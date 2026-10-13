@@ -46,6 +46,7 @@ theorem epi_pushforward_map_of_isAffineHom {M N : X.Modules} (φ : M ⟶ N)
   apply Scheme.Modules.Hom.epi_of_surjective_on_affineOpens
   intro U hU
   -- Pushforward on sections is restriction of scalars of the component over the preimage.
+  rw [Scheme.Modules.pushforward_map_app]
   exact φ.app_surjective_of_epi_of_isAffineOpen (f ⁻¹ᵁ U) (hU.preimage f)
 
 /-- Affine pushforward preserves a short exact sequence of module sheaves whose middle and

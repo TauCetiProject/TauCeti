@@ -140,23 +140,15 @@ epimorphism. No quasicoherence hypothesis is required. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineOpens
     {M N : X.Modules} (f : M ⟶ N)
     (hf : ∀ U : X.Opens, IsAffineOpen U → Function.Surjective (f.app U)) : Epi f := by
-  constructor
-  intro P g h hgh
-  ext U s
-  apply TopCat.Presheaf.IsSheaf.section_ext P.isSheaf
-  intro x hx
-  obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
-  have hVU' : V ≤ U := hVU
-  let i : V ⟶ U := homOfLE hVU'
-  refine ⟨V, hVU', hxV, ?_⟩
-  obtain ⟨t, ht⟩ := hf V hV (N.presheaf.map i.op s)
-  calc
-    P.presheaf.map i.op (g.app U s) = g.app V (N.presheaf.map i.op s) :=
-      (congr($(g.mapPresheaf.naturality i.op) s)).symm
-    _ = h.app V (N.presheaf.map i.op s) := by
-      rw [← ht]
-      exact congr($(hgh).val.app (.op V) t)
-    _ = P.presheaf.map i.op (h.app U s) := congr($(h.mapPresheaf.naturality i.op) s)
+  have : Sheaf.IsLocallySurjective ((toSheaf X).map f) := by
+    constructor
+    intro U s x hx
+    obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
+    have hVU' : V ≤ U := hVU
+    exact ⟨V, homOfLE hVU', hf V hV (N.presheaf.map (homOfLE hVU').op s), hxV⟩
+  have : (toSheaf X).Faithful :=
+    inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
+  exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
 
 end Scheme.Modules
 
