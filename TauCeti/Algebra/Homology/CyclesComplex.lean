@@ -175,12 +175,14 @@ def cyclesComplexShortComplexMap : K.cyclesComplexShortComplex ⟶ L.cyclesCompl
 
 /-- In each degree, the morphism of cycle sequences induced by `φ` is the induced map on cycles
 on the first terms. -/
+@[simp]
 lemma cyclesComplexShortComplexMap_τ₁_f (i : ι) :
     (cyclesComplexShortComplexMap φ).τ₁.f i =
       eqToHom (by simp) ≫ cyclesMap φ i ≫ eqToHom (by simp) :=
   (Category.comp_id _).symm.trans (Category.id_comp _).symm
 
 /-- On the middle terms, the morphism of cycle sequences induced by `φ` is `φ`. -/
+@[simp]
 lemma cyclesComplexShortComplexMap_τ₂ :
     (cyclesComplexShortComplexMap φ).τ₂ =
       eqToHom K.cyclesComplexShortComplex_X₂ ≫ φ ≫ eqToHom L.cyclesComplexShortComplex_X₂.symm :=
@@ -188,6 +190,7 @@ lemma cyclesComplexShortComplexMap_τ₂ :
 
 /-- In each degree, the morphism of cycle sequences induced by `φ` is the induced map on the
 cokernels of the inclusions of the cycles on the last terms. -/
+@[simp]
 lemma cyclesComplexShortComplexMap_τ₃_f (i : ι) :
     (cyclesComplexShortComplexMap φ).τ₃.f i = eqToHom (by simp) ≫
       cokernel.map (K.iCycles i) (L.iCycles i) (cyclesMap φ i) (φ.f i) (by simp) ≫

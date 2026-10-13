@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
@@ -537,31 +538,6 @@ variable {K L} {K' L' : ChainComplex (ModuleCat.{u} R) ℕ}
 
 omit [∀ q, Projective (cokernel (L.iCycles q))] [∀ q, Projective (L.cycles q)]
   [∀ q, Projective (cokernel (L'.iCycles q))] [∀ q, Projective (L'.cycles q)] in
-/-- Transport of `homologyMap` along the identification of the middle term of a cycle sequence. -/
-private lemma homologyMap_comp_eqToHom {M M' : ChainComplex (ModuleCat.{u} R) ℕ} (hM : M = L)
-    (hM' : M' = L') (τ : M ⟶ M') (hτ : τ = eqToHom hM ≫ ψ ≫ eqToHom hM'.symm) (q : ℕ) :
-    homologyMap τ q ≫ eqToHom (congrArg (·.homology q) hM') =
-      eqToHom (congrArg (·.homology q) hM) ≫ homologyMap ψ q := by
-  subst hM hM' hτ
-  simp
-
-omit [∀ q, Projective (cokernel (L.iCycles q))] [∀ q, Projective (L.cycles q)]
-  [∀ q, Projective (cokernel (L'.iCycles q))] [∀ q, Projective (L'.cycles q)] in
-/-- Transport of the homology of a tensor product along the identification of the middle term of
-a cycle sequence. -/
-@[reassoc]
-private lemma eqToHom_comp_homologyMap_tensorHom {M M' : ChainComplex (ModuleCat.{u} R) ℕ}
-    (hM : M = L) (hM' : M' = L') (τ : M ⟶ M') (hτ : τ = eqToHom hM ≫ ψ ≫ eqToHom hM'.symm)
-    (n : ℕ) :
-    eqToHom (congrArg (fun N ↦ (tensorObj K N).homology n) hM.symm) ≫
-        homologyMap (tensorHom φ τ) n =
-      homologyMap (tensorHom φ ψ) n ≫
-        eqToHom (congrArg (fun N ↦ (tensorObj K' N).homology n) hM'.symm) := by
-  subst hM hM' hτ
-  simp
-
-omit [∀ q, Projective (cokernel (L.iCycles q))] [∀ q, Projective (L.cycles q)]
-  [∀ q, Projective (cokernel (L'.iCycles q))] [∀ q, Projective (L'.cycles q)] in
 /-- The morphism of presentations `homologyPresentation L q ⟶ homologyPresentation L' q` induced
 by `ψ`. -/
 @[simps]
@@ -679,14 +655,37 @@ theorem homologyToTor_naturality (m : ℕ) :
     homologyMap (tensorHom φ ψ) (m + 1) ≫ homologyToTor K' L' m =
       homologyToTor K L m ≫ GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1)
         (fun x ↦ x.1 + x.2) (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m := by
-  rw [← cancel_mono (homologyTorToHomologyQuotient K' L' m), Category.assoc, Category.assoc,
-    homologyTorToHomologyQuotient_naturality, homologyToTor_comp_homologyTorToHomologyQuotient,
-    homologyToTor_comp_homologyTorToHomologyQuotient_assoc, ← homologyMap_comp,
-    tensorHom_id_g_comp_tensorHom, homologyMap_comp]
-  -- the `eqToHom`s identify the middle term `L.cyclesComplexShortComplex.X₂` with `L`; they are
-  -- not identities syntactically, since the body of `cyclesComplexShortComplex` is not exposed
-  rw [eqToHom_comp_homologyMap_tensorHom_assoc φ ψ L.cyclesComplexShortComplex_X₂
-    L'.cyclesComplexShortComplex_X₂ _ (cyclesComplexShortComplexMap_τ₂ ψ)]
+  apply (cancel_mono (homologyTorToHomologyQuotient K' L' m)).1
+  calc
+    (homologyMap (tensorHom φ ψ) (m + 1) ≫ homologyToTor K' L' m) ≫
+        homologyTorToHomologyQuotient K' L' m =
+      homologyMap (tensorHom φ ψ) (m + 1) ≫
+        eqToHom (congrArg (fun N ↦ (tensorObj K' N).homology (m + 1))
+          L'.cyclesComplexShortComplex_X₂.symm) ≫
+        homologyMap (tensorLeftShortComplex K' L'.cyclesComplexShortComplex).g (m + 1) := by
+          rw [Category.assoc, homologyToTor_comp_homologyTorToHomologyQuotient]
+    _ = eqToHom (congrArg (fun N ↦ (tensorObj K N).homology (m + 1))
+          L.cyclesComplexShortComplex_X₂.symm) ≫
+        homologyMap (tensorHom φ (cyclesComplexShortComplexMap ψ).τ₂) (m + 1) ≫
+        homologyMap (tensorLeftShortComplex K' L'.cyclesComplexShortComplex).g (m + 1) := by
+          simpa only [Category.assoc] using
+            (eqToHom_comp_homologyMap_tensorHom_assoc φ ψ L.cyclesComplexShortComplex_X₂
+              L'.cyclesComplexShortComplex_X₂ _ (cyclesComplexShortComplexMap_τ₂ ψ)
+              (homologyMap (tensorLeftShortComplex K' L'.cyclesComplexShortComplex).g
+                (m + 1))).symm
+    _ = eqToHom (congrArg (fun N ↦ (tensorObj K N).homology (m + 1))
+          L.cyclesComplexShortComplex_X₂.symm) ≫
+        homologyMap (tensorLeftShortComplex K L.cyclesComplexShortComplex).g (m + 1) ≫
+        homologyMap (tensorHom φ (cyclesComplexShortComplexMap ψ).τ₃) (m + 1) := by
+          simp only [Category.assoc]
+          congr 1
+          rw [← homologyMap_comp, ← tensorHom_id_g_comp_tensorHom, homologyMap_comp]
+    _ = (homologyToTor K L m ≫
+        GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1)
+          (fun x ↦ x.1 + x.2) (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m) ≫
+        homologyTorToHomologyQuotient K' L' m := by
+          simp only [Category.assoc, homologyTorToHomologyQuotient_naturality,
+            homologyToTor_comp_homologyTorToHomologyQuotient_assoc]
 
 end Naturality
 
