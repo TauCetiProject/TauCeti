@@ -148,6 +148,25 @@ theorem eq_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f)) {
     γ t = negativeGradientFlow f hf t (γ 0) :=
   eq_flowOfLipschitz hf.neg hγ t
 
+/-- **Negative-gradient flows agree where the gradients agree.** If the gradients of `g` and `f`
+coincide along the orbit segment `{φ_τ y | τ ∈ [[0, t]]}` of the negative-gradient flow of `f`,
+then the negative-gradient flow of `g` sends `y` at time `t` to the same point. -/
+theorem negativeGradientFlow_apply_eq_of_gradient_eq {g : E → ℝ} {K' : ℝ≥0}
+    (hg : LipschitzWith K' (∇ g)) (hf : LipschitzWith K (∇ f)) {y : E} {t : ℝ}
+    (hfg : ∀ τ ∈ uIcc 0 t,
+      ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y)) :
+    negativeGradientFlow g hg t y = negativeGradientFlow f hf t y := by
+  have hγ : IsIntegralCurveOn (fun τ ↦ negativeGradientFlow f hf τ y) (fun _ w ↦ -∇ g w)
+      (uIcc 0 t) := fun τ hτ ↦ by
+    have h := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y τ
+    beta_reduce at h ⊢
+    rw [hfg τ hτ]
+    exact h.hasDerivWithinAt
+  have h := eq_flowOfLipschitz_of_isIntegralCurveOn hg.neg hγ le_rfl
+  rw [Flow.map_zero_apply] at h
+  rw [negativeGradientFlow]
+  exact h.symm
+
 /-- Translating the negative-gradient field to displacement coordinates preserves its Lipschitz
 constant. -/
 theorem lipschitzWith_centeredNegativeGradient (hf : LipschitzWith K (∇ f)) (x : E) :

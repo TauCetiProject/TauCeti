@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
+public import TauCeti.Dynamics.Flow.Stable
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Dynamics.Flow.Variational
@@ -46,6 +47,9 @@ for parameters in the closed unit ball.
   `TauCeti.perturbedFlow_apply_zero` and `TauCeti.snd_fderiv_perturbedFlow_apply`.
 * `TauCeti.fst_fderiv_perturbedFlow_apply_eq_neg_integral`: Duhamel's formula for the derivative
   of the perturbed flow in a parameter direction at the parameter `0`.
+* `TauCeti.negativeGradientFlow_perturb_apply_eq`, `TauCeti.mem_stableSet_perturb_iff`,
+  `TauCeti.mem_unstableSet_perturb_iff`: away from the supports of the family, the perturbed flow,
+  and membership in stable and unstable sets, are those of `f`.
 
 ## References
 
@@ -511,6 +515,55 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   rw [hu0, map_zero, sub_zero, intervalIntegral.integral_neg, hinv] at hFTC
   calc u T = M T (N T (u T)) := (hMN T _).symm
     _ = -M T (∫ σ in (0 : ℝ)..T, N σ (b σ)) := by rw [← hFTC, map_neg]
+
+/-- Outside the supports of the family, the gradient of a perturbation is the gradient of `f`. -/
+theorem gradient_perturb_of_forall_notMem_tsupport (s : EuclideanSpace ℝ ι) {x : E}
+    (hx : ∀ i, x ∉ tsupport (h i)) : ∇ (perturb f h s) x = ∇ f x := by
+  rw [gradient, (perturb_eventuallyEq_of_forall_notMem_tsupport s hx).fderiv_eq, gradient]
+
+/-- **Away from the perturbation, the perturbed flow is the flow of `f`.** If the orbit segment
+`{φ_τ y | τ ∈ [[0, t]]}` of the negative-gradient flow of `f` avoids the supports of the family,
+then the negative-gradient flow of `perturb f h s` sends `y` at time `t` to `φ_t y`. -/
+theorem negativeGradientFlow_perturb_apply_eq (hf : LipschitzWith K (∇ f))
+    {s : EuclideanSpace ℝ ι} {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {y : E}
+    {t : ℝ} (hy : ∀ τ ∈ uIcc 0 t, ∀ i, negativeGradientFlow f hf τ y ∉ tsupport (h i)) :
+    negativeGradientFlow (perturb f h s) hf' t y = negativeGradientFlow f hf t y :=
+  negativeGradientFlow_apply_eq_of_gradient_eq hf' hf fun τ hτ ↦
+    gradient_perturb_of_forall_notMem_tsupport s (hy τ hτ)
+
+/-- **Stable sets away from the perturbation.** If the forward orbit of `y` under the
+negative-gradient flow of `f` avoids the supports of the family, then `y` lies in the stable set
+of a point `q` for the perturbed flow if and only if it does for the flow of `f`. -/
+theorem mem_stableSet_perturb_iff (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι}
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {y q : E}
+    (hy : ∀ τ, 0 ≤ τ → ∀ i, negativeGradientFlow f hf τ y ∉ tsupport (h i)) :
+    y ∈ Flow.stableSet (negativeGradientFlow (perturb f h s) hf') q ↔
+      y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
+  have heq : (fun t ↦ negativeGradientFlow (perturb f h s) hf' t y) =ᶠ[atTop]
+      fun t ↦ negativeGradientFlow f hf t y := by
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    refine negativeGradientFlow_perturb_apply_eq hf hf' fun τ hτ ↦ hy τ ?_
+    rw [uIcc_of_le ht] at hτ
+    exact hτ.1
+  simp only [Flow.mem_stableSet]
+  exact tendsto_congr' heq
+
+/-- **Unstable sets away from the perturbation.** If the backward orbit of `y` under the
+negative-gradient flow of `f` avoids the supports of the family, then `y` lies in the unstable set
+of a point `p` for the perturbed flow if and only if it does for the flow of `f`. -/
+theorem mem_unstableSet_perturb_iff (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι}
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {y p : E}
+    (hy : ∀ τ, τ ≤ 0 → ∀ i, negativeGradientFlow f hf τ y ∉ tsupport (h i)) :
+    y ∈ Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p ↔
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
+  have heq : (fun t ↦ negativeGradientFlow (perturb f h s) hf' t y) =ᶠ[atBot]
+      fun t ↦ negativeGradientFlow f hf t y := by
+    filter_upwards [eventually_le_atBot 0] with t ht
+    refine negativeGradientFlow_perturb_apply_eq hf hf' fun τ hτ ↦ hy τ ?_
+    rw [uIcc_of_ge ht] at hτ
+    exact hτ.2
+  simp only [Flow.mem_unstableSet]
+  exact tendsto_congr' heq
 
 end ParameterDerivative
 
