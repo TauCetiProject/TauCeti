@@ -541,13 +541,11 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
   ext t ht
   rw [hsnd t ht, hc, one_mul]
 
-/-- A reference measure with log-density bounded above almost everywhere against the product of
-two finite measures is finite. -/
-theorem isFiniteMeasure_of_eq_withDensity_exp [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    {R : Measure (X × Y)} (hg : AEMeasurable g (μ.prod ν)) (hgM : ∀ᵐ z ∂μ.prod ν, g z ≤ M)
-    (hR : R = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (Real.exp (g z))) :
-    IsFiniteMeasure R := by
-  rw [hR]
+/-- A measure with log-density bounded above almost everywhere against a finite measure is
+finite. -/
+theorem isFiniteMeasure_withDensity_ofReal_exp {Z : Type*} [MeasurableSpace Z] {ρ : Measure Z}
+    [IsFiniteMeasure ρ] {g : Z → ℝ} (hg : AEMeasurable g ρ) (hgM : ∀ᵐ z ∂ρ, g z ≤ M) :
+    IsFiniteMeasure (ρ.withDensity fun z ↦ ENNReal.ofReal (Real.exp (g z))) := by
   refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
     (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
     (hgM.mono fun z hz ↦ ?_)).2
@@ -591,8 +589,8 @@ theorem IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
     exists_isCoupling_withDensity_exp_add_of_eq_withDensity hπ.measure_univ_eq hg hgM hR
-  have := isFiniteMeasure_of_eq_withDensity_exp hg.aemeasurable
-    (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2) hR
+  have : IsFiniteMeasure R := hR ▸ isFiniteMeasure_withDensity_ofReal_exp hg.aemeasurable
+    (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2)
   have hφi : Integrable φ μ :=
     Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)
   have hψi : Integrable ψ ν :=

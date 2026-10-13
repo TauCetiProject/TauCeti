@@ -265,8 +265,8 @@ theorem exists_klDiv_withDensity_exp_add_comp_eq_dynamicSchroedingerValue [IsFin
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
     exists_isCoupling_withDensity_exp_add_of_eq_withDensity hμν hg hgM hR
   -- The reference measure is finite, since its endpoint law has a bounded density.
-  have := isFiniteMeasure_of_eq_withDensity_exp hg.aemeasurable
-    (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2) hR
+  have : IsFiniteMeasure (R.map e) := hR ▸ isFiniteMeasure_withDensity_ofReal_exp hg.aemeasurable
+    (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2)
   have : IsFiniteMeasure R := Measure.isFiniteMeasure_of_map he.aemeasurable
   have hφi : Integrable φ μ :=
     Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)
