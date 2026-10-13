@@ -27,6 +27,7 @@ are stated over an arbitrary commutative ring.
 * `TauCeti.D4Tripled.trialityCoefficient_cyclic`: cyclic compatibility with triality.
 * `TauCeti.D4Tripled.trialityTrilinearForm`: the bundled trilinear form over a commutative ring.
 * `TauCeti.D4Tripled.trialityTrilinearForm_apply`: evaluation on arbitrary coordinate vectors.
+* `TauCeti.D4Tripled.trialityTrilinearForm_ne_zero`: nonvanishing over a nontrivial ring.
 * `TauCeti.D4Tripled.trialityTrilinearForm_cyclic`: cyclic compatibility of the bundled form.
 * `TauCeti.D4Tripled.trialityTrilinearForm_raising_invariant` and its lowering and Cartan
   analogues: invariance under the diagonal Chevalley-generator action.
@@ -163,6 +164,15 @@ theorem trialityTrilinearForm_single_one_single_one_single_one (R : Type*) [Comm
       (trialityCoefficient a b c : R) := by
   classical
   simp [trialityTrilinearForm, Pi.single_apply]
+
+/-- The triality trilinear form is nonzero over every nontrivial commutative ring. -/
+theorem trialityTrilinearForm_ne_zero (R : Type*) [CommRing R] [Nontrivial R] :
+    trialityTrilinearForm R ≠ 0 := by
+  intro h
+  have hEval := congrArg
+    (fun f => f (Pi.single ⟨0, by decide⟩ 1) (Pi.single ⟨11, by decide⟩ 1)
+      (Pi.single ⟨23, by decide⟩ 1)) h
+  simp at hEval
 
 private theorem trialityTrilinearForm_apply_single_one_single_one (R : Type*) [CommRing R]
     (v : Block 0 → R) (b : Block 1) (c : Block 2) :
