@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CubicDiscriminant
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Divisors of a monic cubic and of its discriminant
@@ -20,15 +21,22 @@ divisibilities is needed — no domain, no ellipticity, nothing about the ring b
 Composing them is the algebraic half of the sharp discriminant bound in Nagell–Lutz: a divisor of
 the cubic which also divides that quartic divides the cubic's discriminant.
 
+The second transfer also shows that a repeated root modulo `d` forces `d` to divide the
+discriminant: if `x`, `y`, `z` have the elementary symmetric functions `-a₂`, `a₄`, `-a₆`
+modulo `d`, so that the cubic is `(X - x)(X - y)(X - z)` modulo `d`, and `x ≡ y`, then `x` is a
+common root of the cubic and its derivative modulo `d`.
+
 ## Main results
 
 * `TauCeti.Cubic.dvd_derivative_sq`
 * `TauCeti.Cubic.dvd_discr`
+* `TauCeti.Cubic.dvd_discr_of_dvd_sub`
 
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-the roadmap at `dev/modular-curves @ 9fec8eba7652`,
+The first two lemmas are ported from the AINTLIB `NagellLutz` project
+(`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by the roadmap at
+`dev/modular-curves @ 9fec8eba7652`,
 `LutzNagell/LutzNagellTheorem/GeneralDiscriminant.lean`, where the two identities appear inline
 inside the discriminant argument rather than as separate lemmas.
 -/
@@ -66,5 +74,22 @@ theorem dvd_discr (hf : d ∣ x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆)
         - (3 * x ^ 2 + 2 * a₂ * x - a₂ ^ 2 + 4 * a₄) * (3 * x ^ 2 + 2 * a₂ * x + a₄) ^ 2 := by
     simp only [_root_.Cubic.discr]; ring
   exact hid ▸ dvd_sub (Dvd.dvd.mul_left hf _) (Dvd.dvd.mul_left hderiv _)
+
+/-- **A repeated root modulo `d` makes `d` divide the discriminant.** If `x`, `y`, `z` are the roots
+of the monic cubic `X³ + a₂X² + a₄X + a₆` modulo `d`, that is `d` divides `x + y + z + a₂`,
+`xy + xz + yz − a₄` and `xyz + a₆`, and `x ≡ y` modulo `d`, then `d` divides the cubic's
+discriminant. -/
+theorem dvd_discr_of_dvd_sub {y z : R} (h₁ : d ∣ x + y + z + a₂)
+    (h₂ : d ∣ x * y + x * z + y * z - a₄) (h₃ : d ∣ x * y * z + a₆) (h : d ∣ x - y) :
+    d ∣ (_root_.Cubic.mk 1 a₂ a₄ a₆).discr := by
+  obtain ⟨u, hu⟩ := h₁
+  obtain ⟨w, hw⟩ := h₂
+  obtain ⟨r, hr⟩ := h₃
+  obtain ⟨e, he⟩ := h
+  -- the cubic is `(X - x)(X - y)(X - z) + d (u X² - w X + r)`, and `x - y = d e`
+  refine dvd_discr (x := x) ⟨u * x ^ 2 - w * x + r, ?_⟩
+    (dvd_pow ⟨e * (x - z) + 2 * u * x - w, ?_⟩ two_ne_zero)
+  · linear_combination x ^ 2 * hu - x * hw + hr
+  · linear_combination 2 * x * hu - hw + (x - z) * he
 
 end TauCeti.Cubic
