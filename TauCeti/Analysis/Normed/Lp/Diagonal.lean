@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
+public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
 /-!
 # Bounded diagonal operators on sequence spaces
@@ -16,14 +17,16 @@ A bounded scalar family defines coordinatewise multiplication on `lp` for every 
 `1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms. Finite coordinate
 truncations have rank at most the number of retained coordinates, and the discarded coefficients
 bound their error in operator norm. These estimates provide finite-rank approximations of
-diagonal operators.
+diagonal operators. Over a complete locally compact scalar field, coefficients tending to
+zero along the cofinite filter give a compact diagonal operator.
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
 
 public section
 
-open scoped lp ENNReal NNReal
+open scoped lp ENNReal NNReal Topology
+open Filter
 
 namespace lp
 
@@ -66,6 +69,33 @@ theorem diagonalCLM_zero : diagonalCLM (p := p) (0 : ℓ^∞(ι, 𝕜)) = 0 := b
   ext x i
   simp
 
+/-- Adding coefficient families adds their diagonal multipliers. -/
+@[simp]
+theorem diagonalCLM_add (d e : ℓ^∞(ι, 𝕜)) :
+    diagonalCLM (p := p) (d + e) = diagonalCLM d + diagonalCLM e := by
+  ext x i
+  simp [add_mul]
+
+/-- Scaling a coefficient family scales its diagonal multiplier. -/
+@[simp]
+theorem diagonalCLM_smul (a : 𝕜) (d : ℓ^∞(ι, 𝕜)) :
+    diagonalCLM (p := p) (a • d) = a • diagonalCLM d := by
+  ext x i
+  simp [mul_assoc]
+
+/-- The constant-one coefficient family gives the identity operator. -/
+@[simp]
+theorem diagonalCLM_one :
+    diagonalCLM (p := p) (1 : ℓ^∞(ι, 𝕜)) = ContinuousLinearMap.id 𝕜 ℓ^p(ι, 𝕜) := by
+  ext x i
+  simp
+
+/-- Multiplying coefficient families composes their diagonal multipliers. -/
+theorem diagonalCLM_mul (d e : ℓ^∞(ι, 𝕜)) :
+    diagonalCLM (p := p) (d * e) = (diagonalCLM d).comp (diagonalCLM e) := by
+  ext x i
+  simp [mul_assoc]
+
 variable [DecidableEq ι]
 
 /-- Retain the coefficients of a diagonal operator on a finite set of coordinates. -/
@@ -73,6 +103,13 @@ noncomputable def diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
     ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜) :=
   ∑ i ∈ s, (d i • singleContinuousLinearMap 𝕜 (fun _ : ι ↦ 𝕜) p i).comp
     (evalCLM 𝕜 (fun _ : ι ↦ 𝕜) p i)
+
+/-- A finite diagonal truncation is a sum of scalar multiples of coordinate vectors. -/
+theorem diagonalTruncation_apply_eq_sum_single (d : ℓ^∞(ι, 𝕜)) (s : Finset ι)
+    (x : ℓ^p(ι, 𝕜)) :
+    diagonalTruncation d s x = ∑ i ∈ s, (d i * x i) • lp.single p i 1 := by
+  rw [diagonalTruncation, sum_apply]
+  simp [singleContinuousLinearMap_apply, evalCLM, ← lp.single_smul]
 
 /-- A finite diagonal truncation is the original multiplier on the retained coordinates
 and zero elsewhere. -/
@@ -83,8 +120,24 @@ theorem diagonalTruncation_apply (d : ℓ^∞(ι, 𝕜)) (s : Finset ι)
   -- Reify evaluation before rewriting sums: simplifying the `PreLp` coercion first
   -- produces an expression which the rewrite matcher cannot type-check.
   change (evalₗ (𝕜 := 𝕜) (fun _ : ι ↦ 𝕜) p i) (diagonalTruncation d s x) = _
-  rw [diagonalTruncation, sum_apply, map_sum]
-  simp [singleContinuousLinearMap_apply, evalCLM, lp.single_apply, Pi.single_apply]
+  rw [diagonalTruncation_apply_eq_sum_single, map_sum]
+  simp [lp.single_apply, Pi.single_apply]
+
+/-- Retaining no coordinates gives the zero operator. -/
+@[simp]
+theorem diagonalTruncation_empty (d : ℓ^∞(ι, 𝕜)) :
+    diagonalTruncation (p := p) d ∅ = 0 := by
+  simp [diagonalTruncation]
+
+/-- A finite diagonal truncation retains exactly the coordinate vectors in its finite set. -/
+@[simp]
+theorem diagonalTruncation_single (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) (i : ι) (a : 𝕜) :
+    diagonalTruncation d s (lp.single p i a) =
+      if i ∈ s then lp.single p i (d i * a) else 0 := by
+  ext j
+  by_cases h : j = i
+  · subst j; by_cases hi : i ∈ s <;> simp [hi]
+  · by_cases hi : i ∈ s <;> simp [hi, lp.single_apply, h]
 
 /-- A finite diagonal truncation has rank at most the number of retained coordinates. -/
 theorem rank_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
@@ -94,15 +147,8 @@ theorem rank_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
   have hrange : LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap ≤
       Submodule.span 𝕜 (v '' (s : Set ι)) := by
     rintro _ ⟨x, rfl⟩
-    have hx : diagonalTruncation d s x = ∑ i ∈ s, (d i * x i) • v i := by
-      ext j
-      -- Keep evaluation bundled to avoid unfolding the `PreLp` coercion when rewriting sums.
-      change (evalₗ (𝕜 := 𝕜) (fun _ : ι ↦ 𝕜) p j) (diagonalTruncation d s x) =
-        (evalₗ (𝕜 := 𝕜) (fun _ : ι ↦ 𝕜) p j) (∑ i ∈ s, (d i * x i) • v i)
-      rw [map_sum]
-      simp [v, lp.single_apply, Pi.single_apply]
     simp only [ContinuousLinearMap.coe_coe]
-    rw [hx]
+    rw [diagonalTruncation_apply_eq_sum_single]
     exact Submodule.sum_mem _ fun i hi ↦ Submodule.smul_mem _ _
       (Submodule.subset_span ⟨i, hi, rfl⟩)
   calc
@@ -126,5 +172,25 @@ theorem norm_diagonalCLM_sub_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : 
       · simpa [hi, norm_mul, abs_of_nonneg hC] using
           mul_le_mul_of_nonneg_right (hd i hi) (norm_nonneg (x i))
     _ = C * ‖x‖ := by simp [norm_smul, abs_of_nonneg hC, norm_toNorm]
+
+omit [DecidableEq ι] in
+/-- A diagonal multiplier is compact if its coefficient norms tend to zero along cofinite. -/
+theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜] [CompleteSpace 𝕜]
+    (d : ℓ^∞(ι, 𝕜)) (hd : Tendsto (fun i ↦ ‖d i‖) cofinite (𝓝 0)) :
+    IsCompactOperator (diagonalCLM (p := p) d) := by
+  classical
+  apply isClosed_setOfPred_isCompactOperator.closure_subset
+  refine Metric.mem_closure_iff.mpr fun ε hε ↦ ?_
+  have hs : {i | ¬‖d i‖ < ε / 2}.Finite :=
+    eventually_cofinite.mp (hd.eventually (gt_mem_nhds (half_pos hε)))
+  let s := hs.toFinset
+  have : Module.Finite 𝕜 (LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap) :=
+    Module.rank_lt_aleph0_iff.mp
+      ((rank_diagonalTruncation_le (p := p) d s).trans_lt (Cardinal.natCast_lt_aleph0))
+  refine ⟨diagonalTruncation d s,
+    LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this), ?_⟩
+  rw [dist_eq_norm]
+  exact (norm_diagonalCLM_sub_diagonalTruncation_le d s (half_pos hε).le
+    (fun i hi ↦ (by simpa [s] using hi : ‖d i‖ < ε / 2).le)).trans_lt (half_lt_self hε)
 
 end lp

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Lp.Diagonal
-public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 public import Mathlib.LinearAlgebra.StdBasis
 
@@ -18,8 +17,9 @@ number at index `n` equals the magnitude of the `n`-th coefficient. Retaining th
 coordinates attains the best rank-at-most-`n` approximation. The formula applies to all
 sequence spaces `lp` with `1 ≤ p ≤ ∞`, in particular to real and complex `ℓ²`.
 
-Over a complete locally compact scalar field, coefficients tending to zero give a compact
-diagonal operator.
+The general compactness theorem `lp.isCompactOperator_diagonalCLM` in the multiplier module
+shows that, over a complete locally compact scalar field, coefficients tending to zero give a
+compact diagonal operator; monotonicity is not required.
 
 ## References
 
@@ -28,12 +28,23 @@ diagonal operator.
 
 public section
 
-open scoped lp ENNReal NNReal Topology
-open Filter
+open scoped lp ENNReal NNReal
 
 namespace lp
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Retaining the first `n` coordinates gives an operator of rank at most `n`. -/
+theorem rank_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜)) (n : ℕ) :
+    (diagonalTruncation (p := p) d (Finset.range n)).rank ≤ n := by
+  simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n)
+
+/-- For decreasing coefficient magnitudes, the first discarded coefficient bounds the error. -/
+theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜))
+    (hd : Antitone fun i ↦ ‖d i‖) (n : ℕ) :
+    ‖diagonalCLM (p := p) d - diagonalTruncation d (Finset.range n)‖₊ ≤ ‖d n‖₊ := by
+  exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
+    (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
 
 /-- The approximation numbers of a diagonal operator with decreasing coefficient magnitudes
 are exactly those magnitudes. No convergence-to-zero assumption is needed. -/
@@ -43,10 +54,9 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
     (diagonalCLM (p := p) d).singularValue n = ‖d n‖₊ := by
   have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   refine le_antisymm ?_ ?_
-  · refine ((diagonalCLM (p := p) d).singularValue_le_nnnorm_sub
-      (by simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n))).trans ?_
-    exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
-      (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
+  · exact ((diagonalCLM (p := p) d).singularValue_le_nnnorm_sub
+      (rank_diagonalTruncation_range_le d n)).trans
+        (nnnorm_diagonalCLM_sub_diagonalTruncation_range_le d hd n)
   · let v : Fin (n + 1) → ℓ^p(ℕ, 𝕜) := fun i ↦ lp.single p (i : ℕ) 1
     have hv : LinearIndependent 𝕜 v := by
       apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ℕ ↦ 𝕜) p).subtype
@@ -75,18 +85,9 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
     (hd : Antitone fun i ↦ ‖d i‖) (n : ℕ) :
     ‖diagonalCLM (p := p) d - diagonalTruncation d (Finset.range n)‖₊ = ‖d n‖₊ := by
   refine le_antisymm ?_ ?_
-  · exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
-      (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
+  · exact nnnorm_diagonalCLM_sub_diagonalTruncation_range_le d hd n
   · rw [← singularValue_diagonalCLM (p := p) d hd n]
     exact (diagonalCLM d).singularValue_le_nnnorm_sub
-      (by simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n))
-
-/-- A diagonal operator with decreasing coefficient magnitudes tending to zero is compact. -/
-theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜] [CompleteSpace 𝕜]
-    (d : ℓ^∞(ℕ, 𝕜)) (hd : Antitone fun i ↦ ‖d i‖)
-    (hzero : Tendsto (fun i ↦ ‖d i‖₊) atTop (𝓝 0)) :
-    IsCompactOperator (diagonalCLM (p := p) d) := by
-  apply ContinuousLinearMap.isCompactOperator_of_tendsto_singularValue
-  exact hzero.congr fun n ↦ (singularValue_diagonalCLM (p := p) d hd n).symm
+      (rank_diagonalTruncation_range_le d n)
 
 end lp
