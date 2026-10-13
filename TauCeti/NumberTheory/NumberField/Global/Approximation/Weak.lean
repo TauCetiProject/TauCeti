@@ -393,7 +393,7 @@ theorem denseRange_algebraMap_embedding_of_isReal
     exact ⟨w.2, hw⟩
   choose hr hrT using hreal
   -- Read each archimedean completion as `ℝ` through its real embedding.
-  let r : (∀ u : {u // u ∈ Sinf}, u.1.Completion) → ∀ w : T, ℝ :=
+  let r : (∀ u : {u // u ∈ Sinf}, u.1.Completion) → ∀ _ : T, ℝ :=
     fun y w => Completion.extensionEmbeddingOfIsReal w.1.2 (y ⟨w.1.1, hmem w⟩)
   have hrc : Continuous r := continuous_pi fun w =>
     (Completion.isometry_extensionEmbeddingOfIsReal w.1.2).continuous.comp (continuous_apply _)

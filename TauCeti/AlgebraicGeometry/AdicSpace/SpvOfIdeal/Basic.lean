@@ -53,6 +53,8 @@ Lemma 7.4.
 
 * `mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top` : **Lemma 7.4**
   at the `Spv` level — the criterion in the form a consumer can actually check.
+* `TauCeti.ValuationSpectrum.mem_spvOfIdeal_top_iff` : `Spv (A, A)` consists of the points with
+  full characteristic group.
 * `TauCeti.ValuationSpectrum.mem_spvOfIdeal_iff` : membership unfolded through the canonical
   valuation, and `TauCeti.ValuationSpectrum.mem_spvOfIdeal_ofValuation` : membership tested on
   an arbitrary representative, which is what makes the definition usable.
@@ -107,5 +109,14 @@ theorem mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top 
     v ∈ spvOfIdeal I hfg ↔
       (∀ a ∈ I, CofinalValue v.valuation a) ∨ characteristicSubgroup v.valuation = ⊤ :=
   characteristicSubgroupOfIdeal_eq_top_iff hfg
+
+/-- **The points of `Spv (A, A)`** are those whose characteristic subgroup is the whole value
+group. The cofinal alternative of Lemma 7.4 cannot hold for the unit ideal, as `v(1) = 1` is not
+cofinal. -/
+theorem mem_spvOfIdeal_top_iff {hfg : ∃ J : Ideal A, J.FG ∧ (⊤ : Ideal A).radical = J.radical}
+    {v : Spv A} : v ∈ spvOfIdeal ⊤ hfg ↔ characteristicSubgroup v.valuation = ⊤ :=
+  mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top.trans
+    (or_iff_right fun h ↦
+      not_cofinalValueFor_one _ ⊤ (cofinalValueFor_top_iff.mpr (h 1 Submodule.mem_top)))
 
 end TauCeti.ValuationSpectrum

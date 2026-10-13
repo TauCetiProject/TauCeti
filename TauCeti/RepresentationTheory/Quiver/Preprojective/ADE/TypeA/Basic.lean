@@ -268,7 +268,8 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
     · exact .inr ⟨h.symm, by rw [← h]⟩
 
 /-- **Every path of length at least `n` vanishes in the signless algebra of `Aₙ`.** -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.A n).cartanMatrix)))
     (hx : n ≤ x.2.2.length) :
@@ -285,7 +286,8 @@ variable (o : Orientation (diagramGraph (DynkinType.A n).cartanMatrix))
 
 /-- **Every path of length at least `n` vanishes in the preprojective algebra of `Aₙ`**, for every
 orientation of the `Aₙ` graph. -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem preprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath
       (Symmetrify (OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o)))

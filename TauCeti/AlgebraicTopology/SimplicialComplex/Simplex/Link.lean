@@ -39,6 +39,23 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [DecidableEq ι]
 variable {V σ : Finset ι}
 
+/-- The closed star of a face with empty link is the simplex on that face. -/
+theorem closedStar_eq_simplex_of_link_eq_bot {K : PreAbstractSimplicialComplex ι} (hσ : σ ∈ K)
+    (hlink : link K σ = ⊥) : closedStar K σ = simplex σ := by
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_closedStar_iff_sdiff hσ]
+  constructor
+  · rintro ⟨hne, hρ⟩
+    apply mem_simplex.mpr
+    refine ⟨hne, ?_⟩
+    rcases hρ with hρ | hρ
+    · exact sdiff_eq_empty_iff_subset.mp hρ
+    · rw [hlink] at hρ
+      exact hρ.elim
+  · intro hρ
+    obtain ⟨hne, hsub⟩ := mem_simplex.mp hρ
+    exact ⟨hne, Or.inl (sdiff_eq_empty_iff_subset.mpr hsub)⟩
+
 /-- The closed star of any subset `σ ⊆ V` in the simplex on `V` is the entire simplex. -/
 @[simp]
 theorem closedStar_simplex (hσ : σ ⊆ V) : closedStar (simplex V) σ = simplex V := by

@@ -17,9 +17,11 @@ For a partial linear map `A` on a normed space and a scalar `c`, this file studi
 `x ↦ c • x - A x` (bundled as `LinearPMap.smulSub` in `TauCeti.LinearAlgebra.LinearPMap.SmulSub`)
 under a lower bound.  A shift bounded below by a multiple of `‖x‖` is injective; a shift bounded
 below by a multiple of the graph norm `max ‖x‖ ‖A x‖` of a closed `A` has closed range, because it
-is then an antilipschitz map on the complete graph of `A`.  These are the common cores of the
-injectivity of `λ - A` for a dissipative `A` and of the closed-range property of the nonreal
-shifts of a closed symmetric `A`.
+is then an antilipschitz map on the complete graph of `A`.  A lower bound by a multiple of `‖x‖`
+alone already controls the graph norm, since `‖A x‖ ≤ ‖c‖ ‖x‖ + ‖c • x - A x‖`, so such a shift
+of a closed `A` has closed range too.  These are the common cores of the injectivity of `λ - A`
+for a dissipative `A` and of the closed-range property of the shifts of a closed symmetric `A`
+away from its spectrum.
 
 ## Main results
 
@@ -29,6 +31,8 @@ shifts of a closed symmetric `A`.
   `graphSmulSub_apply` and `range_graphSmulSub`.
 * `LinearPMap.isClosed_range_smul_sub_of_graph_norm_le`: a shift of a closed partial linear map
   that is bounded below by a multiple of the graph norm has closed range.
+* `LinearPMap.isClosed_range_smul_sub_of_norm_le`: a shift of a closed partial linear map that is
+  bounded below by a positive multiple of `‖x‖` has closed range.
 -/
 
 public section
@@ -99,6 +103,30 @@ theorem isClosed_range_smul_sub_of_graph_norm_le [CompleteSpace E] {A : E →ₗ
   rw [← A.range_graphSmulSub c]
   exact ((A.graphSmulSub c).antilipschitz_of_bound
     (norm_le_mul_norm_graphSmulSub hbound)).isClosed_range (A.graphSmulSub c).uniformContinuous
+
+/-- **A shift bounded below has closed range.** If `A` is closed and `K * ‖x‖ ≤ ‖c • x - A x‖` on
+the domain for some `K > 0`, then the range of `x ↦ c • x - A x` is closed: the lower bound
+controls the graph norm, because `‖A x‖ ≤ ‖c‖ ‖x‖ + ‖c • x - A x‖`. -/
+theorem isClosed_range_smul_sub_of_norm_le [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hcl : A.IsClosed) {c : 𝕜} {K : ℝ} (hK : 0 < K)
+    (hbound : ∀ x : A.domain, K * ‖(x : E)‖ ≤ ‖c • (x : E) - A x‖) :
+    _root_.IsClosed (Set.range fun x : A.domain => c • (x : E) - A x) := by
+  let L : ℝ≥0 := ⟨(1 + ‖c‖) * K⁻¹ + 1, by positivity⟩
+  have hL : (L : ℝ) = (1 + ‖c‖) * K⁻¹ + 1 := NNReal.coe_mk _ _
+  refine isClosed_range_smul_sub_of_graph_norm_le hcl (K := L) fun x => ?_
+  have hx : ‖(x : E)‖ ≤ K⁻¹ * ‖c • (x : E) - A x‖ := (le_inv_mul_iff₀ hK).mpr (hbound x)
+  have hAx : ‖A x‖ ≤ ‖c‖ * ‖(x : E)‖ + ‖c • (x : E) - A x‖ := by
+    calc
+      ‖A x‖ = ‖c • (x : E) - (c • (x : E) - A x)‖ := by rw [sub_sub_cancel]
+      _ ≤ ‖c • (x : E)‖ + ‖c • (x : E) - A x‖ := norm_sub_le _ _
+      _ = ‖c‖ * ‖(x : E)‖ + ‖c • (x : E) - A x‖ := by rw [norm_smul]
+  have hKi : 0 ≤ K⁻¹ := inv_nonneg.mpr hK.le
+  have hN : 0 ≤ ‖c • (x : E) - A x‖ := norm_nonneg _
+  have hc : 0 ≤ ‖c‖ := norm_nonneg c
+  have hcKN : 0 ≤ ‖c‖ * K⁻¹ * ‖c • (x : E) - A x‖ := by positivity
+  rw [hL]
+  refine max_le (by nlinarith) ?_
+  nlinarith [mul_le_mul_of_nonneg_left hx hc]
 
 end Graph
 

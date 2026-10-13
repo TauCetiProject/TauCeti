@@ -25,6 +25,9 @@ as a `ℤ`-module: `AddSubgroup.index_range_nsmul` gives `n ^ finrank ℤ M`. Th
   extra factor is exactly what torsion contributes. The proof runs the structure theorem
   `AddCommGroup.equiv_free_prod_directSum_zmod` and reduces to the free case on the free part and
   to a counting argument on the finite part.
+* `Subgroup.index_range_powMonoidHom_of_fg`: the same count for a group written multiplicatively,
+  `(G : Gⁿ) = n ^ finrank ℤ (Additive G) * #G[n]`, the form that applies to unit groups such as the
+  `S`-units of a number field.
 * `Subgroup.index_range_pow_mul_card_ker` and its additive form
   `AddSubgroup.index_range_nsmul_mul_card_ker`: for a subgroup `U ≤ G` of finite index,
   `(G : nG) * #U[n] = #G[n] * (U : nU)`. It is stated multiplicatively as well so that it applies
@@ -49,11 +52,13 @@ it either. The same formula is in turn the group-theoretic input to the finitene
 group `K(S,n)` that the layer's weak Mordell–Weil bullet names, for the finitely generated — not
 free — group of `S`-units.
 
-Everything here is adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention
-for adapted material, the upstream authorship is credited here rather than in the copyright header,
-and each declaration carries its source name.
+Everything here except `Subgroup.index_range_powMonoidHom_of_fg`, which only rereads
+`AddSubgroup.index_range_nsmul_of_fg` multiplicatively, is adapted from Michael Stoll's
+elliptic-curves formalisation (`github.com/MichaelStollBayreuth/EllipticCurves`,
+`EllipticCurves/Mathlib/SelmerGroup.lean` at the roadmap's pin `66889eada51a`, Apache 2.0, by
+Michael Stoll). Following this repository's convention for adapted material, the upstream
+authorship is credited here rather than in the copyright header, and each declaration carries its
+source name.
 
 **Not ported from that file**, because Mathlib or this repository already has them: its
 `Module.finite_int_additive` and `Group.fg_of_module_finite_int` (Mathlib's
@@ -237,7 +242,7 @@ theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] {n 
       (AddSubgroup.equivMapOfInjective _ eqv.toAddMonoidHom eqv.injective).toEquiv
   have hrk : finrank ℤ G = r := by
     have h1 : Module.rank ℤ ((Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) = r := by
-      set π := LinearMap.fst ℤ (Fin r →₀ ℤ) (⨁ i, ZMod (p i ^ e i)) with hπ
+      set π := LinearMap.fst ℤ (Fin r →₀ ℤ) (⨁ i, ZMod (p i ^ e i))
       have h0 : Module.rank ℤ (LinearMap.ker π) = 0 := by
         have e2 : LinearMap.ker π ≃ₗ[ℤ] ⨁ i, ZMod (p i ^ e i) :=
           { toFun x := x.1.2
@@ -272,5 +277,23 @@ theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] {n 
   simp
 
 end AddSubgroup
+
+namespace Subgroup
+
+/-- **The index of the `n`-th powers in a finitely generated commutative group** `G` is
+`n ^ finrank ℤ (Additive G) * #G[n]`, where `G[n]` is the `n`-torsion subgroup. This is
+`AddSubgroup.index_range_nsmul_of_fg` read in `Additive G`. -/
+theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] {n : ℕ}
+    (hn : n ≠ 0) :
+    (powMonoidHom (α := G) n).range.index =
+      n ^ finrank ℤ (Additive G) * Nat.card (powMonoidHom (α := G) n).ker := by
+  have h : (powMonoidHom (α := G) n).toAdditive = nsmulAddMonoidHom n := by
+    ext x
+    simp
+  have := AddSubgroup.index_range_nsmul_of_fg (Additive G) hn
+  rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
+    index_toAddSubgroup] at this
+
+end Subgroup
 
 end

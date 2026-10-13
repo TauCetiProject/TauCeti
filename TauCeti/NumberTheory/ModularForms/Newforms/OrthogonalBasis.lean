@@ -87,15 +87,6 @@ theorem linearIndependent_toCuspForm :
 
 /-! ### Normalising a new eigenvector -/
 
-/-- A nonzero good Hecke eigenvector in the new subspace has nonzero first coefficient. -/
-private theorem qExpansion_coeff_one_ne_zero {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hχ : F ∈ cuspFormCharSpace k χ) (hnew : F ∈ cuspFormsNew N k) (hF : F ≠ 0)
-    (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
-      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨F, hχ⟩ = c • ⟨F, hχ⟩) :
-    (qExpansion 1 F).coeff 1 ≠ 0 := fun h1 ↦
-  hF (eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew (F := ⟨F, hχ⟩)
-    (fun p hp hpN ↦ by rw [heckeTCompositeGamma0_prime N hp]; exact h p hp hpN) h1 hnew)
-
 /-- **A new eigenvector, normalised, is a newform.** A nonzero cusp form of nebentypus `χ` in the
 new subspace that is an eigenvector of the Hecke ring at every prime not dividing `N`, divided
 by its first coefficient (which is nonzero). -/
@@ -107,7 +98,8 @@ noncomputable def ofForallPrime {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
   toEigenformAwayFromLevel :=
     EigenformAwayFromLevel.ofForallPrime (f := ((qExpansion 1 F).coeff 1)⁻¹ • F)
       (Submodule.smul_mem _ _ hχ)
-      (smul_ne_zero (inv_ne_zero (qExpansion_coeff_one_ne_zero hχ hnew hF h)) hF)
+      (smul_ne_zero
+        (inv_ne_zero (qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew hχ hnew hF h)) hF)
       fun p hp hpN ↦ by
         obtain ⟨c, hc⟩ := h p hp hpN
         -- the rescaled form, as an element of `S_k(N, χ)`, is the rescaled element
@@ -122,7 +114,7 @@ noncomputable def ofForallPrime {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     rw [EigenformAwayFromLevel.ofForallPrime_toCuspForm,
       ← CuspForm.qExpansionCoeffₗ_apply one_pos (one_mem_strictPeriods_Gamma1_map N), map_smul,
       CuspForm.qExpansionCoeffₗ_apply, smul_eq_mul,
-      inv_mul_cancel₀ (qExpansion_coeff_one_ne_zero hχ hnew hF h)]
+      inv_mul_cancel₀ (qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew hχ hnew hF h)]
 
 /-- The underlying cusp form of `ofForallPrime` is the supplied form divided by its first
 coefficient. -/
@@ -160,7 +152,7 @@ private theorem mem_span_of_forall_prime {F : cuspFormCharSpace k χ}
       Submodule.span ℂ ((fun f : Newform N k ↦ f.toCuspForm) '' {f | f.χ = χ}) :=
     Submodule.subset_span ⟨_, ofForallPrime_χ hχ hnew hF h, rfl⟩
   rw [ofForallPrime_toCuspForm] at hmem
-  simpa [smul_inv_smul₀ (qExpansion_coeff_one_ne_zero hχ hnew hF h)] using
+  simpa [smul_inv_smul₀ (qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew hχ hnew hF h)] using
     Submodule.smul_mem _ ((qExpansion 1 F).coeff 1) hmem
 
 /-- The new part of a good Hecke eigenvector is a good Hecke eigenvector, with the same

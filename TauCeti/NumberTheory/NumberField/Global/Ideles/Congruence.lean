@@ -333,15 +333,14 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
   -- The three conditions are open on the adele ring; an idele satisfies the congruence conditions
   -- exactly when both it and its inverse satisfy the adelic ones.
   set A : Set 𝔸[K] :=
-    {a | ∀ v : HeightOneSpectrum (𝓞 K), a.2 v ∈ v.adicCompletionIntegers K} ∩
+    {a | a.2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K} ∩
       ({a | ∀ v ∈ 𝔪.support, Valued.v ((a.2 v : v.adicCompletion K) - 1) ≤
           WithZero.exp (-(𝔪.exponent v : ℤ))} ∩
         {a | ∀ w ∈ 𝔪.infinitePart,
           0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)})
   have hAopen : IsOpen A := by
     refine IsOpen.inter ?_ (IsOpen.inter ?_ ?_)
-    · exact (RestrictedProduct.isOpen_forall_mem fun v ↦
-        Valued.isOpen_valuationSubring _).preimage continuous_snd
+    · exact (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
     · have h : {a : 𝔸[K] | ∀ v ∈ 𝔪.support, Valued.v ((a.2 v : v.adicCompletion K) - 1) ≤
             WithZero.exp (-(𝔪.exponent v : ℤ))} =
           ⋂ v ∈ 𝔪.support, (fun a : 𝔸[K] ↦ (a.2 v : v.adicCompletion K) - 1) ⁻¹'
@@ -362,7 +361,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
           ((continuous_apply w.1).comp continuous_fst))
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
-    refine ⟨fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
     · exact ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hx v
     · exact ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx
         (𝔪.pow_exponent_dvd_finitePart v)
@@ -380,8 +379,8 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
         simpa using (v.ideleFiniteCoord x).ne_zero
       refine le_antisymm (by
         simpa [mem_adicCompletionIntegers, HeightOneSpectrum.coe_ideleFiniteCoord] using
-          hx1 v) ?_
-      have hinv := hy1 v
+          FiniteAdeleRing.mem_integralAdeles.mp hx1 v) ?_
+      have hinv := FiniteAdeleRing.mem_integralAdeles.mp hy1 v
       rw [mem_adicCompletionIntegers, ← HeightOneSpectrum.coe_ideleFiniteCoord, map_inv,
         Units.val_inv_eq_inv_val, map_inv₀] at hinv
       exact (inv_le_one₀ (zero_lt_iff.mpr hne)).mp hinv

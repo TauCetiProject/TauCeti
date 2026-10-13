@@ -86,6 +86,13 @@ def IsCentral (I : HopfIdeal R H) : Prop :=
   ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
       Algebra.TensorProduct.includeRight x ∈ leftTensorIdeal (R := R) (H := H) I.toIdeal
 
+/-- Centrality means that conjugation agrees with the second projection modulo the ideal
+of the subgroup in the first tensor factor. -/
+theorem isCentral_iff_conjugation_sub_mem (I : HopfIdeal R H) :
+    I.IsCentral ↔ ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
+      Algebra.TensorProduct.includeRight x ∈ leftTensorIdeal (R := R) (H := H) I.toIdeal :=
+  Iff.rfl
+
 /-- Centrality passes to larger Hopf ideals, which cut out smaller closed subgroups. -/
 theorem IsCentral.mono {I J : HopfIdeal R H} (hI : I.IsCentral) (hIJ : I ≤ J) : J.IsCentral :=
   fun x ↦ leftTensorIdeal_mono R H (toIdeal_le_toIdeal.mpr hIJ) (hI x)
@@ -262,8 +269,14 @@ theorem IsCentral.comapOfSurjective_of_bijective {H K : Type v} [CommRing H] [Co
   intro A g hg
   let e := BialgEquiv.ofBijective f ⟨hinj, hsurj⟩
   let E := AlgHom.mapDomainMulEquiv (A := A) e
-  have hmem := CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
-    f hinj hsurj I A
+  have he : (e : H →ₐc[R] K) = f := by
+    ext x
+    exact congrFun (BialgEquiv.coe_ofBijective f ⟨hinj, hsurj⟩) x
+  have hmem (x) : E x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H)
+      (I.comapOfSurjective f hsurj) A ↔
+      x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
+    rw [AlgHom.mapDomainMulEquiv_apply, he]
+    exact f.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff hsurj I A x
   have hg' : E.symm g ∈ CommHopfAlgCat.quotientPointsSubgroup
       (_root_.CommHopfAlgCat.of R K) I A := by
     apply (hmem (E.symm g)).mp

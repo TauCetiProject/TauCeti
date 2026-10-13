@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Coupling.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.FiniteMeasure
 
@@ -96,10 +96,10 @@ first marginal is `ν` because the matched mass and the excess add up at every a
 marginal is `ν'` because the designated atom `k₀` absorbs exactly the total excess. -/
 theorem isCoupling_shiftCoupling (hfg : ∑ k, ν {k} = ∑ k, ν' {k})
     (hne : ∑ k, ν {k} ≠ ⊤) (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) :
-    IsCoupling ν ν' (shiftCoupling ν ν' k₀) := by
+    IsCoupling (shiftCoupling ν ν' k₀) ν ν' := by
   have hdom' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν' {k} ≤ ν {k} := fun k _ hk => hdom k hk
   have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
-  refine isCoupling_iff.2 ⟨?_, ?_⟩
+  refine ⟨?_, ?_⟩
   · refine Measure.ext_of_singleton fun i => ?_
     rw [Measure.fst_apply (MeasurableSet.singleton i), shiftCoupling_apply]
     have h1 : ∑ k, min (ν {k}) (ν' {k}) * (Prod.fst ⁻¹' ({i} : Set κ)).indicator 1 (k, k)

@@ -13,6 +13,7 @@ import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # The marked pro-`2` Galois group of `ℚ₂(√-2)`
@@ -73,10 +74,6 @@ noncomputable section
 open Polynomial
 
 namespace TauCeti
-
-/-- Instance search for `Nontrivial ℚ_[2]` times out through the Henselian-ring instances; the
-degree and separability computations below need it. -/
-local instance : Nontrivial ℚ_[2] := DivisionRing.toNontrivial
 
 /-- The local field `ℚ₂(√-2)`, obtained by adjoining a root of `X² + 2` to `ℚ₂`. -/
 def RatPadicSqrtNegTwo : Type := AdjoinRoot (X ^ 2 + C 2 : ℚ_[2][X])

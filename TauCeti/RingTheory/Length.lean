@@ -119,7 +119,7 @@ theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG →
   have hx : ∀ i : Fin l.length, ∃ x : M, x ∈ l i.succ ∧ x ∉ l i.castSucc := fun i =>
     IsConcreteLE.exists_of_lt (l.strictMono (Fin.castSucc_lt_succ : i.castSucc < i.succ))
   choose x hx1 hx2 using hx
-  set N : Submodule A M := Submodule.span A (Set.range x) with hN
+  set N : Submodule A M := Submodule.span A (Set.range x) with _
   have hxN : ∀ i, x i ∈ N := fun i => Submodule.subset_span ⟨i, rfl⟩
   have hmono : StrictMono (fun i => Submodule.comap N.subtype (l i)) :=
     Fin.strictMono_iff_lt_succ.mpr fun i => by
