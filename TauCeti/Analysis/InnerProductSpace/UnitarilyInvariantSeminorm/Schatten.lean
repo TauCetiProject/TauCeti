@@ -85,9 +85,7 @@ theorem schatten_apply_of_ne_top (hp : p ≠ ∞) (A : E →ₗ[𝕜] F) :
   rw [schatten_apply, PiLp.norm_eq_sum hp0]
   congr 1
   simp only [Real.norm_of_nonneg (A.singularValues_nonneg _)]
-  rw [Fin.sum_univ_eq_sum_range (fun i ↦ A.singularValues i ^ p.toReal),
-    Finsupp.sum_of_support_subset _ (A.support_singularValues ▸
-      Finset.range_subset_range.mpr A.finrank_range_le) _ fun _ _ ↦ by simp [hp0.ne']]
+  exact A.sum_fin_singularValues (· ^ p.toReal) (by simp [hp0.ne'])
 
 /-- The Schatten seminorms dominate the operator norm: `‖A‖ ≤ ‖A‖_p`. -/
 theorem opNorm_apply_le_schatten_apply (A : E →ₗ[𝕜] F) :
