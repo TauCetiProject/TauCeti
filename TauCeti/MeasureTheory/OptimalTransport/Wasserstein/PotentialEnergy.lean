@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
-public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
+import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
 # Potential energy and its displacement convexity

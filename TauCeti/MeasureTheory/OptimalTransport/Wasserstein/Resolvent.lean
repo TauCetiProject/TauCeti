@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Tight
-public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PotentialEnergy
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Compactness
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.LowerSemicontinuous
