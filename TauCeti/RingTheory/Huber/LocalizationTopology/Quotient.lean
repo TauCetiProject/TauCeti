@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Basic
 import TauCeti.RingTheory.Huber.WeightedEval.Quotient
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!

@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
 /-!
 # Cancellation of topological finite type
