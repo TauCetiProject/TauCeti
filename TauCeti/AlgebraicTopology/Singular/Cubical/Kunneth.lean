@@ -52,12 +52,6 @@ namespace TauCeti
 
 variable (k : Type u) [CommRing k]
 
-/-- The monoidal tensor product of morphisms of chain complexes is `HomologicalComplex.tensorHom`
-(by definition of the monoidal structure). -/
-private theorem tensorHom_eq_tensorHom {K₁ K₂ L₁ L₂ : ChainComplex (ModuleCat.{u} k) ℕ}
-    (φ : K₁ ⟶ L₁) (ψ : K₂ ⟶ L₂) : HomologicalComplex.tensorHom φ ψ = φ ⊗ₘ ψ :=
-  (rfl)
-
 /-- The tensor product of the two comparison maps is a quasi-isomorphism: they are homotopy
 equivalences, and the tensor product preserves homotopy equivalences. -/
 instance quasiIso_tensorHom_cubicalToSingular (X Y : TopCat.{u}) :
@@ -124,6 +118,20 @@ theorem cubicalHomologyKunneth_def (n : ℕ) :
         homologyMap (cubicalCrossProduct k X Y) n :=
   (rfl)
 
+/-- **Naturality of the cubical Künneth map** in both spaces. -/
+theorem cubicalHomologyKunneth_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y')
+    (n : ℕ) :
+    GradedObject.Monoidal.tensorHom
+        (fun p ↦ homologyMap ((normalizedCubicalChainComplex k).map f) p)
+        (fun q ↦ homologyMap ((normalizedCubicalChainComplex k).map g) q) n ≫
+      cubicalHomologyKunneth k X' Y' n =
+      cubicalHomologyKunneth k X Y n ≫
+        homologyMap ((normalizedCubicalChainComplex k).map (f ⊗ₘ g)) n := by
+  rw [cubicalHomologyKunneth_def, cubicalHomologyKunneth_def, ← Category.assoc,
+    homologyKunneth_naturality, Category.assoc, ← homologyMap_comp, Category.assoc,
+    ← homologyMap_comp, ← cubicalCrossProduct_naturality,
+    HomologicalComplex.tensorHom_eq_tensorHom]
+
 /-- The cubical cross product induces an isomorphism on homology. -/
 instance isIso_homologyMap_cubicalCrossProduct (n : ℕ) :
     IsIso (homologyMap (cubicalCrossProduct k X Y) n) :=
@@ -176,7 +184,7 @@ theorem tensorHom_comp_homologyKunneth_comp_homologyMap_singularCrossProduct (n 
   rw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
     cubicalHomologyKunneth_def, Category.assoc, ← homologyMap_comp,
     ← cubicalCrossProductToSingularApp_def, homologyMap_cubicalCrossProductToSingular,
-    singularCrossProductOfCubicalApp_def, tensorHom_eq_tensorHom]
+    singularCrossProductOfCubicalApp_def, HomologicalComplex.tensorHom_eq_tensorHom]
 
 /-- The same statement for the Künneth map of singular homology with coefficients in the ring
 (`TopCat.singularHomologyKunneth`, followed by the unitor `k ⊗ k ≅ k`). -/
@@ -203,18 +211,31 @@ theorem tensorHom_comp_singularHomologyKunneth (n : ℕ) :
 
 variable [NoZeroDivisors k] [IsPrincipalIdealRing k]
 
+/-- The map `Hₘ₊₁(X × Y; k) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))` of the cubical Künneth
+sequence: the inverse of the isomorphism induced by the cross product followed by the map to `Tor₁`
+of the algebraic Künneth sequence. -/
+def cubicalHomologyToTor (m : ℕ) :
+    ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).homology (m + 1) ⟶
+      homologyTor ((normalizedCubicalChainComplex k).obj X)
+        ((normalizedCubicalChainComplex k).obj Y) m :=
+  inv (homologyMap (cubicalCrossProduct k X Y) (m + 1)) ≫
+    homologyToTor ((normalizedCubicalChainComplex k).obj X)
+      ((normalizedCubicalChainComplex k).obj Y) m
+
+/-- The cubical Künneth map followed by the map to `Tor₁` vanishes. -/
+@[reassoc (attr := simp)]
+theorem cubicalHomologyKunneth_comp_cubicalHomologyToTor (m : ℕ) :
+    cubicalHomologyKunneth k X Y (m + 1) ≫ cubicalHomologyToTor k X Y m = 0 := by
+  rw [cubicalHomologyToTor, cubicalHomologyKunneth_def, Category.assoc, IsIso.hom_inv_id_assoc]
+  exact homologyKunneth_comp_homologyToTor _ _ m
+
 /-- The Künneth short complex of cubical homology,
 `⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))`,
 formed by the cubical Künneth map and the map to `Tor₁` of the algebraic Künneth sequence, through
 the isomorphism induced on homology by the cross product. -/
 abbrev cubicalHomologyKunnethShortComplex (m : ℕ) : ShortComplex (ModuleCat.{u} k) :=
-  ShortComplex.mk (cubicalHomologyKunneth k X Y (m + 1))
-    (inv (homologyMap (cubicalCrossProduct k X Y) (m + 1)) ≫
-      homologyToTor ((normalizedCubicalChainComplex k).obj X)
-        ((normalizedCubicalChainComplex k).obj Y) m)
-    (by
-      rw [cubicalHomologyKunneth_def, Category.assoc, IsIso.hom_inv_id_assoc]
-      exact homologyKunneth_comp_homologyToTor _ _ m)
+  ShortComplex.mk (cubicalHomologyKunneth k X Y (m + 1)) (cubicalHomologyToTor k X Y m)
+    (cubicalHomologyKunneth_comp_cubicalHomologyToTor k X Y m)
 
 /-- **The Künneth short exact sequence for cubical homology over a principal ideal domain**:
 
@@ -230,7 +251,7 @@ theorem cubicalHomologyKunnethShortComplex_shortExact (m : ℕ) :
       ((normalizedCubicalChainComplex k).obj Y) m)
   exact ShortComplex.isoMk (Iso.refl _)
     (asIso (homologyMap (cubicalCrossProduct k X Y) (m + 1))) (Iso.refl _)
-    (Category.id_comp _).symm (by simp)
+    (Category.id_comp _).symm (IsIso.hom_inv_id_assoc _ _)
 
 end TauCeti
 
