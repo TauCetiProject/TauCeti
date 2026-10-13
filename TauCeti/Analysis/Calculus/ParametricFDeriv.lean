@@ -150,8 +150,7 @@ theorem hasFDerivAt_spatialFDeriv {P : Type*} [NormedAddCommGroup P] [NormedSpac
       (fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p) x).flip p := by
   have hDF := ContDiffAt.hasFDerivAt_fderiv hF le_minSmoothness
   have hnear : ∀ᶠ z in 𝓝 (p, x), DifferentiableAt 𝕜 F z :=
-    ((hF.of_le (show 1 ≤ minSmoothness 𝕜 2 from le_trans (by norm_num)
-      le_minSmoothness)).eventually (by simp)).mono fun _ hz ↦
+    ((hF.of_le (le_trans (by norm_num) le_minSmoothness)).eventually (by simp)).mono fun _ hz ↦
         hz.differentiableAt one_ne_zero
   have hSpatial := ((compL 𝕜 E (P × E) F').flip (inr 𝕜 P E)).hasFDerivAt.comp p
     (hDF.comp p (hasFDerivAt_prodMk_left (𝕜 := 𝕜) p x))
@@ -208,8 +207,7 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
       simpa only [← fderiv_apply_one_eq_deriv] using
         hcurve.symm)
   have hnear : ∀ᶠ z in 𝓝 (t, x), DifferentiableAt 𝕜 F z :=
-    ((hF.of_le (show 1 ≤ minSmoothness 𝕜 2 from le_trans (by norm_num)
-      le_minSmoothness)).eventually (by simp)).mono fun _ hz ↦
+    ((hF.of_le (le_trans (by norm_num) le_minSmoothness)).eventually (by simp)).mono fun _ hz ↦
         hz.differentiableAt one_ne_zero
   have hSpatial := hSlice.congr_of_eventuallyEq (f₁ := spatialFDeriv F x) (by
     filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually hnear] with s hs
