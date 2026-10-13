@@ -123,6 +123,18 @@ theorem curveAction_add (p : ℝ) (γ : ℝ → X) {a b c : ℝ} (hb : b ∈ uIc
   · rw [uIoc_of_ge hba, uIoc_of_ge hcb]
     exact (Ioc_disjoint_Ioc_of_le le_rfl).symm
 
+/-- The `p`-action over `[a, a + n * h]` is the sum of the actions over the cells
+`[a + k * h, a + (k + 1) * h]` of the uniform grid of step `h ≥ 0`. -/
+theorem curveAction_eq_sum_range (p : ℝ) (γ : ℝ → X) {a h : ℝ} (hh : 0 ≤ h) (n : ℕ) :
+    curveAction p γ a (a + n * h) =
+      ∑ k ∈ Finset.range n, curveAction p γ (a + k * h) (a + (k + 1) * h) := by
+  induction n with
+  | zero => simp [curveAction_self]
+  | succ n ih =>
+    rw [Finset.sum_range_succ, ← ih, curveAction_add, Nat.cast_succ]
+    · refine mem_uIcc.2 (Or.inl ⟨by nlinarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n), hh], ?_⟩)
+      nlinarith
+
 /-- The `p`-action of a `K`-Lipschitz curve over the interval between `a` and `b` is at most
 `K ^ p` times the length of the interval. -/
 theorem _root_.LipschitzWith.curveAction_le {K : ℝ≥0} (hγ : LipschitzWith K γ) (hp : 0 ≤ p)
