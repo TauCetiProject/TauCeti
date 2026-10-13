@@ -549,7 +549,8 @@ class TopicScheme(unittest.TestCase):
                     path.write_text(json.dumps(broken))
                     self.assertFalse(rp.snapshot_is_current(path))
             for field, value in (("arxiv", "math.BAD"), ("arxiv", []),
-                                 ("topic", "obsolete category"), ("layers", None)):
+                                 ("topic", "obsolete category"), ("layers", None),
+                                 ("parent_id", "__proto__")):
                 with self.subTest(row_field=field):
                     broken = copy.deepcopy(snapshot)
                     broken["rows"][0][field] = value

@@ -130,8 +130,10 @@ try {
             return False
     by_id = {row["id"]: row for row in rows}
     for row in rows:
-        if row["parent_id"] is not None and row["arxiv"] != by_id[row["parent_id"]]["arxiv"]:
-            return False
+        if row["parent_id"] is not None:
+            parent = by_id.get(row["parent_id"])
+            if parent is None or row["arxiv"] != parent["arxiv"]:
+                return False
     return data["topics"] == sorted({row["topic"] for row in rows} - {UNSORTED})
 
 
