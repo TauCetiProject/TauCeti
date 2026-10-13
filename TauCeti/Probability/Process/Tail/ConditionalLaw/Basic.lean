@@ -13,10 +13,9 @@ public import Mathlib.Probability.Kernel.CondDistrib
 # Tail-conditioned laws of a process
 
 For a process `X : ℕ → Ω → α` valued in a standard Borel space `α`, `tailConditionalMeasure μ X ω`
-is the conditional law of the initial coordinate `X 0` given the process tail σ-algebra
-`tailProcess X`,
-realised as Mathlib's regular conditional distribution `condDistrib` of `X 0`, conditioning on
-`tailProcess X` via the identity map:
+is Mathlib's `condDistrib` construction for `X 0`, conditioning on `tailProcess X` via the identity
+map. When `X 0` is measurable and `tailProcess X` is contained in the ambient measurable space, it
+represents the conditional law of the initial coordinate `X 0` given the process tail σ-algebra:
 
 ```
 tailConditionalMeasure μ X ω = condDistrib (X 0) (id) μ ω    (conditioning on tailProcess X).
@@ -25,7 +24,7 @@ tailConditionalMeasure μ X ω = condDistrib (X 0) (id) μ ω    (conditioning o
 Because it lives over the **value** space `α`, it needs only `[StandardBorelSpace α]` (and
 `[Nonempty α]`); the sample space `Ω` is an arbitrary measurable space.
 
-No symmetry assumption is needed to construct this conditional law. It becomes a directing
+No symmetry assumption is needed for this construction. It becomes a directing
 measure when a separate theorem establishes that the coordinates are conditionally i.i.d. with
 this law. The construction alone does not assert that it is the conditional law of any coordinate
 other than `X 0`.
@@ -37,7 +36,8 @@ Agreement of these conditional laws under suitable hypotheses is a separate theo
 This file records the basic theory: it is a probability measure
 (`isProbabilityMeasure_tailConditionalMeasure`), its set evaluations are `tailProcess X`-measurable
 (`measurable_tailProcess_tailConditionalMeasure_coe`, with the ambient corollary
-`measurable_tailConditionalMeasure_coe`), and it is the conditional law of `X 0` given the tail
+`measurable_tailConditionalMeasure_coe`), and, when `X 0` is measurable and the tail is contained
+in the ambient measurable space, it is the conditional law of `X 0` given the tail
 (`tailConditionalMeasure_ae_eq_condExp`). It is also bundled as the `ProbabilityMeasure`-valued
 `tailConditionalProbabilityMeasure`, measurable at the `tailProcess X` level
 (`measurable_tailProcess_tailConditionalProbabilityMeasure`, with the ambient corollary
@@ -62,10 +62,10 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 
-/-- The conditional law of the initial coordinate `X 0` given
-the process tail σ-algebra `tailProcess X`, as the regular conditional distribution of `X 0` given
-that σ-algebra (Mathlib's `condDistrib`, conditioning on `tailProcess X` via the identity map). It
-lives over the value space `α`, so it needs `α` standard Borel, not `Ω`. -/
+/-- Mathlib's `condDistrib` construction for `X 0`, conditioning on `tailProcess X` via the identity
+map. It represents the conditional law of the initial coordinate `X 0` given the process tail
+σ-algebra when `X 0` is measurable and `tailProcess X` is contained in the ambient measurable space.
+It lives over the value space `α`, so it needs `α` standard Borel, not `Ω`. -/
 -- `tailConditionalMeasure` is intentionally opaque (no `@[expose]`): downstream code uses the
 -- characteristic lemmas below (probability measure, `tailProcess`-measurability,
 -- `tailConditionalMeasure_ae_eq_condExp`) rather than the definition body. A public `rfl`-unfold
