@@ -11,9 +11,12 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 /-!
 # The localisation `A(T/s)` for a family of denominators
 
-Wedhorn's Proposition and Definition 5.51 localises a nonarchimedean ring `A` at a finite family
-of denominators `s = (sᵢ)_{i ∈ ι}`, each with its own set of numerators `Tᵢ`, subject to the
-standing hypothesis that every `Tᵢ · A` is open. The underlying ring is the algebraic localisation
+Wedhorn's Proposition and Definition 5.51 localises a nonarchimedean ring `A` at a family of
+denominators `s = (sᵢ)_{i ∈ ι}`, each with its own set of numerators `Tᵢ ⊆ A`, subject to the
+standing hypothesis that every `Tᵢ · A` is open. This file treats a finite index type and finite
+numerator sets `Tᵢ`, the generality of the single-denominator construction it is built on, which
+takes a `Finset` of numerators and a localisation `IsLocalization.Away` at one element. In this
+case the underlying ring is the algebraic localisation
 `A[1/s₁, …, 1/sₙ] = A[1/∏ᵢ sᵢ]`, the candidate ring of definition is
 `D = A₀[t/sᵢ : i ∈ ι, t ∈ Tᵢ]`, and the resulting topological ring `A(T/s)` has the universal
 property: the `sᵢ` become units and every fraction `t/sᵢ` is power-bounded, and every continuous
