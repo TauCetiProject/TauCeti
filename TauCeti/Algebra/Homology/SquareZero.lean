@@ -286,6 +286,16 @@ theorem homologyProdEquiv_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
         Submodule.Quotient.mk ⟨z.1.2, congrArg Prod.snd (mem_ker.mp z.2)⟩) := by
   simp [homologyProdEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
 
+/-- The inverse product-homology equivalence sends two cycle classes to their product class. -/
+@[simp]
+theorem homologyProdEquiv_symm_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (x : ker d) (y : ker e) :
+    (d.homologyProdEquiv e hd he).symm (Submodule.Quotient.mk x, Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk
+        ⟨((x : M), (y : N)), mem_ker.mpr (Prod.ext (mem_ker.mp x.2) (mem_ker.mp y.2))⟩ := by
+  apply (d.homologyProdEquiv e hd he).injective
+  simp only [LinearEquiv.apply_symm_apply, homologyProdEquiv_mk]
+
 end Product
 
 end Ring

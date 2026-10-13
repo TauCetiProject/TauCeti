@@ -339,8 +339,7 @@ homology. The equivalence is induced by `fullyBlockedStabilizeXMap`; it concerns
 vector spaces. -/
 noncomputable def fullyBlockedHomologyStabilizeXEquivProd :
     (G').fullyBlockedHomology ≃ₗ[F] G.fullyBlockedHomology × G.fullyBlockedHomology :=
-  ((G').fullyBlockedHomologyEquivLinearMapHomology
-    (G').fullyBlockedDifferential_comp_self_eq_zero).trans
+  (G').fullyBlockedHomologyEquivLinearMapHomology.trans
     ((LinearEquiv.ofBijective
       (LinearMap.homologyMap (G.fullyBlockedStabilizeXMap s)
         (G').fullyBlockedDifferential_comp_self_eq_zero G.prod_d_squared
@@ -348,10 +347,8 @@ noncomputable def fullyBlockedHomologyStabilizeXEquivProd :
       (G.fullyBlockedStabilizeXMap_homologyMap_bijective s)).trans
       (((DI).homologyProdEquiv DI G.fullyBlockedDifferential_comp_self_eq_zero
         G.fullyBlockedDifferential_comp_self_eq_zero).trans
-        ((G.fullyBlockedHomologyEquivLinearMapHomology
-          G.fullyBlockedDifferential_comp_self_eq_zero).symm.prodCongr
-          (G.fullyBlockedHomologyEquivLinearMapHomology
-            G.fullyBlockedDifferential_comp_self_eq_zero).symm)))
+        (G.fullyBlockedHomologyEquivLinearMapHomology.symm.prodCongr
+          G.fullyBlockedHomologyEquivLinearMapHomology.symm)))
 
 /-- The stabilization comparison takes cycles to pairs of cycles. -/
 noncomputable def fullyBlockedStabilizeXCycles :
