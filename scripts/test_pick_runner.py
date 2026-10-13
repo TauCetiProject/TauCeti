@@ -62,7 +62,7 @@ class PickerTests(unittest.TestCase):
             "rate_limit": [dict(resources=dict(core=dict(remaining=5000)))],
         }
 
-    def pick(self, fixture, budget="18", app_token="installation-token", fallback_token=""):
+    def pick(self, fixture, budget="18", app_token="installation-token", fallback_token="repository-token", repository_reserve=None):
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
             (directory / "gh").write_text(FAKE_GH)
@@ -70,12 +70,18 @@ class PickerTests(unittest.TestCase):
             (directory / "fixture.json").write_text(json.dumps(fixture))
             output, summary, calls = (directory / name for name in ["output", "summary", "calls"])
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
-            selected_reserve = expression(step["env"]["API_RESERVE"], "", "", "", app_token)
+            variables = SimpleNamespace(PICKER_API_RESERVE="",
+                                        PICKER_REPOSITORY_API_RESERVE=repository_reserve or "")
+            selected_reserve = expression(step["env"]["API_RESERVE"], "", "", "", app_token,
+                                          variables=variables)
+            selected_repository_reserve = expression(step["env"]["REPOSITORY_API_RESERVE"],
+                                                    "", "", "", app_token, variables=variables)
             env = {**os.environ, "PATH": f"{directory}:{os.environ['PATH']}",
                    "ORG": "Test", "BUDGET": budget, "GITHUB_OUTPUT": str(output),
                    "GITHUB_STEP_SUMMARY": str(summary), "CALLS": str(calls),
                    "FIXTURE": str(directory / "fixture.json"),
                    "API_RESERVE": selected_reserve, "FALLBACK_TOKEN": fallback_token,
+                   "REPOSITORY_API_RESERVE": selected_repository_reserve,
                    "GH_TOKEN": app_token or "repository-token"}
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
             result = subprocess.run(["bash", "-c", step["run"]], env=env,
@@ -144,10 +150,12 @@ class PickerTests(unittest.TestCase):
             with self.subTest(remaining=remaining):
                 fixture = self.fixture()
                 fixture["rate_limit"][0]["resources"]["core"]["remaining"] = remaining
+                fixture["repository-token:rate_limit"] = [
+                    dict(resources=dict(core=dict(remaining=250)))]
                 output, summary, calls = self.pick(fixture)
                 self.assertEqual(output["github"], "false")
                 self.assertIn("quota reserve", summary)
-                self.assertEqual(calls, ["rate_limit"])
+                self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
 
     def test_private_github_token_uses_its_separate_1000_request_budget(self):
         fixture = self.fixture()
@@ -181,7 +189,7 @@ class PickerTests(unittest.TestCase):
         self.assertTrue(all(path.startswith("repository:") for path in job_calls))
 
     def test_exhausted_or_unreadable_repository_budget_falls_back_to_namespace(self):
-        for remaining in [0, None]:
+        for remaining in [0, 250, None]:
             with self.subTest(remaining=remaining):
                 fixture = self.fixture()
                 fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
@@ -194,10 +202,55 @@ class PickerTests(unittest.TestCase):
     def test_projected_job_reads_preserve_reserve(self):
         fixture = self.fixture()
         fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1501
+        fixture["repository-token:rate_limit"] = [
+            dict(resources=dict(core=dict(remaining=251)))]
         output, summary, calls = self.pick(fixture)
         self.assertEqual(output["github"], "false")
         self.assertIn("inspection would consume", summary)
         self.assertFalse(any("/jobs?" in path for path in calls))
+
+    def test_no_app_preserves_repository_budget_without_switching(self):
+        for remaining in [0, 250, 251]:
+            with self.subTest(remaining=remaining):
+                fixture = self.fixture()
+                fixture["rate_limit"][0]["resources"]["core"]["remaining"] = remaining
+                output, summary, calls = self.pick(fixture, app_token="")
+                self.assertEqual(output["github"], "false")
+                self.assertNotIn("Shared App quota reserve protected", summary)
+                self.assertFalse(any("/jobs?" in path for path in calls))
+
+    def test_repository_reserve_is_configurable_and_identified_in_summary(self):
+        fixture = self.fixture()
+        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
+        fixture["repository-token:rate_limit"] = [
+            dict(resources=dict(core=dict(remaining=500)))]
+        output, summary, _ = self.pick(fixture, repository_reserve="400")
+        self.assertEqual(output["github"], "true")
+        self.assertIn("repository API requests left this hour (reserve 400)", summary)
+        output, _, calls = self.pick(fixture, repository_reserve="500")
+        self.assertEqual(output["github"], "false")
+        self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
+
+    def test_invalid_repository_reserve_avoids_api_reads(self):
+        for value in ["bad", "9223372036854775807"]:
+            output, summary, calls = self.pick({}, repository_reserve=value)
+            self.assertEqual(output["github"], "false")
+            self.assertIn("Invalid repository API reserve", summary)
+            self.assertEqual(calls, [])
+
+    def test_no_app_custom_reserve_uses_workflow_expression(self):
+        fixture = self.fixture()
+        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 400
+        output, _, calls = self.pick(fixture, app_token="", repository_reserve="400")
+        self.assertEqual(output["github"], "false")
+        self.assertEqual(calls, ["repository:rate_limit"])
+
+    def test_missing_fallback_token_preserves_installation_reserve(self):
+        fixture = self.fixture()
+        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
+        output, _, calls = self.pick(fixture, fallback_token="")
+        self.assertEqual(output["github"], "false")
+        self.assertEqual(calls, ["rate_limit"])
 
     def test_quota_read_failure_falls_back_before_org_scan(self):
         fixture = self.fixture()
@@ -220,7 +273,7 @@ class PickerTests(unittest.TestCase):
         self.assertEqual(calls, [])
 
 
-def expression(value, event, action, picked, app_token="installation-token"):
+def expression(value, event, action, picked, app_token="installation-token", variables=None):
     """Evaluate the actual workflow expression's boolean/format/JSON subset."""
     source = value.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -228,7 +281,7 @@ def expression(value, event, action, picked, app_token="installation-token"):
     needs = SimpleNamespace(**{"pick-runner": SimpleNamespace(outputs=SimpleNamespace(github=picked))})
     source = source.replace("needs.pick-runner", "needs.__dict__['pick-runner']")
     steps = SimpleNamespace(**{"app-token": SimpleNamespace(outputs=SimpleNamespace(token=app_token))})
-    variables = SimpleNamespace(PICKER_API_RESERVE="")
+    variables = variables or SimpleNamespace(PICKER_API_RESERVE="", PICKER_REPOSITORY_API_RESERVE="")
     source = source.replace("steps.app-token", "steps.__dict__['app-token']")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "steps": steps, "vars": variables, "fromJSON": json.loads, "format": lambda s, *args: s.format(*args)})
