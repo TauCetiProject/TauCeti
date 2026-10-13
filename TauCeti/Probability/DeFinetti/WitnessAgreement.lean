@@ -17,9 +17,6 @@ import TauCeti.Probability.DeFinetti.JointRectangle
 import TauCeti.Probability.DeFinetti.ViaKoopman.Theorem
 -- Non-public: `conditionallyIID_ae_unique` identifies the two witnesses.
 import TauCeti.Probability.Exchangeability.ConditionallyIID.Unique
--- Non-public: `contractable_of_contractableLaw_pathLaw` views the coordinate process as
--- contractable.
-import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 
 /-!
 # Agreement of the canonical de Finetti witnesses
@@ -44,8 +41,6 @@ agreement is the a.e. uniqueness of directing measures, `conditionallyIID_ae_uni
 Exchangeable path laws are covered through `ExchangeableLaw.contractableLaw`. The `L²` witness
 theorem `Contractable.conditionallyIIDWith_directingProbabilityMeasure` names the same
 tail-conditioned witness, so it needs no separate comparison.
-
-This module sits downstream of the route proofs and no route imports it.
 -/
 
 public section
