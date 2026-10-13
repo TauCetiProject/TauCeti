@@ -19,14 +19,20 @@ weights are the images of the source weights.
 
 The coefficients can be lifted subject to their index-dependent weighted neighbourhoods.
 `TauCeti.exists_lift_eventually_mem_cofinite` supplies the diagonal choice, so one family of
-lifts satisfies every weighted neighbourhood bound eventually. Exceptional coefficients are
-lifted arbitrarily; polynomial coefficients need not belong to the weight ideals.
+lifts satisfies every weighted neighbourhood bound eventually. For each bound, the finitely
+many coefficients outside the target weighted additive subgroup are lifted arbitrarily.
 
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §5.6 and Proposition 6.33.
 
-The proof shares the diagonal lifting argument of
+AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`37bbdaeb9ad9e3bc9f0d660feadc2779e455a91c`,
+`projects/AdicSpaces/Adic spaces/RestrictedModule.lean`, has the corresponding statement for
+modules in one variable, `restrictedModule_map_surjective`, with both sides assumed Hausdorff.
+This version treats weighted multivariate series. Nothing was copied.
+
+The proof shares `TauCeti.exists_lift_eventually_mem_cofinite` with
 `TauCeti.exists_lift_tendsto_cofinite_nhds`.
 -/
 
@@ -57,9 +63,8 @@ theorem weightedMap_surjective [(𝓝 (0 : A)).IsCountablyGenerated] {φ : A →
       isOpen' := hopen _ (V n).isOpen }
   have hmap (ν : Fin k →₀ ℕ) (n : ℕ) :
       φ '' (weightMul T ν (V n).toAddSubgroup : Set A) =
-        (weightMul S ν (W n).toAddSubgroup : Set B) := by
-    simpa only [AddSubgroup.coe_map, AddMonoidHom.coe_ofClass, hTS, W] using
-      congrArg SetLike.coe (φ.map_weightMul T ν (V n).toAddSubgroup)
+        (weightMul S ν (W n).toAddSubgroup : Set B) :=
+    φ.image_weightMul_of_image_eq hTS ν (V n).toAddSubgroup
   obtain ⟨L, hL, hbound⟩ := exists_lift_eventually_mem_cofinite φ hsurj
     (fun n ν ↦ (weightMul T ν (V n).toAddSubgroup : Set A))
     (fun ν n m hnm ↦ weightMul_mono T ν (hV.antitone hnm))

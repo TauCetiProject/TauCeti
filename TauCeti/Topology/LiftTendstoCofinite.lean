@@ -34,24 +34,9 @@ so that convergence is forced by the choice rather than hoped for.
 
 ## Implementation notes
 
-Countability of `𝓝 m₀` enters only through `Filter.exists_antitone_basis`, which supplies the
-antitone basis the lifts are drawn from. It is taken as an instance rather than as a basis in the
-statement, so a caller neither has to produce a basis nor to re-prove the image condition index by
-index: `𝓝 n₀ ≤ Filter.map φ (𝓝 m₀)` gives the latter uniformly.
-
-The index of the neighbourhood a lift is drawn from is
-`Nat.findGreatest (fun m ↦ g α ∈ φ '' V m) (r α)`, where `r` is an injection of `ι` into `ℕ` —
-one exists because `ι` is countable, and it tends to infinity cofinitely because `cofinite` is
-`atTop` on `ℕ`. **The cap by `r α` is what makes the definition total.** Without it the natural
-index is the largest `m` with `g α ∈ φ '' V m`, and no largest one need exist: the set of such `m`
-can be empty, which is the common case, and it can equally be unbounded, when `g α` lies in every
-`φ '' V m`. `Nat.findGreatest` returns a usable index in both cases, so capping removes them
-rather than splitting on them.
-
-No algebraic structure is used: `M` and `N` carry only a topology and a distinguished point. In
-particular the neighbourhoods drawn from are not assumed to be subgroups, which the argument would
-need if it ever added two lifts — it never does, choosing each independently. Nothing about `m₀`
-and `n₀` is used beyond their neighbourhood filters — no zero, and no algebra.
+The proof applies `TauCeti.exists_lift_eventually_mem_cofinite` to an antitone basis of `𝓝 m₀`,
+supplied by `Filter.exists_antitone_basis`. The filter inequality gives the required image
+condition for each basis member. No algebraic structure is used.
 -/
 
 namespace TauCeti

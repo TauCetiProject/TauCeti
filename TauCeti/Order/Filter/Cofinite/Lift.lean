@@ -16,8 +16,18 @@ countable decreasing family of bounds eventually. The bounds may depend on the f
 This supplies a common diagonal choice for lifting convergent families and coefficients of
 weighted restricted series.
 
-The construction is the indexed-bound form of the diagonal choice in
-`TauCeti.exists_lift_tendsto_cofinite_nhds`.
+`TauCeti.exists_lift_tendsto_cofinite_nhds` is the case of bounds constant in the family index,
+taken from an antitone neighbourhood basis.
+
+## Implementation notes
+
+Choose an injection `r : ι → ℕ`, which tends to infinity along the cofinite filter. For each
+`α`, choose a lift in the bound indexed by
+`Nat.findGreatest (fun m ↦ g α ∈ φ '' V m α) (r α)` whenever that image contains `g α`,
+and otherwise use an arbitrary preimage. The cap `r α` makes the search finite even when the
+admissible indices are unbounded; `findGreatest` also handles the empty case. For each fixed
+`j`, eventually `j ≤ r α` and `g α ∈ φ '' V j α`, so the chosen index is at least `j`.
+Antitonicity then puts the chosen lift in `V j α`.
 -/
 
 public section

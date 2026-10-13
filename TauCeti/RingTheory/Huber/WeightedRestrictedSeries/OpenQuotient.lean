@@ -21,7 +21,8 @@ completions when each target weight is the image of the corresponding source wei
 Surjectivity is `IsOpenQuotientMap.weightedMap_surjective`. For openness, a target series whose
 coefficients lie in the image of a weighted neighbourhood lifts to a series in that
 neighbourhood: a restricted lift can be corrected at its finitely many exceptional
-coefficients. Completion then preserves openness and surjectivity through
+coefficients using `IsWeightedRestricted.exists_coeff_mem_weightMul`.
+Completion then preserves openness and surjectivity through
 `AddMonoidHom.isOpenMap_completion` and `AddMonoidHom.surjective_completion`.
 
 These coefficientwise open quotients let finite-type presentations be transported to
@@ -38,8 +39,42 @@ open Filter Topology UniformSpace
 
 namespace TauCeti.Huber
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-  [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B]
+variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A]
+
+open scoped Classical in
+/-- Replace the coefficients of a restricted series that fail one open weighted bound by
+coefficients satisfying that bound. Only finitely many coefficients change, so the resulting
+series remains restricted. The coefficient equation retains every coefficient already in the
+bound. Openness of `U` ensures that the exceptional set is finite. -/
+theorem IsWeightedRestricted.exists_coeff_mem_weightMul {T : Fin k → Set A}
+    {f : MvPowerSeries (Fin k) A} (hf : IsWeightedRestricted T f) (U : OpenAddSubgroup A)
+    (u : (Fin k →₀ ℕ) → A) (hu : ∀ ν, u ν ∈ weightMul T ν U.toAddSubgroup) :
+    ∃ g : MvPowerSeries (Fin k) A, IsWeightedRestricted T g ∧
+      (∀ ν, MvPowerSeries.coeff ν g ∈ weightMul T ν U.toAddSubgroup) ∧
+      ∀ ν, MvPowerSeries.coeff ν g =
+        if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+        then MvPowerSeries.coeff ν f else u ν := by
+  classical
+  let g : MvPowerSeries (Fin k) A := fun ν ↦
+    if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+    then MvPowerSeries.coeff ν f else u ν
+  have hcoeff (ν) : MvPowerSeries.coeff ν g =
+      if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
+      then MvPowerSeries.coeff ν f else u ν := rfl
+  refine ⟨g, ?_, ?_, hcoeff⟩
+  · rw [isWeightedRestricted_iff]
+    intro W
+    filter_upwards [isWeightedRestricted_iff.mp hf U,
+      isWeightedRestricted_iff.mp hf W] with ν hU hW
+    rwa [hcoeff, ite_eq_left hU]
+  · intro ν
+    rw [hcoeff]
+    split_ifs with h
+    · exact h
+    · exact hu ν
+
+variable {B : Type*} [NonarchimedeanRing A] [CommRing B] [TopologicalSpace B]
+  [NonarchimedeanRing B]
 
 /-- An open quotient map induces an open quotient map on weighted restricted series when each
 source weight maps onto the corresponding target weight. The source neighbourhood filter
@@ -62,13 +97,10 @@ theorem _root_.IsOpenQuotientMap.weightedMap [(𝓝 (0 : A)).IsCountablyGenerate
   have hgU : ∀ ν, ∃ u ∈ weightMul T ν U.toAddSubgroup,
       φ u = MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
     intro ν
-    have hmap := φ.map_weightMul T ν U.toAddSubgroup
-    simp only [hTS] at hmap
-    have h := mem_weightedNhd.mp hg ν
-    have hm : MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) ∈
-        (weightMul T ν U.toAddSubgroup).map (φ : A →+ B) := by
-      simpa only [hmap, V] using h
-    exact hm
+    change MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) ∈
+      φ '' (weightMul T ν U.toAddSubgroup : Set A)
+    rw [φ.image_weightMul_of_image_eq hTS]
+    exact mem_weightedNhd.mp hg ν
   choose u huU hu using hgU
   obtain ⟨L, hL⟩ := hq.weightedMap_surjective hT hS hTS g
   have hLφ (ν) : φ (MvPowerSeries.coeff ν (L : MvPowerSeries (Fin k) A)) =
@@ -78,32 +110,15 @@ theorem _root_.IsOpenQuotientMap.weightedMap [(𝓝 (0 : A)).IsCountablyGenerate
         MvPowerSeries.coeff ν (x : MvPowerSeries (Fin k) B)) hL
   -- Correct the restricted lift only at the finitely many coefficients outside the U bound.
   classical
-  let L' : MvPowerSeries (Fin k) A := fun ν ↦
-    if MvPowerSeries.coeff ν (L : MvPowerSeries (Fin k) A) ∈ weightMul T ν U.toAddSubgroup
-    then MvPowerSeries.coeff ν (L : MvPowerSeries (Fin k) A) else u ν
-  have hL'U : ∀ ν, MvPowerSeries.coeff ν L' ∈ weightMul T ν U.toAddSubgroup := by
-    intro ν
-    rw [MvPowerSeries.coeff_apply L']
-    dsimp only [L']
-    split_ifs with h
-    · exact h
-    · exact huU ν
+  obtain ⟨L', hL', hL'U, hcoeff⟩ :=
+    (mem_weightedRestrictedSubring.mp L.2).exists_coeff_mem_weightMul U u huU
   have hL'φ : ∀ ν, φ (MvPowerSeries.coeff ν L') =
       MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
     intro ν
-    rw [MvPowerSeries.coeff_apply L']
-    dsimp only [L']
+    rw [hcoeff]
     split_ifs
     · exact hLφ ν
     · exact hu ν
-  have hL' : IsWeightedRestricted T L' := by
-    rw [isWeightedRestricted_iff]
-    intro W
-    filter_upwards [(isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp L.2)) U,
-      (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp L.2)) W] with ν hU hW
-    rw [MvPowerSeries.coeff_apply L']
-    dsimp only [L']
-    rwa [ite_eq_left hU]
   refine ⟨⟨L', mem_weightedRestrictedSubring.mpr hL'⟩,
     mem_weightedNhd.mpr hL'U, Subtype.ext ?_⟩
   ext ν
