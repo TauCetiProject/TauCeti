@@ -45,6 +45,7 @@ together with the archimedean places, with `S` containing the ramified primes, t
   `TauCeti.ClassFieldTheory.idelesRep K L` and `TauCeti.ClassFieldTheory.ideleClassRep K L`: the
   `S`-units, the `S`-ideles, the ideles and the idele classes of `L` as integral representations of
   `Aut(L/K)`.
+* `TauCeti.ClassFieldTheory.unitsToIdeles K L`: the principal ideles `Lˣ → I_L`.
 * `TauCeti.ClassFieldTheory.sIdelesToIdeles L S`: the inclusion `I_{L,S} → I_L`.
 * `TauCeti.ClassFieldTheory.sIdeleShortComplex L S`: the sequence `U_{L,S} → I_{L,S} → C_L`.
 
@@ -123,6 +124,21 @@ def sUnitsToSIdeles : sUnitsRep L S ⟶ sIdelesRep L S :=
 theorem sUnitsToSIdeles_hom_apply (a : Additive ((primesAbove (𝓞 K) (𝓞 L) S).unit L)) :
     (sUnitsToSIdeles L S).hom a = Additive.ofMul ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.toMul,
       (unitEmbedding_mem_sIdeles_iff S _).2 a.toMul.2⟩ :=
+  (rfl)
+
+variable (K) in
+/-- The inclusion `Lˣ → I_L` of the units of `L` as principal ideles, as a morphism of
+representations of `Aut(L/K)`. -/
+def unitsToIdeles : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ idelesRep K L :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (IdeleGroup.unitEmbedding (𝓞 L) L).toAdditive.toIntLinearMap fun σ a ↦
+      congrArg Additive.ofMul (smul_unitEmbedding σ a.toMul).symm
+
+omit [NumberField K] in
+/-- `unitsToIdeles` sends a unit of `L` to its principal idele. -/
+@[simp]
+theorem unitsToIdeles_hom_apply (a : Additive Lˣ) :
+    (unitsToIdeles K L).hom a = Additive.ofMul (IdeleGroup.unitEmbedding (𝓞 L) L a.toMul) :=
   (rfl)
 
 /-- The inclusion `I_{L,S} → I_L` of the `S`-ideles, as a morphism of representations of
