@@ -107,8 +107,9 @@ theorem cubicalTensorGen_def (n : ℕ) (i : BidegreeIndex n) :
           NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2)) :=
   (rfl)
 
-/-- The coefficients of a chain of a summand of the tensor product are those of the summand. -/
-@[simp]
+/-- The coefficients of a chain of a summand of the tensor product are those of the summand.  Not a
+simp lemma: `simp` rewrites the types of both sides (the abbreviations `cubicalTensor` and
+`cubicalBidegreeModel`), so the left-hand side is not in simp normal form. -/
 theorem cubicalTensorCoord_ι (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
     (z : NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q) :
     cubicalTensorCoord k X n
