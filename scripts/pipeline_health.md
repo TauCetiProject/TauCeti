@@ -200,7 +200,9 @@ against the last successful main run on the same history, so a coalesced main CI
 run still detects an earlier pin change. A delayed success for an old pin does
 not authorize updating a newer pin; that newer pin must complete its own CI.
 Ordinary same-pin main builds do not run bump or incompatibility reconciliation.
-The gate reads trusted current main and never executes workflow-run artifacts.
+The gate reads a shallow sparse checkout of trusted main (only its script and
+pin files), then bounded commit metadata and immutable pin-file reads. It never
+clones historical source trees or executes workflow-run artifacts.
 Only actionable mutation jobs join the shared serialization group. Its bounded
 FIFO queue preserves pending updates; skipped CI completions never join it. Reconciliation remains serialized, checks out fresh main, and uses the existing
 idempotent downstream report and bump actions. An outstanding downstream

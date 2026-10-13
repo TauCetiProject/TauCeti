@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Pin landing events survive coalesced CI and cannot act on stale/fork results."""
 
+import base64
+import json
 import unittest
-from bump_update_trigger import reconcile
+from bump_update_trigger import Evidence, reconcile
 
 
 class TriggerTests(unittest.TestCase):
@@ -59,6 +61,29 @@ class TriggerTests(unittest.TestCase):
 
     def test_first_run_reconciles_once(self):
         self.assertTrue(self.check([]))
+
+
+class EvidenceTests(unittest.TestCase):
+    def test_reads_only_small_pin_files_and_caches_immutable_heads(self):
+        calls = []
+        commit = "a" * 40
+        def api(path):
+            calls.append(path)
+            value = (json.dumps({"packages": [{"name": "mathlib", "rev": "b" * 40}]})
+                     if "lake-manifest" in path else "leanprover/lean4:v4.35.0-rc3\n")
+            return {"encoding": "base64", "content": base64.b64encode(value.encode()).decode()}
+        evidence = Evidence("owner/repo", api)
+        self.assertEqual(evidence.pin_at(commit), ("b" * 40, "leanprover/lean4:v4.35.0-rc3"))
+        evidence.pin_at(commit)
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(all(f"?ref={commit}" in path for path in calls))
+
+    def test_compare_requires_forward_history(self):
+        for status in ["identical", "ahead", "behind", "diverged"]:
+            evidence = Evidence("owner/repo", lambda path: {"status": status})
+            self.assertEqual(evidence.ancestor("a" * 40, "b" * 40), status in {"identical", "ahead"})
+        evidence = Evidence("owner/repo", lambda path: self.fail("identical commits need no API call"))
+        self.assertTrue(evidence.ancestor("a" * 40, "a" * 40))
 
 
 if __name__ == "__main__":

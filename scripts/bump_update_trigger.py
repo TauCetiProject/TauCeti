@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Reconcile after successful main CI changes a pin, including coalesced pushes."""
 
+import base64
 import json
 import os
 from pathlib import Path
 import subprocess
 
-from bump_report import git_ancestor, git_pin, sha
+from bump_report import sha
 
 
 def reconcile(run, previous, *, repo, current, pin_at, ancestor):
@@ -32,9 +33,34 @@ def reconcile(run, previous, *, repo, current, pin_at, ancestor):
     return True
 
 
-def revision_pins(commit):
-    return (git_pin(commit), subprocess.check_output(
-        ["git", "show", f"{sha(commit)}:lean-toolchain"], text=True, timeout=30).strip())
+def github(path):
+    return json.loads(subprocess.check_output(["gh", "api", path], text=True, timeout=60))
+
+
+class Evidence:
+    """Small immutable file reads; no clone of historical repository contents."""
+    def __init__(self, repo, api=github):
+        self.repo, self.api, self.pins = repo, api, {}
+
+    def pin_at(self, commit):
+        commit = sha(commit)
+        if commit not in self.pins:
+            values = []
+            for file in ["lake-manifest.json", "lean-toolchain"]:
+                result = self.api(f"repos/{self.repo}/contents/{file}?ref={commit}")
+                if result["encoding"] != "base64":
+                    raise ValueError("Pin file encoding unavailable")
+                values.append(base64.b64decode(result["content"]).decode())
+            manifest = json.loads(values[0])
+            mathlib = sha(next(p["rev"] for p in manifest["packages"] if p["name"] == "mathlib"))
+            self.pins[commit] = (mathlib, values[1].strip())
+        return self.pins[commit]
+
+    def ancestor(self, base, head):
+        if base == head:
+            return True
+        result = self.api(f"repos/{self.repo}/compare/{sha(base)}...{sha(head)}?per_page=1")
+        return result["status"] in {"identical", "ahead"}
 
 
 def main():
@@ -43,12 +69,19 @@ def main():
     if os.environ["GITHUB_EVENT_NAME"] == "workflow_run":
         repo = os.environ["GITHUB_REPOSITORY"]
         run = event["workflow_run"]
-        previous = json.loads(subprocess.check_output([
-            "gh", "api", f"repos/{repo}/actions/workflows/ci.yml/runs?branch=main&event=push&per_page=20"
-        ], text=True, timeout=60))["workflow_runs"]
+        previous = github(
+            f"repos/{repo}/actions/workflows/ci.yml/runs?branch=main&event=push&per_page=20"
+        )["workflow_runs"]
         current = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        evidence = Evidence(repo)
+        # The sparse checkout already supplies current pin files; seed their
+        # immutable snapshot without two redundant API reads.
+        manifest = json.loads(Path("lake-manifest.json").read_text())
+        evidence.pins[sha(current)] = (
+            sha(next(p["rev"] for p in manifest["packages"] if p["name"] == "mathlib")),
+            Path("lean-toolchain").read_text().strip())
         result = reconcile(run, previous, repo=repo, current=current,
-                           pin_at=revision_pins, ancestor=git_ancestor)
+                           pin_at=evidence.pin_at, ancestor=evidence.ancestor)
     print(f"Dependency reconciliation required: {result}")
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
         output.write(f"reconcile={str(result).lower()}\n")

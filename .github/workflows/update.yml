@@ -40,7 +40,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts/bump_update_trigger.py
+            scripts/bump_report.py
+            lake-manifest.json
+            lean-toolchain
+          sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Reconcile only a newly validated pin
         id: trigger
