@@ -38,6 +38,14 @@ that the field is globally Lipschitz.
   negative-gradient flow of `perturb f h s`, with the parameter carried along
   (`TauCeti.snd_perturbedFlow_apply`). `TauCeti.exists_lipschitzWith_gradient_perturb` supplies
   the Lipschitz hypothesis needed to speak of that flow.
+
+## References
+
+* M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
+  Chapter 3 (transversality of the unstable and stable manifolds by perturbation).
+* S. Smale, *On gradient dynamical systems*, Ann. of Math. **74** (1961), 199--206.
+* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
+  Lane M, "Morse homology".
 -/
 
 public section
@@ -68,6 +76,7 @@ def perturb (f : E → ℝ) (h : ι → E → ℝ) (s : EuclideanSpace ℝ ι) :
   fun x ↦ f x + ∑ i, s i * h i x
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+@[simp]
 theorem perturb_apply (f : E → ℝ) (h : ι → E → ℝ) (s : EuclideanSpace ℝ ι) (x : E) :
     perturb f h s x = f x + ∑ i, s i * h i x :=
   (rfl)
@@ -80,12 +89,10 @@ theorem perturb_zero (f : E → ℝ) (h : ι → E → ℝ) : perturb f h 0 = f 
 
 end Perturb
 
-section Gradient
+section Differential
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Fintype ι]
-  {f : E → ℝ} {h : ι → E → ℝ}
+variable [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype ι] {f : E → ℝ} {h : ι → E → ℝ}
 
-omit [FiniteDimensional ℝ E] in
 /-- The differential of a perturbation is the perturbed differential. -/
 @[simp]
 theorem fderiv_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable ℝ (h i))
@@ -98,21 +105,13 @@ theorem fderiv_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable �
   rw [e]
   exact ((hf x).hasFDerivAt.add hs).fderiv
 
-/-- The gradient of a perturbation is the perturbed gradient. -/
-@[simp]
-theorem gradient_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable ℝ (h i))
-    (s : EuclideanSpace ℝ ι) (x : E) :
-    ∇ (perturb f h s) x = ∇ f x + ∑ i, s i • ∇ (h i) x := by
-  simp only [gradient, fderiv_perturb hf hh, map_add, map_sum, map_smul]
-
-omit [FiniteDimensional ℝ E] in
 /-- The perturbation of a `C²` function by `C²` functions is `C²`. -/
 theorem contDiff_perturb (hfs : ContDiff ℝ 2 f) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (s : EuclideanSpace ℝ ι) :
     ContDiff ℝ 2 (perturb f h s) :=
   hfs.add (ContDiff.sum fun i _ ↦ contDiff_const.mul (hh i))
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
+omit [NormedSpace ℝ E] in
 /-- A perturbation agrees with `f` near each point outside the supports of the family. -/
 theorem perturb_eventuallyEq_of_forall_notMem_tsupport {x : E} (s : EuclideanSpace ℝ ι)
     (hx : ∀ i, x ∉ tsupport (h i)) : perturb f h s =ᶠ[𝓝 x] f := by
@@ -120,7 +119,6 @@ theorem perturb_eventuallyEq_of_forall_notMem_tsupport {x : E} (s : EuclideanSpa
   filter_upwards [eventually_all.2 hi] with y hy
   simp [perturb_apply, hy]
 
-omit [FiniteDimensional ℝ E] in
 /-- **Near a critical point of `f`, a perturbation agrees with `f`.** The functions of an admissible
 family vanish on a neighbourhood of each critical point. -/
 theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturbation f (h i))
@@ -128,7 +126,6 @@ theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturba
   perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦
     Set.disjoint_left.1 (hh i).disjoint hmem hx
 
-omit [FiniteDimensional ℝ E] in
 /-- **Small perturbations keep the critical points.** For all sufficiently small parameters, the
 critical points of `perturb f h s` are those of `f`. -/
 theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 2 f)
@@ -185,12 +182,19 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 2 f)
       perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦ hx (mem_iUnion.2 ⟨i, hmem⟩)
     rw [hev.fderiv_eq]
 
-end Gradient
+end Differential
 
 section Flow
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Fintype ι]
   {f : E → ℝ} {h : ι → E → ℝ} {K : ℝ≥0}
+
+/-- The gradient of a perturbation is the perturbed gradient. -/
+@[simp]
+theorem gradient_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable ℝ (h i))
+    (s : EuclideanSpace ℝ ι) (x : E) :
+    ∇ (perturb f h s) x = ∇ f x + ∑ i, s i • ∇ (h i) x := by
+  simp only [gradient, fderiv_perturb hf hh, map_add, map_sum, map_smul]
 
 /-- A smooth cutoff of the parameter, equal to `1` on the closed unit ball and supported in the
 closed ball of radius `2`. -/
@@ -199,28 +203,23 @@ private noncomputable def perturbationBump : ContDiffBump (0 : EuclideanSpace �
 
 /-- The cut-off parameter `s ↦ φ(s) • s`, with `φ` a smooth bump equal to `1` on the closed unit
 ball: it is the identity on the closed unit ball and has compact support. -/
-noncomputable def perturbationCutoff (s : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+private noncomputable def perturbationCutoff (s : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
   perturbationBump.toFun s • s
 
-theorem contDiff_perturbationCutoff : ContDiff ℝ 1 (perturbationCutoff (ι := ι)) :=
+private theorem contDiff_perturbationCutoff : ContDiff ℝ 1 (perturbationCutoff (ι := ι)) :=
   perturbationBump.contDiff.smul contDiff_id
 
-theorem hasCompactSupport_perturbationCutoff : HasCompactSupport (perturbationCutoff (ι := ι)) :=
+private theorem hasCompactSupport_perturbationCutoff :
+    HasCompactSupport (perturbationCutoff (ι := ι)) :=
   perturbationBump.hasCompactSupport.smul_right
 
 @[simp]
-theorem perturbationCutoff_eq_self_of_norm_le {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1) :
+private theorem perturbationCutoff_eq_self_of_norm_le {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1) :
     perturbationCutoff s = s := by
   have hr : (perturbationBump (ι := ι)).rIn = 1 := (rfl)
   have hb : perturbationBump.toFun s = 1 :=
     perturbationBump.one_of_mem_closedBall (by rw [mem_closedBall_zero_iff, hr]; exact hs)
   rw [perturbationCutoff, hb, one_smul]
-
-/-- Outside the supports of the family, every combination of the gradients vanishes. -/
-private theorem sum_smul_gradient_eq_zero {x : E} (c : ι → ℝ)
-    (hx : x ∉ ⋃ i, tsupport (h i)) : ∑ i, c i • ∇ (h i) x = 0 :=
-  Finset.sum_eq_zero fun i _ ↦ by
-    rw [gradient_of_notMem_tsupport (f := h i) fun hmem ↦ hx (mem_iUnion.2 ⟨i, hmem⟩), smul_zero]
 
 /-- The part of the augmented field that couples the state to the parameter. -/
 private noncomputable def coupling (h : ι → E → ℝ) (p : E × EuclideanSpace ℝ ι) : E :=
@@ -243,70 +242,70 @@ private theorem hasCompactSupport_coupling (hh : ∀ i, IsAdmissiblePerturbation
   refine HasCompactSupport.intro (hA.prod perturbationBump.hasCompactSupport) fun p hp ↦ ?_
   rw [mem_prod, not_and_or] at hp
   rcases hp with hp | hp
-  · exact sum_smul_gradient_eq_zero _ hp
+  · exact sum_smul_gradient_eq_zero_of_forall_notMem_tsupport _ _ _ fun i _ hmem ↦
+      hp (mem_iUnion.2 ⟨i, hmem⟩)
   · have : perturbationBump.toFun p.2 = 0 := image_eq_zero_of_notMem_tsupport hp
     simp [coupling, perturbationCutoff, this]
 
 /-- **The augmented field.** The vector field on `E × EuclideanSpace ℝ ι` whose first component
 is `-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x`, with `a` the cutoff of the parameter, and whose second component is
 zero: the parameter is constant along its orbits. -/
-noncomputable def perturbedField (f : E → ℝ) (h : ι → E → ℝ)
+private noncomputable def perturbedField (f : E → ℝ) (h : ι → E → ℝ)
     (p : E × EuclideanSpace ℝ ι) : E × EuclideanSpace ℝ ι :=
-  (-∇ f p.1 - ∑ i, perturbationCutoff p.2 i • ∇ (h i) p.1, 0)
+  (-∇ f p.1 - coupling h p, 0)
 
 @[simp]
-theorem perturbedField_apply (x : E) (s : EuclideanSpace ℝ ι) :
+private theorem perturbedField_apply (x : E) (s : EuclideanSpace ℝ ι) :
     perturbedField f h (x, s) = (-∇ f x - ∑ i, perturbationCutoff s i • ∇ (h i) x, 0) :=
   (rfl)
 
 /-- For a parameter of norm at most `1`, the augmented field is the negative gradient of the
 perturbation, with zero parameter component. -/
-theorem perturbedField_apply_of_norm_le (hfs : ContDiff ℝ 2 f)
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1)
+private theorem perturbedField_apply_of_norm_le (hf : Differentiable ℝ f)
+    (hh : ∀ i, Differentiable ℝ (h i)) {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1)
     (x : E) : perturbedField f h (x, s) = (-∇ (perturb f h s) x, 0) := by
-  rw [perturbedField_apply, perturbationCutoff_eq_self_of_norm_le hs,
-    gradient_perturb (hfs.differentiable (by norm_num))
-      (fun i ↦ (hh i).contDiff.differentiable (by norm_num)), neg_add', sub_eq_add_neg]
+  rw [perturbedField_apply, perturbationCutoff_eq_self_of_norm_le hs, gradient_perturb hf hh,
+    neg_add', sub_eq_add_neg]
 
-/-- The gradient of a perturbation is Lipschitz, so its negative-gradient flow is defined. -/
-theorem exists_lipschitzWith_gradient_perturb (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) (s : EuclideanSpace ℝ ι) :
+/-- The gradient of a perturbation of `f` by compactly supported `C²` functions is Lipschitz if
+the gradient of `f` is, so its negative-gradient flow is defined. -/
+theorem exists_lipschitzWith_gradient_perturb (hf : Differentiable ℝ f)
+    (hK : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (s : EuclideanSpace ℝ ι) :
     ∃ K' : ℝ≥0, LipschitzWith K' (∇ (perturb f h s)) := by
-  have hA : IsCompact (⋃ i, tsupport (h i)) :=
-    isCompact_iUnion fun i ↦ (hh i).hasCompactSupport
-  have hcs : HasCompactSupport fun x ↦ ∑ i, s i • ∇ (h i) x := by
-    exact HasCompactSupport.intro hA fun x hx ↦ sum_smul_gradient_eq_zero _ hx
-  have hc : ContDiff ℝ 1 fun x ↦ ∑ i, s i • ∇ (h i) x :=
+  have hA : IsCompact (⋃ i, tsupport (h i)) := isCompact_iUnion fun i ↦ hc i
+  have hcs : HasCompactSupport fun x ↦ ∑ i, s i • ∇ (h i) x :=
+    HasCompactSupport.intro hA fun x hx ↦
+      sum_smul_gradient_eq_zero_of_forall_notMem_tsupport _ _ _ fun i _ hmem ↦
+        hx (mem_iUnion.2 ⟨i, hmem⟩)
+  have hd : ContDiff ℝ 1 fun x ↦ ∑ i, s i • ∇ (h i) x :=
     ContDiff.sum fun i _ ↦
-      contDiff_const.smul ((hh i).contDiff.gradient_right (m := 1) (by norm_num))
-  obtain ⟨C, hC⟩ := hc.lipschitzWith_of_hasCompactSupport hcs one_ne_zero
+      contDiff_const.smul ((hh i).gradient_right (m := 1) (by norm_num))
+  obtain ⟨C, hC⟩ := hd.lipschitzWith_of_hasCompactSupport hcs one_ne_zero
   have e : ∇ (perturb f h s) = fun x ↦ ∇ f x + ∑ i, s i • ∇ (h i) x :=
-    funext (gradient_perturb (hfs.differentiable (by norm_num))
-      (fun i ↦ (hh i).contDiff.differentiable (by norm_num)) s)
-  exact ⟨_, e ▸ hf.add hC⟩
+    funext (gradient_perturb hf (fun i ↦ (hh i).differentiable (by norm_num)) s)
+  exact ⟨_, e ▸ hK.add hC⟩
 
-/-- The augmented field is the negative gradient minus the coupling term, with zero parameter
-component; this is the definition of `perturbedField`, unfolded. -/
-private theorem perturbedField_eq (f : E → ℝ) (h : ι → E → ℝ) :
-    perturbedField f h = fun p ↦ (-∇ f p.1 - coupling h p, 0) :=
-  (rfl)
-
-theorem exists_lipschitzWith_perturbedField (hf : LipschitzWith K (∇ f))
+private theorem exists_lipschitzWith_perturbedField (hf : LipschitzWith K (∇ f))
     (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
     ∃ K' : ℝ≥0, LipschitzWith K' (perturbedField f h) := by
   obtain ⟨C, hC⟩ := (contDiff_coupling hh).lipschitzWith_of_hasCompactSupport
     (hasCompactSupport_coupling hh) one_ne_zero
-  rw [perturbedField_eq]
+  unfold perturbedField
   exact ⟨_, ((hf.comp LipschitzWith.prod_fst).neg.sub hC).prodMk (LipschitzWith.const 0)⟩
 
-theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f)
+private theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f)
     (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : ContDiff ℝ 1 (perturbedField f h) := by
-  rw [perturbedField_eq]
+  unfold perturbedField
   exact (((hfs.gradient_right (m := 1) (by norm_num)).comp contDiff_fst).neg.sub
     (contDiff_coupling hh)).prodMk contDiff_const
 
-/-- **The flow of the augmented field**: the negative-gradient flow of the perturbation
-`perturb f h s`, jointly in the parameter `s`, which is carried along unchanged. -/
+/-- **The flow of the cut-off augmented field** on `E × EuclideanSpace ℝ ι`: the field is
+`(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)`, with `a` a smooth cutoff of the parameter equal to the
+identity on the closed unit ball. The parameter is constant along its orbits, and for `‖s‖ ≤ 1` the
+first component is the negative-gradient flow of `perturb f h s`
+(`perturbedFlow_apply_of_norm_le`); outside the unit ball it is the flow of the cut-off field,
+not of `perturb f h s`. -/
 noncomputable def perturbedFlow (f : E → ℝ) (h : ι → E → ℝ) (hf : LipschitzWith K (∇ f))
     (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : Flow ℝ (E × EuclideanSpace ℝ ι) :=
   flowOfLipschitz (perturbedField f h) (exists_lipschitzWith_perturbedField hf hh).choose_spec
@@ -336,7 +335,7 @@ theorem snd_perturbedFlow_apply (hf : LipschitzWith K (∇ f))
 /-- **The perturbed flow is the negative-gradient flow of the perturbation.** For a parameter `s`
 of norm at most `1`, the perturbed flow sends `(x, s)` at time `t` to the pair of the time-`t`
 image of `x` under the negative-gradient flow of `perturb f h s`, and `s`. -/
-theorem perturbedFlow_apply_of_norm_le (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+theorem perturbedFlow_apply_of_norm_le (hd : Differentiable ℝ f) (hf : LipschitzWith K (∇ f))
     (hh : ∀ i, IsAdmissiblePerturbation f (h i)) {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1)
     {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) (t : ℝ) (x : E) :
     perturbedFlow f h hf hh t (x, s) = (negativeGradientFlow (perturb f h s) hf' t x, s) := by
@@ -345,7 +344,8 @@ theorem perturbedFlow_apply_of_norm_le (hfs : ContDiff ℝ 2 f) (hf : LipschitzW
     intro t
     have h1 : HasDerivAt (fun t ↦ φ t x) (-∇ (perturb f h s) (φ t x)) t :=
       (isNegativeGradient_negativeGradientFlow (perturb f h s) hf').isIntegralCurve x t
-    rw [perturbedField_apply_of_norm_le hfs hh hs]
+    rw [perturbedField_apply_of_norm_le hd
+      (fun i ↦ (hh i).contDiff.differentiable (by norm_num)) hs]
     exact h1.prodMk (hasDerivAt_const t s)
   have := eq_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh).choose_spec hγ t
   simpa [perturbedFlow] using this.symm
