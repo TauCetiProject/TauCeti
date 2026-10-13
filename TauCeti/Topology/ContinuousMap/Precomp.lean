@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Precomposition with a surjection from a compact space
@@ -26,6 +27,8 @@ subspaces of mapping spaces out of the cube.
   `q : A → B` from a compact space to a Hausdorff space is inducing, on the compact-open
   topologies.
 * `ContinuousMap.isEmbedding_precomp_of_surjective`: the same, as an embedding.
+* `ContinuousMap.homeomorphFactorsThrough`: for such a `q`, `C(B, X)` is homeomorphic to the
+  subspace of maps `A → X` that are constant on the fibres of `q`.
 -/
 
 public section
@@ -60,5 +63,27 @@ theorem isEmbedding_precomp_of_surjective [CompactSpace A] [T2Space B] (q : C(A,
     (hq : Function.Surjective q) :
     IsEmbedding (fun f : C(B, X) => f.comp q) :=
   ⟨isInducing_precomp_of_surjective q hq, fun _ _ h => (cancel_right hq).1 h⟩
+
+/-- Maps out of a Hausdorff quotient `B` of a compact space `A` are the maps out of `A` that are
+constant on the fibres of the quotient map `q`: precomposition with `q` is a homeomorphism from
+`C(B, X)` onto the subspace of such maps. -/
+noncomputable def homeomorphFactorsThrough [CompactSpace A] [T2Space B] (q : C(A, B))
+    (hq : Function.Surjective q) :
+    C(B, X) ≃ₜ {g : C(A, X) // Function.FactorsThrough g q} :=
+  (isEmbedding_precomp_of_surjective q hq).toHomeomorph.trans
+    (Homeomorph.setCongr (by
+      ext g
+      refine ⟨?_, fun hg => ?_⟩
+      · rintro ⟨f, rfl⟩ a b h
+        exact congrArg f h
+      · have hqm : IsQuotientMap q := q.continuous.isClosedMap.isQuotientMap q.continuous hq
+        exact ⟨hqm.lift g hg, hqm.lift_comp g hg⟩))
+
+@[simp]
+theorem homeomorphFactorsThrough_apply [CompactSpace A] [T2Space B] (q : C(A, B))
+    (hq : Function.Surjective q) (f : C(B, X)) :
+    (homeomorphFactorsThrough q hq f : C(A, X)) = f.comp q := by
+  rw [homeomorphFactorsThrough]
+  rfl
 
 end ContinuousMap
