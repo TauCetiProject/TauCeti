@@ -110,7 +110,7 @@ noncomputable def baseChangeHopfIdeal (J : HopfIdeal k H) :
 
 /-- Membership in the base-changed Hopf ideal is vanishing under the base-changed quotient
 morphism. -/
-@[simp]
+@[simp↓]
 theorem mem_baseChangeHopfIdeal_iff (J : HopfIdeal k H) (y : baseChange (K := K) H) :
     y ∈ baseChangeHopfIdeal (K := K) J ↔ (baseChangeMap (K := K) (mkQuotient H J)).hom y = 0 :=
   HopfIdeal.mem_kerOfSurjective _ _
