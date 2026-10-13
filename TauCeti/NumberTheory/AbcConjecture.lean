@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.RingTheory.Int.Basic
 public import Mathlib.RingTheory.Radical.NatInt
 
 /-!
@@ -96,9 +97,7 @@ theorem abcConjecture_iff_nat : AbcConjecture ↔
     have h := hC a b c (Nat.Coprime.isCoprime hab) (by exact_mod_cast habc)
     rwa [← Nat.cast_mul, ← Nat.cast_mul, Int.natAbs_natCast, Int.natAbs_natCast,
       Int.natAbs_natCast, show max (max a b) c = c by omega] at h
-  · have hxy : a.natAbs.Coprime b.natAbs := by
-      rw [Nat.Coprime, ← Int.gcd_eq_natAbs]
-      exact Int.isCoprime_iff_gcd_eq_one.mp hab
+  · have hxy : a.natAbs.Coprime b.natAbs := Int.isCoprime_iff_nat_coprime.mp hab
     have hR := one_le_radical_rpow (a.natAbs * b.natAbs * c.natAbs) hε.le
     have hR₀ : 0 ≤ ((radical (a.natAbs * b.natAbs * c.natAbs) : ℕ) : ℝ) ^ (1 + ε) :=
       zero_le_one.trans hR
