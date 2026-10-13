@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IsAdjoinRoot
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
-public import TauCeti.RingTheory.Polynomial.Monic.Ideal
 
 /-!
 # Monic equations for divisors on the relative affine line

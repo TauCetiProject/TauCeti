@@ -13,8 +13,9 @@ public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 
 An ideal of `R[X]` whose quotient is finite free of rank `n` has a unique monic generator of
 degree `n`. Thus these ideals are parameterized by `n` lower coefficients. Extension of ideals
-along any coefficient homomorphism acts coordinatewise on this chart, including over rings
-with nilpotents and when roots collide. Degree zero corresponds to the unit ideal.
+along a homomorphism between nontrivial commutative rings acts coordinatewise on this chart,
+including over rings with nilpotents and when roots collide. Degree zero corresponds to the
+unit ideal.
 
 This is the affine algebra used to parameterize finite divisors on the relative affine line.
 The quotient is assumed free here; descent from locally free quotients is a separate step.
@@ -85,8 +86,7 @@ noncomputable def coeffEquivFiniteFreeIdeal :
       · rw [← Ideal.mem_span_singleton, hI]
         exact Ideal.subset_span (Set.mem_singleton _)
       · simp
-    exact funext fun i ↦ by
-      simpa only [coeff_monicOfCoeff] using congrArg (fun p : R[X] ↦ p.coeff i) hp.symm
+    exact (monicOfCoeff_inj c d).mp hp.symm
   · rintro ⟨I, hfinite, hfree, hrank⟩
     let := hfinite
     let := hfree
@@ -111,7 +111,8 @@ lemma coeffEquivFiniteFreeIdeal_symm_apply
   simp only [Equiv.apply_symm_apply, coeffEquivFiniteFreeIdeal_apply,
     monicOfCoeff_coeff hp hdeg, hI]
 
-/-- Arbitrary extension of the coefficient ring acts coordinatewise on the ideal chart. -/
+/-- Extension along a homomorphism between nontrivial commutative rings acts coordinatewise
+on the ideal chart. -/
 -- The left-hand side already simplifies via `coeffEquivFiniteFreeIdeal_apply`, so a simp
 -- attribute here would fail `simpNF`.
 lemma map_coeffEquivFiniteFreeIdeal {S : Type*} [CommRing S] [Nontrivial S]
