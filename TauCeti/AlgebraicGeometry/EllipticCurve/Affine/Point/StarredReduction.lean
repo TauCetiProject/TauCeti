@@ -183,36 +183,10 @@ private theorem nonsingularReduction_eq_top_of_isTateTerminal {ϖ : v.valuationS
       ¬ (integralModel v.valuationSubring W).toAffine.Equation x y) :
     W.nonsingularReduction v = ⊤ := by
   obtain ⟨-, h₃, h₄, h₆⟩ := hs.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ hsI
-  -- if `ϖ = 0`, then `a₃ = a₄ = a₆ = 0` and the stopping test `¬ 0 ^ k ∣ _` fails
-  have hϖ0 : ϖ ≠ 0 := by
-    rintro rfl
-    have hz {k : ℕ} (hk : k ≠ 0) {x : v.valuationSubring} : (0 : v.valuationSubring) ^ k ∣ x ↔
-        x = 0 := by
-      rw [zero_pow hk, zero_dvd_iff]
-    rw [zero_dvd_iff] at h₃ h₄ h₆
-    match s, hs with
-    | .I n, _ => exact hsI n rfl
-    | .II, hs => exact (isTateTerminal_II.1 hs).2.2.2.2 ((hz two_ne_zero).2 h₆)
-    | .III, hs =>
-      exact (isTateTerminal_III.1 hs).2.2.2.2 ((hz three_ne_zero).2 (by rw [b₈, h₃, h₄, h₆]; ring))
-    | .IV, hs =>
-      exact (isTateTerminal_IV.1 hs).2.2.2.2.2 ((hz three_ne_zero).2 (by rw [b₆, h₃, h₆]; ring))
-    | .IStar 0, hs =>
-      exact (isTateTerminal_IStar_zero.1 hs).2.2.2.2.2
-        ((hz (by norm_num)).2 (by rw [Cubic.discr, h₄, h₆]; ring))
-    | .IStar (_ + 1), hs =>
-      rcases isTateTerminal_IStar_add_one.1 hs with ⟨_, -, hW, -⟩ | ⟨_, -, hW, -⟩
-      · obtain ⟨-, h₂, h₂', -⟩ := isTateOddStage_iff.1 hW
-        exact h₂' ((hz two_ne_zero).2 (zero_dvd_iff.1 h₂))
-      · obtain ⟨-, h₂, h₂', -⟩ := isTateEvenStage_iff.1 hW
-        exact h₂' ((hz two_ne_zero).2 (zero_dvd_iff.1 h₂))
-    | .IVStar, hs =>
-      exact (isTateTerminal_IVStar.1 hs).2.2.2.2.2 ((hz (by norm_num)).2 (by rw [b₆, h₃, h₆]; ring))
-    | .IIIStar, hs => exact (isTateTerminal_IIIStar.1 hs).2.2.2.2.2 ((hz (by norm_num)).2 h₄)
-    | .IIStar, hs => exact (isTateTerminal_IIStar.1 hs).2.2.2.2.2 ((hz (by norm_num)).2 h₆)
   have hmem {z : v.valuationSubring} : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
     rw [hϖ, Ideal.mem_span_singleton]
-  have hp : Prime ϖ := (Ideal.span_singleton_prime hϖ0).mp (hϖ ▸ (maximalIdeal.isMaximal _).isPrime)
+  have hp : Prime ϖ := (Ideal.span_singleton_prime (hs.ne_zero (hsI 0))).mp
+    (hϖ ▸ (maximalIdeal.isMaximal _).isPrime)
   exact nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation v (hmem.mpr h₃)
     (hmem.mpr h₄) (hmem.mpr h₆) fun x y hx hy ↦ h hp x y (hmem.mp hx) (hmem.mp hy)
 
