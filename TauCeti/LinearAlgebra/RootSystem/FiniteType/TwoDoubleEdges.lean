@@ -374,7 +374,7 @@ private theorem submatrix_eq_twoDoubleEdgeCartanMatrix (h : IsFiniteType A) {v :
 edge.** This is the previous exclusion transported along the chain; the orientation of the first
 edge is normalized here, and the general case follows by transposition in
 `TauCeti.IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le`. -/
-private theorem not_two_le_of_chain_of_apply_eq_neg_two [Finite B] (h : IsFiniteType A)
+private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
     {v : ℕ → B}
     (hv : Set.InjOn v (Set.Iio (m + 3)))
     (hzero : ∀ s t, s + 1 < t → t < m + 3 → A (v s) (v t) = 0)
