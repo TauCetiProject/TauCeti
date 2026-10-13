@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
+public import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Angular operators and graph subspaces
@@ -186,11 +187,6 @@ end Angular
 
 section Gap
 
-/-- The value `r / √(1 + r²)` of the graph gap is always less than `1`. -/
-private theorem div_sqrt_one_add_sq_lt_one (r : ℝ) : r / √(1 + r ^ 2) < 1 :=
-  (div_lt_one (Real.sqrt_pos.2 (by positivity))).2 <| (le_abs_self r).trans_lt <|
-    (Real.lt_sqrt (abs_nonneg r)).2 (by rw [sq_abs]; linarith)
-
 variable {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {X : E →L[𝕜] E}
 
 namespace IsAngularOperator
@@ -253,7 +249,7 @@ theorem directedProjectionGap_graphSubspace_left
           gcongr
           exact norm_starProjection_apply_le _ _
   refine le_antisymm hle (hX.div_sqrt_le_of_forall_norm_apply_le (norm_nonneg _) ?_ fun u hu => ?_)
-  · exact hle.trans_lt (div_sqrt_one_add_sq_lt_one _)
+  · exact hle.trans_lt (Real.div_sqrt_one_add_sq_lt_one _)
   · -- On `u + X u ∈ G`, the operator `P_{Uᗮ} P_G` returns `X u`.
     have h := le_opNorm (Uᗮ.starProjection ∘L G.starProjection) (u + X u)
     rwa [comp_apply, starProjection_eq_self_iff.mpr (add_apply_mem_graphSubspace hu),
@@ -324,7 +320,7 @@ theorem projectionGap_graphSubspace [(U.graphSubspace X).HasOrthogonalProjection
 theorem projectionGap_graphSubspace_lt_one [(U.graphSubspace X).HasOrthogonalProjection] :
     projectionGap U (U.graphSubspace X) < 1 := by
   rw [hX.projectionGap_graphSubspace]
-  exact div_sqrt_one_add_sq_lt_one _
+  exact Real.div_sqrt_one_add_sq_lt_one _
 
 end IsAngularOperator
 
