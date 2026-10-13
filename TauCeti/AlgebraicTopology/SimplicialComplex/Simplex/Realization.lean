@@ -16,6 +16,9 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 
 This file compares the closed coordinate simplex on any finite vertex set, including the empty
 set, with Mathlib's standard simplex on that set. It also identifies the geometric realization of
+any closed simplex in an ambient weak realization with its coordinate simplex, preserving
+barycentric coordinates in both directions. This works even in infinite ambient complexes.
+Finally, it compares the realization of
 the full abstract complex on a finite vertex type with Mathlib's standard simplex of barycentric
 coordinate functions. Specializing to two
 vertices gives a homeomorphism from the standard one-simplex to the unit interval. Its boundary,
@@ -113,6 +116,44 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
+
+/-- A closed face, with the subspace topology of the weak realization, is homeomorphic to
+its coordinate simplex. The ambient complex and its vertex type may be infinite. -/
+noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι)
+    (V : Finset ι) (hV : V ∈ K) :
+    StandardSimplex V ≃ₜ
+      {x : Realization K // x.1.support ∈ PreAbstractSimplicialComplex.simplex V} := by
+  let e : StandardSimplex V ≃
+      {x : Realization K // x.1.support ∈ PreAbstractSimplicialComplex.simplex V} := {
+    toFun x := ⟨faceInclusion K ⟨V, hV⟩ x, by
+      refine PreAbstractSimplicialComplex.mem_simplex.mpr
+        ⟨K.isRelLowerSet_faces.prop_of_mem (support_mem K (faceInclusion K ⟨V, hV⟩ x)), ?_⟩
+      simpa only [faceInclusion_val] using StandardSimplex.support_subset x⟩
+    invFun x := ⟨x.1.1, by
+      simpa only [Finset.coe_image] using mem_standardSimplex_iff.mpr
+        ⟨Realization.nonneg K x.1, Realization.sum_eq_one K x.1,
+          (PreAbstractSimplicialComplex.mem_simplex.mp x.2).2⟩⟩
+    left_inv x := Subtype.ext (faceInclusion_val K ⟨V, hV⟩ x)
+    right_inv x := Subtype.ext (Subtype.ext (faceInclusion_val K ⟨V, hV⟩ _)) }
+  letI : CompactSpace (StandardSimplex V) :=
+    (Finset.standardSimplexHomeomorph V).symm.compactSpace
+  have hc : Continuous e := (continuous_faceInclusion K ⟨V, hV⟩).subtype_mk _
+  exact e.toHomeomorphOfContinuousClosed hc hc.isClosedMap
+
+/-- The closed-face identification preserves the barycentric coordinate vector. -/
+@[simp] theorem simplexRealizationHomeomorph_val (K : AbstractSimplicialComplex ι)
+    (V : Finset ι) (hV : V ∈ K) (x : StandardSimplex V) :
+    (K.simplexRealizationHomeomorph V hV x).1.1 = x.1 :=
+  faceInclusion_val K ⟨V, hV⟩ x
+
+/-- The inverse closed-face identification preserves the barycentric coordinate vector. -/
+@[simp] theorem simplexRealizationHomeomorph_symm_val (K : AbstractSimplicialComplex ι)
+    (V : Finset ι) (hV : V ∈ K)
+    (x : {x : Realization K // x.1.support ∈ PreAbstractSimplicialComplex.simplex V}) :
+    ((K.simplexRealizationHomeomorph V hV).symm x).1 = x.1.1 := by
+  have h := congrArg (fun y => y.1.1)
+    ((K.simplexRealizationHomeomorph V hV).apply_symm_apply x)
+  simpa only [simplexRealizationHomeomorph_val] using h
 
 variable [Fintype ι] [Nonempty ι]
 

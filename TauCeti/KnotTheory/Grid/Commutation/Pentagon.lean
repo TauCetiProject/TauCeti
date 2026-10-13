@@ -85,6 +85,9 @@ here.
 * `TauCeti.GridPentagonBetween.mem_coveredSquares`,
   `TauCeti.GridPentagonBetween.mem_coveredSquares_iff_of_ne`: the covered squares, which agree
   with those of the underlying rectangle away from columns `a` and `b`.
+  `TauCeti.GridPentagonBetween.mk_mem_coveredSquares_left_column` and
+  `TauCeti.GridPentagonBetween.mk_mem_coveredSquares_right_column` give them in those two
+  columns.
 * `TauCeti.GridPentagonBetween.coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom`:
   a pentagon spanning one row covers that row away from the first commuted column.
 * `TauCeti.GridPentagonBetween.disjoint_coveredSquares_XSet_iff`: the `X`-avoidance condition
@@ -387,6 +390,39 @@ theorem mem_coveredSquares_iff_of_ne (P : GridPentagonBetween a s x y) {p : Fin 
     GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
     GridRectangleBetween.toGridRectangle_top, P.right_eq, ha, hb, ne_eq, not_false_eq_true,
     true_and, false_and, or_false] using P.mem_coveredSquares p
+
+/-- In the column before the replaced grid line a pentagon covers the rows above the turn row. -/
+theorem mk_mem_coveredSquares_left_column (P : GridPentagonBetween a s x y) (t : Fin n) :
+    (a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIoo s P.top := by
+  simp only [P.mem_coveredSquares, ne_eq, not_true_eq_false, false_and, true_and, false_or,
+    P.ne_finRotate, or_false]
+
+/-- In the column after the replaced grid line a pentagon covers the rows from its bottom row up
+to the turn row. -/
+theorem mk_mem_coveredSquares_right_column (P : GridPentagonBetween a s x y) (t : Fin n) :
+    (finRotate n a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIco P.bottom s := by
+  simp only [P.mem_coveredSquares, Grid.right_notMem_cIco, P.ne_finRotate.symm, false_and,
+    and_false, true_and, false_or]
+
+/-- In the column before the replaced grid line the underlying rectangle of a pentagon covers
+all of its rows. -/
+theorem mk_mem_toGridRectangle_coveredSquares_left_column
+    (P : GridPentagonBetween a s x y) (t : Fin n) :
+    (a, t) ∈ P.toGridRectangle.coveredSquares ↔ t ∈ Grid.cIco P.bottom P.top := by
+  simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top, P.right_eq, Grid.self_mem_cIco_finRotate P.left_ne,
+    true_and]
+
+/-- The underlying rectangle of a pentagon covers nothing in the column after the replaced grid
+line. -/
+theorem mk_notMem_toGridRectangle_coveredSquares_right_column
+    (P : GridPentagonBetween a s x y) (t : Fin n) :
+    (finRotate n a, t) ∉ P.toGridRectangle.coveredSquares := by
+  simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+    GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
+    P.right_eq, Grid.right_notMem_cIco, false_and, not_false_eq_true]
 
 /-- A pentagon spanning a pentagon with a toroidal rectangle stacked on it covers only squares
 one of those two covers.

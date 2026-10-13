@@ -45,7 +45,7 @@ noncomputable section
 
 /-- The relative weight-unipotent ideal cuts out exactly the existing upper-unitriangular
 matrix group, compatibly with the upper-triangular inclusion into `GL_n`. -/
-@[simp]
+@[simp↓ high]
 theorem mem_upperUnitriangularPointsSubgroup_iff
     (R : Type u) [CommRing R] (n : ℕ) {A : Type v} [CommRing A] [Algebra R A]
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n)

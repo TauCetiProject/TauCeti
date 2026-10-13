@@ -222,7 +222,7 @@ theorem exists_continuousMulEquiv_apply_demushkinWordNeTwo_eq_of_crossedHom_sing
     (fun _ ↦ exponentSumKer p (Fin n) ⟨1, hn1⟩) (fun _ ↦ isClosed_exponentSumKer _) ?_
     ⟨_, demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩ r hr.symm ?_ ?_
   · -- Stability: a basis modification by elements of `X` preserves `X`.
-    intro ω hω i c hc
+    intro ω hω _ c hc
     exact ((basisModification ω).apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem
       (fun j ↦ by rw [basisModification_of, inv_mul_cancel_left]; exact hω j) c).2 hc
   · -- The invariant: the deviation lies in `X` and is killed by every `D_i`.

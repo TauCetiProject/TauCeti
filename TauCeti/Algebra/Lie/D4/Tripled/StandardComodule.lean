@@ -174,7 +174,7 @@ theorem summandSubcomodule_toSubmodule (s : Set (Fin 24))
   Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
 
 /-- Membership in a summand subcomodule means vanishing outside the chosen summands. -/
-@[simp]
+@[simp↓]
 theorem mem_summandSubcomodule (s : Set (Fin 24))
     (hs : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ s → a ∈ s) (v : Fin 24 → R) :
     v ∈ summandSubcomodule R s hs ↔ ∀ a ∉ s, v a = 0 := by

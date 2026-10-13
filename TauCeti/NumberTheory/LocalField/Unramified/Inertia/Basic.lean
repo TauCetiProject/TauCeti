@@ -77,6 +77,10 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   `X^{q^f} − X` to the `q^n`-th power.
 * `TauCeti.IsArithFrobeniusLift.apply_of_pow_eq_one`: a Frobenius lift acts on the roots of unity
   of order prime to the residue characteristic by `ζ ↦ ζ ^ q`.
+* `TauCeti.IsArithFrobeniusLift.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv`,
+  `TauCeti.IsArithFrobeniusLift.zpowers_restrictNormalHom_unramifiedExtension`: a Frobenius lift
+  restricts to the arithmetic Frobenius of the unramified extension of each degree `f`, which it
+  therefore generates.
 * `TauCeti.IsArithFrobeniusLift.restrictNormal_smul_residueField_eq_pow`: on a finite normal
   subextension `L`, a Frobenius lift acts on the residue field of `L` by `x ↦ x ^ q`.
 * `TauCeti.IsArithFrobeniusLift.topologicalClosure_zpowers_sup_inertiaSubgroup`: a Frobenius lift
@@ -407,6 +411,39 @@ theorem apply_of_pow_eq_one (hσ : IsArithFrobeniusLift K σ) {m : ℕ}
   exact isArithFrobeniusLift_iff.1 hσ ζ m.totient
     (Nat.totient_pos.2 (Nat.pos_of_ne_zero (ne_zero_of_coprime_ringChar hm))).ne'
     (pow_pow_totient_eq_self hq hζ)
+
+/-- **A Frobenius lift restricts to the Frobenius of each finite unramified level.** On the
+unramified extension `K_f` of degree `f` inside `K^{alg}`, an arithmetic Frobenius lift acts as the
+arithmetic Frobenius of `K_f / K`. This holds for any structure of nonarchimedean local field on
+`K_f` compatible with `K`. -/
+theorem restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv
+    (hσ : IsArithFrobeniusLift K σ) {f : ℕ}
+    [ValuativeRel (unramifiedExtension K (AlgebraicClosure K) f)]
+    [TopologicalSpace (unramifiedExtension K (AlgebraicClosure K) f)]
+    [IsNonarchimedeanLocalField (unramifiedExtension K (AlgebraicClosure K) f)]
+    [ValuativeExtension K (unramifiedExtension K (AlgebraicClosure K) f)]
+    [IsUnramified K (unramifiedExtension K (AlgebraicClosure K) f)] :
+    AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ =
+      frobeniusAlgEquiv (K := K) (L := unramifiedExtension K (AlgebraicClosure K) f) := by
+  ext ⟨x, hx⟩
+  refine (AlgEquiv.restrictNormalHom_apply _ σ _).trans ?_
+  rw [← coe_maximalUnramifiedFrobenius_apply_of_mem hx, ← isArithFrobeniusLift_def.1 hσ,
+    restrictMaximalUnramifiedHom_coe_apply]
+
+/-- **A Frobenius lift generates the Galois group of each finite unramified level.** For `f ≠ 0`,
+the restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
+inside `K^{alg}` generates `Gal(K_f/K)`. -/
+theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ}
+    (hf : f ≠ 0) :
+    Subgroup.zpowers
+      (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by
+  set F := unramifiedExtension K (AlgebraicClosure K) f
+  let := finiteExtensionValuativeRel K F
+  let := finiteExtensionNormedFieldTopology K F
+  have := finiteExtension_isNonarchimedeanLocalField K F
+  have := finiteExtension_valuativeExtension K F
+  have : IsUnramified K F := isUnramified_unramifiedExtension hf
+  rw [hσ.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv, zpowers_frobeniusAlgEquiv]
 
 /-- **A Frobenius lift acts on finite residue fields as the `q`-th power map.** The restriction of
 an arithmetic Frobenius lift to a finite normal subextension `L` of `K^{alg}/K` acts on the residue

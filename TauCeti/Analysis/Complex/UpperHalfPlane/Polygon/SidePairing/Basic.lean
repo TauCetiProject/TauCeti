@@ -24,11 +24,11 @@ side-pairing maps along a cycle is the cycle transformation.
 
 Vertices may be finite or ideal, so the paired sides may be segments, rays, or full geodesic
 lines. No Fuchsian group appears: these are the standalone definitions and their elementary
-properties.
+properties. Going around a cycle `k` times gives the `k`-th power of the cycle transformation.
 
 At a finite vertex cycle, the relation `m · sum = 2π` between the order of a cycle transformation
-and the angle sum needs the polygon to be a fundamental domain and is left to Poincaré's polygon
-theorem.
+and the angle sum needs the polygon to be a fundamental domain, and is proved in
+`TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer`.
 
 ## Main definitions
 
@@ -51,6 +51,8 @@ theorem.
   `vertex j`.
 * `ConvexPolygon.SidePairing.cycleMap_next`: the cycle transformations at the vertices of one
   cycle are conjugate.
+* `ConvexPolygon.SidePairing.partialCycleMap_mul_cycleLength`: `k` circuits of a cycle give the
+  `k`-th power of the cycle transformation.
 * `ConvexPolygon.SidePairing.isElliptic_of_cycleMap_eq`: a nonidentity cycle transformation at
   a vertex in `ℍ` is elliptic.
 * `ConvexPolygon.SidePairing.card_cycle`: the vertex cycle through `j` has `cycleLength j`
@@ -194,6 +196,23 @@ theorem partialCycleMap_succ' (j : Fin n) (m : ℕ) :
   | succ m ih =>
     rw [partialCycleMap_succ, ih, partialCycleMap_succ, Function.iterate_succ_apply, mul_assoc]
 
+/-- The partial products are multiplicative along the cycle: the first `a + b` maps from `j` are
+the first `a` maps from `j`, followed by the first `b` maps from `next^[a] j`. -/
+theorem partialCycleMap_add (j : Fin n) (a b : ℕ) :
+    σ.partialCycleMap j (a + b) = σ.partialCycleMap (σ.next^[a] j) b * σ.partialCycleMap j a := by
+  induction b with
+  | zero => simp
+  | succ b ih =>
+    rw [← add_assoc, partialCycleMap_succ, ih, partialCycleMap_succ, mul_assoc,
+      add_comm a b, Function.iterate_add_apply]
+
+/-- The partial products lie in every subgroup containing the side-pairing maps. -/
+theorem partialCycleMap_mem {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i ∈ Γ) (j : Fin n)
+    (m : ℕ) : σ.partialCycleMap j m ∈ Γ := by
+  induction m with
+  | zero => exact Γ.one_mem
+  | succ m ih => exact Γ.mul_mem (hmap _) ih
+
 /-- The partial product of the first `m` side-pairing maps carries `vertex j` to the vertex at
 the `m`-th successor of `j`. -/
 theorem partialCycleMap_smul_vertex (j : Fin n) (m : ℕ) :
@@ -252,6 +271,23 @@ def cycleMap (j : Fin n) : PSL(2, ℝ) :=
 /-- The cycle transformation, unfolded. -/
 theorem cycleMap_def (j : Fin n) : σ.cycleMap j = σ.partialCycleMap j (σ.cycleLength j) :=
   (rfl)
+
+/-- Going `k` times around the cycle through `j` gives the `k`-th power of the cycle
+transformation. -/
+theorem partialCycleMap_mul_cycleLength (j : Fin n) (k : ℕ) :
+    σ.partialCycleMap j (k * σ.cycleLength j) = σ.cycleMap j ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hper : σ.next^[k * σ.cycleLength j] j = j := by
+      rw [cycleLength_def]
+      exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul k).eq
+    rw [Nat.succ_mul, partialCycleMap_add, hper, ih, ← cycleMap_def, pow_succ']
+
+/-- The cycle transformation lies in every subgroup containing the side-pairing maps. -/
+theorem cycleMap_mem {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i ∈ Γ) (j : Fin n) :
+    σ.cycleMap j ∈ Γ :=
+  σ.partialCycleMap_mem hmap j _
 
 /-- **The cycle transformation at `j` fixes `vertex j`.** -/
 theorem cycleMap_smul_vertex (j : Fin n) : σ.cycleMap j • P.vertex j = P.vertex j := by

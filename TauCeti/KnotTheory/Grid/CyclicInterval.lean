@@ -750,7 +750,6 @@ theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
   | zero => exact c.elim0
   | succ n =>
     rw [mem_cIco, mem_cIco]
-    have hc := c.isLt
     have ha' := a.isLt
     have hb' := b.isLt
     have haVal : a.val ≠ (finRotate (n + 1) c).val := fun h => ha (Fin.ext h)
@@ -877,7 +876,6 @@ theorem cIco_eq_singleton_iff {a b c : Fin n} :
     | succ n =>
       have := a.isLt; have := b.isLt
       rw [Fin.ext_iff, coe_finRotate]
-      have hab' : a.val ≠ b.val := fun e => hab (Fin.ext e)
       by_cases hlast : a = Fin.last n
       · simp only [hlast, ↓reduceIte] at hcard ⊢
         simp only [Fin.val_last] at hcard ⊢

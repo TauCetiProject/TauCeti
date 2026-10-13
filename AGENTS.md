@@ -42,9 +42,9 @@ scope do not coincide.
 ## The rules of the repo
 
 - `main` is always green. CI builds against pinned Mathlib and enforces: no `sorry`, no
-  axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), and the
-  Mathlib linter set (style, file length, no `maxHeartbeats` overrides). Do not try to disable
-  these.
+  axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
+  `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
+  overrides). Do not try to disable these.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every
@@ -53,7 +53,9 @@ scope do not coincide.
   import modules, deprecated shims (including `deprecated_module`), or duplicate theorem names.
   External users of an older revision must update to the canonical API on current `main`;
   breaking their source compatibility is not a reason to keep an obsolete surface.
-- `TauCeti/` is the only place code goes. `scripts/`, `.github/`, and the lakefile
+- `TauCeti/` is the only place code goes, and what goes there is mathematics, not
+  metaprogramming: Lean meta code is human-owned and lives in `scripts/`, which is why the
+  `meta import` guard above exists. `scripts/`, `.github/`, and the lakefile
   (`lakefile.toml`/`lakefile.lean`) are human-owned. The two Lake *pins* —
   `lake-manifest.json` and `lean-toolchain` — are an exception: a **forward-only** bump of
   them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving

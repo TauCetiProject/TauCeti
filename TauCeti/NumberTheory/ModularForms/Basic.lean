@@ -369,6 +369,48 @@ lemma mem_range_ofLeₗ_iff [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
   ⟨by rintro ⟨g, rfl⟩ γ hγ; exact g.slash_action_eq' γ hγ,
     fun hf ↦ ⟨ofSlashInvariant hc f hf, rfl⟩⟩
 
+/-- `ModularForm.ofLe` agrees with Mathlib's `ModularForm.restrict`. -/
+lemma ofLe_eq_restrict (h : Γ' ≤ Γ) (f : ModularForm Γ k) : ofLe h f = restrict h f :=
+  DFunLike.coe_injective (by rw [coe_ofLe, coe_restrict])
+
+variable (Γ) in
+/-- Mathlib's trace `ModularForm.trace` from `Γ'` to a group `Γ` in which `Γ'` has finite relative
+index, as a `ℂ`-linear map. -/
+noncomputable def traceₗ [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] :
+    ModularForm Γ' k →ₗ[ℂ] ModularForm Γ k where
+  toFun f := ModularForm.trace Γ f
+  map_add' f g := by
+    let _ := Fintype.ofFinite (Γ ⧸ Γ'.subgroupOf Γ)
+    apply DFunLike.coe_injective
+    rw [FunLike.coe_add, coe_trace, coe_trace, coe_trace, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    induction q using QuotientGroup.induction_on' with
+    | H h => rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
+        SlashInvariantForm.quotientFunc_mk, FunLike.coe_add, SlashAction.add_slash]
+  map_smul' c f := by
+    let _ := Fintype.ofFinite (Γ ⧸ Γ'.subgroupOf Γ)
+    apply DFunLike.coe_injective
+    rw [FunLike.coe_smul, coe_trace, coe_trace, RingHom.id_apply, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    induction q using QuotientGroup.induction_on' with
+    | H h =>
+      have hdet : 0 < ((h.val⁻¹ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det := by
+        rw [← Matrix.GeneralLinearGroup.val_det_apply,
+          Subgroup.HasDetOne.det_eq (inv_mem h.property), Units.val_one]
+        exact one_pos
+      rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
+        FunLike.coe_smul, ModularForm.smul_slash_of_det_pos k hdet]
+
+@[simp]
+lemma traceₗ_apply [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] (f : ModularForm Γ' k) :
+    traceₗ Γ f = ModularForm.trace Γ f := (rfl)
+
+/-- Tracing the restriction of a form for `Γ` back to `Γ` multiplies it by the relative index.
+This is Mathlib's `trace_restrict` for the linear trace. -/
+lemma traceₗ_ofLe [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] (h : Γ' ≤ Γ)
+    (f : ModularForm Γ k) : traceₗ Γ (ofLe h f) = (Γ'.relIndex Γ : ℂ) • f := by
+  rw [traceₗ_apply, ofLe_eq_restrict, trace_restrict, Nat.cast_smul_eq_nsmul]
+
 end ModularForm
 
 namespace CuspForm

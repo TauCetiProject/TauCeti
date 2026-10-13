@@ -151,7 +151,7 @@ theorem isPolynomial_iff_zero_le_detShift (l : DominantWeight n) :
   refine ⟨fun h => ?_, fun h i => h.trans (l.detShift_le i)⟩
   match n, l, h with
   | 0, _, _ => simp
-  | _ + 1, l, h => exact h _
+  | _ + 1, _, h => exact h _
 
 /-- Subtracting its last entry makes any dominant weight polynomial. -/
 theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :

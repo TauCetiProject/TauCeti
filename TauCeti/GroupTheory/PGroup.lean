@@ -48,6 +48,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
   group, an element of `p`-power order survives in some `p`-group quotient.
 * `IsPGroup.index_eq_prime_of_isCoatom`: a maximal subgroup of a finite `p`-group has index
   `p`.
+* `IsPGroup.exists_mem_center_orderOf_eq_prime`: a nontrivial finite `p`-group has a central
+  element of order `p`.
 * `IsPGroup.exists_ne_one_le_centralizer`: a nontrivial finite `p`-subgroup lies in the
   centralizer of one of its nontrivial elements.
 * `IsPGroup.quotient_inf`: if `G ⧸ M` and `G ⧸ N` are `p`-groups, so is `G ⧸ (M ⊓ N)`.
@@ -105,12 +107,8 @@ theorem _root_.IsPGroup.of_subgroup_of_quotient {N : Subgroup G} [N.Normal]
 /-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
 theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}
     (hC : ¬ p ∣ Nat.card C) (hQ : IsPGroup p Q) : Disjoint C Q := by
-  rw [Subgroup.disjoint_def]
-  intro g hg hgQ
-  by_contra hg1
-  refine hC ((?_ : p ∣ orderOf g).trans ?_)
-  · simpa [Subgroup.orderOf_mk] using hQ.dvd_orderOf (g := (⟨g, hgQ⟩ : Q)) (by simpa using hg1)
-  · simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
+  exact (hQ.disjoint_of_coprime (IsPGroup.card (G := C))
+    ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hC)).symm
 
 /-- A group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/
 theorem _root_.IsPGroup.subsingleton_of_coprime {q : ℕ} (hp : IsPGroup p G) (hq : IsPGroup q G)
@@ -230,6 +228,17 @@ theorem _root_.IsPGroup.index_eq_prime_of_isCoatom [Finite G] [hp : Fact p.Prime
   rw [hKbot, Subgroup.index_eq_card] at hKindex
   exact (Subgroup.index_eq_card (H := H)).trans <|
     (Nat.card_congr QuotientGroup.quotientBot.toEquiv).symm.trans hKindex
+
+/-- A nontrivial finite `p`-group has an element in its centre of order `p`. -/
+theorem _root_.IsPGroup.exists_mem_center_orderOf_eq_prime [Fact p.Prime] [Finite G]
+    [Nontrivial G] (hG : IsPGroup p G) : ∃ z ∈ Subgroup.center G, orderOf z = p := by
+  have := hG.center_nontrivial
+  obtain ⟨z, hz⟩ : ∃ z : Subgroup.center G, orderOf z = p := by
+    refine exists_prime_orderOf_dvd_card' p ?_
+    rcases (hG.to_subgroup (Subgroup.center G)).card_eq_or_dvd with h | h
+    · exact absurd h Finite.one_lt_card.ne'
+    · exact h
+  exact ⟨z, z.2, (Subgroup.orderOf_coe z).trans hz⟩
 
 /-- A nontrivial finite `p`-subgroup `P` of `G` lies in the centralizer of one of its nontrivial
 elements, namely of any nontrivial element of the centre of `P`. -/

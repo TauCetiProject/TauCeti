@@ -72,6 +72,9 @@ discrete case below is proved through it.
 * `Ideal.isClosed_weightedRestrictedSubring_one_weight`: every ideal in an
   uncompleted restricted-series ring over a complete Hausdorff strongly noetherian Tate ring is
   closed.
+* `Ideal.isClosed_restrictedMvPowerSeriesCompletion`: every ideal of the completed
+  `A⟨X₁, …, Xₖ⟩` over a strongly noetherian Tate ring, not necessarily complete or Hausdorff, is
+  closed.
 
 * `TauCeti.Huber.IsStronglyNoetherian.of_surjective`: strong noetherianness passes along a
   continuous surjection carrying neighbourhoods of zero onto neighbourhoods of zero, out of a
@@ -101,11 +104,12 @@ discrete case below is proved through it.
   discontinuous map.
 
 What is not here is the assembly that turns the result above into Wedhorn's statement: that a
-ring *strictly* topologically of finite type over a strongly noetherian `A` is again strongly
-noetherian. That needs `TauCeti.Huber.IsStrictlyTopologicallyFiniteType` unfolded to its open
-quotient `A⟨X₁,…,Xₖ⟩ ↠ B` and the result above applied to it. The unqualified
-`TauCeti.Huber.IsTopologicallyFiniteType` presents `B` as a quotient of the completion of a
-*weighted* `A⟨X⟩_T` for an arbitrary finite weight family, and is not covered at all.
+ring topologically of finite type over a strongly noetherian `A` is again strongly noetherian.
+It lives in `TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic`:
+`TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian` unfolds a strict
+presentation to its open quotient `A⟨X₁,…,Xₖ⟩ ↠ B` and applies the result above, and
+`TauCeti.Huber.IsTopologicallyFiniteType.isStronglyNoetherian` reduces a presentation by a
+*weighted* `A⟨X⟩_T` to a strict one when `A` is a Tate ring.
 
 ## Provenance
 
@@ -178,6 +182,26 @@ theorem _root_.Ideal.isClosed_weightedRestrictedSubring_one_weight {k : ℕ}
   exact isClosed_of_isNoetherian I
 
 end ClosedIdeal
+
+section ClosedIdealCompletion
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  [IsStronglyNoetherian A]
+
+/-- **Every ideal of `A⟨X₁, …, Xₖ⟩` is closed**, for a strongly noetherian Tate ring `A`, which
+need not be complete or Hausdorff: `A⟨X₁, …, Xₖ⟩` is a complete metrisable noetherian Tate ring.
+Compare `Ideal.isClosed_weightedRestrictedSubring_one_weight`, the same statement for the
+uncompleted algebra over a complete Hausdorff `A`. -/
+theorem _root_.Ideal.isClosed_restrictedMvPowerSeriesCompletion {k : ℕ}
+    (I : Ideal (restrictedMvPowerSeriesCompletion k A)) :
+    IsClosed (I : Set (restrictedMvPowerSeriesCompletion k A)) := by
+  have : IsTateRing (restrictedMvPowerSeriesCompletion k A) :=
+    IsTateRing.of_continuous (continuous_algebraMap_restrictedMvPowerSeriesCompletion k A)
+  have : (𝓤 (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  exact isClosed_of_isNoetherian I
+
+end ClosedIdealCompletion
 
 /-! ### The discrete case -/
 
@@ -330,7 +354,8 @@ This is the presentation-independent half of Wedhorn's Proposition & Definition 
 (`TauCeti.Huber.IsStrictlyTopologicallyFiniteType`), so the statement that such a ring is strongly
 noetherian reduces to this together with strong noetherianness of `A⟨X₁,…,Xₖ⟩` itself. The
 unqualified `TauCeti.Huber.IsTopologicallyFiniteType` presents `B` as a quotient of a *weighted*
-`A⟨X⟩_T` instead, and is not covered. -/
+`A⟨X⟩_T` instead; over a Tate ring such a presentation can be replaced by a strict one
+(`TauCeti.Huber.IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType`). -/
 theorem IsStronglyNoetherian.of_surjective [IsStronglyNoetherian A] {π : A →+* B}
     (hπ : Continuous π) (hsurj : Function.Surjective π)
     (hnhds : nhds (0 : B) ≤ Filter.map π (nhds (0 : A))) : IsStronglyNoetherian B := by

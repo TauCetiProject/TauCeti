@@ -155,7 +155,7 @@ private theorem differentiableAt_dixonH1_integral (hU : IsOpen U) (hf : Differen
     DifferentiableAt ℂ (fun w ↦ ∫ t in a..b, dslope f w (γ t) * deriv γ t) w₀ := by
   have hK_compact : IsCompact (γ '' uIcc a b) := isCompact_uIcc.image_of_continuousOn hγ_cont
   have hK_sub : γ '' uIcc a b ⊆ U := fun _ ⟨t, ht, hz⟩ ↦ hz ▸ hγU t ht
-  obtain ⟨C, hC_pos, δ, hδ_pos, h_dslope_bd⟩ :=
+  obtain ⟨C, _, δ, hδ_pos, h_dslope_bd⟩ :=
     deriv_dslope_bounded_on_compact hU hf hK_compact hK_sub hw₀
   obtain ⟨εU, hεU_pos, hεU_sub⟩ := Metric.isOpen_iff.mp hU w₀ hw₀
   have hε_pos : 0 < min δ εU := lt_min hδ_pos hεU_pos
