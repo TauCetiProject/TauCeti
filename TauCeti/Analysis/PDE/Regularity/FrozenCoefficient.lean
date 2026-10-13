@@ -26,8 +26,8 @@ if `‖a(x) - A‖ ≤ ε` on `B` and `A` has lower ellipticity constant `λ`, t
 
 `λ ‖∇(u - w)‖_{L²(B)} ≤ ε ‖∇u‖_{L²(B)} + ‖G - c‖_{L²(B)}`
 
-for every constant `c`. For `α`-Hölder coefficients and data on a ball `B ⊆ B(x₀, r)`, freezing
-at `x₀` makes both terms of order `r^α`:
+for every constant `c` such that `G - c ∈ L²(B)`. For `α`-Hölder coefficients and data on an
+open set `B ⊆ B(x₀, r)`, freezing at `x₀` makes both terms of order `r^α`:
 
 `λ ‖∇(u - w)‖_{L²(B)} ≤ r^α ([a]_α ‖∇u‖_{L²(B)} + [G]_α |B|^{1/2})`.
 
