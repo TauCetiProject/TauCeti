@@ -181,12 +181,25 @@ theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSp
   apply (NormedSpace.fromTangentSpace x).injective
   apply ext_inner_right ℝ
   intro v
-  change inner ℝ (Riemannian.Tensor.rieszDual x (mvfderiv 𝓘(ℝ, F) f x))
-      ((NormedSpace.fromTangentSpace x).symm v) =
-    inner ℝ (gradient f x) v
-  rw [Riemannian.Tensor.inner_rieszDual, ← InnerProductSpace.toDual_apply_apply,
-    toDual_gradient]
-  rw [mvfderiv_eq_fderiv]
-  simp
+  have hinner (a b : TangentSpace 𝓘(ℝ, F) x) :
+      inner ℝ a b = inner ℝ (NormedSpace.fromTangentSpace x a)
+        (NormedSpace.fromTangentSpace x b) := by
+    -- `TangentSpace` is a type synonym for `F`, `fromTangentSpace` is its
+    -- canonical `tangentSpaceCastModel`, and the standard metric has `innerSL` as
+    -- its inner product. This is the same definitional transport used by
+    -- Mathlib's `norm_tangentSpace_vectorSpace`.
+    rfl
+  calc
+    inner ℝ (NormedSpace.fromTangentSpace x (Riemannian.Tensor.rieszDual x
+        (mvfderiv 𝓘(ℝ, F) f x))) v =
+      inner ℝ (Riemannian.Tensor.rieszDual x (mvfderiv 𝓘(ℝ, F) f x))
+        ((NormedSpace.fromTangentSpace x).symm v) := by
+          simpa using (hinner (Riemannian.Tensor.rieszDual x
+            (mvfderiv 𝓘(ℝ, F) f x)) ((NormedSpace.fromTangentSpace x).symm v)).symm
+    _ = inner ℝ (gradient f x) v := by
+      rw [Riemannian.Tensor.inner_rieszDual, ← InnerProductSpace.toDual_apply_apply,
+        toDual_gradient]
+      rw [mvfderiv_eq_fderiv]
+      simp
 
 end TauCeti.Manifold
