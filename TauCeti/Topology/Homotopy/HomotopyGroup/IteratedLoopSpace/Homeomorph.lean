@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.IteratedLoopSpace
 
 /-!
@@ -20,7 +21,8 @@ carries the basepoint (the constant iterated loop) to the constant cube loop.
 
 * `TauCeti.BasedTopologicalSpace.iteratedLoopSpaceHomeomorph`:
   `Ω^[k] X ≃ₜ Ω^ (Fin k) X x`, with `iteratedLoopSpaceHomeomorph_zero` and
-  `iteratedLoopSpaceHomeomorph_succ` its defining equations.
+  `iteratedLoopSpaceHomeomorph_succ` its defining equations, and
+  `iteratedLoopSpaceHomeomorph_map` its naturality in `X`.
 -/
 
 public section
@@ -76,6 +78,31 @@ theorem iteratedLoopSpaceHomeomorph_basepoint :
     (congrArg (GenLoop.genLoopLoopHomeomorph X.basepoint k)
       (iteratedLoopSpaceHomeomorph_basepoint k X.loopSpace)).trans
         (GenLoop.genLoopLoopHomeomorph_const X.basepoint k)
+
+private theorem genLoopLoopHomeomorph_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y)
+    (k : ℕ) (p : GenLoop (Fin k) X.loopSpace.carrier X.loopSpace.basepoint) :
+    GenLoop.genLoopLoopHomeomorph Y.basepoint k
+        (GenLoop.map f.loopSpace.toContinuousMap f.loopSpace.map_basepoint p) =
+      GenLoop.map f.toContinuousMap f.map_basepoint
+        (GenLoop.genLoopLoopHomeomorph X.basepoint k p) := by
+  refine GenLoop.ext _ _ fun t => ?_
+  rw [GenLoop.genLoopLoopHomeomorph_apply]
+  exact (Hom.loopSpace_apply f _ _).trans
+    (congrArg f (GenLoop.genLoopLoopHomeomorph_apply X.basepoint k p t).symm)
+
+/-- **Naturality of the cube-loop homeomorphism**: a based map `f` acts on iterated loops
+`Ω^[k] f` and on cube loops by postcomposition compatibly with `iteratedLoopSpaceHomeomorph`. -/
+@[simp]
+theorem iteratedLoopSpaceHomeomorph_map :
+    (k : ℕ) → {X Y : BasedTopologicalSpace.{u}} → (f : Hom X Y) →
+      (γ : (X.iteratedLoopSpace k).carrier) →
+      iteratedLoopSpaceHomeomorph k Y (f.iteratedLoopSpace k γ) =
+        GenLoop.map f.toContinuousMap f.map_basepoint (iteratedLoopSpaceHomeomorph k X γ)
+  | 0, _, _, _, _ => GenLoop.ext _ _ fun _ => rfl
+  | k + 1, _, _, f, γ =>
+    (congrArg (GenLoop.genLoopLoopHomeomorph _ k)
+      (iteratedLoopSpaceHomeomorph_map k f.loopSpace γ)).trans
+        (genLoopLoopHomeomorph_map f k _)
 
 end BasedTopologicalSpace
 

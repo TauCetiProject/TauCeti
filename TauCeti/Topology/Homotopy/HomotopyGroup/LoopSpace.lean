@@ -259,6 +259,16 @@ theorem congrMulEquiv_symm_mk [DecidableEq M] [DecidableEq N] [Nonempty M]
       ⟦_root_.GenLoop.congr x e.symm q⟧ :=
   (congrMulEquiv_symm_apply e _).trans (congrEquiv_symm_mk e q)
 
+/-- In positive dimensions, reindexing the cube directions commutes with the maps induced by
+based continuous maps. -/
+@[simp]
+theorem map_congrMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M] {Y : Type*}
+    [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (e : M ≃ N)
+    (a : HomotopyGroup M X x) :
+    map f hf (congrMulEquiv e a) = congrMulEquiv e (map f hf a) := by
+  rw [congrMulEquiv_apply, congrMulEquiv_apply]
+  exact map_congrEquiv f hf e a
+
 /-! ### Homotopy groups as path components of the loop space -/
 
 /-- **The homotopy group `π_N(X, x)` is the set of path components of the space of

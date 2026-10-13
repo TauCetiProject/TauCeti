@@ -20,6 +20,9 @@ and its `k`-fold iterate. Iterated loop spaces are the based mapping spaces out 
 * `TauCeti.BasedTopologicalSpace.loopSpace`: the loop space `Ω X`, based at the constant loop.
 * `TauCeti.BasedTopologicalSpace.iteratedLoopSpace`: the `k`-fold iterated loop space `Ω^[k] X`,
   with `iteratedLoopSpace_zero` and `iteratedLoopSpace_succ` its two defining equations.
+* `TauCeti.BasedTopologicalSpace.Hom.loopSpace` and
+  `TauCeti.BasedTopologicalSpace.Hom.iteratedLoopSpace`: the induced maps `Ω f` and `Ω^[k] f`,
+  given by postcomposition, compatible with identities and composition.
 -/
 
 public section
@@ -60,6 +63,11 @@ theorem iteratedLoopSpace_succ' (X : BasedTopologicalSpace.{u}) (k : ℕ) :
     X.iteratedLoopSpace (k + 1) = X.loopSpace.iteratedLoopSpace k :=
   Function.iterate_succ_apply _ _ _
 
+/-- A loop in the loop space is a function on the unit interval. -/
+instance (X : BasedTopologicalSpace.{u}) :
+    FunLike X.loopSpace.carrier unitInterval X.carrier :=
+  inferInstanceAs (FunLike (Path X.basepoint X.basepoint) unitInterval X.carrier)
+
 @[simp]
 theorem loopSpace_carrier (X : BasedTopologicalSpace.{u}) :
     X.loopSpace.carrier = Path X.basepoint X.basepoint :=
@@ -69,6 +77,70 @@ theorem loopSpace_carrier (X : BasedTopologicalSpace.{u}) :
 theorem loopSpace_basepoint (X : BasedTopologicalSpace.{u}) :
     X.loopSpace.basepoint = Path.refl X.basepoint :=
   rfl
+
+namespace Hom
+
+variable {X Y Z : BasedTopologicalSpace.{u}}
+
+/-- The map `Ω f : Ω X → Ω Y` induced by a based map `f`: postcomposition of loops with `f`. -/
+def loopSpace (f : Hom X Y) : Hom X.loopSpace Y.loopSpace where
+  toContinuousMap :=
+    ⟨fun γ => (γ.map (map_continuous f)).cast f.map_basepoint.symm f.map_basepoint.symm,
+      continuous_induced_rng.2 <|
+        (ContinuousMap.continuous_postcomp f.toContinuousMap).comp continuous_induced_dom⟩
+  map_basepoint := by
+    exact DFunLike.ext _ _ fun _ => f.map_basepoint
+
+@[simp]
+theorem loopSpace_apply (f : Hom X Y) (γ : X.loopSpace.carrier) (t : unitInterval) :
+    f.loopSpace γ t = f (γ t) := by
+  rw [loopSpace]
+  rfl
+
+@[simp]
+theorem loopSpace_id (X : BasedTopologicalSpace.{u}) : (Hom.id X).loopSpace = Hom.id X.loopSpace :=
+  DFunLike.ext _ _ fun γ => DFunLike.ext _ _ fun t => by
+    rw [loopSpace_apply, Hom.id_apply, Hom.id_apply]
+
+@[simp]
+theorem loopSpace_comp (g : Hom Y Z) (f : Hom X Y) :
+    (g.comp f).loopSpace = g.loopSpace.comp f.loopSpace :=
+  DFunLike.ext _ _ fun γ => DFunLike.ext _ _ fun t => by
+    simp only [loopSpace_apply, Hom.comp_apply]
+
+/-- The map `Ω^[k] f : Ω^[k] X → Ω^[k] Y` induced by a based map `f`. -/
+-- Exposed so that proofs by recursion on `k` in other modules can unfold it.
+@[expose] def iteratedLoopSpace : (k : ℕ) → {X Y : BasedTopologicalSpace.{u}} → Hom X Y →
+    Hom (X.iteratedLoopSpace k) (Y.iteratedLoopSpace k)
+  | 0, _, _, f => f
+  | k + 1, _, _, f => iteratedLoopSpace k f.loopSpace
+
+@[simp]
+theorem iteratedLoopSpace_zero (f : Hom X Y) : f.iteratedLoopSpace 0 = f := by
+  rw [iteratedLoopSpace.eq_1]
+
+@[simp]
+theorem iteratedLoopSpace_succ (f : Hom X Y) (k : ℕ) :
+    f.iteratedLoopSpace (k + 1) = f.loopSpace.iteratedLoopSpace k := by
+  rw [iteratedLoopSpace.eq_2]
+
+@[simp]
+theorem iteratedLoopSpace_id (X : BasedTopologicalSpace.{u}) :
+    ∀ k : ℕ, (Hom.id X).iteratedLoopSpace k = Hom.id (X.iteratedLoopSpace k)
+  | 0 => by rw [iteratedLoopSpace_zero]; rfl
+  | k + 1 => by
+    rw [iteratedLoopSpace_succ, loopSpace_id, iteratedLoopSpace_id X.loopSpace k]; rfl
+
+@[simp]
+theorem iteratedLoopSpace_comp (g : Hom Y Z) (f : Hom X Y) (k : ℕ) :
+    (g.comp f).iteratedLoopSpace k = (g.iteratedLoopSpace k).comp (f.iteratedLoopSpace k) := by
+  induction k generalizing X Y Z with
+  | zero => rw [iteratedLoopSpace_zero, iteratedLoopSpace_zero, iteratedLoopSpace_zero]; rfl
+  | succ k ih =>
+    rw [iteratedLoopSpace_succ, iteratedLoopSpace_succ, iteratedLoopSpace_succ, loopSpace_comp,
+      ih]; rfl
+
+end Hom
 
 end BasedTopologicalSpace
 
