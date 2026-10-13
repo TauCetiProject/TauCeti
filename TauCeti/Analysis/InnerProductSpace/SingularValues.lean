@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.SingularValues
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
+public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
@@ -81,6 +82,8 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
   `B` have the same singular values.
+* `LinearMap.singularValues_operatorAbs`: the modulus `|A| = √(A† A)` has the same singular values
+  as `A`.
 * `LinearMap.singularValues_linearIsometryEquiv_comp`,
   `LinearMap.singularValues_comp_linearIsometryEquiv`: composing with isometric isomorphisms on
   either side leaves the singular values unchanged.
@@ -511,6 +514,12 @@ theorem singularValues_eq_of_norm_apply_eq {A : E →ₗ[𝕜] F} {B : E →ₗ[
   exact le_antisymm
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
+
+/-- The modulus `|A| = √(A† A)` of a map has the same singular values as the map itself. -/
+@[simp]
+theorem singularValues_operatorAbs (A : E →ₗ[𝕜] F) :
+    A.operatorAbs.singularValues = A.singularValues :=
+  singularValues_eq_of_norm_apply_eq A.norm_operatorAbs_apply
 
 /-- Composing on the left with an isometric isomorphism leaves the singular values unchanged. -/
 @[simp]
