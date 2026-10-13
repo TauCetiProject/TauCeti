@@ -36,6 +36,9 @@ both the coupling and the reference measure move.
 * `TauCeti.ofReal_integral_sub_integral_exp_sub_one_le_klDiv` and
   `TauCeti.ofReal_integral_sub_log_integral_exp_le_klDiv`: the variational lower bounds, for
   every integrable `f` with integrable `exp ∘ f`.
+* `TauCeti.integral_sub_integral_indicator_exp_sub_one_eq` and
+  `TauCeti.ae_mul_sub_indicator_exp_sub_one_le_klFun`: for `μ ≪ ν`, the truncated objective as a
+  single `ν`-integral against the density, and the pointwise Fenchel–Young bound on its integrand.
 * `TauCeti.ofReal_integral_sub_integral_indicator_exp_sub_one_le_klDiv`: the first bound with
   `exp ∘ f` truncated to a set carrying `μ`, which reads `f` as `-∞` off that set.
 * `TauCeti.integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff`: the truncated bound
@@ -121,7 +124,7 @@ theorem ofReal_integral_sub_integral_exp_sub_one_le_klDiv [IsFiniteMeasure μ] [
 
 /-- For `μ ≪ ν`, the variational objective with the truncated exponential `s.indicator (exp ∘ f)`
 is a single `ν`-integral against the density. -/
-private lemma integral_sub_integral_indicator_exp_sub_one_eq [IsFiniteMeasure μ]
+theorem integral_sub_integral_indicator_exp_sub_one_eq [SigmaFinite μ]
     [IsFiniteMeasure ν] {s : Set α} (hμν : μ ≪ ν) (hf : Integrable f μ)
     (hef : Integrable (s.indicator fun x ↦ exp (f x)) ν) :
     ∫ x, f x ∂μ - ∫ x, (s.indicator (fun x ↦ exp (f x)) x - 1) ∂ν =
@@ -133,7 +136,7 @@ private lemma integral_sub_integral_indicator_exp_sub_one_eq [IsFiniteMeasure μ
 
 /-- Off `s` the density vanishes, so the integrand of the truncated variational objective is
 `1 = klFun 0` there; on `s` it is bounded by the Fenchel–Young inequality. -/
-private lemma ae_mul_sub_indicator_exp_sub_one_le_klFun [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem ae_mul_sub_indicator_exp_sub_one_le_klFun [SigmaFinite μ] [SigmaFinite ν]
     {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) :
     ∀ᵐ x ∂ν, (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1) ≤
       klFun (μ.rnDeriv ν x).toReal := by
