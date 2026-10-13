@@ -54,12 +54,13 @@ variable (A : Type*) [NormedRing A]
 
 /-- The germ at `(0, 0)` represented by the local logarithm
 `fun p ↦ log (exp p.1 * exp p.2)` of `exp p.1 * exp p.2`. -/
-def localBCH [hA : CompleteSpace A] : Germ (𝓝 ((0, 0) : A × A)) A :=
+def localBCH [hR : NormedAlgebra ℝ A] [hA : CompleteSpace A] : Germ (𝓝 ((0, 0) : A × A)) A :=
+  let _ := hR
   let _ := hA
   (fun p : A × A ↦ log (exp p.1 * exp p.2) : A × A → A)
 
 /-- `localBCH` is the germ of `fun p ↦ log (exp p.1 * exp p.2)`. -/
-theorem localBCH_def [CompleteSpace A] :
+theorem localBCH_def [NormedAlgebra ℝ A] [CompleteSpace A] :
     localBCH A =
       (↑(fun p : A × A ↦ log (exp p.1 * exp p.2)) :
         Germ (𝓝 ((0, 0) : A × A)) A) :=
@@ -67,7 +68,7 @@ theorem localBCH_def [CompleteSpace A] :
 
 /-- The local Baker--Campbell--Hausdorff germ takes the value zero at the origin. -/
 @[simp]
-theorem localBCH_value [CompleteSpace A] : (localBCH A).value = 0 := by
+theorem localBCH_value [NormedAlgebra ℝ A] [CompleteSpace A] : (localBCH A).value = 0 := by
   simp [localBCH]
 
 variable [NormedAlgebra ℝ A] [CompleteSpace A]
