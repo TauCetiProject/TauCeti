@@ -119,14 +119,16 @@ theorem integral_verticalRegion
   exact integral_indicator measurableSet_Icc
 
 omit [NormedSpace ℝ E] in
-private theorem integrableOn_comp_coordinateSwap
+/-- Coordinate swap transports integrability from a horizontal cell to its vertical cell. -/
+theorem integrableOn_comp_coordinateSwap
     (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
     IntegrableOn (R ∘ Complex.coordinateSwap) (verticalRegion a b lower upper) := by
   rw [← preimage_coordinateSwap_horizontalRegion]
   exact (Complex.measurePreserving_coordinateSwap.integrableOn_comp_preimage
     Complex.coordinateSwap.toMeasurableEquiv.measurableEmbedding).2 hR
 
-private theorem integral_comp_coordinateSwap_verticalRegion :
+/-- Coordinate swap transports the set integral from a vertical cell to its horizontal cell. -/
+theorem integral_comp_coordinateSwap_verticalRegion :
     (∫ z in verticalRegion a b lower upper, (R ∘ Complex.coordinateSwap) z) =
       ∫ z in horizontalRegion a b lower upper, R z := by
   simpa only [preimage_coordinateSwap_horizontalRegion, Function.comp_apply] using
