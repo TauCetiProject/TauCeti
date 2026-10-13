@@ -38,6 +38,7 @@ variable {ι : Type u} [Fintype ι] {n : ℕ} (h : Fintype.card ι = n + 1)
 
 /-- The attaching map of the `(n + 1)`-cell of `Sⁿ ∪_f Dⁿ⁺¹` is `f`, read through the
 identification `TauCeti.sphereMappingConeSkeletonHomeomorph` of the `n`-skeleton with `Sⁿ`. -/
+@[simp]
 theorem cellAttachingMap_sphereMappingConeTopCell_apply (x : TopCat.diskBoundary.{u} (n + 1)) :
     letI := sphereMappingConeCWComplex h f
     ConcreteCategory.hom (Y := TopCat.of (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞)))
