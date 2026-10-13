@@ -53,7 +53,7 @@ additive constant.
   `μ ⊗ ν`-almost everywhere, two pairs of potentials whose values equal the regularised cost of a
   common coupling differ by one additive constant.
 * `TauCeti.exists_entropicDualValue_eq_toReal_entropicTransportCost` and
-  `TauCeti.isGreatest_entropicDualValue`: strong duality with dual attainment by bounded
+  `TauCeti.isGreatest_entropicDualValue_integrable`: strong duality with dual attainment by bounded
   measurable potentials, for a bounded measurable cost and probability measures.
 * `TauCeti.exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost`: for a
   bounded measurable cost, the dual maximisers are unique up to one additive constant.
@@ -155,22 +155,22 @@ theorem measurable_entropicGibbsFactor (hc : Measurable c) (hφ : Measurable φ)
     (hψ : Measurable ψ) : Measurable (entropicGibbsFactor c ε φ ψ) :=
   Measurable.indicator (by fun_prop) (hc (measurableSet_singleton ∞).compl)
 
-/-- For finite measures, a measurable cost and bounded measurable potentials, the Gibbs factor
-is integrable against `μ ⊗ ν`: it is at most `exp ((C + C) / ε)`, since the cost is
-nonnegative. -/
-theorem integrable_entropicGibbsFactor_of_abs_le [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (hc : Measurable c) {C : ℝ} (hφ : Measurable φ) (hψ : Measurable ψ)
-    (hφC : ∀ x, |φ x| ≤ C) (hψC : ∀ y, |ψ y| ≤ C) :
+/-- For finite measures, a measurable cost and measurable potentials bounded above by `Cφ` and
+`Cψ`, the Gibbs factor is integrable against `μ ⊗ ν`: it is at most `exp ((Cφ + Cψ) / ε)`, since
+the cost is nonnegative. -/
+theorem integrable_entropicGibbsFactor_of_le [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (hc : Measurable c) {Cφ Cψ : ℝ} (hφ : Measurable φ) (hψ : Measurable ψ)
+    (hφC : ∀ x, φ x ≤ Cφ) (hψC : ∀ y, ψ y ≤ Cψ) :
     Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) := by
   refine Integrable.of_bound (measurable_entropicGibbsFactor hc hφ hψ).aestronglyMeasurable
-    (Real.exp ((C + C) / ε)) <| ae_of_all _ fun z ↦ ?_
+    (Real.exp ((Cφ + Cψ) / ε)) <| ae_of_all _ fun z ↦ ?_
   rw [Real.norm_eq_abs, abs_of_nonneg (entropicGibbsFactor_nonneg z)]
   by_cases hz : c z = ∞
   · rw [entropicGibbsFactor_of_eq_top hz]
     exact (Real.exp_pos _).le
   rw [entropicGibbsFactor_of_ne_top hz, Real.exp_le_exp]
   refine div_le_div_of_nonneg_right ?_ ε.coe_nonneg
-  linarith [le_of_abs_le (hφC z.1), le_of_abs_le (hψC z.2), (c z).toReal_nonneg]
+  linarith [hφC z.1, hψC z.2, (c z).toReal_nonneg]
 
 /-! ### The dual value -/
 
@@ -362,7 +362,8 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost (hc : Measurabl
   refine (hπ.entropicDualValue_eq_toReal_lintegral_add_mul_klDiv_iff hc.aemeasurable hε
     (.of_bound hφ.aestronglyMeasurable C (ae_of_all _ hφC))
     (.of_bound hψ.aestronglyMeasurable C (ae_of_all _ hψC))
-    (integrable_entropicGibbsFactor_of_abs_le hc hφ hψ hφC hψC)
+    (integrable_entropicGibbsFactor_of_le hc hφ hψ (fun x ↦ le_of_abs_le (hφC x))
+      (fun y ↦ le_of_abs_le (hψC y)))
     (hopt ▸ entropicTransportCost_ne_top_of_le hcB ε)).2 ?_
   rwa [entropicGibbsFactor_eq_of_forall_ne_top fun z ↦
     ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)]
@@ -370,7 +371,8 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost (hc : Measurabl
 /-- **Strong entropic duality for a bounded cost.** For probability measures, a bounded
 measurable cost and a positive temperature, the regularised transport cost is the greatest
 entropic dual value of integrable potentials with integrable Gibbs factor. -/
-theorem isGreatest_entropicDualValue (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) :
+theorem isGreatest_entropicDualValue_integrable (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hε : ε ≠ 0) :
     IsGreatest {r : ℝ | ∃ (φ : X → ℝ) (ψ : Y → ℝ), Integrable φ μ ∧ Integrable ψ ν ∧
         Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) ∧
         entropicDualValue c ε μ ν φ ψ = r}
@@ -379,7 +381,8 @@ theorem isGreatest_entropicDualValue (hc : Measurable c) (hcB : ∀ z, c z ≤ B
     exists_entropicDualValue_eq_toReal_entropicTransportCost (μ := μ) (ν := ν) hc hcB hε
   refine ⟨⟨φ, ψ, .of_bound hφ.aestronglyMeasurable C (ae_of_all _ hφC),
     .of_bound hψ.aestronglyMeasurable C (ae_of_all _ hψC),
-    integrable_entropicGibbsFactor_of_abs_le hc hφ hψ hφC hψC, h⟩, ?_⟩
+    integrable_entropicGibbsFactor_of_le hc hφ hψ (fun x ↦ le_of_abs_le (hφC x))
+      (fun y ↦ le_of_abs_le (hψC y)), h⟩, ?_⟩
   rintro r ⟨φ', ψ', hφ', hψ', hexp', rfl⟩
   exact entropicDualValue_le_toReal_entropicTransportCost
     (entropicTransportCost_ne_top_of_le hcB ε) hc.aemeasurable hε hφ' hψ' hexp'
