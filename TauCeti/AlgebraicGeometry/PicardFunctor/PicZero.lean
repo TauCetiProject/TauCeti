@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Relative
 public import Mathlib.CategoryTheory.Subfunctor.Basic
@@ -32,7 +32,9 @@ degree zero on every geometric fibre, the functor the Jacobian represents.
 
 On a fibre which is a proper integral curve over `Ω` with discrete valuation rings as
 codimension-one local rings, the fibre degree is additive (`relativePicardFiberDegree_mul`), by
-Riemann–Roch on that curve. For a scheme over a field which is not a proper curve,
+Riemann–Roch on that curve, and a class has fibre degree zero there exactly when its restriction
+lies in `Pic⁰` of the fibre, `LineBundleClass.picZero` (`relativePicardFiberDegree_mk_eq_zero_iff`).
+For a scheme over a field which is not a proper curve,
 `LineBundleClass.eulerDegree` takes the same junk values as the truncated Euler characteristic
 `Scheme.Modules.eulerCharBelow`; the definitions here make sense in general, but they are only
 the degree and `Pic⁰` for families of curves. Verifying the curve hypotheses on the geometric
@@ -48,6 +50,8 @@ degree in flat families, and representability are not treated here.
 * `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_map`: its naturality in `T`;
 * `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_mul`: its additivity on a fibre which is
   a curve;
+* `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_mk_eq_zero_iff`: on a fibre which is a
+  curve, degree zero is membership in `Pic⁰` of the fibre;
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroSubfunctor`: the subfunctor of classes of
   degree zero on every geometric fibre.
 
@@ -188,6 +192,34 @@ lemma relativePicardFiberDegree_mul {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω
         relativePicardFiberDegree_mk_eq_fiberDegree, fiberDegree, fiberDegree, fiberDegree,
         LineBundleClass.pullback_mul]
       exact LineBundleClass.eulerDegree_mul Ω hX _ _
+
+/-- **On a fibre which is a curve, degree zero is membership in `Pic⁰` of the fibre.** If the
+fibre `X_ξ = Spec Ω ×_S X` over `ξ : Spec Ω ⟶ T` is a proper integral curve over `Ω` whose
+codimension-one local rings are discrete valuation rings and whose `H¹(X_ξ, 𝒪)` is
+finite-dimensional, then the class of a line bundle on `X_T` has fibre degree zero at `ξ` exactly
+when its restriction to `X_ξ` lies in `Pic⁰ X_ξ` (`LineBundleClass.picZero`). -/
+lemma relativePicardFiberDegree_mk_eq_zero_iff {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
+    (ξ : Spec (.of Ω) ⟶ T.unop.left) [IsIntegral (pullback (ξ ≫ T.unop.hom) f)]
+    [IsNoetherian (pullback (ξ ≫ T.unop.hom) f)]
+    [∀ y : CodimensionOnePoint (pullback (ξ ≫ T.unop.hom) f),
+      IsDiscreteValuationRing ((pullback (ξ ≫ T.unop.hom) f).presheaf.stalk (y : _))]
+    [IsProper (pullback.fst (ξ ≫ T.unop.hom) f)]
+    (hX : ∀ y : ↥(pullback (ξ ≫ T.unop.hom) f), Order.coheight y ≤ 1)
+    (hH : letI : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
+      FiniteDimensional Ω
+        (Scheme.Modules.Cohomology (InvertibleSheaf.trivial (pullback (ξ ≫ T.unop.hom) f)).obj 1))
+    (a : LineBundleClass (pullback T.unop.hom f)) :
+    relativePicardFiberDegree f ξ (QuotientGroup.mk a) = 0 ↔
+      letI : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
+      haveI : IsProper (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω)) :=
+        inferInstanceAs (IsProper (pullback.fst (ξ ≫ T.unop.hom) f))
+      haveI : Fact (∀ y : ↥(pullback (ξ ≫ T.unop.hom) f), Order.coheight y ≤ 1) := ⟨hX⟩
+      haveI := hH
+      Additive.ofMul (LineBundleClass.pullback
+        (pullback.map (ξ ≫ T.unop.hom) f T.unop.hom f ξ (𝟙 X) (𝟙 S) (by simp) (by simp)) a) ∈
+        LineBundleClass.picZero Ω (pullback (ξ ≫ T.unop.hom) f) := by
+  rw [LineBundleClass.mem_picZero_iff, relativePicardFiberDegree_mk]
+  rfl
 
 /-- **Naturality of the fibre degree.** For a morphism `T' ⟶ T` over `S` and a point
 `ξ' : Spec Ω ⟶ T'`, the fibre degree at `ξ'` of the pullback of a section from `T` to `T'` is
