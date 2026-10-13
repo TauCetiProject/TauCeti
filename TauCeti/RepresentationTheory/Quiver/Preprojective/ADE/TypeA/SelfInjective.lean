@@ -205,7 +205,6 @@ private theorem signlessPreprojectiveAFrobeniusFunctional_valley_mul_valley
           signlessPreprojectiveAValley k a b m') =
       if m' = m then (-1) ^ (m * (b.val - m)) else 0 := by
   have ha := a.isLt
-  have hb := b.isLt
   have hn := DynkinType.rank_A n
   have hrev := Fin.val_rev a
   simp only [Finset.mem_Icc] at hm hm'

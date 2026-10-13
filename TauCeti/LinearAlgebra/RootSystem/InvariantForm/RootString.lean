@@ -111,7 +111,6 @@ theorem _root_.RootPairing.not_root_eq_add_nsmul_of_length_eq_of_two_le
     (hγ : length γ < 3 * length α)
     (hneg : P.root β ≠ -P.root α) (hn : 2 ≤ n)
     (h : P.root γ = P.root β + (n : ℤ) • P.root α) : False := by
-  have hn' : (2 : ℤ) ≤ n := by exact_mod_cast hn
   have hquad : 0 ≤ (n : ℤ) ^ 2 - n - 2 := by nlinarith
   have hne_or_eq : β = α ∨ β ≠ α := eq_or_ne β α
   have hp : P.pairing β α ∈ ({-1, 0, 1, 2} : Set ℤ) := by
@@ -255,7 +254,7 @@ theorem _root_.RootPairing.exists_short_midpoint_of_long_add_two_short
     ∃ δ : I, P.root δ = P.root β + P.root α ∧ length δ = 1 ∧
       P.chainBotCoeff α β = 0 ∧ P.chainTopCoeff α β = 2 ∧
       P.chainBotCoeff α δ = 1 ∧ P.chainTopCoeff α δ = 1 := by
-  obtain ⟨hp, hp', hγ⟩ := P.pairings_of_long_add_two_short length hsym
+  obtain ⟨hp, hp', _⟩ := P.pairings_of_long_add_two_short length hsym
     α β γ hα hβ hγ h
   have hne : α ≠ β := by
     intro hab

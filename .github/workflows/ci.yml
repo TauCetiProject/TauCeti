@@ -130,10 +130,12 @@ jobs:
           python3 scripts/test_structure_nudge.py
           python3 scripts/test_workflow_pins.py
           python3 scripts/test_queue_release.py
+          python3 scripts/test_pick_runner.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
           python3 scripts/test_bump_report.py
           python3 scripts/test_lint_scope.py
+          python3 scripts/test_bors_scope_approval.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py
@@ -364,6 +366,13 @@ jobs:
       # checks; the empty root makes that command linter skip every library module at this pin.
       - name: Header audit equivalence tests
         run: lake env python3 scripts/test_header_style.py
+
+      # The meta-import guard's fixtures, plus the invariant itself over the whole checkout.
+      # pr-build.yml runs the guard on a change's files only, so this post-merge pass is where
+      # a `meta import` that reached main some other way would surface. Headers alone: nothing
+      # here builds or imports a TauCeti module, and the whole library costs about 5 seconds.
+      - name: Meta-import guard tests and whole-library invariant
+        run: python3 scripts/test_check_meta_imports.py
 
       - name: Source style lint (copyright headers + text linters)
         run: bash scripts/lint-style.sh

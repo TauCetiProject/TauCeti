@@ -27,7 +27,8 @@ with no further computation.
 * `TauCeti.SplitTorus.characterRelabel`: the induced automorphism of the character lattice.
 * `TauCeti.SplitTorus.characterRelabelHom`: the same map, read in `FGCommGrpCat`.
 * `TauCeti.SplitTorus.relabelCoordinateMap`: the induced automorphism of the coordinate
-  Hopf algebra.
+  Hopf algebra, with `pointsMulEquiv_mapDomain_relabelCoordinateMap` describing its
+  action on algebra-valued points.
 * `TauCeti.SplitTorus.relabel`: the induced automorphism of the split-torus group scheme.
 * `TauCeti.SplitTorus.relabelIso`: the same automorphism as a bundled isomorphism.
 * `TauCeti.SplitTorus.schemePointsMulEquiv_relabel`: its action on coordinate tuples.
@@ -51,7 +52,7 @@ open CategoryTheory
 
 namespace TauCeti.SplitTorus
 
-universe u v
+universe u v w
 
 variable {sigma : Type u}
 
@@ -148,6 +149,25 @@ theorem hom_relabelCoordinateMap (τ : Equiv.Perm sigma) :
     (relabelCoordinateMap R τ).hom =
       MonoidAlgebra.mapDomainBialgHom R (characterRelabel τ) :=
   (rfl)
+
+/-- Coordinate relabelling sends a torus point's coordinate at `i` to its old
+coordinate at `τ i`. -/
+@[simp]
+theorem pointsMulEquiv_mapDomain_relabelCoordinateMap
+    {A : Type w} [CommRing A] [Algebra R A] (τ : Equiv.Perm sigma)
+    (p : WithConv (MonoidAlgebra R (Multiplicative (sigma →₀ ℤ)) →ₐ[R] A))
+    (i : sigma) :
+    pointsMulEquiv
+        (WithConv.toConv (p.ofConv.comp ↑(relabelCoordinateMap R τ).hom)) i =
+      pointsMulEquiv p (τ i) := by
+  apply Units.ext
+  rw [pointsMulEquiv_apply_coe, pointsMulEquiv_apply_coe,
+    WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    hom_relabelCoordinateMap]
+  rw [MonoidAlgebra.mapDomainBialgHom_single]
+  have h := characterRelabel_ofAdd τ (Finsupp.single i (1 : ℤ))
+  rw [Finsupp.equivMapDomain_single] at h
+  exact congrArg (fun x => p.ofConv (MonoidAlgebra.single x 1)) h
 
 /-- Coordinate relabelling is multiplicative in the permutation. -/
 @[simp]

@@ -34,9 +34,7 @@ while root negation does not change the reflection.
 
 ## References
 
-This file implements “Simple reflections generate” in Layer 2 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The argument follows the standard
-positive-root induction described there.
+The argument is the standard positive-root induction.
 -/
 
 public section

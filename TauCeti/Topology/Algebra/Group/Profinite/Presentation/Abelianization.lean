@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Compact
-public import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
+public import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 public import TauCeti.RingTheory.Valuation.FinsetDvd
 public import TauCeti.Topology.Algebra.Module.PiSpanSingleton
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization

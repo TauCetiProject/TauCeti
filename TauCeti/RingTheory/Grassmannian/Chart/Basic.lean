@@ -39,7 +39,8 @@ subfunctor `Module.Grassmannian.chartFunctor R x` of the Grassmannian functor, c
 
 These charts are the affine pieces from which the Grassmannian scheme is glued. That they are open
 subfunctors and cover the Grassmannian functor is proved in
-`TauCeti.RingTheory.Grassmannian.Chart.Locus`.
+`TauCeti.RingTheory.Grassmannian.Chart.Locus`, and the transition maps between them are constructed
+in `TauCeti.RingTheory.Grassmannian.Chart.Transition`.
 
 ## Main definitions
 
@@ -154,6 +155,12 @@ theorem toSubmodule_chartEquiv_symm_apply (x : Fin k → M)
 theorem chartEquiv_apply_apply_self (x : Fin k → M) (N : chart R x) (i : Fin k) :
     (chartEquiv R x N).1 (x i) = Pi.single i 1 :=
   (chartEquiv R x N).2 i
+
+/-- The linear map `M → R^k` attached to a point `N` of the chart at `x`, followed by
+`R^k ≃ M ⧸ N`, is the projection `M → M ⧸ N`. -/
+theorem chartQuotEquiv_chartEquiv_apply (x : Fin k → M) (N : chart R x) (m : M) :
+    chartQuotEquiv N ((chartEquiv R x N).1 m) = Submodule.Quotient.mk m := by
+  simp [chartEquiv]
 
 @[simp]
 theorem ker_chartEquiv_apply (x : Fin k → M) (N : chart R x) :
@@ -384,6 +391,16 @@ theorem chartHomEquiv_symm_apply_universalLinearMap (x : Fin k → M) {A : Type 
     (chartHomEquiv R x A).symm N (ChartAlgebra.universalLinearMap R x m j) =
       (chartEquiv A _ N).1 (1 ⊗ₜ m) j := by
   simp [chartHomEquiv]
+
+/-- The linear map `A ⊗[R] M → A^k` attached to the point of the chart at `x` classified by
+`g : ChartAlgebra R x →ₐ[R] A` sends `1 ⊗ₜ m` to the image under `g` of the universal point at
+`m`. -/
+@[simp]
+theorem chartEquiv_chartHomEquiv_apply_tmul (x : Fin k → M) {A : Type w} [CommRing A]
+    [Algebra R A] (g : ChartAlgebra R x →ₐ[R] A) (m : M) (j : Fin k) :
+    (chartEquiv A _ (chartHomEquiv R x A g)).1 (1 ⊗ₜ m) j =
+      g (ChartAlgebra.universalLinearMap R x m j) := by
+  rw [← chartHomEquiv_symm_apply_universalLinearMap, Equiv.symm_apply_apply]
 
 /-- `chartHomEquiv` is natural: composing with `f : A → B` corresponds to base change of points
 along `f`. -/

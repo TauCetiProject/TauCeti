@@ -11,14 +11,14 @@ public import TauCeti.RingTheory.PowerSeries.Derivative
 /-!
 # Scalar towers, the product rule, and residues of `φⁿ dφ` for Laurent series
 
-The `R`-algebra structure on `R⸨X⸩` is the one inherited from `R⟦X⟧` through
-`HahnSeries.ofPowerSeries`, so its scalar action is multiplication by the image of a constant
-power series. This is propositionally, but not definitionally, equal to the coefficientwise
+For an `R`-algebra `A`, the `R`-algebra structure on `A⸨X⸩` is the one inherited from `A⟦X⟧`
+through `HahnSeries.ofPowerSeries`, so its scalar action is multiplication by the image of a
+constant power series. This is propositionally, but not definitionally, equal to the coefficientwise
 action `HahnSeries.instSMul` found by default.
 
-This file records that the algebra actions form a scalar tower `R → R⟦X⟧ → R⸨X⸩`. This is what
+This file records that the algebra actions form a scalar tower `R → A⟦X⟧ → A⸨X⸩`. This is what
 fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require to extend an
-`R`-algebra equivalence with `R⟦X⟧` to one with `R⸨X⸩`.
+`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
@@ -36,14 +36,16 @@ uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
 
 ## Main results
 
-* `TauCeti.LaurentSeries.isScalarTower_powerSeries`: the algebra actions of `R` on `R⟦X⟧` and
-  `R⸨X⸩` form a scalar tower.
+* `TauCeti.LaurentSeries.isScalarTower_powerSeries`: the algebra actions of `R` on `A⟦X⟧` and
+  `A⸨X⸩` form a scalar tower.
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative`: the derivative of Laurent series extends that of power series.
+* `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
+  `m`, so does `f' - m X⁻¹ f`.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` of order one is `1` if `n = -1` and `0` otherwise.
 
@@ -61,11 +63,11 @@ namespace TauCeti.LaurentSeries
 
 variable {R : Type*} [CommSemiring R]
 
-/-- The constant scalars on `R⸨X⸩` factor through `R⟦X⟧`. The scalar actions are stated through
-the algebra structures, since the `R`-algebra structure on `R⸨X⸩` is the one inherited from
-`R⟦X⟧` rather than the coefficientwise action. -/
-instance isScalarTower_powerSeries :
-    @IsScalarTower R R⟦X⟧ R⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
+/-- For an `R`-algebra `A`, the scalars of `R` on `A⸨X⸩` factor through `A⟦X⟧`. The scalar
+actions are stated through the algebra structures, since the `R`-algebra structure on `A⸨X⸩` is
+the one inherited from `A⟦X⟧` rather than the coefficientwise action. -/
+instance isScalarTower_powerSeries {A : Type*} [CommSemiring A] [Algebra R A] :
+    @IsScalarTower R A⟦X⟧ A⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
   .of_algebraMap_eq' rfl
 
 /-- Multiplying a Laurent series by a constant of the `R`-algebra structure on `R⸨X⸩` multiplies
@@ -159,6 +161,30 @@ theorem derivative_mul (f g : R⸨X⸩) :
   simp only [Derivation.leibniz, smul_eq_mul, PowerSeries.coe_add, PowerSeries.coe_mul]
   rw [hd, hab]
   ring
+
+/-- The derivative of `f` agrees with `m X⁻¹ f` up to a correction whose coefficient of `Xⁿ` is
+`(n + 1 - m)` times the coefficient of `Xⁿ⁺¹` in `f`. -/
+theorem coeff_derivative_sub_zsmul_single_mul (m n : ℤ) (f : R⸨X⸩) :
+    (derivative R f - m • (single (-1) 1 * f)).coeff n =
+      ((n + 1 - m : ℤ) : R) * f.coeff (n + 1) := by
+  rw [coeff_sub, coeff_smul, coeff_single_mul, derivative_apply, hasseDeriv_coeff,
+    Ring.choose_one_right, sub_neg_eq_add, one_mul, zsmul_eq_mul, zsmul_eq_mul]
+  push_cast
+  ring
+
+/-- **Differentiation lowers the order by at most one, with leading term `m X⁻¹ f`.** If `f` has
+valuation at most `exp (-m)`, that is, vanishes to order at least `m`, then `f' - m X⁻¹ f` again
+vanishes to order at least `m`. -/
+theorem valuation_derivative_sub_zsmul_single_mul_le {K : Type*} [Field K] {m : ℤ} {f : K⸨X⸩}
+    (hf : Valued.v f ≤ WithZero.exp (-m)) :
+    Valued.v (derivative K f - m • (single (-1) 1 * f)) ≤ WithZero.exp (-m) := by
+  rw [valuation_le_iff_coeff_lt_eq_zero] at hf ⊢
+  intro n hn
+  rw [coeff_derivative_sub_zsmul_single_mul]
+  -- Below `m - 1` the coefficient of `f` vanishes; at `m - 1` the integer factor does.
+  rcases lt_or_eq_of_le (show n + 1 ≤ m by omega) with h | h
+  · rw [hf _ h, mul_zero]
+  · simp [h]
 
 end LaurentSeries
 

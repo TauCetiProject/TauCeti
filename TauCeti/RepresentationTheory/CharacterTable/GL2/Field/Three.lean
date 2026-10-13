@@ -16,6 +16,8 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NormalForm
 import TauCeti.FieldTheory.Quadratic
 -- Non-public: the canonical additive character is nontrivial.
 import TauCeti.NumberTheory.LegendreSymbol.Complex
+-- Non-public: multiplicative characters take the value `1` or `-1` at `-1`.
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # The character table of `GL₂(𝔽₃)`
@@ -175,8 +177,6 @@ theorem bijective_gl2FieldThreeClassIndex (hF : Fintype.card F = 3) :
     Function.Bijective (gl2FieldThreeClassIndex F) := by
   obtain ⟨h3, h1, -, -⟩ := fieldThree_facts hF
   have h2 : (2 : F) = -1 := by linear_combination h3
-  have hm2 : (-2 : F) = 1 := by linear_combination -h3
-  have h0 : (0 : F) ≠ -1 := (neg_ne_zero.mpr one_ne_zero).symm
   refine Function.Injective.bijective_of_nat_card_le (fun i j h => ?_) ?_
   · fin_cases i <;> fin_cases j <;> simp_all [Units.ext_iff]
   · simp [Nat.card_units, hF]
@@ -299,7 +299,8 @@ private theorem exists_linear_row (α : Fˣ →* ℂˣ) :
     ∃ k, ∀ j, ((GL2CharacterParam.linear (E := E) α).classFunction : GL (Fin 2) F → ℂ)
       (conjRepGLFinTwo (gl2FieldThreeClassIndex F j)) = gl2FieldThreeCharacterTable k j := by
   simp only [GL2CharacterParam.coe_classFunction_linear, character_GL2Linear]
-  rcases val_apply_neg_one_eq_one_or_eq_neg_one (α := α) with hα | hα
+  obtain hα | hα : (α (-1) : ℂ) = 1 ∨ (α (-1) : ℂ) = -1 :=
+    ((Units.coeHom ℂ).comp α).map_neg_one_eq_one_or_eq_neg_one
   · refine ⟨0, fun j => ?_⟩
     fin_cases j <;> simp [det_companionGL, hα]
   · refine ⟨1, fun j => ?_⟩
@@ -313,7 +314,8 @@ private theorem exists_steinbergTwist_row (hF : Fintype.card F = 3) {u : Eˣ}
   simp only [GL2CharacterParam.coe_classFunction_steinbergTwist, character_GL2SteinbergTwist]
   simp only [character_conjRepGLFinTwo_gl2FieldThreeClassIndex hF hu (GL2Steinberg F),
     character_GL2Steinberg_gl2FieldThreeNormalForm hF hu]
-  rcases val_apply_neg_one_eq_one_or_eq_neg_one (α := α) with hα | hα
+  obtain hα | hα : (α (-1) : ℂ) = 1 ∨ (α (-1) : ℂ) = -1 :=
+    ((Units.coeHom ℂ).comp α).map_neg_one_eq_one_or_eq_neg_one
   · refine ⟨5, fun j => ?_⟩
     fin_cases j <;> simp [det_companionGL, hα]
   · refine ⟨6, fun j => ?_⟩
@@ -337,9 +339,11 @@ private theorem exists_principalSeries_row (hF : Fintype.card F = 3) {u : Eˣ}
       · simp
       · exact Units.ext h
   have hprod : (α (-1) : ℂ) * β (-1) = -1 ∧ (β (-1) : ℂ) + α (-1) = 0 := by
-    rcases val_apply_neg_one_eq_one_or_eq_neg_one (α := α) with ha | ha <;>
-      rcases val_apply_neg_one_eq_one_or_eq_neg_one (α := β) with hb | hb <;>
-      simp_all
+    have ha : (α (-1) : ℂ) = 1 ∨ (α (-1) : ℂ) = -1 :=
+      ((Units.coeHom ℂ).comp α).map_neg_one_eq_one_or_eq_neg_one
+    have hb : (β (-1) : ℂ) = 1 ∨ (β (-1) : ℂ) = -1 :=
+      ((Units.coeHom ℂ).comp β).map_neg_one_eq_one_or_eq_neg_one
+    rcases ha with ha | ha <;> rcases hb with hb | hb <;> simp_all
   have hab : (1 : Fˣ) ≠ -1 := fun h => h1 (by simpa using congrArg Units.val h)
   refine ⟨7, fun j => ?_⟩
   rw [GL2CharacterParam.coe_classFunction_principalSeries_mk,

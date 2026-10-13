@@ -61,6 +61,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
+* `ContDiffOn.continuousOn_laplacian`: the Laplacian of a `C²` function on an open set is
+  continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
   directional derivatives along an orthonormal basis.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
@@ -73,6 +75,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
   `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
+* `HasCompactSupport.laplacian`: the Laplacian of a compactly supported function is compactly
+  supported.
 -/
 
 public section
@@ -93,6 +97,18 @@ theorem laplacian_eq_traceL (f : E → F) (x : E) :
       (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i)))
         (fderiv ℝ (fderiv ℝ f) x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
+
+/-- The Laplacian of a function of class `C²` on an open set is continuous there. -/
+theorem _root_.ContDiffOn.continuousOn_laplacian {f : E → F} {s : Set E} (hf : ContDiffOn ℝ 2 f s)
+    (hs : IsOpen s) : ContinuousOn (Δ f) s :=
+  ((ContinuousLinearMap.continuous _).comp_continuousOn
+    ((hf.fderiv_of_isOpen hs (by norm_num)).continuousOn_fderiv_of_isOpen hs le_rfl)).congr
+    fun x _ => laplacian_eq_traceL f x
+
+/-- The Laplacian of a function of class `C²` is continuous. -/
+theorem _root_.ContDiff.continuous_laplacian {f : E → F} (hf : ContDiff ℝ 2 f) :
+    Continuous (Δ f) :=
+  continuousOn_univ.1 (hf.contDiffOn.continuousOn_laplacian isOpen_univ)
 
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/
@@ -405,5 +421,10 @@ theorem tsupport_laplacian_subset (f : E → F) : tsupport (Δ f) ⊆ tsupport f
   have h0 : Δ f =ᶠ[𝓝 x] Δ (fun _ : E => (0 : F)) :=
     laplacian_congr_nhds (notMem_tsupport_iff_eventuallyEq.mp hxf)
   exact hx (by simpa using h0.eq_of_nhds)
+
+/-- The Laplacian of a function with compact support has compact support. -/
+theorem _root_.HasCompactSupport.laplacian {f : E → F} (hf : HasCompactSupport f) :
+    HasCompactSupport (Δ f) :=
+  hf.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset f))
 
 end TauCeti

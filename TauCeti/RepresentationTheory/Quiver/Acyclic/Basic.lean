@@ -126,7 +126,7 @@ theorem vertices_nodup (h : Quiver.IsAcyclic V) {a b : V} (p : Path a b) :
     rw [Path.vertices_cons, List.nodup_concat]
     refine ⟨?_, ih⟩
     intro he
-    obtain ⟨p₁, p₂, hp⟩ := p.exists_eq_comp_of_mem_vertices he
+    obtain ⟨p₁, p₂, _⟩ := p.exists_eq_comp_of_mem_vertices he
     have hlength := h.length_eq_zero (p₂.cons e)
     rw [Path.length_cons] at hlength
     omega

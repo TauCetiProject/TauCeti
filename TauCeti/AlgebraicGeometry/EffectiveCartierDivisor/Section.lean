@@ -88,7 +88,6 @@ private lemma exists_ker_ideal_eq_span_singleton (hs : s ≫ f = 𝟙 S) [QuasiC
     (by simpa [hsf] using e₂ hxV₂)
   set W := S.basicOpen c
   set V := X.basicOpen (f.appLE W₂ V₂ e₂ c)
-  have hWa : IsAffineOpen W := W₂.2.basicOpen c
   have hVa : IsAffineOpen V := V₂.2.basicOpen _
   have hV : V = V₂.1 ⊓ f ⁻¹ᵁ W := Scheme.basicOpen_appLE f V₂ W₂ e₂ c
   have e : V ≤ f ⁻¹ᵁ W := hV ▸ inf_le_right
@@ -192,12 +191,12 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X S T : Scheme.{u}} {f : X ⟶ S}
 
-/-- **Sums of sections of a relative curve commute with base change.** Let `f : X ⟶ S` be flat,
-and let finitely many sections of `f`, each a closed immersion, pass through an open subscheme
+/-- **Sums of sections of a relative curve commute with base change.** Let finitely many sections
+of `f : X ⟶ S`, each a closed immersion, pass through an open subscheme
 `U ⊆ X` on which `f` is smooth of relative dimension one. For every `g : T ⟶ S`, the divisor
 `s₁ + ⋯ + sₙ` of the base-changed sections `T ⟶ X ×_S T` is a relative effective Cartier
 divisor over `T`. The sections need not be disjoint. -/
-theorem isRelativeEffectiveCartier_prod_ker_pullback_section [Flat f] {ι : Type*}
+theorem isRelativeEffectiveCartier_prod_ker_pullback_section {ι : Type*}
     (t : Finset ι) (h : ι → SplitEpi f) [∀ i, IsClosedImmersion (h i).section_] (U : X.Opens)
     (hU : ∀ i ∈ t, Set.range (h i).section_ ⊆ U) [SmoothOfRelativeDimension 1 (U.ι ≫ f)]
     (g : T ⟶ S) :

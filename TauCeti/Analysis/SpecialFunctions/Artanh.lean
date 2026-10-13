@@ -55,6 +55,7 @@ follows from the inversion `Real.tanh_artanh` together with the addition formula
 * `Real.self_le_artanh` and `Real.artanh_le_self_div_one_sub_sq` — the two-sided comparison
   `x ≤ artanh x ≤ x / (1 - x ^ 2)` on `[0, 1)`, obtained by bounding that integrand between
   its values at the two endpoints.
+* `Real.tanh_le_self` — the inverse form `tanh x ≤ x` of the lower bound, for `0 ≤ x`.
 
 The motivation is the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`),
 whose layer L2 asks for the hyperbolic (Poincaré) metric on the unit disc. Tau Ceti's
@@ -297,6 +298,12 @@ theorem _root_.Real.self_le_artanh {x : ℝ} (hx : 0 ≤ x) (hx₁ : x < 1) : x 
         have ht₂ : t < 1 := lt_of_le_of_lt ht.2 hx₁
         have hpos : (0 : ℝ) < 1 - t ^ 2 := by nlinarith [ht.1]
         exact (one_le_inv₀ hpos).2 (by nlinarith [ht.1])
+
+/-- **The hyperbolic tangent lies below the identity on `[0, ∞)`.** This is
+`Real.self_le_artanh` evaluated at `tanh x`, which lies in `[0, 1)`. -/
+theorem _root_.Real.tanh_le_self {x : ℝ} (hx : 0 ≤ x) : Real.tanh x ≤ x := by
+  simpa only [Real.artanh_tanh] using
+    Real.self_le_artanh (Real.tanh_nonneg hx) (Real.tanh_lt_one x)
 
 /-- **The elementary upper bound `artanh x ≤ x / (1 - x ^ 2)` on `[0, 1)`**: the Poincaré
 density `(1 - t ^ 2)⁻¹` is increasing, so on `[0, x]` it is at most its value at `x`. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 import TauCeti.RingTheory.Valuation.FinsetDvd
-import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
+import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
 # Elementary automorphisms of a free pro-`p` group and the exponent vector of a relator

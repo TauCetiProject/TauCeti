@@ -87,8 +87,6 @@ theorem logDeriv_comp_ofComplex_S_transform [SlashInvariantFormClass F Γ k] (f 
     logDeriv (⇑f ∘ ofComplex) w =
       logDeriv (⇑f ∘ ofComplex) (-1 / w) / w ^ 2 - k / w := by
   have hw0 : w ≠ 0 := fun h ↦ absurd hw (by simp [h])
-  have him : 0 < (-1 / w).im := by
-    simpa [neg_div, one_div, inv_neg] using (⟨w, hw⟩ : ℍ).im_inv_neg_coe_pos
   have h_eq_nhd : (fun v ↦ (⇑f ∘ ofComplex) (-1 / v)) =ᶠ[nhds w]
       fun v ↦ v ^ k * (⇑f ∘ ofComplex) v := by
     filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds hw] with v hv

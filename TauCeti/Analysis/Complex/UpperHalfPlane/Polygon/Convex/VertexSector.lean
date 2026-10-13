@@ -189,6 +189,34 @@ theorem eventuallyEq_carrier_vertexSector_atImInfty {j : Fin n} (hj : P.vertex j
   rw [hj, inr_mem_extLeftHalfPlane_iff] at hi
   exact eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane hi
 
+/-- The interior of a polygon with a vertex at infinity meets every horodisc at infinity. -/
+theorem exists_mem_interior_carrier_im_gt_of_vertex_eq_inr_infty {j : Fin n}
+    (hj : P.vertex j = .inr ∞) (A : ℝ) :
+    ∃ z ∈ interior P.carrier, A < z.im := by
+  obtain ⟨B, hB⟩ := (atImInfty_mem _).1
+    (P.eventuallyEq_carrier_vertexSector_atImInfty hj).mem_iff
+  let t : ℝ := max (max A B) 0 + 1
+  have ht : 0 < t := by dsimp [t]; linarith [le_max_right (max A B) 0]
+  let w : ℍ := ⟨(toComplex (P.vertex (j + 1))).re + t * Complex.I, by simpa using ht⟩
+  have hwim : w.im = t := by simp [w]
+  have hwA : A < w.im := by
+    rw [hwim]
+    dsimp [t]
+    linarith [le_max_left A B, le_max_left (max A B) 0]
+  have hwB : B ≤ w.im := by
+    rw [hwim]
+    dsimp [t]
+    linarith [le_max_right A B, le_max_left (max A B) 0]
+  have hwP : w ∈ P.carrier := (hB w hwB).2
+    ((P.mem_vertexSector_iff_of_vertex_eq_inr_infty hj w).2
+      ⟨by simp [w], by simpa [w] using
+        (P.re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty hj).le⟩)
+  -- The closed strip gives a point of the tile; the open horodisc also meets its interior.
+  rw [← P.closure_interior_carrier] at hwP
+  obtain ⟨z, hzA, hzP⟩ := mem_closure_iff.1 hwP {z : ℍ | A < z.im}
+    (isOpen_lt continuous_const UpperHalfPlane.continuous_im) hwA
+  exact ⟨z, hzP, hzA⟩
+
 /-! ### The sector in angular coordinates -/
 
 variable {P}
@@ -314,8 +342,8 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
   -- `φ - α`, a real number in `(-π, π)` once `0 ≤ φ`
   obtain ⟨D, hD⟩ : ∃ D, D = geodesicLine (rayToward z (P.vertex (j + 1))) 1 := ⟨_, rfl⟩
   obtain ⟨E, hE⟩ : ∃ E, E = geodesicLine (rayToward z (P.vertex (j - 1))) 1 := ⟨_, rfl⟩
-  have hφ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
-  have hφ' := Real.Angle.toReal_le_pi (orientedAngle z D w)
+  have _ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
+  have _ := Real.Angle.toReal_le_pi (orientedAngle z D w)
   have hEw : orientedAngle z E w =
       (((orientedAngle z D w).toReal - P.interiorAngle j : ℝ) : Real.Angle) := by
     rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
@@ -324,7 +352,7 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
   rw [mem_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw, Ne, Ne,
     ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, not_lt,
     Set.mem_Icc]
-  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₀⟩⟩
+  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, _⟩ ↦ ⟨?_, h₀⟩⟩
   · by_contra hlt
     rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h₁
     exact h₁ ⟨by linarith, by linarith⟩
@@ -345,8 +373,8 @@ theorem mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo {j : Fin n} {
   -- as for the closed sector, the oriented angle from the incoming ray `E` is `φ - α`
   obtain ⟨D, hD⟩ : ∃ D, D = geodesicLine (rayToward z (P.vertex (j + 1))) 1 := ⟨_, rfl⟩
   obtain ⟨E, hE⟩ : ∃ E, E = geodesicLine (rayToward z (P.vertex (j - 1))) 1 := ⟨_, rfl⟩
-  have hφ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
-  have hφ' := Real.Angle.toReal_le_pi (orientedAngle z D w)
+  have _ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
+  have _ := Real.Angle.toReal_le_pi (orientedAngle z D w)
   have hEw : orientedAngle z E w =
       (((orientedAngle z D w).toReal - P.interiorAngle j : ℝ) : Real.Angle) := by
     rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
@@ -355,7 +383,7 @@ theorem mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo {j : Fin n} {
   rw [mem_interior_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw,
     ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, Set.mem_Ioo,
     Set.mem_Ioo]
-  refine ⟨fun ⟨h₁, h₀, _⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₀, by linarith⟩⟩
+  refine ⟨fun ⟨h₁, h₀, _⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, _⟩ ↦ ⟨?_, h₀, by linarith⟩⟩
   · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h₁
     linarith
   · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩]

@@ -242,6 +242,22 @@ theorem indSubtypeEquivPi_ρ_apply [S.FiniteIndex] (A : Rep.{max w u} k S) (g : 
   rw [indSubtypeEquivPi_apply, indSubtypeEquivPi_apply, Rep.hom_comm_apply]
   exact coindSubtypeEquivPi_ρ_apply A g _ q
 
+/-- An induced morphism acts coordinatewise in the right-coset model of induction. -/
+theorem _root_.Rep.indSubtypeEquivPi_indMap [S.FiniteIndex]
+    {V W : Rep.{max w u} k S} (f : V ⟶ W)
+    (x : Rep.ind S.subtype V) (q : Quotient (QuotientGroup.rightRel S)) :
+    indSubtypeEquivPi W ((Rep.indMap S.subtype f).hom x) q =
+      f.hom (indSubtypeEquivPi V x q) := by
+  let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
+  have h := (Rep.indCoindNatIso.{w, u, v} k S).hom.naturality f
+  have hx := congrArg (fun m ↦ (m.hom x).1 q.out) h
+  rw [indSubtypeEquivPi_apply, indSubtypeEquivPi_apply]
+  have hn : ((Rep.indCoindIso W).hom.hom ((Rep.indMap S.subtype f).hom x)).1 q.out =
+      ((Rep.coindMap S.subtype f).hom ((Rep.indCoindIso V).hom.hom x)).1 q.out := by
+    simpa only [Rep.indCoindNatIso_hom_app, Rep.indFunctor_map, Rep.coindFunctor_map,
+      Rep.hom_comp, Representation.IntertwiningMap.comp_apply] using hx
+  exact hn.trans (Representation.coindMap_coe_apply_apply S.subtype V.ρ W.ρ f.hom _ q.out)
+
 /-- **Induction from a finite-index subgroup preserves finiteness** of the underlying module. -/
 instance finite_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [Finite A] :
     Finite (Rep.ind S.subtype A) :=
