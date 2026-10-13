@@ -42,6 +42,9 @@ how far `σ` is from `π.fitLaw f μ`.
   law `μ` under `π.fitLaw f μ`.
 * `MeasureTheory.Measure.fitLaw_eq_self`: a measure under which `f` already has law `μ` is its
   own projection.
+* `MeasureTheory.Measure.rnDeriv_fitLaw` and `MeasureTheory.Measure.fitLaw_withDensity`: the
+  projection has density `dμ/d(f₊π) ∘ f` against `π`, so a law with density `g` against `f₊π` is
+  fitted by the density `g ∘ f`.
 * `MeasureTheory.Measure.fitLaw_apply_singleton`: on spaces with measurable singletons, the
   projection multiplies the mass of each point `ω` by `μ {f ω} / π.map f {f ω}`;
   `MeasureTheory.Measure.fitLaw_real_singleton` is the same for real masses.
@@ -91,6 +94,20 @@ theorem fitLaw_def (π : Measure Ω) (f : Ω → X) (μ : Measure X) :
 /-- The projection only reweights `π`, so it is absolutely continuous with respect to `π`. -/
 theorem fitLaw_absolutelyContinuous : π.fitLaw f μ ≪ π :=
   withDensity_absolutelyContinuous _ _
+
+/-- The density of the projection against `π` is the density of `μ` against the law of `f`,
+evaluated at `f`. -/
+theorem rnDeriv_fitLaw [SigmaFinite π] (hf : Measurable f) :
+    (π.fitLaw f μ).rnDeriv π =ᵐ[π] fun ω ↦ μ.rnDeriv (π.map f) (f ω) := by
+  rw [fitLaw_def]
+  exact rnDeriv_withDensity _ ((measurable_rnDeriv _ _).comp hf)
+
+/-- Projecting onto a law with density `g` against the law of `f` reweights `π` by `g ∘ f`. -/
+theorem fitLaw_withDensity [SigmaFinite (π.map f)] (hf : Measurable f) {g : X → ℝ≥0∞}
+    (hg : AEMeasurable g (π.map f)) :
+    π.fitLaw f ((π.map f).withDensity g) = π.withDensity fun ω ↦ g (f ω) := by
+  rw [fitLaw_def]
+  exact withDensity_congr_ae (ae_of_ae_map hf.aemeasurable (rnDeriv_withDensity₀ _ hg))
 
 /-- The law of `f` under `π.fitLaw f μ` is the law of `f` under `π` reweighted by `dμ/d(f₊π)`,
 which is the absolutely continuous part of `μ` when `μ` has a Lebesgue decomposition with
@@ -183,9 +200,7 @@ private theorem llr_ae_eq_llr_comp_add [IsFiniteMeasure π] [IsFiniteMeasure σ]
     llr σ π =ᵐ[σ] fun ω ↦ llr μ (π.map f) (f ω) + llr σ (π.fitLaw f μ) ω := by
   have := isFiniteMeasure_fitLaw (π := π) (μ := μ) hf
   have hσπ : σ ≪ π := h.trans fitLaw_absolutelyContinuous
-  have hdens : (π.fitLaw f μ).rnDeriv π =ᵐ[π] fun ω ↦ μ.rnDeriv (π.map f) (f ω) := by
-    rw [fitLaw_def]
-    exact rnDeriv_withDensity _ ((measurable_rnDeriv _ _).comp hf)
+  have hdens := rnDeriv_fitLaw (π := π) (μ := μ) hf
   have hlaw : ∀ᵐ ω ∂σ, 0 < μ.rnDeriv (π.map f) (f ω) ∧ μ.rnDeriv (π.map f) (f ω) < ∞ := by
     refine ae_of_ae_map (p := fun x ↦ 0 < μ.rnDeriv (π.map f) x ∧ μ.rnDeriv (π.map f) x < ∞)
       hf.aemeasurable ?_
