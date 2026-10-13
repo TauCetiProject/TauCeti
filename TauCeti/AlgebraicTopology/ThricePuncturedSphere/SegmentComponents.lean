@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborh
 
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Algebra.Module.LocallyConvex
+import TauCeti.Analysis.Complex.OpenSegment
 import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
@@ -74,21 +75,10 @@ dessin of a cover are drawn: the preimage of the open segment `openSegment ℝ 0
 def unitSegment : Set ThricePuncturedSphere :=
   ((↑) : ThricePuncturedSphere → ℂ) ⁻¹' openSegment ℝ 0 1
 
-/-- A point of `ℂ` lies on the open segment from `0` to `1` exactly when it is real and strictly
-between `0` and `1`. -/
-private theorem mem_openSegment_zero_one {w : ℂ} :
-    w ∈ openSegment ℝ (0 : ℂ) 1 ↔ w.im = 0 ∧ 0 < w.re ∧ w.re < 1 := by
-  rw [openSegment_eq_image]
-  constructor
-  · rintro ⟨θ, ⟨h0, h1⟩, rfl⟩
-    simp [h0, h1]
-  · rintro ⟨him, h0, h1⟩
-    refine ⟨w.re, ⟨h0, h1⟩, Complex.ext ?_ ?_⟩ <;> simp [him]
-
 @[simp]
 theorem mem_unitSegment {z : ThricePuncturedSphere} :
     z ∈ unitSegment ↔ (z : ℂ).im = 0 ∧ 0 < (z : ℂ).re ∧ (z : ℂ).re < 1 :=
-  mem_openSegment_zero_one
+  Complex.mem_openSegment_zero_one
 
 /-- The basepoint `1/2` lies on the segment `(0, 1)`. -/
 theorem basePt_mem_unitSegment : basePt ∈ unitSegment := by
@@ -119,8 +109,8 @@ private theorem isSimplyConnected_preimage_coe {T : Set ℂ} (hT : Convex ℝ T)
 /-- The segment `(0, 1)` is simply connected. -/
 theorem isSimplyConnected_unitSegment : IsSimplyConnected unitSegment :=
   isSimplyConnected_preimage_coe (convex_openSegment 0 1)
-    ⟨1 / 2, mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩⟩
-    fun _ hw => (mem_openSegment_zero_one.1 hw).2
+    ⟨1 / 2, Complex.mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩⟩
+    fun _ hw => (Complex.mem_openSegment_zero_one.1 hw).2
 
 /-- The segment `(0, 1)` is locally path connected, being homeomorphic to a convex set of `ℂ`. -/
 instance : LocallyPathConnectedSpace unitSegment := by
@@ -131,7 +121,7 @@ instance : LocallyPathConnectedSpace unitSegment := by
       openSegment ℝ 0 1 := by
     refine (range_comp ((↑) : ThricePuncturedSphere → ℂ) ((↑) : unitSegment → _)).trans ?_
     rw [Subtype.range_coe]
-    exact image_coe_preimage_coe fun _ hw => (mem_openSegment_zero_one.1 hw).2
+    exact image_coe_preimage_coe fun _ hw => (Complex.mem_openSegment_zero_one.1 hw).2
   exact (hf.toHomeomorph.trans (Homeomorph.setCongr hrange)).symm.locallyPathConnectedSpace
 
 /-- The part `(0, 1/2)` of the segment inside the punctured neighborhood of `0` is simply
@@ -149,8 +139,8 @@ private theorem isSimplyConnected_unitSegment_inter_puncturedNeighborhoodZero :
   rw [hset]
   refine isSimplyConnected_preimage_coe ((convex_openSegment 0 1).inter
       (hball ▸ convex_ball 0 (1 / 2)))
-    ⟨1 / 4, mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
-    fun _ hw => (mem_openSegment_zero_one.1 hw.1).2
+    ⟨1 / 4, Complex.mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
+    fun _ hw => (Complex.mem_openSegment_zero_one.1 hw.1).2
   rw [mem_ofPred_eq]
   norm_num [Complex.norm_div]
 
@@ -169,8 +159,8 @@ private theorem isSimplyConnected_unitSegment_inter_puncturedNeighborhoodOne :
   rw [hset]
   refine isSimplyConnected_preimage_coe ((convex_openSegment 0 1).inter
       (hball ▸ convex_ball 1 (1 / 2)))
-    ⟨3 / 4, mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
-    fun _ hw => (mem_openSegment_zero_one.1 hw.1).2
+    ⟨3 / 4, Complex.mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
+    fun _ hw => (Complex.mem_openSegment_zero_one.1 hw.1).2
   have h : (3 / 4 : ℂ) - 1 = -(1 / 4) := by norm_num
   rw [mem_ofPred_eq, h, norm_neg]
   norm_num [Complex.norm_div]
