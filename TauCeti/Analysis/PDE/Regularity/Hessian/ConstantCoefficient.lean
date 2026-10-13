@@ -20,8 +20,8 @@ this file proves
 
 `‖D²u‖_{Lᵖ} ≤ (C / λ) ‖L_A u‖_{Lᵖ}`
 
-for every Schwartz function `u` on `ℝⁿ`, real valued or with values in a complex Hilbert space,
-with a constant `C` depending only on `n` and `p`
+for every Schwartz function `u` on `ℝⁿ`, real valued or with values in a fixed complex Hilbert
+space `F`, with a constant `C` depending only on `n` and `p`, and on `F` in the Hilbert-space case
 (`TauCeti.PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv` and
 `TauCeti.PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real`). The
 constant does not depend on `A` beyond the lower ellipticity constant `λ`; no upper bound on `A`
@@ -130,13 +130,13 @@ end Transfer
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
   {p : ℝ≥0∞}
 
-/-- **The Calderón–Zygmund estimate for constant-coefficient operators.** Let `n ≥ 3` and
-`1 < p < ∞`. There is a constant `C`, depending only on `n` and `p`, such that for every matrix `A`
-with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`,
+/-- **The Calderón–Zygmund estimate for constant-coefficient operators.** Let `n ≥ 3`, let
+`1 < p < ∞`, and let `F` be a complex Hilbert space. There is a constant `C`, depending only on `n`,
+`p` and `F`, such that for every matrix `A` with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`,
 
 `‖D²u‖_{Lᵖ} ≤ (C / λ) ‖∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu‖_{Lᵖ}`
 
-for every Schwartz function `u` on `ℝⁿ` with values in a complex Hilbert space. -/
+for every Schwartz function `u` on `ℝⁿ` with values in `F`. -/
 theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv (hn : 3 ≤ n)
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
