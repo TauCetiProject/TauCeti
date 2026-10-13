@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.MeasureTheory.Function.LpSpace.Translation
+import TauCeti.MeasureTheory.Function.Lp.Translation
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 

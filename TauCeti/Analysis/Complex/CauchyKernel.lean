@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.NormRpow
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import TauCeti.MeasureTheory.Function.LpSpace.Translation
+import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
 # Planar Cauchy kernel estimates
