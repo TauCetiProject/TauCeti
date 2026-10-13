@@ -46,6 +46,26 @@ namespace ContDiffBump
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- Rescaling by `2^{-j}` turns an upper bound `‖ξ‖ ≤ 2^j r` into `‖2^{-j} ξ‖ ≤ r`. -/
+private lemma norm_two_zpow_inv_smul_le_iff {j : ℤ} {ξ : E} {r : ℝ} :
+    ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ ≤ r ↔ ‖ξ‖ ≤ 2 ^ j * r := by
+  rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _), div_le_iff₀ (zpow_pos two_pos _),
+    mul_comm]
+
+/-- Rescaling by `2^{-j}` turns a lower bound `2^j r ≤ ‖ξ‖` into `r ≤ ‖2^{-j} ξ‖`. -/
+private lemma le_norm_two_zpow_inv_smul_iff {j : ℤ} {ξ : E} {r : ℝ} :
+    r ≤ ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ ↔ 2 ^ j * r ≤ ‖ξ‖ := by
+  rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _), le_div_iff₀ (zpow_pos two_pos _),
+    mul_comm]
+
+/-- Rescaling by `2^{-j}` shrinks a vector at least as much as rescaling by `2^{1-j}`. -/
+private lemma norm_two_zpow_inv_smul_le_sub_one (j : ℤ) (ξ : E) :
+    ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ ≤ ‖((2 : ℝ) ^ (j - 1))⁻¹ • ξ‖ := by
+  rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _),
+    norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _)]
+  exact div_le_div_of_nonneg_left (norm_nonneg _) (zpow_pos two_pos _)
+    (zpow_le_zpow_right₀ one_le_two (by omega))
+
 section HasContDiffBump
 
 variable [HasContDiffBump E] (φ : ContDiffBump (0 : E))
@@ -71,15 +91,8 @@ theorem contDiff_littlewoodPaley {n : ℕ∞} (j : ℤ) : ContDiff ℝ n (φ.lit
 are `1`. -/
 theorem littlewoodPaley_eq_zero_of_norm_le {j : ℤ} {ξ : E}
     (hξ : ‖ξ‖ ≤ 2 ^ (j - 1) * φ.rIn) : φ.littlewoodPaley j ξ = 0 := by
-  have hj : (0 : ℝ) < 2 ^ (j - 1) := zpow_pos two_pos _
-  have h1 : ‖((2 : ℝ) ^ (j - 1))⁻¹ • ξ‖ ≤ φ.rIn := by
-    rw [norm_inv_smul_of_nonneg hj.le, div_le_iff₀ hj, mul_comm]
-    exact hξ
-  have h2 : ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ ≤ φ.rIn := by
-    refine le_trans ?_ h1
-    rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _), norm_inv_smul_of_nonneg hj.le]
-    exact div_le_div_of_nonneg_left (norm_nonneg _) hj
-      (zpow_le_zpow_right₀ one_le_two (by omega))
+  have h1 : ‖((2 : ℝ) ^ (j - 1))⁻¹ • ξ‖ ≤ φ.rIn := norm_two_zpow_inv_smul_le_iff.2 hξ
+  have h2 := (norm_two_zpow_inv_smul_le_sub_one j ξ).trans h1
   rw [littlewoodPaley_apply, φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h1),
     φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h2), sub_self]
 
@@ -87,16 +100,8 @@ theorem littlewoodPaley_eq_zero_of_norm_le {j : ℤ} {ξ : E}
 are `0`. -/
 theorem littlewoodPaley_eq_zero_of_le_norm {j : ℤ} {ξ : E}
     (hξ : 2 ^ j * φ.rOut ≤ ‖ξ‖) : φ.littlewoodPaley j ξ = 0 := by
-  have hj : (0 : ℝ) < 2 ^ (j - 1) := zpow_pos two_pos _
-  have h1 : φ.rOut ≤ ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ := by
-    rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _), le_div_iff₀ (zpow_pos two_pos _),
-      mul_comm]
-    exact hξ
-  have h2 : φ.rOut ≤ ‖((2 : ℝ) ^ (j - 1))⁻¹ • ξ‖ := by
-    refine h1.trans ?_
-    rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _), norm_inv_smul_of_nonneg hj.le]
-    exact div_le_div_of_nonneg_left (norm_nonneg _) hj
-      (zpow_le_zpow_right₀ one_le_two (by omega))
+  have h1 : φ.rOut ≤ ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ := le_norm_two_zpow_inv_smul_iff.2 hξ
+  have h2 := h1.trans (norm_two_zpow_inv_smul_le_sub_one j ξ)
   rw [littlewoodPaley_apply, φ.zero_of_le_dist (by rwa [dist_zero_right]),
     φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_self]
 
@@ -149,14 +154,8 @@ private lemma exists_Ioc_littlewoodPaley {ξ : E} (hξ : ξ ≠ 0) :
       refine φ.littlewoodPaley_eq_zero_of_norm_le (hb'.trans ?_)
       exact mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by omega))
         φ.rIn_pos.le
-  · refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
-    rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _), div_le_iff₀ (zpow_pos two_pos _),
-      mul_comm]
-    exact hb'
-  · refine φ.zero_of_le_dist ?_
-    rw [dist_zero_right, norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _),
-      le_div_iff₀ (zpow_pos two_pos _), mul_comm]
-    exact ha'
+  · exact φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 (norm_two_zpow_inv_smul_le_iff.2 hb'))
+  · exact φ.zero_of_le_dist (by rw [dist_zero_right]; exact le_norm_two_zpow_inv_smul_iff.2 ha')
 
 /-- **The Littlewood–Paley partition of unity.** For `ξ ≠ 0`, `∑ⱼ ψⱼ ξ = 1`, the sum having
 only finitely many nonzero terms. -/
@@ -188,7 +187,6 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaley_le (k : ℕ) :
     rw [iteratedFDeriv_comp_const_smul c φ.contDiff, norm_smul, norm_pow, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_left (hM _) (by positivity)
   refine ⟨(1 + 2 ^ k) * M, by positivity, fun j ξ ↦ ?_⟩
-  have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos _
   have hsub : ‖iteratedFDeriv ℝ k (φ.littlewoodPaley j) ξ‖ ≤
       ‖iteratedFDeriv ℝ k (fun y ↦ φ (((2 : ℝ) ^ j)⁻¹ • y)) ξ‖ +
         ‖iteratedFDeriv ℝ k (fun y ↦ φ (((2 : ℝ) ^ (j - 1))⁻¹ • y)) ξ‖ := by
@@ -199,8 +197,8 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaley_le (k : ℕ) :
         ((φ.contDiff.comp (contDiff_const_smul _)).contDiffAt)]
     exact norm_sub_le _ _
   refine hsub.trans ((add_le_add (hterm _ ξ) (hterm _ ξ)).trans_eq ?_)
-  rw [abs_inv, abs_inv, abs_of_pos h2j, abs_of_pos (zpow_pos two_pos _), zpow_sub_one₀ two_ne_zero,
-    mul_inv, inv_inv, mul_pow, inv_pow]
+  rw [zpow_sub_one₀ two_ne_zero]
+  simp only [abs_inv, abs_mul, abs_zpow, abs_two, inv_pow, mul_pow]
   field_simp
 
 end FiniteDimensional

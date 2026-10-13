@@ -128,7 +128,8 @@ private lemma norm_iteratedFDeriv_le_of_mem_tsupport_littlewoodPaley {A : ℝ} (
   have hρ : 0 < 2 ^ (j - 1) * φ.rIn := mul_pos (zpow_pos two_pos _) φ.rIn_pos
   refine (hmA ξ (norm_pos_iff.1 (hρ.trans_le hann.1))).trans ?_
   have heq : A * (2 / φ.rIn) ^ l / (2 ^ j) ^ l = A / (2 ^ (j - 1) * φ.rIn) ^ l := by
-    rw [zpow_sub_one₀ two_ne_zero, div_pow, mul_pow, mul_pow, inv_pow]
+    rw [zpow_sub_one₀ two_ne_zero]
+    simp only [div_pow, mul_pow, inv_pow]
     field_simp
   rw [heq]
   exact div_le_div_of_nonneg_left hA (pow_pos hρ _) (pow_le_pow_left₀ hρ.le hann.1 _)
