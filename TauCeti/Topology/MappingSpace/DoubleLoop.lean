@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
+public import TauCeti.Topology.Sphere.Suspension
 
 /-!
 # The double loop space inside the free loop space of the loop space
@@ -41,9 +42,6 @@ noncomputable section
 open Metric Topology
 
 namespace TauCeti
-
-/-- The unit circle `S¹ ⊆ ℝ²`. -/
-abbrev Sphere1 : Type := sphere (0 : EuclideanSpace ℝ (Fin 2)) 1
 
 namespace BasedTopologicalSpace
 
