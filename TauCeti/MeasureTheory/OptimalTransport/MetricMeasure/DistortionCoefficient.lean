@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.SineRatio
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # The distortion coefficients `σ_{K,N}^{(t)}(θ)` and `τ_{K,N}^{(t)}(θ)`
@@ -306,25 +307,20 @@ theorem distortionTau_one_of_nonpos (h : K * θ ^ 2 ≤ 0) :
     distortionTau K 1 t θ = ENNReal.ofReal t := by
   rw [distortionTau, ite_eq_right (lt_irrefl 1), ite_eq_right h.not_gt]
 
-/-- The product `t ^ (1 / N) s ^ (1 - 1 / N)` is `t` when `s = t`. -/
-private theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) (hN : 1 < N) :
-    x ^ (1 / N) * x ^ (1 - 1 / N) = x := by
-  have h : 1 / N ≤ 1 := (div_le_one (zero_lt_one.trans hN)).2 hN.le
-  rw [← ENNReal.rpow_add_of_nonneg _ _ (by positivity) (sub_nonneg.2 h), add_sub_cancel,
-    ENNReal.rpow_one]
-
 /-- The flat coefficient `τ_{0,N}^{(t)}(θ)` is `t`. -/
 @[simp]
 theorem distortionTau_zero_left (hN : 1 ≤ N) : distortionTau 0 N t θ = ENNReal.ofReal t := by
   rcases hN.lt_or_eq with hN | rfl
-  · rw [distortionTau_of_one_lt hN, distortionSigma_zero_left, rpow_mul_rpow_one_sub _ hN]
+  · rw [distortionTau_of_one_lt hN, distortionSigma_zero_left, ENNReal.rpow_mul_rpow_one_sub _
+      (one_div_nonneg.2 (zero_le_one.trans hN.le)) ((div_le_one (zero_lt_one.trans hN)).2 hN.le)]
   · exact distortionTau_one_of_nonpos (by rw [zero_mul])
 
 /-- At distance `0` the coefficient `τ_{K,N}^{(t)}(0)` is `t`. -/
 @[simp]
 theorem distortionTau_zero_right (hN : 1 ≤ N) : distortionTau K N t 0 = ENNReal.ofReal t := by
   rcases hN.lt_or_eq with hN | rfl
-  · rw [distortionTau_of_one_lt hN, distortionSigma_zero_right, rpow_mul_rpow_one_sub _ hN]
+  · rw [distortionTau_of_one_lt hN, distortionSigma_zero_right, ENNReal.rpow_mul_rpow_one_sub _
+      (one_div_nonneg.2 (zero_le_one.trans hN.le)) ((div_le_one (zero_lt_one.trans hN)).2 hN.le)]
   · exact distortionTau_one_of_nonpos (by rw [zero_pow two_ne_zero, mul_zero])
 
 /-- For `t ∈ [0, 1]` and `N ≥ 1`, `τ_{K,N}^{(t)}(θ)` is monotone in the curvature bound `K`. -/
