@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Unramified
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 public import TauCeti.AlgebraicGeometry.GroupScheme.Etale
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 
@@ -58,9 +57,7 @@ theorem etale_mulBy_left_of_forall_intCast_ne_zero {S : Scheme.{u}}
   have := E.isFinite_mulBy_left hn₀
   have := E.flat_mulBy_left hn₀
   have := E.surjective_mulBy_left hn₀
-  have := E.flat_torsion_hom hn₀
-  have := E.formallyUnramified_torsion_hom hn
-  have hT := Etale.of_formallyUnramified_of_flat (E.torsion n).X.hom
+  have hT := E.etale_torsion_hom_of_forall_intCast_ne_zero hn
   have : Surjective (Grp.ofHom (E.mulBy n)).hom.hom.left := by
     simpa only [Grp.ofHom_hom_hom] using E.surjective_mulBy_left hn₀
   have : Flat (Grp.ofHom (E.mulBy n)).hom.hom.left := by

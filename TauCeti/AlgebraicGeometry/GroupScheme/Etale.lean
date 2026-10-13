@@ -13,8 +13,9 @@ import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair
 # Étale homomorphisms and their kernels
 
 A faithfully flat, quasi-compact homomorphism of group schemes is étale if and only if
-its scheme-theoretic kernel is étale over the base. This criterion applies over arbitrary
-schemes and does not require commutativity, smoothness, or finiteness of either group.
+its scheme-theoretic kernel is étale over the base. An étale homomorphism always has an étale
+kernel, without the fpqc hypotheses. This criterion applies over arbitrary schemes and does
+not require commutativity, smoothness, or finiteness of either group.
 
 The kernel is the fibre over the identity, giving the forward implication. The identity
 `G ×_H G ≅ ker(f) ×_S G`, with its second projection, gives the converse by fpqc descent
@@ -38,6 +39,13 @@ namespace CategoryTheory.Grp
 
 variable {S : Scheme.{u}} {G H : Grp (Over S)}
 
+/-- The scheme-theoretic kernel of an étale homomorphism is étale over the base. -/
+theorem etale_kernel_hom (f : G ⟶ H) (hf : Etale f.hom.hom.left) :
+    Etale (kernel f).X.hom := by
+  simpa only [Over.forget_map, Over.toUnit_left] using
+    MorphismProperty.of_isPullback (P := @Etale)
+      ((TauCeti.GroupScheme.isPullback_kernel_hom f).map (Over.forget S)) hf
+
 /-- An fpqc homomorphism of group schemes is étale exactly when its kernel is étale over
 the base. The kernel is scheme-theoretic, so infinitesimal points are included. -/
 theorem etale_iff_etale_kernel (f : G ⟶ H) [Surjective f.hom.hom.left]
@@ -45,9 +53,7 @@ theorem etale_iff_etale_kernel (f : G ⟶ H) [Surjective f.hom.hom.left]
     Etale f.hom.hom.left ↔ Etale (kernel f).X.hom := by
   have hk := TauCeti.GroupScheme.isPullback_kernel_hom f
   constructor
-  · intro hf
-    simpa only [Over.forget_map, Over.toUnit_left] using
-      MorphismProperty.of_isPullback (P := @Etale) (hk.map (Over.forget S)) hf
+  · exact etale_kernel_hom f
   · intro hK
     let := hK
     have h := (TauCeti.isPullback_mul_of_isPullback_one f.hom.hom
