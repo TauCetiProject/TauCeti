@@ -33,7 +33,9 @@ and `vᵢ`, which is realized by unitaries of `F` and `E`. This set contains the
 multiple of `∑ᵢ σᵢ(A) wᵢ ⊗ vᵢ`.
 
 Two consequences follow. Since `σᵢ(C A) ≤ ‖C‖ σᵢ(A)`, Fan dominance gives the **ideal
-inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`.
+inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`. Applied to the
+inverse of a map `C` bounded below by `c > 0`, they give the reverse inequalities
+`c N A ≤ N (C A)` and `c N A ≤ N (A C)`.
 
 ## Main results
 
@@ -42,6 +44,9 @@ inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖
 * `TauCeti.UnitarilyInvariantSeminorm.map_le_of_kyFanSum_le`: Fan dominance.
 * `TauCeti.UnitarilyInvariantSeminorm.map_comp_le_left`,
   `TauCeti.UnitarilyInvariantSeminorm.map_comp_le_right`: the ideal inequalities.
+* `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_map_comp_left`,
+  `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_map_comp_right`: the reverse ideal inequalities
+  for factors bounded below.
 
 ## References
 
@@ -171,5 +176,46 @@ theorem map_comp_le_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A : E →�
     (LinearMap.norm_adjoint_apply_le hc hC)
   rwa [compAdjoint_apply, compAdjoint_apply, ← LinearMap.adjoint_comp, LinearMap.adjoint_adjoint,
     LinearMap.adjoint_adjoint] at h
+
+/-- A linear endomorphism bounded below by `c > 0` is invertible, with inverse bounded by `c⁻¹`. -/
+private theorem exists_comp_eq_id_of_mul_norm_le {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V] {C : V →ₗ[𝕜] V} {c : ℝ} (hc : 0 < c)
+    (hC : ∀ v, c * ‖v‖ ≤ ‖C v‖) :
+    ∃ G : V →ₗ[𝕜] V, C ∘ₗ G = .id ∧ G ∘ₗ C = .id ∧ ∀ v, ‖G v‖ ≤ c⁻¹ * ‖v‖ := by
+  have hinj : Function.Injective C := (injective_iff_map_eq_zero C).mpr fun v hv ↦
+    norm_eq_zero.mp <| le_antisymm (nonpos_of_mul_nonpos_right (by simpa [hv] using hC v) hc)
+      (norm_nonneg v)
+  set e := LinearEquiv.ofInjectiveEndo C hinj
+  refine ⟨e.symm, LinearEquiv.ofInjectiveEndo_right_inv C hinj,
+    LinearEquiv.ofInjectiveEndo_left_inv C hinj, fun v ↦ ?_⟩
+  rw [le_inv_mul_iff₀ hc]
+  have hv : C (e.symm v) = v := by
+    rw [← LinearEquiv.coe_ofInjectiveEndo C hinj]
+    exact e.apply_symm_apply v
+  simpa [hv] using hC (e.symm v)
+
+/-- **Reverse ideal inequality, left factor.** If `c * ‖y‖ ≤ ‖C y‖` for every `y`, then
+`c * N A ≤ N (C A)` for every unitarily invariant seminorm `N`. -/
+theorem mul_map_le_map_comp_left (N : UnitarilyInvariantSeminorm 𝕜 E F) (C : F →ₗ[𝕜] F)
+    (A : E →ₗ[𝕜] F) {c : ℝ} (hC : ∀ y, c * ‖y‖ ≤ ‖C y‖) : c * N A ≤ N (C ∘ₗ A) := by
+  rcases le_or_gt c 0 with hc | hc
+  · exact (mul_nonpos_of_nonpos_of_nonneg hc (apply_nonneg _ _)).trans (apply_nonneg _ _)
+  -- `A = C⁻¹ (C A)` and `C⁻¹` has operator norm at most `c⁻¹`.
+  obtain ⟨G, -, hGC, hG⟩ := exists_comp_eq_id_of_mul_norm_le hc hC
+  have h := N.map_comp_le_left G (C ∘ₗ A) hG
+  rw [← LinearMap.comp_assoc, hGC, LinearMap.id_comp] at h
+  rwa [le_inv_mul_iff₀ hc] at h
+
+/-- **Reverse ideal inequality, right factor.** If `c * ‖x‖ ≤ ‖C x‖` for every `x`, then
+`c * N A ≤ N (A C)` for every unitarily invariant seminorm `N`. -/
+theorem mul_map_le_map_comp_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A : E →ₗ[𝕜] F)
+    (C : E →ₗ[𝕜] E) {c : ℝ} (hC : ∀ x, c * ‖x‖ ≤ ‖C x‖) : c * N A ≤ N (A ∘ₗ C) := by
+  rcases le_or_gt c 0 with hc | hc
+  · exact (mul_nonpos_of_nonpos_of_nonneg hc (apply_nonneg _ _)).trans (apply_nonneg _ _)
+  -- `A = (A C) C⁻¹` and `C⁻¹` has operator norm at most `c⁻¹`.
+  obtain ⟨G, hCG, -, hG⟩ := exists_comp_eq_id_of_mul_norm_le hc hC
+  have h := N.map_comp_le_right (A ∘ₗ C) G hG
+  rw [LinearMap.comp_assoc, hCG, LinearMap.comp_id] at h
+  rwa [le_inv_mul_iff₀ hc] at h
 
 end TauCeti.UnitarilyInvariantSeminorm

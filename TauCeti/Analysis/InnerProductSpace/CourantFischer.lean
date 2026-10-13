@@ -23,6 +23,8 @@ form domination and Weyl's perturbation bound.
 
 * `LinearMap.IsSymmetric.re_inner_apply_self_eq_sum_eigenvalues_mul_sq`:
   diagonal expansion of the Rayleigh form in an eigenbasis.
+* `LinearMap.IsSymmetric.sq_norm_apply_eq_sum_of_eigenbasis`:
+  diagonal expansion of `‖T x‖²` in an eigenbasis.
 * `LinearMap.IsSymmetric.exists_unit_vector_re_inner_le_eigenvalue` and
   `LinearMap.IsSymmetric.exists_submodule_forall_unit_eigenvalue_le_re_inner`:
   the two min–max directions.
@@ -88,6 +90,20 @@ theorem re_inner_apply_self_eq_sum_of_eigenbasis
     rw [RCLike.inner_apply, hrepr i, map_mul, RCLike.conj_ofReal, mul_left_comm,
       RCLike.mul_conj]
   rw [key, RCLike.ofReal_re]
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The squared norm in any orthonormal eigenbasis: if `S (w i) = μ i • w i` for all `i`, then
+`‖S x‖ ^ 2 = ∑ i, μ i ^ 2 * ‖w.repr x i‖ ^ 2`. -/
+theorem sq_norm_apply_eq_sum_of_eigenbasis
+    (hS : S.IsSymmetric) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
+    (hw : ∀ i, S (w i) = (μ i : 𝕜) • w i) (x : E) :
+    ‖S x‖ ^ 2 = ∑ i : Fin n, μ i ^ 2 * ‖w.repr x i‖ ^ 2 := by
+  have hrepr : ∀ i, w.repr (S x) i = (μ i : 𝕜) * w.repr x i := by
+    intro i
+    rw [w.repr_apply_apply, w.repr_apply_apply, ← hS (w i) x, hw i, inner_smul_left,
+      RCLike.conj_ofReal]
+  rw [← sum_sq_norm_repr_eq_sq_norm w (S x)]
+  simp_rw [hrepr, norm_mul, RCLike.norm_ofReal, mul_pow, sq_abs]
 
 omit [FiniteDimensional 𝕜 E] in
 /-- On the span of the eigenvectors selected by `s`, the quadratic form is
