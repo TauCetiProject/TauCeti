@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Invariant.Galois
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Decomposition
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified.Basic
 
 /-!
 # The inertia group and inertia field of a place, and the residue action
@@ -82,6 +83,8 @@ order of the decomposition group, and the decomposition field — is in
   `TauCeti.Place.eq_of_restrict_inertiaField_eq`: over its inertia field a place is fixed by the
   whole Galois group, which acts trivially on its residues, and it is the only place above its
   restriction.
+* `TauCeti.Place.finrank_inertiaField_eq_ramificationIdx_mul_finInsepDegree`: unconditionally,
+  `[F' : T] = e · f_ins`.
 * `TauCeti.Place.finrank_inertiaField`, `TauCeti.Place.ramificationIdx_inertiaField`,
   `TauCeti.Place.ramificationIdx_restrict_inertiaField`,
   `TauCeti.Place.isTotallyRamified_inertiaField`, `TauCeti.Place.relativeDegree_inertiaField` and
@@ -94,6 +97,8 @@ order of the decomposition group, and the decomposition field — is in
 * `TauCeti.Place.ramificationIdx_restrict_eq_relIndex`: with separable residue extension, the
   ramification index of the restriction of a place to `E` is the relative index of the
   automorphisms fixing `E` in the inertia group.
+* `TauCeti.Place.le_inertiaField_iff`: an intermediate field lies in the inertia field of a place
+  exactly when the restriction of the place to it is unramified, with no separability assumption.
 
 ## References
 
@@ -575,6 +580,13 @@ theorem finrank_inertiaField_eq_card :
   rw [inertiaField, IntermediateField.finrank_fixedField_eq_card,
     Subgroup.card_map_of_injective (Subgroup.subtype_injective _)]
 
+/-- **The unconditional degree of `F'` over the inertia field** (Stichtenoth, Theorem 3.8.2): it
+is the ramification index times the inseparable residue degree. -/
+theorem finrank_inertiaField_eq_ramificationIdx_mul_finInsepDegree :
+    Module.finrank (inertiaField F P) F' =
+      ramificationIdx F P * Field.finInsepDegree (P.restrict k F).ResidueField P.ResidueField := by
+  rw [finrank_inertiaField_eq_card, card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree]
+
 variable [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
 
 /-- **The degree of `F'` over the inertia field is `e(P ∣ P ∩ F)`** (Stichtenoth, Theorem 3.8.2),
@@ -663,6 +675,44 @@ theorem map_restrictScalarsHom_fixingSubgroup_inertiaField (E : IntermediateFiel
       exact congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨σ', hE⟩) x
     have hτ : τ ∈ Q.integers.decompositionSubgroup E := (hdec τ).mpr (hτσ ▸ σ'.2)
     exact ⟨_, ⟨⟨τ, hτ⟩, (hiner ⟨τ, hτ⟩ σ' hτσ.symm).mpr hσ', rfl⟩, hτσ⟩
+
+/-- **The inertia field is the largest subextension in which a place is unramified**
+(compare Stichtenoth, Section III.8): an intermediate field `E` lies in the inertia field of `Q`
+exactly when the restriction of `Q` to `E` is unramified over `F`, with ramification index one
+and separable residue extension. No separability of the residue extension of `Q` itself is
+assumed. -/
+theorem le_inertiaField_iff (E : IntermediateField F F') :
+    E ≤ inertiaField F Q ↔ IsUnramified k F (Q.restrict k E) := by
+  -- The orders of the inertia groups of `Q` over `F` and over `E`, read inside `F' ≃ₐ[F] F'`.
+  have hcardF : Nat.card (inertiaField F Q).fixingSubgroup = ramificationIdx F Q *
+      Field.finInsepDegree (Q.restrict k F).ResidueField Q.ResidueField := by
+    rw [IsGalois.card_fixingSubgroup_eq_finrank,
+      finrank_inertiaField_eq_ramificationIdx_mul_finInsepDegree]
+  have hcardE : Nat.card ↥(E.fixingSubgroup ⊓ (inertiaField F Q).fixingSubgroup) =
+      ramificationIdx E Q * Field.finInsepDegree (Q.restrict k E).ResidueField Q.ResidueField := by
+    rw [← map_restrictScalarsHom_fixingSubgroup_inertiaField,
+      Subgroup.card_map_of_injective (AlgEquiv.restrictScalarsHom_injective F),
+      IsGalois.card_fixingSubgroup_eq_finrank,
+      finrank_inertiaField_eq_ramificationIdx_mul_finInsepDegree]
+  -- Both factors are multiplicative in the tower `F ⊆ E ⊆ F'`, so the order of the inertia group
+  -- over `F` is that over `E` times `e · f_ins` of `Q ∩ E` over `F`.
+  rw [ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) Q,
+    finInsepDegree_residueField_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) Q,
+    mul_mul_mul_comm, ← hcardE] at hcardF
+  have hpos : 0 < Nat.card ↥(E.fixingSubgroup ⊓ (inertiaField F Q).fixingSubgroup) :=
+    Nat.card_pos
+  rw [isUnramified_iff, isSeparable_iff_finInsepDegree_eq_one, ← mul_eq_one, inertiaField,
+    IntermediateField.le_iff_le, ← fixingSubgroup_inertiaField, ← inf_eq_right]
+  constructor
+  · intro h
+    have hcard : Nat.card ↥(E.fixingSubgroup ⊓ (inertiaField F Q).fixingSubgroup) =
+        Nat.card (inertiaField F Q).fixingSubgroup := by
+      rw [h]
+    rw [← hcard] at hcardF
+    exact (Nat.mul_eq_left hpos.ne').mp hcardF.symm
+  · intro h
+    rw [h, mul_one] at hcardF
+    exact Subgroup.eq_of_le_of_card_ge inf_le_right hcardF.le
 
 variable [Algebra.IsSeparable (Q.restrict k F).ResidueField Q.ResidueField]
 

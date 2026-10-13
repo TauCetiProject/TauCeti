@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.RingTheory.DedekindDomain.Different
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified.Basic
 import Mathlib.RingTheory.Finiteness.Quotient
 -- Non-public: `TauCeti.Place.isIntegral_integers_algebraMap` puts the constants into the local
 -- model, in a proof below only.
@@ -55,6 +56,8 @@ the statement.
   `e(P' ∣ P) = d(P' ∣ P) + 1`, holding exactly at the tame places.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_iff`: `e(P' ∣ P) ≤ d(P' ∣ P)` exactly at the
   wild places (Stichtenoth, Corollary 3.5.5).
+* `TauCeti.Place.differentExponent_eq_zero_iff_isUnramified`: `d(P' ∣ P) = 0` exactly at the
+  unramified places.
 * `TauCeti.Place.relativeDegree_eq_one_of_isSepClosed_of_differentExponent_eq_zero`: a place with
   zero different exponent over a separably closed residue field has relative degree one.
 * `TauCeti.Divisor.coeff_different_add_one_eq_ramificationIdx_iff` and
@@ -282,6 +285,23 @@ theorem ramificationIdx_eq_differentExponent_add_one_iff :
   have hiff : ramificationIdx F P' = differentExponent k F P' + 1 ↔
       ¬ ramificationIdx F P' ≤ differentExponent k F P' := ⟨fun _ ↦ by omega, fun _ ↦ by omega⟩
   rw [hiff, ramificationIdx_le_differentExponent_iff, IsWild, not_not]
+
+/-- **A place has different exponent zero exactly when it is unramified**, with ramification
+index one and separable residue extension (Stichtenoth, Theorem 3.5.1). -/
+theorem differentExponent_eq_zero_iff_isUnramified (P' : Place k F') :
+    differentExponent k F P' = 0 ↔ IsUnramified k F P' := by
+  have hle := ramificationIdx_le_differentExponent_add_one k F P'
+  have hpos := ramificationIdx_pos F P'
+  rw [isUnramified_iff]
+  constructor
+  · intro hd
+    have he : ramificationIdx F P' = 1 := by omega
+    have htame := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mp (by omega)
+    exact ⟨he, ((isTame_iff_isSeparable_residueField k F P').mp htame).1⟩
+  · rintro ⟨he, hsep⟩
+    have htame := (isTame_iff_isSeparable_residueField k F P').mpr ⟨hsep, by simp [he]⟩
+    have := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mpr htame
+    omega
 
 /-- If the residue field of the place below `P'` is separably closed and the different exponent
 of `P'` vanishes, then the relative residue degree of `P'` is one. -/
