@@ -182,7 +182,6 @@ noncomputable def tensorRepresentableBy :
   homEquiv := Equiv.ofBijective (D.tensorMap R) ⟨D.tensorMap_injective R, D.tensorMap_surjective R⟩
   homEquiv_comp f g := D.tensorMap_comp R f g
 
-@[simp]
 theorem tensorRepresentableBy_homEquiv {X : EllObj B}
     (f : X ⟶ U.baseChangeFunctor.obj (D.rep U)) :
     (D.tensorRepresentableBy R).homEquiv f =
