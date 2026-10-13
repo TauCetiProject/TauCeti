@@ -123,6 +123,40 @@ theorem affineRayCharacter_apply (n : Fin 1 → ℤ) :
   rw [affineRayCharacter, coe_dualSemigroupCoord]
   simp [rayBasis, Pi.basisFun_repr]
 
+/-- Every character of the positive-ray semigroup is a natural multiple of its standard
+character; the coefficient is its value at the primitive lattice generator. -/
+theorem eq_nsmul_affineRayCharacter
+    (m : dualSemigroup (isIntegralLattice_intCast 1) affineRayCone) :
+    m = ((m : (Fin 1 → ℤ) →+ ℤ) 1).toNat • affineRayCharacter := by
+  have hm : 0 ≤ (m : (Fin 1 → ℤ) →+ ℤ) 1 := by
+    have h := (mem_dualSemigroup _ _).1 m.2
+      (x := ((Int.castAddHom ℝ).compLeft (Fin 1)) (1 : Fin 1 → ℤ))
+      (by simp)
+    rw [IsIntegralLattice.realCharacter_apply] at h
+    exact_mod_cast h
+  apply Subtype.ext
+  apply DFunLike.ext
+  intro n
+  have hn : n = n 0 • (1 : Fin 1 → ℤ) := by
+    ext j
+    simp [Subsingleton.elim j 0]
+  rw [hn, map_zsmul]
+  simp [affineRayCharacter_apply, Int.toNat_of_nonneg hm, mul_comm]
+
+/-- In the standard affine-line coordinate, every semigroup monomial is the corresponding
+natural power, including at the origin. -/
+@[simp low]
+theorem affineRayPointHomeomorph_symm_apply_single_eq_pow (z : ℂ)
+    (m : dualSemigroup (isIntegralLattice_intCast 1) affineRayCone) :
+    let _ := affinePointTopology g
+    (affineRayPointHomeomorph g).symm z (MonoidAlgebra.single (ofAdd m) 1) =
+      z ^ ((m : (Fin 1 → ℤ) →+ ℤ) 1).toNat := by
+  let _ := affinePointTopology g
+  dsimp only
+  conv_lhs => rw [eq_nsmul_affineRayCharacter m]
+  rw [AffineSemigroupComplexPoint.apply_single_nsmul,
+    affineRayPointHomeomorph_symm_apply_single]
+
 /-- The regular-cone complex structure on the affine ray chart. Its model retains the single
 ray coordinate and the empty family of complementary coordinates. -/
 @[instance_reducible]

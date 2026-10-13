@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Hom
 public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.Bialgebra.Hom.Representable
-public import TauCeti.RingTheory.Norm.FullSetOfSections
+public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 
 /-!

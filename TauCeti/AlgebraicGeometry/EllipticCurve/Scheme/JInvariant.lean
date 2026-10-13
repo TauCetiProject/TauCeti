@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange.Basic
 
 /-!
 # The `j`-invariant is an invariant of pointed projective Weierstrass models

@@ -5,17 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
 
 /-!
-# Entrywise control and rank cutoffs for sorted matrix eigenvalues
+# Perturbation bounds and rank cutoffs for sorted matrix eigenvalues
 
 For a Hermitian matrix over `RCLike`, an entrywise perturbation of size `ε` changes each
 sorted eigenvalue by at most `card ι * ε`. An entrywise bound on the matrix itself gives the
 same a-priori bound on the absolute values of its eigenvalues. These estimates connect
 coordinatewise error bounds to spectral error bounds for random matrices.
+
+A perturbation smaller than the distance of a sorted eigenvalue from a real threshold
+preserves its membership in `[c, ∞)`. Thus perturbations smaller than a spectral gap
+preserve the number of eigenvalues above the threshold, counted with multiplicity.
+This is the rank stability used when selecting a spectral subspace by a fixed threshold.
+The norm in these threshold results is the Euclidean operator norm, selected by
+`Matrix.Norms.L2Operator`.
 
 All statements use Mathlib's decreasing enumeration `Matrix.IsHermitian.eigenvalues₀`,
 including multiplicities. For positive-semidefinite matrices its nonzero entries form an
@@ -73,6 +81,50 @@ theorem _root_.Matrix.IsHermitian.abs_eigenvalues₀_le_of_entry_le (hA : A.IsHe
         (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) k)
   simpa only [hzero, sub_zero] using hA.abs_eigenvalues₀_sub_le_of_entry_le hZ
     (by simpa only [Matrix.zero_apply, sub_zero] using hentry) k
+
+section
+
+open scoped Matrix.Norms.L2Operator
+
+/-- A Hermitian perturbation smaller than the distance of a sorted eigenvalue from `c`
+preserves whether that eigenvalue belongs to `[c, ∞)`. The norm is the Euclidean operator
+norm. -/
+theorem _root_.Matrix.IsHermitian.le_eigenvalues₀_iff_of_norm_sub_lt
+    (hA : A.IsHermitian) (hB : B.IsHermitian)
+    {c : ℝ} (i : Fin (Fintype.card ι))
+    (hgap : ‖A - B‖ < |hA.eigenvalues₀ i - c|) :
+    c ≤ hB.eigenvalues₀ i ↔ c ≤ hA.eigenvalues₀ i := by
+  have hweyl : |hA.eigenvalues₀ i - hB.eigenvalues₀ i| ≤ ‖A - B‖ := by
+    -- The matrix enumeration is defined using the symmetric Euclidean operator.
+    simp only [Matrix.IsHermitian.eigenvalues₀]
+    simpa only [coe_toEuclideanCLM_eq_toEuclideanLin, ← map_sub,
+      l2_opNorm_toEuclideanCLM] using
+      LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le_norm
+        (T := toEuclideanCLM (𝕜 := 𝕜) A) (S := toEuclideanCLM (𝕜 := 𝕜) B)
+        (by simpa only [coe_toEuclideanCLM_eq_toEuclideanLin] using
+          isSymmetric_toEuclideanLin_iff.mpr hA)
+        (by simpa only [coe_toEuclideanCLM_eq_toEuclideanLin] using
+          isSymmetric_toEuclideanLin_iff.mpr hB)
+        finrank_euclideanSpace i
+  obtain ⟨hlower, hupper⟩ := abs_le.mp hweyl
+  by_cases hside : c ≤ hA.eigenvalues₀ i
+  · rw [abs_of_nonneg (sub_nonneg.mpr hside)] at hgap
+    exact iff_of_true (by linarith) hside
+  · rw [abs_of_neg (sub_neg.mpr (lt_of_not_ge hside))] at hgap
+    exact iff_of_false (by linarith) hside
+
+/-- Hermitian perturbations of Euclidean operator norm less than a spectral gap around
+`c` preserve the number of eigenvalues in `[c, ∞)`, with multiplicity. The gap bound may
+be attained, and the matrix index type may be empty. -/
+theorem _root_.Matrix.IsHermitian.card_eigenvalues₀_ge_eq_of_norm_sub_lt
+    (hA : A.IsHermitian) (hB : B.IsHermitian)
+    {c δ : ℝ} (hgap : ∀ i, δ ≤ |hA.eigenvalues₀ i - c|) (hpert : ‖A - B‖ < δ) :
+    Nat.card {i : Fin (Fintype.card ι) // c ≤ hB.eigenvalues₀ i} =
+      Nat.card {i : Fin (Fintype.card ι) // c ≤ hA.eigenvalues₀ i} := by
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun i ↦
+    hA.le_eigenvalues₀_iff_of_norm_sub_lt hB i (hpert.trans_le (hgap i)))
+
+end
 
 /-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
 corresponding matrix-indexed eigenvalue. -/

@@ -116,17 +116,11 @@ hypotheses this simply connected datum does not carry.
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate I, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `Aₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The positive-root count is the
-corresponding clause of the `Aₙ` worked example in the "Worked examples (acceptance criteria)"
-section of that README; it agrees with the count in Bourbaki, Plate I.
+4--6*, Plate I, and Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+section 12.1. The positive-root count agrees with the count in Bourbaki, Plate I.
 
-The graph automorphism is the root-datum input to the isomorphism theorem for pinned groups in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is the graph-twisted
-Steinberg map of milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`. The description of the
-type-`A` diagram automorphism as `X ↦ -J Xᵀ J` on `sl_{n+1}`, of which the map below is the
-root-datum shadow, is in R. W. Carter, *Simple Groups of Lie Type*, §12.2.
+The description of the type-`A` diagram automorphism as `X ↦ -J Xᵀ J` on `sl_{n+1}`, of which the
+map below is the root-datum shadow, is in R. W. Carter, *Simple Groups of Lie Type*, §12.2.
 -/
 
 public section

@@ -196,7 +196,7 @@ private theorem map_univ_val_partWeight (ν : n.Partition)
         = Multiset.map ((fun i : ℕ => (ν.parts.sort (· ≥ ·)).getD i 0) ∘
             ((Fin.val : Fin (Fintype.card σ) → ℕ) ∘ (Fintype.equivFin σ))) univ.val :=
           Multiset.map_congr rfl fun x _ => by
-            rw [partWeight_apply, rowLen_diagramOf]; rfl
+            rw [partWeight_apply, YoungDiagram.rowLen_ofPartition]; rfl
       _ = ((List.range (Fintype.card σ)).map
             fun i => (ν.parts.sort (· ≥ ·)).getD i 0 : List ℕ) := by
           rw [← Multiset.map_map, ← Multiset.map_map, Multiset.map_univ_val_equiv, hval]
@@ -342,7 +342,7 @@ theorem coeff_schurPoly_eq_kostkaNumber {d : σ →₀ ℕ} (h : d.degree = n) :
     conv_lhs => rw [← schurPoly_isSymmetric (R := R) μ e]
     exact coeff_rename_mapDomain _ e.injective _ _
   rw [← hsymm, he, coeff_schurPoly_partWeight μ _
-    (by rw [colLen_zero_diagramOf]; exact card_parts_weightPartition_le d h)]
+    (by rw [YoungDiagram.colLen_zero_ofPartition]; exact card_parts_weightPartition_le d h)]
 
 /-- **The monomial expansion of a Schur polynomial**: `s_μ = ∑_ν K_{μν} m_ν`, expanding `s_μ` in
 the monomial symmetric polynomials with the Kostka numbers as its coefficients.  The sum runs over

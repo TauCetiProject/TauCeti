@@ -42,6 +42,8 @@ developed in `TauCeti/Topology/Algebra/GroupAction/FixedPoints.lean`.
 * `TauCeti.fixedPointsInclusion`, `TauCeti.fixedPointsDistribMulActionInclusion`, and
   `Subgroup.fixedPointsDistribMulActionSubtype`: the additive and equivariant inclusions between
   fixed points and into the ambient additive monoid, with their functoriality laws.
+* `Subgroup.fixedPoints_subtype_mk'_smul`: the fixed-point additive subgroup's inclusion is
+  equivariant along the quotient homomorphism, in a form usable as a compatible-pair hypothesis.
 * `DistribMulActionHom.fixedPointsMap` and `DistribMulActionHom.fixedPointsQuotientMap`:
   functoriality of fixed points in the additive monoid, additively and as a quotient-equivariant
   map.
@@ -376,6 +378,19 @@ theorem fixedPointsQuotientMap_id (H : Subgroup G) [H.Normal] :
   DistribMulActionHom.ext fun _ ↦ Subtype.ext <| by simp
 
 end Maps
+
+section SubtypeAddGroup
+
+variable {G : Type*} [Group G] {M : Type*} [AddGroup M] [DistribMulAction G M]
+
+/-- The inclusion of the fixed-point additive subgroup is equivariant along the quotient map. -/
+theorem fixedPoints_subtype_mk'_smul (H : Subgroup G) [H.Normal] (g : G)
+    (m : FixedPoints.addSubgroup H M) :
+    (FixedPoints.addSubgroup H M).subtype (QuotientGroup.mk' H g • m) =
+      g • (FixedPoints.addSubgroup H M).subtype m := by
+  simp
+
+end SubtypeAddGroup
 
 section Pairing
 

@@ -62,11 +62,7 @@ extension of the general linear group over `ℤ`.
 
 ## References
 
-This advances the Layer 9 milestone "base change along `ℤ → k` for any commutative ring `k`, and
-the compatibility of the pinning with it" of `TauCetiRoadmap/ReductiveGroups/README.md`, which
-milestone L0 of the CFSGStatement roadmap consumes when it base-changes a pinned
-Chevalley--Demazure group to a prime field and its algebraic closure. See R. W. Carter, *Simple
-Groups of Lie Type*, §4.4, and B. Conrad, *Reductive Group Schemes*, §1.
+See R. W. Carter, *Simple Groups of Lie Type*, §4.4, and B. Conrad, *Reductive Group Schemes*, §1.
 -/
 
 public section
