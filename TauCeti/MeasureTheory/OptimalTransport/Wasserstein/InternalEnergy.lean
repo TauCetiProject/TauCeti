@@ -44,6 +44,14 @@ entropy may be `⊥`. Against a finite reference measure it is never `⊥`, and 
 is Mathlib's Kullback–Leibler divergence up to the mass correction:
 `klDiv μ m = Ent_m(μ) + m(X) - μ(X)` (`TauCeti.klDiv_eq_boltzmannEntropy_add_sub`).
 
+Changing the reference measure to a Gibbs measure `m.tilted f = Z⁻¹ exp(f) m`, with
+`Z = ∫ exp f dm` finite, shifts the entropy by a potential energy and a free energy:
+`Ent_{m.tilted f}(μ) = Ent_m(μ) - ∫ f dμ + μ(X) log Z` (`TauCeti.boltzmannEntropy_tilted`). This
+is how the entropy against an infinite reference is controlled: for `f x = -a d(x, x₀)²` with
+`exp f` integrable against a nonzero `m`, the tilted reference is a probability measure, and the
+entropy of a law with finite second moment is a relative entropy minus a moment and a constant, in
+particular never `⊥`.
+
 ## Main definitions
 
 * `TauCeti.internalEnergy U m μ`: the internal energy of `μ` relative to `m`, as an extended real.
@@ -61,6 +69,11 @@ is Mathlib's Kullback–Leibler divergence up to the mass correction:
   `⊥`, or finite.
 * `TauCeti.klDiv_eq_boltzmannEntropy_add_sub`: `klDiv μ m = Ent_m(μ) + m(X) - μ(X)` for finite
   measures.
+* `TauCeti.boltzmannEntropy_eq_potentialEnergy_llr`: for `μ ≪ m`, the entropy is `∫ log ρ dμ`.
+* `TauCeti.boltzmannEntropy_tilted`, `TauCeti.klDiv_tilted_eq_boltzmannEntropy`: change of
+  reference to a Gibbs measure.
+* `TauCeti.boltzmannEntropy_ne_bot_of_integrable_exp`: the entropy is not `⊥` when some `exp f`
+  is integrable against `m` and `f` is integrable against `μ`.
 
 ## References
 
@@ -304,6 +317,81 @@ theorem klDiv_eq_boltzmannEntropy_of_measure_univ_eq [IsFiniteMeasure μ] [IsFin
     (h : μ univ = m univ) : (klDiv μ m : EReal) = boltzmannEntropy m μ := by
   rw [klDiv_eq_boltzmannEntropy_add_sub, measureReal_def, measureReal_def, h,
     EReal.add_sub_cancel_right]
+
+/-- For `μ ≪ m`, the Boltzmann entropy `∫ ρ log ρ dm` is the potential energy `∫ log ρ dμ` of the
+log-likelihood ratio `log ρ = llr μ m` against `μ` itself. -/
+theorem boltzmannEntropy_eq_potentialEnergy_llr [SigmaFinite μ] [SigmaFinite m] (h : μ ≪ m) :
+    boltzmannEntropy m μ = potentialEnergy (llr μ m) μ := by
+  have key : ∀ F : ℝ → ℝ, Measurable F →
+      ∫⁻ x, ENNReal.ofReal ((μ.rnDeriv m x).toReal * F (μ.rnDeriv m x).toReal) ∂m =
+        ∫⁻ x, ENNReal.ofReal (F (μ.rnDeriv m x).toReal) ∂μ := fun F hF ↦ by
+    rw [← lintegral_rnDeriv_mul h (by fun_prop)]
+    refine lintegral_congr_ae ?_
+    filter_upwards [Measure.rnDeriv_lt_top μ m] with x hx
+    rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx.ne]
+  have hpos : ∫⁻ x, ENNReal.ofReal
+      ((μ.rnDeriv m x).toReal * Real.log (μ.rnDeriv m x).toReal) ∂m =
+        ∫⁻ x, ENNReal.ofReal (llr μ m x) ∂μ :=
+    key Real.log Real.measurable_log
+  have hneg : ∫⁻ x, ENNReal.ofReal
+      (-((μ.rnDeriv m x).toReal * Real.log (μ.rnDeriv m x).toReal)) ∂m =
+        ∫⁻ x, ENNReal.ofReal (-llr μ m x) ∂μ := by
+    simp_rw [← mul_neg]
+    exact key (fun t ↦ -Real.log t) Real.measurable_log.neg
+  rw [boltzmannEntropy_of_absolutelyContinuous h]
+  by_cases hA : ∫⁻ x, ENNReal.ofReal (llr μ m x) ∂μ = ∞
+  · rw [potentialEnergy_eq_top_iff.2 hA, potentialEnergy_eq_top_iff.2 (hpos.trans hA)]
+  rw [potentialEnergy_of_lintegral_ne_top hA, potentialEnergy_of_lintegral_ne_top (hpos ▸ hA),
+    hpos, hneg]
+
+/-- **Change of reference for the Boltzmann entropy.** If `exp f` is integrable against `m`, so
+that the tilted measure `m.tilted f = Z⁻¹ exp(f) m` with `Z = ∫ exp f dm` is a finite reference
+measure, then for every finite measure `μ` against which `f` is integrable,
+`Ent_{m.tilted f}(μ) = Ent_m(μ) - ∫ f dμ + μ(X) log Z`. The reference `m` may be infinite. -/
+theorem boltzmannEntropy_tilted [SigmaFinite m] [IsFiniteMeasure μ] {f : X → ℝ}
+    (hf : Integrable (fun x ↦ Real.exp (f x)) m) (hfμ : Integrable f μ) :
+    boltzmannEntropy (m.tilted f) μ = boltzmannEntropy m μ - ((∫ x, f x ∂μ : ℝ) : EReal) +
+      ((μ.real univ * Real.log (∫ x, Real.exp (f x) ∂m) : ℝ) : EReal) := by
+  by_cases hac : μ ≪ m
+  swap
+  · have hac' : ¬ μ ≪ m.tilted f := fun h ↦ hac (h.trans (tilted_absolutelyContinuous m f))
+    rw [boltzmannEntropy_of_not_absolutelyContinuous hac,
+      boltzmannEntropy_of_not_absolutelyContinuous hac', EReal.top_sub_coe, EReal.top_add_coe]
+  have hac' : μ ≪ m.tilted f := hac.trans (absolutelyContinuous_tilted hf)
+  have hfun : (fun x ↦ -f x + Real.log (∫ z, Real.exp (f z) ∂m) + llr μ m x) =
+      fun x ↦ llr μ m x + (-f x + Real.log (∫ z, Real.exp (f z) ∂m)) := by
+    ext x
+    ring
+  rw [boltzmannEntropy_eq_potentialEnergy_llr hac', boltzmannEntropy_eq_potentialEnergy_llr hac,
+    potentialEnergy_congr_ae (llr_tilted_right hac hf), hfun,
+    potentialEnergy_add_of_integrable (W := fun x ↦ -f x + Real.log (∫ z, Real.exp (f z) ∂m))
+      (measurable_llr μ m).aestronglyMeasurable (hfμ.neg.add (integrable_const _)),
+    integral_add (f := fun x ↦ -f x) hfμ.neg (integrable_const _), integral_neg, integral_const,
+    smul_eq_mul, EReal.coe_add, ← add_assoc, EReal.coe_neg, ← sub_eq_add_neg]
+
+/-- **Change of reference to a Gibbs measure.** If `exp f` is integrable against a nonzero
+σ-finite reference `m`, then the tilted measure `m.tilted f = Z⁻¹ exp(f) m`, with
+`Z = ∫ exp f dm`, is a probability measure, and for every finite measure `μ` against which `f` is
+integrable, `klDiv μ (m.tilted f) = Ent_m(μ) - ∫ f dμ + μ(X) log Z + 1 - μ(X)`. For
+`f x = -a d(x, x₀)²` this is the confining Gaussian reference against which the entropy of laws
+with finite second moment is controlled. -/
+theorem klDiv_tilted_eq_boltzmannEntropy [SigmaFinite m] [NeZero m] [IsFiniteMeasure μ]
+    {f : X → ℝ} (hf : Integrable (fun x ↦ Real.exp (f x)) m) (hfμ : Integrable f μ) :
+    (klDiv μ (m.tilted f) : EReal) = boltzmannEntropy m μ - ((∫ x, f x ∂μ : ℝ) : EReal) +
+      ((μ.real univ * Real.log (∫ x, Real.exp (f x) ∂m) : ℝ) : EReal) + 1 - μ.real univ := by
+  have := isProbabilityMeasure_tilted hf
+  have h1 : (m.tilted f).real univ = 1 := probReal_univ
+  rw [klDiv_eq_boltzmannEntropy_add_sub, boltzmannEntropy_tilted hf hfμ, h1, EReal.coe_one]
+
+/-- If `exp f` is integrable against the reference `m` and `f` is integrable against a finite
+measure `μ`, then the Boltzmann entropy of `μ` is not `⊥`, even when `m` is infinite: it is
+bounded below through the entropy against the finite reference `m.tilted f`. -/
+theorem boltzmannEntropy_ne_bot_of_integrable_exp [SigmaFinite m] [IsFiniteMeasure μ] {f : X → ℝ}
+    (hf : Integrable (fun x ↦ Real.exp (f x)) m) (hfμ : Integrable f μ) :
+    boltzmannEntropy m μ ≠ ⊥ := fun h ↦ by
+  have := boltzmannEntropy_tilted hf hfμ
+  rw [h, EReal.bot_sub, EReal.bot_add] at this
+  exact boltzmannEntropy_ne_bot this
 
 end BoltzmannEntropy
 
