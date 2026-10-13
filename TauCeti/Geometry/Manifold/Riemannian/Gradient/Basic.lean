@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-public import Mathlib.Analysis.Calculus.Gradient.Basic
-public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -31,7 +29,7 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 
 * `TauCeti.Manifold.mgradient`: the gradient of a function.
 * `TauCeti.Manifold.mgradientWithin`: the gradient within a subset.
-* `TauCeti.Manifold.inner_mgradient_left`: its characteristic property
+* `TauCeti.Manifold.inner_mgradient`: its characteristic property
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_mgradient_iff`, which identifies the
   gradient from it.
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
@@ -61,11 +59,16 @@ vector dual to the differential `df_x`, so that `⟪grad f x, v⟫ = df_x v`. -/
 noncomputable def mgradient (f : M → ℝ) (x : M) : TangentSpace I x :=
   rieszDual x (mvfderiv I f x)
 
+/-- The gradient is the fibrewise Riesz dual of the manifold derivative. -/
+theorem mgradient_def (f : M → ℝ) (x : M) :
+    mgradient I f x = rieszDual x (mvfderiv I f x) := by
+  rw [mgradient]
+
 variable {f : M → ℝ} {x : M}
 
 /-- The characteristic property of the gradient: `⟪grad f x, v⟫ = df_x v`. -/
 @[simp]
-theorem inner_mgradient_left (v : TangentSpace I x) :
+theorem inner_mgradient (v : TangentSpace I x) :
     inner ℝ (mgradient I f x) v = mvfderiv I f x v :=
   inner_rieszDual _ v
 
@@ -73,7 +76,7 @@ theorem inner_mgradient_left (v : TangentSpace I x) :
 @[simp]
 theorem inner_mgradient_right (v : TangentSpace I x) :
     inner ℝ v (mgradient I f x) = mvfderiv I f x v := by
-  rw [real_inner_comm, inner_mgradient_left]
+  rw [real_inner_comm, inner_mgradient]
 
 /-- A tangent vector is the gradient exactly when its inner product with every vector `v` is
 `df_x v`. -/
@@ -86,7 +89,7 @@ gradient. -/
 theorem mvfderiv_apply_mgradient :
     mvfderiv I f x (mgradient I f x) =
       inner ℝ (mgradient I f x) (mgradient I f x) :=
-  (inner_mgradient_left _).symm
+  (inner_mgradient _).symm
 
 /-- The gradient vanishes exactly where the differential does. -/
 @[simp]
@@ -131,7 +134,7 @@ theorem mgradientWithin_univ (f : M → ℝ) :
   funext x
   apply ext_inner_right ℝ
   intro v
-  simp only [inner_mgradientWithin_left, inner_mgradient_left,
+  simp only [inner_mgradientWithin_left, inner_mgradient,
     mvfderivWithin_univ]
 
 /-- The relative gradient is uniquely characterized by its inner products. -/
@@ -152,7 +155,7 @@ theorem mgradientWithin_of_mem_nhds (hs : s ∈ 𝓝 x) :
     mgradientWithin I f s x = mgradient I f x := by
   apply ext_inner_right ℝ
   intro v
-  simp only [inner_mgradientWithin_left, inner_mgradient_left,
+  simp only [inner_mgradientWithin_left, inner_mgradient,
     mvfderivWithin, mvfderiv, mfderivWithin_of_mem_nhds hs]
 
 /-- **The gradient is smooth.** For a `C^n` Riemannian metric, the gradient of a `C^{n+1}`
@@ -169,37 +172,5 @@ theorem contMDiff_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
   rw [TangentBundle.trivializationAt_baseSet] at hframe
   exact (hf.contMDiffOn.contMDiffOn_mvfderiv_apply hopen hframe le_rfl).contMDiffAt
     (hopen.mem_nhds (mem_chart_source H x))
-
-/-- On a flat inner product space with its standard Riemannian metric, the manifold gradient is
-Mathlib's `gradient`. -/
-theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] (f : F → ℝ) (x : F) :
-    let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
-      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
-    mgradient 𝓘(ℝ, F) f x = gradient f x := by
-  dsimp [mgradient]
-  apply (NormedSpace.fromTangentSpace x).injective
-  apply ext_inner_right ℝ
-  intro v
-  have hinner (a b : TangentSpace 𝓘(ℝ, F) x) :
-      inner ℝ a b = inner ℝ (NormedSpace.fromTangentSpace x a)
-        (NormedSpace.fromTangentSpace x b) := by
-    -- `TangentSpace` is a type synonym for `F`, `fromTangentSpace` is its
-    -- canonical `tangentSpaceCastModel`, and the standard metric has `innerSL` as
-    -- its inner product. This is the same definitional transport used by
-    -- Mathlib's `norm_tangentSpace_vectorSpace`.
-    rfl
-  calc
-    inner ℝ (NormedSpace.fromTangentSpace x (Riemannian.Tensor.rieszDual x
-        (mvfderiv 𝓘(ℝ, F) f x))) v =
-      inner ℝ (Riemannian.Tensor.rieszDual x (mvfderiv 𝓘(ℝ, F) f x))
-        ((NormedSpace.fromTangentSpace x).symm v) := by
-          simpa using (hinner (Riemannian.Tensor.rieszDual x
-            (mvfderiv 𝓘(ℝ, F) f x)) ((NormedSpace.fromTangentSpace x).symm v)).symm
-    _ = inner ℝ (gradient f x) v := by
-      rw [Riemannian.Tensor.inner_rieszDual, ← InnerProductSpace.toDual_apply_apply,
-        toDual_gradient]
-      rw [mvfderiv_eq_fderiv]
-      simp
 
 end TauCeti.Manifold
