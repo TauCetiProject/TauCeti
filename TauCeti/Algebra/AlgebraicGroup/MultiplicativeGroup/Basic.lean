@@ -28,8 +28,6 @@ property of the Laurent polynomial algebra. Over commutative targets this is Mat
   multiplicative equivalence from the convolution group to `Aˣ`.
 * `TauCeti.MultiplicativeGroup.pointsMulEquiv_mapValue`: the points equivalence is natural
   in the value algebra.
-* `TauCeti.MultiplicativeGroup.genericUnit`: the tautological unit `T` of a Laurent polynomial
-  ring.
 
 ## References
 
@@ -98,40 +96,6 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : Aˣ) :
 
 end Naturality
 
-variable (A : Type v) [CommSemiring A]
-
-/-- The Laurent variable `T`, as a unit of `A[T;T⁻¹]`. It is the tautological
-`A[T;T⁻¹]`-point of the multiplicative group. -/
-noncomputable def genericUnit : (LaurentPolynomial A)ˣ :=
-  unitOfInvertible (LaurentPolynomial.T 1)
-
-/-- The generic unit is the Laurent variable `T`. -/
-@[simp]
-theorem genericUnit_val : (genericUnit A : LaurentPolynomial A) = LaurentPolynomial.T 1 := by
-  simp [genericUnit]
-
-/-- The inverse of the generic unit is the inverse Laurent variable. -/
-@[simp]
-theorem genericUnit_inv : (((genericUnit A)⁻¹ : (LaurentPolynomial A)ˣ) :
-    LaurentPolynomial A) = LaurentPolynomial.T (-1) := by
-  simp [genericUnit]
-
-/-- An integer power of the generic unit is the corresponding Laurent monomial. -/
-@[simp]
-theorem genericUnit_zpow_val (n : ℤ) :
-    ((genericUnit A ^ n : (LaurentPolynomial A)ˣ) : LaurentPolynomial A) =
-      LaurentPolynomial.T n := by
-  have h := laurentEval_unique (genericUnit A) (AlgHom.id A _) (by simp)
-  simpa using (DFunLike.congr_fun h (LaurentPolynomial.T n)).symm
-
-/-- Mapping the generic unit along a Laurent-polynomial algebra map gives the unit represented
-by that map. -/
-@[simp]
-theorem map_genericUnit {B : Type w} [Semiring B] [Algebra A B]
-    (φ : A[T;T⁻¹] →ₐ[A] B) :
-    Units.map φ (genericUnit A) = laurentEvalEquiv.symm φ := by
-  apply Units.ext
-  simp
 
 end MultiplicativeGroup
 

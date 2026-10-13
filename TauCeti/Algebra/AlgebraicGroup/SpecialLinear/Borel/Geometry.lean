@@ -58,7 +58,7 @@ private abbrev presentationRing := Polynomial (LaurentPolynomial R)
 
 /-- The tautological diagonal parameter in the polynomial-Laurent presentation. -/
 private def presentationUnit : (presentationRing R)ˣ :=
-  Units.map Polynomial.C.toMonoidHom (MultiplicativeGroup.genericUnit R)
+  Units.map Polynomial.C.toMonoidHom (LaurentPolynomial.genericUnit R)
 
 @[simp]
 private theorem presentationUnit_val :
@@ -204,9 +204,9 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
     have hunit : laurentEvalEquiv.symm
         (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) =
           presentationUnit R := by
-      rw [← MultiplicativeGroup.map_genericUnit]
+      rw [← LaurentPolynomial.map_genericUnit]
       ext
-      simp only [Units.coe_map, MultiplicativeGroup.genericUnit_val, MonoidHom.coe_ofClass,
+      simp only [Units.coe_map, LaurentPolynomial.genericUnit_val, MonoidHom.coe_ofClass,
         Polynomial.CAlgHom_apply, presentationUnit_val]
     simpa only [presentationCoefficientToCoordinate, laurentEvalEquiv_symm_laurentEval,
       AlgHom.id_comp, hunit] using map_tautologicalUnit R

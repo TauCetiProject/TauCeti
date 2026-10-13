@@ -107,9 +107,9 @@ variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
 theorem mapValue_conjugate {C : Type*} [CommSemiring C] [Algebra R C]
     (ψ : LaurentPolynomial A →ₐ[R] C) (g : WithConv (H →ₐ[R] A)) :
     AlgHom.mapValue ψ (conjugate A l g) =
-      pointsHom C l (Units.map ψ.toMonoidHom (MultiplicativeGroup.genericUnit A)) *
+      pointsHom C l (Units.map ψ.toMonoidHom (LaurentPolynomial.genericUnit A)) *
         AlgHom.mapValue (ψ.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A))) g *
-        (pointsHom C l (Units.map ψ.toMonoidHom (MultiplicativeGroup.genericUnit A)))⁻¹ := by
+        (pointsHom C l (Units.map ψ.toMonoidHom (LaurentPolynomial.genericUnit A)))⁻¹ := by
   rw [conjugate_apply, map_mul, map_mul, map_inv, genericPoint_eq_pointsHom,
     mapValue_pointsHom, constPoint_apply, ← AlgHom.mapValue_apply, AlgHom.mapValue_comp,
     MonoidHom.comp_apply]
@@ -245,7 +245,7 @@ theorem pointsHom_mem_levi (u : Aˣ) : pointsHom A l u ∈ levi A l := by
     rw [constPoint_apply, ← AlgHom.mapValue_apply]
     exact mapValue_pointsHom _ l u
   rw [mem_levi_iff, conjugate_apply, h, genericPoint_eq_pointsHom,
-    (pointsHom_commute (A := LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A) v).eq,
+    (pointsHom_commute (A := LaurentPolynomial A) l (LaurentPolynomial.genericUnit A) v).eq,
     mul_assoc,
     mul_inv_cancel, mul_one]
 
@@ -318,8 +318,8 @@ variable (R A) in
 private noncomputable def prodUnit : (LaurentPolynomial (LaurentPolynomial A))ˣ :=
   Units.map (IsScalarTower.toAlgHom R (LaurentPolynomial A)
       (LaurentPolynomial (LaurentPolynomial A))).toMonoidHom
-        (MultiplicativeGroup.genericUnit A) *
-    MultiplicativeGroup.genericUnit (LaurentPolynomial A)
+        (LaurentPolynomial.genericUnit A) *
+    LaurentPolynomial.genericUnit (LaurentPolynomial A)
 
 variable (R A) in
 /-- The substitution `T ↦ T · T'`, as an `R`-algebra homomorphism
@@ -354,9 +354,9 @@ private theorem prodSubst_T :
   (laurentEval_T (R := A) (prodUnit R A) 1).trans (by rw [zpow_one])
 
 private theorem map_prodSubst_genericUnit :
-    Units.map (prodSubst R A).toMonoidHom (MultiplicativeGroup.genericUnit A) = prodUnit R A :=
+    Units.map (prodSubst R A).toMonoidHom (LaurentPolynomial.genericUnit A) = prodUnit R A :=
   Units.ext (by
-    rw [Units.coe_map, MultiplicativeGroup.genericUnit_val]
+    rw [Units.coe_map, LaurentPolynomial.genericUnit_val]
     exact prodSubst_T)
 
 private theorem prodSubst_comp_const :
@@ -423,8 +423,8 @@ theorem limit_mem_levi (g : parabolic A l) : limit A l g ∈ levi A l := by
       prodSubst_comp_const, prodUnit,
       mul_comm (Units.map (IsScalarTower.toAlgHom R (LaurentPolynomial A)
         (LaurentPolynomial (LaurentPolynomial A))).toMonoidHom
-          (MultiplicativeGroup.genericUnit A))
-        (MultiplicativeGroup.genericUnit (LaurentPolynomial A))]
+          (LaurentPolynomial.genericUnit A))
+        (LaurentPolynomial.genericUnit (LaurentPolynomial A))]
   -- Specialize the generic identity at `X = 0`.
   rw [mem_levi_iff, limit_apply]
   simp only [evalZeroPoint_apply, constPoint_apply, ← AlgHom.mapValue_apply]

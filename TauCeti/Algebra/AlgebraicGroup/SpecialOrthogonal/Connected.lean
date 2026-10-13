@@ -104,7 +104,7 @@ private def laurentPath (i half : K) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) :
         congrArg LaurentPolynomial.C hi)
       (by simpa only [map_ofNat, map_mul, map_one] using
         congrArg LaurentPolynomial.C hhalf)
-      (MultiplicativeGroup.genericUnit K))
+      (LaurentPolynomial.genericUnit K))
 
 private theorem mapValue_laurentPath
     (i half : K) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) (u : Kˣ) :
@@ -117,7 +117,7 @@ private theorem mapValue_laurentPath
   simp only [laurentPath, MulEquiv.apply_symm_apply]
   rw [Matrix.SpecialOrthogonalGroup.map_finTwoOfUnit]
   have hu : Units.map (laurentEval u).toRingHom.toMonoidHom
-      (MultiplicativeGroup.genericUnit K) = u := by
+      (LaurentPolynomial.genericUnit K) = u := by
     apply Units.ext
     simp
   apply Subtype.ext

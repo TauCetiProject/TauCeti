@@ -115,7 +115,7 @@ private noncomputable def diag2nLaurentPath
       (K ⊗[k] coordinateHopfAlgebra k n →ₐ[K] LaurentPolynomial K) :=
   (baseChangeSpecialLinearPointsMulEquiv (k := k) (K := K) n
     (LaurentPolynomial K)).symm
-      (Matrix.SpecialLinearGroup.diag2nUnit hij (MultiplicativeGroup.genericUnit K))
+      (Matrix.SpecialLinearGroup.diag2nUnit hij (LaurentPolynomial.genericUnit K))
 
 private theorem mapValue_diag2nLaurentPath
     (n : ℕ) {i j : Fin n} (hij : i ≠ j) (b : Kˣ) :
