@@ -120,17 +120,21 @@ theorem degenerate_zero : degenerate X R 0 = ⊥ := by
   rintro f ⟨c, hc, rfl⟩
   exact (not_isDegenerate_zero c hc).elim
 
+/-- A map of singular cubes sending degenerate cubes to degenerate cubes preserves the degenerate
+chains. -/
+theorem lmapDomain_mem_degenerate {n m : ℕ} {φ : SingularCube X n → SingularCube Y m}
+    (hφ : ∀ c, IsDegenerate c → IsDegenerate (φ c)) {g : CubicalChain X R n}
+    (hg : g ∈ degenerate X R n) : lmapDomain R R φ g ∈ degenerate Y R m := by
+  rw [degenerate_eq_supported] at hg ⊢
+  have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R φ) hg
+  rw [lmapDomain_supported] at hmap
+  exact supported_mono (Set.image_subset_iff.2 hφ) hmap
+
 /-- The push-forward of a degenerate chain is degenerate. -/
 theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
     (hg : g ∈ degenerate X R n) : map R f n g ∈ degenerate Y R n := by
-  induction hg using Submodule.span_induction with
-  | mem g hg =>
-    obtain ⟨c, hc, rfl⟩ := hg
-    rw [map_single]
-    exact single_mem_degenerate R (hc.comp f) 1
-  | zero => simp
-  | add g h _ _ hg hh => rw [map_add]; exact Submodule.add_mem _ hg hh
-  | smul a g _ hg => rw [map_smul]; exact Submodule.smul_mem _ a hg
+  rw [show map R f n = lmapDomain R R f.comp from lhom_ext fun c a ↦ by simp]
+  exact lmapDomain_mem_degenerate R (fun _ hc ↦ hc.comp f) hg
 
 /-- Pushing forward along an injective continuous map reflects degenerate chains. -/
 theorem map_mem_degenerate_iff_of_injective (f : C(X, Y)) (hf : Function.Injective f)
@@ -142,16 +146,6 @@ theorem map_mem_degenerate_iff_of_injective (f : C(X, Y)) (hf : Function.Injecti
   have hzero := hg (f.comp c) (by
     rwa [isDegenerate_comp_iff_of_injective f hf])
   rwa [map_apply_comp_of_injective R f hf] at hzero
-
-/-- A map of singular cubes sending degenerate cubes to degenerate cubes preserves the degenerate
-chains. -/
-theorem lmapDomain_mem_degenerate {n m : ℕ} {φ : SingularCube X n → SingularCube X m}
-    (hφ : ∀ c, IsDegenerate c → IsDegenerate (φ c)) {g : CubicalChain X R n}
-    (hg : g ∈ degenerate X R n) : lmapDomain R R φ g ∈ degenerate X R m := by
-  rw [degenerate_eq_supported] at hg ⊢
-  have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R φ) hg
-  rw [lmapDomain_supported] at hmap
-  exact supported_mono (Set.image_subset_iff.2 hφ) hmap
 
 private theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
     degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
