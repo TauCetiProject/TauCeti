@@ -59,7 +59,7 @@ noncomputable def zmodProdMulAutEquiv :
   invFun σ := (Module.Basis.finTwoProd (ZMod N)).toGL
     { AddEquiv.toMultiplicative.symm σ with
       map_smul' := ZMod.map_smul (AddEquiv.toMultiplicative.symm σ) }
-  left_inv g := (congrArg _ (LinearEquiv.ext fun _ ↦ rfl)).trans (MulEquiv.apply_symm_apply _ g)
+  left_inv g := (congrArg _ (LinearEquiv.ext fun _ ↦ by simp)).trans (MulEquiv.apply_symm_apply _ g)
   right_inv _ := MulEquiv.ext fun _ ↦ by simp
   map_mul' _ _ := MulEquiv.ext fun _ ↦ by simp
 
@@ -71,13 +71,7 @@ by `g`: it sends `(x, y)` to `(g₀₀ x + g₀₁ y, g₁₀ x + g₁₁ y)`. -
 theorem zmodProdMulAutEquiv_apply (g : GL (Fin 2) (ZMod N)) (x y : ZMod N) :
     zmodProdMulAutEquiv N g (.ofAdd (x, y)) =
       .ofAdd (g 0 0 * x + g 0 1 * y, g 1 0 * x + g 1 1 * y) := by
-  obtain ⟨f, rfl⟩ := (Module.Basis.finTwoProd (ZMod N)).toGL.surjective g
-  simp only [zmodProdMulAutEquiv, MulEquiv.coe_mk, Equiv.coe_fn_mk, MulEquiv.symm_apply_apply,
-    Module.Basis.coe_toGL, LinearMap.toMatrix_apply]
-  have hxy : ((x, y) : ZMod N × ZMod N) = x • (1, 0) + y • (0, 1) := by simp
-  rw [AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, hxy, map_add, ZMod.map_smul,
-    ZMod.map_smul]
-  exact congrArg Multiplicative.ofAdd (Prod.ext (by simp [mul_comm]) (by simp [mul_comm]))
+  simp [zmodProdMulAutEquiv]
 
 /-- The matrix of an automorphism `σ` of `(ℤ/Nℤ)²` has columns the images `σ (1, 0)` and
 `σ (0, 1)` of the standard basis vectors. -/
