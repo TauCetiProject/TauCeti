@@ -50,11 +50,11 @@ separable, and the places above `P` are totally ramified, so `k` stays the exact
 `2g' - 2 = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`.
 
 Without such a place, Stichtenoth's nondegeneracy hypothesis supplies the degree: if `F` contains
-a primitive `n`-th root of unity and `u` is not a `d`-th power in `F` for any divisor `d ≠ 1` of
-`n`, then `[F' : F] = n` (`TauCeti.finrank_eq_of_pow_eq_of_adjoin_eq_top`) and `F' / F` is
+a primitive `n`-th root of unity and `u` is not a `p`-th power in `F` for any prime `p ∣ n`,
+then `[F' : F] = n` (`TauCeti.finrank_eq_of_pow_eq_of_adjoin_eq_top`) and `F' / F` is
 separable, so the genus formula holds without assuming either. The exact constant field `k'` of
-`F'` may then be larger than `k`: for a constant `u ∈ k` that is not a `d`-th power, `F'` is a
-constant field extension of `F`.
+`F'` may then be larger than `k`: for a constant `u ∈ k` that is not a `p`-th power for any prime
+`p ∣ n`, `F'` is a constant field extension of `F`.
 
 ## Main results
 
@@ -265,7 +265,7 @@ variable {y : F'} {n : ℕ} [NeZero n] {u : F} {ζ : F}
 
 /-- **The genus formula for nondegenerate Kummer extensions** (Stichtenoth, Proposition 3.7.3):
 let `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, where `F` contains a primitive `n`-th root
-of unity and `u` is not a `d`-th power in `F` for any divisor `d ≠ 1` of `n`. If the constant
+of unity and `u` is not a `p`-th power in `F` for any prime `p ∣ n`. If the constant
 fields `k` of `F` and `k'` of `F'` are exact and `k' / k` is separable, then
 
 `[k' : k] (2g' - 2) = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`,
@@ -278,7 +278,7 @@ theorem genus_formula_of_pow_eq_of_isPrimitiveRoot [Algebra.IsSeparable k k']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
     (hex' : IsIntegrallyClosedIn k' F') (hζ : IsPrimitiveRoot ζ n) (hgen : F⟮y⟯ = ⊤)
     (hy : y ^ n = algebraMap F F' u) (hu : u ≠ 0)
-    (hnd : ∀ d, d ∣ n → d ≠ 1 → ∀ w : F, w ^ d ≠ u) (S : Finset (Place k F))
+    (hnd : ∀ p : ℕ, p.Prime → p ∣ n → ∀ w : F, w ^ p ≠ u) (S : Finset (Place k F))
     (hS : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) :
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       n * (2 * genus k F - 2) + ∑ P ∈ S, ((n : ℤ) - Int.gcd n (P.ord u)) * P.degree := by
