@@ -262,7 +262,7 @@ a finite normal extension of `k`, and `F' = F(roots of f)` is the compositum `F 
 theorem exists_finiteDimensional_normal_splits_constantCompositum_eq_top (f : Polynomial k) :
     ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
       FiniteDimensional k k' ∧ Normal k k' ∧ (f.map (algebraMap k k')).Splits ∧
-        constantCompositum F k' F' = ⊤ := by
+        Polynomial.IsSplittingField k k' f ∧ constantCompositum F k' F' = ⊤ := by
   let F' := IntermediateField.adjoin F ((f.map (algebraMap k F)).rootSet (AlgebraicClosure F))
   have : Polynomial.IsSplittingField F F' (f.map (algebraMap k F)) :=
     IntermediateField.adjoin_rootSet_isSplittingField (IsAlgClosed.splits _)
@@ -273,7 +273,7 @@ theorem exists_finiteDimensional_normal_splits_constantCompositum_eq_top (f : Po
   have : Polynomial.IsSplittingField k k' f :=
     IntermediateField.adjoin_rootSet_isSplittingField hsplit
   refine ⟨F', k', Polynomial.IsSplittingField.finiteDimensional k' f,
-    Normal.of_isSplittingField f, Polynomial.IsSplittingField.splits k' f, ?_⟩
+    Normal.of_isSplittingField f, Polynomial.IsSplittingField.splits k' f, this, ?_⟩
   -- Each root of `f` in the algebraic closure lies in `F'`, and there it lies in `k'`.
   refine eq_top_iff.mpr fun x _ ↦ ?_
   have hle : F' ≤ (constantCompositum F k' F').map F'.val := by

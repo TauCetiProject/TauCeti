@@ -191,31 +191,13 @@ theorem exists_constantCompositum_eq_top_and_forall_degree_eq_one (hF : IsFuncti
   obtain ⟨γ, hγ⟩ := Field.exists_primitive_element k P.ResidueField
   have hγint : IsIntegral k γ := Algebra.IsIntegral.isIntegral γ
   set p := minpoly k γ
-  let Ω := AlgebraicClosure F
-  let F' := IntermediateField.adjoin F (p.rootSet Ω)
-  have hsplit : (p.map (algebraMap k F')).Splits :=
-    IntermediateField.splits_of_splits (F := F'.restrictScalars k)
-      (IsAlgClosed.splits (p.map (algebraMap k Ω))) fun z hz ↦
-        IntermediateField.subset_adjoin F (p.rootSet Ω) hz
-  let k' := IntermediateField.adjoin k (p.rootSet F')
-  have : p.IsSplittingField k k' := IntermediateField.adjoin_rootSet_isSplittingField hsplit
-  have : FiniteDimensional k k' := Polynomial.IsSplittingField.finiteDimensional k' p
-  have : Normal k k' := Normal.of_isSplittingField p
+  obtain ⟨F', k', _, _, hsplit, _, htop⟩ :=
+    exists_finiteDimensional_normal_splits_constantCompositum_eq_top F p
   have : Algebra.IsSeparable k k' :=
     Algebra.isSeparable_of_separable_splitting_field (F := k) (E := k')
       (Algebra.IsSeparable.isSeparable k γ)
-  -- `F'` is generated over `F` by the roots of `p`, which lie in `k'`.
-  have htop : constantCompositum F k' F' = ⊤ := by
-    have : IsScalarTower k F' Ω := .of_algebraMap_eq fun c ↦ IsScalarTower.algebraMap_apply k F Ω c
-    have himage : Subtype.val '' p.rootSet F' = p.rootSet Ω := hsplit.image_rootSet_algebraMap
-    have hF' : IntermediateField.adjoin F (p.rootSet F') = ⊤ := by
-      apply IntermediateField.lift_injective
-      rw [IntermediateField.lift_adjoin, himage, IntermediateField.lift_top]
-    rw [eq_top_iff, ← hF', constantCompositum_def]
-    exact IntermediateField.adjoin.mono _ _ _ fun z hz ↦
-      ⟨⟨z, IntermediateField.subset_adjoin k _ hz⟩, rfl⟩
   -- `F_P = k(γ)` embeds into `k'`, where `p` has a root.
-  obtain ⟨r, hr⟩ := (Polynomial.IsSplittingField.splits k' p).exists_eval_eq_zero (by
+  obtain ⟨r, hr⟩ := hsplit.exists_eval_eq_zero (by
     rw [Polynomial.degree_map]; exact (minpoly.degree_pos hγint).ne')
   have hroot : r ∈ p.aroots k' := by
     rw [Polynomial.mem_aroots]
