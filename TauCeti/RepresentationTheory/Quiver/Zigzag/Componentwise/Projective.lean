@@ -54,7 +54,6 @@ abbrev zigzagAlgebraGradedProjective (i : V) :
   GradedModuleCat.ofIdeal _ (Ideal.span {e i}) (isHomogeneous_span_zigzagAlgebraBasis_inl k G i)
 
 /-- The projective's grading is the restriction of the signed algebra grading. -/
-@[simp]
 theorem mem_zigzagAlgebraGradedProjective_piece_iff (i : V) (d : ℤ)
     {x : zigzagAlgebraGradedProjective k G i} :
     x ∈ (zigzagAlgebraGradedProjective k G i).grading.piece d ↔
