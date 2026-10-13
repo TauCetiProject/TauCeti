@@ -80,7 +80,10 @@ theorem of_isIsogeny (hQ : semisimpleCommHopfAlgProperty k Q) (f : Q.obj ⟶ G.o
 end semisimpleCommHopfAlgProperty
 
 /-- Semisimplicity is invariant under a central isogeny whose source is smooth and
-geometrically connected. No hypothesis on the smoothness of its kernel is needed. -/
+geometrically connected. No hypothesis on the smoothness of its kernel is needed.
+
+Use `rw [semisimpleCommHopfAlgProperty_iff_of_isCentralIsogeny f hf hsmooth hconnected]`
+to transport semisimplicity along a specified central isogeny. -/
 theorem semisimpleCommHopfAlgProperty_iff_of_isCentralIsogeny
     {k : Type u} [Field k] {Q G : FiniteTypeCommHopfAlgCat.{u, u} k}
     (f : Q.obj ⟶ G.obj) (hf : CommHopfAlgCat.IsCentralIsogeny f)
