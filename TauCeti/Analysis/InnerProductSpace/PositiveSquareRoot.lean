@@ -90,9 +90,7 @@ theorem sqrt_isSymmetric (hT : T.IsPositive) : hT.sqrt.IsSymmetric :=
 /-- The square of the positive square root is the original endomorphism. -/
 theorem sqrt_sq (hT : T.IsPositive) : hT.sqrt ∘ₗ hT.sqrt = T := by
   refine (hT.isSymmetric.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_
-  rw [OrthonormalBasis.coe_toBasis, comp_apply, sqrt_apply_eigenvectorBasis,
-    map_smul, sqrt_apply_eigenvectorBasis, smul_smul, ← RCLike.ofReal_mul,
-    Real.mul_self_sqrt (hT.nonneg_eigenvalues rfl i),
+  simp [smul_smul, ← RCLike.ofReal_mul, Real.mul_self_sqrt (hT.nonneg_eigenvalues rfl i),
     hT.isSymmetric.apply_eigenvectorBasis]
 
 /-- The squared norm of `sqrt T x` is the quadratic form of `T` at `x`. -/
@@ -102,6 +100,7 @@ theorem norm_sqrt_apply_sq (hT : T.IsPositive) (x : E) :
     ← comp_apply, hT.sqrt_sq]
 
 /-- The positive square root has the same kernel as the original endomorphism. -/
+@[simp]
 theorem ker_sqrt (hT : T.IsPositive) : hT.sqrt.ker = T.ker := by
   ext x
   simp only [mem_ker]
@@ -114,6 +113,7 @@ theorem ker_sqrt (hT : T.IsPositive) : hT.sqrt.ker = T.ker := by
     exact norm_eq_zero.mp (sq_eq_zero_iff.mp hsquare)
 
 /-- The positive square root has the same range as the original endomorphism. -/
+@[simp]
 theorem range_sqrt (hT : T.IsPositive) : hT.sqrt.range = T.range := by
   calc
     hT.sqrt.range = hT.sqrt.adjoint.range := by rw [hT.sqrt_isPositive.adjoint_eq]
@@ -123,6 +123,7 @@ theorem range_sqrt (hT : T.IsPositive) : hT.sqrt.range = T.range := by
     _ = T.range := by rw [hT.adjoint_eq]
 
 /-- The positive square root is a unit exactly when the original endomorphism is a unit. -/
+@[simp]
 theorem sqrt_isUnit_iff (hT : T.IsPositive) : IsUnit hT.sqrt ↔ IsUnit T := by
   rw [LinearMap.isUnit_iff_ker_eq_bot, LinearMap.isUnit_iff_ker_eq_bot, hT.ker_sqrt]
 
@@ -130,15 +131,11 @@ theorem sqrt_isUnit_iff (hT : T.IsPositive) : IsUnit hT.sqrt ↔ IsUnit T := by
 theorem sqrt_unique (hT : T.IsPositive) (hS : S.IsPositive) (hST : S ∘ₗ S = T) :
     S = hT.sqrt := by
   refine (hS.isSymmetric.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_
-  let e := hS.isSymmetric.eigenvectorBasis rfl i
-  let μ := hS.isSymmetric.eigenvalues rfl i
-  have hSe : S e = (μ : 𝕜) • e := hS.isSymmetric.apply_eigenvectorBasis rfl i
-  have hTe : T e = ((μ ^ 2 : ℝ) : 𝕜) • e := by
-    rw [← hST, comp_apply, hSe, map_smul, hSe, smul_smul, ← RCLike.ofReal_mul, pow_two]
-  rw [OrthonormalBasis.coe_toBasis]
-  change S e = hT.sqrt e
-  rw [hSe, hT.sqrt_apply_of_apply_eq_smul hTe,
-    Real.sqrt_sq (hS.nonneg_eigenvalues rfl i)]
+  have hSe := hS.isSymmetric.apply_eigenvectorBasis rfl i
+  have hTe : T (hS.isSymmetric.eigenvectorBasis rfl i) =
+      ((hS.isSymmetric.eigenvalues rfl i ^ 2 : ℝ) : 𝕜) • hS.isSymmetric.eigenvectorBasis rfl i := by
+    simp [← hST, hSe, smul_smul, sq]
+  simp [hSe, hT.sqrt_apply_of_apply_eq_smul hTe, Real.sqrt_sq (hS.nonneg_eigenvalues rfl i)]
 
 end IsPositive
 
@@ -175,6 +172,7 @@ theorem ker_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.ker = A.ker := by
   rw [operatorAbs, (isPositive_adjoint_comp_self A).ker_sqrt, ker_adjoint_comp_self]
 
 /-- The range of the modulus is the orthogonal complement of the original map's kernel. -/
+@[simp]
 theorem range_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.range = A.kerᗮ := by
   rw [operatorAbs, (isPositive_adjoint_comp_self A).range_sqrt,
     range_adjoint_comp_self, ← orthogonal_ker]
