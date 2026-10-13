@@ -76,11 +76,7 @@ theorem isNormal_comapOfSurjective_unipotentRadicalDefiningIdeal (hI : I.IsNorma
       · have hle := HopfIdeal.conjugate_mono g (hI.le_conjugate g⁻¹)
         simpa using hle
       · exact hI.le_conjugate g
-    ext y
-    rw [HopfIdeal.mem_comapOfSurjective]
-    have hc : e.hom.hom y = HopfAlgebra.pointConjugationAlgHom g y :=
-      DFunLike.congr_fun (HopfAlgebra.pointConjugationBialgEquiv_toAlgHom g) y
-    rw [hc, ← HopfIdeal.mem_conjugate, hconj]
+    exact (HopfIdeal.conjugate_eq_comapOfSurjective I g).symm.trans hconj
   let eN : N ≅ N := ObjectProperty.isoMk _
     (CommHopfAlgCat.quotientIsoOfComapEq e I hstable)
   have hR := comapOfSurjective_unipotentRadicalDefiningIdeal eN
