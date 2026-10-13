@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
 public import TauCeti.Topology.Homotopy.Extension.Cube
-public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
@@ -575,7 +574,8 @@ structure BasedCubeDeformation where
   homotopy_of_isBased {m : ℕ} {c : SingularCube X m} (hc : c.IsBased n x) (s : I)
     (y : Fin m → I) : homotopy c (s, y) = c y
 
-attribute [simp] BasedCubeDeformation.homotopy_zero
+attribute [simp] BasedCubeDeformation.homotopy_zero BasedCubeDeformation.homotopy_insertNth
+  BasedCubeDeformation.homotopy_of_isBased
 
 /-- **Every singular cube of an `(n - 1)`-connected space deforms into an `n`-based cube.** If
 `π_k(X, x)` is trivial for every `k < n` (for `k = 0`, if `X` is path connected), then there is a
