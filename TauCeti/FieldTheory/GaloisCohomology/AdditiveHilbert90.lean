@@ -11,7 +11,6 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
-public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 import TauCeti.Algebra.GroupAction.Equiv
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
@@ -35,14 +34,14 @@ nonabelian exact sequences of pointed sets, including the vanishing for the twis
 kernels, which remains to be established. That vanishing is what lets a Galois cocycle of changes
 of variables descend a Weierstrass equation from `Kˢ` to `K`.
 
-The finite case is Noether's argument with the trace in place of a norm. For a finite extension
-`L/K` the automorphisms of `L/K` are linearly independent over `L` (Dedekind), so their sum is not
-identically zero: some `z ∈ L` has `c = ∑_τ τ z ≠ 0`, and `c` is fixed by every automorphism. For
-a `1`-cocycle `f`, the cocycle identity `f (σ τ) = σ (f τ) + f σ` gives
-`σ (∑_τ f τ · τ z) = ∑_τ f τ · τ z - f σ · c`, so `x = -(∑_τ f τ · τ z) / c` satisfies
-`σ x - x = f σ`. The infinite case passes to finite layers, exactly as for Hilbert 90: every
-continuous class is inflated from a finite quotient `Gal(L/K) ⧸ U`, which is the Galois group of
-the finite Galois subextension fixed by `U`.
+The finite case is Noether's argument with the sum over all `K`-automorphisms in place of a norm.
+For a finite extension `L/K` the automorphisms of `L/K` are linearly independent over `L`
+(Dedekind), so their sum is not identically zero: some `z ∈ L` has `c = ∑_τ τ z ≠ 0`, and `c` is
+fixed by every automorphism. For a `1`-cocycle `f`, the cocycle identity
+`f (σ τ) = σ (f τ) + f σ` gives `σ (∑_τ f τ · τ z) = ∑_τ f τ · τ z - f σ · c`, so
+`x = -(∑_τ f τ · τ z) / c` satisfies `σ x - x = f σ`. The infinite case passes to finite layers,
+exactly as for Hilbert 90: every continuous class is inflated from a finite quotient
+`Gal(L/K) ⧸ U`, which is the Galois group of the finite Galois subextension fixed by `U`.
 
 ## Main results
 
