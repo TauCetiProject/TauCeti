@@ -68,10 +68,18 @@ def classicalAction (L : LocalCoefficientSystem.{u, u, w} R X) :
       (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L)).comp
       (loopChainToGroupAlgebra X x R)).op
 
+theorem classicalAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
+    (a : loopChainAlgebra X x R) :
+    classicalAction L (op a) =
+      (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+        (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L)
+        (loopChainToGroupAlgebra X x R a)).unop := by
+  simp [classicalAction]
+
 theorem classicalAction_eq_zero (L : LocalCoefficientSystem.{u, u, w} R X)
     {a : loopChainAlgebra X x R} (ha : loopChainToGroupAlgebra X x R a = 0) :
     classicalAction L (op a) = 0 := by
-  simp [classicalAction, ha]
+  rw [classicalAction_op_apply, ha, map_zero, unop_zero]
 
 /-- The right action of the chain algebra on the fiber of a classical local system. -/
 instance instModuleOpFiber (L : LocalCoefficientSystem.{u, u, w} R X) :
@@ -107,7 +115,7 @@ instance (L : LocalCoefficientSystem.{u, u, w} R X) :
       · right
         rw [← op_unop a, op_smul_eq_classicalAction,
           classicalAction_eq_zero L (loopChainToGroupAlgebra_eq_zero_of_mem hi ha)]
-        rfl
+        exact LinearMap.zero_apply m
     · right
       simp
 
@@ -118,7 +126,7 @@ theorem isDGRightModule_fiber (L : LocalCoefficientSystem.{u, u, w} R X) :
       (trivialGrading R (L.obj (FundamentalGroupoid.mk x)))
       (0 : L.obj (FundamentalGroupoid.mk x) →ₗ[R] L.obj (FundamentalGroupoid.mk x)) where
   isHomogeneous := LinearMap.isHomogeneous_zero _ _ _
-  sq_zero _ := rfl
+  sq_zero _ := LinearMap.zero_apply _
   leibniz {_ _} _ a := by
     rw [op_smul_eq_classicalAction _ (cubicalChainDifferential _ R a),
       classicalAction_eq_zero L (loopChainToGroupAlgebra_differential a)]
@@ -158,15 +166,9 @@ theorem classicalAction_lof_ofCube (L : LocalCoefficientSystem.{u, u, w} R X)
         (NormalizedCubicalChain.ofCube (MooreLoopSpace X x) R c))) =
       LocalCoefficientSystem.monodromyRepresentation L x
         (MooreLoopSpace.fundamentalGroupHom x (c 0))⁻¹ := by
-  simp [classicalAction]
-
-theorem classicalAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
-    (a : loopChainAlgebra X x R) :
-    classicalAction L (op a) =
-      (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
-        (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L)
-        (loopChainToGroupAlgebra X x R a)).unop := by
-  simp [classicalAction]
+  simp only [classicalAction_op_apply, loopChainToGroupAlgebra_lof_zero,
+    loopZeroChainToGroupAlgebra_ofCube]
+  simp
 
 theorem classicalAction_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L')
     (a : (loopChainAlgebra X x R)ᵐᵒᵖ) (m : L.obj (FundamentalGroupoid.mk x)) :
@@ -195,7 +197,6 @@ theorem classicalDGLocalSystemMap_apply {L L' : LocalCoefficientSystem.{u, u, w}
     classicalDGLocalSystemMap (x := x) φ m = (φ.app (FundamentalGroupoid.mk x)).hom m :=
   (rfl)
 
-@[simp]
 theorem classicalDGLocalSystemMap_comp_apply {L L' L'' : LocalCoefficientSystem.{u, u, w} R X}
     (φ : L ⟶ L') (ψ : L' ⟶ L'') (m : L.obj (FundamentalGroupoid.mk x)) :
     classicalDGLocalSystemMap (x := x) (φ ≫ ψ) m =
@@ -212,6 +213,8 @@ Exposed because the type of `classicalDGLocalSystemFunctor_map` needs `obj` to u
     LocalCoefficientSystem.{u, u, w} R X ⥤ DGLocalSystem X x R where
   obj L := classicalDGLocalSystem x L
   map φ := classicalDGLocalSystemMap φ
+  -- `ext` finds no extensionality lemma for these goals, so `hom_ext` is applied with the
+  -- objects named explicitly, which unblocks the stuck `GradedAlgebra` instance problem.
   map_id L := by
     refine DGRightModuleCat.hom_ext (M := classicalDGLocalSystem x L)
       (N := classicalDGLocalSystem x L) fun m ↦ ?_

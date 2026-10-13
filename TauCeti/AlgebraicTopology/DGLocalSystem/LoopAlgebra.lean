@@ -233,6 +233,21 @@ theorem loopChainToGroupAlgebra_eq_zero_of_mem {i : ℤ} (hi : i ≠ 0) {a : loo
 
 /-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
 rings induced by `π₁(f)`. -/
+private theorem loopChainToGroupAlgebraComponent_map {B' : Type u} [TopologicalSpace B']
+    {b' : B'} (f : C(B, B')) (hf : f b = b') (n : ℕ)
+    (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
+    loopChainToGroupAlgebraComponent B' b' R n
+        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) n y) =
+      MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
+        (loopChainToGroupAlgebraComponent B b R n y) := by
+  cases n with
+  | zero =>
+    rw [loopChainToGroupAlgebraComponent_zero, loopChainToGroupAlgebraComponent_zero]
+    exact loopZeroChainToGroupAlgebra_map f hf y
+  | succ n =>
+    rw [loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero,
+      loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero, map_zero]
+
 @[simp]
 theorem loopChainToGroupAlgebra_loopChainMap {B' : Type u} [TopologicalSpace B'] {b' : B'}
     (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
@@ -242,21 +257,9 @@ theorem loopChainToGroupAlgebra_loopChainMap {B' : Type u} [TopologicalSpace B']
   induction a using DirectSum.induction_on with
   | zero => simp
   | of n y =>
-    have h : loopChainToGroupAlgebraComponent B' b' R n
-        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) n y) =
-        MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
-          (loopChainToGroupAlgebraComponent B b R n y) := by
-      cases n with
-      | zero =>
-        rw [loopChainToGroupAlgebraComponent_zero, loopChainToGroupAlgebraComponent_zero]
-        exact loopZeroChainToGroupAlgebra_map f hf y
-      | succ n =>
-        rw [loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero,
-          loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero, map_zero]
-    rw [← DirectSum.lof_eq_of R]
-    exact ((congrArg _ (loopChainMap_lof R f hf n y)).trans
-      (loopChainToGroupAlgebra_lof_component n _)).trans
-      (h.trans (congrArg _ (loopChainToGroupAlgebra_lof_component n y)).symm)
+    rw [← DirectSum.lof_eq_of R, loopChainMap_lof, loopChainToGroupAlgebra_lof_component,
+      loopChainToGroupAlgebra_lof_component]
+    exact loopChainToGroupAlgebraComponent_map f hf n y
   | add x y hx hy => simp only [map_add, hx, hy]
 
 end DegreeZero
