@@ -36,28 +36,27 @@ variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite Q]
   [∀ a b : Q, Finite (a ⟶ b)]
   [HasExt.{t} (GradedModuleCat.{max u v w} (integerGrade k Q))]
 
-private theorem isGradedEulerAdmissible_gradedArrowSum (i : Q)
+/-- The shifted projective sum in the first-arrow resolution is Euler-admissible against
+every finite-dimensional graded target. -/
+theorem isGradedEulerAdmissible_gradedArrowSum (i : Q)
     (Y : GradedModuleCat.{max u v w} (integerGrade k Q)) [Module.Finite k Y] :
     IsGradedEulerAdmissible.{t} k (GradedModuleCat.shift (integerGrade k Q))
       (gradedArrowSum k Q i) Y := by
   let _ := integerGradedAlgebra k Q
-  let hP (j : Q) : Module.Projective (pathAlgebra k Q) (gradedVertexProjective k Q j) :=
-    (gradedFiniteProjectiveModules_iff.1
-      (gradedFiniteProjectiveModules_gradedVertexProjective k Q j)).2
   let hF (a : (j : Q) × (i ⟶ j)) :
       Module.Finite (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
     (gradedFiniteProjectiveModules_iff.1
       (gradedFiniteProjectiveModules_shiftObj
         (gradedFiniteProjectiveModules_gradedVertexProjective k Q a.1) 1)).1
   let _ : Module.Finite (pathAlgebra k Q) (gradedArrowSum k Q i) := inferInstance
-  let _ : Projective (gradedArrowSum k Q i) :=
-    GradedModuleCat.projective_of_module_projective _
   exact isGradedEulerAdmissible_of_projective k _ _ Y
     ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj _ Y).of_equiv
       fun j ↦ (GradedModuleCat.homShiftPowEquiv (integerGrade k Q) _ Y j).symm)
 
 omit [∀ a b : Q, Finite (a ⟶ b)] in
-private theorem isGradedEulerAdmissible_gradedVertexProjective (i : Q)
+/-- A graded vertex projective is Euler-admissible against every finite-dimensional
+graded target, even when the path algebra itself is infinite-dimensional. -/
+theorem isGradedEulerAdmissible_gradedVertexProjective (i : Q)
     (Y : GradedModuleCat.{max u v w} (integerGrade k Q)) [Module.Finite k Y] :
     IsGradedEulerAdmissible.{t} k (GradedModuleCat.shift (integerGrade k Q))
       (gradedVertexProjective k Q i) Y := by
@@ -65,11 +64,6 @@ private theorem isGradedEulerAdmissible_gradedVertexProjective (i : Q)
   let _ : Module.Finite (pathAlgebra k Q) (gradedVertexProjective k Q i) :=
     (gradedFiniteProjectiveModules_iff.1
       (gradedFiniteProjectiveModules_gradedVertexProjective k Q i)).1
-  let _ : Module.Projective (pathAlgebra k Q) (gradedVertexProjective k Q i) :=
-    (gradedFiniteProjectiveModules_iff.1
-      (gradedFiniteProjectiveModules_gradedVertexProjective k Q i)).2
-  let _ : Projective (gradedVertexProjective k Q i) :=
-    GradedModuleCat.projective_of_module_projective _
   exact isGradedEulerAdmissible_of_projective k _ _ Y
     ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj _ Y).of_equiv
       fun j ↦ (GradedModuleCat.homShiftPowEquiv (integerGrade k Q) _ Y j).symm)

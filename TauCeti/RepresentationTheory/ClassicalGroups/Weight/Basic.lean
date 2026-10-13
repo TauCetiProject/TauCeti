@@ -71,9 +71,9 @@ The definitions themselves need only a commutative ring, and are stated there.
 
 ## Implementation notes
 
-The weight space is indexed by `l : Fin n → ℤ`, not by a character of the torus, because that is
-the index the highest-weight theory of the roadmap runs on; `TauCeti.weightChar` is the translation
-between the two, and the separation hypothesis says the translation is faithful.
+The weight space is indexed by `l : Fin n → ℤ`, not by a character of the torus, because that is the
+index the highest-weight theory runs on; `TauCeti.weightChar` is the translation between the two,
+and the separation hypothesis says the translation is faithful.
 
 The intersection defining `TauCeti.weightSpace` runs over `t : Fin n → kˣ` rather than over
 `TauCeti.diagonalTorus k n` itself: `TauCeti.diagGL` is onto the torus
@@ -85,8 +85,6 @@ acts on a weight vector by an honest scalar, and independence is available in th
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
