@@ -65,7 +65,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -409,6 +409,17 @@ theorem wassersteinEDist_ne_top
       ((μ : ProbabilityMeasure X) : Measure X) ((ν : ProbabilityMeasure X) : Measure X) ≠ ∞ :=
   (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd
     (hasFiniteMoment μ)).1 (hasFiniteMoment ν)
+
+/-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
+point of `P_p(X)`. -/
+theorem sum_mul_wassersteinEDist_rpow_ne_top [BorelSpace X] [SecondCountableTopology X]
+    {J : Type*} [Fintype J] {w : J → ℝ≥0} (μ : J → WassersteinSpace p X)
+    (z : WassersteinSpace p X) :
+    ∑ j, (w j : ℝ≥0∞) * wassersteinEDist p ((z : ProbabilityMeasure X) : Measure X)
+      ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal ≠ ∞ :=
+  ENNReal.sum_ne_top.2 fun _ _ ↦ ENNReal.mul_ne_top ENNReal.coe_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
+      (wassersteinEDist_ne_top measurable_edist _ _))
 
 variable [StandardBorelSpace X]
 

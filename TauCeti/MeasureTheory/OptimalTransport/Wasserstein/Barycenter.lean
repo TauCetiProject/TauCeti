@@ -9,8 +9,8 @@ public import TauCeti.MeasureTheory.Measure.FrechetMean.TwoPoint
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Rearrangement
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.Normed.Group.WeightedVariance
-import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Barycenter
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 
 /-!
 # Wasserstein barycenters on the real line

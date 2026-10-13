@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.Measure.FrechetMean.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.MeasureTheory.Measure.FrechetMean.Selection
 import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Existence
-import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 
 /-!
 # Wasserstein barycenters as a multi-marginal problem
@@ -74,9 +74,6 @@ completeness.
   map `T` under a multi-coupling is at most `∫ ∑ j, w j * d(T x, x j) ^ p dγ`.
 * `TauCeti.exists_isMultiCoupling_lintegral_iInf_le` — on a Polish space, every probability law
   costs at least the multi-marginal cost of some multi-coupling.
-* `TauCeti.WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn` — on a Polish space,
-  the Fréchet barycenters of `∑ j, w j • δ_{μ j}` on `P_p(X)` are the minimizers over `P_p(X)` of
-  the weighted `p`-Wasserstein cost.
 * `TauCeti.isMinOn_sum_mul_wassersteinEDist_rpow_map` — the law of a measurable choice of pointwise
   barycenters under an optimal multi-coupling is a barycenter.
 * `TauCeti.exists_isMultiCoupling_isMinOn_lintegral_iInf` — on a Polish space, the multi-marginal
@@ -205,47 +202,6 @@ private theorem exists_glue_wassersteinEDist_rpow_eq [Finite J] (hp0 : p ≠ 0) 
   rw [← hπW j, eLpNorm_rpow_eq_lintegral hp0 hp measurable_edist.aemeasurable, ← hΓ j,
     lintegral_map (measurable_edist.pow_const _) (he j)]
   rfl
-
-omit [CompleteSpace X] in
-/-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
-point of `P_p(X)`. -/
-theorem WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (μ : J → WassersteinSpace p X)
-    (z : WassersteinSpace p X) :
-    ∑ j, (w j : ℝ≥0∞) * wassersteinEDist p ((z : ProbabilityMeasure X) : Measure X)
-      ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal ≠ ∞ :=
-  ENNReal.sum_ne_top.2 fun _ _ ↦ ENNReal.mul_ne_top ENNReal.coe_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
-      (WassersteinSpace.wassersteinEDist_ne_top measurable_edist _ _))
-
-/-- **Fréchet barycenters of a finitely supported law on `P_p(X)`.** On a Polish metric space and
-for `1 ≤ p < ∞`, a point `ν` of the Wasserstein space `P_p(X)` is a `p`-Fréchet barycenter of
-`∑ j, w j • δ_{μ j}` exactly when it minimizes the weighted `p`-Wasserstein cost
-`z ↦ ∑ j, w j * W_p(z, μ j) ^ p` over `P_p(X)`. That cost is finite on `P_p(X)`, so the finiteness
-condition in the definition of a barycenter holds automatically. -/
-theorem WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn [Fact (1 ≤ p)]
-    (hp_top : p ≠ ∞) (μ : J → WassersteinSpace p X) (ν : WassersteinSpace p X) :
-    IsFrechetBarycenter p (∑ j, w j • Measure.dirac (μ j)) ν ↔
-      IsMinOn (fun z : WassersteinSpace p X ↦ ∑ j, (w j : ℝ≥0∞) *
-          wassersteinEDist p ((z : ProbabilityMeasure X) : Measure X)
-            ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal) univ ν := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  have := WassersteinSpace.borelSpace (X := X) (p := p) hp_top
-  set P := ∑ j, w j • Measure.dirac (μ j)
-  have hm (z : WassersteinSpace p X) : AEMeasurable (fun y ↦ edist z y) P :=
-    (continuous_const.edist continuous_id).measurable.aemeasurable
-  have hF (z : WassersteinSpace p X) : frechetPower p P z =
-      ∑ j, (w j : ℝ≥0∞) * wassersteinEDist p ((z : ProbabilityMeasure X) : Measure X)
-        ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal := by
-    simp only [P, frechetPower_sum_smul_dirac, WassersteinSpace.edist_def, ENNReal.smul_def,
-      smul_eq_mul]
-  have hR : frechetRadius p P ν ≠ ∞ := by
-    intro h
-    have := frechetRadius_rpow_eq_frechetPower hp0 hp_top (hm ν)
-    rw [h, ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp_top), hF] at this
-    exact WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top μ ν this.symm
-  rw [isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp_top (hm ν) hm, and_iff_right hR,
-    isMinOn_univ_iff]
-  simp only [hF]
 
 end Polish
 
