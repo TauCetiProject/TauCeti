@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -128,8 +128,11 @@ theorem oneSubVecMulVecGL_toLinearEquiv_apply (t : Rˣ) (u v x : α → R)
     (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R)
       (Matrix.GeneralLinearGroup.toLin (oneSubVecMulVecGL t u v h))) x =
         x - (v ⬝ᵥ x) • u := by
-  simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-    Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply, coe_oneSubVecMulVecGL,
+  -- Mathlib's ring-valued transport is the restriction of the canonical semiring transport.
+  change (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R)
+    (matrixGeneralLinearEquiv (oneSubVecMulVecGL t u v h))) x = _
+  rw [matrixGeneralLinearEquiv_apply]
+  simp only [coe_oneSubVecMulVecGL,
     Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec, op_smul_eq_smul]
 
 /-- The inverse induced automorphism rescales the same row pairing by the inverse unit. -/
@@ -139,14 +142,15 @@ theorem oneSubVecMulVecGL_toLinearEquiv_symm_apply (t : Rˣ) (u v x : α → R)
     (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R)
       (Matrix.GeneralLinearGroup.toLin (oneSubVecMulVecGL t u v h))).symm x =
         x - ((↑t⁻¹ : R) * (v ⬝ᵥ x)) • u := by
-  let L := Matrix.GeneralLinearGroup.toLin.trans
+  let L := matrixGeneralLinearEquiv.trans
     (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R))
   calc
     _ = L (oneSubVecMulVecGL t u v h)⁻¹ x := by
+      -- The two matrix transports have the same underlying construction over a ring.
+      change (L (oneSubVecMulVecGL t u v h)).symm x = _
       simp only [L, map_inv, MulEquiv.trans_apply, LinearEquiv.coe_inv]
     _ = _ := by
-      simp only [L, MulEquiv.trans_apply, LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-        Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply,
+      simp only [L, MulEquiv.trans_apply, matrixGeneralLinearEquiv_apply,
         Matrix.GeneralLinearGroup.coe_inv, coe_oneSubVecMulVecGL, inv_one_sub_vecMulVec t h,
         Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.vecMulVec_mulVec,
         op_smul_eq_smul, smul_smul]
