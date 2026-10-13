@@ -441,7 +441,6 @@ theorem X_smul_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R] (i : Fin
 
 /-- Multiplication by a variable reflects homogeneity as well as lowering bidegree
 by `(2, 1)`. No condition on the coefficient semiring is needed. -/
-@[simp]
 theorem X_smul_mem_bigradedChainMinusPiece_iff {R : Type*} [CommSemiring R]
     (i : Fin n) {g : ℤ × ℤ} {c : GridChainMinus R n} :
     (X i : MvPolynomial (Fin n) R) • c ∈ G.bigradedChainMinusPiece R (g - (2, 1)) ↔
