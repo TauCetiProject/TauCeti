@@ -51,7 +51,7 @@ a neighbourhood of zero, and completeness of `A⟨X⟩` removes the closure
 ## Main results
 
 * `TauCeti.WittVector.isNoetherianRing_isRestricted_subring_intervalRing` : the rings
-  `B^{[ρ₁, ρ₂]}{T₁/c₁, …, Tₖ/cₖ}` are noetherian for all positive radii.
+  `B^{[ρ₁, ρ₂]}{T/c}` in finitely many variables are noetherian for all positive radii.
 * `TauCeti.WittVector.isStronglyNoetherian_intervalRing` : `B^{[ρ₁, ρ₂]}` is strongly noetherian
   for all `ρ₁ ≤ ρ₂`.
 * `TauCeti.WittVector.RadiusRing.isOpenQuotientMap_restrictedSeries_toIntervalRing` : the
@@ -347,17 +347,30 @@ theorem isOpenQuotientMap_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂
 
 end RadiusRing
 
-/-- **Kedlaya's Theorem 4.10.** For `ρ₁ ≤ ρ₂`, the ring `B^{[ρ₁, ρ₂]}{T₁/c₁, …, Tₖ/cₖ}` of
-restricted power series over the interval ring is noetherian, for all positive radii `c`. It is a
-quotient of `A^{ρ₂}{T/c, U/ρ₁⁻¹}`
+/-- **Kedlaya's Theorem 4.10.** For `ρ₁ ≤ ρ₂`, the ring `B^{[ρ₁, ρ₂]}{T/c}` of restricted power
+series over the interval ring in finitely many variables is noetherian, for all positive radii `c`.
+After numbering the variables, it is a quotient of `A^{ρ₂}{T/c, U/ρ₁⁻¹}`
 (`TauCeti.WittVector.RadiusRing.restrictedEvalIntervalRing_surjective`), which is noetherian by
 Kedlaya's Theorem 3.2. -/
-theorem isNoetherianRing_isRestricted_subring_intervalRing (hρ : ρ₁ ≤ ρ₂) {k : ℕ} (c : Fin k → ℝ)
-    [∀ i, Fact (0 < c i)] : IsNoetherianRing (MvPowerSeries.IsRestricted.subring (R := B) c) :=
-  have : ∀ j, Fact (0 < (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j) :=
-    Fin.cases ⟨inv_pos.mpr (by exact_mod_cast hρ₁.1)⟩ fun i ↦ ⟨(Fact.out : 0 < c i)⟩
-  isNoetherianRing_of_surjective _ _ _
-    (RadiusRing.restrictedEvalIntervalRing_surjective p hv hϖ hϖ' hρ₁ hρ₂ hρ)
+theorem isNoetherianRing_isRestricted_subring_intervalRing (hρ : ρ₁ ≤ ρ₂) {σ : Type*} [Finite σ]
+    (c : σ → ℝ) [∀ i, Fact (0 < c i)] :
+    IsNoetherianRing (MvPowerSeries.IsRestricted.subring (R := B) c) := by
+  obtain ⟨k, ⟨e⟩⟩ := Finite.exists_equiv_fin σ
+  -- the case of the variables `Fin k`
+  have : ∀ i, Fact (0 < (c ∘ e.symm) i) := fun i ↦ ‹∀ i, Fact (0 < c i)› (e.symm i)
+  have : ∀ j, Fact (0 < (Fin.cons (ρ₁ : ℝ)⁻¹ (c ∘ e.symm) : Fin (k + 1) → ℝ) j) :=
+    Fin.cases ⟨inv_pos.mpr (by exact_mod_cast hρ₁.1)⟩ fun i ↦ ⟨(Fact.out : 0 < c (e.symm i))⟩
+  have := isNoetherianRing_of_surjective _ _ _
+    (RadiusRing.restrictedEvalIntervalRing_surjective p hv hϖ hϖ' hρ₁ hρ₂ (c := c ∘ e.symm) hρ)
+  -- renaming the variables along `e` identifies the two rings
+  refine isNoetherianRing_of_ringEquiv _ (RingEquiv.restrict
+    (MvPowerSeries.renameEquiv B e).toRingEquiv (MvPowerSeries.IsRestricted.subring (R := B) c)
+      (MvPowerSeries.IsRestricted.subring (R := B) (c ∘ e.symm)) fun f ↦ ?_).symm
+  -- membership in `IsRestricted.subring` is `IsRestricted` by definition
+  change _ ↔ MvPowerSeries.IsRestricted _ (MvPowerSeries.renameEquiv B e f)
+  rw [MvPowerSeries.isRestricted_renameEquiv_iff, Function.comp_assoc, e.symm_comp_self,
+    Function.comp_id]
+  rfl
 
 open TauCeti.Huber in
 /-- **The interval ring `B^I` is strongly noetherian** (Kedlaya, Theorem 4.10 and Remark 4.11),

@@ -12,9 +12,10 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 # Surjectivity of maps of Tate algebras from lifts of generators
 
 Let `Φ : R{Y/d} → S{X/c}` be a ring homomorphism between rings of restricted power series with
-their Gauss norms, over ultrametric normed rings `R` and `S`, with `R` complete, and suppose that
-`Φ` does not increase norms. If every constant from a dense additive subgroup `D ⊆ S` and every
-variable `Xᵢ` has a preimage of no larger norm, then `Φ` is surjective.
+their Gauss norms, over ultrametric normed rings `R` and `S`, with `R{Y/d}` complete (for
+instance when `R` is complete), and suppose that `Φ` does not increase norms. If every constant
+from a dense additive subgroup `D ⊆ S` and every variable `Xᵢ` has a preimage of no larger norm,
+then `Φ` is surjective.
 
 Indeed, the polynomials with coefficients in `D` lift without increasing the norm, since the
 Gauss norm of a polynomial is the largest weighted norm of its terms. These polynomials are dense
@@ -83,12 +84,12 @@ private theorem exists_lift_of_finite {D : AddSubgroup S}
     · simpa [T] using han 0
     · exact (norm_mul_le _ _).trans (mul_le_mul (han t) (hTn ht) (norm_nonneg _) (norm_nonneg _))
 
-variable [CompleteSpace R]
+variable [CompleteSpace (IsRestricted.subring (R := R) d)]
 
 /-- **Surjectivity from lifts of generators.** Let `Φ : R{Y/d} → S{X/c}` be a ring homomorphism
-of Tate algebras that does not increase the Gauss norm, with `R` complete. If every constant from
-a dense additive subgroup `D` of `S` and every variable `Xᵢ` is the image of an element of no
-larger norm, then `Φ` is surjective. -/
+of Tate algebras that does not increase the Gauss norm, with `R{Y/d}` complete. If every constant
+from a dense additive subgroup `D` of `S` and every variable `Xᵢ` is the image of an element of
+no larger norm, then `Φ` is surjective. -/
 theorem surjective_of_exists_lift (hΦ : ∀ f, ‖Φ f‖ ≤ ‖f‖) {D : AddSubgroup S}
     (hDense : Dense (D : Set S)) (hC : ∀ a ∈ D, ∃ f, Φ f = algebraMap S _ a ∧ ‖f‖ ≤ ‖a‖)
     (hX : ∀ i, ∃ f, Φ f = ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩ ∧ ‖f‖ ≤ c i) :
