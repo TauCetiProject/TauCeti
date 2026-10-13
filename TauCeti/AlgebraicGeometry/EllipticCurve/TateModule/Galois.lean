@@ -37,6 +37,12 @@ so it is stated basis-free, on `T_ℓ E` itself.
 
 * `WeierstrassCurve.coe_proj_tateModuleGaloisRepresentation`: on the level `E[ℓ ^ n]` the
   representation is the coordinatewise action on points.
+* `WeierstrassCurve.tateModuleGaloisRepresentation_eq_one_of_isOfFinOrder`: an automorphism
+  fixing `E[ℓ ^ k]` pointwise, with `ℓ ^ k ≥ 3`, and acting on `T_ℓ E` with finite order acts
+  trivially on `T_ℓ E` (Serre's lemma).
+* `WeierstrassCurve.tateModuleGaloisRepresentation_eq_one_of_finite_image`: the same for a
+  subgroup with finite image in the automorphisms of `T_ℓ E`, such as an inertia group at a place
+  of potential good reduction.
 * `WeierstrassCurve.isLocallyConstant_map_of_zsmul_eq_zero`: the orbit map of a torsion point of
   an elliptic curve is locally constant for the Krull topology.
 * `WeierstrassCurve.continuous_tateModuleGaloisRepresentation_apply`: for an elliptic curve, the
@@ -97,6 +103,32 @@ theorem coe_proj_tateModuleGaloisRepresentation (σ : K ≃ₐ[F] K)
     (TateModule.proj n (W.tateModuleGaloisRepresentation ℓ σ x) : (W⁄K).toAffine.Point) =
       Affine.Point.map σ.toAlgHom (TateModule.proj n x : (W⁄K).toAffine.Point) := by
   rw [tateModuleGaloisRepresentation_apply, TateModule.proj_map, TateModule.levelMap_apply]
+
+/-- **Serre's lemma for the `ℓ`-adic representation.** An automorphism `σ` fixing every point of
+`E[ℓ ^ k]`, with `ℓ ^ k ≥ 3`, and acting on `T_ℓ E` with finite order, acts trivially on `T_ℓ E`. -/
+theorem tateModuleGaloisRepresentation_eq_one_of_isOfFinOrder {σ : K ≃ₐ[F] K}
+    (hσ : IsOfFinOrder (W.tateModuleGaloisRepresentation ℓ σ)) {k : ℕ} (hk : 3 ≤ ℓ ^ k)
+    (hfix : ∀ P : (W⁄K).toAffine.Point, ℓ ^ k • P = 0 → Affine.Point.map σ.toAlgHom P = P) :
+    W.tateModuleGaloisRepresentation ℓ σ = 1 :=
+  TateModule.eq_one_of_isOfFinOrder_of_forall_proj_eq hσ hk fun t ↦ Subtype.ext <| by
+    rw [coe_proj_tateModuleGaloisRepresentation,
+      hfix _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k t).2)]
+
+/-- **A subgroup acting on `T_ℓ E` through a finite quotient and trivially on `E[ℓ ^ k]`, with
+`ℓ ^ k ≥ 3`, acts trivially on `T_ℓ E`.** For an inertia group at a place of potential good
+reduction, the image is finite, and this passes from unramified torsion `E[ℓ ^ k]` to an
+unramified Tate module. -/
+theorem tateModuleGaloisRepresentation_eq_one_of_finite_image {H : Subgroup (K ≃ₐ[F] K)}
+    (hH : (W.tateModuleGaloisRepresentation ℓ '' (H : Set (K ≃ₐ[F] K))).Finite) {k : ℕ}
+    (hk : 3 ≤ ℓ ^ k) (hfix : ∀ σ ∈ H, ∀ P : (W⁄K).toAffine.Point, ℓ ^ k • P = 0 →
+      Affine.Point.map σ.toAlgHom P = P) {σ : K ≃ₐ[F] K} (hσ : σ ∈ H) :
+    W.tateModuleGaloisRepresentation ℓ σ = 1 := by
+  refine W.tateModuleGaloisRepresentation_eq_one_of_isOfFinOrder ?_ hk (hfix σ hσ)
+  -- The powers of the unit by which `σ` acts lie in the finite image of `H`.
+  rw [← Representation.asGroupHom_apply, Units.isOfFinOrder_val, ← finite_powers]
+  refine (hH.preimage Units.val_injective.injOn).subset ?_
+  rintro _ ⟨n, rfl⟩
+  exact ⟨σ ^ n, H.pow_mem hσ n, by simp [Representation.asGroupHom_apply]⟩
 
 end Representation
 
