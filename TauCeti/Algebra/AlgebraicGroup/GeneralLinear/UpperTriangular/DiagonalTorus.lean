@@ -124,7 +124,6 @@ theorem diagonalTorus_comp_inclusion :
   rw [← Category.assoc ((AlgebraicGeometry.hopfSpec _).map _),
     CommHopfAlgCat.hopfSpec_map_comp_quotientSpecι, ← coordinateMap_def,
     coordinateMap_comp_diagonalTorusCoordinateMap]
-  rfl
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
