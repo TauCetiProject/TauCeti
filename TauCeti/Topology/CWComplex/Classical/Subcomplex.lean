@@ -31,6 +31,8 @@ subcomplexes.
 
 * `Topology.RelCWComplex.Subcomplex.relCWComplex`: the CW structure on `C` relative to a
   subcomplex `E`.
+* `Topology.RelCWComplex.Subcomplex.relCWComplexCellEquiv`: its `n`-cells are the `n`-cells of `C`
+  not in `E`.
 * `Topology.RelCWComplex.Subcomplex.finite_relCWComplex`: it is finite when `C` is.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
@@ -54,7 +56,7 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComple
 
 /-- A relative CW complex `(C, D)` is a CW complex relative to any subcomplex `E`: its `n`-cells
 are the `n`-cells of `C` that do not lie in `E`, with the characteristic maps of `C`. -/
-@[expose, simps, instance_reducible]
+@[instance_reducible]
 def relCWComplex (E : Subcomplex C) : RelCWComplex C E where
   cell n := ↥(E.I n)ᶜ
   map n i := map n (i : cell C n)
@@ -99,29 +101,44 @@ def relCWComplex (E : Subcomplex C) : RelCWComplex C E where
     · exact subset_union_of_subset_right
         (subset_iUnion₂ (s := fun n (j : ↥(E.I n)ᶜ) ↦ closedCell n (j : cell C n)) n ⟨j, hj⟩) _
 
+/-- The `n`-cells of `C` relative to a subcomplex `E` are the `n`-cells of `C` not in `E`. -/
+def relCWComplexCellEquiv (E : Subcomplex C) (n : ℕ) :
+    @cell X _ C E E.relCWComplex n ≃ ↥(E.I n)ᶜ :=
+  Equiv.refl _
+
+/-- The characteristic maps of `C` relative to `E` are characteristic maps of `C`. -/
+@[simp]
+lemma map_relCWComplex (E : Subcomplex C) (n : ℕ) (i : @cell X _ C E E.relCWComplex n) :
+    @map X _ C E E.relCWComplex n i = map n (E.relCWComplexCellEquiv n i : cell C n) :=
+  (rfl)
+
 /-- The open cells of `C` relative to `E` are open cells of `C`. -/
 @[simp]
-lemma openCell_relCWComplex (E : Subcomplex C) (n : ℕ) (i : ↥(E.I n)ᶜ) :
-    @openCell X _ C E E.relCWComplex n i = openCell n (i : cell C n) :=
-  rfl
+lemma openCell_relCWComplex (E : Subcomplex C) (n : ℕ) (i : @cell X _ C E E.relCWComplex n) :
+    @openCell X _ C E E.relCWComplex n i = openCell n (E.relCWComplexCellEquiv n i : cell C n) :=
+  (rfl)
 
 /-- The closed cells of `C` relative to `E` are closed cells of `C`. -/
 @[simp]
-lemma closedCell_relCWComplex (E : Subcomplex C) (n : ℕ) (i : ↥(E.I n)ᶜ) :
-    @closedCell X _ C E E.relCWComplex n i = closedCell n (i : cell C n) :=
-  rfl
+lemma closedCell_relCWComplex (E : Subcomplex C) (n : ℕ) (i : @cell X _ C E E.relCWComplex n) :
+    @closedCell X _ C E E.relCWComplex n i =
+      closedCell n (E.relCWComplexCellEquiv n i : cell C n) :=
+  (rfl)
 
 /-- The boundaries of the cells of `C` relative to `E` are boundaries of cells of `C`. -/
 @[simp]
-lemma cellFrontier_relCWComplex (E : Subcomplex C) (n : ℕ) (i : ↥(E.I n)ᶜ) :
-    @cellFrontier X _ C E E.relCWComplex n i = cellFrontier n (i : cell C n) :=
-  rfl
+lemma cellFrontier_relCWComplex (E : Subcomplex C) (n : ℕ)
+    (i : @cell X _ C E E.relCWComplex n) :
+    @cellFrontier X _ C E E.relCWComplex n i =
+      cellFrontier n (E.relCWComplexCellEquiv n i : cell C n) :=
+  (rfl)
 
 /-- The CW structure on `C` relative to a subcomplex is finite dimensional when `C` is. -/
 lemma finiteDimensional_relCWComplex [FiniteDimensional C] (E : Subcomplex C) :
     @FiniteDimensional X _ C E E.relCWComplex :=
   @FiniteDimensional.mk X _ C E E.relCWComplex <| by
     filter_upwards [FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D)] with n hn
+    rw [(E.relCWComplexCellEquiv n).isEmpty_congr]
     simp [isEmpty_subtype]
 
 /-- The CW structure on `C` relative to a subcomplex is of finite type when `C` is. -/
@@ -129,7 +146,7 @@ lemma finiteType_relCWComplex [FiniteType C] (E : Subcomplex C) :
     @FiniteType X _ C E E.relCWComplex :=
   @FiniteType.mk X _ C E E.relCWComplex fun n ↦
     have := FiniteType.finite_cell (C := C) (D := D) n
-    Subtype.finite
+    (E.relCWComplexCellEquiv n).finite_iff.2 Subtype.finite
 
 /-- The CW structure on `C` relative to a subcomplex is finite when `C` is. -/
 lemma finite_relCWComplex [Finite C] (E : Subcomplex C) :
@@ -152,7 +169,6 @@ lemma le_iff_I_subset {F E : Subcomplex C} : F ≤ E ↔ ∀ n, F.I n ⊆ E.I n 
 
 /-- A subcomplex `F` of `C` contained in a subcomplex `E`, as a subcomplex of the CW complex `E`.
 Its cells are the cells of `E` that are cells of `F`. -/
-@[expose, simps]
 def ofLE {F E : Subcomplex C} (h : F ≤ E) : Subcomplex (E : Set X) where
   carrier := F
   I n := (Subtype.val : E.I n → cell C n) ⁻¹' F.I n
@@ -163,5 +179,16 @@ def ofLE {F E : Subcomplex C} (h : F ≤ E) : Subcomplex (E : Set X) where
     refine iUnion_congr fun n ↦ iUnion_congr_of_surjective
       (fun j ↦ ⟨(j.1 : E.I n).1, j.2⟩)
       (fun j ↦ ⟨⟨⟨j.1, le_iff_I_subset.1 h n j.2⟩, j.2⟩, rfl⟩) fun j ↦ rfl
+
+/-- As a set, `ofLE h` is the subcomplex `F`. -/
+@[simp]
+lemma coe_ofLE {F E : Subcomplex C} (h : F ≤ E) : (ofLE h : Set X) = F :=
+  (rfl)
+
+/-- The `n`-cells of `ofLE h` are the `n`-cells of `E` that are `n`-cells of `F`. -/
+@[simp]
+lemma ofLE_I {F E : Subcomplex C} (h : F ≤ E) (n : ℕ) :
+    (ofLE h).I n = (Subtype.val : E.I n → cell C n) ⁻¹' F.I n :=
+  (rfl)
 
 end Topology.RelCWComplex.Subcomplex

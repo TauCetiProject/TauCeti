@@ -98,7 +98,7 @@ theorem finsum_finrank_singularHomology_subcomplexPair [RelCWComplex.Finite C]
     k _ M _ E.finite_relCWComplex
   rw [@complexBasePair_eq_ofInclusion X _ _ (E : Set X) C E.relCWComplex,
     @cwEulerChar_def X _ (E : Set X) C E.relCWComplex] at this
-  simpa only [Subcomplex.relCWComplex_cell] using this
+  simpa only [Nat.card_congr (E.relCWComplexCellEquiv _)] using this
 
 /-- **Additivity of the Euler characteristic along a subcomplex.** For a subcomplex `E` of a
 finite relative CW complex `(C, D)` and finite-dimensional coefficients `M`, the alternating sum
@@ -157,7 +157,14 @@ theorem eulerChar_eq_add_sum_finsum_finrank_singularHomology {E : ℕ → Subcom
     rw [Fin.sum_univ_castSucc, ← add_assoc, ← ih fun j hj ↦ hE j (by omega)]
     have h := eulerChar_eq_add_finsum_finrank_singularHomology (E (m + 1) : Set X) k
       (Subcomplex.ofLE (hE m m.lt_succ_self))
-    rwa [(Homeomorph.setCongr (Subcomplex.coe_ofLE (hE m m.lt_succ_self))).eulerChar_eq] at h
+    rw [(Homeomorph.setCongr (Subcomplex.coe_ofLE (hE m m.lt_succ_self))).eulerChar_eq] at h
+    have hpair : ∀ {A : Set X}, A = E m → ∀ hAE : A ⊆ E (m + 1),
+        TopPair.ofInclusion (X := TopCat.of X) hAE =
+          TopPair.ofInclusion (X := TopCat.of X)
+            (SetLike.coe_subset_coe.2 (hE m m.lt_succ_self)) := by
+      rintro _ rfl _
+      rfl
+    rwa [hpair (Subcomplex.coe_ofLE _)] at h
 
 end Absolute
 
