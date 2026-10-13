@@ -22,15 +22,25 @@ within-set ODE regularity theorem then gives `C^(n + 1)` regularity. Applied to 
 spray, this removes the separate regularity assumption on the projected curve in the spray
 characterization of geodesics.
 
+## Main results
+
+* `TauCeti.Manifold.contMDiffOn_succ_of_isMIntegralCurveOn`: regularity on parameter sets
+  with unique derivatives.
+* `TauCeti.Manifold.contMDiffAt_two_of_isMIntegralCurveAt`: local `C²` regularity.
+* `TauCeti.Manifold.contMDiff_succ_of_isMIntegralCurve` and
+  `TauCeti.Manifold.contMDiff_of_isMIntegralCurve`: all-time finite-order and smooth regularity.
+
 ## References
 
-* The chart calculation adapts Tau Ceti's `IsMIntegralCurveAt.contMDiffAt_two` in
-  `TauCeti.Geometry.Manifold.IntegralCurve.Basic` to within-derivatives on `UniqueDiffOn` sets.
+* The chart calculation adapts the original Tau Ceti proof of
+  `IsMIntegralCurveAt.contMDiffAt_two`, formerly in
+  `TauCeti.Geometry.Manifold.IntegralCurve.Basic`, to within-derivatives on `UniqueDiffOn` sets.
+  The local and all-time regularity results below now follow from that general calculation.
 -/
 
 public section
 
-open Bundle Filter Set
+open Bundle Filter Manifold Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -111,5 +121,53 @@ theorem contMDiffOn_two_of_isMIntegralCurveOn [BoundarylessManifold I M] [IsMani
     ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s :=
   contMDiffOn_succ_of_isMIntegralCurveOn 1 hs hγ
     (fun _ _ ↦ BoundarylessManifold.isInteriorPoint) hv
+
+variable [BoundarylessManifold I M]
+
+/-- A local integral curve on a boundaryless manifold is `C²` at its initial parameter if the
+vector field is `C¹` at the corresponding point of the curve. -/
+theorem contMDiffAt_two_of_isMIntegralCurveAt [IsManifold I 2 M]
+    {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {t₀ : ℝ}
+    (hγ : IsMIntegralCurveAt γ v t₀)
+    (hv : ContMDiffAt I I.tangent 1 (fun x => (⟨x, v x⟩ : TangentBundle I M)) (γ t₀)) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t₀ := by
+  have hv' : ∀ᶠ t in 𝓝 t₀,
+      ContMDiffAt I I.tangent 1 (fun x => (⟨x, v x⟩ : TangentBundle I M)) (γ t) :=
+    hγ.continuousAt.tendsto.eventually ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hv)
+  obtain ⟨s, hs, hγs⟩ := isMIntegralCurveAt_iff.mp hγ
+  obtain ⟨u, hus, huopen, ht₀⟩ := mem_nhds_iff.mp (Filter.inter_mem hs hv')
+  exact (contMDiffOn_two_of_isMIntegralCurveOn huopen.uniqueDiffOn
+    (hγs.mono fun _ ht => (hus ht).1) (fun _ ht => (hus ht).2)).contMDiffAt
+    (huopen.mem_nhds ht₀)
+
+/-- An integral curve of a `C^n` vector field on a boundaryless smooth manifold is `C^(n + 1)`. -/
+theorem contMDiff_succ_of_isMIntegralCurve (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
+    {γ : ℝ → M} {v : (x : M) → TangentSpace I x}
+    (hγ : IsMIntegralCurve γ v)
+    (hv : let _ : IsManifold I 1 M := IsManifold.of_le (n := (n + 1 : ℕ)) (by
+      exact_mod_cast Nat.succ_le_succ (Nat.zero_le n));
+      CMDiff n (fun x => (⟨x, v x⟩ : TangentBundle I M))) :
+    ContMDiff 𝓘(ℝ, ℝ) I (n + 1 : ℕ) γ := by
+  let _ : IsManifold I 1 M := IsManifold.of_le (n := (n + 1 : ℕ)) (by
+    exact_mod_cast Nat.succ_le_succ (Nat.zero_le n))
+  -- Unfold the dependent let so the tangent bundle uses the installed low-order instance.
+  change CMDiff n (fun x => (⟨x, v x⟩ : TangentBundle I M)) at hv
+  exact contMDiffOn_univ.mp (contMDiffOn_succ_of_isMIntegralCurveOn n
+    uniqueDiffOn_univ (hγ.isMIntegralCurveOn univ)
+    (fun _ _ => BoundarylessManifold.isInteriorPoint) (fun _ _ => hv.contMDiffAt))
+
+/-- An integral curve of an infinitely smooth vector field on a boundaryless smooth manifold is
+infinitely smooth. -/
+theorem contMDiff_of_isMIntegralCurve [IsManifold I ∞ M]
+    {γ : ℝ → M} {v : (x : M) → TangentSpace I x}
+    (hγ : IsMIntegralCurve γ v)
+    (hv : CMDiff ∞ (fun x => (⟨x, v x⟩ : TangentBundle I M))) :
+    ContMDiff 𝓘(ℝ, ℝ) I ∞ γ := by
+  rw [contMDiff_infty]
+  intro n
+  let _ : IsManifold I (n + 1 : ℕ) M := IsManifold.of_le (n := ∞)
+    (by exact_mod_cast le_top)
+  exact (contMDiff_succ_of_isMIntegralCurve n hγ (hv.of_le (by exact_mod_cast le_top))).of_le
+    (by exact_mod_cast Nat.le_succ n)
 
 end TauCeti.Manifold
