@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.XPowSubC
 public import TauCeti.Analysis.Complex.Minpoly
 public import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc
 
