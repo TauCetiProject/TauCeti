@@ -30,6 +30,10 @@ center of the new block into `x`. Renaming variables does not change the total d
 such term has the bigrading of `V^e · y` (`GridDiagram.maslovOℤ_stabilizeX_eq_of_isEmpty` and
 `GridDiagram.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles`).
 
+The bigrading calculation holds over every commutative ring and is stated on this explicit
+coefficient formula. Identifying it with the component of `stabilizeXMap` requires
+characteristic two.
+
 Since `stabilizeXMap` is a quasi-isomorphism (`GridDiagram.quasiIso_stabilizeXMap`), this is the
 chain-level input for identifying the bigraded homologies `GH⁻(G')` and `GH⁻(G)`, and so the
 invariants `τ` of a knot grid and of this stabilization.
@@ -59,7 +63,7 @@ namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 
-variable (R : Type*) [CommRing R] [CharP R 2]
+variable (R : Type*) [CommRing R]
 
 local notation "A" => MvPolynomial (Fin n) R
 local notation "S" => MvPolynomial (Fin (n + 1)) R
@@ -68,15 +72,12 @@ local notation "S" => MvPolynomial (Fin (n + 1)) R
 bidegree of some monomial `V^d · y` of `c`. -/
 private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R (n + 1)}
     {x : GridState n} {e : Fin n →₀ ℕ}
-    (he : e ∈ (((ModuleCat.restrictScalars
-        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
-          (eqToHom
-            ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
-        (G.1.stabilizeXMap s R).f () ≫ eqToHom (G.1.unblockedComplex_X R ())).hom c x).support) :
+    (he : e ∈ (Finsupp.mapRange (rename s.predAbove) (map_zero _)
+      (G.1.stabilizeXOffCenterToCenter s R (G.1.stabilizeXOffCenterProjection s R c)) x).support) :
     ∃ y : GridState (n + 1), ∃ d ∈ (c y).support,
       G.monomialBidegree x e = (G.stabilizeX s).monomialBidegree y d := by
   classical
-  rw [GridDiagram.stabilizeXMap_f_apply, Finsupp.mapRange_apply] at he
+  rw [Finsupp.mapRange_apply] at he
   -- The monomial `e` is the renaming of a monomial `u` of the coefficient before renaming.
   obtain ⟨u, hu, rfl⟩ : ∃ u ∈ (G.1.stabilizeXOffCenterToCenter s R
       (G.1.stabilizeXOffCenterProjection s R c) x).support, u.mapDomain s.predAbove = e := by
@@ -107,19 +108,19 @@ private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R 
 
 /-- **The stabilization chain map preserves the bigrading.** The chain map `GC⁻(G') ⟶ GC⁻(G)` of
 the stabilization splitting the `X`-marking of column `s` sends a chain of `GC⁻(G')` that is
-homogeneous of bidegree `g` to a chain of `GC⁻(G)` homogeneous of the same bidegree. -/
+homogeneous of bidegree `g` to a chain of `GC⁻(G)` homogeneous of the same bidegree. The explicit
+coefficient formula preserves bidegrees over any commutative ring. -/
 theorem stabilizeXMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : GridChainMinus R (n + 1)}
     (hc : c ∈ (G.stabilizeX s).bigradedChainMinusPiece R g) :
-    ((ModuleCat.restrictScalars
-        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
-          (eqToHom
-            ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
-        (G.1.stabilizeXMap s R).f () ≫ eqToHom (G.1.unblockedComplex_X R ())).hom c ∈
+    Finsupp.mapRange (rename s.predAbove) (map_zero _)
+      (G.1.stabilizeXOffCenterToCenter s R (G.1.stabilizeXOffCenterProjection s R c)) ∈
       G.bigradedChainMinusPiece R g := by
   rw [mem_bigradedChainMinusPiece] at hc ⊢
   intro x e he
   obtain ⟨y, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support s R he
   rw [h, hc y d hd]
+
+variable [CharP R 2]
 
 /-- **The stabilization chain map preserves the Alexander grading.** The chain map
 `GC⁻(G') ⟶ GC⁻(G)` of the stabilization splitting the `X`-marking of column `s` sends a chain of
@@ -134,6 +135,7 @@ theorem stabilizeXMap_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus
       G.alexanderChainMinusPiece R a := by
   rw [mem_alexanderChainMinusPiece] at hc ⊢
   intro x e he
+  rw [GridDiagram.stabilizeXMap_f_apply] at he
   obtain ⟨y, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support s R he
   rw [← monomialBidegree_snd, h, monomialBidegree_snd, hc y d hd]
 

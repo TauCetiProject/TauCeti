@@ -45,39 +45,11 @@ theorem stabilizeXChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
       ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
         (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g) :
     G.1.stabilizeXChainMap s R c ∈ G.bigradedChainMinusPiece R g := by
-  classical
   have hG' : G.stabilizeX s = ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
       (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ := Subtype.ext (G.val_stabilizeX s)
-  rw [← hG', mem_bigradedChainMinusPiece] at hc
-  rw [mem_bigradedChainMinusPiece]
-  intro x e he
-  rw [GridDiagram.stabilizeXChainMap_apply, Finsupp.mapRange_apply] at he
-  -- Trace an output monomial through renaming, the off-center projection, and a rectangle.
-  obtain ⟨u, hu, rfl⟩ : ∃ u ∈ (G.1.stabilizeXOffCenterToCenter s R
-      (G.1.stabilizeXOffCenterProjection s R c) x).support, u.mapDomain s.predAbove = e := by
-    by_contra! h
-    exact (MvPolynomial.mem_support_iff.mp he) (coeff_rename_eq_zero _ _ _ fun u hu =>
-      MvPolynomial.notMem_support_iff.mp fun hu' => h u hu' hu)
-  rw [GridDiagram.stabilizeXOffCenterToCenter_apply, Finsupp.sum] at hu
-  obtain ⟨y, -, huy⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hu)
-  obtain ⟨d, hd, d', hd', rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ huy)
-  obtain ⟨r, hr, rfl⟩ :=
-    GridDiagram.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient _ R hd'
-  rw [GridDiagram.stabilizeXOffCenterProjection_apply] at hd
-  have hM := G.1.maslovOℤ_stabilizeX_eq_of_isEmpty s x
-    ((GridDiagram.mem_XHomotopyRectangles _ _ r).mp hr).1
-  have hA := G.1.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
-  rw [← val_stabilizeX, alexander_eq_intCast, G.alexander_eq_intCast] at hA
-  have hA' : (G.stabilizeX s).alexanderℤ y.1 = G.alexanderℤ x -
-      ((G.stabilizeX s).1.OColumns r.toGridRectangle).card := by
-    exact_mod_cast hA
-  rw [val_stabilizeX] at hA'
-  rw [← hc y.1 d hd]
-  -- The rectangle grading shifts cancel the degree of its coefficient monomial.
-  refine Prod.ext ?_ ?_ <;>
-    simp only [monomialBidegree_fst, monomialBidegree_snd, Finsupp.degree_mapDomain, map_add,
-      map_sum, Finsupp.degree_single, Finset.sum_const, smul_eq_mul, mul_one, val_stabilizeX] <;>
-    push_cast <;> omega
+  rw [← hG'] at hc
+  rw [GridDiagram.stabilizeXChainMap_apply]
+  exact G.stabilizeXMap_mem_bigradedChainMinusPiece s R hc
 
 variable [CharP R 2]
 
