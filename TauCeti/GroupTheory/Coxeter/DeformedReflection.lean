@@ -110,30 +110,16 @@ def deformedReflection (q : Rˣ) (i : V) : (V → R) ≃ₗ[R] (V → R) :=
 theorem deformedReflection_apply (q : Rˣ) (i : V) (x : V → R) :
     G.deformedReflection q i x =
       x - G.deformedCartanRow (q : R) i x • Pi.single i 1 := by
-  simp only [deformedReflection, MulEquiv.trans_apply,
-    LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, Matrix.GeneralLinearGroup.toLin_apply,
-    Matrix.mulVecLin_apply, deformedReflectionGL, TauCeti.coe_oneSubVecMulVecGL,
-    Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec, op_smul_eq_smul,
-    deformedCartanRow_apply, dotProduct]
+  simp only [deformedReflection, MulEquiv.trans_apply, deformedReflectionGL,
+    TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply, deformedCartanRow_apply, dotProduct]
 
 /-- The inverse subtracts `q⁻²` times the same Cartan-row value. -/
 theorem deformedReflection_symm_apply (q : Rˣ) (i : V) (x : V → R) :
     (G.deformedReflection q i).symm x =
       x - ((↑q⁻¹ : R) ^ 2 * G.deformedCartanRow (q : R) i x) • Pi.single i 1 := by
-  have hself : dotProduct (G.deformedCartanEntry (q : R) i) (Pi.single i 1) =
-      ((q ^ 2 : Rˣ) : R) + 1 := by
-    simp [deformedCartanEntry_self, add_comm]
-  calc
-    _ = matrixLinearEquiv (G.deformedReflectionGL q i)⁻¹ x := by
-      simp only [map_inv, deformedReflection, LinearEquiv.coe_inv]
-    _ = _ := by
-      simp only [MulEquiv.trans_apply, LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-        Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply,
-        Matrix.GeneralLinearGroup.coe_inv, deformedReflectionGL, TauCeti.coe_oneSubVecMulVecGL,
-        TauCeti.inv_one_sub_vecMulVec (q ^ 2) hself, Matrix.sub_mulVec, Matrix.one_mulVec,
-        Matrix.smul_mulVec, Matrix.vecMulVec_mulVec, op_smul_eq_smul,
-        deformedCartanRow_apply, dotProduct, smul_smul]
-      simp
+  simp only [deformedReflection, MulEquiv.trans_apply, deformedReflectionGL,
+    TauCeti.oneSubVecMulVecGL_toLinearEquiv_symm_apply, deformedCartanRow_apply, dotProduct]
+  simp
 
 /-- Distinct nonadjacent vertex operators commute. -/
 theorem deformedReflection_commute (q : Rˣ) {i j : V}
