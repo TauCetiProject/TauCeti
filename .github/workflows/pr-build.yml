@@ -1293,9 +1293,9 @@ jobs:
               approval_args+=(--batch-id "$SCOPE_BATCH" --paths-file "$RUNNER_TEMP/scope-files")
             fi
             if python3 gate/scripts/bors_scope_approval.py "${approval_args[@]}"; then
-              sc_state=success; sc_desc="restricted paths approved by kim-em through bors; other scope guards passed"
+              sc_state=success; sc_desc="restricted paths approved by a repository admin through bors; other scope guards passed"
             else
-              sc_state=failure; sc_desc="changes outside TauCeti/ — kim-em can approve with bors r+ or bors merge"
+              sc_state=failure; sc_desc="changes outside TauCeti/ — a repository admin can approve with bors r+ or bors merge"
             fi
           else
             sc_state=success; sc_desc="changes are in scope (TauCeti/, the allowed root files, and the bibliography only)"

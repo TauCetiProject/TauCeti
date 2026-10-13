@@ -34,12 +34,11 @@ content; the disjoint windows those theorems also accept are `disjointWindow` in
 `Process/DisjointWindow.lean`. `fixedStart_injective` gives injectivity at each length and
 `fixedStart_eventually_injective` the eventual form the limit theorems take.
 
-Measure-theoretic facts about all three — square-integrability, conditional expectations, variances
-and covariances under contractability — live with the `L²` averaging library in
-`Exchangeability/L2/BlockAverages.lean` and `Exchangeability/L2/LongTailAverages.lean`, which import
-this module. Keeping the definitions here means a route that only needs the algebra does not import
-the `L²` machinery to get them: the Koopman route needs `prefixAverage` to state its Birkhoff
-bridge, and has no `L²` content of its own.
+Integrability and conditional expectations of these averages live in
+`TauCeti.Probability.Process.BlockAverage.Measure`. Variance and covariance identities under
+contractability live in `Exchangeability/L2/BlockAverages.lean` and
+`Exchangeability/L2/LongTailAverages.lean`. Keeping the algebra separate lets averaging and
+dynamical arguments use it without importing measure theory.
 -/
 
 public section
