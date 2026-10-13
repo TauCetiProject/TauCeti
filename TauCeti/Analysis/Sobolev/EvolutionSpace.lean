@@ -15,7 +15,7 @@ import Mathlib.Topology.Order.ProjIcc
 /-!
 # The energy space of a Gelfand triple
 
-For a continuous linear map `ι : V →L[ℝ] H` into a real Hilbert space, `EvolutionSpace ι a b`
+For a continuous linear map `ι : V →L[ℝ] H` into a real inner-product space, `EvolutionSpace ι a b`
 is the space of `u ∈ L²(a,b;V)` whose image under `ι.gelfandDual ∘ ι` has weak time derivative
 in `L²(a,b;V*)`. It carries the Euclidean graph norm and is Banach when `V` is Banach.
 The derivative is uniquely determined by the value field; extensionality needs no injectivity
@@ -60,7 +60,7 @@ def _root_.ContinuousLinearMap.evolutionBaseL (ι : V →L[ℝ] H) (a b : ℝ) :
 
 open ContinuousLinearMap (evolutionBaseL)
 
-/-- The pivot inclusion acts pointwise almost everywhere. -/
+/-- The pivot map acts pointwise almost everywhere. -/
 theorem _root_.ContinuousLinearMap.evolutionBaseL_apply_ae (ι : V →L[ℝ] H) (a b : ℝ)
     (u : Lp V 2 (volume.restrict (Ioo a b))) :
     evolutionBaseL ι a b u =ᵐ[volume.restrict (Ioo a b)] fun t ↦ ι.gelfandDual (ι (u t)) :=
@@ -209,7 +209,8 @@ def mk (u : Lp V 2 (volume.restrict (Ioo a b)))
 theorem value_mk (u : Lp V 2 (volume.restrict (Ioo a b)))
     (d : Lp (StrongDual ℝ V) 2 (volume.restrict (Ioo a b))) (h) :
     value (mk (ι := ι) u d h) = u := by
-  simp [value, valueL, mk]
+  rw [value_eq_prev]
+  exact WeakDerivStep.prev_mk _ _ _ _
 
 @[simp]
 theorem timeDeriv_mk (u : Lp V 2 (volume.restrict (Ioo a b)))
@@ -234,6 +235,20 @@ private theorem norm_timeDeriv_eq (u : EvolutionSpace ι a b) :
   filter_upwards [timeDeriv_apply_ae u] with t ht
   rw [ht, ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply]
   exact LinearIsometryEquiv.norm_map _ _
+
+/-- Convergence in the energy space is equivalent to convergence of the value and the
+dual-valued weak time derivative in their respective `L²` spaces. -/
+theorem tendsto_iff_value_timeDeriv {I : Type*} {l : Filter I}
+    {v : I → EvolutionSpace ι a b} {u : EvolutionSpace ι a b} :
+    Tendsto v l (𝓝 u) ↔
+      Tendsto (fun i ↦ value (v i)) l (𝓝 (value u)) ∧
+      Tendsto (fun i ↦ timeDeriv (v i)) l (𝓝 (timeDeriv u)) := by
+  rw [WeakDerivStep.tendsto_iff_prev_weakFDeriv]
+  simp only [← value_eq_prev]
+  refine and_congr Iff.rfl ?_
+  conv_lhs => rw [tendsto_iff_norm_sub_tendsto_zero]
+  conv_rhs => rw [tendsto_iff_norm_sub_tendsto_zero]
+  simp only [← timeDeriv_sub, norm_timeDeriv_eq, ← WeakDerivStep.weakFDerivL_apply, map_sub]
 
 /-- The squared energy norm is the sum of the squared value and time-derivative `L²` norms. -/
 theorem norm_sq_eq_norm_value_sq_add_norm_timeDeriv_sq (u : EvolutionSpace ι a b) :
@@ -329,11 +344,16 @@ representative. Both endpoint evaluations are therefore bounded linear maps. -/
 def toContinuousMap (hab : a < b) : EvolutionSpace ι a b →L[ℝ] C(Icc a b, H) :=
   .ofSeqClosedGraph (g := representativeₗ hab) (representativeₗ_closedGraph hab)
 
+private theorem toContinuousMap_apply (hab : a < b) (u : EvolutionSpace ι a b) :
+    toContinuousMap hab u = representativeₗ hab u := by
+  simp only [toContinuousMap, ContinuousLinearMap.coeFn_ofSeqClosedGraph]
+
 /-- The canonical time trace represents the pivot-valued function almost everywhere. -/
 theorem value_ae_eq_toContinuousMap (hab : a < b) (u : EvolutionSpace ι a b) :
     (fun t ↦ ι (value u t)) =ᵐ[volume.restrict (Ioo a b)]
-      fun t ↦ toContinuousMap hab u (projIcc a b hab.le t) :=
-  representativeₗ_ae hab u
+      fun t ↦ toContinuousMap hab u (projIcc a b hab.le t) := by
+  rw [toContinuousMap_apply]
+  exact representativeₗ_ae hab u
 
 /-- A continuous function is the time trace exactly when it represents the pivot value field. -/
 theorem toContinuousMap_eq_iff (hab : a < b) (u : EvolutionSpace ι a b)
