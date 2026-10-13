@@ -9,9 +9,10 @@ public import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 
 /-!
-# Discrete valuation rings of a finite extension of a local field
+# Discrete valuation rings of an algebraic extension of a local field
 
-Let `K` be a nonarchimedean local field and `M` a finite extension of `K`. A discrete valuation
+Let `K` be a nonarchimedean local field and `M` an algebraic extension of `K`. A discrete
+valuation
 ring `S` with fraction field `M` which lies over `𝒪[K]` through a local homomorphism defines a
 valuation on `M` whose restriction to `K` has valuation ring `𝒪[K]`
 (`TauCeti.isEquiv_comap_valuation_maximalIdeal_of_isLocalHom`). Since the valuation of `K`
@@ -19,7 +20,7 @@ extends uniquely to `M` (`TauCeti.algebraicExtensionValuation_isEquiv`), the val
 extended valuation, and in particular `S` lies inside `𝒪[M]`.
 
 This is what lets a statement phrased with an abstract discrete valuation ring dominating `𝒪[K]`,
-such as potential good reduction, be read over the ring of integers of a finite extension.
+such as potential good reduction, be read over the ring of integers of an algebraic extension.
 
 ## Main results
 
@@ -40,12 +41,13 @@ open ValuativeRel IsDedekindDomain
 namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] {M : Type*} [Field M] [Algebra K M] [Module.Finite K M]
+  [IsNonarchimedeanLocalField K] {M : Type*} [Field M] [Algebra K M] [Algebra.IsAlgebraic K M]
   {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S] [Algebra S M]
   [IsFractionRing S M] [Algebra 𝒪[K] S] [IsLocalHom (algebraMap 𝒪[K] S)]
 
 /-- **A discrete valuation ring dominating `𝒪[K]` defines the extended valuation.** Let `S` be a
-discrete valuation ring with fraction field a finite extension `M` of `K`, lying over `𝒪[K]`
+discrete valuation ring with fraction field an algebraic extension `M` of `K`, lying over
+`𝒪[K]`
 through a local homomorphism. Its valuation is equivalent to the valuation of any valuative
 relation on `M` extending that of `K`. -/
 theorem isEquiv_valuation_maximalIdeal_of_isLocalHom [ValuativeRel M] [ValuativeExtension K M]
