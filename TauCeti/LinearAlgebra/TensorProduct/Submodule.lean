@@ -7,13 +7,16 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 
 /-!
 # Scalar extension of images and powers of submodules
 
 Extension of scalars commutes with taking images of submodules under linear maps, and preserves
 powers of submodules of an algebra. The latter applies, in particular, to the homogeneous pieces of
-tensor and exterior algebras, defined as powers of their generators.
+tensor and exterior algebras, defined as powers of their generators. Over a faithfully flat
+coefficient algebra, image containment can also be checked after extension of scalars,
+using `LinearMap.mapsTo_baseChange_iff`.
 -/
 
 public section
@@ -56,3 +59,19 @@ theorem baseChange_pow (p : Submodule R B) (n : ℕ) :
     (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) (p : Set B) n)
 
 end Submodule
+
+namespace LinearMap
+
+variable {R A M N : Type*} [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [Module.FaithfullyFlat R A]
+
+/-- Over a faithfully flat coefficient algebra, image containment between submodules can be
+checked after extension of scalars. -/
+theorem mapsTo_baseChange_iff (f : M →ₗ[R] N) (p : Submodule R M) (q : Submodule R N) :
+    (∀ z ∈ p.baseChange A, f.baseChange A z ∈ q.baseChange A) ↔ ∀ x ∈ p, f x ∈ q := by
+  change p.baseChange A ≤ (q.baseChange A).comap (f.baseChange A) ↔ p ≤ q.comap f
+  rw [← Submodule.map_le_iff_le_comap, ← Submodule.baseChange_map,
+    Submodule.baseChange_le_iff, Submodule.map_le_iff_le_comap]
+
+end LinearMap

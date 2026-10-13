@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Images and ranges after extension of scalars
@@ -30,13 +31,13 @@ This builds on `Submodule.baseChange`, `Submodule.baseChange_eq_span` and
 
 ## Main results
 
-* `LinearMap.mapsTo_baseChange`: a containment of the image of a submodule in another ascends to
-  the extensions, with no hypothesis on the coefficient algebra.
-* `LinearMap.mapsTo_baseChange_iff` and `LinearMap.range_baseChange_le_baseChange_iff`: over a
-  faithfully flat coefficient algebra, such a containment, respectively a containment of the whole
-  range in a submodule, may be checked after extension of scalars.
+* `LinearMap.range_baseChange_le_baseChange_iff`: over a faithfully flat coefficient algebra,
+  a containment of the whole range in a submodule may be checked after extension of scalars.
 * `LinearMap.one_tmul_mem_range_baseChange_iff`: a vector belongs to a range exactly when its
   canonical image belongs to the extended range, for a faithfully flat coefficient algebra.
+
+Image containment for a submodule is recorded as `LinearMap.mapsTo_baseChange_iff` in
+`TauCeti/LinearAlgebra/TensorProduct/Submodule.lean`, alongside `Submodule.baseChange_map`.
 -/
 
 public section
@@ -80,52 +81,15 @@ universe u v w x
 
 variable {R : Type u} {A : Type v} {M : Type w} {N : Type x}
 
-section Image
-
-variable [CommSemiring R] [Semiring A] [Algebra R A]
-variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-/-- **Ascent of a containment along extension of scalars.**  If `f` maps `p` into `q`, then the
-extended map sends the extension of `p` into the extension of `q`.  This direction asks nothing of
-the coefficient algebra. -/
-theorem mapsTo_baseChange (f : M →ₗ[R] N) {p : Submodule R M} {q : Submodule R N}
-    (h : ∀ x ∈ p, f x ∈ q) {z : A ⊗[R] M} (hz : z ∈ p.baseChange A) :
-    f.baseChange A z ∈ q.baseChange A := by
-  have hle : p.baseChange A ≤ (q.baseChange A).comap (f.baseChange A) := by
-    rw [Submodule.baseChange_eq_span, Submodule.span_le]
-    rintro - ⟨x, hx, rfl⟩
-    simpa using Submodule.tmul_mem_baseChange_of_mem (1 : A) (h x hx)
-  exact hle hz
-
-end Image
-
-section Descent
-
 variable [CommRing R] [Ring A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 variable [Module.FaithfullyFlat R A]
-
-/-- **A containment of submodules under a linear map may be checked after extending scalars.**
-Over a faithfully flat coefficient algebra, the extended map sends the extension of `p` into the
-extension of `q` exactly when `f` maps `p` into `q`. -/
-theorem mapsTo_baseChange_iff (f : M →ₗ[R] N) (p : Submodule R M) (q : Submodule R N) :
-    (∀ z ∈ p.baseChange A, f.baseChange A z ∈ q.baseChange A) ↔ ∀ x ∈ p, f x ∈ q := by
-  refine ⟨fun h x hx => ?_, fun h _ hz => mapsTo_baseChange f h hz⟩
-  have hmem := h ((1 : A) ⊗ₜ[R] x) (Submodule.tmul_mem_baseChange_of_mem (1 : A) hx)
-  rwa [baseChange_tmul, Submodule.one_tmul_mem_baseChange_iff] at hmem
 
 /-- **A containment of the range of a linear map in a submodule may be checked after extending
 scalars.** -/
 theorem range_baseChange_le_baseChange_iff (f : M →ₗ[R] N) (q : Submodule R N) :
     range (f.baseChange A) ≤ q.baseChange A ↔ range f ≤ q := by
-  constructor
-  · intro h y hy
-    obtain ⟨x, rfl⟩ := hy
-    rw [← Submodule.one_tmul_mem_baseChange_iff (A := A) q (f x)]
-    exact h ⟨(1 : A) ⊗ₜ[R] x, by simp⟩
-  · intro h y hy
-    obtain ⟨z, rfl⟩ := hy
-    exact mapsTo_baseChange f (p := ⊤) (fun x _ => h ⟨x, rfl⟩) (by simp)
+  rw [← LinearMap.baseChange_range, Submodule.baseChange_le_iff]
 
 /-- Over a faithfully flat coefficient algebra, a vector belongs to the range of a linear map if
 and only if its canonical image belongs to the range after extension of scalars. -/
@@ -137,7 +101,5 @@ theorem one_tmul_mem_range_baseChange_iff (f : M →ₗ[R] N) (y : N) :
         SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) ((1 : A) ⊗ₜ[R] y)
     _ ↔ y ∈ range f := by
       rw [← Submodule.baseChange, Submodule.one_tmul_mem_baseChange_iff]
-
-end Descent
 
 end LinearMap

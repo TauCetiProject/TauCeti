@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import Mathlib.Algebra.Lie.Derivation.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.BaseChange
-public import TauCeti.LinearAlgebra.TensorProduct.Range
+public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Lie derivations after extension of scalars
@@ -36,12 +36,14 @@ Mathlib's Lie theorem applies, and then descended.
 ## Main definitions
 
 * `LieDerivation.baseChange`: the `A`-linear extension of a Lie derivation to `A ⊗[R] L`.
+* `LieDerivation.baseChangeHom`: the same extension bundled as an `R`-linear Lie homomorphism.
 
 ## Main results
 
 * `LieDerivation.baseChange_ad`: the extension of an inner derivation `ad x` is the inner
   derivation at `1 ⊗ₜ x`, so the construction is compatible with the adjoint action.
-* `LieDerivation.baseChange_zero`, `LieDerivation.baseChange_add` and
+* `LieDerivation.baseChange_zero`, `LieDerivation.baseChange_add`,
+  `LieDerivation.baseChange_smul` and
   `LieDerivation.baseChange_lie`: extension of scalars respects the additive and the bracket
   structure of the derivations.
 * `LieDerivation.baseChange_injective`: over a faithfully flat coefficient algebra, two derivations
@@ -57,7 +59,8 @@ function, recorded as `LieDerivation.coe_ofLieDerivation`; only the ring over wh
 registered as linear differs.
 
 The descent is not specific to derivations, so it lives one level down:
-`LinearMap.mapsTo_baseChange_iff` and `LinearMap.range_baseChange_le_baseChange_iff` in
+`LinearMap.mapsTo_baseChange_iff` in `TauCeti/LinearAlgebra/TensorProduct/Submodule.lean` and
+`LinearMap.range_baseChange_le_baseChange_iff` in
 `TauCeti/LinearAlgebra/TensorProduct/Range.lean`, `LinearMap.baseChange_injective` and
 `LinearMap.isNilpotent_baseChange_iff` in
 `TauCeti/LinearAlgebra/TensorProduct/BaseChange.lean`.  These are the statements for a bare linear
@@ -91,9 +94,9 @@ def baseChange (D : LieDerivation R L L) : LieDerivation A (A ⊗[R] L) (A ⊗[R
 
 /-- The extended derivation differentiates the second factor of a pure tensor. -/
 @[simp]
-theorem baseChange_apply_tmul (D : LieDerivation R L L) (a : A) (x : L) :
-    D.baseChange A (a ⊗ₜ[R] x) = a ⊗ₜ[R] D x :=
-  (rfl)
+theorem baseChange_tmul (D : LieDerivation R L L) (a : A) (x : L) :
+    D.baseChange A (a ⊗ₜ[R] x) = a ⊗ₜ[R] D x := by
+  exact LinearMap.baseChange_tmul D.toLinearMap a x
 
 /-- The linear map underlying the extension of `D` is the extension of the linear map underlying
 `D`; this is what lets the linear-algebraic base-change API apply to it. -/
@@ -106,38 +109,71 @@ theorem baseChange_toLinearMap (D : LieDerivation R L L) :
 `A`-linear extension `LieDerivation.baseChange` are the same function: only the ring over which
 each is recorded as linear differs. -/
 theorem coe_ofLieDerivation (D : LieDerivation R L L) :
-    ⇑(Lie.Derivation.ofLieDerivation A D) = ⇑(D.baseChange A) :=
+    ⇑(Lie.Derivation.ofLieDerivation A D) = ⇑(D.baseChange A) := by
+  funext z
+  rw [Lie.Derivation.ofLieDerivation_apply]
+  exact (congrFun (LinearMap.baseChange_eq_ltensor D.toLinearMap) z).symm
+
+variable (A) in
+/-- Extension of scalars as an `R`-linear homomorphism of Lie algebras. The extended derivations
+are `A`-linear, and their coefficient scalars are restricted to `R` for this homomorphism. -/
+def baseChangeHom : LieDerivation R L L →ₗ⁅R⁆
+    RestrictScalars R A (LieDerivation A (A ⊗[R] L) (A ⊗[R] L)) where
+  toFun := baseChange A
+  map_add' D E := by
+    apply LieDerivation.ext
+    intro z
+    have h := congrFun (coe_ofLieDerivation (A := A) (D + E)) z
+    rw [map_add] at h
+    simp only [LieDerivation.add_apply, coe_ofLieDerivation] at h
+    exact h.symm
+  map_smul' r D := by
+    apply LieDerivation.ext
+    intro z
+    change (r • D).baseChange A z = algebraMap R A r • D.baseChange A z
+    have h := congrFun (coe_ofLieDerivation (A := A) (r • D)) z
+    rw [map_smul] at h
+    simpa only [LieDerivation.smul_apply, coe_ofLieDerivation, algebraMap_smul] using h.symm
+  map_lie' {D E} := by
+    apply LieDerivation.ext
+    intro z
+    have h := congrFun (coe_ofLieDerivation (A := A) ⁅D, E⁆) z
+    rw [LieHom.map_lie] at h
+    simp only [LieDerivation.lie_apply, coe_ofLieDerivation] at h
+    exact h.symm
+
+/-- The bundled scalar-extension homomorphism applies as the extended derivation. -/
+@[simp]
+theorem baseChangeHom_apply (D : LieDerivation R L L) : baseChangeHom A D = D.baseChange A :=
   (rfl)
 
 /-- The zero derivation extends to the zero derivation. -/
 @[simp]
 theorem baseChange_zero : (0 : LieDerivation R L L).baseChange A = 0 :=
-  LieDerivation.ext fun z => by
-    have h := congrFun (coe_ofLieDerivation (A := A) (0 : LieDerivation R L L)) z
-    rw [map_zero] at h
-    simpa using h.symm
+  (baseChangeHom A).toLinearMap.map_zero
 
 /-- Extension of scalars is additive in the derivation. -/
 @[simp]
 theorem baseChange_add (D E : LieDerivation R L L) :
     (D + E).baseChange A = D.baseChange A + E.baseChange A :=
-  LieDerivation.ext fun z => by
-    have h := congrFun (coe_ofLieDerivation (A := A) (D + E)) z
-    rw [map_add] at h
-    simp only [LieDerivation.add_apply, coe_ofLieDerivation] at h
-    rw [LieDerivation.add_apply]
-    exact h.symm
+  map_add (baseChangeHom A) D E
+
+/-- Extension of scalars preserves scalar multiplication by the original coefficient ring. -/
+@[simp]
+theorem baseChange_smul (r : R) (D : LieDerivation R L L) :
+    (r • D).baseChange A = r • D.baseChange A := by
+  apply LieDerivation.ext
+  intro z
+  have h := congrArg (fun E : LieDerivation A (A ⊗[R] L) (A ⊗[R] L) => E z)
+    (map_smul (baseChangeHom A) r D)
+  change (r • D).baseChange A z = algebraMap R A r • D.baseChange A z at h
+  simpa only [LieDerivation.smul_apply, algebraMap_smul] using h
 
 /-- Extension of scalars is compatible with the bracket of derivations. -/
 @[simp]
 theorem baseChange_lie (D E : LieDerivation R L L) :
     (⁅D, E⁆ : LieDerivation R L L).baseChange A = ⁅D.baseChange A, E.baseChange A⁆ :=
-  LieDerivation.ext fun z => by
-    have h := congrFun (coe_ofLieDerivation (A := A) ⁅D, E⁆) z
-    rw [LieHom.map_lie] at h
-    simp only [LieDerivation.lie_apply, coe_ofLieDerivation] at h
-    rw [LieDerivation.lie_apply]
-    exact h.symm
+  LieHom.map_lie (baseChangeHom A) D E
 
 /-- The extension of the inner derivation at `x` is the inner derivation at `1 ⊗ₜ x`. -/
 @[simp]
