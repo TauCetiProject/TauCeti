@@ -29,7 +29,7 @@ The classes whose fibre degree vanishes at every geometric point, that is at eve
 values in an algebraically closed field, therefore form a subfunctor
 `relativePicardDegreeZeroSubfunctor` of the relative Picard presheaf. When `f` is a smooth proper
 curve with geometrically connected fibres, this is the functor `Pic⁰_{X/S}` of line bundles of
-degree zero on every geometric fibre, the functor the Jacobian represents.
+degree zero on every geometric fibre, before representability.
 
 On a fibre which is a proper integral curve over `Ω` with discrete valuation rings as
 codimension-one local rings, the fibre degree is additive (`relativePicardFiberDegree_mul`), by
