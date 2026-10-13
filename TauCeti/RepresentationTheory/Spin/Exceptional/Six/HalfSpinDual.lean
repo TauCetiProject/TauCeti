@@ -273,6 +273,8 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
   refine ⟨hline, ?_⟩
+  -- First compute the half-spin dimensions and transport reversal to an anti-isomorphism between
+  -- the two endomorphism factors of the even Clifford algebra.
   have hWfin : finrank K P.W = 3 :=
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
@@ -289,6 +291,8 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   let a : (Module.End K (spinPlus Q P))ᵐᵒᵖ ≃ₐ[K]
       Module.End K (spinMinus Q P) :=
     reverseEvenFirstToSecondAlgEquiv ep hswap (hplus.trans hminus.symm)
+  -- Scalar duality turns that anti-isomorphism into an isomorphism of endomorphism algebras;
+  -- Skolem--Noether then realizes it as conjugation by a linear equivalence.
   let c : Module.End K (Module.Dual K (spinPlus Q P)) ≃ₐ[K]
       Module.End K (spinMinus Q P) :=
     (Module.dualEndAlgEquiv K (spinPlus Q P)).symm.trans a
@@ -300,6 +304,7 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   let E : (spinMinusSubrep P hline).toSubmodule ≃ₗ[K]
       Module.Dual K (spinPlusSubrep P hline).toSubmodule :=
     eminus.symm.trans <| T.symm.trans eplus.symm.dualMap
+  -- It remains to show that the conjugating equivalence intertwines the two Spin actions.
   refine ⟨Representation.Equiv.mk E ?_⟩
   intro g
   apply LinearMap.ext
@@ -309,6 +314,7 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   intro p
   have hactionInv := reverseEvenFirstToSecondAlgEquiv_action ep hswap
     (hplus.trans hminus.symm) (spinGroupToEven Q g⁻¹)
+  -- Reversal converts the inverse even-half-spin action into the odd-half-spin action.
   have hcInv : c ((spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap) =
       spinMinusAction Q P hline (spinGroupToEven Q g) := by
     simp only [c, AlgEquiv.trans_apply, Module.dualEndAlgEquiv_symm_dualMap]
@@ -331,12 +337,14 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
     ((spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap)
   rw [hcInv] at hconjInv
   simp only [LinearEquiv.conjAlgEquiv_apply] at hconjInv
+  -- Apply the conjugacy equation to the chosen odd spinor.
   have hintertwine :
       T.symm (spinMinusAction Q P hline (spinGroupToEven Q g) (eminus.symm s)) =
         (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap
           (T.symm (eminus.symm s)) := by
     have h := congrArg T.symm <| LinearMap.congr_fun hconjInv (eminus.symm s)
     simpa using h
+  -- Translate the ambient exterior-algebra actions to the two subrepresentation actions.
   have hplusAction :
       eplus.symm ((spinPlusSubrep P hline).toRepresentation g⁻¹ (eplus p)) =
         spinPlusAction Q P hline (spinGroupToEven Q g⁻¹) p := by
@@ -359,6 +367,7 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
     apply Subtype.ext
     simpa [eminus] using
       (coe_spinMinusAction_spinGroup_apply P hline g (eminus.symm s)).symm
+  -- The remaining equality is the evaluation pairing for the transported dual action.
   simp only [E, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
     LinearEquiv.dualMap_apply]
   rw [hminusAction, hintertwine]

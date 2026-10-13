@@ -147,13 +147,6 @@ variable (R : Type u) [CommSemiring R] (M : Type v) [AddCommMonoid M] [Module R 
 endomorphism algebra of its dual. -/
 noncomputable def dualEndAlgEquiv :
     (Module.End R M)ᵐᵒᵖ ≃ₐ[R] Module.End R (Module.Dual R M) := by
-  let f : (Module.End R M)ᵐᵒᵖ →ₐ[R] Module.End R (Module.Dual R M) :=
-    { toFun := fun g => g.unop.dualMap
-      map_one' := by ext; simp
-      map_mul' := by intro g h; ext; simp [Module.End.mul_apply]
-      map_zero' := by ext; simp
-      map_add' := by intro g h; ext; simp
-      commutes' := by intro r; ext; simp }
   letI : Module Rᵐᵒᵖ M :=
     Module.compHom M ((RingHom.id R).fromOpposite fun _ _ ↦ Commute.all _ _)
   letI : IsScalarTower R Rᵐᵒᵖ M :=
@@ -183,16 +176,20 @@ noncomputable def dualEndAlgEquiv :
   let d : (Module.End Rᵐᵒᵖ M)ᵐᵒᵖ ≃+* Module.End R (Module.Dual R M) :=
     (LinearEquiv.refl R (Module.Dual R M)).dualEndRingEquiv heval
   let e := (RingEquiv.op c).trans d
-  have hfe : (f : (Module.End R M)ᵐᵒᵖ → Module.End R (Module.Dual R M)) = e := by
-    funext g
-    ext φ x
-    have h := (LinearEquiv.refl R (Module.Dual R M)).dualEndRingEquiv_apply_apply heval
-      (MulOpposite.op (c g.unop)) φ x
-    have hc : c g.unop x = g.unop x := rfl
-    simp only [LinearEquiv.refl_apply, MulOpposite.unop_op] at h
-    rw [hc] at h
-    simpa [f, e, d] using h.symm
-  exact AlgEquiv.ofBijective f (hfe ▸ e.bijective)
+  refine AlgEquiv.ofRingEquiv (f := e) fun r ↦ ?_
+  ext φ x
+  -- Expose scalar evaluation through the promoted ring equivalence.
+  change ((LinearEquiv.refl R (Module.Dual R M)).dualEndRingEquiv heval
+    (MulOpposite.op (c (algebraMap R (Module.End R M) r)))) φ x = _
+  have h := (LinearEquiv.refl R (Module.Dual R M)).dualEndRingEquiv_apply_apply heval
+    (MulOpposite.op (c (algebraMap R (Module.End R M) r))) φ x
+  calc
+    _ = φ (c (algebraMap R (Module.End R M) r) x) := by
+      simpa only [LinearEquiv.refl_apply, MulOpposite.unop_op] using h
+    _ = _ := by
+      -- The scalar endomorphism is pointwise scalar multiplication under `c`.
+      change φ (r • x) = r * φ x
+      rw [φ.map_smul, smul_eq_mul]
 
 /-- Under scalar duality, an endomorphism acts on the dual by precomposition. -/
 @[simp] theorem dualEndAlgEquiv_apply (g : (Module.End R M)ᵐᵒᵖ) :
