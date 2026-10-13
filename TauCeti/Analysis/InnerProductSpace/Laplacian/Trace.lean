@@ -46,8 +46,13 @@ theorem laplacian_eq_trace_iteratedGradientChain_one (f : E → ℝ) (x : E) :
   -- The derivative of the gradient is the Riesz representative of the second derivative.
   have hD :
       iteratedGradientChain f 1 x = continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) := by
-    rw [iteratedGradientChain_succ, iteratedGradientChain_zero]
-    exact (toDual ℝ E).symm.toContinuousLinearEquiv.comp_fderiv (f := fderiv ℝ f) (x := x)
+    -- `∇f = (toDual ℝ E).symm ∘ fderiv ℝ f`, and `continuousLinearMapOfBilin B` is
+    -- `(toDual ℝ E).symm` composed with `B`.
+    have hgrad : gradient f = (toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f := by
+      funext y
+      simp only [gradient, Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    rw [iteratedGradientChain_succ, iteratedGradientChain_zero, hgrad, continuousLinearMapOfBilin,
+      ContinuousLinearEquiv.comp_fderiv]
   rw [LinearMap.trace_eq_sum_inner _ b, laplacian_eq_iteratedFDeriv_orthonormalBasis f b, hD]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [iteratedFDeriv_two_apply, ContinuousLinearMap.coe_coe, real_inner_comm,

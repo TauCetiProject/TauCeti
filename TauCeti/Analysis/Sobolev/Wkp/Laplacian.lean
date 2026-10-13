@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Normed.Module.Trace
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
@@ -72,8 +73,8 @@ theorem forall_integral_laplacian_smul_value_eq_iff (u : Wkp mu Omega p 2) {f : 
   have htr : LocallyIntegrableOn (fun x => LinearMap.trace ℝ E (iteratedGradient 1 u x))
       Omega mu := fun x hx => by
     obtain ⟨t, ht, hint⟩ := (hasWeakFDerivOn_iteratedGradient 0 u).locallyIntegrableOn_deriv x hx
-    exact ⟨t, ht, (LinearMap.toContinuousLinearMap
-      (LinearMap.trace ℝ E ∘ₗ ContinuousLinearMap.coeLM ℝ)).integrable_comp hint⟩
+    exact ⟨t, ht, by simpa only [IntegrableOn, Function.comp_def, traceCLM_apply] using
+      (traceCLM ℝ E).integrable_comp hint⟩
   simp_rw [integral_laplacian_smul_value_eq]
   constructor
   · intro h

@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
+import TauCeti.Analysis.Normed.Module.Trace
 import TauCeti.Analysis.PDE.Regularity.Hessian.Lp
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
@@ -110,10 +111,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq (
   obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real hn hp hp_top
   refine ⟨C, fun u f hf => ?_⟩
   -- The trace of endomorphisms, which is continuous because `ℝⁿ` is finite-dimensional.
-  set T : (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) →L[ℝ] ℝ :=
-    LinearMap.toContinuousLinearMap
-      (LinearMap.trace ℝ (EuclideanSpace ℝ (Fin n)) ∘ₗ ContinuousLinearMap.coeLM ℝ)
-  have hT : ∀ A, T A = LinearMap.trace ℝ (EuclideanSpace ℝ (Fin n)) A := fun _ => rfl
+  set T := traceCLM ℝ (EuclideanSpace ℝ (Fin n))
   -- The trace of the weak Hessian of `u` is `f`.
   have hf' : T.compLpL p _ (Wkp.iteratedGradient 1 u) = f := by
     have hloc : LocallyIntegrableOn (f : EuclideanSpace ℝ (Fin n) → ℝ) ⊤ volume :=
@@ -122,7 +120,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq (
     refine Lp.ext ?_
     filter_upwards [T.coeFn_compLpL (Wkp.iteratedGradient 1 u),
       (Wkp.forall_integral_laplacian_smul_value_eq_iff u hloc).1 hf] with x hx htr
-    rw [hx, hT, htr]
+    rw [hx, traceCLM_apply, htr]
   -- Approximate `u` by test functions in the Sobolev norm.
   obtain ⟨v, hv, hlim⟩ :=
     mem_closure_iff_seq_limit.1 (Wkp.denseRange_ofTestFunctionₗ_top hp_top 2 u)
@@ -141,7 +139,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq (
           Δ (φ j : EuclideanSpace ℝ (Fin n) → ℝ) := by
       filter_upwards [T.coeFn_compLpL (H j),
         iteratedGradientTestFunctionLp_apply_ae (mu := volume) p 1 (φ j)] with x hx hHx
-      rw [hx, hT, hHj, hHx, iteratedGradientTestFunction_def,
+      rw [hx, traceCLM_apply, hHj, hHx, iteratedGradientTestFunction_def,
         laplacian_eq_trace_iteratedGradientChain_one]
     rw [Lp.norm_def, eLpNorm_congr_ae hae, Opens.coe_top, Measure.restrict_univ, lpNorm]
   have hlimT : Tendsto (fun j => (C : ℝ) * ‖T.compLpL p _ (H j)‖) atTop (𝓝 (C * ‖f‖)) := by
