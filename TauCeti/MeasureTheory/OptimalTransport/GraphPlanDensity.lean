@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Realization
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
+import TauCeti.MeasureTheory.OptimalTransport.Cost.Partial.Integrable
 
 /-!
 # Density of graph plans among couplings
@@ -17,12 +18,36 @@ of graph plans of measurable, law-preserving maps. A countable quantization of t
 each point by a uniformly small distance. Realizing the coupling exactly after this quantization
 then makes its graph realization close in the Lévy--Prokhorov metric.
 
-This is the measure-theoretic approximation used to compare the Monge and Kantorovich problems
-for bounded continuous costs. It does not assert that a limiting coupling is itself a graph plan.
+This is the measure-theoretic approximation used to compare the Monge and Kantorovich problems.
+It does not assert that a limiting coupling is itself a graph plan.
 
-The realization step follows A. Pratelli, *On the equality between Monge's infimum and
-Kantorovich's minimum in optimal mass transportation*, Ann. I. H. Poincaré Probab. Statist.
-43 (2007), §1.1.
+For a bounded continuous cost, integration against a weakly convergent family of plans converges,
+so the Monge and Kantorovich values agree. The same holds for a continuous cost with an integrable
+split upper envelope `c (x, y) ≤ a x + b y`: below a level `R` the truncated cost is bounded
+continuous, and above it the envelope makes the cost uniformly small over all couplings, graph
+plans included. In particular, on a Polish metric space the `p`-th power of the Wasserstein
+distance from an atomless law with finite `p`-moment is a Monge infimum over transport maps. For
+continuous costs without such an envelope, possibly infinite, the equality of the two values is
+Pratelli's Theorem B, which is not proved here.
+
+## Main statements
+
+* `TauCeti.Coupling.dense_graphPlans` — graph plans are dense among the couplings of an atomless
+  source law;
+* `TauCeti.mongeCost_eq_transportCost_boundedContinuous` — Monge equals Kantorovich for bounded
+  continuous costs;
+* `TauCeti.IsCoupling.exists_hasLaw_transportMapCost_le` — under an integrable split upper
+  envelope, transport maps approach the cost of every coupling;
+* `TauCeti.mongeCost_eq_transportCost_of_le_split` — Monge equals Kantorovich for continuous costs
+  with an integrable split upper envelope;
+* `TauCeti.wassersteinEDist_rpow_eq_mongeCost` — the Monge formula for `W_p ^ p` from an atomless
+  law with finite `p`-moment.
+
+## References
+
+* A. Pratelli, *On the equality between Monge's infimum and Kantorovich's minimum in optimal mass
+  transportation*, Ann. I. H. Poincaré Probab. Statist. 43 (2007), 1--13; the realization step
+  follows §1.1, and Theorem B there is the general continuous-cost equality.
 -/
 
 public section
@@ -202,5 +227,141 @@ theorem mongeCost_eq_transportCost_boundedContinuous
       mongeCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) (ν₀ : Measure Y) ≤
         ∫⁻ z, f z ∂σ} := hclosed.closure_subset (closure_mono hsubset hclosure)
   exact hmem
+
+/-! ### Costs with an integrable split upper envelope -/
+
+section SplitEnvelope
+
+open ProbabilityTheory
+
+variable {c : X × Y → ℝ≥0∞} {a : X → ℝ≥0∞} {b : Y → ℝ≥0∞}
+
+/-- The truncation `min c R` of a continuous cost at a finite level is a bounded continuous cost,
+so transport maps approach its integral against every coupling. -/
+private theorem IsCoupling.exists_hasLaw_lintegral_min_lt (hπ : IsCoupling π μ ν)
+    (hc : Continuous c) (R : NNReal) {η : ℝ≥0∞} (hη : η ≠ 0) :
+    ∃ T : X → Y, HasLaw T ν μ ∧
+      ∫⁻ z, min (c z) R ∂graphPlan T μ < ∫⁻ z, min (c z) R ∂π + η := by
+  let : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hπ.snd_eq ▸ inferInstance
+  have hfin (z : X × Y) : min (c z) R ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.coe_ne_top (min_le_right _ _)
+  have hle (z : X × Y) : (min (c z) R).toNNReal ≤ R := by
+    rw [← ENNReal.coe_le_coe, ENNReal.coe_toNNReal (hfin z)]
+    exact min_le_right _ _
+  let f : BoundedContinuousFunction (X × Y) NNReal := BoundedContinuousFunction.mkOfBound
+    ⟨fun z ↦ (min (c z) R).toNNReal,
+      ENNReal.continuousOn_toNNReal.comp_continuous (hc.min continuous_const) hfin⟩ R
+    fun z w ↦ by
+      rw [NNReal.dist_eq]
+      exact abs_sub_le_of_nonneg_of_le (by positivity) (by exact_mod_cast hle z)
+        (by positivity) (by exact_mod_cast hle w)
+  have hf : (fun z ↦ (f z : ℝ≥0∞)) = fun z ↦ min (c z) R :=
+    funext fun z ↦ ENNReal.coe_toNNReal (hfin z)
+  have hfπ : ∫⁻ z, f z ∂π ≠ ∞ := by
+    rw [hf]
+    exact ne_top_of_le_ne_top (by simp) (lintegral_mono fun z ↦ min_le_right (c z) R)
+  -- The bounded-cost theorem takes bundled laws; the coercion of `μ₀` is `μ` itself.
+  let μ₀ : ProbabilityMeasure X := ⟨μ, inferInstance⟩
+  have : NullSingletonClass (μ₀ : Measure X) := ‹NullSingletonClass μ›
+  have hfm : Measurable fun z ↦ (f z : ℝ≥0∞) :=
+    measurable_coe_nnreal_ennreal.comp f.continuous.measurable
+  obtain ⟨T, hT, hTlt⟩ : ∃ T : X → Y, HasLaw T ν μ ∧
+      transportMapCost (fun z ↦ (f z : ℝ≥0∞)) μ T < ∫⁻ z, f z ∂π + η :=
+    mongeCost_lt_iff.1 <|
+      ((mongeCost_eq_transportCost_boundedContinuous (μ₀ := μ₀) (ν₀ := ⟨ν, inferInstance⟩)
+        f).trans_le (transportCost_le_lintegral hπ _)).trans_lt (ENNReal.lt_add_right hfπ hη)
+  refine ⟨T, hT, ?_⟩
+  rwa [transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hfm.aemeasurable, hf] at hTlt
+
+/-- **Transport maps approximate the cost of every coupling.** Let the cost be continuous and
+bounded by an integrable split envelope `c (x, y) ≤ a x + b y`. For an atomless source, the cost
+of every coupling `π` is approached from above by the costs of transport maps: for every `η > 0`
+some transport map costs at most `∫⁻ c ∂π + η`. -/
+theorem IsCoupling.exists_hasLaw_transportMapCost_le (hπ : IsCoupling π μ ν) (hc : Continuous c)
+    (ha : AEMeasurable a μ) (hb : AEMeasurable b ν) (haint : ∫⁻ x, a x ∂μ ≠ ∞)
+    (hbint : ∫⁻ y, b y ∂ν ≠ ∞) (hcab : ∀ z, c z ≤ a z.1 + b z.2) {η : ℝ≥0∞} (hη : 0 < η) :
+    ∃ T : X → Y, HasLaw T ν μ ∧ transportMapCost c μ T ≤ ∫⁻ z, c z ∂π + η := by
+  have hcm : Measurable c := hc.measurable
+  -- Above a level `R` every coupling, in particular every graph plan, spends at most `η / 2`.
+  obtain ⟨R, hR⟩ := exists_forall_setLIntegral_le_of_le_split ha hb haint hbint hcab
+    (ENNReal.half_pos hη.ne')
+  -- Below `R` the cost is bounded continuous, so some transport map matches `π` up to `η / 2`.
+  obtain ⟨T, hT, hTlt⟩ := hπ.exists_hasLaw_lintegral_min_lt hc R (ENNReal.half_pos hη.ne').ne'
+  refine ⟨T, hT, ?_⟩
+  calc transportMapCost c μ T = ∫⁻ z, c z ∂graphPlan T μ :=
+        transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hcm.aemeasurable
+    _ ≤ ∫⁻ z, min (c z) R + {z | (R : ℝ≥0∞) ≤ c z}.indicator c z ∂graphPlan T μ := by
+        refine lintegral_mono fun z ↦ ?_
+        by_cases hz : (R : ℝ≥0∞) ≤ c z
+        · simp [hz]
+        · simp [hz, (not_le.1 hz).le]
+    _ = ∫⁻ z, min (c z) R ∂graphPlan T μ +
+          ∫⁻ z in {z | (R : ℝ≥0∞) ≤ c z}, c z ∂graphPlan T μ := by
+        rw [lintegral_add_left (hcm.min measurable_const),
+          lintegral_indicator (measurableSet_le measurable_const hcm)]
+    _ ≤ (∫⁻ z, min (c z) R ∂π + η / 2) + η / 2 :=
+        add_le_add hTlt.le (hR _ (isCoupling_graphPlan hT))
+    _ ≤ ∫⁻ z, c z ∂π + η := by
+        rw [add_assoc, ENNReal.add_halves]
+        gcongr with z
+        exact min_le_left _ _
+
+/-- **Monge's and Kantorovich's values agree for continuous costs with an integrable split upper
+envelope.** For an atomless source law, a continuous cost bounded by `a x + b y` with finite
+marginal integrals has the same Monge and Kantorovich values. The Monge infimum need not be
+attained. -/
+theorem mongeCost_eq_transportCost_of_le_split (hc : Continuous c)
+    (ha : AEMeasurable a μ) (hb : AEMeasurable b ν) (haint : ∫⁻ x, a x ∂μ ≠ ∞)
+    (hbint : ∫⁻ y, b y ∂ν ≠ ∞) (hcab : ∀ z, c z ≤ a z.1 + b z.2) :
+    mongeCost c μ ν = transportCost c μ ν := by
+  refine le_antisymm (le_transportCost fun π hπ ↦ ?_) (transportCost_le_mongeCost c μ ν)
+  refine ENNReal.le_of_forall_pos_le_add fun η hη _ ↦ ?_
+  obtain ⟨T, hT, hle⟩ := hπ.exists_hasLaw_transportMapCost_le hc ha hb haint hbint hcab
+    (η := η) (by exact_mod_cast hη)
+  exact (mongeCost_le_transportMapCost hT c).trans hle
+
+end SplitEnvelope
+
+/-- **The Wasserstein distance is a Monge infimum.** For an atomless source law with finite
+`p`-moment on a Polish metric space, the `p`-th power of the Wasserstein distance to any
+probability law is the infimum of `∫⁻ x, edist x (T x) ^ p ∂μ` over the transport maps `T`, for
+every finite nonzero exponent `p`. -/
+theorem wassersteinEDist_rpow_eq_mongeCost {p : ℝ≥0∞} {ν : Measure X} [IsProbabilityMeasure ν]
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ : HasFiniteMoment p μ) :
+    wassersteinEDist p μ ν ^ p.toReal =
+      mongeCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν := by
+  have hd : Measurable fun z : X × X ↦ edist z.1 z.2 := measurable_edist
+  rw [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+  by_cases hν : HasFiniteMoment p ν
+  swap
+  · have hW : wassersteinEDist p μ ν = ∞ := by
+      by_contra h
+      exact hν ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2 h)
+    have htop : transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν = ∞ := by
+      rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, hW,
+        ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp)]
+    rw [htop, eq_comm, ← top_le_iff, ← htop]
+    exact transportCost_le_mongeCost _ _ _
+  obtain ⟨x₀, -⟩ := hasFiniteMoment_def.1 hμ
+  set K := ENNReal.LpAddConst (ENNReal.ofReal p.toReal)⁻¹
+  have hK : K ≠ ∞ := (ENNReal.LpAddConst_lt_top _).ne
+  have hint {ρ : Measure X} [IsProbabilityMeasure ρ] (hρ : HasFiniteMoment p ρ) :
+      ∫⁻ x, K * edist x₀ x ^ p.toReal ∂ρ ≠ ∞ := by
+    rw [lintegral_const_mul' _ _ hK]
+    exact ENNReal.mul_ne_top hK
+      ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x₀ ρ).1 hρ)
+  have hm : Measurable fun x : X ↦ K * edist x₀ x ^ p.toReal :=
+    (measurable_edist_right.pow_const _).const_mul _
+  have hc : Continuous fun z : X × X ↦ edist z.1 z.2 ^ p.toReal :=
+    ENNReal.continuous_rpow_const.comp continuous_edist
+  refine (mongeCost_eq_transportCost_of_le_split (c := fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
+    hc hm.aemeasurable hm.aemeasurable (hint hμ) (hint hν) fun z ↦ ?_).symm
+  calc edist z.1 z.2 ^ p.toReal ≤ (edist x₀ z.1 + edist x₀ z.2) ^ p.toReal := by
+        gcongr
+        exact edist_triangle_left _ _ _
+    _ ≤ K * (edist x₀ z.1 ^ p.toReal + edist x₀ z.2 ^ p.toReal) :=
+        ENNReal.rpow_add_le_mul_rpow_add_rpow' _ _ ENNReal.toReal_nonneg
+    _ = K * edist x₀ z.1 ^ p.toReal + K * edist x₀ z.2 ^ p.toReal := mul_add _ _ _
 
 end TauCeti
