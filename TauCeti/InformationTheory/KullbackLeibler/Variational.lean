@@ -8,6 +8,7 @@ module
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # The Donsker–Varadhan variational formula for relative entropy
@@ -118,14 +119,6 @@ theorem ofReal_integral_sub_integral_exp_sub_one_le_klDiv [IsFiniteMeasure μ] [
     ((integrable_klFun_rnDeriv_iff hμν).2 hllr) fun x ↦ ?_)
   exact mul_sub_exp_sub_one_le_klFun ENNReal.toReal_nonneg _
 
-/-- If `μ` is concentrated on `s`, then its density with respect to `ν` vanishes `ν`-almost
-everywhere off `s`. -/
-private lemma ae_notMem_imp_rnDeriv_eq_zero [SigmaFinite μ] [SigmaFinite ν] {s : Set α}
-    (hs : ∀ᵐ x ∂μ, x ∈ s) : ∀ᵐ x ∂ν, x ∉ s → μ.rnDeriv ν x = 0 :=
-  (Measure.ae_rnDeriv_ne_zero_imp_of_ae ν hs).mono fun _ hx hxs ↦ by
-    by_contra h
-    exact hxs (hx h)
-
 /-- For `μ ≪ ν`, the variational objective with the truncated exponential `s.indicator (exp ∘ f)`
 is a single `ν`-integral against the density. -/
 private lemma integral_sub_integral_indicator_exp_sub_one_eq [IsFiniteMeasure μ]
@@ -144,7 +137,7 @@ private lemma ae_mul_sub_indicator_exp_sub_one_le_klFun [IsFiniteMeasure μ] [Is
     {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) :
     ∀ᵐ x ∂ν, (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1) ≤
       klFun (μ.rnDeriv ν x).toReal := by
-  filter_upwards [ae_notMem_imp_rnDeriv_eq_zero hs] with x hx
+  filter_upwards [Measure.ae_notMem_imp_rnDeriv_eq_zero hs] with x hx
   by_cases hxs : x ∈ s
   · rw [Set.indicator_of_mem hxs]
     exact mul_sub_exp_sub_one_le_klFun ENNReal.toReal_nonneg _
@@ -195,7 +188,7 @@ theorem integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff [IsFinit
       hef.aemeasurable.ennreal_ofReal
   rw [hdens]
   refine Filter.eventually_congr (((Measure.rnDeriv_lt_top μ ν).and
-    (ae_notMem_imp_rnDeriv_eq_zero hs)).mono fun x ⟨hx, hx0⟩ ↦ ?_)
+    (Measure.ae_notMem_imp_rnDeriv_eq_zero hs)).mono fun x ⟨hx, hx0⟩ ↦ ?_)
   simp only [Pi.zero_apply]
   by_cases hxs : x ∈ s
   · rw [Set.indicator_of_mem hxs, sub_eq_zero, eq_comm,

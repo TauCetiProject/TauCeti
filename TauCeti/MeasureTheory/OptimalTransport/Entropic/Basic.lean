@@ -61,8 +61,9 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
   potentials are unique up to one additive constant.
 * `TauCeti.entropicTransportCost_zero` and `TauCeti.transportCost_le_entropicTransportCost`: at
   zero temperature the regularised value is the transport cost, which it always dominates.
-* `TauCeti.entropicTransportCost_le_lintegral_prod`: for probability measures the regularised
-  value is at most the cost of the product coupling.
+* `TauCeti.entropicTransportCost_le_lintegral_prod` and
+  `TauCeti.entropicTransportCost_ne_top_of_le`: for probability measures the regularised value is
+  at most the cost of the product coupling, so it is finite for a bounded cost.
 * `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
   constant; when it is finite, with `Mathlib`'s `InformationTheory.klDiv_eq_zero_iff`, the product
   coupling is then the unique optimal plan at positive temperature.
@@ -509,6 +510,14 @@ coupling, whose relative entropy against `μ.prod ν` vanishes. -/
 theorem entropicTransportCost_le_lintegral_prod [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) : entropicTransportCost c ε μ ν ≤ ∫⁻ z, c z ∂μ.prod ν :=
   (entropicTransportCost_le (isCoupling_prod μ ν) c ε).trans_eq (by simp [klDiv_self])
+
+/-- For a cost bounded by `B`, the regularised transport cost of two probability measures is
+finite, by the product-coupling bound. -/
+theorem entropicTransportCost_ne_top_of_le [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    {B : ℝ≥0} (hcB : ∀ z, c z ≤ B) (ε : ℝ≥0) : entropicTransportCost c ε μ ν ≠ ∞ :=
+  ne_top_of_le_ne_top (ENNReal.coe_ne_top (r := B)) <|
+    (entropicTransportCost_le_lintegral_prod c ε).trans <|
+      (lintegral_mono hcB).trans_eq (by simp)
 
 /-- For a constant cost `a`, the regularised transport cost of two probability measures is `a`,
 attained by the product coupling. Since a coupling `π` pays `a + ε * klDiv π (μ.prod ν)`, at

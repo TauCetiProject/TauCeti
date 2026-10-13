@@ -18,9 +18,10 @@ over pairs of real potentials `φ` on `X` and `ψ` on `Y`, the value
 `∫ φ dμ + ∫ ψ dν - ε * ∫ (exp ((φ(x) + ψ(y) - c(x, y)) / ε) - 1) d(μ ⊗ ν)`,
 
 which is `TauCeti.entropicDualValue c ε μ ν φ ψ`. The Gibbs factor
-`exp ((φ(x) + ψ(y) - c(x, y)) / ε)` is read with `exp (-∞) = 0`, so it vanishes where the cost is
-infinite. Unlike the Kantorovich dual problem, the dual problem has no constraint: the condition
-`φ(x) + ψ(y) ≤ c(x, y)` is replaced by an exponential penalty.
+`exp ((φ(x) + ψ(y) - c(x, y)) / ε)`, which is `TauCeti.entropicGibbsFactor c ε φ ψ`, is read with
+`exp (-∞) = 0`, so it vanishes where the cost is infinite. Unlike the Kantorovich dual problem,
+the dual problem has no constraint: the condition `φ(x) + ψ(y) ≤ c(x, y)` is replaced by an
+exponential penalty.
 
 Weak duality is the integrated Fenchel–Young inequality for relative entropy
 (`TauCeti.ofReal_integral_sub_integral_indicator_exp_sub_one_le_klDiv`), applied to the coupling
@@ -35,6 +36,8 @@ additive constant.
 
 ## Main definitions
 
+* `TauCeti.entropicGibbsFactor c ε φ ψ`: the Gibbs factor `exp ((φ(x) + ψ(y) - c(x, y)) / ε)`,
+  read as `0` where the cost is infinite.
 * `TauCeti.entropicDualValue c ε μ ν φ ψ`: the value of the dual problem at the potentials `φ`
   and `ψ`.
 
@@ -88,22 +91,84 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} {π : Measure (X × Y)} {μ : Measure X} {ν : Measure Y}
   {φ φ' : X → ℝ} {ψ ψ' : Y → ℝ}
 
+/-! ### The Gibbs factor -/
+
+/-- The Gibbs factor `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` of the potentials `φ` and `ψ`, read with
+`exp (-∞) = 0`: it is `0` where the cost is infinite. A coupling and a pair of potentials close
+the entropic duality gap exactly when the Gibbs factor is the density of the coupling against
+`μ ⊗ ν`. -/
+def entropicGibbsFactor (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) (φ : X → ℝ) (ψ : Y → ℝ) : X × Y → ℝ :=
+  {z | c z ≠ ∞}.indicator fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- The Gibbs factor is the indicator of the finite-cost set applied to the real exponential. The
+definition's body is not exposed, so this is the lemma downstream modules should rewrite with. -/
+theorem entropicGibbsFactor_def :
+    entropicGibbsFactor c ε φ ψ =
+      {z | c z ≠ ∞}.indicator fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
+  (rfl)
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- Where the cost is finite, the Gibbs factor is the real exponential of the Gibbs exponent. -/
+theorem entropicGibbsFactor_of_ne_top {z : X × Y} (hz : c z ≠ ∞) :
+    entropicGibbsFactor c ε φ ψ z = Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
+  Set.indicator_of_mem hz _
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- Where the cost is infinite, the Gibbs factor vanishes. -/
+theorem entropicGibbsFactor_of_eq_top {z : X × Y} (hz : c z = ∞) :
+    entropicGibbsFactor c ε φ ψ z = 0 :=
+  Set.indicator_of_notMem (not_not.2 hz) _
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- The Gibbs factor is nonnegative. -/
+theorem entropicGibbsFactor_nonneg (z : X × Y) : 0 ≤ entropicGibbsFactor c ε φ ψ z :=
+  Set.indicator_nonneg (fun _ _ ↦ (Real.exp_pos _).le) z
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- Opposite additive shifts of the potentials do not change the Gibbs factor. -/
+theorem entropicGibbsFactor_add_const_sub_const (a : ℝ) :
+    entropicGibbsFactor c ε (fun x ↦ φ x + a) (fun y ↦ ψ y - a) = entropicGibbsFactor c ε φ ψ := by
+  simp only [entropicGibbsFactor_def, add_add_sub_cancel]
+
+/-- The Gibbs factor of measurable potentials for a measurable cost is measurable. -/
+theorem measurable_entropicGibbsFactor (hc : Measurable c) (hφ : Measurable φ)
+    (hψ : Measurable ψ) : Measurable (entropicGibbsFactor c ε φ ψ) :=
+  Measurable.indicator (by fun_prop) (hc (measurableSet_singleton ∞).compl)
+
+/-- For finite measures, a measurable cost and bounded measurable potentials, the Gibbs factor
+is integrable against `μ ⊗ ν`: it is at most `exp ((C + C) / ε)`, since the cost is
+nonnegative. -/
+theorem integrable_entropicGibbsFactor_of_abs_le [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (hc : Measurable c) {C : ℝ} (hφ : Measurable φ) (hψ : Measurable ψ)
+    (hφC : ∀ x, |φ x| ≤ C) (hψC : ∀ y, |ψ y| ≤ C) :
+    Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) := by
+  refine Integrable.of_bound (measurable_entropicGibbsFactor hc hφ hψ).aestronglyMeasurable
+    (Real.exp ((C + C) / ε)) <| ae_of_all _ fun z ↦ ?_
+  rw [Real.norm_eq_abs, abs_of_nonneg (entropicGibbsFactor_nonneg z)]
+  by_cases hz : c z = ∞
+  · rw [entropicGibbsFactor_of_eq_top hz]
+    exact (Real.exp_pos _).le
+  rw [entropicGibbsFactor_of_ne_top hz, Real.exp_le_exp]
+  refine div_le_div_of_nonneg_right ?_ ε.coe_nonneg
+  linarith [le_of_abs_le (hφC z.1), le_of_abs_le (hψC z.2), (c z).toReal_nonneg]
+
+/-! ### The dual value -/
+
 /-- The value of the dual problem of entropic optimal transport at the potentials `φ` and `ψ`:
 `∫ φ dμ + ∫ ψ dν - ε * ∫ (exp ((φ(x) + ψ(y) - c(x, y)) / ε) - 1) d(μ ⊗ ν)`, where the Gibbs factor
-`exp ((φ(x) + ψ(y) - c(x, y)) / ε)` is `0` where the cost is infinite. The duality theorems assume
-a positive temperature `ε` and require both potentials and the Gibbs factor to be integrable. -/
+`exp ((φ(x) + ψ(y) - c(x, y)) / ε)` is `TauCeti.entropicGibbsFactor c ε φ ψ`, which is `0` where
+the cost is infinite. The duality theorems assume a positive temperature `ε` and require both
+potentials and the Gibbs factor to be integrable. -/
 def entropicDualValue (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) (μ : Measure X) (ν : Measure Y) (φ : X → ℝ)
     (ψ : Y → ℝ) : ℝ :=
-  kantorovichDualValue μ ν φ ψ - ε * ∫ z,
-    ({z | c z ≠ ∞}.indicator (fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) z - 1)
-      ∂μ.prod ν
+  kantorovichDualValue μ ν φ ψ - ε * ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν
 
 /-- The entropic dual value is the Kantorovich dual value minus the exponential penalty. The
 definition's body is not exposed, so this is the lemma downstream modules should rewrite with. -/
 theorem entropicDualValue_def :
-    entropicDualValue c ε μ ν φ ψ = kantorovichDualValue μ ν φ ψ - ε * ∫ z,
-      ({z | c z ≠ ∞}.indicator (fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) z - 1)
-        ∂μ.prod ν :=
+    entropicDualValue c ε μ ν φ ψ =
+      kantorovichDualValue μ ν φ ψ - ε * ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν :=
   (rfl)
 
 /-- Opposite additive shifts of the potentials do not change the entropic dual value when the
@@ -113,7 +178,7 @@ theorem entropicDualValue_add_const_sub_const [IsFiniteMeasure μ] (hφ : Integr
     entropicDualValue c ε μ ν (fun x ↦ φ x + a) (fun y ↦ ψ y - a) =
       entropicDualValue c ε μ ν φ ψ := by
   simp only [entropicDualValue_def, kantorovichDualValue_add_const_sub_const hφ hψ hmass,
-    add_add_sub_cancel]
+    entropicGibbsFactor_add_const_sub_const]
 
 /-! ### Weak duality and complementary slackness -/
 
@@ -123,9 +188,8 @@ of `π`. -/
 private theorem IsCoupling.entropicDualValue_eq (hπ : IsCoupling π μ ν) (hε : ε ≠ 0)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hc : Integrable (fun z ↦ (c z).toReal) π) :
     entropicDualValue c ε μ ν φ ψ =
-      ε * (∫ z, (φ z.1 + ψ z.2 - (c z).toReal) / ε ∂π - ∫ z,
-        ({z | c z ≠ ∞}.indicator (fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) z - 1)
-          ∂μ.prod ν) + ∫ z, (c z).toReal ∂π := by
+      ε * (∫ z, (φ z.1 + ψ z.2 - (c z).toReal) / ε ∂π -
+        ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν) + ∫ z, (c z).toReal ∂π := by
   have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
   rw [entropicDualValue_def, kantorovichDualValue_eq_integral hπ hφ hψ, integral_div,
     integral_sub (hπ.integrable_add_split hφ hψ) hc]
@@ -137,8 +201,7 @@ measure, an almost everywhere measurable cost and a positive temperature, the po
 entropic dual value of integrable potentials is at most the regularised cost of every coupling. -/
 theorem IsCoupling.ofReal_entropicDualValue_le_lintegral_add_mul_klDiv [IsFiniteMeasure μ]
     (hπ : IsCoupling π μ ν) (hc : AEMeasurable c (μ.prod ν)) (hε : ε ≠ 0) (hφ : Integrable φ μ)
-    (hψ : Integrable ψ ν) (hexp : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν)) :
+    (hψ : Integrable ψ ν) (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν)) :
     ENNReal.ofReal (entropicDualValue c ε μ ν φ ψ) ≤ ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) := by
   have := hπ.isFiniteMeasure
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
@@ -162,8 +225,7 @@ everywhere measurable cost and a positive temperature, the positive part of the 
 value of integrable potentials is at most the regularised transport cost. -/
 theorem ofReal_entropicDualValue_le_entropicTransportCost [IsFiniteMeasure μ]
     (hc : AEMeasurable c (μ.prod ν)) (hε : ε ≠ 0) (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
-    (hexp : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν)) :
+    (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν)) :
     ENNReal.ofReal (entropicDualValue c ε μ ν φ ψ) ≤ entropicTransportCost c ε μ ν :=
   le_entropicTransportCost fun _ hπ ↦
     hπ.ofReal_entropicDualValue_le_lintegral_add_mul_klDiv hc hε hφ hψ hexp
@@ -173,8 +235,7 @@ cost is finite, it bounds the entropic dual value of integrable potentials. -/
 theorem entropicDualValue_le_toReal_entropicTransportCost [IsFiniteMeasure μ]
     (h : entropicTransportCost c ε μ ν ≠ ∞) (hc : AEMeasurable c (μ.prod ν)) (hε : ε ≠ 0)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
-    (hexp : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν)) :
+    (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν)) :
     entropicDualValue c ε μ ν φ ψ ≤ (entropicTransportCost c ε μ ν).toReal :=
   (ENNReal.ofReal_le_iff_le_toReal h).1
     (ofReal_entropicDualValue_le_entropicTransportCost hc hε hφ hψ hexp)
@@ -186,12 +247,10 @@ entropic dual value of `φ` and `ψ` equals the regularised cost of `π` exactly
 weak duality, `π` is then an optimal plan and `(φ, ψ)` a maximiser of the dual problem. -/
 theorem IsCoupling.entropicDualValue_eq_toReal_lintegral_add_mul_klDiv_iff [IsFiniteMeasure μ]
     (hπ : IsCoupling π μ ν) (hc : AEMeasurable c (μ.prod ν)) (hε : ε ≠ 0) (hφ : Integrable φ μ)
-    (hψ : Integrable ψ ν) (hexp : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν))
+    (hψ : Integrable ψ ν) (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν))
     (hfin : ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) ≠ ∞) :
     entropicDualValue c ε μ ν φ ψ = (∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν)).toReal ↔
-      π = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal
-        ({z | c z ≠ ∞}.indicator (fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) z) := by
+      π = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (entropicGibbsFactor c ε φ ψ z) := by
   have := hπ.isFiniteMeasure
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
   obtain ⟨hcost, hεKL⟩ := ENNReal.add_ne_top.1 hfin
@@ -201,10 +260,12 @@ theorem IsCoupling.entropicDualValue_eq_toReal_lintegral_add_mul_klDiv_iff [IsFi
   have hci := integrable_toReal_of_lintegral_ne_top hcπ hcost
   have hf : Integrable (fun z ↦ (φ z.1 + ψ z.2 - (c z).toReal) / ε) π :=
     ((hπ.integrable_add_split hφ hψ).sub hci).div_const _
-  rw [← integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff (s := {z | c z ≠ ∞})
+  rw [entropicGibbsFactor_def,
+    ← integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff (s := {z | c z ≠ ∞})
       ((ae_lt_top' hcπ hcost).mono fun _ hz ↦ hz.ne) hf hexp hKL,
-    hπ.entropicDualValue_eq hε hφ hψ hci, integral_toReal hcπ (ae_lt_top' hcπ hcost),
-    ENNReal.toReal_add hcost hεKL, ENNReal.toReal_mul, ENNReal.coe_toReal]
+    hπ.entropicDualValue_eq hε hφ hψ hci, entropicGibbsFactor_def,
+    integral_toReal hcπ (ae_lt_top' hcπ hcost), ENNReal.toReal_add hcost hεKL, ENNReal.toReal_mul,
+    ENNReal.coe_toReal]
   have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
   constructor
   · intro h
@@ -221,11 +282,11 @@ theorem IsCoupling.exists_ae_eq_add_const_of_entropicDualValue_eq
     [IsFiniteMeasure μ] (hμ : μ ≠ 0) (hπ : IsCoupling π μ ν) (hc : AEMeasurable c (μ.prod ν))
     (hcfin : ∀ᵐ z ∂μ.prod ν, c z ≠ ∞) (hε : ε ≠ 0)
     (hfin : ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) ≠ ∞)
-    (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hexp : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν))
+    (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
+    (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν))
     (h : entropicDualValue c ε μ ν φ ψ = (∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν)).toReal)
-    (hφ' : Integrable φ' μ) (hψ' : Integrable ψ' ν) (hexp' : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ' z.1 + ψ' z.2 - (c z).toReal) / ε)) (μ.prod ν))
+    (hφ' : Integrable φ' μ) (hψ' : Integrable ψ' ν)
+    (hexp' : Integrable (entropicGibbsFactor c ε φ' ψ') (μ.prod ν))
     (h' : entropicDualValue c ε μ ν φ' ψ' = (∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν)).toReal) :
     ∃ a, φ =ᵐ[μ] (fun x ↦ φ' x + a) ∧ ψ =ᵐ[ν] (fun y ↦ ψ' y - a) := by
   have := hπ.isFiniteMeasure
@@ -243,7 +304,7 @@ theorem IsCoupling.exists_ae_eq_add_const_of_entropicDualValue_eq
   -- `ψ' - ψ` agree on `μ ⊗ ν`.
   obtain ⟨a, hφa, hψa⟩ := exists_ae_eq_const_of_ae_prod_eq (f := fun x ↦ φ x - φ' x)
     (g := fun y ↦ ψ' y - ψ y) hμ hν <| (hdens.and hcfin).mono fun z ⟨hz, hcz⟩ ↦ by
-      simp only [Set.indicator_of_mem (show z ∈ {z | c z ≠ ∞} from hcz)] at hz
+      simp only [entropicGibbsFactor_of_ne_top hcz] at hz
       have := Real.exp_injective <|
         (ENNReal.ofReal_eq_ofReal_iff (Real.exp_pos _).le (Real.exp_pos _).le).1 hz
       rw [div_left_inj' hε'] at this
@@ -257,31 +318,11 @@ section Bounded
 
 variable [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {B : ℝ≥0}
 
-/-- For a cost bounded by `B`, the regularised transport cost of two probability measures is
-finite. -/
-private theorem entropicTransportCost_ne_top_of_le (hcB : ∀ z, c z ≤ B) :
-    entropicTransportCost c ε μ ν ≠ ∞ :=
-  ne_top_of_le_ne_top (ENNReal.coe_ne_top (r := B)) <|
-    (entropicTransportCost_le_lintegral_prod c ε).trans <|
-      (lintegral_mono hcB).trans_eq (by simp)
-
 omit [MeasurableSpace X] [MeasurableSpace Y] in
-/-- A bounded cost is finite everywhere, so restricting to `{z | c z ≠ ∞}` changes nothing. -/
-private theorem indicator_ne_top_of_le (hcB : ∀ z, c z ≤ B) (f : X × Y → ℝ) :
-    {z | c z ≠ ∞}.indicator f = f :=
-  funext fun z ↦ Set.indicator_of_mem (ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)) f
-
-/-- Bounded measurable potentials have integrable Gibbs factor, for a measurable bounded cost. -/
-private theorem integrable_exp_of_abs_le (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0)
-    {C : ℝ} (hφ : Measurable φ) (hψ : Measurable ψ) (hφC : ∀ x, |φ x| ≤ C)
-    (hψC : ∀ y, |ψ y| ≤ C) : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν) := by
-  have hε' : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  rw [indicator_ne_top_of_le hcB]
-  refine Integrable.of_bound (by fun_prop) (Real.exp ((C + C) / ε)) <| ae_of_all _ fun z ↦ ?_
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
-  refine div_le_div_of_nonneg_right ?_ hε'.le
-  linarith [le_of_abs_le (hφC z.1), le_of_abs_le (hψC z.2), (c z).toReal_nonneg]
+/-- A bounded cost is finite everywhere, so the Gibbs factor is the real exponential. -/
+private theorem entropicGibbsFactor_eq_of_le (hcB : ∀ z, c z ≤ B) :
+    entropicGibbsFactor c ε φ ψ = fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
+  funext fun z ↦ entropicGibbsFactor_of_ne_top (ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z))
 
 /-- **Strong entropic duality for a bounded cost, with attainment.** For probability measures, a
 bounded measurable cost and a positive temperature, the dual problem is attained by bounded
@@ -299,27 +340,26 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost (hc : Measurabl
   refine (hπ.entropicDualValue_eq_toReal_lintegral_add_mul_klDiv_iff hc.aemeasurable hε
     (.of_bound hφ.aestronglyMeasurable C (ae_of_all _ hφC))
     (.of_bound hψ.aestronglyMeasurable C (ae_of_all _ hψC))
-    (integrable_exp_of_abs_le hc hcB hε hφ hψ hφC hψC)
-    (hopt ▸ entropicTransportCost_ne_top_of_le hcB)).2 ?_
-  rwa [indicator_ne_top_of_le hcB]
+    (integrable_entropicGibbsFactor_of_abs_le hc hφ hψ hφC hψC)
+    (hopt ▸ entropicTransportCost_ne_top_of_le hcB ε)).2 ?_
+  rwa [entropicGibbsFactor_eq_of_le hcB]
 
 /-- **Strong entropic duality for a bounded cost.** For probability measures, a bounded
 measurable cost and a positive temperature, the regularised transport cost is the greatest
 entropic dual value of integrable potentials with integrable Gibbs factor. -/
 theorem isGreatest_entropicDualValue (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) :
     IsGreatest {r : ℝ | ∃ (φ : X → ℝ) (ψ : Y → ℝ), Integrable φ μ ∧ Integrable ψ ν ∧
-        Integrable ({z | c z ≠ ∞}.indicator
-          fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν) ∧
+        Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) ∧
         entropicDualValue c ε μ ν φ ψ = r}
       (entropicTransportCost c ε μ ν).toReal := by
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, h⟩ :=
     exists_entropicDualValue_eq_toReal_entropicTransportCost (μ := μ) (ν := ν) hc hcB hε
   refine ⟨⟨φ, ψ, .of_bound hφ.aestronglyMeasurable C (ae_of_all _ hφC),
     .of_bound hψ.aestronglyMeasurable C (ae_of_all _ hψC),
-    integrable_exp_of_abs_le hc hcB hε hφ hψ hφC hψC, h⟩, ?_⟩
+    integrable_entropicGibbsFactor_of_abs_le hc hφ hψ hφC hψC, h⟩, ?_⟩
   rintro r ⟨φ', ψ', hφ', hψ', hexp', rfl⟩
   exact entropicDualValue_le_toReal_entropicTransportCost
-    (entropicTransportCost_ne_top_of_le hcB) hc.aemeasurable hε hφ' hψ' hexp'
+    (entropicTransportCost_ne_top_of_le hcB ε) hc.aemeasurable hε hφ' hψ' hexp'
 
 /-- **Uniqueness of the entropic dual maximisers for a bounded cost.** For probability measures,
 a bounded measurable cost and a positive temperature, two pairs of integrable potentials whose
@@ -327,11 +367,10 @@ entropic dual values both equal the regularised transport cost differ by one add
 `μ`- and `ν`-almost everywhere. -/
 theorem exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost
     (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) (hφ : Integrable φ μ)
-    (hψ : Integrable ψ ν) (hexp : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) (μ.prod ν))
+    (hψ : Integrable ψ ν) (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν))
     (h : entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal)
-    (hφ' : Integrable φ' μ) (hψ' : Integrable ψ' ν) (hexp' : Integrable ({z | c z ≠ ∞}.indicator
-      fun z ↦ Real.exp ((φ' z.1 + ψ' z.2 - (c z).toReal) / ε)) (μ.prod ν))
+    (hφ' : Integrable φ' μ) (hψ' : Integrable ψ' ν)
+    (hexp' : Integrable (entropicGibbsFactor c ε φ' ψ') (μ.prod ν))
     (h' : entropicDualValue c ε μ ν φ' ψ' = (entropicTransportCost c ε μ ν).toReal) :
     ∃ a, φ =ᵐ[μ] (fun x ↦ φ' x + a) ∧ ψ =ᵐ[ν] (fun y ↦ ψ' y - a) := by
   obtain ⟨π, hπ, hopt, -⟩ :=
@@ -341,7 +380,7 @@ theorem exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportC
   exact hπ.exists_ae_eq_add_const_of_entropicDualValue_eq
     (IsProbabilityMeasure.ne_zero μ) hc.aemeasurable
     (ae_of_all _ fun z ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)) hε
-    (hopt ▸ entropicTransportCost_ne_top_of_le hcB) hφ hψ hexp h hφ' hψ' hexp' h'
+    (hopt ▸ entropicTransportCost_ne_top_of_le hcB ε) hφ hψ hexp h hφ' hψ' hexp' h'
 
 end Bounded
 
