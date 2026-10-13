@@ -74,6 +74,7 @@ public section
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
 open scoped BigOperators
 
 namespace YoungTableau
@@ -258,12 +259,13 @@ theorem isIrreducible_spechtSubrepresentation (μ : YoungDiagram) :
   Representation.isIrreducible_toRepresentation_of_isAtom (isAtom_spechtSubrepresentation μ)
 
 /-- **The Specht module of a partition is irreducible**, in the partition-indexed packaging
-`TauCeti.spechtModule`.  Transporting along the relabelling `Fin n ≃ Fin (diagramOf μ).card` is an
-isomorphism of groups, and restriction along an isomorphism preserves irreducibility. -/
+`TauCeti.spechtModule`.  Transporting along the relabelling
+`Fin n ≃ Fin (YoungDiagram.ofPartition μ).card` is an isomorphism of groups, and restriction along
+an isomorphism preserves irreducibility. -/
 instance isIrreducible_spechtModule {n : ℕ} (μ : n.Partition) :
     _root_.Representation.IsIrreducible (spechtModule μ).ρ :=
-  (MulEquiv.isIrreducible_comp_equiv_iff (finCongr (card_diagramOf μ).symm).permCongrHom
-    (spechtSubrepresentation (diagramOf μ)).toRepresentation).mpr
-    (isIrreducible_spechtSubrepresentation (diagramOf μ))
+  (MulEquiv.isIrreducible_comp_equiv_iff (finCongr (card_ofPartition μ).symm).permCongrHom
+    (spechtSubrepresentation (ofPartition μ)).toRepresentation).mpr
+    (isIrreducible_spechtSubrepresentation (ofPartition μ))
 
 end TauCeti

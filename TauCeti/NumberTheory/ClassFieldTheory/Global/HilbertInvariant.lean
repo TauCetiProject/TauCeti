@@ -53,9 +53,11 @@ negative there, while at a complex place it is `0`; it is again bilinear and sym
   `ℚ/ℤ`, is the Brauer invariant of the cup product of the two Kummer classes.
 * `TauCeti.ClassFieldTheory.infiniteInvAt_kummerBrauerClass`: the infinite-place invariant of the
   global Kummer-cup Brauer class is the image of `infiniteHilbertInvariantAt` in `ℚ/ℤ`.
-* `TauCeti.ClassFieldTheory.infiniteHilbertInvariantAt_of_isReal`: at a real place the invariant
+* `TauCeti.ClassFieldTheory.infiniteHilbertInvariantAt_eq_ite_of_isReal`: at a real place
+  the invariant
   is `1` exactly when both arguments are negative.
-* `TauCeti.ClassFieldTheory.infiniteHilbertInvariantAt_of_isComplex`: at a complex place the
+* `TauCeti.ClassFieldTheory.infiniteHilbertInvariantAt_eq_zero_of_isComplex`: at a complex
+  place the
   invariant is `0`.
 * `TauCeti.ClassFieldTheory.finiteHilbertInvariantAt_mul_left`,
   `TauCeti.ClassFieldTheory.finiteHilbertInvariantAt_mul_right`,
@@ -149,6 +151,25 @@ def infiniteHilbertInvariantAt (w : InfinitePlace K) (a b : Kˣ) : ZMod 2 :=
           (Units.map (algebraMap K w.Completion : K →* w.Completion) a)
           (Units.map (algebraMap K w.Completion : K →* w.Completion) b)))
     else 0
+
+/-- At a real place `w`, the infinite Hilbert invariant of `a` and `b` is the invariant, in
+`Br ℝ ≃ ZMod 2`, of the Kummer-cup Brauer class of their images in `K_w`, carried to `ℝ` along the
+isomorphism `K_w ≃ ℝ`. -/
+theorem infiniteHilbertInvariantAt_of_isReal {w : InfinitePlace K} (hw : w.IsReal) (a b : Kˣ) :
+    infiniteHilbertInvariantAt K w a b =
+      realInvEquiv (brCongr (NumberField.InfinitePlace.Completion.ringEquivRealOfIsReal hw)
+        (kummerBrauerClass (algebraMap K w.Completion (-1))
+          ((.neg_one 0 (by decide) : IsPrimitiveRoot (-1 : K) 2).map_of_injective
+            (algebraMap K w.Completion).injective)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) a)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) b))) := by
+  rw [infiniteHilbertInvariantAt, dite_eq_left hw]
+
+/-- The infinite Hilbert invariant vanishes at a complex place. -/
+theorem infiniteHilbertInvariantAt_eq_zero_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
+    (a b : Kˣ) : infiniteHilbertInvariantAt K w a b = 0 := by
+  rw [infiniteHilbertInvariantAt,
+    dite_eq_right (NumberField.InfinitePlace.not_isReal_iff_isComplex.mpr hw)]
 
 /-- **The infinite Hilbert invariant is the invariant of the global Kummer-cup Brauer class**:
 localizing `kummerBrauerClass (-1) hζ a b` at `w` and applying `infiniteInvMap` gives the
@@ -247,7 +268,8 @@ theorem infiniteHilbertInvariantAt_eq_zero_iff (w : InfinitePlace K) (a b : Kˣ)
 /-- **The Hilbert invariant at a real place** is `1` exactly when both `a` and `b` are negative
 there. -/
 @[simp]
-theorem infiniteHilbertInvariantAt_of_isReal {w : InfinitePlace K} (hw : w.IsReal) (a b : Kˣ) :
+theorem infiniteHilbertInvariantAt_eq_ite_of_isReal {w : InfinitePlace K} (hw : w.IsReal)
+    (a b : Kˣ) :
     infiniteHilbertInvariantAt K w a b =
       if embedding_of_isReal hw (a : K) < 0 ∧ embedding_of_isReal hw (b : K) < 0 then 1 else 0 := by
   have : CharZero w.Completion := (Completion.extensionEmbedding w).charZero
@@ -266,19 +288,12 @@ theorem infiniteHilbertInvariantAt_of_isReal {w : InfinitePlace K} (hw : w.IsRea
   · exact (by decide : ∀ y : ZMod 2, y ≠ 0 → y = 1) _ (key.not.2 (by grind))
   · exact key.2 (by grind)
 
-/-- The Hilbert invariant at a complex place vanishes. -/
-@[simp]
-theorem infiniteHilbertInvariantAt_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
-    (a b : Kˣ) : infiniteHilbertInvariantAt K w a b = 0 := by
-  rw [infiniteHilbertInvariantAt,
-    dite_eq_right (NumberField.InfinitePlace.not_isReal_iff_isComplex.mpr hw)]
-
 /-- The Hilbert invariant at an infinite place is symmetric. -/
 theorem infiniteHilbertInvariantAt_comm (w : InfinitePlace K) (a b : Kˣ) :
     infiniteHilbertInvariantAt K w a b = infiniteHilbertInvariantAt K w b a := by
   rcases w.isReal_or_isComplex with hw | hw
-  · simp only [infiniteHilbertInvariantAt_of_isReal K hw, and_comm]
-  · simp [hw]
+  · simp only [infiniteHilbertInvariantAt_eq_ite_of_isReal K hw, and_comm]
+  · simp [infiniteHilbertInvariantAt_eq_zero_of_isComplex K hw]
 
 /-- The Hilbert invariant at an infinite place is additive in its first argument. -/
 theorem infiniteHilbertInvariantAt_mul_left (w : InfinitePlace K) (a a' b : Kˣ) :
@@ -287,9 +302,10 @@ theorem infiniteHilbertInvariantAt_mul_left (w : InfinitePlace K) (a a' b : Kˣ)
   rcases w.isReal_or_isComplex with hw | hw
   · have ha := (map_ne_zero (embedding_of_isReal hw)).2 a.ne_zero
     have ha' := (map_ne_zero (embedding_of_isReal hw)).2 a'.ne_zero
-    simp only [infiniteHilbertInvariantAt_of_isReal K hw, Units.val_mul, map_mul, mul_neg_iff]
+    simp only [infiniteHilbertInvariantAt_eq_ite_of_isReal K hw, Units.val_mul, map_mul,
+      mul_neg_iff]
     split_ifs <;> first | rfl | grind
-  · simp [hw]
+  · simp [infiniteHilbertInvariantAt_eq_zero_of_isComplex K hw]
 
 /-- The Hilbert invariant at an infinite place is additive in its second argument. -/
 theorem infiniteHilbertInvariantAt_mul_right (w : InfinitePlace K) (a b b' : Kˣ) :

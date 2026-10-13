@@ -11,8 +11,8 @@ public import TauCeti.Algebra.WordFiltration.Basic
 /-!
 # The PBW filtration of a universal enveloping algebra
 
-This file constructs the first stage of the Poincaré--Birkhoff--Witt development: the increasing
-filtration of `UniversalEnvelopingAlgebra R L` by word length in the image of the canonical Lie map
+This file constructs the Poincaré--Birkhoff--Witt filtration: the increasing filtration of
+`UniversalEnvelopingAlgebra R L` by word length in the image of the canonical Lie map
 `UniversalEnvelopingAlgebra.ι R`.
 
 The defining relation
@@ -22,8 +22,8 @@ The defining relation
 ```
 
 replaces a degree-two commutator by a degree-one term. Thus word length gives a filtration, not a
-grading. The associated graded will use this degree drop to make the leading symbols commute; that
-comparison with `SymmetricAlgebra R L` is the next PBW stage and is not asserted here.
+grading. In the associated graded this degree drop makes the leading symbols commute; the comparison
+with `SymmetricAlgebra R L` is not treated here.
 
 Nothing in the construction is special to the enveloping algebra: `pbwFiltration` and
 `pbwFiltrationPrevious` are `TauCeti.Algebra.wordFiltration` and
@@ -49,9 +49,6 @@ comes from the tensor-algebra presentation.
   structure on `pbwFiltration`, with `pbwFiltrationPrevious` as its preceding-step family.
 
 ## References
-
-This is the pinned "the PBW filtration" target of Layer 3, "PBW, a substantial sub-project", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter V, §17.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter I, §2.7.

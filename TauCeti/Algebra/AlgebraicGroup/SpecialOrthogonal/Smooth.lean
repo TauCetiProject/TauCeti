@@ -34,9 +34,6 @@ used for `TauCeti.Symplectic`, with the half-error correction particular to symm
 
 * SGA 3, Exposé XXIII, for split orthogonal group schemes away from characteristic two.
 * The Stacks Project, Tags 00TH, 00TI, 00T2, and 00TN, for formal smoothness and smooth algebras.
-
-This supplies the smoothness prerequisite for the `SOₙ` reductivity worked example in Layer 6
-of the ReductiveGroups roadmap.
 -/
 
 public section
