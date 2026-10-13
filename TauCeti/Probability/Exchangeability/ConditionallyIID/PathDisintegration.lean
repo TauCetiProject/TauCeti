@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-public import TauCeti.Probability.Process.IIDMixture
+public import TauCeti.Probability.Process.IIDMixture.Basic
 public import TauCeti.Probability.Process.PathLaw.Joint
 -- Non-public: mixing-law uniqueness is used only inside the proof of
 -- `ConditionallyIIDWith.jointPathLaw_eq_of_pathLaw_eq`.
@@ -29,7 +29,7 @@ measure together with the entire process is the disintegration `∫ δ_{ν ω} �
 ## Implementation
 
 The right-hand side is not a new construction: `iidMixtureLaw (μ.map ν) id` is the canonical
-two-stage law of `Process.IIDMixture` — draw a probability measure from the mixing law
+two-stage law of `Process.IIDMixture.Basic` — draw a probability measure from the mixing law
 `μ.map ν`, then sample i.i.d. from it, keeping the drawn measure as a coordinate. So the theorem
 says the abstract conditional predicate is *exactly* realised by that generative construction, which
 is a stronger statement than naming a bespoke disintegration measure would be.
