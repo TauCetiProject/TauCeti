@@ -24,6 +24,9 @@ as a ring homomorphism. It is an involution.
 * `PowerSeries.coeff_coeff_swap`: the coefficient of `uᵃ vᵇ` in `swap G` is that of `uᵇ vᵃ` in
   `G`.
 * `PowerSeries.swap_swap`: `swap` is an involution.
+* `PowerSeries.swap_C`, `PowerSeries.swap_map_C`, `PowerSeries.swap_X`: `swap` exchanges the
+  power series in the inner variable `u`, embedded as constants, with those in the outer variable
+  `v`, embedded through `map C`.
 -/
 
 public section
@@ -61,5 +64,24 @@ theorem coeff_coeff_swap (G : R⟦X⟧⟦X⟧) (a b : ℕ) :
 @[simp]
 theorem swap_swap (G : R⟦X⟧⟦X⟧) : swap (swap G) = G :=
   PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ by simp
+
+/-- Exchanging the variables sends a power series in the inner variable `u` to the same power
+series in the outer variable `v`. -/
+@[simp]
+theorem swap_C (f : R⟦X⟧) : swap (C f) = map C f :=
+  PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ by
+    simp only [coeff_coeff_swap, coeff_C, coeff_map]
+    split_ifs <;> simp
+
+/-- Exchanging the variables sends a power series in the outer variable `v` to the same power
+series in the inner variable `u`. -/
+@[simp]
+theorem swap_map_C (f : R⟦X⟧) : swap (map C f) = C f := by
+  rw [← swap_C, swap_swap]
+
+/-- Exchanging the variables sends the outer variable `v` to the inner variable `u`. -/
+@[simp]
+theorem swap_X : swap (X : R⟦X⟧⟦X⟧) = C X := by
+  rw [← map_X (C (R := R)), swap_map_C]
 
 end PowerSeries

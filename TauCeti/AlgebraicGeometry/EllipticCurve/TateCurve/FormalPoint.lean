@@ -8,12 +8,11 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.Data.Nat.Dist
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
+public import TauCeti.RingTheory.PowerSeries.Swap
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Polynomial.Taylor
-import Mathlib.RingTheory.LaurentSeries
 import TauCeti.Algebra.Polynomial.Laurent.Symmetric
 import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
-import TauCeti.RingTheory.PowerSeries.Swap
 
 /-!
 # The formal point of the Tate curve
@@ -29,9 +28,10 @@ as `tateFormalX R` and `tateFormalY R` in `R⟦u⟧⟦v⟧`, for any commutative
 the point `(X, Y)` lies on the Tate curve after the substitution `q = u v`.
 
 This is the algebraic identity behind Tate's uniformisation. Over a complete non-archimedean field
-the series converge at `u` and `v = q / u` whenever `|q| < |u| < 1`, and the identity then says
-that the analytic coordinates `TauCeti.tateUniformizationX` and `TauCeti.tateUniformizationY`
-satisfy the equation of the specialised Tate curve.
+the series converge at `u` and `v = q / u` whenever `|q| < |u| < 1`. Once their values there are
+identified with the analytic coordinates `TauCeti.tateUniformizationX` and
+`TauCeti.tateUniformizationY`, which this file does not do, the identity shows that those
+coordinates satisfy the equation of the specialised Tate curve.
 
 ## Main definitions
 
@@ -41,35 +41,24 @@ satisfy the equation of the specialised Tate curve.
 ## Main results
 
 * `TauCeti.coeff_coeff_tateFormalX`, `TauCeti.coeff_coeff_tateFormalY`: their coefficients.
+* `TauCeti.swap_tateFormalX`, `TauCeti.swap_tateFormalY`: exchanging `u` and `v` sends the formal
+  point `(X, Y)` to its negative `(X, -Y - X)`.
 * `TauCeti.equation_tateFormalX_tateFormalY`: the formal point `(X, Y)` lies on the Tate curve.
 
 ## Implementation notes
 
-The classical proof compares `q`-expansions with the Weierstrass `℘`-function over `ℂ`. The proof
-here is algebraic. It is carried out over `ℚ`, and the statement over `ℤ`, hence over every `R`,
-follows by injectivity of `ℤ → ℚ`. Write `w = u - 2 + u⁻¹`.
-
-1. The coefficient of `q⁰` in `X` is `u / (1 - u)² = w⁻¹`, and for `N ≥ 1` that of `qᴺ` is
-  `∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2)`, a polynomial in `w` through the Chebyshev polynomials `C_d`.
-  Likewise `2Y + X` is `u - u⁻¹` times `-w⁻²` plus a polynomial in `w`, through the Chebyshev
-  polynomials `S_d`. Expanding these polynomials to second order at `w = 0` shows that the
-  difference of the two sides of the equation is `w` times a polynomial in `w` in every
-  coefficient of `q`: the poles at `u = 1` cancel exactly because `a₄ = -5 s₃` and
-  `a₆ = -(5 s₃ + 7 s₅) / 12`.
-2. Exchanging `u` and `v`, that is `u ↦ q / u`, fixes `X` and negates `2Y + X`, so it fixes the
-  difference.
-3. A formal Liouville theorem: an element of `ℚ⟦u⟧⟦v⟧` symmetric in `u` and `v` whose `qᴺ`
-  coefficients are polynomials in `w` without constant term vanishes.
-
-The `w`-expansions are compared with power series in `u` and `v` in `ℚ⸨u⸩⟦q⟧`, through `v ↦ q / u`.
+The proof is algebraic, over `ℚ`, and transfers to `ℤ`, hence to every `R`, by injectivity of
+`ℤ → ℚ`. It rests on a formal Liouville theorem: an element of `ℚ⟦u⟧⟦v⟧` symmetric in `u` and `v`
+whose `qᴺ` coefficients, as Laurent polynomials in `u`, are polynomials in `w = u - 2 + u⁻¹`
+without constant term vanishes.
 
 ## References
 
 * J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, §V.1 and §V.3.
 * J. Tate, *A review of non-Archimedean elliptic functions*, in *Elliptic curves, modular forms,
-  & Fermat's last theorem* (Hong Kong, 1993), International Press (1995), 162–184. Step 3 is a
-  formal counterpart of the non-archimedean Liouville theorem used there: an analytic function on
-  `Kˣ` invariant under `u ↦ q u` is constant.
+  & Fermat's last theorem* (Hong Kong, 1993), International Press (1995), 162–184. The formal
+  Liouville theorem above is a formal counterpart of the non-archimedean Liouville theorem used
+  there: an analytic function on `Kˣ` invariant under `u ↦ q u` is constant.
 -/
 
 public section
@@ -126,6 +115,50 @@ otherwise. -/
 theorem coeff_coeff_tateParamHom (f : ℤ⟦X⟧) (a b : ℕ) :
     coeff a (coeff b (tateParamHom R f)) = if a = b then ((coeff b f : ℤ) : R) else 0 := by
   simp [tateParamHom]
+
+/-- The substitution `q = u v` sends `q` to the product of the inner variable `u` and the outer
+variable `v`. -/
+@[simp]
+theorem tateParamHom_X : tateParamHom R X = C X * X := by
+  rw [tateParamHom, RingHom.comp_apply, map_X, rescale_X]
+
+/-- Exchanging `u` and `v` fixes the substitution `q = u v`. -/
+@[simp]
+theorem swap_tateParamHom (g : ℤ⟦X⟧) :
+    PowerSeries.swap (tateParamHom R g) = tateParamHom R g := by
+  refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
+  rw [PowerSeries.coeff_coeff_swap, coeff_coeff_tateParamHom, coeff_coeff_tateParamHom]
+  by_cases h : a = b
+  · subst h
+    rfl
+  · rw [ite_eq_right h, ite_eq_right (Ne.symm h)]
+
+/-- Exchanging `u` and `v` fixes the formal Tate coordinate `x`. -/
+@[simp]
+theorem swap_tateFormalX : PowerSeries.swap (tateFormalX R) = tateFormalX R := by
+  refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
+  rw [PowerSeries.coeff_coeff_swap, coeff_coeff_tateFormalX, coeff_coeff_tateFormalX,
+    Nat.dist_comm, min_comm]
+  by_cases h : a = b
+  · subst h
+    rfl
+  · rw [ite_eq_right h, ite_eq_right (Ne.symm h)]
+
+/-- Exchanging `u` and `v` sends the formal Tate coordinate `y` to `-y - x`: it maps the formal
+Tate point to its negative on the curve `y² + x y = x³ + a₄ x + a₆`. -/
+@[simp]
+theorem swap_tateFormalY :
+    PowerSeries.swap (tateFormalY R) = -tateFormalY R - tateFormalX R := by
+  refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
+  rw [PowerSeries.coeff_coeff_swap, map_sub, map_sub, map_neg, map_neg, coeff_coeff_tateFormalY,
+    coeff_coeff_tateFormalY, coeff_coeff_tateFormalX, Nat.dist_comm, min_comm]
+  rcases lt_trichotomy a b with h | rfl | h
+  · simp only [h.ne', h, h.ne, not_lt_of_gt h, ite_false, ite_true]
+    split_ifs <;> simp [Nat.choose_succ_succ, Nat.choose_one_right, sub_eq_add_neg]
+  · simp
+    ring
+  · simp only [h.ne, h, h.ne', not_lt_of_gt h, ite_false, ite_true]
+    split_ifs <;> simp [Nat.choose_succ_succ, Nat.choose_one_right, sub_eq_add_neg]
 
 /-! ### Laurent polynomials and Laurent series in `u` -/
 
@@ -363,7 +396,8 @@ private theorem exists_tQ_eq : ∃ Q₂ : (Polynomial ℚ)⟦X⟧,
 /-! ### The coordinates as power series in `u` -/
 
 private theorem mk_id_mul_one_sub_X_sq : (mk fun a : ℕ ↦ (a : ℚ)) * (1 - X) ^ 2 = X := by
-  rw [show ((1 : ℚ⟦X⟧) - X) ^ 2 = 1 - C 2 * X ^ 1 + X ^ 2 by rw [map_ofNat]; ring]
+  have h : ((1 : ℚ⟦X⟧) - X) ^ 2 = 1 - C 2 * X ^ 1 + X ^ 2 := by rw [map_ofNat]; ring
+  rw [h]
   refine PowerSeries.ext fun n ↦ ?_
   simp only [mul_add, mul_sub, mul_one, map_add, map_sub, mul_left_comm _ (C _), coeff_C_mul,
     coeff_mul_X_pow', coeff_mk, coeff_X]
@@ -372,8 +406,9 @@ private theorem mk_id_mul_one_sub_X_sq : (mk fun a : ℕ ↦ (a : ℚ)) * (1 - X
 
 private theorem mk_sq_mul_one_sub_X_pow_four :
     (mk fun a : ℕ ↦ (a : ℚ) ^ 2) * (1 - X) ^ 4 = X - X ^ 3 := by
-  rw [show ((1 : ℚ⟦X⟧) - X) ^ 4 = 1 - C 4 * X ^ 1 + C 6 * X ^ 2 - C 4 * X ^ 3 + X ^ 4 by
-    rw [map_ofNat, map_ofNat]; ring]
+  have h : ((1 : ℚ⟦X⟧) - X) ^ 4 = 1 - C 4 * X ^ 1 + C 6 * X ^ 2 - C 4 * X ^ 3 + X ^ 4 := by
+    rw [map_ofNat, map_ofNat]; ring
+  rw [h]
   refine PowerSeries.ext fun n ↦ ?_
   simp only [mul_add, mul_sub, mul_one, map_add, map_sub, mul_left_comm _ (C _), coeff_C_mul,
     coeff_mul_X_pow', coeff_mk, coeff_X, coeff_X_pow]
@@ -402,7 +437,8 @@ private theorem sum_divisors_ite_eq_add {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : 
   · refine Finset.sum_eq_zero fun d hd ↦ ite_eq_right fun ha ↦ h ⟨?_, ?_⟩
     · have := Nat.pos_of_mem_divisors hd
       omega
-    · rw [show a - N = d by omega]
+    · have had : a - N = d := by omega
+      rw [had]
       exact Nat.dvd_of_mem_divisors hd
 
 private theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → ℚ) :
@@ -422,9 +458,11 @@ private theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : 
       have := Nat.divisor_le hd
       omega
     · have := Nat.divisor_le hd
-      rw [show N - a = d by omega]
+      have had : N - a = d := by omega
+      have hN' : N = a + d := by omega
+      rw [had]
       have h' := Nat.dvd_of_mem_divisors hd
-      rwa [show N = a + d by omega, Nat.dvd_add_self_right] at h'
+      rwa [hN', Nat.dvd_add_self_right] at h'
 
 /-- The coefficient of `vᴺ` in `x` for `N ≠ 0`, as the power series
 `∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` in `u`. -/
@@ -519,7 +557,7 @@ private theorem single_mul_coeff_two_mul_tateFormalY_add {N : ℕ} (hN : N ≠ 0
   have hS := sL_mul_psi_chebyshevS n
   have h₁ := single_neg_mul_single_add N (n + 1)
   have h₂ := single_neg_mul_single N (n + 1) hdN
-  rw [show ((n + 1 : ℕ) : ℤ) - 1 = n by push_cast; ring, map_mul, map_sub,
+  rw [Nat.cast_add_one (R := ℤ), add_sub_cancel_right, map_mul, map_sub,
     HahnSeries.ofPowerSeries_X_pow, HahnSeries.ofPowerSeries_X_pow]
   simp only [map_mul, map_pow, map_natCast]
   push_cast at h₁ h₂ ⊢
@@ -560,9 +598,9 @@ private theorem toLaurent_two_mul_tateFormalY_add_mul :
     toLaurent (2 * tateFormalY ℚ + tateFormalX ℚ) * C (psi wP ^ 2) =
       C sL * map psi (-1 + C wP ^ 2 * tQ) := by
   refine PowerSeries.ext fun N ↦ ?_
-  rw [coeff_mul_C, coeff_toLaurent, coeff_C_mul, coeff_map,
-    show coeff N (-1 + C wP ^ 2 * tQ) = -coeff N 1 + wP ^ 2 * coeff N tQ by
-      rw [map_add, map_neg, ← map_pow, coeff_C_mul], coeff_one]
+  have hc : coeff N (-1 + C wP ^ 2 * tQ) = -coeff N 1 + wP ^ 2 * coeff N tQ := by
+    rw [map_add, map_neg, ← map_pow, coeff_C_mul]
+  rw [coeff_mul_C, coeff_toLaurent, coeff_C_mul, coeff_map, hc, coeff_one]
   rcases eq_or_ne N 0 with rfl | hN
   · rw [coeff_zero_two_mul_tateFormalY_add, tQ, coeff_mk, Nat.divisors_zero, Finset.sum_empty,
       mul_zero, add_zero, ite_eq_left rfl, psi.map_neg, psi.map_one, mul_neg_one, Nat.cast_zero,
@@ -641,8 +679,10 @@ private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSerie
       · have hmN : m ≤ N := by omega
         have h' := ih (N - m) (by omega) m hm
         rw [hcoe, ite_eq_right (by omega)] at h'
-        rw [show (-(m : ℤ) + N).natAbs = N - m by omega, hswap]
-        rwa [show ((m : ℤ) + (N - m : ℕ)).natAbs = N by omega] at h'
+        have e₁ : (-(m : ℤ) + N).natAbs = N - m := by omega
+        have e₂ : ((m : ℤ) + (N - m : ℕ)).natAbs = N := by omega
+        rw [e₁, hswap]
+        rwa [e₂] at h'
   have hconst (N : ℕ) : L N = LaurentPolynomial.C ((L N).coeff 0) := by
     refine LaurentPolynomial.ext fun k ↦ ?_
     rw [LaurentPolynomial.C_apply]
@@ -663,42 +703,12 @@ private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSerie
     rw [hconst N, h, _root_.map_zero]
   refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
   have h := hcoe b ((a : ℤ) - b)
-  rw [hzero, ite_eq_right (by omega), show ((a : ℤ) - b + b).natAbs = a by omega] at h
+  have e : ((a : ℤ) - b + b).natAbs = a := by omega
+  rw [hzero, ite_eq_right (by omega), e] at h
   rw [_root_.map_zero, _root_.map_zero]
   exact h.symm.trans (by simp)
 
 /-! ### The Weierstrass equation -/
-
-private theorem swap_tateFormalX : PowerSeries.swap (tateFormalX ℚ) = tateFormalX ℚ := by
-  refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
-  rw [PowerSeries.coeff_coeff_swap, coeff_coeff_tateFormalX, coeff_coeff_tateFormalX,
-    Nat.dist_comm, min_comm]
-  by_cases h : a = b
-  · subst h
-    rfl
-  · rw [ite_eq_right h, ite_eq_right (Ne.symm h)]
-
-private theorem swap_two_mul_tateFormalY_add :
-    PowerSeries.swap (2 * tateFormalY ℚ + tateFormalX ℚ) =
-      -(2 * tateFormalY ℚ + tateFormalX ℚ) := by
-  refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
-  rw [PowerSeries.coeff_coeff_swap, map_neg, map_neg, coeff_coeff_two_mul_tateFormalY_add,
-    coeff_coeff_two_mul_tateFormalY_add, Nat.dist_comm, min_comm]
-  rcases lt_trichotomy a b with h | rfl | h
-  · simp only [h.ne', h, h.ne, not_lt_of_gt h, ite_false, ite_true]
-    split_ifs <;> ring
-  · simp
-  · simp only [h.ne, h, h.ne', not_lt_of_gt h, ite_false, ite_true]
-    split_ifs <;> ring
-
-private theorem swap_tateParamHom (g : ℤ⟦X⟧) :
-    PowerSeries.swap (tateParamHom ℚ g) = tateParamHom ℚ g := by
-  refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
-  rw [PowerSeries.coeff_coeff_swap, coeff_coeff_tateParamHom, coeff_coeff_tateParamHom]
-  by_cases h : a = b
-  · subst h
-    rfl
-  · rw [ite_eq_right h, ite_eq_right (Ne.symm h)]
 
 private theorem coeff_toLaurent_tateParamHom (g : ℤ⟦X⟧) (N : ℕ) :
     coeff N (toLaurent (tateParamHom ℚ g)) = HahnSeries.C ((coeff N g : ℤ) : ℚ) := by
@@ -733,8 +743,9 @@ private theorem two_mul_tateFormalY_add_sq_sub_eq_zero :
       4 * tateParamHom ℚ tateCurve.a₄ * tateFormalX ℚ - 4 * tateParamHom ℚ tateCurve.a₆ = 0 := by
   obtain ⟨h, hH⟩ := exists_polar_eq
   refine eq_zero_of_swap_eq_self (f := h) ?_ ?_
-  · simp only [map_sub, map_mul, map_pow, map_ofNat, swap_tateFormalX,
-      swap_two_mul_tateFormalY_add, swap_tateParamHom, neg_sq]
+  · simp only [map_sub, map_mul, map_pow, map_add, map_ofNat, swap_tateFormalX, swap_tateFormalY,
+      swap_tateParamHom]
+    ring
   have hx := toLaurent_tateFormalX_mul
   have hy := toLaurent_two_mul_tateFormalY_add_mul
   have hS : (C sL : (LaurentSeries ℚ)⟦X⟧) ^ 2 = C (psi wP) ^ 2 + 4 * C (psi wP) := by
