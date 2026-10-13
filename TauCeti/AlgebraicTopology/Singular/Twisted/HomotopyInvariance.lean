@@ -88,6 +88,12 @@ lemma simplexMap_toSimplicialObjectHomotopy_h_apply {n : ℕ} (i : Fin (n + 1))
   change H.h (TauCeti.TopCat.simplexMap
     ((Functor.LaxMonoidal.μ TopCat.toSSet X TopCat.I).app _ ⟨_, _⟩) p) = _
   rw [TauCeti.TopCat.simplexMap_μ_apply]
+  -- The rest holds by definition, as `TopCat.Homotopy.h_hom_apply` and
+  -- `TauCeti.TopCat.simplexMap_map` record: `H.h (a, b) = H (I.homeomorph b, a)`, and the two
+  -- components of the simplex of `X ⊗ Δ[1]` attached to `i` are the degeneracy
+  -- `X.map (σ i).op x` and `objMk₁ i.succ.castSucc`.
+  -- Neither lemma rewrites here, since the pair is typed in `X × I` rather than `X ⊗ I` and the
+  -- first component is only definitionally a reindexing.
   rfl
 
 /-- The combinatorial homotopy extracted from a homotopy `H` from `f` to `g` starts every simplex

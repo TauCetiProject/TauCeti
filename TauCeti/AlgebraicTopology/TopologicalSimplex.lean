@@ -146,6 +146,11 @@ lemma simplexMap_μ_apply (a : (TopCat.toSSet.obj X).obj n) (b : (TopCat.toSSet.
   Prod.ext congr(simplexMap $(congr($(Functor.Monoidal.μ_fst TopCat.toSSet X Y).app n ⟨a, b⟩)) p)
     congr(simplexMap $(congr($(Functor.Monoidal.μ_snd TopCat.toSSet X Y).app n ⟨a, b⟩)) p)
 
+/-- The singular `0`-simplex corresponding to a point is the constant map at that point. -/
+@[simp]
+lemma simplexMap_toSSetObj₀Equiv_symm_apply (x : X) (p : SimplexCategory.toTop.{u}.obj ⦋0⦌) :
+    simplexMap (TopCat.toSSetObj₀Equiv.symm x) p = x := rfl
+
 open Opposite in
 /-- The parametrization of the unit interval by the topological `1`-simplex underlying the
 nondegenerate `1`-simplex of `Δ[1]` sends the vertex `ε` to the point `ε` of `Δ[1]`. -/
@@ -173,8 +178,8 @@ lemma homeomorph_simplexMap_toSSetObjI_toTopInitialVertex :
       (SSet.stdSimplex.objMk₁ 1)) (SimplexCategory.toTopInitialVertex ⦋1⦌)) = 0 := by
   rw [← SimplexCategory.toTop_map_toTopInitialVertex (SimplexCategory.const ⦋0⦌ ⦋1⦌ 0) rfl,
     simplexMap_toSSetObjI_objMk₁_toTop_map _ (ε := 0) rfl,
-    SSet.stdSimplex.toSSetObj_app_const_zero]
-  rfl
+    SSet.stdSimplex.toSSetObj_app_const_zero, simplexMap_toSSetObj₀Equiv_symm_apply,
+    TopCat.I.homeomorph_zero]
 
 open Opposite in
 /-- The parametrization of the unit interval by the topological `1`-simplex underlying the
@@ -184,8 +189,8 @@ lemma homeomorph_simplexMap_toSSetObjI_toTop_map_δ_zero :
       (SSet.stdSimplex.objMk₁ 1)) (SimplexCategory.toTop.map (SimplexCategory.δ 0)
         (SimplexCategory.toTopInitialVertex ⦋0⦌))) = 1 := by
   rw [simplexMap_toSSetObjI_objMk₁_toTop_map _ (ε := 1) rfl,
-    SSet.stdSimplex.toSSetObj_app_const_one]
-  rfl
+    SSet.stdSimplex.toSSetObj_app_const_one, simplexMap_toSSetObj₀Equiv_symm_apply,
+    TopCat.I.homeomorph_one]
 
 end TauCeti.TopCat
 
