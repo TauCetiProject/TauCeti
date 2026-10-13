@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 import Mathlib.Probability.Moments.Basic
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The Schrödinger system for a bounded kernel
@@ -540,16 +541,6 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
     ⟨hfst, ?_⟩⟩
   ext t ht
   rw [hsnd t ht, hc, one_mul]
-
-/-- A measure with log-density bounded above almost everywhere against a finite measure is
-finite. -/
-theorem isFiniteMeasure_withDensity_ofReal_exp {Z : Type*} [MeasurableSpace Z] {ρ : Measure Z}
-    [IsFiniteMeasure ρ] {g : Z → ℝ} (hg : AEMeasurable g ρ) (hgM : ∀ᵐ z ∂ρ, g z ≤ M) :
-    IsFiniteMeasure (ρ.withDensity fun z ↦ ENNReal.ofReal (Real.exp (g z))) := by
-  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
-    (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
-    (hgM.mono fun z hz ↦ ?_)).2
-  rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
 
 /-- **The Schrödinger system against a reference measure with bounded log-density.** Let `μ` and
 `ν` be finite measures of equal mass, and let the reference measure `R` have density `exp g`
