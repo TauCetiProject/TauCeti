@@ -118,13 +118,21 @@ theorem extendScalarsSymmetricPowerIso_hom_naturality (n : ℕ)
     ModuleCat.symmetricPower.coe_map_apply]
   have h := AlgHom.congr_fun (g.hom.scalarTensorBialgEquiv_comp_map (S := S))
     ((1 : S) ⊗ₜ[R] x.1)
-  have hg : ((ModuleCat.extendScalars f).map g).hom = g.hom.baseChange S := by rfl
+  -- Identify the underlying map by the named pure-tensor formulas, rather than
+  -- unfolding the restriction-of-scalars module structure used by the functor.
+  have hg : ((ModuleCat.extendScalars f).map g).hom = g.hom.baseChange S := by
+    apply LinearMap.ext
+    intro t
+    induction t using TensorProduct.inductionOn with
+    | tmul s m =>
+      exact (ModuleCat.ExtendScalars.map_tmul f g s m).trans
+        (LinearMap.baseChange_tmul (A := S) g.hom s m).symm
+    | add x y hx hy =>
+      exact (map_add _ x y).trans ((congrArg₂ (· + ·) hx hy).trans (map_add _ x y).symm)
   erw [hg]
   simp only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
     AlgEquiv.toAlgHom_apply, BialgEquiv.coe_toAlgEquiv] at h
-  -- The tensor-module presentations expose the same scalar instances after unfolding.
-  convert h using 1
-  rfl
+  exact h
 
 /-- The natural scalar-extension comparison for symmetric powers of arbitrary modules. -/
 def extendScalarsSymmetricPowerNatIso (n : ℕ) :
@@ -189,11 +197,11 @@ theorem extendScalarsSymmetricPowerNatIso_id (n : ℕ) :
       -- The ring-homomorphism composites have the same underlying algebra maps.
       change (SymmetricAlgebra.map R a)
         (e (Algebra.TensorProduct.includeRight (algebraMap R _ r))) = algebraMap R _ r
-      rw [AlgHom.commutes]
-      have he := e.toAlgEquiv.commutes r
-      convert (congrArg (SymmetricAlgebra.map R a) he).trans
-        ((SymmetricAlgebra.map R a).commutes r) using 1
-      rfl
+      rw [Algebra.TensorProduct.includeRight_apply,
+        ← Algebra.TensorProduct.tmul_one_eq_one_tmul, RingHom.algebraMap_toAlgebra,
+        RingHom.id_apply]
+      simp only [e]
+      erw [TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one, AlgHom.commutes]
     · intro m
       -- Evaluate the ambient comparison on a generator.
       change (SymmetricAlgebra.map R a) (e ((1 : R) ⊗ₜ[R] SymmetricAlgebra.ι R M m)) =
@@ -210,10 +218,9 @@ theorem extendScalarsSymmetricPowerNatIso_id (n : ℕ) :
     coe_extendScalarsSymmetricPowerIso_hom_tmul.{u, u, v}]
   have hx : (SymmetricAlgebra.map R a) (e ((1 : R) ⊗ₜ[R] x.1)) = x.1 :=
     RingHom.congr_fun h x.1
-  convert hx using 1
-  · rfl
-  · exact congrArg Subtype.val (ModuleCat.extendScalarsId_hom_app_one_tmul
-      (M.symmetricPower n) x)
+  erw [ModuleCat.comp_apply, ModuleCat.id_apply,
+    ModuleCat.extendScalarsId_hom_app_one_tmul]
+  exact hx
 
 end
 
