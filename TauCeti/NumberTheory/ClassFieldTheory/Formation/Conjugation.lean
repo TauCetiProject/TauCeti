@@ -255,6 +255,15 @@ theorem conj_mem_top_conjugate {x : G} :
   rw [mem_top_conjugate]
   simp [mul_assoc]
 
+/-- The ground subgroup of the conjugate layer is the conjugate `gUg⁻¹` of the ground subgroup,
+read as the image of `U` under conjugation by `g`. -/
+theorem toSubgroup_ground_conjugate :
+    (L.conjugate g).ground.toSubgroup = L.ground.toSubgroup.map (MulAut.conj g).toMonoidHom := by
+  ext x
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, OpenSubgroup.mem_toSubgroup,
+    OpenSubgroup.mem_toSubgroup]
+  exact L.mem_ground_conjugate g
+
 /-! ### The Galois group of a conjugate layer -/
 
 /-- Conjugation by `g` as an isomorphism `U ≃* gUg⁻¹` of the ground subgroups of a layer and its

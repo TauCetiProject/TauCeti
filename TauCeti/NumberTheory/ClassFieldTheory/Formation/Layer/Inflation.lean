@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.CoefficientMap
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
@@ -35,9 +36,11 @@ in the explicit inhomogeneous model of `TauCeti.ContCohomology`. On the class of
 `c` it is the class of the inflated cocycle `(u, v) ↦ c (u V, v V)` (`explicitInfl2_H2π`,
 `inflCocycle2_apply`). It is compatible with the operations on layers: restriction to an
 intermediate ground subgroup (`explicitInfl2_cohomologyRes`), refinement to a smaller top subgroup
-(`explicitInfl2_cohomologyInfl`), and every map of layer cohomologies that pulls inflated cocycles
-back along a compatible pair (`explicitInfl2_eq_explicitMap2_explicitInfl2`), in particular every
-map of coefficient modules (`explicitInfl2_map_repMap`). Restriction to the
+(`explicitInfl2_cohomologyInfl`), conjugation by an element `g` of `G`, which it carries to the
+conjugation `H²(U, M) → H²(gUg⁻¹, M)` (`explicitInfl2_conjugateCohomologyIso`), and every map of
+layer cohomologies that pulls inflated cocycles back along a compatible pair
+(`explicitInfl2_eq_explicitMap2_explicitInfl2`), in particular every map of coefficient modules
+(`explicitInfl2_map_repMap`). Restriction to the
 top subgroup kills inflated classes (`explicitMap2_explicitInfl2_eq_zero`), inflation is injective
 when `H¹(V, M)` vanishes (`explicitInfl2_injective_of_subsingleton`), and every class of
 `H²(U, M)` is inflated from a refinement of a given layer over `U` (`exists_explicitInfl2_eq`).
@@ -52,6 +55,9 @@ corestriction from the ground subgroup `U` to `G`) are defined.
   `H²(U ⧸ V, M^V) → H²(U, M)`.
 * `TauCeti.ClassFieldTheory.NormalLayer.inflCocycle2 L e he c`: the continuous `2`-cocycle on `U`
   inflated from a layer cocycle `c`.
+* `TauCeti.ClassFieldTheory.NormalLayer.conjugateGroundHom L g`: inverse conjugation
+  `gUg⁻¹ → U`, as a continuous homomorphism of the ground subgroups of the conjugate layer and of
+  the layer.
 
 ## Main results
 
@@ -64,6 +70,8 @@ corestriction from the ground subgroup `U` to `G`) are defined.
 * `TauCeti.ClassFieldTheory.NormalLayer.explicitInfl2_cohomologyRes`,
   `TauCeti.ClassFieldTheory.NormalLayer.explicitInfl2_cohomologyInfl`: inflation commutes with the
   restriction and the refinement of layers.
+* `TauCeti.ClassFieldTheory.NormalLayer.explicitInfl2_conjugateCohomologyIso`: inflation commutes
+  with the conjugation of layers.
 * `TauCeti.ClassFieldTheory.NormalLayer.exists_explicitInfl2_eq`: every class of `H²(U, M)` is
   inflated from a refinement of a given layer over `U`.
 * `TauCeti.ClassFieldTheory.NormalLayer.explicitInfl2_eq_explicitMap2_explicitInfl2`: inflation is
@@ -363,6 +371,81 @@ theorem explicitInfl2_map_repMap {F' : Formation G} {M' : Type} [AddCommGroup M'
   have h := hf (e.symm (c ((u : L.Gal), (v : L.Gal)) : F.level L.top))
   rw [AddEquiv.apply_symm_apply] at h
   exact h
+
+/-! ### Inflation and conjugation -/
+
+section Conjugation
+
+variable (g : G)
+
+/-- Inverse conjugation `v ↦ g⁻¹ v g`, from the ground subgroup `gUg⁻¹` of the conjugate layer to
+the ground subgroup `U` of the layer, as a continuous homomorphism. -/
+def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
+  toFun v := ⟨g⁻¹ * v * g, (L.mem_ground_conjugate g).1 v.2⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' v w := Subtype.ext (by simp only [Subgroup.coe_mul]; group)
+  continuous_toFun := ((continuous_mul_const g).comp
+    ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).subtype_mk _
+
+/-- Inverse conjugation on underlying elements of `G`. -/
+@[simp]
+theorem conjugateGroundHom_apply_coe (v : (L.conjugate g).ground.toSubgroup) :
+    (L.conjugateGroundHom g v : G) = g⁻¹ * v * g :=
+  (rfl)
+
+omit [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M] in
+/-- The action of `g` on `M` and inverse conjugation form a compatible pair. -/
+theorem conjugateGroundHom_smul (v : (L.conjugate g).ground.toSubgroup) (m : M) :
+    DistribSMul.toAddMonoidHom M g (L.conjugateGroundHom g v • m) =
+      v • DistribSMul.toAddMonoidHom M g m := by
+  rw [DistribSMul.toAddMonoidHom_apply, DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
+    Subgroup.smul_def, conjugateGroundHom_apply_coe, smul_smul, smul_smul]
+  congr 1
+  group
+
+omit [ContinuousSMul G M] in
+/-- The inflated cocycle of a layer cocycle pulled back along a pair `(f, φ)` that acts on Galois
+groups by inverse conjugation and on coefficients by `g` is the inflated cocycle, pulled back along
+inverse conjugation and pushed forward by `g`. -/
+private theorem inflCocycle2_mapCocycles₂ (f : (L.conjugate g).Gal →* L.Gal)
+    (φ : Rep.res f (L.rep F) ⟶ (L.conjugate g).rep F)
+    (hf : ∀ w : (L.conjugate g).ground.toSubgroup,
+      f (w : (L.conjugate g).Gal) = (L.conjugateGroundHom g w : L.Gal))
+    (hφ : ∀ x : (L.rep F).V, (φ.hom x : F.toRep.V) = F.toRep.ρ g (x : F.toRep.V))
+    (c : cocycles₂ (L.rep F))
+    (p : (L.conjugate g).ground.toSubgroup × (L.conjugate g).ground.toSubgroup) :
+    ((L.conjugate g).inflCocycle2 e he (mapCocycles₂ f φ c) :
+        (L.conjugate g).ground.toSubgroup × (L.conjugate g).ground.toSubgroup → M) p =
+      DistribSMul.toAddMonoidHom M g
+        ((L.inflCocycle2 e he c : L.ground.toSubgroup × L.ground.toSubgroup → M)
+          (L.conjugateGroundHom g p.1, L.conjugateGroundHom g p.2)) := by
+  rw [inflCocycle2_apply, inflCocycle2_apply, TauCeti.groupCohomology.mapCocycles₂_apply, hφ,
+    AddEquiv.symm_apply_eq, DistribSMul.toAddMonoidHom_apply, he, AddEquiv.apply_symm_apply, hf,
+    hf]
+
+/-- **Inflation commutes with conjugation**: inflating the conjugate of a class to the ground
+subgroup `gUg⁻¹` of the conjugate layer is conjugating the inflated class from `U` to `gUg⁻¹`, that
+is, pulling it back along inverse conjugation and acting by `g` on the coefficients. -/
+theorem explicitInfl2_conjugateCohomologyIso (x : L.H F 2) :
+    (L.conjugate g).explicitInfl2 e he ((L.conjugateCohomologyIso F g 2).hom x) =
+      explicitMap2 L.ground.toSubgroup M (L.conjugate g).ground.toSubgroup M
+        (L.conjugateGroundHom g) (DistribSMul.toAddMonoidHom M g)
+        continuous_of_discreteTopology (L.conjugateGroundHom_smul g) (L.explicitInfl2 e he x) := by
+  refine L.explicitInfl2_eq_explicitMap2_explicitInfl2 _ _ _ _ _ _ _
+    (fun y => (L.conjugateCohomologyIso F g 2).hom y) (fun c => ?_) x
+  refine ⟨?_, ?hcls, ?hcocycle⟩
+  case hcls =>
+    rw [conjugateCohomologyIso_def, groupCohomology.mapIso_hom]
+    -- Rewriting with `H2π_comp_map_apply` times out here; the term is given explicitly.
+    exact groupCohomology.H2π_comp_map_apply (L.conjugateGalEquiv g).symm.toMonoidHom _ c
+  case hcocycle =>
+    exact Subtype.ext (funext fun p => (inflCocycle2_mapCocycles₂ L e he g _ _
+      (fun w => (L.conjugateGalEquiv_symm_mk g w).trans (congrArg QuotientGroup.mk
+        (Subtype.ext (L.conjugateGroundEquiv_symm_apply_coe g w))))
+      (fun x => L.conjugateCoefficientEquiv_apply_coe F g x) c p).trans
+      (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).symm)
+
+end Conjugation
 
 end NormalLayer
 
