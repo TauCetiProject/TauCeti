@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
-public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+public import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 public import TauCeti.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Calculus.Rademacher
 
@@ -33,9 +33,11 @@ Both sides are continuous linear functionals of `u ∈ W^{1,p}(Ω)`: `g` and `�
 compact support, so they lie in the dual exponent space and the two sides are Hölder pairings
 (`ContinuousLinearMap.lpPairing`). By the Meyers–Serrin theorem
 (`TauCeti.Wkp.dense_contDiffOn_representatives`) it therefore suffices to treat `u` smooth on `Ω`.
-For such `u`, a smooth cutoff equal to one near the support of `g` turns `u` into a smooth function
-with compact support on the whole space, which is Lipschitz, and the identity becomes Mathlib's
-integration by parts for Lipschitz functions, `LipschitzWith.integral_lineDeriv_mul_eq`.
+For such `u` the identity is integration by parts against a Lipschitz function with compact
+support in `Ω`, `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: a smooth cutoff equal to one
+near the support of `g` turns `u` into a smooth function with compact support on the whole space,
+which is Lipschitz, and the identity becomes Mathlib's integration by parts for Lipschitz
+functions, `LipschitzWith.integral_lineDeriv_mul_eq`.
 
 ## Main declarations
 
@@ -60,47 +62,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {g : E → ℝ} {L : ℝ≥0}
-
-/-- The smooth case: for `f` that is `C¹` on `Ω` and `g` Lipschitz with compact support in `Ω`,
-`∫ (∂_v g) f = -∫ g (∂_v f)`. A cutoff equal to one near `tsupport g` reduces this to Mathlib's
-integration by parts for two Lipschitz functions. -/
-private theorem integral_lineDeriv_mul_eq_neg_of_contDiffOn {f : E → ℝ}
-    (hf : ContDiffOn ℝ 1 f Omega) (hg : LipschitzWith L g) (hgc : HasCompactSupport g)
-    (hgs : tsupport g ⊆ Omega) (v : E) :
-    ∫ x, lineDeriv ℝ g x v * f x ∂mu = -∫ x, g x * fderiv ℝ f x v ∂mu := by
-  obtain ⟨χ, hχ, -, hχ1, hχc, hχs⟩ := hgc.exists_contDiff_cutoff Omega.isOpen hgs
-  set F : E → ℝ := fun x => χ x * f x
-  -- `F = χ f` is `C¹` on the whole space: near a point outside `Ω` it vanishes identically.
-  have hF : ContDiff ℝ 1 F := by
-    refine contDiff_iff_contDiffAt.2 fun x => ?_
-    by_cases hx : x ∈ (Omega : Set E)
-    · exact (hχ.of_le (by simp)).contDiffAt.mul (hf.contDiffAt (Omega.isOpen.mem_nhds hx))
-    · have h0 : χ =ᶠ[𝓝 x] 0 := notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hχs h)
-      exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq
-        (h0.mono fun y hy => by simp [F, hy])
-  obtain ⟨C, hFC⟩ : ∃ C, LipschitzWith C F :=
-    hF.lipschitzWith_of_hasCompactSupport hχc.mul_right one_ne_zero
-  have hibp := hFC.integral_lineDeriv_mul_eq (μ := mu) hg hgc v
-  -- On a neighbourhood of each point of `tsupport g` the cutoff is one, so `F` agrees with `f`.
-  have hnear : ∀ x ∈ tsupport g, F =ᶠ[𝓝 x] f := fun x hx => by
-    filter_upwards [isOpen_interior.mem_nhds (hχ1 hx)] with y hy
-    have hy1 : y ∈ χ ⁻¹' {1} := interior_subset hy
-    simp [F, show χ y = 1 from hy1]
-  have h1 : ∀ x, lineDeriv ℝ F x v * g x = g x * fderiv ℝ f x v := fun x => by
-    by_cases hx : x ∈ tsupport g
-    · have hfx : DifferentiableAt ℝ f x :=
-        (hf.differentiableOn one_ne_zero x (hgs hx)).differentiableAt
-          (Omega.isOpen.mem_nhds (hgs hx))
-      rw [(hnear x hx).lineDeriv_eq, hfx.lineDeriv_eq_fderiv, mul_comm]
-    · simp [image_eq_zero_of_notMem_tsupport hx]
-  have h2 : ∀ x, lineDeriv ℝ g x (-v) * F x = -(lineDeriv ℝ g x v * f x) := fun x => by
-    rw [lineDeriv_neg]
-    by_cases hx : x ∈ tsupport g
-    · rw [(hnear x hx).eq_of_nhds]
-      ring
-    · simp [lineDeriv_of_notMem_tsupport hx]
-  simp only [h1, h2, integral_neg] at hibp
-  linarith
 
 /-- **Integration by parts against Lipschitz functions.** For `1 ≤ p < ∞`, `u ∈ W^{1,p}(Ω)`, a
 Lipschitz function `g` with compact support in `Ω`, and a direction `v`,
@@ -166,7 +127,7 @@ theorem W1p.setIntegral_lineDeriv_mul_value_eq_neg (hp : p ≠ ⊤) (u : W1p mu 
       rw [← hout _ fun x hx => by simp [image_eq_zero_of_notMem_tsupport hx]]
       refine integral_congr_ae (hgrad.mono fun x hx => ?_)
       simp only [← innerSL_apply_apply, hx]
-    rw [hΦ, e1, e2, integral_lineDeriv_mul_eq_neg_of_contDiffOn hf1 hg hgc hgs v,
+    rw [hΦ, e1, e2, integral_lineDeriv_mul_eq_neg_of_contDiffOn Omega.isOpen hf1 hg hgc hgs v,
       neg_add_cancel]
   -- By Meyers–Serrin these elements are dense, and the kernel of `Φ` is closed.
   have hker :=
