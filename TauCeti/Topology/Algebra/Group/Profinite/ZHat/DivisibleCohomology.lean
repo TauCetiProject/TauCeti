@@ -16,10 +16,6 @@ module, with arbitrary continuous action. Both Mathlib's canonical continuous co
 the explicit inhomogeneous quotient are covered. Together with the torsion-coefficient
 calculation, this supplies the divisible case of the procyclic second-cohomology computation.
 
-The proof uses the torsion-coefficient vanishing theorem
-`TauCeti.zHat.subsingleton_continuousCohomology_two_of_isAddTorsion` and the reduction from
-divisible to torsion coefficients in `TauCeti.ContinuousCohomology`.
-
 ## References
 
 * J.-P. Serre, *Local Fields*, Chapter XIII, §1, Proposition 2.

@@ -17,13 +17,6 @@ vanishing in that degree for every divisible discrete module. No triviality of t
 required. This reduces divisible-coefficient calculations to torsion-coefficient calculations,
 in particular for the profinite integers.
 
-For a divisible module `M` and a positive integer `k`, multiplication by `k` gives the short
-exact sequence `0 → M[k] → M → M → 0`. Its long exact sequence makes multiplication by `k`
-injective on cohomology when the cohomology of `M[k]` vanishes. Positive-degree continuous
-cohomology is torsion, so injectivity for every positive `k` forces it to vanish.
-
-The construction uses `TauCeti.ContCohomology.DiscreteShortExact.coeffMap_proj_injective` and
-`TauCeti.ContinuousCohomology.isAddTorsion_continuousCohomology` on Mathlib's canonical carrier.
 Degree zero is excluded: the invariants of a trivial divisible module need not vanish.
 
 ## References
@@ -56,6 +49,7 @@ theorem subsingleton_continuousCohomology_of_divisible_of_forall_isAddTorsion (n
   suffices hz : ∀ x : continuousCohomology (n + 1) (ofDiscreteModule ℤ G M), x = 0 from
     ⟨fun x y ↦ (hz x).trans (hz y).symm⟩
   intro x
+  -- Torsion of positive-degree cohomology: NSW (1.6.1).
   obtain ⟨k, hk, hx⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.mp
     (isAddTorsion_continuousCohomology n x)
   -- The kernel of multiplication by the annihilator is a discrete torsion module.
@@ -79,16 +73,9 @@ theorem subsingleton_continuousCohomology_of_divisible_of_forall_isAddTorsion (n
       exact := fun m ↦ by
         simp only [← AddMonoidHom.mem_ker, Set.mem_range]
         exact ⟨fun hm ↦ ⟨⟨m, hm⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.property⟩ }
-  -- The coefficient endomorphism is k times the identity, and cohomology is additive.
-  have hproj : ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant =
-      k • 𝟙 (ofDiscreteModule ℤ G M) := by
-    ext m
-    rfl
   have hmap : coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) (n + 1) =
-      k • 𝟙 (continuousCohomology (n + 1) (ofDiscreteModule ℤ G M)) := by
-    rw [hproj]
-    exact (continuousCohomologyFunctor ℤ G (n + 1)).map_nsmul.trans
-      (congrArg (k • ·) ((continuousCohomologyFunctor ℤ G (n + 1)).map_id _))
+      k • 𝟙 (continuousCohomology (n + 1) (ofDiscreteModule ℤ G M)) :=
+    coeffMap_nsmulAddMonoidHom (G := G) k (n + 1)
   apply S.coeffMap_proj_injective (n := n + 1)
   simpa only [hmap, TopModuleCat.hom_nsmul, smul_apply, TopModuleCat.hom_id,
     ContinuousLinearMap.id_apply, smul_zero] using hx
