@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Order.Interval.Set.Disjoint
 import Mathlib.Order.MinMax
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Absolutely continuous monotone changes of parameter
@@ -83,5 +84,19 @@ theorem comp_antitoneOn (hγ : AbsolutelyContinuousOnInterval γ c d)
     (hmap : MapsTo θ (uIcc a b) (uIcc c d)) :
     AbsolutelyContinuousOnInterval (γ ∘ θ) a b :=
   comp_of_monotoneOn_or_antitoneOn hγ hθ_ac (Or.inr hθ) hmap
+
+/-- Composing an absolutely continuous metric-valued curve with an affine change of parameter
+preserves absolute continuity whenever that parameter maps into the curve's interval.
+The slope may be positive, zero, or negative. -/
+theorem comp_affine {γ : ℝ → X} {a b c d : ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ c d) (m k : ℝ)
+    (hmap : MapsTo (fun t : ℝ ↦ m * t + k) (uIcc a b) (uIcc c d)) :
+    AbsolutelyContinuousOnInterval (γ ∘ (fun t : ℝ ↦ m * t + k)) a b := by
+  have hc : ContDiffOn ℝ 1 (fun t : ℝ ↦ m * t + k) (uIcc a b) := by fun_prop
+  rcases le_total 0 m with hm | hm
+  · exact hγ.comp_monotoneOn hc.absolutelyContinuousOnInterval
+      (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonneg_left hst hm) le_rfl) hmap
+  · exact hγ.comp_antitoneOn hc.absolutelyContinuousOnInterval
+      (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonpos_left hst hm) le_rfl) hmap
 
 end AbsolutelyContinuousOnInterval

@@ -19,6 +19,8 @@ public section
 
 open MeasureTheory Set
 
+namespace TauCeti
+
 /-- Curve integrability is equivalent to interval integrability of the ordinary velocity
 paired with the 1-form. The endpoint derivative values do not affect integrability. -/
 theorem curveIntegrable_iff_intervalIntegrable_deriv {𝕜 E F : Type*} [RCLike 𝕜]
@@ -31,3 +33,5 @@ theorem curveIntegrable_iff_intervalIntegrable_deriv {𝕜 E F : Type*} [RCLike 
   rw [Filter.EventuallyEq, uIoc_of_le zero_le_one, ← restrict_Ioo_eq_restrict_Ioc]
   filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
   rw [curveIntegralFun_def, derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
+
+end TauCeti

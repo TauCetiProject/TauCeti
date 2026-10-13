@@ -25,17 +25,6 @@ open Set
 
 variable {X : Type*} [PseudoMetricSpace X] {x y z : X}
 
-private theorem AbsolutelyContinuousOnInterval.comp_affine {γ : ℝ → X} {a b c d : ℝ}
-    (hγ : AbsolutelyContinuousOnInterval γ c d) (m k : ℝ)
-    (hmap : MapsTo (fun t : ℝ ↦ m * t + k) (uIcc a b) (uIcc c d)) :
-    AbsolutelyContinuousOnInterval (γ ∘ (fun t : ℝ ↦ m * t + k)) a b := by
-  have hc : ContDiffOn ℝ 1 (fun t : ℝ ↦ m * t + k) (uIcc a b) := by fun_prop
-  rcases le_total 0 m with hm | hm
-  · exact hγ.comp_monotoneOn hc.absolutelyContinuousOnInterval
-      (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonneg_left hst hm) le_rfl) hmap
-  · exact hγ.comp_antitoneOn hc.absolutelyContinuousOnInterval
-      (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonpos_left hst hm) le_rfl) hmap
-
 namespace Path
 
 /-- The constant extension of an absolutely continuous path is absolutely continuous on every

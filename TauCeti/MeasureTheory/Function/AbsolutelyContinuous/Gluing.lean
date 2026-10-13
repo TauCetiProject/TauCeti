@@ -79,7 +79,7 @@ theorem trans (h₁ : AbsolutelyContinuousOnInterval γ a c)
     exact Icc_subset_Icc (le_of_not_ge hac) le_rfl
 
 /-- Absolute continuity can be checked on the two pieces of a parameter interval. -/
-theorem _root_.absolutelyContinuousOnInterval_iff_and (hc : c ∈ uIcc a b) :
+theorem _root_.TauCeti.absolutelyContinuousOnInterval_iff_and (hc : c ∈ uIcc a b) :
     AbsolutelyContinuousOnInterval γ a b ↔
       AbsolutelyContinuousOnInterval γ a c ∧ AbsolutelyContinuousOnInterval γ c b :=
   ⟨fun h ↦ ⟨h.mono (uIcc_subset_uIcc left_mem_uIcc hc),
