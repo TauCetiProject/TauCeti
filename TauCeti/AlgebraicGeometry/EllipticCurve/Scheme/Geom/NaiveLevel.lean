@@ -48,6 +48,8 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: the points of
+  `S` at which an `S`-point of `E` meets the zero section form a closed set.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_injective`: over a field,
   injectivity on fibres is injectivity.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`: injectivity
@@ -128,6 +130,24 @@ theorem IsFiberwiseInjective.injective [Nonempty S] (h : E.IsFiberwiseInjective 
   obtain ⟨s⟩ := ‹Nonempty S›
   refine (injective_iff_map_eq_one φ).mpr fun a ha ↦ h a s ?_
   simp [ha]
+
+omit [Group A] in
+/-- **Meeting the zero section is a closed condition.** The set of points of `S` at which an
+`S`-point of `E` meets the zero section is closed: it is the preimage of the image of the zero
+section, a closed immersion since `E` is separated over `S`. -/
+theorem isClosed_setOf_left_apply_eq_zero (x : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
+    IsClosed {s | x.left s = E.zero s} := by
+  have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
+    rw [zero_comp_structureMap]
+    infer_instance
+  have : IsClosedImmersion E.zero := .of_comp E.zero E.structureMap
+  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
+  ext s
+  refine ⟨fun h ↦ ⟨s, h.symm⟩, fun ⟨s', hs'⟩ ↦ ?_⟩
+  -- a point of the zero section lying on `x` lies over the same point of `S`
+  obtain rfl : s' = s := by
+    simpa [← Scheme.Hom.comp_apply] using congrArg E.structureMap hs'
+  exact hs'.symm
 
 /-! ### Over a field -/
 
