@@ -147,7 +147,7 @@ theorem degeneracy_apply {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1))
 
 /-- Degeneracies commute with postcomposition by a continuous map. -/
 @[simp]
-theorem comp_degeneracy {n : ℕ} (f : C(X, Y)) (s : SingularCube X n) (i : Fin (n + 1)) :
+theorem degeneracy_comp {n : ℕ} (f : C(X, Y)) (s : SingularCube X n) (i : Fin (n + 1)) :
     degeneracy (f.comp s) i = f.comp (degeneracy s i) :=
   (rfl)
 
@@ -157,6 +157,38 @@ theorem face_degeneracy_self {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) 
     face i t (degeneracy s i) = s := by
   ext x
   simp
+
+/-- Degeneracies commute with reindexing along an equality of dimensions. -/
+@[simp]
+theorem degeneracy_cast {n m : ℕ} (h : n = m) (s : SingularCube X n) (i : Fin (n + 1)) :
+    degeneracy (cast h s) (Fin.cast (congrArg Nat.succ h) i) =
+      cast (congrArg Nat.succ h) (degeneracy s i) := by
+  subst h
+  simp
+
+/-- Two degeneracies commute after reindexing the forgotten coordinates. -/
+theorem degeneracy_degeneracy {n : ℕ} (s : SingularCube X n)
+    (i : Fin (n + 1)) (j : Fin (n + 2)) :
+    degeneracy (degeneracy s i) j =
+      degeneracy (degeneracy s (i.predAbove j)) (j.succAbove i) := by
+  ext x
+  simp only [degeneracy_apply]
+  rw [Fin.removeNth_removeNth_eq_swap]
+
+/-- A face in a coordinate other than the forgotten coordinate commutes with degeneracy. -/
+@[simp]
+theorem face_degeneracy_succAbove {n : ℕ} (s : SingularCube X (n + 1))
+    (j : Fin (n + 2)) (i : Fin (n + 1)) (t : I) :
+    face (j.succAbove i) t (degeneracy s j) = degeneracy (face i t s) (i.predAbove j) := by
+  ext x
+  simp only [face_apply, degeneracy_apply]
+  congr 1
+  funext k
+  rcases Fin.eq_self_or_eq_succAbove i k with rfl | ⟨k, rfl⟩
+  · simp [Fin.removeNth]
+  · simp only [Fin.removeNth]
+    rw [← Fin.succAbove_succAbove_succAbove_predAbove j i k]
+    simp only [Fin.insertNth_apply_succAbove, Fin.removeNth]
 
 /-- A cube is **degenerate at the coordinate `i`** when it does not depend on it. -/
 def IsDegenerateAt {n : ℕ} (c : SingularCube X n) (i : Fin n) : Prop :=
@@ -198,7 +230,7 @@ theorem isDegenerate_iff_exists_eq_degeneracy {n : ℕ} {s : SingularCube X (n +
     IsDegenerate s ↔ ∃ (i : Fin (n + 1)) (t : SingularCube X n), s = degeneracy t i := by
   refine ⟨fun ⟨i, hi⟩ ↦ ⟨i, face i 0 s, ?_⟩, ?_⟩
   · ext x
-    change s x = s (Fin.insertNth i 0 (Fin.removeNth i x))
+    simp only [degeneracy_apply, face_apply]
     rw [Fin.insertNth_removeNth]
     exact (hi x 0).symm
   · rintro ⟨i, t, rfl⟩

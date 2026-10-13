@@ -31,14 +31,14 @@ noncomputable section
 
 open CategoryTheory
 
-universe u v
+universe u
 
 namespace TauCeti
 
 variable (R : Type u) [Ring R]
 
 /-- The **normalized cubical chain complex** of a topological space, with coefficients in `R`. -/
-def normalizedCubicalChainComplexObj (X : TopCat.{v}) : ChainComplex (ModuleCat.{max u v} R) ℕ :=
+def normalizedCubicalChainComplexObj (X : TopCat.{u}) : ChainComplex (ModuleCat.{u} R) ℕ :=
   ChainComplex.of (fun n ↦ ModuleCat.of R (NormalizedCubicalChain X R n))
     (fun n ↦ ModuleCat.ofHom (NormalizedCubicalChain.boundary X R n))
     fun n ↦ by
@@ -46,7 +46,7 @@ def normalizedCubicalChainComplexObj (X : TopCat.{v}) : ChainComplex (ModuleCat.
       rfl
 
 /-- The **normalized cubical chain complex functor**, with coefficients in `R`. -/
-def normalizedCubicalChainComplex : TopCat.{v} ⥤ ChainComplex (ModuleCat.{max u v} R) ℕ where
+def normalizedCubicalChainComplex : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} R) ℕ where
   obj X := normalizedCubicalChainComplexObj R X
   map f := ChainComplex.ofHom
     (fun n ↦ ModuleCat.ofHom (NormalizedCubicalChain.map R f.hom n)) fun n ↦ by
@@ -62,12 +62,12 @@ def normalizedCubicalChainComplex : TopCat.{v} ⥤ ChainComplex (ModuleCat.{max 
 variable {R}
 
 @[simp]
-theorem normalizedCubicalChainComplex_obj_X (X : TopCat.{v}) (n : ℕ) :
+theorem normalizedCubicalChainComplex_obj_X (X : TopCat.{u}) (n : ℕ) :
     ((normalizedCubicalChainComplex R).obj X).X n = ModuleCat.of R (NormalizedCubicalChain X R n) :=
   (rfl)
 
 @[simp]
-theorem normalizedCubicalChainComplex_obj_d_apply (X : TopCat.{v}) (n : ℕ)
+theorem normalizedCubicalChainComplex_obj_d_apply (X : TopCat.{u}) (n : ℕ)
     (x : NormalizedCubicalChain X R (n + 1)) :
     ((normalizedCubicalChainComplex R).obj X).d (n + 1) n x =
       NormalizedCubicalChain.boundary X R n x := by
@@ -75,7 +75,7 @@ theorem normalizedCubicalChainComplex_obj_d_apply (X : TopCat.{v}) (n : ℕ)
   rfl
 
 @[simp]
-theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{v}} (f : X ⟶ Y) (n : ℕ)
+theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
     (x : NormalizedCubicalChain X R n) :
     ((normalizedCubicalChainComplex R).map f).f n x = NormalizedCubicalChain.map R f.hom n x :=
   (rfl)
