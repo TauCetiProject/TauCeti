@@ -107,6 +107,43 @@ theorem norm_hemispherePoint {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hk : k 
     ring
   nlinarith [norm_nonneg (hemispherePoint n v)]
 
+/-- On unit vectors `hemispherePoint n` is odd, since its coordinate `k` vanishes there. -/
+theorem hemispherePoint_neg {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hv : ‖v‖ = 1) :
+    hemispherePoint n (-v) = -hemispherePoint n v := by
+  ext j
+  rcases lt_trichotomy (j : ℕ) k with h | h | h
+  · simp [hemispherePoint_apply_of_lt _ h]
+  · simp [hemispherePoint_apply_of_eq _ h, hv]
+  · simp [hemispherePoint_apply_of_gt _ h]
+
+/-- For `k ≤ n + 1`, `hemispherePoint n` is injective on `ℝᵏ`, since the first `k` coordinates of
+`hemispherePoint n v` are those of `v`. -/
+theorem hemispherePoint_injective {k : ℕ} (hk : k ≤ n + 1) :
+    Function.Injective (hemispherePoint n : EuclideanSpace ℝ (Fin k) → _) := by
+  intro v w h
+  ext j
+  have hj := congrArg (fun y : EuclideanSpace ℝ (Fin (n + 1)) ↦ y ⟨j, by omega⟩) h
+  rwa [hemispherePoint_apply_of_lt v (j := ⟨j, by omega⟩) j.is_lt,
+    hemispherePoint_apply_of_lt w (j := ⟨j, by omega⟩) j.is_lt] at hj
+
+/-- The point of the upper hemisphere of `Sᵏ⁺¹ ⊆ Sⁿ` over the point `hemispherePoint k v` of `Sᵏ`
+is the point of the upper hemisphere of `Sᵏ ⊆ Sⁿ` over `v`. -/
+theorem hemispherePoint_hemispherePoint {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hv : ‖v‖ ≤ 1) :
+    hemispherePoint n (hemispherePoint k v) = hemispherePoint n v := by
+  ext j
+  rcases lt_trichotomy (j : ℕ) k with h | h | h
+  · rw [hemispherePoint_apply_of_lt _ (by omega : (j : ℕ) < k + 1),
+      hemispherePoint_apply_of_lt _ h]
+    exact hemispherePoint_apply_of_lt v (j := ⟨j, by omega⟩) h
+  · rw [hemispherePoint_apply_of_lt _ (by omega : (j : ℕ) < k + 1),
+      hemispherePoint_apply_of_eq _ h]
+    exact hemispherePoint_apply_of_eq v (j := ⟨j, by omega⟩) h
+  · rw [hemispherePoint_apply_of_gt _ h]
+    rcases (Nat.succ_le_of_lt h).lt_or_eq with h' | h'
+    · rw [hemispherePoint_apply_of_gt _ h']
+    · rw [hemispherePoint_apply_of_eq _ h'.symm, norm_hemispherePoint le_rfl hv]
+      simp
+
 /-- The first `i` coordinates of a vector of `ℝⁿ⁺¹`. -/
 private def truncate (i : Fin (n + 1)) (y : EuclideanSpace ℝ (Fin (n + 1))) :
     EuclideanSpace ℝ (Fin i) :=
