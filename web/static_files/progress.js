@@ -5,9 +5,6 @@
 // it reaches the document, and the data's shape is checked before anything is rendered.
 (function () {
   "use strict";
-  var root = document.getElementById("progress-board");
-  if (!root) return;
-
   var STATES = ["done", "partial", "untouched", "unassessed"];
   var STATE_CLASS = { done: "d", partial: "p", untouched: "u", unassessed: "q" };
   var STATE_WORD = { done: "reported done", partial: "reported partial", untouched: "reported untouched", unassessed: "unassessed" };
@@ -28,6 +25,14 @@
   var SHOWS = ["all", "active", "completed", "reported", "unreported", "unassessed", "due"];
   var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   var TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+
+  // Let the generator's cache check reuse the board's schema validator under Node.
+  if (typeof module === "object" && module.exports) {
+    module.exports = validate;
+    return;
+  }
+  var root = document.getElementById("progress-board");
+  if (!root) return;
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {

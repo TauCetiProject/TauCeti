@@ -4,6 +4,7 @@
 Run with: PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
 """
 
+import copy
 import datetime as dt
 import json
 import os
@@ -508,6 +509,7 @@ class Topics(unittest.TestCase):
                                           "Number Theory"])
 
 
+@unittest.skipUnless(shutil.which("node"), "Node is needed for snapshot validation")
 class TopicScheme(unittest.TestCase):
     """A snapshot says which classification its topics follow, so one from before the switch to
     arXiv categories can be told apart from a current one."""
@@ -525,22 +527,58 @@ class TopicScheme(unittest.TestCase):
             path.write_text(json.dumps({"schema_version": 3, "topics": ["Number theory"]}))
             self.assertFalse(rp.snapshot_is_current(path))  # from before the scheme existed
             path.write_text(json.dumps({"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME}))
+            self.assertFalse(rp.snapshot_is_current(path))  # a stamp alone is insufficient
+            now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+            path.write_text(json.dumps(rp.build([], [], now, now, None, None, "test")))
             self.assertTrue(rp.snapshot_is_current(path))
             self.assertEqual(rp.main(["--check-snapshot", str(path)]), 0)
             path.write_text("[]")
             self.assertEqual(rp.main(["--check-snapshot", str(path)]), 1)
 
+    def test_rejects_invalid_board_data_and_category_assignments(self):
+        snapshot = json.loads((pathlib.Path(__file__).resolve().parents[1] /
+                               "web/static_files/progress.json").read_text())
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / "progress.json"
+            path.write_text(json.dumps(snapshot))
+            self.assertTrue(rp.snapshot_is_current(path))
+            for field, value in (("schema_version", 2), ("topics", None), ("rows", None),
+                                 ("global", {}), ("topics", ["obsolete category"])):
+                with self.subTest(field=field, value=value):
+                    broken = {**snapshot, field: value}
+                    path.write_text(json.dumps(broken))
+                    self.assertFalse(rp.snapshot_is_current(path))
+            for field, value in (("arxiv", "math.BAD"), ("arxiv", []),
+                                 ("topic", "obsolete category"), ("layers", None)):
+                with self.subTest(row_field=field):
+                    broken = copy.deepcopy(snapshot)
+                    broken["rows"][0][field] = value
+                    path.write_text(json.dumps(broken))
+                    self.assertFalse(rp.snapshot_is_current(path))
+            broken = copy.deepcopy(snapshot)
+            del broken["rows"][0]["arxiv"]
+            path.write_text(json.dumps(broken))
+            self.assertFalse(rp.snapshot_is_current(path))
+            broken = copy.deepcopy(snapshot)
+            child = next(row for row in broken["rows"] if row["parent_id"] is not None)
+            child["arxiv"] = "math.NT" if child["arxiv"] != "math.NT" else "math.AG"
+            child["topic"] = rp.topic_label(child["arxiv"])
+            broken["topics"] = sorted({row["topic"] for row in broken["rows"]} - {rp.UNSORTED})
+            path.write_text(json.dumps(broken))
+            self.assertFalse(rp.snapshot_is_current(path))
 
+
+@unittest.skipUnless(shutil.which("node"), "Node is needed for snapshot validation")
 class PagesFailurePath(unittest.TestCase):
     """The Pages workflow restores the last published static files from a cache and then
     regenerates them. When the progress board's regeneration fails, the restored snapshot is
-    published only if it is in the current topic scheme; one from before the switch would show the
+    published only if it validates in the current topic scheme; one from before the switch would show the
     old hand-assigned topics under the new label, so the committed fallback replaces it. This runs
     the workflow step's own script, with generation made to fail."""
 
     REPO = pathlib.Path(__file__).resolve().parents[1]
-    COMMITTED = {"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME, "topics": ["Number Theory"],
-                 "which": "committed"}
+    NOW = dt.datetime(2026, 10, 1, tzinfo=UTC)
+    COMMITTED = {**rp.build([], [], NOW, NOW, None, None, "test"), "which": "committed"}
 
     def step_script(self):
         text = (self.REPO / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
@@ -563,6 +601,7 @@ class PagesFailurePath(unittest.TestCase):
                 (root / "scripts" / name).write_text((self.REPO / "scripts" / name).read_text(encoding="utf-8"))
             static = root / "web" / "static_files"
             static.mkdir(parents=True)
+            (static / "progress.js").write_text((self.REPO / "web/static_files/progress.js").read_text())
             (static / "progress.json").write_text(json.dumps(self.COMMITTED))
             git = ["git", "-C", d, "-c", "user.name=t", "-c", "user.email=t@t"]
             subprocess.run(["git", "init", "-q", d], check=True)
@@ -588,6 +627,10 @@ class PagesFailurePath(unittest.TestCase):
     def test_a_current_restored_snapshot_is_kept(self):
         current = {**self.COMMITTED, "which": "last published"}
         self.assertEqual(self.publish_after_failure(current)["which"], "last published")
+
+    def test_a_stamped_but_malformed_snapshot_is_replaced(self):
+        broken = {"topic_scheme": rp.TOPIC_SCHEME, "which": "malformed"}
+        self.assertEqual(self.publish_after_failure(broken)["which"], "committed")
 
     def test_no_restored_snapshot_means_the_committed_fallback(self):
         self.assertEqual(self.publish_after_failure(None)["which"], "committed")

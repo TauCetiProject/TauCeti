@@ -63,7 +63,8 @@ category) is shown under "Unsorted". `scripts/arxiv_categories.py` holds the nam
 `scripts/roadmap_links.json` lists per-roadmap pages elsewhere (a contributor's route map, say)
 that a row should point at.
 
-Pure stdlib, like the other chart generators, so CI needs no pip install.
+Generation uses only the Python stdlib, so CI needs no pip install. The optional
+`--check-snapshot` cache check also requires Node to reuse the browser's schema validator.
 """
 
 from __future__ import annotations
@@ -90,14 +91,48 @@ UNSORTED = "Unsorted"
 # regeneration fails (see `snapshot_is_current`).
 TOPIC_SCHEME = "arxiv-math"
 def snapshot_is_current(path: pathlib.Path) -> bool:
-    """Is the snapshot at `path` one this generator could have written: readable JSON whose topics
-    follow TOPIC_SCHEME? False for one from before the scheme existed, and for a missing or
-    unreadable file."""
+    """Does `path` pass the board's schema validation and the current arXiv topic rules?
+
+    Uses the browser's validator under Node, then checks category codes, labels, parent
+    inheritance and the topic list. Returns False for unreadable or invalid data, or if Node
+    is unavailable. This checks structure and classification, not snapshot freshness.
+    """
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, ValueError):
         return False
-    return isinstance(data, dict) and data.get("topic_scheme") == TOPIC_SCHEME
+    if not isinstance(data, dict) or data.get("topic_scheme") != TOPIC_SCHEME:
+        return False
+    validator = pathlib.Path(__file__).resolve().parents[1] / "web/static_files/progress.js"
+    script = """
+const validate = require(process.argv[1]);
+try {
+  const data = JSON.parse(require("fs").readFileSync(0, "utf8"));
+  process.exit(validate(data) === null ? 0 : 1);
+} catch (_) { process.exit(1); }
+"""
+    try:
+        checked = subprocess.run(["node", "-e", script, str(validator)], input=json.dumps(data),
+                                 text=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                 timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if checked.returncode != 0:
+        return False
+    rows = data["rows"]
+    for row in rows:
+        if "arxiv" not in row:
+            return False
+        code = row["arxiv"]
+        if code is not None and (not isinstance(code, str) or code not in ARXIV_MATH):
+            return False
+        if row["topic"] != topic_label(code):
+            return False
+    by_id = {row["id"]: row for row in rows}
+    for row in rows:
+        if row["parent_id"] is not None and row["arxiv"] != by_id[row["parent_id"]]["arxiv"]:
+            return False
+    return data["topics"] == sorted({row["topic"] for row in rows} - {UNSORTED})
 
 
 def topic_label(code: str | None) -> str:
@@ -728,8 +763,8 @@ def main(argv=None) -> int:
                         "snapshot's collection time when it records one, else now)")
     p.add_argument("--out", type=pathlib.Path)
     p.add_argument("--check-snapshot", type=pathlib.Path, metavar="FILE",
-                   help="only say whether FILE is a snapshot in the current topic scheme: exit 0 if "
-                        "it is, 1 if not (missing, unreadable, or from before arXiv categories)")
+                   help="validate FILE against the board schema and current arXiv topic rules "
+                        "(requires Node): exit 0 if valid, 1 otherwise; does not check freshness")
     args = p.parse_args(argv)
     if args.check_snapshot:
         return 0 if snapshot_is_current(args.check_snapshot) else 1
