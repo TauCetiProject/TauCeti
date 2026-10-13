@@ -160,8 +160,6 @@ private lemma coe_dblSub_of_lt {t : I} (h : 1 / 2 < (t : ℝ)) :
 
 @[simp] private lemma one_max (t : I) : max 1 t = 1 := max_eq_left unitInterval.le_one'
 
-@[simp] private lemma max_zero (t : I) : max t 0 = t := max_eq_left unitInterval.nonneg'
-
 /-! ### Cubes whose faces are generalized loops -/
 
 /-- The faces of `c` at both ends of every coordinate are generalized loops at `x`. For an
