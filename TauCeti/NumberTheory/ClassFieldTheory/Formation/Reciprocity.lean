@@ -237,7 +237,6 @@ include cf in
 is cut out by `V ⊔ W`, is the sum of the two norm subgroups. No abelianity is needed: by norm
 limitation every norm subgroup is that of its maximal abelian sublayer, and the maximal abelian
 sublayer of `V ⊔ W` is the join of those of `V` and `W`. -/
-@[simp]
 theorem normSubgroup_sup (V W : OpenNormalSubgroup G) :
     F.normSubgroup (V ⊔ W) = F.normSubgroup V ⊔ F.normSubgroup W := by
   rw [← cf.normSubgroup_maximalAbelianLayer, OpenNormalSubgroup.maximalAbelianLayer_sup,
