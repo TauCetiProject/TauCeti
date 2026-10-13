@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 /-!
 # Orientable manifolds with corners
 
-Orientability means the existence of a canonical manifold orientation: a model orientation and
+Orientability means the existence of a manifold orientation: a model orientation and
 source-indexed locally constant chart signs modulo simultaneous reversal. This includes boundary
 and corner points. An oriented atlas is a sufficient condition, rather than the definition.
 The model spaces and products of orientable manifolds are orientable.
@@ -33,19 +33,19 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- A manifold with corners is orientable when it carries an orientation of its tangent spaces
 compatible with the within-range chart Jacobians. -/
 class Orientable : Prop where
-  /-- A canonical manifold orientation exists. -/
+  /-- A manifold orientation exists. -/
   nonempty_orientation : Nonempty (Manifold.Orientation I M (Fin (Module.finrank ℝ E)))
 
 variable {I M}
 
 variable [IsManifold I 1 M]
 
-/-- An oriented atlas gives canonical orientability, including at boundary and corner points. -/
+/-- An oriented atlas gives orientability, including at boundary and corner points. -/
 theorem IsOrientedAtlas.orientable {n : ℕ∞ω} [NeZero n]
     {A : Set (OpenPartialHomeomorph M H)} (hA : IsOrientedAtlas I n A) : Orientable I M :=
   ⟨⟨hA.orientation (Module.finBasis ℝ E).orientation (Fintype.card_fin _)⟩⟩
 
-/-- A manifold whose given atlas has positive transition derivatives is canonically orientable. -/
+/-- A manifold whose given atlas has positive transition derivatives is orientable. -/
 theorem Orientable.of_hasGroupoid [HasGroupoid M (orientationPreservingGroupoid I)] :
     Orientable I M := by
   apply IsOrientedAtlas.orientable (n := 1) (A := atlas H M)
@@ -62,7 +62,7 @@ variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [FiniteDimensional ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
 
-/-- Products of canonically orientable manifolds with corners are orientable. -/
+/-- Products of orientable manifolds with corners are orientable. -/
 instance [Orientable I M] [Orientable I' M'] : Orientable (I.prod I') (M × M') := by
   obtain ⟨o⟩ := Orientable.nonempty_orientation (I := I) (M := M)
   obtain ⟨o'⟩ := Orientable.nonempty_orientation (I := I') (M := M')

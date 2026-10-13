@@ -14,8 +14,8 @@ public import Mathlib.LinearAlgebra.Determinant
 
 The orientation-preserving groupoid uses transition derivatives within the model range, so its
 maps and oriented subatlases are meaningful for boundary and corner models. An oriented atlas is
-a sufficient condition for canonical orientability. It is not the definition of orientability:
-for example, the interval has a canonical orientation even though its half-line charts cannot
+a sufficient condition for orientability. It is not the definition of orientability:
+for example, the interval has an orientation even though its half-line charts cannot
 form an atlas with only positive transition determinants.
 -/
 

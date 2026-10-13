@@ -156,12 +156,37 @@ theorem orientationAt_prod (o : Orientation I M (Fin m))
             else -l.modelOrientation)
           (if l'.sign x.2 ⟨x.2, mem_chart_source H' x.2⟩ = 1 then l'.modelOrientation
             else -l'.modelOrientation) _ _
+      have hneg : (-1 : ℤˣ) ≠ 1 := by decide
       rcases Int.units_eq_one_or (l.sign x.1 ⟨x.1, mem_chart_source H x.1⟩) with h | h <;>
         rcases Int.units_eq_one_or (l'.sign x.2 ⟨x.2, mem_chart_source H' x.2⟩) with h' | h' <;>
         simp only [h, h', one_mul, mul_one, neg_mul_neg, ite_true,
-          show (-1 : ℤˣ) ≠ 1 by decide, ite_false]
+          hneg, ite_false]
       · exact (_root_.Orientation.prod_neg_right l.modelOrientation l'.modelOrientation _ _).symm
       · exact (_root_.Orientation.prod_neg_left l.modelOrientation l'.modelOrientation _ _).symm
       · exact (_root_.Orientation.prod_neg_neg l.modelOrientation l'.modelOrientation _ _).symm
+
+
+/-- Reversing the first factor reverses the product manifold orientation. -/
+@[simp]
+theorem prod_neg_left (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin n)) :
+    (-o).prod o' = -(o.prod o') := by
+  apply ext
+  intro x
+  simp only [orientationAt_prod, orientationAt_neg, _root_.Orientation.prod_neg_left]
+  rfl
+
+/-- Reversing the second factor reverses the product manifold orientation. -/
+@[simp]
+theorem prod_neg_right (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin n)) :
+    o.prod (-o') = -(o.prod o') := by
+  apply ext
+  intro x
+  simp only [orientationAt_prod, orientationAt_neg, _root_.Orientation.prod_neg_right]
+  rfl
+
+/-- Reversing both factors preserves the product manifold orientation. -/
+theorem prod_neg_neg (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin n)) :
+    (-o).prod (-o') = o.prod o' := by
+  rw [prod_neg_left, prod_neg_right, neg_neg]
 
 end TauCeti.Manifold.Orientation

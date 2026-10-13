@@ -402,7 +402,7 @@ coordinate change between two of them is a composite of two inversions, each rev
 orientation, and a linear isometry of positive determinant.
 
 This positive-atlas construction uses `2 ≤ n`: the half-line charts at the two endpoints of
-`D¹ = [-1, 1]` have opposite signs. Canonical orientability permits those signs, so this limitation
+`D¹ = [-1, 1]` have opposite signs. Orientability permits those signs, so this limitation
 belongs to the construction rather than the definition of orientability. -/
 theorem orientable_closedBall (hn : 2 ≤ n) :
     Orientable (𝓡∂ n) (closedBall (0 : E) 1) := by

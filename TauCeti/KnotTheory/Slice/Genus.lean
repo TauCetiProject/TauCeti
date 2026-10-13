@@ -28,7 +28,7 @@ As for sliceness (`TauCeti.IsSmoothlySlice`), the knot is a smooth circle embedd
 (`TauCeti.SmoothSliceSurface K`) bundles
 
 * a compact, connected, orientable smooth surface `S` with boundary, modelled on the half-plane
-  `EuclideanHalfSpace 2` (orientability is `TauCeti.Orientable`, the existence of a canonical
+  `EuclideanHalfSpace 2` (orientability is `TauCeti.Orientable`, the existence of a
   tangent orientation, including at boundary points);
 * a smooth embedding `Φ : S → Dⁿ⁺¹` of manifolds with boundary, properly embedded (the preimage
   of the boundary sphere is the boundary of `S`), which carries the boundary of `S` onto the image

@@ -11,7 +11,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 
 /-!
-# Oriented atlases induce canonical orientations
+# Orientations determined by oriented atlases and model orientations
 
 An oriented subatlas of the maximal atlas determines an actual orientation, also at boundary and
 corner points. The converse requires a boundaryless hypothesis and is not used here.
@@ -113,7 +113,7 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
   erw [hox, hlin]
   exact hread j he x hxj
 
-/-- An oriented subatlas defines the canonical quotient orientation whose charts read the
+/-- An oriented subatlas defines the quotient orientation whose charts read the
 specified model orientation. It includes boundary and corner points. -/
 def IsOrientedAtlas.orientation {A : Set (OpenPartialHomeomorph M H)}
     (hA : IsOrientedAtlas I n A) (model : Orientation ℝ E ι)
