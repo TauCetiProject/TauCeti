@@ -27,15 +27,8 @@ open scoped Topology
 namespace Complex
 
 /-- The reciprocal kernel cut off outside the closed disk of radius `R`. -/
+@[expose]
 def truncatedCauchyKernel (R : ℝ) : ℂ → ℂ := (closedBall 0 R).indicator (fun z ↦ z⁻¹)
-
-/-- The truncated kernel agrees with the reciprocal inside its cutoff disk. -/
-theorem truncatedCauchyKernel_of_mem {R : ℝ} {z : ℂ} (hz : z ∈ closedBall 0 R) :
-    truncatedCauchyKernel R z = z⁻¹ := Set.indicator_of_mem hz _
-
-/-- The truncated kernel vanishes outside its cutoff disk. -/
-theorem truncatedCauchyKernel_of_notMem {R : ℝ} {z : ℂ} (hz : z ∉ closedBall 0 R) :
-    truncatedCauchyKernel R z = 0 := Set.indicator_of_notMem hz _
 
 /-- The truncated Cauchy kernel is measurable. -/
 theorem measurable_truncatedCauchyKernel (R : ℝ) : Measurable (truncatedCauchyKernel R) :=
@@ -120,7 +113,7 @@ theorem tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall {ι : Type*} {l : F
       mem_closedBall_zero_iff.mpr ((norm_sub_le z (wn n)).trans (by dsimp [T]; linarith))
     have hzw : z - w ∈ closedBall 0 T :=
       mem_closedBall_zero_iff.mpr ((norm_sub_le z w).trans (by dsimp [T]; linarith))
-    simp only [truncatedCauchyKernel_of_mem hzn, truncatedCauchyKernel_of_mem hzw]
+    simp only [truncatedCauchyKernel, Set.indicator_of_mem hzn, Set.indicator_of_mem hzw]
   rw [heq]
   exact setIntegral_le_integral ((hk.comp_sub_right (wn n)).sub (hk.comp_sub_right w)).norm
     (Eventually.of_forall fun _ ↦ norm_nonneg _)
