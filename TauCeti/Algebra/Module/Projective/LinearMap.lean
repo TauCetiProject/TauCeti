@@ -21,9 +21,9 @@ Let `k` be a field and `A` a `k`-algebra. For a projective `A`-module `P` the fu
 is the sum of the dimensions of the hom spaces into a submodule of `M` and its quotient.
 
 Exactness of `Hom_A(P, -)` also computes the maps from `P` into a reduction `V ⧸ x • V`, for `A`
-an algebra over a commutative ring `R` and `x : R` a non-zero-divisor on `V`: they are the
-reductions modulo `x` of the maps `P → V`. Over `R = ℤ_p` and `x = p`, this makes the number of
-maps from a projective `ℤ_p[G]`-lattice into the reduction of another lattice a function of the
+an algebra over a commutative ring `R` and any `x : R`: they are the reductions modulo `x` of
+the maps `P → V`. Over `R = ℤ_p` and `x = p`, this makes the number of maps from a projective
+`ℤ_p[G]`-lattice into the reduction of another lattice a function of the
 `ℤ_p`-module of maps between the lattices.
 
 ## Main results
@@ -33,8 +33,10 @@ maps from a projective `ℤ_p[G]`-lattice into the reduction of another lattice 
 * `TauCeti.compRight_mkQ_surjective`: every map from a projective `P` into `V ⧸ N` lifts to `V`.
 * `TauCeti.ker_compRight_mkQ_eq_smul_top`: a map `P → V` vanishes modulo a non-zero-divisor `x`
   exactly when it is `x` times a map.
+* `TauCeti.ker_compRight_mkQ_eq_smul_top_of_projective`: the same kernel computation for
+  a projective `P` and any scalar `x`.
 * `TauCeti.quotientSMulTopLinearMapEquiv`: `Hom_A(P, V) ⧸ x • Hom_A(P, V) ≃ Hom_A(P, V ⧸ x • V)`
-  for a projective `P` and a non-zero-divisor `x` on `V`.
+  for a projective `P` and any scalar `x`.
 -/
 
 public section
@@ -123,26 +125,60 @@ theorem ker_compRight_mkQ_eq_smul_top (hx : IsSMulRegular V x) :
       Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
     exact (Submodule.mem_span_algebraMap_smul_top_iff x).mpr ⟨g p, rfl⟩
 
+variable (P) [Module.Projective A P] in
+/-- For `P` projective, a map `P → V` vanishes modulo `x` exactly when it is `x` times a map,
+without any regularity assumption on `x`. -/
+@[simp]
+theorem ker_compRight_mkQ_eq_smul_top_of_projective :
+    LinearMap.ker (LinearMap.compRight (M := P) R
+      (Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)).mkQ) = x • ⊤ := by
+  let N : Submodule A V := Ideal.span {algebraMap R A x} • ⊤
+  let sx : V →ₗ[A] N := (DistribSMul.toLinearMap A V x).codRestrict N fun v =>
+    (Submodule.mem_span_algebraMap_smul_top_iff x).mpr ⟨v, rfl⟩
+  have hsx : Function.Surjective sx := by
+    intro v
+    obtain ⟨w, hw⟩ := (Submodule.mem_span_algebraMap_smul_top_iff x).mp v.property
+    refine ⟨w, Subtype.ext ?_⟩
+    simpa only [sx, LinearMap.codRestrict_apply, DistribSMul.toLinearMap_apply] using hw
+  ext h
+  simp only [LinearMap.mem_ker, Submodule.mem_smul_pointwise_iff_exists,
+    Submodule.mem_top, true_and]
+  constructor
+  · intro hh
+    have hmem : ∀ p, h p ∈ N := fun p =>
+      (Submodule.Quotient.mk_eq_zero N).mp (LinearMap.congr_fun hh p)
+    obtain ⟨g, hg⟩ := Module.projective_lifting_property sx (h.codRestrict N hmem) hsx
+    refine ⟨g, ?_⟩
+    ext p
+    have hp := congrArg Subtype.val (LinearMap.congr_fun hg p)
+    simpa only [sx, LinearMap.comp_apply, LinearMap.codRestrict_apply,
+      DistribSMul.toLinearMap_apply, LinearMap.smul_apply] using hp
+  · rintro ⟨g, rfl⟩
+    ext p
+    simp only [LinearMap.compRight_apply, LinearMap.comp_apply, LinearMap.smul_apply,
+      Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
+    exact (Submodule.mem_span_algebraMap_smul_top_iff x).mpr ⟨g p, rfl⟩
+
 end CommSemiring
 
 variable [CommRing R] [Algebra R A] [Module R V] [IsScalarTower R A V]
   [Module.Projective A P]
 
-variable (P) in
+variable (P x) in
 /-- **Maps from a projective module into a reduction.** Let `A` be an algebra over a commutative
-ring `R`, let `P` be a projective `A`-module, and let `x : R` be a non-zero-divisor on the
-`A`-module `V`. Composition with `V → V ⧸ x • V` identifies the maps `P → V ⧸ x • V` with the
-reductions modulo `x` of the maps `P → V`: every map lifts because `P` is projective, and a map
-with values in `x • V` is `x` times a map. -/
-noncomputable def quotientSMulTopLinearMapEquiv (hx : IsSMulRegular V x) :
+ring `R`, let `P` be a projective `A`-module, and let `x : R`. Composition with `V → V ⧸ x • V`
+identifies the maps `P → V ⧸ x • V` with the reductions modulo `x` of the maps `P → V`: every
+map lifts because `P` is projective, and a map with values in `x • V` is `x` times a map. -/
+noncomputable def quotientSMulTopLinearMapEquiv :
     ((P →ₗ[A] V) ⧸ x • (⊤ : Submodule R (P →ₗ[A] V))) ≃ₗ[R]
       (P →ₗ[A] V ⧸ Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)) :=
-  (Submodule.quotEquivOfEq _ _ (ker_compRight_mkQ_eq_smul_top P hx).symm).trans <|
+  (Submodule.quotEquivOfEq _ _
+    (ker_compRight_mkQ_eq_smul_top_of_projective (x := x) P).symm).trans <|
     LinearMap.quotKerEquivOfSurjective _ (compRight_mkQ_surjective R P _)
 
 @[simp]
-theorem quotientSMulTopLinearMapEquiv_mk (hx : IsSMulRegular V x) (f : P →ₗ[A] V) :
-    quotientSMulTopLinearMapEquiv P hx (Submodule.Quotient.mk f) =
+theorem quotientSMulTopLinearMapEquiv_mk (f : P →ₗ[A] V) :
+    quotientSMulTopLinearMapEquiv P x (Submodule.Quotient.mk f) =
       (Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)).mkQ ∘ₗ f := by
   rw [quotientSMulTopLinearMapEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.compRight_apply]
