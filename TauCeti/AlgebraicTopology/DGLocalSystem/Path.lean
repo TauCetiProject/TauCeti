@@ -23,6 +23,10 @@ It does not yet equip these chains with the left loop-chain action or construct 
 basepoint change. Homotopy invariance is the existing cubical-chain comparison theorem;
 no homology calculation is repeated here.
 
+The chain objects and maps allow independent universes for the space and coefficient ring.
+The quasi-isomorphism statements require a shared universe, as in the cubical-chain
+homotopy-invariance theorem.
+
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
@@ -35,9 +39,9 @@ open CategoryTheory ContinuousMap
 
 namespace TauCeti
 
-universe u
+universe u v
 
-variable {B : Type u} [TopologicalSpace B] (R : Type u) [CommRing R] {a b c : B}
+variable {B : Type u} [TopologicalSpace B] (R : Type v) [CommRing R] {a b c : B}
 
 /-- Chains on Moore paths from `a` to `b`, as a DG local system based at `b` through
 concatenation on the right. -/
@@ -55,6 +59,7 @@ theorem pathChainPrepend_apply (γ : MoorePathBetween B a b) (c : B)
     pathChainPrepend R γ c x = cubicalChainModuleLinearMap R (γ.prepend c) x :=
   cubicalChainModuleMap_apply _ _ x
 
+variable (R : Type u) [CommRing R] in
 /-- Prepending a chosen path is a quasi-isomorphism of right DG modules. -/
 theorem isQuasiIso_pathChainPrepend (γ : MoorePathBetween B a b) (c : B) :
     DGRightModuleCat.IsQuasiIso (pathChainPrepend R γ c) :=
@@ -77,6 +82,7 @@ theorem loopChainPrepend_apply (γ : MoorePathBetween B a b)
       cubicalChainModuleLinearMap R γ.loopPrependHomotopyEquiv.toFun x :=
   cubicalChainModuleMap_apply _ _ x
 
+variable (R : Type u) [CommRing R] in
 /-- Loop chains and path chains are quasi-isomorphic as right DG modules, after choosing
 a path between the basepoints. -/
 theorem isQuasiIso_loopChainPrepend (γ : MoorePathBetween B a b) :

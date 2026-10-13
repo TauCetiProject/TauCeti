@@ -38,52 +38,7 @@ open unitInterval MulOpposite ContinuousMap
 namespace TauCeti
 namespace MoorePathBetween
 
-variable {X : Type*} [TopologicalSpace X] {a b c d : X}
-
-/-- Reverse a Moore path with specified endpoints. -/
-def symm (γ : MoorePathBetween X a b) : MoorePathBetween X b a :=
-  ⟨γ.toMoorePath.symm, by simp⟩
-
-@[simp]
-theorem toMoorePath_symm (γ : MoorePathBetween X a b) :
-    γ.symm.toMoorePath = γ.toMoorePath.symm := by
-  simp only [symm, toMoorePath_mk]
-
-@[simp]
-theorem symm_symm (γ : MoorePathBetween X a b) : γ.symm.symm = γ :=
-  ext (by simp)
-
-@[fun_prop]
-theorem continuous_symm :
-    Continuous (symm : MoorePathBetween X a b → MoorePathBetween X b a) :=
-  continuous_toMoorePath.moorePath_symm.subtype_mk _
-
-/-- Concatenate Moore paths with specified endpoints. -/
-def trans (γ : MoorePathBetween X a b) (δ : MoorePathBetween X b c) :
-    MoorePathBetween X a c :=
-  ⟨γ.toMoorePath.trans δ.toMoorePath (by simp), by simp⟩
-
-@[simp]
-theorem toMoorePath_trans (γ : MoorePathBetween X a b) (δ : MoorePathBetween X b c) :
-    (γ.trans δ).toMoorePath = γ.toMoorePath.trans δ.toMoorePath (by simp) := by
-  simp only [trans, toMoorePath_mk]
-
-/-- Concatenation remains strictly associative on endpoint-constrained path spaces. -/
-theorem trans_assoc (γ : MoorePathBetween X a b) (δ : MoorePathBetween X b c)
-    (η : MoorePathBetween X c d) : (γ.trans δ).trans η = γ.trans (δ.trans η) :=
-  ext (by simp [MoorePath.trans_assoc])
-
-@[simp]
-theorem symm_trans (γ : MoorePathBetween X a b) (δ : MoorePathBetween X b c) :
-    (γ.trans δ).symm = δ.symm.trans γ.symm :=
-  ext (by simp [MoorePath.symm_trans])
-
-/-- Concatenation is jointly continuous on the endpoint-constrained spaces. -/
-@[fun_prop]
-theorem continuous_trans :
-    Continuous fun p : MoorePathBetween X a b × MoorePathBetween X b c ↦ p.1.trans p.2 :=
-  ((continuous_toMoorePath.comp continuous_fst).moorePath_trans
-    (continuous_toMoorePath.comp continuous_snd) _).subtype_mk _
+variable {X : Type*} [TopologicalSpace X] {a b c : X}
 
 /-- Prepend a chosen Moore path. -/
 def prepend (γ : MoorePathBetween X a b) (c : X) :
@@ -169,25 +124,6 @@ theorem prependHomotopyEquiv_apply (γ : MoorePathBetween X a b)
 @[simp]
 theorem prependHomotopyEquiv_symm_apply (γ : MoorePathBetween X a b)
     (δ : MoorePathBetween X a c) : (prependHomotopyEquiv γ c).symm δ = γ.symm.trans δ := (rfl)
-
-/-- Moore loops are precisely the Moore paths with equal specified endpoints. -/
-def loopHomeomorph (x : X) : MooreLoopSpace X x ≃ₜ MoorePathBetween X x x where
-  toFun ω := ⟨ω.toMoorePath, ω.source_eq, ω.target_eq⟩
-  invFun γ := ⟨γ.toMoorePath, γ.source, γ.target⟩
-  left_inv ω := MooreLoopSpace.ext (by simp)
-  right_inv γ := ext (a := x) (b := x) (by simp)
-  continuous_toFun := (MooreLoopSpace.continuous_toMoorePath (X := X) (x := x)).subtype_mk _
-  continuous_invFun := (MooreLoopSpace.isEmbedding_toMoorePath (X := X) (x := x)).continuous_iff.2
-    (continuous_toMoorePath (a := x) (b := x))
-
-@[simp]
-theorem toMoorePath_loopHomeomorph (ω : MooreLoopSpace X b) :
-    (loopHomeomorph b ω).toMoorePath = ω.toMoorePath := by
-  simp [loopHomeomorph]
-
-@[simp]
-theorem toMoorePath_loopHomeomorph_symm (γ : MoorePathBetween X b b) :
-    ((loopHomeomorph b).symm γ).toMoorePath = γ.toMoorePath := (rfl)
 
 /-- Prepending a chosen path identifies loops at its target with paths between its endpoints,
 up to homotopy. -/
