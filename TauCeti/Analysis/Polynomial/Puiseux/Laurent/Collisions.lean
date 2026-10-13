@@ -63,17 +63,9 @@ theorem eventually_finite_root_eq_iff_on_hyperplane
       have hl0 : (P p).coeff d ≠ 0 :=
         hl hp0 ▸ mul_ne_zero (pow_ne_zero _ (sub_ne_zero.mpr hp0)) hvp
       exact mul_left_cancel₀ hl0 ((hp hp0).1.trans (hp hp0).2.symm)
-    -- Continuity extends this equality across the dense punctured neighborhood.
-    obtain ⟨U, hUsub, hU, hpU⟩ := mem_nhds_iff.mp
-      (heq.and (hf.eventually_continuousAt.and hg.eventually_continuousAt))
-    have hpunct : EqOn f g (U ∩ (univ ×ˢ ({y₀}ᶜ : Set 𝕜))) :=
-      fun p hp ↦ (hUsub hp.1).1 hp.2.2
-    have hfull : ∀ᶠ p in 𝓝 (x₀, y₀), f p = g p :=
-      Filter.mem_of_superset (hU.mem_nhds hpU) (hpunct.of_subset_closure
-        (fun p hp ↦ (hUsub hp).2.1.continuousWithinAt)
-        (fun p hp ↦ (hUsub hp).2.2.continuousWithinAt)
-        inter_subset_left
-        ((dense_univ.prod (dense_compl_singleton y₀)).open_subset_closure_inter hU))
+    have hfull := (dense_univ.prod (dense_compl_singleton y₀)).eventuallyEq_nhds
+      hf.eventually_continuousAt hg.eventually_continuousAt
+      (eventually_nhdsWithin_iff.mpr (by simpa using heq))
     filter_upwards [hslice.eventually hfull] with x hx
     exact iff_of_true hx hfull.self_of_nhds
   -- The difference theorem only uses the two selected unscaled branches.

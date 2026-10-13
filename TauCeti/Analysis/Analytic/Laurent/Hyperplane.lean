@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Meromorphic.Order
+public import TauCeti.Topology.ContinuousOn.Dense
 
 /-!
 # Removing poles from analytic Laurent unit forms
@@ -57,16 +58,8 @@ theorem exists_eventuallyEq_pow_mul_of_zpow_mul
     filter_upwards [heq] with p hp hp0
     exact (hp hp0).trans (by
       simpa only [zpow_natCast] using congrArg (fun k : ℤ ↦ (p.2 - y₀) ^ k * u p) hn.symm)
-  -- Extend on an open neighborhood where both sides are continuous.
-  obtain ⟨U, hUsub, hU, hpU⟩ := mem_nhds_iff.mp
-    (heq'.and (hf.eventually_continuousAt.and hG.eventually_continuousAt))
-  have hpunct : EqOn f (fun p : E × 𝕜 ↦ (p.2 - y₀) ^ m.toNat * u p)
-      (U ∩ (univ ×ˢ ({y₀}ᶜ : Set 𝕜))) := fun p hp ↦ (hUsub hp.1).1 hp.2.2
-  have hfull := hpunct.of_subset_closure
-    (fun p hp ↦ (hUsub hp).2.1.continuousWithinAt)
-    (fun p hp ↦ (hUsub hp).2.2.continuousWithinAt)
-    inter_subset_left
-    ((dense_univ.prod (dense_compl_singleton y₀)).open_subset_closure_inter hU)
-  exact ⟨m.toNat, hn, Filter.mem_of_superset (hU.mem_nhds hpU) hfull⟩
+  exact ⟨m.toNat, hn, (dense_univ.prod (dense_compl_singleton y₀)).eventuallyEq_nhds
+    hf.eventually_continuousAt hG.eventually_continuousAt
+    (eventually_nhdsWithin_iff.mpr (by simpa using heq'))⟩
 
 end AnalyticAt
