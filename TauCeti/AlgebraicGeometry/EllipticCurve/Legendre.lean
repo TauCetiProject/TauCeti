@@ -68,8 +68,8 @@ an elliptic curve over a general base.
   `ℤ[1/2][λ, 1/λ(λ - 1)]` and the universal Legendre curve over it.
 * `WeierstrassCurve.UniversalLegendre.lift`: the classifying homomorphism
   `ℤ[1/2][λ, 1/λ(λ - 1)] →+* R` of an element `l` with `2l(l - 1)` a unit, along which the
-  universal curve becomes `y² = x (x - 1) (x - l)` (by `TauCeti.map_freyCurve` and
-  `WeierstrassCurve.UniversalLegendre.lift_param`), naturally in `R`
+  universal curve becomes `y² = x (x - 1) (x - l)`
+  (`WeierstrassCurve.UniversalLegendre.map_lift`), naturally in `R`
   (`WeierstrassCurve.UniversalLegendre.comp_lift`).
 
 ## Main results
@@ -414,13 +414,15 @@ noncomputable abbrev param : Ring := algebraMap ℤ[X] Ring X
 its points `(0, 0)` and `(1, 0)` of order two. Every elliptic Weierstrass curve with two points
 of order two whose `x`-coordinates differ by the square of a unit is a change of variables away
 from its base change along exactly one ring homomorphism (`existsUnique_legendre`). -/
-noncomputable abbrev curve : WeierstrassCurve Ring := freyCurve 1 (-param)
+-- A `def` rather than an `abbrev`, so that `map_lift` rather than `TauCeti.map_freyCurve` is the
+-- simp normal form of its base changes.
+noncomputable def curve : WeierstrassCurve Ring := freyCurve 1 (-param)
 
 variable {R : Type*} [CommRing R]
 
 /-- The universal Legendre curve is an elliptic curve. -/
 instance : curve.IsElliptic :=
-  isElliptic_freyCurve_one_neg_iff.mpr <| by
+  (isElliptic_freyCurve_one_neg_iff (l := param)).mpr <| by
     have h := IsLocalization.Away.algebraMap_isUnit (S := Ring) (2 * X * (X - 1) : ℤ[X])
     rwa [map_mul, map_mul, map_sub, map_ofNat, map_one] at h
 
@@ -471,6 +473,13 @@ theorem eq_lift {l : R} (h : IsUnit (2 * l * (l - 1))) {f : Ring →+* R} (hf : 
   ext
   rw [hf, lift_param]
 
+/-- Every Legendre form `y² = x (x - 1) (x - l)` with `2l(l - 1)` a unit is the base change of the
+universal Legendre curve along its classifying homomorphism. -/
+@[simp]
+theorem map_lift {l : R} (h : IsUnit (2 * l * (l - 1))) :
+    curve.map (lift h) = freyCurve 1 (-l) := by
+  simp [curve]
+
 variable {W : WeierstrassCurve R} {x₁ y₁ x₂ y₂ : R} (u : Rˣ)
 
 /-- **The universal Legendre curve classifies Legendre normalisations.** Let `W` be an elliptic
@@ -495,8 +504,8 @@ theorem existsUnique_legendre [W.IsElliptic] (h₁ : W.toAffine.Equation x₁ y�
     infer_instance
   refine ⟨(lift hB, C), ⟨hCu, hCr, hCt, hCx, hCy, ?_⟩,
     fun ⟨f, D⟩ ⟨hDu, hDr, hDt, hDx, hDy, hD⟩ ↦ ?_⟩
-  · rw [hC, map_freyCurve, map_one, map_neg, lift_param, neg_neg]
-  rw [map_freyCurve, map_one, map_neg] at hD
+  · rw [hC, map_lift, neg_neg]
+  rw [curve, map_freyCurve, map_one, map_neg] at hD
   obtain rfl : D = C := hCuniq D ⟨hDu, hDr, hDt, hDx, hDy, _, hD⟩
   -- comparing `a₄` of the two Legendre forms gives `f λ = -B`
   have hf : f param = -B := by simpa using congrArg a₄ (hD.symm.trans hC)
