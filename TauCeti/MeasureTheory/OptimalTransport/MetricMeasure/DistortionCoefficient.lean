@@ -210,8 +210,8 @@ private theorem sigmaOf_mono (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) {D D' : ℝ} (h
 `K θ² / N`. -/
 theorem distortionSigma_mono {K' N' θ' : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1)
     (h : K * θ ^ 2 / N ≤ K' * θ' ^ 2 / N') :
-    distortionSigma K N t θ ≤ distortionSigma K' N' t θ' :=
-  sigmaOf_mono ht₀ ht₁ h
+    distortionSigma K N t θ ≤ distortionSigma K' N' t θ' := by
+  simpa only [distortionSigma_eq_sigmaOf] using sigmaOf_mono ht₀ ht₁ h
 
 /-- For `t ∈ [0, 1]` and `N ≥ 0`, `σ_{K,N}^{(t)}(θ)` is monotone in the curvature bound `K`. -/
 theorem distortionSigma_left_monotone (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 0 ≤ N) :
