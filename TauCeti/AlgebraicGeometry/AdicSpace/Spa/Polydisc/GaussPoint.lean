@@ -738,7 +738,7 @@ theorem supp_gaussPointBelow (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
       closedDiscGaussValuationBelow_eq_zero_iff, Ideal.mem_bot]
 
 /-- The variable `T` and a constant `c` of norm `r` have the same Gauss norm at radius `r`. -/
-private theorem closedDiscGaussValuation_weightedX_eq_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+theorem closedDiscGaussValuation_weightedX_eq_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {c : K} (hc : ‖c‖ = r) :
     closedDiscGaussValuation hr₀ hr₁
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) =

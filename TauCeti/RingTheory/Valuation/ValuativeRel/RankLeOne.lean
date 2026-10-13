@@ -29,7 +29,7 @@ public section
 
 namespace ValuativeRel
 
-variable {R : Type*} [CommRing R] [ValuativeRel R]
+variable {R : Type*} [Ring R] [ValuativeRel R]
 
 /-- **A value above `1` with bounded powers rules out rank at most one.** If `g <ᵥ f` and
 `fⁿ ≤ᵥ gⁿ h` for every `n`, then `v(f) / v(g) > 1` has all its powers bounded by `v(h)`, so the

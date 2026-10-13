@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.NestedDiscPoint
 public import TauCeti.RingTheory.Valuation.ValuativeRel.RankLeOne
-public import Mathlib.Topology.Algebra.Valued.NormedValued
+import Mathlib.Topology.Algebra.Valued.NormedValued
 
 /-!
 # The rank of the points of the closed unit disc
@@ -124,9 +124,7 @@ private theorem closedDiscGaussValuation_weightedX_pow (hr₀ : 0 < r) (hr₁ : 
     (hc : ‖c‖ = r) (n : ℕ) :
     closedDiscGaussValuation (R := K) hr₀ hr₁ (T ^ n) =
       closedDiscGaussValuation hr₀ hr₁ (C c ^ n) := by
-  rw [map_pow, map_pow, closedDiscGaussValuation_weightedC]
-  congr 1
-  rw [← NNReal.coe_inj, coe_closedDiscGaussValuation_weightedX, coe_nnnorm, hc]
+  rw [map_pow, map_pow, closedDiscGaussValuation_weightedX_eq_weightedC hr₀ hr₁ hc]
 
 omit [CompleteSpace K] in
 /-- Multiplying by a constant of norm larger than `1` strictly increases a nonzero Gauss norm. -/
