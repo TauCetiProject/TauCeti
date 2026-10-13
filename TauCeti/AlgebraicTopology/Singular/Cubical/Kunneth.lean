@@ -197,7 +197,8 @@ theorem tensorHom_comp_homologyKunneth_comp_homologyMap_singularCrossProduct (n 
       cubicalHomologyKunneth k X Y n ≫ homologyMap ((cubicalToSingular k).app (X ⊗ Y)) n := by
   rw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
     cubicalHomologyKunneth_def, Category.assoc, ← homologyMap_comp,
-    ← cubicalCrossProductToSingularApp_def, homologyMap_cubicalCrossProductToSingular,
+    ← cubicalCrossProductToSingularApp_def,
+    homologyMap_cubicalCrossProductToSingularApp_eq_singularCrossProductOfCubicalApp,
     singularCrossProductOfCubicalApp_def, HomologicalComplex.tensorHom_eq_mapBifunctorMap]
 
 /-- The same statement for the Künneth map of singular homology with coefficients in the ring
