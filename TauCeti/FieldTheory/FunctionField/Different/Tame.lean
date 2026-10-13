@@ -56,6 +56,7 @@ the statement.
   `e(P' ∣ P) = d(P' ∣ P) + 1`, holding exactly at the tame places.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_iff`: `e(P' ∣ P) ≤ d(P' ∣ P)` exactly at the
   wild places (Stichtenoth, Corollary 3.5.5).
+* `TauCeti.Place.IsUnramified.isTame`: unramified places are tame.
 * `TauCeti.Place.isUnramified_iff_isUnramifiedAt`: a place is unramified, with ramification index
   one and separable residue extension, exactly when its local model is unramified at its centre
   in Mathlib's `Algebra.IsUnramifiedAt` sense.
@@ -170,6 +171,13 @@ theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
     exact congrArg _ (Subtype.ext (by simp [IsScalarTower.algebraMap_apply _ F F']))
   rw [isTame_iff]
   exact and_congr (Algebra.IsSeparable.iff_of_equiv_equiv e₀ e he) Iff.rfl
+
+variable {k F} in
+/-- **Unramified places are tame**: their residue extension is separable and their ramification
+index one is nonzero in the residue field below. -/
+theorem IsUnramified.isTame {P' : Place k F'} (h : IsUnramified k F P') : IsTame k F P' :=
+  (isTame_iff_isSeparable_residueField k F P').mpr
+    ⟨h.isSeparable_residueField, by simp [h.ramificationIdx_eq_one]⟩
 
 /-- A place `P'` of `F'` is **wild** over `F` (Stichtenoth, Definition 3.5.4) when it is not tame:
 the residue extension of its local model is inseparable or its ramification index vanishes in the
@@ -297,11 +305,11 @@ theorem isUnramified_iff_isUnramifiedAt (P' : Place k F') :
       (centerIntegralClosure k F P').asIdeal := by
   have hle := ramificationIdx_le_differentExponent_add_one k F P'
   have hpos := ramificationIdx_pos F P'
-  rw [← differentExponent_eq_zero_iff, isUnramified_iff]
+  rw [← differentExponent_eq_zero_iff]
   constructor
-  · rintro ⟨he, hsep⟩
-    have htame := (isTame_iff_isSeparable_residueField k F P').mpr ⟨hsep, by simp [he]⟩
-    have := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mpr htame
+  · intro h
+    have := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mpr h.isTame
+    have := h.ramificationIdx_eq_one
     omega
   · intro hd
     have he : ramificationIdx F P' = 1 := by omega

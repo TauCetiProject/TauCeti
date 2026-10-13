@@ -701,7 +701,7 @@ theorem le_inertiaField_iff (E : IntermediateField F F') :
     mul_mul_mul_comm, ← hcardE] at hcardF
   have hpos : 0 < Nat.card ↥(E.fixingSubgroup ⊓ (inertiaField F Q).fixingSubgroup) :=
     Nat.card_pos
-  rw [isUnramified_iff, isSeparable_iff_finInsepDegree_eq_one, ← mul_eq_one, inertiaField,
+  rw [isUnramified_iff_ramificationIdx_mul_finInsepDegree_eq_one, inertiaField,
     IntermediateField.le_iff_le, ← fixingSubgroup_inertiaField, ← inf_eq_right]
   constructor
   · intro h

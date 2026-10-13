@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 /-!
 # Unramified places
@@ -26,6 +27,12 @@ composita and Galois closures (Stichtenoth, Corollary 3.9.3); see
 
 ## Main results
 
+* `TauCeti.Place.isUnramified_iff_ramificationIdx_mul_finInsepDegree_eq_one`: a place is
+  unramified exactly when `e(P' ∣ P)` times the inseparable residue degree is one.
+* `TauCeti.Place.isUnramified_self`: a place is unramified over itself.
+* `TauCeti.Place.isUnramified_restrict_iff`: in a tower `F₀ ⊆ F₁ ⊆ F₂`, a place is unramified
+  over `F₀` exactly when it is unramified over `F₁` and its restriction to `F₁` is unramified
+  over `F₀`.
 * `TauCeti.Place.isUnramified_equivOfRingEquiv_iff`: unramifiedness is invariant under an
   isomorphism of the upstairs field over the base field.
 * `TauCeti.Place.forall_isUnramified_iff_of_algEquiv`: so is the property that every place above
@@ -34,7 +41,7 @@ composita and Galois closures (Stichtenoth, Corollary 3.9.3); see
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Definition 3.1.5.
+  Definition 3.1.5 and Proposition 3.1.6.
 -/
 
 public section
@@ -67,7 +74,66 @@ structure IsUnramified (P' : Place k' F') : Prop where
   isSeparable_residueField :
     Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
 
+variable (k F) in
+/-- **Unramifiedness read on degrees**: a place `P'` is unramified over `F` exactly when
+`e(P' ∣ P)` times the inseparable degree of its residue extension `F'_{P'} / F_P` is one. -/
+theorem isUnramified_iff_ramificationIdx_mul_finInsepDegree_eq_one (P' : Place k' F') :
+    IsUnramified k F P' ↔ ramificationIdx F P' *
+      Field.finInsepDegree (P'.restrict k F).ResidueField P'.ResidueField = 1 := by
+  rw [isUnramified_iff, isSeparable_iff_finInsepDegree_eq_one, mul_eq_one]
+
 end Defs
+
+section Self
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+
+/-- **A place is unramified over itself**: its residue field over the residue field of its own
+restriction is the trivial extension. -/
+@[simp]
+theorem isUnramified_self (P : Place k F) : IsUnramified k F P := by
+  refine ⟨ramificationIdx_self P, ⟨fun y ↦ ?_⟩⟩
+  obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective y
+  have hy : (y : F) ∈ (P.restrict k F).integers := by
+    rw [restrict_self]
+    exact y.2
+  have : IsLocalRing.residue P.integers y =
+      algebraMap (P.restrict k F).ResidueField P.ResidueField
+        (IsLocalRing.residue _ ⟨y, hy⟩) := by
+    rw [IsLocalRing.ResidueField.algebraMap_residue]
+    congr 1
+  rw [this]
+  exact isSeparable_algebraMap _
+
+end Self
+
+section Tower
+
+variable {k₀ k₁ k₂ F₀ F₁ F₂ : Type*}
+variable [Field k₀] [Field k₁] [Field k₂] [Field F₀] [Field F₁] [Field F₂]
+variable [Algebra k₀ k₁] [Algebra k₁ k₂] [Algebra k₀ k₂]
+variable [Algebra F₀ F₁] [Algebra F₁ F₂] [Algebra F₀ F₂] [IsScalarTower F₀ F₁ F₂]
+variable [Algebra k₀ F₀] [Algebra k₁ F₁] [Algebra k₂ F₂]
+variable [Algebra k₀ F₁] [Algebra k₁ F₂] [Algebra k₀ F₂]
+variable [IsScalarTower k₀ k₁ F₁] [IsScalarTower k₁ k₂ F₂]
+variable [IsScalarTower k₀ F₀ F₁] [IsScalarTower k₁ F₁ F₂]
+variable [IsScalarTower k₀ k₂ F₂] [IsScalarTower k₀ F₀ F₂]
+variable [Algebra.IsIntegral F₀ F₁] [Algebra.IsIntegral F₁ F₂]
+
+/-- **Unramifiedness in a tower**: a place `P` of `F₂` is unramified over `F₀` exactly when it is
+unramified over `F₁` and `P ∩ F₁` is unramified over `F₀`, since both the ramification index and
+the inseparable residue degree are multiplicative in the tower (Stichtenoth, Proposition 3.1.6). -/
+theorem isUnramified_restrict_iff (P : Place k₂ F₂) :
+    @IsUnramified k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ (Algebra.IsIntegral.trans F₁) P ↔
+      IsUnramified k₁ F₁ P ∧ IsUnramified k₀ F₀ (P.restrict k₁ F₁) := by
+  rw [isUnramified_iff_ramificationIdx_mul_finInsepDegree_eq_one,
+    isUnramified_iff_ramificationIdx_mul_finInsepDegree_eq_one,
+    isUnramified_iff_ramificationIdx_mul_finInsepDegree_eq_one,
+    ramificationIdx_restrict_mul (k₁ := k₁) (F₁ := F₁) P,
+    finInsepDegree_residueField_restrict_mul (k₁ := k₁) (F₁ := F₁) P, mul_mul_mul_comm,
+    mul_eq_one]
+
+end Tower
 
 section Equiv
 
