@@ -21,6 +21,8 @@ The scalar action on spheres and `ne_neg_of_mem_sphere` are from Mathlib's
 
 ## Main declarations
 
+* `TauCeti.Sphere.coe_sphere_smul`: Mathlib's action of unit scalars on a sphere is scalar
+  multiplication.
 * `TauCeti.Sphere.instMulActionIntUnitsSphere`: the action of `ℤˣ` on a real sphere.
 * `TauCeti.Sphere.instContinuousConstSMulIntUnitsSphere`: continuity of the action.
 * `TauCeti.Sphere.instIsCancelSMulIntUnitsSphere`: freeness on every nonzero-radius sphere.
@@ -54,9 +56,12 @@ theorem coe_intUnitsToUnitSphere (u : ℤˣ) :
   by
     obtain rfl | rfl := Int.units_eq_one_or u <;> simp [intUnitsToUnitSphere]
 
-/-- The coercion of Mathlib's sphere action is scalar multiplication in the ambient space. -/
-private theorem coe_sphere_smul {r : ℝ} (c : sphere (0 : ℝ) 1) (x : sphere (0 : E) r) :
-    ((c • x : sphere (0 : E) r) : E) = (c : ℝ) • (x : E) :=
+/-- The coercion of Mathlib's action of the unit sphere of a normed field `𝕜` on a sphere of a
+normed `𝕜`-space is scalar multiplication in the ambient space. -/
+@[simp]
+theorem coe_sphere_smul {𝕜 F : Type*} [NormedField 𝕜] [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {r : ℝ} (c : sphere (0 : 𝕜) 1) (x : sphere (0 : F) r) :
+    ((c • x : sphere (0 : F) r) : F) = (c : 𝕜) • (x : F) :=
   (rfl)
 
 /-- The two integer units act on every sphere centred at zero by the identity and the antipodal

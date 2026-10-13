@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import Mathlib.RingTheory.AlgebraTower
 
 /-!
 # Dimensions of Euclidean spaces
@@ -20,6 +21,11 @@ The instance `TauCeti.factFinrankEuclideanSpaceComplex` records the real dimensi
 Mathlib puts a manifold structure on the unit sphere of `E`
 (`EuclideanSpace.instChartedSpaceSphere`), so instance search finds the sphere of `ℂᵏ⁺¹`, and its
 quotients, to be manifolds of dimension `2k + 1`.
+
+The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify it `ℝ`-linearly with
+`ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
+closed disks in which characteristic maps of CW complexes are defined onto complex Euclidean
+disks.
 -/
 
 public section
@@ -37,6 +43,24 @@ and quotients of the sphere, are found to be manifolds of dimension `2k + 1`. -/
 instance factFinrankEuclideanSpaceComplex (k : ℕ) :
     Fact (Module.finrank ℝ (EuclideanSpace ℂ (Fin (k + 1))) = 2 * k + 1 + 1) :=
   ⟨by rw [finrank_real_of_complex, finrank_euclideanSpace_fin]; ring⟩
+
+/-- The real coordinates of `ℂⁱ`, as a continuous `ℝ`-linear isomorphism onto `ℝᵐ` for `m = 2i`:
+coordinate `j + i * a` of the image of `v` is the real part of `vⱼ` for `a = 0` and its imaginary
+part for `a = 1` (`complexEuclideanRealCoords_apply`). It is the coordinate isomorphism of the
+`ℝ`-basis `{eⱼ, I • eⱼ}` of `ℂⁱ`. -/
+noncomputable def complexEuclideanRealCoords {i m : ℕ} (hm : 2 * i = m) :
+    EuclideanSpace ℂ (Fin i) ≃L[ℝ] (Fin m → ℝ) :=
+  ((Complex.basisOneI.smulTower (EuclideanSpace.basisFun (Fin i) ℂ).toBasis).reindex
+    (finProdFinEquiv.trans (finCongr hm))).equivFun.toContinuousLinearEquiv
+
+/-- The coordinates of `complexEuclideanRealCoords hm v` are the real and imaginary parts of the
+coordinates of `v`, read through `Complex.basisOneI.repr`. -/
+@[simp]
+theorem complexEuclideanRealCoords_apply {i m : ℕ} (hm : 2 * i = m) (v : EuclideanSpace ℂ (Fin i))
+    (a : Fin 2) (j : Fin i) :
+    complexEuclideanRealCoords hm v (Fin.cast hm (finProdFinEquiv (a, j))) =
+      Complex.basisOneI.repr (v j) a := by
+  simp [complexEuclideanRealCoords, Module.Basis.smulTower_repr]
 
 end TauCeti
 
