@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Deriv.Endpoint
 public import TauCeti.Topology.MetricSpace.RadialLimit
 public import TauCeti.Analysis.Calculus.FDeriv.CircleMap
-import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
 # Continuous extension across a puncture from finite radial length
@@ -19,8 +18,8 @@ assumed integrable on the entire open radial interval, rather than merely locall
 the latter would not force a limit. Completeness is needed only for the target.
 
 For a map from the complex plane, the angular hypothesis follows from sublinear derivative
-blow-up: `‖z - a‖ * ‖du(z)‖ → 0`. The value assigned at the puncture is unrestricted, and the
-extension is expressed by `Function.update`.
+blow-up: `‖z - a‖ * ‖du(z)‖ → 0`. The original value of `u` at the puncture is unrestricted;
+the extension replaces it with the limiting value `q` using `Function.update`.
 
 These are the metric and one-dimensional calculus ingredients of continuous removal of
 singularities. They do not assert differentiability of the extension. The central inputs are
