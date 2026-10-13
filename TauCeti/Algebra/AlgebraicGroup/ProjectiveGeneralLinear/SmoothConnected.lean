@@ -48,16 +48,9 @@ instance instSmoothCoordinateHopfAlgebra :
     Algebra.Smooth k (coordinateHopfAlgebra n k) := by
   apply (smoothCommHopfAlgProperty_iff _).mp
   apply smoothCommHopfAlgProperty_of_geometricallyReduced
-  rw [geometricallyReducedCommHopfAlgProperty_iff]
-  intro K _ _
-  have hGL := geometricallyReducedCommHopfAlgProperty_of_smooth k
-    (GeneralLinear.coordinateHopfAlgebra k n)
-    ((smoothCommHopfAlgProperty_iff _).mpr inferInstance)
-  rw [geometricallyReducedCommHopfAlgProperty_iff] at hGL
-  let _ := hGL K
-  exact isReduced_of_injective
-    (Algebra.TensorProduct.map (conjugationMap n k).hom.toAlgHom (AlgHom.id k K)).toRingHom
-    (Module.Flat.rTensor_preserves_injective_linearMap _ (conjugationMap_injective n k))
+  exact .of_injective (conjugationMap n k).hom.toAlgHom (conjugationMap_injective n k)
+    (geometricallyReducedCommHopfAlgProperty_of_smooth k _
+      ((smoothCommHopfAlgProperty_iff _).mpr inferInstance))
 
 /-- The coordinate Hopf algebra of `PGLₙ` is geometrically connected over every field. -/
 theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra :

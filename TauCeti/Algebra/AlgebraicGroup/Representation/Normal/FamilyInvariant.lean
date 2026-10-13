@@ -62,7 +62,7 @@ theorem commute_baseChange_of_mem_quotientPointsSubgroup
   let q := CommHopfAlgCat.liftQuotientPoint H I A g hzero
   have hq : q.ofConv.comp (Ideal.Quotient.mkₐ R I.toIdeal) = g.ofConv := by
     ext a
-    exact CommHopfAlgCat.liftQuotientPoint_mk H I A g hzero a
+    rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, CommHopfAlgCat.liftQuotientPoint_mk]
   rw [← hq]
   apply Submodule.commute_baseChange_of_forall_tmul_eq_smul (I.weightSpace V) hV
     _ (fun χ ↦ q.ofConv χ.val) _ hp

@@ -57,6 +57,9 @@ over every point is the spectrum of an algebra of dimension `n²` over its resid
 ## Main results
 
 * `WeierstrassCurve.projModelMulBy_eq`: it is multiplication by `n` on `toEllipticCurveGeom W`.
+* `WeierstrassCurve.projModelMulBy_comp_of_isPullback` and
+  `WeierstrassCurve.comp_projModelMulBy_of_isPullback`: `[n]` commutes with pointed base changes
+  from and to the projective model.
 * `WeierstrassCurve.isFinite_projModelMulBy`: for `n ≠ 0`, `[n]` is finite.
 * `WeierstrassCurve.projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy`: `[n]` sends the
   point with values in a field `L` of a point `P` of `W` over `L` to that of `n • P`;
@@ -130,6 +133,43 @@ theorem projModelMulBy_eq (n : ℤ) :
   rw [← toEllipticCurveGeomOverIso_hom_left, ← Over.comp_left, h, Over.comp_left,
     toEllipticCurveGeomOverIso_hom_left, Iso.inv_hom_id_assoc, projModelMulBy]
 
+/-- **Multiplication by `n` commutes with a pointed base change from the projective model.** Let
+`a : projModel W ⟶ E` be a morphism to an elliptic curve `E` over a scheme `S`, forming a pullback
+square over a morphism `b : Spec R ⟶ S` and carrying the zero section to the zero section. Then `a`
+carries multiplication by `n` on the projective model to multiplication by `n` on `E`. -/
+@[reassoc]
+theorem projModelMulBy_comp_of_isPullback {S : Scheme.{u}} {E : EllipticCurveGeom S}
+    {a : W.projModel ⟶ E.carrier} {b : Spec (.of R) ⟶ S}
+    (hab : IsPullback a W.projModelOver E.structureMap b) (h₀ : W.projModelZero ≫ a = b ≫ E.zero)
+    (n : ℤ) : W.projModelMulBy n ≫ a = a ≫ (E.mulBy n).left := by
+  have hab' : IsPullback ((toEllipticCurveGeomIso W).hom ≫ a)
+      (toEllipticCurveGeom W).structureMap E.structureMap b := by
+    simpa using (IsPullback.of_horiz_isIso (fst := (toEllipticCurveGeomIso W).hom)
+      (snd := (toEllipticCurveGeom W).structureMap) (f := W.projModelOver) (g := 𝟙 _)
+      ⟨by simp⟩).paste_horiz hab
+  have := EllipticCurveGeom.mulBy_left_comp_of_isPullback hab' (by simp [h₀]) n
+  simp only [Category.assoc] at this
+  rw [projModelMulBy_eq, Category.assoc, Category.assoc, this, Iso.inv_hom_id_assoc]
+
+/-- **Multiplication by `n` commutes with a pointed base change to the projective model.** Let
+`g : E ⟶ projModel W` be a morphism from an elliptic curve `E` over a scheme `S`, forming a pullback
+square over a morphism `f : S ⟶ Spec R` and carrying the zero section to the zero section. Then `g`
+carries multiplication by `n` on `E` to multiplication by `n` on the projective model. -/
+@[reassoc]
+theorem comp_projModelMulBy_of_isPullback {S : Scheme.{u}} {E : EllipticCurveGeom S}
+    {g : E.carrier ⟶ W.projModel} {f : S ⟶ Spec (.of R)}
+    (hg : IsPullback g E.structureMap W.projModelOver f) (h₀ : E.zero ≫ g = f ≫ W.projModelZero)
+    (n : ℤ) : g ≫ W.projModelMulBy n = (E.mulBy n).left ≫ g := by
+  have hg' : IsPullback (g ≫ (toEllipticCurveGeomIso W).inv) E.structureMap
+      (toEllipticCurveGeom W).structureMap f := by
+    simpa using hg.paste_horiz (IsPullback.of_horiz_isIso (fst := (toEllipticCurveGeomIso W).inv)
+      (snd := W.projModelOver) (f := (toEllipticCurveGeom W).structureMap) (g := 𝟙 _)
+      ⟨by simp [← toEllipticCurveGeomIso_hom_projModelOver]⟩)
+  have := EllipticCurveGeom.mulBy_left_comp_of_isPullback hg'
+    (by simp [reassoc_of% h₀, ← zero_toEllipticCurveGeomIso_hom]) n
+  rw [projModelMulBy_eq]
+  simpa using (this =≫ (toEllipticCurveGeomIso W).hom).symm
+
 /-- Multiplication by a nonzero integer on the projective Weierstrass model is finite, being
 multiplication by `n` on the elliptic curve `toEllipticCurveGeom W`
 (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_mulBy_left`). -/
@@ -158,7 +198,7 @@ private noncomputable def baseChangePointsHom :
     simp [Hom.one_def]
   map_mul' x y := by
     ext1
-    simp only [Hom.mul_def, Over.comp_left, Over.lift_left, mul_projModel_left, Category.assoc,
+    simp only [Hom.mul_def, Over.comp_left, Over.lift_left, mul_projModelOver_left, Category.assoc,
       additionMorphism_projModelBaseChange, Over.homMk_left]
     -- the base change morphism carries the pair `(x, y)` to the pair of the base changed points
     rw [← Category.assoc]

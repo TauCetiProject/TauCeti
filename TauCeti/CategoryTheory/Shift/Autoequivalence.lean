@@ -45,6 +45,9 @@ becomes the shift of that category.
 * `CategoryTheory.Equivalence.shiftFunctorNegOneIso`: its shift by `-1` is any quasi-inverse of
   `e.functor`.
 
+* `TauCeti.Shift.intSequenceIsoMk`: construct a sequence isomorphism from component
+  isomorphisms and compatibility with forward linking maps.
+
 ## Main results
 
 * `CategoryTheory.Equivalence.shiftFunctor_additive`: when `C` is preadditive and `e.functor` is
@@ -441,3 +444,48 @@ lemma shiftFunctor_additive [Preadditive C] [e.functor.Additive] (n : ℤ) :
       (shiftFunctorAdd' C (-k : ℤ) (-1) (-k - 1) (by omega)).symm)
 
 end CategoryTheory.Equivalence
+
+namespace TauCeti.Shift
+
+open CategoryTheory CategoryTheory.Equivalence
+
+variable {C : Type u} [Category.{v} C] {e : C ≌ C}
+
+/-- An isomorphism of integer sequences from component isomorphisms respecting the forward
+linking maps. Only compatibility with the forward linking maps need be supplied; the inverse
+components are automatically compatible. -/
+def intSequenceIsoMk {X Y : IntSequence e} (φ : ∀ n, X.X n ≅ Y.X n)
+    (comm : ∀ n m h, e.functor.map (φ n).hom ≫ (Y.iso n m h).hom =
+      (X.iso n m h).hom ≫ (φ m).hom) : X ≅ Y where
+  hom := { f := fun n => (φ n).hom, comm := comm }
+  inv :=
+    { f := fun n => (φ n).inv
+      comm := fun n m h => by
+        rw [← cancel_mono (φ m).hom]
+        simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+        rw [← cancel_epi (e.functor.map (φ n).hom)]
+        simp only [← Functor.map_comp_assoc, Iso.hom_inv_id]
+        -- Cancellation leaves an identity whose endpoints are component-iso projections;
+        -- reduce those endpoints to apply the functor identity law.
+        erw [e.functor.map_id, Category.id_comp]
+        exact (comm n m h).symm }
+  hom_inv_id := by ext n; simp
+  inv_hom_id := by ext n; simp
+
+@[simp]
+theorem intSequenceIsoMk_hom_f {X Y : IntSequence e} (φ : ∀ n, X.X n ≅ Y.X n)
+    (comm : ∀ n m h, e.functor.map (φ n).hom ≫ (Y.iso n m h).hom =
+      (X.iso n m h).hom ≫ (φ m).hom) (n : ℤ) :
+    (intSequenceIsoMk φ comm).hom.f n = (φ n).hom := by
+  unfold intSequenceIsoMk
+  rfl
+
+@[simp]
+theorem intSequenceIsoMk_inv_f {X Y : IntSequence e} (φ : ∀ n, X.X n ≅ Y.X n)
+    (comm : ∀ n m h, e.functor.map (φ n).hom ≫ (Y.iso n m h).hom =
+      (X.iso n m h).hom ≫ (φ m).hom) (n : ℤ) :
+    (intSequenceIsoMk φ comm).inv.f n = (φ n).inv := by
+  unfold intSequenceIsoMk
+  rfl
+
+end TauCeti.Shift

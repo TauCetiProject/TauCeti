@@ -11,10 +11,12 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 /-!
 # The normalizer of the diagonal torus of the special linear group
 
-The diagonal torus of `SL_n(k)` is the group of determinant-one diagonal matrices, the preimage
-of the diagonal torus of `GL_n(k)`. When this torus separates every pair of coordinates, its
-normalizer in `SL_n(k)` consists of the determinant-one monomial matrices, and the normalizer
-quotient is the symmetric group on the coordinate lines, exactly as for `GL_n(k)`.
+Over a commutative ring with cancellation by nonzero elements, the diagonal torus of `SL_n(k)`
+is the group of determinant-one diagonal matrices, the preimage of the diagonal torus of
+`GL_n(k)`. When this torus separates every pair of coordinates, its normalizer in `SL_n(k)`
+consists of the determinant-one monomial matrices, and the normalizer quotient is the symmetric
+group on the coordinate lines, exactly as for `GL_n(k)`. In dimensions zero and one, the quotient
+is trivial over any commutative ring, without cancellation or separation assumptions.
 
 The separation hypothesis cannot simply be dropped. Over `𝔽₃` the torus of `SL₂` is the central
 subgroup `{±1}`, so its normalizer is all of `SL₂(𝔽₃)` and the normalizer quotient has order
@@ -61,6 +63,15 @@ section CommRing
 
 variable [CommRing k]
 
+/-- In dimensions zero and one, the determinant-one diagonal normalizer quotient is trivial
+over any commutative ring. -/
+instance [Subsingleton (Fin n)] :
+    Subsingleton (Subgroup.normalizerQuotient (diagonalTorus k n)) := by
+  apply QuotientGroup.subsingleton_iff.mpr
+  apply top_unique
+  intro g _
+  exact mem_diagonalTorus_iff.mpr (Matrix.isDiag_of_subsingleton _)
+
 /-- An element of `SL_n(k)` normalizing the diagonal torus of `GL_n(k)` normalizes the diagonal
 torus of `SL_n(k)`. -/
 theorem mem_normalizer_diagonalTorus_of_toGL_mem {g : SpecialLinearGroup (Fin n) k}
@@ -94,9 +105,9 @@ private theorem exists_conj_mem_diagonalTorus_apply_ne
 
 end CommRing
 
-section Field
+section IsCancelMulZero
 
-variable [Field k]
+variable [CommRing k] [IsCancelMulZero k]
 
 /-- When the determinant-one diagonal torus separates coordinates, an element of `SL_n(k)`
 normalizes it exactly when it normalizes the diagonal torus of `GL_n(k)`, that is, exactly when
@@ -231,7 +242,7 @@ theorem diagonalNormalizerQuotientMulEquivPerm_mk
       diagonalNormalizerPerm hsep g :=
   (rfl)
 
-end Field
+end IsCancelMulZero
 
 end
 

@@ -467,6 +467,24 @@ theorem transvectionHom_injective (hu : Q u = 0) (hu₀ : Q.polarBilin u ≠ 0) 
     Function.Injective (transvectionHom Q hu) :=
   transvectionHom_injective_of_isUnit hu (exists_isUnit_polar_of_polarBilin_ne_zero hu₀)
 
+/-- In dimension at least three, a vector outside the polar radical has an orthogonal vector
+outside its span. For an isotropic vector, this gives a nontrivial transvection parameter. -/
+theorem exists_polar_eq_zero_not_mem_span_of_finrank_ge_three [FiniteDimensional K V]
+    (Q : QuadraticForm K V) (hpolar : Q.polarBilin u ≠ 0)
+    (hdim : 3 ≤ Module.finrank K V) : ∃ w : V, polar Q u w = 0 ∧ w ∉ K ∙ u := by
+  have hu₀ : u ≠ 0 := by
+    rintro rfl
+    exact hpolar (by ext; simp)
+  have hdimker := Module.Dual.finrank_ker_add_one_of_ne_zero hpolar
+  have hex : ∃ w ∈ LinearMap.ker (Q.polarBilin u), w ∉ K ∙ u := by
+    by_contra! h
+    have hle : LinearMap.ker (Q.polarBilin u) ≤ K ∙ u := h
+    have hbound := Submodule.finrank_mono hle
+    rw [finrank_span_singleton hu₀] at hbound
+    omega
+  obtain ⟨w, huw, hw⟩ := hex
+  exact ⟨w, by simpa only [LinearMap.mem_ker, polarBilin_apply_apply] using huw, hw⟩
+
 /-- The Eichler-transvection parameter space `u^⊥ / K ∙ u` of an isotropic vector outside the
 polar radical has dimension `dim V - 2`. -/
 theorem finrank_transvectionParameter [FiniteDimensional K V] (hu : Q u = 0)

@@ -109,7 +109,7 @@ theorem quasiIso_cechAugmentation_rationalCover_of_standardCover
       (fun i ↦ (⟨U i, Set.mem_Iic.2 le_top⟩ : Set.Iic (⊤ : Opens ↥(spa Aplus))))
       isTerminalTop (presentationLimitAddCommGrpPresheaf P Aplus ⊤)) := by
   classical
-  obtain ⟨S, hS, hSU⟩ := exists_span_eq_top_forall_rationalSubset_subset_of_isTateRing
+  obtain ⟨S, hS, hSU⟩ := exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ
     Aplus hplus (fun i ↦ (U i : Set ↥(spa Aplus))) (fun i ↦ (U i).isOpen) (by
       rw [← Opens.coe_iSup, hcov, Opens.coe_top])
   rcases S.eq_empty_or_nonempty with hSempty | hSne

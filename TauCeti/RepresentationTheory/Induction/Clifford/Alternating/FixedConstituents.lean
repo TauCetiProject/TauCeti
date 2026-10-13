@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.CharacterTwist
 public import TauCeti.RepresentationTheory.Induction.LiesOver
 import TauCeti.RepresentationTheory.Induction.Permutation
 import TauCeti.RepresentationTheory.Induction.Character
-import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
+import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction
 import TauCeti.RepresentationTheory.CharacterTable.Determined
 
 /-!

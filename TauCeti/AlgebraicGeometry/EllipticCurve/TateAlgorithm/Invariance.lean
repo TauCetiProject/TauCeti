@@ -8,13 +8,15 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 import TauCeti.Algebra.Ring.Divisibility
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Additive
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Multiplicity
 
 /-!
-# Tate's algorithm: the output does not depend on the choices
+# Tate's algorithm: the output does not depend on the choices, and certifies minimality
 
 Tate's algorithm reads the reduction symbol of a Weierstrass equation over a discrete valuation
 ring `R` with uniformiser `ϖ` by alternating changes of variables over `R` with divisibility tests
@@ -27,6 +29,13 @@ change of variables `C` over `R`, on which the algorithm stops with symbols `s` 
 a change of variables over `R`, the symbol at which the algorithm stops on a minimal equation is an
 invariant of the curve. No minimality is needed for the first statement.
 
+The same invariance shows that the algorithm stops only on minimal equations. A change of
+variables over `R` carries a non-minimal equation to one with `ϖⁱ ∣ aᵢ` for `i = 1, 2, 3, 4, 6`
+(`WeierstrassCurve.exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal`). That equation
+passes every test of the algorithm, Step 10's `ϖ⁶ ∣ a₆` included, so the algorithm cannot have
+stopped on the original equation. Together with termination this says that Tate's algorithm
+decides minimality.
+
 ## Main results
 
 * `WeierstrassCurve.dvd_r_and_dvd_t_of_dvd_a₃_a₄_a₆`: a change of variables between two
@@ -38,6 +47,10 @@ invariant of the curve. No minimality is needed for the first statement.
   the uniformiser.
 * `WeierstrassCurve.IsTateTerminal.eq_of_isMinimal_smul`: the same statement for two minimal
   equations of one elliptic curve over the fraction field, with any uniformisers.
+* `WeierstrassCurve.IsTateTerminal.isMinimal_baseChange`: an equation on which the algorithm stops
+  is minimal over the fraction field.
+* `WeierstrassCurve.isMinimal_baseChange_iff_exists_isTateTerminal`: with perfect residue field, an
+  equation with nonzero discriminant is minimal exactly when the algorithm, run on it, stops.
 
 ## Implementation notes
 
@@ -59,7 +72,8 @@ test is read on:
   branch;
 * if both equations are in the normal form of Step 8, so that both residue cubics are `T³`, then
   `ρ = 0`. This makes `b₆` modulo `ϖ⁵` invariant, which is the test of `IV*`, and on the normal
-  form of Step 9 also `ϖ³ ∣ t`, which makes `a₄` modulo `ϖ⁴` invariant, the test of `III*`.
+  form of Step 9 also `ϖ³ ∣ t`, which makes `a₄` modulo `ϖ⁴` invariant, the test of `III*`, and
+  `a₆` modulo `ϖ⁶` invariant, the test of `II*`.
 
 If the algorithm stopped on `W` at an earlier test than on `C • W`, then `W` would fail a test
 that `C • W` passes, which invariance rules out. So it stops on both at the same test, and the
@@ -128,6 +142,7 @@ private def tateTest (ϖ : R) (W : WeierstrassCurve R) : ℕ → Prop
   | 6 => ϖ ^ 3 ∣ W.a₂ ^ 2 - 3 * W.a₄
   | 7 => ϖ ^ 5 ∣ W.b₆
   | 8 => ϖ ^ 4 ∣ W.a₄
+  | 9 => ϖ ^ 6 ∣ W.a₆
   | _ => False
 
 /-- The test at which Tate's algorithm stops with a given symbol. -/
@@ -444,6 +459,25 @@ private theorem tateContext_six_of_doubleRoot (hϖ : Irreducible ϖ) (h₁ : ϖ 
       exact h₂' ⟨B, by rw [hA₂]; ring⟩
     simpa [hres] using this
 
+/-- An equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁵ ∣ a₆`, the normal form of
+Step 10, reaches the test of `II*`. -/
+private theorem tateContext_nine_of_pow_dvd (hϖ : Irreducible ϖ) (h₁ : ϖ ∣ W.a₁)
+    (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 4 ∣ W.a₄) (h₆ : ϖ ^ 5 ∣ W.a₆) :
+    TateContext ϖ 9 W := by
+  have hp (n : ℕ) {x : R} (h : ϖ ^ (n + 1) ∣ x) : ϖ ∣ x := (dvd_pow_self ϖ n.succ_ne_zero).trans h
+  have hle {m n : ℕ} (hmn : m ≤ n) {x : R} (h : ϖ ^ n ∣ x) : ϖ ^ m ∣ x :=
+    (pow_dvd_pow ϖ hmn).trans h
+  have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
+    (hle (by omega) h₆)
+  have ht' := tateTest_five_six_of_stepEight hϖ h₂ (hle (by omega) h₄) (hle (by omega) h₆)
+  refine ⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 3 h₄, hp 4 h₆⟩,
+    fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
+    fun _ ↦ ⟨h₂, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩
+  rcases lt_or_ge k 5 with hk5 | hk5
+  · exact ht k hk5
+  · interval_cases k
+    exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆, h₄]
+
 /-- **The test at which Tate's algorithm stops.** On an equation on which the algorithm stops with
 symbol `s`, it reaches the test `chainIndex s` and fails it. -/
 private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : ReductionSymbol}
@@ -522,19 +556,8 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
     · interval_cases k
       exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆]
   | .IIStar, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IIStar.1 h
-    have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
-      (hle (by omega) h₆)
-    have ht' := tateTest_five_six_of_stepEight hϖ h₂ (hle (by omega) h₄) (hle (by omega) h₆)
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 3 h₄, hp 4 h₆⟩,
-      fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
-      fun _ ↦ ⟨h₂, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩, by
-        simp [chainIndex, tateTest]⟩
-    simp only [chainIndex] at hk
-    rcases lt_or_ge k 5 with hk5 | hk5
-    · exact ht k hk5
-    · interval_cases k
-      exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆, h₄]
+    obtain ⟨h₁, h₂, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_IIStar.1 h
+    exact ⟨tateContext_nine_of_pow_dvd hϖ h₁ h₂ h₃ h₄ h₆, h₆'⟩
 
 /-- **Each test of Tate's algorithm is invariant under changes of variables over `R`** between
 equations on which the algorithm reaches it. -/
@@ -588,6 +611,21 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       rw [← hϖ.residue_eq_zero_iff_dvd]
       simpa [(C.u⁻¹.isUnit.map (residue R)).ne_zero] using e₆.symm
     exact ⟨r₂, by rw [hr]; ring⟩
+  -- From the test of `III*` on, both equations are in the normal form of Step 9, so `ϖ³ ∣ t`.
+  have ht₃ (hi : 8 ≤ i) : ϖ ^ 3 ∣ C.t := by
+    obtain ⟨r₂, hr₂⟩ := hr (by omega)
+    obtain ⟨-, -, ⟨t₁, ht₁⟩⟩ := hst (by omega)
+    obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by omega)
+    obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 (by omega)
+    obtain ⟨⟨z₃, hz₃⟩, ⟨z₆, hz₆⟩⟩ := h.2.2.2.2 hi
+    obtain ⟨-, h₆'⟩ := h'.2.2.2.2 hi
+    rw [variableChange_a₆, (hv 6).dvd_mul_left] at h₆'
+    obtain ⟨e₆, he₆⟩ := h₆'
+    refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
+      ⟨z₆ + r₂ * y₄ + ϖ * r₂ ^ 2 * y₂ + ϖ * r₂ ^ 3 - t₁ * z₃ - r₂ * t₁ * x₁ - e₆, ?_⟩
+    rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
+    rw [ht₁]
+    linear_combination -he₆
   match i, h, h', ht with
   | 0, _, _, ht =>
     simp only [tateTest] at ht ⊢
@@ -654,27 +692,29 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       ϖ * r₂ ^ 2 * (x₁ ^ 2 + 4 * y₂) + 4 * ϖ * r₂ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₂, b₄, b₂, hx₁, hx₃, hy₂, hy₄]
     ring
-  | 8, h, h', ht =>
+  | 8, h, _, ht =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
-    obtain ⟨-, ⟨s₁, hs₁⟩, ⟨t₁, ht₁⟩⟩ := hst (by norm_num)
+    obtain ⟨-, ⟨s₁, hs₁⟩, -⟩ := hst (by norm_num)
+    obtain ⟨t₃, ht₃⟩ := ht₃ le_rfl
     obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by norm_num)
-    obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 (by norm_num)
-    obtain ⟨⟨z₃, hz₃⟩, ⟨z₆, hz₆⟩⟩ := h.2.2.2.2 le_rfl
-    obtain ⟨-, h₆'⟩ := h'.2.2.2.2 le_rfl
-    -- On the normal form of Step 9 also `ϖ³ ∣ t`.
-    rw [variableChange_a₆, (hv 6).dvd_mul_left] at h₆'
-    obtain ⟨e₆, he₆⟩ := h₆'
-    obtain ⟨t₃, ht₃⟩ : ϖ ^ 3 ∣ C.t := by
-      refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
-        ⟨z₆ + r₂ * y₄ + ϖ * r₂ ^ 2 * y₂ + ϖ * r₂ ^ 3 - t₁ * z₃ - r₂ * t₁ * x₁ - e₆, ?_⟩
-      rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
-      rw [ht₁]
-      linear_combination -he₆
+    obtain ⟨⟨y₂, hy₂⟩, -, -⟩ := h.2.2.2.1 (by norm_num)
+    obtain ⟨⟨z₃, hz₃⟩, -⟩ := h.2.2.2.2 le_rfl
     refine ((hv 4).dvd_iff_of_eq_mul_add (-(s₁ * z₃) + 2 * r₂ * y₂ - (t₃ + r₂ * s₁) * x₁ +
       3 * r₂ ^ 2 - 2 * s₁ * t₃) ?_).2 ht
     rw [variableChange_a₄, hr₂, hs₁, ht₃, hx₁, hy₂, hz₃]
     ring
-  | i + 9, _, _, ht => exact ht.elim
+  | 9, h, _, ht =>
+    obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
+    obtain ⟨t₃, ht₃⟩ := ht₃ (by norm_num)
+    obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by norm_num)
+    obtain ⟨⟨y₂, hy₂⟩, -, -⟩ := h.2.2.2.1 (by norm_num)
+    obtain ⟨⟨z₃, hz₃⟩, -⟩ := h.2.2.2.2 (by norm_num)
+    obtain ⟨y₄, hy₄⟩ : ϖ ^ 4 ∣ W.a₄ := h.1 8 (by norm_num)
+    refine ((hv 6).dvd_iff_of_eq_mul_add (r₂ * y₄ + r₂ ^ 2 * y₂ + r₂ ^ 3 - t₃ * z₃ - t₃ ^ 2 -
+      r₂ * t₃ * x₁) ?_).2 ht
+    rw [variableChange_a₆, hr₂, ht₃, hx₁, hy₂, hy₄, hz₃]
+    ring
+  | i + 10, _, _, ht => exact ht.elim
 
 /-- Tate's algorithm stops on `W` and on `C • W` at the same test: if it stopped on one at an
 earlier test, that equation would fail a test which the other passes. -/
@@ -841,6 +881,62 @@ theorem IsTateTerminal.eq_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
   · -- At `Iₙ*` the index is the stage at which the subprocedure of Step 7 stops.
     have h₀ : (C⁻¹ • C • W).IsTateTerminal ϖ (.IStar (n + 1)) := by rwa [inv_smul_smul]
     rw [le_antisymm (h.le_of_IStar_of_smul hϖ h') (h'.le_of_IStar_of_smul hϖ h₀)]
+
+/-- An equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁶ ∣ a₆`, on which Tate's
+algorithm would go on to Step 11, passes every test. -/
+private theorem tateContext_ten_of_pow_dvd (hϖ : Irreducible ϖ) (h₁ : ϖ ∣ W.a₁)
+    (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 4 ∣ W.a₄) (h₆ : ϖ ^ 6 ∣ W.a₆) :
+    TateContext ϖ 10 W := by
+  have hc := tateContext_nine_of_pow_dvd hϖ h₁ h₂ h₃ h₄ ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  refine ⟨fun k hk ↦ ?_, fun _ ↦ hc.2.1 (by omega), fun _ ↦ hc.2.2.1 (by omega),
+    fun _ ↦ hc.2.2.2.1 (by omega), fun _ ↦ hc.2.2.2.2 (by omega)⟩
+  rcases lt_or_ge k 9 with hk9 | hk9
+  · exact hc.1 k hk9
+  · obtain rfl : k = 9 := by omega
+    exact h₆
+
+/-- If Tate's algorithm stops on `W`, no change of variables over `R` carries `W` to an equation
+on which it would go on to Step 11. -/
+private theorem IsTateTerminal.not_pow_dvd_smul (hϖ : Irreducible ϖ) {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) (C : VariableChange R) :
+    ¬ (ϖ ∣ (C • W).a₁ ∧ ϖ ^ 2 ∣ (C • W).a₂ ∧ ϖ ^ 3 ∣ (C • W).a₃ ∧ ϖ ^ 4 ∣ (C • W).a₄ ∧
+      ϖ ^ 6 ∣ (C • W).a₆) := by
+  rintro ⟨h₁, h₂, h₃, h₄, h₆⟩
+  obtain ⟨hc, hn⟩ := h.tateContext hϖ
+  have hc' := tateContext_ten_of_pow_dvd hϖ h₁ h₂ h₃ h₄ h₆
+  have hlt : chainIndex s < 10 := by
+    rcases s with (_ | _) | _ | _ | _ | (_ | _) | _ | _ | _ <;> simp [chainIndex]
+  have hc₀ : TateContext ϖ (chainIndex s) (C⁻¹ • C • W) := by rwa [inv_smul_smul]
+  have ht := tateTest_smul hϖ C⁻¹ (hc'.mono hlt.le) hc₀ (hc'.1 _ hlt)
+  rw [inv_smul_smul] at ht
+  exact hn ht
+
+section Minimality
+
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- **Tate's algorithm only stops on minimal equations.** If the algorithm stops on an equation
+`W` over `R`, with any symbol, then the base change of `W` to the fraction field is minimal over
+`R`. -/
+theorem IsTateTerminal.isMinimal_baseChange (hϖ : Irreducible ϖ) {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) : IsMinimal R (W.baseChange K) := by
+  by_contra hmin
+  obtain ⟨r, s', t, hC⟩ := exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ W hmin
+  exact h.not_pow_dvd_smul hϖ _ hC
+
+/-- **Tate's algorithm decides minimality.** Over a discrete valuation ring with perfect residue
+field, an equation over `R` with nonzero discriminant is minimal over the fraction field exactly
+when some change of variables over `R` carries it to an equation on which the algorithm stops. -/
+theorem isMinimal_baseChange_iff_exists_isTateTerminal [PerfectField (ResidueField R)]
+    (hϖ : Irreducible ϖ) (hΔ : W.Δ ≠ 0) :
+    IsMinimal R (W.baseChange K) ↔
+      ∃ (C : VariableChange R) (s : ReductionSymbol), (C • W).IsTateTerminal ϖ s := by
+  refine ⟨fun _ ↦ exists_isTateTerminal (K := K) hϖ W hΔ, fun ⟨C, s, h⟩ ↦ ?_⟩
+  have := h.isMinimal_baseChange (K := K) hϖ
+  rw [← inv_smul_smul C W, ← baseChange_smul_baseChange]
+  infer_instance
+
+end Minimality
 
 section MinimalModel
 

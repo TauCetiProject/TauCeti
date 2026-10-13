@@ -40,10 +40,6 @@ Chevalley--Demazure construction.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This supplies the Chevalley commutator interface for the toral carrier in Layer 9 of the
-`ReductiveGroups` roadmap. That carrier and its root subgroups are consumed by milestone L0 of the
-`CFSGStatement` roadmap.
 -/
 
 public section

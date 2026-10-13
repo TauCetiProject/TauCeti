@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.Set
@@ -23,6 +24,10 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
+  `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
+* `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
+  function dominated pointwise by a multiple of the norm of an `Lᵖ` function.
 * `MeasureTheory.Lp.setIntegral_norm_sq_le_norm_sq`: so its integral over a subset of the set it
   lives on is at most its squared `L²` norm.
 * `MeasureTheory.MemLp.integrableOn_of_subset` and
@@ -89,6 +94,42 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
   have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
   rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
     Real.rpow_one]
+
+/-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
+`μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/
+theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (f : Lp F p m) :
+    ∫ x, ‖f x‖ ∂m ≤ (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := by
+  have hexp : 0 ≤ 1 - 1 / p.toReal := by
+    rcases eq_or_ne p ∞ with rfl | hp
+    · simp
+    · have h1p : 1 ≤ p.toReal := by
+        simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
+      exact sub_nonneg.2 (div_le_one_of_le₀ h1p (zero_le_one.trans h1p))
+  have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) (μ := m) Fact.out
+    (Lp.aestronglyMeasurable f)
+  rw [ENNReal.toReal_one, div_one] at h
+  rw [integral_norm_eq_lintegral_enorm (Lp.aestronglyMeasurable f),
+    ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable f), Lp.norm_def, mul_comm,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f)
+    (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h
+
+/-- On a finite measure space, a function dominated pointwise by `K ‖f‖` for an `Lᵖ` function
+`f`, `1 ≤ p`, has norm of its integral at most `K μ(univ)^{1 - 1/p} ‖f‖`. -/
+theorem Lp.norm_integral_le_of_ae_norm_le_mul {alpha F G : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p m) {g : alpha → G} {K : ℝ}
+    (hK : 0 ≤ K) (hg : ∀ᵐ x ∂m, ‖g x‖ ≤ K * ‖f x‖) :
+    ‖∫ x, g x ∂m‖ ≤ K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := by
+  calc ‖∫ x, g x ∂m‖ ≤ ∫ x, K * ‖f x‖ ∂m :=
+        norm_integral_le_of_norm_le (((Lp.memLp f).integrable Fact.out).norm.const_mul K) hg
+    _ = K * ∫ x, ‖f x‖ ∂m := integral_const_mul _ _
+    _ ≤ K * ((m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖) := by
+        gcongr
+        exact Lp.integral_norm_le_mul_norm f
+    _ = K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := (mul_assoc _ _ _).symm
 
 /-- For an `L²` function `f` on `t`, the integral of `‖f‖²` over a subset `s ⊆ t` is at most the
 squared `L²` norm of `f`. -/

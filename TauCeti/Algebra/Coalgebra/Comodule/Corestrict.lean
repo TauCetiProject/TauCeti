@@ -15,10 +15,8 @@ This file proves the basic functoriality of right comodules in the coalgebra. A 
 morphism `f : C →ₗc[R] D` turns every right `C`-comodule into a right `D`-comodule by
 postcomposing the coaction with `id ⊗ f`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target "Comodules over a
-coalgebra/Hopf algebra": representations of affine group schemes are comodules over their
-coordinate coalgebras, and changing the coordinate coalgebra along a morphism needs this
-corestriction functor.
+Representations of affine group schemes are comodules over their coordinate coalgebras, and changing
+the coordinate coalgebra along a morphism needs this corestriction functor.
 
 A coalgebra morphism also gives a morphism from its corestricted regular source
 comodule to its regular target comodule.
@@ -327,7 +325,6 @@ theorem corestrict_map_toLinearMap (f : C →ₗc[R] D) {M N : ComoduleCat.{u, v
   rfl
 
 /-- The corestriction functor leaves the underlying function of a morphism unchanged. -/
-@[simp]
 theorem corestrict_map_apply (f : C →ₗc[R] D) {M N : ComoduleCat.{u, v, x} R C}
     (g : M ⟶ N) (m : M) : (corestrict (R := R) (C := C) (D := D) f).map g m = g m :=
   rfl
@@ -343,7 +340,6 @@ theorem corestrict_map_comp_coalg_toLinearMap (f : C →ₗc[R] D) (g : D →ₗ
   rfl
 
 /-- Corestriction functors compose in the coalgebra morphism on elements. -/
-@[simp]
 theorem corestrict_map_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E)
     {M N : ComoduleCat.{u, v, x} R C} (h : M ⟶ N) (m : M) :
     (corestrict (R := R) (C := C) (D := E) (g.comp f)).map h m =

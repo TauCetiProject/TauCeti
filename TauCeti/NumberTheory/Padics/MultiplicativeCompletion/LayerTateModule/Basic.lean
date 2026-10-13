@@ -50,6 +50,8 @@ layer, carried to `A(L)` along local reciprocity, is one.
   augmentation ideal by `A(L)` is a Tate module of the layer.
 * `TauCeti.LayerTateModule.nonempty_of_tateHypotheses`: a class in `H²(Gal(L/K), A(L))`
   satisfying Tate's hypotheses on the `p`-subgroups gives a Tate module of the layer.
+* `TauCeti.LayerTateModule.nonempty_of_equiv`: a Tate module transports along an isomorphism of
+  layers.
 
 ## References
 
@@ -252,6 +254,103 @@ theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L
       (TauCeti.AugmentationIdeal.augmentationι_injective ℤ_[p] (L ≃ₐ[K] L)).eq_iff]
     exact (Rep.exact_iff_function_exact _).1 hse.exact y
   exact nonempty_of_isZero _ hY hι hπ hιπ
+
+/-- **Transport of the Tate module along an isomorphism of layers.** Let `L/K` and `L'/K'` be
+layers, `L', K'` in `Type`, with an isomorphism `φ` of their automorphism groups and a
+`ℤ_p`-linear isomorphism `A(L) ≃ A(L')` intertwining the actions of `σ` and `φ σ`. Then a Tate
+module of `L'/K'` gives one of `L/K`: its carrier, lifted to the universe of `L`, is a module over
+`ℤ_p[Gal(L/K)]` through the induced isomorphism of group algebras. -/
+theorem nonempty_of_equiv {L K : Type u} [Field L] [Field K] [Algebra K L]
+    {L' K' : Type} [Field L'] [Field K'] [Algebra K' L']
+    (φ : (L ≃ₐ[K] L) ≃* (L' ≃ₐ[K'] L'))
+    (c : ↑(padicCompletionUnits p L) ≃* ↑(padicCompletionUnits p L'))
+    (hsmul : ∀ (a : ℤ_[p]) (x : Additive ↑(padicCompletionUnits p L)),
+      Additive.ofMul (c (a • x).toMul) = a • Additive.ofMul (c x.toMul))
+    (haut : ∀ σ x, c (padicCompletionUnitsAut p L K σ x) =
+      padicCompletionUnitsAut p L' K' (φ σ) (c x))
+    (Y : LayerTateModule p L' K') : Nonempty (LayerTateModule p L K) := by
+  let R := MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)
+  let R' := MonoidAlgebra ℤ_[p] (L' ≃ₐ[K'] L')
+  let Φ : R ≃+* R' := MonoidAlgebra.mapDomainRingEquiv ℤ_[p] φ
+  have : RingHomInvPair (Φ : R →+* R') (Φ.symm : R' →+* R) := .of_ringEquiv Φ
+  have : RingHomInvPair (Φ.symm : R' →+* R) (Φ : R →+* R') := .of_ringEquiv_symm Φ
+  -- `A(L) ≃ A(L')` is `Φ`-semilinear.
+  have hc (r : R) (x : Additive ↑(padicCompletionUnits p L)) :
+      Additive.ofMul (c (r • x).toMul) = Φ r • Additive.ofMul (c x.toMul) := by
+    induction r using MonoidAlgebra.induction_linear with
+    | zero => simp
+    | add r s hr hs =>
+      rw [add_smul, toMul_add, map_mul, ofMul_mul, hr, hs, map_add, add_smul]
+    | single σ a =>
+      obtain ⟨x, rfl⟩ : ∃ y, Additive.ofMul y = x := ⟨x.toMul, rfl⟩
+      rw [MonoidAlgebra.mapDomainRingEquiv_single, padicCompletionUnits_single_smul, hsmul,
+        toMul_ofMul, toMul_ofMul, haut, padicCompletionUnits_single_smul]
+  let cS : Additive ↑(padicCompletionUnits p L) ≃ₛₗ[(Φ : R →+* R')]
+      Additive ↑(padicCompletionUnits p L') :=
+    { c.toAdditive with map_smul' := hc }
+  -- The carrier, lifted to the universe of `L`, as an `R`-module through `Φ`.
+  let _ : Module R (ULift.{u} Y.carrier) := Module.compHom _ (Φ : R →+* R')
+  let eY : ULift.{u} Y.carrier ≃ₛₗ[(Φ : R →+* R')] Y.carrier :=
+    { toFun := ULift.down
+      invFun := ULift.up
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  -- `Φ` identifies the augmentation ideals.
+  have hI : Submodule.map (Φ.toSemilinearEquiv : R →ₛₗ[(Φ : R →+* R')] R')
+      (RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))) =
+      RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L' ≃ₐ[K'] L')) := by
+    ext y
+    rw [Submodule.mem_map_equiv, RingHom.mem_ker, RingHom.mem_ker,
+      ← MonoidAlgebra.augmentation_mapDomainRingEquiv ℤ_[p] φ]
+    exact Iff.of_eq (congrArg (· = 0) (congrArg _ (Φ.apply_symm_apply y)))
+  let eI := Φ.toSemilinearEquiv.ofSubmodules _ _ hI
+  obtain ⟨n, f', hf', hker'⟩ := Y.projdim
+  let PΦ : (Fin n → R) ≃ₛₗ[(Φ : R →+* R')] (Fin n → R') :=
+    { toFun v i := Φ (v i)
+      invFun v i := Φ.symm (v i)
+      map_add' _ _ := funext fun _ ↦ map_add Φ _ _
+      map_smul' _ _ := funext fun _ ↦ map_mul Φ _ _
+      left_inv _ := funext fun _ ↦ Φ.symm_apply_apply _
+      right_inv _ := funext fun _ ↦ Φ.apply_symm_apply _ }
+  let ι : Additive ↑(padicCompletionUnits p L) →ₗ[R] ULift.{u} Y.carrier :=
+    eY.symm.toLinearMap.comp (Y.ι.comp cS.toLinearMap)
+  let π : ULift.{u} Y.carrier →ₗ[R] RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L)) :=
+    eI.symm.toLinearMap.comp (Y.π.comp eY.toLinearMap)
+  let f : (Fin n → R) →ₗ[R] ULift.{u} Y.carrier :=
+    eY.symm.toLinearMap.comp (f'.comp PΦ.toLinearMap)
+  have hf : Function.Surjective f :=
+    eY.symm.surjective.comp (hf'.comp PΦ.surjective)
+  have hker : (LinearMap.ker f).map (PΦ : (Fin n → R) →ₛₗ[(Φ : R →+* R')] (Fin n → R')) =
+      LinearMap.ker f' := by
+    ext v
+    rw [Submodule.mem_map_equiv, LinearMap.mem_ker, LinearMap.mem_ker]
+    -- Unfold the local definitions of `f` and of the inverse of `PΦ`.
+    change eY.symm (f' (PΦ (PΦ.symm v))) = 0 ↔ _
+    rw [LinearEquiv.apply_symm_apply, LinearEquiv.map_eq_zero_iff]
+  have : Module.Projective R (LinearMap.ker f) :=
+    .of_equiv (σ := (Φ.symm : R' →+* R)) (σ' := (Φ : R →+* R'))
+      (PΦ.ofSubmodules _ _ hker).symm
+  have hιπ : Function.Exact ι π := by
+    intro y
+    -- Unfold the local definitions of `ι` and `π`.
+    change eI.symm (Y.π (eY y)) = 0 ↔ ∃ x, eY.symm (Y.ι (cS x)) = y
+    rw [LinearEquiv.map_eq_zero_iff, ← LinearMap.mem_ker, Y.exact, LinearMap.mem_range]
+    constructor
+    · rintro ⟨x, hx⟩
+      exact ⟨cS.symm x, by rw [LinearEquiv.apply_symm_apply, hx, LinearEquiv.symm_apply_apply]⟩
+    · rintro ⟨x, rfl⟩
+      exact ⟨cS x, (eY.apply_symm_apply _).symm⟩
+  exact ⟨{
+    carrier := ULift.{u} Y.carrier
+    ι := ι
+    π := π
+    ι_injective := eY.symm.injective.comp (Y.ι_injective.comp cS.injective)
+    π_surjective := eI.symm.surjective.comp (Y.π_surjective.comp eY.surjective)
+    exact := LinearMap.exact_iff.mp hιπ
+    finite := .of_surjective f hf
+    projdim := ⟨n, f, hf, this⟩ }⟩
 
 end LayerTateModule
 

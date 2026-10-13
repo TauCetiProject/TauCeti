@@ -24,9 +24,9 @@ points, we package that equalizer as an algebra equivalence and precompose algeb
 `H`. The resulting equivalence respects convolution because it is induced by postcomposition in
 the value algebra.
 
-This is the affine, group-valued faithfully flat descent statement needed by the fppf sheaf and
-quotient lane of the reductive-groups roadmap. The finite-presentation part of an fppf cover is
-not needed for descent itself, so the result is stated at the natural faithfully flat level.
+This is the affine, group-valued faithfully flat descent statement. The finite-presentation part of
+an fppf cover is not needed for descent itself, so the result is stated at the natural faithfully
+flat level.
 
 ## Main declarations
 

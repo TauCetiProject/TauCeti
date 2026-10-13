@@ -91,7 +91,7 @@ that it applies to the ground of a layer, which is `⊤` only propositionally. -
 private theorem coe_levelNorm_ideleClassLevelEquiv (E : Ω)
     {W W₀ : OpenSubgroup (AbsoluteGaloisGroup K)} (h : W ≤ W₀) (hW₀ : W₀ = ⊤)
     (hW : fixedField W.toSubgroup = E) (c : IdeleClassGroup (𝓞 E) E) :
-    ((globalFormation K).levelNorm h (ideleClassLevelEquiv E hW (.ofMul c)) :
+    ((globalFormation K).levelNorm h (ideleClassLevelEquiv hW (.ofMul c)) :
         (globalFormation K).toRep.V) =
       (globalGroundEquiv K (.ofMul (GlobalNumberFields.ideleClassNormMap K E c)) :
         (globalFormation K).toRep.V) := by
@@ -101,7 +101,8 @@ private theorem coe_levelNorm_ideleClassLevelEquiv (E : Ω)
   have hprod := prod_restrictNormal_out hW fun σ ↦
     (Units.map (GlobalNumberFields.adeleGaloisAction K E σ) a : IdeleGroup (𝓞 E) E)
   rw [Formation.levelNorm_top_apply_coe, finsum_eq_sum_of_fintype, ideleClassLevelEquiv_mk,
-    GlobalNumberFields.ideleClassNormMap_mk, globalGroundEquiv_mk, ideleCoeffOf_bot_ideleExtension,
+    ideleCoeffOfIntermediateField_coe, GlobalNumberFields.ideleClassNormMap_mk,
+    globalGroundEquiv_mk, ideleCoeffOf_bot_ideleExtension,
     GlobalNumberFields.ideleExtension_ideleNormMap, ← hprod, ofMul_prod, map_sum (ideleCoeffOf K E),
     map_sum (ideleClassMk K), map_sum (ideleClassCoeffEquivGlobalFormation K)]
   -- Each coset representative acts on the class of `a` through its restriction to `E`.
@@ -115,7 +116,7 @@ classes `N_{E/K} : C_E → C_K`. -/
 theorem norm_ideleClassLevelEquiv (E : Ω) {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
     (hV : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E)
     (c : IdeleClassGroup (𝓞 E) E) :
-    (NormalLayer.ofOpenNormal V).norm (globalFormation K) (ideleClassLevelEquiv E hV (.ofMul c)) =
+    (NormalLayer.ofOpenNormal V).norm (globalFormation K) (ideleClassLevelEquiv hV (.ofMul c)) =
       NormalLayer.groundEquivOfOpenNormal (globalFormation K) V
         (globalGroundEquiv K (.ofMul (GlobalNumberFields.ideleClassNormMap K E c))) := by
   refine Subtype.ext ?_
@@ -134,7 +135,7 @@ theorem globalGroundEquiv_mem_normSubgroup_iff (E : Ω)
         (NormalLayer.ofOpenNormal V).normSubgroup (globalFormation K) ↔
       c ∈ (GlobalNumberFields.ideleClassNormMap K E :
         IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K).range := by
-  rw [NormalLayer.mem_normSubgroup, (ideleClassLevelEquiv E hV).surjective.exists,
+  rw [NormalLayer.mem_normSubgroup, (ideleClassLevelEquiv hV).surjective.exists,
     Additive.ofMul.surjective.exists, MonoidHom.mem_range]
   refine exists_congr fun x ↦ ?_
   rw [norm_ideleClassLevelEquiv, EmbeddingLike.apply_eq_iff_eq, EmbeddingLike.apply_eq_iff_eq,

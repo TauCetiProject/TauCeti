@@ -55,6 +55,7 @@ Jordan–Kinderlehrer–Otto step is unique.
 * `TauCeti.integrable_iff_potentialEnergy_ne_top_and_ne_bot`: an almost everywhere strongly
   measurable potential is integrable exactly when its potential energy is finite.
 * `TauCeti.potentialEnergy_mono`: the potential energy is monotone in the potential.
+* `TauCeti.potentialEnergy_add_of_integrable`: adding an integrable function adds its integral.
 * `TauCeti.potentialEnergy_dirac`: the potential energy of a Dirac mass at `x` is `V x`.
 * `TauCeti.potentialEnergy_ne_bot_of_hasFiniteMoment`: a potential with at most quadratic negative
   part has potential energy `≠ ⊥` against every finite measure with finite second moment.
@@ -172,6 +173,38 @@ theorem potentialEnergy_ne_bot_of_le (hW : Integrable W μ) (h : W ≤ᵐ[μ] V)
   have := potentialEnergy_mono h
   rw [hV, potentialEnergy_of_integrable hW, le_bot_iff] at this
   exact EReal.coe_ne_bot _ this
+
+/-- Adding an integrable function to a potential adds its integral to the potential energy. The
+potential itself need not be integrable: if its energy is `⊤` or `⊥`, then so is the energy of the
+sum. -/
+theorem potentialEnergy_add_of_integrable (hV : AEStronglyMeasurable V μ) (hW : Integrable W μ) :
+    potentialEnergy (fun x ↦ V x + W x) μ = potentialEnergy V μ + ((∫ x, W x ∂μ : ℝ) : EReal) := by
+  by_cases hVi : Integrable V μ
+  · rw [potentialEnergy_of_integrable (V := fun x ↦ V x + W x) (hVi.add hW),
+      potentialEnergy_of_integrable hVi, integral_add hVi hW, EReal.coe_add]
+  have hVWi : ¬ Integrable (fun x ↦ V x + W x) μ := fun h ↦
+    hVi ((h.sub hW).congr (ae_of_all _ fun x ↦ by simp))
+  -- Adding an integrable function changes the integral of the positive part by a finite amount.
+  have hpos : ∀ {F G : X → ℝ}, Integrable G μ → ∫⁻ x, ENNReal.ofReal (F x + G x) ∂μ = ∞ →
+      ∫⁻ x, ENNReal.ofReal (F x) ∂μ = ∞ := fun {F G} hG h ↦ by
+    by_contra hF
+    refine (lt_of_le_of_lt (lintegral_mono fun x ↦ ENNReal.ofReal_add_le) ?_).ne h
+    rw [lintegral_add_right' _ hG.aemeasurable.ennreal_ofReal]
+    exact ENNReal.add_lt_top.2 ⟨lt_top_iff_ne_top.2 hF, hG.lintegral_lt_top⟩
+  have htop : potentialEnergy (fun x ↦ V x + W x) μ = ⊤ ↔ potentialEnergy V μ = ⊤ := by
+    rw [potentialEnergy_eq_top_iff, potentialEnergy_eq_top_iff]
+    refine ⟨hpos hW, fun h ↦ hpos (F := fun x ↦ V x + W x) hW.neg ?_⟩
+    simpa using h
+  by_cases hT : potentialEnergy V μ = ⊤
+  · rw [hT, htop.2 hT, EReal.top_add_coe]
+  have hB : potentialEnergy V μ = ⊥ := by
+    by_contra hB
+    exact hVi ((integrable_iff_potentialEnergy_ne_top_and_ne_bot hV).2 ⟨hT, hB⟩)
+  have hB' : potentialEnergy (fun x ↦ V x + W x) μ = ⊥ := by
+    by_contra hB'
+    exact hVWi ((integrable_iff_potentialEnergy_ne_top_and_ne_bot
+      (hV.add hW.aestronglyMeasurable)).2 ⟨mt htop.1 hT, hB'⟩)
+  rw [hB, hB', EReal.bot_add]
 
 /-- The potential energy of the zero measure is `0`. -/
 @[simp]

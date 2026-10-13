@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
 
 /-!

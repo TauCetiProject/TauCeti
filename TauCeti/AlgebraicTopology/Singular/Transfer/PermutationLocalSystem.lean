@@ -123,7 +123,7 @@ private lemma single_initialSheet_map_vertexTransport {k l : ℕ} (α : ⦋l⦌ 
       hp.permutationLocalSystemSingle R _ (initialSheet ((TopCat.toSSet.obj E).map α.op τ)) ≫
         ιTwistedChainComplex (hp.permutationLocalSystem R) l
           ((TopCat.toSSet.map p).app _ ((TopCat.toSSet.obj E).map α.op τ)) := by
-  rw [hp.permutationLocalSystemSingle_map_assoc, vertexTransport_eq_pathTransport]
+  rw [hp.permutationLocalSystemSingle_map_assoc, vertexTransport]
   exact (single_initialSheet_ιTwistedChainComplex hp R
     (NatTrans.naturality_apply (TopCat.toSSet.map p) α.op τ)
     (congrArg Subtype.val (hp.monodromy_pathTransport τ _ _)).symm).symm

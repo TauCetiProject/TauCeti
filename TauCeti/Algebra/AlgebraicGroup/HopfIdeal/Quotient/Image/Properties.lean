@@ -38,10 +38,9 @@ a group homomorphism.
 * J. S. Milne, *Algebraic Groups* (2017), §5.a and §6.a.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§15--16.
 
-This is image infrastructure for Layer 5, "The unipotent radical", of the ReductiveGroups
-roadmap. The maximality construction needs the scheme-theoretic image of the multiplication
-homomorphism from an appropriate semidirect product of normal subgroups; the results here supply
-the connectedness and reducedness descent step once that semidirect product is constructed.
+This is image infrastructure for the unipotent radical. The maximality construction needs the
+scheme-theoretic image of the multiplication homomorphism from an appropriate semidirect product of
+normal subgroups; the results here supply the connectedness and reducedness descent step.
 -/
 
 public section
