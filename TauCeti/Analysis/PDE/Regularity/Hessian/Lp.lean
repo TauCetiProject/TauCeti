@@ -243,8 +243,10 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian (hn : 3 ≤ n) {p
   have hpt : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ ∑ r, ‖D r x‖ := fun x => by
     refine ((iteratedFDeriv ℝ 2 u x).opNorm_le_sum_norm_apply_orthonormalBasis b).trans_eq
       (Finset.sum_congr rfl fun r _ => ?_)
-    rw [← SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv]
-    rfl
+    rw [← SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv,
+      LineDeriv.iteratedLineDerivOp_succ_left,
+      LineDeriv.iteratedLineDerivOp_one]
+    simp only [D, Fin.tail_def, Fin.succ_zero_eq_one]
   calc eLpNorm (iteratedFDeriv ℝ 2 ⇑u) p volume
       ≤ eLpNorm (∑ r, fun x => ‖D r x‖) p volume := by
         refine eLpNorm_mono_real
@@ -277,7 +279,10 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real (hn : 3 ≤ 
       ((ψ.smooth ⊤).continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
       ((u.smooth ⊤).continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
       (ae_of_all _ fun x => ?_)
-    rw [show ⇑ψ = Complex.ofRealLI ∘ ⇑u from hψ]
+    have hψ' : ⇑ψ = Complex.ofRealLI ∘ ⇑u := funext fun y => by
+      rw [hψ, Function.comp_apply, Function.comp_apply, Complex.ofRealCLM_apply,
+        Complex.ofRealLI_apply]
+    rw [hψ']
     exact Complex.ofRealLI.norm_iteratedFDeriv_comp_left hu.contDiffAt le_rfl
   have h₂ : eLpNorm (⇑(Δ ψ : 𝓢(EuclideanSpace ℝ (Fin n), ℂ))) p volume =
       eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), ℝ))) p volume := by
