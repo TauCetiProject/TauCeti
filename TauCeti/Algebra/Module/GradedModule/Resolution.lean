@@ -251,12 +251,6 @@ theorem isLinear_directSum_iff : (directSum G r).IsLinear ↔ ∀ i, (r i).IsLin
   · intro h n
     exact (InternalGrading.isGeneratedInDegree_directSum_iff _ _).2 fun i ↦ h i n
 
-omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
-  [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in
-/-- A direct sum of linear graded projective resolutions is linear. -/
-theorem isLinear_directSum (h : ∀ i, (r i).IsLinear) : (directSum G r).IsLinear :=
-  (isLinear_directSum_iff G r).2 h
-
 end GradedProjectiveResolution
 
 end TauCeti
