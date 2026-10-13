@@ -91,7 +91,6 @@ def loopSpace (f : Hom X Y) : Hom X.loopSpace Y.loopSpace where
   map_basepoint := by
     exact DFunLike.ext _ _ fun _ => f.map_basepoint
 
-@[simp]
 theorem loopSpace_apply (f : Hom X Y) (γ : X.loopSpace.carrier) (t : unitInterval) :
     f.loopSpace γ t = f (γ t) := by
   rw [loopSpace]

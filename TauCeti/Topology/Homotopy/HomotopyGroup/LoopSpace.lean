@@ -260,7 +260,6 @@ theorem congrMulEquiv_symm_mk [DecidableEq M] [DecidableEq N] [Nonempty M]
 
 /-- In positive dimensions, reindexing the cube directions commutes with the maps induced by
 based continuous maps. -/
-@[simp]
 theorem map_congrMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M] {Y : Type*}
     [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (e : M ≃ N)
     (a : HomotopyGroup M X x) :
