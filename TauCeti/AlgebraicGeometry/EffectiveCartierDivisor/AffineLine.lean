@@ -61,6 +61,14 @@ lemma zeroIdealSheaf_one : (1 : R[X]).zeroIdealSheaf = ⊤ := by
   simp only [zeroIdealSheaf_eq_ofIdealTop, Ideal.span_singleton_one, Ideal.map_top]
   exact (Scheme.IdealSheafData.equivOfIsAffine (X := Spec (.of R[X]))).symm.toOrderIso.map_top
 
+/-- Multiplying equations multiplies their zero ideal sheaves, adding the corresponding
+effective Cartier divisors when the equations are regular. -/
+@[simp]
+lemma zeroIdealSheaf_mul (p q : R[X]) :
+    (p * q).zeroIdealSheaf = p.zeroIdealSheaf * q.zeroIdealSheaf := by
+  simp only [zeroIdealSheaf_eq_ofIdealTop, ← Ideal.span_singleton_mul_span_singleton,
+    Ideal.map_mul, Scheme.IdealSheafData.ofIdealTop_mul]
+
 /-- The closed subscheme defined by a polynomial is its affine quotient scheme. -/
 noncomputable def zeroSchemeIsoAdjoinRoot (p : R[X]) :
     p.zeroIdealSheaf.subscheme ≅ Spec (.of (AdjoinRoot p)) := by
@@ -152,7 +160,7 @@ lemma zeroIdealSheaf_map {S : Type u} [CommRing S] (φ : R →+* S) (p : R[X]) :
 
 /-- Two monic polynomials define the same zero scheme on the relative affine line exactly
 when they agree, without a fixed-degree or reducedness assumption. -/
--- A simp attribute here would make `zeroIdealSheaf_monicOfCoeff_eq_iff` fail `simpNF`.
+@[simp]
 theorem Monic.zeroIdealSheaf_eq_iff {p q : R[X]} (hp : p.Monic) (hq : q.Monic) :
     p.zeroIdealSheaf = q.zeroIdealSheaf ↔ p = q := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
@@ -173,19 +181,3 @@ theorem Monic.zeroIdealSheaf_eq_iff {p q : R[X]} (hp : p.Monic) (hq : q.Monic) :
   exact eq_of_monic_of_dvd_of_natDegree_le hq hp hqp (hp.natDegree_le_of_dvd hq.ne_zero hpq)
 
 end Polynomial
-
-namespace TauCeti.Polynomial
-
-variable {R : Type u} [CommRing R] {n : ℕ}
-
-/-- Two coefficient tuples define the same divisor on the relative affine line exactly when
-they agree, including over nonreduced coefficient rings. -/
-@[simp]
-theorem zeroIdealSheaf_monicOfCoeff_eq_iff (c d : Fin n → R) :
-    (monicOfCoeff c).zeroIdealSheaf = (monicOfCoeff d).zeroIdealSheaf ↔ c = d := by
-  rw [(monic_monicOfCoeff c).zeroIdealSheaf_eq_iff (monic_monicOfCoeff d)]
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  exact funext fun i ↦ by
-    simpa only [coeff_monicOfCoeff] using congrArg (fun p : R[X] ↦ p.coeff i) h
-
-end TauCeti.Polynomial
