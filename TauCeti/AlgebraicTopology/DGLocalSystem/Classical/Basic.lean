@@ -78,6 +78,7 @@ instance instModuleOpFiber (L : LocalCoefficientSystem.{u, u, w} R X) :
     Module (loopChainAlgebra X x R)ᵐᵒᵖ (L.obj (FundamentalGroupoid.mk x)) :=
   Module.compHom _ (classicalAction L).toRingHom
 
+@[simp]
 theorem op_smul_eq_classicalAction (L : LocalCoefficientSystem.{u, u, w} R X)
     (a : loopChainAlgebra X x R)
     (m : L.obj (FundamentalGroupoid.mk x)) : op a • m = classicalAction L (op a) m :=
@@ -220,12 +221,19 @@ theorem classicalDGLocalSystemFunctor_map {L L' : LocalCoefficientSystem.{u, u, 
 DG local systems**: it is determined by its component at the basepoint, by transport along
 paths. -/
 theorem classicalDGLocalSystemMap_injective [PathConnectedSpace X]
-    {L L' : LocalCoefficientSystem.{u, u, w} R X} {φ ψ : L ⟶ L'}
-    (h : classicalDGLocalSystemMap (x := x) φ = classicalDGLocalSystemMap (x := x) ψ) : φ = ψ := by
+    {L L' : LocalCoefficientSystem.{u, u, w} R X} :
+    Function.Injective (classicalDGLocalSystemMap (x := x) (L := L) (L' := L')) := by
+  intro φ ψ h
   have hx : φ.app (FundamentalGroupoid.mk x) = ψ.app (FundamentalGroupoid.mk x) :=
     ModuleCat.hom_ext (LinearMap.ext fun m ↦ congrArg (fun f ↦ f.toLinearMap m) h)
   exact Groupoid.natTrans_ext (x₀ := FundamentalGroupoid.mk x)
     (fun y ↦ ⟨(⟦PathConnectedSpace.somePath x y.as⟧ : Path.Homotopic.Quotient x y.as)⟩) hx
+
+/-- On a path-connected space, the functor from classical to DG local systems is faithful. -/
+instance [PathConnectedSpace X] : (classicalDGLocalSystemFunctor R x).Faithful where
+  map_injective h := by
+    rw [classicalDGLocalSystemFunctor_map, classicalDGLocalSystemFunctor_map] at h
+    exact classicalDGLocalSystemMap_injective h
 
 end Action
 
