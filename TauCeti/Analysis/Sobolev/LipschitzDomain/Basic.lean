@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Analysis.InnerProductSpace.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
 /-!
 # Domains with Lipschitz boundary
@@ -88,14 +87,11 @@ epigraph of a function `φ` satisfying `LipschitzWith L φ` and `φ 0 = 0`.
 
 The two independently positive cylinder radii retain the product geometry needed for boundary
 charts and permit either the normal or tangential direction to be shrunk later. -/
-def IsLipschitzDomainAtWith [FiniteDimensional ℝ E]
-    (Omega : Set (WithLp 2 (ℝ × E))) (L : ℝ≥0)
+def IsLipschitzDomainAtWith (Omega : Set (WithLp 2 (ℝ × E))) (L : ℝ≥0)
     (x : WithLp 2 (ℝ × E)) : Prop :=
   ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (a b : ℝ),
     0 < a ∧ 0 < b ∧ e x = 0 ∧ φ 0 = 0 ∧ LipschitzWith L φ ∧
       ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)
-
-variable [FiniteDimensional ℝ E]
 
 /-- The local Lipschitz-domain predicate written out as a rigid-coordinate graph condition. -/
 theorem isLipschitzDomainAtWith_iff (Omega : Set (WithLp 2 (ℝ × E))) (L : ℝ≥0)
