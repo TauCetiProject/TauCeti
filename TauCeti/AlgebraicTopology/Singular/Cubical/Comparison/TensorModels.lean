@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.DirectSum.Finsupp
-public import TauCeti.Algebra.Homology.AcyclicModels
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Models
+public import TauCeti.LinearAlgebra.DirectSum.Finsupp
 
 /-!
 # The models of the tensor product of normalized cubical chains
@@ -106,7 +105,7 @@ theorem tensorCoord_ι (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q =
 
 /-- The map induced on a summand of the tensor product by a pair of maps is the tensor product of
 the maps of the components. -/
-theorem map_ι {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n p q : ℕ) (h : p + q = n)
+theorem cubicalTensor_map_ι {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n p q : ℕ) (h : p + q = n)
     (z : NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q) :
     ((cubicalTensor k).map f).f n
         ((ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj X.1)
@@ -118,22 +117,6 @@ theorem map_ι {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n p q : ℕ) (h :
   LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
     (HomologicalComplex.ι_tensorHom ((normalizedCubicalChainComplex.{u} k).map f.1)
       ((normalizedCubicalChainComplex.{u} k).map f.2) p q n h)) z
-
-/-- The coefficient of a tensor product of finitely supported functions pushed forward along maps
-of the index types. -/
-theorem finsuppTensorFinsupp'_mapDomain {α β α' β' : Type*} (g₁ : α → α') (g₂ : β → β')
-    (c : α →₀ k) (d : β →₀ k) :
-    finsuppTensorFinsupp' k α' β' (mapDomain g₁ c ⊗ₜ[k] mapDomain g₂ d) =
-      mapDomain (Prod.map g₁ g₂) (finsuppTensorFinsupp' k α β (c ⊗ₜ[k] d)) := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c₁ c₂ h₁ h₂ => simp only [mapDomain_add, add_tmul, map_add, h₁, h₂]
-  | single a s =>
-    induction d using Finsupp.induction_linear with
-    | zero => simp
-    | add d₁ d₂ h₁ h₂ => simp only [mapDomain_add, tmul_add, map_add, h₁, h₂]
-    | single b t =>
-      simp [mapDomain_single, finsuppTensorFinsupp'_single_tmul_single]
 
 /-- The coefficients of a tensor of two chains are the tensor product of their coefficients. -/
 theorem summandCoord_tmul (X Y : TopCat.{u}) (n p q : ℕ) (h : p + q = n)
@@ -171,10 +154,11 @@ theorem tensorCoord_map {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
           (⟨s.1, s.2 ≫ f⟩ : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ Y)))) := by
     refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
     refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
-    change tensorCoord k Y n (((cubicalTensor k).map f).f n _) =
-      lmapDomain k k _ (tensorCoord k X n _)
-    erw [map_ι, tensorCoord_ι, tensorCoord_ι]
-    exact summandCoord_map f.1 f.2 n p q h a b
+    -- the goal is `coord (F f (ι (a ⊗ b))) = mapDomain _ (coord (ι (a ⊗ b)))`, a statement about
+    -- the composite morphisms evaluated on `a ⊗ b`, which `exact` unfolds
+    exact (congrArg (tensorCoord k Y n) (cubicalTensor_map_ι f n p q h (a ⊗ₜ[k] b))).trans
+      ((tensorCoord_ι Y n p q h _).trans ((summandCoord_map f.1 f.2 n p q h a b).trans
+        (congrArg (lmapDomain k k _) (tensorCoord_ι X n p q h (a ⊗ₜ[k] b))).symm))
   exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom key) x
 
 /-- The image of the generator of bidegree `(p, q)` under a pair of maps is the tensor product of
@@ -189,7 +173,7 @@ theorem map_tensorGen (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = 
             (NormalizedCubicalChain.ofCube (cubeModel.{u} p) k (upCube p)) ⊗ₜ[k]
           NormalizedCubicalChain.map k τ.hom q
             (NormalizedCubicalChain.ofCube (cubeModel.{u} q) k (upCube q))) :=
-  map_ι ((σ, τ) : bidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X) n p q h _
+  cubicalTensor_map_ι ((σ, τ) : bidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X) n p q h _
 
 variable (k) in
 /-- The inclusion of the summand of bidegree `(p, q)` into the tensor product, as a linear map out
@@ -227,23 +211,25 @@ theorem linearCombination_summand (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (
         linearCombination_single, linearCombination_single, smul_tmul_smul, map_smul]
       exact congrArg ((s * t) • ·) (map_tensorGen X n p q h σ τ)
 
-/-- A normalized cubical chain is the combination of the images of the identity cube with its
-coefficients. -/
-theorem linearCombination_cubicalCoord (X : TopCat.{u}) (n : ℕ) (x : NormalizedCubicalChain X k n) :
-    linearCombination k (fun σ : cubeModel.{u} n ⟶ X ↦ NormalizedCubicalChain.map k σ.hom n
-      (NormalizedCubicalChain.ofCube (cubeModel.{u} n) k (upCube n)))
-      (cubicalCoord k X n x) = x := by
-  rw [linearCombination_apply]
-  exact sum_cubicalCoord x
-
 /-- A summand chain is the combination of the images of the generators with its coefficients. -/
 theorem linearCombination_summandCoord (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
     (a : NormalizedCubicalChain X.1 k p) (b : NormalizedCubicalChain X.2 k q) :
     linearCombination k (fun s : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X) ↦
         ((cubicalTensor k).map s.2).f n (tensorGen k n s.1))
       (summandCoord X.1 X.2 n p q h (a ⊗ₜ[k] b)) = summandInclusion k X n p q h (a ⊗ₜ[k] b) := by
-  rw [summandCoord_tmul, linearCombination_summand, linearCombination_cubicalCoord,
-    linearCombination_cubicalCoord]
+  have ha : linearCombination k (fun σ : cubeModel.{u} p ⟶ X.1 ↦
+      NormalizedCubicalChain.map k σ.hom p
+        (NormalizedCubicalChain.ofCube (cubeModel.{u} p) k (upCube p)))
+      (cubicalCoord k X.1 p a) = a := by
+    rw [linearCombination_apply]
+    exact sum_cubicalCoord a
+  have hb : linearCombination k (fun τ : cubeModel.{u} q ⟶ X.2 ↦
+      NormalizedCubicalChain.map k τ.hom q
+        (NormalizedCubicalChain.ofCube (cubeModel.{u} q) k (upCube q)))
+      (cubicalCoord k X.2 q b) = b := by
+    rw [linearCombination_apply]
+    exact sum_cubicalCoord b
+  rw [summandCoord_tmul, linearCombination_summand, ha, hb]
 
 /-- Every chain of the tensor product is the combination of the images of the generators with its
 coefficients. -/
@@ -255,11 +241,11 @@ theorem sum_tensorCoord (X : TopCat.{u} × TopCat.{u}) (n : ℕ) (x : ((cubicalT
         ((cubicalTensor k).map s.2).f n (tensorGen k n s.1))) = 𝟙 _ := by
     refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
     refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
-    change linearCombination k _ (tensorCoord k X n (summandInclusion k X n p q h (a ⊗ₜ[k] b))) =
-      summandInclusion k X n p q h (a ⊗ₜ[k] b)
+    -- the goal is `lc (coord (ι (a ⊗ b))) = ι (a ⊗ b)`, with `ι = summandInclusion`
     have e : tensorCoord k X n (summandInclusion k X n p q h (a ⊗ₜ[k] b)) =
         summandCoord X.1 X.2 n p q h (a ⊗ₜ[k] b) := tensorCoord_ι X n p q h _
-    exact (congrArg _ e).trans (linearCombination_summandCoord X n p q h a b)
+    exact (congrArg (linearCombination k _) e).trans
+      (linearCombination_summandCoord X n p q h a b)
   exact (linearCombination_apply _ _).symm.trans
     (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom key) x)
 
@@ -273,6 +259,23 @@ degree `n`, on the models `(Iᵖ, I^q)` with `p + q = n`. -/
   coord := tensorCoord k
   coord_map f n x := tensorCoord_map f n x
   sum_coord X n x := sum_tensorCoord X n x
+
+/-- The models of `cubicalTensorModelPresentation` are the pairs of cubes. -/
+@[simp]
+theorem cubicalTensorModelPresentation_model (n : ℕ) (i : BidegreeIndex n) :
+    (cubicalTensorModelPresentation.{u} k).model n i = bidegreeModel n i :=
+  (rfl)
+
+/-- The generators of `cubicalTensorModelPresentation` are the tensor products of the identity
+cubes. -/
+theorem cubicalTensorModelPresentation_gen (n : ℕ) (i : BidegreeIndex n) :
+    (cubicalTensorModelPresentation.{u} k).gen n i = tensorGen k n i :=
+  (rfl)
+
+/-- The coefficients of `cubicalTensorModelPresentation` are `tensorCoord`. -/
+theorem cubicalTensorModelPresentation_coord (X : TopCat.{u} × TopCat.{u}) (n : ℕ) :
+    (cubicalTensorModelPresentation.{u} k).coord X n = tensorCoord k X n :=
+  (rfl)
 
 variable (k) in
 /-- The simplicial singular chains of the product of the two spaces, as a functor on pairs of
