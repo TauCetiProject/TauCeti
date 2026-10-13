@@ -77,6 +77,7 @@ theorem generatingTuples_mono (ι : Type*) {U U' : OpenNormalSubgroup G}
 
 /-- Some tuple of the group generates the quotient by an open normal subgroup exactly when the
 quotient has a generating tuple with the same index type. -/
+@[simp]
 theorem generatingTuples_nonempty_iff (ι : Type*) (U : OpenNormalSubgroup G) :
     (generatingTuples ι U).Nonempty ↔
       ∃ x : ι → G ⧸ U.toSubgroup, Subgroup.closure (Set.range x) = ⊤ := by
