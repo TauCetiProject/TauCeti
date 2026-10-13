@@ -352,7 +352,7 @@ variable {X G₁ G₂ G₃ : Type*}
 
 /-- Swapping the two factors of a paired wedge flips the pairing and contributes the graded sign.
 This identity is valid for every continuous bilinear pairing and requires no norm on the domain. -/
-theorem ContinuousAlternatingMap.pairedWedge_flip {k l : ℕ}
+theorem _root_.ContinuousAlternatingMap.pairedWedge_flip {k l : ℕ}
     (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
     (hμ : Continuous (fun p : G₁ × G₂ ↦ μ p.1 p.2))
     (hμflip : Continuous (fun p : G₂ × G₁ ↦ μ.flip p.1 p.2))
