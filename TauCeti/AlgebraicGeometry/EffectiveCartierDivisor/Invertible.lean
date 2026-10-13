@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Over
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # The ideal sheaf of an effective Cartier divisor is invertible
