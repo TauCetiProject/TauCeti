@@ -18,7 +18,7 @@ extension of scalars is.
 
 This builds on `LinearMap.baseChange` and `Module.End.baseChangeHom` from
 `Mathlib/LinearAlgebra/TensorProduct/Tower.lean` and on
-`Module.FaithfullyFlat.one_tmul_eq_zero_iff` from
+`Module.FaithfullyFlat.zero_iff_lTensor_zero` from
 `Mathlib/RingTheory/Flat/FaithfullyFlat/Basic.lean`.
 
 ## Main results
@@ -51,12 +51,14 @@ flatness of the coefficient algebra asks nothing of `N`. -/
 theorem baseChange_injective :
     Function.Injective (baseChange A : (M →ₗ[R] N) → A ⊗[R] M →ₗ[A] A ⊗[R] N) := by
   intro f g h
-  ext x
-  have hx : (1 : A) ⊗ₜ[R] (f x - g x) = 0 := by
-    rw [TensorProduct.tmul_sub, ← baseChange_tmul (A := A) f, ← baseChange_tmul (A := A) g, h,
-      sub_self]
-  rw [← sub_eq_zero]
-  exact (Module.FaithfullyFlat.one_tmul_eq_zero_iff R _ (f x - g x)).mp hx
+  apply sub_eq_zero.mp
+  apply (Module.FaithfullyFlat.zero_iff_lTensor_zero R A (f - g)).mpr
+  have hTensor : f.lTensor A = g.lTensor A := by
+    apply LinearMap.ext
+    intro z
+    simpa only [← baseChange_eq_ltensor] using DFunLike.congr_fun h z
+  rw [lTensor_sub, hTensor]
+  exact _root_.sub_self (g.lTensor A)
 
 /-- **An endomorphism is nilpotent exactly when its extension of scalars is**, over a faithfully
 flat coefficient algebra. -/

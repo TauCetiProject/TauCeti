@@ -14,12 +14,11 @@ public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 # Lie derivations after extension of scalars
 
 Let `L` be a Lie algebra over a commutative ring `R` and let `A` be a commutative `R`-algebra.
-Mathlib's `Lie.Derivation.ofLieDerivation` extends a derivation `D` of `L` to the base change
-`A ⊗[R] L`, but records the result only as a derivation over `R`.  The extension is in fact
-`A`-linear, because it is `LinearMap.baseChange`, and `A` is the ring the extended Lie algebra is
-an algebra over; `LieDerivation.baseChange` is that sharper packaging.  Every statement below is
-about the `A`-linear form, which is the one that can be compared with `LieSubmodule.baseChange`,
-whose ideals are ideals over `A`.
+A Lie derivation of `L` with values in a Lie `L`-module `M` extends to an `A`-linear derivation
+from `A ⊗[R] L` into `A ⊗[R] M`, with underlying map `LinearMap.baseChange`. For endomorphism-valued
+derivations this agrees as a function with Mathlib's `Lie.Derivation.ofLieDerivation`, which records
+the extension over `R`. The `A`-linear form can be compared with `LieSubmodule.baseChange`, whose
+ideals are ideals over `A`.
 
 The point of the construction is descent.  Over a faithfully flat coefficient algebra a containment
 between the image of a Lie ideal under a derivation and another Lie ideal may be *checked after
@@ -65,10 +64,11 @@ submodules underlying the Lie ideals. No separate generic containment wrappers a
 `TauCeti/LinearAlgebra/TensorProduct/BaseChange.lean` reach a derivation through
 `LieDerivation.baseChange_toLinearMap`.
 
-Mathlib provides the extension for a derivation of `L` into `L` and not for one into a general
-Lie module `M`, so that is the generality available by reuse and the generality used here; it is
-also the one the descent statement needs, since it compares the extended derivation with the
-extensions of ideals of `L`.
+The core construction, pure-tensor formula, underlying-map formula, and injectivity apply to
+any Lie `L`-module `M`. The comparison with Mathlib's endomorphism extension, the Lie-homomorphism
+bundle, inner derivations, and ideal descent specialize to `M = L`. The construction verifies
+the derivation identity on pure tensors using Mathlib's scalar-extended Lie-module bracket, then
+extends it by additivity.
 -/
 
 public section
@@ -82,27 +82,54 @@ universe u v w
 variable {R : Type u} {A : Type v} {L : Type w}
 variable [CommRing R] [CommRing A] [Algebra R A] [LieRing L] [LieAlgebra R L]
 
+section LieModule
+
+variable {M : Type*} [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
 variable (A) in
-/-- The extension of a Lie derivation `D` of `L` to the base change `A ⊗[R] L`, as a derivation
-over `A`.  Its underlying map is `LinearMap.baseChange`, so it sends `a ⊗ₜ x` to `a ⊗ₜ D x`. -/
-def baseChange (D : LieDerivation R L L) : LieDerivation A (A ⊗[R] L) (A ⊗[R] L) where
+/-- Extension of an `M`-valued Lie derivation of `L` to the scalar extensions of `L` and `M`,
+as a derivation over `A`.  Its underlying map is `LinearMap.baseChange`, so it sends `a ⊗ₜ x` to
+`a ⊗ₜ D x`. -/
+def baseChange (D : LieDerivation R L M) : LieDerivation A (A ⊗[R] L) (A ⊗[R] M) where
   toLinearMap := D.toLinearMap.baseChange A
   leibniz' x y := by
-    simpa only [Lie.Derivation.ofLieDerivation_apply, LinearMap.baseChange_eq_ltensor] using
-      (Lie.Derivation.ofLieDerivation A D).apply_lie_eq_sub x y
+    induction x using TensorProduct.inductionOn with
+    | tmul a x =>
+      induction y using TensorProduct.inductionOn with
+      | tmul b y =>
+        simp [LieAlgebra.ExtendScalars.bracket_tmul, D.apply_lie_eq_sub, tmul_sub, mul_comm]
+      | add y z hy hz =>
+        simp only [lie_add, add_lie, map_add, hy, hz, sub_add_sub_comm]
+    | add x z hx hz =>
+      simp only [add_lie, lie_add, map_add, hx, hz, sub_add_sub_comm]
 
 /-- The extended derivation differentiates the second factor of a pure tensor. -/
 @[simp]
-theorem baseChange_tmul (D : LieDerivation R L L) (a : A) (x : L) :
+theorem baseChange_tmul (D : LieDerivation R L M) (a : A) (x : L) :
     D.baseChange A (a ⊗ₜ[R] x) = a ⊗ₜ[R] D x := by
   exact LinearMap.baseChange_tmul D.toLinearMap a x
 
 /-- The linear map underlying the extension of `D` is the extension of the linear map underlying
 `D`; this is what lets the linear-algebraic base-change API apply to it. -/
 @[simp]
-theorem baseChange_toLinearMap (D : LieDerivation R L L) :
+theorem baseChange_toLinearMap (D : LieDerivation R L M) :
     (D.baseChange A).toLinearMap = D.toLinearMap.baseChange A :=
   (rfl)
+
+
+variable [Module.FaithfullyFlat R A]
+
+/-- Over a faithfully flat coefficient algebra no information is lost by extending a derivation:
+two derivations agreeing after extension of scalars are equal. -/
+theorem baseChange_injective :
+    Function.Injective (baseChange A : LieDerivation R L M → LieDerivation A _ _) := by
+  intro D E h
+  have hL : D.toLinearMap = E.toLinearMap :=
+    LinearMap.baseChange_injective (A := A) (by
+      rw [← baseChange_toLinearMap, ← baseChange_toLinearMap, h])
+  exact LieDerivation.ext fun x => DFunLike.congr_fun hL x
+
+end LieModule
 
 /-- The `R`-linear extension `Lie.Derivation.ofLieDerivation` supplied by Mathlib and the
 `A`-linear extension `LieDerivation.baseChange` are the same function: only the ring over which
@@ -203,15 +230,6 @@ section FaithfullyFlat
 
 variable [Module.FaithfullyFlat R A]
 
-/-- Over a faithfully flat coefficient algebra no information is lost by extending a derivation:
-two derivations agreeing after extension of scalars are equal. -/
-theorem baseChange_injective :
-    Function.Injective (baseChange A : LieDerivation R L L → LieDerivation A _ _) := by
-  intro D E h
-  have hL : D.toLinearMap = E.toLinearMap :=
-    LinearMap.baseChange_injective (A := A) (by
-      rw [← baseChange_toLinearMap, ← baseChange_toLinearMap, h])
-  exact LieDerivation.ext fun x => DFunLike.congr_fun hL x
 
 variable (D : LieDerivation R L L)
 
