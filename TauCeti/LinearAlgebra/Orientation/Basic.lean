@@ -11,11 +11,11 @@ public import Mathlib.LinearAlgebra.Orientation
 /-!
 # Transporting orientations along linear equivalences
 
-Facts about `Orientation.map`, the transport of orientations along a linear equivalence:
+Two facts about `Orientation.map`, the transport of orientations along a linear equivalence:
 it is compatible with composition of equivalences, and two self-equivalences of a
 finite-dimensional space transport an orientation to the same orientation exactly when their
-determinants have the same sign. Unit scalars encode orientation signs and the signed Jacobian
-criterion, using Mathlib’s action on rays.
+determinants have the same sign.
+Integral unit signs also act on rays.
 
 ## Main results
 
@@ -43,6 +43,30 @@ theorem Orientation.map_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) (x : Orien
 
 end CommSemiring
 
+section CommRing
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*}
+
+/-- Integral unit signs act on orientations by retaining or reversing the ray. -/
+theorem Orientation.intCast_units_smul_eq_ite (u : ℤˣ) (o : Orientation R M ι) :
+    (Units.map (Int.castRingHom R).toMonoidHom u) • o = if u = 1 then o else -o := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp
+  · rw [ite_eq_right (by decide)]
+    exact Module.Ray.units_smul_of_neg _ (by norm_num) _
+
+/-- Distinct integral unit signs induce distinct orientations. -/
+theorem Orientation.intCast_units_smul_injective (o : Orientation R M ι) :
+    Function.Injective (fun u : ℤˣ ↦ (Units.map (Int.castRingHom R).toMonoidHom u) • o) := by
+  intro u v huv
+  simp only [intCast_units_smul_eq_ite] at huv
+  rcases Int.units_eq_one_or u with rfl | rfl <;>
+    rcases Int.units_eq_one_or v with rfl | rfl <;>
+    simp_all [Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self o).symm]
+
+end CommRing
+
 section Field
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
@@ -64,26 +88,6 @@ theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orie
       div_eq_mul_inv, mul_comm]
   rw [htransport, map_eq_iff_det_pos _ _ h, hdet]
   exact div_pos_iff.trans mul_pos_iff.symm
-
-
-omit [Fintype ι] in
-/-- Integral unit signs act on orientations by retaining or reversing the ray. -/
-theorem Orientation.intCast_units_smul_eq_ite (u : ℤˣ) (o : Orientation R M ι) :
-    (Units.map (Int.castRingHom R).toMonoidHom u) • o = if u = 1 then o else -o := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · simp
-  · rw [ite_eq_right (by decide)]
-    exact Module.Ray.units_smul_of_neg _ (by norm_num) _
-
-omit [Fintype ι] in
-/-- Distinct integral unit signs induce distinct orientations. -/
-theorem Orientation.intCast_units_smul_injective (o : Orientation R M ι) :
-    Function.Injective (fun u : ℤˣ ↦ (Units.map (Int.castRingHom R).toMonoidHom u) • o) := by
-  intro u v huv
-  simp only [intCast_units_smul_eq_ite] at huv
-  rcases Int.units_eq_one_or u with rfl | rfl <;>
-    rcases Int.units_eq_one_or v with rfl | rfl <;>
-    simp_all [Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self o).symm]
 
 /-- The signed Jacobian criterion for transporting orientations with arbitrary unit scalars. -/
 theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]
