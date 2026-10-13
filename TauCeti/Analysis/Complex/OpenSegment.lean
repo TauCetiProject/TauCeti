@@ -26,6 +26,7 @@ namespace TauCeti.Complex
 
 /-- A point of `ℂ` lies on the open segment from `0` to `1` exactly when it is real and strictly
 between `0` and `1`. -/
+@[simp]
 theorem mem_openSegment_zero_one {w : ℂ} :
     w ∈ openSegment ℝ (0 : ℂ) 1 ↔ w.im = 0 ∧ 0 < w.re ∧ w.re < 1 := by
   rw [openSegment_eq_image]
