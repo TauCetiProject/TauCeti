@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Finite
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.BaseChange
-public import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Powers
 import TauCeti.Topology.Algebra.QuadraticForm.Transvection
 import TauCeti.NumberTheory.Padics.Factorial

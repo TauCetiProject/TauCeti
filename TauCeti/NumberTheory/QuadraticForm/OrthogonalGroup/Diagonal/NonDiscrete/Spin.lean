@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.NonDiscrete.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Transvection
+import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 import TauCeti.NumberTheory.Padics.Factorial
 
