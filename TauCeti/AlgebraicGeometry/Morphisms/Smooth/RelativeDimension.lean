@@ -7,10 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
+public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 public import TauCeti.RingTheory.Smooth.KrullDimension
 
 /-!
-# The relative dimension of a smooth scheme over a field
+# The relative dimension of smooth morphisms
 
 A morphism `f : X ⟶ Spec k` to the spectrum of a field is smooth of relative dimension `n` exactly
 when it is smooth and the local ring of `X` at every closed point has Krull dimension `n`. In
@@ -19,7 +20,9 @@ and a smooth curve, an integral smooth `k`-scheme whose function field is an alg
 field of one variable over `k`, is smooth of relative dimension one. This turns the dimension
 hypothesis on a smooth curve into the relative-dimension hypothesis under which its sheaf of
 relative differentials `Ω_{X/k}` is invertible
-(`TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`).
+(`TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`). Over an arbitrary base,
+a morphism smooth of relative dimension `n` has fibres of dimension at most `n`; the bound
+also includes empty fibres.
 
 Around every point a smooth morphism has affine charts whose rings are standard smooth over `k`
 of some relative dimension. By `TauCeti.height_eq_of_isStandardSmoothOfRelativeDimension` that
@@ -37,7 +40,9 @@ subsets of a Jacobson scheme, so they contain closed points.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_smoothOfRelativeDimension`: conversely,
   a nonempty scheme smooth of relative dimension `n` over `k` has dimension `n`;
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_one_of_isFunctionField`: a smooth curve is
-  smooth of relative dimension one.
+  smooth of relative dimension one;
+* `TauCeti.AlgebraicGeometry.relativeDimensionLE_of_smoothOfRelativeDimension`: over any base,
+  a morphism smooth of relative dimension `n` has fibres of dimension at most `n`.
 
 ## References
 
@@ -46,11 +51,13 @@ subsets of a Jacobson scheme, so they contain closed points.
 
 public section
 
-open CategoryTheory AlgebraicGeometry Order RingHom
+open CategoryTheory Limits AlgebraicGeometry Order RingHom
 
 namespace TauCeti.AlgebraicGeometry
 
 universe u
+
+section Field
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} (f : X ⟶ Spec (.of k))
 
@@ -141,5 +148,22 @@ theorem smoothOfRelativeDimension_one_of_isFunctionField [X.Over (Spec (.of k))]
     SmoothOfRelativeDimension 1 (X ↘ Spec (.of k)) :=
   smoothOfRelativeDimension_of_topologicalKrullDim_eq _ <| by
     exact_mod_cast (isFunctionField_functionField_iff k).mp hF
+
+end Field
+
+/-- A morphism smooth of relative dimension `n` has fibres of dimension at most `n`.
+Empty fibres are allowed. -/
+instance relativeDimensionLE_of_smoothOfRelativeDimension {X Y : Scheme.{u}}
+    (n : ℕ) (f : X ⟶ Y) [SmoothOfRelativeDimension n f] : RelativeDimensionLE n f where
+  topologicalKrullDim_fiber_le y := by
+    let F := pullback f (Y.fromSpecResidueField y)
+    let hSmooth : SmoothOfRelativeDimension n (pullback.snd f (Y.fromSpecResidueField y)) :=
+      inferInstance
+    rcases isEmpty_or_nonempty F with h | h
+    · let hEmpty := h
+      exact (topologicalKrullDim_zero_of_discreteTopology F).trans (by exact_mod_cast Nat.zero_le n)
+    · exact (@topologicalKrullDim_eq_of_smoothOfRelativeDimension
+        (Y.residueField y) inferInstance F (pullback.snd f (Y.fromSpecResidueField y))
+        h n hSmooth).le
 
 end TauCeti.AlgebraicGeometry

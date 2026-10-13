@@ -14,6 +14,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+import TauCeti.Analysis.Convex.MongeAmpere.Decomposition
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 
 /-!
@@ -96,6 +97,10 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   laws are absolutely continuous, the Brenier potential `u` is a weak solution of its transport
   equation: its Monge–Ampère measure weighted by `ν` is `μ`, and `ν` is carried by
   the subgradient image of the interior of its effective domain;
+* `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq` — when both laws
+  are absolutely continuous, with densities `g₀` and `g₁`, the Brenier potential `u` solves the
+  Monge–Ampère equation `g₀ x = g₁ (∇ u x) det (D²u x)` almost everywhere, with `D²u` the
+  Alexandrov Hessian;
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — laws with finite second moment have finite
   quadratic transport cost, so Brenier's theorem applies to them;
 * `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` — for marginals with finite second moments,
@@ -702,6 +707,39 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous {μ ν : M
   have hopt := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h
   obtain ⟨u, -, -, -, -, hgraph⟩ := hopt.exists_eq_graphPlan_gradient hμ hfin'
   exact ⟨_, measurable_gradient _, hgraph⟩
+
+/-- **The Brenier potential solves the Monge–Ampère equation almost everywhere.** Let `μ` and `ν`
+be probability measures on a finite-dimensional real inner product space `E`, both absolutely
+continuous with respect to an additive Haar measure `ρ`, with densities `g₀ = dμ/dρ` and
+`g₁ = dν/dρ`, and suppose the optimal cost for `‖x - y‖ ^ 2 / 2` is finite. Then there is a
+convex, lower semicontinuous `u : E → EReal` that never takes the value `⊥`, with `D` the interior
+of its effective domain, such that:
+
+* the gradient `∇ u` is an optimal transport map from `μ` to `ν`;
+* at `ρ`-almost every point `x` of the effective domain, the subdifferential of `u` has a positive
+  derivative `H x`, the Alexandrov Hessian of `u`: every subgradient `y'` at a point `x'` near `x`
+  satisfies `y' = ∇ u x + H x (x' - x) + o(‖x' - x‖)`;
+* the **Jacobian equation** `g₀ x = g₁ (∇ u x) det (H x)` holds for `ρ`-almost every `x ∈ D`,
+  and `g₀ = 0` almost everywhere off `D`. -/
+theorem exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν (∇ fun x => (u x).toReal) ∧
+      ∃ H : E → E →L[ℝ] E, (∀ᵐ x ∂ρ, u x ≠ ⊤ → (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+          ∀ y' ∈ subdifferential (innerₗ E) u x',
+            ‖y' - (∇ fun x => (u x).toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
+        μ.rnDeriv ρ =ᵐ[ρ] (interior {x | u x ≠ ⊤}).indicator fun x =>
+          ENNReal.ofReal (H x).det * ν.rnDeriv ρ ((∇ fun x => (u x).toReal) x) := by
+  obtain ⟨u, hconv, hlsc, hbot, hT, hMA, -⟩ :=
+    exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq hμ hν hfin
+  obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hconv hbot
+  refine ⟨u, hconv, hlsc, hbot, hT, H, hH,
+    rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_of_mongeAmpereMeasure_eq ρ hconv hbot ?_ hν hMA⟩
+  filter_upwards [hH] with x hx hxD
+  exact ⟨_, (hx (interior_subset hxD)).2⟩
 
 end FiniteDimensional
 
