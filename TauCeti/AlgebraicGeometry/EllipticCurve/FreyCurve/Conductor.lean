@@ -100,8 +100,9 @@ theorem algorithmicConductor_freyCurve_pow {p : ℕ} (hp : 5 ≤ p) {a b c : ℤ
       Ideal.span {radical (a * b * c)} := by
   have h32 : (32 : ℤ) ∣ b ^ p := by
     simpa using (pow_dvd_pow_of_dvd hb 5).trans (pow_dvd_pow b hp)
-  rw [algorithmicConductor_freyCurve ((Int.ModEq.dvd ha.symm).trans (by simp)) h32 hab.pow,
-    show a ^ p * b ^ p * (a ^ p + b ^ p) = -(a * b * c) ^ p by linear_combination a ^ p * b ^ p * h,
+  have habc : a ^ p * b ^ p * (a ^ p + b ^ p) = -(a * b * c) ^ p := by
+    linear_combination a ^ p * b ^ p * h
+  rw [algorithmicConductor_freyCurve ((Int.ModEq.dvd ha.symm).trans (by simp)) h32 hab.pow, habc,
     Ideal.span_singleton_neg, ← Ideal.span_singleton_pow, radical_pow _ (by omega),
     radical_span_singleton]
 
