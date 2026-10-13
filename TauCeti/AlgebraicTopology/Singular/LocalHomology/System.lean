@@ -99,7 +99,7 @@ lemma localHomologyRestriction_refl (S : Set M) (k : ℕ) :
   (congrArg (TopPair.singularHomologyMap · R k) (TopPair.ofSubsetMap_id _)).trans
     (TopPair.singularHomologyMap_id _ R k)
 
-@[reassoc (attr := simp), elementwise]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma localHomologyRestriction_comp {S T W : Set M} (h₁ : S ⊆ T) (h₂ : T ⊆ W) (k : ℕ) :
     localHomologyRestriction R h₂ k ≫ localHomologyRestriction R h₁ k =
       localHomologyRestriction R (h₁.trans h₂) k := by
