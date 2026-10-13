@@ -243,8 +243,10 @@ theorem compositumGalHom_injective : Function.Injective (L.compositumGalHom W) :
   induction γ using QuotientGroup.induction_on with
   | H u =>
     rw [compositumGalHom_mk, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hγ
-    have hu : (u : G) ∈ W :=
-      (OpenSubgroup.mem_inf.1 (L.compositum_ground W ▸ u.2)).2
+    have hground : (L.compositum W).ground ≤ W := by
+      rw [compositum_ground]
+      exact inf_le_right
+    have hu : (u : G) ∈ W := hground u.2
     rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, OpenSubgroup.mem_toSubgroup,
       compositum_top, OpenSubgroup.mem_inf]
     exact ⟨hγ, hu⟩
