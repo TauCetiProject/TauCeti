@@ -48,8 +48,8 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   `Polynomial.Bivariate.natDegree_equivMvPolynomial_symm`: if `φ` has total degree at most `n` and
   the coefficient of `X₁ ^ n` is `1`, then `φ`, read as a polynomial in `X₁` over `R[X₀]`, is monic
   of degree `n`.
-* `Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero`: if `φ` is monic in `X₁` over
-  `k[X₀]` and `φ(a, y) = 0` for a constant `a ∈ k`, then `y` is algebraic over `k`.
+* `Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero`: if `φ(a, T) ≠ 0` and
+  `φ(a, y) = 0` for a constant `a ∈ k`, then `y` is algebraic over `k`.
 
 ## The chart at infinity
 
@@ -444,13 +444,15 @@ theorem natDegree_equivMvPolynomial_symm [Nontrivial R] {φ : MvPolynomial (Fin 
 
 end MvPolynomial
 
-/-- If `φ ∈ k[X₀, X₁]` is monic in `X₁` over `k[X₀]` and `φ(a, y) = 0` for a constant `a ∈ k`, then
-`y` is algebraic over `k`: it is a root of the monic polynomial `φ(a, T)`. -/
+/-- If `φ ∈ k[X₀, X₁]` and `a ∈ k` are such that `φ(a, T) ≠ 0` and `φ(a, y) = 0`, then `y` is
+algebraic over `k`: it is a root of the nonzero polynomial `φ(a, T)`. This applies in particular
+when `φ` is monic in `X₁` over `k[X₀]`. -/
 theorem isAlgebraic_of_aeval_algebraMap_eq_zero {k F : Type*} [Field k] [Field F] [Algebra k F]
-    {φ : MvPolynomial (Fin 2) k} (hmon : ((equivMvPolynomial k).symm φ).Monic) {a : k} {y : F}
+    {φ : MvPolynomial (Fin 2) k} {a : k}
+    (hq : ((equivMvPolynomial k).symm φ).map (evalRingHom a) ≠ 0) {y : F}
     (hy : MvPolynomial.aeval ![algebraMap k F a, y] φ = 0) : IsAlgebraic k y := by
   set q := (equivMvPolynomial k).symm φ
-  refine ⟨q.map (evalRingHom a), (hmon.map _).ne_zero, ?_⟩
+  refine ⟨q.map (evalRingHom a), hq, ?_⟩
   -- View `F` as a `k[X]`-algebra with `X ↦ a`.
   let _ : Algebra k[X] F := (aeval (algebraMap k F a)).toRingHom.toAlgebra
   have : IsScalarTower k k[X] F := .of_algebraMap_eq fun c ↦ by

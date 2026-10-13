@@ -502,7 +502,7 @@ private theorem exists_aeval_sub_mul_eq_zero (hex : IsIntegrallyClosedIn k F)
     intro hua
     obtain ⟨a', ha'⟩ := IsIntegrallyClosedIn.algebraMap_eq_of_integral (A := F) hua.isIntegral
     have hy : IsAlgebraic k y :=
-      Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero hmon (a := a')
+      Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero (hmon.map _).ne_zero
         (by rw [heval, ha', hxu, h, mul_zero])
     exact hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul hy))
   -- `∂g'/∂Y (u, y) = (c ∂G/∂X₀ + ∂G/∂X₁)(x, y, 1) / G(c, 1, 0)`, nonzero by the choice of `c`.
@@ -540,8 +540,7 @@ theorem exists_isSeparable_finrank_eq_of_isHomogeneous_of_lt_card (hex : IsInteg
     algebraMap_ratFuncAlgebraOfTranscendental_X hu
   have hgen' := adjoin_simple_eq_top_of_algebraMap_X_eq hX hgen
   rw [← hX] at hy' hpd
-  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_aeval_pderiv_one_ne_zero hirr'
-    (Polynomial.Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hgen' hy' hpd
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_aeval_pderiv_one_ne_zero hgen' hy' hpd
   -- Transport from `k(X)` along `k(X) ≃ k(u)`, which commutes with the embeddings into `F`.
   set e := (RatFunc.algEquivOfTranscendental u hu).toRingEquiv
   have he : (algebraMap k⟮u⟯ F).comp e = (RingEquiv.refl F : F →+* F).comp
@@ -573,8 +572,7 @@ theorem genus_eq_of_isHomogeneous_of_lt_card (hex : IsIntegrallyClosedIn k F)
     algebraMap_ratFuncAlgebraOfTranscendental_X hu
   have hgen' := adjoin_simple_eq_top_of_algebraMap_X_eq hX hgen
   rw [← hX] at hy' hpd
-  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_aeval_pderiv_one_ne_zero hirr'
-    (Polynomial.Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hgen' hy' hpd
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_aeval_pderiv_one_ne_zero hgen' hy' hpd
   rw [genus_eq_of_aeval_eq_zero hex hirr' hlead hsmA hsmI hgen' hy', hdeg']
 
 /-- **The genus of a smooth projective plane curve** (Fulton, *Algebraic Curves*, Section 8.3): let
