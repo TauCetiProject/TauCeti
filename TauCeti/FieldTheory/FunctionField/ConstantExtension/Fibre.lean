@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
+import TauCeti.FieldTheory.FunctionField.Place.Approximation
 import TauCeti.FieldTheory.FunctionField.Place.Degree
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
@@ -48,8 +49,8 @@ algebraic extension of constants, such as an algebraic closure of `k`.
   finite.
 * `TauCeti.Place.ncard_setOf_restrict_eq_le_degree_of_constantCompositum_eq_top`: the fibre over
   `P` has at most `deg P` elements.
-* `TauCeti.Place.existsUnique_restrict_eq_of_degree_eq_one`: exactly one place lies over a
-  rational place.
+* `TauCeti.Place.existsUnique_restrict_eq_of_degree_eq_one_of_constantCompositum_eq_top`:
+  exactly one place lies over a rational place.
 
 ## References
 
@@ -103,6 +104,40 @@ private theorem card_le_degree_of_finiteDimensional [FiniteDimensional k k']
     _ ≤ Module.finrank k k' * P.degree := Nat.mul_le_mul_right _ (hsum.trans hcomp)
     _ = P.degree * Module.finrank k k' := mul_comm _ _
 
+/-- The bound once finitely many places over `P` are told apart by functions of `F · L` for a
+finite subextension `L / k`: restriction to `F · L` is then injective on them, and the finite
+bound applies there. -/
+private theorem card_le_degree_of_separated (hF : IsFunctionField k F) (L : IntermediateField k k')
+    [FiniteDimensional k L] (P : Place k F) (t : Finset (Place k' F'))
+    (ht : ∀ P' ∈ t, P'.restrict k F = P)
+    (hsep : ∀ P₁ ∈ t, ∀ P₂ ∈ t, P₁ ≠ P₂ →
+      ∃ z ∈ constantCompositum F L F', z ∈ P₁.integers ∧ z ∉ P₂.integers) :
+    t.card ≤ P.degree := by
+  classical
+  let E := constantCompositum F L F'
+  let : Algebra L E := ((algebraMap L F').codRestrict E
+    (algebraMap_mem_constantCompositum F L F')).toAlgebra
+  have : IsScalarTower L E F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k L E := IsScalarTower.of_algebraMap_eq fun c ↦
+    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+  have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
+  let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
+  let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)
+  have hinj : Set.InjOn (fun P' : Place k' F' ↦ P'.restrict L E) t := by
+    intro P₁ h₁ P₂ h₂ heq
+    beta_reduce at heq
+    by_contra hne
+    obtain ⟨z, hzE, hz₁, hz₂⟩ := hsep P₁ h₁ P₂ h₂ hne
+    have hmem : (⟨z, hzE⟩ : E) ∈ (P₁.restrict L E).integers :=
+      (mem_integers_restrict_iff L E P₁ _).mpr hz₁
+    rw [heq, mem_integers_restrict_iff] at hmem
+    exact hz₂ hmem
+  rw [← Finset.card_image_of_injOn hinj]
+  exact card_le_degree_of_finiteDimensional hF hE P _ fun Q hQ ↦ by
+    obtain ⟨P', hP', rfl⟩ := Finset.mem_image.mp hQ
+    rw [restrict_restrict]
+    exact ht P' hP'
+
 variable [Algebra.IsAlgebraic k k']
 
 /-- **A place has at most `deg P` places above it in a constant field extension**: if
@@ -119,8 +154,7 @@ theorem card_le_degree_of_constantCompositum_eq_top (hF : IsFunctionField k F)
       ∃ z : F', P₁ ≠ P₂ → z ∈ P₁.integers ∧ z ∉ P₂.integers := by
     by_cases hne : P₁ = P₂
     · exact ⟨0, fun h ↦ (h hne).elim⟩
-    · obtain ⟨z, hz₁, hz₂⟩ :=
-        IsConcreteLE.not_le_iff_exists.mp fun hle ↦ hne (eq_of_integers_le hle)
+    · obtain ⟨z, hz₁, hz₂⟩ := exists_mem_integers_notMem_integers hne
       exact ⟨z, fun _ ↦ ⟨hz₁, hz₂⟩⟩
   choose z hz using hsep
   -- the finitely many separating functions are defined over a finite extension `L / k`
@@ -128,35 +162,9 @@ theorem card_le_degree_of_constantCompositum_eq_top (hF : IsFunctionField k F)
     exists_finiteDimensional_constantSubfield_of_finset_subset_constantCompositum
       (k := k) (F := F) ((t ×ˢ t).image fun p ↦ z p.1 p.2) fun x _ ↦ h ▸ IntermediateField.mem_top
   let : FiniteDimensional k L := hL
-  let E := constantCompositum F L F'
-  let : Algebra L E := ((algebraMap L F').codRestrict E
-    (algebraMap_mem_constantCompositum F L F')).toAlgebra
-  have : IsScalarTower L E F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k L E := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
-  have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
-  let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
-  let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)
-  have hzE (P₁ : Place k' F') (h₁ : P₁ ∈ t) (P₂ : Place k' F') (h₂ : P₂ ∈ t) :
-      z P₁ P₂ ∈ E :=
-    hzL _ (Finset.mem_image.mpr ⟨(P₁, P₂), Finset.mem_product.mpr ⟨h₁, h₂⟩, rfl⟩)
-  -- restriction to `F · L` is injective on `t`, and the restrictions still lie over `P`
-  have hinj : Set.InjOn (fun P' : Place k' F' ↦ P'.restrict L E) t := by
-    intro P₁ h₁ P₂ h₂ heq
-    beta_reduce at heq
-    by_contra hne
-    obtain ⟨hz₁, hz₂⟩ := hz P₁ P₂ hne
-    have hmem : (⟨z P₁ P₂, hzE P₁ h₁ P₂ h₂⟩ : E) ∈ (P₁.restrict L E).integers :=
-      (mem_integers_restrict_iff L E P₁ _).mpr hz₁
-    rw [heq, mem_integers_restrict_iff] at hmem
-    exact hz₂ hmem
-  have hres (P' : Place k' F') (hP' : P' ∈ t) : (P'.restrict L E).restrict k F = P := by
-    rw [restrict_restrict]
-    exact ht P' hP'
-  rw [← Finset.card_image_of_injOn hinj]
-  exact card_le_degree_of_finiteDimensional hF hE P _ fun Q hQ ↦ by
-    obtain ⟨P', hP', rfl⟩ := Finset.mem_image.mp hQ
-    exact hres P' hP'
+  exact card_le_degree_of_separated hF L P t ht fun P₁ h₁ P₂ h₂ hne ↦
+    ⟨z P₁ P₂, hzL _ (Finset.mem_image.mpr ⟨(P₁, P₂), Finset.mem_product.mpr ⟨h₁, h₂⟩, rfl⟩),
+      hz P₁ P₂ hne⟩
 
 /-- **A place has only finitely many places above it in a constant field extension**: if
 `F' = F · k'` for an algebraic extension `k' / k`, finite or not, the places of `F' / k'` lying
@@ -184,8 +192,9 @@ theorem ncard_setOf_restrict_eq_le_degree_of_constantCompositum_eq_top
 /-- **A rational place has exactly one place above it in a constant field extension**: if
 `F' = F · k'` for an algebraic extension `k' / k`, finite or not, and `P` is a place of `F / k`
 of degree one, then exactly one place of `F' / k'` lies over `P`. -/
-theorem existsUnique_restrict_eq_of_degree_eq_one (hF : IsFunctionField k F)
-    (h : constantCompositum F k' F' = ⊤) {P : Place k F} (hP : P.degree = 1) :
+theorem existsUnique_restrict_eq_of_degree_eq_one_of_constantCompositum_eq_top
+    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) {P : Place k F}
+    (hP : P.degree = 1) :
     ∃! P' : Place k' F', P'.restrict k F = P := by
   classical
   obtain ⟨P', hP'⟩ := restrict_surjective (k := k) (F := F) (hF.of_constantCompositum_eq_top h) P
