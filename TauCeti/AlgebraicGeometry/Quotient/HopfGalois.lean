@@ -33,7 +33,7 @@ the kernel pair.
 
 ## Main results
 
-* `TauCeti.ComoduleAlgebra.existsUnique_spec_map_comp_eq`: an invariant morphism from `Spec A` to
+* `TauCeti.ComoduleAlgebra.existsUnique_SpecMap_comp_eq`: an invariant morphism from `Spec A` to
   any scheme factors uniquely through `Spec A ⟶ Spec B`.
 
 ## References
@@ -59,7 +59,7 @@ variable {R : Type*} {H A B : Type u} [CommSemiring R] [CommRing H] [Bialgebra R
 
 /-- On the kernel pair `Spec (A ⊗[B] A)` of `Spec A ⟶ Spec B`, the two projections agree after
 an invariant morphism, once the Galois map is bijective. -/
-private theorem spec_map_includeLeft_comp_eq
+private theorem SpecMap_includeLeft_comp_eq
     (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A)
     (hbij : Function.Bijective (galoisMap B hB)) {Z : Scheme.{u}} (f : Spec (.of A) ⟶ Z)
     (hf : Spec.map (CommRingCat.ofHom (coactAlgHom R H A).toRingHom) ≫ f =
@@ -88,7 +88,7 @@ faithfully flat over an algebra `B` acting by coinvariants, with bijective Galoi
 `f : Spec A ⟶ Z` to any scheme which is invariant under the action, in the sense that composing
 it with the action `Spec (coact)` and with the projection `Spec (a ↦ a ⊗ 1)` from
 `Spec (A ⊗[R] H)` gives the same morphism, factors uniquely through `Spec A ⟶ Spec B`. -/
-theorem existsUnique_spec_map_comp_eq [Module.FaithfullyFlat B A]
+theorem existsUnique_SpecMap_comp_eq [Module.FaithfullyFlat B A]
     (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A)
     (hbij : Function.Bijective (galoisMap B hB)) {Z : Scheme.{u}} (f : Spec (.of A) ⟶ Z)
     (hf : Spec.map (CommRingCat.ofHom (coactAlgHom R H A).toRingHom) ≫ f =
@@ -102,7 +102,7 @@ theorem existsUnique_spec_map_comp_eq [Module.FaithfullyFlat B A]
   have hker : pullback.fst π π ≫ f = pullback.snd π π ≫ f := by
     rw [← cancel_epi (pullbackSpecIso B A A).inv, pullbackSpecIso_inv_fst_assoc,
       pullbackSpecIso_inv_snd_assoc]
-    exact spec_map_includeLeft_comp_eq hB hbij f hf
+    exact SpecMap_includeLeft_comp_eq hB hbij f hf
   have hdesc : ∀ {W : Scheme.{u}} (g₁ g₂ : W ⟶ Spec (.of A)), g₁ ≫ π = g₂ ≫ π →
       g₁ ≫ f = g₂ ≫ f := fun g₁ g₂ h ↦ by
     simpa using pullback.lift g₁ g₂ h ≫= hker
