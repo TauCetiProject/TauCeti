@@ -49,6 +49,7 @@ topological space underlying the branched cover of the Riemann sphere attached t
 * `TauCeti.FilledCover.t2Space`, `TauCeti.FilledCover.compactSpace`,
   `TauCeti.FilledCover.secondCountableTopology`: the filled cover is Hausdorff and compact, and
   second countable when `E` is.
+* `TauCeti.FilledCover.finite_filledPoint`: a finite cover has finitely many added points.
 * `TauCeti.FilledCover.indexEquiv`: the added points are the cycles of `σ0`, `σ1` and `σinf`.
 * `TauCeti.FilledCover.degree_indexEquiv_symm_inl`,
   `TauCeti.FilledCover.degree_indexEquiv_symm_inr_inl`,
@@ -413,11 +414,16 @@ theorem degree_indexEquiv_symm_inr_inr {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin
   rw [← connectedComponents_preimage_singleton, ← Puncture.coord_inf]
   exact key
 
+/-- **A finite cover has finitely many added points.** This is `FilledPoint.finite`, applied to a
+numbering of the fibre over `1/2`, which is finite as soon as one fibre is. -/
+theorem finite_filledPoint : Finite (FilledPoint p) :=
+  have := finite_fiber_of_finite_fiber hp hfin basePt
+  FilledPoint.finite p hp (Finite.equivFin _)
+
 /-- **The filled cover is compact**: outside the images of the discs of radius `1 / 2` under the
 filling charts, a finite cover lies over a compact core of `ℂ ∖ {0, 1}`. -/
 theorem compactSpace : CompactSpace (FilledCover p) := by
-  have := finite_fiber_of_finite_fiber hp hfin basePt
-  have := FilledPoint.finite p hp (Finite.equivFin _)
+  have := finite_filledPoint hp hfin
   refine PunctureFilling.compactSpace (r := 1 / 2) (by norm_num) ?_
   have hK : IsCompact
       (p ⁻¹' compactCore (1 / 2) ∪ ⋃ i, p ⁻¹' compactCore ((1 / 2) ^ degree p i / 2)) :=
@@ -449,8 +455,7 @@ theorem compactSpace : CompactSpace (FilledCover p) := by
 /-- **The filled cover of a second-countable cover is second countable.** -/
 theorem secondCountableTopology [SecondCountableTopology E] :
     SecondCountableTopology (FilledCover p) :=
-  have := finite_fiber_of_finite_fiber hp hfin basePt
-  have := FilledPoint.finite p hp (Finite.equivFin _)
+  have := finite_filledPoint hp hfin
   PunctureFilling.secondCountableTopology (isOpenEmbedding_chart hp hfin)
 
 omit hfin in
