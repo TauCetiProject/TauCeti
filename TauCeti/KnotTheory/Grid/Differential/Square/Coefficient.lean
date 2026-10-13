@@ -15,8 +15,8 @@ finite sum over intermediate grid states. It is the algebraic handoff from the m
 coefficient definition of the differential to the rectangle-pairing argument: proving `∂² = 0`
 on a generator is exactly proving that this sum of length-two rectangle counts vanishes.
 
-The statements here do not assert square-zero. They isolate the coefficient formula and combine
-it with the existing two-step support bound, so later files can work coefficient-by-coefficient
+The statements here do not assert square-zero. They isolate the coefficient formula and combine it
+with the two-step support bound, so that a square-zero argument can work coefficient-by-coefficient
 inside the finite set of states reached by two column swaps.
 
 ## Main results
@@ -32,10 +32,8 @@ inside the finite set of states reached by two column swaps.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane
-G.3, "The complexes and `∂² = 0`": the fully blocked differential over `𝔽₂` and the later
-juxtaposition case analysis pairing two-step rectangle decompositions. The coefficient
-interpretation follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.
+The coefficient interpretation follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapter 4.
 -/
 
 public section

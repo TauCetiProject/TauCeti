@@ -159,7 +159,7 @@ theorem qExpansion_coeff_correctedE2 (n : ℕ) :
       if n = 0 then 1 - (t : ℂ) else
         -24 * ((σ 1 n : ℂ) - if t ∣ n then t * (σ 1 (n / t) : ℂ) else 0) := by
   exact (ModularFormClass.qExpansion_coeff_unique one_pos
-    (by simp [CongruenceSubgroup.strictPeriods_Gamma0]) (hasSum_correctedE2 t) n).symm
+    (one_mem_strictPeriods_Gamma0_map t) (hasSum_correctedE2 t) n).symm
 
 /-- At level one the correction vanishes. -/
 @[simp]
@@ -187,7 +187,7 @@ theorem correctedE2_mem_cuspFormSubmodule_iff :
   constructor
   · rintro ⟨f, hf⟩
     have H := CuspFormClass.qExpansion_coeff_zero f one_pos
-      (by simp [CongruenceSubgroup.strictPeriods_Gamma0])
+      (one_mem_strictPeriods_Gamma0_map t)
     have heq : (f : ℍ → ℂ) = ⇑(correctedE2 t) := by
       rw [← hf, CuspForm.toModularFormₗ_eq_coe, ModularFormClass.coe_modularForm]
     rw [heq] at H

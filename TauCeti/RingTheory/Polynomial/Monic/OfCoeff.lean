@@ -81,6 +81,14 @@ theorem coeff_monicOfCoeff (c : Fin n → R) (i : Fin n) : (monicOfCoeff c).coef
   have hne : (i : ℕ) ≠ n := i.2.ne
   simp [monicOfCoeff, coeff_X_pow, coeff_monomial, hne, Fin.val_eq_val]
 
+/-- Monic polynomials with prescribed lower coefficients agree exactly when their
+coefficient tuples agree. -/
+@[simp]
+theorem monicOfCoeff_inj (c d : Fin n → R) : monicOfCoeff c = monicOfCoeff d ↔ c = d := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  exact funext fun i ↦ by
+    simpa only [coeff_monicOfCoeff] using congrArg (fun p : R[X] ↦ p.coeff i) h
+
 /-- Evaluating the monic polynomial attached to a coefficient tuple: the leading power plus the
 prescribed lower part. -/
 theorem eval_monicOfCoeff (c : Fin n → R) (z : R) :

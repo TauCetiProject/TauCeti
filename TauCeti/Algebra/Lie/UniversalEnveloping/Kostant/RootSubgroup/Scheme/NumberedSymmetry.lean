@@ -72,10 +72,6 @@ All of these live in the `TauCeti.UniversalEnvelopingAlgebra` namespace.
 * R. W. Carter, *Simple Groups of Lie Type*, §12.2.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * J. E. Humphreys, *Linear Algebraic Groups*, §27.
-
-This advances the pinnings and pinned-isomorphism targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`; the automorphisms it produces are required by milestone
-L1 of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section

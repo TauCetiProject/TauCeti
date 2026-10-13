@@ -30,9 +30,6 @@ finite-type affine group.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This advances Layer 5, "Unipotent groups", of the ReductiveGroups roadmap, specifically the
-consequence that connected unipotent groups have no nontrivial characters.
 -/
 
 public section

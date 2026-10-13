@@ -58,7 +58,9 @@ available in the `AdicCompletionExtension` scope.
   completion valuations.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_algebraMap`: the defining property
   `decompositionHom v w τ x = τ x` for `x ∈ L`; `decompositionHom_algebraMap_ringOfIntegers` is
-  its form on `𝓞 L`, and `valued_decompositionHom` says the action preserves the valuation.
+  its form on `𝓞 L`, and `valued_decompositionHom` says the action preserves the valuation;
+  `restrictNormalHom_restrictScalarsHom_decompositionHom` says that restricting the action back
+  to `L` recovers the automorphism.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_injective`: the decomposition group
   embeds into `Aut(L_w/K_v)`.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_conj`: compatibility with the action of
@@ -231,6 +233,19 @@ theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w
     decompositionHom v w τ (algebraMap L (w.adicCompletion L) x) =
       algebraMap L (w.adicCompletion L) ((τ : L ≃ₐ[K] L) x) := by
   rw [decompositionHom_apply, completionCongr_algebraMap]
+
+/-- Restricting the action of an element of the decomposition group on `L_w` back to `L` recovers
+the element: composing `decompositionHom` with restriction `Aut(L_w/K_v) → Aut(L/K)` recovers the
+inclusion of the decomposition subgroup into `Aut(L/K)`. -/
+@[simp]
+theorem restrictNormalHom_restrictScalarsHom_decompositionHom [Normal K L]
+    (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) :
+    (AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K) (decompositionHom v w τ) =
+      τ := by
+  ext x
+  exact (algebraMap L (w.adicCompletion L)).injective <|
+    (AlgEquiv.restrictNormal_commutes ((decompositionHom v w τ).restrictScalars K) L x).trans
+      (decompositionHom_algebraMap (v := v) τ x)
 
 /-- On the ring of integers of `L`, `decompositionHom` is the action of the automorphism. -/
 theorem decompositionHom_algebraMap_ringOfIntegers

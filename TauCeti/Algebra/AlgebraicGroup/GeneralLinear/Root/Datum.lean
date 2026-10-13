@@ -50,9 +50,6 @@ X*(T) = ULift (Fin n) →₀ ℤ,    X_*(T) = ULift (Fin n) → ℤ.
 
 * J. S. Milne, *Algebraic Groups* (2017), Example 19.7 and Section 21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
-
-This advances Layer 7, "Root datum of `(G, T)`", of the ReductiveGroups roadmap through its
-standard `GL_n` split-coordinate example.
 -/
 
 public section

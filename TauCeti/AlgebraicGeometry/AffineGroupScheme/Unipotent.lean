@@ -35,11 +35,6 @@ scheme-side predicate needed to formulate reductivity using normal closed subgro
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This advances Layer 5, "Unipotent groups", of the ReductiveGroups roadmap. It is the scheme-side
-form of the smooth geometric definition and a direct prerequisite for Layer 6, where reductivity
-is defined by excluding nontrivial connected normal unipotent closed subgroup schemes after
-geometric base change.
 -/
 
 public section
