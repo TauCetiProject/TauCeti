@@ -162,17 +162,6 @@ namespace Hom
 
 variable {Y : PreAdicSpace.{u}} (f : X ⟶ Y)
 
-/-- The germ at `x` of the pullback of a section `s` of `𝒪_Y` over `V` is the image under the stalk
-map of the germ of `s` at `f x`. -/
-private theorem germ_c_app_apply (V : Opens Y) (x : X) (hx : f.base x ∈ V)
-    (s : Y.toRingPresheafedSpace.presheaf.obj (op V)) :
-    X.toRingPresheafedSpace.presheaf.germ ((Opens.map f.base).obj V) x hx
-        ((toRingPresheafedSpaceHom f.toHom).c.app (op V) s) =
-      f.stalkMap x (Y.toRingPresheafedSpace.presheaf.germ V (f.base x) hx s) := by
-  rw [Hom.stalkMap_def]
-  exact (congrArg (fun φ ↦ φ.hom s)
-    (PresheafedSpace.stalkMap_germ (toRingPresheafedSpaceHom f.toHom) V x hx)).symm
-
 /-- At a point `x` over `V`, the pullback of a section `s` of `𝒪_Y` over `V` is sub-unit at `x`
 exactly when `s` is sub-unit at `f x`: the stalk valuation at `f x` is the pullback of the one at
 `x` along the stalk map. -/
@@ -183,7 +172,9 @@ private theorem vle_germ_c_app_iff (V : Opens Y) (x : X) (hx : f.base x ∈ V)
           ((toRingPresheafedSpaceHom f.toHom).c.app (op V) s)) 1 ↔
       (Y.stalkValuation (f.base x)).toValuativeRel.vle
         (Y.toRingPresheafedSpace.presheaf.germ V (f.base x) hx s) 1 := by
-  rw [germ_c_app_apply, f.stalkValuation_eq_comap x, ValuationSpectrum.comap_vle, map_one]
+  rw [f.stalkValuation_eq_comap x, ValuationSpectrum.comap_vle, map_one, Hom.stalkMap_def]
+  convert Iff.rfl using 2
+  exact PresheafedSpace.stalkMap_germ_apply (toRingPresheafedSpaceHom f.toHom) V x hx s
 
 /-- **Morphisms preserve integral sections**: for a morphism `f : X ⟶ Y` of pre-adic spaces and an
 open `V ⊆ Y`, the map on sections `𝒪_Y(V) → 𝒪_X(f⁻¹V)` carries `𝒪_Y⁺(V)` into `𝒪_X⁺(f⁻¹V)`. -/
