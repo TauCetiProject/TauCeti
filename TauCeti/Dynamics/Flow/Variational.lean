@@ -26,6 +26,8 @@ equivalently `d/dt Dφₜ(x) = Dv(φₜ x) ∘ Dφₜ(x)`. The proof differentia
 
 ## Main results
 
+* `TauCeti.continuous_flowOfLipschitz_orbit`, `TauCeti.flowOfLipschitz_eq_add_integral`: the
+  orbits are continuous and solve the integral equation.
 * `TauCeti.lipschitzWith_flowOfLipschitz`: the time-`t` map is `exp (K |t|)`-Lipschitz.
 * `TauCeti.norm_fderiv_flowOfLipschitz_le`: `‖Dφₜ(x)‖ ≤ exp (K |t|)`.
 * `TauCeti.differentiable_flowOfLipschitz_apply`: the time-`t` map is differentiable.
@@ -59,6 +61,16 @@ theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ
   simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
     norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
 
+/-- Every orbit of the flow is continuous in time. -/
+theorem continuous_flowOfLipschitz_orbit (hv : LipschitzWith K v) (x : E) :
+    Continuous fun τ : ℝ ↦ flowOfLipschitz v hv τ x :=
+  continuous_iff_continuousAt.2 fun τ ↦ (hasDerivAt_flowOfLipschitz hv x τ).continuousAt
+
+/-- **The integral equation of the flow**: `φₜ y = y + ∫₀ᵗ v (φ_τ y) dτ`. -/
+theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :
+    flowOfLipschitz v hv t y = y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) := by
+  simpa only [flowOfLipschitz_apply] using ODE.globalSolution_eq_integral v hv y t
+
 section Smooth
 
 variable (hv : LipschitzWith K v) (hvs : ContDiff ℝ 1 v)
@@ -73,12 +85,6 @@ theorem differentiable_flowOfLipschitz_apply (t : ℝ) :
     Differentiable ℝ (flowOfLipschitz v hv t) :=
   (contDiff_flowOfLipschitz_apply 0 v hv (by simpa using hvs) t).differentiable
     (by norm_num)
-
-/-- Every orbit of the flow is continuous in time. -/
-private theorem continuous_flowOfLipschitz_orbit (x : E) :
-    Continuous fun τ : ℝ ↦ flowOfLipschitz v hv τ x :=
-  (contDiff_uncurry_flowOfLipschitz hv hvs).continuous.comp
-    (by fun_prop : Continuous fun τ : ℝ ↦ (τ, x))
 
 /-- The derivative of the time-`τ` map at a fixed point is continuous in `τ`. -/
 private theorem continuous_fderiv_flowOfLipschitz (x : E) :
@@ -98,7 +104,7 @@ private theorem continuous_variational_integrand (x : E) :
     Continuous fun τ : ℝ ↦
       (fderiv ℝ v (flowOfLipschitz v hv τ x)).comp (fderiv ℝ (flowOfLipschitz v hv τ) x) := by
   exact ((hvs.continuous_fderiv one_ne_zero).comp
-    (continuous_flowOfLipschitz_orbit hv hvs x)).clm_comp
+    (continuous_flowOfLipschitz_orbit hv x)).clm_comp
     (continuous_fderiv_flowOfLipschitz hv hvs x)
 
 /-- **The variational equation, integral form.** For a globally Lipschitz `C¹` vector field, the
@@ -113,7 +119,7 @@ theorem fderiv_flowOfLipschitz_eq_id_add_integral (x : E) (t : ℝ) :
       (∫ τ in (0 : ℝ)..t, (fderiv ℝ v (flowOfLipschitz v hv τ x)).comp
         (fderiv ℝ (flowOfLipschitz v hv τ) x)) x := by
     have hcont : ∀ y : E, Continuous fun τ : ℝ ↦ v (flowOfLipschitz v hv τ y) := fun y ↦
-      hv.continuous.comp (continuous_flowOfLipschitz_orbit hv hvs y)
+      hv.continuous.comp (continuous_flowOfLipschitz_orbit hv y)
     refine hasFDerivAt_integral_of_dominated_of_fderiv_le''
       (F := fun y τ ↦ v (flowOfLipschitz v hv τ y))
       (F' := fun y τ ↦ (fderiv ℝ v (flowOfLipschitz v hv τ y)).comp
@@ -136,8 +142,7 @@ theorem fderiv_flowOfLipschitz_eq_id_add_integral (x : E) (t : ℝ) :
     · refine ae_restrict_of_forall_mem measurableSet_uIoc fun τ _ y _ ↦ ?_
       exact ((hvs.differentiable one_ne_zero _).hasFDerivAt.comp y (hdiff τ y).hasFDerivAt)
   have hφ : flowOfLipschitz v hv t = fun y ↦ y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) :=
-    funext fun y ↦ by
-      simpa only [flowOfLipschitz_apply] using ODE.globalSolution_eq_integral v hv y t
+    funext fun y ↦ flowOfLipschitz_eq_add_integral hv y t
   rw [hφ]
   exact ((hasFDerivAt_id x).add hI).fderiv
 
