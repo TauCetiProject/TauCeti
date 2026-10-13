@@ -318,6 +318,22 @@ theorem torsionMap_ι (f : G ⟶ H) (n : ℤ) :
 instance isMonHom_torsionMap (f : G ⟶ H) (n : ℤ) : IsMonHom (torsionMap f n) :=
   (kernel.map _ _ _ _ (forget₂Grp_map_intCast_comp f n)).hom.isMonHom_hom
 
+/-- Torsion transitions commute with homomorphisms of commutative group schemes. -/
+@[reassoc (attr := simp)]
+theorem torsionMulBy_comp_torsionMap (f : G ⟶ H) (m n : ℤ) :
+    torsionMulBy G m n ≫ torsionMap f n =
+      torsionMap f (m * n) ≫ torsionMulBy H m n := by
+  apply torsion_hom_ext H
+  simp [GrpObj.comp_zpow, GrpObj.zpow_comp]
+
+/-- Inclusions between torsion levels commute with homomorphisms of commutative group schemes. -/
+@[reassoc (attr := simp)]
+theorem torsionInclusion_comp_torsionMap (f : G ⟶ H) (m n : ℤ) :
+    torsionInclusion G m n ≫ torsionMap f (m * n) =
+      torsionMap f m ≫ torsionInclusion H m n := by
+  apply torsion_hom_ext H
+  simp
+
 /-- The identity of `G` induces the identity of `G[n]`. -/
 @[simp]
 theorem torsionMap_id (n : ℤ) : torsionMap (𝟙 G) n = 𝟙 _ :=
