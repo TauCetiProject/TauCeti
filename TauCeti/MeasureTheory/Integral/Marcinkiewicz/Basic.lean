@@ -103,20 +103,14 @@ private theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable_of_sFin
   have hGval : ∀ (t : ℝ) (x : α), G (t, x) =
       ENNReal.ofReal (t ^ (p - 2)) * {x | ENNReal.ofReal (c * t) < f x}.indicator f x := by
     intro t x
-    have hmem : (t, x) ∈ S ↔ x ∈ {x | ENNReal.ofReal (c * t) < f x} := by
-      simp only [hS, Set.mem_ofPred]
-    by_cases hx : x ∈ {x | ENNReal.ofReal (c * t) < f x}
-    · rw [hG, Set.indicator_of_mem (hmem.2 hx), Set.indicator_of_mem hx]
-    · rw [hG, Set.indicator_of_notMem (hmem.not.2 hx), Set.indicator_of_notMem hx, mul_zero]
+    rw [hG, Set.indicator_mul_right]
+    simp only [Set.indicator_apply, hS, Set.mem_ofPred]
   have hGvalt : ∀ (t : ℝ) (x : α), G (t, x) =
       {t : ℝ | ENNReal.ofReal (c * t) < f x}.indicator
         (fun t => ENNReal.ofReal (t ^ (p - 2))) t * f x := by
     intro t x
-    have hmem : (t, x) ∈ S ↔ t ∈ {t : ℝ | ENNReal.ofReal (c * t) < f x} := by
-      simp only [hS, Set.mem_ofPred]
-    by_cases ht : t ∈ {t : ℝ | ENNReal.ofReal (c * t) < f x}
-    · rw [hG, Set.indicator_of_mem (hmem.2 ht), Set.indicator_of_mem ht]
-    · rw [hG, Set.indicator_of_notMem (hmem.not.2 ht), Set.indicator_of_notMem ht, zero_mul]
+    rw [hG, Set.indicator_mul_left]
+    simp only [Set.indicator_apply, hS, Set.mem_ofPred]
   -- Its slices are the truncated integrals appearing in the hypothesis.
   have hslice : ∀ t : ℝ, ∫⁻ x, G (t, x) ∂μ =
       ENNReal.ofReal (t ^ (p - 2)) * ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ∂μ := by
