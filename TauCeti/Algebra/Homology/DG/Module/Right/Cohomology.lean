@@ -191,13 +191,13 @@ private theorem op_quotientMk_smul_eq_quotientMk_op_smul (hM : IsDGRightModule h
       Ideal.Quotient.mk h.boundaries.op.asIdeal (op z) • x :=
   rfl
 
-/-- The action on module cohomology is computed by acting with a cycle representative.
-
-The scalar is taken in `(h.cycles)ᵐᵒᵖ` rather than written as `op z` for a cycle `z`.  Both state
-the same fact, but `op z • x` would put `MulOpposite.op` applied to a `SetLike` element under a
-`•`, which sends `simp` after `IsCentralScalar.op_smul_eq_smul` and hence after the nonexistent
-`SMul h.cycles hM.Cohomology`; refuting that costs more than the default instance budget, because
-the carrier is a coercion and the search enumerates the algebraic hierarchy. -/
+/-- The action on module cohomology is computed by acting with a cycle representative: the
+cohomology class of `w.unop` acts as `w` does, through the opposite cycle algebra. -/
+-- The scalar is taken in `(h.cycles)ᵐᵒᵖ` rather than written as `op z` for a cycle `z`. Both
+-- state the same fact, but `op z • x` would put `MulOpposite.op` applied to a `SetLike` element
+-- under a `•`, which sends `simp` through `IsCentralScalar.op_smul_eq_smul` and so on to the
+-- nonexistent `SMul h.cycles hM.Cohomology`; refuting that costs more than the default instance
+-- budget, because the carrier is a coercion and the search enumerates the algebraic hierarchy.
 @[simp]
 theorem op_quotientMk_smul (hM : IsDGRightModule h ℳ dM)
     (w : (h.cycles)ᵐᵒᵖ) (x : hM.Cohomology) :
