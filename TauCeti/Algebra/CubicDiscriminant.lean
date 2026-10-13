@@ -35,8 +35,7 @@ common root of the cubic and its derivative modulo `d`.
 ## Provenance
 
 The first two lemmas are ported from the AINTLIB `NagellLutz` project
-(`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by the roadmap at
-`dev/modular-curves @ 9fec8eba7652`,
+(`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at `dev/modular-curves @ 9fec8eba7652`,
 `LutzNagell/LutzNagellTheorem/GeneralDiscriminant.lean`, where the two identities appear inline
 inside the discriminant argument rather than as separate lemmas.
 -/

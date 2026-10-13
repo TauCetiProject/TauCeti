@@ -58,6 +58,8 @@ residue cubic are simple, and `(ϖ X, 0)` is a point of `W` with singular reduct
 * `WeierstrassCurve.Affine.exists_xCoord_eq_of_isTateTerminal_IStar_zero`:
   a point with singular reduction has `x = ϖ X`, with the residue of `X` a root of the residue
   cubic.
+* `WeierstrassCurve.Affine.exists_yCoord_eq_of_isTateTerminal_IStar_zero`:
+  a point with singular reduction has `y = ϖ² Y`.
 * `WeierstrassCurve.Affine.add_mem_nonsingularReduction_iff_of_isTateTerminal_IStar_zero`: for two
   points `(ϖ X₁, y₁)` and `(ϖ X₂, y₂)` with singular reduction, the sum has nonsingular reduction
   exactly when `X₁` and `X₂` have the same residue.
@@ -200,6 +202,18 @@ theorem exists_xCoord_eq_of_isTateTerminal_IStar_zero
   obtain ⟨-, -, hc⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hP hX'
   refine ⟨X, hX', ?_⟩
   simpa using (residue_eq_zero_iff _).2 ((hmem _).2 hc)
+
+/-- **At `I₀*`, a point with singular reduction has `y = ϖ² Y`.** Here `ϖ` generates the maximal
+ideal of the valuation ring and Tate's algorithm stops at `I₀*` on the integral model. -/
+theorem exists_yCoord_eq_of_isTateTerminal_IStar_zero
+    {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar 0)) {P : W.Point}
+    (hP : P ∉ W.nonsingularReduction v) :
+    ∃ Y : v.valuationSubring, P.yCoord = ((ϖ ^ 2 * Y : v.valuationSubring) : F) := by
+  obtain ⟨-, ⟨A₂, h₂⟩, -, ⟨A₄, h₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IStar_zero.1 h
+  obtain ⟨X, hX, -⟩ := exists_xCoord_eq_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆ hP
+  obtain ⟨Y, hY, -⟩ := exists_yCoord_eq_and_dvd_cubic v hϖ h h₂ h₄ h₆ hP hX
+  exact ⟨Y, hY⟩
 
 /-! ### Sums of points with singular reduction -/
 
@@ -460,9 +474,10 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IStar_zero
 /-- **At `I₀*` over a Henselian valuation ring, `[E(F) : E₀(F)]` is one more than the number of
 roots of the residue cubic.** Here `ϖ` generates the maximal ideal of the valuation ring, Tate's
 algorithm stops at `I₀*` on the integral model, and `a₂ = ϖ A₂`, `a₄ = ϖ² A₄`, `a₆ = ϖ³ A₆`, so
-that the residue cubic is `T³ + A₂ T² + A₄ T + A₆` over the residue field. This is the local index
-`c_v` that Tate's algorithm reports at `I₀*`; since the residue cubic has nonzero discriminant it is
-`1`, `2` or `4`. -/
+that the residue cubic is `T³ + A₂ T² + A₄ T + A₆` over the residue field. Since the residue cubic
+has nonzero discriminant, the index is `1`, `2` or `4`. When `F` is complete for a discrete
+valuation with perfect residue field and the equation is minimal, this is the local index `c_v` that
+Tate's algorithm reports at `I₀*`. -/
 theorem index_nonsingularReduction_eq_of_isTateTerminal_IStar_zero
     [HenselianLocalRing v.valuationSubring] {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
