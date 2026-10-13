@@ -27,7 +27,6 @@ is a map on each summand, followed by the reindexing `p + q = n`.
 
 * `TauCeti.cubicalCrossProduct R X Y`: the cross product as a chain map
   `N(X) ⊗ N(Y) ⟶ N(X ⊗ Y)`.
-* `TauCeti.ι_cubicalCrossProduct_f_apply`: its value on a summand of bidegree `(p, q)`.
 * `TauCeti.cubicalCrossProduct_naturality`: naturality in both spaces.
 -/
 
@@ -220,27 +219,19 @@ theorem ι_cubicalCrossProduct_f {p q n : ℕ} (h : p + q = n) :
       cubicalCrossProductSummand R X Y p q n h :=
   ι_cubicalCrossProductX h
 
-/-- The cross product chain map on a pure tensor of a summand. -/
-@[simp]
-theorem ι_cubicalCrossProduct_f_apply {p q n : ℕ} (h : p + q = n)
-    (a : NormalizedCubicalChain X R p) (b : NormalizedCubicalChain Y R q) :
-    (ιTensorObj ((normalizedCubicalChainComplex R).obj X)
-        ((normalizedCubicalChainComplex R).obj Y) p q n h ≫
-          (cubicalCrossProduct R X Y).f n).hom (a ⊗ₜ[R] b) =
-      NormalizedCubicalChain.cast R h (NormalizedCubicalChain.crossProduct X Y R p q a b) := by
-  rw [ι_cubicalCrossProduct_f]
-  exact cubicalCrossProductSummand_apply R X Y p q n h a b
-
 /-- **Naturality** of the cross product chain map in both spaces. -/
 @[reassoc]
 theorem cubicalCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
-    HomologicalComplex.tensorHom ((normalizedCubicalChainComplex R).map f)
-        ((normalizedCubicalChainComplex R).map g) ≫ cubicalCrossProduct R X' Y' =
+    ((normalizedCubicalChainComplex R).map f ⊗ₘ (normalizedCubicalChainComplex R).map g) ≫
+        cubicalCrossProduct R X' Y' =
       cubicalCrossProduct R X Y ≫ (normalizedCubicalChainComplex R).map (f ⊗ₘ g) := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
   refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    HomologicalComplex.ι_tensorHom_assoc, ι_cubicalCrossProduct_f, ι_cubicalCrossProduct_f_assoc]
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f]
+  -- `⊗ₘ` on chain complexes is `HomologicalComplex.tensorHom` by definition, which `rw` does not
+  -- see through the monoidal structure instance
+  erw [HomologicalComplex.ι_tensorHom_assoc]
+  rw [ι_cubicalCrossProduct_f, ι_cubicalCrossProduct_f_assoc]
   refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
   -- both sides are the class of `a × b`, once the components of the chain maps induced by `f` and
   -- `g` are read as `NormalizedCubicalChain.map` (the definition of the functor on morphisms) and
