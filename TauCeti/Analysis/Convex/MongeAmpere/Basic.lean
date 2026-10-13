@@ -79,6 +79,7 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
 * `TauCeti.mongeAmpereMeasure_lt_top` and `TauCeti.isLocallyFiniteMeasure_comap_mongeAmpereMeasure`
   — when `μ` is finite on compact sets, `MA_f` is finite on compact subsets of `D`, so it is a
   locally finite measure on `D`;
+* `TauCeti.sigmaFinite_mongeAmpereMeasure` — under the same hypothesis, `MA_f` is σ-finite;
 * `TauCeti.mongeAmpereMeasure_ite_apply` — the formula for a finite convex function on an open
   set;
 * `TauCeti.mongeAmpereMeasure_eq_withDensity_det` and
@@ -291,6 +292,21 @@ theorem isLocallyFiniteMeasure_comap_mongeAmpereMeasure [IsFiniteMeasureOnCompac
     exact mongeAmpereMeasure_lt_top μ hf hbot hμ (hK.image continuous_subtype_val)
       (image_subset_iff.2 fun x _ => x.2)
   infer_instance
+
+/-- The Aleksandrov Monge–Ampère measure of a convex function, with respect to a measure that is
+finite on compact sets, is σ-finite: it is carried by the interior of the effective domain, which
+is a countable union of compact sets of finite Monge–Ampère measure. -/
+theorem sigmaFinite_mongeAmpereMeasure [IsFiniteMeasureOnCompacts μ]
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) (hμ : μ ≪ ν) :
+    SigmaFinite (mongeAmpereMeasure μ f) := by
+  have : LocallyCompactSpace (interior {x | f x ≠ ⊤}) := isOpen_interior.locallyCompactSpace
+  obtain ⟨K, hK, hKD⟩ := isSigmaCompact_iff_sigmaCompactSpace.2 (inferInstance :
+    SigmaCompactSpace (interior {x | f x ≠ ⊤}))
+  refine sigmaFinite_of_countable ((countable_range K).insert (interior {x | f x ≠ ⊤})ᶜ) ?_ ?_
+  · rintro s (rfl | ⟨n, rfl⟩)
+    · simp
+    · exact mongeAmpereMeasure_lt_top μ hf hbot hμ (hK n) (hKD ▸ subset_iUnion K n)
+  · rw [sUnion_insert, sUnion_range, hKD, compl_union_self]
 
 section Ite
 
