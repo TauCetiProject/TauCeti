@@ -20,8 +20,8 @@ the Cauchy--Riemann operator and the tori `T_α`, `T_β` in `Sym^g(Σ)`, Lagrang
 for exact Lagrangian Floer homology. They are nevertheless tightly linked: on a finite-dimensional
 space, as soon as a symplectic form `ω` *tames* an almost complex structure `J`, every Lagrangian
 subspace is automatically maximal totally real. This file records that link in general,
-complementing the standard-model statement in `Lagrangian.lean` where the coordinate factors of
-`V × V` are seen to be simultaneously Lagrangian and maximal totally real.
+complementing the standard-model statement in `TauCeti.Geometry.Symplectic.Lagrangian.Basic` where
+the coordinate factors of `V × V` are seen to be simultaneously Lagrangian and maximal totally real.
 
 The mechanism is the one classical computation behind "a compatible `J` makes a Lagrangian totally
 real" (McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Section 2.6), split here

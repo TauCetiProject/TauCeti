@@ -19,9 +19,12 @@ tangent bundle whose square is fiberwise minus the identity. Its value at each p
 almost complex structure on that tangent space.
 
 The smoothness is part of the structure itself, while relations to a symplectic form are not fields
-of it. Tameness and compatibility are stated pointwise, as `TauCeti.SymplecticForm.Tames` and
-`TauCeti.SymplecticForm.Compatible` on a real module, for the tangent-fiber structures produced by
-`almostComplexStructureAt`. Manifold-valued `J`-holomorphic maps
+of it. Tameness and compatibility with a smooth two-form are `TauCeti.SmoothTwoForm.Tames` and
+`TauCeti.SmoothTwoForm.Compatible` in `TauCeti.Geometry.Symplectic.Manifold.TwoForm`. For a
+fiberwise nondegenerate form, `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff` and
+`TauCeti.SmoothTwoForm.IsNondegenerate.compatible_iff` reduce them to the pointwise
+`TauCeti.SymplecticForm.Tames` and `TauCeti.SymplecticForm.Compatible` for the tangent-fiber
+structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorphic maps
 (`TauCeti.Geometry.Symplectic.Manifold.JHolomorphic`) are stated with this definition.
 
 ## Main declarations
