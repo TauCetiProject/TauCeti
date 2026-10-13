@@ -55,7 +55,7 @@ topological space underlying the branched cover of the Riemann sphere attached t
   `TauCeti.FilledCover.degree_overOne_mk_monodromy`,
   `TauCeti.FilledCover.degree_overInf_mk_monodromy`: the local degree of the component of a
   cycle is its length.
-* `TauCeti.FilledCover.card_range_center`: there are `c(σ0) + c(σ1) + c(σinf)` added points.
+* `TauCeti.FilledCover.natCard_range_center`: there are `c(σ0) + c(σ1) + c(σinf)` added points.
 
 ## References
 
@@ -388,7 +388,7 @@ omit hfin in
 /-- **The number of added points.** For a cover whose fibre over `1/2` is numbered by `ν`, the
 filled cover has `c(σ0) + c(σ1) + c(σinf)` added points, where `c(σ)` is the number of cycles of
 `σ`, fixed points included (`FilledPoint.natCard_eq_cycleCounts`). -/
-theorem card_range_center {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) :
+theorem natCard_range_center {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) :
     Nat.card (range (PunctureFilling.center (chart p))) =
       (hp.monodromyTriple ν).cycleCounts.1 + (hp.monodromyTriple ν).cycleCounts.2.1 +
         (hp.monodromyTriple ν).cycleCounts.2.2 := by
