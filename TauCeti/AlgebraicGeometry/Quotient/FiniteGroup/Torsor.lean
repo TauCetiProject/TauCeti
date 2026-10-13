@@ -39,15 +39,17 @@ open CategoryTheory Limits AlgebraicGeometry
 
 namespace TauCeti.AffineInvariantQuotient
 
-universe u
+universe u v
 
 section Monoid
 
-variable (A G : Type u) [CommRing A] [Monoid G] [MulSemiringAction G A]
+variable (A : Type u) (G : Type v) [CommRing A] [Monoid G] [MulSemiringAction G A]
+  [Small.{u} G]
 
 /-- The action graphs over the invariant quotient. On the component indexed by `g`, the two
 projections are the identity and `specComap A G g`, respectively. The latter is the right action
-on spectra, induced contravariantly by `a ↦ g • a`. -/
+on spectra, induced contravariantly by `a ↦ g • a`. The assumption `Small.{u} G` ensures that
+the coproduct exists in `Scheme.{u}`; it is automatic for finite `G`. -/
 noncomputable def actionMap : (∐ fun _ : G ↦ Spec (CommRingCat.of A)) ⟶
     pullback (projection A G) (projection A G) :=
   Sigma.desc fun g ↦ pullback.lift (𝟙 _) (specComap A G g) (by simp)
@@ -77,17 +79,24 @@ end Monoid
 
 section Group
 
-variable (A G : Type u) [CommRing A] [Group G] [MulSemiringAction G A]
+variable (A : Type u) (G : Type v) [CommRing A] [Group G] [MulSemiringAction G A]
 
-/-- On coordinate rings, the action map is the Galois map `a ⊗ b ↦ (a * g • b)_g`. -/
-private theorem actionMap_eq : actionMap A G =
-    sigmaSpec (fun _ : G ↦ CommRingCat.of A) ≫
+/-- On coordinate rings, the action map is the Galois map `a ⊗ b ↦ (a * g • b)_g`,
+with the product reindexed in the universe of `A`. -/
+private theorem actionMap_eq [Small.{u} G] : actionMap A G =
+    (Sigma.reindex (equivShrink.{u} G) (fun _ : Shrink.{u} G ↦ Spec (CommRingCat.of A))).hom ≫
+      sigmaSpec (fun _ : Shrink.{u} G ↦ CommRingCat.of A) ≫
       Spec.map (CommRingCat.ofHom
-        (MulSemiringAction.tensorToPi (FixedPoints.subring A G) A G).toRingHom) ≫
+        ((RingEquiv.piCongrLeft' (fun _ : G ↦ A) (equivShrink.{u} G)).toRingHom.comp
+          (MulSemiringAction.tensorToPi (FixedPoints.subring A G) A G).toRingHom)) ≫
       (pullbackSpecIso (FixedPoints.subring A G) A A).inv ≫
       (pullback.congrHom (projection_def A G) (projection_def A G)).inv := by
   apply Sigma.hom_ext
   intro g
+  have hι := Sigma.ι_reindex_hom (equivShrink.{u} G)
+    (fun _ : Shrink.{u} G ↦ Spec (CommRingCat.of A)) g
+  dsimp only [Function.comp_def] at hι
+  rw [← Category.assoc, hι]
   apply pullback.hom_ext
   · simp only [ι_actionMap_assoc, pullback.lift_fst, Category.assoc,
       ι_sigmaSpec_assoc, pullback.congrHom_inv, Category.comp_id,
@@ -108,7 +117,12 @@ kernel pair of the quotient projection exactly when every nonidentity element ha
 scheme-theoretic fixed locus. -/
 theorem isIso_actionMap_iff [Finite G] : IsIso (actionMap A G) ↔
     ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤ := by
-  simp only [actionMap_eq, isIso_comp_left_iff, isIso_comp_right_iff, isIso_SpecMap_iff]
+  have : Finite (Shrink.{u} G) := Finite.of_equiv G (equivShrink.{u} G)
+  simp only [actionMap_eq, isIso_comp_left_iff, isIso_comp_right_iff, isIso_SpecMap_iff,
+    CommRingCat.hom_ofHom, RingHom.coe_comp, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+  rw [Function.Bijective.of_comp_iff'
+    (RingEquiv.piCongrLeft' (fun _ : G ↦ A) (equivShrink.{u} G)).bijective]
   exact ⟨fun h ↦ MulSemiringAction.tensorToPi_surjective_iff.mp h.2,
     fun h ↦ MulSemiringAction.tensorToPi_bijective h⟩
 
