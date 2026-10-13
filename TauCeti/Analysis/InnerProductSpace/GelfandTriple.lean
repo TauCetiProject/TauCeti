@@ -33,6 +33,8 @@ The composite `ι.gelfandDual ∘ ι : V →L[ℝ] StrongDual ℝ V` is the symm
 * `ContinuousLinearMap.norm_gelfandDual`: its norm is `‖ι‖`.
 * `ContinuousLinearMap.gelfandDual_injective`: it is injective when `ι` has dense range.
 * `ContinuousLinearMap.flip_gelfandDual_comp`: the form `⟪ι x, ι y⟫` on `V` is symmetric.
+* `ContinuousLinearMap.gelfandDual_comp_injective`: the composite `V → V*` is injective when `ι`
+  is.
 
 ## References
 
@@ -96,5 +98,12 @@ symmetric. -/
 theorem flip_gelfandDual_comp : (ι.gelfandDual.comp ι).flip = ι.gelfandDual.comp ι := by
   ext x y
   simp [real_inner_comm]
+
+/-- If `ι` is injective, so is the composite `ι.gelfandDual ∘ ι : V → V*`: testing
+`ι.gelfandDual (ι x)` on `x` returns `‖ι x‖²`. -/
+theorem gelfandDual_comp_injective (hι : Function.Injective ι) :
+    Function.Injective (ι.gelfandDual.comp ι) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ (injective_iff_map_eq_zero ι).1 hι x ?_
+  simpa using congr($hx x)
 
 end ContinuousLinearMap
