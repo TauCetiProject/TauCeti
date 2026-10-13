@@ -344,6 +344,10 @@ theorem torsionInclusion_torsionι :
     E.torsionInclusion m n ≫ E.torsionι (m * n) = E.torsionι m :=
   GroupScheme.torsionInclusion_torsionι E.toCommGrp m n
 
+/-- The inclusion between torsion levels is a monomorphism. -/
+instance mono_torsionInclusion : Mono (E.torsionInclusion m n) :=
+  GroupScheme.mono_torsionInclusion E.toCommGrp m n
+
 /-- The inclusion between torsion levels is a homomorphism of group schemes. -/
 instance isMonHom_torsionInclusion : IsMonHom (E.torsionInclusion m n) :=
   GroupScheme.isMonHom_torsionInclusion E.toCommGrp m n

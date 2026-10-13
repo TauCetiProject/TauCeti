@@ -209,6 +209,10 @@ theorem torsionInclusion_torsionι :
     torsionInclusion G m n ≫ torsionι G (m * n) = torsionι G m :=
   torsionLift_ι _ _
 
+/-- The inclusion between torsion levels is a monomorphism. -/
+instance mono_torsionInclusion : Mono (torsionInclusion G m n) :=
+  mono_of_mono_fac (torsionInclusion_torsionι G m n)
+
 /-- The inclusion between torsion levels is a homomorphism of group schemes. -/
 instance isMonHom_torsionInclusion : IsMonHom (torsionInclusion G m n) := by
   unfold torsionInclusion
