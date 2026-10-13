@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
-import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.Algebra.Module.Projective.LinearMap
 
 /-!
 # Reduction of endomorphisms modulo `I • M`
@@ -132,18 +132,10 @@ to zero on `N ⧸ r • N` exactly when it is `r` times an endomorphism of `N`. 
 theorem endMapQ_span_algebraMap_eq_zero_iff (f : Module.End A N) :
     endMapQ (span {algebraMap R A r}) N f = 0 ↔ ∃ g : Module.End A N, r • g = f := by
   rw [← RingHom.mem_ker, mem_ker_endMapQ_iff]
-  constructor
-  · -- `f` takes values in `r • N`, the range of `r • id`, so it factors through `r • id`.
-    intro hf
-    let φ : Module.End A N := r • LinearMap.id
-    have hfφ (x : N) : f x ∈ LinearMap.range φ := by
-      obtain ⟨w, hw⟩ := (Submodule.mem_span_algebraMap_smul_top_iff r).mp (hf ⟨x, rfl⟩)
-      exact ⟨w, hw⟩
-    obtain ⟨g, hg⟩ := Module.projective_lifting_property φ.rangeRestrict (f.codRestrict _ hfφ)
-      φ.surjective_rangeRestrict
-    exact ⟨g, LinearMap.ext fun x ↦ congrArg Subtype.val (LinearMap.congr_fun hg x)⟩
-  · rintro ⟨g, rfl⟩ _ ⟨x, rfl⟩
-    exact (Submodule.mem_span_algebraMap_smul_top_iff r).mpr ⟨g x, rfl⟩
+  simpa only [LinearMap.mem_ker, LinearMap.compRight_apply, ← LinearMap.range_le_ker_iff,
+    Submodule.ker_mkQ, Submodule.mem_smul_pointwise_iff_exists, Submodule.mem_top, true_and] using
+    (SetLike.ext_iff.mp
+      (TauCeti.ker_compRight_mkQ_eq_smul_top_of_projective (R := R) (x := r) N) f)
 
 end Principal
 
