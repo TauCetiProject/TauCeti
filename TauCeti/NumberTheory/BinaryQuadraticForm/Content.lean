@@ -244,6 +244,19 @@ theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) : (γ • f).IsPrimitive ↔ f.IsPrimitive := by
   rw [isPrimitive_iff, isPrimitive_iff, content_smul]
 
+/-- Primitive forms of fixed discriminant, with the proper special-linear action. -/
+def primitiveForms (D : ℤ) :
+    SubMulAction (Matrix.SpecialLinearGroup (Fin 2) ℤ) (BinaryQuadraticForm ℤ) where
+  carrier := {f | f.discrim = D ∧ f.IsPrimitive}
+  smul_mem' γ f := by
+    rintro ⟨hf, hprim⟩
+    exact ⟨(discrim_smul γ f).trans hf, (isPrimitive_smul_iff f γ).mpr hprim⟩
+
+/-- Membership in the primitive fixed-discriminant forms. -/
+@[simp] theorem mem_primitiveForms (D : ℤ) (f : BinaryQuadraticForm ℤ) :
+    f ∈ primitiveForms D ↔ f.discrim = D ∧ f.IsPrimitive := by
+  rfl
+
 /-- Taking primitive parts commutes with proper integral changes of variables. -/
 theorem primPart_smul (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) :
