@@ -51,6 +51,7 @@ def bundleWedgeWith (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
   fun x ↦ ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x)
 
 /-- At each point, the bundle wedge is the paired wedge of the two fibre values. -/
+@[simp]
 theorem bundleWedgeWith_apply' (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
     (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) (x : M) :
@@ -163,7 +164,7 @@ theorem bundleMpullback_wedgeWith (f : M' → M)
       bundleWedgeWith (I := I') (fun y ↦ μ (f y)) (fun y ↦ hμ (f y))
         (bundleMpullback I' I f φ) (bundleMpullback I' I f ψ) := by
   ext x v
-  simp [bundleWedgeWith_apply, bundleMpullback_apply]
+  simp [bundleWedgeWith_apply, bundleMpullback_apply, -bundleWedgeWith_apply']
 
 /-- Within-set pullback likewise commutes with the paired wedge without regularity
 assumptions. -/
@@ -175,7 +176,7 @@ theorem bundleMpullbackWithin_wedgeWith (f : M' → M) (s : Set M')
       bundleWedgeWith (I := I') (fun y ↦ μ (f y)) (fun y ↦ hμ (f y))
         (bundleMpullbackWithin I' I f s φ) (bundleMpullbackWithin I' I f s ψ) := by
   ext x v
-  simp [bundleWedgeWith_apply, bundleMpullbackWithin_apply]
+  simp [bundleWedgeWith_apply, bundleMpullbackWithin_apply, -bundleWedgeWith_apply']
 
 end TauCeti
 
