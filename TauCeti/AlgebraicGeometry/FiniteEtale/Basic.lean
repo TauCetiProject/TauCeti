@@ -131,22 +131,23 @@ instance : (spec R).IsEquivalence where
 
 /-- Finite étale algebras over a commutative ring are anti-equivalent to finite étale schemes
 over its spectrum. The forward functor is `spec`. -/
-noncomputable def specEquivalence :
+noncomputable def finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme :
     (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ ≌ FiniteEtaleScheme (Spec R) :=
   (spec R).asEquivalence
 
 /-- The forward functor of the finite étale anti-equivalence is the spectrum functor. -/
 @[simp]
-theorem specEquivalence_functor : (specEquivalence R).functor = spec R :=
+theorem finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor :
+    (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme R).functor = spec R :=
   (rfl)
 
 /-- After forgetting finiteness and étaleness, the inverse coordinate-algebra functor is
 naturally isomorphic to Mathlib's global-sections functor `algΓ`. The components identify
 coordinate algebras, and `.hom.naturality` identifies pullback on every morphism. -/
-noncomputable def specEquivalenceInverseCompInclusionIso :
-    (specEquivalence R).inverse ⋙ (CommAlgCat.finiteEtale R).ι.op ≅
+noncomputable def finiteEtaleCommAlgCatOpEquivFiniteEtaleSchemeInverseCompInclusionIso :
+    (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme R).inverse ⋙ (CommAlgCat.finiteEtale R).ι.op ≅
       (finiteEtaleSchemeProperty (Spec R)).ι ⋙ algΓ R :=
-  Iso.inverseCompIso (G := specEquivalence R)
+  Iso.inverseCompIso (G := finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme R)
     ((Functor.rightUnitor _).symm ≪≫
       Functor.isoWhiskerLeft _ (asIso (algΓAlgSpecAdjunction R).counit).symm ≪≫
       (Functor.associator _ _ _).symm ≪≫
@@ -158,16 +159,18 @@ noncomputable def specEquivalenceInverseCompInclusionIso :
 The inverse constructs the spectrum of the algebra of functions on the finite set. -/
 noncomputable def equivOfIsSepClosed (K : Type u) [Field K] [IsSepClosed K] :
     FiniteEtaleScheme (Spec (.of K)) ≌ FintypeCat.{u} :=
-  (specEquivalence (.of K)).symm.trans (CommAlgCat.FiniteEtale.equivOfIsSepClosed K)
+  (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).symm.trans
+    (CommAlgCat.FiniteEtale.equivOfIsSepClosed K)
 
 /-- The finite-set classification takes the finite prime spectrum of the coordinate algebra.
 Its object and map computations are those of Mathlib's `finiteSpec`; the coordinate algebra
 and its pullback are identified with global sections by
-`specEquivalenceInverseCompInclusionIso`. -/
+`finiteEtaleCommAlgCatOpEquivFiniteEtaleSchemeInverseCompInclusionIso`. -/
 @[simp]
 theorem equivOfIsSepClosed_functor (K : Type u) [Field K] [IsSepClosed K] :
     (equivOfIsSepClosed K).functor =
-      (specEquivalence (.of K)).inverse ⋙ CommAlgCat.FiniteEtale.finiteSpec K := by
+      (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).inverse ⋙
+        CommAlgCat.FiniteEtale.finiteSpec K := by
   simp only [equivOfIsSepClosed, Equivalence.trans_functor, Equivalence.symm_functor,
     CommAlgCat.FiniteEtale.equivOfIsSepClosed_functor]
 
@@ -178,14 +181,15 @@ theorem equivOfIsSepClosed_inverse (K : Type u) [Field K] [IsSepClosed K] :
     (equivOfIsSepClosed K).inverse =
       (CommAlgCat.FiniteEtale.equivOfIsSepClosed K).inverse ⋙ spec (.of K) := by
   simp only [equivOfIsSepClosed, Equivalence.trans_inverse, Equivalence.symm_inverse,
-    specEquivalence_functor]
+    finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor]
 
 /-- The finite-set classification is naturally isomorphic to the geometric fibre of the
 coordinate algebra: algebra homomorphisms to the separably closed base field, with
 precomposition as the action on morphisms. -/
 noncomputable def equivOfIsSepClosedFunctorIsoFiber (K : Type u) [Field K] [IsSepClosed K] :
     (equivOfIsSepClosed K).functor ≅
-      (specEquivalence (.of K)).inverse ⋙ CommAlgCat.FiniteEtale.fiber K K :=
+      (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).inverse ⋙
+        CommAlgCat.FiniteEtale.fiber K K :=
   eqToIso (equivOfIsSepClosed_functor K) ≪≫
     Functor.isoWhiskerLeft _ (CommAlgCat.FiniteEtale.fiberIsoFiniteSpec K).symm
 
