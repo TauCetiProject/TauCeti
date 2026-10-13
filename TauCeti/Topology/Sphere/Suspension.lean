@@ -38,6 +38,9 @@ open scoped unitInterval
 
 namespace TauCeti
 
+/-- The unit circle `S¹` in `ℝ²`. -/
+abbrev Sphere1 : Type := sphere (0 : EuclideanSpace ℝ (Fin 2)) 1
+
 /-- The unit sphere `S²` in `ℝ³`. -/
 abbrev Sphere2 : Type := sphere (0 : EuclideanSpace ℝ (Fin 3)) 1
 
