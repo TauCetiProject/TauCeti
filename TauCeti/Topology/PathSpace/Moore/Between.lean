@@ -43,6 +43,10 @@ variable {a b}
 /-- The underlying Moore path. -/
 def toMoorePath (γ : MoorePathBetween X a b) : MoorePath X := γ.val
 
+@[simp]
+theorem toMoorePath_mk (γ : MoorePath X) (h : γ.source = a ∧ γ.target = b) :
+    toMoorePath (a := a) (b := b) ⟨γ, h⟩ = γ := (rfl)
+
 @[ext]
 theorem ext {γ δ : MoorePathBetween X a b} (h : γ.toMoorePath = δ.toMoorePath) : γ = δ :=
   Subtype.ext h
