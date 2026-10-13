@@ -319,15 +319,13 @@ This is the inner-automorphism triviality of Milne, *Arithmetic Duality Theorems
 Proposition 0.15. -/
 theorem explicitConj1_eq_id_of_mem (N : Subgroup G) [N.Normal] (g : N) :
     explicitConj1 (M := M) N (g : G) = AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitConj1_apply_eq_smul, smul_mk, AddMonoidHom.id_apply, H1pi_eq_iff]
-      refine mem_B1_iff.2 ⟨(c : N → M) g, ?_⟩
-      intro n
-      simpa [d0_apply] using
-        congrFun (inverseConjugationHomotopy1_spec N g c) n
+  unfold explicitConj1
+  have hmap := explicitMap1_eq_of_conj N M N M
+    (ContinuousMonoidHom.id N) (inverseConjugationHom N (g : G))
+    (AddMonoidHom.id M) (DistribSMul.toAddMonoidHom M (g : G)) continuous_id
+    (fun _ _ => rfl) g
+    (fun n => by ext; simp [inverseConjugationHom_apply]) (fun _ => rfl)
+  exact hmap.trans (explicitMap1_id N M (fun _ _ => rfl))
 
 /-- An element of the subgroup acts trivially on explicit first cohomology. -/
 @[simp]
