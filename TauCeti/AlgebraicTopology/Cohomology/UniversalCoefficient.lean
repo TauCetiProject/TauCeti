@@ -25,9 +25,10 @@ universal coefficient sequence (`TauCeti.Algebra.Homology.UniversalCoefficient.B
 
 is exact, where the second map is the Kronecker map `TopCat.singularKronecker` evaluating
 cohomology classes on homology classes.  The sequence splits, and the Kronecker map is surjective
-in every degree, including degree `0`.  Both maps are natural in `X`.  The splitting
-`TopCat.singularKroneckerSection` depends on a chosen retraction of the cycles in each degree and
-need not be natural in `X`.
+in every degree; in degree `0` it is bijective (`TopCat.singularKronecker_bijective_zero`).  Both
+maps are natural in `X`.  The splitting `TopCat.singularKroneckerSection`, and the resulting
+decomposition `TopCat.singularUniversalCoefficientEquiv`, depend on a chosen retraction of the
+cycles in each degree and need not be natural in `X`.
 
 With `k = R = ℤ` this is the classical sequence
 `0 ⟶ Ext(Hₙ(X; ℤ), M) ⟶ Hⁿ⁺¹(X; M) ⟶ Hom(Hₙ₊₁(X; ℤ), M) ⟶ 0` for an abelian group `M`.  For an
@@ -36,12 +37,15 @@ any ring (`TopCat.singularKroneckerEquiv`).
 
 ## Main declarations
 
-* `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`.
+* `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
+  extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
   `TopCat.exact_singularExtToCohomology_singularKronecker`: exactness at the first two places.
 * `TopCat.singularKroneckerSection` and `TopCat.singularKronecker_singularKroneckerSection`: a
   `k`-linear right inverse of the Kronecker map, so that `TopCat.singularKronecker_surjective`
   gives exactness at the last place and the sequence splits.
+* `TopCat.singularUniversalCoefficientEquiv`: the resulting decomposition
+  `Hⁿ⁺¹(X; R, M) ≃ₗ[k] Ext¹(Hₙ(X; R), M) × Hom(Hₙ₊₁(X; R), M)`.
 * `TopCat.singularExtToCohomology_naturality`: naturality of the first map in `X`; the naturality
   of the Kronecker map is `TopCat.singularKronecker_naturality`.
 
@@ -81,6 +85,20 @@ lemma singularExtToCohomology_def (n : ℕ) :
       TauCeti.ChainComplex.extToHomology k ((toSSet.obj X).chainComplex R) M (n + 1) n :=
   (rfl)
 
+/-- **The characterization of `TopCat.singularExtToCohomology`**: the class in
+`Ext¹(Hₙ(X; R), M)` of a morphism `β : Bₙ ⟶ M` out of the singular boundaries
+`Bₙ = ker(Zₙ ⟶ Hₙ(X; R))` goes to the class of the cocycle `Cₙ₊₁(X; R) ⟶ Bₙ ⟶ M`. -/
+lemma singularExtToCohomology_extClass_comp_mk₀ (n : ℕ)
+    (β : kernel (((toSSet.obj X).chainComplex R).homologyπ n) ⟶ M)
+    (φ : (X.singularCochainComplex R k M).cycles (n + 1))
+    (hφ : (X.singularCochainComplex R k M).iCycles (n + 1) φ =
+      ((toSSet.obj X).chainComplex R).toBoundaries (n + 1) n ≫ β) :
+    X.singularExtToCohomology R M n
+        ((TauCeti.kernelSequence_shortExact
+          (((toSSet.obj X).chainComplex R).homologyπ n)).extClass.comp (Ext.mk₀ β) (add_zero 1)) =
+      (X.singularCochainComplex R k M).homologyπ (n + 1) φ :=
+  TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀ (n + 1) n β φ hφ
+
 /-- **Injectivity in the universal coefficient sequence**: over a principal ideal domain, the map
 `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)` is injective. -/
 theorem singularExtToCohomology_injective (n : ℕ) :
@@ -118,6 +136,42 @@ morphism `Hₙ(X; R) ⟶ M` is the evaluation of a class in `Hⁿ(X; R, M)`. -/
 theorem singularKronecker_surjective (n : ℕ) :
     Function.Surjective (X.singularKronecker (R := R) (M := M) k n) :=
   fun g ↦ ⟨X.singularKroneckerSection R M n g, X.singularKronecker_singularKroneckerSection R M n g⟩
+
+/-- **The splitting of the universal coefficient sequence** of singular cohomology over a
+principal ideal domain: a `k`-linear equivalence
+`Hⁿ⁺¹(X; R, M) ≃ₗ[k] Ext¹(Hₙ(X; R), M) × Hom(Hₙ₊₁(X; R), M)` whose second component is the
+Kronecker map (`TopCat.singularUniversalCoefficientEquiv_apply_snd`) and whose inverse restricts
+to `TopCat.singularExtToCohomology` on the first factor
+(`TopCat.singularUniversalCoefficientEquiv_symm_inl`).  It is built from the section
+`TopCat.singularKroneckerSection` and is not natural in `X`. -/
+def singularUniversalCoefficientEquiv (n : ℕ) :
+    X.singularCohomology R k M (n + 1) ≃ₗ[k]
+      Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1 ×
+        (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X ⟶ M) :=
+  ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
+    (X.singularExtToCohomology_injective R M n)
+    ⟨X.singularKroneckerSection R M (n + 1),
+      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).1
+
+/-- The inverse of the splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the
+inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor. -/
+@[simp]
+lemma singularUniversalCoefficientEquiv_symm_inl (n : ℕ)
+    (e : Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1) :
+    (X.singularUniversalCoefficientEquiv R M n).symm (e, 0) = X.singularExtToCohomology R M n e :=
+  (LinearMap.congr_fun
+    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
+      (X.singularExtToCohomology_injective R M n) _).property.left e).symm
+
+/-- The second component of the splitting `TopCat.singularUniversalCoefficientEquiv` is the
+Kronecker map. -/
+@[simp]
+lemma singularUniversalCoefficientEquiv_apply_snd (n : ℕ)
+    (x : X.singularCohomology R k M (n + 1)) :
+    (X.singularUniversalCoefficientEquiv R M n x).2 = X.singularKronecker k (n + 1) x :=
+  (LinearMap.congr_fun
+    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
+      (X.singularExtToCohomology_injective R M n) _).property.right x).symm
 
 variable {X} in
 /-- **Naturality of the universal coefficient sequence** in the space: for a continuous map

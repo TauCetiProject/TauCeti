@@ -148,4 +148,11 @@ theorem heatSemigroup_ae_eq_convolution (hp : p ≠ ∞) {t : ℝ≥0} (ht : t �
   exact convolutionLp_ae_eq_convolution hp
     (integrable_heatKernel (by positivity)) hf
 
+/-- At a positive time `t`, the heat semigroup applied to `f : Lp` is represented almost
+everywhere by convolution of the heat kernel with the chosen representative of `f`. -/
+theorem heatSemigroup_ae_eq_convolution_coeFn (hp : p ≠ ∞) {t : ℝ≥0} (ht : t ≠ 0)
+    (f : Lp F p (volume : Measure E)) :
+    heatSemigroup hp t f =ᵐ[volume] heatKernel t ⋆ (f : E → F) := by
+  simpa only [Lp.toLp_coeFn] using heatSemigroup_ae_eq_convolution hp ht (Lp.memLp f)
+
 end TauCeti

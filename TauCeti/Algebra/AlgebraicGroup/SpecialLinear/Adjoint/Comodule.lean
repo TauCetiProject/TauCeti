@@ -66,7 +66,7 @@ theorem mem_adjointWeightSpace_iff
 
 /-- A cotangent-dual tangent vector lies in a root weight space of the adjoint comodule
 exactly when its trace-zero matrix lies in the corresponding matrix-unit line. -/
-@[simp]
+@[simp↓]
 theorem mem_adjointWeightSpace_root_iff
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1)))
     (x : Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R (r + 1)))) :

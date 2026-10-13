@@ -40,9 +40,11 @@ corollaries for a `p`-group hold for an infinite `p`-group.
 This complements `TauCeti/RepresentationTheory/PGroupInvariants.lean`, which proves the same
 conclusion for a **finite** group over a commutative ring of characteristic `p` with no
 finiteness hypothesis on the module, by an orbit count rather than by Kolchin's theorem.  Neither
-statement subsumes the other: the results here allow an infinite acting monoid, at the cost of
-asking the module to be finite-dimensional over a field, while there the module is arbitrary and
-the group must be finite.
+invariant-vector statement subsumes the other: the results here allow an infinite acting monoid,
+at the cost of asking the module to be finite-dimensional over a field, while there the module is
+arbitrary and the group must be finite.  The irreducible corollaries here also cover a finite
+group, since an irreducible representation of a finite group is finite-dimensional
+(`Representation.IsIrreducible.finiteDimensional`).
 
 ## Main results
 
@@ -131,8 +133,8 @@ theorem invariants_ne_bot_of_forall_pow_expChar_pow_eq_one [Nontrivial V]
 /-- **A finite-dimensional irreducible representation in which every element acts with `p`-power
 order, over a field of exponential characteristic `p`, is the trivial representation.** It has a
 nonzero invariant vector, and a nontrivial irreducible representation has none.  The acting group
-need not be finite, where `Representation.IsIrreducible.eq_trivial_of_forall_pow_eq_one` asks for a
-finite group but not for a finite-dimensional module. -/
+need not be finite; for a finite group the finite dimensionality is automatic
+(`Representation.IsIrreducible.finiteDimensional`). -/
 theorem IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one {ρ : Representation k G V}
     (h : ρ.IsIrreducible) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ρ = trivial k G V :=
   have := h.nontrivial

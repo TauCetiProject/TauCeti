@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
-import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel
+import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel.Basic
 import TauCeti.MeasureTheory.Measure.UnitIntervalMap
 
 /-!

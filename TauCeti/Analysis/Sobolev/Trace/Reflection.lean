@@ -528,7 +528,6 @@ private theorem integral_lineDeriv_smul_add_comp_normalReflection {a : ℝ}
     ∫ x, lineDeriv ℝ φ x d • (w x + w (normalReflection E a x)) =
       -∫ x, φ x • inner ℝ (G x + normalLinearReflection E (G (normalReflection E a x))) d := by
   set ρ := normalReflection E a
-  have hρρ (x : WithLp 2 (ℝ × E)) : ρ (ρ x) = x := normalReflection_normalReflection a x
   have hεε : ε * ε = 1 := by rcases hε with rfl | rfl <;> norm_num
   have hwρ : LocallyIntegrable fun x => w (ρ x) := locallyIntegrable_comp_normalReflection a hwl
   have hGd := hGl.inner_const (𝕜 := ℝ) d

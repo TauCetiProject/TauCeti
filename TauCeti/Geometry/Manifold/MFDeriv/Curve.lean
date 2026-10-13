@@ -499,7 +499,7 @@ theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
   have htangent := hγ.continuousOn_tangentMapWithin le_rfl hu
   have hcomp := htangent.comp hι.continuous.continuousOn
     (fun t ht ↦ by simpa [ι] using ht)
-  refine hcomp.congr fun t ht ↦ ?_
+  refine hcomp.congr fun t _ ↦ ?_
   exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
 
 /-- The velocity lift of a `C¹` curve is continuous on an open parameter set. The openness

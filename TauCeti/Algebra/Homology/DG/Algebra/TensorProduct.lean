@@ -175,7 +175,7 @@ theorem isDGAlgebra_gradedTensorGrading (hA : IsDGAlgebra 𝒜 dA) (hB : IsDGAlg
   sq_zero x := by
     have key : (dgTensorDifferential 𝒜 ℬ dA dB ∘ₗ dgTensorDifferential 𝒜 ℬ dA dB :
         (𝒜 ᵍ⊗[R] ℬ) →ₗ[R] (𝒜 ᵍ⊗[R] ℬ)) = 0 := by
-      refine gradedTensor_linearMap_ext 𝒜 ℬ fun p q a ha b hb ↦ ?_
+      refine gradedTensor_linearMap_ext 𝒜 ℬ fun p q a ha b _ ↦ ?_
       rw [LinearMap.comp_apply, dgTensorDifferential_tmul_of_mem' ha, map_add, map_smul,
         dgTensorDifferential_tmul_of_mem' (hA.map_mem ha),
         dgTensorDifferential_tmul_of_mem' ha, hA.sq_zero, hB.sq_zero, Int.negOnePow_succ]

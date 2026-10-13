@@ -201,6 +201,13 @@ theorem map_comp_apply (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y)
   -- carried by `GenLoop.map`, which is proof-irrelevant.
   rfl
 
+/-- Composition law, as an equality of functions: the composite of the maps induced on homotopy
+classes is the map induced by the composite continuous map. -/
+@[simp]
+theorem map_comp_map (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y) :
+    map (N := N) g hg ∘ map f hf = map (g.comp f) (by simp [hf, hg]) :=
+  funext (map_comp_apply g hg f hf)
+
 /-- The induced map `HomotopyGroup.map` depends only on the underlying continuous map, not on the
 chosen proof of the basepoint equation. -/
 theorem map_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x = y) (h₂ : f₂ x = y)

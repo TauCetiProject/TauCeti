@@ -101,6 +101,9 @@ it.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_of_surjective`: **over a Tate ring, a
   surjection out of `A⟨X₁, …, Xₖ⟩` that is continuous at zero is already a strict
   presentation** — openness is supplied by the open mapping theorem rather than assumed.
+* `TauCeti.Huber.exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion`: over a Tate ring the
+  completion of `A⟨X₁, …, Xₖ⟩_T` is an open quotient of an unweighted `A⟨Y₁, …, Yₘ⟩`, each `Yⱼ`
+  going to a weighted variable `t Xᵢ` and every weighted variable being hit.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_algebraMap_completion_weightedRestrictedSubring`:
   over a Tate ring the completion of `A⟨X₁, …, Xₖ⟩_T` is strictly topologically of finite type,
   presented by one variable for each element of each `Tᵢ`.
@@ -477,7 +480,7 @@ private theorem exists_aeval_eq_of_forall_coeff_mem
   let S : AddSubgroup (MvPolynomial (Fin m) A) :=
     { carrier := {q | ∀ μ, q.coeff μ ∈ U}
       add_mem' := fun ha hb μ ↦ by simpa using U.add_mem (ha μ) (hb μ)
-      zero_mem' := fun μ ↦ by simp
+      zero_mem' := fun _ ↦ by simp
       neg_mem' := fun ha μ ↦ by simpa using U.neg_mem (ha μ) }
   let Q := S.map (MvPolynomial.aeval
     (fun j ↦ MvPolynomial.C (t j) * MvPolynomial.X (idx j))).toAddMonoidHom
@@ -680,14 +683,22 @@ private theorem surjective_weightSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j 
     (Completion.denseRange_coe y)
 
 variable (hT) in
-/-- **Over a Tate ring the completed weighted algebra is strictly topologically of finite type.**
-For a finite weight family `T`, the completion of `A⟨X₁, …, Xₖ⟩_T` is an open quotient of an
-unweighted `A⟨Y₁, …, Yₘ⟩` with one variable for each pair `(i, t)` with `t ∈ Tᵢ`, mapped to
-`t Xᵢ`. -/
-theorem isStrictlyTopologicallyFiniteType_algebraMap_completion_weightedRestrictedSubring
+/-- **Over a Tate ring the completed weighted algebra is an open quotient of an unweighted one.**
+For a finite weight family `T` there is an enumeration `j ↦ (idx j, t j)` of the pairs `(i, t)`
+with `t ∈ Tᵢ`, and an open quotient map `θ : A⟨Y₁, …, Yₘ⟩ → A⟨X₁, …, Xₖ⟩_T` (completed) over `A`
+sending `Yⱼ` to `tⱼ X_{idx j}`. -/
+theorem exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion
     (hTfin : ∀ i, (T i).Finite) :
-    IsStrictlyTopologicallyFiniteType
-      (algebraMap A (Completion (weightedRestrictedSubring T hT))) := by
+    ∃ (m : ℕ) (idx : Fin m → Fin k) (t : Fin m → A), (∀ j, t j ∈ T (idx j)) ∧
+      (∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) ∧
+      ∃ θ : restrictedMvPowerSeriesCompletion m A →+* Completion (weightedRestrictedSubring T hT),
+        IsOpenQuotientMap θ ∧
+          θ.comp (algebraMap A (restrictedMvPowerSeriesCompletion m A)) =
+            algebraMap A (Completion (weightedRestrictedSubring T hT)) ∧
+          ∀ j, θ (weightedX (fun _ : Fin m ↦ ({1} : Set A)) isWeightFamily_one_weight j :
+              weightedRestrictedSubring _ _) =
+            ((weightedC T hT (t j) * weightedX T hT (idx j) : weightedRestrictedSubring T hT) :
+              Completion (weightedRestrictedSubring T hT)) := by
   -- enumerate the pairs `(i, t)` with `t ∈ T i`
   have : ∀ i, Finite (T i) := fun i ↦ (hTfin i).to_subtype
   obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ((i : Fin k) × T i)
@@ -698,9 +709,30 @@ theorem isStrictlyTopologicallyFiniteType_algebraMap_completion_weightedRestrict
   -- the open mapping theorem makes the continuous surjection `weightSubst` open
   have : (𝓤 (Completion (weightedRestrictedSubring T hT))).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
-  exact isStrictlyTopologicallyFiniteType_of_surjective
+  have : (𝓤 (restrictedMvPowerSeriesCompletion m A)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  let θ : restrictedMvPowerSeriesCompletion m A →ₐ[A] Completion (weightedRestrictedSubring T hT) :=
     { weightSubst hT htT with commutes' := weightSubst_algebraMap hT htT }
-    (continuous_weightSubst hT htT).continuousAt (surjective_weightSubst htT ht)
+  have hs : Function.Surjective θ := surjective_weightSubst htT ht
+  refine ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, htT, ht, θ.toRingHom,
+    ⟨hs, continuous_weightSubst hT htT,
+      IsTateRing.isOpenMap θ.toLinearMap hs (continuous_weightSubst hT htT).continuousAt⟩,
+    RingHom.ext (weightSubst_algebraMap hT htT), fun j ↦ ?_⟩
+  simp only [θ]
+  rw [weightSubst, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
+
+variable (hT) in
+/-- **Over a Tate ring the completed weighted algebra is strictly topologically of finite type.**
+For a finite weight family `T`, the completion of `A⟨X₁, …, Xₖ⟩_T` is an open quotient of an
+unweighted `A⟨Y₁, …, Yₘ⟩` with one variable for each pair `(i, t)` with `t ∈ Tᵢ`, mapped to
+`t Xᵢ`. -/
+theorem isStrictlyTopologicallyFiniteType_algebraMap_completion_weightedRestrictedSubring
+    (hTfin : ∀ i, (T i).Finite) :
+    IsStrictlyTopologicallyFiniteType
+      (algebraMap A (Completion (weightedRestrictedSubring T hT))) := by
+  obtain ⟨m, -, -, -, -, θ, hθ, hθA, -⟩ :=
+    exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion hT hTfin
+  exact isStrictlyTopologicallyFiniteType_iff.mpr ⟨m, θ, hθ, hθA⟩
 
 /-- **Over a Tate ring, topologically of finite type is strictly topologically of finite type**:
 a presentation by a weighted restricted power-series algebra can be replaced by one by

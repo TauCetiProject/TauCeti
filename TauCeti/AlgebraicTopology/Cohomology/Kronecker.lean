@@ -34,6 +34,8 @@ the case where its `Ext¹`-term vanishes.
   `TopCat.singularKronecker_naturality` its naturality.
 * `TopCat.singularKroneckerEquiv`: for an injective coefficient object `M`, the Kronecker map is a
   `k`-linear equivalence.
+* `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
+  every coefficient object.
 
 ## References
 
@@ -93,6 +95,13 @@ def singularKroneckerEquiv (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] [I
     (n : ℕ) :
     X.singularCohomology R k M n ≃ₗ[k] (((singularHomologyFunctor C n).obj R).obj X ⟶ M) :=
   TauCeti.ChainComplex.kroneckerEquiv k ((toSSet.obj X).chainComplex R) M n
+
+/-- **The universal coefficient theorem in degree zero**: for every coefficient object `M`, the
+Kronecker map `H⁰(X; R, M) →ₗ[k] (H₀(X; R) ⟶ M)` is bijective, as no differential leaves the
+degree-zero singular chains. -/
+theorem singularKronecker_bijective_zero (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] :
+    Function.Bijective (X.singularKronecker (R := R) (M := M) k 0) :=
+  TauCeti.ChainComplex.kronecker_bijective_of_isIso 0
 
 /-- The equivalence `TopCat.singularKroneckerEquiv` is the Kronecker map. -/
 @[simp]

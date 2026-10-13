@@ -115,7 +115,7 @@ private theorem exists_unit_vectors_mapping_to_quaternion
     · simp [m, realCliffordForm_three_zero_apply]
       field_simp
       nlinarith
-    · have hnum :
+    · have _ :
           (q.re * q.imI + q.imK * q.imJ) ^ 2 +
               (q.re * q.imJ - q.imK * q.imI) ^ 2 =
             (q.re ^ 2 + q.imK ^ 2) * (q.imI ^ 2 + q.imJ ^ 2) := by
