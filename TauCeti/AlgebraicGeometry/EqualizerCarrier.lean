@@ -29,25 +29,25 @@ they differ.
 
 ## Main results
 
-* `AlgebraicGeometry.range_equalizer_ι_left_comp`: the image of the equalizer of `y ≫ a` and
-  `y ≫ b` is the preimage under `y` of the image of the equalizer of `a` and `b`.
-* `AlgebraicGeometry.isEmpty_equalizer_comp_iff`: the equalizer of `y ≫ a` and `y ≫ b` is empty
-  exactly when the image of `y` misses the equalizer of `a` and `b`.
-* `AlgebraicGeometry.range_equalizer_ι_left_of_section`: the image of the equalizer of two
-  sections is the set of points of the base at which they agree.
-* `AlgebraicGeometry.isEmpty_equalizer_iff_forall_ne`: two sections have empty equalizer exactly
-  when they agree at no point of the base.
-* `AlgebraicGeometry.isEmpty_equalizer_iff_ne`: over a field, two points of a scheme have empty
-  equalizer exactly when they are distinct.
+* `TauCeti.AlgebraicGeometry.range_equalizer_ι_left_comp`: the image of the equalizer of
+  `y ≫ a` and `y ≫ b` is the preimage under `y` of the image of the equalizer of `a` and `b`.
+* `TauCeti.AlgebraicGeometry.isEmpty_equalizer_comp_iff`: the equalizer of `y ≫ a` and `y ≫ b`
+  is empty exactly when the image of `y` misses the equalizer of `a` and `b`.
+* `TauCeti.AlgebraicGeometry.range_equalizer_ι_left_of_section`: the image of the equalizer of
+  two sections is the set of points of the base at which they agree.
+* `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_forall_ne`: two sections have empty equalizer
+  exactly when they agree at no point of the base.
+* `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_ne`: over a field, two points of a scheme
+  have empty equalizer exactly when they are distinct.
 -/
 
 public section
 
-open CategoryTheory Limits MonoidalCategory
+open AlgebraicGeometry CategoryTheory Limits MonoidalCategory
 
 universe u
 
-namespace AlgebraicGeometry
+namespace TauCeti.AlgebraicGeometry
 
 variable {S : Scheme.{u}} {Z Y W : Over S}
 
@@ -114,8 +114,7 @@ theorem range_equalizer_ι_left_of_section {X : Over S} (Q R : 𝟙_ (Over S) �
     obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
     have hp : t p = s := Scheme.fromSpecResidueField_apply s p
     have ht : t ≫ Q.left = t ≫ R.left :=
-      (TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section (f := X.hom)
-        (by simp) (by simp) t p).mpr
+      (comp_eq_comp_iff_of_section (f := X.hom) (by simp) (by simp) t p).mpr
         ((congrArg Q.left hp).trans (hs.trans (congrArg R.left hp).symm))
     have hy : CartesianMonoidalCategory.toUnit (Over.mk t) ≫ Q =
         CartesianMonoidalCategory.toUnit (Over.mk t) ≫ R := by
@@ -142,7 +141,7 @@ theorem isEmpty_equalizer_iff_ne {K : Type u} [Field K] {X : Over (Spec (.of K))
   rw [isEmpty_equalizer_iff_forall_ne]
   refine ⟨fun h hPQ ↦ h s (by rw [hPQ]), fun hPQ t ht ↦ hPQ ?_⟩
   ext1
-  simpa using (TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section (f := X.hom)
+  simpa using (comp_eq_comp_iff_of_section (f := X.hom)
     (by simp) (by simp) (𝟙 _) t).mpr ht
 
-end AlgebraicGeometry
+end TauCeti.AlgebraicGeometry
