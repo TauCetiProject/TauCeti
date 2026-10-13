@@ -20,7 +20,7 @@ The coefficient and basis formulas retain the specified field equivalence, rathe
 asserting the existence of an isomorphism of algebras.
 
 The construction uses Mathlib's `AlgEquiv.autCongr` and `Finsupp.lcongr`, and Tau Ceti's
-crossed-product basis and multiplication table.
+crossed-product universal property `CrossedProduct.lift` and basis.
 
 ## References
 
@@ -52,60 +52,59 @@ private theorem congrLinearEquiv_smul_basis (σ : L ≃ₐ[K] L) (x : L) :
 variable (hc : ∀ σ τ, Units.map e.toMonoidHom (c.toFun σ τ) =
   d.toFun (e.autCongr σ) (e.autCongr τ))
 
-include hc in
-private theorem congrLinearEquiv_mul (a b : CrossedProduct c) :
-    congrLinearEquiv c d e (a * b) = congrLinearEquiv c d e a * congrLinearEquiv c d e b := by
-  induction a using induction_on with
-  | zero => simp
-  | add a a' ha ha' => simp only [add_mul, map_add, ha, ha']
-  | smul_basis σ x =>
-    induction b using induction_on with
-    | zero => simp
-    | add b b' hb hb' => simp only [mul_add, map_add, hb, hb']
-    | smul_basis τ y =>
-      simp only [smul_basis_mul_smul_basis, congrLinearEquiv_smul_basis, map_mul]
+private def congrHom : CrossedProduct c →ₐ[K] CrossedProduct d :=
+  lift ((inc d).comp e.toAlgHom) (fun σ ↦ basis d (e.autCongr σ))
+    (fun σ x ↦ by
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, basis_mul_inc,
+        AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply])
+    (fun σ τ ↦ by
       have h : e (c.toFun σ τ : L) = (d.toFun (e.autCongr σ) (e.autCongr τ) : M) :=
         congrArg Units.val (hc σ τ)
-      simp only [h, AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply]
+      simp only [basis_mul_basis, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, h, map_mul])
+    (by
+      have h : e (c.toFun 1 1 : L) = (d.toFun 1 1 : M) := by
+        have h : e (c.toFun 1 1 : L) = (d.toFun (e.autCongr 1) (e.autCongr 1) : M) :=
+          congrArg Units.val (hc 1 1)
+        simpa only [map_one] using h
+      simp only [map_one, basis_one, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, h])
 
-include hc in
-private theorem congrLinearEquiv_one : congrLinearEquiv c d e (1 : CrossedProduct c) = 1 := by
-  have h : Units.map e.toMonoidHom (c.toFun 1 1) = d.toFun 1 1 := by
-    simpa only [map_one] using hc 1 1
-  rw [one_def, one_def, congrLinearEquiv_smul_basis, map_one]
-  congr 1
-  exact congrArg Units.val ((map_inv (Units.map e.toMonoidHom) _).trans (congrArg Inv.inv h))
+private theorem coe_congrHom : ⇑(congrHom c d e hc) = congrLinearEquiv c d e := by
+  funext a
+  induction a using induction_on with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | smul_basis σ x =>
+    rw [congrHom, lift_smul_basis, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+      congrLinearEquiv_smul_basis, smul_def]
 
 /-- Transport a crossed product along an equivalence of its coefficient algebras and the
 corresponding equality of cocycles. The coefficient of `u_σ` is mapped by `e`, and its index is
 conjugated by `e`. -/
 def congr : CrossedProduct c ≃ₐ[K] CrossedProduct d :=
-  AlgEquiv.ofLinearEquiv (congrLinearEquiv c d e)
-    (congrLinearEquiv_one c d e hc) (congrLinearEquiv_mul c d e hc)
+  AlgEquiv.ofBijective (congrHom c d e hc) (by
+    rw [coe_congrHom]
+    exact (congrLinearEquiv c d e).bijective)
 
--- `AlgEquiv.ofLinearEquiv` retains the underlying function of the linear equivalence.
-private theorem coe_congr : ⇑(congr c d e hc) = congrLinearEquiv c d e := rfl
+private theorem coe_congr : ⇑(congr c d e hc) = congrLinearEquiv c d e := by
+  rw [congr, AlgEquiv.coe_ofBijective, coe_congrHom]
 
 /-- The transport conjugates the index of a basis element. -/
 @[simp]
 theorem congr_basis (σ : L ≃ₐ[K] L) :
     congr c d e hc (basis c σ) = basis d (e.autCongr σ) := by
-  rw [coe_congr, ← one_smul L (basis c σ), congrLinearEquiv_smul_basis, map_one, one_smul]
+  simp only [congr, AlgEquiv.ofBijective_apply, congrHom, lift_basis]
+
+/-- The transport maps the embedded coefficient algebra by the specified equivalence. -/
+@[simp]
+theorem congr_inc (x : L) : congr c d e hc (inc c x) = inc d (e x) := by
+  simp only [congr, AlgEquiv.ofBijective_apply, congrHom, lift_inc, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom]
 
 /-- Transport is semilinear for left multiplication by the coefficient algebra. -/
 @[simp]
 theorem congr_smul (x : L) (a : CrossedProduct c) :
     congr c d e hc (x • a) = e x • congr c d e hc a := by
-  induction a using induction_on with
-  | zero => simp
-  | add a b ha hb => simp only [smul_add, map_add, ha, hb]
-  | smul_basis σ y =>
-    simp only [coe_congr, smul_smul, congrLinearEquiv_smul_basis, map_mul]
-
-/-- The transport maps the embedded coefficient algebra by the specified equivalence. -/
-@[simp]
-theorem congr_inc (x : L) : congr c d e hc (inc c x) = inc d (e x) := by
-  rw [← mul_one (inc c x), ← smul_def, congr_smul, map_one, smul_def, mul_one]
+  rw [smul_def, map_mul, congr_inc, smul_def]
 
 /-- In the transported basis, every coefficient is mapped by `e`. -/
 @[simp]
