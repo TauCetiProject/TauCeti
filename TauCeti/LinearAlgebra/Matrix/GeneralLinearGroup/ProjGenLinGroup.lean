@@ -92,9 +92,11 @@ theorem natCard_PGL_fin_two (F : Type*) [Field F] [Fintype F] :
   have hcube : (m + 2) ^ 3 - (m + 2) = (m + 1) * ((m + 2) * (m + 3)) := by
     have : (m + 2) ^ 3 = (m + 1) * ((m + 2) * (m + 3)) + (m + 2) := by ring
     omega
+  have hmpos : 0 < m + 1 := by omega
+  have hsub : m + 2 - 1 = m + 1 := by omega
   rw [hm, hcube]
-  refine Nat.eq_of_mul_eq_mul_right (show 0 < m + 1 by omega) ?_
-  rw [show m + 2 - 1 = m + 1 by omega] at h
+  refine Nat.eq_of_mul_eq_mul_right hmpos ?_
+  rw [hsub] at h
   rw [h]
   ring
 
