@@ -33,7 +33,8 @@ the first component `P` of a pair `(P, Q)`, the first basis vector when `N` is i
 
 The definitions make sense over every base `B`, but they are the naive level structures of Katz and
 Mazur only over a base on which `N` is invertible, where `E[N]` is finite étale. Over a general base
-the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`).
+the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`, `ModuliProblem.gamma`
+for `[Γ(N)]`).
 
 ## Main definitions
 
