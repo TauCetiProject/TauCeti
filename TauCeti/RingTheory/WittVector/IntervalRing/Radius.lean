@@ -378,7 +378,7 @@ def restrictedEvalIntervalRing (hρ : ρ₁ ≤ ρ₂) :
     (Fin.cases (by
       have h : ((ρ₂ : ℝ))⁻¹ ≤ (ρ₁ : ℝ)⁻¹ :=
         inv_anti₀ (by exact_mod_cast hρ₁.1) (by exact_mod_cast hρ)
-      simpa [norm_ringInverse_natCast_intervalRing] using h) fun i ↦ by simp)
+      simpa using h) fun i ↦ by simp)
 
 variable {c}
 

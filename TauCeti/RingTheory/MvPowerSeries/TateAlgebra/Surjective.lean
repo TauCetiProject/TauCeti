@@ -41,7 +41,7 @@ public section
 
 namespace MvPowerSeries
 
-variable {σ τ R S : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+variable {σ τ R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [NormedCommRing S] [IsUltrametricDist S] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
   {d : τ → ℝ} [∀ j, Fact (0 < d j)]
   {Φ : IsRestricted.subring (R := R) d →+* IsRestricted.subring (R := S) c}
@@ -62,9 +62,12 @@ private theorem exists_lift_of_finite {D : AddSubgroup S}
   set T : (σ →₀ ℕ) → IsRestricted.subring (R := R) d := fun t ↦ t.prod fun i n ↦ x i ^ n
   have hT (t : σ →₀ ℕ) : Φ (T t) = ⟨monomial t 1, isRestricted_monomial c t 1⟩ := by
     simp [T, map_finsuppProd, hx, mk_monomial_eq_algebraMap_mul_prod]
-  have hTn (t : σ →₀ ℕ) : ‖T t‖ ≤ t.prod (c · ^ ·) :=
-    (Finset.norm_prod_le _ _).trans (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦
-      (norm_pow_le _ _).trans (pow_le_pow_left₀ (norm_nonneg _) (hxn i) _))
+  -- `R` need not satisfy `‖1‖ = 1`, so only nonempty products are bounded factorwise
+  have hTn {t : σ →₀ ℕ} (ht : t ≠ 0) : ‖T t‖ ≤ t.prod (c · ^ ·) :=
+    (Finset.norm_prod_le' _ (Finsupp.support_nonempty_iff.mpr ht) _).trans
+      (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i hi ↦
+        (norm_pow_le' _ (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
+          (pow_le_pow_left₀ (norm_nonneg _) (hxn i) _))
   refine ⟨∑ t ∈ hfin.toFinset, a t * T t, ?_, ?_⟩
   · apply Subtype.ext
     ext s
@@ -74,9 +77,11 @@ private theorem exists_lift_of_finite {D : AddSubgroup S}
     split_ifs with hs
     · rfl
     · exact (not_not.mp hs).symm
-  · refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg h) fun t _ ↦ ?_
-    exact ((norm_mul_le _ _).trans (mul_le_mul (han t) (hTn t) (norm_nonneg _)
-      (norm_nonneg _))).trans (norm_coeff_mul_prod_le h t)
+  · refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg h) fun t _ ↦
+      le_trans ?_ (norm_coeff_mul_prod_le h t)
+    rcases eq_or_ne t 0 with rfl | ht
+    · simpa [T] using han 0
+    · exact (norm_mul_le _ _).trans (mul_le_mul (han t) (hTn ht) (norm_nonneg _) (norm_nonneg _))
 
 variable [CompleteSpace R]
 

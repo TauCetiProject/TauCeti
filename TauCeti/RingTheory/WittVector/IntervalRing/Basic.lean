@@ -375,6 +375,7 @@ theorem ringInverse_natCast_intervalRing :
   rfl
 
 /-- The norm of `p⁻¹` in `B^I` is `max(ρ₁⁻¹, ρ₂⁻¹)`. -/
+@[simp]
 theorem norm_ringInverse_natCast_intervalRing :
     ‖Ring.inverse (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)‖ = max (ρ₁ : ℝ)⁻¹ (ρ₂ : ℝ)⁻¹ := by
   have hp (ρ : ℝ≥0) (hρ : ρ ∈ Set.Ioo 0 1) :

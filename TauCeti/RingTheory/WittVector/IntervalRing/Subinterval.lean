@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.WittVector.IntervalRing.Radius
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
 
@@ -299,7 +298,7 @@ noncomputable def intervalRingRestrictedEval (h₁ : ρ₁ ≤ ρ₁') (h₁₂ 
     (Fin.cases (by
       have h : ((ρ₂ : ℝ))⁻¹ ≤ (ρ₁' : ℝ)⁻¹ :=
         inv_anti₀ (by exact_mod_cast hρ₁'.1) (by exact_mod_cast h₁₂)
-      simpa [norm_ringInverse_natCast_intervalRing] using h) fun i ↦ by simp)
+      simpa using h) fun i ↦ by simp)
 
 variable {c}
 
