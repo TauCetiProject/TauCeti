@@ -104,7 +104,7 @@ theorem adicOfIrreducibleXSqAddOneResidueFieldEquiv_cast_algebraMap_X :
 
 /-- The element `i` corresponds to the residue class of `x` at the place of `X ^ 2 + 1`. -/
 @[simp]
-theorem adicOfIrreducibleXSqAddOneResidueFieldEquiv_symm_gen :
+theorem adicOfIrreducibleXSqAddOneResidueFieldEquiv_symm_apply_gen :
     (adicOfIrreducibleXSqAddOneResidueFieldEquiv h).symm
         (IntermediateField.AdjoinSimple.gen K Complex.I) =
       adicOfIrreducibleResidueFieldEquiv h (Ideal.Quotient.mk _ X) :=
