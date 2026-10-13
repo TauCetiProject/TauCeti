@@ -201,7 +201,8 @@ run still detects an earlier pin change. A delayed success for an old pin does
 not authorize updating a newer pin; that newer pin must complete its own CI.
 Ordinary same-pin main builds do not run bump or incompatibility reconciliation.
 The gate reads trusted current main and never executes workflow-run artifacts.
-Reconciliation remains serialized, checks out fresh main, and uses the existing
+Only actionable mutation jobs join the shared serialization group. Its bounded
+FIFO queue preserves pending updates; skipped CI completions never join it. Reconciliation remains serialized, checks out fresh main, and uses the existing
 idempotent downstream report and bump actions. An outstanding downstream
 revalidation still defers advancement; its report is consumed by later normal
 reconciliation, rather than being bypassed with a guessed compatibility claim.
