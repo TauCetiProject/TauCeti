@@ -43,9 +43,11 @@ faithfully flat over `B` and `β` is injective, then `B` maps isomorphically ont
 categorical quotient in affine schemes: an invariant algebra map into `A` factors uniquely
 through `B` (`TauCeti.ComoduleAlgebra.existsUnique_comp_eq`).
 
-For a commutative Hopf algebra `H`, the regular comodule algebra `H` is an `H`-Galois extension
-of `R`: its Galois map is the tensor shear `HopfAlgebra.tensorShearMulRight`, which is bijective
-(`TauCeti.ComoduleAlgebra.galoisMap_self_bijective`). This is the trivial torsor `G ⟶ Spec R`.
+For a commutative Hopf algebra `H`, the Galois map of the regular comodule algebra `H` over `R`
+is the tensor shear `HopfAlgebra.tensorShearMulRight`, which is bijective
+(`TauCeti.ComoduleAlgebra.galoisMap_self_bijective`). When `H` is moreover faithfully flat over
+`R` (for instance when `R` is a field), `H` is therefore an `H`-Galois extension of `R`: the
+trivial torsor `G ⟶ Spec R`.
 
 ## Main definitions
 
@@ -289,8 +291,9 @@ section Hopf
 variable {R : Type u} {H : Type v} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
 
 /-- **The trivial torsor.** For a commutative Hopf algebra `H`, the Galois map of the regular
-comodule algebra `H` over `R` is the tensor shear `a ⊗ b ↦ (a ⊗ 1) Δ b`, which is bijective: the
-action of `Spec H` on itself by right translation makes it a torsor over `Spec R`. -/
+comodule algebra `H` over `R` is the tensor shear `a ⊗ b ↦ (a ⊗ 1) Δ b`, which is bijective. When
+`H` is faithfully flat over `R`, the action of `Spec H` on itself by right translation therefore
+makes it a torsor over `Spec R`. -/
 theorem galoisMap_self_bijective :
     Function.Bijective (galoisMap R fun r ↦ (coinvariants R H H).algebraMap_mem r) := by
   have h : (galoisMap R fun r ↦ (coinvariants R H H).algebraMap_mem r).restrictScalars R =
