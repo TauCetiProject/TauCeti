@@ -52,6 +52,8 @@ field" into the classical resolvent conditions — irreducible, splits completel
 * `Polynomial.Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd` and
   `Polynomial.irreducible_X_pow_five_add_C_mul_X_add_C`: irreducibility in degree at most five
   from the absence of linear and monic quadratic factors
+* `Polynomial.Monic.irreducible_of_natDegree_eq_three_of_coeff_zero_eq_one`: a monic integer
+  cubic with constant coefficient `1` and no root at `±1` is irreducible
 -/
 
 public section
@@ -347,5 +349,17 @@ theorem irreducible_X_pow_five_add_C_mul_X_add_C {c d : R}
   exact hquad a b
 
 end NoZeroDivisors
+
+/-- A monic integer cubic with constant coefficient `1` and no root at `1` or `-1` is
+irreducible: an integer root divides the constant coefficient. -/
+theorem Monic.irreducible_of_natDegree_eq_three_of_coeff_zero_eq_one {p : ℤ[X]} (hm : p.Monic)
+    (hd : p.natDegree = 3) (h0 : p.coeff 0 = 1) (h1 : p.eval 1 ≠ 0) (hn1 : p.eval (-1) ≠ 0) :
+    Irreducible p := by
+  rw [Monic.irreducible_iff_roots_eq_zero_of_degree_le_three hm (by lia) hd.le]
+  refine Multiset.eq_zero_of_forall_notMem fun n hn ↦ ?_
+  have hr : p.IsRoot n := (mem_roots hm.ne_zero).mp hn
+  -- an integer root divides the constant coefficient `1`, so it is `1` or `-1`
+  rcases Int.isUnit_iff.mp (isUnit_of_dvd_one (h0 ▸ hr.dvd_coeff_zero)) with rfl | rfl
+  exacts [h1 hr, hn1 hr]
 
 end Polynomial
