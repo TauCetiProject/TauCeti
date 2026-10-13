@@ -152,12 +152,11 @@ theorem degree_comp (g : H ⟶ K) [IsFinite g.hom.hom.left] [Flat g.hom.hom.left
   have hfg : (f ≫ g).hom.hom.left = f.hom.hom.left ≫ g.hom.hom.left := by simp
   have : IsFinite (f ≫ g).hom.hom.left := by rw [hfg]; infer_instance
   have : Flat (f ≫ g).hom.hom.left := by rw [hfg]; infer_instance
-  -- The rank of `f` at a point of `H` is the degree of `f` at its image in `S`.
-  have hf : f.hom.hom.left.finrank = (fun z ↦ degree f (K.X.hom z)) ∘ g.hom.hom.left := by
-    ext y
-    rw [finrank_hom_hom_left, Function.comp_apply, ← Scheme.Hom.comp_apply, Over.w g.hom.hom]
-  rw [degree_eq_finrank, hfg, Scheme.Hom.finrank_comp_of_finrank_eq_comp _ _ hf,
-    ← degree_eq_finrank, ← Scheme.Hom.comp_apply, Over.w η[K.X]]
+  rw [degree_eq_finrank, hfg, Scheme.Hom.finrank_comp_of_fiber (n := degree f s) _ _ fun y hy ↦ ?_,
+    ← degree_eq_finrank]
+  -- The rank of `f` at a point of `H` over `s` is the degree of `f` at `s`.
+  rw [finrank_hom_hom_left, ← Over.w g.hom.hom, Scheme.Hom.comp_apply, hy,
+    ← Scheme.Hom.comp_apply, Over.w η[K.X]]
   simp
 
 /-- **A homomorphism of degree one is an isomorphism.** A finite, flat and surjective

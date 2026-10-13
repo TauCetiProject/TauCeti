@@ -26,14 +26,9 @@ finite locally free morphisms multiply in towers. The constancy hypothesis canno
 since the points of `Y` over a given point of `S` can carry different ranks of `f`. Over an
 affine base this is `TauCeti.Module.rankAtStalk_eq_mul_of_rankAtStalk_eq`, and the general case
 reduces to it because the rank is computed after base change to affine opens of `S`. More
-generally, if the rank of `f` at `y` is `d (g y)` for a function `d` on `S`, then
-`(f ≫ g).finrank s = d s * g.finrank s`
-(`AlgebraicGeometry.Scheme.Hom.finrank_comp_of_finrank_eq_comp`): over the residue field of `s`
-the rank of `f` is constant.
-
-When `f` is moreover locally of finite presentation, it suffices that `f` have rank `n` on the
-fibre of `g` over `s` (`AlgebraicGeometry.Scheme.Hom.finrank_comp_of_fiber`): the rank of `f` is
-then locally constant and `g` is closed, so `f` has rank `n` over an open neighbourhood of `s`.
+generally, it suffices that `f` have rank `n` on the fibre of `g` over `s`
+(`AlgebraicGeometry.Scheme.Hom.finrank_comp_of_fiber`): after base change to the residue field
+of `s`, the rank of `f` is constant.
 
 The rank is at least `1` at the points of the image (Mathlib's `Scheme.Hom.one_le_finrank_map`)
 and is `0` at every other point (`AlgebraicGeometry.Scheme.Hom.finrank_eq_zero_iff_notMem_range`).
@@ -48,10 +43,8 @@ rank is the `K`-dimension of `Γ(X, ⊤)` (`AlgebraicGeometry.Scheme.Hom.finrank
   rank of `f` at `y`, for an isomorphism `e`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp`: the rank of a composite whose first factor has
   constant rank.
-* `AlgebraicGeometry.Scheme.Hom.finrank_comp_of_finrank_eq_comp`: the rank of a composite whose
-  first factor has rank depending only on the image in the base.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp_of_fiber`: the rank of a composite whose first factor
-  is finite locally free of constant rank on a fibre of the second.
+  has constant rank on a fibre of the second.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_zero_iff_notMem_range`: the rank vanishes exactly at
   the points outside the image.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`: over a field, the rank is the
@@ -174,49 +167,22 @@ theorem Scheme.Hom.finrank_comp (f : X ⟶ Y) (g : Y ⟶ S) [Flat f] [IsFinite f
     ← RingHom.algebraMap_toAlgebra φ.hom, RingHom.finrank_algebraMap] at this
 
 /-- **The rank is multiplicative in towers, fibrewise.** If `f : X ⟶ Y` and `g : Y ⟶ S` are finite
-and flat and the rank of `f` at every point of `Y` depends only on its image in `S`, through a
-function `d : S → ℕ`, then the rank of `f ≫ g` at `s` is `d s` times the rank of `g` at `s`.
-This specializes to `AlgebraicGeometry.Scheme.Hom.finrank_comp` for constant `d`. -/
-theorem Scheme.Hom.finrank_comp_of_finrank_eq_comp (f : X ⟶ Y) (g : Y ⟶ S) [Flat f]
-    [IsFinite f] [Flat g] [IsFinite g] {d : S → ℕ} (hf : f.finrank = d ∘ g) (s : S) :
-    (f ≫ g).finrank s = d s * g.finrank s := by
-  -- Over the residue field of `s`, the base change of `f` has constant rank `d s`.
+and flat and `f` has rank `n` at every point of the fibre of `g` over `s`, then the rank of
+`f ≫ g` at `s` is `n` times the rank of `g` at `s`. -/
+theorem Scheme.Hom.finrank_comp_of_fiber (f : X ⟶ Y) (g : Y ⟶ S) [Flat f] [IsFinite f] [Flat g]
+    [IsFinite g] {n : ℕ} {s : S} (hf : ∀ y, g y = s → f.finrank y = n) :
+    (f ≫ g).finrank s = n * g.finrank s := by
+  -- Over the residue field of `s`, the base change of `f` has constant rank `n`.
   let t := S.fromSpecResidueField s
   obtain ⟨a⟩ : Nonempty (Spec (.of (S.residueField s))) := inferInstance
   rw [← S.fromSpecResidueField_apply s a, ← finrank_pullback_snd, ← finrank_pullback_snd,
     ← finrank_comp_left_of_isIso (pullbackRightPullbackFstIso g t f).hom,
     pullbackRightPullbackFstIso_hom_snd]
   refine finrank_comp _ _ (fun y ↦ ?_) a
-  rw [finrank_pullback_snd, hf, Function.comp_apply, ← Scheme.Hom.comp_apply, pullback.condition,
-    Scheme.Hom.comp_apply]
-  simp only [t, S.fromSpecResidueField_apply]
-
-/-- **The rank is multiplicative in towers, fibrewise.** If `f : X ⟶ Y` is finite locally free,
-`g : Y ⟶ S` is finite and flat, and `f` has rank `n` at every point of the fibre of `g` over `s`,
-then the rank of `f ≫ g` at `s` is `n` times the rank of `g` at `s`. -/
-theorem Scheme.Hom.finrank_comp_of_fiber (f : X ⟶ Y) (g : Y ⟶ S) [Flat f] [IsFinite f]
-    [LocallyOfFinitePresentation f] [Flat g] [IsFinite g] {n : ℕ} {s : S}
-    (hf : ∀ y, g y = s → f.finrank y = n) :
-    (f ≫ g).finrank s = n * g.finrank s := by
-  -- `f` has rank `n` over the open neighbourhood `U` of `s` consisting of the points not in the
-  -- image of the closed set where the rank of `f` is not `n`; `g` is finite, hence closed
-  let U : S.Opens := ⟨(g '' {y | f.finrank y = n}ᶜ)ᶜ,
-    (g.isClosedMap _ (f.isLocallyConstant_finrank.isClopen_fiber n).compl.isClosed).isOpen_compl⟩
-  have hU (y : Y) (hy : g y ∈ U) : f.finrank y = n := by_contra fun h ↦ hy ⟨y, h, rfl⟩
-  have hs : s ∈ Set.range U.ι := by
-    rw [Scheme.Opens.range_ι]
-    rintro ⟨y, hy, rfl⟩
-    exact hy (hf y rfl)
-  -- after base change to `U`, the morphism `f` has constant rank `n`
-  obtain ⟨s, rfl⟩ := hs
-  rw [← finrank_pullback_snd, ← finrank_pullback_snd,
-    ← finrank_comp_left_of_isIso (pullbackRightPullbackFstIso g U.ι f).hom,
-    pullbackRightPullbackFstIso_hom_snd]
-  refine finrank_comp _ _ (fun y ↦ ?_) s
   rw [finrank_pullback_snd]
-  refine hU _ ?_
+  refine hf _ ?_
   rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
-  exact (pullback.snd g U.ι y).2
+  simp only [t, S.fromSpecResidueField_apply]
 
 /-- **Over a field, the rank is the dimension of the global sections.** The rank of a finite
 morphism `f : X ⟶ Spec K` is the `K`-dimension of `Γ(X, ⊤)`, for the `K`-algebra structure given
