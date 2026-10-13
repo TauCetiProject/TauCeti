@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Kernel
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cokernel
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Biproduct
 public import Mathlib.CategoryTheory.Preadditive.LeftExact
 
 /-!
@@ -40,6 +41,7 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
 
+/-- The closed category's coimage-to-image comparison is an isomorphism. -/
 noncomputable instance
     {M N : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)}
     (f : M ⟶ N) : IsIso (Abelian.coimageImageComparison f) := by
@@ -52,9 +54,11 @@ noncomputable instance instAbelianClosedCategory : Abelian
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
   Abelian.ofCoimageImageComparisonIsIso
 
+/-- The graded forgetful functor preserves finite limits of closed curved-module diagrams. -/
 noncomputable instance : PreservesFiniteLimits (forgetDifferential (h := h)) :=
   Functor.preservesFiniteLimits_of_preservesKernels _
 
+/-- The graded forgetful functor preserves finite colimits of closed curved-module diagrams. -/
 noncomputable instance : PreservesFiniteColimits (forgetDifferential (h := h)) :=
   Functor.preservesFiniteColimits_of_preservesCokernels _
 

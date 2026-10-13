@@ -6,7 +6,6 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Biproduct
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 
 /-!
@@ -51,8 +50,8 @@ noncomputable def cokernelDifferential : (N ⧸ LinearMap.range (closedHom f)) �
     (((LinearMap.range (closedHom f)).mkQ.restrictScalars R).comp N.differential)
     (fun x hx ↦ by
       obtain ⟨y, rfl⟩ := (LinearMap.mem_range).mp hx
-      -- Evaluate the restricted quotient map on a representative of the image.
-      change Submodule.Quotient.mk (N.differential (closedHom f y)) = 0
+      simp only [LinearMap.mem_ker, LinearMap.comp_apply,
+        LinearMap.restrictScalars_apply, Submodule.mkQ_apply]
       rw [differential_closedHom]
       exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨M.differential y, rfl⟩)).comp
     (Submodule.Quotient.restrictScalarsEquiv R (LinearMap.range (closedHom f))).symm.toLinearMap
@@ -66,9 +65,22 @@ theorem cokernelDifferential_mk (x : N) :
     Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.liftQ_apply,
     LinearMap.restrictScalars_apply, Submodule.mkQ_apply]
 
+/-- The reused graded quotient consists of classes of homogeneous target elements. -/
+private theorem mem_gradedCokernel_piece_iff {p : ℤ}
+    {x : N ⧸ LinearMap.range (closedHom f)} :
+    x ∈ (GradedModuleCat.cokernelObj ((forgetDifferential (h := h)).map f)).grading.piece p ↔
+      ∃ y ∈ N.grading p, Submodule.Quotient.mk y = x := by
+  dsimp only [GradedModuleCat.cokernelObj]
+  rw [GradedModuleCat.mem_cokernelGrading_piece_iff]
+  -- A representative is typed in the forgetful target's carrier. Rewriting its
+  -- object equality changes that dependent type, so align the foreign grading
+  -- view once here before using the public equation for its homogeneous pieces.
+  change (∃ y ∈ (toGradedModuleCat N).grading.piece p, Submodule.Quotient.mk y = x) ↔ _
+  rw [toGradedModuleCat_piece]
+  rfl
+
 /-- The curved module carried by the quotient of the target by the image of a closed map. -/
-@[expose, implicit_reducible]
-noncomputable def cokernelModule : CurvedDGRightModuleCat.{u, u, u} h := by
+noncomputable def cokernelObj : CurvedDGRightModuleCat.{u, u, u} h := by
   let Q := GradedModuleCat.cokernelObj ((forgetDifferential (h := h)).map f)
   letI : DirectSum.Decomposition Q.grading.piece := inferInstance
   letI : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece Q.grading.piece :=
@@ -81,21 +93,12 @@ noncomputable def cokernelModule : CurvedDGRightModuleCat.{u, u, u} h := by
   refine ⟨?_, ?_, ?_⟩
   · apply LinearMap.isHomogeneous_def.mpr
     intro p x hx
-    obtain ⟨y, hy, rfl⟩ := (GradedModuleCat.mem_cokernelGrading_piece_iff _).mp hx
-    -- The existing quotient grading chooses a homogeneous representative in the target.
-    change y ∈ (toGradedModuleCat N).grading.piece p at hy
-    rw [toGradedModuleCat_piece] at hy
+    obtain ⟨y, hy, rfl⟩ := (mem_gradedCokernel_piece_iff f).mp hx
     rw [cokernelDifferential_mk]
-    apply (GradedModuleCat.mem_cokernelGrading_piece_iff _).mpr
-    refine ⟨N.differential y, ?_, rfl⟩
-    change N.differential y ∈ (toGradedModuleCat N).grading.piece (p + 1)
-    rw [toGradedModuleCat_piece]
-    exact N.isCurvedDGRightModule.isHomogeneous.map_mem hy
+    apply (mem_gradedCokernel_piece_iff f).mpr
+    exact ⟨N.differential y, N.isCurvedDGRightModule.isHomogeneous.map_mem hy, rfl⟩
   · intro p x hx a
-    obtain ⟨y, hy, rfl⟩ := (GradedModuleCat.mem_cokernelGrading_piece_iff _).mp hx
-    -- Read that representative's degree in the original target before applying its Leibniz rule.
-    change y ∈ (toGradedModuleCat N).grading.piece p at hy
-    rw [toGradedModuleCat_piece] at hy
+    obtain ⟨y, hy, rfl⟩ := (mem_gradedCokernel_piece_iff f).mp hx
     simp only [← Submodule.Quotient.mk_smul]
     erw [cokernelDifferential_mk, cokernelDifferential_mk]
     rw [← Submodule.Quotient.mk_smul, N.isCurvedDGRightModule.leibniz hy a]
@@ -106,81 +109,114 @@ noncomputable def cokernelModule : CurvedDGRightModuleCat.{u, u, u} h := by
       rw [cokernelDifferential_mk, cokernelDifferential_mk,
         N.isCurvedDGRightModule.sq_eq, Submodule.Quotient.mk_smul]
 
-/-- Homogeneous elements of the curved cokernel are classes of homogeneous target elements. -/
+/-- The cokernel carrier is the range quotient. The equivalence's linearity supplies the
+inherited right action without exposing the construction of `cokernelObj`. -/
+noncomputable def cokernelEquiv : cokernelObj f ≃ₗ[Aᵐᵒᵖ] N ⧸ LinearMap.range (closedHom f) :=
+  LinearEquiv.refl Aᵐᵒᵖ (N ⧸ LinearMap.range (closedHom f))
+
+/-- The cokernel differential corresponds to the induced quotient differential. -/
 @[simp]
-theorem mem_cokernelModule_grading_iff {p : ℤ} {x : N ⧸ LinearMap.range (closedHom f)} :
-    x ∈ (cokernelModule f).grading p ↔
-      ∃ y ∈ N.grading p, Submodule.Quotient.mk y = x := by
-  -- The curved cokernel retains the existing graded quotient's homogeneous pieces.
-  change x ∈ (GradedModuleCat.cokernelGrading ((forgetDifferential (h := h)).map f)).piece p ↔ _
-  rw [GradedModuleCat.mem_cokernelGrading_piece_iff]
-  change (∃ y ∈ (toGradedModuleCat N).grading.piece p, Submodule.Quotient.mk y = x) ↔ _
-  rw [toGradedModuleCat_piece]
-  rfl
+theorem cokernelEquiv_differential (x : cokernelObj f) :
+    cokernelEquiv f ((cokernelObj f).differential x) =
+      cokernelDifferential f (cokernelEquiv f x) :=
+  (rfl)
+
+/-- Homogeneous cokernel elements correspond to classes of homogeneous target elements. -/
+@[simp]
+theorem mem_cokernelObj_grading_iff {p : ℤ} {x : cokernelObj f} :
+    x ∈ (cokernelObj f).grading p ↔
+      ∃ y ∈ N.grading p, Submodule.Quotient.mk y = cokernelEquiv f x :=
+  mem_gradedCokernel_piece_iff f
 
 /-- The projection onto the curved cokernel is a closed map. -/
-noncomputable def cokernelProjection :
+noncomputable def cokernelπ :
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cokernelModule f) :=
-  closedHomOf (LinearMap.range (closedHom f)).mkQ
-    (fun _ x hx ↦ (mem_cokernelModule_grading_iff f).mpr ⟨x, hx, rfl⟩)
-    (fun x ↦ cokernelDifferential_mk f x)
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cokernelObj f) :=
+  closedHomOf ((cokernelEquiv f).symm.toLinearMap.comp (LinearMap.range (closedHom f)).mkQ)
+    (fun _ x hx ↦ (mem_cokernelObj_grading_iff f).mpr ⟨x, hx, by simp⟩)
+    (fun x ↦ by
+      apply (cokernelEquiv f).injective
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, cokernelEquiv_differential,
+        LinearEquiv.apply_symm_apply, Submodule.mkQ_apply, cokernelDifferential_mk])
 
-/-- The underlying cokernel projection is the quotient map. -/
+/-- The projection represents the class of a target element under the carrier equivalence. -/
 @[simp]
-theorem closedHom_cokernelProjection :
-    closedHom (cokernelProjection f) = (LinearMap.range (closedHom f)).mkQ := by
-  dsimp only [cokernelProjection]
-  exact closedHom_closedHomOf _ _ _
+theorem cokernelEquiv_cokernelπ (x : N) :
+    cokernelEquiv f (closedHom (cokernelπ f) x) = Submodule.Quotient.mk x := by
+  dsimp only [cokernelπ]
+  rw [closedHom_closedHomOf]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply, Submodule.mkQ_apply]
+
+/-- The inverse carrier equivalence represents a quotient class by the closed projection. -/
+@[simp]
+theorem cokernelEquiv_symm_mk (x : N) :
+    (cokernelEquiv f).symm (Submodule.Quotient.mk x) = closedHom (cokernelπ f) x := by
+  apply (cokernelEquiv f).injective
+  simp only [LinearEquiv.apply_symm_apply, cokernelEquiv_cokernelπ]
 
 /-- The original map followed by its cokernel projection is zero. -/
 @[reassoc (attr := simp)]
-theorem comp_cokernelProjection : f ≫ cokernelProjection f = 0 := by
+theorem comp_cokernelπ : f ≫ cokernelπ f = 0 := by
   apply closedHom_ext
   intro x
-  simp only [closedHom_comp, closedHom_cokernelProjection, closedHom_zero, LinearMap.comp_apply,
-    LinearMap.zero_apply]
+  apply (cokernelEquiv f).injective
+  simp only [closedHom_comp, LinearMap.comp_apply, cokernelEquiv_cokernelπ,
+    closedHom_zero, LinearMap.zero_apply, map_zero]
   exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨x, rfl⟩
 
 /-- The cokernel cofork in the closed category of curved right modules. -/
 @[expose]
 noncomputable def cokernelCocone : CokernelCofork f :=
-  CokernelCofork.ofπ (cokernelProjection f) (comp_cokernelProjection f)
+  CokernelCofork.ofπ (cokernelπ f) (comp_cokernelπ f)
+
+/-- The underlying cofork projection is the quotient map followed by the carrier equivalence. -/
+@[simp]
+theorem hom_cokernelCocone_π :
+    closedHom (cokernelCocone f).π =
+      (cokernelEquiv f).symm.toLinearMap.comp (LinearMap.range (closedHom f)).mkQ := by
+  dsimp only [cokernelCocone, cokernelπ]
+  exact closedHom_closedHomOf _ _ _
 
 /-- The curved cokernel projection satisfies the cokernel universal property. -/
 noncomputable def cokernelIsColimit : IsColimit (cokernelCocone f) :=
-  CokernelCofork.IsColimit.ofπ (cokernelProjection f) (comp_cokernelProjection f)
+  CokernelCofork.IsColimit.ofπ (cokernelπ f) (comp_cokernelπ f)
     (fun g hg ↦ closedHomOf
-      ((LinearMap.range (closedHom f)).liftQ (closedHom g) fun x hx ↦ by
-        obtain ⟨y, rfl⟩ := (LinearMap.mem_range).mp hx
+      (((LinearMap.range (closedHom f)).liftQ (closedHom g) fun x hx ↦ by
+        obtain ⟨y, rfl⟩ := LinearMap.mem_range.mp hx
         apply LinearMap.mem_ker.mpr
         have hs := congrArg (fun l ↦ closedHom l y) hg
         simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
-          using hs)
+          using hs).comp (cokernelEquiv f).toLinearMap)
       (fun _ x hx ↦ by
-        obtain ⟨y, hy, rfl⟩ := (mem_cokernelModule_grading_iff f).mp hx
-        rw [Submodule.liftQ_apply]
+        obtain ⟨y, hy, he⟩ := (mem_cokernelObj_grading_iff f).mp hx
+        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+        rw [← he, Submodule.liftQ_apply]
         exact closedHom_mem g hy)
       (fun x ↦ by
-        induction x using Submodule.Quotient.induction_on with
-        | _ x =>
-          erw [cokernelDifferential_mk]
-          exact differential_closedHom g x))
+        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, cokernelEquiv_differential]
+        induction (cokernelEquiv f x) using Submodule.Quotient.induction_on with
+        | _ y =>
+          simp only [Submodule.liftQ_apply, cokernelDifferential_mk]
+          exact differential_closedHom g y))
     (fun g hg ↦ by
       apply closedHom_ext
       intro x
-      erw [closedHom_comp, closedHom_cokernelProjection, closedHom_closedHomOf]
-      rfl)
+      simp only [closedHom_comp, LinearMap.comp_apply, closedHom_closedHomOf,
+        LinearEquiv.coe_coe, cokernelEquiv_cokernelπ, Submodule.liftQ_apply])
     (fun g hg m hm ↦ by
       apply closedHom_ext
       intro x
-      induction x using Submodule.Quotient.induction_on with
-      | _ x =>
-        have hs := congrArg (fun l ↦ closedHom l x) hm
-        simp only [closedHom_comp, LinearMap.comp_apply, closedHom_cokernelProjection] at hs
-        erw [closedHom_closedHomOf]
-        exact hs)
+      obtain ⟨z, rfl⟩ := (cokernelEquiv f).symm.surjective x
+      induction z using Submodule.Quotient.induction_on with
+      | _ y =>
+        have hs := congrArg (fun l ↦ closedHom l y) hm
+        simp only [closedHom_comp, LinearMap.comp_apply] at hs
+        simpa only [closedHom_closedHomOf, LinearMap.comp_apply, LinearEquiv.coe_coe,
+          LinearEquiv.apply_symm_apply, Submodule.liftQ_apply, cokernelEquiv_symm_mk, cokernelEquiv_cokernelπ]
+          using hs)
 
+/-- The closed category of curved right modules has cokernels. -/
 noncomputable instance : HasCokernels
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
   ⟨fun f ↦ HasColimit.mk ⟨_, cokernelIsColimit f⟩⟩
@@ -188,13 +224,21 @@ noncomputable instance : HasCokernels
 /-- Forgetting the differential of the curved cokernel gives the usual graded cokernel. -/
 noncomputable def forgetDifferentialCokernelIso :
     (forgetDifferential (h := h)).obj
-        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cokernelModule f)) ≅
+        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cokernelObj f)) ≅
       GradedModuleCat.cokernelObj ((forgetDifferential (h := h)).map f) :=
-  GradedModuleCat.isoMk (LinearEquiv.refl Aᵐᵒᵖ (N ⧸ LinearMap.range (closedHom f))) fun p x ↦ by
-    -- Forgetting the differential recovers exactly the inherited quotient grading.
-    change x ∈ (toGradedModuleCat (cokernelModule f)).grading.piece p ↔ _
+  GradedModuleCat.isoMk (cokernelEquiv f) fun p x ↦ by
+    -- `isoMk` fixes a representative in the forgetful object's dependent carrier.
+    -- Rewriting the object equality would transport that representative; align
+    -- only the grading view, leaving the cokernel object behind its sealed API.
+    change x ∈ (toGradedModuleCat (cokernelObj f)).grading.piece p ↔ _
     rw [toGradedModuleCat_piece]
-    rfl
+    exact (mem_cokernelObj_grading_iff f).trans (mem_gradedCokernel_piece_iff f).symm
+
+/-- The graded comparison is the cokernel's characteristic carrier equivalence. -/
+@[simp]
+theorem forgetDifferentialCokernelIso_hom_hom :
+    (forgetDifferentialCokernelIso f).hom.hom = (cokernelEquiv f).toLinearMap := by
+  simp only [forgetDifferentialCokernelIso, GradedModuleCat.isoMk_hom_hom]
 
 /-- The graded forgetful functor preserves the cokernel of a closed map. -/
 noncomputable instance : PreservesColimit (parallelPair f 0) (forgetDifferential (h := h)) := by
@@ -204,10 +248,12 @@ noncomputable instance : PreservesColimit (parallelPair f 0) (forgetDifferential
       GradedModuleCat.cokernelCocone ((forgetDifferential (h := h)).map f) :=
     Cofork.ext (forgetDifferentialCokernelIso f) (by
       apply GradedModuleCat.hom_ext
-      -- The comparison is the identity on the quotient, so evaluate its underlying composition.
-      change LinearMap.id.comp (closedHom (cokernelProjection f)) =
-        (LinearMap.range (closedHom f)).mkQ
-      rw [LinearMap.id_comp, closedHom_cokernelProjection])
+      rw [GradedModuleCat.hom_comp, forgetDifferentialCokernelIso_hom_hom,
+        GradedModuleCat.hom_cokernelCocone_π, CokernelCofork.map_π,
+        forgetDifferential_map_hom, hom_cokernelCocone_π]
+      apply LinearMap.ext
+      intro x
+      exact LinearEquiv.apply_symm_apply (cokernelEquiv f) _)
   exact (IsColimit.equivIsoColimit e).symm
     (GradedModuleCat.cokernelIsColimit ((forgetDifferential (h := h)).map f))
 

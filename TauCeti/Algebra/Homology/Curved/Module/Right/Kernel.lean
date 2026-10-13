@@ -6,7 +6,6 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Biproduct
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 
 /-!
@@ -49,8 +48,8 @@ noncomputable def kernelDifferential : LinearMap.ker (closedHom f) →ₗ[R]
   LinearMap.codRestrict ((LinearMap.ker (closedHom f)).restrictScalars R)
     (M.differential.comp ((LinearMap.ker (closedHom f)).subtype.restrictScalars R))
     (fun x ↦ by
-      -- Membership in the restricted kernel is the underlying closed map's zero equation.
-      change closedHom f (M.differential x.1) = 0
+      simp only [Submodule.restrictScalars_mem, LinearMap.mem_ker, LinearMap.comp_apply,
+        LinearMap.restrictScalars_apply, Submodule.subtype_apply]
       rw [← differential_closedHom, x.2, map_zero])
 
 /-- The restricted differential is the source differential on underlying elements. -/
@@ -59,9 +58,19 @@ theorem coe_kernelDifferential (x : LinearMap.ker (closedHom f)) :
     (kernelDifferential f x : M) = M.differential x :=
   (rfl)
 
+/-- The reused graded kernel has exactly the source's homogeneous pieces on its subtype. -/
+private theorem mem_gradedKernel_piece_iff {p : ℤ} {x : LinearMap.ker (closedHom f)} :
+    x ∈ (GradedModuleCat.kernelObj ((forgetDifferential (h := h)).map f)).grading.piece p ↔
+      (x : M) ∈ M.grading p := by
+  simp only [GradedModuleCat.kernelObj, InternalGrading.mem_ker_piece]
+  -- The element is typed through the kernel subtype of the forgetful object. Rewriting
+  -- that object equality would change its dependent element type; align this foreign
+  -- carrier once in the helper, then use the public grading equation.
+  change (x : M) ∈ (toGradedModuleCat M).grading.piece p ↔ (x : M) ∈ M.grading p
+  rw [toGradedModuleCat_piece]
+
 /-- The curved module carried by the kernel of a closed map. -/
-@[expose, implicit_reducible]
-noncomputable def kernelModule : CurvedDGRightModuleCat.{u, u, u} h := by
+noncomputable def kernelObj : CurvedDGRightModuleCat.{u, u, u} h := by
   let K := GradedModuleCat.kernelObj ((forgetDifferential (h := h)).map f)
   letI : DirectSum.Decomposition K.grading.piece := inferInstance
   letI : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece K.grading.piece :=
@@ -74,96 +83,105 @@ noncomputable def kernelModule : CurvedDGRightModuleCat.{u, u, u} h := by
   refine ⟨?_, ?_, ?_⟩
   · apply LinearMap.isHomogeneous_def.mpr
     intro p x hx
-    simp only [K, GradedModuleCat.kernelObj, InternalGrading.mem_ker_piece] at hx ⊢
-    -- The graded kernel uses the original source's pieces, restricted to its kernel subtype.
-    change (x : M) ∈ (toGradedModuleCat M).grading.piece p at hx
-    change (kernelDifferential f x : M) ∈ (toGradedModuleCat M).grading.piece (p + 1)
-    rw [toGradedModuleCat_piece] at hx ⊢
-    rw [coe_kernelDifferential]
-    exact M.isCurvedDGRightModule.isHomogeneous.map_mem hx
+    apply (mem_gradedKernel_piece_iff f).mpr
+    simpa only [coe_kernelDifferential] using
+      M.isCurvedDGRightModule.isHomogeneous.map_mem ((mem_gradedKernel_piece_iff f).mp hx)
   · intro p x hx a
     apply Subtype.ext
-    simp only [coe_kernelDifferential, Submodule.coe_smul, Submodule.coe_add,
-      K, GradedModuleCat.kernelObj, InternalGrading.mem_ker_piece] at hx ⊢
-    -- Reduce the inherited grading and subtype operations to the source module's Leibniz rule.
-    change (x : M) ∈ (toGradedModuleCat M).grading.piece p at hx
-    rw [toGradedModuleCat_piece] at hx
-    change M.differential (op a • x.1) =
-      op a • M.differential x.1 + p.negOnePow • (op (d a) • x.1)
-    exact M.isCurvedDGRightModule.leibniz hx a
+    simpa only [coe_kernelDifferential, Units.smul_def, Submodule.coe_smul,
+      Submodule.coe_smul_of_tower, Submodule.coe_add] using
+      M.isCurvedDGRightModule.leibniz ((mem_gradedKernel_piece_iff f).mp hx) a
   · intro x
     apply Subtype.ext
-    simp only [coe_kernelDifferential, Submodule.coe_smul]
-    exact M.isCurvedDGRightModule.sq_eq x.1
+    simpa only [coe_kernelDifferential, Submodule.coe_smul] using
+      M.isCurvedDGRightModule.sq_eq x.1
 
-/-- Homogeneity in the curved kernel is homogeneity in the source. -/
+/-- The kernel carrier is the kernel submodule. Its linearity characterizes the inherited
+right action; consumers use this equivalence rather than unfolding `kernelObj`. -/
+noncomputable def kernelEquiv : kernelObj f ≃ₗ[Aᵐᵒᵖ] LinearMap.ker (closedHom f) :=
+  LinearEquiv.refl Aᵐᵒᵖ (LinearMap.ker (closedHom f))
+
+/-- The kernel's differential corresponds to the restricted source differential. -/
 @[simp]
-theorem mem_kernelModule_grading_iff {p : ℤ} {x : LinearMap.ker (closedHom f)} :
-    x ∈ (kernelModule f).grading p ↔ (x : M) ∈ M.grading p := by
-  -- The curved kernel's grading is the existing graded kernel's restricted grading.
-  change x ∈ (GradedModuleCat.kernelObj ((forgetDifferential (h := h)).map f)).grading.piece p ↔ _
-  simp only [GradedModuleCat.kernelObj, InternalGrading.mem_ker_piece]
-  change (x : M) ∈ (toGradedModuleCat M).grading.piece p ↔ _
-  rw [toGradedModuleCat_piece]
+theorem kernelEquiv_differential (x : kernelObj f) :
+    kernelEquiv f ((kernelObj f).differential x) = kernelDifferential f (kernelEquiv f x) :=
+  (rfl)
+
+/-- Homogeneity in the curved kernel is homogeneity in the source under its carrier comparison. -/
+@[simp]
+theorem mem_kernelObj_grading_iff {p : ℤ} {x : kernelObj f} :
+    x ∈ (kernelObj f).grading p ↔ (kernelEquiv f x : M) ∈ M.grading p :=
+  mem_gradedKernel_piece_iff f
 
 /-- The inclusion of the curved kernel is a closed map. -/
-noncomputable def kernelInclusion :
-    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (kernelModule f) ⟶
+noncomputable def kernelι :
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (kernelObj f) ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M :=
-  closedHomOf (LinearMap.ker (closedHom f)).subtype
-    (fun _ _ hx ↦ (mem_kernelModule_grading_iff f).mp hx)
-    (fun _ ↦ (coe_kernelDifferential f _).symm)
+  closedHomOf ((LinearMap.ker (closedHom f)).subtype.comp (kernelEquiv f).toLinearMap)
+    (fun _ _ hx ↦ (mem_kernelObj_grading_iff f).mp hx)
+    (fun x ↦ by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply,
+        kernelEquiv_differential, coe_kernelDifferential])
 
-/-- The underlying kernel inclusion is the submodule inclusion. -/
+/-- The underlying kernel inclusion is its carrier comparison followed by subtype inclusion. -/
 @[simp]
-theorem closedHom_kernelInclusion :
-    closedHom (kernelInclusion f) = (LinearMap.ker (closedHom f)).subtype := by
-  dsimp only [kernelInclusion]
+theorem hom_kernelι :
+    closedHom (kernelι f) =
+      (LinearMap.ker (closedHom f)).subtype.comp (kernelEquiv f).toLinearMap := by
+  dsimp only [kernelι]
   exact closedHom_closedHomOf _ _ _
 
 /-- The kernel inclusion followed by the original map is zero. -/
 @[reassoc (attr := simp)]
-theorem kernelInclusion_comp : kernelInclusion f ≫ f = 0 := by
+theorem kernelι_comp : kernelι f ≫ f = 0 := by
   apply closedHom_ext
   intro x
-  simp only [closedHom_comp, closedHom_kernelInclusion, closedHom_zero, LinearMap.comp_apply,
-    LinearMap.zero_apply]
-  exact x.2
+  simp only [closedHom_comp, hom_kernelι, closedHom_zero, LinearMap.comp_apply,
+    LinearMap.zero_apply, LinearEquiv.coe_coe, Submodule.subtype_apply]
+  exact (kernelEquiv f x).2
 
 /-- The kernel fork in the closed category of curved right modules. -/
 @[expose]
 noncomputable def kernelCone : KernelFork f :=
-  KernelFork.ofι (kernelInclusion f) (kernelInclusion_comp f)
+  KernelFork.ofι (kernelι f) (kernelι_comp f)
 
 /-- The curved kernel inclusion satisfies the kernel universal property. -/
 noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=
-  KernelFork.IsLimit.ofι (kernelInclusion f) (kernelInclusion_comp f)
+  KernelFork.IsLimit.ofι (kernelι f) (kernelι_comp f)
     (fun g hg ↦ closedHomOf
-      (LinearMap.codRestrict (LinearMap.ker (closedHom f)) (closedHom g) fun x ↦ by
-        -- Evaluate kernel membership before using the fork's closed-map equation.
-        change closedHom f (closedHom g x) = 0
-        have hs := congrArg (fun l ↦ closedHom l x) hg
-        simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
-          using hs)
-      (fun _ _ hx ↦ (mem_kernelModule_grading_iff f).mpr (closedHom_mem g hx))
+      ((kernelEquiv f).symm.toLinearMap.comp
+        (LinearMap.codRestrict (LinearMap.ker (closedHom f)) (closedHom g) fun x ↦ by
+          rw [LinearMap.mem_ker]
+          have hs := congrArg (fun l ↦ closedHom l x) hg
+          simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
+            using hs))
+      (fun _ _ hx ↦ (mem_kernelObj_grading_iff f).mpr (by
+        simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+          LinearMap.codRestrict_apply] using closedHom_mem g hx))
       (fun x ↦ by
+        apply (kernelEquiv f).injective
         apply Subtype.ext
-        exact differential_closedHom g x))
+        simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, kernelEquiv_differential,
+          LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply, coe_kernelDifferential]
+          using differential_closedHom g x))
     (fun g hg ↦ by
       apply closedHom_ext
       intro x
-      simp only [closedHom_comp, LinearMap.comp_apply, closedHom_kernelInclusion,
-        closedHom_closedHomOf]
-      rfl)
+      simp only [closedHom_comp, hom_kernelι, closedHom_closedHomOf, LinearMap.comp_apply,
+        LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply,
+        Submodule.subtype_apply])
     (fun g hg m hm ↦ by
       apply closedHom_ext
       intro x
+      apply (kernelEquiv f).injective
       apply Subtype.ext
       have hs := congrArg (fun l ↦ closedHom l x) hm
-      simp only [closedHom_comp, LinearMap.comp_apply, closedHom_kernelInclusion] at hs
-      erw [closedHom_closedHomOf]
-      exact hs)
+      simp only [closedHom_comp, hom_kernelι, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        Submodule.subtype_apply] at hs
+      simpa only [closedHom_closedHomOf, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply] using hs)
 
+/-- The closed category of curved right modules has kernels. -/
 noncomputable instance : HasKernels
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
   ⟨fun f ↦ HasLimit.mk ⟨_, kernelIsLimit f⟩⟩
@@ -171,13 +189,21 @@ noncomputable instance : HasKernels
 /-- Forgetting the differential of the curved kernel gives the usual graded kernel. -/
 noncomputable def forgetDifferentialKernelIso :
     (forgetDifferential (h := h)).obj
-        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (kernelModule f)) ≅
+        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (kernelObj f)) ≅
       GradedModuleCat.kernelObj ((forgetDifferential (h := h)).map f) :=
-  GradedModuleCat.isoMk (LinearEquiv.refl Aᵐᵒᵖ (LinearMap.ker (closedHom f))) fun p x ↦ by
-    -- Forgetting the differential recovers the graded kernel's chosen homogeneous pieces.
-    change x ∈ (toGradedModuleCat (kernelModule f)).grading.piece p ↔ _
+  GradedModuleCat.isoMk (kernelEquiv f) fun p x ↦ by
+    -- `isoMk` fixes the element's type in the forgetful object. Its object equality
+    -- cannot rewrite this dependent predicate without a transport; reduce only that
+    -- forgetful grading view, retaining the sealed kernel and its characteristic API.
+    change x ∈ (toGradedModuleCat (kernelObj f)).grading.piece p ↔ _
     rw [toGradedModuleCat_piece]
-    rfl
+    exact (mem_kernelObj_grading_iff f).trans (mem_gradedKernel_piece_iff f).symm
+
+/-- The graded comparison is the kernel's characteristic carrier equivalence. -/
+@[simp]
+theorem forgetDifferentialKernelIso_hom_hom :
+    (forgetDifferentialKernelIso f).hom.hom = (kernelEquiv f).toLinearMap := by
+  simp only [forgetDifferentialKernelIso, GradedModuleCat.isoMk_hom_hom]
 
 /-- The graded forgetful functor preserves the kernel of a closed map. -/
 noncomputable instance : PreservesLimit (parallelPair f 0) (forgetDifferential (h := h)) := by
@@ -187,10 +213,14 @@ noncomputable instance : PreservesLimit (parallelPair f 0) (forgetDifferential (
       GradedModuleCat.kernelCone ((forgetDifferential (h := h)).map f) :=
     Fork.ext (forgetDifferentialKernelIso f) (by
       apply GradedModuleCat.hom_ext
-      -- The comparison is the identity on the kernel subtype, so evaluate its map composition.
-      change (LinearMap.ker (closedHom f)).subtype.comp LinearMap.id =
-        closedHom (kernelInclusion f)
-      rw [LinearMap.comp_id, closedHom_kernelInclusion])
+      rw [GradedModuleCat.hom_comp, forgetDifferentialKernelIso_hom_hom, KernelFork.map_ι]
+      -- Rewriting the graded map's `hom` changes the subtype carrier while the target
+      -- of `kernelEquiv` stays fixed; Lean rejects that dependent rewrite motive.
+      -- Align only this foreign cone/forgetful boundary, then use the characteristic
+      -- map equation. The sealed kernel object's construction is never unfolded.
+      change (LinearMap.ker (closedHom f)).subtype.comp (kernelEquiv f).toLinearMap =
+        closedHom (kernelι f)
+      exact (hom_kernelι f).symm)
   exact (IsLimit.equivIsoLimit e).symm
     (GradedModuleCat.kernelIsLimit ((forgetDifferential (h := h)).map f))
 
