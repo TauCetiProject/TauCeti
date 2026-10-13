@@ -16,7 +16,7 @@ import Mathlib.RingTheory.Ideal.Prod
 For the branch inclusion `R[x,y]/(xy) → R[t] × R[t]`, the conductor in the branch algebra
 is `(t) × (t)`. Its contraction to the node algebra is the Jacobian ideal `(x,y)`, and its
 extension back to the branch algebra recovers the conductor. The branch algebra modulo the
-conductor is `R × R`: the two copies record the two points above the node.
+conductor is `R × R`: the two copies record the two branch origins.
 
 These identities supply the local conductor calculation for the normalization of nodal curves.
 They hold over every commutative ring, including nonreduced rings. No assertion that the
@@ -76,6 +76,8 @@ theorem branchConductor_eq_prod :
 def branchValues : (R[X] × R[X]) →ₐ[R] R × R :=
   (aeval (0 : R)).prodMap (aeval (0 : R))
 
+/-- The branch values are the constant coefficients, equivalently the values at the two
+branch origins. -/
 @[simp]
 theorem branchValues_apply (p : R[X] × R[X]) :
     branchValues R p = (p.1.coeff 0, p.2.coeff 0) := by
