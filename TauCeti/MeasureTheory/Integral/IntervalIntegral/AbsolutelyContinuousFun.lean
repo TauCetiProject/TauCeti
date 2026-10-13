@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
 /-!
@@ -20,8 +20,8 @@ Mathlib's `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub` is the fundamen
 calculus for an absolutely continuous real function. This file composes it with a `C¹` function:
 if `γ : ℝ → F` is an absolutely continuous curve in a normed space with derivative `V t` at almost
 every time and `φ : F → ℝ` is `C¹`, then `∫_a^b φ'(γ t) (V t) dt = φ (γ b) - φ (γ a)`.
-In finite dimension, it also extends Mathlib's real-valued differentiation, derivative
-integrability, and fundamental-theorem results to curves.
+In finite dimension, it also extends Mathlib's real-valued derivative integrability and
+fundamental-theorem results to curves.
 
 ## Main results
 
@@ -30,11 +30,14 @@ integrability, and fundamental-theorem results to curves.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_of_ae_hasDerivAt`: the almost-everywhere
   derivative of an absolutely continuous curve in a finite-dimensional space is interval
   integrable.
-* `AbsolutelyContinuousOnInterval.ae_differentiableAt_of_finiteDimensional`: an absolutely
-  continuous curve in a finite-dimensional space is differentiable almost everywhere.
+* `AbsolutelyContinuousOnInterval.integral_eq_sub_of_ae_hasDerivAt`: the fundamental theorem for
+  the almost-everywhere derivative of an absolutely continuous curve in finite dimension.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional` and
   `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub_of_finiteDimensional`: integrability and
   the fundamental theorem for the canonical derivative of such a curve.
+* `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_of_finiteDimensional`:
+  indefinite integrals of interval-integrable functions in finite dimension are absolutely
+  continuous.
 -/
 
 public section
@@ -44,21 +47,6 @@ open MeasureTheory Set
 namespace AbsolutelyContinuousOnInterval
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {γ V : ℝ → F} {a b : ℝ}
-
-/-- An absolutely continuous curve in a finite-dimensional real normed space is differentiable
-almost everywhere on its parameter interval. -/
-theorem ae_differentiableAt_of_finiteDimensional [FiniteDimensional ℝ F]
-    (hγ : AbsolutelyContinuousOnInterval γ a b) :
-    ∀ᵐ t, t ∈ uIcc a b → DifferentiableAt ℝ γ t := by
-  let e := (Module.finBasis ℝ F).equivFun.toContinuousLinearEquiv
-  have hcoord (i : Fin (Module.finrank ℝ F)) :
-      ∀ᵐ t, t ∈ uIcc a b → DifferentiableAt ℝ (fun t ↦ e (γ t) i) t := by
-    let L : F →L[ℝ] ℝ := (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ) i).comp
-      (e : F →L[ℝ] _)
-    exact (L.lipschitzWith.comp_absolutelyContinuousOnInterval hγ).ae_differentiableAt
-  filter_upwards [Filter.eventually_all.mpr hcoord] with t ht hmem
-  apply e.comp_differentiableAt_iff.mp
-  exact differentiableAt_pi.mpr fun i ↦ ht i hmem
 
 /-- *Fundamental theorem of calculus* along an absolutely continuous curve: if `γ` is absolutely
 continuous on `uIcc a b` with derivative `V t` at almost every `t ∈ uIoc a b` and `φ` is `C¹`, then
@@ -100,7 +88,7 @@ theorem intervalIntegrable_deriv_of_finiteDimensional [FiniteDimensional ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b) :
     IntervalIntegrable (deriv γ) volume a b := by
   apply hγ.intervalIntegrable_of_ae_hasDerivAt
-  filter_upwards [hγ.ae_differentiableAt_of_finiteDimensional] with t ht hmem
+  filter_upwards [hγ.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht hmem
   exact (ht (uIoc_subset_uIcc hmem)).hasDerivAt
 
 /-- The fundamental theorem of calculus for the almost-everywhere derivative of an absolutely
@@ -109,18 +97,9 @@ theorem integral_eq_sub_of_ae_hasDerivAt [FiniteDimensional ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (V t) t) :
     ∫ t in a..b, V t = γ b - γ a := by
-  let e := (Module.finBasis ℝ F).equivFun.toContinuousLinearEquiv
-  apply e.injective
-  ext i
-  let L : F →L[ℝ] ℝ := (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ) i).comp
-    (e : F →L[ℝ] _)
-  -- Express equality of the chosen coordinates through their continuous linear projection.
-  change L (∫ t in a..b, V t) = L (γ b - γ a)
-  rw [← L.intervalIntegral_comp_comm (hγ.intervalIntegrable_of_ae_hasDerivAt hV), L.map_sub]
-  refine Eq.trans (intervalIntegral.integral_congr_ae ?_)
-    (L.lipschitzWith.comp_absolutelyContinuousOnInterval hγ).integral_deriv_eq_sub
-  filter_upwards [hV] with t ht hmem
-  exact (L.hasFDerivAt.comp_hasDerivAt t (ht hmem)).deriv.symm
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun g ↦ ?_
+  rw [← g.intervalIntegral_comp_comm (hγ.intervalIntegrable_of_ae_hasDerivAt hV), map_sub]
+  simpa [g.fderiv] using hγ.integral_fderiv_apply_eq_sub hV g.contDiff
 
 /-- The fundamental theorem of calculus for an absolutely continuous curve in a
 finite-dimensional real normed space. -/
@@ -128,7 +107,35 @@ theorem integral_deriv_eq_sub_of_finiteDimensional [FiniteDimensional ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b) :
     ∫ t in a..b, deriv γ t = γ b - γ a := by
   apply hγ.integral_eq_sub_of_ae_hasDerivAt
-  filter_upwards [hγ.ae_differentiableAt_of_finiteDimensional] with t ht hmem
+  filter_upwards [hγ.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht hmem
   exact (ht (uIoc_subset_uIcc hmem)).hasDerivAt
 
 end AbsolutelyContinuousOnInterval
+
+/-- An indefinite interval integral with values in a finite-dimensional real normed space is
+absolutely continuous on every interval on which its integrand is interval integrable. -/
+theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_of_finiteDimensional
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {f : ℝ → F} {a b c : ℝ} (hf : IntervalIntegrable f volume a b) (hc : c ∈ uIcc a b) :
+    AbsolutelyContinuousOnInterval (fun t ↦ ∫ v in c..t, f v) a b := by
+  let B := Module.finBasis ℝ F
+  let e := B.equivFun.toContinuousLinearEquiv
+  let L (i : Fin (Module.finrank ℝ F)) : F →L[ℝ] ℝ :=
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ) i).comp (e : F →L[ℝ] _)
+  have hcoord (i) : AbsolutelyContinuousOnInterval
+      (fun t ↦ (∫ v in c..t, L i (f v)) • B i) a b := by
+    have hi : IntervalIntegrable (fun t ↦ L i (f t)) volume a b :=
+      ⟨(L i).integrable_comp hf.1, (L i).integrable_comp hf.2⟩
+    exact hi.absolutelyContinuousOnInterval_intervalIntegral hc |>.smul
+      (LipschitzOnWith.absolutelyContinuousOnInterval (LipschitzWith.const (B i)).lipschitzOnWith)
+  have hsum (s : Finset (Fin (Module.finrank ℝ F))) : AbsolutelyContinuousOnInterval
+      (fun t ↦ ∑ i ∈ s, (∫ v in c..t, L i (f v)) • B i) a b := by
+    induction s using Finset.induction_on with
+    | empty =>
+      simpa using LipschitzOnWith.absolutelyContinuousOnInterval
+        (LipschitzWith.const (α := ℝ) (0 : F)).lipschitzOnWith
+    | @insert i s hi ih => simpa [Finset.sum_insert hi] using (hcoord i).fun_add ih
+  apply (hsum Finset.univ).congr
+  intro t ht
+  simp_rw [(L _).intervalIntegral_comp_comm (hf.mono_set (uIcc_subset_uIcc hc ht))]
+  exact B.sum_equivFun _

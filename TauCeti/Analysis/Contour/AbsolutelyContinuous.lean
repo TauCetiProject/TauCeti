@@ -16,9 +16,7 @@ A piecewise `C¹` curve on a compact parameter interval is Lipschitz there, and 
 continuous. The derivative is bounded by `IsPiecewiseC1On.isBounded_image_deriv`; the fundamental
 theorem of calculus off the finite set of breakpoints then bounds every increment of the curve.
 
-This supplies the specialization from the existing contour regularity to the absolutely continuous
-curves in DifferentialGeometry roadmap target 5.6.1. The countable-exception fundamental theorem
-used here applies to piecewise `C¹` curves, whose exceptional set is finite.
+The existing contour regularity therefore specializes to absolutely continuous curves.
 -/
 
 public section
