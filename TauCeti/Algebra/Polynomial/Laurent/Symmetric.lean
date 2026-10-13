@@ -57,7 +57,7 @@ variable {R : Type*} [CommRing R]
 
 /-- The rescaled Chebyshev polynomial of the second kind expresses a difference of opposite
 Laurent powers, once multiplied by `T - T⁻¹`. -/
-theorem T_sub_T_neg_mul_eval₂_S_add_T_neg (n : ℕ) :
+@[simp] theorem T_sub_T_neg_mul_eval₂_S_add_T_neg (n : ℕ) :
     (LaurentPolynomial.T 1 - LaurentPolynomial.T (-1) : R[T;T⁻¹]) *
         Polynomial.eval₂ LaurentPolynomial.C (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1))
           (S R n) =

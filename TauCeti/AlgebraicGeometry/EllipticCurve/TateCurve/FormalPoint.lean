@@ -10,9 +10,10 @@ public import Mathlib.Data.Nat.Dist
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.RingTheory.PowerSeries.Swap
 import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Algebra.Polynomial.Taylor
 import TauCeti.Algebra.Polynomial.Laurent.Symmetric
+import TauCeti.NumberTheory.Divisors
 import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
+import TauCeti.RingTheory.Polynomial.Chebyshev.Taylor
 
 /-!
 # The formal point of the Tate curve
@@ -227,95 +228,6 @@ private theorem coeff_toLaurent (G : ℚ⟦X⟧⟦X⟧) (N : ℕ) :
   rw [RingHom.comp_apply, coeff_rescale, coeff_map, HahnSeries.single_pow]
   simp
 
-/-! ### Chebyshev polynomials near `u = 1` -/
-
-/-- The first three Taylor coefficients at `2` of the Chebyshev polynomial `Cₙ`, for which
-`Cₙ(u + u⁻¹) = uⁿ + u⁻ⁿ`. They come from those of `Tₙ` at `1`, since `Cₙ(2X) = 2Tₙ(X)`. -/
-private theorem taylor_chebyshevC (n : ℤ) :
-    (Polynomial.taylor 2 (Polynomial.Chebyshev.C ℚ n)).coeff 0 = 2 ∧
-      (Polynomial.taylor 2 (Polynomial.Chebyshev.C ℚ n)).coeff 1 = (n : ℚ) ^ 2 ∧
-      (Polynomial.taylor 2 (Polynomial.Chebyshev.C ℚ n)).coeff 2 =
-        (n : ℚ) ^ 2 * ((n : ℚ) ^ 2 - 1) / 12 := by
-  have h₁ := congrArg Polynomial.derivative (Polynomial.Chebyshev.C_comp_two_mul_X ℚ n)
-  have h₂ := congrArg Polynomial.derivative h₁
-  simp only [Polynomial.derivative_comp, Polynomial.derivative_mul, Polynomial.derivative_ofNat,
-    Polynomial.derivative_X, zero_mul, zero_add, mul_one] at h₁ h₂
-  have e₁ := congrArg (Polynomial.eval 1) h₁
-  have e₂ := congrArg (Polynomial.eval 1) h₂
-  simp only [Polynomial.eval_mul, Polynomial.eval_comp, Polynomial.eval_ofNat, Polynomial.eval_X,
-    mul_one, Polynomial.Chebyshev.derivative_T_eval_one] at e₁ e₂
-  have hT := Polynomial.Chebyshev.iterate_derivative_T_eval_one (R := ℚ) n 2
-  have hH := congrArg (fun f ↦ (f (Polynomial.Chebyshev.C ℚ n)).eval 2)
-    (Polynomial.factorial_smul_hasseDeriv (R := ℚ) 2)
-  simp [Finset.prod_range_succ] at hT hH
-  refine ⟨by rw [Polynomial.taylor_coeff_zero, Polynomial.Chebyshev.C_eval_two], ?_, ?_⟩
-  · rw [Polynomial.taylor_coeff_one]
-    linear_combination e₁ / 2
-  · rw [Polynomial.taylor_coeff]
-    linear_combination hH / 2 + e₂ / 8 + hT / 12
-
-/-- The first two Taylor coefficients at `2` of the Chebyshev polynomial `Sₙ`, for which
-`(u - u⁻¹) Sₙ(u + u⁻¹) = uⁿ⁺¹ - u⁻ⁿ⁻¹`. They come from those of `Uₙ` at `1`, since
-`Sₙ(2X) = Uₙ(X)`. -/
-private theorem taylor_chebyshevS (n : ℤ) :
-    (Polynomial.taylor 2 (Polynomial.Chebyshev.S ℚ n)).coeff 0 = n + 1 ∧
-      (Polynomial.taylor 2 (Polynomial.Chebyshev.S ℚ n)).coeff 1 =
-        ((n : ℚ) + 2) * ((n : ℚ) + 1) * n / 6 := by
-  have h₁ := congrArg Polynomial.derivative (Polynomial.Chebyshev.S_comp_two_mul_X ℚ n)
-  simp only [Polynomial.derivative_comp, Polynomial.derivative_mul, Polynomial.derivative_ofNat,
-    Polynomial.derivative_X, zero_mul, zero_add, mul_one] at h₁
-  have e₁ := congrArg (Polynomial.eval 1) h₁
-  simp only [Polynomial.eval_mul, Polynomial.eval_comp, Polynomial.eval_ofNat, Polynomial.eval_X,
-    mul_one] at e₁
-  have hU := Polynomial.Chebyshev.derivative_U_eval_one (R := ℚ) n
-  refine ⟨by rw [Polynomial.taylor_coeff_zero, Polynomial.Chebyshev.S_eval_two], ?_⟩
-  rw [Polynomial.taylor_coeff_one]
-  linear_combination e₁ / 2 + hU / 6
-
-/-- `Cₐ - 2 = d² w + d² (d² - 1) / 12 · w² + O(w³)` for `w = X - 2`. -/
-private theorem exists_chebyshevC_sub_two_eq (d : ℕ) : ∃ r : Polynomial ℚ,
-    Polynomial.Chebyshev.C ℚ d - Polynomial.C 2 =
-      Polynomial.C ((d : ℚ) ^ 2) * (Polynomial.X - Polynomial.C 2) +
-        Polynomial.C ((d : ℚ) ^ 2 * ((d : ℚ) ^ 2 - 1) / 12) *
-          (Polynomial.X - Polynomial.C 2) ^ 2 + (Polynomial.X - Polynomial.C 2) ^ 3 * r := by
-  obtain ⟨h₀, h₁, h₂⟩ := taylor_chebyshevC d
-  push_cast at h₀ h₁ h₂
-  obtain ⟨r, hr⟩ : Polynomial.X ^ 3 ∣ Polynomial.taylor 2 (Polynomial.Chebyshev.C ℚ d) -
-      Polynomial.C 2 - Polynomial.C ((d : ℚ) ^ 2) * Polynomial.X -
-        Polynomial.C ((d : ℚ) ^ 2 * ((d : ℚ) ^ 2 - 1) / 12) * Polynomial.X ^ 2 := by
-    rw [Polynomial.X_pow_dvd_iff]
-    intro k hk
-    interval_cases k <;>
-      simp only [Polynomial.coeff_sub, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow,
-        Polynomial.coeff_C, Polynomial.coeff_X, h₀, h₁, h₂] <;> norm_num
-  refine ⟨Polynomial.taylor (-2) r, Polynomial.taylor_injective (2 : ℚ) ?_⟩
-  simp only [map_sub, map_add, Polynomial.taylor_mul, Polynomial.taylor_pow, Polynomial.taylor_C,
-    Polynomial.taylor_X, Polynomial.taylor_taylor, add_neg_cancel, Polynomial.taylor_zero,
-    add_sub_cancel_right]
-  linear_combination hr
-
-/-- `Sₐ₋₁ = d + d (d² - 1) / 6 · w + O(w²)` for `w = X - 2`. -/
-private theorem exists_chebyshevS_eq (d : ℕ) : ∃ r : Polynomial ℚ,
-    Polynomial.Chebyshev.S ℚ ((d : ℤ) - 1) =
-      Polynomial.C (d : ℚ) + Polynomial.C ((d : ℚ) * ((d : ℚ) ^ 2 - 1) / 6) *
-        (Polynomial.X - Polynomial.C 2) + (Polynomial.X - Polynomial.C 2) ^ 2 * r := by
-  obtain ⟨h₀, h₁⟩ := taylor_chebyshevS ((d : ℤ) - 1)
-  push_cast at h₀ h₁
-  obtain ⟨r, hr⟩ : Polynomial.X ^ 2 ∣
-      Polynomial.taylor 2 (Polynomial.Chebyshev.S ℚ ((d : ℤ) - 1)) - Polynomial.C (d : ℚ) -
-        Polynomial.C ((d : ℚ) * ((d : ℚ) ^ 2 - 1) / 6) * Polynomial.X := by
-    rw [Polynomial.X_pow_dvd_iff]
-    intro k hk
-    interval_cases k <;>
-      simp only [Polynomial.coeff_sub, Polynomial.coeff_C_mul, Polynomial.coeff_C,
-        Polynomial.coeff_X, h₀, h₁] <;> norm_num
-    ring
-  refine ⟨Polynomial.taylor (-2) r, Polynomial.taylor_injective (2 : ℚ) ?_⟩
-  simp only [map_sub, map_add, Polynomial.taylor_mul, Polynomial.taylor_pow, Polynomial.taylor_C,
-    Polynomial.taylor_X, Polynomial.taylor_taylor, add_neg_cancel, Polynomial.taylor_zero,
-    add_sub_cancel_right]
-  linear_combination hr
-
 /-! ### The coordinates in the variable `X = u + u⁻¹` -/
 
 /-- `w = X - 2`, which becomes `u - 2 + u⁻¹ = u⁻¹ (1 - u)²`. -/
@@ -337,27 +249,18 @@ private noncomputable def sig₃ : (Polynomial ℚ)⟦X⟧ := mk fun N ↦ Polyn
 private noncomputable def sig₅ : (Polynomial ℚ)⟦X⟧ :=
   mk fun N ↦ Polynomial.C (((σ 5 N : ℚ) - σ 3 N) / 12)
 
-private theorem sum_divisors_pow_sub (N k l : ℕ) (c : ℚ) :
-    Polynomial.C (((σ k N : ℚ) - σ l N) / c) =
-      ∑ d ∈ N.divisors, Polynomial.C (((d : ℚ) ^ k - (d : ℚ) ^ l) / c) := by
-  rw [← map_sum Polynomial.C, sigma_apply, sigma_apply]
-  push_cast
-  rw [← Finset.sum_div, Finset.sum_sub_distrib]
-
 /-- The expansion of the regular part of `x` at `w = 0`:
 `P = s₃ w + (s₅ - s₃) / 12 · w² + O(w³)`. -/
 private theorem exists_tP_eq : ∃ P₃ : (Polynomial ℚ)⟦X⟧,
     tP = C wP * sig₃ + C wP ^ 2 * sig₅ + C wP ^ 3 * P₃ := by
-  choose r hr using exists_chebyshevC_sub_two_eq
+  choose r hr using fun d : ℕ ↦ Polynomial.Chebyshev.exists_C_sub_two_eq (R := ℚ) d
+  simp only [Int.cast_natCast] at hr
   refine ⟨mk fun N ↦ ∑ d ∈ N.divisors, (d : Polynomial ℚ) * r d, PowerSeries.ext fun N ↦ ?_⟩
-  have h₃ : Polynomial.C (σ 3 N : ℚ) = ∑ d ∈ N.divisors, Polynomial.C ((d : ℚ) ^ 3) := by
-    rw [← map_sum Polynomial.C, sigma_apply]
-    push_cast
-    rfl
   rw [tP, sig₃, sig₅, map_add, map_add, ← map_pow, ← map_pow, coeff_C_mul, coeff_C_mul,
-    coeff_C_mul, coeff_mk, coeff_mk, coeff_mk, coeff_mk, h₃, sum_divisors_pow_sub,
-    Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
+    coeff_C_mul, coeff_mk, coeff_mk, coeff_mk, coeff_mk]
+  simp only [sigma_apply, Nat.cast_sum, Nat.cast_pow, ← Finset.sum_sub_distrib, Finset.sum_div,
+    map_sum, Finset.mul_sum]
+  rw [← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [hr d, ← map_natCast Polynomial.C]
   have e₁ : Polynomial.C (d : ℚ) * Polynomial.C ((d : ℚ) ^ 2) = Polynomial.C ((d : ℚ) ^ 3) := by
@@ -372,22 +275,20 @@ private theorem exists_tP_eq : ∃ P₃ : (Polynomial ℚ)⟦X⟧,
 /-- The expansion of `Q` at `w = 0`: `Q = s₃ + 2 (s₅ - s₃)/12 · w + O(w²)`. -/
 private theorem exists_tQ_eq : ∃ Q₂ : (Polynomial ℚ)⟦X⟧,
     tQ = sig₃ + 2 * C wP * sig₅ + C wP ^ 2 * Q₂ := by
-  choose r hr using exists_chebyshevS_eq
+  choose r hr using fun d : ℕ ↦ Polynomial.Chebyshev.exists_S_eq (R := ℚ) ((d : ℤ) - 1)
+  simp only [Int.cast_sub, Int.cast_natCast, Int.cast_one, sub_add_cancel] at hr
   refine ⟨mk fun N ↦ ∑ d ∈ N.divisors, (d : Polynomial ℚ) ^ 2 * r d, PowerSeries.ext fun N ↦ ?_⟩
-  have h₃ : Polynomial.C (σ 3 N : ℚ) = ∑ d ∈ N.divisors, Polynomial.C ((d : ℚ) ^ 3) := by
-    rw [← map_sum Polynomial.C, sigma_apply]
-    push_cast
-    rfl
   rw [tQ, sig₃, sig₅, map_add, map_add, ← map_pow, mul_assoc, ← map_ofNat C 2, coeff_C_mul,
-    coeff_C_mul, coeff_C_mul, coeff_mk, coeff_mk, coeff_mk, coeff_mk, h₃, sum_divisors_pow_sub,
-    Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
+    coeff_C_mul, coeff_C_mul, coeff_mk, coeff_mk, coeff_mk, coeff_mk]
+  simp only [sigma_apply, Nat.cast_sum, Nat.cast_pow, ← Finset.sum_sub_distrib, Finset.sum_div,
+    map_sum, Finset.mul_sum]
+  rw [← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [hr d, ← map_natCast Polynomial.C]
   have e₁ : Polynomial.C (d : ℚ) ^ 2 * Polynomial.C (d : ℚ) = Polynomial.C ((d : ℚ) ^ 3) := by
     rw [← map_pow, ← map_mul]
     ring_nf
-  have e₂ : Polynomial.C (d : ℚ) ^ 2 * Polynomial.C ((d : ℚ) * ((d : ℚ) ^ 2 - 1) / 6) =
+  have e₂ : Polynomial.C (d : ℚ) ^ 2 * Polynomial.C (((d : ℚ) - 1 + 2) * d * ((d : ℚ) - 1) / 6) =
       2 * Polynomial.C (((d : ℚ) ^ 5 - (d : ℚ) ^ 3) / 12) := by
     rw [← map_pow, ← map_mul, ← map_ofNat Polynomial.C 2, ← map_mul]
     ring_nf
@@ -424,46 +325,6 @@ private theorem coeff_coeff_two_mul_tateFormalY_add (a b : ℕ) :
     coeff_coeff_tateFormalY]
   split_ifs <;> simp [Nat.cast_choose_two] <;> ring
 
-private theorem sum_divisors_ite_eq_add {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → ℚ) :
-    ∑ d ∈ N.divisors, (if a = N + d then f d else 0) =
-      if N < a ∧ a - N ∣ N then f (a - N) else 0 := by
-  split_ifs with h
-  · rw [Finset.sum_eq_single (a - N)]
-    · rw [ite_eq_left (by omega)]
-    · intro d _ hd
-      rw [ite_eq_right (by omega)]
-    · intro h'
-      exact absurd (Nat.mem_divisors.mpr ⟨h.2, hN⟩) h'
-  · refine Finset.sum_eq_zero fun d hd ↦ ite_eq_right fun ha ↦ h ⟨?_, ?_⟩
-    · have := Nat.pos_of_mem_divisors hd
-      omega
-    · have had : a - N = d := by omega
-      rw [had]
-      exact Nat.dvd_of_mem_divisors hd
-
-private theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → ℚ) :
-    ∑ d ∈ N.divisors, (if a = N - d then f d else 0) =
-      if a < N ∧ N - a ∣ a then f (N - a) else 0 := by
-  split_ifs with h
-  · rw [Finset.sum_eq_single (N - a)]
-    · rw [ite_eq_left (by omega)]
-    · intro d hd hne
-      have := Nat.divisor_le hd
-      rw [ite_eq_right (by omega)]
-    · refine fun h' ↦ absurd (Nat.mem_divisors.mpr ⟨?_, hN⟩) h'
-      have h'' := Nat.dvd_add_self_right.mpr h.2
-      rwa [Nat.add_sub_cancel' h.1.le] at h''
-  · refine Finset.sum_eq_zero fun d hd ↦ ite_eq_right fun ha ↦ h ⟨?_, ?_⟩
-    · have := Nat.pos_of_mem_divisors hd
-      have := Nat.divisor_le hd
-      omega
-    · have := Nat.divisor_le hd
-      have had : N - a = d := by omega
-      have hN' : N = a + d := by omega
-      rw [had]
-      have h' := Nat.dvd_of_mem_divisors hd
-      rwa [hN', Nat.dvd_add_self_right] at h'
-
 /-- The coefficient of `vᴺ` in `x` for `N ≠ 0`, as the power series
 `∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` in `u`. -/
 private theorem coeff_tateFormalX_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
@@ -473,7 +334,7 @@ private theorem coeff_tateFormalX_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
   simp only [coeff_coeff_tateFormalX, map_sum, ← map_natCast (C (R := ℚ)), coeff_C_mul,
     map_add, map_sub, ← map_ofNat (C (R := ℚ)) 2, coeff_X_pow, mul_add, mul_sub, mul_ite,
     mul_one, mul_zero, Finset.sum_add_distrib, Finset.sum_sub_distrib]
-  rw [sum_divisors_ite_eq_add hN, sum_divisors_ite_eq_sub hN]
+  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub hN]
   rcases lt_trichotomy a N with h | rfl | h
   · rw [Nat.dist_eq_sub_of_le h.le, min_eq_left h.le]
     simp only [h.ne, h, not_lt_of_gt h, false_and, true_and, ite_false,
@@ -492,7 +353,7 @@ private theorem coeff_two_mul_tateFormalY_add_of_ne_zero {N : ℕ} (hN : N ≠ 0
   simp only [coeff_coeff_two_mul_tateFormalY_add, map_sum, ← map_natCast (C (R := ℚ)),
     ← map_pow, coeff_C_mul, map_sub, coeff_X_pow, mul_sub, mul_ite, mul_one, mul_zero,
     Finset.sum_sub_distrib]
-  rw [sum_divisors_ite_eq_add hN, sum_divisors_ite_eq_sub hN]
+  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub hN]
   rcases lt_trichotomy a N with h | rfl | h
   · rw [Nat.dist_eq_sub_of_le h.le, min_eq_left h.le]
     simp only [h.ne, h, not_lt_of_gt h, false_and, true_and, ite_false, zero_sub]
