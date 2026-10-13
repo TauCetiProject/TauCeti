@@ -41,6 +41,8 @@ idele classes to ray classes.
 * `TauCeti.GlobalNumberFields.raySubgroup_gcd`: the ray subgroup of a greatest common divisor is
   the join of the two ray subgroups.
 * `TauCeti.GlobalNumberFields.isOpen_raySubgroup`: every ray subgroup is open.
+* `TauCeti.GlobalNumberFields.ofCompletion_mem_raySubgroup`: an idele class concentrated at an
+  infinite place where the modulus imposes no sign condition is a ray class.
 
 ## References
 
@@ -104,6 +106,17 @@ greatest common divisor. -/
 theorem raySubgroup_gcd (𝔪 𝔫 : Modulus K) :
     raySubgroup (𝔪.gcd 𝔫) = raySubgroup 𝔪 ⊔ raySubgroup 𝔫 := by
   rw [raySubgroup, ideleCongruenceSubgroup_gcd, Subgroup.map_sup, raySubgroup, raySubgroup]
+
+/-- **An idele class concentrated at an infinite place outside the modulus is a ray class.** If
+the infinite place `w` is not one of the real places of `𝔪`, the class of the idele that is `u` at
+`w` and `1` at every other place lies in `raySubgroup 𝔪`, for every `u ∈ K_wˣ`. -/
+theorem ofCompletion_mem_raySubgroup {𝔪 : Modulus K} {w : InfinitePlace K}
+    (hw : ∀ w' ∈ 𝔪.infinitePart, (w' : InfinitePlace K) ≠ w) (u : w.Completionˣ) :
+    IdeleClassGroup.ofCompletion (𝓞 K) K w u ∈ raySubgroup 𝔪 := by
+  refine mem_raySubgroup_iff.mpr ⟨IdeleGroup.ofCompletion (𝓞 K) K w u, ?_, rfl⟩
+  refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ by simp, fun v _ ↦ by simp, fun w' hw' ↦ ?_⟩
+  rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ (hw w' hw'), Units.val_one, map_one]
+  exact one_pos
 
 /-- **Every ray subgroup is open in the idele class group.** -/
 theorem isOpen_raySubgroup (𝔪 : Modulus K) :
