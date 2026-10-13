@@ -54,6 +54,12 @@ theorem iteratedLoopSpace_succ (X : BasedTopologicalSpace.{u}) (k : ℕ) :
     X.iteratedLoopSpace (k + 1) = (X.iteratedLoopSpace k).loopSpace :=
   Function.iterate_succ_apply' _ _ _
 
+/-- The `(k + 1)`-fold iterated loop space is the `k`-fold iterated loop space of the loop space,
+the form in which the iterate unfolds. -/
+theorem iteratedLoopSpace_succ' (X : BasedTopologicalSpace.{u}) (k : ℕ) :
+    X.iteratedLoopSpace (k + 1) = X.loopSpace.iteratedLoopSpace k :=
+  Function.iterate_succ_apply _ _ _
+
 @[simp]
 theorem loopSpace_carrier (X : BasedTopologicalSpace.{u}) :
     X.loopSpace.carrier = Path X.basepoint X.basepoint :=
