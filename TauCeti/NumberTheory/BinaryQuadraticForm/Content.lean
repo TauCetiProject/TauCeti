@@ -9,13 +9,17 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
 import Mathlib.Data.Int.GCD
 
 /-!
-# Content and primitive parts of integral binary quadratic forms
+# Content and primitive forms of fixed discriminant
 
 The content of an integral binary quadratic form is the nonnegative gcd of its three
 coefficients. Dividing by it gives a primitive form whenever the original form is nonzero.
 The content is also the gcd of all represented values, which makes it invariant under
 proper integral changes of variables. Scaling the form multiplies its content by the
 absolute value of the scalar and its discriminant by the scalar's square.
+
+The invariance of discriminant and primitivity packages primitive forms of a fixed
+discriminant in the subaction `primitiveForms D`, stable under `SL(2, ℤ)`. This gives the
+carrier for proper-equivalence and orbit constructions among forms of that discriminant.
 
 ## References
 
