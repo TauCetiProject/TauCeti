@@ -14,6 +14,10 @@ on:
   schedule:
   - cron: "17 * * * *"   # consume refreshed reports without waiting a day
   workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 # Serialize branch and issue reconciliation; keep an active bump build running.
 concurrency:
@@ -24,7 +28,34 @@ env:
   LKG_BRANCH: hopscotch/lkg-bump
 
 jobs:
+  trigger:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      reconcile: ${{ steps.trigger.outputs.reconcile }}
+    steps:
+      # Read trusted current main, never workflow_run artifacts or candidate code.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reconcile only a newly validated pin
+        id: trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bump_update_trigger.py
+
   bump:
+    needs: trigger
+    if: needs.trigger.outputs.reconcile == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
