@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Normalization
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 
 /-!
 # Recognizing the relative normalization
@@ -31,9 +32,9 @@ the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a
   onto the integral closure.
 * `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: on an integral scheme with integrally
   closed local rings, the sections over a nonempty affine open are integrally closed.
-* `AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral scheme with
-  integrally closed local rings, integral over `Y`, is the normalization of `Y` in its function
-  field.
+* `TauCeti.AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral
+  scheme with integrally closed local rings, integral over `Y`, is the normalization of `Y` in its
+  function field.
 
 ## References
 
@@ -151,11 +152,15 @@ theorem IsAffineOpen.isIntegrallyClosed [IsIntegral T] {V : T.Opens} (hV : IsAff
   exact (hT (hV.fromSpec y) hy).of_equiv (IsLocalization.algEquiv P.primeCompl
     (T.presheaf.stalk (hV.fromSpec y)) (Localization.AtPrime P)).toRingEquiv
 
-/-- The generic point `Spec k(T) ⟶ T` of an integral scheme is quasi-compact, since `Spec k(T)` is
-a single point. -/
-instance [IsIntegral T] : QuasiCompact (T.fromSpecStalk (genericPoint T)) :=
-  have : Finite (Spec T.functionField) := inferInstanceAs (Finite (PrimeSpectrum T.functionField))
-  ⟨fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
+end AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+open CategoryTheory _root_.AlgebraicGeometry
+
+universe u
+
+variable {T Y : Scheme.{u}}
 
 /-- **A normal scheme integral over `Y` is the normalization of `Y` in its function field.** If `T`
 is an integral scheme whose local rings are integrally closed and `g : T ⟶ Y` is integral, then the
@@ -218,4 +223,4 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
       infer_instance
     exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun _ _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
-end AlgebraicGeometry
+end TauCeti.AlgebraicGeometry

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Properties
+public import Mathlib.AlgebraicGeometry.FunctionField
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+public import Mathlib.AlgebraicGeometry.Stalk
 
 /-!
 # The generic point of an irreducible scheme and the specialization order
@@ -17,6 +19,9 @@ point and generizes it, hence equals it because the underlying space of a scheme
 points of coheight zero are the maximal ones, this identifies the points of coheight zero of an
 irreducible scheme with its generic point.
 
+On an integral scheme `X`, the morphism `Spec k(X) ⟶ X` from the spectrum of the function field
+to the generic point is quasi-compact, since `Spec k(X)` is a single point.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_genericPoint`: the generic point of an irreducible
@@ -24,7 +29,9 @@ irreducible scheme with its generic point.
 * `TauCeti.AlgebraicGeometry.Scheme.eq_genericPoint_of_isMax`: a point of an irreducible scheme
   which is maximal for the specialization order is the generic point;
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_iff_eq_genericPoint`: the maximal points for the
-  specialization order on an irreducible scheme are exactly the generic point.
+  specialization order on an irreducible scheme are exactly the generic point;
+* `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
+  `Spec k(X) ⟶ X` of an integral scheme is quasi-compact.
 -/
 
 public section
@@ -54,6 +61,13 @@ theorem eq_genericPoint_of_isMax {y : X} (hy : IsMax y) : y = genericPoint X :=
 exactly the generic point. -/
 theorem isMax_iff_eq_genericPoint {y : X} : IsMax y ↔ y = genericPoint X :=
   ⟨eq_genericPoint_of_isMax, fun h ↦ h ▸ isMax_genericPoint⟩
+
+/-- The generic point `Spec k(X) ⟶ X` of an integral scheme is quasi-compact, since `Spec k(X)` is
+a single point. -/
+instance quasiCompact_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegral X] :
+    QuasiCompact (X.fromSpecStalk (genericPoint X)) :=
+  have : Finite (Spec X.functionField) := inferInstanceAs (Finite (PrimeSpectrum X.functionField))
+  ⟨fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
 
 end Scheme
 
