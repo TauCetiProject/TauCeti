@@ -122,12 +122,25 @@ theorem HasLengthBound.add {c : ℕ}
   intro k x
   simp only [LinearMap.add_apply, DirectSum.add_apply, hf k x, hg k x]
 
+/-- Scaling a finite-word map preserves its length bound. -/
+theorem HasLengthBound.smul {c : ℕ} {f : TensorWords R M →ₗ[R] TensorWords R N}
+    (hf : HasLengthBound c f) (r : R) : HasLengthBound c (r • f) := by
+  intro k x
+  simp only [LinearMap.smul_apply, DirectSum.smul_apply, hf k x]
+
 /-- The finite-prefix construction preserves addition at a common cutoff. -/
 @[simp]
 theorem extend_add (c : ℕ) (f g : TensorWords R M →ₗ[R] TensorWords R N) :
     extend c (f + g) = extend c f + extend c g := by
   ext x k
   simp only [extend_apply, LinearMap.add_apply, DirectSum.add_apply, Pi.add_apply]
+
+/-- The finite-prefix construction preserves scalar multiplication at a fixed cutoff. -/
+@[simp]
+theorem extend_smul (c : ℕ) (r : R) (f : TensorWords R M →ₗ[R] TensorWords R N) :
+    extend c (r • f) = r • extend c f := by
+  ext x k
+  simp only [extend_apply, LinearMap.smul_apply, DirectSum.smul_apply, Pi.smul_apply]
 
 /-- Extending the identity gives the identity on the completion. -/
 @[simp]
