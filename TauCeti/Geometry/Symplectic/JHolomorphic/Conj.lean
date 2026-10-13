@@ -16,10 +16,9 @@ predicate. Conjugation anticommutes with the standard almost complex structure
 `AlmostComplexStructure.product ℝ`, hence it is complex-linear from the standard structure to
 the negated one, and conversely from the negated structure back to the standard one.
 
-This is local-model bookkeeping for the analytic Heegaard Floer roadmap. The Schwarz-reflection
-and boundary-regularity targets in Lane F1.2, and the flat `J`-holomorphic map layer in Lane F2.1,
-need a reusable formal statement that reflecting the source changes the sign of the domain
-complex structure while preserving the Cauchy--Riemann equation.
+This is local-model bookkeeping for reflection arguments such as Schwarz reflection: reflecting the
+source changes the sign of the domain complex structure while preserving the Cauchy--Riemann
+equation.
 
 ## Main declarations
 

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Polynomial.CommonXPower
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.RingTheory.Valuation.Polynomial
 
 /-!
 # The degree of a place of an algebraic function field is finite
@@ -51,7 +52,9 @@ a genuine positive natural number.
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
 computation Stichtenoth's argument turns on; it is reused by the bound on the zeros of a
-function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`.
+function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`. Its companion
+`TauCeti.Place.valuation_aeval_eq_one_of_valuation_sub_lt_one` says that a polynomial in a function
+congruent to a constant `c` is a unit at `P` as soon as it does not vanish at `c`.
 
 The rational places themselves are characterised in
 `TauCeti.FieldTheory.FunctionField.Place.Basic`, where no function-field hypothesis is needed.
@@ -101,6 +104,20 @@ to the constant term of `p`. -/
   rw [aeval_def, Polynomial.hom_eval₂, ht, eval₂_at_zero]
   rw [RingHom.comp_apply, IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
     IsLocalRing.ResidueField.algebraMap_eq]
+
+/-- **A polynomial in a function congruent to a constant `c` is a unit at `P` when it does not
+vanish at `c`**: if `v_P (z - c) < 1` and `R (c) ≠ 0`, then `v_P (R (z)) = 1`. -/
+theorem valuation_aeval_eq_one_of_valuation_sub_lt_one {z : F} {c : k}
+    (hz : P.valuation (z - algebraMap k F c) < 1) {R : k[X]} (hR : R.eval c ≠ 0) :
+    P.valuation (aeval z R) = 1 := by
+  -- Shift the variable: `R (z)` is `R (X + c)` evaluated at `z - c`, with constant term `R (c)`.
+  have hv : P.valuation.IsEquiv P.integers.valuation := by
+    rw [integers_def]; exact Valuation.isEquiv_valuation_valuationSubring _
+  have h := valuation_aeval_eq_one P.algebraMap_mem_integers
+    ((Valuation.isEquiv_iff_val_lt_one.mp hv).mp hz) (p := R.comp (X + C c))
+    (by simpa [coeff_zero_eq_eval_zero] using hR)
+  rw [aeval_comp, map_add, aeval_X, aeval_C, sub_add_cancel] at h
+  exact (Valuation.isEquiv_iff_val_eq_one.mp hv).mpr h
 
 /-! ### Linear independence over `k(x)` of a lift of a `k`-independent family of residues -/
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
+public import TauCeti.Algebra.Lie.E6.Minuscule.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
 
 /-!
@@ -31,6 +31,8 @@ simplicity statement is made here.
 
 * `TauCeti.E6Minuscule.rootSubgroupCoordinateMap_surjective`: every numbered root-subgroup
   coordinate map is surjective.
+* `TauCeti.E6Minuscule.rootSubgroupIntegralCoordinateMap_surjective`: every integral numbered
+  root-subgroup coordinate map from the quotient by `definingIdeal` is surjective.
 * `TauCeti.E6Minuscule.isClosedImmersion_rootSubgroup`: every numbered root-subgroup morphism is a
   closed immersion.
 * `TauCeti.E6Minuscule.rootSubgroupClosedSubgroup`: its image as a closed subgroup scheme.
@@ -186,6 +188,17 @@ theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (k : Fin 6 ⊕ Fin 6) :
     (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).1.arrow =
       rootSubgroup k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup k)
+
+/-- The integral `k`th root-subgroup coordinate map, from the quotient by `definingIdeal` to the
+coordinate algebra of `𝔾ₐ`, is surjective. -/
+theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupIntegralCoordinateMap k).hom := by
+  have hs := (rootSubgroupCoordinateMap_surjective k).comp
+    (CommHopfAlgCat.mkQuotient_surjective _ _)
+  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
+    TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
+    ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at hs
+  exact Function.Surjective.of_comp hs
 
 end
 

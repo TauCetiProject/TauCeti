@@ -552,7 +552,7 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
   set f : k[X] := (∏ R ∈ hSR.toFinset, minpoly k (α R)) * ∏ Q ∈ TQ, minpoly k (β Q)
   have hf0 : f ≠ 0 := mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun R _ ↦ minpoly.ne_zero (hαint R))
     (Finset.prod_ne_zero_iff.mpr fun Q _ ↦ minpoly.ne_zero (hβint Q))
-  obtain ⟨F', k', _, _, hsplit, h⟩ :=
+  obtain ⟨F', k', _, _, hsplit, -, h⟩ :=
     exists_finiteDimensional_normal_splits_constantCompositum_eq_top F f
   -- The residue fields of the chosen places embed into `k'`, since `f` splits in `k'`.
   exact genus_le_of_constantCompositum_eq_top hF hex h hy hmin hsep c z hyz hc hz'

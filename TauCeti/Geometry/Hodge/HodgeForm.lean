@@ -51,7 +51,7 @@ itself are those pinned in `TauCeti.Hodge.IsPolarization`.
 * `TauCeti.Hodge.Polarization.hodgeForm_eq_zero_of_mem_piece`: distinct Hodge components are
   orthogonal for it.
 * `TauCeti.Hodge.Polarization.hodgeForm_self_pos`: it is positive definite.
-* `TauCeti.Hodge.IsPolarization.integralFormBaseChange_weilOperator_self_pos`: read on the diagonal
+* `TauCeti.Hodge.IsPolarization.bilinForm_weilOperator_self_pos`: read on the diagonal
   at a real vector, positive definiteness says that a polarizing form is positive on `(C v, v)`.
 * `TauCeti.Hodge.Polarization.isPosSemidef_hodgeForm` and
   `TauCeti.Hodge.Polarization.hodgeForm_nondegenerate`: the packaged consequences.
@@ -69,6 +69,8 @@ Hodge Structures*, §2.
 public section
 
 namespace TauCeti.Hodge
+
+open IsBaseChange
 
 open scoped ComplexOrder
 
@@ -266,10 +268,10 @@ end Polarization
 /-- **A polarizing form is positive on `(C v, v)` for every nonzero real vector `v`.** This is the
 Hodge form of the polarization evaluated on the diagonal, where the conjugation in its first
 argument acts trivially. In weight one it is the second Riemann bilinear relation. -/
-theorem IsPolarization.integralFormBaseChange_weilOperator_self_pos
+theorem IsPolarization.bilinForm_weilOperator_self_pos
     {Q : LinearMap.BilinForm ℤ V} (h : IsPolarization hℂ hs Q) {v : Vℂ}
     (hv : v ∈ realPoints (latticeConj hℂ)) (hv0 : v ≠ 0) :
-    0 < integralFormBaseChange hℂ Q (hs.weilOperator v) v := by
+    0 < bilinForm hℂ Q (hs.weilOperator v) v := by
   have hpos := (⟨Q, h⟩ : Polarization hℂ hs).hodgeForm_self_pos hv0
   rwa [Polarization.hodgeForm_apply, mem_realPoints.mp hv, Polarization.Q_def] at hpos
 
@@ -296,10 +298,9 @@ the positivity of the Hodge form of `Q`. -/
 theorem IsPolarization.comp {Q : LinearMap.BilinForm ℤ V} (hQ : IsPolarization hℂ hs Q)
     (f : HodgeStructure.Hom hs' hs) (hf : Function.Injective f.toIntLinearMap) :
     IsPolarization h'ℂ hs' (Q.comp f.toIntLinearMap f.toIntLinearMap) := by
-  have hform : integralFormBaseChange h'ℂ (Q.comp f.toIntLinearMap f.toIntLinearMap) =
-      (integralFormBaseChange hℂ Q).comp f.toLinearMap f.toLinearMap := by
-    rw [HodgeStructure.Hom.toLinearMap_def]
-    exact integralFormBaseChange_comp h'ℂ hℂ Q _ _
+  have hform : bilinForm h'ℂ (Q.comp f.toIntLinearMap f.toIntLinearMap) =
+      (bilinForm hℂ Q).comp f.toLinearMap f.toLinearMap :=
+    (bilinForm_unique h'ℂ _ _ fun x y ↦ by simp [HodgeStructure.Hom.toLinearMap_def]).symm
   have hsymm : ∀ x y, Q.comp f.toIntLinearMap f.toIntLinearMap y x =
       (n.negOnePow : ℤ) * Q.comp f.toIntLinearMap f.toIntLinearMap x y := fun x y ↦ by
     rw [LinearMap.BilinForm.comp_apply, LinearMap.BilinForm.comp_apply]
@@ -324,9 +325,9 @@ theorem IsPolarization.comp {Q : LinearMap.BilinForm ℤ V} (hQ : IsPolarization
     have hu : ιℂ (f.toIntLinearMap v) = 0 :=
       P.hodgeForm_self_eq_zero_iff.mp (by rw [hnorm, hzero, mul_zero])
     refine hf ((hQ.nondegenerate.1 _ fun w ↦ ?_).trans (map_zero _).symm)
-    have hw := integralFormBaseChange_ι hℂ Q (f.toIntLinearMap v) w
+    have hw := bilinForm_apply hℂ Q (f.toIntLinearMap v) w
     rw [hu, map_zero, LinearMap.zero_apply] at hw
-    exact_mod_cast hw.symm
+    exact (FaithfulSMul.algebraMap_eq_zero_iff ℤ ℂ).mp hw.symm
   · rw [hform, LinearMap.BilinForm.comp_apply]
     exact hQ.orthogonal p _ (f.map_F_le p (Submodule.mem_map_of_mem hx)) _
       (f.map_F_le _ (Submodule.mem_map_of_mem hy))

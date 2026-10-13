@@ -95,12 +95,6 @@ reflection `P.reflectionPerm i i`.
 
 ## References
 
-This file supplies the "Borel and the nilradicals" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signatures
-`positiveNilradical`, `negativeNilradical` and `borelSubalgebra` are pinned in the accompanying
-`Suggested.lean`. They are the subalgebras the Verma module `U(L) ⊗_{U(𝔟)} Kλ` of that layer is
-induced from.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §10.1.
 -/
 

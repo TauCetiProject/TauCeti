@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Convex.Differentiability
+public import TauCeti.Analysis.Convex.MongeAmpere.Transport
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
@@ -87,6 +88,10 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   **Brenier's theorem with the inverse map**: when both laws are absolutely continuous, the
   gradients of a convex potential and of its conjugate are the optimal transport maps in the two
   directions, and they are inverse to each other almost everywhere;
+* `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq` — when both
+  laws are absolutely continuous, the Brenier potential `u` is a weak solution of its transport
+  equation: its Monge–Ampère measure weighted by `ν` is `μ`, and `ν` is carried by
+  the subgradient image of the interior of its effective domain;
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — laws with finite second moment have finite
   quadratic transport cost, so Brenier's theorem applies to them;
 * `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` — for marginals with finite second moments,
@@ -646,6 +651,32 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
       hc.measurable.aemeasurable).2 (hgraph' ▸ hswap),
     hπ.toIsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id hμ hν hconv hlsc hbot hsub',
     hπ.toIsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id hμ hν hconv hlsc hbot hsub'⟩
+
+/-- **The Brenier potential is a weak solution of its transport equation.** Let `μ` and `ν` be
+probability measures on a finite-dimensional real inner product space `E`, both absolutely
+continuous with respect to an additive Haar measure, and suppose the optimal cost for
+`‖x - y‖ ^ 2 / 2` is finite. Then there is a convex, lower semicontinuous `u : E → EReal` that
+never takes the value `⊥`, with `D` the interior of its effective domain, such that:
+
+* the gradient `∇ u` is an optimal transport map from `μ` to `ν`;
+* the Monge–Ampère measure of `u` weighted by `ν` is `μ`, that is, `ν(∂u(s ∩ D)) = μ(s)` for
+  every measurable `s`; for `μ = g₀ dx` and `ν = g₁ dy` this is `∫_{∂u(s ∩ D)} g₁ = ∫_s g₀`;
+* `ν`-almost every point is a subgradient of `u` at a point of `D`. -/
+theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν (∇ fun x => (u x).toReal) ∧
+      mongeAmpereMeasure ν u = μ ∧
+      ∀ᵐ y ∂ν, y ∈ subgradientImage (innerₗ E) u (interior {x | u x ≠ ⊤}) := by
+  obtain ⟨u, hconv, hlsc, hbot, hdiff, hT, -⟩ :=
+    exists_isKantorovichOptimalTransportMap_gradient hμ hfin
+  refine ⟨u, hconv, hlsc, hbot, hT,
+    (hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage
+      hconv hbot hμ hν).1 ⟨hT.toHasLaw, ?_⟩⟩
+  filter_upwards [hdiff] with x hx using hx.1.self_of_nhds
 
 end FiniteDimensional
 

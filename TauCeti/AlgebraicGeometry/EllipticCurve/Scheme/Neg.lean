@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
@@ -102,7 +102,7 @@ private theorem projModelNeg_eq {C : VariableChange R} (hC : W.negVariableChange
 @[reassoc (attr := simp)]
 theorem projModelNeg_projModelOver : W.projModelNeg ≫ W.projModelOver = W.projModelOver := by
   rw [projModelNeg, Category.assoc, projModelVariableChangeIso_hom_projModelOver]
-  simpa using (eqToHom_naturality projModelOver W.negVariableChange_smul_self.symm).symm
+  exact eqToHom_projModelOver W.negVariableChange_smul_self.symm
 
 /-- The negation morphism fixes the zero section: `[0 : 1 : 0] ↦ [0 : -1 : 0] = [0 : 1 : 0]`. -/
 @[reassoc (attr := simp)]

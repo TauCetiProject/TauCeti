@@ -22,10 +22,10 @@ file transports the combinatorial statement to the representation it counts:
 and reads off the quotient form `dim_ℚ S^μ = n ! / ∏ hooks`, over `ℕ` and over `ℚ`.
 
 Nothing new is proved about Specht modules here; the content is the identification of the two
-sides, which needs `TauCeti.card_diagramOf` to see the Young diagram of a partition of `n` as a
-diagram with `n` cells.  The shapes are written as `TauCeti.diagramOf μ` throughout, matching
-`TauCeti.finrank_spechtModule`, because the hook lengths are attached to the diagram and not to
-the partition.
+sides, which needs `YoungDiagram.card_ofPartition` to see the Young diagram of a partition of `n` as
+a diagram with `n` cells.  The shapes are written as `YoungDiagram.ofPartition μ` throughout,
+matching `TauCeti.finrank_spechtModule`, because the hook lengths are attached to the diagram and
+not to the partition.
 
 ## Main results
 
@@ -47,6 +47,8 @@ open Finset Module Nat
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
+
 variable {n : ℕ} (μ : n.Partition)
 
 /-- **The hook-length formula for the dimension of a Specht module.** The degree of the
@@ -57,23 +59,24 @@ Equivalently, the degree of `S^μ` is the number of standard Young tableaux of s
 quotient form `dim_ℚ S^μ = n ! / ∏ hooks` is
 `TauCeti.finrank_spechtModule_eq_factorial_div_prod_hookLength`. -/
 theorem finrank_spechtModule_mul_prod_hookLength :
-    finrank ℚ (spechtModule μ) * ∏ c ∈ (diagramOf μ).cells, (diagramOf μ).hookLength c = n ! := by
-  rw [finrank_spechtModule, standardCount_mul_prod_hookLength, card_diagramOf]
+    finrank ℚ (spechtModule μ) * ∏ c ∈ (ofPartition μ).cells, (ofPartition μ).hookLength c =
+      n ! := by
+  rw [finrank_spechtModule, standardCount_mul_prod_hookLength, card_ofPartition]
 
 /-- **The hook-length formula in quotient form**: the degree of `S^μ` is `n !` divided by the
 product of the hook lengths of the shape `μ`. The division is exact, by
-`YoungDiagram.prod_hookLength_dvd_factorial` at the shape `TauCeti.diagramOf μ`, which has `n`
-cells. -/
+`YoungDiagram.prod_hookLength_dvd_factorial` at the shape `YoungDiagram.ofPartition μ`, which has
+`n` cells. -/
 theorem finrank_spechtModule_eq_factorial_div_prod_hookLength :
     finrank ℚ (spechtModule μ)
-      = n ! / ∏ c ∈ (diagramOf μ).cells, (diagramOf μ).hookLength c := by
-  rw [finrank_spechtModule, standardCount_eq_factorial_div_prod_hookLength, card_diagramOf]
+      = n ! / ∏ c ∈ (ofPartition μ).cells, (ofPartition μ).hookLength c := by
+  rw [finrank_spechtModule, standardCount_eq_factorial_div_prod_hookLength, card_ofPartition]
 
 /-- **The hook-length formula in quotient form over `ℚ`**, the field the Specht modules live
 over. -/
 theorem cast_finrank_spechtModule_eq_factorial_div_prod_hookLength :
     (finrank ℚ (spechtModule μ) : ℚ)
-      = (n ! : ℚ) / ∏ c ∈ (diagramOf μ).cells, ((diagramOf μ).hookLength c : ℚ) := by
-  rw [finrank_spechtModule, cast_standardCount_eq_factorial_div_prod_hookLength, card_diagramOf]
+      = (n ! : ℚ) / ∏ c ∈ (ofPartition μ).cells, ((ofPartition μ).hookLength c : ℚ) := by
+  rw [finrank_spechtModule, cast_standardCount_eq_factorial_div_prod_hookLength, card_ofPartition]
 
 end TauCeti

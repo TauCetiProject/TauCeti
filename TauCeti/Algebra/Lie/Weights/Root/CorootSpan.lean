@@ -28,8 +28,7 @@ subalgebra over `ℤ`. The other three generator pairs need no hypothesis:
 
 For a Chevalley-normalized system the remaining coefficients are `±(p + 1)`, so the resulting
 `rootCorootLieSubalgebra` is the integral Chevalley form of `L`. This is the Lie-algebra input to
-the Kostant `ℤ`-form used in the explicit Chevalley--Demazure construction of Layer 9 of the
-ReductiveGroups roadmap, which is in turn consumed by CFSGStatement milestone L0.
+the Kostant `ℤ`-form used in the explicit Chevalley--Demazure construction.
 
 ## Main definitions and results
 
