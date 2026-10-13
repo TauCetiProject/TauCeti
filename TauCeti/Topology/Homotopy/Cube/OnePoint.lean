@@ -47,12 +47,17 @@ def cubeToOnePoint : C((N → I), OnePoint (N → ℝ)) where
 
 variable {N}
 
+@[simp]
+theorem cubeToOnePoint_apply (z : N → I) :
+    cubeToOnePoint N z = unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ) := by
+  rw [cubeToOnePoint]
+  rfl
+
 /-- The collapse of the cube sends a point to `∞` exactly when it lies on the boundary. -/
 theorem cubeToOnePoint_eq_infty_iff (z : N → I) :
     cubeToOnePoint N z = ∞ ↔ z ∈ Cube.boundary N := by
   rw [← norm_cubeHomeomorphClosedBall_eq_one_iff]
-  change unitBallToOnePoint _ = ∞ ↔ _
-  rw [unitBallToOnePoint_apply_eq_infty_iff]
+  rw [cubeToOnePoint_apply, unitBallToOnePoint_apply_eq_infty_iff]
   exact ⟨fun h => le_antisymm (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N z).2) h,
     fun h => h.ge⟩
 
@@ -60,9 +65,7 @@ theorem cubeToOnePoint_eq_infty_iff (z : N → I) :
 theorem cubeToOnePoint_surjective [Nonempty N] : Function.Surjective (cubeToOnePoint N) := by
   intro y
   obtain ⟨x, hx, rfl⟩ := image_unitBallToOnePoint_closedBall.ge (mem_univ y)
-  exact ⟨(cubeHomeomorphClosedBall N).symm ⟨x, hx⟩, by
-    change unitBallToOnePoint _ = _
-    simp⟩
+  exact ⟨(cubeHomeomorphClosedBall N).symm ⟨x, hx⟩, by simp⟩
 
 /-- Two points with the same image under the collapse of the cube are equal or both on the
 boundary. -/
@@ -80,12 +83,11 @@ theorem eq_or_mem_boundary_of_cubeToOnePoint_eq {z z' : N → I}
         ‖(cubeHomeomorphClosedBall N w : N → ℝ)‖ < 1 :=
       lt_of_le_of_ne (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N w).2)
         fun h1 => hw ((norm_cubeHomeomorphClosedBall_eq_one_iff w).1 h1)
-    have h' : unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ) =
-        unitBallToOnePoint (cubeHomeomorphClosedBall N z' : N → ℝ) := h
+    rw [cubeToOnePoint_apply, cubeToOnePoint_apply] at h
     rw [unitBallToOnePoint_apply_of_norm_lt (hlt z hz),
-      unitBallToOnePoint_apply_of_norm_lt (hlt z' hz'), OnePoint.coe_eq_coe] at h'
+      unitBallToOnePoint_apply_of_norm_lt (hlt z' hz'), OnePoint.coe_eq_coe] at h
     have hx := OpenPartialHomeomorph.univUnitBall.symm.injOn
-      (mem_ball_zero_iff.2 (hlt z hz)) (mem_ball_zero_iff.2 (hlt z' hz')) h'
+      (mem_ball_zero_iff.2 (hlt z hz)) (mem_ball_zero_iff.2 (hlt z' hz')) h
     exact (cubeHomeomorphClosedBall N).injective (Subtype.ext hx)
 
 end TauCeti

@@ -22,9 +22,10 @@ subspaces of mapping spaces out of the cube.
 
 ## Main declarations
 
-* `ContinuousMap.isInducing_precomp`: precomposition with a continuous surjection `q : A → B`
-  from a compact space to a Hausdorff space is inducing, on the compact-open topologies.
-* `ContinuousMap.isEmbedding_precomp`: the same, as an embedding.
+* `ContinuousMap.isInducing_precomp_of_surjective`: precomposition with a continuous surjection
+  `q : A → B` from a compact space to a Hausdorff space is inducing, on the compact-open
+  topologies.
+* `ContinuousMap.isEmbedding_precomp_of_surjective`: the same, as an embedding.
 -/
 
 public section
@@ -37,7 +38,8 @@ variable {A B X : Type*} [TopologicalSpace A] [TopologicalSpace B] [TopologicalS
 
 /-- Precomposition with a continuous surjection `q` from a compact space is inducing for the
 compact-open topologies. -/
-theorem isInducing_precomp [CompactSpace A] [T2Space B] (q : C(A, B)) (hq : Function.Surjective q) :
+theorem isInducing_precomp_of_surjective [CompactSpace A] [T2Space B] (q : C(A, B))
+    (hq : Function.Surjective q) :
     IsInducing (fun f : C(B, X) => f.comp q) := by
   refine ⟨le_antisymm (continuous_iff_le_induced.mp (continuous_precomp q)) ?_⟩
   refine le_generateFrom ?_
@@ -54,9 +56,9 @@ theorem isInducing_precomp [CompactSpace A] [T2Space B] (q : C(A, B)) (hq : Func
     exact h ha
 
 /-- Precomposition with a continuous surjection `q` from a compact space is an embedding. -/
-theorem isEmbedding_precomp [CompactSpace A] [T2Space B] (q : C(A, B))
+theorem isEmbedding_precomp_of_surjective [CompactSpace A] [T2Space B] (q : C(A, B))
     (hq : Function.Surjective q) :
     IsEmbedding (fun f : C(B, X) => f.comp q) :=
-  ⟨isInducing_precomp q hq, fun _ _ h => (cancel_right hq).1 h⟩
+  ⟨isInducing_precomp_of_surjective q hq, fun _ _ h => (cancel_right hq).1 h⟩
 
 end ContinuousMap

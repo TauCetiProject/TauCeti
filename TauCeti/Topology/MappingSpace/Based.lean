@@ -63,6 +63,15 @@ theorem map_apply (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) (b : B)
   rw [map]
   rfl
 
+@[simp]
+theorem map_id (f : BasedMap B X b₀ x) : map (ContinuousMap.id X) rfl f = f :=
+  Subtype.ext rfl
+
+theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g y = z)
+    (h : C(X, Y)) (hh : h x = y) (f : BasedMap B X b₀ x) :
+    map g hg (map h hh f) = map (g.comp h) (by rw [ContinuousMap.comp_apply, hh, hg]) f :=
+  Subtype.ext rfl
+
 theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
     Continuous (map (B := B) (b₀ := b₀) g hg) :=
   continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtype_val)
@@ -94,10 +103,10 @@ theorem isEmbedding_precompGenLoop : IsEmbedding (precompGenLoop (X := X) (x := 
   refine ⟨?_, fun f g h => Subtype.ext ((ContinuousMap.cancel_right hq).1
     (congrArg Subtype.val h))⟩
   exact IsInducing.of_comp hcont continuous_subtype_val
-    ((ContinuousMap.isInducing_precomp q hq).comp IsInducing.subtypeVal)
+    ((ContinuousMap.isInducing_precomp_of_surjective q hq).comp IsInducing.subtypeVal)
 
 include hq hb hinj in
-theorem surjective_precompGenLoop : Surjective (precompGenLoop (X := X) (x := x) q b₀ hb) := by
+theorem precompGenLoop_surjective : Surjective (precompGenLoop (X := X) (x := x) q b₀ hb) := by
   have hqm : IsQuotientMap q :=
     (q.continuous.isClosedMap).isQuotientMap q.continuous hq
   intro p
@@ -118,7 +127,7 @@ injective elsewhere, then precomposition with `q` is a homeomorphism from the ba
 `Map_*(B, X)` onto the space `Ω^ N X x` of generalized loops. -/
 noncomputable def homeomorphGenLoop : BasedMap B X b₀ x ≃ₜ Ω^ N X x :=
   (isEmbedding_precompGenLoop q b₀ hb hq).toHomeomorphOfSurjective
-    (surjective_precompGenLoop q b₀ hb hq hinj)
+    (precompGenLoop_surjective q b₀ hb hq hinj)
 
 @[simp]
 theorem homeomorphGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
@@ -126,11 +135,11 @@ theorem homeomorphGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
   rw [homeomorphGenLoop, IsEmbedding.toHomeomorphOfSurjective_apply]
   exact precompGenLoop_apply q b₀ hb f z
 
+include hq hb hinj in
 /-- The homeomorphism `homeomorphGenLoop` is natural in `X`: it commutes with postcomposition by
 a based map `g : X → Y`. -/
 theorem homeomorphGenLoop_map {Y : Type*} [TopologicalSpace Y] {y : Y} (g : C(X, Y)) (hg : g x = y)
-    (f : BasedMap B X b₀ x) (hq : Surjective q)
-    (hinj : ∀ z z', q z = q z' → z = z' ∨ (z ∈ Cube.boundary N ∧ z' ∈ Cube.boundary N)) :
+    (f : BasedMap B X b₀ x) :
     homeomorphGenLoop q b₀ hb hq hinj (map g hg f) =
       GenLoop.map g hg (homeomorphGenLoop q b₀ hb hq hinj f) :=
   GenLoop.ext _ _ fun z => by

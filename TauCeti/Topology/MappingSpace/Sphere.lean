@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import TauCeti.Analysis.InnerProductSpace.SphereReflection
 public import Mathlib.Topology.Compactification.OnePoint.Sphere
 public import TauCeti.Topology.Homotopy.Cube.OnePoint
 public import TauCeti.Topology.Homotopy.HomotopyGroup.IteratedLoopSpace.Homeomorph
@@ -25,8 +25,6 @@ It is natural in `X` by postcomposition.
 
 ## Main declarations
 
-* `TauCeti.sphereHomeomorphOfBasepoints`: a homeomorphism of the sphere carrying a given point to
-  another given point, a reflection.
 * `TauCeti.sphereCollapse`: the quotient map `I^k → S^k` collapsing the cube boundary to a given
   basepoint of the sphere.
 * `TauCeti.basedMapSphereHomeomorph`: `Map_*(S^k, X) ≃ₜ Ω^ (Fin k) X x`.
@@ -47,25 +45,6 @@ open Metric Module OnePoint Submodule Set Topology.Homotopy
 open scoped unitInterval
 
 namespace TauCeti
-
-section Reflection
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- Any point of the unit sphere is carried to any other by a homeomorphism of the sphere: the
-reflection in the hyperplane orthogonal to the difference. -/
-def sphereHomeomorphOfBasepoints (v w : sphere (0 : E) 1) : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1 :=
-  (reflection (ℝ ∙ ((v : E) - w))ᗮ).toHomeomorph.subtype fun x => by
-    simp only [mem_sphere_zero_iff_norm, LinearIsometryEquiv.coe_toHomeomorph,
-      LinearIsometryEquiv.norm_map]
-
-omit [FiniteDimensional ℝ E] in
-theorem sphereHomeomorphOfBasepoints_apply_self (v w : sphere (0 : E) 1) :
-    sphereHomeomorphOfBasepoints v w v = w :=
-  Subtype.ext (reflection_sub (by simp [mem_sphere_zero_iff_norm.1 v.2,
-    mem_sphere_zero_iff_norm.1 w.2]))
-
-end Reflection
 
 section Sphere
 
@@ -98,7 +77,7 @@ theorem sphereCollapse_apply (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1)
   rw [sphereCollapse]
   rfl
 
-theorem sphereCollapse_eq_iff (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
+theorem sphereCollapse_eq_basepoint_iff (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
     (z : Fin k → I) : sphereCollapse k s₀ z = s₀ ↔ z ∈ Cube.boundary (Fin k) := by
   have h := onePointHomeomorphSphere_infty k s₀
   rw [← cubeToOnePoint_eq_infty_iff, sphereCollapse_apply]
@@ -128,7 +107,7 @@ theorem sphereCollapse_surjective : Function.Surjective (sphereCollapse k s₀) 
 boundary to `x`, by precomposition with the quotient map `sphereCollapse`. -/
 def basedMapSphereHomeomorph :
     BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x ≃ₜ Ω^ (Fin k) X x :=
-  BasedMap.homeomorphGenLoop (sphereCollapse k s₀) s₀ (sphereCollapse_eq_iff k s₀)
+  BasedMap.homeomorphGenLoop (sphereCollapse k s₀) s₀ (sphereCollapse_eq_basepoint_iff k s₀)
     (sphereCollapse_surjective k s₀) fun _ _ h => eq_or_mem_boundary_of_sphereCollapse_eq k s₀ h
 
 @[simp]
@@ -161,6 +140,14 @@ def basedMapSphereHomeomorphIteratedLoopSpace (k : ℕ) [NeZero k] (X : BasedTop
       (X.iteratedLoopSpace k).carrier :=
   (basedMapSphereHomeomorph k X.basepoint s₀).trans (iteratedLoopSpaceHomeomorph k X).symm
 
+@[simp]
+theorem iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace (k : ℕ) [NeZero k]
+    (X : BasedTopologicalSpace.{u}) (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
+    (φ : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X.carrier s₀ X.basepoint) :
+    iteratedLoopSpaceHomeomorph k X (basedMapSphereHomeomorphIteratedLoopSpace k X s₀ φ) =
+      basedMapSphereHomeomorph k X.basepoint s₀ φ :=
+  (iteratedLoopSpaceHomeomorph k X).apply_symm_apply _
+
 /-- The homeomorphism `basedMapSphereHomeomorphIteratedLoopSpace` is natural in `X`: it commutes
 with postcomposition by a based map and the induced map `Ω^[k] f` of iterated loop spaces. -/
 theorem basedMapSphereHomeomorphIteratedLoopSpace_map (k : ℕ) [NeZero k]
@@ -172,7 +159,9 @@ theorem basedMapSphereHomeomorphIteratedLoopSpace_map (k : ℕ) [NeZero k]
       f.iteratedLoopSpace k (basedMapSphereHomeomorphIteratedLoopSpace k X s₀ φ) := by
   apply (iteratedLoopSpaceHomeomorph k Y).injective
   rw [iteratedLoopSpaceHomeomorph_map]
-  simp [basedMapSphereHomeomorphIteratedLoopSpace, basedMapSphereHomeomorph_map]
+  rw [iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace,
+    basedMapSphereHomeomorph_map,
+    iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace]
 
 end BasedTopologicalSpace
 
