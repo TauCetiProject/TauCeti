@@ -101,13 +101,16 @@ private theorem norm_mk_scalarProjection_le (base : X →L[ℝ] Lp F p (mu.restr
           (hasWeakFDerivOn_scalarProjection base ℓ u))
     _ ≤ ‖ℓ‖ * (‖base‖ * ‖u‖) + ‖ℓ‖ * ‖u‖ := by
       apply add_le_add
-      · exact ((ℓ.compLpL p (mu.restrict Omega)).le_opNorm _).trans
-          (mul_le_mul (ℓ.norm_compLpL_le)
-            ((base.le_opNorm _).trans (mul_le_mul_of_nonneg_left
-              (norm_prev_le base u) (norm_nonneg base))) (norm_nonneg _) (norm_nonneg ℓ))
-      · exact ((G.compLpL p (mu.restrict Omega)).le_opNorm _).trans
-          (mul_le_mul ((G.norm_compLpL_le).trans hG) (norm_weakFDeriv_le base u)
-            (norm_nonneg _) (norm_nonneg ℓ))
+      · refine ((ℓ.compLpL p (mu.restrict Omega)).le_opNorm _).trans ?_
+        gcongr
+        · exact ℓ.norm_compLpL_le
+        · refine (base.le_opNorm _).trans ?_
+          gcongr
+          exact norm_prev_le base u
+      · refine ((G.compLpL p (mu.restrict Omega)).le_opNorm _).trans ?_
+        gcongr
+        · exact (G.norm_compLpL_le).trans hG
+        · exact norm_weakFDeriv_le base u
     _ = (‖ℓ‖ * (‖base‖ + 1)) * ‖u‖ := by ring
 
 /-- Apply a continuous linear functional to the field selected by `base`, obtaining a scalar

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 public import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
+public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # Vector-valued local Rellich compactness
@@ -70,26 +71,19 @@ theorem isCompactOperator_restrictBaseL [FiniteDimensional ℝ F]
   have heq : restrictBaseL base hV = ∑ i, C i := by
     apply ContinuousLinearMap.ext
     intro u
-    apply Lp.ext
-    have hproj : ∀ i, W1p.value (W1p.restrictL hV (toW1pL base (ℓ i) u)) =ᵐ[mu.restrict V]
-        fun x ↦ ℓ i (base (prev base u) x) := fun i ↦ by
+    have hproj (i) : W1p.value (W1p.restrictL hV (toW1pL base (ℓ i) u)) =
+        (ℓ i).compLpL p (mu.restrict V) (restrictBaseL base hV u) := by
+      apply Lp.ext
+      refine Filter.EventuallyEq.trans ?_
+        ((ℓ i).coeFn_compLpL (restrictBaseL base hV u)).symm
+      refine Filter.EventuallyEq.trans ?_
+        ((restrictBaseL_apply_ae base hV u).fun_comp (ℓ i)).symm
       refine (W1p.value_restrictL_ae hV _).trans ?_
       rw [value_toW1pL]
       exact (ℓ i).coeFn_compLpL (base (prev base u)) |>.filter_mono
         (ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV)))
-    have hcoord : ∀ i, C i u =ᵐ[mu.restrict V]
-        fun x ↦ (ℓ i (base (prev base u) x)) • b i := fun i ↦ by
-      simp only [C, ContinuousLinearMap.comp_apply, W1p.valueL_apply]
-      refine (((ContinuousLinearMap.toSpanSingleton ℝ (b i)).coeFn_compLpL
-        (W1p.value (W1p.restrictL hV (toW1pL base (ℓ i) u))))).trans ?_
-      filter_upwards [hproj i] with x hx
-      simp only [ContinuousLinearMap.toSpanSingleton_apply, hx]
-    filter_upwards [restrictBaseL_apply_ae base hV u,
-      Lp.coeFn_fun_finsetSum Finset.univ (fun i ↦ C i u),
-      ae_all_iff.mpr hcoord] with x hres hsum hcoords
-    simp only [sum_apply, hres, hsum]
-    simpa only [hcoords, ℓ, LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply] using
-      (b.sum_repr (base (prev base u) x)).symm
+    simpa only [sum_apply, C, ContinuousLinearMap.comp_apply, W1p.valueL_apply, hproj, ℓ] using
+      eq_sum_basis_compLpL b (restrictBaseL base hV u)
   rw [heq]
   -- Compact operators form a submodule, so finite coordinate reconstruction preserves compactness.
   exact (compactOperator (RingHom.id ℝ) _ _).sum_mem fun i _ ↦ hC i
