@@ -67,7 +67,8 @@ are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of
   `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_a₆_notMem`: the three criteria above.
 * `WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff`: when the reduction is singular
   at the origin, an affine point has singular reduction exactly when both of its coordinates lie in
-  the maximal ideal.
+  the maximal ideal, and `WeierstrassCurve.Affine.exists_eq_some_of_notMem_nonsingularReduction`
+  writes such a point with integral coordinates.
 
 ## References
 
@@ -319,6 +320,23 @@ theorem some_notMem_nonsingularReduction_iff
       (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hx),
       (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hy)] at hm
     exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 hm
+
+/-- **When the reduction is singular at the origin, a point with singular reduction is an affine
+point whose coordinates lie in the maximal ideal of the valuation ring.** Here `a₃`, `a₄` and `a₆`
+of the integral model lie in the maximal ideal. -/
+theorem exists_eq_some_of_notMem_nonsingularReduction
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {P : W.Point} (hP : P ∉ W.nonsingularReduction v) :
+    ∃ (x y : v.valuationSubring) (h : W.Nonsingular x y), P = .some _ _ h ∧
+      x ∈ maximalIdeal v.valuationSubring ∧ y ∈ maximalIdeal v.valuationSubring := by
+  rcases P with _ | ⟨x, y, h⟩
+  · exact absurd (zero_mem _) hP
+  obtain ⟨hx, hy⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ h).1 hP
+  exact ⟨⟨x, (v.mem_valuationSubring_iff x).2 hx.le⟩, ⟨y, (v.mem_valuationSubring_iff y).2 hy.le⟩,
+    h, rfl, (Valuation.mem_maximalIdeal_iff (v := v)).2 hx,
+    (Valuation.mem_maximalIdeal_iff (v := v)).2 hy⟩
 
 end Affine
 
