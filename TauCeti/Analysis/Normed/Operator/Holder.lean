@@ -15,6 +15,10 @@ A continuous bilinear map sends two bounded Hölder functions of the same expone
 function. The estimate keeps the uniform bounds separate from the Hölder constants, so it also
 applies to restrictions and yields the product estimate for the supremum-plus-Hölder norm.
 
+For scalar multiplication by a factor vanishing off a set `s`, the second function need only be
+Hölder and bounded on `s` (`HolderWith.smul_of_eq_zero`): this is how a cutoff extends a function
+given on `s` to the whole space.
+
 The argument is adapted from `holderWith_bilinear_of_norm_le` in
 [DifferentialGeometry, Holder/Bilinear.lean](https://github.com/qinz1yang/differential-geometry/blob/7a48598d35109aa99d1cc678e2724c213cdf4ff3/DifferentialGeometry/Analysis/Schauder/Holder/Bilinear.lean).
 Here the map may be semilinear over arbitrary nontrivially normed fields, the spaces are
@@ -76,3 +80,57 @@ theorem holderWith_comp₂ (B : E →SL[σ₁₃] F →SL[σ₂₃] G)
     (hg.holderOnWith univ) (fun x _ ↦ hfnorm x) (fun x _ ↦ hgnorm x))
 
 end ContinuousLinearMap
+
+namespace HolderWith
+
+variable {𝕜 X G : Type*} [NontriviallyNormedField 𝕜] [PseudoEMetricSpace X]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A scalar factor that is Hölder on the whole space and vanishes off a set `s` turns a function
+that is Hölder and bounded only on `s` into a function that is Hölder on the whole space. Nothing
+is assumed about `f` off `s`: there the product vanishes, and across the boundary of `s` only the
+bound on `f` and the Hölder bound on `c` enter. This is how a cutoff `c` extends a function given
+on `s`. -/
+theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G} {s : Set X}
+    (hc : HolderWith Kc α c) (hf : HolderOnWith Kf α f s) (hcnorm : ∀ x, ‖c x‖ ≤ Mc)
+    (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hc0 : ∀ x ∉ s, c x = 0) :
+    HolderWith (Mc * Kf + Mf * Kc) α (fun x ↦ c x • f x) := by
+  -- Across the boundary of `s`, the product at `x ∈ s` is `(c x - c y) • f x`.
+  have hcross : ∀ x ∈ s, ∀ y ∉ s, edist (c x • f x) (c y • f y) ≤
+      (Mc * Kf + Mf * Kc) * edist x y ^ (α : ℝ) := by
+    intro x hx y hy
+    calc
+      edist (c x • f x) (c y • f y) = ‖c x - c y‖₊ * ‖f x‖₊ := by
+        rw [hc0 y hy, sub_zero, zero_smul, edist_zero_right, enorm_eq_nnnorm, nnnorm_smul,
+          ENNReal.coe_mul]
+      _ ≤ (Kc * edist x y ^ (α : ℝ)) * Mf := by
+        gcongr
+        · rw [← nndist_eq_nnnorm, ← edist_nndist]
+          exact hc.edist_le x y
+        · exact_mod_cast hfnorm x hx
+      _ ≤ (Mc * Kf + Mf * Kc) * edist x y ^ (α : ℝ) := by
+        rw [mul_comm _ (Mf : ℝ≥0∞), ← mul_assoc]
+        gcongr
+        exact_mod_cast le_add_self
+  intro x y
+  by_cases hx : x ∈ s <;> by_cases hy : y ∈ s
+  · have hsplit : c x • f x - c y • f y = c x • (f x - f y) + (c x - c y) • f y := by
+      rw [smul_sub, sub_smul]
+      abel
+    calc
+      edist (c x • f x) (c y • f y) ≤ ‖c x‖₊ * edist (f x) (f y) + edist (c x) (c y) * ‖f y‖₊ := by
+        simp only [edist_nndist, nndist_eq_nnnorm, hsplit]
+        exact_mod_cast (nnnorm_add_le _ _).trans (by rw [nnnorm_smul, nnnorm_smul])
+      _ ≤ Mc * (Kf * edist x y ^ (α : ℝ)) + (Kc * edist x y ^ (α : ℝ)) * Mf := by
+        gcongr
+        · exact_mod_cast hcnorm x
+        · exact hf.edist_le hx hy
+        · exact hc.edist_le x y
+        · exact_mod_cast hfnorm y hy
+      _ = (Mc * Kf + Mf * Kc) * edist x y ^ (α : ℝ) := by ring
+  · exact hcross x hx y hy
+  · rw [edist_comm, edist_comm x]
+    exact hcross y hy x hx
+  · simp [hc0 x hx, hc0 y hy]
+
+end HolderWith

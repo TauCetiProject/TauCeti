@@ -61,6 +61,9 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   uniformly elliptic.
 * `TauCeti.PDE.continuous_of_continuous_matrixBilinearForm`: a coefficient field whose
   bilinear forms vary continuously is continuous.
+* `TauCeti.PDE.UniformlyEllipticOn.smul_add_one_sub_smul`: interpolating a uniformly elliptic
+  field on `Ω` with one on the whole space through a cutoff supported in `Ω` gives a uniformly
+  elliptic field on the whole space.
 * `TauCeti.PDE.uniformlyEllipticOn_smul_one`: scalar, isotropic coefficient fields are
   uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
 * `TauCeti.PDE.UniformlyEllipticOn.add_nonneg`: adding a nonnegative bounded
@@ -806,6 +809,41 @@ lemma uniformlyEllipticOn_const_smul_one (Ω : Set X) {c lam Lam : ℝ} (hlam : 
   uniformlyEllipticOn_smul_one Ω (fun _ => c) hlam (hlamc.trans hcLam)
     (fun {_} _ => ⟨hlamc, hcLam⟩)
 
+/-- **Interpolating two uniformly elliptic fields.** Let `a` be uniformly elliptic on `Ω` and `b`
+on the whole space, with the same constants `λ, Λ`, and let `χ` take values in `[0, 1]` and vanish
+off `Ω`. Then `χ a + (1 - χ) b` is uniformly elliptic on the whole space with the same constants.
+
+It agrees with `a` where `χ = 1`, so this extends a coefficient field given on `Ω` to the whole
+space without changing it near a compact subset of `Ω`. -/
+lemma UniformlyEllipticOn.smul_add_one_sub_smul (ha : UniformlyEllipticOn Ω a lam Lam)
+    (hb : UniformlyEllipticOn Set.univ b lam Lam) {χ : X → ℝ} (hχ : ∀ x, χ x ∈ Set.Icc 0 1)
+    (hχΩ : ∀ x ∉ Ω, χ x = 0) :
+    UniformlyEllipticOn Set.univ (fun x => χ x • a x + (1 - χ x) • b x) lam Lam := by
+  refine UniformlyEllipticOn.of_bounds ha.pos ha.le (fun {x} _ ξ => ?_) (fun {x} _ η ξ => ?_)
+  · -- Off `Ω` the weight `χ x` vanishes, so the bound for `a` is only needed on `Ω`.
+    have hA : χ x * (lam * ‖ξ‖ ^ 2) ≤ χ x * (a x).toQuadraticForm' ξ := by
+      by_cases hx : x ∈ Ω
+      · exact mul_le_mul_of_nonneg_left (ha.lower_bound hx ξ) (hχ x).1
+      · simp [hχΩ x hx]
+    have hB := mul_le_mul_of_nonneg_left (hb.lower_bound (Set.mem_univ x) ξ)
+      (sub_nonneg.2 (hχ x).2)
+    rw [toQuadraticForm'_add, toQuadraticForm'_smul, toQuadraticForm'_smul]
+    simp only [_root_.smul_apply, smul_eq_mul]
+    linarith
+  · have hA : χ x * |η ⬝ᵥ (a x *ᵥ ξ)| ≤ χ x * (Lam * ‖η‖ * ‖ξ‖) := by
+      by_cases hx : x ∈ Ω
+      · exact mul_le_mul_of_nonneg_left (ha.upper_bound hx η ξ) (hχ x).1
+      · simp [hχΩ x hx]
+    have hB := mul_le_mul_of_nonneg_left (hb.upper_bound (Set.mem_univ x) η ξ)
+      (sub_nonneg.2 (hχ x).2)
+    rw [add_mulVec, smul_mulVec, smul_mulVec, dotProduct_add, dotProduct_smul, dotProduct_smul,
+      smul_eq_mul, smul_eq_mul]
+    calc |χ x * (η ⬝ᵥ (a x *ᵥ ξ)) + (1 - χ x) * (η ⬝ᵥ (b x *ᵥ ξ))|
+        ≤ χ x * |η ⬝ᵥ (a x *ᵥ ξ)| + (1 - χ x) * |η ⬝ᵥ (b x *ᵥ ξ)| := by
+          refine (abs_add_le _ _).trans_eq ?_
+          rw [abs_mul, abs_mul, abs_of_nonneg (hχ x).1, abs_of_nonneg (sub_nonneg.2 (hχ x).2)]
+      _ ≤ Lam * ‖η‖ * ‖ξ‖ := by linarith
+
 /-! ### Gradient calculus and orthonormal expansion -/
 
 section Calculus
@@ -829,10 +867,11 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
 
-/-- The conormal component of a gradient is supported where the function is. -/
-theorem tsupport_matrixBilinearForm_gradient_subset {A : Matrix n n ℝ}
+/-- The conormal component of a gradient, for a possibly variable coefficient field, is
+supported where the function is. -/
+theorem tsupport_matrixBilinearForm_gradient_subset {a : EuclideanSpace ℝ n → Matrix n n ℝ}
     (ψ : EuclideanSpace ℝ n → ℝ) (η : EuclideanSpace ℝ n) :
-    tsupport (fun y => matrixBilinearForm A η (∇ ψ y)) ⊆ tsupport ψ :=
+    tsupport (fun y => matrixBilinearForm (a y) η (∇ ψ y)) ⊆ tsupport ψ :=
   closure_minimal (fun x hx => by_contra fun hxψ => hx (by
     simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 

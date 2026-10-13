@@ -112,7 +112,7 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
     intro x
     by_cases hx : x ∈ tsupport (φ : E → ℝ)
     · rw [hwS hx]
-    · simp [lineDeriv_eq_zero_of_notMem_tsupport φ hx]
+    · simp [lineDeriv_of_notMem_tsupport hx]
   obtain ⟨L, hL⟩ := φ.contDiff.lipschitzWith_of_hasCompactSupport φ.hasCompactSupport (by simp)
   -- For small `t`, the translation moves onto the test function.
   have hEq : ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
