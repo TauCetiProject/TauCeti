@@ -9,8 +9,6 @@ public import TauCeti.Analysis.PDE.Regularity.Basic
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.IntegrationByParts
-public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-public import TauCeti.Analysis.Normed.Operator.Holder
 public import TauCeti.Analysis.PDE.Ellipticity.Extension
 
 /-!
@@ -150,17 +148,6 @@ theorem measurable_divMatrixGradient (ha : Continuous fun x => matrixBilinearFor
   Finset.measurable_sum _ fun _ _ => measurable_lineDeriv
     ((ha.clm_apply continuous_const).clm_apply (ContDiff.continuous_gradient hψ))
 
-/-- The field `x ↦ a(x)(η(x), ξ(x))` is measurable for a continuous coefficient field and
-measurable vector fields `η`, `ξ`. -/
-private theorem aestronglyMeasurable_matrixBilinearForm_apply
-    {ν : Measure (EuclideanSpace ℝ ι)} (ha : Continuous fun x => matrixBilinearForm (a x))
-    {η ξ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hη : AEStronglyMeasurable η ν)
-    (hξ : AEStronglyMeasurable ξ ν) :
-    AEStronglyMeasurable (fun x => matrixBilinearForm (a x) (η x) (ξ x)) ν := by
-  have hc : Continuous fun q : (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) ×
-      EuclideanSpace ℝ ι × EuclideanSpace ℝ ι => q.1 q.2.1 q.2.2 := by fun_prop
-  exact hc.comp_aestronglyMeasurable (ha.aestronglyMeasurable.prodMk (hη.prodMk hξ))
-
 /-- **Integration by parts against the conormal field of a cutoff.** For `u ∈ H¹(Ω)`, a test
 function `φ` on the whole space, and a smooth `ψ` compactly supported in `Ω`,
 
@@ -279,8 +266,8 @@ theorem memLp_localizedForcing (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M
   have h2 : MemLp (fun x => matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x)) 2
       (mu.restrict Omega) :=
     (Lp.memLp (W1p.gradient u)).of_le_mul (c := M * N)
-      (aestronglyMeasurable_matrixBilinearForm_apply hK.continuous (Lp.aestronglyMeasurable _)
-        hgψ.aestronglyMeasurable)
+      (aestronglyMeasurable_matrixBilinearForm_apply hK.continuous.aestronglyMeasurable
+        (Lp.aestronglyMeasurable _) hgψ.aestronglyMeasurable)
       (Filter.Eventually.of_forall fun x => (hB _ _ _).trans (by
         rw [mul_right_comm]
         gcongr
@@ -288,8 +275,8 @@ theorem memLp_localizedForcing (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M
   have h3 : MemLp (fun x => matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x)) 2
       (mu.restrict Omega) :=
     (Lp.memLp (W1p.gradient u)).of_le_mul (c := M * N)
-      (aestronglyMeasurable_matrixBilinearForm_apply hK.continuous hgψ.aestronglyMeasurable
-        (Lp.aestronglyMeasurable _))
+      (aestronglyMeasurable_matrixBilinearForm_apply hK.continuous.aestronglyMeasurable
+        hgψ.aestronglyMeasurable (Lp.aestronglyMeasurable _))
       (Filter.Eventually.of_forall fun x => (hB _ _ _).trans (by
         gcongr
         exact hgradN x))
@@ -426,7 +413,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
       (hcont (W := fun x => ‖matrixBilinearForm (a x)‖ * ‖ψ x • ∇ φ x + φ x • ∇ ψ x‖)
         (by fun_prop)
         (hcs _ fun x h1 h2 _ => by simp [h1, h2]))
-      (aestronglyMeasurable_matrixBilinearForm_apply hBc
+      (aestronglyMeasurable_matrixBilinearForm_apply hBc.aestronglyMeasurable
         (Continuous.aestronglyMeasurable (by fun_prop)) hgu_m)
       (fun x => (matrixBilinearForm (a x)).le_opNorm₂ _ _)
   have hT2 : Integrable (fun x => φ x * matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x))
@@ -435,7 +422,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
       (hcont (W := fun x => ‖φ x‖ * (‖matrixBilinearForm (a x)‖ * ‖∇ ψ x‖))
         (by fun_prop) (hcs _ fun x _ h2 _ => by simp [h2]))
       ((Continuous.aestronglyMeasurable (by fun_prop)).mul
-        (aestronglyMeasurable_matrixBilinearForm_apply hBc
+        (aestronglyMeasurable_matrixBilinearForm_apply hBc.aestronglyMeasurable
           (Continuous.aestronglyMeasurable (by fun_prop)) hgu_m))
       (fun x => by
         rw [norm_mul, mul_assoc]
@@ -447,7 +434,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
       (hcont (W := fun x => ‖φ x‖ * (‖matrixBilinearForm (a x)‖ * ‖∇ ψ x‖))
         (by fun_prop) (hcs _ fun x _ h2 _ => by simp [h2]))
       ((Continuous.aestronglyMeasurable (by fun_prop)).mul
-        (aestronglyMeasurable_matrixBilinearForm_apply hBc hgu_m
+        (aestronglyMeasurable_matrixBilinearForm_apply hBc.aestronglyMeasurable hgu_m
           (Continuous.aestronglyMeasurable (by fun_prop))))
       (fun x => by
         rw [norm_mul, mul_assoc]

@@ -34,6 +34,7 @@ theorem lineDeriv_one {f : 𝕜 → F} {x : 𝕜} : lineDeriv 𝕜 f x 1 = deriv
 
 /-- Outside the topological support of `f`, every directional derivative of `f` vanishes. No
 differentiability hypothesis is needed. -/
+@[simp]
 theorem lineDeriv_of_notMem_tsupport {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {f : E → F} {x : E} (h : x ∉ tsupport f) (v : E) : lineDeriv 𝕜 f x v = 0 := by
   rw [(notMem_tsupport_iff_eventuallyEq.1 h).lineDeriv_eq]
