@@ -25,6 +25,8 @@ other.
 * `LinearPMap.smulSub`: the bundled shift `x ↦ c • x - A x` on the domain of `A`.
 * `LinearPMap.smulSub_apply` and `LinearPMap.coe_range_smulSub`: its values and its range.
 * `LinearPMap.smulSub_apply_eq_neg_subScalar`: `smulSub c A` is `-(subScalar A c)` pointwise.
+* `LinearPMap.exists_linearMap_inverse_smul_sub`: a bijective shift has a linear two-sided inverse
+  `E → E` with values in the domain of `A`.
 -/
 
 public section
@@ -54,6 +56,23 @@ theorem coe_range_smulSub (c : R) (A : E →ₗ.[R] E) :
     ((A.smulSub c).range : Set E) = Set.range (fun x : A.domain => c • (x : E) - A x) := by
   ext y
   simp only [SetLike.mem_coe, LinearMap.mem_range, smulSub_apply, Set.mem_range]
+
+/-- A bijective shift `x ↦ c • x - A x` has a linear two-sided inverse `J : E →ₗ[R] E` taking
+values in the domain of `A`. -/
+theorem exists_linearMap_inverse_smul_sub {A : E →ₗ.[R] E} {c : R}
+    (h : Function.Bijective fun x : A.domain => c • (x : E) - A x) :
+    ∃ (J : E →ₗ[R] E) (hJ : ∀ y, J y ∈ A.domain),
+      (∀ y, c • J y - A ⟨J y, hJ y⟩ = y) ∧ ∀ x : A.domain, J (c • (x : E) - A x) = x := by
+  have hfun : ⇑(A.smulSub c) = fun x : A.domain => c • (x : E) - A x := funext (smulSub_apply c A)
+  let e := LinearEquiv.ofBijective (A.smulSub c) (hfun ▸ h)
+  refine ⟨A.domain.subtype ∘ₗ e.symm.toLinearMap, fun y => (e.symm y).property, fun y => ?_,
+    fun x => ?_⟩
+  · change c • (e.symm y : E) - A (e.symm y) = y
+    rw [← smulSub_apply]
+    exact e.apply_symm_apply y
+  · change (e.symm (c • (x : E) - A x) : E) = x
+    rw [← smulSub_apply]
+    exact congrArg Subtype.val (e.symm_apply_apply x)
 
 end LinearPMap
 

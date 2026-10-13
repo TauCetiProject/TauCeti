@@ -73,30 +73,23 @@ automatically bounded. -/
 theorem IsClosed.mem_resolventSet_iff_bijective (hA : A.IsClosed) :
     z ∈ resolventSet A ↔ Function.Bijective fun x : A.domain => z • (x : X) - A x := by
   refine ⟨smul_sub_bijective, fun hbij => ?_⟩
-  have hfun : ⇑(A.smulSub z) = fun x : A.domain => z • (x : X) - A x := funext (A.smulSub_apply z)
-  let e : A.domain ≃ₗ[𝕜] X := LinearEquiv.ofBijective (A.smulSub z) (hfun ▸ hbij)
-  have he (x : A.domain) : e x = z • (x : X) - A x :=
-    (LinearEquiv.ofBijective_apply _ _).trans (A.smulSub_apply z x)
-  let J : X →ₗ[𝕜] X := A.domain.subtype ∘ₗ e.symm.toLinearMap
-  have hJ (y : X) : J y = (e.symm y : X) := (rfl)
+  obtain ⟨J, hJ, hright, hleft⟩ := exists_linearMap_inverse_smul_sub hbij
   -- The graph of `J` is the preimage of the graph of `A` under `(y, x) ↦ (x, z • x - y)`.
   have hgraph : (J.graph : Set (X × X)) =
       (fun p : X × X => (p.2, z • p.2 - p.1)) ⁻¹' (A.graph : Set (X × X)) := by
     ext ⟨y, x⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_preimage, mem_graph_iff, hJ]
+    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_preimage, mem_graph_iff]
     constructor
     · rintro rfl
-      refine ⟨e.symm y, rfl, ?_⟩
-      rw [eq_sub_iff_add_eq, ← eq_sub_iff_add_eq', ← he, e.apply_symm_apply]
-    · rintro ⟨u, hu, hAu⟩
-      have hy : e u = y := by rw [he, hAu, hu, sub_sub_cancel]
-      rw [← hy, e.symm_apply_apply, hu]
+      exact ⟨⟨J y, hJ y⟩, rfl, by rw [eq_sub_iff_add_eq, ← eq_sub_iff_add_eq', hright]⟩
+    · rintro ⟨u, rfl, hAu⟩
+      rw [← hleft u, hAu, sub_sub_cancel]
   have hclosed : _root_.IsClosed (J.graph : Set (X × X)) := by
     rw [hgraph]
     exact hA.preimage (continuous_snd.prodMk ((continuous_snd.const_smul z).sub continuous_fst))
   refine IsResolventAt.mem_resolventSet (R := ContinuousLinearMap.ofIsClosedGraph hclosed)
     (isResolventAt_iff_surjective_and_apply_smul_sub.mpr ⟨hbij.surjective, fun x => ?_⟩)
-  rw [ContinuousLinearMap.coeFn_ofIsClosedGraph, hJ, ← he, e.symm_apply_apply]
+  rw [ContinuousLinearMap.coeFn_ofIsClosedGraph, hleft]
 
 /-- **Resolvent characterization on a Banach space.** A scalar `z` lies in the resolvent set of
 a partial linear map `A` exactly when `A` is closed and the shift `z • I - A : D(A) → X` is
