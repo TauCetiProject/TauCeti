@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Probability.Independence.Integration
 public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.Analysis.Convex.FiniteMean
+public import TauCeti.Analysis.Matrix.SampleSecondMoment
 
 /-!
 # Second moments of sample means
@@ -30,9 +30,9 @@ sum of the expected squared norms. Only pairwise independence is used, through t
 cross term vanish. The sample mean is `TauCeti.finiteMean`, and the scalar statement is the
 case `E = ℝ`.
 
-The empirical second-moment matrix `r⁻¹ ∑ₖ Xₖ Xₖᵀ` of real random vectors is the sample mean of
-their outer products, so each of its entries is a sample mean of products of coordinates and the
-scalar identity bounds its mean-square error.
+The empirical second-moment matrix `TauCeti.sampleSecondMoment` of real random vectors is the
+sample mean of their outer products, so each of its entries is a sample mean of products of
+coordinates and the scalar identity bounds its mean-square error.
 
 ## Main statements
 
@@ -42,8 +42,6 @@ scalar identity bounds its mean-square error.
 * `TauCeti.integral_norm_finiteMean_sub_sq_of_forall_eq` and
   `TauCeti.integral_norm_finiteMean_sub_sq_le_of_forall_le`: the mean-square error is `γ / r`
   when every per-sample error equals `γ`, and at most `γ / r` when every one is at most `γ`.
-* `TauCeti.sampleSecondMoment`: the empirical second-moment matrix, with
-  `TauCeti.isHermitian_sampleSecondMoment`.
 * `TauCeti.integral_sampleSecondMoment_apply_sub_sq_le`: each entry of the empirical second-moment
   matrix has mean-square error at most `v / r` when the per-sample errors are at most `v`.
 
@@ -160,24 +158,6 @@ end SampleMean
 section SecondMomentMatrix
 
 variable {κ : Type*} [Fintype ι]
-
-/-- The empirical second-moment matrix `r⁻¹ ∑ᵢ Vᵢ Vᵢᵀ` of a finite sample `V` of real vectors,
-the mean of the outer products of the samples. Its entries are the sample means
-`r⁻¹ ∑ᵢ Vᵢₖ Vᵢₗ`, see `TauCeti.sampleSecondMoment_apply`. -/
-noncomputable def sampleSecondMoment (V : ι → κ → ℝ) : Matrix κ κ ℝ :=
-  finiteMean ℝ fun i ↦ Matrix.vecMulVec (V i) (V i)
-
-/-- Each entry of the empirical second-moment matrix is the sample mean of the corresponding
-products of coordinates. -/
-@[simp]
-theorem sampleSecondMoment_apply (V : ι → κ → ℝ) (k l : κ) :
-    sampleSecondMoment V k l = finiteMean ℝ fun i ↦ V i k * V i l := by
-  simp [sampleSecondMoment, finiteMean_eq_inv_smul_sum, Matrix.sum_apply, Matrix.vecMulVec_apply]
-
-/-- The empirical second-moment matrix is symmetric. -/
-theorem isHermitian_sampleSecondMoment (V : ι → κ → ℝ) : (sampleSecondMoment V).IsHermitian := by
-  ext k l
-  simp only [Matrix.conjTranspose_apply, star_trivial, sampleSecondMoment_apply, mul_comm]
 
 /-- An entry of a random empirical second-moment matrix is square-integrable when the
 corresponding products of coordinates of the samples are. -/
