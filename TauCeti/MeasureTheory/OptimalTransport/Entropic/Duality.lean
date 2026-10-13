@@ -123,12 +123,19 @@ theorem entropicGibbsFactor_of_eq_top {z : X × Y} (hz : c z = ∞) :
   Set.indicator_of_notMem (not_not.2 hz) _
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- A bounded cost is finite everywhere, so the Gibbs factor is the real exponential. -/
+theorem entropicGibbsFactor_eq_of_le {B : ℝ≥0} (hcB : ∀ z, c z ≤ B) :
+    entropicGibbsFactor c ε φ ψ = fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
+  funext fun z ↦ entropicGibbsFactor_of_ne_top (ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z))
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- The Gibbs factor is nonnegative. -/
 theorem entropicGibbsFactor_nonneg (z : X × Y) : 0 ≤ entropicGibbsFactor c ε φ ψ z :=
   Set.indicator_nonneg (fun _ _ ↦ (Real.exp_pos _).le) z
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- Opposite additive shifts of the potentials do not change the Gibbs factor. -/
+@[simp]
 theorem entropicGibbsFactor_add_const_sub_const (a : ℝ) :
     entropicGibbsFactor c ε (fun x ↦ φ x + a) (fun y ↦ ψ y - a) = entropicGibbsFactor c ε φ ψ := by
   simp only [entropicGibbsFactor_def, add_add_sub_cancel]
@@ -319,12 +326,6 @@ theorem IsCoupling.exists_ae_eq_add_const_of_entropicDualValue_eq
 section Bounded
 
 variable [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {B : ℝ≥0}
-
-omit [MeasurableSpace X] [MeasurableSpace Y] in
-/-- A bounded cost is finite everywhere, so the Gibbs factor is the real exponential. -/
-private theorem entropicGibbsFactor_eq_of_le (hcB : ∀ z, c z ≤ B) :
-    entropicGibbsFactor c ε φ ψ = fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
-  funext fun z ↦ entropicGibbsFactor_of_ne_top (ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z))
 
 /-- **Strong entropic duality for a bounded cost, with attainment.** For probability measures, a
 bounded measurable cost and a positive temperature, the dual problem is attained by bounded
