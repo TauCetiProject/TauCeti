@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
-public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
+public import TauCeti.AlgebraicGeometry.GroupScheme.Torsion
 
 /-!
 # The `n`-torsion of an elliptic curve over a scheme
@@ -16,7 +16,8 @@ and let `n` be an integer. The `n`-torsion `E[n]` of `E` is the scheme-theoretic
 multiplication by `n`, `[n] : E ⟶ E` (`EllipticCurveGeom.mulBy`): the kernel of the homomorphism
 `Grp.ofHom (E.mulBy n)` of group schemes over `S`, constructed in `TauCeti.GroupScheme`. It is a
 group scheme over `S`, with a homomorphism `E[n] ⟶ E` of group schemes over `S`
-(`EllipticCurveGeom.torsionι`).
+(`EllipticCurveGeom.torsionι`). The construction specializes `TauCeti.GroupScheme.torsion` to
+`E.toCommGrp`.
 
 On underlying schemes, `E[n]` is the fibre of `[n]` over the zero section, so its inclusion into `E`
 is a closed immersion. Its points with values in any `Z` over `S` are the points of `E` with values
@@ -79,38 +80,38 @@ variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (n : ℤ)
 
 /-- **The `n`-torsion `E[n]` of an elliptic curve** `E` over a scheme `S`: the scheme-theoretic
 kernel of multiplication by `n`, as a group object of `Over S`. -/
+@[expose]
 noncomputable def torsion : Grp (Over S) :=
-  kernel (Grp.ofHom (E.mulBy n))
+  GroupScheme.torsion E.toCommGrp n
 
 /-- **The `n`-torsion is the kernel of the endomorphism `n`.** The `n`-torsion of `E` is the kernel
 of the image in `Grp (Over S)` of the integer `n` of the endomorphism ring `End E.toCommGrp`. -/
 theorem torsion_eq_kernel :
     E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp)) := by
-  rw [forget₂Grp_map_intCast]
-  -- `(CommGrp.forget₂Grp (Over S)).obj E.toCommGrp` is `Grp.mk (Over.mk E.structureMap)` by
-  -- definition, so both sides are the kernel of `Grp.ofHom (E.mulBy n)`
-  rfl
+  rw [torsion, GroupScheme.torsion]
 
 /-- The inclusion `E[n] ⟶ E` of the `n`-torsion of `E`, a morphism of `Over S`. -/
+@[expose]
 noncomputable def torsionι : (E.torsion n).X ⟶ Over.mk E.structureMap :=
-  (kernel.ι (Grp.ofHom (E.mulBy n))).hom.hom
+  GroupScheme.torsionι E.toCommGrp n
 
 /-- The inclusion of the `n`-torsion is a homomorphism of group schemes over `S`. -/
 instance isMonHom_torsionι : IsMonHom (E.torsionι n) :=
-  (kernel.ι (Grp.ofHom (E.mulBy n))).hom.isMonHom_hom
+  GroupScheme.isMonHom_torsionι E.toCommGrp n
 
 /-- The inclusion of the `n`-torsion is a monomorphism. -/
 instance mono_torsionι : Mono (E.torsionι n) :=
-  GroupScheme.mono_kernel_ι_hom _
+  GroupScheme.mono_torsionι E.toCommGrp n
 
 /-- **The `n`-torsion is commutative.** Its group law is the restriction of that of `E`. -/
 instance isCommMonObj_torsion : IsCommMonObj (E.torsion n).X :=
-  GroupScheme.isCommMonObj_kernel _
+  GroupScheme.isCommMonObj_torsion E.toCommGrp n
 
 /-- Multiplication by `n` kills the `n`-torsion. -/
 @[reassoc]
-theorem torsionι_mulBy : E.torsionι n ≫ E.mulBy n = 1 :=
-  GroupScheme.kernel_ι_comp_hom _
+theorem torsionι_mulBy : E.torsionι n ≫ E.mulBy n = 1 := by
+  rw [comp_mulBy]
+  exact GroupScheme.torsionι_zpow E.toCommGrp n
 
 /-- The inclusion of the `n`-torsion, as a point of `E` with values in `E[n]`, is killed by `n`. -/
 @[simp]
@@ -132,18 +133,18 @@ variable {E n} {Z : Over S}
 killed by multiplication by `n`. -/
 noncomputable def torsionLift (x : Z ⟶ Over.mk E.structureMap) (hx : x ≫ E.mulBy n = 1) :
     Z ⟶ (E.torsion n).X :=
-  GroupScheme.kernelLift x hx
+  GroupScheme.torsionLift x (by simpa only [comp_mulBy] using hx)
 
 /-- The point `torsionLift x hx` of `E[n]` maps to `x` in `E`. -/
 @[reassoc (attr := simp)]
 theorem torsionLift_torsionι (x : Z ⟶ Over.mk E.structureMap) (hx : x ≫ E.mulBy n = 1) :
     torsionLift x hx ≫ E.torsionι n = x :=
-  GroupScheme.kernelLift_ι _ _
+  GroupScheme.torsionLift_ι _ _
 
 /-- Two points of the `n`-torsion `E[n]` agree if their images in `E` do. -/
 theorem torsion_hom_ext {y y' : Z ⟶ (E.torsion n).X}
     (h : y ≫ E.torsionι n = y' ≫ E.torsionι n) : y = y' :=
-  GroupScheme.kernel_hom_ext h
+  GroupScheme.torsion_hom_ext E.toCommGrp h
 
 /-- A point of `E` with values in `Z` lies in the `n`-torsion `E[n]` exactly when it is killed by
 multiplication by `n`. -/
@@ -154,17 +155,19 @@ theorem exists_comp_torsionι_iff (x : Z ⟶ Over.mk E.structureMap) :
 variable (E n Z)
 
 /-- **The points of `E[n]`.** The points of the `n`-torsion `E[n]` with values in `Z` form the
-kernel of multiplication by `n` on the group of points of `E` with values in `Z`. This is
-`TauCeti.GroupScheme.kernelPointsMulEquiv` for the kernel `E[n]` of `[n]`. -/
+kernel of multiplication by `n` on the group of points of `E` with values in `Z`. This specializes
+`TauCeti.GroupScheme.torsionPointsMulEquiv`, identifying multiplication by `n` with `n`-th powers.
+-/
 noncomputable def torsionPointsMulEquiv :
     (Z ⟶ (E.torsion n).X) ≃* (IsMonHom.monoidHom (E.mulBy n) Z).ker :=
-  GroupScheme.kernelPointsMulEquiv _ Z
+  (GroupScheme.torsionPointsMulEquiv E.toCommGrp n Z).trans <| MulEquiv.subgroupCongr <|
+    congrArg MonoidHom.ker <| MonoidHom.ext fun x ↦ (E.comp_mulBy x n).symm
 
 /-- A point of `E[n]` corresponds to its image in `E`. -/
 @[simp]
 theorem coe_torsionPointsMulEquiv_apply (y : Z ⟶ (E.torsion n).X) :
     (E.torsionPointsMulEquiv n Z y : Z ⟶ Over.mk E.structureMap) = y ≫ E.torsionι n :=
-  GroupScheme.coe_kernelPointsMulEquiv_apply _ _ y
+  GroupScheme.coe_torsionPointsMulEquiv_apply E.toCommGrp n Z y
 
 /-- The point of `E[n]` corresponding to a point `x` of `E` killed by `[n]` maps to `x` in `E`. -/
 @[simp]
@@ -202,7 +205,8 @@ formed by the inclusion `E[n] ⟶ E`, the structure morphism of `E[n]`, multipli
 zero section of `E` is a pullback square. -/
 theorem isPullback_torsion :
     IsPullback (E.torsionι n).left (E.torsion n).X.hom (E.mulBy n).left E.zero :=
-  (GroupScheme.isPullback_kernel_hom _).map (Over.forget S)
+  by simpa [torsion, torsionι, ← mulBy_eq_zpow] using
+    (GroupScheme.isPullback_torsionι E.toCommGrp n).map (Over.forget S)
 
 /-- The inclusion `E[n] ⟶ E` lies over `S`. -/
 @[reassoc (attr := simp)]

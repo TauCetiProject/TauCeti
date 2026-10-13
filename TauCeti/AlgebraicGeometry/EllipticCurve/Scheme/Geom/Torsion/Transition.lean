@@ -17,7 +17,8 @@ These statements hold over arbitrary bases, including in characteristics dividin
 
 The case `m = p`, `n = p^r` supplies the faithfully flat transitions in the elliptic
 `p`-divisible group. Both the inclusions and the transition maps commute with arbitrary base
-change of the elliptic curve.
+change of the elliptic curve. The maps and their identity and composition laws specialize the
+commutative group-scheme API in `TauCeti.GroupScheme`.
 
 ## References
 
@@ -36,41 +37,53 @@ variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (m n : ℤ)
 
 /-- Multiplication by `m` restricted to `E[mn]`, with values in `E[n]`. -/
 noncomputable def torsionMulBy : (E.torsion (m * n)).X ⟶ (E.torsion n).X :=
-  torsionLift (E.torsionι (m * n) ≫ E.mulBy m) (by
-    rw [Category.assoc, ← mulBy_mul, mul_comm n m, torsionι_mulBy])
+  GroupScheme.torsionMulBy E.toCommGrp m n
 
 /-- The transition `E[mn] ⟶ E[n]` sends a torsion point to its multiple by `m`. -/
 @[reassoc (attr := simp)]
 theorem torsionMulBy_torsionι :
     E.torsionMulBy m n ≫ E.torsionι n = E.torsionι (m * n) ≫ E.mulBy m :=
-  torsionLift_torsionι _ _
+  by
+    rw [comp_mulBy]
+    exact GroupScheme.torsionMulBy_torsionι E.toCommGrp m n
 
 /-- The torsion transition is a homomorphism of group schemes. -/
-instance isMonHom_torsionMulBy : IsMonHom (E.torsionMulBy m n) where
-  one_hom := torsion_hom_ext (by simp [-comp_mulBy])
-  mul_hom := torsion_hom_ext (by simp [IsMonHom.mul_hom, -comp_mulBy])
+instance isMonHom_torsionMulBy : IsMonHom (E.torsionMulBy m n) :=
+  GroupScheme.isMonHom_torsionMulBy E.toCommGrp m n
+
+/-- Multiplication by one on torsion is the identity, after identifying `1 * n` with `n`. -/
+@[simp]
+theorem torsionMulBy_one :
+    E.torsionMulBy 1 n = eqToHom (congrArg (fun k ↦ (E.torsion k).X) (one_mul n)) :=
+  GroupScheme.torsionMulBy_one E.toCommGrp n
+
+/-- Successive torsion transitions multiply their indices, with the associativity transport. -/
+@[reassoc]
+theorem torsionMulBy_comp (l : ℤ) :
+    E.torsionMulBy l (m * n) ≫ E.torsionMulBy m n =
+      eqToHom (congrArg (fun k ↦ (E.torsion k).X) (mul_assoc l m n).symm) ≫
+        E.torsionMulBy (l * m) n :=
+  GroupScheme.torsionMulBy_comp E.toCommGrp m n l
 
 /-- The inclusion of `E[m]` in `E[mn]`. -/
 noncomputable def torsionInclusion : (E.torsion m).X ⟶ (E.torsion (m * n)).X :=
-  torsionLift (E.torsionι m) (by
-    rw [mul_comm m n, mulBy_mul, torsionι_mulBy_assoc, one_comp])
+  GroupScheme.torsionInclusion E.toCommGrp m n
 
 /-- The inclusion between torsion levels preserves the underlying point of `E`. -/
 @[reassoc (attr := simp)]
 theorem torsionInclusion_torsionι :
     E.torsionInclusion m n ≫ E.torsionι (m * n) = E.torsionι m :=
-  torsionLift_torsionι _ _
+  GroupScheme.torsionInclusion_torsionι E.toCommGrp m n
 
 /-- The inclusion between torsion levels is a homomorphism of group schemes. -/
-instance isMonHom_torsionInclusion : IsMonHom (E.torsionInclusion m n) where
-  one_hom := torsion_hom_ext (by simp [-comp_mulBy])
-  mul_hom := torsion_hom_ext (by simp [IsMonHom.mul_hom, -comp_mulBy])
+instance isMonHom_torsionInclusion : IsMonHom (E.torsionInclusion m n) :=
+  GroupScheme.isMonHom_torsionInclusion E.toCommGrp m n
 
 /-- The transition kills the included `m`-torsion. -/
 @[reassoc (attr := simp)]
 theorem torsionInclusion_torsionMulBy :
     E.torsionInclusion m n ≫ E.torsionMulBy m n = 1 :=
-  torsion_hom_ext (by simp [torsionι_mulBy, -comp_mulBy])
+  GroupScheme.torsionInclusion_torsionMulBy E.toCommGrp m n
 
 /-- On schemes, the torsion transition is the restriction of multiplication by `m`. -/
 @[reassoc (attr := simp)]
@@ -149,7 +162,7 @@ variable {S' : Scheme.{u}} {E} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E
   (h0 : E'.zero ≫ g = f ≫ E.zero)
 
 /-- Inclusions between torsion levels commute with arbitrary base change. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem torsionInclusion_left_comp_torsionMap :
     (E'.torsionInclusion m n).left ≫ torsionMap (m * n) hg h0 =
       torsionMap m hg h0 ≫ (E.torsionInclusion m n).left := by
@@ -158,7 +171,7 @@ theorem torsionInclusion_left_comp_torsionMap :
   · simp [Over.w]
 
 /-- Torsion transitions commute with arbitrary base change. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem torsionMulBy_left_comp_torsionMap :
     (E'.torsionMulBy m n).left ≫ torsionMap n hg h0 =
       torsionMap (m * n) hg h0 ≫ (E.torsionMulBy m n).left := by

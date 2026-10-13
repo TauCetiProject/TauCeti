@@ -11,12 +11,16 @@ public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 import TauCeti.CategoryTheory.Preadditive.CoprimeKernels
 
 /-!
-# Torsion of commutative group schemes and the coprime splitting
+# Torsion of commutative group schemes, transitions, and the coprime splitting
 
 Let `G` be a commutative group scheme over a scheme `S`, that is, a commutative group object of
 `Over S`, and let `n` be an integer. The `n`-torsion `G[n]` is the scheme-theoretic kernel of
 multiplication by `n`, the integer `n` of the endomorphism ring `End_S(G)`. Its points with values
 in any `Z` over `S` are the points of `G` killed by `n`.
+
+Multiplication by `m` restricts to a homomorphism `G[mn] ⟶ G[n]`, and `G[m]` includes into
+`G[mn]`. The transitions satisfy identity and composition laws, with transports between equal
+indices. These laws supply the coherence of towers of prime-power torsion.
 
 If `G` is killed by `m * n`, with `m` and `n` coprime, then addition `G[m] ×_S G[n] ⟶ G` is an
 isomorphism of group schemes over `S`. If `a * m + b * n = 1`, the projection of `G` to `G[m]` is
@@ -46,6 +50,8 @@ commutative group schemes.
 * `TauCeti.GroupScheme.torsionPointsMulEquiv`: the points of `G[n]` with values in `Z`, as a group,
   are the `n`-torsion of the points of `G` with values in `Z`.
 * `TauCeti.GroupScheme.torsionBaseChangeIso`: formation of `G[n]` commutes with base change.
+* `TauCeti.GroupScheme.torsionMulBy`: multiplication `G[mn] ⟶ G[n]` between torsion levels.
+* `TauCeti.GroupScheme.torsionInclusion`: the inclusion `G[m] ⟶ G[mn]`.
 * `TauCeti.GroupScheme.torsionTensorIso`: for `G` killed by `m * n` with `m` and `n` coprime, the
   isomorphism `G[m] ×_S G[n] ≅ G` of group schemes given by addition.
 
@@ -89,6 +95,7 @@ variable {S : Scheme.{u}} (G : CommGrp (Over S))
 /-- **The `n`-torsion `G[n]` of a commutative group scheme** `G` over `S`: the scheme-theoretic
 kernel of multiplication by `n`, the integer `n` of the endomorphism ring of `G`, as a group object
 of `Over S`. -/
+@[expose]
 noncomputable def torsion (n : ℤ) : Grp (Over S) :=
   kernel ((CommGrp.forget₂Grp (Over S)).map (n : End G))
 
@@ -160,6 +167,80 @@ instance isMonHom_torsionLift {Z : Over S} [MonObj Z] (x : Z ⟶ G.X) [IsMonHom 
     (hx : x ^ n = 1) : IsMonHom (torsionLift x hx) where
   one_hom := torsion_hom_ext G (by simp)
   mul_hom := torsion_hom_ext G (by simp [IsMonHom.mul_hom])
+
+/-! ### Transitions between torsion levels -/
+
+section Transitions
+
+variable (G) (m n : ℤ)
+
+/-- Multiplication by `m` restricted to `G[mn]`, with values in `G[n]`. -/
+noncomputable def torsionMulBy : (torsion G (m * n)).X ⟶ (torsion G n).X :=
+  torsionLift (torsionι G (m * n) ≫ 𝟙 G.X ^ m) (by
+    rw [GrpObj.comp_zpow, Category.comp_id, ← zpow_mul, torsionι_zpow])
+
+/-- The transition `G[mn] ⟶ G[n]` sends a torsion point to its multiple by `m`. -/
+@[reassoc (attr := simp)]
+theorem torsionMulBy_torsionι :
+    torsionMulBy G m n ≫ torsionι G n = torsionι G (m * n) ^ m := by
+  rw [torsionMulBy, torsionLift_ι, GrpObj.comp_zpow, Category.comp_id]
+
+/-- The torsion transition is a homomorphism of group schemes. -/
+instance isMonHom_torsionMulBy : IsMonHom (torsionMulBy G m n) := by
+  have : IsMonHom (𝟙 G.X ^ m) := by
+    rw [← CommGrp.intCast_hom_hom_hom]
+    infer_instance
+  unfold torsionMulBy
+  infer_instance
+
+/-- The inclusion of `G[m]` in `G[mn]`. -/
+noncomputable def torsionInclusion : (torsion G m).X ⟶ (torsion G (m * n)).X :=
+  torsionLift (torsionι G m) (by rw [zpow_mul, torsionι_zpow, one_zpow])
+
+/-- The inclusion between torsion levels preserves the underlying point of `G`. -/
+@[reassoc (attr := simp)]
+theorem torsionInclusion_torsionι :
+    torsionInclusion G m n ≫ torsionι G (m * n) = torsionι G m :=
+  torsionLift_ι _ _
+
+/-- The inclusion between torsion levels is a homomorphism of group schemes. -/
+instance isMonHom_torsionInclusion : IsMonHom (torsionInclusion G m n) := by
+  unfold torsionInclusion
+  infer_instance
+
+/-- The transition kills the included `m`-torsion. -/
+@[reassoc (attr := simp)]
+theorem torsionInclusion_torsionMulBy :
+    torsionInclusion G m n ≫ torsionMulBy G m n = 1 := by
+  apply torsion_hom_ext G
+  simp [GrpObj.comp_zpow]
+
+/-- Transport between equal torsion indices preserves the underlying point of `G`. -/
+@[reassoc (attr := simp)]
+theorem eqToHom_torsionι {a b : ℤ} (h : a = b) :
+    eqToHom (congrArg (fun k ↦ (torsion G k).X) h) ≫ torsionι G b = torsionι G a := by
+  subst b
+  simp
+
+/-- Multiplication by one on torsion is the identity, after identifying `1 * n` with `n`. -/
+@[simp]
+theorem torsionMulBy_one :
+    torsionMulBy G 1 n = eqToHom (congrArg (fun k ↦ (torsion G k).X) (one_mul n)) := by
+  apply torsion_hom_ext G
+  simp
+
+/-- Successive torsion transitions multiply their indices, with the associativity transport. -/
+@[reassoc]
+theorem torsionMulBy_comp (l : ℤ) :
+    torsionMulBy G l (m * n) ≫ torsionMulBy G m n =
+      eqToHom (congrArg (fun k ↦ (torsion G k).X) (mul_assoc l m n).symm) ≫
+        torsionMulBy G (l * m) n := by
+  apply torsion_hom_ext G
+  rw [Category.assoc, torsionMulBy_torsionι, GrpObj.comp_zpow, torsionMulBy_torsionι,
+    ← zpow_mul, Category.assoc, torsionMulBy_torsionι, GrpObj.comp_zpow,
+    eqToHom_torsionι G (mul_assoc l m n).symm]
+
+end Transitions
 
 variable (G n Z)
 
