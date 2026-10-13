@@ -49,7 +49,7 @@ theorem mem_integralFiniteIdelesAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)
 /-- The integral ideal away from `S` defined by an integral finite idele locally a unit on `S`.
 This map takes values in the existing integral prime-to monoid. -/
 def toIntegralIdealsAway (S : Finset (HeightOneSpectrum (𝓞 K))) :
-    integralFiniteIdelesAway S →* NumberFieldArithmetic.integralIdealsAway (K := K) S :=
+    integralFiniteIdelesAway S →* NumberFieldArithmetic.integralIdealsAway S :=
   (((Ideal (𝓞 K))⁰).subtype.comp
     (toIntegralIdeal.comp (integralFiniteIdelesAway S).subtype)).codRestrict _ fun x ↦ by
     simp only [MonoidHom.comp_apply, Submonoid.subtype_apply]
