@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 
 /-!
 # The localisation `A(T/s)` for a family of denominators
@@ -40,10 +40,12 @@ That the topology does not depend on the pair of definition is
 
 * `TauCeti.Huber.PairOfDefinition.locSubring_familyNumerators`: the candidate ring of definition
   is `A₀[t/sᵢ : i ∈ ι, t ∈ Tᵢ]`, where `t/sᵢ` is the element whose product with `sᵢ` is `t`.
-  Over the common denominator it is `(t · ∏_{j ≠ i} sⱼ) / ∏ⱼ sⱼ`
-  (`TauCeti.Localization.algebraMap_mul_divBy_mul_of_eq_mul`).
+  Over the common denominator it is `(t · ∏_{j ≠ i} sⱼ) / ∏ⱼ sⱼ`.
+* `TauCeti.Huber.PairOfDefinition.locSubring_familyNumerators_le_iff`: a subring contains the
+  candidate ring of definition exactly when it contains the image of `A₀` and every `t/sᵢ`.
 * `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_familyNumerators`: if each `Tᵢ · A` is open,
-  the construction's standing hypothesis holds.
+  the construction's standing hypothesis holds. Adding one denominator at a time, this is
+  `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_mul`.
 * `TauCeti.Huber.PairOfDefinition.isPowerBounded_of_algebraMap_mul_eq_familyNumerators`: in
   `A(T/s)` every fraction `t/sᵢ` is power-bounded. Each `sᵢ` is a unit there because it divides
   `∏ⱼ sⱼ` (`IsLocalization.Away.isUnit_of_dvd`).
@@ -115,18 +117,35 @@ theorem locSubring_familyNumerators :
       ((algebraMap A S) '' (P.ringOfDefinition : Set A) ∪
         {x | ∃ i, ∃ t ∈ T i, algebraMap A S (s i) * x = algebraMap A S t}) := by
   classical
+  -- over the common denominator, `t/sᵢ` is `(t · ∏_{j ≠ i} sⱼ) / ∏ⱼ sⱼ`
+  have hmul (i : ι) (t : A) : algebraMap A S (s i) *
+      divBy (t * ∏ j ∈ Finset.univ.erase i, s j) (∏ j, s j) = algebraMap A S t := by
+    rw [← divBy_mul, mul_left_comm, Finset.mul_prod_erase _ _ (Finset.mem_univ i),
+      divBy_mul_cancel_right]
   rw [locSubring_def]
   congr 2
   ext x
   constructor
   · rintro ⟨⟨y, hy⟩, rfl⟩
     obtain ⟨i, t, ht, rfl⟩ := mem_familyNumerators.mp hy
-    exact ⟨i, t, ht, algebraMap_mul_divBy_mul_of_eq_mul _
-      (Finset.mul_prod_erase _ _ (Finset.mem_univ i)).symm t⟩
+    exact ⟨i, t, ht, hmul i t⟩
   · rintro ⟨i, t, ht, hx⟩
     exact ⟨⟨_, mul_prod_erase_mem_familyNumerators ht⟩,
-      (eq_divBy_mul_of_algebraMap_mul_eq _ (Finset.mul_prod_erase _ _ (Finset.mem_univ i)).symm
-        hx).symm⟩
+      ((IsLocalization.Away.isUnit_of_dvd (∏ j, s j)
+        (Finset.dvd_prod_of_mem s (Finset.mem_univ i))).mul_left_cancel
+          (hx.trans (hmul i t).symm)).symm⟩
+
+/-- **The elimination rule for `A₀[t/sᵢ : i ∈ ι, t ∈ Tᵢ]`**: a subring of `S` contains the
+candidate ring of definition exactly when it contains the image of `A₀` and every fraction `t/sᵢ`
+with `t ∈ Tᵢ`, that is, every `x` with `sᵢ · x = t`. -/
+theorem locSubring_familyNumerators_le_iff {R : Subring S} :
+    locSubring P (familyNumerators T s) (∏ i, s i) S ≤ R ↔
+      (∀ a ∈ P.ringOfDefinition, algebraMap A S a ∈ R) ∧
+        ∀ i, ∀ t ∈ T i, ∀ x : S, algebraMap A S (s i) * x = algebraMap A S t → x ∈ R := by
+  rw [locSubring_familyNumerators, Subring.closure_le, Set.union_subset_iff,
+    Set.image_subset_iff]
+  exact Iff.and Iff.rfl ⟨fun h i t ht x hx ↦ h ⟨i, t, ht, hx⟩,
+    fun h _ ⟨i, t, ht, hx⟩ ↦ h i t ht _ hx⟩
 
 /-- Each fraction `t/sᵢ` with `t ∈ Tᵢ` lies in the candidate ring of definition. -/
 theorem mem_locSubring_familyNumerators_of_algebraMap_mul_eq {i : ι} {t : A} (ht : t ∈ T i)
@@ -144,45 +163,39 @@ theorem hasDenominatorPower_familyNumerators [IsTopologicalRing A]
     (hT : ∀ i, IsOpen (Ideal.span (T i : Set A) : Set A)) :
     HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S := by
   classical
-  -- For each `i`, openness of `Tᵢ · A` puts `b/sᵢ` in the ring of definition for `b` in a power
-  -- `I ^ N i` of the ideal of definition. A product of one element from each `I ^ N i`, divided by
-  -- `∏ᵢ sᵢ`, is the product of these fractions.
-  choose N hN using fun i ↦ (hasDenominatorPower_iff P (T i) (s i) (Localization.Away (s i))).mp
-    (hasDenominatorPower_of_isOpen_span P (T i) (s i) _ (hT i))
-  have hgen (i : ι) {b : A} (hb : (divBy b (s i) : Localization.Away (s i)) ∈
-      locSubring P (T i) (s i) (Localization.Away (s i))) :
-      divBy (b * ∏ j ∈ Finset.univ.erase i, s j) (∏ j, s j) ∈
-        locSubring P (familyNumerators T s) (∏ i, s i) S :=
-    divBy_mul_mem_locSubring P (T i) (s i) _ _ _ S _
-      (Finset.mul_prod_erase _ _ (Finset.mem_univ i)).symm
-      (fun _ ht ↦ mul_prod_erase_mem_familyNumerators ht) hb
-  -- Induct over the set `F` of denominators already used: `b ∈ I ^ (∑_{i ∈ F} N i)` divided by
-  -- `∏_{i ∈ F} sᵢ`, written over the common denominator, lies in the ring of definition.
-  have key (F : Finset ι) : ∀ b ∈ P.idealOfDefinition ^ (∑ i ∈ F, N i),
-      divBy ((b : A) * ∏ j ∈ Finset.univ \ F, s j) (∏ j, s j) ∈
-        locSubring P (familyNumerators T s) (∏ i, s i) S := by
+  -- the numerators over the partial product `∏_{j ∈ F} sⱼ` of the denominators used so far
+  let U (F : Finset ι) : Finset A := F.biUnion fun i ↦ (T i).image (· * ∏ j ∈ F.erase i, s j)
+  have mem_U {F : Finset ι} {i : ι} (hi : i ∈ F) {t : A} (ht : t ∈ T i) :
+      t * ∏ j ∈ F.erase i, s j ∈ U F :=
+    Finset.mem_biUnion.mpr ⟨i, hi, Finset.mem_image_of_mem _ ht⟩
+  -- adding one denominator at a time is `hasDenominatorPower_mul`
+  have key (F : Finset ι) :
+      HasDenominatorPower P (U F) (∏ j ∈ F, s j) (Localization.Away (∏ j ∈ F, s j)) := by
     induction F using Finset.induction_on with
     | empty =>
-      intro b _
-      rw [Finset.sdiff_empty, divBy_mul_cancel_right]
-      exact algebraMap_mem_locSubring P _ _ S b.2
+      rw [Finset.prod_empty]
+      exact hasDenominatorPower_denom_one P _ _
     | @insert i F hi ih =>
-      intro b hb
-      rw [Finset.sum_insert hi, pow_add] at hb
-      refine Submodule.mul_induction_on hb (fun x hx y hy ↦ ?_) (fun p q hp hq ↦ ?_)
-      · have hsplit : ∏ j ∈ Finset.univ \ F, s j =
-            (∏ j ∈ Finset.univ \ insert i F, s j) * s i := by
-          rw [mul_comm, ← Finset.prod_insert (by simp)]
-          congr 1
-          ext j
-          by_cases hj : j = i <;> simp [hj, hi]
-        rw [Subring.coe_mul, mul_assoc, divBy_mul_divBy_of_eq_mul (∏ j, s j)
-          (Finset.mul_prod_erase _ _ (Finset.mem_univ i)).symm, mul_assoc, ← hsplit]
-        exact Subring.mul_mem _ (hgen i (hN i x hx)) (ih y hy)
-      · rw [Subring.coe_add, add_mul, divBy_add]
-        exact Subring.add_mem _ hp hq
-  refine (hasDenominatorPower_iff P _ _ S).mpr ⟨∑ i, N i, fun b hb ↦ ?_⟩
-  simpa using key Finset.univ b hb
+      rw [Finset.prod_insert hi]
+      refine hasDenominatorPower_mul P (T i) (U F) _ (s i) _ (Localization.Away (s i)) _ _
+        (fun t ht ↦ ?_) (fun x hx ↦ ?_)
+        (hasDenominatorPower_of_isOpen_span P (T i) (s i) _ (hT i)) ih
+      · simpa only [Finset.erase_insert hi] using mem_U (Finset.mem_insert_self i F) ht
+      · obtain ⟨k, hk, t, ht, rfl⟩ : ∃ k ∈ F, ∃ t ∈ T k, t * ∏ j ∈ F.erase k, s j = x := by
+          simpa [U] using hx
+        have hki : k ≠ i := fun h ↦ hi (h ▸ hk)
+        convert mem_U (Finset.mem_insert_of_mem hk) ht using 1
+        rw [Finset.erase_insert_of_ne hki.symm,
+          Finset.prod_insert fun h ↦ hi (Finset.mem_of_mem_erase h)]
+        ring
+  -- the full product is the product with the empty family over the denominator `1`
+  have : IsLocalization.Away ((∏ i, s i) * 1) S := by rwa [mul_one]
+  convert hasDenominatorPower_mul P (U Finset.univ) ∅ _ _ 1 _ (Localization.Away (1 : A)) S
+    (fun x hx ↦ ?_) (by simp) (key Finset.univ) (hasDenominatorPower_denom_one P _ _) using 1
+  · rw [mul_one]
+  · obtain ⟨i, t, ht, rfl⟩ : ∃ i, ∃ t ∈ T i, t * ∏ j ∈ Finset.univ.erase i, s j = x := by
+      simpa [U] using hx
+    simpa using mul_prod_erase_mem_familyNumerators ht
 
 /-! ### The universal property -/
 

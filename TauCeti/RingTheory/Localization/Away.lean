@@ -46,9 +46,6 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `A`.
 * `TauCeti.Localization.divBy_mul_divBy_of_eq_mul`: for `s = u * r`, the fraction `(a · b)/s`
   splits as `(a · r)/s · (b · u)/s`, each half carrying one factor of the denominator.
-* `TauCeti.Localization.algebraMap_mul_divBy_mul_of_eq_mul` and
-  `TauCeti.Localization.eq_divBy_mul_of_algebraMap_mul_eq`: for `s = u * r`, the fraction
-  `(a · r)/s` is `a/u`, the unique element whose product with `u` is `a`.
 * `TauCeti.Localization.isUnit_of_comp_algebraMap`: a ring homomorphism out of the localisation
   whose restriction along `algebraMap A S` is `φ` makes `φ s` a unit.
 * `TauCeti.Localization.map_divBy_eq_mul_inv`: such a homomorphism sends `t/s` to
@@ -242,19 +239,6 @@ theorem divBy_mul_divBy_of_eq_mul {u r : A} (h : s = u * r) (a b : A) :
     show (a * r) * (b * u) = (a * b) * s by rw [h]; ring]
   exact (IsLocalization.mk'_cancel (S := S) (a * b)
     ⟨s, Submonoid.mem_powers s⟩ ⟨s, Submonoid.mem_powers s⟩).symm
-
-/-- **A fraction over a factor, written over `s`.** If `s = u * r` then `(a · r)/s` is `a/u`:
-multiplied by `u` it gives `a`. -/
-theorem algebraMap_mul_divBy_mul_of_eq_mul {u r : A} (h : s = u * r) (a : A) :
-    algebraMap A S u * divBy (a * r) s = algebraMap A S a := by
-  rw [← divBy_mul, mul_left_comm, ← h, divBy_mul_cancel_right]
-
-/-- If `s = u * r`, the element `x` with `u · x = a` is `(a · r)/s`. This determines `a/u`
-inside a localisation away from `s`, where `u` is a unit. -/
-theorem eq_divBy_mul_of_algebraMap_mul_eq {u r : A} (h : s = u * r) {a : A} {x : S}
-    (hx : algebraMap A S u * x = algebraMap A S a) : x = divBy (a * r) s :=
-  (IsLocalization.Away.isUnit_of_dvd s ⟨r, h⟩).mul_left_cancel
-    (hx.trans (algebraMap_mul_divBy_mul_of_eq_mul s h a).symm)
 
 /-! ### Maps out of the localisation
 
