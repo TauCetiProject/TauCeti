@@ -426,8 +426,7 @@ private lemma rowHom_comp_map_cechSmallAugmentation (q : ℕ) :
   · ext s : 1
     refine freeCechFunctor_hom_ext R fun σ hσ ↦ ?_
     obtain ⟨i, hi⟩ := Finset.card_pos.1 (by rw [s.2]; omega : 0 < #s.1)
-    have h := freeCechι_freeCechAugmentation_f_zero R s σ hσ
-    simp only [ChainComplex.single₀ObjXSelf, Iso.refl_hom] at h
+    have h := freeCechι_freeCechAugmentation_f_zero_assoc R s σ hσ ((rowTargetIso U R q).hom.f 0)
     calc _ = (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet).ιChainComplex σ := by
           rw [HomologicalComplex.comp_f, reassoc_of% ι_rowHom_f,
             Functor.mapHomologicalComplex_map_f, HomologicalComplex.eval_map,
@@ -437,7 +436,7 @@ private lemma rowHom_comp_map_cechSmallAugmentation (q : ℕ) :
       _ = _ := by
           rw [HomologicalComplex.comp_f]
           -- The isomorphism `rowTargetIso` is the identity in degree `0`.
-          exact h.symm
+          exact (h.trans (Category.comp_id _)).symm
   · exact ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).map_isZero
       (HomologicalComplex.isZero_single_obj_X (ComplexShape.down ℕ) 0 _ (p + 1)
         (by simp))).eq_of_tgt _ _

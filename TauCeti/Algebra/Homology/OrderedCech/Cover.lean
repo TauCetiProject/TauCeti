@@ -135,9 +135,15 @@ summand of `a`. -/
 lemma freeCechι_freeCechAugmentation_f_zero (s : {s : Finset ι // #s = 0 + 1}) (a : A)
     (ha : ∀ i ∈ s.1, a ∈ P i) :
     freeCechι R a ha ≫ (freeCechFunctor R P).orderedCechComplexι s ≫
-        (freeCechAugmentation R P).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom =
+        (freeCechAugmentation R P).f 0 =
       Sigma.ι (fun _ : A ↦ R) a := by
-  simp [freeCechAugmentation]
+  have h : freeCechι R a ha ≫ (freeCechFunctor R P).orderedCechComplexι s ≫
+      (freeCechAugmentation R P).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom =
+        Sigma.ι (fun _ : A ↦ R) a := by
+    simp [freeCechAugmentation]
+  simp only [ChainComplex.single₀ObjXSelf, Iso.refl_hom] at h
+  rw [← Category.comp_id ((freeCechAugmentation R P).f 0)]
+  exact h
 
 namespace FreeCech
 
@@ -197,7 +203,7 @@ private lemma single_freeCechAugmentation {s : Finset ι} (hs : #s = 0 + 1) {a :
         (HomologicalComplex.singleObjXSelf _ 0 _).hom =
       Sigma.ι (fun _ : A ↦ R) a := by
   rw [single_of_card_eq R ha hs, Category.assoc]
-  exact freeCechι_freeCechAugmentation_f_zero R ⟨s, hs⟩ a ha
+  simp [freeCechAugmentation]
 
 variable (hP : ⋃ i, P i = Set.univ)
 
