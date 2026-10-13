@@ -96,6 +96,7 @@ instance instIsLocalRingStalk (x : X) :
   exact fun f g ↦ Ideal.add_mem _
 
 /-- The maximal ideal of a holomorphic stalk consists of the germs vanishing at its base point. -/
+@[simp]
 theorem maximalIdeal_stalk (x : X) :
     IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x) =
       RingHom.ker (eval I X x) := by
