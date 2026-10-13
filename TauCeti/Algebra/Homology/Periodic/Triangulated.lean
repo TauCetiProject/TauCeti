@@ -5,58 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Periodic.CommShift
 public import TauCeti.Algebra.Homology.Periodic.Connecting
 public import TauCeti.CategoryTheory.Exact.Stable.Triangulated
-public import TauCeti.CategoryTheory.Localization.Triangulated
 
 /-!
-# The periodic homotopy category is triangulated
+# Periodic homotopy categories are triangulated
 
-Let `C` be a preadditive category with a zero object and binary biproducts. The componentwise
-split exact structure on `ZMod n`-graded cochain complexes is Frobenius, its stable category is
-identified with the homotopy category `K_n(C) = HomotopyCategory C (ComplexShape.up (ZMod n))`,
-and this identification intertwines stable suspension with the signed cyclic shift. This file
-extends that intertwining to a coherent compatibility with every shift by `ℤ` and transports
-Happel's triangulation of the stable category along the identification. This makes `K_n(C)` a
-triangulated category whose shift is the existing signed cyclic shift.
+The componentwise split exact category of cyclic cochain complexes is Frobenius, and its
+stable category is equivalent to Mathlib's homotopy category. The equivalence commutes with
+all integral shifts, retaining the signed cyclic shift on the homotopy category. Transporting
+Happel's triangulation along it makes the periodic homotopy category triangulated.
 
-The resulting triangulation is the mapping-cone triangulation: for a chain map `f : X ⟶ Y`, the
-triangle `X ⟶ Y ⟶ cone(f) ⟶ X⟦1⟧` whose last map is minus the cone projection is distinguished,
-and every distinguished triangle is isomorphic to one of these. Thus the stable and the
-mapping-cone descriptions of the triangulation agree.
+Its distinguished triangles are precisely the triangles isomorphic to images of distinguished
+stable triangles. This description supplies the categorical structure for comparison with
+explicit mapping-cone triangles. `mappingCone_mem_distTriang` proves the mapping-cone triangle
+is distinguished, and `mem_distTriang_iff` shows every distinguished triangle is isomorphic to one.
+No abelianity or positive-period assumption is needed; period
+zero gives integer indexing.
 
-No positivity hypothesis on the period is needed: at `n = 0` the constructions apply to
-integer-indexed cochain complexes.
+`homotopyCategory_mem_distTriang_iff` characterizes distinguished triangles as images of
+standard stable triangles of componentwise split conflations, up to isomorphism.
+`homotopyCategory_map_stableConflationTriangle_mem_distTriang` supplies the corresponding
+introduction rule.
 
-## Main definitions
-
-* `TauCeti.PeriodicComplex.splitStableToHomotopyCommShift`: the comparison from the split stable
-  category commutes with the shifts by `ℤ`.
-* `TauCeti.PeriodicComplex.homotopyCategoryPretriangulated`: the pretriangulated structure on
-  the periodic homotopy category.
-
-## Main results
-
-* `TauCeti.PeriodicComplex.homotopyCategoryIsTriangulated`: the periodic homotopy category is
-  triangulated.
-* `TauCeti.PeriodicComplex.splitStableToHomotopy_isTriangulated`: the comparison from the split
-  stable category is a triangle functor.
-* `TauCeti.PeriodicComplex.mappingCone_mem_distTriang`: mapping-cone triangles are distinguished.
-* `TauCeti.PeriodicComplex.mem_distTriang_iff`: every distinguished triangle is isomorphic to a
-  mapping-cone triangle.
+The transport follows `TauCeti.CommutativeAlgebra.MatrixFactorization.Triangulated`, using
+Mathlib's localization at isomorphisms.
 
 ## References
 
-* Dieter Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
-  Algebras*, Chapter I, Section 2, Theorem 2.6: the stable category of a Frobenius category is
-  triangulated.
-* Bernhard Keller, *Chain complexes and stable categories*, Manuscripta Mathematica **67**
-  (1990), 379–417, Section 1, for complexes with the componentwise split exact structure.
-* Torkil Stai, *The triangulated hull of periodic complexes*, Mathematical Research Letters
-  **25** (2018), 199–236, Section 3, for the triangulated periodic homotopy category.
-
-The transport follows the analogous construction for curved duplexes in
-`TauCeti.Algebra.Homology.Curved.Triangulated`.
+* D. Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
+  Algebras*, Chapter I, Section 2, Theorem 2.6.
+* B. Keller, *Chain complexes and stable categories*, Manuscripta Mathematica **67**
+  (1990), 379–417, Section 1.
+* T. Stai, *The triangulated hull of periodic complexes*, Mathematical Research Letters **25**
+  (2018), 199–236, Section 3.
 -/
 
 public section
@@ -67,78 +50,59 @@ namespace TauCeti.PeriodicComplex
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated HomologicalComplex
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
-  [HasBinaryBiproducts C] {n : ℕ}
+variable (C : Type u) [Category.{v} C] [Preadditive C] [HasZeroObject C]
+  [HasBinaryBiproducts C] (n : ℕ)
 
-local notation "E" => ExactStructure.homologicalComplex (ExactStructure.split C)
-  (ComplexShape.up (ZMod n))
 local notation "hE" => ExactStructure.homologicalComplex_split_isFrobenius
   (C := C) (c := ComplexShape.up (ZMod n))
-  (fun j => Exists.intro (j - 1) (by simp))
-  (fun i => Exists.intro (i + 1) (by simp))
-local notation "Φ" => ExactStructure.homologicalComplexSplitStableToHomotopy C
+  (fun j => Exists.intro (j - 1) (sub_add_cancel j 1))
+  (fun i => Exists.intro (i + 1) rfl)
+local notation "F" => ExactStructure.homologicalComplexSplitStableToHomotopy C
   (ComplexShape.up (ZMod n)) (fun i => Exists.intro (i + 1) rfl)
+local notation "E" => ExactStructure.homologicalComplex (ExactStructure.split C)
+  (ComplexShape.up (ZMod n))
 
-variable (C n)
-
-/-- The comparison from the componentwise split stable category of periodic complexes to their
-homotopy category commutes with the shifts by `ℤ`: the one generated by stable suspension and the
-signed cyclic shift. -/
-@[instance_reducible]
-noncomputable def splitStableToHomotopyCommShift :
-    letI := (hE).stableHasShift
-    (Φ).CommShift ℤ :=
-  letI := (hE).stableHasShift
-  (Φ).commShiftOfShiftOneIso (Functor.isoWhiskerRight (hE).stableShiftFunctorOneIso _ ≪≫
-    stableSuspensionCompStableToHomotopyIso C n)
-
-/-- In degree one, the shift compatibility of the stable-to-homotopy comparison is the
-identification of stable suspension with the signed cyclic shift. -/
-theorem splitStableToHomotopyCommShift_iso_one :
-    letI := (hE).stableHasShift
-    letI := splitStableToHomotopyCommShift C n
-    (Φ).commShiftIso (1 : ℤ) =
-      Functor.isoWhiskerRight (hE).stableShiftFunctorOneIso _ ≪≫
-        stableSuspensionCompStableToHomotopyIso C n :=
-  letI := (hE).stableHasShift
-  (Φ).commShiftOfShiftOneIso_iso_one _
-
-/-- The periodic homotopy category is pretriangulated: its distinguished triangles are the images
-of Happel's distinguished triangles under the equivalence with the componentwise split stable
-category. -/
+/-- The periodic homotopy category is pretriangulated, with distinguished triangles transported
+from the componentwise split stable category and the existing signed cyclic shift. -/
 noncomputable instance homotopyCategoryPretriangulated :
     Pretriangulated (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
-  letI := (hE).stableHasShift
-  letI := (hE).stableShiftFunctor_additive
-  letI := (hE).stablePretriangulated
-  letI := splitStableToHomotopyCommShift C n
-  Triangulated.Localization.pretriangulated (Φ) (MorphismProperty.isomorphisms _)
+  (hE).pretriangulatedOfCommShiftEquivalence F (stableToHomotopyCommShift C n)
 
-/-- The comparison from the componentwise split stable category of periodic complexes to their
-homotopy category is a triangle functor. -/
-theorem splitStableToHomotopy_isTriangulated :
+/-- The canonical equivalence from the split stable category to the periodic homotopy category
+is a triangle functor. -/
+theorem stableToHomotopy_isTriangulated :
     letI := (hE).stableHasShift
     letI := (hE).stableShiftFunctor_additive
     letI := (hE).stablePretriangulated
-    letI := splitStableToHomotopyCommShift C n
-    (Φ).IsTriangulated :=
-  letI := (hE).stableHasShift
-  letI := (hE).stableShiftFunctor_additive
-  letI := (hE).stablePretriangulated
-  letI := splitStableToHomotopyCommShift C n
-  Triangulated.Localization.isTriangulated_functor _ (MorphismProperty.isomorphisms _)
+    letI := stableToHomotopyCommShift C n
+    (F).IsTriangulated :=
+  (hE).isTriangulated_functor_ofCommShiftEquivalence F (stableToHomotopyCommShift C n)
 
-/-- **The periodic homotopy category `K_n(C)` is triangulated**, with the shift by `1` given by
-the signed cyclic shift. -/
+/-- The periodic homotopy category with its signed cyclic shift is triangulated. -/
 instance homotopyCategoryIsTriangulated :
     IsTriangulated (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
-  letI := (hE).stableHasShift
-  letI := (hE).stableShiftFunctor_additive
-  letI := (hE).stablePretriangulated
-  letI := splitStableToHomotopyCommShift C n
-  haveI := (hE).stableIsTriangulated
-  haveI := splitStableToHomotopy_isTriangulated C n
-  Triangulated.Localization.isTriangulated (Φ) (MorphismProperty.isomorphisms _)
+  (hE).isTriangulated_ofCommShiftEquivalence F (stableToHomotopyCommShift C n)
+
+/-- The image of the standard stable triangle of a componentwise split conflation is
+distinguished in the periodic homotopy category. -/
+theorem homotopyCategory_map_stableConflationTriangle_mem_distTriang
+    (S : ShortComplex (CochainComplex C (ZMod n))) (hS : (E).Conflation S) :
+    letI := (hE).stableHasShift
+    letI := stableToHomotopyCommShift C n
+    (F).mapTriangle.obj ((hE).stableConflationTriangle S hS) ∈
+      distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
+  (hE).map_stableConflationTriangle_mem_distTriang F (stableToHomotopyCommShift C n) S hS
+
+/-- A triangle in the periodic homotopy category is distinguished exactly when it is
+isomorphic to the image of the standard stable triangle of a componentwise split conflation. -/
+theorem homotopyCategory_mem_distTriang_iff
+    (T : Triangle (HomotopyCategory C (ComplexShape.up (ZMod n)))) :
+    letI := (hE).stableHasShift
+    letI := stableToHomotopyCommShift C n
+    T ∈ distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) ↔
+      ∃ (S : ShortComplex (CochainComplex C (ZMod n))) (hS : (E).Conflation S),
+        Nonempty (T ≅ (F).mapTriangle.obj ((hE).stableConflationTriangle S hS)) :=
+  (hE).mem_distTriang_ofCommShiftEquivalence_iff F (stableToHomotopyCommShift C n) T
 
 variable {C n}
 
@@ -146,7 +110,7 @@ variable {C n}
 identifications of objects. -/
 private lemma splitStableToHomotopy_map_projectiveStableFunctor_map
     {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
-    (Φ).map ((E).projectiveStableFunctor.map f) =
+    (F).map ((E).projectiveStableFunctor.map f) =
       eqToHom (ExactStructure.homologicalComplexSplitStableToHomotopy_obj C _ _ X) ≫
         (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map f ≫
           eqToHom (ExactStructure.homologicalComplexSplitStableToHomotopy_obj C _ _ Y).symm := by
@@ -164,14 +128,14 @@ theorem mappingCone_mem_distTriang {X Y : CochainComplex C (ZMod n)} (f : X ⟶ 
   let := (hE).stableHasShift
   let := (hE).stableShiftFunctor_additive
   let := (hE).stablePretriangulated
-  let := splitStableToHomotopyCommShift C n
-  have := splitStableToHomotopy_isTriangulated C n
-  refine isomorphic_distinguished _ ((Φ).map_distinguished _ (mappingCone_distinguished f)) _ ?_
+  let := stableToHomotopyCommShift C n
+  have := stableToHomotopy_isTriangulated C n
+  refine isomorphic_distinguished _ ((F).map_distinguished _ (mappingCone_distinguished f)) _ ?_
   refine Triangle.isoMk _ _ (eqToIso (by simp)) (eqToIso (by simp)) (eqToIso (by simp)) ?_ ?_ ?_
   · simp [splitStableToHomotopy_map_projectiveStableFunctor_map]
   · simp [splitStableToHomotopy_map_projectiveStableFunctor_map]
   · simp only [Triangle.mk_obj₁, Triangle.mk_obj₃, Functor.mapTriangle_obj, Triangle.mk_mor₃,
-      eqToIso.hom, splitStableToHomotopyCommShift_iso_one, Iso.trans_hom, NatTrans.comp_app,
+      eqToIso.hom, stableToHomotopyCommShift_iso_one, Iso.trans_hom, NatTrans.comp_app,
       Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, splitStableShiftObjIso_hom,
       Functor.map_comp, Functor.map_neg, Preadditive.neg_comp, Category.assoc]
     simp only [stableSuspensionCompStableToHomotopyIso_hom_app, ← Functor.map_comp_assoc,
@@ -198,5 +162,6 @@ theorem mem_distTriang_iff (T : Triangle (HomotopyCategory C (ComplexShape.up (Z
   obtain ⟨e, -, -⟩ := exists_iso_of_arrow_iso _ _ hT (mappingCone_mem_distTriang f)
     (Arrow.isoMk (eqToIso hX.symm) (eqToIso hY.symm) (by simp [hf]))
   exact ⟨X, Y, f, ⟨e⟩⟩
+
 
 end TauCeti.PeriodicComplex

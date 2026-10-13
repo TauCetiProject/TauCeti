@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.ExteriorPower
+public import TauCeti.Algebra.Category.ModuleCat.ExteriorPower.RestrictScalars
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
 
 /-!
@@ -49,25 +49,18 @@ def exteriorPowerObjMap (M : PresheafOfModulesOfCommRing.{u} R) (n : ℕ) {X Y :
     (f : X ⟶ Y) :
     (M.obj X).exteriorPower n ⟶
       (ModuleCat.restrictScalars (R.map f).hom).obj ((M.obj Y).exteriorPower n) :=
-  ModuleCat.exteriorPower.desc
-    { toFun x := ModuleCat.exteriorPower.mk (M := M.obj Y) (n := n) fun j ↦ M.map f (x j)
-      map_update_add' x i a b := by
-        simp only [Function.apply_update (fun _ ↦ M.map f), map_add]
-        exact (ModuleCat.exteriorPower.mk (M := M.obj Y) (n := n)).map_update_add _ _ _ _
-      map_update_smul' x i c a := by
-        simp only [Function.apply_update (fun _ ↦ M.map f), map_smul]
-        exact (ModuleCat.exteriorPower.mk (M := M.obj Y) (n := n)).map_update_smul _ _
-          (R.map f c) _
-      map_eq_zero_of_eq' x i j h hij :=
-        (ModuleCat.exteriorPower.mk (M := M.obj Y) (n := n)).map_eq_zero_of_eq _
-          (by dsimp only; rw [h]) hij }
+  ModuleCat.exteriorPower.map (M.map f) n ≫
+    (TauCeti.ModuleCat.restrictScalarsExteriorPowerComparison (R.map f).hom n).app (M.obj Y)
 
 /-- The restriction maps of the exterior power on decomposable elements. -/
 lemma exteriorPowerObjMap_mk (M : PresheafOfModulesOfCommRing.{u} R) (n : ℕ) {X Y : Cᵒᵖ}
     (f : X ⟶ Y) (x : Fin n → M.obj X) :
     exteriorPowerObjMap M n f (ModuleCat.exteriorPower.mk x) =
-      ModuleCat.exteriorPower.mk (M := M.obj Y) fun j ↦ M.map f (x j) :=
-  ModuleCat.exteriorPower.desc_mk _ _
+      ModuleCat.exteriorPower.mk (M := M.obj Y) fun j ↦ M.map f (x j) := by
+  -- `erw` identifies the comparison's composite-functor objects with module exterior powers.
+  erw [exteriorPowerObjMap, ModuleCat.comp_apply, ModuleCat.exteriorPower.map_mk]
+  exact TauCeti.ModuleCat.restrictScalarsExteriorPowerComparison_app_mk
+    (R.map f).hom n (M.obj Y) _
 
 /-- Auxiliary definition for `exteriorPower`: the exterior power of a presheaf of modules. -/
 @[expose]
