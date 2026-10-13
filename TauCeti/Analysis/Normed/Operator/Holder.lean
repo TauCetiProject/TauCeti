@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.MetricSpace.Holder
 
 /-!
@@ -116,7 +117,9 @@ theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
   have hconst : ‖B‖₊ * (Mc * Kf + Mf * Kc) ≤ Mc * Kf + Mf * Kc := by
     calc
       _ ≤ 1 * (Mc * Kf + Mf * Kc) :=
-        mul_le_mul_right' ContinuousLinearMap.opNNNorm_lsmul_le _
+        by
+          gcongr
+          exact ContinuousLinearMap.opNNNorm_lsmul_le
       _ = _ := one_mul _
   have hboth := (B.holderOnWith_comp₂ (hc.holderOnWith s) hf
     (fun x _ ↦ hcnorm x) hfnorm).mono_const hconst
