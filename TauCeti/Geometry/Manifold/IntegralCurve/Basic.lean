@@ -315,8 +315,9 @@ theorem IsMIntegralCurveAt.contMDiffAt_two
     hderiv.and hcu
   obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
   have hc : ContDiffAt ℝ 2 c t₀ :=
-    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
-      (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
+    (TauCeti.contDiffOn_succ_of_hasDerivWithinAt_comp hsopen.uniqueDiffOn hvu
+      (fun t ht => (hsP ht).2)
+      (fun t ht => (hsP ht).1.hasDerivWithinAt)).contDiffAt (hsopen.mem_nhds hst₀)
   have hc' : ContDiffAt ℝ 2 ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
     simpa only [c] using hc
   exact hc'.contMDiffAt
@@ -364,8 +365,9 @@ theorem contMDiff_succ (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     hderiv.and hcu
   obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
   have hc : ContDiffAt ℝ (n + 1 : ℕ) c t₀ :=
-    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
-      (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
+    (TauCeti.contDiffOn_succ_of_hasDerivWithinAt_comp hsopen.uniqueDiffOn hvu
+      (fun t ht => (hsP ht).2)
+      (fun t ht => (hsP ht).1.hasDerivWithinAt)).contDiffAt (hsopen.mem_nhds hst₀)
   have hc' : ContDiffAt ℝ (n + 1 : ℕ) ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
     simpa only [c] using hc
   exact hc'.contMDiffAt

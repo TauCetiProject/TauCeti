@@ -6,20 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Regularity of integral curves on parameter sets
 
-An integral curve of a continuously differentiable vector field is twice continuously
-differentiable within any parameter set with unique derivatives. This includes nondegenerate
-closed intervals: no extension of the curve beyond its endpoints is assumed.
+An integral curve gains one derivative when its vector field is `C^n` at every point of
+the curve image and those points are interior to the manifold. Regularity is within any
+parameter set with unique derivatives, including nondegenerate closed intervals: no extension
+of the curve beyond its endpoints is assumed.
 
-In coordinates the first derivative is the vector field evaluated along the curve. Its
-continuity first gives `C¹` regularity, and composition with the `C¹` field then gives `C²`
-regularity. Applied to the geodesic spray, this removes the separate regularity assumption
-on the projected curve in the spray characterization of geodesics.
+In coordinates the first derivative is the vector field evaluated along the curve. The
+within-set ODE regularity theorem then gives `C^(n + 1)` regularity. Applied to the geodesic
+spray, this removes the separate regularity assumption on the projected curve in the spray
+characterization of geodesics.
+
+## References
+
+* The chart calculation adapts Tau Ceti's `IsMIntegralCurveAt.contMDiffAt_two` in
+  `TauCeti.Geometry.Manifold.IntegralCurve.Basic` to within-derivatives on `UniqueDiffOn` sets.
 -/
 
 public section
@@ -32,16 +38,24 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [BoundarylessManifold I M] [IsManifold I 2 M]
 
-/-- An integral curve of a `C¹` vector field is `C²` within a parameter set with unique
-derivatives, including the endpoints of a nondegenerate closed interval. -/
-theorem contMDiffOn_two_of_isMIntegralCurveOn {γ : ℝ → M}
-    {v : (x : M) → TangentSpace I x} {s : Set ℝ}
+/-- An integral curve is `C^(n + 1)` within a parameter set with unique derivatives if the
+vector field is `C^n` at every point of the curve image and those points are interior to the
+manifold. -/
+theorem contMDiffOn_succ_of_isMIntegralCurveOn (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
+    {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {s : Set ℝ}
     (hs : UniqueDiffOn ℝ s) (hγ : IsMIntegralCurveOn γ v s)
-    (hv : ∀ t ∈ s,
-      ContMDiffAt I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t)) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s := by
+    (hinterior : ∀ t ∈ s, I.IsInteriorPoint (γ t))
+    (hv : let _ : IsManifold I 1 M := IsManifold.of_le (n := (n + 1 : ℕ)) (by
+      exact_mod_cast Nat.succ_le_succ (Nat.zero_le n));
+      ∀ t ∈ s,
+        ContMDiffAt I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t)) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I (n + 1 : ℕ) γ s := by
+  let _ : IsManifold I 1 M := IsManifold.of_le (n := (n + 1 : ℕ)) (by
+    exact_mod_cast Nat.succ_le_succ (Nat.zero_le n))
+  -- Unfold the dependent let so the tangent bundle uses the installed low-order instance.
+  change ∀ t ∈ s,
+    ContMDiffAt I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t) at hv
   intro t₀ ht₀
   rw [contMDiffWithinAt_iff_target]
   refine ⟨(hγ t₀ ht₀).continuousWithinAt, ?_⟩
@@ -50,11 +64,11 @@ theorem contMDiffOn_two_of_isMIntegralCurveOn {γ : ℝ → M}
   let w : E → E := fun x ↦
     tangentCoordChange I ((extChartAt I (γ t₀)).symm x) (γ t₀)
       ((extChartAt I (γ t₀)).symm x) (v ((extChartAt I (γ t₀)).symm x))
-  have hw : ContDiffAt ℝ 1 w (extChartAt I (γ t₀) (γ t₀)) := by
+  have hw : ContDiffAt ℝ n w (extChartAt I (γ t₀) (γ t₀)) := by
     have h := hv t₀ ht₀
     rw [contMDiffAt_iff] at h
     exact (h.2.contDiffAt
-      (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).snd
+      (range_mem_nhds_isInteriorPoint (hinterior t₀ ht₀))).snd
   obtain ⟨u, hu, hwu⟩ := hw.contDiffOn le_rfl (by simp)
   have hcsrc : ∀ᶠ t in 𝓝[s] t₀, γ t ∈ (extChartAt I (γ t₀)).source :=
     (hγ t₀ ht₀).continuousWithinAt.preimage_mem_nhdsWithin (extChartAt_source_mem_nhds (I := I) _)
@@ -80,19 +94,22 @@ theorem contMDiffOn_two_of_isMIntegralCurveOn {γ : ℝ → M}
         (extChartAt_source I (γ t₀) ▸ hsrc t ht)).mfderiv,
       mfderiv_chartAt_eq_tangentCoordChange (extChartAt_source I (γ t₀) ▸ hsrc t ht)]
     rfl
-  -- The continuous coordinate field gives C¹ regularity, then composition gives C².
-  have hc1 : ContDiffOn ℝ 1 c r := by
-    rw [contDiffOn_one_iff_derivWithin hr]
-    refine ⟨fun t ht ↦ (hd t ht).differentiableWithinAt, ?_⟩
-    exact (hwu.continuousOn.comp (fun t ht ↦ (hd t ht).continuousWithinAt) hmaps).congr
-      fun t ht ↦ (hd t ht).derivWithin (hr t ht)
-  have hc2 : ContDiffOn ℝ 2 c r := by
-    have htwo : (2 : ℕ∞ω) = 1 + 1 := by norm_num
-    rw [htwo, contDiffOn_succ_iff_derivWithin hr]
-    exact ⟨fun t ht ↦ (hd t ht).differentiableWithinAt, by simp,
-      (hwu.comp hc1 hmaps).congr fun t ht ↦ (hd t ht).derivWithin (hr t ht)⟩
-  have hc2t := hc2 t₀ ⟨ht₀, htV⟩
-  rw [contDiffWithinAt_inter (hVopen.mem_nhds htV)] at hc2t
-  exact hc2t.contMDiffWithinAt
+  have hc : ContDiffOn ℝ (n + 1 : ℕ) c r :=
+    TauCeti.contDiffOn_succ_of_hasDerivWithinAt_comp hr hwu hmaps hd
+  have hct := hc t₀ ⟨ht₀, htV⟩
+  rw [contDiffWithinAt_inter (hVopen.mem_nhds htV)] at hct
+  exact hct.contMDiffWithinAt
+
+/-- An integral curve on a boundaryless manifold is `C²` within a parameter set with unique
+derivatives when the vector field is `C¹` at every point of the curve image. This includes
+the endpoints of a nondegenerate closed interval. -/
+theorem contMDiffOn_two_of_isMIntegralCurveOn [BoundarylessManifold I M] [IsManifold I 2 M]
+    {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {s : Set ℝ}
+    (hs : UniqueDiffOn ℝ s) (hγ : IsMIntegralCurveOn γ v s)
+    (hv : ∀ t ∈ s,
+      ContMDiffAt I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t)) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s :=
+  contMDiffOn_succ_of_isMIntegralCurveOn 1 hs hγ
+    (fun _ _ ↦ BoundarylessManifold.isInteriorPoint) hv
 
 end TauCeti.Manifold
