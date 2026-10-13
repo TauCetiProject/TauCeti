@@ -56,8 +56,7 @@ identifications remain future work.
   companion `..._of_isEvenPrimeDiscriminant`: the two shape-specific component theorems that
   `isFundamentalDiscr_prod` assembles.
 
-The generic `Int.IsFundamentalDiscr` API used here (the base case `Int.isFundamentalDiscr_one`,
-the branch accessors and `Int.IsFundamentalDiscr.not_isSquare_rat`) lives in
+The generic `Int.IsFundamentalDiscr` fact `Int.IsFundamentalDiscr.not_isSquare_rat` lives in
 `TauCeti.NumberTheory.FundamentalDiscriminant`.
 -/
 
@@ -124,8 +123,8 @@ theorem squarefree_prod_oddPrimeDiscriminant (hp : ∀ i ∈ s, (p i).Prime) (hi
   exact fun hdvd => hpij ((Nat.prime_dvd_prime_iff_eq (hp i hi) (hp j hj)).mp hdvd)
 
 /-- **A product of odd prime discriminants is a fundamental discriminant**, provided the
-underlying odd primes are pairwise distinct. The empty product recovers
-`Int.isFundamentalDiscr_one`. -/
+underlying odd primes are pairwise distinct. The empty product recovers the fundamental
+discriminant `1` of `ℚ`. -/
 theorem isFundamentalDiscr_prod_oddPrimeDiscriminant (hp : ∀ i ∈ s, (p i).Prime)
     (hodd : ∀ i ∈ s, Odd (p i)) (hinj : Set.InjOn p s) :
     Int.IsFundamentalDiscr (∏ i ∈ s, oddPrimeDiscriminant (p i)) :=

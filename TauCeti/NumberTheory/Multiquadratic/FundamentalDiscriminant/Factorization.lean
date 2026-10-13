@@ -133,10 +133,16 @@ theorem _root_.Int.IsFundamentalDiscr.exists_finset_primeDiscriminant {D : ℤ}
     ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧
       (∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) ∧
       ∏ P ∈ s, P = D := by
-  rcases hD.emod_four_eq_zero_or_one with h0 | h1
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, hsf⟩ | ⟨h0, hsf, hmm⟩
+  · -- `D ≡ 1 (mod 4)`, `D` odd squarefree: no even factor.
+    have hodd : Odd D := Int.odd_iff.mpr (by omega)
+    obtain ⟨himg, hprodimg⟩ := oddPrimeDiscriminant_image_prod (Int.natAbs_odd.mpr hodd)
+    refine ⟨D.natAbs.primeFactors.image oddPrimeDiscriminant, fun P hP => (himg P hP).1, ?_, ?_⟩
+    · intro P hP Q _ hPe _
+      exact absurd hPe (himg P hP).2
+    · rw [hprodimg]
+      exact prod_oddPrimeDiscriminant_primeFactors_eq hsf hodd h1
   · -- `D = 4 * m`, `m` squarefree, `m ≡ 2` or `3 (mod 4)`.
-    have hsf : Squarefree (D / 4) := hD.squarefree_div_four h0
-    have hmm : D / 4 % 4 = 2 ∨ D / 4 % 4 = 3 := hD.div_four_emod_four_eq_two_or_three h0
     have hDm : D = 4 * (D / 4) := by omega
     set m := D / 4
     rcases hmm with hm2 | hm3
@@ -162,15 +168,6 @@ theorem _root_.Int.IsFundamentalDiscr.exists_finset_primeDiscriminant {D : ℤ}
       rw [Int.natAbs_neg] at hcore
       exact exists_finset_insert_evenPrimeDiscriminant (Int.natAbs_odd.mpr hmodd)
         isPrimeDiscriminant_neg_four (by simp) (by rw [hcore]; omega)
-  · -- `D ≡ 1 (mod 4)`, `D` odd squarefree: no even factor.
-    have hsf : Squarefree D := hD.squarefree_of_emod_four_eq_one h1
-    have hodd : Odd D := Int.odd_iff.mpr (by omega)
-    obtain ⟨himg, hprodimg⟩ := oddPrimeDiscriminant_image_prod (Int.natAbs_odd.mpr hodd)
-    refine ⟨D.natAbs.primeFactors.image oddPrimeDiscriminant, fun P hP => (himg P hP).1, ?_, ?_⟩
-    · intro P hP Q _ hPe _
-      exact absurd hPe (himg P hP).2
-    · rw [hprodimg]
-      exact prod_oddPrimeDiscriminant_primeFactors_eq hsf hodd h1
 
 /-- An odd prime-discriminant factor of one product occurs in any equal prime-discriminant
 product.  The rational prime below an odd prime discriminant determines it uniquely. -/
