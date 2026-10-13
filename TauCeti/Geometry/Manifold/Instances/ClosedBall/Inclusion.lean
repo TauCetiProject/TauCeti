@@ -24,20 +24,6 @@ open scoped Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
 
-private def inversionTangentEquiv {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (c z : V) (R : ℝ) (hR : R ≠ 0) (hz : z ≠ c) : V ≃L[ℝ] V :=
-  ((ℝ ∙ (z - c))ᗮ.reflection).toContinuousLinearEquiv.trans
-    (ContinuousLinearEquiv.smulLeft (Units.mk0 ((R / dist z c) ^ 2)
-      (pow_ne_zero _ (div_ne_zero hR (dist_ne_zero.mpr hz)))))
-
-private theorem inversionTangentEquiv_hasFDerivAt {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] (c z : V) (R : ℝ)
-    (hR : R ≠ 0) (hz : z ≠ c) :
-    HasFDerivAt (inversion c R) (inversionTangentEquiv c z R hR hz).toContinuousLinearMap z := by
-  convert hasFDerivAt_inversion hz using 1
-  ext v
-  rfl
-
 variable {n : ℕ} [NeZero n] {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [Fact (Module.finrank ℝ V = n)]
 
@@ -57,11 +43,11 @@ private theorem exists_subtypeValClosedBallTangentEquiv (x : closedBall (0 : V) 
     have hc0 : c 0 = -1 := by simp [c]
     rw [he, hc0] at hz0
     norm_num at hz0
-  let L := (inversionTangentEquiv c z √2 (by positivity) hzc).trans
+  let L := (inversionFDerivEquiv c z √2 (by positivity) hzc).trans
     φ.symm.toContinuousLinearEquiv
   have hd : HasFDerivAt (fun y ↦ φ.symm (inversion c √2 y)) L.toContinuousLinearMap z :=
     φ.symm.toContinuousLinearEquiv.hasFDerivAt.comp z
-      (inversionTangentEquiv_hasFDerivAt c z √2 (by positivity) hzc)
+      (hasFDerivAt_inversionFDerivEquiv c z √2 (by positivity) hzc)
   have heq : EqOn (Subtype.val ∘ (extChartAt (𝓡∂ n) x).symm)
       (fun y ↦ φ.symm (inversion c √2 y)) (range (𝓡∂ n)) := by
     intro y hy
