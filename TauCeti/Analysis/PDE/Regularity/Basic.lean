@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.W1p.DifferenceQuotient
 public import TauCeti.Analysis.PDE.EnergyForm.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # `H²` regularity of whole-space weak solutions
@@ -111,52 +110,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {A : Matrix ι ι ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {lam Lam : ℝ} {K : ℝ≥0}
 
-omit [DecidableEq ι] in
-/-- **Translation moves across the energy form.** For opposite vectors `h` and `k`, translating
-the first argument of the energy form of `a` by `h` is the same as translating the second
-argument and the coefficient field by `k`:
-
-`∫ ⟨a(x) ∇u(x + h), ∇v(x)⟩ dx = ∫ ⟨a(x + k) ∇u(x), ∇v(x + k)⟩ dx`.
-
-This is the integrated form of the substitution `x ↦ x + k`, and needs no hypothesis on `a`. For
-a constant coefficient matrix the translated coefficient field is the original one. -/
-theorem energyFormH1_translate (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
-    {h k : EuclideanSpace ℝ ι} (hk : h + k = 0) (u v : W1p mu ⊤ 2) :
-    energyFormH1 a 0 0 (W1p.translate (Set.mapsTo_univ (· + h) _) u) v
-      = energyFormH1 (fun x => a (x + k)) 0 0 u
-        (W1p.translate (Set.mapsTo_univ (· + k) _) v) := by
-  -- On the whole space the energy form is the integral of `⟨a(x) ∇u(x), ∇v(x)⟩` against `mu`.
-  have hform : ∀ (b : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (y z : W1p mu ⊤ 2),
-      energyFormH1 b 0 0 y z
-        = ∫ x, matrixBilinearForm (b x) (W1p.gradient z x) (W1p.gradient y x) ∂mu :=
-    fun b y z => by
-      rw [energyFormH1_def]
-      simp
-  rw [hform, hform]
-  have hcancel : ∀ x : EuclideanSpace ℝ ι, x + h + k = x := fun x => by
-    rw [add_assoc, hk, add_zero]
-  have htr : ∀ (s : EuclideanSpace ℝ ι) (z : W1p mu ⊤ 2),
-      (W1p.gradient (W1p.translate (Set.mapsTo_univ (· + s) _) z) :
-        EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =ᵐ[mu] fun x => W1p.gradient z (x + s) :=
-    fun s z => by
-      simpa using W1p.gradient_translate_ae (V := ⊤) (Omega := ⊤) (Set.mapsTo_univ (· + s) _) z
-  calc ∫ x, matrixBilinearForm (a x) (W1p.gradient v x)
-        (W1p.gradient (W1p.translate (Set.mapsTo_univ (· + h) _) u) x) ∂mu
-      = ∫ x, matrixBilinearForm (a (x + h + k)) (W1p.gradient v (x + h + k))
-          (W1p.gradient u (x + h)) ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [htr h u] with x hx
-        rw [hx, hcancel]
-    _ = ∫ x, matrixBilinearForm (a (x + k)) (W1p.gradient v (x + k)) (W1p.gradient u x) ∂mu :=
-        integral_add_right_eq_self
-          (fun y => matrixBilinearForm (a (y + k)) (W1p.gradient v (y + k)) (W1p.gradient u y)) h
-    _ = ∫ x, matrixBilinearForm (a (x + k))
-          (W1p.gradient (W1p.translate (Set.mapsTo_univ (· + k) _) v) x)
-          (W1p.gradient u x) ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [htr k v] with x hx
-        rw [hx]
-
 omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
 /-- A bounded coefficient field with continuously varying matrix bilinear forms, translated by
 `s`, has an essentially bounded field of drift- and mass-free energy integrands. -/
@@ -177,60 +130,6 @@ private theorem memLp_energyIntegrand_comp_add
       simpa [Real.norm_eq_abs] using
         (matrixBilinearForm (a (x + s))).le_of_opNorm₂_le_of_le (hC' _) le_rfl le_rfl)
     (fun _ _ => by simp) (fun _ _ => by simp)
-
-omit [DecidableEq ι] in
-/-- **Translating a Lipschitz coefficient field moves the energy form by little.** If
-`x ↦ a(x)` has essentially bounded energy densities and is `K`-Lipschitz in the operator norm
-of its bilinear forms, then
-translating it by `s` changes the energy form by at most `K ‖s‖ ‖∇y‖_{L²} ‖∇z‖_{L²}`. -/
-theorem norm_energyFormH1_comp_add_sub_le
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) (s : EuclideanSpace ℝ ι)
-    (y z : W1p mu ⊤ 2) :
-    ‖energyFormH1 (fun x => a (x + s)) 0 0 y z - energyFormH1 a 0 0 y z‖
-      ≤ K * ‖s‖ * ‖W1p.gradient y‖ * ‖W1p.gradient z‖ := by
-  -- The difference is the energy form of the difference of the coefficient fields.
-  have hdiff : energyFormH1 (fun x => a (x + s)) 0 0 y z - energyFormH1 a 0 0 y z
-      = ∫ x, (matrixBilinearForm (a (x + s)) - matrixBilinearForm (a x))
-          (W1p.gradient z x) (W1p.gradient y x) ∂mu := by
-    simp only [energyFormH1_def, Pi.zero_apply]
-    rw [← integral_sub
-      (integrable_energyIntegrand_jetField
-        (memLp_energyIntegrand_comp_add_right hcoeff s) y z)
-      (integrable_energyIntegrand_jetField hcoeff y z)]
-    simp
-  -- The Lipschitz bound on the coefficient field, pointwise.
-  have hpt : ∀ x, ‖(matrixBilinearForm (a (x + s)) - matrixBilinearForm (a x))
-      (W1p.gradient z x) (W1p.gradient y x)‖
-        ≤ K * ‖s‖ * (‖W1p.gradient z x‖ * ‖W1p.gradient y x‖) := fun x => by
-    calc _ ≤ ‖matrixBilinearForm (a (x + s)) - matrixBilinearForm (a x)‖
-            * ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖ := ContinuousLinearMap.le_opNorm₂ _ _ _
-      _ ≤ K * ‖s‖ * ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖ := by
-          gcongr
-          exact (hK.norm_sub_le _ _).trans_eq (by rw [add_sub_cancel_left])
-      _ = _ := by ring
-  -- Cauchy--Schwarz for the two gradients.
-  have hmem : ∀ q : W1p mu ⊤ 2, MemLp (W1p.gradient q : EuclideanSpace ℝ ι →
-      EuclideanSpace ℝ ι) (ENNReal.ofReal (2 : ℝ)) mu := fun q => by
-    simpa using Lp.memLp (W1p.gradient q)
-  have hsq : ∀ q : W1p mu ⊤ 2, √(∫ x, ‖W1p.gradient q x‖ ^ 2 ∂mu) = ‖W1p.gradient q‖ :=
-    fun q => by
-      have := W1p.integral_norm_gradient_sq_eq_norm_gradient_sq q
-      simp only [Opens.coe_top, Measure.restrict_univ] at this
-      rw [this, Real.sqrt_sq (norm_nonneg _)]
-  have hCS := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two (hmem z) (hmem y)
-  simp only [Real.rpow_two, ← Real.sqrt_eq_rpow, hsq] at hCS
-  have hint : Integrable (fun x => ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖) mu := by
-    have hmem' : ∀ q : W1p mu ⊤ 2, MemLp (fun x => ‖W1p.gradient q x‖) 2 mu := fun q => by
-      simpa using (Lp.memLp (W1p.gradient q)).norm
-    exact (hmem' z).integrable_mul (hmem' y)
-  rw [hdiff]
-  calc _ ≤ ∫ x, K * ‖s‖ * (‖W1p.gradient z x‖ * ‖W1p.gradient y x‖) ∂mu :=
-        norm_integral_le_of_norm_le (hint.const_mul _) (.of_forall hpt)
-    _ = K * ‖s‖ * ∫ x, ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖ ∂mu := integral_const_mul _ _
-    _ ≤ K * ‖s‖ * (‖W1p.gradient z‖ * ‖W1p.gradient y‖) := by gcongr
-    _ = K * ‖s‖ * ‖W1p.gradient y‖ * ‖W1p.gradient z‖ := by ring
 
 omit [DecidableEq ι] in
 /-- **Discrete integration by parts for a Lipschitz coefficient field.** Testing the difference
@@ -302,62 +201,6 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
     (by simp) (LipschitzWith.const _) w t u v
   simp only [NNReal.coe_zero, zero_mul, abs_nonpos_iff] at h
   linarith
-
-omit [DecidableEq ι] in
-/-- **Discrete integration by parts for the energy form.** Testing the difference quotient of
-`u` against `v` with the translated coefficients `aₜ = a(· + t w)` is, up to sign, testing `u`
-against the difference quotient of `v` with the opposite step, plus a commutator term:
-
-`aₜ(Dᵗ u, v) = -a(u, D⁻ᵗ v) - t⁻¹ (aₜ(u, v) - a(u, v))`.
-
-This is the integrated form of the discrete product rule `Dᵗ(a ∇u) = aₜ Dᵗ∇u + (Dᵗ a) ∇u`. For
-constant coefficients the commutator vanishes and the identity reads `a(Dᵗ u, v) = -a(u, D⁻ᵗ v)`.
-The hypothesis on the coefficients makes the energy form bilinear and continuous on `H¹(ℝⁿ)`. -/
-theorem energyFormH1_differenceQuotient_eq_neg_sub
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (w : EuclideanSpace ℝ ι) (t : ℝ) (u v : W1p mu ⊤ 2) :
-    energyFormH1 (fun x => a (x + t • w)) 0 0
-        (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u) v
-      = -energyFormH1 a 0 0 u
-          (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) v)
-        - t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v) := by
-  have hcoeff' := memLp_energyIntegrand_comp_add_right hcoeff (t • w)
-  have hk : t • w + (-t) • w = 0 := by rw [← add_smul]; simp
-  have htranslate := energyFormH1_translate (fun x => a (x + t • w)) hk u v
-  have hcancel : (-t) • w + t • w = 0 := by rw [← add_smul]; simp
-  simp only [add_assoc, hcancel, add_zero] at htranslate
-  rw [energyFormH1_differenceQuotient_left (b := 0) (c := 0) hcoeff',
-    energyFormH1_differenceQuotient_right (b := 0) (c := 0) hcoeff, htranslate, inv_neg]
-  ring
-
-omit [DecidableEq ι] in
-/-- **The commutator of the energy form with a translation.** If the bilinear forms of the
-coefficient field are `K`-Lipschitz in operator norm, then translating the coefficients by `t w`
-changes the energy form by at most `K |t| ‖w‖ ‖∇u‖_{L²} ‖∇v‖_{L²}`:
-
-`|t⁻¹ (aₜ(u, v) - a(u, v))| ≤ K ‖w‖ ‖∇v‖_{L²} ‖∇u‖_{L²}`, where `aₜ = a(· + t w)`.
-
-This bounds the commutator term of `TauCeti.PDE.energyFormH1_differenceQuotient_eq_neg_sub`
-uniformly in `t`. The hypothesis on the coefficients makes both energy densities integrable. -/
-theorem norm_inv_mul_energyFormH1_comp_add_sub_le
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (hLip : LipschitzWith K fun x => matrixBilinearForm (a x)) (w : EuclideanSpace ℝ ι) (t : ℝ)
-    (u v : W1p mu ⊤ 2) :
-    ‖t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v)‖
-      ≤ K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
-  rcases eq_or_ne t 0 with rfl | ht
-  · simp only [inv_zero, zero_mul, norm_zero]
-    positivity
-  rw [norm_mul, norm_inv, Real.norm_eq_abs]
-  calc |t|⁻¹ * ‖energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v‖
-      ≤ |t|⁻¹ * (K * ‖t • w‖ * ‖W1p.gradient u‖ * ‖W1p.gradient v‖) := by
-        gcongr
-        exact norm_energyFormH1_comp_add_sub_le hcoeff hLip (t • w) u v
-    _ = K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
-        rw [norm_smul, Real.norm_eq_abs]
-        field_simp [abs_ne_zero.mpr ht]
 
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** Let
 `a` be uniformly elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be
