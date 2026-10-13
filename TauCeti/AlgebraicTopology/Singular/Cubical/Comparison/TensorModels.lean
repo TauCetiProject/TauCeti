@@ -107,9 +107,9 @@ theorem cubicalTensorGen_def (n : ℕ) (i : BidegreeIndex n) :
           NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2)) :=
   (rfl)
 
-/-- The coefficients of a chain of a summand of the tensor product are those of the summand.  Not a
-simp lemma: `simp` rewrites the types of both sides (the abbreviations `cubicalTensor` and
-`cubicalBidegreeModel`), so the left-hand side is not in simp normal form. -/
+/-- The coefficients of a chain of a summand of the tensor product are those of the summand. -/
+-- Not a simp lemma: `simp` rewrites the types of both sides (the abbreviations `cubicalTensor` and
+-- `cubicalBidegreeModel`), so the left-hand side is not in simp normal form.
 theorem cubicalTensorCoord_ι (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
     (z : NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q) :
     cubicalTensorCoord k X n
@@ -201,8 +201,9 @@ theorem map_cubicalTensorGen (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p
 
 variable (k) in
 /-- The inclusion of the summand of bidegree `(p, q)` into the tensor product, as a linear map out
-of the tensor product of the chains; a proof-internal name for `(ιTensorObj …).hom`, which keeps
-the instances of the tensor product of chains visible to `simp`. -/
+of the tensor product of the chains. -/
+-- A proof-internal name for `(ιTensorObj …).hom`, which keeps the instances of the tensor product
+-- of chains visible to `simp`.
 private def summandInclusion (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n) :
     NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q →ₗ[k]
       ((cubicalTensor k).obj X).X n :=
@@ -276,11 +277,9 @@ theorem sum_cubicalTensorCoord (X : TopCat.{u} × TopCat.{u}) (n : ℕ)
 
 variable (k) in
 /-- **The tensor product of the normalized cubical chains is free on the pairs of cubes**: in
-degree `n`, on the models `(Iᵖ, I^q)` with `p + q = n`.
-The body is exposed because the statements of `cubicalTensorModelPresentation_gen` and
-`cubicalTensorModelPresentation_coord` (and the use of `.model`, `.gen` in
-`singularAugment_cubicalCrossProductToSingular_eq`) need `.model n i` to reduce to
-`cubicalBidegreeModel n i`. -/
+degree `n`, on the models `(Iᵖ, I^q)` with `p + q = n`. -/
+-- The body is exposed so that `.model n i` reduces to `cubicalBidegreeModel n i` in the statements
+-- of `cubicalTensorModelPresentation_gen` and `_coord`.
 @[expose] def cubicalTensorModelPresentation :
     AcyclicModels.MultiModelPresentation (cubicalTensor.{u} k) BidegreeIndex where
   model := cubicalBidegreeModel
