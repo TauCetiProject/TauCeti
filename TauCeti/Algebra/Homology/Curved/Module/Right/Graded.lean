@@ -102,25 +102,34 @@ noncomputable def closedIsoOfGradedIso {M N : CurvedDGRightModuleCat.{u, u, u} h
     (hd : ∀ x, N.differential (g.hom.hom x) = g.hom.hom (M.differential x)) :
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ≅
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N := by
-  let e : M ≃ₗ[Aᵐᵒᵖ] N := LinearEquiv.ofLinearMap g.hom.hom g.inv.hom
-    (by simpa only [GradedModuleCat.hom_comp, GradedModuleCat.hom_id] using
-      congrArg GradedModuleCat.Hom.hom g.inv_hom_id)
-    (by simpa only [GradedModuleCat.hom_comp, GradedModuleCat.hom_id] using
-      congrArg GradedModuleCat.Hom.hom g.hom_inv_id)
+  let e : M ≃ₗ[Aᵐᵒᵖ] N :=
+    ((GradedModuleCat.toModuleCat (𝒜 := _)).mapIso g).toLinearEquiv
+  have he (x : M) : e x = g.hom.hom x :=
+    (Iso.toLinearEquiv_apply ((GradedModuleCat.toModuleCat (𝒜 := _)).mapIso g) x).trans
+      ((congrArg (fun f ↦ f x) (GradedModuleCat.toModuleCat_map g.hom)).trans
+        (ModuleCat.ofHom_apply g.hom.hom x))
+  have heInv (x : N) : e.symm x = g.inv.hom x :=
+    (congrArg (fun e : N ≃ₗ[Aᵐᵒᵖ] M ↦ e x)
+      (Iso.toLinearEquiv_symm ((GradedModuleCat.toModuleCat (𝒜 := _)).mapIso g))).trans
+      ((Iso.toLinearEquiv_apply ((GradedModuleCat.toModuleCat (𝒜 := _)).mapIso g).symm x).trans
+        ((congrArg (fun f ↦ f x) (GradedModuleCat.toModuleCat_map g.inv)).trans
+          (ModuleCat.ofHom_apply g.inv.hom x)))
   refine closedIsoOf e (fun p x ↦ ?_) (fun x ↦ ?_)
   · constructor
     · intro hx
-      simpa only [e, LinearEquiv.coe_ofLinearMap, toGradedModuleCat_piece, add_zero] using
+      rw [he]
+      simpa only [toGradedModuleCat_piece, add_zero] using
         g.hom.isHomogeneous.map_mem (by simpa only [toGradedModuleCat_piece] using hx)
     · intro hx
       have hxN : e x ∈ (toGradedModuleCat N).grading.piece p := by
         rw [toGradedModuleCat_piece]
         exact hx
       have hx' : e.symm (e x) ∈ M.grading (p + 0) := by
-        simpa only [e, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
-          toGradedModuleCat_piece] using g.inv.isHomogeneous.map_mem hxN
+        rw [heInv]
+        simpa only [toGradedModuleCat_piece] using g.inv.isHomogeneous.map_mem hxN
       simpa only [e.symm_apply_apply, add_zero] using hx'
-  · simpa only [e, LinearEquiv.coe_ofLinearMap] using hd x
+  · rw [he, he]
+    exact hd x
 
 /-- The lifted graded isomorphism retains its forward underlying linear map. -/
 @[simp]
@@ -128,8 +137,12 @@ theorem closedHom_closedIsoOfGradedIso_hom {M N : CurvedDGRightModuleCat.{u, u, 
     (g : toGradedModuleCat M ≅ toGradedModuleCat N)
     (hd : ∀ x, N.differential (g.hom.hom x) = g.hom.hom (M.differential x)) :
     closedHom (closedIsoOfGradedIso g hd).hom = g.hom.hom := by
-  simp only [closedIsoOfGradedIso, closedHom_closedIsoOf_hom,
-    LinearEquiv.toLinearMap_ofLinearMap]
+  dsimp only [closedIsoOfGradedIso]
+  refine (closedHom_closedIsoOf_hom _ _ _).trans ?_
+  exact (Iso.toLinearMap_toLinearEquiv
+    ((GradedModuleCat.toModuleCat (𝒜 := _)).mapIso g)).trans
+    ((congrArg ModuleCat.Hom.hom (GradedModuleCat.toModuleCat_map g.hom)).trans
+      (ModuleCat.hom_ofHom g.hom.hom))
 
 /-- The lifted graded isomorphism retains its inverse underlying linear map. -/
 @[simp]
@@ -137,8 +150,14 @@ theorem closedHom_closedIsoOfGradedIso_inv {M N : CurvedDGRightModuleCat.{u, u, 
     (g : toGradedModuleCat M ≅ toGradedModuleCat N)
     (hd : ∀ x, N.differential (g.hom.hom x) = g.hom.hom (M.differential x)) :
     closedHom (closedIsoOfGradedIso g hd).inv = g.inv.hom := by
-  simp only [closedIsoOfGradedIso, closedHom_closedIsoOf_inv,
-    LinearEquiv.symm_ofLinearMap, LinearEquiv.toLinearMap_ofLinearMap]
+  dsimp only [closedIsoOfGradedIso]
+  refine (closedHom_closedIsoOf_inv _ _ _).trans ?_
+  exact (congrArg LinearEquiv.toLinearMap
+    (Iso.toLinearEquiv_symm ((GradedModuleCat.toModuleCat (𝒜 := _)).mapIso g))).trans
+    ((Iso.toLinearMap_toLinearEquiv
+      ((GradedModuleCat.toModuleCat (𝒜 := _)).mapIso g).symm).trans
+      ((congrArg ModuleCat.Hom.hom (GradedModuleCat.toModuleCat_map g.inv)).trans
+        (ModuleCat.hom_ofHom g.inv.hom)))
 
 instance : (forgetDifferential (h := h)).ReflectsIsomorphisms where
   reflects {M N} f _ := by
