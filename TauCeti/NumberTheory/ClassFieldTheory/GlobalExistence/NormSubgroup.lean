@@ -21,8 +21,8 @@ the finite Galois extension `classField K V` of `K`. This file attaches to `V` i
 the idele class group `C_K`: the norm subgroup of the layer `V ◁ G_K` of the idele-class formation
 `globalFormation K`, read on `C_K` through the identification `globalGroundEquiv` of `C_K` with the
 ground level. It is the idele-class norm group `N_{E/K}(C_E)` of the class field `E`
-(`globalNormSubgroup_eq_range`), and of any finite Galois extension `L/K` whose layer is `V`
-(`globalNormSubgroup_fixingOpenNormalSubgroup`).
+(`globalNormSubgroup_eq_range_classField`, `globalNormSubgroup_eq_range`), and of any finite Galois
+extension `L/K` whose layer is `V` (`globalNormSubgroup_fixingOpenNormalSubgroup`).
 
 The idele-class norm group is open and of finite index
 (`TauCeti.GlobalNumberFields.isOpen_range_ideleClassNormMap`,
@@ -38,8 +38,10 @@ inclusion of class fields, and the layer `G_K` itself, which cuts out `K`, has n
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.globalNormSubgroup_eq_range`: it is `N_{E/K}(C_E)` for the class field
-  `E` of `V`.
+* `TauCeti.ClassFieldTheory.globalNormSubgroup_eq_range_classField`: it is `N_{E/K}(C_E)` for the
+  class field `E = classField K V`.
+* `TauCeti.ClassFieldTheory.globalNormSubgroup_eq_range`: the same for any finite Galois
+  subextension `E` of `Kˢ/K` given as the fixed field of `V`.
 * `TauCeti.ClassFieldTheory.globalNormSubgroup_fixingOpenNormalSubgroup`: the layer of a finite
   Galois extension `L/K` has norm subgroup `N_{L/K}(C_L)`.
 * `TauCeti.ClassFieldTheory.isOpen_globalNormSubgroup`: global norm subgroups are open.
@@ -107,33 +109,57 @@ theorem globalNormSubgroup_fixingOpenNormalSubgroup (L : Type*) [Field L] [Numbe
   ext c
   rw [mem_globalNormSubgroup_iff, globalGroundEquiv_mem_layerNormSubgroup_iff]
 
-/-- Every open normal subgroup `V` of `G_K` is the top subgroup of a layer whose fixed field is a
-finite Galois subextension of `Kˢ/K`, namely the class field of `V`. -/
-private theorem exists_fixedField_top_ofOpenNormal_eq
-    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
-    ∃ E : Ω, fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E :=
-  ⟨⟨classField K V⟩, IntermediateField.ext fun x ↦ by
-    rw [NormalLayer.top_ofOpenNormal, mem_fixedField_iff]
-    exact mem_classField.symm⟩
+/-- The class field of an open normal subgroup of `G_K` is a number field, being a finite extension
+of the number field `K`. -/
+instance numberField_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    NumberField (classField K V) :=
+  .of_module_finite K _
+
+variable (K) in
+/-- **The global norm subgroup of `V` is `N_{E/K}(C_E)` for the class field `E` of `V`.** -/
+theorem globalNormSubgroup_eq_range_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    globalNormSubgroup K V =
+      (GlobalNumberFields.ideleClassNormMap K (classField K V) :
+        IdeleClassGroup (𝓞 (classField K V)) (classField K V) →*
+          IdeleClassGroup (𝓞 K) K).range := by
+  conv_lhs => rw [← fixingOpenNormalSubgroup_classField V]
+  exact globalNormSubgroup_fixingOpenNormalSubgroup (classField K V)
+
+/-- An idele class lies in the global norm subgroup of `V` exactly when it is the norm of an idele
+class of the class field of `V`. -/
+@[simp]
+theorem mem_globalNormSubgroup_iff_exists {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
+    {c : IdeleClassGroup (𝓞 K) K} :
+    c ∈ globalNormSubgroup K V ↔
+      ∃ d : IdeleClassGroup (𝓞 (classField K V)) (classField K V),
+        GlobalNumberFields.ideleClassNormMap K (classField K V) d = c := by
+  rw [globalNormSubgroup_eq_range_classField, MonoidHom.mem_range]
+  rfl
 
 variable (K) in
 /-- **Global norm subgroups are open.** -/
 theorem isOpen_globalNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     IsOpen ((globalNormSubgroup K V : Subgroup (IdeleClassGroup (𝓞 K) K)) :
       Set (IdeleClassGroup (𝓞 K) K)) := by
-  obtain ⟨E, hE⟩ := exists_fixedField_top_ofOpenNormal_eq V
-  rw [globalNormSubgroup_eq_range E hE]
-  exact GlobalNumberFields.isOpen_range_ideleClassNormMap K E
+  rw [globalNormSubgroup_eq_range_classField]
+  exact GlobalNumberFields.isOpen_range_ideleClassNormMap K (classField K V)
 
 variable (K) in
 /-- **Global norm subgroups have finite index.** -/
 theorem finiteIndex_globalNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     (globalNormSubgroup K V).FiniteIndex := by
-  obtain ⟨E, hE⟩ := exists_fixedField_top_ofOpenNormal_eq V
-  rw [globalNormSubgroup_eq_range E hE]
-  exact GlobalNumberFields.finiteIndex_range_ideleClassNormMap K E
+  rw [globalNormSubgroup_eq_range_classField]
+  exact GlobalNumberFields.finiteIndex_range_ideleClassNormMap K (classField K V)
 
-/-! ### Order properties -/
+/-! ### Order properties
+
+The proofs in this section adapt those of `TauCeti.ClassFieldTheory.groundEquiv_localGroundEquiv`,
+`TauCeti.ClassFieldTheory.localNormSubgroup_mono` and
+`TauCeti.ClassFieldTheory.localNormSubgroup_top` in
+`TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup`, with the identification
+`localGroundEquiv` of `Kˣ` with a ground level replaced by `globalGroundEquiv` followed by
+`NormalLayer.groundEquivOfOpenNormal`.
+-/
 
 /-- The ground-level identification of the refinement `V ≤ W` is compatible with the two
 identifications of `C_K` with the ground levels of the layers of `W` and `V`. -/

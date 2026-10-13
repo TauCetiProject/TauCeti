@@ -86,12 +86,7 @@ theorem exists_ideleCongruenceSubgroup_le_range_ideleNormMap :
     exact ⟨m, hm⟩
   choose m hm using hdeep
   -- An `n`-th power of a local unit is a local norm.
-  have hpow {F : Type _} [Field F] [Algebra K F] {y : Fˣ}
-      (hy : y ∈ (powMonoidHom n : Fˣ →* Fˣ).range) :
-      y ∈ (Algebra.normUnits F (S := F ⊗[K] L)).range := by
-    obtain ⟨b, rfl⟩ := hy
-    have hb := Algebra.pow_finrank_mem_range_normUnits F (S := F ⊗[K] L) b
-    rwa [Module.finrank_baseChange] at hb
+  have hpow := range_powMonoidHom_le_range_normUnits_baseChange K L
   -- The modulus `∏_{v ∈ S} v ^ m v`, divisible by every real place.
   let 𝔪 : Modulus K :=
     { finitePart := ∏ v ∈ S, v.asIdeal ^ m v
@@ -104,7 +99,7 @@ theorem exists_ideleCongruenceSubgroup_le_range_ideleNormMap :
     · -- A ramified place: the coordinate lies deep in the unit filtration, so it is a power.
       have hexp : m v ≤ 𝔪.exponent v :=
         (Modulus.pow_dvd_finitePart_iff_le_exponent 𝔪 v).mp (Finset.dvd_prod_of_mem _ hv)
-      exact hpow (hm v (unitFiltration_antitone hexp
+      exact hpow _ (hm v (unitFiltration_antitone hexp
         (ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hx v)))
     · -- An unramified place: the coordinate is a unit, and units are norms there.
       obtain ⟨P, hP, hPv⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral
@@ -115,7 +110,7 @@ theorem exists_ideleCongruenceSubgroup_le_range_ideleNormMap :
         ⟨⟨⟨P, hP.isPrime, hP0⟩, hPv⟩, hS v hv _⟩
       exact (mem_range_normUnits_adicCompletion_iff K L v _).mpr ⟨u, hu⟩
   · -- An infinite place: the coordinate is positive at a real place, hence a power.
-    exact hpow (Completion.mem_range_powMonoidHom hn _ fun hw ↦
+    exact hpow _ (Completion.mem_range_powMonoidHom hn _ fun hw ↦
       ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx (w := ⟨w, hw⟩)
         (mem_narrowModulus_infinitePart ⟨w, hw⟩))
 
