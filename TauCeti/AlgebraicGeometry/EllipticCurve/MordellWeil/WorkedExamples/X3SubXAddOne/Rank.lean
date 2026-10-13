@@ -17,8 +17,9 @@ import Mathlib.Tactic.NormNum.Prime
 # The Mordell–Weil group of `y² = x³ - x + 1` is `ℤ`
 
 The rational points of the elliptic curve `E : y² = x³ - x + 1` over `ℚ` form a free abelian
-group of rank one, so `E(ℚ) ≅ ℤ`. This is the classical first example of a rank computation by
-explicit `2`-descent (Silverman X.1).
+group of rank one, so `E(ℚ) ≅ ℤ`. The rank is computed by explicit `2`-descent through the étale
+algebra of the cubic `x³ - x + 1`, following the worked example of Stoll's `EllipticCurves`
+project (see Provenance); Silverman X.1 is general background on descent.
 
 * **Rank at least one.** The rational point `P = (1, 1)` is nonzero, and `E(ℚ)` is torsion-free
   (`TauCeti.WorkedExamples.torsion_curveX3SubXAddOne_eq_bot`), so `P` has infinite order.
@@ -85,7 +86,7 @@ theorem curveX3SubXAddOnePoint_def :
       rw [equation_iff]
       simp [curveX3SubXAddOne]) := (rfl)
 
-/-- `(1, 1)` has infinite order: it is nonzero, and `E(ℚ)` is torsion-free. -/
+/-- `(1, 1)` has infinite order. -/
 theorem not_isOfFinAddOrder_curveX3SubXAddOnePoint :
     ¬ IsOfFinAddOrder curveX3SubXAddOnePoint := fun h ↦ by
   have := (AddCommGroup.mem_torsion _).mpr h
@@ -93,10 +94,6 @@ theorem not_isOfFinAddOrder_curveX3SubXAddOnePoint :
   exact Point.some_ne_zero _ this
 
 /-! ### The descent bound -/
-
-/-- `E(ℚ)` is a finitely generated `ℤ`-module, by the Mordell–Weil theorem. -/
-private instance : Module.Finite ℤ (curveX3SubXAddOne.baseChange ℚ).toAffine.Point :=
-  Module.Finite.iff_addGroup_fg.mpr fg_point_of_numberField
 
 /-- The cubic of the `2`-descent is `x³ - x + 1`. -/
 private theorem f_curveX3SubXAddOne :

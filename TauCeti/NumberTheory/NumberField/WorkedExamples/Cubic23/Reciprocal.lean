@@ -39,32 +39,30 @@ open scoped NumberField
 
 namespace TauCeti.NumberField.Cubic23
 
-/-- The defining cubic `X³ - X² + 1` is irreducible over `ℤ`: it is monic of degree three, and an
-integer root `n` would satisfy `n (n (n - 1)) = -1`, forcing `n = ±1`, which are not roots. -/
-theorem irreducible_polynomial : Irreducible (X ^ 3 - X ^ 2 + 1 : ℤ[X]) := by
-  have hm : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).Monic := by monicity!
-  have hd : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).natDegree = 3 := by compute_degree!
+/-- A monic integer cubic with constant coefficient `1` and no root at `1` or `-1` is
+irreducible. -/
+private theorem irreducible_of_natDegree_eq_three_of_coeff_zero_eq_one {p : ℤ[X]} (hm : p.Monic)
+    (hd : p.natDegree = 3) (h0 : p.coeff 0 = 1) (h1 : p.eval 1 ≠ 0) (hn1 : p.eval (-1) ≠ 0) :
+    Irreducible p := by
   rw [Monic.irreducible_iff_roots_eq_zero_of_degree_le_three hm (by lia) hd.le]
   refine Multiset.eq_zero_of_forall_notMem fun n hn ↦ ?_
-  rw [mem_roots hm.ne_zero, IsRoot.def] at hn
-  simp only [eval_add, eval_sub, eval_pow, eval_X, eval_one] at hn
-  rcases Int.eq_one_or_neg_one_of_mul_eq_neg_one (v := n * (n - 1)) (by linear_combination hn)
-    with rfl | rfl <;> norm_num at hn
+  have hr : p.IsRoot n := (mem_roots hm.ne_zero).mp hn
+  -- an integer root divides the constant coefficient `1`, so it is `1` or `-1`
+  rcases Int.isUnit_iff.mp (isUnit_of_dvd_one (h0 ▸ hr.dvd_coeff_zero)) with rfl | rfl
+  exacts [h1 hr, hn1 hr]
 
-/-- The cubic `X³ - X + 1` is irreducible over `ℚ`. By Gauss's lemma it suffices to show this
-over `ℤ`, where an integer root `n` would satisfy `n (n n - 1) = -1`, forcing `n = ±1`, which are
-not roots. -/
+/-- The defining cubic `X³ - X² + 1` is irreducible over `ℤ`. -/
+theorem irreducible_polynomial : Irreducible (X ^ 3 - X ^ 2 + 1 : ℤ[X]) :=
+  irreducible_of_natDegree_eq_three_of_coeff_zero_eq_one (by monicity!) (by compute_degree!)
+    (by simp) (by norm_num) (by norm_num)
+
+/-- The cubic `X³ - X + 1` is irreducible over `ℚ`. -/
 theorem irreducible_X_pow_three_sub_X_add_one : Irreducible (X ^ 3 - X + 1 : ℚ[X]) := by
   have hm : (X ^ 3 - X + 1 : ℤ[X]).Monic := by monicity!
-  have hd : (X ^ 3 - X + 1 : ℤ[X]).natDegree = 3 := by compute_degree!
-  have hirr : Irreducible (X ^ 3 - X + 1 : ℤ[X]) := by
-    rw [Monic.irreducible_iff_roots_eq_zero_of_degree_le_three hm (by lia) hd.le]
-    refine Multiset.eq_zero_of_forall_notMem fun n hn ↦ ?_
-    rw [mem_roots hm.ne_zero, IsRoot.def] at hn
-    simp only [eval_add, eval_sub, eval_pow, eval_X, eval_one] at hn
-    rcases Int.eq_one_or_neg_one_of_mul_eq_neg_one (v := n * n - 1) (by linear_combination hn)
-      with rfl | rfl <;> norm_num at hn
-  simpa using (hm.irreducible_iff_irreducible_map_fraction_map (K := ℚ)).mp hirr
+  -- by Gauss's lemma it suffices to work over `ℤ`
+  simpa using (hm.irreducible_iff_irreducible_map_fraction_map (K := ℚ)).mp
+    (irreducible_of_natDegree_eq_three_of_coeff_zero_eq_one hm (by compute_degree!) (by simp)
+      (by norm_num) (by norm_num))
 
 variable {K : Type*} [Field K] [NumberField K]
 
