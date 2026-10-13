@@ -20,8 +20,10 @@ to its Newtonian Hessian kernel.
 The restriction `n ≥ 3` comes from the available kernel representation through the power-law
 Newtonian potential.  The planar logarithmic kernel requires a separate identification.
 
-## Main declaration
+## Main declarations
 
+* `TauCeti.exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le`: for `1 < p < ∞`, the
+  Hessian Fourier multiplier satisfies an `Lᵖ` estimate on its `L²` domain.
 * `TauCeti.exists_eLpNorm_lineDerivOp_lineDerivOp_le_laplacian`: for `1 < p < ∞`, every
   second directional derivative has `Lᵖ` norm bounded by the `Lᵖ` norm of the Laplacian.
 
@@ -111,11 +113,13 @@ private theorem norm_newtonianHessianKernel_sub_le
           exact ContinuousLinearMap.norm_id_le
         _ = ‖(iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) -
             iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y')) ![v, w]‖ := by
-          rw [show -iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w] -
-          -iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y') ![v, w] =
-          -(iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w] -
-            iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y') ![v, w]) by ring, norm_neg,
-            mul_one]
+          -- Factor out the common negation so the norm can eliminate it.
+          have hneg : -iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w] -
+              -iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y') ![v, w] =
+              -(iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w] -
+                iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y') ![v, w]) := by
+            ring
+          rw [hneg, norm_neg, mul_one]
           rfl
     _ ≤ ‖iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) -
           iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y')‖ * (‖v‖ * ‖w‖) := by
@@ -133,7 +137,9 @@ private theorem norm_newtonianHessianKernel_sub_le
         sub_sub_sub_cancel_left, norm_sub_rev]
       ring
 
-private theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le [CompleteSpace F]
+/-- The Hessian Fourier multiplier satisfies an `Lᵖ` estimate on its `L²` domain in dimension at
+least three. The constant may depend on `n`, `p`, `v`, and `w`, but not on the input. -/
+theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le [CompleteSpace F]
     (hn : 3 ≤ n) (v w : EuclideanSpace ℝ (Fin n)) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ f : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n))),
       eLpNorm (Lp.fourierMultiplierCLM F (hessianSymbolLp v w) f) p volume ≤
@@ -163,15 +169,16 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le [Complete
     simp [Lp.adjoint_fourierMultiplierCLM]
   have hsymm := ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mp
     (ContinuousLinearMap.isSelfAdjoint_iff'.mpr hTc)
+  have hsymmRestrict := hsymm.restrictScalars
   have hsymmReal : T.toLinearMap.IsSymmetric := fun f g ↦ by
-    -- Expand the real `L²` inner product to compare it with complex self-adjointness.
+    -- Bridge scalar restriction to the independently constructed real `L²` inner product.
     change (∫ x, RCLike.re ⟪Lp.fourierMultiplierCLM F (hessianSymbolLp v w) f x, g x⟫_ℂ) =
       ∫ x, RCLike.re ⟪f x, Lp.fourierMultiplierCLM F (hessianSymbolLp v w) g x⟫_ℂ
     rw [integral_re (L2.integrable_inner (𝕜 := ℂ)
       (Lp.fourierMultiplierCLM F (hessianSymbolLp v w) f) g),
       integral_re (L2.integrable_inner (𝕜 := ℂ) f
         (Lp.fourierMultiplierCLM F (hessianSymbolLp v w) g)), ← L2.inner_def, ← L2.inner_def]
-    exact congrArg RCLike.re (hsymm f g)
+    exact hsymmRestrict f g
   have hself : adjoint (𝕜 := ℝ) T = T := hsymmReal.clm_adjoint_eq
   have hrep' : ∀ (f : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n))))
       (s : Set (EuclideanSpace ℝ (Fin n))), IsCompact s →
