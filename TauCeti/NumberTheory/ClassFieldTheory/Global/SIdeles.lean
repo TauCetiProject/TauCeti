@@ -308,17 +308,7 @@ section Herbrand
 
 open scoped AdicCompletionExtension NumberField.LiesOver
 
-variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)]
-
-/-- A choice of a place of `L` above each place of `S`. -/
-private def placeAbove (v : S) :
-    {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal} :=
-  have hw : ∃ w : HeightOneSpectrum (𝓞 L), w.asIdeal.LiesOver v.1.asIdeal := by
-    obtain ⟨w, hw⟩ := under_surjective (𝓞 K) (𝓞 L) v.1
-    exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
-  ⟨hw.choose, hw.choose_spec⟩
-
-variable {L S}
+variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] {L S}
 
 /-- The Herbrand quotient of the `S`-ideles is that of the infinite ideles times that of the
 finite `S`-ideles. -/

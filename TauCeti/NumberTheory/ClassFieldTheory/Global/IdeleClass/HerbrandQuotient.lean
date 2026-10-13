@@ -50,8 +50,8 @@ archimedean factor cancel, leaving `[L : K]`.
 
 public noncomputable section
 
-open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
+open scoped AdicCompletionExtension
 
 namespace TauCeti.ClassFieldTheory
 
@@ -67,29 +67,14 @@ theorem herbrandQuotient_ideleClassRep_eq_finrank :
   have := finite_tateCohomology_zero_sUnitsRep (L := L) (S : Set (HeightOneSpectrum (𝓞 K)))
   have := finite_tateCohomology_negOne_sUnitsRep (L := L) (S : Set (HeightOneSpectrum (𝓞 K)))
   have := (finite_tateCohomology_sIdelesRep (K := K) (L := L) hunram).2
-  -- A place of `L` above every infinite place of `K` and above every place of `S`.
-  have hwInf (v : InfinitePlace K) : ∃ w : InfinitePlace L, w.LiesOver v := by
-    obtain ⟨w, rfl⟩ := comap_surjective (K := L) v
-    exact ⟨w, inferInstance⟩
-  have hw (v : S) : ∃ w : HeightOneSpectrum (𝓞 L), w.asIdeal.LiesOver v.1.asIdeal := by
-    obtain ⟨w, hw⟩ := under_surjective (𝓞 K) (𝓞 L) v.1
-    exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
-  have wInf (v : InfinitePlace K) : {w : InfinitePlace L // w.LiesOver v} :=
-    ⟨_, (hwInf v).choose_spec⟩
-  have w (v : S) : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal} :=
-    ⟨_, (hw v).choose_spec⟩
-  rw [herbrandQuotient_ideleClassRep L hgen, herbrandQuotient_sIdelesRep hunram wInf w,
-    ← herbrandQuotient_infiniteIdelesRep wInf,
-    herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction,
-    herbrandQuotient_sUnitsRep S w, herbrandQuotient_sUnitsRep_empty,
-    herbrandQuotient_units_eq_div]
+  rw [herbrandQuotient_ideleClassRep L hgen,
+    herbrandQuotient_sIdelesRep_eq_herbrandQuotient_ofMulAction hunram,
+    herbrandQuotient_ofMulAction_places S (placeAbove L S),
+    herbrandQuotient_sUnitsRep S (placeAbove L S), herbrandQuotient_sUnitsRep_empty,
+    herbrandQuotient_units_eq_div, herbrandQuotient_ofMulAction_infinitePlace]
   -- The archimedean factor `2 ^ r` and the local degrees at `S` cancel.
-  have hA : TateCohomology.herbrandQuotient
-      (Rep.ofMulAction ℤ (L ≃ₐ[K] L) (InfinitePlace L)) ≠ 0 := by
-    rw [herbrandQuotient_ofMulAction_infinitePlace]
-    positivity
-  have hP : ∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) ≠
-      0 :=
+  have hP : ∏ v : S, (Module.finrank (v.1.adicCompletion K)
+      ((placeAbove L S v).1.adicCompletion L) : ℚ) ≠ 0 :=
     Finset.prod_ne_zero_iff.2 fun v _ ↦ Nat.cast_ne_zero.2 Module.finrank_pos.ne'
   have hn : (Module.finrank K L : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
   field_simp
