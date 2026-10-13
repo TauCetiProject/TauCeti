@@ -34,8 +34,6 @@ complexification preserves the spectrum of a self-adjoint operator
 
 ## Main declarations
 
-* `ContinuousLinearMap.isClosedEmbedding_complexifyL2StarAlgHom`: complexification of bounded
-  operators is a closed embedding.
 * `ContinuousLinearMap.instContinuousFunctionalCalculusRealIsSelfAdjoint`: the continuous
   functional calculus for bounded self-adjoint operators on a real Hilbert space.
 * `ContinuousLinearMap.instStarOrderedRingReal`: the bounded operators on a real Hilbert space
@@ -62,13 +60,6 @@ open scoped InnerProductSpace
 namespace ContinuousLinearMap
 
 variable {X : Type*} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [CompleteSpace X]
-
-variable (X) in
-/-- Complexification of the bounded operators on a real Hilbert space is a closed embedding. -/
-theorem isClosedEmbedding_complexifyL2StarAlgHom :
-    Topology.IsClosedEmbedding (complexifyL2StarAlgHom X) := by
-  have : ⇑(complexifyL2StarAlgHom X) = complexifyL2ₗᵢ X X := funext fun _ ↦ by simp
-  exact this ▸ (complexifyL2ₗᵢ X X).isometry.isClosedEmbedding
 
 /-- **The continuous functional calculus for bounded self-adjoint operators on a real Hilbert
 space**, pulled back from the complexification. -/
