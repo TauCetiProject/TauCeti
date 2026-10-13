@@ -17,14 +17,13 @@ uses relative basis signs and actual product-basis determinants, including empty
 -/
 
 public section
-
 noncomputable section
 
 open Module
 
 namespace Orientation
 
-variable {R E F : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R E F : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
   {m n : ℕ}
 
@@ -61,7 +60,8 @@ private theorem prodOfBases_eq (o : Orientation R E (Fin m))
   have hpos := mul_pos (signBasis_mul_det_mul_pos o b b') (signBasis_mul_det_mul_pos p c c')
   convert hpos.le using 1; ring
 
-variable [FiniteDimensional R E] [FiniteDimensional R F]
+variable [Module.Free R E] [Module.Finite R E]
+  [Module.Free R F] [Module.Finite R F]
 
 /-- The canonical product of actual linear orientations, with the first factor before the second.
 Both signs of each factor are retained, including in dimension zero. -/
@@ -135,7 +135,8 @@ theorem signBasis_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n
     rcases c.orientation_eq_or_eq_neg p with hp | hp <;> subst o <;> subst p <;> simp
 
 variable {E' F' : Type*} [AddCommGroup E'] [Module R E'] [AddCommGroup F'] [Module R F']
-  [FiniteDimensional R E'] [FiniteDimensional R F']
+  [Module.Free R E'] [Module.Finite R E']
+  [Module.Free R F'] [Module.Finite R F']
 
 /-- Transporting a product orientation is the product of the transported factor orientations. -/
 theorem map_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))

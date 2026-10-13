@@ -77,7 +77,7 @@ def subtypeValClosedBallTangentEquiv (x : closedBall (0 : V) 1) :
 
 /-- The tangent equivalence is precisely the actual inclusion derivative after the canonical
 normed-model tangent identification. -/
-theorem subtypeValClosedBallTangentEquiv_toContinuousLinearMap (x : closedBall (0 : V) 1) :
+@[simp] theorem subtypeValClosedBallTangentEquiv_toContinuousLinearMap (x : closedBall (0 : V) 1) :
     (subtypeValClosedBallTangentEquiv (n := n) x).toContinuousLinearMap =
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : V)).toContinuousLinearMap.comp
         (mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x) :=

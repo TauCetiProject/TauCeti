@@ -70,7 +70,7 @@ def orientationOfPositiveAtlas : TauCeti.VectorBundleOrientation F Z.Fiber ι :=
 
 /-- Every chart of the given positive subatlas reads the induced orientation as the prescribed
 model orientation. -/
-theorem mapOrientation_orientationOfPositiveAtlas (i : κ) (hi : i ∈ S)
+@[simp] theorem mapOrientation_orientationOfPositiveAtlas (i : κ) (hi : i ∈ S)
     (x : B) (hxi : x ∈ (Z.localTriv i).baseSet) :
     (Z.localTriv i).mapOrientation ι hxi
       (Z.orientationOfPositiveAtlas model hι hcover hpos x) = model := by

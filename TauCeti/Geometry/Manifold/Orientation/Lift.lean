@@ -267,7 +267,7 @@ def orientationAt (o : OrientationLift I M ι) (x : M) :
 
 /-- Reading the tangent orientation in any preferred chart gives precisely its signed model
 orientation. Thus the construction is independent of the chosen chart. -/
-theorem mapOrientation_orientationAt (o : OrientationLift I M ι) {α x : M}
+@[simp] theorem mapOrientation_orientationAt (o : OrientationLift I M ι) {α x : M}
     (hα : x ∈ (chartAt H α).source) :
     (trivializationAt E (TangentSpace I) α).mapOrientation ι
       (by rwa [TangentBundle.trivializationAt_baseSet (I := I)]) (o.orientationAt x) =

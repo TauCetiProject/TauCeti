@@ -15,7 +15,6 @@ basis. Empty index types are included, so both zero-dimensional orientations ret
 -/
 
 public section
-
 noncomputable section
 
 namespace Orientation
