@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 -- Proof-only: weak lower semicontinuity of the optimal transport cost, and `W_∞` as the supremum
 -- of the finite-exponent distances.
