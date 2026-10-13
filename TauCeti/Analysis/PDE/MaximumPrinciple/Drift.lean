@@ -58,9 +58,11 @@ every `f ∈ L²(Ω)` as soon as `c ≥ 0`.
   principle under a Sobolev inequality on `H¹₀(Ω)` with an exponent `q > 2`.
 * `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`: the weak maximum principle
   on every open set of finite measure, in every dimension.
-* `TauCeti.PDE.UniformlyEllipticOn.value_le_of_measure_ne_top`: the comparison principle.
-* `TauCeti.PDE.UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_measure_ne_top`:
-  uniqueness of weak solutions of the Dirichlet problem.
+* `TauCeti.PDE.UniformlyEllipticOn.value_le_of_forall_eLpNorm_le`,
+  `TauCeti.PDE.UniformlyEllipticOn.value_le_of_measure_ne_top`: the comparison principle.
+* Uniqueness of weak solutions of the Dirichlet problem, in the namespace `TauCeti.PDE`:
+  `UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_forall_eLpNorm_le` and
+  `UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_measure_ne_top`.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_nonneg`:
   existence and uniqueness of the weak solution of the Dirichlet problem on a bounded domain when
   `c ≥ 0`.
@@ -302,26 +304,12 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
     h.ofReal_le_mul_measure_rpow_of_not_ae_value_le hcoeff hb_bound hc_nonneg hq hsob hk
       (hl j).1 hboundary hu (hl j).2) zero_le)
 
-/-- **The weak maximum principle with bounded drift.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be open with finite
-measure, and let `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with
-constants `λ, Λ`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. If
-`u ∈ H¹(Ω)` is a weak subsolution, `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and
-`(u - k)⁺ ∈ H¹₀(Ω)` for some `k ≥ 0`, then `u ≤ k` almost everywhere. There is no smallness
-condition on `β` and no regularity condition on `∂Ω`. -/
-theorem UniformlyEllipticOn.value_le_const_of_measure_ne_top [Nonempty ι]
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hb : AEStronglyMeasurable b (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
-    (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
-    (hOmega : mu Omega ≠ ∞) {k : ℝ} (hk : 0 ≤ k) {u : W1p mu Omega 2}
-    (hboundary : W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2)
-    (hu : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
-    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
+omit [DecidableEq ι] in
+/-- On an open set of finite measure in `ℝⁿ`, `n ≥ 1`, the Sobolev inequality
+`‖w‖_q ≤ S ‖∇w‖₂` holds on `H¹₀(Ω)` for some exponent `q > 2`. -/
+private theorem exists_forall_eLpNorm_le_of_measure_ne_top [Nonempty ι] (hOmega : mu Omega ≠ ∞) :
+    ∃ q : ℝ≥0∞, 2 < q ∧ ∃ S : ℝ≥0, ∀ v ∈ w1p0Submodule mu Omega 2,
+      eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ := by
   -- The Sobolev inequality on sets of finite measure, at `1/q = 1/2 - δ` with `δ = 1/(4n)`.
   set n : ℝ := (Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ)
   have hn : 1 ≤ n := by
@@ -345,11 +333,68 @@ theorem UniformlyEllipticOn.value_le_const_of_measure_ne_top [Nonempty ι]
     ((1 - δ) / (n⁻¹ - δ)) ^ (1 - δ)) * mu Omega ^ (n⁻¹ - δ)
   have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega)
-  refine h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq2
-    (S := C.toNNReal) (fun v hv ↦ ?_) hk hboundary hu
+  refine ⟨q, hq2, C.toNNReal, fun v hv ↦ ?_⟩
   rw [ENNReal.coe_toNNReal hC]
   exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (by norm_num) hOmega
     (by exact_mod_cast hq2.le) (by rw [ENNReal.toReal_ofNat, hq, inv_inv]; ring) hδn hv
+
+/-- **The weak maximum principle with bounded drift.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be open with finite
+measure, and let `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with
+constants `λ, Λ`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. If
+`u ∈ H¹(Ω)` is a weak subsolution, `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and
+`(u - k)⁺ ∈ H¹₀(Ω)` for some `k ≥ 0`, then `u ≤ k` almost everywhere. There is no smallness
+condition on `β` and no regularity condition on `∂Ω`. -/
+theorem UniformlyEllipticOn.value_le_const_of_measure_ne_top [Nonempty ι]
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    (hOmega : mu Omega ≠ ∞) {k : ℝ} (hk : 0 ≤ k) {u : W1p mu Omega 2}
+    (hboundary : W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2)
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
+  obtain ⟨q, hq, S, hsob⟩ := exists_forall_eLpNorm_le_of_measure_ne_top hOmega
+  exact h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob hk
+    hboundary hu
+
+/-- **The comparison principle with bounded drift**, under a Sobolev inequality. Under the
+hypotheses of `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`, if
+`a(u, w) ≤ a(v, w)` for every nonnegative `w ∈ H¹₀(Ω)`, that is `L u ≤ L v` weakly, and
+`(u - v)⁺ ∈ H¹₀(Ω)`, then `u ≤ v` almost everywhere. -/
+theorem UniformlyEllipticOn.value_le_of_forall_eLpNorm_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    {q : ℝ≥0∞} (hq : 2 < q) {S : ℝ≥0}
+    (hsob : ∀ v ∈ w1p0Submodule mu Omega 2,
+      eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {u v : W1p mu Omega 2}
+    (hboundary : W1p.posPart (by norm_num) (u - v) ∈ w1p0Submodule mu Omega 2)
+    (huv : ∀ w : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (w : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (w : W1p mu Omega 2) ≤
+          energyFormH1 a b c v (w : W1p mu Omega 2)) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
+  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
+  have hsub := h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob
+    le_rfl (u := u - v) (by rwa [W1p.posPartAbove_zero]) fun w hw ↦ by
+      rw [energyFormH1_sub_left hcoeff]
+      exact sub_nonpos.2 (huv w hw)
+  have hvalue : W1p.value (u - v) = W1p.value u - W1p.value v := by
+    simp only [← W1p.valueL_apply, map_sub]
+  filter_upwards [hsub, Lp.coeFn_sub (W1p.value u) (W1p.value v)] with x hx hval
+  rw [hvalue, hval, Pi.sub_apply] at hx
+  exact sub_nonpos.mp hx
 
 /-- **The comparison principle with bounded drift.** Under the hypotheses of
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`, if `a(u, w) ≤ a(v, w)` for
@@ -370,17 +415,37 @@ theorem UniformlyEllipticOn.value_le_of_measure_ne_top [Nonempty ι]
         energyFormH1 a b c u (w : W1p mu Omega 2) ≤
           energyFormH1 a b c v (w : W1p mu Omega 2)) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
-  have hsub := h.value_le_const_of_measure_ne_top ha hb hc hb_bound hc_bound hc_nonneg hOmega
-    le_rfl (u := u - v) (by rwa [W1p.posPartAbove_zero]) fun w hw ↦ by
-      rw [energyFormH1_sub_left hcoeff]
-      exact sub_nonpos.2 (huv w hw)
-  have hvalue : W1p.value (u - v) = W1p.value u - W1p.value v := by
-    simp only [← W1p.valueL_apply, map_sub]
-  filter_upwards [hsub, Lp.coeFn_sub (W1p.value u) (W1p.value v)] with x hx hval
-  rw [hvalue, hval, Pi.sub_apply] at hx
-  exact sub_nonpos.mp hx
+  obtain ⟨q, hq, S, hsob⟩ := exists_forall_eLpNorm_le_of_measure_ne_top hOmega
+  exact h.value_le_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob hboundary huv
+
+/-- **Uniqueness for the Dirichlet problem with bounded drift**, under a Sobolev inequality.
+Under the hypotheses of `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`,
+two weak solutions `u, v ∈ H¹₀(Ω)` of `L u = f` are equal. -/
+theorem UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_forall_eLpNorm_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    {q : ℝ≥0∞} (hq : 2 < q) {S : ℝ≥0}
+    (hsob : ∀ v ∈ w1p0Submodule mu Omega 2,
+      eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u v : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a b c f u) (hv : IsWeakSolutionDirichlet a b c f v) :
+    u = v := by
+  have hle : ∀ {u v : W1p0 mu Omega 2}, IsWeakSolutionDirichlet a b c f u →
+      IsWeakSolutionDirichlet a b c f v → ∀ᵐ x ∂mu.restrict Omega,
+        W1p.value (u : W1p mu Omega 2) x ≤ W1p.value (v : W1p mu Omega 2) x :=
+    fun {u v} hu hv ↦ h.value_le_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob
+      (W1p.posPart_mem_w1p0Submodule (by norm_num)
+        ((w1p0Submodule mu Omega 2).sub_mem u.property v.property))
+      fun w _ ↦ (((isWeakSolutionDirichlet_iff f u).1 hu w).trans
+        ((isWeakSolutionDirichlet_iff f v).1 hv w).symm).le
+  refine Subtype.ext (W1p.ext_value (Lp.ext ?_))
+  filter_upwards [hle hu hv, hle hv hu] with x h₁ h₂
+  exact le_antisymm h₁ h₂
 
 /-- **Uniqueness for the Dirichlet problem with bounded drift.** Under the hypotheses of
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`, two weak solutions
@@ -397,17 +462,9 @@ theorem UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_meas
     (hOmega : mu Omega ≠ ∞) {f : Lp ℝ 2 (mu.restrict Omega)} {u v : W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet a b c f u) (hv : IsWeakSolutionDirichlet a b c f v) :
     u = v := by
-  have hle : ∀ {u v : W1p0 mu Omega 2}, IsWeakSolutionDirichlet a b c f u →
-      IsWeakSolutionDirichlet a b c f v → ∀ᵐ x ∂mu.restrict Omega,
-        W1p.value (u : W1p mu Omega 2) x ≤ W1p.value (v : W1p mu Omega 2) x :=
-    fun {u v} hu hv ↦ h.value_le_of_measure_ne_top ha hb hc hb_bound hc_bound hc_nonneg hOmega
-      (W1p.posPart_mem_w1p0Submodule (by norm_num)
-        ((w1p0Submodule mu Omega 2).sub_mem u.property v.property))
-      fun w _ ↦ (((isWeakSolutionDirichlet_iff f u).1 hu w).trans
-        ((isWeakSolutionDirichlet_iff f v).1 hv w).symm).le
-  refine Subtype.ext (W1p.ext_value (Lp.ext ?_))
-  filter_upwards [hle hu hv, hle hv hu] with x h₁ h₂
-  exact le_antisymm h₁ h₂
+  obtain ⟨q, hq, S, hsob⟩ := exists_forall_eLpNorm_le_of_measure_ne_top hOmega
+  exact h.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_forall_eLpNorm_le ha hb hc hb_bound
+    hc_bound hc_nonneg hq hsob hu hv
 
 /-- **Existence and uniqueness for the Dirichlet problem with `c ≥ 0`.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`,
 be a bounded open set, and let `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly
