@@ -148,12 +148,14 @@ theorem toContMDiffSection_apply (φ : SmoothBundleForm I F V k) (x : M) :
     simp only [toContMDiffSection]
     rfl
 
+/-- The section view and reconstruction are mutual inverses on forms. -/
 @[simp]
 theorem ofContMDiffSection_toContMDiffSection (φ : SmoothBundleForm I F V k) :
     ofContMDiffSection φ.toContMDiffSection = φ := by
   apply Subtype.ext
   rfl
 
+/-- The section view and reconstruction are mutual inverses on sections. -/
 @[simp]
 theorem toContMDiffSection_ofContMDiffSection
     (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
@@ -163,18 +165,13 @@ theorem toContMDiffSection_ofContMDiffSection
   intro x
   rfl
 
+/-- The section view determines a smooth bundle-valued form uniquely. -/
 theorem toContMDiffSection_injective :
     Function.Injective
       (toContMDiffSection : SmoothBundleForm I F V k →
         ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
           (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) := by
-  intro φ ψ h
-  apply Subtype.ext
-  have h' : (φ : RoughBundleForm I M V k) = ψ :=
-    congrArg (fun s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
-      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x) ↦
-      (s : ∀ x, TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) h
-  exact h'
+  exact Function.LeftInverse.injective ofContMDiffSection_toContMDiffSection
 
 @[simp]
 theorem zero_toContMDiffSection :
@@ -199,6 +196,20 @@ theorem smul_toContMDiffSection (c : ℝ) (φ : SmoothBundleForm I F V k) :
     apply ContMDiffSection.ext
     intro x
     rfl
+
+@[simp]
+theorem neg_toContMDiffSection (φ : SmoothBundleForm I F V k) :
+    (-φ).toContMDiffSection = -φ.toContMDiffSection := by
+  apply ContMDiffSection.ext
+  intro x
+  rfl
+
+@[simp]
+theorem sub_toContMDiffSection (φ ψ : SmoothBundleForm I F V k) :
+    (φ - ψ).toContMDiffSection = φ.toContMDiffSection - ψ.toContMDiffSection := by
+  apply ContMDiffSection.ext
+  intro x
+  rfl
 
 end SmoothBundleForm
 
@@ -233,72 +244,67 @@ variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
     ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) :=
-  ⟨φ.1, φ.2⟩
+  SmoothBundleForm.toContMDiffSection φ
 
 /-- Reconstruct a fixed-coefficient smooth form from its smooth section. -/
 def ofContMDiffSection {k : ℕ}
     (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :
     SmoothForm I M F k :=
-  ⟨s, s.contMDiff⟩
+  SmoothBundleForm.ofContMDiffSection s
 
 @[simp]
 theorem toContMDiffSection_apply {k : ℕ} (φ : SmoothForm I M F k) (x : M) :
     φ.toContMDiffSection x = φ.1 x :=
   by
-    simp only [toContMDiffSection]
-    rfl
+    exact SmoothBundleForm.toContMDiffSection_apply φ x
 
+/-- The section view and reconstruction are mutual inverses on forms. -/
 @[simp]
 theorem ofContMDiffSection_toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
-    ofContMDiffSection φ.toContMDiffSection = φ := by
-  apply Subtype.ext
-  rfl
+    ofContMDiffSection φ.toContMDiffSection = φ :=
+  SmoothBundleForm.ofContMDiffSection_toContMDiffSection φ
 
+/-- The section view and reconstruction are mutual inverses on sections. -/
 @[simp]
 theorem toContMDiffSection_ofContMDiffSection {k : ℕ}
     (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :
-    (ofContMDiffSection s).toContMDiffSection = s := by
-  apply ContMDiffSection.ext
-  intro x
-  rfl
+    (ofContMDiffSection s).toContMDiffSection = s :=
+  SmoothBundleForm.toContMDiffSection_ofContMDiffSection s
 
+/-- The section view determines a smooth fixed-coefficient form uniquely. -/
 theorem toContMDiffSection_injective {k : ℕ} :
     Function.Injective
       (toContMDiffSection : SmoothForm I M F k →
         ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
           (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :=
-  by
-    intro φ ψ h
-    apply Subtype.ext
-    have h' : (φ : RoughForm I M F k) = ψ :=
-      congrArg (fun s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
-        (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) ↦
-        (s : ∀ x, TangentSpace I x [⋀^Fin k]→L[ℝ] F)) h
-    exact h'
+  SmoothBundleForm.toContMDiffSection_injective
 
 @[simp]
 theorem zero_toContMDiffSection {k : ℕ} :
     (0 : SmoothForm I M F k).toContMDiffSection = 0 :=
-  by
-    apply ContMDiffSection.ext
-    intro x
-    rfl
+  SmoothBundleForm.zero_toContMDiffSection
 
 @[simp]
 theorem add_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
     (φ + ψ).toContMDiffSection = φ.toContMDiffSection + ψ.toContMDiffSection := by
-  apply ContMDiffSection.ext
-  intro x
-  rfl
+  exact SmoothBundleForm.add_toContMDiffSection φ ψ
 
 @[simp]
 theorem smul_toContMDiffSection {k : ℕ} (c : ℝ) (φ : SmoothForm I M F k) :
     (c • φ).toContMDiffSection = c • φ.toContMDiffSection := by
-  apply ContMDiffSection.ext
-  intro x
-  rfl
+  exact SmoothBundleForm.smul_toContMDiffSection c φ
+
+@[simp]
+theorem neg_toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
+    (-φ).toContMDiffSection = -φ.toContMDiffSection :=
+  SmoothBundleForm.neg_toContMDiffSection φ
+
+@[simp]
+theorem sub_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
+    (φ - ψ).toContMDiffSection = φ.toContMDiffSection - ψ.toContMDiffSection :=
+  SmoothBundleForm.sub_toContMDiffSection φ ψ
 
 /-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors.
 
