@@ -141,19 +141,11 @@ theorem AffineBasis.mem_image_homothety_convexHull_iff {x : E} :
         convexHull k (range b) ↔ ∀ i, b.coord i x ≤ 1 := by
   have hn : (0 : k) ≤ finrank k E := Nat.cast_nonneg _
   have hn1 : (finrank k E : k) + 1 ≠ 0 := by positivity
-  -- The barycentric coordinates of a point after a homothety about the centroid.
-  have coord_homothety_centroid : ∀ (t : k) (z : E) (i : ι),
-      b.coord i (AffineMap.homothety (Finset.univ.centroid k b) t z) =
-        (1 - t) / (finrank k E + 1) + t * b.coord i z := fun t z i => by
-    rw [AffineMap.homothety_eq_lineMap, AffineMap.apply_lineMap,
-      b.coord_apply_centroid (Finset.mem_univ i), Finset.card_univ, b.card_eq_finrank_add_one,
-      AffineMap.lineMap_apply_ring']
-    push_cast
-    ring
   constructor
   · rintro ⟨z, hz, rfl⟩ i
     rw [b.convexHull_eq_nonneg_coord] at hz
-    rw [coord_homothety_centroid, div_eq_one_iff_eq hn1 |>.2 (by ring)]
+    rw [b.coord_homothety_centroid, b.card_eq_finrank_add_one, Nat.cast_add_one,
+      div_eq_one_iff_eq hn1 |>.2 (by ring)]
     nlinarith [hz i]
   · intro hx
     rcases hn.eq_or_lt with h0 | hpos
@@ -166,7 +158,7 @@ theorem AffineBasis.mem_image_homothety_convexHull_iff {x : E} :
     · refine ⟨AffineMap.homothety (Finset.univ.centroid k b) (-(finrank k E : k)⁻¹) x, ?_, ?_⟩
       · rw [b.convexHull_eq_nonneg_coord]
         intro i
-        rw [coord_homothety_centroid]
+        rw [b.coord_homothety_centroid, b.card_eq_finrank_add_one, Nat.cast_add_one]
         have := hx i
         field_simp
         nlinarith

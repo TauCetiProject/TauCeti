@@ -17,11 +17,17 @@ barycentric coordinates (`AffineBasis.coord_apply_of_forall_apply_eq`). This is 
 about barycentric coordinates relative to an arbitrary affine basis is reduced to one about a
 fixed reference basis.
 
+The file also computes the barycentric coordinates of a point after a homothety about the centroid
+of an affine basis (`AffineBasis.coord_homothety_centroid`), which describes the homothetic images
+of the simplex spanned by the basis.
+
 ## Main statements
 
 * `AffineBasis.coord_apply_of_forall_apply_eq`: an affine map sending the affine basis `b` to the
   affine basis `b₂` carries barycentric coordinates relative to `b` to those relative to `b₂`;
-* `AffineBasis.exists_affineEquiv_apply_eq`: there is an affine equivalence sending `b` to `b₂`.
+* `AffineBasis.exists_affineEquiv_apply_eq`: there is an affine equivalence sending `b` to `b₂`;
+* `AffineBasis.coord_homothety_centroid`: the barycentric coordinates of the image of a point under
+  a homothety about the centroid of an affine basis.
 -/
 
 public section
@@ -59,5 +65,22 @@ theorem exists_affineEquiv_apply_eq : ∃ T : P ≃ᵃ[k] P₂, ∀ i, T (b i) =
       rw [← b.basisOf_apply i₀ ⟨i, hi⟩, Module.Basis.equiv_apply, Equiv.refl_apply,
         basisOf_apply]
     simp [hL]
+
+end AffineBasis
+
+namespace AffineBasis
+
+variable {ι k V P : Type*} [Fintype ι] [Field k] [CharZero k] [AddCommGroup V] [Module k V]
+  [AddTorsor V P] (b : AffineBasis ι k P)
+
+/-- The barycentric coordinates relative to an affine basis `b` of the image of a point `z` under
+the homothety of ratio `t` about the centroid of `b`: the homothety moves each coordinate
+`b.coord i z` towards the centroid's coordinate `1 / card ι` by the factor `t`. -/
+theorem coord_homothety_centroid (t : k) (z : P) (i : ι) :
+    b.coord i (AffineMap.homothety (Finset.univ.centroid k b) t z) =
+      (1 - t) / Fintype.card ι + t * b.coord i z := by
+  rw [AffineMap.homothety_eq_lineMap, AffineMap.apply_lineMap,
+    b.coord_apply_centroid (Finset.mem_univ i), Finset.card_univ, AffineMap.lineMap_apply_ring']
+  ring
 
 end AffineBasis
