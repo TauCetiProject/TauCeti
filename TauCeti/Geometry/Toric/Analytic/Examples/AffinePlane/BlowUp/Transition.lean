@@ -244,4 +244,22 @@ theorem affinePlaneBlowUpTransition_apply (n : ℕ∞ω) (z : ℂ × ℂ) :
 theorem affinePlaneBlowUpTransition_invFun (n : ℕ∞ω) (w : ℂ × ℂ) :
     (affinePlaneBlowUpTransition n).invFun w = (w.1 * w.2, w.1⁻¹) := (rfl)
 
+/-- Applying the forward transition on its source preserves the represented blow-up point. -/
+theorem affinePlaneBlowUpLowerChart_transition (n : ℕ∞ω) (z : ℂ × ℂ)
+    (hz : z ∈ (affinePlaneBlowUpTransition n).source) :
+    affinePlaneBlowUpLowerChart (affinePlaneBlowUpTransition n z) =
+      affinePlaneBlowUpUpperChart z := by
+  simpa only [affinePlaneBlowUpTransition_apply] using
+    (affinePlaneBlowUpUpperChart_eq_lowerChart z
+      (by simpa only [affinePlaneBlowUpTransition_source, Set.mem_ofPred_eq] using hz)).symm
+
+/-- Applying the inverse transition on its target preserves the represented blow-up point. -/
+theorem affinePlaneBlowUpUpperChart_transition_invFun (n : ℕ∞ω) (w : ℂ × ℂ)
+    (hw : w ∈ (affinePlaneBlowUpTransition n).target) :
+    affinePlaneBlowUpUpperChart ((affinePlaneBlowUpTransition n).invFun w) =
+      affinePlaneBlowUpLowerChart w := by
+  simpa only [affinePlaneBlowUpTransition_invFun] using
+    (affinePlaneBlowUpLowerChart_eq_upperChart w
+      (by simpa only [affinePlaneBlowUpTransition_target, Set.mem_ofPred_eq] using hw)).symm
+
 end TauCeti.Toric
