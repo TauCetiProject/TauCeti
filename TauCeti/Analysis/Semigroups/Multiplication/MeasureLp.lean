@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Basic
-public import Mathlib.MeasureTheory.Function.Holder
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
