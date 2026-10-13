@@ -13,9 +13,9 @@ public import TauCeti.Analysis.Convex.FiniteMean
 # Second moments of sample means
 
 Let `X₁, …, X_r` be pairwise independent, square-integrable random vectors in a real Hilbert space
-with a common mean `m`. Their sample mean `X̄ = r⁻¹ ∑ₖ Xₖ` has mean-square error
+with a common mean `m`. Their sample mean `S = r⁻¹ ∑ₖ Xₖ` has mean-square error
 
-`∫ ‖X̄ - m‖² dP = r⁻² ∑ₖ ∫ ‖Xₖ - m‖² dP`,
+`∫ ‖S - m‖² dP = r⁻² ∑ₖ ∫ ‖Xₖ - m‖² dP`,
 
 so that averaging `r` samples with a common per-sample error `γ` divides it by `r`. Together with
 Chebyshev's inequality for the second moment, this is the scale `1 / r` behind the elementary
@@ -129,7 +129,7 @@ variable [Fintype ι] [Nonempty ι]
 
 /-- **The mean-square error of a sample mean.** If the random vectors `X i` in a real Hilbert space
 are square-integrable, pairwise independent and have a common mean `m`, then their sample mean
-`X̄` satisfies `∫ ‖X̄ - m‖² = r⁻² ∑ᵢ ∫ ‖X i - m‖²`, where `r` is the number of samples. -/
+`S` satisfies `∫ ‖S - m‖² = r⁻² ∑ᵢ ∫ ‖X i - m‖²`, where `r` is the number of samples. -/
 theorem integral_norm_finiteMean_sub_sq [IsProbabilityMeasure μ] {X : ι → Ω → E} {m : E}
     (hX : ∀ i, MemLp (X i) 2 μ) (hmean : ∀ i, μ[X i] = m)
     (hindep : Pairwise fun i j ↦ X i ⟂ᵢ[μ] X j) :
@@ -150,7 +150,7 @@ theorem integral_norm_finiteMean_sub_sq [IsProbabilityMeasure μ] {X : ι → Ω
 
 /-- **The mean-square error of a sample mean of real random variables.** If the real random
 variables `Z i` are square-integrable, pairwise independent and have a common mean `c`, then their
-sample mean `Z̄` satisfies `∫ (Z̄ - c)² = r⁻² ∑ᵢ ∫ (Z i - c)²`, where `r` is the number of
+sample mean `S` satisfies `∫ (S - c)² = r⁻² ∑ᵢ ∫ (Z i - c)²`, where `r` is the number of
 samples. -/
 theorem integral_finiteMean_sub_sq [IsProbabilityMeasure μ] {Z : ι → Ω → ℝ} {c : ℝ}
     (hZ : ∀ i, MemLp (Z i) 2 μ) (hmean : ∀ i, μ[Z i] = c)
