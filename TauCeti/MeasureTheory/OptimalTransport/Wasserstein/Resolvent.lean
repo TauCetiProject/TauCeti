@@ -145,13 +145,20 @@ theorem exists_forall_mem_moreauYosidaResolvent {φ : WassersteinSpace p X → E
     (fun _ _ hv h ↦ hφ (Metric.isBounded_iff_ediam_ne_top.2 hv) (tendsto_comap_iff.1 h))
     (exists_strictMono_tendsto_comap htight) hτ hττ₀ (edist_ne_top μ μ₀) h₀
 
+end Narrow
+
+section Proper
+
+variable {X : Type*} {p : ℝ≥0∞} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [SecondCountableTopology X] [ProperSpace X] [Fact (1 ≤ p)]
+
 /-- **Existence of the Jordan–Kinderlehrer–Otto step on a proper space.** On a proper metric
 space, such as `ℝⁿ`, bounded sets of `P_p (X)` are tight, so the JKO step exists for every energy
 that is narrowly lower semicontinuous along bounded sequences and coercive,
 `φ_{τ₀}(μ₀) > -∞`: for every time step `0 < τ < τ₀` and every law `μ`, some law `ν` minimizes
 `φ ν + W_p (μ, ν) ^ 2 / (2τ)`. -/
-theorem moreauYosidaResolvent_nonempty_of_properSpace [ProperSpace X]
-    {φ : WassersteinSpace p X → EReal} {τ τ₀ : ℝ≥0} {μ₀ : WassersteinSpace p X}
+theorem moreauYosidaResolvent_nonempty_of_properSpace {φ : WassersteinSpace p X → EReal}
+    {τ τ₀ : ℝ≥0} {μ₀ : WassersteinSpace p X}
     (hφ : ∀ ⦃v : ℕ → WassersteinSpace p X⦄ ⦃ν : WassersteinSpace p X⦄,
       Bornology.IsBounded (range v) →
       Tendsto (fun n ↦ (v n : ProbabilityMeasure X)) atTop (𝓝 ν) →
@@ -163,7 +170,7 @@ theorem moreauYosidaResolvent_nonempty_of_properSpace [ProperSpace X]
 /-- **The JKO step for a potential energy.** On a proper complete separable metric space, let `V`
 be a lower semicontinuous potential bounded below. Then for every time step `τ > 0` and every law
 `μ` of `P_p (X)`, some law `ν` of `P_p (X)` minimizes `∫ V dν + W_p (μ, ν) ^ 2 / (2τ)`. -/
-theorem moreauYosidaResolvent_potentialEnergy_nonempty [ProperSpace X] {V : X → ℝ}
+theorem moreauYosidaResolvent_potentialEnergy_nonempty {V : X → ℝ}
     (hV : LowerSemicontinuous V) (hb : BddBelow (range V)) {τ : ℝ≥0} (hτ : 0 < τ)
     (μ : WassersteinSpace p X) :
     (moreauYosidaResolvent
@@ -184,7 +191,7 @@ theorem moreauYosidaResolvent_potentialEnergy_nonempty [ProperSpace X] {V : X �
   exact le_moreauYosida_iff.2 fun ν _ ↦
     (hge ν).trans (le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _))
 
-end Narrow
+end Proper
 
 end WassersteinSpace
 
