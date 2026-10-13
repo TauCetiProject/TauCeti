@@ -10,8 +10,9 @@ public import TauCeti.RingTheory.DedekindDomain.Factorization
 /-!
 # Multiplicative congruence modulo an ideal
 
-For a Dedekind domain `R` with fraction field `K`, `TauCeti.Ideal.congruenceSubgroup m K hm`
-consists of the elements of `Kˣ` congruent to one locally modulo the nonzero ideal `m`.
+For a Dedekind domain `R` with fraction field `K`,
+`TauCeti.DedekindDomain.congruenceSubgroup m K hm` consists of the elements of `Kˣ`
+congruent to one locally modulo the nonzero ideal `m`.
 At a prime dividing `m`, the valuation of `x - 1` must be at most the negative
 exponential of the multiplicity of that prime in `m`. Such an `x` is a local unit.
 No condition is imposed at primes not dividing `m`; in particular, `x` need not
@@ -27,8 +28,8 @@ The valuation and prime-power dictionary is Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.intValuation_le_pow_iff_mem`, and the passage
 from local membership to membership in `m` uses `Ideal.iInf_maxPowDividing_eq`.
 
-`TauCeti.Ideal.congruenceSubgroup` and its subgroup proofs generalize the former number-field
-construction `TauCeti.GlobalNumberFields.congruenceSubgroup` in
+`TauCeti.DedekindDomain.congruenceSubgroup` and its subgroup proofs generalize the former
+number-field construction `TauCeti.GlobalNumberFields.congruenceSubgroup` in
 `TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus`.
 
 ## References
@@ -41,7 +42,7 @@ public section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
-namespace TauCeti.Ideal
+namespace TauCeti.DedekindDomain
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
@@ -156,4 +157,4 @@ theorem comap_congruenceSubgroup_eq_ker (m : Ideal R) (K : Type*) [Field K]
     MonoidHom.mem_ker, Units.ext_iff, Units.coe_map, Units.val_one]
   exact (Ideal.Quotient.mk_eq_one_iff_sub_mem (I := m) (u : R)).symm
 
-end TauCeti.Ideal
+end TauCeti.DedekindDomain

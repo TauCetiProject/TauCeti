@@ -328,9 +328,9 @@ theorem isCongrOne_iff {𝔪 : Modulus K} {x : Kˣ} :
 real-place positivity conditions. -/
 theorem isCongrOne_iff_mem_congruenceSubgroup_and_pos {𝔪 : Modulus K} {x : Kˣ} :
     IsCongrOne 𝔪 x ↔
-      x ∈ Ideal.congruenceSubgroup 𝔪.finitePart K 𝔪.finitePart_ne_bot ∧
+      x ∈ DedekindDomain.congruenceSubgroup 𝔪.finitePart K 𝔪.finitePart_ne_bot ∧
         ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
-  simp only [isCongrOne_iff, Ideal.mem_congruenceSubgroup_iff, Modulus.exponent_def]
+  simp only [isCongrOne_iff, DedekindDomain.mem_congruenceSubgroup_iff, Modulus.exponent_def]
 
 namespace IsCongrOne
 
@@ -355,7 +355,7 @@ theorem valuation_sub_one_lt_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum
 /-- **An element congruent to one is a unit at the primes dividing the finite part.** -/
 theorem valuation_eq_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum (𝓞 K)}
     (hv : v.asIdeal ∣ 𝔪.finitePart) : v.valuation K (x : K) = 1 := by
-  exact Ideal.valuation_eq_one_of_mem_congruenceSubgroup
+  exact DedekindDomain.valuation_eq_one_of_mem_congruenceSubgroup
     (isCongrOne_iff_mem_congruenceSubgroup_and_pos.mp hx).1 hv
 
 /-- **Congruence is antitone in the modulus.**  An element congruent to one modulo the larger
@@ -363,7 +363,7 @@ modulus `𝔫` is congruent to one modulo every divisor `𝔪` of `𝔫`: the ex
 shrunk and fewer real places are constrained. -/
 theorem mono {𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (hx : IsCongrOne 𝔫 x) : IsCongrOne 𝔪 x := by
   rw [isCongrOne_iff_mem_congruenceSubgroup_and_pos] at hx ⊢
-  exact ⟨Ideal.congruenceSubgroup_antitone (Modulus.dvd_iff.mp h).1 hx.1,
+  exact ⟨DedekindDomain.congruenceSubgroup_antitone (Modulus.dvd_iff.mp h).1 hx.1,
     fun w hw ↦ hx.2 w ((Modulus.dvd_iff.mp h).2 hw)⟩
 
 end IsCongrOne
