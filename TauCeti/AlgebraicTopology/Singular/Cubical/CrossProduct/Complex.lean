@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Category.TopCat.Monoidal
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Chains
+public import TauCeti.Topology.Category.TopCat.Monoidal
 
 /-!
 # The cubical cross product as a chain map
@@ -219,12 +219,6 @@ theorem ι_cubicalCrossProduct_f {p q n : ℕ} (h : p + q = n) :
       cubicalCrossProductSummand R X Y p q n h :=
   ι_cubicalCrossProductX h
 
-/-- The continuous map underlying `f ⊗ₘ g`, for the cartesian monoidal structure on spaces, is the
-product map. -/
-theorem hom_tensorHom_eq_prodMap {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
-    (f ⊗ₘ g).hom = f.hom.prodMap g.hom :=
-  ContinuousMap.ext fun p ↦ TopCat.tensor_apply f g p
-
 /-- **Naturality** of the cross product chain map in both spaces. -/
 @[reassoc]
 theorem cubicalCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
@@ -250,7 +244,7 @@ theorem cubicalCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (
       NormalizedCubicalChain.map R (f ⊗ₘ g).hom n
         ((cubicalCrossProductSummand R X Y p q n h).hom (a ⊗ₜ[R] b)) :=
     normalizedCubicalChainComplex_map_f_apply (f ⊗ₘ g) n _
-  rw [hom_tensorHom_eq_prodMap] at h₂
+  rw [TopCat.hom_tensorHom] at h₂
   exact h₁.trans ((congrArg (NormalizedCubicalChain.cast R h)
     (NormalizedCubicalChain.map_crossProduct (R := R) f.hom g.hom a b).symm).trans
     ((NormalizedCubicalChain.map_cast (R := R) (f.hom.prodMap g.hom) h _).symm.trans

@@ -256,20 +256,22 @@ theorem augment_extend {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k}
   refine Finsupp.sum_congr fun p _ ↦ ?_
   rw [map_smul, map_smul, hεF, hεG, ht]
 
-/-- Two natural families `φ, ψ : F₀ → G₀` have the same augmentation as soon as they have the same
-augmentation on the generators of the models of degree zero, when the augmentation of `G` is
-natural. -/
+/-- Two natural chain maps `f, g : F ⟶ G` have the same augmentation in degree zero as soon as they
+have the same augmentation on the generators of the models of degree zero, when the augmentation
+of `G` is natural. -/
 theorem augment_eq_of_gen {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
-    (hεG : ∀ {X Y : C} (f : X ⟶ Y) x, εG Y ((G.map f).f 0 x) = εG X x)
-    (φ ψ : NatLinear F G 0 0)
-    (h : ∀ i : ι 0, εG (B.model 0 i) (φ.app (B.model 0 i) (B.gen 0 i)) =
-      εG (B.model 0 i) (ψ.app (B.model 0 i) (B.gen 0 i))) (X : C) (x : (F.obj X).X 0) :
-    εG X (φ.app X x) = εG X (ψ.app X x) := by
-  conv_lhs => rw [← B.sum_coord X 0 x]
-  conv_rhs => rw [← B.sum_coord X 0 x]
-  rw [map_finsuppSum, map_finsuppSum, map_finsuppSum, map_finsuppSum]
-  refine Finsupp.sum_congr fun p _ ↦ ?_
-  rw [map_smul, map_smul, map_smul, map_smul, φ.naturality, ψ.naturality, hεG, hεG, h]
+    (hεG : ∀ {X Y : C} (f : X ⟶ Y) x, εG Y ((G.map f).f 0 x) = εG X x) (f g : F ⟶ G)
+    (h : ∀ i : ι 0, εG (B.model 0 i) ((f.app (B.model 0 i)).f 0 (B.gen 0 i)) =
+      εG (B.model 0 i) ((g.app (B.model 0 i)).f 0 (B.gen 0 i))) (X : C) (x : (F.obj X).X 0) :
+    εG X ((f.app X).f 0 x) = εG X ((g.app X).f 0 x) := by
+  have e := B.eq_extend (NatLinear.ofHom f 0) X x
+  simp only [NatLinear.ofHom_app] at e
+  rw [e]
+  refine B.augment_extend (εF := fun X ↦ εG X ∘ₗ ((g.app X).f 0).hom) (fun σ y ↦ ?_) hεG
+    (fun i ↦ (f.app (B.model 0 i)).f 0 (B.gen 0 i)) h X x
+  have := (NatLinear.ofHom g 0).naturality σ y
+  simp only [NatLinear.ofHom_app] at this
+  simp only [LinearMap.comp_apply, this, hεG]
 
 /-- **The boundary of a map determined on the models**: if the boundary of each `tᵢ` is the value
 on the generator `uᵢ` of a natural family `R`, then the boundary of the map determined by the
@@ -628,6 +630,12 @@ agree after augmentation in degree zero are chain homotopic, if `G` is acyclic o
 `F`.  The homotopy is natural (`ModelPresentation.homotopy_hom_naturality`). -/
 def homotopy (X : C) : Homotopy (f.app X) (g.app X) :=
   B.toMulti.homotopy (isAcyclicOnMulti B hG) f g hfg X
+
+/-- The components of the chain homotopy vanish off the shape of the complexes. -/
+@[simp]
+theorem homotopy_hom_eq_zero (X : C) {i j : ℕ} (h : i + 1 ≠ j) :
+    (B.homotopy hG f g hfg X).hom i j = 0 :=
+  MultiModelPresentation.homotopy_hom_eq_zero _ _ f g hfg X h
 
 /-- The chain homotopy is natural. -/
 theorem homotopy_hom_naturality {X Y : C} (φ : X ⟶ Y) (i j : ℕ) :
