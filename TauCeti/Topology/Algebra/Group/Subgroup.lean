@@ -141,8 +141,10 @@ namespace Subgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
+-- Normalize the action before `subgroupOfContinuousMulEquivOfLe_apply` rewrites the scalar.
 /-- The canonical topological identification of `V.subgroupOf U` with `V` respects every action
 restricted from the ambient group. -/
+@[simp↓]
 theorem subgroupOfContinuousMulEquivOfLe_smul {M : Type*} [SMul G M]
     {U V : Subgroup G} (hVU : V ≤ U) (x : V.subgroupOf U) (m : M) :
     subgroupOfContinuousMulEquivOfLe hVU x • m = x • m := by
