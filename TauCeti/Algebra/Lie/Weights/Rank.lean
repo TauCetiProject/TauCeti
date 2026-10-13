@@ -34,10 +34,8 @@ is nonzero by construction. The zero root space is the Cartan subalgebra.
   elements.
 * `TauCeti.rank_le_finrank_cartan`: the rank of `L` is at most the dimension of `H`.
 
-This is a direct prerequisite for the Layer 9 target `rank_eq_finrank_cartan` in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Suggested.lean`. It supplies only the
-`rank ≤ dim H` direction. The reverse inequality needs a separate minimal-centralizer or
-Cartan-dimension argument and is deliberately not asserted here.
+It supplies only the `rank ≤ dim H` direction; the reverse inequality, which needs a separate
+minimal-centralizer or Cartan-dimension argument, is not asserted here.
 
 ## References
 
