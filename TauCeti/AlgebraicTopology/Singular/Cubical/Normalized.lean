@@ -143,6 +143,16 @@ theorem map_mem_degenerate_iff_of_injective (f : C(X, Y)) (hf : Function.Injecti
     rwa [isDegenerate_comp_iff_of_injective f hf])
   rwa [map_apply_comp_of_injective R f hf] at hzero
 
+/-- A map of singular cubes sending degenerate cubes to degenerate cubes preserves the degenerate
+chains. -/
+theorem lmapDomain_mem_degenerate {n m : ℕ} {φ : SingularCube X n → SingularCube X m}
+    (hφ : ∀ c, IsDegenerate c → IsDegenerate (φ c)) {g : CubicalChain X R n}
+    (hg : g ∈ degenerate X R n) : lmapDomain R R φ g ∈ degenerate X R m := by
+  rw [degenerate_eq_supported] at hg ⊢
+  have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R φ) hg
+  rw [lmapDomain_supported] at hmap
+  exact supported_mono (Set.image_subset_iff.2 hφ) hmap
+
 private theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
     degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
   fun _ hg ↦ map_mem_degenerate R f hg
@@ -220,6 +230,22 @@ theorem linearMap_ext {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ}
     (h : ∀ c : SingularCube X n, f (ofCube X R c) = g (ofCube X R c)) : f = g := by
   refine Submodule.linearMap_qext _ (Finsupp.lhom_ext' fun c ↦ LinearMap.ext_ring ?_)
   simpa [ofCube_def] using h c
+
+/-- **Induction on normalized chains**: a property of normalized chains which holds for `0` and
+for the class of each cube, and is stable under sums and scalar multiples, holds for every
+normalized chain. -/
+@[elab_as_elim]
+theorem induction_on {n : ℕ} {P : NormalizedCubicalChain X R n → Prop}
+    (g : NormalizedCubicalChain X R n) (zero : P 0) (add : ∀ a b, P a → P b → P (a + b))
+    (smul : ∀ (r : R) a, P a → P (r • a)) (ofCube : ∀ c, P (ofCube X R c)) : P g := by
+  induction g using Submodule.Quotient.induction_on with
+  | H g =>
+    induction g using Finsupp.induction_linear with
+    | zero => exact zero
+    | add a b ha hb => simpa using add _ _ ha hb
+    | single c a =>
+      rw [← smul_single_one, Submodule.Quotient.mk_smul]
+      exact smul a _ (ofCube c)
 
 @[simp]
 theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : SingularCube.IsDegenerate c) :

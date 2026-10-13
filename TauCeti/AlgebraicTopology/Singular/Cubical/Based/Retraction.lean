@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Deformation
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Prism
 
 /-!
 # The retraction of cubical chains onto based chains
@@ -37,8 +38,9 @@ the homotopy group through the Hurewicz map starts.
 
 ## Main definitions
 
-* `TauCeti.BasedCubeDeformation.retract`, `TauCeti.BasedCubeDeformation.sweep`: the end of the
-  deformation of a cube, and the cube it sweeps out.
+* `TauCeti.BasedCubeDeformation.retract`, `TauCeti.BasedCubeDeformation.cubeHomotopy`,
+  `TauCeti.BasedCubeDeformation.sweep`: the end of the deformation of a cube, the deformation as a
+  homotopy, and the cube it sweeps out (its `SingularCube.prism`).
 * `TauCeti.BasedCubeDeformation.retractChain`, `TauCeti.BasedCubeDeformation.prismChain`: the
   induced operators on normalized cubical chains.
 * `TauCeti.BasedCubeDeformation.retractChainMap`, `TauCeti.BasedCubeDeformation.retractHomotopy`:
@@ -51,7 +53,7 @@ the homotopy group through the Hurewicz map starts.
   `∂ P + P ∂ = ρ - id`.
 * `TauCeti.BasedCubeDeformation.retractChain_eq_zero`: the retraction vanishes in the positive
   dimensions below `n`.
-* `TauCeti.BasedCubeDeformation.isZero_homology_normalizedCubicalChainComplex`,
+* `TauCeti.isZero_homology_normalizedCubicalChainComplex_of_subsingleton_homotopyGroup`,
   `TauCeti.isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup`: the vanishing of the
   normalized cubical and of the singular homology of an `(n - 1)`-connected space in the positive
   degrees below `n`.
@@ -126,30 +128,34 @@ theorem retract_eq_const {m : ℕ} (hm : m < n) (c : SingularCube X m) :
   ext y
   exact (SingularCube.isBased_iff_of_lt hm).1 (D.isBased_retract c) y
 
+/-- The deformation of the singular cube `c`, as a homotopy from `c` to `D.retract c`. -/
+def cubeHomotopy {m : ℕ} (c : SingularCube X m) : ContinuousMap.Homotopy c (D.retract c) where
+  toContinuousMap := D.homotopy c
+  map_zero_left := D.homotopy_zero c
+  map_one_left _ := rfl
+
 /-- The cube swept out by the deformation of the singular cube `c`, with time as the first
 coordinate. -/
-def sweep {m : ℕ} (c : SingularCube X m) : SingularCube X (m + 1) where
-  toFun y := D.homotopy c (y 0, Fin.tail y)
-  continuous_toFun := by fun_prop
+def sweep {m : ℕ} (c : SingularCube X m) : SingularCube X (m + 1) :=
+  SingularCube.prism (D.cubeHomotopy c) (ContinuousMap.id _)
 
 @[simp]
 theorem sweep_apply {m : ℕ} (c : SingularCube X m) (y : Fin (m + 1) → I) :
-    D.sweep c y = D.homotopy c (y 0, Fin.tail y) :=
-  (rfl)
+    D.sweep c y = D.homotopy c (y 0, Fin.tail y) := by
+  rw [sweep, SingularCube.prism_apply]
+  rfl
 
 /-- The swept cube starts at `c`. -/
 @[simp]
 theorem face_zero_zero_sweep {m : ℕ} (c : SingularCube X m) :
     SingularCube.face 0 0 (D.sweep c) = c := by
-  ext y
-  simp [Fin.insertNth_zero']
+  simp [sweep]
 
 /-- The swept cube ends at the retraction of `c`. -/
 @[simp]
 theorem face_zero_one_sweep {m : ℕ} (c : SingularCube X m) :
     SingularCube.face 0 1 (D.sweep c) = D.retract c := by
-  ext y
-  simp [Fin.insertNth_zero']
+  simp [sweep]
 
 /-- The faces of the swept cube in the spatial coordinates are the swept faces. -/
 @[simp]
@@ -179,29 +185,15 @@ theorem isDegenerate_sweep {m : ℕ} {c : SingularCube X m} (hc : c.IsDegenerate
 
 variable (R : Type*) [Ring R]
 
-/-- A map of singular cubes sending degenerate cubes to degenerate cubes preserves the degenerate
-chains. -/
-private theorem lmapDomain_mem_degenerate {m m' : ℕ}
-    {φ : SingularCube X m → SingularCube X m'}
-    (hφ : ∀ c, c.IsDegenerate → (φ c).IsDegenerate) {g : CubicalChain X R m}
-    (hg : g ∈ CubicalChain.degenerate X R m) :
-    lmapDomain R R φ g ∈ CubicalChain.degenerate X R m' := by
-  rw [CubicalChain.degenerate_eq_supported] at hg ⊢
-  have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R φ) hg
-  rw [lmapDomain_supported] at hmap
-  exact supported_mono (Set.image_subset_iff.2 hφ) hmap
-
 /-- The retraction onto `n`-based cubes, on normalized cubical chains. -/
 def retractChain (m : ℕ) : NormalizedCubicalChain X R m →ₗ[R] NormalizedCubicalChain X R m :=
   Submodule.mapQ _ _ (lmapDomain R R D.retract) fun _ hg ↦
-    lmapDomain_mem_degenerate R
-      (fun _ ↦ D.isDegenerate_retract) hg
+    CubicalChain.lmapDomain_mem_degenerate R (fun _ ↦ D.isDegenerate_retract) hg
 
 /-- The negative swept-cube operator on normalized cubical chains. -/
 def prismChain (m : ℕ) : NormalizedCubicalChain X R m →ₗ[R] NormalizedCubicalChain X R (m + 1) :=
   -Submodule.mapQ _ _ (lmapDomain R R D.sweep) fun _ hg ↦
-    lmapDomain_mem_degenerate R
-      (fun _ ↦ D.isDegenerate_sweep) hg
+    CubicalChain.lmapDomain_mem_degenerate R (fun _ ↦ D.isDegenerate_sweep) hg
 
 @[simp]
 theorem retractChain_ofCube {m : ℕ} (c : SingularCube X m) :
@@ -219,15 +211,13 @@ theorem prismChain_ofCube {m : ℕ} (c : SingularCube X m) :
 theorem retractChain_mem_span {m : ℕ} (g : NormalizedCubicalChain X R m) :
     D.retractChain R m g ∈ Submodule.span R
       (NormalizedCubicalChain.ofCube X R '' {c | c.IsBased n x}) := by
-  induction g using Submodule.Quotient.induction_on with
-  | H g =>
-    induction g using Finsupp.induction_linear with
-    | zero => simp
-    | add a b ha hb => simpa using Submodule.add_mem _ ha hb
-    | single c a =>
-      rw [← smul_single_one, Submodule.Quotient.mk_smul, map_smul,
-        ← NormalizedCubicalChain.ofCube_def, retractChain_ofCube]
-      exact Submodule.smul_mem _ a (Submodule.subset_span ⟨_, D.isBased_retract c, rfl⟩)
+  induction g using NormalizedCubicalChain.induction_on with
+  | zero => simp
+  | add a b ha hb => simpa using Submodule.add_mem _ ha hb
+  | smul r a ha => simpa using Submodule.smul_mem _ r ha
+  | ofCube c =>
+    rw [retractChain_ofCube]
+    exact Submodule.subset_span ⟨_, D.isBased_retract c, rfl⟩
 
 /-- **The retraction vanishes in the positive dimensions below `n`**: there, every cube retracts
 to the constant cube at `x`, which is degenerate. -/
@@ -241,10 +231,11 @@ theorem retractChain_eq_zero {m : ℕ} (hm : m + 1 < n) : D.retractChain R (m + 
 theorem boundary_retractChain (m : ℕ) (g : NormalizedCubicalChain X R (m + 1)) :
     NormalizedCubicalChain.boundary X R m (D.retractChain R (m + 1) g) =
       D.retractChain R m (NormalizedCubicalChain.boundary X R m g) := by
-  refine LinearMap.congr_fun (NormalizedCubicalChain.linearMap_ext (f :=
-    NormalizedCubicalChain.boundary X R m ∘ₗ D.retractChain R (m + 1))
-    (g := D.retractChain R m ∘ₗ NormalizedCubicalChain.boundary X R m) fun c ↦ ?_) g
-  simp [D.face_retract c _ (Or.inl rfl), D.face_retract c _ (Or.inr rfl)]
+  induction g using NormalizedCubicalChain.induction_on with
+  | zero => simp
+  | add a b ha hb => simp [ha, hb]
+  | smul r a ha => simp [ha]
+  | ofCube c => simp [D.face_retract c _ (Or.inl rfl), D.face_retract c _ (Or.inr rfl)]
 
 /-- **The prism identity** `∂ P + P ∂ = ρ - id` in positive degrees, for the swept-cube operator
 `P` and the retraction `ρ`. -/
@@ -253,26 +244,32 @@ theorem boundary_prismChain_add_prismChain_boundary (m : ℕ)
     NormalizedCubicalChain.boundary X R (m + 1) (D.prismChain R (m + 1) g) +
         D.prismChain R m (NormalizedCubicalChain.boundary X R m g) =
       D.retractChain R (m + 1) g - g := by
-  refine LinearMap.congr_fun (NormalizedCubicalChain.linearMap_ext (f :=
-    NormalizedCubicalChain.boundary X R (m + 1) ∘ₗ D.prismChain R (m + 1) +
-      D.prismChain R m ∘ₗ NormalizedCubicalChain.boundary X R m)
-    (g := D.retractChain R (m + 1) - LinearMap.id) fun c ↦ ?_) g
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,
-    prismChain_ofCube, retractChain_ofCube, map_neg, NormalizedCubicalChain.boundary_ofCube,
-    map_sum, map_smul, map_sub]
-  rw [Fin.sum_univ_succ]
-  simp only [face_zero_zero_sweep, face_zero_one_sweep, D.face_succ_sweep c _ (Or.inl rfl),
-    D.face_succ_sweep c _ (Or.inr rfl), Fin.val_zero, pow_zero, one_smul, Fin.val_succ, pow_succ,
-    mul_neg_one, neg_smul, smul_neg, smul_sub]
-  abel
+  induction g using NormalizedCubicalChain.induction_on with
+  | zero => simp
+  | add a b ha hb =>
+    simp only [map_add]
+    rw [add_add_add_comm, ha, hb]
+    abel
+  | smul r a ha => simp only [map_smul, ← smul_add, ha, smul_sub]
+  | ofCube c =>
+    simp only [prismChain_ofCube, retractChain_ofCube, map_neg,
+      NormalizedCubicalChain.boundary_ofCube, map_sum, map_smul, map_sub]
+    rw [Fin.sum_univ_succ]
+    simp only [face_zero_zero_sweep, face_zero_one_sweep, D.face_succ_sweep c _ (Or.inl rfl),
+      D.face_succ_sweep c _ (Or.inr rfl), Fin.val_zero, pow_zero, one_smul, Fin.val_succ, pow_succ,
+      mul_neg_one, neg_smul, smul_neg, smul_sub]
+    abel
 
 /-- The prism identity `∂ P = ρ - id` in degree zero. -/
 theorem boundary_prismChain_zero (g : NormalizedCubicalChain X R 0) :
     NormalizedCubicalChain.boundary X R 0 (D.prismChain R 0 g) = D.retractChain R 0 g - g := by
-  refine LinearMap.congr_fun (NormalizedCubicalChain.linearMap_ext (f :=
-    NormalizedCubicalChain.boundary X R 0 ∘ₗ D.prismChain R 0)
-    (g := D.retractChain R 0 - LinearMap.id) fun c ↦ ?_) g
-  simp
+  induction g using NormalizedCubicalChain.induction_on with
+  | zero => simp
+  | add a b ha hb =>
+    simp only [map_add, ha, hb]
+    abel
+  | smul r a ha => simp [ha, smul_sub]
+  | ofCube c => simp
 
 end BasedCubeDeformation
 
@@ -292,9 +289,9 @@ def retractChainMap :
     (normalizedCubicalChainComplex R).obj X ⟶ (normalizedCubicalChainComplex R).obj X :=
   ChainComplex.ofHom (fun m ↦ ModuleCat.ofHom (D.retractChain R m)) fun m ↦ by
     ext g
-    simp only [normalizedCubicalChainComplex, normalizedCubicalChainComplexObj,
-      ChainComplex.of_d, ModuleCat.hom_comp, ModuleCat.hom_ofHom]
-    exact D.boundary_retractChain R m g
+    exact (normalizedCubicalChainComplex_obj_d_apply X m _).trans
+      ((D.boundary_retractChain R m g).trans
+        (congrArg _ (normalizedCubicalChainComplex_obj_d_apply X m g).symm))
 
 @[simp]
 theorem retractChainMap_f_apply (m : ℕ) (g : NormalizedCubicalChain X R m) :
