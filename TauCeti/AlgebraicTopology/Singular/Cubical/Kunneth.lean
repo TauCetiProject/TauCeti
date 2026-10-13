@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
-public import TauCeti.Algebra.Homology.PrincipalIdealRing
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.CrossProduct
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 
