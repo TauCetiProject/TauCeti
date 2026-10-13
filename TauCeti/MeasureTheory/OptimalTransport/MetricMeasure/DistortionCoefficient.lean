@@ -62,8 +62,9 @@ decreases, as in the implication from `CD(K, N)` to `CD(K', N)` for `K' ≤ K`.
   are `t`.
 * `TauCeti.ofReal_le_distortionSigma`, `TauCeti.distortionSigma_le_ofReal` and their `τ`
   analogues: comparison with the flat value `t` for `K ≥ 0` and for `K ≤ 0`.
-* `TauCeti.distortionSigma_eq_top_iff`, `TauCeti.distortionTau_eq_top_iff`: the coefficients are
-  infinite exactly when `N π² ≤ K θ²`, respectively `(N - 1) π² ≤ K θ²`.
+* `TauCeti.distortionSigma_eq_top_iff`, `TauCeti.distortionTau_eq_top_iff`: for `N > 0`,
+  `σ_{K,N}^{(t)}(θ)` is infinite exactly when `N π² ≤ K θ²`; for `N > 1` and `t > 0`,
+  `τ_{K,N}^{(t)}(θ)` is infinite exactly when `(N - 1) π² ≤ K θ²`.
 * `TauCeti.distortionSigma_time_one`, `TauCeti.distortionTau_time_one`: below the critical
   distance both coefficients equal `1` at time `1`.
 
@@ -134,7 +135,7 @@ private theorem sigmaOf_of_neg {D : ℝ} (h : D < 0) :
     ite_eq_right h.ne]
 
 /-- At or beyond the critical distance, `N π² ≤ K θ²`, the coefficient is infinite. -/
-theorem distortionSigma_of_le (hN : 0 < N) (h : N * π ^ 2 ≤ K * θ ^ 2) :
+theorem distortionSigma_eq_top_of_le (hN : 0 < N) (h : N * π ^ 2 ≤ K * θ ^ 2) :
     distortionSigma K N t θ = ⊤ :=
   sigmaOf_of_le ((le_div_iff₀' hN).2 h)
 
@@ -289,7 +290,7 @@ theorem distortionTau_of_one_lt (hN : 1 < N) :
   ite_eq_left hN
 
 /-- For `N = 1` and `K θ² > 0`, the coefficient `τ_{K,1}^{(t)}(θ)` is infinite. -/
-theorem distortionTau_one_of_pos (h : 0 < K * θ ^ 2) : distortionTau K 1 t θ = ⊤ := by
+theorem distortionTau_one_eq_top_of_pos (h : 0 < K * θ ^ 2) : distortionTau K 1 t θ = ⊤ := by
   rw [distortionTau, ite_eq_right (lt_irrefl 1), ite_eq_left h]
 
 /-- For `N = 1` and `K θ² ≤ 0`, the coefficient `τ_{K,1}^{(t)}(θ)` is `t`. -/
@@ -329,7 +330,7 @@ theorem distortionTau_mono_left (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ 
     · exact distortionSigma_mono_left ht₀ ht₁ (sub_nonneg.2 hN.le) hK
   · dsimp only
     rcases lt_or_ge 0 (K' * θ ^ 2) with hK' | hK'
-    · simp [distortionTau_one_of_pos hK']
+    · simp [distortionTau_one_eq_top_of_pos hK']
     · rw [distortionTau_one_of_nonpos ((mul_le_mul_of_nonneg_right hK (sq_nonneg θ)).trans hK'),
         distortionTau_one_of_nonpos hK']
 
