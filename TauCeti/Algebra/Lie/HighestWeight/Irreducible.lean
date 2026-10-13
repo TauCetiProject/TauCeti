@@ -84,8 +84,8 @@ universe u v w w₁
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
-  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-  {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
+  {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N]
   {b : (IsKilling.rootSystem H).Base} {lam mu : Dual K H} {v : M} {w : N}
 
 /-! ### The diagonal highest weight vector
@@ -109,6 +109,8 @@ private theorem isHighestWeightVector_inl (hv : IsHighestWeightVector b lam v) :
   by
     simpa only [LieModuleHom.inl_apply] using
       hv.map (LieModuleHom.inl K L M N) (by simpa using hv.ne_zero)
+
+variable [LieModule K L M] [LieModule K L N]
 
 /-- **The diagonal generates a proper submodule of the product.** If it generated everything, then
 `M × N` would be a highest weight module of weight `lam`, whose `lam`-weight space is the line
