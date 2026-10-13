@@ -23,8 +23,8 @@ Huber-pair morphisms. It supplies the ring map to which a quotient factorisation
 No sheaf condition is required for this direction of the correspondence.
 
 The construction uses Mathlib's `PresheafedSpace.Γ` and `Iso.homCongr`, the topological
-isomorphism `presentationLimitTopIso`, and the characterisation of rings of integral elements
-by valuations in `IsRingOfIntegralElements.mem_of_forall_vle_one`.
+isomorphism `presentationLimitTopIso`, and the characterisation of open integrally closed
+subrings by valuations in `mem_of_forall_vle_one`.
 
 ## References
 
@@ -165,6 +165,7 @@ private theorem globalSectionsPullback_comp_germ
 
 /-- The map on points of an affinoid pre-adic morphism is pullback along its recovered ring
 homomorphism. Equality is in the valuation spectrum, so no representative value group is chosen. -/
+@[simp]
 theorem base_eq_comap_presentationLimitHomRingHom
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP)
@@ -247,13 +248,13 @@ theorem presentationLimitHomRingHom_comp
 
 variable [IsHuberRing B]
 /-- The recovered ring map carries the source plus ring into the target plus ring when the
-latter is a ring of integral elements. -/
+latter is open and integrally closed. -/
 theorem presentationLimitHomRingHom_mem_plus
-    (hB : IsRingOfIntegralElements Bplus)
+    (hopen : IsOpen (Bplus : Set B)) [IsIntegrallyClosedIn Bplus B]
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP) {a : A} (ha : a ∈ Aplus) :
     presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f a ∈ Bplus := by
-  apply hB.mem_of_forall_vle_one
+  apply mem_of_forall_vle_one hopen
   intro v hv
   let x : presentationLimitPreAdicSpace P' Bplus hBplus hP' := ⟨v, hv⟩
   have hx := ((mem_spa_iff Aplus (f.base x : spa Aplus).1).mp (f.base x : spa Aplus).2).2 a ha
@@ -275,9 +276,11 @@ noncomputable def presentationLimitHomPairHom (S : Pair A) (T : Pair B)
   continuous_toRingHom := (globalSectionsPullback P S.plus
     S.isRingOfIntegralElements.isPowerBounded_of_mem hS P' T.plus
     T.isRingOfIntegralElements.isPowerBounded_of_mem hT f).2
-  map_mem_plus _ ha := presentationLimitHomRingHom_mem_plus P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hS P' T.plus
-    T.isRingOfIntegralElements.isPowerBounded_of_mem hT T.isRingOfIntegralElements f ha
+  map_mem_plus _ ha := by
+    have := T.isRingOfIntegralElements.isIntegrallyClosedIn
+    exact presentationLimitHomRingHom_mem_plus P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hS P' T.plus
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hT T.isRingOfIntegralElements.isOpen f ha
 
 /-- The underlying ring map of the recovered Huber-pair map is the recovered section map. -/
 @[simp]
@@ -290,6 +293,33 @@ theorem presentationLimitHomPairHom_toRingHom (S : Pair A) (T : Pair B)
       presentationLimitHomRingHom P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hS
         P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hT f :=
   (rfl)
+
+/-- The identity pre-adic morphism recovers the identity Huber-pair morphism. -/
+@[simp]
+theorem presentationLimitHomPairHom_id (S : Pair A) (hS : P.ringOfDefinition ≤ S.plus) :
+    presentationLimitHomPairHom P P S S hS hS
+      (𝟙 (presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hS)) = Pair.Hom.id S := by
+  apply Pair.Hom.ext
+  simp
+
+/-- Recovery of Huber-pair morphisms is contravariant with respect to composition. -/
+@[simp]
+theorem presentationLimitHomPairHom_comp [IsHuberRing C]
+    (S : Pair A) (T : Pair B) (U : Pair C)
+    (hS : P.ringOfDefinition ≤ S.plus) (hT : P'.ringOfDefinition ≤ T.plus)
+    (hU : P''.ringOfDefinition ≤ U.plus)
+    (f : presentationLimitPreAdicSpace P'' U.plus
+      U.isRingOfIntegralElements.isPowerBounded_of_mem hU ⟶
+      presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hT)
+    (g : presentationLimitPreAdicSpace P' T.plus
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hT ⟶
+      presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hS) :
+    presentationLimitHomPairHom P P'' S U hS hU (f ≫ g) =
+      (presentationLimitHomPairHom P' P'' T U hT hU f).comp
+        (presentationLimitHomPairHom P P' S T hS hT g) := by
+  apply Pair.Hom.ext
+  simp
 
 end TauCeti.ValuationSpectrum
 

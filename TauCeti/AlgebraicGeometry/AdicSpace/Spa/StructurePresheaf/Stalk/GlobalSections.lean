@@ -68,10 +68,11 @@ theorem comap_presentationLimitGlobalGerm (x : spa Aplus) :
     comap (presentationLimitGlobalGerm P Aplus x) (presentationLimitStalkValuation hAplus hP x) =
       x.1 := by
   -- Use the trivial rational presentation to compute the germ of a global coefficient.
-  let p : Presentation P := ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩
-  have hp : IsOpen (Ideal.span (p.num : Set A) : Set A) := by simp [p]
+  let p := Presentation.trivial P
+  have hp : IsOpen (Ideal.span (p.num : Set A) : Set A) := by
+    simp [p, Presentation.trivial]
   have hx : x ∈ spaBasicOpen Aplus p.num p.den :=
-    mem_spaBasicOpen.mpr (by simp [p])
+    mem_spaBasicOpen.mpr (by simp [p, Presentation.trivial])
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
@@ -110,7 +111,7 @@ theorem comap_presentationLimitGlobalGerm (x : spa Aplus) :
     erw [← hcanon'']
     have hR : spaBasicOpen Aplus p.num p.den = ⊤ := by
       ext y
-      simp [mem_spaBasicOpen, p]
+      simp [mem_spaBasicOpen, p, Presentation.trivial]
     -- Generalize the membership proof before transporting its open to the whole space.
     revert hx
     erw [hR]
