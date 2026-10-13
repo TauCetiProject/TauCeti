@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Topology.Category.TopCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 
 /-!
 # The normalized cubical chain complex functor
