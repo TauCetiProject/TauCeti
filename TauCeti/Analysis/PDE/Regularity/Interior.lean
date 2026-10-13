@@ -104,6 +104,15 @@ def divMatrixGradient (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (ψ : Euc
   ∑ i, lineDeriv ℝ (fun y => matrixBilinearForm (a y) (EuclideanSpace.basisFun ι ℝ i) (∇ ψ y)) x
     (EuclideanSpace.basisFun ι ℝ i)
 
+/-- The defining formula for `divMatrixGradient`: the sum of the directional derivatives of the
+conormal components in the standard basis. -/
+theorem divMatrixGradient_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (ψ : EuclideanSpace ℝ ι → ℝ) (x : EuclideanSpace ℝ ι) :
+    divMatrixGradient a ψ x =
+      ∑ i, lineDeriv ℝ (fun y => matrixBilinearForm (a y) (EuclideanSpace.basisFun ι ℝ i)
+        (∇ ψ y)) x (EuclideanSpace.basisFun ι ℝ i) := by
+  rw [divMatrixGradient]
+
 /-- `div(a ∇ψ)` vanishes off the support of `ψ`. -/
 @[simp] theorem divMatrixGradient_eq_zero_of_notMem_tsupport {ψ : EuclideanSpace ℝ ι → ℝ}
     {x : EuclideanSpace ℝ ι} (hx : x ∉ tsupport ψ) :
@@ -212,7 +221,7 @@ private theorem setIntegral_value_mul_eq_neg (hM : ∀ x, ‖matrixBilinearForm 
         + φ x * divMatrixGradient a ψ x) ∂mu
       = ∫ x in Omega, ∑ i, lineDeriv ℝ (g i) x (b i) * W1p.value u x ∂mu := by
         refine integral_congr_ae ((ae_restrict_of_ae hderiv).mono fun x hx => ?_)
-        simp only [hx, divMatrixGradient]
+        simp only [hx, divMatrixGradient_def]
         rw [← sum_inner_mul_matrixBilinearForm (A := a x)]
         simp only [Finset.mul_sum, ← Finset.sum_add_distrib, mul_add, add_mul]
         refine Finset.sum_congr rfl fun i _ => ?_
@@ -243,6 +252,15 @@ def localizedForcing (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (ψ : Eucl
     (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) (x : EuclideanSpace ℝ ι) : ℝ :=
   ψ x * f x - matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x)
     - matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x) - W1p.value u x * divMatrixGradient a ψ x
+
+/-- The defining formula for `localizedForcing`. -/
+theorem localizedForcing_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ)
+    (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) (x : EuclideanSpace ℝ ι) :
+    localizedForcing a ψ f u x =
+      ψ x * f x - matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x)
+        - matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x)
+        - W1p.value u x * divMatrixGradient a ψ x := by
+  rw [localizedForcing]
 
 /-- The localized forcing term is square integrable, since each of its terms is an `L²(Ω)`
 function times a bounded one. -/
@@ -288,24 +306,6 @@ theorem memLp_localizedForcing (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M
         rw [norm_mul, mul_comm]
         exact mul_le_mul_of_nonneg_right (hC x) (norm_nonneg _))
   exact ((h1.sub h2).sub h3).sub h4
-
-omit [mu.IsAddHaarMeasure] in
-/-- A bounded continuous coefficient field has an essentially bounded field of drift- and
-mass-free energy integrands on every open set. -/
-private theorem memLp_energyIntegrand_of_continuous (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
-    (ha : Continuous fun x => matrixBilinearForm (a x)) (U : Opens (EuclideanSpace ℝ ι)) :
-    MemLp (fun x => energyIntegrand (a x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
-      (mu.restrict U) :=
-  memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
-    ((norm_nonneg (matrixBilinearForm (a 0))).trans (hM 0))
-    (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
-      continuous_of_continuous_matrixBilinearForm ha)
-    aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun x _ eta xi => by
-      simpa [Real.norm_eq_abs] using
-        (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hM x) le_rfl le_rfl)
-    (fun _ _ => by simp) (fun _ _ => by simp)
 
 /-- **The weak equation tested against `ψ φ`.** For a weak solution `u` of `-div(a ∇u) = f` in
 `Ω`, a smooth `ψ` compactly supported in `Ω`, and a test function `φ` on the whole space, the
@@ -489,7 +489,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
         · exact (hP.sub hQ).sub hT2
     _ = ∫ x in Omega, localizedForcing a ψ f u x * φ x ∂mu := by
         refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-        simp only [localizedForcing]
+        simp only [localizedForcing_def]
         ring
 
 /-- The whole-space weak equation for the extended cutoff product, against a test function. -/
@@ -656,7 +656,7 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
       add_zero]
   · filter_upwards [hforce] with x hx hxS
     rw [hx, indicator_of_mem (hSΩ hxS)]
-    simp [localizedForcing, (hψ_S x hxS).1, (hψ_S x hxS).2, hdiv_S x hxS]
+    simp [localizedForcing_def, (hψ_S x hxS).1, (hψ_S x hxS).2, hdiv_S x hxS]
 
 /-! ### Interior `H²` regularity -/
 

@@ -264,6 +264,23 @@ theorem memLp_energyIntegrand_mass_sub_const
   simpa only [sub_zero] using
     (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
 
+/-- A bounded coefficient field with continuously varying matrix bilinear forms has an essentially
+bounded field of drift- and mass-free energy integrands on every open set. -/
+theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
+    (ha : Continuous fun x => matrixBilinearForm (a x)) (U : Opens (EuclideanSpace ℝ ι)) :
+    MemLp (fun x => energyIntegrand (a x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict U) :=
+  memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
+    ((norm_nonneg (matrixBilinearForm (a 0))).trans (hLam 0))
+    (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
+      continuous_of_continuous_matrixBilinearForm ha)
+    aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun x _ eta xi => by
+      simpa [Real.norm_eq_abs] using
+        (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hLam x) le_rfl le_rfl)
+    (fun _ _ => by simp) (fun _ _ => by simp)
+
 variable [mu.IsAddHaarMeasure]
 
 /-- The continuous linear inclusion that forgets the `W^{1,2}` weak-derivative constraint and
