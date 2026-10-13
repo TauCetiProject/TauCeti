@@ -60,14 +60,14 @@ private theorem nonempty_layerTateModule_of_type (L K : Type) [Field L] [Field K
   have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
   have : FiniteDimensional K L := .right ℚ_[p] K L
   -- The local-field structures of `K` and `L`.
-  let _ := finiteExtensionValuativeRel ℚ_[p] K
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] K
+  let _ := algebraicExtensionValuativeRel ℚ_[p] K
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] K
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] K
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
-  have := finiteExtension_valuativeExtension ℚ_[p] L
+  have := algebraicExtension_valuativeExtension ℚ_[p] L
   have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
   let A := Rep.of (padicCompletionUnitsRepresentation p L K)
   obtain ⟨u, hu, hcard⟩ := exists_zmultiples_eq_top_groupCohomology_two_padicCompletionUnits p K L
