@@ -119,6 +119,8 @@ theorem mem_initialPentagonInitialSelfPairs_of_left_eq_right
       using hrecut.isEmpty_second
   -- Both pieces of the recut start on the replaced line.
   have hEfirstLeft : E.first.left = D.second.left := by
+    -- `toGridRectangleDecomposition` is the abbreviation for the parent two-step decomposition,
+    -- so `E.first` is its first rectangle; restate the goal through it for `hErect` to rewrite.
     change E.toGridRectangleDecomposition.first.left = _
     rw [hErect]
     exact D.leftRightRecut_first_left hcommon hother hfirst hpentagon
