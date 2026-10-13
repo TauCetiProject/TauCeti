@@ -75,24 +75,23 @@ theorem isUpperUnitriangular_mul_inv_weightTorusPoints_iff (g : points A)
     (((g * (weightTorusPoints A s)⁻¹ : points A) : GL (Fin 7) A) :
         Matrix (Fin 7) (Fin 7) A).IsUpperUnitriangular ↔
       ∀ i, (torusCharacter s (weight i) : A) = (g : GL (Fin 7) A) i i := by
-  have hmat : (((g * (weightTorusPoints A s)⁻¹ : points A) : GL (Fin 7) A) :
-        Matrix (Fin 7) (Fin 7) A) =
-      ((g : GL (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) *
-        diagonal (fun i ↦ (↑((torusCharacter s (weight i))⁻¹) : A)) := by
-    rw [← map_inv, Subgroup.coe_mul, Units.val_mul, coe_weightTorusPoints,
-      IntegralToralClosure.coe_weightTorusPoints_eq_diagonal]
-    simp only [← torusCharacterHom_apply, map_inv, Pi.inv_apply]
-  rw [hmat, Matrix.isUpperUnitriangular_def]
-  have hupper := htri.mul (Matrix.blockTriangular_diagonal
-    (fun i ↦ (↑((torusCharacter s (weight i))⁻¹) : A)))
-  simp only [hupper, true_and, Matrix.mul_diagonal]
+  let b : upperTriangularGroup (Fin 7) A :=
+    ⟨(g : GL (Fin 7) A), UpperTriangularGroup.mem_iff.mpr htri⟩
+  have htorus : (weightTorusPoints A s : GL (Fin 7) A) =
+      diagGL (fun i ↦ torusCharacter s (weight i)) := by
+    apply Units.ext
+    rw [coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal,
+      diagGL_coe]
+  rw [Subgroup.coe_mul, Subgroup.coe_inv, htorus, ← UpperUnitriangularGroup.mem_iff]
+  rw [UpperTriangularGroup.mul_inv_diagGL_mem_upperUnitriangularGroup_iff b]
   constructor
   · intro h i
-    have hi := congrArg (fun x : A ↦ x * (torusCharacter s (weight i) : A)) (h i)
-    simpa [mul_assoc] using hi.symm
-  · intro h i
-    rw [← h i]
-    exact Units.mul_inv _
+    rw [← congrFun h i]
+    exact UpperTriangularGroup.diag_apply_val b i
+  · intro h
+    funext i
+    apply Units.ext
+    exact (UpperTriangularGroup.diag_apply_val b i).trans (h i).symm
 
 /-- Every upper-triangular short-root carrier point has a unique weight-torus factor whose
 removal on the right leaves an upper-unitriangular carrier point. -/
