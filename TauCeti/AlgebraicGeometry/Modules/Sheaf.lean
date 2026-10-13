@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import Mathlib.AlgebraicGeometry.AffineScheme
 
 /-!
 # The underlying abelian sheaf of a sheaf of modules on a scheme
@@ -16,6 +17,7 @@ scheme that land in presheaves: `AlgebraicGeometry.Scheme.Modules.toPresheafOfMo
 `AlgebraicGeometry.Scheme.Modules.toPresheaf`. This file adds the conversion of sheaf-level
 isomorphisms back to `𝒪_X`-module isomorphisms, the one that lands in abelian sheaves, and records
 that the latter is exact.
+It also gives an epimorphism criterion using surjectivity on sections over affine opens.
 
 ## Main declarations
 
@@ -132,6 +134,29 @@ exact sequence of sheaves of abelian groups. -/
 theorem shortExact_map_toSheaf {S : ShortComplex X.Modules} (hS : S.ShortExact) :
     (S.map (toSheaf X)).ShortExact :=
   hS.map_of_exact _
+
+/-- Surjectivity on sections over affine opens implies that a module-sheaf morphism is an
+epimorphism. No quasicoherence hypothesis is required. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineOpens
+    {M N : X.Modules} (f : M ⟶ N)
+    (hf : ∀ U : X.Opens, IsAffineOpen U → Function.Surjective (f.app U)) : Epi f := by
+  constructor
+  intro P g h hgh
+  ext U s
+  apply TopCat.Presheaf.IsSheaf.section_ext P.isSheaf
+  intro x hx
+  obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
+  have hVU' : V ≤ U := hVU
+  let i : V ⟶ U := homOfLE hVU'
+  refine ⟨V, hVU', hxV, ?_⟩
+  obtain ⟨t, ht⟩ := hf V hV (N.presheaf.map i.op s)
+  calc
+    P.presheaf.map i.op (g.app U s) = g.app V (N.presheaf.map i.op s) :=
+      (congr($(g.mapPresheaf.naturality i.op) s)).symm
+    _ = h.app V (N.presheaf.map i.op s) := by
+      rw [← ht]
+      exact congr($(hgh).val.app (.op V) t)
+    _ = P.presheaf.map i.op (h.app U s) := congr($(h.mapPresheaf.naturality i.op) s)
 
 end Scheme.Modules
 
