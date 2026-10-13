@@ -51,8 +51,11 @@ end Complex
 namespace TauCeti
 
 /-- The reciprocal kernel cut off outside the closed disk of radius `R`. -/
-@[expose]
 def truncatedCauchyKernel (R : ℝ) : ℂ → ℂ := (closedBall 0 R).indicator (fun z ↦ z⁻¹)
+
+/-- The cutoff kernel is the indicator of the reciprocal on its closed disk. -/
+theorem truncatedCauchyKernel_def (R : ℝ) :
+    truncatedCauchyKernel R = (closedBall 0 R).indicator (fun z ↦ z⁻¹) := (rfl)
 
 /-- The truncated Cauchy kernel is measurable. -/
 theorem measurable_truncatedCauchyKernel (R : ℝ) : Measurable (truncatedCauchyKernel R) :=
@@ -87,7 +90,7 @@ theorem integral_norm_truncatedCauchyKernel {R : ℝ} (hR : 0 ≤ R) :
   have heq : (fun z : ℂ ↦ ‖truncatedCauchyKernel R z‖) =
       (closedBall 0 R).indicator (fun z ↦ ‖z‖⁻¹) := by
     funext z
-    simp only [truncatedCauchyKernel, norm_indicator_eq_indicator_norm, norm_inv]
+    simp only [truncatedCauchyKernel_def, norm_indicator_eq_indicator_norm, norm_inv]
   rw [heq, integral_indicator isClosed_closedBall.measurableSet]
   simpa only [sub_zero] using integral_norm_sub_inv_closedBall hR (0 : ℂ)
 
@@ -112,7 +115,7 @@ theorem tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall {ι : Type*} {l : F
       mem_closedBall_zero_iff.mpr ((norm_sub_le z (wn n)).trans (by dsimp [T]; linarith))
     have hzw : z - w ∈ closedBall 0 T :=
       mem_closedBall_zero_iff.mpr ((norm_sub_le z w).trans (by dsimp [T]; linarith))
-    simp only [truncatedCauchyKernel, Set.indicator_of_mem hzn, Set.indicator_of_mem hzw]
+    simp only [truncatedCauchyKernel_def, Set.indicator_of_mem hzn, Set.indicator_of_mem hzw]
   rw [heq]
   exact setIntegral_le_integral ((hk.comp_sub_right (wn n)).sub (hk.comp_sub_right w)).norm
     (Eventually.of_forall fun _ ↦ norm_nonneg _)

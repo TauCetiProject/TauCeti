@@ -22,7 +22,9 @@ itself is controlled by the distance between the centres.
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: closed and open balls agree up to a null
-  set when the space is nontrivial or the radius is nonzero.
+  set in a nontrivial space.
+* `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
+  radius, including trivial spaces.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
