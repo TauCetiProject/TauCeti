@@ -52,13 +52,15 @@ private theorem leftRightInverse_geometry_of_left_eq_left
     (hcommon : E.first.left = E.second.left)
     (hcol : E.first.right ∈ Grid.cIoo E.first.left E.second.right)
     (hf : E.first.IsEmpty) (hs : E.second.IsEmpty) :
-    let D := E.recut
-      (E.hasOneCommonSide_of_left_eq_left hcommon (Grid.ne_right_of_mem_cIoo hcol)) hf hs
+    let D := E.toGridRectangleDecomposition.recut
+      (E.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left hcommon
+        (Grid.ne_right_of_mem_cIoo hcol)) hf hs
     D.first.left = D.second.right ∧ D.first.right ≠ D.second.left ∧
       D.second.left = E.first.left ∧ s ∈ Grid.cIco D.second.bottom D.second.top := by
   intro D
-  have hdata := E.isRecutOfLeftEqLeft_recut hcommon
-    (E.hasOneCommonSide_of_left_eq_left hcommon (Grid.ne_right_of_mem_cIoo hcol)) hf hs
+  have hdata := E.toGridRectangleDecomposition.isRecutOfLeftEqLeft_recut hcommon
+    (E.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left hcommon
+      (Grid.ne_right_of_mem_cIoo hcol)) hf hs
   obtain ⟨hfr, hsr⟩ := hdata.recut_sides
   rcases hdata.recut_branch with ⟨-, hm, hfl, hsl⟩ | ⟨hcol', -⟩
   · have hne : E.first.left ≠ E.second.right := hcommon ▸ E.second.left_ne_right
@@ -74,7 +76,7 @@ private theorem leftRightInverse_geometry_of_left_eq_left
     · rw [hfr, hsl]
       exact hne.symm
     · -- The pentagon's rows and the rectangle's rows together make up the recut piece's rows.
-      have hrow := (E.cyclicOrder_of_isEmpty_of_left_eq_left hcommon
+      have hrow := (E.toGridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon
         (Grid.ne_right_of_mem_cIoo hcol) hf hs).2
       rw [hbottom, htop, ← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hrow]
       exact Finset.mem_union_left _ E.first_turn_mem
@@ -89,13 +91,15 @@ private theorem leftRightInverse_geometry_of_right_eq_right
     (hcommon : E.first.right = E.second.right)
     (hcol : E.second.left ∈ Grid.cIoo E.first.left E.first.right)
     (hf : E.first.IsEmpty) (hs : E.second.IsEmpty) :
-    let D := E.recut
-      (E.hasOneCommonSide_of_right_eq_right hcommon (Grid.ne_left_of_mem_cIoo hcol).symm) hf hs
+    let D := E.toGridRectangleDecomposition.recut
+      (E.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_right hcommon
+        (Grid.ne_left_of_mem_cIoo hcol).symm) hf hs
     D.first.left = D.second.right ∧ D.first.right ≠ D.second.left ∧
       D.second.left = E.first.left ∧ s ∈ Grid.cIco D.second.bottom D.second.top := by
   intro D
-  have hdata := E.isRecutOfRightEqRight_recut hcommon
-    (E.hasOneCommonSide_of_right_eq_right hcommon (Grid.ne_left_of_mem_cIoo hcol).symm) hf hs
+  have hdata := E.toGridRectangleDecomposition.isRecutOfRightEqRight_recut hcommon
+    (E.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_right hcommon
+      (Grid.ne_left_of_mem_cIoo hcol).symm) hf hs
   obtain ⟨hfl, hsl⟩ := hdata.recut_sides
   rcases hdata.recut_branch with ⟨hcol', -⟩ | ⟨-, hm, hfr, hsr⟩
   · exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap E.first.left E.first.right)
@@ -117,24 +121,26 @@ private theorem leftRightInverse_geometry_of_right_eq_right
 an initial-side pentagon, when its second piece starts where the pentagon starts and contains
 the turn row. -/
 private noncomputable def leftRightInverse
-    (E : GridInitialPentagonRectangleDecomposition a s x z) (hone : E.HasOneCommonSide)
+    (E : GridInitialPentagonRectangleDecomposition a s x z)
+    (hone : E.toGridRectangleDecomposition.HasOneCommonSide)
     (hf : E.first.IsEmpty) (hs : E.second.IsEmpty)
-    (hleft : (E.recut hone hf hs).second.left = E.first.left)
-    (hturn : s ∈ Grid.cIco (E.recut hone hf hs).second.bottom
-      (E.recut hone hf hs).second.top) :
+    (hleft : (E.toGridRectangleDecomposition.recut hone hf hs).second.left = E.first.left)
+    (hturn : s ∈ Grid.cIco (E.toGridRectangleDecomposition.recut hone hf hs).second.bottom
+      (E.toGridRectangleDecomposition.recut hone hf hs).second.top) :
     GridRectangleInitialPentagonDecomposition a s x z where
-  toGridRectangleDecomposition := E.recut hone hf hs
+  toGridTwoStepDecomposition := E.toGridRectangleDecomposition.recut hone hf hs
   second_left_eq := hleft.trans E.first_left_eq
   second_turn_mem := hturn
 
 private theorem leftRightInverse_toGridRectangleDecomposition
-    (E : GridInitialPentagonRectangleDecomposition a s x z) (hone : E.HasOneCommonSide)
+    (E : GridInitialPentagonRectangleDecomposition a s x z)
+    (hone : E.toGridRectangleDecomposition.HasOneCommonSide)
     (hf : E.first.IsEmpty) (hs : E.second.IsEmpty)
-    (hleft : (E.recut hone hf hs).second.left = E.first.left)
-    (hturn : s ∈ Grid.cIco (E.recut hone hf hs).second.bottom
-      (E.recut hone hf hs).second.top) :
+    (hleft : (E.toGridRectangleDecomposition.recut hone hf hs).second.left = E.first.left)
+    (hturn : s ∈ Grid.cIco (E.toGridRectangleDecomposition.recut hone hf hs).second.bottom
+      (E.toGridRectangleDecomposition.recut hone hf hs).second.top) :
     (E.leftRightInverse hone hf hs hleft hturn).toGridRectangleDecomposition =
-      E.recut hone hf hs :=
+      E.toGridRectangleDecomposition.recut hone hf hs :=
   (rfl)
 
 end TauCeti.GridInitialPentagonRectangleDecomposition
@@ -149,21 +155,24 @@ mixed `left = right` partner. -/
 private theorem mem_initialPentagonLeftRightOverlapPartners_of_recut
     (E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z)
     (hE : E ∈ G.initialPentagonRectangleDecompositions C x z)
-    (hone : E.HasOneCommonSide) (hf : E.first.IsEmpty) (hs : E.second.IsEmpty)
-    (hcommon : (E.recut hone hf hs).first.left = (E.recut hone hf hs).second.right)
-    (hother : (E.recut hone hf hs).first.right ≠ (E.recut hone hf hs).second.left)
-    (hleft : (E.recut hone hf hs).second.left = E.first.left)
-    (hturn : C.turnRow ∈ Grid.cIco (E.recut hone hf hs).second.bottom
-      (E.recut hone hf hs).second.top) :
+    (hone : E.toGridRectangleDecomposition.HasOneCommonSide) (hf : E.first.IsEmpty)
+    (hs : E.second.IsEmpty)
+    (hcommon : (E.toGridRectangleDecomposition.recut hone hf hs).first.left =
+      (E.toGridRectangleDecomposition.recut hone hf hs).second.right)
+    (hother : (E.toGridRectangleDecomposition.recut hone hf hs).first.right ≠
+      (E.toGridRectangleDecomposition.recut hone hf hs).second.left)
+    (hleft : (E.toGridRectangleDecomposition.recut hone hf hs).second.left = E.first.left)
+    (hturn : C.turnRow ∈ Grid.cIco (E.toGridRectangleDecomposition.recut hone hf hs).second.bottom
+      (E.toGridRectangleDecomposition.recut hone hf hs).second.top) :
     E ∈ G.initialPentagonLeftRightOverlapPartners C x z := by
   let D := E.leftRightInverse hone hf hs hleft hturn
   have hDrect := E.leftRightInverse_toGridRectangleDecomposition hone hf hs hleft hturn
-  have hrecut : E.IsRecut D.toGridRectangleDecomposition := by
+  have hrecut : E.toGridRectangleDecomposition.IsRecut D.toGridRectangleDecomposition := by
     rw [hDrect]
-    exact E.isRecut_recut hone hf hs
+    exact E.toGridRectangleDecomposition.isRecut_recut hone hf hs
   have hback := hrecut.symm hone hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.target_ne_source_of_hasOneCommonSide hone)
+    (E.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   rw [← hDrect] at hcommon hother
   have hDf : D.first.IsEmpty := hrecut.isEmpty_first
   have hDp : D.pentagon.IsEmpty := by
@@ -171,7 +180,8 @@ private theorem mem_initialPentagonLeftRightOverlapPartners_of_recut
     exact hrecut.isEmpty_second
   -- The generic recut of the source is `E` itself, whose pentagon contains the turn row.
   have hcut : D.leftRightRecut hcommon hother hDf hDp = E.toGridRectangleDecomposition :=
-    (D.existsUnique_isRecut hDone hrecut.isEmpty_first hrecut.isEmpty_second).unique
+    (D.toGridRectangleDecomposition.existsUnique_isRecut hDone hrecut.isEmpty_first
+      hrecut.isEmpty_second).unique
       (D.isRecut_leftRightRecut hcommon hother hDf hDp) hback
   have hDturn : C.turnRow ∈ Grid.cIco (D.leftRightRecut hcommon hother hDf hDp).first.bottom
       (D.leftRightRecut hcommon hother hDf hDp).first.top := by
@@ -236,10 +246,11 @@ private theorem sides_of_mem_initialPentagonLeftRightOverlapPartners
   have hf := G.isEmpty_of_mem_unblockedRectangles hR
   have hs : D.second.IsEmpty := by
     simpa only [D.pentagon_toGridRectangleBetween] using ((G.mem_initialPentagons _).1 hP).1
-  have hone := D.hasOneCommonSide_of_left_eq_right hcommon hother
-  have hcut : E.toGridRectangleDecomposition = D.recut hone hf hs :=
-    (D.existsUnique_isRecut hone hf hs).unique hrecut (D.isRecut_recut hone hf hs)
-  have hdata := D.isRecutOfLeftEqRight_recut hcommon hone hf hs
+  have hone := D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_right hcommon hother
+  have hcut : E.toGridRectangleDecomposition = D.toGridRectangleDecomposition.recut hone hf hs :=
+    (D.toGridRectangleDecomposition.existsUnique_isRecut hone hf hs).unique hrecut
+      (D.toGridRectangleDecomposition.isRecut_recut hone hf hs)
+  have hdata := D.toGridRectangleDecomposition.isRecutOfLeftEqRight_recut hcommon hone hf hs
   rw [← hcut] at hdata
   -- The two pieces of the partner differ in both their bottom rows and their top rows.
   have hrows : E.first.bottom ≠ E.second.bottom ∧ E.first.top ≠ E.second.top := by
