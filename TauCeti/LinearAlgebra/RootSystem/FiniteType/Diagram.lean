@@ -123,7 +123,6 @@ theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
 
 namespace IsFiniteType
 
-variable [Fintype B]
 
 /-- **Adjacency in the diagram of a finite-type matrix is a single nonvanishing condition**, the
 vanishing pattern of such a matrix being symmetric. -/
@@ -187,7 +186,7 @@ theorem exists_chain_of_reachable (h : IsFiniteType A) {u v : B}
 
 /-- **The degree bound in graph form**: no index of a finite-type matrix has four neighbours in the
 diagram, so a finite-type diagram branches into at most three arms. -/
-theorem degree_le_three [DecidableEq B] (h : IsFiniteType A) (i : B) :
+theorem degree_le_three [Fintype B] [DecidableEq B] (h : IsFiniteType A) (i : B) :
     (diagramGraph A).degree i ≤ 3 :=
   h.card_le_three_of_forall_apply_ne_zero (SimpleGraph.notMem_neighborFinset_self _ i)
     fun _ hj ↦ (diagramGraph_adj.mp ((SimpleGraph.mem_neighborFinset _ _ _).mp hj)).2.1
@@ -201,7 +200,7 @@ theorem isTree_diagramGraph (h : IsFiniteType A) (hconn : (diagramGraph A).Conne
 /-- **A connected finite-type diagram has one edge fewer than it has vertices.** This is the
 counting form of acyclicity, and the constraint that the enumeration of admissible diagrams is run
 against. -/
-theorem card_edgeFinset_add_one_eq_card [DecidableEq B] (h : IsFiniteType A)
+theorem card_edgeFinset_add_one_eq_card [Fintype B] [DecidableEq B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Connected) :
     (diagramGraph A).edgeFinset.card + 1 = Fintype.card B :=
   (h.isTree_diagramGraph hconn).card_edgeFinset

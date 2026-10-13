@@ -118,11 +118,10 @@ making `fun i j ↦ d i * A i j` positive definite (in particular symmetric).
 
 The Cartan matrices of finite root systems are exactly the matrices of this kind, up to
 irreducibility; `TauCeti.isFiniteType_cartanMatrix` proves one direction. -/
-def IsFiniteType [Fintype B] (A : Matrix B B ℤ) : Prop :=
+def IsFiniteType (A : Matrix B B ℤ) : Prop :=
   (∀ i, A i i = 2) ∧ (∀ i j, i ≠ j → A i j ≤ 0) ∧ (∀ i j, A i j = 0 → A j i = 0) ∧
     ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef
 
-variable [Fintype B]
 
 /-- **Building a finite-type matrix.** The symmetric vanishing pattern demanded by
 `TauCeti.IsFiniteType` need not be checked: a positive symmetrizer already forces
@@ -158,7 +157,8 @@ positive definiteness of the symmetrization is certified by exhibiting it as `C�
 `C` of coordinates - the columns of `C` being simple coroots, in the intended application - which
 makes it positive *semi*definite, with nonsingularity of `A` upgrading that to positive
 definiteness. -/
-theorem isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero [DecidableEq B] {m : Type*}
+theorem isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero [Fintype B] [DecidableEq B]
+    {m : Type*}
     [Fintype m] (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i j ≤ 0) {d : B → ℚ}
     (hd : ∀ i, 0 < d i) {C : Matrix m B ℚ}
     (hgram : Matrix.of (fun i j ↦ d i * (A i j : ℚ)) = Cᴴ * C) (hdet : A.det ≠ 0) :
@@ -191,7 +191,6 @@ lemma apply_eq_zero_iff (h : IsFiniteType A) {i j : B} : A i j = 0 ↔ A j i = 0
 lemma exists_symmetrizer (h : IsFiniteType A) :
     ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef := h.2.2.2
 
-omit [Fintype B] in
 /-- **The symmetrizer intertwines the two entries of a transposed pair.** The symmetrization is
 symmetric, being positive definite, and this is what that says entrywise. -/
 private theorem symmetrization_apply_comm {d : B → ℚ}
@@ -201,7 +200,7 @@ private theorem symmetrization_apply_comm {d : B → ℚ}
 
 /-- **A principal submatrix of a finite-type matrix is of finite type.** This is the form in which
 a forbidden subdiagram excludes every diagram containing it. -/
-theorem submatrix {C : Type*} [Fintype C] (h : IsFiniteType A) {e : C → B}
+theorem submatrix {C : Type*} (h : IsFiniteType A) {e : C → B}
     (he : Function.Injective e) :
     IsFiniteType (A.submatrix e e) := by
   -- Restricting the symmetrizer along the same injection restricts the symmetrization, and
@@ -214,8 +213,9 @@ theorem submatrix {C : Type*} [Fintype C] (h : IsFiniteType A) {e : C → B}
 /-- **Finite type is invariant under transposition.** The reciprocal vector is a symmetrizer for
 the transpose. Its symmetrization is obtained from the original one by conjugating with the
 invertible diagonal matrix whose entries are those reciprocals. -/
-theorem transpose (h : IsFiniteType A) : IsFiniteType A.transpose := by
+theorem transpose [Finite B] (h : IsFiniteType A) : IsFiniteType A.transpose := by
   classical
+  have : Fintype B := Fintype.ofFinite B
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
   refine isFiniteType_of (fun i ↦ h.apply_self i)
     (fun i j hij ↦ h.apply_le_zero_of_ne hij.symm) (d := fun i ↦ (d i)⁻¹)
@@ -249,7 +249,6 @@ theorem one_le_apply_mul_apply (h : IsFiniteType A) {i j : B} (hne : A i j ≠ 0
     omega
   nlinarith
 
-omit [Fintype B] in
 /-- **A pairwise non-adjacent block of the symmetrization is diagonal.** Along a set of indices
 that are pairwise non-adjacent, the `l`-th column of the symmetrization `fun p q ↦ d p * A p q`
 meets only the index `l` itself, so the sum collapses to that one term. This is what makes the
@@ -273,7 +272,7 @@ Of the matrix data only the nonvanishing of the symmetrizer on `s`, the diagonal
 on `s`, and the symmetrization identity `dⱼAⱼᵢ = dᵢAᵢⱼ` for `j ∈ s` are used; positive definiteness
 enters in `TauCeti.IsFiniteType.sum_apply_mul_apply_lt_four`, which is what turns this value into a
 bound. -/
-private theorem dotProduct_mulVec_symmetrization_eq_of_pairwise_apply_eq_zero
+private theorem dotProduct_mulVec_symmetrization_eq_of_pairwise_apply_eq_zero [Fintype B]
     {d : B → ℚ} {i : B} {s : Finset B} (hd : ∀ p ∈ s, d p ≠ 0) (h2i : A i i = 2)
     (h2s : ∀ p ∈ s, A p p = 2)
     (hsymm : ∀ p ∈ s, d p * (A p i : ℚ) = d i * (A i p : ℚ)) (his : i ∉ s)
@@ -317,10 +316,11 @@ This is the first of the two positive-definiteness estimates behind the local sh
 diagram: inside a pairwise non-adjacent star at `i` there are at most three neighbours, at most one
 of the edges to them is multiple, and a triple edge among them stands alone. The second,
 `TauCeti.IsFiniteType.apply_eq_zero_of_apply_ne_zero`, removes the pairwise hypothesis. -/
-theorem sum_apply_mul_apply_lt_four (h : IsFiniteType A) {i : B} {s : Finset B} (his : i ∉ s)
-    (hs : (s : Set B).Pairwise fun j k ↦ A j k = 0) :
+theorem sum_apply_mul_apply_lt_four [Finite B] (h : IsFiniteType A) {i : B} {s : Finset B}
+    (his : i ∉ s) (hs : (s : Set B).Pairwise fun j k ↦ A j k = 0) :
     ∑ j ∈ s, A i j * A j i < 4 := by
   classical
+  have : Fintype B := Fintype.ofFinite B
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
   have hsymm := symmetrization_apply_comm hpd
   -- The test vector: `1` at `i`, the value minimizing the `k`-th coordinate of the form at each
@@ -344,7 +344,7 @@ theorem sum_apply_mul_apply_lt_four (h : IsFiniteType A) {i : B} {s : Finset B} 
 /-- **The Cartan product of two distinct indices of a finite-type matrix is `0`, `1`, `2` or `3`.**
 These are exactly the values that name the orders `2, 3, 4, 6` of a product of two simple
 reflections. -/
-theorem apply_mul_apply_mem_of_ne (h : IsFiniteType A) {i j : B} (hij : i ≠ j) :
+theorem apply_mul_apply_mem_of_ne [Finite B] (h : IsFiniteType A) {i j : B} (hij : i ≠ j) :
     A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ) := by
   -- Nonnegativity is the product of two nonpositive entries; the upper bound is the star bound for
   -- the single-element star `{j}`.
@@ -562,7 +562,8 @@ that the Cartan products of `i` with `j` and with `k` sum to less than `4`; neit
 required to be a neighbour of `i`, an absent edge contributing `0`. No non-adjacency of `j` and `k`
 is assumed: if both are neighbours of `i` the no-triangle theorem supplies it, and otherwise the
 rank-two bound alone already caps the sum at `3`. -/
-theorem apply_mul_apply_add_apply_mul_apply_lt_four (h : IsFiniteType A) {i j k : B} (hij : i ≠ j)
+theorem apply_mul_apply_add_apply_mul_apply_lt_four [Finite B] (h : IsFiniteType A) {i j k : B}
+    (hij : i ≠ j)
     (hik : i ≠ k) (hjk : j ≠ k) :
     A i j * A j i + A i k * A k i < 4 := by
   classical
@@ -592,7 +593,8 @@ theorem apply_mul_apply_add_apply_mul_apply_lt_four (h : IsFiniteType A) {i j k 
 /-- **At most one edge at an index is multiple.** An index carrying a multiple edge to `j` is
 joined to every index other than `j` by at most a single edge. No non-adjacency of the far ends is
 assumed: the no-triangle theorem supplies it. -/
-theorem apply_mul_apply_le_one_of_two_le (h : IsFiniteType A) {i j k : B} (hij : i ≠ j)
+theorem apply_mul_apply_le_one_of_two_le [Finite B] (h : IsFiniteType A) {i j k : B}
+    (hij : i ≠ j)
     (hik : i ≠ k) (hjk : j ≠ k) (hj : 2 ≤ A i j * A j i) :
     A i k * A k i ≤ 1 := by
   -- The two-index case of the star bound leaves less than `2` for the edge to `k`.
@@ -603,7 +605,8 @@ theorem apply_mul_apply_le_one_of_two_le (h : IsFiniteType A) {i j k : B} (hij :
 other than `j` at all; applied at both ends of the edge this says that a triple edge is a connected
 component of the diagram, which is why `G₂` has rank `2`. Here `i ≠ j` need not be assumed: it
 follows from the Cartan product being `3` rather than the diagonal value `4`. -/
-theorem apply_eq_zero_of_apply_mul_apply_eq_three (h : IsFiniteType A) {i j k : B} (hik : i ≠ k)
+theorem apply_eq_zero_of_apply_mul_apply_eq_three [Finite B] (h : IsFiniteType A) {i j k : B}
+    (hik : i ≠ k)
     (hjk : j ≠ k) (hj : A i j * A j i = 3) :
     A i k = 0 := by
   have hij : i ≠ j := by
@@ -619,7 +622,8 @@ theorem apply_eq_zero_of_apply_mul_apply_eq_three (h : IsFiniteType A) {i j k : 
 /-- **The degree bound: an index of a finite-type matrix has at most three neighbours**, so a
 finite-type diagram branches into at most three arms. By the no-triangle theorem the neighbours are
 automatically pairwise non-adjacent, so the star bound applies to them directly. -/
-theorem card_le_three_of_forall_apply_ne_zero (h : IsFiniteType A) {i : B} {s : Finset B}
+theorem card_le_three_of_forall_apply_ne_zero [Finite B] (h : IsFiniteType A) {i : B}
+    {s : Finset B}
     (his : i ∉ s) (hadj : ∀ j ∈ s, A i j ≠ 0) :
     s.card ≤ 3 := by
   have hone : ∀ j ∈ s, (1 : ℤ) ≤ A i j * A j i := fun j hj ↦
@@ -634,7 +638,8 @@ theorem card_le_three_of_forall_apply_ne_zero (h : IsFiniteType A) {i : B} {s : 
 meets each of them along a single edge, since three Cartan products of value at least `1` already
 exhaust the star bound. Together with `TauCeti.IsFiniteType.card_le_three_of_forall_apply_ne_zero`
 this says that a branch vertex of a finite-type diagram carries exactly three simple edges. -/
-theorem apply_mul_apply_eq_one_of_three_le_card (h : IsFiniteType A) {i : B} {s : Finset B}
+theorem apply_mul_apply_eq_one_of_three_le_card [Finite B] (h : IsFiniteType A) {i : B}
+    {s : Finset B}
     (his : i ∉ s) (hadj : ∀ j ∈ s, A i j ≠ 0) (hcard : 3 ≤ s.card) {j : B} (hj : j ∈ s) :
     A i j * A j i = 1 := by
   classical
@@ -653,7 +658,7 @@ theorem apply_mul_apply_eq_one_of_three_le_card (h : IsFiniteType A) {i : B} {s 
 
 /-- **A finite-type matrix is nonsingular.** This is the elimination tool for the extended Dynkin
 diagrams, whose Cartan matrices are singular. -/
-theorem det_ne_zero [DecidableEq B] (h : IsFiniteType A) : A.det ≠ 0 := by
+theorem det_ne_zero [Fintype B] [DecidableEq B] (h : IsFiniteType A) : A.det ≠ 0 := by
   -- The symmetrization is a positive definite matrix over a field, hence invertible, and the
   -- symmetrizer contributes only a nonzero diagonal factor.
   obtain ⟨d, -, hpd⟩ := h.exists_symmetrizer
@@ -674,7 +679,7 @@ This is the elimination tool for a diagram carrying an explicit certificate. It 
 asking for a null vector, as `TauCeti.IsFiniteType.det_ne_zero` does: the certificate is allowed to
 be strictly subdominant at some indices, which is what lets a single vector rule out a whole family
 of diagrams rather than only the critical ones. -/
-theorem eq_zero_of_forall_mul_sum_apply_mul_nonpos (h : IsFiniteType A) {x : B → ℚ}
+theorem eq_zero_of_forall_mul_sum_apply_mul_nonpos [Fintype B] (h : IsFiniteType A) {x : B → ℚ}
     (hx : ∀ i, x i * ∑ j, (A i j : ℚ) * x j ≤ 0) : x = 0 := by
   by_contra hne
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer

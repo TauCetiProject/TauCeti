@@ -45,7 +45,7 @@ namespace TauCeti
 
 open SimpleGraph
 
-variable {B : Type*} [Fintype B] {A : Matrix B B ℤ} {n : ℕ}
+variable {B : Type*} {A : Matrix B B ℤ} {n : ℕ}
 
 /-! ## The double-edge model read along its path -/
 
@@ -167,7 +167,7 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
 multiple edge; in particular it already forces the opposite entry `A u v` to be `-1`. The path
 argument below discharges it. -/
 private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_simple
-    [DecidableEq B] (h : IsFiniteType A)
+    [Fintype B] [DecidableEq B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Connected) (hdeg : ∀ i, (diagramGraph A).degree i ≤ 2)
     {u v : B} (hvu : A v u = -2)
     (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
@@ -198,7 +198,7 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
 
 /-- Starting from a multiple edge at position `a` in a path numbering, every later edge is
 single. -/
-private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt (h : IsFiniteType A)
+private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt [Finite B] (h : IsFiniteType A)
     (k : diagramGraph A ≃g pathGraph n)
     {a : ℕ} (ha : a + 1 < n)
     (hfirst : 2 ≤ A (k.symm ⟨a, by omega⟩) (k.symm ⟨a + 1, ha⟩) *
@@ -266,7 +266,8 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt (h : IsFiniteType A
 
 /-- In a path numbering, an edge lying strictly beyond a fixed multiple edge has Cartan product
 one. -/
-private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min (h : IsFiniteType A)
+private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min [Finite B]
+    (h : IsFiniteType A)
     (k : diagramGraph A ≃g pathGraph n) {u v : B} (huv : (k u : ℕ) + 1 = (k v : ℕ))
     (hfirst : 2 ≤ A u v * A v u) {i j : B}
     (hpath : (k i : ℕ) + 1 = (k j : ℕ) ∨ (k j : ℕ) + 1 = (k i : ℕ))
@@ -294,7 +295,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min (h : IsFiniteTy
     simpa only [hi, hj, mul_comm] using hone
 
 /-- In a path numbering, every edge other than a fixed multiple edge has Cartan product one. -/
-private theorem apply_mul_apply_eq_one_of_isoPathGraph (h : IsFiniteType A)
+private theorem apply_mul_apply_eq_one_of_isoPathGraph [Finite B] (h : IsFiniteType A)
     (k : diagramGraph A ≃g pathGraph n) {u v : B} (huv : (k u : ℕ) + 1 = (k v : ℕ))
     (hfirst : 2 ≤ A u v * A v u) {i j : B} (hij : (diagramGraph A).Adj i j)
     (hne : ¬ ((i = u ∧ j = v) ∨ (i = v ∧ j = u))) : A i j * A j i = 1 := by
@@ -339,7 +340,7 @@ the only multiple edge, and the finite-type sign conditions then determine every
 entry. -/
 -- `degree` needs finite neighbour sets while the theorem type is elaborated, so this decidability
 -- instance cannot be confined to the proof.
-theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [DecidableEq B]
+theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [DecidableEq B]
     (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) (hdeg : ∀ i, (diagramGraph A).degree i ≤ 2)
     {u v : B} (hvu : A v u = -2) :
