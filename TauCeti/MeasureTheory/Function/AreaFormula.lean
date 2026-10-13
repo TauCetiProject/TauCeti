@@ -78,72 +78,6 @@ section InnerProduct
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is
-uniform and the Jacobian varies by a factor at most `τ`. -/
-private theorem exists_ball_antilipschitzWith_normDet_le [FiniteDimensional ℝ V] (B : U →L[ℝ] V)
-    (hB : Injective B) {τ : ℝ} (hτ : 1 < τ) :
-    ∃ ρ : ℝ, 0 < ρ ∧ ∃ K : ℝ≥0, ∀ C : U →L[ℝ] V, dist C B < ρ →
-      AntilipschitzWith K C ∧ C.normDet ≤ τ * B.normDet ∧ B.normDet ≤ τ * C.normDet := by
-  obtain ⟨K₀, hK₀pos, hK₀⟩ := (B : U →ₗ[ℝ] V).exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hB)
-  have hJ : 0 < B.normDet := lt_of_le_of_ne B.normDet_nonneg
-    (Ne.symm fun h => (LinearMap.normDet_eq_zero_iff_ker_ne_bot.1 h) (LinearMap.ker_eq_bot.2 hB))
-  -- Continuity of the Jacobian at `B`.
-  have hev : ∀ᶠ C in 𝓝 B, C.normDet ∈ Ioo (B.normDet / τ) (τ * B.normDet) :=
-    (ContinuousLinearMap.continuous_normDet.tendsto B).eventually
-      (Ioo_mem_nhds (div_lt_self hJ hτ) (lt_mul_of_one_lt_left hJ hτ))
-  obtain ⟨ε, hε, hεJ⟩ := Metric.eventually_nhds_iff.1 hev
-  have hK₀' : (0 : ℝ) < K₀ := hK₀pos
-  refine ⟨min ε (1 / (2 * K₀)), lt_min hε (by positivity), 2 * K₀, fun C hC => ⟨?_, ?_, ?_⟩⟩
-  · -- `‖x‖ ≤ K₀ ‖B x‖ ≤ K₀ (‖C x‖ + ‖x‖ / (2 K₀))`.
-    refine ContinuousLinearMap.antilipschitz_of_bound C fun x => ?_
-    have h1 : ‖x‖ ≤ K₀ * ‖B x‖ := by simpa using hK₀.le_mul_dist x 0
-    have h2 : ‖B - C‖ ≤ 1 / (2 * K₀) := by
-      rw [← dist_eq_norm, dist_comm]
-      exact hC.le.trans (min_le_right _ _)
-    have h3 : ‖B x‖ ≤ ‖C x‖ + 1 / (2 * K₀) * ‖x‖ := by
-      calc ‖B x‖ = ‖C x + (B - C) x‖ := by simp
-        _ ≤ ‖C x‖ + ‖(B - C) x‖ := norm_add_le _ _
-        _ ≤ ‖C x‖ + 1 / (2 * K₀) * ‖x‖ := by
-            gcongr
-            exact ((B - C).le_opNorm x).trans (by gcongr)
-    have h4 : K₀ * (1 / (2 * K₀) * ‖x‖) = ‖x‖ / 2 := by field_simp
-    push_cast
-    nlinarith
-  · exact (hεJ (hC.trans_le (min_le_left _ _))).2.le
-  · have h := (hεJ (hC.trans_le (min_le_left _ _))).1
-    rw [div_lt_iff₀ (zero_lt_one.trans hτ)] at h
-    linarith
-
-/-- For `τ > 1` and an antilipschitz constant `K`, there is a positive approximation precision `δ`
-for which the factors `(1 + δ K)ᵐ` and `(1 - δ K)⁻ᵐ` of the linear area bounds are at most `τ`. -/
-private theorem exists_pos_mul_lt_one_pow_le (K : ℝ≥0) {τ : ℝ} (hτ : 1 < τ) (m : ℕ) :
-    ∃ δ : ℝ≥0, 0 < δ ∧ δ * K < 1 ∧ (((1 + δ * K) ^ m : ℝ≥0) : ℝ) ≤ τ ∧
-      ((((1 - δ * K)⁻¹) ^ m : ℝ≥0) : ℝ) ≤ τ := by
-  have h₁ : ∀ᶠ δ : ℝ in 𝓝 0, (1 + δ * K) ^ m < τ :=
-    (((continuous_const.add (continuous_id.mul continuous_const)).pow m).tendsto' 0 1
-      (by simp)).eventually_lt_const hτ
-  have h₂ : ∀ᶠ δ : ℝ in 𝓝 0, ((1 - δ * K)⁻¹) ^ m < τ := by
-    have hc : ContinuousAt (fun δ : ℝ => ((1 - δ * K)⁻¹) ^ m) 0 :=
-      ((continuousAt_const.sub (continuousAt_id.mul continuousAt_const)).inv₀ (by simp)).pow m
-    have ht := hc.tendsto
-    rw [zero_mul, sub_zero, inv_one, one_pow] at ht
-    exact ht.eventually_lt_const hτ
-  have h₃ : ∀ᶠ δ : ℝ in 𝓝 0, δ * K < 1 :=
-    ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const one_pos
-  obtain ⟨δ, ⟨⟨h₁, h₂⟩, h₃⟩, hδ⟩ :=
-    ((((h₁.and h₂).and h₃).filter_mono nhdsWithin_le_nhds).and
-      (self_mem_nhdsWithin (s := Ioi (0 : ℝ)))).exists
-  have hδK : δ.toNNReal * K < 1 := by
-    rw [← NNReal.coe_lt_coe, NNReal.coe_mul, Real.coe_toNNReal _ (le_of_lt hδ)]
-    exact h₃
-  refine ⟨δ.toNNReal, Real.toNNReal_pos.2 hδ, hδK, ?_, ?_⟩
-  · rw [NNReal.coe_pow, NNReal.coe_add, NNReal.coe_one, NNReal.coe_mul,
-      Real.coe_toNNReal _ (le_of_lt hδ)]
-    exact h₁.le
-  · rw [NNReal.coe_pow, NNReal.coe_inv, NNReal.coe_sub hδK.le, NNReal.coe_one, NNReal.coe_mul,
-      Real.coe_toNNReal _ (le_of_lt hδ)]
-    exact h₂.le
-
 variable [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V] [BorelSpace V]
   {f : U → V} {A : U →L[ℝ] V} {s : Set U} {δ K : ℝ≥0}
 
@@ -221,9 +155,10 @@ theorem ApproximatesLinearOn.ofReal_normDet_mul_volume_le
 
 namespace MeasureTheory
 
-/-- The area formula on one piece, up to factors: if `f` is approximated on `Q` by `A` with the
-precision of `exists_pos_mul_lt_one_pow_le`, and `j` agrees with `J A` on `Q` up to the factor `σ`,
-then `∫⁻ x in Q, j x` and `μHE[m] (f '' Q)` agree up to the factor `τ σ`. -/
+/-- The area formula on one piece, up to factors: if `f` is approximated on `Q` by `A` with a
+precision `δ` for which `(1 + δ K)ᵐ` and `(1 - δ K)⁻ᵐ` are at most `τ`, and `j` agrees with `J A` on
+`Q` up to the factor `σ`, then `∫⁻ x in Q, j x` and `μHE[m] (f '' Q)` agree up to the factor
+`τ σ`. -/
 private theorem euclideanHausdorffMeasure_image_le_and_lintegral_le {Q : Set U}
     (hQ : MeasurableSet Q) {j : U → ℝ≥0∞} {τ σ : ℝ} (hσ : 0 ≤ σ)
     (hf : ApproximatesLinearOn f A Q δ) (hA : AntilipschitzWith K A) (hδK : δ * K < 1)
@@ -265,8 +200,8 @@ variable [FiniteDimensional ℝ V]
 omit [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V] [BorelSpace V] in
 /-- A nonempty set `W` of injective linear maps is covered by countably many balls
 `ball (B k) (ρ k)` on each of which the antilipschitz constant `K k` is uniform and the Jacobian
-varies by a factor at most `τ`, together with approximation precisions `δ k` as in
-`exists_pos_mul_lt_one_pow_le`. -/
+varies by a factor at most `τ`, together with approximation precisions `δ k` for which the factors
+`(1 + δ k K k)ᵐ` and `(1 - δ k K k)⁻ᵐ` of the linear area bounds are at most `τ`. -/
 private theorem exists_seq_ball_cover {W : Set (U →L[ℝ] V)} (hW : W.Nonempty)
     (hWinj : ∀ C ∈ W, Injective C) {τ : ℝ} (hτ : 1 < τ) :
     ∃ (B : ℕ → U →L[ℝ] V) (ρ : ℕ → ℝ) (K δ : ℕ → ℝ≥0),
@@ -278,8 +213,36 @@ private theorem exists_seq_ball_cover {W : Set (U →L[ℝ] V)} (hW : W.Nonempty
       ∀ C ∈ W, ∃ k, dist C (B k) < ρ k := by
   set G := {B : U →L[ℝ] V | Injective B}
   choose ρ hρ K hK using fun B : G =>
-    exists_ball_antilipschitzWith_normDet_le (B : U →L[ℝ] V) B.2 hτ
-  choose δ hδ using fun B : G => exists_pos_mul_lt_one_pow_le (K B) hτ (finrank ℝ U)
+    (B : U →L[ℝ] V).exists_ball_antilipschitzWith_normDet_le B.2 hτ
+  -- For each antilipschitz constant `K` there is a positive precision `δ` for which the factors
+  -- `(1 + δ K)ᵐ` and `(1 - δ K)⁻ᵐ` of the linear area bounds are at most `τ`.
+  have hδex (K : ℝ≥0) (m : ℕ) : ∃ δ : ℝ≥0, 0 < δ ∧ δ * K < 1 ∧
+      (((1 + δ * K) ^ m : ℝ≥0) : ℝ) ≤ τ ∧ ((((1 - δ * K)⁻¹) ^ m : ℝ≥0) : ℝ) ≤ τ := by
+    have h₁ : ∀ᶠ δ : ℝ in 𝓝 0, (1 + δ * K) ^ m < τ :=
+      (((continuous_const.add (continuous_id.mul continuous_const)).pow m).tendsto' 0 1
+        (by simp)).eventually_lt_const hτ
+    have h₂ : ∀ᶠ δ : ℝ in 𝓝 0, ((1 - δ * K)⁻¹) ^ m < τ := by
+      have hc : ContinuousAt (fun δ : ℝ => ((1 - δ * K)⁻¹) ^ m) 0 :=
+        ((continuousAt_const.sub (continuousAt_id.mul continuousAt_const)).inv₀ (by simp)).pow m
+      have ht := hc.tendsto
+      rw [zero_mul, sub_zero, inv_one, one_pow] at ht
+      exact ht.eventually_lt_const hτ
+    have h₃ : ∀ᶠ δ : ℝ in 𝓝 0, δ * K < 1 :=
+      ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const one_pos
+    obtain ⟨δ, ⟨⟨h₁, h₂⟩, h₃⟩, hδ⟩ :=
+      ((((h₁.and h₂).and h₃).filter_mono nhdsWithin_le_nhds).and
+        (self_mem_nhdsWithin (s := Ioi (0 : ℝ)))).exists
+    have hδK : δ.toNNReal * K < 1 := by
+      rw [← NNReal.coe_lt_coe, NNReal.coe_mul, Real.coe_toNNReal _ (le_of_lt hδ)]
+      exact h₃
+    refine ⟨δ.toNNReal, Real.toNNReal_pos.2 hδ, hδK, ?_, ?_⟩
+    · rw [NNReal.coe_pow, NNReal.coe_add, NNReal.coe_one, NNReal.coe_mul,
+        Real.coe_toNNReal _ (le_of_lt hδ)]
+      exact h₁.le
+    · rw [NNReal.coe_pow, NNReal.coe_inv, NNReal.coe_sub hδK.le, NNReal.coe_one, NNReal.coe_mul,
+        Real.coe_toNNReal _ (le_of_lt hδ)]
+      exact h₂.le
+  choose δ hδ using fun B : G => hδex (K B) (finrank ℝ U)
   -- Second countability extracts a countable subcover, which `W ≠ ∅` makes nonempty.
   obtain ⟨T, hTc, hTU⟩ := TopologicalSpace.isOpen_iUnion_countable
     (fun B : G => ball (B : U →L[ℝ] V) (ρ B)) fun _ => isOpen_ball
@@ -386,18 +349,6 @@ private theorem euclideanHausdorffMeasure_image_le_and_lintegral_le_of_one_lt
     ← ENNReal.tsum_mul_left, ← ENNReal.tsum_mul_left]
   exact ⟨ENNReal.tsum_le_tsum fun p => (hpiece p).1, ENNReal.tsum_le_tsum fun p => (hpiece p).2⟩
 
-/-- If `a ≤ τ³ b` for every `τ > 1`, then `a ≤ b`. -/
-private theorem le_of_forall_one_lt_le_ofReal_pow_mul {a b : ℝ≥0∞}
-    (h : ∀ τ : ℝ, 1 < τ → a ≤ ENNReal.ofReal (τ ^ 3) * b) : a ≤ b := by
-  rcases eq_or_ne b ⊤ with rfl | hb
-  · exact le_top
-  have hlim : Tendsto (fun τ : ℝ => ENNReal.ofReal (τ ^ 3) * b) (𝓝[>] 1) (𝓝 b) := by
-    have h1 : Tendsto (fun τ : ℝ => ENNReal.ofReal (τ ^ 3)) (𝓝[>] 1) (𝓝 1) := by
-      simpa using (ENNReal.tendsto_ofReal ((continuous_pow 3).tendsto (1 : ℝ))).mono_left
-        nhdsWithin_le_nhds
-    simpa using ENNReal.Tendsto.mul_const h1 (Or.inr hb)
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun τ hτ => h τ hτ)
-
 /-- **The area formula** for injective maps with injective derivative. Let `U` and `V` be
 finite-dimensional real inner product spaces and let `f : U → V` be injective on a measurable set
 `s`, differentiable at every point of `s` with injective derivative. Then the integral over `s`
@@ -406,11 +357,21 @@ Hausdorff measure of `f '' s`. -/
 theorem lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image (hs : MeasurableSet s)
     (hd : ∀ x ∈ s, DifferentiableAt ℝ f x) (hinj : ∀ x ∈ s, Injective (fderiv ℝ f x))
     (hf : InjOn f s) :
-    ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).normDet = μHE[finrank ℝ U] (f '' s) :=
-  le_antisymm
-    (le_of_forall_one_lt_le_ofReal_pow_mul fun _ hτ =>
+    ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).normDet = μHE[finrank ℝ U] (f '' s) := by
+  -- Both inequalities hold up to the factor `τ³` for every `τ > 1`; let `τ → 1`.
+  have hlim {a b : ℝ≥0∞} (h : ∀ τ : ℝ, 1 < τ → a ≤ ENNReal.ofReal (τ ^ 3) * b) : a ≤ b := by
+    rcases eq_or_ne b ⊤ with rfl | hb
+    · exact le_top
+    have ht : Tendsto (fun τ : ℝ => ENNReal.ofReal (τ ^ 3) * b) (𝓝[>] 1) (𝓝 b) := by
+      have h1 : Tendsto (fun τ : ℝ => ENNReal.ofReal (τ ^ 3)) (𝓝[>] 1) (𝓝 1) := by
+        simpa using (ENNReal.tendsto_ofReal ((continuous_pow 3).tendsto (1 : ℝ))).mono_left
+          nhdsWithin_le_nhds
+      simpa using ENNReal.Tendsto.mul_const h1 (Or.inr hb)
+    exact ge_of_tendsto ht (eventually_nhdsWithin_of_forall fun τ hτ => h τ hτ)
+  exact le_antisymm
+    (hlim fun _ hτ =>
       (euclideanHausdorffMeasure_image_le_and_lintegral_le_of_one_lt hs hd hinj hf hτ).2)
-    (le_of_forall_one_lt_le_ofReal_pow_mul fun _ hτ =>
+    (hlim fun _ hτ =>
       (euclideanHausdorffMeasure_image_le_and_lintegral_le_of_one_lt hs hd hinj hf hτ).1)
 
 end MeasureTheory
