@@ -27,7 +27,8 @@ subspaces of mapping spaces out of the cube.
   `q : A → B` from a compact space to a Hausdorff space is inducing, on the compact-open
   topologies.
 * `ContinuousMap.isEmbedding_precomp_of_surjective`: the same, as an embedding.
-* `ContinuousMap.homeomorphFactorsThrough`: for such a `q`, `C(B, X)` is homeomorphic to the
+* `ContinuousMap.homeomorphFactorsThrough`, with `homeomorphFactorsThrough_apply` and
+  `homeomorphFactorsThrough_symm_apply_comp`: for such a `q`, `C(B, X)` is homeomorphic to the
   subspace of maps `A → X` that are constant on the fibres of `q`.
 -/
 
@@ -85,5 +86,14 @@ theorem homeomorphFactorsThrough_apply [CompactSpace A] [T2Space B] (q : C(A, B)
     (homeomorphFactorsThrough q hq f : C(A, X)) = f.comp q := by
   rw [homeomorphFactorsThrough]
   rfl
+
+/-- The inverse of `homeomorphFactorsThrough` evaluates, at the image under `q` of a point, to the
+value at that point of the map out of the source. -/
+theorem homeomorphFactorsThrough_symm_apply_comp [CompactSpace A] [T2Space B] (q : C(A, B))
+    (hq : Function.Surjective q) (g : {g : C(A, X) // Function.FactorsThrough g q}) (a : A) :
+    (homeomorphFactorsThrough q hq).symm g (q a) = g.1 a := by
+  have h := congrArg (fun f : {g : C(A, X) // Function.FactorsThrough g q} => f.1 a)
+    ((homeomorphFactorsThrough q hq).apply_symm_apply g)
+  rwa [homeomorphFactorsThrough_apply] at h
 
 end ContinuousMap
