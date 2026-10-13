@@ -42,6 +42,8 @@ serves to make the energy form integrable. The condition `k ≥ 0` is what makes
 
 ## Main declarations
 
+* `TauCeti.PDE.UniformlyEllipticOn.caccioppoliAbove_lowerOrder`: under `c ≥ 0`, weak
+  subsolutions belong to De Giorgi's class above every level `k ≥ 0`.
 * `TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: local
   boundedness of weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`.
 
@@ -66,10 +68,9 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- Under `c ≥ 0`, the truncations of a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` at
-every level `l ≥ 0` satisfy the Caccioppoli inequality in the form used by De Giorgi's iteration,
-with `A = 2 (2Λ/λ)²` and `B = (2β/λ)²`. -/
-private theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_le_add_lowerOrder
+/-- Under `c ≥ 0`, weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` belong to De Giorgi's
+class above every level `k ≥ 0`, with `A = 2 (2Λ/λ)²` and `B = (2β/λ)²`. -/
+theorem UniformlyEllipticOn.caccioppoliAbove_lowerOrder
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {beta gamma : ℝ}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
@@ -82,17 +83,12 @@ private theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_le_add_lowe
     (hu : ∀ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0)
-    {l : ℝ} (hl0 : 0 ≤ l) (hl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
-    let w := W1p.posPartAboveOfMemLp (by norm_num) l u hl
-    ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
-      2 * (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu +
-        (2 * beta / lam) ^ 2 * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu := by
-  dsimp only
-  rw [W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) hl0 u hl]
+    {k : ℝ} (hk : 0 ≤ k) :
+    CaccioppoliAbove u k (2 * (2 * Lam / lam) ^ 2) ((2 * beta / lam) ^ 2) := by
+  intro l hkl hl ψ hψ hcpt hts
+  rw [W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) (hk.trans hkl) u hl]
   exact h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_nonpos ha hb hc
-    hb_bound hc_bound hc_nonneg hu hl0 hψ hcpt hts
+    hb_bound hc_bound hc_nonneg hu (hk.trans hkl) hψ hcpt hts
 
 /-- **Local boundedness of weak subsolutions with lower-order terms (De Giorgi).** In every
 dimension `n ≥ 1` there is `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization of
@@ -139,12 +135,10 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
   -- The restriction of `u` to the ball satisfies the Caccioppoli inequality at every level
   -- `l ≥ k ≥ 0`, with `A = 2 (2Λ/λ)²` and `B = (2β/λ)²`.
   have hbound := hmain (k := k) hball (by positivity) (sq_nonneg (2 * beta / lam)) hR
-    fun l hkl hl _ hψ hcpt hts =>
-      (h.mono_set hball).setIntegral_sq_mul_norm_gradient_le_add_lowerOrder
-        (ha.mono_measure hmono) (hb.mono_measure hmono) (hc.mono_measure hmono)
-        (fun x hx => hb_bound x (hball hx)) (fun x hx => hc_bound x (hball hx))
-        (fun x hx => hc_nonneg x (hball hx)) (energyFormH1_restrictL_nonpos hU hu)
-        (hk.trans hkl) hl hψ hcpt hts
+    ((h.mono_set hball).caccioppoliAbove_lowerOrder (ha.mono_measure hmono)
+      (hb.mono_measure hmono) (hc.mono_measure hmono) (fun x hx => hb_bound x (hball hx))
+      (fun x hx => hc_bound x (hball hx)) (fun x hx => hc_nonneg x (hball hx))
+      (energyFormH1_restrictL_nonpos hU hu) hk)
   -- `1 + A + (2β/λ)² R² ≤ 4 (1 + A) (1 + (βR/λ)²)`.
   have hfac : D * (1 + 2 * (2 * Lam / lam) ^ 2 + (2 * beta / lam) ^ 2 * R ^ 2) ^ Fintype.card ι ≤
       D * (4 * (1 + 2 * (2 * Lam / lam) ^ 2)) ^ Fintype.card ι *
