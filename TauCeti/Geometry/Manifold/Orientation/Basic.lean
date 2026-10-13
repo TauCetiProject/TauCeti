@@ -235,6 +235,11 @@ theorem ofVectorBundleOrientation_toVectorBundleOrientation
 def model (o : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) :
     Orientation I H ι := mk (OrientationLift.model (I := I) o hι)
 
+/-- The constant model orientation is represented by its actual constant orientation lift. -/
+theorem model_eq_mk (o : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) :
+    model (I := I) o hι = mk (OrientationLift.model (I := I) o hι) := (rfl)
+
 @[simp]
 theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     (hι : Fintype.card ι = Module.finrank ℝ E) (x : H) :

@@ -20,6 +20,9 @@ orientations unchanged.
 
 ## References
 
+* Michael Lee's [Mathlib PR #35376](https://github.com/leanprover-community/mathlib4/pull/35376):
+  the chart-sign lift and diagonal-quotient design, adapted here to source-indexed signs and
+  actual tangent-bundle trivializations.
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 15.
 * [TauCeti PR #15107](https://github.com/TauCetiProject/TauCeti/pull/15107): the earlier
   chart-sign lift and diagonal-flip quotient formulation. The tangent interpretation here uses

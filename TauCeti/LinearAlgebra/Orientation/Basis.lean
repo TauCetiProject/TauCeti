@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Orientation
-public import Mathlib.Basic.Real.Basic
 
 /-!
 # The sign of a basis relative to an orientation
@@ -21,21 +20,22 @@ noncomputable section
 
 namespace Orientation
 
-variable {E ι : Type*} [AddCommGroup E] [Module ℝ E] [Fintype ι] [DecidableEq ι]
+variable {R E ι : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup E] [Module R E] [Fintype ι] [DecidableEq ι]
 
 /-- The sign of a basis relative to a model orientation, including empty index types. -/
-def signBasis (o : Orientation ℝ E ι) (b : Module.Basis ι ℝ E) : ℤˣ := by
+def signBasis (o : Orientation R E ι) (b : Module.Basis ι R E) : ℤˣ := by
   classical
   exact if o = b.orientation then 1 else -1
 
 /-- A basis giving the chosen orientation has positive relative sign. -/
 @[simp]
-theorem signBasis_orientation (b : Module.Basis ι ℝ E) : signBasis b.orientation b = 1 := by
+theorem signBasis_orientation (b : Module.Basis ι R E) : signBasis b.orientation b = 1 := by
   simp [signBasis]
 
 /-- Reversing the orientation reverses the relative basis sign. -/
 @[simp]
-theorem signBasis_neg (o : Orientation ℝ E ι) (b : Module.Basis ι ℝ E) :
+theorem signBasis_neg (o : Orientation R E ι) (b : Module.Basis ι R E) :
     signBasis (-o) b = -signBasis o b := by
   rcases b.orientation_eq_or_eq_neg o with h | h
   · subst o
@@ -45,16 +45,16 @@ theorem signBasis_neg (o : Orientation ℝ E ι) (b : Module.Basis ι ℝ E) :
     simp [signBasis, (Module.Ray.ne_neg_self b.orientation).symm]
 
 /-- Reversing the basis orientation reverses its relative sign. -/
-theorem signBasis_eq_neg_of_orientation_eq_neg (o : Orientation ℝ E ι)
-    (b b' : Module.Basis ι ℝ E) (h : b'.orientation = -b.orientation) :
+theorem signBasis_eq_neg_of_orientation_eq_neg (o : Orientation R E ι)
+    (b b' : Module.Basis ι R E) (h : b'.orientation = -b.orientation) :
     signBasis o b' = -signBasis o b := by
   rcases b.orientation_eq_or_eq_neg o with ho | ho <;>
     subst o <;> simp [signBasis, h, Module.Ray.ne_neg_self b.orientation,
       (Module.Ray.ne_neg_self b.orientation).symm]
 
 /-- The relative basis sign compensates exactly for the signed determinant ratio. -/
-theorem signBasis_mul_det_div_abs (o : Orientation ℝ E ι) (b b' : Module.Basis ι ℝ E) :
-    (signBasis o b' : ℝ) * (b.det b' / |b.det b'|) = (signBasis o b : ℝ) := by
+theorem signBasis_mul_det_div_abs (o : Orientation R E ι) (b b' : Module.Basis ι R E) :
+    (signBasis o b' : R) * (b.det b' / |b.det b'|) = (signBasis o b : R) := by
   have hd : b.det b' ≠ 0 := (b.isUnit_det b').ne_zero
   rcases lt_or_gt_of_ne hd with hneg | hpos
   · have hne : b'.orientation ≠ b.orientation := by
@@ -71,19 +71,19 @@ theorem signBasis_mul_det_div_abs (o : Orientation ℝ E ι) (b b' : Module.Basi
     rw [hs, abs_of_pos hpos, div_self hd, mul_one]
 
 /-- The basis signs compensate the change-of-basis determinant to give a positive product. -/
-theorem signBasis_mul_det_mul_pos (o : Orientation ℝ E ι)
-    (b b' : Module.Basis ι ℝ E) :
-    0 < (signBasis o b : ℝ) * b.det b' * (signBasis o b' : ℝ) := by
+theorem signBasis_mul_det_mul_pos (o : Orientation R E ι)
+    (b b' : Module.Basis ι R E) :
+    0 < (signBasis o b : R) * b.det b' * (signBasis o b' : R) := by
   have h := signBasis_mul_det_div_abs o b b'
-  have hsign : (signBasis o b' : ℝ) * (signBasis o b' : ℝ) = 1 := by
+  have hsign : (signBasis o b' : R) * (signBasis o b' : R) = 1 := by
     exact_mod_cast Int.isUnit_mul_self (signBasis o b').isUnit
   have hd : 0 < |b.det b'| := abs_pos.mpr (b.isUnit_det b').ne_zero
-  have he : (signBasis o b : ℝ) * b.det b' * (signBasis o b' : ℝ) = |b.det b'| := by
+  have he : (signBasis o b : R) * b.det b' * (signBasis o b' : R) = |b.det b'| := by
     rw [← h]
     calc
-      (signBasis o b' : ℝ) * (b.det b' / |b.det b'|) * b.det b' *
-          (signBasis o b' : ℝ) =
-        ((signBasis o b' : ℝ) * (signBasis o b' : ℝ)) *
+      (signBasis o b' : R) * (b.det b' / |b.det b'|) * b.det b' *
+          (signBasis o b' : R) =
+        ((signBasis o b' : R) * (signBasis o b' : R)) *
           ((b.det b') ^ 2 / |b.det b'|) := by ring
       _ = |b.det b'| := by rw [hsign, one_mul, ← sq_abs]; field_simp
   rw [he]

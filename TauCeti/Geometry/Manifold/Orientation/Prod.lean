@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
@@ -134,12 +135,13 @@ theorem prod_mk (l : OrientationLift I M (Fin m))
   all_goals exact (mk_eq_mk_iff _ _).mpr (.inr rfl)
 
 /-- The product manifold orientation induces the ordered product of its tangent orientations. -/
+@[simp]
 theorem orientationAt_prod (o : Orientation I M (Fin m))
     (o' : Orientation I' M' (Fin n)) (x : M × M') :
     (o.prod o').orientationAt x =
       _root_.Orientation.prod (o.orientationAt x.1) (o'.orientationAt x.2)
-        (by change Module.finrank ℝ E = m; simpa using o.card_eq.symm)
-        (by change Module.finrank ℝ E' = n; simpa using o'.card_eq.symm) := by
+        ((TauCeti.finrank_tangentSpace (I := I) x.1).trans (by simpa using o.card_eq.symm))
+        ((TauCeti.finrank_tangentSpace (I := I') x.2).trans (by simpa using o'.card_eq.symm)) := by
   induction o using Orientation.inductionOn with | h l =>
     induction o' using Orientation.inductionOn with | h l' =>
       rw [prod_mk, orientationAt_mk, orientationAt_mk, orientationAt_mk]
