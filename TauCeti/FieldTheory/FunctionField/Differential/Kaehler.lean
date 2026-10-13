@@ -54,6 +54,8 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
   every derivation `D` of `F` over `k`.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a
   fixed parameter over a perfect field.
+* `TauCeti.nontrivial_kaehlerDifferential`, `TauCeti.finrank_kaehlerDifferential_pos`: an
+  essentially finite type field extension that is not algebraic has nonzero Kähler differentials.
 * `TauCeti.IsFunctionField.finrank_kaehlerDifferential_eq_one_iff`: `dim_F Ω[F⁄k] = 1` exactly
   when `F / k` has a separating element.
 * `TauCeti.IsFunctionField.two_le_finrank_kaehlerDifferential_iff`: without a separating element,
@@ -226,6 +228,27 @@ theorem derivativeOfSeparating_eq_zero_iff [CharZero k] [Algebra.IsSeparable k�
   · rintro ⟨a, rfl⟩
     exact (derivativeOfSeparating hx).map_algebraMap a
 
+section Transcendental
+
+variable [Algebra.EssFiniteType k F] [Algebra.Transcendental k F]
+
+/-- The Kähler differentials of an essentially finite type field extension that is not algebraic
+are nonzero. -/
+theorem nontrivial_kaehlerDifferential : Nontrivial Ω[F⁄k] := by
+  -- Were they zero, `F` would be formally unramified, hence separable algebraic, over `k`.
+  refine not_subsingleton_iff_nontrivial.mp fun h ↦ ?_
+  have : Algebra.FormallyUnramified k F := ⟨h⟩
+  have := Algebra.FormallyUnramified.isSeparable k F
+  exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› inferInstance
+
+/-- The Kähler differentials of an essentially finite type field extension that is not algebraic
+form a nonzero finite-dimensional `F`-vector space. -/
+theorem finrank_kaehlerDifferential_pos : 0 < finrank F Ω[F⁄k] := by
+  have := nontrivial_kaehlerDifferential (k := k) (F := F)
+  exact Module.finrank_pos
+
+end Transcendental
+
 namespace IsFunctionField
 
 /-! ### Separable generation and the dimension of `Ω[F⁄k]` -/
@@ -236,21 +259,17 @@ variable (hF : IsFunctionField k F)
 include hF
 
 /-- The Kähler differentials of an algebraic function field are nonzero. -/
-theorem nontrivial_kaehlerDifferential : Nontrivial Ω[F⁄k] := by
-  -- Were they zero, `F` would be formally unramified, hence separable algebraic, over `k`.
+theorem nontrivial_kaehlerDifferential : Nontrivial Ω[F⁄k] :=
   have : Algebra.EssFiniteType k F := hF.essFiniteType
-  refine not_subsingleton_iff_nontrivial.mp fun h ↦ ?_
-  have : Algebra.FormallyUnramified k F := ⟨h⟩
-  have := Algebra.FormallyUnramified.isSeparable k F
-  obtain ⟨y, hy⟩ := hF.exists_transcendental
-  exact hy (Algebra.IsAlgebraic.isAlgebraic y)
+  have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
+  TauCeti.nontrivial_kaehlerDifferential
 
 /-- The Kähler differentials of an algebraic function field form a nonzero finite-dimensional
 `F`-vector space. -/
-theorem finrank_kaehlerDifferential_pos : 0 < finrank F Ω[F⁄k] := by
+theorem finrank_kaehlerDifferential_pos : 0 < finrank F Ω[F⁄k] :=
   have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have := hF.nontrivial_kaehlerDifferential
-  exact Module.finrank_pos
+  have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
+  TauCeti.finrank_kaehlerDifferential_pos
 
 /-- **The Kähler differentials of an algebraic function field are one-dimensional exactly when it
 is separably generated**: `dim_F Ω[F⁄k] = 1` if and only if some `x` transcendental over `k`

@@ -7,8 +7,8 @@ module
 
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
-public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # The constant field of an algebraic function field
