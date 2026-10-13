@@ -51,15 +51,6 @@ namespace TauCeti
 
 variable {N c : ℕ} {μ ν : YoungDiagram}
 
-/-- The staircase exponents `N - 1 - j` of the Vandermonde alternant are pairwise distinct. -/
-private theorem injective_staircase (N : ℕ) :
-    Function.Injective fun j : Fin N => N - 1 - (j : ℕ) := by
-  intro a b hab
-  have ha := a.isLt
-  have hb := b.isLt
-  have h : N - 1 - (a : ℕ) = N - 1 - (b : ℕ) := hab
-  exact Fin.ext (by omega)
-
 /-- Adding `c` to the first `N` row lengths adds `c` to the first `N` beta-numbers. -/
 private theorem betaNumber_eq_add (h : ∀ j < N, ν.rowLen j = μ.rowLen j + c) :
     (fun j : Fin N => ν.betaNumber N j) = fun j : Fin N => μ.betaNumber N j + c := by
@@ -73,9 +64,12 @@ private theorem diagramSchurPoly_int_eq_prod_X_pow_mul (hμ : μ.colLen 0 ≤ N)
     (h : ∀ j < N, ν.rowLen j = μ.rowLen j + c) :
     diagramSchurPoly N ℤ ν
       = (∏ i, (X i : MvPolynomial (Fin N) ℤ)) ^ c * diagramSchurPoly N ℤ μ := by
-  have hne : alternant (Fin N) ℤ (fun j : Fin N => N - 1 - (j : ℕ)) ≠ 0 :=
-    alternant_ne_zero_of_injective (injective_staircase N)
-  refine mul_right_cancel₀ hne ?_
+  -- Cancel the staircase alternant, whose exponents are pairwise distinct.
+  have hδ : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) := fun a b hab => by
+    have := a.isLt
+    have := b.isLt
+    exact Fin.ext (by simp only at hab; omega)
+  refine mul_right_cancel₀ (alternant_ne_zero_of_injective hδ) ?_
   rw [diagramSchurPoly_mul_alternant N ν hν, betaNumber_eq_add h, alternant_add_const,
     mul_assoc, diagramSchurPoly_mul_alternant N μ hμ]
 

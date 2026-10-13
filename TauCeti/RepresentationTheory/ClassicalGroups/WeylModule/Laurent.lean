@@ -61,8 +61,6 @@ construction, not yet about a classified irreducible.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15, where the
   rational representations of `GL n` are the determinant twists of the polynomial ones and their
   characters are the corresponding Laurent symmetric functions.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 4, "the rational character is Laurent".
 -/
 
 public section
