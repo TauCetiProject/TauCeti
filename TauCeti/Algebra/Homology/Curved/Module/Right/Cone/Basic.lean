@@ -268,8 +268,10 @@ variable
   (α : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := M.grading) (-1))
   (β : dgRightModuleCochains (R := R) (A := A) (ℳ := N.grading) (ℳN := N.grading) (-1))
 
-/-- The corrected contraction associated to an inverse and its two inverse homotopies.
-For `t = f ∘ α - β ∘ f`, its matrix is `(α - g ∘ t, g; β ∘ t, -β)`. -/
+/-- A corrected degree-minus-one cochain for a closed map `g` and cochains `α`, `β`.
+For `t = f ∘ α - β ∘ f`, its matrix is `(α - g ∘ t, g; β ∘ t, -β)`.
+It is a contraction when the inverse-homotopy equations in
+`coneHomotopyContraction_boundary` hold. -/
 noncomputable def coneHomotopyContraction :
     dgRightModuleCochains (R := R) (A := A) (ℳ := (cone f).grading)
       (ℳN := (cone f).grading) (-1) := by
@@ -299,7 +301,7 @@ noncomputable def coneHomotopyContraction :
     ((N.grading (p + -1)).sub_mem (dgRightModuleCochains.map_mem β htx)
       (dgRightModuleCochains.map_mem β hx.2))
 
-/-- The corrected contraction has the explicit block formula on the cone carrier. -/
+/-- The corrected degree-minus-one cochain has this block formula on the cone carrier. -/
 @[simp]
 theorem coneHomotopyContraction_apply (x : M × N) :
     (coneHomotopyContraction f g α β).1 x =
