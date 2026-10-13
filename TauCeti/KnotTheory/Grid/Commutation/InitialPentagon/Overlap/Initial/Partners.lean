@@ -94,7 +94,7 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : Grid
 /-- A counted mixed initial-pentagon--rectangle domain whose rectangle ends inside the
 pentagon's rows, below or at the turn row, is the recut of a counted common-initial-side cross
 source. -/
-theorem mem_initialPentagonInitialCrossOverlapPartners_of_right_eq_left
+private theorem mem_initialPentagonInitialCrossOverlapPartners_of_right_eq_left
     (E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z)
     (hE : E ∈ G.initialPentagonRectangleDecompositions C x z)
     (hcommon : E.first.right = E.second.left)
