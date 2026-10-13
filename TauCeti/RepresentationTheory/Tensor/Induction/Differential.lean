@@ -22,11 +22,16 @@ degree; that hypothesis enters only the square-zero law without Koszul signs.
 
 ## Main definitions and lemmas
 
-* `TauCeti.wreathTensorDifferential d ι`: the equivariant differential on a finite tensor power.
-* `TauCeti.tensorInducedDifferential d s`: its restriction along a transversal's monomial map.
-* `TauCeti.wreathTensor_mem_degreePiece ρ ι`: preservation of total degree by the wreath action.
-* `TauCeti.tensorInducedRepresentation_mem_degreePiece U s τ`: preservation of total degree
-  by tensor induction.
+* `TauCeti.Representation.IntertwiningMap.wreathTensorDifferential d ι`: the equivariant
+  differential on a finite tensor power.
+* `TauCeti.Representation.IntertwiningMap.tensorInducedDifferential d s`: its restriction along
+  a transversal's monomial map.
+* `TauCeti.Representation.wreathTensor_mem_degreePiece ρ ι`: preservation of total degree by
+  the wreath action.
+* `TauCeti.Subgroup.tensorInducedRepresentation_mem_degreePiece U s τ`: preservation of total
+  degree by tensor induction.
+
+Open `TauCeti` to use these declarations through receiver dot notation.
 
 ## References
 
@@ -40,7 +45,7 @@ open scoped TensorProduct
 
 universe u v w x
 
-namespace TauCeti
+namespace TauCeti.Representation.IntertwiningMap
 
 variable {R : Type u} [CommSemiring R] {D : Type v} [Group D]
   {M : Type w} [AddCommMonoid M] [Module R M] {ρ : Representation R D M}
@@ -52,7 +57,7 @@ noncomputable def wreathTensorDifferential :
     (ρ.wreathTensor ι).IntertwiningMap (ρ.wreathTensor ι) where
   toLinearMap := TauCeti.PiTensorProduct.differential (fun _ : ι ↦ d.toLinearMap)
   isIntertwining' a := by
-    rw [wreathTensor_apply, ← LinearMap.comp_assoc,
+    rw [TauCeti.Representation.wreathTensor_apply, ← LinearMap.comp_assoc,
       TauCeti.PiTensorProduct.differential_comp_map _ _ _ (fun i ↦ d.isIntertwining' (a.left i)),
       LinearMap.comp_assoc,
       TauCeti.PiTensorProduct.differential_comp_reindex a.right (fun _ ↦ d.toLinearMap),
@@ -124,9 +129,11 @@ theorem tensorInducedDifferential_comp_self [CharP R 2] (d : τ.IntertwiningMap 
     congrArg Representation.IntertwiningMap.toLinearMap
       (wreathTensorDifferential_comp_self d (G ⧸ U) hd)
 
-end TauCeti
+end TauCeti.Representation.IntertwiningMap
 
-namespace TauCeti
+namespace TauCeti.Representation
+
+open TauCeti
 
 variable {R : Type u} [CommSemiring R] {D : Type v} [Group D]
   {M : Type w} [AddCommMonoid M] [Module R M] (ρ : Representation R D M)
@@ -142,6 +149,14 @@ theorem wreathTensor_mem_degreePiece (ℳ : ℤ → Submodule R M)
   exact PiTensorProduct.map_mem_degreePiece _ _ _ (fun i ↦ hρ (a.left i))
     (PiTensorProduct.reindex_mem_degreePiece a.right (fun _ ↦ ℳ) hz)
 
+end TauCeti.Representation
+
+namespace TauCeti.Subgroup
+
+open TauCeti
+
+variable {R : Type u} [CommSemiring R] {M : Type w} [AddCommMonoid M] [Module R M]
+
 /-- A grading-preserving subgroup action gives a tensor-induced action preserving total degree. -/
 theorem tensorInducedRepresentation_mem_degreePiece {G : Type v} [Group G]
     (U : Subgroup G) (s : U.LeftTransversal) [Fintype (G ⧸ U)]
@@ -152,6 +167,7 @@ theorem tensorInducedRepresentation_mem_degreePiece {G : Type v} [Group G]
     U.tensorInducedRepresentation s τ g z ∈
       PiTensorProduct.degreePiece (fun _ : G ⧸ U ↦ ℳ) n := by
   rw [Subgroup.tensorInducedRepresentation_apply]
-  exact wreathTensor_mem_degreePiece τ (G ⧸ U) ℳ hτ (U.monomialHom s g) hz
+  exact TauCeti.Representation.wreathTensor_mem_degreePiece τ (G ⧸ U) ℳ hτ
+    (U.monomialHom s g) hz
 
-end TauCeti
+end TauCeti.Subgroup
