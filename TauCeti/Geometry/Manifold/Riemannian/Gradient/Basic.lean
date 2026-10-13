@@ -17,6 +17,10 @@ On a manifold `M` whose tangent spaces carry a Riemannian metric, the **gradient
 metric: `⟪grad f x, v⟫ = df_x v` for every tangent vector `v`. It is the fibrewise Riesz dual
 `Riemannian.Tensor.rieszDual` of `df_x`.
 
+The gradient within a subset is similarly the fibrewise Riesz dual of `mvfderivWithin`.
+Its characteristic equations, uniqueness, vanishing, and neighbourhood-restriction laws require
+only the pointwise Riemannian bundle structure.
+
 For a `C^{n+1}` function and a `C^n` metric, the gradient is a `C^n` vector field: the evaluations
 of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a field of covectors
 (`Riemannian.Tensor.contMDiffAt_rieszDual`).
@@ -24,6 +28,7 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 ## Main declarations
 
 * `TauCeti.Manifold.riemannianGradient`: the gradient of a function.
+* `TauCeti.Manifold.riemannianGradientWithin`: the gradient within a subset.
 * `TauCeti.Manifold.inner_riemannianGradient_left`: its characteristic property
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_riemannianGradient_iff`, which identifies the
   gradient from it.
@@ -91,6 +96,62 @@ theorem riemannianGradient_eq_zero_iff : riemannianGradient I f x = 0 ↔ mvfder
 theorem riemannianGradient_neg : riemannianGradient I (-f) x = -riemannianGradient I f x := by
   rw [riemannianGradient, riemannianGradient, mvfderiv_neg]
   exact (rieszDual (I := I) x).toLinearEquiv.map_neg _
+
+variable {s : Set M}
+
+variable (I) in
+/-- The Riemannian gradient within a set, obtained by taking the fibrewise Riesz dual of the
+manifold derivative within that set. Like the derivative, it is total. -/
+noncomputable def riemannianGradientWithin (f : M → ℝ) (s : Set M)
+    (x : M) : TangentSpace I x :=
+  rieszDual x (mvfderivWithin I f s x)
+
+/-- The gradient within a set is the Riesz dual of the relative differential. -/
+theorem riemannianGradientWithin_def (f : M → ℝ) (s : Set M) (x : M) :
+    riemannianGradientWithin I f s x = rieszDual x (mvfderivWithin I f s x) := (rfl)
+
+/-- Pairing the relative gradient with a tangent vector evaluates the relative differential. -/
+@[simp]
+theorem inner_riemannianGradientWithin_left (v : TangentSpace I x) :
+    inner ℝ (riemannianGradientWithin I f s x) v = mvfderivWithin I f s x v := by
+  rw [riemannianGradientWithin_def, inner_rieszDual]
+
+/-- The symmetric form of the relative gradient's characteristic equation. -/
+@[simp]
+theorem inner_riemannianGradientWithin_right (v : TangentSpace I x) :
+    inner ℝ v (riemannianGradientWithin I f s x) = mvfderivWithin I f s x v := by
+  rw [real_inner_comm, inner_riemannianGradientWithin_left]
+
+/-- On the whole manifold the relative gradient is the gradient. -/
+@[simp]
+theorem riemannianGradientWithin_univ (f : M → ℝ) :
+    riemannianGradientWithin I f univ = riemannianGradient I f := by
+  funext x
+  apply ext_inner_right ℝ
+  intro v
+  simp only [inner_riemannianGradientWithin_left, inner_riemannianGradient_left,
+    mvfderivWithin_univ]
+
+/-- The relative gradient is uniquely characterized by its inner products. -/
+theorem eq_riemannianGradientWithin_iff {w : TangentSpace I x} :
+    w = riemannianGradientWithin I f s x ↔
+      ∀ v, inner ℝ w v = mvfderivWithin I f s x v := by
+  rw [riemannianGradientWithin_def]
+  exact eq_rieszDual_iff_inner_eq
+
+/-- The relative gradient vanishes exactly where the relative differential vanishes. -/
+@[simp]
+theorem riemannianGradientWithin_eq_zero_iff :
+    riemannianGradientWithin I f s x = 0 ↔ mvfderivWithin I f s x = 0 := by
+  rw [riemannianGradientWithin_def, LinearIsometryEquiv.map_eq_zero_iff]
+
+/-- Restriction to a neighbourhood does not change the gradient. -/
+theorem riemannianGradientWithin_of_mem_nhds (hs : s ∈ 𝓝 x) :
+    riemannianGradientWithin I f s x = riemannianGradient I f x := by
+  apply ext_inner_right ℝ
+  intro v
+  simp only [inner_riemannianGradientWithin_left, inner_riemannianGradient_left,
+    mvfderivWithin, mvfderiv, mfderivWithin_of_mem_nhds hs]
 
 /-- **The gradient is smooth.** For a `C^n` Riemannian metric, the gradient of a `C^{n+1}`
 function is a `C^n` vector field. -/

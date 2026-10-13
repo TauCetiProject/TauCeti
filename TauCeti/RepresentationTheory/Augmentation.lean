@@ -44,7 +44,7 @@ These constructions underlie the standard representation of the symmetric group.
   when the permutation set is nonempty.
 * `TauCeti.permutationSum` and `TauCeti.invariantLine`: the sum of the standard basis and its span.
 * `TauCeti.invariantLineEquivTrivial`: the invariant line as the trivial representation on `k`.
-* `TauCeti.MonoidAlgebra.ker_sumCoords_basis_eq_span`: the augmentation kernel is spanned by
+* `MonoidAlgebra.ker_sumCoords_basis_eq_span`: the augmentation kernel is spanned by
   differences of standard basis vectors from a fixed one.
 * `TauCeti.isCompl_invariantLine_augmentationSubrepresentation_iff`: the two subrepresentations
   are complementary exactly when `X` is empty or its cardinality is a unit in the coefficient ring.

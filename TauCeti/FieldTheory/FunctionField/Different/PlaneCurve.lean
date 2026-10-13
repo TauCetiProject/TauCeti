@@ -61,6 +61,8 @@ The principal divisor has degree zero and the pole divisor of `x` has degree `[F
 
 ## Main results
 
+* `TauCeti.Place.mem_integers_of_aeval_eq_zero`: a root `b` of `φ(a, Y)`, for `φ` monic in `Y`, is
+  regular wherever `a` is.
 * `TauCeti.Place.differentExponent_eq_ord_aeval_pderiv_one`: at a place at which `t` is regular,
   the different exponent of `F / k(t)` is the order of `∂g/∂Y (t, y)`.
 * `TauCeti.minpoly_ratFunc_eq_map_of_aeval_eq_zero` and
@@ -90,6 +92,27 @@ open scoped IntermediateField
 namespace TauCeti
 
 namespace Place
+
+section Integral
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+
+/-- **A root of a polynomial monic in `Y` is regular wherever its first coordinate is**: if
+`φ ∈ k[X, Y]` is monic as a polynomial in `Y` over `k[X]`, `φ(a, b) = 0`, and `a` is regular at the
+place `P`, then so is `b`, which is integral over `k[a]`. -/
+theorem mem_integers_of_aeval_eq_zero (P : Place k F) {φ : MvPolynomial (Fin 2) k}
+    (hmon : ((Bivariate.equivMvPolynomial k).symm φ).Monic) {a b : F}
+    (hab : MvPolynomial.aeval ![a, b] φ = 0) (ha : a ∈ P.integers) : b ∈ P.integers := by
+  -- View `k[a]` as a `k[X]`-algebra through `X ↦ a`; the monic equation makes `b` integral over it.
+  let A := Algebra.adjoin k ({a} : Set F)
+  let _ : Algebra k[X] A := (aeval (⟨a, Algebra.self_mem_adjoin_singleton k a⟩ : A)).toAlgebra
+  have : IsScalarTower k k[X] A := .of_algebraMap_eq fun c ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+  refine P.mem_integers_of_isIntegral_adjoin ha ⟨_, hmon.map (algebraMap k[X] A), ?_⟩
+  rw [← aeval_def, Bivariate.aeval_map_eq_aeval_equivMvPolynomial, AlgEquiv.apply_symm_apply]
+  simpa [RingHom.algebraMap_toAlgebra] using hab
+
+end Integral
 
 section Rational
 
