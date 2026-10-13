@@ -402,16 +402,6 @@ private theorem perturbedFlow_eq_flowOfLipschitz (hf : LipschitzWith K (∇ f))
       (exists_lipschitzWith_perturbedField hf hh).choose_spec :=
   (rfl)
 
-/-- **The perturbed flow is `C¹`**, jointly in time, the initial condition and the parameter. -/
-theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
-    ContDiff ℝ 1 (Function.uncurry (perturbedFlow f h hf hh)) := by
-  have hc : ContDiff ℝ ((0 : ℕ) + 1) (perturbedField f h) := by
-    simpa using contDiff_perturbedField hfs hh
-  unfold perturbedFlow
-  simpa using contDiff_flowOfLipschitz 0 (perturbedField f h)
-    (exists_lipschitzWith_perturbedField hf hh).choose_spec hc
-
 /-- **Higher regularity of the perturbed flow**: if `f` and the perturbing functions are
 `C^{n+2}`, the perturbed flow is `C^{n+1}` jointly in time, the initial condition and the
 parameter. -/
@@ -426,6 +416,13 @@ theorem contDiff_perturbedFlow_of_contDiff (n : ℕ) (hfs : ContDiff ℝ (n + 2)
     contDiff_perturbedField_of (by rw [e]; exact hfs) fun i ↦ by rw [e]; exact hhs i
   unfold perturbedFlow
   exact contDiff_flowOfLipschitz n _ _ (by exact_mod_cast hc)
+
+/-- **The perturbed flow is `C¹`**, jointly in time, the initial condition and the parameter. -/
+theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
+    ContDiff ℝ 1 (Function.uncurry (perturbedFlow f h hf hh)) := by
+  simpa using contDiff_perturbedFlow_of_contDiff 0 (by simpa using hfs) hf hh
+    fun i ↦ by simpa using (hh i).contDiff
 
 /-- **The parameter is constant along the perturbed flow.** -/
 @[simp]

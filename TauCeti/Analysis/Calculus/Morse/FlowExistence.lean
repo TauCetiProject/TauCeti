@@ -111,16 +111,20 @@ theorem isNegativeGradient_negativeGradientFlow (f : E → ℝ) (hf : LipschitzW
     Flow.IsNegativeGradient (negativeGradientFlow f hf) f :=
   Flow.isNegativeGradient_iff.2 fun x ↦ isIntegralCurve_flowOfLipschitz hf.neg x
 
+/-- At time `0`, the orbit of `y` under the negative-gradient flow has velocity `-∇f y`. -/
+theorem hasDerivAt_negativeGradientFlow_zero (f : E → ℝ) (hf : LipschitzWith K (∇ f)) (y : E) :
+    HasDerivAt (fun t ↦ negativeGradientFlow f hf t y) (-∇ f y) 0 := by
+  have := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
+  beta_reduce at this
+  rwa [Flow.map_zero_apply] at this
+
 /-- **The derivative of the negative-gradient flow carries the gradient along**:
 `Dφₜ(x) (∇f x) = ∇f (φₜ x)`. -/
 theorem fderiv_negativeGradientFlow_apply_gradient (f : E → ℝ) (hf : LipschitzWith K (∇ f))
     (hfs : ContDiff ℝ 2 f) (t : ℝ) (x : E) :
     fderiv ℝ (negativeGradientFlow f hf t) x (∇ f x) = ∇ f (negativeGradientFlow f hf t x) := by
-  have hv : ∀ y, HasDerivAt (fun s ↦ negativeGradientFlow f hf s y) (-∇ f y) 0 := fun y ↦ by
-    have := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
-    beta_reduce at this
-    rwa [Flow.map_zero_apply] at this
-  have := fderiv_flow_apply_of_hasDerivAt (hv x) (hv _)
+  have := fderiv_flow_apply_of_hasDerivAt (hasDerivAt_negativeGradientFlow_zero f hf x)
+    (hasDerivAt_negativeGradientFlow_zero f hf _)
     ((contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero x)
   rwa [map_neg, neg_inj] at this
 

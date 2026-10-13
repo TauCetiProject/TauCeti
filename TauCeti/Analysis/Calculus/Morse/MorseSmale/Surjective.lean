@@ -31,8 +31,9 @@ surjectivity is what the transversality of these sets for a generic perturbation
 ## Main results
 
 * `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top`.
-* `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_stableSet_eq_top`:
-  the parametrized flow is transverse to the stable set of a point that the orbit reaches.
+* `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top`: the
+  parametrized flow is transverse to any flow-invariant set that the orbit reaches, such as a
+  stable set.
 
 ## References
 
@@ -310,34 +311,30 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
   rw [hwab]
   exact Submodule.add_mem_sup (hS hb) (Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _))
 
-/-- **Universal transversality for one pair.** For a point `x` that is not critical, a time `T > 0`
-and a point `q` whose stable set contains `φ_T x`, there is a finite family `h` of admissible
-perturbations of `f` such that the derivative at the parameter `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x`,
-together with the tangent space of the stable set of `q` at `φ_T x`, spans `E`: the parametrized
-flow is transverse to that stable set at `(0, x)`, through the parameter directions alone. -/
-theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_stableSet_eq_top
-    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) {x q : E} (hx : ∇ f x ≠ 0) {T : ℝ}
-    (hT : 0 < T)
-    (hq : negativeGradientFlow f hf T x ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
+/-- **Universal transversality.** For a point `x` that is not critical, a time `T > 0` and a set
+`S` invariant under the negative-gradient flow and containing `φ_T x` (for instance the stable or
+unstable set of a point), there is a finite family `h` of admissible perturbations of `f` such that
+the derivative at the parameter `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x`, together with the tangent space
+of `S` at `φ_T x`, spans `E`: the parametrized flow is transverse to `S` at `(0, x)`, through the
+parameter directions alone. -/
+theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top
+    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T : ℝ}
+    (hT : 0 < T) {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S)
+    (hTS : negativeGradientFlow f hf T x ∈ S) :
     ∃ (n : ℕ) (h : Fin n → E → ℝ) (hh : ∀ i, IsAdmissiblePerturbation f (h i)),
       LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin n))).comp
           ((fderiv ℝ (perturbedFlow f h hf hh T) (x, 0)).comp
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin n))))) :
             EuclideanSpace ℝ (Fin n) →ₗ[ℝ] E) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q)
-          (negativeGradientFlow f hf T x)) = ⊤ := by
+        Submodule.span ℝ (tangentConeAt ℝ S (negativeGradientFlow f hf T x)) = ⊤ := by
   obtain ⟨n, h, hh, H⟩ := exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top hfs hf hx hT
   refine ⟨n, h, hh, top_unique (H ▸ sup_le_sup_left ?_ _)⟩
-  set φ := negativeGradientFlow f hf
-  set y := φ T x
-  -- The velocity of the orbit of `y`, which stays in the stable set of `q`, is tangent to it.
-  have hvel : HasDerivAt (fun t ↦ φ t y) (-∇ f y) 0 := by
-    have := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
-    beta_reduce at this
-    rwa [Flow.map_zero_apply] at this
-  have hmem : -∇ f y ∈ tangentConeAt ℝ (Flow.stableSet φ q) y := by
-    simpa only [Flow.map_zero_apply] using hvel.mem_tangentConeAt (S := Flow.stableSet φ q)
-      (Filter.Eventually.of_forall fun t ↦ Flow.isInvariant_stableSet φ q t hq)
+  set y := negativeGradientFlow f hf T x
+  -- The velocity of the orbit of `y`, which stays in `S`, is tangent to `S`.
+  have hmem : -∇ f y ∈ tangentConeAt ℝ S y := by
+    simpa only [Flow.map_zero_apply] using
+      (hasDerivAt_negativeGradientFlow_zero f hf y).mem_tangentConeAt (S := S)
+        (Filter.Eventually.of_forall fun t ↦ hS t hTS)
   refine Submodule.span_le.2 (Set.singleton_subset_iff.2 ?_)
   simpa using Submodule.neg_mem _ (Submodule.subset_span hmem)
 
