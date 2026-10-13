@@ -100,8 +100,20 @@ theorem natDegree_legendreRelation [Nontrivial R] : (legendreRelation R).natDegr
 /-- The coordinate ring `R[λ, (λ (λ - 1))⁻¹]` of the **Legendre line** over `R`, presented as the
 `R[u]`-algebra `R[u][λ] / ((λ² - λ + 1)³ - u λ² (λ - 1)²)`, where `u = j / 2⁸`. It is the
 localization of `R[λ]` away from `λ (λ - 1)` (`TauCeti.LegendreRing.equivLocalization`). -/
-abbrev LegendreRing : Type _ :=
+def LegendreRing : Type _ :=
   AdjoinRoot (legendreRelation R)
+
+noncomputable instance : CommRing (LegendreRing R) :=
+  inferInstanceAs (CommRing (AdjoinRoot (legendreRelation R)))
+
+noncomputable instance : Algebra R[X] (LegendreRing R) :=
+  inferInstanceAs (Algebra R[X] (AdjoinRoot (legendreRelation R)))
+
+noncomputable instance : Algebra R (LegendreRing R) :=
+  inferInstanceAs (Algebra R (AdjoinRoot (legendreRelation R)))
+
+instance : IsScalarTower R R[X] (LegendreRing R) :=
+  inferInstanceAs (IsScalarTower R R[X] (AdjoinRoot (legendreRelation R)))
 
 /-- The Legendre ring is free over `R[u]`, with basis `1, λ, …, λ⁵`. -/
 instance : Module.Free R[X] (LegendreRing R) :=
@@ -126,8 +138,7 @@ pulled back to the Legendre line. -/
 theorem lambda_sq_sub_lambda_add_one_pow_three :
     (lambda R ^ 2 - lambda R + 1) ^ 3 =
       algebraMap R[X] (LegendreRing R) X * (lambda R * (lambda R - 1)) ^ 2 := by
-  have h : aeval (lambda R) (legendreRelation R) = 0 := by
-    rw [lambda, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]
+  have h : aeval (lambda R) (legendreRelation R) = 0 := AdjoinRoot.eval₂_root _
   simp only [legendreRelation, map_sub, map_pow, map_add, map_mul, aeval_X, map_one, aeval_C] at h
   linear_combination h
 
@@ -171,12 +182,13 @@ theorem lift_lambda (x : S) (hx : IsUnit x) (hx₁ : IsUnit (x - 1)) :
     lift (R := R) x hx hx₁ (lambda R) = x :=
   AdjoinRoot.liftAlgHom_root _ _ _ _
 
-/-- The map `TauCeti.LegendreRing.lift` sends the coordinate `u` to `(x² - x + 1)³ / (x (x - 1))²`.
-This is not `@[simp]`: `simp` rewrites `algebraMap R[X] (LegendreRing R)` to `AdjoinRoot.of`. -/
+/-- The map `TauCeti.LegendreRing.lift` sends the coordinate `u` to
+`(x² - x + 1)³ / (x (x - 1))²`. -/
+@[simp]
 theorem lift_algebraMap_X (x : S) (hx : IsUnit x) (hx₁ : IsUnit (x - 1)) :
     lift (R := R) x hx hx₁ (algebraMap R[X] (LegendreRing R) X) =
-      (x ^ 2 - x + 1) ^ 3 * ↑(hx.mul hx₁).unit⁻¹ ^ 2 := by
-  rw [AdjoinRoot.algebraMap_eq, lift, AdjoinRoot.liftAlgHom_of, aeval_X]
+      (x ^ 2 - x + 1) ^ 3 * ↑(hx.mul hx₁).unit⁻¹ ^ 2 :=
+  (AdjoinRoot.liftAlgHom_of _ _ _ _ X).trans (aeval_X _)
 
 /-- Two `R`-algebra maps out of the Legendre ring agree once they agree on `λ`. -/
 @[ext]
@@ -184,8 +196,13 @@ theorem algHom_ext {φ ψ : LegendreRing R →ₐ[R] S} (h : φ (lambda R) = ψ 
   have hu : φ (algebraMap R[X] (LegendreRing R) X) = ψ (algebraMap R[X] (LegendreRing R) X) := by
     refine (((isUnit_lambda_mul_lambda_sub_one R).map φ).pow 2).mul_right_cancel ?_
     rw [map_mul φ, map_sub, map_one, map_algebraMap_X_mul, h, ← map_algebraMap_X_mul ψ]
-  refine AdjoinRoot.algHom_ext' (Polynomial.algHom_ext ?_) h
-  simpa [AdjoinRoot.algebraMap_eq] using hu
+  exact AdjoinRoot.algHom_ext' (Polynomial.algHom_ext hu) h
+
+omit [Algebra R S] in
+/-- Two `R[u]`-algebra maps out of the Legendre ring agree once they agree on `λ`. -/
+private theorem algHom_ext_polynomial [Algebra R[X] S] {φ ψ : LegendreRing R →ₐ[R[X]] S}
+    (h : φ (lambda R) = ψ (lambda R)) : φ = ψ :=
+  AdjoinRoot.algHom_ext h
 
 end lift
 
@@ -249,8 +266,7 @@ private theorem oneSubAlgHom_algebraMap_X :
 private theorem oneSubAlgHom_comp_oneSubAlgHom :
     (toAlgHomOfMapAlgebraMapX R _ (oneSubAlgHom_algebraMap_X R)).comp
       (toAlgHomOfMapAlgebraMapX R _ (oneSubAlgHom_algebraMap_X R)) = AlgHom.id R[X] _ :=
-  AdjoinRoot.algHom_ext (by
-    simp [toAlgHomOfMapAlgebraMapX_apply, ← lambda.eq_def, oneSubAlgHom_lambda])
+  algHom_ext_polynomial (by simp [toAlgHomOfMapAlgebraMapX_apply, oneSubAlgHom_lambda])
 
 /-- The substitution `λ ↦ λ⁻¹`, as an `R`-algebra endomorphism. -/
 private noncomputable def invAlgHom : LegendreRing R →ₐ[R] LegendreRing R :=
@@ -287,8 +303,7 @@ private theorem invAlgHom_algebraMap_X :
 private theorem invAlgHom_comp_invAlgHom :
     (toAlgHomOfMapAlgebraMapX R _ (invAlgHom_algebraMap_X R)).comp
       (toAlgHomOfMapAlgebraMapX R _ (invAlgHom_algebraMap_X R)) = AlgHom.id R[X] _ := by
-  refine AdjoinRoot.algHom_ext ?_
-  rw [← lambda.eq_def]
+  refine algHom_ext_polynomial ?_
   simp only [AlgHom.comp_apply, toAlgHomOfMapAlgebraMapX_apply, AlgHom.id_apply]
   set i := invAlgHom R (lambda R)
   have hi : lambda R * i = 1 := lambda_mul_invAlgHom_lambda R
@@ -341,8 +356,7 @@ theorem invAut_mem_anharmonicGroup : invAut R ∈ anharmonicGroup R :=
 `σ τ σ = τ σ τ`: both send `λ` to `λ / (λ - 1)`. -/
 theorem oneSubAut_mul_invAut_mul_oneSubAut :
     oneSubAut R * invAut R * oneSubAut R = invAut R * oneSubAut R * invAut R := by
-  refine AlgEquiv.coe_toAlgHom_injective (AdjoinRoot.algHom_ext ?_)
-  rw [← lambda.eq_def]
+  refine AlgEquiv.coe_toAlgHom_injective (algHom_ext_polynomial ?_)
   simp only [AlgEquiv.coe_toAlgHom, AlgEquiv.mul_apply, oneSubAut_lambda, map_sub, map_one]
   set l := lambda R
   set i := invAut R l
@@ -460,7 +474,7 @@ theorem isInvariant_anharmonicGroup (h6 : (6 : R) ∈ nonZeroDivisors R) :
   rcases subsingleton_or_nontrivial R with hR | hR
   · have := Module.subsingleton R (LegendreRing R)
     exact ⟨0, Subsingleton.elim _ _⟩
-  let pb := AdjoinRoot.powerBasis' (monic_legendreRelation R)
+  let pb : PowerBasis R[X] (LegendreRing R) := AdjoinRoot.powerBasis' (monic_legendreRelation R)
   have hdim : pb.dim = 6 := natDegree_legendreRelation R
   -- The orbit sum of `a` is `6 a`, and it lies in `R[u]`.
   obtain ⟨c, hc⟩ : ∃ c, algebraMap R[X] (LegendreRing R) c = (6 : R[X]) • a := by
