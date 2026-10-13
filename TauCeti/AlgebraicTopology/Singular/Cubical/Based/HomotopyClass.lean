@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Deformation
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
+public import TauCeti.Data.Fin.Tuple.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 
 /-!
@@ -202,31 +203,6 @@ private lemma apply_eq_of_face_eq_const {m : ℕ} {c : SingularCube X (m + 1)} {
 
 /-! ### Capping a face -/
 
-@[simp] private lemma insertNth_castSucc_apply_succ {m : ℕ} (k : Fin m) (u : I) (y : Fin m → I) :
-    (k.castSucc.insertNth u y : Fin (m + 1) → I) k.succ = y k := by
-  rw [← Fin.succAbove_castSucc_self, Fin.insertNth_apply_succAbove]
-
-@[simp] private lemma insertNth_succ_apply_castSucc {m : ℕ} (k : Fin m) (v : I) (y : Fin m → I) :
-    (k.succ.insertNth v y : Fin (m + 1) → I) k.castSucc = y k := by
-  rw [← Fin.succAbove_succ_self, Fin.insertNth_apply_succAbove]
-
-/-- Two insertions at adjacent positions agree away from those positions. -/
-private lemma update_insertNth_castSucc {m : ℕ} (k : Fin m) (y : Fin m → I) (u v : I) :
-    Function.update (k.castSucc.insertNth u y : Fin (m + 1) → I) k.succ v =
-      Function.update (k.succ.insertNth v y : Fin (m + 1) → I) k.castSucc u := by
-  have hk : k.castSucc ≠ k.succ := Fin.castSucc_lt_succ.ne
-  ext l
-  rcases lt_trichotomy l k.castSucc with h | rfl | h
-  · rw [Function.update_of_ne (h.trans Fin.castSucc_lt_succ).ne, Function.update_of_ne h.ne,
-      Fin.insertNth_apply_below h, Fin.insertNth_apply_below (h.trans Fin.castSucc_lt_succ)]
-    simp
-  · simp [hk]
-  rcases eq_or_lt_of_le (Fin.castSucc_lt_iff_succ_le.1 h) with h' | h'
-  · subst h'; simp [hk.symm]
-  · rw [Function.update_of_ne h'.ne', Function.update_of_ne h.ne', Fin.insertNth_apply_above h,
-      Fin.insertNth_apply_above h']
-    simp
-
 /-- The reparametrisation of `Iᵐ⁺¹` that runs a cube at double speed in the coordinate `k.succ`
 and then its face `k.succ = 1`, swept by `max` along the coordinate `k.castSucc`. -/
 private def capMap {m : ℕ} (k : Fin m) : C(Fin (m + 1) → I, Fin (m + 1) → I) where
@@ -251,7 +227,7 @@ variable {m : ℕ} {c : SingularCube X (m + 1)}
 private lemma face_succ_zero_comp_capMap (k : Fin m) :
     face k.succ 0 (c.comp (capMap k)) = face k.succ 0 c := by
   ext y
-  simp [capMap_apply, -insertNth_succ_apply_castSucc]
+  simp [capMap_apply, -Fin.insertNth_succ_apply_castSucc]
 
 private lemma face_succ_one_comp_capMap (hc : FacesBased x c) (k : Fin m) :
     face k.succ 1 (c.comp (capMap k)) = ContinuousMap.const _ x := by
@@ -271,7 +247,7 @@ private lemma face_castSucc_zero_comp_capMap (hc : FacesBased x c) (k : Fin m) :
   · rw [GenLoop.coe_coe, GenLoop.transAt_apply_of_le k _ _ h (coe_dbl_of_le h)]
     simp [capMap_apply, dblSub_of_le h]
   · rw [GenLoop.coe_coe, GenLoop.transAt_apply_of_lt k _ _ h (coe_dblSub_of_lt h)]
-    simp [capMap_apply, dbl_of_lt h, update_insertNth_castSucc]
+    simp [capMap_apply, dbl_of_lt h, Fin.update_insertNth_castSucc]
 
 private lemma face_castSucc_one_comp_capMap (hc : FacesBased x c) (k : Fin m) :
     face k.castSucc 1 (c.comp (capMap k)) =
@@ -284,7 +260,7 @@ private lemma face_castSucc_one_comp_capMap (hc : FacesBased x c) (k : Fin m) :
       GenLoop.const_apply]
     have hk : k.castSucc ≠ k.succ := Fin.castSucc_lt_succ.ne
     simp only [face_apply, ContinuousMap.comp_apply, capMap_apply, Fin.insertNth_apply_same,
-      one_max, Fin.update_insertNth, insertNth_castSucc_apply_succ, dbl_of_lt h]
+      one_max, Fin.update_insertNth, Fin.insertNth_castSucc_apply_succ, dbl_of_lt h]
     exact hc.apply_eq hk (.inr (by rw [Function.update_of_ne hk, Fin.insertNth_apply_same]))
       (.inr (Function.update_self ..))
 
@@ -327,9 +303,9 @@ private lemma face_comp_reflectMap_of_ne (hc : FacesBased x c) {i j : Fin (m + 1
     (hjl : j.succAbove l = i) {t : I} (ht : t = 0 ∨ t = 1) :
     face j t (c.comp (reflectMap i)) = (GenLoop.symmAt l (hc.loop j ht) : SingularCube X m) := by
   ext y
-  rw [GenLoop.coe_coe, GenLoop.symmAt, GenLoop.coe_copy]
+  rw [GenLoop.coe_coe, GenLoop.symmAt_apply]
   subst hjl
-  simp [reflectMap_apply, ← Function.update_apply]
+  simp [reflectMap_apply]
 
 private lemma FacesBased.comp_capMap (hc : FacesBased x c) (k : Fin m) :
     FacesBased x (c.comp (capMap k)) := by
@@ -396,42 +372,22 @@ private def faceTerm (x : X) (c : SingularCube X (n + 3)) (j : Fin (n + 3)) :
   (-1 : ℤ) ^ (j : ℕ) • (Additive.ofMul (basedClass x (face j 0 c)) -
     Additive.ofMul (basedClass x (face j 1 c)))
 
-/-! Mathlib's `HomotopyGroup.mul_spec`, `HomotopyGroup.inv_spec` and `HomotopyGroup.one_def`, read
-in the additive group, where the order of the concatenation no longer matters. -/
-
-private lemma ofMul_transAt (i : Fin (n + 2)) (p q : Ω^ (Fin (n + 2)) X x) :
-    Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦GenLoop.transAt i p q⟧ =
-      Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦p⟧ +
-        Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦q⟧ := by
-  rw [← HomotopyGroup.mul_spec]
-  exact (ofMul_mul (α := HomotopyGroup (Fin (n + 2)) X x) _ _).trans (add_comm _ _)
-
-private lemma ofMul_symmAt (i : Fin (n + 2)) (p : Ω^ (Fin (n + 2)) X x) :
-    Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦GenLoop.symmAt i p⟧ =
-      -Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦p⟧ := by
-  rw [← HomotopyGroup.inv_spec]
-  exact ofMul_inv (α := HomotopyGroup (Fin (n + 2)) X x) _
-
-private lemma ofMul_const :
-    Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦GenLoop.const⟧ = 0 := by
-  rw [← HomotopyGroup.one_def]
-  exact ofMul_one (α := HomotopyGroup (Fin (n + 2)) X x)
-
 /-- Capping does not change the alternating sum of the classes of the faces. -/
 private lemma sum_faceTerm_comp_capMap {c : SingularCube X (n + 3)} (hc : FacesBased x c)
     (k : Fin (n + 2)) : ∑ j, faceTerm x (c.comp (capMap k)) j = ∑ j, faceTerm x c j := by
   rw [← sub_eq_zero, ← Finset.sum_sub_distrib,
     Fintype.sum_eq_add k.castSucc k.succ Fin.castSucc_lt_succ.ne]
   · simp only [faceTerm, face_castSucc_zero_comp_capMap hc, face_castSucc_one_comp_capMap hc,
-      face_succ_zero_comp_capMap, face_succ_one_comp_capMap hc, basedClass_coe, ofMul_transAt,
-      basedClass_const, ofMul_const, Fin.val_succ, Fin.val_castSucc, pow_succ]
+      face_succ_zero_comp_capMap, face_succ_one_comp_capMap hc, basedClass_coe,
+      HomotopyGroup.ofMul_transAt, basedClass_const, HomotopyGroup.ofMul_const, Fin.val_succ,
+      Fin.val_castSucc, pow_succ]
     simp only [hc.basedClass_face, or_true, true_or]
     module
   · rintro j ⟨hja, hjb⟩
     obtain ⟨l, hl⟩ := Fin.exists_succAbove_eq hjb.symm
     simp only [faceTerm, face_comp_capMap_of_ne hc k hl hja (.inl rfl),
-      face_comp_capMap_of_ne hc k hl hja (.inr rfl), basedClass_coe, ofMul_transAt, ofMul_const,
-      add_zero, hc.basedClass_face, or_true, true_or, sub_self]
+      face_comp_capMap_of_ne hc k hl hja (.inr rfl), basedClass_coe, HomotopyGroup.ofMul_transAt,
+      HomotopyGroup.ofMul_const, zero_add, hc.basedClass_face, or_true, true_or, sub_self]
 
 /-- Reflecting a coordinate negates the alternating sum of the classes of the faces. -/
 private lemma sum_faceTerm_comp_reflectMap {c : SingularCube X (n + 3)} (hc : FacesBased x c)
@@ -445,7 +401,7 @@ private lemma sum_faceTerm_comp_reflectMap {c : SingularCube X (n + 3)} (hc : Fa
     module
   obtain ⟨l, hl⟩ := Fin.exists_succAbove_eq (Ne.symm hji)
   simp only [faceTerm, face_comp_reflectMap_of_ne hc hl (.inl rfl),
-    face_comp_reflectMap_of_ne hc hl (.inr rfl), basedClass_coe, ofMul_symmAt,
+    face_comp_reflectMap_of_ne hc hl (.inr rfl), basedClass_coe, HomotopyGroup.ofMul_symmAt,
     hc.basedClass_face, or_true, true_or]
   module
 
@@ -520,12 +476,25 @@ def basedClassHom (x : X) (n : ℕ) :
     (Finsupp.linearCombination ℤ fun c ↦ Additive.ofMul (basedClass x c)) <| by
       rw [CubicalChain.degenerate_def, Submodule.span_le]
       rintro _ ⟨c, hc, rfl⟩
-      simp [basedClass_of_isDegenerate hc, ofMul_const]
+      simp [basedClass_of_isDegenerate hc]
 
 @[simp]
 theorem basedClassHom_ofCube {n : ℕ} (c : SingularCube X (n + 2)) :
     basedClassHom x n (ofCube X ℤ c) = Additive.ofMul (basedClass x c) := by
   simp [basedClassHom, ofCube_def]
+
+/-- An `(n + 2)`-based cube is sent to its class as a generalized loop. -/
+theorem basedClassHom_ofCube_of_isBased {n : ℕ} {c : SingularCube X (n + 2)}
+    (hc : c.IsBased (n + 2) x) :
+    basedClassHom x n (ofCube X ℤ c) =
+      Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x)
+        ⟦⟨c, isBased_iff_mem_genLoop.1 hc⟩⟧ := by
+  rw [basedClassHom_ofCube, basedClass_of_isBased hc]
+
+/-- A cube that is not `(n + 2)`-based is sent to zero. -/
+theorem basedClassHom_ofCube_of_not_isBased {n : ℕ} {c : SingularCube X (n + 2)}
+    (hc : ¬ c.IsBased (n + 2) x) : basedClassHom x n (ofCube X ℤ c) = 0 := by
+  rw [basedClassHom_ofCube, basedClass_of_not_isBased hc, HomotopyGroup.ofMul_const]
 
 /-- **Boundaries of based cubes have trivial class**: the boundary of an `(n + 2)`-based
 `(n + 3)`-cube is sent to zero in `π_{n+2}(X, x)`. Equivalently, the alternating sum of the classes
