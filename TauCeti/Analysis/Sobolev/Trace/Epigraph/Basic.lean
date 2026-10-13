@@ -93,9 +93,18 @@ theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0
   ext x
   simp
 
-private theorem one_le_one_add {φ : C(E, ℝ)} {L : ℝ} (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
+/-- A uniform bound on the derivative norm is nonnegative, so `1 ≤ 1 + L`. -/
+theorem one_le_one_add {φ : C(E, ℝ)} {L : ℝ} (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     (1 : ℝ) ≤ 1 + L := by
   linarith [norm_nonneg (fderiv ℝ φ 0), hL 0]
+
+/-- Graph flattening has derivative norm at most `1 + L` when the graph function
+has derivative norm bounded by `L`. -/
+theorem norm_fderiv_graphFlattening_le_one_add {φ : C(E, ℝ)} {L : ℝ}
+    (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
+    ‖fderiv ℝ (graphFlattening φ φ.continuous) x‖ ≤ 1 + L :=
+  (norm_fderiv_graphFlattening_le φ.continuous
+    (hφ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -129,8 +138,7 @@ private def unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y
       ext x
       exact (mem_normalHalfSpace 0 x).symm)
     (contDiff_graphFlattening hφ).contDiffOn
-    fun x _ => (norm_fderiv_graphFlattening_le φ.continuous
-      (hφ.differentiable one_ne_zero _)).trans (by linarith [hL x.snd])
+    fun x _ => norm_fderiv_graphFlattening_le_one_add hφ hL x
 
 private theorem norm_flattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     ‖(flattenL hφ hL : W1p volume (normalEpigraph φ) p →L[ℝ] _)‖ ≤ 1 + L :=

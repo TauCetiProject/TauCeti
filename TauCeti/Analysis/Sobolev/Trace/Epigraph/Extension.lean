@@ -39,16 +39,6 @@ open scoped ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {φ : C(E, ℝ)} {L : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-private theorem norm_fderiv_graphFlattening_le_one_add (hφ : ContDiff ℝ 1 φ)
-    (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
-    ‖fderiv ℝ (graphFlattening φ φ.continuous) x‖ ≤ 1 + L :=
-  (norm_fderiv_graphFlattening_le φ.continuous
-    (hφ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))
-
-private theorem one_le_one_add (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
-    (1 : ℝ) ≤ 1 + L :=
-  le_add_of_nonneg_right ((norm_nonneg _).trans (hL 0))
-
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Unflatten a whole-space Sobolev function. -/
