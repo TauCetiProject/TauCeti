@@ -21,8 +21,9 @@ instance and applies the generic Lie-lattice rationalization theorem to obtain
 ```
 
 No basis of the integral lattice is chosen here: the `Fin`-indexed basis that the matrix-coordinate
-and Kostant root-subgroup constructions read is the weight basis of the Kostant lane, which is a
-basis of weight vectors rather than an arbitrary one.
+and Kostant root-subgroup constructions read is the weight basis
+`TauCeti.IsChevalleySystem.chevalleyWeightBasisFin`, a basis of weight vectors rather than an
+arbitrary one.
 
 ## Main declarations
 
@@ -36,10 +37,6 @@ basis of weight vectors rather than an arbitrary one.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§25--26.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This advances the Chevalley-basis and generic-fibre part of the explicit pinned
-Chevalley--Demazure construction in Layer 9 of the `ReductiveGroups` roadmap. That construction is
-the declared input to milestone L0 of the `CFSGStatement` roadmap.
 -/
 
 public section

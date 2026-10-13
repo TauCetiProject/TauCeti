@@ -18,9 +18,9 @@ smooth unipotent closed subgroup. In coordinate-Hopf-algebra terms, a closed sub
 geometric fibre is a Hopf-ideal quotient. The subgroup is trivial exactly when its defining Hopf
 ideal is the augmentation ideal.
 
-This formulation is equivalent to triviality of the geometric unipotent radical once that radical
-has been constructed, but it does not make the definition wait for that construction. It also
-avoids asserting descent of the geometric unipotent radical over an imperfect field.
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic` proves this formulation
+equivalent to triviality of the geometric unipotent radical. The formulation also avoids asserting
+descent of the geometric unipotent radical over an imperfect field.
 
 Instantiating the definition at the zero Hopf ideal—the whole geometric fibre as a subgroup of
 itself—shows that if the geometric fibre of a reductive group is itself unipotent, its coordinate
@@ -48,10 +48,6 @@ the precise affine-group statement that the geometric fibre is the trivial group
 * J. S. Milne, *Algebraic Groups* (2017), §6.46 and §19.b.
 * T. A. Springer, *Linear Algebraic Groups*, Chapter 8.
 * B. Conrad, *Reductive Group Schemes*, Section 3.
-
-This is the definition target in Layer 6, "Reductive and semisimple groups", of the
-ReductiveGroups roadmap. The geometric formulation is the roadmap's prescribed alternative while
-the descended unipotent radical is unavailable.
 -/
 
 public section

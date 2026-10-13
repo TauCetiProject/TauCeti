@@ -23,7 +23,8 @@ import Mathlib.Tactic.FinCases
 
 This file collects elementary facts about finite ordinal types, including the classification of
 permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, and the cyclic index arithmetic of `Fin 3`.
+value of a partial product, sums of families vanishing beyond an index, and the cyclic index
+arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -36,6 +37,8 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
+* `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
+  splits as its sum over the first `i` indices plus its value at `i`.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
@@ -156,6 +159,21 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
     Fin.partialProd f (Fin.last n) = ∏ i, f i := by
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
+
+/-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
+`i` indices times its value at `i`. -/
+@[to_additive /-- A sum over `Fin n` of a family vanishing beyond `i` is its sum over the
+first `i` indices plus its value at `i`. -/]
+theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : Fin n)
+    (f : Fin n → M) (hf : ∀ j, i < j → f j = 1) :
+    ∏ j, f j = (∏ j : Fin i, f (castLE i.is_lt.le j)) * f i := by
+  have hIio : Finset.univ.map (castLEEmb i.is_lt.le) = Finset.Iio i := by
+    simp [← Finset.coe_inj, Set.Iio_def]
+  rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
+      fun j _ hj => hf j (by simpa using hj),
+    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    Finset.prod_map]
+  simp only [castLEEmb_apply]
 
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
 @[simp]

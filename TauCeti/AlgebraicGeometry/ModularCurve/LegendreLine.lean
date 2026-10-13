@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Invariant.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import TauCeti.Algebra.Polynomial.AlgHom
 import Mathlib.RingTheory.IsAdjoinRoot
 import Mathlib.Tactic.ComputeDegree

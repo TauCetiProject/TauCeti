@@ -98,13 +98,7 @@ private def layerGroupCohomologyIso (n : ℕ) :
       | H u =>
         refine LinearMap.ext fun x => Subtype.ext ?_
         rw [LinearMap.comp_apply, LinearMap.comp_apply, NormalLayer.galOfOpenNormalEquiv_mk]
-        -- both sides are `u` acting on the underlying element of `x` in the module
-        exact ((ofOpenNormalRepEquiv_apply_coe V _).trans
-          ((NormalLayer.rep_ρ_mk_apply_coe _ F u x).trans (Formation.toRep_ρ_apply F u x))).trans
-          ((congrArg (F.module.ρ u) (ofOpenNormalRepEquiv_apply_coe V x)).symm.trans
-            ((TopRep.distribMulAction_smul F.module u _).symm.trans
-              (subtype_quotientMk_smul G F.module.V V.toSubgroup u
-                (ofOpenNormalRepEquiv V x)).symm))) n
+        exact (NormalLayer.rep_ρ_mk_apply_coe _ F u x).trans (Formation.toRep_ρ_apply F u x)) n
 
 end Level
 
