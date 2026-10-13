@@ -613,16 +613,14 @@ theorem genus_eq_of_isHomogeneous (hG : G.IsHomogeneous d)
     | C a => simp [e, eK]
     | add p q hp hq => simp [hp, hq]
     | mul_X p i hp => fin_cases i <;> simp [e, eK, hp]
-  have heval (φ : MvPolynomial (Fin 2) k) :
-      Polynomial.aevalAeval x y (e.symm φ) = aeval ![x, y] φ := by
-    induction φ using MvPolynomial.induction_on with
-    | C a => simp [e]
-    | add p q hp hq => simp [hp, hq]
-    | mul_X p i hp => fin_cases i <;> simp [e, hp]
-  have hirr' := (MulEquiv.irreducible_iff eK).mp (by simpa using hirr)
+  have heval : (Polynomial.aevalAeval x y).comp (e.symm : MvPolynomial (Fin 2) k →ₐ[k] _) =
+      aeval ![x, y] :=
+    MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp [e]
+  have hirr' : Irreducible (eK.symm ((dehomogenize 2 G).map (algebraMap k K))) :=
+    (MulEquiv.irreducible_iff eK.symm.toMulEquiv).mpr hirr
   rw [hmap] at hirr'
   have hex := isIntegrallyClosedIn_of_irreducible_map (L := K) hx hgen hirr'
-    ((heval _).trans h₂)
+    ((AlgHom.congr_fun heval _).trans h₂)
   rcases finite_or_infinite k with hk | hk
   · -- Pass to a finite constant field extension `k'` with more than `d + 1` elements.
     obtain ⟨F', k', hk', hcard, hc⟩ :=
