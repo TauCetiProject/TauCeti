@@ -126,7 +126,6 @@ theorem W1p.gradient_localizeL_ae (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (h
       (W1p.gradient_contDiffSMul_ae hψ hM hψM hgM u)))
 
 /-- Localization has the same norm as the cutoff product on the source domain. -/
-@[simp]
 theorem W1p.norm_localizeL (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
     (hψM : ∀ x ∈ U, |ψ x| ≤ M) (hgM : ∀ x ∈ U, ‖∇ ψ x‖ ≤ M)
     (hs : (Ω : Set E) ∩ tsupport ψ ⊆ U) (u : W1p μ U p) :
