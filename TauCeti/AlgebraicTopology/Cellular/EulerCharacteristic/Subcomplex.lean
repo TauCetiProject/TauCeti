@@ -26,9 +26,6 @@ alternating sum of the dimensions of `Hᵢ(C, E; k)` over a division ring `k`. A
 filtration `E₀ ≤ E₁ ≤ ⋯ ≤ Eₘ` of `C` by subcomplexes, the Euler characteristic of `Eₘ` is that of
 `E₀` plus the sum of the relative Euler characteristics of the strata `(Eⱼ₊₁, Eⱼ)`.
 
-The proofs count cells; no long exact sequence is used, since the relative CW structure computes
-the homology of each pair.
-
 ## Main results
 
 * `TauCeti.cwEulerChar_eq_add_finsum_card_compl`: the alternating cell count of `C` is that of a
@@ -83,8 +80,8 @@ theorem cwEulerChar_eq_add_finsum_card_compl [RelCWComplex.Finite C] (E : Subcom
     infer_instance, hcompl, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   have := FiniteType.finite_cell (C := C) (D := D) n
-  rw [← mul_add, Subcomplex.cell_def,
-    Nat.card_congr (Equiv.Set.sumCompl (E.I n)).symm, Nat.card_sum, Nat.cast_add]
+  rw [← mul_add, Subcomplex.cell_def, Nat.card_coe_set_eq, Nat.card_coe_set_eq,
+    ← Nat.cast_add, Set.ncard_add_ncard_compl]
 
 variable {k : Type w} [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
 
@@ -143,24 +140,24 @@ theorem eulerChar_eq_add_finsum_finrank_singularHomology (E : Subcomplex C) :
     one_mul]
   exact cwEulerChar_eq_add_finsum_card_compl C E
 
-/-- **Additivity of the Euler characteristic along a filtration by subcomplexes.** For a
-monotone sequence `E₀ ≤ E₁ ≤ ⋯` of subcomplexes of a finite CW complex, the Euler characteristic
+/-- **Additivity of the Euler characteristic along a filtration by subcomplexes.** For a finite
+filtration `E₀ ≤ E₁ ≤ ⋯ ≤ Eₘ` by subcomplexes of a finite CW complex, the Euler characteristic
 of `Eₘ` is that of `E₀` plus the relative Euler characteristics `χ(Eⱼ₊₁, Eⱼ)` of the strata,
 computed by singular homology over any division ring `k`. -/
-theorem eulerChar_eq_add_sum_finsum_finrank_singularHomology {E : ℕ → Subcomplex C}
-    (hE : Monotone E) (m : ℕ) :
+theorem eulerChar_eq_add_sum_finsum_finrank_singularHomology {E : ℕ → Subcomplex C} {m : ℕ}
+    (hE : ∀ j < m, E j ≤ E (j + 1)) :
     eulerChar (E m : Set X) = eulerChar (E 0 : Set X) +
-      ∑ j ∈ Finset.range m, ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
+      ∑ j : Fin m, ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
         ((TopPair.ofInclusion (X := TopCat.of X)
-          (SetLike.coe_subset_coe.2 (hE j.le_succ))).singularHomology
+          (SetLike.coe_subset_coe.2 (hE j j.isLt))).singularHomology
             (ModuleCat.of k k) i : ModuleCat k) := by
   induction m with
   | zero => simp
   | succ m ih =>
-    rw [Finset.sum_range_succ, ← add_assoc, ← ih]
+    rw [Fin.sum_univ_castSucc, ← add_assoc, ← ih fun j hj ↦ hE j (by omega)]
     have h := eulerChar_eq_add_finsum_finrank_singularHomology (E (m + 1) : Set X) k
-      (Subcomplex.ofLE (hE m.le_succ))
-    rwa [(Homeomorph.setCongr (Subcomplex.coe_ofLE (hE m.le_succ))).eulerChar_eq] at h
+      (Subcomplex.ofLE (hE m m.lt_succ_self))
+    rwa [(Homeomorph.setCongr (Subcomplex.coe_ofLE (hE m m.lt_succ_self))).eulerChar_eq] at h
 
 end Absolute
 

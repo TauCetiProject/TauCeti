@@ -137,13 +137,15 @@ lemma finite_relCWComplex [Finite C] (E : Subcomplex C) :
   @finite_of_finiteDimensional_finiteType X _ C E E.relCWComplex
     (finiteDimensional_relCWComplex E) (finiteType_relCWComplex E)
 
+omit [T2Space X] in
 /-- One subcomplex lies in another exactly when its cells are among the cells of the other. -/
 lemma le_iff_I_subset {F E : Subcomplex C} : F ≤ E ↔ ∀ n, F.I n ⊆ E.I n := by
   refine ⟨fun h n i hi ↦ ?_, fun h ↦ ?_⟩
   · by_contra hiE
     obtain ⟨x, hx⟩ := openCell_nonempty (C := C) n i
-    exact (E.disjoint_openCell_subcomplex_of_notMem hiE).notMem_of_mem_left hx
-      (h (F.openCell_subset_of_mem hi hx))
+    refine (E.disjoint_openCell_subcomplex_of_notMem hiE).notMem_of_mem_left hx (h ?_)
+    rw [← SetLike.mem_coe, ← F.union]
+    exact Or.inr (mem_iUnion₂.2 ⟨n, ⟨i, hi⟩, hx⟩)
   · rw [← SetLike.coe_subset_coe, ← F.union, ← E.union]
     exact union_subset_union_right D
       (iUnion_mono fun n ↦ iUnion_mono' fun j ↦ ⟨⟨j, h n j.2⟩, subset_rfl⟩)
