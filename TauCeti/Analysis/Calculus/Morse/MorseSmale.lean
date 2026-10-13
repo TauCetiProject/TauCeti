@@ -33,8 +33,8 @@ hypotheses of the statements that use it, as in the pointwise theorems it is mea
 * `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet`: under the Morse–Smale
   condition, the set of points on trajectories from `p` to `q` is a `C¹` manifold of dimension
   `morseIndex f p - morseIndex f q`, embedded in `E`.
-* `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level`: for `p ≠ q`, each
-  level slice of it, the space of unparametrized trajectories, is a `C¹` manifold of dimension
+* `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level`: each level slice of
+  it, the space of unparametrized trajectories, is a `C¹` manifold of dimension
   `morseIndex f p - morseIndex f q - 1`, embedded in `E`.
 
 ## References
@@ -88,47 +88,6 @@ theorem isMorseSmale_congr (f : E → ℝ) {K K' : ℝ≥0} (hf : LipschitzWith 
     (hf' : LipschitzWith K' (∇ f)) : IsMorseSmale f hf ↔ IsMorseSmale f hf' := by
   rw [isMorseSmale_iff, isMorseSmale_iff, negativeGradientFlow_congr f hf hf']
 
-/-- Two subspaces of the same dimension are exchanged by a continuous linear automorphism. -/
-private theorem exists_continuousLinearEquiv_mem_iff (V L : Submodule ℝ E)
-    (h : Module.finrank ℝ V = Module.finrank ℝ L) :
-    ∃ Φ : E ≃L[ℝ] E, ∀ z, z ∈ V ↔ Φ z ∈ L := by
-  have h' : Module.finrank ℝ Vᗮ = Module.finrank ℝ Lᗮ := by
-    have h1 := Submodule.finrank_add_finrank_orthogonal V
-    have h2 := Submodule.finrank_add_finrank_orthogonal L
-    omega
-  have hV := Submodule.isCompl_orthogonal (K := V)
-  have hL := Submodule.isCompl_orthogonal (K := L)
-  let Φ : E ≃ₗ[ℝ] E := (Submodule.prodEquivOfIsCompl V Vᗮ hV).symm.trans
-    (((LinearEquiv.ofFinrankEq V L h).prodCongr (LinearEquiv.ofFinrankEq Vᗮ Lᗮ h')).trans
-      (Submodule.prodEquivOfIsCompl L Lᗮ hL))
-  refine ⟨Φ.toContinuousLinearEquiv, fun z ↦ ?_⟩
-  have h1 := (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero V Vᗮ hV (x := z)).symm
-  have h2 := (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero L Lᗮ hL
-    (x := Φ.toContinuousLinearEquiv z)).symm
-  rw [h1, h2]
-  simp [Φ]
-
-/-- A subset of `E` that is flattened near each of its points by a `C¹` chart onto a subspace of
-dimension `d` is a `C¹` manifold modelled on any complemented subspace `L` of dimension `d`. -/
-private theorem exists_isManifold_of_charts {s : Set E} {L N : Submodule ℝ E}
-    (hLN : Submodule.IsTopCompl L N)
-    (hcharts : ∀ y ∈ s, ∃ (e : OpenPartialHomeomorph E E) (V : Submodule ℝ E), y ∈ e.source ∧
-      (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧ (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
-      (∀ z ∈ e.source, z ∈ s ↔ e z ∈ V) ∧ Module.finrank ℝ V = Module.finrank ℝ L) :
-    ∃ C : ChartedSpace L s, letI := C
-      IsManifold 𝓘(ℝ, L) 1 s ∧ ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) 1 (Subtype.val : s → E) := by
-  refine exists_isManifold_of_linearSubspaceCharts (I := 𝓘(ℝ, E)) hLN fun y ↦ ?_
-  obtain ⟨e, V, hy, he, hes, hmem, hdim⟩ := hcharts y y.2
-  obtain ⟨Φ, hΦ⟩ := exists_continuousLinearEquiv_mem_iff V L hdim
-  refine ⟨e.transHomeomorph Φ.toHomeomorph, by simpa using hy, fun z hz ↦ ?_, fun z hz ↦ ?_,
-    fun z hz ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
-    exact (Φ.contDiff.contDiffAt.comp z (he z hz)).contMDiffAt
-  · have hz' : Φ.symm z ∈ e.target := by simpa using hz
-    exact ((hes _ hz').comp z Φ.symm.contDiff.contDiffAt).contMDiffAt
-  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
-    simpa [hΦ] using hmem z hz
-
 variable {p q : E} {c : ℝ}
 
 /-- **The connecting locus is a manifold.** Under the Morse–Smale condition, for nondegenerate
@@ -145,7 +104,7 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet (h : IsMorseS
         Flow.stableSet (negativeGradientFlow f hf) q) ∧
       ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) 1 (Subtype.val : ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q) → E) := by
-  refine exists_isManifold_of_charts hLN fun y ⟨hyu, hys⟩ ↦ ?_
+  refine exists_isManifold_of_finrankSubspaceCharts hLN fun y ⟨hyu, hys⟩ ↦ ?_
   have htr := h.transverse hp.fderiv_eq_zero hq.fderiv_eq_zero hyu hys
   obtain ⟨e, hye, he, hes, hmem⟩ :=
     hp.exists_unstableSet_inter_stableSet_chart hq hfs hf hyu hys htr
@@ -156,13 +115,13 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet (h : IsMorseS
   omega
 
 /-- **The space of unparametrized trajectories is a manifold.** Under the Morse–Smale condition,
-for distinct nondegenerate critical points `p` and `q` of a `C²` function, each level slice
+for nondegenerate critical points `p` and `q` of a `C²` function, each level slice
 `W^u(p) ∩ W^s(q) ∩ {f = c}` is a `C¹` manifold of dimension `morseIndex f p - morseIndex f q - 1`:
 it is modelled on any complemented subspace `L` of that dimension, and its inclusion into `E` is
 `C¹`. -/
 theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level (h : IsMorseSmale f hf)
     (hfs : ContDiff ℝ 2 f) (hp : IsNondegenerateCriticalPoint f p)
-    (hq : IsNondegenerateCriticalPoint f q) (hpq : p ≠ q) {L N : Submodule ℝ E}
+    (hq : IsNondegenerateCriticalPoint f q) {L N : Submodule ℝ E}
     (hLN : Submodule.IsTopCompl L N)
     (hL : Module.finrank ℝ L + morseIndex f q + 1 = morseIndex f p) :
     ∃ C : ChartedSpace L ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
@@ -171,7 +130,8 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level (h : Is
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) ∧
       ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) 1 (Subtype.val : ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) → E) := by
-  refine exists_isManifold_of_charts hLN fun y ⟨⟨hyu, hys⟩, hyc⟩ ↦ ?_
+  have hpq : p ≠ q := by rintro rfl; omega
+  refine exists_isManifold_of_finrankSubspaceCharts hLN fun y ⟨⟨hyu, hys⟩, hyc⟩ ↦ ?_
   have htr := h.transverse hp.fderiv_eq_zero hq.fderiv_eq_zero hyu hys
   obtain ⟨e, hye, he, hes, hmem⟩ :=
     hp.exists_unstableSet_inter_stableSet_level_chart hq hfs hf hpq hyu hys htr hyc

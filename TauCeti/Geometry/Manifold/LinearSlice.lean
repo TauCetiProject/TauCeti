@@ -10,6 +10,10 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Complement
 
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.Dimension.Free
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Manifold structures from linear slice charts
@@ -218,5 +222,51 @@ theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
   exact ⟨linearSliceChartedSpace e he hcover,
     isManifold_linearSliceChartedSpace e he hs hi hcover,
     contMDiff_subtypeVal_linearSliceChartedSpace e he hi hcover⟩
+
+omit e he hsmooth hinv in
+/-- **Subspaces of equal dimension are exchanged by an automorphism.** In a finite-dimensional
+space over a complete field, two subspaces of the same dimension are mapped onto each other by a
+continuous linear automorphism. -/
+theorem exists_continuousLinearEquiv_mem_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+    (V L : Submodule 𝕜 E) (h : Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
+    ∃ Φ : E ≃L[𝕜] E, ∀ z, z ∈ V ↔ Φ z ∈ L := by
+  obtain ⟨V', hV⟩ := V.exists_isCompl
+  obtain ⟨L', hL⟩ := L.exists_isCompl
+  have h' : Module.finrank 𝕜 V' = Module.finrank 𝕜 L' := by
+    have h1 := Submodule.finrank_add_eq_of_isCompl hV
+    have h2 := Submodule.finrank_add_eq_of_isCompl hL
+    omega
+  let Φ : E ≃ₗ[𝕜] E := (Submodule.prodEquivOfIsCompl V V' hV).symm.trans
+    (((LinearEquiv.ofFinrankEq V L h).prodCongr (LinearEquiv.ofFinrankEq V' L' h')).trans
+      (Submodule.prodEquivOfIsCompl L L' hL))
+  refine ⟨Φ.toContinuousLinearEquiv, fun z ↦ ?_⟩
+  have h1 := (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero V V' hV (x := z)).symm
+  have h2 := (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero L L' hL
+    (x := Φ.toContinuousLinearEquiv z)).symm
+  rw [h1, h2]
+  simp [Φ]
+
+omit e he hsmooth hinv in
+/-- A subset of a finite-dimensional space that is flattened near each of its points by a `C^n`
+chart onto some subspace of dimension `d` is a `C^n` manifold modelled on any complemented subspace
+`L` of dimension `d`, and its inclusion is `C^n`. -/
+theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+    {t : Set E} {L N : Submodule 𝕜 E} (hLN : Submodule.IsTopCompl L N)
+    (hcharts : ∀ y ∈ t, ∃ (q : OpenPartialHomeomorph E E) (V : Submodule 𝕜 E), y ∈ q.source ∧
+      (∀ z ∈ q.source, ContDiffAt 𝕜 n q z) ∧ (∀ z ∈ q.target, ContDiffAt 𝕜 n q.symm z) ∧
+      (∀ z ∈ q.source, z ∈ t ↔ q z ∈ V) ∧ Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
+    ∃ C : ChartedSpace L t, letI := C
+      IsManifold 𝓘(𝕜, L) n t ∧ ContMDiff 𝓘(𝕜, L) 𝓘(𝕜, E) n (Subtype.val : t → E) := by
+  refine exists_isManifold_of_linearSubspaceCharts (I := 𝓘(𝕜, E)) hLN fun y ↦ ?_
+  obtain ⟨q, V, hy, hq, hqs, hmem, hdim⟩ := hcharts y y.2
+  obtain ⟨Φ, hΦ⟩ := exists_continuousLinearEquiv_mem_iff V L hdim
+  refine ⟨q.transHomeomorph Φ.toHomeomorph, by simpa using hy, fun z hz ↦ ?_, fun z hz ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    exact (Φ.contDiff.contDiffAt.comp z (hq z hz)).contMDiffAt
+  · have hz' : Φ.symm z ∈ q.target := by simpa using hz
+    exact ((hqs _ hz').comp z Φ.symm.contDiff.contDiffAt).contMDiffAt
+  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    simpa [hΦ] using hmem z hz
 
 end TauCeti
