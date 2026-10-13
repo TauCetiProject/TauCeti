@@ -55,7 +55,7 @@ variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
 
 /-- The `R`-subalgebra of `B[X]` of polynomials whose `n`-th coefficient lies in `M n`, for a
 graded family `M` of submodules of `B`: the direct sum `⨁ₙ Mₙ Xⁿ` realized inside `B[X]`. -/
-@[expose] def coeffSubalgebra : Subalgebra R B[X] where
+def coeffSubalgebra : Subalgebra R B[X] where
   carrier := {f | ∀ n, f.coeff n ∈ M n}
   mul_mem' {f g} hf hg n := by
     rw [coeff_mul]

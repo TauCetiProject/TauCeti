@@ -8,6 +8,9 @@ module
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.ReesAlgebra
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
+-- Proof-only: `reesAlgebra I` is `TauCeti.coeffSubalgebra` of `n ↦ Iⁿ` by definition, and the
+-- body of `TauCeti.coeffSubalgebra` is not exposed.
+import all TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
 
 /-!
 # The grading of the Rees algebra
@@ -59,7 +62,7 @@ variable {R : Type*} [CommRing R] (I : Ideal R)
 /-- The degree `n` piece of the Rees algebra `R[It]`: the monomials `r Xⁿ` with `r ∈ Iⁿ`. It is
 the degree `n` piece of `reesAlgebra I` viewed as `TauCeti.coeffSubalgebra` of the family
 `n ↦ Iⁿ`. -/
-@[expose] noncomputable def grade (n : ℕ) : Submodule R (reesAlgebra I) :=
+noncomputable def grade (n : ℕ) : Submodule R (reesAlgebra I) :=
   TauCeti.coeffSubalgebra.grade (fun n ↦ I ^ n) n
 
 variable {I}
@@ -95,7 +98,7 @@ theorem isInternal_grade : IsInternal (grade I) :=
 
 /-- The grading of the Rees algebra `R[It]` by the power of `t`. -/
 noncomputable instance gradedAlgebra : GradedAlgebra (grade I) :=
-  TauCeti.coeffSubalgebra.gradedAlgebra
+  (isInternal_grade I).gradedAlgebra
 
 /-- The degree `n` component of an element `f` of the Rees algebra is the monomial
 `f.coeff n • Xⁿ`. -/
