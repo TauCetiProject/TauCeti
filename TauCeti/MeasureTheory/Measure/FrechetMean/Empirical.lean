@@ -38,8 +38,9 @@ barycenters converge almost surely to it.
 The carrier `X` may itself be a Wasserstein space: for `1 ≤ p < ∞` over a Polish base `Z`, the
 space `P_p(Z)` is a separable Borel pseudometric space, so for i.i.d. random laws `Y i` in `P_p(Z)`
 the empirical laws converge almost surely in `W_p(P_p(Z))`, and the statements above concern the
-empirical Wasserstein barycenters of finitely many random laws. That space is not proper, so the
-proper-space statements do not apply there.
+empirical Wasserstein barycenters of finitely many random laws. That space need not be proper (it
+is when `Z` is compact), so the proper-space statements apply there only under a separate
+properness hypothesis.
 
 ## Main statements
 
