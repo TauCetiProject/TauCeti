@@ -17,6 +17,7 @@ by the number of sheets over any point of that simplex. On a disconnected base t
 in general a single scalar: it is the action of the locally constant function
 `IsCoveringMap.degree`. This file proves the formula on chains and homology, then restricts it
 to any preconnected subspace. In particular each connected component has its own degree.
+The constant-degree formulas follow by specializing the degree to a constant function.
 There is no connectedness, surjectivity, or uniform bound on the fibre cardinalities.
 
 We reuse `IsCoveringMap.singularTransfer` and its summand formula. The mathematical reference
@@ -58,6 +59,28 @@ theorem homologyMap_singularTransfer_comp_homologyMap_eq_locallyConstantNsmul
       HomologicalComplex.homologyMap (singularChainLocallyConstantNsmul R hp.degree) n := by
   rw [← HomologicalComplex.homologyMap_comp,
     singularTransfer_comp_chainComplexMap_eq_locallyConstantNsmul]
+
+/-- **The transfer formula** `p_* ∘ transfer = d • id` on singular chains, for a covering map
+whose fibres all have `d` points. -/
+theorem singularTransfer_comp_chainComplexMap (hp : IsCoveringMap p)
+    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (R : C) {d : ℕ} (hd : ∀ b, Nat.card (p ⁻¹' {b}) = d) :
+    hp.singularTransfer hfin R ≫ SSet.chainComplexMap (TopCat.toSSet.map p) R = d • 𝟙 _ := by
+  have hdegree : hp.degree = LocallyConstant.const B d := by
+    ext b
+    simpa only [degree_apply, LocallyConstant.coe_const, Function.const_apply] using hd b
+  rw [singularTransfer_comp_chainComplexMap_eq_locallyConstantNsmul, hdegree,
+    singularChainLocallyConstantNsmul_const]
+
+/-- **The transfer formula** `p_* ∘ transfer = d • id` on singular homology, for a covering map
+whose fibres all have `d` points. -/
+theorem homologyMap_singularTransfer_comp_homologyMap [CategoryWithHomology C]
+    (hp : IsCoveringMap p) (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (R : C) {d : ℕ}
+    (hd : ∀ b, Nat.card (p ⁻¹' {b}) = d) (n : ℕ) :
+    HomologicalComplex.homologyMap (hp.singularTransfer hfin R) n ≫
+        SSet.homologyMap (TopCat.toSSet.map p) R n = d • 𝟙 _ := by
+  rw [← HomologicalComplex.homologyMap_comp, singularTransfer_comp_chainComplexMap hp hfin R hd]
+  exact (HomologicalComplex.homologyFunctor C _ n).map_nsmul.trans
+    (congrArg (d • ·) ((HomologicalComplex.homologyFunctor C _ n).map_id _))
 
 /-- On chains from a preconnected space mapping into the base, projection after transfer
 multiplies by the fibre cardinality over the image of any chosen point of that space. -/
