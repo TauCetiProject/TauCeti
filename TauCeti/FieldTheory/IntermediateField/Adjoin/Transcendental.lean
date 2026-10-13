@@ -22,11 +22,11 @@ Combined with the tower rule for linear independence, a family that is linearly 
 the simple extension `k⟮x⟯` stays linearly independent over `k` after multiplying by arbitrary
 powers of a transcendental element `x`.
 
-Translating a transcendental element by a constant keeps it transcendental.
-
-The finite-power statement is the source of dimension growth in the theory of algebraic function
-fields: multiplying a basis of `F / k⟮x⟯` by the powers `1, x, …, xⁿ` exhibits `(n + 1) [F : k(x)]`
-functions that are independent over `k` and whose poles are controlled by those of `x`.
+The finite-power statement supplies dimension growth in the theory of algebraic function fields:
+when `[F : k(x)]` is finite, multiplying a basis of `F / k⟮x⟯` by the powers `1, x, …, xⁿ`
+exhibits `(n + 1) [F : k(x)]` functions that are independent over `k`. Pole bounds for these
+functions depend on the poles of `x` together with the fixed poles of the chosen basis elements.
+The statements below assert linear independence; the valuation estimates are separate.
 
 ## Main results
 
@@ -36,7 +36,6 @@ functions that are independent over `k` and whose poles are controlled by those 
   `F`, multiplied by the powers of a transcendental `x`, is `k`-linearly independent.
 * `Transcendental.linearIndependent_mul_pow_fin`: the finite-power restriction used in
   dimension estimates.
-* `Transcendental.add_algebraMap`: `x + c` is transcendental for a constant `c`.
 -/
 
 public section
@@ -91,10 +90,5 @@ theorem _root_.Transcendental.linearIndependent_mul_pow_fin (hx : _root_.Transce
       simp only [Prod.mk.injEq, Fin.val_inj] at hpq
       exact Prod.ext hpq.1 hpq.2)
   simpa [Function.comp_def] using h
-
-/-- Translating a transcendental element by a constant keeps it transcendental. -/
-theorem _root_.Transcendental.add_algebraMap (hx : Transcendental k x) (c : k) :
-    Transcendental k (x + algebraMap k F c) := fun halg ↦
-  hx (by simpa using halg.sub (isAlgebraic_algebraMap (R := k) (A := F) c))
 
 end TauCeti

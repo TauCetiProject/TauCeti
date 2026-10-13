@@ -117,6 +117,8 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
   let u := Complex.exp (-θj * Complex.I)
   let V : ℕ → ℂ := fun k ↦ if hk : k < n + 1 then
     schwarzChristoffelVertex a e z₀ ⟨k, hk⟩ else 0
+  have hVeval : ∀ m : Fin (n + 1), V m = schwarzChristoffelVertex a e z₀ m :=
+    fun m ↦ dite_eq_left m.isLt
   let Vinf := schwarzChristoffelVertexAtInfinity a e z₀
   have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun k ↦ (he k).2
   have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
@@ -135,7 +137,7 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
     exact hlast
   have hθilower := (schwarzChristoffelEdgeAngle_mem_Ioc a e
     (fun k ↦ (he k).2) hsum i.castSucc).1
-  have hθjlower : -Real.pi < θj := by
+  have : -Real.pi < θj := by
     dsimp only [θj]
     linarith
   -- Both pieces incident to infinity point along the positive real axis when the total
@@ -192,26 +194,10 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
         (norm_pos_iff.mpr (sub_ne_zero.mpr hfirstNe))
         (norm_pos_iff.mpr (sub_ne_zero.mpr hlastNe.symm))
     · exact Real.sin_pos_of_pos_of_lt_pi (neg_pos.mpr hθjneg) (by linarith)
-  have hVzero : V 0 = schwarzChristoffelVertex a e z₀ 0 := by
-    dsimp only [V]
-    split
-    · congr
-    · omega
-  have hVi : V i.val = schwarzChristoffelVertex a e z₀ i.castSucc := by
-    dsimp only [V]
-    split
-    · congr
-    · omega
-  have hVj : V (j.val + 1) = schwarzChristoffelVertex a e z₀ j.succ := by
-    dsimp only [V]
-    split
-    · congr
-    · omega
-  have hVlast : V n = schwarzChristoffelVertex a e z₀ (Fin.last n) := by
-    dsimp only [V]
-    split
-    · congr
-    · omega
+  have hVzero : V 0 = schwarzChristoffelVertex a e z₀ 0 := hVeval 0
+  have hVi : V i.val = schwarzChristoffelVertex a e z₀ i.castSucc := hVeval i.castSucc
+  have hVj : V (j.val + 1) = schwarzChristoffelVertex a e z₀ j.succ := hVeval j.succ
+  have hVlast : V n = schwarzChristoffelVertex a e z₀ (Fin.last n) := hVeval (Fin.last n)
   have hleftTel := Finset.sum_Ico_sub V (Nat.zero_le i.val)
   have hrightTel := Finset.sum_Ico_sub V (Nat.succ_le_iff.mpr j.isLt)
   rw [hVzero, hVi] at hleftTel
@@ -253,13 +239,8 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
       exact Real.sin_pos_of_pos_of_lt_pi hδ.1 hδ.2
     have hV : V (k + 1) - V k =
         schwarzChristoffelVertex a e z₀ k'.succ -
-          schwarzChristoffelVertex a e z₀ k'.castSucc := by
-      dsimp only [V]
-      split <;> split
-      · congr
-      · omega
-      · omega
-      · omega
+          schwarzChristoffelVertex a e z₀ k'.castSucc :=
+      congrArg₂ (· - ·) (hVeval k'.succ) (hVeval k'.castSucc)
     simp only [Complex.imCLM_apply, hV]
     rw [him]
     exact mul_nonneg (norm_nonneg _) hsin.le
@@ -288,13 +269,8 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
       a e z₀ ha θj k' (hfinite k'.castSucc) (hfinite k'.succ)
     have hV : V (k + 1) - V k =
         schwarzChristoffelVertex a e z₀ k'.succ -
-          schwarzChristoffelVertex a e z₀ k'.castSucc := by
-      dsimp only [V]
-      split <;> split
-      · congr
-      · omega
-      · omega
-      · omega
+          schwarzChristoffelVertex a e z₀ k'.castSucc :=
+      congrArg₂ (· - ·) (hVeval k'.succ) (hVeval k'.castSucc)
     simp only [Complex.imCLM_apply, hV]
     rw [him]
     exact mul_nonneg (norm_nonneg _)
@@ -328,7 +304,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn
   intro x hxi hxj
   rw [segment_eq_image'] at hxi hxj
   obtain ⟨s, hs, rfl⟩ := hxi
-  obtain ⟨t, ht, heq⟩ := hxj
+  obtain ⟨t, -, heq⟩ := hxj
   let Vi := schwarzChristoffelVertex a e z₀ i.castSucc
   let Vi' := schwarzChristoffelVertex a e z₀ i.succ
   let Vj := schwarzChristoffelVertex a e z₀ j.castSucc
@@ -346,7 +322,6 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn
       a e z₀ ha θj j (hfinite j.castSucc) (hfinite j.succ)
     simpa only [u, θj, sub_self, Real.sin_zero, mul_zero, Vi, Vi', Vj, Vj'] using him
   have hi_nonneg : 0 ≤ (u * (Vi' - Vi)).im := by
-    have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun k ↦ (he k).2
     have hij' : i.castSucc < j.castSucc := Fin.mk_lt_mk.mpr (by omega)
     have hdiff := schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi
       a e ha (fun k ↦ (he k).2) hsum hij'

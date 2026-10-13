@@ -69,7 +69,7 @@ private theorem f4ModularChevalleyBasis_repr_lie_summand_eq_zero_of_ne_long
           f4ModularSimpleCoroot j :=
         f4ModularChevalleyBasis_inr_eq_simpleCoroot r
       have hz := f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
-        j β γ (f4KillingRootLabel_ne_of_root_eq_add α β γ hγ)
+        j β γ (f4_ne_of_root_eq_add α β γ hγ)
       -- Transport the bracket equality without unfolding the imported basis definition.
       have hlie := congrArg (fun Y => ⁅Y, f4ModularRootVector β⁆) hbasis
       have hcoord : f4ModularChevalleyBasis.repr

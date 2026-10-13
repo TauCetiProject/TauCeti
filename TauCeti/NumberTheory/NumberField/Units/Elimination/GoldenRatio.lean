@@ -43,7 +43,6 @@ theorem unitCandidateEliminationCertificate_goldenRatio (hdeg : Module.finrank �
     UnitCandidateEliminationCertificate K Real.goldenRatio := by
   obtain ⟨φ, hφ⟩ : ∃ φ : ℝ, φ = Real.goldenRatio := ⟨_, rfl⟩
   have hφ2 : φ ^ 2 = φ + 1 := by rw [hφ]; exact Real.goldenRatio_sq
-  have hφl : 1 < φ := by rw [hφ]; exact Real.one_lt_goldenRatio
   have hφu : φ < 2 := by rw [hφ]; exact Real.goldenRatio_lt_two
   rw [← hφ, unitCandidateEliminationCertificate_iff]
   intro g hg
@@ -68,7 +67,6 @@ theorem unitCandidateEliminationCertificate_goldenRatio (hdeg : Module.finrank �
   rw [heval]
   obtain ⟨hm1, hm3⟩ := hm2
   -- The interval facts driving the root test: `x < φ`, `x < 2`, and `1 < x`.
-  have hx2 : 1 < x ^ 2 := one_lt_pow₀ hx1 two_ne_zero
   have hA : 0 < (φ - x) * (x + φ - 1) := mul_pos (sub_pos.mpr hxφ) (by linarith)
   have hB : 0 < (x - 1) * (2 - x) := mul_pos (sub_pos.mpr hx1) (by linarith)
   have hC : 0 < (x - 1) * (x - 1) := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)

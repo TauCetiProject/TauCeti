@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.CharacterCarry
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LayerInvariant
-import TauCeti.NumberTheory.ClassFieldTheory.Global.CyclotomicInput
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Input
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.NumberField.FinitePlace
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation

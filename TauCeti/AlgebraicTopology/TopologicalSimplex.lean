@@ -94,3 +94,23 @@ lemma simplexMap_app (f : X ⟶ Y) (σ : (TopCat.toSSet.obj X).obj n) :
     simplexMap ((TopCat.toSSet.map f).app n σ) = f.hom.comp (simplexMap σ) := rfl
 
 end TauCeti.TopCat
+
+namespace TauCeti
+
+open Simplicial
+
+/-- The topological `n`-simplex, the model of the simplicial singular chains in degree `n`. -/
+noncomputable abbrev simplexModel (n : ℕ) : TopCat.{u} := SimplexCategory.toTop.{u}.obj ⦋n⦌
+
+/-- The identity singular simplex of the topological simplex. -/
+noncomputable def idSimplex (n : ℕ) : (TopCat.toSSet.obj (simplexModel.{u} n)) _⦋n⦌ :=
+  ULift.up (𝟙 _)
+
+/-- A singular simplex is the push-forward of the identity simplex along itself. -/
+theorem toSSet_map_down_idSimplex {X : TopCat.{u}} {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
+    (TopCat.toSSet.map σ.down).app _ (idSimplex n) = σ := by
+  apply TopCat.simplexMap_injective
+  rw [TopCat.simplexMap_app]
+  rfl
+
+end TauCeti

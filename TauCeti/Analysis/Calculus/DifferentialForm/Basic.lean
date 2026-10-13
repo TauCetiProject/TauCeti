@@ -42,4 +42,19 @@ theorem extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
 
 end TauCeti
 
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ}
+
+/-- The exterior derivative of a continuous linear differential form is its alternatization. -/
+@[simp]
+lemma extDeriv_eq (ω : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (x : E) :
+    extDeriv ω x = ContinuousAlternatingMap.alternatizeUncurryFin ω := by
+  simp [extDeriv]
+
+end ContinuousLinearMap
+
 end

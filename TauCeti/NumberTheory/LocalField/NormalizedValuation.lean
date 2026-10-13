@@ -375,7 +375,6 @@ of `𝒪[K]`. -/
 theorem exists_eq_mul_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducible π) (x : Kˣ) :
     ∃ (u : Kˣ) (n : ℤ), valuation K (u : K) = 1 ∧
       x = u * Units.mk0 (π : K) (fun h => hπ.ne_zero (Subtype.ext h)) ^ n := by
-  let hπ0 : (π : K) ≠ 0 := fun h => hπ.ne_zero (Subtype.ext h)
   obtain ⟨n, u, hx⟩ :=
     IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible
       (R := 𝒪[K]) hπ x.ne_zero

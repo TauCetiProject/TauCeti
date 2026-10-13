@@ -127,7 +127,7 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_convex
   have hfin : IsFiniteMeasure (mu.restrict (Omega : Set E)) :=
     isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
   set nu := mu.restrict (Omega : Set E) with hnu
-  set K : ℝ := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) with hK
+  set K : ℝ := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
   set I : ℝ := ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖ ∂nu
     with hI
   have hK0 : 0 ≤ K := by positivity
@@ -211,7 +211,7 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball {c : E} {R : ℝ} 
           ∂mu.restrict Omega := by
   refine (W1p.sub_mul_measureReal_mul_measureReal_le_of_convex (hOmega ▸ convex_ball c R)
     (hOmega ▸ isBounded_ball) u hkl).trans ?_
-  have hI0 : 0 ≤ ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖
+  have : 0 ≤ ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖
       ∂mu.restrict Omega := integral_nonneg fun x ↦ norm_nonneg _
   gcongr
   rw [hOmega]

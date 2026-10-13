@@ -206,10 +206,8 @@ theorem discriminant_typeARootLattice : (typeARootLattice n).discriminant = n + 
   rw [discriminant_def, determinant_typeARootLattice]
   omega
 
-/-- **The discriminant group of the type `Aₙ` root lattice has order `n + 1`.**
-
-This is deliberately not a `simp` lemma: `Nat.card_eq_fintype_card` rewrites the left-hand side,
-so the `simpNF` linter rejects the tagged form. -/
+/-- **The discriminant group of the type `Aₙ` root lattice has order `n + 1`.** -/
+@[simp]
 theorem natCard_discriminantGroup_typeARootLattice :
     Nat.card (typeARootLattice n).DiscriminantGroup = n + 1 := by
   rw [natCard_discriminantGroup, discriminant_typeARootLattice]

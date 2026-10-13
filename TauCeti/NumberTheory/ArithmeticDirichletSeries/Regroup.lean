@@ -106,7 +106,7 @@ theorem norm_idealTerm_le_of_re_le_re (f : IdealArithmeticFunction K) {s s' : �
     ‖idealTerm K f s' I‖ ≤ ‖idealTerm K f s I‖ := by
   have h₁ : (1 : ℝ) ≤ (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) := by
     exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors I
-  have h₀ : (0 : ℝ) < (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s.re :=
+  have _ : (0 : ℝ) < (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s.re :=
     Real.rpow_pos_of_pos (by linarith) _
   simp only [norm_idealTerm]
   gcongr

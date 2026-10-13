@@ -33,6 +33,8 @@ Proposition 8.2 (2), second assertion, for `Opens`.
 * `TauCeti.ValuationSpectrum.isOpenEmbedding_spaComapLoc`,
   `TauCeti.ValuationSpectrum.isOpenEmbedding_spaComapLocHom`: `j` is an open embedding.
 * `TauCeti.ValuationSpectrum.range_spaComapLoc`: the range of `j` is `R(T/s)`.
+* `TauCeti.ValuationSpectrum.spaComapTopHom_toCompletionLoc`: `j` is the map of adic spectra
+  induced by the structure map, as a morphism of `TopCat`.
 * `TauCeti.ValuationSpectrum.locOpensComap_spaComapLoc_functor_obj`,
   `TauCeti.ValuationSpectrum.spaComapLoc_functor_obj_locOpensComap`: `j⁻¹(j(W)) = W`, and
   `j(j⁻¹(V)) = V` for `V ⊆ R(T/s)`.
@@ -116,6 +118,23 @@ theorem coe_spaComapLocHom :
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ⇑(spaComapLocHom P Aplus T s S hden) = spaComapLoc P Aplus T s S hden := by
   rfl
+
+/-- The morphism `spaComapLocHom` is the morphism of `TopCat` induced by the structure map
+`A → A⟨T/s⟩`. -/
+@[simp]
+theorem spaComapTopHom_toCompletionLoc :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    spaComapTopHom (toCompletionLoc P T s S hden) (continuous_toCompletionLoc P T s S hden)
+        (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) =
+      spaComapLocHom P Aplus T s S hden :=
+  letI := locUniformSpace P T s S hden
+  letI := isUniformAddGroup_locUniformSpace P T s S hden
+  letI := isTopologicalRing_locUniformSpace P T s S hden
+  TopCat.ext fun v ↦ Subtype.ext <|
+    (spaComap_val _ _ _ _ _ v).trans ((spaComapLoc_val P Aplus T s S hden v).symm.trans
+      (congrArg Subtype.val (congrFun (coe_spaComapLocHom P Aplus T s S hden) v).symm))
 
 include hP in
 /-- **`j : Spa (A⟨T/s⟩, A_U⁺) → Spa (A, A⁺)` is an open embedding**, for the morphism of

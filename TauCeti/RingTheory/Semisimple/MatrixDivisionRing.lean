@@ -24,7 +24,7 @@ import TauCeti.RingTheory.Semisimple.SimpleArtinian
 Artin--Wedderburn presents a simple Artinian ring as a matrix ring `Matᵢ(D)` over a division ring,
 and a semisimple ring as a finite product of such blocks.  Mathlib supplies the presentation but
 says nothing about how much of it is determined by the ring: `RingEquiv.card_blocks_eq` shows the
-*number* of blocks is an invariant and `RingEquiv.exists_simpleSubmodule_of_pi_matrix` matches the
+*number* of blocks is an invariant and `RingEquiv.exists_simpleSubmodule_of_pi` matches the
 blocks with the simple modules, but both are silent about the two remaining pieces of data, the
 size `ι` of a block and its division ring `D`.  This file determines both, for a *single* block:
 it does not treat a product of blocks; `RingEquiv.wedderburn_blocks_unique` applies the result here

@@ -163,7 +163,7 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
     rw [uIcc_of_le ht] at hs
     exact hσ0 s hs.1
   -- The radial test function `χ x = ρ (‖x‖ ^ 2)` on the ball, supported in `closedBall 0 R'`.
-  set Ω : Opens E := ⟨ball (0 : E) R, isOpen_ball⟩ with hΩ_def
+  set Ω : Opens E := ⟨ball (0 : E) R, isOpen_ball⟩ with _
   have hχ_supp : tsupport (fun x : E ↦ ρ (‖x‖ ^ 2)) ⊆ closedBall (0 : E) R' := by
     refine (closure_mono fun x hx ↦ ?_).trans closure_ball_subset_closedBall
     rw [mem_ball_zero_iff]

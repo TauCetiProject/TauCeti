@@ -35,6 +35,8 @@ commutation of two insertions, dual to Mathlib's `Fin.removeNth_removeNth_eq_swa
 ## Main definitions
 
 * `TauCeti.SingularCube X n`: singular `n`-cubes in `X`.
+* `TauCeti.SingularCube.cast`: reindexing along an equality of dimensions.
+* `TauCeti.SingularCube.point`: the `0`-cube at a point.
 * `TauCeti.SingularCube.face`: the face of a cube in a coordinate, at a parameter `t ∈ I`.
 * `TauCeti.SingularCube.IsDegenerateAt`, `TauCeti.SingularCube.IsDegenerate`: degeneracy at a
   coordinate, and degeneracy.
@@ -67,6 +69,34 @@ abbrev SingularCube (X : Type*) [TopologicalSpace X] (n : ℕ) := C(Fin n → I,
 
 namespace SingularCube
 
+/-- Reindex a singular cube along an equality of dimensions. -/
+def cast {n m : ℕ} (h : n = m) (c : SingularCube X n) : SingularCube X m :=
+  c.comp ⟨fun x ↦ x ∘ Fin.cast h, by fun_prop⟩
+
+@[simp]
+theorem cast_apply {n m : ℕ} (h : n = m) (c : SingularCube X n) (x : Fin m → I) :
+    cast h c x = c (x ∘ Fin.cast h) :=
+  (rfl)
+
+/-- The `0`-cube at a point. -/
+def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
+
+@[simp]
+theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
+  (rfl)
+
+@[simp]
+theorem cast_rfl {n : ℕ} (c : SingularCube X n) : cast rfl c = c := by
+  ext x
+  simp
+
+/-- Reindexing along successive dimension equalities is reindexing along their composite. -/
+@[simp]
+theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k) (c : SingularCube X n) :
+    cast h' (cast h c) = cast (h.trans h') c := by
+  subst m k
+  simp
+
 /-- The face of an `(n+1)`-cube in its `i`-th coordinate, at the parameter `t`: the `n`-cube
 `x ↦ c (i.insertNth t x)`.  The front and back faces are `face i 0` and `face i 1`. -/
 def face {n : ℕ} (i : Fin (n + 1)) (t : I) (c : SingularCube X (n + 1)) : SingularCube X n :=
@@ -90,6 +120,15 @@ theorem face_face {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) (a b : I)
 theorem face_comp {n : ℕ} (i : Fin (n + 1)) (t : I) (f : C(X, Y)) (c : SingularCube X (n + 1)) :
     face i t (f.comp c) = f.comp (face i t c) := by
   ext x
+  simp
+
+/-- Faces commute with reindexing. -/
+theorem face_cast {n m : ℕ} (h : n = m) (i : Fin (n + 1)) (t : I)
+    (c : SingularCube X (n + 1)) :
+    face (Fin.cast (congrArg Nat.succ h) i) t
+        (cast (congrArg Nat.succ h) c) =
+      cast h (face i t c) := by
+  subst h
   simp
 
 /-- A cube is **degenerate at the coordinate `i`** when it does not depend on it. -/
@@ -130,6 +169,18 @@ theorem IsDegenerateAt.comp {n : ℕ} {c : SingularCube X n} {i : Fin n} (h : Is
 theorem IsDegenerate.comp {n : ℕ} {c : SingularCube X n} (h : IsDegenerate c) (f : C(X, Y)) :
     IsDegenerate (f.comp c) :=
   h.elim fun i hi ↦ ⟨i, hi.comp f⟩
+
+/-- An injective continuous map reflects degeneracy in each coordinate. -/
+theorem isDegenerateAt_comp_iff_of_injective {n : ℕ} (f : C(X, Y))
+    (hf : Function.Injective f) (c : SingularCube X n) (i : Fin n) :
+    IsDegenerateAt (f.comp c) i ↔ IsDegenerateAt c i :=
+  ⟨fun h x t ↦ hf (h x t), fun h ↦ h.comp f⟩
+
+/-- An injective continuous map preserves and reflects degeneracy. -/
+theorem isDegenerate_comp_iff_of_injective {n : ℕ} (f : C(X, Y))
+    (hf : Function.Injective f) (c : SingularCube X n) :
+    IsDegenerate (f.comp c) ↔ IsDegenerate c := by
+  simp only [isDegenerate_iff, isDegenerateAt_comp_iff_of_injective f hf]
 
 /-- The two faces of a cube in a coordinate it does not depend on coincide. -/
 theorem face_eq_of_isDegenerateAt {n : ℕ} {c : SingularCube X (n + 1)} {i : Fin (n + 1)}

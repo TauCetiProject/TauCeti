@@ -162,7 +162,7 @@ private theorem abs_rectEdgeCount_sub_le (W : Graphon Ω μ) (y : Fin n → Ω) 
         refine (Finset.sum_subset (Finset.subset_univ _) fun q _ hq => ?_).symm
         simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hq
         rw [hd0 q hq.1 hq.2, abs_zero]
-    _ ≤ ∑ q ∈ ({p, p.swap} : Finset (Fin n × Fin n)), (1 : ℝ) := Finset.sum_le_sum fun q _ => hd1 q
+    _ ≤ ∑ _ ∈ ({p, p.swap} : Finset (Fin n × Fin n)), (1 : ℝ) := Finset.sum_le_sum fun q _ => hd1 q
     _ ≤ 2 := by
         rw [Finset.sum_const, nsmul_eq_mul, mul_one]
         exact_mod_cast Finset.card_le_two

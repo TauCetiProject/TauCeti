@@ -13,7 +13,8 @@ public import TauCeti.CategoryTheory.Linear.FullyFaithful
 # Restriction of actions
 
 Restriction along a composite monoid homomorphism is successive restriction, as an equality
-of functors. This equality form complements Mathlib's natural isomorphism `Action.resComp`.
+of functors, and restriction along the identity is the identity functor. These equality forms
+complement Mathlib's natural isomorphisms `Action.resComp` and `Action.resId`.
 
 For actions in a linear category, restriction along a surjective monoid homomorphism preserves
 the finrank of morphism spaces. This uses Mathlib's fullness result `Action.full_res` and
@@ -23,6 +24,7 @@ representations over a commutative ring.
 ## Main results
 
 * `MonoidHom.actionRes_comp`: restriction along a composite is successive restriction.
+* `MonoidHom.actionRes_id`: restriction along the identity is the identity functor.
 * `MonoidHom.finrank_hom_actionRes_of_surjective`: restriction along a surjective monoid
   homomorphism preserves the finrank of morphism spaces in a linear category.
 -/
@@ -37,6 +39,13 @@ variable {V : Type*} [Category V] {H K L : Type*} [Monoid H] [Monoid K] [Monoid 
 form of Mathlib's natural isomorphism `Action.resComp`. -/
 theorem MonoidHom.actionRes_comp (φ : K →* L) (ψ : H →* K) :
     Action.res V (φ.comp ψ) = Action.res V φ ⋙ Action.res V ψ :=
+  rfl
+
+/-- Restriction of actions along the identity is the identity functor. This is the equality
+form of Mathlib's natural isomorphism `Action.resId`. -/
+@[simp]
+theorem MonoidHom.actionRes_id :
+    Action.res V (MonoidHom.id H) = 𝟭 (Action V H) :=
   rfl
 
 /-- Restriction along a surjective monoid homomorphism preserves the finrank of morphism spaces

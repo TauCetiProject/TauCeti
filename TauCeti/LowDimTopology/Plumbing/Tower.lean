@@ -165,14 +165,6 @@ theorem latticeAugmentation_latticeDifferentialOnGenerator (P : PlumbingGraph V)
           PlumbingCube.characteristicWeight P k C -
             PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) :=
       PlumbingCube.characteristicUpperFaceExponent_natCast P k C v.property
-    have hlowerle :
-        PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) ≤
-          PlumbingCube.characteristicWeight P k C :=
-      PlumbingCube.characteristicWeight_lowerFace_le P k C v.property
-    have hupperle :
-        PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) ≤
-          PlumbingCube.characteristicWeight P k C :=
-      PlumbingCube.characteristicWeight_upperFace_le P k C v.property
     have hlowermin :
         P.sInfCharacteristicWeight k ≤
           P.characteristicWeight k (C.lowerFace v.val v.property).base :=
