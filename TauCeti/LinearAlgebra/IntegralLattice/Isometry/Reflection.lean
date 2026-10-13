@@ -43,60 +43,51 @@ variable {L : IntegralLattice V} {M : IntegralLattice W}
 
 /-- Reflection in an integral vector of norm two, as an automorphism of the lattice. -/
 noncomputable def rootReflection (x : L) (hx : L.integralNorm x = 2) : Isometry L L := by
-  have hxx : L.form x x = 2 := by
-    rw [← L.norm_apply, ← L.integralNorm_cast, hx]
-    norm_num
-  let r : V ≃ₗ[ℚ] V := Module.reflection hxx
-  have hr (y : V) : r y = y - L.form x y • (x : V) := Module.reflection_apply _ hxx
-  have hmem (y : L) : r y ∈ L.carrier := by
-    rw [hr, ← L.integralForm_cast]
-    exact L.carrier.sub_mem y.property (by
-      simpa only [Int.cast_smul_eq_zsmul] using L.carrier.smul_mem (L.integralForm x y) x.property)
-  have hreflective : LinearMap.IsReflective L.form (x : V) :=
-    LinearMap.IsReflective.of_dvd_two L.form (hxx ▸ dvd_rfl)
-  have hcoroot : LinearMap.IsReflective.coroot L.form hreflective = L.form x := by
+  have hxx : L.integralForm x x = 2 := by simpa only [integralNorm_apply] using hx
+  have hreflective : LinearMap.IsReflective L.integralForm x :=
+    LinearMap.IsReflective.of_dvd_two L.integralForm (hxx ▸ dvd_rfl)
+  have hcoroot : LinearMap.IsReflective.coroot L.integralForm hreflective =
+      L.integralForm x := by
     ext y
-    have h := LinearMap.IsReflective.apply_self_mul_coroot_apply L.form hreflective (y := y)
+    have h := LinearMap.IsReflective.apply_self_mul_coroot_apply
+      L.integralForm hreflective (y := y)
     rw [hxx] at h
     linarith
-  refine
-    { toIsometryEquiv :=
-        { toLinearEquiv := r
-          map_app' := ?_ }
-      map_carrier := ?_ }
-  · intro y z
-    simpa only [r, Module.reflection_apply, hcoroot, LinearEquiv.toFun_eq_coe] using
-      LinearMap.IsReflective.isOrthogonal_reflection L.form hreflective
-        (LinearMap.BilinForm.isSymm_iff.mp L.isSymm) y z
-  · apply le_antisymm
-    · rintro y ⟨z, hz, rfl⟩
-      exact hmem ⟨z, hz⟩
-    · intro y hy
-      exact ⟨r y, hmem ⟨y, hy⟩, Module.involutive_reflection hxx y⟩
+  refine Isometry.ofCarrierEquiv (Module.reflection hxx) ?_
+  intro y z
+  simpa only [Module.reflection_apply, hcoroot, LinearEquiv.toFun_eq_coe] using
+    LinearMap.IsReflective.isOrthogonal_reflection L.integralForm hreflective
+      (LinearMap.BilinForm.isSymm_iff.mp L.isSymm_integralForm) y z
+
+/-- The carrier equivalence is the integral module reflection in the root. -/
+theorem rootReflection_carrierEquiv (x : L) (hx : L.integralNorm x = 2) :
+    (rootReflection x hx).carrierEquiv =
+      Module.reflection (x := x) (f := L.integralForm x)
+        (by simpa only [integralNorm_apply] using hx) := by
+  -- Unfold the comparison constructor to use the carrier-extension round trip.
+  simp only [rootReflection, Isometry.carrierEquiv_ofCarrierEquiv]
 
 /-- On the rational ambient space, reflection in a root has no denominator. -/
 -- Like `Module.reflection_apply`, this stays explicit so that `simp` retains the reflection
 -- until a specialized rule such as `rootReflection_apply_self` can apply.
 theorem rootReflection_apply (x : L) (hx : L.integralNorm x = 2) (y : V) :
     rootReflection x hx y = y - L.form x y • (x : V) := by
-  unfold rootReflection
-  rfl
+  have hxx : L.form x x = 2 := by
+    rw [← L.norm_apply, ← L.integralNorm_cast, hx]
+    norm_num
+  have hlinear := LinearEquiv.eq_extendOfIsLattice
+    (rootReflection x hx).carrierEquiv (Module.reflection hxx) (by
+      intro z
+      simp only [rootReflection_carrierEquiv, Module.reflection_apply, Submodule.coe_sub,
+        SetLike.val_smul, ← L.integralForm_cast, Int.cast_smul_eq_zsmul])
+  rw [← Isometry.ofCarrierEquiv_carrierEquiv (rootReflection x hx),
+    Isometry.ofCarrierEquiv_apply, ← hlinear, Module.reflection_apply]
 
 /-- On the integral carrier, the reflection uses the integral pairing as its coefficient. -/
 @[simp]
 theorem rootReflection_carrierEquiv_apply (x : L) (hx : L.integralNorm x = 2) (y : L) :
     (rootReflection x hx).carrierEquiv y = y - L.integralForm x y • x := by
-  apply Subtype.ext
-  simp only [Isometry.coe_carrierEquiv_apply, rootReflection_apply, Submodule.coe_sub,
-    SetLike.val_smul, ← L.integralForm_cast, Int.cast_smul_eq_zsmul]
-
-/-- The carrier equivalence is the integral module reflection in the root. -/
-theorem rootReflection_carrierEquiv (x : L) (hx : L.integralNorm x = 2) :
-    (rootReflection x hx).carrierEquiv =
-      Module.reflection (show L.integralForm x x = 2 from
-        by simpa only [integralNorm_apply] using hx) := by
-  ext y
-  rw [rootReflection_carrierEquiv_apply, Module.reflection_apply]
+  rw [rootReflection_carrierEquiv, Module.reflection_apply]
 
 /-- Every root reflection has determinant minus one. -/
 @[simp]
@@ -108,22 +99,21 @@ theorem det_rootReflection (x : L) (hx : L.integralNorm x = 2) :
 @[simp]
 theorem rootReflection_apply_self (x : L) (hx : L.integralNorm x = 2) :
     rootReflection x hx x = -(x : V) := by
-  have hxx : L.form x x = 2 := by
-    rw [← L.norm_apply, ← L.integralNorm_cast, hx]
-    norm_num
-  simp [rootReflection_apply, hxx, two_smul]
+  have hxx : L.integralForm x x = 2 := by simpa only [integralNorm_apply] using hx
+  simpa only [← Isometry.coe_carrierEquiv_apply, rootReflection_carrierEquiv,
+    Submodule.coe_neg] using congrArg Subtype.val (Module.reflection_apply_self hxx)
 
 /-- Reflection in a root is an involution in the lattice isometry group. -/
 @[simp]
 theorem rootReflection_mul_self (x : L) (hx : L.integralNorm x = 2) :
     rootReflection x hx * rootReflection x hx = 1 := by
+  have hxx : L.integralForm x x = 2 := by simpa only [integralNorm_apply] using hx
   apply Isometry.carrierEquiv_injective
   ext y
   simp only [Isometry.mul_def, Isometry.carrierEquiv_trans, LinearEquiv.trans_apply,
     rootReflection_carrierEquiv, Isometry.one_def, Isometry.carrierEquiv_refl,
     LinearEquiv.refl_apply]
-  exact congrArg Subtype.val (Module.involutive_reflection
-    (show L.integralForm x x = 2 from by simpa only [integralNorm_apply] using hx) y)
+  exact congrArg Subtype.val (Module.involutive_reflection hxx y)
 
 /-- The inverse of a root reflection is itself. -/
 @[simp]
@@ -139,6 +129,7 @@ theorem rootReflection_neg (x : L) (hx : L.integralNorm x = 2) :
   simp [rootReflection_apply]
 
 /-- A root reflection fixes exactly the vectors orthogonal to its root. -/
+@[simp]
 theorem rootReflection_apply_eq_self_iff (x : L) (hx : L.integralNorm x = 2) (y : V) :
     rootReflection x hx y = y ↔ L.form x y = 0 := by
   have hx0 : (x : V) ≠ 0 := by
