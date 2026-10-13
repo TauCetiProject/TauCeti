@@ -159,10 +159,10 @@ theorem leftAct_act {H : Type*} [TopologicalSpace H] [SMul Hᵐᵒᵖ Y] [Contin
 
 end LeftAct
 
-section MulAction
+section SemigroupAction
 
-variable {G Y : Type*} [Monoid G] [TopologicalSpace G] [TopologicalSpace Y] [MulAction G Y]
-  [ContinuousSMul G Y] {R : Type*} [CommRing R]
+variable {G Y : Type*} [Semigroup G] [TopologicalSpace G] [TopologicalSpace Y]
+  [SemigroupAction G Y] [ContinuousSMul G Y] {R : Type*} [CommRing R]
 
 /-- **Strict associativity of the left action**, after the reindexing
 `(p + q) + r = p + (q + r)`: `(a b) · c = a · (b · c)`. -/
@@ -174,6 +174,13 @@ theorem leftAct_assoc [ContinuousMul G] {p q r : ℕ} (a : NormalizedCubicalChai
   refine map_crossProduct_map_assoc R ?_ a b c
   ext x
   simp [Homeomorph.prodAssoc, Equiv.prodAssoc, mul_smul]
+
+end SemigroupAction
+
+section MulAction
+
+variable {G Y : Type*} [Monoid G] [TopologicalSpace G] [TopologicalSpace Y] [MulAction G Y]
+  [ContinuousSMul G Y] {R : Type*} [CommRing R]
 
 /-- **The unit acts trivially from the left**, after the reindexing `0 + q = q`. -/
 @[simp]
