@@ -216,7 +216,7 @@ section SectionView
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] {k : ℕ}
+  [IsManifold I 1 M] {k : ℕ}
 
 /-- The smooth section underlying a fixed-coefficient smooth form of degree `k`. -/
 def toContMDiffSection (φ : SmoothForm I M F k) :
