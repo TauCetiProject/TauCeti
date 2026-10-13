@@ -159,8 +159,7 @@ theorem restrictHom_injective : Function.Injective (restrictHom (L := L) c) := b
   exact hrepr
 
 /-- An element is in the restricted crossed product exactly when its coefficients vanish
-outside the automorphisms fixing `L`. This is used by rewriting: `simp` first expands
-range membership through `AlgHom.mem_range`. -/
+outside the automorphisms fixing `L`. -/
 theorem mem_range_restrictHom_iff (a : CrossedProduct c) :
     a ∈ (restrictHom (L := L) c).range ↔
       ∀ σ ∉ Set.range (AlgEquiv.restrictScalars K : (E ≃ₐ[L] E) → E ≃ₐ[K] E),
@@ -206,6 +205,21 @@ theorem range_restrictHom_eq_centralizer [NoZeroDivisors E] :
       exact mul_left_cancel₀ hn (h.symm.trans (mul_comm _ _))
     exact hσ ⟨AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) hfix,
       AlgEquiv.ext fun _ => rfl⟩
+
+/-- The restricted crossed product is canonically equivalent as a `K`-algebra to the
+centralizer of the embedded copy of `L` in the original crossed product. -/
+def restrictAlgEquivCentralizer [NoZeroDivisors E] :
+    CrossedProduct (c.restrict L) ≃ₐ[K]
+      Subalgebra.centralizer K (Set.range fun x : L => inc c (algebraMap L E x)) :=
+  (AlgEquiv.ofInjective (restrictHom (L := L) c) (restrictHom_injective c)).trans
+    (Subalgebra.equivOfEq _ _ (range_restrictHom_eq_centralizer c))
+
+/-- The centralizer equivalence has the same underlying value as the restriction embedding. -/
+@[simp]
+theorem coe_restrictAlgEquivCentralizer_apply [NoZeroDivisors E]
+    (a : CrossedProduct (c.restrict L)) :
+    (restrictAlgEquivCentralizer c a : CrossedProduct c) = restrictHom (L := L) c a :=
+  (rfl)
 
 end CrossedProduct
 
