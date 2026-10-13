@@ -12,21 +12,20 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 # Abel-Jacobi fibers and complete linear systems
 
 This file records the formal fixed-degree fiber statement for the divisor-class shadow of the
-Abel-Jacobi map.  The existing map
+Abel-Jacobi map. The map
 
 `D ↦ [D - deg(D) • [x₀]] ∈ Pic⁰`
 
-is defined on all Weil divisors as `OrderSystem.weightedAbelJacobiDivisorClass`.  On effective
+is defined on all Weil divisors as `OrderSystem.weightedAbelJacobiDivisorClass`. On effective
 divisors of a fixed degree, two divisors have the same normalized Abel-Jacobi class exactly when
-they are linearly equivalent; equivalently, one lies in the complete linear system of the other.
-The same statement is restated for Mathlib's symmetric powers through the existing equivalence
-between `Sym X d` and effective divisors of degree `d`.
+they are linearly equivalent; equivalently, one lies in the complete linear system of the other. The
+same statement is restated for Mathlib's symmetric powers through the equivalence between `Sym X d`
+and effective divisors of degree `d`.
 
 This is the formal-divisor version of the classical fact that the fibers of the Abel map
-`Symᵈ X → Pic⁰ X`, `D ↦ 𝒪_X(D - d·x₀)`, are complete linear systems.  It advances
-`TauCetiRoadmap/JacobianChallenge/README.md`, Layer C/D, the symmetric-power Abel-map lane
-`D ↦ 𝒪_X(D - d·x₀)`, using the abstract divisor class group available before line bundles,
-the Picard scheme, or the Jacobian variety exist.  No external mathematics is vendored.
+`Symᵈ X → Pic⁰ X`, `D ↦ 𝒪_X(D - d·x₀)`, are complete linear systems. It uses the abstract divisor
+class group, without line bundles, the Picard scheme or the Jacobian variety. No external
+mathematics is vendored.
 -/
 
 public section

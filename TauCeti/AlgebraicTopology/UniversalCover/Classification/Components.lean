@@ -35,12 +35,10 @@ faithfulness has no hypothesis, so monodromy is an equivalence.
 
 ## References
 
-This closes the disconnected-cover part of Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`. It consumes the based-path universal-cover
-construction adapted from Kim Morrison's
+This file consumes the based-path universal-cover construction adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), and the
-disjoint-union classification already built from it. The mathematical classification follows
-Hatcher, *Algebraic Topology*, Section 1.3; no external formalization is copied or adapted here.
+disjoint-union classification built from it. The mathematical classification follows Hatcher,
+*Algebraic Topology*, Section 1.3; no external formalization is copied or adapted here.
 -/
 
 public section

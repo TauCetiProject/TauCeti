@@ -14,9 +14,9 @@ This file records the basic translation-invariance API for the generalized windi
 Translating both the curve and the distinguished point by the same complex number leaves the index
 principal value unchanged, so the winding number and null-homology are invariant.
 
-These lemmas are bookkeeping for the roadmap's curve and cycle layer. The geometry of the
-generalized winding number is local at a crossing or sector, and finite-decomposition arguments
-frequently translate the crossing point to the origin before applying the model computation.
+These lemmas are bookkeeping for curves and cycles. The geometry of the generalized winding number
+is local at a crossing or sector, and finite-decomposition arguments frequently translate the
+crossing point to the origin before applying the model computation.
 
 ## Main results
 
@@ -27,8 +27,8 @@ frequently translate the crossing point to the origin before applying the model 
 
 ## Provenance
 
-This is routine API around the Hungerbühler--Wasem generalized winding number from the contour
-integration roadmap; no formal source is vendored.
+This is routine API around the Hungerbühler--Wasem generalized winding number; no formal source is
+vendored.
 -/
 
 public section
