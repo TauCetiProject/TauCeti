@@ -53,7 +53,7 @@ abbrev cubicalTensor : TopCat.{u} × TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} 
 abbrev BidegreeIndex (n : ℕ) : Type := {pq : ℕ × ℕ // pq.1 + pq.2 = n}
 
 /-- The only bidegree of total degree `0` is `(0, 0)`. -/
-theorem BidegreeIndex.eq_zero (i : BidegreeIndex 0) : i = ⟨(0, 0), rfl⟩ := by
+theorem BidegreeIndex.eq_mk_zero_zero (i : BidegreeIndex 0) : i = ⟨(0, 0), rfl⟩ := by
   obtain ⟨⟨p, q⟩, h⟩ := i
   have h' : p + q = 0 := h
   exact Subtype.ext (Prod.ext (by simp only; omega) (by simp only; omega))

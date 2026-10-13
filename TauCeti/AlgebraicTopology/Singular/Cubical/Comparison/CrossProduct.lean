@@ -26,14 +26,14 @@ the simplicial singular chains of the product:
 They agree on the augmentation in degree zero, and the singular chains of the product are acyclic on
 the models of the tensor product (`TauCeti.cubicalTensorModelPresentation`), so by the method of
 acyclic models they are naturally chain homotopic
-(`TauCeti.crossProductHomotopy`), and equal on homology.
+(`TauCeti.cubicalSingularCrossProductHomotopy`), and equal on homology.
 
 ## Main definitions and results
 
 * `TauCeti.cubicalCrossProductToSingular`, `TauCeti.singularCrossProductOfCubical`: the two
   natural chain maps, on pairs of spaces.
-* `TauCeti.crossProductHomotopy`: the chain homotopy between them, natural in both spaces
-  (`TauCeti.crossProductHomotopy_hom_naturality`).
+* `TauCeti.cubicalSingularCrossProductHomotopy`: the chain homotopy between them, natural in both
+  spaces (`TauCeti.cubicalSingularCrossProductHomotopy_hom_naturality`).
 * `TauCeti.homologyMap_cubicalCrossProductToSingularApp_eq_singularCrossProductOfCubicalApp`:
   they have the same map on homology.
 
@@ -126,7 +126,7 @@ private theorem singularAugment_cubicalCrossProductToSingular_gen (i : BidegreeI
     singularAugment k ((cubicalBidegreeModel.{u} 0 i).1 ⊗ (cubicalBidegreeModel.{u} 0 i).2)
       (((cubicalCrossProductToSingular k).app (cubicalBidegreeModel.{u} 0 i)).f 0
         (cubicalTensorGen k 0 i)) = 1 := by
-  obtain rfl := BidegreeIndex.eq_zero i
+  obtain rfl := BidegreeIndex.eq_mk_zero_zero i
   refine (singularAugment_cubicalToSingular (k := k) _ _).trans ?_
   rw [cubicalTensorGen_def]
   -- the cross product chain map on the summand `(0, 0)` is the cross product of chains
@@ -168,7 +168,7 @@ private theorem singularAugment_singularCrossProductOfCubical_gen (i : BidegreeI
     singularAugment k ((cubicalBidegreeModel.{u} 0 i).1 ⊗ (cubicalBidegreeModel.{u} 0 i).2)
       (((singularCrossProductOfCubical k).app (cubicalBidegreeModel.{u} 0 i)).f 0
         (cubicalTensorGen k 0 i)) = 1 := by
-  obtain rfl := BidegreeIndex.eq_zero i
+  obtain rfl := BidegreeIndex.eq_mk_zero_zero i
   rw [cubicalTensorGen_def]
   exact singularAugment_singularCrossProduct_zeroCube k
 
@@ -189,7 +189,7 @@ theorem singularAugment_cubicalCrossProductToSingular_eq (X : TopCat.{u} × TopC
 cross product followed by the comparison map and the tensor product of the two comparison maps
 followed by the simplicial cross product, `N(X; k) ⊗ N(Y; k) ⟶ C(X × Y; k)`, are chain homotopic.
 The homotopy is natural in both spaces. -/
-def crossProductHomotopy (X Y : TopCat.{u}) :
+def cubicalSingularCrossProductHomotopy (X Y : TopCat.{u}) :
     Homotopy (cubicalCrossProductToSingularApp k X Y) (singularCrossProductOfCubicalApp k X Y) :=
   (cubicalTensorModelPresentation.{u} k).homotopy
     (isAcyclicOnMulti_singularChainsProduct_cubicalTensorModelPresentation k)
@@ -197,11 +197,13 @@ def crossProductHomotopy (X Y : TopCat.{u}) :
     (singularAugment_cubicalCrossProductToSingular_eq k) (X, Y)
 
 /-- The homotopy between the two cross products is natural in both spaces. -/
-theorem crossProductHomotopy_hom_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y')
-    (i j : ℕ) :
+theorem cubicalSingularCrossProductHomotopy_hom_naturality {X X' Y Y' : TopCat.{u}}
+    (f : X ⟶ X') (g : Y ⟶ Y') (i j : ℕ) :
     (HomologicalComplex.tensorHom ((normalizedCubicalChainComplex k).map f)
-        ((normalizedCubicalChainComplex k).map g)).f i ≫ (crossProductHomotopy k X' Y').hom i j =
-      (crossProductHomotopy k X Y).hom i j ≫ ((singularChains k).map (f ⊗ₘ g)).f j :=
+        ((normalizedCubicalChainComplex k).map g)).f i ≫
+        (cubicalSingularCrossProductHomotopy k X' Y').hom i j =
+      (cubicalSingularCrossProductHomotopy k X Y).hom i j ≫
+        ((singularChains k).map (f ⊗ₘ g)).f j :=
   AcyclicModels.MultiModelPresentation.homotopy_hom_naturality _ _
     (cubicalCrossProductToSingular k) (singularCrossProductOfCubical k)
     (singularAugment_cubicalCrossProductToSingular_eq k) ((f, g) : (X, Y) ⟶ (X', Y')) i j
@@ -213,7 +215,7 @@ theorem homologyMap_cubicalCrossProductToSingularApp_eq_singularCrossProductOfCu
     (X Y : TopCat.{u}) (n : ℕ) :
     HomologicalComplex.homologyMap (cubicalCrossProductToSingularApp k X Y) n =
       HomologicalComplex.homologyMap (singularCrossProductOfCubicalApp k X Y) n :=
-  (crossProductHomotopy k X Y).homologyMap_eq n
+  (cubicalSingularCrossProductHomotopy k X Y).homologyMap_eq n
 
 end TauCeti
 
