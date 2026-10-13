@@ -60,17 +60,6 @@ The pairing enters only through the split orthonormality lemmas of
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
-  Everything here is proved from Layer 0's `characterPairing` and its orthonormality, which are on
-  `main`, together with Mathlib's `char_orthonormal`; no Layer 1, Layer 2 or Layer 3 material is
-  used, and none is presupposed. What the file supplies is prerequisite material for the later
-  layers: that a character determines its irreducible is the injectivity of the map
-  `character : Irreps k G → ClassFunction k G` that Layer 2.5 asks for, and the cardinality bound
-  is the `≤` half of Layer 2's count `Nat.card (Irreps k G) = Nat.card (ConjClasses G)`, obtained
-  without Wedderburn. Layer 3's completeness item, the spanning statement and the orthonormal
-  basis, is proved downstream in
-  `TauCeti/RepresentationTheory/CharacterTable/Completeness.lean` from the linear independence
-  proved here and the `≥` half of the count.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Theorem 2.8 and Corollary 2.9.
 -/
 
