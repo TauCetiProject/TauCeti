@@ -24,8 +24,8 @@ pentagon's top.
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1, and
 Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Section 3.1
-(arXiv:math/0610559). The construction uses the forward recut in `Initial.Basic` and follows
-the inverse promotion argument of `InitialPentagon.Overlap.PentagonInitial.Mixed`.
+(arXiv:math/0610559). Related formalization:
+`InitialPentagon.Overlap.PentagonInitial.Mixed`.
 -/
 
 public section
