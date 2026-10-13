@@ -15,8 +15,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
 Every elliptic curve over `ℚ` has exactly one reduced minimal equation in its isomorphism class:
 an equation that is minimal at every prime and satisfies `a₁, a₃ ∈ {0, 1}` and
 `a₂ ∈ {-1, 0, 1}` (`WeierstrassCurve.existsUnique_reducedMinimal`). This is the equation by which
-Cremona's tables and the LMFDB present a curve, so a label names a particular equation and not
-merely an isomorphism class. This file certifies the equations of two curves from those tables:
+Cremona's tables and the LMFDB present a curve. Each database label identifies the curve's
+isomorphism class; the displayed equation is its canonical reduced-minimal representative.
+This file certifies the equations of two curves from those tables:
 
 | LMFDB label | Cremona label | `[a₁, a₂, a₃, a₄, a₆]` | `Δ` | `c₄` |
 |---|---|---|---|---|
@@ -73,7 +74,7 @@ theorem isReducedMinimal_curve11a2 : IsReducedMinimal (curve11a2.baseChange ℚ)
   norm_num
 
 /-- **The reduced minimal model of any curve isomorphic to 11.a2 is
-`y² + y = x³ - x² - 10 x - 20`**, so the label names this equation. -/
+`y² + y = x³ - x² - 10 x - 20`**, the canonical reduced-minimal representative of that class. -/
 theorem reducedMinimalModel_eq_curve11a2 {E : WeierstrassCurve ℚ} [E.IsElliptic]
     (C : VariableChange ℚ) (hC : C • E = curve11a2.baseChange ℚ) :
     reducedMinimalModel E = curve11a2.baseChange ℚ :=
@@ -106,8 +107,8 @@ theorem isReducedMinimal_curve37a1 : IsReducedMinimal (curve37a1.baseChange ℚ)
   rw [Δ_curve37a1, c₄_curve37a1, Int.isCoprime_iff_gcd_eq_one]
   norm_num
 
-/-- **The reduced minimal model of any curve isomorphic to 37.a1 is `y² + y = x³ - x`**, so the
-label names this equation. -/
+/-- **The reduced minimal model of any curve isomorphic to 37.a1 is `y² + y = x³ - x`**,
+the canonical reduced-minimal representative of that class. -/
 theorem reducedMinimalModel_eq_curve37a1 {E : WeierstrassCurve ℚ} [E.IsElliptic]
     (C : VariableChange ℚ) (hC : C • E = curve37a1.baseChange ℚ) :
     reducedMinimalModel E = curve37a1.baseChange ℚ :=
