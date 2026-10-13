@@ -33,23 +33,23 @@ pushing the `a`-th coordinate followed by the `x`-th basis vector through the st
 through all the others, weighted by `J a b` for the cap and `-J x y` for the cup and summed over
 all four indices.
 
-## The orientation of an arc cancels
+## The arc is an unordered pair of strands
 
-The cap and the cup each change sign when their two endpoints are exchanged, because the standard
-symplectic form is alternating (`TauCeti.symplecticCap_comp_symplecticFlip` and
-`TauCeti.symplecticFlip_comp_symplecticCup`). That is why a Brauer *diagram* acting on `V^{⊗d}`
-needs a chosen ordering of each of its arcs, and why the crossing is the sign-twisted flip rather
-than the bare one. On a *single* arc the two sign changes cancel: the generator `e i j` built here
-is unchanged by exchanging `i` and `j` (`TauCeti.symplecticCupCapAt_comm`), exactly as in the
-orthogonal case. So the ordering convention is invisible to the relations proved here, and it is
-the relative orientation of *different* arcs of one diagram that it will pin down.
+The cap and the cup are each antisymmetric: exchanging their two endpoints changes the sign,
+because the standard symplectic form is alternating
+(`TauCeti.symplecticCap_comp_symplecticFlip` and `TauCeti.symplecticFlip_comp_symplecticCup`). On
+a single arc the two sign changes cancel, so the generator `e i j` built here is unchanged by
+exchanging `i` and `j` (`TauCeti.symplecticCupCapAt_comm`), exactly as in the orthogonal case: an
+arc carries no orientation and is the unordered pair of the two strands it joins. What the
+antisymmetry does force instead is the sign on the *crossing*, which is minus the flip of the two
+slots (`TauCeti.symplecticCrossing` on two strands), and the negative loop value below.
 
 ## The relations
 
 Writing `e i j` for the generator, the relations proved here are
 
 * `e i j * e i j = (-2n) • e i j`, the loop rule at the symplectic loop value `δ = -2n = -dim V`;
-* `e i j = e j i`, the cancellation of the orientation just described;
+* `e i j = e j i`, the cancellation of the two sign changes just described;
 * `e i j * e a b = e a b * e i j` for two arcs on disjoint pairs of strands;
 * `e i j * ρ g = ρ g * e i j` for `g` in the symplectic group acting diagonally.
 
@@ -66,9 +66,11 @@ definition is then a fourfold sum, and the cap half of it is the double sum that
 `Matrix.toBilin'` already is.
 
 At `i = j` the two strands coincide. The first branch of `TauCeti.symplecticCupCapStrand` then
-wins and the operator is not an arc of a Brauer diagram; nothing is proved about that degenerate
-value, and every statement that reads an arc through the form carries the hypothesis `i ≠ j`. Only
-`TauCeti.commute_symplecticCupCapAt_of_disjoint`, which is a strandwise statement, holds for
+wins, the second plug of the definition is dead, and the operator is not an arc of a Brauer
+diagram but the rank-one map of `TauCeti.symplecticCupCapAt_self_tprod`: the slot `i` is paired
+with the all-ones vector and replaced by the row sums of `J`. Every statement that reads an arc
+through the form therefore carries the hypothesis `i ≠ j`; `TauCeti.symplecticCupCapAt_comm` and
+`TauCeti.commute_symplecticCupCapAt_of_disjoint`, which are strandwise statements, hold for
 coincident strands too.
 
 ## Main definitions
@@ -80,6 +82,8 @@ coincident strands too.
 
 * `TauCeti.symplecticCupCapAt_tprod`: the value of the generator on a pure tensor at distinct
   strands, the invariant form of the two chosen factors times the cup re-expanding those slots.
+* `TauCeti.symplecticCupCapAt_self_tprod`: the degenerate value at `i = j`, where the second plug
+  is dead and the operator is not an arc.
 * `TauCeti.symplecticCupCapAt_comm`: **the generator depends only on the unordered pair of
   strands**, the two sign changes of the cap and the cup cancelling.
 * `TauCeti.symplecticCupCapAt_zero_one`: on two strands the generator is
@@ -87,8 +91,7 @@ coincident strands too.
 * `TauCeti.symplecticCupCapAt_mul_self`: **the loop rule** `e * e = (-2n) • e`.
 * `TauCeti.commute_symplecticCupCapAt_of_disjoint`: **disjoint arcs commute.**
 * `TauCeti.commute_symplecticCupCapAt_piTensorProductMap`: the generator commutes with the
-  diagonal action of every matrix `A` with `Aᵀ * J * A = J` and `A * J * Aᵀ = J`; the cap consumes
-  the first identity and the cup the second.
+  diagonal action of every matrix `A` preserving the standard alternating form, `Aᵀ * J * A = J`.
 * `TauCeti.commute_symplecticCupCapAt_tensorPower`: **the generator commutes with the diagonal
   action of the symplectic group**, so every single-arc diagram acts by an intertwiner.
 
@@ -129,7 +132,8 @@ off by a cup re-expanding those two slots through the inverse copairing, the biv
 
 The cap contributes the weight `J a b` to the pair of coordinates it reads off the two slots, and
 the cup the weight `-J x y` to the pair of basis vectors it writes back into them. At `i = j` the
-two strands coincide and the result is not an arc of a Brauer diagram; see the module docstring. -/
+two strands coincide and the result is not an arc of a Brauer diagram
+(`TauCeti.symplecticCupCapAt_self_tprod`); see the module docstring. -/
 noncomputable def symplecticCupCapAt (i j : Fin d) :
     Module.End k (⨂[k]^d ((Fin n ⊕ Fin n) → k)) :=
   ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
@@ -172,23 +176,6 @@ private theorem update_pair_update_pair (hij : i ≠ j) :
     · simp [hi, hj]
 
 end Plug
-
-/-- The regrouping that reads `TauCeti.symplecticCupCapAt` on a pure tensor: the cap contributes a
-scalar depending on the first two indices and the cup a vector depending on the last two, so the
-fourfold sum is the product of the two double sums. This is bookkeeping for
-`TauCeti.symplecticCupCapAt_tprod`. -/
-private theorem sum_mul_smul_eq_smul_sum {K : Type u} [CommRing K] {ι M : Type*} [Fintype ι]
-    [AddCommMonoid M] [Module K M] (C D : ι → ι → K) (P : ι → ι → M) :
-    ∑ a : ι, ∑ b : ι, ∑ x : ι, ∑ y : ι, (C a b * D x y) • P x y =
-      (∑ a : ι, ∑ b : ι, C a b) • ∑ x : ι, ∑ y : ι, D x y • P x y := by
-  rw [Finset.sum_smul]
-  refine Finset.sum_congr rfl fun a _ => ?_
-  rw [Finset.sum_smul]
-  refine Finset.sum_congr rfl fun b _ => ?_
-  rw [Finset.smul_sum]
-  refine Finset.sum_congr rfl fun x _ => ?_
-  rw [Finset.smul_sum]
-  exact Finset.sum_congr rfl fun y _ => (smul_smul _ _ _).symm
 
 /-- One summand of `TauCeti.symplecticCupCapAt` on a pure tensor. -/
 private theorem symplecticCupCapAt_map_tprod {i j : Fin d} (hij : i ≠ j)
@@ -243,22 +230,97 @@ theorem symplecticCupCapAt_tprod {i j : Fin d} (hij : i ≠ j)
     rw [← Finset.sum_neg_distrib]
     exact Finset.sum_congr rfl fun y _ =>
       (neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)) _ _).symm
+  have hsummand : ∀ a b x y : Fin n ⊕ Fin n,
+      (-(Matrix.J (Fin n) k a b * Matrix.J (Fin n) k x y)) •
+          PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y)
+            (PiTensorProduct.tprod k v) =
+        (v i a * Matrix.J (Fin n) k a b * v j b * -Matrix.J (Fin n) k x y) •
+          PiTensorProduct.tprod k (Function.update
+            (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k))) := by
+    intro a b x y
+    rw [symplecticCupCapAt_map_tprod hij, smul_smul]
+    congr 1
+    ring
   rw [symplecticCupCapAt]
   simp only [LinearMap.sum_apply, LinearMap.smul_apply]
   rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ =>
-    Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => by
-      rw [symplecticCupCapAt_map_tprod hij, smul_smul,
-        show (-(Matrix.J (Fin n) k a b * Matrix.J (Fin n) k x y)) * (v i a * v j b) =
-          (v i a * Matrix.J (Fin n) k a b * v j b) * (-Matrix.J (Fin n) k x y) by ring]]
-  rw [sum_mul_smul_eq_smul_sum, hform, hneg]
+    Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => hsummand a b x y, hform, hneg]
+  -- the cap scalars depend on `a` and `b` and the cup ones on `x` and `y`, so the fourfold sum is
+  -- the product of the two double sums: distribute the scalar action over both of them
+  simp_rw [Finset.sum_smul, Finset.smul_sum, smul_smul]
+
+/-- One summand of `TauCeti.symplecticCupCapAt` at coincident strands: the strand `i` wins the
+first branch of `TauCeti.symplecticCupCapStrand`, so the second plug is dead and only the `a`-th
+coordinate and the `x`-th basis vector survive. -/
+private theorem symplecticCupCapAt_self_map_tprod (i : Fin d) (a b x y : Fin n ⊕ Fin n)
+    (v : Fin d → ((Fin n ⊕ Fin n) → k)) :
+    PiTensorProduct.map (symplecticCupCapStrand k n d i i a b x y) (PiTensorProduct.tprod k v) =
+      v i a • PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k))) := by
+  have hval : PiTensorProduct.map (symplecticCupCapStrand k n d i i a b x y)
+      (PiTensorProduct.tprod k v) =
+      PiTensorProduct.tprod k (Function.update v i (v i a • Pi.single x (1 : k))) := by
+    rw [PiTensorProduct.map_tprod]
+    congr 1
+    funext t
+    rcases eq_or_ne t i with hi | hi
+    · subst hi
+      rw [Function.update_self]
+      simp [symplecticCupCapStrand]
+    · rw [Function.update_of_ne hi]
+      simp [symplecticCupCapStrand, hi]
+  rw [hval, (PiTensorProduct.tprod k).map_update_smul]
+
+/-- **The degenerate value at coincident strands**: at `i = j` the cap and the cup land on the same
+slot, and the second plug of `TauCeti.symplecticCupCapAt` is dead. The operator is then *not* the
+contraction of that slot against itself -- which would be quadratic in `v i`, not linear -- but the
+rank-one map pairing the slot with the all-ones vector and refilling it with the row sums of `J`.
+This is why the relations that read the arc through the form assume `i ≠ j`. -/
+@[simp]
+theorem symplecticCupCapAt_self_tprod (i : Fin d) (v : Fin d → ((Fin n ⊕ Fin n) → k)) :
+    symplecticCupCapAt k n d i i (PiTensorProduct.tprod k v) =
+      stdSymplecticBilinForm k n (v i) 1 •
+        -∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
+          PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k))) := by
+  have hform : stdSymplecticBilinForm k n (v i) 1 =
+      ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, v i a * Matrix.J (Fin n) k a b := by
+    rw [stdSymplecticBilinForm_apply, ← Matrix.toBilin'_apply' (Matrix.J (Fin n) k),
+      Matrix.toBilin'_apply]
+    simp
+  have hneg : (-∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
+        PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k)))) =
+      ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, (-Matrix.J (Fin n) k x y) •
+        PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k))) := by
+    rw [← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    rw [← Finset.sum_neg_distrib]
+    exact Finset.sum_congr rfl fun y _ =>
+      (neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)) _ _).symm
+  have hsummand : ∀ a b x y : Fin n ⊕ Fin n,
+      (-(Matrix.J (Fin n) k a b * Matrix.J (Fin n) k x y)) •
+          PiTensorProduct.map (symplecticCupCapStrand k n d i i a b x y)
+            (PiTensorProduct.tprod k v) =
+        (v i a * Matrix.J (Fin n) k a b * -Matrix.J (Fin n) k x y) •
+          PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k))) := by
+    intro a b x y
+    rw [symplecticCupCapAt_self_map_tprod, smul_smul]
+    congr 1
+    ring
+  rw [symplecticCupCapAt]
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply]
+  rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ =>
+    Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => hsummand a b x y, hform, hneg]
+  simp_rw [Finset.sum_smul, Finset.smul_sum, smul_smul]
 
 /-! ### The orientation of the arc -/
 
 /-- **The generator depends only on the unordered pair of strands.** Exchanging the two endpoints
-of the arc changes the sign of the cap and the sign of the cup, and the two changes cancel: the
-alternating form forces an orientation on each arc of a diagram, but not on a single arc. -/
-theorem symplecticCupCapAt_comm {i j : Fin d} (hij : i ≠ j) :
+of the arc changes the sign of the cap and the sign of the cup, and the two changes cancel, so an
+arc of a diagram carries no orientation. The sign the alternating form does force is the one on the
+crossing, not one on an arc. -/
+theorem symplecticCupCapAt_comm (i j : Fin d) :
     symplecticCupCapAt k n d i j = symplecticCupCapAt k n d j i := by
+  rcases eq_or_ne i j with rfl | hij
+  · rfl
   have hstrand : ∀ a b x y : Fin n ⊕ Fin n,
       symplecticCupCapStrand k n d j i b a y x = symplecticCupCapStrand k n d i j a b x y := by
     intro a b x y
@@ -311,6 +373,7 @@ theorem symplecticCupCapAt_zero_one :
 
 /-- **The loop rule `e² = δ e`** at the symplectic loop value `δ = -2n = -dim V`: a cup stacked
 under a cap closes into a loop, which contracts the pairing `J` against the copairing `-J`. -/
+@[simp]
 theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
     symplecticCupCapAt k n d i j * symplecticCupCapAt k n d i j =
       -(2 * n : k) • symplecticCupCapAt k n d i j := by
@@ -478,21 +541,22 @@ private theorem sum_sum_tprod_update_pair_mulVec
         rw [hcoef a b, hA]
 
 /-- **The generator commutes with the diagonal action of a symplectic matrix**: the cap consumes
-`Aᵀ * J * A = J`, which is exactly preservation of the standard alternating form, and the cup
-consumes the other one-sided identity `A * J * Aᵀ = J`. -/
+`Aᵀ * J * A = J`, which is exactly preservation of the standard alternating form, and the cup the
+other one-sided identity `A * J * Aᵀ = J`, which `SymplecticGroup.mem_iff` derives from it. -/
 theorem commute_symplecticCupCapAt_piTensorProductMap
     {A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k}
-    (hcap : Aᵀ * Matrix.J (Fin n) k * A = Matrix.J (Fin n) k)
-    (hcup : A * Matrix.J (Fin n) k * Aᵀ = Matrix.J (Fin n) k) {i j : Fin d} (hij : i ≠ j) :
+    (hA : Aᵀ * Matrix.J (Fin n) k * A = Matrix.J (Fin n) k) {i j : Fin d} (hij : i ≠ j) :
     Commute (symplecticCupCapAt k n d i j)
       (PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin A) := by
+  have hcup : A * Matrix.J (Fin n) k * Aᵀ = Matrix.J (Fin n) k :=
+    SymplecticGroup.mem_iff.mp (SymplecticGroup.mem_iff'.mpr hA)
   refine PiTensorProduct.ext ?_
   ext v
   have hform : stdSymplecticBilinForm k n (A *ᵥ v i) (A *ᵥ v j) =
       stdSymplecticBilinForm k n (v i) (v j) := by
     rw [stdSymplecticBilinForm_apply, stdSymplecticBilinForm_apply, Matrix.mulVec_mulVec,
       Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose, Matrix.vecMul_vecMul,
-      ← Matrix.mul_assoc, hcap, ← Matrix.dotProduct_mulVec]
+      ← Matrix.mul_assoc, hA, ← Matrix.dotProduct_mulVec]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
     Module.End.mul_apply, Module.End.mul_apply, PiTensorProduct.map_tprod,
     symplecticCupCapAt_tprod hij, symplecticCupCapAt_tprod hij, map_smul, map_neg, map_sum]
@@ -518,15 +582,15 @@ theorem commute_symplecticCupCapAt_piTensorProductMap
         Function.update_of_ne hi]
 
 /-- **The symplectic Brauer arc commutes with the symplectic group.** Membership in
-`Matrix.symplecticGroup` supplies both one-sided identities, so every single-arc diagram acts on
-the tensor power by an intertwiner of the diagonal symplectic action. -/
+`Matrix.symplecticGroup` supplies preservation of the standard alternating form, so every
+single-arc diagram acts on the tensor power by an intertwiner of the diagonal symplectic
+action. -/
 theorem commute_symplecticCupCapAt_tensorPower (g : Matrix.symplecticGroup (Fin n) k)
     {i j : Fin d} (hij : i ≠ j) :
     Commute (symplecticCupCapAt k n d i j) ((stdSymplecticRep k n).tensorPower d g) := by
   rw [Representation.tensorPower_apply]
   simpa only [stdSymplecticRep_apply] using
     commute_symplecticCupCapAt_piTensorProductMap
-      ((SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.prop)
-      ((SymplecticGroup.mem_iff (l := Fin n) (R := k)).mp g.prop) hij
+      ((SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.prop) hij
 
 end TauCeti
