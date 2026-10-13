@@ -28,6 +28,7 @@ open scoped ENNReal
 namespace ENNReal
 
 /-- For `a ≤ b`, the difference `1 - a / b` is read in `ℝ` as `1 - a.toReal / b.toReal`. -/
+@[simp]
 theorem toReal_one_sub_div {a b : ℝ≥0∞} (hab : a ≤ b) :
     (1 - a / b).toReal = 1 - a.toReal / b.toReal := by
   rw [toReal_sub_of_le (div_le_of_le_mul (by simpa using hab)) one_ne_top, toReal_div, toReal_one]
