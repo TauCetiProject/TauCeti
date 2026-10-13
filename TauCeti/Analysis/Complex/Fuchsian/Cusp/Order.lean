@@ -10,8 +10,9 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
 /-!
 # Cusp orders from Laurent q-expansions
 
-For a cusp-invariant holomorphic function with controlled exponential growth, the meromorphic
-order of its q-extension is exactly the order of its convergent Laurent q-expansion. Both orders
+For a cusp-invariant function whose twisted q-extension is analytic at zero, the meromorphic
+order of its q-extension is exactly the order of its Laurent q-expansion. Controlled exponential
+growth of a function holomorphic sufficiently high ensures this analyticity. Both orders
 are infinite for the zero germ. Thus vanishing of the coefficients below an integer characterizes
 an order bound, and the first nonzero coefficient gives the exact order, for poles and zeros alike.
 
@@ -35,17 +36,14 @@ namespace TauCeti.Subgroup.CuspDatum
 variable {Γ : Subgroup PSL(2, ℝ)}
 
 /-- The meromorphic order of the cusp extension is the least exponent with a nonzero Laurent
-coefficient, with value `⊤` when all coefficients vanish. It is independent of the growth bound
-used to construct the Laurent series. -/
+coefficient, with value `⊤` when all coefficients vanish, provided the twisted extension is
+analytic at zero. It is independent of the valid integer twist used to construct the series. -/
 theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
     (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
-    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
+    (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 = (laurentQExpansion D k f).orderTop := by
-  have han := analyticAt_twistedExtension_zero D k f hf hhol hbound
-  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf hhol hbound]
+  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf han]
   cases ho : analyticOrderAt (twistedExtension D k f) 0 with
   | top =>
     have hzero : laurentQExpansion D k f = 0 := by
@@ -56,8 +54,8 @@ theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
       · have hderiv : iteratedDeriv (j + k).toNat (twistedExtension D k f) 0 = 0 :=
           (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero han).mp
             (ho ▸ le_top (a := (((j + k).toNat + 1 : ℕ) : ℕ∞))) _ (Nat.lt_succ_self _)
-        simp [laurentQExpansion_coeff, show 0 ≤ j + k by omega,
-          twistedQExpansion_coeff, hderiv]
+        have hjk : 0 ≤ j + k := by omega
+        simp [laurentQExpansion_coeff, hjk, twistedQExpansion_coeff, hderiv]
     simp [hzero]
   | coe n =>
     obtain ⟨hvanish, hnonzero⟩ := (analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero han).mp ho
@@ -82,25 +80,21 @@ theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
 less than `m` vanishes. The bound may be positive, zero, or negative. -/
 theorem le_meromorphicOrderAt_cuspExtension_iff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
-    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) (m : ℤ) :
+    (han : AnalyticAt ℂ (twistedExtension D k f) 0) (m : ℤ) :
     (m : WithTop ℤ) ≤ meromorphicOrderAt (cuspExtension D f) 0 ↔
       ∀ j < m, (laurentQExpansion D k f).coeff j = 0 := by
-  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf hhol hbound,
+  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf han,
     HahnSeries.le_orderTop_iff_forall]
   simp only [WithTop.coe_lt_coe]
 
 /-- The first nonzero Laurent coefficient gives the exact meromorphic cusp order. -/
-theorem meromorphicOrderAt_cuspExtension_eq_iff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
+theorem meromorphicOrderAt_cuspExtension_eq_int_iff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
-    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) (m : ℤ) :
+    (han : AnalyticAt ℂ (twistedExtension D k f) 0) (m : ℤ) :
     meromorphicOrderAt (cuspExtension D f) 0 = (m : WithTop ℤ) ↔
       (laurentQExpansion D k f).coeff m ≠ 0 ∧
         ∀ j < m, (laurentQExpansion D k f).coeff j = 0 := by
-  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf hhol hbound]
+  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf han]
   refine ⟨fun h ↦ ⟨HahnSeries.coeff_orderTop_ne h, ?_⟩, fun ⟨hm, hbelow⟩ ↦ ?_⟩
   · intro j hj
     exact HahnSeries.coeff_eq_zero_of_lt_orderTop (h ▸ WithTop.coe_lt_coe.mpr hj)
@@ -110,11 +104,9 @@ theorem meromorphicOrderAt_cuspExtension_eq_iff (D : Γ.CuspDatum) (k : ℤ) (f 
 /-- The Laurent q-expansion vanishes exactly when its meromorphic cusp germ has infinite order. -/
 theorem meromorphicOrderAt_cuspExtension_eq_top_iff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
-    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
+    (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 = ⊤ ↔ laurentQExpansion D k f = 0 := by
-  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf hhol hbound,
+  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf han,
     HahnSeries.orderTop_eq_top]
 
 end TauCeti.Subgroup.CuspDatum

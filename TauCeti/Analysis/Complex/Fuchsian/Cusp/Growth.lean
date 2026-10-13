@@ -201,16 +201,13 @@ theorem meromorphicAt_cuspExtension_zero (D : Γ.CuspDatum) (k : ℤ) (f : ℍ �
     (cuspExtension_eventuallyEq_zpow_mul_twistedExtension D k f hf).mono
       fun q hq ↦ by simpa only [sub_zero, smul_eq_mul] using hq⟩
 
-/-- Twisting by `q^k` adds `k` to the cusp order. Under the corresponding growth bound,
-the remaining order is the analytic order of the twisted extension, including infinite order. -/
+/-- Twisting by `q^k` adds `k` to the cusp order. When the twisted extension is analytic
+at zero, the remaining order is its analytic order, including infinite order. -/
 theorem meromorphicOrderAt_cuspExtension_eq_neg_add (D : Γ.CuspDatum) (k : ℤ)
     (f : ℍ → ℂ) (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
-    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
+    (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 =
       ((-k : ℤ) : WithTop ℤ) + (analyticOrderAt (twistedExtension D k f) 0).map Nat.cast := by
-  have han := analyticAt_twistedExtension_zero D k f hf hhol hbound
   have hrepr := cuspExtension_eventuallyEq_zpow_mul_twistedExtension D k f hf
   have hfun : (fun q : ℂ ↦ q ^ (-k) * twistedExtension D k f q) =
       id ^ (-k) * twistedExtension D k f := rfl
@@ -227,10 +224,10 @@ theorem neg_le_meromorphicOrderAt_cuspExtension (D : Γ.CuspDatum) (k : ℤ)
     (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
       fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
     ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspExtension D f) 0 := by
-  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf hhol hbound,
-    ← (analyticAt_twistedExtension_zero D k f hf hhol hbound).meromorphicOrderAt_eq]
-  exact le_add_of_nonneg_right
-    (analyticAt_twistedExtension_zero D k f hf hhol hbound).meromorphicOrderAt_nonneg
+  have han := analyticAt_twistedExtension_zero D k f hf hhol hbound
+  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf han,
+    ← han.meromorphicOrderAt_eq]
+  exact le_add_of_nonneg_right han.meromorphicOrderAt_nonneg
 
 /-- Exponential growth of rate at most `2πn / w` forces the meromorphic order of the cusp
 extension to be at least `-n`; equivalently, its pole order is at most `n`. -/

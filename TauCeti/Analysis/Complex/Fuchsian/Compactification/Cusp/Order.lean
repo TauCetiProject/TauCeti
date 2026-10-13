@@ -52,6 +52,7 @@ theorem meromorphicOrderAt_ofCusp_eq_orderTop_laurentQExpansion (D : Γ.CuspDatu
     exact congrArg (fun p ↦ F (ofQuotient p))
       (Quotient.sound (orbitRel_apply.mpr (mem_orbit z (g : Γ))))
   rw [meromorphicOrderAt_ofCusp D hF]
-  exact meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf hhol hbound
+  exact meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf
+    (analyticAt_twistedExtension_zero D k f hf hhol hbound)
 
 end Subgroup.CompactifiedQuotient
