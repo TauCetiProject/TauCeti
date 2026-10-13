@@ -187,12 +187,20 @@ private theorem cross_lower_entries (h2 : IsRegular (2 : R))
   have hz (i j : Fin 7) (hji : j < i) : g i j = 0 := hu.isUpperTriangular hji
   have h34 : g 3 4 = g 0 1 := by
     have he := cross_entry h 0 0 4
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one, Fin.sum_univ_seven,
+      hu.apply_diag, Int.cast_zero, mul_zero, cons_val_one, Int.cast_neg, Int.cast_ofNat, mul_neg,
+      zero_add, add_zero, one_mul, zero_lt_one, hz, zero_mul, Fin.reduceLT, neg_mul, mul_one,
+      neg_inj] at he
     apply h2.left
     linear_combination -he
   have h35 : g 3 5 = g 0 2 := by
     have he := cross_entry h 0 0 5
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one, Fin.sum_univ_seven,
+      hu.apply_diag, Int.cast_zero, mul_zero, cons_val_one, add_zero, Int.cast_neg,
+      Int.cast_ofNat, mul_neg, zero_add, one_mul, zero_lt_one, hz, zero_mul, Fin.reduceLT,
+      neg_mul, mul_one, neg_inj] at he
     apply h2.left
     linear_combination -he
   have h03 : g 0 3 = 2 * g 3 6 := by
@@ -200,32 +208,54 @@ private theorem cross_lower_entries (h2 : IsRegular (2 : R))
     simpa [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven] using he
   have h45 : g 4 5 = g 1 2 := by
     have he := cross_entry h 0 1 5
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one, Fin.sum_univ_seven,
+      zero_lt_one, hz, Int.cast_zero, mul_zero, hu.apply_diag, cons_val_one, add_zero,
+      Int.cast_neg, Int.cast_ofNat, mul_neg, zero_add, one_mul, zero_mul, Fin.reduceLT, neg_mul,
+      mul_one, neg_inj] at he
     apply h2.left
     linear_combination -he
   have h23 : g 2 3 = 2 * g 0 1 := by
     have he := cross_entry h 1 0 3
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_one, cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one,
+      Fin.sum_univ_seven, hu.apply_diag, Int.cast_zero, mul_zero, Int.cast_ofNat, zero_add,
+      add_zero, one_mul, Fin.reduceLT, hz, zero_mul, Int.cast_neg, mul_neg, mul_one] at he
     apply h2.left
     linear_combination -he
   have h56 : g 5 6 = g 0 1 := by
     have he := cross_entry h 0 2 6
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h23] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one, Fin.sum_univ_seven,
+      Fin.reduceLT, hz, Int.cast_zero, mul_zero, cons_val_one, add_zero, hu.apply_diag, h23,
+      Int.cast_neg, Int.cast_one, mul_neg, mul_one, zero_add, one_mul, zero_lt_one, zero_mul,
+      Int.cast_ofNat, neg_mul, neg_inj] at he
     apply h2.left
     linear_combination -he
   have h24 : g 2 4 = (g 0 1) ^ 2 := by
     have he := cross_entry h 1 0 4
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h34] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_one, cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one,
+      Fin.sum_univ_seven, hu.apply_diag, Int.cast_zero, mul_zero, add_zero, one_mul, Fin.reduceLT,
+      hz, zero_mul, Int.cast_ofNat, zero_add, Int.cast_neg, mul_neg, h34, neg_mul, mul_one] at he
     apply h2.left
     linear_combination -he
   have h25 : g 2 5 = g 0 1 * g 0 2 - g 3 6 := by
     have he := cross_entry h 1 0 5
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h35, h03] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_one, cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one,
+      Fin.sum_univ_seven, hu.apply_diag, Int.cast_zero, mul_zero, add_zero, h03, Int.cast_neg,
+      Int.cast_one, mul_neg, mul_one, zero_add, one_mul, Fin.reduceLT, hz, zero_mul,
+      Int.cast_ofNat, h35, neg_mul] at he
     apply h2.left
     linear_combination -he
   have h26 : g 2 6 = g 0 1 * g 3 6 - g 0 4 := by
     have he := cross_entry h 1 0 6
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_one, cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one,
+      Fin.sum_univ_seven, hu.apply_diag, Int.cast_zero, mul_zero, add_zero, Int.cast_neg,
+      Int.cast_ofNat, mul_neg, zero_add, one_mul, Fin.reduceLT, hz, zero_mul,
+      neg_mul, mul_one] at he
     apply h2.left
     linear_combination -he
   exact ⟨h34, h35, h03, h45, h23, h56, h24, h25, h26⟩
@@ -241,31 +271,55 @@ theorem eq_crossUnipotentMatrix_of_preservesG2Cross (h2 : IsRegular (2 : R))
   -- The remaining cross-product identities determine the top two rows.
   have h13 : g 1 3 = 2 * g 0 1 * g 1 2 - 2 * g 0 2 := by
     have he := cross_entry h 1 1 5
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h45, h35] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_one, cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one,
+      Fin.sum_univ_seven, zero_lt_one, hz, Int.cast_zero, mul_zero, hu.apply_diag, add_zero,
+      Int.cast_neg, Int.cast_one, mul_neg, mul_one, zero_add, one_mul, Fin.reduceLT, zero_mul,
+      Int.cast_ofNat, h35, h45, neg_mul] at he
     linear_combination -he
   have h46 : g 4 6 = g 0 1 * g 1 2 - g 0 2 := by
     have he := cross_entry h 0 1 6
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h56, h13] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one, Fin.sum_univ_seven,
+      zero_lt_one, hz, Int.cast_zero, mul_zero, hu.apply_diag, cons_val_one, add_zero, h13,
+      Int.cast_neg, Int.cast_one, mul_neg, mul_one, neg_sub, zero_add, one_mul, zero_mul,
+      Fin.reduceLT, Int.cast_ofNat, neg_mul, h56] at he
     apply h2.left
     linear_combination he
   have h14 : g 1 4 = (g 0 1) ^ 2 * g 1 2 - g 0 1 * g 0 2 - g 3 6 := by
     have he := cross_entry h 1 1 6
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h13, h46] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val_one, cons_val_zero, of_apply, cons_val', cons_val, cons_val_fin_one,
+      Fin.sum_univ_seven, zero_lt_one, hz, Int.cast_zero, mul_zero, hu.apply_diag, add_zero, h13,
+      Int.cast_neg, Int.cast_ofNat, mul_neg, zero_add, one_mul, Fin.reduceLT, zero_mul, h46,
+      neg_mul, mul_one] at he
     apply h2.left
     linear_combination -he
   have h15 : g 1 5 = g 0 1 * g 1 2 * g 0 2 - (g 0 2) ^ 2 - g 1 2 * g 3 6 := by
     have he := cross_entry h 2 0 5
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h25, h45, h35] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val, of_apply, cons_val', cons_val_fin_one, Fin.sum_univ_seven, hu.apply_diag,
+      cons_val_zero, Int.cast_zero, mul_zero, cons_val_one, add_zero, one_mul, Fin.reduceLT, hz,
+      zero_mul, Int.cast_neg, Int.cast_ofNat, zero_add, neg_mul, h25, mul_neg, h35, h45, mul_one]
+      at he
     apply h2.left
     linear_combination he
   have h16 : g 1 6 = g 0 1 * g 1 2 * g 3 6 - g 0 2 * g 3 6 - g 1 2 * g 0 4 + g 0 5 := by
     have he := cross_entry h 2 0 6
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h26, h46, h56] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val, of_apply, cons_val', cons_val_fin_one, Fin.sum_univ_seven, hu.apply_diag,
+      cons_val_zero, Int.cast_zero, mul_zero, cons_val_one, add_zero, Int.cast_neg,
+      Int.cast_ofNat, mul_neg, zero_add, one_mul, Fin.reduceLT, hz, zero_mul, neg_mul, h26, h46,
+      h56, mul_one] at he
     apply h2.left
     linear_combination he
   have h06 : g 0 6 = g 0 1 * g 0 5 - g 0 2 * g 0 4 + (g 3 6) ^ 2 := by
     have he := cross_entry h 3 0 6
-    simp [hu.apply_diag, hz, crossOperator_def, Fin.sum_univ_seven, h03, h16, h26, h23, h13] at he
+    simp only [Fin.isValue, crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg,
+      cons_val, of_apply, cons_val', cons_val_fin_one, Fin.sum_univ_seven, hu.apply_diag,
+      cons_val_zero, Int.cast_zero, mul_zero, cons_val_one, add_zero, h03, Int.cast_neg,
+      Int.cast_ofNat, mul_neg, zero_add, h13, h23, one_mul, Fin.reduceLT, hz, zero_mul, h16,
+      neg_mul, h26, mul_one] at he
     apply h2.left
     apply h2.left
     linear_combination -he
