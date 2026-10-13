@@ -94,29 +94,34 @@ private theorem laurentValuation_X_one (N : ℕ) :
     laurentValuation k N (MvPolynomial.X 1) = exp 1 := by
   simp [laurentValuation, LaurentSeries.valuation_single_zpow]
 
+private theorem laurentValuation_C_le_one (N : ℕ) (c : k) :
+    laurentValuation k N (MvPolynomial.C c) ≤ 1 := by
+  simp only [laurentValuation, comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    MvPolynomial.aeval_C]
+  -- a constant is the image of a power series, so `intValuation_le_one` applies
+  rw [HahnSeries.algebraMap_apply', ← LaurentSeries.coe_algebraMap, LaurentSeries.valuation_def,
+    IsDedekindDomain.HeightOneSpectrum.valuation_of_algebraMap]
+  exact IsDedekindDomain.HeightOneSpectrum.intValuation_le_one _ _
+
+private theorem laurentValuation_monomial (N : ℕ) (m : Fin 2 →₀ ℕ) (c : k) :
+    laurentValuation k N (MvPolynomial.monomial m c) =
+      laurentValuation k N (MvPolynomial.C c) * exp ((m 1 : ℤ) - N * m 0) := by
+  rw [MvPolynomial.monomial_eq, map_mul]
+  congr 1
+  simp [Finsupp.prod_fintype, Fin.prod_univ_two, laurentValuation_X_zero, laurentValuation_X_one,
+    ← exp_nsmul, ← exp_add, -exp_sub]
+  ring
+
 /-- If every monomial of `d` has `X₁`-degree less than `N`, then `v_N(d X₀) < 1`. -/
 private theorem laurentValuation_mul_X_zero_lt_one {N : ℕ} {d : MvPolynomial (Fin 2) k}
     (hd : ∀ m ∈ d.support, m 1 < N) : laurentValuation k N (d * MvPolynomial.X 0) < 1 := by
   rw [d.as_sum, Finset.sum_mul]
   refine Valuation.map_sum_lt _ one_ne_zero fun m hm ↦ ?_
-  have hC : laurentValuation k N (MvPolynomial.C (d.coeff m)) ≤ 1 := by
-    simpa [laurentValuation, LaurentSeries.algebraMap_apply] using
-      (LaurentSeries.val_le_one_iff_eq_coe k _).mpr
-        ⟨PowerSeries.C (d.coeff m), PowerSeries.coe_C _⟩
-  rw [MvPolynomial.monomial_eq, mul_assoc, map_mul, Finsupp.prod_fintype _ _ (by simp),
-    Fin.prod_univ_two, map_mul, map_mul, map_pow, map_pow, laurentValuation_X_zero,
-    laurentValuation_X_one]
-  calc laurentValuation k N (MvPolynomial.C (d.coeff m)) *
-        (exp (-(N : ℤ)) ^ m 0 * exp 1 ^ m 1 * exp (-(N : ℤ)))
-      ≤ 1 * (1 * exp 1 ^ m 1 * exp (-(N : ℤ))) := by
-        -- `gcongr` closes the constant factor with `hC`
-        gcongr
-        exact pow_le_one₀ zero_le (exp_le_one_iff.mpr (by omega))
-    _ < 1 := by
-        rw [one_mul, one_mul, ← exp_nsmul, ← exp_add, exp_lt_one_iff]
-        have := hd m hm
-        simp only [nsmul_eq_mul, mul_one]
-        omega
+  rw [map_mul, laurentValuation_monomial, laurentValuation_X_zero, mul_assoc, ← exp_add]
+  have := hd m hm
+  have : (0 : ℤ) ≤ N * m 0 := by positivity
+  exact (mul_le_of_le_one_left' (laurentValuation_C_le_one k N _)).trans_lt
+    (exp_lt_one_iff.mpr (by omega))
 
 /-- `v_N` lies in `Spv (A, A)`: it has rank one and `v_N(X₁) > 1`. -/
 private theorem ofValuation_laurentValuation_mem_spvOfIdeal_top
