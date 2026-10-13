@@ -412,7 +412,9 @@ theorem explicitInfl2_conjugateCohomologyIso (x : L.H F 2) :
     exact groupCohomology.H2π_comp_map_apply (L.conjugateGalEquiv g).symm.toMonoidHom _ c
   case hcocycle =>
     exact Subtype.ext (funext fun p => (inflCocycle2_mapCocycles₂ L e he g _ _
-      (L.conjugateGalEquiv_symm_mk g)
+      (fun w => (L.conjugateGalEquiv_symm_mk g w).trans (congrArg QuotientGroup.mk
+        (Subtype.ext ((L.conjugateGroundEquiv_symm_apply_coe g w).trans
+          (L.conjugateGroundHom_apply_coe g w).symm))))
       (fun x => L.conjugateCoefficientEquiv_apply_coe F g x) c p).trans
       (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).symm)
 

@@ -289,12 +289,17 @@ theorem conjugateGroundEquiv_symm_apply_coe (v : (L.conjugate g).ground) :
 /-- Inverse conjugation `v ↦ g⁻¹ v g`, the inverse ground-subgroup equivalence, as a continuous
 homomorphism from the ground subgroup `gUg⁻¹` of the conjugate layer to the ground subgroup `U` of
 the layer. -/
--- Exposed so that downstream modules can use the lemmas of `conjugateGroundEquiv` for it directly.
-@[expose] def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
+def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
   toMonoidHom := (L.conjugateGroundEquiv g).symm.toMonoidHom
   continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
     ((continuous_mul_const g).comp ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).congr
       fun v => (L.conjugateGroundEquiv_symm_apply_coe g v).symm
+
+/-- On elements of `G`, the inverse-conjugation homomorphism is `v ↦ g⁻¹ * v * g`. -/
+@[simp]
+theorem conjugateGroundHom_apply_coe (v : (L.conjugate g).ground.toSubgroup) :
+    (L.conjugateGroundHom g v : G) = g⁻¹ * v * g :=
+  L.conjugateGroundEquiv_symm_apply_coe g v
 
 variable {M : Type} [AddCommGroup M] [DistribMulAction G M] in
 /-- The action of `g` on `M` and inverse conjugation form a compatible pair. -/
@@ -304,7 +309,8 @@ theorem conjugateGroundHom_smul (v : (L.conjugate g).ground.toSubgroup) (m : M) 
   rw [DistribSMul.toAddMonoidHom_apply, DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
     Subgroup.smul_def, smul_smul, smul_smul]
   congr 1
-  exact (congrArg (g * ·) (L.conjugateGroundEquiv_symm_apply_coe g v)).trans (by group)
+  rw [conjugateGroundHom_apply_coe]
+  group
 
 /-- Conjugation carries the top subgroup of a layer, read inside its ground subgroup, onto the
 corresponding subgroup of the conjugate layer. This is what lets it descend to Galois groups. -/

@@ -221,7 +221,7 @@ theorem layerInv_conjugateCohomologyIso (g : AbsoluteGaloisGroup K)
       layerInv K L x := by
   rw [layerInv_apply, NormalLayer.explicitInfl2_conjugateCohomologyIso,
     subgroupInvMap_explicitMap2_of_conj K L.ground.toSubgroup (L.conjugate g).ground.toSubgroup
-      L.ground.isOpen (L.conjugate g).ground.isOpen g _ (L.conjugateGroundEquiv_symm_apply_coe g)
+      L.ground.isOpen (L.conjugate g).ground.isOpen g _ (L.conjugateGroundHom_apply_coe g)
       (DistribSMul.toAddMonoidHom (UnitsCoeff K) g) (DistribSMul.toAddMonoidHom_apply _ g)
       (L.toSubgroup_ground_conjugate g),
     layerInv_apply]
