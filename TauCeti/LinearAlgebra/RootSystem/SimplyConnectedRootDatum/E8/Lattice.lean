@@ -54,8 +54,7 @@ table is therefore private to this file; the completeness statement is its only 
 
 The Euclidean model of the `E₈` lattice and its two hundred and forty minimal vectors are Bourbaki,
 *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VII, and Conway--Sloane, *Sphere Packings,
-Lattices and Groups*, chapter 4, section 8. This supports the target "a named datum per valid type"
-in Layer 6 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+Lattices and Groups*, chapter 4, section 8.
 -/
 
 public section

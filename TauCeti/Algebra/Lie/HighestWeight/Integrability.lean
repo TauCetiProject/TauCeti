@@ -62,10 +62,6 @@ Three facts have to be checked about `w`, and they use different parts of the th
 
 ## References
 
-This is the "integrability relation" milestone of Layer 4, "the classification of
-finite-dimensional irreducibles", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2 and
   §21.4.
 -/

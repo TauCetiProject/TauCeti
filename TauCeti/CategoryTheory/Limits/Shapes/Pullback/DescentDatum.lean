@@ -43,6 +43,8 @@ construct.
   `Hom.comp`, and the inverse `Hom.inv` of a morphism which is an isomorphism over `S'`.
 * `TauCeti.DescentDatum.transport e E`: the descent datum transported from `E` along an
   isomorphism `e : X ≅ Y` over `S'`, with the isomorphism `transportHom e E` to `E`.
+* `TauCeti.DescentDatum.pullbackAlong D q`: the descent datum obtained from `D` after an arbitrary
+  base change `q : T ⟶ S`, functorial on morphisms of descent data.
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
   `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`, with the morphism
   `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`.
@@ -219,6 +221,249 @@ theorem transportHom_hom (e : X ≅ Y) (E : DescentDatum p Y) : (transportHom e 
   (rfl)
 
 end Hom
+
+section Pullback
+
+variable {T : C} (q : T ⟶ S) {X Y Z : Over S'}
+
+/-- The object over `T ×_S S'` obtained by pulling an object over `S'` back along the second
+projection `T ×_S S' ⟶ S'`. This is the carrier on which a base-changed descent datum acts. -/
+noncomputable abbrev pullbackAlongObj (X : Over S') : Over (pullback q p) :=
+  (Over.pullback (pullback.snd q p)).obj X
+
+/-- The comparison from the action space of the base-changed datum to the action space of the
+original datum. On points it sends `((t, s₁), (x, (t, s₂)))` to `(s₁, x)`. -/
+noncomputable def pullbackAlongActionComparison (X : Over S') :
+    pullback (pullback.fst q p) ((pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p) ⟶
+      pullback p (X.hom ≫ p) :=
+  pullback.lift
+    (pullback.fst _ _ ≫ pullback.snd q p)
+    (pullback.snd _ _ ≫ pullback.fst X.hom (pullback.snd q p)) <| by
+      simp only [Category.assoc]
+      slice_lhs 2 3 => rw [← pullback.condition]
+      slice_rhs 2 3 => rw [pullback.condition]
+      slice_rhs 3 4 => rw [← pullback.condition]
+      simpa only [pullbackAlongObj, Over.pullback_obj_hom, Category.assoc] using
+        pullback.condition_assoc
+        (f := pullback.fst q p)
+        (g := (pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p) q
+
+/-- The action-space comparison preserves the first `S'`-coordinate. -/
+@[reassoc (attr := simp)]
+theorem pullbackAlongActionComparison_fst (X : Over S') :
+    pullbackAlongActionComparison (p := p) q X ≫ pullback.fst p (X.hom ≫ p) =
+      pullback.fst _ _ ≫ pullback.snd q p :=
+  pullback.lift_fst _ _ _
+
+/-- The action-space comparison preserves the point of `X`. -/
+@[reassoc (attr := simp)]
+theorem pullbackAlongActionComparison_snd (X : Over S') :
+    pullbackAlongActionComparison (p := p) q X ≫ pullback.snd p (X.hom ≫ p) =
+      pullback.snd _ _ ≫ pullback.fst X.hom (pullback.snd q p) :=
+  pullback.lift_snd _ _ _
+
+/-- The comparison from the twice-iterated action space after base change to the original
+twice-iterated action space. -/
+private noncomputable def pullbackAlongActionAssocComparison (X : Over S') :
+    pullback (pullback.fst q p)
+        (pullback.fst (pullback.fst q p)
+          ((pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p) ≫ pullback.fst q p) ⟶
+      pullback p (pullback.fst p (X.hom ≫ p) ≫ p) :=
+  pullback.lift
+    (pullback.fst _ _ ≫ pullback.snd q p)
+    (pullback.snd _ _ ≫ pullbackAlongActionComparison (p := p) q X) <| by
+      simp only [Category.assoc]
+      slice_lhs 2 3 => rw [← pullback.condition]
+      rw [pullbackAlongActionComparison_fst_assoc]
+      slice_rhs 3 4 => rw [← pullback.condition]
+      simpa only [pullbackAlongObj, Over.pullback_obj_hom, Category.assoc] using
+        pullback.condition_assoc
+        (f := pullback.fst q p)
+        (g := pullback.fst (pullback.fst q p)
+          ((pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p) ≫ pullback.fst q p) q
+
+private theorem pullbackAlongNormalizationComparison (X : Over S') :
+    pullback.lift (pullbackAlongObj (p := p) q X).hom (𝟙 _) (by simp) ≫
+        pullbackAlongActionComparison (p := p) q X =
+      pullback.fst X.hom (pullback.snd q p) ≫
+        pullback.lift X.hom (𝟙 X.left) (by simp) := by
+  apply pullback.hom_ext
+  · simpa [pullbackAlongActionComparison, pullbackAlongObj] using
+      (pullback.condition (f := X.hom) (g := pullback.snd q p)).symm
+  · simp [pullbackAlongActionComparison, pullbackAlongObj]
+
+private theorem pullbackAlongActionAssocComparison_act (D : DescentDatum p X) :
+    pullback.lift (pullback.fst _ _)
+          (pullback.snd _ _ ≫
+            pullback.lift (pullbackAlongActionComparison (p := p) q X ≫ D.act)
+              (pullback.fst _ _) (by simp))
+          (by
+            simp only [pullbackAlongObj, Over.pullback_obj_hom, Category.assoc,
+              pullback.lift_snd_assoc]
+            exact pullback.condition) ≫
+        pullbackAlongActionComparison (p := p) q X =
+      pullbackAlongActionAssocComparison (p := p) q X ≫
+        pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+          (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
+          (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition) := by
+  apply pullback.hom_ext
+  · simp [pullbackAlongActionAssocComparison, pullbackAlongActionComparison, pullbackAlongObj]
+  · simp only [Category.assoc]
+    dsimp only [pullbackAlongActionAssocComparison]
+    slice_lhs 2 3 => rw [pullbackAlongActionComparison_snd]
+    slice_lhs 1 2 => rw [pullback.lift_snd]
+    slice_lhs 2 3 => rw [pullback.lift_fst]
+    slice_rhs 2 3 => rw [pullback.lift_snd]
+    slice_rhs 1 2 => rw [pullback.lift_snd]
+    exact (Category.assoc _ _ _).symm
+
+private theorem pullbackAlongActionAssocComparison_snd (X : Over S') :
+    pullback.lift (pullback.fst _ _)
+          (pullback.snd _ _ ≫ pullback.snd _ _)
+          (by
+            simp only [pullbackAlongObj, Over.pullback_obj_hom, Category.assoc]
+            slice_rhs 2 4 => rw [← pullback.condition]
+            exact pullback.condition) ≫
+        pullbackAlongActionComparison (p := p) q X =
+      pullbackAlongActionAssocComparison (p := p) q X ≫
+        pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+          (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫
+            pullback.snd p (X.hom ≫ p))
+          (by
+            rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
+            exact pullback.condition) := by
+  apply pullback.hom_ext
+  · simp only [Category.assoc]
+    dsimp only [pullbackAlongActionAssocComparison]
+    slice_lhs 2 3 => rw [pullbackAlongActionComparison_fst]
+    slice_lhs 1 2 => rw [pullback.lift_fst]
+    slice_rhs 2 3 => rw [pullback.lift_fst]
+    slice_rhs 1 2 => rw [pullback.lift_fst]
+  · simp only [Category.assoc]
+    dsimp only [pullbackAlongActionAssocComparison]
+    slice_lhs 2 3 => rw [pullbackAlongActionComparison_snd]
+    slice_lhs 1 2 => rw [pullback.lift_snd]
+    slice_rhs 2 3 => rw [pullback.lift_snd]
+    slice_rhs 1 2 => rw [pullback.lift_snd]
+    slice_rhs 2 3 => rw [pullbackAlongActionComparison_snd]
+    exact Category.assoc _ _ _
+
+private theorem pullbackAlongActionComparison_naturality (f : X ⟶ Y) :
+    pullback.map (pullback.fst q p) _ (pullback.fst q p) _ (𝟙 _)
+          ((Over.pullback (pullback.snd q p)).map f).left (𝟙 _) (by simp) (by simp) ≫
+        pullbackAlongActionComparison (p := p) q Y =
+      pullbackAlongActionComparison (p := p) q X ≫
+        pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S)
+          (by simp) (by simp) := by
+  apply pullback.hom_ext <;>
+    simp [pullbackAlongActionComparison, pullbackAlongObj, Over.pullback_map_left]
+
+/-- Base change of a descent datum along an arbitrary morphism `q : T ⟶ S`. If `D` acts on
+`X ⟶ S'` relative to `p : S' ⟶ S`, then `D.pullbackAlong q` acts on
+`X ×_{S'} (T ×_S S') ⟶ T ×_S S'` relative to the base change of `p` to `T`. -/
+noncomputable def pullbackAlong (D : DescentDatum p X) :
+    DescentDatum (pullback.fst q p) (pullbackAlongObj (p := p) q X) where
+  act := pullback.lift (pullbackAlongActionComparison (p := p) q X ≫ D.act)
+    (pullback.fst _ _) <| by simp
+  act_hom := by simp
+  lift_act := by
+    apply pullback.hom_ext
+    · simp only [Category.assoc, pullback.lift_fst]
+      rw [← Category.assoc, pullbackAlongNormalizationComparison, Category.assoc, D.lift_act,
+        Category.comp_id, Category.id_comp]
+    · simp
+  act_assoc := by
+    apply pullback.hom_ext
+    · simp only [Category.assoc, pullback.lift_fst]
+      -- Compare both sides with the original twice-iterated action space, where `D.act_assoc`
+      -- applies directly.
+      calc
+        _ = (pullbackAlongActionAssocComparison (p := p) q X ≫
+              pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
+                (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition)) ≫
+              D.act := by rw [← Category.assoc, pullbackAlongActionAssocComparison_act]
+        _ = pullbackAlongActionAssocComparison (p := p) q X ≫
+              (pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
+                (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition) ≫
+              D.act) := Category.assoc _ _ _
+        _ = pullbackAlongActionAssocComparison (p := p) q X ≫
+              (pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫
+                  pullback.snd p (X.hom ≫ p))
+                (by
+                  rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
+                  exact pullback.condition) ≫ D.act) := congrArg _ D.act_assoc
+        _ = (pullbackAlongActionAssocComparison (p := p) q X ≫
+              pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫
+                  pullback.snd p (X.hom ≫ p))
+                (by
+                  rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
+                  exact pullback.condition)) ≫ D.act := (Category.assoc _ _ _).symm
+        _ = _ := by
+          simpa only [Category.assoc] using
+            congrArg (· ≫ D.act) (pullbackAlongActionAssocComparison_snd (p := p) q X).symm
+    · simp
+
+/-- The underlying map of the base-changed action, followed by the projection to `X`, is the
+original action applied after forgetting the base-change coordinates. -/
+@[reassoc (attr := simp)]
+theorem pullbackAlong_act_fst (D : DescentDatum p X) :
+    (D.pullbackAlong q).act ≫ pullback.fst X.hom (pullback.snd q p) =
+      pullbackAlongActionComparison (p := p) q X ≫ D.act :=
+  pullback.lift_fst _ _ _
+
+/-- The base-changed action moves a point into the fibre over its first
+`T ×_S S'`-coordinate. -/
+@[reassoc (attr := simp)]
+theorem pullbackAlong_act_snd (D : DescentDatum p X) :
+    (D.pullbackAlong q).act ≫ pullback.snd X.hom (pullback.snd q p) = pullback.fst _ _ :=
+  pullback.lift_snd _ _ _
+
+variable {q}
+
+/-- Base change of a morphism of descent data. -/
+noncomputable def Hom.pullbackAlong {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
+    (q : T ⟶ S) : Hom (D.pullbackAlong q) (E.pullbackAlong q) where
+  hom := (Over.pullback (pullback.snd q p)).map f.hom
+  map_act := by
+    apply pullback.hom_ext
+    · simp only [Category.assoc, pullbackAlong_act_fst]
+      rw [← Category.assoc, pullbackAlongActionComparison_naturality, Category.assoc, f.map_act]
+      have hm : ((Over.pullback (pullback.snd q p)).map f.hom).left ≫
+          pullback.fst Y.hom (pullback.snd q p) =
+          pullback.fst X.hom (pullback.snd q p) ≫ f.hom.left := by simp
+      rw [hm, pullbackAlong_act_fst_assoc]
+    · simp
+
+/-- The underlying morphism of the base-changed morphism is obtained by pullback in `Over`. -/
+@[simp]
+theorem Hom.pullbackAlong_hom {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
+    (q : T ⟶ S) : (f.pullbackAlong q).hom = (Over.pullback (pullback.snd q p)).map f.hom :=
+  (rfl)
+
+/-- Base change preserves morphisms of descent data whose underlying morphism is an isomorphism. -/
+instance Hom.isIso_pullbackAlong_hom {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
+    [IsIso f.hom] (q : T ⟶ S) : IsIso (f.pullbackAlong q).hom := by
+  rw [Hom.pullbackAlong_hom]
+  infer_instance
+
+/-- Base change preserves identity morphisms of descent data. -/
+@[simp]
+theorem Hom.pullbackAlong_id (D : DescentDatum p X) (q : T ⟶ S) :
+    (Hom.id D).pullbackAlong q = Hom.id (D.pullbackAlong q) :=
+  Hom.ext ((Over.pullback (pullback.snd q p)).map_id X)
+
+/-- Base change preserves composition of morphisms of descent data. -/
+@[simp]
+theorem Hom.pullbackAlong_comp {D : DescentDatum p X} {E : DescentDatum p Y}
+    {F : DescentDatum p Z} (g : Hom E F) (f : Hom D E) (q : T ⟶ S) :
+    (g.comp f).pullbackAlong q = (g.pullbackAlong q).comp (f.pullbackAlong q) :=
+  Hom.ext ((Over.pullback (pullback.snd q p)).map_comp f.hom g.hom)
+
+end Pullback
 
 variable (p) in
 /-- The canonical descent datum on the base change `X ×_S S'` of an object `X` over `S`: a point
