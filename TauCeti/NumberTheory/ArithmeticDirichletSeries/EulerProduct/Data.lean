@@ -216,6 +216,11 @@ noncomputable instance : StarMul (EulerProductData K) where
 theorem star_apply (D : EulerProductData K) (I : (Ideal (𝓞 K))⁰) :
     (star D) I = star (D I) := (rfl)
 
+/-- Conjugation of Euler-product data conjugates its underlying ideal coefficients. -/
+@[simp]
+theorem toIdealArithmeticFunction_star (D : EulerProductData K) :
+    (star D).toIdealArithmeticFunction = star D.toIdealArithmeticFunction := (rfl)
+
 /-- Restrict Euler-product data away from a set of height-one primes, leaving its
 coefficients unchanged on ideals prime to that set and setting the others to zero. -/
 noncomputable def restrictAway (D : EulerProductData K)
