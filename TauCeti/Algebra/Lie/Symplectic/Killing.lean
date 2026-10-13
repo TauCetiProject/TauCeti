@@ -135,11 +135,12 @@ instance hasTrivialRadical_sp : HasTrivialRadical K (Symplectic.sp l K) := by
     · infer_instance
     · exact hasTrivialRadical_of_isIrreducible_of_isFaithful A (Symplectic.sp l A) (l ⊕ l → A)
         fun ⟨_, hx⟩ ↦ by simpa using Symplectic.trace_eq_zero_of_mem_sp hx
-  -- After extension of scalars to `A`, `sp l K` becomes `sp l A`.
-  have e := skewAdjointMatricesLieSubalgebraBaseChangeEquiv A (J l K)
-  rw [map_J] at e
-  have : HasTrivialRadical A (skewAdjointMatricesLieSubalgebra (J l A)) :=
-    ‹HasTrivialRadical A (Symplectic.sp l A)›
+  -- After extension of scalars to `A`, `sp l K` becomes `sp l A`: both are skew-adjoint matrix
+  -- Lie algebras, for `J l K` and for its image `J l A`.
+  have e : A ⊗[K] Symplectic.sp l K ≃ₗ⁅A⁆ Symplectic.sp l A := by
+    unfold Symplectic.sp
+    rw [← map_J (l := l) (algebraMap K A)]
+    exact skewAdjointMatricesLieSubalgebraBaseChangeEquiv A (J l K)
   have : HasTrivialRadical A (A ⊗[K] Symplectic.sp l K) := hasTrivialRadical_of_equiv e.symm
   exact (hasTrivialRadical_baseChange_iff K (Symplectic.sp l K) A).mp this
 
