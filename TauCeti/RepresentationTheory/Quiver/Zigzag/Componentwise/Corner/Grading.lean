@@ -15,6 +15,8 @@ A self corner has its vertex vector in degree zero and its volume vector in degr
 This includes the infinitesimal at an isolated vertex. An adjacent corner is concentrated
 in degree one. The existing corner spans and the homogeneous vertex–arrow–volume basis
 determine their intersections with the signed grading.
+These degree-wise dimensions compute graded vertex-projective Hom dimensions and the
+coefficients of the graded Cartan matrix.
 
 ## References
 
