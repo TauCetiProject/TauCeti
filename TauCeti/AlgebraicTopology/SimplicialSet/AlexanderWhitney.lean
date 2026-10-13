@@ -101,6 +101,18 @@ private lemma ιChainComplex_map {m n : ℕ} (x : K _⦋m⦌) (φ : Opposite.op 
       K.ιChainComplex (K.map φ x) := by
   simp [ιChainComplex, sigmaConst]
 
+/-- The inclusion of a summand into the tensor product of the alternating face map complexes of
+the simplicial objects of chains of `K` and of `L` is the inclusion into the tensor product of
+the chain complexes of `K` and of `L`. -/
+private lemma ιTensorObj_chainComplex (p q n : ℕ) (h : p + q = n) :
+    ιTensorObj ((AlgebraicTopology.alternatingFaceMapComplex C).obj
+        (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj K))
+      ((AlgebraicTopology.alternatingFaceMapComplex C).obj
+        (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj S)).obj L)) p q n h =
+      ιTensorObj (K.chainComplex R) (L.chainComplex S) p q n h := by
+  dsimp only [chainComplex, chainComplexFunctor, Functor.postcompose₂_obj_obj_obj_obj,
+    Functor.comp_obj]
+
 /-- The Alexander–Whitney map `C(K × L; R ⊗ S) ⟶ C(K; R) ⊗ C(L; S)`, sending an `n`-simplex
 `(x, y)` of `K × L` to `∑_{p + q = n} x|[0, …, p] ⊗ y|[p, …, n]`, the front `p`-face of `x`
 tensored with the back `q`-face of `y` (`SSet.ιChainComplex_alexanderWhitney_f`).  It is the
@@ -126,11 +138,10 @@ lemma ιChainComplex_alexanderWhitney_f {n : ℕ} (x : (K ⊗ L) _⦋n⦌) :
     SimplicialObject.alexanderWhitney_f]
   -- The chains of `K` are the alternating face map complex of the simplicial object of chains
   -- only up to unfolding, so the sum is distributed by `Eq.trans` rather than by rewriting, and
-  -- the two inclusions of the summand into the tensor product agree by `rfl`.
+  -- the two inclusions of the summand into the tensor product agree by `ιTensorObj_chainComplex`.
   refine (Preadditive.comp_sum _ _ _).trans (Finset.sum_congr rfl fun p _ ↦ ?_)
   refine (tensorHom_comp_tensorHom_assoc _ _ _ _ _).trans ?_
-  rw [ιChainComplex_map, ιChainComplex_map]
-  rfl
+  rw [ιChainComplex_map, ιChainComplex_map, ιTensorObj_chainComplex]
 
 variable {K L} in
 /-- The Alexander–Whitney map is natural in both simplicial sets. -/

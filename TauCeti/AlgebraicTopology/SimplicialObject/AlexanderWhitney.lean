@@ -67,75 +67,10 @@ attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
 variable {C : Type u} [Category.{v} C]
 
-section Faces
-
-variable (X : SimplicialObject C)
-
-private lemma map_subinterval_zero_comp_δ {n p : ℕ} (i : Fin (p + 2)) (k : Fin (n + 2))
-    (hik : (i : ℕ) = k) (h : 0 + (p + 1) ≤ n + 1) :
-    X.map (SimplexCategory.subinterval 0 (p + 1) h).op ≫ X.δ i =
-      X.δ k ≫ X.map (SimplexCategory.subinterval 0 p (by omega)).op := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
-    SimplexCategory.δ_comp_subinterval_zero i k hik h]
-
-private lemma map_subinterval_zero_comp_δ_last {n p : ℕ} (h : 0 + (p + 1) ≤ n) :
-    X.map (SimplexCategory.subinterval 0 (p + 1) h).op ≫ X.δ (Fin.last (p + 1)) =
-      X.map (SimplexCategory.subinterval 0 p (by omega)).op := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
-    SimplexCategory.δ_last_comp_subinterval_zero h]
-
-private lemma map_subinterval_comp_δ_zero {n j q : ℕ} (h : j + (q + 1) ≤ n) :
-    X.map (SimplexCategory.subinterval j (q + 1) h).op ≫ X.δ 0 =
-      X.map (SimplexCategory.subinterval (j + 1) q (by omega)).op := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
-    SimplexCategory.δ_zero_comp_subinterval h]
-
-private lemma map_subinterval_comp_δ_succ {n j q : ℕ} (i : Fin (q + 1)) (k : Fin (n + 2))
-    (hik : j + 1 + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
-    X.map (SimplexCategory.subinterval j (q + 1) h).op ≫ X.δ i.succ =
-      X.δ k ≫ X.map (SimplexCategory.subinterval j q (by omega)).op := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
-    SimplexCategory.δ_succ_comp_subinterval i k hik h]
-
-private lemma δ_comp_map_subinterval_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) ≤ j)
-    (h : j + q ≤ n) :
-    X.δ k ≫ X.map (SimplexCategory.subinterval j q h).op =
-      X.map (SimplexCategory.subinterval (j + 1) q (by omega)).op := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
-    SimplexCategory.subinterval_comp_δ_of_le k hk h]
-
-private lemma δ_comp_map_subinterval_zero_of_lt {n p : ℕ} (k : Fin (n + 2)) (hk : p < (k : ℕ))
-    (h : 0 + p ≤ n) :
-    X.δ k ≫ X.map (SimplexCategory.subinterval 0 p h).op =
-      X.map (SimplexCategory.subinterval 0 p (by omega)).op := by
-  simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
-    SimplexCategory.subinterval_zero_comp_δ_of_lt k hk h]
-
-end Faces
-
 variable [Preadditive C]
-
-/-- The differential of the alternating face map complex, through the functor
-`alternatingFaceMapComplex`.  This is `AlgebraicTopology.AlternatingFaceMapComplex.obj_d_eq` with
-the type of the sum written in terms of `X`, so that composites with it can be rewritten next to
-the face maps of `X`. -/
-private lemma alternatingFaceMapComplex_obj_d_eq (X : SimplicialObject C) (n : ℕ) :
-    ((alternatingFaceMapComplex C).obj X).d (n + 1) n =
-      (∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • X.δ i : X _⦋n + 1⦌ ⟶ X _⦋n⦌) :=
-  AlternatingFaceMapComplex.obj_d_eq X n
 
 variable [MonoidalCategory C] [MonoidalPreadditive C] [HasFiniteCoproducts C]
   (A B : SimplicialObject C)
-
-omit [MonoidalPreadditive C] [HasFiniteCoproducts C] in
-/-- The differential of the alternating face map complex of a degreewise tensor product, with the
-type of the sum written as a morphism of tensor products, so that composites with it can be
-rewritten next to the summands of the Alexander–Whitney map. -/
-private lemma alternatingFaceMapComplex_obj_tensor_d_eq (n : ℕ) :
-    ((alternatingFaceMapComplex C).obj (A ⊗ B)).d (n + 1) n =
-      (∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (A.δ i ⊗ₘ B.δ i) :
-        A _⦋n + 1⦌ ⊗ B _⦋n + 1⦌ ⟶ A _⦋n⦌ ⊗ B _⦋n⦌) :=
-  AlternatingFaceMapComplex.obj_d_eq (A ⊗ B) n
 
 /-- The summand of the Alexander–Whitney map in degree `n` and bidegree `(p, q)`: the front
 `p`-face of `A` tensored with the back `q`-face of `B`, or zero if `p + q ≠ n`.  Indexing by an
@@ -172,7 +107,8 @@ private lemma alexanderWhitneyTerm_D (n r s : ℕ) (h : r + s = n) :
   rw [alexanderWhitneyTerm_of_eq _ _ _ _ _ (by omega),
     alexanderWhitneyTerm_of_eq _ _ _ _ _ (by omega)]
   simp only [Category.assoc, ChainComplex.ιTensorObj_D₁_succ,
-    ChainComplex.ιTensorObj_D₂_succ, Preadditive.comp_zsmul, alternatingFaceMapComplex_obj_d_eq]
+    ChainComplex.ιTensorObj_D₂_succ, Preadditive.comp_zsmul, alternatingFaceMapComplex_obj_d,
+    AlternatingFaceMapComplex.objD]
   dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj]
   simp only [tensorHom_comp_whiskerRight_assoc, tensorHom_comp_whiskerLeft_assoc,
     Preadditive.comp_sum, Preadditive.comp_zsmul,
@@ -183,8 +119,9 @@ private lemma alexanderWhitneyTerm_D (n r s : ℕ) (h : r + s = n) :
     rw [← Fin.sum_congr' _ hrs, Fin.sum_univ_add]
   rw [Fin.sum_univ_castSucc (n := r + 1), Fin.sum_univ_succ (n := s + 1)]
   simp only [alexanderWhitneyTerm_of_eq A B n r s h, tensorHom_comp_tensorHom_assoc]
-  rw [map_subinterval_zero_comp_δ_last, map_subinterval_comp_δ_zero, smul_add, Finset.smul_sum,
-    add_add_add_comm]
+  simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
+    SimplexCategory.δ_last_comp_subinterval_zero, SimplexCategory.δ_zero_comp_subinterval]
+  rw [smul_add, Finset.smul_sum, add_add_add_comm]
   -- the two sums match termwise, and the two remaining terms cancel
   have key {M : Type _} [AddCommGroup M] {P P' a b Q Q' : M} (h₁ : P = P') (h₂ : Q = Q')
       (h₃ : a + b = 0) : P + b + (a + Q) = P' + Q' := by
@@ -193,14 +130,14 @@ private lemma alexanderWhitneyTerm_D (n r s : ℕ) (h : r + s = n) :
   refine key ?_ ?_ ?_
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     have := i.isLt
-    rw [map_subinterval_zero_comp_δ A i.castSucc
+    rw [SimplexCategory.δ_comp_subinterval_zero i.castSucc
         (Fin.cast (by omega) (Fin.castAdd (s + 1) i)) (by simp),
-      δ_comp_map_subinterval_of_le B _ (by simp; omega)]
+      SimplexCategory.subinterval_comp_δ_of_le (j := r) _ (by simp; omega)]
     simp
   · refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [map_subinterval_comp_δ_succ B j (Fin.cast (by omega) (Fin.natAdd (r + 1) j))
+    rw [SimplexCategory.δ_succ_comp_subinterval j (Fin.cast (by omega) (Fin.natAdd (r + 1) j))
         (by simp),
-      δ_comp_map_subinterval_zero_of_lt A _ (by simp; omega), smul_smul]
+      SimplexCategory.subinterval_zero_comp_δ_of_lt (p := r) _ (by simp; omega), smul_smul]
     congr 1
     simp [pow_add]
   · rw [smul_smul, ← add_smul]
@@ -212,12 +149,11 @@ private def alexanderWhitneyX (n : ℕ) :
       ((alternatingFaceMapComplex C).obj A ⊗ (alternatingFaceMapComplex C).obj B).X n :=
   ∑ pq ∈ Finset.antidiagonal n, alexanderWhitneyTerm A B n pq.1 pq.2
 
-/-- **The Alexander–Whitney map** `N(A ⊗ B) ⟶ N(A) ⊗ N(B)` of two simplicial objects, from the
-alternating face map complex of their degreewise tensor product to the tensor product of their
-alternating face map complexes.  In degree `n` it is the sum over `p + q = n` of the front
-`p`-face of `A` tensored with the back `q`-face of `B`
-(`CategoryTheory.SimplicialObject.alexanderWhitney_f`).  It is a morphism of chain complexes for
-the Koszul sign convention on the tensor product. -/
+/-- **The Alexander–Whitney map** of two simplicial objects, from the alternating face map
+complex of their degreewise tensor product to the tensor product of their alternating face map
+complexes.  In degree `n` it is the sum over `p + q = n` of the front `p`-face of `A` tensored
+with the back `q`-face of `B` (`CategoryTheory.SimplicialObject.alexanderWhitney_f`).  It is a
+morphism of chain complexes for the Koszul sign convention on the tensor product. -/
 def alexanderWhitney :
     (alternatingFaceMapComplex C).obj (A ⊗ B) ⟶
       (alternatingFaceMapComplex C).obj A ⊗ (alternatingFaceMapComplex C).obj B where
@@ -229,7 +165,12 @@ def alexanderWhitney :
         mapBifunctor.D₁ _ _ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n +
           mapBifunctor.D₂ _ _ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n :=
       mapBifunctor.d_eq _ _ _ _ _ _
-    rw [hd, alternatingFaceMapComplex_obj_tensor_d_eq]
+    -- the faces of `A ⊗ B` are typed as morphisms of tensor products, so that the composites
+    -- with the summands of the Alexander–Whitney map can be distributed
+    rw [hd, show ((alternatingFaceMapComplex C).obj (A ⊗ B)).d (n + 1) n =
+      (∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (A.δ i ⊗ₘ B.δ i) :
+        A _⦋n + 1⦌ ⊗ B _⦋n + 1⦌ ⟶ A _⦋n⦌ ⊗ B _⦋n⦌) from
+      AlternatingFaceMapComplex.obj_d_eq (A ⊗ B) n]
     dsimp only [alexanderWhitneyX, alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj]
     simp only [Preadditive.sum_comp, Preadditive.comp_add, Preadditive.zsmul_comp,
       Preadditive.comp_sum]
