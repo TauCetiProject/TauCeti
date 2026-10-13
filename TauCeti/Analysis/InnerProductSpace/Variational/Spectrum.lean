@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Variational.Fredholm
+public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 
 /-!
 # The spectrum of a coercive variational problem
 
 Let `B` be a bounded coercive bilinear form on a real Hilbert space `V` and let `J : V →L[ℝ] H`
-be a continuous linear map into a second real Hilbert space.  The **variational eigenvalue
+be a continuous linear map into a real inner-product space.  The **variational eigenvalue
 problem** attached to this pair asks for `κ : ℝ` and `u ≠ 0` with
 
 `B u v = κ ⟪J u, J v⟫` for every `v : V`.
@@ -20,7 +21,10 @@ problem** attached to this pair asks for `κ : ℝ` and `u ≠ 0` with
 This file studies that problem through the **solution operator** on `H`.  For `h : H`,
 Lax--Milgram produces the unique `u : V` with `B u v = ⟪h, J v⟫` for all `v`; the map
 `h ↦ u` is `IsCoercive.formSolutionMap`, and composing it with `J` gives
-`IsCoercive.formSolutionOperator`, an operator `S : H →L[ℝ] H`.
+`IsCoercive.formSolutionOperator`, an operator `S : H →L[ℝ] H`. These constructions, their
+kernel and eigenvector correspondence, and their compactness, symmetry and positivity properties
+do not require `H` to be complete. The spectral existence and basis theorems assume completeness
+of `H`.
 
 `S` is the right object to spectralize.  It is compact as soon as `J` is, it is symmetric as
 soon as `B` is, and its nonzero eigenvalues are exactly the reciprocals of the variational
@@ -28,7 +32,7 @@ eigenvalues: `S` has eigenvalue `κ⁻¹` at `κ • J u` precisely when `u` sol
 eigenvalue problem for `κ`.  Mathlib's spectral theorem for compact symmetric operators then
 applies verbatim, giving eigenvectors with dense span and finite-dimensional eigenspaces at the
 *nonzero* eigenvalues.  The eigenspace at `0` is the kernel of `S`, which is `(range J)ᗮ` and so
-can be infinite dimensional; it vanishes exactly when `J` has dense range.
+can be infinite dimensional; it vanishes when `J` has dense range.
 
 Coercivity forces every variational eigenvalue to be positive, and quantitatively to be at
 least the coercivity constant whenever `J` is a contraction; this is the abstract form of the
@@ -37,8 +41,8 @@ the corresponding Poincaré inequality.  These estimates only need a real normed
 seminormed inner-product target, without completeness of either space.
 
 The kernel of `S` is the orthogonal complement of the range of `J`
-(`IsCoercive.ker_formSolutionOperator`), so `S` is injective exactly when `J` has dense range;
-that is the hypothesis under which every eigenvector of `S` comes from a variational
+(`IsCoercive.ker_formSolutionOperator`), so dense range of `J` makes `S` injective.
+This is the hypothesis under which every eigenvector of `S` comes from a variational
 eigenfunction.
 
 ## Main declarations
@@ -78,12 +82,12 @@ public section
 noncomputable section
 
 open Module.End
-open scoped InnerProduct InnerProductSpace
+open scoped InnerProductSpace
 
 namespace IsCoercive
 
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
 
 /-! ### The solution map and the solution operator -/
@@ -92,27 +96,27 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
 `h : H` to the unique `u : V` solving `B u v = ⟪h, J v⟫` for every `v : V`.  It is characterized
 by `IsCoercive.apply_formSolutionMap` together with `IsCoercive.eq_formSolutionMap`. -/
 def formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) : H →L[ℝ] V :=
-  hB.continuousLinearEquivOfBilin.symm.toContinuousLinearMap.comp (J†)
+  hB.solutionOfFunctionalCLM.comp (ContinuousLinearMap.toSesqForm J)
 
-/-- The solution map is the inverse Lax--Milgram operator applied to the adjoint of `J`. -/
+/-- The solution map solves the forcing functional `v ↦ ⟪h, J v⟫`. -/
 theorem formSolutionMap_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
-    hB.formSolutionMap J h = hB.solutionOfInner ((J†) h) := by
-  rw [formSolutionMap, ContinuousLinearMap.comp_apply, solutionOfInner_def]
-  rfl
+    hB.formSolutionMap J h = hB.solutionOfFunctional (ContinuousLinearMap.toSesqForm J h) := by
+  simp only [formSolutionMap, ContinuousLinearMap.comp_apply, solutionOfFunctionalCLM_apply]
 
 /-- **The variational equation solved by the solution map.** -/
 @[simp]
 theorem apply_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) (v : V) :
     B (hB.formSolutionMap J h) v = ⟪h, J v⟫_ℝ := by
-  rw [formSolutionMap_apply, apply_solutionOfInner_eq_inner,
-    ContinuousLinearMap.adjoint_inner_left]
+  simp only [formSolutionMap_apply, apply_solutionOfFunctional_eq,
+    ContinuousLinearMap.toSesqForm_apply_coe, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
 
 /-- A vector solving the variational equation of `h` is the solution map's value at `h`. -/
 theorem eq_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) {h : H} {u : V}
     (hu : ∀ v : V, B u v = ⟪h, J v⟫_ℝ) : u = hB.formSolutionMap J h := by
   rw [formSolutionMap_apply]
-  refine eq_solutionOfInner hB fun v => ?_
-  rw [hu, ContinuousLinearMap.adjoint_inner_left]
+  apply eq_solutionOfFunctional hB
+  simpa only [ContinuousLinearMap.toSesqForm_apply_coe, ContinuousLinearMap.comp_apply,
+    innerSL_apply_apply] using hu
 
 /-- The form perturbation operator on `V` is the solution map precomposed with `J`, where the
 solution operator on `H` is the same pair of maps composed in the other order. -/
@@ -192,6 +196,10 @@ theorem formSolutionOperator_apply_eq_zero_iff (hB : IsCoercive B) (J : V →L[�
     have hsol : (0 : V) = hB.formSolutionMap J h :=
       eq_formSolutionMap hB J fun v => by rw [horth v]; simp
     rw [formSolutionOperator_apply, ← hsol, map_zero]
+
+variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+  {B : V →L[ℝ] V →L[ℝ] ℝ}
 
 /-- The solution operator is nonzero whenever the map defining it is nonzero. -/
 theorem formSolutionOperator_ne_zero (hB : IsCoercive B) {J : V →L[ℝ] H} (hJ : J ≠ 0) :
@@ -278,7 +286,7 @@ theorem apply_ne_zero_of_forall_apply_eq_smul_inner (hB : IsCoercive B) (J : V �
   linarith [hle u]
 
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
 
 /-- A variational eigenfunction produces an eigenvector of the solution operator with
@@ -312,22 +320,6 @@ theorem exists_forall_apply_eq_smul_inner (hB : IsCoercive B) (J : V →L[ℝ] H
   · rw [apply_formSolutionMap, hSw, real_inner_smul_left, ← mul_assoc, inv_mul_cancel₀ hmu,
       one_mul]
 
-/-- **Existence of a variational eigenvalue.**  For a symmetric form and a nonzero compact `J`,
-the variational eigenvalue problem has a nonzero eigenvalue with an eigenfunction. -/
-theorem exists_ne_zero_forall_apply_eq_smul_inner (hB : IsCoercive B) {J : V →L[ℝ] H}
-    (hJ : IsCompactOperator J) (hsymm : ∀ u v : V, B u v = B v u) (hJne : J ≠ 0) :
-    ∃ kappa : ℝ, kappa ≠ 0 ∧ ∃ u : V, u ≠ 0 ∧ ∀ v : V, B u v = kappa * ⟪J u, J v⟫_ℝ := by
-  have hSne := hB.formSolutionOperator_ne_zero hJne
-  have hcompact := hB.isCompactOperator_formSolutionOperator hJ
-  have hsym := hB.isSymmetric_formSolutionOperator J hsymm
-  have hex : ¬ ∀ mu : ℝ,
-      HasEigenvalue (hB.formSolutionOperator J : H →ₗ[ℝ] H) mu → mu = 0 := fun hcontra =>
-    hSne ((ContinuousLinearMap.eq_zero_of_forall_hasEigenvalue_eq_zero hcompact hsym).mp hcontra)
-  obtain ⟨mu, hmu⟩ := not_forall.mp hex
-  obtain ⟨hmu_eigen, hmu_ne⟩ := Classical.not_imp.mp hmu
-  obtain ⟨u, hu, heq⟩ := hB.exists_forall_apply_eq_smul_inner J hmu_ne hmu_eigen
-  exact ⟨mu⁻¹, inv_ne_zero hmu_ne, u, hu, heq⟩
-
 /-- **The variational eigenvalues are the reciprocals of the nonzero eigenvalues of the
 solution operator.** -/
 theorem hasEigenvalue_formSolutionOperator_iff (hB : IsCoercive B) (J : V →L[ℝ] H) {kappa : ℝ}
@@ -343,10 +335,31 @@ theorem hasEigenvalue_formSolutionOperator_iff (hB : IsCoercive B) (J : V →L[�
     exact hasEigenvalue_of_hasEigenvector
       (hB.hasEigenvector_formSolutionOperator J hu heq)
 
+variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+  {B : V →L[ℝ] V →L[ℝ] ℝ}
+
+/-- **Existence of a variational eigenvalue.**  For a symmetric form and a nonzero compact `J`,
+the variational eigenvalue problem has a nonzero eigenvalue with an eigenfunction. -/
+theorem exists_ne_zero_forall_apply_eq_smul_inner [CompleteSpace H] (hB : IsCoercive B)
+    {J : V →L[ℝ] H}
+    (hJ : IsCompactOperator J) (hsymm : ∀ u v : V, B u v = B v u) (hJne : J ≠ 0) :
+    ∃ kappa : ℝ, kappa ≠ 0 ∧ ∃ u : V, u ≠ 0 ∧ ∀ v : V, B u v = kappa * ⟪J u, J v⟫_ℝ := by
+  have hSne := hB.formSolutionOperator_ne_zero hJne
+  have hcompact := hB.isCompactOperator_formSolutionOperator hJ
+  have hsym := hB.isSymmetric_formSolutionOperator J hsymm
+  have hex : ¬ ∀ mu : ℝ,
+      HasEigenvalue (hB.formSolutionOperator J : H →ₗ[ℝ] H) mu → mu = 0 := fun hcontra =>
+    hSne ((ContinuousLinearMap.eq_zero_of_forall_hasEigenvalue_eq_zero hcompact hsym).mp hcontra)
+  obtain ⟨mu, hmu⟩ := not_forall.mp hex
+  obtain ⟨hmu_eigen, hmu_ne⟩ := Classical.not_imp.mp hmu
+  obtain ⟨u, hu, heq⟩ := hB.exists_forall_apply_eq_smul_inner J hmu_ne hmu_eigen
+  exact ⟨mu⁻¹, inv_ne_zero hmu_ne, u, hu, heq⟩
+
 /-- **The reciprocal of the norm of the solution operator is a variational eigenvalue.**
 Compactness of `J` is what makes `‖S‖` itself an eigenvalue of `S`, and positivity of `S` is what
 excludes `-‖S‖`. -/
-theorem exists_ne_zero_forall_apply_eq_inv_norm_smul_inner (hB : IsCoercive B)
+theorem exists_ne_zero_forall_apply_eq_inv_norm_smul_inner [CompleteSpace H] (hB : IsCoercive B)
     {J : V →L[ℝ] H} (hJ : IsCompactOperator J) (hsymm : ∀ u v : V, B u v = B v u)
     (hJne : J ≠ 0) :
     ∃ u : V, u ≠ 0 ∧
@@ -386,12 +399,13 @@ theorem exists_ne_zero_forall_apply_eq_inv_norm_smul_inner (hB : IsCoercive B)
 theorem finiteDimensional_eigenspace_formSolutionOperator (hB : IsCoercive B) {J : V →L[ℝ] H}
     (hJ : IsCompactOperator J) {mu : ℝ} (hmu : mu ≠ 0) :
     FiniteDimensional ℝ (eigenspace (hB.formSolutionOperator J : H →ₗ[ℝ] H) mu) :=
-  ContinuousLinearMap.finite_dimensional_eigenspace
-    (hB.isCompactOperator_formSolutionOperator hJ) mu hmu
+  IsCompactOperator.finiteDimensional_eigenspace
+    (hB.isCompactOperator_formSolutionOperator hJ) hmu
 
 /-- **The spectral theorem for the solution operator**: its eigenvectors span a dense subspace
 of `H`. -/
-theorem orthogonalComplement_iSup_eigenspaces_formSolutionOperator_eq_bot (hB : IsCoercive B)
+theorem orthogonalComplement_iSup_eigenspaces_formSolutionOperator_eq_bot [CompleteSpace H]
+    (hB : IsCoercive B)
     {J : V →L[ℝ] H} (hJ : IsCompactOperator J) (hsymm : ∀ u v : V, B u v = B v u) :
     (⨆ mu : ℝ, eigenspace (hB.formSolutionOperator J : H →ₗ[ℝ] H) mu)ᗮ = ⊥ :=
   ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot
@@ -402,7 +416,7 @@ theorem orthogonalComplement_iSup_eigenspaces_formSolutionOperator_eq_bot (hB : 
 when `J` is compact with dense range and the form is symmetric, the eigenspaces of the solution
 operator at its nonzero eigenvalues already have trivial orthogonal complement. -/
 theorem orthogonalComplement_iSup_eigenspaces_ne_zero_formSolutionOperator_eq_bot
-    (hB : IsCoercive B)
+    [CompleteSpace H] (hB : IsCoercive B)
     {J : V →L[ℝ] H} (hJ : IsCompactOperator J) (hJdense : DenseRange J)
     (hsymm : ∀ u v : V, B u v = B v u) :
     (⨆ mu : ℝ, ⨆ _ : mu ≠ 0,
@@ -424,7 +438,8 @@ solution of `B u v = ⟪h, J v⟫`, is the eigenfunction expansion `∑ κ⁻¹ 
 This is the abstract form of the eigenfunction expansion of a symmetric elliptic operator; `H`
 is not assumed separable, so the basis is indexed by a set of vectors of `H` as in
 `exists_hilbertBasis`. -/
-theorem exists_hilbertBasis_forall_apply_eq_smul_inner (hB : IsCoercive B) {J : V →L[ℝ] H}
+theorem exists_hilbertBasis_forall_apply_eq_smul_inner [CompleteSpace H] (hB : IsCoercive B)
+    {J : V →L[ℝ] H}
     (hJ : IsCompactOperator J) (hJdense : DenseRange J) (hsymm : ∀ u v : V, B u v = B v u) :
     ∃ (s : Set H) (b : HilbertBasis s ℝ H) (kappa : s → ℝ) (u : s → V),
       ⇑b = ((↑) : s → H) ∧ (∀ x : s, 0 < kappa x) ∧ (∀ x : s, u x ≠ 0) ∧

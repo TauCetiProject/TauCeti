@@ -15,11 +15,9 @@ This file defines right comodules over an `R`-coalgebra `C` and their morphisms.
 comodule is an `R`-module `M` equipped with a coaction `ρ : M →ₗ[R] M ⊗[R] C` satisfying
 the usual coassociativity and counit identities.
 
-This is a first Layer 1 prerequisite for the reductive-groups roadmap: representations of an
-affine group scheme represented by a Hopf algebra are comodules over its coordinate Hopf
-algebra, and the roadmap explicitly calls for comodules, comodule morphisms, tensor products,
-duals, and the regular representation. The file starts with the core definition, the regular
-right comodule of a coalgebra over itself, and the basic morphism API.
+Representations of an affine group scheme represented by a Hopf algebra are comodules over its
+coordinate Hopf algebra. The file provides the core definition, the regular right comodule of a
+coalgebra over itself, and the basic morphism API.
 
 ## Main definitions
 
@@ -31,9 +29,8 @@ right comodule of a coalgebra over itself, and the basic morphism API.
 
 ## References
 
-This follows the standard definition of a right comodule over a coalgebra; see for example
-Sweedler, *Hopf Algebras*, Chapter 2. It is added for the "Comodules over a coalgebra/Hopf
-algebra" target in Layer 1 of the Tau Ceti reductive-groups roadmap.
+This follows the standard definition of a right comodule over a coalgebra; see for example Sweedler,
+*Hopf Algebras*, Chapter 2.
 -/
 
 public section

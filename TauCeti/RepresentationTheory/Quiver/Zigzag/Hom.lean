@@ -24,8 +24,8 @@ degree-zero homomorphisms `P_i → P_j{d}` are the degree-`(-d)` part of the cor
 the homomorphisms which raise degree by `n : ℕ` are `Hom(P_i{n}, P_j)`.
 
 Combining the two identifications with the entrywise computation of the graded corners in
-`TauCeti.RepresentationTheory.Quiver.Zigzag.CartanMatrix` turns the graded Cartan matrix into what
-the roadmap asks it to be, a matrix of graded dimensions of homomorphism spaces,
+`TauCeti.RepresentationTheory.Quiver.Zigzag.CartanMatrix` turns the graded Cartan matrix into a
+matrix of graded dimensions of homomorphism spaces,
 
 `C_G(q)_{i,j} = ∑_d dim_k Hom(P_i{d}, P_j) q^d = (1 + q²) δ_{i,j} + q A_{i,j}`.
 
@@ -71,12 +71,10 @@ spaces are `k`-submodules of the ungraded homomorphism space.
 
 ## References
 
-This is the homomorphism half of Layer 3 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which
-asks for `P_i` together with "all homogeneous `Hom(P_i,P_j{d})` spaces".  Under its pinned shift
-convention, moving that target shift to the source reverses the sign; the nonnegative
-degree-raising part formalized here is `Hom(P_i{d},P_j) = Hom(P_i,P_j{-d})`.  See
-Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
-Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
+Moving a shift from the target to the source reverses its sign: the nonnegative degree-raising part
+formalized here is `Hom(P_i{d},P_j) = Hom(P_i,P_j{-d})`. See Huerfano--Khovanov, *A category for the
+adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
+algebras*, Section 2.
 -/
 
 public section
@@ -666,9 +664,8 @@ theorem finrank_zigzagProjectiveHomOfDegree_two_of_ne {i j : V} (h : i ≠ j) :
 /-! ### The graded Cartan matrix as a matrix of homomorphism dimensions -/
 
 /-- **The graded Cartan entry is the graded dimension of the homomorphism spaces of the vertex
-projectives**, `∑_d dim_k Hom(P_i{d}, P_j) qᵈ`.  Together with
-`TauCeti.zigzagGradedCartanMatrix_eq` this is the roadmap's graded Cartan formula read on the
-projectives themselves, and by
+projectives**, `∑_d dim_k Hom(P_i{d}, P_j) qᵈ`. Together with `TauCeti.zigzagGradedCartanMatrix_eq`
+this is the graded Cartan formula read on the projectives themselves, and by
 `TauCeti.zigzagProjectiveHomOfDegree_eq_bot_of_three_le` the truncation of the sum below degree
 three discards only zeros. -/
 theorem zigzagGradedCartanMatrix_eq_sum_finrank_zigzagProjectiveHomOfDegree (i j : V) :
