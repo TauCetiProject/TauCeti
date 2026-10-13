@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
-public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.RingTheory.ClassGroup.Basic
 
 /-!
@@ -46,7 +46,9 @@ that is, a local unit at every prime of `S`. -/
 @[simp↓]
 theorem toPrincipalIdeal_mem_idealsAway_iff {S : Finset (HeightOneSpectrum R)} {x : Kˣ} :
     toPrincipalIdeal R K x ∈ idealsAway K S ↔ x ∈ (S : Set (HeightOneSpectrum R))ᶜ.unit K := by
-  rw [mem_idealsAway_iff, Set.mem_unit_iff]
+  rw [mem_idealsAway_iff]
+  -- Mathlib has no S-unit membership lemma; unfold the defining valuation condition.
+  change _ ↔ ∀ v ∉ (S : Set (HeightOneSpectrum R))ᶜ, v.valuation K (x : K) = 1
   simp only [Set.mem_compl_iff, Finset.mem_coe, not_not]
   refine forall_congr' fun v ↦ forall_congr' fun _ ↦ ?_
   rw [FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation, neg_eq_zero]

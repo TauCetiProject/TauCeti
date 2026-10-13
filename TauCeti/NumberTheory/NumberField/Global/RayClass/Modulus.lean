@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
-public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -410,7 +410,10 @@ noncomputable abbrev primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ :=
 @[simp↓] theorem mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ} :
     x ∈ primeToSubgroup 𝔪 ↔
       ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 := by
-  simp only [primeToSubgroup, Set.mem_unit_iff, Set.mem_compl_iff, Finset.mem_coe,
+  -- Mathlib has no S-unit membership lemma; unfold the defining valuation condition.
+  change (∀ v ∉ (𝔪.support : Set (HeightOneSpectrum (𝓞 K)))ᶜ,
+    v.valuation K (x : K) = 1) ↔ _
+  simp only [Set.mem_compl_iff, Finset.mem_coe,
     not_not, Modulus.mem_support_iff]
 
 /-- A larger finite part has a smaller prime-to subgroup.  This is the carrier map used when
