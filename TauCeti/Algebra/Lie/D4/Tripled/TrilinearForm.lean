@@ -148,7 +148,6 @@ noncomputable def trialityTrilinearForm (R : Type*) [CommRing R] :
           ((Pi.basisFun R (Block 2)).coord c))
 
 /-- The triality form is the sum of its signed coordinate monomials. -/
-@[simp]
 theorem trialityTrilinearForm_apply (R : Type*) [CommRing R]
     (v₀ : Block 0 → R) (v₁ : Block 1 → R) (v₂ : Block 2 → R) :
     trialityTrilinearForm R v₀ v₁ v₂ =
@@ -157,6 +156,7 @@ theorem trialityTrilinearForm_apply (R : Type*) [CommRing R]
   simp [trialityTrilinearForm, mul_assoc, mul_comm, mul_left_comm]
 
 /-- The triality form on three single-coordinate vectors is its signed integral coefficient. -/
+@[simp]
 theorem trialityTrilinearForm_single_one_single_one_single_one (R : Type*) [CommRing R]
     (a : Block 0) (b : Block 1) (c : Block 2) :
     trialityTrilinearForm R (Pi.single a 1) (Pi.single b 1) (Pi.single c 1) =
