@@ -86,6 +86,9 @@ what the gluing lemma consumes.
   along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
+* `TauCeti.hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top` — a law of finite weighted
+  Wasserstein cost against finitely many laws, one of positive weight and finite moment, has finite
+  moment;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
 * `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
@@ -767,6 +770,22 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
       rw [eLpNorm_map_measure (f := fun x : X ↦ (x, x)) hd.aestronglyMeasurable
         (measurable_id.prodMk measurable_id).aemeasurable]
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
+
+/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ n` has
+finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment
+and `n ≠ 0`: the corresponding summand bounds `W_p(ν, μ i)`. -/
+theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
+    {μ : ι → Measure X} {ν : Measure X} [IsProbabilityMeasure ν] {i : ι} (hi : i ∈ s)
+    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {n : ℕ}
+    (hn : n ≠ 0) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ n ≠ ∞) :
+    HasFiniteMoment p ν := by
+  have hi' : w i * wassersteinEDist p ν (μ i) ^ n ≠ ∞ :=
+    ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ n)
+      (fun _ _ ↦ bot_le) hi)
+  rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ,
+    wassersteinEDist_comm hd]
+  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_pow hn, ENNReal.mul_top hwi])
 
 end Anchor
 

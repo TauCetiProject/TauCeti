@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Huber.PowerBounded
 import TauCeti.RingTheory.Ideal.PowerStabilization
 import TauCeti.RingTheory.Subring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent
 
 /-!
 # Huber rings and Tate rings
@@ -59,8 +60,6 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.IsHuberRing.isCountablyGenerated_nhds_zero`: its neighbourhoods of zero are
   countably generated. With the previous bullet these are exactly the two hypotheses Henkel's open
   mapping theorem asks of the underlying group, so both are instances.
-* `TauCeti.Huber.PairOfDefinition.exists_pow_mul_mem`: a power of a topologically nilpotent `s`
-  carries any `c : A` into the ring of definition.
 * `IsTopologicallyNilpotent.exists_pow_mul` and
   `TauCeti.Huber.IsTateRing.exists_isTopologicallyNilpotent_pow_mul`: a power of a topologically
   nilpotent element — a pseudouniformiser, in the Tate case — rescales any element of `A` to a
@@ -581,16 +580,6 @@ theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : 
   · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
     exact ⟨q₀ a, Ideal.mem_map_of_mem q₀ ha, rfl⟩
 
-/-- **Some power of a topologically nilpotent `s` carries any `c : A` into the ring of
-definition.** The ring of definition is open and `sⁿ c → 0`, so `sⁿ c` is eventually inside it.
-
-This is the arbitrary-`c` generalisation of
-`TauCeti.Huber.IsPseudoUniformizer.eventually_pow_mem_ringOfDefinition`, which is the case
-`c = 1`; it also asks only for topological nilpotence rather than for a pseudouniformiser. -/
-theorem exists_pow_mul_mem [SeparatelyContinuousMul A] (P : PairOfDefinition A) {s : A}
-    (hs : IsTopologicallyNilpotent s) (c : A) : ∃ i : ℕ, s ^ i * c ∈ P.ringOfDefinition :=
-  ((hs.mul_const c).eventually
-    (P.isOpen_ringOfDefinition.mem_nhds (by simp))).exists
 
 end PairOfDefinition
 
@@ -608,7 +597,9 @@ theorem _root_.IsTopologicallyNilpotent.exists_pow_mul {A : Type*} [CommRing A]
     (hϖ : IsTopologicallyNilpotent ϖ) (s : A) : ∃ i : ℕ, IsTopologicallyNilpotent (ϖ ^ i * s) := by
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   have := P.toNonarchimedeanRing
-  obtain ⟨i, hi⟩ := P.exists_pow_mul_mem hϖ s
+  obtain ⟨i, hi⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hϖ
+    P.isOpen_ringOfDefinition s
+  rw [mul_comm] at hi
   have hpb : IsPowerBounded (ϖ ^ i * s) :=
     mem_powerBoundedSubring.mp (P.le_powerBoundedSubring hi)
   exact ⟨i + 1, by simpa [pow_succ, mul_assoc, mul_comm, mul_left_comm] using

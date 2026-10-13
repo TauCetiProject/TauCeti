@@ -415,9 +415,7 @@ theorem hasTateTangentRoot_iff_splits (hϖ : Irreducible ϖ) :
     rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq, ← residue_eq_zero_iff]
     simpa [sub_eq_add_neg] using hx
 
-variable [IsMinimal R (W.baseChange K)]
-
-/-- **At split multiplicative reduction, the local index of `Iₙ` is `n`.** On a minimal equation
+/-- **At split multiplicative reduction, the local index of `Iₙ` is `n`.** On an equation
 at which Tate's algorithm stops at `Iₙ` with `n ≥ 1`. -/
 theorem IsTateTerminal.tateLocalIndex_of_hasSplitMultiplicativeReduction (hϖ : Irreducible ϖ)
     {n : ℕ} (h : W.IsTateTerminal ϖ (.I (n + 1)))
@@ -426,7 +424,7 @@ theorem IsTateTerminal.tateLocalIndex_of_hasSplitMultiplicativeReduction (hϖ : 
   tateLocalIndex_I_add_one_of_hasTateTangentRoot ((hasTateTangentRoot_iff_splits hϖ).2
     ((h.hasSplitMultiplicativeReduction_iff hϖ).1 hs)) n
 
-/-- **At nonsplit multiplicative reduction, the local index of `Iₙ` is `gcd(2, n)`.** On a minimal
+/-- **At nonsplit multiplicative reduction, the local index of `Iₙ` is `gcd(2, n)`.** On an
 equation at which Tate's algorithm stops at `Iₙ` with `n ≥ 1`. -/
 theorem IsTateTerminal.tateLocalIndex_of_not_hasSplitMultiplicativeReduction
     (hϖ : Irreducible ϖ) {n : ℕ} (h : W.IsTateTerminal ϖ (.I (n + 1)))
