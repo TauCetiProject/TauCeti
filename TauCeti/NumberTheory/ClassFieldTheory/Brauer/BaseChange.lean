@@ -51,12 +51,16 @@ On central simple algebras, base change is `A ↦ A ⊗_K L`; that comparison is
   `TauCeti.ClassFieldTheory.brBaseChange_brBaseChange`: functoriality in the extension.
 * `TauCeti.ClassFieldTheory.brBaseChange_eq_brRes`: for an extension embedded in `Kˢ`, base
   change is restriction.
+* `TauCeti.ClassFieldTheory.brBaseChange_eq_zero_of_algHom`: a class split by `L` is split by
+  every extension of `L`.
 * `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`: base change of a class inflated from a finite
   normal layer `L/K` is inflated from any finite normal layer `M/F` receiving `L`, along restriction
   `Gal(M/F) → Gal(L/K)` and the inclusion `Lˣ → Mˣ`.
 * `TauCeti.ClassFieldTheory.brBaseChange_characterCarryCocycle`: base change of the carry class
   `a ∪ δχ` of a character `χ` of `G_K` and `a ∈ Kˣ` is the carry class of `χ` read on `G_L` and
   the image of `a` in `Lˣ`.
+* `TauCeti.ClassFieldTheory.mem_range_relBrInfl_iff_brBaseChange_eq_zero`: the classes inflated
+  from a finite normal layer `L/K` are exactly those whose base change to `L` vanishes.
 
 ## References
 
@@ -237,6 +241,15 @@ theorem brBaseChange_brBaseChange (M : Type w) [Field M] [Algebra K M] [Algebra 
       (H := AbsoluteGaloisGroup L) (N := UnitsCoeff L)
       (K := AbsoluteGaloisGroup M) (P := UnitsCoeff M), AddMonoidHom.comp_apply]
 
+variable {K L} in
+/-- **A class split by `L` is split by every extension of `L`.** If the base change of `x` to `L`
+vanishes, so does its base change to any field `M` receiving a `K`-embedding of `L`. -/
+theorem brBaseChange_eq_zero_of_algHom {M : Type w} [Field M] [Algebra K M] (f : L →ₐ[K] M)
+    {x : Br K} (hx : brBaseChange K L x = 0) : brBaseChange K M x = 0 := by
+  let : Algebra L M := f.toRingHom.toAlgebra
+  have : IsScalarTower K L M := .of_algebraMap_eq fun c ↦ (f.commutes c).symm
+  rw [← brBaseChange_brBaseChange K L M, hx, map_zero]
+
 /-- **Base change along an embedded extension is restriction**: if `L/K` is embedded in `Kˢ` by
 `σ`, then `brBaseChange K L` is the restriction `brRes K L σ`. In particular `brRes K L σ` does
 not depend on `σ`. -/
@@ -341,5 +354,41 @@ theorem brBaseChange_relBrInfl (y : groupCohomology (Rep.ofMulDistribMulAction G
   exact hτ _
 
 end Relative
+
+/-! ### The relative Brauer group as a kernel -/
+
+section Kernel
+
+variable (K : Type) [Field K] (L : Type) [Field L] [Algebra K L] [FiniteDimensional K L]
+  [Normal K L] (σ : L →ₐ[K] SeparableClosure K)
+
+/-- **The relative Brauer group is the kernel of base change.** For a finite normal extension
+`L/K`, embedded in `Kˢ` by `σ`, a class of `Br K` is inflated from `H²(Gal(L/K), Lˣ)` exactly when
+its base change to `L` vanishes: `Br(L/K) = ker(Br K → Br L)`. -/
+theorem mem_range_relBrInfl_iff_brBaseChange_eq_zero (x : Br K) :
+    x ∈ (relBrInfl K L σ).range ↔ brBaseChange K L x = 0 := by
+  obtain ⟨E, _, _, y, rfl⟩ := exists_relBrInfl_eq x
+  -- Both `E` and `L` embed in the compositum `M = E · σ(L)` inside `Kˢ`, finite normal over `K`.
+  have : FiniteDimensional K σ.fieldRange := σ.equivFieldRange.toLinearEquiv.finiteDimensional
+  have : Normal K σ.fieldRange := Normal.of_algEquiv σ.equivFieldRange
+  set M : IntermediateField K (SeparableClosure K) := E ⊔ σ.fieldRange
+  let : Algebra E M := (IntermediateField.inclusion le_sup_left).toRingHom.toAlgebra
+  let : Algebra L M :=
+    ((IntermediateField.inclusion le_sup_right).comp σ.equivFieldRange.toAlgHom).toRingHom.toAlgebra
+  have : IsScalarTower K E M := .of_algebraMap_eq fun c ↦ (AlgHom.commutes _ c).symm
+  have : IsScalarTower K L M := .of_algebraMap_eq fun c ↦ (AlgHom.commutes _ c).symm
+  have : Algebra.IsSeparable L M := Algebra.isSeparable_tower_top_of_isSeparable K L M
+  have : FiniteDimensional L M := Module.Finite.of_restrictScalars_finite K L M
+  have : Normal L M := Normal.tower_top_of_normal K L M
+  -- Read through `M`, the embeddings of `E` and `L` are the given ones.
+  have hE : M.val.comp (IsScalarTower.toAlgHom K E M) = E.val := AlgHom.ext fun _ ↦ rfl
+  have hL : M.val.comp (IsScalarTower.toAlgHom K L M) = σ := AlgHom.ext fun _ ↦ rfl
+  -- Both conditions say that the image of `y` in `H²(Gal(M/L), Mˣ)` vanishes.
+  have hsplit := relBrInfl_mem_range_relBrInfl_iff K E L M M.val y
+  rw [hE, hL] at hsplit
+  rw [hsplit, brBaseChange_relBrInfl K L E M E.val (IsSepClosed.lift : M →ₐ[L] SeparableClosure L),
+    map_eq_zero_iff _ (relBrInfl_injective L M _)]
+
+end Kernel
 
 end TauCeti.ClassFieldTheory
