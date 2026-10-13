@@ -13,17 +13,12 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 # Solvable radicals of normal closed subgroups
 
 Over an algebraically closed field, the solvable radical of a normal closed subgroup of a
-reduced finite-type affine group is normal in the ambient group. Conjugation restricts to an
-automorphism of the normal subgroup and preserves its solvable radical. Since the radical is
-smooth, rational-point stability proves scheme-theoretic normality.
+reduced finite-type affine group is normal in the ambient group.
 
 Consequently this radical is contained in the ambient solvable radical. In particular, a normal
 closed subgroup of a group with trivial solvable radical again has trivial solvable radical.
 The normal subgroup itself need not be smooth or connected; those hypotheses are needed only
 when recognizing it as semisimple.
-
-The automorphism-invariance input is
-`FiniteTypeCommHopfAlgCat.comapOfSurjective_solvableRadicalDefiningIdeal`.
 
 ## References
 
@@ -67,6 +62,8 @@ theorem isSolvableRadicalCandidate_comap_solvableRadicalDefiningIdeal_quotient
         ((smoothCommHopfAlgProperty_iff _).mpr (smooth_solvableRadical Q))
   let _ := hsm
   let _ : IsReduced (H ⧸ P.toIdeal) := isReduced_of_smooth k (quotient H P)
+  -- Restricted conjugation preserves the radical by
+  -- comapOfSurjective_solvableRadicalDefiningIdeal; rational-point stability gives normality.
   refine .mk (hI.comapOfSurjective_of_forall_iso J ?_) ?_ hsm ?_
   · intro a
     exact comapOfSurjective_solvableRadicalDefiningIdeal

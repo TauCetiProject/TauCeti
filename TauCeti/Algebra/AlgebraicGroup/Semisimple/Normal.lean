@@ -14,19 +14,15 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 # Normal closed subgroups of semisimple affine groups
 
 A smooth geometrically connected normal closed subgroup of a semisimple affine group is
-semisimple, over every field and in every characteristic. Over an algebraic closure, its solvable
-radical is normal in the ambient group and hence lies in the ambient solvable radical, which is
-trivial. The quotient/base-change comparison identifies this calculation with the geometric
-fibre of the original subgroup.
+semisimple, over every field and in every characteristic. Closed subgroups are represented by
+Hopf quotients; `CommHopfAlgCat.quotientBaseChangeIso` identifies their geometric fibres with
+quotients of the base-changed ambient Hopf algebra.
 
 Smoothness and geometric connectedness of the subgroup are explicit: normal closed subgroups of
 semisimple groups can be disconnected or infinitesimal. No perfection of the ground field is
 assumed. The theorem recognizes the connected normal factors appearing in decompositions of
 semisimple groups, and applies to the derived subgroup once its smoothness and geometric
 connectedness have been established.
-
-The proof uses `Solvable.Radical.Normal` for radical containment and
-`CommHopfAlgCat.quotientBaseChangeIso` for the geometric fibre of a closed subgroup.
 
 ## References
 
