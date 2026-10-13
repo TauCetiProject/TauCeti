@@ -79,7 +79,7 @@ an elliptic curve over a general base.
   polynomial splits, with `e₂ - e₁` a square, is a change of variables away from Legendre form.
 * `WeierstrassCurve.exists_variableChange_smul_baseChange_eq_freyCurve_one`: away from
   characteristic `2`, an elliptic curve takes Legendre form over a finite separable extension.
-* `WeierstrassCurve.isElliptic_freyCurve_one_neg_iff`: `y² = x (x - 1) (x - l)` is elliptic
+* `TauCeti.isElliptic_freyCurve_one_neg_iff`: `y² = x (x - 1) (x - l)` is elliptic
   exactly when `2l(l - 1)` is a unit.
 * `WeierstrassCurve.toLegendre_smul`: over a ring, `toLegendre` carries `W` to Legendre form, with
   an explicit parameter.
@@ -104,6 +104,17 @@ universe u
 
 open Polynomial TauCeti
 
+namespace TauCeti
+
+/-- The Legendre form `y² = x (x - 1) (x - l)` is elliptic exactly when `2l(l - 1)` is a unit. -/
+theorem isElliptic_freyCurve_one_neg_iff {R : Type*} [CommRing R] {l : R} :
+    (freyCurve 1 (-l)).IsElliptic ↔ IsUnit (2 * l * (l - 1)) := by
+  rw [isElliptic_freyCurve_iff, IsUnit.mul_iff, IsUnit.mul_iff, IsUnit.neg_iff,
+    ← sub_eq_add_neg, ← neg_sub l, IsUnit.neg_iff]
+  simp only [isUnit_one, true_and, and_assoc]
+
+end TauCeti
+
 namespace WeierstrassCurve
 
 /-! ### Legendre form over a ring -/
@@ -111,13 +122,6 @@ namespace WeierstrassCurve
 section CommRing
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {x₁ y₁ x₂ y₂ : R}
-
-/-- The Legendre form `y² = x (x - 1) (x - l)` is elliptic exactly when `2l(l - 1)` is a unit. -/
-theorem isElliptic_freyCurve_one_neg_iff {l : R} :
-    (freyCurve 1 (-l)).IsElliptic ↔ IsUnit (2 * l * (l - 1)) := by
-  rw [isElliptic_freyCurve_iff, IsUnit.mul_iff, IsUnit.mul_iff, IsUnit.neg_iff,
-    ← sub_eq_add_neg, ← neg_sub l, IsUnit.neg_iff]
-  simp only [isUnit_one, true_and, and_assoc]
 
 /-- **Two points of order two force `2` to be a unit.** If `W` is elliptic and `ψ₂` vanishes at
 `(x₁, y₁)` and at `(x₂, y₂)` with `x₂ - x₁` a unit, then `2` is a unit: modulo `2` both `a₁` and
