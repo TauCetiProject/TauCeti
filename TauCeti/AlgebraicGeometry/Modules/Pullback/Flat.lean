@@ -44,6 +44,7 @@ private theorem mono_pullback_specMap_of_flat (hφ : φ.hom.Flat)
     Mono ((pullback (Spec.map φ)).map g) := by
   let F := pullback (Spec.map φ)
   let G := moduleSpecΓFunctor (R := R)
+  let c := fromTildeΓNatTrans (R := R)
   have : G.IsRightAdjoint := (tilde.adjunction (R := R)).isRightAdjoint
   have : PreservesFiniteLimits (ModuleCat.extendScalars φ.hom) :=
     ModuleCat.preservesFiniteLimits_extendScalars_of_flat hφ
@@ -52,19 +53,17 @@ private theorem mono_pullback_specMap_of_flat (hφ : φ.hom.Flat)
   let e := TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ
   have hm : Mono ((tilde.functor R ⋙ F).map (G.map g)) := by
     apply mono_of_mono_fac (e.hom.naturality (G.map g))
-  have : IsIso M.fromTildeΓ := isIso_fromTildeΓ_of_isQuasicoherent M
-  have : IsIso N.fromTildeΓ := isIso_fromTildeΓ_of_isQuasicoherent N
-  have : IsIso (F.map N.fromTildeΓ) := inferInstance
-  have hN : Mono (F.map N.fromTildeΓ) := IsIso.mono_of_iso _
-  have hn : (tilde.functor R).map (G.map g) ≫ N.fromTildeΓ = M.fromTildeΓ ≫ g :=
-    fromTildeΓNatTrans.naturality g
-  have : Mono (F.map M.fromTildeΓ ≫ F.map g) := by
+  have : IsIso (c.app M) := isIso_fromTildeΓ_of_isQuasicoherent M
+  have : IsIso (c.app N) := isIso_fromTildeΓ_of_isQuasicoherent N
+  have : IsIso (F.map (c.app N)) := inferInstance
+  have hN : Mono (F.map (c.app N)) := IsIso.mono_of_iso _
+  have hn : (tilde.functor R).map (G.map g) ≫ c.app N = c.app M ≫ g :=
+    c.naturality g
+  have : Mono (F.map (c.app M) ≫ F.map g) := by
     rw [← F.map_comp, ← hn]
-    -- `fromTildeΓ` writes its source using the concrete global-sections module rather than
-    -- the object of `moduleSpecΓFunctor`; `erw` identifies these presentations.
-    erw [F.map_comp]
+    rw [F.map_comp]
     exact mono_comp' hm hN
-  exact (mono_comp_iff_of_isIso (F.map M.fromTildeΓ) (F.map g)).mp inferInstance
+  exact (mono_comp_iff_of_isIso (F.map (c.app M)) (F.map g)).mp inferInstance
 
 variable {X Y : Scheme.{u}}
 
@@ -122,7 +121,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.mono_pullback_map_of_flat
 
 /-- Flat pullback carries a short exact sequence to a short exact sequence when its first two
 terms are quasicoherent. No quasicoherence hypothesis on the third term is needed. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.shortExact_pullback_of_flat
+theorem _root_.AlgebraicGeometry.Scheme.Hom.shortExact_map_pullback_of_flat
     (f : X ⟶ Y) [Flat f] (S : ShortComplex Y.Modules) (hS : S.ShortExact)
     [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent] : (S.map (pullback f)).ShortExact := by
   have := hS.mono_f
