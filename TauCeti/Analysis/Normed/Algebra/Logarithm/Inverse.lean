@@ -133,7 +133,7 @@ variable (A : Type*) [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
 /-- Near zero, taking `log` after the exponential is the identity. -/
 theorem eventually_log_exp : ∀ᶠ x in 𝓝 (0 : A), log (exp x) = x := by
   have hlog : HasFPowerSeriesAt (log : A → A) (logSeries ℚ A) (exp 0) := by
-    simpa only [exp_zero] using (hasFPowerSeriesOnBall_log ℚ A).hasFPowerSeriesAt
+    simpa only [exp_zero] using (log_hasFPowerSeriesOnBall ℚ A).hasFPowerSeriesAt
   have h := hlog.comp (exp_hasFPowerSeriesAt_zero (𝕂 := ℚ) (𝔸 := A))
   rw [logSeries_eq_ratSeries, expSeries_eq_ratSeries, ratSeries_comp,
     compCoeff_logCoeff_expCoeff] at h
@@ -146,7 +146,7 @@ theorem eventually_log_exp : ∀ᶠ x in 𝓝 (0 : A), log (exp x) = x := by
 theorem eventually_exp_log : ∀ᶠ x in 𝓝 (1 : A), exp (log x) = x := by
   have hexp : HasFPowerSeriesAt (exp : A → A) (expSeries ℚ A) (log 1) := by
     simpa only [log_one] using exp_hasFPowerSeriesAt_zero (𝕂 := ℚ) (𝔸 := A)
-  have h := hexp.comp (hasFPowerSeriesOnBall_log ℚ A).hasFPowerSeriesAt
+  have h := hexp.comp (log_hasFPowerSeriesOnBall ℚ A).hasFPowerSeriesAt
   rw [logSeries_eq_ratSeries, expSeries_eq_ratSeries, ratSeries_comp,
     compCoeff_expCoeff_logCoeff] at h
   have hid : HasFPowerSeriesAt (fun x : A ↦ x) (ratSeries ℚ A oneAddCoeff) 1 := by

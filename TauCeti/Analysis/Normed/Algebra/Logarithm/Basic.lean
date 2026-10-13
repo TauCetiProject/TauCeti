@@ -24,7 +24,7 @@ origin.
 * `NormedSpace.logSeries_apply`: the homogeneous terms of `NormedSpace.logSeries`.
 * `NormedSpace.logSeries_partialSum_three`: its third partial sum, `u - 2⁻¹ • u ^ 2`.
 * `NormedSpace.one_le_logSeries_radius`: the radius of convergence is at least one.
-* `NormedSpace.hasFPowerSeriesOnBall_log`: the series represents `NormedSpace.log` on the
+* `NormedSpace.log_hasFPowerSeriesOnBall`: the series represents `NormedSpace.log` on the
   unit ball about one.
 * `NormedSpace.isBigO_log_one_add_sub_quadratic`: `log (1 + u) - (u - 2⁻¹ • u ^ 2)` is
   `O(‖u‖ ^ 3)` at the origin.
@@ -99,7 +99,7 @@ theorem logSeries_summable_of_norm_lt_one {u : A} (hu : ‖u‖ < 1) :
     (logSeries 𝕂 A).summable (hed.trans_le (one_le_logSeries_radius 𝕂 A))
 
 /-- `logSeries` represents `log` throughout the open unit ball about one. -/
-theorem hasFPowerSeriesOnBall_log :
+theorem log_hasFPowerSeriesOnBall :
     HasFPowerSeriesOnBall (log : A → A) (logSeries 𝕂 A) 1 1 := by
   have h := ((logSeries 𝕂 A).hasFPowerSeriesOnBall
       (lt_of_lt_of_le zero_lt_one (one_le_logSeries_radius 𝕂 A))).mono zero_lt_one
@@ -109,14 +109,14 @@ theorem hasFPowerSeriesOnBall_log :
 
 /-- `log` is analytic at one. -/
 theorem analyticAt_log_one : AnalyticAt 𝕂 (log : A → A) 1 :=
-  hasFPowerSeriesOnBall_log 𝕂 A |>.analyticAt
+  log_hasFPowerSeriesOnBall 𝕂 A |>.analyticAt
 
 /-- **The quadratic Taylor estimate for the Banach algebra logarithm.**  The difference
 `log (1 + u) - (u - 2⁻¹ • u ^ 2)` is `O(‖u‖ ^ 3)` as `u → 0`. -/
 theorem isBigO_log_one_add_sub_quadratic :
     (fun u : A ↦ log (1 + u) - (u - (2⁻¹ : 𝕂) • u ^ 2)) =O[𝓝 (0 : A)] fun u ↦ ‖u‖ ^ 3 := by
   simpa only [logSeries_partialSum_three] using
-    (hasFPowerSeriesOnBall_log 𝕂 A).hasFPowerSeriesAt.isBigO_sub_partialSum_pow 3
+    (log_hasFPowerSeriesOnBall 𝕂 A).hasFPowerSeriesAt.isBigO_sub_partialSum_pow 3
 
 end Normed
 

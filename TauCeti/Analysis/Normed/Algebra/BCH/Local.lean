@@ -35,11 +35,6 @@ algebra its chosen representative is analytic at the origin.
   tending to zero with the same exponential image.
 * `NormedSpace.map_localBCH`: continuous ring homomorphisms commute with the
   local BCH germ.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 3, "Baker--Campbell--Hausdorff".
 -/
 
 public section
