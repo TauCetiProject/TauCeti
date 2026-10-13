@@ -134,6 +134,11 @@ def cubeHomotopy {m : ℕ} (c : SingularCube X m) : ContinuousMap.Homotopy c (D.
   map_zero_left := D.homotopy_zero c
   map_one_left _ := rfl
 
+@[simp]
+theorem cubeHomotopy_apply {m : ℕ} (c : SingularCube X m) (p : I × (Fin m → I)) :
+    D.cubeHomotopy c p = D.homotopy c p :=
+  (rfl)
+
 /-- The cube swept out by the deformation of the singular cube `c`, with time as the first
 coordinate. -/
 def sweep {m : ℕ} (c : SingularCube X m) : SingularCube X (m + 1) :=
@@ -142,8 +147,7 @@ def sweep {m : ℕ} (c : SingularCube X m) : SingularCube X (m + 1) :=
 @[simp]
 theorem sweep_apply {m : ℕ} (c : SingularCube X m) (y : Fin (m + 1) → I) :
     D.sweep c y = D.homotopy c (y 0, Fin.tail y) := by
-  rw [sweep, SingularCube.prism_apply]
-  rfl
+  simp [sweep]
 
 /-- The swept cube starts at `c`. -/
 @[simp]
