@@ -6,19 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
+public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 /-!
 # Smooth maps composed with absolutely continuous curves
 
-A map that is continuously differentiable near every point of the compact trace of an
-absolutely continuous curve preserves absolute continuity under composition.
+Locally Lipschitz maps preserve the absolute continuity of metric-valued curves under composition.
+In particular, a map that is continuously differentiable near every point of the compact trace of
+an absolutely continuous curve preserves absolute continuity.
 -/
 
 public section
 
 open Set
+
+/-- A locally Lipschitz map preserves the absolute continuity of a metric-valued curve whose
+trace lies in its domain of local Lipschitz continuity. -/
+theorem LocallyLipschitzOn.comp_absolutelyContinuousOnInterval
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {φ : X → Y} {γ : ℝ → X}
+    {s : Set X} {a b : ℝ} (hφ : LocallyLipschitzOn s φ)
+    (hmap : MapsTo γ (uIcc a b) s) (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    AbsolutelyContinuousOnInterval (φ ∘ γ) a b := by
+  obtain ⟨K, hK⟩ := (hφ.mono hmap.image_subset).exists_lipschitzOnWith_of_compact
+    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn')
+  exact hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
 
 namespace AbsolutelyContinuousOnInterval
 
@@ -33,8 +45,6 @@ theorem comp_of_contDiffAt {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
     intro x hx
     obtain ⟨K, U, hU, hLip⟩ := (hφ x hx).exists_lipschitzOnWith
     exact ⟨K, U, mem_nhdsWithin_of_mem_nhds hU, hLip⟩
-  obtain ⟨K, hK⟩ := hloc.exists_lipschitzOnWith_of_compact
-    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn)
-  exact hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
+  exact hloc.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
 
 end AbsolutelyContinuousOnInterval

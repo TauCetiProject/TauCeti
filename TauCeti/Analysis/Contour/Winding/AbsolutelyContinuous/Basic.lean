@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 
@@ -36,12 +37,8 @@ theorem exp_two_pi_I_mul_windingNumber_of_absolutelyContinuousOnInterval
     intervalIntegrable_inv_sub_mul_deriv_of_absolutelyContinuousOnInterval hγ hz
   have hA : AbsolutelyContinuousOnInterval A a b :=
     hf.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc
-  have hloc : LocallyLipschitzOn ((fun t ↦ -A t) '' uIcc a b) Complex.exp :=
-    (Complex.contDiff_exp (𝕜 := ℝ) (n := 1)).locallyLipschitz.locallyLipschitzOn
-  obtain ⟨K, hK⟩ := hloc.exists_lipschitzOnWith_of_compact
-    (isCompact_uIcc.image_of_continuousOn hA.neg.continuousOn)
   have hexp : AbsolutelyContinuousOnInterval (fun t ↦ Complex.exp (-A t)) a b :=
-    hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hA.neg
+    hA.neg.comp_of_contDiffAt fun _ _ ↦ (Complex.contDiff_exp (𝕜 := ℝ) (n := 1)).contDiffAt
   have hsub : AbsolutelyContinuousOnInterval (fun t ↦ γ t - z) a b :=
     hγ.fun_sub (LipschitzWith.const (α := ℝ) z).lipschitzOnWith.absolutelyContinuousOnInterval
   have hfactor : AbsolutelyContinuousOnInterval

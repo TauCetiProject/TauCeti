@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Basic
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
@@ -54,10 +54,8 @@ continuous because `φ` is Lipschitz on the compact image `γ '' uIcc a b`. -/
 theorem integral_fderiv_apply_eq_sub (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (V t) t) {φ : F → ℝ} (hφ : ContDiff ℝ 1 φ) :
     ∫ t in a..b, fderiv ℝ φ (γ t) (V t) = φ (γ b) - φ (γ a) := by
-  obtain ⟨K, hK⟩ := hφ.locallyLipschitz.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
-    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn)
   refine Eq.trans (intervalIntegral.integral_congr_ae ?_)
-    (hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ).integral_deriv_eq_sub
+    (hγ.comp_of_contDiffAt fun _ _ ↦ hφ.contDiffAt).integral_deriv_eq_sub
   filter_upwards [hV] with t ht hmem
   exact (HasFDerivAt.comp_hasDerivAt t (hφ.differentiable one_ne_zero (γ t)).hasFDerivAt
     (ht hmem)).deriv.symm
