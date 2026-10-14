@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Contour.PiecewiseC1On
-import TauCeti.Analysis.Contour.Winding.EndpointRatio
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
 # The winding number of a closed curve is an integer
@@ -20,9 +20,9 @@ Hungerbühler–Wasem path (HW Thm 3.3): combined with continuity of the winding
 it makes the winding number locally constant on the complement of the curve — the input to the
 homology form of Cauchy's theorem.
 
-Closing the curve is the only thing used here: `exp_two_pi_I_mul_windingNumber_of_avoidance`
-evaluates `exp (2πi · n_w(γ))` as the endpoint ratio `(γ b - w) / (γ a - w)` for any avoiding arc,
-and `γ a = γ b` makes that ratio `1`.
+The proof recovers absolute continuity from the countable-exception hypotheses and then uses
+`AbsolutelyContinuousOnInterval.exists_int_windingNumber`. In that theorem, the endpoint ratio
+of a closed curve is `1`, so its winding number is an integer.
 
 ## Main results
 
@@ -35,8 +35,8 @@ and `γ a = γ b` makes that ratio `1`.
 
 Adapted from `hasGeneralizedWindingNumber_integer_of_closed` in `WindingInteger.lean` of the AINTLIB
 `LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on an oriented interval. The
-argument-lift computation that used to sit here now lives in `Winding.EndpointRatio`, which proves
-it for arcs that need not close up.
+integrality statement is now derived from its absolutely continuous form through the
+countable-exception fundamental theorem of calculus.
 -/
 
 public section
@@ -58,12 +58,14 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
     (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w)
     (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
     ∃ n : ℤ, windingNumber γ a b w = n := by
-  -- The endpoint ratio of a closed curve is `1`, so the exponent is a multiple of `2πi`.
-  have h := exp_two_pi_I_mul_windingNumber_of_avoidance hP hγ_cont hγ_diff h_avoid h_int
-  rw [← hclosed, div_self (sub_ne_zero.mpr (h_avoid a left_mem_uIcc))] at h
-  obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.mp h
-  refine ⟨n, mul_left_cancel₀ Complex.two_pi_I_ne_zero ?_⟩
-  rw [hn, mul_comm]
+  have hderiv : IntervalIntegrable (deriv γ) volume a b := by
+    refine (h_int.continuousOn_mul (hγ_cont.sub (continuousOn_const (c := w)))).congr
+      (fun t ht ↦ ?_)
+    dsimp
+    rw [← mul_assoc, mul_inv_cancel₀ (sub_ne_zero.mpr (h_avoid t (uIoc_subset_uIcc ht))), one_mul]
+  exact (hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv).exists_int_windingNumber hclosed
+      (by rintro ⟨t, ht, heq⟩; exact h_avoid t ht heq)
 
 /-- **Piecewise-`C¹` form of winding-number integrality.** For a closed piecewise-`C¹` curve that
 avoids `w`, the winding number about `w` is an integer. Piecewise-`C¹` regularity supplies the
