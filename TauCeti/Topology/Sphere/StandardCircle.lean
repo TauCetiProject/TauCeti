@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Geometry.Sphere.Circle
 
 /-!
