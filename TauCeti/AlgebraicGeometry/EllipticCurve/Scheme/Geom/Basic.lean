@@ -457,6 +457,11 @@ theorem chartPoint_toTotal : c.chartPoint hP ≫ c.toTotal = c.baseMap ≫ P :=
 theorem chartPoint_toBase : c.chartPoint hP ≫ c.toBase = 𝟙 _ :=
   IsPullback.lift_snd _ _ _ _
 
+/-- The section induced by `zero` on a chart is the section `pulledZero` of the chart. -/
+@[simp]
+theorem chartPoint_zero (hzero : zero ≫ π = 𝟙 S) : c.chartPoint hzero = c.pulledZero :=
+  c.isPullback.hom_ext (by simp) (by simp)
+
 /-- The section of the projective model of the equation of a chart `c` induced by a section `P` of
 `π`: the section `chartPoint` read through `Spec c.ring ≅ c.base` and the isomorphism `modelIso`
 with the projective model. -/
@@ -493,6 +498,12 @@ theorem projModelZero_modelIso_inv_toTotal :
       (c.baseIso.inv ≫ c.baseMap) ≫ zero := by
   rw [← cancel_epi c.baseIso.hom, ← c.modelIso_zero_assoc]
   simp
+
+/-- The model point of the section `zero` is the zero section of the projective model. -/
+@[simp]
+theorem modelPoint_zero (hzero : zero ≫ π = 𝟙 S) :
+    c.modelPoint hzero = c.equation.projModelZero := by
+  simp [modelPoint, c.modelIso_zero]
 
 /-- The model point of a section `P` missing the section `zero` at every point misses the zero
 section of the projective model at every point. -/

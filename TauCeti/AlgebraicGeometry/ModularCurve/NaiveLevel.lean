@@ -42,11 +42,11 @@ column `(1, 0)`.
 
 Naive `[Γ(N)]`-structures rigidify for `N ≥ 3` (Katz–Mazur 2.7.2): an automorphism of an elliptic
 curve `E/S` fixing a naive `[Γ(N)]`-structure is the identity (`ModuliProblem.isRigid_gammaNaive`),
-over every base. More generally the naive `A`-structures are rigid as soon as `A` contains elements
-`a` and `b` with `a² ≠ 1`, `b ≠ 1` and `b ≠ a^{±1}` (`ModuliProblem.isRigid_naiveLevel`), since an
-automorphism fixing `φ a` and `φ b` is trivial
-(`EllipticCurveGeom.IsFiberwiseInjective.eq_id_of_isPullback`). The bound `N ≥ 3` is sharp: for
-`N ≤ 2`, the automorphism `[-1]` fixes every point killed by `N`.
+with no hypothesis on `S`; such a structure can only exist where `N` is invertible. More generally
+the naive `A`-structures are rigid as soon as `A` contains elements `a` and `b` with `a² ≠ 1`,
+`b ≠ 1` and `b ≠ a^{±1}` (`ModuliProblem.isRigid_naiveLevel`), since an automorphism fixing `φ a`
+and `φ b` is trivial (`EllipticCurveGeom.IsFiberwiseInjective.eq_id_of_isPullback`). The bound
+`N ≥ 3` is sharp: for `N ≤ 2`, the automorphism `[-1]` fixes every point killed by `N`.
 
 The definitions make sense over every base `B`, but they are the naive level structures of Katz and
 Mazur only over a base on which `N` is invertible, where `E[N]` is finite étale. Over a general base
@@ -274,7 +274,7 @@ noncomputable abbrev gammaNaive : ModuliProblem B :=
 /-- **Full level structures rigidify for `N ≥ 3`** (Katz–Mazur 2.7.2). An automorphism of an
 elliptic curve `E/S` over the identity of `S` fixing a naive `[Γ(N)]`-structure `(P, Q)` is the
 identity, because it fixes `P`, `Q` and `-P`, which are distinct in every fibre. No hypothesis is
-made on the base; in particular `N` need not be invertible on it. -/
+made on the base, which may be nonreduced or non-affine. -/
 theorem isRigid_gammaNaive (hN : 3 ≤ N) : (gammaNaive B N).IsRigid := by
   have : Fact (1 < N) := ⟨by omega⟩
   have h2 : (2 : ZMod N) ≠ 0 := by

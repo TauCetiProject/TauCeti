@@ -54,6 +54,9 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   injectivity on fibres is injectivity.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`: injectivity
   on fibres is stable under base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.eq_of_comp_left_eq`: points
+  in the image of a homomorphism injective on every fibre are distinguished by every field-valued
+  point of the base.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_forall_residueField`:
   injectivity on fibres is injectivity on the fibre over every residue field.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_iff`: the naive
@@ -159,6 +162,15 @@ theorem IsFiberwiseInjective.injective_pointsPullback (h : E.IsFiberwiseInjectiv
     (h0 : E'.zero ≫ g = t ≫ E.zero) :
     Function.Injective ((EllipticCurveGeom.pointsPullback hg h0).comp φ) :=
   (E'.isFiberwiseInjective_iff_injective _).mp (h.pointsPullback hg h0)
+
+/-- **Points of a fibrewise injective homomorphism are distinguished on field points.** If
+`φ : A →* E(S)` is injective on every fibre and `φ c₁`, `φ c₂` agree after composition with a
+point `t : Spec K ⟶ S` with values in a field, then `c₁ = c₂`. -/
+theorem IsFiberwiseInjective.eq_of_comp_left_eq (hφ : E.IsFiberwiseInjective φ) {K : Type u}
+    [Field K] (t : Spec (.of K) ⟶ S) {c₁ c₂ : A}
+    (h : t ≫ (φ c₁).left = t ≫ (φ c₂).left) : c₁ = c₂ :=
+  hφ.injective_pointsPullback (E.isPullback_baseChange t) (by simp)
+    ((eq_pointsPullback_iff _ _).mpr (by rw [MonoidHom.comp_apply, pointsPullback_left_comp, h]))
 
 /-- **Injectivity on fibres is checked on residue fields.** A homomorphism `φ : A →* E(S)` is
 injective on every fibre exactly when, for every point `s` of `S`, `φ` followed by restriction to
