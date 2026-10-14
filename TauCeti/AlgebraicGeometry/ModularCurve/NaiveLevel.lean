@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
 public import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Rigidity
 
 /-!
 # The naive moduli problems `[Γ₁(N)]` and `[Γ(N)]`
@@ -38,6 +39,14 @@ this is the right action of `GL₂(ℤ/Nℤ)` on `[Γ(N)]` (`ModuliProblem.gamma
 row-vector convention of Katz and Mazur: `g = !![a, b; c, d]` sends `(P, Q)` to
 `(aP + cQ, bP + dQ)`. The morphism `[Γ(N)] ⟶ [Γ₁(N)]` is invariant under the matrices with first
 column `(1, 0)`.
+
+Naive `[Γ(N)]`-structures rigidify for `N ≥ 3` (Katz–Mazur 2.7.2): an automorphism of an elliptic
+curve `E/S` fixing a naive `[Γ(N)]`-structure is the identity (`ModuliProblem.isRigid_gammaNaive`),
+over every base. More generally the naive `A`-structures are rigid as soon as `A` contains elements
+`a` and `b` with `a² ≠ 1`, `b ≠ 1` and `b ≠ a^{±1}` (`ModuliProblem.isRigid_naiveLevel`), since an
+automorphism fixing `φ a` and `φ b` is trivial
+(`EllipticCurveGeom.IsFiberwiseInjective.eq_id_of_isPullback`). The bound `N ≥ 3` is sharp: for
+`N ≤ 2`, the automorphism `[-1]` fixes every point killed by `N`.
 
 The definitions make sense over every base `B`, but they are the naive level structures of Katz and
 Mazur only over a base on which `N` is invertible, where `E[N]` is finite étale. Over a general base
@@ -77,6 +86,10 @@ for `[Γ(N)]`).
   are free over a nonempty base.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveEquiv_gammaNaiveAction_hom_app_fst_torsionι`
   and its `snd` analogue: `(P, Q) g = (aP + cQ, bP + dQ)` for `g = !![a, b; c, d]`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.isRigid_naiveLevel` and
+  `TauCeti.AlgebraicGeometry.ModuliProblem.isRigid_gammaNaive`: naive `A`-structures are rigid when
+  `A` contains a suitable pair of elements, and the naive moduli problem `[Γ(N)]` is rigid for
+  `N ≥ 3`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveAction_hom_comp_gammaNaiveToGammaOneNaive`:
   keeping the first point is invariant under the matrices with first column `(1, 0)`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneNaiveEquiv_map_torsionι` and
@@ -221,6 +234,26 @@ theorem eq_one_of_naiveLevelAction_hom_app_eq_self {X : EllObj B} [Nonempty X.ba
   refine MulOpposite.unop_injective (MulEquiv.ext fun a ↦ (naiveLevelEquiv X α).2.injective ?_)
   simpa using DFunLike.congr_fun h' a
 
+/-! ### Rigidity -/
+
+variable (B) in
+/-- **Naive `A`-structures are rigid when `A` contains a full level pair.** If `A` contains `a` and
+`b` with `a² ≠ 1`, `b ≠ 1`, `b ≠ a` and `b ≠ a⁻¹`, then an automorphism of an elliptic curve
+`E/S` over the identity of `S` fixing a naive `A`-structure is the identity. No hypothesis is made
+on the base. -/
+theorem isRigid_naiveLevel {a b : A} (ha : a * a ≠ 1) (hb : b ≠ 1) (hba : b ≠ a)
+    (hba' : b ≠ a⁻¹) : (naiveLevel B A).IsRigid := by
+  refine (isRigid_iff _).mpr fun X σ hσ α hα ↦ ?_
+  have hfix (c : A) :
+      ((naiveLevelEquiv X α).1 c).left ≫ σ.total = ((naiveLevelEquiv X α).1 c).left := by
+    have h := DFunLike.congr_fun (naiveLevelEquiv_map σ α) c
+    rw [hα, MonoidHom.comp_apply, EllipticCurveGeom.eq_pointsPullback_iff] at h
+    rw [h, hσ, Category.id_comp]
+  refine EllObj.hom_ext ?_
+  rw [EllObj.id_total]
+  exact (naiveLevelEquiv X α).2.eq_id_of_isPullback ha hb hba hba' (hσ ▸ σ.isPullback)
+    (by rw [σ.zero_total, hσ, Category.id_comp]) (hfix a) (hfix b)
+
 variable (B) (N : ℕ)
 
 /-- **The naive moduli problem `[Γ₁(N)]`** over `Ell/B`: a naive `[Γ₁(N)]`-structure on `(E/S)` is
@@ -237,6 +270,25 @@ it is a pair of `S`-points of `E[N]` forming a basis of the `N`-torsion in every
 (`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`). -/
 noncomputable abbrev gammaNaive : ModuliProblem B :=
   naiveLevel B (Multiplicative (ZMod N × ZMod N))
+
+/-- **Full level structures rigidify for `N ≥ 3`** (Katz–Mazur 2.7.2). An automorphism of an
+elliptic curve `E/S` over the identity of `S` fixing a naive `[Γ(N)]`-structure `(P, Q)` is the
+identity, because it fixes `P`, `Q` and `-P`, which are distinct in every fibre. No hypothesis is
+made on the base; in particular `N` need not be invertible on it. -/
+theorem isRigid_gammaNaive (hN : 3 ≤ N) : (gammaNaive B N).IsRigid := by
+  have : Fact (1 < N) := ⟨by omega⟩
+  have h2 : (2 : ZMod N) ≠ 0 := by
+    intro h
+    have := (ZMod.natCast_eq_zero_iff 2 N).mp (by exact_mod_cast h)
+    have := Nat.le_of_dvd two_pos this
+    omega
+  refine isRigid_naiveLevel B (a := .ofAdd (1, 0)) (b := .ofAdd (0, 1)) ?_ ?_ ?_ ?_
+  · rw [← ofAdd_add, Ne, ofAdd_eq_one, Prod.ext_iff]
+    simp [one_add_one_eq_two, h2]
+  · simp [Prod.ext_iff]
+  · simp [Prod.ext_iff]
+  · rw [← ofAdd_neg, Ne, Multiplicative.ofAdd.injective.eq_iff]
+    simp [Prod.ext_iff]
 
 /-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` of naive moduli problems which keeps the first component `P`
 of a naive `[Γ(N)]`-structure `(P, Q)`, that is, restricts it along `z ↦ (z, 0)`. When `N` is

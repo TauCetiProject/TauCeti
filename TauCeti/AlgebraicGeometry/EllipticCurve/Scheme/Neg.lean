@@ -43,6 +43,8 @@ independent of the local Weierstrass equations used to define it.
   (`WeierstrassCurve.inv_projModelNeg`).
 * `WeierstrassCurve.projModelPoint_projModelNeg`: negation sends the point with homogeneous
   coordinates `P` to the point with homogeneous coordinates `Projective.neg P`.
+* `WeierstrassCurve.projModelAffinePoint_projModelNeg`: negation sends the point `[x : y : 1]` to
+  `[x : -y - a₁x - a₃ : 1]`.
 * `WeierstrassCurve.projModelNeg_projModelBaseChange`: negation commutes with the base change
   morphism `projModel (W.map f) ⟶ projModel W`.
 * `WeierstrassCurve.projModelNeg_projModelVariableChangeIso_hom`: negation commutes with the
@@ -154,6 +156,19 @@ theorem projModelPoint_projModelNeg {S : Type u} [CommRing S] {g : R →+* S} {P
   rw [projModelNeg, projModelPoint_eqToHom_assoc W.negVariableChange_smul_self.symm hi,
     projModelPoint_projModelVariableChangeIso_hom hi (hQ ▸ hj)]
   simp only [hQ]
+
+/-- The negation morphism sends the point `[x : y : 1]` with values in `R` to the point
+`[x : -y - a₁x - a₃ : 1]`, the negative of `(x, y)` on the affine curve. -/
+@[reassoc (attr := simp)]
+theorem projModelAffinePoint_projModelNeg {x y : R} (h : W.toAffine.Equation x y) :
+    W.projModelAffinePoint h ≫ W.projModelNeg =
+      W.projModelAffinePoint ((W.toAffine.equation_neg x y).mpr h) := by
+  rw [projModelNeg, projModelAffinePoint_eqToHom_assoc _ W.negVariableChange_smul_self.symm,
+    projModelAffinePoint_projModelVariableChangeIso_hom, projModelAffinePoint_inj]
+  refine ⟨by simp, ?_⟩
+  simp only [negVariableChange_u, negVariableChange_s, negVariableChange_t, Affine.negY]
+  push_cast
+  ring
 
 /-- The negation morphism commutes with base change: negation on `projModel (W.map f)` followed by
 the base change morphism `projModel (W.map f) ⟶ projModel W` along `f : R →+* R'` is the base change
