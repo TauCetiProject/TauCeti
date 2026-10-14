@@ -23,6 +23,8 @@ Hopf-ideal point functor through the named carrier presentation.
 * `PrimeField.pointsMap` is functoriality under a homomorphism of `ZMod 2`-algebras.
 * `PrimeField.pointsMap_id`, `PrimeField.pointsMap_comp`, and
   `PrimeField.pointsMap_injective` expose the generic Hopf-ideal functor laws.
+* `PrimeField.baseChangePointsEquiv` identifies points of the scalar-extended coordinate algebra
+  with the named matrix-valued points over the extension ring.
 * `PrimeField.weightTorusPoints_conj_rootSubgroupPoints` is the pinning equation.
 
 The carrier remains distinct from the base change of the integral toral closure: only the proven
@@ -333,6 +335,14 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
   (GeneralLinear.hopfIdealPointsSubgroupMulEquiv 26 J (CommAlgCat.of 𝔽₂ A)).trans
     (MulEquiv.subgroupCongr (by
       rw [points_eq_hopfIdealPointsSubgroup, definingIdeal_def]))
+
+/-- Points of the scalar-extended carrier coordinate algebra are the named matrix-valued
+prime-field carrier points over the extension ring. -/
+noncomputable abbrev baseChangePointsEquiv (k : Type v) [CommRing k] [Algebra 𝔽₂ k] :
+    HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) Q)
+      (CommAlgCat.of k k) ≃* points k :=
+  (AlgHom.baseChangePointsMulEquiv (k := 𝔽₂) (K := k) (A := Q) (R := k)).symm.trans
+    (coordinatePointsEquiv k)
 
 /-- The coordinate-point equivalence evaluates the ambient matrix coordinates. -/
 @[simp] theorem coe_coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽₂ A]
