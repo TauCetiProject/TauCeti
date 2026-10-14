@@ -57,7 +57,9 @@ def pairedWedgeCLM : (F₁ →L[ℝ] F₂ →L[ℝ] F₃) →L[ℝ]
         ((k + l).choose k * ‖μ‖) (norm_pairedWedge_le μ)
   have hB (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
       (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
-      B μ φ ψ = pairedWedge μ μ.continuous₂ φ ψ := rfl
+      B μ φ ψ = pairedWedge μ μ.continuous₂ φ ψ := by
+    dsimp only [B]
+    exact (LinearMap.mkContinuous₂_apply _ _ φ ψ).trans (LinearMap.mk₂_apply ℝ _ φ ψ)
   have hnorm (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
       ‖B μ‖ ≤ (k + l).choose k * ‖μ‖ :=
     LinearMap.mkContinuous₂_norm_le _ (by positivity) _
@@ -69,20 +71,24 @@ def pairedWedgeCLM : (F₁ →L[ℝ] F₂ →L[ℝ] F₃) →L[ℝ]
         apply ContinuousLinearMap.ext
         intro ψ
         simpa only [hB, _root_.add_apply] using
-          pairedWedge_add_pairing μ ν φ ψ
+          pairedWedge_add_pairing μ ν μ.continuous₂ ν.continuous₂ φ ψ
       map_smul' := fun c μ ↦ by
         apply ContinuousLinearMap.ext
         intro φ
         apply ContinuousLinearMap.ext
         intro ψ
         simpa only [hB, _root_.smul_apply, RingHom.id_apply] using
-          pairedWedge_smul_pairing c μ φ ψ }
+          pairedWedge_smul_pairing c μ μ.continuous₂ φ ψ }
     ((k + l).choose k) hnorm
 
 /-- Evaluation of the bundled paired wedge recovers `ContinuousAlternatingMap.pairedWedge`. -/
 @[simp] theorem pairedWedgeCLM_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
-    pairedWedgeCLM μ φ ψ = pairedWedge μ μ.continuous₂ φ ψ := (rfl)
+    pairedWedgeCLM μ φ ψ = pairedWedge μ μ.continuous₂ φ ψ := by
+  -- Evaluate the outer bounded linear map, then the bounded bilinear map and its algebraic map.
+  simp only [pairedWedgeCLM, LinearMap.mkContinuous_apply]
+  exact (LinearMap.mkContinuous₂_apply _ (norm_pairedWedge_le μ) φ ψ).trans
+    (LinearMap.mk₂_apply ℝ _ φ ψ)
 
 /-- The operator norm of the bundled paired wedge is bounded by the binomial coefficient. -/
 theorem norm_pairedWedgeCLM_le :

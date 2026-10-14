@@ -99,14 +99,14 @@ theorem bracketWedge_smul_right (β : F →L[ℝ] F →L[ℝ] F) (c : ℝ)
 theorem bracketWedge_zero_left (β : F →L[ℝ] F →L[ℝ] F)
     (ψ : E [⋀^Fin l]→L[ℝ] F) :
     bracketWedge β (0 : E [⋀^Fin k]→L[ℝ] F) ψ = 0 := by
-  simpa only [bracketWedge_def] using (pairedWedge_zero_left β ψ : _)
+  simpa only [bracketWedge_def] using (pairedWedge_zero_left β β.continuous₂ ψ : _)
 
 /-- The bracket wedge vanishes when its second form is zero. -/
 @[simp]
 theorem bracketWedge_zero_right (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) :
     bracketWedge β φ (0 : E [⋀^Fin l]→L[ℝ] F) = 0 := by
-  simpa only [bracketWedge_def] using (pairedWedge_zero_right β φ : _)
+  simpa only [bracketWedge_def] using (pairedWedge_zero_right β β.continuous₂ φ : _)
 
 /-- A skew-symmetric bracket induces graded skew-symmetry on the bracket wedge. -/
 theorem bracketWedge_skew {β : F →L[ℝ] F →L[ℝ] F} (hβ : ∀ a b, β a b = -β b a)
@@ -114,7 +114,7 @@ theorem bracketWedge_skew {β : F →L[ℝ] F →L[ℝ] F} (hβ : ∀ a b, β a 
     (v : Fin (k + l) → E) :
     bracketWedge β φ ψ v =
       -((-1 : ℝ) ^ (k * l) • bracketWedge β ψ φ (v ∘ Fin.cast (Nat.add_comm l k))) := by
-  simpa only [bracketWedge_def] using pairedWedge_anticomm hβ φ ψ v
+  simpa only [bracketWedge_def] using pairedWedge_anticomm β.continuous₂ hβ φ ψ v
 
 /-- The graded Jacobi identity of the bracket wedge of a `k`-form `φ`, an `l`-form `ψ` and an
 `m`-form `χ`: `(-1)^{km} [[φ ∧ ψ] ∧ χ] + (-1)^{kl} [[ψ ∧ χ] ∧ φ] + (-1)^{lm} [[χ ∧ φ] ∧ ψ] = 0`,
