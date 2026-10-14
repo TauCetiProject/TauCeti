@@ -9,8 +9,8 @@ public import TauCeti.Analysis.Green.Basic
 public import TauCeti.Analysis.Complex.Coordinates
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Topology.Algebra.ContinuousAffineEquiv
-public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
-public import Mathlib.MeasureTheory.Function.Jacobian
+public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
+public import TauCeti.MeasureTheory.Function.ContinuousAffineEquiv
 import TauCeti.LinearAlgebra.Complex.Module
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Affine
@@ -97,14 +97,6 @@ theorem curl_affinePullback (A : ℂ →ᴬ[ℝ] ℂ) {P Q : ℂ → ℝ} {z : �
   simp only [ContinuousAffineMap.coe_contLinear]
   ring
 
-/-- Affine transport preserves absolute continuity without a bounded-speed assumption. -/
-theorem absolutelyContinuousOnInterval_affineMap (A : ℂ →ᴬ[ℝ] ℂ)
-    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) :
-    AbsolutelyContinuousOnInterval (A ∘ γ) a b := by
-  rw [A.decomp]
-  exact ((isometry_add_right (A 0)).lipschitzWith.comp
-    A.contLinear.lipschitzWith).comp_absolutelyContinuousOnInterval hγ
-
 private theorem circulationFun_affineMap_ae (A : ℂ →ᴬ[ℝ] ℂ)
     (P Q : ℂ → ℝ) {γ : ℝ → ℂ} {a b : ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) :
@@ -117,7 +109,7 @@ private theorem circulationFun_affineMap_ae (A : ℂ →ᴬ[ℝ] ℂ)
   have hder : HasDerivAt (A ∘ γ) (A.contLinear (deriv γ t)) t :=
     A.hasFDerivAt.comp_hasDerivAt t hd.hasDerivAt
   rw [hder.deriv]
-  rfl
+  simp only [ContinuousLinearMap.comp_apply, Function.comp_apply]
 
 /-- Integrability of circulation is preserved by pulling back the field along affine transport. -/
 theorem intervalIntegrable_circulationFun_affineMap_iff (A : ℂ →ᴬ[ℝ] ℂ)
@@ -138,60 +130,6 @@ theorem integral_circulationFun_affineMap (A : ℂ →ᴬ[ℝ] ℂ)
   exact intervalIntegral.integral_congr_ae_restrict
     (circulationFun_affineMap_ae A P Q hγ)
 
-/-- The area measure on an affine image is the pushforward of the absolute determinant density. -/
-theorem map_withDensity_affineMap (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
-    (hs : NullMeasurableSet s volume) :
-    Measure.map A
-      ((volume.restrict s).withDensity
-        (fun _ ↦ ENNReal.ofReal |A.linear.toLinearMap.det|)) =
-      volume.restrict (A '' s) := by
-  simpa only [ContinuousLinearMap.det,
-    ContinuousAffineMap.coe_contLinear_eq_linear,
-    ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
-    AffineEquiv.linear_toAffineMap] using
-    map_withDensity_abs_det_fderiv_eq_addHaar volume hs
-      (f := A) (f' := fun _ ↦ A.toContinuousAffineMap.contLinear)
-    (fun _ _ ↦ A.toContinuousAffineMap.hasFDerivWithinAt)
-    A.injective.injOn
-
-/-- Change of variables for planar area under an invertible affine coordinate map. -/
-theorem integral_affineMap_image (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
-    (hs : MeasurableSet s) (f : ℂ → ℝ) :
-    (∫ z in A '' s, f z) =
-      |A.linear.toLinearMap.det| * ∫ z in s, f (A z) := by
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-    (f := A) (f' := fun _ ↦ A.toContinuousAffineMap.contLinear)
-    (fun _ _ ↦ A.toContinuousAffineMap.hasFDerivWithinAt)
-    A.injective.injOn f]
-  simp only [smul_eq_mul, integral_const_mul, ContinuousLinearMap.det,
-    ContinuousAffineMap.coe_contLinear_eq_linear,
-    ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
-    AffineEquiv.linear_toAffineMap]
-
-/-- Affine images scale planar area by the absolute real determinant. -/
-theorem volume_affineMap_image (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
-    (hs : NullMeasurableSet s volume) :
-    volume (A '' s) =
-      ENNReal.ofReal |A.linear.toLinearMap.det| * volume s := by
-  rw [← lintegral_abs_det_fderiv_eq_addHaar_image₀ volume hs
-    (f := A) (f' := fun _ ↦ A.toContinuousAffineMap.contLinear)
-    (fun _ _ ↦ A.toContinuousAffineMap.hasFDerivWithinAt)
-    A.injective.injOn]
-  simp only [lintegral_const, Measure.restrict_apply_univ, ContinuousLinearMap.det,
-    ContinuousAffineMap.coe_contLinear_eq_linear,
-    ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
-    AffineEquiv.linear_toAffineMap]
-
-/-- Area integrability is preserved under an invertible affine coordinate map. -/
-theorem integrableOn_affineMap_image_iff (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
-    (hs : MeasurableSet s) (f : ℂ → ℝ) :
-    IntegrableOn f (A '' s) ↔ IntegrableOn (f ∘ A) s := by
-  rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs
-    (f := A) (f' := fun _ ↦ A.toContinuousAffineMap.contLinear)
-    (fun _ _ ↦ A.toContinuousAffineMap.hasFDerivWithinAt)
-    A.injective.injOn f]
-  exact integrable_smul_iff (abs_ne_zero.mpr A.linear.isUnit_det'.ne_zero) _
-
 /-- Integrability of curl is preserved by affine pullback for differentiable fields. -/
 theorem integrableOn_curl_affinePullback_iff (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
     (hs : MeasurableSet s) {P Q : ℂ → ℝ}
@@ -200,7 +138,7 @@ theorem integrableOn_curl_affinePullback_iff (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set 
     IntegrableOn (curl (affinePullbackP A.toContinuousAffineMap P Q)
       (affinePullbackQ A.toContinuousAffineMap P Q)) s ↔
       IntegrableOn (curl P Q) (A '' s) := by
-  rw [integrableOn_affineMap_image_iff A hs,
+  rw [A.integrableOn_image_iff volume hs,
     integrableOn_congr_fun
       (fun z hz ↦ curl_affinePullback A.toContinuousAffineMap (hP z hz) (hQ z hz)) hs]
   exact integrable_smul_iff A.linear.isUnit_det'.ne_zero _
@@ -220,7 +158,7 @@ theorem integral_curl_affinePullback (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
         curl P Q (A z) := setIntegral_congr_fun hs fun z hz ↦
           curl_affinePullback A.toContinuousAffineMap (hP z hz) (hQ z hz)
     _ = _ := by
-      rw [integral_const_mul, integral_affineMap_image A hs]
+      rw [integral_const_mul, A.integral_image volume hs, smul_eq_mul]
       field_simp [abs_ne_zero.mpr A.linear.isUnit_det'.ne_zero]
 
 /-- Coordinate interchange exchanges the two coefficients of a pulled-back 1-form. -/
@@ -229,7 +167,8 @@ theorem oneForm_coordinateSwap (P Q : ℂ → ℝ) (z : ℂ) :
       Complex.coordinateSwapCLE.toContinuousLinearMap =
       oneForm (Q ∘ Complex.coordinateSwapCLE) (P ∘ Complex.coordinateSwapCLE) z := by
   ext v
-  simp [oneForm_apply, Complex.coordinateSwapCLE_apply, ContinuousLinearEquiv.coe_coe]
+  simp only [Complex.coordinateSwapCLE_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, oneForm_apply, Function.comp_apply]
   ring
 
 /-- Interchanging real and imaginary coordinates negates the curl. -/
@@ -241,21 +180,28 @@ theorem curl_coordinateSwap {P Q : ℂ → ℝ} {z : ℂ}
   have hp : affinePullbackP Complex.coordinateSwapCLE.toContinuousAffineEquiv.toContinuousAffineMap
       P Q = Q ∘ Complex.coordinateSwapCLE := by
     ext w
-    change oneForm P Q (Complex.coordinateSwapCLE w) (Complex.coordinateSwapCLE 1) = _
-    simp [oneForm_apply, Complex.coordinateSwapCLE_apply]
+    rw [affinePullbackP_apply,
+      ContinuousLinearEquiv.toContinuousAffineEquiv_toContinuousAffineMap]
+    simp only [ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearEquiv.coe_coe,
+      Complex.coordinateSwapCLE_apply, ContinuousLinearMap.toContinuousAffineMap_contLinear,
+      Complex.one_im, Complex.one_re, mul_zero, mul_one, zero_add, Function.comp_apply]
   have hq : affinePullbackQ Complex.coordinateSwapCLE.toContinuousAffineEquiv.toContinuousAffineMap
       P Q = P ∘ Complex.coordinateSwapCLE := by
     ext w
-    change oneForm P Q (Complex.coordinateSwapCLE w)
-      (Complex.coordinateSwapCLE Complex.I) = _
-    simp [oneForm_apply, Complex.coordinateSwapCLE_apply]
+    rw [affinePullbackQ_apply,
+      ContinuousLinearEquiv.toContinuousAffineEquiv_toContinuousAffineMap]
+    simp only [ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearEquiv.coe_coe,
+      Complex.coordinateSwapCLE_apply, ContinuousLinearMap.toContinuousAffineMap_contLinear,
+      Complex.I_im, Complex.I_re, mul_one, mul_zero, add_zero, Function.comp_apply]
   have he := curl_affinePullback
     Complex.coordinateSwapCLE.toContinuousAffineEquiv.toContinuousAffineMap hP hQ
   rw [hp, hq] at he
-  change curl (Q ∘ Complex.coordinateSwapCLE) (P ∘ Complex.coordinateSwapCLE) z =
-    Complex.coordinateSwapCLE.toLinearEquiv.toLinearMap.det *
-      curl P Q (Complex.coordinateSwapCLE z) at he
-  simpa only [Complex.det_coordinateSwapCLE, neg_one_mul] using he
+  simpa only [← ContinuousAffineMap.coe_contLinear_eq_linear,
+    ContinuousLinearEquiv.toContinuousAffineEquiv_toContinuousAffineMap,
+    ContinuousLinearMap.toContinuousAffineMap_contLinear,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearEquiv.coe_coe,
+    Complex.det_coordinateSwapCLE, neg_one_mul] using he
 
 private theorem oneForm_affineMap_lineMap (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ)
     (P Q : ℂ → ℝ) (t : ℝ) :
