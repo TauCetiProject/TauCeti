@@ -138,6 +138,46 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
 .pillar h3 { margin: 0.1rem 0 0.55rem; color: var(--amber-1); font-size: 1.15rem; }
 .pillar p { margin: 0; color: var(--muted); }
 
+/* ---- "put your AI to work": a prompt to copy into an agent ---- */
+.agent-note { max-width: 46rem; margin: -0.6rem auto 1.3rem; color: var(--muted); text-align: center; }
+.prompt-box {
+  position: relative;
+  max-width: 52rem;
+  margin: 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem 3.4rem;
+}
+.prompt-text {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 0.92rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--verso-code-color);
+}
+.copy-btn {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 0.9rem;
+  padding: 0.45rem 1.15rem;
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1a1205;
+  background: linear-gradient(120deg, var(--amber-1), var(--amber-2));
+  cursor: pointer;
+}
+.copy-btn:hover { filter: brightness(1.07); }
+.copy-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
 /* ---- bands + cards ---- */
 .band { padding: 2.75rem 0; border-top: 1px solid var(--line); }
 .section-title { font-size: 1.95rem; text-align: center; margin: 0 0 1.7rem; }

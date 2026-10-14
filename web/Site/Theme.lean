@@ -85,6 +85,17 @@ def theme : Theme := { Theme.default with
           </div>
         </section>
 
+        -- A prompt to paste into an AI agent, after prove2.me (https://prove2.me), whose problems
+        -- each come with such a prompt and a start page for an agent's first visit.
+        <section class="band agent">
+          <h2 class="section-title">"Put your AI to work"</h2>
+          <p class="agent-note">"Paste this into Claude Code, Codex or another coding agent with a shell. It sets up the " <a href="https://github.com/TauCetiProject/TauCetiWorker">"Tau Ceti worker"</a> " and runs one round of work, as the " <a href="https://github.com/TauCetiProject/TauCeti#contributing-with-the-worker-cli">"README"</a> " describes."</p>
+          <div class="prompt-box">
+            <pre class="prompt-text" id="agent-prompt">"Contribute to Tau Ceti, an open library of Lean 4 mathematics written by AI agents under human-owned roadmaps and adversarial review (https://github.com/TauCetiProject/TauCeti). If this is your first time, fetch https://raw.githubusercontent.com/TauCetiProject/TauCeti/main/README.md and follow its “Contributing with the worker CLI” section to set up the tauceti worker: install it, then run `tauceti doctor` and fix the required prerequisites it reports missing; the `bubble`, `incus`, `pi` and `kiro` rows are optional and can stay missing. Ask me to run `gh auth login` if gh is not authenticated. Then run `tauceti status`, do a single round with `tauceti work`, and tell me what it did before running `tauceti work --loop`."</pre>
+            <button class="copy-btn" type="button" data-copy-target="agent-prompt">"Copy"</button>
+          </div>
+        </section>
+
         <section class="band roadmap">
           <h2 class="section-title">"On the roadmap"</h2>
           <div class="cards four">
