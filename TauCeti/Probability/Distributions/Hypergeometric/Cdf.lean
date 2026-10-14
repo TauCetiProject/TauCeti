@@ -15,9 +15,10 @@ The hypergeometric law counts marked objects in a sample drawn without replaceme
 this count to the reals gives a cumulative distribution function that vanishes at negative
 cutoffs and sums the singleton masses through the natural floor at nonnegative cutoffs.
 
-`cdf_map_cast_hypergeometricMeasure` gives this finite-sum formula for every real cutoff and
-every valid population, marked count, and sample size, including a population of size zero.
-It uses the native cumulative-mass formula from
+`cdf_map_cast_hypergeometricMeasure` gives this finite-sum formula at nonnegative cutoffs, and
+`cdf_map_cast_hypergeometricMeasure_of_neg` gives zero at negative cutoffs, for every valid
+population, marked count, and sample size, including a population of size zero.
+They use the native cumulative-mass formula from
 `TauCeti.Probability.Distributions.Hypergeometric.Basic` and the natural-cast cdf bridge from
 `TauCeti.Probability.Cdf`.
 
@@ -35,21 +36,25 @@ open MeasureTheory ProbabilityTheory
 
 namespace TauCeti.Probability
 
-/-- The cdf of the real cast hypergeometric law is zero below the origin and otherwise the
-finite sum of its masses through the natural floor of the cutoff. The explicit sample-size
+/-- At a nonnegative cutoff, the cdf of the real cast hypergeometric law is the finite sum
+of its masses through the natural floor of the cutoff. The explicit sample-size
 branch makes the formula valid even when the cutoff exceeds the support. -/
 theorem cdf_map_cast_hypergeometricMeasure {N K n : ℕ} (hK : K ≤ N) (hn : n ≤ N)
-    (x : ℝ) :
+    {x : ℝ} (hx : 0 ≤ x) :
     cdf ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) x =
-      if x < 0 then 0 else
-        ∑ j ∈ Finset.Iic ⌊x⌋₊,
-          if j ≤ n then
-            (K.choose j : ℝ) * ((N - K).choose (n - j) : ℝ) / (N.choose n : ℝ)
-          else 0 := by
+      ∑ j ∈ Finset.Iic ⌊x⌋₊,
+        if j ≤ n then
+          (K.choose j : ℝ) * ((N - K).choose (n - j) : ℝ) / (N.choose n : ℝ)
+        else 0 := by
   let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
-  split_ifs with hx
-  · exact Measure.cdf_map_natCast_of_neg _ hx
-  · rw [Measure.cdf_map_natCast _ (le_of_not_gt hx), ← Set.Iic_def,
-      hypergeometricMeasure_real_Iic_eq_sum hK hn]
+  rw [Measure.cdf_map_natCast _ hx, ← Set.Iic_def,
+    hypergeometricMeasure_real_Iic_eq_sum hK hn]
+
+/-- Below the origin, the cdf of the real cast hypergeometric law vanishes. -/
+theorem cdf_map_cast_hypergeometricMeasure_of_neg {N K n : ℕ} (hK : K ≤ N) (hn : n ≤ N)
+    {x : ℝ} (hx : x < 0) :
+    cdf ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) x = 0 := by
+  let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
+  exact Measure.cdf_map_natCast_of_neg _ hx
 
 end TauCeti.Probability
