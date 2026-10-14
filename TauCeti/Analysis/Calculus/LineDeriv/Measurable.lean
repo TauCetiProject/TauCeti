@@ -13,13 +13,15 @@ public import Mathlib.Topology.EMetricSpace.Lipschitz
 /-!
 # Measurability of almost-everywhere line derivatives
 
-Let `u : E → F` be a.e.-strongly measurable on an open set `s`, and suppose that at almost every
+Let `μ` be a translation-invariant measure on `E`. Let `u : E → F` be a.e.-strongly measurable
+on an open set `s`, and suppose that at almost every
 `x ∈ s` it has a line derivative `u' x` in a fixed direction `v`. Then `u'` is a.e.-strongly
 measurable on `s` (`TauCeti.aestronglyMeasurable_of_ae_hasLineDerivAt`), being the
 almost-everywhere limit of the difference quotients `t⁻¹ • (u (x + t • v) - u x)`. If `u` is
 moreover locally Lipschitz on `s`, then `u'` is essentially locally bounded there (near each point
 it is bounded almost everywhere by `C * ‖v‖` for a local Lipschitz constant `C`), hence locally
-integrable (`LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt`).
+integrable provided `μ` is locally finite and `SecondCountableTopologyEither E F` holds
+(`LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt`).
 
 Mathlib's `aestronglyMeasurable_lineDeriv` covers `lineDeriv` of a globally continuous function.
 The results here only ask for measurability on `s` and for a line derivative almost everywhere, with
@@ -38,8 +40,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
 
 namespace TauCeti
 
-/-- An almost-everywhere line derivative of a function a.e.-strongly measurable on an open set `s`
-is a.e.-strongly measurable on `s`: it is the almost-everywhere limit of difference quotients. -/
+/-- For a translation-invariant measure `μ`, an almost-everywhere line derivative of a function
+a.e.-strongly measurable on an open set `s` is a.e.-strongly measurable on `s`: it is the
+almost-everywhere limit of difference quotients. -/
 theorem aestronglyMeasurable_of_ae_hasLineDerivAt [μ.IsAddRightInvariant]
     (hu : AEStronglyMeasurable u (μ.restrict s)) (hs : IsOpen s)
     (h : ∀ᵐ x ∂μ, x ∈ s → HasLineDerivAt ℝ u (u' x) x v) :
@@ -72,9 +75,10 @@ theorem aestronglyMeasurable_of_ae_hasLineDerivAt [μ.IsAddRightInvariant]
 
 end TauCeti
 
-/-- An almost-everywhere line derivative of a function locally Lipschitz on an open set `s` is
-locally integrable on `s`: it is measurable, and near each point it is bounded almost everywhere by
-`C * ‖v‖` for a local Lipschitz constant `C`. -/
+/-- For a locally finite, translation-invariant measure `μ`, assuming
+`SecondCountableTopologyEither E F`, an almost-everywhere line derivative of a function locally
+Lipschitz on an open set `s` is locally integrable on `s`: it is measurable, and near each point it
+is bounded almost everywhere by `C * ‖v‖` for a local Lipschitz constant `C`. -/
 theorem LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt
     [SecondCountableTopologyEither E F] [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ]
     (hu : LocallyLipschitzOn s u) (hs : IsOpen s)
