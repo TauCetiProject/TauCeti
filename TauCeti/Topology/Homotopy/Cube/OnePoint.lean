@@ -11,11 +11,13 @@ public import TauCeti.Topology.Homotopy.Cube.Radius
 /-!
 # Collapsing the boundary of the cube
 
-The cube `I^N` with its boundary `Cube.boundary N` collapsed to a point is the one-point
-compactification of `N → ℝ`: the cube is the closed unit ball of the sup norm
+For a nonempty finite `N`, the cube `I^N` with its boundary `Cube.boundary N` collapsed to a point
+is the one-point compactification of `N → ℝ`: the cube is the closed unit ball of the sup norm
 (`TauCeti.cubeHomeomorphClosedBall`), and the closed unit ball with its boundary sphere collapsed
 is `OnePoint (N → ℝ)` (`TauCeti.unitBallToOnePoint`). Together with the homeomorphism of
-`OnePoint (N → ℝ)` with a sphere, this realizes the sphere `S^n` as the quotient `I^n / ∂I^n`.
+`OnePoint (N → ℝ)` with a sphere, this realizes the sphere `S^n` as the quotient `I^n / ∂I^n` for
+`n ≥ 1`. The collapse map itself is defined for every `N`; for empty `N` the cube is a point and
+the collapse is not surjective.
 
 ## Main declarations
 
@@ -47,13 +49,13 @@ def cubeToOnePoint : C((N → I), OnePoint (N → ℝ)) where
 
 variable {N}
 
-@[simp]
 theorem cubeToOnePoint_apply (z : N → I) :
     cubeToOnePoint N z = unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ) := by
   rw [cubeToOnePoint]
   rfl
 
 /-- The collapse of the cube sends a point to `∞` exactly when it lies on the boundary. -/
+@[simp]
 theorem cubeToOnePoint_eq_infty_iff (z : N → I) :
     cubeToOnePoint N z = ∞ ↔ z ∈ Cube.boundary N := by
   rw [← norm_cubeHomeomorphClosedBall_eq_one_iff]
@@ -65,7 +67,8 @@ theorem cubeToOnePoint_eq_infty_iff (z : N → I) :
 theorem cubeToOnePoint_surjective [Nonempty N] : Function.Surjective (cubeToOnePoint N) := by
   intro y
   obtain ⟨x, hx, rfl⟩ := image_unitBallToOnePoint_closedBall.ge (mem_univ y)
-  exact ⟨(cubeHomeomorphClosedBall N).symm ⟨x, hx⟩, by simp⟩
+  exact ⟨(cubeHomeomorphClosedBall N).symm ⟨x, hx⟩, by
+    rw [cubeToOnePoint_apply, Homeomorph.apply_symm_apply]⟩
 
 /-- Two points with the same image under the collapse of the cube are equal or both on the
 boundary. -/
@@ -84,10 +87,11 @@ theorem eq_or_mem_boundary_of_cubeToOnePoint_eq {z z' : N → I}
       lt_of_le_of_ne (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N w).2)
         fun h1 => hw ((norm_cubeHomeomorphClosedBall_eq_one_iff w).1 h1)
     rw [cubeToOnePoint_apply, cubeToOnePoint_apply] at h
-    rw [unitBallToOnePoint_apply_of_norm_lt (hlt z hz),
-      unitBallToOnePoint_apply_of_norm_lt (hlt z' hz'), OnePoint.coe_eq_coe] at h
-    have hx := OpenPartialHomeomorph.univUnitBall.symm.injOn
-      (mem_ball_zero_iff.2 (hlt z hz)) (mem_ball_zero_iff.2 (hlt z' hz')) h
-    exact (cubeHomeomorphClosedBall N).injective (Subtype.ext hx)
+    have hs (w : N → I) (hw : w ∉ Cube.boundary N) :
+        (cubeHomeomorphClosedBall N w : N → ℝ) ∈ (unitBallToOnePoint (E := N → ℝ)).source := by
+      rw [unitBallToOnePoint_source]
+      exact mem_ball_zero_iff.2 (hlt w hw)
+    exact (cubeHomeomorphClosedBall N).injective
+      (Subtype.ext (unitBallToOnePoint.injOn (hs z hz) (hs z' hz') h))
 
 end TauCeti
