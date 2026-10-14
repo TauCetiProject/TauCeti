@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Module.LinearPMap
 /-!
 # Coordinate changes for partial operators
 
-`TauCeti.LinearPMap.pullback A e` transports a partial endomorphism `A` along a continuous linear
+`TauCeti.pullback A e` transports a partial endomorphism `A` along a continuous linear
 equivalence `e : E ≃L[R] F`. Its domain is `e ⁻¹' A.domain` and its action is `e⁻¹ A e`.
 The graph is the inverse image of the graph of `A` under the product equivalence `e × e`.
 Consequently density of the domain and closedness of the operator are invariant under
@@ -29,8 +29,6 @@ J. Weidmann, *Linear Operators in Hilbert Spaces*, Chapter 1, closed operators a
 public section
 
 namespace TauCeti
-
-namespace LinearPMap
 
 section Ring
 
@@ -139,7 +137,5 @@ variable {R E F : Type*} [CommRing R]
   exact (e.prodCongr e).toHomeomorph.isClosed_preimage
 
 end Closed
-
-end LinearPMap
 
 end TauCeti
