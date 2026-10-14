@@ -180,21 +180,6 @@ theorem bimoduleModuleTensorTmul_mem {p q : ℤ} {m : M} {n : N}
       (bimoduleModuleTensorObj Γ Δ M N).grading.piece (p + q) :=
   BalancedTensorProduct.tmul_mem_grading (𝒜 := Δ.piece) M.grading N.grading hm hn
 
-/-- Every left-module tensor is a sum of pure tensors. -/
-@[elab_as_elim]
-theorem bimoduleModuleTensor_induction_on {P : bimoduleModuleTensorObj Γ Δ M N → Prop}
-    (z : bimoduleModuleTensorObj Γ Δ M N)
-    (ht : ∀ m n, P (bimoduleModuleTensorTmul Γ Δ M N m n))
-    (ha : ∀ x y, P x → P y → P (x + y)) : P z :=
-  BalancedTensorProduct.induction_on k B z ht ha
-
-/-- Internal degree pieces are spanned by homogeneous pure left-module tensors. -/
-theorem bimoduleModuleTensorObj_grading_piece_eq_iSup (p : ℤ) :
-    (bimoduleModuleTensorObj Γ Δ M N).grading.piece p =
-      ⨆ q : ℤ, Submodule.map₂ (bimoduleModuleTensorMk Γ Δ M N)
-        (M.grading.piece q) (N.grading.piece (p - q)) :=
-  BalancedTensorProduct.grading_piece_eq_iSup (𝒜 := Δ.piece) M.grading N.grading p
-
 /-- The quotient map from the ground-ring tensor product to the left-module tensor product. -/
 noncomputable def bimoduleModuleTensorMkQ : M ⊗[k] N →ₗ[k] bimoduleModuleTensorObj Γ Δ M N :=
   BalancedTensorProduct.mkQ k B
