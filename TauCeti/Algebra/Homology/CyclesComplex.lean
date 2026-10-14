@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # The short exact sequence of cycles of a complex
@@ -36,8 +37,6 @@ tensor products of homology, which is how it enters the Künneth formula.
 * `HomologicalComplex.cyclesComplexShortComplex_shortExact`: it is short exact.
 * `HomologicalComplex.cyclesComplexShortComplexMap`: the morphism of cycle sequences induced by a
   chain map.
-* `HomologicalComplex.homologyMap_eqToHom`: identifications of complexes induce identifications
-  of their homology.
 * `HomologicalComplex.homologyMap_cyclesComplexShortComplex_g`: the projection is zero on
   homology.
 * `HomologicalComplex.isZero_homology_cyclesComplexShortComplex_X₃_zero`: for a chain complex
@@ -157,16 +156,6 @@ instance mono_δ_cyclesComplexShortComplex {i j : ι} (hij : c.Rel i j) :
     Mono (K.cyclesComplexShortComplex_shortExact.δ i j hij) :=
   (K.cyclesComplexShortComplex_shortExact.homology_exact₃ i j hij).mono_g
     (K.homologyMap_cyclesComplexShortComplex_g i)
-
-/-- The map induced on homology by an identification `eqToHom` of complexes is the identification
-of their homology.  It is used to compare the terms of cycle sequences with the complexes they are
-built from. -/
-@[simp]
-lemma homologyMap_eqToHom {D : Type*} [Category* D] [HasZeroMorphisms D]
-    {A B : HomologicalComplex D c} (e : A = B) (i : ι) [A.HasHomology i] [B.HasHomology i] :
-    homologyMap (eqToHom e) i = eqToHom (by subst e; rfl) := by
-  subst e
-  simp
 
 section Map
 

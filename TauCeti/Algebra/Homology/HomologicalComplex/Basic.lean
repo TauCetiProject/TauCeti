@@ -30,7 +30,9 @@ requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`). The isomorphisms `homologyIsoSc'`
-are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
+are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`). An identification
+`eqToHom` of complexes induces the identification of their homology
+(`HomologicalComplex.homologyMap_eqToHom`).
 -/
 
 public section
@@ -237,6 +239,15 @@ lemma homologyMap_comp_homologyIsoSc'_hom :
   exact (natIsoSc' C c i j k hi hk).hom.naturality f
 
 end HomologyIsoSc'
+
+/-- The map induced on homology by an identification `eqToHom` of complexes is the identification
+of their homology. -/
+@[simp]
+lemma homologyMap_eqToHom {D : Type*} [Category* D] [HasZeroMorphisms D]
+    {A B : HomologicalComplex D c} (e : A = B) (i : ι) [A.HasHomology i] [B.HasHomology i] :
+    homologyMap (eqToHom e) i = eqToHom (by subst e; rfl) := by
+  subst e
+  simp
 
 end HomologicalComplex
 
