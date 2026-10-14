@@ -8,7 +8,13 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
 public import TauCeti.RingTheory.Valuation.Spectral
 
+public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
+
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
+import TauCeti.RingTheory.Huber.Restricted.Noetherian
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Complete
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.ResidueField
 
 /-!
 # The classical points of an adic spectrum over a complete field
@@ -40,10 +46,23 @@ Both steps work for any continuous `K`-algebra map `φ : A → L` to a finite fi
 For a complete Huber ring every maximal ideal is closed (`TauCeti.Huber.isClosed_of_isMaximal`).
 For an affinoid `K`-algebra, finiteness of the residue fields is Wedhorn's Proposition 5.61.
 
+Conversely, the classical point at `𝔪` is the only point of `Spa (A, A°)` with support `𝔪`. Such a
+point is a valuation on `A ⧸ 𝔪` pulled back to `A`, and it compares scalars by their norms because
+it pulls back to a point of `Spa (K, K°)`. Up to equivalence the norm of `K` has only one extension
+to the finite extension `A ⧸ 𝔪` (`Valuation.isEquiv_spectralValuation_iff`), so the point is the
+classical one.
+
+For a `K`-algebra `A` topologically of finite type, every maximal ideal is closed and has residue
+field finite over `K`. The classical points then give an injective map
+`Max(A) → Spa (A, A°)`, `TauCeti.ValuationSpectrum.maximalSpectrumToSpa`, whose image consists of
+the points with maximal support.
+
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.maximalIdealPoint`: the classical point of `Spa (A, A°)` attached to
   a closed maximal ideal with residue field finite over `K`.
+* `TauCeti.ValuationSpectrum.maximalSpectrumToSpa`: for `A` topologically of finite type over `K`,
+  the map `Max(A) → Spa (A, A°)` sending a maximal ideal to its classical point.
 
 ## Main results
 
@@ -59,6 +78,11 @@ For an affinoid `K`-algebra, finiteness of the residue fields is Wedhorn's Propo
 * `TauCeti.ValuationSpectrum.supp_maximalIdealPoint`: its support is `𝔪`.
 * `TauCeti.ValuationSpectrum.maximalIdealPoint_inj`: distinct maximal ideals give distinct
   points when they are closed and their residue fields are finite over `K`.
+* `TauCeti.ValuationSpectrum.eq_maximalIdealPoint_iff`: a point of `Spa (A, A°)` is the classical
+  point at `𝔪` exactly when its support is `𝔪`.
+* `TauCeti.ValuationSpectrum.maximalSpectrumToSpa_injective` and
+  `TauCeti.ValuationSpectrum.range_maximalSpectrumToSpa`: for `A` topologically of finite type over
+  `K`, `Max(A)` embeds into `Spa (A, A°)`, with image the points whose support is maximal.
 
 ## References
 
@@ -173,6 +197,89 @@ theorem maximalIdealPoint_inj {𝔫 : Ideal A} [𝔫.IsMaximal] [FiniteDimension
   refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
   rw [← supp_maximalIdealPoint (K := K) h𝔪, ← supp_maximalIdealPoint (K := K) h𝔫, h]
 
+/-- **The classical point at `𝔪` is the only point of `Spa (A, A°)` with support `𝔪`.** A point
+with support `𝔪` is a valuation on the residue field `A ⧸ 𝔪` pulled back to `A`. It compares
+scalars by their norms, because it pulls back to a point of `Spa (K, K°)`. By the uniqueness of
+the extension of the norm of `K` to the finite extension `A ⧸ 𝔪`
+(`Valuation.isEquiv_spectralValuation_iff`), that valuation is equivalent to the spectral
+valuation. -/
+theorem eq_maximalIdealPoint_iff (h𝔪 : IsClosed (𝔪 : Set A)) (x : spa (powerBoundedSubring A)) :
+    x = maximalIdealPoint K 𝔪 h𝔪 ↔ x.1.supp = 𝔪 := by
+  refine ⟨fun h ↦ h ▸ supp_maximalIdealPoint h𝔪, fun hx ↦ ?_⟩
+  -- `x` pulls back to a point of `Spa (K, K°)`, so it compares scalars by their norms
+  have hK := comap_mem_spa (continuous_algebraMap K A) (fun c hc ↦ mem_powerBoundedSubring.mpr
+    (isPowerBounded_algebraMap_of_norm_le_one
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp hc)))) x.2
+  -- the valuation of `x` factors through the residue field `A ⧸ 𝔪`
+  have hle : 𝔪 ≤ x.1.valuation.supp := hx ▸ (supp_eq_valuation_supp x.1).le
+  set w := x.1.valuation.onQuot hle
+  have hw (a : A) : w (Ideal.Quotient.mk 𝔪 a) = x.1.valuation a := by
+    rw [← Valuation.comap_apply, Valuation.onQuot_comap_eq]
+  have hequiv : w.IsEquiv (spectralValuation K (A ⧸ 𝔪)) :=
+    (w.isEquiv_spectralValuation_iff).mpr fun c d ↦ by
+      simpa [← Ideal.Quotient.mk_algebraMap, hw, NormedField.valuation_apply,
+        ← NNReal.coe_le_coe] using vle_iff_norm_le_of_mem_spa hK c d
+  refine Subtype.ext (ext' fun a b ↦ ?_)
+  rw [maximalIdealPoint_val, vle_ofValuation, ← valuation_le_iff, ← hw, ← hw]
+  exact hequiv a b
+
 end MaximalIdeal
+
+section TopologicallyFiniteType
+
+attribute [local instance] Ideal.Quotient.field MaximalSpectrum.isMaximal
+
+variable (K) (hA : IsTopologicallyFiniteType (algebraMap K A))
+
+/-- **The classical points of an affinoid `K`-algebra** (Wedhorn, Example 7.58). For `A`
+topologically of finite type over `K`, every maximal ideal `𝔪` is closed and has residue field
+finite over `K` (Wedhorn, Proposition 5.61), so it has a classical point
+`TauCeti.ValuationSpectrum.maximalIdealPoint` in `Spa (A, A°)`. -/
+def maximalSpectrumToSpa (𝔪 : MaximalSpectrum A) : spa (powerBoundedSubring A) :=
+  haveI := hA.finite_quotient_of_isMaximal 𝔪.asIdeal
+  maximalIdealPoint K 𝔪.asIdeal (hA.isClosed_ideal 𝔪.asIdeal)
+
+variable {K hA}
+
+/-- **The classical point at `𝔪` compares elements by the spectral norms of their residues.** -/
+@[simp]
+theorem maximalSpectrumToSpa_vle_iff (𝔪 : MaximalSpectrum A) (a b : A) :
+    (maximalSpectrumToSpa K hA 𝔪).1.toValuativeRel.vle a b ↔
+      spectralNorm K (A ⧸ 𝔪.asIdeal) (Ideal.Quotient.mk 𝔪.asIdeal a) ≤
+        spectralNorm K (A ⧸ 𝔪.asIdeal) (Ideal.Quotient.mk 𝔪.asIdeal b) :=
+  haveI := hA.finite_quotient_of_isMaximal 𝔪.asIdeal
+  maximalIdealPoint_vle_iff _ a b
+
+/-- **The support of the classical point at `𝔪` is `𝔪`.** -/
+@[simp]
+theorem supp_maximalSpectrumToSpa (𝔪 : MaximalSpectrum A) :
+    (maximalSpectrumToSpa K hA 𝔪).1.supp = 𝔪.asIdeal :=
+  haveI := hA.finite_quotient_of_isMaximal 𝔪.asIdeal
+  supp_maximalIdealPoint _
+
+/-- **A point of `Spa (A, A°)` is the classical point at `𝔪` exactly when its support is `𝔪`**,
+for `A` topologically of finite type over `K`. -/
+theorem eq_maximalSpectrumToSpa_iff (x : spa (powerBoundedSubring A)) (𝔪 : MaximalSpectrum A) :
+    x = maximalSpectrumToSpa K hA 𝔪 ↔ x.1.supp = 𝔪.asIdeal :=
+  haveI := hA.finite_quotient_of_isMaximal 𝔪.asIdeal
+  eq_maximalIdealPoint_iff _ x
+
+/-- **Distinct maximal ideals give distinct classical points**: `Max(A)` embeds into
+`Spa (A, A°)`. -/
+theorem maximalSpectrumToSpa_injective : Function.Injective (maximalSpectrumToSpa K hA) :=
+  fun 𝔪 𝔫 h ↦ MaximalSpectrum.ext <| by
+    rw [← supp_maximalSpectrumToSpa (hA := hA) 𝔪, h, supp_maximalSpectrumToSpa]
+
+/-- **The classical points of `Spa (A, A°)` are the points with maximal support**, for `A`
+topologically of finite type over `K`. -/
+theorem range_maximalSpectrumToSpa :
+    Set.range (maximalSpectrumToSpa K hA) = {x | x.1.supp.IsMaximal} := by
+  ext x
+  refine ⟨?_, fun hx ↦ ⟨⟨x.1.supp, hx⟩, ((eq_maximalSpectrumToSpa_iff x _).mpr rfl).symm⟩⟩
+  rintro ⟨𝔪, rfl⟩
+  rw [Set.mem_ofPred_eq, supp_maximalSpectrumToSpa]
+  exact 𝔪.isMaximal
+
+end TopologicallyFiniteType
 
 end TauCeti.ValuationSpectrum

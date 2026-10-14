@@ -28,6 +28,13 @@ topological `K`-vector space, the spectral valuation is continuous for it
 (`TauCeti.isContinuous_spectralValuation`). This is how a maximal ideal with finite residue field
 gives a point of an adic spectrum.
 
+Up to equivalence the spectral valuation is the only valuation on `L` extending the norm of `K`
+(`Valuation.isEquiv_spectralValuation_iff`). An element of spectral norm at most one is integral
+over the closed unit ball of `K`, so every such valuation is at most one on it. An element of
+spectral norm below one has a power dominated by a scalar of norm below one, so its value is below
+one. This makes the point of an adic spectrum attached to a maximal ideal the only one with that
+support.
+
 ## Main definitions
 
 * `TauCeti.spectralValuation`: the spectral norm of an algebraic extension, as a valuation with
@@ -36,7 +43,10 @@ gives a point of an adic spectrum.
 ## Main results
 
 * `TauCeti.coe_spectralValuation`: the spectral valuation is the spectral norm.
-* `TauCeti.spectralValuation_algebraMap`: it extends the norm of `K`.
+* `TauCeti.spectralValuation_algebraMap` and `TauCeti.comap_spectralValuation`: it extends the
+  norm of `K`.
+* `Valuation.isEquiv_spectralValuation_iff`: a valuation on `L` is equivalent to the spectral
+  valuation exactly when its restriction to `K` is equivalent to the norm.
 * `TauCeti.isContinuous_spectralValuation`: on a finite extension it is continuous for every
   Hausdorff topological `K`-vector space structure.
 -/
@@ -77,6 +87,74 @@ theorem coe_spectralValuation (x : L) : (spectralValuation K L x : ℝ) = spectr
 theorem spectralValuation_algebraMap (c : K) :
     spectralValuation K L (algebraMap K L c) = ‖c‖₊ :=
   NNReal.eq <| by rw [coe_spectralValuation, spectralNorm_extends, coe_nnnorm]
+
+/-- The spectral valuation pulled back to `K` is the norm valuation of `K`. -/
+@[simp]
+theorem comap_spectralValuation :
+    (spectralValuation K L).comap (algebraMap K L) = NormedField.valuation :=
+  Valuation.ext fun c ↦ by simp [NormedField.valuation_apply]
+
+/-- An element of spectral norm at most one has value at most one for every valuation that is at
+most one on the image of the closed unit ball of `K`: the coefficients of its minimal polynomial
+have norm at most one, so a value above one would make the leading term of that polynomial
+dominate the others. -/
+private theorem le_one_of_spectralValuation_le_one {Γ₀ : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀] {w : Valuation L Γ₀}
+    (hw : ∀ c : K, ‖c‖ ≤ 1 → w (algebraMap K L c) ≤ 1) {a : L}
+    (ha : spectralValuation K L a ≤ 1) : w a ≤ 1 := by
+  have hP : (minpoly K a).Monic := minpoly.monic (Algebra.IsIntegral.isIntegral a)
+  have hcoeff := (spectralValue_le_one_iff hP).mp (by
+    rwa [← NNReal.coe_le_coe, coe_spectralValuation, NNReal.coe_one] at ha)
+  by_contra! h
+  set n := (minpoly K a).natDegree
+  -- the terms of degree below `n` have value strictly below that of `aⁿ`
+  have hlt : w (∑ i ∈ Finset.range n, (minpoly K a).coeff i • a ^ i) < w (a ^ n) := by
+    rw [map_pow]
+    refine Valuation.map_sum_lt _ (pow_ne_zero _ (zero_lt_one.trans h).ne') fun i hi ↦ ?_
+    rw [Algebra.smul_def, map_mul, map_pow]
+    calc w (algebraMap K L ((minpoly K a).coeff i)) * w a ^ i ≤ 1 * w a ^ i := by
+          gcongr; exact hw _ (hcoeff i)
+      _ < w a ^ n := by
+          rw [one_mul]; exact pow_lt_pow_right₀ h (Finset.mem_range.mp hi)
+  have hroot := minpoly.aeval K a
+  rw [Polynomial.aeval_eq_sum_range, Finset.sum_range_succ, hP.coeff_natDegree, one_smul,
+    add_eq_zero_iff_eq_neg] at hroot
+  rw [hroot, Valuation.map_neg] at hlt
+  exact hlt.false
+
+/-- **Uniqueness of the extension of the norm.** A valuation on an algebraic extension `L` of a
+complete ultrametric field `K` whose restriction to `K` is equivalent to the norm is equivalent to
+the spectral valuation. In particular every such valuation has rank at most one. -/
+theorem _root_.Valuation.isEquiv_spectralValuation_iff {Γ₀ : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀] (w : Valuation L Γ₀) :
+    w.IsEquiv (spectralValuation K L) ↔
+      (w.comap (algebraMap K L)).IsEquiv NormedField.valuation := by
+  refine ⟨fun h ↦ comap_spectralValuation (K := K) (L := L) ▸ h.comap _, fun hw ↦ ?_⟩
+  have hK (c d : K) : w (algebraMap K L c) ≤ w (algebraMap K L d) ↔ ‖c‖ ≤ ‖d‖ := by
+    simpa [NormedField.valuation_apply, ← NNReal.coe_le_coe] using hw c d
+  have hle (c : K) (hc : ‖c‖ ≤ 1) : w (algebraMap K L c) ≤ 1 := by
+    simpa using (hK c 1).mpr (by simpa using hc)
+  -- an element of spectral norm below one has value below one: compare a power of it with a
+  -- scalar of norm strictly between zero and one
+  have hlt {a : L} (ha : spectralValuation K L a < 1) : w a < 1 := by
+    obtain ⟨c, hc₀, hc₁⟩ := NormedField.exists_norm_lt_one K
+    have hwc : w (algebraMap K L c) < 1 := lt_of_not_ge fun h ↦
+      hc₁.not_ge (by simpa using (hK 1 c).mp (by simpa using h))
+    have hwc₀ : w (algebraMap K L c) ≠ 0 := by simpa using norm_pos_iff.mp hc₀
+    obtain ⟨n, hn⟩ := NNReal.exists_pow_lt_of_lt_one (nnnorm_pos.mpr (norm_pos_iff.mp hc₀)) ha
+    have hdiv : w (a ^ n / algebraMap K L c) ≤ 1 := le_one_of_spectralValuation_le_one hle <| by
+      rw [map_div₀, map_pow, spectralValuation_algebraMap]
+      exact div_le_one_of_le₀ hn.le zero_le
+    rw [map_div₀, map_pow, div_le_one₀ (zero_lt_iff.mpr hwc₀)] at hdiv
+    by_contra! h1
+    exact (one_le_pow₀ h1).trans hdiv |>.not_gt hwc
+  refine Valuation.isEquiv_of_val_le_one fun a ↦ ⟨fun ha ↦ ?_,
+    le_one_of_spectralValuation_le_one hle⟩
+  by_contra! h
+  have ha₀ : a ≠ 0 := by rintro rfl; simp at h
+  have := hlt (a := a⁻¹) (by rw [map_inv₀]; exact inv_lt_one_of_one_lt₀ h)
+  rw [map_inv₀, inv_lt_one₀ (zero_lt_iff.mpr ((Valuation.ne_zero_iff w).mpr ha₀))] at this
+  exact this.not_ge ha
 
 end IsAlgebraic
 
