@@ -23,10 +23,10 @@ public noncomputable section
 
 open ContinuousMap
 
-namespace AbstractMeasure
-
 variable {X A B R : Type*} [TopologicalSpace X] [TopologicalSpace A] [TopologicalSpace B]
   [CommRing R] [TopologicalSpace R]
+
+namespace ContinuousMap
 
 /-- The continuous characteristic function of a fibre of a map to a finite discrete space. -/
 def fiberIndicator [DiscreteTopology A] (q : C(X, A)) (a : A) : C(X, R) :=
@@ -37,9 +37,13 @@ def fiberIndicator [DiscreteTopology A] (q : C(X, A)) (a : A) : C(X, R) :=
 @[simp]
 theorem fiberIndicator_apply [DiscreteTopology A] [DecidableEq A]
     (q : C(X, A)) (a : A) (x : X) :
-    fiberIndicator (R := R) q a x = if q x = a then 1 else 0 := by
+    q.fiberIndicator (R := R) a x = if q x = a then 1 else 0 := by
   classical
   simp [fiberIndicator, Pi.single_apply]
+
+end ContinuousMap
+
+namespace AbstractMeasure
 
 variable [IsTopologicalRing R]
 
