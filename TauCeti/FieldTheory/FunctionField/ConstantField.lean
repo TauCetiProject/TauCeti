@@ -64,7 +64,7 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
 
 The statements follow Stichtenoth, *Algebraic Function Fields and Codes*, second edition:
 Corollary 1.1.16 for the finiteness of the field of constants, the standing hypothesis of
-Section 1.4 for its exactness, Proposition 1.2.1(d) for the rational function field, and
+Section 1.4 for its exactness, Proposition 1.2.1(d) for the rational function field,
 Definition 3.1.1 for an extension of function fields.
 -/
 
@@ -259,5 +259,6 @@ theorem algebraicClosure_ratFunc (K : Type*) [Field K] :
 /-- `k` is integrally closed in the rational function field `k(x)`. -/
 instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
   algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure_ratFunc k)
+
 
 end TauCeti

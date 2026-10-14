@@ -104,6 +104,12 @@ attribute [reassoc (attr := simp)] act_hom lift_act
 
 variable {p}
 
+/-- The action of a descent datum lies over `S`: `π (s · x) = π x` for `π = X.hom ≫ p`. -/
+@[reassoc]
+theorem act_comp_hom_comp {X : Over S'} (D : DescentDatum p X) :
+    D.act ≫ X.hom ≫ p = pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p := by
+  rw [D.act_hom_assoc, pullback.condition]
+
 section Hom
 
 variable {X Y Z : Over S'}

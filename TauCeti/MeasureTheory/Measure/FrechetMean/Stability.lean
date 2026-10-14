@@ -206,12 +206,8 @@ theorem eventually_edist_lt_of_isFrechetBarycenter [∀ i, IsProbabilityMeasure 
     ENNReal.Tendsto.const_mul (tendsto_frechetRadius_of_tendsto_wassersteinEDist hp hμ x₀)
       (Or.inr ENNReal.ofNat_ne_top)
   filter_upwards [hb, hlim.eventually (gt_mem_nhds hr)] with i hi hir
-  calc edist (b i) x₀ ≤ frechetRadius p (μs i) (b i) + frechetRadius p (μs i) x₀ :=
-        edist_le_frechetRadius_add hp (μs i) (b i) x₀
-    _ ≤ frechetRadius p (μs i) x₀ + frechetRadius p (μs i) x₀ := by
-      gcongr; exact isFrechetMinimizer_iff.1 (isFrechetBarycenter_iff.1 hi).2 x₀
-    _ = 2 * frechetRadius p (μs i) x₀ := (two_mul _).symm
-    _ < r := hir
+  rw [edist_comm]
+  exact (hi.edist_le_two_mul_frechetRadius hp x₀).trans_lt hir
 
 end Lipschitz
 
