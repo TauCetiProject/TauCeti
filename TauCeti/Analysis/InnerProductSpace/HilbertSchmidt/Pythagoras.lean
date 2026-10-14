@@ -64,14 +64,18 @@ theorem hilbertSchmidtEnergy_starProjection_comp_add_orthogonal (T : E →L[𝕜
 section Complete
 
 variable [CompleteSpace E] [CompleteSpace F]
+variable {H ι' : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
 /-- A family whose adjoints split squared norms on the source splits Hilbert–Schmidt energy
-under right composition. This includes infinite energy and arbitrary index types. -/
+under right composition. The composed operators may have a different source space.
+This includes infinite energy and arbitrary index types. -/
 theorem tsum_hilbertSchmidtEnergy_comp_right (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
-    (Q : η → E →L[𝕜] E) (hQ : ∀ v, ∑' j, ‖adjoint (Q j) v‖ₑ ^ 2 = ‖v‖ₑ ^ 2) :
-    ∑' j, (T ∘L Q j).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
+    (b' : HilbertBasis ι' 𝕜 H) (Q : η → H →L[𝕜] E)
+    (hQ : ∀ v, ∑' j, ‖adjoint (Q j) v‖ₑ ^ 2 = ‖v‖ₑ ^ 2) :
+    ∑' j, (T ∘L Q j).hilbertSchmidtEnergy b' = T.hilbertSchmidtEnergy b := by
   obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
-  simp_rw [← hilbertSchmidtEnergy_adjoint _ b c, adjoint_comp]
+  simp_rw [← hilbertSchmidtEnergy_adjoint _ b' c,
+    ← hilbertSchmidtEnergy_adjoint T b c, adjoint_comp]
   exact tsum_hilbertSchmidtEnergy_comp_left (adjoint T) c (fun j ↦ adjoint (Q j)) hQ
 
 /-- Splitting the source into a projected subspace and its orthogonal complement splits
@@ -87,15 +91,16 @@ theorem hilbertSchmidtEnergy_comp_starProjection_add_orthogonal (T : E →L[𝕜
     hilbertSchmidtEnergy_starProjection_comp_add_orthogonal (adjoint T) c U
 
 /-- Squared-norm splittings on the target and on the adjoints of source operators give the
-joint Pythagoras identity for Hilbert–Schmidt energy. No summability hypothesis is needed. -/
+joint Pythagoras identity for Hilbert–Schmidt energy. The blocks may have a different source
+space. No summability hypothesis is needed. -/
 theorem tsum_tsum_hilbertSchmidtEnergy_comp (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
-    (P : κ → F →L[𝕜] G) (Q : η → E →L[𝕜] E)
+    (b' : HilbertBasis ι' 𝕜 H) (P : κ → F →L[𝕜] G) (Q : η → H →L[𝕜] E)
     (hP : ∀ v, ∑' i, ‖P i v‖ₑ ^ 2 = ‖v‖ₑ ^ 2)
     (hQ : ∀ v, ∑' j, ‖adjoint (Q j) v‖ₑ ^ 2 = ‖v‖ₑ ^ 2) :
-    ∑' j, ∑' i, ((P i) ∘L T ∘L Q j).hilbertSchmidtEnergy b =
+    ∑' j, ∑' i, ((P i) ∘L T ∘L Q j).hilbertSchmidtEnergy b' =
       T.hilbertSchmidtEnergy b := by
-  simp_rw [tsum_hilbertSchmidtEnergy_comp_left _ b P hP]
-  exact tsum_hilbertSchmidtEnergy_comp_right T b Q hQ
+  simp_rw [tsum_hilbertSchmidtEnergy_comp_left _ b' P hP]
+  exact tsum_hilbertSchmidtEnergy_comp_right T b b' Q hQ
 
 end Complete
 
