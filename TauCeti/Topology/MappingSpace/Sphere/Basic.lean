@@ -24,8 +24,8 @@ It is natural in `X` by postcomposition.
 
 ## Main declarations
 
-* `TauCeti.sphereCollapse`: the continuous map `I^k → S^k` collapsing the cube boundary to a given
-  basepoint of the sphere, a quotient map for `k ≥ 1` (`TauCeti.sphereCollapse_surjective`).
+The collapse map `TauCeti.sphereCollapse` is in `TauCeti.Topology.Homotopy.Cube.Sphere`.
+
 * `TauCeti.basedMapSphereHomeomorph`: `Map_*(S^k, X) ≃ₜ Ω^ (Fin k) X x`.
 * `TauCeti.BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace`:
   `Map_*(S^k, X) ≃ₜ Ω^[k] X`, natural in `X` by
