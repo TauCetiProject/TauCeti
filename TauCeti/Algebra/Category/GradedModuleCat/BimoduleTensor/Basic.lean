@@ -72,7 +72,7 @@ local instance (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SMulCommClass A Bᵐᵒᵖ M :=
   TauCeti.Algebra.TensorProduct.moduleSMulCommClass (k := k) (A := A) (B := Bᵐᵒᵖ) M
 
-local instance [SetLike.GradedOne Δ.piece]
+local instance leftGradedSMul [SetLike.GradedOne Δ.piece]
     (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SetLike.GradedSMul Γ.piece M.grading.piece where
   smul_mem {p q} {a m} ha hm := by
@@ -152,6 +152,13 @@ theorem bimoduleModuleTensorUnderlyingEquiv_smul (a : A)
     (z : bimoduleModuleTensorObj Γ Δ M N) :
     bimoduleModuleTensorUnderlyingEquiv Γ Δ M N (a • z) =
       a • bimoduleModuleTensorUnderlyingEquiv Γ Δ M N z := (rfl)
+
+/-- The carrier identification preserves membership in each internal degree piece. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_mem_iff {p : ℤ}
+    {z : bimoduleModuleTensorObj Γ Δ M N} :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N z ∈
+        (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
+      z ∈ (bimoduleModuleTensorObj Γ Δ M N).grading.piece p := Iff.rfl
 
 /-- Balancing transfers the right action on the bimodule to the left module. -/
 theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
@@ -531,6 +538,13 @@ theorem bimoduleTensorUnderlyingEquiv_tmul (m : M) (n : N) :
 theorem bimoduleTensorUnderlyingEquiv_symm_tmul (m : M) (n : N) :
     (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).symm (BalancedTensorProduct.tmul k B m n) =
       bimoduleTensorTmul Γ Δ Θ M N m n := (rfl)
+
+/-- The bimodule carrier identification preserves every internal degree piece. -/
+theorem bimoduleTensorUnderlyingEquiv_mem_iff {p : ℤ}
+    {z : bimoduleTensorObj Γ Δ Θ M N} :
+    bimoduleTensorUnderlyingEquiv Γ Δ Θ M N z ∈
+        (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
+      z ∈ (bimoduleTensorObj Γ Δ Θ M N).grading.piece p := Iff.rfl
 
 @[simp]
 theorem bimoduleTensorTmul_zero_left (n : N) :
