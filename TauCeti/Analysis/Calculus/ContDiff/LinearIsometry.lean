@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
-public import Mathlib.Analysis.Calculus.Deriv.Slope
-public import Mathlib.Analysis.Calculus.Deriv.Add
+public import TauCeti.Analysis.Calculus.FDeriv.Submodule
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
@@ -30,18 +29,6 @@ variable {𝕜 D E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup D] [NormedSpace 𝕜 D]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-private theorem hasFDerivAt_mem_closedSubmodule (S : Submodule 𝕜 F) (hS : IsClosed (S : Set F))
-    {f : D → F} {A : D →L[𝕜] F} {x : D} (h : HasFDerivAt f A x)
-    (hf : ∀ y, f y ∈ S) (v : D) : A v ∈ S := by
-  have hline : HasDerivAt (fun c : 𝕜 ↦ x + c • v) v 0 := by
-    have hc := ((ContinuousLinearMap.id 𝕜 𝕜).smulRight v).hasFDerivAt (x := (0 : 𝕜))
-      |>.hasDerivAt
-    convert (hasDerivAt_const 0 x).add hc using 1 <;> first | rfl | simp
-  have hd := HasFDerivAt.comp_hasDerivAt (0 : 𝕜) (by simpa using h) hline
-  apply hS.mem_of_tendsto hd.tendsto_slope
-  exact Eventually.of_forall fun c ↦ by
-    simpa [slope_def_module] using S.smul_mem c⁻¹ (S.sub_mem (hf (x + c • v)) (hf x))
 
 /-- For finite orders and `∞`, a closed linear isometric inclusion reflects smoothness.
 No completeness assumption is needed. -/
@@ -71,8 +58,9 @@ theorem LinearIsometry.contDiff_comp_iff (i : E →ₗᵢ[𝕜] F)
       | succ m ih =>
         intro hm x v
         have hmn : (m : WithTop ℕ∞) < n := lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self m) hm
-        have hv := hasFDerivAt_mem_closedSubmodule (R m) (hR m) (hq.fderiv m hmn x)
-          (fun y ↦ ih (le_of_lt hmn) y) (v 0)
+        have hv := (hq.fderiv m hmn x).apply_mem_of_eventually_sub_mem (hR m)
+          (Eventually.of_forall fun y ↦
+            (R m).sub_mem (ih (le_of_lt hmn) y) (ih (le_of_lt hmn) x)) (v 0)
         simpa only [ContinuousMultilinearMap.curryLeft_apply, Fin.cons_self_tail]
           using hv (Fin.tail v)
     let J (m : ℕ) : (D [×m]→L[𝕜] E) →ₗᵢ[𝕜] (D [×m]→L[𝕜] F) :=
