@@ -41,7 +41,8 @@ for parameters in the closed unit ball.
   parameter (`TauCeti.contDiff_perturbedFlow_of_contDiff`: `C^{n+1}` for `C^{n+2}` data), and
   `TauCeti.perturbedFlow_apply_of_norm_le` that, for `‖s‖ ≤ 1`, it is the
   negative-gradient flow of `perturb f h s`, with the parameter carried along
-  (`TauCeti.snd_perturbedFlow_apply`). `TauCeti.exists_lipschitzWith_gradient_perturb` supplies
+  (`TauCeti.snd_perturbedFlow_apply`); `TauCeti.perturbedFlow_congr`: it does not depend on the
+  Lipschitz witness for `∇ f`. `TauCeti.exists_lipschitzWith_gradient_perturb` supplies
   the Lipschitz hypothesis needed to speak of that flow.
 * `TauCeti.hasDerivAt_fst_fderiv_perturbedFlow_apply`: at the parameter `0`, the derivative of the
   perturbed flow along a tangent vector `(v, e)` solves the inhomogeneous variational equation
@@ -428,6 +429,14 @@ private theorem perturbedFlow_eq_flowOfLipschitz (hf : LipschitzWith K (∇ f))
       (exists_lipschitzWith_perturbedField hf hh hc).choose_spec :=
   (rfl)
 
+/-- **Independence of the Lipschitz witness.** The perturbed flow does not depend on the Lipschitz
+bound for `∇ f` used to construct it: the Lipschitz constant of the augmented field is chosen from a
+proposition that does not mention that bound. -/
+theorem perturbedFlow_congr {K' : ℝ≥0} (hf : LipschitzWith K (∇ f)) (hf' : LipschitzWith K' (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
+    perturbedFlow f h hf hh hc = perturbedFlow f h hf' hh hc :=
+  (rfl)
+
 /-- **Higher regularity of the perturbed flow**: if `f` and the perturbing functions are
 `C^{n+2}`, the perturbed flow is `C^{n+1}` jointly in time, the initial condition and the
 parameter. -/
@@ -480,7 +489,8 @@ theorem perturbedFlow_apply_of_norm_le (hd : Differentiable ℝ f) (hf : Lipschi
       (fun i ↦ (hh i).differentiable (by norm_num)) hs]
     exact h1.prodMk (hasDerivAt_const t s)
   have := eq_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hγ t
-  simpa [perturbedFlow] using this.symm
+  rw [perturbedFlow_eq_flowOfLipschitz]
+  simpa using this.symm
 
 end Flow
 
@@ -504,7 +514,8 @@ theorem perturbedFlow_apply_zero (hf : LipschitzWith K (∇ f)) (hh : ∀ i, Con
     exact ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x t).prodMk
       (hasDerivAt_const t 0)
   have := eq_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hγ t
-  simpa [perturbedFlow] using this.symm
+  rw [perturbedFlow_eq_flowOfLipschitz]
+  simpa using this.symm
 
 private theorem differentiableAt_perturbedFlow (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
