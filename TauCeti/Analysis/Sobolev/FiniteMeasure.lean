@@ -45,8 +45,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   on a ball `B(x₀, R)`, with constant a multiple of `R ^ (1 - n δ)`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
-* `TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`: for `r > max 1 (n/2)`, an
-  `Lʳ(Ω)` function acts on `W^{1,2}_0(Ω)` as a continuous linear functional `v ↦ ∫_Ω f v`.
+* `TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`: for `r > max 1 (2n/(n+2))`,
+  an `Lʳ(Ω)` function acts on `W^{1,2}_0(Ω)` as a continuous linear functional `v ↦ ∫_Ω f v`.
 
 ## References
 
@@ -266,31 +266,27 @@ private def W1p0.setIntegralMulₗ (f : E → ℝ)
     W1p0 mu Omega 2 →ₗ[ℝ] ℝ where
   toFun v := ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu
   map_add' u v := by
-    have hvalue : W1p.value ((u : W1p mu Omega 2) + (v : W1p mu Omega 2)) =
-        W1p.value (u : W1p mu Omega 2) + W1p.value (v : W1p mu Omega 2) := by
-      simp only [← W1p.valueL_apply, map_add]
-    simp only [Submodule.coe_add, hvalue]
+    simp only [Submodule.coe_add]
     rw [← integral_add (hint u) (hint v)]
     refine integral_congr_ae ?_
-    filter_upwards [Lp.coeFn_add (W1p.value (u : W1p mu Omega 2))
-      (W1p.value (v : W1p mu Omega 2))] with x hx
+    filter_upwards [W1p.value_add_ae (u : W1p mu Omega 2) (v : W1p mu Omega 2)] with x hx
     rw [hx, Pi.add_apply, mul_add]
   map_smul' c u := by
-    have hvalue : W1p.value (c • (u : W1p mu Omega 2)) = c • W1p.value (u : W1p mu Omega 2) := by
-      simp only [← W1p.valueL_apply, map_smul]
-    simp only [RingHom.id_apply, Submodule.coe_smul, hvalue, smul_eq_mul]
+    simp only [RingHom.id_apply, Submodule.coe_smul, smul_eq_mul]
     rw [← integral_const_mul]
     refine integral_congr_ae ?_
-    filter_upwards [Lp.coeFn_smul c (W1p.value (u : W1p mu Omega 2))] with x hx
+    filter_upwards [W1p.value_smul_ae c (u : W1p mu Omega 2)] with x hx
     rw [hx, Pi.smul_apply, smul_eq_mul]
     ring
 
 /-- **An `Lʳ` function acts continuously on `W^{1,2}_0(Ω)`.** Let `n ≥ 1` be the dimension, let
-`Ω` have finite measure, and let `r > 1` with `r > n/2`. For `f ∈ Lʳ(Ω)`, the pairing
-`v ↦ ∫_Ω f v` is a continuous linear functional on `W^{1,2}_0(Ω)`. This is the right-hand side
-of the weak formulation of an elliptic equation with `Lʳ` data. -/
+`Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)` (which
+is automatic for `n ≤ 2`). For `f ∈ Lʳ(Ω)`, the pairing `v ↦ ∫_Ω f v` is a continuous linear
+functional on `W^{1,2}_0(Ω)`. This is the right-hand side of the weak
+formulation of an elliptic equation with `Lʳ` data. -/
 theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
-    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r) (hrn : (finrank ℝ E : ℝ) < 2 * r)
+    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (finrank ℝ E : ℝ) * (2 - r) < 2 * r)
     {f : E → ℝ} (hf : MemLp f r (mu.restrict Omega)) :
     ∃ ℓ : StrongDual ℝ (W1p0 mu Omega 2), ∀ v : W1p0 mu Omega 2,
       ℓ v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
@@ -309,11 +305,11 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
   have hτr : τ ≤ 1 - (r : ℝ)⁻¹ := min_le_right _ _
   have hτn : 2⁻¹ - τ < n⁻¹ := by
     have hn0 : 0 < n⁻¹ := inv_pos.2 (by linarith)
-    have h2r : (r : ℝ)⁻¹ < 2 * n⁻¹ := by
-      rw [inv_lt_comm₀ hr0 (by positivity), mul_inv, inv_inv]
-      linarith
-    have : 2⁻¹ - n⁻¹ < τ := lt_min (by linarith) <| by
-      rcases le_total n⁻¹ 2⁻¹ with hn2 | hn2 <;> linarith
+    have h2r : (r : ℝ)⁻¹ < 2⁻¹ + n⁻¹ := by
+      rw [← sub_pos, show (2⁻¹ + n⁻¹ - (r : ℝ)⁻¹) = (2 * r - n * (2 - r)) / (2 * n * r) by
+        field_simp; ring]
+      exact div_pos (by linarith) (by positivity)
+    have : 2⁻¹ - n⁻¹ < τ := lt_min (by linarith) (by linarith)
     linarith
   set t : ℝ≥0 := Real.toNNReal τ⁻¹
   have ht : (t : ℝ) = τ⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 hτ0.le)

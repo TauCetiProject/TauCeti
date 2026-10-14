@@ -104,7 +104,7 @@ the constructed one, so it is available before, and independently of, uniqueness
   existence and uniqueness on an arbitrary open domain when the potential absorbs the drift.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`:
   existence and uniqueness for `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f`, `c ≥ 0`, on a domain of finite measure
-  with data `f ∈ Lʳ(Ω)`, `r > max 1 (n/2)`, which need not be square integrable.
+  with data `f ∈ Lʳ(Ω)`, `r > max 1 (2n/(n+2))`, which need not be square integrable.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
   under the geometric hypotheses that make the energy form coercive.
@@ -441,16 +441,16 @@ theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_b
 /-! ### Data in `Lʳ` on a domain of finite measure -/
 
 /-- **Weak solvability of the Dirichlet problem with `Lʳ` data.** Let `n ≥ 1` be the dimension
-and let `r > 1` with `r > n/2`. On a domain `Ω` of finite measure, let `a` be measurable and
-uniformly elliptic, and let `c` be measurable, bounded and nonnegative. For every `f ∈ Lʳ(Ω)`
-there is exactly one `w ∈ H¹₀(Ω)` with
+and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. On a domain `Ω` of finite
+measure, let `a` be measurable and uniformly elliptic, and let `c` be measurable, bounded and
+nonnegative. For every `f ∈ Lʳ(Ω)` there is exactly one `w ∈ H¹₀(Ω)` with
 
 `a(w, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
 
 the weak solution of `-∂ⱼ(aⁱʲ ∂ᵢw) + c w = f` in `Ω`, `w = 0` on `∂Ω`. Unlike
 `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`, the data need not be square integrable. The
-range `r > max 1 (n/2)` is the one in which Stampacchia's bound
-`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow` applies to the solution. -/
+range `r > max 1 (2n/(n + 2))` is the one in which `v ↦ ∫_Ω f v` is continuous on `H¹₀(Ω)`
+(`TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`). -/
 theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp
     [DecidableEq ι] [Nonempty ι] {lam Lam gamma : ℝ} {r : ℝ≥0} {f : EuclideanSpace ℝ ι → ℝ}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
@@ -458,7 +458,8 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_m
     (hc : AEStronglyMeasurable c (mu.restrict Omega))
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) (hOmega : mu Omega ≠ ∞)
-    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) (hf : MemLp f r (mu.restrict Omega)) :
+    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) * (2 - r) < 2 * r)
+    (hf : MemLp f r (mu.restrict Omega)) :
     ∃! w : W1p0 mu Omega 2, ∀ v : W1p0 mu Omega 2,
       energyFormH1 a 0 c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
