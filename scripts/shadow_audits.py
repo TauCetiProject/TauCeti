@@ -178,6 +178,10 @@ class ShadowSession:
         if set(full) != locals_ or len(full) != len(snapshot["results"]):
             raise ValueError("full result/source inventory mismatch")
         _, reusable = self.plan(snapshot["inventory"], artifacts, identity)
+        # A collision can change the merged owner without changing either owner's
+        # bytes/closure. Reject every cached per-owner result when ownership fails.
+        if snapshot["ownership_status"] != 0:
+            reusable = {}
         changed = set(full) - set(reusable)
         # Unit-level callers can supply a synthetic oracle; observe always runs the
         # separate incremental subprocess before providing its results here.
@@ -202,7 +206,7 @@ class ShadowSession:
             payload = json.dumps(result, sort_keys=True)
             next_records[module] = Record(key, payload, self._seal(module, key, payload))
         removed = sorted(set(self._records) - locals_)
-        self._records = next_records
+        self._records = next_records if snapshot["ownership_status"] == 0 else {}
         full_status = max(snapshot["ownership_status"], snapshot["axioms_status"],
                           module_system.returncode)
         axiom_status = int(sum(r["count"] for r in shadow.values()) == 0 or
@@ -299,6 +303,8 @@ def observe(session, project, paths, sysroot, driver, toolchain_identity):
                 relative = str(Path(row["relative"]).with_suffix(".lean"))
                 artifact_ids[row["module"]] = (artifact_ids[row["module"]], dict(source_id)[relative])
         _, reusable = session.plan(discovery, artifact_ids, identity)
+        if full["ownership_status"] != 0:
+            reusable = {}
         changed = sorted(row["module"] for row in discovery
                          if row["local"] and row["module"] not in reusable)
         scope = sources / ".shadow-scope"

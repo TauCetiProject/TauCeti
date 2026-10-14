@@ -103,7 +103,8 @@ class ShadowRecordsTest(unittest.TestCase):
         self.snapshot["ownership_status"] = 1
         flags = subprocess.CompletedProcess([], 1, "", "bad module-system flag")
         report = self.compare(flags=flags)
-        self.assertEqual(len(report["reused"]), 4)
+        self.assertEqual(report["reused"], [])
+        self.assertEqual(self.session._records, {})
         self.assertEqual(report["full_status"], 1)
         self.assertEqual(report["global_checks"]["module_system_stderr"], flags.stderr)
         self.assertTrue(report["equivalent"])
@@ -261,7 +262,8 @@ class ShadowLeanTest(unittest.TestCase):
         self.compile({"TauCeti.B": "module\npublic theorem collision : True := True.intro\n"})
         changed = self.check(status=1)
         self.assertEqual(changed["global_checks"]["ownership_status"], 1)
-        self.assertIn("TauCeti.A", changed["reused"])
+        self.assertEqual(changed["reused"], [])
+        self.assertEqual(self.session._records, {})
 
     def test_removed_source_still_imported_as_stale_artifact_is_rejected(self):
         self.compile({"TauCeti.Base": "module\npublic def value := 1\n",
