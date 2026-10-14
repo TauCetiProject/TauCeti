@@ -142,6 +142,13 @@ theorem isometry_quantileLp :
     Isometry (quantileLp : WassersteinSpace p ℝ → Lp ℝ p (volume.restrict (Ioo (0 : ℝ) 1))) :=
   edist_quantileLp
 
+/-- The quantile map preserves the distance: the `p`-Wasserstein distance of two laws on `ℝ` is
+the `Lᵖ(0, 1)` distance of their quantile functions. -/
+@[simp]
+theorem dist_quantileLp (μ ν : WassersteinSpace p ℝ) :
+    dist (quantileLp μ) (quantileLp ν) = dist μ ν :=
+  isometry_quantileLp.dist_eq μ ν
+
 /-- **`P₂(ℝ)` is CAT(0).** The quadratic Wasserstein space of the line is a geodesic space that
 embeds isometrically in the Hilbert space `L²(0, 1)`, so it satisfies the CN inequality. -/
 instance instIsCATZeroSpace : IsCATZeroSpace (WassersteinSpace 2 ℝ) :=
