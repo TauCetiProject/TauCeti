@@ -62,6 +62,46 @@ def schwarzChristoffelFiniteEdge (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p q
       range (fun t : ℝ => schwarzChristoffelBoundary a e z₀ ((p + q) / 2) +
         (t : ℂ) * exp (schwarzChristoffelEdgeAngle a e ((p + q) / 2) * Complex.I))
 
+/-- The finite side is selected by the integrability of its two endpoints. -/
+theorem schwarzChristoffelFiniteEdge_def (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p q : ℝ) :
+    schwarzChristoffelFiniteEdge a e z₀ p q =
+      if -1 < ∑ i with a i = p, e i then
+        if -1 < ∑ i with a i = q, e i then
+          segment ℝ (schwarzChristoffelBoundary a e z₀ p) (schwarzChristoffelBoundary a e z₀ q)
+        else
+          (fun t : ℝ => schwarzChristoffelBoundary a e z₀ p +
+            (t : ℂ) * exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) '' Ici 0
+      else
+        if -1 < ∑ i with a i = q, e i then
+          (fun t : ℝ => schwarzChristoffelBoundary a e z₀ q -
+            (t : ℂ) * exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) '' Ici 0
+        else
+          range (fun t : ℝ => schwarzChristoffelBoundary a e z₀ ((p + q) / 2) +
+            (t : ℂ) * exp (schwarzChristoffelEdgeAngle a e ((p + q) / 2) * Complex.I)) := (rfl)
+
+/-- Membership in a finite side is segment membership or a real parametrization of its
+ray or line, according to the integrability of the endpoints. -/
+@[simp]
+theorem mem_schwarzChristoffelFiniteEdge_iff (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (p q : ℝ) (w : ℂ) :
+    w ∈ schwarzChristoffelFiniteEdge a e z₀ p q ↔
+      if -1 < ∑ i with a i = p, e i then
+        if -1 < ∑ i with a i = q, e i then
+          w ∈ segment ℝ (schwarzChristoffelBoundary a e z₀ p) (schwarzChristoffelBoundary a e z₀ q)
+        else
+          ∃ t : ℝ, 0 ≤ t ∧ w = schwarzChristoffelBoundary a e z₀ p +
+            (t : ℂ) * exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
+      else
+        if -1 < ∑ i with a i = q, e i then
+          ∃ t : ℝ, 0 ≤ t ∧ w = schwarzChristoffelBoundary a e z₀ q -
+            (t : ℂ) * exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
+        else
+          ∃ t : ℝ, w = schwarzChristoffelBoundary a e z₀ ((p + q) / 2) +
+            (t : ℂ) * exp (schwarzChristoffelEdgeAngle a e ((p + q) / 2) * Complex.I) := by
+  classical
+  rw [schwarzChristoffelFiniteEdge_def]
+  split_ifs <;> simp [eq_comm]
+
 /-- With two integrable endpoints, the finite side is their closed segment. -/
 @[simp]
 theorem schwarzChristoffelFiniteEdge_of_integrable_integrable (a e : ι → ℝ)
