@@ -36,6 +36,8 @@ def snapshot():
     for name in ('stat', 'meminfo', 'diskstats', 'pressure/cpu', 'pressure/memory', 'pressure/io'):
         try:
             value = read('/proc/' + name)
+            if len(value) == MAX_READ:
+                missing.append(name + '-truncated')
             if name == 'stat':
                 ticks = list(map(int, value.splitlines()[0].split()[1:9]))
                 result['cpu_total_ticks'] = sum(ticks)  # excludes duplicate guest ticks
@@ -70,11 +72,14 @@ class Sampler:
         self.samples = 0
         self.missing = set()
         self.cpu_s = 0
+        self.started = self.ended = None
 
     def sample(self):
         start = time.thread_time()
         try:
             value = snapshot()
+            self.started = self.started or time.monotonic()
+            self.ended = time.monotonic()
             self.first = self.first or value
             self.last = value
             self.samples += 1
@@ -109,7 +114,10 @@ class Sampler:
                    for name, counters in last.get('host_devices', {}).items()
                    if name in first.get('host_devices', {})}
         return {'samples': self.samples, 'interval_s': INTERVAL, 'sample_limit': MAX_SAMPLES,
-                'sampler_cpu_s': self.cpu_s, 'missing': sorted(self.missing),
+                'sampler_cpu_s': self.cpu_s,
+                'sample_limit_reached': self.samples >= MAX_SAMPLES,
+                'sampled_elapsed_s': self.ended - self.started if self.started is not None else None,
+                'missing': sorted(self.missing),
                 'host_cpu_busy_fraction': busy / total if total else None,
                 'host_used_peak_bytes': self.peak, 'host_pressure_stall_us': pressure,
                 'host_device_io_bytes': devices}
