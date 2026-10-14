@@ -16,9 +16,9 @@ Both half-turns preserve the absolute `O`-Maslov and Alexander gradings, and var
 preserves total monomial degree. Consequently the specified north-east chain map has bidegree
 `(0, 0)`, with each coefficient variable in bidegree `(-2, -1)`.
 
-The Alexander comparison descends to the specified bijective semilinear map on unblocked
-homology. An odd component count is required only to use integer Alexander degrees; the
-coefficient ring can be any commutative ring of characteristic two.
+Chain-level bigrading preservation holds over any commutative ring. In characteristic two,
+the Alexander comparison descends to the specified bijective semilinear map on unblocked
+homology. An odd component count is required only to use integer Alexander degrees.
 
 ## References
 
@@ -49,7 +49,7 @@ theorem rotate_stabilizeXSucc : (G.stabilizeXSucc s).rotate = G.rotate.stabilize
   apply Subtype.ext
   simp only [val_stabilizeX, GridDiagram.rotate_stabilizeX_succ]
 
-variable (R : Type*) [CommRing R] [CharP R 2]
+variable (R : Type*) [CommRing R]
 
 /-- The north-east stabilization chain map preserves the `O`-Maslov--Alexander bigrading. -/
 theorem stabilizeXSuccChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
@@ -63,6 +63,8 @@ theorem stabilizeXSuccChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
   rw [rotate_rotate] at hout
   rw [GridDiagram.stabilizeXSuccChainMap_apply, GridDiagram.stabilizeXChainMap_apply]
   exact hout
+
+variable [CharP R 2]
 
 /-- The north-east stabilization chain map preserves the integer Alexander grading. -/
 theorem stabilizeXSuccChainMap_mem_alexanderChainMinusPiece {a : ℤ}
