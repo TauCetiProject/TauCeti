@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
-public import TauCeti.RepresentationTheory.Homological.Augmentation
+public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.GroupTheory.FiniteAbelian.Generators
 import TauCeti.RepresentationTheory.Intertwining

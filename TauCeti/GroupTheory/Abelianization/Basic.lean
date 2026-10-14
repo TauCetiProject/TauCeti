@@ -37,6 +37,7 @@ lemma ofMul_of_add_ofMul_of (p q : G) :
 
 /-- An element has trivial image in the abelianization exactly when it is in the commutator
 subgroup. -/
+@[simp]
 theorem of_eq_one_iff {g : G} : of g = 1 ↔ g ∈ commutator G := by
   rw [← MonoidHom.mem_ker, ker_of]
 

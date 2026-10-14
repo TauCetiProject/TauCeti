@@ -11,7 +11,7 @@ import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.GroupTheory.Abelianization.Conjugation
-import TauCeti.RepresentationTheory.Homological.AugmentationNorm
+import TauCeti.RepresentationTheory.Homological.Augmentation.Norm
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.SplittingModule
 
 /-!
