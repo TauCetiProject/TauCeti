@@ -20,11 +20,6 @@ units in the unramified quadratic extension of `ℚ₂`. Together with the unifo
 they represent all sixteen square classes. The eight unit classes are exactly the classes
 of even valuation, which are the domain for computations of transferred lines.
 
-The norm detects the last two unit generators: their norms are `-1` and `-11`, independent
-modulo squares in `ℚ₂`. The first remains nonsquare after adjoining `√5`, by the square-class
-descent theorem `TauCeti.Multiquadratic.squareClass_of_sq_mem_finset`. Exhaustion uses
-`TauCeti.natCard_squareClassGroup_eq_four_mul_pow_finrank`.
-
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §63A, for dyadic square classes.
@@ -68,7 +63,8 @@ theorem norm_unitSquareClassGenerator (i : Fin 3) :
   · convert norm_add_mul_sqrtFive 2 1 using 1 <;> norm_num [map_ofNat]
   · convert norm_add_mul_sqrtFive 3 2 using 1 <;> norm_num [map_ofNat]
 
-/-- Each generator is a unit of the integer ring: its normalized valuation is zero. -/
+/-- Each generator is a unit of the integer ring: its multiplicative normalized valuation is one
+(equivalently, its additive valuation is zero). -/
 @[simp]
 theorem normalizedValuation_unitSquareClassGenerator (i : Fin 3) :
     normalizedValuation DyadicSqrtFive (unitSquareClassGenerator i) = 1 := by
