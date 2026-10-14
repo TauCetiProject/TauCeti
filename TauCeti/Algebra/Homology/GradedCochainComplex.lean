@@ -365,9 +365,19 @@ theorem gradedCochainComplexInclusion_comp {ℳ'' : ℤ → Submodule R M} (hle'
     gradedCochainComplexXEquiv_inclusion_f, gradedCochainComplexXEquiv_inclusion_f,
     gradedCochainComplexXEquiv_inclusion_f]
 
+/-- Each component of the inclusion of complexes is injective. -/
+theorem gradedCochainComplexInclusion_f_injective (p : ℤ) :
+    Function.Injective
+      ((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg').f p).hom := by
+  intro x y h
+  apply (gradedCochainComplexXEquiv p).injective
+  apply Subtype.ext
+  simpa only [gradedCochainComplexXEquiv_inclusion_f] using
+    congrArg (fun z ↦ (gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) p z : M)) h
+
 instance : Mono (gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg') :=
   HomologicalComplex.mono_of_mono_f _ fun p ↦
-    (ModuleCat.mono_iff_injective _).2 fun _ _ h ↦ Submodule.inclusion_injective (hle p) h
+    (ModuleCat.mono_iff_injective _).2 (gradedCochainComplexInclusion_f_injective hle hdeg' p)
 
 variable (ℳ dM hdeg hsq) in
 /-- The subcomplex of `gradedCochainComplex ℳ dM` cut out by a submodule `N` of `M` stable under
@@ -424,10 +434,13 @@ theorem gradedCochainComplexSubobject_eq_top {N : Submodule R M} (hN : ∀ x ∈
   have (p : ℤ) : IsIso ((gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg)
       (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p) := by
     apply (ConcreteCategory.isIso_iff_bijective _).2
-    change Function.Bijective (Submodule.inclusion (inf_le_left : ℳ p ⊓ ⊤ ≤ ℳ p))
-    refine ⟨Submodule.inclusion_injective _, ?_⟩
-    rw [← LinearMap.range_eq_top, Submodule.range_inclusion]
-    simp
+    refine ⟨gradedCochainComplexInclusion_f_injective _ _ p, fun y ↦ ?_⟩
+    refine ⟨(gradedCochainComplexXEquiv p).symm
+      ⟨gradedCochainComplexXEquiv p y, (gradedCochainComplexXEquiv p y).2, Submodule.mem_top⟩, ?_⟩
+    apply (gradedCochainComplexXEquiv p).injective
+    apply Subtype.ext
+    rw [gradedCochainComplexXEquiv_inclusion_f,
+      LinearEquiv.apply_symm_apply]
   have := HomologicalComplex.Hom.isIso_of_components
     (gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg) (hsq := hsq)
       (fun _ ↦ inf_le_left) (hdeg.inf hN))
