@@ -119,9 +119,9 @@ theorem map_algebraMap_ratFuncAlgebraOfTranscendental {F' G : Type*} [Field F'] 
     [FunLike G F F'] [AlgHomClass G k F F'] (f : G) (hf : Function.Injective f)
     (hx : Transcendental k x) (r : RatFunc k) :
     f (letI := ratFuncAlgebraOfTranscendental hx; algebraMap (RatFunc k) F r) =
-      letI := ratFuncAlgebraOfTranscendental (hx.map f hf)
+      letI := ratFuncAlgebraOfTranscendental (hx.algHom f hf)
       algebraMap (RatFunc k) F' r := by
-  have hy := hx.map f hf
+  have hy := hx.algHom f hf
   -- Both sides are `k`-algebra maps out of `k(X)` sending `X` to `f x`.
   have h : (AlgHom.ofClass f).comp
         (k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom) =

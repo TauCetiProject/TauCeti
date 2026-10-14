@@ -34,7 +34,7 @@ theorem add_algebraMap (hx : Transcendental R x) (c : R) :
 
 /-- An injective algebra homomorphism carries a transcendental element to a transcendental
 element. -/
-protected theorem map {B G : Type*} [Ring B] [Algebra R B] [FunLike G A B] [AlgHomClass G R A B]
+protected theorem algHom {B G : Type*} [Ring B] [Algebra R B] [FunLike G A B] [AlgHomClass G R A B]
     (f : G) (hf : Function.Injective f) (hx : Transcendental R x) : Transcendental R (f x) :=
   (isAlgebraic_algHom_iff (AlgHom.ofClass f) hf).not.mpr hx
 

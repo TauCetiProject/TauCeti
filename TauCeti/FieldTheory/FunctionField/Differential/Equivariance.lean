@@ -73,8 +73,8 @@ theorem weilDifferentialRepresentation_weilDifferentialOfSeparating (hF : IsFunc
     (σ : F ≃ₐ[k] F) {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
     [Algebra.IsSeparable k⟮σ x⟯ F] :
     weilDifferentialRepresentation k k F σ (weilDifferentialOfSeparating hF hx) =
-      weilDifferentialOfSeparating hF (hx.map σ σ.injective) := by
-  have hy := hx.map σ σ.injective
+      weilDifferentialOfSeparating hF (hx.algHom σ σ.injective) := by
+  have hy := hx.algHom σ σ.injective
   -- The embedding `X ↦ x` and its instances.
   let A₁ := ratFuncAlgebraOfTranscendental hx
   have t₁ := isScalarTower_ratFuncAlgebraOfTranscendental hx
@@ -110,7 +110,7 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] [Algebra.IsSeparable k⟮σ x⟯ F]
     (ω : Ω[F⁄k]) :
     kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex
-        (hx.map σ σ.injective) (mapSemilinear (σ : F →ₐ[k] F) ω) =
+        (hx.algHom σ σ.injective) (mapSemilinear (σ : F →ₐ[k] F) ω) =
       weilDifferentialRepresentation k k F σ
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω) := by
   let _ := weilDifferentialSpaceModule hF
@@ -141,7 +141,7 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear_of_pe
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω) := by
   have := IntermediateField.isSeparable_adjoin_simple_map σ (x := x)
   conv_lhs => rw [kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField hF hex
-    hx (hx.map σ σ.injective)]
+    hx (hx.algHom σ σ.injective)]
   exact kaehlerDifferentialEquivWeilDifferentialOfSeparating_mapSemilinear hF hex σ hx ω
 
 end TauCeti
