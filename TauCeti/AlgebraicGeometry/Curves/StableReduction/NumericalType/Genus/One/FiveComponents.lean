@@ -150,22 +150,6 @@ private lemma fivePath_factor_cases_two_one
       rcases h₃ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
         omega
 
-/-- The factor patterns when the first edge has factors `(1, 2)`. -/
-private lemma fivePath_factor_cases_one_two
-    {m₀ m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
-    (hm₀ : 0 < m₀) (_hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
-    (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
-    (h₃ : IsGenusOneEdgeFactor p₃ q₃) (e₀ : m₁ = 2 * m₀)
-    (e₁ : 2 * m₀ + m₂ * p₁ = 2 * m₁) (e₂ : m₁ * q₁ + m₃ * p₂ = 2 * m₂)
-    (e₃ : m₂ * q₂ + m₄ * p₃ = 2 * m₃) (e₄ : m₃ * q₃ = 2 * m₄) :
-    (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 2 ∧ q₃ = 1) ∨
-    (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 2) := by
-  rw [isGenusOneEdgeFactor_iff] at h₁ h₂ h₃
-  rcases h₁ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
-    rcases h₂ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
-      rcases h₃ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
-        omega
-
 /-- Triple factors at the first edge are incompatible with a positive kernel vector. -/
 private lemma fivePath_factor_cases_triple_false
     {m₀ m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q₃ r s : ℤ}
@@ -211,8 +195,8 @@ private lemma fivePath_factor_cases
       h₁ h₂ h₃ (by omega) (by omega) e₂ e₃ e₄ <;>
       rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ <;> omega
   · rcases h₀ with ⟨rfl, rfl⟩
-    obtain h | h := fivePath_factor_cases_one_two hm₀ hm₁ hm₂ hm₃ hm₄
-      h₁ h₂ h₃ (by omega) (by omega) e₂ e₃ e₄ <;>
+    obtain h | h := fivePath_factor_cases_two_one (m₀ := m₁) hm₁ hm₁ hm₂ hm₃ hm₄
+      h₁ h₂ h₃ rfl (by omega) e₂ e₃ e₄ <;>
       rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ <;> omega
   · rcases h₀ with ⟨rfl, rfl⟩
     exact (fivePath_factor_cases_triple_false hm₀ hm₁ hm₂ hm₃ hm₄ h₁ h₂ h₃
