@@ -199,6 +199,30 @@ private theorem ae_garding_energyFormH1
   exact hellt.garding_energyFormH1_self_norm_of_norm_le hat hbt hct hbt'
     (fun x hx => (hct' x hx).trans (le_abs_self _)) _
 
+/-- Under the standing hypotheses on the coefficients on a nondegenerate interval, the ellipticity
+constants satisfy `0 < λ` and `0 ≤ Λ`, and the energy forms of `L(t)` are the values of a single
+family of bounded operators `H¹₀(Ω) → H⁻¹(Ω)` for almost every `t`. -/
+private theorem exists_ae_apply_eq_energyFormH1_of_lt (ht : t₀ < t₁)
+    (ha : AEStronglyMeasurable (Function.uncurry a)
+      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
+    (hb : AEStronglyMeasurable (Function.uncurry b)
+      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
+    (hc : AEStronglyMeasurable (Function.uncurry c)
+      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
+    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
+    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
+      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
+    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
+      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma) :
+    0 < lam ∧ 0 ≤ Lam ∧ ∃ A : ℝ → W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
+      ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ u v : W1p0 mu Omega 2,
+        A t u v = energyFormH1 (a t) (b t) (c t) (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
+  have : (ae (volume.restrict (Ioo t₀ t₁))).NeBot := ae_restrict_neBot.2 (by simpa using ht)
+  refine ⟨hell.exists.elim fun _ h => h.pos, hell.exists.elim fun _ h => h.upper_nonneg, ?_⟩
+  exact exists_ae_apply_eq_energyFormH1 (mu := mu) (Omega := Omega) (a := a) (b := b) (c := c)
+    (ae_memLp_energyIntegrand ha hb hc hell hb_bound hc_bound)
+
 end StandingHypotheses
 
 /-- **Existence for the parabolic Dirichlet problem.** Let the coefficients `a, b, c` of
@@ -235,23 +259,16 @@ theorem exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner [DecidableEq �
           ⟪W1p0.valueL (u t), W1p0.valueL (deriv φ t)⟫_ℝ) =
         (∫ t in Ioo t₀ t₁, f t (φ t)) + ⟪u₀, W1p0.valueL (φ t₀)⟫_ℝ := by
   -- The energy form of `L(t)`, as a bounded operator `H¹₀(Ω) → H⁻¹(Ω)` for almost every `t`.
-  -- `cases` instead of `obtain`: `obtain` is much slower to elaborate in this context.
-  have hA := exists_ae_apply_eq_energyFormH1 (mu := mu) (Omega := Omega) (a := a) (b := b)
-    (c := c) (ae_memLp_energyIntegrand ha hb hc hell hb_bound hc_bound)
-  cases hA with | intro A hA_apply => ?_
-  have : (ae (volume.restrict (Ioo t₀ t₁))).NeBot := ae_restrict_neBot.2 (by simpa using ht)
-  have hlam : 0 < lam := hell.exists.elim fun _ h => h.pos
-  have hLam : 0 ≤ Lam := hell.exists.elim fun _ h => h.upper_nonneg
+  -- `have` then `obtain`: destructuring the application directly times out in elaboration.
+  have hA := exists_ae_apply_eq_energyFormH1_of_lt ht ha hb hc hell hb_bound hc_bound
+  obtain ⟨hlam, hLam, A, hA_apply⟩ := hA
+  -- `by exact` postpones Gårding's inequality until the other arguments have fixed `B`, `α`
+  -- and `ι`; elaborated eagerly as a plain term, it times out in unification.
   exact exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq W1p0.valueL ht.le hA_apply
     (fun u v => aestronglyMeasurable_energyFormH1 ha hb hc _ _)
     (add_nonneg (add_nonneg hLam (abs_nonneg _)) (abs_nonneg _))
-    (by
-      filter_upwards [ae_norm_energyFormH1_le (mu := mu) hell hb_bound hc_bound] with t ht u v
-      exact ht u v)
-    (half_pos hlam)
-    (by
-      filter_upwards [ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound] with t ht v
-      exact ht v) hf u₀
+    (ae_norm_energyFormH1_le (mu := mu) hell hb_bound hc_bound)
+    (half_pos hlam) (by exact ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound) hf u₀
 
 /-- **Weak solutions of the parabolic Dirichlet problem.** Under the hypotheses of
 `TauCeti.PDE.exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner`, for every forcing term
@@ -291,26 +308,18 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_energyFormH1 [DecidableEq ι] (ht 
           f t v) ∧
       ContinuousOn w (Icc t₀ t₁) ∧
       (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Ioo t₀ t₁)] w ∧ w t₀ = u₀ := by
-  -- `cases` instead of `obtain`: `obtain` is much slower to elaborate in this context.
-  have hA := exists_ae_apply_eq_energyFormH1 (mu := mu) (Omega := Omega) (a := a) (b := b)
-    (c := c) (ae_memLp_energyIntegrand ha hb hc hell hb_bound hc_bound)
-  cases hA with | intro A hA_apply => ?_
-  have : (ae (volume.restrict (Ioo t₀ t₁))).NeBot := ae_restrict_neBot.2 (by simpa using ht)
-  have hlam : 0 < lam := hell.exists.elim fun _ h => h.pos
-  have hLam : 0 ≤ Lam := hell.exists.elim fun _ h => h.upper_nonneg
+  -- `have` then `obtain`: destructuring the application directly times out in elaboration.
+  have hA := exists_ae_apply_eq_energyFormH1_of_lt ht ha hb hc hell hb_bound hc_bound
+  obtain ⟨hlam, hLam, A, hA_apply⟩ := hA
   -- With `2 ≠ ∞` registered, instance search finds that `H¹₀(Ω)` is separable, as a subspace
   -- of a second-countable `L²` space; this makes `t ↦ A(t) u(t)` strongly measurable.
   have : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
   exact exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq W1p0.denseRange_valueL_two ht.le hA_apply
     (fun u v => aestronglyMeasurable_energyFormH1 ha hb hc _ _)
     (add_nonneg (add_nonneg hLam (abs_nonneg _)) (abs_nonneg _))
-    (by
-      filter_upwards [ae_norm_energyFormH1_le (mu := mu) hell hb_bound hc_bound] with t ht u v
-      exact ht u v)
+    (ae_norm_energyFormH1_le (mu := mu) hell hb_bound hc_bound)
     (half_pos hlam)
-    (by
-      filter_upwards [ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound] with t ht v
-      exact ht v) hf u₀
+    (ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound) hf u₀
 
 /-- Two weak solutions of the parabolic Dirichlet problem, in the form of
 `TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1`, satisfy the hypotheses of the
@@ -345,11 +354,9 @@ private theorem exists_garding_and_eq_of_energyFormH1 [DecidableEq ι] (ht : t�
           A t v v) ∧
       (∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), u₁' t + A t (u₁ t) = f t) ∧
       ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), u₂' t + A t (u₂ t) = f t := by
-  have hA := exists_ae_apply_eq_energyFormH1 (mu := mu) (Omega := Omega) (a := a) (b := b)
-    (c := c) (ae_memLp_energyIntegrand ha hb hc hell hb_bound hc_bound)
-  cases hA with | intro A hA_apply => ?_
-  have : (ae (volume.restrict (Ioo t₀ t₁))).NeBot := ae_restrict_neBot.2 (by simpa using ht)
-  have hlam : 0 < lam := hell.exists.elim fun _ h => h.pos
+  -- `have` then `obtain`: destructuring the application directly times out in elaboration.
+  have hA := exists_ae_apply_eq_energyFormH1_of_lt ht ha hb hc hell hb_bound hc_bound
+  obtain ⟨hlam, -, A, hA_apply⟩ := hA
   refine ⟨A, half_pos hlam, by positivity, ?_, ?_, ?_⟩
   · filter_upwards [hA_apply, ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound]
       with t hAt hGt v
