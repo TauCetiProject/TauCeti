@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
-public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.MayerVietoris
 
 /-!
 # Local homology of finite unions of convex sets in a chart
@@ -33,7 +32,7 @@ Mayer–Vietoris sequence of the complements of two closed sets `A` and `B`,
 `⋯ ⟶ Hₖ₊₁(M, M ∖ (A ∩ B)) ⟶ Hₖ(M, M ∖ (A ∪ B)) ⟶ Hₖ(M, M ∖ A) ⊞ Hₖ(M, M ∖ B) ⟶ ⋯`,
 to `A = L₁ ∪ ⋯ ∪ Lₘ₋₁` and `B = Lₘ`, where `A ∩ B` is again a union of `m - 1` convex pieces of
 the same chart. The two consequences of that sequence used in the step hold for any closed sets:
-`TauCeti.isZero_localHomology_union` and `TauCeti.localHomology_union_hom_ext`.
+`TauCeti.isZero_localHomology_union` and `TauCeti.localHomology_hom_ext_of_union`.
 
 ## References
 
@@ -51,61 +50,6 @@ universe w v u
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-
-section Union
-
-variable {M : Type w} [TopologicalSpace M]
-
-variable {A B : Set M}
-
-/-- **Vanishing of local homology along a union.** For closed sets `A` and `B`, if `Hₖ(M, M ∖ A)`,
-`Hₖ(M, M ∖ B)` and `Hₖ₊₁(M, M ∖ (A ∩ B))` vanish, then so does `Hₖ(M, M ∖ (A ∪ B))`, by the
-relative Mayer–Vietoris sequence of the open sets `M ∖ A` and `M ∖ B`. -/
-theorem isZero_localHomology_union (hA : IsClosed A) (hB : IsClosed B) {k : ℕ}
-    (hAk : IsZero (localHomology R A k)) (hBk : IsZero (localHomology R B k))
-    (hABk : IsZero (localHomology R (A ∩ B) (k + 1))) :
-    IsZero (localHomology R (A ∪ B) k) := by
-  dsimp only [localHomology] at hAk hBk hABk ⊢
-  rw [compl_union]
-  rw [compl_inter] at hABk
-  have := TopCat.mono_relativeMayerVietorisToBiprod R hA.isOpen_compl hB.isOpen_compl hABk
-  exact IsZero.of_mono (TopCat.relativeMayerVietorisToBiprod R _ _ k)
-    ((biprod_isZero_iff _ _).2 ⟨hAk, hBk⟩)
-
-/-- **Morphisms into local homology along a union.** For closed sets `A` and `B` such that
-`Hₖ₊₁(M, M ∖ (A ∩ B))` vanishes, a morphism into `Hₖ(M, M ∖ (A ∪ B))` is determined by its
-composites with the restrictions to `Hₖ(M, M ∖ A)` and `Hₖ(M, M ∖ B)`. This is the injectivity of
-the first map of the relative Mayer–Vietoris sequence of the open sets `M ∖ A` and `M ∖ B`. -/
-theorem localHomology_union_hom_ext (hA : IsClosed A) (hB : IsClosed B) {k : ℕ}
-    (hABk : IsZero (localHomology R (A ∩ B) (k + 1))) {T : C}
-    {g₁ g₂ : T ⟶ localHomology R (A ∪ B) k}
-    (hgA : g₁ ≫ localHomologyRestriction R subset_union_left k =
-      g₂ ≫ localHomologyRestriction R subset_union_left k)
-    (hgB : g₁ ≫ localHomologyRestriction R subset_union_right k =
-      g₂ ≫ localHomologyRestriction R subset_union_right k) :
-    g₁ = g₂ := by
-  dsimp only [localHomology] at hABk
-  rw [compl_inter] at hABk
-  rw [localHomologyRestriction_def] at hgA hgB
-  have := TopCat.mono_relativeMayerVietorisToBiprod R hA.isOpen_compl hB.isOpen_compl hABk
-  -- The complement of `A ∪ B` is `(M ∖ A) ∩ (M ∖ B)` only propositionally, so the statement is
-  -- proved for any set `W` equal to that intersection, which is then substituted.
-  suffices ∀ (W : Set (TopCat.of M)) (hWA : W ⊆ Aᶜ) (hWB : W ⊆ Bᶜ), Aᶜ ∩ Bᶜ ⊆ W →
-      ∀ g₁ g₂ : T ⟶ (TopPair.ofSubset W).singularHomology R k,
-        g₁ ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWA) R k =
-            g₂ ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWA) R k →
-          g₁ ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWB) R k =
-              g₂ ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWB) R k →
-            g₁ = g₂ from
-    this _ _ _ (compl_union A B).superset g₁ g₂ hgA hgB
-  intro W hWA hWB hW g₁ g₂ h₁ h₂
-  obtain rfl : W = Aᶜ ∩ Bᶜ := subset_antisymm (subset_inter hWA hWB) hW
-  rw [← cancel_mono (TopCat.relativeMayerVietorisToBiprod (X := TopCat.of M) R Aᶜ Bᶜ k)]
-  ext
-  · simpa using h₁
-  · simpa using h₂
-
-end Union
 
 section Chart
 
@@ -130,9 +74,9 @@ omit [T2Space M] in
 private lemma Detected.union {A B : Set M} (hA : IsClosed A) (hB : IsClosed B)
     (dA : Detected R n A) (dB : Detected R n B) (dAB : Detected R n (A ∩ B)) :
     Detected R n (A ∪ B) := by
-  refine ⟨fun k hk ↦ isZero_localHomology_union R hA hB (dA.1 k hk) (dB.1 k hk)
+  refine ⟨fun k hk ↦ isZero_localHomology_union hA hB (dA.1 k hk) (dB.1 k hk)
     (dAB.1 (k + 1) (by lia)), fun T g₁ g₂ h ↦ ?_⟩
-  refine localHomology_union_hom_ext R hA hB (dAB.1 (n + 1) (by lia))
+  refine localHomology_hom_ext_of_union hA hB (dAB.1 (n + 1) (by lia))
     (dA.2 _ _ fun x hx ↦ ?_) (dB.2 _ _ fun x hx ↦ ?_)
   · simpa only [Category.assoc, localHomologyRestriction_comp] using h x (subset_union_left hx)
   · simpa only [Category.assoc, localHomologyRestriction_comp] using h x (subset_union_right hx)
