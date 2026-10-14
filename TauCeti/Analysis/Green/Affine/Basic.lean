@@ -101,7 +101,7 @@ theorem curl_affinePullback (A : ℂ →ᴬ[ℝ] ℂ) {P Q : ℂ → ℝ} {z : �
   simp only [ContinuousAffineMap.coe_contLinear]
   ring
 
-private theorem circulationFun_affineMap_ae (A : ℂ →ᴬ[ℝ] ℂ)
+private theorem circulationFun_continuousAffineMap_ae (A : ℂ →ᴬ[ℝ] ℂ)
     (P Q : ℂ → ℝ) {γ : ℝ → ℂ} {a b : ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) :
     circulationFun P Q (A ∘ γ) =ᵐ[volume.restrict (uIoc a b)]
@@ -116,23 +116,23 @@ private theorem circulationFun_affineMap_ae (A : ℂ →ᴬ[ℝ] ℂ)
   simp only [ContinuousLinearMap.comp_apply, Function.comp_apply]
 
 /-- Integrability of circulation is preserved by pulling back the field along affine transport. -/
-theorem intervalIntegrable_circulationFun_affineMap_iff (A : ℂ →ᴬ[ℝ] ℂ)
+theorem intervalIntegrable_circulationFun_continuousAffineMap_iff (A : ℂ →ᴬ[ℝ] ℂ)
     (P Q : ℂ → ℝ) {γ : ℝ → ℂ} {a b : ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) :
     IntervalIntegrable (circulationFun P Q (A ∘ γ)) volume a b ↔
       IntervalIntegrable
         (circulationFun (affinePullbackP A P Q) (affinePullbackQ A P Q) γ) volume a b := by
-  exact intervalIntegrable_congr_ae (circulationFun_affineMap_ae A P Q hγ)
+  exact intervalIntegrable_congr_ae (circulationFun_continuousAffineMap_ae A P Q hγ)
 
 /-- The actual raw circulation integrals agree under affine pullback. -/
-theorem integral_circulationFun_affineMap (A : ℂ →ᴬ[ℝ] ℂ)
+theorem integral_circulationFun_continuousAffineMap (A : ℂ →ᴬ[ℝ] ℂ)
     (P Q : ℂ → ℝ) {γ : ℝ → ℂ} {a b : ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) :
     (∫ t in a..b, circulationFun P Q (A ∘ γ) t) =
       ∫ t in a..b,
         circulationFun (affinePullbackP A P Q) (affinePullbackQ A P Q) γ t := by
   exact intervalIntegral.integral_congr_ae_restrict
-    (circulationFun_affineMap_ae A P Q hγ)
+    (circulationFun_continuousAffineMap_ae A P Q hγ)
 
 /-- Integrability of curl is preserved by affine pullback for differentiable fields. -/
 theorem integrableOn_curl_affinePullback_iff (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
@@ -219,7 +219,7 @@ theorem curl_coordinateSwap {P Q : ℂ → ℝ} {z : ℂ}
     ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearEquiv.coe_coe,
     Complex.det_coordinateSwapCLE, neg_one_mul] using he
 
-private theorem oneForm_affineMap_lineMap (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ)
+private theorem oneForm_continuousAffineMap_lineMap (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ)
     (P Q : ℂ → ℝ) (t : ℝ) :
     oneForm P Q (AffineMap.lineMap (A p) (A q) t)
         (A q - A p) =
@@ -230,19 +230,19 @@ private theorem oneForm_affineMap_lineMap (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ)
   exact (A.contLinear_map_vsub q p).symm
 
 /-- Genuine segment integrability is preserved by affine pullback of the planar 1-form. -/
-theorem curveIntegrable_segment_affineMap_iff (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ) (P Q : ℂ → ℝ) :
+theorem curveIntegrable_segment_continuousAffineMap_iff (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ) (P Q : ℂ → ℝ) :
     CurveIntegrable (oneForm P Q) (Path.segment (A p) (A q)) ↔
       CurveIntegrable (oneForm (affinePullbackP A P Q) (affinePullbackQ A P Q))
         (Path.segment p q) := by
   rw [curveIntegrable_segment, curveIntegrable_segment]
-  exact intervalIntegrable_congr fun t _ ↦ oneForm_affineMap_lineMap A p q P Q t
+  exact intervalIntegrable_congr fun t _ ↦ oneForm_continuousAffineMap_lineMap A p q P Q t
 
 /-- Actual segment circulation transports to the pulled-back planar 1-form. -/
-theorem curveIntegral_segment_affineMap (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ) (P Q : ℂ → ℝ) :
+theorem curveIntegral_segment_continuousAffineMap (A : ℂ →ᴬ[ℝ] ℂ) (p q : ℂ) (P Q : ℂ → ℝ) :
     curveIntegral (oneForm P Q) (Path.segment (A p) (A q)) =
       curveIntegral (oneForm (affinePullbackP A P Q) (affinePullbackQ A P Q))
         (Path.segment p q) := by
   rw [curveIntegral_segment, curveIntegral_segment]
-  exact intervalIntegral.integral_congr fun t _ ↦ oneForm_affineMap_lineMap A p q P Q t
+  exact intervalIntegral.integral_congr fun t _ ↦ oneForm_continuousAffineMap_lineMap A p q P Q t
 
 end TauCeti.Green
