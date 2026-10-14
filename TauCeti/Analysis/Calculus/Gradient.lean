@@ -99,6 +99,13 @@ theorem _root_.ContDiff.gradient_right {E : Type*} [NormedAddCommGroup E] [Inner
     ContDiff ℝ m (∇ f) :=
   (toDual ℝ E).symm.contDiff.comp (hf.fderiv_right hmn)
 
+/-- The pointwise form of `ContDiff.gradient_right`: over `ℝ`, the gradient of a function that is
+`C^{m+1}` at `x` is `Cᵐ` at `x`. -/
+theorem _root_.ContDiffAt.gradient_right {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hmn : m + 1 ≤ n) : ContDiffAt ℝ m (∇ f) x :=
+  (toDual ℝ E).symm.contDiff.contDiffAt.comp x (hf.fderiv_right hmn)
+
 /-- **The Hessian is symmetric.** If a real function `f` is differentiable near `x` and its
 gradient has derivative `H` at `x`, then `H` is a symmetric operator:
 `⟪H v, w⟫ = ⟪v, H w⟫`. This is Schwarz's theorem for the second derivative, read through the
