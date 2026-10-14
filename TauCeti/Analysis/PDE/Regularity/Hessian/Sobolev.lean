@@ -45,11 +45,11 @@ For Schwartz functions the constant-coefficient estimate is
 `TauCeti.PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real`, the
 singular integral estimate for the Hessian, and test functions are Schwartz functions. Both sides
 of the estimate are continuous on `W^{2,p}(ℝⁿ)`: `D²u` is a continuous projection, and
-`D²u ↦ ∑ᵢⱼ Aᵢⱼ ⟪D²u eᵢ, eⱼ⟫` is the continuous linear functional `TauCeti.matrixContraction A`
+`D²u ↦ ∑ᵢⱼ Aᵢⱼ ⟪D²u eᵢ, eⱼ⟫` is the continuous linear functional `Matrix.contraction A`
 applied pointwise. Test functions are dense in `W^{2,p}(ℝⁿ)` for `p < ∞`
 (`TauCeti.Wkp.denseRange_ofTestFunctionₗ_top`), so the estimate holds on all of `W^{2,p}(ℝⁿ)`.
 The Laplacian is the case `A = 1`, `λ = 1`: contracting with the identity matrix is the trace
-(`TauCeti.matrixContraction_one`).
+(`Matrix.contraction_one`).
 
 ## References
 
@@ -72,18 +72,18 @@ variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- The Hessian of a test function `φ`, regarded as an element of `W^{2,p}(ℝⁿ)`, contracted with a
 matrix `A` is `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼφ` almost everywhere. -/
-private theorem matrixContraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq
+private theorem contraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq
     (A : Matrix (Fin n) (Fin n) ℝ) (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ)) :
-    ((matrixContraction A).compLpL p _ (Wkp.iteratedGradient 1
+    ((Matrix.contraction A).compLpL p _ (Wkp.iteratedGradient 1
       (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)) : EuclideanSpace ℝ (Fin n) → ℝ)
         =ᵐ[(volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
           ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n)))]
       fun x => ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ (φ : EuclideanSpace ℝ (Fin n) → ℝ)) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-  filter_upwards [(matrixContraction A).coeFn_compLpL (Wkp.iteratedGradient 1
+  filter_upwards [(Matrix.contraction A).coeFn_compLpL (Wkp.iteratedGradient 1
       (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ)),
     iteratedGradientTestFunctionLp_apply_ae (mu := volume) p 1 φ] with x hx hHx
-  rw [hx, matrixContraction_apply, Wkp.iteratedGradient_ofTestFunctionₗ 1 φ, hHx,
+  rw [hx, Matrix.contraction_apply, Wkp.iteratedGradient_ofTestFunctionₗ 1 φ, hHx,
     iteratedGradientTestFunction_def]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [smul_eq_mul, iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient,
@@ -130,7 +130,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq (hn : 3 ≤
   obtain ⟨C, hC⟩ :=
     PDE.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real hn hp hp_top
   refine ⟨C, fun {A lam} hlam hA u f hf => ?_⟩
-  set T := matrixContraction A
+  set T := Matrix.contraction A
   have hvol : ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
       ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n)))) = volume := by
     rw [Opens.coe_top, Measure.restrict_univ]
@@ -139,7 +139,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq (hn : 3 ≤
     refine Lp.ext ?_
     filter_upwards [T.coeFn_compLpL (Wkp.iteratedGradient 1 u), ae_restrict_of_ae hf]
       with x hx hfx
-    rw [hx, matrixContraction_apply, hfx]
+    rw [hx, Matrix.contraction_apply, hfx]
   rw [← hTf]
   -- Both sides are continuous on `W^{2,p}(ℝⁿ)`, so it suffices to treat test functions.
   refine (Wkp.denseRange_ofTestFunctionₗ_top hp_top 2).induction_on u
@@ -154,7 +154,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq (hn : 3 ≤
   obtain ⟨L, hL⟩ : ∃ L : EuclideanSpace ℝ (Fin n) → ℝ, L = fun x => ∑ i, ∑ j, A i j •
     fderiv ℝ (fderiv ℝ (φ : EuclideanSpace ℝ (Fin n) → ℝ)) x
       (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := ⟨_, rfl⟩
-  have hae := matrixContraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq (p := p) A φ
+  have hae := contraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq (p := p) A φ
   rw [← hL] at hae
   have hLfin : eLpNorm L p volume ≠ ∞ := by
     rw [← hvol, ← eLpNorm_congr_ae hae]
@@ -191,14 +191,14 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq (hn : 3 
   refine ⟨C, fun u f hf => ?_⟩
   -- The Laplacian has the identity matrix as constant coefficients, and contracting with the
   -- identity matrix is the trace.
-  rw [← matrixContraction_one] at hf
+  rw [← Matrix.contraction_one] at hf
   have htop :
       MeasurableSet ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) :=
     (⊤ : Opens (EuclideanSpace ℝ (Fin n))).isOpen.measurableSet
   have h := hC one_pos (fun ξ => (one_mul _).trans_le (PDE.toQuadraticForm'_one ξ).ge) u f (by
     filter_upwards [(ae_restrict_iff' htop).1
-      ((matrixContraction 1).coeFn_compLpL (Wkp.iteratedGradient 1 u))] with x hx
-    rw [← hf, hx (by simp), matrixContraction_apply])
+      ((Matrix.contraction 1).coeFn_compLpL (Wkp.iteratedGradient 1 u))] with x hx
+    rw [← hf, hx (by simp), Matrix.contraction_apply])
   rwa [div_one] at h
 
 /-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)`, against test functions.** Let `n ≥ 3` and

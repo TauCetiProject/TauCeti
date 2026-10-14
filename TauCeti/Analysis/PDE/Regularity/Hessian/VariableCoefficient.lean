@@ -27,7 +27,7 @@ coefficient with `|aᵢⱼ(x) - Aᵢⱼ| ≤ ε ≤ δ λ` for almost every `x �
 Freeze the coefficients at `A`:
 `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f + ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ) ∂ᵢ∂ⱼu`. Outside `s` the weak Hessian vanishes
 (`TauCeti.Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero`), and on `s` the error term is at
-most `n² ε ‖D²u‖` pointwise (`TauCeti.abs_matrixContraction_le`). The constant-coefficient
+most `n² ε ‖D²u‖` pointwise (`Matrix.abs_contraction_le`). The constant-coefficient
 estimate (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq`) gives
 `‖D²u‖ ≤ (C₀ / λ) (‖f‖ + n² ε ‖D²u‖)`, and the choice of `δ` makes the coefficient of `‖D²u‖`
 on the right at most `1 / 2`, so it is absorbed on the left. This is the step of the `W^{2,p}`
@@ -83,7 +83,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
   refine ⟨2 * C, 1 / (2 * (C + 1) * n ^ 2), by positivity,
     fun {A lam} hlam hA {a s ε} hs hε ha u f hu hf => ?_⟩
   set H := Wkp.iteratedGradient 1 u
-  set T := matrixContraction A with hT
+  set T := Matrix.contraction A with hT
   set g := T.compLpL p _ H
   have htop :
       MeasurableSet ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) :=
@@ -101,7 +101,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
       (Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero 1 u le_top hval)
   -- The constant-coefficient estimate, applied to the frozen operator.
   have hHg : ‖H‖ ≤ C / lam * ‖g‖ :=
-    hC hlam hA u g (by filter_upwards [hg] with x hx; rw [hx, matrixContraction_apply])
+    hC hlam hA u g (by filter_upwards [hg] with x hx; rw [hx, Matrix.contraction_apply])
   -- The error of freezing is at most `n² ε |D²u|` pointwise.
   have hgf : ‖g - f‖ ≤ n ^ 2 * ε * ‖H‖ := by
     refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
@@ -109,11 +109,11 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
       ae_restrict_of_ae ha, ae_restrict_of_ae hH0] with x hsub hgx hfx hax hHx
     by_cases hxs : x ∈ s
     · -- On `s`, the difference is the contraction of the weak Hessian with `A - a(x)`.
-      have hdiff : g x - f x = matrixContraction (A - a x) (H x) := by
-        rw [hgx, ← hfx, hT, matrixContraction_sub, sub_apply,
-          matrixContraction_apply (a x)]
+      have hdiff : g x - f x = Matrix.contraction (A - a x) (H x) := by
+        rw [hgx, ← hfx, hT, Matrix.contraction_sub, sub_apply,
+          Matrix.contraction_apply (a x)]
       rw [hsub, Pi.sub_apply, hdiff, Real.norm_eq_abs]
-      exact abs_matrixContraction_le (fun i j => by
+      exact Matrix.abs_contraction_le (fun i j => by
         rw [Matrix.sub_apply, abs_sub_comm]
         exact hax hxs i j) (H x)
     · rw [hsub, Pi.sub_apply, hgx, ← hfx, hHx hxs]
