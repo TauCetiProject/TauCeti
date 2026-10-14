@@ -128,7 +128,7 @@ theorem congruenceSubgroup_top :
   exact mem_congruenceSubgroup_iff.mpr fun v hv ↦
     (v.isPrime.ne_top (top_le_iff.mp (Ideal.dvd_iff_le.mp hv))).elim
 
-/-- For a unit represented by an element of the base ring, local congruence is ordinary
+/-- For a fraction-field unit represented by a base-ring element, local congruence is ordinary
 congruence: its representative minus one belongs to the ideal. -/
 theorem mem_congruenceSubgroup_iff_sub_one_mem {m : Ideal R} {hm : m ≠ ⊥}
     {x : Kˣ} {a : R} (hxa : (x : K) = algebraMap R K a) :
