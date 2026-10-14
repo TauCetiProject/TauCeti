@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.BraidWord.Equivalence
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Equivalence
 import TauCeti.KnotTheory.BraidWord.Cyclic
-import TauCeti.KnotTheory.BraidWord.FreeCancellation.CircleArc
 import TauCeti.KnotTheory.BraidWord.FreeCancellation.Face
 
 /-!
@@ -16,10 +15,11 @@ import TauCeti.KnotTheory.BraidWord.FreeCancellation.Face
 
 Inserting or deleting an adjacent inverse pair `σᵢ ^ ε σᵢ ^ (-ε)` anywhere in a braid word
 changes its oriented closure only by Reidemeister moves. At the top of the word the pair is a
-second Reidemeister move: between the two closing arcs when both participating positions already
-meet crossings, between a closing arc and an isolated circle when exactly one does, and between
-two isolated circles when neither does. Cyclic rotation of the word moves an arbitrary insertion
-to the top.
+clasp: between the two closing arcs when both participating positions already meet crossings,
+between a closing arc and an isolated circle when exactly one does, and between two isolated
+circles when neither does. When only the higher position meets crossings, the isolated lower
+circle is first reversed before the clasp is inserted. Cyclic rotation of the word moves an
+arbitrary insertion to the top.
 
 Together with the invariance under the Artin relations, and the completeness of Artin relations
 and free cancellation as braid-word moves, this shows that two braid words representing the same
@@ -48,8 +48,8 @@ open BraidGroup
 
 variable {n : ℕ}
 
-/-- An inverse pair at the top of a braid word is a second Reidemeister move on the closure, in
-each of the three cases of which participating positions already meet crossings. -/
+/-- An inverse pair at the top of a braid word changes the closure only by Reidemeister moves,
+in each of the three cases of which participating positions already meet crossings. -/
 private theorem reidemeisterEquiv_closure_cons_cons (v : BraidWord n) (i : Fin (n - 1))
     (ε : ℤˣ) :
     OrientedPDCode.ReidemeisterEquiv v.closure (closure ((i, ε) :: (i, -ε) :: v)) := by

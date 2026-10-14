@@ -38,7 +38,8 @@ already supplied by the braid closure API, together with oriented clasp insertio
 * `reidemeisterEquiv_closure_cons_cons_freeCancel_of_strandSucc_crossingsAt_eq_nil`: insertion
   beside a higher crossing-free circle is a Reidemeister-II move.
 * `reidemeisterEquiv_closure_cons_cons_freeCancel_of_strand_crossingsAt_eq_nil`: insertion
-  beside a lower crossing-free circle is a Reidemeister-II move.
+  beside a lower crossing-free circle is a Reidemeister-II move, after reversing that circle when
+  the higher position meets crossings.
 
 ## References
 
@@ -1145,8 +1146,10 @@ theorem reidemeisterEquiv_closure_cons_cons_freeCancel_of_strandSucc_crossingsAt
   · exact twoCircle_cancel v i ε hp hq
   · exact circleArc_cancel v i ε hp hq
 
-/-- An inverse pair beside a crossing-free lower position gives a Reidemeister-II move.
-The higher position may be crossing-free or already meet crossings. -/
+/-- An inverse pair beside a crossing-free lower position changes the closure only by
+Reidemeister moves. If the higher position is also crossing-free, this is a Reidemeister-II move
+between two isolated circles. If it already meets crossings, the isolated lower circle is first
+reversed and then clasped with the closing arc of the higher position. -/
 theorem reidemeisterEquiv_closure_cons_cons_freeCancel_of_strand_crossingsAt_eq_nil
     (v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ)
     (hp : v.crossingsAt (strand i) = []) :
