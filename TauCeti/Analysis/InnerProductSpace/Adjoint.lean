@@ -23,6 +23,8 @@ Two families of adjoints of linear maps between finite-dimensional inner product
 Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 (`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
+The adjoint of a linear map takes values in the orthogonal complement of its kernel
+(`LinearMap.adjoint_apply_mem_orthogonal_ker`).
 -/
 
 public section
@@ -78,5 +80,11 @@ theorem norm_adjoint_apply_le {C : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
     _ ≤ c * ‖y‖ := ContinuousLinearMap.le_of_opNorm_le _ (by
         rw [LinearIsometryEquiv.norm_map]
         exact C.toContinuousLinearMap.opNorm_le_bound hc hC) y
+
+/-- The adjoint of a linear map takes values in the orthogonal complement of its kernel. -/
+theorem adjoint_apply_mem_orthogonal_ker (A : E →ₗ[𝕜] F) (y : F) : adjoint A y ∈ (ker A)ᗮ := by
+  rw [Submodule.mem_orthogonal]
+  intro x hx
+  rw [adjoint_inner_right, mem_ker.mp hx, inner_zero_left]
 
 end LinearMap

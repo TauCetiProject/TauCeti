@@ -33,21 +33,30 @@ and `vᵢ`, which is realized by unitaries of `F` and `E`. This set contains the
 `C`, so it contains those of `A`, which are weakly majorized by them; and `A` itself is a unitary
 multiple of `∑ᵢ σᵢ(A) wᵢ ⊗ vᵢ`.
 
-Two consequences follow. Since `σᵢ(C A) ≤ ‖C‖ σᵢ(A)`, Fan dominance gives the **ideal
-inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`. Applied to the
-inverse of a map `C` bounded below by `c > 0`, they give the reverse inequalities
-`c N A ≤ N (C A)` and `c N A ≤ N (A C)`.
+Consequences follow. If `‖B x‖ ≤ c ‖A x‖` for every `x`, then `σᵢ(B) ≤ c σᵢ(A)`, so Fan
+dominance gives the **pointwise comparison** `N B ≤ c N A`. Taking `B = C A` gives the **ideal
+inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`; in particular
+orthogonal projections do not increase `N`. Applied to the inverse of a map `C` bounded below by
+`c > 0`, they give the reverse inequalities `c N A ≤ N (C A)` and `c N A ≤ N (A C)`. For a
+symmetric right factor `C` and a map `A` vanishing on `Tᗮ`, the right ideal inequalities only
+need the bounds on `C` along `T`, since `(A C)† = C A†` and `A†` takes values in `T`.
 
 ## Main results
 
 * `LinearMap.mem_twoSidedUnitaryOrbitHull_iff_kyFanSum_le`: the orbit-hull characterization of
   Ky Fan domination.
 * `TauCeti.UnitarilyInvariantSeminorm.map_le_of_kyFanSum_le`: Fan dominance.
+* `TauCeti.UnitarilyInvariantSeminorm.map_le_mul_of_norm_apply_le`,
+  `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_of_mul_norm_apply_le`: the pointwise comparison
+  and its reverse.
 * `TauCeti.UnitarilyInvariantSeminorm.map_comp_le_left`,
   `TauCeti.UnitarilyInvariantSeminorm.map_comp_le_right`: the ideal inequalities.
 * `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_map_comp_left`,
   `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_map_comp_right`: the reverse ideal inequalities
   for factors bounded below.
+* `TauCeti.UnitarilyInvariantSeminorm.map_comp_le_right_of_isSymmetric`,
+  `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_map_comp_right_of_isSymmetric`: the right ideal
+  inequalities for a symmetric factor bounded, or bounded below, on a subspace.
 
 ## References
 
@@ -144,22 +153,40 @@ theorem map_le_of_kyFanSum_le (N : UnitarilyInvariantSeminorm 𝕜 E F) {A C : E
   N.map_le_of_mem_twoSidedUnitaryOrbitHull
     (LinearMap.mem_twoSidedUnitaryOrbitHull_iff_kyFanSum_le.mpr h)
 
+/-! ### Pointwise comparison -/
+
+/-- **Pointwise comparison.** If `‖B x‖ ≤ c * ‖A x‖` for every `x`, then `N B ≤ c * N A` for every
+unitarily invariant seminorm `N`. -/
+theorem map_le_mul_of_norm_apply_le (N : UnitarilyInvariantSeminorm 𝕜 E F) {A B : E →ₗ[𝕜] F}
+    {c : ℝ} (h : ∀ x, ‖B x‖ ≤ c * ‖A x‖) : N B ≤ c * N A := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- A negative constant forces `A = 0` and `B = 0`.
+    have hA : A = 0 := LinearMap.ext fun x ↦ norm_le_zero_iff.mp <|
+      nonpos_of_mul_nonneg_right ((norm_nonneg _).trans (h x)) hc
+    have hB : B = 0 := LinearMap.ext fun x ↦ norm_le_zero_iff.mp <| by simpa [hA] using h x
+    simp [hA, hB]
+  calc N B ≤ N ((c : 𝕜) • A) := N.map_le_of_kyFanSum_le fun k ↦ by
+        simp only [LinearMap.kyFanSum_def, LinearMap.singularValues_smul, RCLike.norm_ofReal,
+          abs_of_nonneg hc, Finsupp.smul_apply, smul_eq_mul]
+        exact Finset.sum_le_sum fun i _ ↦ LinearMap.singularValues_le_mul_of_norm_apply_le h i
+    _ = c * N A := by rw [map_smul_eq_mul, RCLike.norm_ofReal, abs_of_nonneg hc]
+
+/-- **Reverse pointwise comparison.** If `c * ‖A x‖ ≤ ‖B x‖` for every `x`, then
+`c * N A ≤ N B` for every unitarily invariant seminorm `N`. -/
+theorem mul_map_le_of_mul_norm_apply_le (N : UnitarilyInvariantSeminorm 𝕜 E F) {A B : E →ₗ[𝕜] F}
+    {c : ℝ} (h : ∀ x, c * ‖A x‖ ≤ ‖B x‖) : c * N A ≤ N B := by
+  rcases le_or_gt c 0 with hc | hc
+  · exact (mul_nonpos_of_nonpos_of_nonneg hc (apply_nonneg _ _)).trans (apply_nonneg _ _)
+  rw [← le_inv_mul_iff₀ hc]
+  exact N.map_le_mul_of_norm_apply_le fun x ↦ (le_inv_mul_iff₀ hc).mpr (h x)
+
 /-! ### Ideal inequalities -/
 
 /-- **Ideal inequality, left factor.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
 operator norm at most `c`), then `N (C A) ≤ c * N A` for every unitarily invariant seminorm `N`. -/
 theorem map_comp_le_left (N : UnitarilyInvariantSeminorm 𝕜 E F) (C : F →ₗ[𝕜] F) (A : E →ₗ[𝕜] F)
-    {c : ℝ} (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) : N (C ∘ₗ A) ≤ c * N A := by
-  rcases lt_or_ge c 0 with hc | hc
-  · -- A negative constant forces `A = 0`.
-    have hA : A = 0 := LinearMap.ext fun x ↦ norm_le_zero_iff.mp <|
-      nonpos_of_mul_nonneg_right ((norm_nonneg _).trans (hC (A x))) hc
-    simp [hA]
-  calc N (C ∘ₗ A) ≤ N ((c : 𝕜) • A) := N.map_le_of_kyFanSum_le fun k ↦ by
-        simp only [LinearMap.kyFanSum_def, LinearMap.singularValues_smul, RCLike.norm_ofReal,
-          abs_of_nonneg hc, Finsupp.smul_apply, smul_eq_mul]
-        exact Finset.sum_le_sum fun i _ ↦ LinearMap.singularValues_comp_le C A hC i
-    _ = c * N A := by rw [map_smul_eq_mul, RCLike.norm_ofReal, abs_of_nonneg hc]
+    {c : ℝ} (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) : N (C ∘ₗ A) ≤ c * N A :=
+  N.map_le_mul_of_norm_apply_le fun x ↦ hC (A x)
 
 /-- **Ideal inequality, right factor.** If `‖C x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `C`
 has operator norm at most `c`), then `N (A C) ≤ c * N A` for every unitarily invariant seminorm
@@ -181,14 +208,8 @@ theorem map_comp_le_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A : E →�
 /-- **Reverse ideal inequality, left factor.** If `c * ‖y‖ ≤ ‖C y‖` for every `y`, then
 `c * N A ≤ N (C A)` for every unitarily invariant seminorm `N`. -/
 theorem mul_map_le_map_comp_left (N : UnitarilyInvariantSeminorm 𝕜 E F) (C : F →ₗ[𝕜] F)
-    (A : E →ₗ[𝕜] F) {c : ℝ} (hC : ∀ y, c * ‖y‖ ≤ ‖C y‖) : c * N A ≤ N (C ∘ₗ A) := by
-  rcases le_or_gt c 0 with hc | hc
-  · exact (mul_nonpos_of_nonpos_of_nonneg hc (apply_nonneg _ _)).trans (apply_nonneg _ _)
-  -- `A = C⁻¹ (C A)` and `C⁻¹` has operator norm at most `c⁻¹`.
-  obtain ⟨G, -, hGC, hG⟩ := LinearMap.exists_comp_eq_id_of_mul_norm_le hc hC
-  have h := N.map_comp_le_left G (C ∘ₗ A) hG
-  rw [← LinearMap.comp_assoc, hGC, LinearMap.id_comp] at h
-  rwa [le_inv_mul_iff₀ hc] at h
+    (A : E →ₗ[𝕜] F) {c : ℝ} (hC : ∀ y, c * ‖y‖ ≤ ‖C y‖) : c * N A ≤ N (C ∘ₗ A) :=
+  N.mul_map_le_of_mul_norm_apply_le fun x ↦ hC (A x)
 
 /-- **Reverse ideal inequality, right factor.** If `c * ‖x‖ ≤ ‖C x‖` for every `x`, then
 `c * N A ≤ N (A C)` for every unitarily invariant seminorm `N`. -/
@@ -201,5 +222,52 @@ theorem mul_map_le_map_comp_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A :
   have h := N.map_comp_le_right (A ∘ₗ C) G hG
   rw [LinearMap.comp_assoc, hCG, LinearMap.comp_id] at h
   rwa [le_inv_mul_iff₀ hc] at h
+
+/-- Composing with an orthogonal projection on the left does not increase a unitarily invariant
+seminorm. -/
+theorem map_starProjection_comp_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 F)
+    (A : E →L[𝕜] F) : N (U.starProjection ∘L A) ≤ N A := by
+  simpa using N.map_comp_le_left U.starProjection (A : E →ₗ[𝕜] F) (c := 1)
+    fun y ↦ by simpa using U.norm_starProjection_apply_le y
+
+/-- Composing with an orthogonal projection on the right does not increase a unitarily invariant
+seminorm. -/
+theorem map_comp_starProjection_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 E)
+    (A : E →L[𝕜] F) : N (A ∘L U.starProjection) ≤ N A := by
+  simpa using N.map_comp_le_right (A : E →ₗ[𝕜] F) U.starProjection (c := 1)
+    fun x ↦ by simpa using U.norm_starProjection_apply_le x
+
+/-! ### Ideal inequalities for a symmetric right factor bounded on a subspace -/
+
+/-- If `A` vanishes on `Tᗮ`, then the adjoint of `A` takes values in `T`. -/
+private theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : Submodule 𝕜 E}
+    (hA : ∀ x ∈ Tᗮ, A x = 0) (y : F) : LinearMap.adjoint A y ∈ T :=
+  T.orthogonal_orthogonal ▸ Submodule.orthogonal_le (fun x hx ↦ hA x hx)
+    (A.adjoint_apply_mem_orthogonal_ker y)
+
+/-- **Ideal inequality, symmetric right factor bounded on a subspace.** If `A` vanishes on `Tᗮ`,
+`C` is symmetric, and `‖C x‖ ≤ c * ‖x‖` for every `x ∈ T`, then `N (A C) ≤ c * N A` for every
+unitarily invariant seminorm `N`. -/
+theorem map_comp_le_right_of_isSymmetric (N : UnitarilyInvariantSeminorm 𝕜 E F) {A : E →ₗ[𝕜] F}
+    {C : E →ₗ[𝕜] E} (hC : C.IsSymmetric) {T : Submodule 𝕜 E} (hA : ∀ x ∈ Tᗮ, A x = 0) {c : ℝ}
+    (hCT : ∀ x ∈ T, ‖C x‖ ≤ c * ‖x‖) : N (A ∘ₗ C) ≤ c * N A := by
+  -- Pass to adjoints: `(A C)† = C A†`, and `A†` takes values in `T`.
+  have h := N.compAdjoint.map_le_mul_of_norm_apply_le (A := LinearMap.adjoint A)
+    (B := C ∘ₗ LinearMap.adjoint A) fun y ↦ hCT _ (adjoint_apply_mem_of_forall_mem_orthogonal hA y)
+  rwa [compAdjoint_apply, compAdjoint_apply, LinearMap.adjoint_adjoint, ← hC.adjoint_eq,
+    ← LinearMap.adjoint_comp, LinearMap.adjoint_adjoint] at h
+
+/-- **Reverse ideal inequality, symmetric right factor bounded below on a subspace.** If `A`
+vanishes on `Tᗮ`, `C` is symmetric, and `c * ‖x‖ ≤ ‖C x‖` for every `x ∈ T`, then
+`c * N A ≤ N (A C)` for every unitarily invariant seminorm `N`. -/
+theorem mul_map_le_map_comp_right_of_isSymmetric (N : UnitarilyInvariantSeminorm 𝕜 E F)
+    {A : E →ₗ[𝕜] F} {C : E →ₗ[𝕜] E} (hC : C.IsSymmetric) {T : Submodule 𝕜 E}
+    (hA : ∀ x ∈ Tᗮ, A x = 0) {c : ℝ} (hCT : ∀ x ∈ T, c * ‖x‖ ≤ ‖C x‖) :
+    c * N A ≤ N (A ∘ₗ C) := by
+  -- Pass to adjoints: `(A C)† = C A†`, and `A†` takes values in `T`.
+  have h := N.compAdjoint.mul_map_le_of_mul_norm_apply_le (A := LinearMap.adjoint A)
+    (B := C ∘ₗ LinearMap.adjoint A) fun y ↦ hCT _ (adjoint_apply_mem_of_forall_mem_orthogonal hA y)
+  rwa [compAdjoint_apply, compAdjoint_apply, LinearMap.adjoint_adjoint, ← hC.adjoint_eq,
+    ← LinearMap.adjoint_comp, LinearMap.adjoint_adjoint] at h
 
 end TauCeti.UnitarilyInvariantSeminorm
