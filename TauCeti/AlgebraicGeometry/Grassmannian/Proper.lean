@@ -10,6 +10,8 @@ public import Mathlib.AlgebraicGeometry.ValuativeCriterion
 public import TauCeti.AlgebraicGeometry.Grassmannian.Points
 public import TauCeti.RingTheory.Grassmannian.ValuationRing
 
+import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
+
 /-!
 # The Grassmannian scheme is proper
 
