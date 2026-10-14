@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Injective
-public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Span
 
