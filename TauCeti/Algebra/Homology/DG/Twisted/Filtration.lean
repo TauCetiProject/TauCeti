@@ -202,16 +202,11 @@ theorem indexFiltrationι_f_apply (p n : ℤ) (f : (m.indexFiltrationComplex dM 
 
 /-- The inclusion of `F_p` into the twisted complex is injective in each degree. -/
 theorem injective_indexFiltrationι_f (p n : ℤ) :
-    Function.Injective ((m.indexFiltrationι dM hM p).f n) := by
-  unfold indexFiltrationι
-  change Function.Injective
-    ((twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm.toLinearMap ∘ₗ
-      Submodule.inclusion (twistedIndexFiltration_le_twistedTotalGrading p n) ∘ₗ
-        (m.indexFiltrationComplexXEquiv dM hM p n).toLinearMap)
-  exact (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm.injective.comp
-    ((Submodule.inclusion_injective
-      (twistedIndexFiltration_le_twistedTotalGrading p n)).comp
-      (m.indexFiltrationComplexXEquiv dM hM p n).injective)
+    Function.Injective ((m.indexFiltrationι dM hM p).f n) := fun f g hfg ↦
+  (m.indexFiltrationComplexXEquiv dM hM p n).injective <| Subtype.ext <| by
+    rw [← indexFiltrationι_f_apply _ _ _ p n f, ← indexFiltrationι_f_apply _ _ _ p n g]
+    exact congrArg (fun x ↦ (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n x : P → M))
+      hfg
 
 instance (p : ℤ) : Mono (m.indexFiltrationι dM hM p) :=
   HomologicalComplex.mono_of_mono_f _ fun n ↦
@@ -386,15 +381,11 @@ theorem indexFiltrationShortComplex_g (p : ℤ) :
 
 /-- The inclusion `F_p ⟶ F_q` is injective in each degree. -/
 theorem injective_indexFiltrationComplexMap_f {p q : ℤ} (hpq : p ≤ q) (n : ℤ) :
-    Function.Injective ((m.indexFiltrationComplexMap dM hM hpq).f n) := by
-  unfold indexFiltrationComplexMap
-  change Function.Injective
-    ((m.indexFiltrationComplexXEquiv dM hM q n).symm.toLinearMap ∘ₗ
-      Submodule.inclusion (twistedIndexFiltration_mono hpq n) ∘ₗ
-        (m.indexFiltrationComplexXEquiv dM hM p n).toLinearMap)
-  exact (m.indexFiltrationComplexXEquiv dM hM q n).symm.injective.comp
-    ((Submodule.inclusion_injective (twistedIndexFiltration_mono hpq n)).comp
-      (m.indexFiltrationComplexXEquiv dM hM p n).injective)
+    Function.Injective ((m.indexFiltrationComplexMap dM hM hpq).f n) := fun f g hfg ↦
+  (m.indexFiltrationComplexXEquiv dM hM p n).injective <| Subtype.ext <| by
+    rw [← indexFiltrationComplexMap_f_apply _ _ _ hpq n f,
+      ← indexFiltrationComplexMap_f_apply _ _ _ hpq n g]
+    exact congrArg (fun x ↦ (m.indexFiltrationComplexXEquiv dM hM q n x : P → M)) hfg
 
 /-- The restriction `F_p ⟶ ℳ ⊗ ⟨P_p⟩` is surjective in each degree: a function on the generators
 of index `p` extends by zero to a function supported on the generators of index at most `p`. -/
