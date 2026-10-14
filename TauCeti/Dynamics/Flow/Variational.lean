@@ -155,6 +155,7 @@ theorem fderiv_flow_add (hs : DifferentiableAt ℝ (ϕ s) (ϕ t x))
 
 omit [CompleteSpace E] in
 /-- The derivative of the time-`(-t)` map at `ϕ t x` is a left inverse of `Dϕ_t(x)`. -/
+@[simp]
 theorem fderiv_flow_neg_comp (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     (fderiv ℝ (ϕ (-t)) (ϕ t x)).comp (fderiv ℝ (ϕ t) x) = ContinuousLinearMap.id ℝ E := by
@@ -162,6 +163,7 @@ theorem fderiv_flow_neg_comp (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
 
 omit [CompleteSpace E] in
 /-- The derivative of the time-`(-t)` map at `ϕ t x` is a right inverse of `Dϕ_t(x)`. -/
+@[simp]
 theorem fderiv_flow_comp_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     (fderiv ℝ (ϕ t) x).comp (fderiv ℝ (ϕ (-t)) (ϕ t x)) = ContinuousLinearMap.id ℝ E := by
@@ -186,6 +188,7 @@ theorem fderiv_flow_apply_fderiv_flow_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (
 
 omit [CompleteSpace E] in
 /-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. -/
+@[simp]
 theorem ring_inverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=

@@ -476,9 +476,10 @@ perturbed flow in a parameter direction `e` is
 `f`: the perturbation `∑ᵢ eᵢ ∇hᵢ` met along the orbit is transported back to time `0`,
 integrated, and carried forward to time `T`. -/
 theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, IsAdmissiblePerturbation f (h i)) (x : E)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (x : E)
     (e : EuclideanSpace ℝ ι) (T : ℝ) :
-    (fderiv ℝ (perturbedFlow f h hf hh T) (x, 0) (0, e)).1 =
+    (fderiv ℝ (perturbedFlow f h hf hh hc T) (x, 0) (0, e)).1 =
       -fderiv ℝ (negativeGradientFlow f hf T) x
         (∫ σ in (0 : ℝ)..T, fderiv ℝ (negativeGradientFlow f hf (-σ))
           (negativeGradientFlow f hf σ x)
@@ -488,7 +489,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
     (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
   set M : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ t) x
   set N : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ (-t)) (φ t x)
-  set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh t) (x, 0) (0, e)).1
+  set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) (0, e)).1
   set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
   have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
   have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ ring_inverse_fderiv_flow (hs t) (hφd t x)
@@ -497,7 +498,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
     hasDerivAt_fderiv_negativeGradientFlow f hf hfs x
   have hu : ∀ t, HasDerivAt u (-(fderiv ℝ (∇ f) (φ t x)) (u t) - b t) t := fun t ↦ by
-    simpa using hasDerivAt_fst_fderiv_perturbedFlow_apply hfs hf hh x (0, e) t
+    simpa using hasDerivAt_fst_fderiv_perturbedFlow_apply hfs hf hh hc x (0, e) t
   -- The inverse of `Dφₜ(x)` moves with derivative `Dφ_{-t}(φₜ x) ∘ D(∇f)(φₜ x)`.
   have hN : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ))
       (N t * (fderiv ℝ (∇ f) (φ t x)).comp (M t) * N t) t := fun t ↦ by
@@ -518,7 +519,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
       (contDiff_negativeGradientFlow f hf hfs).continuous.comp
         (continuous_id.prodMk continuous_const)
     have hb : Continuous b := continuous_finsetSum _ fun i _ ↦ continuous_const.smul
-      ((((hh i).contDiff.gradient_right (m := 1) (by norm_num)).continuous).comp horb)
+      ((((hh i).gradient_right (m := 1) (by norm_num)).continuous).comp horb)
     exact (hN'.clm_apply hb).neg
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hW t)
     (hcont.intervalIntegrable 0 T)
