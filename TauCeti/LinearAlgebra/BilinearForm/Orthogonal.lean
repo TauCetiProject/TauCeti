@@ -53,7 +53,7 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.isPerfPair_restrict_of_isCompl_orthogonal`: a symmetric perfect pairing
   remains perfect on a submodule complementary to its orthogonal complement.
 * `LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl`: double orthogonality for an
-  orthogonally split submodule over a commutative ring.
+  orthogonally split submodule over a commutative semiring.
 * `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
   the cyclic restriction perfect.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`: a vector whose self-pairing is
@@ -241,8 +241,9 @@ theorem isPerfPair_restrict_of_isCompl_orthogonal
   exact h
 
 /-- For a right-separating reflexive form, a submodule complementary to its orthogonal complement
-equals its double orthogonal complement, over an arbitrary commutative ring. -/
-theorem orthogonal_orthogonal_of_isCompl (B : LinearMap.BilinForm R M)
+equals its double orthogonal complement, over an arbitrary commutative semiring. -/
+theorem orthogonal_orthogonal_of_isCompl {R : Type u} {M : Type v}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M)
     (hB : B.IsRefl) (hsep : B.SeparatingRight) (S : Submodule R M)
     (hS : IsCompl S (B.orthogonal S)) : B.orthogonal (B.orthogonal S) = S := by
   apply le_antisymm _ (le_orthogonal_orthogonal hB)
