@@ -198,7 +198,7 @@ lemma _root_.WeierstrassCurve.Affine.Point.map_eq_cast_mapAlong {L M : Type*} [F
       Affine.Point.cast_zero (W.map_baseChange σ)]
   · rw [WeierstrassCurve.Affine.Point.mapAlong_some, Affine.Point.cast_some (W.map_baseChange σ),
       Affine.Point.map_some]
-    rfl
+    simp only [AlgHom.coe_toRingHom]
 
 end Field
 

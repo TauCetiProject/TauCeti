@@ -320,15 +320,10 @@ theorem explicitCoeff0_basePointEquivInvariants (P : W₁.toAffine.Point) :
       coe_basePointEquivInvariants, coe_basePointEquivInvariants, pointCoeffMap_basePointCoeff]
 
 /-- **The kernel of the Kummer map is `φ(E₁(K))`.** -/
-theorem ker_kummerMap : φ.kummerMap.ker = (ofIsogeny φ).pointMapHom.range := by
-  ext P
-  rw [AddMonoidHom.mem_ker, kummerMap_apply, ← AddMonoidHom.mem_ker,
-    ← φ.kummerShortExact.explicitLongExact_H0C, AddMonoidHom.mem_range, AddMonoidHom.mem_range]
-  refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun ⟨Q, hQ⟩ ↦ ⟨W₁.basePointEquivInvariants Q, ?_⟩⟩
-  · obtain ⟨Q, rfl⟩ := W₁.basePointEquivInvariants.surjective u
-    rw [Isogeny.explicitCoeff0_basePointEquivInvariants] at hu
-    exact ⟨Q, by rw [pointMapHom_apply]; exact W₂.basePointEquivInvariants.injective hu⟩
-  · rw [Isogeny.explicitCoeff0_basePointEquivInvariants, ← hQ, pointMapHom_apply]
+theorem ker_kummerMap : φ.kummerMap.ker = (ofIsogeny φ).pointMapHom.range :=
+  φ.kummerShortExact.ker_explicitDelta0_comp (eY := W₁.basePointEquivInvariants)
+    W₂.basePointEquivInvariants.injective W₁.basePointEquivInvariants.surjective
+    fun P ↦ by rw [pointMapHom_apply]; exact φ.explicitCoeff0_basePointEquivInvariants P
 
 variable {φ} in
 /-- **A point has trivial Kummer class exactly when it lies in `φ(E₁(K))`.** -/
@@ -361,12 +356,8 @@ theorem range_kummerMap :
     φ.kummerMap.range =
       (explicitCoeff1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff (ofIsogeny φ).kerCoeffIncl
         continuous_of_discreteTopology).ker := by
-  rw [← Isogeny.kummerShortExact_inclDistribMulActionHom φ,
-    ← φ.kummerShortExact.explicitLongExact_H1A]
-  ext c
-  refine ⟨fun ⟨P, hP⟩ ↦ ⟨_, hP⟩, fun ⟨u, hu⟩ ↦ ?_⟩
-  obtain ⟨P, rfl⟩ := W₂.basePointEquivInvariants.surjective u
-  exact ⟨P, hu⟩
+  rw [← Isogeny.kummerShortExact_inclDistribMulActionHom φ]
+  exact φ.kummerShortExact.range_explicitDelta0_comp W₂.basePointEquivInvariants.surjective
 
 omit [DecidableEq K] in
 /-- **The image of `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)` is the kernel of the map
@@ -407,11 +398,10 @@ theorem coe_kerCoeffInclH1 (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoe
 omit [DecidableEq K] in
 /-- **`H¹(G_K, E₁[φ]) → H¹(G_K, E₁)[φ]` is surjective**, the right end of the `φ`-descent
 sequence. -/
-theorem kerCoeffInclH1_surjective : Function.Surjective φ.kerCoeffInclH1 := by
-  rintro ⟨c, hc⟩
-  rw [← range_explicitCoeff1_kerCoeffIncl φ] at hc
-  obtain ⟨d, rfl⟩ := hc
-  exact ⟨d, rfl⟩
+theorem kerCoeffInclH1_surjective : Function.Surjective φ.kerCoeffInclH1 :=
+  fun ⟨_, hc⟩ ↦ by
+    obtain ⟨d, rfl⟩ := (range_explicitCoeff1_kerCoeffIncl φ).ge hc
+    exact ⟨d, rfl⟩
 
 /-- **The `φ`-descent sequence is exact at `H¹(G_K, E₁[φ])`**: the kernel of
 `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)[φ]` is the image of `E₂(K) ⧸ φ(E₁(K))` under the Kummer map.
@@ -420,10 +410,10 @@ Together with `TauCeti.Isogeny.kummerClassMap_injective` and
 `0 → E₂(K) ⧸ φ(E₁(K)) → H¹(G_K, E₁[φ]) → H¹(G_K, E₁)[φ] → 0`. -/
 theorem exact_kummerClassMap_kerCoeffInclH1 :
     Function.Exact φ.kummerClassMap φ.kerCoeffInclH1 := by
-  rw [AddMonoidHom.exact_iff, kerCoeffInclH1, AddMonoidHom.ker_codRestrict, ← range_kummerMap φ]
-  ext c
-  refine ⟨fun ⟨P, hP⟩ ↦ ⟨QuotientAddGroup.mk P, hP⟩, fun ⟨x, hx⟩ ↦ ?_⟩
-  induction x using QuotientAddGroup.induction_on with
-  | _ P => exact ⟨P, hx⟩
+  rw [AddMonoidHom.exact_iff, kerCoeffInclH1, AddMonoidHom.ker_codRestrict,
+    ← AddMonoidHom.exact_iff]
+  have := φ.kummerShortExact.exact_lift_explicitDelta0_comp
+    W₂.basePointEquivInvariants.surjective φ.ker_kummerMap.ge
+  rwa [Isogeny.kummerShortExact_inclDistribMulActionHom] at this
 
 end TauCeti.Isogeny
