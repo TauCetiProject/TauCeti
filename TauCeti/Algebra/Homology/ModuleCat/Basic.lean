@@ -22,7 +22,9 @@ is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly r
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
 Consequently, when `K` is the union of subcomplexes `L i`, every homology class of `K` comes from
-some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).
+some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).  Two cycles whose difference
+is a boundary have the same homology class
+(`HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d`).
 -/
 
 public section
@@ -69,6 +71,16 @@ noncomputable def moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
 lemma iCycles_moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
     (hx : K.d n m x = 0) : K.iCycles n (K.moduleCatCyclesMk x m hm hx) = x :=
   (K.sc n).moduleCatCyclesIso_inv_iCycles_apply _
+
+variable {n} in
+/-- Two degree-`n` cycles of a complex of modules whose difference is a boundary have the same
+homology class. -/
+lemma moduleCat_homologyπ_eq_of_iCycles_sub_eq_d {z w : K.cycles n} {m : ι} (b : K.X m)
+    (h : K.iCycles n z - K.iCycles n w = K.d m n b) : K.homologyπ n z = K.homologyπ n w := by
+  have hb : z - w = K.toCycles m n b := K.moduleCat_iCycles_injective n <| by
+    rw [map_sub, h, ← ModuleCat.comp_apply, toCycles_i]
+  rw [← sub_eq_zero, ← map_sub, hb, ← ModuleCat.comp_apply, toCycles_comp_homologyπ]
+  rfl
 
 variable {K} in
 /-- **Homology classes of a union of subcomplexes.** Let `φ i : L i ⟶ K` be chain maps of
