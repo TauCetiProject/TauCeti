@@ -97,13 +97,15 @@ def toActionFintypeCat : FiniteAction.{u} G ⥤ Action FintypeCat.{u} G where
   obj A :=
     { V := ⟨A.obj.V, (isFiniteAction_iff _).1 A.property⟩
       ρ :=
-        { toFun := fun g => ObjectProperty.homMk (A.obj.ρ g)
+        { toFun := fun g => .of (ObjectProperty.homMk (A.obj.ρ g).asHom)
           map_one' := by
+            ext : 1
             apply ObjectProperty.hom_ext
-            simp [End.one_asHom]
+            simp
           map_mul' := fun g h => by
+            ext : 1
             apply ObjectProperty.hom_ext
-            simp [End.mul_asHom] } }
+            simp } }
   map f :=
     { hom := ObjectProperty.homMk f.hom.hom
       comm := fun g => by
@@ -125,7 +127,7 @@ theorem toActionFintypeCat_obj_V (A : FiniteAction.{u} G) :
 @[simp]
 theorem toActionFintypeCat_obj_ρ_apply (A : FiniteAction.{u} G) (g : G) (x : A.obj.V) :
     cast (toActionFintypeCat_obj_V G A)
-        (ConcreteCategory.hom (((toActionFintypeCat G).obj A).ρ g)
+        (ConcreteCategory.hom (((toActionFintypeCat G).obj A).ρ g).asHom
           (cast (toActionFintypeCat_obj_V G A).symm x)) =
       A.obj.ρ g x :=
   (rfl)
@@ -152,7 +154,7 @@ theorem ofActionFintypeCat_obj_obj_ρ_apply (B : Action FintypeCat.{u} G) (g : G
     cast (ofActionFintypeCat_obj_obj_V G B)
         (((ofActionFintypeCat G).obj B).obj.ρ g
           (cast (ofActionFintypeCat_obj_obj_V G B).symm x)) =
-      ConcreteCategory.hom (B.ρ g) x :=
+      ConcreteCategory.hom (B.ρ g).asHom x :=
   (rfl)
 
 /-- Reading a map of actions of `G` in `FintypeCat` as a map of finite `G`-sets keeps the

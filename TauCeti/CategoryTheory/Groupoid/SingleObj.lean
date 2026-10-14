@@ -73,13 +73,13 @@ theorem singleObjFunctor_obj (a : SingleObj (End x₀)) : (singleObjFunctor x₀
 @[simp]
 theorem singleObjFunctor_map (g : End x₀) :
     (singleObjFunctor x₀).map (X := SingleObj.star (End x₀)) (Y := SingleObj.star (End x₀)) g =
-      g :=
+      g.asHom :=
   (rfl)
 
 /-- The functor out of the one-object category of the vertex group is fully faithful: on the
 single hom-set it is the identity of `End x₀`. -/
 def fullyFaithfulSingleObjFunctor : (singleObjFunctor x₀).FullyFaithful where
-  preimage f := f
+  preimage f := .of f
 
 instance singleObjFunctor_full : (singleObjFunctor x₀).Full :=
   (fullyFaithfulSingleObjFunctor x₀).full
@@ -128,13 +128,15 @@ morphism `g : y ⟶ z` is sent to the image under `f` of the loop `τ y ≫ g �
 noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G]
     (f : End x₀ →* G) : C ⥤ SingleObj G where
   obj _ := SingleObj.star G
-  map {y z} g := f (τ y ≫ g ≫ inv (τ z))
+  map {y z} g := f (.of (τ y ≫ g ≫ inv (τ z)))
   map_id y := by
-    rw [Category.id_comp, IsIso.hom_inv_id, ← End.one_asHom, map_one, SingleObj.id_as_one]
+    rw [Category.id_comp, IsIso.hom_inv_id, SingleObj.id_as_one]
+    exact map_one f
   map_comp {y z w} g h := by
     rw [SingleObj.comp_as_mul, ← map_mul]
     congr 1
-    simp [End.mul_asHom, Category.assoc]
+    ext
+    simp
 
 @[simp]
 theorem functorOfEndHom_obj (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] (f : End x₀ →* G)
@@ -143,7 +145,7 @@ theorem functorOfEndHom_obj (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] 
 
 @[simp]
 theorem functorOfEndHom_map (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] (f : End x₀ →* G)
-    {y z : C} (g : y ⟶ z) : (functorOfEndHom x₀ τ f).map g = f (τ y ≫ g ≫ inv (τ z)) :=
+    {y z : C} (g : y ⟶ z) : (functorOfEndHom x₀ τ f).map g = f (.of (τ y ≫ g ≫ inv (τ z))) :=
   (rfl)
 
 end Groupoid

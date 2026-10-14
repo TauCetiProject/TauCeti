@@ -61,7 +61,7 @@ namespace FundamentalGroup
 @[simp]
 theorem map_id {X : Type*} [TopologicalSpace X] (x : X) :
     map (ContinuousMap.id X) x = MonoidHom.id _ := by
-  ext p
+  ext ⟨p⟩ : 1
   -- Mapping a representative path by the identity preserves the path and its endpoints.
   induction p using Path.Homotopic.Quotient.ind
   rfl
@@ -71,7 +71,7 @@ theorem map_id {X : Type*} [TopologicalSpace X] (x : X) :
 theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
     (g : C(Y, Z)) (f : C(X, Y)) (x : X) :
     map (g.comp f) x = (map g (f x)).comp (map f x) :=
-  MonoidHom.ext fun p ↦ FundamentalGroupoid.map_comp_map g f p
+  MonoidHom.ext fun p ↦ End.ext (FundamentalGroupoid.map_comp_map g f p.asHom)
 
 end FundamentalGroup
 
@@ -101,16 +101,17 @@ theorem FundamentalGroup.map_range_eq_bot_iff {Y : Type*} [TopologicalSpace Y] (
         _root_.FundamentalGroup.fromPath ⟦Path.refl (f base)⟧ := by
       rw [← FundamentalGroup.map_fromPath f base γ, h]
       -- the identity of the fundamental groupoid is the class of the constant path
-      exact FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base))
-    exact (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp h_map
+      exact congrArg End.of (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base)))
+    exact (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp (congrArg End.asHom h_map)
   · intro h
-    ext p
-    obtain ⟨γ, rfl⟩ := Quotient.exists_rep (_root_.FundamentalGroup.toPath p)
+    ext ⟨p⟩ : 1
+    obtain ⟨γ, rfl⟩ := Quotient.exists_rep p
     have hnull : _root_.FundamentalGroup.fromPath ⟦γ.map f.continuous⟧ =
         _root_.FundamentalGroup.fromPath ⟦Path.refl (f base)⟧ :=
-      (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr (h γ)
+      congrArg End.of ((FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr (h γ))
     rw [FundamentalGroup.map_fromPath f base γ, hnull]
-    exact (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base))).symm
+    exact congrArg End.of
+      (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (f base))).symm
 
 /-- If the source fundamental group is subsingleton, the range of any induced map from it is
 trivial. -/

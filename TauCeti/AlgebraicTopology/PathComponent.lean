@@ -75,19 +75,20 @@ noncomputable def _root_.FundamentalGroup.pathComponentMulEquiv (a : pathCompone
       (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a) <| by
     constructor
     · rw [injective_iff_map_eq_one]
-      intro g hg
-      obtain ⟨γ, rfl⟩ := Quotient.exists_rep (FundamentalGroup.toPath g)
+      intro ⟨g⟩ hg
+      obtain ⟨γ, rfl⟩ := Quotient.exists_rep g
       have hnull : (γ.map continuous_subtype_val).Homotopic (Path.refl (a : X)) := by
         refine (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp ?_
-        exact (FundamentalGroup.map_fromPath
-            (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a γ).symm.trans
-          (hg.trans (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (a : X))))
-      refine (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr ?_
+        exact (congrArg CategoryTheory.End.asHom (FundamentalGroup.map_fromPath
+            (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a γ)).symm.trans
+          ((congrArg CategoryTheory.End.asHom hg).trans
+            (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (a : X))))
+      refine CategoryTheory.End.ext ((FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr ?_)
       apply homotopic_pathComponent_of_map_subtypeVal_homotopic x₀
       rw [Path.map_refl]
       exact hnull
-    · intro g
-      obtain ⟨γ, rfl⟩ := Quotient.exists_rep (FundamentalGroup.toPath g)
+    · intro ⟨g⟩
+      obtain ⟨γ, rfl⟩ := Quotient.exists_rep g
       have hmem : ∀ t, γ t ∈ pathComponent x₀ := γ.mem_pathComponent_of_mem a.2
       refine ⟨FundamentalGroup.fromPath
         ⟦Path.codRestrict (x := a) (y := a) γ hmem⟧, ?_⟩

@@ -144,8 +144,8 @@ abbrev homologyTor (m : ℕ) : ModuleCat.{u} R :=
 /-- Sums over the finitely many pairs `(p, q)` with `p + q = m` are exact. -/
 private instance (m : ℕ) : HasExactColimitsOfShape
     (Discrete ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {m})) (ModuleCat.{u} R) :=
-  have := ((Finset.antidiagonal m).finite_toSet.subset fun x (hx : x.1 + x.2 = m) ↦
-    by simpa using hx).to_subtype
+  have := ((Finset.antidiagonal m).finite_toSet.subset
+    (t := (fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {m}) fun x hx ↦ by simpa using hx).to_subtype
   @hasExactColimitsOfShape_discrete_finite _ _ _ Abelian.hasFiniteBiproducts _ _
 
 /-- The map `⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ ⨁ Hₚ(K) ⊗ H_q(Z(L))` of degree `m` induced by the

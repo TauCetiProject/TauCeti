@@ -244,7 +244,9 @@ theorem mem_connectedComponentIn_of_locally_subset_line_of_im_pos
     exact (convex_ball p r).inter
       (convex_halfSpace_gt (Complex.imLm.comp (LinearMap.mulLeft ℝ v)).isLinear _)
   exact hS.isPreconnected.subset_connectedComponentIn ⟨hx, hx'⟩
-    (fun z hz hzC => hz.2.ne' (hline z hz.1 hzC)) ⟨hy, hy'⟩
+    (by
+      rintro z ⟨hz₁, hz₂⟩ hzC
+      exact (show 0 < (v * (z - p)).im from hz₂).ne' (hline z hz₁ hzC)) ⟨hy, hy'⟩
 
 /-- For `0 < s < r * ‖v‖`, the point `p + I * s / v` lies in `ball p r`, on the positive side of
 the line `{z | (v * (z - p)).im = 0}`. -/

@@ -77,7 +77,7 @@ variable {k G} {U V W : Type u} [AddCommGroup U] [DistribMulAction G U]
 /-- The action on the reduction is the base change of the action on `V`. -/
 @[simp]
 theorem reduction_ρ_hom_hom (g : G) :
-    (Action.ρ (reduction k G V) g).hom.hom =
+    (Action.ρ (reduction k G V) g).asHom.hom.hom =
       Representation.baseChange k (Representation.ofDistribMulAction ℤ G V) g :=
   (rfl)
 
