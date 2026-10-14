@@ -30,9 +30,9 @@ The proof runs through the idele-class formation `globalFormation K`. For an ope
 degree of the layer (`herbrandQuotient_rep_globalFormation_ofOpenNormal_eq_degree`). For a cyclic
 layer, a Herbrand quotient equal to the degree forces the norm quotient to have at least that many
 elements (`NormalLayer.degree_le_natCard_normQuotient_of_herbrandQuotient_eq`): the norm quotient
-is `Ĥ⁰`, whose order is `h` times the order of `H¹`. This gives the inequality on the layer
-(`degree_le_natCard_normQuotient_ofOpenNormal_of_isCyclic`), and the layer of `L/K` has norm
-quotient `C_K / N_{L/K}(C_L)` (`globalLayerNormQuotientEquiv`).
+is the zeroth Tate cohomology, whose order is `h` times the order of `H¹`. This gives the
+inequality on the layer (`degree_le_natCard_normQuotient_ofOpenNormal_of_isCyclic`), and the layer
+of `L/K` has norm quotient `C_K / N_{L/K}(C_L)` (`globalLayerNormQuotientEquiv`).
 
 ## Main results
 
