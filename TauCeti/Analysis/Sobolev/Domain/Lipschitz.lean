@@ -100,8 +100,9 @@ theorem continuous_boundaryTangentCoordinate (ν x : F) :
 
 omit [FiniteDimensional ℝ F] in
 /-- A point is recovered by adding its normal and tangential coordinates to the chart centre. -/
-theorem boundary_coordinate_reconstruction (ν x y : F) (hν : ‖ν‖ = 1) :
-    y = x + boundaryNormalCoordinate ν x y • ν + (boundaryTangentCoordinate ν x y : F) := by
+theorem add_boundaryNormalCoordinate_smul_add_coe_boundaryTangentCoordinate
+    (ν x y : F) (hν : ‖ν‖ = 1) :
+    x + boundaryNormalCoordinate ν x y • ν + (boundaryTangentCoordinate ν x y : F) = y := by
   simp only [boundaryNormalCoordinate_apply, coe_boundaryTangentCoordinate,
     Submodule.starProjection_orthogonal, sub_apply, ContinuousLinearMap.id_apply,
     Submodule.starProjection_unit_singleton ℝ hν]
@@ -179,14 +180,8 @@ theorem lipschitzWith_height (c : LipschitzBoundaryChart Ω x) :
   c.exists_lipschitzWith_height.choose_spec
 
 omit [FiniteDimensional ℝ F] in
-/-- The height function of a Lipschitz boundary chart is continuous. -/
-theorem continuousOn_height (c : LipschitzBoundaryChart Ω x) :
-    ContinuousOn c.height Set.univ :=
-  c.lipschitzWith_height.continuous.continuousOn
-
-omit [FiniteDimensional ℝ F] in
 /-- The centre of a boundary chart belongs to the chart's product cylinder. -/
-theorem mem_boundaryCylinder_center (c : LipschitzBoundaryChart Ω x) :
+theorem mem_boundaryCylinder_self (c : LipschitzBoundaryChart Ω x) :
     x ∈ boundaryCylinder c.normal x c.normalRadius c.tangentRadius := by
   simp [c.normalRadius_pos, c.tangentRadius_pos]
 
@@ -225,6 +220,15 @@ theorem restrict_height_apply (c : LipschitzBoundaryChart Ω x) {r ρ : ℝ}
     (c.restrict hr hrc hρ hρc).height z =
       c.height (Set.inclusion (Metric.ball_subset_ball hρc) z) :=
   (rfl)
+
+omit [FiniteDimensional ℝ F] in
+/-- Restricting a chart preserves its chosen Lipschitz bound. -/
+theorem lipschitzWith_restrict_height (c : LipschitzBoundaryChart Ω x) {r ρ : ℝ}
+    (hr : 0 < r) (hrc : r ≤ c.normalRadius)
+    (hρ : 0 < ρ) (hρc : ρ ≤ c.tangentRadius) :
+    LipschitzWith c.lipschitzConstant (c.restrict hr hrc hρ hρc).height := by
+  simpa using
+    c.lipschitzWith_height.comp ((LipschitzWith.subtype_val _).subtype_mk _)
 
 omit [FiniteDimensional ℝ F] in
 @[simp]
