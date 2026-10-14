@@ -467,15 +467,10 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
   let eAB : ↥(A' ∩ B') ≃ₜ ↥(A ∩ B) :=
     Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange (s := A ∩ B)
       (fun a ha => ⟨(⟨a, Or.inl ha.1⟩ : ↥(A ∪ B)), rfl⟩)
-  have hA' : IsPathConnected A' := by
-    let := isPathConnected_iff_pathConnectedSpace.mp hA
-    exact isPathConnected_iff_pathConnectedSpace.mpr eA.symm.pathConnectedSpace
-  have hB' : IsPathConnected B' := by
-    let := isPathConnected_iff_pathConnectedSpace.mp hB
-    exact isPathConnected_iff_pathConnectedSpace.mpr eB.symm.pathConnectedSpace
-  have hAB' : IsPathConnected (A' ∩ B') := by
-    let := isPathConnected_iff_pathConnectedSpace.mp hAB
-    exact isPathConnected_iff_pathConnectedSpace.mpr eAB.symm.pathConnectedSpace
+  have hA' : IsPathConnected A' := hA.preimage_coe subset_union_left
+  have hB' : IsPathConnected B' := hB.preimage_coe subset_union_right
+  have hAB' : IsPathConnected (A' ∩ B') :=
+    hAB.preimage_coe (inter_subset_left.trans subset_union_left)
   have hCover : interior A' ∪ interior B' = univ := by
     rw [(hAo.preimage continuous_subtype_val).interior_eq,
       (hBo.preimage continuous_subtype_val).interior_eq]
