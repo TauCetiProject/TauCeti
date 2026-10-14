@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Star.ProjectionFamily
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
+public import TauCeti.RingTheory.Idempotents.Module
 
 /-!
 # Davis's intertwining unitary
@@ -64,34 +65,46 @@ theorem projectionFamilyOverlap_injective (hP : CompleteOrthogonalIdempotents P)
     apply hPQ i (LinearMap.mem_range_self _ _) (LinearMap.mem_range_self _ _)
     rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← hQ.mul_projectionFamilyOverlap P i]
     simpa only [Module.End.mul_apply] using congrArg (Q i) hxy
-  rw [← hP.sum_apply_eq_self x, ← hP.sum_apply_eq_self y]
+  rw [← sum_smul_eq_self_of_sum_eq_one hP.complete x,
+    ← sum_smul_eq_self_of_sum_eq_one hP.complete y]
+  simp only [Module.End.smul_def]
   exact Finset.sum_congr rfl fun i _ ↦ hcomponents i
 
 end CompleteOrthogonalIdempotents
 
-namespace TauCeti.IsCompleteOrthogonalProjectionFamily
+namespace OrthogonalIdempotents
+
+open TauCeti
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [Fintype ι] {P Q : ι → E →ₗ[𝕜] E}
 
 /-- Every source projection commutes with the modulus of the overlap operator. -/
-theorem commute_operatorAbs_projectionFamilyOverlap (hP : IsCompleteOrthogonalProjectionFamily P)
-    (hQ : IsCompleteOrthogonalProjectionFamily Q) (i : ι) :
+theorem commute_operatorAbs_projectionFamilyOverlap (hP : OrthogonalIdempotents P)
+    (hPsa : ∀ i, IsSelfAdjoint (P i)) (hQ : OrthogonalIdempotents Q)
+    (hQsa : ∀ i, IsSelfAdjoint (Q i)) (i : ι) :
     Commute (P i) (projectionFamilyOverlap P Q).operatorAbs := by
   let D := projectionFamilyOverlap P Q
   have hD : D * P i = Q i * D :=
-    hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul_eq_mul_projectionFamilyOverlap
-      hQ.toOrthogonalIdempotents i
+    hP.projectionFamilyOverlap_mul_eq_mul_projectionFamilyOverlap hQ i
   have hD' : P i * star D = star D * Q i := by
-    simpa only [star_mul, (hP.isSelfAdjoint i).star_eq,
-      (hQ.isSelfAdjoint i).star_eq] using congrArg star hD
+    simpa only [D, star_projectionFamilyOverlap hPsa hQsa] using
+      (hQ.projectionFamilyOverlap_mul_eq_mul_projectionFamilyOverlap hP i).symm
   have hcomm' : Commute (P i) (star D * D) := by
     calc P i * (star D * D) = star D * (Q i * D) := by rw [← mul_assoc, hD', mul_assoc]
          _ = (star D * D) * P i := by rw [← hD, mul_assoc]
   have hcomm : Commute (P i) (D.adjoint ∘ₗ D) := by
     simpa only [LinearMap.star_eq_adjoint, Module.End.mul_eq_comp] using hcomm'
   exact D.commute_operatorAbs_of_commute_adjoint_comp_self hcomm
+
+end OrthogonalIdempotents
+
+namespace TauCeti.IsCompleteOrthogonalProjectionFamily
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [Fintype ι] {P Q : ι → E →ₗ[𝕜] E}
 
 /-- **Davis's intertwining unitary.** Nondegenerate overlaps between two complete orthogonal
 projection families admit a unitary intertwining all their matched projections simultaneously.
@@ -114,7 +127,9 @@ theorem exists_intertwining_linearIsometryEquiv (hP : IsCompleteOrthogonalProjec
   obtain ⟨U, hU⟩ := exists_linearIsometryEquiv_of_inner_eq hinner
   refine ⟨U, LinearMap.ext hU, fun i ↦ LinearMap.ext fun x ↦ ?_⟩
   obtain ⟨y, rfl⟩ := hS x
-  have hcomm := LinearMap.congr_fun (hP.commute_operatorAbs_projectionFamilyOverlap hQ i).eq y
+  have hcomm := LinearMap.congr_fun
+    (hP.toOrthogonalIdempotents.commute_operatorAbs_projectionFamilyOverlap
+      hP.isSelfAdjoint hQ.toOrthogonalIdempotents hQ.isSelfAdjoint i).eq y
   have hD : D (P i y) = Q i (D y) := by
     simpa only [Module.End.mul_apply] using
       LinearMap.congr_fun

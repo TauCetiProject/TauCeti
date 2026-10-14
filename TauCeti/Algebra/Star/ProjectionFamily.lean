@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.BigOperators
 public import Mathlib.Algebra.Star.StarProjection
-public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.RingTheory.Idempotents
 
 /-!
@@ -34,6 +34,19 @@ structure IsCompleteOrthogonalProjectionFamily [Star R] (P : ι → R) : Prop
   /-- Each member is self-adjoint. -/
   isSelfAdjoint : ∀ i, IsSelfAdjoint (P i)
 
+/-- Every member of a complete orthogonal projection family is a star projection. -/
+theorem IsCompleteOrthogonalProjectionFamily.isStarProjection [Star R] {P : ι → R}
+    (hP : IsCompleteOrthogonalProjectionFamily P) (i : ι) : IsStarProjection (P i) :=
+  ⟨hP.idem i, hP.isSelfAdjoint i⟩
+
+/-- Complete orthogonal projection families are complete orthogonal idempotent families
+whose members are star projections. -/
+theorem isCompleteOrthogonalProjectionFamily_iff [Star R] (P : ι → R) :
+    IsCompleteOrthogonalProjectionFamily P ↔
+      CompleteOrthogonalIdempotents P ∧ ∀ i, IsStarProjection (P i) :=
+  ⟨fun hP ↦ ⟨hP.toCompleteOrthogonalIdempotents, hP.isStarProjection⟩,
+    fun ⟨hP, hPstar⟩ ↦ ⟨hP, fun i ↦ (hPstar i).isSelfAdjoint⟩⟩
+
 /-- The overlap between two projection families, with each source block sent into the
 corresponding target block in the endomorphism setting. -/
 noncomputable def projectionFamilyOverlap (P Q : ι → R) : R := ∑ i, Q i * P i
@@ -41,6 +54,14 @@ noncomputable def projectionFamilyOverlap (P Q : ι → R) : R := ∑ i, Q i * P
 /-- The overlap is the sum of the matched projection products. -/
 theorem projectionFamilyOverlap_def (P Q : ι → R) :
     projectionFamilyOverlap P Q = ∑ i, Q i * P i := (rfl)
+
+/-- Taking the star of the overlap reverses the two self-adjoint families. -/
+@[simp]
+theorem star_projectionFamilyOverlap [StarRing R] {P Q : ι → R}
+    (hP : ∀ i, IsSelfAdjoint (P i)) (hQ : ∀ i, IsSelfAdjoint (Q i)) :
+    star (projectionFamilyOverlap P Q) = projectionFamilyOverlap Q P := by
+  simp only [projectionFamilyOverlap_def, star_sum, star_mul,
+    fun i ↦ (hP i).star_eq, fun i ↦ (hQ i).star_eq]
 
 end TauCeti
 
@@ -71,16 +92,3 @@ theorem projectionFamilyOverlap_mul_eq_mul_projectionFamilyOverlap
   simp only [hP.projectionFamilyOverlap_mul, hQ.mul_projectionFamilyOverlap]
 
 end OrthogonalIdempotents
-
-namespace CompleteOrthogonalIdempotents
-
-variable {𝕜 E ι : Type*} [Semiring 𝕜] [AddCommMonoid E] [Module 𝕜 E] [Fintype ι]
-  {P : ι → E →ₗ[𝕜] E}
-
-/-- Summing the projected components reconstructs a vector. -/
-@[simp]
-theorem sum_apply_eq_self (hP : CompleteOrthogonalIdempotents P) (x : E) :
-    ∑ i, P i x = x := by
-  simpa using LinearMap.congr_fun hP.complete x
-
-end CompleteOrthogonalIdempotents
