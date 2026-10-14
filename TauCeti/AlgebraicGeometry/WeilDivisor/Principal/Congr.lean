@@ -116,14 +116,17 @@ noncomputable def picZeroCongr : picZero v hv ≃+ picZero w hw :=
 /-- `picZeroCongr` is the restriction of `classGroupCongr`. -/
 @[simp]
 lemma coe_picZeroCongr_apply (c : picZero v hv) :
-    (picZeroCongr e φ h hv hw hvw c : T.ClassGroup) = classGroupCongr e φ h c :=
-  (rfl)
+    (picZeroCongr e φ h hv hw hvw c : T.ClassGroup) = classGroupCongr e φ h c := by
+  rw [picZeroCongr, AddEquiv.trans_apply]
+  exact (AddEquiv.addSubgroupCongr_apply _ _).trans (AddEquiv.coe_addSubgroupMap_apply _ _ c)
 
 /-- The inverse of `picZeroCongr` is the restriction of the inverse of `classGroupCongr`. -/
 @[simp]
 lemma coe_picZeroCongr_symm_apply (c : picZero w hw) :
-    ((picZeroCongr e φ h hv hw hvw).symm c : S.ClassGroup) = (classGroupCongr e φ h).symm c :=
-  (rfl)
+    ((picZeroCongr e φ h hv hw hvw).symm c : S.ClassGroup) = (classGroupCongr e φ h).symm c := by
+  rw [picZeroCongr, AddEquiv.symm_trans_apply, AddEquiv.addSubgroupMap_symm_apply,
+    AddSubgroup.coe_mk]
+  exact congrArg _ (AddEquiv.addSubgroupCongr_symm_apply _ c)
 
 end OrderSystem
 

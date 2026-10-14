@@ -281,8 +281,11 @@ lemma coe_picZeroAddEquivDegreeZeroClassGroup_apply [X.IsSeparated]
     (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k))) (a : LineBundleClass.picZero k X) :
     (picZeroAddEquivDegreeZeroClassGroup k hF a : (Place.orderSystem hF).ClassGroup) =
       classGroupEquivFunctionField hex hX.out hF
-        ((classGroupAddEquivLineBundleClass X).symm (a : Additive (LineBundleClass X))) :=
-  (rfl)
+        ((classGroupAddEquivLineBundleClass X).symm (a : Additive (LineBundleClass X))) := by
+  rw [picZeroAddEquivDegreeZeroClassGroup, AddEquiv.trans_apply, AddEquiv.trans_apply]
+  exact (AddEquiv.addSubgroupCongr_apply _ _).trans
+    ((AddEquiv.coe_addSubgroupMap_apply _ _ _).trans
+      (congrArg _ (coe_classGroupPicZeroAddEquivPicZero_symm_apply k a)))
 
 /-- The inverse of `picZeroAddEquivDegreeZeroClassGroup` sends the class of a function-field
 divisor `E` of degree zero to the class of the line bundle `𝒪_X(D)`, where `D` is the divisor on
