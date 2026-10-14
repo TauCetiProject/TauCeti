@@ -129,8 +129,8 @@ theorem ker_baseChangeMkQ_le_ker_iff [Algebra A B] [IsScalarTower R A B]
     (Φ : B ⊗[R] M →ₗ[B] Y) :
     LinearMap.ker (baseChangeMkQ B N) ≤ LinearMap.ker Φ ↔
       ∀ x ∈ N, Φ ((IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x) = 0 := by
-  rw [ker_baseChangeMkQ, Submodule.span_le, Set.image_subset_iff]
-  rfl
+  simp only [ker_baseChangeMkQ, Submodule.span_le, Set.subset_def, SetLike.mem_coe,
+    LinearMap.mem_ker, Set.forall_mem_image]
 
 /-- With an algebra structure in place, the base change `map f N` along the structure map
 `f : A → B` is the kernel of `baseChangeMkQ B N`. -/
