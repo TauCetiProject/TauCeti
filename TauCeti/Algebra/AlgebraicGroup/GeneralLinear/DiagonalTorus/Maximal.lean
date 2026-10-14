@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # Maximality of the diagonal torus in the general linear group
@@ -154,20 +155,6 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k)
   HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 variable [IsAlgClosed k]
-
-private instance instNontrivialUnitsOfInfiniteField {F : Type*} [Field F] [Infinite F] :
-    Nontrivial Fˣ := by
-  let U := {x : F // x ∈ ({0} : Set F)ᶜ}
-  let _ : Infinite U := (Set.toFinite ({0} : Set F)).infinite_compl.to_subtype
-  obtain ⟨x, y, hxy⟩ := exists_pair_ne U
-  refine ⟨Units.mk0 x (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using x.property),
-    Units.mk0 y (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using y.property), ?_⟩
-  intro h
-  apply hxy
-  apply Subtype.ext
-  exact congrArg Units.val h
 
 omit [IsAlgClosed k] in
 private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :

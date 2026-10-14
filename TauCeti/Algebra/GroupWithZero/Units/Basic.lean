@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Units.Hom
 public import Mathlib.Algebra.GroupWithZero.Hom
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
 public import Mathlib.Data.Nat.Cast.Basic
-public import Mathlib.Data.Set.Operations
+public import Mathlib.Data.Set.Finite.Basic
 -- Non-public: the `IsLocalHom` instance for a monoid-with-zero homomorphism out of a group with
 -- zero is used only in the proof below.
 import Mathlib.Algebra.GroupWithZero.Units.Lemmas
@@ -17,7 +17,8 @@ import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 /-!
 # Units and powers in groups with zero
 
-Two elementary facts about a group with zero `G₀`, and one about local ring homomorphisms.
+Three elementary facts about groups with zero and their units, and one about local ring
+homomorphisms.
 
 A product `a ^ i * a⁻¹ ^ (n - i)`, in which the two exponents are natural numbers adding up to
 `n`, is the integer power `a ^ (2 * i - n)`.  Such a product is what a diagonal matrix
@@ -37,6 +38,9 @@ A local ring homomorphism reflects units, and it carries the natural number `n` 
 invertible in the source as soon as it is invertible in the target. For an algebra map of fields
 `K → L` this is how invertibility of `n` travels from `L` down to `K`.
 
+Finally, the units of an infinite group with zero are nontrivial: deleting zero leaves at least two
+elements, both of which define units.
+
 ## Main results
 
 * `TauCeti.pow_mul_inv_pow_eq_zpow₀`: `a ^ i * a⁻¹ ^ (n - i) = a ^ (2 * i - n)` for `i ≤ n`.
@@ -44,11 +48,28 @@ invertible in the source as soon as it is invertible in the target. For an algeb
   homomorphism out of a group with zero exactly when it is `Units.map` of a unit.
 * `TauCeti.isUnit_natCast_of_isUnit_natCast`: a natural number invertible in the target of a
   local ring homomorphism is invertible in its source.
+* `TauCeti.instNontrivialUnitsOfInfiniteGroupWithZero`: the units of an infinite group with zero
+  are nontrivial.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- The units of an infinite group with zero form a nontrivial group. -/
+instance instNontrivialUnitsOfInfiniteGroupWithZero {G₀ : Type*} [GroupWithZero G₀] [Infinite G₀] :
+    Nontrivial G₀ˣ := by
+  let U := {x : G₀ // x ∈ ({0} : Set G₀)ᶜ}
+  let _ : Infinite U := (Set.toFinite ({0} : Set G₀)).infinite_compl.to_subtype
+  obtain ⟨x, y, hxy⟩ := exists_pair_ne U
+  refine ⟨Units.mk0 x (by
+      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using x.property),
+    Units.mk0 y (by
+      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using y.property), ?_⟩
+  intro h
+  apply hxy
+  apply Subtype.ext
+  exact congrArg Units.val h
 
 /-- **A power of `a` times a power of `a⁻¹` is an integer power of `a`**: for `i ≤ n`, the
 exponents `i` and `n - i` combine to `i - (n - i) = 2 * i - n`. -/

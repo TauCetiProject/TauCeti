@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
@@ -101,7 +102,8 @@ theorem mem_normalizer_unitaryTorus_iff_toUnits_mem {g : unitaryGroup (Fin n) �
     have hconj := (Subgroup.mem_normalizer_iff.mp hg _).mp (unitaryTorusHom_mem_unitaryTorus z)
     rw [mem_unitaryTorus_iff_toUnits_mem, map_mul, map_mul, map_inv,
       toUnits_unitaryTorusHom] at hconj
-    exact ⟨_, hconj, Circle.toUnits_injective.ne (mulSingle_exp_pi_apply_ne hij)⟩
+    exact ⟨_, hconj,
+      (unitSphereToUnits_injective (𝕜 := ℂ)).ne (mulSingle_exp_pi_apply_ne hij)⟩
   obtain ⟨d, σ, hdσ⟩ := exists_eq_diagGL_mul_permutationGL_of_forall_ne hsep
   rw [hdσ]
   exact (Subgroup.normalizer (diagonalTorus ℂ n : Set (GL (Fin n) ℂ))).mul_mem
