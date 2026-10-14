@@ -19,10 +19,10 @@ For a closed curve `γ` (so `γ a = γ b`) that is continuous on `Set.uIcc a b`,
 countable set, with interval-integrable derivative, the generalized winding number
 `fun w ↦ windingNumber γ a b w`, viewed as a function on the points off the curve, is locally
 constant (`isLocallyConstant_windingNumber_of_closed`). It is the ingredient Dixon's argument uses
-for the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`). As a corollary,
-the winding number is constant on every connected component of the curve complement. Also,
-`exists_ball_windingNumber_zero` packages the local matching data Dixon needs: around an off-curve
-point where the winding number vanishes, it vanishes on a whole ball that stays off the curve.
+for the homology form of Cauchy's theorem. As a corollary, the winding number is constant on every
+connected component of the curve complement. Also, `exists_ball_windingNumber_zero` packages the
+local matching data Dixon needs: around an off-curve point where the winding number vanishes, it
+vanishes on a whole ball that stays off the curve.
 
 ## Main results
 

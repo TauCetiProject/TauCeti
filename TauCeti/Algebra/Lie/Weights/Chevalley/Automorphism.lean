@@ -60,11 +60,6 @@ are proved here. Throughout this file `map_` is reserved, as elsewhere in the
 * R. W. Carter, *Simple Groups of Lie Type*, §12.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §16.5.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter VIII, §5, no. 3.
-
-This is the general-root sign statement that milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md` asks to record as a consequence of the pinned
-construction, and it supplies part of the diagram-automorphism data for Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section

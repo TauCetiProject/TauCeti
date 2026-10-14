@@ -26,7 +26,7 @@ the resulting smooth paths with proximity invariance of the winding number.
 
 * `windingNumber_eq_two_pi_I_inv_mul_curveIntegral` identifies Tau Ceti's raw-function winding
   number of a piecewise-`C¹` path with Mathlib's curve integral of the Cauchy-kernel `1`-form.
-* `windingNumber_eq_of_pathHomotopy` proves the Layer 0 homotopy invariance result without any
+* `windingNumber_eq_of_pathHomotopy` proves homotopy invariance without any
   regularity hypothesis on the homotopy.
 * `curveIntegral_inv_sub_smul_id_eq_of_pathHomotopy` is its curve-integral form: such a homotopy
   preserves the integral of the Cauchy-kernel `1`-form.
@@ -36,9 +36,8 @@ the resulting smooth paths with proximity invariance of the winding number.
 ## Provenance
 
 The regularization step is `exists_contDiff_eq_endpoints_dist_lt`, which reuses Mathlib's
-`bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of the
-classical winding number is standard complex analysis; see the references in the Contour
-Integration roadmap.
+`bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of the classical
+winding number is standard complex analysis.
 -/
 
 public section

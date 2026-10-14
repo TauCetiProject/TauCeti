@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
+import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.Tactic.Ring
 
@@ -180,6 +181,24 @@ theorem normIdeal_eq_scaleIdeal_of_isUnit_two (B : LinearMap.BilinForm R M)
   simpa [htwo] using B.span_singleton_two_mul_scaleIdeal_le_normIdeal hB
 
 end Ring
+
+section BasisDivisibility
+
+open Module
+open LinearMap (BilinForm)
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+
+/-- A common divisor of the Gram entries of a bilinear form in a basis divides every value of the
+form. -/
+theorem dvd_apply_of_forall_dvd_basis {ι : Type*} (b : Basis ι R M) {d : R}
+    (hd : ∀ i j, d ∣ B (b i) (b j)) (x y : M) : d ∣ B x y := by
+  rw [← B.sum_repr_mul_repr_mul b x y]
+  refine Finset.dvd_sum fun i _ ↦ Finset.dvd_sum fun j _ ↦ ?_
+  simp only [smul_eq_mul]
+  exact dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (hd i j) _) _
+
+end BasisDivisibility
 
 section BaseChange
 

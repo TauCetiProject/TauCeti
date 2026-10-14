@@ -34,7 +34,9 @@ values:
 * finite orbit certificates, which write `X` as a combination `∑ᵢ aᵢ • Uᵢ C Vᵢ` of points of the
   orbit of `C`, and bound `N X` by the coefficient mass `∑ᵢ ‖aᵢ‖` times `N C`;
 * transport of a unitarily invariant seminorm along isometric isomorphisms of the source and the
-  target, and, for finite-dimensional `E` and `F`, to the adjoint maps.
+  target, and, for finite-dimensional `E` and `F`, to the adjoint maps;
+* invariance under replacing an endomorphism `A` by its operator modulus `|A| = √(A† A)`, which
+  has the same singular values as `A`.
 
 ## Main declarations
 
@@ -60,6 +62,8 @@ values:
 * `TauCeti.UnitarilyInvariantSeminorm.arrowCongr`: transport along isometric isomorphisms of the
   source and the target.
 * `TauCeti.UnitarilyInvariantSeminorm.compAdjoint`: the seminorm `B ↦ N B†` on the adjoint maps.
+* `TauCeti.UnitarilyInvariantSeminorm.map_operatorAbs`: on endomorphisms, `N |A| = N A` for the
+  operator modulus `|A| = √(A† A)`.
 
 ## Source
 
@@ -400,6 +404,16 @@ theorem compAdjoint_compAdjoint : N.compAdjoint.compAdjoint = N := by
   simp
 
 end Adjoint
+
+/-! ### The operator modulus -/
+
+/-- **Modulus invariance.** A unitarily invariant seminorm on the endomorphisms of a
+finite-dimensional inner product space takes the same value at an endomorphism `A` and at its
+modulus `|A| = √(A† A)`. -/
+@[simp]
+theorem map_operatorAbs [FiniteDimensional 𝕜 E] (N : UnitarilyInvariantSeminorm 𝕜 E E)
+    (A : E →ₗ[𝕜] E) : N A.operatorAbs = N A :=
+  N.map_eq_of_singularValues_eq A.singularValues_operatorAbs
 
 end UnitarilyInvariantSeminorm
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 import Mathlib.SetTheory.Cardinal.Finite
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
 # Point counts at a singular Weierstrass model
@@ -217,7 +218,7 @@ private theorem exists_isSingular_zero_frobeniusTrace_eq [Finite F] (hΔ : W.Δ 
       WeierstrassCurve.pointCount_def]
     push_cast
     linarith
-  · rw [WeierstrassCurve.variableChange_c₄, inv_one, Units.val_one, one_pow, one_mul]
+  · exact WeierstrassCurve.variableChange_translate_c₄ W x y
   · simpa using WeierstrassCurve.splits_variableChange_nodePolynomial_map_iff (RingHom.id F) W C
 
 /-- **The Frobenius trace at a cusp is `0`.** A singular model over a finite field with `c₄ = 0`

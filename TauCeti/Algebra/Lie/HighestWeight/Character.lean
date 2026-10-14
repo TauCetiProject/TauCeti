@@ -80,11 +80,6 @@ every weight in the orbit occurs, and occurs simply.
 
 ## References
 
-This builds towards the Weyl character formula of Layer 6 ("the Weyl character, dimension, and
-Kostant formulas") of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose
-proof route is fixed there as "defining Verma characters, proving the Weyl denominator identity
-combinatorially, and concluding by Weyl alternation".
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII, §7.
 -/
