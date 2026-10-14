@@ -61,10 +61,10 @@ variable (G M : Type u) [Group G] [TopologicalSpace G]
 compatible pair of explicit inflation: the quotient map `G → G ⧸ N` with the inclusion
 `M ^ N ↪ M`. -/
 theorem ofDiscreteModulePair_quotientMk_subtype :
-    ofDiscreteModulePair (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)
+    ofDiscreteModulePair (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)
         (FixedPoints.addSubgroup N M).subtype.toIntLinearMap
         N.fixedPoints_subtype_quotientMk_smul =
-      (TopRep.resFunctor (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)).map
+      (TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
           (ofDiscreteModuleQuotient G M N) ≫
         TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N :=
   -- Evaluating the restricted morphism and the invariants inclusion reduces to the
@@ -83,8 +83,8 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
     -- cohomology objects to compare the two sides (7.5 s).
     TauCeti.ContinuousCohomology.coeffMap.{0, u, u} (ofDiscreteModuleQuotient G M N) n ≫
         TauCeti.ContinuousCohomology.infl.{0, u, u} N (ofDiscreteModule ℤ G M) n =
-      _root_.ContinuousCohomology.map.{0, u, u} (ContinuousMonoidHom.quotientMk N)
-        (ofDiscreteModulePair (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)
+      _root_.ContinuousCohomology.map.{0, u, u} (Subgroup.quotientMkContinuousMonoidHom N)
+        (ofDiscreteModulePair (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)
           (FixedPoints.addSubgroup N M).subtype.toIntLinearMap
           N.fixedPoints_subtype_quotientMk_smul) n := by
   rw [TauCeti.ContinuousCohomology.coeffMap_def, TauCeti.ContinuousCohomology.infl_def,
@@ -92,7 +92,7 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
   refine (_root_.ContinuousCohomology.map_comp
     (X := ofDiscreteModule ℤ (G ⧸ N) (FixedPoints.addSubgroup N M))
     (Y := TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) N) (Z := ofDiscreteModule ℤ G M)
-    (ContinuousMonoidHom.id (G ⧸ N)) (ContinuousMonoidHom.quotientMk N)
+    (ContinuousMonoidHom.id (G ⧸ N)) (Subgroup.quotientMkContinuousMonoidHom N)
     (ofDiscreteModuleQuotient G M N) (TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N)
     n).symm.trans ?_
   -- `map_comp` produces the composite `id.comp (quotientMk N)`, which is `quotientMk N` by `rfl`.
@@ -116,9 +116,9 @@ theorem explicitH0Iso_infl
       (explicitH0IsoContinuousCohomology G M).hom (explicitInfl0 G M N x) := by
   rw [← ConcreteCategory.comp_apply, coeffMap_ofDiscreteModuleQuotient_comp_infl,
     explicitInfl0_eq_explicitMap0]
-  simpa only [ContinuousMonoidHom.coe_quotientMk] using
+  simpa only [Subgroup.coe_quotientMkContinuousMonoidHom] using
     (explicitH0Iso_map (G ⧸ N) (FixedPoints.addSubgroup N M) G M
-      (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
+      (Subgroup.quotientMkContinuousMonoidHom N) (FixedPoints.addSubgroup N M).subtype
       N.fixedPoints_subtype_quotientMk_smul x)
 
 variable [ContinuousSMul G M] [CompactSpace G]
@@ -138,7 +138,7 @@ theorem explicitIso_infl
   rw [← ConcreteCategory.comp_apply, coeffMap_ofDiscreteModuleQuotient_comp_infl,
     explicitInfl1_eq_explicitMap1]
   exact explicitIso_map (G ⧸ N) (FixedPoints.addSubgroup N M) G M
-    (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
+    (Subgroup.quotientMkContinuousMonoidHom N) (FixedPoints.addSubgroup N M).subtype
     N.fixedPoints_subtype_quotientMk_smul x
 
 /-- **Transport of inflation in degree two.** The degree-two comparison carries explicit
@@ -156,7 +156,7 @@ theorem explicitIso_infl2
   rw [← ConcreteCategory.comp_apply, coeffMap_ofDiscreteModuleQuotient_comp_infl,
     explicitInfl2_eq_explicitMap2]
   exact explicitIso_map2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
-    (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
+    (Subgroup.quotientMkContinuousMonoidHom N) (FixedPoints.addSubgroup N M).subtype
     N.fixedPoints_subtype_quotientMk_smul x
 
 end TauCeti.ContCohomology

@@ -183,13 +183,13 @@ theorem ker_iwasawaCoordinate :
   -- The quotient map `π` onto the profinite group `IwasawaGroup K ⧸ ⟨⟨τ⟩⟩` agrees on generators
   -- with the coordinate followed by `ℤ̂ → IwasawaGroup K ⧸ ⟨⟨τ⟩⟩`, `gen ↦ π σ`.
   have : IsClosed (M : Set (IwasawaGroup K)) := Subgroup.isClosed_topologicalClosure _
-  let π := ContinuousMonoidHom.quotientMk M
+  let π := Subgroup.quotientMkContinuousMonoidHom M
   have hτ : π (iwasawaTau K) = 1 :=
     (QuotientGroup.eq_one_iff _).2
       (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure rfl))
   have key : (zHat.lift (π (iwasawaSigma K))).comp (iwasawaCoordinate K) = π :=
     IwasawaGroup.hom_ext (by simp) (by simp [hτ])
-  rw [← QuotientGroup.eq_one_iff, ← ContinuousMonoidHom.quotientMk_apply]
+  rw [← QuotientGroup.eq_one_iff, ← Subgroup.quotientMkContinuousMonoidHom_apply]
   have hg' : iwasawaCoordinate K g = 1 := hg
   rw [← DFunLike.congr_fun key g, ContinuousMonoidHom.comp_toFun, hg', map_one]
 
@@ -272,8 +272,9 @@ private theorem iwasawaTau_zpowHat_eq_one {a : Additive zHat.{u}}
   have : Finite (IwasawaGroup K ⧸ U.toSubgroup) := Subgroup.quotient_finite_of_isOpen _ U.isOpen
   set t := (iwasawaTau K : IwasawaGroup K ⧸ U.toSubgroup)
   let n : ℕ+ := ⟨orderOf t, (isOfFinOrder_of_finite t).orderOf_pos⟩
-  rw [← QuotientGroup.eq_one_iff, ← ContinuousMonoidHom.quotientMk_apply, map_zpowHat,
-    ContinuousMonoidHom.quotientMk_apply, zpowHat_eq_pow_val_toZMod (n := n) (pow_orderOf_eq_one t),
+  rw [← QuotientGroup.eq_one_iff, ← Subgroup.quotientMkContinuousMonoidHom_apply, map_zpowHat,
+    Subgroup.quotientMkContinuousMonoidHom_apply, zpowHat_eq_pow_val_toZMod (n := n)
+      (pow_orderOf_eq_one t),
     ha n (coprime_orderOf_mk_iwasawaTau K U).symm, ZMod.val_zero, pow_zero]
 
 /-! ### The marked isomorphism -/

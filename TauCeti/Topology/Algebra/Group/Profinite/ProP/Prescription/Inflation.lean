@@ -78,8 +78,8 @@ namespace ZModTwist
 /-- The normal subgroup `N` acts trivially on the twisted module of a character pulled back from
 `G ⧸ N`, because the pulled-back character is `1` on `N`. -/
 theorem smul_eq_self_of_mem {n : G} (hn : n ∈ N)
-    (x : ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i) : n • x = x := by
-  have h1 : ContinuousMonoidHom.quotientMk N n = 1 := (QuotientGroup.eq_one_iff n).2 hn
+    (x : ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i) : n • x = x := by
+  have h1 : Subgroup.quotientMkContinuousMonoidHom N n = 1 := (QuotientGroup.eq_one_iff n).2 hn
   ext
   simp [val_smul, h1]
 
@@ -87,9 +87,9 @@ theorem smul_eq_self_of_mem {n : G} (hn : n ∈ N)
 `I(χ)/pⁱ`. On residue classes this is the identity; it is `G ⧸ N`-equivariant
 (`fixedPointsEquiv_smul`). -/
 def fixedPointsEquiv :
-    FixedPoints.addSubgroup N (ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i) ≃+
+    FixedPoints.addSubgroup N (ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i) ≃+
       ZModTwist χ i where
-  toFun x := ⟨(x : ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i).val⟩
+  toFun x := ⟨(x : ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i).val⟩
   invFun y := ⟨⟨y.val⟩, (FixedPoints.mem_addSubgroup _ _ _).2 fun n =>
     smul_eq_self_of_mem N χ i n.2 _⟩
   left_inv _ := rfl
@@ -99,21 +99,23 @@ def fixedPointsEquiv :
 /-- The identification of the invariants is the identity on residue classes. -/
 @[simp]
 theorem val_fixedPointsEquiv
-    (x : FixedPoints.addSubgroup N (ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i)) :
+    (x : FixedPoints.addSubgroup N (ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N))
+      i)) :
     (fixedPointsEquiv N χ i x).val =
-      (x : ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i).val :=
+      (x : ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i).val :=
   (rfl)
 
 /-- The inverse identification of the invariants is the identity on residue classes. -/
 @[simp]
 theorem val_coe_fixedPointsEquiv_symm (y : ZModTwist χ i) :
     (((fixedPointsEquiv N χ i).symm y :
-      ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i)).val = y.val :=
+      ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i)).val = y.val :=
   (rfl)
 
 /-- The identification of the invariants is equivariant for the quotient action of `G ⧸ N`. -/
 theorem fixedPointsEquiv_smul (q : G ⧸ N)
-    (x : FixedPoints.addSubgroup N (ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i)) :
+    (x : FixedPoints.addSubgroup N (ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N))
+      i)) :
     fixedPointsEquiv N χ i (q • x) = q • fixedPointsEquiv N χ i x := by
   induction q using QuotientGroup.induction_on with
   | H g =>
@@ -128,8 +130,8 @@ end ZModTwist
 `TauCeti.ZModTwist.fixedPointsEquiv` of the `N`-invariants of `I(χ ∘ π)/pⁱ` with `I(χ)/pⁱ`. -/
 noncomputable def explicitInfl1ZModTwist :
     H1 (G ⧸ N) (ZModTwist χ i) →+
-      H1 G (ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i) :=
-  (explicitInfl1 G (ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i) N).comp
+      H1 G (ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i) :=
+  (explicitInfl1 G (ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i) N).comp
     (explicitCoeff1Equiv (G ⧸ N) (ZModTwist χ i) (ZModTwist.fixedPointsEquiv N χ i).symm
       continuous_of_discreteTopology continuous_of_discreteTopology
       (fun q y => AddEquiv.symm_map_smul_of_map_smul _
@@ -141,11 +143,12 @@ on residue classes. -/
 theorem explicitInfl1ZModTwist_eq_explicitMap1 :
     explicitInfl1ZModTwist N χ i =
       explicitMap1 (G ⧸ N) (ZModTwist χ i) G
-        (ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i)
-        (ContinuousMonoidHom.quotientMk N)
-        (ZModTwist.compEquiv (ContinuousMonoidHom.quotientMk N) χ i).toAddMonoidHom
+        (ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i)
+        (Subgroup.quotientMkContinuousMonoidHom N)
+        (ZModTwist.compEquiv (Subgroup.quotientMkContinuousMonoidHom N) χ i).toAddMonoidHom
         continuous_of_discreteTopology
-        (fun g x => ZModTwist.compEquiv_smul (ContinuousMonoidHom.quotientMk N) χ i g x) := by
+        (fun g x => ZModTwist.compEquiv_smul (Subgroup.quotientMkContinuousMonoidHom N) χ i g x)
+          := by
   ext c
   simp only [AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply, explicitInfl1ZModTwist,
     AddEquiv.coe_toAddMonoidHom, explicitCoeff1Equiv_mk, explicitInfl1_mk]
@@ -164,8 +167,8 @@ theorem explicitInfl1ZModTwist_injective : Function.Injective (explicitInfl1ZMod
 /-- **Twisted inflation commutes with the reductions** `I(χ)/pⁱ → I(χ)/pʲ`: on cocycles both
 composites send a cocycle on `G ⧸ N` to the same cocycle on `G`. -/
 theorem explicitCoeff1_reduce_comp_explicitInfl1ZModTwist {j : ℕ} (hij : j ≤ i) :
-    (explicitCoeff1 G (ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i)
-        (ZModTwist.reduce (χ.comp (ContinuousMonoidHom.quotientMk N)) hij)
+    (explicitCoeff1 G (ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i)
+        (ZModTwist.reduce (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) hij)
         continuous_of_discreteTopology).comp (explicitInfl1ZModTwist N χ i) =
       (explicitInfl1ZModTwist N χ j).comp
         (explicitCoeff1 (G ⧸ N) (ZModTwist χ i) (ZModTwist.reduce χ hij)
@@ -179,7 +182,7 @@ theorem explicitCoeff1_reduce_comp_explicitInfl1ZModTwist {j : ℕ} (hij : j ≤
   -- homomorphisms, which `rw` and `simp` cannot match against the bundled equivariant ones here.
   erw [cocyclesMap1_apply, cocyclesMap1_apply, cocyclesMap1_apply, cocyclesMap1_apply,
     cocyclesMap1_apply, cocyclesMap1_apply]
-  exact (ZModTwist.val_reduce (χ.comp (ContinuousMonoidHom.quotientMk N)) hij
+  exact (ZModTwist.val_reduce (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) hij
     ⟨((c : G ⧸ N → ZModTwist χ i) g).val⟩).trans
       (ZModTwist.val_reduce χ hij ((c : G ⧸ N → ZModTwist χ i) g)).symm
 
@@ -191,7 +194,7 @@ are trivial (`TauCeti.eq_one_of_proPKernel_eq_top`). -/
 theorem explicitInfl1ZModTwist_bijective (hN : proPKernel p N = ⊤) :
     Function.Bijective (explicitInfl1ZModTwist N χ i) := by
   refine ⟨explicitInfl1ZModTwist_injective N χ i, fun x => ?_⟩
-  set M := ZModTwist (χ.comp (ContinuousMonoidHom.quotientMk N)) i
+  set M := ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i
   have htriv : ∀ (n : N) (m : M), n • m = m := fun n m => ZModTwist.smul_eq_self_of_mem N χ i n.2 m
   have hsub : Subsingleton (H1 N M) := by
     refine (H1EquivOfSmulEqSelf htriv).toEquiv.subsingleton_congr.2 ⟨fun φ ψ => ?_⟩
@@ -214,7 +217,7 @@ has no nontrivial continuous `p`-group quotient, a character `χ` of `G ⧸ N` h
 property exactly when its pullback `χ ∘ π` to `G` does: twisted inflation identifies the
 reductions `H¹(-, I(-)/pⁱ) → H¹(-, I(-)/p)` of the two groups. -/
 theorem hasPrescriptionProperty_comp_quotientMk_iff (hN : proPKernel p N = ⊤) :
-    HasPrescriptionProperty (χ.comp (ContinuousMonoidHom.quotientMk N)) ↔
+    HasPrescriptionProperty (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) ↔
       HasPrescriptionProperty χ := by
   simp only [hasPrescriptionProperty_iff]
   refine forall₂_congr fun k hk => ⟨fun h y => ?_, fun h y => ?_⟩
@@ -233,7 +236,7 @@ character of its maximal pro-`p` quotient `G(p)` has the prescription property e
 pullback to `G` does. -/
 theorem hasPrescriptionProperty_comp_quotientMk_proPKernel_iff [IsTopologicalGroup G]
     [CompactSpace G] [TotallyDisconnectedSpace G] (χ : maximalProPQuotient p G →ₜ* ℤ_[p]ˣ) :
-    HasPrescriptionProperty (χ.comp (ContinuousMonoidHom.quotientMk (proPKernel p G))) ↔
+    HasPrescriptionProperty (χ.comp (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G))) ↔
       HasPrescriptionProperty χ :=
   hasPrescriptionProperty_comp_quotientMk_iff _ χ proPKernel_proPKernel_eq_top
 

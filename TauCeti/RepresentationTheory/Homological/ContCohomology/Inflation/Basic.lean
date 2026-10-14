@@ -204,7 +204,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G]
 `G → G ⧸ N`, with the invariants `M ^ N` as coefficients. -/
 noncomputable def explicitInfl1 :
     H1 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H1 G M :=
-  explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+  explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (Subgroup.quotientMkContinuousMonoidHom N)
     (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
     N.fixedPoints_subtype_quotientMk_smul
 
@@ -213,7 +213,8 @@ it inflates to; `TauCeti.ContCohomology.cocyclesMap1_apply` evaluates the latter
 @[simp]
 theorem explicitInfl1_mk (c : Z1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     explicitInfl1 G M N (c : H1 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
-      (cocyclesMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+      (cocyclesMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
+        (Subgroup.quotientMkContinuousMonoidHom N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul c : H1 G M) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
@@ -222,7 +223,8 @@ theorem explicitInfl1_mk (c : Z1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
 `G → G ⧸ N` and the inclusion of the invariants `M ^ N` into `M`. -/
 theorem explicitInfl1_eq_explicitMap1 :
     explicitInfl1 G M N =
-      explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+      explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
+        (Subgroup.quotientMkContinuousMonoidHom N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul := by
   rw [explicitInfl1]
@@ -255,7 +257,7 @@ theorem explicitInfl1_injective : Function.Injective (explicitInfl1 G M N) := by
       refine (FixedPoints.mem_addSubgroup N M m).2 fun n => ?_
       have h := hm (n : G)
       rw [cocyclesMap1_apply] at h
-      simp only [ContinuousMonoidHom.quotientMk_apply, quotientMk_coe_eq_one,
+      simp only [Subgroup.quotientMkContinuousMonoidHom_apply, quotientMk_coe_eq_one,
         map_one_of_mem_Z1 c.2, AddSubgroup.coe_subtype, ZeroMemClass.coe_zero, sub_eq_zero] at h
       exact h
     rw [H1pi_eq_zero_iff, mem_B1_iff]
@@ -335,7 +337,7 @@ theorem explicitInfl1_descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n :
       (z : H1 G M) := by
   rw [explicitInfl1_mk]
   refine congrArg (fun w : Z1 G M => (w : H1 G M)) (Subtype.ext (funext fun g => ?_))
-  rw [cocyclesMap1_apply, ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype,
+  rw [cocyclesMap1_apply, Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype,
     coe_descendZ1_apply_mk]
 
 variable (G M N)
@@ -392,7 +394,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 five-term exact sequence. -/
 noncomputable def explicitInfl2 :
     H2 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H2 G M :=
-  explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+  explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (Subgroup.quotientMkContinuousMonoidHom N)
     (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
     N.fixedPoints_subtype_quotientMk_smul
 
@@ -401,7 +403,8 @@ it inflates to; `TauCeti.ContCohomology.cocyclesMap2_apply` evaluates the latter
 @[simp]
 theorem explicitInfl2_mk (c : Z2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     explicitInfl2 G M N (c : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
-      (cocyclesMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+      (cocyclesMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
+        (Subgroup.quotientMkContinuousMonoidHom N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul c : H2 G M) :=
   explicitMap2_mk _ _ _ _ _ _ _ _ c
@@ -411,7 +414,7 @@ theorem explicitInfl2_mk (c : Z2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
 theorem explicitInfl2_eq_explicitMap2 :
     explicitInfl2 G M N =
       explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
-        (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
+        (Subgroup.quotientMkContinuousMonoidHom N) (FixedPoints.addSubgroup N M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul := by
   rw [explicitInfl2]
@@ -431,7 +434,8 @@ theorem explicitRes2_comp_explicitInfl2 :
     refine ⟨fun _ => (m₀ : M), continuous_const, fun n n' => ?_⟩
     have hfix := (FixedPoints.mem_addSubgroup N M (m₀ : M)).1 m₀.2 n
     rw [cocyclesMap2_apply, cocyclesMap2_apply]
-    simp only [ContinuousMonoidHom.subgroupSubtype_apply, ContinuousMonoidHom.quotientMk_apply,
+    simp only [ContinuousMonoidHom.subgroupSubtype_apply,
+      Subgroup.quotientMkContinuousMonoidHom_apply,
       quotientMk_coe_eq_one, AddMonoidHom.id_apply, AddSubgroup.coe_subtype, ← hm₀, hfix]
     abel
 
@@ -499,7 +503,7 @@ theorem explicitInfl2_descendZ2 (z : Z2 G M)
       (z : H2 G M) := by
   rw [explicitInfl2_mk]
   refine congrArg (fun w : Z2 G M => (w : H2 G M)) (Subtype.ext (funext fun p => ?_))
-  rw [cocyclesMap2_apply, ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype]
+  rw [cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype]
   -- The preceding rewrite leaves quotient representatives under the fixed-point subtype
   -- coercion; expose that evaluation so the representative computation lemma applies.
   change ((descendZ2 z hright hfixed :
@@ -661,7 +665,7 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
       fun q ↦ ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) q : M) with hF
     have hcF (g h : G) : g • c h - c (g * h) + c g = F ((g : G ⧸ N), (h : G ⧸ N)) := by
       rw [hcf g h, cocyclesMap2_apply, AddSubgroup.coe_subtype,
-        ContinuousMonoidHom.quotientMk_apply, ContinuousMonoidHom.quotientMk_apply]
+        Subgroup.quotientMkContinuousMonoidHom_apply, Subgroup.quotientMkContinuousMonoidHom_apply]
     -- The normalizations of the cocycle `f`, read in `M`.
     have hF1 (g : G) : F ((g : G ⧸ N), 1) = g • F (1, 1) := by
       simp only [hF]

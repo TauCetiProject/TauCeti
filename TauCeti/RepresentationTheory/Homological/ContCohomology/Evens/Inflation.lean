@@ -213,7 +213,7 @@ theorem explicitInfl2_evensGraphCocycle (U : OpenSubgroup G) (hNU : N ≤ U)
   rw [cocyclesMap2_apply]
   simp only [AddSubgroup.coe_subtype]
   rw [coe_evensGraphCocycleFixedPoints]
-  simp only [ContinuousMonoidHom.quotientMk_apply, coe_evensGraphCocycle,
+  simp only [Subgroup.quotientMkContinuousMonoidHom_apply, coe_evensGraphCocycle,
     trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints, AddEquiv.apply_symm_apply]
   exact (evensGraphCochain_quotient U hNU s α g h).symm
 

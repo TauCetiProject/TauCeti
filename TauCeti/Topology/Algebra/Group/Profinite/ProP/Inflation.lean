@@ -76,12 +76,13 @@ identifies `H¹(G(p), 𝔽_p)` with `H¹(G, 𝔽_p)`. -/
 noncomputable def inflH1MaximalProP :
     cohomFp p (maximalProPQuotient p G) 1 ≃ₗ[ZMod p] cohomFp p G 1 :=
   LinearEquiv.ofBijective
-    (cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 1).hom.toLinearMap <| by
+    (cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G)) 1).hom.toLinearMap <| by
     -- Read through the identifications of `H¹` with continuous characters, the map is the
     -- pullback of characters along the quotient map, which the universal property makes bijective.
-    have h : ⇑(cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 1).hom.toLinearMap =
+    have h : ⇑(cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G))
+      1).hom.toLinearMap =
         (cohomFpLinearEquivContinuousZModDual p G).symm ∘
-          (ContinuousMonoidHom.quotientMk (proPKernel p G)).continuousZModDualMap (n := p) ∘
+          (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G)).continuousZModDualMap (n := p) ∘
             cohomFpLinearEquivContinuousZModDual p (maximalProPQuotient p G) :=
       funext fun x ↦ (LinearEquiv.eq_symm_apply _).2
         (cohomFpLinearEquivContinuousZModDual_cohomFpMap p _ x)
@@ -95,7 +96,7 @@ omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 @[simp]
 theorem inflH1MaximalProP_apply (x : cohomFp p (maximalProPQuotient p G) 1) :
     inflH1MaximalProP p G x =
-      cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 1 x :=
+      cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G)) 1 x :=
   LinearEquiv.ofBijective_apply _ x
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in
@@ -112,7 +113,8 @@ theorem inflH1MaximalProP_apply_eq_infl (x : cohomFp p (maximalProPQuotient p G)
 /-- **Degree-two inflation from the maximal pro-`p` quotient is injective.** The inflation map
 `H²(G(p), 𝔽_p) → H²(G, 𝔽_p)` is injective. -/
 theorem inflH2MaximalProP_injective :
-    Function.Injective (cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 2) := by
+    Function.Injective (cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G)) 2)
+      := by
   -- Transport to the explicit models and apply `explicitInfl2_proPKernel_injective`.
   let R : Subgroup G := proPKernel p G
   -- The explicit models need actions on `ZMod p`; the trivial ones are installed for the proof.
@@ -152,10 +154,12 @@ spanned by cup products.** Every class `a ⌣ b` with `a, b ∈ H¹(G, 𝔽_p)` 
 since degree-one inflation is bijective and inflation commutes with the cup product. -/
 theorem inflH2MaximalProP_surjective_of_map₂_cupFp_eq_top
     (h : Submodule.map₂ (cupFp p G) ⊤ ⊤ = ⊤) :
-    Function.Surjective (cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 2) := by
+    Function.Surjective (cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G)) 2)
+      := by
   have hle : Submodule.map₂ (cupFp p G) ⊤ ⊤ ≤
       LinearMap.range
-        (cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 2).hom.toLinearMap := by
+        (cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom (proPKernel p G)) 2).hom.toLinearMap
+          := by
     rw [Submodule.map₂_le]
     rintro a - b -
     obtain ⟨a, rfl⟩ := (inflH1MaximalProP p G).surjective a
