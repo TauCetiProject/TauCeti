@@ -53,17 +53,13 @@ theorem wassersteinEDist_rpow_eq_mongeCost {p : ℝ≥0∞} {ν : Measure X} [Is
   obtain ⟨x₀, -⟩ := hasFiniteMoment_def.1 hμ
   set K := ENNReal.LpAddConst (ENNReal.ofReal p.toReal)⁻¹
   have hK : K ≠ ∞ := (ENNReal.LpAddConst_lt_top _).ne
-  have hint {ρ : Measure X} [IsProbabilityMeasure ρ] (hρ : HasFiniteMoment p ρ) :
-      ∫⁻ x, K * edist x₀ x ^ p.toReal ∂ρ ≠ ∞ := by
-    rw [lintegral_const_mul' _ _ hK]
-    exact ENNReal.mul_ne_top hK
-      ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x₀ ρ).1 hρ)
   have hm : Measurable fun x : X ↦ K * edist x₀ x ^ p.toReal :=
     (measurable_edist_right.pow_const _).const_mul _
   have hc : Continuous fun z : X × X ↦ edist z.1 z.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.comp continuous_edist
   exact (mongeCost_eq_transportCost_of_le_split (c := fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
-    hc hm.aemeasurable hm.aemeasurable (hint hμ) (hint hν) fun z ↦
+    hc hm.aemeasurable hm.aemeasurable (hμ.lintegral_const_mul_edist_rpow_ne_top hp0 hp x₀ hK)
+    (hν.lintegral_const_mul_edist_rpow_ne_top hp0 hp x₀ hK) fun z ↦
       edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow ENNReal.toReal_nonneg x₀ z.1 z.2).symm
 
 end TauCeti

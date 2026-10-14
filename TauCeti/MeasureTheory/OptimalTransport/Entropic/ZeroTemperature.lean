@@ -558,11 +558,6 @@ theorem tendsto_entropicTransportCost_wassersteinEDist_rpow (hp0 : p ≠ 0) (hp 
   obtain ⟨x₀, -⟩ := hasFiniteMoment_def.1 hμ
   set K := ENNReal.LpAddConst (ENNReal.ofReal p.toReal)⁻¹
   have hK : K ≠ ∞ := (ENNReal.LpAddConst_lt_top _).ne
-  have hint {ρ : Measure X} [IsProbabilityMeasure ρ] (hρ : HasFiniteMoment p ρ) :
-      ∫⁻ x, K * edist x₀ x ^ p.toReal ∂ρ ≠ ∞ := by
-    rw [lintegral_const_mul' _ _ hK]
-    exact ENNReal.mul_ne_top hK
-      ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x₀ ρ).1 hρ)
   have hm : Measurable fun x : X ↦ K * edist x₀ x ^ p.toReal :=
     (measurable_edist_right.pow_const _).const_mul _
   have hc : Continuous fun z : X × X ↦ nndist z.1 z.2 ^ p.toReal :=
@@ -572,7 +567,9 @@ theorem tendsto_entropicTransportCost_wassersteinEDist_rpow (hp0 : p ≠ 0) (hp 
     ext z
     rw [ENNReal.coe_rpow_of_nonneg _ ENNReal.toReal_nonneg, edist_nndist]
   have h := tendsto_entropicTransportCost_transportCost_of_le_add isTightMeasureSet_singleton
-    isTightMeasureSet_singleton hc hm.aemeasurable (hint hν) hm.aemeasurable (hint hμ)
+    isTightMeasureSet_singleton hc hm.aemeasurable
+    (hν.lintegral_const_mul_edist_rpow_ne_top hp0 hp x₀ hK) hm.aemeasurable
+    (hμ.lintegral_const_mul_edist_rpow_ne_top hp0 hp x₀ hK)
     (μ := ν) (ν := μ) fun x y ↦ by
       calc ((nndist x y ^ p.toReal : ℝ≥0) : ℝ≥0∞) = edist x y ^ p.toReal :=
             congrFun hcoe (x, y)

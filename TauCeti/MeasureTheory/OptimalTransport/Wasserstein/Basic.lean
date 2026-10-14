@@ -110,7 +110,9 @@ what the gluing lemma consumes.
   coupling, and `TauCeti.transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment` the infinite
   value against a target without finite moment;
 * `TauCeti.edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow` — the split upper bound
-  `K * (edist x₀ x ^ r + edist x₀ y ^ r)` for the cost `edist x y ^ r`;
+  `K * (edist x₀ x ^ r + edist x₀ y ^ r)` for the cost `edist x y ^ r`, with
+  `TauCeti.HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top` its integrability under a finite
+  `p`-moment;
 * `TauCeti.exists_isCoupling_eLpNorm_eq_wassersteinEDist` — on a Polish metric space and for a
   finite nonzero exponent, between finite measures that admit a coupling, the infimum is attained;
 * `TauCeti.wassersteinEDist_eq_zero_iff` — on a Polish metric space and for a finite nonzero
@@ -713,6 +715,15 @@ theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
   rw [MemLp, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
       measurable_edist_right.aestronglyMeasurable, lt_top_iff_ne_top]
   simp only [enorm_eq_self]
+
+/-- For a finite nonzero exponent `p`, a finite measure with finite `p`-moment integrates every
+finite multiple of the `p`-th power of the distance to a basepoint to a finite value; this is the
+integrability half of the split upper bound for the cost `edist ^ p`. -/
+theorem HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top [OpensMeasurableSpace X]
+    {ν : Measure X} [IsFiniteMeasure ν] (hν : HasFiniteMoment p ν) (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (x : X) {c : ℝ≥0∞} (hc : c ≠ ∞) : ∫⁻ y, c * edist x y ^ p.toReal ∂ν ≠ ∞ := by
+  rw [lintegral_const_mul' _ _ hc]
+  exact ENNReal.mul_ne_top hc ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x ν).1 hν)
 
 /-- The sum of two finite measures with finite `p`-moments has finite `p`-moment. -/
 theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] {μ ν : Measure X}
