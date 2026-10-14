@@ -81,6 +81,14 @@ def equivFunctionFieldDivisor
     SchemeWeilDivisor X ≃+ Divisor k X.functionField :=
   Finsupp.domCongr (CodimensionOnePoint.equivPlace hex hdim)
 
+/-- `equivFunctionFieldDivisor` is reindexing along `CodimensionOnePoint.equivPlace`. -/
+theorem equivFunctionFieldDivisor_eq_domCongr
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) :
+    equivFunctionFieldDivisor hex hdim =
+      Finsupp.domCongr (CodimensionOnePoint.equivPlace hex hdim) := by
+  rw [equivFunctionFieldDivisor]
+
 /-- The coefficient after reindexing is the coefficient at the corresponding codimension-one
 point. -/
 @[simp]
