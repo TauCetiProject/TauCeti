@@ -53,6 +53,8 @@ degree `2` where discreteness enters the denominator, `B²` being the image of t
 * `TauCeti.ContCohomology.mem_cocycles₁_iff_mem_Z1`,
   `TauCeti.ContCohomology.mem_coboundaries₁_iff_mem_B1` and their degree-`2` and degree-`0`
   counterparts: the dictionary between the two sets of cocycles and coboundaries.
+* `TauCeti.ContCohomology.explicitH2AddEquivGroupCohomology_explicitCoeff2`: the degree-two
+  comparison is natural in equivariant coefficient maps.
 
 ## Implementation notes
 
@@ -95,7 +97,7 @@ public section
 
 namespace TauCeti.ContCohomology
 
-universe u v w
+universe u v w x
 
 open CategoryTheory _root_.groupCohomology
 
@@ -441,6 +443,74 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
       simpa using (hφS (φS.symm s)).symm
     rw [TauCeti.groupCohomology.mapCocycles₂_apply]
     simp [cocyclesMap2_apply, c, transport₂, hs]
+
+/-- The explicit-to-derived comparison in degree two is natural in an equivariant coefficient
+map. The source and target coefficient groups may be identified additively with representations
+over any common coefficient ring; the square commutes whenever the two identifications commute
+with the coefficient map. -/
+theorem explicitH2AddEquivGroupCohomology_explicitCoeff2
+    {N : Type x} [AddCommGroup N] [DistribMulAction G N]
+    {C : Rep k H} (chi : N ≃+ C)
+    (hchi : ∀ (g : G) (n : N), chi (g • n) = C.ρ (φ g) (chi n))
+    [TopologicalSpace N] [IsTopologicalAddGroup N] [ContinuousSMul G N]
+    (f : M →+[G] N) (hf : Continuous f) (F : B ⟶ C)
+    (hF : ∀ m, F.hom (ψ m) = chi (f m)) (x : H2 G M) :
+    explicitH2AddEquivGroupCohomology φ chi hchi
+        (explicitCoeff2 G M f hf x) =
+      groupCohomology.map (MonoidHom.id H) F 2
+        (explicitH2AddEquivGroupCohomology φ ψ hψ x) := by
+  induction x using QuotientAddGroup.induction_on with
+  | H z =>
+    let c : cocycles₂ B := ⟨transport₂ φ ψ z,
+      (transport₂_mem_cocycles₂_iff φ ψ hψ z).2 (mem_Z2_iff.1 z.2).2⟩
+    rw [explicitCoeff2_mk,
+      explicitH2AddEquivGroupCohomology_mk φ ψ hψ z c (fun _ ↦ rfl)]
+    have hmap := ConcreteCategory.congr_hom
+      (groupCohomology.H2π_comp_map (MonoidHom.id H) F) c
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hmap
+    rw [hmap]
+    apply explicitH2AddEquivGroupCohomology_mk
+    intro q
+    rw [TauCeti.groupCohomology.mapCocycles₂_apply]
+    -- Expose the transported cochain and the explicit coefficient map; their bundled proofs are
+    -- propositionally irrelevant but prevent the preceding rewrite lemmas from matching directly.
+    change F.hom (ψ ((z : G × G → M) (φ.symm q.1, φ.symm q.2))) =
+      chi ((cocyclesMap2 G M G N (ContinuousMonoidHom.id G) f hf
+        (fun g m ↦ f.map_smul g m) z : G × G → N) (φ.symm q.1, φ.symm q.2))
+    rw [hF]
+    apply congrArg chi
+    exact (cocyclesMap2_apply G M G N (ContinuousMonoidHom.id G) f hf
+      (fun g m ↦ f.map_smul g m) z _ _).symm
+
+include hψ in
+/-- An equivariant coefficient map induces a bijection on explicit second cohomology when the
+corresponding morphism of representations induces a bijection on derived group cohomology, for
+instance an isomorphism (`ConcreteCategory.bijective_of_isIso`). The comparison permits the
+explicit coefficient groups and the representations to have merely additively equivalent
+carriers. -/
+theorem explicitCoeff2_bijective_of_bijective_map
+    {N : Type x} [AddCommGroup N] [DistribMulAction G N]
+    {C : Rep k H} (chi : N ≃+ C)
+    (hchi : ∀ (g : G) (n : N), chi (g • n) = C.ρ (φ g) (chi n))
+    [TopologicalSpace N] [IsTopologicalAddGroup N] [ContinuousSMul G N]
+    (f : M →+[G] N) (hf : Continuous f) (F : B ⟶ C)
+    (hF : ∀ m, F.hom (ψ m) = chi (f m))
+    (hd : Function.Bijective (groupCohomology.map (MonoidHom.id H) F 2)) :
+    Function.Bijective (explicitCoeff2 G M f hf) := by
+  let eM := explicitH2AddEquivGroupCohomology φ ψ hψ
+  let eN := explicitH2AddEquivGroupCohomology φ chi hchi
+  let d := groupCohomology.map (MonoidHom.id H) F 2
+  have hcomm (x : H2 G M) : eN (explicitCoeff2 G M f hf x) = d (eM x) :=
+    explicitH2AddEquivGroupCohomology_explicitCoeff2 φ ψ hψ chi hchi f hf F hF x
+  constructor
+  · intro x y hxy
+    apply eM.injective
+    apply hd.injective
+    rw [← hcomm x, ← hcomm y, hxy]
+  · intro y
+    obtain ⟨z, hz⟩ := hd.surjective (eN y)
+    obtain ⟨x, rfl⟩ := eM.surjective z
+    exact ⟨x, eN.injective ((hcomm x).trans hz)⟩
 
 end CompatiblePairDegree2
 
