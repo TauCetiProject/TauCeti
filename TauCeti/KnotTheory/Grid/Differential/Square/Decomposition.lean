@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import TauCeti.KnotTheory.Grid.Differential.Square.Support
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap
+public import TauCeti.KnotTheory.Grid.TwoStepDecomposition
 
 /-!
 # Two-step rectangle decompositions
@@ -23,9 +23,8 @@ between two given states is determined by its side columns.
 
 ## Main definitions
 
-* `TauCeti.GridRectangleDecomposition`: two composable oriented grid rectangles.
-* `TauCeti.GridRectangleDecomposition.decompositionsOf`: composable pairs drawn from any family
-  of finite rectangle sets.
+* `TauCeti.GridRectangleDecomposition`: two composable oriented grid rectangles, the two-step
+  decomposition `TauCeti.GridTwoStepDecomposition` with both steps rectangles.
 
 ## Main results
 
@@ -53,13 +52,8 @@ namespace TauCeti
 
 /-- A decomposition of a two-step rectangle domain from `x` to `z` through an intermediate grid
 state. -/
-structure GridRectangleDecomposition {n : ℕ} (x z : GridState n) where
-  /-- The grid state between the two rectangle moves. -/
-  middle : GridState n
-  /-- The first oriented rectangle, from the source to the intermediate state. -/
-  first : GridRectangleBetween x middle
-  /-- The second oriented rectangle, from the intermediate state to the target. -/
-  second : GridRectangleBetween middle z
+abbrev GridRectangleDecomposition {n : ℕ} (x z : GridState n) :=
+  GridTwoStepDecomposition GridRectangleBetween GridRectangleBetween x z
 
 namespace GridRectangleDecomposition
 
@@ -266,55 +260,6 @@ theorem target_mem_twoStepColumnSwapNeighbors (D : GridRectangleDecomposition x 
         ⟨D.first.left, D.first.right, D.first.left_ne_right, D.first.target_eq_swapColumns⟩,
       GridState.mem_columnSwapNeighbors.mpr
         ⟨D.second.left, D.second.right, D.second.left_ne_right, D.second.target_eq_swapColumns⟩⟩
-
-private def decompositionSigmaEquiv (x z : GridState n) :
-    GridRectangleDecomposition x z ≃
-      (Σ y : GridState n,
-        Σ _first : GridRectangleBetween x y, GridRectangleBetween y z) where
-  toFun D := ⟨D.middle, D.first, D.second⟩
-  invFun D := ⟨D.1, D.2.1, D.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The finite set of two-step decompositions whose two rectangles belong to a prescribed family
-of finite rectangle sets. -/
-noncomputable def decompositionsOf
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) : Finset (GridRectangleDecomposition x z) :=
-  (((Finset.univ : Finset (GridState n)).sigma fun y =>
-      (S x y).sigma fun _first => S y z).map
-    (decompositionSigmaEquiv x z).symm.toEmbedding)
-
-/-- A decomposition belongs to `decompositionsOf S` exactly when each rectangle belongs to the
-corresponding set in `S`. -/
-@[simp]
-theorem mem_decompositionsOf
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) (D : GridRectangleDecomposition x z) :
-    D ∈ decompositionsOf S x z ↔
-      D.first ∈ S x D.middle ∧ D.second ∈ S D.middle z := by
-  classical
-  simp [decompositionsOf, decompositionSigmaEquiv]
-
-/-- The cardinality of `decompositionsOf S x z` is the sum, over intermediate states, of the
-product of the two rectangle-set cardinalities. -/
-theorem card_decompositionsOf
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) :
-    (decompositionsOf S x z).card = ∑ y, (S x y).card * (S y z).card := by
-  classical
-  simp [decompositionsOf, Finset.card_sigma]
-
-/-- Summing over `decompositionsOf` is the corresponding iterated sum over the intermediate state
-and the two selected rectangles. -/
-theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n)
-    (w : ∀ y, GridRectangleBetween x y → GridRectangleBetween y z → M) :
-    ∑ D ∈ decompositionsOf S x z, w D.middle D.first D.second =
-      ∑ y, ∑ r₁ ∈ S x y, ∑ r₂ ∈ S y z, w y r₁ r₂ := by
-  classical
-  simp [decompositionsOf, decompositionSigmaEquiv, Finset.sum_sigma']
 
 end GridRectangleDecomposition
 
