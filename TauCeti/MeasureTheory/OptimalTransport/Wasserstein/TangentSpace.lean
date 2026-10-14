@@ -210,9 +210,8 @@ theorem integral_fderiv_starProjection_wassersteinTangentSpace (v : Lp E 2 μ) {
     (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hφc : HasCompactSupport φ) :
     ∫ x, fderiv ℝ φ x ((wassersteinTangentSpace μ).starProjection v x) ∂μ =
       ∫ x, fderiv ℝ φ x (v x) ∂μ :=
-  sub_mem_orthogonal_wassersteinTangentSpace_iff.1
-    (sub_mem_comm_iff.1 ((wassersteinTangentSpace μ).sub_starProjection_mem_orthogonal v))
-    φ hφ hφc
+  (sub_mem_orthogonal_wassersteinTangentSpace_iff.1
+    ((wassersteinTangentSpace μ).sub_starProjection_mem_orthogonal v) φ hφ hφc).symm
 
 /-- The orthogonal projection of a field `v` onto the tangent space is the unique tangent field
 with the divergence of `v`. -/
