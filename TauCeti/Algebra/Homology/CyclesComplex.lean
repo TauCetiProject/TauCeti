@@ -23,7 +23,8 @@ exact sequence of complexes
 terms, as happens for a complex of projective modules over a principal ideal domain.  The map it
 induces on homology from `K` to `K / Z(K)` vanishes, so in its long exact homology sequence the
 map induced by the inclusion of the cycles is an epimorphism and the connecting morphisms are
-monomorphisms.
+monomorphisms.  A chain map `K ⟶ L` induces a morphism from the sequence of `K` to that of `L`
+(`HomologicalComplex.cyclesComplexShortComplexMap`).
 
 Tensoring this sequence with a second complex compares the homology of a tensor product with
 tensor products of homology, which is how it enters the Künneth formula.
@@ -33,6 +34,8 @@ tensor products of homology, which is how it enters the Künneth formula.
 * `HomologicalComplex.cyclesComplex`, `HomologicalComplex.cyclesCokernelComplex` and
   `HomologicalComplex.cyclesComplexShortComplex`: the complexes and the short complex.
 * `HomologicalComplex.cyclesComplexShortComplex_shortExact`: it is short exact.
+* `HomologicalComplex.cyclesComplexShortComplexMap`: the morphism of cycle sequences induced by a
+  chain map.
 * `HomologicalComplex.homologyMap_cyclesComplexShortComplex_g`: the projection is zero on
   homology.
 * `HomologicalComplex.isZero_homology_cyclesComplexShortComplex_X₃_zero`: for a chain complex
@@ -152,6 +155,46 @@ instance mono_δ_cyclesComplexShortComplex {i j : ι} (hij : c.Rel i j) :
     Mono (K.cyclesComplexShortComplex_shortExact.δ i j hij) :=
   (K.cyclesComplexShortComplex_shortExact.homology_exact₃ i j hij).mono_g
     (K.homologyMap_cyclesComplexShortComplex_g i)
+
+section Map
+
+variable {K} {L : HomologicalComplex C c} (φ : K ⟶ L)
+
+/-- A chain map `φ : K ⟶ L` induces a morphism from the cycle sequence
+`0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` of `K` to that of `L`: the map `cyclesMap φ` on cycles, `φ` itself,
+and the induced map on the cokernels of the inclusions of the cycles. -/
+def cyclesComplexShortComplexMap : K.cyclesComplexShortComplex ⟶ L.cyclesComplexShortComplex where
+  τ₁ :=
+    { f i := cyclesMap φ i
+      comm' i j _ := comp_zero.trans zero_comp.symm }
+  τ₂ := φ
+  τ₃ :=
+    { f i := cokernel.map (K.iCycles i) (L.iCycles i) (cyclesMap φ i) (φ.f i) (by simp)
+      comm' i j _ := comp_zero.trans zero_comp.symm }
+  comm₁₂ := by ext; simp [cyclesComplexShortComplex]
+  comm₂₃ := by ext; simp [cyclesComplexShortComplex]
+
+/-- The middle component of the morphism of cycle sequences induced by `φ` is `φ`. -/
+lemma cyclesComplexShortComplexMap_τ₂ :
+    (cyclesComplexShortComplexMap φ).τ₂ = eqToHom (by simp) ≫ φ ≫ eqToHom (by simp) :=
+  (Category.comp_id _).symm.trans (Category.id_comp _).symm
+
+/-- In each degree, the first component of the morphism of cycle sequences induced by `φ` is the
+map `cyclesMap φ` of cycles. -/
+lemma cyclesComplexShortComplexMap_τ₁_f (i : ι) :
+    (cyclesComplexShortComplexMap φ).τ₁.f i =
+      eqToHom (by simp) ≫ cyclesMap φ i ≫ eqToHom (by simp) :=
+  (Category.comp_id _).symm.trans (Category.id_comp _).symm
+
+/-- In each degree, the last component of the morphism of cycle sequences induced by `φ` is the
+map of cokernels of the inclusions of the cycles induced by `φ`. -/
+lemma cyclesComplexShortComplexMap_τ₃_f (i : ι) :
+    (cyclesComplexShortComplexMap φ).τ₃.f i = eqToHom (by simp) ≫
+      cokernel.map (K.iCycles i) (L.iCycles i) (cyclesMap φ i) (φ.f i) (by simp) ≫
+        eqToHom (by simp) :=
+  (Category.comp_id _).symm.trans (Category.id_comp _).symm
+
+end Map
 
 /-- For a chain complex indexed by `ℕ`, all of `K₀` consists of cycles, so the third term
 `K / Z(K)` of the cycle sequence has zero homology in degree zero. -/
