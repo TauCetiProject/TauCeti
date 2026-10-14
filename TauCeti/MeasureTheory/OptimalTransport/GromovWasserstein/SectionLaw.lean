@@ -290,11 +290,7 @@ def kernelSectionLawWassersteinSpace (p : ℝ≥0∞) (μ : Measure X) [IsProbab
       else ⟨Measure.dirac z₀, inferInstance⟩) <| by
     by_cases h : HasFiniteMoment p (kernelSectionLaw μ ω x)
     · simp only [h, ↓reduceIte, ProbabilityMeasure.coe_mk]
-    · simp only [h, ↓reduceIte, ProbabilityMeasure.coe_mk]
-      refine hasFiniteMoment_def.2 ⟨z₀, MemLp.of_enorm_bound (C := 0)
-        measurable_edist_right.aestronglyMeasurable ENNReal.zero_ne_top ?_⟩
-      filter_upwards [ae_eq_dirac' (a := z₀) (measurable_edist_right (x := z₀))] with y hy
-      simp only [enorm_eq_self, hy, Function.const_apply, edist_self, le_refl]
+    · simpa only [h, ↓reduceIte, ProbabilityMeasure.coe_mk] using hasFiniteMoment_dirac p z₀
 
 variable [IsProbabilityMeasure μ] {z₀ : Z}
 
