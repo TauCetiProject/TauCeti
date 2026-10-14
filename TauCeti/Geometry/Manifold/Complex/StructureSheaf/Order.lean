@@ -124,6 +124,7 @@ variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(�
 
 /-- The vanishing ideal of holomorphic germs on a complex curve is separated: a germ in
 every power of that ideal is zero. -/
+@[simp]
 theorem iInf_pow_ker_eval_eq_bot (x : X) :
     (⨅ n : ℕ, RingHom.ker (eval 𝓘(ℂ) X x) ^ n) = ⊥ := by
   apply le_antisymm _ bot_le
@@ -145,24 +146,17 @@ theorem existsUnique_mem_pow_ker_eval_notMem_succ (x : X)
     ∃! n : ℕ, f ∈ RingHom.ker (eval 𝓘(ℂ) X x) ^ n ∧
       f ∉ RingHom.ker (eval 𝓘(ℂ) X x) ^ (n + 1) := by
   classical
-  let I := RingHom.ker (eval 𝓘(ℂ) X x)
-  have hex : ∃ n : ℕ, f ∉ I ^ n := by
+  let c := (chartAt ℂ x).holomorphicCoordinateGerm
+    (chart_mem_maximalAtlas x) x (mem_chart_source ℂ x)
+  have hfin : FiniteMultiplicity c f := by
     by_contra h
-    have hmem : f ∈ ⨅ n : ℕ, I ^ n := Ideal.mem_iInf.mpr (by simpa using h)
-    rw [iInf_pow_ker_eval_eq_bot] at hmem
-    exact hf hmem
-  have hm : f ∉ I ^ Nat.find hex := Nat.find_spec hex
-  have hm0 : Nat.find hex ≠ 0 := by intro h; simp [h] at hm
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero hm0
-  have hnmem : f ∈ I ^ n := by
-    exact not_not.mp (Nat.find_min hex (by omega))
-  rw [hn] at hm
-  refine ⟨n, ⟨hnmem, hm⟩, ?_⟩
-  intro j hj
-  apply le_antisymm
-  · by_contra h
-    exact hm (Ideal.pow_le_pow_right (by omega : n + 1 ≤ j) hj.1)
-  · by_contra h
-    exact hj.2 (Ideal.pow_le_pow_right (by omega : j + 1 ≤ n) hnmem)
+    obtain ⟨n, hn⟩ := (chartAt ℂ x).exists_not_dvd_holomorphicCoordinateGerm_pow
+      (chart_mem_maximalAtlas x) x (mem_chart_source ℂ x) hf
+    exact hn (FiniteMultiplicity.not_iff_forall.mp h n)
+  simp_rw [(chartAt ℂ x).ker_eval_eq_span_holomorphicCoordinateGerm
+    (chart_mem_maximalAtlas x) x (mem_chart_source ℂ x), Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton]
+  exact ⟨multiplicity c f, hfin.multiplicity_eq_iff.mp rfl,
+    fun n hn => (hfin.multiplicity_eq_iff.mpr hn).symm⟩
 
 end TauCeti.holomorphicStructureSheaf
