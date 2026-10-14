@@ -43,8 +43,11 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {dC : C →ₗ[R] C}
   {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB} {hC : IsDGAlgebra 𝒞 dC}
 
+-- Exposed so that morphisms into a restricted object are the unbundled restricted morphisms,
+-- as the extension-restriction adjunction requires.
 /-- Restriction of scalars along a DG algebra morphism, on the ordinary categories of DG modules.
 The action on each image object is given by the original action through the algebra morphism. -/
+@[expose]
 noncomputable def restrictScalars (f : DGAlgHom hA hB) :
     DGRightModuleCat.{uR, uB, uM} hB ⥤ DGRightModuleCat.{uR, uA, uM} hA where
   obj M := of (M.isDGRightModule.restrictScalars f)
