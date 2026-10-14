@@ -159,20 +159,8 @@ theorem cotangentLinearEquiv_comp_quotientCotangentMap
         (Derivation.cotangentLinearEquiv (R := k) (A := H ⧸ I.toIdeal) (B := B) f) =
       Derivation.cotangentLinearEquiv (R := k) (A := H) (B := B)
         (f.comp (quotientCotangentMap I)) := by
-  apply Derivation.ext
-  intro x
-  apply (Bialgebra.CounitAlgebra.algEquivSelf k H B).injective
-  rw [quotientLieHom_apply_apply,
-    Derivation.cotangentLinearEquiv_apply_apply,
-    Derivation.cotangentLinearEquiv_apply_apply, LinearMap.comp_apply,
-    quotientCotangentMap_cotangentMap]
-  exact congrArg
-    (fun b : B => Bialgebra.CounitAlgebra.algEquivSelf k H B
-      (b : Bialgebra.CounitAlgebra k H B))
-    (Bialgebra.CounitAlgebra.algEquivSelf_apply k (H ⧸ I.toIdeal) B
-      (f (Bialgebra.cotangentMap k (H ⧸ I.toIdeal)
-        (Ideal.Quotient.mkₐ k I.toIdeal x)) :
-          Bialgebra.CounitAlgebra k (H ⧸ I.toIdeal) B))
+  rw [quotientLieHom_apply, quotientCotangentMap]
+  exact (Derivation.cotangentLinearEquiv_comp_cotangentSpaceMap _ f).symm
 
 /-- The quotient cotangent map in the form `Ideal.mapCotangent` along `Algebra.ofId`, in which
 Mathlib states the surjectivity and kernel of cotangent maps of quotients. -/

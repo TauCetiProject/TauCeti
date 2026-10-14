@@ -37,7 +37,8 @@ to turn the coefficient-natural adjoint action into an action on one fixed finit
 * `TauCeti.Bialgebra.cotangentSpaceMap` and `Derivation.dualCotangentMap`: a bialgebra morphism
   `φ : A →ₐc[R] A'` maps cotangent spaces covariantly, hence their duals contravariantly; the
   dual map is the differential of `Spec A' → Spec A` and agrees with precomposition of
-  derivations (`Derivation.cotangentLinearEquiv_dualCotangentMap`).
+  derivations (`Derivation.cotangentLinearEquiv_comp_cotangentSpaceMap`,
+  `Derivation.cotangentLinearEquiv_dualCotangentMap`).
 * `Derivation.dualCotangentEquiv`: the differential of a bialgebra equivalence.
 
 ## References
@@ -300,17 +301,26 @@ noncomputable def dualCotangentMap (φ : A →ₐc[R] A') :
       Module.Dual R (Bialgebra.CotangentSpace R A) :=
   (Bialgebra.cotangentSpaceMap φ).dualMap
 
+/-- Under cotangent duality, precomposition with the cotangent map of `φ` is precomposition of
+derivations along `φ`. -/
+lemma cotangentLinearEquiv_comp_cotangentSpaceMap [Ring B] [Algebra R B] (φ : A →ₐc[R] A')
+    (f : Bialgebra.CotangentSpace R A' →ₗ[R] B) :
+    cotangentLinearEquiv (R := R) (A := A) (B := B) (f ∘ₗ Bialgebra.cotangentSpaceMap φ) =
+      derivationComp (B := B) φ (cotangentLinearEquiv (R := R) (A := A') (B := B) f) := by
+  ext a
+  rw [cotangentLinearEquiv_apply_apply, derivationComp_apply, cotangentLinearEquiv_apply_apply,
+    LinearMap.comp_apply, Bialgebra.cotangentSpaceMap_cotangentMap]
+  -- Both sides are the same value of `B`, read in the two counit coefficient synonyms.
+  rfl
+
 /-- The differential on cotangent duals is precomposition of derivations along `φ`. -/
 @[simp]
 lemma cotangentLinearEquiv_dualCotangentMap (φ : A →ₐc[R] A')
     (y : Module.Dual R (Bialgebra.CotangentSpace R A')) :
     cotangentLinearEquiv (R := R) (A := A) (B := R) (dualCotangentMap φ y) =
       derivationComp (B := R) φ (cotangentLinearEquiv (R := R) (A := A') (B := R) y) := by
-  ext a
-  rw [cotangentLinearEquiv_apply_apply, derivationComp_apply, cotangentLinearEquiv_apply_apply,
-    dualCotangentMap, LinearMap.dualMap_apply, Bialgebra.cotangentSpaceMap_cotangentMap]
-  -- Both sides are the same value of `R`, read in the two counit coefficient synonyms.
-  rfl
+  rw [dualCotangentMap, LinearMap.dualMap_apply']
+  exact cotangentLinearEquiv_comp_cotangentSpaceMap φ y
 
 /-- The differential on cotangent duals of a derivation is its precomposition along `φ`. -/
 lemma dualCotangentMap_cotangentLinearEquiv_symm (φ : A →ₐc[R] A')
