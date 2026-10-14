@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
-import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Naive level structures on an elliptic curve
@@ -88,20 +87,6 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicG
 universe u
 
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
-
-/-! ### Points meeting the zero section -/
-
-/-- A point `x` of `E` with values in a scheme `Z` over `S` takes a value in the image of the zero
-section at a point `z` of `Z` exactly when it agrees there with the zero section over the image of
-`z` in `S`. -/
-theorem left_apply_mem_range_zero_iff {S : Scheme.{u}} {E : EllipticCurveGeom S} {Z : Over S}
-    (x : Z ⟶ Over.mk E.structureMap) (z : Z.left) :
-    x.left z ∈ Set.range E.zero ↔ x.left z = E.zero (Z.hom z) := by
-  refine ⟨fun ⟨s, hs⟩ ↦ ?_, fun h ↦ ⟨_, h.symm⟩⟩
-  have hx : E.structureMap (x.left z) = Z.hom z := by
-    rw [← Scheme.Hom.comp_apply]
-    simpa using congr($(Over.w x) z)
-  rw [← hx, ← hs, section_apply E.zero_comp_structureMap]
 
 /-! ### Homomorphisms injective on every fibre -/
 
