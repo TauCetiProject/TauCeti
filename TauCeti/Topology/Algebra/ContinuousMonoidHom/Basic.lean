@@ -35,8 +35,7 @@ continuous multiplicative isomorphism has the same underlying function. A topolo
 continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
 range, with forward and inverse computation rules. The file also records the
 pointwise characterization of finite-order continuous homomorphisms and the open kernel of a
-finite-order continuous character into the units of a `T1` commutative integral domain with
-continuous multiplication.
+finite-order continuous character into the units of a `T1` commutative integral domain.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -76,13 +75,15 @@ theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, ContinuousMonoidHom.pow_apply,
     ContinuousMonoidHom.coe_one, Pi.one_apply]
 
-/-- A finite-order continuous character into the units of a `T₁` commutative integral domain
-with continuous multiplication has open kernel. -/
+/-- A continuous character whose underlying homomorphism has finite order has open kernel when
+the target consists of units of a `T₁` commutative integral domain. -/
 theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
     {M K : Type*} [Monoid M] [TopologicalSpace M] [CommRing K] [IsDomain K]
-    [TopologicalSpace K] [ContinuousMul K] [T1Space K] {χ : M →ₜ* Kˣ}
-    (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
-  obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
+    [TopologicalSpace K] [T1Space K] {χ : M →ₜ* Kˣ}
+    (hχ : IsOfFinOrder χ.toMonoidHom) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
+  obtain ⟨n, hn, hpow⟩ := hχ.exists_pow_eq_one
+  have hχn (x : M) : χ x ^ n = 1 := by
+    simpa using DFunLike.congr_fun hpow x
   let _ : NeZero n := ⟨hn.ne'⟩
   have hmem : ∀ x, χ x ∈ rootsOfUnity n K := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
   have hset : ((χ : M → Kˣ) ⁻¹' {1}) =
