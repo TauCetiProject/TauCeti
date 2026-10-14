@@ -306,21 +306,11 @@ private abbrev filtrationTriple : TopTriple.{w} :=
 private abbrev fMap {a b : ℤ} (h : (a : EInt) ≤ b) :=
   (CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX)).map (homOfLE h)
 
-/-- The sequence `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` of graded pieces, written with
-explicit cokernels; it is the last row of `kernelCokernelCompSequence.snakeInput`. -/
--- Restated rather than taken as that row, since `rw` fails to match the comparisons in
--- `gradedShortComplexHom` against the row itself.
+/-- The sequence `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` of graded pieces: the last row of
+`kernelCokernelCompSequence.snakeInput` for the transition maps `F_{q-1} ⟶ F_q ⟶ F_{q+1}`. -/
 private abbrev gradedShortComplex : ShortComplex (CochainComplex A ℤ) :=
-  ShortComplex.mk
-    (cokernel.map (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q))
-      (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q) ≫
-        fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt))) (𝟙 _)
-      (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt))) (by simp))
-    (cokernel.map (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q) ≫
-        fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))
-      (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))
-      (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q)) (𝟙 _) (by simp))
-    (kernelCokernelCompSequence.snakeInput _ _).L₃.zero
+  (kernelCokernelCompSequence.snakeInput (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q))
+    (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))).L₃
 
 /-- The reindexed relative singular chain sequence of the triple `(X (q + 1), X q, X (q - 1))`,
 written with the pairs of the filtration. -/
@@ -375,6 +365,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
     cokernelFiltrationFunctorMapIso R hX _).hom
   τ₃ := (cokernelFiltrationFunctorMapIso R hX _).hom
   comm₁₂ := by
+    unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, TopTriple.innerPair_obj_ofInclusions,
       TopTriple.totalPair_obj_ofInclusions, π_cokernelFiltrationFunctorMapIso_hom_assoc,
@@ -394,6 +385,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
     exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
       (congrArg (_ ≫ ·) (extendMap_π_comp_innerToTotal R hX q)).trans (Category.assoc _ _ _).symm)
   comm₂₃ := by
+    unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, homOfLE_comp, Iso.trans_hom,
       TopTriple.totalPair_obj_ofInclusions, TopTriple.outerPair_obj_ofInclusions, Category.assoc,
@@ -439,13 +431,10 @@ theorem filteredSpaceSpectralSequence_first_page_d_eq (p : ℤ) (n : ℕ)
   simp only [filteredSpaceSpectralSequenceFirstPageXIso, Iso.trans_hom, Iso.trans_inv,
     Category.assoc]
   congr 1
-  -- The row of graded pieces in the statement of `spectralSequence_first_page_d_eq` is
-  -- `gradedShortComplex` up to unfolding `kernelCokernelCompSequence.snakeInput`, so the comparison
-  -- of connecting maps is applied with `Eq.trans` rather than `rw`.
-  refine (congrArg (· ≫ _) ((Iso.eq_comp_inv ((homologyFunctor A _ (p + q + 1)).mapIso
+  rw [(Iso.eq_comp_inv ((homologyFunctor A _ (p + q + 1)).mapIso
       (cokernelFiltrationFunctorMapIso R hX _) ≪≫ extendHomologyIso _ _ _)).2
     ((δ_comp_extendHomologyIso_hom R hX q n _ _ hn (by lia) rfl).trans
-      (Category.assoc _ _ _).symm))).trans ?_
+      (Category.assoc _ _ _).symm)]
   exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)
 
 end FirstDifferential
