@@ -18,10 +18,10 @@ the whole coalgebra, and likewise that the coefficients of its restriction to a 
 recover that subcoalgebra. The key coefficient is the counit: for the regular comodule, the
 matrix coefficient attached to `Coalgebra.counit` and a vector `c` is exactly `c`.
 
-This is a small Layer 1 prerequisite for the reductive-groups roadmap's faithful
-representation criterion, where faithfulness is detected by whether matrix coefficients
-generate the coordinate Hopf algebra. It proves that the regular representation satisfies
-that generated-coefficient condition.
+This is a small prerequisite for the faithful-representation criterion, where faithfulness is
+detected by whether the matrix coefficients, together with their antipode images, generate the
+coordinate Hopf algebra. It proves that the regular representation satisfies that
+generated-coefficient condition.
 
 ## Main declarations
 
@@ -37,8 +37,7 @@ that generated-coefficient condition.
 ## References
 
 This is the standard observation that the regular comodule's coefficient space is the whole
-coalgebra; see Sweedler, *Hopf Algebras*, Chapter 2. It uses the existing Tau Ceti matrix
-coefficient API and Mathlib's counit law for coalgebras.
+coalgebra; see Sweedler, *Hopf Algebras*, Chapter 2.
 -/
 
 public section

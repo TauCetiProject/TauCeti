@@ -32,7 +32,8 @@ finiteness where the value is computed.
 ## Main results
 
 * `TauCeti.Algebra.pow_finrank_mem_range_normUnits`: in a free algebra, the `finrank`-th power of
-  a unit of the base is a norm.
+  a unit of the base is a norm; `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits` does the
+  same for every `n`-th power with `n` a multiple of the rank.
 * `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
 * `TauCeti.pow_finrank_mem_normGroup`: the `[L : K]`-th power of an element of `Kˣ` is a norm.
 -/
@@ -58,6 +59,16 @@ theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.
 theorem Algebra.pow_finrank_mem_range_normUnits [Module.Free R S] (a : Rˣ) :
     a ^ Module.finrank R S ∈ (Algebra.normUnits R : Sˣ →* Rˣ).range :=
   ⟨Units.map (algebraMap R S : R →* S) a, Units.ext <| by simp⟩
+
+/-- **Powers by a multiple of the rank are norms.** In a free `R`-algebra `S` whose rank divides
+`n`, every `n`-th power of a unit of `R` is the norm of a unit of `S`. -/
+theorem Algebra.range_powMonoidHom_le_range_normUnits [Module.Free R S] {n : ℕ}
+    (hn : Module.finrank R S ∣ n) :
+    (powMonoidHom n : Rˣ →* Rˣ).range ≤ (Algebra.normUnits R : Sˣ →* Rˣ).range := by
+  rintro _ ⟨a, rfl⟩
+  obtain ⟨k, rfl⟩ := hn
+  rw [powMonoidHom_apply, pow_mul']
+  exact Algebra.pow_finrank_mem_range_normUnits R (a ^ k)
 
 section NormGroup
 

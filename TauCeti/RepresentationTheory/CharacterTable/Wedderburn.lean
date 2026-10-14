@@ -18,7 +18,9 @@ Over an algebraically closed field `k` whose characteristic does not divide the 
 group `G`, Maschke's theorem makes `k[G]` semisimple and Artin--Wedderburn presents it as a finite
 product of matrix algebras `∏ᵢ Matₙᵢ(k)`. This file reads the two classical numerical invariants
 off such a presentation. The sum-of-squares identity only needs a commutative semiring with the
-strong rank condition; the center statements are over a field.
+strong rank condition; the center statements are over a commutative semiring, with the strong rank
+condition
+for their numerical conclusions.
 
 * `AlgEquiv.sum_sq_eq_card_of_pi_matrix`: the matrix sizes satisfy `∑ᵢ nᵢ² = |G|`, because
   both sides compute `dimₖ k[G]`;
@@ -67,7 +69,9 @@ theorem sum_sq_eq_card_of_pi_matrix [CommSemiring k] [StrongRankCondition k] [Mo
     _ = Module.finrank k (MonoidAlgebra k G) := e.toLinearEquiv.finrank_eq.symm
     _ = Nat.card G := Module.finrank_eq_nat_card_basis (MonoidAlgebra.basis G k)
 
-variable [Field k]
+section Center
+
+variable [CommSemiring k]
 
 /-- **The center of the monoid algebra splits**: a Wedderburn presentation of `k[G]` with blocks
 indexed by `ι` identifies `Z(k[G])` with the algebra `ι → k` of functions on the blocks. -/
@@ -100,7 +104,8 @@ sides compute the dimension of `Z(k[G])`.
 
 This is the numerical half of the count `#irreducibles = #conjugacy classes`; identifying the blocks
 with the isomorphism classes of simple `k[G]`-modules is a separate statement. -/
-theorem card_eq_card_conjClasses_of_pi_matrix [Group G] [Finite G] [Finite ι]
+theorem card_eq_card_conjClasses_of_pi_matrix [StrongRankCondition k] [Group G] [Finite G]
+    [Finite ι]
     [∀ i, NeZero (d i)] (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
     Nat.card ι = Nat.card (ConjClasses G) := by
   let := Fintype.ofFinite ι
@@ -109,6 +114,8 @@ theorem card_eq_card_conjClasses_of_pi_matrix [Group G] [Finite G] [Finite ι]
     _ = Module.finrank k (Subalgebra.center k (MonoidAlgebra k G)) :=
         e.centerMonoidAlgebraAlgEquivPi.toLinearEquiv.finrank_eq.symm
     _ = Nat.card (ConjClasses G) := finrank_center_monoidAlgebra k G
+
+end Center
 
 end Presentation
 

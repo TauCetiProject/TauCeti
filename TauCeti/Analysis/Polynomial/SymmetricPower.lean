@@ -48,7 +48,7 @@ Both halves are elementary, but neither is formal:
 * `TauCeti.Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`: its inverse read on ordered tuples,
   that nearby coefficient tuples come from ordered tuples close coordinate by coordinate; this is
   continuity of roots with multiplicity, stated for polynomials in
-  `TauCeti/Analysis/Polynomial/ContinuityOfRoots.lean`.
+  `TauCeti/Analysis/Polynomial/ContinuityOfRoots/Basic.lean`.
 * `TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`: the chart induced by an open coordinate
   embedding, whose symmetric power is an open subspace of affine space.
 * `TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_ofFn_map`: the chart on a product mapped into

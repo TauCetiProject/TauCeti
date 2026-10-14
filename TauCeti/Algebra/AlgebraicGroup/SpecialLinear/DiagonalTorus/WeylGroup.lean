@@ -17,12 +17,14 @@ The Weyl group of the diagonal root datum of `SL_{r+1}` is the symmetric group o
 faithfulness follows because the coroots span the cocharacter lattice. This realizes the
 identification integrally, including rank zero.
 
-Over a field whose determinant-one diagonal torus separates coordinates, composing with the
-matrix normalizer computation identifies the normalizer quotient with this Weyl group. The
-root-index and character-lattice formulas specify the identification; in particular a normalizer
-class with a transposition as its coordinate permutation gives the corresponding reflection.
-The separation assumption concerns the group of rational points and is essential over small
-finite fields. No scheme-theoretic normalizer assertion is made here.
+Over a commutative ring with cancellation by nonzero elements whose determinant-one diagonal
+torus separates coordinates, composing with the matrix normalizer computation identifies the
+normalizer quotient with this Weyl group. The root-index and character-lattice formulas specify
+the identification; in particular a normalizer class with a transposition as its coordinate
+permutation gives the corresponding reflection. The separation assumption concerns the group of
+rational points and is essential over small finite fields. No scheme-theoretic normalizer
+assertion is made here. In rank zero, both groups are trivial over any commutative ring,
+without cancellation or separation assumptions.
 
 ## References
 
@@ -148,18 +150,56 @@ theorem diagonalPermMulEquivWeylGroup_smul_apply
   simpa [diagonalRootDatum_coroot_apply, coordinatePermRootIndex_coe,
     Pi.single_apply, mul_ite, Subgroup.smul_def] using h
 
-section Field
+/-- In rank zero, the determinant-one diagonal normalizer quotient agrees with the Weyl
+group over any commutative ring: both groups are trivial. -/
+def diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton
+    (k : Type v) [CommRing k] [Subsingleton (Fin r.succ)] :
+    Subgroup.normalizerQuotient (Matrix.SpecialLinearGroup.diagonalTorus k (r + 1)) ≃*
+      (diagonalRootDatum.{u} r).weylGroup := by
+  let _ : Subsingleton (Fin (r + 1)) := ‹Subsingleton (Fin r.succ)›
+  let _ : Unique (Subgroup.normalizerQuotient
+    (Matrix.SpecialLinearGroup.diagonalTorus k (r + 1))) := uniqueOfSubsingleton 1
+  exact (MulEquiv.ofUnique :
+    Subgroup.normalizerQuotient (Matrix.SpecialLinearGroup.diagonalTorus k (r + 1)) ≃*
+      Equiv.Perm (Fin (r + 1))).trans (diagonalPermMulEquivWeylGroup r)
 
-variable {k : Type v} [Field k]
+/-- Every normalizer class maps to the identity Weyl element in rank zero. -/
+@[simp]
+theorem diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton_apply
+    (k : Type v) [CommRing k] [Subsingleton (Fin r.succ)]
+    (q : Subgroup.normalizerQuotient (Matrix.SpecialLinearGroup.diagonalTorus k (r + 1))) :
+    diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton.{u} k q = 1 := by
+  let _ : Subsingleton (Fin (r + 1)) := ‹Subsingleton (Fin r.succ)›
+  rw [Subsingleton.elim q 1, map_one]
+
+section IsCancelMulZero
+
+variable {k : Type v} [CommRing k] [IsCancelMulZero k]
   (hsep : Matrix.SpecialLinearGroup.DiagonalTorusSeparatesCoordinates k (r + 1))
 
 /-- The normalizer quotient of the determinant-one diagonal torus is the Weyl group of the
 root datum of `SL_{r+1}`, whenever the torus separates coordinate lines. -/
 def diagonalNormalizerQuotientMulEquivWeylGroup :
     Subgroup.normalizerQuotient (Matrix.SpecialLinearGroup.diagonalTorus k (r + 1)) ≃*
-      (diagonalRootDatum.{u} r).weylGroup :=
-  (Matrix.SpecialLinearGroup.diagonalNormalizerQuotientMulEquivPerm hsep).trans
-    (diagonalPermMulEquivWeylGroup r)
+      (diagonalRootDatum.{u} r).weylGroup := by
+  classical
+  by_cases hn : Subsingleton (Fin (r + 1))
+  · let _ : Subsingleton (Fin r.succ) := hn
+    exact diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton k
+  · exact (Matrix.SpecialLinearGroup.diagonalNormalizerQuotientMulEquivPerm hsep).trans
+      (diagonalPermMulEquivWeylGroup r)
+
+private theorem diagonalNormalizerQuotientMulEquivWeylGroup_eq :
+    diagonalNormalizerQuotientMulEquivWeylGroup.{u} hsep =
+      (Matrix.SpecialLinearGroup.diagonalNormalizerQuotientMulEquivPerm hsep).trans
+        (diagonalPermMulEquivWeylGroup r) := by
+  classical
+  rw [diagonalNormalizerQuotientMulEquivWeylGroup]
+  split
+  · rename_i hn
+    let _ := hn
+    exact MulEquiv.toMonoidHom_injective (Subsingleton.elim _ _)
+  · rfl
 
 /-- A normalizer representative maps to the Weyl element of its coordinate permutation. -/
 @[simp]
@@ -170,7 +210,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_mk
         (g : Subgroup.normalizerQuotient (Matrix.SpecialLinearGroup.diagonalTorus k (r + 1))) =
       diagonalPermMulEquivWeylGroup r
         (Matrix.SpecialLinearGroup.diagonalNormalizerPerm hsep g) := by
-  simp [diagonalNormalizerQuotientMulEquivWeylGroup]
+  simp [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
 
 /-- On root indices the normalizer quotient acts by its coordinate permutation. -/
 @[simp]
@@ -180,7 +220,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_indexEquiv_apply
     (diagonalNormalizerQuotientMulEquivWeylGroup.{u} hsep q).1.indexEquiv p =
       coordinatePermRootIndex
         (Matrix.SpecialLinearGroup.diagonalNormalizerQuotientMulEquivPerm hsep q) p := by
-  simp [diagonalNormalizerQuotientMulEquivWeylGroup]
+  simp [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
 
 /-- The character-lattice action of a normalizer class in fundamental-weight coordinates. -/
 @[simp↓]
@@ -192,7 +232,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_smul_apply
       x.sum (fun j c => c *
         ((if e.symm i.down.castSucc ≤ j.down.castSucc then 1 else 0) -
           (if e.symm i.down.succ ≤ j.down.castSucc then 1 else 0))) := by
-  simp [diagonalNormalizerQuotientMulEquivWeylGroup]
+  simp [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
 
 /-- A normalizer class is the reflection in a root exactly when its coordinate permutation is
 the transposition of that root's two indices. -/
@@ -204,10 +244,11 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_eq_ofIdx_iff
         RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r) p ↔
       Matrix.SpecialLinearGroup.diagonalNormalizerQuotientMulEquivPerm hsep q =
         Equiv.swap p.1.1 p.1.2 := by
-  rw [← diagonalPermMulEquivWeylGroup_swap p.1.1 p.1.2 p.2]
+  rw [diagonalNormalizerQuotientMulEquivWeylGroup_eq,
+    ← diagonalPermMulEquivWeylGroup_swap p.1.1 p.1.2 p.2]
   exact (diagonalPermMulEquivWeylGroup r).injective.eq_iff
 
-end Field
+end IsCancelMulZero
 
 end
 

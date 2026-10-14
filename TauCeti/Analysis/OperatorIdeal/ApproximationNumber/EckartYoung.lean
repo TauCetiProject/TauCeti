@@ -77,16 +77,12 @@ theorem singularValue_eq_linearMap_singularValues (T : E →L[𝕜] F) (n : ℕ)
   refine le_antisymm ?_ ?_
   · -- Upper bound: `T` on the orthogonal complement of the first `n` right singular vectors.
     set V := v.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
-    have hV : Module.rank 𝕜 V ≤ n := by
-      rw [← finrank_eq_rank, v.finrank_spanIndices, Fin.card_filter_val_lt]
-      exact_mod_cast min_le_right _ _
-    refine (NNReal.coe_le_coe.mpr (T.singularValue_le_nnnorm_comp_orthogonal hV)).trans ?_
+    refine (NNReal.coe_le_coe.mpr
+      (T.singularValue_le_nnnorm_comp_orthogonal (v.rank_spanIndices_val_lt_le n))).trans ?_
     rw [coe_nnnorm]
-    refine opNorm_le_bound _ (A.singularValues_nonneg n) fun x ↦ ?_
-    have hx : (x : E) ∈ v.spanIndices {i | n ≤ (i : ℕ)} := by
-      refine v.spanIndices_mono (fun i hi ↦ ?_) ((v.orthogonal_spanIndices _).le x.2)
-      simpa using hi
-    simpa [A] using A.norm_apply_le_singularValues_mul_norm hx
+    exact T.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis v
+      (A.sq_singularValues_antitone.comp_monotone (Fin.valOrderEmb _).monotone)
+      A.adjoint_comp_self_rightSingularBasis n
   · -- Lower bound: `T` is `σₙ`-coercive on the span of the first `n + 1` right singular vectors.
     rcases lt_or_ge n (finrank 𝕜 E) with hn | hn
     · set V := v.spanIndices ↑({i | (i : ℕ) < n + 1} : Finset (Fin (finrank 𝕜 E)))

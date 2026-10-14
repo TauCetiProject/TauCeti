@@ -43,9 +43,6 @@ express weak convergence; the weak form therefore asks for a Polish topology and
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 6's empirical form of the
-  directing-measure theorem, in both its topology-free fixed-set version and its
-  weak-convergence version.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005), §1.1.
 
 No material is adapted from `cameronfreer/exchangeability`, which does not treat empirical measures.

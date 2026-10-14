@@ -89,6 +89,19 @@ theorem lid_smul_right (T : Type*) [Semiring T] [Module T N]
   intro t a n
   simpa [leftActionMap] using smul_comm a t n
 
+variable {k A N} {N' : Type*} [AddCommGroup N'] [Module k N'] [Module A N']
+  [IsScalarTower k A N']
+
+/-- The left action identification is natural in equivariant linear maps. -/
+theorem lid_naturality (f : N →ₗ[k] N')
+    (hf : ∀ (a : A) n, f (a • n) = a • f n) :
+    (lid k A N').toLinearMap ∘ₗ
+        map LinearMap.id f (fun _ _ ↦ rfl) hf =
+      f ∘ₗ (lid k A N).toLinearMap := by
+  apply hom_ext
+  intro a n
+  simp [hf]
+
 end Left
 
 section Right
@@ -150,6 +163,19 @@ theorem rid_smul_right (a : Aᵐᵒᵖ) (x : BalancedTensorProduct k A M A) :
   apply lift_smul_right Aᵐᵒᵖ (rightActionMap k A M) (rightAction_balanced k A M)
   intro a m b
   simp [rightActionMap, MulOpposite.smul_eq_mul_unop, op_mul]
+
+variable {k A M} {M' : Type*} [AddCommGroup M'] [Module k M'] [Module Aᵐᵒᵖ M']
+  [IsScalarTower k Aᵐᵒᵖ M']
+
+/-- The right action identification is natural in equivariant linear maps. -/
+theorem rid_naturality (f : M →ₗ[k] M')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m) :
+    (rid k A M').toLinearMap ∘ₗ
+        map f LinearMap.id hf (fun _ _ ↦ rfl) =
+      f ∘ₗ (rid k A M).toLinearMap := by
+  apply hom_ext
+  intro m a
+  simp [hf]
 
 end Right
 

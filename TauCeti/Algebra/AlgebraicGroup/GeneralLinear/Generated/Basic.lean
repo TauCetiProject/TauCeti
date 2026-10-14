@@ -90,7 +90,6 @@ theorem generatedGroupSchemeι_def :
           (CommHopfAlgCat.commonKernelHopfIdeal f) ≫
         eqToHom (groupScheme_def R n).symm := by
   rw [generatedGroupSchemeι, hopfIdealInclusion_def]
-  rfl
 
 /-- Closed immersion of the generated-subgroup inclusion reduces to closed immersion of the
 common-kernel quotient inclusion. This records the definitional transport through

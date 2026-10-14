@@ -236,6 +236,16 @@ abbrev projectiveLineNegativeCone : projectiveLineFan.cones :=
 abbrev projectiveLineZeroCone : projectiveLineFan.cones :=
   ⟨⊥, (mem_projectiveLineFan_cones _).2 (Or.inl rfl)⟩
 
+/-- The zero cone is contained in the positive maximal cone of the projective-line fan. -/
+theorem projectiveLineZeroCone_le_positiveCone :
+    projectiveLineZeroCone ≤ projectiveLinePositiveCone :=
+  Subtype.mk_le_mk.mpr bot_le
+
+/-- The zero cone is contained in the negative maximal cone of the projective-line fan. -/
+theorem projectiveLineZeroCone_le_negativeCone :
+    projectiveLineZeroCone ≤ projectiveLineNegativeCone :=
+  Subtype.mk_le_mk.mpr bot_le
+
 private theorem projectiveLinePositiveCone_inf_negativeCone :
     projectiveLinePositiveCone ⊓ projectiveLineNegativeCone = projectiveLineZeroCone :=
   Subtype.ext affineRayCone_inf_negativeRayCone
@@ -283,18 +293,18 @@ theorem projectiveLine_chart_overlap :
     isRegular_projectiveLineFan, projectiveLinePositiveCone_inf_negativeCone]
 
 /-- When points in the two affine charts represent the same point of the analytic realization,
-their complex coordinates are inverse to one another. -/
-theorem projectiveLine_chart_transition
+their complex coordinates multiply to one. -/
+theorem projectiveLine_chart_coordinates_mul_of_eq
     (x : (projectiveLineFan.analyticAffineChartDiagram).obj projectiveLinePositiveCone)
     (y : (projectiveLineFan.analyticAffineChartDiagram).obj projectiveLineNegativeCone)
     (hxy : projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
         projectiveLinePositiveCone x =
       projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
         projectiveLineNegativeCone y) :
-    negativeRayPointHomeomorph
-      (projectiveLineFan.analyticChartGenerators projectiveLineNegativeCone).2 y =
-      (affineRayPointHomeomorph
-        (projectiveLineFan.analyticChartGenerators projectiveLinePositiveCone).2 x)⁻¹ := by
+    affineRayPointHomeomorph
+        (projectiveLineFan.analyticChartGenerators projectiveLinePositiveCone).2 x *
+      negativeRayPointHomeomorph
+        (projectiveLineFan.analyticChartGenerators projectiveLineNegativeCone).2 y = 1 := by
   have hz : projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
       projectiveLinePositiveCone x ∈
       Set.range (projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
@@ -302,31 +312,25 @@ theorem projectiveLine_chart_transition
     rw [← projectiveLine_chart_overlap]
     exact ⟨⟨x, rfl⟩, ⟨y, hxy.symm⟩⟩
   obtain ⟨z, hz⟩ := hz
-  have hp : projectiveLineZeroCone ≤ projectiveLinePositiveCone := by
-    apply Subtype.mk_le_mk.mpr
-    exact bot_le
-  have hn : projectiveLineZeroCone ≤ projectiveLineNegativeCone := by
-    apply Subtype.mk_le_mk.mpr
-    exact bot_le
   have hpx : faceAffinePointMap projectiveLineFan.lattice
       (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
-        projectiveLineZeroCone.2 hp) z = x :=
+        projectiveLineZeroCone.2 projectiveLineZeroCone_le_positiveCone) z = x :=
     (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
       isRegular_projectiveLineFan projectiveLinePositiveCone).injective <| by
       exact (projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-        isRegular_projectiveLineFan hp z).trans hz
+        isRegular_projectiveLineFan projectiveLineZeroCone_le_positiveCone z).trans hz
   have hny : faceAffinePointMap projectiveLineFan.lattice
       (projectiveLineFan.isFaceOf_of_le projectiveLineNegativeCone.2
-        projectiveLineZeroCone.2 hn) z = y :=
+        projectiveLineZeroCone.2 projectiveLineZeroCone_le_negativeCone) z = y :=
     (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
       isRegular_projectiveLineFan projectiveLineNegativeCone).injective <| by
       exact (projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-        isRegular_projectiveLineFan hn z).trans (hz.trans hxy)
+        isRegular_projectiveLineFan projectiveLineZeroCone_le_negativeCone z).trans (hz.trans hxy)
   have hm := projectiveLine_chart_coordinates_mul
     (gp := (projectiveLineFan.analyticChartGenerators projectiveLinePositiveCone).2)
     (g := (projectiveLineFan.analyticChartGenerators projectiveLineNegativeCone).2) z
   rw [hpx, hny] at hm
-  exact eq_inv_of_mul_eq_one_right hm
+  exact hm
 
 namespace Fan
 

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Invariance
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
@@ -42,8 +43,17 @@ reverse direction needs the residue fields to be perfect, so that the algorithm 
 
 * `WeierstrassCurve.IsTateTerminal.hasGoodReduction_iff`,
   `WeierstrassCurve.IsTateTerminal.hasMultiplicativeReduction_iff` and
-  `WeierstrassCurve.IsTateTerminal.hasAdditiveReduction_iff`: the reduction type of an equation
-  from the symbol at which the algorithm stops on it.
+  `WeierstrassCurve.IsTateTerminal.hasAdditiveReduction_iff`: the reduction type of an
+  equation from the symbol at which the algorithm stops on it.
+* `WeierstrassCurve.IsTateTerminal.hasGoodReduction_minimal_iff`,
+  `WeierstrassCurve.IsTateTerminal.hasMultiplicativeReduction_minimal_iff` and
+  `WeierstrassCurve.IsTateTerminal.hasAdditiveReduction_minimal_iff`: the same, for Mathlib's
+  chosen minimal equation `E.minimal R` of a curve `E` with a minimal equation on which the
+  algorithm stops.
+* `WeierstrassCurve.IsTateTerminal.hasGoodReduction_minimal_baseChange_iff`,
+  `WeierstrassCurve.IsTateTerminal.hasMultiplicativeReduction_minimal_baseChange_iff` and
+  `WeierstrassCurve.IsTateTerminal.hasAdditiveReduction_minimal_baseChange_iff`: the same, for an
+  equation defined over a ring mapping into `R`, such as an equation over `ℤ`.
 * `WeierstrassCurve.IsTateTerminal.hasSplitMultiplicativeReduction_iff`: at `Iₙ` with `n ≥ 1`, the
   split test.
 * `WeierstrassCurve.IsTateTerminal.localMinimalDiscriminantValuation_eq`: at `Iₙ`, `n` is the
@@ -157,6 +167,94 @@ theorem IsTateTerminal.not_hasAdditiveReduction_iff (hϖ : Irreducible ϖ)
     ¬ (W.baseChange K).HasAdditiveReduction R ↔ ∃ n, s = .I n := by
   simp only [h.hasAdditiveReduction_iff hϖ, ne_eq, not_forall_not]
 
+/-! The symbol at which the algorithm stops on one minimal equation of a curve `E` decides the
+reduction type of Mathlib's chosen minimal equation `E.minimal R`. -/
+
+/-- **Tate's algorithm detects good reduction of the chosen minimal equation.** If a change of
+variables carries `E` to a minimal equation on which the algorithm stops at `s`, then
+`E.minimal R` has good reduction exactly when `s = I₀`. -/
+theorem IsTateTerminal.hasGoodReduction_minimal_iff {E : WeierstrassCurve K} (D : VariableChange K)
+    (hD : D • E = W.baseChange K) (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ s) :
+    (E.minimal R).HasGoodReduction R ↔ s = .I 0 := by
+  have := h.isMinimal_baseChange (K := K) hϖ
+  obtain ⟨D', hD'⟩ := exists_smul_minimal_eq_of_smul_eq R D hD
+  rw [WeierstrassCurve.hasGoodReduction_minimal_iff, ← valuation_Δ_eq_of_isMinimal_smul R _ hD',
+    ← h.hasGoodReduction_iff (K := K) hϖ, WeierstrassCurve.hasGoodReduction_iff,
+    and_iff_right ‹IsMinimal R (W.baseChange K)›]
+
+/-- **Tate's algorithm detects additive reduction of the chosen minimal equation.** If a change of
+variables carries the elliptic curve `E` to a minimal equation on which the algorithm stops at
+`s`, then `E.minimal R` has additive reduction exactly when `s` is none of the `Iₙ`. -/
+theorem IsTateTerminal.hasAdditiveReduction_minimal_iff {E : WeierstrassCurve K} [E.IsElliptic]
+    (D : VariableChange K) (hD : D • E = W.baseChange K) (hϖ : Irreducible ϖ)
+    (h : W.IsTateTerminal ϖ s) : (E.minimal R).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n := by
+  have := h.isMinimal_baseChange (K := K) hϖ
+  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal R
+  have : (E.minimal R).IsElliptic := hC ▸ inferInstance
+  obtain ⟨D', hD'⟩ := exists_smul_minimal_eq_of_smul_eq R D hD
+  rw [← hasAdditiveReduction_iff_of_isMinimal_smul R _ hD']
+  exact h.hasAdditiveReduction_iff hϖ
+
+/-- **Tate's algorithm detects multiplicative reduction of the chosen minimal equation.** If a
+change of variables carries the elliptic curve `E` to a minimal equation on which the algorithm
+stops at `s`, then `E.minimal R` has multiplicative reduction exactly when `s = Iₙ` with
+`n ≥ 1`. -/
+theorem IsTateTerminal.hasMultiplicativeReduction_minimal_iff {E : WeierstrassCurve K}
+    [E.IsElliptic] (D : VariableChange K) (hD : D • E = W.baseChange K) (hϖ : Irreducible ϖ)
+    (h : W.IsTateTerminal ϖ s) :
+    (E.minimal R).HasMultiplicativeReduction R ↔ ∃ n, s = .I (n + 1) := by
+  have hg := h.hasGoodReduction_minimal_iff (K := K) D hD hϖ
+  have ha := h.hasAdditiveReduction_minimal_iff (K := K) D hD hϖ
+  refine ⟨fun hm ↦ ?_, fun ⟨n, hn⟩ ↦ ?_⟩
+  · obtain ⟨m, rfl⟩ : ∃ m, s = .I m := by
+      simpa only [ne_eq, not_forall_not] using mt ha.2 (hm.not_hasAdditiveReduction R)
+    cases m with
+    | zero => exact absurd (hg.2 rfl) (hm.not_hasGoodReduction R)
+    | succ m => exact ⟨m, rfl⟩
+  rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction (R := R)
+    (W := E.minimal R) with hgood | hm | hadd
+  · exact absurd (hn.symm.trans (hg.1 hgood)) nofun
+  · exact hm
+  · exact absurd hn (ha.1 hadd _)
+
+/-! The same for an equation `W₀` over a ring `A` mapping into `R`, such as an equation over `ℤ`,
+when a change of variables over `R` carries it to an equation on which the algorithm stops. -/
+
+variable {A : Type*} [CommRing A] [Algebra A K] {φ : A →+* R} {W₀ : WeierstrassCurve A}
+
+/-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
+good reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
+mapped into `R` by `φ` compatibly with `K`. If a change of variables `C` over `R` carries it to
+an equation on which the algorithm stops at `s`, then `(W₀.baseChange K).minimal R` has good
+reduction exactly when `s = I₀`. -/
+theorem IsTateTerminal.hasGoodReduction_minimal_baseChange_iff
+    (hφ : (algebraMap R K).comp φ = algebraMap A K) (C : VariableChange R) (hϖ : Irreducible ϖ)
+    (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
+    ((W₀.baseChange K).minimal R).HasGoodReduction R ↔ s = .I 0 :=
+  h.hasGoodReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C W₀) hϖ
+
+/-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
+multiplicative reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
+mapped into `R` by `φ` compatibly with `K`. If a change of variables `C` over `R` carries it to
+an equation on which the algorithm stops at `s`, then `(W₀.baseChange K).minimal R` has
+multiplicative reduction exactly when `s = Iₙ` with `n ≥ 1`. -/
+theorem IsTateTerminal.hasMultiplicativeReduction_minimal_baseChange_iff
+    [(W₀.baseChange K).IsElliptic] (hφ : (algebraMap R K).comp φ = algebraMap A K)
+    (C : VariableChange R) (hϖ : Irreducible ϖ) (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
+    ((W₀.baseChange K).minimal R).HasMultiplicativeReduction R ↔ ∃ n, s = .I (n + 1) :=
+  h.hasMultiplicativeReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C W₀) hϖ
+
+/-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
+additive reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
+mapped into `R` by `φ` compatibly with `K`. If a change of variables `C` over `R` carries it to
+an equation on which the algorithm stops at `s`, then `(W₀.baseChange K).minimal R` has
+additive reduction exactly when `s` is none of the `Iₙ`. -/
+theorem IsTateTerminal.hasAdditiveReduction_minimal_baseChange_iff
+    [(W₀.baseChange K).IsElliptic] (hφ : (algebraMap R K).comp φ = algebraMap A K)
+    (C : VariableChange R) (hϖ : Irreducible ϖ) (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
+    ((W₀.baseChange K).minimal R).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n :=
+  h.hasAdditiveReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C W₀) hϖ
+
 /-- **At `Iₙ`, the index is the valuation of the minimal discriminant.** -/
 theorem IsTateTerminal.localMinimalDiscriminantValuation_eq [(W.baseChange K).IsElliptic]
     (hϖ : Irreducible ϖ) {n : ℕ} (h : W.IsTateTerminal ϖ (.I n)) :
@@ -183,14 +281,8 @@ theorem IsSemistable.exists_eq_I_of_isTateTerminal (h : IsSemistable O W) (v : H
     {W' : WeierstrassCurve (Localization.AtPrime v.asIdeal)} (D : VariableChange F)
     (hD : D • W = W'.baseChange F) {ϖ : Localization.AtPrime v.asIdeal} (hϖ : Irreducible ϖ)
     {s : ReductionSymbol} (hs : W'.IsTateTerminal ϖ s) : ∃ n, s = .I n := by
-  have := hs.isMinimal_baseChange (K := F) hϖ
-  rw [← hs.not_hasAdditiveReduction_iff (K := F) hϖ]
-  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
-  have : (W.minimal (Localization.AtPrime v.asIdeal)).IsElliptic := hC ▸ inferInstance
-  have hD' : (D * C⁻¹) • W.minimal (Localization.AtPrime v.asIdeal) = W'.baseChange F := by
-    rw [mul_smul, ← hC, inv_smul_smul, hD]
-  rw [hasAdditiveReduction_iff_of_isMinimal_smul _ _ hD']
-  exact h.not_hasAdditiveReduction v
+  simpa only [hs.hasAdditiveReduction_minimal_iff D hD hϖ, ne_eq, not_forall_not] using
+    h.not_hasAdditiveReduction v
 
 /-- **Semistability is read off Tate's algorithm.** Over a Dedekind domain whose localisations at
 height-one primes have perfect residue fields, an elliptic curve is semistable exactly when, at
@@ -221,8 +313,7 @@ theorem isSemistable_iff_forall_isTateTerminal
   have hD : (C.baseChange F * C₀) • W = (C • W₀).baseChange F := by
     rw [mul_smul, hC₀, hCW₀]
   obtain ⟨n, rfl⟩ := h v (C • W₀) _ ϖ s hD hϖ hs
-  have hn := (hs.not_hasAdditiveReduction_iff (K := F) hϖ).2 ⟨n, rfl⟩
-  rwa [hasAdditiveReduction_iff_of_isMinimal_smul Rv (C.baseChange F) hCW₀.symm] at hn
+  exact fun ha ↦ (hs.hasAdditiveReduction_minimal_iff _ hD hϖ).1 ha n rfl
 
 end Semistable
 
