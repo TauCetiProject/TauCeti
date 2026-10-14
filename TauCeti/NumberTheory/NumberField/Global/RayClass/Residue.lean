@@ -211,11 +211,7 @@ theorem IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul {𝔪 : Modulus K} {
 
 /-- **Every residue unit modulo the finite part is the reduction of a field unit prime to it.**
 This is what makes the residue-unit factor of the ray class number formula the *whole* of
-`(𝓞 K ⧸ 𝔪.finitePart)ˣ` rather than the image of the algebraic integers prime to `𝔪`.
-
-The generic unit-lifting theorem for `Ideal.sIntegerToQuotient` supplies a locally integral
-unit. Mathlib's `Set.unitEquivUnitsInteger` reads that unit as an element of `Kˣ` prime to the
-finite part. -/
+`(𝓞 K ⧸ 𝔪.finitePart)ˣ` rather than the image of the algebraic integers prime to `𝔪`. -/
 theorem residueHom_surjective (𝔪 : Modulus K) : Function.Surjective (residueHom 𝔪) := by
   intro u
   obtain ⟨z, hz⟩ := 𝔪.finitePart.units_map_sIntegerToQuotient_surjective

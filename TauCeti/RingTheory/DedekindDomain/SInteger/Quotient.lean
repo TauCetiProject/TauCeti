@@ -20,8 +20,8 @@ Mathlib's ring of `S`-integers, where `S` is the complement of the primes dividi
 to `R ⧸ I`. Its kernel is the extension of `I`. Its restriction to units enters the
 ray-class exact sequence, without imposing a number-field or finite-residue-ring hypothesis.
 
-The denominator argument uses `IsDedekindDomain.denIdeal_not_le`: local integrality makes
-the denominator ideal coprime to `I`. The construction includes the unit ideal, where the
+Local integrality makes the denominator ideal coprime to `I`.
+The construction includes the unit ideal, where the
 residue ring is the zero ring. The numerator construction generalizes the existing
 `TauCeti.GlobalNumberFields.residueHom` for number-field moduli.
 
