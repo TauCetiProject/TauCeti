@@ -76,6 +76,10 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 * `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` — for an absolutely continuous source,
   an optimal quadratic plan of finite cost is the graph plan of the gradient of such a function,
   differentiable almost everywhere;
+* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous` — the graph-plan
+  conclusion of `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` for the cost `edist ^ 2`
+  of the quadratic Wasserstein distance: out of an absolutely continuous source, an optimal plan to
+  a law at finite `W₂` distance is the graph plan of a measurable map;
 * `TauCeti.map_swap_eq_graphPlan_gradient_fenchelConjugate`,
   `TauCeti.IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id` and
   `TauCeti.IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id` — for an absolutely
@@ -750,6 +754,27 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
       (hνg ▸ hT.toHasLaw.congr hgrad) hD hsub' hKc (fun y hy => ?_) hgK⟩
   obtain ⟨x, -, hxy⟩ := (mem_subgradientImage_iff _).1 hy
   exact subset_closure (hK x hxy)
+
+/-- **Brenier's theorem for the cost `edist ^ 2`.** On a finite-dimensional real inner product
+space, an optimal plan for the cost `edist ^ 2` out of a finite measure `μ` that is absolutely
+continuous with respect to an additive Haar measure, to a law at finite `W₂` distance from `μ`,
+is the graph plan of a measurable map. -/
+theorem IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous {μ ν : Measure E}
+    [IsFiniteMeasure μ] {π : Measure (E × E)} (hμ : μ ≪ ρ)
+    (h : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν)
+    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
+    ∃ T : E → E, Measurable T ∧ π = graphPlan T μ := by
+  -- The cost `edist ^ 2` is twice the cost `‖x - y‖ ^ 2 / 2` of Brenier's theorem.
+  have hfin' : transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+    have h2 := wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
+      ENNReal.ofNat_ne_top μ ν
+    rw [ENNReal.toReal_ofNat, funext edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two,
+      transportCost_const_mul two_ne_zero ENNReal.ofNat_ne_top] at h2
+    refine fun htop ↦ ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin ?_
+    rw [h2, htop, ENNReal.mul_top two_ne_zero]
+  have hopt := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h
+  obtain ⟨u, -, -, -, -, hgraph⟩ := hopt.exists_eq_graphPlan_gradient hμ hfin'
+  exact ⟨_, measurable_gradient _, hgraph⟩
 
 /-- **The Brenier potential solves the Monge–Ampère equation almost everywhere.** Let `μ` and `ν`
 be probability measures on a finite-dimensional real inner product space `E`, both absolutely

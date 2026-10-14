@@ -5,11 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.FanDominance
 public import TauCeti.Analysis.InnerProductSpace.Sylvester
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
 /-!
-# The Frobenius bound for the Sylvester equation
+# Unitarily invariant bounds for the Sylvester equation
+
+This file bounds solutions of the Sylvester equation `A X - X B = C` in unitarily invariant
+seminorms, for operators on finite-dimensional inner product spaces.
+
+## The Frobenius bound
 
 Let `A` and `B` be symmetric operators on finite-dimensional inner product spaces `E` and `F`, with
 orthonormal eigenbases `(uᵢ)`, `(vⱼ)` and eigenvalues `(αᵢ)`, `(βⱼ)`. The Sylvester operator
@@ -24,6 +30,18 @@ equation `A X - X B = C` satisfies `δ ‖X‖_F ≤ ‖C‖_F`. For the Frobeni
 `1`; the corresponding bound for a general unitarily invariant seminorm under the same pairwise
 separation hypothesis carries the constant `π / 2`.
 
+## The interval/exterior bound
+
+If the spectrum of `A` lies in the interval `[a, b]` and that of `B` outside `(a - δ, b + δ)`, then
+`δ N(X) ≤ N(A X - X B)` for every unitarily invariant seminorm `N`, again with constant `1`; the
+same holds with the roles of `A` and `B` exchanged. With centre `c = (a + b) / 2` and radius
+`r = (b - a) / 2`, for symmetric `A` and `B` the hypothesis gives `‖(A - c) x‖ ≤ r ‖x‖` and
+`(r + δ) ‖y‖ ≤ ‖(B - c) y‖`. Since
+`A X - X B = (A - c) X - X (B - c)`, the ideal inequality `N((A - c) X) ≤ r N(X)` and its reverse
+`(r + δ) N(X) ≤ N(X (B - c))` give `(r + δ) N(X) ≤ r N(X) + N(A X - X B)`. This argument needs
+neither symmetry nor a real centre, so it is stated first for an arbitrary centre `c : 𝕜` and
+norm bounds of this shape.
+
 ## Main statements
 
 * `ContinuousLinearMap.sq_frobenius_sylvester_apply`: the exact formula for `‖A X - X B‖_F²` in
@@ -31,9 +49,22 @@ separation hypothesis carries the constant `π / 2`.
 * `ContinuousLinearMap.mul_frobenius_le_frobenius_sylvester_apply`: if the point spectra of `A`
   and `B` are at distance at least `δ`, then `δ ‖X‖_F ≤ ‖A X - X B‖_F`.
 
+In the namespace `TauCeti.UnitarilyInvariantSeminorm`:
+
+* `mul_map_le_map_sylvester_apply_of_norm_sub_smul_le_of_le_norm_sub_smul`,
+  `mul_map_le_map_sylvester_apply_of_le_norm_sub_smul_of_norm_sub_smul_le`: if `A - c` is
+  bounded by `r` and `B - c` bounded below by `r + δ`, or the other way round, then
+  `δ N(X) ≤ N(A X - X B)`.
+* `mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap`,
+  `mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap_swap`: under an interval/exterior
+  gap between the spectra of symmetric `A` and `B`, in either orientation,
+  `δ N(X) ≤ N(A X - X B)`.
+
 ## References
 
 * R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer (1997), §VII.2.
+* C. Davis, W. M. Kahan, *The rotation of eigenvectors by a perturbation. III*,
+  SIAM J. Numer. Anal. **7** (1970), 1–46.
 * R. Bhatia, C. Davis, A. McIntosh, *Perturbation of spectral subspaces and solution of linear
   operator equations*, Linear Algebra Appl. **52/53** (1983), 45–67.
 -/
@@ -88,3 +119,112 @@ theorem mul_frobenius_le_frobenius_sylvester_apply (hA : (A : E →ₗ[𝕜] E).
   simpa using pow_le_pow_left₀ hδ hij 2
 
 end ContinuousLinearMap
+
+namespace TauCeti.UnitarilyInvariantSeminorm
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {A : E →L[𝕜] E} {B : F →L[𝕜] F} {c : 𝕜} {a b r δ : ℝ}
+
+omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
+/-- As a linear map, `A X - X B` equals `(A - c) X - X (B - c)` for every scalar `c`. -/
+private theorem coe_sylvester_apply_eq_sub_smul_one (A : E →L[𝕜] E) (B : F →L[𝕜] F) (c : 𝕜)
+    (X : F →L[𝕜] E) :
+    ((A.sylvester B X : F →L[𝕜] E) : F →ₗ[𝕜] E) =
+      ((A - c • 1 : E →L[𝕜] E) : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E) -
+        (X : F →ₗ[𝕜] E) ∘ₗ ((B - c • 1 : F →L[𝕜] F) : F →ₗ[𝕜] F) := by
+  rw [← ContinuousLinearMap.sub_smul_one_sylvester_sub_smul_one A B c,
+    ContinuousLinearMap.sylvester_apply, ContinuousLinearMap.toLinearMap_sub,
+    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp]
+
+/-- **Sylvester bound from a disc and the exterior of a larger disc.** If `‖A x - c x‖ ≤ r ‖x‖`
+for every `x` and `(r + δ) ‖y‖ ≤ ‖B y - c y‖` for every `y`, then `δ N(X) ≤ N(A X - X B)` for
+every unitarily invariant seminorm `N`. -/
+theorem mul_map_le_map_sylvester_apply_of_norm_sub_smul_le_of_le_norm_sub_smul
+    (N : UnitarilyInvariantSeminorm 𝕜 F E) (hA : ∀ x, ‖A x - c • x‖ ≤ r * ‖x‖)
+    (hB : ∀ y, (r + δ) * ‖y‖ ≤ ‖B y - c • y‖) (X : F →L[𝕜] E) :
+    δ * N X ≤ N (A.sylvester B X) := by
+  have hsyl := coe_sylvester_apply_eq_sub_smul_one A B c X
+  set A' : E →L[𝕜] E := A - c • 1
+  set B' : F →L[𝕜] F := B - c • 1
+  have h₁ : (r + δ) * N X ≤ N ((X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F)) :=
+    N.mul_map_le_map_comp_right _ _ (by simpa [B'] using hB)
+  have h₂ : N ((A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E)) ≤ r * N X :=
+    N.map_comp_le_left _ _ (by simpa [A'] using hA)
+  -- `X (B - c) = (A - c) X - (A X - X B)`.
+  have h₃ := map_sub_le_add N ((A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E))
+    ((A' : E →ₗ[𝕜] E) ∘ₗ X - X ∘ₗ (B' : F →ₗ[𝕜] F))
+  rw [sub_sub_cancel, ← hsyl] at h₃
+  linarith
+
+/-- **Sylvester bound from the exterior of a disc and a smaller disc.** If
+`(r + δ) ‖x‖ ≤ ‖A x - c x‖` for every `x` and `‖B y - c y‖ ≤ r ‖y‖` for every `y`, then
+`δ N(X) ≤ N(A X - X B)` for every unitarily invariant seminorm `N`. -/
+theorem mul_map_le_map_sylvester_apply_of_le_norm_sub_smul_of_norm_sub_smul_le
+    (N : UnitarilyInvariantSeminorm 𝕜 F E) (hA : ∀ x, (r + δ) * ‖x‖ ≤ ‖A x - c • x‖)
+    (hB : ∀ y, ‖B y - c • y‖ ≤ r * ‖y‖) (X : F →L[𝕜] E) :
+    δ * N X ≤ N (A.sylvester B X) := by
+  have hsyl := coe_sylvester_apply_eq_sub_smul_one A B c X
+  set A' : E →L[𝕜] E := A - c • 1
+  set B' : F →L[𝕜] F := B - c • 1
+  have h₁ : (r + δ) * N X ≤ N ((A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E)) :=
+    N.mul_map_le_map_comp_left _ _ (by simpa [A'] using hA)
+  have h₂ : N ((X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F)) ≤ r * N X :=
+    N.map_comp_le_right _ _ (by simpa [B'] using hB)
+  -- `(A - c) X = X (B - c) + (A X - X B)`.
+  have h₃ := map_add_le_add N ((X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F))
+    ((A' : E →ₗ[𝕜] E) ∘ₗ X - X ∘ₗ (B' : F →ₗ[𝕜] F))
+  rw [add_sub_cancel, ← hsyl] at h₃
+  linarith
+
+/-- The interval `(a - δ, b + δ)` is the open ball about `(a + b) / 2` of radius
+`(b - a) / 2 + δ`. -/
+private theorem ball_eq_Ioo_sub_add :
+    Metric.ball ((a + b) / 2) ((b - a) / 2 + δ) = Set.Ioo (a - δ) (b + δ) := by
+  rw [Real.Ioo_eq_ball]
+  congr 1 <;> ring
+
+/-- **The interval/exterior Sylvester bound.** Let `A` and `B` be symmetric operators on
+finite-dimensional inner product spaces. If the eigenvalues of `A` lie in `[a, b]` and those of `B`
+outside `(a - δ, b + δ)`, then `δ N(X) ≤ N(A X - X B)` for every unitarily invariant seminorm `N`.
+In particular every solution of the Sylvester equation `A X - X B = C` satisfies
+`δ N(X) ≤ N(C)`. -/
+theorem mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap
+    (N : UnitarilyInvariantSeminorm 𝕜 F E) (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
+    (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
+    (h : End.PointIntervalExteriorGap (A : E →ₗ[𝕜] E) ⊤ (B : F →ₗ[𝕜] F) ⊤ a b δ)
+    (X : F →L[𝕜] E) :
+    δ * N X ≤ N (A.sylvester B X) := by
+  have hA' (x : E) := hA.norm_apply_sub_smul_le_of_pointSpectrumIn (fun _ _ ↦ Submodule.mem_top)
+    (h.pointSpectrumIn_Icc.mono le_rfl (Real.Icc_eq_closedBall a b).subset)
+    (Submodule.mem_top (x := x))
+  have hB' (y : F) := hB.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn
+    (fun _ _ ↦ Submodule.mem_top) (h.pointSpectrumIn_compl_Ioo.mono le_rfl
+      (Set.compl_subset_compl.mpr ball_eq_Ioo_sub_add.subset)) (Submodule.mem_top (x := y))
+  exact N.mul_map_le_map_sylvester_apply_of_norm_sub_smul_le_of_le_norm_sub_smul
+    (c := (((a + b) / 2 : ℝ) : 𝕜))
+    (fun x ↦ by simpa using hA' x) (fun y ↦ by simpa using hB' y) X
+
+/-- **The interval/exterior Sylvester bound, reversed orientation.** Let `A` and `B` be symmetric
+operators on finite-dimensional inner product spaces. If the eigenvalues of `B` lie in `[a, b]`
+and those of `A` outside `(a - δ, b + δ)`, then `δ N(X) ≤ N(A X - X B)` for every unitarily
+invariant seminorm `N`. In particular every solution of the Sylvester equation `A X - X B = C`
+satisfies `δ N(X) ≤ N(C)`. -/
+theorem mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap_swap
+    (N : UnitarilyInvariantSeminorm 𝕜 F E) (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
+    (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
+    (h : End.PointIntervalExteriorGap (B : F →ₗ[𝕜] F) ⊤ (A : E →ₗ[𝕜] E) ⊤ a b δ)
+    (X : F →L[𝕜] E) :
+    δ * N X ≤ N (A.sylvester B X) := by
+  have hA' (x : E) := hA.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn
+    (fun _ _ ↦ Submodule.mem_top) (h.pointSpectrumIn_compl_Ioo.mono le_rfl
+      (Set.compl_subset_compl.mpr ball_eq_Ioo_sub_add.subset)) (Submodule.mem_top (x := x))
+  have hB' (y : F) := hB.norm_apply_sub_smul_le_of_pointSpectrumIn (fun _ _ ↦ Submodule.mem_top)
+    (h.pointSpectrumIn_Icc.mono le_rfl (Real.Icc_eq_closedBall a b).subset)
+    (Submodule.mem_top (x := y))
+  exact N.mul_map_le_map_sylvester_apply_of_le_norm_sub_smul_of_norm_sub_smul_le
+    (c := (((a + b) / 2 : ℝ) : 𝕜))
+    (fun x ↦ by simpa using hA' x) (fun y ↦ by simpa using hB' y) X
+
+end TauCeti.UnitarilyInvariantSeminorm

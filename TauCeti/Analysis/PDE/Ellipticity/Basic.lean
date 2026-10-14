@@ -389,6 +389,13 @@ lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
 
+/-- Every matrix quadratic form is bounded above by the operator norm of the matrix bilinear form
+times `‖ξ‖²`. -/
+lemma toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A : Matrix n n ℝ)
+    (ξ : EuclideanSpace ℝ n) : A.toQuadraticForm' ξ ≤ ‖matrixBilinearForm A‖ * ‖ξ‖ ^ 2 := by
+  rw [← matrixBilinearForm_self, sq, ← mul_assoc]
+  exact (Real.le_norm_self _).trans ((matrixBilinearForm A).le_opNorm₂ ξ ξ)
+
 /-- The symmetric part has the same quadratic form as the original coefficient matrix. -/
 @[simp]
 lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
