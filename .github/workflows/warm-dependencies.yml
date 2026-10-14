@@ -157,6 +157,7 @@ jobs:
           PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
           LAKE_CACHE_MAX_REVS: '1000'
+          LAKE_CACHE_DIR: ${{ github.workspace }}/warm-input/project/.lake/cache
         run: |
           if [ -n "$PUBLIC_ARTIFACT_ENDPOINT" ] && [ -n "$PUBLIC_REVISION_ENDPOINT" ]; then
             bash scripts/lake-cache-get.sh warm-input/project
