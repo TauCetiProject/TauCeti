@@ -23,6 +23,8 @@ of Mathlib's `AlgebraicGeometry.Scheme.homOfLE`.
 
 * `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE_ofRestrict`: composing with the inclusion
   `X|_W ⟶ X` gives the inclusion `X|_V ⟶ X`.
+* `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE_refl`,
+  `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE_comp`: the inclusions are functorial.
 
 ## Implementation notes
 
@@ -68,6 +70,35 @@ theorem restrictHomOfLE_ofRestrict {V W : Opens X} (h : V ≤ W) :
   ext Q
   rw [NatTrans.comp_app, comp_c_app, Functor.whiskerRight_app, eqToHom_app,
     ofRestrict_c_app, ofRestrict_c_app, restrictHomOfLE_c_app]
+  erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
+  rfl
+
+/-- The inclusion of a restriction into itself is the identity. -/
+@[simp]
+theorem restrictHomOfLE_refl (V : Opens X) :
+    X.restrictHomOfLE (le_refl V) = 𝟙 (X.restrict V.isOpenEmbedding) := by
+  have hbase : (X.restrictHomOfLE (le_refl V)).base =
+      Hom.base (𝟙 (X.restrict V.isOpenEmbedding)) := by
+    rw [restrictHomOfLE_base, id_base]
+    rfl
+  refine PresheafedSpace.ext _ _ hbase ?_
+  ext Q
+  rw [NatTrans.comp_app, id_c_app, Functor.whiskerRight_app, eqToHom_app, restrictHomOfLE_c_app]
+  erw [← X.presheaf.map_comp]
+  rfl
+
+/-- Inclusions between restrictions to nested opens compose. -/
+@[reassoc (attr := simp)]
+theorem restrictHomOfLE_comp {U V W : Opens X} (h : U ≤ V) (k : V ≤ W) :
+    X.restrictHomOfLE h ≫ X.restrictHomOfLE k = X.restrictHomOfLE (h.trans k) := by
+  have hbase : (X.restrictHomOfLE h ≫ X.restrictHomOfLE k).base =
+      (X.restrictHomOfLE (h.trans k)).base := by
+    rw [comp_base, restrictHomOfLE_base, restrictHomOfLE_base, restrictHomOfLE_base]
+    rfl
+  refine PresheafedSpace.ext _ _ hbase ?_
+  ext Q
+  rw [NatTrans.comp_app, comp_c_app, Functor.whiskerRight_app, eqToHom_app,
+    restrictHomOfLE_c_app, restrictHomOfLE_c_app, restrictHomOfLE_c_app]
   erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
   rfl
 
