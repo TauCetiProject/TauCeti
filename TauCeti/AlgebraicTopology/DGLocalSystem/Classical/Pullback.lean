@@ -46,7 +46,7 @@ while it acts on the restriction through `C_*(Ωf)`, whose degree-zero part is t
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §1.4, Definition 1.8.
 * G. W. Whitehead, *Elements of Homotopy Theory*, Graduate Texts in Mathematics 61, Springer,
-  1978, Chapter III (local systems and their pullbacks).
+  1978, Chapter VI, Section 1 ("Bundles of Groups": local systems and their pullbacks).
 -/
 
 public section
