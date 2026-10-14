@@ -20,7 +20,7 @@ exchangeable** process the excursion process is exchangeable, hence conditionall
 excursion law is a mixture.  Combining the two gives the representation
 
 ```text
-pathLaw μ X = (deFinettiBarycenter π).map (pathOfExcursions a₀)
+pathLaw μ X = (Measure.deFinettiBarycenter π).map (pathOfExcursions a₀)
 ```
 
 for a probability measure `π` on laws of finite words: draw an excursion law `P` from `π`, draw
@@ -135,7 +135,7 @@ theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabil
     ∃ π : Measure (ProbabilityMeasure (List α)), IsProbabilityMeasure π ∧
       (∀ᵐ P : ProbabilityMeasure (List α) ∂π,
         (P : Measure (List α)) {l : List α | a₀ ∈ l} = 0) ∧
-      pathLaw μ X = (deFinettiBarycenter π).map (pathOfExcursions a₀) := by
+      pathLaw μ X = (Measure.deFinettiBarycenter π).map (pathOfExcursions a₀) := by
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
   obtain ⟨ν, hν⟩ := (h.conditionallyIID_excursionProcess hrec h0).exists_directing
@@ -148,7 +148,7 @@ theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabil
     exact ((Measure.measurable_coe hSmeas).comp measurable_subtype_coe)
       (measurableSet_singleton (0 : ENNReal))
   · rw [hrec.pathLaw_eq_map_pathOfExcursions h.aemeasurable (measurableSet_singleton a₀) h0,
-      pathLaw_eq_bind_infinitePi_of_mixedIIDWith hmix, deFinettiBarycenter_def]
+      pathLaw_eq_bind_infinitePi_of_mixedIIDWith hmix, Measure.deFinettiBarycenter_def]
 
 end Probability
 

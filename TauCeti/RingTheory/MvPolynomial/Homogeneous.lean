@@ -16,7 +16,10 @@ multiplies its value by `a ^ n`. This permits normalizing linear substitutions w
 expanding the polynomial.
 
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
-notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`.
+notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In the same way
+`hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
+vector, and `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
+positive degree.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
@@ -61,6 +64,39 @@ theorem eval_smul {σ R : Type*} [CommSemiring R]
     _root_.MvPolynomial.eval (a • g) p = a ^ n • _root_.MvPolynomial.eval g p := by
   simpa only [_root_.MvPolynomial.eval, coe_eval₂Hom, Pi.smul_def, smul_eq_mul] using
     hp.eval₂_const_mul (RingHom.id R) g a
+
+/-- The coefficient of `X_j ^ n` in a homogeneous polynomial of degree `n` is its value at the
+`j`-th basis vector: every other monomial involves a variable other than `X_j`. -/
+theorem coeff_single_eq_eval {σ R : Type*} [CommSemiring R] [DecidableEq σ]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (j : σ) :
+    p.coeff (Finsupp.single j n) = _root_.MvPolynomial.eval (Pi.single j 1) p := by
+  conv_rhs => rw [p.as_sum]
+  rw [map_sum, Finset.sum_eq_single (Finsupp.single j n)]
+  · simp [_root_.MvPolynomial.eval_monomial]
+  · intro s hs hne
+    obtain ⟨i, hij, hi⟩ : ∃ i, i ≠ j ∧ s i ≠ 0 := by
+      by_contra! h
+      have hs' : s = Finsupp.single j (s j) := Finsupp.ext fun i ↦ by
+        by_cases hi : i = j
+        · simp [hi]
+        · simp [hi, h i hi]
+      have hdeg := hp (_root_.MvPolynomial.mem_support_iff.mp hs)
+      rw [hs'] at hdeg
+      simp only [Finsupp.weight_apply, Finsupp.sum_single_index, Pi.one_apply, smul_eq_mul,
+        mul_one] at hdeg
+      exact hne (hs'.trans (by rw [hdeg]))
+    rw [_root_.MvPolynomial.eval_monomial, Finsupp.prod,
+      Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi)
+        (by rw [Pi.single_eq_of_ne hij, zero_pow hi]), mul_zero]
+  · intro h
+    simp [_root_.MvPolynomial.notMem_support_iff.mp h]
+
+/-- A homogeneous polynomial of positive degree has zero constant coefficient. -/
+theorem constantCoeff_eq_zero {σ R : Type*} [CommSemiring R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (hn : n ≠ 0) :
+    _root_.MvPolynomial.constantCoeff p = 0 := by
+  rw [_root_.MvPolynomial.constantCoeff_eq]
+  exact hp.coeff_eq_zero (by simpa using hn.symm)
 
 end MvPolynomial.IsHomogeneous
 

@@ -128,14 +128,14 @@ def dualLeftRegularEquiv :
     (leftRegular k G).dual.Equiv (leftRegular k G) :=
   .mk (MonoidAlgebra.basis G k).toDualEquiv.symm fun g ↦ by
     ext f h
-    simp [TauCeti.MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply,
+    simp [Module.Dual.coeff_basis_toDualEquiv_symm_apply,
       Module.Dual.transpose_apply, smul_eq_mul]
 
 /-- Under regular self-duality, the coefficient at `g` is evaluation on the basis vector `g`. -/
 @[simp]
 theorem dualLeftRegularEquiv_apply_coeff (f : Module.Dual k (MonoidAlgebra k G)) (g : G) :
     (dualLeftRegularEquiv (k := k) (G := G) f).coeff g = f (MonoidAlgebra.single g 1) :=
-  TauCeti.MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply f g
+  f.coeff_basis_toDualEquiv_symm_apply g
 
 /-- The inverse of regular self-duality evaluates on the basis vector `g` as the coefficient
 at `g`. -/

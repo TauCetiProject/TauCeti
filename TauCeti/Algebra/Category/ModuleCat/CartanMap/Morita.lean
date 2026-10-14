@@ -265,7 +265,7 @@ theorem cartanMap_finiteProjectiveModulesK0Equiv
   DFunLike.congr_fun e.cartanMap_comp_finiteProjectiveModulesK0Equiv x
 
 include e in
-/-- **The resolution-theorem hypothesis is a Morita invariant**: for rings with equivalent module
+/-- **Bijectivity of the Cartan map is a Morita invariant**: for rings with equivalent module
 categories, the Cartan map of `A` is bijective if and only if the Cartan map of `B` is. -/
 theorem cartanMap_bijective_iff :
     Function.Bijective (cartanMap A) ↔ Function.Bijective (cartanMap B) := by

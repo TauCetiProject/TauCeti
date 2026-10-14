@@ -21,8 +21,8 @@ the whole algebra `C`.
 
 For a commutative Hopf algebra, this is the finite-dimensional construction at the heart of the
 affine-group embedding theorem. After choosing a basis, its coefficient matrix defines a map to
-`GLₙ`; the faithful-representation criterion identifies generation by its coefficients with a
-closed immersion.
+`GLₙ`; the faithful-representation criterion identifies generation by its coefficients together with
+their antipode images with a closed immersion.
 
 ## Main declaration
 
@@ -32,9 +32,8 @@ closed immersion.
 
 ## References
 
-This is the standard proof of the embedding theorem's finite-dimensional representation step;
-see J. S. Milne, *Algebraic Groups* (2017), Proposition 4.7 and Theorem 4.9. It advances Layer 1,
-"Embedding theorem (hard)", of the ReductiveGroups roadmap.
+This is the standard proof of the embedding theorem's finite-dimensional representation step; see
+J. S. Milne, *Algebraic Groups* (2017), Proposition 4.7 and Theorem 4.9.
 -/
 
 public section

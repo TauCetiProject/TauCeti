@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Radial differentiation of disc integrals
@@ -114,10 +114,7 @@ theorem hasDerivAt_integral_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
   have heq : (fun t ↦ ∫ z in ball z₀ t, f z) =ᶠ[𝓝 r]
       (fun t ↦ (∫ z in ball z₀ a, f z) + ∫ s in a..t, G s) := by
     filter_upwards [Ioo_mem_nhds har hrb] with t ht
-    have hclosed : closedBall z₀ t =ᵐ[volume] ball z₀ t :=
-      (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-        (volume.addHaar_closedBall_eq_addHaar_ball z₀ t).le
-        measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+    have hclosed := volume.addHaar_closedBall_ae_eq_ball z₀ t
     have hA : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ t} = closedBall z₀ t \ ball z₀ a := by
       ext z
       simp only [mem_ofPred_eq, Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, not_lt]

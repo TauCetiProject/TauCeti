@@ -79,6 +79,7 @@ jobs:
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py
+          python3 scripts/test_ci_host_resources.py
           python3 scripts/test_web_pins.py
           python3 scripts/test_attest_pr_config.py
           python3 scripts/test_profile_workflow.py
@@ -89,6 +90,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
           python3 scripts/test_check_expired_mathlib_shims.py
+          python3 scripts/test_check_source_options.py
           python3 scripts/test_toolchain_tags.py
 
       # The two-library split is build convenience, not a trust boundary.
@@ -101,16 +103,12 @@ jobs:
             exit 1
           fi
 
-      # No-set_option guard. `set_option` is an escape hatch (it can raise maxHeartbeats,
-      # silence linters, bump maxRecDepth, ...), so TauCeti/ source may not use it. Like the
-      # import guard it is a textual scan that needs no elaboration, so it runs trusted and
-      # outside the sandbox.
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      # Option overrides and heartbeat instrumentation are forbidden in library code.
+      # This cheap trusted scan ignores comments without double quotes, conservatively
+      # includes strings and names, and needs no elaboration or sandbox access.
+      - name: Reject option overrides and heartbeat instrumentation
         run: |
-          if grep -rIn '^set_option ' TauCeti/ TauCeti.lean; then
-            echo "::error::TauCeti/ and TauCeti.lean may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
-            exit 1
-          fi
+          python3 scripts/check_source_options.py TauCeti/ TauCeti.lean
 
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store. This is
       # deliberately narrower than a cache of the whole multi-gigabyte `./.lake` tree: `lake exe
