@@ -178,12 +178,13 @@ theorem isIntegrallyClosedIn_of_irreducible_map {L : Type*} [Field L] [Algebra k
     rw [← restrictScalars_eq_top_iff (K := k), eq_top_iff, ← hxy, adjoin_le_iff]
     exact (subset_adjoin M {x, y} :)
   have hM : aevalAeval x y (φ.map (mapRingHom (algebraMap k M))) = 0 := by
-    rw [aevalAeval_eq_eval₂, eval₂_map, ← h, aevalAeval_eq_eval₂]
+    rw [aevalAeval_eq_eval₂, Polynomial.eval₂_map, ← h, aevalAeval_eq_eval₂]
     congr 1
     refine RingHom.ext fun p ↦ ?_
-    simp [aeval_map_algebraMap]
+    simp [Polynomial.aeval_map_algebraMap]
   have hrankM := (hx.extendScalars M).finrank_eq_natDegree_of_aevalAeval_eq_zero hxyM hφM hM
-  rw [natDegree_map_eq_of_injective (map_injective _ (algebraMap k M).injective)] at hrankM
+  rw [natDegree_map_eq_of_injective
+    (Polynomial.map_injective _ (algebraMap k M).injective)] at hrankM
   have hrankk := hx.finrank_eq_natDegree_of_aevalAeval_eq_zero hxy hφk h
   have hle : k⟮x⟯ ≤ (M⟮x⟯).restrictScalars k := by
     rw [adjoin_simple_le_iff, mem_restrictScalars]
