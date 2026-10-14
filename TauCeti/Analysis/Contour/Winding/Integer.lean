@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
+import TauCeti.Analysis.Contour.AbsolutelyContinuous
 
 /-!
 # The winding number of a closed curve is an integer
@@ -58,13 +59,8 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
     (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w)
     (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
     ∃ n : ℤ, windingNumber γ a b w = n := by
-  have hderiv : IntervalIntegrable (deriv γ) volume a b := by
-    refine (h_int.continuousOn_mul (hγ_cont.sub (continuousOn_const (c := w)))).congr
-      (fun t ht ↦ ?_)
-    dsimp
-    rw [← mul_assoc, mul_inv_cancel₀ (sub_ne_zero.mpr (h_avoid t (uIoc_subset_uIcc ht))), one_mul]
-  exact (hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
-    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv).exists_int_windingNumber hclosed
+  exact (hγ_cont.absolutelyContinuousOnInterval_of_intervalIntegrable_inv_sub_mul_deriv hP
+    hγ_diff h_avoid h_int).exists_int_windingNumber hclosed
       (by rintro ⟨t, ht, heq⟩; exact h_avoid t ht heq)
 
 /-- **Piecewise-`C¹` form of winding-number integrality.** For a closed piecewise-`C¹` curve that

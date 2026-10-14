@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
+import TauCeti.Analysis.Contour.AbsolutelyContinuous
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 
 /-!
@@ -89,13 +90,8 @@ theorem exp_two_pi_I_mul_windingNumber_of_avoidance
     (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
     Complex.exp (2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b w)
       = (γ b - w) / (γ a - w) := by
-  have hderiv : IntervalIntegrable (deriv γ) volume a b := by
-    refine (h_int.continuousOn_mul (hγ_cont.sub (continuousOn_const (c := w)))).congr
-      (fun t ht ↦ ?_)
-    dsimp
-    rw [← mul_assoc, mul_inv_cancel₀ (sub_ne_zero.mpr (h_avoid t (uIoc_subset_uIcc ht))), one_mul]
-  exact (hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
-    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv).exp_two_pi_I_mul_windingNumber
+  exact (hγ_cont.absolutelyContinuousOnInterval_of_intervalIntegrable_inv_sub_mul_deriv hP
+    hγ_diff h_avoid h_int).exp_two_pi_I_mul_windingNumber
       (by rintro ⟨t, ht, heq⟩; exact h_avoid t ht heq)
 
 /-- **Piecewise-`C¹` form of the endpoint-ratio identity.** Piecewise-`C¹` regularity supplies the
