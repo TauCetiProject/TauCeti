@@ -63,11 +63,9 @@ theorem _root_.LipschitzWith.isLipschitzDomainWith_normalEpigraph {L : ℝ≥0} 
   · simp [e]
   · simp [ψ, hxGraph]
   · intro z _
-    rw [coe_normalEpigraph]
-    dsimp only [e, ψ]
-    simp only [AffineIsometryEquiv.symm_symm, AffineIsometryEquiv.coe_vaddConst,
-      vadd_eq_add, Set.mem_ofPred_eq]
-    rw [WithLp.add_fst, WithLp.add_snd]
+    simp only [SetLike.mem_coe, mem_normalEpigraph, e, ψ,
+      AffineIsometryEquiv.symm_symm, AffineIsometryEquiv.coe_vaddConst, vadd_eq_add,
+      WithLp.add_fst, WithLp.add_snd]
     constructor <;> intro h <;> linarith
 
 /-- A normal half-space is a Lipschitz domain with Lipschitz constant zero. -/

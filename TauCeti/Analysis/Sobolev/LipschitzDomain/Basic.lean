@@ -141,13 +141,7 @@ theorem IsLipschitzDomainAtWith.image_affineIsometryEquiv
     have hchart : (g.symm.trans e).symm z = g (e.symm z) := by
       simpa only [Function.comp_apply, AffineIsometryEquiv.symm_symm] using
         congrFun (AffineIsometryEquiv.coe_symm_trans g.symm e) z
-    have himage : g (e.symm z) ∈ g '' Omega ↔ e.symm z ∈ Omega := by
-      constructor
-      · rintro ⟨y, hy, hgy⟩
-        rw [← g.injective hgy]
-        exact hy
-      · exact fun hz ↦ ⟨e.symm z, hz, rfl⟩
-    rw [hchart, himage]
+    rw [hchart, g.injective.mem_set_image]
     exact hOmega z hz
 
 /-- The local Lipschitz-domain condition is invariant under an affine isometry. -/
