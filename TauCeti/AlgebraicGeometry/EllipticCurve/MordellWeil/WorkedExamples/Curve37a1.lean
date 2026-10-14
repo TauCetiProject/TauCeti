@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.InfiniteOrder
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.FinitelyGenerated
+public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
 -- Proof-only: integral models over a tower, points carried along `ZMod p → k`, and membership
 -- in the maximal ideal of the valuation ring at a prime.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
@@ -58,26 +59,6 @@ public section
 open WeierstrassCurve Affine IsDedekindDomain IsLocalRing
 
 namespace TauCeti.WorkedExamples
-
-/-- The curve 37.a1, `y² + y = x³ - x`, as an integral Weierstrass model. -/
-abbrev curve37a1 : WeierstrassCurve ℤ := ⟨0, 0, 1, -1, 0⟩
-
-/-- The discriminant of `y² + y = x³ - x` is `37`. -/
-theorem Δ_curve37a1 : curve37a1.Δ = 37 := by
-  simp [Δ, b₂, b₄, b₆, b₈]
-
-/-- 37.a1 is an elliptic curve over `ℚ`. -/
-instance : (curve37a1.baseChange ℚ).IsElliptic := by
-  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve37a1]
-  norm_num
-
-/-- The rational points of 37.a1 are the solutions of `y² + y = x³ - x`. -/
-theorem equation_curve37a1_iff (x y : ℚ) :
-    (curve37a1.baseChange ℚ).toAffine.Equation x y ↔ y ^ 2 + y = x ^ 3 - x := by
-  rw [equation_iff]
-  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆, map_zero,
-    map_one, map_neg]
-  constructor <;> intro h <;> linear_combination h
 
 /-- Every rational solution of `y² + y = x³ - x` is a nonsingular point of 37.a1. -/
 theorem nonsingular_curve37a1 {x y : ℚ} (h : y ^ 2 + y = x ^ 3 - x) :
