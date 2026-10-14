@@ -42,6 +42,9 @@ holds for every homomorphism topologically of finite type
   invariant under isomorphisms of the source and of the target.
 * `TauCeti.PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top`: being locally of finite type can be
   checked on an open cover of the source.
+* `TauCeti.PreAdicSpace.LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le`: the restriction
+  of `f` to an open of the source is locally of finite type once its restrictions to smaller opens
+  around every point are.
 * `TauCeti.PreAdicSpace.LocallyOfFiniteType.comp_of_isOpenImmersion`: composing with an open
   immersion into a larger target preserves being locally of finite type.
 
@@ -184,6 +187,26 @@ theorem LocallyOfFiniteType.of_iSup_eq_top {f : X ⟶ Y} {ι : Type*} (U : ι �
     (restrictRestrictIso X (U i).isOpenEmbedding W).symm ≪≫ eW, eV, ?_⟩
   rw [Iso.trans_hom, Iso.symm_hom, Category.assoc, ← hfac, Iso.eq_inv_comp,
     restrictRestrictIso_hom_ofRestrict_assoc]
+
+/-- **Being locally of finite type on an open can be checked on smaller opens**: if every point
+of an open `W` of `X` has an open neighbourhood `V ≤ W` on which `f` is locally of finite type,
+then so is the restriction `W → Y` of `f`. The opens `V`, read as opens of the restriction to `W`,
+cover it, and `of_iSup_eq_top` applies. -/
+theorem LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le {f : X ⟶ Y} (W : Opens X)
+    (h : ∀ x : W, ∃ V : Opens X, x.1 ∈ V ∧ V ≤ W ∧
+      LocallyOfFiniteType (X.ofRestrict V.isOpenEmbedding ≫ f)) :
+    LocallyOfFiniteType (X.ofRestrict W.isOpenEmbedding ≫ f) := by
+  choose V hxV hVW hV using h
+  refine of_iSup_eq_top (fun x ↦ (Opens.map (X.ofRestrict W.isOpenEmbedding).base).obj (V x))
+    (eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, Opens.mem_map.mpr (hxV x)⟩) fun x ↦ ?_
+  -- the open `V x` of the restriction to `W` is identified with the open `V x` of `X`
+  have hO : W.isOpenEmbedding.isOpenMap.functor.obj
+      ((Opens.map (X.ofRestrict W.isOpenEmbedding).base).obj (V x)) = V x :=
+    (Opens.functor_obj_map_obj W.isOpenEmbedding.isOpenMap (V x)).trans
+      (by rw [Opens.isOpenEmbedding_obj_top, inf_eq_right.mpr (hVW x)])
+  rw [← Category.assoc, ← restrictRestrictIso_hom_ofRestrict, Category.assoc,
+    MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}, hO]
+  exact hV x
 
 /-- **Composing with an open immersion into a larger target preserves being locally of finite
 type**: an open `V` of `Y` over which `f` is induced by a morphism of Huber pairs is identified,
