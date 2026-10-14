@@ -117,6 +117,21 @@ variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
 
+/-- Moving a point of a closed simplex towards a vertex stays in the enlarged simplex. -/
+theorem StandardSimplex.smul_add_single_mem {σ : Finset ι} (x : StandardSimplex σ)
+    (v : ι) (t : unitInterval) :
+    (1 - (t : ℝ)) • x.1 + (t : ℝ) • Finsupp.single v 1 ∈
+      convexHull ℝ ((insert v σ).image (fun w => Finsupp.single w (1 : ℝ)) :
+        Set (ι →₀ ℝ)) := by
+  apply (convex_convexHull ℝ _)
+  · exact convexHull_mono (Finset.coe_subset.mpr
+      (Finset.image_mono _ (Finset.subset_insert v σ))) x.2
+  · exact subset_convexHull ℝ _ (Finset.mem_coe.mpr
+      (Finset.mem_image.mpr ⟨v, Finset.mem_insert_self v σ, rfl⟩))
+  · exact sub_nonneg.mpr t.2.2
+  · exact t.2.1
+  · ring
+
 /-- A closed face, with the subspace topology of the weak realization, is homeomorphic to
 its coordinate simplex. The ambient complex and its vertex type may be infinite. -/
 noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι)
