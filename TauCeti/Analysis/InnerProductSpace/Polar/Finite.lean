@@ -162,18 +162,24 @@ theorem polarFactor_zero : (0 : E →ₗ[𝕜] F).polarFactor = 0 := by
 
 /-! ### The adjoint of the polar factor -/
 
-/-- The adjoint of the canonical polar factor carries the original map back to its modulus:
-`U† A = |A|`. -/
+/-- The adjoint of the canonical polar factor carries the image of a vector back to its
+modulus: `U† (A x) = |A| x`. -/
 @[simp]
-theorem adjoint_polarFactor_comp (A : E →ₗ[𝕜] F) :
-    A.polarFactor.adjoint ∘ₗ A = A.operatorAbs := by
+theorem adjoint_polarFactor_apply_apply (A : E →ₗ[𝕜] F) (x : E) :
+    A.polarFactor.adjoint (A x) = A.operatorAbs x := by
   let := FiniteDimensional.complete 𝕜 E
   let := FiniteDimensional.complete 𝕜 F
   have h := ContinuousLinearMap.adjoint_factorThru_comp
     (T := A.toContinuousLinearMap) (A := A.operatorAbs.toContinuousLinearMap) (by simp)
   rw [← A.toContinuousLinearMap_polarFactor] at h
-  ext x
   simpa [adjoint_eq_toCLM_adjoint] using congr($h x)
+
+/-- The adjoint of the canonical polar factor carries the original map back to its modulus:
+`U† A = |A|`. -/
+@[simp]
+theorem adjoint_polarFactor_comp (A : E →ₗ[𝕜] F) :
+    A.polarFactor.adjoint ∘ₗ A = A.operatorAbs :=
+  LinearMap.ext A.adjoint_polarFactor_apply_apply
 
 /-- The adjoint of the polar decomposition: `A† = |A| U†`. -/
 @[simp]
@@ -181,6 +187,12 @@ theorem operatorAbs_comp_adjoint_polarFactor (A : E →ₗ[𝕜] F) :
     A.operatorAbs ∘ₗ A.polarFactor.adjoint = A.adjoint := by
   conv_rhs => rw [← A.polarFactor_comp_operatorAbs]
   rw [adjoint_comp, A.isPositive_operatorAbs.adjoint_eq]
+
+/-- The adjoint of the polar decomposition, applied to a vector: `|A| (U† y) = A† y`. -/
+@[simp]
+theorem operatorAbs_adjoint_polarFactor_apply (A : E →ₗ[𝕜] F) (y : F) :
+    A.operatorAbs (A.polarFactor.adjoint y) = A.adjoint y :=
+  LinearMap.congr_fun A.operatorAbs_comp_adjoint_polarFactor y
 
 /-- The modulus of the adjoint is the original map composed with the adjoint of its canonical
 polar factor: `|A†| = A U†`, equivalently `|A†| = U |A| U†`. -/
@@ -215,6 +227,12 @@ theorem operatorAbs_adjoint_comp_polarFactor (A : E →ₗ[𝕜] F) :
   have h := congrArg adjoint A.adjoint.polarFactor_comp_operatorAbs
   rwa [polarFactor_adjoint, adjoint_comp, adjoint_adjoint, adjoint_adjoint,
     A.adjoint.isPositive_operatorAbs.adjoint_eq] at h
+
+/-- The left polar decomposition, applied to a vector: `|A†| (U x) = A x`. -/
+@[simp]
+theorem operatorAbs_adjoint_apply_polarFactor_apply (A : E →ₗ[𝕜] F) (x : E) :
+    A.adjoint.operatorAbs (A.polarFactor x) = A x :=
+  LinearMap.congr_fun A.operatorAbs_adjoint_comp_polarFactor x
 
 /-! ### Unitary extensions -/
 
