@@ -22,9 +22,9 @@ Huber pairs. `Pair.map_iterateSplitHom_plus` identifies the plus rings, and
 `Pair.isQuotientMapping_iterateSplitHom` makes the splitting usable in quotient presentations.
 The weights need not be finite and the base need not be Tate, complete, or Hausdorff.
 
-The construction uses `TauCeti.Huber.iterateRingEquiv` and the generator characterization
-`Pair.weighted_completion_plus_le_comap`. It generalizes the unweighted plus-ring argument
-in the finite-type composition theorem.
+The underlying ring isomorphism is `TauCeti.Huber.iterateRingEquiv`, and the plus rings satisfy
+the generator characterization `Pair.weighted_completion_plus_le_comap`.
+`Pair.Hom.IsTopologicallyFiniteType.comp` uses the splitting to flatten iterated presentations.
 
 ## References
 
@@ -57,10 +57,9 @@ private theorem plus_le_comap_iterateFirstBlockHom :
     rw [iterateFirstBlockHom_coe_weightedC, algebraMap_completion_weightedRestrictedSubring_apply]
     exact S.weightedC_mem_weighted_completion_plus hU ha
   · intro i t ht
-    rw [Completion.coe_mul, map_mul, iterateFirstBlockHom_coe_weightedC,
-      iterateFirstBlockHom_coe_weightedX, algebraMap_completion_weightedRestrictedSubring_apply,
-      ← Completion.coe_mul]
-    exact S.weightedC_mul_weightedX_mem_weighted_completion_plus hU (hTU i ▸ ht)
+    simpa only [Completion.coe_mul, map_mul, iterateFirstBlockHom_coe_weightedC,
+      iterateFirstBlockHom_coe_weightedX, algebraMap_completion_weightedRestrictedSubring_apply]
+      using S.weightedC_mul_weightedX_mem_weighted_completion_plus hU (hTU i ▸ ht)
 
 /-- Splitting the variables of a completed weighted algebra, as a morphism of Huber pairs. -/
 def iterateSplitHom : Hom (S.weighted hU).completion
@@ -77,18 +76,17 @@ def iterateSplitHom : Hom (S.weighted hU).completion
         (S.weightedC_mem_weighted_completion_plus hT ha)
     · intro l
       refine Fin.addCases (fun i t ht ↦ ?_) (fun j t ht ↦ ?_) l
-      · rw [Completion.coe_mul, map_mul, iterateSplitHom_coe_weightedC,
-          iterateSplitHom_coe_weightedX, iterateStructureHom_apply, iterateVar_castAdd,
-          ← Completion.coe_mul, ← map_mul, ← Completion.coe_mul]
-        exact (S.weighted hT).completion.weightedC_mem_weighted_completion_plus hW
-          (S.weightedC_mul_weightedX_mem_weighted_completion_plus hT (hTU i ▸ ht))
-      · rw [Completion.coe_mul, map_mul, iterateSplitHom_coe_weightedC,
+      · simpa only [Completion.coe_mul, map_mul, iterateSplitHom_coe_weightedC,
+          iterateSplitHom_coe_weightedX, iterateStructureHom_apply, iterateVar_castAdd]
+          using (S.weighted hT).completion.weightedC_mem_weighted_completion_plus hW
+            (S.weightedC_mul_weightedX_mem_weighted_completion_plus hT (hTU i ▸ ht))
+      · simpa only [Completion.coe_mul, map_mul, iterateSplitHom_coe_weightedC,
           iterateSplitHom_coe_weightedX, iterateStructureHom_apply, iterateVar_natAdd,
-          ← Completion.coe_mul]
-        exact (S.weighted hT).completion.weightedC_mul_weightedX_mem_weighted_completion_plus hW
-          (hUW j ▸ Set.mem_image_of_mem _ ht)
+          algebraMap_completion_weightedRestrictedSubring_apply]
+          using (S.weighted hT).completion.weightedC_mul_weightedX_mem_weighted_completion_plus hW
+            (hUW j ▸ Set.mem_image_of_mem _ ht)
 
-/-- The splitting morphism has the existing weighted splitting as its underlying ring map. -/
+/-- The splitting morphism has `TauCeti.Huber.iterateSplitHom` as its underlying ring map. -/
 @[simp]
 theorem Hom.toRingHom_iterateSplitHom :
     (S.iterateSplitHom hT hW hU hTU hUW).toRingHom =
@@ -109,13 +107,12 @@ def iterateJoinHom : Hom (((S.weighted hT).completion).weighted hW).completion
       exact plus_le_comap_iterateFirstBlockHom S hT hU hTU ha
     · intro j w hw
       obtain ⟨t, ht, rfl⟩ := hUW j ▸ hw
-      rw [Completion.coe_mul, map_mul, iterateJoinHom_coe_weightedC,
+      simpa only [Completion.coe_mul, map_mul, iterateJoinHom_coe_weightedC,
         iterateJoinHom_coe_weightedX, algebraMap_completion_weightedRestrictedSubring_apply,
-        iterateFirstBlockHom_coe_weightedC, algebraMap_completion_weightedRestrictedSubring_apply,
-        ← Completion.coe_mul]
-      exact S.weightedC_mul_weightedX_mem_weighted_completion_plus hU ht
+        iterateFirstBlockHom_coe_weightedC]
+        using S.weightedC_mul_weightedX_mem_weighted_completion_plus hU ht
 
-/-- The joining morphism has the existing weighted joining as its underlying ring map. -/
+/-- The joining morphism has `TauCeti.Huber.iterateJoinHom` as its underlying ring map. -/
 @[simp]
 theorem Hom.toRingHom_iterateJoinHom :
     (S.iterateJoinHom hT hW hU hTU hUW).toRingHom =
@@ -152,7 +149,8 @@ theorem map_iterateSplitHom_plus :
       (S.iterateJoinHom hT hW hU hTU hUW).map_mem_plus a ha, ?_⟩
     exact DFunLike.congr_fun (Huber.iterateSplitHom_comp_iterateJoinHom hT hW hU hTU hUW) a
 
-/-- The splitting is a quotient mapping of Huber pairs, with exact equality of plus rings. -/
+/-- The splitting is a quotient mapping of Huber pairs. The exact plus-ring equality is
+`map_iterateSplitHom_plus`. -/
 theorem isQuotientMapping_iterateSplitHom :
     (S.iterateSplitHom hT hW hU hTU hUW).IsQuotientMapping := by
   apply (Hom.isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral _).mpr
@@ -160,7 +158,7 @@ theorem isQuotientMapping_iterateSplitHom :
   · rw [Hom.toRingHom_iterateSplitHom]
     have he : (iterateRingEquiv hT hW hU hTU hUW : _ → _) =
         Huber.iterateSplitHom hT hW hU hTU hUW :=
-      funext (iterateRingEquiv_apply hT hW hU hTU hUW)
+      congrArg DFunLike.coe (iterateRingEquiv_coe hT hW hU hTU hUW)
     rw [← he]
     exact (Homeomorph.mk (iterateRingEquiv hT hW hU hTU hUW).toEquiv
       (continuous_iterateRingEquiv hT hW hU hTU hUW)
