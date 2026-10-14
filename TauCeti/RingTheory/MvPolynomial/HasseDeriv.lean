@@ -1,0 +1,329 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.BigOperators.Finprod
+public import TauCeti.RingTheory.MvPolynomial.OrderAt
+
+/-!
+# Hasse derivatives of multivariate polynomials
+
+For a multi-index `d : σ →₀ ℕ`, the `d`-th Hasse (divided) partial derivative `∂^d` of a
+multivariate polynomial sends the monomial `X^m` to `(∏ⱼ (mⱼ choose dⱼ)) X^(m - d)`, which is
+zero unless `d ≤ m`. It is defined over any commutative semiring, so it preserves integrality of
+coefficients, and in a single variable `k! • ∂^(k eᵢ)` is the `k`-th partial derivative in `Xᵢ`
+(`MvPolynomial.factorial_smul_hasseDeriv_single`).
+
+Hasse derivatives are the Taylor coefficients of a polynomial: `P(X + Y) = ∑_d (∂^d P)(X) Y^d`.
+They are the jets used to measure the vanishing of auxiliary polynomials at a point, as in the
+index of a polynomial in the proof of Roth's theorem.
+
+## Main definitions
+
+* `MvPolynomial.hasseDeriv d`: the `d`-th Hasse derivative, as an `R`-linear endomorphism of
+  `MvPolynomial σ R`.
+
+## Main results
+
+* `MvPolynomial.hasseDeriv_monomial`, `MvPolynomial.coeff_hasseDeriv`: the values on monomials
+  and the coefficients `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`.
+* `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`: `∂^0` is the identity and every
+  other Hasse derivative kills constants.
+* `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
+* `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
+  derivative lowers the degree in `Xᵢ` by `dᵢ`.
+* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`.
+* `MvPolynomial.hasseDeriv_single_toMvPolynomial`: on a polynomial in the single variable `Xᵢ`,
+  `∂^(k eᵢ)` is the univariate `k`-th Hasse derivative.
+* `MvPolynomial.hasseDeriv_comp`: `∂^a ∘ ∂^b = (∏ⱼ (aⱼ + bⱼ choose aⱼ)) • ∂^(a + b)`.
+* `MvPolynomial.coeff_taylor`, `MvPolynomial.eval_add_eq_finsum_hasseDeriv`: the Taylor
+  coefficients of `P` at `a` are the values `(∂^d P)(a)`, so `P(a + y) = ∑_d (∂^d P)(a) y^d`.
+* `MvPolynomial.hasseDeriv_mul`: the Leibniz rule `∂^d (P Q) = ∑_{a + b = d} ∂^a P · ∂^b Q`.
+
+## References
+
+* L. Pottmeyer, *Diophantine Approximation*, lecture notes (2022), §2.6, Lemma 2.6.1 and
+  §3.5.3.
+* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 6, p. 117.
+-/
+
+public section
+
+namespace MvPolynomial
+
+open Finsupp
+
+variable {R σ : Type*} [CommSemiring R]
+
+/-- The `d`-th Hasse derivative `∂^d` of a multivariate polynomial, the linear map sending the
+monomial `a X^m` to `(∏ⱼ (mⱼ choose dⱼ)) a X^(m - d)`. The coefficient vanishes unless `d ≤ m`. -/
+noncomputable def hasseDeriv (d : σ →₀ ℕ) : MvPolynomial σ R →ₗ[R] MvPolynomial σ R :=
+  Finsupp.lsum ℕ (fun m ↦ monomial (m - d) ∘ₗ
+      DistribSMul.toLinearMap R R ((d.prod fun j k ↦ (m j).choose k : ℕ) : R)) ∘ₗ
+    (AddMonoidAlgebra.coeffLinearEquiv R).toLinearMap
+
+/-- The Hasse derivative of a monomial: `∂^d (a X^m) = (∏ⱼ (mⱼ choose dⱼ)) a X^(m - d)`. -/
+@[simp]
+theorem hasseDeriv_monomial (d m : σ →₀ ℕ) (a : R) :
+    hasseDeriv d (monomial m a) =
+      monomial (m - d) (((d.prod fun j k ↦ (m j).choose k : ℕ) : R) * a) := by
+  simp [hasseDeriv]
+
+/-- The multi-index binomial coefficient vanishes unless `d ≤ m`. -/
+private theorem prod_choose_eq_zero {d m : σ →₀ ℕ} (h : ¬d ≤ m) :
+    (d.prod fun j k ↦ (m j).choose k) = 0 := by
+  obtain ⟨j, hj⟩ : ∃ j, m j < d j := by simpa [Finsupp.le_def] using h
+  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (Nat.choose_eq_zero_of_lt hj)
+
+/-- The coefficients of a Hasse derivative:
+`[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`. -/
+theorem coeff_hasseDeriv (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    (hasseDeriv d P).coeff m =
+      ((d.prod fun j k ↦ (m j + k).choose k : ℕ) : R) * P.coeff (m + d) := by
+  classical
+  induction P using MvPolynomial.induction_on' with
+  | monomial n a =>
+    rw [hasseDeriv_monomial, coeff_monomial, coeff_monomial]
+    by_cases h : n = m + d
+    · subst h
+      simp only [add_tsub_cancel_right, ↓reduceIte]
+      exact congrArg (fun c : ℕ ↦ (c : R) * a)
+        (Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply])
+    · rw [ite_eq_right h, mul_zero, ite_eq_right_iff]
+      intro h'
+      by_cases hdn : d ≤ n
+      · exact absurd ((tsub_eq_iff_eq_add_of_le hdn).1 h') h
+      · simp [prod_choose_eq_zero hdn]
+  | add p q hp hq => simp [hp, hq, mul_add]
+
+/-- The `0`-th Hasse derivative is the identity. -/
+@[simp]
+theorem hasseDeriv_zero :
+    hasseDeriv (0 : σ →₀ ℕ) = (LinearMap.id : MvPolynomial σ R →ₗ[R] _) := by
+  refine LinearMap.ext fun P ↦ ?_
+  ext m
+  simp [coeff_hasseDeriv]
+
+/-- Every Hasse derivative of positive order kills constants. -/
+theorem hasseDeriv_C {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) : hasseDeriv d (C a) = 0 := by
+  rw [← monomial_zero', hasseDeriv_monomial,
+    prod_choose_eq_zero (by simpa [nonpos_iff_eq_zero] using hd)]
+  simp
+
+/-- Hasse derivatives commute with coefficient ring maps. -/
+@[simp]
+theorem hasseDeriv_map {S : Type*} [CommSemiring S] (f : R →+* S) (d : σ →₀ ℕ)
+    (P : MvPolynomial σ R) : hasseDeriv d (map f P) = map f (hasseDeriv d P) := by
+  ext m
+  simp [coeff_hasseDeriv, coeff_map, map_finsuppProd]
+
+/-- If the degree of `P` in `Xᵢ` is less than `dᵢ`, then `∂^d P = 0`. -/
+theorem hasseDeriv_eq_zero_of_degreeOf_lt {d : σ →₀ ℕ} {P : MvPolynomial σ R} {i : σ}
+    (h : P.degreeOf i < d i) : hasseDeriv d P = 0 := by
+  refine MvPolynomial.ext _ _ fun m ↦ ?_
+  have : P.coeff (m + d) = 0 := notMem_support_iff.1 fun hm ↦ by
+    have := monomial_le_degreeOf i hm
+    simp only [Finsupp.add_apply] at this
+    omega
+  simp [coeff_hasseDeriv, this]
+
+/-- The Hasse derivative `∂^d` lowers the degree in `Xᵢ` by at least `dᵢ`. -/
+theorem degreeOf_hasseDeriv_le (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
+    (hasseDeriv d P).degreeOf i ≤ P.degreeOf i - d i := by
+  refine degreeOf_le_iff.2 fun m hm ↦ ?_
+  rw [mem_support_iff, coeff_hasseDeriv] at hm
+  have := monomial_le_degreeOf i (mem_support_iff.2 (right_ne_zero_of_mul hm))
+  simp only [Finsupp.add_apply] at this
+  omega
+
+/-- Differentiating `∂^(k eᵢ)` with respect to `Xᵢ` gives `(k + 1) ∂^((k + 1) eᵢ)`. -/
+private theorem pderiv_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ R) :
+    pderiv i (hasseDeriv (single i k) P) = (k + 1) • hasseDeriv (single i (k + 1)) P := by
+  induction P using MvPolynomial.induction_on' with
+  | monomial n a =>
+    simp only [hasseDeriv_monomial, pderiv_monomial, prod_single_index, Nat.choose_zero_right,
+      tsub_tsub, ← single_add, smul_monomial, tsub_apply, single_eq_same]
+    congr 1
+    rw [nsmul_eq_mul, mul_right_comm, ← Nat.cast_mul, ← Nat.choose_succ_right_eq]
+    push_cast
+    ring
+  | add p q hp hq => simp [hp, hq]
+
+/-- The Hasse derivative `∂^(k eᵢ)` is the `k`-th partial derivative in `Xᵢ` divided by `k!`:
+`k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`. -/
+theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ R) :
+    k.factorial • hasseDeriv (single i k) P = (pderiv i)^[k] P := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ← ih, map_nsmul, pderiv_hasseDeriv_single, smul_smul,
+      Nat.factorial_succ, mul_comm]
+
+/-- On a polynomial in the single variable `Xᵢ`, the Hasse derivative `∂^(k eᵢ)` is the
+univariate `k`-th Hasse derivative. -/
+theorem hasseDeriv_single_toMvPolynomial (i : σ) (k : ℕ) (p : Polynomial R) :
+    hasseDeriv (single i k) (p.toMvPolynomial i) =
+      (Polynomial.hasseDeriv k p).toMvPolynomial i := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => simp [hp, hq]
+  | monomial n a =>
+    have h (n : ℕ) (a : R) :
+        (Polynomial.monomial n a).toMvPolynomial i = monomial (single i n) a := by
+      simp [Polynomial.toMvPolynomial, X_pow_eq_monomial, ← Polynomial.C_mul_X_pow_eq_monomial,
+        C_mul_monomial]
+    simp [h, single_tsub]
+
+/-- The multi-index binomial coefficient as a product over any finite set of indices containing
+the support of the lower index. -/
+private theorem prod_choose_eq_prod {d : σ →₀ ℕ} (m : σ →₀ ℕ) {s : Finset σ}
+    (hs : d.support ⊆ s) : (d.prod fun j k ↦ (m j).choose k) = ∏ j ∈ s, (m j).choose (d j) :=
+  Finsupp.prod_of_support_subset _ hs _ fun _ _ ↦ Nat.choose_zero_right _
+
+/-- The composition rule `∂^a ∘ ∂^b = (∏ⱼ (aⱼ + bⱼ choose aⱼ)) • ∂^(a + b)`. -/
+theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
+    (hasseDeriv a).comp (hasseDeriv b) =
+      (a.prod fun j k ↦ (k + b j).choose k) •
+        (hasseDeriv (a + b) : MvPolynomial σ R →ₗ[R] _) := by
+  classical
+  refine linearMap_ext fun m ↦ LinearMap.ext_ring ?_
+  have ha : a.support ⊆ a.support ∪ b.support := Finset.subset_union_left
+  have hb : b.support ⊆ a.support ∪ b.support := Finset.subset_union_right
+  have hab : (a + b).support ⊆ a.support ∪ b.support := Finsupp.support_add
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, hasseDeriv_monomial, smul_monomial,
+    tsub_tsub, add_comm b a, prod_choose_eq_prod _ ha, prod_choose_eq_prod _ hb,
+    prod_choose_eq_prod _ hab,
+    Finsupp.prod_of_support_subset _ ha (fun j k ↦ (k + b j).choose k) fun _ _ ↦
+      Nat.choose_zero_right _]
+  congr 1
+  rw [nsmul_eq_mul, ← mul_assoc, ← mul_assoc, ← Nat.cast_mul, ← Nat.cast_mul,
+    ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+  congr 2
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  -- In each coordinate:
+  -- `(m - b).choose a * m.choose b = (a + b).choose a * m.choose (a + b)`.
+  have h := Nat.choose_mul (n := m j) (Nat.le_add_left (b j) (a j))
+  rw [Nat.add_sub_cancel] at h
+  rw [tsub_apply, Finsupp.add_apply, Nat.choose_symm_add]
+  linarith
+
+/-- Pascal's rule for the multi-index binomial coefficient, in the coordinate `i`. -/
+private theorem prod_choose_add_single [DecidableEq σ] (n d : σ →₀ ℕ) (i : σ) :
+    (d.prod fun j k ↦ ((n + single i 1 : σ →₀ ℕ) j).choose k) =
+      (d.prod fun j k ↦ (n j).choose k) +
+        if i ∈ d.support then (d - single i 1).prod fun j k ↦ (n j).choose k else 0 := by
+  rw [prod_choose_eq_prod _ subset_rfl, prod_choose_eq_prod _ subset_rfl]
+  split_ifs with hi
+  · rw [prod_choose_eq_prod _ support_tsub, ← Finset.mul_prod_erase _ _ hi,
+      ← Finset.mul_prod_erase _ _ hi, ← Finset.mul_prod_erase _ _ hi]
+    have h1 : ∏ j ∈ d.support.erase i, ((n + single i 1 : σ →₀ ℕ) j).choose (d j) =
+        ∏ j ∈ d.support.erase i, (n j).choose (d j) :=
+      Finset.prod_congr rfl fun j hj ↦ by simp [Finset.ne_of_mem_erase hj]
+    have h2 : ∏ j ∈ d.support.erase i, (n j).choose ((d - single i 1 : σ →₀ ℕ) j) =
+        ∏ j ∈ d.support.erase i, (n j).choose (d j) :=
+      Finset.prod_congr rfl fun j hj ↦ by simp [Finset.ne_of_mem_erase hj]
+    rw [h1, h2, ← add_mul]
+    obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero (Finsupp.mem_support_iff.1 hi)
+    congr 1
+    rw [Finsupp.add_apply, tsub_apply, single_eq_same, hk, Nat.add_sub_cancel,
+      Nat.choose_succ_succ', add_comm]
+  · rw [add_zero]
+    refine Finset.prod_congr rfl fun j hj ↦ ?_
+    simp [show i ≠ j by rintro rfl; exact hi hj]
+
+/-- The Leibniz rule for multiplication by a variable. -/
+private theorem hasseDeriv_mul_X [DecidableEq σ] (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
+    hasseDeriv d (P * X i) =
+      (if i ∈ d.support then hasseDeriv (d - single i 1) P else 0) + hasseDeriv d P * X i := by
+  induction P using MvPolynomial.induction_on' with
+  | monomial n a =>
+    -- A monomial whose coefficient carries the binomial factor of `d'` only depends on its
+    -- exponent when `d' ≤ n`.
+    have key {e e' d' : σ →₀ ℕ} (h : d' ≤ n → e = e') :
+        monomial e (((d'.prod fun j k ↦ (n j).choose k : ℕ) : R) * a) =
+          monomial e' (((d'.prod fun j k ↦ (n j).choose k : ℕ) : R) * a) := by
+      by_cases hd : d' ≤ n
+      · rw [h hd]
+      · rw [prod_choose_eq_zero hd, Nat.cast_zero, zero_mul, monomial_zero, monomial_zero]
+    rw [← pow_one (X i), ← monomial_add_single, hasseDeriv_monomial, hasseDeriv_monomial,
+      hasseDeriv_monomial, ← monomial_add_single, prod_choose_add_single]
+    split_ifs with hi
+    · rw [Nat.cast_add, add_mul, map_add, add_comm]
+      congr 1
+      · refine key fun h ↦ ?_
+        ext j
+        have hj := Finsupp.le_def.1 h j
+        rcases eq_or_ne i j with rfl | hij
+        · have hi' := Finsupp.mem_support_iff.1 hi
+          simp only [tsub_apply, Finsupp.add_apply, single_eq_same] at hj ⊢
+          omega
+        · simp [hij] at hj ⊢
+      · exact key fun h ↦ (tsub_add_eq_add_tsub h).symm
+    · rw [add_zero, zero_add]
+      exact key fun h ↦ (tsub_add_eq_add_tsub h).symm
+  | add p q hp hq =>
+    simp only [add_mul, map_add, hp, hq]
+    split_ifs <;> abel
+
+/-- The Taylor coefficients of `P` at the generic point are its Hasse derivatives:
+`P(X + Y) = ∑_d (∂^d P)(X) Y^d`. -/
+theorem coeff_taylor_X_map_C (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    (taylor (X : σ → MvPolynomial σ R) (map C P)).coeff d = hasseDeriv d P := by
+  classical
+  induction P using MvPolynomial.induction_on generalizing d with
+  | C a =>
+    rw [map_C, taylor_C, coeff_C]
+    by_cases hd : d = 0
+    · subst hd; simp
+    · rw [ite_eq_right (Ne.symm hd), hasseDeriv_C hd]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp =>
+    rw [hasseDeriv_mul_X, mul_comm (hasseDeriv d p)]
+    simp [mul_add, mul_comm _ (C _), coeff_C_mul, coeff_mul_X', hp]
+
+/-- The Taylor coefficients of `P` at the point `a` are the values of its Hasse derivatives:
+`[Y^d] P(a + Y) = (∂^d P)(a)`. -/
+theorem coeff_taylor (a : σ → R) (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    (taylor a P).coeff d = eval a (hasseDeriv d P) := by
+  rw [← eval_coeff_taylor_map_C, coeff_taylor_X_map_C]
+
+/-- The Leibniz rule for Hasse derivatives: `∂^d (P Q) = ∑_{a + b = d} ∂^a P · ∂^b Q`. -/
+theorem hasseDeriv_mul [DecidableEq σ] (d : σ →₀ ℕ) (P Q : MvPolynomial σ R) :
+    hasseDeriv d (P * Q) =
+      ∑ x ∈ Finset.antidiagonal d, hasseDeriv x.1 P * hasseDeriv x.2 Q := by
+  simp only [← coeff_taylor_X_map_C, map_mul, coeff_mul]
+
+/-- The finite Taylor expansion with Hasse derivatives: `P(a + y) = ∑_d (∂^d P)(a) y^d`. -/
+theorem eval_add_eq_finsum_hasseDeriv (P : MvPolynomial σ R) (a y : σ → R) :
+    eval (a + y) P = ∑ᶠ d : σ →₀ ℕ, eval a (hasseDeriv d P) * d.prod fun j k ↦ y j ^ k := by
+  rw [add_comm, ← eval_taylor, eval_eq,
+    finsum_eq_sum_of_support_subset (s := (taylor a P).support) _ fun d hd ↦ ?_]
+  · simp [coeff_taylor, Finsupp.prod]
+  · rw [Function.mem_support] at hd
+    rw [Finset.mem_coe, mem_support_iff, coeff_taylor]
+    exact left_ne_zero_of_mul hd
+
+/-- `∂^(2, 0) (X₀³ X₁) = 3 X₀ X₁` over `ℤ`. -/
+example : hasseDeriv (single 0 2) (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) ℤ) = 3 * (X 0 * X 1) := by
+  have h1 : (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) ℤ) = monomial (single 0 3 + single 1 1) 1 := by
+    rw [X_pow_eq_monomial, X, monomial_mul_monomial, one_mul]
+  have h2 : (3 * (X 0 * X 1) : MvPolynomial (Fin 2) ℤ) = monomial (single 0 1 + single 1 1) 3 := by
+    rw [X, X, monomial_mul_monomial, one_mul, ← map_ofNat C 3, C_mul_monomial, mul_one]
+  have h3 : (single 0 3 + single 1 1 - single 0 2 : Fin 2 →₀ ℕ) = single 0 1 + single 1 1 := by
+    ext j
+    fin_cases j <;> simp
+  rw [h1, h2, hasseDeriv_monomial, prod_single_index (by simp), h3]
+  simp
+
+/-- The divided derivative is not the ordinary one: `∂^(2) X₀² = 1`, while differentiating
+`X₀²` twice gives `2`. -/
+example : hasseDeriv (single 0 2) (X 0 ^ 2 : MvPolynomial (Fin 1) ℚ) = 1 ∧
+    (pderiv 0)^[2] (X 0 ^ 2 : MvPolynomial (Fin 1) ℚ) = 2 := by
+  refine ⟨by simp [X_pow_eq_monomial], ?_⟩
+  simp only [Function.iterate_succ_apply, Function.iterate_zero_apply, X_pow_eq_monomial,
+    pderiv_monomial, ← single_tsub]
+  norm_num [monomial_zero', map_ofNat]
+
+end MvPolynomial
