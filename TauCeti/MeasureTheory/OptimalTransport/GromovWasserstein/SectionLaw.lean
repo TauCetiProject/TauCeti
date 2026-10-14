@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Eccentricity
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
+import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 
 /-!
 # Section laws of measured kernels and the section-law lower bound
@@ -35,23 +37,26 @@ Under Mathlib's `eLpNorm` convention a function that is not almost everywhere st
 has infinite `Lᵖ` norm, so the right inequality needs the section-law distance to be measurable.
 The general form takes that measurability as a hypothesis. It is discharged for a finite exponent
 `1 ≤ p < ∞` on a Polish target, for kernels of finite `p`-size: their section laws have finite
-`p`-moment almost everywhere and agree almost everywhere with a measurable map into the Wasserstein
-space `P_p(Z)`, which is a Borel space, so the section-law distance is almost everywhere the
-Wasserstein distance between two measurable maps. The left inequality needs no measurability of
-the section-law distance.
+`p`-moment almost everywhere and agree almost everywhere with the section-law map into the
+Wasserstein space `P_p(Z)`, which is a Borel space, so the section-law distance is almost
+everywhere the Wasserstein distance between two almost everywhere measurable maps. The left
+inequality needs no measurability of the section-law distance.
 
 ## Main definitions
 
 * `TauCeti.kernelSectionLaw μ ω x` — the outgoing section law of `ω` at `x`.
 * `TauCeti.kernelSectionLawEDist p μ ωX ν ωY` — the section-law distance on `X × Y`.
+* `TauCeti.kernelSectionLawWassersteinSpace p μ ω z₀` — the section-law map into `P_p(Z)`, the
+  section law where it has finite `p`-moment and the Dirac law at `z₀` elsewhere.
 
 ## Main statements
 
 * `TauCeti.measurable_kernelSectionLaw` and `TauCeti.kernelSectionLaw_congr_ae` — section laws
   depend measurably on the point and only on the kernel up to almost-everywhere equality;
-* `TauCeti.exists_measurable_wassersteinSpace_ae_eq_kernelSectionLaw` — for a kernel of finite
-  `p`-size on a second countable target, the section laws are almost everywhere a measurable map
-  into `P_p(Z)`;
+* `TauCeti.coe_kernelSectionLawWassersteinSpace_ae_eq` and
+  `TauCeti.aemeasurable_kernelSectionLawWassersteinSpace` — for a kernel of finite `p`-size, the
+  section-law map agrees almost everywhere with the section laws and is almost everywhere
+  measurable;
 * `TauCeti.eLpNorm_kernelSectionLawEDist_le_gromovWassersteinDistortion` — the `Lᵖ(π)` norm of the
   section-law distance is at most the distortion of the coupling `π`;
 * `TauCeti.iInf_eLpNorm_kernelSectionLawEDist_le_gromovWassersteinEDist` — the section-law lower
@@ -108,12 +113,8 @@ theorem kernelSectionLaw_congr_ae [SFinite μ] (h : ω =ᵐ[μ.prod μ] ω') :
 /-- The section laws of a measurable kernel on an s-finite measure depend measurably on the
 point. -/
 theorem measurable_kernelSectionLaw [SFinite μ] (hω : Measurable ω) :
-    Measurable (kernelSectionLaw μ ω) := by
-  -- The section law at `x` is the pushforward along `ω` of `(Prod.mk x)_# μ`.
-  have h : kernelSectionLaw μ ω = fun x ↦ (μ.map (Prod.mk x)).map ω := funext fun x ↦ by
-    rw [Measure.map_map hω measurable_prodMk_left, kernelSectionLaw_def, Function.comp_def]
-  rw [h]
-  exact (Measure.measurable_map ω hω).comp Measurable.map_prodMk_left
+    Measurable (kernelSectionLaw μ ω) :=
+  MeasureTheory.measurable_map_of_measurable_uncurry (f := fun x x' ↦ ω (x, x')) hω
 
 /-- The section laws of an almost-everywhere measurable kernel on an s-finite measure depend
 almost-everywhere measurably on the point. -/
@@ -176,17 +177,8 @@ theorem ae_kernelSectionLawEDist_le [SFinite μ] [SFinite ν] (hπ : IsCoupling 
   have hsnd := hπ.measurePreserving_snd.quasiMeasurePreserving
   filter_upwards [hfst.tendsto_ae.eventually hωX.prodMk_left,
     hsnd.tendsto_ae.eventually hωY.prodMk_left] with q hX hY
-  -- Push `π` forward along measurable representatives of the two sections at `q`.
-  have hσ := hπ.map hX.measurable_mk hY.measurable_mk
-  rw [kernelSectionLawEDist_def, kernelSectionLaw_def, kernelSectionLaw_def,
-    Measure.map_congr hX.ae_eq_mk, Measure.map_congr hY.ae_eq_mk]
-  refine (wassersteinEDist_le hσ p).trans_eq ?_
-  rw [eLpNorm_map_measure hd.aestronglyMeasurable
-    (hX.measurable_mk.prodMap hY.measurable_mk).aemeasurable]
-  refine eLpNorm_congr_ae ?_
-  filter_upwards [hfst.ae_eq_comp hX.ae_eq_mk, hsnd.ae_eq_comp hY.ae_eq_mk] with q' h₁ h₂
-  simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd] at h₁ h₂ ⊢
-  rw [h₁, h₂]
+  rw [kernelSectionLawEDist_def, kernelSectionLaw_def, kernelSectionLaw_def]
+  exact wassersteinEDist_map_le_eLpNorm_of_measurable_edist hπ hd hX hY
 
 /-- The `Lᵖ(π)` norm of an almost everywhere strongly measurable section-law distance is at most
 the distortion of the coupling `π`. -/
@@ -255,7 +247,9 @@ theorem wassersteinEDist_map_kernelEccentricity_le_eLpNorm_kernelSectionLawEDist
     wassersteinEDist p (μ.map (kernelEccentricity p μ ωX z₀))
         (ν.map (kernelEccentricity p ν ωY z₀)) ≤
       eLpNorm (kernelSectionLawEDist p μ ωX ν ωY) p π := by
-  refine (wassersteinEDist_map_kernelEccentricity_le_eLpNorm hπ hωX hωY z₀).trans
+  refine (wassersteinEDist_map_le_eLpNorm_of_measurable_edist hπ ENNReal.measurable_edist
+    (aestronglyMeasurable_kernelEccentricity hωX z₀).aemeasurable
+    (aestronglyMeasurable_kernelEccentricity hωY z₀).aemeasurable).trans
     (eLpNorm_mono_enorm_ae (hπ.aestronglyMeasurable_edist_kernelEccentricity hωX hωY z₀) ?_)
   filter_upwards [ae_edist_kernelEccentricity_le_kernelSectionLawEDist hπ hp hd hωX hωY z₀]
     with q hq
@@ -278,59 +272,120 @@ theorem wassersteinEDist_map_kernelEccentricity_le_iInf_eLpNorm_kernelSectionLaw
 
 end PseudoEMetricSpace
 
-section SecondCountable
+section SectionLawMap
 
-variable [PseudoMetricSpace Z] [OpensMeasurableSpace Z] [SecondCountableTopology Z]
+variable [PseudoMetricSpace Z] [OpensMeasurableSpace Z]
 
-/-- **Section laws as a measurable map into `P_p(Z)`.** For a finite exponent `1 ≤ p < ∞`, a second
-countable pseudometric target and an almost-everywhere measurable kernel of finite `p`-size on a
-probability measure, there is a measurable map into the Wasserstein space `P_p(Z)` that agrees
-almost everywhere with the section laws. In particular the section laws have finite `p`-moment
-almost everywhere. -/
-theorem exists_measurable_wassersteinSpace_ae_eq_kernelSectionLaw [IsProbabilityMeasure μ]
-    (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hω : AEMeasurable ω (μ.prod μ)) {z₀ : Z}
-    (hm : MemLp (fun q ↦ edist (ω q) z₀) p (μ.prod μ)) :
-    ∃ Φ : X → WassersteinSpace p Z, Measurable Φ ∧
-      (fun x ↦ ((Φ x : ProbabilityMeasure Z) : Measure Z)) =ᵐ[μ] kernelSectionLaw μ ω := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
+open scoped Classical in
+/-- The **section-law map** of a measured kernel into the Wasserstein space `P_p(Z)`: the outgoing
+section law of `ω` at `x` where it has finite `p`-moment, and the Dirac law at `z₀` elsewhere. For
+a kernel of finite `p`-size it agrees almost everywhere with the section laws, see
+`TauCeti.coe_kernelSectionLawWassersteinSpace_ae_eq`. -/
+def kernelSectionLawWassersteinSpace (p : ℝ≥0∞) (μ : Measure X) [IsProbabilityMeasure μ]
+    (ω : X × X → Z) (z₀ : Z) (x : X) : WassersteinSpace p Z :=
+  WassersteinSpace.mk
+    (if HasFiniteMoment p (kernelSectionLaw μ ω x) then ⟨kernelSectionLaw μ ω x, inferInstance⟩
+      else ⟨Measure.dirac z₀, inferInstance⟩) <| by
+    by_cases h : HasFiniteMoment p (kernelSectionLaw μ ω x)
+    · simp only [h, ↓reduceIte, ProbabilityMeasure.coe_mk]
+    · simp only [h, ↓reduceIte, ProbabilityMeasure.coe_mk]
+      refine hasFiniteMoment_def.2 ⟨z₀, MemLp.of_enorm_bound (C := 0)
+        measurable_edist_right.aestronglyMeasurable ENNReal.zero_ne_top ?_⟩
+      filter_upwards [ae_eq_dirac' (a := z₀) (measurable_edist_right (x := z₀))] with y hy
+      simp only [enorm_eq_self, hy, Function.const_apply, edist_self, le_refl]
+
+variable [IsProbabilityMeasure μ] {z₀ : Z}
+
+open scoped Classical in
+/-- The probability measure underlying the section-law map: the section law where it has finite
+`p`-moment, and the Dirac law at `z₀` elsewhere. -/
+theorem coe_kernelSectionLawWassersteinSpace (p : ℝ≥0∞) (μ : Measure X) [IsProbabilityMeasure μ]
+    (ω : X × X → Z) (z₀ : Z) (x : X) :
+    (kernelSectionLawWassersteinSpace p μ ω z₀ x : ProbabilityMeasure Z) =
+      if HasFiniteMoment p (kernelSectionLaw μ ω x) then ⟨kernelSectionLaw μ ω x, inferInstance⟩
+      else ⟨Measure.dirac z₀, inferInstance⟩ :=
+  WassersteinSpace.coe_mk _ _
+
+/-- Where the section law has finite `p`-moment, the section-law map is the section law. -/
+theorem coe_kernelSectionLawWassersteinSpace_of_hasFiniteMoment {x : X}
+    (h : HasFiniteMoment p (kernelSectionLaw μ ω x)) :
+    ((kernelSectionLawWassersteinSpace p μ ω z₀ x : ProbabilityMeasure Z) : Measure Z) =
+      kernelSectionLaw μ ω x := by
+  simp only [coe_kernelSectionLawWassersteinSpace, h, ↓reduceIte, ProbabilityMeasure.coe_mk]
+
+/-- Almost-everywhere changes of a kernel change its section-law map only on a null set. -/
+theorem kernelSectionLawWassersteinSpace_congr_ae (h : ω =ᵐ[μ.prod μ] ω') :
+    kernelSectionLawWassersteinSpace p μ ω z₀ =ᵐ[μ] kernelSectionLawWassersteinSpace p μ ω' z₀ := by
+  filter_upwards [kernelSectionLaw_congr_ae h] with x hx
+  ext1
+  by_cases h₁ : HasFiniteMoment p (kernelSectionLaw μ ω x)
+  · simp only [coe_kernelSectionLawWassersteinSpace, h₁, hx ▸ h₁, ↓reduceIte]
+    exact Subtype.ext hx
+  · simp only [coe_kernelSectionLawWassersteinSpace, h₁, hx ▸ h₁, ↓reduceIte]
+    rfl
+
+/-- For a finite exponent `0 < p < ∞`, the section laws of an almost-everywhere measurable kernel
+of finite `p`-size on a probability measure have finite `p`-moment almost everywhere. -/
+theorem ae_hasFiniteMoment_kernelSectionLaw (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hω : AEMeasurable ω (μ.prod μ)) (hm : MemLp (fun q ↦ edist (ω q) z₀) p (μ.prod μ)) :
+    ∀ᵐ x ∂μ, HasFiniteMoment p (kernelSectionLaw μ ω x) := by
   obtain ⟨ω₀, hω₀, hωω₀⟩ := hω
   -- The `p`-th moment of the section law of `ω₀` at `x` about `z₀`.
   set g : X × X → ℝ≥0∞ := fun q ↦ edist (ω₀ q) z₀ ^ p.toReal
-  have hg : Measurable g := (hω₀.edist measurable_const).pow_const _
-  set G : Set X := {x | ∫⁻ x', g (x, x') ∂μ < ∞}
-  have hGm : MeasurableSet G := measurableSet_lt hg.lintegral_prod_right' measurable_const
-  have hG : ∀ᵐ x ∂μ, x ∈ G := by
-    have hm₀ : MemLp (fun q ↦ edist (ω₀ q) z₀) p (μ.prod μ) :=
-      hm.ae_eq (hωω₀.mono fun q hq ↦ by rw [hq])
-    have hint := (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp hm₀.aestronglyMeasurable).1
-      hm₀.eLpNorm_lt_top
-    simp only [enorm_eq_self] at hint
-    rw [lintegral_prod _ hg.aemeasurable] at hint
-    exact ae_lt_top hg.lintegral_prod_right' hint.ne
+  have hg : Measurable g := (measurable_edist_left.comp hω₀).pow_const _
   have hsec (x : X) : Measurable fun x' ↦ ω₀ (x, x') := hω₀.comp measurable_prodMk_left
-  -- On `G` the section law of `ω₀` has finite `p`-moment; off `G` use the Dirac law at `z₀`.
-  have hmom (x : X) (hx : x ∈ G) : HasFiniteMoment p (kernelSectionLaw μ ω₀ x) := by
-    rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp z₀, kernelSectionLaw_def,
-      lintegral_map (measurable_edist_right.pow_const _) (hsec x)]
-    simpa only [edist_comm z₀] using hx.ne
-  let P : X → ProbabilityMeasure Z := fun x ↦
-    if x ∈ G then ⟨kernelSectionLaw μ ω₀ x, inferInstance⟩
-    else ⟨Measure.dirac z₀, inferInstance⟩
-  have hP : Measurable P :=
-    Measurable.ite hGm (measurable_kernelSectionLaw hω₀).subtype_mk measurable_const
-  have hPm (x : X) : HasFiniteMoment p (P x : Measure Z) := by
-    by_cases hx : x ∈ G
-    · simpa only [P, hx, ↓reduceIte, ProbabilityMeasure.coe_mk] using hmom x hx
-    · simp only [P, hx, ↓reduceIte, ProbabilityMeasure.coe_mk]
-      rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp z₀,
-        lintegral_dirac' _ (measurable_edist_right.pow_const _)]
-      exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg (edist_ne_top _ _)
-  refine ⟨fun x ↦ WassersteinSpace.mk (P x) (hPm x), WassersteinSpace.measurable_mk hP hPm, ?_⟩
-  filter_upwards [hG, kernelSectionLaw_congr_ae hωω₀] with x hx hx'
-  rw [hx', WassersteinSpace.coe_mk]
-  simp only [P, hx, ↓reduceIte, ProbabilityMeasure.coe_mk]
+  have hm₀ : MemLp (fun q ↦ edist (ω₀ q) z₀) p (μ.prod μ) :=
+    hm.ae_eq (hωω₀.mono fun q hq ↦ by rw [hq])
+  have hint := (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp hm₀.aestronglyMeasurable).1
+    hm₀.eLpNorm_lt_top
+  simp only [enorm_eq_self] at hint
+  rw [lintegral_prod _ hg.aemeasurable] at hint
+  filter_upwards [ae_lt_top hg.lintegral_prod_right' hint.ne, kernelSectionLaw_congr_ae hωω₀]
+    with x hx hx'
+  rw [hx', hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp z₀, kernelSectionLaw_def,
+    lintegral_map (measurable_edist_right.pow_const _) (hsec x)]
+  simpa only [edist_comm z₀] using hx.ne
 
-end SecondCountable
+/-- For a kernel of finite `p`-size, `0 < p < ∞`, the section-law map agrees almost everywhere with
+the section laws. -/
+theorem coe_kernelSectionLawWassersteinSpace_ae_eq (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hω : AEMeasurable ω (μ.prod μ)) (hm : MemLp (fun q ↦ edist (ω q) z₀) p (μ.prod μ)) :
+    (fun x ↦ ((kernelSectionLawWassersteinSpace p μ ω z₀ x : ProbabilityMeasure Z) : Measure Z))
+      =ᵐ[μ] kernelSectionLaw μ ω := by
+  filter_upwards [ae_hasFiniteMoment_kernelSectionLaw hp0 hp hω hm] with x hx
+  exact coe_kernelSectionLawWassersteinSpace_of_hasFiniteMoment hx
+
+/-- For a finite exponent `0 < p < ∞`, the section-law map of a measurable kernel is measurable. -/
+theorem measurable_kernelSectionLawWassersteinSpace (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hω : Measurable ω) (z₀ : Z) :
+    Measurable (kernelSectionLawWassersteinSpace p μ ω z₀) := by
+  classical
+  -- The set where the section law has finite `p`-moment is where its `p`-th moment is finite.
+  have hG : MeasurableSet {x | HasFiniteMoment p (kernelSectionLaw μ ω x)} := by
+    have hg : Measurable fun q : X × X ↦ edist z₀ (ω q) ^ p.toReal :=
+      (measurable_edist_right.comp hω).pow_const _
+    have hset : {x | HasFiniteMoment p (kernelSectionLaw μ ω x)} =
+        (fun x ↦ ∫⁻ x', edist z₀ (ω (x, x')) ^ p.toReal ∂μ) ⁻¹' {∞}ᶜ := by
+      ext x
+      rw [Set.mem_ofPred_eq, hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp z₀,
+        kernelSectionLaw_def,
+        lintegral_map (measurable_edist_right.pow_const _)
+          (show Measurable fun x' ↦ ω (x, x') from hω.comp measurable_prodMk_left)]
+      rfl
+    rw [hset]
+    exact hg.lintegral_prod_right' (measurableSet_singleton ∞).compl
+  exact WassersteinSpace.measurable_mk
+    (Measurable.ite hG (measurable_kernelSectionLaw hω).subtype_mk measurable_const) _
+
+/-- For a finite exponent `0 < p < ∞`, the section-law map of an almost-everywhere measurable
+kernel is almost-everywhere measurable. -/
+theorem aemeasurable_kernelSectionLawWassersteinSpace (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hω : AEMeasurable ω (μ.prod μ)) (z₀ : Z) :
+    AEMeasurable (kernelSectionLawWassersteinSpace p μ ω z₀) μ :=
+  ⟨_, measurable_kernelSectionLawWassersteinSpace hp0 hp hω.measurable_mk z₀,
+    kernelSectionLawWassersteinSpace_congr_ae hω.ae_eq_mk⟩
+
+end SectionLawMap
 
 section Polish
 
@@ -347,12 +402,16 @@ theorem IsCoupling.aestronglyMeasurable_kernelSectionLawEDist [IsProbabilityMeas
     AEStronglyMeasurable (kernelSectionLawEDist p μ ωX ν ωY) π := by
   have : Fact (1 ≤ p) := ⟨hp1⟩
   have : Fact (p ≠ ∞) := ⟨hp⟩
-  obtain ⟨ΦX, hΦX, hX⟩ := exists_measurable_wassersteinSpace_ae_eq_kernelSectionLaw hp1 hp hωX hmX
-  obtain ⟨ΦY, hΦY, hY⟩ := exists_measurable_wassersteinSpace_ae_eq_kernelSectionLaw hp1 hp hωY hmY
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
+  have hfst := hπ.measurePreserving_fst.quasiMeasurePreserving
+  have hsnd := hπ.measurePreserving_snd.quasiMeasurePreserving
   -- Almost everywhere, the section-law distance is the distance in `P_p(Z)`, a Borel space.
-  refine ((hΦX.comp measurable_fst).edist (hΦY.comp measurable_snd)).aestronglyMeasurable.congr ?_
-  filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hX,
-    hπ.measurePreserving_snd.quasiMeasurePreserving.ae_eq_comp hY] with q h₁ h₂
+  have hΦX := aemeasurable_kernelSectionLawWassersteinSpace hp0 hp hωX z₀
+  have hΦY := aemeasurable_kernelSectionLawWassersteinSpace hp0 hp hωY z₀
+  refine ((hΦX.comp_quasiMeasurePreserving hfst).edist
+    (hΦY.comp_quasiMeasurePreserving hsnd)).aestronglyMeasurable.congr ?_
+  filter_upwards [hfst.ae_eq_comp (coe_kernelSectionLawWassersteinSpace_ae_eq hp0 hp hωX hmX),
+    hsnd.ae_eq_comp (coe_kernelSectionLawWassersteinSpace_ae_eq hp0 hp hωY hmY)] with q h₁ h₂
   simp only [Function.comp_apply] at h₁ h₂
   rw [kernelSectionLawEDist_def, ← h₁, ← h₂]
   exact WassersteinSpace.edist_def _ _
