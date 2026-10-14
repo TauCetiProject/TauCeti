@@ -167,8 +167,7 @@ function fields: the unique dominant `k`-morphism `X ⟶ Y` whose pullback of ra
 `φ` (`functionFieldAlgHom_homOfAlgHom`, `homOfAlgHom_functionFieldAlgHom`). -/
 noncomputable def homOfAlgHom (φ : Y.toScheme.functionField →ₐ[k] X.toScheme.functionField) :
     X ⟶ Y :=
-  haveI hX := Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
-    (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := X.toScheme) k).le
+  haveI hX := Scheme.IsCurveOver.valuationRing_stalk k X.toScheme
   haveI hφ := Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over k
     (CommRingCat.ofHom φ.toRingHom) φ.commutes
   { hom := Scheme.homOfFunctionField hX _ hφ
@@ -181,8 +180,7 @@ noncomputable def homOfAlgHom (φ : Y.toScheme.functionField →ₐ[k] X.toSchem
 theorem functionFieldAlgHom_homOfAlgHom
     (φ : Y.toScheme.functionField →ₐ[k] X.toScheme.functionField) :
     (homOfAlgHom φ).hom.functionFieldAlgHom k = φ := by
-  have hX := Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
-    (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := X.toScheme) k).le
+  have hX := Scheme.IsCurveOver.valuationRing_stalk k X.toScheme
   have h := ((Scheme.Hom.eq_functionFieldMap_iff (homOfAlgHom φ).hom
     (CommRingCat.ofHom φ.toRingHom)).mpr
     (Scheme.fromSpecStalk_homOfFunctionField hX _ _).symm).symm

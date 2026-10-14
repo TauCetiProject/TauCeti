@@ -115,6 +115,22 @@ theorem hom_comp (f : F ⟶ F') (g : F' ⟶ F'') : (f ≫ g).hom = g.hom.comp f.
 theorem hom_ext {f g : F ⟶ F'} (h : f.hom = g.hom) : f = g :=
   Hom.ext h
 
+-- Not `@[simp]`: `simp` already proves these through `ConcreteCategory.hom_ofHom` and
+-- `ConcreteCategory.ofHom_hom`, since `Hom.hom` and `ofHom` are reducible.
+theorem hom_ofHom (f : F →ₐ[k] F') : (ofHom f).hom = f :=
+  (rfl)
+
+theorem ofHom_hom (f : F ⟶ F') : ofHom f.hom = f :=
+  (rfl)
+
+@[simp]
+theorem ofHom_id : ofHom (AlgHom.id k F) = 𝟙 F :=
+  (rfl)
+
+@[simp]
+theorem ofHom_comp (f : F →ₐ[k] F') (g : F' →ₐ[k] F'') : ofHom (g.comp f) = ofHom f ≫ ofHom g :=
+  (rfl)
+
 /-- A `k`-algebra isomorphism of function fields as an isomorphism of `FunctionFieldCat k`. -/
 def isoMk (e : F ≃ₐ[k] F') : F ≅ F' where
   hom := ofHom e

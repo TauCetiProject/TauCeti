@@ -40,6 +40,8 @@ models, is `TauCeti.AlgebraicGeometry.twoChartModel.homOfAlgHom`.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.IsCurveOver.valuationRing_stalk`: the local rings of a regular proper
+  curve are valuation rings.
 * the instances `(X.isoTwoChartModel …).hom.IsOver (Spec k)` and
   `(X.isoTwoChartModel …).inv.IsOver (Spec k)`.
 * `AlgebraicGeometry.Scheme.functionFieldMap_isoTwoChartModel_hom`: the pullback of rational
@@ -76,6 +78,14 @@ private noncomputable def functionFieldIso :
 
 variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
+variable (k) in
+/-- **The local rings of a regular proper curve are valuation rings**: for a curve `X` over `k`
+whose codimension-one local rings are discrete valuation rings, the local ring at the generic point
+is the function field, and every other point has codimension one. -/
+theorem IsCurveOver.valuationRing_stalk (p : X) : ValuationRing (X.presheaf.stalk p) :=
+  Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
+    (IsCurveOver.topologicalKrullDim_eq_one k).le p
+
 /-- **A regular proper curve is the two-chart model of its function field**: for a curve `X` over
 `k` whose codimension-one local rings are discrete valuation rings and `x ∈ k(X)` transcendental
 over `k`, the isomorphism of `X` with
@@ -87,8 +97,7 @@ noncomputable def isoTwoChartModel :
   have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
     hxt
   { hom := homOfFunctionField
-      (Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
-        (IsCurveOver.topologicalKrullDim_eq_one k).le) _
+      (IsCurveOver.valuationRing_stalk k X) _
       (specMap_comp_fromSpecStalk_genericPoint_comp_over k (functionFieldIso X hx hxt).hom
         (twoChartModel.functionFieldEquiv hxt).commutes)
     inv := homOfFunctionField (twoChartModel.valuationRing_stalk hxt) _
