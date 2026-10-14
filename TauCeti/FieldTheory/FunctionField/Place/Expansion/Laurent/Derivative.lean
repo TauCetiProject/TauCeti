@@ -98,30 +98,20 @@ theorem algHom_derivativeOfSeparating {k F A : Type*} [Field k] [Field F] [Algeb
     [CommRing A] [Algebra k A] {t : F} (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
     {e : F →ₐ[k] LaurentSeries A} (he : e t = HahnSeries.single 1 1) (z : F) :
     e (derivativeOfSeparating htr z) = LaurentSeries.derivative A (e z) := by
-  -- Make `A((X))` an `F`-module through `e`, so that `z ↦ (e z)'` is a derivation.
-  let _ : Module F (LaurentSeries A) := Module.compHom _ e.toRingHom
-  have hsmul (z : F) (f : LaurentSeries A) : z • f = e z * f := rfl
+  -- Give `A((X))` the `F`-algebra structure induced by the expansion map.
+  let _ : Algebra F (LaurentSeries A) := e.toRingHom.toAlgebra
   -- The `k`-module structure on `A((X))` found by instance search is the coefficientwise one.
   have hek (c : k) (z : F) : e (c • z) = c • e z := by
     rw [Algebra.smul_def, map_mul, AlgHom.commutes, laurentSeries_algebraMap_mul_eq_smul]
   have _ : IsScalarTower k F (LaurentSeries A) := ⟨fun c z f ↦ by
-    -- `z • f` is `e z * f` by the definition of `Module.compHom`.
+    -- The induced algebra acts by multiplication with the expansion of the scalar.
     change e (c • z) * f = c • (e z * f)
     rw [hek, ← laurentSeries_algebraMap_mul_eq_smul, ← laurentSeries_algebraMap_mul_eq_smul,
       mul_assoc]⟩
   let D : Derivation k F (LaurentSeries A) :=
-    { toFun z := LaurentSeries.derivative A (e z)
-      map_add' := by simp
-      map_smul' := by simp [hek]
-      map_one_eq_zero' := by
-        simpa only [LinearMap.coe_mk, AddHom.coe_mk, map_one, laurentSeriesDerivation_apply] using
-          (laurentSeriesDerivation A).map_one_eq_zero
-      leibniz' a b := by
-        simpa only [LinearMap.coe_mk, AddHom.coe_mk, map_mul, hsmul, smul_eq_mul,
-          laurentSeriesDerivation_apply] using
-          (laurentSeriesDerivation A).leibniz (e a) (e b) }
+    ((laurentSeriesDerivation A).restrictScalars k).compAlgebraMap F
   -- By the chain rule `D z = (dz/dt) • D t`, and `D t = (X)' = 1`. Unfolding `D` and the
-  -- `Module.compHom` scalar action turns the chain rule into an identity of Laurent series.
+  -- induced algebra's scalar action turns the chain rule into an identity of Laurent series.
   have h := D.apply_eq_derivativeOfSeparating_smul htr z
   change LaurentSeries.derivative A (e z) =
     e (derivativeOfSeparating htr z) * LaurentSeries.derivative A (e t) at h
