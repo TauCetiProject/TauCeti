@@ -41,7 +41,6 @@ theorem counit_rTensor [AddCommMonoid H] [Module R H] [CoalgebraStruct R H] (x :
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The map `f ⊗ id : A ⊗[R] H → B ⊗[R] H` commutes with the antipodes. -/
-@[simp]
 theorem antipode_rTensor [Semiring H] [HopfAlgebra R H] (x : A ⊗[R] H) :
     antipode B (f.toLinearMap.rTensor H x) = f.toLinearMap.rTensor H (antipode A x) := by
   induction x using TensorProduct.inductionOn with
