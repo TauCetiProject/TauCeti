@@ -263,8 +263,44 @@ instance vanishingSheafι_mono (D : X →₀ ℕ) : Mono (vanishingSheafι I X D
   exact (sheafToPresheaf (Opens.grothendieckTopology X) (ModuleCat ℂ)).mono_of_mono_map
     (NatTrans.mono_of_mono_app (vanishingSheafι I X D).hom)
 
-/-- Every allowed germ is represented by an allowed section on some neighborhood. Finiteness
-of the divisor support and the separation hypothesis allow other support points to be excluded. -/
+/-- Increasing the divisor induces an inclusion of vanishing sheaves in the reverse direction. -/
+def vanishingSheafMapOfLE {D D' : X →₀ ℕ} (h : D ≤ D') :
+    vanishingSheaf I X D' ⟶ vanishingSheaf I X D where
+  hom.app U := ModuleCat.ofHom <| Submodule.inclusion
+    (Submodule.restrictScalars_mono ℂ (vanishingIdeal_antitone I X U.unop h))
+  hom.naturality := by
+    intro U V f
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro s
+    exact Subtype.ext rfl
+
+/-- The inclusion between vanishing sheaves preserves the underlying holomorphic section. -/
+@[simp]
+theorem vanishingSheafMapOfLE_app {D D' : X →₀ ℕ} (h : D ≤ D') (U : Opens X)
+    (f : (vanishingSheaf I X D').obj.obj (op U)) :
+    (vanishingSheafSectionsEquiv I X D U
+      ((vanishingSheafMapOfLE I X h).hom.app (op U) f)).1 =
+        (vanishingSheafSectionsEquiv I X D' U f).1 := (rfl)
+
+/-- The inclusion between vanishing sheaves commutes with inclusion into the structure sheaf. -/
+@[reassoc (attr := simp), simp]
+theorem vanishingSheafMapOfLE_ι {D D' : X →₀ ℕ} (h : D ≤ D') :
+    vanishingSheafMapOfLE I X h ≫ vanishingSheafι I X D = vanishingSheafι I X D' := by
+  apply Sheaf.hom_ext
+  apply NatTrans.ext
+  funext U
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro f
+  rfl
+
+/-- The map induced by increasing the divisor is a monomorphism. -/
+instance vanishingSheafMapOfLE_mono {D D' : X →₀ ℕ} (h : D ≤ D') :
+    Mono (vanishingSheafMapOfLE I X h) :=
+  mono_of_mono_fac (vanishingSheafMapOfLE_ι I X h)
+
+/-- Every allowed germ is represented by an allowed section on some neighborhood. -/
 theorem exists_germ_eq_of_mem_pow_ker_eval [T1Space X] (D : X →₀ ℕ) (x : X)
     {g : (holomorphicStructureSheaf I X).presheaf.stalk x}
     (hg : g ∈ (RingHom.ker (eval I X x)) ^ D x) :
