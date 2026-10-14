@@ -142,6 +142,8 @@ theorem equivOfAsModuleLinearEquiv_apply (f : ρ.asModule ≃ₗ[k[G]] σ.asModu
     equivOfAsModuleLinearEquiv f v = σ.asModuleEquiv (f (ρ.asModuleEquiv.symm v)) :=
   (rfl)
 
+/-- The inverse representation equivalence evaluates as `f.symm` through the carrier
+identifications. This simp rule removes the representation/module conversion from applications. -/
 @[simp]
 theorem equivOfAsModuleLinearEquiv_symm_apply (f : ρ.asModule ≃ₗ[k[G]] σ.asModule) (w : W) :
     (equivOfAsModuleLinearEquiv f).symm w =
@@ -162,6 +164,8 @@ theorem asModuleLinearEquivOfEquiv_apply (φ : ρ.Equiv σ) (x : ρ.asModule) :
     asModuleLinearEquivOfEquiv φ x = σ.asModuleEquiv.symm (φ (ρ.asModuleEquiv x)) :=
   (rfl)
 
+/-- The inverse module equivalence evaluates as `φ.symm` through the carrier identifications.
+This simp rule removes the representation/module conversion from applications. -/
 @[simp]
 theorem asModuleLinearEquivOfEquiv_symm_apply (φ : ρ.Equiv σ) (y : σ.asModule) :
     (asModuleLinearEquivOfEquiv φ).symm y =
@@ -206,6 +210,8 @@ theorem _root_.Representation.prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule
       (ρ.asModuleEquiv.symm (x : V × W).1, σ.asModuleEquiv.symm (x : V × W).2) :=
   (rfl)
 
+/-- The inverse product-module equivalence pairs the underlying vectors in the product
+representation. This simp rule removes the product-module conversion from applications. -/
 @[simp]
 theorem _root_.Representation.prodAsModuleEquiv_symm_apply (x : ρ.asModule × σ.asModule) :
     (ρ.prodAsModuleEquiv σ).symm x =
