@@ -12,7 +12,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFu
 
 If `N` is a normal subgroup of a group `G` with separately continuous multiplication, conjugation
 by `g` on `N`, together with the action of `g` on coefficients, is a compatible pair. This file
-packages the resulting map on the explicit quotient `H¹(N, M)`. The map uses inverse conjugation
+packages the resulting map on the explicit quotient `H¹(N, M)`. The theorem
+`explicitMap1_eq_of_conj` identifies the maps on `H¹` of compatible pairs differing by conjugation
+and the corresponding coefficient action. The subgroup map uses inverse conjugation
 `h ↦ g⁻¹ h g`, so that its coefficient component is the left action `m ↦ g • m`.
 
 The construction is functorial in `g`, hence gives the expected `G`-action.  When `g` belongs to
@@ -33,7 +35,48 @@ namespace TauCeti.ContCohomology
 
 open _root_.Subgroup
 
-universe uG uM uK uA
+universe uG uH uM uN uK uA
+
+section Conjugation
+
+variable (G : Type uG) [Group G] [TopologicalSpace G]
+  (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+  (H : Type uH) [Monoid H] [TopologicalSpace H]
+  (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [DistribMulAction H N] [ContinuousSMul H N]
+
+/-- Conjugating the group map of a compatible pair and composing its coefficient map with the
+same group element's action leaves the map on explicit `H¹` unchanged. This is the
+compatible-pair form of the conjugation invariance in Neukirch, Schmidt and Wingberg,
+*Cohomology of Number Fields*, Chapter I, §5. -/
+theorem explicitMap1_eq_of_conj
+    (φ ψ : H →ₜ* G) (f q : M →+ N) (hf : Continuous f)
+    (hφ : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (g : G) (hconj : ∀ h, ψ h = g⁻¹ * φ h * g)
+    (hqf : ∀ m, q m = f (g • m)) :
+    explicitMap1 G M H N ψ q
+      ((hf.comp (continuous_const.smul continuous_id)).congr fun m => (hqf m).symm)
+      (fun h m => by
+        calc
+          q (ψ h • m) = f (g • (ψ h • m)) := hqf _
+          _ = f (φ h • (g • m)) := by
+            rw [hconj, mul_smul, mul_smul, smul_inv_smul]
+          _ = h • f (g • m) := hφ _ _
+          _ = h • q m := congrArg (h • ·) (hqf m).symm) =
+      explicitMap1 G M H N φ f hf hφ := by
+  apply AddMonoidHom.ext
+  intro x
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitMap1_mk, explicitMap1_mk, H1pi_eq_iff]
+    refine mem_B1_iff.2 ⟨f ((c : G → M) g), fun h => ?_⟩
+    simp only [Pi.sub_apply, cocyclesMap1_apply, hqf, hconj]
+    rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2,
+      map_add, map_sub, hφ]
+    abel
+
+end Conjugation
 
 section
 
@@ -276,15 +319,13 @@ This is the inner-automorphism triviality of Milne, *Arithmetic Duality Theorems
 Proposition 0.15. -/
 theorem explicitConj1_eq_id_of_mem (N : Subgroup G) [N.Normal] (g : N) :
     explicitConj1 (M := M) N (g : G) = AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitConj1_apply_eq_smul, smul_mk, AddMonoidHom.id_apply, H1pi_eq_iff]
-      refine mem_B1_iff.2 ⟨(c : N → M) g, ?_⟩
-      intro n
-      simpa [d0_apply] using
-        congrFun (inverseConjugationHomotopy1_spec N g c) n
+  unfold explicitConj1
+  have hmap := explicitMap1_eq_of_conj N M N M
+    (ContinuousMonoidHom.id N) (inverseConjugationHom N (g : G))
+    (AddMonoidHom.id M) (DistribSMul.toAddMonoidHom M (g : G)) continuous_id
+    (fun _ _ => rfl) g
+    (fun n => by ext; simp [inverseConjugationHom_apply]) (fun _ => rfl)
+  exact hmap.trans (explicitMap1_id N M (fun _ _ => rfl))
 
 /-- An element of the subgroup acts trivially on explicit first cohomology. -/
 @[simp]

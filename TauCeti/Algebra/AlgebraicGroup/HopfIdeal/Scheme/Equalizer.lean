@@ -35,8 +35,7 @@ faithfulness of `hopfSpec` together with uniqueness of that factorization.
 
 The equalizer of two homomorphisms of group schemes is a closed subgroup scheme; see
 [Milne, *Algebraic Groups*][milne2017], §1.h, and Waterhouse, *Introduction to Affine Group
-Schemes*, §15.3. It serves `TauCetiRoadmap/ReductiveGroups/README.md`, "Hopf ideals ↔ closed
-subgroup schemes".
+Schemes*, §15.3.
 -/
 
 public section
