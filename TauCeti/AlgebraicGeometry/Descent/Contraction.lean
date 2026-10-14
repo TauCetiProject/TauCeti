@@ -97,13 +97,6 @@ private theorem preimage_descBase_le (W : Opens Z) :
   intro x hx
   simpa [← comp_descBase c hq h hh] using hx
 
-/-- Restricting a section to a smaller open and back again, along any two inclusions, is the
-identity; the opens of a space form a thin category. -/
-private theorem presheaf_map_map_eq_self {C : Type*} [Category* C] {T : TopCat.{u}}
-    {F : TopCat.Presheaf C T} {A : C} {V V' : Opens T} (a : A ⟶ F.obj (op V))
-    (i : op V ⟶ op V') (j : op V' ⟶ op V) : (a ≫ F.map i) ≫ F.map j = a := by
-  rw [Category.assoc, ← F.map_comp, Subsingleton.elim (i ≫ j) (𝟙 _), F.map_id, Category.comp_id]
-
 /-- The descended morphism as a morphism of presheafed spaces: on sections over `W` it maps
 `Γ(Z, W)` to `Γ(X, c⁻¹ g⁻¹ W)` by `h`, and then back to `Γ(Y, g⁻¹ W)` by the inverse of `c`. -/
 private noncomputable def descPsh : Y.toPresheafedSpace ⟶ Z.toPresheafedSpace where
@@ -120,14 +113,14 @@ private noncomputable def descPsh : Y.toPresheafedSpace ⟶ Z.toPresheafedSpace 
 `c⁻¹ g⁻¹ W`, since the inverse of `c` on sections cancels against `c`. -/
 private theorem comp_descPsh_c_app (W : Opens Z) :
     (c.toHom ≫ descPsh c hq hc h hh).c.app (op W) =
-      h.c.app (op W) ≫ X.presheaf.map (homOfLE (preimage_descBase_le c hq h hh W)).op :=
-  ((Category.assoc _ _ _).trans (congrArg _ (@IsIso.inv_hom_id _ _ _ _ _ (hc _)))).trans
-    (Category.comp_id _)
+      h.c.app (op W) ≫ X.presheaf.map (homOfLE (preimage_descBase_le c hq h hh W)).op := by
+  rw [PresheafedSpace.comp_c_app]
+  simp [descPsh]
 
 private theorem comp_descPsh : c.toHom ≫ descPsh c hq hc h hh = h.toHom := by
   refine PresheafedSpace.ext_of_app (comp_descBase c hq h hh) fun W ↦ ?_
   rw [comp_descPsh_c_app]
-  exact presheaf_map_map_eq_self _ _ _
+  exact TopCat.Presheaf.comp_map_comp_map_eq_self _ _ _
 
 private theorem isLocalHom_stalkMap_descPsh (y : Y) :
     IsLocalHom ((descPsh c hq hc h hh).stalkMap y).hom := by
@@ -140,6 +133,8 @@ private theorem isLocalHom_stalkMap_descPsh (y : Y) :
         Z.presheaf.stalk (h.base x)))
     exact CommRingCat.isLocalHom_comp _ _
   rw [PresheafedSpace.stalkMap.comp] at this
+  -- `rw [CommRingCat.hom_comp] at this` fails: the stalk map of `descPsh` has codomain stated at
+  -- `(c.toHom ≫ descPsh c hq hc h hh).base x`, only definitionally equal to `descPsh` at `c x`.
   have : IsLocalHom ((c.toHom.stalkMap x).hom.comp
       ((descPsh c hq hc h hh).stalkMap (c.base x)).hom) := this
   exact isLocalHom_of_comp _ (c.toHom.stalkMap x).hom
@@ -155,6 +150,12 @@ noncomputable def descOfIsQuotientMap : Y ⟶ Z :=
 @[reassoc (attr := simp)]
 theorem comp_descOfIsQuotientMap : c ≫ c.descOfIsQuotientMap hq hc h hh = h :=
   LocallyRingedSpace.Hom.ext' (comp_descPsh c hq hc h hh)
+
+/-- On points, the morphism descended along `c` sends `c x` to `h x`. -/
+@[simp]
+theorem descOfIsQuotientMap_base_apply (x : X) :
+    (c.descOfIsQuotientMap hq hc h hh).base (c.base x) = h.base x := by
+  rw [← ConcreteCategory.comp_apply, ← LocallyRingedSpace.comp_base, comp_descOfIsQuotientMap]
 
 /-- The morphism descended along `c` is the only morphism through which `h` factors. -/
 theorem eq_descOfIsQuotientMap {g : Y ⟶ Z} (hg : c ≫ g = h) :
@@ -220,6 +221,11 @@ noncomputable def descOfIsQuotientMap : Y ⟶ Z :=
 @[reassoc (attr := simp)]
 theorem comp_descOfIsQuotientMap : c ≫ c.descOfIsQuotientMap hq hc h hh = h :=
   Scheme.Hom.ext' (LocallyRingedSpace.Hom.comp_descOfIsQuotientMap ..)
+
+/-- On points, the morphism descended along `c` sends `c x` to `h x`. -/
+@[simp]
+theorem descOfIsQuotientMap_apply (x : X) : c.descOfIsQuotientMap hq hc h hh (c x) = h x := by
+  rw [← Scheme.Hom.comp_apply, comp_descOfIsQuotientMap]
 
 /-- The morphism descended along `c` is the only morphism through which `h` factors. -/
 theorem eq_descOfIsQuotientMap {g : Y ⟶ Z} (hg : c ≫ g = h) :
