@@ -24,6 +24,10 @@ map is continuous once every prescribed order of the output difference is reache
 the input difference. The coefficient formulation instead identifies limits concretely, coefficient
 by coefficient, once a common lower bound on the supports is known.
 
+The reverse implication in the coefficient criterion adapts
+`LaurentSeries.Cauchy.eventually_mem_nhds` from Mathlib: its coefficient agreement for a Cauchy
+limit is replaced here by the assumed pointwise agreement with the prescribed limit.
+
 ## Main results
 
 * `TauCeti.tendsto_laurentSeries_iff_coeff` characterizes convergence by a common lower support
@@ -107,10 +111,12 @@ theorem tendsto_laurentSeries_iff_orderTop_sub {ι : Type*} {l : Filter ι}
         (HahnSeries.le_orderTop_iff_forall.mp hi) z (by exact_mod_cast (lt_add_one z))
       simpa only [HahnSeries.coeff_sub, sub_eq_zero] using hdiff
 
-/-- Every fixed coefficient of the sequence `X⁻¹, X⁻², ...` is eventually zero. -/
-theorem laurentSeries_eventually_coeff_single_neg_succ_eq_zero (z : ℤ) :
+/-- Every fixed coefficient of the sequence of monomials with exponents `-1, -2, ...` and fixed
+coefficient `r` is eventually zero. -/
+theorem laurentSeries_eventually_coeff_single_neg_succ_eq_zero {R : Type*} [Zero R]
+    (r : R) (z : ℤ) :
     ∀ᶠ n : ℕ in atTop,
-      (HahnSeries.single (-((n + 1 : ℕ) : ℤ)) (1 : K) : LaurentSeries K).coeff z = 0 := by
+      (HahnSeries.single (-((n + 1 : ℕ) : ℤ)) r : LaurentSeries R).coeff z = 0 := by
   filter_upwards [eventually_ge_atTop (z.natAbs + 1)] with n hn
   rw [HahnSeries.coeff_single]
   split_ifs with h

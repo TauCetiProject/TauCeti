@@ -17,6 +17,10 @@ coefficient of a fixed series, eventually agrees with that series at every coeff
 prescribed index. This upgrades pointwise stabilization to stabilization of every initial segment
 of coefficients, which is the form in which order-based convergence statements consume it.
 
+The proof adapts the finite-interval assembly in
+`LaurentSeries.Cauchy.coeff_eventually_equal` from Mathlib. Here its Cauchy-filter-specific
+coefficient limit is replaced by an arbitrary fixed Hahn series and an arbitrary filter.
+
 ## Main results
 
 * `TauCeti.hahnSeries_eventually_forall_lt_coeff_eq`: a common eventual lower support bound and
@@ -34,11 +38,12 @@ namespace TauCeti
 and each coefficient eventually agrees with the corresponding coefficient of `g`, then for every
 `D` the family eventually agrees with `g` at all coefficients below `D`. -/
 theorem hahnSeries_eventually_forall_lt_coeff_eq {Γ R : Type*} [LinearOrder Γ]
-    [LocallyFiniteOrder Γ] [Zero Γ] [Zero R]
+    [LocallyFiniteOrder Γ] [Zero R]
     {ι : Type*} {l : Filter ι} {f : ι → HahnSeries Γ R} {g : HahnSeries Γ R}
     {b : Γ} (hlb : ∀ᶠ i in l, ∀ z < b, (f i).coeff z = 0)
     (hcoeff : ∀ z, ∀ᶠ i in l, (f i).coeff z = g.coeff z) (D : Γ) :
     ∀ᶠ i in l, ∀ z < D, (f i).coeff z = g.coeff z := by
+  let _ : Zero Γ := ⟨b⟩
   let a := min b g.order
   let c := max a D
   have hfinite : ∀ᶠ i in l, ∀ z ∈ Set.Icc a c, (f i).coeff z = g.coeff z :=
