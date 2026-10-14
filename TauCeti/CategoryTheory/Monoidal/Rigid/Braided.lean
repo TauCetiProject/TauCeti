@@ -37,14 +37,14 @@ namespace TauCeti
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- The evaluation of the swapped pairing is braided evaluation. -/
-@[reassoc]
+@[simp, reassoc]
 theorem exactPairing_swap_evaluation (X Y : C) [ExactPairing X Y] :
     @ExactPairing.evaluation C _ _ Y X (exactPairing_swap X Y) =
       (β_ X Y).hom ≫ ε_ X Y :=
   (rfl)
 
 /-- The coevaluation of the swapped pairing uses the inverse braiding. -/
-@[reassoc]
+@[simp, reassoc]
 theorem exactPairing_swap_coevaluation (X Y : C) [ExactPairing X Y] :
     @ExactPairing.coevaluation C _ _ Y X (exactPairing_swap X Y) =
       η_ X Y ≫ (β_ Y X).inv :=
