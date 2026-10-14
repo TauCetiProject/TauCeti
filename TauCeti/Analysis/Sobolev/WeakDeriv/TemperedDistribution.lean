@@ -29,7 +29,7 @@ the forward implication only requires temperate growth.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, Section 7.1.
 
 The formalization uses Mathlib's `MeasureTheory.Lp.toTemperedDistribution` and the real-test
-extensionality theorem `TauCeti.temperedDistribution_ext_real`.
+extensionality theorem `TemperedDistribution.ext_real`.
 -/
 
 public section
@@ -51,7 +51,7 @@ derivative whenever that derivative is represented by an `L^q` function, `q ≥ 
 theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution_eq
     {u : Lp F p μ} {u' : Lp F q μ} {v : E} (h : HasWeakLineDerivOn μ ⊤ u u' v) :
     ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
-  apply temperedDistribution_ext_real
+  apply TemperedDistribution.ext_real
   intro φ hφ
   have hweak := (hasWeakLineDerivOn_iff h.locallyIntegrableOn
     h.locallyIntegrableOn_deriv).1 h φ (φ.smooth ⊤) hφ (by simp)
