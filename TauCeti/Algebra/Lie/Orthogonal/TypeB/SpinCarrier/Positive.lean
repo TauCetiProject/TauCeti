@@ -315,25 +315,15 @@ theorem closedSubgroup_le_iff
     (latticeBasis n) (basisWeight n)
   let e : TypeBSpinCarrier.groupScheme n ≅ Gtoral :=
     eqToIso (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n)
-  have hcomp : IsClosedImmersion ((P.1.arrow ≫ e.hom).hom.hom.left) := by
-    rw [← closedSubgroupMorphismProperty_iff,
-      (closedSubgroupMorphismProperty _).cancel_right_of_respectsIso]
-    exact P.2
-  let P' : ClosedSubgroupScheme Gtoral :=
-    @ClosedSubgroupScheme.mk _ _ _ (P.1.arrow ≫ e.hom) hcomp
   let Q := kostantTorusSubsystemClosedSubgroup
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n)
     (isNilpotent_rep_rootGenerator n) (Set.range Sum.inl)
-  let E := Subobject.mapIsoToOrderIso e
-  have hP : E P.1 = P'.1 := by
-    calc
-      E P.1 = E (Subobject.mk P.1.arrow) := congrArg E (Subobject.mk_arrow P.1).symm
-      _ = Subobject.mk (P.1.arrow ≫ e.hom) := rfl
-      _ = P'.1 := (ClosedSubgroupScheme.coe_mk _).symm
-  have hQ : E (closedSubgroup n).1 = Q.1 := by
-    rw [coe_closedSubgroup]
+  let E := ClosedSubgroupScheme.mapIso e
+  have hQ : E (closedSubgroup n) = Q := by
+    apply Subtype.ext
+    rw [ClosedSubgroupScheme.coe_mapIso, coe_closedSubgroup]
     change Subobject.mk (inclusion n ≫ e.hom) = Q.1
     calc
       _ = Subobject.mk (kostantTorusSubsystemToToral
@@ -351,39 +341,11 @@ theorem closedSubgroup_le_iff
             (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)
             (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n) (latticeBasis n)
             (basisWeight n) (isNilpotent_rep_rootGenerator n) (Set.range Sum.inl)).symm
-  have hle : closedSubgroup n ≤ P ↔ Q ≤ P' := by
-    rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe, ← hQ, ← hP]
-    exact E.map_rel_iff.symm
-  let pIso : (P'.1 : Grp (Over (Spec (CommRingCat.of ℤ)))) ≅
-      (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))) :=
-    ClosedSubgroupScheme.mkIso (P.1.arrow ≫ e.hom)
-  have pIso_inv_comp_arrow : pIso.inv ≫ P'.1.arrow = P.1.arrow ≫ e.hom := by
-    simp [pIso, P']
-  have pIso_hom_comp_arrow : pIso.hom ≫ P.1.arrow = P'.1.arrow ≫ e.inv := by
-    apply (cancel_mono e.hom).mp
-    rw [Category.assoc, Category.assoc, e.inv_hom_id, Category.comp_id,
-      ← pIso_inv_comp_arrow]
-    simp
   have factors_iff {X : Grp (Over (Spec (CommRingCat.of ℤ)))} (f : X ⟶ Gtoral) :
-      P'.1.Factors f ↔ P.1.Factors (f ≫ e.inv) := by
-    constructor
-    · intro hf
-      let g := P'.1.factorThru f hf ≫ pIso.hom
-      have hg : g ≫ P.1.arrow = f ≫ e.inv := by
-        dsimp only [g]
-        rw [Category.assoc, pIso_hom_comp_arrow, ← Category.assoc,
-          P'.1.factorThru_arrow]
-      rw [← hg]
-      exact Subobject.factors_comp_arrow g
-    · intro hf
-      let g := P.1.factorThru (f ≫ e.inv) hf ≫ pIso.inv
-      have hg : g ≫ P'.1.arrow = f := by
-        dsimp only [g]
-        rw [Category.assoc, pIso_inv_comp_arrow, ← Category.assoc,
-          P.1.factorThru_arrow, Category.assoc, e.inv_hom_id, Category.comp_id]
-      rw [← hg]
-      exact Subobject.factors_comp_arrow g
-  rw [hle, kostantTorusSubsystemClosedSubgroup_le_iff]
+      (E P).1.Factors f ↔ P.1.Factors (f ≫ e.inv) := by
+    rw [ClosedSubgroupScheme.coe_mapIso]
+    exact Subobject.factors_mapIsoToOrderIso_iff e P.1 f
+  rw [← E.le_iff_le, hQ, kostantTorusSubsystemClosedSubgroup_le_iff]
   constructor
   · rintro ⟨hroot, htorus⟩
     constructor
@@ -391,19 +353,19 @@ theorem closedSubgroup_le_iff
       apply (Subobject.factors_iff_existsUnique P.1 _).mp
       simpa [e, Gtoral, TypeBSpinCarrier.rootSubgroup_def] using
         (factors_iff _).mp
-          ((Subobject.factors_iff_existsUnique P'.1 _).mpr (hroot (.inl i) ⟨i, rfl⟩))
+          ((Subobject.factors_iff_existsUnique (E P).1 _).mpr (hroot (.inl i) ⟨i, rfl⟩))
     · apply (Subobject.factors_iff_existsUnique P.1 _).mp
       simpa [e, Gtoral, TypeBSpinCarrier.weightTorus_def] using
-        (factors_iff _).mp ((Subobject.factors_iff_existsUnique P'.1 _).mpr htorus)
+        (factors_iff _).mp ((Subobject.factors_iff_existsUnique (E P).1 _).mpr htorus)
   · rintro ⟨hroot, htorus⟩
     constructor
     · intro k hk
       obtain ⟨i, rfl⟩ := hk
-      apply (Subobject.factors_iff_existsUnique P'.1 _).mp
+      apply (Subobject.factors_iff_existsUnique (E P).1 _).mp
       apply (factors_iff _).mpr
       simpa [e, Gtoral, TypeBSpinCarrier.rootSubgroup_def] using
         (Subobject.factors_iff_existsUnique P.1 _).mpr (hroot i)
-    · apply (Subobject.factors_iff_existsUnique P'.1 _).mp
+    · apply (Subobject.factors_iff_existsUnique (E P).1 _).mp
       apply (factors_iff _).mpr
       simpa [e, Gtoral, TypeBSpinCarrier.weightTorus_def] using
         (Subobject.factors_iff_existsUnique P.1 _).mpr htorus

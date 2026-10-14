@@ -28,6 +28,8 @@ specialized constructions that import this generic API.
 * `TauCeti.ClosedSubgroupScheme.mk`: the closed subgroup represented by a closed immersion.
 * `TauCeti.ClosedSubgroupScheme.mkIso`: the canonical isomorphism of that closed subgroup with the
   source of the immersion.
+* `TauCeti.ClosedSubgroupScheme.mapIso`: transport of closed subgroups along an isomorphism of
+  ambient group schemes.
 -/
 
 public section
@@ -124,6 +126,45 @@ lemma mkIso_inv_comp_arrow {K : Grp (Over X)} (i : K ⟶ G)
         (Subobject.mk i).arrow :=
     Subobject.arrow_congr (Subobject.mk i) (mk i).1 (coe_mk i).symm
   rw [mkIso, Iso.trans_inv, Category.assoc, harrow, Subobject.underlyingIso_arrow]
+
+/-- Closed subgroups are transported along an isomorphism of ambient group schemes by
+postcomposing their representing arrows with the isomorphism. -/
+noncomputable def mapIso {H : Grp (Over X)} (e : G ≅ H) :
+    ClosedSubgroupScheme G ≃o ClosedSubgroupScheme H where
+  toFun P := ⟨Subobject.mapIsoToOrderIso e P.1, by
+    obtain ⟨P, hP⟩ := P
+    induction P using Subobject.ind with
+    | _ f =>
+      rw [← Subobject.underlyingIso_hom_comp_eq_mk f,
+        (closedSubgroupMorphismProperty X).cancel_left_of_respectsIso] at hP
+      dsimp only
+      rw [Subobject.mapIsoToOrderIso_apply, Subobject.map_mk,
+        ← Subobject.underlyingIso_hom_comp_eq_mk (f ≫ e.hom),
+        (closedSubgroupMorphismProperty X).cancel_left_of_respectsIso,
+        (closedSubgroupMorphismProperty X).cancel_right_of_respectsIso]
+      exact hP⟩
+  invFun P := ⟨(Subobject.mapIsoToOrderIso e).symm P.1, by
+    obtain ⟨P, hP⟩ := P
+    induction P using Subobject.ind with
+    | _ f =>
+      rw [← Subobject.underlyingIso_hom_comp_eq_mk f,
+        (closedSubgroupMorphismProperty X).cancel_left_of_respectsIso] at hP
+      change closedSubgroupMorphismProperty X ((Subobject.map e.inv).obj (Subobject.mk f)).arrow
+      rw [Subobject.map_mk,
+        ← Subobject.underlyingIso_hom_comp_eq_mk (f ≫ e.inv),
+        (closedSubgroupMorphismProperty X).cancel_left_of_respectsIso,
+        (closedSubgroupMorphismProperty X).cancel_right_of_respectsIso]
+      exact hP⟩
+  left_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).symm_apply_apply P.1)
+  right_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).apply_symm_apply P.1)
+  map_rel_iff' := (Subobject.mapIsoToOrderIso e).map_rel_iff
+
+/-- The subobject underlying a transported closed subgroup is the transported subobject. -/
+@[simp]
+lemma coe_mapIso {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme G) :
+    (mapIso e P).1 = Subobject.mapIsoToOrderIso e P.1 := by
+  unfold mapIso
+  rfl
 
 end ClosedSubgroupScheme
 
