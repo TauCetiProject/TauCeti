@@ -45,8 +45,8 @@ namespace TauCeti.Subgroup.CuspDatum
 
 variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
 
-/-- The Dirichlet domain lies in the strip of width `D.width` centred at the scaled
-Dirichlet centre. -/
+/-- The scaled image of the Dirichlet domain lies in the vertical strip of width `D.width`
+centred at `(D.scaling • p).re`. -/
 theorem abs_re_scaling_smul_sub_le {p z : ℍ} (hz : z ∈ dirichletDomain Γ p) :
     |(D.scaling • z).re - (D.scaling • p).re| ≤ D.width / 2 := by
   apply (dist_le_dist_vadd_and_neg_vadd_iff D.width_pos _ _).mp
