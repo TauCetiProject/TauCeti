@@ -295,7 +295,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             self.assertEqual(check.main([]), 2)
 
     def test_workflow_uses_merge_base_and_scopes_feature_probes(self):
-        workflow = (SCRIPT.parent.parent / ".github/workflows/pr-build-jobs.yml").read_text()
+        workflow = (SCRIPT.parent.parent / ".github/workflows/pr-build.yml").read_text()
         self.assertIn("cp mergebase/TauCeti/mathlib-shims.json", workflow)
         self.assertNotIn("cp base/TauCeti/mathlib-shims.json", workflow)
         self.assertIn('[ "${BUMP:-0}" = "1" ] || args+=(--only-new)', workflow)

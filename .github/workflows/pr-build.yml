@@ -1,9 +1,26 @@
 name: pr-build
 run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
-# Keep this entrypoint and its bors run title stable: bors cancellation recovery
-# binds failed statuses to this exact workflow path and candidate identity.
-# The reusable workflow retains all sandbox, audit, publication and status gates.
+# Builds the exact immutable PR head in a TRUSTED, base-branch-defined workflow. A PR cannot
+# change what runs here (pull_request_target uses the base definition). Before Lake sees the
+# candidate, the workflow proves that its lakefile is an ordinary file byte-identical to the
+# PR's merge base and that its pins are either inherited unchanged or a validated forward bump.
+# Workflow-pinned audit tooling is mounted separately; candidate scripts are never invoked by
+# the required build. Candidate Lean code runs only under bwrap (offline; writes confined to
+# the checkout's .lake; no secrets or token in reach). Scope is a separate policy status, so an
+# old PR keeps its own historical pins and sources rather than being synthetically merged or
+# overlaid onto today's main. The `build` status on the exact head SHA is the required check.
+#
+# The job below is deliberately NOT named `build`: GitHub Actions auto-creates a check-run named
+# after the job, and a check-run named `build` would collide with the required `build` STATUS this
+# job posts. Branch protection matches the required context `build` against BOTH commit statuses and
+# check-runs by name, so two `build` results (a green status + a red job check-run) wedge the PR as
+# BLOCKED even though the authoritative build passed — e.g. when the job's final report step exits
+# nonzero on a transient "could not list files" (INFRA) hiccup while a healthy re-run posts the green
+# status. Keeping the job name distinct leaves exactly one `build` (the status) as the merge gate.
+#
+# Live on pull_request_target (fires for all PRs, incl. forks, from the trusted base definition).
+# workflow_dispatch is also kept for ad-hoc re-testing of a given PR number.
 
 on:
   pull_request_target:
@@ -29,50 +46,1384 @@ permissions:
   statuses: write
 
 concurrency:
-  # Staging cancellation is owned by the validated reusable-workflow job below.
-  # This outer group is run-specific until validation; all other keys are unchanged.
-  group: pr-build-${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors-staging-run-{0}', github.run_id) || github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha }}
+  # Bors batch IDs identify one base branch. Incomplete dispatch identities use
+  # the run ID so they cannot displace another candidate.
+  group: >-
+    pr-build-${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
+      github.event.client_payload.batch_id && github.event.client_payload.head_sha &&
+      github.event.client_payload.base_sha && github.event.client_payload.base_ref &&
+      format('bors-staging-{0}-{1}-{2}-{3}-{4}', github.repository_id, github.event.client_payload.batch_id,
+        github.event.client_payload.head_sha, github.event.client_payload.base_sha, github.event.client_payload.base_ref)
+      || format('bors-staging-run-{0}', github.run_id)
+    ) || github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
-jobs:
-  staging-identity:
-    if: github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      group: ${{ steps.identity.outputs.group }}
-    steps:
-      - name: Checkout workflow-pinned identity validator
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.workflow_sha }}
-          persist-credentials: false
-          sparse-checkout: scripts/bors_staging_identity.py
-          sparse-checkout-cone-mode: false
-      - name: Validate staging identity
-        id: identity
-        run: python3 scripts/bors_staging_identity.py
+env:
+  IS_BATCH: ${{ github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') }}
+  # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
+  # during the transition to the cache tool's new default read endpoint. Set the
+  # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
+  # return reads to the default endpoint on the next run: the cache tool treats unset,
+  # empty, `0`, and `false` alike as off.
+  MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
-  build-candidate:
-    needs: staging-identity
-    if: ${{ !cancelled() && ((github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') || needs.staging-identity.result == 'success') }}
-    # Reusable workflows cannot elevate the caller's token permissions. Permit
-    # the existing runner picker's actions read here; pr-build-jobs.yml narrows
-    # its build and publisher tokens to their original permissions.
+jobs:
+  # The merge queue and bors staging always build on Namespace: they are the path every PR must
+  # pass through to land, so they get the faster machine and never wait for a GitHub slot.
+  # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
+  # Bors staging has scheduling priority over PR overflow and a run-specific assignment.
+  # https://namespace.so/docs/solutions/github-actions/runner-controls/job-ordering
+  pick-runner:
+    if: github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging')
+    uses: ./.github/workflows/pick-runner.yml
     permissions:
-      contents: read
-      statuses: write
       actions: read
-    # Concurrency on a reusable-workflow job cancels the whole build, publisher
-    # and finalizer sequence. Invalid identities never reach a shared group.
-    concurrency:
-      group: ${{ needs.staging-identity.outputs.group || format('pr-build-jobs-run-{0}', github.run_id) }}
-      cancel-in-progress: true
-    uses: ./.github/workflows/pr-build-jobs.yml
-    with:
-      pr: ${{ inputs.pr || '' }}
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+
+  # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
+  # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
+  sandboxed-build:
+    needs: pick-runner
+    if: ${{ !cancelled() }}
+    # `container.privileged` is required and documented by Namespace for this case: without it
+    # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
+    # at all, for root as well as for the job user. The machine name uses `-with-features`;
+    # bors appends its documented `;job.priority=1` option to that machine label. Its run-ID
+    # assignment is a separate option on the feature label.
+    #
+    # Both the provisioning and the feature are per-organisation configuration. A job whose
+    # labels this organisation does not serve is not rejected: it sits queued with an empty
+    # runner name until it expires, taking the required builds with it. Before changing these
+    # labels, confirm them in the organisation that will run the job.
+    #
+    # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
+    # an explicit `true` from it, including a picker that failed, was skipped or never ran, means
+    # Namespace. The event check is redundant with the picker's own `if`, and keeps the merge
+    # queue and bors staging on Namespace should that ever change.
+    runs-on: >-
+      ${{ github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
+        "nscloud-ubuntu-24.04-amd64-8x16-with-features{0}",
+        "namespace-features:container.privileged=true{1}"
+      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
+    outputs:
+      status-sha: ${{ steps.pr.outputs.status_sha }}
+      build-state: ${{ steps.report.outputs.build-state }}
+      build-description: ${{ steps.report.outputs.build-description }}
+      publication-required: ${{ steps.report.outputs.publication-required }}
+      reported-toolchain: ${{ steps.cache_stage.outputs.toolchain }}
+    env:
+      BWRAP_VER: 0.9.0-1build1
+      BWRAP_DEB_SHA256: dde30d1f24da50446d647ed504ec8dc5a714f171974d054c70a589b48ba38b48
+      BWRAP_SHA256: 3e33f8255e1411ada346db27028c25ef5ba4fa3327754a2321ea4c8732a3bc10
+      # Lake artifact-cache knobs, off by default. The "Configure the Lake artifact cache"
+      # step flips these on (and sets LAKE_CACHE_DIR) ONLY when the public cache endpoints
+      # are installed as repo variables; until then they stay empty and the build runs
+      # exactly as before (a full recompile of TauCeti/). Declared here so the sandboxed
+      # build's `--setenv` list always has a defined value to pass.
+      LAKE_ARTIFACT_CACHE: ""
+      LAKE_RESTORE_ARTIFACTS: ""
+      LAKE_CACHE_DIR: ""
+      # Enabled only for a merge-group commit when the upload service is configured. The
+      # sandbox then stages the fully audited root-package outputs for the isolated publisher.
+      STAGE_LAKE_CACHE: ""
+    steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+      # --- Trusted setup: no PR code runs until the sandboxed build phase ---
+      - name: Resolve PR head
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BORS_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
+          BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
+          REQUESTED_PR: ${{ inputs.pr || github.event.client_payload.pr }}
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            # Build the COMBINED merge-group commit (current base + ALL batched PRs, squash-merged by
+            # GitHub onto the gh-readonly-queue ref), not any single PR — so a batch is tested as a
+            # whole. The combined commit lives in THIS repo, is checked out exactly below, and the
+            # required `build` status lands on that merge-group commit.
+            REPO='${{ github.repository }}'
+            SHA='${{ github.event.merge_group.head_sha }}'
+            # Use the IMMUTABLE base SHA the queue synthesized this group on — NOT the mutable `main`
+            # tip, which may have advanced since the group was formed. Building the batch's TauCeti/
+            # as a different commit would test (and green-light) the wrong batch. This base_sha
+            # drives the combined-diff scope compare and forward-bump policy input below.
+            BASE_REF='${{ github.event.merge_group.base_sha }}'
+            STATUS_SHA='${{ github.event.merge_group.head_sha }}'
+            NUM="merge-group"   # not a single PR; scope/diff use the combined base..head diff below
+            AUTHOR=""           # author was checked before enqueue; strict config validation repeats below
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ] && [ "${{ github.event.action }}" = "tauceti-bors-staging" ]; then
+            REPO='${{ github.repository }}'
+            SHA="$BORS_HEAD_SHA"
+            BASE_REF="$BORS_BASE_SHA"
+            STATUS_SHA="$SHA"
+            NUM="bors-batch"
+            AUTHOR=""
+            [[ "$SHA" =~ ^[0-9a-f]{40}$ && "$BASE_REF" =~ ^[0-9a-f]{40}$ ]] || {
+              echo "::error::bors dispatch did not contain two commit SHAs"; exit 1;
+            }
+            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/staging" --jq .object.sha)
+            [ "$STAGING_SHA" = "$SHA" ] || {
+              echo "::error::bors staging moved since this dispatch"; exit 1;
+            }
+            relation=$(gh api "repos/${{ github.repository }}/compare/$BASE_REF...$SHA" --jq .status)
+            [ "$relation" = ahead ] || {
+              echo "::error::bors base is not an ancestor of its staging commit"; exit 1;
+            }
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            NUM='${{ github.event.pull_request.number }}'
+            SHA='${{ github.event.pull_request.head.sha }}'
+            REPO='${{ github.event.pull_request.head.repo.full_name }}'
+            BASE_REF='${{ github.event.pull_request.base.ref }}'
+            STATUS_SHA="$SHA"
+            AUTHOR='${{ github.event.pull_request.user.login }}'
+          else
+            NUM="$REQUESTED_PR"
+            [[ "$NUM" =~ ^[1-9][0-9]*$ ]] || { echo "::error::invalid PR number"; exit 1; }
+            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
+            REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
+            BASE_REF=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .base.ref)
+            STATUS_SHA="$SHA"
+            AUTHOR=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .user.login)
+          fi
+          # Resolve the target branch to a commit ONCE. Everything below -- policy validation,
+          # the merge-base attestation, and the scope compare -- then refers to the same base,
+          # instead of each step separately racing a branch that moves every few minutes. For
+          # merge_group BASE_REF is already the immutable base_sha the queue synthesized on.
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
+            BASE_SHA=$(gh api "repos/${{ github.repository }}/commits/$BASE_REF" --jq .sha 2>/dev/null) || BASE_SHA=""
+            if [ -z "$BASE_SHA" ]; then
+              echo "INFRA=1" >> "$GITHUB_ENV"
+              echo "::warning::could not resolve $BASE_REF to a commit — re-run pr-build"
+            fi
+          else
+            BASE_SHA="$BASE_REF"
+          fi
+
+          # Merge-base with the target branch, for the Lake-pin bump validation below:
+          # check-bump.sh uses it to scope the PR's own pin delta. owner:sha for forks;
+          # `|| true` so a failed substitution does not trip set -e before the fallback.
+          #
+          # Against BASE_SHA, not the branch name: check-bump.sh reads mergebase/ to decide
+          # whether the pins were touched at all, so if the branch moved between here and the
+          # checkouts, base/, pr/ and mergebase/ would be describing three different bases and
+          # that decision would be made against a snapshot nothing else in the job shares.
+          OWNER="${REPO%%/*}"
+          MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_SHA}...${OWNER}:${SHA}" \
+                 --jq '.merge_base_commit.sha' 2>/dev/null || true)
+          if [ -n "$MB" ]; then
+            echo "MERGEBASE_EXACT=1" >> "$GITHUB_ENV"
+          else
+            MB="$BASE_SHA"
+            echo "::warning::merge-base unresolved; falling back to the base commit $BASE_SHA"
+          fi
+          {
+            echo "num=$NUM"
+            echo "base_sha=$BASE_SHA"
+            echo "sha=$SHA"
+            echo "repo=$REPO"
+            echo "base_ref=$BASE_REF"
+            echo "mergebase=$MB"
+            echo "status_sha=$STATUS_SHA"
+            echo "author=$AUTHOR"
+          } >> "$GITHUB_OUTPUT"
+          echo "Building PR #$NUM @ $SHA from $REPO (author=${AUTHOR:-merge-group}, status -> $STATUS_SHA, bump delta vs merge-base $MB)"
+
+      # This is the commit that supplied the pull_request_target / merge_group workflow. All
+      # executable audit, watchdog, cache, and bump-validation tooling comes from here.
+      - name: Checkout workflow-pinned trusted build tooling
+        if: ${{ env.INFRA != '1' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: gate
+          persist-credentials: false
+          fetch-depth: 1
+
+      # Full history is intentional. lake cache get walks ancestors until it reaches a published
+      # main commit, then Lake's input hashes invalidate only changed modules and their downstream
+      # dependents. The cache step below limits how many ancestors it reads. The checkout is the
+      # immutable event head itself: no refs/pull/N/merge, no local merge, and no source/config
+      # overlay.
+      - name: Checkout the exact candidate head (untrusted contents, no credentials)
+        if: ${{ env.INFRA != '1' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.repo }}
+          ref: ${{ steps.pr.outputs.sha }}
+          path: pr
+          persist-credentials: false
+          fetch-depth: 0
+          allow-unsafe-pr-checkout: true
+
+      - name: Scope guard — allow TauCeti sources and validated pins
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          # Attacker-chosen strings: read them from the environment, never interpolate them.
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_USER: ${{ github.event.pull_request.user.login }}
+          SCOPE_BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.mergebase }}
+          SCOPE_HEAD: ${{ steps.pr.outputs.sha }}
+        run: |
+          # Complete immutable diff, including removals, using workflow-pinned
+          # tooling and an isolated object reader. A batch's validated base is exact;
+          # ordinary PRs need an exact merge base to exclude unrelated main changes.
+          # Missing objects/metadata or unsafe line-format filenames fail closed.
+          if { [ "${{ env.IS_BATCH }}" != "true" ] && [ "${MERGEBASE_EXACT:-0}" != "1" ]; } \
+              || ! files=$(python3 gate/scripts/lint_scope_files.py \
+                   pr "$SCOPE_BASE" "$SCOPE_HEAD" --policy); then
+            files=""
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            echo "::warning::cannot determine the complete immutable scope — routing to human"
+          fi
+          echo "changed files:"; echo "$files"
+          printf '%s\n' "$files" > "$RUNNER_TEMP/scope-files"
+          # The root TauCeti.lean is allowed alongside TauCeti/: it is the (intentionally
+          # empty) library root, normally untouched, but a PR may edit it. Everything else
+          # outside TauCeti/ (scripts/, .github/, arbitrary Lake config) routes to a human.
+          # Candidate scripts are never used by the trusted harness, and a changed lakefile is
+          # rejected before Lake executes, independently of this merge-policy status.
+          # lake-manifest.json and lean-toolchain are also permitted, but ONLY as a
+          # machine-validated forward bump: the "Validate the Lake-pin bump" step below
+          # runs the workflow-pinned scripts/check-bump.sh and routes to a human if it is
+          # anything other than a forward move (mathlib forward on its nominated branch,
+          # transitive pins derived from mathlib, toolchain monotonic).
+          # docbuild/docs/references.bib is permitted too. It is the bibliography doc-gen4
+          # resolves docstring citations against, so a docstring that cites a work no one has
+          # entered renders as a bare bracketed key. Filling that in is the same kind of work as
+          # writing the docstring, and holding it for a human merge stalled exactly that. It is
+          # BibTeX consumed only by the pages build, never by Lake or the harness, so nothing
+          # here executes it. The rest of docbuild/ stays human-owned: lakefile.toml, the pin,
+          # and the two generator scripts all feed the docs build itself.
+          # Two independent questions: does this reach outside TauCeti/, and does it change the
+          # Lake pins. They used to share an `elif`, so a PR doing both was only ever answered as
+          # out-of-scope: BUMP stayed unset, check-bump.sh never ran, and the report step could
+          # not tell that apart from a PR with no pin change at all — so it posted the required
+          # bump-guard status green, asserting a validation that had not happened, to the human
+          # being asked to merge exactly that kind of PR by hand.
+          # A lint repair PR starts as an empty commit on `lint-repair/...` opened by the review
+          # bot (lint-full.yml); its first build is the full lint that shows what to repair. Only
+          # that exact shape is exempt from routing an empty diff to a human.
+          repair_pr=0
+          if [ -z "$files" ] && { [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.action }}" = "tauceti-bors-pr-approved" ]; }; then
+            # A dispatched rebuild (e.g. `gh workflow run pr-build.yml -f pr=N`) carries no PR payload.
+            IFS=$'\t' read -r PR_HEAD_REF PR_HEAD_REPO PR_USER < <(gh api \
+              "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
+              --jq '[.head.ref, .head.repo.full_name, .user.login] | @tsv') || true
+          fi
+          if [ -z "$files" ] \
+              && { [ "${{ github.event_name }}" = "pull_request_target" ] \
+                   || [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+                   || [ "${{ github.event.action }}" = "tauceti-bors-pr-approved" ]; } \
+              && [ "$PR_HEAD_REPO" = "${{ github.repository }}" ] \
+              && [[ "$PR_HEAD_REF" == lint-repair/* ]] \
+              && [ "$PR_USER" = "tauceti-review-bot[bot]" ]; then
+            repair_pr=1
+            echo "empty lint repair PR from the review bot: building it for its full lint"
+          fi
+          if [ -z "$files" ] && [ "$repair_pr" = 0 ]; then
+            echo "INFRA=1" >> "$GITHUB_ENV"; echo "::warning::no files / unable to list — cannot determine scope, routing to human"
+          elif [ -n "$files" ]; then
+            if echo "$files" | grep -vqE '^TauCeti/|^TauCeti\.lean$|^lake-manifest\.json$|^lean-toolchain$|^docbuild/docs/references\.bib$'; then
+              if echo "$files" | grep -qE '^lakefile\.(toml|lean)$'; then
+                echo "HUMAN_LAKEFILE=1" >> "$GITHUB_ENV"
+              fi
+              echo "OUT_OF_SCOPE=1" >> "$GITHUB_ENV"
+              echo "::warning::PR changes paths outside TauCeti/ + Lake pins — its exact head is still sandbox-built when its Lake config is attested, but merging needs human review"
+            fi
+          fi
+          # Whether THIS pull request changes the Lake pins, asked of the immutable commit this
+          # run will post its statuses to, and of that commit's merge base.
+          #
+          # Read tree entries independently of the complete filename diff. Besides
+          # detecting pin changes, this verifies that each head pin is an ordinary
+          # file: a symlink could reuse a blob without changing its bytes.
+          #
+          # Comparing blob SHAs at two immutable commits has neither problem, and asking the
+          # merge base rather than the branch tip keeps the question "did this pull request
+          # change the pins" rather than "have the pins moved since this branch was cut".
+          # A merge group's head descends from its base_sha, so the fallback below is exact
+          # there. For an ordinary pull request it is a guess, and the pin question cannot be
+          # answered against a guess.
+          if [ "${{ env.IS_BATCH }}" != "true" ] && [ "${{ env.MERGEBASE_EXACT }}" != "1" ]; then
+            pins_known=0
+            echo "::warning::merge base unresolved — pin state unknown"
+          else
+            pins_known=1
+          fi
+          pins_changed=0
+          toolchain_changed=0
+          # Whole tree entries, not just blob IDs. Git keeps the mode beside the object, and a
+          # symlink is a blob holding its target path — so `lean-toolchain` can be re-pointed at
+          # mode 120000 while REUSING the existing blob. Its ID would be unchanged, this would
+          # conclude no pin change, the validator would not run, and main would end up with a
+          # dangling symlink where its toolchain should be. Requiring an ordinary file at the head
+          # closes that separately from the comparison.
+          tree_entry() {
+            gh api "repos/${{ github.repository }}/git/trees/$1" \
+              --jq ".tree[] | select(.path==\"$2\") | [.mode, .type, .sha] | join(\" \")" 2>/dev/null
+          }
+          for f in lake-manifest.json lean-toolchain; do
+            mb_entry=$(tree_entry "${{ steps.pr.outputs.mergebase }}" "$f") || mb_entry=""
+            head_entry=$(tree_entry "${{ steps.pr.outputs.sha }}" "$f") || head_entry=""
+            if [ -z "$mb_entry" ] || [ -z "$head_entry" ]; then
+              pins_known=0
+              echo "::warning::could not read the tree entry for $f — pin state unknown"
+              continue
+            fi
+            case "$head_entry" in
+              "100644 blob "*) ;;
+              *) pins_known=0
+                 echo "::error::$f is not an ordinary file at the head ($head_entry)"
+                 continue ;;
+            esac
+            if [ "$mb_entry" != "$head_entry" ]; then
+              pins_changed=1
+              # Which pin moved matters to the cache step below, not just whether one did. The
+              # Lake cache keys each revision map by toolchain, so when lean-toolchain moves no
+              # ancestor can hold a map under the new one and the lookup is known-futile before
+              # it starts. A manifest-only bump keeps the toolchain and still hits.
+              if [ "$f" = "lean-toolchain" ]; then toolchain_changed=1; fi
+            fi
+          done
+          if [ "$pins_known" = "1" ]; then echo "PINS_KNOWN=1" >> "$GITHUB_ENV"; fi
+          if [ "$pins_changed" = "1" ]; then
+            echo "BUMP=1" >> "$GITHUB_ENV"
+            echo "::notice::PR changes Lake pins — validating as a forward bump before building"
+          fi
+          # Set only when both tree entries were read and differ, so an unresolved merge base
+          # leaves it unset and the lookup runs as before: unknown means look, never means skip.
+          if [ "$toolchain_changed" = "1" ]; then
+            echo "TOOLCHAIN_CHANGED=1" >> "$GITHUB_ENV"
+            echo "::notice::PR moves lean-toolchain — the Lake cache lookup will ask about this revision only, since the maps are keyed by toolchain and every ancestor was published under the old one"
+          fi
+
+          # The report step runs under `if: always()`. Mark successful completion explicitly so an
+          # API or shell failure above cannot be misreported as a green scope decision.
+          echo "SCOPE_OK=1" >> "$GITHUB_ENV"
+
+      - name: Diff size guard — additions, deletions, and changed files each ≤ 2000 (trusted GitHub PR totals; Lake-pin bumps exempt from the line caps)
+        # Per-PR cap, enforced when each PR is built on pull_request_target (its entry condition to the
+        # queue). A merge_group batch is the sum of already-capped PRs, so we don't re-cap the combined
+        # size here. The combined batch scope uses a complete local Git diff.
+        # A PR that moves the Lake pins (BUMP=1, set by the scope guard above) is exempt from the
+        # two line caps: its diff is whatever the upstream Mathlib/Lean changes force, so splitting
+        # it is not possible without an intermediate bump. Such a PR still has to pass the trusted
+        # bump validator before anything builds, and the file cap still applies.
+        if: ${{ env.IS_BATCH != 'true' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          # Per-PR review-size policy remains independent of the complete local scope diff.
+          read -r adds dels files < <(gh api "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
+            --jq '"\(.additions) \(.deletions) \(.changed_files)"')
+          echo "diff size: +$adds / -$dels across $files files (cap: 2000 each)"
+          # Fail closed on non-numeric data: [ -gt ] errors on garbage but an `if` would
+          # swallow that as false, silently passing the guard.
+          if ! [[ "$adds" =~ ^[0-9]+$ && "$dels" =~ ^[0-9]+$ && "$files" =~ ^[0-9]+$ ]]; then
+            echo "DIFF_UNKNOWN=1" >> "$GITHUB_ENV"
+            echo "::error::could not read the PR's diff totals from the GitHub API (+$adds / -$dels / $files files); failing closed"
+            exit 1
+          fi
+          if [ "${BUMP:-0}" = "1" ] && [ "$files" -le 2000 ]; then
+            echo "::notice::PR moves the Lake pins, so the added/removed line caps do not apply"
+          elif [ "$adds" -gt 2000 ] || [ "$dels" -gt 2000 ] || [ "$files" -gt 2000 ]; then
+            echo "TOO_LARGE=1" >> "$GITHUB_ENV"
+            echo "::error::This PR is too large to review: +$adds / -$dels lines across $files files (cap: 2000 added lines, 2000 removed lines, 2000 files). We cap diff size to keep review manageable — reviewers, AI and human alike, do far better work on small, focused PRs. Please split this into smaller PRs, one topic each. We are open to raising the cap once there is evidence that review is working well at the current size."
+            exit 1
+          fi
+
+      - name: New-file length guard — newly added .lean files must be ≤ 1000 lines
+        # A brand-new file may be at most 1000 lines; an existing file may grow up to the
+        # in-build linter ceiling of 1500 (set in lakefile.toml). The split keeps new material
+        # small and reviewable while not blocking incremental growth of established files.
+        # PR-only, like the diff-size guard: new files enter the library through a PR, and a
+        # merge_group batch is the sum of already-guarded PRs. For an *added* file the GitHub
+        # diff lists every line as an addition, so `.additions` is its line count.
+        if: ${{ env.IS_BATCH != 'true' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          long=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" \
+            --jq '.[] | select(.status == "added" and (.filename | endswith(".lean")) and .additions > 1000)
+                      | "\(.filename) (\(.additions) lines)"')
+          if [ -n "$long" ]; then
+            echo "NEWFILE_TOO_LONG=1" >> "$GITHUB_ENV"
+            echo "::error::New .lean files must be at most 1000 lines; these exceed it. Split them, or grow an existing file (allowed up to 1500):"
+            echo "$long"
+          fi
+
+      # The current target tip is trusted policy input for forward-bump validation only. It is
+      # never used as the source or configuration tree of an ordinary PR build.
+      - name: Checkout current base policy input (trusted)
+        if: ${{ env.INFRA != '1' }}
+        uses: actions/checkout@v4
+        with:
+          ref: "${{ steps.pr.outputs.base_sha }}"
+          path: base
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Checkout the PR merge base (trusted historical configuration)
+        if: ${{ env.INFRA != '1' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.mergebase }}
+          path: mergebase
+          persist-credentials: false
+          fetch-depth: 1
+
+      # `.lake` sits inside a checkout whose contents the candidate controls, and a symlink
+      # committed there gets followed by everything that later writes to that path, each of
+      # which then writes outside the checkout as the runner user. Replacing it with a real,
+      # empty directory first stops that. `rm -rf` unlinks a symlink rather than following it,
+      # which is what makes this work; the absent trailing slash is what keeps it true.
+      #
+      # There are two reasons this step exists, and they expire differently.
+      #
+      # The first is the pinned bubblewrap. Noble ships 0.9.0, which follows such a symlink
+      # while creating the sandbox's mount point (GHSA-pxhw-h44j-8pfx). Upstream fixed that in
+      # 0.12.0, so THIS REASON GOES AWAY once noble carries 0.12.0 or newer and the pin below
+      # moves to it.
+      #
+      # The second does not. `mkdir -p <tree>/.lake/tmp` and the Mathlib cache restore both run
+      # in the trusted phase, before any sandbox exists, and both follow the symlink themselves.
+      # No bubblewrap version fixes that, because bubblewrap is not involved. So this step stays
+      # after the pin moves, unless those two callers are made symlink-safe at the same time.
+      - name: Normalise the candidate's .lake before anything touches it
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          rm -rf pr/.lake
+          mkdir -p pr/.lake
+          if [ -L pr/.lake ] || [ ! -d pr/.lake ]; then
+            echo "::error::pr/.lake is not a real directory after normalisation"; exit 1
+          fi
+
+      - name: Attest exact-head Lake configuration before executing Lake
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          if bash gate/scripts/attest-pr-config.sh \
+               mergebase pr '${{ steps.pr.outputs.sha }}' '${{ github.event_name }}' \
+               "${MERGEBASE_EXACT:-0}" "${BUMP:-0}"; then
+            echo "CONFIG_ATTESTED=1" >> "$GITHUB_ENV"
+            echo "Exact candidate Lake configuration attested against merge base ${{ steps.pr.outputs.mergebase }}."
+          else
+            echo "CONFIG_BAD=1" >> "$GITHUB_ENV"
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            echo "::warning::candidate Lake configuration failed trusted attestation; refusing to execute it"
+          fi
+
+      # For a pin-changing candidate, the workflow-pinned validator proves a forward Mathlib and
+      # toolchain move before dependency setup. Unchanged historical pins inherit trust from the
+      # attested merge base and need no comparison with today's main.
+      - name: Validate the Lake-pin bump before building
+        if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          if bash gate/scripts/check-bump.sh base mergebase pr; then
+            echo "BUMP_VALIDATED=1" >> "$GITHUB_ENV"
+            echo "Lake-pin bump validated — building the exact candidate with its new pins."
+          else
+            echo "BUMP_BAD=1" >> "$GITHUB_ENV"
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            echo "::warning::Lake-pin change is not a validated forward bump — refusing to execute it"
+          fi
+
+      - name: Candidate source shape guard (reject symlinks)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          test -d pr/TauCeti && test ! -L pr/TauCeti
+          if find pr/TauCeti -type l -print | grep -q .; then
+            echo "::error::symlinks are not allowed under TauCeti/"
+            exit 1
+          fi
+          test -f pr/TauCeti.lean && test ! -L pr/TauCeti.lean
+
+      - name: Prepare inherited Mathlib shim obligations
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          # Compare with the inherited registry (not today's base tip), so unrelated source
+          # PRs from inheriting registry edits that landed after they branched.
+          base_shims="$RUNNER_TEMP/base-mathlib-shims.json"
+          if [ -f mergebase/TauCeti/mathlib-shims.json ]; then
+            cp mergebase/TauCeti/mathlib-shims.json "$base_shims"
+            echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
+            echo "BASE_SHIM_ROOT=$(realpath mergebase)" >> "$GITHUB_ENV"
+            echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
+          elif [ -f pr/TauCeti/mathlib-shims.json ]; then
+            # A PR that introduces the registry has no inherited obligations, but its entries are
+            # all new and must still be checked. An older PR containing neither copy predates the
+            # mechanism and is left alone until it rebases onto a registry-bearing main.
+            printf '[]\n' > "$base_shims"
+            echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
+            echo "BASE_SHIM_ROOT=$(realpath mergebase)" >> "$GITHUB_ENV"
+            echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
+          else
+            echo "SHIM_CHECK=0" >> "$GITHUB_ENV"
+          fi
+
+      - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' pr/TauCeti/ pr/TauCeti.lean; then
+            echo "::error::TauCeti/ must not import TauCetiRoadmap or TauCetiReview"
+            exit 1
+          fi
+
+      - name: Reject option overrides and heartbeat instrumentation
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          python3 gate/scripts/check_source_options.py pr/TauCeti/ pr/TauCeti.lean
+
+      # The trusted checker requires each source-only PR that declares a new temporary Mathlib shim
+      # to record a concrete expiry target in TauCeti's AI-owned registry. Keeping the registry under
+      # TauCeti/ lets a worker add or remove entries in the same autonomous source PR as the shim.
+      - name: Temporary Mathlib shims have machine-checkable expiry targets
+        id: shim_coverage
+        if: ${{ env.INFRA != '1' && env.SHIM_CHECK == '1' }}
+        continue-on-error: true
+        run: |
+          set +e
+          args=(--coverage-only)
+          [ -z "${BASE_SHIM_REGISTRY:-}" ] || args+=(
+            --base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT"
+          )
+          python3 gate/scripts/check-expired-mathlib-shims.py \
+            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+          rc=$?
+          echo "SHIM_COVERAGE_RC=$rc" >> "$GITHUB_ENV"
+          exit "$rc"
+
+      # Take elan from a pinned leanprover/elan release verified by SHA-256, not from whatever
+      # the installer URL serves at the moment of the request. This elan chooses the `lake` the
+      # sandboxed build runs, and it is installed here, in the trusted phase, before bwrap
+      # confines anything, so a substituted one would sit outside the sandbox by construction.
+      # Same idiom as the bwrap pin below; scripts/test_elan_pin.py keeps the copies honest.
+      - name: Install elan (trusted, pinned + checksum)
+        if: ${{ env.INFRA != '1' }}
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Install bubblewrap (pinned + checksum) and self-test (fail closed)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          # Pinned Ubuntu package, verified twice: the .deb that was fetched, and the binary it
+          # installed. A bare `apt-get install bubblewrap` would take whatever the archive holds on
+          # the day, which is not a pin.
+          #
+          # Noble's RELEASE pocket, which is the part of the archive Ubuntu never rewrites: a
+          # version published there stays published for the life of the release. The pocket
+          # matters more than the suite. `0.9.0-1ubuntu0.1` in noble-security looks like the
+          # better package, but security and updates entries are superseded and then deleted
+          # when the next one lands, so pinning that would expire the first time Ubuntu ships a
+          # bubblewrap fix. A development suite is worse again, deleted on the next upload.
+          #
+          # What we give up is the noble-security revision, whose only change is a backport
+          # Flatpak needed for CVE-2024-42472. That is an enabling change for Flatpak rather
+          # than a bubblewrap vulnerability fix, and nothing here uses Flatpak.
+          #
+          # 0.9.0 predates the fix for GHSA-pxhw-h44j-8pfx (2026-08-27, no CVE assigned yet),
+          # where a symlink in attacker-controlled content redirects the files bwrap creates
+          # while setting the sandbox up. That reaches these policies through exactly one path:
+          # `.lake`, the only place they create a mount point inside a candidate checkout. The
+          # "Normalise ... .lake" step above replaces it with a real directory before anything
+          # reads or writes it, which removes the precondition rather than patching the symptom,
+          # and closes the same hole for `mkdir -p` and the cache restore, neither of which the
+          # upstream fix would have covered.
+          #
+          # So this pin is safe because of that step, not because 0.9.0 is fixed. Moving to
+          # 0.12.0 when noble carries it would make the sandbox safe on its own and retire that
+          # half of the step's job; the trusted-phase half stays either way. Until then the step
+          # is load-bearing, and scripts/test_bwrap_pin.py checks it is still present and still
+          # runs before anything that touches a candidate `.lake`.
+          deb="bubblewrap_${BWRAP_VER}_amd64.deb"
+          if ! curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb \
+             && ! curl -sSL --fail "https://security.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
+            echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The sandbox cannot be installed, so no PR can build until the pin is moved."
+            printf '%s\n' \
+              '' \
+              "WHAT HAPPENED: BWRAP_VER is pinned to ${BWRAP_VER} from noble's release pocket," \
+              'which Ubuntu does not rewrite for the life of the release. Reaching this is' \
+              'unexpected: an archive outage, a runner image no longer on 24.04, or 24.04 gone' \
+              'end of life.' \
+              '' \
+              'HOW TO FIX IT. Take the version from a RELEASE pocket, never from -updates,' \
+              '-security or a development suite: those are superseded and deleted, so a pin' \
+              'to one expires and brings every required build down with it.' \
+              '' \
+              '  suite=noble        # or the release pocket of whatever image CI runs on' \
+              '  curl -s "https://archive.ubuntu.com/ubuntu/dists/$suite/main/binary-amd64/Packages.gz" \' \
+              "    | gunzip | awk '/^Package: bubblewrap\$/{f=1} f&&/^Version:/{print \$2; exit}'" \
+              '' \
+              'Download it and take both hashes:' \
+              '' \
+              '  curl -sSLO "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${ver}_amd64.deb"' \
+              '  sha256sum "bubblewrap_${ver}_amd64.deb"   # BWRAP_DEB_SHA256' \
+              '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
+              '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
+              '' \
+              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all three of' \
+              '.github/workflows/{pr-build,pr-profile,nightly-verify}.yml. They must agree;' \
+              'scripts/test_bwrap_pin.py fails if they do not.' \
+              '' \
+              'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \
+              '"Normalise ... .lake" step is what keeps it safe, because earlier bubblewrap' \
+              'follows a symlink in a candidate checkout while creating the sandbox mount point' \
+              '(GHSA-pxhw-h44j-8pfx). If you pin below 0.12.0, check that step still runs before' \
+              'anything else touches .lake. Keep the step either way: the trusted-phase callers' \
+              'follow the symlink themselves and no bubblewrap version fixes that.' \
+              '' >&2
+            exit 1
+          fi
+          if ! echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -; then
+            echo "::error::bubblewrap ${BWRAP_VER} downloaded but does not match BWRAP_DEB_SHA256. Ubuntu does not rewrite published packages, so either the pin is wrong or the download was tampered with. Re-derive the hashes rather than relaxing this check."
+            exit 1
+          fi
+          sudo dpkg -i bwrap.deb >/dev/null
+          if ! echo "${BWRAP_SHA256}  /usr/bin/bwrap" | sha256sum -c -; then
+            echo "::error::the installed /usr/bin/bwrap does not match BWRAP_SHA256, so the binary that would run is not the one that was vetted. Re-derive it with: sudo dpkg -i ${deb} && sha256sum /usr/bin/bwrap"
+            exit 1
+          fi
+          rm -f bwrap.deb
+          /usr/bin/bwrap --version
+
+          # Ubuntu 24.04 denies unprivileged user namespaces through AppArmor, so bwrap cannot build
+          # its sandbox as shipped. Grant the capability to this one binary rather than clearing
+          # kernel.apparmor_restrict_unprivileged_userns, which would lift it for everything on the
+          # runner. Measured on ubuntu-24.04: without this, bwrap fails with
+          # "loopback: Failed RTM_NEWADDR: Operation not permitted".
+          #
+          # Only where that restriction is actually in force. A container runner has the knob
+          # unset, unprivileged user namespaces already working, and no `apparmor_parser`
+          # installed, so doing this unconditionally would fail the step for a profile it does
+          # not need. Skipping when the restriction is absent is safe because it is not what
+          # decides the outcome: if bwrap cannot build its sandbox for any reason, the self-test
+          # below refuses to run candidate code.
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = 1 ]; then
+            printf '%s\n' \
+              'abi <abi/4.0>,' \
+              'include <tunables/global>' \
+              'profile bwrap /usr/bin/bwrap flags=(unconfined) {' \
+              '  userns,' \
+              '  include if exists <local/bwrap>' \
+              '}' | sudo tee /etc/apparmor.d/bwrap >/dev/null
+            sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          else
+            echo "unprivileged user namespaces are not AppArmor-restricted here; no profile needed"
+          fi
+
+          # Prove the sandbox enforces before trusting it with candidate code. bwrap fails closed
+          # where landrun's --best-effort could degrade to no sandbox at all, but `--unshare-all`
+          # expands to `--unshare-user-try`, which SKIPS the user namespace rather than failing
+          # when it cannot be created, so the policies name `--unshare-user` explicitly and this
+          # compares the resulting namespace against the host's.
+          #
+          # `env -i`: `--clearenv` clears the CHILD's environment, but bwrap keeps its own and is
+          # PID 1 of the sandbox's PID namespace, so without this the launcher's environment stays
+          # readable at /proc/1/environ from inside (containers/bubblewrap#725).
+          probe() {
+            env -i /usr/bin/bwrap --tmpfs / --ro-bind /usr /usr --ro-bind /etc /etc \
+              --symlink usr/bin /bin --symlink usr/sbin /sbin \
+              --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+              --dev /dev --proc /proc --tmpfs /tmp --remount-ro / \
+              --setenv PATH /usr/bin \
+              --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
+              --unshare-cgroup --disable-userns --die-with-parent --new-session \
+              -- /usr/bin/bash -c "$1"
+          }
+          # Canaries, so each check can fail for the right reason. Testing that a host path is
+          # merely absent proves nothing if it never existed; these are known to exist outside.
+          canary=$(mktemp -d); echo secret > "$canary/file"
+          echo secret > /dev/shm/bwrap-host-canary-$$
+          set +e
+          probe 'echo ok' >/dev/null 2>&1; ok=$?
+          probe 'echo x > /etc/bwrap-probe' >/dev/null 2>&1; wr=$?
+          probe 'mkdir /bwrap-probe-dir' >/dev/null 2>&1; rootw=$?
+          probe "cat $canary/file" >/dev/null 2>&1; hostro=$?
+          probe "cat /dev/shm/bwrap-host-canary-$$" >/dev/null 2>&1; shm=$?
+          probe 'curl -sS --max-time 8 https://example.com >/dev/null' >/dev/null 2>&1; net=$?
+          probe 'unshare --user --map-root-user true' >/dev/null 2>&1; nest=$?
+          host_ns=$(readlink /proc/self/ns/user)
+          sb_ns=$(probe 'readlink /proc/self/ns/user' 2>/dev/null)
+          sb_env=$(probe 'tr "\0" "\n" < /proc/1/environ | grep -c .' 2>/dev/null)
+          set -e
+          rm -rf "$canary" /dev/shm/bwrap-host-canary-$$
+          echo "self-test: run=$ok etc-write=$wr root-write=$rootw host-read=$hostro shm=$shm" \
+            "net=$net nested-userns=$nest pid1-env=$sb_env userns=$host_ns->$sb_ns"
+          # Every one of these but `ok` must FAIL inside the sandbox.
+          if [ "$ok" -ne 0 ] || [ "$wr" -eq 0 ] || [ "$rootw" -eq 0 ] || [ "$hostro" -eq 0 ] \
+             || [ "$shm" -eq 0 ] || [ "$net" -eq 0 ] || [ "$nest" -eq 0 ] \
+             || [ "$sb_env" != "0" ] || [ -z "$sb_ns" ] || [ "$sb_ns" = "$host_ns" ]; then
+            echo "::error::bwrap not enforcing (run=$ok etc-write=$wr root-write=$rootw" \
+              "host-read=$hostro shm=$shm net=$net nested-userns=$nest pid1-env=$sb_env" \
+              "userns=$host_ns->$sb_ns); refusing to run candidate code"
+            exit 1
+          fi
+
+      # Restore only Mathlib's compressed, content-addressed `.ltar` download store from a
+      # trusted main publisher. This workflow never writes that GitHub Actions cache. The keys
+      # hash the exact candidate pins, so an exact historical or new-pin snapshot is preferred. A
+      # Mathlib-only bump can fall back to the newest same-toolchain main snapshot; a toolchain
+      # bump misses both keys and refetches from Mathlib's server. `lake exe cache get` below
+      # remains authoritative and downloads every applicable hash that is still absent. The
+      # workflow-pinned local action credits the corresponding Mathlib design and owns the key
+      # namespace shared with ci.yml. This is separate from the much larger `./.lake` cache.
+      - name: Restore Mathlib's compressed download cache from main
+        if: ${{ env.INFRA != '1' }}
+        uses: ./gate/.github/actions/restore-mathlib-ltars
+        with:
+          # The action's default cache directory is outside pr/, which is later mounted into
+          # the sandbox. Although MATHLIB_CACHE_DIR is job-wide, bwrap's explicit
+          # `--setenv` allowlist excludes it and the cache directory is not bound in,
+          # so the sandbox never receives it.
+          project-dir: pr
+
+      # `lake exe cache get` runs the `cache` exe built from the pinned Mathlib, unsandboxed,
+      # with network (to download oleans) but deliberately NO token in env. For a normal PR that
+      # pin is inherited from its trusted merge base. For a validated bump it is the new pin — which
+      # bump-guard proved is a *forward commit on Mathlib's own master* (same repo, never a fork),
+      # so the code run here is still trusted Mathlib master under the project's "track master"
+      # policy; only the PR's TauCeti/ code stays untrusted and runs solely under bwrap below.
+      - name: Fetch Mathlib with the (bump-validated) config (network, no token; no PR code)
+        if: ${{ env.INFRA != '1' }}
+        # `set -o pipefail` is not optional here. A `run:` step with no explicit `shell:`
+        # gets the runner default `bash -e {0}`, which does NOT set pipefail, so piping
+        # into `tee` would report the pipeline's status as tee's and swallow a failing
+        # `cache get` on every PR, not just a bump. Naming the shell also sets pipefail;
+        # both are here so neither the tee nor the guard below depends on runner defaults.
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! ( cd pr && lake exe cache get ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"; then
+            echo "::warning::lake exe cache get failed; forcing a full refetch"
+            ( cd pr && lake exe cache get! ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"
+          fi
+          mkdir -p pr/.lake/tmp
+
+      # Backstop to bump-guard's step 2b, measuring the thing itself rather than a proxy.
+      # `lake exe cache get` exits 0 on a PARTIAL hit: it prints one warning and the build
+      # then quietly recompiles every module whose oleans never arrived. That is invisible
+      # in a green build and costs about an hour on every downstream build until the pin
+      # moves again, so catch it here (roughly 90 seconds in) rather than after the build.
+      #
+      # Only a bump is judged. A normal PR builds against its inherited pin, which it did not
+      # choose and cannot fix; failing those would take every PR in the repo down for as
+      # long as a bad pin sat on main, which is precisely backwards.
+      - name: Require a complete Mathlib cache for a bump
+        if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$GITHUB_WORKSPACE/cache-get.log"
+          # Fail closed. An absent or unreadable log is not evidence of a complete cache,
+          # and `grep` on a missing file exits 2, which as an `if` condition would read the
+          # same as "phrase not found" and wave the bump through.
+          if [ ! -r "$log" ]; then
+            echo "::error::$log is missing or unreadable, so cache completeness cannot be established for this bump"
+            exit 1
+          fi
+          if grep -qF 'some files were not found in the cache' "$log"; then
+            echo "::error::the bump target's Mathlib cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
+            exit 1
+          fi
+          echo "Mathlib cache is complete at the bump target."
+
+      # Text-only trusted lint: inspect the exact candidate sources after Mathlib's source tree is
+      # available. The workflow-pinned Python does not elaborate or execute candidate code.
+      - name: Decide the environment-lint scope
+        if: ${{ env.INFRA != '1' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          IS_BATCH: ${{ env.IS_BATCH }}
+          NUM: ${{ steps.pr.outputs.num }}
+          # The immutable commits being built: the batch's base, or the PR's base commit
+          # (a three-dot compare diffs from the merge base), and the exact head.
+          BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
+          HEAD: ${{ steps.pr.outputs.sha }}
+          HEAD_REPO: ${{ steps.pr.outputs.repo }}
+          SCOPE_REPO: pr
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lint-scope"
+          bash gate/scripts/lint-scope.sh "$out"
+          echo "LINT_SCOPE_DIR=$out" >> "$GITHUB_ENV"
+
+      # The axiom audit and the dot-notation lint need see only what an ordinary PR changes: the
+      # library on main already passed both in full (every push to main runs them unscoped, as does
+      # every GitHub merge-queue or bors staging build here), and neither result for an unchanged file can change unless
+      # its dependencies or the Mathlib pin do. So they are scoped to the changed modules exactly
+      # when the environment lint is, and additionally only for a PR build (not a batch,
+      # which re-checks the whole library before anything lands), only when the Lake pins are
+      # unchanged, and only when every changed `.lean` file is a module the list can name.
+      - name: Decide the audit scope
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          if [ -n "${LINT_ONLY_MODULES:-}" ] && [ "${{ env.IS_BATCH }}" != "true" ] \
+             && [ "${BUMP:-0}" != "1" ] && [ ! -s "$LINT_SCOPE_DIR/unmatched.txt" ]; then
+            echo "AXIOMS_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
+            echo "DOT_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
+            echo "audit scope: the $(grep -c . "$LINT_ONLY_MODULES" || true) changed module(s)"
+          else
+            echo "AXIOMS_ONLY_MODULES=" >> "$GITHUB_ENV"
+            echo "DOT_ONLY_MODULES=" >> "$GITHUB_ENV"
+            echo "audit scope: the whole library"
+          fi
+
+      - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          python3 gate/scripts/lint-dot-notation.py \
+            --baseline gate/scripts/lint-dot-notation-baseline.txt \
+            --mathlib-root pr/.lake/packages/mathlib/Mathlib \
+            --source-root pr/TauCeti \
+            ${DOT_ONLY_MODULES:+--only-modules "$DOT_ONLY_MODULES" --base-source-root mergebase/TauCeti}
+
+      # Meta-import guard. `meta import` makes a module available to compile-time code, and
+      # TauCeti holds no metaprogramming: the repository's only Lean meta code is the
+      # human-owned governance machinery in scripts/. So a `meta import` under TauCeti/ is
+      # either an accident or the start of code that belongs elsewhere.
+      #
+      # The verdict comes from Lean's own header parser: gate/scripts/MetaImports.lean runs
+      # `Lean.Parser.parseHeader` and reads the written imports out of the resulting syntax,
+      # so the `meta` modifier is seen exactly as the frontend sees it, through comments,
+      # nested block comments, strings and quoted module names. Asking the syntax rather than
+      # the computed import list is what makes `meta import Init` visible at all; see that
+      # driver's module doc. Trusted like the guards above, and `lean --run` on a
+      # workflow-pinned driver needs no Lake environment: it reads candidate headers as data,
+      # elaborates nothing, and never imports a candidate module.
+      #
+      # Scoped to the change's files exactly when the environment lint is. A file it skips was
+      # audited by the PR that last touched it, main is clean, and every route onto main runs
+      # this workflow, so the invariant holds without rescanning the library. When that scope is
+      # withheld the whole library is audited, which is the answer those cases want rather than a
+      # concession: a `full-lint` label or a `lint-repair/...` branch is a request to check
+      # everything, and a scope that could not be determined should widen the audit, not narrow
+      # it. Headers alone, one process: about 5 seconds at 13k files against 0.6 for a PR's files.
+      - name: Meta-import guard (TauCeti/ and TauCeti.lean use no `meta import`)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          python3 gate/scripts/check-meta-imports.py --root pr \
+            --lean "$(cd pr && elan which lean)" \
+            ${LINT_ONLY_MODULES:+--changed "$LINT_SCOPE_DIR/files.nul"}
+
+      # Enable Lake's built-in artifact cache for the build below ONLY when the public read
+      # endpoints are configured (repo variables). Until then this is a no-op: LAKE_*
+      # stay empty and the sandboxed build recompiles TauCeti/ from scratch exactly as before.
+      # The cache dir lives under pr/.lake/ so the offline sandboxed build (which binds
+      # pr/.lake writable) can read what the network `lake cache get` step populates. We
+      # never pass the cache *endpoints* into the sandbox, so the build stays offline and
+      # can only consult the locally-populated cache.
+      - name: Configure the Lake artifact cache (no-op unless the public endpoints are set)
+        if: ${{ env.INFRA != '1' }}
+        env:
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+          S3_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT }}
+          S3_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT }}
+        run: |
+          if [ -n "$PUBLIC_ARTIFACT_ENDPOINT" ] && [ -n "$PUBLIC_REVISION_ENDPOINT" ]; then
+            {
+              echo "LAKE_CACHE_DIR=$PWD/pr/.lake/cache"
+              echo "LAKE_ARTIFACT_CACHE=true"
+              echo "LAKE_RESTORE_ARTIFACTS=true"
+              echo "TAUCETI_CACHE_ENABLED=1"
+            } >> "$GITHUB_ENV"
+            echo "::notice::Lake artifact cache enabled — will fetch TauCeti's oleans and build incrementally"
+          else
+            echo "::notice::Lake artifact cache not configured — building TauCeti/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
+          fi
+          # A merge-group head is the exact commit GitHub will land. Stage its outputs after every
+          # sandboxed audit so the required build can wait for publication.
+          if [ "${{ env.IS_BATCH }}" = "true" ] \
+             && [ -n "$S3_ARTIFACT_ENDPOINT" ] && [ -n "$S3_REVISION_ENDPOINT" ]; then
+            echo "STAGE_LAKE_CACHE=1" >> "$GITHUB_ENV"
+            echo "::notice::merge-group outputs will be staged for pre-landing publication"
+          fi
+
+      # Restore TauCeti's own root-package oleans from the public Lake cache. The workflow-pinned
+      # trusted script retains hash-verified artifacts between attempts and retries only missing
+      # downloads. If all attempts remain incomplete, it discards the partial cache and falls
+      # back to no cache so ci.yml's post-merge build has the same final semantics.
+      - name: Fetch TauCeti's own oleans from the Lake cache (network, no token; no PR code)
+        if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' }}
+        env:
+          # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
+          # environment variables; the script hands it the endpoints through a `--service` config.
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+          # How far back it is worth asking, which depends on whether an ancestor could hold
+          # a usable map at all. The maps are keyed by toolchain, so once lean-toolchain moves
+          # every ancestor was published under the old one and walking them cannot hit: ask
+          # about HEAD alone and stop. HEAD itself is still worth one request, because a
+          # merge-group re-run of a bump that already built once finds its own published
+          # outputs there — the case an outright skip would recompile from scratch.
+          #
+          # Otherwise a walk can pay, so bound it only as a backstop against something we have
+          # not characterised. Overrunning the bound is indistinguishable from a genuine miss,
+          # and a miss costs a full recompile (~2h) against the ~4 minutes a 1000-revision walk
+          # costs at the rate observed in the run that motivated #5396 — so it is sized to be
+          # reached only by the genuinely unexpected. At main's current rate 1000 is about three
+          # weeks of history, against roughly 39 hours for the 100 it replaces.
+          #
+          # The scope guard above answers the toolchain question from the immutable tree entries
+          # at the merge base and the head, and leaves it unset whenever it could not read them,
+          # so unknown falls through to the walk rather than to the single lookup.
+          LAKE_CACHE_MAX_REVS: ${{ env.TOOLCHAIN_CHANGED == '1' && '1' || '1000' }}
+        run: bash gate/scripts/lake-cache-get.sh pr
+
+      - name: Save verified Lake archive records before candidate code runs
+        if: ${{ env.INFRA != '1' && env.STAGE_LAKE_CACHE == '1' }}
+        # gate/ is mounted read-only below. Candidate builds overwrite the live
+        # cache records, so retain the downloaded associations and archive digests here.
+        run: python3 gate/scripts/lake_cache_reuse.py snapshot pr gate/lake-cache-reuse.json
+
+      - name: Validate Lake archive reuse against a changed toolchain
+        if: ${{ env.INFRA != '1' && env.TOOLCHAIN_CHANGED == '1' }}
+        # The pin was validated above; Mathlib setup has installed that toolchain.
+        # Build only the trusted test's synthetic modules, never candidate sources.
+        # Catch Lake schema/CLI drift before a bump can land and fail main's tests.
+        run: |
+          ELAN_TOOLCHAIN="$(cat pr/lean-toolchain)" \
+            python3 gate/scripts/test_lake_cache_reuse.py --integration
+
+      - name: Prepare trusted read-only Lean watchdog toolchain
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.elan/bin:$PATH"
+          real_lean=$(cd pr && elan which lean)
+          watchdog="$RUNNER_TEMP/lean-watchdog-toolchain"
+          bash gate/scripts/perf/prepare-watchdog-toolchain.sh "$watchdog" "$real_lean"
+          echo "WATCHDOG_TOOLCHAIN=$watchdog" >> "$GITHUB_ENV"
+
+      # The environment lint's compiled driver, built on the host from the workflow-pinned
+      # scripts/LintEnvDriver.lean against the pinned Batteries checkout, BEFORE any candidate code
+      # runs: once the candidate's build starts it can rewrite .lake/packages/batteries. It is
+      # mounted read-only into the sandbox, and lint-env.sh refuses to compile it there.
+      - name: Build the trusted environment-lint driver (before any candidate code runs)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.elan/bin:$PATH"
+          out="$RUNNER_TEMP/lint-env-driver"
+          bash gate/scripts/build-lint-driver.sh pr gate/scripts/LintEnvDriver.lean "$out"
+          echo "LINT_DRIVER_DIR=$out" >> "$GITHUB_ENV"
+
+      # Which modules the environment lint covers: the TauCeti modules this change touches, or the
+      # whole library for `full-lint`-labelled and lint-repair PRs (scripts/lint-scope.sh). Computed
+      # on the host from GitHub metadata and immutable Git objects using trusted tooling,
+      # and mounted read-only into the sandbox.
+      - name: Build exact candidate under bwrap with workflow-pinned audits, offline
+        id: build
+        if: ${{ env.INFRA != '1' }}
+        env:
+          # The sandboxed build is always offline: never let Lake reach out to a remote
+          # cache from inside the sandbox. When the artifact cache is enabled above, it
+          # restores TauCeti's oleans purely from the locally-populated $LAKE_CACHE_DIR; when it is
+          # not, this is a normal full build. Either way, no network from in here.
+          LAKE_NO_CACHE: "true"
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
+          # gate checkout; candidate scripts are never invoked. Keeping the bwrap bash payload
+          # a fixed, comment-free one-liner
+          # is deliberate: a comment's apostrophe once closed this single-quoted string
+          # early and reddened every PR build (#694). All prose now lives in the script.
+          export TAUCETI_PROJECT_ROOT="$PWD/pr"
+          export TAUCETI_TRUSTED_SCRIPTS="$PWD/gate/scripts"
+          # `env -i` and `--remount-ro /` are both load-bearing. `--clearenv` clears the child's
+          # environment but bwrap keeps its own and is PID 1 here, so the launcher's environment
+          # would otherwise be readable at /proc/1/environ (containers/bubblewrap#725). And
+          # `--tmpfs /` gives a WRITABLE synthetic root: the directories bwrap creates to hang the
+          # binds off, $HOME among them, are writable until this remounts them read-only, which
+          # would let candidate code drop a `lake` or `bash` earlier on PATH than the real one and
+          # have the later audits run it. The explicit PATH below is the other half of that: it
+          # never contains a directory the sandbox can write.
+          env -i /usr/bin/bwrap --tmpfs / \
+            --ro-bind /usr /usr --ro-bind /etc /etc \
+            --symlink usr/bin /bin --symlink usr/sbin /sbin \
+            --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+            --dev /dev --proc /proc --tmpfs /tmp \
+            --ro-bind "$HOME/.elan" "$HOME/.elan" \
+            --ro-bind "$WATCHDOG_TOOLCHAIN" "$WATCHDOG_TOOLCHAIN" \
+            --ro-bind "$LINT_DRIVER_DIR" "$LINT_DRIVER_DIR" \
+            --ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR" \
+            --ro-bind "$PWD/gate" "$PWD/gate" \
+            --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
+            --remount-ro / \
+            --setenv PATH "$HOME/.elan/bin:/usr/bin:/bin" \
+            --setenv HOME "$HOME" --setenv CI "${CI:-}" \
+            --setenv LAKE_NO_CACHE "${LAKE_NO_CACHE:-}" \
+            --setenv LAKE_ARTIFACT_CACHE "${LAKE_ARTIFACT_CACHE:-}" \
+            --setenv LAKE_RESTORE_ARTIFACTS "${LAKE_RESTORE_ARTIFACTS:-}" \
+            --setenv LAKE_CACHE_DIR "${LAKE_CACHE_DIR:-}" \
+            --setenv WATCHDOG_TOOLCHAIN "${WATCHDOG_TOOLCHAIN:-}" \
+            --setenv LINT_DRIVER_EXE "$LINT_DRIVER_DIR/lint-env-driver" \
+            --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
+            --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
+            --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
+            --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
+            --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \
+            --chdir "$PWD/pr" \
+            --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
+            --unshare-cgroup --disable-userns --die-with-parent --new-session \
+            -- bash -euxo pipefail -c 'exec bash ../gate/scripts/sandbox-build.sh'
+
+      - name: Prepare merge-group cache artifact metadata
+        id: cache_stage
+        if: ${{ env.IS_BATCH == 'true' && env.STAGE_LAKE_CACHE == '1' && steps.build.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          test -s pr/.lake/cache-staging/outputs.jsonl
+          TOOLCHAIN="$(cat pr/lean-toolchain)"
+          case "$TOOLCHAIN" in
+            leanprover/lean4:[A-Za-z0-9]*) ;;
+            *) echo "::error::invalid toolchain pin '$TOOLCHAIN'"; exit 1 ;;
+          esac
+          printf 'toolchain=%s\n' "$TOOLCHAIN" >> "$GITHUB_OUTPUT"
+          echo 'staged=true' >> "$GITHUB_OUTPUT"
+
+      - name: Hand the merge-group oleans to the isolated publisher
+        if: ${{ steps.cache_stage.outputs.staged == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lake-cache-staging-${{ steps.pr.outputs.status_sha }}
+          path: pr/.lake/cache-staging
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+      # A replacement normally becomes newly actionable when the pinned Mathlib moves; that bump PR
+      # is picked up by Tau Ceti's bump worker. Running the same trusted probe on source PRs also
+      # prevents a newly-added shim from targeting API that already exists at the current pin. The
+      # probe follows the build so a partial Mathlib download can be recovered by the normal build
+      # path first. Only concrete replacements block; broader sentinels remain audit warnings.
+      - name: Migrate shims whose exact replacements exist in pinned Mathlib
+        id: shim_expiry
+        if: ${{ always() && env.INFRA != '1' && env.SHIM_CHECK == '1' }}
+        continue-on-error: true
+        run: |
+          set +e
+          args=(--fail-on-available)
+          if [ -n "${BASE_SHIM_REGISTRY:-}" ]; then
+            args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
+            [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
+          fi
+          python3 gate/scripts/check-expired-mathlib-shims.py \
+            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+          rc=$?
+          echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
+          exit "$rc"
+
+      - name: Report build and bump-guard statuses to the PR head commit
+        id: report
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED_SCOPE_HEAD: ${{ steps.pr.outputs.sha }}
+          TESTED_SCOPE_BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.mergebase }}
+          SCOPE_PR: ${{ steps.pr.outputs.num }}
+          SCOPE_EVENT: ${{ github.event.action }}
+          SCOPE_BATCH: ${{ github.event.client_payload.batch_id }}
+        run: |
+          # Posting the three statuses is deliberately NOT all-or-nothing. These are three
+          # sequential API calls under `set -e`: a single transient error on an early one used to
+          # abort the step and leave the commit with a partial set. A MISSING required status is
+          # worse than a red one. `build` never appears, so GitHub holds the PR at BLOCKED
+          # forever; core.derive reads no `build` status, so labels.py pins the PR at
+          # `awaiting-CI` (its ci=None branch) rather than `ci-failed`; and nothing re-runs
+          # pr-build without a push, so no event ever corrects it. That wedged PR #1358 for seven
+          # days, invisible to both the author path and the review path.
+          #
+          # So: retry each POST, always attempt all three whatever the others did, and surface a
+          # persistent failure loudly at the end rather than silently dropping a status.
+          # The scope, size and new-file guards above read the pull request's CURRENT state
+          # from the API rather than from the immutable head, so it can move underneath a run.
+          # Fail closed: an unreadable answer is not a passing one. A status is keyed only by
+          # commit, so a green posted while the pull request has moved on can outlive the state
+          # it was about -- the same SHA can become the head again, two pull requests can share
+          # a head, and retargeting does not change the head at all.
+          head_moved=0
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
+            now=$(gh api "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
+                    --jq '[.head.sha, .base.ref] | join(" ")' 2>/dev/null) || now=""
+            if [ "$now" != "${{ steps.pr.outputs.sha }} ${{ steps.pr.outputs.base_ref }}" ]; then
+              head_moved=1
+              echo "::warning::PR is now '${now:-unreadable}', not '${{ steps.pr.outputs.sha }} ${{ steps.pr.outputs.base_ref }}'"
+            fi
+          fi
+
+          post_fail=0
+          post_status() {
+            local ctx="$1" st="$2" dsc="$3" attempt
+            for attempt in 1 2 3; do
+              if gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
+                   -f state="$st" -f context="$ctx" -f description="$dsc" \
+                   -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; then
+                echo "posted $ctx=$st ($dsc) to ${{ steps.pr.outputs.status_sha }}"
+                return 0
+              fi
+              echo "::warning::posting the $ctx status failed (attempt $attempt/3)"
+              if [ "$attempt" != 3 ]; then sleep $(( attempt * 5 )); fi
+            done
+            # Never propagate the failure as a return code: that would abort this step under
+            # `set -e` and skip the statuses not yet posted, which is the bug being fixed.
+            echo "::error::could not post the $ctx status to ${{ steps.pr.outputs.status_sha }} after 3 attempts"
+            post_fail=1
+            return 0
+          }
+
+          # bump-guard: this job already ran the workflow-pinned scripts/check-bump.sh inline
+          # (the "Validate the Lake-pin bump" step), so we post the required `bump-guard`
+          # status from its result here rather than from a separate workflow. BUMP_BAD is set
+          # only when a manifest/toolchain change failed that validator; anything else (no pin
+          # change, or a validated forward bump) is a pass. Posting it from this job also means
+          # both required statuses land together, before the auto-merge workflow_run fires.
+          if [ "${{ env.BUMP_BAD }}" = "1" ]; then
+            bg_state=failure; bg_desc="Lake pin change is not a validated forward bump — needs human review"
+          elif [ "${{ env.BUMP }}" = "1" ] && [ "${{ env.BUMP_VALIDATED }}" != "1" ]; then
+            # The pins changed and the validator never got to run — the build was abandoned
+            # earlier for some unrelated reason. Knowing a bump is present is not knowing it is
+            # a safe one, so do not say it is.
+            bg_state=failure; bg_desc="Lake pin change was not validated — the build did not get that far; re-run pr-build"
+          elif [ "${{ env.PINS_KNOWN }}" != "1" ]; then
+            # The pin state could not be established: an unresolved merge base, an unreadable
+            # tree entry, or a pin path that is not an ordinary file. Neither "validated" nor
+            # "no pin change" is something this run knows, so assert neither. Kept separate from
+            # INFRA deliberately, since INFRA is set by several things that say nothing about the
+            # pins — a conflict, a moved head — and keying off it would tell a merely conflicting
+            # pull request that its pin state was unknown when it is perfectly well known.
+            bg_state=failure; bg_desc="could not determine whether the Lake pins changed — re-run pr-build"
+          elif [ "${{ env.HUMAN_LAKEFILE }}" = "1" ]; then
+            bg_state=success; bg_desc="lakefile is human-owned; pin policy passed, but candidate config was not executed"
+          else
+            bg_state=success; bg_desc="validated forward Lake pin bump (or no pin change)"
+          fi
+          post_status bump-guard "$bg_state" "$bg_desc"
+
+          # build: the actionable exact-candidate verdict consumed by the autonomous bump/fix-ci
+          # workers. It includes the sandboxed build plus shim metadata and exact-expiry failures,
+          # but never a merge-policy verdict. An out-of-scope scripts/.github change still receives
+          # a useful build because all harness code is workflow-pinned. A lakefile edit or invalid
+          # pin is never executed and therefore reports a required failure rather than pretending
+          # that a different configuration built.
+          if [ "$head_moved" = 1 ]; then
+            state=failure; desc="the pull request changed during this build — the run for its current state statuses it"
+          elif [ "${{ env.CONFIG_BAD }}" = "1" ]; then
+            state=failure; desc="build not run — candidate Lake configuration failed trusted attestation"
+          elif [ "${{ env.BUMP_BAD }}" = "1" ] || [ "${{ env.INFRA }}" = "1" ] \
+             || [ "${{ env.TOO_LARGE }}" = "1" ] || [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
+            state=failure; desc="build not run — see the scope check"
+          elif [ "${{ steps.build.outcome }}" = "failure" ]; then
+            state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
+          elif { [ -n "${{ env.SHIM_COVERAGE_RC }}" ] \
+                 && [ "${{ env.SHIM_COVERAGE_RC }}" != "0" ]; } \
+               || [ "${{ steps.shim_coverage.outcome }}" = "failure" ]; then
+            state=failure; desc="shim expiry metadata invalid — see failed checker step"
+          elif [ "${{ env.SHIM_EXPIRY_RC }}" = "3" ]; then
+            state=failure; desc="Mathlib replacements landed — autonomous shim migration required"
+          elif { [ -n "${{ env.SHIM_EXPIRY_RC }}" ] \
+                 && [ "${{ env.SHIM_EXPIRY_RC }}" != "0" ]; } \
+               || [ "${{ steps.shim_expiry.outcome }}" = "failure" ]; then
+            state=failure; desc="shim expiry probe failed — see failed checker step"
+          elif [ "${{ steps.build.outcome }}" = "success" ]; then
+            state=success; desc="exact-head sandboxed build and workflow-pinned audits passed"
+          else
+            state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
+          fi
+          {
+            echo "build-state=$state"
+            echo "build-description=$desc"
+            if [ "${{ env.IS_BATCH }}" = "true" ] && [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
+              echo 'publication-required=true'
+            else
+              echo 'publication-required=false'
+            fi
+          } >> "$GITHUB_OUTPUT"
+          # PR heads are reported immediately. A merge-group head is reported by the finalizer
+          # job below, after its exact revision map has reached the public cache endpoint.
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
+            post_status build "$state" "$desc"
+          fi
+
+          # scope: the merge-policy verdict, posted as its OWN status so a policy issue never hides the
+          # build result (the bug this split fixes — an out-of-scope PR used to post its "human review"
+          # verdict as a red `build`, so fix-ci churned on it and you could not see whether it compiled).
+          # Kept separate from the required GitHub checks so a human-owned infrastructure PR can be
+          # merged after review, but required green by TauCetiReview's automatic merge policy. This
+          # status is therefore a trusted, fail-closed input to every automatic merge decision.
+          if [ "${{ env.SCOPE_OK }}" != "1" ]; then
+            sc_state=failure; sc_desc="trusted scope guard did not complete — re-run pr-build"
+          elif [ "${{ env.BUMP_BAD }}" = "1" ]; then
+            sc_state=failure; sc_desc="Lake pin change failed the trusted bump validator"
+          elif [ "${{ env.INFRA }}" = "1" ]; then
+            sc_state=failure; sc_desc="trusted scope/config checks did not complete — see the run; human review may be required"
+          elif [ "${{ env.TOO_LARGE }}" = "1" ]; then
+            sc_state=failure; sc_desc="diff exceeds 2000 added/removed lines or 2000 files — split into smaller PRs to keep review manageable"
+          elif [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
+            sc_state=failure; sc_desc="could not read PR diff totals from the GitHub API — re-run pr-build"
+          elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
+            sc_state=failure; sc_desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
+          elif [ "${{ env.OUT_OF_SCOPE }}" = "1" ]; then
+            # Only the path restriction is waivable. Every other scope/config/size
+            # guard above must pass first. Approval comes from bors's HTTPS state,
+            # never the dispatch payload or candidate files. Check at report time
+            # so an r- or changed revision during the build is observed.
+            approval_args=(--head "$TESTED_SCOPE_HEAD" --base "$TESTED_SCOPE_BASE")
+            if [ "$IS_BATCH" != "true" ]; then
+              approval_args+=(--pr "$SCOPE_PR")
+            elif [ "$SCOPE_EVENT" = "tauceti-bors-staging" ]; then
+              approval_args+=(--batch-id "$SCOPE_BATCH" --paths-file "$RUNNER_TEMP/scope-files")
+            fi
+            if python3 gate/scripts/bors_scope_approval.py "${approval_args[@]}"; then
+              sc_state=success; sc_desc="restricted paths approved by a repository admin through bors; other scope guards passed"
+            else
+              sc_state=failure; sc_desc="changes outside TauCeti/ — a repository admin can approve with bors r+ or bors merge"
+            fi
+          else
+            sc_state=success; sc_desc="changes are in scope (TauCeti/, the allowed root files, and the bibliography only)"
+          fi
+          post_status scope "$sc_state" "$sc_desc"
+
+          # A status we could not post leaves the commit in the wedged state described above, so
+          # fail the job loudly. This runs only after all three have been attempted.
+          if [ "$post_fail" = 1 ]; then
+            echo "::error::one or more commit statuses are missing; re-run pr-build for this commit"
+            exit 1
+          fi
+          [ "$state" = "success" ]
+
+      # Statistics for TauCetiCI (https://github.com/TauCetiProject/TauCetiCI): when each phase of
+      # the sandboxed build started, how many modules were built or restored from the cache, the
+      # slowest, and the runner picker's decision. After the statuses so it can never delay them,
+      # and continue-on-error so it can never fail the job. The phase and build files were written
+      # inside the sandbox, so the record marks itself as statistics only.
+      - name: Summarise CI telemetry (statistics only)
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          MERGE_ENGINE: ${{ github.event_name == 'merge_group' && 'queue' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (github.event.client_payload.base_ref == 'main' && 'bors' || 'bors_pilot') || 'pr') }}
+          TESTED_HEAD: ${{ steps.pr.outputs.status_sha }}
+          TESTED_BASE: ${{ steps.pr.outputs.base_sha }}
+          BORS_BATCH: ${{ github.event.client_payload.batch_id }}
+          BORS_MEMBERS: ${{ toJSON(github.event.client_payload.members) }}
+          PICKED: ${{ needs.pick-runner.outputs.github == 'true' && 'github' || 'namespace' }}
+          PICKER_BUSY: ${{ needs.pick-runner.outputs.busy }}
+          PICKER_BUDGET: ${{ needs.pick-runner.outputs.budget }}
+        run: |
+          python3 gate/scripts/ci_telemetry.py --dir pr/.lake/telemetry --out "$RUNNER_TEMP/telemetry.json" \
+            --meta "event=${{ github.event_name }}" --meta "runner=$PICKED" \
+            --meta "picker_busy=$PICKER_BUSY" --meta "picker_budget=$PICKER_BUDGET" \
+            --meta "head_sha=$TESTED_HEAD" --meta "base_sha=$TESTED_BASE" \
+            --meta "merge_engine=$MERGE_ENGINE" --meta "batch_id=$BORS_BATCH" \
+            --meta "batch_members=$BORS_MEMBERS"
+
+      - name: Upload CI telemetry
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-telemetry
+          path: ${{ runner.temp }}/telemetry.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+  # Only an already-audited merge-group commit may publish. The reusable workflow runs on a
+  # fresh runner, sparsely checks out that commit's toolchain pin and key-free confirmation
+  # helper, and is the sole holder of the key. The helper runs only after the key-bearing step.
+  publish-merge-group-cache:
+    needs: sandboxed-build
+    if: ${{ always() && needs.sandboxed-build.result == 'success' && needs.sandboxed-build.outputs.publication-required == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/publish-lake-cache.yml
+    with:
+      revision: ${{ needs.sandboxed-build.outputs.status-sha }}
+      artifact-name: lake-cache-staging-${{ needs.sandboxed-build.outputs.status-sha }}
+      reported-toolchain: ${{ needs.sandboxed-build.outputs.reported-toolchain }}
+      publication-required: true
+    secrets:
       LAKE_CACHE_KEY: ${{ secrets.LAKE_CACHE_KEY }}
+
+  # The merge queue's required `build` status is posted only here. In a configured installation,
+  # green therefore means both that the combined commit passed every sandboxed audit and that a
+  # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
+  finalize-merge-group-build:
+    needs: [sandboxed-build, publish-merge-group-cache]
+    if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      STATUS_SHA: ${{ needs.sandboxed-build.outputs.status-sha || github.event.client_payload.head_sha || github.event.merge_group.head_sha }}
+      BUILD_JOB_RESULT: ${{ needs.sandboxed-build.result }}
+      BUILD_STATE: ${{ needs.sandboxed-build.outputs.build-state }}
+      BUILD_DESCRIPTION: ${{ needs.sandboxed-build.outputs.build-description }}
+      PUBLICATION_REQUIRED: ${{ needs.sandboxed-build.outputs.publication-required }}
+      PUBLISH_JOB_RESULT: ${{ needs.publish-merge-group-cache.result }}
+      PUBLISHED: ${{ needs.publish-merge-group-cache.outputs.published }}
+    steps:
+      - name: Post the terminal merge-group build status
+        run: |
+          set -uo pipefail
+          [[ "$STATUS_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::cannot post a batch status without a commit SHA"
+            exit 1
+          }
+          if [ "$BUILD_JOB_RESULT" != "success" ] || [ "$BUILD_STATE" != "success" ]; then
+            state=failure
+            description="${BUILD_DESCRIPTION:-sandboxed merge-group build did not complete}"
+          elif [ "$PUBLICATION_REQUIRED" = "true" ] \
+               && { [ "$PUBLISH_JOB_RESULT" != "success" ] || [ "$PUBLISHED" != "true" ]; }; then
+            state=failure
+            description="build passed, but its exact Lake cache was not published"
+          elif [ "$PUBLICATION_REQUIRED" = "true" ]; then
+            state=success
+            description="sandboxed build passed; exact revision cache is public"
+          else
+            state=success
+            description="sandboxed build passed (cache upload is not configured)"
+          fi
+
+          posted=0
+          for attempt in 1 2 3; do
+            if gh api -X POST "repos/${{ github.repository }}/statuses/$STATUS_SHA" \
+                 -f state="$state" -f context=build -f description="$description" \
+                 -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; then
+              posted=1
+              break
+            fi
+            echo "::warning::posting the build status failed (attempt $attempt/3)"
+            [ "$attempt" = 3 ] || sleep $((attempt * 5))
+          done
+          [ "$posted" = 1 ] || { echo "::error::could not post the merge-group build status"; exit 1; }
+          [ "$state" = success ]

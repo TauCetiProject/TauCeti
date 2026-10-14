@@ -117,7 +117,7 @@ class LintScopeTest(unittest.TestCase):
                         "SCOPE_REPO": str(checkout), **env}
             command = ["bash", str(SCRIPT), str(d / "scope")]
             if policy:
-                wf = yaml.safe_load((ROOT / ".github/workflows/pr-build-jobs.yml").read_text())
+                wf = yaml.safe_load((ROOT / ".github/workflows/pr-build.yml").read_text())
                 run = next(s["run"] for s in wf["jobs"]["sandboxed-build"]["steps"]
                            if s.get("name", "").startswith("Scope guard"))
                 run = run[:run.index("# Whether THIS")]
@@ -442,7 +442,7 @@ class PrBuildWiringTest(unittest.TestCase):
         self.assertEqual(scope["env"]["SCOPE_REPO"], ".")
 
     def test_scope_is_decided_before_the_sandbox_and_mounted_read_only(self):
-        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build-jobs.yml").read_text())
+        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
         (job,) = [j for j in wf["jobs"].values()
                   if any("Build exact candidate under bwrap" in s.get("name", "")
                          for s in j.get("steps", []))]
@@ -461,7 +461,7 @@ class PrBuildWiringTest(unittest.TestCase):
         self.assertIn('--setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}"', run)
 
     def test_batch_audits_stay_whole_library_with_scoped_environment_lint(self):
-        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build-jobs.yml").read_text())
+        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
         self.assertIn("github.event_name == 'repository_dispatch'", wf["env"]["IS_BATCH"])
         self.assertIn("github.event_name == 'merge_group'", wf["env"]["IS_BATCH"])
         job = wf["jobs"]["sandboxed-build"]
@@ -482,7 +482,7 @@ class PrBuildWiringTest(unittest.TestCase):
     def repair_exemption(self, event, files, env=None, api=None):
         """Run pr-build's empty-repair-PR exemption, extracted from the Scope guard step, with a fake
         `gh` that prints `api` (or fails when it is None). Returns (repair_pr, routed_to_human)."""
-        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build-jobs.yml").read_text())
+        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
         (job,) = [j for j in wf["jobs"].values()
                   if any("Build exact candidate under bwrap" in s.get("name", "")
                          for s in j.get("steps", []))]

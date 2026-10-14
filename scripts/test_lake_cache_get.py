@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "lake-cache-get.sh"
-PR_BUILD = (ROOT / ".github" / "workflows" / "pr-build-jobs.yml").read_text()
+PR_BUILD = (ROOT / ".github" / "workflows" / "pr-build.yml").read_text()
 
 failures: list[str] = []
 
