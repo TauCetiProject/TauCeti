@@ -181,11 +181,12 @@ theorem exists_mem_range_chartι_comp {ι : Type*} (m : ι → M)
 
 instance [Module.Finite R M] : CompactSpace (scheme R M k) := by
   obtain ⟨n, m, hm⟩ := Module.Finite.exists_fin (R := R) (M := M)
-  refine ⟨?_⟩
-  have h : (Set.univ : Set (scheme R M k)) = ⋃ y : Fin k → Fin n, Set.range (chartι R (m ∘ y)) :=
-    (Set.eq_univ_of_forall fun z ↦ Set.mem_iUnion.mpr (exists_mem_range_chartι_comp m hm z)).symm
-  rw [h]
-  exact isCompact_iUnion fun y ↦ isCompact_range (Scheme.Hom.continuous _)
+  let 𝒰 : (scheme R M k).OpenCover := Scheme.Cover.mkOfCovers (Fin k → Fin n) _
+    (fun y ↦ chartι R (m ∘ y)) (exists_mem_range_chartι_comp m hm)
+  -- the index type and the components of `mkOfCovers` are not reducibly `Fin k → Fin n` and `Spec`
+  have : Finite 𝒰.I₀ := inferInstanceAs (Finite (Fin k → Fin n))
+  have (y : 𝒰.I₀) : CompactSpace (𝒰.X y) := inferInstanceAs (CompactSpace (Spec _))
+  exact 𝒰.compactSpace
 
 instance quasiCompact_toSpec [Module.Finite R M] : QuasiCompact (toSpec R M k) :=
   (quasiCompact_iff_compactSpace _).mpr inferInstance
