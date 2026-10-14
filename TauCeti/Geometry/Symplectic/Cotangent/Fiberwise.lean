@@ -23,11 +23,14 @@ bundles and that remove an exact magnetic term.
   Its Liouville vector field is the radial field `Z(q, p) = (0, p)`, that is `p ∂_p`
   (`TauCeti.cotangentLiouvilleField`): `ι_Z ω = -λ`.
 * The **magnetic translation** `Ψ_σ(q, p) = (q, p - σ_q)` by a one-form `σ` on `V`
-  (`TauCeti.cotangentFiberTranslate`) also covers the identity of `V`. It satisfies
-  `Ψ_σ^*λ = λ - π^*σ` and `Ψ_σ^*ω = ω + π^*dσ`, where `π` is the projection to `V`. So it is a
-  symplectomorphism from the magnetic form `ω + π^*dσ` to `ω`, and for a closed `σ` it preserves
-  `ω`. The two statements need `σ` to be differentiable only at the base point, and the second is
-  proved by direct computation, without the second derivative of `σ`.
+  (`TauCeti.cotangentFiberTranslate`) also covers the identity of `V`, and it is a bijection with
+  inverse `Ψ_{-σ}`. At every point where `σ` is differentiable, it satisfies the pointwise
+  identities `Ψ_σ^*λ = λ - π^*σ` and `Ψ_σ^*ω = ω + π^*dσ`, where `π` is the projection to `V`.
+  These need `σ` to be differentiable only at the base point, and the second is proved by direct
+  computation, without the second derivative of `σ`. So for a smooth `σ` (for which `Ψ_σ` and
+  `Ψ_{-σ}` are smooth), `Ψ_σ` is a symplectomorphism from the magnetic form `ω + π^*dσ` to `ω`,
+  and for a smooth closed `σ` it preserves `ω`. This file records the pointwise identities; it
+  does not bundle `Ψ_σ` as a symplectomorphism.
 
 Conjugating a magnetic translation by `ν` changes the sign of the one-form
 (`TauCeti.cotangentFiberNeg_cotangentFiberTranslate_cotangentFiberNeg`).
