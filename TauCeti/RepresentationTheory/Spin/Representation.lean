@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 public import Mathlib.RepresentationTheory.Basic
 
@@ -87,6 +88,15 @@ def spinGroupToEven (Q : QuadraticForm K V) : spinGroup Q →* CliffordAlgebra.e
 theorem coe_spinGroupToEven_apply (Q : QuadraticForm K V) (g : spinGroup Q) :
     (spinGroupToEven Q g : CliffordAlgebra Q) = g :=
   (rfl)
+
+/-- The even part of a Spin element is unchanged by the map to the even-unitary carrier. -/
+@[simp]
+theorem evenUnitaryGroupEvenPart_spinGroupToEvenUnitary
+    (Q : QuadraticForm K V) (g : spinGroup Q) :
+    CliffordAlgebra.evenUnitaryGroupEvenPart Q
+        (CliffordAlgebra.spinGroupToEvenUnitary Q g) = spinGroupToEven Q g := by
+  apply Subtype.ext
+  simp
 
 /-- **The action of the even Clifford subalgebra on the spinor module** `S = ⋀·W`, the Fock action
 restricted along the inclusion of `CliffordAlgebra.even Q`.

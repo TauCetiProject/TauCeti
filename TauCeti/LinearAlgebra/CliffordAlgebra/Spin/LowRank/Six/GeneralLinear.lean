@@ -343,15 +343,21 @@ universe u
 
 variable (K : Type u) [Field K]
 
-private theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 6 := by
+/-- The ambient split space of three hyperbolic planes has dimension `2 * 3`. -/
+theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 2 * 3 := by
   simp [SplitEvenSpace]
+
+/-- The canonical isotropic summand of the split six-dimensional space has dimension three. -/
+theorem hyperbolicSix_finrank_W :
+    finrank K (splitEvenPolarization K 3).W = 3 := by
+  rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
+    (hyperbolicSix_finrank K)]
 
 /-- The isotropic summand in the canonical split polarization of three hyperbolic planes is
 nonzero. -/
 theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
   Submodule.finrank_eq_zero.not.1 <| by
-    rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-      ((hyperbolicSix_finrank K).trans (by norm_num : 6 = 2 * 3))]
+    rw [hyperbolicSix_finrank_W K]
     norm_num
 
 variable [NeZero (2 : K)]
@@ -365,14 +371,16 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
     even (splitEvenForm K 3) ≃ₐ[K]
       Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K := by
   simpa using (splitEvenPolarization K 3).evenCliffordEquivProdMatrix
-    (hyperbolicSix_W_ne_bot K) ((hyperbolicSix_finrank K).trans (by norm_num : 6 = 2 * 3))
+    (l := 3)
+    (hyperbolicSix_W_ne_bot K)
+      ((hyperbolicSix_finrank K).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =
       (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
         (hyperbolicSix_W_ne_bot K)
-        (by simp [SplitEvenSpace]) x := by
+        (hyperbolicSix_finrank K) x := by
   simp [hyperbolicSixEvenEquivMatrixProd]
 
 /-- The even unitary group of three hyperbolic planes is the four-dimensional general linear
@@ -380,7 +388,8 @@ group. In particular, specializing `K` to `ℚ` gives the split rational six-dim
 noncomputable def hyperbolicSixEvenUnitaryEquivGeneralLinear :
     evenUnitaryGroup (splitEvenForm K 3) ≃* Matrix.GeneralLinearGroup (Fin 4) K :=
   (hyperbolicSixEvenEquivMatrixProd K).evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-    (nondegenerate_splitEvenForm K 3) (hyperbolicSix_finrank K)
+    (nondegenerate_splitEvenForm K 3)
+      ((hyperbolicSix_finrank K).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
 /-- The hyperbolic general linear equivalence is the first half-spin matrix component. -/
 @[simp]
@@ -412,12 +421,7 @@ theorem coe_hyperbolicSixSpinToGeneralLinear_apply
   rw [hyperbolicSixSpinToGeneralLinear, MonoidHom.comp_apply]
   simp only [MulEquiv.coe_toMonoidHom]
   rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  have heven : evenUnitaryGroupEvenPart (splitEvenForm K 3)
-      (spinGroupToEvenUnitary (splitEvenForm K 3) g) =
-        spinGroupToEven (splitEvenForm K 3) g := by
-    apply Subtype.ext
-    simp
-  rw [heven]
+  rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary]
 
 /-- Reconstructing a hyperbolic even unitary element recovers the given first matrix component.
 The rule precedes simplification of the full inverse Clifford value. -/
