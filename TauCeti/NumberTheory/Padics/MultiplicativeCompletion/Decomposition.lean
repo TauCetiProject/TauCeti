@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
-public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.LayerTateModule.Basic
 public import TauCeti.NumberTheory.LocalField.TameFrameModule.Torsion
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Rational
 import Mathlib.LinearAlgebra.TensorProduct.Prod
@@ -64,11 +63,9 @@ NSW (7.4.1).
 
 * `TauCeti.nonempty_linearEquiv_tameFrameModule_prod`: an extension of `I_G` by `A(L)` of
   projective dimension at most one is isomorphic to `M₀ ⊕ ℤ_p[G]^N`.
-* `TauCeti.exists_relationModule_surjective_of_tameFrame`: on a layer with a generating pair
-  `σ, τ`, `τ` of order prime to `p`, the relation module of every generating family of size
-  `N + 2` maps onto `A(L)` with kernel `ℤ_p[G]`.
-* `TauCeti.LayerTateModule.exists_relationModule_surjective_of_tameFrame`: the same result for a
-  `LayerTateModule`, with its projective resolution and extension sequence taken from the package.
+* `TauCeti.exists_relationModule_surjective_of_tameFrame_of_exact`: given such a `Y`, on a layer
+  with a generating pair `σ, τ`, `τ` of order prime to `p`, the relation module of every
+  generating family of size `N + 2` maps onto `A(L)` with kernel `ℤ_p[G]`.
 
 ## References
 
@@ -83,8 +80,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 open _root_.MonoidAlgebra
-
-universe u
 
 variable {p : ℕ} [Fact p.Prime] {L : Type*} [Field L] {K : Type*} [Field K] [Algebra K L]
 
@@ -168,8 +163,9 @@ generated projective `ℤ_p[G]`-modules, which is an extension `0 → A(L) → Y
 augmentation ideal by the `p`-adic completion `A(L)` of `Lˣ`. Let `σ, τ` generate `G`, with the
 order of `τ` prime to `p`. Then for every generating family `g` of `G` of size `N + 2`, the relation
 module of `g` maps onto `A(L)` with kernel isomorphic to `ℤ_p[G]`. -/
-theorem exists_relationModule_surjective_of_tameFrame [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L]
-    [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K L] [IsGalois K L]
+theorem exists_relationModule_surjective_of_tameFrame_of_exact
+    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K]
+    [IsScalarTower ℚ_[p] K L] [IsGalois K L]
     {Y P₀ P₁ : Type*} [AddCommGroup Y] [Module Λ Y]
     [AddCommGroup P₀] [Module Λ P₀] [Module.Finite Λ P₀] [Module.Projective Λ P₀]
     [AddCommGroup P₁] [Module Λ P₁] [Module.Finite Λ P₁] [Module.Projective Λ P₁]
@@ -230,42 +226,5 @@ theorem exists_relationModule_surjective_of_tameFrame [Algebra ℚ_[p] L] [Modul
   refine ⟨β, hβ, ⟨eβ ≪≫ₗ .ofEq _ _ (LinearMap.exact_iff.mp hex) ≪≫ₗ
     (LinearEquiv.ofInjective (eP.symm.toLinearMap ∘ₗ LinearMap.inl Λ _ _ ∘ₗ k)
       (eP.symm.injective.comp (LinearMap.inl_injective.comp hk))).symm⟩⟩
-
-/-- **The relation-module surjection from a Tate module of a tame layer.** Let `L/K` be a finite
-Galois extension of `p`-adic fields, and let `σ, τ` generate its Galois group with `τ` of order
-prime to `p`. For every generating family `g` of size `[K : ℚ_p] + 2`, the relation module of `g`
-surjects onto the completed multiplicative group `A(L)`, with kernel isomorphic to `ℤ_p[G]`.
-
-The Tate module `Y` supplies the finite projective resolution and the extension
-`0 → A(L) → Y → I_G → 0` required by `TauCeti.exists_relationModule_surjective_of_tameFrame`. -/
-theorem LayerTateModule.exists_relationModule_surjective_of_tameFrame
-    {L K : Type u} [Field L] [Field K] [Algebra K L]
-    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K]
-    [IsScalarTower ℚ_[p] K L] [IsGalois K L]
-    (Y : LayerTateModule p L K) (h : Finite (pPowerRootsOfUnity p L))
-    (σ τ : L ≃ₐ[K] L)
-    (hgen : Subgroup.closure {σ, τ} = ⊤) (hτ : ¬ p ∣ orderOf τ)
-    {g : Fin (Module.finrank ℚ_[p] K + 2) → L ≃ₐ[K] L}
-    (hg : Subgroup.closure (Set.range g) = ⊤) :
-    ∃ β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g →ₗ[
-        MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive (padicCompletionUnits p L),
-      Function.Surjective β ∧
-        Nonempty (LinearMap.ker β ≃ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
-          MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) := by
-  have := Module.Finite.right ℚ_[p] K L
-  obtain ⟨n, f, hf, hker⟩ := Y.projdim
-  let P₀ := Fin n → MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)
-  let P₁ := LinearMap.ker f
-  let d : P₁ →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] P₀ := P₁.subtype
-  let ρ : P₀ →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Y.carrier := f
-  have hdρ : Function.Exact d ρ := f.exact_subtype_ker_map
-  have : IsNoetherianRing (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) :=
-    IsNoetherianRing.of_finite ℤ_[p] _
-  have hP₁ : P₁.FG := IsNoetherian.noetherian P₁
-  have : Module.Finite (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₁ := .of_fg hP₁
-  have : Module.Projective (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₁ := hker
-  exact TauCeti.exists_relationModule_surjective_of_tameFrame
-    hdρ (Submodule.subtype_injective _) hf Y.exact_ι_π Y.ι_injective
-    Y.π_surjective h σ τ hgen hτ hg
 
 end TauCeti
