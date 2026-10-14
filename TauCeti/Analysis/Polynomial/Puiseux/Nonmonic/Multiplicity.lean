@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Analytic.ConstantOrder.Laurent
-public import TauCeti.Analysis.Analytic.Laurent.Hyperplane
+public import TauCeti.Topology.ContinuousOn.Dense
 public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Nonmonic
 
 /-!
