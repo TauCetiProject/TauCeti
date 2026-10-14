@@ -51,8 +51,9 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
     f.reflected.discrim = f.discrim := by
   simp [discrim_def, _root_.discrim]
 
-/-- Multiplying all coefficients commutes with reflection. -/
-@[simp] theorem reflected_smul' [Ring R] (r : R) (f : BinaryQuadraticForm R) :
+/-- An external distributive scalar action on the coefficients commutes with reflection. -/
+@[simp] theorem reflected_smul' {S : Type*} [AddGroup R] [DistribSMul S R]
+    (r : S) (f : BinaryQuadraticForm R) :
     (r • f).reflected = r • f.reflected := by
   ext <;> simp
 
@@ -75,11 +76,9 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
     exact Int.neg_ediv_of_dvd f.content_dvd_b
   · simp
 
-/-- Reflection transports a proper change of variables to another proper change. The
-transported matrix is conjugated by `diag(1, -1)`, so its determinant is still one. -/
-theorem exists_reflected_smul [CommRing R] (γ : SL(2, R)) :
-    ∃ δ : SL(2, R), ∀ f : BinaryQuadraticForm R, (γ • f).reflected = δ • f.reflected := by
-  refine ⟨SpecialLinearGroup.conjJ γ, fun f ↦ ?_⟩
+/-- Reflection intertwines a proper change of variables with its canonical coordinate conjugate. -/
+@[simp] theorem reflected_smul [CommRing R] (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
+    (γ • f).reflected = SpecialLinearGroup.conjJ γ • f.reflected := by
   ext
   all_goals simp only [reflected_a, reflected_b, reflected_c, smul_a, smul_b, smul_c]
   all_goals simp only [SpecialLinearGroup.coe_conjJ, Matrix.of_apply,
