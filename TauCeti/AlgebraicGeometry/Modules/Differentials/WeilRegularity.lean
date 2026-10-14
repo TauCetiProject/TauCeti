@@ -19,10 +19,11 @@ an arbitrary field and does not require that the place be rational.
 
 For an invertible differential sheaf on an open subset of dimension at most one, regularity is
 detected at its codimension-one points. Over a perfect exact constant field, the Kähler–Weil
-comparison identifies this condition with nonnegative Weil order at places of every degree. Thus a
-nonzero Weil differential corresponds to a regular section on the open subset exactly when it has
-no poles there. This supplies the local-lattice comparison for identifying the differential line
-bundle with a canonical divisor sheaf.
+comparison identifies this condition with nonnegative Weil order at places of every degree, so
+no codimension-one point needs to be rational. Thus a nonzero Weil differential corresponds to a
+regular section on the open subset exactly when it has no poles there. This supplies the
+local-lattice comparison for identifying the differential line bundle with a canonical divisor
+sheaf.
 
 ## References
 
@@ -91,7 +92,7 @@ variable [PerfectField k]
 
 /-- Over a perfect exact constant field, a nonzero Weil differential corresponds to a regular
 differential on a curve open exactly when its order is nonnegative at every codimension-one point
-there. The associated places may have any degree. -/
+there. The codimension-one points need not be rational. -/
 theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg
     (U : X.Opens) [Nonempty U] (hU : ∀ y ∈ U, coheight y ≤ 1)
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
@@ -110,15 +111,14 @@ theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg
   intro hy
   let := hDVR y hy
   rw [mem_range_rationalDifferentialStalk_iff_mem_range_map]
-  exact (X.toPlace (k := k) (y : X)).mem_range_map_iff_weilDifferentialOrder_nonneg
-    hF hk ht ω hω
+  exact (X.toPlace (k := k) (y : X)).mem_range_map_iff_weilDifferentialOrder_nonneg hF hk ht ω hω
 
 variable [IsLocallyNoetherian X]
 
 /-- The rational differential `f dt` is regular on `U` exactly when `f` satisfies the
 order bounds of the divisor of the Weil differential `dt`. Only codimension-one stalks
-on `U` are required to be discrete valuation rings; their associated places may have any degree.
-The constant field is perfect and exact. -/
+on `U` are required to be discrete valuation rings, and the constant field is perfect and
+exact. -/
 theorem smul_D_mem_range_rationalDifferential_iff (U : X.Opens) [Nonempty U]
     (hU : ∀ y ∈ U, coheight y ≤ 1)
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →

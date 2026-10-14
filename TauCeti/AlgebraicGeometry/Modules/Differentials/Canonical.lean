@@ -12,17 +12,17 @@ public import TauCeti.AlgebraicGeometry.LineBundle.SerreDuality
 # The differential line bundle and canonical divisors
 
 On an integral curve over a perfect exact constant field, with invertible differential sheaf and
-discrete valuation rings at its codimension-one points, the sheaf of relative differentials is
-the sheaf of a canonical divisor. The associated places may have any degree. A separating
-rational function `t` gives the rational basis `dt`; its Weil divisor `K` identifies a regular
-differential `f dt` with a section `f` of `𝒪_X(K)`. The isomorphism is characterized by this
-rational-coordinate formula.
+discrete valuation rings at its codimension-one points, the sheaf of relative differentials is the
+sheaf of a canonical divisor. A separating rational function `t` gives the rational basis
+`dt`; its Weil divisor `K` identifies a regular differential `f dt` with a section `f` of
+`𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula. The
+codimension-one points need not be rational, so this applies over finite fields and over number
+fields as well as over algebraically closed fields.
 
 For a proper curve this identifies the differential line bundle with the canonical bundle
-constructed from Weil differentials, over every perfect field that is the exact constant field of
-the curve; in particular over every algebraically closed field. Perfectness makes every residue
-field separable and every prime element separating, which is where the local comparison uses it.
-No natural trace pairing is constructed.
+constructed from Weil differentials. Consequently, for every line bundle `L`, the dual of
+`H¹(X, L)` is linearly equivalent to `H⁰(X, Ω_{X/k} ⊗ L⁻¹)`. This is only the existence of a
+noncanonical equivalence: the comparison does not provide a natural trace pairing.
 
 ## References
 
@@ -155,8 +155,8 @@ private lemma differentialCoordinateHom_mem (U : X.Opens)
 
 /-- Reading a differential in the rational basis `dt` identifies `Ω_{X/k}` with `𝒪_X(K)`,
 where `K` has the Weil orders of `dt` as its coefficients. The constant field is perfect and
-exact; the codimension-one places may have any degree. The differential sheaf is assumed
-invertible. -/
+exact, and the differential sheaf is assumed invertible; the codimension-one places may have any
+degree. -/
 def relativeDifferentialsIsoDivisorSheaf :
     X.relativeDifferentials k ≅ SchemeWeilDivisor.sheaf K := by
   let φ := SchemeWeilDivisor.sheafLift K (differentialCoordinateHom ht)
@@ -203,12 +203,13 @@ variable [PerfectField k] [IsNoetherian X] [X.IsSeparated]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
-  (hdim : ∀ y : X, coheight y ≤ 1) (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+  (hdim : ∀ y : X, coheight y ≤ 1)
+  (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
 
 include hF hk hdim hex in
-/-- On a curve over a perfect field that is its exact constant field, with all the places of its
-function field, the invertible sheaf of relative differentials is isomorphic to the
-Weil-differential canonical bundle. -/
+/-- On a curve over a perfect exact constant field with all the places of its function field, the
+invertible sheaf of relative differentials is isomorphic to the Weil-differential canonical
+bundle. -/
 theorem nonempty_iso_relativeDifferentials_canonicalBundle :
     Nonempty (X.relativeDifferentials k ≅
       (InvertibleSheaf.canonicalBundle hex hdim hF hk).obj) := by
@@ -220,21 +221,20 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
   let K := (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
     (weilDifferentialDivisor hF hk ω.2 hω)
   have hK (y : CodimensionOnePoint X) : WeilDivisor.coeff K y =
-      weilDifferentialOrder hF hk ω.2 hω
-        (X.toPlace (k := k) (y : X)) := by
+      weilDifferentialOrder hF hk ω.2 hω (X.toPlace (k := k) (y : X)) := by
     simp only [K, SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
       coeff_weilDifferentialDivisor]
-  obtain ⟨e⟩ := InvertibleSheaf.nonempty_iso_canonicalBundle_sheaf hex hdim hF
-    hk (K := K) (by
-      dsimp only [K]
-      rw [(SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
-      exact divisorClass_weilDifferentialDivisor hF hk ω.2 hω)
+  obtain ⟨e⟩ := InvertibleSheaf.nonempty_iso_canonicalBundle_sheaf hex hdim hF hk (K := K) (by
+    dsimp only [K]
+    rw [(SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
+    exact divisorClass_weilDifferentialDivisor hF hk ω.2 hω)
   exact ⟨relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK ≪≫ e.symm⟩
 
 include hF hk hdim hex in
-/-- Serre duality for a line bundle with the differential line bundle as canonical bundle,
-over a perfect exact constant field. This asserts existence of a linear equivalence, not a
-choice of natural pairing. -/
+/-- Over a perfect exact constant field, the dual of `H¹(X, L)` is linearly equivalent to
+`H⁰(X, Ω_{X/k} ⊗ L⁻¹)`, by the identification of the differential line bundle with the canonical
+bundle. This asserts only the existence of a noncanonical linear equivalence, not a natural
+duality pairing. -/
 theorem nonempty_cohomologyOneDualEquivCohomologyZero_differentials_tensor_dual
     (L : InvertibleSheaf X) :
     Nonempty (Module.Dual k (Scheme.Modules.Cohomology L.obj 1) ≃ₗ[k]

@@ -29,6 +29,9 @@ the residue of Kähler differentials.
 
 ## Main results
 
+* `TauCeti.Place.mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem`: the
+  coefficient criterion whenever differentiation by the uniformizer preserves the valuation ring.
+
 * `TauCeti.Place.mem_range_map_iff_coord_mem_integers`: a differential comes from `𝒪_P` exactly
   when its coefficient in `dt` is integral.
 * `TauCeti.Place.coord_mem_integers_iff_forall_traceResidue_coord_smul_eq_zero`: that coefficient
@@ -63,11 +66,11 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F]
   (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
 
 include ht in
-/-- A Kähler differential of `F` comes from the valuation ring of a place with separable residue
-field exactly when its coefficient in the basis given by a separating uniformizer is integral
-there. -/
-theorem mem_range_map_iff_coord_mem_integers [Algebra.IsSeparable k P.ResidueField]
-    (ω : Ω[F⁄k]) :
+/-- If differentiation by a separating prime element `t` preserves the valuation ring of `P`,
+then a Kähler differential comes from that valuation ring exactly when its coefficient in the
+basis `dt` is integral there. -/
+theorem mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem
+    (hD : ∀ z ∈ P.integers, derivativeOfSeparating htr z ∈ P.integers) (ω : Ω[F⁄k]) :
     ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
       (kaehlerBasisOfSeparating htr).coord () ω ∈ P.integers := by
   constructor
@@ -80,8 +83,7 @@ theorem mem_range_map_iff_coord_mem_integers [Algebra.IsSeparable k P.ResidueFie
       obtain ⟨z, rfl⟩ := hη
       rw [KaehlerDifferential.map_D]
       simpa only [Module.Basis.coord_apply, kaehlerBasisOfSeparating_repr_D,
-        ValuationSubring.algebraMap_apply] using
-          P.derivativeOfSeparating_mem_integers ht htr z.2
+        ValuationSubring.algebraMap_apply] using hD z z.2
     | zero => simp
     | add a b _ _ ha hb => simpa using P.integers.add_mem _ _ ha hb
     | smul a b _ hb =>
@@ -96,6 +98,17 @@ theorem mem_range_map_iff_coord_mem_integers [Algebra.IsSeparable k P.ResidueFie
     rw [← IsScalarTower.algebraMap_smul F]
     simpa [kaehlerBasisOfSeparating_apply] using
       (kaehlerBasisOfSeparating htr).sum_repr ω
+
+include ht in
+/-- A Kähler differential of `F` comes from the valuation ring of a place with separable residue
+field exactly when its coefficient in the basis given by a separating uniformizer is integral
+there. -/
+theorem mem_range_map_iff_coord_mem_integers [Algebra.IsSeparable k P.ResidueField]
+    (ω : Ω[F⁄k]) :
+    ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
+      (kaehlerBasisOfSeparating htr).coord () ω ∈ P.integers := by
+  exact P.mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem ht htr
+    (fun _ ↦ P.derivativeOfSeparating_mem_integers ht htr) ω
 
 include ht in
 /-- At a place with separable residue field, the trace residue pairing against integral functions

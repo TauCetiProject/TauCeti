@@ -316,8 +316,8 @@ theorem tendsto_mongeAmpereMeasure_closedBall_div (hf : Convex ℝ {p : E × ℝ
 expansion of the subdifferential with derivative `H x`, then there is a measurable `S ⊆ D` of full
 measure in `D` on which the subdifferential is the single gradient, with the expansion centred at
 the gradient and `H x` positive, and on which `H` agrees with a measurable map. -/
-private theorem exists_measurableSet_ae_eq_interior (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
-    (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+theorem exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
     ∃ S, MeasurableSet S ∧ S ⊆ interior {x | f x ≠ ⊤} ∧ interior {x | f x ≠ ⊤} =ᵐ[μ] S ∧
@@ -384,7 +384,8 @@ private theorem exists_mongeAmpereMeasure_withDensity_eq_add_withDensity
   set φ : E → ℝ≥0∞ := fun x => ENNReal.ofReal (H x).det * g (G x)
   set ν := μ.withDensity g
   have hν : ν ≪ μ := withDensity_absolutelyContinuous μ g
-  obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ := exists_measurableSet_ae_eq_interior μ hf hbot hH
+  obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
+    exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient μ hf hbot hH
   have hdet : Measurable fun x => (H' x).det :=
     ContinuousLinearMap.continuous_det.measurable.comp hH'm
   have hφ : AEMeasurable (D.indicator φ) μ := by
