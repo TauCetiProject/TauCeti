@@ -144,7 +144,7 @@ variable (x) in
 based at the constant loop, are cube loops of `X` in `k + 1` directions. -/
 def genLoopLoopHomeomorph (k : ℕ) :
     Ω^ (Fin k) (Ω X x) (Path.refl x) ≃ₜ Ω^ (Fin (k + 1)) X x :=
-  (mapHomeomorph (homeomorphOfUnique (Fin 1)).symm
+  (Homeomorph.genLoopHomeomorph (homeomorphOfUnique (Fin 1)).symm
       ((Homeomorph.symm_apply_eq _).mpr (homeomorphOfUnique_const (Fin 1)).symm)).trans
     ((genLoopGenLoopEquiv x).trans (GenLoop.congr x finSumFinEquiv))
 
@@ -260,8 +260,8 @@ theorem congrMulEquiv_symm_mk [DecidableEq M] [DecidableEq N] [Nonempty M]
 
 /-- In positive dimensions, reindexing the cube directions commutes with the maps induced by
 based continuous maps. -/
-theorem map_congrMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M] {Y : Type*}
-    [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (e : M ≃ N)
+theorem _root_.ContinuousMap.map_congrMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M]
+    {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (e : M ≃ N)
     (a : HomotopyGroup M X x) :
     map f hf (congrMulEquiv e a) = congrMulEquiv e (map f hf a) := by
   rw [congrMulEquiv_apply, congrMulEquiv_apply]
@@ -497,10 +497,11 @@ variable {Y : Type*} [TopologicalSpace Y] {y : Y}
 
 /-- The shift `pathLoopSpaceMulEquiv` is natural: it commutes with the maps induced on homotopy
 groups by a based map `f` and by any map `F` of loop spaces that postcomposes loops with `f`. -/
-theorem pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
-    (hF : F (Path.refl x) = Path.refl y) (hFf : ∀ γ t, F γ t = f (γ t)) (m : ℕ)
+theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y)
+    (F : C(Ω X x, Ω Y y)) (hFf : ∀ γ t, F γ t = f (γ t)) (m : ℕ)
     (a : π_ (m + 1) (Ω X x) (Path.refl x)) :
-    pathLoopSpaceMulEquiv m (map F hF a) = map f hf (pathLoopSpaceMulEquiv m a) := by
+    pathLoopSpaceMulEquiv m (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
+      map f hf (pathLoopSpaceMulEquiv m a) := by
   induction a using Quotient.inductionOn with
   | h p =>
     rw [map_mk, pathLoopSpaceMulEquiv_mk, pathLoopSpaceMulEquiv_mk, map_mk]

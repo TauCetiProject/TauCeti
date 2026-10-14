@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
-public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
 /-!
