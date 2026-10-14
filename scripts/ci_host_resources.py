@@ -217,6 +217,14 @@ def main():
     drain_deadline = None
     try:
         while True:
+            if code is None and child.returncode is not None:
+                code = child.returncode
+                sampler.missing.add('primary-resource-accounting-unavailable')
+                drain_deadline = time.monotonic() + DESCENDANT_GRACE
+            if restore_subreaper and code is not None and (
+                    cancelled or time.monotonic() >= drain_deadline):
+                sampler.missing.add('descendant-accounting-unfinished')
+                break
             try:
                 pid, status, usage = os.wait4(-1 if restore_subreaper else child.pid, os.WNOHANG)
             except InterruptedError:
@@ -224,15 +232,6 @@ def main():
             except ChildProcessError:
                 break
             if pid == 0:
-                if code is None and child.returncode is not None:
-                    code = child.returncode
-                    sampler.missing.add('primary-resource-accounting-unavailable')
-                if code is not None:
-                    if drain_deadline is None:
-                        drain_deadline = time.monotonic() + DESCENDANT_GRACE
-                    if cancelled or time.monotonic() >= drain_deadline:
-                        sampler.missing.add('descendant-accounting-unfinished')
-                        break
                 time.sleep(.02)
                 continue
             reaped += 1

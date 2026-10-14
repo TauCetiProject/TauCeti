@@ -131,6 +131,34 @@ class HostResourcesTests(unittest.TestCase):
                     os.kill(worker, signal.SIGKILL)
                     os.waitpid(worker, 0)
 
+    def test_ready_descendant_stream_cannot_bypass_deadline_or_cancellation(self):
+        for cancel in (False, True):
+            with tempfile.TemporaryDirectory() as directory:
+                out = Path(directory) / 'resources.json'
+                handlers, primary, calls = {}, [], []
+                wait4 = host.os.wait4
+                def continuous_reaps(pid, options):
+                    if not primary:
+                        value = wait4(pid, options)
+                        if value[0]:
+                            primary.append(value)
+                        return value
+                    calls.append(1)
+                    if len(calls) > 200:
+                        raise ChildProcessError()
+                    time.sleep(.01)
+                    if cancel and len(calls) == 1:
+                        handlers[signal.SIGTERM](signal.SIGTERM, None)
+                    return primary[0][0] + 1, 0, primary[0][2]
+                with patch.object(host, 'DESCENDANT_GRACE', .05), \
+                        patch.object(host.os, 'wait4', side_effect=continuous_reaps), \
+                        patch.object(host.signal, 'signal', side_effect=lambda sig, fn: handlers.update({sig: fn})):
+                    self.assertEqual(self.invoke([sys.executable, '-c', 'raise SystemExit(7)'], out), 7)
+                value = json.loads(out.read_text())
+                self.assertLess(value['elapsed_s'], 1)
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-unfinished', value['missing'])
+
     def test_cancellation_after_monitor_exit_flushes_without_waiting_for_worker(self):
         with tempfile.TemporaryDirectory() as directory:
             out, ready = Path(directory) / 'resources.json', Path(directory) / 'worker'
