@@ -34,9 +34,8 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
-  map is `exp (K |t|)`-Lipschitz, and its derivative has norm at most `exp (K |t|)`.
-* `TauCeti.continuous_flowOfLipschitz_orbit`, `TauCeti.flowOfLipschitz_eq_add_integral`: orbits are
-  continuous and satisfy the integral equation.
+  map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
+* `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
 
 ## References
 
@@ -174,17 +173,14 @@ theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :
       Real.coe_toNNReal _ (Real.exp_pos _).le, mul_comm]
     exact ODE.dist_globalSolution_le v hv a b t
 
-/-- **A bound on the derivative of the flow.** The derivative of the time-`t` map of the flow of a
-`K`-Lipschitz vector field has norm at most `exp (K |t|)`. -/
+/-- **A bound on the derivative of the flow.** For a `K`-Lipschitz vector field, `fderiv` of the
+time-`t` map of the flow has norm at most `exp (K |t|)`. The field need not be differentiable, so
+this is a bound on Lean's `fderiv`, which is `0` where the time-`t` map is not differentiable; where
+it is differentiable (e.g. for a `C¹` field), it bounds the genuine derivative. -/
 theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ) :
     ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
   simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
     norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
-
-/-- Every orbit of the flow is continuous in time. -/
-theorem continuous_flowOfLipschitz_orbit (hv : LipschitzWith K v) (x : E) :
-    Continuous fun τ : ℝ ↦ flowOfLipschitz v hv τ x :=
-  continuous_iff_continuousAt.2 fun τ ↦ (hasDerivAt_flowOfLipschitz hv x τ).continuousAt
 
 /-- **The integral equation of the flow**: `φₜ y = y + ∫₀ᵗ v (φ_τ y) dτ`. -/
 theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :

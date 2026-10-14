@@ -23,10 +23,10 @@ and `T > 0`. Perturbing `f` by functions vanishing near its critical points move
 perturbations such that the derivative at `s = 0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x`, together with
 the flow direction `∇f(φ_T x)`, spans `E`.
 
-The flow direction cannot be dropped: a perturbation supported away from the critical points does
-not move the end of an orbit along the orbit to first order. Since the flow direction is tangent
-to both the unstable and the stable sets of the critical points joined by the orbit, this
-surjectivity is what the transversality of these sets for a generic perturbation needs.
+The statement includes the flow direction among the spanning vectors. This costs nothing for the
+intended application: the flow direction is tangent to both the unstable and the stable sets of
+the critical points joined by the orbit, so this spanning statement is what the transversality of
+these sets for a generic perturbation needs.
 
 ## Main results
 
@@ -87,37 +87,14 @@ private theorem nonpos_of_forall_integral_bump {b F : ℝ → ℝ} (hb : Continu
     by_cases hσ' : |σ - σ₀| < δ / 2
     · exact mul_nonneg (hbpos σ (by linarith)).le ψ.nonneg
     · rw [hψ0 σ (not_lt.1 hσ'), mul_zero]
-  -- Near `σ₀` the integrand is positive.
+  -- The integrand is nonnegative and positive at `σ₀`, so its integral is positive.
   have hψc : 0 < ψ (F σ₀) := ψ.pos_of_mem_ball (by rw [Metric.mem_ball, dist_self]; exact hrpos)
-  obtain ⟨η, hη, hηψ⟩ := Metric.eventually_nhds_iff.1
-    ((ψ.continuous.comp hF).continuousAt.eventually (lt_mem_nhds hψc))
-  set η' := min η (δ / 2)
-  have hη' : 0 < η' := lt_min hη (by linarith)
-  have hηδ : η' ≤ δ / 2 := min_le_right _ _
-  have hpos' : ∀ σ ∈ Ioo (σ₀ - η') (σ₀ + η'), 0 < b σ * ψ (F σ) := fun σ hσ' ↦ by
-    have hd : |σ - σ₀| < η' := abs_sub_lt_iff.2 ⟨by linarith [hσ'.2], by linarith [hσ'.1]⟩
-    exact mul_pos (hbpos σ (hd.trans_le ((min_le_right _ _).trans (by linarith))))
-      (hηψ (by rw [Real.dist_eq]; exact hd.trans_le (min_le_left _ _)))
-  have hδσ : δ ≤ σ₀ := (min_le_right _ _).trans (min_le_left _ _)
-  have hδT : δ ≤ T - σ₀ := (min_le_right _ _).trans (min_le_right _ _)
-  have hint : ∀ a b' : ℝ, IntervalIntegrable (fun σ ↦ b σ * ψ (F σ)) MeasureTheory.volume a b' :=
-    fun a b' ↦ hg.intervalIntegrable a b'
-  have hsplit := intervalIntegral.integral_add_adjacent_intervals (μ := MeasureTheory.volume)
-    (hint 0 (σ₀ - η'))
-    (hint (σ₀ - η') (σ₀ + η'))
-  have hsplit' := intervalIntegral.integral_add_adjacent_intervals (μ := MeasureTheory.volume)
-    (hint 0 (σ₀ + η'))
-    (hint (σ₀ + η') T)
-  have hA := intervalIntegral.integral_nonneg (μ := MeasureTheory.volume) (a := 0) (b := σ₀ - η')
-    (by linarith)
-    (fun σ _ ↦ hnonneg σ)
-  have hB := intervalIntegral.intervalIntegral_pos_of_pos_on (hint (σ₀ - η') (σ₀ + η')) hpos'
-    (by linarith)
-  have hC := intervalIntegral.integral_nonneg (μ := MeasureTheory.volume) (a := σ₀ + η') (b := T)
-    (by linarith)
-    (fun σ _ ↦ hnonneg σ)
-  have := h ψ
-  linarith
+  have hT : (0 : ℝ) < T := hσ.1.trans hσ.2
+  have hlt := intervalIntegral.integral_lt_integral_of_continuousOn_of_le_of_exists_lt hT
+    continuousOn_const hg.continuousOn (fun σ _ ↦ hnonneg σ)
+    ⟨σ₀, Ioo_subset_Icc_self hσ, mul_pos hpos hψc⟩
+  rw [intervalIntegral.integral_zero, h ψ] at hlt
+  exact lt_irrefl _ hlt
 
 /-- If `∫₀ᵀ a(σ) ψ(F σ) dσ = 0` for every smooth bump `ψ` centred at `F σ₀`, with `F` continuous
 and strictly antitone and `a` continuous, then `a σ₀ = 0` for `σ₀ ∈ (0, T)`. -/
@@ -264,7 +241,8 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
     (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T : ℝ} (hT : 0 < T) :
     ∃ (n : ℕ) (h : Fin n → E → ℝ) (hh : ∀ i, IsAdmissiblePerturbation f (h i)),
       LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin n))).comp
-          ((fderiv ℝ (perturbedFlow f h hf hh T) (x, 0)).comp
+          ((fderiv ℝ (perturbedFlow f h hf (fun i ↦ (hh i).contDiff)
+              (fun i ↦ (hh i).hasCompactSupport) T) (x, 0)).comp
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin n))))) :
             EuclideanSpace ℝ (Fin n) →ₗ[ℝ] E) ⊔
         (ℝ ∙ ∇ f (negativeGradientFlow f hf T x)) = ⊤ := by
@@ -273,10 +251,12 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
   obtain ⟨v, hvS, hvspan, -⟩ := Submodule.exists_fun_fin_finrank_span_eq ℝ S
   choose g hg using hvS
   refine ⟨_, fun i ↦ (g i).1, fun i ↦ (g i).2, ?_⟩
+  have hgc : ∀ i, ContDiff ℝ 2 (g i).1 := fun i ↦ (g i).2.contDiff
+  have hgs : ∀ i, HasCompactSupport (g i).1 := fun i ↦ (g i).2.hasCompactSupport
   set MT := fderiv ℝ (φ T) x
   set L : EuclideanSpace ℝ (Fin (Module.finrank ℝ (Submodule.span ℝ S))) →ₗ[ℝ] E :=
     ContinuousLinearMap.toLinearMap (((ContinuousLinearMap.fst ℝ E _).comp
-      ((fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf (fun i ↦ (g i).2) T) (x, 0)).comp
+      ((fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf hgc hgs T) (x, 0)).comp
         (ContinuousLinearMap.inr ℝ E _))) :
       EuclideanSpace ℝ (Fin (Module.finrank ℝ (Submodule.span ℝ S))) →L[ℝ] E)
   have hφd : ∀ t, Differentiable ℝ (φ t) := fun t ↦
@@ -284,12 +264,12 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
   -- `Dφ_T(x)` maps the contributions of the family into the range of the parameter derivative.
   have hv : ∀ i, MT (v i) ∈ LinearMap.range L := fun i ↦ by
     refine ⟨-EuclideanSpace.single i 1, ?_⟩
-    have hD := fst_fderiv_perturbedFlow_apply_eq_neg_integral hfs hf (fun i ↦ (g i).2) x
+    have hD := fst_fderiv_perturbedFlow_apply_eq_neg_integral hfs hf hgc hgs x
       (-EuclideanSpace.single i 1) T
     have hsum : ∀ p, ∑ j, (-EuclideanSpace.single i (1 : ℝ)) j • ∇ (g j).1 p = -∇ (g i).1 p :=
       fun p ↦ by simp
     calc L (-EuclideanSpace.single i 1)
-        = (fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf (fun i ↦ (g i).2) T) (x, 0)
+        = (fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf hgc hgs T) (x, 0)
             (0, -EuclideanSpace.single i 1)).1 := by simp [L]
       _ = MT (v i) := by
         rw [hD, ← hg i]
@@ -323,7 +303,8 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_t
     (hTS : negativeGradientFlow f hf T x ∈ S) :
     ∃ (n : ℕ) (h : Fin n → E → ℝ) (hh : ∀ i, IsAdmissiblePerturbation f (h i)),
       LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin n))).comp
-          ((fderiv ℝ (perturbedFlow f h hf hh T) (x, 0)).comp
+          ((fderiv ℝ (perturbedFlow f h hf (fun i ↦ (hh i).contDiff)
+              (fun i ↦ (hh i).hasCompactSupport) T) (x, 0)).comp
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin n))))) :
             EuclideanSpace ℝ (Fin n) →ₗ[ℝ] E) ⊔
         Submodule.span ℝ (tangentConeAt ℝ S (negativeGradientFlow f hf T x)) = ⊤ := by
