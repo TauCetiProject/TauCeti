@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.LinearTopology
-public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Module.Bounded
@@ -62,7 +61,7 @@ results follows AINTLIB's `Bounded.lean`; its proofs were not used.
   topological ring isomorphism.
 * `TauCeti.Huber.isBounded_prod_iff`: a subset of a product of two topological rings, or more
   generally monoids with zero, is bounded exactly when both of its projections are.
-* `TauCeti.IsModuleBounded.smul`: a bounded set of scalars times a bounded subset of a module is
+* `TauCeti.Huber.IsBounded.smul`: a bounded set of scalars times a bounded subset of a module is
   bounded.
 
 ## Implementation notes
@@ -113,16 +112,12 @@ theorem isBounded_iff {S : Set M} :
 theorem isModuleBounded_self_iff {S : Set M} : IsModuleBounded M S ↔ IsBounded S := by
   simp only [isModuleBounded_iff, isBounded_iff, smul_eq_mul]
 
-/-- A bounded set of scalars times a bounded subset of a module is bounded. -/
-theorem _root_.TauCeti.IsModuleBounded.smul {N : Type*} [TopologicalSpace N] [Zero N] [SMul M N]
+/-- A bounded set of scalars times a bounded subset of a module is bounded. This is
+`TauCeti.IsModuleBounded.smul` for the monoid with zero acting on itself. -/
+theorem IsBounded.smul {N : Type*} [TopologicalSpace N] [Zero N] [SMul M N]
     [IsScalarTower M M N] {S : Set M} {T : Set N} (hS : IsBounded S) (hT : IsModuleBounded M T) :
-    IsModuleBounded M (S • T) := by
-  refine isModuleBounded_iff.mpr fun U hU ↦ ?_
-  obtain ⟨W, hW, hWT⟩ := isModuleBounded_iff.mp hT U hU
-  obtain ⟨V, hV, hVS⟩ := hS W hW
-  refine ⟨V, hV, ?_⟩
-  rw [← smul_assoc, smul_eq_mul]
-  exact (Set.smul_subset_smul_right hVS).trans hWT
+    IsModuleBounded M (S • T) :=
+  (isModuleBounded_self_iff.mpr hS).smul hT
 
 /-- Some power of a topologically nilpotent element multiplies a bounded set into any
 neighbourhood of zero. -/
@@ -182,7 +177,7 @@ theorem isBounded_union {S T : Set M} : IsBounded (S ∪ T) ↔ IsBounded S ∧ 
 /-- The pointwise product of two bounded sets is bounded. -/
 theorem IsBounded.mul {S T : Set M} (hS : IsBounded S) (hT : IsBounded T) : IsBounded (S * T) := by
   rw [← smul_eq_mul, ← isModuleBounded_self_iff]
-  exact (isModuleBounded_self_iff.mpr hT).smul hS
+  exact hS.smul (isModuleBounded_self_iff.mpr hT)
 
 /-- Every subset of a discrete monoid with zero is bounded. -/
 theorem isBounded_of_discreteTopology [DiscreteTopology M] (S : Set M) : IsBounded S :=

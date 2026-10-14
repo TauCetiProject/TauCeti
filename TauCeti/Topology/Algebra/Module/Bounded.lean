@@ -24,8 +24,8 @@ to be transported along the map.
 ## Provenance
 
 The calculus of subsets, unions and finite sets follows the ring calculus of William Coram's
-mathlib4#40013, and its proofs adapt the proofs there. The images, products and nonarchimedean
-sums are new.
+mathlib4#40013, and its proofs adapt the proofs there. The images, products, scalar products
+and nonarchimedean sums are new.
 
 ## Main definitions
 
@@ -37,6 +37,8 @@ sums are new.
   linear maps, send bounded subsets of modules to bounded subsets.
 * `TauCeti.isModuleBounded_prod_iff`: a subset of a product of two modules is bounded exactly
   when both of its projections are.
+* `TauCeti.IsModuleBounded.smul`: in a scalar tower, a bounded set of scalars times a bounded
+  subset of a module is bounded.
 * `TauCeti.isModuleBounded_finite`: under a continuous scalar action, finite sets are bounded.
 * `TauCeti.IsModuleBounded.add`, `TauCeti.IsModuleBounded.addSubgroupClosure`: in a module with a
   nonarchimedean additive group, sums and the generated additive subgroup of bounded sets stay
@@ -163,6 +165,18 @@ theorem IsModuleBounded.prod [Zero N] [SMul R N] {S : Set M} {T : Set N}
     (hS : IsModuleBounded R S) (hT : IsModuleBounded R T) : IsModuleBounded R (S ×ˢ T) :=
   isModuleBounded_prod_iff.mpr ⟨hS.subset (Set.fst_image_prod_subset S T),
     hT.subset (Set.snd_image_prod_subset S T)⟩
+
+/-- In a scalar tower `R → M → N`, an `R`-bounded subset of `M` acting on an `M`-bounded subset
+of `N` gives an `R`-bounded subset of `N`. -/
+theorem IsModuleBounded.smul [Zero N] [SMul M N] [SMul R N] [IsScalarTower R M N] {S : Set M}
+    {T : Set N} (hS : IsModuleBounded R S) (hT : IsModuleBounded M T) :
+    IsModuleBounded R (S • T) := by
+  intro U hU
+  obtain ⟨W, hW, hWT⟩ := hT U hU
+  obtain ⟨V, hV, hVS⟩ := hS W hW
+  refine ⟨V, hV, ?_⟩
+  rw [← smul_assoc]
+  exact (Set.smul_subset_smul_right hVS).trans hWT
 
 end SMul
 
