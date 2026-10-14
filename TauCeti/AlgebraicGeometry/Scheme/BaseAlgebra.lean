@@ -237,64 +237,6 @@ theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_
   ext c
   exact hf c
 
-/-- **The pullback of rational functions along a morphism over `Spec k` is `k`-linear**: for a
-dominant morphism `f : Y ⟶ Z` of integral schemes over `Spec k`, the pullback `f^*` fixes the
-image of `k` in the function fields. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap {Y Z : Scheme.{u}}
-    [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y] [IsIntegral Z] (f : Y ⟶ Z)
-    [f.IsOver (Spec (.of k))] [IsDominant f] (c : k) :
-    f.functionFieldMap (algebraMap k Z.functionField c) = algebraMap k Y.functionField c := by
-  have h : CommRingCat.ofHom (algebraMap k Z.functionField) ≫ f.functionFieldMap =
-      CommRingCat.ofHom (algebraMap k Y.functionField) := by
-    rw [← Spec.map_inj, Spec.map_comp, ← Scheme.fromSpecStalk_genericPoint_comp_over k Z,
-      f.SpecMap_functionFieldMap_fromSpecStalk_assoc, comp_over,
-      Scheme.fromSpecStalk_genericPoint_comp_over k Y]
-  exact congr($h c)
-
-/-- The pullback of rational functions `f^* : k(Z) → k(Y)` along a dominant morphism `f : Y ⟶ Z`
-of integral schemes over `Spec k`, as a `k`-algebra homomorphism. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom {Y Z : Scheme.{u}}
-    [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y] [IsIntegral Z] (f : Y ⟶ Z)
-    [f.IsOver (Spec (.of k))] [IsDominant f] : Z.functionField →ₐ[k] Y.functionField where
-  toRingHom := f.functionFieldMap.hom
-  commutes' := f.functionFieldMap_algebraMap k
-
-/-- The `k`-algebra homomorphism `Scheme.Hom.functionFieldAlgHom` is the pullback of rational
-functions. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_apply {Y Z : Scheme.{u}}
-    [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y] [IsIntegral Z] (f : Y ⟶ Z)
-    [f.IsOver (Spec (.of k))] [IsDominant f] (z : Z.functionField) :
-    f.functionFieldAlgHom k z = f.functionFieldMap z :=
-  (rfl)
-
-/-- The ring homomorphism underlying `Scheme.Hom.functionFieldAlgHom` is the pullback of rational
-functions. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.coe_functionFieldAlgHom {Y Z : Scheme.{u}}
-    [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y] [IsIntegral Z] (f : Y ⟶ Z)
-    [f.IsOver (Spec (.of k))] [IsDominant f] :
-    (f.functionFieldAlgHom k : Z.functionField →+* Y.functionField) = f.functionFieldMap.hom :=
-  (rfl)
-
-/-- The pullback of rational functions along the identity is the identity `k`-algebra map. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_id {Y : Scheme.{u}}
-    [Y.Over (Spec (.of k))] [IsIntegral Y] :
-    Scheme.Hom.functionFieldAlgHom k (𝟙 Y) = AlgHom.id k Y.functionField :=
-  AlgHom.ext fun _ ↦ by simp
-
-/-- The pullback of rational functions along a composite of dominant morphisms over `Spec k` is
-the composite of the pullbacks, in the opposite order. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_comp {Y Z W : Scheme.{u}}
-    [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [W.Over (Spec (.of k))] [IsIntegral Y]
-    [IsIntegral Z] [IsIntegral W] (f : Y ⟶ Z) (g : Z ⟶ W) [f.IsOver (Spec (.of k))]
-    [g.IsOver (Spec (.of k))] [IsDominant f] [IsDominant g] :
-    Scheme.Hom.functionFieldAlgHom k (f ≫ g) =
-      (f.functionFieldAlgHom k).comp (g.functionFieldAlgHom k) :=
-  AlgHom.ext fun _ ↦ by simp
-
 end CommRing
 
 section FunctionFieldMap

@@ -105,7 +105,8 @@ theorem functionFieldAlgHom_homOfAlgHom
     (CommRingCat.ofHom φ.toRingHom)).mpr
     (Scheme.fromSpecStalk_homOfFunctionField hX _ _).symm).symm
   refine AlgHom.toRingHom_injective ?_
-  rw [Scheme.Hom.coe_functionFieldAlgHom, h]
+  change (homOfAlgHom φ).hom.functionFieldMap.hom = _
+  rw [h]
   -- `rw [CommRingCat.hom_ofHom]` fails here: the ring structure of the field `k(X)` is only
   -- defeq to that of the `CommRingCat` object `k(X)` at default transparency, so the lemma is
   -- applied with `exact`.
