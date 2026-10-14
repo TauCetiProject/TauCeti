@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.MorseSmale
+public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Calculus.Gradient
@@ -72,6 +72,7 @@ private theorem gradField_apply_zero (z : EuclideanSpace ℝ (Fin 2)) :
 @[simp]
 private theorem gradField_apply_one (z : EuclideanSpace ℝ (Fin 2)) : gradField z 1 = z 1 := rfl
 
+/-- The function `cos x + y² / 2` is smooth: it is `C^n` for every differentiability order `n`. -/
 theorem contDiff_cosAddHalfSq {n : WithTop ℕ∞} : ContDiff ℝ n cosAddHalfSq :=
   (Real.contDiff_cos.comp (EuclideanSpace.proj (0 : Fin 2)).contDiff).add
     (((EuclideanSpace.proj (1 : Fin 2)).contDiff.pow 2).div_const 2)
@@ -120,8 +121,7 @@ theorem lipschitzWith_gradient_cosAddHalfSq : LipschitzWith 1 (∇ cosAddHalfSq)
   simp only [Fin.sum_univ_two, gradField_apply_zero, gradField_apply_one, Real.dist_eq]
   have := Real.abs_sin_sub_sin_le (z 0) (w 0)
   have h0 : |-Real.sin (z 0) - -Real.sin (w 0)| ^ 2 ≤ |z 0 - w 0| ^ 2 := by
-    rw [show -Real.sin (z 0) - -Real.sin (w 0) = -(Real.sin (z 0) - Real.sin (w 0)) by ring,
-      abs_neg]
+    rw [neg_sub_neg, abs_sub_comm]
     exact pow_le_pow_left₀ (abs_nonneg _) this 2
   linarith
 
@@ -172,6 +172,7 @@ theorem hessianQuadraticForm_cosAddHalfSq (z u : EuclideanSpace ℝ (Fin 2)) :
   ring
 
 /-- The critical points of `cos x + y² / 2` are the points with `sin x = 0` and `y = 0`. -/
+@[simp]
 theorem fderiv_cosAddHalfSq_eq_zero_iff {z : EuclideanSpace ℝ (Fin 2)} :
     fderiv ℝ cosAddHalfSq z = 0 ↔ Real.sin (z 0) = 0 ∧ z 1 = 0 := by
   have h : fderiv ℝ cosAddHalfSq z = 0 ↔ ∇ cosAddHalfSq z = 0 := by
@@ -331,8 +332,7 @@ private theorem apply_zero_eq_of_mem_stableSet {q z : EuclideanSpace ℝ (Fin 2)
     have h2 : Tendsto D atTop
         (𝓝 ((EuclideanSpace.proj (0 : Fin 2) : EuclideanSpace ℝ (Fin 2) → ℝ) q - q 0)) :=
       h1.sub_const (q 0)
-    rwa [show (EuclideanSpace.proj (0 : Fin 2) : EuclideanSpace ℝ (Fin 2) → ℝ) q - q 0 = 0 from
-      sub_self (q 0)] at h2
+    simpa using h2
   obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 (hD.eventually (Ioo_mem_nhds (by norm_num : (-1 : ℝ) < 0)
     (by norm_num : (0 : ℝ) < 1)))
   -- `D²` is nondecreasing on `[T₀, ∞)`, since `D sin D ≥ 0` for `|D| < 1`.
