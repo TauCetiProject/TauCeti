@@ -43,7 +43,6 @@ open TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
-open scoped Pointwise in
 /-- **Wedhorn's Proposition 8.30.** Over a strongly noetherian Tate ring `A`, a containment
 `R(T'/s') ⊆ R(T/s)` of rational subsets induces a flat comparison map `A⟨T/s⟩ → A⟨T'/s'⟩`, the map
 `ringHomOfRationalSubsetSubset` of Proposition 8.2(1). The numerators `T` together with the
@@ -66,29 +65,20 @@ theorem flat_ringHomOfRationalSubsetSubset [IsTateRing A] [IsStronglyNoetherian 
     letI := isUniformAddGroup_locUniformSpace P T' s' S' hden'
     letI := isTopologicalRing_locUniformSpace P T' s' S' hden'
     (ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' hsub).Flat := by
-  classical
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   let _ := locUniformSpace P T' s' S' hden'
   have _ := isUniformAddGroup_locUniformSpace P T' s' S' hden'
   have _ := isTopologicalRing_locUniformSpace P T' s' S' hden'
-  -- the common refinement `(T'', s s')` of the two presentations
-  let T'' : Finset A := insert s T * insert s' T'
-  have hT : ∀ t ∈ T, t * s' ∈ T'' := fun _ ht ↦
-    Finset.mul_mem_mul (Finset.mem_insert_of_mem ht) (Finset.mem_insert_self _ _)
+  -- a common refinement `(T'', s s')` of the two presentations, presenting `R(T'/s')`
+  obtain ⟨T'', heq, hT, hT'⟩ := exists_refinement_of_subset Aplus T T' s s' hsub
   have hden'' : HasDenominatorPower P T'' (s * s') (Localization.Away (s * s')) :=
-    hasDenominatorPower_mul P T T' T'' s s' S S' _ hT
-      (fun t ht ↦ mul_comm s t ▸
-        Finset.mul_mem_mul (Finset.mem_insert_self _ _) (Finset.mem_insert_of_mem ht))
-      hden hden'
+    hasDenominatorPower_mul P T T' T'' s s' S S' _ hT hT' hden hden'
   let _ := locUniformSpace P T'' (s * s') _ hden''
   have _ := isUniformAddGroup_locUniformSpace P T'' (s * s') _ hden''
   have _ := isTopologicalRing_locUniformSpace P T'' (s * s') _ hden''
-  -- it presents `R(T/s) ∩ R(T'/s') = R(T'/s')`
-  have heq : rationalSubset Aplus T'' (s * s') = rationalSubset Aplus T' s' := by
-    rw [← rationalSubset_inter, Set.inter_eq_right.mpr hsub]
-  let e := presentationRingEquivOfEq P Aplus hAplus T'' (s * s') _ hden'' T' s' S' hden' heq
+  let e := presentationRingEquivOfEq P Aplus hAplus T'' (s * s') _ hden'' T' s' S' hden' heq.symm
   let ρ := restrictionRingHom P T s S hden T'' (s * s') _ hden'' s' rfl hT
   -- the comparison map is the restriction to the refinement followed by `e`: both are continuous
   -- and compatible with the structure maps, which by Proposition 8.2(1) determines the map
@@ -96,7 +86,7 @@ theorem flat_ringHomOfRationalSubsetSubset [IsTateRing A] [IsStronglyNoetherian 
       (e : _ →+* _).comp ρ := by
     refine (eq_ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' hsub _
       ((continuous_presentationRingEquivOfEq P Aplus hAplus T'' (s * s') _ hden'' T' s' S' hden'
-        heq).comp (continuous_restrictionRingHom P T s S hden T'' (s * s') _ hden'' s' rfl hT))
+        heq.symm).comp (continuous_restrictionRingHom P T s S hden T'' (s * s') _ hden'' s' rfl hT))
       ?_).symm
     rw [RingHom.comp_assoc, restrictionRingHom_comp_toCompletionLoc,
       presentationRingEquivOfEq_coe_comp_toCompletionLoc]
