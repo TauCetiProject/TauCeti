@@ -94,6 +94,9 @@ it.
   and rational presentation.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_id`: the identity of a complete Hausdorff
   nonarchimedean ring is strictly topologically of finite type, presented with no variables.
+* `TauCeti.Huber.isStrictlyTopologicallyFiniteType_coeRingHom`: the completion map `A → Â` of a
+  nonarchimedean uniform ring is strictly topologically of finite type, presented with no
+  variables.
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian`: over a strongly
   noetherian Huber ring, an algebra strictly topologically of finite type is again strongly
   noetherian.
@@ -162,7 +165,8 @@ theorem isStrictlyTopologicallyFiniteType_iff {φ : A →+* B} :
 
 /-- **The presentation by the identity**: the structure map `A → A⟨X₁, …, Xₖ⟩` is strictly
 topologically of finite type. This is the witness that the conditions are simultaneously
-satisfiable, and the `k = 0` case says the completion map `A → Â` is one too. -/
+satisfiable. At `k = 0` it presents the structure map `A → A⟨⟩`; for the completion map `A → Â`
+itself see `TauCeti.Huber.isStrictlyTopologicallyFiniteType_coeRingHom`. -/
 theorem isStrictlyTopologicallyFiniteType_algebraMap (k : ℕ) :
     IsStrictlyTopologicallyFiniteType (algebraMap A (restrictedMvPowerSeriesCompletion k A)) :=
   ⟨k, RingHom.id _, IsOpenQuotientMap.id, RingHom.id_comp _⟩
@@ -299,6 +303,29 @@ theorem isStrictlyTopologicallyFiniteType_id : IsStrictlyTopologicallyFiniteType
     (continuous_weightedEvalHomCompletion ..) hπ, RingHom.ext hπ⟩
 
 end Identity
+
+/-! ### The completion map -/
+
+section Completion
+
+variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [NonarchimedeanRing R]
+
+/-- **The completion map `R → R̂` is strictly topologically of finite type**, presented in no
+variables: the comparison `R⟨⟩ ≅ R` of the uncompleted rings extends to an isomorphism of
+topological rings `R⟨⟩ ≅ R̂` of their completions, under which the structure map of `R⟨⟩` becomes
+the completion map. The completion `R̂` is formed for the given uniformity of `R`. -/
+theorem isStrictlyTopologicallyFiniteType_coeRingHom :
+    IsStrictlyTopologicallyFiniteType (Completion.coeRingHom : R →+* Completion R) := by
+  let T : Fin 0 → Set R := fun _ ↦ {1}
+  have hf := continuous_weightedRestrictedSubringFinZeroEquiv T
+  have hf' := continuous_weightedRestrictedSubringFinZeroEquiv_symm T
+  let e := Completion.mapRingEquiv (weightedRestrictedSubringFinZeroEquiv T) hf hf'
+  refine ⟨0, e, (Homeomorph.mk e.toEquiv (Completion.continuous_mapRingEquiv _ hf hf')
+    (Completion.continuous_mapRingEquiv_symm _ hf hf')).isOpenQuotientMap,
+    RingHom.ext fun a ↦ ?_⟩
+  simp [e, T, Completion.map_coe (uniformContinuous_addMonoidHom_of_continuous hf)]
+
+end Completion
 
 /-! ### Strong noetherianness
 
