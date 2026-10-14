@@ -43,11 +43,8 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {dC : C →ₗ[R] C}
   {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB} {hC : IsDGAlgebra 𝒞 dC}
 
--- Exposed so that morphisms into a restricted object are the unbundled restricted morphisms,
--- as the extension-restriction adjunction requires.
 /-- Restriction of scalars along a DG algebra morphism, on the ordinary categories of DG modules.
 The action on each image object is given by the original action through the algebra morphism. -/
-@[expose]
 noncomputable def restrictScalars (f : DGAlgHom hA hB) :
     DGRightModuleCat.{uR, uB, uM} hB ⥤ DGRightModuleCat.{uR, uA, uM} hA where
   obj M := of (M.isDGRightModule.restrictScalars f)
@@ -55,10 +52,21 @@ noncomputable def restrictScalars (f : DGAlgHom hA hB) :
   map_id _ := DGRightModuleHom.restrictScalars_id f
   map_comp g k := DGRightModuleHom.restrictScalars_comp f k g
 
+private theorem restrictScalars_obj_def (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) :
+    (restrictScalars f).obj M = of (M.isDGRightModule.restrictScalars f) := rfl
+
+/-- The object produced by bundled restriction of scalars is the bundled unbundled restriction. -/
+theorem restrictScalars_obj (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) :
+    (restrictScalars f).obj M = of (M.isDGRightModule.restrictScalars f) :=
+  restrictScalars_obj_def f M
+
 /-- Restriction of scalars preserves the underlying module over the ground ring. -/
 noncomputable def restrictScalarsEquiv (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uB, uM} hB) : (restrictScalars f).obj M ≃ₗ[R] M :=
-  DGRightModule.RestrictScalars.linearEquiv f M
+    (M : DGRightModuleCat.{uR, uB, uM} hB) : (restrictScalars f).obj M ≃ₗ[R] M := by
+  rw [restrictScalars_obj]
+  exact DGRightModule.RestrictScalars.linearEquiv f M
 
 /-- The restricted action is the original action through the algebra morphism. -/
 @[simp]
@@ -98,6 +106,85 @@ theorem restrictScalarsEquiv_differential (f : DGAlgHom hA hB)
   exact (DGRightModule.RestrictScalars.linearEquiv_apply f M _).trans
     ((IsDGRightModule.val_restrictScalarsDifferential f x).trans
       (congrArg M.differential (DGRightModule.RestrictScalars.linearEquiv_apply f M x).symm))
+
+/-- The bundled restricted object is canonically isomorphic to the object obtained by bundling
+the unbundled restriction. -/
+noncomputable def restrictScalarsObjIso (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) :
+    (restrictScalars f).obj M ≅ of (M.isDGRightModule.restrictScalars f) where
+  hom :=
+    { toLinearMap :=
+        { toFun := fun x ↦ DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x)
+          map_add' := fun x y ↦ by
+            apply DGRightModule.RestrictScalars.ext
+            simp
+          map_smul' := fun a x ↦ by
+            apply DGRightModule.RestrictScalars.ext
+            simp only [DGRightModule.RestrictScalars.val_smul_eq,
+              restrictScalarsEquiv_smul, RingHom.id_apply, AlgHom.op_apply_apply,
+              GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom] }
+      map_mem' {q x} hx := by
+        rw [IsDGRightModule.mem_restrictScalarsGrading_iff,
+          DGRightModule.RestrictScalars.linearEquiv_apply]
+        exact (mem_restrictScalars_obj_grading f M q x).1 hx
+      map_d' x := by
+        apply DGRightModule.RestrictScalars.ext
+        simp only [IsDGRightModule.val_restrictScalarsDifferential]
+        exact (restrictScalarsEquiv_differential f M x).symm }
+  inv :=
+    { toLinearMap :=
+        { toFun := fun x ↦ (restrictScalarsEquiv f M).symm x.val
+          map_add' := fun x y ↦ by simp
+          map_smul' := fun a x ↦ by
+            apply (restrictScalarsEquiv f M).injective
+            simp only [restrictScalarsEquiv_smul, LinearEquiv.apply_symm_apply,
+              DGRightModule.RestrictScalars.val_smul_eq, RingHom.id_apply,
+              AlgHom.op_apply_apply, GradedAlgHom.coe_toAlgHom,
+              DGAlgHom.coe_toGradedAlgHom] }
+      map_mem' {q x} hx := by
+        change (restrictScalarsEquiv f M).symm x.val ∈
+          ((restrictScalars f).obj M).grading q
+        apply (mem_restrictScalars_obj_grading f M q _).2
+        have hx' := (IsDGRightModule.mem_restrictScalarsGrading_iff f).1 hx
+        rw [DGRightModule.RestrictScalars.linearEquiv_apply] at hx'
+        simpa only [LinearEquiv.apply_symm_apply] using hx'
+      map_d' x := by
+        simp only [LinearMap.coe_mk, AddHom.coe_mk]
+        rw [IsDGRightModule.val_restrictScalarsDifferential]
+        apply (restrictScalarsEquiv f M).injective
+        rw [restrictScalarsEquiv_differential]
+        simp only [LinearEquiv.apply_symm_apply] }
+  hom_inv_id := by
+    ext x
+    rw [comp_apply, id_apply]
+    exact (restrictScalarsEquiv f M).symm_apply_apply x
+  inv_hom_id := by
+    ext x
+    rw [comp_apply, id_apply]
+    exact (restrictScalarsEquiv f M).apply_symm_apply x.val
+
+/-- The canonical restricted-object isomorphisms are natural in the module. -/
+theorem restrictScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
+    {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
+    (restrictScalars f).map g ≫ (restrictScalarsObjIso f N).hom =
+      (restrictScalarsObjIso f M).hom ≫ g.restrictScalars f := by
+  ext x
+  rw [comp_apply, comp_apply]
+  dsimp only [restrictScalarsObjIso, LinearMap.coe_mk, AddHom.coe_mk]
+  change restrictScalarsEquiv f N ((restrictScalars f).map g x) =
+    (g.restrictScalars f (DGRightModule.RestrictScalars.mk
+      (restrictScalarsEquiv f M x))).val
+  rw [DGRightModuleHom.val_restrictScalars]
+  exact restrictScalars_map_apply f g x
+
+/-- The inverses of the canonical restricted-object isomorphisms are natural in the module. -/
+theorem restrictScalarsObjIso_inv_naturality (f : DGAlgHom hA hB)
+    {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
+    (restrictScalarsObjIso f M).inv ≫ (restrictScalars f).map g =
+      g.restrictScalars f ≫ (restrictScalarsObjIso f N).inv := by
+  rw [← cancel_mono (restrictScalarsObjIso f N).hom]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
+    restrictScalarsObjIso_hom_naturality, Iso.inv_hom_id_assoc]
 
 instance (f : DGAlgHom hA hB) : (restrictScalars.{uR, uA, uB, uM} f).Faithful where
   map_injective {M N} g k hgk := by
