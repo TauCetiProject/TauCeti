@@ -440,6 +440,31 @@ section Natural
 
 variable {Y : Type*} [TopologicalSpace Y] {y : Y}
 
+/-- The shift `loopSpaceEquiv` is natural: it commutes with the maps induced on homotopy sets by a
+based map `f` and by any map `F` of cube-loop spaces that postcomposes with `f`. -/
+theorem _root_.ContinuousMap.loopSpaceEquiv_map (f : C(X, Y)) (hf : f x = y)
+    (F : C(Ω^ N X x, Ω^ N Y y)) (hFf : ∀ γ t, F γ t = f (γ t))
+    (a : HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const) :
+    loopSpaceEquiv (map F (GenLoop.ext _ _ fun t => (hFf _ t).trans hf) a) =
+      map f hf (loopSpaceEquiv a) := by
+  induction a using Quotient.inductionOn with
+  | h p =>
+    rw [map_mk, loopSpaceEquiv_mk, loopSpaceEquiv_mk, map_mk]
+    refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
+    simp [hFf]
+
+/-- The `π_n` form of the shift is natural, for any map `F` of cube-loop spaces that postcomposes
+with `f`. -/
+theorem _root_.ContinuousMap.piLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y) (m n : ℕ)
+    (F : C(Ω^ (Fin n) X x, Ω^ (Fin n) Y y)) (hFf : ∀ γ t, F γ t = f (γ t))
+    (a : π_ (m + 1) (Ω^ (Fin n) X x) _root_.GenLoop.const) :
+    piLoopSpaceMulEquiv m n (map F (GenLoop.ext _ _ fun t => (hFf _ t).trans hf) a) =
+      map f hf (piLoopSpaceMulEquiv m n a) := by
+  rw [piLoopSpaceMulEquiv_apply, piLoopSpaceMulEquiv_apply, loopSpaceMulEquiv_apply,
+    loopSpaceMulEquiv_apply]
+  exact (congrArg (congrMulEquiv finSumFinEquiv) (f.loopSpaceEquiv_map hf F hFf a)).trans
+    (f.map_congrMulEquiv hf finSumFinEquiv _).symm
+
 /-- The shift `pathLoopSpaceMulEquiv` is natural: it commutes with the maps induced on homotopy
 groups by a based map `f` and by any map `F` of loop spaces that postcomposes loops with `f`. -/
 theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y)
@@ -447,11 +472,25 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
     (a : π_ (m + 1) (Ω X x) (Path.refl x)) :
     pathLoopSpaceMulEquiv m (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
       map f hf (pathLoopSpaceMulEquiv m a) := by
-  induction a using Quotient.inductionOn with
-  | h p =>
-    rw [map_mk, pathLoopSpaceMulEquiv_mk, pathLoopSpaceMulEquiv_mk, map_mk]
-    refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
-    simp [hFf]
+  -- the loop space `Ω X x` is `Ω^ (Fin 1) X x` through `homeomorphOfUnique`, under which `F`
+  -- becomes the postcomposition with `f` on cube loops
+  let F' : C(Ω^ (Fin 1) X x, Ω^ (Fin 1) Y y) :=
+    ⟨_root_.GenLoop.map f hf,
+      continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp f).comp continuous_subtype_val)⟩
+  rw [pathLoopSpaceMulEquiv_apply, pathLoopSpaceMulEquiv_apply]
+  have key : (homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
+      (GenLoop.homeomorphOfUnique_const (Fin 1))).symm
+        (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
+      map (y := (_root_.GenLoop.const : Ω^ (Fin 1) Y y)) F'
+        (GenLoop.ext _ _ fun _ => hf)
+        ((homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
+          (GenLoop.homeomorphOfUnique_const (Fin 1))).symm a) := by
+    induction a using Quotient.inductionOn with
+    | h p =>
+      refine congrArg (Quotient.mk _) (GenLoop.ext _ _ fun t => GenLoop.ext _ _ fun s => ?_)
+      simp [F', hFf]
+  rw [key]
+  exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun _ _ => rfl) _
 
 end Natural
 
