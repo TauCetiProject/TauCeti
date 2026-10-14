@@ -31,6 +31,7 @@ The scalings agree with the chosen cusp data at ideal vertices; finite vertices 
 theorem exists_cuspDatum_scaling [DiscreteTopology Γ]
     (hcusp : ∀ i c, P.vertex i = .inr c → Γ.IsCuspPoint c) :
     ∃ D : {i : Fin n // (P.vertex i).isRight} → Γ.CuspDatum,
+      (∀ i : {i : Fin n // (P.vertex i).isRight}, P.vertex i = .inr (D i).cusp) ∧
       ∃ g : Fin n → PSL(2, ℝ),
         (∀ i (hi : (P.vertex i).isRight), g i = (D ⟨i, hi⟩).scaling) ∧
         ∀ i c, P.vertex i = .inr c → g i • c = ∞ := by
@@ -43,7 +44,7 @@ theorem exists_cuspDatum_scaling [DiscreteTopology Γ]
   choose D hD using hex
   let g (i : Fin n) : PSL(2, ℝ) :=
     if hi : (P.vertex i).isRight then (D ⟨i, hi⟩).scaling else 1
-  refine ⟨D, g, fun i hi ↦ dite_eq_left hi, ?_⟩
+  refine ⟨D, hD, g, fun i hi ↦ dite_eq_left hi, ?_⟩
   intro i c hi
   have hright : (P.vertex i).isRight := by simp [hi]
   have heq : (D ⟨i, hright⟩).cusp = c := Sum.inr.inj ((hD ⟨i, hright⟩).symm.trans hi)

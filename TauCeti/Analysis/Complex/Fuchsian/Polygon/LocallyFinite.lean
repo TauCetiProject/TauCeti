@@ -51,7 +51,7 @@ theorem locallyFinite_smul_carrier_of_isCuspPoint [DiscreteTopology Γ]
   classical
   -- Only ideal vertices require cusp data; this also handles polygons with no ideal vertices.
   let I := {i : Fin n // (P.vertex i).isRight}
-  obtain ⟨D, g, hgD, hg⟩ := P.exists_cuspDatum_scaling hcusp
+  obtain ⟨D, -, g, hgD, hg⟩ := P.exists_cuspDatum_scaling hcusp
   intro z
   -- All translates of this neighbourhood have bounded height in each cusp coordinate.
   choose S hS hz A hA using fun i : I ↦
