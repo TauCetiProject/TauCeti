@@ -285,17 +285,55 @@ instance isClosedImmersion_weightTorus :
     (fun j ↦ isNilpotent_rep_rootGenerator n j.1) (span_range_basisWeight_eq_top n)
 
 /-- Each positive simple-root closed subgroup of the full carrier lies in the positive subgroup. -/
-theorem rootSubgroup_le_closedSubgroup (i : Fin (n + 1)) :
+theorem rootSubgroupClosedSubgroup_inl_le_closedSubgroup (i : Fin (n + 1)) :
     TypeBSpinCarrier.rootSubgroupClosedSubgroup n (.inl i) ≤ closedSubgroup n := by
   rw [← Subtype.coe_le_coe, TypeBSpinCarrier.coe_rootSubgroupClosedSubgroup,
     coe_closedSubgroup]
   exact Subobject.mk_le_mk_of_comm (rootSubgroup n i) (rootSubgroup_comp_inclusion n i)
 
 /-- The full carrier's weight torus lies in the positive subgroup. -/
-theorem weightTorus_le_closedSubgroup :
+theorem mk_weightTorus_le_closedSubgroup :
     ClosedSubgroupScheme.mk (TypeBSpinCarrier.weightTorus n) ≤ closedSubgroup n := by
   rw [← Subtype.coe_le_coe, ClosedSubgroupScheme.coe_mk, coe_closedSubgroup]
   exact Subobject.mk_le_mk_of_comm (weightTorus n) (weightTorus_comp_inclusion n)
+
+/-- Transporting the positive subgroup to the generic Kostant toral group scheme gives the generic
+torus-subsystem closed subgroup for the positive simple-root labels. -/
+private theorem mapIso_closedSubgroup :
+    ClosedSubgroupScheme.mapIso
+        (eqToIso (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n))
+        (closedSubgroup n) =
+      kostantTorusSubsystemClosedSubgroup
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n)
+        (isNilpotent_rep_rootGenerator n) (Set.range Sum.inl) := by
+  rw [closedSubgroup, ClosedSubgroupScheme.mapIso_mk]
+  apply Subtype.ext
+  rw [ClosedSubgroupScheme.coe_mk, coe_kostantTorusSubsystemClosedSubgroup]
+  exact Subobject.mk_eq_mk_of_comm _ _
+    (eqToIso (groupScheme_eq_kostantTorusSubsystemGroupScheme n)) (by simp [inclusion_def])
+
+/-- A generic Kostant map factors uniquely through a transported closed subgroup exactly when its
+transport to the full carrier factors uniquely through the original closed subgroup. -/
+private theorem existsUnique_mapIso_iff
+    (P : ClosedSubgroupScheme (TypeBSpinCarrier.groupScheme n))
+    {Y : Grp (Over (Spec (CommRingCat.of ℤ)))}
+    (g : Y ⟶ kostantToralGroupScheme
+      (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+      (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+      (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+      (latticeBasis n) (basisWeight n)) :
+    (∃! f : Y ⟶ (((ClosedSubgroupScheme.mapIso (eqToIso
+        (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n)) P).1 :
+          Grp (Over (Spec (CommRingCat.of ℤ))))),
+        f ≫ (ClosedSubgroupScheme.mapIso (eqToIso
+          (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n)) P).1.arrow = g) ↔
+      ∃! f : Y ⟶ (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
+        f ≫ P.1.arrow = g ≫ eqToHom
+          (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n).symm := by
+  rw [← Subobject.factors_iff_existsUnique, ← Subobject.factors_iff_existsUnique,
+    ClosedSubgroupScheme.coe_mapIso, Subobject.factors_mapIsoToOrderIso_iff, eqToIso.inv]
 
 /-- **Universal property of the positive subgroup.** It is the smallest closed subgroup of the
 full spin carrier through which every positive simple-root map and the weight-torus map factor. -/
@@ -308,67 +346,13 @@ theorem closedSubgroup_le_iff
       ∃! f : SplitTorus.groupScheme ℤ (Fin (n + 1)) ⟶
         (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
           f ≫ P.1.arrow = TypeBSpinCarrier.weightTorus n := by
-  let Gtoral := kostantToralGroupScheme
-    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
-    (latticeBasis n) (basisWeight n)
-  let e : TypeBSpinCarrier.groupScheme n ≅ Gtoral :=
-    eqToIso (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n)
-  let Q := kostantTorusSubsystemClosedSubgroup
-    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n)
-    (isNilpotent_rep_rootGenerator n) (Set.range Sum.inl)
-  let E := ClosedSubgroupScheme.mapIso e
-  have hQ : E (closedSubgroup n) = Q := by
-    simp only [E, closedSubgroup, ClosedSubgroupScheme.mapIso_mk]
-    apply Subtype.ext
-    rw [ClosedSubgroupScheme.coe_mk]
-    calc
-      _ = Subobject.mk (kostantTorusSubsystemToToral
-          (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-          (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-          (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n)
-          (isNilpotent_rep_rootGenerator n) (Set.range Sum.inl)) :=
-        Subobject.mk_eq_mk_of_comm _ _
-          (eqToIso (groupScheme_eq_kostantTorusSubsystemGroupScheme n)) (by
-            simp [inclusion_def, e, Gtoral])
-      _ = Q.1 := by
-        simpa only [Q] using
-          (coe_kostantTorusSubsystemClosedSubgroup
-            (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-            (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)
-            (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n) (latticeBasis n)
-            (basisWeight n) (isNilpotent_rep_rootGenerator n) (Set.range Sum.inl)).symm
-  have factors_iff {X : Grp (Over (Spec (CommRingCat.of ℤ)))} (f : X ⟶ Gtoral) :
-      (E P).1.Factors f ↔ P.1.Factors (f ≫ e.inv) := by
-    rw [ClosedSubgroupScheme.coe_mapIso]
-    exact Subobject.factors_mapIsoToOrderIso_iff e P.1 f
-  rw [← E.le_iff_le, hQ, kostantTorusSubsystemClosedSubgroup_le_iff]
-  constructor
-  · rintro ⟨hroot, htorus⟩
-    constructor
-    · intro i
-      apply (Subobject.factors_iff_existsUnique P.1 _).mp
-      simpa [e, Gtoral, TypeBSpinCarrier.rootSubgroup_def] using
-        (factors_iff _).mp
-          ((Subobject.factors_iff_existsUnique (E P).1 _).mpr (hroot (.inl i) ⟨i, rfl⟩))
-    · apply (Subobject.factors_iff_existsUnique P.1 _).mp
-      simpa [e, Gtoral, TypeBSpinCarrier.weightTorus_def] using
-        (factors_iff _).mp ((Subobject.factors_iff_existsUnique (E P).1 _).mpr htorus)
-  · rintro ⟨hroot, htorus⟩
-    constructor
-    · intro k hk
-      obtain ⟨i, rfl⟩ := hk
-      apply (Subobject.factors_iff_existsUnique (E P).1 _).mp
-      apply (factors_iff _).mpr
-      simpa [e, Gtoral, TypeBSpinCarrier.rootSubgroup_def] using
-        (Subobject.factors_iff_existsUnique P.1 _).mpr (hroot i)
-    · apply (Subobject.factors_iff_existsUnique (E P).1 _).mp
-      apply (factors_iff _).mpr
-      simpa [e, Gtoral, TypeBSpinCarrier.weightTorus_def] using
-        (Subobject.factors_iff_existsUnique P.1 _).mpr htorus
+  -- Transport to the generic Kostant toral group scheme and apply the generic universal property.
+  rw [← (ClosedSubgroupScheme.mapIso
+      (eqToIso (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n))).le_iff_le,
+    mapIso_closedSubgroup, kostantTorusSubsystemClosedSubgroup_le_iff]
+  simp only [existsUnique_mapIso_iff, ← TypeBSpinCarrier.rootSubgroup_def,
+    ← TypeBSpinCarrier.weightTorus_def, Set.mem_range, forall_exists_index,
+    forall_apply_eq_imp_iff]
 
 /-- A morphism from the positive subgroup is determined by its restrictions to the positive
 simple-root subgroups and the weight torus. -/
