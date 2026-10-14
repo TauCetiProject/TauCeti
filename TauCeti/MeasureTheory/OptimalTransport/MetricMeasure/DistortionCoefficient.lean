@@ -311,6 +311,11 @@ theorem distortionTau_of_one_lt (hN : 1 < N) (h : K * θ ^ 2 < (N - 1) * π ^ 2)
       ENNReal.ofReal t ^ (1 / N) * distortionSigma K (N - 1) t θ ^ (1 - 1 / N) := by
   rw [distortionTau, ite_eq_left hN, ite_eq_right h.not_ge]
 
+/-- For `N ≤ 1` the coefficient `τ_{K,N}^{(t)}(θ)` is `∞` if `K θ² > 0` and `t` otherwise. -/
+private theorem distortionTau_of_le_one (hN : N ≤ 1) :
+    distortionTau K N t θ = if 0 < K * θ ^ 2 then ⊤ else ENNReal.ofReal t := by
+  rw [distortionTau, ite_eq_right hN.not_gt]
+
 /-- For `N = 1` and `K θ² > 0`, the coefficient `τ_{K,1}^{(t)}(θ)` is infinite. -/
 @[simp]
 theorem distortionTau_one_eq_top_of_pos (h : 0 < K * θ ^ 2) : distortionTau K 1 t θ = ⊤ := by
@@ -324,28 +329,28 @@ theorem distortionTau_one_of_nonpos (h : K * θ ^ 2 ≤ 0) :
 
 /-- The flat coefficient `τ_{0,N}^{(t)}(θ)` is `t`. -/
 @[simp]
-theorem distortionTau_zero_left (hN : 1 ≤ N) : distortionTau 0 N t θ = ENNReal.ofReal t := by
-  rcases hN.lt_or_eq with hN | rfl
+theorem distortionTau_zero_left : distortionTau 0 N t θ = ENNReal.ofReal t := by
+  rcases lt_or_ge 1 N with hN | hN
   · rw [distortionTau_of_one_lt hN (by rw [zero_mul]; have := sub_pos.2 hN; positivity),
       distortionSigma_zero_left, ENNReal.rpow_mul_rpow_one_sub _
       (one_div_nonneg.2 (zero_le_one.trans hN.le)) ((div_le_one (zero_lt_one.trans hN)).2 hN.le)]
-  · exact distortionTau_one_of_nonpos (by rw [zero_mul])
+  · rw [distortionTau_of_le_one hN, zero_mul, ite_eq_right (lt_irrefl 0)]
 
 /-- At distance `0` the coefficient `τ_{K,N}^{(t)}(0)` is `t`. -/
 @[simp]
-theorem distortionTau_zero_right (hN : 1 ≤ N) : distortionTau K N t 0 = ENNReal.ofReal t := by
-  rcases hN.lt_or_eq with hN | rfl
+theorem distortionTau_zero_right : distortionTau K N t 0 = ENNReal.ofReal t := by
+  rcases lt_or_ge 1 N with hN | hN
   · rw [distortionTau_of_one_lt hN
       (by rw [zero_pow two_ne_zero, mul_zero]; have := sub_pos.2 hN; positivity),
       distortionSigma_zero_right, ENNReal.rpow_mul_rpow_one_sub _
       (one_div_nonneg.2 (zero_le_one.trans hN.le)) ((div_le_one (zero_lt_one.trans hN)).2 hN.le)]
-  · exact distortionTau_one_of_nonpos (by rw [zero_pow two_ne_zero, mul_zero])
+  · rw [distortionTau_of_le_one hN, zero_pow two_ne_zero, mul_zero, ite_eq_right (lt_irrefl 0)]
 
-/-- For `t ∈ [0, 1]` and `N ≥ 1`, `τ_{K,N}^{(t)}(θ)` is monotone in the curvature bound `K`. -/
-theorem distortionTau_left_monotone (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ N) :
+/-- For `t ∈ [0, 1]`, `τ_{K,N}^{(t)}(θ)` is monotone in the curvature bound `K`. -/
+theorem distortionTau_left_monotone (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
     Monotone fun K ↦ distortionTau K N t θ := by
   intro K K' hK
-  rcases hN.lt_or_eq with hN | rfl
+  rcases lt_or_ge 1 N with hN | hN
   · dsimp only
     rcases le_or_gt ((N - 1) * π ^ 2) (K' * θ ^ 2) with hK' | hK'
     · rw [distortionTau_eq_top_of_le hN hK']
@@ -356,20 +361,22 @@ theorem distortionTau_left_monotone (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 
     · exact sub_nonneg.2 ((div_le_one (zero_lt_one.trans hN)).2 hN.le)
     · exact distortionSigma_left_monotone ht₀ ht₁ (sub_nonneg.2 hN.le) hK
   · dsimp only
+    rw [distortionTau_of_le_one hN, distortionTau_of_le_one hN]
     rcases lt_or_ge 0 (K' * θ ^ 2) with hK' | hK'
-    · simp [distortionTau_one_eq_top_of_pos hK']
-    · rw [distortionTau_one_of_nonpos ((mul_le_mul_of_nonneg_right hK (sq_nonneg θ)).trans hK'),
-        distortionTau_one_of_nonpos hK']
+    · rw [ite_eq_left hK']
+      exact le_top
+    · rw [ite_eq_right ((mul_le_mul_of_nonneg_right hK (sq_nonneg θ)).trans hK').not_gt,
+        ite_eq_right hK'.not_gt]
 
 /-- For `K ≥ 0` the coefficient `τ_{K,N}^{(t)}(θ)` is at least the flat value `t`. -/
-theorem ofReal_le_distortionTau (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ N) (hK : 0 ≤ K) :
+theorem ofReal_le_distortionTau (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hK : 0 ≤ K) :
     ENNReal.ofReal t ≤ distortionTau K N t θ := by
-  simpa [hN] using distortionTau_left_monotone (θ := θ) ht₀ ht₁ hN hK
+  simpa using distortionTau_left_monotone (N := N) (θ := θ) ht₀ ht₁ hK
 
 /-- For `K ≤ 0` the coefficient `τ_{K,N}^{(t)}(θ)` is at most the flat value `t`. -/
-theorem distortionTau_le_ofReal (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ N) (hK : K ≤ 0) :
+theorem distortionTau_le_ofReal (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hK : K ≤ 0) :
     distortionTau K N t θ ≤ ENNReal.ofReal t := by
-  simpa [hN] using distortionTau_left_monotone (θ := θ) ht₀ ht₁ hN hK
+  simpa using distortionTau_left_monotone (N := N) (θ := θ) ht₀ ht₁ hK
 
 /-- For `N > 1`, the coefficient `τ_{K,N}^{(t)}(θ)` is infinite exactly when
 `(N - 1) π² ≤ K θ²`. -/
@@ -387,12 +394,13 @@ theorem distortionTau_eq_top_iff (hN : 1 < N) :
 
 /-- Below the critical distance, `τ_{K,N}^{(1)}(θ) = 1`. -/
 @[simp]
-theorem distortionTau_time_one (hN : 1 ≤ N) (h : K * θ ^ 2 < (N - 1) * π ^ 2) :
+theorem distortionTau_time_one (h : K * θ ^ 2 < (N - 1) * π ^ 2) :
     distortionTau K N 1 θ = 1 := by
-  rcases hN.lt_or_eq with hN | rfl
+  rcases lt_or_ge 1 N with hN | hN
   · rw [distortionTau_of_one_lt hN h, distortionSigma_time_one (sub_pos.2 hN) h]
     simp
-  · rw [distortionTau_one_of_nonpos (by linarith), ENNReal.ofReal_one]
+  · rw [distortionTau_of_le_one hN, ite_eq_right (h.trans_le (mul_nonpos_of_nonpos_of_nonneg
+      (sub_nonpos.2 hN) (sq_nonneg π))).not_gt, ENNReal.ofReal_one]
 
 /-- For `N > 1`, below the critical distance, `τ_{K,N}^{(0)}(θ) = 0`. -/
 theorem distortionTau_time_zero (hN : 1 < N) (h : K * θ ^ 2 < (N - 1) * π ^ 2) :
