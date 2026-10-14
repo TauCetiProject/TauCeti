@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MappingSpace.Based
+public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.Sphere.Suspension
 
 /-!
@@ -54,62 +55,7 @@ open scoped unitInterval
 
 namespace TauCeti
 
-variable (Q : Type*) [TopologicalSpace Q]
-
-/-- The paths `I → C(S¹, Q)` in the free loop space from a constant loop to a constant loop,
-with the compact-open topology. -/
-abbrev ConstLoopPath : Type _ :=
-  {p : C(I, C(Circle, Q)) // (∃ q, p 0 = ContinuousMap.const Circle q) ∧
-    ∃ q, p 1 = ContinuousMap.const Circle q}
-
-variable {Q}
-
-variable (Q) in
-/-- The **contractible free loops** `𝓛₀Q ⊆ C(S¹, Q)`: the loops joined by a path in the free loop
-space to a constant loop. -/
-def contractibleLoops : Set C(Circle, Q) :=
-  {γ | ∃ q, Joined γ (ContinuousMap.const Circle q)}
-
-/-- A free loop is contractible exactly when it is joined, by a path in the free loop space, to a
-constant loop. -/
-@[simp]
-theorem mem_contractibleLoops_iff {γ : C(Circle, Q)} :
-    γ ∈ contractibleLoops Q ↔ ∃ q, Joined γ (ContinuousMap.const Circle q) :=
-  Iff.rfl
-
-/-- A constant loop is contractible. -/
-theorem const_mem_contractibleLoops (q : Q) : ContinuousMap.const Circle q ∈ contractibleLoops Q :=
-  ⟨q, Joined.refl _⟩
-
-/-- The constant loops, as a continuous map `Q → 𝓛₀Q`. -/
-def constContractibleLoop : C(Q, contractibleLoops Q) :=
-  ⟨fun q => ⟨ContinuousMap.const Circle q, const_mem_contractibleLoops q⟩,
-    ContinuousMap.continuous_const'.subtype_mk _⟩
-
-/-- The underlying free loop of `constContractibleLoop q` is the constant loop at `q`. -/
-@[simp]
-theorem coe_constContractibleLoop (q : Q) :
-    (constContractibleLoop q : C(Circle, Q)) = ContinuousMap.const Circle q := by
-  rw [constContractibleLoop]
-  rfl
-
-/-- The constant loops form a topological embedding `Q → 𝓛₀Q`: evaluation at the point
-`1` of the circle is a continuous left inverse. -/
-theorem isEmbedding_constContractibleLoop :
-    Topology.IsEmbedding (constContractibleLoop (Q := Q)) :=
-  Function.LeftInverse.isEmbedding (f := fun γ : contractibleLoops Q => (γ : C(Circle, Q)) 1)
-    (fun _ => rfl) ((continuous_eval_const (1 : Circle)).comp continuous_subtype_val)
-    constContractibleLoop.continuous
-
-/-- Every loop along a path of free loops that starts at a constant loop is contractible: a path
-in `ConstLoopPath Q` is a path in `𝓛₀Q`. -/
-theorem constLoopPath_mem_contractibleLoops (p : ConstLoopPath Q) (t : I) :
-    p.1 t ∈ contractibleLoops Q := by
-  obtain ⟨⟨q, hq⟩, -⟩ := p.2
-  have h : Joined (0 : I) t := ⟨⟨⟨fun s => s * t, by fun_prop⟩, by simp, by simp⟩⟩
-  have h' := h.map p.1.continuous
-  rw [hq] at h'
-  exact ⟨q, h'.symm⟩
+variable {Q : Type*} [TopologicalSpace Q]
 
 private theorem factorsThrough_suspensionToSphere_iff (g : C(I × Circle, Q)) :
     Function.FactorsThrough g suspensionToSphere ↔
@@ -162,11 +108,6 @@ theorem sphere2HomeomorphConstLoopPath_symm_apply (p : ConstLoopPath Q) (t : I) 
   rw [Homeomorph.apply_symm_apply] at h
   exact h.symm
 
-variable (Q) in
-/-- The paths in the free loop space from the constant loop at `x` to a constant loop. -/
-abbrev BasedConstLoopPath (x : Q) : Type _ :=
-  {p : ConstLoopPath Q // p.1 0 = ContinuousMap.const Circle x}
-
 /-- **`Map_*(S², Q)` is the space of paths of free loops from the constant loop at `x` to a
 constant loop.** The north pole of `S²` goes to `x`; the south pole is free. -/
 def basedMapSphere2HomeomorphBasedConstLoopPath (x : Q) :
@@ -201,45 +142,6 @@ theorem basedMapSphere2HomeomorphBasedConstLoopPath_symm_apply (x : Q)
   rw [Homeomorph.apply_symm_apply] at h
   exact h.symm
 
-section Contractible
-
-variable (Q) in
-/-- The paths in the contractible free loops `𝓛₀Q` from a constant loop to a constant loop. -/
-abbrev ContractibleConstLoopPath : Type _ :=
-  {p : C(I, contractibleLoops Q) //
-    (∃ q, p 0 = constContractibleLoop q) ∧ ∃ q, p 1 = constContractibleLoop q}
-
-/-- A path of free loops from a constant loop to a constant loop is a path in the contractible free
-loops `𝓛₀Q`. -/
-def constLoopPathHomeomorph : ConstLoopPath Q ≃ₜ ContractibleConstLoopPath Q where
-  toFun p := ⟨⟨fun t => ⟨p.1 t, constLoopPath_mem_contractibleLoops p t⟩,
-      p.1.continuous.subtype_mk _⟩,
-    ⟨p.2.1.choose, Subtype.ext p.2.1.choose_spec⟩, ⟨p.2.2.choose, Subtype.ext p.2.2.choose_spec⟩⟩
-  invFun r := ⟨(ContinuousMap.mk Subtype.val continuous_subtype_val).comp r.1,
-    ⟨r.2.1.choose, congrArg Subtype.val r.2.1.choose_spec⟩,
-    ⟨r.2.2.choose, congrArg Subtype.val r.2.2.choose_spec⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := by
-    refine continuous_induced_rng.2 ?_
-    refine ((ContinuousMap.isInducing_postcomp (ContinuousMap.mk Subtype.val
-      continuous_subtype_val) Topology.IsInducing.subtypeVal).continuous_iff).2 ?_
-    exact continuous_subtype_val
-  continuous_invFun :=
-    continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp _).comp continuous_subtype_val)
-
-/-- The path of contractible loops, read in the free loop space, is the original path. -/
-@[simp]
-theorem coe_constLoopPathHomeomorph (p : ConstLoopPath Q) (t : I) :
-    ((constLoopPathHomeomorph p).1 t : C(Circle, Q)) = p.1 t := by
-  rw [constLoopPathHomeomorph]
-  rfl
-
-variable (Q) in
-/-- The paths in the contractible free loops from the constant loop at `x` to a constant loop. -/
-abbrev BasedContractibleConstLoopPath (x : Q) : Type _ :=
-  {p : ContractibleConstLoopPath Q // p.1 0 = constContractibleLoop x}
-
 /-- **`Map(S², Q)` is the space of paths in the contractible free loops `𝓛₀Q` from a constant loop
 to a constant loop.** -/
 def sphere2HomeomorphContractibleConstLoopPath : C(Sphere2, Q) ≃ₜ ContractibleConstLoopPath Q :=
@@ -264,10 +166,46 @@ def basedMapSphere2HomeomorphBasedContractibleConstLoopPath (x : Q) :
     (Homeomorph.subtype constLoopPathHomeomorph fun p => by
       constructor
       · intro h
-        exact Subtype.ext ((coe_constLoopPathHomeomorph p 0).trans h)
+        exact Subtype.ext (((coe_constLoopPathHomeomorph p 0).trans h).trans
+          (coe_constContractibleLoop x).symm)
       · intro h
-        exact (coe_constLoopPathHomeomorph p 0).symm.trans (congrArg Subtype.val h))
+        exact (coe_constLoopPathHomeomorph p 0).symm.trans
+          ((congrArg Subtype.val h).trans (coe_constContractibleLoop x)))
 
-end Contractible
+/-- The inverse of `sphere2HomeomorphContractibleConstLoopPath` evaluates, at the image of `(t, z)`
+under the suspension map, to the value of the path of contractible loops at `t` and `z`. -/
+@[simp]
+theorem sphere2HomeomorphContractibleConstLoopPath_symm_apply
+    (r : ContractibleConstLoopPath Q) (t : I) (z : Circle) :
+    sphere2HomeomorphContractibleConstLoopPath.symm r (suspensionToSphere (t, z)) =
+      (r.1 t : C(Circle, Q)) z := by
+  have h := sphere2HomeomorphContractibleConstLoopPath_apply
+    (sphere2HomeomorphContractibleConstLoopPath.symm r) t z
+  rw [Homeomorph.apply_symm_apply] at h
+  exact h.symm
+
+/-- The loop of the path of contractible loops at `(t, z)` is the value of the based sphere map at
+the image of `(t, z)` under the suspension map. -/
+@[simp]
+theorem basedMapSphere2HomeomorphBasedContractibleConstLoopPath_apply (x : Q)
+    (f : BasedMap Sphere2 Q Sphere2.north x) (t : I) (z : Circle) :
+    ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x f).1.1 t : C(Circle, Q)) z =
+      f.1 (suspensionToSphere (t, z)) := by
+  rw [basedMapSphere2HomeomorphBasedContractibleConstLoopPath, Homeomorph.trans_apply,
+    Homeomorph.subtype_apply_coe, coe_constLoopPathHomeomorph]
+  exact basedMapSphere2HomeomorphBasedConstLoopPath_apply x f t z
+
+/-- The inverse of `basedMapSphere2HomeomorphBasedContractibleConstLoopPath` evaluates, at the
+image of `(t, z)` under the suspension map, to the value of the path of contractible loops at `t`
+and `z`. -/
+@[simp]
+theorem basedMapSphere2HomeomorphBasedContractibleConstLoopPath_symm_apply (x : Q)
+    (p : BasedContractibleConstLoopPath Q x) (t : I) (z : Circle) :
+    ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x).symm p).1
+        (suspensionToSphere (t, z)) = (p.1.1 t : C(Circle, Q)) z := by
+  have h := basedMapSphere2HomeomorphBasedContractibleConstLoopPath_apply x
+    ((basedMapSphere2HomeomorphBasedContractibleConstLoopPath x).symm p) t z
+  rw [Homeomorph.apply_symm_apply] at h
+  exact h.symm
 
 end TauCeti
