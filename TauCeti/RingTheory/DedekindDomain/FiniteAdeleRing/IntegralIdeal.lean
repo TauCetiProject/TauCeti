@@ -141,8 +141,16 @@ theorem toIntegralIdeal_eq_one_iff (x : integralFiniteIdeles R K) :
     rw [coe_toIntegralIdeal, h]
     simp
 
+/-- The kernel of the integral-ideal map is the preimage of the everywhere-integral units. -/
+theorem mker_toIntegralIdeal :
+    MonoidHom.mker (toIntegralIdeal (R := R) (K := K)) =
+      (integralUnits R K).toSubmonoid.comap (integralFiniteIdeles R K).subtype := by
+  ext x
+  exact toIntegralIdeal_eq_one_iff x
+
 /-- Two integral finite ideles define the same ideal exactly when their ratio is an
 everywhere-integral unit. -/
+@[simp]
 theorem toIntegralIdeal_eq_iff (x y : integralFiniteIdeles R K) :
     toIntegralIdeal x = toIntegralIdeal y ↔
       (x : 𝔸ᶠ[R, K]ˣ) / (y : 𝔸ᶠ[R, K]ˣ) ∈ integralUnits R K := by
@@ -229,8 +237,19 @@ theorem toIntegralIdealsAway_eq_one_iff (S : Finset (HeightOneSpectrum R))
     apply Subtype.ext
     simp only [coe_toIntegralIdealsAway, h, Submonoid.coe_one]
 
+/-- The kernel of the integral prime-to map is the preimage of the everywhere-integral units.
+-/
+theorem mker_toIntegralIdealsAway (S : Finset (HeightOneSpectrum R)) :
+    MonoidHom.mker (toIntegralIdealsAway (K := K) S) =
+      (integralUnits R K).toSubmonoid.comap
+        ((integralFiniteIdeles R K).subtype.comp
+          (integralFiniteIdelesAway (K := K) S).subtype) := by
+  ext x
+  exact toIntegralIdealsAway_eq_one_iff S x
+
 /-- Two integral finite ideles locally units on `S` define the same prime-to ideal exactly
 when their ratio is an everywhere-integral unit. -/
+@[simp]
 theorem toIntegralIdealsAway_eq_iff (S : Finset (HeightOneSpectrum R))
     (x y : integralFiniteIdelesAway (K := K) S) :
     toIntegralIdealsAway S x = toIntegralIdealsAway S y ↔
