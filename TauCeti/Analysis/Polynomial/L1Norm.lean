@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Polynomial.MahlerMeasure
+public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 
 /-!
@@ -25,7 +25,8 @@ coefficients.
 
 * `Polynomial.l1Norm_add_le` and `Polynomial.l1Norm_mul_le`: the triangle and product bounds.
 * `Polynomial.norm_eval_le_l1Norm_mul`: the evaluation bound.
-* `Polynomial.l1Norm_comp_X_add_C_le`: the translation bound.
+* `Polynomial.l1Norm_comp_le` and `Polynomial.l1Norm_comp_X_add_C_le`: the composition and
+  translation bounds.
 * `Polynomial.l1Norm_hasseDeriv_le`: the Hasse derivative bound.
 
 ## References
@@ -48,13 +49,25 @@ theorem l1Norm_eq_sum_support (P : R[X]) :
     P.l1Norm = ∑ i ∈ P.support, ‖P.coeff i‖ := by
   rw [l1Norm, sum_def]
 
+/-- The coefficient l¹-norm is the sum over any finite set containing the support. -/
+theorem l1Norm_eq_sum_of_support_subset (P : R[X]) {s : Finset ℕ} (h : P.support ⊆ s) :
+    P.l1Norm = ∑ i ∈ s, ‖P.coeff i‖ :=
+  sum_eq_of_subset _ (fun _ ↦ norm_zero) h
+
 /-- The coefficient l¹-norm is the sum through the natural degree. -/
 theorem l1Norm_eq_sum_range (P : R[X]) :
-    P.l1Norm = ∑ i ∈ Finset.range (P.natDegree + 1), ‖P.coeff i‖ := by
-  rw [l1Norm, sum_eq_of_subset]
-  · exact fun _ ↦ norm_zero
-  · intro i hi
-    exact Finset.mem_range.2 (Nat.lt_succ_iff.2 (le_natDegree_of_mem_supp i hi))
+    P.l1Norm = ∑ i ∈ Finset.range (P.natDegree + 1), ‖P.coeff i‖ :=
+  P.l1Norm_eq_sum_of_support_subset fun i hi ↦
+    Finset.mem_range.2 (Nat.lt_succ_iff.2 (le_natDegree_of_mem_supp i hi))
+
+/-- A sum over the support of coefficient norms weighted by factors bounded by `c` is at most
+`c` times the coefficient l¹-norm. -/
+theorem sum_support_norm_coeff_mul_le (P : R[X]) (f : ℕ → ℝ) {c : ℝ}
+    (hf : ∀ i ∈ P.support, f i ≤ c) :
+    ∑ i ∈ P.support, ‖P.coeff i‖ * f i ≤ P.l1Norm * c := by
+  rw [l1Norm_eq_sum_support, Finset.sum_mul]
+  gcongr with i hi
+  exact hf i hi
 
 /-- The zero polynomial has coefficient l¹-norm zero. -/
 @[simp]
@@ -79,12 +92,17 @@ theorem l1Norm_monomial (n : ℕ) (a : R) : (monomial n a).l1Norm = ‖a‖ := b
 /-- The unit polynomial has coefficient l¹-norm one when the coefficient norm preserves one. -/
 @[simp]
 theorem l1Norm_one [NormOneClass R] : (1 : R[X]).l1Norm = 1 := by
-  rw [show (1 : R[X]) = C 1 by simp, l1Norm_C, norm_one]
+  rw [← C_1, l1Norm_C, norm_one]
 
 /-- The polynomial `X` has coefficient l¹-norm one when the coefficient norm preserves one. -/
 @[simp]
 theorem l1Norm_X [NormOneClass R] : (X : R[X]).l1Norm = 1 := by
   rw [← monomial_one_one_eq_X, l1Norm_monomial, norm_one]
+
+/-- The powers of `X` have coefficient l¹-norm one when the coefficient norm preserves one. -/
+@[simp]
+theorem l1Norm_X_pow [NormOneClass R] (n : ℕ) : (X ^ n : R[X]).l1Norm = 1 := by
+  rw [← monomial_one_right_eq_X_pow, l1Norm_monomial, norm_one]
 
 /-- Negating a polynomial does not change its coefficient l¹-norm. -/
 @[simp]
@@ -116,6 +134,7 @@ theorem l1Norm_le_natDegree_add_one_mul_supNorm (P : R[X]) :
     _ = (P.natDegree + 1) * P.supNorm := by simp
 
 /-- Over a normed ring, the coefficient l¹-norm vanishes exactly for the zero polynomial. -/
+@[simp]
 theorem l1Norm_eq_zero_iff {A : Type*} [NormedRing A] (P : A[X]) : P.l1Norm = 0 ↔ P = 0 := by
   constructor
   · intro hP
@@ -127,33 +146,20 @@ theorem l1Norm_eq_zero_iff {A : Type*} [NormedRing A] (P : A[X]) : P.l1Norm = 0 
 /-- The coefficient l¹-norm satisfies the triangle inequality. -/
 theorem l1Norm_add_le (P Q : R[X]) : (P + Q).l1Norm ≤ P.l1Norm + Q.l1Norm := by
   classical
-  let s := P.support ∪ Q.support
-  have hadd : (P + Q).l1Norm = ∑ i ∈ s, ‖(P + Q).coeff i‖ := by
-    rw [l1Norm, sum_eq_of_subset]
-    · exact fun _ ↦ norm_zero
-    · exact support_add
-  have hP : P.l1Norm = ∑ i ∈ s, ‖P.coeff i‖ := by
-    rw [l1Norm, sum_eq_of_subset]
-    · exact fun _ ↦ norm_zero
-    · exact Finset.subset_union_left
-  have hQ : Q.l1Norm = ∑ i ∈ s, ‖Q.coeff i‖ := by
-    rw [l1Norm, sum_eq_of_subset]
-    · exact fun _ ↦ norm_zero
-    · exact Finset.subset_union_right
-  rw [hadd, hP, hQ, ← Finset.sum_add_distrib]
+  rw [(P + Q).l1Norm_eq_sum_of_support_subset support_add,
+    P.l1Norm_eq_sum_of_support_subset Finset.subset_union_left,
+    Q.l1Norm_eq_sum_of_support_subset Finset.subset_union_right, ← Finset.sum_add_distrib]
   exact Finset.sum_le_sum fun i _ ↦ by
     simpa only [coeff_add] using norm_add_le (P.coeff i) (Q.coeff i)
 
+/-- The coefficient l¹-norm of a difference is at most the sum of the coefficient l¹-norms. -/
+theorem l1Norm_sub_le (P Q : R[X]) : (P - Q).l1Norm ≤ P.l1Norm + Q.l1Norm := by
+  simpa only [sub_eq_add_neg, l1Norm_neg] using l1Norm_add_le P (-Q)
+
 /-- The coefficient l¹-norm of a finite sum is at most the sum of the coefficient l¹-norms. -/
 theorem l1Norm_sum_le {S : Type*} (s : Finset S) (P : S → R[X]) :
-    (∑ i ∈ s, P i).l1Norm ≤ ∑ i ∈ s, (P i).l1Norm := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert a s ha ih =>
-      simp only [Finset.sum_insert ha]
-      exact (l1Norm_add_le _ _).trans <| by
-        simpa only [add_comm] using add_le_add_right ih (P a).l1Norm
+    (∑ i ∈ s, P i).l1Norm ≤ ∑ i ∈ s, (P i).l1Norm :=
+  s.le_sum_of_subadditive l1Norm l1Norm_zero.le l1Norm_add_le P
 
 /-- The coefficient l¹-norm is submultiplicative. -/
 theorem l1Norm_mul_le (P Q : R[X]) : (P * Q).l1Norm ≤ P.l1Norm * Q.l1Norm := by
@@ -183,27 +189,17 @@ theorem l1Norm_mul_le (P Q : R[X]) : (P * Q).l1Norm ≤ P.l1Norm * Q.l1Norm := b
 point permitted by the degree. -/
 theorem norm_eval_le_l1Norm_mul [NormOneClass R] (P : R[X]) (z : R) :
     ‖P.eval z‖ ≤ P.l1Norm * max 1 ‖z‖ ^ P.natDegree := by
-  rw [eval_eq_sum]
+  rw [eval_eq_sum, sum_def]
   calc
-    ‖P.sum fun i a ↦ a * z ^ i‖ ≤ P.sum fun i a ↦ ‖a * z ^ i‖ := by
-      rw [sum_def]
-      exact norm_sum_le _ _
-    _ ≤ P.sum fun _i a ↦ ‖a‖ * max 1 ‖z‖ ^ P.natDegree := by
-      apply Finset.sum_le_sum
-      intro i hi
-      calc
-        ‖P.coeff i * z ^ i‖ ≤ ‖P.coeff i‖ * ‖z ^ i‖ := norm_mul_le _ _
-        _ ≤ ‖P.coeff i‖ * ‖z‖ ^ i :=
-          mul_le_mul_of_nonneg_left (norm_pow_le z i) (norm_nonneg _)
-        _ ≤ ‖P.coeff i‖ * max 1 ‖z‖ ^ P.natDegree := by
-          gcongr
-          calc
-            ‖z‖ ^ i ≤ max 1 ‖z‖ ^ i :=
-              pow_le_pow_left₀ (norm_nonneg z) (le_max_right 1 ‖z‖) i
-            _ ≤ max 1 ‖z‖ ^ P.natDegree :=
-              pow_le_pow_right₀ (le_max_left 1 ‖z‖) (le_natDegree_of_mem_supp i hi)
-    _ = P.l1Norm * max 1 ‖z‖ ^ P.natDegree := by
-      rw [sum_def, l1Norm_eq_sum_support, Finset.sum_mul]
+    ‖∑ i ∈ P.support, P.coeff i * z ^ i‖ ≤ ∑ i ∈ P.support, ‖P.coeff i * z ^ i‖ :=
+      norm_sum_le _ _
+    _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * ‖z‖ ^ i := by
+      gcongr with i
+      exact (norm_mul_le _ _).trans (by gcongr; exact norm_pow_le z i)
+    _ ≤ P.l1Norm * max 1 ‖z‖ ^ P.natDegree :=
+      P.sum_support_norm_coeff_mul_le _ fun i hi ↦
+        (pow_le_pow_left₀ (norm_nonneg z) (le_max_right 1 ‖z‖) i).trans
+          (pow_le_pow_right₀ (le_max_left 1 ‖z‖) (le_natDegree_of_mem_supp i hi))
 
 /-- Taking a power raises the coefficient l¹-norm by at most the same power. -/
 theorem l1Norm_pow_le [NormOneClass R] (P : R[X]) (n : ℕ) :
@@ -215,66 +211,57 @@ theorem l1Norm_pow_le [NormOneClass R] (P : R[X]) (n : ℕ) :
       exact (l1Norm_mul_le _ _).trans
         (mul_le_mul ih le_rfl P.l1Norm_nonneg (pow_nonneg P.l1Norm_nonneg n))
 
-/-- Translating a polynomial multiplies its coefficient l¹-norm by at most the indicated
-degree factor. -/
-theorem l1Norm_comp_X_add_C_le [NormOneClass R] (P : R[X]) (a : R) :
-    (P.comp (X + C a)).l1Norm ≤ P.l1Norm * (1 + ‖a‖) ^ P.natDegree := by
+/-- The coefficient l¹-norm of a composition `P.comp Q` is at most that of `P` times
+`max 1 Q.l1Norm ^ P.natDegree`. -/
+theorem l1Norm_comp_le [NormOneClass R] (P Q : R[X]) :
+    (P.comp Q).l1Norm ≤ P.l1Norm * max 1 Q.l1Norm ^ P.natDegree := by
   rw [comp_eq_sum_left, sum_def]
   calc
-    (∑ i ∈ P.support, C (P.coeff i) * (X + C a) ^ i).l1Norm ≤
-        ∑ i ∈ P.support, (C (P.coeff i) * (X + C a) ^ i).l1Norm :=
+    (∑ i ∈ P.support, C (P.coeff i) * Q ^ i).l1Norm ≤
+        ∑ i ∈ P.support, (C (P.coeff i) * Q ^ i).l1Norm :=
       l1Norm_sum_le P.support _
-    _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * (1 + ‖a‖) ^ i := by
-      gcongr with i hi
-      calc
-        (C (P.coeff i) * (X + C a) ^ i).l1Norm ≤
-            (C (P.coeff i)).l1Norm * ((X + C a) ^ i).l1Norm := l1Norm_mul_le _ _
-        _ ≤ ‖P.coeff i‖ * (1 + ‖a‖) ^ i := by
-          rw [l1Norm_C]
-          apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
-          have hbase : (X + C a : R[X]).l1Norm ≤ 1 + ‖a‖ := by
-            calc
-              (X + C a : R[X]).l1Norm ≤ (X : R[X]).l1Norm + (C a).l1Norm :=
-                l1Norm_add_le _ _
-              _ = 1 + ‖a‖ := by rw [l1Norm_X, l1Norm_C]
-          calc
-            ((X + C a) ^ i : R[X]).l1Norm ≤ (X + C a : R[X]).l1Norm ^ i :=
-              l1Norm_pow_le _ i
-            _ ≤ (1 + ‖a‖) ^ i :=
-              pow_le_pow_left₀ (l1Norm_nonneg (X + C a : R[X])) hbase i
-    _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * (1 + ‖a‖) ^ P.natDegree := by
-      apply Finset.sum_le_sum
-      intro i hi
-      apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
-      exact pow_le_pow_right₀ (a := (1 + ‖a‖ : ℝ)) (by simp)
-        (le_natDegree_of_mem_supp i hi)
-    _ = P.l1Norm * (1 + ‖a‖) ^ P.natDegree := by
-      simp only [l1Norm_eq_sum_support, Finset.sum_mul]
+    _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * Q.l1Norm ^ i := by
+      gcongr with i
+      exact (l1Norm_mul_le _ _).trans <| by
+        rw [l1Norm_C]
+        gcongr
+        exact l1Norm_pow_le Q i
+    _ ≤ P.l1Norm * max 1 Q.l1Norm ^ P.natDegree :=
+      P.sum_support_norm_coeff_mul_le _ fun i hi ↦
+        (pow_le_pow_left₀ Q.l1Norm_nonneg (le_max_right 1 Q.l1Norm) i).trans
+          (pow_le_pow_right₀ (le_max_left 1 Q.l1Norm) (le_natDegree_of_mem_supp i hi))
 
-/-- A Hasse derivative increases coefficient length by at most `2 ^ natDegree`. -/
+/-- The coefficient l¹-norm of `X + C a` is at most `1 + ‖a‖`. -/
+theorem l1Norm_X_add_C_le [NormOneClass R] (a : R) : (X + C a : R[X]).l1Norm ≤ 1 + ‖a‖ := by
+  simpa only [l1Norm_X, l1Norm_C] using l1Norm_add_le (X : R[X]) (C a)
+
+/-- The coefficient l¹-norm of the translate `P.comp (X + C a)` is at most
+`(1 + ‖a‖) ^ natDegree` times that of `P`. -/
+theorem l1Norm_comp_X_add_C_le [NormOneClass R] (P : R[X]) (a : R) :
+    (P.comp (X + C a)).l1Norm ≤ P.l1Norm * (1 + ‖a‖) ^ P.natDegree :=
+  (P.l1Norm_comp_le _).trans <| by
+    gcongr
+    · exact P.l1Norm_nonneg
+    · exact max_le (le_add_of_nonneg_right (norm_nonneg a)) (l1Norm_X_add_C_le a)
+
+/-- The coefficient l¹-norm of the `k`-th Hasse derivative is at most `2 ^ natDegree` times
+that of `P`. -/
 theorem l1Norm_hasseDeriv_le [NormOneClass R] (P : R[X]) (k : ℕ) :
     (hasseDeriv k P).l1Norm ≤ 2 ^ P.natDegree * P.l1Norm := by
-  rw [hasseDeriv_apply]
+  rw [hasseDeriv_apply, sum_def, mul_comm]
   calc
-    (P.sum fun i r ↦ monomial (i - k) ((i.choose k : R) * r)).l1Norm ≤
-        P.sum fun i r ↦ (monomial (i - k) ((i.choose k : R) * r)).l1Norm := by
-      rw [sum_def]
-      exact l1Norm_sum_le P.support _
-    _ ≤ P.sum fun _i r ↦ 2 ^ P.natDegree * ‖r‖ := by
-      apply Finset.sum_le_sum
-      intro i hi
-      simp only [l1Norm_monomial]
-      calc
-        ‖(i.choose k : R) * P.coeff i‖ ≤ ‖(i.choose k : R)‖ * ‖P.coeff i‖ :=
-          norm_mul_le _ _
-        _ ≤ (i.choose k : ℝ) * ‖P.coeff i‖ := by
-          gcongr
-          simpa only [norm_one, mul_one] using (Nat.norm_cast_le (α := R) (i.choose k))
-        _ ≤ (2 : ℝ) ^ P.natDegree * ‖P.coeff i‖ := by
-          gcongr
-          exact_mod_cast (Nat.choose_le_two_pow i k).trans
-            (Nat.pow_le_pow_right (by omega) (le_natDegree_of_mem_supp i hi))
-    _ = 2 ^ P.natDegree * P.l1Norm := by
-      rw [sum_def, l1Norm_eq_sum_support, Finset.mul_sum]
+    (∑ i ∈ P.support, monomial (i - k) ((i.choose k : R) * P.coeff i)).l1Norm ≤
+        ∑ i ∈ P.support, (monomial (i - k) ((i.choose k : R) * P.coeff i)).l1Norm :=
+      l1Norm_sum_le P.support _
+    _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * (i.choose k : ℝ) := by
+      gcongr with i
+      rw [l1Norm_monomial, mul_comm]
+      refine (norm_mul_le _ _).trans ?_
+      gcongr
+      simpa only [norm_one, mul_one] using (Nat.norm_cast_le (α := R) (i.choose k))
+    _ ≤ P.l1Norm * 2 ^ P.natDegree :=
+      P.sum_support_norm_coeff_mul_le _ fun i hi ↦ by
+        exact_mod_cast (Nat.choose_le_two_pow i k).trans
+          (Nat.pow_le_pow_right (by omega) (le_natDegree_of_mem_supp i hi))
 
 end Polynomial
