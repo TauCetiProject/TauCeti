@@ -126,7 +126,7 @@ theorem IsCyclicSubgroup.comap {I : E.carrier.IdealSheafData} {N : ℕ}
   have := h.flat
   have := h.locallyOfFinitePresentation
   -- The closed subscheme of `I.comap g` is the base change of that of `I` along `f`.
-  have hsub := I.isPullback_subschemeMap_comap _ g _ f hg
+  have hsub := I.isPullback_subschemeMap_comap _ hg
   refine
     { exists_grpObj_isMonHom := exists_grpObj_isMonHom_comap hg h0 I h.exists_grpObj_isMonHom
       isFinite := MorphismProperty.of_isPullback hsub ‹_›

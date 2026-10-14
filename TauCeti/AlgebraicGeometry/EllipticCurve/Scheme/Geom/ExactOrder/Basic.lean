@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.CategoryTheory.Monoidal.Grp.Translation
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
@@ -29,11 +29,12 @@ kernel of the relative Frobenius of `E`, so the zero section has exact order `p`
 
 Each `[aP]` is the divisor of the section `aP` of the smooth separated curve `E ⟶ S`, cut out by
 its ideal sheaf, and the sum of divisors is the product of ideal sheaves
-(`EllipticCurveGeom.multiplesDivisor`). The subgroup condition asks that the closed subscheme `D`
-carry a group-scheme structure for which its inclusion into `E` is a homomorphism
-(`EllipticCurveGeom.IsOfExactOrder`); by the closed-subgroup criterion this says that the ideal
-sheaf of `D` vanishes on the identity, on the sum of two points of `D` and on the negative of a
-point of `D`, scheme-theoretically.
+(`EllipticCurveGeom.multiplesDivisor`), the divisor of the family of points `P, 2P, …, NP`
+(`EllipticCurveGeom.multiplesDivisor_eq_pointsDivisor`). The subgroup condition asks that the
+closed subscheme `D` carry a group-scheme structure for which its inclusion into `E` is a
+homomorphism (`EllipticCurveGeom.IsOfExactOrder`); by the closed-subgroup criterion this says that
+the ideal sheaf of `D` vanishes on the identity, on the sum of two points of `D` and on the
+negative of a point of `D`, scheme-theoretically.
 
 The main theorem is that a point of exact order `N` is killed by `N`
 (`EllipticCurveGeom.IsOfExactOrder.pow_eq_one`), so it is an `S`-point of the `N`-torsion `E[N]`
@@ -61,6 +62,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfExactOrder_iff`: the closed-subgroup criterion
   for `IsOfExactOrder`, in terms of the ideal sheaf of `[P] + ⋯ + [NP]`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.multiplesDivisor_eq_pointsDivisor`:
+  `[P] + ⋯ + [NP]` is the divisor of the family of points `P, 2P, …, NP`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isRelativeEffectiveCartier_multiplesDivisor`:
   `[P] + ⋯ + [NP]` is a relative effective Cartier divisor on `E` over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_comap_leftTranslation_hom`: translation by
@@ -158,18 +161,24 @@ theorem multiplesDivisor_succ (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N
       E.multiplesDivisor P N * Scheme.Hom.ker (Y := E.carrier) (P ^ (N + 1)).left :=
   Finset.prod_range_succ _ _
 
+/-- `[P] + [2P] + ⋯ + [NP]` is the divisor of the family of points `P, 2P, …, NP`, indexed by
+`Fin N`. -/
+theorem multiplesDivisor_eq_pointsDivisor (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
+    E.multiplesDivisor P N = E.pointsDivisor fun a : Fin N ↦ P ^ (a.val + 1) := by
+  rw [multiplesDivisor, pointsDivisor_def,
+    Fin.prod_univ_eq_prod_range (fun a ↦ (P ^ (a + 1)).left.ker)]
+
 /-- The divisor `[P] + [2P] + ⋯ + [NP]` is a relative effective Cartier divisor on `E` over `S`. -/
 theorem isRelativeEffectiveCartier_multiplesDivisor (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
-    (N : ℕ) : (E.multiplesDivisor P N).IsRelativeEffectiveCartier E.structureMap :=
-  isRelativeEffectiveCartier_prod fun a _ ↦
-    Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (f := E.structureMap)
-      _ (Over.w (P ^ (a + 1)))
+    (N : ℕ) : (E.multiplesDivisor P N).IsRelativeEffectiveCartier E.structureMap := by
+  rw [multiplesDivisor_eq_pointsDivisor]
+  exact isRelativeEffectiveCartier_pointsDivisor _
 
 /-- Each of the points `P, 2P, …, NP` lies on the divisor `[P] + [2P] + ⋯ + [NP]`. -/
 theorem multiplesDivisor_le_ker {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N a : ℕ}
     (ha : a < N) : E.multiplesDivisor P N ≤ (P ^ (a + 1)).left.ker := by
-  rw [multiplesDivisor, ← Finset.mul_prod_erase _ _ (Finset.mem_range.mpr ha)]
-  exact mul_le_of_le_one_right bot_le le_top
+  rw [multiplesDivisor_eq_pointsDivisor]
+  exact pointsDivisor_le_ker (fun i : Fin N ↦ P ^ (i.val + 1)) ⟨a, ha⟩
 
 /-! ### Translating divisors of points -/
 
@@ -296,8 +305,8 @@ variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.car
 divisor `[P] + ⋯ + [NP]` on `E`. -/
 theorem multiplesDivisor_pointsPullback (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
     E'.multiplesDivisor (pointsPullback hg h0 P) N = (E.multiplesDivisor P N).comap g := by
-  simp only [multiplesDivisor, Scheme.IdealSheafData.comap_prod, ← map_pow,
-    ker_pointsPullback_left]
+  simp only [multiplesDivisor_eq_pointsDivisor, ← pointsDivisor_pointsPullback hg h0,
+    Function.comp_def, map_pow]
 
 /-- **Points of exact order `N` are stable under base change** (Katz–Mazur, §1.4): if an `S`-point
 `P` of `E` has exact order `N`, then so does its base change, the `S'`-point `P'` of `E'`. -/

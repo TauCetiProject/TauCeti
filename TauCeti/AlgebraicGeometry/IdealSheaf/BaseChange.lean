@@ -33,9 +33,11 @@ ideal sheaves of finitely many sections
 a section, or of a finite family of sections, therefore commutes with arbitrary base change.
 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
-closed subscheme of `I` along `g`. Hence, if the closed subscheme of `I` is finite and flat over a
-base `S` and `g` is finite and flat of constant rank `n`, the rank over `S` of the closed subscheme
-of `I.comap g` is `n` times that of `I`
+closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
+change over `S` of the closed subscheme of `I`
+(`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`). Hence, if the closed
+subscheme of `I` is finite and flat over a base `S` and `g` is finite and flat of constant rank
+`n`, the rank over `S` of the closed subscheme of `I.comap g` is `n` times that of `I`
 (`AlgebraicGeometry.Scheme.IdealSheafData.finrank_comap_subschemeι_comp`). For relative effective
 Cartier divisors on relative curves, whose degree is this rank, this is the statement that inverse
 images under finite flat morphisms of constant degree multiply degrees.
@@ -102,11 +104,11 @@ theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P �
   rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
 
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
-`X ⟶ S` along `S' ⟶ S`, then the closed subscheme of `X'` cut out by the inverse image of an
-ideal sheaf `I` is the base change of the closed subscheme of `X` cut out by `I`, over the same
-square. -/
+`X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme
+over `S'`, is the base change along `S' ⟶ S` of the closed subscheme of `I`, as a scheme over
+`S`. -/
 theorem isPullback_subschemeMap_comap {X' S' : Scheme.{u}} (I : X.IdealSheafData) (f : X ⟶ S)
-    (g : X' ⟶ X) (f' : X' ⟶ S') (h : S' ⟶ S) (H : IsPullback g f' f h) :
+    {g : X' ⟶ X} {f' : X' ⟶ S'} {h : S' ⟶ S} (H : IsPullback g f' f h) :
     IsPullback (subschemeMap (I.comap g) I g (I.le_map_comap g))
       ((I.comap g).subschemeι ≫ f') (I.subschemeι ≫ f) h := by
   have hI : IsPullback (I.comap g).subschemeι (subschemeMap (I.comap g) I g (I.le_map_comap g))
@@ -126,7 +128,7 @@ theorem finrank_comap_of_isPullback {X' S' : Scheme.{u}} (I : X.IdealSheafData) 
     (H : IsPullback g f' f h) [Flat (I.subschemeι ≫ f)] [IsFinite (I.subschemeι ≫ f)]
     (s : S') :
     ((I.comap g).subschemeι ≫ f').finrank s = (I.subschemeι ≫ f).finrank (h s) :=
-  Scheme.Hom.finrank_of_isPullback _ _ _ _ (I.isPullback_subschemeMap_comap f g f' h H) s
+  Scheme.Hom.finrank_of_isPullback _ _ _ _ (I.isPullback_subschemeMap_comap f H) s
 
 /-- **The ideal sheaf of a section commutes with base change.** For a section `h.section_` of
 `f : X ⟶ S` which is a closed immersion, as it is when `f` is separated, the ideal sheaf of its
