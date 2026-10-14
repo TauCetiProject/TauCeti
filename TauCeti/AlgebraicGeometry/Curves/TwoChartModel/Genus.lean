@@ -32,7 +32,7 @@ When `F` has genus one, the ladder `ℓ(n P) = n deg P` of Riemann–Roch spaces
 
 All in the namespace `TauCeti.AlgebraicGeometry`:
 
-* `twoChartModel.finrank_cohomology_one_trivial_eq_genus`: `dim_k H¹(X_F, 𝒪_{X_F}) = g(F)`.
+* `twoChartModel.genus_eq_genus`: the genus `dim_k H¹(X_F, 𝒪_{X_F})` of `X_F` is `g(F)`.
 * `twoChartModel.finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one`: in genus
   one, `dim_k H⁰(X_F, 𝒪_{X_F}(n P)) = n deg P` for every place `P` of `F` and `n ≥ 1`.
 
@@ -54,23 +54,22 @@ universe u
 variable {k F : Type u} [Field k] [Field F] [Algebra k F] {hF : IsFunctionField k F} {x : F}
   {hx : x ≠ 0}
 
-/-- **The cohomological genus of the two-chart model is the genus of the function field.** For
-`x` transcendental over `k` and `k` the exact constant field of `F`,
-`dim_k H¹(X_F, 𝒪_{X_F}) = g(F)`. -/
-theorem finrank_cohomology_one_trivial_eq_genus (hxt : Transcendental k x)
-    (hk : IsIntegrallyClosedIn k F) :
-    Module.finrank k
-        (Scheme.Modules.Cohomology (InvertibleSheaf.trivial (twoChartModel hF hx)).obj 1) =
-      genus k F := by
+/-- **The genus of the two-chart model is the genus of the function field.** For `x`
+transcendental over `k` and `k` the exact constant field of `F`, the genus
+`dim_k H¹(X_F, 𝒪_{X_F})` of `X_F` is `g(F)`. -/
+theorem genus_eq_genus (hxt : Transcendental k x) (hk : IsIntegrallyClosedIn k F) :
+    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+    haveI := isProper (hF := hF) (hx := hx) hxt
+    haveI := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
+      (topologicalKrullDim_eq_one hxt)
+    (twoChartModel hF hx).genus k = genus k F := by
   have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   have := isNoetherian (hF := hF) (hx := hx) hxt
   have := locallyOfFiniteType (hF := hF) (hx := hx) hxt
   have hF' : IsFunctionField k (twoChartModel hF hx).functionField :=
     (isFunctionField_functionField_iff k).mpr (topologicalKrullDim_eq_one hxt)
-  have h := SchemeWeilDivisor.genus_eq_genus_functionField (valuativeCriterion_existence hF hx)
-    (coheight_le_one hxt) hF' ((functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk)
-  rw [Scheme.genus_def] at h
-  rw [h]
+  rw [SchemeWeilDivisor.genus_eq_genus_functionField (valuativeCriterion_existence hF hx)
+    (coheight_le_one hxt) hF' ((functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk)]
   exact (genus_eq_of_ringEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
     (functionFieldEquiv hxt).commutes).symm
 
@@ -94,7 +93,7 @@ theorem finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one
     (topologicalKrullDim_eq_one hxt)
   rw [SchemeWeilDivisor.finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one k
       ((functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk)
-      (by rw [Scheme.genus_def, finrank_cohomology_one_trivial_eq_genus hxt hk, hg]) _ hn,
+      ((genus_eq_genus hxt hk).trans hg) _ hn,
     ← degree_equivPlace hxt, Equiv.apply_symm_apply]
 
 end TauCeti.AlgebraicGeometry.twoChartModel
