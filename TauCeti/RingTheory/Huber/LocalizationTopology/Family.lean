@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BigOperators.Finset.Erase
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 
 /-!
 # The localisation `A(T/s)` for a family of denominators
