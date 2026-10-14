@@ -27,7 +27,8 @@ plan generally does not have both prescribed marginals, so these are approximati
 not objective-gap bounds for a feasible plan.
 
 Use `TauCeti.sinkhornErrorBound K a b u` to evaluate the certificate. Its characteristic
-and error lemmas are also in `TauCeti`; the iteration and plan operations are in `Matrix`.
+and error lemmas are also in `TauCeti`. After `open TauCeti`, the certificate can be written
+as `sinkhornErrorBound K a b u`; the iteration and plan operations are in `Matrix`.
 
 ## References
 
