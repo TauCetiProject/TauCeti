@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Based
 public import TauCeti.Topology.Sphere.Suspension
 
@@ -137,5 +136,17 @@ theorem basedMapSphere2HomeomorphBasedConstLoopPath_apply (x : Q)
     (basedMapSphere2HomeomorphBasedConstLoopPath x f).1.1 t z =
       f.1 (suspensionToSphere (t, z)) :=
   sphere2HomeomorphConstLoopPath_apply f.1 t z
+
+/-- The inverse of `basedMapSphere2HomeomorphBasedConstLoopPath` evaluates, at the image of
+`(t, z)` under the suspension map, to the value of the path of loops at `t` and `z`. -/
+@[simp]
+theorem basedMapSphere2HomeomorphBasedConstLoopPath_symm_apply (x : Q)
+    (p : BasedConstLoopPath Q x) (t : I) (z : Circle) :
+    ((basedMapSphere2HomeomorphBasedConstLoopPath x).symm p).1 (suspensionToSphere (t, z)) =
+      p.1.1 t z := by
+  have h := basedMapSphere2HomeomorphBasedConstLoopPath_apply x
+    ((basedMapSphere2HomeomorphBasedConstLoopPath x).symm p) t z
+  rw [Homeomorph.apply_symm_apply] at h
+  exact h.symm
 
 end TauCeti
