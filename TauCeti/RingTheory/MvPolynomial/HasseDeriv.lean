@@ -85,6 +85,7 @@ private theorem prod_choose_eq_zero {d m : σ →₀ ℕ} (h : ¬d ≤ m) :
 
 /-- The coefficients of a Hasse derivative:
 `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`. -/
+@[simp]
 theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     (hasseDeriv d P).coeff m =
       ((d.prod fun j k ↦ (m j + k).choose k : ℕ) : R) * P.coeff (m + d) := by
@@ -304,6 +305,7 @@ theorem coeff_taylor_X_map_C (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
 
 /-- The Taylor coefficients of `P` at the point `a` are the values of its Hasse derivatives:
 `[Y^d] P(a + Y) = (∂^d P)(a)`. -/
+@[simp]
 theorem coeff_taylor (a : σ → R) (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
     (taylor a P).coeff d = eval a (hasseDeriv d P) := by
   rw [← eval_coeff_taylor_map_C, coeff_taylor_X_map_C]
