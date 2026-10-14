@@ -60,7 +60,7 @@ private theorem isAdmissiblePerturbation_bump_mul (hfs : ContDiff ℝ 2 f) {z : 
     (θ : ContDiffBump z) (hθ : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0) {c : ℝ}
     (ψ : ContDiffBump c) (w : E) :
     IsAdmissiblePerturbation f fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫) :=
-  isAdmissiblePerturbation_contDiffBump_mul θ hθ
+  θ.isAdmissiblePerturbation_mul hθ
     ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
 
 /-- The derivative of a test perturbation `θ (ψ ∘ f) ⟪w, ·⟫` in a direction `v` killed by
@@ -178,7 +178,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   -- And so `y = 0`.
   apply hy0
   have hNM : ∀ v, N σ₀ (fderiv ℝ (φ σ₀) x v) = v :=
-    fderiv_flow_neg_apply_fderiv_flow (hφd _ _) (hφd σ₀ x)
+    Flow.fderiv_flow_neg_apply_fderiv_flow (hφd _ _) (hφd σ₀ x)
   have := ContinuousLinearMap.adjoint_inner_right (N σ₀) (fderiv ℝ (φ σ₀) x y) y
   rw [hNM] at this
   rw [← inner_self_eq_zero (𝕜 := ℝ), ← this]
@@ -237,7 +237,7 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 ha
   have hwab : w = MT b + c • ∇ f (φ T x) := by
     rw [← hgrad, ← map_smul, ← map_add, add_comm, hab]
-    exact (fderiv_flow_apply_fderiv_flow_neg (hφd _ _) (hφd T x) w).symm
+    exact (Flow.fderiv_flow_apply_fderiv_flow_neg (hφd _ _) (hφd T x) w).symm
   rw [hwab]
   exact Submodule.add_mem_sup (hS hb) (Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _))
 

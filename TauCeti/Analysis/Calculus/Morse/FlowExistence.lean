@@ -149,7 +149,7 @@ theorem neg_gradient_mem_tangentConeAt_of_isInvariant (f : E → ℝ) (hf : Lips
 theorem fderiv_negativeGradientFlow_apply_gradient (f : E → ℝ) (hf : LipschitzWith K (∇ f))
     (hfs : ContDiff ℝ 2 f) (t : ℝ) (x : E) :
     fderiv ℝ (negativeGradientFlow f hf t) x (∇ f x) = ∇ f (negativeGradientFlow f hf t x) := by
-  have := fderiv_flow_apply_of_hasDerivAt (hasDerivAt_negativeGradientFlow_zero f hf x)
+  have := Flow.fderiv_flow_apply_of_hasDerivAt (hasDerivAt_negativeGradientFlow_zero f hf x)
     (hasDerivAt_negativeGradientFlow_zero f hf _)
     (differentiable_negativeGradientFlow_apply f hf hfs t x)
   rwa [map_neg, neg_inj] at this
