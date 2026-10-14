@@ -5,15 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
-public import TauCeti.AlgebraicTopology.Singular.Sphere
-public import TauCeti.Topology.MappingSpace.DoubleLoop
+public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
+public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
+public import TauCeti.Topology.MappingSpace.Sphere.DoubleLoop
 
 /-!
 # The degree-raising map from the double loop space to the loop space
 
 A double loop is a loop in the loop space, so evaluation on the circle gives a map
-`S¹ × Ω²X → ΩX` (`TauCeti.BasedTopologicalSpace.evalCircle`). On singular homology with
+`S¹ × Ω²X → ΩX` (`TauCeti.BasedTopologicalSpace.evalCircle`). The circle is parametrized by the
+standard loop `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`) both in this identification of double
+loops with maps from the circle and in the fundamental class below, which is the class of that same
+loop. So `β_*` is oriented by the standard parametrization of the interval and the circle. On singular homology with
 coefficients in the unit `𝟙` of a monoidal category such as `ModuleCat R`, composing the cross
 product with the fundamental class of the circle with the map induced by this evaluation gives the
 degree-raising map
@@ -25,7 +30,7 @@ natural in the based space `X`.
 ## Main declarations
 
 * `TauCeti.circleFundamentalClass`: the fundamental class `𝟙 ⟶ H₁(S¹; 𝟙)` of the unit circle in
-  `ℝ²`, oriented by the standard basis.
+  `ℝ²`, the class of the standard loop.
 * `TauCeti.degreeRaising`: the degree-raising map `H_p(Ω²X; 𝟙) ⟶ H_n(ΩX; 𝟙)` for `1 + p = n`.
 * `TauCeti.degreeRaising_naturality`: its naturality in `X`.
 
@@ -47,27 +52,39 @@ section Class
 
 variable (R : Type) [CommRing R]
 
-/-- The point `(1, 0)` of the unit circle. -/
-def Sphere1.east : Sphere1 := ⟨EuclideanSpace.single 0 1, by simp⟩
+/-- The circle `S¹` with the basepoint `(1, 0)`, as a topological pair. -/
+abbrev circlePair : TopPair.{0} := TopPair.ofSubset (X := TopCat.of Sphere1) {Sphere1.east}
 
-/-- The point `(0, 1)` of the unit circle. -/
-def Sphere1.north : Sphere1 := ⟨EuclideanSpace.single 1 1, by simp⟩
+/-- The standard loop `t ↦ (cos 2πt, sin 2πt)` as a map of pairs
+`(I¹, ∂I¹) ⟶ (S¹, {(1, 0)})`. -/
+def circleLoopPairHom : cubeBoundaryPair.{0} 1 ⟶ circlePair :=
+  TopPair.ofSubsetMap
+    (TopCat.ofHom (circleLoop.comp ⟨ULift.down, continuous_uliftDown⟩))
+    fun t ht => Set.mem_singleton_iff.2 ((circleLoop_eq_east_iff t.down).2 ht)
 
-theorem Sphere1.north_mem : Sphere1.north ∈ ({Sphere1.east}ᶜ ∩ {-Sphere1.east}ᶜ : Set Sphere1) := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · have := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
-    simp [Sphere1.north, Sphere1.east] at this
-  · have := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
-    simp [Sphere1.north, Sphere1.east] at this
+/-- The inclusion of the circle into the pair `(S¹, {(1, 0)})` induces an isomorphism on first
+homology, since the point is contractible. -/
+instance isIso_circlePair_singularHomologyπ :
+    IsIso (circlePair.singularHomologyπ (𝟙_ (ModuleCat.{0} R)) 1) :=
+  haveI : ContractibleSpace circlePair.snd :=
+    inferInstanceAs (ContractibleSpace ↥({Sphere1.east} : Set Sphere1))
+  TopPair.isIso_singularHomologyπ (P := circlePair) (𝟙_ (ModuleCat.{0} R)) (k := 0)
+    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace _ circlePair.snd 1)
+    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace _ circlePair.snd 0)
 
-/-- **The fundamental class of the circle**: the generator of `H₁(S¹; 𝟙)` determined by the
-Mayer–Vietoris isomorphism for the cover by the arcs `S¹ ∖ {(1, 0)}` and `S¹ ∖ {(-1, 0)}`, and the
-point `(0, 1)`. -/
+/-- **The fundamental class of the circle**: the class of the standard loop
+`t ↦ (cos 2πt, sin 2πt)`. It is the image of the relative class of the standard `1`-simplex of the
+interval `I¹` under the loop, followed by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`. The circle
+is oriented by this parametrization, which is also the one with which double loops are read as
+maps from the circle in `TauCeti.BasedTopologicalSpace.loopSpace2Homeomorph`. -/
 def circleFundamentalClass :
     𝟙_ (ModuleCat.{0} R) ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) 1).obj (𝟙_ _)).obj
         (TopCat.of Sphere1) :=
-  (singularHomologySphereOneIso (𝟙_ (ModuleCat.{0} R)) (by simp) Sphere1.north_mem).inv
+  cubeRelClass (𝟙_ (ModuleCat.{0} R)) ≫
+    TopPair.singularHomologyMap circleLoopPairHom (𝟙_ (ModuleCat.{0} R)) 1 ≫
+      @inv _ _ _ _ (circlePair.singularHomologyπ (𝟙_ (ModuleCat.{0} R)) 1)
+        (isIso_circlePair_singularHomologyπ R)
 
 end Class
 
@@ -82,7 +99,7 @@ variable (R : Type) [CommRing R] (X : BasedTopologicalSpace.{0}) (p n : ℕ) (h 
 /-- The evaluation `S¹ × Ω²X → ΩX` as a morphism of topological spaces. -/
 def evalCircleTop :
     TopCat.of Sphere1 ⊗ TopCat.of (X.iteratedLoopSpace 2).carrier ⟶ TopCat.of X.loopSpace.carrier :=
-  TopCat.ofHom (evalCircle X Sphere1.east)
+  TopCat.ofHom (evalCircle X)
 
 /-- **The degree-raising map** `β_* : H_p(Ω²X; 𝟙) ⟶ H_n(ΩX; 𝟙)` for `1 + p = n`: the cross product
 with the fundamental class of the circle, followed by the map induced by the evaluation
@@ -121,7 +138,7 @@ theorem evalCircleTop_naturality (f : Hom X Y) :
         evalCircleTop Y =
       evalCircleTop X ≫ TopCat.ofHom f.loopSpace.toContinuousMap := by
   ext ⟨z, γ⟩
-  exact evalCircle_map Sphere1.east f z γ
+  exact evalCircle_map f z γ
 
 /-- **Naturality of the degree-raising map** in the based space `X`: it commutes with the maps
 induced on homology by `Ω²f` and `Ωf`. -/
