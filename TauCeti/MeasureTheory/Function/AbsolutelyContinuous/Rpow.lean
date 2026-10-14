@@ -22,8 +22,8 @@ public section
 open MeasureTheory Set
 
 /-- A nonnegative real power is absolutely continuous on every finite interval. -/
-theorem Real.absolutelyContinuousOnInterval_rpow_const {p : ℝ} (hp : 0 ≤ p := by positivity)
-    (a b : ℝ) :
+theorem Real.absolutelyContinuousOnInterval_rpow_const {p : ℝ} (a b : ℝ)
+    (hp : 0 ≤ p := by positivity) :
     AbsolutelyContinuousOnInterval (fun x : ℝ ↦ x ^ p) a b := by
   rcases hp.eq_or_lt with rfl | hp
   · simpa only [Real.rpow_zero] using
@@ -46,5 +46,5 @@ theorem Real.absolutelyContinuousOnInterval_rpow_const {p : ℝ} (hp : 0 ≤ p :
 /-- Square root is absolutely continuous on every finite interval. -/
 theorem Real.absolutelyContinuousOnInterval_sqrt (a b : ℝ) :
     AbsolutelyContinuousOnInterval Real.sqrt a b :=
-  (Real.absolutelyContinuousOnInterval_rpow_const (p := 1 / 2) (by norm_num) a b).congr
+  (Real.absolutelyContinuousOnInterval_rpow_const (p := 1 / 2) a b).congr
     (fun t _ ↦ (Real.sqrt_eq_rpow t).symm)
