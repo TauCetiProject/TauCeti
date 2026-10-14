@@ -101,6 +101,8 @@ structure IsAngularOperator (X : E →L[𝕜] E) : Prop where
   comp_starProjection : X ∘L U.starProjection = X
   starProjection_comp : U.starProjection ∘L X = 0
 
+attribute [simp] IsAngularOperator.comp_starProjection IsAngularOperator.starProjection_comp
+
 variable {U} {X : E →L[𝕜] E}
 
 namespace IsAngularOperator
@@ -108,9 +110,11 @@ namespace IsAngularOperator
 variable (hX : U.IsAngularOperator X)
 include hX
 
+@[simp]
 theorem apply_starProjection (x : E) : X (U.starProjection x) = X x :=
   DFunLike.congr_fun hX.comp_starProjection x
 
+@[simp]
 theorem starProjection_apply_eq_zero (x : E) : U.starProjection (X x) = 0 :=
   DFunLike.congr_fun hX.starProjection_comp x
 
@@ -164,6 +168,8 @@ theorem completeSpace_graphSubspace [CompleteSpace U] : CompleteSpace (U.graphSu
 
 end IsAngularOperator
 
+/-- An operator is an angular operator from `U` to `Uᗮ` exactly when it vanishes on `Uᗮ` and takes
+values in `Uᗮ`. -/
 theorem isAngularOperator_iff :
     U.IsAngularOperator X ↔ (∀ x ∈ Uᗮ, X x = 0) ∧ ∀ x, X x ∈ Uᗮ := by
   refine ⟨fun hX => ⟨fun _ hx => hX.apply_eq_zero_of_mem_orthogonal hx, hX.apply_mem_orthogonal⟩,
@@ -174,6 +180,7 @@ theorem isAngularOperator_iff :
   · exact (starProjection_apply_eq_zero_iff U).mpr (h₂ x)
 
 variable (U) in
+@[simp]
 theorem isAngularOperator_zero : U.IsAngularOperator 0 :=
   ⟨by simp, by simp⟩
 
@@ -234,26 +241,20 @@ private theorem div_sqrt_le_of_forall_norm_apply_le {d : ℝ} (hd0 : 0 ≤ d) (h
 theorem directedProjectionGap_graphSubspace_left
     [(U.graphSubspace X).HasOrthogonalProjection] :
     directedProjectionGap (U.graphSubspace X) U = ‖X‖ / √(1 + ‖X‖ ^ 2) := by
-  rw [directedProjectionGap_def]
   set G := U.graphSubspace X
   have hs : 0 < √(1 + ‖X‖ ^ 2) := Real.sqrt_pos.2 (by positivity)
-  -- `P_{Uᗮ} P_G` sends every `x` to the `Uᗮ`-component `X u` of `P_G x = u + X u`.
-  have hle : ‖Uᗮ.starProjection ∘L G.starProjection‖ ≤ ‖X‖ / √(1 + ‖X‖ ^ 2) := by
-    refine opNorm_le_bound _ (by positivity) fun x => ?_
-    obtain ⟨u, hu, hux⟩ := mem_graphSubspace.1 (G.starProjection_apply_mem x)
-    rw [comp_apply, ← hux, hX.starProjection_orthogonal_add_apply hu, div_mul_eq_mul_div,
-      le_div_iff₀ hs]
-    calc ‖X u‖ * √(1 + ‖X‖ ^ 2) ≤ ‖X‖ * ‖u + X u‖ := hX.norm_apply_mul_sqrt_le hu
-      _ ≤ ‖X‖ * ‖x‖ := by
-          rw [hux]
-          gcongr
-          exact norm_starProjection_apply_le _ _
-  refine le_antisymm hle (hX.div_sqrt_le_of_forall_norm_apply_le (norm_nonneg _) ?_ fun u hu => ?_)
+  -- The `Uᗮ`-component of a vector `u + X u` of `G` is `X u`.
+  have hle : directedProjectionGap G U ≤ ‖X‖ / √(1 + ‖X‖ ^ 2) := by
+    refine (directedProjectionGap_le_iff _ _ (by positivity)).mpr fun y hy => ?_
+    obtain ⟨u, hu, rfl⟩ := mem_graphSubspace.1 hy
+    rw [hX.starProjection_orthogonal_add_apply hu, div_mul_eq_mul_div, le_div_iff₀ hs]
+    exact hX.norm_apply_mul_sqrt_le hu
+  refine le_antisymm hle (hX.div_sqrt_le_of_forall_norm_apply_le
+    (directedProjectionGap_nonneg _ _) ?_ fun u hu => ?_)
   · exact hle.trans_lt ((Real.tanh_arsinh _).symm.trans_lt (Real.tanh_lt_one _))
-  · -- On `u + X u ∈ G`, the operator `P_{Uᗮ} P_G` returns `X u`.
-    have h := le_opNorm (Uᗮ.starProjection ∘L G.starProjection) (u + X u)
-    rwa [comp_apply, starProjection_eq_self_iff.mpr (add_apply_mem_graphSubspace hu),
-      hX.starProjection_orthogonal_add_apply hu] at h
+  · have h := (directedProjectionGap_le_iff G U (directedProjectionGap_nonneg _ _)).mp le_rfl _
+      (add_apply_mem_graphSubspace hu)
+    rwa [hX.starProjection_orthogonal_add_apply hu] at h
 
 /-- The distance from a vector `u ∈ U` to the graph subspace is at most
 `‖X‖ / √(1 + ‖X‖²) ‖u‖`, witnessed by the vector `(1 + ‖X‖²)⁻¹ (u + X u)` of the graph subspace. -/
@@ -300,15 +301,10 @@ private theorem norm_sub_starProjection_graphSubspace_mul_sqrt_le
 theorem directedProjectionGap_graphSubspace_right_le
     [(U.graphSubspace X).HasOrthogonalProjection] :
     directedProjectionGap U (U.graphSubspace X) ≤ ‖X‖ / √(1 + ‖X‖ ^ 2) := by
-  rw [directedProjectionGap_def]
-  refine opNorm_le_bound _ (by positivity) fun x => ?_
-  rw [comp_apply, starProjection_orthogonal_val, div_mul_eq_mul_div,
+  refine (directedProjectionGap_le_iff _ _ (by positivity)).mpr fun u hu => ?_
+  rw [starProjection_orthogonal_val, div_mul_eq_mul_div,
     le_div_iff₀ (Real.sqrt_pos.2 (by positivity))]
-  calc _ ≤ ‖X‖ * ‖U.starProjection x‖ :=
-        hX.norm_sub_starProjection_graphSubspace_mul_sqrt_le (U.starProjection_apply_mem x)
-    _ ≤ ‖X‖ * ‖x‖ := by
-        gcongr
-        exact norm_starProjection_apply_le _ _
+  exact hX.norm_sub_starProjection_graphSubspace_mul_sqrt_le hu
 
 /-- **The exact gap of a graph subspace**: `‖P_U - P_graph‖ = ‖X‖ / √(1 + ‖X‖²)`. -/
 theorem projectionGap_graphSubspace [(U.graphSubspace X).HasOrthogonalProjection] :
@@ -338,10 +334,12 @@ variable (hX : U.IsAngularOperator X)
 include hX
 
 /-- The adjoint of `X P_U = X`: an angular operator's adjoint takes values in `U`. -/
+@[simp]
 theorem starProjection_comp_adjoint : U.starProjection ∘L X† = X† := by
   rw [← (isSelfAdjoint_starProjection U).adjoint_eq, ← adjoint_comp, hX.comp_starProjection]
 
 /-- The adjoint of `P_U X = 0`: an angular operator's adjoint vanishes on `U`. -/
+@[simp]
 theorem adjoint_comp_starProjection : X† ∘L U.starProjection = 0 := by
   rw [← (isSelfAdjoint_starProjection U).adjoint_eq, ← adjoint_comp, hX.starProjection_comp,
     map_zero]
