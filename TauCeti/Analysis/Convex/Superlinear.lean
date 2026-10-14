@@ -66,11 +66,12 @@ theorem exists_isMinOn_sub_of_superlinear (hc : Continuous h)
     (tendsto_sub_atTop_of_superlinear hh ℓ)
   exact ⟨x, fun z _ => hx z⟩
 
-/-- A strictly convex continuous superlinear function has a unique tilted minimizer. -/
-theorem existsUnique_isMinOn_sub_of_superlinear (hc : Continuous h)
-    (hs : StrictConvexOn ℝ univ h)
+/-- A strictly convex superlinear function has a unique tilted minimizer. -/
+theorem existsUnique_isMinOn_sub_of_superlinear (hs : StrictConvexOn ℝ univ h)
     (hh : Tendsto (fun x => h x / ‖x‖) (cocompact E) atTop) (ℓ : E →L[ℝ] ℝ) :
     ∃! x, IsMinOn (fun z => h z - ℓ z) univ x := by
+  have : FiniteDimensional ℝ E := .of_locallyCompactSpace ℝ
+  have hc : Continuous h := continuousOn_univ.1 (hs.convexOn.continuousOn isOpen_univ)
   obtain ⟨x, hx⟩ := exists_isMinOn_sub_of_superlinear hc hh ℓ
   exact ⟨x, hx, fun y hy =>
     (hs.sub_concaveOn (ℓ.toLinearMap.concaveOn convex_univ)).eq_of_isMinOn hy hx
