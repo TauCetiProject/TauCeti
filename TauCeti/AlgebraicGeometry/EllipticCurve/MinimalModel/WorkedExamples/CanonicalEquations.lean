@@ -128,19 +128,13 @@ theorem absNorm_minimalDiscriminantIdeal_curve37a1 :
 /-! ### Minimal-pair equations and naïve heights -/
 
 /-- The minimal-pair equation `y² = x³ - 10135152x - 12419196912` of 11.a1. -/
-abbrev minimalPairCurve11a1 : WeierstrassCurve ℤ := ⟨0, 0, 0, -10135152, -12419196912⟩
+abbrev minimalPairCurve11a1 : WeierstrassCurve ℤ := shortCurve (-10135152) (-12419196912)
 
 /-- The minimal-pair equation `y² = x³ - 13392x - 1080432` of 11.a2. -/
-abbrev minimalPairCurve11a2 : WeierstrassCurve ℤ := ⟨0, 0, 0, -13392, -1080432⟩
+abbrev minimalPairCurve11a2 : WeierstrassCurve ℤ := shortCurve (-13392) (-1080432)
 
 /-- The minimal-pair equation `y² = x³ - 16x + 16` of 37.a1. -/
-abbrev minimalPairCurve37a1 : WeierstrassCurve ℤ := ⟨0, 0, 0, -16, 16⟩
-
-instance : minimalPairCurve11a1.IsShortNF := ⟨rfl, rfl, rfl⟩
-
-instance : minimalPairCurve11a2.IsShortNF := ⟨rfl, rfl, rfl⟩
-
-instance : minimalPairCurve37a1.IsShortNF := ⟨rfl, rfl, rfl⟩
+abbrev minimalPairCurve37a1 : WeierstrassCurve ℤ := shortCurve (-16) 16
 
 /-- The changes of variables `(u, r, s, t) = (6, -12, 0, 108)`, carrying the minimal-pair
 equations of 11.a1 and 11.a2 to their reduced minimal equations. -/
