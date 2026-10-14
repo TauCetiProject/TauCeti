@@ -62,18 +62,19 @@ namespace TauCeti
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {x : X} {e : ℕ}
 
 /-- The map `f` is **locally the `e`-th power map at `x`**: there are a chart `φ` of `X` centred at
-`x` and a chart `ψ` of `Y` centred at `f x` such that `ψ (f (φ.symm w)) = w ^ e` for every `w` in
-the image of `φ`. The exponent is positive (`TauCeti.IsLocalPowerAt.ne_zero`) and, for `f`
-continuous at `x`, unique (`TauCeti.IsLocalPowerAt.unique`). -/
+`x` and a chart `ψ` of `Y` centred at `f x` such that `f` maps the source of `φ` into the source of
+`ψ` and `ψ (f (φ.symm w)) = w ^ e` for every `w` in the image of `φ`. The exponent is positive
+(`TauCeti.IsLocalPowerAt.ne_zero`) and, for `f` continuous at `x`, unique
+(`TauCeti.IsLocalPowerAt.unique`). -/
 def IsLocalPowerAt (f : X → Y) (x : X) (e : ℕ) : Prop :=
   ∃ (φ : OpenPartialHomeomorph X ℂ) (ψ : OpenPartialHomeomorph Y ℂ),
-    x ∈ φ.source ∧ f x ∈ ψ.source ∧ φ x = 0 ∧ ψ (f x) = 0 ∧
+    x ∈ φ.source ∧ MapsTo f φ.source ψ.source ∧ φ x = 0 ∧ ψ (f x) = 0 ∧
       ∀ w ∈ φ.target, ψ (f (φ.symm w)) = w ^ e
 
 /-- Unfolding `TauCeti.IsLocalPowerAt`. -/
 theorem isLocalPowerAt_iff :
     IsLocalPowerAt f x e ↔ ∃ (φ : OpenPartialHomeomorph X ℂ) (ψ : OpenPartialHomeomorph Y ℂ),
-      x ∈ φ.source ∧ f x ∈ ψ.source ∧ φ x = 0 ∧ ψ (f x) = 0 ∧
+      x ∈ φ.source ∧ MapsTo f φ.source ψ.source ∧ φ x = 0 ∧ ψ (f x) = 0 ∧
         ∀ w ∈ φ.target, ψ (f (φ.symm w)) = w ^ e :=
   Iff.rfl
 
@@ -89,8 +90,8 @@ theorem ne_zero (h : IsLocalPowerAt f x e) : e ≠ 0 := by
 
 /-- The value `f x` is not isolated in the target of a local power map. -/
 theorem nhdsNE_neBot (h : IsLocalPowerAt f x e) : (𝓝[≠] f x).NeBot := by
-  obtain ⟨-, ψ, -, hψ, -⟩ := h
-  exact ψ.nhdsNE_neBot hψ
+  obtain ⟨φ, ψ, hx, hmaps, -⟩ := h
+  exact ψ.nhdsNE_neBot (hmaps hx)
 
 /-- A point at which `f` is locally a power map is isolated in its fibre. -/
 theorem eventually_ne (h : IsLocalPowerAt f x e) : ∀ᶠ x' in 𝓝[≠] x, f x' ≠ f x := by
@@ -109,7 +110,8 @@ theorem exists_ncard_inter_preimage_eq (h : IsLocalPowerAt f x e) (hf : Continuo
     ∃ V ⊆ N, IsOpen V ∧ x ∈ V ∧ ∀ᶠ y in 𝓝[≠] f x, (V ∩ f ⁻¹' {y}).ncard = e := by
   classical
   have he := h.ne_zero
-  obtain ⟨φ, ψ, hx, hψ, hφx, hψx, hpow⟩ := h
+  obtain ⟨φ, ψ, hx, hmaps, hφx, hψx, hpow⟩ := h
+  have hψ : f x ∈ ψ.source := hmaps hx
   have h0 : (0 : ℂ) ∈ φ.target := hφx ▸ φ.map_source hx
   have hsymm0 : φ.symm 0 = x := by rw [← hφx, φ.left_inv hx]
   -- A radius `r` such that the disc `ball 0 r` lies in the chart, inside `N`, and over `ψ`.
@@ -168,8 +170,9 @@ theorem unique {e' : ℕ} (h : IsLocalPowerAt f x e) (h' : IsLocalPowerAt f x e'
 /-- Being locally a power map is invariant under a homeomorphism of the source. -/
 theorem comp_homeomorph {X' : Type*} [TopologicalSpace X'] (g : X' ≃ₜ X) {x' : X'}
     (h : IsLocalPowerAt f (g x') e) : IsLocalPowerAt (f ∘ g) x' e := by
-  obtain ⟨φ, ψ, hx, hψ, hφx, hψx, hpow⟩ := h
-  refine ⟨g.toOpenPartialHomeomorph.trans φ, ψ, by simpa using hx, hψ, hφx, hψx, fun w hw => ?_⟩
+  obtain ⟨φ, ψ, hx, hmaps, hφx, hψx, hpow⟩ := h
+  refine ⟨g.toOpenPartialHomeomorph.trans φ, ψ, by simpa using hx,
+    fun x' hx' => hmaps (by simpa using hx'), hφx, hψx, fun w hw => ?_⟩
   simp only [OpenPartialHomeomorph.trans_target, Homeomorph.toOpenPartialHomeomorph_target,
     preimage_univ, inter_univ] at hw
   simpa using hpow w hw
@@ -190,8 +193,8 @@ theorem IsLocalHomeomorphOn.isLocalPowerAt_one {X Y : Type*} [TopologicalSpace X
   -- Recentre `ψ` at `φ x` by a translation of `ℂ`.
   set τ := ψ.trans (Homeomorph.addRight (-ψ (φ x))).toOpenPartialHomeomorph
   have hτ : τ.source = ψ.source := by simp [τ]
-  refine ⟨φ.trans τ, τ, by simpa [hτ] using ⟨hxφ, hψ⟩, hτ ▸ hψ, by simp [τ], by simp [τ],
-    fun w hw => ?_⟩
+  refine ⟨φ.trans τ, τ, by simpa [hτ] using ⟨hxφ, hψ⟩, fun _ hx' => hx'.2, by simp [τ],
+    by simp [τ], fun w hw => ?_⟩
   rw [OpenPartialHomeomorph.trans_target] at hw
   rw [OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply, φ.right_inv hw.2,
     τ.right_inv hw.1, pow_one]
