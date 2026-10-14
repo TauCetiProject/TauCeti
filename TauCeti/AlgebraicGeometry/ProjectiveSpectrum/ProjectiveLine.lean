@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.RatFunc.Basic
+public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+public import TauCeti.RingTheory.Localization.Away
 
 /-!
 # The projective line over a commutative ring
@@ -25,10 +26,12 @@ symmetric algebra of `R²`, whose two standard basis vectors are the homogeneous
 It is covered by the two standard affine charts `D₊(Xᵢ)`. The chart `D₊(Xᵢ)` is the spectrum of
 the degree-zero part `R[X₀, X₁]_(Xᵢ)` of the localization away from `Xᵢ`, and dehomogenization,
 setting `Xᵢ = 1` and the other coordinate to `X`, identifies it with the polynomial ring `R[X]`:
-the fraction `p / Xᵢⁿ` of a form `p` of degree `n` goes to `p` with `Xᵢ = 1`. So `ℙ¹_R` is proper
-over `R`; it is integral when `R` is a domain, and its local rings are regular when `R` is a regular
-ring. Over a domain, its function field is the fraction field `R(X)` of the ring `R[X]` of
-functions on the chart `D₊(X₀)`, the function `X₁ / X₀` on that chart going to `X`.
+the fraction `p / Xᵢⁿ` of a form `p` of degree `n` goes to `p` with `Xᵢ = 1`. The projective line
+`ℙ¹_R` is proper over `R`, as the Proj of the symmetric algebra of a finite module
+(`TauCeti.SymmetricAlgebra.instIsProperOver`); it is integral when `R` is a domain, and its local
+rings are regular when `R` is a regular ring. Over a domain, its function field is the fraction
+field `R(X)` of the ring `R[X]` of functions on the chart `D₊(X₀)`, the function `X₁ / X₀` on that
+chart going to `X`.
 
 ## Main definitions
 
@@ -55,6 +58,8 @@ functions on the chart `D₊(X₀)`, the function `X₁ / X₀` on that chart go
   regular over a regular ring.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_germToFunctionField`: on the chart
   `D₊(X₀)`, the identification of the function field with `R(X)` is `chartSectionsEquiv`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_symm_X`: that identification sends
+  the function `X₁ / X₀` to `X`.
 
 ## References
 
@@ -141,17 +146,6 @@ private theorem awayToPolynomial_mk (i : Fin 2) {n : ℕ}
 private noncomputable def polynomialToAway (i : Fin 2) : R[X] →ₐ[R] Away 𝒜 (coord R i) :=
   aeval (Away.mk 𝒜 (coord_mem R i) 1 (coord R i.rev) (by simpa using coord_mem R i.rev))
 
-/-- In the localization away from `Xᵢ`, the fraction `a / Xᵢⁿ` is `a` times the `n`-th power of
-the inverse of `Xᵢ`. -/
-private theorem localization_mk_eq (i : Fin 2) (n : ℕ)
-    (a : _root_.SymmetricAlgebra R (Fin 2 → R)) :
-    Localization.mk a (⟨coord R i ^ n, n, rfl⟩ : Submonoid.powers (coord R i)) =
-      IsLocalization.Away.invSelf (coord R i) ^ n *
-        algebraMap _ (Localization.Away (coord R i)) a := by
-  rw [Localization.mk_eq_mk', IsLocalization.mk'_eq_iff_eq_mul, mul_right_comm, map_pow,
-    ← mul_pow, mul_comm (IsLocalization.Away.invSelf _), IsLocalization.Away.mul_invSelf, one_pow,
-    one_mul]
-
 /-- Rehomogenizing the dehomogenization of a form `a` of degree `n` gives back `a / Xᵢⁿ`, read in
 the localization away from `Xᵢ`. Both sides are algebra maps of `a` agreeing, up to the factor
 `Xᵢ⁻¹`, on the linear forms. -/
@@ -165,12 +159,14 @@ private theorem val_polynomialToAway_dehomogenize (i : Fin 2) {n : ℕ}
   let g := (IsScalarTower.toAlgHom R (Away 𝒜 (coord R i)) (Localization.Away (coord R i))).comp
     ((polynomialToAway R i).comp (dehomogenize R i))
   refine AlgHom.apply_eq_pow_mul_of_forall_ι_eq f g _ (fun m ↦ ?_) ha
-  have h1 := localization_mk_eq R i 1 (coord R i.rev)
+  have h1 := TauCeti.Localization.mk'_pow_eq_invSelf_pow_mul (S := Localization.Away (coord R i))
+    (coord R i.rev) (coord R i) 1
   simp only [g, f, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
     ι_eq_smul_coord_add_smul_coord R i m, map_add, map_smul, dehomogenize_coord_self,
     dehomogenize_coord_rev, polynomialToAway, aeval_X, map_one]
-  rw [HomogeneousLocalization.algebraMap_apply, Away.val_mk, h1, pow_one, mul_add, mul_smul_comm,
-    mul_smul_comm, mul_comm _ (algebraMap _ _ (coord R i)), IsLocalization.Away.mul_invSelf]
+  rw [HomogeneousLocalization.algebraMap_apply, Away.val_mk, Localization.mk_eq_mk', h1, pow_one,
+    mul_add, mul_smul_comm, mul_smul_comm, mul_comm _ (algebraMap _ _ (coord R i)),
+    IsLocalization.Away.mul_invSelf]
 
 /-- **The chart ring of `D₊(Xᵢ)` is a polynomial ring**: dehomogenization identifies the
 degree-zero part `R[X₀, X₁]_(Xᵢ)` of the localization away from `Xᵢ` with `R[X]`. -/
@@ -181,7 +177,8 @@ noncomputable def awayEquivPolynomial (i : Fin 2) : Away 𝒜 (coord R i) ≃ₐ
       obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective 𝒜 (coord_mem R i) z
       apply HomogeneousLocalization.val_injective
       simp only [AlgHom.comp_apply, awayToPolynomial_mk, AlgHom.id_apply, Away.val_mk]
-      rw [val_polynomialToAway_dehomogenize R i (by simpa using ha), localization_mk_eq])
+      rw [val_polynomialToAway_dehomogenize R i (by simpa using ha), Localization.mk_eq_mk',
+        TauCeti.Localization.mk'_pow_eq_invSelf_pow_mul])
 
 /-- The chart isomorphism sends `p / Xᵢⁿ` to the dehomogenization of `p`. -/
 @[simp]
@@ -281,6 +278,14 @@ theorem chartSectionsEquiv_apply (i : Fin 2) (a : Γ(projectiveLine R, awayι R 
       awayEquivPolynomial R i ((Scheme.ΓSpecIso _).hom (((awayι R i).appIso ⊤).hom a)) :=
   (rfl)
 
+/-- The function `X` on the chart `D₊(Xᵢ)` restricts along the chart to the other coordinate over
+`Xᵢ`. -/
+theorem chartSectionsEquiv_symm_X (i : Fin 2) :
+    (Scheme.ΓSpecIso _).hom (((awayι R i).appIso ⊤).hom ((chartSectionsEquiv R i).symm X)) =
+      Away.mk 𝒜 (coord_mem R i) 1 (coord R i.rev) (by simpa using coord_mem R i.rev) := by
+  rw [← awayEquivPolynomial_symm_X, AlgEquiv.eq_symm_apply, ← chartSectionsEquiv_apply,
+    RingEquiv.apply_symm_apply]
+
 /-- On the chart `D₊(Xᵢ)`, the functions on `Spec R` pulled back along the structure morphism are
 the constant polynomials. -/
 @[simp]
@@ -296,7 +301,10 @@ theorem chartSectionsEquiv_appLE (i : Fin 2) (a : Γ(Spec (.of R), ⊤)) :
     reassoc_of% Scheme.Hom.appLE_comp_appLE (awayι R i)
     (projectiveLine R ↘ Spec (.of R)) ⊤ (awayι R i ''ᵁ ⊤) ⊤ le_top
     (Scheme.Hom.preimage_image_eq _ _).ge]
-  -- The composite of the chart with the structure morphism is `Spec` of the inclusion of `R`.
+  -- The `show` reads `appLE ⊤ ⊤` as `appTop` through `appLE_eq_app`, relying on the
+  -- definitional equalities `f ⁻¹ᵁ ⊤ = ⊤` (`Scheme.Hom.preimage_top`, proved by `rfl`) and
+  -- `f.app ⊤ = f.appTop` (`appTop` is an abbreviation); a plain `rw` cannot match the preimage.
+  -- Then the composite of the chart with the structure morphism is `Spec` of the inclusion of `R`.
   rw [show Scheme.Hom.appLE _ ⊤ ⊤ _ = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
     awayι_over, Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
 
@@ -328,6 +336,15 @@ theorem functionFieldEquiv_germToFunctionField (a : Γ(projectiveLine R, awayι 
   have := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_awayι_top R 0)
   -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `R(X)`.
   exact IsFractionRing.ringEquivOfRingEquiv_algebraMap _ a
+
+/-- The identification of the function field of the projective line with `R(X)` sends the
+function `X₁ / X₀`, the function on the chart `D₊(X₀)` restricting to `X₁ / X₀`
+(`chartSectionsEquiv_symm_X`), to `X`. -/
+theorem functionFieldEquiv_symm_X :
+    (functionFieldEquiv R).symm RatFunc.X =
+      (projectiveLine R).germToFunctionField _ ((chartSectionsEquiv R 0).symm X) := by
+  rw [AlgEquiv.symm_apply_eq, functionFieldEquiv_germToFunctionField, RingEquiv.apply_symm_apply,
+    RatFunc.algebraMap_X]
 
 end projectiveLine
 

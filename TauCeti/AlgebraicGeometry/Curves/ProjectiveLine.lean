@@ -173,7 +173,7 @@ instance : IsDominant (toProjectiveLine hF hx) := by
 
 /-- **The projection of the two-chart model of `F` to the projective line is finite.** This
 includes inseparable extensions `F / k(X)`. -/
-theorem isFinite_toProjectiveLine : IsFinite (toProjectiveLine hF hx) := by
+instance isFinite_toProjectiveLine : IsFinite (toProjectiveLine hF hx) := by
   have := isFinite_map (IsFunctionField.ratFunc k) hF RatFunc.X_ne_zero hx rfl
     RatFunc.transcendental_X
   rw [toProjectiveLine]
