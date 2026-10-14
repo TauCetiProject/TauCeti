@@ -7,21 +7,22 @@ module
 
 public import TauCeti.Topology.MappingSpace.Group
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
-public import TauCeti.Topology.Sphere.Suspension
 
 /-!
-# Maps from the two-sphere into a topological group
+# Maps from a sphere into a topological group
 
-Evaluation at the north pole `Map(S², G) → G` has the constant spheres `ContinuousMap.const` as a
-section, and its fibre over the identity is the based mapping space `Map_*(S², G)`. For a
-topological group `G` the fibration is trivial, `G × Map_*(S², G) ≃ₜ Map(S², G)`
+Evaluation at the basepoint `Map(S^k, G) → G` has the constant spheres `ContinuousMap.const` as a
+section, and its fibre over the identity is the based mapping space `Map_*(S^k, G)`. For a
+topological group `G` the fibration is trivial, `G × Map_*(S^k, G) ≃ₜ Map(S^k, G)`
 (`TauCeti.mappingSpaceGroupHomeomorph`), and by the identification of based maps out of the sphere
-with double loops, `G × Ω²G ≃ₜ Map(S², G)`.
+with the iterated loop space, `G × Ω^[k] G ≃ₜ Map(S^k, G)`, in particular
+`G × Ω²G ≃ₜ Map(S², G)`.
 
 ## Main declarations
 
-* `TauCeti.sphere2GroupHomeomorphIteratedLoopSpace`: `G × Ω²G ≃ₜ Map(S², G)`, sending `(g, γ)`
-  to the product of the constant sphere `g` and the based sphere map of `γ`.
+* `TauCeti.sphereGroupHomeomorphIteratedLoopSpace`: `G × Ω^[k] G ≃ₜ Map(S^k, G)` for `k ≥ 1`,
+  sending `(g, γ)` to the product of the constant sphere `g` and the based sphere map of `γ`, with
+  the characteristic lemmas `_apply`, `_symm_fst` and `_symm_snd`.
 
 ## References
 
@@ -33,36 +34,52 @@ public section
 
 noncomputable section
 
+open Metric
+
 namespace TauCeti
 
-variable (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
+variable (k : ℕ) [NeZero k] (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
+  (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
 
-/-- **`G × Ω²G ≃ₜ Map(S², G)` for a topological group `G`**, through the identification of
-based maps out of `S²` with the double loop space. -/
-def sphere2GroupHomeomorphIteratedLoopSpace :
-    G × (BasedTopologicalSpace.iteratedLoopSpace ⟨G, 1⟩ 2).carrier ≃ₜ C(Sphere2, G) :=
+/-- **`G × Ω^[k] G ≃ₜ Map(S^k, G)` for a topological group `G` and `k ≥ 1`**, through the
+identification of based maps out of `S^k`, based at `s₀`, with the `k`-fold loop space. -/
+def sphereGroupHomeomorphIteratedLoopSpace :
+    G × (BasedTopologicalSpace.iteratedLoopSpace ⟨G, 1⟩ k).carrier ≃ₜ
+      C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, G) :=
   (Homeomorph.prodCongr (Homeomorph.refl G)
-    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨G, 1⟩
-      Sphere2.north).symm).trans (mappingSpaceGroupHomeomorph Sphere2.north)
+    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace k ⟨G, 1⟩ s₀).symm).trans
+      (mappingSpaceGroupHomeomorph s₀)
 
-variable {G}
+variable {k G s₀}
 
 @[simp]
-theorem sphere2GroupHomeomorphIteratedLoopSpace_apply (g : G)
-    (γ : (BasedTopologicalSpace.iteratedLoopSpace ⟨G, 1⟩ 2).carrier) :
-    sphere2GroupHomeomorphIteratedLoopSpace G (g, γ) =
-      ContinuousMap.const Sphere2 g *
-        ((BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨G, 1⟩
-          Sphere2.north).symm γ).1 := by
-  rw [sphere2GroupHomeomorphIteratedLoopSpace, Homeomorph.trans_apply,
+theorem sphereGroupHomeomorphIteratedLoopSpace_apply (g : G)
+    (γ : (BasedTopologicalSpace.iteratedLoopSpace ⟨G, 1⟩ k).carrier) :
+    sphereGroupHomeomorphIteratedLoopSpace k G s₀ (g, γ) =
+      ContinuousMap.const _ g *
+        ((BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace k ⟨G, 1⟩
+          s₀).symm γ).1 := by
+  rw [sphereGroupHomeomorphIteratedLoopSpace, Homeomorph.trans_apply,
     mappingSpaceGroupHomeomorph_apply]
   rfl
 
-/-- The group coordinate of the decomposition of a sphere map is its value at the north pole. -/
+/-- The group coordinate of the decomposition of a sphere map is its value at the basepoint. -/
 @[simp]
-theorem sphere2GroupHomeomorphIteratedLoopSpace_symm_fst (f : C(Sphere2, G)) :
-    ((sphere2GroupHomeomorphIteratedLoopSpace G).symm f).1 = f Sphere2.north := by
-  rw [sphere2GroupHomeomorphIteratedLoopSpace, Homeomorph.symm_trans_apply]
-  exact mappingSpaceGroupHomeomorph_symm_fst Sphere2.north f
+theorem sphereGroupHomeomorphIteratedLoopSpace_symm_fst
+    (f : C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, G)) :
+    ((sphereGroupHomeomorphIteratedLoopSpace k G s₀).symm f).1 = f s₀ := by
+  rw [sphereGroupHomeomorphIteratedLoopSpace, Homeomorph.symm_trans_apply]
+  exact mappingSpaceGroupHomeomorph_symm_fst s₀ f
+
+/-- The loop coordinate of the decomposition of a sphere map `f` is the loop corresponding to the
+based sphere map `(f s₀)⁻¹ * f`. -/
+@[simp]
+theorem sphereGroupHomeomorphIteratedLoopSpace_symm_snd
+    (f : C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, G)) :
+    ((sphereGroupHomeomorphIteratedLoopSpace k G s₀).symm f).2 =
+      BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace k ⟨G, 1⟩ s₀
+        ((mappingSpaceGroupHomeomorph s₀).symm f).2 := by
+  rw [sphereGroupHomeomorphIteratedLoopSpace, Homeomorph.symm_trans_apply]
+  rfl
 
 end TauCeti

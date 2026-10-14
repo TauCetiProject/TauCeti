@@ -89,6 +89,7 @@ theorem suspensionToSphere_apply_two (p : I × Circle) :
   rfl
 
 /-- The collapse sends exactly the end `{0} × S¹` to the north pole. -/
+@[simp]
 theorem suspensionToSphere_eq_north_iff (p : I × Circle) :
     suspensionToSphere p = Sphere2.north ↔ p.1 = 0 := by
   constructor
@@ -103,6 +104,7 @@ theorem suspensionToSphere_eq_north_iff (p : I × Circle) :
     fin_cases i <;> simp [Sphere2.north, h, suspensionToSphere]
 
 /-- The collapse sends exactly the end `{1} × S¹` to the south pole. -/
+@[simp]
 theorem suspensionToSphere_eq_south_iff (p : I × Circle) :
     suspensionToSphere p = Sphere2.south ↔ p.1 = 1 := by
   constructor

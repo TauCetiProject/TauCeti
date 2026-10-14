@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MappingSpace.Sphere.Group
+public import TauCeti.Topology.Sphere.Suspension
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
 /-!
 # Maps from the two-sphere into a group, with Moore loops
 
 For a topological group `G`, the space `Map(S², G)` is homeomorphic to `G × Ω²G`, with `Ω²G` the
-fixed-interval double loop space (`TauCeti.sphere2GroupHomeomorphIteratedLoopSpace`). Replacing
+fixed-interval double loop space (`TauCeti.sphereGroupHomeomorphIteratedLoopSpace`). Replacing
 the outer loop space of `Ω²G = Ω(ΩG)` by the space of Moore loops in the fixed-interval loop space
 `ΩG`, which is homotopy equivalent to it (`TauCeti.MooreLoopSpace.homotopyEquivPath`), gives a
 homotopy equivalence of `Map(S², G)` with `G × Ω^M(ΩG)`, in which the group coordinate is the
@@ -48,7 +49,7 @@ def sphere2GroupHomotopyEquivMoore :
     ContinuousMap.HomotopyEquiv (G × MooreLoopSpace (Path (1 : G) 1) (Path.refl 1)) C(Sphere2, G) :=
   (ContinuousMap.HomotopyEquiv.prodCongr (ContinuousMap.HomotopyEquiv.refl G)
     (MooreLoopSpace.homotopyEquivPath (Path.refl (1 : G)))).trans
-      (sphere2GroupHomeomorphIteratedLoopSpace G).toHomotopyEquiv
+      (sphereGroupHomeomorphIteratedLoopSpace 2 G Sphere2.north).toHomotopyEquiv
 
 variable {G}
 
@@ -57,7 +58,7 @@ interval and applies the decomposition `G × Ω²G ≃ₜ Map(S², G)`. -/
 theorem sphere2GroupHomotopyEquivMoore_apply (g : G)
     (γ : MooreLoopSpace (Path (1 : G) 1) (Path.refl 1)) :
     sphere2GroupHomotopyEquivMoore G (g, γ) =
-      sphere2GroupHomeomorphIteratedLoopSpace G
+      sphereGroupHomeomorphIteratedLoopSpace 2 G Sphere2.north
         (g, MooreLoopSpace.homotopyEquivPath (Path.refl (1 : G)) γ) := by
   rw [sphere2GroupHomotopyEquivMoore]
   rfl
@@ -67,17 +68,18 @@ theorem sphere2GroupHomotopyEquivMoore_apply (g : G)
 theorem sphere2GroupHomotopyEquivMoore_apply_north (g : G)
     (γ : MooreLoopSpace (Path (1 : G) 1) (Path.refl 1)) :
     sphere2GroupHomotopyEquivMoore G (g, γ) Sphere2.north = g := by
-  have h := sphere2GroupHomeomorphIteratedLoopSpace_symm_fst
-    (sphere2GroupHomeomorphIteratedLoopSpace G
+  have h := sphereGroupHomeomorphIteratedLoopSpace_symm_fst (s₀ := Sphere2.north)
+    (sphereGroupHomeomorphIteratedLoopSpace 2 G Sphere2.north
       (g, MooreLoopSpace.homotopyEquivPath (Path.refl (1 : G)) γ))
   rw [Homeomorph.symm_apply_apply] at h
   exact h.symm
 
 /-- The group coordinate of the image under the homotopy inverse of `sphere2GroupHomotopyEquivMoore`
 is the value at the north pole. -/
+@[simp]
 theorem sphere2GroupHomotopyEquivMoore_symm_apply_fst (f : C(Sphere2, G)) :
     ((sphere2GroupHomotopyEquivMoore G).symm f).1 = f Sphere2.north := by
   rw [sphere2GroupHomotopyEquivMoore]
-  exact sphere2GroupHomeomorphIteratedLoopSpace_symm_fst f
+  exact sphereGroupHomeomorphIteratedLoopSpace_symm_fst (s₀ := Sphere2.north) f
 
 end TauCeti
