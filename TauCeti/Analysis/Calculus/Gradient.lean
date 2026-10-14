@@ -36,6 +36,8 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
+* `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
+  supported.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`; `ContDiffAt.continuousAt_fderiv_gradient` and
@@ -82,6 +84,11 @@ does. -/
 @[simp]
 theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
+
+/-- The gradient of a compactly supported function is compactly supported, as is its Fréchet
+derivative (`HasCompactSupport.fderiv`). -/
+theorem _root_.HasCompactSupport.gradient (hf : HasCompactSupport f) : HasCompactSupport (∇ f) :=
+  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx (gradient_of_notMem_tsupport h)
 
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
