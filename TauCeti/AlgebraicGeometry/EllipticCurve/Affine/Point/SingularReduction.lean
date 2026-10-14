@@ -430,10 +430,14 @@ theorem exists_chord_of_add_notMem_nonsingularReduction
     (Valuation.mem_maximalIdeal_iff (v := v)).2 hx₃,
     (Valuation.mem_maximalIdeal_iff (v := v)).2 hy₃, ?_, ?_, ?_⟩ <;> apply Subtype.ext <;>
     push_cast
-  · rw [coe_integralModel_a₁, coe_integralModel_a₂, addX]
+  · simp only [addX, ← integralModel_a₁_eq v.valuationSubring W,
+      ← integralModel_a₂_eq v.valuationSubring W, ValuationSubring.algebraMap_apply]
     ring
   · exact hL
-  · rw [coe_integralModel_a₁, coe_integralModel_a₃, coe_integralModel_a₄, h2]
+  · simp only [← integralModel_a₁_eq v.valuationSubring W,
+      ← integralModel_a₃_eq v.valuationSubring W, ← integralModel_a₄_eq v.valuationSubring W,
+      ValuationSubring.algebraMap_apply] at hc
+    rw [h2]
     linear_combination hc
 
 /-- **Twice a point whose tangent slope lies in `𝔪` has singular reduction.** Here the reduction is
@@ -468,9 +472,10 @@ theorem two_nsmul_notMem_of_slope_mem
     rw [slope_of_Y_ne rfl hy', div_eq_iff (sub_ne_zero.2 hy')]
     have := congrArg ((↑) : v.valuationSubring → F) hslope
     push_cast at this
-    rw [coe_integralModel_a₁, coe_integralModel_a₂, coe_integralModel_a₃, coe_integralModel_a₄, h2,
-      h3] at this
-    rw [negY]
+    rw [h2, h3] at this
+    simp only [negY, ← integralModel_a₁_eq v.valuationSubring W,
+      ← integralModel_a₂_eq v.valuationSubring W, ← integralModel_a₃_eq v.valuationSubring W,
+      ← integralModel_a₄_eq v.valuationSubring W, ValuationSubring.algebraMap_apply]
     linear_combination -this
   have hx₃ : Wo.toAffine.addX x x ℓ ∈ maximalIdeal v.valuationSubring :=
     sub_mem (sub_mem (sub_mem (add_mem (Ideal.pow_mem_of_mem _ hℓ 2 two_pos)

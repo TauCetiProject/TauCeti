@@ -299,7 +299,8 @@ theorem reduction_neg (P : W.Point) :
         (valuation_y_le_one_of_valuation_x_le_one v h.left hx)⟩ -
           M.a₁ * ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩ - M.a₃
       have hc : ((c : v.valuationSubring) : F) = W.negY x y * 1 := by
-        simp [c, Affine.negY, M]
+        simp [c, Affine.negY, ← integralModel_a₁_eq v.valuationSubring W,
+          ← integralModel_a₃_eq v.valuationSubring W, M]
       rw [reduction_some_eq_mk v _ (X := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩) (Y := c)
         (Z := 1) (by simp) hc (Or.inr (Or.inr isUnit_one)),
         reduction_some_of_valuation_le_one v h hx, Projective.negMap_eq]

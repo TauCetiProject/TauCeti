@@ -271,31 +271,6 @@ theorem nonsingular_integralModel_iff {x y : v.valuationSubring} :
     rw [baseChange_integralModel_eq]
   exact (map_nonsingular _ Subtype.val_injective x y).symm.trans h
 
-/-- The coefficient `a₁` of the integral model is that of `W`. -/
-@[simp]
-theorem coe_integralModel_a₁ : ((integralModel v.valuationSubring W).a₁ : F) = W.a₁ := by
-  simpa using integralModel_a₁_eq v.valuationSubring W
-
-/-- The coefficient `a₂` of the integral model is that of `W`. -/
-@[simp]
-theorem coe_integralModel_a₂ : ((integralModel v.valuationSubring W).a₂ : F) = W.a₂ := by
-  simpa using integralModel_a₂_eq v.valuationSubring W
-
-/-- The coefficient `a₃` of the integral model is that of `W`. -/
-@[simp]
-theorem coe_integralModel_a₃ : ((integralModel v.valuationSubring W).a₃ : F) = W.a₃ := by
-  simpa using integralModel_a₃_eq v.valuationSubring W
-
-/-- The coefficient `a₄` of the integral model is that of `W`. -/
-@[simp]
-theorem coe_integralModel_a₄ : ((integralModel v.valuationSubring W).a₄ : F) = W.a₄ := by
-  simpa using integralModel_a₄_eq v.valuationSubring W
-
-/-- The coefficient `a₆` of the integral model is that of `W`. -/
-@[simp]
-theorem coe_integralModel_a₆ : ((integralModel v.valuationSubring W).a₆ : F) = W.a₆ := by
-  simpa using integralModel_a₆_eq v.valuationSubring W
-
 /-- The negated `y`-coordinate computed in the integral model is that computed in `W`. -/
 theorem coe_negY_integralModel (x y : v.valuationSubring) :
     (((integralModel v.valuationSubring W).toAffine.negY x y : v.valuationSubring) : F) =
