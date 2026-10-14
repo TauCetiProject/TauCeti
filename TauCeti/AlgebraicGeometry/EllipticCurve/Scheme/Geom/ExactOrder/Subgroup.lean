@@ -7,8 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
-import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 
@@ -49,45 +47,30 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S}
 
 /-- The divisor of the first `N` positive multiples of a point is finite over the base. -/
 instance isFinite_multiplesDivisor :
-    IsFinite ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) :=
-  (E.isRelativeEffectiveCartier_multiplesDivisor P N).isFinite
+    IsFinite ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
+  rw [multiplesDivisor_eq_pointsDivisor]
+  infer_instance
 
 /-- The divisor of the first `N` positive multiples of a point is flat over the base. -/
 instance flat_multiplesDivisor :
-    Flat ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) :=
-  (E.isRelativeEffectiveCartier_multiplesDivisor P N).flat
+    Flat ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
+  rw [multiplesDivisor_eq_pointsDivisor]
+  infer_instance
 
 /-- The divisor of the first `N` positive multiples of a point is locally of finite
 presentation over the base. Together with finiteness and flatness, this makes it finite
 locally free. -/
 instance locallyOfFinitePresentation_multiplesDivisor :
     LocallyOfFinitePresentation ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
-  have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
-  exact TauCeti.locallyOfFinitePresentation_subschemeι_comp_of_isEffectiveCartier
-    (E.isRelativeEffectiveCartier_multiplesDivisor P N).isEffectiveCartier
+  rw [multiplesDivisor_eq_pointsDivisor]
+  infer_instance
 
 /-- The divisor `[P] + ⋯ + [NP]` has constant rank `N`, whether or not `P` has exact order. -/
 @[simp]
 theorem finrank_multiplesDivisor :
     ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap).finrank = fun _ ↦ N := by
-  induction N with
-  | zero =>
-    funext s
-    rw [multiplesDivisor_zero, Scheme.Hom.finrank_eq_zero_iff_notMem_range]
-    rintro ⟨x, -⟩
-    exact isEmptyElim (α := (⊤ : E.carrier.IdealSheafData).subscheme) x
-  | succ N ih =>
-    have hsec := Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension
-      (f := E.structureMap)
-      (P ^ (N + 1)).left (Over.w (P ^ (N + 1)))
-    have := (P ^ (N + 1)).left.isClosedImmersion_of_comp_eq_id (f := E.structureMap) (Over.w _)
-    have : IsFinite ((E.multiplesDivisor P N *
-        Scheme.Hom.ker (Y := E.carrier) (P ^ (N + 1)).left).subschemeι ≫ E.structureMap) := by
-      rw [← multiplesDivisor_succ]; infer_instance
-    rw [multiplesDivisor_succ,
-      (E.isRelativeEffectiveCartier_multiplesDivisor P N).finrank_mul_subschemeι_comp hsec,
-      ih, Scheme.Hom.finrank_ker_comp_eq_one_of_comp_eq_id _ (f := E.structureMap) (Over.w _)]
-    rfl
+  funext s
+  rw [multiplesDivisor_eq_pointsDivisor, finrank_pointsDivisor, Fintype.card_fin]
 
 variable {P N}
 

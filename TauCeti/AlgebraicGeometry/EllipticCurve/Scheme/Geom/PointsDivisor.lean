@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
@@ -20,8 +21,9 @@ effective Cartier divisor `[x a]` on `E`. The divisor `∑_{a ∈ A} [x a]`
 (`EllipticCurveGeom.pointsDivisor`) is the product of their ideal sheaves; points occurring several
 times in the family are counted with multiplicity.
 
-The divisor `∑_a [x a]` is a relative effective Cartier divisor on `E` over `S`, contains each of
-the points `x a`, does not depend on how the points are indexed, and commutes with base change.
+The divisor `∑_a [x a]` is a relative effective Cartier divisor on `E` over `S`, finite locally
+free over `S`, contains each of the points `x a`, does not depend on how the points are indexed,
+and commutes with base change.
 Particular cases are the divisor `[P] + [2P] + ⋯ + [NP]` of points of exact order `N`
 (`EllipticCurveGeom.multiplesDivisor`) and the divisor `∑_{a ∈ (ℤ/Nℤ)²} [φ a]` of Drinfeld bases
 (`EllipticCurveGeom.IsDrinfeldBasis`).
@@ -82,6 +84,25 @@ theorem isRelativeEffectiveCartier_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ 
     Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (f := E.structureMap)
       _ (Over.w (x a))
 
+/-- The divisor `∑_a [x a]` is finite over the base. -/
+instance isFinite_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
+    IsFinite ((E.pointsDivisor x).subschemeι ≫ E.structureMap) :=
+  (isRelativeEffectiveCartier_pointsDivisor x).isFinite
+
+/-- The divisor `∑_a [x a]` is flat over the base. -/
+instance flat_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
+    Flat ((E.pointsDivisor x).subschemeι ≫ E.structureMap) :=
+  (isRelativeEffectiveCartier_pointsDivisor x).flat
+
+/-- The divisor `∑_a [x a]` is locally of finite presentation over the base. Together with
+finiteness and flatness, this makes it finite locally free. -/
+instance locallyOfFinitePresentation_pointsDivisor
+    (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
+    LocallyOfFinitePresentation ((E.pointsDivisor x).subschemeι ≫ E.structureMap) := by
+  have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
+  exact TauCeti.locallyOfFinitePresentation_subschemeι_comp_of_isEffectiveCartier
+    (isRelativeEffectiveCartier_pointsDivisor x).isEffectiveCartier
+
 /-- Each of the points `x a` lies on the divisor `∑_a [x a]`. -/
 theorem pointsDivisor_le_ker (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (a : A) :
     E.pointsDivisor x ≤ (x a).left.ker := by
@@ -102,7 +123,7 @@ theorem finrank_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structure
     ((E.pointsDivisor x).subschemeι ≫ E.structureMap).finrank s = Fintype.card A := by
   have (a : A) : IsClosedImmersion (x a).left :=
     (x a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
-  have := (isRelativeEffectiveCartier_pointsDivisor x).isFinite
+  have := isFinite_pointsDivisor x
   rw [pointsDivisor_def] at this ⊢
   rw [finrank_prod_subschemeι_comp Finset.univ (fun a ↦ (x a).left.ker)
     (fun a _ ↦ Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension
