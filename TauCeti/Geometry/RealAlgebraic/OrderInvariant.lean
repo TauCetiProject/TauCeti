@@ -42,6 +42,16 @@ public section
 
 open MvPolynomial Set
 
+namespace TauCeti
+
+/-- Equal orders of vanishing give the same zero pattern at the two points. -/
+theorem eval_eq_zero_iff_of_orderAt_eq {σ R : Type*} [CommSemiring R]
+    {p : MvPolynomial σ R} {x y : σ → R} (h : p.orderAt x = p.orderAt y) :
+    eval x p = 0 ↔ eval y p = 0 := by
+  rw [← orderAt_pos_iff, h, orderAt_pos_iff]
+
+end TauCeti
+
 /-- A polynomial whose order of vanishing is the same at all points of a preconnected set `S` is
 sign-invariant on `S`. -/
 theorem IsPreconnected.signInvariant_eval_of_orderAt_eq {σ R : Type*} [CommSemiring R]

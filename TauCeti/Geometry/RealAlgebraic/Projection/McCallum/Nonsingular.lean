@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.Submanifold.Polynomial
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
 public import TauCeti.Geometry.RealAlgebraic.IrreducibleBasis
 public import TauCeti.Geometry.RealAlgebraic.OrderInvariant
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Analysis.Analytic.Polynomial
 
 /-!
 # Nonsingular McCallum lifting
@@ -110,14 +110,8 @@ theorem exists_delineation_orderAt_eq_of_nonsingular (hB : F.IsIrreducibleBasis 
     (fun b hb x ↦ hlc b hb x x.2) (fun b hb x ↦ hdiscr b hb x x.2)
     (fun b hb c hc hne x ↦ hres b hb c hc hne x x.2)
   -- Intrinsic analyticity of coefficients makes sections analytic; sectors are relatively open.
-  have hcoeff (b : B) (j : ℕ) :
-      TauCeti.AnalyticOnSubmanifold d
-        (fun x ↦ (b.1.map (MvPolynomial.eval x)).coeff j) S := by
-    simp only [Polynomial.coeff_map]
-    exact ((AnalyticOnNhd.eval_continuousLinearMap
-      (ContinuousLinearMap.id ℝ (Fin n → ℝ)) (b.1.coeff j)).mono
-        (Set.subset_univ S)).analyticOnSubmanifold hS
-  refine ⟨D, fun E hE ↦ ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS hcoeff hE,
+  refine ⟨D, fun E hE ↦ ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS
+    (fun (b : B) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.1 j) hE,
     fun f hf ↦ ?_⟩⟩
   -- Simple fiber zeros have ambient order one. Transfer these basis orders through factorization.
   have horder : ∀ y ∈ E, ∀ y' ∈ E, ((finSuccEquiv ℝ n).symm f).orderAt y =
