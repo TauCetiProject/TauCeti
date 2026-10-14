@@ -27,6 +27,10 @@ Smoothness of relative dimension one, properness and the local-model condition
   structure morphisms (`baseChangeIso_hom_snd`) and the zero sections (`zero_baseChangeIso_hom`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap E k hk`: the canonical morphism
   between base changes induced by a morphism `k` of bases over `S`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeLift hg₁ hg₂ hh`: for a base change square
+  `hg₁` of `E` along `u : T₁ ⟶ S`, a morphism from an elliptic curve `E₂` to `E` over `v : T₂ ⟶ S`
+  and `h : T₂ ⟶ T₁` with `h ≫ u = v`, the induced morphism `E₂ ⟶ E₁` over `h`; it is a base change
+  square (`isPullback_baseChangeLift`) preserving zero sections (`zero_baseChangeLift`).
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.carrierMap hg hh` and
   `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelMap hg hh`: for a base change square
   `hg` of a morphism with a section, and charts `k` and `c` of its two sides whose bases are related
@@ -219,6 +223,52 @@ theorem baseChangeMap_comp (k : T' ⟶ T) (hk : k ≫ f = f') (l : T'' ⟶ T')
     E.baseChangeMap l hl ≫ E.baseChangeMap k hk =
       E.baseChangeMap (l ≫ k) (by rw [Category.assoc, hk, hl]) := by
   simp [baseChangeMap]
+
+section BaseChangeLift
+
+variable {E} {T₁ T₂ : Scheme.{u}} {E₁ : EllipticCurveGeom T₁} {E₂ : EllipticCurveGeom T₂}
+  {g₁ : E₁.carrier ⟶ E.carrier} {u : T₁ ⟶ S} (hg₁ : IsPullback g₁ E₁.structureMap E.structureMap u)
+  {g₂ : E₂.carrier ⟶ E.carrier} {v : T₂ ⟶ S} {h : T₂ ⟶ T₁}
+
+/-- Let `g₁ : E₁ ⟶ E` exhibit the elliptic curve `E₁` over `T₁` as a base change of `E` along
+`u : T₁ ⟶ S`, and let `g₂ : E₂ ⟶ E` be a morphism from an elliptic curve `E₂` over `T₂` lying
+over `v : T₂ ⟶ S`. Given `h : T₂ ⟶ T₁` with `h ≫ u = v`, this is the induced morphism `E₂ ⟶ E₁`
+lying over `h`, compatibly with `g₁` and `g₂`. When `g₂` is also a base change square, so is this
+morphism (`isPullback_baseChangeLift`), and it preserves zero sections when `g₁` and `g₂` do
+(`zero_baseChangeLift`). -/
+noncomputable def baseChangeLift (hg₂ : CommSq g₂ E₂.structureMap E.structureMap v)
+    (hh : h ≫ u = v) : E₂.carrier ⟶ E₁.carrier :=
+  hg₁.lift g₂ (E₂.structureMap ≫ h) (by rw [Category.assoc, hh, hg₂.w])
+
+/-- The morphism `baseChangeLift hg₁ hg₂ hh` is compatible with the morphisms `g₁` and `g₂` to
+`E`. -/
+@[reassoc (attr := simp)]
+theorem baseChangeLift_comp (hg₂ : CommSq g₂ E₂.structureMap E.structureMap v) (hh : h ≫ u = v) :
+    baseChangeLift hg₁ hg₂ hh ≫ g₁ = g₂ :=
+  IsPullback.lift_fst _ _ _ _
+
+/-- The morphism `baseChangeLift hg₁ hg₂ hh` lies over the morphism `h` of bases. -/
+@[reassoc (attr := simp)]
+theorem baseChangeLift_structureMap (hg₂ : CommSq g₂ E₂.structureMap E.structureMap v)
+    (hh : h ≫ u = v) : baseChangeLift hg₁ hg₂ hh ≫ E₁.structureMap = E₂.structureMap ≫ h :=
+  IsPullback.lift_snd _ _ _ _
+
+/-- If `g₂` exhibits `E₂` as a base change of `E`, then `baseChangeLift` exhibits `E₂` as the base
+change of `E₁` along `h`. -/
+theorem isPullback_baseChangeLift (hg₂ : IsPullback g₂ E₂.structureMap E.structureMap v)
+    (hh : h ≫ u = v) :
+    IsPullback (baseChangeLift hg₁ hg₂.toCommSq hh) E₂.structureMap E₁.structureMap h :=
+  .of_right (by rw [baseChangeLift_comp, hh]; exact hg₂) (baseChangeLift_structureMap _ _ _) hg₁
+
+/-- If `g₁` and `g₂` carry the zero sections of `E₁` and `E₂` to that of `E`, then
+`baseChangeLift hg₁ hg₂ hh` carries the zero section of `E₂` to that of `E₁`. -/
+@[reassoc]
+theorem zero_baseChangeLift (hg₂ : CommSq g₂ E₂.structureMap E.structureMap v) (hh : h ≫ u = v)
+    (h0₁ : E₁.zero ≫ g₁ = u ≫ E.zero) (h0₂ : E₂.zero ≫ g₂ = v ≫ E.zero) :
+    E₂.zero ≫ baseChangeLift hg₁ hg₂ hh = h ≫ E₁.zero :=
+  hg₁.hom_ext (by simp [h0₁, h0₂, reassoc_of% hh]) (by simp)
+
+end BaseChangeLift
 
 end EllipticCurveGeom
 

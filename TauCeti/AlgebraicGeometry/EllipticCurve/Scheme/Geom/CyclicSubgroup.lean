@@ -148,20 +148,12 @@ theorem IsCyclicSubgroup.comap {I : E.carrier.IdealSheafData} {N : ℕ}
   have h0₂ : E₂.zero ≫ g₂ = p₁ ≫ E'.zero := by
     simp [g₂, E₂, E'.zero_baseChangeIso_hom_assoc]
   -- The induced morphism from `E₂` to `E₁`, lying over `p₂`.
-  let k : E₂.carrier ⟶ E₁.carrier := hg₁.lift (g₂ ≫ g) (E₂.structureMap ≫ p₂) (by
-    rw [Category.assoc, hg.w, ← Category.assoc, hg₂.w, Category.assoc, Category.assoc, hp])
-  have hkg : k ≫ g₁ = g₂ ≫ g := hg₁.lift_fst _ _ _
-  have hk : IsPullback k E₂.structureMap E₁.structureMap p₂ := by
-    refine .of_right ?_ (hg₁.lift_snd _ _ _) hg₁
-    rw [hkg, ← hp]
-    exact hg₂.paste_horiz hg
-  have h0k : E₂.zero ≫ k = p₂ ≫ E₁.zero := hg₁.hom_ext
-    (by simp only [Category.assoc, hkg, h0₁, reassoc_of% h0₂, h0, reassoc_of% hp])
-    (by simp only [Category.assoc, k, IsPullback.lift_snd, zero_comp_structureMap_assoc,
-      zero_comp_structureMap, Category.comp_id])
+  have hk := isPullback_baseChangeLift hg₁ (hg₂.paste_horiz hg) hp.symm
+  have h0k := zero_baseChangeLift hg₁ (hg₂.paste_horiz hg).toCommSq hp.symm h0₁
+    (by simp [h0, reassoc_of% h0₂])
   refine ⟨E₂, g₂, hg₂, h0₂, pointsPullback hk h0k P, hP.pointsPullback hk h0k, ?_⟩
   rw [multiplesDivisor_pointsPullback hk h0k, ← hI, ← Scheme.IdealSheafData.comap_comp,
-    ← Scheme.IdealSheafData.comap_comp, hkg]
+    ← Scheme.IdealSheafData.comap_comp, baseChangeLift_comp]
 
 end BaseChange
 
