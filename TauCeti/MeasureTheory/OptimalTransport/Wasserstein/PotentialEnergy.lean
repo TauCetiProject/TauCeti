@@ -143,6 +143,17 @@ theorem potentialEnergy_of_integrable (h : Integrable V μ) :
     integral_eq_lintegral_pos_part_sub_lintegral_neg_part h, EReal.coe_sub,
     EReal.coe_ennreal_toReal h₁, EReal.coe_ennreal_toReal h₂]
 
+/-- For an almost everywhere nonnegative potential, the potential energy is the lower Lebesgue
+integral of the potential. -/
+theorem potentialEnergy_of_nonneg_ae (h : 0 ≤ᵐ[μ] V) :
+    potentialEnergy V μ = (∫⁻ x, ENNReal.ofReal (V x) ∂μ : EReal) := by
+  have h₀ : ∫⁻ x, ENNReal.ofReal (-V x) ∂μ = 0 :=
+    (lintegral_congr_ae (h.mono fun x hx ↦ ENNReal.ofReal_eq_zero.2 (neg_nonpos.2 hx))).trans
+      lintegral_zero
+  by_cases hV : ∫⁻ x, ENNReal.ofReal (V x) ∂μ = ∞
+  · simp [potentialEnergy, hV]
+  · rw [potentialEnergy_of_lintegral_ne_top hV, h₀, EReal.coe_ennreal_zero, sub_zero]
+
 /-- An almost everywhere strongly measurable potential is integrable exactly when its potential
 energy is finite. -/
 theorem integrable_iff_potentialEnergy_ne_top_and_ne_bot (hV : AEStronglyMeasurable V μ) :
