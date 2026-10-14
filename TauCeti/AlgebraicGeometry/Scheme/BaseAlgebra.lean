@@ -240,7 +240,6 @@ theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_
 /-- **The pullback of rational functions along a morphism over `Spec k` is `k`-linear**: for a
 dominant morphism `f : Y ⟶ Z` of integral schemes over `Spec k`, the pullback `f^*` fixes the
 image of `k` in the function fields. -/
-@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap {Y Z : Scheme.{u}}
     [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y] [IsIntegral Z] (f : Y ⟶ Z)
     [f.IsOver (Spec (.of k))] [IsDominant f] (c : k) :

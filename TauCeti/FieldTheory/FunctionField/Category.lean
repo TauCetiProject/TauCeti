@@ -115,14 +115,6 @@ theorem hom_comp (f : F ⟶ F') (g : F' ⟶ F'') : (f ≫ g).hom = g.hom.comp f.
 theorem hom_ext {f g : F ⟶ F'} (h : f.hom = g.hom) : f = g :=
   Hom.ext h
 
-@[simp]
-theorem hom_ofHom (f : F →ₐ[k] F') : (ofHom f).hom = f :=
-  (rfl)
-
-@[simp]
-theorem ofHom_hom (f : F ⟶ F') : ofHom f.hom = f :=
-  (rfl)
-
 /-- A `k`-algebra isomorphism of function fields as an isomorphism of `FunctionFieldCat k`. -/
 def isoMk (e : F ≃ₐ[k] F') : F ≅ F' where
   hom := ofHom e
