@@ -58,6 +58,7 @@ theorem aevalAeval_eq_eval₂ {R A : Type*} [CommSemiring R] [CommSemiring A] [A
   | monomial n a => simp [← C_mul_X_pow_eq_monomial]
 
 /-- The bivariate-to-multivariate equivalence commutes with coefficient maps. -/
+@[simp]
 theorem Bivariate.equivMvPolynomial_symm_map {R S : Type*} [CommSemiring R] [CommSemiring S]
     (f : R →+* S) (φ : MvPolynomial (Fin 2) R) :
     (Bivariate.equivMvPolynomial S).symm (φ.map f) =
@@ -68,6 +69,7 @@ theorem Bivariate.equivMvPolynomial_symm_map {R S : Type*} [CommSemiring R] [Com
   | mul_X p i hp => fin_cases i <;> simp [hp]
 
 /-- Evaluation is unchanged by converting a two-variable polynomial to bivariate form. -/
+@[simp]
 theorem Bivariate.aevalAeval_comp_equivMvPolynomial_symm {R A : Type*}
     [CommSemiring R] [CommSemiring A] [Algebra R A] (x y : A) :
     (aevalAeval x y).comp
