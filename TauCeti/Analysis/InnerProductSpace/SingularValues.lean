@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.SingularValues
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
+public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
@@ -55,6 +56,8 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
   for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
+* `LinearMap.singularValues_eq_single_of_finrank_eq_one`: on a one-dimensional source the only
+  singular value is `‖A x‖` for a unit vector `x`.
 * `LinearMap.singularValues_mul_norm_le_norm_apply`,
   `LinearMap.norm_apply_le_singularValues_mul_norm`: `σₙ ‖x‖ ≤ ‖A x‖` on the span of the `vᵢ`
   with `i ≤ n`, and `‖A x‖ ≤ σₙ ‖x‖` on the span of the `vᵢ` with `n ≤ i`.
@@ -79,8 +82,15 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_le_of_norm_apply_le`: if `‖A x‖ ≤ c ‖x‖` for every `x`, with
+  `c ≥ 0`, then `σᵢ(A) ≤ c` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
   `B` have the same singular values.
+* `LinearMap.singularValues_operatorAbs`: the modulus `|A| = √(A† A)` has the same singular values
+  as `A`.
+* `LinearMap.singularValues_linearIsometry_comp`,
+  `LinearMap.singularValues_comp_adjoint_linearIsometry`: composing on the left with a linear
+  isometry, or on the right with the adjoint of one, leaves the singular values unchanged.
 * `LinearMap.singularValues_linearIsometryEquiv_comp`,
   `LinearMap.singularValues_comp_linearIsometryEquiv`: composing with isometric isomorphisms on
   either side leaves the singular values unchanged.
@@ -278,6 +288,23 @@ theorem norm_apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
     one_pow, mul_one] at h
   norm_cast at h
   exact (sq_eq_sq₀ (norm_nonneg _) (A.singularValues_nonneg _)).mp h
+
+/-- On a one-dimensional source, the singular values of `A` are `‖A x‖` for any unit vector `x`,
+followed by zeros. -/
+theorem singularValues_eq_single_of_finrank_eq_one (hE : finrank 𝕜 E = 1) {x : E}
+    (hx : ‖x‖ = 1) : A.singularValues = Finsupp.single 0 ‖A x‖ := by
+  ext i
+  rcases Nat.eq_zero_or_pos i with rfl | hi
+  · have h0 : 0 < finrank 𝕜 E := hE ▸ one_pos
+    -- The right singular vector `v₀` is a unit multiple `c • x` of `x`.
+    obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' x (norm_ne_zero_iff.mp (by simp [hx]))).mp
+      hE (A.rightSingularBasis ⟨0, h0⟩)
+    have hc1 : ‖c‖ = 1 := by
+      simpa [← hc, norm_smul, hx] using A.rightSingularBasis.norm_eq_one ⟨0, h0⟩
+    have h := A.norm_apply_rightSingularBasis ⟨0, h0⟩
+    rw [Fin.val_mk, ← hc, map_smul, norm_smul, hc1, one_mul] at h
+    rw [Finsupp.single_eq_same, h]
+  · rw [Finsupp.single_eq_of_ne (by omega), A.singularValues_of_finrank_le (by omega)]
 
 /-- A right singular vector lies in the kernel of `A` exactly when its singular value
 vanishes. -/
@@ -512,6 +539,15 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
     (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
 
+/-- If `‖A x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `A` has operator norm at most `c`), then
+every singular value of `A` is at most `c`. -/
+theorem singularValues_le_of_norm_apply_le {A : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ x, ‖A x‖ ≤ c * ‖x‖) (i : ℕ) : A.singularValues i ≤ c := by
+  rcases lt_or_ge i (finrank 𝕜 E) with hi | hi
+  · simpa [norm_apply_rightSingularBasis] using h (A.rightSingularBasis ⟨i, hi⟩)
+  · rw [A.singularValues_of_finrank_le hi]
+    exact hc
+
 /-- Two maps with the same source and `‖B x‖ = ‖A x‖` for every `x` have the same singular
 values. -/
 theorem singularValues_eq_of_norm_apply_eq {A : E →ₗ[𝕜] F} {B : E →ₗ[𝕜] G}
@@ -521,11 +557,31 @@ theorem singularValues_eq_of_norm_apply_eq {A : E →ₗ[𝕜] F} {B : E →ₗ[
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
 
+/-- The modulus `|A| = √(A† A)` of a map has the same singular values as the map itself. -/
+@[simp]
+theorem singularValues_operatorAbs (A : E →ₗ[𝕜] F) :
+    A.operatorAbs.singularValues = A.singularValues :=
+  singularValues_eq_of_norm_apply_eq A.norm_operatorAbs_apply
+
+/-- Composing on the left with a linear isometry leaves the singular values unchanged. -/
+@[simp]
+theorem singularValues_linearIsometry_comp (W : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    (W.toLinearMap ∘ₗ A).singularValues = A.singularValues :=
+  singularValues_eq_of_norm_apply_eq fun x ↦ by simp
+
+/-- Composing on the right with the adjoint of a linear isometry leaves the singular values
+unchanged. -/
+@[simp]
+theorem singularValues_comp_adjoint_linearIsometry (A : E →ₗ[𝕜] F) (W : E →ₗᵢ[𝕜] G) :
+    (A ∘ₗ adjoint W.toLinearMap).singularValues = A.singularValues := by
+  rw [← singularValues_adjoint, adjoint_comp, adjoint_adjoint, singularValues_linearIsometry_comp,
+    singularValues_adjoint]
+
 /-- Composing on the left with an isometric isomorphism leaves the singular values unchanged. -/
 @[simp]
 theorem singularValues_linearIsometryEquiv_comp (U : F ≃ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
     ((U : F →ₗ[𝕜] G) ∘ₗ A).singularValues = A.singularValues :=
-  singularValues_eq_of_norm_apply_eq fun x ↦ by simp
+  singularValues_linearIsometry_comp U.toLinearIsometry A
 
 /-- Composing on the right with an isometric isomorphism leaves the singular values unchanged. -/
 @[simp]

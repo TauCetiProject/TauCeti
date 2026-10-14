@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
 public import Mathlib.FieldTheory.Separable
+public import TauCeti.RingTheory.Algebraic.Basic
+import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
 # The rational function field as a base for a transcendental element
@@ -39,6 +41,8 @@ characteristic.
 ## Main results
 
 * `TauCeti.algebraMap_ratFuncAlgebraOfTranscendental_X`: the variable `X` acts as `x`.
+* `TauCeti.map_algebraMap_ratFuncAlgebraOfTranscendental`: an injective `k`-algebra map `f`
+  carries the structure induced by `x` to the structure induced by `f x`.
 * `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental`: the structure extends the given
   `k`-algebra structure.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
@@ -108,6 +112,24 @@ theorem algebraMap_ratFuncAlgebraOfTranscendental_X (hx : Transcendental k x) :
   let _ := ratFuncAlgebraOfTranscendental hx
   rw [algebraMap_ratFuncAlgebraOfTranscendental_apply,
     RatFunc.algEquivOfTranscendental_X]
+
+/-- An injective `k`-algebra map `f : F → F'` carries the embedding `X ↦ x` of `k(X)` to the
+embedding `X ↦ f x`. -/
+theorem map_algebraMap_ratFuncAlgebraOfTranscendental {F' G : Type*} [Field F'] [Algebra k F']
+    [FunLike G F F'] [AlgHomClass G k F F'] (f : G) (hf : Function.Injective f)
+    (hx : Transcendental k x) (r : RatFunc k) :
+    f (letI := ratFuncAlgebraOfTranscendental hx; algebraMap (RatFunc k) F r) =
+      letI := ratFuncAlgebraOfTranscendental (hx.algHom f hf)
+      algebraMap (RatFunc k) F' r := by
+  have hy := hx.algHom f hf
+  -- Both sides are `k`-algebra maps out of `k(X)` sending `X` to `f x`.
+  have h : (AlgHom.ofClass f).comp
+        (k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom) =
+      k⟮f x⟯.val.comp (RatFunc.algEquivOfTranscendental (f x) hy).toAlgHom :=
+    RatFunc.algHom_ext (by simp [RatFunc.algEquivOfTranscendental_X])
+  rw [algebraMap_ratFuncAlgebraOfTranscendental_apply,
+    algebraMap_ratFuncAlgebraOfTranscendental_apply]
+  exact DFunLike.congr_fun h r
 
 /-- The `RatFunc k`-algebra structure induced by `x` extends the given `k`-algebra structure. -/
 theorem isScalarTower_ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :

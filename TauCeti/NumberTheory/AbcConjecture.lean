@@ -38,9 +38,15 @@ constant `C` at the exponent `1 + ε / 2` leaves as exceptions at the exponent `
 with `rad(a b c) ^ (ε / 2) < C`, and these have bounded `c`. Conversely, the largest `c` among the
 finitely many exceptions at the exponent `1 + ε` is a constant for that exponent.
 
+The weaker statements with `1 + ε` replaced by `κ + ε` for a fixed `κ ≥ 1` are the abc conjecture
+with exponent `κ`, `TauCeti.AbcConjectureWithExponent κ`. Szpiro's conjecture implies the one with
+exponent `3 / 2`, through the Frey curve
+(`TauCeti.AlgorithmicSzpiroConjecture.abcConjectureWithExponent`).
+
 ## Main definitions
 
 * `TauCeti.AbcConjecture`: the abc conjecture.
+* `TauCeti.AbcConjectureWithExponent κ`: the abc conjecture with exponent `κ`.
 
 ## Main results
 
@@ -48,6 +54,10 @@ finitely many exceptions at the exponent `1 + ε` is a constant for that exponen
   `a + b = c`, bounding `c`.
 * `TauCeti.abcConjecture_iff_forall_finite`: the conjecture is the statement that, for every
   `ε > 0`, only finitely many triples have `rad(a b c) ^ (1 + ε) < c`.
+* `TauCeti.AbcConjectureWithExponent.mono`: a larger exponent gives a weaker statement.
+* `TauCeti.abcConjectureWithExponent_iff_nat`: for `κ ≥ 0`, the abc conjecture with exponent `κ` is
+  its form for coprime positive integers, of which `TauCeti.abcConjecture_iff_nat` is the case
+  `κ = 1`.
 
 ## References
 
@@ -65,13 +75,28 @@ open UniqueFactorizationMonoid
 
 namespace TauCeti
 
-/-- **The abc conjecture** (Masser, Oesterlé): for every `ε > 0` there is a constant `C` such that
-`max(|a|, |b|, |c|) ≤ C · rad(a b c) ^ (1 + ε)` for all coprime integers `a` and `b` with
-`a + b = c`. The radical is taken in `ℕ`, of `|a b c|`. -/
-def AbcConjecture : Prop :=
+/-- **The abc conjecture with exponent `κ`**: for every `ε > 0` there is a constant `C` such that
+`max(|a|, |b|, |c|) ≤ C · rad(a b c) ^ (κ + ε)` for all coprime integers `a` and `b` with
+`a + b = c`. The radical is taken in `ℕ`, of `|a b c|`. The abc conjecture is the case `κ = 1`
+(`TauCeti.AbcConjecture`), and the statement becomes weaker as
+`κ` grows (`TauCeti.AbcConjectureWithExponent.mono`). -/
+def AbcConjectureWithExponent (κ : ℝ) : Prop :=
   ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
     ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) ≤
-      C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (1 + ε)
+      C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ + ε)
+
+/-- The abc conjecture with exponent `κ`, unfolded. -/
+theorem abcConjectureWithExponent_iff (κ : ℝ) : AbcConjectureWithExponent κ ↔
+    ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
+      ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) ≤
+        C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ + ε) :=
+  Iff.rfl
+
+/-- **The abc conjecture** (Masser, Oesterlé): for every `ε > 0` there is a constant `C` such that
+`max(|a|, |b|, |c|) ≤ C · rad(a b c) ^ (1 + ε)` for all coprime integers `a` and `b` with
+`a + b = c`. It is the abc conjecture with exponent `1`. -/
+def AbcConjecture : Prop :=
+  AbcConjectureWithExponent 1
 
 /-- The abc conjecture, unfolded. -/
 theorem abcConjecture_iff : AbcConjecture ↔
@@ -81,16 +106,32 @@ theorem abcConjecture_iff : AbcConjecture ↔
   Iff.rfl
 
 -- The radical of a natural number is at least `1`, and so is any nonnegative power of it.
-private theorem one_le_radical_rpow (n : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
-    1 ≤ ((radical n : ℕ) : ℝ) ^ (1 + ε) :=
-  Real.one_le_rpow (by exact_mod_cast Nat.radical_pos n) (by linarith)
+private theorem one_le_radical_rpow (n : ℕ) {r : ℝ} (hr : 0 ≤ r) :
+    1 ≤ ((radical n : ℕ) : ℝ) ^ r :=
+  Real.one_le_rpow (by exact_mod_cast Nat.radical_pos n) hr
 
-/-- **The abc conjecture for positive integers**: it is equivalent to ask, for every `ε > 0`, for
-a constant `C` with `c ≤ C · rad(a b c) ^ (1 + ε)` for all coprime positive integers `a` and `b`
-with `a + b = c`. -/
-theorem abcConjecture_iff_nat : AbcConjecture ↔
+/-- **The abc conjecture with a larger exponent is weaker**: a bound with exponent `κ + ε` gives
+one with exponent `κ' + ε` for every `κ' ≥ κ`, since the radical is at least `1`. -/
+theorem AbcConjectureWithExponent.mono {κ κ' : ℝ} (h : AbcConjectureWithExponent κ)
+    (hκ : κ ≤ κ') : AbcConjectureWithExponent κ' := by
+  intro ε hε
+  obtain ⟨C, hC⟩ := h ε hε
+  refine ⟨max C 0, fun a b c hab habc ↦ (hC a b c hab habc).trans ?_⟩
+  have hR : (1 : ℝ) ≤ ((radical (a * b * c).natAbs : ℕ) : ℝ) := by
+    exact_mod_cast Nat.radical_pos _
+  calc C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ + ε)
+      ≤ max C 0 * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ + ε) :=
+        mul_le_mul_of_nonneg_right (le_max_left C 0) (Real.rpow_nonneg (by linarith) _)
+    _ ≤ max C 0 * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ' + ε) :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hR (by linarith))
+          (le_max_right C 0)
+
+/-- **The abc conjecture with exponent `κ ≥ 0` for positive integers**: it is equivalent to ask, for
+every `ε > 0`, for a constant `C` with `c ≤ C · rad(a b c) ^ (κ + ε)` for all coprime positive
+integers `a` and `b` with `a + b = c`. -/
+theorem abcConjectureWithExponent_iff_nat (κ : ℝ) (hκ : 0 ≤ κ) : AbcConjectureWithExponent κ ↔
     ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℕ, 0 < a → 0 < b → a.Coprime b → a + b = c →
-      (c : ℝ) ≤ C * ((radical (a * b * c) : ℕ) : ℝ) ^ (1 + ε) := by
+      (c : ℝ) ≤ C * ((radical (a * b * c) : ℕ) : ℝ) ^ (κ + ε) := by
   refine forall₂_congr fun ε hε ↦ ⟨fun ⟨C, hC⟩ ↦ ⟨C, fun a b c _ _ hab habc ↦ ?_⟩,
     fun ⟨C, hC⟩ ↦ ⟨max C 1, fun a b c hab habc ↦ ?_⟩⟩
   · -- a triple of natural numbers is a triple of integers, whose largest entry is `c`
@@ -98,8 +139,8 @@ theorem abcConjecture_iff_nat : AbcConjecture ↔
     rwa [← Nat.cast_mul, ← Nat.cast_mul, Int.natAbs_natCast, Int.natAbs_natCast,
       Int.natAbs_natCast, show max (max a b) c = c by omega] at h
   · have hxy : a.natAbs.Coprime b.natAbs := Int.isCoprime_iff_nat_coprime.mp hab
-    have hR := one_le_radical_rpow (a.natAbs * b.natAbs * c.natAbs) hε.le
-    have hR₀ : 0 ≤ ((radical (a.natAbs * b.natAbs * c.natAbs) : ℕ) : ℝ) ^ (1 + ε) :=
+    have hR := one_le_radical_rpow (a.natAbs * b.natAbs * c.natAbs) (by linarith : 0 ≤ κ + ε)
+    have hR₀ : 0 ≤ ((radical (a.natAbs * b.natAbs * c.natAbs) : ℕ) : ℝ) ^ (κ + ε) :=
       zero_le_one.trans hR
     rw [Int.natAbs_mul, Int.natAbs_mul]
     by_cases h₀ : a.natAbs = 0 ∨ b.natAbs = 0 ∨ c.natAbs = 0
@@ -127,6 +168,14 @@ theorem abcConjecture_iff_nat : AbcConjecture ↔
       rw [show max (max a.natAbs b.natAbs) c.natAbs = a.natAbs by omega,
         show a.natAbs * b.natAbs * c.natAbs = b.natAbs * c.natAbs * a.natAbs by ring]
       exact hC _ _ _ (by omega) (by omega) hxy h
+
+/-- **The abc conjecture for positive integers**: it is equivalent to ask, for every `ε > 0`, for
+a constant `C` with `c ≤ C · rad(a b c) ^ (1 + ε)` for all coprime positive integers `a` and `b`
+with `a + b = c`. -/
+theorem abcConjecture_iff_nat : AbcConjecture ↔
+    ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℕ, 0 < a → 0 < b → a.Coprime b → a + b = c →
+      (c : ℝ) ≤ C * ((radical (a * b * c) : ℕ) : ℝ) ^ (1 + ε) :=
+  abcConjectureWithExponent_iff_nat 1 zero_le_one
 
 /-- **The abc conjecture as finitely many exceptions**, the form of `ABC.abc` in the
 `formal-conjectures` project: it is equivalent to ask that, for every `ε > 0`, only finitely many
@@ -174,7 +223,7 @@ theorem abcConjecture_iff_forall_finite : AbcConjecture ↔
   · -- the largest `c` among the finitely many exceptions is a constant
     obtain ⟨M, hM⟩ := ((H ε hε).image fun t : ℕ × ℕ × ℕ ↦ (t.2.2 : ℝ)).bddAbove
     refine ⟨max M 1, fun a b c ha hb hab habc ↦ ?_⟩
-    have hR := one_le_radical_rpow (a * b * c) hε.le
+    have hR := one_le_radical_rpow (a * b * c) (by linarith : (0 : ℝ) ≤ 1 + ε)
     by_cases hlt : ((radical (a * b * c) : ℕ) : ℝ) ^ (1 + ε) < c
     · have hcM : (c : ℝ) ≤ M :=
         hM ⟨(a, b, c), ⟨ha, hb, by omega, (hpair hb habc).mpr hab, habc, hlt⟩, rfl⟩
