@@ -573,6 +573,7 @@ theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
 Herbrand function is the lower adjoint of `i ↦ ⌊φ_{L/K}(i)⌋`. In particular
 `ψℕ_{L/K}(⌊φ_{L/K}(i)⌋) ≤ i`, which converts the Herbrand-shifted depths `ψℕ_{L/K}(n)` back into
 unshifted ones. -/
+@[simp]
 theorem psiNat_le_iff_le_floor_herbrand {n i : ℕ} :
     psiNat K L n ≤ i ↔
       n ≤ ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ := by
