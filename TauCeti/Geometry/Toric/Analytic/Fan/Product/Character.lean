@@ -11,8 +11,9 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Product.Basic
 /-!
 # Characters of product toric realizations
 
-An integral character `m` of the product lattice `N × N'` splits as the sum of its restrictions
-`m ∘ inl` and `m ∘ inr` to the two lattice factors. When these restrictions are nonnegative on the
+An integral character `m` of the product lattice `N × N'` decomposes componentwise through its
+restrictions `m ∘ inl` and `m ∘ inr` to the two lattice factors:
+`m = (m.comp inl).comp fst + (m.comp inr).comp snd`. When these restrictions are nonnegative on the
 cones of two regular fans `Φ` and `Ψ`, the character is nonnegative on the cones of `Φ.prod Ψ`,
 and under the canonical product homeomorphism its holomorphic character function is the product
 of the character functions of the two restrictions. This is the character formula of the product
