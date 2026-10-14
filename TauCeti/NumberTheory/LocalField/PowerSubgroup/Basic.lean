@@ -65,6 +65,8 @@ The openness results are stated in `PowerSubgroup.Open`, including the general c
   square, in `K` exactly when its residue is one in `𝓀[K]`.
 * `TauCeti.disjoint_rootsOfUnity_unitFiltration_one_of_isUnit`: no nontrivial `n`-th root of
   unity is a principal unit.
+* `TauCeti.pow_mem_unitFiltration_succ_iff_of_isUnit`: for a principal unit `x`, `x ^ n` lies
+  in `U(K,i+1)` exactly when `x` does.
 * `TauCeti.powMonoidHom_unitFiltration_succ_bijective_of_isUnit`: the `n`-th power map is a
   bijection of `U(K,i+1)`.
 * `TauCeti.card_powerClasses_eq_of_index_unitFiltration_one`: the power-class count reduces to
@@ -197,6 +199,23 @@ theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUni
   exact disjoint_rootsOfUnity_unitFiltration hnK fun p hp hpK hpn ↦
     natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK
       (natCastValuation_eq_zero_of_isUnit K hnK hn ▸ Nat.one_pos) hp hpK hpn
+
+/-- **Powers prime to the residue characteristic preserve depth.** For `n` invertible in `𝒪[K]`
+and a principal unit `x ∈ U(K,1)`, the power `x ^ n` lies in `U(K,i+1)` exactly when `x` does.
+The hypothesis `x ∈ U(K,1)` cannot be dropped: a nontrivial `n`-th root of unity in `U(K,0)` has
+`n`-th power `1`. -/
+theorem pow_mem_unitFiltration_succ_iff_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) {x : Kˣ}
+    (hx : x ∈ unitFiltration K 1) (i : ℕ) :
+    x ^ n ∈ unitFiltration K (i + 1) ↔ x ∈ unitFiltration K (i + 1) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ pow_mem h n⟩
+  obtain ⟨y, hy, hyx⟩ := (map_powMonoidHom_unitFiltration_succ_of_isUnit hn i).ge h
+  rw [powMonoidHom_apply] at hyx
+  -- `x / y` is an `n`-th root of unity in `U(K,1)`, hence trivial.
+  have hxy : x / y = 1 :=
+    Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hn)
+      ((mem_rootsOfUnity n _).mpr (by rw [div_pow, hyx, div_self']))
+      (div_mem hx (unitFiltration_antitone (Nat.le_add_left 1 i) hy))
+  rwa [div_eq_one.mp hxy]
 
 /-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
 `U(K,i+1)` of the unit filtration. -/

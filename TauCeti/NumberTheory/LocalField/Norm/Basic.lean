@@ -128,9 +128,8 @@ theorem normalizedValuation_norm (x : Lˣ) :
     simp only [y, map_mul, map_pow, map_inv]
     rw [hu]
     simp
-  have hnorm : Algebra.normUnits K u = t ^ Module.finrank K L := by
-    apply Units.ext
-    simp [u, Algebra.norm_algebraMap]
+  have hnorm : Algebra.normUnits K u = t ^ Module.finrank K L :=
+    Algebra.normUnits_unitsMap_algebraMap K t
   have hmap : (normalizedValuation K (Algebra.normUnits K u)).toAdd =
       Module.finrank K L * (normalizedValuation L x).toAdd := by
     rw [hnorm, map_pow, ht, toAdd_pow, nsmul_eq_mul]
