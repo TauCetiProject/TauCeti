@@ -72,6 +72,23 @@ theorem quaternionFrame_two (x : E) : quaternionFrame x 2 = x <• (⟨0, 0, 0, 
 
 end Frame
 
+section Smooth
+
+variable [NormedAddCommGroup E] [DistribSMul ℍᵐᵒᵖ E] [ContinuousConstSMul ℍᵐᵒᵖ E]
+
+/-- Each vector field of the quaternionic frame extends to a smooth map of `E`. -/
+theorem contDiff_quaternionFrame [NormedSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] (j : Fin 3) :
+    ContDiff ℝ ∞ fun x : E ↦ quaternionFrame x j := by
+  fin_cases j <;> exact contDiff_const_smul _
+
+/-- Each vector field of the quaternionic frame is a smooth map on the unit sphere. -/
+theorem contMDiff_quaternionFrame [InnerProductSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] {n : ℕ}
+    [Fact (finrank ℝ E = n + 1)] (j : Fin 3) :
+    ContMDiff (𝓡 n) 𝓘(ℝ, E) ∞ fun x : sphere (0 : E) 1 ↦ quaternionFrame (x : E) j :=
+  (contDiff_quaternionFrame j).contMDiff.comp contMDiff_coe_sphere
+
+end Smooth
+
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℍᵐᵒᵖ E] [NormSMulClass ℍᵐᵒᵖ E]
 
 /-- Each vector of the quaternionic frame of `x` is orthogonal to `x`: on the unit sphere the
@@ -79,21 +96,6 @@ frame consists of tangent vectors. -/
 @[simp]
 theorem inner_quaternionFrame_self (x : E) (j : Fin 3) : ⟪quaternionFrame x j, x⟫ = 0 := by
   fin_cases j <;> simp
-
-section Smooth
-
-variable [SMulCommClass ℝ ℍᵐᵒᵖ E]
-
-/-- Each vector field of the quaternionic frame extends to a smooth map of `E`. -/
-theorem contDiff_quaternionFrame (j : Fin 3) : ContDiff ℝ ∞ fun x : E ↦ quaternionFrame x j := by
-  fin_cases j <;> exact contDiff_const_smul _
-
-/-- Each vector field of the quaternionic frame is a smooth map on the unit sphere. -/
-theorem contMDiff_quaternionFrame {n : ℕ} [Fact (finrank ℝ E = n + 1)] (j : Fin 3) :
-    ContMDiff (𝓡 n) 𝓘(ℝ, E) ∞ fun x : sphere (0 : E) 1 ↦ quaternionFrame (x : E) j :=
-  (contDiff_quaternionFrame j).contMDiff.comp contMDiff_coe_sphere
-
-end Smooth
 
 /-- The quaternionic frame of a unit vector is orthonormal. -/
 theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
