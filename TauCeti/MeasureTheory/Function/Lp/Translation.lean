@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.Topology.Instances.ENNReal
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 
@@ -56,6 +57,8 @@ this continuity for a `C¹` function, and needs no integrability of the function
   `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`: the global translation estimate.
 * `ContDiff.tendsto_eLpNorm_comp_add_sub`: continuity of translation in `Lᵖ` for a `C¹` function
   with `Lᵖ` derivative.
+* `ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv`: the second-order
+  translation estimate, bounding a mixed second difference by the second derivative.
 
 ## References
 
@@ -405,5 +408,34 @@ theorem ContDiff.tendsto_eLpNorm_comp_add_sub [SecondCountableTopology E] (hu : 
     Filter.Tendsto (fun h : E => eLpNorm (fun x => u (x + h) - u x) p mu) (nhds 0) (nhds 0) :=
   TauCeti.tendsto_nhds_zero_of_le_enorm_mul hfin fun h =>
     hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp hp' h
+
+/-- **The second-order translation estimate**: the mixed second difference of a `C²` function is
+controlled by its second derivative,
+
+`‖u(· + h + k) - u(· + h) - (u(· + k) - u)‖_p ≤ ‖h‖ ‖k‖ ‖D²u‖_p`, `1 ≤ p < ∞`.
+
+As for `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, no support, integrability or
+boundedness hypothesis is needed. -/
+theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
+    [SecondCountableTopology E] (hu : ContDiff ℝ 2 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (h k : E) :
+    eLpNorm (fun x => u (x + h + k) - u (x + h) - (u (x + k) - u x)) p mu ≤
+      ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := by
+  -- The mixed difference is the `h`-increment of the `k`-increment `x ↦ u (x + k) - u x`.
+  have hdiff : Differentiable ℝ u := hu.differentiable (by norm_num)
+  have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
+  have hinc : ContDiff ℝ 1 fun x => u (x + k) - u x := by fun_prop
+  have hd : fderiv ℝ (fun x => u (x + k) - u x) = fun x => fderiv ℝ u (x + k) - fderiv ℝ u x := by
+    ext1 x
+    rw [fderiv_fun_sub (by fun_prop) (hdiff x), fderiv_comp_add_right]
+  calc eLpNorm (fun x => u (x + h + k) - u (x + h) - (u (x + k) - u x)) p mu
+      ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ fun x => u (x + k) - u x) p mu :=
+        hinc.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp hp' h
+    _ ≤ ‖h‖ₑ * (‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu) := by
+        rw [hd]
+        gcongr
+        exact (hu.fderiv_right (m := 1) (by norm_num)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv
+          hp hp' k
+    _ = ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := (mul_assoc _ _ _).symm
 
 end Translation
