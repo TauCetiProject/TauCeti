@@ -243,7 +243,7 @@ noncomputable def baseChangeLift (hg₂ : CommSq g₂ E₂.structureMap E.struct
 /-- The morphism `baseChangeLift hg₁ hg₂ hh` is compatible with the morphisms `g₁` and `g₂` to
 `E`. -/
 @[reassoc (attr := simp)]
-theorem baseChangeLift_comp (hg₂ : CommSq g₂ E₂.structureMap E.structureMap v) (hh : h ≫ u = v) :
+theorem baseChangeLift_fst (hg₂ : CommSq g₂ E₂.structureMap E.structureMap v) (hh : h ≫ u = v) :
     baseChangeLift hg₁ hg₂ hh ≫ g₁ = g₂ :=
   IsPullback.lift_fst _ _ _ _
 
@@ -258,7 +258,7 @@ change of `E₁` along `h`. -/
 theorem isPullback_baseChangeLift (hg₂ : IsPullback g₂ E₂.structureMap E.structureMap v)
     (hh : h ≫ u = v) :
     IsPullback (baseChangeLift hg₁ hg₂.toCommSq hh) E₂.structureMap E₁.structureMap h :=
-  .of_right (by rw [baseChangeLift_comp, hh]; exact hg₂) (baseChangeLift_structureMap _ _ _) hg₁
+  .of_right (by rw [baseChangeLift_fst, hh]; exact hg₂) (baseChangeLift_structureMap _ _ _) hg₁
 
 /-- If `g₁` and `g₂` carry the zero sections of `E₁` and `E₂` to that of `E`, then
 `baseChangeLift hg₁ hg₂ hh` carries the zero section of `E₂` to that of `E₁`. -/

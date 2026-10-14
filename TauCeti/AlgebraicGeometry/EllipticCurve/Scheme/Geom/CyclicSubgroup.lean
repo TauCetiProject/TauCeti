@@ -153,7 +153,7 @@ theorem IsCyclicSubgroup.comap {I : E.carrier.IdealSheafData} {N : ℕ}
     (by simp [h0, reassoc_of% h0₂])
   refine ⟨E₂, g₂, hg₂, h0₂, pointsPullback hk h0k P, hP.pointsPullback hk h0k, ?_⟩
   rw [multiplesDivisor_pointsPullback hk h0k, ← hI, ← Scheme.IdealSheafData.comap_comp,
-    ← Scheme.IdealSheafData.comap_comp, baseChangeLift_comp]
+    ← Scheme.IdealSheafData.comap_comp, baseChangeLift_fst]
 
 end BaseChange
 

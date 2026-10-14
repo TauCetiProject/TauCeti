@@ -203,14 +203,16 @@ namespace Hom
 /-- **The cartesian factorisation in `Ell/B`.** Given arrows `g : Y ⟶ Z` and `f : X ⟶ Z` and a
 morphism of bases `h : X.base ⟶ Y.base` with `h ≫ g.base = f.base`, this is the arrow `X ⟶ Y`
 over `h` whose composite with `g` is `f` (`Hom.lift_comp`). It is unique (`Hom.eq_lift`). Its
-morphism of total spaces is induced by the cartesian square of `g`. -/
+morphism of total spaces is `EllipticCurveGeom.baseChangeLift`, induced by the cartesian square
+of `g`. -/
 noncomputable def lift (g : Y ⟶ Z) (f : X ⟶ Z) (h : X.base ⟶ Y.base) (hh : h ≫ g.base = f.base) :
     X ⟶ Y where
   base := h
   base_structureMap := by rw [← g.base_structureMap, reassoc_of% hh, f.base_structureMap]
-  total := g.isPullback.lift f.total (X.curve.structureMap ≫ h) (by simp [hh])
-  isPullback := .of_right (by simpa [hh] using f.isPullback) (by simp) g.isPullback
-  zero_total := g.isPullback.hom_ext (by simp [reassoc_of% hh]) (by simp)
+  total := EllipticCurveGeom.baseChangeLift g.isPullback f.isPullback.toCommSq hh
+  isPullback := EllipticCurveGeom.isPullback_baseChangeLift g.isPullback f.isPullback hh
+  zero_total := EllipticCurveGeom.zero_baseChangeLift g.isPullback f.isPullback.toCommSq hh
+    g.zero_total f.zero_total
 
 variable (g : Y ⟶ Z) (f : X ⟶ Z) (h : X.base ⟶ Y.base) (hh : h ≫ g.base = f.base)
 
@@ -220,7 +222,7 @@ theorem lift_base : (lift g f h hh).base = h :=
 
 @[reassoc (attr := simp)]
 theorem lift_total_total : (lift g f h hh).total ≫ g.total = f.total :=
-  g.isPullback.lift_fst _ _ _
+  EllipticCurveGeom.baseChangeLift_fst _ _ _
 
 /-- The cartesian factorisation `Hom.lift g f h hh` composed with `g` is `f`. -/
 @[reassoc (attr := simp)]
