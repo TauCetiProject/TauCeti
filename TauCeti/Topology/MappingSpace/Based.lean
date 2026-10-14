@@ -67,6 +67,7 @@ theorem map_apply (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) (b : B)
 theorem map_id (f : BasedMap B X b₀ x) : map (ContinuousMap.id X) rfl f = f :=
   Subtype.ext rfl
 
+@[simp]
 theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g y = z)
     (h : C(X, Y)) (hh : h x = y) (f : BasedMap B X b₀ x) :
     map g hg (map h hh f) = map (g.comp h) (by rw [ContinuousMap.comp_apply, hh, hg]) f :=

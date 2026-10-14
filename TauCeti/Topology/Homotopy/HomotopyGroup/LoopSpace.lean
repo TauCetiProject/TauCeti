@@ -140,13 +140,60 @@ end Sum
 section Loop
 
 variable (x) in
-/-- Currying the last cube direction: cube loops in `k` directions of the loop space `Ω X x`,
-based at the constant loop, are cube loops of `X` in `k + 1` directions. -/
-def genLoopLoopHomeomorph (k : ℕ) :
-    Ω^ (Fin k) (Ω X x) (Path.refl x) ≃ₜ Ω^ (Fin (k + 1)) X x :=
+/-- Currying one extra cube direction: cube loops in the directions `M` of the loop space
+`Ω X x`, based at the constant loop, are cube loops of `X` in the directions `M ⊕ Fin 1`. -/
+def genLoopLoopSumHomeomorph (M : Type*) :
+    Ω^ M (Ω X x) (Path.refl x) ≃ₜ Ω^ (M ⊕ Fin 1) X x :=
   (Homeomorph.genLoopHomeomorph (homeomorphOfUnique (Fin 1)).symm
       ((Homeomorph.symm_apply_eq _).mpr (homeomorphOfUnique_const (Fin 1)).symm)).trans
-    ((genLoopGenLoopEquiv x).trans (GenLoop.congr x finSumFinEquiv))
+    (genLoopGenLoopEquiv x)
+
+variable (x) in
+/-- The extra cube direction of `genLoopLoopSumHomeomorph` is the path parameter. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_apply (M : Type*) (p : Ω^ M (Ω X x) (Path.refl x))
+    (t : I^(M ⊕ Fin 1)) :
+    genLoopLoopSumHomeomorph x M p t = p (fun i => t (Sum.inl i)) (t (Sum.inr 0)) := by
+  rw [genLoopLoopSumHomeomorph, Homeomorph.trans_apply]
+  simp
+
+variable (x) in
+/-- The homeomorphism `genLoopLoopSumHomeomorph` is based: it carries the constant cube loop to
+the constant cube loop. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_const (M : Type*) :
+    genLoopLoopSumHomeomorph x M (GenLoop.const : Ω^ M (Ω X x) (Path.refl x)) = GenLoop.const := by
+  refine _root_.GenLoop.ext _ _ fun t => ?_
+  simp [genLoopLoopSumHomeomorph_apply]
+
+variable (x) in
+/-- The inverse of `genLoopLoopSumHomeomorph` also carries the constant cube loop to the constant
+cube loop. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_symm_const (M : Type*) :
+    (genLoopLoopSumHomeomorph x M).symm (GenLoop.const : Ω^ (M ⊕ Fin 1) X x) =
+      (GenLoop.const : Ω^ M (Ω X x) (Path.refl x)) :=
+  (genLoopLoopSumHomeomorph x M).symm_apply_eq.2 (genLoopLoopSumHomeomorph_const x M).symm
+
+variable (x) in
+/-- The inverse of `genLoopLoopSumHomeomorph` evaluated at the cube coordinates `s` in the
+directions `M` and the path parameter `u`. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_symm_apply (M : Type*) (q : Ω^ (M ⊕ Fin 1) X x)
+    (s : I^M) (u : I) :
+    (genLoopLoopSumHomeomorph x M).symm q s u = q (Sum.elim s fun _ => u) := by
+  have h := genLoopLoopSumHomeomorph_apply x M ((genLoopLoopSumHomeomorph x M).symm q)
+    (Sum.elim s fun _ => u)
+  rw [Homeomorph.apply_symm_apply] at h
+  simpa using h.symm
+
+variable (x) in
+/-- Currying the last cube direction: cube loops in `k` directions of the loop space `Ω X x`,
+based at the constant loop, are cube loops of `X` in `k + 1` directions. This is
+`genLoopLoopSumHomeomorph` with the directions `Fin k ⊕ Fin 1` identified with `Fin (k + 1)`. -/
+def genLoopLoopHomeomorph (k : ℕ) :
+    Ω^ (Fin k) (Ω X x) (Path.refl x) ≃ₜ Ω^ (Fin (k + 1)) X x :=
+  (genLoopLoopSumHomeomorph x (Fin k)).trans (GenLoop.congr x finSumFinEquiv)
 
 variable (x) in
 /-- The last cube direction of `genLoopLoopHomeomorph` is the path parameter. -/
@@ -154,10 +201,12 @@ variable (x) in
 theorem genLoopLoopHomeomorph_apply (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x))
     (t : I^(Fin (k + 1))) :
     genLoopLoopHomeomorph x k p t = p (fun i => t i.castSucc) (t (Fin.last k)) := by
-  rw [genLoopLoopHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply]
-  have h : Fin.natAdd k (0 : Fin 1) = Fin.last k := Fin.ext (by simp)
-  have h' (i : Fin k) : Fin.castAdd 1 i = i.castSucc := Fin.ext (by simp)
-  simp [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, h, h']
+  rw [genLoopLoopHomeomorph, Homeomorph.trans_apply, congr_apply,
+    genLoopLoopSumHomeomorph_apply]
+  have h' (i : Fin k) : finSumFinEquiv (Sum.inl i) = i.castSucc := rfl
+  have h'' : finSumFinEquiv (Sum.inr (0 : Fin 1)) = Fin.last k := rfl
+  rw [h'']
+  simp only [h']
 
 variable (x) in
 /-- The homeomorphism `genLoopLoopHomeomorph` is based: it carries the constant cube loop to
@@ -168,6 +217,15 @@ theorem genLoopLoopHomeomorph_const (k : ℕ) :
       GenLoop.const := by
   refine _root_.GenLoop.ext _ _ fun t => ?_
   simp [genLoopLoopHomeomorph_apply]
+
+variable (x) in
+/-- The inverse of `genLoopLoopHomeomorph` also carries the constant cube loop to the constant
+cube loop. -/
+@[simp]
+theorem genLoopLoopHomeomorph_symm_const (k : ℕ) :
+    (genLoopLoopHomeomorph x k).symm (GenLoop.const : Ω^ (Fin (k + 1)) X x) =
+      (GenLoop.const : Ω^ (Fin k) (Ω X x) (Path.refl x)) :=
+  (genLoopLoopHomeomorph x k).symm_apply_eq.2 (genLoopLoopHomeomorph_const x k).symm
 
 variable (x) in
 /-- The inverse of `genLoopLoopHomeomorph` evaluated at the first `k` coordinates `s` and the
