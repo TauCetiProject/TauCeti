@@ -34,7 +34,7 @@ subdivisions are computed on affine chains as well
 (`TauCeti.LocalCoefficientSystem.twistedSingularChain_subdivision_iterate`), which is what the
 argument making twisted chains subordinate to an open cover consumes.
 
-Both operators are natural in the space, and the subdivision is natural in the coefficient system.
+Both operators are natural in the space and in the coefficient system.
 
 ## Main definitions and results
 
@@ -51,8 +51,9 @@ Both operators are natural in the space, and the subdivision is natural in the c
   chain homotopic to the identity**, so it induces the identity on twisted homology
   (`homologyMap_twistedSubdivisionChainMap`).
 * `twistedChainComplexMap_comp_twistedSubdivisionChainMap`,
-  `twistedChainComplexMap_f_comp_twistedPrismX` and
-  `twistedChainComplexCoefficientMap_comp_twistedSubdivisionChainMap`: naturality.
+  `twistedChainComplexMap_f_comp_twistedPrismX`,
+  `twistedChainComplexCoefficientMap_comp_twistedSubdivisionChainMap` and
+  `twistedChainComplexCoefficientMap_f_comp_twistedPrismX`: naturality.
 
 ## References
 
@@ -102,15 +103,6 @@ private lemma pathTransport_affineSimplex (σ : (TopCat.toSSet.obj X).obj n) {k 
   -- Both sides are the class of `q` pushed forward along the same function.
   rfl
 
-/-- Vertex transport is transport inside the simplex between the two initial vertices. -/
-private lemma vertexTransport_eq_pathTransport {m n : SimplexCategoryᵒᵖ} (α : m ⟶ n)
-    (σ : (TopCat.toSSet.obj X).obj m) :
-    vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
-      (toTop.map α.unop (toTopInitialVertex n.unop)) := by
-  let q : Path (toTopInitialVertex.{v} m.unop) (toTop.map α.unop (toTopInitialVertex n.unop)) :=
-    PathConnectedSpace.somePath _ _
-  rw [vertexTransport_eq_mk α σ q, pathTransport_eq_mk σ q]
-
 variable {L} in
 private lemma map_comp_ιTwistedChainComplex_congr {k : ℕ} {a : FundamentalGroupoid X}
     {τ₁ τ₂ : (TopCat.toSSet.obj X) _⦋k⦌} (h : τ₁ = τ₂) {f₁ : a ⟶ initialVertex τ₁}
@@ -153,7 +145,7 @@ lemma twistedAffineSimplex_d (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.o
     rw [affineToTop_apply_down, affineToTop_apply_down, toTop_map_toTopInitialVertex_down,
       toTopInitialVertex_down]
     simp [SimplexCategory.δ]
-  rw [vertexTransport_eq_pathTransport, pathTransport_affineSimplex]
+  rw [vertexTransport_def, pathTransport_affineSimplex]
   exact (Category.assoc _ _ _).trans
     ((pathTransport_comp_assoc σ _ _ _ _).trans (pathTransport_eqToHom σ _ hp))
 
@@ -290,7 +282,7 @@ lemma map_vertexTransport_comp_twistedAffineSimplex {m : ℕ}
         (δ j).op σ) (toTopInitialVertex ⦋m⦌) v =
       twistedAffineSimplex L σ (toTopInitialVertex ⦋m + 1⦌) (StdSimplex.map j.succAbove ∘ v) := by
   rw [twistedAffineSimplex_δ]
-  exact (congrArg (fun f ↦ L.map f ≫ _) (vertexTransport_eq_pathTransport _ _)).trans
+  exact (congrArg (fun f ↦ L.map f ≫ _) (vertexTransport_def _ _)).trans
     (map_pathTransport_comp_twistedAffineSimplex L σ _ _ _)
 
 /-- Pushing affine chains forward along a facet of a singular simplex, after transporting the
@@ -507,6 +499,27 @@ lemma twistedChainComplexCoefficientMap_comp_twistedSubdivisionChainMap (η : L 
   refine twistedChainComplex_hom_ext L fun σ ↦ ?_
   simp [ιTwistedChainComplex_twistedChainComplexCoefficientMap_f_assoc, Preadditive.sum_comp,
     Preadditive.comp_sum, Units.smul_def]
+
+/-- Pushing affine chains forward into the twisted chains is natural in the coefficient system. -/
+@[reassoc (attr := simp)]
+lemma twistedSingularChain_comp_twistedChainComplexCoefficientMap_f (η : L ⟶ K)
+    (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) {k : ℕ}
+    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) →₀ ℤ) :
+    twistedSingularChain L σ z k c ≫ (twistedChainComplexCoefficientMap η).f k =
+      η.app _ ≫ twistedSingularChain K σ z k c := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd =>
+    simp only [twistedSingularChain_add, Preadditive.add_comp, Preadditive.comp_add, hc, hd]
+  | single v a => simp
+
+/-- The twisted prism operator is natural in the coefficient system. -/
+@[reassoc]
+lemma twistedChainComplexCoefficientMap_f_comp_twistedPrismX (η : L ⟶ K) (k : ℕ) :
+    (twistedChainComplexCoefficientMap η).f k ≫ twistedPrismX K k =
+      twistedPrismX L k ≫ (twistedChainComplexCoefficientMap η).f (k + 1) := by
+  refine twistedChainComplex_hom_ext L fun σ ↦ ?_
+  simp [ιTwistedChainComplex_twistedChainComplexCoefficientMap_f_assoc]
 
 variable (f : X ⟶ Y) (M : LocalCoefficientSystem.{u, v, max v w} R Y)
 

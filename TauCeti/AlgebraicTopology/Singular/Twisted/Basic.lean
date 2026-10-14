@@ -167,6 +167,11 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
+/-- Vertex transport is transport inside the simplex between the two initial vertices. -/
+lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
+      (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
+
 /-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
 lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     (q : Path (toTopInitialVertex m.unop)
