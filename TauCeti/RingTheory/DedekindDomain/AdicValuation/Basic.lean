@@ -298,11 +298,9 @@ theorem intValuation_eq_exp_neg_one_of_mem_of_notMem_sq {r : R} (hr : r ∈ v.as
 outside the square of the prime.** -/
 theorem exp_neg_one_le_intValuation_iff {r : R} :
     WithZero.exp (-1) ≤ v.intValuation r ↔ r ∉ v.asIdeal ^ 2 := by
-  rw [← v.intValuation_le_pow_iff_mem, not_le]
-  rcases eq_or_ne (v.intValuation r) 0 with h | h
-  · simp [h]
-  · rw [← WithZero.exp_log h, WithZero.exp_le_exp, WithZero.exp_lt_exp]
-    omega
+  rw [← Nat.cast_one, v.exp_le_intValuation_iff_emultiplicity_le,
+    ← ENat.lt_natCast_add_one_iff, ← Nat.cast_add_one, emultiplicity_lt_iff_not_dvd,
+    Ideal.dvd_span_singleton]
 
 /-- **A set generating a height one prime contains an element of order of vanishing `1`**:
 otherwise the prime would lie in its own square. -/
