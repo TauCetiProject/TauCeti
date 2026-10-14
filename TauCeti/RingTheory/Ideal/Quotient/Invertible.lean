@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.RingTheory.Artinian.Module
+import TauCeti.LinearAlgebra.Dimension.Tower
 public import TauCeti.RingTheory.PicardGroup.Quotient
 public import TauCeti.RingTheory.Ideal.Quotient.ModuleFinite
 
@@ -46,21 +47,22 @@ theorem finrank_quotient_mul (K : Type*) [Field K] [Algebra K R] (I J : Ideal R)
   let : IsArtinianRing (R ⧸ J) := IsArtinianRing.of_finite K (R ⧸ J)
   have : Module.Finite K (R ⧸ I * J) := I.finite_quotient_mul J
   obtain ⟨eI⟩ := nonempty_quotient_comap_mul_linearEquiv_quotient I J
-  let g : I →ₗ[R] R ⧸ I * J := (I * J).mkQ.comp I.subtype
-  let N := LinearMap.range g
-  have hN : N = Submodule.map (I * J).mkQ I := by
-    dsimp only [N, g]
-    rw [LinearMap.range_comp, Submodule.range_subtype]
-  have e₁ : ((R ⧸ I * J) ⧸ N) ≃ₗ[R] R ⧸ I := by
-    rw [hN]
-    exact Submodule.quotientQuotientEquivQuotient (I * J) I Ideal.mul_le_left
-  let e₂ : N ≃ₗ[R] I ⧸ Submodule.comap I.subtype (I * J) :=
-    g.quotKerEquivRange.symm.trans (Submodule.quotEquivOfEq _ _ (by
-      simp only [g, LinearMap.ker_comp, Submodule.ker_mkQ]))
-  let eN : N ≃ₗ[R] R ⧸ J := e₂.trans eI
-  let eNK := ((N.restrictScalarsEquiv K).restrictScalars K).trans (eN.restrictScalars K)
-  let e₁K := (Submodule.Quotient.restrictScalarsEquiv K N).trans (e₁.restrictScalars K)
-  rw [← (N.restrictScalars K).finrank_quotient_add_finrank,
-    e₁K.finrank_eq, eNK.finrank_eq]
+  let p := (I * J).restrictScalars K
+  let q := I.restrictScalars K
+  let eTop (L : Submodule K R) :
+      ((⊤ : Submodule K R) ⧸ L.submoduleOf ⊤) ≃ₗ[K] R ⧸ L :=
+    Submodule.Quotient.equiv _ _ (LinearEquiv.ofTop ⊤ rfl) (by
+      change Submodule.map (⊤ : Submodule K R).subtype
+        (Submodule.comap (⊤ : Submodule K R).subtype L) = L
+      rw [Submodule.map_comap_subtype, top_inf_eq])
+  let eIJ := (eTop p).trans (Submodule.Quotient.restrictScalarsEquiv K (I * J))
+  let eQ := (eTop q).trans (Submodule.Quotient.restrictScalarsEquiv K I)
+  let eIK : (q ⧸ p.submoduleOf q) ≃ₗ[K] R ⧸ J :=
+    (Submodule.Quotient.restrictScalarsEquiv K
+      (Submodule.comap I.subtype (I * J))).trans (eI.restrictScalars K)
+  have h := TauCeti.rank_quotient_submoduleOf_tower
+    (p := p) (q := q) (r := ⊤) (show p ≤ q from Ideal.mul_le_left) le_top
+  rw [eIJ.rank_eq, eIK.rank_eq, eQ.rank_eq, add_comm] at h
+  simpa only [← Module.finrank_eq_rank, ← Nat.cast_add, Nat.cast_inj] using h
 
 end Ideal
