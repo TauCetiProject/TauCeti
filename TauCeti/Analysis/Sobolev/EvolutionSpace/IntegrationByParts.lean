@@ -38,9 +38,27 @@ namespace TauCeti.EvolutionSpace
 open MeasureTheory Set
 open scoped InnerProductSpace
 
-variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
   {ι : V →L[ℝ] H} {a b : ℝ}
+
+/-- The pairing of an energy function's weak time derivative with another energy function
+is integrable on the open time interval. -/
+theorem integrableOn_timeDeriv_value (u v : EvolutionSpace ι a b) :
+    IntegrableOn (fun r ↦ timeDeriv u r (value v r)) (Ioo a b) :=
+  (Lp.memLp (timeDeriv u)).integrable_apply (Lp.memLp (value v))
+
+/-- The derivative-value pairing is interval integrable between any two times in `[a,b]`,
+including endpoints and either time order. -/
+theorem intervalIntegrable_timeDeriv_value (u v : EvolutionSpace ι a b) (s t : Icc a b) :
+    IntervalIntegrable (fun r ↦ timeDeriv u r (value v r)) volume (s : ℝ) (t : ℝ) := by
+  have hab : a ≤ b := s.property.1.trans s.property.2
+  exact ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2
+    (integrableOn_timeDeriv_value u v)).mono_set
+      (by simpa only [uIcc_of_le hab] using
+        ordConnected_Icc.uIcc_subset s.property t.property)
+
+variable [CompleteSpace V] [CompleteSpace H]
 
 /-- **Integration by parts in the parabolic energy space.** The weak time derivative may
 be moved between two energy functions, with the endpoint terms evaluated on their canonical
@@ -58,18 +76,10 @@ theorem integral_timeDeriv_value_eq_sub (hab : a < b) (u v : EvolutionSpace ι a
     ((toContinuousMap hab v).continuous.comp continuous_projIcc).continuousOn
     (value_ae_eq_toContinuousMap hab u) (value_ae_eq_toContinuousMap hab v)
     s.property t.property
-  have hint (u v : EvolutionSpace ι a b) :
-      IntervalIntegrable (fun r ↦ timeDeriv u r (value v r)) volume (s : ℝ) (t : ℝ) := by
-    have hp : IntegrableOn (fun r ↦ timeDeriv u r (value v r)) (Ioo a b) :=
-      memLp_one_iff_integrable.1
-        ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1
-          (Lp.memLp (timeDeriv u)) (Lp.memLp (value v)))
-    exact ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hp).mono_set
-      (by simpa only [uIcc_of_le hab.le] using
-        ordConnected_Icc.uIcc_subset s.property t.property)
   simp only [Function.comp_apply, projIcc_of_mem hab.le s.property,
     projIcc_of_mem hab.le t.property,
-    intervalIntegral.integral_add (hint u v) (hint v u)] at hp
+    intervalIntegral.integral_add (intervalIntegrable_timeDeriv_value u v s t)
+      (intervalIntegrable_timeDeriv_value v u s t)] at hp
   linarith
 
 end TauCeti.EvolutionSpace

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
+public import TauCeti.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Topology.ExtendFrom
 
@@ -301,10 +302,7 @@ theorem HasWeakLineDerivOn.inner_sub_inner_eq_integral_of_gelfandDual
       ∫ r in s..t, (u' r (z r) + z' r (u r)) := by
   have hprod := HasWeakLineDerivOn.bilin ι.flip_gelfandDual_comp h hz hu hu' hzL hz'
   have hp : IntegrableOn (fun r ↦ u' r (z r) + z' r (u r)) (Ioo a b) :=
-    (memLp_one_iff_integrable.1
-      ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hzL)).add
-    (memLp_one_iff_integrable.1
-      ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hz' hu))
+    (hu'.integrable_apply hzL).add (hz'.integrable_apply hu)
   exact (hprod.integral_eq_sub hp (hw.inner hq) (by
     filter_upwards [hae, hzae] with r hr hzr
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.gelfandDual_apply, hr, hzr])
