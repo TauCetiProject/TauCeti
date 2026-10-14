@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.Measure.Topology
+public import Mathlib.NumberTheory.Padics.Measure.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Pi
 
 /-!
@@ -46,11 +46,11 @@ variable [IsTopologicalRing R]
 /-- The finite projection of a measure records its values on all fibres of `q`. -/
 def finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
     D(X, R) →ₗ[R] A →₀ R :=
-  (Finsupp.linearEquivFunOnFinite R R A).symm.toLinearMap.comp
-    (show D(X, R) →ₗ[R] (A → R) from
-      { toFun := fun μ a ↦ μ (fiberIndicator q a)
-        map_add' := fun μ ν ↦ by ext a; simp
-        map_smul' := fun r μ ↦ by ext a; simp })
+  let coefficients : D(X, R) →ₗ[R] (A → R) :=
+    { toFun := fun μ a ↦ μ (fiberIndicator q a)
+      map_add' := fun μ ν ↦ by ext a; simp
+      map_smul' := fun r μ ↦ by ext a; simp }
+  (Finsupp.linearEquivFunOnFinite R R A).symm.toLinearMap.comp coefficients
 
 @[simp]
 theorem finiteProjection_apply [Finite A] [DiscreteTopology A] (q : C(X, A))
@@ -105,6 +105,7 @@ theorem finiteProjection_comp [Finite A] [Finite B] [DiscreteTopology A] [Discre
       by_cases h : t a = b <;> simp [g, h]
 
 /-- The sum of all finite coefficients is the total mass of the measure. -/
+@[simp]
 theorem sum_finiteProjection [Finite A] [DiscreteTopology A]
     (q : C(X, A)) (μ : D(X, R)) :
     (finiteProjection q μ).sum (fun _ r ↦ r) = μ 1 := by
@@ -116,7 +117,7 @@ theorem sum_finiteProjection [Finite A] [DiscreteTopology A]
     _ = ∑ a, (1 : R) * finiteProjection q μ a := by simp
     _ = μ ((ContinuousMap.equivFnOfDiscrete.symm (fun _ : A ↦ (1 : R))).comp q) :=
       (apply_comp_eq_sum_finiteProjection q μ (fun _ ↦ 1)).symm
-    _ = μ 1 := by congr 1
+    _ = μ 1 := congrArg μ (by ext x; simp)
 
 /-- A finitely supported coefficient function on a finite discrete space defines the corresponding
 finite linear combination of Dirac measures. -/
@@ -166,7 +167,7 @@ theorem ofFiniteCoefficients_finiteProjection_id [Finite A] [DiscreteTopology A]
       rw [mul_comm]
     _ = μ ((ContinuousMap.equivFnOfDiscrete.symm f).comp (.id A)) :=
       (apply_comp_eq_sum_finiteProjection (.id A) μ f).symm
-    _ = μ f := rfl
+    _ = μ f := congrArg μ (by ext x; simp)
 
 example :
     finiteProjection (R := ℤ) (ContinuousMap.const (Fin 2) (0 : Fin 1))
