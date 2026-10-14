@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 

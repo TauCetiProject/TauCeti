@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Basic
 
 /-!
@@ -97,10 +96,10 @@ theorem piIteratedLoopSpaceMulEquiv_map :
         (piIteratedLoopSpaceMulEquiv_map k f.loopSpace m a)
       _ = _ := congrArg (congrMulEquiv (finCongr (by omega : m + k + 2 = m + 1 + (k + 1))))
         ((congrArg (pathLoopSpaceMulEquiv (X := Y.carrier) (x := Y.basepoint) (m + k))
-          (HomotopyGroup.map_congrMulEquiv _ _ _ _).symm).trans
-          (HomotopyGroup.pathLoopSpaceMulEquiv_map _ _ _ _
+          (ContinuousMap.map_congrMulEquiv _ _ _ _).symm).trans
+          (ContinuousMap.pathLoopSpaceMulEquiv_map _ _ _
             (fun γ t => Hom.loopSpace_apply f γ t) _ _))
-      _ = _ := (HomotopyGroup.map_congrMulEquiv _ _ _ _).symm
+      _ = _ := (ContinuousMap.map_congrMulEquiv _ _ _ _).symm
 
 end BasedTopologicalSpace
 
