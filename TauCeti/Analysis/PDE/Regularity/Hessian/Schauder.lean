@@ -305,9 +305,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
   have hdist : ∀ y y', dist (e y) (e y') ≤ √Lam * dist y y' := fun y y' => by
     rw [dist_eq_norm, dist_eq_norm, ← map_sub]
     exact he' _
-  have hdist' : ∀ x x', dist (e.symm x) (e.symm x') ≤ (√lam)⁻¹ * dist x x' := fun x x' => by
-    rw [dist_eq_norm, dist_eq_norm, ← map_sub]
-    exact he _
   -- The transformed problem for `v = u ∘ e`, on the thickening of `e⁻¹ S` of radius `R / √Λ`.
   set v := u ∘ e
   set R' := R / √Lam with hR'_def
