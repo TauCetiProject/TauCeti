@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 
 /-!

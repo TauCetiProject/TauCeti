@@ -117,10 +117,13 @@ include hg h0 in
 /-- **Base change carries sums of points to sums of points**, in terms of the group law on points
 of `E`. If points `x` and `y` of `E'` with values in a scheme `Z` over `S'` lie over points `x₀`
 and `y₀` of `E` with values in `Z`, viewed as a scheme over `S`, then the sum of `x` and `y` lies
-over the sum of `x₀` and `y₀`. -/
+over the sum of `x₀` and `y₀`. The structure map `f'` of `Z` over `S` is identified with
+`Z.hom ≫ f` by `e`. -/
 theorem mul_left_comp_eq_of_isPullback {Z : Over S'} {x y : Z ⟶ Over.mk E'.structureMap}
-    {x₀ y₀ : Over.mk (Z.hom ≫ f) ⟶ Over.mk E.structureMap} (hx : x.left ≫ g = x₀.left)
+    {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f')
+    {x₀ y₀ : Over.mk f' ⟶ Over.mk E.structureMap} (hx : x.left ≫ g = x₀.left)
     (hy : y.left ≫ g = y₀.left) : (x * y).left ≫ g = (x₀ * y₀).left := by
+  subst f'
   rw [mul_left_comp_of_isPullback hg h0, hom_mul_left]
   congr 1
   apply pullback.hom_ext <;> simp [hx, hy]
@@ -151,7 +154,7 @@ noncomputable def pointsBaseChangeEquiv :
   right_inv Q := by ext1; simp
   map_mul' P Q := by
     ext1
-    exact mul_left_comp_eq_of_isPullback hg h0 rfl rfl
+    exact mul_left_comp_eq_of_isPullback hg h0 (Category.id_comp f) rfl rfl
 
 /-- The underlying morphism of the point corresponding to a base-changed point is its
 composite with the pullback projection. -/
@@ -346,7 +349,7 @@ theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
         (lift σ₁ σ₂).left ≫ ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left := by
       -- Both sides are composites of tensor products with `μ`, i.e. products of points.
       simp only [← Over.comp_left, mul_eq_mul, comp_mul, tensorHom_fst, tensorHom_snd]
-      exact mul_left_comp_eq_of_isPullback hg h0 (by simp [σ₁, i, i', A, ← hρ])
+      exact mul_left_comp_eq_of_isPullback hg h0 rfl (by simp [σ₁, i, i', A, ← hρ])
         (by simp [σ₂, i, i', A, ← hρ])
     rw [key]
     exact hm.trans (Scheme.Hom.le_ker_comp _ _)

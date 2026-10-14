@@ -102,12 +102,14 @@ theorem isEmpty_equalizer_comp_iff (y : Z ⟶ Y) (a b : Y ⟶ W) :
     disjoint_comm]
 
 /-- Changing the base of a pullback does not change whether the equalizer of two points
-is empty. Here `a` and `b` are the images of `x` and `y` under the pullback projection. -/
+is empty. Here `a` and `b` are the images of `x` and `y` under the pullback projection,
+and `e` identifies their base map `f'` with `Z.hom ≫ f`. -/
 theorem isEmpty_equalizer_iff_of_isPullback {S' : Scheme.{u}} {X : Over S} {X' Z : Over S'}
     {f : S' ⟶ S} {g : X'.left ⟶ X.left} (hg : IsPullback g X'.hom X.hom f)
-    (x y : Z ⟶ X') (a b : Over.mk (Z.hom ≫ f) ⟶ X)
+    {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f') (x y : Z ⟶ X') (a b : Over.mk f' ⟶ X)
     (hx : x.left ≫ g = a.left) (hy : y.left ≫ g = b.left) :
     IsEmpty (equalizer x y).left ↔ IsEmpty (equalizer a b).left := by
+  subst f'
   constructor
   · intro h
     let ι := equalizer.ι a b

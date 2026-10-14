@@ -215,7 +215,7 @@ theorem isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
     (pointsBaseChangeEquiv hg h0).injective.eq_iff]
   refine and_congr Iff.rfl (forall_congr' fun d ↦ ?_)
   refine imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
-  exact (isEmpty_equalizer_iff_of_isPullback hg (P ^ d) 1 _ _
+  exact (isEmpty_equalizer_iff_of_isPullback hg (Category.id_comp f) (P ^ d) 1 _ _
     (pointsBaseChangeEquiv_left hg h0 _).symm
     (pointsBaseChangeEquiv_left hg h0 _).symm).symm
 
