@@ -86,11 +86,11 @@ variable {K : Type*} [Field K] [NumberField K]
 dividing the finite part of `m`. -/
 noncomputable def principalRayClass (m : Modulus K) :
     primeToSubgroup m →* RayClassGroup m :=
-  (rayClassMk m).comp (principalIdealPrimeTo m)
+  (rayClassMk m).comp (NumberFieldArithmetic.principalIdealAway K m.support)
 
 /-- The principal ray class is represented by the corresponding principal fractional ideal. -/
 @[simp] theorem principalRayClass_apply (m : Modulus K) (x : primeToSubgroup m) :
-    principalRayClass m x = rayClassMk m (principalIdealPrimeTo m x) :=
+    principalRayClass m x = rayClassMk m (NumberFieldArithmetic.principalIdealAway K m.support x) :=
   (rfl)
 
 /-- A generator congruent to one modulo `m` has trivial principal ray class. -/
@@ -178,7 +178,7 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
   let xm : primeToSubgroup 𝔪 :=
     ⟨x, congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hxm)⟩
   have hJ : NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h) J =
-      I * principalIdealPrimeTo 𝔪 xm := by
+      I * NumberFieldArithmetic.principalIdealAway K 𝔪.support xm := by
     apply Subtype.ext
     apply Units.ext
     rw [NumberFieldArithmetic.coe_idealsAwayInclusion, Subgroup.coe_mul,
@@ -196,7 +196,12 @@ theorem rayClassToClassGroup_surjective (m : Modulus K) :
 is exactness at `RayClassGroup m` in the ray-class exact sequence. -/
 theorem ker_rayClassToClassGroup (m : Modulus K) :
     (rayClassToClassGroup m).ker = (principalRayClass m).range := by
-  rw [rayClassToClassGroup, ker_rayClassLift, ← range_principalIdealPrimeTo,
+  have hmap : idealsPrimeToClassGroup m =
+      (ClassGroup.mk K).comp (NumberFieldArithmetic.idealsAway K m.support).subtype := by
+    ext I
+    simp only [idealsPrimeToClassGroup_apply, MonoidHom.comp_apply, Subgroup.subtype_apply]
+  rw [rayClassToClassGroup, ker_rayClassLift, hmap,
+    ← NumberFieldArithmetic.range_principalIdealAway (K := K) m.support,
     principalRayClass, MonoidHom.range_comp]
 
 /-- The principal-ray-class map followed by forgetting the modulus is exact. -/
@@ -345,7 +350,7 @@ theorem classMap_eq_one_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪 �
     refine ⟨modulusSignHom 𝔫 x, fun w hw ↦ ?_, ?_⟩
     · rw [modulusSignHom_apply, signHom_apply_eq_one_iff]
       exact hpos w.1 hw
-    · have hI : principalIdealPrimeTo 𝔫 ⟨x, hxn⟩ = I :=
+    · have hI : NumberFieldArithmetic.principalIdealAway K 𝔫.support ⟨x, hxn⟩ = I :=
         Subtype.ext (Units.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway, hxI]))
       rw [← hI, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom]
       exact congrArg _ (Prod.ext (by rw [residueSignHom_fst, hres]) (by rw [residueSignHom_snd]))
