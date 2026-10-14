@@ -1,7 +1,7 @@
 import Lean
 
 /-!
-# Exact-candidate project import preflight
+# Exact-candidate import header audit
 
 Workflow-pinned trusted tooling: candidate headers are data, never elaborated or imported.
 Use both pinned parsers: `parseImports'` is Lake's dependency parser, while `parseHeader` is
@@ -9,6 +9,10 @@ Lean's frontend parser. Malformed keyword prefixes can make them disagree. Check
 their local imports and refuse disagreement, so neither interpretation can hide a dependency.
 Nested comments, multiline imports, modifiers, and escaped names are handled by the compiler.
 Compare semantic `Name`s: a quoted component containing a dot is not a directory boundary.
+
+The same parsed frontend header enforces TauCeti's no-meta-import rule. Use written imports
+(`includeInit := false`), so implicit meta Init imports are ignored while an explicit meta Init
+import is still rejected. No separate driver or narrower file inventory can drift from this one.
 
 The complete candidate inventory includes TauCeti.lean, orphan modules, and batch additions.
 Only imports rooted at TauCeti are checked. External resolution and body validity remain the
@@ -41,16 +45,22 @@ def problems (source : Source) (inventory : Std.HashSet Name) : IO (Array Proble
   let mut found := #[]
   for message in messages.toList do
     if message.severity == .error then
-      found := found.push <| mk s!"Lean import header does not parse: {← message.data.toString}"
+      found := found.push <| mk s!"Lean import header does not parse at \
+        {message.pos.line}:{message.pos.column + 1}: {← message.data.toString}"
   -- Recovery syntax can contain missing nodes: never extract imports from a rejected header.
   unless found.isEmpty do return found
   let lakeHeader ← try parseImports' input source.file catch error =>
     return #[mk s!"Lake import header does not parse: {error}"]
   unless HeaderSyntax.isModule header && lakeHeader.isModule do
-    return #[mk "no leading module header; refusing an ambiguous import inventory"]
+    return #[mk "does not opt into the module system (no leading module header)"]
+  let written := HeaderSyntax.imports header (includeInit := false)
+  for imported in written do
+    if imported.isMeta then
+      found := found.push <| mk s!"`meta import {imported.module}` is not allowed: TauCeti/ \
+        holds no metaprogramming, and meta code belongs in scripts/"
   let localNames (imports : Array Import) :=
     imports.filter (·.module.getRoot == `TauCeti) |>.map (·.module)
-  let frontend := localNames (HeaderSyntax.imports header (includeInit := false))
+  let frontend := localNames written
   let lake := localNames lakeHeader.imports
   for name in (frontend.toList ++ lake.toList).eraseDups do
     unless inventory.contains name do

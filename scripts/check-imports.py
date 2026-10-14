@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Preflight project-local imports against the complete exact candidate source tree.
+"""Audit candidate import headers: reject missing project sources and meta imports.
 
-No Lake environment or compiled artifacts are used. ProjectImports.lean uses the
+No Lake environment or compiled artifacts are used. ImportHeaders.lean uses the
 pinned Lean and Lake header parsers and reads candidate sources only as data. External
 imports, elaboration, and all existing build/audit gates remain Lake's responsibility.
 """
@@ -45,14 +45,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--lean", default="lean")
     parser.add_argument("--driver", type=Path,
-                        default=Path(__file__).resolve().with_name("ProjectImports.lean"))
+                        default=Path(__file__).resolve().with_name("ImportHeaders.lean"))
     args = parser.parse_args(argv)
     try:
         root = args.root.resolve()
         sources = inventory(root)
         result = subprocess.run([args.lean, "--run", str(args.driver.resolve())],
                                 input=json.dumps(sources), capture_output=True,
-                                text=True, check=False)
+                                text=True, check=False,
+                                env={**os.environ, "LEAN_ABORT_ON_PANIC": "1"})
         if result.returncode:
             raise ValueError(f"Lean header driver exited {result.returncode}: "
                              f"{result.stderr.strip() or result.stdout.strip()}")
@@ -74,13 +75,13 @@ def main(argv: list[str] | None = None) -> int:
             # Plain text keeps candidate-controlled names out of workflow command syntax.
             print(f"{name}: {message}")
         if problems:
-            print(f"check-project-imports: {len(problems)} problem(s); compilation refused")
+            print(f"check-imports: {len(problems)} problem(s); compilation refused")
             return 1
-        print(f"check-project-imports: all local imports exist in {len(sources)} "
+        print(f"check-imports: all local imports exist and no meta imports in {len(sources)} "
               "exact-candidate source(s)")
         return 0
     except (OSError, ValueError, TypeError) as error:
-        print(f"check-project-imports: {error}")
+        print(f"check-imports: {error}")
         return 1
 
 

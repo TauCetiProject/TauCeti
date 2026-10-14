@@ -13,13 +13,13 @@ import unittest
 from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location(
-    "check_project_imports", Path(__file__).with_name("check-project-imports.py"))
+    "check_imports", Path(__file__).with_name("check-imports.py"))
 check = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(check)
 LEAN = os.environ.get("LEAN", "lean")
 
 
-class ProjectImportsTests(unittest.TestCase):
+class ImportHeadersTests(unittest.TestCase):
     def run_check(self, sources, *, raw=None, symlinks=None):
         with tempfile.TemporaryDirectory(prefix="project-imports-") as temporary:
             root = Path(temporary)
@@ -77,7 +77,7 @@ class ProjectImportsTests(unittest.TestCase):
 
     def test_pinned_lean_public_and_private_import_forms(self):
         # Plain `import` and `import all` are the pinned module system's private imports.
-        # There is no `private import` keyword form at this pin (tested below).
+        # There is no `private import` keyword form at this pin.
         status, output = self.run_check({
             "TauCeti/Forms.lean": "module\nprelude\npublic import TauCeti.Dep\n"
                                   "import TauCeti.Dep\nimport all TauCeti.Dep\n",
@@ -85,16 +85,27 @@ class ProjectImportsTests(unittest.TestCase):
         })
         self.assertEqual(status, 0, output)
 
+    def test_public_import_all_is_rejected_by_the_pinned_frontend(self):
+        status, output = self.run_check({
+            "TauCeti/Bad.lean": "module\npublic import all TauCeti.Dep\n",
+            "TauCeti/Dep.lean": "module\n",
+        })
+        self.assertEqual(status, 1, output)
+        self.assertIn("cannot use", output)
+        self.assertIn("Lean import header does not parse at 2:", output)
+
     def test_comments_multiline_and_literals(self):
         status, output = self.run_check({
             "TauCeti/Comments.lean": """module
 /- import TauCeti.Fake /- import TauCeti.Nested -/ -/
 -- import TauCeti.Fake
+-- meta import Lean
 public /- nested /- hi -/ -/
 import
 /- hi -/ TauCeti.Dep
 /-! import TauCeti.Fake -/
 def text := "import TauCeti.Fake"
+def metaText := "meta import Lean"
 def raw := r#"import TauCeti.Fake"#
 def quotedName := `import
 def projection (x : Nat × Nat) := x.1
@@ -120,13 +131,14 @@ theorem example' : True := trivial
 
     def test_malformed_and_ambiguous_inputs_fail_closed(self):
         headers = [
+            "",
             "\ufeffmodule\nimport TauCeti.Gone\n",
             "import TauCeti.Gone\n",
+            "meta import Lean\n",
             "module\nimport\n",
             "module\nimport TauCeti.Gone.\n",
             "module\nimport /- unterminated TauCeti.Gone\n",
             "module\nimport TauCeti.«unterminated\n",
-            "module\npublic import all TauCeti.Gone\n",
             "module\nimport allTauCeti.Gone\n",
             "module\nimportTauCeti.Gone\n",
             "module\npublic importTauCeti.Gone\n",
@@ -154,6 +166,33 @@ theorem example' : True := trivial
             "TauCeti/Lemma.lean": "module\nimport Mathlib\nlemma one : 1 = 1 := by norm_num\n",
             "TauCeti/Variable.lean": "module\nimport Mathlib\nvariable {R : Type*}\n",
         })
+        self.assertEqual(status, 0, output)
+
+    def test_all_written_meta_import_forms_are_rejected(self):
+        headers = [
+            "module\nmeta import Lean\n",
+            "module\npublic meta import Lean\n",
+            "module\nmeta import all Lean\n",
+            "module\nmeta import Init\n",
+            "module\nprelude\npublic import Init\npublic meta import Init\n",
+            "module\nmeta import «Lean.Odd Name»\n",
+            "module\npublic meta import TauCeti.Dep\n",
+            "module\nmeta import all TauCeti.Dep\n",
+        ]
+        sources = {f"TauCeti/Meta{i}.lean": header for i, header in enumerate(headers)}
+        sources["TauCeti/Dep.lean"] = "module\n"
+        status, output = self.run_check(sources)
+        self.assertEqual(status, 1, output)
+        self.assertNotIn("header does not parse", output)
+        self.assertIn("`meta import Init` is not allowed", output)
+        for i in range(len(headers)):
+            self.assertIn(f"TauCeti/Meta{i}.lean: `meta import", output)
+
+    def test_root_meta_import_is_rejected_and_implicit_init_is_ignored(self):
+        status, output = self.run_check({"TauCeti.lean": "module\nmeta import Lean\n"})
+        self.assertEqual(status, 1, output)
+        self.assertIn("TauCeti.lean: `meta import Lean` is not allowed", output)
+        status, output = self.run_check({})
         self.assertEqual(status, 0, output)
 
     def test_bad_utf8_and_symlinks_fail_closed(self):
@@ -186,21 +225,37 @@ theorem example' : True := trivial
                     status, output = self.run_check({})
                 self.assertEqual(status, 1, output)
 
+    def test_a_driver_panic_cannot_return_a_clean_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "TauCeti").mkdir()
+            (root / "TauCeti.lean").write_text("module\n")
+            driver = root / "Panic.lean"
+            driver.write_text('import Lean\ndef main : IO Unit := do\n'
+                              '  if (panic! "fixture" : Nat) == 0 then\n'
+                              '    IO.println "{\\"checked\\":1,\\"problems\\":[]}"\n')
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                status = check.main(["--root", str(root), "--lean", LEAN,
+                                     "--driver", str(driver)])
+            self.assertEqual(status, 1, output.getvalue())
+            self.assertIn("driver exited", output.getvalue())
+            self.assertIn("fixture", output.getvalue())
+
     def test_workflow_runs_trusted_full_preflight_before_build_setup(self):
         workflows = Path(__file__).resolve().parent.parent / ".github/workflows"
         text = (workflows / "pr-build.yml").read_text()
-        start = text.index("      - name: Preflight exact-candidate project imports")
+        start = text.index("      - name: Preflight exact-candidate import headers")
         end = text.index("      - name:", start + 15)
         step = text[start:end]
-        self.assertIn("python3 gate/scripts/check-project-imports.py --root pr", step)
+        self.assertIn("python3 gate/scripts/check-imports.py --root pr", step)
         self.assertIn('$(cd pr && elan which lean)', step)
         self.assertNotIn("--changed", step)
-        self.assertIn("steps.project_imports.outcome", text)
-        self.assertIn("project import preflight failed", text)
+        self.assertIn("steps.import_headers.outcome", text)
+        self.assertIn("import header preflight failed", text)
         self.assertLess(start, text.index("      - name: Fetch Mathlib"))
         self.assertLess(start, text.index("      - name: Build exact candidate"))
         ci = (workflows / "ci.yml").read_text()
-        self.assertLess(ci.index("run: python3 scripts/check-project-imports.py"),
+        self.assertLess(ci.index("run: python3 scripts/check-imports.py"),
                         ci.index("      - name: Build\n"))
 
 
