@@ -30,6 +30,10 @@ trivial is a separate step toward identifying it as the adjoint form.
   algebra of the quotient by the center.
 * `TauCeti.semisimpleCommHopfAlgProperty.centerQuotientι`: the coordinate inclusion representing
   the center-quotient projection.
+* `TauCeti.semisimpleCommHopfAlgProperty.liftCenterQuotient`: the universal factorization through
+  the represented center quotient.
+* `TauCeti.semisimpleCommHopfAlgProperty.isCentralIsogeny_centerQuotientι`: the named projection
+  is a central isogeny.
 * `TauCeti.semisimpleCommHopfAlgProperty.centerQuotientFppfIso`: representability of the fppf
   center quotient by `centerQuotient`.
 * `TauCeti.semisimpleCommHopfAlgProperty.semisimple_centerQuotient`: the represented center
@@ -57,7 +61,7 @@ variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- The finite-type coordinate Hopf algebra of the quotient of a semisimple affine group by its
 scheme-theoretic center. It consists of the functions invariant under the center. -/
-@[expose] noncomputable def centerQuotient (hH : semisimpleCommHopfAlgProperty k H) :
+noncomputable def centerQuotient (hH : semisimpleCommHopfAlgProperty k H) :
     FiniteTypeCommHopfAlgCat.{u, u} k := by
   letI : Algebra.Smooth k H := hH.smooth
   letI : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
@@ -66,12 +70,57 @@ scheme-theoretic center. It consists of the functions invariant under the center
 
 /-- The inclusion of center-coinvariant functions. Contravariantly, this is the quotient
 projection from a semisimple affine group to its represented center quotient. -/
-@[expose] noncomputable def centerQuotientι (hH : semisimpleCommHopfAlgProperty k H) :
+noncomputable def centerQuotientι (hH : semisimpleCommHopfAlgProperty k H) :
     (hH.centerQuotient).obj ⟶ H.obj := by
   let _ : Algebra.Smooth k H := hH.smooth
   let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.coinvariantsι
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
+
+/-- A homomorphism whose kernel contains the center factors through the represented center
+quotient. -/
+noncomputable def liftCenterQuotient (hH : semisimpleCommHopfAlgProperty k H)
+    {K : _root_.CommHopfAlgCat.{u} k} (f : K ⟶ H.obj)
+    (hf : CommHopfAlgCat.kernelHopfIdeal f ≤ CommHopfAlgCat.centerDefiningIdeal H.obj) :
+    K ⟶ hH.centerQuotient.obj := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  exact CommHopfAlgCat.liftCoinvariants
+    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf
+
+/-- The factorization through the represented center quotient recovers the original
+homomorphism. -/
+@[reassoc (attr := simp)]
+theorem liftCenterQuotient_comp_centerQuotientι (hH : semisimpleCommHopfAlgProperty k H)
+    {K : _root_.CommHopfAlgCat.{u} k} (f : K ⟶ H.obj)
+    (hf : CommHopfAlgCat.kernelHopfIdeal f ≤ CommHopfAlgCat.centerDefiningIdeal H.obj) :
+    hH.liftCenterQuotient f hf ≫ hH.centerQuotientι = f := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  exact CommHopfAlgCat.liftCoinvariants_comp_coinvariantsι
+    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf
+
+/-- The factorization through the represented center quotient is unique. -/
+theorem liftCenterQuotient_unique (hH : semisimpleCommHopfAlgProperty k H)
+    {K : _root_.CommHopfAlgCat.{u} k} (f : K ⟶ H.obj)
+    (hf : CommHopfAlgCat.kernelHopfIdeal f ≤ CommHopfAlgCat.centerDefiningIdeal H.obj)
+    (g : K ⟶ hH.centerQuotient.obj) (hg : g ≫ hH.centerQuotientι = f) :
+    g = hH.liftCenterQuotient f hf := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  exact CommHopfAlgCat.liftCoinvariants_unique
+    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf g hg
+
+/-- A homomorphism factors through the represented center quotient exactly when its kernel
+contains the scheme-theoretic center. -/
+theorem exists_comp_centerQuotientι_iff (hH : semisimpleCommHopfAlgProperty k H)
+    {K : _root_.CommHopfAlgCat.{u} k} (f : K ⟶ H.obj) :
+    (∃ g : K ⟶ hH.centerQuotient.obj, g ≫ hH.centerQuotientι = f) ↔
+      CommHopfAlgCat.kernelHopfIdeal f ≤ CommHopfAlgCat.centerDefiningIdeal H.obj := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  exact CommHopfAlgCat.exists_comp_coinvariantsι_iff
+    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f
 
 /-- The represented center-quotient projection has the full scheme-theoretic center as its
 kernel, including any nonreduced structure. -/
@@ -83,6 +132,13 @@ theorem kernelHopfIdeal_centerQuotientι_eq (hH : semisimpleCommHopfAlgProperty 
   let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
+
+/-- The represented center-quotient projection is a central isogeny. -/
+theorem isCentralIsogeny_centerQuotientι (hH : semisimpleCommHopfAlgProperty k H) :
+    CommHopfAlgCat.IsCentralIsogeny hH.centerQuotientι := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
+  exact hH.isCentralIsogeny_coinvariantsι_centerDefiningIdeal
 
 /-- The fppf quotient of a semisimple affine group by its center is represented by
 `centerQuotient`. -/
@@ -114,8 +170,7 @@ theorem semisimple_centerQuotient (hH : semisimpleCommHopfAlgProperty k H) :
     semisimpleCommHopfAlgProperty k hH.centerQuotient := by
   let _ : Algebra.Smooth k H := hH.smooth
   let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
-  exact hH.of_isCentralIsogeny hH.centerQuotientι
-    hH.isCentralIsogeny_coinvariantsι_centerDefiningIdeal
+  exact hH.of_isCentralIsogeny hH.centerQuotientι hH.isCentralIsogeny_centerQuotientι
 
 end semisimpleCommHopfAlgProperty
 
