@@ -29,7 +29,8 @@ The paths of free loops are taken on the fixed interval `I`.
 ## Main declarations
 
 * `TauCeti.ConstLoopPath Q`: the space of paths `I → C(S¹, Q)` from a constant loop to a constant
-  loop.
+  loop; `TauCeti.constLoopPath_mem_contractibleLoops` says each such path lies in the contractible
+  free loops `TauCeti.contractibleLoops Q`, the space `𝓛₀Q`.
 * `TauCeti.sphere2HomeomorphConstLoopPath`: `Map(S², Q) ≃ₜ ConstLoopPath Q`.
 * `TauCeti.basedMapSphere2HomeomorphBasedConstLoopPath`: `Map_*(S², Q) ≃ₜ` the subspace of
   `ConstLoopPath Q` of paths starting at the constant loop at `⋆`.
@@ -58,6 +59,22 @@ abbrev ConstLoopPath : Type _ :=
     ∃ q, p 1 = ContinuousMap.const Circle q}
 
 variable {Q}
+
+variable (Q) in
+/-- The **contractible free loops** `𝓛₀Q ⊆ C(S¹, Q)`: the loops joined by a path in the free loop
+space to a constant loop. -/
+def contractibleLoops : Set C(Circle, Q) :=
+  {γ | ∃ q, Joined γ (ContinuousMap.const Circle q)}
+
+/-- Every loop along a path of free loops that starts at a constant loop is contractible: a path
+in `ConstLoopPath Q` is a path in `𝓛₀Q`. -/
+theorem constLoopPath_mem_contractibleLoops (p : ConstLoopPath Q) (t : I) :
+    p.1 t ∈ contractibleLoops Q := by
+  obtain ⟨⟨q, hq⟩, -⟩ := p.2
+  have h : Joined (0 : I) t := ⟨⟨⟨fun s => s * t, by fun_prop⟩, by simp, by simp⟩⟩
+  have h' := h.map p.1.continuous
+  rw [hq] at h'
+  exact ⟨q, h'.symm⟩
 
 private theorem factorsThrough_suspensionToSphere_iff (g : C(I × Circle, Q)) :
     Function.FactorsThrough g suspensionToSphere ↔
