@@ -54,7 +54,7 @@ theorem toConv_comp_leftTranslationAlgEquiv {A : Type*} [CommRing A] [Algebra R 
     toConv (x.ofConv.comp (leftTranslationAlgEquiv g).toAlgHom) =
       AlgHom.mapValue (Algebra.ofId R A) g * x := by
   have h := congrArg (AlgHom.mapValue x.ofConv) (toConv_leftTranslationAlgEquiv g)
-  rw [map_mul, AlgHom.mapValue_algebraOfId] at h
+  rw [map_mul, WithConv.mapValue_algebraOfId] at h
   simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id] using h
 
 /-- Left translation by the identity point is the identity algebra automorphism. -/

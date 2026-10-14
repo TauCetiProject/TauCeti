@@ -103,14 +103,14 @@ theorem typeAGraphCoordinateIso_hom_comp_diagonalTorusCoordinateMap :
   change WithConv (MonoidAlgebra R
     (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A) at p
   apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
-  let q := AlgHom.mapDomain (SplitTorus.relabelCoordinateMap R
+  let q := BialgHom.mapDomain (SplitTorus.relabelCoordinateMap R
     (diagonalTorusRevPerm r)).hom p
   have hq : q = (SplitTorus.pointsMulEquiv (R := R) (A := A)).symm
       (fun i : ULift.{u} (Fin r) =>
         SplitTorus.pointsMulEquiv p (ULift.up i.down.rev)) := by
     apply (SplitTorus.pointsMulEquiv (R := R) (A := A)).injective
     funext i
-    simpa only [q, AlgHom.mapDomain_apply, WithConv.ofConv_toConv,
+    simpa only [q, BialgHom.mapDomain_apply, WithConv.ofConv_toConv,
       diagonalTorusRevPerm_apply, MulEquiv.apply_symm_apply] using
       SplitTorus.pointsMulEquiv_mapDomain_relabelCoordinateMap
         (R := R) (A := A) (τ := diagonalTorusRevPerm r) p i
@@ -145,7 +145,7 @@ theorem typeAGraphCoordinateIso_hom_comp_diagonalTorusCoordinateMap :
         diagonalTorusPoints r R A q := by
     rw [diagonalTorusPoints_apply,
       CommHopfAlgCat.mapPointsFunctor_app_apply]
-    simp only [q, AlgHom.mapDomain_apply, ofConv_toConv]
+    simp only [q, BialgHom.mapDomain_apply, ofConv_toConv]
   rw [hleft, hright, hq]
   exact typeAGraphAutomorphism_diagonalTorusPoints r R A p
 

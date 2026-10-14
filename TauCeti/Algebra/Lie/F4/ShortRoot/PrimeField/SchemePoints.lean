@@ -87,7 +87,7 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap
     groupSchemePointMulEquiv A q ≫ (eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
           (hopfSpec (CommRingCat.of 𝔽₂)).map phi.op ≫
             eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm).hom.hom =
-      groupSchemePointMulEquiv A (AlgHom.mapDomain phi.hom q) := by
+      groupSchemePointMulEquiv A (BialgHom.mapDomain phi.hom q) := by
   have h := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
     (R := 𝔽₂) A (GeneralLinear.generatedGroupScheme_def 26 generator)
       (GeneralLinear.generatedGroupScheme_def 26 generator)
@@ -95,8 +95,8 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap
       (groupSchemePointMulEquiv_apply_left A)
       (groupSchemePointMulEquiv_apply_left A) phi q
   have heval : ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of 𝔽₂ A)) q =
-        AlgHom.mapDomain phi.hom q := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
+        BialgHom.mapDomain phi.hom q := by
+    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply]
   rw [heval] at h
   exact h
 

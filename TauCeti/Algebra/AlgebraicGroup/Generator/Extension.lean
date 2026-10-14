@@ -83,8 +83,8 @@ product of its values at the points `φ a`. -/
 private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R Q]
     [Module.Free R G] [Module.Finite R G] [Module.Free R N] [Module.Finite R N]
     (h : IsShortExact p i) (hj : Function.Injective j) (hq : Function.Surjective q)
-    (hjq : q.ker = j.range) (h₁ : (AlgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
-    (h₂ : (AlgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
+    (hjq : q.ker = j.range) (h₁ : (BialgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
+    (h₂ : (BialgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
     (hφ₂ : IsAGenerator φ₂) (b : G) :
     Algebra.norm R b = ∏ a, (φ a).ofConv b := by
   let := p.hom.toAlgHom.toAlgebra
@@ -139,8 +139,8 @@ maps: `i ∘ φ₁ = φ ∘ j` and `p ∘ φ = φ₂ ∘ q` on points. If `φ₁
 theorem IsAGenerator.of_isShortExact [Module.Free R Q] [Module.Finite R Q]
     [Module.Finite R G] [Module.Free R N] [Module.Finite R N]
     (h : IsShortExact p i) (hj : Function.Injective j) (hq : Function.Surjective q)
-    (hjq : q.ker = j.range) (h₁ : (AlgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
-    (h₂ : (AlgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
+    (hjq : q.ker = j.range) (h₁ : (BialgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
+    (h₂ : (BialgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
     (hφ₂ : IsAGenerator φ₂) : IsAGenerator φ := by
   refine isAGenerator_iff.mpr <| isFullSetOfSections_iff.mpr fun T _ _ _ f ↦ ?_
   have h₁T := AlgHom.mapDomain_comp_pointsBaseChange_comp T i.hom h₁

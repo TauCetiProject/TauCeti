@@ -185,7 +185,7 @@ theorem frobeniusCoordinateMap_def :
 theorem coordinatePointsEquiv_map_frobeniusCoordinateMap
     (A : Type*) [CommRing A] [Algebra (ZMod 2) A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of (ZMod 2) A)) :
-    coordinatePointsEquiv A (AlgHom.mapDomain frobeniusCoordinateMap.hom q) =
+    coordinatePointsEquiv A (BialgHom.mapDomain frobeniusCoordinateMap.hom q) =
       frobenius 1 A (coordinatePointsEquiv A q) := by
   apply Subtype.ext
   rw [coe_coordinatePointsEquiv, coe_frobenius, coe_coordinatePointsEquiv]

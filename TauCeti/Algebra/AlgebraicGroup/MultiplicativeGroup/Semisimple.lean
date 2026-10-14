@@ -36,7 +36,7 @@ theorem isSemisimplePoint
     HopfAlgebra.IsSemisimplePoint g := by
   let e := AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ
   have h := DiagonalizableGroup.isSemisimplePoint
-    (AlgHom.mapDomain (e.symm : MonoidAlgebra R (Multiplicative ℤ) →ₐc[R] LaurentPolynomial R) g)
+    (BialgHom.mapDomain (e.symm : MonoidAlgebra R (Multiplicative ℤ) →ₐc[R] LaurentPolynomial R) g)
   exact (HopfAlgebra.isSemisimplePoint_mapDomain_iff e.symm g).mp h
 
 end MultiplicativeGroup

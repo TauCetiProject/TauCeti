@@ -66,7 +66,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (i : Fin 6 ⊕ Fin 6) (B : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) B) :
     GeneralLinear.pointToGeneralLinear 54
-        (AlgHom.mapDomain (generatedCoordinateMap R).hom
+        (BialgHom.mapDomain (generatedCoordinateMap R).hom
           (no_index (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)))) =
       (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin 54) B) := by
@@ -84,7 +84,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
     exact (mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
       _ _ _ _ _ _ _ _ _ i).symm
-  have hpoint : AlgHom.mapDomain (generatedCoordinateMap R).hom
+  have hpoint : BialgHom.mapDomain (generatedCoordinateMap R).hom
       (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)) =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R 54) _ B

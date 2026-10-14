@@ -264,7 +264,7 @@ by its conjugate. -/
 theorem mapDomain_pointConjugation_mem_conjugate_iff
     (I : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
     (A : CommAlgCat.{w} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
-    AlgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
+    BialgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) A ↔
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
   have hsurj : Function.Surjective

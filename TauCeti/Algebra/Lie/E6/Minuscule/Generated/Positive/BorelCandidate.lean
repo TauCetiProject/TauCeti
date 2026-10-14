@@ -69,7 +69,7 @@ theorem upperTriangular_le_definingIdeal :
           Matrix.GeneralLinearGroup (Fin 27) B) := by
       rw [generatorCoordinateMap_inl,
         ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap]
-      simpa only [AlgHom.mapDomain_apply, q, B, ofConv_toConv, AlgHom.id_comp,
+      simpa only [BialgHom.mapDomain_apply, q, B, ofConv_toConv, AlgHom.id_comp,
         _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom] using h
     rw [hpoint]
     exact isUpperTriangular_rootSubgroupPoints_inl i B (AdditiveGroup.gaPointsMulEquiv q)

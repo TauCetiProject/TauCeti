@@ -72,16 +72,16 @@ theorem hasCentralKernel_hopfSpec_map_of_isCentral_kernelHopfIdeal
       (T ⟶ ((hopfSpec (CommRingCat.of R)).obj (Opposite.op H)).X) ≃*
         WithConv (H →ₐ[R] ((algΓ (CommRingCat.of R)).obj T).unop) :=
     CommHopfAlgCat.schemePointsAlgΓMulEquiv H T
-  have hmap : AlgHom.mapDomain f.hom (eK g) = 1 := by
+  have hmap : BialgHom.mapDomain f.hom (eK g) = 1 := by
     calc
-      AlgHom.mapDomain f.hom (eK g) =
+      BialgHom.mapDomain f.hom (eK g) =
           eH (pointMap ((hopfSpec (CommRingCat.of R)).map f.op) T g) := by
         dsimp only [eH, eK]
         rw [pointMap_apply]
         exact (CommHopfAlgCat.schemePointsAlgΓMulEquiv_mapDomain T f.hom g).symm
       _ = eH 1 := congrArg eH (MonoidHom.mem_ker.mp hg)
       _ = 1 := map_one eH
-  rw [AlgHom.mapDomain_apply, ← CommHopfAlgCat.mapPointsFunctor_app_apply] at hmap
+  rw [BialgHom.mapDomain_apply, ← CommHopfAlgCat.mapPointsFunctor_app_apply] at hmap
   have hmem : eK g ∈ CommHopfAlgCat.quotientPointsSubgroup K
       (CommHopfAlgCat.kernelHopfIdeal f) ((algΓ (CommRingCat.of R)).obj T).unop :=
     (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff f _ (eK g)).mp hmap

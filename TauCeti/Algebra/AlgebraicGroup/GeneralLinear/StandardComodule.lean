@@ -206,7 +206,7 @@ theorem corestrictStandardComodule_mulVec_mem {H : Type*} [CommRing H] [HopfAlge
     let _ := corestrictStandardComodule R n f
     ∀ (N : Subcomodule R H (Fin n → R)) (g : WithConv (H →ₐ[R] R))
       {w : Fin n → R}, w ∈ N →
-      (pointToGeneralLinear n (AlgHom.mapDomain f g) : Matrix (Fin n) (Fin n) R) *ᵥ w ∈ N := by
+      (pointToGeneralLinear n (BialgHom.mapDomain f g) : Matrix (Fin n) (Fin n) R) *ᵥ w ∈ N := by
   let _ := corestrictStandardComodule R n f
   dsimp only
   intro N g w hw

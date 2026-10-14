@@ -353,13 +353,13 @@ theorem mkQuotient_comp_geckRootSubgroupToBaseChangeCoordinateMap
 
 /-- The factored root-subgroup map sends an additive point to the numbered Geck root-subgroup
 matrix with the same parameter. -/
--- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+-- Normalize the point before `BialgHom.mapDomain_apply` unfolds the inner map.
 @[simp↓]
 theorem pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap
     (i : Fin t.rank ⊕ Fin t.rank) (B : CommAlgCat.{w} A)
     (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
     GeneralLinear.pointToGeneralLinear (t.geckDim ht)
-        (AlgHom.mapDomain
+        (BialgHom.mapDomain
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
             (t.geckBaseChangeDefiningIdeal ht A)).hom
           (WithConv.toConv

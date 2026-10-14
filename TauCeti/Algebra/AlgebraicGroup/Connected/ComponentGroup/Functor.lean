@@ -48,9 +48,9 @@ omit [IsAlgClosed k] in
 Use with `rw`: simplification already expands `mapDomain` before this formula applies. -/
 theorem rationalKernelPoint_mapDomain (f : H ⟶ K)
     (g : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k)) :
-    rationalKernelPoint H (AlgHom.mapDomain (A := k) f.hom.hom g) =
+    rationalKernelPoint H (BialgHom.mapDomain (A := k) f.hom.hom g) =
       PrimeSpectrum.comap (f.hom.hom.toAlgHom : H →+* K) (rationalKernelPoint K g) := by
-  rw [AlgHom.mapDomain_apply]
+  rw [BialgHom.mapDomain_apply]
   exact (AlgHom.comap_kernelPoint g.ofConv f.hom.hom.toAlgHom).symm
 
 /-- The map on connected components induced by an affine group homomorphism is multiplicative.
@@ -87,7 +87,7 @@ theorem mapComponentGroup_rationalComponentMap (f : H ⟶ K)
     (g : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k)) :
     mapComponentGroup f (rationalComponentMap K g) =
       rationalComponentMap H
-        (AlgHom.mapDomain (A := k) f.hom.hom g) := by
+        (BialgHom.mapDomain (A := k) f.hom.hom g) := by
   rw [rationalComponentMap_apply K, mapComponentGroup_mk,
     rationalComponentMap_apply H]
   rw [rationalKernelPoint_mapDomain]
@@ -98,7 +98,7 @@ theorem mapComponentGroup_unique (f : H ⟶ K)
     (m : ConnectedComponents (PrimeSpectrum K) →* ConnectedComponents (PrimeSpectrum H))
     (hm : ∀ g : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k),
       m (rationalComponentMap K g) = rationalComponentMap H
-        (AlgHom.mapDomain (A := k) f.hom.hom g)) :
+        (BialgHom.mapDomain (A := k) f.hom.hom g)) :
     m = mapComponentGroup f := by
   ext x
   obtain ⟨g, rfl⟩ := rationalComponentMap_surjective K x
@@ -112,7 +112,7 @@ theorem mapComponentGroup_id (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
   apply mapComponentGroup_unique
   intro g
   have hid : (𝟙 H : H ⟶ H).hom.hom = BialgHom.id k H := toBialgHom_id
-  rw [MonoidHom.id_apply, hid, AlgHom.mapDomain_id, MonoidHom.id_apply]
+  rw [MonoidHom.id_apply, hid, BialgHom.mapDomain_id, MonoidHom.id_apply]
 
 /-- Composition of coordinate morphisms induces reverse composition on component groups. -/
 @[simp]
@@ -124,7 +124,7 @@ theorem mapComponentGroup_comp (f : H ⟶ K) (g : K ⟶ L) :
   rw [MonoidHom.comp_apply, mapComponentGroup_rationalComponentMap g,
     mapComponentGroup_rationalComponentMap f]
   simp only [ObjectProperty.FullSubcategory.comp_hom, _root_.CommHopfAlgCat.hom_comp,
-    AlgHom.mapDomain_comp, MonoidHom.comp_apply]
+    BialgHom.mapDomain_comp, MonoidHom.comp_apply]
 
 /-- The component group, contravariantly functorial in finite-type coordinate Hopf algebras. -/
 noncomputable def componentGroupFunctor :
@@ -165,7 +165,7 @@ theorem mapComponentGroup_surjective_of_injective (f : H ⟶ K)
   let q' : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k) := q
   -- `mapPointsFunctor` is constructed with `mapDomain`; specify the rational-point carrier
   -- here because its functor-object spelling does not rewrite at implicit transparency.
-  have hq' : AlgHom.mapDomain (A := k) f.hom.hom q' = p := hq
+  have hq' : BialgHom.mapDomain (A := k) f.hom.hom q' = p := hq
   refine ⟨rationalComponentMap K q', ?_⟩
   rw [mapComponentGroup_rationalComponentMap]
   exact congrArg (rationalComponentMap H) hq'

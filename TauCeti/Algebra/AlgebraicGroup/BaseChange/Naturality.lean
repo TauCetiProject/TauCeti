@@ -103,21 +103,21 @@ agrees with first base-changing the point and then pre-composing by the scalar e
 lemma baseChangePointsMulEquiv_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
-        (mapDomain (A := R) φ f) =
-      mapDomain (A := R)
+        (BialgHom.mapDomain (A := R) φ f) =
+      BialgHom.mapDomain (A := R)
         (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
         (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (R := R) f) := by
   ext a
-  simp [mapDomain_apply]
+  simp [BialgHom.mapDomain_apply]
 
 /-- Pointwise form of `AlgHom.baseChangePointsMulEquiv_mapDomain` on pure tensors. -/
 @[simp]
 lemma baseChangePointsMulEquiv_mapDomain_apply_tmul (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) (s : K) (a : A) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
-        (mapDomain (A := R) φ f) (s ⊗ₜ[k] a) =
+        (BialgHom.mapDomain (A := R) φ f) (s ⊗ₜ[k] a) =
       s • f.ofConv (φ a) := by
-  rw [baseChangePointsMulEquiv_apply_tmul, mapDomain_apply_apply]
+  rw [baseChangePointsMulEquiv_apply_tmul, BialgHom.mapDomain_apply_apply]
 
 /-- The inverse direction of base change is natural in the coordinate bialgebra.
 
@@ -126,12 +126,12 @@ with first restricting and then pre-composing by `φ`. -/
 lemma baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
-        (mapDomain (A := R)
+        (BialgHom.mapDomain (A := R)
           (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ) f) =
-      mapDomain (A := R) φ
+      BialgHom.mapDomain (A := R) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := B) (R := R)).symm f) := by
   ext a
-  simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
+  simp only [baseChangePointsMulEquiv_symm_apply, BialgHom.mapDomain_apply_apply,
     _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
 
 /-- Pointwise form of `AlgHom.baseChangePointsMulEquiv_symm_mapDomain`. -/
@@ -139,10 +139,10 @@ lemma baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
 lemma baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) (a : A) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
-        (mapDomain (A := R)
+        (BialgHom.mapDomain (A := R)
           (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ) f)).ofConv a =
       f.ofConv (1 ⊗ₜ[k] φ a) := by
-  simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
+  simp only [baseChangePointsMulEquiv_symm_apply, BialgHom.mapDomain_apply_apply,
     _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
 
 variable (K) in
@@ -150,9 +150,9 @@ variable (K) in
 base change of a point `f` of `B` by the scalar extension of `φ : A →ₐc[k] B` gives the base change
 of `f ∘ φ`. -/
 lemma mapDomain_pointsBaseChange (φ : A →ₐc[k] B) (f : WithConv (B →ₐ[k] k)) :
-    mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
+    BialgHom.mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
         (pointsBaseChange K f) =
-      pointsBaseChange K (mapDomain φ f) := by
+      pointsBaseChange K (BialgHom.mapDomain φ f) := by
   ext a
   simp
 
@@ -162,12 +162,13 @@ variable (K) in
 changes along `k → K`, with `φ` replaced by its scalar extension. -/
 lemma mapDomain_comp_pointsBaseChange_comp {M N : Type*} [Monoid M] [Monoid N]
     (φ : A →ₐc[k] B) {ψ : M →* WithConv (B →ₐ[k] k)} {ψ' : N →* WithConv (A →ₐ[k] k)}
-    {g : M →* N} (h : (mapDomain φ).comp ψ = ψ'.comp g) :
-    (mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)).comp
+    {g : M →* N} (h : (BialgHom.mapDomain φ).comp ψ = ψ'.comp g) :
+    (BialgHom.mapDomain (A := K)
+        (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)).comp
         ((pointsBaseChange K).comp ψ) = ((pointsBaseChange K).comp ψ').comp g := by
   ext1 m
   simp only [MonoidHom.comp_apply, mapDomain_pointsBaseChange]
-  rw [← MonoidHom.comp_apply (mapDomain φ), h, MonoidHom.comp_apply]
+  rw [← MonoidHom.comp_apply (BialgHom.mapDomain φ), h, MonoidHom.comp_apply]
 
 end MapDomain
 

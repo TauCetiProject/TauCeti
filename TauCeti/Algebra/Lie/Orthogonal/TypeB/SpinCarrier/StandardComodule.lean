@@ -97,7 +97,7 @@ theorem mulVec_mem
       N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R (dimension n)
     (coordinateMap n R).hom N g hw
-  have hpoint : AlgHom.mapDomain (coordinateMap n R).hom g = _ :=
+  have hpoint : BialgHom.mapDomain (coordinateMap n R).hom g = _ :=
     mapPointsFunctor_coordinateMap_app n R g
   rwa [hpoint] at h
 

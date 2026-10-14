@@ -66,7 +66,7 @@ theorem flat_localization_kernel_iff (f : H ⟶ K) (g : WithConv (K →ₐ[k] k)
     ((algebraMap K (Localization.AtPrime
       (RingHom.ker (_root_.Bialgebra.counitAlgHom k K).toRingHom))).comp
       f.hom.toAlgHom.toRingHom).Flat := by
-  let eH := HopfAlgebra.rightTranslationAlgEquiv (AlgHom.mapDomain f.hom g)
+  let eH := HopfAlgebra.rightTranslationAlgEquiv (BialgHom.mapDomain f.hom g)
   let eK := HopfAlgebra.rightTranslationAlgEquiv g
   let p := RingHom.ker (_root_.Bialgebra.counitAlgHom k K).toRingHom
   have hp : p.comap eK.toRingEquiv = RingHom.ker g.ofConv.toRingHom := by

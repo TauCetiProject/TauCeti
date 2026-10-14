@@ -268,14 +268,14 @@ theorem IsCentral.comapOfSurjective_of_bijective {H K : Type v} [CommRing H] [Co
     (_root_.CommHopfAlgCat.of R H) (I.comapOfSurjective f hsurj)).mpr
   intro A g hg
   let e := BialgEquiv.ofBijective f ⟨hinj, hsurj⟩
-  let E := AlgHom.mapDomainMulEquiv (A := A) e
+  let E := BialgEquiv.mapDomainMulEquiv (A := A) e
   have he : (e : H →ₐc[R] K) = f := by
     ext x
     exact congrFun (BialgEquiv.coe_ofBijective f ⟨hinj, hsurj⟩) x
   have hmem (x) : E x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H)
       (I.comapOfSurjective f hsurj) A ↔
       x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
-    rw [AlgHom.mapDomainMulEquiv_apply, he]
+    rw [BialgEquiv.mapDomainMulEquiv_apply, he]
     exact f.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff hsurj I A x
   have hg' : E.symm g ∈ CommHopfAlgCat.quotientPointsSubgroup
       (_root_.CommHopfAlgCat.of R K) I A := by
@@ -286,7 +286,7 @@ theorem IsCentral.comapOfSurjective_of_bijective {H K : Type v} [CommRing H] [Co
     (_root_.CommHopfAlgCat.of R K) I hI A hg'
   have htransport := hcentral.mapDomain_bialgEquiv e
   simp only [BialgEquiv.toBialgHom_eq_coe] at htransport
-  rw [← AlgHom.mapDomainMulEquiv_apply e, E.apply_symm_apply] at htransport
+  rw [← BialgEquiv.mapDomainMulEquiv_apply e, E.apply_symm_apply] at htransport
   exact htransport
 
 /-- **A central Hopf ideal is normal.** Its points commute with every point of the ambient group

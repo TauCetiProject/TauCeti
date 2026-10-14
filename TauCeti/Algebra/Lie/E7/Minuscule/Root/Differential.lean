@@ -67,7 +67,7 @@ private theorem map_genericMatrix_rootSubgroup (k : Fin 7 ⊕ Fin 7) :
     (pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
       R k A q)
   rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
-    AlgHom.mapDomain_apply] at h
+    BialgHom.mapDomain_apply] at h
   simp only [q, AlgHom.id_comp] at h
   rw [h, hu]
   rcases k with i | i

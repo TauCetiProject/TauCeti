@@ -90,7 +90,7 @@ theorem pointToGeneralLinear_mapDomain_geckGeneratedCoordinateLift_inl
     (i : Fin t.rank ⊕ Fin t.rank) (B : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) B) :
     GeneralLinear.pointToGeneralLinear (t.geckDim ht)
-        (AlgHom.mapDomain (t.geckGeneratedCoordinateMap ht R).hom
+        (BialgHom.mapDomain (t.geckGeneratedCoordinateMap ht R).hom
           (no_index (toConv
             (q.ofConv.comp (t.geckGeneratedCoordinateLift ht R (.inl i)).hom.toAlgHom)))) =
       (t.geckRootSubgroupPoints ht i B (AdditiveGroup.gaPointsMulEquiv q) :
@@ -102,9 +102,9 @@ theorem pointToGeneralLinear_mapDomain_geckGeneratedCoordinateLift_inl
         t.geckRootSubgroupToBaseChangeCoordinateMap ht R i := by
     rw [geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift,
       geckGeneratorCoordinateMap_inl, mkQuotient_comp_geckRootSubgroupToBaseChangeCoordinateMap]
-  have hpoint : AlgHom.mapDomain (t.geckGeneratedCoordinateMap ht R).hom
+  have hpoint : BialgHom.mapDomain (t.geckGeneratedCoordinateMap ht R).hom
       (toConv (q.ofConv.comp (t.geckGeneratedCoordinateLift ht R (.inl i)).hom.toAlgHom)) =
-      AlgHom.mapDomain
+      BialgHom.mapDomain
         (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R (t.geckDim ht))
           (t.geckBaseChangeDefiningIdeal ht R)).hom
         (toConv

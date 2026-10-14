@@ -204,7 +204,7 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap {B : Type} [CommRing B] [Alg
         (eqToHom groupScheme_eq_commonKernelSpec ≫
           (hopfSpec (CommRingCat.of (ZMod 3))).map phi.op ≫
             eqToHom groupScheme_eq_commonKernelSpec.symm).hom.hom =
-      groupSchemePointMulEquiv B (AlgHom.mapDomain phi.hom q) := by
+      groupSchemePointMulEquiv B (BialgHom.mapDomain phi.hom q) := by
   have h := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
     (R := ZMod 3) B groupScheme_eq_commonKernelSpec groupScheme_eq_commonKernelSpec
     (groupSchemePointMulEquiv B) (groupSchemePointMulEquiv B)
@@ -212,7 +212,7 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap {B : Type} [CommRing B] [Alg
     (groupSchemePointMulEquiv_apply_left B) phi q
   have heval :
       ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of (ZMod 3) B)) q =
-        AlgHom.mapDomain phi.hom q := rfl
+        BialgHom.mapDomain phi.hom q := rfl
   rw [heval] at h
   exact h
 

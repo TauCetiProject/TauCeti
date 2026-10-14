@@ -122,16 +122,16 @@ variable {K : Type v} [Ring K] [_root_.Bialgebra R K]
 /-- Precomposition by a bialgebra equivalence preserves universal centrality of points. -/
 theorem IsCentralPoint.mapDomain_bialgEquiv {g : WithConv (K →ₐ[R] A)}
     (hg : IsCentralPoint g) (e : H ≃ₐc[R] K) :
-    IsCentralPoint (AlgHom.mapDomain (A := A) e.toBialgHom g) := by
+    IsCentralPoint (BialgHom.mapDomain (A := A) e.toBialgHom g) := by
   intro B _ _ φ h
-  let E := AlgHom.mapDomainMulEquiv (A := B) e
+  let E := BialgEquiv.mapDomainMulEquiv (A := B) e
   have hc := hg φ (E.symm h)
   have hc' := hc.map E.toMonoidHom
   simp only [MulEquiv.coe_toMonoidHom] at hc'
   have hnatural :
       E (AlgHom.mapValue (H := K) φ g) =
-        AlgHom.mapValue (H := H) φ (AlgHom.mapDomain (A := A) e.toBialgHom g) :=
-    DFunLike.congr_fun (AlgHom.mapValue_mapDomain e.toBialgHom φ) g
+        AlgHom.mapValue (H := H) φ (BialgHom.mapDomain (A := A) e.toBialgHom g) :=
+    DFunLike.congr_fun (BialgHom.mapValue_mapDomain e.toBialgHom φ) g
   rw [hnatural, E.apply_symm_apply] at hc'
   exact hc'
 
@@ -140,14 +140,14 @@ points. This is invariance of the center of the functor of points under a change
 Hopf algebra. -/
 theorem isCentralPoint_mapDomain_bialgEquiv_iff (e : H ≃ₐc[R] K)
     (g : WithConv (K →ₐ[R] A)) :
-    IsCentralPoint (AlgHom.mapDomain (A := A) e.toBialgHom g) ↔ IsCentralPoint g := by
+    IsCentralPoint (BialgHom.mapDomain (A := A) e.toBialgHom g) ↔ IsCentralPoint g := by
   constructor
   · intro hg
     have htransport := hg.mapDomain_bialgEquiv e.symm
     simp only [BialgEquiv.toBialgHom_eq_coe] at htransport
-    rw [← AlgHom.mapDomainMulEquiv_apply (A := A) e,
-      ← AlgHom.mapDomainMulEquiv_symm_apply (A := A) e,
-      (AlgHom.mapDomainMulEquiv (A := A) e).symm_apply_apply] at htransport
+    rw [← BialgEquiv.mapDomainMulEquiv_apply (A := A) e,
+      ← BialgEquiv.mapDomainMulEquiv_symm_apply (A := A) e,
+      (BialgEquiv.mapDomainMulEquiv (A := A) e).symm_apply_apply] at htransport
     exact htransport
   · exact fun hg ↦ hg.mapDomain_bialgEquiv e
 

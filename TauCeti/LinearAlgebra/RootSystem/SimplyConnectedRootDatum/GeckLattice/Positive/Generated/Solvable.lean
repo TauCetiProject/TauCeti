@@ -161,7 +161,7 @@ theorem isSolvable_points_geckPositiveGenerated (B : CommAlgCat.{w} A) :
         (CommHopfAlgCat.baseChange (K := A)
           (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
         (t.geckTorusPositiveBaseChangeIdeal ht A)) B)
-    (f := AlgHom.mapDomain (A := B) f.hom)
+    (f := BialgHom.mapDomain (A := B) f.hom)
     (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f
       (t.geckTorusPositiveBaseChangeToGeneratedCoordinateMap_surjective ht A) B)
 

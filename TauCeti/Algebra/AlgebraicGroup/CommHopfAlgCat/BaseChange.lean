@@ -240,8 +240,8 @@ lemma baseChangePointsMulEquiv_mapValue
 lemma baseChangePointsMulEquiv_mapDomain {H L : _root_.CommHopfAlgCat.{v} k}
     (φ : H ⟶ L) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) L) A) :
     baseChangePointsMulEquiv (K := K) A H
-        (AlgHom.mapDomain (A := A) ((baseChangeMap (K := K) φ).hom) f) =
-      AlgHom.mapDomain
+        (BialgHom.mapDomain (A := A) ((baseChangeMap (K := K) φ).hom) f) =
+      BialgHom.mapDomain
         (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         φ.hom
         (baseChangePointsMulEquiv (K := K) A L f) := by
@@ -262,7 +262,7 @@ noncomputable def baseChangeIsoPointsMulEquiv (e : L ≅ baseChange (K := K) H)
     HopfAlgebra.points (R := K) (H := L) A ≃*
       HopfAlgebra.points (R := k) (H := H)
         (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
-  (AlgHom.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm)).trans
+  (BialgEquiv.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm)).trans
     (baseChangePointsMulEquiv (K := K) A H)
 
 /-- The presented point equivalence evaluates a point of `L` at the image of `1 ⊗ h` under the
@@ -272,7 +272,7 @@ lemma baseChangeIsoPointsMulEquiv_apply_apply (e : L ≅ baseChange (K := K) H)
     (A : CommAlgCat.{x} K) (f : HopfAlgebra.points (R := K) (H := L) A) (h : H) :
     (baseChangeIsoPointsMulEquiv e A f).ofConv h = f.ofConv (e.inv (1 ⊗ₜ[k] h)) := by
   rw [baseChangeIsoPointsMulEquiv, MulEquiv.trans_apply, baseChangePointsMulEquiv_apply_apply,
-    AlgHom.mapDomainMulEquiv_apply, AlgHom.mapDomain_apply_apply]
+    BialgEquiv.mapDomainMulEquiv_apply, BialgHom.mapDomain_apply_apply]
   exact congrArg f.ofConv (_root_.CommHopfAlgCat.ofIso_apply e.symm _)
 
 /-- Point transport through a scalar-extension presentation commutes with a compatible square of
@@ -319,13 +319,13 @@ lemma baseChangeIsoPointsMulEquiv_mapPoints (e : L ≅ baseChange (K := K) H)
   -- Transport along `e` is a pre-composition in the coordinate Hopf algebra, so it commutes with
   -- the post-composition by `χ` in the value algebra. The bundled `mapDomainMulEquiv` and
   -- `mapPoints` are unfolded to `mapDomain` and `mapValue` to reach `mapValue_mapDomain`.
-  have h : AlgHom.mapDomainMulEquiv (A := B) (_root_.CommHopfAlgCat.ofIso e.symm)
+  have h : BialgEquiv.mapDomainMulEquiv (A := B) (_root_.CommHopfAlgCat.ofIso e.symm)
         (HopfAlgebra.mapPoints (H := L) χ f) =
       HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ
-        (AlgHom.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm) f) := by
-    simp only [AlgHom.mapDomainMulEquiv_apply, HopfAlgebra.mapPoints]
+        (BialgEquiv.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm) f) := by
+    simp only [BialgEquiv.mapDomainMulEquiv_apply, HopfAlgebra.mapPoints]
     exact DFunLike.congr_fun
-      (AlgHom.mapValue_mapDomain (_root_.CommHopfAlgCat.ofIso e.symm).toBialgHom χ.hom) f
+      (BialgHom.mapValue_mapDomain (_root_.CommHopfAlgCat.ofIso e.symm).toBialgHom χ.hom) f
   simp only [baseChangeIsoPointsMulEquiv, MulEquiv.trans_apply, h]
   rw [baseChangePointsMulEquiv_mapValue]
 

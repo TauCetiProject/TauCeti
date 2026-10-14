@@ -67,7 +67,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (i : Fin n ⊕ Fin n) (B : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) B) :
     GeneralLinear.pointToGeneralLinear (dimension n)
-        (AlgHom.mapDomain (generatedCoordinateMap n hn R).hom
+        (BialgHom.mapDomain (generatedCoordinateMap n hn R).hom
           (no_index (toConv (q.ofConv.comp
             (generatedCoordinateLift n hn R (.inl i)).hom.toAlgHom)))) =
       (rootSubgroupPoints n hn i B (AdditiveGroup.gaPointsMulEquiv q) :
@@ -76,9 +76,9 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
       coordinateMap n hn R ≫ rootSubgroupToBaseChangeCoordinateMap n hn R i := by
     rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
     exact (coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap n hn R i).symm
-  have hpoint : AlgHom.mapDomain (generatedCoordinateMap n hn R).hom
+  have hpoint : BialgHom.mapDomain (generatedCoordinateMap n hn R).hom
       (toConv (q.ofConv.comp (generatedCoordinateLift n hn R (.inl i)).hom.toAlgHom)) =
-      AlgHom.mapDomain (coordinateMap n hn R).hom
+      BialgHom.mapDomain (coordinateMap n hn R).hom
         (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap n hn R i).hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
