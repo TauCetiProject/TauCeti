@@ -250,11 +250,19 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
           (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app M))
       _ = _ := PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
         (commRingCatHom φ) M.val
+  refine (Adjunction.homEquiv_unit _ _ _ _).trans ?_
+  refine key.trans ?_
   calc
-    _ = _ := Adjunction.homEquiv_unit _ _ _ _
-    _ = _ := key
-    _ = _ := (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app
-      ((_root_.SheafOfModules.pushforward φ).obj M)).symm
+    (PresheafOfModulesOfCommRing.exteriorPowerOneIso S.obj).hom.app
+        ((_root_.SheafOfModules.pushforward φ).obj M).val =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) 1).obj
+          ((_root_.SheafOfModules.pushforward φ).obj M).val) ≫
+        ((_root_.SheafOfModules.exteriorPowerIso 1 _).inv ≫
+          (_root_.SheafOfModules.exteriorPowerOneIso S).hom.app
+            ((_root_.SheafOfModules.pushforward φ).obj M)).val :=
+      (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app
+        ((_root_.SheafOfModules.pushforward φ).obj M)).symm
     _ = _ := (Adjunction.homEquiv_unit
       (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)) _ _
       ((_root_.SheafOfModules.exteriorPowerIso 1 _).inv ≫
