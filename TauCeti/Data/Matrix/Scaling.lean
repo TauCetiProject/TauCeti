@@ -213,6 +213,10 @@ noncomputable def relEntropy (P K : Matrix ι κ ℝ) : ℝ :=
   -- and this lemma is the supported unfolding interface instead.
   (rfl)
 
+/-- The relative entropy of a matrix against itself vanishes. -/
+theorem relEntropy_self (P : Matrix ι κ ℝ) : relEntropy P P = 0 := by
+  simp [relEntropy_def]
+
 /-- The relative entropy against a fixed matrix is continuous in the matrix it is applied to. -/
 theorem continuous_relEntropy (K : Matrix ι κ ℝ) : Continuous (relEntropy · K) := by
   unfold relEntropy
@@ -1017,10 +1021,9 @@ theorem IsDiagonalScaling.relEntropy_eq_relEntropy_add {P K : Matrix ι κ ℝ} 
     (hv : ∀ j, v j ≠ 0) {a : ι → ℝ} {b : κ → ℝ} (hP : HasMarginals P a b) {Q : Matrix ι κ ℝ}
     (hQ : HasMarginals Q a b) :
     relEntropy Q K = relEntropy Q P + relEntropy P K := by
-  have hPP : relEntropy P P = 0 := by simp [relEntropy_def]
   rw [h.relEntropy_eq_relEntropy_add_sum_sum_mul hK hu hv Q,
-    h.relEntropy_eq_relEntropy_add_sum_sum_mul hK hu hv P, hPP, zero_add, hQ.sum_sum_mul_add,
-    hP.sum_sum_mul_add]
+    h.relEntropy_eq_relEntropy_add_sum_sum_mul hK hu hv P, relEntropy_self, zero_add,
+    hQ.sum_sum_mul_add, hP.sum_sum_mul_add]
 
 /-- A diagonal scaling of a strictly positive `K` by strictly positive factors minimises the
 relative entropy against `K` among the nonnegative matrices with its row and column sums. -/
@@ -1106,8 +1109,7 @@ theorem IsDiagonalScaling.relEntropyDual_eq_relEntropy {P K : Matrix ι κ ℝ} 
     (hv : ∀ j, 0 < v j) {a : ι → ℝ} {b : κ → ℝ} (hPm : HasMarginals P a b) :
     K.relEntropyDual a b (fun i => Real.log (u i)) (fun j => Real.log (v j)) = relEntropy P K := by
   have hgap := hP.relEntropy_sub_relEntropyDual hK hu hv hPm
-  have hself : relEntropy P P = 0 := by simp [relEntropy_def]
-  linarith [hPm.sum_sum_eq]
+  linarith [hPm.sum_sum_eq, relEntropy_self P]
 
 /-- For a strictly positive kernel `K` and strictly positive marginals `a` and `b`, a nonnegative
 matrix with row sums `a` and column sums `b` minimises the relative entropy against `K` among all
