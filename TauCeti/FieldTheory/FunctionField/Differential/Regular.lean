@@ -214,31 +214,18 @@ theorem derivativeOfSeparating_mem_integers_of_perfectField {t : F} (ht : P.ord 
   have hzsep : Algebra.IsSeparable k⟮z⟯ F := (hF.isSeparable_adjoin_iff_D_ne_zero).mpr hDz
   have hztr : Transcendental k z := fun halg ↦ hDz (D_eq_zero_of_isSeparable
     (PerfectField.separable_of_irreducible (minpoly.irreducible halg.isIntegral)))
-  have hd0 := derivativeOfSeparating_ne_zero htr hztr
-  have hchain : (weilDifferentialOfSeparating hF hztr : Module.Dual k ↥(repartitionSpace k F)) =
-      repartitionDualMul hF (Units.mk0 _ hd0 : F) (weilDifferentialOfSeparating hF htr) := by
-    rw [weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_perfectField hF hex htr
-      hztr, coe_weilDifferentialSpaceModule_smul, Units.val_mk0]
-  have hdz := weilDifferentialDivisor_repartitionDualMul hF hex
-    (weilDifferentialOfSeparating hF htr).2
-    (by simpa using weilDifferentialOfSeparating_ne_zero hF htr) (Units.mk0 _ hd0)
-  rw [← weilDifferentialDivisor_congr hF hex hchain (weilDifferentialOfSeparating hF hztr).2
-    (by simpa using weilDifferentialOfSeparating_ne_zero hF hztr)] at hdz
-  have hord := congrArg (fun D : Divisor k F ↦ D.coeff P) hdz
   have := P.finiteDimensional_residueField hF
-  simp only [coeff_weilDifferentialDivisor,
-    weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr ht,
-    AlgebraicGeometry.WeilDivisor.coeff_add, Divisor.coeff_principal, Units.val_mk0,
-    add_zero] at hord
-  -- The divisor `-2 (z)_∞ + Diff(F / k(z))` of `dz` has nonnegative coefficient at `P`.
   let _ := ratFuncAlgebraOfTranscendental hztr
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental hztr
   let _ := isFunctionField_iff_functionField.mp hF
   let _ := isSeparable_ratFuncAlgebraOfTranscendental hztr
-  rw [← coeff_weilDifferentialDivisor, weilDifferentialDivisor_weilDifferentialOfSeparating,
-    AlgebraicGeometry.WeilDivisor.coeff_add, AlgebraicGeometry.WeilDivisor.coeff_zsmul,
-    Divisor.coeff_poles, Units.val_mk0, Divisor.coeff_different] at hord
   rw [P.mem_integers_iff_ord_nonneg] at hz ⊢
+  rw [P.ord_derivativeOfSeparating_eq_sub hF hex htr hztr,
+    weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr ht, sub_zero,
+    ← coeff_weilDifferentialDivisor, weilDifferentialDivisor_weilDifferentialOfSeparating]
+  -- The divisor `-2 (z)_∞ + Diff(F / k(z))` of `dz` has nonnegative coefficient at `P`.
+  simp only [AlgebraicGeometry.WeilDivisor.coeff_add, AlgebraicGeometry.WeilDivisor.coeff_zsmul,
+    Divisor.coeff_poles, Units.val_mk0, Divisor.coeff_different]
   omega
 
 include hF hex in
@@ -283,17 +270,11 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg
     rw [← hη, map_smul, kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self,
       coe_weilDifferentialSpaceModule_smul]
   have ha : a ≠ 0 := fun ha ↦ hω (by simp [hωa, ha])
-  have hdt : (weilDifferentialOfSeparating hF htr : Module.Dual k ↥(repartitionSpace k F)) ≠ 0 :=
-    by simpa using weilDifferentialOfSeparating_ne_zero hF htr
-  have hord := weilDifferentialOrder_repartitionDualMul hF hex
-    (weilDifferentialOfSeparating hF htr).2 hdt (Units.mk0 a ha) P
-  have hcongr := congrArg (fun D : Divisor k F ↦ D.coeff P)
-    (weilDifferentialDivisor_congr hF hex hωa (Submodule.coe_mem _) hω
-      (repartitionDualMul_mem_weilDifferentialSpace hF a (weilDifferentialOfSeparating hF htr).2)
-      (repartitionDualMul_ne_zero hF ha hdt))
-  simp only [coeff_weilDifferentialDivisor] at hcongr
-  rw [hcongr.trans hord, weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr ht,
-    add_zero, Units.val_mk0, P.mem_integers_iff_ord_nonneg]
+  rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex _ _
+      (weilDifferentialOfSeparating hF htr).2
+      (by simpa using weilDifferentialOfSeparating_ne_zero hF htr) ha hωa P,
+    weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr ht, add_zero,
+    P.mem_integers_iff_ord_nonneg]
 
 include hF hex in
 /-- Over a perfect exact constant field, the image of local Kähler differentials at a place of
