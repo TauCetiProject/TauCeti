@@ -55,10 +55,7 @@ theorem exists_iterateFrobenius_eq_algebraMap_comp
       ← ResidueField.algebraMap_eq, ← IsScalarTower.algebraMap_apply k R (ResidueField R)]
     exact e.symm_apply_apply a
   have hker : RingHom.ker f = maximalIdeal R := by
-    ext x
-    simp only [RingHom.mem_ker, f, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-      RingEquiv.coe_toRingHom]
-    rw [← e.symm.map_zero, e.symm.injective.eq_iff, residue_eq_zero_iff]
+    exact (RingHom.ker_comp_of_injective (residue R) e.symm.injective).trans ker_residue
   have hnil : IsNilpotent (RingHom.ker f) := by
     rw [hker, ← jacobson_eq_maximalIdeal (⊥ : Ideal R) bot_ne_top]
     exact IsArtinianRing.isNilpotent_jacobson_bot
