@@ -161,7 +161,7 @@ theorem ratModulusEquivGal_comp_rayClassMk :
   refine artinHomAway_eq_of_apply_prime _ _ _ _ fun I v hv hI Q _ _ σ hσ ↦ ?_
   have hmem : v.asIdeal ∈ integralIdealsPrimeTo (ratModulus n (NeZero.ne n)) :=
     asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff.mpr (mem_ratModulus_support_iff.not.mp hv)
-  have hIv : I = integralIdealsAwayHom _ ⟨v.asIdeal, hmem⟩ :=
+  have hIv : I = integralIdealsAwayHom ℚ _ ⟨v.asIdeal, hmem⟩ :=
     Subtype.ext (Units.ext (by rw [coe_integralIdealsAwayHom]; exact hI))
   rw [MonoidHom.comp_apply, hIv, ← idealClass_apply, MonoidHom.coe_ofClass,
     ← (isArithFrobAt_iff_eq_ratModulusEquivGal_idealClass n F v hmem Q σ).mp hσ]

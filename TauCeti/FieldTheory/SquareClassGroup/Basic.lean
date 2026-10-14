@@ -127,45 +127,45 @@ private theorem zmod_two_eq_zero_or_one : ∀ t : ZMod 2, t = 0 ∨ t = 1 := by 
 
 /-- A `ZMod 2`-linear combination of square classes is the class of the corresponding subset
 product (the subset where the coefficient is `1`). -/
-private theorem sum_smul_squareClass {ι : Type*} [Fintype ι] (d : ι → Kˣ) (g : ι → ZMod 2) :
-    ∑ i, g i • squareClass (d i) = squareClass (∏ i with g i = 1, d i) := by
+private theorem sum_smul_squareClass {ι : Type*} (S : Finset ι)
+    (d : ι → Kˣ) (g : ι → ZMod 2) :
+    ∑ i ∈ S, g i • squareClass (d i) = squareClass (∏ i ∈ S with g i = 1, d i) := by
   rw [squareClass_prod, Finset.sum_filter]
   refine Finset.sum_congr rfl fun i _ => ?_
   rcases zmod_two_eq_zero_or_one (g i) with h | h
   · rw [h, zero_smul]; exact (ite_eq_right (by decide)).symm
   · rw [h, one_smul]; exact (ite_eq_left rfl).symm
 
-/-- **Square-class independence is `ZMod 2`-linear independence.** For a finite family of units
+/-- **Square-class independence is `ZMod 2`-linear independence.** For any family of units
 `d : ι → Kˣ`, the square classes `squareClass (d i)` are `ZMod 2`-linearly independent in the
 square-class group iff no nonempty subset product `∏_{i ∈ S} d i` is a square. The right-hand side
 is the Finset form of square-class independence that the multiquadratic degree theorem consumes. -/
-theorem linearIndependent_squareClass_iff {ι : Type*} [Finite ι] (d : ι → Kˣ) :
+theorem linearIndependent_squareClass_iff {ι : Type*} (d : ι → Kˣ) :
     LinearIndependent (ZMod 2) (fun i => squareClass (d i)) ↔
       ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i) := by
   classical
-  let := Fintype.ofFinite ι
-  rw [Fintype.linearIndependent_iff]
+  rw [linearIndependent_iff']
   contrapose
   push Not
   constructor
   · -- A linear dependence singles out a nonempty square subset product.
-    intro ⟨g, _, i, hgi⟩
-    set S : Finset _ := { i | g i = 1 } with hS
+    intro ⟨T, g, _, i, hi, hgi⟩
+    set S : Finset _ := T.filter (fun i ↦ g i = 1) with hS
     use S
     constructor
     · use i
       rw [hS, Finset.mem_filter]
-      exact ⟨Finset.mem_univ i, (zmod_two_eq_zero_or_one (g i)).resolve_left hgi⟩
+      exact ⟨hi, (zmod_two_eq_zero_or_one (g i)).resolve_left hgi⟩
     · rwa [← squareClass_eq_zero_iff, ← sum_smul_squareClass]
   · -- A nonempty square subset product would give a nontrivial linear dependence.
     intro ⟨S, ⟨_, _⟩, _⟩
     let g i : ZMod 2 := if i ∈ S then 1 else 0
-    use g
+    use S, g
     constructor
-    · have hS : ({ i | g i = 1 } : Finset _) = S := by
+    · have hS : S.filter (fun i ↦ g i = 1) = S := by
         ext i
         rw [Finset.mem_filter]
-        grind only [← Finset.mem_univ]
+        simp [g]
       rwa [sum_smul_squareClass, hS, squareClass_eq_zero_iff]
     · grind only
 
