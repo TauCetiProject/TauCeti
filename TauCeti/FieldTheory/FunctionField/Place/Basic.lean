@@ -146,6 +146,13 @@ noncomputable def ord (f : F) : ℤ := Valuation.ord P.valuation f
 theorem ord_def (f : F) : P.ord f = -WithZero.log (P.valuation f) :=
   Valuation.ord_def P.valuation f
 
+/-- The order function of a place is the order function of its underlying valuation. The body of
+`Place.ord` is not exposed to importing modules, so this is how generic `Valuation.ord` results
+are transported to it. -/
+@[simp]
+theorem ord_valuation (f : F) : Valuation.ord P.valuation f = P.ord f :=
+  (rfl)
+
 /-- The translation between the multiplicative and additive views of a place. -/
 theorem valuation_eq_exp_neg_ord {f : F} (hf : f ≠ 0) :
     P.valuation f = WithZero.exp (-P.ord f) :=

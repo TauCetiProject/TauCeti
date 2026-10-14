@@ -56,6 +56,8 @@ conjugation with the resulting map on norm quotients.
 * `TauCeti.ClassFieldTheory.NormalLayer.conjugate`: the conjugate layer `gVg⁻¹ ◁ gUg⁻¹`.
 * `TauCeti.ClassFieldTheory.NormalLayer.conjugateGalEquiv`: the induced isomorphism
   `U/V ≃* gUg⁻¹/gVg⁻¹` of Galois groups.
+* `TauCeti.ClassFieldTheory.NormalLayer.conjugateGroundHom`: inverse conjugation `gUg⁻¹ → U`, as a
+  continuous homomorphism of ground subgroups.
 * `TauCeti.ClassFieldTheory.Formation.levelConjEquiv`: acting by `g` is an isomorphism
   `A^U ≃ A^{gUg⁻¹}` of levels.
 * `TauCeti.ClassFieldTheory.NormalLayer.conjugateCoefficientEquiv` and
@@ -255,6 +257,15 @@ theorem conj_mem_top_conjugate {x : G} :
   rw [mem_top_conjugate]
   simp [mul_assoc]
 
+/-- The ground subgroup of the conjugate layer is the conjugate `gUg⁻¹` of the ground subgroup,
+read as the image of `U` under conjugation by `g`. -/
+theorem toSubgroup_ground_conjugate :
+    (L.conjugate g).ground.toSubgroup = L.ground.toSubgroup.map (MulAut.conj g).toMonoidHom := by
+  ext x
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, OpenSubgroup.mem_toSubgroup,
+    OpenSubgroup.mem_toSubgroup]
+  exact L.mem_ground_conjugate g
+
 /-! ### The Galois group of a conjugate layer -/
 
 /-- Conjugation by `g` as an isomorphism `U ≃* gUg⁻¹` of the ground subgroups of a layer and its
@@ -274,6 +285,32 @@ theorem conjugateGroundEquiv_apply_coe (u : L.ground) :
 theorem conjugateGroundEquiv_symm_apply_coe (v : (L.conjugate g).ground) :
     (((L.conjugateGroundEquiv g).symm v : L.ground) : G) = g⁻¹ * v * g :=
   (Subgroup.coe_congrOfMapEq_symm_apply _ _ v).trans (MulAut.conj_symm_apply g v)
+
+/-- Inverse conjugation `v ↦ g⁻¹ v g`, the inverse ground-subgroup equivalence, as a continuous
+homomorphism from the ground subgroup `gUg⁻¹` of the conjugate layer to the ground subgroup `U` of
+the layer. -/
+def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
+  toMonoidHom := (L.conjugateGroundEquiv g).symm.toMonoidHom
+  continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
+    ((continuous_mul_const g).comp ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).congr
+      fun v => (L.conjugateGroundEquiv_symm_apply_coe g v).symm
+
+/-- On elements of `G`, the inverse-conjugation homomorphism is `v ↦ g⁻¹ * v * g`. -/
+@[simp]
+theorem conjugateGroundHom_apply_coe (v : (L.conjugate g).ground.toSubgroup) :
+    (L.conjugateGroundHom g v : G) = g⁻¹ * v * g :=
+  L.conjugateGroundEquiv_symm_apply_coe g v
+
+variable {M : Type} [AddMonoid M] [DistribMulAction G M] in
+/-- The action of `g` on `M` and inverse conjugation form a compatible pair. -/
+theorem conjugateGroundHom_smul (v : (L.conjugate g).ground.toSubgroup) (m : M) :
+    DistribSMul.toAddMonoidHom M g (L.conjugateGroundHom g v • m) =
+      v • DistribSMul.toAddMonoidHom M g m := by
+  rw [DistribSMul.toAddMonoidHom_apply, DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
+    Subgroup.smul_def, smul_smul, smul_smul]
+  congr 1
+  rw [conjugateGroundHom_apply_coe]
+  group
 
 /-- Conjugation carries the top subgroup of a layer, read inside its ground subgroup, onto the
 corresponding subgroup of the conjugate layer. This is what lets it descend to Galois groups. -/

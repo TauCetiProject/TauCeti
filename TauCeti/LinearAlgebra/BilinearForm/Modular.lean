@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Dual.Divisibility
 
 /-!
 # Modular bilinear forms
@@ -30,6 +31,9 @@ This file proves the facts about modular forms that hold over every commutative 
 * when `a` is a non-zero-divisor, `a`-modularity is characterized by divisibility of all values
   by `a`, left separation, and the representability of `a f` for each linear functional `f`
   (`LinearMap.BilinForm.isModular_iff`);
+* a vector `x` with `a r ∣ B x y` for all `y`, where `B` is `a`-modular and `a` and `r` are
+  non-zero-divisors, is divisible by `r`
+  (`LinearMap.BilinForm.IsModular.exists_eq_smul_of_forall_dvd`);
 * the orthogonal sum of two `a`-modular submodules is `a`-modular
   (`LinearMap.BilinForm.IsModular.restrict_sup`);
 * an `a`-modular submodule splits off orthogonally when `a` divides every value of the form
@@ -195,6 +199,18 @@ theorem isModular_iff (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R) :
     have hflip : C.flip = C := LinearMap.ext₂ fun x y ↦ hcan _ _ (by
       simpa using hB.eq y x)
     exact ⟨C, rfl, ⟨hbij, hflip ▸ hbij⟩⟩
+
+/-- **Divisibility in a modular form.** If `B` is `a`-modular, with `a` and `r` non-zero-divisors,
+and `a * r` divides `B x y` for every `y`, then `x` is `r` times a vector. -/
+theorem IsModular.exists_eq_smul_of_forall_dvd (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)
+    {r : R} (hr : r ∈ nonZeroDivisors R) {x : M} (hx : ∀ y, a * r ∣ B x y) : ∃ z, x = r • z := by
+  obtain ⟨C, rfl, hC⟩ := h
+  have hdvd : ∀ y, r ∣ C x y := fun y ↦ by
+    obtain ⟨c, hc⟩ := hx y
+    exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa [mul_assoc] using hc)⟩
+  obtain ⟨f, hf⟩ := LinearMap.exists_smul_eq_of_forall_dvd hr hdvd
+  obtain ⟨z, rfl⟩ := hC.bijective_left.2 f
+  exact ⟨z, hC.bijective_left.1 (by rw [map_smul, hf])⟩
 
 /-- **Orthogonal sums of modular forms are modular.** If two orthogonal submodules carry
 `a`-modular restrictions of a symmetric form, with `a` a non-zero-divisor, so does their sum. -/
