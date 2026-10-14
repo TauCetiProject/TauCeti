@@ -146,20 +146,14 @@ the right action of `GL₂(ℤ/Nℤ)`: reindexing the points `φ a` does not cha
 theorem drinfeldBasisLocus_comp_mulEquiv
     (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
     (σ : Multiplicative (ZMod N × ZMod N) ≃* Multiplicative (ZMod N × ZMod N)) :
-    E.drinfeldBasisLocus N (φ.comp ↑σ) = E.drinfeldBasisLocus N φ := by
+    E.drinfeldBasisLocus N (φ.comp ↑σ) = E.drinfeldBasisLocus N φ :=
   -- both sides have the same morphisms factoring through their closed subschemes
-  have key {T : Scheme.{u}} (t : T ⟶ S) :
-      E.drinfeldBasisLocus N (φ.comp ↑σ) ≤ t.ker ↔ E.drinfeldBasisLocus N φ ≤ t.ker := by
+  ext_of_le_ker_iff fun t ↦ by
     have ht := E.isPullback_baseChange t
     have h0t : (E.baseChange t).zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ =
         t ≫ E.zero := by simp
     rw [← isDrinfeldBasis_pointsPullback_iff ht h0t, ← isDrinfeldBasis_pointsPullback_iff ht h0t,
       ← MonoidHom.comp_assoc, isDrinfeldBasis_comp_mulEquiv_iff]
-  exact le_antisymm
-    (((key (E.drinfeldBasisLocus N φ).subschemeι).2 (ker_subschemeι _).ge).trans
-      (ker_subschemeι _).le)
-    (((key (E.drinfeldBasisLocus N (φ.comp ↑σ)).subschemeι).1 (ker_subschemeι _).ge).trans
-      (ker_subschemeι _).le)
 
 /-- **The Drinfeld-basis locus commutes with base change.** For a morphism `g : E' ⟶ E` of
 elliptic curves forming a pullback square over `f : S' ⟶ S` and carrying the zero section of `E'`
@@ -169,11 +163,9 @@ theorem drinfeldBasisLocus_pointsPullback (hg : IsPullback g E'.structureMap E.s
     (h0 : E'.zero ≫ g = f ≫ E.zero)
     (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
     E'.drinfeldBasisLocus N ((pointsPullback hg h0).comp φ) =
-      (E.drinfeldBasisLocus N φ).comap f := by
+      (E.drinfeldBasisLocus N φ).comap f :=
   -- both sides have the same morphisms factoring through their closed subschemes
-  have key {T : Scheme.{u}} (t : T ⟶ S') :
-      E'.drinfeldBasisLocus N ((pointsPullback hg h0).comp φ) ≤ t.ker ↔
-        (E.drinfeldBasisLocus N φ).comap f ≤ t.ker := by
+  ext_of_le_ker_iff fun t ↦ by
     have ht := E'.isPullback_baseChange t
     have h0t : (E'.baseChange t).zero ≫ (E'.baseChangeIso t).hom ≫ pullback.fst _ _ =
         t ≫ E'.zero := by simp
@@ -185,10 +177,5 @@ theorem drinfeldBasisLocus_pointsPullback (hg : IsPullback g E'.structureMap E.s
       MonoidHom.ext fun a ↦ pointsPullback_comp hg h0 ht h0t (φ a)
     rw [← isDrinfeldBasis_pointsPullback_iff ht h0t, ← le_map_iff_comap_le, map_ker,
       ← isDrinfeldBasis_pointsPullback_iff (ht.paste_horiz hg) h0', hφ]
-  exact le_antisymm
-    (((key ((E.drinfeldBasisLocus N φ).comap f).subschemeι).2 (ker_subschemeι _).ge).trans
-      (ker_subschemeι _).le)
-    (((key (E'.drinfeldBasisLocus N ((pointsPullback hg h0).comp φ)).subschemeι).1
-      (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

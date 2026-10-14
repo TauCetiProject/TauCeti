@@ -47,7 +47,9 @@ condition defining points of exact order `N` and Drinfeld level structures.
   this persists along any base change of the family.
 * `AlgebraicGeometry.Scheme.IdealSheafData.le_ker_pullback_snd_subschemeι_weilRestriction`: over
   the closed subscheme of `I.weilRestriction g`, the base change of `Y` lies in `V(I)`.
-* `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_comap`: compatibility with base change.
+* `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_comap`: compatibility with base change,
+  proved with `AlgebraicGeometry.Scheme.IdealSheafData.ext_of_le_ker_iff`, which says that an
+  ideal sheaf is determined by the morphisms factoring through its closed subscheme.
 
 ## References
 
@@ -233,24 +235,25 @@ theorem le_ker_pullback_snd_subschemeι_weilRestriction (I : Y.IdealSheafData) :
     I ≤ (pullback.snd (I.weilRestriction g).subschemeι g).ker :=
   (weilRestriction_le_ker_iff g I _).1 (ker_subschemeι _).ge
 
+/-- An ideal sheaf on `X` is determined by the morphisms to `X` that factor through its closed
+subscheme: if the same morphisms `t : T ⟶ X` satisfy `I ≤ t.ker` and `J ≤ t.ker`, then `I = J`.
+Apply this to the closed immersions `I.subschemeι` and `J.subschemeι`. -/
+theorem ext_of_le_ker_iff {X : Scheme.{u}} {I J : X.IdealSheafData}
+    (h : ∀ {T : Scheme.{u}} (t : T ⟶ X), I ≤ t.ker ↔ J ≤ t.ker) : I = J :=
+  le_antisymm (((h J.subschemeι).2 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
+    (((h I.subschemeι).1 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
+
 /-- **The Weil restriction of a closed subscheme commutes with base change.** For `t : T ⟶ S`,
 the Weil restriction of the inverse image of `V(I)` in `T ×_S Y` along `T ×_S Y ⟶ T` is the
 inverse image of the Weil restriction of `V(I)` along `g`. -/
 theorem weilRestriction_comap (I : Y.IdealSheafData) {T : Scheme.{u}} (t : T ⟶ S) :
     (I.comap (pullback.snd t g)).weilRestriction (pullback.fst t g) =
-      (I.weilRestriction g).comap t := by
+      (I.weilRestriction g).comap t :=
   -- both sides have the same morphisms factoring through their closed subschemes
-  have key {T' : Scheme.{u}} (s : T' ⟶ T) :
-      (I.comap (pullback.snd t g)).weilRestriction (pullback.fst t g) ≤ s.ker ↔
-        (I.weilRestriction g).comap t ≤ s.ker := by
+  ext_of_le_ker_iff fun s ↦ by
     rw [weilRestriction_le_ker_iff, ← le_map_iff_comap_le, map_ker, ← le_map_iff_comap_le,
       map_ker, weilRestriction_le_ker_iff, ← pullbackRightPullbackFstIso_hom_snd,
       Scheme.Hom.ker_comp_of_isIso]
-  exact le_antisymm
-    (((key ((I.weilRestriction g).comap t).subschemeι).2 (ker_subschemeι _).ge).trans
-      (ker_subschemeι _).le)
-    (((key ((I.comap (pullback.snd t g)).weilRestriction (pullback.fst t g)).subschemeι).1
-      (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
 
 end Scheme.IdealSheafData
 
