@@ -11,17 +11,19 @@ public import Mathlib.LinearAlgebra.Orientation
 /-!
 # Transporting orientations along linear equivalences
 
-Two facts about `Orientation.map`, the transport of orientations along a linear equivalence:
-it is compatible with composition of equivalences, and two self-equivalences of a
-finite-dimensional space transport an orientation to the same orientation exactly when their
-determinants have the same sign.
-Integral unit signs also act on rays.
+Orientation transport commutes with composition, and determinants characterize when transported
+rays agree. Integral unit signs retain or reverse orientations; signed Jacobians determine their
+compatibility under linear equivalences.
 
 ## Main results
 
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
   if and only if `0 < det f * det g`.
+* `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
+* `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
+* `Orientation.map_units_smul_eq_iff_det_mul_pos`: the signed-Jacobian compatibility criterion.
+* `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 -/
 
 public section

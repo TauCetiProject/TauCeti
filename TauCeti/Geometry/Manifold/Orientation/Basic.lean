@@ -152,21 +152,10 @@ theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
 @[ext]
 theorem ext {o o' : Orientation I M ι}
     (h : ∀ x, orientationAt o x = orientationAt o' x) : o = o' := by
-  induction o using Quotient.inductionOn with | _ a =>
-    induction o' using Quotient.inductionOn with | _ b =>
-      apply Quotient.sound (s := OrientationLift.setoid)
-      -- Quotient induction exposes raw Quotient.mk terms; present them as Orientation.mk
-      -- so the public representative equations apply without unfolding the quotient lift.
-      change ∀ x, (mk a).toVectorBundleOrientation x =
-        (mk b).toVectorBundleOrientation x at h
-      simp only [toVectorBundleOrientation_mk,
-        OrientationLift.toVectorBundleOrientation_apply] at h
-      -- The quotient equality uses the same lift setoid as the representative constructor.
-      change OrientationLift.setoid.r a b
-      rw [OrientationLift.setoid_rel]
-      rcases OrientationLift.eq_or_eq_flip_of_orientationAt (fun x ↦ (h x).symm) with h | h
-      · exact .inl h
-      · exact .inr h
+  induction o using Orientation.inductionOn with | _ a =>
+    induction o' using Orientation.inductionOn with | _ b =>
+      simp only [orientationAt_mk] at h
+      exact (mk_eq_mk_iff a b).mpr (OrientationLift.eq_or_eq_flip_of_orientationAt h)
 
 /-- Over a preconnected manifold there are at most two orientations. -/
 theorem eq_or_eq_neg [PreconnectedSpace M] (o o' : Orientation I M ι) :

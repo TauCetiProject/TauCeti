@@ -12,11 +12,19 @@ public import Mathlib.LinearAlgebra.Determinant
 /-!
 # Orientation-preserving coordinate changes and oriented atlases
 
-The orientation-preserving groupoid uses transition derivatives within the model range, so its
-maps and oriented subatlases are meaningful for boundary and corner models. An oriented atlas is
-a sufficient condition for orientability. It is not the definition of orientability:
-for example, the interval has an orientation even though its half-line charts cannot
-form an atlas with only positive transition determinants.
+Within-range transition derivatives define the orientation-preserving groupoid and oriented
+subatlases, including at boundary and corner points. An oriented atlas supplies an orientation;
+the interval is orientable although its half-line charts have opposite transition signs.
+
+## Main declarations
+
+* `orientationPreservingGroupoid` and `IsOrientedAtlas`: positive transitions and oriented atlases.
+* `IsOrientedAtlas.det_fderivWithin_pos` and `IsOrientedAtlas.prod`: determinants and products.
+* `not_contDiffGroupoid_le_orientationPreservingGroupoid`: smooth changes can reverse orientation.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition, Chapter 15.
 -/
 
 public section
