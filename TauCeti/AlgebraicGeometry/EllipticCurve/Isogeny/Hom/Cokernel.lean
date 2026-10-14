@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
-import TauCeti.GroupTheory.Finiteness
 import TauCeti.GroupTheory.Index.Quotient
 
 /-!
@@ -24,8 +23,8 @@ Here the cokernel modulo torsion is expressed as the index of the image in
 `E₂(F)/E₂(F)tors`; the map from `E₁(F)` has the same image as the induced map from its quotient
 by torsion. This avoids choosing bases or splittings of the Mordell–Weil groups.
 
-The kernel is finite for every nonzero morphism. When the source is finitely generated, its
-torsion is finite too, so division gives the rational cokernel/kernel ratio
+The kernel is finite for every nonzero morphism. When the source torsion is finite (in particular,
+when the source is finitely generated), division gives the rational cokernel/kernel ratio
 `#coker(f) / #ker(f)`. When the target is finitely generated, the cokernel is finite too:
 its image contains `deg(f) · E₂(F)`.
 
@@ -109,15 +108,14 @@ theorem index_range_mul_card_torsion (hf : f ≠ 0) :
       (S := AddCommGroup.torsion W₂.Point))
 
 /-- The rational cokernel/kernel ratio `#coker(f) / #ker(f)` equals the image index modulo torsion
-times the ratio of target to source torsion orders. Finite generation is needed only for the
-source here; if the target is also finitely generated, `finiteIndex_range_pointMapHom` makes
-the cokernel index a positive integer. -/
-theorem index_range_div_card_ker [AddGroup.FG W₁.Point] (hf : f ≠ 0) :
+times the ratio of target to source torsion orders. Only the source torsion subgroup needs to be
+finite; in particular, finite generation of the source suffices. If the target is finitely
+generated, `finiteIndex_range_pointMapHom` makes the cokernel index a positive integer. -/
+theorem index_range_div_card_ker [Finite (AddCommGroup.torsion W₁.Point)] (hf : f ≠ 0) :
     (f.pointMapHom.range.index : ℚ) / Nat.card f.pointMapHom.ker =
       (f.pointMapHom.range.map (QuotientAddGroup.mk' (AddCommGroup.torsion W₂.Point))).index *
         (Nat.card (AddCommGroup.torsion W₂.Point) : ℚ) /
           Nat.card (AddCommGroup.torsion W₁.Point) := by
-  have := TauCeti.AddCommGroup.finite_torsion_of_fg W₁.Point
   have := f.finite_ker_pointMapHom hf
   have hT : (Nat.card (AddCommGroup.torsion W₁.Point) : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
