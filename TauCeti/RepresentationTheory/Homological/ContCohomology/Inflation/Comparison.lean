@@ -95,7 +95,8 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
     (ContinuousMonoidHom.id (G ⧸ N)) (Subgroup.quotientMkContinuousMonoidHom N)
     (ofDiscreteModuleQuotient G M N) (TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N)
     n).symm.trans ?_
-  -- `map_comp` produces the composite `id.comp (quotientMk N)`, which is `quotientMk N` by `rfl`.
+  -- `map_comp` produces the identity composed with the quotient projection.
+  -- This is the projection itself by `rfl`.
   exact TauCeti.ContinuousCohomology.map_congr rfl HEq.rfl n
 
 -- The three transport lemmas below state their left-hand sides through `dsimp% only` (#8315):

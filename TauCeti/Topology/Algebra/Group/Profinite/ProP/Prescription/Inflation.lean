@@ -147,8 +147,8 @@ theorem explicitInfl1ZModTwist_eq_explicitMap1 :
         (Subgroup.quotientMkContinuousMonoidHom N)
         (ZModTwist.compEquiv (Subgroup.quotientMkContinuousMonoidHom N) χ i).toAddMonoidHom
         continuous_of_discreteTopology
-        (fun g x => ZModTwist.compEquiv_smul (Subgroup.quotientMkContinuousMonoidHom N) χ i g x)
-          := by
+        (fun g x =>
+          ZModTwist.compEquiv_smul (Subgroup.quotientMkContinuousMonoidHom N) χ i g x) := by
   ext c
   simp only [AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply, explicitInfl1ZModTwist,
     AddEquiv.coe_toAddMonoidHom, explicitCoeff1Equiv_mk, explicitInfl1_mk]

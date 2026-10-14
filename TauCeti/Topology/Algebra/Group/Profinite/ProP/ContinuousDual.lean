@@ -193,8 +193,8 @@ continuous `𝔽_p`-dual of `G ⧸ N` onto that of `G`: every continuous `𝔽_p
 kills the pro-`p` Frattini subgroup, hence `N`, and so descends to the quotient. -/
 theorem continuousZModDualMap_quotientMk_bijective {N : Subgroup G} [N.Normal]
     (hN : N ≤ proPFrattini p G) :
-    Function.Bijective ((Subgroup.quotientMkContinuousMonoidHom N).continuousZModDualMap (n := p))
-      := by
+    Function.Bijective
+      ((Subgroup.quotientMkContinuousMonoidHom N).continuousZModDualMap (n := p)) := by
   refine ⟨fun χ ψ h ↦ Additive.toMul.injective (ContinuousMonoidHom.ext fun q ↦ ?_), fun χ ↦ ?_⟩
   · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
     have := congrArg (fun x : continuousZModDual p G ↦ Additive.toMul x g) h
