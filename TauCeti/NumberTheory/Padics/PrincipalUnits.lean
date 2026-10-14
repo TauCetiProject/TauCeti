@@ -277,8 +277,8 @@ variable (p) in
 /-- `[ℤ_pˣ : U^(f)] = φ(p ^ f)`: reduction modulo `p ^ f` is surjective on units. -/
 @[simp]
 theorem index_unitsPrincipal (f : ℕ) : (unitsPrincipal p f).index = Nat.totient (p ^ f) := by
-  rw [unitsPrincipal, Subgroup.index_ker,
-    MonoidHom.range_eq_top_of_surjective _ (PadicInt.surjective_units_map_toZModPow f),
+  rw [← ker_unitsToZModPow, Subgroup.index_ker,
+    MonoidHom.range_eq_top_of_surjective _ (PadicInt.surjective_unitsToZModPow f),
     Subgroup.card_top, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 variable (p) in

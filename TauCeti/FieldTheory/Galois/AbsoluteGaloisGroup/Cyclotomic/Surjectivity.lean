@@ -143,11 +143,8 @@ theorem range_localCyclotomicCharacter_ratPadic : (localCyclotomicCharacter p �
 automorphism of the `p^n`-th roots of unity, `ζ ↦ ζ^a` with `a` prime to `p`, is induced by an
 element of `G_{ℚ_p}`. -/
 theorem surjective_toZModPow_localCyclotomicCharacter_ratPadic (n : ℕ) :
-    Function.Surjective (PadicInt.unitsToZModPow n ∘ localCyclotomicCharacter p ℚ_[p]) := by
-  intro u
-  obtain ⟨σ, hσ⟩ := ((PadicInt.surjective_units_map_toZModPow n).comp
-    (surjective_localCyclotomicCharacter_ratPadic p)) u
-  exact ⟨σ, Units.ext (by simpa using congrArg Units.val hσ)⟩
+    Function.Surjective (PadicInt.unitsToZModPow n ∘ localCyclotomicCharacter p ℚ_[p]) :=
+  (PadicInt.surjective_unitsToZModPow n).comp (surjective_localCyclotomicCharacter_ratPadic p)
 
 end RatPadic
 
