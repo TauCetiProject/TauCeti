@@ -102,10 +102,16 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
       continuous_abelianizationProPMap p φ.toMonoidHom φ.continuous hRV⟩
   have hκ : Function.Surjective κ :=
     abelianizationProPMap_surjective p φ.toMonoidHom φ.continuous hRV hVR
+  have hκ_mk (r : R) : κ (abelianizationProPMk p _ R r) =
+      abelianizationProPMk p _ V ⟨φ r, Subgroup.mem_comap.mp (hRV r.2)⟩ :=
+    abelianizationProPMap_mk p φ.toMonoidHom φ.continuous hRV r
   let a := padicCompletionUnitsEquivAbelianizationProP p K L j
   let ψ : abelianizationProP p (freeProfiniteGroup ι) R →ₜ* ↑(padicCompletionUnits p L) :=
     (a.symm : _ →ₜ* _).comp κ
   have hψ : Function.Surjective ψ := a.symm.surjective.comp hκ
+  have haψ (x) : a (ψ x) = κ x := by
+    simp only [ψ, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      ContinuousMonoidHom.coe_coe, ContinuousMulEquiv.apply_symm_apply]
   -- The pro-p module structure is p-adic exponentiation. Continuity makes ψ linear.
   have : CompactSpace R :=
     isCompact_iff_compactSpace.mp (isClosed_singleton.preimage
@@ -139,8 +145,6 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
     apply Additive.toMul.injective
     simp only [toMul_ofMul, padicCompletionUnits_single_smul, one_smul]
     apply a.injective
-    have haψ (x) : a (ψ x) = κ x := by
-      simp [ψ]
     have ha (z) : a (padicCompletionUnitsAut p L K σ z) =
         (φ f : AbsoluteGaloisGroup K ⧸ V) • a z := by
       simpa only [a, hφ, hf] using
@@ -158,6 +162,6 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
     simp only [β, MonoidAlgebra.equivariantOfLinearOfComm_apply]
     rw [hβ₀, ← freeProfiniteGroup.abelianizationProPLinearEquivRelationModule_apply,
       e.symm_apply_apply, toMul_ofMul]
-    simp [ψ, a, κ, R, V]
+    rw [toMul_ofMul, haψ, hκ_mk]
 
 end TauCeti
