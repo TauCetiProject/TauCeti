@@ -54,7 +54,7 @@ Tangent vector fields on a sphere are represented, as usual in topology, by maps
 public section
 
 open Metric Module MulOpposite Quaternion
-open scoped RealInnerProductSpace RightActions Manifold ContDiff
+open scoped RealInnerProductSpace RightActions Manifold ContDiff ENNReal
 
 namespace TauCeti
 
@@ -88,6 +88,7 @@ variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℍᵐᵒᵖ E
 
 /-- Right multiplication by quaternions scales inner products by the square of the norm:
 `⟪x <• p, x <• q⟫ = ‖x‖ ^ 2 * ⟪p, q⟫`. -/
+@[simp]
 theorem inner_op_smul_op_smul (x : E) (p q : ℍ) :
     ⟪x <• p, x <• q⟫ = ‖x‖ ^ 2 * ⟪p, q⟫ := by
   have hnorm (r : ℍ) : ‖x <• r‖ = ‖r‖ * ‖x‖ := by rw [norm_smul, norm_op]
@@ -97,6 +98,7 @@ theorem inner_op_smul_op_smul (x : E) (p q : ℍ) :
   ring
 
 /-- The inner product of `x <• q` with `x` is `‖x‖ ^ 2` times the real part of `q`. -/
+@[simp]
 theorem inner_op_smul_self_left (x : E) (q : ℍ) : ⟪x <• q, x⟫ = ‖x‖ ^ 2 * q.re := by
   simpa [inner_def] using inner_op_smul_op_smul x q 1
 
@@ -104,13 +106,13 @@ theorem inner_op_smul_self_left (x : E) (q : ℍ) : ⟪x <• q, x⟫ = ‖x‖ 
 purely imaginary. -/
 theorem inner_op_smul_self_left_eq_zero_iff {x : E} (hx : x ≠ 0) (q : ℍ) :
     ⟪x <• q, x⟫ = 0 ↔ q.re = 0 := by
-  simp [inner_op_smul_self_left, hx]
+  simp [hx]
 
 /-- Each vector of the quaternionic frame of `x` is orthogonal to `x`: on the unit sphere the
 frame consists of tangent vectors. -/
 @[simp]
 theorem inner_quaternionFrame_self (x : E) (j : Fin 3) : ⟪quaternionFrame x j, x⟫ = 0 := by
-  fin_cases j <;> simp [inner_op_smul_self_left]
+  fin_cases j <;> simp
 
 section Smooth
 
@@ -160,11 +162,12 @@ theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
 
 end Orthonormal
 
-/-- The quaternionic coordinate space `ℍ^ι` has real dimension `4 * Fintype.card ι`, so its unit
-sphere is a sphere of dimension `4 * Fintype.card ι - 1`. -/
-theorem finrank_piLp_quaternion (ι : Type*) [Fintype ι] :
-    finrank ℝ (PiLp 2 fun _ : ι ↦ ℍ) = 4 * Fintype.card ι := by
-  rw [(WithLp.linearEquiv 2 ℝ _).finrank_eq, Module.finrank_pi_fintype]
+/-- The quaternionic coordinate space `PiLp p (fun _ : ι ↦ ℍ)` has real dimension
+`4 * Fintype.card ι` for every `p`. For `p = 2` this is `ℍ^ι`, whose unit sphere is therefore a
+sphere of dimension `4 * Fintype.card ι - 1`. -/
+theorem finrank_piLp_quaternion (p : ℝ≥0∞) (ι : Type*) [Fintype ι] :
+    finrank ℝ (PiLp p fun _ : ι ↦ ℍ) = 4 * Fintype.card ι := by
+  rw [(WithLp.linearEquiv p ℝ _).finrank_eq, Module.finrank_pi_fintype]
   simp [Quaternion.finrank_eq_four, mul_comm]
 
 end TauCeti
