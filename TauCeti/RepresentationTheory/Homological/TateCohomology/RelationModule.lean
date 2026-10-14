@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
-import TauCeti.RepresentationTheory.Homological.Augmentation
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Augmentation
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective
-import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # Tate cohomology of the relation module
@@ -83,25 +80,32 @@ private def augmentationKerToLeftRegular :
       ((Representation.asAlgebraHom_ofMulAction_smul_eq_mul _ _).symm.trans
         (by rw [Representation.asAlgebraHom_single_one]; rfl)) }
 
-/-- The augmentation sequence `0 → I_G → k[G] → k → 0`, with `I_G` the representation attached to
-the augmentation ideal of `k[G]`, the last term of Lyndon's sequence. (`Rep.augmentationSES` has
-the categorical kernel of the augmentation as its first term instead.) -/
-private def augmentationKerSES : ShortComplex (Rep k G) :=
-  ShortComplex.mk augmentationKerToLeftRegular (augmentation k G) (by
+/-- The representation attached to the augmentation ideal of `k[G]`, the last term of Lyndon's
+sequence, is the augmentation ideal `Rep.augmentationIdeal k G`, the categorical kernel of the
+augmentation: the inclusion `I_G → k[G]` lifts to an isomorphism onto that kernel. -/
+private def augmentationKerIso :
+    ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
+      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))) ≅ augmentationIdeal k G :=
+  let l := KernelFork.IsLimit.lift' (augmentationιIsKernel k G) augmentationKerToLeftRegular (by
     ext x
     exact (augmentation_hom_apply k G _).trans
       (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x).2)
-
-private theorem augmentationKerSES_shortExact :
-    (augmentationKerSES (k := k) (G := G)).ShortExact := by
-  refine .mk' ((exact_iff_function_exact _).2 fun y ↦ ?_)
-    ((Rep.mono_iff_injective _).2 fun x y h ↦ ?_) (augmentation_epi k G)
-  · refine ⟨fun hy ↦ ⟨(RestrictScalars.addEquiv k (MonoidAlgebra k G) _).symm
-      ⟨y, (augmentation_hom_apply k G y).symm.trans hy⟩, rfl⟩, ?_⟩
-    rintro ⟨x, rfl⟩
-    exact (augmentation_hom_apply k G _).trans
-      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x).2
-  · exact (RestrictScalars.addEquiv k (MonoidAlgebra k G) _).injective (Subtype.ext h)
+  have : Mono augmentationKerToLeftRegular := (Rep.mono_iff_injective _).2 fun x y h ↦
+    (RestrictScalars.addEquiv k (MonoidAlgebra k G) _).injective (Subtype.ext h)
+  have : Mono l.1 := mono_of_mono_fac l.2
+  have hy (y : augmentationIdeal k G) :
+      (augmentationι k G).hom y ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) := by
+    rw [RingHom.mem_ker, ← augmentation_hom_apply, ← ConcreteCategory.comp_apply,
+      augmentationι_comp_augmentation]
+    rfl
+  have : Epi l.1 := (Rep.epi_iff_surjective _).2 fun y ↦
+    ⟨(RestrictScalars.addEquiv k (MonoidAlgebra k G)
+      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))).symm ⟨_, hy y⟩,
+      TauCeti.AugmentationIdeal.augmentationι_injective k G <|
+        (ConcreteCategory.comp_apply l.1 (augmentationι k G) _).symm.trans
+          (ConcreteCategory.congr_hom l.2 _)⟩
+  have : IsIso l.1 := isIso_of_mono_of_epi _
+  asIso l.1
 
 variable (g) in
 /-- The map `k[G]^ι → I_G`, `e_i ↦ g_i - 1`, whose kernel is the relation module. -/
@@ -114,11 +118,10 @@ private def relationModuleToKer :
 
 private theorem exact_relationModuleToKer :
     Function.Exact (TauCeti.MonoidAlgebra.relationModule k G g).subtype
-      (relationModuleToKer g) := fun c ↦ by
-  rw [Submodule.coe_subtype, Subtype.range_coe_subtype, Set.mem_ofPred_eq,
-    TauCeti.MonoidAlgebra.relationModule_def, LinearMap.mem_ker, ← Subtype.coe_inj]
-  -- `relationModuleToKer g` is the restriction of the linear combination to its codomain.
-  rfl
+      (relationModuleToKer g) := by
+  have h := (relationModuleToKer (k := k) g).exact_subtype_ker_map
+  rwa [relationModuleToKer, LinearMap.ker_codRestrict,
+    ← TauCeti.MonoidAlgebra.relationModule_def] at h
 
 variable (k g) in
 /-- Lyndon's sequence `0 → R → k[G]^ι → I_G → 0` of `k[G]`-modules. -/
@@ -138,16 +141,17 @@ private theorem relationModuleShortComplex_shortExact (hg : Subgroup.closure (Se
 variable (k) in
 /-- **The double dimension shift of the relation module**: for a family `g` generating `G` and a
 finite subgroup `S`, `H-hat^n(S, k) ≅ H-hat^(n+2)(S, R)`, where `R` is the relation module of
-`g`. It is the composite of the connecting homomorphisms of the augmentation sequence
-`0 → I_G → k[G] → k → 0` and of Lyndon's sequence `0 → R → k[G]^ι → I_G → 0`. -/
+`g`. It is the augmentation dimension shift `augmentationδIso`, carried to the last term `I_G` of
+Lyndon's sequence `0 → R → k[G]^ι → I_G → 0`, followed by the connecting homomorphism of that
+sequence. -/
 private def relationModuleShiftIso (hg : Subgroup.closure (Set.range g) = ⊤) (S : Subgroup G)
     [Fintype S] (n : ℤ) :
     tateCohomology (res S.subtype (trivial k G k)) n ≅
       tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
         (TauCeti.MonoidAlgebra.relationModule k G g)))) (n + 1 + 1) :=
-  (_root_.TateCohomology.map_tateComplexFunctor_shortExact
-      ((shortExact_res S.subtype).2 augmentationKerSES_shortExact)).δIso n (n + 1) rfl
-      (isZero_res_leftRegular S n) (isZero_res_leftRegular S (n + 1)) ≪≫
+  augmentationδIso k S n ≪≫
+    (tateCohomologyFunctor (n + 1)).mapIso
+      ((resFunctor S.subtype).mapIso augmentationKerIso.symm) ≪≫
     (_root_.TateCohomology.map_tateComplexFunctor_shortExact ((shortExact_res S.subtype).2
       ((relationModuleShortComplex_shortExact hg).map_of_exact ofModuleMonoidAlgebra))).δIso
       (n + 1) (n + 1 + 1) rfl
