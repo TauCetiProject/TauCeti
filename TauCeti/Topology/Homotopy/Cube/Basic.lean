@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.PiCurry
 
 /-!
@@ -45,7 +46,8 @@ at `0` while releasing the first.
 ## Main declarations
 
 * `TauCeti.pathTowardZero`: the straight-line path in `I` from `a` to `0`.
-* `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity.
+* `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity; so
+  the cube is contractible.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
@@ -55,6 +57,8 @@ at `0` while releasing the first.
 * `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
   coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
   of `I^(Option N)`.
+* `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
+  `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
 -/
 
 public section
@@ -92,12 +96,36 @@ open unitInterval
 
 variable {N : Type*}
 
-/-- A point `(s, t)` of `I × I^N` whose first coordinate is `0` or `1`, or whose second coordinate
-lies on the boundary of `I^N`, corresponds to a point on the boundary of `I^(Option N)`. -/
-theorem piOptionEquivProdHomeomorph_symm_mem_boundary {s : I} {t : I^N}
-    (h : (s = 0 ∨ s = 1) ∨ t ∈ Cube.boundary N) :
-    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t) ∈ Cube.boundary (Option N) :=
-  Cube.boundary_option_iff.2 (by simpa using h)
+/-- The boundary of the cube `I × I^N`: the points whose first coordinate is `0` or `1`, or whose
+second coordinate lies on the boundary of `I^N`. -/
+def Cube.prodBoundary (N : Type*) : Set (I × I^N) :=
+  {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N}
+
+@[simp]
+theorem Cube.mem_prodBoundary_iff {y : I × I^N} :
+    y ∈ Cube.prodBoundary N ↔ (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N :=
+  Iff.rfl
+
+theorem Cube.mk_zero_mem_prodBoundary (t : I^N) : ((0, t) : I × I^N) ∈ Cube.prodBoundary N :=
+  .inl (.inl rfl)
+
+theorem Cube.mk_mem_prodBoundary {s : I} {t : I^N} (h : s = 1 ∨ t ∈ Cube.boundary N) :
+    ((s, t) : I × I^N) ∈ Cube.prodBoundary N :=
+  h.elim (fun hs => .inl (.inr hs)) .inr
+
+/-- `TauCeti.piOptionEquivProdHomeomorph` identifies the boundary of `I^(Option N)` with the
+boundary of `I × I^N`. -/
+theorem piOptionEquivProdHomeomorph_mem_prodBoundary_iff {y : I^(Option N)} :
+    piOptionEquivProdHomeomorph (fun _ => I) y ∈ Cube.prodBoundary N ↔
+      y ∈ Cube.boundary (Option N) := by
+  simp [Cube.boundary_option_iff]
+
+/-- A point on the boundary of `I × I^N` corresponds to a point on the boundary of
+`I^(Option N)`. -/
+theorem piOptionEquivProdHomeomorph_symm_mem_boundary {y : I × I^N}
+    (h : y ∈ Cube.prodBoundary N) :
+    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm y ∈ Cube.boundary (Option N) :=
+  piOptionEquivProdHomeomorph_mem_prodBoundary_iff.1 (by rwa [Homeomorph.apply_symm_apply])
 
 /-- The straight-line path in the unit interval `I` from `a` to `0`, given by `t ↦ a * σ t`
 where `σ` is the interval symmetry `t ↦ 1 - t`. -/
@@ -130,6 +158,10 @@ def cubeContraction (N : Type*) :
 theorem cubeContraction_apply (N : Type*) (t : I) (x : N → I) (i : N) :
     cubeContraction N (t, x) i = Set.Icc.convexComb 0 (x i) t :=
   (rfl)
+
+/-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
+instance (N : Type*) : ContractibleSpace (N → I) :=
+  (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩
 
 /-- The cube `I^N` is path connected: every point is joined to the corner `0` by the pointwise
 product of the coordinate paths `pathTowardZero`. -/

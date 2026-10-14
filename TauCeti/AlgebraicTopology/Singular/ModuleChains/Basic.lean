@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
 # Singular chains with coefficients in a ring, on elements
@@ -15,8 +16,10 @@ public import TauCeti.AlgebraicTopology.TopologicalSimplex
 For a ring `k`, the simplicial singular chain complex with coefficients in `k` is the complex of
 `k`-modules whose `n`-chains are the formal `k`-combinations of singular `n`-simplices.  This file
 gives the element-level interface to it: the chain `simplexChain σ a` of a simplex with a
-coefficient, the extensionality of linear maps out of the chains, the push-forward and the
-boundary of a simplex, and the augmentation, the sum of the coefficients of a `0`-chain, natural
+coefficient, the extensionality of linear maps out of the chains (and, for integer coefficients,
+of additive maps), the linear map with prescribed values on simplices, the push-forward and the
+boundary of a simplex, the chains of points and paths (`TauCeti.pointChain`,
+`TauCeti.pathChain`), and the augmentation, the sum of the coefficients of a `0`-chain, natural
 and vanishing on boundaries.
 
 ## Main definitions
@@ -24,12 +27,14 @@ and vanishing on boundaries.
 * `TauCeti.singularChains k`: the simplicial singular chain complex functor with coefficients in
   the ring `k`.
 * `TauCeti.simplexChain σ a`: the chain of a singular simplex `σ` with coefficient `a`.
+* `TauCeti.chainsDesc f`: the linear map out of the singular `n`-chains with the given values on
+  singular simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
 
 ## Main results
 
-* `TauCeti.singularChains_linearMap_ext`: linear maps out of the chains are determined on
-  simplices.
+* `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
+  and additive maps out of the chains with integer coefficients, are determined on simplices.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.
@@ -90,22 +95,58 @@ theorem singularChains_map_f_simplexChain {X Y : TopCat.{u}} (f : X ⟶ Y) {n : 
       (TopCat.toSSet.obj Y).ιChainComplex (R := ModuleCat.of k k) _ a
   rw [← ModuleCat.comp_apply, SSet.ι_chainComplexMap_f]
 
+/-- The linear map out of the singular `n`-chains with the given values on singular simplices. -/
+def chainsDesc {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V] [Module k V]
+    (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) : ((singularChains k).obj X).X n →ₗ[k] V :=
+  (Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) n)
+    (fun s ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton k V (f s)))).hom
+
+/-- The linear map with given values on simplices takes the chain of a simplex with coefficient
+`a` to `a` times the value on the simplex. -/
+@[simp]
+theorem chainsDesc_simplexChain {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V]
+    [Module k V] (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) (s : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
+    chainsDesc f (simplexChain s a) = a • f s := by
+  have h := Cofan.IsColimit.fac
+    ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) n)
+    (fun s ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton k V (f s))) s
+  simp only [SSet.chainComplexXCofan, Cofan.inj, Cofan.mk_ι_app] at h
+  exact congrArg (fun g ↦ g.hom a) h
+
+/-- The linear map with given values on simplices takes the chain of a simplex to the value on
+the simplex. -/
+theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V]
+    [Module k V] (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) (s : (TopCat.toSSet.obj X) _⦋n⦌) :
+    chainsDesc f (simplexChain s (1 : k)) = f s := by
+  rw [chainsDesc_simplexChain, one_smul]
+
 end Singular
+
+/-- Additive maps out of the singular chains with integer coefficients agree when they agree on
+simplices. -/
+theorem singularChains_addMonoidHom_ext {X : TopCat.{0}} {n : ℕ} {V : Type} [AddCommGroup V]
+    {f g : ((singularChains ℤ).obj X).X n →+ V}
+    (h : ∀ s, f (simplexChain s 1) = g (simplexChain s 1)) : f = g :=
+  -- An additive map is linear for the module structure of the chains, which is only
+  -- propositionally equal to `AddCommGroup.toIntModule` (so `AddMonoidHom.toIntLinearMap` does
+  -- not apply).
+  let lin (φ : ((singularChains ℤ).obj X).X n →+ V) : ((singularChains ℤ).obj X).X n →ₗ[ℤ] V :=
+    { toFun := φ
+      map_add' := φ.map_add
+      map_smul' a c := (congrArg φ (int_smul_eq_zsmul _ a c)).trans (map_zsmul φ a c) }
+  AddMonoidHom.ext fun c ↦ LinearMap.congr_fun
+    (singularChains_linearMap_ext (L := lin f) (L' := lin g) h) c
 
 /-- The augmentation of the simplicial singular chains: the sum of the coefficients. -/
 def singularAugment (X : TopCat.{u}) : ((singularChains k).obj X).X 0 →ₗ[k] k :=
-  (Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) 0)
-    (fun _ ↦ 𝟙 (ModuleCat.of k k))).hom
+  chainsDesc fun _ ↦ (1 : k)
 
 variable {k} in
 /-- The augmentation of the chain of a `0`-simplex with coefficient `a` is `a`. -/
 @[simp]
 theorem singularAugment_simplexChain (X : TopCat.{u}) (σ : (TopCat.toSSet.obj X) _⦋0⦌)
     (a : k) : singularAugment k X (simplexChain σ a) = a := by
-  have h := Cofan.IsColimit.fac ((TopCat.toSSet.obj X).isColimitChainComplexXCofan
-    (ModuleCat.of k k) 0) (fun _ ↦ 𝟙 (ModuleCat.of k k)) σ
-  simp only [SSet.chainComplexXCofan, Cofan.inj, Cofan.mk_ι_app] at h
-  exact congrArg (fun g ↦ g.hom a) h
+  rw [singularAugment, chainsDesc_simplexChain, smul_eq_mul, mul_one]
 
 variable {k}
 
@@ -142,5 +183,40 @@ theorem singularAugment_d (X : TopCat.{u}) (x : ((singularChains k).obj X).X 1) 
       rw [LinearMap.comp_apply, singularChains_d_simplexChain, map_sum]
       simp [Fin.sum_univ_succ, singularAugment_simplexChain]
   exact LinearMap.congr_fun this x
+
+section Paths
+
+open unitInterval
+
+variable (k)
+
+/-- The chain of the singular `0`-simplex at a point. -/
+abbrev pointChain {X : TopCat.{u}} (p : X) : ((singularChains k).obj X).X 0 :=
+  simplexChain (TopCat.toSSetObj₀Equiv.symm p) 1
+
+/-- The chain of the singular `1`-simplex of a map from the unit interval
+(`TauCeti.TopCat.simplex₁`). -/
+abbrev pathChain {X : TopCat.{u}} (g : C(I, X)) : ((singularChains k).obj X).X 1 :=
+  simplexChain (TopCat.simplex₁ g) 1
+
+variable {k}
+
+/-- The boundary of the chain of a path is the difference of the chains of its endpoints. -/
+theorem singularChains_d_pathChain {X : TopCat.{u}} (g : C(I, X)) :
+    ((singularChains k).obj X).d 1 0 (pathChain k g) =
+      pointChain k (g 1) - pointChain k (g 0) := by
+  rw [singularChains_d_simplexChain (n := 0), Fin.sum_univ_two, TopCat.δ_zero_simplex₁,
+    TopCat.δ_one_simplex₁]
+  simp [sub_eq_add_neg]
+
+/-- Pushing the chain of a path forward along a continuous map gives the chain of the composite. -/
+-- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
+-- the left-hand side first, so the `simpNF` linter rejects it.
+theorem singularChains_map_f_pathChain {X Y : TopCat.{u}} (f : X ⟶ Y) (g : C(I, X)) :
+    ((singularChains k).map f).f 1 (pathChain k g) =
+      pathChain k ((ConcreteCategory.hom f).comp g) := by
+  rw [singularChains_map_f_simplexChain, TopCat.toSSet_map_app_simplex₁]
+
+end Paths
 
 end TauCeti

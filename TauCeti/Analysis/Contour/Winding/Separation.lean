@@ -21,8 +21,6 @@ A closed set `K ⊆ ℂ` with `K \ {p}` preconnected, crossed once by a straight
 `K` adherent from both sides, separates the two ends into different connected components of `Kᶜ`.
 The proof uses winding numbers and needs no Jordan curve theorem.
 
-This is the planar-separation input for layer L5 of the `ConformalMapping` roadmap.
-
 ## Main results
 
 * `TauCeti.Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton` — **the

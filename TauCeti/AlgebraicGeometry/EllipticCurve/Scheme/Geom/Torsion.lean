@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
+import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 
 /-!
 # The `n`-torsion of an elliptic curve over a scheme
@@ -37,6 +39,8 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
   of `E` killed by `[n]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionPointsMulEquiv`: the points of `E[n]` with
   values in `Z` are the kernel of `[n]` on the points of `E` with values in `Z`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionPointsEquiv`: the points `x` of `E` with
+  values in `Z` with `x ^ n = 1` are the points of `E[n]` with values in `Z`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionMap`: the morphism `E'[n] ⟶ E[n]` induced
   by a base change square of elliptic curves.
 
@@ -51,8 +55,15 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosedImmersion_torsionι_left`: `E[n] ⟶ E` is a
   closed immersion; consequently `E[n]` is proper over `S`
   (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.isProper_torsion_hom`).
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_torsionι_left`: as a closed subscheme of `E`,
+  `E[n]` is the inverse image `[n]⁻¹[0]` of the zero section.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_torsion_hom`: `E[n]` is
+  locally of finite presentation over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap`: the `n`-torsion commutes
   with base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap_torsionι` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_torsionι_left_of_isPullback`: `E'[n]` is the
+  inverse image of `E[n]` under `E' ⟶ E`, as a closed subscheme.
 
 ## References
 
@@ -169,6 +180,26 @@ theorem torsionPointsMulEquiv_symm_apply_torsionι
     (E.torsionPointsMulEquiv n Z).symm x ≫ E.torsionι n = x := by
   rw [← coe_torsionPointsMulEquiv_apply, MulEquiv.apply_symm_apply]
 
+/-- The points `x` of `E` with values in `Z` with `x ^ n = 1` are the points of `E[n]` with values
+in `Z`. This is `torsionPointsMulEquiv`, with the kernel of `[n]` written as a subtype. -/
+noncomputable def torsionPointsEquiv :
+    {x : Z ⟶ Over.mk E.structureMap // x ^ n = 1} ≃ (Z ⟶ (E.torsion n).X) :=
+  (Equiv.subtypeEquivRight fun x ↦ by
+    rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, comp_mulBy]).trans
+    (E.torsionPointsMulEquiv n Z).symm.toEquiv
+
+/-- The point of `E[n]` corresponding to a point `x` of `E` with `x ^ n = 1` maps to `x` in `E`. -/
+@[simp]
+theorem torsionPointsEquiv_apply_torsionι (x : {x : Z ⟶ Over.mk E.structureMap // x ^ n = 1}) :
+    E.torsionPointsEquiv n Z x ≫ E.torsionι n = x :=
+  E.torsionPointsMulEquiv_symm_apply_torsionι n Z _
+
+/-- A point of `E[n]` corresponds to its image in `E`. -/
+@[simp]
+theorem coe_torsionPointsEquiv_symm_apply (y : Z ⟶ (E.torsion n).X) :
+    ((E.torsionPointsEquiv n Z).symm y : Z ⟶ Over.mk E.structureMap) = y ≫ E.torsionι n :=
+  E.coe_torsionPointsMulEquiv_apply n Z y
+
 end Points
 
 /-! ### Underlying schemes -/
@@ -195,10 +226,23 @@ instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).le
   have : IsClosedImmersion E.zero := .of_comp E.zero E.structureMap
   exact MorphismProperty.of_isPullback (E.isPullback_torsion n).flip this
 
+/-- **`E[n]` is the inverse image of the zero section under `[n]`**: the ideal sheaf of the closed
+subscheme `E[n]` of `E` is the inverse image along `[n]` of the ideal sheaf of the zero section. -/
+theorem ker_torsionι_left :
+    (E.torsionι n).left.ker = E.zero.ker.comap (E.mulBy n).left := by
+  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
+  exact Scheme.IdealSheafData.ker_eq_comap_of_isPullback _ (E.isPullback_torsion n)
+
 /-- The `n`-torsion of an elliptic curve is proper over the base. -/
 instance isProper_torsion_hom : IsProper (E.torsion n).X.hom := by
   rw [← torsionι_left_structureMap]
   infer_instance
+
+/-- **The `n`-torsion is locally of finite presentation** over `S`: `E[n]` is the base change of
+`[n]` along the zero section. -/
+instance locallyOfFinitePresentation_torsion_hom :
+    LocallyOfFinitePresentation (E.torsion n).X.hom :=
+  MorphismProperty.of_isPullback (E.isPullback_torsion n) inferInstance
 
 /-! ### Base change -/
 
@@ -253,6 +297,21 @@ theorem isPullback_torsionMap :
     refine hg.hom_ext ?_ ?_
     · simp [← h₁]
     · simp [← h₂]
+
+/-- **`E'[n]` is the inverse image of `E[n]`.** For a morphism `g : E' ⟶ E` of elliptic curves
+forming a pullback square over `f : S' ⟶ S` and carrying the zero section of `E'` to that of `E`,
+the square formed by the induced morphism `E'[n] ⟶ E[n]`, the two inclusions and `g` is a pullback
+square. -/
+theorem isPullback_torsionMap_torsionι :
+    IsPullback (torsionMap n hg h0) (E'.torsionι n).left (E.torsionι n).left g :=
+  .of_bot (by simpa using isPullback_torsionMap n hg h0) (torsionMap_torsionι n hg h0) hg
+
+/-- **The ideal sheaf of `E[n]` commutes with base change**: for a morphism `g : E' ⟶ E` of
+elliptic curves forming a pullback square over `f : S' ⟶ S` and carrying the zero section of `E'`
+to that of `E`, the ideal sheaf of `E'[n]` is the inverse image along `g` of that of `E[n]`. -/
+theorem ker_torsionι_left_of_isPullback :
+    (E'.torsionι n).left.ker = (E.torsionι n).left.ker.comap g :=
+  Scheme.IdealSheafData.ker_eq_comap_of_isPullback _ (isPullback_torsionMap_torsionι n hg h0).flip
 
 end BaseChange
 

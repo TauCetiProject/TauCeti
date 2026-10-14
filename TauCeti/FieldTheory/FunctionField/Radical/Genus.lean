@@ -11,6 +11,9 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 import TauCeti.FieldTheory.FunctionField.Different.Radical
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
 # The genus formula for radical extensions `y ^ n = u`
@@ -37,6 +40,13 @@ is what the irreducibility of `X ^ n - u` would supply. The genus formula inheri
 of the Hurwitz genus formula: the constant fields `k` of `F` and `k'` of `F'` are exact, and
 `k' / k` is separable.
 
+When some place `P` of `F` has `gcd(n, ord_P u) = 1`, the hypotheses on `F'` are consequences
+(Stichtenoth, Corollary 3.7.4): `X ^ n - u` is irreducible, so `[F' : F] = n`, the extension is
+separable, and the places above `P` are totally ramified, so `k` stays the exact constant field of
+`F'`. The genus formula then holds with no hypothesis on `F'`:
+
+`2g' - 2 = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`.
+
 ## Main results
 
 * `TauCeti.Divisor.nsmul_different_eq_conorm_of_pow_eq`: `n • Diff(F'/F) = Con (∑ (n - r_P) P)`.
@@ -44,6 +54,11 @@ of the Hurwitz genus formula: the constant fields `k` of `F` and `k'` of `F'` ar
   `n [k' : k] deg Diff(F'/F) = [F' : F] ∑ (n - r_P) deg P`.
 * `TauCeti.genus_formula_of_pow_eq`: the genus formula
   `[k' : k] (2g' - 2) = n (2g - 2) + ∑ (n - r_P) deg P`.
+* `TauCeti.isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one`: a place with `gcd(n, ord_P u) = 1`
+  keeps the constant field exact.
+* `TauCeti.two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one`: the genus formula
+  `2g' - 2 = n (2g - 2) + ∑ (n - r_P) deg P` in that case, and
+  `TauCeti.two_mul_genus_eq_of_pow_eq_of_gcd_ord_eq_one_ratFunc` its form over `k(x)`.
 
 ## References
 
@@ -63,6 +78,8 @@ namespace TauCeti
 open AlgebraicGeometry
 
 universe u u' v v'
+
+section Radical
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
@@ -156,5 +173,99 @@ theorem genus_formula_of_pow_eq [Algebra.IsSeparable k k'] (hF' : IsFunctionFiel
   have h := Divisor.natCast_mul_finrank_mul_degree_different_of_pow_eq hF hgen hy hn hu S hS hF'
   rw [hfin] at h
   rw [hurwitz_genus_formula hF hF' hex hex', hfin, mul_left_cancel₀ hn0 h]
+
+end Radical
+
+/-! ### Kummer extensions with a place of coprime order -/
+
+section Coprime
+
+variable {k : Type u} {F : Type v} {F' : Type v'} [Field k] [Field F] [Field F']
+variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
+variable {y : F'} {n : ℕ} {u : F}
+
+omit [Algebra k F'] [IsScalarTower k F F'] in
+/-- A radical extension `F(y) / F`, `y ^ n = u`, with a place at which `n` is coprime to the order
+of `u`, has degree `n` and is finite and separable when `n` is invertible in `k` and `u ≠ 0`. -/
+private theorem finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) (P : Place k F)
+    (hP : Int.gcd n (P.ord u) = 1) :
+    Module.finrank F F' = n ∧ FiniteDimensional F F' ∧ Algebra.IsSeparable F F' := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    exact hn Nat.cast_zero
+  have hfin : Module.finrank F F' = n :=
+    P.valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one hgen hy hn0
+      (by rwa [Valuation.ord_def, ← Place.ord_def])
+  have hnF : (n : F) ≠ 0 := by
+    rwa [← map_natCast (algebraMap k F), ne_eq, map_eq_zero]
+  exact ⟨hfin, Module.finite_of_finrank_pos (hfin ▸ Nat.pos_of_ne_zero hn0),
+    isSeparable_of_pow_eq_of_adjoin_eq_top hnF hu hy hgen⟩
+
+/-- **A Kummer extension with a place of coprime order acquires no new constants** (Stichtenoth,
+Corollary 3.7.4): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is invertible in
+the exact constant field `k` of `F`, and `gcd(n, ord_P u) = 1` at some place `P` of `F`, then `k`
+is also the exact constant field of `F'`. -/
+theorem isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u)
+    (hn : (n : k) ≠ 0) (hu : u ≠ 0) (P : Place k F) (hP : Int.gcd n (P.ord u) = 1) :
+    IsIntegrallyClosedIn k F' := by
+  obtain ⟨hfin, _, _⟩ :=
+    finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one hgen hy hn hu P hP
+  obtain ⟨P', hP'⟩ :=
+    Place.restrict_surjective_of_finiteDimensional (k' := k) (F' := F') hF hF.finite_extension P
+  refine isIntegrallyClosedIn_of_isTotallyRamified (F := F) hex (P' := P') ?_
+  refine Place.isTotallyRamified_of_pow_eq_of_gcd_ord_eq_one k F hfin hy
+    (fun h ↦ hn (by rw [h, Nat.cast_zero])) ?_
+  simpa only [hP'] using hP
+
+/-- **The genus formula for Kummer extensions** (Stichtenoth, Corollary 3.7.4): let `F' = F(y)`
+with `y ^ n = u` for a nonzero `u ∈ F`, where `n` is invertible in the exact constant field `k`
+of `F`, and suppose `gcd(n, ord_P u) = 1` at some place `P` of `F`. Then
+
+`2g' - 2 = n (2g - 2) + ∑_{Q ∈ S} (n - r_Q) deg Q`,
+
+where `r_Q = gcd(n, ord_Q u)` and `S` is any finite set of places outside which `n` divides
+`ord_Q u`. The degree `[F' : F] = n`, separability, and exactness of the constants of `F'` all
+follow from the place `P`. No root of unity in `k` is needed. -/
+theorem two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u)
+    (hn : (n : k) ≠ 0) (hu : u ≠ 0) (S : Finset (Place k F))
+    (hS : ∀ Q ∉ S, (n : ℤ) ∣ Q.ord u) (P : Place k F) (hP : Int.gcd n (P.ord u) = 1) :
+    2 * (genus k F' : ℤ) - 2 =
+      n * (2 * genus k F - 2) + ∑ Q ∈ S, ((n : ℤ) - Int.gcd n (Q.ord u)) * Q.degree := by
+  obtain ⟨hfin, _, _⟩ :=
+    finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one hgen hy hn hu P hP
+  have hex' := isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one hF hex hgen hy hn hu P hP
+  simpa only [Module.finrank_self, Nat.cast_one, one_mul] using
+    genus_formula_of_pow_eq (k' := k) hF hgen hy hn hu S hS hF.finite_extension hex hex' hfin
+
+end Coprime
+
+section RatFunc
+
+variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
+variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+
+/-- **The genus formula for Kummer extensions of `k(x)`**: if `F = k(x)(y)` with `y ^ n = u` for
+a nonzero `u ∈ k(x)`, `n` is invertible in `k`, and `gcd(n, ord_P u) = 1` at some place `P` of
+`k(x)`, then
+
+`2g = ∑_{Q ∈ S} (n - r_Q) deg Q - 2 (n - 1)`,
+
+where `r_Q = gcd(n, ord_Q u)` and `S` is any finite set of places of `k(x)` outside which `n`
+divides `ord_Q u`. -/
+theorem two_mul_genus_eq_of_pow_eq_of_gcd_ord_eq_one_ratFunc {y : F} {n : ℕ}
+    {u : RatFunc k} (hgen : (RatFunc k)⟮y⟯ = ⊤) (hy : y ^ n = algebraMap (RatFunc k) F u)
+    (hn : (n : k) ≠ 0) (hu : u ≠ 0) (S : Finset (Place k (RatFunc k)))
+    (hS : ∀ Q ∉ S, (n : ℤ) ∣ Q.ord u) (P : Place k (RatFunc k))
+    (hP : Int.gcd n (P.ord u) = 1) :
+    2 * (genus k F : ℤ) = ∑ Q ∈ S, ((n : ℤ) - Int.gcd n (Q.ord u)) * Q.degree - 2 * (n - 1) := by
+  have hg := two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc k)
+    inferInstance hgen hy hn hu S hS P hP
+  rw [genus_ratFunc, Nat.cast_zero] at hg
+  linear_combination hg
+
+end RatFunc
 
 end TauCeti

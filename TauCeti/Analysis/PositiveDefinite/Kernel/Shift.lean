@@ -25,10 +25,10 @@ numbers `a n = ∑ᵢⱼ conj (cᵢ) K (σⁿ pᵢ) (pⱼ) c ⱼ` form a positiv
 bounded above. The matrix estimate `TauCeti.sub_nonneg_of_posSemidef_hankel` then gives
 `a 0 - a 1 ≥ 0`, which is the quadratic form of the difference kernel.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-("BCR semigroup--Bochner"): applied to the Berg--Christensen--Ressel kernel of a bounded
-positive-definite function on `[0,∞) × V` with the time shift, it is the step that turns positive
-definiteness into complete monotonicity in the time variable.
+For the Berg--Christensen--Ressel kernel of a bounded positive-definite function on `ℝ≥0 × V`,
+applying this result to a time shift shows that the corresponding time difference is positive
+definite. Iterating these differences gives complete monotonicity of the zero-spatial time axis
+in the finite-difference sense.
 
 ## Main declarations
 

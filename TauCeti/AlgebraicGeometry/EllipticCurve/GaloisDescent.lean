@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.FieldTheory.Galois.Basic
 
 /-!
@@ -24,6 +25,12 @@ results are proved here:
 Both are stated with `σ` an explicit nontrivial automorphism rather than a quantifier over
 `Gal(L/K)`: for a quadratic extension the two are equivalent, and the consumers have a
 distinguished `σ` in hand.
+
+For an arbitrary Galois extension `L/K`, possibly infinite, the same argument with Mathlib's
+`InfiniteGalois.mem_range_algebraMap_iff_fixed` in place of the quadratic fixed-point lemma
+describes the curves themselves: `WeierstrassCurve.mem_range_baseChange_iff_fixed` says that a
+Weierstrass curve over `L` is the base change of one over `K` exactly when every automorphism of
+`L/K` fixes its coefficients.
 
 These are the descent steps of the quadratic-twist layer of
 `TauCetiRoadmap/EllipticCurves/README.md` (§Layer 5): the twist point isomorphism and the
@@ -98,6 +105,32 @@ theorem exists_baseChange_eq_of_map_eq [DecidableEq K] [DecidableEq L]
       Affine.Point.map_some _ _⟩
 
 end Affine.Point
+
+section Galois
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [IsGalois K L]
+
+/-- **Galois descent for Weierstrass curves.** For a Galois extension `L/K`, possibly infinite, a
+Weierstrass curve over `L` is the base change of one over `K` exactly when every
+`K`-automorphism of `L` fixes its coefficients. -/
+theorem mem_range_baseChange_iff_fixed (W : WeierstrassCurve L) :
+    W ∈ Set.range (fun V : WeierstrassCurve K ↦ V⁄L) ↔
+      ∀ σ : L ≃ₐ[K] L, W.map (σ : L →+* L) = W := by
+  constructor
+  · rintro ⟨V, rfl⟩ σ
+    exact map_baseChange V (σ : L →ₐ[K] L)
+  · intro h
+    have mem (f : WeierstrassCurve L → L) (hf : ∀ σ : L ≃ₐ[K] L, f (W.map σ) = σ (f W)) :
+        f W ∈ Set.range (algebraMap K L) :=
+      (InfiniteGalois.mem_range_algebraMap_iff_fixed _).mpr fun σ ↦ by rw [← hf, h]
+    obtain ⟨a₁, ha₁⟩ := mem a₁ fun _ ↦ map_a₁ ..
+    obtain ⟨a₂, ha₂⟩ := mem a₂ fun _ ↦ map_a₂ ..
+    obtain ⟨a₃, ha₃⟩ := mem a₃ fun _ ↦ map_a₃ ..
+    obtain ⟨a₄, ha₄⟩ := mem a₄ fun _ ↦ map_a₄ ..
+    obtain ⟨a₆, ha₆⟩ := mem a₆ fun _ ↦ map_a₆ ..
+    exact ⟨⟨a₁, a₂, a₃, a₄, a₆⟩, WeierstrassCurve.ext ha₁ ha₂ ha₃ ha₄ ha₆⟩
+
+end Galois
 
 end WeierstrassCurve
 

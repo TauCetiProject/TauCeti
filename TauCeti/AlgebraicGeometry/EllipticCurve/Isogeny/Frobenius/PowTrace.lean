@@ -40,7 +40,7 @@ point counts `#W(𝔽_{qⁿ}) = q ^ n + 1 - t n` over all finite extensions from
 
 The sequence is defined through the degree of an endomorphism of `W` over `F` itself, so it needs
 no choice of a field with `q ^ n` elements, and the degree convention `deg 0 = 0` gives `t 0 = 2`.
-Over a separably closed algebraic extension and for `N` prime to `q`, `t n` is the trace of `π ^ n`
+Over a separably closed extension and for `N` prime to `q`, `t n` is the trace of `π ^ n`
 on `E[N]` modulo `N`: there `π` acts by a `2 × 2` matrix `M` over `ZMod N` with `det M = q` and
 `det (1 - M ^ n) = deg (1 - π ^ n)`, and `trace A = 1 + det A - det (1 - A)` for a `2 × 2` matrix.
 The recurrence is then the Cayley–Hamilton theorem for `M`, read modulo every `N` prime to `q`.
@@ -59,7 +59,7 @@ The recurrence is then the Cayley–Hamilton theorem for `M`, read modulo every 
 * `WeierstrassCurve.frobeniusPowTrace_eq_degree_baseChange`: `t n` may be computed from the
   base-changed Frobenius over any extension of `F`.
 * `TauCeti.Isogeny.Hom.trace_torsionLinearMap_pow_ofIsogeny_baseChangeFrobenius`: `t n` is the
-  trace of `π ^ n` on `E[N]` modulo `N`, over a separably closed algebraic extension.
+  trace of `π ^ n` on `E[N]` modulo `N`, over a separably closed extension.
 
 ## References
 
@@ -125,7 +125,7 @@ end WeierstrassCurve
 namespace TauCeti.Isogeny.Hom
 
 variable {F K : Type*} [Field F] [Finite F] [Field K] [Algebra F K] [IsSepClosed K]
-  [Algebra.IsAlgebraic F K] [DecidableEq K] (W : WeierstrassCurve.Affine F) [W.IsElliptic]
+  [DecidableEq K] (W : WeierstrassCurve.Affine F) [W.IsElliptic]
   {N : ℕ} [NeZero N]
 
 /-- In a basis of `E[N]`, `N` invertible, the trace of the `n`th power of the matrix of Frobenius
@@ -140,17 +140,13 @@ private theorem trace_toMatrix_pow_eq_frobeniusPowTrace (hN : (N : K) ≠ 0)
   have hdet : (M ^ n).det = (Nat.card F : ZMod N) ^ n := by
     rw [Matrix.det_pow, LinearMap.det_toMatrix,
       det_torsionLinearMap_ofIsogeny_baseChangeFrobenius W hN]
-  -- `1 - π ^ n` is zero or a nonzero separable morphism, of determinant its degree
+  -- the determinant of `1 - π ^ n` is its degree
   have hdetOneSub : (1 - M ^ n).det = ((1 - π ^ n).degree : ZMod N) := by
     have hM : 1 - M ^ n = LinearMap.toMatrix b b ((1 - π ^ n).torsionLinearMap N) := by
       rw [← torsionRepresentation_apply, _root_.map_sub, _root_.map_one, _root_.map_pow,
         torsionRepresentation_apply, _root_.map_sub, LinearMap.toMatrix_one,
         ← LinearMap.toMatrix_pow]
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp
-    have := isSeparable_toIsogeny_one_sub_pow_ofIsogeny_baseChangeFrobenius (K := K) W n hn
-    rw [hM, LinearMap.det_toMatrix,
-      det_torsionLinearMap hN (one_sub_pow_ofIsogeny_baseChangeFrobenius_ne_zero W n hn)]
+    rw [hM, LinearMap.det_toMatrix, det_torsionLinearMap hN]
   -- `trace A = 1 + det A - det (1 - A)` for a `2 × 2` matrix `A`
   have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two (M ^ n) (-1) (-1)
   rw [neg_one_smul, neg_one_smul, neg_sub_neg, hdetOneSub, hdet] at h
@@ -158,8 +154,8 @@ private theorem trace_toMatrix_pow_eq_frobeniusPowTrace (hN : (N : K) ≠ 0)
   push_cast
   linear_combination h
 
-/-- **The trace of `π ^ n` on `E[N]` is `t n` modulo `N`**, over a separably closed algebraic
-extension of the finite base in which `N` is invertible. -/
+/-- **The trace of `π ^ n` on `E[N]` is `t n` modulo `N`**, over a separably closed extension of
+the finite base in which `N` is invertible. -/
 theorem trace_torsionLinearMap_pow_ofIsogeny_baseChangeFrobenius (hN : (N : K) ≠ 0) (n : ℕ) :
     LinearMap.trace (ZMod N) _
         ((ofIsogeny (baseChangeFrobenius K W) ^ n).torsionLinearMap N) =

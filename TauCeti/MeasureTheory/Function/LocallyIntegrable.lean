@@ -32,6 +32,9 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
+A function continuous on a compact set is bounded there, so for a measure finite on compact sets
+it lies in every `Lᵖ` on each measurable subset of that compact set.
+
 ## Main declarations
 
 * `MeasureTheory.LocallyIntegrableOn.comp_add_right_of_mapsTo`: translation onto a smaller set
@@ -42,6 +45,8 @@ locally integrable scalar function, as Mathlib records for `Integrable` and `Mem
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
   integrability.
+* `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
+  every `Lᵖ` on its measurable subsets.
 
 ## Attribution
 
@@ -155,3 +160,22 @@ theorem inner_const (hf : LocallyIntegrable f μ) (c : E) :
       ((innerSLFlip 𝕜 c).locallyIntegrableOn_comp (hf.locallyIntegrableOn univ))
 
 end MeasureTheory.LocallyIntegrable
+
+section ContinuousOn
+
+variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E]
+
+/-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
+`K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite
+measure. -/
+theorem ContinuousOn.memLp_restrict_of_subset_isCompact {f : X → E} {K s : Set X}
+    (hf : ContinuousOn f K) (hK : IsCompact K) (hs : MeasurableSet s) (hsK : s ⊆ K)
+    (p : ENNReal) : MemLp f p (μ.restrict s) := by
+  have : IsFiniteMeasure (μ.restrict s) :=
+    isFiniteMeasure_restrict.2 (measure_lt_top_of_subset hsK hK.measure_lt_top.ne).ne
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hf
+  exact MemLp.of_bound (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C
+    ((ae_restrict_iff' hs).2 (ae_of_all _ fun x hx => hC x (hsK hx)))
+
+end ContinuousOn

@@ -118,6 +118,12 @@ theorem weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
     weilDifferentialCotrace_eq_zero_iff, Submodule.mk_eq_zero]
   exact ratFuncWeilDifferential_ne_zero k
 
+/-- The Weil differential of a separating element remains nonzero as a repartition dual. -/
+theorem coe_weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    (weilDifferentialOfSeparating hF hx : Module.Dual k (repartitionSpace k F)) ≠ 0 := by
+  simpa only [ne_eq, Submodule.coe_eq_zero] using weilDifferentialOfSeparating_ne_zero hF hx
+
 /-- The basis of the Weil differential space whose unique vector is the differential `dx`
 attached to a separating element. -/
 noncomputable def weilDifferentialBasisOfSeparating (hF : IsFunctionField k F)
@@ -191,6 +197,18 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_D
   let := weilDifferentialSpaceModule hF
   rw [← derivativeOfSeparating_smul_D hx y, map_smul,
     kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self]
+
+/-- The Kähler–Weil comparison determined by `x` preserves coordinates: the coordinate in `dx` of
+the Weil differential attached to `ω` is the coordinate of `ω` in `dx`. -/
+theorem coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (ω : Ω[F⁄k]) :
+    letI := weilDifferentialSpaceModule hF
+    (weilDifferentialBasisOfSeparating hF hex hx).coord ()
+        (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω) =
+      (kaehlerBasisOfSeparating hx).coord () ω := by
+  let := weilDifferentialSpaceModule hF
+  simp [kaehlerDifferentialEquivWeilDifferentialOfSeparating, Basis.equiv]
 
 /-! ### The divisor of `dx` -/
 

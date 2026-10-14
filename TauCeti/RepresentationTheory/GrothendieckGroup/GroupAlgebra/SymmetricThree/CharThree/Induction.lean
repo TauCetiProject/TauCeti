@@ -47,29 +47,14 @@ private theorem signLinearCharacter_mul_self :
     congrArg Units.val h
   simpa only [Int.cast_mul, Int.cast_one] using congrArg (fun z : ℤ => (z : k)) hz
 
-private theorem simpleClassBasis_eq_linearCharacter (b : Bool) :
-    symmetricThreeCharThreeSimpleClassBasis k b =
-      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
-        (ExactK0.of (FDRep.ofLinearCharacter
-          (if b then signLinearCharacter k (Fin 3) else 1))) := by
-  -- Both sides take the same representation through the two Grothendieck-group presentations.
-  rw [symmetricThreeCharThreeSimpleClassBasis_apply,
-    fdRepK0RingEquiv_of, FDRep.ofLinearCharacter_def]
-  simp only [FDRep.of_ρ']
-
-private theorem signClass_eq :
-    symmetricThreeCharThreeSimpleClassBasis k true =
-      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
-        (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)))) := by
-  simpa only [ite_true] using simpleClassBasis_eq_linearCharacter k true
-
 -- `symmetricThreeCharThreeSimpleClassBasis_apply` simplifies the left side before this theorem
 -- can fire as a simp lemma; use the named theorem to rewrite the class product.
 /-- The sign basis vector squares to the unit in the characteristic-three Grothendieck ring. -/
 theorem symmetricThreeCharThreeSimpleClassBasis_true_mul_self :
     symmetricThreeCharThreeSimpleClassBasis k true *
         symmetricThreeCharThreeSimpleClassBasis k true = 1 := by
-  rw [signClass_eq, exactK0_ofLinearCharacter_mul, signLinearCharacter_mul_self]
+  rw [symmetricThreeCharThreeSimpleClassBasis_true, exactK0_ofLinearCharacter_mul,
+    signLinearCharacter_mul_self]
   exact exactK0_ofLinearCharacter_one
 
 /-- Induction of the restricted sign line from any point stabilizer of S₃ has one
@@ -81,12 +66,9 @@ theorem indK0_sign_stabilizer_perm_fin_three_char_three :
         2 • symmetricThreeCharThreeSimpleClassBasis k true := by
   have hres : resK0 k (H : Subgroup (Equiv.Perm (Fin 3))).subtype (B true) = C true :=
     resK0_stabilizer_perm_fin_three_simpleClassBasis_apply k a true
-  have hzero : B false = (1 : ExactK0 (finiteModulesExactStructure k[Equiv.Perm (Fin 3)])) := by
-    rw [simpleClassBasis_eq_linearCharacter]
-    simpa only [Bool.false_eq_true, ite_false] using
-      (exactK0_ofLinearCharacter_one (k := k) (G := Equiv.Perm (Fin 3)))
   have hind : indK0 k H 1 = 2 • B false + B true := by
-    rw [hzero, signClass_eq]
+    rw [symmetricThreeCharThreeSimpleClassBasis_false,
+      symmetricThreeCharThreeSimpleClassBasis_true]
     exact indK0_one_stabilizer_perm_fin_three_char_three k a
   calc
     indK0 k H (C true) =
@@ -94,7 +76,7 @@ theorem indK0_sign_stabilizer_perm_fin_three_char_three :
       rw [one_mul, hres]
     _ = indK0 k H 1 * B true := indK0_mul_resK0 1 (B true)
     _ = B false + 2 • B true := by
-      rw [hind, hzero, add_mul, smul_mul_assoc, one_mul,
+      rw [hind, symmetricThreeCharThreeSimpleClassBasis_false, add_mul, smul_mul_assoc, one_mul,
         symmetricThreeCharThreeSimpleClassBasis_true_mul_self]
       abel
 

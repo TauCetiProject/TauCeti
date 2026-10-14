@@ -23,7 +23,8 @@ import Mathlib.Tactic.FinCases
 
 This file collects elementary facts about finite ordinal types, including the classification of
 permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, and the cyclic index arithmetic of `Fin 3`.
+value of a partial product, sums of families vanishing beyond an index, and the cyclic index
+arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -36,6 +37,8 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
+* `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
+  splits as its sum over the first `i` indices plus its value at `i`.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
@@ -48,6 +51,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
+* `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
 * `Fin.last_ne_zero`, `Fin.castSucc_last_ne_zero`, `Fin.castSucc_last_ne_one`, `Fin.last_ne_one`:
   the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
@@ -62,6 +66,8 @@ range, so the value is a `dite` rather than a plain application.
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
 * `Fin.val_predAbove`: the value of `p.predAbove i`, read off the comparison of `i` with `p`.
+* `Fin.natAdd_succAbove_castAdd` and `Fin.natAdd_succAbove_natAdd`: skipping a point of the
+  second block of `Fin (n + (m + 1))`, on either block.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
@@ -154,6 +160,21 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
 
+/-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
+`i` indices times its value at `i`. -/
+@[to_additive /-- A sum over `Fin n` of a family vanishing beyond `i` is its sum over the
+first `i` indices plus its value at `i`. -/]
+theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : Fin n)
+    (f : Fin n → M) (hf : ∀ j, i < j → f j = 1) :
+    ∏ j, f j = (∏ j : Fin i, f (castLE i.is_lt.le j)) * f i := by
+  have hIio : Finset.univ.map (castLEEmb i.is_lt.le) = Finset.Iio i := by
+    simp [← Finset.coe_inj, Set.Iio_def]
+  rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
+      fun j _ hj => hf j (by simpa using hj),
+    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    Finset.prod_map]
+  simp only [castLEEmb_apply]
+
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
 @[simp]
 theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
@@ -222,6 +243,23 @@ theorem val_predAbove {n : ℕ} (p : Fin n) (i : Fin (n + 1)) :
   · rw [predAbove_of_le_castSucc _ _ h]
     rw [le_def, val_castSucc] at h
     simp [h]
+
+/-- Skipping a point of the second block of `Fin (n + (m + 1))` fixes the first block. -/
+@[simp]
+theorem natAdd_succAbove_castAdd {n m : ℕ} (j : Fin (m + 1)) (k : Fin n) :
+    (natAdd n j).succAbove (castAdd m k) = castAdd (m + 1) k := by
+  ext
+  simp only [val_succAbove, val_castAdd, val_natAdd]
+  have := k.isLt
+  split_ifs <;> omega
+
+/-- Skipping a point of the second block of `Fin (n + (m + 1))` is skipping it in that block. -/
+@[simp]
+theorem natAdd_succAbove_natAdd {n m : ℕ} (j : Fin (m + 1)) (i : Fin m) :
+    (natAdd n j).succAbove (natAdd n i) = natAdd n (j.succAbove i) := by
+  ext
+  simp only [val_succAbove, val_natAdd]
+  split_ifs <;> omega
 
 /-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
 read through the embedding `i.succ.succAbove` that skips `i.succ`. -/
@@ -328,6 +366,18 @@ theorem eq_castSucc_last_or_eq_last {n : ℕ} {i : Fin (n + 2)} (hi : n ≤ i.va
   simp only [Fin.ext_iff, val_castSucc, val_last]
   omega
 
+/-- The indices of `Fin (n + 2)` greater than `1` are the double successors of indices of
+`Fin n`. -/
+theorem exists_succ_succ_eq {n : ℕ} {j : Fin (n + 2)} :
+    (∃ k : Fin n, k.succ.succ = j) ↔ 1 < j := by
+  refine ⟨by rintro ⟨k, rfl⟩; simp [Fin.lt_def], fun hj => ?_⟩
+  cases j using Fin.cases with
+  | zero => exact absurd hj (by simp)
+  | succ j =>
+    cases j using Fin.cases with
+    | zero => exact absurd hj (by simp)
+    | succ k => exact ⟨k, rfl⟩
+
 /-- A sum over `Fin (n + 1)` with the first and the last summands split off. -/
 theorem sum_univ_eq_zero_add_last_add_sum_erase {n : ℕ} {M : Type*} [AddCommMonoid M]
     (hn : n ≠ 0)
@@ -406,19 +456,8 @@ theorem insertNth_append_natAdd {n m : ℕ} {β : Sort*} (i : Fin (m + 1)) (a : 
   refine ⟨by simp, ?_⟩
   funext k
   induction k using Fin.addCases with
-  | left k =>
-      have hk : (i.natAdd n).succAbove (k.castAdd m) = k.castAdd (m + 1) := by
-        apply Fin.ext
-        simp only [val_succAbove, val_castAdd, val_natAdd]
-        have := k.isLt
-        split_ifs <;> omega
-      simp [removeNth, hk]
-  | right k =>
-      have hk : (i.natAdd n).succAbove (k.natAdd n) = (i.succAbove k).natAdd n := by
-        apply Fin.ext
-        simp only [val_succAbove, val_natAdd]
-        split_ifs <;> omega
-      simp [removeNth, hk]
+  | left k => simp [removeNth, natAdd_succAbove_castAdd]
+  | right k => simp [removeNth, natAdd_succAbove_natAdd]
 
 /-! ### Inserting an entry into a tuple indexed by a sum of two blocks -/
 
@@ -658,6 +697,14 @@ theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
         have h1' : e 1 = 1 := Fin.eq_one_of_ne_zero _ h
         exact Fin.zero_ne_one (e.injective (h1'.trans h0'.symm)).symm
       simpa using h1
+
+/-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
+theorem univ_perm_fin_two [Fintype (Equiv.Perm (Fin 2))] :
+    (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
+    {1, Equiv.swap 0 1} := by
+  classical
+  ext e
+  simpa using perm_fin_two_eq_one_or_swap e
 
 /-- **A shifted indicator picks out one summand.** Summing `f` over `Fin n` against the indicator
 of `b = k + j` gives `f` at the index `b - j` when that is a valid index and `j ≤ b`, and `0`

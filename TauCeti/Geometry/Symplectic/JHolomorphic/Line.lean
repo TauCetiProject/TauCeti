@@ -17,21 +17,19 @@ standard complex line, represented as `ℝ × ℝ` with the almost complex struc
 For a real-linear map out of this source, complex-linearity says exactly that the image of the
 imaginary coordinate vector is `J` applied to the image of the real coordinate vector. Thus the
 linear map, and in particular the Frechet derivative of a constant-structure `J`-holomorphic map
-from the standard
-line, is determined by its `s`-direction.
+from the standard line, is determined by its `s`-direction.
 
-The final lemmas translate this into the first pointwise area estimate used by the analytic
-Heegaard Floer roadmap: under a taming form, the symplectic area of the ordered pair
+The area estimates show that, under a taming form, the symplectic area of the ordered pair
 `(∂s u, ∂t u)` is nonnegative, and it is positive when `∂s u` is nonzero.
-
-This is still pointwise linear algebra, not an integrated energy theory. It is the local
-calculus API needed before the holomorphic-curve energy and elliptic estimates in
-`TauCetiRoadmap/HeegaardFloer/README.md`, Lane F2.1.
+These pointwise linear-algebra statements supply the local calculus for holomorphic-curve
+energy and elliptic estimates.
 
 ## Main declarations
 
 * `TauCeti.stdComplexLineReal` and `TauCeti.stdComplexLineImag`: the coordinate vectors
   `(1, 0)` and `(0, 1)` in the standard complex line.
+* `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
+  coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
   complex line is equivalent to the coordinate Cauchy--Riemann equation
   `F (0, 1) = J (F (1, 0))`.
@@ -41,8 +39,7 @@ calculus API needed before the holomorphic-curve energy and elliptic estimates i
   `F (1, 0)`, via `F (s, t) = s • v + t • J v`.
 * `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLineImag` and
   `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements
-  for
-  Frechet derivatives of constant-structure `J`-holomorphic maps.
+  for Frechet derivatives of constant-structure `J`-holomorphic maps.
 * `TauCeti.IsComplexLinearMap.symplecticForm_apply_apply_*`: nonnegativity and positivity of
   `ω(F v, F (J v))` for a complex-linear map under tameness.
 * `TauCeti.IsComplexLinearMap.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_*`:
@@ -82,13 +79,11 @@ lemma stdComplexLineImag_fst : stdComplexLineImag.1 = 0 :=
 lemma stdComplexLineImag_snd : stdComplexLineImag.2 = 1 :=
   rfl
 
-@[simp]
 lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=
   by
     ext <;> simp [stdComplexLineReal, stdComplexLineImag]
 
-@[simp]
 lemma AlmostComplexStructure.product_apply_stdComplexLineImag :
     AlmostComplexStructure.product ℝ stdComplexLineImag = -stdComplexLineReal := by
   ext <;> simp [stdComplexLineReal, stdComplexLineImag]
@@ -107,13 +102,10 @@ variable {J : AlmostComplexStructure V}
 
 /-- A real-linear map out of `ℝ × ℝ` is determined by its values on the real and imaginary
 coordinate vectors. -/
-lemma LinearMap.apply_stdComplexLine (F : (ℝ × ℝ) →ₗ[ℝ] V) (z : ℝ × ℝ) :
+lemma _root_.LinearMap.apply_stdComplexLine (F : (ℝ × ℝ) →ₗ[ℝ] V) (z : ℝ × ℝ) :
     F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
-  calc
-    F z = F (z.1 • stdComplexLineReal + z.2 • stdComplexLineImag) := by
-      rw [← stdComplexLine_eq_smul_real_add_smul_imag z]
-    _ = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
-      rw [map_add, map_smul, map_smul]
+  simpa only [map_add, map_smul] using
+    congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
 
 /-- Complex-linearity for a real-linear map out of the standard complex line is exactly the
 coordinate Cauchy--Riemann equation `F(0,1) = J(F(1,0))`. -/
@@ -122,24 +114,14 @@ lemma isComplexLinearMap_stdComplexLine_iff (F : (ℝ × ℝ) →ₗ[ℝ] V) :
       F stdComplexLineImag = J (F stdComplexLineReal) := by
   constructor
   · intro hF
-    simpa [stdComplexLineImag] using
+    simpa only [AlmostComplexStructure.product_apply_stdComplexLineReal] using
       (isComplexLinearMap_iff_apply (AlmostComplexStructure.product ℝ) J F).mp hF
         stdComplexLineReal
   · intro hF
     rw [isComplexLinearMap_iff_apply]
     intro z
-    calc
-      F (AlmostComplexStructure.product ℝ z) =
-          (-z.2) • F stdComplexLineReal + z.1 • F stdComplexLineImag := by
-        rw [LinearMap.apply_stdComplexLine]
-        simp [AlmostComplexStructure.product_apply]
-      _ = (-z.2) • F stdComplexLineReal + z.1 • J (F stdComplexLineReal) := by
-        rw [hF]
-      _ = J (z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag) := by
-        rw [hF]
-        simp [map_add, map_smul, smul_neg, add_comm]
-      _ = J (F z) := by
-        exact congrArg J (LinearMap.apply_stdComplexLine F z).symm
+    rw [F.apply_stdComplexLine, F.apply_stdComplexLine z, hF]
+    simp [map_add, map_smul, smul_neg, add_comm]
 
 namespace IsComplexLinearMap
 
@@ -188,11 +170,10 @@ value: `F (s, t) = s • F(1,0) + t • J(F(1,0))`. -/
 lemma apply_stdComplexLine
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (z : ℝ × ℝ) :
     F z = z.1 • F stdComplexLineReal + z.2 • J (F stdComplexLineReal) := by
-  rw [LinearMap.apply_stdComplexLine F z, hF.apply_stdComplexLineImag]
+  rw [F.apply_stdComplexLine z, hF.apply_stdComplexLineImag]
 
 /-- A complex-linear map from the standard complex line is zero exactly when its real-coordinate
 value is zero. -/
-@[simp]
 lemma eq_zero_iff_apply_stdComplexLineReal
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
     F = 0 ↔ F stdComplexLineReal = 0 := by
@@ -219,7 +200,7 @@ oriented coordinate pair is nonnegative. -/
 lemma symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hω : ω.Tames J) :
     0 ≤ ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  simpa [AlmostComplexStructure.product_apply_stdComplexLineReal, stdComplexLineImag] using
+  simpa only [AlmostComplexStructure.product_apply_stdComplexLineReal] using
     hF.symplecticForm_apply_apply_nonneg hω stdComplexLineReal
 
 /-- Under tameness, the pointwise symplectic area of a complex-linear image of the standard
@@ -228,7 +209,7 @@ lemma symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_pos
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hω : ω.Tames J)
     (hreal : F stdComplexLineReal ≠ 0) :
     0 < ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  simpa [AlmostComplexStructure.product_apply_stdComplexLineReal, stdComplexLineImag] using
+  simpa only [AlmostComplexStructure.product_apply_stdComplexLineReal] using
     hF.symplecticForm_apply_apply_pos hω hreal
 
 end IsComplexLinearMap
@@ -241,16 +222,15 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 variable {J' : AlmostComplexStructure W} {f : ℝ × ℝ → W} {x z : ℝ × ℝ}
 
 /-- For a constant-structure `J`-holomorphic map from the standard complex line, the Frechet
-derivative in the
-imaginary coordinate direction is `J` applied to the derivative in the real coordinate direction. -/
+derivative in the imaginary coordinate direction is `J` applied to the derivative in the real
+coordinate direction. -/
 lemma fderiv_stdComplexLineImag
     (hf : IsConstStructureJHolomorphicAt (AlmostComplexStructure.product ℝ) J' f x) :
-    fderiv ℝ f x stdComplexLineImag = J' (fderiv ℝ f x stdComplexLineReal) := by
-  simpa [stdComplexLineImag] using hf.fderiv_apply_commute (v := stdComplexLineReal)
+    fderiv ℝ f x stdComplexLineImag = J' (fderiv ℝ f x stdComplexLineReal) :=
+  hf.fderiv_isComplexLinear.apply_stdComplexLineImag
 
 /-- The Frechet derivative of a constant-structure `J`-holomorphic map from the standard complex
-line is determined
-by its real-coordinate value. -/
+line is determined by its real-coordinate value. -/
 lemma fderiv_stdComplexLine_apply
     (hf : IsConstStructureJHolomorphicAt (AlmostComplexStructure.product ℝ) J' f x) (z : ℝ × ℝ) :
     fderiv ℝ f x z =
@@ -266,19 +246,18 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 variable {J' : AlmostComplexStructure W} {f : ℝ × ℝ → W} {s : Set (ℝ × ℝ)} {x : ℝ × ℝ}
 
 /-- For a within-set constant-structure `J`-holomorphic map from the standard complex line, the
-Frechet derivative
-within the set sends the imaginary coordinate direction to `J` applied to the real direction,
-provided derivatives within the set are unique. -/
+Frechet derivative within the set sends the imaginary coordinate direction to `J` applied to the
+real direction, provided derivatives within the set are unique. -/
 lemma fderivWithin_stdComplexLineImag
     (hf : IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J' f s x)
     (hs : UniqueDiffWithinAt ℝ s x) :
     fderivWithin ℝ f s x stdComplexLineImag =
-      J' (fderivWithin ℝ f s x stdComplexLineReal) := by
-  simpa [stdComplexLineImag] using hf.fderivWithin_apply_commute hs (v := stdComplexLineReal)
+      J' (fderivWithin ℝ f s x stdComplexLineReal) :=
+  (hf.fderivWithin_isComplexLinear hs).apply_stdComplexLineImag
 
 /-- The within-set Frechet derivative of a constant-structure `J`-holomorphic map from the standard
-complex line is
-determined by its real-coordinate value when derivatives within the set are unique. -/
+complex line is determined by its real-coordinate value when derivatives within the set are
+unique. -/
 lemma fderivWithin_stdComplexLine_apply
     (hf : IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J' f s x)
     (hs : UniqueDiffWithinAt ℝ s x) (z : ℝ × ℝ) :

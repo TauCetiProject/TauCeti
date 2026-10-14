@@ -26,19 +26,19 @@ This file presents the special linear group scheme `SLₙ` as the closed subgrou
 
 ## References
 
-* J. S. Milne, *Basic Theory of Affine Group Schemes*, Part I, §1.7, pp. 49–50.
+* J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter IV, §1.7, pp. 49–50.
 -/
 
 public section
 
-open AlgebraicGeometry CategoryTheory MonObj WithConv
+open AlgebraicGeometry CategoryTheory
 open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
 namespace SpecialLinear
 
-universe u w
+universe u
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
@@ -129,7 +129,8 @@ noncomputable def groupSchemePointMulEquiv :
 
 /-- The underlying spectrum map of the scheme point associated to a special-linear algebra
 point. -/
-@[simp]
+-- Not `@[simp]`: `simp` normalizes the point before this equation can apply, so it never fires,
+-- even on its own statement; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     (groupSchemePointMulEquiv n A f).left =
@@ -149,8 +150,8 @@ noncomputable def schemePointsMulEquiv :
     (pointsMulEquiv (R := R) (A := A) n)
 
 /-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
-recovers the canonical algebra point. -/
-@[simp]
+gives the determinant-one matrix of the underlying algebra point. -/
+@[simp↓]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     schemePointsMulEquiv n A (groupSchemePointMulEquiv n A q) =

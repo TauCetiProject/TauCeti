@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Weight-Levi subgroup schemes of the general linear group
@@ -35,13 +34,10 @@ antipode calculations.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-* The closed-subgroup packaging specializes the generic construction abstracted from
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which in turn adapts
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` and
-  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
-
-This advances the dynamic-parabolic route in Layer 7, "Structure theory", of the ReductiveGroups
-roadmap by constructing the scheme-level Levi attached to a weight cocharacter.
+* The closed-subgroup packaging specializes the generic construction of
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which was adapted from
+  the original construction of `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`, itself
+  adapted from `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 -/
 
 public section
@@ -113,7 +109,7 @@ theorem weightLeviInclusion_def (w : Fin N → ℤ) :
     weightLeviInclusion R w =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R N)
           (weightLeviDefiningHopfIdeal R w) ≫
-        (eqToIso (groupScheme_def R N).symm).hom := by
+        eqToHom (groupScheme_def R N).symm := by
   rw [weightLeviInclusion, hopfIdealInclusion_def]
 
 /-- The weight-Levi inclusion into `GL_N` is a closed immersion. -/

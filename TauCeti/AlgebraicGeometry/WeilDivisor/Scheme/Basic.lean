@@ -27,9 +27,8 @@ The coefficient, support, effectivity, and point-divisor API is inherited direct
 codimension-one points themselves are supplied by
 `TauCeti.AlgebraicGeometry.CodimensionOnePoint`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve:
-Weil divisors `⊕_x ℤ`", by supplying the scheme-theoretic codimension-one specialization needed
-before principal divisors can be constructed from `Scheme.ord`.
+This supplies the scheme-theoretic codimension-one specialization used to construct principal
+divisors from `Scheme.ord`.
 -/
 
 public section

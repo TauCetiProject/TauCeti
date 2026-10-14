@@ -174,7 +174,7 @@ theorem upperTriangularAmbientInclusion_comp_inclusion :
       upperTriangularInclusion r ≫ carrierι r := by
   rw [upperTriangularInclusion_comp_carrierι, upperTriangularAmbientInclusion,
     GeneralLinear.UpperTriangular.inclusion, GeneralLinear.weightParabolicInclusion_def,
-    ← Category.assoc, CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι, eqToIso.hom]
+    ← Category.assoc, CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
 
 /-! ## Matrix points -/
 
@@ -262,8 +262,7 @@ theorem isUpperTriangular_coe_rootSubgroupPoints_negative_iff
     ((rootSubgroupPoints r (.inr i) A u : Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
         Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsUpperTriangular ↔
       Multiplicative.toAdd u = 0 := by
-  rw [coe_rootSubgroupPoints, kostantRootSubgroupMatrix_eq_transvection,
-    MulEquiv.apply_symm_apply, coe_transvectionUnit]
+  rw [coe_rootSubgroupPoints_eq_transvectionUnit, coe_transvectionUnit]
   simp only [rootTarget_inr, rootSource_inr]
   exact isUpperTriangular_transvection_iff (Fin.castSucc_lt_succ (i := i)) _
 

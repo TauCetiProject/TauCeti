@@ -7,8 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
--- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # Base change of affine elliptic curves
@@ -90,6 +89,34 @@ theorem equivBaseChangeSelf_some {x y : F} (h : W.Nonsingular x y) :
     equivBaseChangeSelf W (.some x y h) = .some x y (W.baseChange_self.symm ▸ h) := by
   rw [equivBaseChangeSelf, AddEquiv.cast_apply]
   exact Point.cast_some W.baseChange_self.symm h
+
+/-- **`equivBaseChangeSelf` keeps the `x`-coordinate of a point.** -/
+@[simp]
+theorem xCoord_equivBaseChangeSelf (P : W.Point) :
+    xCoord (equivBaseChangeSelf W P) = xCoord P := by
+  rcases P with _ | ⟨x, y, h⟩
+  · simp [← zero_def]
+  · rw [equivBaseChangeSelf_some, xCoord_some, xCoord_some]
+
+/-- **`equivBaseChangeSelf` keeps the `y`-coordinate of a point.** -/
+@[simp]
+theorem yCoord_equivBaseChangeSelf (P : W.Point) :
+    yCoord (equivBaseChangeSelf W P) = yCoord P := by
+  rcases P with _ | ⟨x, y, h⟩
+  · simp [← zero_def]
+  · rw [equivBaseChangeSelf_some, yCoord_some, yCoord_some]
+
+/-- **`equivBaseChangeSelf.symm` keeps the `x`-coordinate of a point.** -/
+@[simp]
+theorem xCoord_equivBaseChangeSelf_symm (P : (W⁄F).toAffine.Point) :
+    xCoord ((equivBaseChangeSelf W).symm P) = xCoord P := by
+  rw [← xCoord_equivBaseChangeSelf, AddEquiv.apply_symm_apply]
+
+/-- **`equivBaseChangeSelf.symm` keeps the `y`-coordinate of a point.** -/
+@[simp]
+theorem yCoord_equivBaseChangeSelf_symm (P : (W⁄F).toAffine.Point) :
+    yCoord ((equivBaseChangeSelf W).symm P) = yCoord P := by
+  rw [← yCoord_equivBaseChangeSelf, AddEquiv.apply_symm_apply]
 
 end WeierstrassCurve.Affine.Point
 

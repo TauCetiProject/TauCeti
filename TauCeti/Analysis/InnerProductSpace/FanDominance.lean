@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
+public import TauCeti.Analysis.InnerProductSpace.DiagonalSum
 public import TauCeti.Analysis.InnerProductSpace.KyFan
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
 
 /-!
-# Fan dominance
+# Fan dominance and the ideal inequalities
 
 For linear maps `A C : E →ₗ[𝕜] F` between finite-dimensional inner product spaces, this file
 proves that `A` lies in the convex hull of the two-sided unitary orbit `{U C V}` of `C` exactly
@@ -33,17 +32,23 @@ and `vᵢ`, which is realized by unitaries of `F` and `E`. This set contains the
 `C`, so it contains those of `A`, which are weakly majorized by them; and `A` itself is a unitary
 multiple of `∑ᵢ σᵢ(A) wᵢ ⊗ vᵢ`.
 
+Two consequences follow. Since `σᵢ(C A) ≤ ‖C‖ σᵢ(A)`, Fan dominance gives the **ideal
+inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`.
+
 ## Main results
 
 * `LinearMap.mem_twoSidedUnitaryOrbitHull_iff_kyFanSum_le`: the orbit-hull characterization of
   Ky Fan domination.
 * `TauCeti.UnitarilyInvariantSeminorm.map_le_of_kyFanSum_le`: Fan dominance.
+* `TauCeti.UnitarilyInvariantSeminorm.map_comp_le_left`,
+  `TauCeti.UnitarilyInvariantSeminorm.map_comp_le_right`: the ideal inequalities.
 
 ## References
 
 * K. Fan, *Maximum properties and inequalities for the eigenvalues of completely continuous
   operators*, Proc. Nat. Acad. Sci. U.S.A. **37** (1951), 760–766.
-* R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer, 1997, Theorem IV.2.2.
+* R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer, 1997, Theorem IV.2.2
+  (Fan dominance) and Proposition IV.2.4 (ideal inequalities).
 * L. Mirsky, *Symmetric gauge functions and unitarily invariant norms*, Quart. J. Math. Oxford
   Ser. (2) **11** (1960), 50–59.
 -/
@@ -56,73 +61,6 @@ namespace LinearMap
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-
-local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
-
-section DiagonalSum
-
-variable {ι : Type*} [Fintype ι]
-
-variable (𝕜) in
-/-- The map `∑ᵢ xᵢ wᵢ ⊗ vᵢ`, sending `y` to `∑ᵢ xᵢ ⟪vᵢ, y⟫ wᵢ`. For orthonormal families `(vᵢ)`
-and `(wᵢ)` and a nonnegative tuple `x`, this is the map with singular system `(vᵢ, wᵢ, xᵢ)`. -/
-private noncomputable def diagonalSum (v : ι → E) (w : ι → F) (x : ι → ℝ) : E →ₗ[𝕜] F :=
-  ∑ i, (x i : 𝕜) • (rankOne 𝕜 (w i) (v i)).toLinearMap
-
-private theorem diagonalSum_apply (v : ι → E) (w : ι → F) (x : ι → ℝ) (y : E) :
-    diagonalSum 𝕜 v w x y = ∑ i, (x i : 𝕜) • ⟪v i, y⟫ • w i := by
-  simp [diagonalSum]
-
-/-- Unitaries on either side act on the vectors of a diagonal sum. -/
-private theorem linearIsometryEquiv_comp_diagonalSum_comp (U : F ≃ₗᵢ[𝕜] F) (V : E ≃ₗᵢ[𝕜] E)
-    (v : ι → E) (w : ι → F) (x : ι → ℝ) :
-    (U : F →ₗ[𝕜] F) ∘ₗ diagonalSum 𝕜 v w x ∘ₗ (V : E →ₗ[𝕜] E) =
-      diagonalSum 𝕜 (V.symm ∘ v) (U ∘ w) x := by
-  ext y
-  simp [diagonalSum_apply, LinearIsometryEquiv.inner_map_eq_flip]
-
-private theorem diagonalSum_add_smul (v : ι → E) (w : ι → F) (x y : ι → ℝ) (a b : ℝ) :
-    diagonalSum 𝕜 v w (a • x + b • y) =
-      (a : 𝕜) • diagonalSum 𝕜 v w x + (b : 𝕜) • diagonalSum 𝕜 v w y := by
-  simp only [diagonalSum, Finset.smul_sum, smul_smul, ← Finset.sum_add_distrib, ← add_smul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp
-
-/-- Permuting the coefficients of a diagonal sum permutes its vectors. -/
-private theorem diagonalSum_comp_perm (v : ι → E) (w : ι → F) (x : ι → ℝ) (π : Equiv.Perm ι) :
-    diagonalSum 𝕜 v w (x ∘ π) = diagonalSum 𝕜 (v ∘ π.symm) (w ∘ π.symm) x := by
-  simp only [diagonalSum, Function.comp_apply]
-  exact (π.symm.sum_comp fun i ↦ (x (π i) : 𝕜) • (rankOne 𝕜 (w i) (v i)).toLinearMap).symm.trans
-    (by simp)
-
-/-- Changing the sign of one coefficient of a diagonal sum changes the sign of one vector. -/
-private theorem diagonalSum_update_neg [DecidableEq ι] (v : ι → E) (w : ι → F) (x : ι → ℝ)
-    (i : ι) :
-    diagonalSum 𝕜 v w (Function.update x i (-x i)) =
-      diagonalSum 𝕜 v (Function.update w i (-w i)) x := by
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rcases eq_or_ne j i with rfl | hj
-  · simp
-  · simp [Function.update_of_ne hj]
-
-variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-
-/-- Diagonal sums over two pairs of orthonormal families with the same coefficients are related by
-unitaries of the source and of the target. -/
-private theorem diagonalSum_mem_twoSidedUnitaryOrbit {v v' : ι → E} {w w' : ι → F}
-    (hv : Orthonormal 𝕜 v) (hv' : Orthonormal 𝕜 v') (hw : Orthonormal 𝕜 w)
-    (hw' : Orthonormal 𝕜 w') (x : ι → ℝ) :
-    diagonalSum 𝕜 v' w' x ∈ (diagonalSum 𝕜 v w x).twoSidedUnitaryOrbit := by
-  classical
-  obtain ⟨P, hP⟩ := TauCeti.exists_linearIsometryEquiv_of_inner_eq (v := v) (w := v') fun i j ↦ by
-    rw [orthonormal_iff_ite.mp hv, orthonormal_iff_ite.mp hv']
-  obtain ⟨Q, hQ⟩ := TauCeti.exists_linearIsometryEquiv_of_inner_eq (v := w) (w := w') fun i j ↦ by
-    rw [orthonormal_iff_ite.mp hw, orthonormal_iff_ite.mp hw']
-  refine mem_twoSidedUnitaryOrbit.mpr ⟨Q, P.symm, ?_⟩
-  rw [linearIsometryEquiv_comp_diagonalSum_comp, LinearIsometryEquiv.symm_symm]
-  congr 1 <;> ext i <;> simp [hP, hQ]
-
-end DiagonalSum
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
@@ -148,9 +86,9 @@ theorem mem_twoSidedUnitaryOrbitHull_iff_kyFanSum_le {A C : E →ₗ[𝕜] F} :
     obtain ⟨vA, wA, hvA, hwA, hA⟩ := A.exists_orthonormal_eq_sum_singularValues_smul_rankOne
     obtain ⟨vC, wC, hvC, hwC, hC⟩ := C.exists_orthonormal_eq_sum_singularValues_smul_rankOne
     replace hA : A = diagonalSum 𝕜 vA wA fun i ↦ A.singularValues i := by
-      simpa only [diagonalSum] using hA
+      simpa only [diagonalSum_def] using hA
     replace hC : C = diagonalSum 𝕜 vC wC fun i ↦ C.singularValues i := by
-      simpa only [diagonalSum] using hC
+      simpa only [diagonalSum_def] using hC
     -- The coefficient tuples `x` whose diagonal sum over `(vC, wC)` lies in the hull form a
     -- symmetric convex set.
     let K : Set (Fin (min (finrank 𝕜 E) (finrank 𝕜 F)) → ℝ) :=
@@ -199,5 +137,39 @@ theorem map_le_of_kyFanSum_le (N : UnitarilyInvariantSeminorm 𝕜 E F) {A C : E
     (h : ∀ k, A.kyFanSum k ≤ C.kyFanSum k) : N A ≤ N C :=
   N.map_le_of_mem_twoSidedUnitaryOrbitHull
     (LinearMap.mem_twoSidedUnitaryOrbitHull_iff_kyFanSum_le.mpr h)
+
+/-! ### Ideal inequalities -/
+
+/-- **Ideal inequality, left factor.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
+operator norm at most `c`), then `N (C A) ≤ c * N A` for every unitarily invariant seminorm `N`. -/
+theorem map_comp_le_left (N : UnitarilyInvariantSeminorm 𝕜 E F) (C : F →ₗ[𝕜] F) (A : E →ₗ[𝕜] F)
+    {c : ℝ} (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) : N (C ∘ₗ A) ≤ c * N A := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- A negative constant forces `A = 0`.
+    have hA : A = 0 := LinearMap.ext fun x ↦ norm_le_zero_iff.mp <|
+      nonpos_of_mul_nonneg_right ((norm_nonneg _).trans (hC (A x))) hc
+    simp [hA]
+  calc N (C ∘ₗ A) ≤ N ((c : 𝕜) • A) := N.map_le_of_kyFanSum_le fun k ↦ by
+        simp only [LinearMap.kyFanSum_def, LinearMap.singularValues_smul, RCLike.norm_ofReal,
+          abs_of_nonneg hc, Finsupp.smul_apply, smul_eq_mul]
+        exact Finset.sum_le_sum fun i _ ↦ LinearMap.singularValues_comp_le C A hC i
+    _ = c * N A := by rw [map_smul_eq_mul, RCLike.norm_ofReal, abs_of_nonneg hc]
+
+/-- **Ideal inequality, right factor.** If `‖C x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `C`
+has operator norm at most `c`), then `N (A C) ≤ c * N A` for every unitarily invariant seminorm
+`N`. -/
+theorem map_comp_le_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A : E →ₗ[𝕜] F) (C : E →ₗ[𝕜] E)
+    {c : ℝ} (hC : ∀ x, ‖C x‖ ≤ c * ‖x‖) : N (A ∘ₗ C) ≤ c * N A := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- A negative constant forces `E = 0`.
+    have hE (x : E) : x = 0 := norm_le_zero_iff.mp <|
+      nonpos_of_mul_nonneg_right ((norm_nonneg _).trans (hC x)) hc
+    have hA : A = 0 := LinearMap.ext fun x ↦ by simp [hE x]
+    simp [hA]
+  -- Pass to adjoints, where `C†` is a left factor with the same bound.
+  have h := N.compAdjoint.map_comp_le_left (LinearMap.adjoint C) (LinearMap.adjoint A)
+    (LinearMap.norm_adjoint_apply_le hc hC)
+  rwa [compAdjoint_apply, compAdjoint_apply, ← LinearMap.adjoint_comp, LinearMap.adjoint_adjoint,
+    LinearMap.adjoint_adjoint] at h
 
 end TauCeti.UnitarilyInvariantSeminorm

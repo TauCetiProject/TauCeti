@@ -43,7 +43,7 @@ the twisted branch the normal form is `x₁^{2 + 2^f} (x₁, x₂)(x₃, x₄) �
 class `((1 + 2^f) + [x₂]⁻¹) • [x₁]` (`TauCeti.IsProP.ofMul_mk_demushkinWordNeTwo_ker`) already has
 the required shape, since `[x₂]⁻¹ = [y]` in `F ⧸ ker χ`. In the branch `{±1} × U^(f)` the normal
 form is `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, and the factorization of its class is
-`TauCeti.IsProP.exists_ofMul_mk_demushkinWordTwoEven_ker_eq_add_smul`.
+`TauCeti.IsProP.exists_ofMul_mk_demushkinWordTwoEvenPadic_ker_eq_add_smul`.
 
 **Conventions.** `Λ` acts on `E` by conjugation, `[g] • [x] = [g x g⁻¹]`
 (`TauCeti.IsProP.completedGroupAlgebraModule`). Labute lets `[g]` act by `[g⁻¹ x g]`, so his
@@ -190,11 +190,15 @@ theorem exists_labuteRelatorClass_eq_add_smul_of_range_eq_unitsPlusMinus
   simp only [← presentedProP.mk_freeProPGen, ← demushkinRelatorCharacter_apply_equiv_symm,
     ← Function.comp_apply (f := e.symm), ← hx_def] at h₁ h₃ hx
   obtain ⟨z₁, z₃, hz⟩ :=
-    (isProP_freeProP 2 (Fin n)).exists_ofMul_mk_demushkinWordTwoEven_ker_eq_add_smul χ 0 f hn3 hf
+    (isProP_freeProP 2 (Fin n)).exists_ofMul_mk_demushkinWordTwoEvenPadic_ker_eq_add_smul
+      χ 0 f hn3 hf
       (x := x) (fun i hi hi' _ ↦ hx i hi hi') h₁ h₃ (by simp) hs hy
   refine ⟨z₁, z₃, Eq.trans ?_ hz⟩
   rw [labuteRelatorClass_def]
-  congr
+  congr 2
+  apply Subtype.ext
+  simpa only [Nat.cast_zero] using
+    hrx.trans (demushkinWordTwoEvenPadic_natCast (isProP_freeProP 2 (Fin n)) n x 0 f).symm
 
 end Factorization
 

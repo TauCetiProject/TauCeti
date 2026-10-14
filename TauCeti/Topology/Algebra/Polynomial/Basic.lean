@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Eval.Degree
+public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
@@ -30,11 +32,30 @@ coefficients with powers of `t`.
 * `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
 * `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
   of bounded degree.
+* `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
 -/
 
 public section
 
 open Filter Topology
+open scoped Polynomial.Bivariate
+
+namespace Polynomial
+
+/-- Evaluation of a bivariate polynomial is jointly continuous in its two arguments. -/
+theorem continuous_evalEval {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] (P : R[X][Y]) :
+    Continuous fun z : R × R ↦ P.evalEval z.1 z.2 := by
+  have key (x y : R) : P.evalEval x y =
+      ∑ j ∈ P.support, (P.coeff j).eval x * y ^ j := by
+    rw [Polynomial.evalEval, Polynomial.eval_eq_sum (p := P)]
+    simp only [Polynomial.sum_def, Polynomial.eval_finsetSum, Polynomial.eval_mul,
+      Polynomial.eval_pow, Polynomial.eval_C]
+  simp only [key]
+  exact continuous_finsetSum _ fun j _ ↦
+    ((P.coeff j).continuous.comp continuous_fst).mul (continuous_snd.pow j)
+
+end Polynomial
 
 namespace Polynomial
 

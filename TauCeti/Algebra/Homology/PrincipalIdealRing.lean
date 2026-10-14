@@ -35,6 +35,8 @@ the simpler reason that all modules are semisimple (`TauCeti.Algebra.Homology.Se
   free.
 * `HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`: the cycles split off a term
   when the next term is projective.
+* `HomologicalComplex.free_cokernel_iCycles_of_isPrincipalIdealRing`: the quotient of a term by
+  its cycles is free when the next term is projective.
 
 ## References
 
@@ -78,5 +80,16 @@ instance isSplitMono_iCycles_of_isPrincipalIdealRing [Module.Projective k (K.X (
   · -- with no differential out of `Kᵢ`, all of `Kᵢ` is cycles
     have := K.isIso_iCycles i (c.next i) rfl (K.shape _ _ h)
     infer_instance
+
+/-- Over a principal ideal ring without zero divisors, the quotient of a term of a complex of
+modules by its cycles is free when the next term is projective: the differential embeds the
+quotient into the next term. -/
+instance free_cokernel_iCycles_of_isPrincipalIdealRing [Module.Projective k (K.X (c.next i))] :
+    Module.Free k (cokernel (K.iCycles i) : ModuleCat.{v} k) :=
+  .of_injective_of_projective_of_isPrincipalIdealRing
+    (cokernel.desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _)).hom
+    ((ModuleCat.mono_iff_injective _).mp (ShortComplex.exact_of_f_is_kernel
+      (ShortComplex.mk (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _))
+      (K.cyclesIsKernel i (c.next i) rfl)).mono_cokernelDesc)
 
 end HomologicalComplex

@@ -30,6 +30,11 @@ require a commutative target.
   naturality of tensor multiplication and cancellation of an inserted middle factor `1`.
 * `Algebra.TensorProduct.map_assoc_tmul_one`: applying `f : B ⊗[R] C → D` after
   reassociating `y ⊗ 1` is the base change of `b ↦ f (b ⊗ 1)`.
+* `AlgHom.sectionBaseChange`: the base change `T ⊗[A] B →ₐ[T] T` of an `A`-algebra map
+  `s : B →ₐ[A] A`, that is, the pullback to `Spec T` of the section of `Spec B → Spec A` given by
+  `s`, with its value `AlgHom.sectionBaseChange_sum_tmul` on sums of pure tensors, its
+  naturality `AlgHom.sectionBaseChange_rTensor` in `T`, and its transitivity
+  `AlgHom.sectionBaseChange_sectionBaseChange` along `A → A' → T`.
 -/
 
 public section
@@ -113,3 +118,58 @@ theorem mulRight_tmul (b : B) (t : S) :
   simp [mulRight]
 
 end Algebra.TensorProduct
+
+namespace AlgHom
+
+variable {A B : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
+
+/-- The base change `T ⊗[A] B →ₐ[T] T`, `t ⊗ b ↦ t * s b`, of an `A`-algebra map
+`s : B →ₐ[A] A`. Geometrically, `s` is a section of `Spec B → Spec A`, and this is its pullback
+along `Spec T → Spec A`. -/
+noncomputable def sectionBaseChange (s : B →ₐ[A] A) (T : Type*) [CommSemiring T] [Algebra A T] :
+    T ⊗[A] B →ₐ[T] T :=
+  Algebra.TensorProduct.productLeftAlgHom (AlgHom.id T T) ((Algebra.ofId A T).comp s)
+
+@[simp]
+theorem sectionBaseChange_tmul (s : B →ₐ[A] A) {T : Type*} [CommSemiring T] [Algebra A T] (t : T)
+    (b : B) : s.sectionBaseChange T (t ⊗ₜ b) = t * algebraMap A T (s b) := by
+  simp [sectionBaseChange]
+
+/-- The base change of a section `s` takes `∑ j ∈ u, tⱼ ⊗ bⱼ` to `∑ j ∈ u, s(bⱼ) • tⱼ`; for
+`tⱼ = Xⱼ` and a basis `b`, the generic element goes to the linear form with coefficients
+`s(bⱼ)`. -/
+theorem sectionBaseChange_sum_tmul (s : B →ₐ[A] A) {T : Type*} [CommSemiring T] [Algebra A T]
+    {κ : Type*} (u : Finset κ) (t : κ → T) (b : κ → B) :
+    s.sectionBaseChange T (∑ j ∈ u, t j ⊗ₜ b j) = ∑ j ∈ u, s (b j) • t j := by
+  simp [Algebra.smul_def, mul_comm]
+
+/-- The base change of a section is natural in the base: it commutes with
+`Algebra.TensorProduct.rTensor B φ` for an `A`-algebra map `φ : T →ₐ[A] T'`. -/
+@[simp]
+theorem sectionBaseChange_rTensor (s : B →ₐ[A] A) {T T' : Type*} [CommSemiring T] [Algebra A T]
+    [CommSemiring T'] [Algebra A T'] (φ : T →ₐ[A] T') (x : T ⊗[A] B) :
+    s.sectionBaseChange T' (Algebra.TensorProduct.rTensor B φ x) = φ (s.sectionBaseChange T x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul t b => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Base change of a section is transitive: along `A → A' → T`, base changing `s` to `A'` and
+then to `T` is base changing `s` to `T`, through the identification
+`T ⊗[A'] (A' ⊗[A] B) ≃ T ⊗[A] B`. -/
+@[simp]
+theorem sectionBaseChange_sectionBaseChange {B : Type*} [CommSemiring B] [Algebra A B]
+    (s : B →ₐ[A] A) {A' T : Type*} [CommSemiring A'] [Algebra A A'] [CommSemiring T]
+    [Algebra A T] [Algebra A' T] [IsScalarTower A A' T] (x : T ⊗[A'] (A' ⊗[A] B)) :
+    (s.sectionBaseChange A').sectionBaseChange T x =
+      s.sectionBaseChange T (Algebra.TensorProduct.cancelBaseChange A A' T T B x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul t y =>
+    induction y using TensorProduct.inductionOn with
+    | tmul a b =>
+      simp only [sectionBaseChange_tmul, Algebra.TensorProduct.cancelBaseChange_tmul,
+        Algebra.smul_def, IsScalarTower.algebraMap_apply A A' T, map_mul]
+      ac_rfl
+    | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end AlgHom

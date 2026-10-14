@@ -49,6 +49,8 @@ segment of `P_p (E)`.
   geodesic space for every `1 ≤ p ≤ ∞`.
 * `TauCeti.WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul`: on a separable Banach
   space, the laws of `(1 - t) • x + t • y` under an optimal coupling form a geodesic segment.
+* `TauCeti.WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_add_smul`: for
+  the exponent `2`, the interpolated plan can be chosen with `∫ ‖x - y‖² dπ = W₂ (μ, ν)²`.
 
 ## References
 
@@ -309,6 +311,38 @@ theorem WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul {μ ν : Was
   obtain ⟨γ, hγ, hγt⟩ := WassersteinSpace.exists_isGeodesicSegment_timeMarginal hη h0 h1
     (by rw [hend, hπopt])
   exact ⟨γ, hγ, fun t ht ↦ by rw [hγt ⟨t, ht⟩, hmarg]⟩
+
+omit [Fact (1 ≤ p)] in
+/-- **Quadratic linear interpolation.** On a separable Banach space `E`, two laws `μ` and `ν` of
+finite second moment have an optimal coupling `π` for the quadratic cost: the displacement `x - y`
+is square integrable under `π`, with `∫ ‖x - y‖² dπ = W₂ (μ, ν)²`, and the laws of
+`(1 - t) • x + t • y` under `π`, for `t ∈ [0, 1]`, trace a geodesic segment of `P₂ (E)` from `μ`
+to `ν`. -/
+theorem WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_add_smul
+    (μ ν : WassersteinSpace 2 E) :
+    ∃ π : Measure (E × E),
+      IsCoupling π ((μ : ProbabilityMeasure E) : Measure E)
+        ((ν : ProbabilityMeasure E) : Measure E) ∧
+      MemLp (fun z : E × E ↦ z.1 - z.2) 2 π ∧ dist μ ν ^ 2 = ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π ∧
+      ∃ γ : ℝ → WassersteinSpace 2 E, IsGeodesicSegment γ μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
+        ((γ t : ProbabilityMeasure E) : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  obtain ⟨π, hπ, hπopt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist two_ne_zero
+    ENNReal.ofNat_ne_top _ _
+    (exists_isCoupling_of_wassersteinEDist_ne_top
+      (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν))
+  -- The `L²` norm of the displacement is the `L²` norm of the ground distance.
+  have hd : eLpNorm (fun z : E × E ↦ z.1 - z.2) 2 π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π :=
+    eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
+      (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
+  have hmem : MemLp (fun z : E × E ↦ z.1 - z.2) 2 π := by
+    rw [memLp_iff, hd, hπopt]
+    exact (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν).lt_top
+  refine ⟨π, hπ, hmem, ?_, WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hπ hπopt⟩
+  rw [WassersteinSpace.dist_def, ← hπopt, ← hd,
+    hmem.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity)]
+  simpa using Real.rpow_inv_natCast_pow (n := 2) (integral_nonneg fun z ↦ by positivity)
+    two_ne_zero
 
 end Normed
 

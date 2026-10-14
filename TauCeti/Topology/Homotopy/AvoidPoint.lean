@@ -46,7 +46,8 @@ subdivision. Here the approximation is smooth instead:
   points stays in the chart.
 * `ContinuousMap.exists_homotopyRel_notMem_range`: a map from a closed subset of a space of
   smaller dimension is homotopic, relative to the preimage of the complement of `φ⁻¹(B)`, to a
-  map missing a point of `φ⁻¹(B)`.
+  map missing a point of `φ⁻¹(B)` and still sending the points sent into the chart into the
+  chart.
 
 ## References
 
@@ -138,12 +139,13 @@ variable {E F Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 `D` be a closed subset of `E`, and let `φ` be a chart of the Hausdorff space `Y` into `F` whose
 target contains `ball c r`. If `dim E < dim F`, then every map `f : D → Y` is homotopic, relative
 to the points that `f` does not send into `φ.symm '' ball c r`, to a map `g` missing the point
-`φ.symm p` for some `p ∈ ball c r`. -/
+`φ.symm p` for some `p ∈ ball c r`. The map `g` sends the points that `f` sends into the chart
+into the chart. -/
 theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed D)
     (hEF : finrank ℝ E < finrank ℝ F) (φ : OpenPartialHomeomorph Y F) {c : F} {r : ℝ}
     (hr : 0 < r) (hφ : ball c r ⊆ φ.target) :
     ∃ g : C(D, Y), Nonempty (f.HomotopyRel g (f ⁻¹' (φ.symm '' ball c r))ᶜ) ∧
-      ∃ p ∈ ball c r, φ.symm p ∉ range g := by
+      (∀ x, f x ∈ φ.source → g x ∈ φ.source) ∧ ∃ p ∈ ball c r, φ.symm p ∉ range g := by
   -- The closed set `K` of points sent into the half-radius ball, where `φ ∘ f` is smoothed.
   have hsub : closedBall c (r / 2) ⊆ φ.target :=
     (closedBall_subset_ball (by linarith)).trans hφ
@@ -212,7 +214,9 @@ theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed
       by_contra hne
       have hβ : β (φ (f x)) ≠ 0 := fun hβ => hne (by simp [d, hβ])
       exact hx ⟨φ (f x), mem_ball.2 ((hβ_zero _ hβ).trans (by linarith)), φ.left_inv hs⟩)
-  refine ⟨g, ⟨Hf⟩, p, ball_subset_ball (by linarith) hp, ?_⟩
+  refine ⟨g, ⟨Hf⟩, fun x hx ↦ ?_, p, ball_subset_ball (by linarith) hp, ?_⟩
+  · rw [hg x hx]
+    exact φ.map_target (hseg x hx (right_mem_segment _ _ _))
   rintro ⟨x, hx⟩
   have hpt : p ∈ φ.target := hφ (ball_subset_ball (by linarith) hp)
   by_cases hs : f x ∈ φ.source

@@ -21,7 +21,10 @@ this is the short exact sequence
 0 → L_∞ˣ → I_{L,S} → I_{L,S}^f → 0
 ```
 
-(`sIdelesInfiniteShortComplex_shortExact`), given by the infinite ideles and the finite part.
+(`sIdelesInfiniteShortComplex_shortExact`), given by the infinite ideles and the finite part. It
+is split by the infinite part `I_L → L_∞ˣ` of an idele (`idelesToInfiniteIdeles`) and the idele
+`(1, a)` of a finite `S`-idele `a` (`finiteSIdelesToSIdeles`): an `S`-idele is the product of its
+infinite part and its finite part (`sIdeles_hom_decomp`).
 
 For a cyclic extension unramified outside `S`, the Herbrand quotient is multiplicative along it,
 so the archimedean computation `herbrandQuotient_infiniteIdelesRep` and the finite one
@@ -43,10 +46,15 @@ extensions follows.
 
 * `TauCeti.ClassFieldTheory.sIdelesInfiniteShortComplex L S`: the sequence
   `L_∞ˣ → I_{L,S} → I_{L,S}^f`.
+* `TauCeti.ClassFieldTheory.idelesToInfiniteIdeles K L`: the infinite part `I_L → L_∞ˣ`.
+* `TauCeti.ClassFieldTheory.finiteSIdelesToSIdeles L S`: the section `I_{L,S}^f → I_{L,S}` of
+  the finite part.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.sIdelesInfiniteShortComplex_shortExact`: the sequence is short exact.
+* `TauCeti.ClassFieldTheory.sIdeles_hom_decomp`: an `S`-idele is the product of its infinite part
+  and its finite part.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_sIdelesRep`: for `L/K` cyclic and unramified outside
   `S`, `h(I_{L,S})` is the product of the local degrees at the infinite places and at `S`.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_sIdelesRep_eq_herbrandQuotient_ofMulAction`: it is
@@ -213,23 +221,94 @@ theorem sIdelesInfiniteShortComplex_shortExact : (sIdelesInfiniteShortComplex L 
     obtain ⟨x, hx⟩ := sIdelesToFiniteSIdelesHom_surjective L S y.toMul
     exact ⟨Additive.ofMul x, congrArg Additive.ofMul hx⟩
 
+/-! ### The splitting of the `S`-ideles -/
+
+variable (K) in
+/-- The infinite part `I_L → L_∞ˣ` of an idele, as a morphism of representations of
+`Aut(L/K)`. -/
+def idelesToInfiniteIdeles : idelesRep K L ⟶ infiniteIdelesRep K L :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L))
+      ).toAdditive.toIntLinearMap
+    fun σ x ↦ congrArg Additive.ofMul (units_map_fst_idele_smul σ x.toMul)
+
+omit [NumberField K] in
+/-- `idelesToInfiniteIdeles` takes the infinite part of an idele. -/
+@[simp]
+theorem idelesToInfiniteIdeles_hom_apply (x : Additive (IdeleGroup (𝓞 L) L)) :
+    (idelesToInfiniteIdeles K L).hom x = Additive.ofMul
+      (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) x.toMul) :=
+  (rfl)
+
+/-- The idele `(1, a)` of a finite `S`-idele `a`, as a morphism of representations of `Aut(L/K)`,
+a section of `sIdelesToFiniteSIdeles`. -/
+def finiteSIdelesToSIdeles : finiteSIdelesRep L S ⟶ sIdelesRep (K := K) L S :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (((IdeleGroup.ofFiniteIdele (𝓞 L) L).comp (finiteSIdeles L S).subtype).codRestrict _
+      fun a ↦ toFiniteIdele_mem_finiteSIdeles_iff.1 (by simp)).toAdditive.toIntLinearMap
+    fun σ a ↦ congrArg Additive.ofMul <| Subtype.ext <|
+      ofFiniteIdele_map_finiteAdeleGaloisAction σ a.toMul.1
+
+/-- `finiteSIdelesToSIdeles` sends a finite `S`-idele `a` to the idele `(1, a)`. -/
+@[simp]
+theorem finiteSIdelesToSIdeles_hom_apply (a : Additive (finiteSIdeles L S)) :
+    (finiteSIdelesToSIdeles L S).hom a = Additive.ofMul
+      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L a.toMul, toFiniteIdele_mem_finiteSIdeles_iff.1 (by simp)⟩ :=
+  (rfl)
+
+/-- **An `S`-idele is the product of its infinite part and its finite part**: the identity of the
+`S`-ideles is the sum of the composites through the infinite ideles and through the finite
+`S`-ideles. -/
+theorem sIdeles_hom_decomp :
+    𝟙 (sIdelesRep (K := K) L S) =
+      (sIdelesToIdeles L S ≫ idelesToInfiniteIdeles K L) ≫ infiniteIdelesToSIdeles L S +
+        sIdelesToFiniteSIdeles L S ≫ finiteSIdelesToSIdeles L S := by
+  ext x
+  -- the two summands, computed on the `S`-idele `a`
+  let a : sIdeles L (S : Set (HeightOneSpectrum (𝓞 K))) := Additive.toMul x
+  have h₁ : (infiniteIdelesToSIdeles L S).hom
+      ((idelesToInfiniteIdeles K L).hom ((sIdelesToIdeles L S).hom x)) =
+      Additive.ofMul ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
+        ofInfiniteIdele_mem_sIdeles _ _⟩ :=
+    (congrArg (fun z ↦ (infiniteIdelesToSIdeles L S).hom ((idelesToInfiniteIdeles K L).hom z))
+      (sIdelesToIdeles_hom_apply L (S : Set (HeightOneSpectrum (𝓞 K))) x)).trans <|
+        (congrArg _ (idelesToInfiniteIdeles_hom_apply L _)).trans
+          (infiniteIdelesToSIdeles_hom_apply L S _)
+  have hb : IdeleGroup.toFiniteIdele (𝓞 L) L
+      (IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1)) ∈
+        finiteSIdeles L S := by
+    rw [IdeleGroup.toFiniteIdele_ofFiniteIdele]
+    exact toFiniteIdele_mem_finiteSIdeles_iff.2 a.2
+  have h₂ : (finiteSIdelesToSIdeles L S).hom ((sIdelesToFiniteSIdeles L S).hom x) =
+      Additive.ofMul ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
+        toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ :=
+    (congrArg _ (sIdelesToFiniteSIdeles_hom_apply L S x)).trans
+      (finiteSIdelesToSIdeles_hom_apply L S _)
+  -- multiplicatively, `a = (a_∞, 1) * (1, a_f)`
+  have ha : a = ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
+        ofInfiniteIdele_mem_sIdeles _ _⟩ *
+      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
+        toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ := by
+    refine Subtype.ext (Units.ext (Prod.ext ?_ ?_))
+    -- the product of adeles is computed componentwise, and the infinite part of `a` has
+    -- underlying infinite adele the first component of `a`
+    · simp only [Subgroup.coe_mul, Units.val_mul, IdeleGroup.coe_ofInfiniteIdele,
+        IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele]
+      exact (mul_one _).symm
+    · simp only [Subgroup.coe_mul, Units.val_mul, IdeleGroup.coe_ofInfiniteIdele,
+        IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele]
+      exact (one_mul _).symm
+  exact (congrArg Additive.ofMul ha).trans (congrArg₂ (· + ·) h₁ h₂).symm
+
 /-! ### The Herbrand quotient -/
 
 section Herbrand
 
 open scoped AdicCompletionExtension NumberField.LiesOver
 
-variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)]
-
-/-- A choice of a place of `L` above each place of `S`. -/
-private def placeAbove (v : S) :
-    {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal} :=
-  have hw : ∃ w : HeightOneSpectrum (𝓞 L), w.asIdeal.LiesOver v.1.asIdeal := by
-    obtain ⟨w, hw⟩ := under_surjective (𝓞 K) (𝓞 L) v.1
-    exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
-  ⟨hw.choose, hw.choose_spec⟩
-
-variable {L S}
+variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] {L S}
 
 /-- The Herbrand quotient of the `S`-ideles is that of the infinite ideles times that of the
 finite `S`-ideles. -/

@@ -344,6 +344,27 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
   rw [GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply,
     CommHopfAlgCat.quotientPointsHom_apply]
 
+/-- A generator's quotient-coordinate point evaluates to its ambient matrix point. -/
+theorem coe_coordinatePointsEquiv_commonKernelLift
+    (j : (Fin 4 ⊕ Fin 4) ⊕ Unit) (A : Type v) [CommRing A] [Algebra 𝔽₂ A]
+    (q : HopfAlgebra.points (H := generatorCodomain j) (CommAlgCat.of 𝔽₂ A)) :
+    (coordinatePointsEquiv A ((CommHopfAlgCat.mapPointsFunctor
+        (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q) :
+        GL (Fin 26) A) =
+      GeneralLinear.pointsMulEquiv 26
+        ((CommHopfAlgCat.mapPointsFunctor (generator j)).app (CommAlgCat.of 𝔽₂ A) q) := by
+  calc
+    _ = GeneralLinear.pointsMulEquiv 26
+        (CommHopfAlgCat.quotientPointsHom H₂₆ J (CommAlgCat.of 𝔽₂ A)
+          ((CommHopfAlgCat.mapPointsFunctor
+            (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q)) := by
+      exact (coe_coordinatePointsEquiv A _).trans (congrArg (GeneralLinear.pointsMulEquiv 26)
+          (CommHopfAlgCat.quotientPointsHom_apply H₂₆ J (CommAlgCat.of 𝔽₂ A) _).symm)
+    _ = _ := congrArg _ (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+        J (CommHopfAlgCat.commonKernelLift generator j) (generator j)
+        (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator j)
+        (CommAlgCat.of 𝔽₂ A) q).symm
+
 /-- The quotient-coordinate equivalence commutes with change of coefficient algebra. -/
 @[simp] theorem coordinatePointsEquiv_mapPoints {A : Type v} {B : Type w}
     [CommRing A] [CommRing B] [Algebra 𝔽₂ A] [Algebra 𝔽₂ B]

@@ -46,8 +46,11 @@ private theorem coe_idealProjection (e : A) (a : A) :
     LinearMap.toSpanSingleton_apply, SetLike.val_smul, smul_eq_mul,
     coe_spanSingletonGenerator]
 
-variable {k} in
-/-- A pure tensor of idempotents is idempotent in the tensor algebra. -/
+variable {k A B : Type*} [CommSemiring k]
+  [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
+  [Module k A] [SMulCommClass k A A] [IsScalarTower k A A]
+  [Module k B] [SMulCommClass k B B] [IsScalarTower k B B] {e : A} {f : B} in
+/-- A pure tensor of idempotents is idempotent in the tensor product. -/
 theorem _root_.IsIdempotentElem.tmul (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
     IsIdempotentElem (e ⊗ₜ[k] f) := by
   rw [IsIdempotentElem, Algebra.TensorProduct.tmul_mul_tmul, he.eq, hf.eq]
@@ -59,8 +62,9 @@ private def idealTensorInclude :
 
 private def idealTensorToSpan (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
     (Ideal.span {e} : Ideal A) ⊗[k] (Ideal.span {f} : Ideal B) →ₗ[k]
-      (Ideal.span {e ⊗ₜ[k] f} : Ideal (A ⊗[k] B)) where
-  toFun t := ⟨idealTensorInclude k t, by
+      (Ideal.span {e ⊗ₜ[k] f} : Ideal (A ⊗[k] B)) :=
+  (idealTensorInclude k).codRestrict
+    ((Ideal.span {e ⊗ₜ[k] f} : Ideal (A ⊗[k] B)).restrictScalars k) fun t ↦ by
     apply (mem_span_singleton_iff_mul_eq_self (he.tmul (k := k) hf)).mpr
     induction t using TensorProduct.inductionOn with
     | tmul x y =>
@@ -68,14 +72,13 @@ private def idealTensorToSpan (he : IsIdempotentElem e) (hf : IsIdempotentElem f
         Submodule.subtype_apply, Algebra.TensorProduct.tmul_mul_tmul,
         (mem_span_singleton_iff_mul_eq_self he).mp x.2,
         (mem_span_singleton_iff_mul_eq_self hf).mp y.2]
-    | add t t' ht ht' => simp only [map_add, add_mul, ht, ht']⟩
-  map_add' t t' := Subtype.ext ((idealTensorInclude k).map_add t t')
-  map_smul' r t := Subtype.ext ((idealTensorInclude k).map_smul r t)
+    | add t t' ht ht' => simp only [map_add, add_mul, ht, ht']
 
 @[simp]
 private theorem coe_idealTensorToSpan (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (t : (Ideal.span {e} : Ideal A) ⊗[k] (Ideal.span {f} : Ideal B)) :
-    (idealTensorToSpan k he hf t : A ⊗[k] B) = idealTensorInclude k t := rfl
+    (idealTensorToSpan k he hf t : A ⊗[k] B) = idealTensorInclude k t :=
+  LinearMap.codRestrict_apply _ _ t
 
 private def spanToIdealTensor :
     (Ideal.span {e ⊗ₜ[k] f} : Ideal (A ⊗[k] B)) →ₗ[k]
@@ -121,26 +124,16 @@ def spanSingletonTensorProductEquiv (he : IsIdempotentElem e) (hf : IsIdempotent
         LinearMap.id_apply, idealProjection, LinearMap.toSpanSingleton_apply,
         smul_spanSingletonGenerator he x, smul_spanSingletonGenerator hf y])
 
-/-- The idempotent-ideal identification includes each factor into its ambient algebra. -/
-@[simp]
-theorem coe_spanSingletonTensorProductEquiv_tmul
-    (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
-    (x : (Ideal.span {e} : Ideal A)) (y : (Ideal.span {f} : Ideal B)) :
-    (spanSingletonTensorProductEquiv k he hf (x ⊗ₜ[k] y) : A ⊗[k] B) =
-      (x : A) ⊗ₜ[k] (y : B) := (rfl)
-
 /-- The forward map is the tensor product of the two ideal inclusions. -/
+@[simp]
 theorem coe_spanSingletonTensorProductEquiv_apply
     (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (t : (Ideal.span {e} : Ideal A) ⊗[k] (Ideal.span {f} : Ideal B)) :
     (spanSingletonTensorProductEquiv k he hf t : A ⊗[k] B) =
       TensorProduct.map ((Ideal.span {e} : Ideal A).subtype.restrictScalars k)
         ((Ideal.span {f} : Ideal B).subtype.restrictScalars k) t := by
-  induction t using TensorProduct.inductionOn with
-  | tmul x y =>
-    rw [coe_spanSingletonTensorProductEquiv_tmul, TensorProduct.map_tmul]
-    rfl
-  | add t t' ht ht' => simp only [map_add, Submodule.coe_add, ht, ht']
+  simp only [spanSingletonTensorProductEquiv, LinearEquiv.coe_ofLinearMap,
+    coe_idealTensorToSpan, idealTensorInclude]
 
 /-- The inverse sends a scaled tensor generator to the tensor of the scaled generators. -/
 @[simp]
@@ -151,9 +144,10 @@ theorem spanSingletonTensorProductEquiv_symm_tmul_smul_generator
         (a • spanSingletonGenerator e) ⊗ₜ[k] (b • spanSingletonGenerator f) := by
   apply (spanSingletonTensorProductEquiv k he hf).injective
   apply Subtype.ext
-  rw [LinearEquiv.apply_symm_apply, coe_spanSingletonTensorProductEquiv_tmul]
-  simp only [SetLike.val_smul, smul_eq_mul, coe_spanSingletonGenerator,
-    Algebra.TensorProduct.tmul_mul_tmul]
+  rw [LinearEquiv.apply_symm_apply]
+  simp only [coe_spanSingletonTensorProductEquiv_apply, TensorProduct.map_tmul,
+    LinearMap.restrictScalars_apply, Submodule.subtype_apply, SetLike.val_smul,
+    smul_eq_mul, coe_spanSingletonGenerator, Algebra.TensorProduct.tmul_mul_tmul]
 
 /-- The identification carries the two factor actions to the tensor-algebra action. -/
 @[simp]
@@ -168,7 +162,8 @@ theorem spanSingletonTensorProductEquiv_map_smul
   induction t using TensorProduct.inductionOn with
   | tmul x y =>
     simp only [TensorProduct.map_tmul, Algebra.lsmul_apply,
-      coe_spanSingletonTensorProductEquiv_tmul, SetLike.val_smul,
+      coe_spanSingletonTensorProductEquiv_apply, LinearMap.restrictScalars_apply,
+      Submodule.subtype_apply, SetLike.val_smul,
       smul_eq_mul, Algebra.TensorProduct.tmul_mul_tmul]
   | add t t' ht ht' =>
     simp only [map_add, smul_add, Submodule.coe_add, ht, ht']

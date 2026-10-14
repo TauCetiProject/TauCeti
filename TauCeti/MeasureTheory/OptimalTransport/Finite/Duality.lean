@@ -269,7 +269,8 @@ theorem isCompact_realPlans : IsCompact (RealPlans μ ν) :=
   IsCompact.of_isClosed_subset isCompact_stdSimplexSet isClosed_realPlans
     realPlans_subset_stdSimplex
 
-private theorem realPlans_nonempty (μ : PMF ι) (ν : PMF κ) : (RealPlans μ ν).Nonempty :=
+/-- The real plans with prescribed marginals form a nonempty set: the independent plan is one. -/
+theorem realPlans_nonempty (μ : PMF ι) (ν : PMF κ) : (RealPlans μ ν).Nonempty :=
   ⟨(TransportMatrix.independent μ ν).toRealFun,
     TransportMatrix.toRealFun_mem_realPlans _⟩
 

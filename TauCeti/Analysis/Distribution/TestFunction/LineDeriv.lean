@@ -16,13 +16,16 @@ evaluates it pointwise as the classical directional derivative, and shows that t
 derivatives of a test function commute, `∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ)`, because the second
 derivative of a smooth function is symmetric. Moving derivatives between the two sides of an
 integration-by-parts identity uses exactly this, for instance to show that weak derivatives
-commute.
+commute. Summing over an orthonormal basis, the Laplacian of a test function commutes with every
+directional derivative.
 
 ## Main declarations
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
+* `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
+  directional derivatives.
 -/
 
 public section
@@ -62,5 +65,23 @@ in the direction `v`. -/
 theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
     lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, F)) x w = lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, F)) x v := by
   rw [← lineDerivOp_apply, ← lineDerivOp_apply, lineDerivOp_comm]
+
+end TestFunction
+
+namespace TestFunction
+
+open LineDeriv TopologicalSpace
+open scoped Distributions
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E}
+
+/-- **The Laplacian of test functions commutes with directional derivatives**:
+`∂_{v} (Δφ) = Δ (∂_{v} φ)`. -/
+theorem lineDerivOp_laplacianCLM (φ : 𝓓(Ω, F)) (v : E) :
+    ∂_{v} (laplacianCLM ℝ E 𝓓(Ω, F) φ) = laplacianCLM ℝ E 𝓓(Ω, F) (∂_{v} φ) := by
+  simp only [laplacianCLM_eq_sum (stdOrthonormalBasis ℝ E), lineDerivOp_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [lineDerivOp_comm, lineDerivOp_comm φ v]
 
 end TestFunction

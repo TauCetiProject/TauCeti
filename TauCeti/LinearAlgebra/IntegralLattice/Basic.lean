@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -162,6 +162,15 @@ theorem integralForm_cast (L : IntegralLattice V) (x y : L) :
     (L.integralForm x y : ℚ) = L.form x y := by
   rw [integralForm, LinearMap.comp_apply, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
   exact L.form.dualSubmodulePairing_spec (Submodule.inclusion L.le_dual x) y
+
+/-- An inclusion of carriers with the same ambient form preserves the integral form. -/
+theorem integralForm_inclusion (L M : IntegralLattice V) (hform : L.form = M.form)
+    (hle : L.carrier ≤ M.carrier) (x y : L) :
+    M.integralForm (Submodule.inclusion hle x) (Submodule.inclusion hle y) =
+      L.integralForm x y := by
+  apply Int.cast_injective (α := ℚ)
+  rw [M.integralForm_cast, L.integralForm_cast, hform]
+  simp only [Submodule.coe_inclusion]
 
 /-- The induced integral form is symmetric. -/
 theorem isSymm_integralForm (L : IntegralLattice V) : L.integralForm.IsSymm := by

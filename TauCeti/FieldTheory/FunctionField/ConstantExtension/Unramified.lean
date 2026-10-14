@@ -9,13 +9,16 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 /-!
 # Unramified constant field extensions
 
 Let `k' / k` be finite and separable and suppose that `F'` is the compositum `F k'`. Then
-`F' / F` is separable and is unramified at every place.
+`F' / F` is separable and is unramified at every place. The ramification-index statement extends
+to arbitrary separable algebraic extensions of constants, including algebraic closures over a
+perfect base field: every place still has index one.
 
 These are the local inputs to the comparison of the divisor theories of `F / k` and `F' / k'`.
 Vanishing different exponents say that the different divisor of `F' / F` is zero, and
@@ -47,7 +50,7 @@ is established.
 * `TauCeti.Place.isUnramifiedAt_of_constantCompositum_eq_top`: each corresponding local model is
   unramified.
 * `TauCeti.Place.ramificationIdx_eq_one_of_constantCompositum_eq_top`: every place has
-  ramification index one.
+  ramification index one, even in an infinite separable algebraic constant extension.
 * `TauCeti.isIntegrallyClosedIn_of_isTotallyRamified`: a finite separable extension with a
   totally ramified place acquires no new constants.
 
@@ -132,19 +135,45 @@ theorem isUnramifiedAt_of_constantCompositum_eq_top
   exact (differentExponent_eq_zero_iff k F P').mp
     (differentExponent_eq_zero_of_constantCompositum_eq_top hcomp P')
 
-/-- Every place in a finite separable constant extension has ramification index one. -/
+/-- Every place in an arbitrary separable algebraic constant extension has ramification index
+one. Neither finiteness of the constant extension nor exactness of the constants is required. -/
 theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
-    [FiniteDimensional k k'] [Algebra.IsSeparable k k']
+    [Algebra.IsSeparable k k']
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
     ramificationIdx F P' = 1 := by
-  let _ : FiniteDimensional F F' :=
-    finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
-  let _ : Algebra.IsSeparable F F' :=
-    isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
-  have := isUnramifiedAt_of_constantCompositum_eq_top (k := k) (k' := k') (F := F) hcomp P'
-  rw [ramificationIdx_eq_ramificationIdx_center (R := (P'.restrict k F).integers) k F P'
-    (algebraMap_mem_integers_of_mem_integralClosure k F P'), ← centerIntegralClosure_def]
-  exact Ideal.ramificationIdx_eq_one_of_isUnramifiedAt
+  let : Algebra.IsSeparable F F' := isSeparable_of_constantCompositum_eq_top (k := k) hcomp
+  -- A uniformizer already occurs over a finite extension of the constants.
+  obtain ⟨t, ht⟩ := P'.exists_isUniformizer
+  rw [isUniformizer_iff_ord_eq_one] at ht
+  obtain ⟨L, hL, htL⟩ :=
+    exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
+      (k := k) (F := F) (by rw [hcomp]; exact IntermediateField.mem_top (x := t))
+  let : FiniteDimensional k L := hL
+  let E := constantCompositum F L F'
+  let : Algebra L E := ((algebraMap L F').codRestrict E
+    (algebraMap_mem_constantCompositum F L F')).toAlgebra
+  have : IsScalarTower L E F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k L E := IsScalarTower.of_algebraMap_eq fun c ↦
+    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+  have hE : constantCompositum F L E = ⊤ :=
+    (constantCompositum_eq_top_iff F L F' E).mpr rfl
+  let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
+  let : Algebra.IsSeparable F E := isSeparable_of_constantCompositum_eq_top (k := k) hE
+  let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)
+  let Q := P'.restrict L E
+  -- The finite constant extension has index one by the local unramifiedness criterion.
+  have hQ : Q.ramificationIdx F = 1 := by
+    have := isUnramifiedAt_of_constantCompositum_eq_top (k := k) hE Q
+    rw [ramificationIdx_eq_ramificationIdx_center (R := (Q.restrict k F).integers) k F Q
+      (algebraMap_mem_integers_of_mem_integralClosure k F Q), ← centerIntegralClosure_def]
+    exact Ideal.ramificationIdx_eq_one_of_isUnramifiedAt
+  -- Since `t` belongs to `E` and has order one upstairs, the remaining index is one too.
+  have he : P'.ramificationIdx E = 1 := by
+    have hord := ord_algebraMap_restrict L E P' (⟨t, htL⟩ : E)
+    rw [IntermediateField.algebraMap_apply, ht] at hord
+    exact_mod_cast Int.eq_one_of_mul_eq_one_right (by positivity) hord.symm
+  rw [ramificationIdx_restrict_mul (k₁ := L) (F₀ := F) (F₁ := E), he, one_mul]
+  exact hQ
 
 end Place
 

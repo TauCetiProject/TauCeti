@@ -92,7 +92,7 @@ projections, up to its degree-one shift. -/
 @[simp]
 theorem map_decompose (hM : IsCurvedDGRightModule h ℳ dM) (q : ℤ) (x : M) :
     dM (decompose ℳ x q : M) = (decompose ℳ (dM x) (q + 1) : M) :=
-  DirectSum.map_decompose_shift ℳ ℳ dM (· + 1) (add_left_injective 1)
+  DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) q x
 
 /-- The right Leibniz rule against a cycle of the algebra.  The signed term vanishes, so the

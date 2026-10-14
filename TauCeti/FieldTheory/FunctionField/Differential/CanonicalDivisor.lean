@@ -54,7 +54,8 @@ the Riemann–Roch identity.
   the characteristic property of that divisor.
 * `TauCeti.weilDifferentialDivisor_repartitionDualMul`: **the transformation law**
   `(z · ω) = div z + (ω)` (Stichtenoth, Proposition 1.5.13), which is what makes the class of
-  `(ω)` — the canonical class — independent of `ω`.
+  `(ω)` — the canonical class — independent of `ω`;
+  `TauCeti.weilDifferentialOrder_repartitionDualMul` gives its coefficient form at each place.
 * `TauCeti.divisorClass_weilDifferentialDivisor`: the divisor of every nonzero Weil differential
   represents `TauCeti.canonicalClass`.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace`: the
@@ -239,6 +240,18 @@ theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     rw [hcancel, Divisor.principal_inv, ← sub_eq_add_neg] at h
     rw [add_comm]
     exact sub_le_iff_le_add.mp (hW.2 h)
+
+/-- Multiplication by a nonzero function adds its order to the order of a Weil differential
+at every place. This is the coefficient form of `weilDifferentialDivisor_repartitionDualMul`. -/
+@[simp]
+theorem weilDifferentialOrder_repartitionDualMul (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (z : Fˣ) (P : Place k F) :
+    weilDifferentialOrder hF hex (repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hmem)
+        (repartitionDualMul_ne_zero hF (Units.ne_zero z) hω) P =
+      P.ord (z : F) + weilDifferentialOrder hF hex hmem hω P := by
+  simp only [weilDifferentialOrder, weilDifferentialDivisor_repartitionDualMul hF hex hmem hω z,
+    AlgebraicGeometry.WeilDivisor.coeff_add, Divisor.coeff_principal]
 
 /-- The divisors of any two nonzero Weil differentials have the same divisor class. -/
 theorem divisorClass_weilDifferentialDivisor_eq (hF : IsFunctionField k F)

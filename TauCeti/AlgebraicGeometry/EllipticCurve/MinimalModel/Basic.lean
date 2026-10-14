@@ -19,19 +19,26 @@ minimality only from that property or from a class that already extends it. Esta
 a caller can discharge by hand.
 
 This file supplies the cheapest sufficient conditions — an integral Weierstrass equation whose `c₄`
-or whose discriminant is a **unit** at the place is already minimal — and then the comparison any
-two minimal models admit: they have the same discriminant valuation, so a change of variables
-between them has a scaling factor of valuation `1`, and they have the same `c₄` valuation too.
+is a **unit** at the place, or whose discriminant has valuation **less than `12`**, is already
+minimal — and then the comparison any two minimal models admit: they have the same discriminant
+valuation, so a change of variables between them has a scaling factor of valuation `1`, and they
+have the same `c₄` valuation too.
 
 ## Main results
 
 * `WeierstrassCurve.isMinimal_of_valuation_c₄_eq_one`: over the fraction field of a discrete
   valuation ring, an integral Weierstrass equation with `v (c₄) = 1` is minimal.
-* `WeierstrassCurve.isMinimal_of_valuation_Δ_eq_one`: so is one with `v (Δ) = 1`.
-* `WeierstrassCurve.isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄`: the same two criteria for an
+* `WeierstrassCurve.isMinimal_of_exp_neg_twelve_lt_valuation_Δ`: so is one with
+  `v (Δ) > exp (-12)`, that is with additive discriminant valuation less than `12`.
+* `WeierstrassCurve.isMinimal_of_valuation_Δ_eq_one`: in particular, so is one with `v (Δ) = 1`.
+* `WeierstrassCurve.isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄`: the unit criteria for an
   equation given over `R`, whose discriminant or `c₄` is a unit.
+* `WeierstrassCurve.isMinimal_baseChange_of_not_pow_twelve_dvd_Δ`: an equation over `R` whose
+  discriminant is not divisible by `ϖ ^ 12` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
+* `WeierstrassCurve.exists_smul_minimal_eq_of_smul_eq`: Mathlib's chosen minimal equation reaches
+  every equation in its orbit by a change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
   equations are related by a change of variables.
 * `WeierstrassCurve.valuation_Δ_le_of_isMinimal_smul`: no integral model in the orbit of a minimal
@@ -53,6 +60,8 @@ between them has a scaling factor of valuation `1`, and they have the same `c₄
   factor of such a change of variables satisfies `v (u) = 1`.
 * `WeierstrassCurve.valuation_c₄_eq_of_isMinimal_smul`: hence the two minimal models have equal
   `v (c₄)`.
+* `WeierstrassCurve.hasAdditiveReduction_iff_of_isMinimal_smul`: so they have additive reduction
+  together.
 * `WeierstrassCurve.VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul`: the scaling
   factor is the image of a unit of the discrete valuation ring.
 * `VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul`: so the
@@ -77,9 +86,9 @@ between them has a scaling factor of valuation `1`, and they have the same `c₄
 
 `valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul` supply the unit needed for descent.
-Turning that into a change of variables actually *defined* over `R` is the job of
-`WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which also consumes integrality
-of both models. A change of variables defined over `R` is one the reduction can see, and that is
+Turning that into a change of variables actually *defined* over `R` is the job of Mathlib's
+`WeierstrassCurve.variableChange_integral_of_u_integral`, which also consumes integrality of both
+models. A change of variables defined over `R` is one the reduction can see, and that is
 what carries split multiplicativity across.
 
 ## Why this is the useful form
@@ -95,13 +104,14 @@ criterion is what turns that computation into minimality of the twisted model.
 
 ## Mathematical content
 
-It is the unit-`c₄` case of the Kraus–Laska criterion — the special case "`v (c₄) < 4` or
-`v (Δ) < 12` implies minimal" of Silverman, *The Arithmetic of Elliptic Curves*,
-Remark VII.1.1, restricted to `v (c₄) = 0`. The proof is direct: a change of variables scales
-`c₄` by `u⁻⁴` and `Δ` by `u⁻¹²`, and integrality of the transformed model bounds `v (u⁻⁴)` by
-`1`, hence `v (u⁻¹²) ≤ 1`, so no change of variables can raise the discriminant's valuation.
-The unit-`Δ` case, `isMinimal_of_valuation_Δ_eq_one`, is immediate, since every integral model
-has `v (Δ) ≤ 1`.
+The two criteria are the unit-`c₄` case and the discriminant case of the sufficient condition
+"`v (c₄) < 4` or `v (Δ) < 12` implies minimal" of Silverman, *The Arithmetic of Elliptic
+Curves*, Remark VII.1.1. Both proofs are direct. A change of variables scales `c₄` by `u⁻⁴` and
+`Δ` by `u⁻¹²`. In the unit-`c₄` case, integrality of the transformed model bounds `v (u⁻⁴)` by
+`1`, hence `v (u⁻¹²) ≤ 1`, so no change of variables can raise the discriminant's valuation. In
+the discriminant case, a change of variables with `v (u⁻¹) > 1` has `v (u⁻¹) ≥ exp 1`, since the
+valuation is discrete, so it would multiply `v (Δ) > exp (-12)` by at least `exp 12` and leave a
+non-integral discriminant.
 
 ## Provenance
 
@@ -155,16 +165,37 @@ theorem isMinimal_of_valuation_c₄_eq_one (W : WeierstrassCurve K) [IsIntegral 
   simpa [variableChange_Δ, map_mul, map_pow] using mul_le_of_le_one_left'
     (pow_le_one' ((pow_le_one_iff (by norm_num)).mp hint) 12)
 
-/-- **An integral Weierstrass equation whose discriminant is a unit at the place is minimal.** The
-discriminant of every integral model has valuation at most `1`, which a unit discriminant already
-attains. This is the `v (Δ) = 0` case of Silverman, *AEC*, Remark VII.1.1. -/
-theorem isMinimal_of_valuation_Δ_eq_one (W : WeierstrassCurve K) [IsIntegral R W]
-    (hΔ : valuation K (maximalIdeal R) W.Δ = 1) : IsMinimal R W := by
+/-- **An integral Weierstrass equation whose discriminant has additive valuation less than `12` is
+minimal.** This is the discriminant case of Silverman, *AEC*, Remark VII.1.1.
+
+The hypothesis is stated multiplicatively, through the adic valuation of `W.Δ : K` with values in
+`ℤᵐ⁰`: the inequality `exp (-12) < v (Δ)` says exactly that the additive valuation of `Δ` (its
+order at the place) is less than `12`. For an equation with coefficients in `R`,
+`isMinimal_baseChange_of_not_pow_twelve_dvd_Δ` reads the same condition as `¬ ϖ ^ 12 ∣ Δ`. -/
+theorem isMinimal_of_exp_neg_twelve_lt_valuation_Δ (W : WeierstrassCurve K) [IsIntegral R W]
+    (hΔ : WithZero.exp (-12) < valuation K (maximalIdeal R) W.Δ) : IsMinimal R W := by
   refine ⟨⟨by simpa using ‹IsIntegral R W›, ?_⟩⟩
   intro C hC _
   simp only [one_smul, ← Subtype.coe_le_coe, valuation_Δ_aux_eq_of_isIntegral R (C • W),
-    valuation_Δ_aux_eq_of_isIntegral R W, hΔ]
-  simpa [← integralModel_Δ_eq R (C • W)] using valuation_le_one _ _
+    valuation_Δ_aux_eq_of_isIntegral R W]
+  have hint : valuation K (maximalIdeal R) (C • W).Δ ≤ 1 := by
+    simpa [← integralModel_Δ_eq R (C • W)] using valuation_le_one _ _
+  rw [variableChange_Δ, map_mul, map_pow] at hint ⊢
+  refine mul_le_of_le_one_left' (pow_le_one' (not_lt.1 fun hu ↦ hint.not_gt ?_) 12)
+  -- A valuation in `ℤᵐ⁰` greater than `1` is at least `exp 1`.
+  have hu := (WithZero.lt_mul_exp_iff_le one_ne_zero).not.2 hu.not_ge
+  rw [one_mul, not_lt] at hu
+  calc 1 = WithZero.exp 1 ^ 12 * WithZero.exp (-12) := by
+        rw [← WithZero.exp_nsmul, ← WithZero.exp_add]; norm_num
+    _ < WithZero.exp 1 ^ 12 * valuation K (maximalIdeal R) W.Δ :=
+        mul_lt_mul_of_pos_left hΔ (by simp)
+    _ ≤ _ := mul_le_mul_left (pow_le_pow_left₀ zero_le hu 12) _
+
+/-- **An integral Weierstrass equation whose discriminant is a unit at the place is minimal.** This
+is the `v (Δ) = 0` case of `isMinimal_of_exp_neg_twelve_lt_valuation_Δ`. -/
+theorem isMinimal_of_valuation_Δ_eq_one (W : WeierstrassCurve K) [IsIntegral R W]
+    (hΔ : valuation K (maximalIdeal R) W.Δ = 1) : IsMinimal R W :=
+  isMinimal_of_exp_neg_twelve_lt_valuation_Δ R W (by simp [hΔ])
 
 /-- **An equation over `R` whose discriminant or `c₄` is a unit is minimal over `R`.** These are
 the criteria `isMinimal_of_valuation_Δ_eq_one` and `isMinimal_of_valuation_c₄_eq_one`, for an
@@ -178,11 +209,36 @@ theorem isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄ (W : WeierstrassCurve R
   · exact isMinimal_of_valuation_Δ_eq_one R _ (by rwa [baseChange, map_Δ, hval])
   · exact isMinimal_of_valuation_c₄_eq_one R _ (by rwa [baseChange, map_c₄, hval])
 
+/-- **An equation over `R` whose discriminant is not divisible by `ϖ ^ 12` is minimal over `R`.**
+This is `isMinimal_of_exp_neg_twelve_lt_valuation_Δ` for an equation whose coefficients are given
+in `R`, with the valuation condition read as a divisibility. -/
+theorem isMinimal_baseChange_of_not_pow_twelve_dvd_Δ (W : WeierstrassCurve R) {ϖ : R}
+    (hϖ : Irreducible ϖ) (h : ¬ ϖ ^ 12 ∣ W.Δ) : IsMinimal R (W.baseChange K) := by
+  have : IsIntegral R (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+  refine isMinimal_of_exp_neg_twelve_lt_valuation_Δ R _ ?_
+  have hΔ : W.Δ ≠ 0 := fun h₀ ↦ h (h₀ ▸ dvd_zero _)
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 (addVal_eq_top_iff.not.2 hΔ)
+  have hn12 : n < 12 := by
+    by_contra h'
+    refine h (addVal_le_iff_dvd.1 ?_)
+    rw [addVal_pow, addVal_uniformizer hϖ, ← hn, nsmul_one]
+    exact_mod_cast not_lt.1 h'
+  rw [baseChange, map_Δ, valuation_of_algebraMap, intValuation_maximalIdeal, ← hn,
+    ENat.recTopCoe_natCast, ← WithZero.exp_eq_coe_ofAdd, WithZero.inv_exp, WithZero.exp_lt_exp]
+  omega
+
 /-- **Mathlib's chosen minimal equation lies in the variable-change orbit.** The equation
 `W.minimal R` is obtained from `W` by a change of variables. -/
 theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, C • W = W.minimal R :=
   ⟨_, rfl⟩
+
+/-- **Mathlib's chosen minimal equation reaches every equation in its orbit.** If a change of
+variables carries `W` to `W'`, then some change of variables carries `W.minimal R` to `W'`. -/
+theorem exists_smul_minimal_eq_of_smul_eq {W W' : WeierstrassCurve K} (D : VariableChange K)
+    (hD : D • W = W') : ∃ C : VariableChange K, C • W.minimal R = W' := by
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  exact ⟨D * C⁻¹, by rw [mul_smul, ← hC, inv_smul_smul, hD]⟩
 
 /-- The chosen minimal equations of two equations related by a change of variables are themselves
 related by a change of variables. -/
@@ -267,7 +323,7 @@ theorem valuation_c₄_baseChange_smul (W : WeierstrassCurve K) (C : VariableCha
 /-- **A change of variables defined over `R` preserves minimality**: if `W` is minimal over `R`
 and `C` is a change of variables with coefficients in `R`, then `C • W` is minimal over `R`. With
 `valuation_u_eq_one_of_isMinimal_smul` and
-`VariableChange.exists_baseChange_eq_of_smul_eq` in the other direction, the changes of variables
+`variableChange_integral_of_u_integral` in the other direction, the changes of variables
 between minimal models of an elliptic curve are exactly those defined over `R`. -/
 instance isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
     (C : VariableChange R) : IsMinimal R (C.baseChange K • W) :=
@@ -313,7 +369,7 @@ theorem hasSplitMultiplicativeReduction_baseChange_smul_iff (W : WeierstrassCurv
 /-- **The scaling factor of a change of variables between two minimal models of an elliptic curve
 has valuation `1`.** Over a discrete valuation ring that says `u` is a **unit**: it and its inverse
 are both integral, so such a change of variables is as integral as its coordinates allow. This is
-the hypothesis `VariableChange.exists_baseChange_eq_of_smul_eq` asks for, and hence the step by
+the hypothesis `variableChange_integral_of_u_integral` asks for, and hence the step by
 which a property of the reduction transfers between two minimal models of one curve. -/
 theorem valuation_u_eq_one_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [IsMinimal R W₁]
     [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂) :
@@ -342,6 +398,15 @@ theorem valuation_c₄_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [Is
     valuation_u_eq_one_of_isMinimal_smul R D hD]
   simp
 
+/-- **Additive reduction is an isomorphism invariant of minimal models.** Two minimal models of an
+elliptic curve related by a change of variables have the same valuations of `Δ` and of `c₄`, so
+they have additive reduction together. -/
+theorem hasAdditiveReduction_iff_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [IsMinimal R W₁]
+    [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂) :
+    W₂.HasAdditiveReduction R ↔ W₁.HasAdditiveReduction R := by
+  simp only [hasAdditiveReduction_iff, valuation_Δ_eq_of_isMinimal_smul R D hD,
+    valuation_c₄_eq_of_isMinimal_smul R D hD, ‹IsMinimal R W₁›, ‹IsMinimal R W₂›, true_and]
+
 namespace VariableChange
 
 /-- The scaling factor between two minimal elliptic equations is the image of a unit of the
@@ -365,7 +430,7 @@ theorem exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul
     (D : VariableChange K) (hD : D • W₁ = W₂) :
     ∃ C : VariableChange R, C.baseChange K = D ∧ C • W₁.integralModel R = W₂.integralModel R := by
   obtain ⟨u₀, hau⟩ := exists_unit_algebraMap_eq_u_of_isMinimal_smul R D hD
-  obtain ⟨C, hC⟩ := exists_baseChange_eq_of_smul_eq R D hD u₀ hau
+  obtain ⟨C, hC⟩ := variableChange_integral_of_u_integral hD hau
   refine ⟨C, hC, (integralModel_eq_of_baseChange_eq ?_).symm⟩
   rw [WeierstrassCurve.baseChange, ← map_variableChange]
   exact (congrArg₂ (· • ·) hC (baseChange_integralModel_eq R W₁)).trans hD
@@ -481,7 +546,7 @@ This is what makes split multiplicative reduction a property of the curve at the
 of the equation presenting it. Mathlib's class is stated through a *chosen* integral model, so the
 transfer is not definitional: it needs `D` to be defined over `R`. Two results combine to give
 that — `valuation_u_eq_one_of_isMinimal_smul` supplies the unit scaling factor, and
-`VariableChange.exists_baseChange_eq_of_smul_eq` turns that unit, with integrality of both models,
+`variableChange_integral_of_u_integral` turns that unit, with integrality of both models,
 into the descent. A form of Silverman, *The Arithmetic of Elliptic Curves*, Remark VII.1.3(b), on
 the uniqueness of minimal models over a discrete valuation ring. -/
 theorem HasSplitMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K}

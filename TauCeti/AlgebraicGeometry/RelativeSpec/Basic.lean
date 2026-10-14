@@ -170,6 +170,50 @@ lemma _root_.CategoryTheory.CommMon.toSectionsPresheaf_comp_sectionsPresheafMap
   ext r
   exact (CommMon.sectionsAlgHom f U).commutes r
 
+/-- The algebra morphism built from a morphism of section rings induces that morphism. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_homOfSectionsPresheaf
+    {A B : CommMon X.Modules} (φ : A.sectionsPresheaf ⟶ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) :
+    CommMon.sectionsPresheafMap (CommMon.homOfSectionsPresheaf φ h) = φ := by
+  ext U x
+  exact (CommMon.sectionsAlgHom_apply _ U.unop x).trans
+    (CommMon.homOfSectionsPresheaf_hom_hom_app_apply φ h U.unop x)
+
+/-- An algebra morphism is recovered from the morphism of section rings it induces. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.homOfSectionsPresheaf_sectionsPresheafMap
+    {A B : CommMon X.Modules} (f : A ⟶ B) :
+    CommMon.homOfSectionsPresheaf (CommMon.sectionsPresheafMap f)
+      (CommMon.toSectionsPresheaf_comp_sectionsPresheafMap f) = f :=
+  CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext fun x ↦
+    (CommMon.sectionsAlgHom_apply _ U x).trans
+      ((CommMon.homOfSectionsPresheaf_hom_hom_app_apply _ _ U x).trans
+        (CommMon.sectionsAlgHom_apply f U x))
+
+/-- Two morphisms into the presheaf of section rings of a commutative `𝒪ₓ`-algebra agree as soon
+as they agree on affine opens. -/
+lemma _root_.CategoryTheory.CommMon.sectionsPresheaf_hom_ext {F : X.Opensᵒᵖ ⥤ CommRingCat.{u}}
+    {f g : F ⟶ A.sectionsPresheaf}
+    (h : ∀ U : X.Opens, IsAffineOpen U → f.app (op U) = g.app (op U)) : f = g := by
+  have hB : TopologicalSpace.Opens.IsBasis (Set.range fun U : X.affineOpens ↦ (U : X.Opens)) := by
+    rw [Subtype.range_coe]
+    exact X.isBasis_affineOpens
+  exact TopCat.Sheaf.hom_ext F ⟨A.sectionsPresheaf, A.isSheaf_sectionsPresheaf⟩ hB
+    fun U ↦ h U.1 U.2
+
+/-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
+sections over affine opens. -/
+lemma _root_.CategoryTheory.CommMon.hom_ext_of_isAffineOpen {A B : CommMon X.Modules}
+    {f g : A ⟶ B}
+    (h : ∀ U : X.Opens, IsAffineOpen U → CommMon.sectionsAlgHom f U = CommMon.sectionsAlgHom g U) :
+    f = g := by
+  have hp : CommMon.sectionsPresheafMap f = CommMon.sectionsPresheafMap g :=
+    B.sectionsPresheaf_hom_ext fun U hU ↦ by
+      rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsPresheafMap_app, h U hU]
+  exact CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext fun x ↦
+    ConcreteCategory.congr_hom (NatTrans.congr_app hp (op U)) x
+
 /-- The `Γ(X, U)`-module structure on the sections over a basic open `X.basicOpen f` of an
 `𝒪ₓ`-module (`Scheme.Modules.moduleBasicOpen`) is, for a commutative `𝒪ₓ`-algebra, multiplication
 by the restriction of the structure map. -/
@@ -249,6 +293,14 @@ variable [A.X.IsQuasicoherent]
 def _root_.CategoryTheory.CommMon.relativeSpecGluingData :
     (directedCover X).RelativeGluingData :=
   relativeGluingData A.coequifibered_toSectionsPresheaf
+
+/-- The transition map between relative-spectrum charts is the spectrum of restriction
+of sections along the corresponding inclusion of affine opens. -/
+lemma _root_.CategoryTheory.CommMon.relativeSpecGluingData_functor_map
+    {U U' : X.AffineZariskiSite} (h : U ⟶ U') :
+    A.relativeSpecGluingData.functor.map h =
+      Spec.map (A.sectionsPresheaf.map ((toOpensFunctor X).map h).op) :=
+  (rfl)
 
 /-- The gluing diagram of the relative spectrum is locally directed. -/
 instance _root_.CategoryTheory.CommMon.isLocallyDirected_relativeSpecGluingData :

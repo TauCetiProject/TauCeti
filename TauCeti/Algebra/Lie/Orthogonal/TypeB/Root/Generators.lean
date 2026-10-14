@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.ToLin
 This file constructs integral matrices for both signs of the Bourbaki simple roots in the standard
 split model `LieAlgebra.Orthogonal.typeB ι K`, together with the auxiliary difference-root family
 `εᵢ - εⱼ`. For a difference root, the matrices are the usual paired matrix units. For a short
-root `εᵢ`, the normalization forced by Mathlib's form matrix `diag(2, J)` is
+root `εᵢ`, Mathlib's form matrix `diag(2, J)` forces the ratio of the two coefficients in each root
+matrix; the integral normalization used here is
 
 ```text
 eᵢ = 2 Eᵢ₀ - E₀,-ᵢ,       fᵢ = E₀,ᵢ - 2 E-ᵢ,₀.
@@ -132,10 +133,8 @@ theorem typeBDifferenceRootMatrix_mem_typeB (i j : ι) (hij : i ≠ j) :
     LieAlgebra.Orthogonal.JB ι K * (-typeBDifferenceRootMatrix (K := K) i j hij)
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBDifferenceRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
-      Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm]
-  all_goals
-    by_cases hia : i = a <;> by_cases hja : j = a <;>
-      by_cases hib : i = b <;> by_cases hjb : j = b <;> simp_all <;> aesop
+      Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm, ite_and]
+  all_goals grind
 
 /-- The root vector `e_{εᵢ-εⱼ}` in the split type-`B` Lie algebra. -/
 def typeBDifferenceRootGenerator (i j : ι) (hij : i ≠ j) :
@@ -192,6 +191,18 @@ theorem typeBDifferenceRootGenerator_lie_swap (i j : ι) (hij : i ≠ j) :
       mul_sub, sub_mul, Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne,
       Matrix.single_apply, Pi.single_apply]
   all_goals aesop
+
+/-- Concatenated difference-root vectors bracket to the difference-root vector of the concatenated
+index pair. -/
+@[simp]
+theorem typeBDifferenceRootGenerator_lie_chain (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k)
+    (hik : i ≠ k) :
+    ⁅typeBDifferenceRootGenerator (K := K) i j hij,
+      typeBDifferenceRootGenerator (K := K) j k hjk⁆ =
+      typeBDifferenceRootGenerator i k hik := by
+  apply Subtype.ext
+  simpa only [LieSubalgebra.coe_bracket, coe_typeBDifferenceRootGenerator] using
+    typeBDifferenceRootMatrix_lie_differenceRootMatrix_chain (K := K) i j j k hij hjk rfl hik
 
 /-- Every difference-root matrix is square-zero. -/
 theorem typeBDifferenceRootMatrix_mul_self (i j : ι) (hij : i ≠ j) :

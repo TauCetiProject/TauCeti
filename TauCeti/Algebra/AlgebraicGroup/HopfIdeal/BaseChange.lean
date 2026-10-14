@@ -66,6 +66,8 @@ along `h ↦ 1 ⊗ h`.
   of surjective morphisms matched by base change.
 * `TauCeti.CommHopfAlgCat.quotientBaseChangeIsoOfMapEq`: transport of this identification
   across an ambient base-change isomorphism carrying the base-changed ideal to a target ideal.
+* `TauCeti.CommHopfAlgCat.baseChangeIsoOfEqQuotient`: the same transport for Hopf algebras
+  presented as the two quotients only up to equality.
 * `TauCeti.CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIso_hom`: the identification is
   compatible with the two quotient morphisms.
 * `TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff`: a point of the
@@ -108,7 +110,7 @@ noncomputable def baseChangeHopfIdeal (J : HopfIdeal k H) :
 
 /-- Membership in the base-changed Hopf ideal is vanishing under the base-changed quotient
 morphism. -/
-@[simp]
+@[simp↓]
 theorem mem_baseChangeHopfIdeal_iff (J : HopfIdeal k H) (y : baseChange (K := K) H) :
     y ∈ baseChangeHopfIdeal (K := K) J ↔ (baseChangeMap (K := K) (mkQuotient H J)).hom y = 0 :=
   HopfIdeal.mem_kerOfSurjective _ _
@@ -526,6 +528,30 @@ theorem baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K] (f : ∀ i, 
 
 end FreeBaseChange
 
+section CommonKernelIso
+
+variable {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
+
+/-- An ambient base-change isomorphism carries the base change of a common-kernel Hopf ideal to
+the common kernel of a target family, when each target map is obtained from the base-changed
+generator by an isomorphism of its codomain. -/
+theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K]
+    {H' : _root_.CommHopfAlgCat.{max w v} K} {N' : ι → _root_.CommHopfAlgCat.{max w v} K}
+    (f : ∀ i, H ⟶ N i) (ambient : baseChange (K := K) H ≅ H')
+    (e : ∀ i, baseChange (K := K) (N i) ≅ N' i) (g : ∀ i, H' ⟶ N' i)
+    (h : ∀ i, (ambient.inv ≫ baseChangeMap (K := K) (f i)) ≫ (e i).hom = g i) :
+    (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).map ambient.hom.hom =
+      commonKernelHopfIdeal g := by
+  rw [baseChangeHopfIdeal_commonKernelHopfIdeal, map_commonKernelHopfIdeal]
+  rw [← commonKernelHopfIdeal_comp_of_injective
+    (fun i ↦ ambient.inv ≫ baseChangeMap (K := K) (f i)) (fun i ↦ (e i).hom)
+    fun i ↦ (ConcreteCategory.bijective_of_isIso (e i).hom).1]
+  congr 1
+  funext i
+  exact h i
+
+end CommonKernelIso
+
 /-- The quotient of a base change by a base-changed Hopf ideal is the base change of the
 quotient: `(K ⊗[k] H) ⧸ J_K ≅ K ⊗[k] (H ⧸ J)`.
 
@@ -726,6 +752,30 @@ theorem baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
     simp
   rw [quotientBaseChangeIsoOfMapEq, Iso.trans_hom, ← Category.assoc, hbase,
     mkQuotient_comp_quotientIsoOfComapEq_hom]
+
+/-- Transport `quotientBaseChangeIsoOfMapEq` to Hopf algebras that are only propositionally
+presented as the two quotients, as happens for sealed named quotients. -/
+noncomputable def baseChangeIsoOfEqQuotient {A : _root_.CommHopfAlgCat.{v} k}
+    {H' A' : _root_.CommHopfAlgCat.{max w v} K} (J : HopfIdeal k H) (J' : HopfIdeal K H')
+    (hA : A = quotient H J) (hA' : A' = quotient H' J') (e : baseChange (K := K) H ≅ H')
+    (hJ : (baseChangeHopfIdeal (K := K) J).map e.hom.hom = J') :
+    baseChange (K := K) A ≅ A' :=
+  eqToIso (congrArg (baseChange (K := K)) hA) ≪≫ quotientBaseChangeIsoOfMapEq J J' e hJ ≪≫
+    eqToIso hA'.symm
+
+/-- The transported base-change isomorphism commutes with maps that become the quotient
+morphisms under the two presentations. -/
+theorem baseChangeMap_comp_baseChangeIsoOfEqQuotient_hom {A : _root_.CommHopfAlgCat.{v} k}
+    {H' A' : _root_.CommHopfAlgCat.{max w v} K} (J : HopfIdeal k H) (J' : HopfIdeal K H')
+    (hA : A = quotient H J) (hA' : A' = quotient H' J') (e : baseChange (K := K) H ≅ H')
+    (hJ : (baseChangeHopfIdeal (K := K) J).map e.hom.hom = J') (f : H ⟶ A) (f' : H' ⟶ A')
+    (hf : f ≫ eqToHom hA = mkQuotient H J) (hf' : f' ≫ eqToHom hA' = mkQuotient H' J') :
+    baseChangeMap (K := K) f ≫ (baseChangeIsoOfEqQuotient J J' hA hA' e hJ).hom =
+      e.hom ≫ f' := by
+  subst hA hA'
+  simp only [eqToHom_refl, Category.comp_id] at hf hf'
+  subst hf hf'
+  simp [baseChangeIsoOfEqQuotient]
 
 variable (A : CommAlgCat.{x} K)
 

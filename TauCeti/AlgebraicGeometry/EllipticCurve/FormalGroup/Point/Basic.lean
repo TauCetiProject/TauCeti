@@ -127,7 +127,7 @@ noncomputable def formalPoint {I : Ideal O} (hI : IsAdic I) {t : O} (ht : t ∈ 
     have hT : algebraMap O K t ≠ 0 :=
       (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective O K)).mpr h0
     .mk (W.equation_formalPoint (K := K) (hI.isTopologicallyNilpotent_of_mem ht)
-      (W.algebraMap_formalWEval_ne_zero hI ht hT))
+      (W.algebraMap_formalWEval_ne_zero (hI.isTopologicallyNilpotent_of_mem ht) hT))
 
 open scoped Classical in
 /-- The parameter `0` gives the point at infinity. -/
@@ -147,7 +147,7 @@ theorem formalPoint_of_param_ne_zero {I : Ideal O} (hI : IsAdic I) {t : O} (ht :
     (h0 : t ≠ 0) :
     W.formalPoint (K := K) hI ht =
       .mk (W.equation_formalPoint (K := K) (hI.isTopologicallyNilpotent_of_mem ht)
-        (W.algebraMap_formalWEval_ne_zero hI ht
+        (W.algebraMap_formalWEval_ne_zero (hI.isTopologicallyNilpotent_of_mem ht)
           ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective O K)).mpr h0))) := by
   simp [formalPoint, h0]
 
@@ -180,7 +180,7 @@ theorem xCoord_formalPoint_mul_eq_one {I : Ideal O} (hI : IsAdic I) {t : O} (ht 
   have hinj := FaithfulSMul.algebraMap_injective O K
   have hT : algebraMap O K t ≠ 0 := (map_ne_zero_iff _ hinj).mpr ht0
   have hU : algebraMap O K (W.formalUEval t) ≠ 0 :=
-    ((W.isUnit_formalUEval hI ht).map (algebraMap O K)).ne_zero
+    ((W.isUnit_formalUEval (hI.isTopologicallyNilpotent_of_mem ht)).map (algebraMap O K)).ne_zero
   rw [W.formalWEval_eq_pow_mul_formalUEval (hI.isTopologicallyNilpotent_of_mem ht)]
   push_cast [map_mul, map_pow]
   field_simp
@@ -196,7 +196,7 @@ theorem yCoord_formalPoint_mul_eq_neg_one {I : Ideal O} (hI : IsAdic I) {t : O} 
   have hinj := FaithfulSMul.algebraMap_injective O K
   have hT : algebraMap O K t ≠ 0 := (map_ne_zero_iff _ hinj).mpr ht0
   have hU : algebraMap O K (W.formalUEval t) ≠ 0 :=
-    ((W.isUnit_formalUEval hI ht).map (algebraMap O K)).ne_zero
+    ((W.isUnit_formalUEval (hI.isTopologicallyNilpotent_of_mem ht)).map (algebraMap O K)).ne_zero
   rw [W.formalWEval_eq_pow_mul_formalUEval (hI.isTopologicallyNilpotent_of_mem ht)]
   push_cast [map_mul, map_pow]
   field_simp
@@ -213,7 +213,7 @@ theorem neg_xCoord_div_yCoord_formalPoint {I : Ideal O} (hI : IsAdic I) {t : O} 
   rcases eq_or_ne t 0 with rfl | h0
   · simp
   · rw [W.xCoord_formalPoint hI ht h0, W.yCoord_formalPoint hI ht h0]
-    have hw := W.algebraMap_formalWEval_ne_zero (S := K) hI ht
+    have hw := W.algebraMap_formalWEval_ne_zero (S := K) (hI.isTopologicallyNilpotent_of_mem ht)
       ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective O K)).mpr h0)
     field_simp
 
@@ -298,17 +298,15 @@ theorem formalPoint_formalInverseEval {I : Ideal O} (hI : IsAdic I) {t : O} (ht 
   have hV0 : W.formalInverseEval t ≠ 0 := W.formalInverseEval_ne_zero hE h0
   have hVmem : W.formalInverseEval t ∈ I := by
     simpa using W.formalInverseEval_mem (I := I) (k := 1) hE (by simpa using ht)
-  have hWt : algebraMap O K (W.formalWEval t) ≠ 0 := W.algebraMap_formalWEval_ne_zero hI ht
+  have hWt : algebraMap O K (W.formalWEval t) ≠ 0 := W.algebraMap_formalWEval_ne_zero hE
     ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective O K)).mpr h0)
   rw [W.formalPoint_of_param_ne_zero hI hVmem hV0,
     W.formalPoint_of_param_ne_zero hI ht h0]
   -- `Point.mk` is the `some` constructor, and `negY` at the original point is the negated
   -- `y`-coordinate the second lemma computes
   simp only [Affine.Point.mk, Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY]
-  refine ⟨W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hE
-      (W.hasEval_formalInverseEval hI ht), ?_⟩
+  refine ⟨W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hE, ?_⟩
   have hy := W.neg_one_div_algebraMap_formalWEval_formalInverseEval (K := K) hE
-    (W.hasEval_formalInverseEval hI ht)
   rw [neg_div, one_div] at hy
   rw [hy]
   field_simp
@@ -364,9 +362,9 @@ theorem mul_formalWEval_eq_mul_formalWEval_iff (K : Type*) [Field K] [Algebra O 
       (t₂ = t₁ ∨ t₂ = W.formalInverseEval t₁) := by simp [h₁0, h₂0]
   have hnz : ∀ {s : O}, s ≠ 0 → algebraMap O K s ≠ 0 := fun hs0 ↦ by simpa using hs0
   have hw₁ : algebraMap O K (W.formalWEval t₁) ≠ 0 :=
-    W.algebraMap_formalWEval_ne_zero hI h₁ (hnz h₁0)
+    W.algebraMap_formalWEval_ne_zero (hI.isTopologicallyNilpotent_of_mem h₁) (hnz h₁0)
   have hw₂ : algebraMap O K (W.formalWEval t₂) ≠ 0 :=
-    W.algebraMap_formalWEval_ne_zero hI h₂ (hnz h₂0)
+    W.algebraMap_formalWEval_ne_zero (hI.isTopologicallyNilpotent_of_mem h₂) (hnz h₂0)
   rw [hred, ← W.xRep_formalPoint_eq_iff K hI h₁ h₂,
     W.formalPoint_of_param_ne_zero hI h₂ h₂0, W.formalPoint_of_param_ne_zero hI h₁ h₁0]
   simp only [Affine.Point.mk, Affine.Point.xRep_some, Matrix.vecCons_inj, and_true]

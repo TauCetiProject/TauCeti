@@ -651,7 +651,9 @@ variable (φ : A →+* B) (hφ : Continuous φ) (hplus : ∀ a ∈ Aplus, φ a �
 change on rational opens. -/
 private theorem isBaseChangeOnRational_presentationLimitPresheafIsoPushforward :
     IsBaseChangeOnRational (P := P) (P' := P') φ hφ
-      (fun _ ↦ isOpen_map_of_continuous_inverse hψ hψφ hφψ)
+      (fun I hI ↦ by
+        rw [Ideal.map_eq_image_of_surjective φ (Function.RightInverse.surjective hφψ)]
+        exact (IsOpenMap.of_inverse hψ hφψ hψφ) I hI)
       hplus hAplus hBplus
       (presentationLimitPresheafIsoPushforward φ hφ hplus ψ hψ hψφ hφψ hplus').hom :=
   fun p hp ↦ by

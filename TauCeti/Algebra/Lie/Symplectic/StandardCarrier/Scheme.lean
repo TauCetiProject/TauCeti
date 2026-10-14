@@ -118,7 +118,7 @@ theorem carrierι_eq_eqToHom_comp_hopfIdealInclusion :
         GeneralLinear.hopfIdealInclusion ℤ ((n + 1) + (n + 1)) (definingIdeal n) := by
   rw [carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
     GeneralLinear.hopfIdealInclusion_def, ← Category.assoc,
-    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm, eqToIso.hom]
+    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm]
 
 /-- The type-`C_(n+1)` carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by
@@ -219,6 +219,15 @@ theorem points_def (A : Type v) [CommRing A] :
   rw [points, definingIdeal]
   exact TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def
     _ _ _ _ _ _ _ _ A
+
+/-- The points of the type-`C_(n+1)` carrier are the points of the generic Kostant toral closure
+they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup (rootGenerator n)
+        (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
+        (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A := (rfl)
 
 /-- A matrix is a point of the type-`C_(n+1)` carrier exactly when its associated convolution
 point kills the carrier's defining Hopf ideal. -/

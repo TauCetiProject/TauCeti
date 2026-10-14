@@ -25,6 +25,7 @@ intermediate ring with a product of displacements of a generator of the top ring
 
 * The fixed-subring and fixed-subalgebra instances of `Algebra.IsInvariant` identify the
   invariant extensions.
+* `TauCeti.smul_sum_smul`: the trace `∑ g, g • m` under a finite group is invariant.
 * `TauCeti.MulSemiringAction.charpoly_dvd`: if `g ↦ g • b` is injective and `f` vanishes at every
   `g • b`, then `charpoly G b ∣ f`.
 * `TauCeti.MulSemiringAction.eval_smul_charpoly`: evaluating `σ • charpoly H b` at `b` gives the
@@ -51,6 +52,18 @@ instance (R A G : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] [Group 
   isInvariant a ha := ⟨⟨a, ha⟩, rfl⟩
 
 end TauCeti.Algebra.IsInvariant
+
+namespace TauCeti
+
+/-- The trace `∑ g, g • m` of an element under a finite group is invariant. -/
+theorem smul_sum_smul {G M : Type*} [Group G] [Fintype G] [AddCommMonoid M]
+    [DistribMulAction G M] (h : G) (m : M) :
+    h • ∑ g : G, g • m = ∑ g : G, g • m := by
+  rw [Finset.smul_sum]
+  simp_rw [smul_smul]
+  exact Fintype.sum_equiv (Equiv.mulLeft h) _ _ fun _ ↦ rfl
+
+end TauCeti
 
 namespace TauCeti.MulSemiringAction
 

@@ -74,18 +74,6 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-! ## A simple Weyl representative -/
 
-private theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
-    t.geckPoints ht A =
-      UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := by
-  rw [t.geckPoints_def ht A,
-    UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def,
-    t.geckDefiningIdeal_def ht]
-
 /-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
 of endomorphisms of the Geck module. -/
 theorem isSl2Triple_geckRepresentation (i : Fin t.rank) :

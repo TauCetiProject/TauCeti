@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.PermutationTriple.DisjointSum
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.GroupTheory.Perm.SwapFactors
+import TauCeti.GroupTheory.Perm.SigmaCongr
 import Mathlib.Logic.Equiv.Fin.Rotate
 
 /-!
@@ -275,6 +276,25 @@ theorem eulerChar_disjointSum (s : PermutationTriple m) (t : PermutationTriple n
   simp only [disjointSum_σ0, disjointSum_σ1, disjointSum_σinf, orbitCount_finSumPerm]
   push_cast
   ring
+
+section IndexedDisjointSum
+
+variable {N : ℕ} {ι : Type*} [Fintype ι] {d : ι → ℕ}
+  (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i)) ≃ Fin N)
+
+/-- The Euler characteristic adds over indexed disjoint sums, including an empty sum. -/
+@[simp]
+theorem eulerChar_indexedDisjointSum :
+    (indexedDisjointSum t e).eulerChar = ∑ i, (t i).eulerChar := by
+  classical
+  have hdegree : ∑ i, d i = N := by simpa using Fintype.card_congr e
+  have hdegree' : (∑ i, (d i : ℤ)) = N := by exact_mod_cast hdegree
+  simp only [eulerChar_def, indexedDisjointSum_σ0, indexedDisjointSum_σ1,
+    indexedDisjointSum_σinf, Equiv.orbitCount_permCongr, orbitCount_sigmaCongrRight,
+    Nat.cast_sum, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+  rw [hdegree']
+
+end IndexedDisjointSum
 
 /-! ### Worked examples
 

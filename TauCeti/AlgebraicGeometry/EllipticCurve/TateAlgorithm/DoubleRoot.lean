@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
@@ -54,6 +55,9 @@ characteristic `2` are square roots.
 
 ## Main results
 
+* `WeierstrassCurve.IsTateOddStage` and `WeierstrassCurve.IsTateEvenStage`: the normal forms at
+  the stages of the subprocedure, with the discriminant bounds `IsTateOddStage.pow_dvd_Δ` and
+  `IsTateEvenStage.pow_dvd_Δ`.
 * `WeierstrassCurve.exists_variableChange_not_sq_dvd_a₂_and_pow_dvd_a₄_a₆`: **Step 7 of Tate's
   algorithm, the translation.** If the residue cubic of an equation in the normal form of Step 6
   has a double root that is not a triple root, a translation `x ↦ x + r` over `R` produces
@@ -85,20 +89,35 @@ open IsLocalRing
 
 variable {R : Type*} [CommRing R] {ϖ : R}
 
-/-- The equation is at an odd stage `n = 2k + 1` of the `Iₙ*` subprocedure of Tate's algorithm. -/
-private def IsOddStage (ϖ : R) (k : ℕ) (W : WeierstrassCurve R) : Prop :=
+/-- The equation is at an odd stage `n = 2k + 1` of the `Iₙ*` subprocedure of Tate's algorithm:
+`ϖ ∣ a₁`, `ϖ ∥ a₂`, `ϖ^(k+2) ∣ a₃`, `ϖ^(k+3) ∣ a₄` and `ϖ^(2k+4) ∣ a₆`. -/
+def IsTateOddStage (ϖ : R) (k : ℕ) (W : WeierstrassCurve R) : Prop :=
   ϖ ∣ W.a₁ ∧ ϖ ∣ W.a₂ ∧ ¬ ϖ ^ 2 ∣ W.a₂ ∧ ϖ ^ (k + 2) ∣ W.a₃ ∧ ϖ ^ (k + 3) ∣ W.a₄ ∧
     ϖ ^ (2 * k + 4) ∣ W.a₆
 
 /-- The equation is at an even stage `n = 2k + 2` of the `Iₙ*` subprocedure of Tate's
-algorithm. -/
-private def IsEvenStage (ϖ : R) (k : ℕ) (W : WeierstrassCurve R) : Prop :=
+algorithm: `ϖ ∣ a₁`, `ϖ ∥ a₂`, `ϖ^(k+3) ∣ a₃`, `ϖ^(k+3) ∣ a₄` and `ϖ^(2k+5) ∣ a₆`. -/
+def IsTateEvenStage (ϖ : R) (k : ℕ) (W : WeierstrassCurve R) : Prop :=
   ϖ ∣ W.a₁ ∧ ϖ ∣ W.a₂ ∧ ¬ ϖ ^ 2 ∣ W.a₂ ∧ ϖ ^ (k + 3) ∣ W.a₃ ∧ ϖ ^ (k + 3) ∣ W.a₄ ∧
     ϖ ^ (2 * k + 5) ∣ W.a₆
 
+/-- Unfolding `IsTateOddStage`. -/
+@[simp]
+theorem isTateOddStage_iff {k : ℕ} {W : WeierstrassCurve R} :
+    IsTateOddStage ϖ k W ↔ ϖ ∣ W.a₁ ∧ ϖ ∣ W.a₂ ∧ ¬ ϖ ^ 2 ∣ W.a₂ ∧ ϖ ^ (k + 2) ∣ W.a₃ ∧
+      ϖ ^ (k + 3) ∣ W.a₄ ∧ ϖ ^ (2 * k + 4) ∣ W.a₆ :=
+  Iff.rfl
+
+/-- Unfolding `IsTateEvenStage`. -/
+@[simp]
+theorem isTateEvenStage_iff {k : ℕ} {W : WeierstrassCurve R} :
+    IsTateEvenStage ϖ k W ↔ ϖ ∣ W.a₁ ∧ ϖ ∣ W.a₂ ∧ ¬ ϖ ^ 2 ∣ W.a₂ ∧ ϖ ^ (k + 3) ∣ W.a₃ ∧
+      ϖ ^ (k + 3) ∣ W.a₄ ∧ ϖ ^ (2 * k + 5) ∣ W.a₆ :=
+  Iff.rfl
+
 /-- At stage `n = 2k + 1`, `ϖ^(n+6) ∣ Δ`. -/
-private theorem IsOddStage.pow_dvd_Δ {k : ℕ} {W : WeierstrassCurve R}
-    (hW : IsOddStage ϖ k W) : ϖ ^ (2 * k + 7) ∣ W.Δ := by
+theorem IsTateOddStage.pow_dvd_Δ {k : ℕ} {W : WeierstrassCurve R}
+    (hW : IsTateOddStage ϖ k W) : ϖ ^ (2 * k + 7) ∣ W.Δ := by
   obtain ⟨⟨x₁, h₁⟩, ⟨x₂, h₂⟩, -, ⟨x₃, h₃⟩, ⟨x₄, h₄⟩, ⟨x₆, h₆⟩⟩ := hW
   have hb₂ : W.b₂ = ϖ * (ϖ * x₁ ^ 2 + 4 * x₂) := by rw [b₂, h₁, h₂]; ring
   have hb₄ : W.b₄ = ϖ ^ (k + 3) * (x₁ * x₃ + 2 * x₄) := by rw [b₄, h₁, h₃, h₄]; ring
@@ -114,8 +133,8 @@ private theorem IsOddStage.pow_dvd_Δ {k : ℕ} {W : WeierstrassCurve R}
   ring
 
 /-- At stage `n = 2k + 2`, `ϖ^(n+6) ∣ Δ`. -/
-private theorem IsEvenStage.pow_dvd_Δ {k : ℕ} {W : WeierstrassCurve R}
-    (hW : IsEvenStage ϖ k W) : ϖ ^ (2 * k + 8) ∣ W.Δ := by
+theorem IsTateEvenStage.pow_dvd_Δ {k : ℕ} {W : WeierstrassCurve R}
+    (hW : IsTateEvenStage ϖ k W) : ϖ ^ (2 * k + 8) ∣ W.Δ := by
   obtain ⟨⟨x₁, h₁⟩, ⟨x₂, h₂⟩, -, ⟨x₃, h₃⟩, ⟨x₄, h₄⟩, ⟨x₆, h₆⟩⟩ := hW
   have hb₂ : W.b₂ = ϖ * (ϖ * x₁ ^ 2 + 4 * x₂) := by rw [b₂, h₁, h₂]; ring
   have hb₄ : W.b₄ = ϖ ^ (k + 3) * (ϖ * x₁ * x₃ + 2 * x₄) := by rw [b₄, h₁, h₃, h₄]; ring
@@ -276,9 +295,10 @@ theorem exists_pow_dvd_and_variableChange_pow_dvd_a₄_a₆ [PerfectField (Resid
 
 /-- If the quadratic of an odd stage `2k + 1` has a double root, a translation `y ↦ y + t` reaches
 the even stage `2k + 2`. -/
-private theorem IsOddStage.exists_isEvenStage [PerfectField (ResidueField R)]
-    (hϖ : Irreducible ϖ) {k : ℕ} {W : WeierstrassCurve R} (hW : IsOddStage ϖ k W)
-    (hb₆ : ϖ ^ (2 * k + 5) ∣ W.b₆) : ∃ t : R, IsEvenStage ϖ k (VariableChange.mk 1 0 0 t • W) := by
+private theorem IsTateOddStage.exists_isTateEvenStage [PerfectField (ResidueField R)]
+    (hϖ : Irreducible ϖ) {k : ℕ} {W : WeierstrassCurve R} (hW : IsTateOddStage ϖ k W)
+    (hb₆ : ϖ ^ (2 * k + 5) ∣ W.b₆) :
+    ∃ t : R, IsTateEvenStage ϖ k (VariableChange.mk 1 0 0 t • W) := by
   obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := hW
   obtain ⟨t, ht, h₃', h₆'⟩ := exists_pow_dvd_and_variableChange_pow_dvd_a₃_a₆ hϖ W (m := k + 2) h₃
     (by simpa [mul_add] using h₆) (by simpa [mul_add] using hb₆)
@@ -291,10 +311,10 @@ private theorem IsOddStage.exists_isEvenStage [PerfectField (ResidueField R)]
 
 /-- If the quadratic of an even stage `2k + 2` has a double root, a translation `x ↦ x + r`
 reaches the odd stage `2k + 3`. -/
-private theorem IsEvenStage.exists_isOddStage [PerfectField (ResidueField R)]
-    (hϖ : Irreducible ϖ) {k : ℕ} {W : WeierstrassCurve R} (hW : IsEvenStage ϖ k W)
+private theorem IsTateEvenStage.exists_isTateOddStage [PerfectField (ResidueField R)]
+    (hϖ : Irreducible ϖ) {k : ℕ} {W : WeierstrassCurve R} (hW : IsTateEvenStage ϖ k W)
     (hd : ϖ ^ (2 * k + 7) ∣ discrim W.a₂ W.a₄ W.a₆) :
-    ∃ r : R, IsOddStage ϖ (k + 1) (VariableChange.mk 1 r 0 0 • W) := by
+    ∃ r : R, IsTateOddStage ϖ (k + 1) (VariableChange.mk 1 r 0 0 • W) := by
   obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := hW
   obtain ⟨r, hr, h₄', h₆'⟩ := exists_pow_dvd_and_variableChange_pow_dvd_a₄_a₆ hϖ W (m := k + 2)
     (by omega) h₂ h₂' h₄ (by simpa [mul_add] using h₆) (by simpa [mul_add] using hd)
@@ -335,7 +355,6 @@ theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (Residue
           ¬ ϖ ^ (2 * k + 7) ∣ discrim (VariableChange.mk 1 r 0 t • W).a₂
             (VariableChange.mk 1 r 0 t • W).a₄ (VariableChange.mk 1 r 0 t • W).a₆ ∧
           ϖ ^ (2 * k + 8) ∣ W.Δ) := by
-  have hΔV (r t : R) : (VariableChange.mk 1 r 0 t • W).Δ = W.Δ := by simp [variableChange_Δ]
   -- Two translations compose to a translation.
   have hC (r t r' t' : R) : VariableChange.mk 1 r' 0 t' • VariableChange.mk 1 r 0 t • W =
       VariableChange.mk 1 (r + r') 0 (t + t') • W := by
@@ -346,7 +365,7 @@ theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (Residue
   -- `2k + 1` forces `ϖ^(2k+7) ∣ Δ`, induct on a bound `M` with `ϖ^(2k+M) ∤ Δ`.
   obtain ⟨N, hN⟩ := FiniteMultiplicity.of_not_isUnit hϖ.not_isUnit hΔ
   obtain ⟨k, r, t, hM, hW⟩ : ∃ (k : ℕ) (r t : R), ¬ ϖ ^ (2 * k + (N + 1)) ∣ W.Δ ∧
-      IsOddStage ϖ k (VariableChange.mk 1 r 0 t • W) := by
+      IsTateOddStage ϖ k (VariableChange.mk 1 r 0 t • W) := by
     refine ⟨0, 0, 0, by simpa using hN, ?_⟩
     rw [← VariableChange.one_def, one_smul]
     exact ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩
@@ -354,22 +373,24 @@ theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (Residue
   generalize N + 1 = M at hM
   induction M generalizing k r t with
   | zero =>
-    exact absurd ((pow_dvd_pow ϖ (by omega)).trans (hΔV r t ▸ hW.pow_dvd_Δ)) hM
+    exact absurd ((pow_dvd_pow ϖ (by omega)).trans
+      (variableChange_translate_Δ W r t ▸ hW.pow_dvd_Δ)) hM
   | succ M ih =>
     by_cases hb₆ : ϖ ^ (2 * k + 5) ∣ (VariableChange.mk 1 r 0 t • W).b₆
-    · obtain ⟨t', hW'⟩ := hW.exists_isEvenStage hϖ hb₆
+    · obtain ⟨t', hW'⟩ := hW.exists_isTateEvenStage hϖ hb₆
       simp only [hC, add_zero] at hW'
       by_cases hd : ϖ ^ (2 * k + 7) ∣ discrim (VariableChange.mk 1 r 0 (t + t') • W).a₂
           (VariableChange.mk 1 r 0 (t + t') • W).a₄ (VariableChange.mk 1 r 0 (t + t') • W).a₆
-      · obtain ⟨r', hW''⟩ := hW'.exists_isOddStage hϖ hd
+      · obtain ⟨r', hW''⟩ := hW'.exists_isTateOddStage hϖ hd
         simp only [hC, add_zero] at hW''
         exact ih (k + 1) (r + r') (t + t') hW'' (fun h ↦ hM ((pow_dvd_pow ϖ (by omega)).trans h))
       · obtain ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩ := hW'
         exact ⟨r, t + t', k, g₁, g₂, g₂', Or.inr ⟨g₃, g₄, g₆, hd,
-          hΔV r (t + t') ▸ IsEvenStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
+          variableChange_translate_Δ W r (t + t') ▸
+            IsTateEvenStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
     · obtain ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩ := hW
       exact ⟨r, t, k, g₁, g₂, g₂', Or.inl ⟨g₃, g₄, g₆, hb₆,
-        hΔV r t ▸ IsOddStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
+        variableChange_translate_Δ W r t ▸ IsTateOddStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
 
 end WeierstrassCurve
 

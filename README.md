@@ -76,6 +76,17 @@ The rubrics are **adversarial**, including instructions to find mis-formalizatio
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
+Human-owned infrastructure changes still require human review. After reviewing a PR,
+repository admins can issue `bors r+` or `bors merge`: bors records approval
+for the accepted head and merge base, requests trusted CI, and owns testing and
+landing the change.
+This approval waives only the restricted-path rule; builds, audits, Lake configuration
+attestation and pin/size guards still apply. A push, changed merge base or `bors r-`
+requires fresh approval. Both bors and CI check the approving account's current GitHub
+repository admin role; removing that role invalidates its scope authority.
+Other users follow the existing review policy. See the
+[bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
+
 ## Mathlib dependency
 
 Although Tau Ceti and [Mathlib](https://leanprover-community.github.io/) differ both in the review mechanisms and in design standards, and while they target different mathematical goals, we envision a strong synergy between the two libraries. We hope to build overlapping communities around both libraries.

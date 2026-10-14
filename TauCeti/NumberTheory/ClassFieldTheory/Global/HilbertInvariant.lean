@@ -15,7 +15,7 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
-# The cohomological Hilbert invariants at the finite places
+# The cohomological Hilbert invariants at all places
 
 Let `K` be a number field and `a, b ∈ Kˣ`. At a finite place `v` of `K`, the **Hilbert invariant**
 `finiteHilbertInvariantAt K v a b ∈ ZMod 2` is the cohomological local symbol of the images of
@@ -24,13 +24,17 @@ along the pairing of the primitive square root of unity `-1`, followed by the no
 invariant `H²(G_{K_v}, μ₂) ≃+ ZMod 2`, which sends a class of Brauer invariant `1/2` to `1`. It is
 the additive form of the quadratic Hilbert symbol `(a, b)_v`.
 
-The invariant is bilinear and symmetric in `a` and `b`, and it vanishes at every place `v` not
-above `2` at which `a` and `b` are both units: there `K_v(√b)` is unramified, so every unit is a
-norm from it. Only finitely many places are excluded, so the invariants of a fixed pair have finite
-support, the finite set `finiteHilbertSupport K a b`. The sum of the invariants over that set,
+The finite invariant is bilinear and symmetric in `a` and `b`, and vanishes at every finite place
+`v` not above `2` at which `a` and `b` are both units: there `K_v(√b)` is unramified, so every
+unit is a norm from it. Only finitely many places are excluded, so the finite invariants of a fixed
+pair have finite support, the finite set `finiteHilbertSupport K a b`. The sum of the invariants
+over that set,
 together with the archimedean invariants, is the left-hand side of Hilbert's reciprocity law.
 The comparison `finiteInvAt_kummerBrauerClass` identifies every finite term with the localization
 of the global Kummer-cup Brauer class, so this sum can be read in the global Brauer sequence.
+At an infinite place, the corresponding invariant is defined by the same local cup product and
+the archimedean invariant map; `infiniteInvAt_kummerBrauerClass` identifies it with the
+localization of that same global class.
 
 ## Main definitions
 
@@ -38,11 +42,15 @@ of the global Kummer-cup Brauer class, so this sum can be read in the global Bra
   invariant of `a` and `b` at the finite place `v`.
 * `TauCeti.ClassFieldTheory.finiteHilbertSupport K a b`: the finite set of the finite places at
   which it is nonzero.
+* `TauCeti.ClassFieldTheory.infiniteHilbertInvariantAt K w a b`: the cohomological Hilbert
+  invariant at an infinite place, with values in `ZMod 2`.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.toRatAddCircle_finiteHilbertInvariantAt`: the invariant, read in
   `ℚ/ℤ`, is the Brauer invariant of the cup product of the two Kummer classes.
+* `TauCeti.ClassFieldTheory.infiniteInvAt_kummerBrauerClass`: the infinite-place invariant of the
+  global Kummer-cup Brauer class is the image of `infiniteHilbertInvariantAt` in `ℚ/ℤ`.
 * `TauCeti.ClassFieldTheory.finiteHilbertInvariantAt_mul_left`,
   `TauCeti.ClassFieldTheory.finiteHilbertInvariantAt_mul_right`,
   `TauCeti.ClassFieldTheory.finiteHilbertInvariantAt_comm`: bilinearity and symmetry.
@@ -120,6 +128,78 @@ theorem finiteInvAt_kummerBrauerClass (v : HeightOneSpectrum (𝓞 K)) (a b : K�
   rw [finiteInvAt_apply, brBaseChange_kummerBrauerClass _ _]
   simpa only [map_neg, map_one, kummerBrauerClass_def] using
     (toRatAddCircle_finiteHilbertInvariantAt K v a b hζv h2v).symm
+
+/-- **The cohomological Hilbert invariant at an infinite place** `w` of a number field `K`.
+It is the `ZMod 2`-valued invariant of the localized global Kummer-cup Brauer class at a real
+place, and zero at a complex place. -/
+def infiniteHilbertInvariantAt (w : InfinitePlace K) (a b : Kˣ) : ZMod 2 :=
+  by
+    classical
+    exact if hw : w.IsReal then
+      realInvEquiv (brCongr (NumberField.InfinitePlace.Completion.ringEquivRealOfIsReal hw)
+        (kummerBrauerClass (algebraMap K w.Completion (-1))
+          ((.neg_one 0 (by decide) : IsPrimitiveRoot (-1 : K) 2).map_of_injective
+            (algebraMap K w.Completion).injective)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) a)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) b)))
+    else 0
+
+/-- At a real place `w`, the infinite Hilbert invariant of `a` and `b` is the invariant, in
+`Br ℝ ≃ ZMod 2`, of the Kummer-cup Brauer class of their images in `K_w`, carried to `ℝ` along the
+isomorphism `K_w ≃ ℝ`. -/
+theorem infiniteHilbertInvariantAt_of_isReal {w : InfinitePlace K} (hw : w.IsReal) (a b : Kˣ) :
+    infiniteHilbertInvariantAt K w a b =
+      realInvEquiv (brCongr (NumberField.InfinitePlace.Completion.ringEquivRealOfIsReal hw)
+        (kummerBrauerClass (algebraMap K w.Completion (-1))
+          ((.neg_one 0 (by decide) : IsPrimitiveRoot (-1 : K) 2).map_of_injective
+            (algebraMap K w.Completion).injective)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) a)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) b))) := by
+  rw [infiniteHilbertInvariantAt, dite_eq_left hw]
+
+/-- The infinite Hilbert invariant vanishes at a complex place. -/
+theorem infiniteHilbertInvariantAt_eq_zero_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
+    (a b : Kˣ) : infiniteHilbertInvariantAt K w a b = 0 := by
+  rw [infiniteHilbertInvariantAt,
+    dite_eq_right (NumberField.InfinitePlace.not_isReal_iff_isComplex.mpr hw)]
+
+/-- **The infinite Hilbert invariant is the invariant of the global Kummer-cup Brauer class**:
+localizing `kummerBrauerClass (-1) hζ a b` at `w` and applying `infiniteInvMap` gives the
+`ℚ/ℤ`-image of `infiniteHilbertInvariantAt`. -/
+theorem infiniteInvAt_kummerBrauerClass (w : InfinitePlace K) (a b : Kˣ) :
+    infiniteInvAt K w (kummerBrauerClass (-1) (.neg_one 0 (by decide)) a b) =
+      ZMod.toRatAddCircle 2 (infiniteHilbertInvariantAt K w a b) := by
+  classical
+  rw [infiniteInvAt_apply]
+  rcases w.isReal_or_isComplex with hw | hw
+  · rw [brBaseChange_kummerBrauerClass _ _]
+    rw [infiniteInvMap_of_isReal w hw]
+    rw [infiniteHilbertInvariantAt, dite_eq_left hw]
+    rw [AddMonoidHom.comp_apply]
+    let x := brCongr (NumberField.InfinitePlace.Completion.ringEquivRealOfIsReal hw)
+      (kummerBrauerClass (algebraMap K w.Completion (-1))
+        ((.neg_one 0 (by decide) : IsPrimitiveRoot (-1 : K) 2).map_of_injective
+          (algebraMap K w.Completion).injective)
+        (Units.map (algebraMap K w.Completion : K →* w.Completion) a)
+        (Units.map (algebraMap K w.Completion : K →* w.Completion) b))
+    -- `change` unfolds only the local `let x`; no rewrite lemma names this abbreviation.
+    -- The invariant normalization uses `realInv_apply` below, not unfolding of `realInv`.
+    change realInv x = ZMod.toRatAddCircle 2 (realInvEquiv x)
+    by_cases hx : x = 0
+    · simp [realInv_apply, hx]
+    · rw [realInv_apply, ite_eq_right hx]
+      have hne : realInvEquiv x ≠ 0 := by
+        intro h
+        exact hx (realInvEquiv.injective (h.trans (map_zero _).symm))
+      have hv : realInvEquiv x = 1 := by
+        have h : ∀ y : ZMod 2, y = 0 ∨ y = 1 := by decide
+        exact (h _).resolve_left hne
+      rw [hv]
+      exact (ZMod.toRatAddCircle_natCast 2 1).symm
+  · rw [infiniteInvMap_of_isComplex w hw]
+    rw [infiniteHilbertInvariantAt,
+      dite_eq_right (NumberField.InfinitePlace.not_isReal_iff_isComplex.mpr hw)]
+    simp
 
 /-- The Hilbert invariant at a finite place is additive in its first argument. -/
 theorem finiteHilbertInvariantAt_mul_left (v : HeightOneSpectrum (𝓞 K)) (a a' b : Kˣ) :
