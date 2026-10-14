@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.NatCast
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.TwoTorsion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Descent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Basic
@@ -99,18 +99,20 @@ theorem coe_twoTorsionCoeff :
     (W.twoTorsionCoeff hT hψ : W.PointCoeff) = W.basePointCoeff (some e t hT) :=
   (rfl)
 
-private theorem twoTorsionCoeff_ne_zero : W.twoTorsionCoeff hT hψ ≠ 0 := fun h ↦
+/-- `T` is a nonzero element of `E(Kˢ)[2]`. -/
+theorem twoTorsionCoeff_ne_zero : W.twoTorsionCoeff hT hψ ≠ 0 := fun h ↦
   some_ne_zero hT <| W.basePointCoeff_injective <| by
     rw [← coe_twoTorsionCoeff W hT hψ, h, _root_.map_zero, ZeroMemClass.coe_zero]
 
-private theorem addOrderOf_twoTorsionCoeff : addOrderOf (W.twoTorsionCoeff hT hψ) = 2 :=
+/-- `T` has order two in `E(Kˢ)[2]`. -/
+theorem addOrderOf_twoTorsionCoeff : addOrderOf (W.twoTorsionCoeff hT hψ) = 2 :=
   addOrderOf_eq_prime (Subtype.ext <| by
     rw [AddSubgroup.coe_nsmul, coe_twoTorsionCoeff, ← map_nsmul, two_nsmul,
       (Affine.Point.some_add_self_eq_zero_iff hT).2 hψ, _root_.map_zero, ZeroMemClass.coe_zero])
     (twoTorsionCoeff_ne_zero W hT hψ)
 
 /-- The multiples of `T` in `E(Kˢ)[2]` are `O` and `T`. -/
-private theorem mem_zmultiples_twoTorsionCoeff_iff {S : W.TorsionCoeff 2} :
+theorem mem_zmultiples_twoTorsionCoeff_iff {S : W.TorsionCoeff 2} :
     S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) ↔
       (S : W.PointCoeff) = 0 ∨ (S : W.PointCoeff) = W.basePointCoeff (some e t hT) := by
   have e₁ : (S : W.PointCoeff) = 0 ↔ S = 0 := ZeroMemClass.coe_eq_zero
@@ -130,7 +132,7 @@ private theorem mem_zmultiples_twoTorsionCoeff_iff {S : W.TorsionCoeff 2} :
     · exact AddSubgroup.mem_zmultiples _
 
 /-- `{O, T}` has index two in `E(Kˢ)[2]`. -/
-private theorem index_zmultiples_twoTorsionCoeff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
+theorem index_zmultiples_twoTorsionCoeff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
     (AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)).index = 2 := by
   have h := (AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)).card_mul_index
   rw [Nat.card_zmultiples, addOrderOf_twoTorsionCoeff, natCard_torsionCoeff W h2] at h

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Universal
 -- Proof-only: the elementary order-two criterion `P + P = 0 ↔ ψ₂(x, y) = 0`, from which the
 -- `addOrderOf` form below is derived.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.TwoTorsion
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 -- Proof-only: the two evaluation bridges `ψₙ = Ψₙ` and `Ψₙ ² = ΨSqₙ` on the curve, which turn the
 -- `ψ`-vanishing criterion below into one on `ΨSqₙ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
