@@ -346,8 +346,7 @@ theorem finrank_kummerField [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIn
 /-- **The elements of `Δ` that become `n`-th powers in a subfield `L`.** If every element of `Δ`
 has an `n`-th root in `E` and `L` is a finite subextension of `E`, then
 `[K(Δ^{1/n}) : K] ≤ [Δ : Δ ∩ (Lˣ)ⁿ] · [L : K]`, where `Δ ∩ (Lˣ)ⁿ` consists of the elements of `Δ`
-that are `n`-th powers in `L`. The `n`-th roots of the elements of `Δ ∩ (Lˣ)ⁿ` generate a
-subfield of `L`, whose degree is the index of `Δ ∩ (Kˣ)ⁿ` in `Δ ∩ (Lˣ)ⁿ`. -/
+that are `n`-th powers in `L`. -/
 theorem finrank_kummerField_le_relIndex_mul_finrank
     [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ]
     (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ n = algebraMap K E a) (L : IntermediateField K E)

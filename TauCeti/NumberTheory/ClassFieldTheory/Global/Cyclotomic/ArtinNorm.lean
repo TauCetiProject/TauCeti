@@ -164,10 +164,9 @@ theorem hasFiniteMulSupport_abelianizedLocalCyclotomicCharacter_artinMap (x : K�
       HeightOneSpectrum.valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
   -- `p` is a unit of `𝒪[K_v]`, so it is prime to the residue cardinality `q` of `K_v`.
   have hpunit : IsUnit (p : 𝒪[v.adicCompletion K]) := by
-    rw [isUnit_iff_normalizedValuationWithZero_eq_one]
-    push_cast
-    rw [← map_natCast (algebraMap K (v.adicCompletion K)) p,
-      HeightOneSpectrum.normalizedValuationWithZero_adicCompletion, hval, hvS.2, inv_one]
+    rw [v.isUnit_natCast_integer_adicCompletion_iff, ← HeightOneSpectrum.intValuation_eq_one_iff,
+      ← HeightOneSpectrum.valuation_of_algebraMap (K := K)]
+    exact_mod_cast hvS.2
   have hcop : p.Coprime (Nat.card 𝓀[v.adicCompletion K]) := by
     let _ := Fintype.ofFinite 𝓀[v.adicCompletion K]
     obtain ⟨n, hℓ, hcard⟩ :=
