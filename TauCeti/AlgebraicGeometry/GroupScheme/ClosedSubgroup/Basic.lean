@@ -185,6 +185,31 @@ lemma mapIso_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ G)
   Subtype.ext (by
     rw [coe_mapIso, coe_mk, coe_mk, Subobject.mapIsoToOrderIso_apply, Subobject.map_mk])
 
+/-- The subobject underlying a closed subgroup transported back along an isomorphism is the
+subobject transported back along it. -/
+@[simp]
+lemma coe_mapIso_symm {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme H) :
+    ((mapIso e).symm P).1 = (Subobject.mapIsoToOrderIso e).symm P.1 := by
+  unfold mapIso
+  rfl
+
+/-- Postcomposing a closed immersion with the inverse of an isomorphism of group schemes gives a
+closed immersion. -/
+instance isClosedImmersion_comp_iso_inv {H K : Grp (Over X)} (i : K ⟶ H)
+    [IsClosedImmersion i.hom.hom.left] (e : G ≅ H) :
+    IsClosedImmersion (i ≫ e.inv).hom.hom.left :=
+  isClosedImmersion_comp_iso_hom i e.symm
+
+/-- Transporting the closed subgroup represented by a closed immersion back along an isomorphism
+gives the closed subgroup represented by the composite with the inverse. -/
+@[simp]
+lemma mapIso_symm_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ H)
+    [IsClosedImmersion i.hom.hom.left] :
+    (mapIso e).symm (mk i) = mk (i ≫ e.inv) :=
+  Subtype.ext (by
+    rw [coe_mapIso_symm, coe_mk, coe_mk]
+    exact Subobject.map_mk i e.inv)
+
 end ClosedSubgroupScheme
 
 end TauCeti
