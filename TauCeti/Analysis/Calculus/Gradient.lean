@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
+public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 -- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
@@ -36,9 +37,15 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
+* `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
+  supported.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
-  function is `Cᵐ`.
+  function is `Cᵐ`; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
+  `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
+  `ContDiffAt.continuousAt_fderiv_gradient` and
+  `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
+  continuous at `x`, and its gradient is differentiable near `x`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -81,6 +88,11 @@ does. -/
 theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
 
+/-- The gradient of a compactly supported function is compactly supported, as is its Fréchet
+derivative (`HasCompactSupport.fderiv`). -/
+theorem _root_.HasCompactSupport.gradient (hf : HasCompactSupport f) : HasCompactSupport (∇ f) :=
+  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx (gradient_of_notMem_tsupport h)
+
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
 differentiable. -/
@@ -98,6 +110,35 @@ theorem _root_.ContDiff.gradient_right {E : Type*} [NormedAddCommGroup E] [Inner
     [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) (hmn : m + 1 ≤ n) :
     ContDiff ℝ m (∇ f) :=
   (toDual ℝ E).symm.contDiff.comp (hf.fderiv_right hmn)
+
+/-- Over `ℝ`, the gradient of a compactly supported `C¹` function is in `Lᵖ(μ)` for every
+measure `μ` finite on compact sets, being continuous with compact support. -/
+theorem _root_.HasCompactSupport.memLp_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {p : ENNReal} {μ : MeasureTheory.Measure E} [MeasureTheory.IsFiniteMeasureOnCompacts μ]
+    {f : E → ℝ} (hfc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) :
+    MeasureTheory.MemLp (∇ f) p μ :=
+  (hf.gradient_right (m := 0) (by simp)).continuous.memLp_of_hasCompactSupport hfc.gradient
+
+/-- The pointwise form of `ContDiff.gradient_right`: over `ℝ`, the gradient of a function that is
+`C^{m+1}` at `x` is `Cᵐ` at `x`. -/
+theorem _root_.ContDiffAt.gradient_right {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hmn : m + 1 ≤ n) : ContDiffAt ℝ m (∇ f) x :=
+  (toDual ℝ E).symm.contDiff.contDiffAt.comp x (hf.fderiv_right hmn)
+
+/-- Over `ℝ`, a function that is `C²` at `x` has a Hessian `fderiv ℝ (∇ f)` continuous at `x`. -/
+theorem _root_.ContDiffAt.continuousAt_fderiv_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hn : 2 ≤ n) : ContinuousAt (fderiv ℝ (∇ f)) x :=
+  (hf.gradient_right (m := 1) hn).continuousAt_fderiv one_ne_zero
+
+/-- Over `ℝ`, the gradient of a function that is `C²` at `x` is differentiable near `x`. -/
+theorem _root_.ContDiffAt.eventually_differentiableAt_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hn : 2 ≤ n) : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (∇ f) y :=
+  ((hf.gradient_right (m := 1) hn).eventually (by simp)).mono fun _ hy =>
+    hy.differentiableAt one_ne_zero
 
 /-- **The Hessian is symmetric.** If a real function `f` is differentiable near `x` and its
 gradient has derivative `H` at `x`, then `H` is a symmetric operator:

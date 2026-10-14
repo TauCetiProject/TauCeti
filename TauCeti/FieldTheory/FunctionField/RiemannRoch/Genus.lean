@@ -42,6 +42,8 @@ linear-equivalence invariants, so the same bound holds for every divisor.
 
 * `TauCeti.Divisor.bddAbove_range_degree_sub_dim`: **Proposition 1.4.14** — `deg D - ℓ(D)` is
   bounded above.  This is what makes the genus well-defined.
+* `TauCeti.Divisor.dim_sub_degree_le_of_riemannRochSpace_ne_bot`: `ℓ(E) - deg E ≤ ℓ(A) - deg A`
+  whenever `L(E - A)` is nonzero.
 * `TauCeti.Divisor.degree_add_one_sub_genus_le_dim`: **Riemann's theorem** (Theorem 1.4.17),
   `ℓ(D) ≥ deg D + 1 - g`, over an arbitrary constant field.
 * `TauCeti.exists_degree_add_one_sub_dim_eq_genus`: the genus is attained (Corollary 1.4.16);
@@ -121,7 +123,7 @@ private theorem exists_growth_ladder (hF : IsFunctionField k F) :
     simpa using hgrowth
 
 /-- If `L(E - A)` is nonzero, then `ℓ(E) - deg E ≤ ℓ(A) - deg A`. -/
-private theorem dim_sub_degree_le_of_riemannRochSpace_ne_bot (hF : IsFunctionField k F)
+theorem Divisor.dim_sub_degree_le_of_riemannRochSpace_ne_bot (hF : IsFunctionField k F)
     {A E : Divisor k F} (h : riemannRochSpace (E - A) ≠ ⊥) :
     (Divisor.dim E : ℤ) - Divisor.degree E ≤ Divisor.dim A - Divisor.degree A := by
   obtain ⟨z, hz, hz0⟩ := (Submodule.ne_bot_iff _).mp h
@@ -172,7 +174,7 @@ theorem Divisor.bddAbove_range_degree_sub_dim (hF : IsFunctionField k F) :
   have hne : riemannRochSpace (l • B - A) ≠ ⊥ :=
     (Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF _).mp
       (hpos.trans (Divisor.dim_mono hF (sub_le_sub_left (le_posPart A) (l • B))))
-  have hfinal := dim_sub_degree_le_of_riemannRochSpace_ne_bot hF hne
+  have hfinal := Divisor.dim_sub_degree_le_of_riemannRochSpace_ne_bot hF hne
   rw [hdeg l] at hfinal
   linarith [hlow l]
 
@@ -267,7 +269,7 @@ theorem exists_forall_dim_eq_degree_add_one_sub_genus (hF : IsFunctionField k F)
     linarith
   have hne : riemannRochSpace (D - A) ≠ ⊥ :=
     (Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF _).mp (by exact_mod_cast hgap)
-  have hstep := dim_sub_degree_le_of_riemannRochSpace_ne_bot hF hne
+  have hstep := Divisor.dim_sub_degree_le_of_riemannRochSpace_ne_bot hF hne
   have hupper := Divisor.degree_add_one_sub_dim_le_genus hF D
   linarith
 
