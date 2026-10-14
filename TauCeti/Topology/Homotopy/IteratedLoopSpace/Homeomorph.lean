@@ -78,8 +78,19 @@ theorem iteratedLoopSpaceHomeomorph_basepoint :
       (iteratedLoopSpaceHomeomorph_basepoint k X.loopSpace)).trans
         (GenLoop.genLoopLoopHomeomorph_const X.basepoint k)
 
+/-- The inverse of the homeomorphism carries the constant cube loop to the constant iterated
+loop. -/
+@[simp]
+theorem iteratedLoopSpaceHomeomorph_symm_const (k : ℕ) (X : BasedTopologicalSpace.{u}) :
+    (iteratedLoopSpaceHomeomorph k X).symm
+        (GenLoop.const : GenLoop (Fin k) X.carrier X.basepoint) =
+      (X.iteratedLoopSpace k).basepoint :=
+  (iteratedLoopSpaceHomeomorph k X).symm_apply_eq.2
+    (iteratedLoopSpaceHomeomorph_basepoint k X).symm
+
 /-- **Naturality of the currying homeomorphism**: `GenLoop.genLoopLoopHomeomorph` commutes with
 the maps induced on cube loops by a based map `f` and by `Ω f`. -/
+@[simp]
 theorem genLoopLoopHomeomorph_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y)
     (k : ℕ) (p : GenLoop (Fin k) X.loopSpace.carrier X.loopSpace.basepoint) :
     GenLoop.genLoopLoopHomeomorph Y.basepoint k

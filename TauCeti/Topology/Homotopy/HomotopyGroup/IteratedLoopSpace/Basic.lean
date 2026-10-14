@@ -71,6 +71,7 @@ theorem piIteratedLoopSpaceMulEquiv_succ (X : BasedTopologicalSpace.{u}) (k m : 
 
 /-- **The shift `π_(m + 1)(Ω^[k] X) ≃* π_(m + 1 + k)(X)` is natural in `X`**: it commutes with the
 maps induced on homotopy groups by a based map `f` and by `Ω^[k] f`. -/
+@[simp]
 theorem piIteratedLoopSpaceMulEquiv_map :
     (k : ℕ) → {X Y : BasedTopologicalSpace.{u}} → (f : Hom X Y) → (m : ℕ) →
       (a : π_ (m + 1) (X.iteratedLoopSpace k).carrier (X.iteratedLoopSpace k).basepoint) →
