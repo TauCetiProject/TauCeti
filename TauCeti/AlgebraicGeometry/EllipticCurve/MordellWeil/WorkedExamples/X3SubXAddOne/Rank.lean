@@ -194,12 +194,8 @@ theorem finrank_point_curveX3SubXAddOne_le_one :
           (by norm_num : Nat.Prime 23).squarefree)
       (fun ⟨r, hr⟩ ↦ by nlinarith [mul_self_nonneg r])
   have htors : Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker = 1 := by
-    rw [Nat.card_eq_one_iff_unique]
-    refine ⟨⟨fun P Q ↦ Subtype.ext ?_⟩, inferInstance⟩
-    have hP := P.2
-    have hQ := Q.2
-    rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply] at hP hQ
-    rw [nsmul_eq_zero_iff_right two_ne_zero |>.mp hP, nsmul_eq_zero_iff_right two_ne_zero |>.mp hQ]
+    rw [(AddMonoidHom.ker_eq_bot_iff _).mpr
+      (AddSubgroup.nsmulAddMonoidHom_injective_of_isTorsionFree two_ne_zero), AddSubgroup.card_bot]
   rw [Fintype.prod_unique, finrank_units_ringOfIntegersFactor, htors, mul_one] at hbound
   have h4 : 2 ^ (finrank ℤ W.Point + 1) ≤ 2 ^ 2 :=
     hbound.trans (Nat.mul_le_mul_left _ card_ker_powMonoidHom_classGroup_ringOfIntegersFactor)
@@ -217,9 +213,7 @@ theorem one_le_finrank_point_curveX3SubXAddOne :
   have : Module.Finite ℤ (curveX3SubXAddOne.baseChange ℚ).toAffine.Point :=
     Module.Finite.iff_addGroup_fg.mpr fg_point_of_numberField
   have hP := nonsingular_one_one_curveX3SubXAddOne
-  refine Nat.one_le_iff_ne_zero.mpr fun h ↦ Point.some_ne_zero hP ?_
-  obtain ⟨a, ha, hP⟩ := Module.finrank_eq_zero_iff.mp h (.some 1 1 hP)
-  exact (IsAddTorsionFree.zsmul_eq_zero_iff_right ha).mp hP
+  exact Module.finrank_pos_iff_exists_ne_zero.mpr ⟨.some 1 1 hP, Point.some_ne_zero hP⟩
 
 /-- **The Mordell–Weil group of `y² = x³ - x + 1` over `ℚ` has rank `1`.** -/
 theorem finrank_point_curveX3SubXAddOne :
