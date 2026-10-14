@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.CategoryTheory.Sites.ExtensionByZero
@@ -32,6 +33,8 @@ cohomology in positive degrees on an affine open `U` with `Γ(X, U)` Noetherian.
   a single sheaf of modules.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`:
   acyclicity of quasi-coherent sheaves on Noetherian affine opens.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isFinite`:
+  acyclicity of quasi-coherent sheaves on schemes finite over a field.
 
 ## References
 
@@ -117,6 +120,20 @@ theorem subsingleton_cohomologyOn_succ_of_isAffineOpen [M.IsQuasicoherent] {U : 
   rw [← hU.opensRange_fromSpec]
   exact (cohomologyOnOpensRangeIso hU.fromSpec M (n + 1)).addCommGroupIsoToAddEquiv.toEquiv
     |>.subsingleton
+
+/-- A quasi-coherent sheaf on a scheme finite over a field has no cohomology in positive
+degrees. -/
+theorem subsingleton_cohomology_succ_of_isFinite (k : Type u) [Field k]
+    {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsFinite (X ↘ Spec (.of k))]
+    (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    Subsingleton (Cohomology M (n + 1)) := by
+  have : IsAffine X := isAffine_of_isAffineHom (X ↘ Spec (.of k))
+  have : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : IsNoetherianRing Γ(X, ⊤) :=
+    IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top _⟩
+  have := subsingleton_cohomologyOn_succ_of_isAffineOpen M (isAffineOpen_top X) n
+  exact (cohomologyOnTopIso M (n + 1)).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
 end AlgebraicGeometry.Scheme.Modules
 

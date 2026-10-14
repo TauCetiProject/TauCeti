@@ -62,41 +62,6 @@ section Finite
 
 variable [IsFinite (I.subschemeι ≫ X ↘ Spec (.of k))]
 
-include k in
-/-- A closed subscheme finite over `k` is affine and Noetherian, so its structure sheaf has no
-first cohomology. -/
-private lemma subsingleton_cohomology_one_subscheme :
-    Subsingleton (Cohomology
-      (SheafOfModules.unit I.subscheme.ringCatSheaf : I.subscheme.Modules) 1) := by
-  have : IsAffine I.subscheme := isAffine_of_isAffineHom (I.subschemeι ≫ X ↘ Spec (.of k))
-  have : IsLocallyNoetherian I.subscheme :=
-    LocallyOfFiniteType.isLocallyNoetherian (I.subschemeι ≫ X ↘ Spec (.of k))
-  have : IsNoetherianRing Γ(I.subscheme, ⊤) :=
-    IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top _⟩
-  have := subsingleton_cohomologyOn_succ_of_isAffineOpen
-    (SheafOfModules.unit I.subscheme.ringCatSheaf) (isAffineOpen_top _) 0
-  exact (cohomologyOnTopIso _ 1).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
-
-/-- The Euler characteristic of the direct image of the structure sheaf of a closed subscheme
-finite over `k` is its rank over `k`: its first cohomology vanishes, and its global sections have
-dimension the rank. -/
-private lemma eulerCharBelow_pushforward_subscheme (s : Spec (.of k)) :
-    eulerCharBelow k X ((Scheme.Modules.pushforward I.subschemeι).obj
-        (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 =
-      (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
-  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
-  have : I.subschemeι.IsOver (Spec (.of k)) := ⟨rfl⟩
-  let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
-  have := subsingleton_cohomology_one_subscheme k I
-  refine (Scheme.Hom.eulerCharBelow_pushforward I.subschemeι k M 2).trans ?_
-  rw [eulerCharBelow_two, Module.finrank_zero_of_subsingleton (M := Cohomology M 1),
-    finrank_cohomology_zero_eq_finrank_globalSections]
-  let _ : Algebra k Γ(I.subscheme, ⊤) := (baseRingToGlobalSections k I.subscheme).toAlgebra
-  rw [Scheme.Hom.finrank_eq_finrank_of_field _ (algebraMap_eq k I) s]
-  -- Both module structures on `Γ(V(I), ⊤)` are restriction of scalars along
-  -- `baseRingToGlobalSections`, and the sections of `𝒪_{V(I)}` are the regular functions.
-  rfl
-
 section FiniteCohomology
 
 variable [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
@@ -123,6 +88,8 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
   -- `H⁰` of `ι_* 𝒪_{V(I)}` is finite-dimensional and its `H¹` vanishes.
   let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
   have : I.subschemeι.IsOver (Spec (.of k)) := ⟨rfl⟩
+  let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
+    inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
   let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
   have : FiniteDimensional k (Cohomology I.shortComplex.X₃ 0) := by
     let _ : Algebra k Γ(I.subscheme, ⊤) := (baseRingToGlobalSections k I.subscheme).toAlgebra
@@ -135,7 +102,7 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
     refine (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k M 0).mpr ?_
     exact Module.Finite.equiv (cohomologyZeroBaseLinearEquiv k I.subscheme M).symm
   have hvan : Subsingleton (Cohomology I.shortComplex.X₃ 1) := by
-    have := subsingleton_cohomology_one_subscheme k I
+    have := subsingleton_cohomology_succ_of_isFinite k M 0
     rw [shortComplex_X₃]
     exact (cohomologyPushforwardIso I.subschemeι M 1).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
   -- `H¹(X, I)` sits between `H⁰(ι_* 𝒪_{V(I)})` and `H¹(X, 𝒪_X)`, so it is finite-dimensional.
@@ -153,7 +120,9 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
       eulerCharBelow k X (SheafOfModules.unit X.ringCatSheaf) 2 := by
     rw [InvertibleSheaf.trivial_obj]
     exact eulerCharBelow_congr k e 2
-  have h₃ := eulerCharBelow_pushforward_subscheme k I s
+  have h₃ := Scheme.Hom.eulerCharBelow_pushforward_structureSheaf I.subschemeι k s
+  change eulerCharBelow k X ((Scheme.Modules.pushforward I.subschemeι).obj M) 2 =
+    (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s at h₃
   linarith
 
 end FiniteCohomology
