@@ -15,7 +15,8 @@ import TauCeti.Probability.Distributions.Dirac
 
 This file computes the cumulative distribution function of the real-valued pushforward of
 Mathlib's geometric law.  At a nonnegative point it is the native cumulative mass through the
-natural floor, while below the origin it vanishes.
+natural floor; below the origin it vanishes by the generic
+`MeasureTheory.Measure.cdf_map_natCast_of_neg`.
 
 Mathlib totalizes success probability zero as a point mass at zero.  That boundary therefore has
 the step-function cdf of a Dirac measure, rather than the formula for a positive success
@@ -25,7 +26,6 @@ probability.
 
 * `TauCeti.Probability.cdf_map_cast_geometricMeasure` computes the cdf for nonzero success
   probability at a nonnegative point;
-* `TauCeti.Probability.cdf_map_cast_geometricMeasure_of_neg` gives the value below the origin;
 * `TauCeti.Probability.cdf_map_cast_geometricMeasure_zero` gives the zero-parameter boundary.
 
 ## References
@@ -47,11 +47,6 @@ theorem cdf_map_cast_geometricMeasure {p : unitInterval} (hp : p ≠ 0) {x : ℝ
       1 - (1 - (p : ℝ)) ^ (⌊x⌋₊ + 1) := by
   rw [Measure.cdf_map_natCast _ hx]
   simpa only [Iic_def] using geometricMeasure_real_Iic hp ⌊x⌋₊
-
-/-- Below the origin, the cdf of every real-valued geometric law vanishes. -/
-theorem cdf_map_cast_geometricMeasure_of_neg (p : unitInterval) {x : ℝ} (hx : x < 0) :
-    cdf ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) x = 0 :=
-  Measure.cdf_map_natCast_of_neg _ hx
 
 /-- At success probability zero, the real-valued geometric law has the step-function cdf of the
 Dirac measure at zero. -/
