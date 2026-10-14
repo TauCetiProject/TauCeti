@@ -45,6 +45,8 @@ pointwise algebra happens before integration; a later layer proves invariance un
 * `abs_testIntegral_le_cutNorm` bounds every `[0,1]`-test integral by the cut norm itself, with no
   loss of constant — the form the counting lemma consumes, where the weights read off the other
   edges of a graph are `[0,1]`-valued.
+* `cutNorm_eq_iSup_testIntegral` says the cut norm is the supremum of the absolute `[0,1]`-test
+  integrals, so the rectangle supremum and the test-function supremum define the same quantity.
 * `abs_testIntegral_le_cutNormSigned` and `cutNormSigned_le` are the corresponding introduction and
   elimination rules for the signed cut norm.
 * `cutNorm_le_cutNormSigned` and `cutNormSigned_le_four_mul_cutNorm` are the two sides of the
@@ -419,6 +421,53 @@ theorem abs_testIntegral_le_cutNorm (K : SymmKernel Ω μ) {u v : Ω → ℝ}
     _ ≤ |K.testIntegral μ (T.indicator 1) (S.indicator 1)| := hTle
     _ = |K.rectIntegral μ T S| := by rw [K.testIntegral_indicator_one μ hT hS]
     _ ≤ cutNorm μ K := abs_rectIntegral_le_cutNorm μ K hT hS
+
+/-- **The cut norm is the supremum over `[0,1]`-valued test functions.**  The supremum of the
+absolute rectangle integrals equals the supremum of `|∫∫ u(x) v(y) K(x,y)|` over measurable
+`[0,1]`-valued test functions `u` and `v`. -/
+theorem cutNorm_eq_iSup_testIntegral (K : SymmKernel Ω μ) :
+    cutNorm μ K =
+      ⨆ (u : Ω → ℝ) (_ : Measurable u) (_ : ∀ x, u x ∈ Icc (0 : ℝ) 1)
+        (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1),
+        |K.testIntegral μ u v| := by
+  have h0 := cutNorm_nonneg μ K
+  -- Each partial supremum, one binder at a time, is bounded by the cut norm.
+  have h5 (u v : Ω → ℝ) (hu : Measurable u) (hu1 : ∀ x, u x ∈ Icc (0 : ℝ) 1)
+      (hv : Measurable v) :
+      (⨆ (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤ cutNorm μ K :=
+    Real.iSup_le (fun hv1 => abs_testIntegral_le_cutNorm μ K hu hv hu1 hv1) h0
+  have h4 (u v : Ω → ℝ) (hu : Measurable u) (hu1 : ∀ x, u x ∈ Icc (0 : ℝ) 1) :
+      (⨆ (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤
+        cutNorm μ K :=
+    Real.iSup_le (h5 u v hu hu1) h0
+  have h3 (u : Ω → ℝ) (hu : Measurable u) (hu1 : ∀ x, u x ∈ Icc (0 : ℝ) 1) :
+      (⨆ (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1),
+        |K.testIntegral μ u v|) ≤ cutNorm μ K :=
+    Real.iSup_le (fun v => h4 u v hu hu1) h0
+  have h2 (u : Ω → ℝ) (hu : Measurable u) :
+      (⨆ (_ : ∀ x, u x ∈ Icc (0 : ℝ) 1) (v : Ω → ℝ) (_ : Measurable v)
+        (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤ cutNorm μ K :=
+    Real.iSup_le (h3 u hu) h0
+  have h1 (u : Ω → ℝ) :
+      (⨆ (_ : Measurable u) (_ : ∀ x, u x ∈ Icc (0 : ℝ) 1) (v : Ω → ℝ) (_ : Measurable v)
+        (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤ cutNorm μ K :=
+    Real.iSup_le (h2 u) h0
+  refine le_antisymm (cutNorm_le μ fun S hS T hT => ?_) (Real.iSup_le h1 h0)
+  -- A rectangle integral is the test integral of the two indicators.
+  have hu : Measurable (S.indicator (1 : Ω → ℝ)) := measurable_one.indicator hS
+  have hv : Measurable (T.indicator (1 : Ω → ℝ)) := measurable_one.indicator hT
+  have hu1 : ∀ x, S.indicator (1 : Ω → ℝ) x ∈ Icc (0 : ℝ) 1 := fun x => by
+    by_cases hx : x ∈ S <;> simp [hx]
+  have hv1 : ∀ y, T.indicator (1 : Ω → ℝ) y ∈ Icc (0 : ℝ) 1 := fun y => by
+    by_cases hy : y ∈ T <;> simp [hy]
+  rw [← K.testIntegral_indicator_one μ hS hT]
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le h1) (S.indicator 1) ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le (h2 _)) hu ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le (h3 _ hu)) hu1 ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun v => h4 _ v hu hu1) (T.indicator 1) ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le (h5 _ _ hu hu1)) hv ?_
+  exact le_ciSup (bddAbove_range_of_forall_le fun hv1 =>
+    abs_testIntegral_le_cutNorm μ K hu hv hu1 hv1) hv1
 
 /-- The signed cut norm is the iterated supremum over measurable `[-1,1]`-valued test functions. -/
 theorem cutNormSigned_def (K : SymmKernel Ω μ) :
