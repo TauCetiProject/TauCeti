@@ -312,8 +312,8 @@ variable {k} {A}
 variable {B : Type*} [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B] {φ : A →+* B}
 
 /-- **An inducing ring map induces an inducing map on restricted power series.** If the topology
-of `A` is pulled back from `B` along `φ`, then the topology of `A⟨X₁, …, Xₖ⟩` is pulled back from
-`B⟨X₁, …, Xₖ⟩` along the coefficientwise map. -/
+of `A` is pulled back from `B` along `φ`, then the topology of the uncompleted ring of restricted
+power series over `A` is pulled back from the one over `B` along the coefficientwise map. -/
 -- A basic neighbourhood `U⟨X⟩` contains the preimage of `V⟨X⟩` as soon as `φ⁻¹ V ⊆ U`.
 theorem _root_.Topology.IsInducing.weightedMap_one_weight (hφ : IsInducing φ) :
     IsInducing (weightedMap (k := k) hφ.continuous isWeightFamily_one_weight
@@ -337,7 +337,8 @@ theorem _root_.Topology.IsInducing.weightedMap_one_weight (hφ : IsInducing φ) 
   exact fun ν ↦ hWU (hVW (hf ν))
 
 /-- **A ring map with dense range induces a map with dense range on restricted power series**:
-the coefficientwise map `A⟨X₁, …, Xₖ⟩ → B⟨X₁, …, Xₖ⟩` has dense range when `φ : A → B` does. -/
+the coefficientwise map between the uncompleted rings of restricted power series over `A` and
+over `B` has dense range when `φ : A → B` does. -/
 -- A restricted series over `B` has only finitely many coefficients outside a given open subgroup
 -- `V`; approximating those by values of `φ` gives a polynomial over `A` whose image agrees with
 -- the series up to `V⟨X⟩`.
@@ -377,8 +378,8 @@ section Compare
 
 attribute [local instance] AbstractCompletion.uniformStruct
 
-/-- The completion of `B⟨X₁, …, Xₖ⟩`, seen through the coefficientwise map, is an abstract
-completion of `A⟨X₁, …, Xₖ⟩` when `φ` is dense inducing. -/
+/-- The completion of the uncompleted restricted-series ring over `B`, seen through the
+coefficientwise map, is an abstract completion of the one over `A` when `φ` is dense inducing. -/
 private noncomputable def restrictedCompletionPkg (hφ : IsDenseInducing φ) :
     AbstractCompletion
       (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) where
@@ -393,7 +394,8 @@ private noncomputable def restrictedCompletionPkg (hφ : IsDenseInducing φ) :
   dense := Completion.denseRange_coe.comp (hφ.dense.weightedMap_one_weight hφ.continuous)
     (Completion.continuous_coe _)
 
-/-- The comparison of the two completions of `A⟨X₁, …, Xₖ⟩` is `weightedMapCompletion`. -/
+/-- The comparison of the two completions of the uncompleted restricted-series ring over `A` is
+`weightedMapCompletion`. -/
 private theorem coe_compareEquiv_restrictedCompletionPkg (hφ : IsDenseInducing φ) :
     ⇑(Completion.cPkg.compareEquiv (restrictedCompletionPkg (k := k) hφ)) =
       weightedMapCompletion hφ.continuous isWeightFamily_one_weight isWeightFamily_one_weight

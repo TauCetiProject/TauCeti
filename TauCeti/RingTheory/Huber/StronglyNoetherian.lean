@@ -132,7 +132,8 @@ That same contrast is why AINTLIB's `isStronglyNoetherian_congr`
 it transports along `restrictedMvPowerSeriesEquiv`, built by hand on the uncompleted subring.
 Here the transport runs one level up, on the completions: a dense inducing map, of which a
 bicontinuous isomorphism is the simplest case, identifies the completed restricted power-series
-algebras because the completion of `B⟨X₁,…,Xₖ⟩` is also a completion of `A⟨X₁,…,Xₖ⟩`.
+algebras because the completion of the uncompleted restricted-series ring over `B` is also a
+completion of the one over `A`.
 -/
 
 open scoped Uniformity
