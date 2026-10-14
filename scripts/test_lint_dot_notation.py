@@ -12,6 +12,33 @@ import unittest
 import lean_source as lint
 
 
+# Standard hom families: spelling, canonical receiver, and distinct related receiver types.
+STANDARD_HOM_NOTATIONS = (
+    ("→ₙ+", "AddHom", ("AddMonoidHom",)),
+    ("→ₙ*", "MulHom", ("MonoidHom",)),
+    ("→ₙ+*", "NonUnitalRingHom", ("AddHom", "RingHom")),
+    ("→⋆*", "StarMonoidHom", ("MonoidHom",)),
+    ("→⋆ₙ+*", "NonUnitalStarRingHom", ("NonUnitalRingHom", "StarMonoidHom")),
+    ("→ₜ+", "ContinuousAddMonoidHom", ("AddMonoidHom",)),
+    ("→ₜ*", "ContinuousMonoidHom", ("MonoidHom",)),
+    ("→ₑ+[φ]", "DistribMulActionHom", ("AddMonoidHom", "MulActionHom")),
+    ("→+[M]", "DistribMulActionHom", ("AddMonoidHom", "MulActionHom")),
+    ("→ₑ*[φ]", "MulDistribMulActionHom", ("MonoidHom", "MulActionHom")),
+    ("→*[M]", "MulDistribMulActionHom", ("MonoidHom", "MulActionHom")),
+    ("→ₑ+*[φ]", "MulSemiringActionHom", ("RingHom", "DistribMulActionHom")),
+    ("→+*[M]", "MulSemiringActionHom", ("RingHom", "DistribMulActionHom")),
+    ("→ₐ", "AlgHom", ("BialgHom", "GradedAlgHom")),
+    ("→ₙₐ", "NonUnitalAlgHom", ("AlgHom", "NonUnitalRingHom")),
+    ("→ₙₐ[R]", "NonUnitalAlgHom", ("AlgHom", "NonUnitalRingHom")),
+    ("→ₛₙₐ[φ]", "NonUnitalAlgHom", ("AlgHom", "NonUnitalRingHom")),
+    ("→⋆ₐ", "StarAlgHom", ("AlgHom", "NonUnitalStarAlgHom")),
+    ("→⋆ₐ[R]", "StarAlgHom", ("AlgHom", "NonUnitalStarAlgHom")),
+    ("→⋆ₙₐ", "NonUnitalStarAlgHom", ("NonUnitalAlgHom", "StarAlgHom")),
+    ("→⋆ₙₐ[R]", "NonUnitalStarAlgHom", ("NonUnitalAlgHom", "StarAlgHom")),
+    ("→ₐᵍ[R]", "GradedAlgHom", ("AlgHom", "GradedRingHom")),
+)
+
+
 def findings(source: str, namespaces: set[str] | None = None):
     return lint.find_violations({pathlib.Path("TauCeti/Test.lean"): source}, namespaces or {"Foo"})
 
@@ -133,6 +160,33 @@ end TauCeti.Foo
                 self.assertEqual([finding.declaration for finding in findings(source)],
                                  ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction"])
 
+    def test_standard_hom_families_are_maps_with_their_canonical_receiver(self):
+        for arrow, owner, other_owners in STANDARD_HOM_NOTATIONS:
+            for separator in (" ", ""):
+                source = f"""\
+namespace TauCeti.Foo
+def returnedMap : Foo{separator}{arrow}{separator}B := f
+def outerFunction : Foo → A{separator}{arrow}{separator}B := f
+def outerAsciiFunction : Foo -> A{separator}{arrow}{separator}B := f
+end TauCeti.Foo
+namespace TauCeti.{owner}
+def actualReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{owner}
+"""
+                for other in other_owners:
+                    source += f"""\
+namespace TauCeti.{other}
+def differentReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{other}
+"""
+                with self.subTest(arrow=arrow, separator=separator):
+                    self.assertEqual(
+                        [finding.declaration for finding in
+                         findings(source, {"Foo", owner, *other_owners})],
+                        ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction",
+                         f"TauCeti.{owner}.actualReceiver"],
+                    )
+
     def test_longer_bundled_arrows_use_their_own_receiver_namespace(self):
         cases = (
             ("→+o", "OrderAddMonoidHom", ("AddMonoidHom",)),
@@ -141,6 +195,8 @@ end TauCeti.Foo
             ("→*₀o", "OrderMonoidWithZeroHom", ("MonoidHom", "MonoidWithZeroHom")),
             ("→+*o", "OrderRingHom", ("AddMonoidHom", "RingHom")),
             ("→+*ᵍ", "GradedRingHom", ("AddMonoidHom", "RingHom")),
+            ("→ₐc", "BialgHom", ("AlgHom",)),
+            ("→ₐc[R]", "BialgHom", ("AlgHom",)),
         )
         for arrow, owner, shorter_owners in cases:
             for separator in (" ", ""):
@@ -166,7 +222,8 @@ end TauCeti.{shorter}
                     )
 
     def test_longer_bundled_maps_do_not_claim_sort_ownership(self):
-        for arrow in ("→+o", "→*o", "→*₀", "→*₀o", "→+*o", "→+*ᵍ"):
+        arrows = ("→+o", "→*o", "→*₀", "→*₀o", "→+*o", "→+*ᵍ")
+        for arrow in (*arrows, *(case[0] for case in STANDARD_HOM_NOTATIONS)):
             source = f"""\
 namespace TauCeti
 def Foo : Type u {arrow} A := f
@@ -187,12 +244,16 @@ def asciiNoSpaces : Foo->Foo := f
 def linearPrefix : Foo →LinearMap := f
 def scalarPrefix : Foo →Scalar := f
 def orderTypePrefix : Foo →OrderHom := f
+def nonUnitalTypePrefix : Foo →NonUnitalAlgHom := f
+def starTypePrefix : Foo →StarAlgHom := f
+def continuousTypePrefix : Foo →ContinuousMonoidHom := f
 end TauCeti.Foo
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
                          ["TauCeti.Foo." + name for name in
                           ("noSpaces", "asciiNoSpaces", "linearPrefix", "scalarPrefix",
-                           "orderTypePrefix")])
+                           "orderTypePrefix", "nonUnitalTypePrefix", "starTypePrefix",
+                           "continuousTypePrefix")])
 
     def test_returned_bundled_map_does_not_claim_sort_ownership(self):
         source = """\
