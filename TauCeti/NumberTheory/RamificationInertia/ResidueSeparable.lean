@@ -15,9 +15,9 @@ If a group acts on an algebra while fixing its base, translation by a group elem
 the residue extension at a maximal ideal with the residue extension at the translated ideal.
 Consequently separability of the residue extension is invariant under translation.
 
-The result uses Mathlib's `Ideal.Quotient.algEquivOfEqMap` for the upper residue fields and the
-equality `Ideal.under_smul` for the lower ideals. It assumes maximality of both the upper ideal
-and its contraction, which says exactly that the quotients in the residue extension are fields.
+Thus separability at one prime suffices throughout its group orbit. The result assumes maximality
+of both the upper ideal and its contraction, which says exactly that the quotients in the residue
+extension are fields.
 
 ## Main result
 
