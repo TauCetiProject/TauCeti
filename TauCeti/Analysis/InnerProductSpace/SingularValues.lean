@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.SingularValues
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
+public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
@@ -81,6 +82,8 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
   `B` have the same singular values.
+* `LinearMap.singularValues_operatorAbs`: the modulus `|A| = √(A† A)` has the same singular values
+  as `A`.
 * `LinearMap.singularValues_linearIsometryEquiv_comp`,
   `LinearMap.singularValues_comp_linearIsometryEquiv`: composing with isometric isomorphisms on
   either side leaves the singular values unchanged.
@@ -186,6 +189,15 @@ theorem singularValues_of_finrank_le_right (A : E →ₗ[𝕜] F) {i : ℕ} (hi 
     A.singularValues i = 0 := by
   rw [← singularValues_adjoint]
   exact (adjoint A).singularValues_of_finrank_le hi
+
+/-- A sum `∑ᵢ f(σᵢ(A))` over the first `dim E` singular values is the `Finsupp` sum of `f` over
+all singular values, provided `f 0 = 0`. -/
+theorem sum_fin_singularValues {M : Type*} [AddCommMonoid M] (A : E →ₗ[𝕜] F) (f : ℝ → M)
+    (hf : f 0 = 0) :
+    ∑ i : Fin (finrank 𝕜 E), f (A.singularValues i) = A.singularValues.sum fun _ s ↦ f s := by
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ f (A.singularValues i)),
+    Finsupp.sum_of_support_subset _ (A.support_singularValues ▸
+      Finset.range_subset_range.mpr A.finrank_range_le) _ fun _ _ ↦ hf]
 
 /-- The squared singular values of `A` are the sorted eigenvalues of the target Gram operator
 `A A†`, at every index below the dimension of the target. -/
@@ -511,6 +523,12 @@ theorem singularValues_eq_of_norm_apply_eq {A : E →ₗ[𝕜] F} {B : E →ₗ[
   exact le_antisymm
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
     (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
+
+/-- The modulus `|A| = √(A† A)` of a map has the same singular values as the map itself. -/
+@[simp]
+theorem singularValues_operatorAbs (A : E →ₗ[𝕜] F) :
+    A.operatorAbs.singularValues = A.singularValues :=
+  singularValues_eq_of_norm_apply_eq A.norm_operatorAbs_apply
 
 /-- Composing on the left with an isometric isomorphism leaves the singular values unchanged. -/
 @[simp]

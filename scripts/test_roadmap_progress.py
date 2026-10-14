@@ -553,13 +553,19 @@ class TopicScheme(unittest.TestCase):
                     path.write_text(json.dumps(broken))
                     self.assertFalse(rp.snapshot_is_current(path))
             for field, value in (("arxiv", "math.BAD"), ("arxiv", []),
-                                 ("topic", "obsolete category"), ("layers", None),
+                                 ("topic", "obsolete category"),
                                  ("parent_id", "__proto__")):
                 with self.subTest(row_field=field):
                     broken = copy.deepcopy(snapshot)
                     broken["rows"][0][field] = value
                     path.write_text(json.dumps(broken))
                     self.assertFalse(rp.snapshot_is_current(path))
+            # The browser leaves malformed individual display rows out rather than
+            # rejecting the whole board. Category metadata still validates above.
+            broken = copy.deepcopy(snapshot)
+            broken["rows"][0]["layers"] = None
+            path.write_text(json.dumps(broken))
+            self.assertTrue(rp.snapshot_is_current(path))
             broken = copy.deepcopy(snapshot)
             del broken["rows"][0]["arxiv"]
             path.write_text(json.dumps(broken))
