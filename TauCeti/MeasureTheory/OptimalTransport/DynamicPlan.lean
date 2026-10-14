@@ -156,11 +156,13 @@ theorem isCoupling_map_timeMarginal (η : Measure C(I, X)) (s t : I) :
     ⟨ContinuousMap.measurable_eval t, (timeMarginal_def η t).symm⟩
 
 /-- The law at time `t` is monotone in the dynamic plan. -/
+@[gcongr]
 theorem timeMarginal_mono {η η' : Measure C(I, X)} (h : η ≤ η') (t : I) :
     timeMarginal η t ≤ timeMarginal η' t :=
   Measure.map_mono h (ContinuousMap.measurable_eval t)
 
 /-- Scaling a dynamic plan by `c` scales its law at every time by `c`. -/
+@[simp]
 theorem timeMarginal_smul (c : ℝ≥0∞) (η : Measure C(I, X)) (t : I) :
     timeMarginal (c • η) t = c • timeMarginal η t :=
   Measure.map_smul c (ContinuousMap.measurable_eval t).aemeasurable
