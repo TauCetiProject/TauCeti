@@ -1,0 +1,650 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.TwoTorsion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Descent
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Basic
+public import TauCeti.FieldTheory.GaloisCohomology.Kummer
+
+/-!
+# The Kummer map of multiplication by two is `x - e`
+
+Let `W` be an elliptic curve over a field `K` in which `2` is invertible, and let `T = (e, t)` be a
+point of `W(K)` of order two. The Kummer map of `[2]` sends `P ∈ E(K)` to a class in
+`H¹(G_K, E[2])`, and the character `E[2] → μ₂` which is trivial exactly on `{O, T}` carries it to
+`H¹(G_K, μ₂) = Kˣ ⧸ (Kˣ)²`. This file proves that the result is the square class of `x(P) - e`
+(Silverman X.1.4):
+
+```text
+H¹(G_K, E[2]) ⟶ H¹(G_K, μ₂),      δ(P) ↦ class of x(P) - e,
+```
+
+with the conventions that `O` goes to `1` and `T` itself, where `x - e` vanishes, goes to
+`c_T = -W_X(e, t) = 3e² + 2a₂e + a₄ - a₁t`, which is `(e - e')(e - e'')` when the equation is
+`y² = (x - e)(x - e')(x - e'')`. The character `E[2] → μ₂` is the Weil pairing `e₂(·, T)`
+(`WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`): the `2`-torsion of `E(Kˢ)` has four
+points, and `e₂(S, T) = 1` exactly for `S ∈ {O, T}`.
+
+This identifies the explicit `x - e` map of the `2`-descent with the cohomological Kummer map,
+read through `T`. Applied over an extension `L` of `K` containing a root `e` of the `2`-division
+polynomial, together with the compatibility of the Kummer map with restriction to `L`
+(`WeierstrassCurve.torsionRes_kummerMap`), it is the computation that compares the cohomological
+`2`-Selmer group with the explicit one in the square classes of the étale algebra of that
+polynomial.
+
+The computation is the classical one. Choose `Q ∈ E(Kˢ)` with `2Q = P`. If `P ∉ {O, T}`, then
+`ψ₂(Q) ≠ 0` and `x(P) - e = α²` with `α = ((x(Q) - e)² - c_T) / ψ₂(Q)`
+(`WeierstrassCurve.Affine.xCoord_add_self_sub_mul_sq`). If `P = T`, then `c_T = α²` with
+`α = x(Q) - e`. In both cases `σ α = α` when `σ Q - Q ∈ {O, T}` and `σ α = -α` otherwise, by the
+formulas for translation by a point of order two
+(`WeierstrassCurve.Affine.xCoord_add_sub_mul_sub`). So the Kummer cocycle `σ ↦ σ α / α` of the
+unit is the image of the Kummer cocycle `σ ↦ σ Q - Q` of `P`.
+
+## Main definitions
+
+* `WeierstrassCurve.twoTorsionCoeff`: the point `T`, as an element of `E(Kˢ)[2]`.
+* `WeierstrassCurve.twoTorsionCharacter`: the character `E(Kˢ)[2] → μ₂`, trivial exactly on
+  `{O, T}`, as a homomorphism of `G_K`-modules.
+* `WeierstrassCurve.twoDescentUnit`: the map `E(K) → Kˣ` sending `P` to `x(P) - e`, with `O ↦ 1`
+  and `T ↦ c_T`.
+
+## Main results
+
+* `WeierstrassCurve.coe_toMul_twoTorsionCharacter`: the character is `1` on `{O, T}` and `-1` off
+  it.
+* `WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`: the character is `e₂(·, T)`.
+* `WeierstrassCurve.explicitCoeff1_twoTorsionCharacter_kummerMap`: the image of the Kummer class of
+  `P` under the character is the Kummer class of `x(P) - e`.
+
+## References
+
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], X.1.4.
+-/
+
+public section
+
+noncomputable section
+
+open TauCeti TauCeti.ContCohomology
+
+namespace WeierstrassCurve
+
+/-! ### Translating the square root of `x(2Q) - e` by points of order two -/
+
+section Halving
+
+open WeierstrassCurve.Affine WeierstrassCurve.Affine.Point
+
+variable {F : Type*} [Field F] [DecidableEq F] {W : Affine F} {e t x y : F}
+
+/-- An affine point of order two has `ψ₂ = 0`. -/
+private theorem evalEval_polynomialY_eq_zero_of_add_self_eq_zero (hT : W.Nonsingular e t)
+    (hS : some e t hT + some e t hT = 0) : W.polynomialY.evalEval e t = 0 := by
+  by_contra hψ
+  have ht : t ≠ W.negY e t := fun ht ↦ hψ <| by
+    rw [negY] at ht
+    rw [evalEval_polynomialY]
+    linear_combination ht
+  rw [add_self_of_Y_ne ht] at hS
+  exact some_ne_zero _ hS
+
+omit [DecidableEq F] in
+/-- A point of order two over the `x`-coordinate of `T` is `T`. -/
+private theorem Y_eq_of_evalEval_polynomialY_eq_zero (hT : W.Equation e t)
+    (hψ : W.polynomialY.evalEval e t = 0) {t₀ : F} (hT₀ : W.Equation e t₀) : t₀ = t := by
+  have ht : t = W.negY e t := by
+    rw [evalEval_polynomialY] at hψ
+    rw [negY]
+    linear_combination hψ
+  rcases Y_eq_of_X_eq hT₀ hT rfl with h | h
+  · exact h
+  · rwa [← ht] at h
+
+/-- A point `S` of order two is `O`, `T`, or a point `(e₀, t₀)` with `ψ₂(e₀, t₀) = 0` and
+`e₀ ≠ e`. -/
+private theorem eq_zero_or_eq_or_exists_of_add_self_eq_zero (hT : W.Nonsingular e t)
+    (hψ : W.polynomialY.evalEval e t = 0) {S : W.Point} (hS : S + S = 0) :
+    S = 0 ∨ S = some e t hT ∨ ∃ (e₀ t₀ : F) (hT₀ : W.Nonsingular e₀ t₀),
+      W.polynomialY.evalEval e₀ t₀ = 0 ∧ e₀ ≠ e ∧ S = some e₀ t₀ hT₀ := by
+  rcases S with _ | ⟨e₀, t₀, hT₀⟩
+  · exact Or.inl rfl
+  have hψ₀ := evalEval_polynomialY_eq_zero_of_add_self_eq_zero hT₀ hS
+  by_cases he : e₀ = e
+  · subst he
+    obtain rfl := Y_eq_of_evalEval_polynomialY_eq_zero hT.1 hψ hT₀.1
+    exact Or.inr (Or.inl rfl)
+  · exact Or.inr (Or.inr ⟨e₀, t₀, hT₀, hψ₀, he, rfl⟩)
+
+/-- Translating `Q` with `ψ₂(Q) ≠ 0` by a point of order two keeps `ψ₂ ≠ 0`. -/
+private theorem evalEval_polynomialY_add_ne_zero (h : W.Nonsingular x y)
+    (hy : W.polynomialY.evalEval x y ≠ 0) {S : W.Point} (hS : S + S = 0) :
+    W.polynomialY.evalEval (some x y h + S).xCoord (some x y h + S).yCoord ≠ 0 := by
+  rcases S with _ | ⟨e₀, t₀, hT₀⟩
+  · rwa [← zero_def, add_zero, xCoord_some, yCoord_some]
+  have hψ₀ := evalEval_polynomialY_eq_zero_of_add_self_eq_zero hT₀ hS
+  have hx := X_ne_of_evalEval_polynomialY_ne_zero hT₀.1 hψ₀ h.1 hy
+  have hA := xCoord_add_sub_mul_sub hT₀ hψ₀ h hx
+  have hB := evalEval_polynomialY_add_mul_sub hT₀ hψ₀ h hx
+  have hc : W.polynomialX.evalEval e₀ t₀ ≠ 0 := hT₀.2.resolve_right (not_not.2 hψ₀)
+  intro h0
+  rw [h0, zero_mul, neg_mul, zero_eq_neg, mul_eq_zero] at hB
+  refine hB.elim hy fun hx' ↦ hc ?_
+  rw [hx', zero_mul, zero_eq_neg] at hA
+  exact hA
+
+/-- The square root `((x - e)² + W_X(e, t)) / ψ₂` of `x(2Q) - e` is unchanged by translation by
+`T = (e, t)`. -/
+private theorem root_add_self_point (hT : W.Nonsingular e t)
+    (hψ : W.polynomialY.evalEval e t = 0) (h : W.Nonsingular x y)
+    (hy : W.polynomialY.evalEval x y ≠ 0) :
+    (((some x y h + some e t hT).xCoord - e) ^ 2 + W.polynomialX.evalEval e t) *
+        W.polynomialY.evalEval x y =
+      ((x - e) ^ 2 + W.polynomialX.evalEval e t) *
+        W.polynomialY.evalEval (some x y h + some e t hT).xCoord
+          (some x y h + some e t hT).yCoord := by
+  have hx := X_ne_of_evalEval_polynomialY_ne_zero hT.1 hψ h.1 hy
+  have hA := xCoord_add_sub_mul_sub hT hψ h hx
+  have hB := evalEval_polynomialY_add_mul_sub hT hψ h hx
+  set x' := (some x y h + some e t hT).xCoord
+  set ψ := W.polynomialY.evalEval x y
+  set c := W.polynomialX.evalEval e t
+  apply mul_left_cancel₀ (sub_ne_zero.2 hx)
+  linear_combination -((x - e) ^ 2 + c) * hB + ψ * ((x - e) + (x' - e)) * hA
+
+/-- The square root `((x - e)² + W_X(e, t)) / ψ₂` of `x(2Q) - e` changes sign under translation
+by a point `(e₀, t₀)` of order two with `e₀ ≠ e`. -/
+private theorem root_add_other_point (hT : W.Nonsingular e t)
+    (hψ : W.polynomialY.evalEval e t = 0) {e₀ t₀ : F} (hT₀ : W.Nonsingular e₀ t₀)
+    (hψ₀ : W.polynomialY.evalEval e₀ t₀ = 0) (he : e₀ ≠ e) (h : W.Nonsingular x y)
+    (hy : W.polynomialY.evalEval x y ≠ 0) :
+    (((some x y h + some e₀ t₀ hT₀).xCoord - e) ^ 2 + W.polynomialX.evalEval e t) *
+        W.polynomialY.evalEval x y =
+      -(((x - e) ^ 2 + W.polynomialX.evalEval e t) *
+        W.polynomialY.evalEval (some x y h + some e₀ t₀ hT₀).xCoord
+          (some x y h + some e₀ t₀ hT₀).yCoord) := by
+  have hx := X_ne_of_evalEval_polynomialY_ne_zero hT₀.1 hψ₀ h.1 hy
+  have hA := xCoord_add_sub_mul_sub hT₀ hψ₀ h hx
+  have hB := evalEval_polynomialY_add_mul_sub hT₀ hψ₀ h hx
+  have hC := evalEval_polynomialX_add_evalEval_polynomialX hT.1 hψ hT₀.1 hψ₀ he
+  set x' := (some x y h + some e₀ t₀ hT₀).xCoord
+  set ψ := W.polynomialY.evalEval x y
+  set c := W.polynomialX.evalEval e t
+  apply mul_left_cancel₀ (sub_ne_zero.2 hx)
+  linear_combination ((x - e) ^ 2 + c) * hB + ψ * ((x - e₀) - (x' - e₀)) * hC -
+    ψ * ((x - e₀) - (x' - e₀)) * hA
+
+/-- **The square root of `x(2Q) - e` under translation by `E[2]`**: if `ψ₂(Q) ≠ 0` and `S` has
+order two, then `r(Q + S) = ±r(Q)` for `r = ((x - e)² + W_X(e, t)) / ψ₂`, with the sign `+`
+exactly when `S ∈ {O, T}`. -/
+private theorem root_add (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
+    (h : W.Nonsingular x y) (hy : W.polynomialY.evalEval x y ≠ 0) {S : W.Point}
+    (hS : S + S = 0) :
+    (((some x y h + S).xCoord - e) ^ 2 + W.polynomialX.evalEval e t) /
+        W.polynomialY.evalEval (some x y h + S).xCoord (some x y h + S).yCoord =
+      (if S = 0 ∨ S = some e t hT then 1 else -1) *
+        (((x - e) ^ 2 + W.polynomialX.evalEval e t) / W.polynomialY.evalEval x y) := by
+  have hy' := evalEval_polynomialY_add_ne_zero h hy hS
+  rcases eq_zero_or_eq_or_exists_of_add_self_eq_zero hT hψ hS with
+    rfl | rfl | ⟨e₀, t₀, hT₀, hψ₀, he, rfl⟩
+  · simp
+  · rw [ite_eq_left (Or.inr rfl), one_mul, div_eq_div_iff hy' hy]
+    exact root_add_self_point hT hψ h hy
+  · have hne : ¬(some e₀ t₀ hT₀ = 0 ∨ some e₀ t₀ hT₀ = some e t hT) := by
+      rintro (h0 | h0)
+      · exact some_ne_zero _ h0
+      · exact he (some.inj h0).1
+    rw [ite_eq_right hne, neg_one_mul, ← neg_div, div_eq_div_iff hy' hy]
+    rw [root_add_other_point hT hψ hT₀ hψ₀ he h hy]
+    ring
+
+/-- **The square root of `c_T` under translation by `E[2]`**: if `2Q = T`, so that
+`(x - e)² = c_T`, and `S` has order two, then `x(Q + S) - e = ±(x(Q) - e)`, with the sign `+`
+exactly when `S ∈ {O, T}`. -/
+private theorem xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
+    (h : W.Nonsingular x y) (hy : W.polynomialY.evalEval x y ≠ 0)
+    (hx2 : (x - e) ^ 2 + W.polynomialX.evalEval e t = 0) {S : W.Point} (hS : S + S = 0) :
+    (some x y h + S).xCoord - e = (if S = 0 ∨ S = some e t hT then 1 else -1) * (x - e) := by
+  rcases eq_zero_or_eq_or_exists_of_add_self_eq_zero hT hψ hS with
+    rfl | rfl | ⟨e₀, t₀, hT₀, hψ₀, he, rfl⟩
+  · simp
+  · rw [ite_eq_left (Or.inr rfl), one_mul]
+    have hx := X_ne_of_evalEval_polynomialY_ne_zero hT.1 hψ h.1 hy
+    have hA := xCoord_add_sub_mul_sub hT hψ h hx
+    apply mul_right_cancel₀ (sub_ne_zero.2 hx)
+    linear_combination hA - hx2
+  · have hne : ¬(some e₀ t₀ hT₀ = 0 ∨ some e₀ t₀ hT₀ = some e t hT) := by
+      rintro (h0 | h0)
+      · exact some_ne_zero _ h0
+      · exact he (some.inj h0).1
+    rw [ite_eq_right hne, neg_one_mul]
+    have hx := X_ne_of_evalEval_polynomialY_ne_zero hT₀.1 hψ₀ h.1 hy
+    have hA := xCoord_add_sub_mul_sub hT₀ hψ₀ h hx
+    have hC := evalEval_polynomialX_add_evalEval_polynomialX hT.1 hψ hT₀.1 hψ₀ he
+    apply mul_right_cancel₀ (sub_ne_zero.2 hx)
+    linear_combination hA - hC + hx2
+
+end Halving
+
+/-! ### The character `E(Kˢ)[2] → μ₂` attached to `T` -/
+
+section Character
+
+open WeierstrassCurve.Affine.Point
+
+variable {K : Type*} [Field K] [DecidableEq K] (W : WeierstrassCurve K) {e t : K}
+  (hT : W.toAffine.Nonsingular e t) (hψ : W.toAffine.polynomialY.evalEval e t = 0)
+
+include hψ in
+/-- `T = (e, t)` has order two. -/
+private theorem some_add_self_eq_zero : (some e t hT : W.toAffine.Point) + some e t hT = 0 :=
+  Affine.Point.add_self_of_Y_eq <| by
+    rw [Affine.evalEval_polynomialY] at hψ
+    rw [Affine.negY]
+    linear_combination hψ
+
+/-- **The point `T` of order two, as an element of `E(Kˢ)[2]`.** -/
+def twoTorsionCoeff : W.TorsionCoeff 2 :=
+  ⟨W.basePointCoeff (some e t hT), by
+    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, two_nsmul,
+      some_add_self_eq_zero W hT hψ, _root_.map_zero]⟩
+
+/-- `twoTorsionCoeff` is the image of `T` in `E(Kˢ)`. -/
+@[simp]
+theorem coe_twoTorsionCoeff :
+    (W.twoTorsionCoeff hT hψ : W.PointCoeff) = W.basePointCoeff (some e t hT) :=
+  (rfl)
+
+private theorem twoTorsionCoeff_ne_zero : W.twoTorsionCoeff hT hψ ≠ 0 := fun h ↦
+  some_ne_zero hT <| W.basePointCoeff_injective <| by
+    rw [← coe_twoTorsionCoeff W hT hψ, h, _root_.map_zero, ZeroMemClass.coe_zero]
+
+private theorem addOrderOf_twoTorsionCoeff : addOrderOf (W.twoTorsionCoeff hT hψ) = 2 :=
+  addOrderOf_eq_prime (Subtype.ext <| by
+    rw [AddSubgroup.coe_nsmul, coe_twoTorsionCoeff, ← map_nsmul, two_nsmul,
+      some_add_self_eq_zero W hT hψ, _root_.map_zero, ZeroMemClass.coe_zero])
+    (twoTorsionCoeff_ne_zero W hT hψ)
+
+/-- The multiples of `T` in `E(Kˢ)[2]` are `O` and `T`. -/
+private theorem mem_zmultiples_twoTorsionCoeff_iff {S : W.TorsionCoeff 2} :
+    S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) ↔
+      (S : W.PointCoeff) = 0 ∨ (S : W.PointCoeff) = W.basePointCoeff (some e t hT) := by
+  have e₁ : (S : W.PointCoeff) = 0 ↔ S = 0 := ZeroMemClass.coe_eq_zero
+  have e₂ : (S : W.PointCoeff) = W.basePointCoeff (some e t hT) ↔ S = W.twoTorsionCoeff hT hψ := by
+    rw [← coe_twoTorsionCoeff W hT hψ, Subtype.coe_inj]
+  rw [e₁, e₂]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨n, rfl⟩
+    dsimp only
+    rw [← mod_addOrderOf_zsmul, addOrderOf_twoTorsionCoeff]
+    rcases Int.emod_two_eq_zero_or_one n with h | h
+    · exact Or.inl (by rw [show n % ((2 : ℕ) : ℤ) = 0 from h, zero_zsmul])
+    · exact Or.inr (by rw [show n % ((2 : ℕ) : ℤ) = 1 from h, one_zsmul])
+  · rintro (rfl | rfl)
+    · exact zero_mem _
+    · exact AddSubgroup.mem_zmultiples _
+
+omit [DecidableEq K] in
+open scoped Classical in
+/-- `E(Kˢ)[2]` has four points. -/
+private theorem natCard_torsionCoeff_two [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
+    Nat.card (W.TorsionCoeff 2) = 4 := by
+  have h2' : (((2 : ℕ) : ℤ) : SeparableClosure K) ≠ 0 := by
+    rw [Int.cast_natCast, ← map_natCast (algebraMap K (SeparableClosure K))]
+    exact (map_ne_zero _).2 h2.ne_zero
+  rw [Nat.card_congr (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _).toEquiv]
+  -- `W.PointCoeff` carries the group law for one choice of decidable equality on `Kˢ`, and
+  -- `natCard_torsionBy` is stated for another; the two choices agree.
+  have hI : (fun a b ↦ Subtype.instDecidableEq a b : DecidableEq (SeparableClosure K)) =
+      fun a b ↦ Classical.propDecidable (a = b) := Subsingleton.elim _ _
+  rw [hI, WeierstrassCurve.natCard_torsionBy (W.baseChange (SeparableClosure K)) h2']
+  norm_num
+
+/-- `{O, T}` has index two in `E(Kˢ)[2]`. -/
+private theorem index_zmultiples_twoTorsionCoeff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
+    (AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)).index = 2 := by
+  have h := (AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)).card_mul_index
+  rw [Nat.card_zmultiples, addOrderOf_twoTorsionCoeff, natCard_torsionCoeff_two W h2] at h
+  omega
+
+/-- `-1` as a square root of unity in `Kˢ`. -/
+private def negOneRootOfUnity : rootsOfUnity 2 (SeparableClosure K) :=
+  ⟨-1, by rw [mem_rootsOfUnity, neg_one_sq]⟩
+
+omit [DecidableEq K] in
+/-- The Galois group fixes `-1`. -/
+private theorem smul_negOneRootOfUnity (σ : AbsoluteGaloisGroup K) :
+    σ • (Additive.ofMul (negOneRootOfUnity (K := K)) : KummerCoeff K 2) =
+      Additive.ofMul negOneRootOfUnity :=
+  Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
+    simp [negOneRootOfUnity, AlgEquiv.smul_units_def]
+
+/-- **The character `E(Kˢ)[2] → μ₂` attached to a point `T` of order two**, trivial exactly on
+`{O, T}`: a homomorphism of discrete `G_K`-modules, for `2` invertible in `K`, since `{O, T}` has
+index two in `E(Kˢ)[2]` and is stable under `G_K`. It is the Weil pairing `e₂(·, T)`
+(`WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`). -/
+def twoTorsionCharacter [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
+    W.TorsionCoeff 2 →+[AbsoluteGaloisGroup K] KummerCoeff K 2 where
+  toFun S := if S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) then 0
+    else Additive.ofMul negOneRootOfUnity
+  map_zero' := ite_eq_left (zero_mem _)
+  map_add' S₁ S₂ := by
+    have hadd := AddSubgroup.add_mem_iff_of_index_two
+      (index_zmultiples_twoTorsionCoeff W hT hψ h2) (a := S₁) (b := S₂)
+    by_cases h₁ : S₁ ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) <;>
+      by_cases h₂ : S₂ ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)
+    · rw [ite_eq_left (hadd.2 (iff_of_true h₁ h₂)), ite_eq_left h₁, ite_eq_left h₂, add_zero]
+    · rw [ite_eq_right fun h ↦ h₂ (hadd.1 h |>.1 h₁), ite_eq_left h₁, ite_eq_right h₂, zero_add]
+    · rw [ite_eq_right fun h ↦ h₁ (hadd.1 h |>.2 h₂), ite_eq_right h₁, ite_eq_left h₂, add_zero]
+    · rw [ite_eq_left (hadd.2 (iff_of_false h₁ h₂)), ite_eq_right h₁, ite_eq_right h₂]
+      exact Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
+        simp [negOneRootOfUnity]
+  map_smul' σ S := by
+    have hσ : σ • S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) ↔
+        S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) := by
+      rw [mem_zmultiples_twoTorsionCoeff_iff, mem_zmultiples_twoTorsionCoeff_iff,
+        coe_smul_torsionCoeff, smul_eq_zero_iff_eq, smul_eq_iff_eq_inv_smul, smul_basePointCoeff]
+    simp only [hσ, MonoidHom.id_apply]
+    split_ifs
+    · rw [smul_zero]
+    · rw [smul_negOneRootOfUnity]
+
+/-- The definition of `twoTorsionCharacter`, through the subgroup `{O, T}` of `E(Kˢ)[2]`. -/
+private theorem twoTorsionCharacter_apply [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
+    (S : W.TorsionCoeff 2) :
+    W.twoTorsionCharacter hT hψ h2 S =
+      if S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) then 0
+      else Additive.ofMul negOneRootOfUnity :=
+  (rfl)
+
+open scoped Classical in
+/-- **The values of `twoTorsionCharacter`**: `1` on `O` and `T`, and `-1` on the other two points
+of `E(Kˢ)[2]`. -/
+theorem coe_toMul_twoTorsionCharacter [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
+    (S : W.TorsionCoeff 2) :
+    (((W.twoTorsionCharacter hT hψ h2 S).toMul : rootsOfUnity 2 (SeparableClosure K)) :
+        (SeparableClosure K)ˣ) =
+      if (S : W.PointCoeff) = 0 ∨ (S : W.PointCoeff) = W.basePointCoeff (some e t hT) then 1
+      else -1 := by
+  rw [twoTorsionCharacter_apply]
+  by_cases h : S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)
+  · rw [ite_eq_left h, ite_eq_left ((mem_zmultiples_twoTorsionCoeff_iff W hT hψ).1 h)]
+    rfl
+  · rw [ite_eq_right h, ite_eq_right (mt (mem_zmultiples_twoTorsionCoeff_iff W hT hψ).2 h)]
+    rfl
+
+/-- **`twoTorsionCharacter` is trivial exactly on `{O, T}`.** -/
+theorem twoTorsionCharacter_eq_zero_iff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
+    {S : W.TorsionCoeff 2} :
+    W.twoTorsionCharacter hT hψ h2 S = 0 ↔
+      (S : W.PointCoeff) = 0 ∨ (S : W.PointCoeff) = W.basePointCoeff (some e t hT) := by
+  have h2L : (2 : SeparableClosure K) ≠ 0 := by
+    rw [← map_ofNat (algebraMap K (SeparableClosure K)), ← Nat.cast_ofNat]
+    exact (map_ne_zero _).2 h2.ne_zero
+  have hneg : (-1 : (SeparableClosure K)ˣ) ≠ 1 := fun h ↦ h2L <| by
+    have := congrArg (fun u : (SeparableClosure K)ˣ ↦ (u : SeparableClosure K)) h
+    simp only [Units.val_neg, Units.val_one] at this
+    linear_combination -this
+  rw [← Additive.toMul.injective.eq_iff, toMul_zero, ← Subtype.coe_inj, OneMemClass.coe_one,
+    coe_toMul_twoTorsionCharacter]
+  split_ifs with h
+  · exact iff_of_true rfl h
+  · exact iff_of_false hneg h
+
+open scoped Classical in
+/-- **`twoTorsionCharacter` is the Weil pairing with `T`**: `χ_T(S) = e₂(S, T)`, the form in which
+it appears in Silverman X.1.4. The Weil pairing `e₂(·, T)` is trivial on `O` and on `T`, since it
+is alternating, and it is nontrivial on `E(Kˢ)[2]`, since it is nondegenerate and `T ≠ O`; so its
+kernel is the subgroup `{O, T}` of index two, and it takes the value `-1` off it. -/
+theorem twoTorsionCharacter_eq_weilPairing [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
+    (S : W.TorsionCoeff 2) :
+    W.twoTorsionCharacter hT hψ h2 S =
+      Isogeny.weilPairing (W⁄(SeparableClosure K)) 2
+        (by rw [← map_natCast (algebraMap K _)]; exact (map_ne_zero _).2 h2.ne_zero)
+        (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _ S)
+        (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _ (W.twoTorsionCoeff hT hψ)) := by
+  set φ := AddEquiv.torsionByCongr W.pointCoeffEquiv.symm ((2 : ℕ) : ℤ)
+  set e := (Isogeny.weilPairing (W⁄(SeparableClosure K)) 2
+    (by rw [← map_natCast (algebraMap K _)]; exact (map_ne_zero _).2 h2.ne_zero)).flip
+      (φ (W.twoTorsionCoeff hT hψ))
+  set H := AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)
+  -- the right-hand side is `e (φ S)`, by `AddMonoidHom.flip_apply`
+  change _ = e (φ S)
+  -- `e₂(·, T)` vanishes on `{O, T}`
+  have hH {S : W.TorsionCoeff 2} (hS : S ∈ H) : e (φ S) = 0 := by
+    rcases (mem_zmultiples_twoTorsionCoeff_iff W hT hψ).1 hS with h | h
+    · rw [ZeroMemClass.coe_eq_zero.1 h, _root_.map_zero, _root_.map_zero]
+    · rw [Subtype.coe_inj.1 (h.trans (coe_twoTorsionCoeff W hT hψ).symm)]
+      exact Isogeny.weilPairing_self _ _ _ _
+  by_cases hS : S ∈ H
+  · rw [hH hS]
+    exact (twoTorsionCharacter_eq_zero_iff W hT hψ h2).2 ((mem_zmultiples_twoTorsionCoeff_iff W hT
+      hψ).1 hS)
+  -- off `{O, T}`, `e₂(·, T)` does not vanish, by nondegeneracy, so it is `-1`
+  have he : e (φ S) ≠ 0 := by
+    intro h0
+    have hall (R) : e R = 0 := by
+      obtain ⟨R, rfl⟩ := φ.surjective R
+      by_cases hR : R ∈ H
+      · exact hH hR
+      · have hRS : R + S ∈ H := (AddSubgroup.add_mem_iff_of_index_two
+          (index_zmultiples_twoTorsionCoeff W hT hψ h2)).2 (iff_of_false hR hS)
+        have := hH hRS
+        rwa [map_add, map_add, h0, add_zero] at this
+    refine twoTorsionCoeff_ne_zero W hT hψ (φ.injective ?_)
+    rw [_root_.map_zero]
+    exact Isogeny.eq_zero_of_forall_weilPairing_eq_zero _ _ _ hall
+  have hsq : (((e (φ S)).toMul : (SeparableClosure K)ˣ) : SeparableClosure K) *
+      ((e (φ S)).toMul : (SeparableClosure K)ˣ) = 1 := by
+    rw [← Units.val_mul, ← sq, (mem_rootsOfUnity _ _).1 (e (φ S)).toMul.2, Units.val_one]
+  refine Additive.toMul.injective <| Subtype.ext <| Units.ext ?_
+  rw [coe_toMul_twoTorsionCharacter, ite_eq_right (mt (mem_zmultiples_twoTorsionCoeff_iff W hT
+    hψ).2 hS)]
+  rcases mul_self_eq_one_iff.1 hsq with h1 | h1
+  · exact absurd (Additive.toMul.injective (Subtype.ext (Units.ext h1))) he
+  · rw [Units.val_neg, Units.val_one, h1]
+
+end Character
+
+/-! ### The map `P ↦ x(P) - e` and the Kummer map -/
+
+section Descent
+
+open WeierstrassCurve.Affine.Point
+
+variable {K : Type*} [Field K] [DecidableEq K] (W : WeierstrassCurve K) {e t : K}
+  (hT : W.toAffine.Nonsingular e t) (hψ : W.toAffine.polynomialY.evalEval e t = 0)
+
+/-- **The `2`-descent map attached to a point `T = (e, t)` of order two**: `P ↦ x(P) - e`, as a
+unit of `K`, with `O ↦ 1` and `T ↦ c_T = -W_X(e, t)`, the value at `T` of the derivative of the
+Weierstrass equation in `x`. Its square class is the image of the Kummer class of `P` under the
+character `E[2] → μ₂` attached to `T`
+(`WeierstrassCurve.explicitCoeff1_twoTorsionCharacter_kummerMap`). -/
+def twoDescentUnit : W.toAffine.Point → Kˣ
+  | .zero => 1
+  | .some x _ _ =>
+    if hx : x = e then
+      Units.mk0 (-W.toAffine.polynomialX.evalEval e t)
+        (neg_ne_zero.2 (hT.2.resolve_right (not_not.2 hψ)))
+    else Units.mk0 (x - e) (sub_ne_zero.2 hx)
+
+/-- The `2`-descent map sends `O` to `1`. -/
+@[simp]
+theorem twoDescentUnit_zero : W.twoDescentUnit hT hψ 0 = 1 :=
+  (rfl)
+
+/-- Away from `T`, the `2`-descent map is `x - e`. -/
+theorem coe_twoDescentUnit_some_of_ne {x y : K} (h : W.toAffine.Nonsingular x y) (hx : x ≠ e) :
+    (W.twoDescentUnit hT hψ (some x y h) : K) = x - e := by
+  rw [twoDescentUnit, dite_eq_right hx, Units.val_mk0]
+
+/-- At `T`, the `2`-descent map is `c_T = -W_X(e, t)`. -/
+theorem coe_twoDescentUnit_some_of_eq {x y : K} (h : W.toAffine.Nonsingular x y) (hx : x = e) :
+    (W.twoDescentUnit hT hψ (some x y h) : K) = -W.toAffine.polynomialX.evalEval e t := by
+  rw [twoDescentUnit, dite_eq_left hx, Units.val_mk0]
+
+variable {W}
+
+omit [DecidableEq K] in
+/-- `ψ₂` commutes with the base change to `Kˢ`. -/
+private theorem evalEval_polynomialY_baseChange (x y : K) :
+    (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval (algebraMap K _ x)
+        (algebraMap K _ y) =
+      algebraMap K (SeparableClosure K) (W.toAffine.polynomialY.evalEval x y) := by
+  simp [Affine.evalEval_polynomialY, WeierstrassCurve.baseChange, map_ofNat]
+
+omit [DecidableEq K] in
+/-- `W_X` commutes with the base change to `Kˢ`. -/
+private theorem evalEval_polynomialX_baseChange (x y : K) :
+    (W⁄(SeparableClosure K)).toAffine.polynomialX.evalEval (algebraMap K _ x)
+        (algebraMap K _ y) =
+      algebraMap K (SeparableClosure K) (W.toAffine.polynomialX.evalEval x y) := by
+  simp [Affine.evalEval_polynomialX, WeierstrassCurve.baseChange, map_ofNat]
+
+omit [DecidableEq K] in
+/-- The Galois group acts on `ψ₂` of the base change through the coordinates. -/
+private theorem evalEval_polynomialY_galois (σ : AbsoluteGaloisGroup K)
+    (x y : SeparableClosure K) :
+    σ ((W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y) =
+      (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval (σ x) (σ y) := by
+  simp [Affine.evalEval_polynomialY, WeierstrassCurve.baseChange, map_ofNat]
+
+open scoped Classical in
+/-- **The Galois action on a half of a point of `E(K)`**: if `2Q` lies in `E(K)`, then the
+coordinates of `σ Q` are those of `Q + S`, for the point `S = σ Q - Q` of order two, and `S` is `O`
+or `T` exactly when `σ Q - Q` is. -/
+private theorem coords_smul_eq_and_add_self_eq_zero {P : W.toAffine.Point}
+    {x y : SeparableClosure K} {hQ : (W⁄(SeparableClosure K)).toAffine.Nonsingular x y}
+    (h2Q : 2 • W.pointCoeffEquiv (some x y hQ) = W.basePointCoeff P) (σ : AbsoluteGaloisGroup K) :
+    let S := W.pointCoeffEquiv.symm (σ • W.pointCoeffEquiv (some x y hQ) -
+      W.pointCoeffEquiv (some x y hQ))
+    σ x = (some x y hQ + S).xCoord ∧ σ y = (some x y hQ + S).yCoord ∧ S + S = 0 ∧
+      (σ • W.pointCoeffEquiv (some x y hQ) - W.pointCoeffEquiv (some x y hQ) = 0 ∨
+          σ • W.pointCoeffEquiv (some x y hQ) - W.pointCoeffEquiv (some x y hQ) =
+            W.basePointCoeff (some e t hT) ↔
+        S = 0 ∨ S = some (algebraMap K _ e) (algebraMap K _ t)
+          ((W.toAffine.baseChange_nonsingular (Algebra.ofId K (SeparableClosure K)).injective
+            e t).2 hT)) := by
+  intro S
+  have hmap : Affine.Point.map σ.toAlgHom (some x y hQ) = some x y hQ + S := by
+    rw [← W.pointCoeffEquiv.injective.eq_iff, map_add, AddEquiv.apply_symm_apply,
+      ← smul_pointCoeffEquiv, add_sub_cancel]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [← hmap, Affine.Point.map_some, xCoord_some]
+    rfl
+  · rw [← hmap, Affine.Point.map_some, yCoord_some]
+    rfl
+  · have h := smul_sub_mem_torsionCoeff h2Q σ
+    rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul] at h
+    rw [← W.pointCoeffEquiv.injective.eq_iff, map_add, AddEquiv.apply_symm_apply, h,
+      _root_.map_zero]
+  · rw [← W.pointCoeffEquiv.symm.injective.eq_iff, ← W.pointCoeffEquiv.symm.injective.eq_iff,
+      _root_.map_zero, basePointCoeff_some, AddEquiv.symm_apply_apply]
+
+open scoped Classical in
+/-- **A Kummer root of `x(P) - e`**: if `2Q = P ≠ O`, the unit `x(P) - e` (or `c_T` at `P = T`)
+has a square root `α` in `Kˢ` on which `σ` acts by `1` when `σ Q - Q ∈ {O, T}` and by `-1`
+otherwise. -/
+private theorem exists_sq_eq_and_smul_eq {xP yP : K} (hP : W.toAffine.Nonsingular xP yP)
+    {Q : W.PointCoeff} (hQ : 2 • Q = W.basePointCoeff (some xP yP hP)) :
+    ∃ α : (SeparableClosure K)ˣ,
+      α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom
+        (W.twoDescentUnit hT hψ (some xP yP hP)) ∧
+      ∀ σ : AbsoluteGaloisGroup K, σ • α =
+        (if σ • Q - Q = 0 ∨ σ • Q - Q = W.basePointCoeff (some e t hT) then 1 else -1) * α := by
+  obtain ⟨Q, rfl⟩ := W.pointCoeffEquiv.surjective Q
+  set ι := algebraMap K (SeparableClosure K)
+  have hT' : (W⁄(SeparableClosure K)).toAffine.Nonsingular (ι e) (ι t) :=
+    (W.toAffine.baseChange_nonsingular (Algebra.ofId K (SeparableClosure K)).injective e t).2 hT
+  have hψ' : (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval (ι e) (ι t) = 0 := by
+    rw [evalEval_polynomialY_baseChange, hψ, _root_.map_zero]
+  have hc' := evalEval_polynomialX_baseChange (W := W) e t
+  have hP' : (W⁄(SeparableClosure K)).toAffine.Nonsingular (ι xP) (ι yP) :=
+    (W.toAffine.baseChange_nonsingular (Algebra.ofId K (SeparableClosure K)).injective xP yP).2 hP
+  have hQQ : Q + Q = some (ι xP) (ι yP) hP' := W.pointCoeffEquiv.injective <| by
+    rw [map_add, ← two_nsmul, hQ, basePointCoeff_some]
+  -- `Q` is an affine point with `ψ₂(Q) ≠ 0`, since `2Q ≠ O`
+  rcases Q with _ | ⟨x, y, hQ'⟩
+  · rw [← zero_def, add_zero] at hQQ
+    exact absurd hQQ.symm (some_ne_zero _)
+  have hy : (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y ≠ 0 := fun hy ↦
+    some_ne_zero hP' <| by
+      rw [← hQQ]
+      refine Affine.Point.add_self_of_Y_eq ?_
+      rw [Affine.evalEval_polynomialY] at hy
+      rw [Affine.negY]
+      linear_combination hy
+  -- `x(2Q) - e` is the square of `((x - e)² + W_X(e, t)) / ψ₂(Q)`
+  have hdup := Affine.xCoord_add_self_sub_mul_sq hT'.1 hψ' hQ' hy
+  rw [hQQ, xCoord_some, hc'] at hdup
+  -- the action of `σ` on the coordinates of `Q`
+  have hσ (σ : AbsoluteGaloisGroup K) := coords_smul_eq_and_add_self_eq_zero hT hQ σ
+  by_cases hxe : xP = e
+  · -- `P = T`: the root is `x(Q) - e`
+    subst hxe
+    have hx2 : (x - ι xP) ^ 2 + ι (W.toAffine.polynomialX.evalEval xP t) = 0 :=
+      pow_eq_zero_iff (n := 2) two_ne_zero |>.1 <| by rw [← hdup, sub_self, zero_mul]
+    have hxne := Affine.X_ne_of_evalEval_polynomialY_ne_zero hT'.1 hψ' hQ'.1 hy
+    refine ⟨Units.mk0 (x - ι xP) (sub_ne_zero.2 hxne), Units.ext ?_, fun σ ↦ Units.ext ?_⟩
+    · rw [Units.val_pow_eq_pow_val, Units.val_mk0, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+        MonoidHom.coe_ofClass, coe_twoDescentUnit_some_of_eq _ _ _ _ rfl, map_neg]
+      linear_combination hx2
+    · obtain ⟨hσx, -, hS, hiff⟩ := hσ σ
+      rw [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0,
+        Units.val_mul, Units.val_mk0, map_sub, AlgEquiv.commutes, hσx,
+        xCoord_add_sub hT' hψ' hQ' hy (by rwa [hc']) hS, apply_ite Units.val]
+      simp only [hiff]
+      split_ifs <;> simp_all
+  · -- `P ≠ T`: the root is `((x - e)² + W_X(e, t)) / ψ₂(Q)`
+    set ψ := (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y
+    set c := W.toAffine.polynomialX.evalEval e t
+    have hα2 : (((x - ι e) ^ 2 + ι c) / ψ) ^ 2 = ι xP - ι e := by
+      rw [div_pow, div_eq_iff (pow_ne_zero 2 hy), hdup]
+    have hα0 : ((x - ι e) ^ 2 + ι c) / ψ ≠ 0 := fun h0 ↦ hxe <| ι.injective <| by
+      rwa [h0, zero_pow two_ne_zero, eq_comm, sub_eq_zero] at hα2
+    refine ⟨Units.mk0 _ hα0, Units.ext ?_, fun σ ↦ Units.ext ?_⟩
+    · rw [Units.val_pow_eq_pow_val, Units.val_mk0, hα2, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+        MonoidHom.coe_ofClass, coe_twoDescentUnit_some_of_ne _ _ _ _ hxe, map_sub]
+    · obtain ⟨hσx, hσy, hS, hiff⟩ := hσ σ
+      have hroot := root_add hT' hψ' hQ' hy hS
+      rw [hc'] at hroot
+      rw [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0,
+        Units.val_mul, Units.val_mk0, map_div₀, map_add, map_pow, map_sub, AlgEquiv.commutes,
+        AlgEquiv.commutes, evalEval_polynomialY_galois, hσx, hσy, hroot, apply_ite Units.val]
+      simp only [hiff]
+      split_ifs <;> simp_all <;> rfl
+
+/-- **The Kummer map of `[2]`, read through a point of order two, is `x - e`** (Silverman X.1.4).
+Let `T = (e, t)` be a point of `W(K)` of order two, with `2` invertible in `K`. The character
+`E(Kˢ)[2] → μ₂` trivial exactly on `{O, T}` carries the Kummer class of `P ∈ E(K)` in
+`H¹(G_K, E[2])` to the Kummer class in `H¹(G_K, μ₂)` of `x(P) - e`, where `O ↦ 1` and
+`T ↦ c_T = -W_X(e, t)`. -/
+theorem explicitCoeff1_twoTorsionCharacter_kummerMap [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
+    (P : W.toAffine.Point) :
+    explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2) (W.twoTorsionCharacter hT hψ h2)
+        continuous_of_discreteTopology (W.kummerMap 2 h2 P) =
+      Multiplicative.toAdd (TauCeti.kummerMap K 2 h2 (W.twoDescentUnit hT hψ P)) := by
+  rcases P with _ | ⟨xP, yP, hP⟩
+  · rw [← zero_def, _root_.map_zero, _root_.map_zero, twoDescentUnit_zero, _root_.map_one,
+      toAdd_one]
+  obtain ⟨Q, hQ⟩ := (W.kummerShortExact 2 h2).proj_surjective (W.basePointCoeff (some xP yP hP))
+  rw [kummerShortExact_proj, nsmulAddMonoidHom_apply] at hQ
+  obtain ⟨α, hα, hσα⟩ := exists_sq_eq_and_smul_eq hT hψ hP hQ
+  rw [kummerMap_eq_H1pi h2 hQ, QuotientAddGroup.mk'_apply, explicitCoeff1_mk,
+    kummerMap_eq_kummerCocycleClass h2 hα, kummerCocycleClass_def, QuotientAddGroup.mk'_apply]
+  -- the two cocycles agree: `σ α / α` is the sign of `σ Q - Q`
+  have key (σ : AbsoluteGaloisGroup K) :
+      W.twoTorsionCharacter hT hψ h2 (kummerCocycle hQ σ) = TauCeti.kummerCocycle hα σ :=
+    Additive.toMul.injective <| Subtype.ext <| by
+      rw [coe_toMul_twoTorsionCharacter, coe_kummerCocycle, toMul_kummerCocycle, hσα σ,
+        mul_inv_cancel_right]
+  exact congrArg _ <| Subtype.ext <| funext fun σ ↦
+    (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ σ).trans (key σ)
+
+end Descent
+
+end WeierstrassCurve
