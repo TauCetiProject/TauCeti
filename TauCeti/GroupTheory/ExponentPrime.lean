@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 import Mathlib.Algebra.Group.Subgroup.Pointwise
 import Mathlib.Order.Zorn
+import TauCeti.Algebra.Module.ZMod.Span.Basic
 
 /-!
 # The index-`p` subgroups of an abelian group of exponent `p` separate its points
@@ -45,6 +46,10 @@ corollary below drops it.
 * `TauCeti.exists_le_index_eq_two_notMem_of_exponent_dvd_two` and
   `TauCeti.exists_index_eq_two_notMem_of_exponent_dvd_two`: the case `p = 2`, where commutativity
   is automatic.
+* `TauCeti.exists_finset_subset_closure_eq_natCard_eq_pow`: in a finite commutative group of
+  exponent `p`, every set contains a finite subset `B` generating the same subgroup, which has
+  `p ^ #B` elements. Unlike the separation results, its proof goes through the `𝔽_p`-vector space
+  `Additive G`, where it is the extraction of a basis from a spanning set.
 -/
 
 public section
@@ -162,5 +167,39 @@ theorem exists_index_eq_two_notMem_of_exponent_dvd_two (hexp : Monoid.exponent G
   obtain ⟨H, -, hH⟩ :=
     exists_le_index_eq_two_notMem_of_exponent_dvd_two hexp (N := ⊥) (Subgroup.mem_bot.not.mpr hσ)
   exact ⟨H, hH⟩
+
+/-- **A generating set of a finite elementary abelian `p`-group contains a basis.** In a finite
+commutative group all of whose elements satisfy `g ^ p = 1`, for `p` prime, every set `X` contains
+a finite subset `B` generating the same subgroup, and that subgroup has exactly `p ^ #B` elements.
+
+This is the extraction of a basis from a spanning set in the `𝔽_p`-vector space `Additive G`
+(`Set.exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow`). -/
+theorem exists_finset_subset_closure_eq_natCard_eq_pow [IsMulCommutative G] [Finite G]
+    (hp : p.Prime) (hexp : Monoid.exponent G ∣ p) (X : Set G) :
+    ∃ B : Finset G, (B : Set G) ⊆ X ∧ Subgroup.closure (B : Set G) = Subgroup.closure X ∧
+      Nat.card (Subgroup.closure X) = p ^ B.card := by
+  classical
+  have : Fact p.Prime := ⟨hp⟩
+  let _ : CommGroup G := { mul_comm := IsMulCommutative.is_comm.comm }
+  let _ : Module (ZMod p) (Additive G) := AddCommGroup.zmodModule fun x ↦ by
+    rw [← ofMul_toMul x, ← ofMul_pow, Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp,
+      ofMul_one]
+  obtain ⟨b, hbX, hbcl, hcard⟩ :=
+    Set.exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow (p := p) (Additive.toMul ⁻¹' X)
+  refine ⟨b.map Additive.toMul.toEmbedding, ?_, ?_, ?_⟩
+  · intro g hg
+    simp only [Finset.coe_map, Equiv.coe_toEmbedding, Set.mem_image, Finset.mem_coe] at hg
+    obtain ⟨x, hx, rfl⟩ := hg
+    exact hbX hx
+  · apply Subgroup.toAddSubgroup.injective
+    rw [Subgroup.toAddSubgroup_closure, Subgroup.toAddSubgroup_closure, ← hbcl]
+    congr 1
+    ext x
+    simp
+  · rw [Finset.card_map, ← hcard]
+    -- Membership in `Subgroup.toAddSubgroup H` is membership in `H`, read through `ofMul`.
+    exact Nat.card_congr (Equiv.subtypeEquiv Additive.ofMul fun g ↦ by
+      rw [← Subgroup.toAddSubgroup_closure]
+      rfl)
 
 end TauCeti

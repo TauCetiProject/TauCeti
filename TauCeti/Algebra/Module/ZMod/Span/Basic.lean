@@ -7,13 +7,27 @@ module
 
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.LinearAlgebra.Span.Defs
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.FieldTheory.Finiteness
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # Spans in modules over `ℤ/nℤ`
 
 In a `ZMod n`-module, additive generation and linear generation agree. This identifies
 the group-theoretic generation criterion for an elementary abelian group with a spanning
-criterion in its associated vector space.
+criterion in its associated vector space. For `n = p` prime it lets a basis be extracted from any
+generating set of a finite elementary abelian `p`-group, with the size of the generated subgroup
+read off from the size of the basis.
+
+## Main results
+
+* `Set.span_zmod_eq_addSubgroupClosure`: the span of a set over `ℤ/nℤ` is the additive subgroup
+  it generates.
+* `Set.exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow`: in a finite `𝔽_p`-vector space
+  every set contains a finite subset generating the same additive subgroup, which has `p ^ #b`
+  elements.
 -/
 
 public section
@@ -30,5 +44,24 @@ theorem span_zmod_eq_addSubgroupClosure {n : ℕ} {M : Type*} [AddCommGroup M] [
   · exact (Submodule.span_le (p := (AddSubgroup.closure s).toZModSubmodule n)).mpr
       AddSubgroup.subset_closure
   · exact (AddSubgroup.closure_le _).mpr Submodule.subset_span
+
+/-- **A generating set of a finite elementary abelian `p`-group contains a basis.** In a finite
+`𝔽_p`-vector space every set `s` contains a finite subset `b` generating the same additive
+subgroup, and that subgroup has exactly `p ^ #b` elements: `b` is a basis of the span of `s`. -/
+theorem exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow {p : ℕ} [Fact p.Prime]
+    {M : Type*} [AddCommGroup M] [Module (ZMod p) M] [Finite M] (s : Set M) :
+    ∃ b : Finset M, (b : Set M) ⊆ s ∧ AddSubgroup.closure (b : Set M) = AddSubgroup.closure s ∧
+      Nat.card (AddSubgroup.closure s) = p ^ b.card := by
+  classical
+  obtain ⟨b, hbs, hbspan, hbli⟩ := exists_linearIndependent (ZMod p) s
+  have : Fintype b := Fintype.ofFinite b
+  refine ⟨b.toFinset, by simpa using hbs, ?_, ?_⟩
+  · rw [coe_toFinset, ← span_zmod_eq_addSubgroupClosure (n := p),
+      ← span_zmod_eq_addSubgroupClosure (n := p), hbspan]
+  · rw [← finrank_span_set_eq_card hbli, hbspan, ← span_zmod_eq_addSubgroupClosure (n := p)]
+    -- The additive subgroup underlying a submodule has the same elements, hence the same
+    -- cardinality, as the submodule; the count is then that of a finite `𝔽_p`-vector space.
+    change Nat.card (Submodule.span (ZMod p) s) = _
+    rw [Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod]
 
 end Set
