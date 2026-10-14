@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
-import TauCeti.NumberTheory.LocalField.FiniteExtension.DiscreteValuationRing
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.DiscreteValuationRing
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 
 /-!

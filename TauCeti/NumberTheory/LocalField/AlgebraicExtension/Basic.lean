@@ -476,7 +476,13 @@ valued field restricts to a local homomorphism of their rings of integers. -/
 instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerRingHom := by
   let _ := ι.toAlgebra
   have := ι.valuativeExtension
-  exact ⟨(inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M])).map_nonunit⟩
+  have hmap : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) = algebraMap 𝒪[L] 𝒪[M] := by
+    ext x
+    simp only [coe_integerRingHom_apply, ValuativeExtension.coe_algebraMap_integerRing]
+    rfl
+  have hlocal : IsLocalHom (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) :=
+    hmap.symm ▸ (inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M]))
+  exact ⟨hlocal.map_nonunit⟩
 
 /-- The embedding of residue fields induced by a `K`-embedding from an algebraic extension of a
 nonarchimedean local field `K` to a compatible valued field. It is linear over the residue field
@@ -511,3 +517,17 @@ theorem residueFieldHom_id : (AlgHom.id K L).residueFieldHom = AlgHom.id 𝓀[K]
   exact congrArg _ (Subtype.ext (by simp))
 
 end AlgHom
+
+namespace IntermediateField
+
+variable {K Ω : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field Ω] [Algebra K Ω]
+
+/-- A compatible valued ambient field is a valuative extension of any algebraic intermediate
+field carrying a valuation extending the base-field valuation. -/
+theorem valuativeExtension [ValuativeRel Ω] [ValuativeExtension K Ω]
+    (E : IntermediateField K Ω) [Algebra.IsAlgebraic K E] [ValuativeRel E]
+    [ValuativeExtension K E] : ValuativeExtension E Ω := by
+  simpa using E.val.valuativeExtension
+
+end IntermediateField

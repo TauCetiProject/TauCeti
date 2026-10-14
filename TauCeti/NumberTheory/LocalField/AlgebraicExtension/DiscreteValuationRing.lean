@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
-public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 /-!
 # Discrete valuation rings of an algebraic extension of a local field
