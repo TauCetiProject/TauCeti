@@ -21,16 +21,21 @@ authoritative Lake build's responsibility; no external syntax or candidate code 
 
 open Lean Elab
 
+/-- One candidate source in the JSON input. `file` is its absolute path; `components` are
+literal semantic module-name components, so Has.Dot is one component, not two directories. -/
 structure Source where
   file : String
   components : Array String
   deriving FromJson
 
+/-- A diagnostic keyed by the exact inventory path, for the wrapper to display safely. -/
 structure Problem where
   file : String
   message : String
   deriving ToJson
 
+/-- The JSON output: `checked` counts audited sources (including failures); `problems` lists
+every finding that prevents a successful preflight verdict. -/
 structure Report where
   checked : Nat
   problems : Array Problem
@@ -72,6 +77,8 @@ def problems (source : Source) (inventory : Std.HashSet Name) : IO (Array Proble
       import keywords and module names with whitespace"
   return found
 
+/-- Read a JSON array of `Source` records from stdin, audit every header against that complete
+inventory, and emit one JSON `Report` on stdout. Candidate contents are read only as data. -/
 def main : IO Unit := do
   let input ← (← IO.getStdin).readToEnd
   let sources : Array Source ← IO.ofExcept <| (Json.parse input).bind fromJson?
