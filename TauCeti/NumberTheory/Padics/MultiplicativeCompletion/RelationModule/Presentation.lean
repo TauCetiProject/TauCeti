@@ -114,15 +114,10 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
     isProP_maximalProPQuotient
   let _ := hA.module
   let _ := hA.continuousSMul_module
-  let e : Additive (abelianizationProP p (freeProfiniteGroup ι) R) ≃ₗ[ℤ_[p]]
-      MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g :=
-    (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg).toLinearEquiv fun c x ↦ by
-      rw [hA.module_smul]
-      exact freeProfiniteGroup.abelianizationProPEquivRelationModule_padicPow p hg x.toMul c
+  let e := freeProfiniteGroup.abelianizationProPLinearEquivRelationModule p hg
   let b := (ψ.toMonoidHom.toAdditive.toPadicIntLinearMap p
     (continuous_ofMul.comp (ψ.continuous.comp continuous_toMul))).toLinearMap
   let β₀ := b.comp e.symm.toLinearMap
-  have he_apply (x) : e x = freeProfiniteGroup.abelianizationProPEquivRelationModule p hg x := rfl
   have hβ₀ (m) : β₀ m = ofMul (ψ (e.symm m).toMul) := by
     simp [β₀, b]
   -- Equivariance on group elements promotes ℤ_p-linearity to group-algebra linearity.
@@ -134,7 +129,7 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
     have he (x : Additive (abelianizationProP p (freeProfiniteGroup ι) R)) :
         e ((f : freeProfiniteGroup ι ⧸ R) • x) =
           MonoidAlgebra.single σ (1 : ℤ_[p]) • e x := by
-      simpa only [he_apply, hf] using
+      simpa only [e, freeProfiniteGroup.abelianizationProPLinearEquivRelationModule_apply, hf] using
         freeProfiniteGroup.abelianizationProPEquivRelationModule_smul p hg f x
     have hinv : e.symm (MonoidAlgebra.single σ (1 : ℤ_[p]) • m) =
         (f : freeProfiniteGroup ι ⧸ R) • e.symm m := by
@@ -161,8 +156,8 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
       e.symm_apply_apply, toMul_ofMul, hx, ofMul_toMul]
   · intro r
     simp only [β, MonoidAlgebra.equivariantOfLinearOfComm_apply]
-    rw [hβ₀, ← he_apply (ofMul (abelianizationProPMk p _ _ r)), e.symm_apply_apply,
-      toMul_ofMul]
-    simp [ψ, a, κ, V]
+    rw [hβ₀, ← freeProfiniteGroup.abelianizationProPLinearEquivRelationModule_apply,
+      e.symm_apply_apply, toMul_ofMul]
+    simp [ψ, a, κ, R, V]
 
 end TauCeti
