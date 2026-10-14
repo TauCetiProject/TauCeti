@@ -114,7 +114,7 @@ theorem charEisensteinSeriesMFRaise_apply_eq_tsum (hk : 3 ≤ k)
 theorem charEisensteinSeriesMFRaise_one (hk : 3 ≤ k) (huv : u * v ∣ N) :
     haveI : NeZero (u * v) := NeZero.of_dvd huv
     charEisensteinSeriesMFRaise ψ φ 1 hk (by simpa using huv) =
-      ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd huv)
+      ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd huv)
         (charEisensteinSeriesMF ψ φ hk dvd_rfl) := by
   rw [charEisensteinSeriesMFRaise, ModularForm.levelRaise_one]
 

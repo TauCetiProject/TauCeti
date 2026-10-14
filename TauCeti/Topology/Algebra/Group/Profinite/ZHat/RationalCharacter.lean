@@ -157,4 +157,25 @@ theorem nontrivial_continuousCohomology_one_discreteRatCircle :
   exact @Equiv.nontrivial _ _ h1EquivRatCircle.toEquiv
     (nontrivial_of_ne 0 (ZMod.toRatAddCircle 2 1) h.symm)
 
+/-- Evaluation at the generator is bijective for any discrete model of the rational circle.
+The coefficient universe may differ from that of the profinite integers. -/
+theorem bijective_ratCircleCharacterEvaluation (C : Type v) [AddCommGroup C]
+    [TopologicalSpace C] [DiscreteTopology C] (e : C ≃+ AddCircle (1 : ℚ)) :
+    Function.Bijective (fun χ : Additive (zHat.{u} →ₜ* Multiplicative C) ↦
+      e (Multiplicative.toAdd (Additive.toMul χ gen))) := by
+  constructor
+  · intro χ ψ h
+    apply Additive.toMul.injective
+    apply hom_ext
+    exact Multiplicative.toAdd.injective (e.injective h)
+  · intro a
+    obtain ⟨χ, hχ⟩ := exists_ratCharacter_gen.{u} (discreteRatCircleEquiv.symm a)
+    let f : Multiplicative DiscreteRatCircle →ₜ* Multiplicative C :=
+      { toFun := fun x ↦ Multiplicative.ofAdd (e.symm (discreteRatCircleEquiv x.toAdd))
+        map_one' := by simp
+        map_mul' := by intros; simp
+        continuous_toFun := continuous_of_discreteTopology }
+    refine ⟨Additive.ofMul (f.comp χ), ?_⟩
+    simp [f, hχ]
+
 end TauCeti.zHat
