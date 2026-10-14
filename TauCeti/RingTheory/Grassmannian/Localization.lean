@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.Algebra.Module.LocalizedModule.Submodule
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 /-!
@@ -34,10 +36,6 @@ local–global principles for finite presentation and flatness.
 
 ## Main results
 
-* `IsLocalizedModule.mk'_mem_iff`: a fraction `f x / s` lies in a submodule over the localization
-  exactly when `f x` does.
-* `TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`: the `A`-linear base change of the
-  structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
 * `Module.Grassmannian.rTensor_mem_map_iff`: membership in the base change of a point along a
   localization.
 * `Module.Grassmannian.eq_of_isLocalized_span`: a point of `G(k, A ⊗[R] M; A)` is determined by
@@ -58,25 +56,6 @@ public section
 universe u v w
 
 open TensorProduct
-
-/-- Let `A` be the localization of `R` at `S`, and `f : M → M'` a localization map at `S` into an
-`A`-module. Then `f x / s` lies in an `A`-submodule `L` of `M'` exactly when `f x` does. -/
-theorem IsLocalizedModule.mk'_mem_iff {R : Type*} [CommSemiring R] {S : Submonoid R}
-    {A : Type*} [CommSemiring A] [Algebra R A] [IsLocalization S A]
-    {M M' : Type*} [AddCommMonoid M] [AddCommMonoid M'] [Module R M] [Module R M'] [Module A M']
-    [IsScalarTower R A M'] (f : M →ₗ[R] M') [IsLocalizedModule S f] {L : Submodule A M'}
-    {x : M} {s : S} : IsLocalizedModule.mk' f x s ∈ L ↔ f x ∈ L := by
-  rw [← IsLocalization.smul_mem_iff (s := s), IsLocalizedModule.mk'_cancel']
-
-/-- The `A`-linear base change of the structure map `A → B` is, as a function, the base change
-of the `R`-algebra map `A →ₐ[R] B`. -/
-theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Type*}
-    [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
-    [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (x : A ⊗[R] M) :
-    AlgebraTensorModule.rTensor R M (Algebra.linearMap A B) x =
-      (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
-  rw [AlgebraTensorModule.coe_rTensor]
-  exact congrArg (LinearMap.rTensor M · x) (LinearMap.ext fun a ↦ by simp)
 
 namespace Module.Grassmannian
 
