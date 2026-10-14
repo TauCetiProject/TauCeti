@@ -55,15 +55,6 @@ theorem homotopyGroupMulEquiv_apply (x : X) (n : ℕ)
     homeomorphMulEquivOfEq_apply, HomotopyGroup.map_comp_apply]
   congr 1
 
-/-- Moore loops are path connected exactly when the fundamental group at their
-basepoint is trivial. -/
-theorem pathConnectedSpace_iff (x : X) :
-    PathConnectedSpace (MooreLoopSpace X x) ↔ Subsingleton (FundamentalGroup X x) := by
-  rw [pathConnectedSpace_iff_zerothHomotopy]
-  have hne : Nonempty (ZerothHomotopy (MooreLoopSpace X x)) := ⟨ZerothHomotopy.mk 1⟩
-  simp only [hne, true_and]
-  exact (zerothHomotopyEquivFundamentalGroup x).subsingleton_congr
-
 /-- The double Moore loop space is path connected when the second homotopy group
 of the original space vanishes. -/
 theorem pathConnectedSpace_double (x : X) [Subsingleton (π_ 2 X x)] :

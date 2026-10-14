@@ -19,6 +19,7 @@ Mathlib multiplies endomorphisms by reversed categorical composition
 The component identification uses the Moore/fixed-interval homotopy equivalence and
 `HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup`. This convention gives the
 multiplicative comparison needed for the degree-zero Pontryagin algebra.
+In particular, Moore loops are path connected exactly when the fundamental group is trivial.
 
 See W. S. Massey, *Singular Homology Theory*, Chapter VII, and
 Barraud--Damian--Humilière--Oancea, *Floer homology with DG coefficients*, §2.2,
@@ -79,6 +80,15 @@ theorem zerothHomotopyEquivFundamentalGroup_mk (γ : MooreLoopSpace X x) :
     zerothHomotopyEquivFundamentalGroup x (.mk γ) = fundamentalGroupHom x γ := by
   exact congrArg (Inv.inv (α := FundamentalGroup X x))
     (HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ.toPath)
+
+/-- Moore loops are path connected exactly when the fundamental group at their
+basepoint is trivial. -/
+theorem pathConnectedSpace_iff (x : X) :
+    PathConnectedSpace (MooreLoopSpace X x) ↔ Subsingleton (FundamentalGroup X x) := by
+  rw [pathConnectedSpace_iff_zerothHomotopy]
+  have hne : Nonempty (ZerothHomotopy (MooreLoopSpace X x)) := ⟨ZerothHomotopy.mk 1⟩
+  simp only [hne, true_and]
+  exact (zerothHomotopyEquivFundamentalGroup x).subsingleton_congr
 
 /-- The multiplicative loop class is natural under based continuous maps. -/
 @[simp↓]
