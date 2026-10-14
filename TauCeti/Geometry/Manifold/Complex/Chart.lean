@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
 # Chart transitions of a complex curve are analytic
@@ -203,8 +204,8 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
 /-- **A homeomorphism onto an open subset of `ℂ` with holomorphic inverse is a holomorphic chart.**
 On a complex curve, an open partial homeomorphism `e : X → ℂ` whose inverse is `C^n` on the target,
 for some `n ≠ 0`, belongs to the maximal `C^n` atlas. The transition from `e` to a chart of `X` is
-then a `C^n` injection of an open subset of `ℂ`, so its derivative vanishes nowhere and its inverse
-is `C^n` too. -/
+then a holomorphic open partial homeomorphism of `ℂ`, so its inverse is holomorphic
+(`TauCeti.OpenPartialHomeomorph.differentiableOn_symm`), hence `C^n` too. -/
 theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : ℕ∞ω} (hn : n ≠ 0)
     [IsManifold 𝓘(ℂ) n X] (e : OpenPartialHomeomorph X ℂ)
     (he : ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n e.symm e.target) : e ∈ maximalAtlas 𝓘(ℂ) n X := by
@@ -212,8 +213,8 @@ theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : �
   let c := chartAt ℂ x
   have hc : c ∈ maximalAtlas 𝓘(ℂ) n X := chart_mem_maximalAtlas x
   have hxc : x ∈ c.source := mem_chart_source ℂ x
-  -- The transition `f = c ∘ e.symm` is a `C^n` open partial homeomorphism of `ℂ`, injective on
-  -- its open source, so its derivative vanishes nowhere and its inverse `e ∘ c.symm` is `C^n`.
+  -- The transition `f = c ∘ e.symm` is a holomorphic open partial homeomorphism of `ℂ`, so its
+  -- inverse `e ∘ c.symm` is holomorphic, hence `C^n`.
   let f := e.symm ≫ₕ c
   have hf : ContDiffOn ℂ n f f.source := by
     rw [← contMDiffOn_iff_contDiffOn]
@@ -222,14 +223,9 @@ theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : �
   have hex : e x ∈ f.source := e.toPartialEquiv.mem_symm_trans_source hx hxc
   have hcx : c x ∈ f.target := by
     simpa [f, e.left_inv hx] using f.map_source hex
-  have hfs : f.symm (c x) = e x := by
-    simp [f, c.left_inv hxc]
-  have hsymm : ContDiffAt ℂ n f.symm (c x) := by
-    refine f.contDiffAt_symm_deriv
-      (deriv_ne_zero_of_injOn (hf.differentiableOn hn) f.open_source f.injOn hex) hcx ?_ ?_ <;>
-      rw [hfs]
-    · exact ((hf.differentiableOn hn).differentiableAt (f.open_source.mem_nhds hex)).hasDerivAt
-    · exact hf.contDiffAt (f.open_source.mem_nhds hex)
+  have hsymm : ContDiffAt ℂ n f.symm (c x) :=
+    ((OpenPartialHomeomorph.differentiableOn_symm (hf.differentiableOn hn)).contDiffOn
+      f.open_target).contDiffAt (f.open_target.mem_nhds hcx)
   refine ((hsymm.contMDiffAt.comp x (contMDiffAt_of_mem_maximalAtlas hc hxc)).congr_of_eventuallyEq
     ?_).contMDiffWithinAt
   filter_upwards [c.open_source.mem_nhds hxc] with y hy
