@@ -49,6 +49,23 @@ def conjJ (γ : SL(2, R)) : SL(2, R) :=
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
+/-- Coordinate conjugation as an involutive group automorphism. -/
+def conjJMulAut : MulAut (SL(2, R)) where
+  toFun := conjJ
+  invFun := conjJ
+  left_inv := conjJ_conjJ
+  right_inv := conjJ_conjJ
+  map_mul' := conjJ_mul
+
+@[simp] theorem conjJMulAut_apply (γ : SL(2, R)) : conjJMulAut γ = conjJ γ := by rfl
+
+@[simp] theorem conjJMulAut_symm_apply (γ : SL(2, R)) :
+    conjJMulAut.symm γ = conjJ γ := by rfl
+
+/-- Coordinate conjugation preserves inverses. -/
+@[simp] theorem conjJ_inv (γ : SL(2, R)) : conjJ γ⁻¹ = (conjJ γ)⁻¹ :=
+  map_inv (conjJMulAut : MulAut (SL(2, R))) γ
+
 /-- Coordinate conjugation commutes with a ring homomorphism on coefficients. -/
 @[simp] theorem map_conjJ {S : Type*} [CommRing S] (f : R →+* S) (γ : SL(2, R)) :
     map f (conjJ γ) = conjJ (map f γ) := by
