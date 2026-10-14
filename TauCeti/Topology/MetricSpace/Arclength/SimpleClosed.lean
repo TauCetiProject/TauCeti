@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MetricSpace.Arclength.Basic
-public import Mathlib.Analysis.ConstantSpeed
+public import TauCeti.Analysis.ConstantSpeed
 
 /-!
 # Arclength parametrization of simple closed curves
@@ -21,8 +21,9 @@ Together with the increasing arclength homeomorphism, this permits transporting 
 constructions on simple closed curves to a Lipschitz parameter without losing their orientation
 or introducing repeated points.
 
-The construction uses `BoundedVariationOn.exists_arclength_factorization` and Mathlib's
-`HasUnitSpeedOn`; there is no additional curve or length carrier.
+The construction uses Mathlib's `naturalParameterization` and its unit-speed theorem,
+together with `HasConstantSpeedOnWith.lipschitzOnWith`; there is no additional curve or
+length carrier.
 
 ## References
 
@@ -75,7 +76,13 @@ theorem exists_simple_closed_arclength_parametrization
     rw [hs.image_Icc_of_monotoneOn hab hm.monotoneOn, hsa, hsb]
   have himageco : s '' Ico a b = Ico 0 L := by
     rw [hs.image_Ico_of_strictMonoOn hab hm, hsa, hsb]
-  obtain ⟨g, hg, hfactor, hvar⟩ := hγ.exists_arclength_factorization hcont hab
+  let g := naturalParameterization γ (Icc a b) a
+  have hunit : HasUnitSpeedOn g (Icc 0 L) := by
+    rw [← himage]
+    exact has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn ha
+  have hg : LipschitzOnWith 1 g (Icc 0 L) := hunit.lipschitzOnWith
+  have hfactor : EqOn (g ∘ s) γ (Icc a b) := fun t ht ↦
+    edist_eq_zero.mp (edist_naturalParameterization_eq_zero hγ.locallyBoundedVariationOn ha ht)
   have hg0 : g 0 = γ a := by
     rw [← hsa]
     exact hfactor ha
@@ -87,11 +94,6 @@ theorem exists_simple_closed_arclength_parametrization
   have hginj : InjOn g (Ico 0 L) := by
     rw [← himageco]
     exact (hinj.congr (hfactor.mono Ico_subset_Icc_self).symm).image_of_comp
-  have hunit : HasUnitSpeedOn g (Icc 0 L) := by
-    apply hasConstantSpeedOnWith_iff_ordered.mpr
-    intro u hu v hv huv
-    rw [inter_eq_right.mpr (Icc_subset_Icc hu.1 hv.2)]
-    simpa only [one_mul, NNReal.coe_one] using hvar u hu v hv huv
   have htrace : g '' Icc 0 L = γ '' Icc a b := by
     rw [← himage, image_image]
     exact hfactor.image_eq
