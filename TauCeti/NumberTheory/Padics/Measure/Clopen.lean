@@ -60,8 +60,8 @@ theorem restrictClopen_map_subtype (ν : D(s, R)) :
 theorem map_subtype_restrictClopen_apply (μ : D(X, R)) (f : C(X, R)) :
     map (ContinuousMap.subtypeVal s) (restrictClopen s R μ) f =
       μ ((LocallyConstant.charFn R s.isClopen).toContinuousMap * f) := by
-  rw [map_apply, restrictClopen_apply, ← zeroExtendClopen_restrict s R f]
-  congr 2
+  rw [map_apply, restrictClopen_apply, comp_subtypeVal_eq_restrict,
+    zeroExtendClopen_restrict]
 
 @[simp]
 theorem restrictClopen_dirac_mem (x : s) :
@@ -132,9 +132,8 @@ theorem map_subtype_restrictClopen_add_compl (μ : D(X, R)) :
       map (ContinuousMap.subtypeVal (sᶜ : Clopens X)) (restrictClopen sᶜ R μ) = μ := by
   ext f
   rw [add_apply, map_apply, map_apply, restrictClopen_apply, restrictClopen_apply, ← map_add]
-  congr 1
-  convert zeroExtendClopen_restrict_add_compl s R f using 1
-  congr 2
+  rw [comp_subtypeVal_eq_restrict, comp_subtypeVal_eq_restrict,
+    zeroExtendClopen_restrict_add_compl]
 
 /-- Measures on a compact space decompose into measures on complementary clopens. -/
 noncomputable def clopenDecomposition : D(X, R) ≃ₗ[R] D(s, R) × D((sᶜ : Clopens X), R) where

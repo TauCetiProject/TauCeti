@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import TauCeti.Topology.Sets.Clopens
+public import TauCeti.Topology.ContinuousMap.Basic
 
 /-!
 # Extension by zero from a clopen subset
@@ -16,6 +17,8 @@ public import TauCeti.Topology.Sets.Clopens
 as a continuous linear map. It preserves the supremum norm, including for the empty subset.
 Restriction followed by extension is multiplication by the clopen characteristic function;
 the two complementary projectors sum to the identity.
+
+The extension uses Mathlib’s `ContinuousMap.liftCover` to glue the function and zero.
 
 These test-function operators give restriction and decomposition of abstract measures.
 See Rodrigues Jacinto and Williams, *An introduction to p-adic L-functions*, §3.5.3,
@@ -33,34 +36,40 @@ variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
 variable (s : Clopens X) (R : Type*) [NormedCommRing R]
 
 omit [CompactSpace X] in
-private noncomputable def zeroExtendClopenFun (f : C(s, R)) : C(X, R) where
-  toFun := Function.extend Subtype.val f 0
-  continuous_toFun := by
-    classical
-    apply continuous_of_cover_nhds (s := fun b : Bool ↦ if b then (s : Set X) else (s : Set X)ᶜ)
-    · intro x
+private noncomputable def zeroExtendClopenFun (f : C(s, R)) : C(X, R) :=
+  ContinuousMap.liftCover (fun b : Bool ↦ if b then (s : Set X) else (s : Set X)ᶜ)
+    (fun b ↦ by
+      cases b
+      · exact 0
+      · exact f)
+    (by
+      intro i j x hi hj
+      cases i <;> cases j
+      · rfl
+      · exact (hi hj).elim
+      · exact (hj hi).elim
+      · rfl)
+    (by
+      intro x
       by_cases hx : x ∈ s
       · exact ⟨true, s.isOpen.mem_nhds hx⟩
-      · exact ⟨false, s.isClopen.compl.isOpen.mem_nhds hx⟩
-    · intro b
-      cases b
-      · exact continuousOn_const.congr
-          (fun x hx ↦ Function.extend_apply' _ _ _ (by simpa using hx))
-      · simp only [ite_true]
-        rw [continuousOn_iff_continuous_domRestrict]
-        convert f.continuous using 1
-        ext x
-        exact Subtype.val_injective.extend_apply _ _ x
+      · exact ⟨false, s.isClopen.compl.isOpen.mem_nhds hx⟩)
 
 omit [CompactSpace X] in
 private lemma zeroExtendClopenFun_mem (f : C(s, R)) (x : s) :
-    zeroExtendClopenFun s R f x = f x :=
-  Subtype.val_injective.extend_apply _ _ x
+    zeroExtendClopenFun s R f x = f x := by
+  unfold zeroExtendClopenFun
+  exact ContinuousMap.liftCover_coe
+    (S := fun b : Bool ↦ if b then (s : Set X) else (s : Set X)ᶜ)
+    (i := true) ⟨x.val, x.property⟩
 
 omit [CompactSpace X] in
 private lemma zeroExtendClopenFun_not_mem (f : C(s, R)) {x : X} (hx : x ∉ s) :
-    zeroExtendClopenFun s R f x = 0 :=
-  Function.extend_apply' _ _ _ (by simpa using hx)
+    zeroExtendClopenFun s R f x = 0 := by
+  unfold zeroExtendClopenFun
+  exact ContinuousMap.liftCover_coe
+    (S := fun b : Bool ↦ if b then (s : Set X) else (s : Set X)ᶜ)
+    (i := false) ⟨x, hx⟩
 
 /-- Extension by zero from a clopen subset, as a continuous linear map. -/
 noncomputable def zeroExtendClopen : C(s, R) →L[R] C(X, R) :=
