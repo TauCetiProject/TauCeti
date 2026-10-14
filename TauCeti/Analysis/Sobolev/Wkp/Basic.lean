@@ -370,8 +370,9 @@ theorem hasWeakFDerivOn_iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 2)) 
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- **A Sobolev function vanishing on an open subset has vanishing highest weak derivative
-there.** This is `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero` at first order, and each
-further derivative is the weak derivative of a field that vanishes on the subset. -/
+there.** If `u ∈ W^{k+1,p}(Ω)` vanishes almost everywhere on an open `V ⊆ Ω`, then its highest
+weak derivative `iteratedGradient k u` vanishes almost everywhere on `V`. The first-order case is
+`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`. -/
 theorem iteratedGradient_ae_eq_zero_of_value_ae_eq_zero (k : ℕ) (u : Wkp mu Omega p (k + 1))
     {V : Opens E} (hV : V ≤ Omega) (hu : ∀ᵐ x ∂mu.restrict (V : Set E), value (k + 1) u x = 0) :
     ∀ᵐ x ∂mu.restrict (V : Set E), iteratedGradient k u x = 0 := by
