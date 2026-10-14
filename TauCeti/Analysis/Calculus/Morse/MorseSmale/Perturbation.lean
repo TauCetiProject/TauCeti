@@ -25,7 +25,8 @@ for parameters in the closed unit ball.
 ## Main declarations
 
 * `TauCeti.IsAdmissiblePerturbation f h`: `h` is `C²`, compactly supported, and its support avoids
-  the critical points of `f`.
+  the critical points of `f`; `TauCeti.isAdmissiblePerturbation_contDiffBump_mul`: a bump times a
+  `C²` function is admissible when the bump's support avoids the critical points.
 * `TauCeti.perturb f h s`: the perturbed function, with `TauCeti.fderiv_perturb`,
   `TauCeti.gradient_perturb` and `TauCeti.contDiff_perturb`.
 * `TauCeti.perturb_eventuallyEq_of_fderiv_eq_zero`: near each critical point of `f` the
@@ -118,22 +119,22 @@ theorem perturb_eventuallyEq_of_forall_notMem_tsupport {x : E} (s : EuclideanSpa
   filter_upwards [eventually_all.2 hi] with y hy
   simp [perturb_apply, hy]
 
-/-- **Near a critical point of `f`, a perturbation agrees with `f`** when the supports of the family
-avoid the critical points: the functions of the family then vanish on a neighbourhood of each
-critical point. -/
-theorem perturb_eventuallyEq_of_fderiv_eq_zero
-    (hdisj : ∀ i, Disjoint (tsupport (h i)) {x | fderiv ℝ f x = 0})
+/-- **Near a critical point of `f`, a perturbation agrees with `f`.** The functions of an admissible
+family vanish on a neighbourhood of each critical point. -/
+theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturbation f (h i))
     (s : EuclideanSpace ℝ ι) {x : E} (hx : fderiv ℝ f x = 0) : perturb f h s =ᶠ[𝓝 x] f :=
   perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦
-    Set.disjoint_left.1 (hdisj i) hmem hx
+    Set.disjoint_left.1 (hh i).disjoint hmem hx
 
 /-- **Small perturbations keep the critical points.** For all sufficiently small parameters, the
 critical points of `perturb f h s` are those of `f`. -/
 theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
-    (hh : ∀ i, ContDiff ℝ 1 (h i)) (hc : ∀ i, HasCompactSupport (h i))
-    (hdisj : ∀ i, Disjoint (tsupport (h i)) {x | fderiv ℝ f x = 0}) :
+    (hadm : ∀ i, IsAdmissiblePerturbation f (h i)) :
     ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ x,
       (fderiv ℝ (perturb f h s) x = 0 ↔ fderiv ℝ f x = 0) := by
+  have hh : ∀ i, ContDiff ℝ 1 (h i) := fun i ↦ (hadm i).contDiff.of_le (by norm_num)
+  have hc : ∀ i, HasCompactSupport (h i) := fun i ↦ (hadm i).hasCompactSupport
+  have hdisj : ∀ i, Disjoint (tsupport (h i)) {x | fderiv ℝ f x = 0} := fun i ↦ (hadm i).disjoint
   have hfd : Differentiable ℝ f := hfs.differentiable (by norm_num)
   have hhd : ∀ i, Differentiable ℝ (h i) := fun i ↦ (hh i).differentiable (by norm_num)
   -- A bound on the differentials of the perturbing functions.
@@ -184,6 +185,26 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     rw [hev.fderiv_eq]
 
 end Differential
+
+section Witness
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [HasContDiffBump E]
+  {f : E → ℝ}
+
+/-- **Bumps away from the critical points give admissible perturbations.** If the closed support of
+a smooth bump `θ` contains no critical point of `f`, then `θ g` is an admissible perturbation of
+`f` for every `C²` function `g`; for instance `x ↦ θ x * ⟪v, x - z⟫`. -/
+theorem isAdmissiblePerturbation_contDiffBump_mul {z : E} (θ : ContDiffBump z)
+    (hθ : ∀ x ∈ Metric.closedBall z θ.rOut, fderiv ℝ f x ≠ 0) {g : E → ℝ} (hg : ContDiff ℝ 2 g) :
+    IsAdmissiblePerturbation f fun x ↦ θ x * g x where
+  contDiff := θ.contDiff.mul hg
+  hasCompactSupport := θ.hasCompactSupport.mul_right
+  disjoint := Set.disjoint_left.2 fun x hx hx0 ↦ by
+    have hxθ : x ∈ tsupport (θ : E → ℝ) := tsupport_mul_subset_left hx
+    rw [θ.tsupport_eq] at hxθ
+    exact hθ x hxθ hx0
+
+end Witness
 
 section Gradient
 
