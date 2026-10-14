@@ -49,7 +49,7 @@ theorem stabilizeXChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
       (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ := Subtype.ext (G.val_stabilizeX s)
   rw [← hG'] at hc
   rw [GridDiagram.stabilizeXChainMap_apply]
-  exact G.stabilizeXMap_mem_bigradedChainMinusPiece s R hc
+  exact G.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece s R hc
 
 variable [CharP R 2]
 

@@ -41,8 +41,9 @@ invariants `τ` of a knot grid and of this stabilization.
 
 ## Main results
 
-* `TauCeti.OddComponentGridDiagram.stabilizeXMap_mem_bigradedChainMinusPiece`: the stabilization
-  coefficient formula preserves the bigrading of `GC⁻` over every commutative ring.
+* `TauCeti.OddComponentGridDiagram.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece`:
+  the stabilization coefficient formula preserves the bigrading of `GC⁻` over every
+  commutative ring.
 * `TauCeti.OddComponentGridDiagram.stabilizeXMap_mem_alexanderChainMinusPiece`: the chain map
   `stabilizeXMap` preserves the Alexander grading of `GC⁻` in characteristic two.
 
@@ -111,7 +112,8 @@ private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R 
 splitting the `X`-marking of column `s`, the displayed formula sends a chain of `GC⁻(G')`
 homogeneous of bidegree `g` to a chain of `GC⁻(G)` homogeneous of the same bidegree over any
 commutative ring. In characteristic two, this is the component of `stabilizeXMap`. -/
-theorem stabilizeXMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : GridChainMinus R (n + 1)}
+theorem stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece
+    {g : ℤ × ℤ} {c : GridChainMinus R (n + 1)}
     (hc : c ∈ (G.stabilizeX s).bigradedChainMinusPiece R g) :
     Finsupp.mapRange (rename s.predAbove) (map_zero _)
       (G.1.stabilizeXOffCenterToCenter s R (G.1.stabilizeXOffCenterProjection s R c)) ∈
