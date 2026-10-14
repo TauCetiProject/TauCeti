@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.Group.Subgroup.Finite
+public import Mathlib.Combinatorics.Enumerative.Partition.YoungDiagram
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.SubgroupCharSum
 public import TauCeti.RepresentationTheory.Symmetric.RowColumnSubgroup
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
@@ -46,6 +48,10 @@ complement of `X`, so it shares the coefficient formula, the translation law and
 criterion with `b_t`, and it is the element the Garnir relations of
 `TauCeti/RepresentationTheory/Symmetric/Specht/Garnir.lean` are stated for.  Nothing about it
 refers to a tableau, only to the sign character `TauCeti.signLinearCharacter`.
+
+For a partition `μ` of `d`, `Nat.Partition.youngSymmetrizer` is the transported Young symmetrizer
+of the row-superstandard tableau of the diagram of `μ`, with the labels of the diagram identified
+with `Fin d`: the partition-indexed element `c_μ ∈ k[S_d]`.
 
 The symmetrizers are built over `ℚ`, which is what the essential-idempotence theorem and the
 Specht-module constructions downstream of this file work over.  The coefficients of `c_t` are in
@@ -499,3 +505,36 @@ theorem asAlgebraHom_antisymmetrizerOn_apply_eq_zero {M : Type*} [AddCommGroup M
 end AntisymmetrizerOn
 
 end TauCeti
+
+namespace Nat.Partition
+
+open TauCeti
+
+variable {d : ℕ} (μ : d.Partition) (k : Type*) [CommSemiring k] [Algebra ℚ k]
+
+/-- **The Young symmetrizer of a partition** `μ` of `d`, as an element of `k[S_d]`: the Young
+symmetrizer `c_t = a_t b_t` of the row-superstandard tableau `t` of the diagram of `μ`, transported
+to `k` and with the labels of the diagram identified with `Fin d` along
+`YoungDiagram.card_ofPartition`. This is the identification along which `TauCeti.spechtModule μ`
+is a representation of `S_d`. -/
+noncomputable def youngSymmetrizer : MonoidAlgebra k (Equiv.Perm (Fin d)) :=
+  MonoidAlgebra.domCongr k k (finCongr (YoungDiagram.card_ofPartition μ)).permCongrHom
+    (YoungTableau.youngSymmetrizerOver k
+      (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau)
+
+/-- The Young symmetrizer of a partition is the transported Young symmetrizer of the
+row-superstandard tableau of its diagram. -/
+theorem youngSymmetrizer_def :
+    μ.youngSymmetrizer k =
+      MonoidAlgebra.domCongr k k (finCongr (YoungDiagram.card_ofPartition μ)).permCongrHom
+        (YoungTableau.youngSymmetrizerOver k
+          (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau) :=
+  (rfl)
+
+/-- The coefficient of the identity in the Young symmetrizer is `1`. -/
+@[simp]
+theorem youngSymmetrizer_coeff_one : (μ.youngSymmetrizer k).coeff 1 = 1 := by
+  rw [youngSymmetrizer_def, MonoidAlgebra.coeff_domCongr, map_one,
+    YoungTableau.youngSymmetrizerOver_coeff, YoungTableau.youngSymmetrizer_coeff_one, map_one]
+
+end Nat.Partition

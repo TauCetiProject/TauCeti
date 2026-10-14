@@ -36,7 +36,9 @@ subgroups of `ℤ₂ˣ`, determine the image of `χ` in each branch of the marke
 ## Main results
 
 * `TauCeti.localCyclotomicCharacter_mem_unitsPrincipal`: if `μ_{p ^ n} ⊆ K`, every value of the
-  cyclotomic character lies in `U^(n)`.
+  cyclotomic character lies in `U^(n)`;
+  `TauCeti.abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal` is the same statement on the
+  topological abelianization.
 * `TauCeti.range_localCyclotomicCharacter_le_unitsPrincipal_iff`: if `p` is invertible in `K`,
   the image lies in `U^(n)` if and only if `μ_{p ^ n} ⊆ K`.
 * `TauCeti.toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three`: if `-2` is a square in
@@ -91,6 +93,15 @@ theorem range_localCyclotomicCharacter_le_unitsPrincipal {n : ℕ}
     (hmu : ∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)) :
     (localCyclotomicCharacter p K).range ≤ unitsPrincipal p n := by
   rintro _ ⟨σ, rfl⟩
+  exact localCyclotomicCharacter_mem_unitsPrincipal hmu σ
+
+/-- If `K` contains a primitive `p ^ n`-th root of unity, every value of the abelianized cyclotomic
+character of `K` is a principal unit `≡ 1 mod p ^ n`. -/
+theorem abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal {n : ℕ}
+    (hmu : ∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)) (g : Field.absoluteGaloisGroupAbelianization K) :
+    abelianizedLocalCyclotomicCharacter p K g ∈ unitsPrincipal p n := by
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective g
+  rw [abelianizedLocalCyclotomicCharacter_mk]
   exact localCyclotomicCharacter_mem_unitsPrincipal hmu σ
 
 /-- If `p` is invertible in `K`, the image of the cyclotomic character lies in the principal unit

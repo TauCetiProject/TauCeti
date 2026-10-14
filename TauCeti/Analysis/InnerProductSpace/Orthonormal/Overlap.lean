@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
 /-!
@@ -24,7 +25,11 @@ isometries `Orthonormal.synthesisMapIsometry`, and the overlap operator records 
 position of the two spanned subspaces in coordinates. On the diagonal it is the Gram operator.
 
 For orthonormal families the singular values of the overlap operator are the *principal cosines*
-`cos θ₀ ≥ cos θ₁ ≥ ⋯` of the two spans (Björck–Golub). Defining them as singular values makes
+`cos θ₀ ≥ cos θ₁ ≥ ⋯` of the two spans (Björck–Golub): writing `S_u`, `S_v` for the coordinate
+isometries, the cosine map of the spans `U` and `V` is `P_V P_U = S_v (S_v† S_u) S_u†`, and the
+outer isometric factors do not change singular values. So these family-level cosines are the
+subspace-level `Submodule.principalCosines U V`; for two unit vectors the single principal cosine
+of the lines they span is `‖⟪u, v⟫‖`. Defining them as singular values makes
 nonnegativity, ordering and symmetry instances of the singular-value API rather than separate
 arguments; the bound `cos θₖ ≤ 1` comes from the overlap operator being a contraction. The sum of
 their squares is the squared Frobenius norm `∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²` of the overlap matrix, which gives
@@ -46,6 +51,10 @@ principal cosines and the squared Frobenius sine are defined only for orthonorma
 * `TauCeti.cosPrincipalAngles`: the principal cosines of two orthonormal families, as singular
   values of the overlap operator, with `cosPrincipalAngles_nonneg`, `cosPrincipalAngles_le_one`,
   `cosPrincipalAngles_antitone` and `cosPrincipalAngles_comm`.
+* `Orthonormal.principalCosines_eq_cosPrincipalAngles`: the principal cosines of the spans of two
+  orthonormal families are the principal cosines of the families.
+* `Submodule.principalCosines_span_singleton`: for unit vectors `u` and `v`, the principal cosines
+  of `𝕜 ∙ u` and `𝕜 ∙ v` are `‖⟪u, v⟫‖` followed by zeros.
 * `TauCeti.sinThetaSq`: the squared Frobenius sine of two orthonormal families, with
   `TauCeti.sinThetaSq_eq_card_sub_sum_norm_inner_sq` and `TauCeti.sinThetaSq_self`.
 * `TauCeti.sinThetaSq_eq_sum_norm_starProjection_orthogonal_sq`: `sin²_F Θ = ∑ⱼ ‖P_{Uᗮ} vⱼ‖²`.
@@ -270,3 +279,57 @@ theorem sinThetaSq_comp_subtypeVal_comp_subtypeVal_eq_sum_compl_norm_inner_sq [D
   exact Finset.sum_coe_sort s fun j ↦ ∑ k ∈ sᶜ, ‖⟪b k, c j⟫_𝕜‖ ^ 2
 
 end TauCeti
+
+/-! ### Principal cosines of the spans -/
+
+namespace Orthonormal
+
+open TauCeti
+
+variable {𝕜 E ι κ : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] [Fintype ι] [Fintype κ]
+
+/-- **Family/subspace cosine bridge.** The principal cosines of the spans `U` and `V` of two finite
+orthonormal families, the singular values of `P_V P_U`, are the principal cosines of the families,
+the singular values of their overlap operator. -/
+theorem principalCosines_eq_cosPrincipalAngles {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) {U V : Submodule 𝕜 E} [U.HasOrthogonalProjection]
+    [V.HasOrthogonalProjection] (hU : Submodule.span 𝕜 (Set.range u) = U)
+    (hV : Submodule.span 𝕜 (Set.range v) = V) :
+    U.principalCosines V = cosPrincipalAngles hu hv := by
+  -- `P_V P_U = S_v (S_v† S_u) S_u†` for the coordinate isometries `S_u` and `S_v`, and the outer
+  -- isometric factors do not change the singular values.
+  have h : (U.cosThetaMap V : E →ₗ[𝕜] E) = hv.synthesisMapIsometry.toLinearMap ∘ₗ
+      (overlapOperator 𝕜 v u ∘ₗ LinearMap.adjoint hu.synthesisMapIsometry.toLinearMap) := by
+    rw [Submodule.cosThetaMap_def, ContinuousLinearMap.toLinearMap_comp,
+      hu.toLinearMap_starProjection_eq_frameOperator hU,
+      hv.toLinearMap_starProjection_eq_frameOperator hV, frameOperator_def, frameOperator_def,
+      synthesisMapIsometry_toLinearMap, synthesisMapIsometry_toLinearMap, adjoint_synthesisMap,
+      overlapOperator_def]
+    simp only [LinearMap.comp_assoc]
+  rw [Submodule.principalCosines_def, h, LinearMap.singularValues_linearIsometry_comp,
+    LinearMap.singularValues_comp_adjoint_linearIsometry, cosPrincipalAngles_comm hu hv,
+    cosPrincipalAngles_def]
+
+end Orthonormal
+
+namespace Submodule
+
+open TauCeti
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E]
+
+/-- **One-dimensional cosine formula.** For unit vectors `u` and `v`, the only principal cosine of
+the lines `𝕜 ∙ u` and `𝕜 ∙ v` is `‖⟪u, v⟫‖`. -/
+theorem principalCosines_span_singleton {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) :
+    (𝕜 ∙ u).principalCosines (𝕜 ∙ v) = Finsupp.single 0 ‖⟪u, v⟫_𝕜‖ := by
+  have hu' : Orthonormal 𝕜 fun _ : Unit ↦ u := orthonormal_subsingleton_iff.mpr fun _ ↦ hu
+  have hv' : Orthonormal 𝕜 fun _ : Unit ↦ v := orthonormal_subsingleton_iff.mpr fun _ ↦ hv
+  rw [hu'.principalCosines_eq_cosPrincipalAngles hv' (by rw [Set.range_const])
+    (by rw [Set.range_const]), cosPrincipalAngles_def,
+    LinearMap.singularValues_eq_single_of_finrank_eq_one _ (by simp)
+      (x := EuclideanSpace.single () 1) (by simp)]
+  simp [EuclideanSpace.norm_eq]
+
+end Submodule

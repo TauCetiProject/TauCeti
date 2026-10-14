@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Basic
-public import TauCeti.Order.Partition.Finpartition
+public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Pullback
+public import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 import Mathlib.Order.Setoid.Partition
 
 /-!
@@ -32,7 +32,12 @@ measurability immediate and does not choose a distinguished index for each point
 * `TauCeti.DenseGraphLimits.stepGraphon_inj` says that, for a fixed partition, two step graphons
   are equal exactly when their block values agree;
 * `TauCeti.DenseGraphLimits.stepGraphon_const` identifies a constant block matrix with the
-  constant graphon.
+  constant graphon;
+* `TauCeti.DenseGraphLimits.exists_stepGraphon_eq_iff` says that a graphon is a step graphon on a
+  given partition exactly when it is constant on each of its rectangles;
+* `TauCeti.DenseGraphLimits.exists_stepGraphon_ofFibers_eq_comap` says that the pullback of a
+  graphon on a finite discrete carrier along a measurable map is a step graphon on the fibres of
+  that map.
 
 ## References
 
@@ -184,6 +189,43 @@ theorem stepGraphon_const (P : Finpartition (Set.univ : Set Ω))
   obtain ⟨q, hyq⟩ := exists_part P y
   rw [stepGraphon_apply P hP (fun _ _ => c) (fun _ _ => rfl) hxp hyq,
     Graphon.const_apply]
+
+/-- **Step graphons on a fixed partition are the graphons constant on its rectangles.** A graphon
+is a step graphon on `P` exactly when its value at `(x, y)` depends only on the parts of `P`
+containing `x` and `y`. -/
+theorem exists_stepGraphon_eq_iff (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) :
+    (∃ (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p),
+        stepGraphon (μ := μ) P hP val hsymm = W) ↔
+      ∀ p q : P.parts, ∀ x ∈ (p : Set Ω), ∀ x' ∈ (p : Set Ω), ∀ y ∈ (q : Set Ω),
+        ∀ y' ∈ (q : Set Ω), W x y = W x' y' := by
+  constructor
+  · rintro ⟨val, hsymm, rfl⟩ p q x hx x' hx' y hy y' hy'
+    rw [stepGraphon_apply P hP val hsymm hx hy, stepGraphon_apply P hP val hsymm hx' hy']
+  · intro hW
+    refine ⟨fun p q => ⟨W (P.indexedPartition.some p) (P.indexedPartition.some q), W.mem_Icc _ _⟩,
+      fun p q => Subtype.ext (W.symm _ _), ?_⟩
+    ext x y
+    obtain ⟨p, hxp⟩ := exists_part P x
+    obtain ⟨q, hyq⟩ := exists_part P y
+    rw [stepGraphon_apply P hP _ _ hxp hyq]
+    exact hW p q _ (P.indexedPartition.some_mem p) x hxp _ (P.indexedPartition.some_mem q) y hyq
+
+/-- **The pullback of a graphon on a finite carrier is a step graphon.** Reading a graphon on a
+finite discrete probability space -- a weighted graph -- along a measurable map `g` gives a step
+graphon on the partition into the fibres of `g`. -/
+theorem exists_stepGraphon_ofFibers_eq_comap {κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] {ν : MeasureTheory.Measure κ}
+    [MeasureTheory.IsProbabilityMeasure ν] (W : Graphon κ ν) {g : Ω → κ} (hg : Measurable g) :
+    ∃ (val : (Finpartition.ofFibers g).parts → (Finpartition.ofFibers g).parts →
+        Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p),
+      stepGraphon (μ := μ) (Finpartition.ofFibers g)
+          (fun _ hp => Finpartition.measurableSet_of_mem_ofFibers hg hp) val hsymm =
+        W.comap g hg μ := by
+  refine (exists_stepGraphon_eq_iff _ _ _).2 fun p q x hx x' hx' y hy y' hy' => ?_
+  rw [Graphon.comap_apply, Graphon.comap_apply,
+    Finpartition.apply_eq_of_mem_ofFibers_parts p.property hx hx',
+    Finpartition.apply_eq_of_mem_ofFibers_parts q.property hy hy']
 
 end DenseGraphLimits
 

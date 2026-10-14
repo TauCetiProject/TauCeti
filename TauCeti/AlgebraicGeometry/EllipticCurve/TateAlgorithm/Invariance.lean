@@ -11,7 +11,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Additive
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Multiplicity
 

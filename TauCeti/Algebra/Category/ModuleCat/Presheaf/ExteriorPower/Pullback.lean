@@ -20,6 +20,9 @@ for this construction. This supplies the sectionwise input to exterior-power pul
 for sheaves. Unlike precomposition alone, restriction of scalars does not generally give an
 isomorphism of exterior powers; no invertibility assertion is made here.
 
+In degree one the pushforward comparison is the identity, read through the identifications
+`⋀¹ M ≅ M`.
+
 The construction uses the module-level restriction-of-scalars comparison and Mathlib's
 `CategoryTheory.mateEquiv` for the pullback--pushforward adjunction. The wedge formula specifies
 the pushforward comparison, and the unit equation specifies the pullback comparison.
@@ -105,6 +108,35 @@ theorem pushforwardExteriorPowerComparison_app_app_mk (n : ℕ)
       ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj U)) m) :=
   ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app U).hom n
     (M.obj (F.op.obj U)) m
+
+/-- In degree one, the pushforward comparison is the identity of `α_* M`, read through the
+identifications of first exterior powers with the presheaves themselves. -/
+@[reassoc (attr := simp)]
+theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
+    (M : PresheafOfModulesOfCommRing.{u} R) :
+    (pushforwardExteriorPowerComparison α 1).app M ≫
+        (PresheafOfModulesOfCommRing.pushforward α).map
+          ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R).hom.app M) =
+      (PresheafOfModulesOfCommRing.exteriorPowerOneIso S).hom.app
+        ((PresheafOfModulesOfCommRing.pushforward α).obj M) := by
+  ext U : 1
+  apply ModuleCat.exteriorPower.hom_ext (R := S.obj U)
+  apply ModuleCat.AlternatingMap.ext
+  intro m
+  -- Both sides send the wedge of a single section `m 0` to `m 0`: the comparison keeps the wedge
+  -- and `iso₁` evaluates it.
+  have hR := congrArg (fun g ↦ g (ModuleCat.exteriorPower.mk
+      (M := PresheafOfModulesOfCommRing.obj M (F.op.obj U)) m))
+    (PresheafOfModulesOfCommRing.exteriorPowerOneIso_hom_app_app M (F.op.obj U))
+  have hS := congrArg (fun g ↦ g (ModuleCat.exteriorPower.mk (M := PresheafOfModulesOfCommRing.obj
+      ((PresheafOfModulesOfCommRing.pushforward α).obj M) U) m))
+    (PresheafOfModulesOfCommRing.exteriorPowerOneIso_hom_app_app
+      ((PresheafOfModulesOfCommRing.pushforward α).obj M) U)
+  exact ((congrArg (((PresheafOfModulesOfCommRing.exteriorPowerOneIso R).hom.app M).app'
+      (F.op.obj U)) (pushforwardExteriorPowerComparison_app_app_mk α 1 M U m)).trans
+    (hR.trans (ModuleCat.exteriorPower.iso₁_hom_apply
+      (M := PresheafOfModulesOfCommRing.obj M (F.op.obj U)) m))).trans
+      (hS.trans (ModuleCat.exteriorPower.iso₁_hom_apply m)).symm
 
 variable [(PresheafOfModulesOfCommRing.pushforward.{u} α).IsRightAdjoint]
 

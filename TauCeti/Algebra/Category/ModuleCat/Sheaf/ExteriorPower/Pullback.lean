@@ -25,7 +25,7 @@ for each model of pullback: `SheafOfModules.pullbackPushforwardAdjunction φ` gi
 `SheafOfModules.pullback φ`, and, for a morphism of schemes `f`,
 `AlgebraicGeometry.Scheme.Modules.pullbackPushforwardAdjunction f` gives it for
 `AlgebraicGeometry.Scheme.Modules.pullback f`. Both maps are characterized on sheafified wedges
-of sections. No invertibility assertion is made here.
+of sections. In degree one the comparison is an isomorphism, for every such adjunction.
 
 ## Main declarations
 
@@ -203,6 +203,74 @@ theorem pushforwardExteriorPowerComparison_app_val_app_mk (n : ℕ)
         (F.op.obj U) x)
     (PresheafOfModules.pushforwardExteriorPowerComparison_app_app_mk (commRingCatHom φ) n M.val U m)
 
+/-- In degree one, the exterior-power comparison of pushforward is the identity of `φ_* M`, read
+through the identifications `⋀¹ M ≅ M`. -/
+-- Not `@[simp]`: `exteriorPowerOneIso_hom_app` unfolds the left-hand side.
+@[reassoc]
+theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    (pushforwardExteriorPowerComparison φ 1).app M ≫
+        (_root_.SheafOfModules.pushforward φ).map
+          ((_root_.SheafOfModules.exteriorPowerOneIso R).hom.app M) =
+      (_root_.SheafOfModules.exteriorPowerOneIso S).hom.app
+        ((_root_.SheafOfModules.pushforward φ).obj M) := by
+  rw [← cancel_epi (_root_.SheafOfModules.exteriorPowerIso 1
+    ((_root_.SheafOfModules.pushforward φ).obj M)).inv]
+  apply ((PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf S).obj)).homEquiv _ _).injective
+  -- Compare the transposes along the sheafification map of `⋀¹ (φ_* M)`: both are the
+  -- sectionwise identification `⋀¹ (φ_* M) ≅ φ_* M`.
+  have key : (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) 1).obj
+          ((_root_.SheafOfModules.pushforward φ).obj M).val) ≫
+      ((_root_.SheafOfModules.exteriorPowerIso 1 _).inv ≫
+          (pushforwardExteriorPowerComparison φ 1).app M).val ≫
+        ((_root_.SheafOfModules.pushforward φ).map
+          ((_root_.SheafOfModules.exteriorPowerOneIso R).hom.app M)).val =
+      (PresheafOfModulesOfCommRing.exteriorPowerOneIso S.obj).hom.app
+        ((_root_.SheafOfModules.pushforward φ).obj M).val := by
+    let P := presheafPushforward φ
+    -- The sectionwise comparison, typed as a morphism of presheaves of modules over
+    -- `(ringCatSheaf S).obj` so that every composite below lives in one category.
+    let c : (PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) 1).obj
+        ((_root_.SheafOfModules.pushforward φ).obj M).val ⟶
+          P.obj ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) 1).obj M.val) :=
+      (PresheafOfModules.pushforwardExteriorPowerComparison (commRingCatHom φ) 1).app M.val
+    let η := (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+      ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) 1).obj M.val)
+    let f : (_root_.SheafOfModules.exteriorPower R 1).obj M ⟶ M :=
+      (_root_.SheafOfModules.exteriorPowerOneIso R).hom.app M
+    let o : (PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) 1).obj M.val ⟶ M.val :=
+      (PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val
+    let o' : (PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) 1).obj
+        ((_root_.SheafOfModules.pushforward φ).obj M).val ⟶ P.obj M.val :=
+      (PresheafOfModulesOfCommRing.exteriorPowerOneIso S.obj).hom.app
+        ((_root_.SheafOfModules.pushforward φ).obj M).val
+    calc
+      _ = c ≫ P.map (η ≫ (_root_.SheafOfModules.exteriorPowerIso 1 M).inv.val) ≫ P.map f.val :=
+        (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ P.map f.val)
+          (unit_comp_forget_map_pushforwardExteriorPowerComparison_app φ 1 M)).trans
+            (Category.assoc _ _ _))
+      _ = c ≫ P.map (η ≫ ((_root_.SheafOfModules.exteriorPowerIso 1 M).inv ≫ f).val) :=
+        congrArg (c ≫ ·) ((P.map_comp _ _).symm.trans (congrArg P.map (Category.assoc _ _ _)))
+      _ = c ≫ P.map o :=
+        congrArg (fun g ↦ c ≫ P.map g)
+          (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app M)
+      _ = o' :=
+        PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
+          (commRingCatHom φ) M.val
+  -- Transport both sides through the adjunction using their unit characterizations.
+  refine (Adjunction.homEquiv_unit _ _ _ _).trans ?_
+  refine key.trans ?_
+  refine (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app
+    ((_root_.SheafOfModules.pushforward φ).obj M)).symm.trans ?_
+  exact (Adjunction.homEquiv_unit
+    (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)) _ _
+    ((_root_.SheafOfModules.exteriorPowerIso 1 _).inv ≫
+      (_root_.SheafOfModules.exteriorPowerOneIso S).hom.app
+        ((_root_.SheafOfModules.pushforward φ).obj M))).symm
+
+
 variable {φ} {G : _root_.SheafOfModules.{u} (ringCatSheaf S) ⥤
     _root_.SheafOfModules.{u} (ringCatSheaf R)} (adj : G ⊣ _root_.SheafOfModules.pushforward φ)
 
@@ -258,6 +326,34 @@ theorem pullbackExteriorPowerComparison_app_val_app_unit_mk (n : ℕ)
   refine (congrArg (((pushforwardExteriorPowerComparison φ n).app (G.obj M)).val.app U)
     (_root_.SheafOfModules.exteriorPower_map_val_app_mk n (adj.unit.app M) U m)).trans ?_
   exact pushforwardExteriorPowerComparison_app_val_app_mk φ n (G.obj M) U _
+
+/-- In degree one, the pullback comparison is the identity of `φ^* M`, read through the
+identifications `⋀¹ M ≅ M`. In particular it is an isomorphism in degree one. -/
+-- Not `@[simp]`: `exteriorPowerOneIso_hom_app` unfolds the left-hand side.
+@[reassoc]
+theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf S)) :
+    (pullbackExteriorPowerComparison adj 1).app M ≫
+        (_root_.SheafOfModules.exteriorPowerOneIso R).hom.app
+          ((G).obj M) =
+      (G).map
+        ((_root_.SheafOfModules.exteriorPowerOneIso S).hom.app M) := by
+  apply (adj.homEquiv _ _).injective
+  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_comp,
+    unit_comp_pushforward_pullbackExteriorPowerComparison_assoc,
+    pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso]
+  exact ((_root_.SheafOfModules.exteriorPowerOneIso S).hom.naturality _).trans
+    (adj.unit.naturality _)
+
+/-- The pullback comparison is an isomorphism in degree one. -/
+instance isIso_pullbackExteriorPowerComparison_one :
+    IsIso (pullbackExteriorPowerComparison adj 1) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro M
+  rw [(Iso.eq_comp_inv ((_root_.SheafOfModules.exteriorPowerOneIso R).app _)).mpr
+    (pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso adj M)]
+  infer_instance
+
 
 end
 
