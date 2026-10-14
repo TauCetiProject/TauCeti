@@ -116,8 +116,8 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
 /-- The composition of two isometric equivalences acts by composing their underlying maps. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}
-    {M₃ : Type*} {N : Type w} [CommSemiring R] [AddCommGroup M₁] [Module R M₁]
-    [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃] [AddCommGroup N]
+    {M₃ : Type*} {N : Type w} [CommSemiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid N]
     [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     {Q₃ : QuadraticMap R M₃ N} (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) (x : M₁) :
     f.trans g x = g (f x) :=

@@ -43,9 +43,7 @@ itself a quotient covering map for any group.
 
 ## References
 
-This completes the existence half in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-item 7: construct the pointed connected cover `UniversalCover x₀ / H`. It uses the universal
-cover adapted from Kim Morrison's
+This file uses the universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) and Mathlib's
 quotient-covering-map interface due to Junyan Xu.
 -/
@@ -130,12 +128,8 @@ theorem subgroupCover_proj [LocallyPathConnectedSpace X] [SemilocallySimplyConne
     (subgroupCover x₀ H).proj =
       eqToHom (subgroupCover_coe x₀ H) ≫
         TopCat.ofHom
-          ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩ := by
-  simpa only [subgroupCover] using
-    ConnectedCoveringSpace.mk_proj
-      (TopCat.ofHom
-        ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩)
-      (isCoveringMap_subgroupQuotientProj x₀ H)
+          ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩ :=
+  (rfl)
 
 /-- The characteristic equality of total spaces for `subgroupCover`, viewed as a
 homeomorphism. -/

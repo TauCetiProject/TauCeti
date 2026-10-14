@@ -131,6 +131,22 @@ end Subgroup
 
 namespace TauCeti
 
+open Set in
+open scoped Pointwise in
+/-- A point in a set disjoint from each of its nontrivial translates has trivial stabilizer.
+
+Injectivity of the orbit projection on the set alone does not imply this: it separates points,
+whereas triviality of a stabilizer distinguishes group elements acting at the same point. -/
+theorem stabilizer_eq_bot_of_disjoint_smul
+    {G X : Type*} [Group G] [MulAction G X] {U : Set X}
+    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) {x : X} (hx : x ∈ U) :
+    MulAction.stabilizer G x = ⊥ := by
+  apply (Subgroup.eq_bot_iff_forall _).mpr
+  intro g hg
+  have hgx := MulAction.mem_stabilizer_iff.mp hg
+  by_contra hne
+  exact disjoint_left.mp (hU g hne) (hgx ▸ smul_mem_smul_set hx) hx
+
 variable {G α : Type*} [Group G] [MulAction G α]
 
 /-- **The order of a stabiliser is constant along an orbit**: points related by the orbit

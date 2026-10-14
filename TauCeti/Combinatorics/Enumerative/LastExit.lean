@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.GroupTheory.Perm.Finite
+public import Mathlib.Order.Filter.AtTopBot.Basic
+import Mathlib.Order.Filter.Finite
 public import TauCeti.Combinatorics.Enumerative.SuccessorArray
 
 /-!
@@ -35,6 +37,9 @@ Applications 100 (2002), 147--165.
 
 * `TauCeti.lastExitAdmissible_of_support_lt_visitCount`: deterministic support criterion for
   last-exit admissibility.
+* `TauCeti.eventually_lastExitAdmissible_of_recurrent`: along a path that revisits every attained
+  row moved by `π` infinitely often, a finitely supported `π` is admissible for every sufficiently
+  long prefix.
 * `TauCeti.visitCount_pathOfReindexedSuccessors_lt_visitCount`: the last-exit lemma — the
   reconstruction only ever consumes successor entries that the original prefix consumes too.
 * `TauCeti.successorArray_pathOfReindexedSuccessors_of_lt_visitCount`: the entries it consumes are
@@ -52,12 +57,13 @@ Applications 100 (2002), 147--165.
   chains", *Stochastic Processes and their Applications* 100 (2002), 147--165, Lemma 1(b).
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115--130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 -/
 
 public section
 
 noncomputable section
+
+open Filter
 
 open Function (occCount occCount_eq_card_filter occCount_le_of_comp occCount_lt_of_comp
   sum_occCount_eq_card)
@@ -123,6 +129,33 @@ theorem lastExitAdmissible_of_support_lt_visitCount {π : α → Equiv.Perm ℕ}
     by_contra hlast
     have hlt := h a ha (visitCount x a m - 1) hlast
     omega
+
+/-- **Finitely many moved cells on attained rows are eventually last-exit admissible along a
+recurrent path.** Recurrence is needed only for attained rows on which `π` moves a cell: each such
+row's visit count eventually exceeds every moved position in the finite attained support. -/
+theorem eventually_lastExitAdmissible_of_recurrent {π : α → Equiv.Perm ℕ} {x : ℕ → α}
+    (hrec : ∀ a, (∃ k, π a k ≠ k) → (∃ t, x t = a) → {n | x n = a}.Infinite)
+    (hπ : {p : α × ℕ | π p.1 p.2 ≠ p.2 ∧ ∃ t, x t = p.1}.Finite) :
+    ∀ᶠ m in atTop, LastExitAdmissible π x m := by
+  have hsupported : ∀ p ∈ {p : α × ℕ | π p.1 p.2 ≠ p.2 ∧ ∃ t, x t = p.1},
+      ∀ᶠ m in atTop, p.2 + 1 < visitCount x p.1 m := by
+    intro p hp
+    have hinfinite := hrec p.1 ⟨p.2, hp.1⟩ hp.2
+    have hcount : Tendsto (visitCount x p.1) atTop atTop := by
+      refine tendsto_atTop_atTop.2 fun b => ?_
+      obtain ⟨n, -, hn⟩ := exists_visitCount_of_infinite hinfinite b
+      exact ⟨n, fun m hnm => hn ▸ visitCount_monotone x p.1 hnm⟩
+    obtain ⟨N, hN⟩ := tendsto_atTop_atTop.1 hcount (p.2 + 2)
+    exact eventually_atTop.2 ⟨N, fun m hm => by have := hN m hm; omega⟩
+  filter_upwards [hπ.eventually_all.2 hsupported] with m hm
+  apply lastExitAdmissible_of_support_lt_visitCount
+  intro a ha k hk
+  have hvisited : ∃ t, x t = a := by
+    by_contra hvisited
+    push Not at hvisited
+    have hzero := visitCount_eq_zero_of_forall_ne (n := m) fun i _ => hvisited i
+    omega
+  exact hm (a, k) ⟨hk, hvisited⟩
 
 /-- **Last-exit admissibility through time `m` only depends on the sequence up to `m`.** Both of
 its conditions are stated in terms of the visit counts before `m`. -/

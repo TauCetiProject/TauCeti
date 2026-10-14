@@ -15,8 +15,9 @@ permissions:
 # cancelled before it can publish, while superseded pending commits do not each
 # start an expensive cache-miss rebuild. In a burst, this deliberately coalesces
 # intermediate commits' post-merge checks too; the newest pending tip rechecks
-# the entire tree, though localizing a failure may then require bisection. No
-# merge decision consumes this post-merge workflow's per-commit conclusion.
+# the entire tree, though localizing a failure may then require bisection.
+# Dependency reconciliation uses conclusive runs as evidence for the current
+# pin, skipping coalesced commits without a completed build.
 concurrency:
   group: main-ci-cache-publisher
   cancel-in-progress: false
@@ -75,6 +76,9 @@ jobs:
           export LEAN LEAN_SYSROOT
           python3 scripts/test_duplicate_declarations.py
 
+      - name: Import header audit regression tests
+        run: python3 scripts/test_check_imports.py
+
   build:
     runs-on: ubuntu-latest
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
@@ -113,6 +117,7 @@ jobs:
       - name: Infrastructure policy unit tests
         run: |
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
+          PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
           PYTHONPATH=scripts python3 scripts/test_participant_graph.py
@@ -128,9 +133,12 @@ jobs:
           python3 scripts/test_structure_nudge.py
           python3 scripts/test_workflow_pins.py
           python3 scripts/test_queue_release.py
+          python3 scripts/test_pick_runner.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
+          python3 scripts/test_bump_latest.py
           python3 scripts/test_lint_scope.py
+          python3 scripts/test_bors_scope_approval.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py
@@ -144,6 +152,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
           python3 scripts/test_check_expired_mathlib_shims.py
+          python3 scripts/test_check_source_options.py
           python3 scripts/test_toolchain_tags.py
 
       # The two-library split is build convenience, not a trust boundary.
@@ -156,16 +165,12 @@ jobs:
             exit 1
           fi
 
-      # No-set_option guard. `set_option` is an escape hatch (it can raise maxHeartbeats,
-      # silence linters, bump maxRecDepth, ...), so TauCeti/ source may not use it. Like the
-      # import guard it is a textual scan that needs no elaboration, so it runs trusted and
-      # outside the sandbox.
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      # Option overrides and heartbeat instrumentation are forbidden in library code.
+      # This cheap scan ignores comments without double quotes, conservatively includes
+      # strings and names, and never elaborates code.
+      - name: Reject option overrides and heartbeat instrumentation
         run: |
-          if grep -rIn '^set_option ' TauCeti/ TauCeti.lean; then
-            echo "::error::TauCeti/ and TauCeti.lean may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
-            exit 1
-          fi
+          python3 scripts/check_source_options.py TauCeti/ TauCeti.lean
 
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store. This is
       # deliberately narrower than a cache of the whole multi-gigabyte `./.lake` tree: `lake exe
@@ -267,6 +272,9 @@ jobs:
       - name: Lake archive reuse integration tests
         run: python3 scripts/test_lake_cache_reuse.py --integration
 
+      - name: Audit import headers against the complete source inventory
+        run: python3 scripts/check-imports.py
+
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
       # re-exports the library.
@@ -300,23 +308,14 @@ jobs:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
 
-      - name: Duplicate-declaration audit
-        run: lake env lean --run scripts/DuplicateDeclarations.lean
+      # The same shared checks as trusted PR builds, compiled from merged main's sources.
+      - name: Shared ownership and axiom audits
+        run: |
+          bash scripts/build-audit-driver.sh . scripts "$RUNNER_TEMP/audit-driver"
+          lake env "$RUNNER_TEMP/audit-driver/audit-driver"
 
-      # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
-      # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
-      # Quot.sound}, catching sorry/admit (sorryAx), native_decide (Lean.ofReduceBool),
-      # and home-rolled axioms, including ones reaching in through imports.
-      - name: Axiom audit (TauCeti/ uses only allowlisted axioms)
-        env:
-          LAKE_NO_CACHE: "true"
-        run: lake exe axioms
-
-      # Module-system audit. Inspects the built TauCeti `.olean`s and rejects any module that
-      # did not opt into the Lean module system (a leading `module`). It reads each module's
-      # `ModuleData.isModule` flag from the compiled artifact, so it cannot be fooled by a
-      # `module` appearing in a comment or string the way a textual grep could.
-      - name: Module-system audit (every TauCeti/ file opts into `module`)
+      # Read compiled module flags with the canonical direct-artifact checker.
+      - name: Module-system audit (every TauCeti file opts into module)
         env:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system

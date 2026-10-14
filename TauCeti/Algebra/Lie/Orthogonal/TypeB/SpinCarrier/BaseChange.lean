@@ -399,6 +399,20 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap
     (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n) A k
 
+/-- The factored `k`th root-subgroup map composed with the carrier coordinate morphism recovers
+its ambient transported coordinate map. -/
+@[simp]
+theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap
+    (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    coordinateMap n A ≫ rootSubgroupToBaseChangeCoordinateMap n A k =
+      kostantRootSubgroupBaseChangePresentationCoordinateMap
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+        (latticeBasis n) A k := by
+  unfold coordinateMap
+  exact mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap n A k
+
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/
 @[simp]

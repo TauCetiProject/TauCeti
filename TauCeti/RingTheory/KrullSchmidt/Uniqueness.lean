@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.KrullSchmidt.Exchange
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # The Krull-Schmidt theorem
@@ -24,8 +25,9 @@ isomorphism gives two decompositions of one module with one fewer summand, and t
 closes.
 
 What the induction asks of the first decomposition is only that each `Module.End A (P i)` is local,
-which is all the exchange lemma consumes, so that is how the theorem is stated; finite length enters
-only through Fitting's lemma `TauCeti.isLocalRing_end_of_isIndecomposable`, in the corollaries.
+which is all the exchange lemma consumes, so that is how the theorem is stated. In the corollaries,
+finite length ensures finite index types and supplies locality through Fitting's lemma
+`TauCeti.isLocalRing_end_of_isIndecomposable`.
 
 ## Main results
 
@@ -33,7 +35,7 @@ only through Fitting's lemma `TauCeti.isLocalRing_end_of_isIndecomposable`, in t
   generality, for a first family whose summands have local endomorphism rings and a second family
   of indecomposable summands.
 * `TauCeti.exists_equiv_linearEquiv_of_iSupIndep`: the same for two families of indecomposable
-  submodules of a module of finite length, indexed by finite types.
+  submodules of a module of finite length; finiteness of the index types follows automatically.
 * `TauCeti.exists_equiv_linearEquiv_of_finset`: the same in the `Finset` and `DirectSum.IsInternal`
   packaging produced by `TauCeti.exists_indecomposable_decomposition`.
 * `TauCeti.card_eq_card_of_iSupIndep` and `TauCeti.card_eq_card_of_finset`: in particular the two
@@ -48,21 +50,19 @@ statement does not need; the two are interchanged inside the proofs by
 in the `DirectSum.IsInternal` form because that is what
 `TauCeti.exists_indecomposable_decomposition` produces. The finiteness of `M` is carried as the
 instance pair `[IsNoetherian A M] [IsArtinian A M]` on the results indexed by a type, and in the
-`IsFiniteLength A M` spelling on the `Finset` results.
+`IsFiniteLength A M` spelling on the `Finset` results. Independence and nontriviality of the
+summands imply that both index types are finite, by Noetherianity of the ambient module.
 
 The induction is on `Nat.card` of the first index type, and it changes the ambient module: the
 recursive call is made on `↥(⨆ j ≠ j₀, Q j)`. That is why it is packaged as a private auxiliary
 statement quantifying over the module as well, rather than run inside the theorem below.
 Restricting a decomposition to the submodule it spans is Mathlib's
 `DirectSum.isInternal_biSup_submodule_of_iSupIndep`; transporting one along a linear equivalence is
-Mathlib's `LinearMap.iSupIndep_map` together with the private helper below, and transporting
-locality of an endomorphism ring along one is `TauCeti.IsLocalRing.of_ringEquiv` applied to
-Mathlib's `LinearEquiv.conjRingEquiv`.
+Mathlib's `LinearMap.iSupIndep_map` and `Submodule.map_iSup`, and transporting
+locality of an endomorphism ring along one is Mathlib's `RingEquiv.isLocalRing` applied to
+`LinearEquiv.conjRingEquiv`.
 
 ## References
-
-This implements the uniqueness bullet of Layer 2 ("the Krull-Schmidt theorem") of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4.
@@ -75,22 +75,6 @@ namespace TauCeti
 universe u v w x
 
 variable {A : Type u} [Ring A]
-
-/-! ### Transporting a decomposition along a linear equivalence -/
-
-section Transport
-
-variable {M : Type v} {M' : Type*} [AddCommGroup M] [Module A M] [AddCommGroup M'] [Module A M']
-variable {ι : Type w} {P : ι → Submodule A M}
-
-/-- A family of submodules spanning the whole module still spans it after taking images along a
-linear equivalence. -/
-private theorem iSup_map_of_linearEquiv_eq_top (e : M ≃ₗ[A] M') (h : ⨆ i, P i = ⊤) :
-    ⨆ i, (P i).map (e : M →ₗ[A] M') = ⊤ := by
-  rw [← Submodule.map_iSup, h, Submodule.map_top]
-  exact LinearMap.range_eq_top.mpr e.surjective
-
-end Transport
 
 /-! ### The exchange induction -/
 
@@ -119,11 +103,8 @@ private theorem exists_equiv_linearEquiv_aux :
     exact ⟨Equiv.equivOfIsEmpty ι κ, fun i ↦ isEmptyElim i⟩
   -- The summand `P i₀` is complemented by the other `P`s.
   set s : Set ι := {i | i ≠ i₀} with hs
-  set S : Submodule A M := ⨆ i ∈ s, P i with hS
-  have hcomplP : IsCompl (P i₀) S := by
-    refine ⟨hP i₀, codisjoint_iff.mpr ?_⟩
-    rw [hS, ← hPt]
-    exact (iSup_split_single P i₀).symm
+  set S : Submodule A M := ⨆ i ∈ s, P i
+  have hcomplP : IsCompl (P i₀) S := hP.isCompl_biSup_ne hPt i₀
   -- Exchange it for a summand of the second decomposition; its endomorphism ring is local, which is
   -- all the exchange lemma asks for.
   have : IsLocalRing (Module.End A (P i₀)) := hPloc i₀
@@ -154,8 +135,8 @@ private theorem exists_equiv_linearEquiv_aux :
     (hcard ▸ Finite.card_subtype_lt (p := fun i ↦ i ∈ s) (x := i₀) (by simp [hs]))
     (M := T) (ι := s) (κ := t) (P := P') (Q := Q') rfl
     (LinearMap.iSupIndep_map (φ : S →ₗ[A] T) φ.injective hPi)
-    (iSup_map_of_linearEquiv_eq_top φ hPs)
-    (fun i ↦ have := hPloc i; IsLocalRing.of_ringEquiv (hPP' i).some.conjRingEquiv) hQi hQs
+    (by rw [← Submodule.map_iSup, Submodule.map_eq_top_iff]; exact hPs)
+    (fun i ↦ have := hPloc i; (hPP' i).some.conjRingEquiv.isLocalRing) hQi hQs
     (fun j ↦ (hQind j).of_linearEquiv (hQQ' j).some.symm)
   -- Extend the matching by `i₀ ↦ j₀`.
   refine ⟨(Equiv.optionSubtypeNe i₀).symm.trans
@@ -196,17 +177,23 @@ theorem exists_equiv_linearEquiv_of_isLocalRing_end
 indecomposable submodules are matched by a bijection of their index sets under which corresponding
 summands are isomorphic.
 
-Finite length enters only through Fitting's lemma, which makes the endomorphism ring of each summand
-local; `TauCeti.exists_equiv_linearEquiv_of_isLocalRing_end` is the statement that hypothesis is
-really needed for. Existence of such a decomposition is
+The index types need not carry finiteness instances: independence and the nonzero summands force
+them to be finite because the ambient module is Noetherian.
+
+Fitting's lemma makes the endomorphism ring of each summand local, as needed by
+`TauCeti.exists_equiv_linearEquiv_of_isLocalRing_end`. Existence of such a decomposition is
 `TauCeti.exists_indecomposable_decomposition`. -/
 theorem exists_equiv_linearEquiv_of_iSupIndep [IsNoetherian A M] [IsArtinian A M]
-    {ι : Type w} {κ : Type x} [Finite ι] [Finite κ] {P : ι → Submodule A M}
+    {ι : Type w} {κ : Type x} {P : ι → Submodule A M}
     {Q : κ → Submodule A M} (hP : iSupIndep P) (hPt : ⨆ i, P i = ⊤)
     (hPind : ∀ i, IsIndecomposableModule A (P i)) (hQ : iSupIndep Q) (hQt : ⨆ j, Q j = ⊤)
     (hQind : ∀ j, IsIndecomposableModule A (Q j)) :
-    ∃ e : ι ≃ κ, ∀ i, Nonempty (P i ≃ₗ[A] Q (e i)) :=
-  exists_equiv_linearEquiv_of_isLocalRing_end hP hPt
+    ∃ e : ι ≃ κ, ∀ i, Nonempty (P i ≃ₗ[A] Q (e i)) := by
+  have : Finite ι := WellFoundedGT.finite_of_iSupIndep hP
+    fun i ↦ Submodule.nontrivial_iff_ne_bot.mp (hPind i).nontrivial
+  have : Finite κ := WellFoundedGT.finite_of_iSupIndep hQ
+    fun j ↦ Submodule.nontrivial_iff_ne_bot.mp (hQind j).nontrivial
+  exact exists_equiv_linearEquiv_of_isLocalRing_end hP hPt
     (fun i ↦ isLocalRing_end_of_isIndecomposable
       (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩) (hPind i))
     hQ hQt hQind
@@ -214,7 +201,7 @@ theorem exists_equiv_linearEquiv_of_iSupIndep [IsNoetherian A M] [IsArtinian A M
 /-- Two decompositions of a module of finite length into indecomposable submodules have the same
 number of summands. -/
 theorem card_eq_card_of_iSupIndep [IsNoetherian A M] [IsArtinian A M]
-    {ι : Type w} {κ : Type x} [Finite ι] [Finite κ] {P : ι → Submodule A M}
+    {ι : Type w} {κ : Type x} {P : ι → Submodule A M}
     {Q : κ → Submodule A M} (hP : iSupIndep P) (hPt : ⨆ i, P i = ⊤)
     (hPind : ∀ i, IsIndecomposableModule A (P i)) (hQ : iSupIndep Q) (hQt : ⨆ j, Q j = ⊤)
     (hQind : ∀ j, IsIndecomposableModule A (Q j)) : Nat.card ι = Nat.card κ :=

@@ -29,9 +29,6 @@ ordinary functor of points.
 * `TauCeti.Bialgebra.CounitAlgebra.pointsMulEquiv_mapValue` and
   `TauCeti.Bialgebra.CounitAlgebra.mapValue_pointsMulEquiv_symm_apply`: the identification is
   natural in the coefficient algebra.
-
-This is coefficient bookkeeping for the adjoint action of Layer 2, "Lie algebra and the adjoint
-representation", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -109,9 +106,7 @@ theorem pointsMulEquiv_mapValue (phi : B →ₐ[R] C)
   ext h
   simp only [AlgHom.mapValue_apply, pointsMulEquiv_apply, AlgHom.coe_comp,
     Function.comp_apply, mapAlgHom_apply]
-  calc
-    _ = phi (g.ofConv h) := algEquivSelf_apply (R := R) (A := H) (B := C) _
-    _ = _ := congrArg phi (algEquivSelf_apply (R := R) (A := H) (B := B) _).symm
+  exact algEquivSelf_map phi _
 
 /-- Naturality of the inverse counit-points equivalence in the coefficient algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (phi : B →ₐ[R] C)

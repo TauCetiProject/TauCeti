@@ -84,7 +84,7 @@ theorem sum_char_permutationModule_mul_char_permutationModule (ν ξ : n.Partiti
     (sum_card_fixedPoints_smul_psumPart_partition (σ := Fin n) ℚ ν)
   simp only [← Nat.cast_smul_eq_nsmul ℚ, coeff_sum, coeff_smul, smul_eq_mul,
     coeff_partWeight_psumPart_partition ℚ _ ξ hξ,
-    coeff_hsymmPart_partWeight ν ξ (by rwa [colLen_zero_diagramOf])] at key
+    coeff_hsymmPart_partWeight ν ξ (by rwa [YoungDiagram.colLen_zero_ofPartition])] at key
   rw [← key]
   exact Finset.sum_congr rfl fun π _ => by rw [char_permutationModule, char_permutationModule]
 
@@ -111,8 +111,8 @@ Specht multiplicity outside the dominance cone. -/
 private theorem sum_spechtChar_mul_char_permutationModule_eq_zero {l ν : n.Partition}
     (h : ¬Dominates l ν) :
     ∑ π, (spechtChar l π : ℚ) * (permutationModule ν).ρ.character π = 0 := by
-  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), toPartition D hc = l :=
-    ⟨_, _, toPartition_diagramOf l⟩
+  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), D.toPartition hc = l :=
+    ⟨_, _, YoungDiagram.toPartition_ofPartition (p := l)⟩
   subst hc
   rw [toPartition_eq_shapePartition] at h ⊢
   rw [sum_spechtChar_shapePartition_mul_char_permutationModule,
@@ -122,8 +122,8 @@ private theorem sum_spechtChar_mul_char_permutationModule_eq_zero {l ν : n.Part
 multiplicity. -/
 private theorem sum_spechtChar_mul_char_permutationModule_self (l : n.Partition) :
     ∑ π, (spechtChar l π : ℚ) * (permutationModule l).ρ.character π = n.factorial := by
-  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), toPartition D hc = l :=
-    ⟨_, _, toPartition_diagramOf l⟩
+  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), D.toPartition hc = l :=
+    ⟨_, _, YoungDiagram.toPartition_ofPartition (p := l)⟩
   subst hc
   rw [toPartition_eq_shapePartition, sum_spechtChar_shapePartition_mul_char_permutationModule,
     spechtMultiplicity_self, Nat.cast_one, mul_one]

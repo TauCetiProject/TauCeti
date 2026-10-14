@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Ring.Basic
-public import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
+public import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
 # Continuity of the reduction of `X → R` modulo one vector with a unit coordinate
@@ -17,7 +17,7 @@ Over a topological ring `R`, the reduction
 
 `LinearMap.piSplitAtQuot x₀ w hw q : (X → R) →ₗ[R] ({x // x ≠ x₀} → R) × R ⧸ (q)`
 
-of `TauCeti.LinearAlgebra.Quotient.PiSpanSingleton`, which sends `u` to the coordinates
+of `TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton`, which sends `u` to the coordinates
 `u x - u x₀ * w x` for `x ≠ x₀` together with the class of `u x₀` modulo `q`, is continuous for
 the product topology on `X → R` and the quotient topology on `R ⧸ (q)`. Since the coordinate
 formula involves only subtraction and multiplication by the constants `w x`, continuity of these

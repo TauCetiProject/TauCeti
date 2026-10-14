@@ -99,7 +99,7 @@ theorem ae_mem_Ioo_betaMeasure (α β : ℝ) :
   rw [betaMeasure, hpdf, ae_withDensity_iff
     (ENNReal.measurable_ofReal.comp (measurable_betaPDFReal α β))]
   filter_upwards [(volume : Measure ℝ).ae_ne 0, (volume : Measure ℝ).ae_ne 1]
-    with x hx0 hx1 hpdf
+    with x _ _ hpdf
   constructor
   · by_contra hx
     exact hpdf (betaPDF_eq_zero_of_nonpos (le_of_not_gt hx))

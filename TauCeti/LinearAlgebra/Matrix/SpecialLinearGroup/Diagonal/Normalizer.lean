@@ -11,10 +11,12 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 /-!
 # The normalizer of the diagonal torus of the special linear group
 
-The diagonal torus of `SL_n(k)` is the group of determinant-one diagonal matrices, the preimage
-of the diagonal torus of `GL_n(k)`. When this torus separates every pair of coordinates, its
-normalizer in `SL_n(k)` consists of the determinant-one monomial matrices, and the normalizer
-quotient is the symmetric group on the coordinate lines, exactly as for `GL_n(k)`.
+Over a commutative ring with cancellation by nonzero elements, the diagonal torus of `SL_n(k)`
+is the group of determinant-one diagonal matrices, the preimage of the diagonal torus of
+`GL_n(k)`. When this torus separates every pair of coordinates, its normalizer in `SL_n(k)`
+consists of the determinant-one monomial matrices, and the normalizer quotient is the symmetric
+group on the coordinate lines, exactly as for `GL_n(k)`. In dimensions zero and one, the quotient
+is trivial over any commutative ring, without cancellation or separation assumptions.
 
 The separation hypothesis cannot simply be dropped. Over `𝔽₃` the torus of `SL₂` is the central
 subgroup `{±1}`, so its normalizer is all of `SL₂(𝔽₃)` and the normalizer quotient has order
@@ -30,9 +32,6 @@ there.
 
 ## Main declarations
 
-* `Matrix.SpecialLinearGroup.diagonalTorus`: the diagonal torus of `SL_n(k)`.
-* `Matrix.SpecialLinearGroup.DiagonalTorusSeparatesCoordinates`: the coordinate-separation
-  hypothesis used by the normalizer computation.
 * `Matrix.SpecialLinearGroup.mem_normalizer_diagonalTorus_iff_toGL_mem`: an element of `SL_n(k)`
   normalizes its diagonal torus exactly when it normalizes the diagonal torus of `GL_n(k)`.
 * `Matrix.SpecialLinearGroup.diagonalNormalizerPerm`: the coordinate permutation of a normalizer
@@ -64,6 +63,15 @@ section CommRing
 
 variable [CommRing k]
 
+/-- In dimensions zero and one, the determinant-one diagonal normalizer quotient is trivial
+over any commutative ring. -/
+instance [Subsingleton (Fin n)] :
+    Subsingleton (Subgroup.normalizerQuotient (diagonalTorus k n)) := by
+  apply QuotientGroup.subsingleton_iff.mpr
+  apply top_unique
+  intro g _
+  exact mem_diagonalTorus_iff.mpr (Matrix.isDiag_of_subsingleton _)
+
 /-- An element of `SL_n(k)` normalizing the diagonal torus of `GL_n(k)` normalizes the diagonal
 torus of `SL_n(k)`. -/
 theorem mem_normalizer_diagonalTorus_of_toGL_mem {g : SpecialLinearGroup (Fin n) k}
@@ -74,40 +82,6 @@ theorem mem_normalizer_diagonalTorus_of_toGL_mem {g : SpecialLinearGroup (Fin n)
   simp only [mem_diagonalTorus_iff_toGL_mem, map_mul, map_inv]
   exact Subgroup.mem_normalizer_iff.mp hg (toGL h)
 
-end CommRing
-
-section Field
-
-variable [Field k]
-
-/-- The determinant-one diagonal torus separates coordinates if each pair of distinct coordinates
-receives different values under some diagonal element of determinant one. -/
-def DiagonalTorusSeparatesCoordinates (k : Type u) [Field k] (n : ℕ) : Prop :=
-  ∀ i j : Fin n, i ≠ j → ∃ t : Fin n → kˣ, ∏ r, (t r : k) = 1 ∧ t i ≠ t j
-
-/-- A unit whose square is not one makes the determinant-one diagonal torus separate
-coordinates. -/
-theorem diagonalTorusSeparatesCoordinates_of_exists_sq_ne_one
-    (hk : ∃ a : kˣ, a ^ 2 ≠ 1) : DiagonalTorusSeparatesCoordinates k n := by
-  obtain ⟨a, ha⟩ := hk
-  intro i j hij
-  let t : Fin n → kˣ := fun r ↦ if r = i then a else if r = j then a⁻¹ else 1
-  refine ⟨t, ?_, ?_⟩
-  · have ht (r : Fin n) : (t r : k) =
-        if r = i then (a : k) else if r = j then ((a⁻¹ : kˣ) : k) else 1 := by
-      simp only [t]
-      split_ifs <;> rfl
-    have ht' : (fun r ↦ (t r : k)) = fun r ↦
-        if r = i then (a : k) else if r = j then ((a⁻¹ : kˣ) : k) else 1 := funext ht
-    rw [ht']
-    simpa only [diag2nUnit_coe, det_diagonal] using (diag2nUnit hij a).property
-  · intro h
-    have h' : a = a⁻¹ := by simpa [t, Ne.symm hij] using h
-    apply ha
-    rw [sq]
-    nth_rw 2 [h']
-    exact mul_inv_cancel a
-
 /-- Conjugation by a normalizer element of the diagonal torus of `SL_n(k)` keeps a diagonal
 matrix separating any two given coordinates diagonal. -/
 private theorem exists_conj_mem_diagonalTorus_apply_ne
@@ -117,7 +91,7 @@ private theorem exists_conj_mem_diagonalTorus_apply_ne
     {i j : Fin n} (hij : i ≠ j) :
     ∃ t : Fin n → kˣ,
       toGL g * diagGL t * (toGL g)⁻¹ ∈ TauCeti.diagonalTorus k n ∧ t i ≠ t j := by
-  obtain ⟨t, htprod, htne⟩ := hsep i j hij
+  obtain ⟨t, htprod, htne⟩ := diagonalTorusSeparatesCoordinates_iff.mp hsep i j hij
   let d : SpecialLinearGroup (Fin n) k :=
     ⟨(diagGL t : Matrix (Fin n) (Fin n) k), by
       simpa only [diagGL_coe, det_diagonal] using htprod⟩
@@ -128,6 +102,12 @@ private theorem exists_conj_mem_diagonalTorus_apply_ne
   have hconj := (Subgroup.mem_normalizer_iff.mp hg _).mp hs
   rw [mem_diagonalTorus_iff_toGL_mem, map_mul, map_mul, map_inv, hd] at hconj
   exact ⟨t, hconj, htne⟩
+
+end CommRing
+
+section IsCancelMulZero
+
+variable [CommRing k] [IsCancelMulZero k]
 
 /-- When the determinant-one diagonal torus separates coordinates, an element of `SL_n(k)`
 normalizes it exactly when it normalizes the diagonal torus of `GL_n(k)`, that is, exactly when
@@ -144,16 +124,6 @@ theorem mem_normalizer_diagonalTorus_iff_toGL_mem
   exact (Subgroup.normalizer (TauCeti.diagonalTorus k n : Set (GL (Fin n) k))).mul_mem
     (Subgroup.le_normalizer (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨d, rfl⟩))
     (permutationGL_mem_normalizer σ)
-
-/-- Coordinate separation implies that the unit group is nontrivial when there are at least two
-coordinates. -/
-theorem DiagonalTorusSeparatesCoordinates.nontrivial_of_not_subsingleton
-    (hsep : DiagonalTorusSeparatesCoordinates k n) (hn : ¬ Subsingleton (Fin n)) :
-    Nontrivial kˣ := by
-  let _ : Nontrivial (Fin n) := not_subsingleton_iff_nontrivial.mp hn
-  obtain ⟨i, j, hij⟩ := exists_pair_ne (Fin n)
-  obtain ⟨t, _, ht⟩ := hsep i j hij
-  exact nontrivial_of_ne (t i) (t j) ht
 
 /-- The homomorphism from the normalizer of the diagonal torus of `SL_n(k)` to the normalizer of
 the diagonal torus of `GL_n(k)`. -/
@@ -196,15 +166,12 @@ subsingleton. -/
 theorem diagonalNormalizerPerm_apply_of_subsingleton
     (hsep : DiagonalTorusSeparatesCoordinates k n) [Subsingleton (Fin n)]
     (g : Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k))) :
-    diagonalNormalizerPerm hsep g = 1 := by
-  classical
-  rw [diagonalNormalizerPerm]
-  split
-  · rfl
-  · contradiction
+    diagonalNormalizerPerm hsep g = 1 :=
+  Subsingleton.elim _ _
 
 /-- The coordinate permutation of a normalizer element of the diagonal torus of `SL_n(k)` is
 trivial exactly for elements of the torus. -/
+@[simp]
 theorem diagonalNormalizerPerm_eq_one_iff (hsep : DiagonalTorusSeparatesCoordinates k n)
     (g : Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k))) :
     diagonalNormalizerPerm hsep g = 1 ↔
@@ -222,29 +189,8 @@ theorem diagonalNormalizerPerm_eq_one_iff (hsep : DiagonalTorusSeparatesCoordina
     rw [diagonalNormalizerPerm_apply hsep hn,
       TauCeti.diagonalNormalizerPerm_eq_one_iff, mem_diagonalTorus_iff_toGL_mem]
 
-/-- A permutation matrix corrected by a sign in one diagonal position has determinant one. -/
-private theorem exists_toGL_eq_diagGL_mul_permutationGL (σ : Equiv.Perm (Fin n)) :
-    ∃ (g : SpecialLinearGroup (Fin n) k) (d : Fin n → kˣ),
-      toGL g = diagGL d * permutationGL (k := k) σ := by
-  rcases n with _ | n
-  · refine ⟨1, 1, ?_⟩
-    rw [Subsingleton.elim σ 1, map_one, map_one, map_one, one_mul]
-  · let s : kˣ := Units.map (Int.castRingHom k).toMonoidHom (Equiv.Perm.sign σ)
-    let d : Fin (n + 1) → kˣ := Pi.mulSingle 0 s
-    have hdet : ((diagGL d * permutationGL (k := k) σ : GL (Fin (n + 1)) k) :
-        Matrix (Fin (n + 1)) (Fin (n + 1)) k).det = 1 := by
-      have hprod : ∏ i, (d i : k) = s := by
-        rw [Fintype.prod_eq_single 0 fun i hi ↦ by simp [d, Pi.mulSingle_eq_of_ne hi]]
-        simp [d]
-      rw [Units.val_mul, det_mul, diagGL_coe, det_diagonal, hprod, permutationGL_coe,
-        det_permutation, Equiv.Perm.sign_inv]
-      simp only [s, Units.coe_map, MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe,
-        eq_intCast]
-      rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
-    exact ⟨⟨_, hdet⟩, d, Units.ext (coe_GL_coe_matrix _)⟩
-
 /-- Every permutation of the coordinate lines is induced by an element of `SL_n(k)` normalizing
-the diagonal torus: a permutation matrix with a sign correcting its determinant. -/
+the diagonal torus: a permutation matrix with a diagonal correction of its determinant. -/
 theorem diagonalNormalizerPerm_surjective (hsep : DiagonalTorusSeparatesCoordinates k n) :
     Function.Surjective (diagonalNormalizerPerm (k := k) (n := n) hsep) := by
   classical
@@ -255,14 +201,17 @@ theorem diagonalNormalizerPerm_surjective (hsep : DiagonalTorusSeparatesCoordina
     rw [map_one, Subsingleton.elim σ 1]
   · let _ := hsep.nontrivial_of_not_subsingleton hn
     intro σ
-    obtain ⟨g, d, hg⟩ := exists_toGL_eq_diagGL_mul_permutationGL (k := k) σ
-    have hgN : g ∈ Subgroup.normalizer
+    obtain ⟨g, d, hg⟩ := GeneralLinearGroup.exists_toGL_mul_eq
+      ((permutationGL (k := k) σ)⁻¹)
+    have hg' : toGL g⁻¹ = diagGL d * permutationGL (k := k) σ := by
+      rw [map_inv, inv_eq_iff_mul_eq_one, ← mul_assoc, hg, inv_mul_cancel]
+    have hgN : g⁻¹ ∈ Subgroup.normalizer
         (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k)) :=
       mem_normalizer_diagonalTorus_of_toGL_mem
-        ((mem_normalizer_diagonalTorus_iff_exists (k := k)).mpr ⟨d, σ, hg⟩)
-    refine ⟨⟨g, hgN⟩, ?_⟩
+        ((mem_normalizer_diagonalTorus_iff_exists (k := k)).mpr ⟨d, σ, hg'⟩)
+    refine ⟨⟨g⁻¹, hgN⟩, ?_⟩
     rw [diagonalNormalizerPerm_apply hsep hn]
-    exact diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL _ d σ hg
+    exact diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL _ d σ hg'
 
 /-- **The Weyl group of the diagonal torus of `SL_n(k)`**: when the determinant-one diagonal
 torus separates coordinates, its normalizer modulo the torus is canonically the symmetric group
@@ -293,7 +242,7 @@ theorem diagonalNormalizerQuotientMulEquivPerm_mk
       diagonalNormalizerPerm hsep g :=
   (rfl)
 
-end Field
+end IsCancelMulZero
 
 end
 

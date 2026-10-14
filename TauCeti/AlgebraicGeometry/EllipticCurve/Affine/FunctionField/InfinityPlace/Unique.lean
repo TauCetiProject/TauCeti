@@ -60,6 +60,8 @@ The route has three steps, and none of them needs a Riemann–Roch theorem or a 
 * `WeierstrassCurve.Affine.val_X_lt_val_mk_Y` and `WeierstrassCurve.Affine.val_mk_Y_sq`:
   `v x < v y` and
   `(v y) ^ 2 = (v x) ^ 3` — the pole orders `2` and `3`, for any such `v`.
+* `WeierstrassCurve.Affine.val_add_mul_mk_Y`: the value of `A + B y` is the larger of the values
+  of `A` and of `B y`; the two never cancel.
 * `WeierstrassCurve.Affine.val_add_mul_mk_Y_le_one_iff`: the criterion the theorem is proved by,
   worth stating because it computes the valuation ring of every such `v` in closed form.
 * `WeierstrassCurve.Affine.exists_ratFunc_add_mul_mk_Y`: every function is `A + B y` with `A` and
@@ -287,6 +289,32 @@ private theorem val_algebraMap_le_one_iff {A : RatFunc F} (hA : A ≠ 0) :
     v (algebraMap (RatFunc F) W.FunctionField A) ≤ 1 ↔ A.intDegree ≤ 0 := by
   rw [val_algebraMap_eq_zpow_intDegree v hx hA, zpow_le_one_iff_right₀ hx]
 
+/-- **The two summands of `A + B y` never cancel**: the value of `A + B y` is the larger of the
+values of `A` and of `B y`. When both are nonzero the two values differ: their squares are powers
+of `v x` with exponents `2 deg A` and `2 deg B + 3`, of opposite parities. -/
+theorem val_add_mul_mk_Y (A B : RatFunc F) :
+    v (algebraMap (RatFunc F) W.FunctionField A
+        + algebraMap (RatFunc F) W.FunctionField B *
+          algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y))
+      = max (v (algebraMap (RatFunc F) W.FunctionField A))
+          (v (algebraMap (RatFunc F) W.FunctionField B *
+            algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y))) := by
+  rcases eq_or_ne A 0 with rfl | hA
+  · simp
+  rcases eq_or_ne B 0 with rfl | hB
+  · simp
+  refine v.map_add_of_distinct_val fun heq ↦ ?_
+  have hsq : v (algebraMap F[X] W.FunctionField Polynomial.X) ^ (2 * A.intDegree)
+      = v (algebraMap F[X] W.FunctionField Polynomial.X) ^ (2 * B.intDegree + 3) := by
+    rw [← val_mul_mk_Y_sq v hx hB, ← heq, val_algebraMap_eq_zpow_intDegree v hx hA,
+      ← zpow_natCast (v (algebraMap F[X] W.FunctionField Polynomial.X) ^ A.intDegree) 2,
+      ← zpow_mul]
+    congr 1
+    push_cast
+    ring
+  have := zpow_right_injective₀ (zero_lt_one.trans hx) hx.ne' hsq
+  omega
+
 /-- **The valuation ring of `v`, in closed form**: `A + B y` lies in it exactly when
 `deg A ≤ 0` and `2 deg B + 3 ≤ 0`. The two summands never have the same value — after squaring,
 their exponents have opposite parities — so the valuation of the sum is the larger of the two, and
@@ -296,29 +324,14 @@ theorem val_add_mul_mk_Y_le_one_iff (A B : RatFunc F) :
         + algebraMap (RatFunc F) W.FunctionField B *
           algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)) ≤ 1
       ↔ (A = 0 ∨ A.intDegree ≤ 0) ∧ (B = 0 ∨ 2 * B.intDegree + 3 ≤ 0) := by
-  rcases eq_or_ne A 0 with rfl | hA
+  rw [val_add_mul_mk_Y v hx, max_le_iff]
+  refine and_congr ?_ ?_
+  · rcases eq_or_ne A 0 with rfl | hA
+    · simp
+    · simpa [hA] using val_algebraMap_le_one_iff v hx hA
   · rcases eq_or_ne B 0 with rfl | hB
     · simp
     · simpa [hB] using val_mul_mk_Y_le_one_iff v hx hB
-  · rcases eq_or_ne B 0 with rfl | hB
-    · simpa [hA] using val_algebraMap_le_one_iff v hx hA
-    · have hne : v (algebraMap (RatFunc F) W.FunctionField A)
-          ≠ v (algebraMap (RatFunc F) W.FunctionField B *
-            algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)) := by
-        intro heq
-        have hsq : v (algebraMap F[X] W.FunctionField Polynomial.X) ^ (2 * A.intDegree)
-            = v (algebraMap F[X] W.FunctionField Polynomial.X) ^ (2 * B.intDegree + 3) := by
-          rw [← val_mul_mk_Y_sq v hx hB, ← heq, val_algebraMap_eq_zpow_intDegree v hx hA,
-            ← zpow_natCast (v (algebraMap F[X] W.FunctionField Polynomial.X) ^ A.intDegree) 2,
-            ← zpow_mul]
-          congr 1
-          push_cast
-          ring
-        have := zpow_right_injective₀ (zero_lt_one.trans hx) hx.ne' hsq
-        omega
-      rw [v.map_add_of_distinct_val hne, max_le_iff, val_algebraMap_le_one_iff v hx hA,
-        val_mul_mk_Y_le_one_iff v hx hB]
-      simp [hA, hB]
 
 end PoleOrders
 

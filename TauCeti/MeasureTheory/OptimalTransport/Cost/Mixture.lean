@@ -82,6 +82,14 @@ theorem transportCost_smul (ha : a ≠ ∞) (c : X × Y → ℝ≥0∞) (μ : Me
           rw [lintegral_smul_measure, smul_eq_mul, ← mul_assoc, ENNReal.mul_inv_cancel ha₀ ha,
             one_mul]
 
+/-- Scaling an optimal plan by a finite factor preserves optimality, including at zero mass. -/
+protected theorem IsOptimalCoupling.smul {c : X × Y → ℝ≥0∞} {π : Measure (X × Y)}
+    {μ : Measure X} {ν : Measure Y} (h : IsOptimalCoupling c π μ ν) (ha : a ≠ ∞) :
+    IsOptimalCoupling c (a • π) (a • μ) (a • ν) where
+  toIsCoupling := h.toIsCoupling.smul a
+  lintegral_eq := by
+    rw [lintegral_smul_measure, smul_eq_mul, h.lintegral_eq, transportCost_smul ha]
+
 /-- **Countable subadditivity of the transport cost.** The transport cost of the sums of two
 countable families of marginals is at most the sum of the transport costs of the pairs: near
 optimal plans of the pairs sum to a plan of the sums. -/

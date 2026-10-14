@@ -10,7 +10,7 @@ public import TauCeti.Probability.Exchangeability.MixedIID.Basic
 public import TauCeti.Probability.Process.MarkovChain
 public import TauCeti.Probability.ConditionalProbability
 -- Non-public: null-measurability of a prefix event is used only inside a proof.
-import TauCeti.Probability.Exchangeability.Cylinder
+import TauCeti.Probability.Process.Cylinder
 
 /-!
 # Mixtures of Markov chains

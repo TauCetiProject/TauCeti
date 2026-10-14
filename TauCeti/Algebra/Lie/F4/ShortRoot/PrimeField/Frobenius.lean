@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
 public import TauCeti.FieldTheory.Finite.Frobenius
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Frobenius
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 
 /-!
 # Frobenius on the short-root type-F4 prime-field carrier

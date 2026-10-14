@@ -415,18 +415,16 @@ noncomputable def rootSubgroupToBaseChangeCoordinateMap (k : Fin n ⊕ Fin n) :
 
 /-- The factored root-subgroup map recovers its ambient transported coordinate map after composition
 with the quotient map. -/
-@[simp]
-theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap
+@[reassoc (attr := simp)]
+theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap
     (k : Fin n ⊕ Fin n) :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
-          (baseChangeDefiningIdeal n hn A) ≫
-        rootSubgroupToBaseChangeCoordinateMap n hn A k =
+    coordinateMap n hn A ≫ rootSubgroupToBaseChangeCoordinateMap n hn A k =
       kostantRootSubgroupBaseChangePresentationCoordinateMap
         (TauCeti.serreRootGenerator (CartanMatrix.D n))
         (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n hn)
         (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) A k := by
-  unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
+  unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator (CartanMatrix.D n))
     (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup

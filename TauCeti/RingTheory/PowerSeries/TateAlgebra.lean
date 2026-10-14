@@ -43,7 +43,7 @@ automatically.
 
 Apply the norm lemmas by qualified name, for example `TauCeti.PowerSeries.norm_eq_gaussNorm f`.
 The normed and completeness instances are supplied by the multivariate construction in
-`TauCeti.RingTheory.MvPowerSeries.TateAlgebra`. Elements of the restricted subring have type
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic`. Elements of the restricted subring have type
 `Subtype`, rather than a new Tate algebra type.
 
 ## References

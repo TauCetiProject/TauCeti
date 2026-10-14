@@ -28,7 +28,7 @@ normalized common left eigenrows. So an eigenrow computed from the structure con
 central character, and there are exactly as many of them as `G` has conjugacy classes.
 
 The proof runs through a Wedderburn presentation `k[G] ≃ₐ[k] ∏ᵢ Matₙᵢ(k)`. Such a presentation
-splits the centre as the product algebra `∏ᵢ k` (`TauCeti.centerMonoidAlgebraAlgEquivPi`), whose
+splits the centre as the product algebra `∏ᵢ k` (`AlgEquiv.centerMonoidAlgebraAlgEquivPi`), whose
 only algebra homomorphisms to `k` are the coordinate evaluations (`AlgHom.eq_piEvalAlgHom`);
 the evaluation at a block is the central character of the representation that block carries
 (`TauCeti.centralCharacter_blockRepresentation`), and every irreducible representation is equivalent
@@ -85,12 +85,8 @@ cannot be an instance. Callers supply it with `have := isIrreducible_blockRepres
 
 ## References
 
-This is the step that Layer 5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-calls for after `normalized_eigenrow_iff_algHom`: the identification of the algebra homomorphisms
-out of the centre with the central characters, and the central table `Ω` itself. See I. M. Isaacs,
-*Character Theory of Finite Groups* (1976), Chapter 3, or J. D. Dixon, *High speed computation of
-group characters*, Numer. Math. 10 (1967).
+See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 3, or J. D. Dixon,
+*High speed computation of group characters*, Numer. Math. 10 (1967).
 -/
 
 public section
@@ -108,12 +104,12 @@ variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G] {ι : Typ
 
 /-- **The central character of a Wedderburn block is the corresponding coordinate of the splitting
 of the centre.** A central element of `k[G]` acts on the `i`-th matrix factor as the scalar matrix
-that `TauCeti.centerMonoidAlgebraAlgEquivPi` records there, hence on the representation the block
+that `AlgEquiv.centerMonoidAlgebraAlgEquivPi` records there, hence on the representation the block
 carries as that scalar. -/
 theorem centralCharacter_blockRepresentation [∀ i, NeZero (d i)] (i : ι)
     [(blockRepresentation e i).IsIrreducible] (z : Subalgebra.center k k[G]) :
     Representation.centralCharacter (blockRepresentation e i) z =
-      centerMonoidAlgebraAlgEquivPi e z i := by
+      e.centerMonoidAlgebraAlgEquivPi z i := by
   have hne : Nonempty (Fin (d i)) := ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne (d i))⟩⟩
   obtain ⟨j⟩ := hne
   classical
@@ -122,7 +118,7 @@ theorem centralCharacter_blockRepresentation [∀ i, NeZero (d i)] (i : ι)
     simpa using congrFun h j
   refine Representation.centralCharacter_eq_of_ne_zero_of_asAlgebraHom_apply_eq _ hv ?_
   rw [asAlgebraHom_blockRepresentation, blockAlgHom_apply,
-    ← algebraMap_centerMonoidAlgebraAlgEquivPi_apply e z i, Matrix.toLinAlgEquiv'.commutes,
+    ← AlgEquiv.algebraMap_centerMonoidAlgebraAlgEquivPi_apply e z i, Matrix.toLinAlgEquiv'.commutes,
     Module.algebraMap_end_apply]
 
 end Block
@@ -152,13 +148,13 @@ theorem exists_centralCharacter_eq (φ : Subalgebra.center k k[G] →ₐ[k] k) :
   obtain ⟨n, d, hd, ⟨e⟩⟩ := exists_algEquiv_pi_matrix k G
   have := hd
   obtain ⟨a, ha⟩ :=
-    (φ.comp (centerMonoidAlgebraAlgEquivPi e).symm.toAlgHom).eq_piEvalAlgHom
+    (φ.comp (e.centerMonoidAlgebraAlgEquivPi).symm.toAlgHom).eq_piEvalAlgHom
   have := isIrreducible_blockRepresentation e a
   obtain ⟨i, hi⟩ :=
     exists_centralCharacter_irreducibleRepresentation_eq k G (blockRepresentation e a)
   refine ⟨i, hi.trans (AlgHom.ext fun z => ?_)⟩
   rw [centralCharacter_blockRepresentation]
-  simpa using (congrArg (fun ψ => ψ (centerMonoidAlgebraAlgEquivPi e z)) ha).symm
+  simpa using (congrArg (fun ψ => ψ (e.centerMonoidAlgebraAlgEquivPi z)) ha).symm
 
 /-- **Distinct enumerated irreducibles have distinct central characters.** Each is equivalent to a
 Wedderburn block, and its central character is the evaluation at that block; equal central
@@ -173,20 +169,20 @@ theorem centralCharacter_irreducibleRepresentation_injective :
   have : ∀ a, (blockRepresentation e a).IsIrreducible := fun a =>
     isIrreducible_blockRepresentation e a
   have hcard : Nat.card (Fin n) = Nat.card (ConjClasses G) := by
-    simpa using card_eq_card_conjClasses_of_algEquiv_pi_matrix e
+    simpa using e.card_eq_card_conjClasses_of_pi_matrix
   choose c hc using fun i : Fin (Nat.card (ConjClasses G)) =>
     ClassFunction.exists_nonempty_equiv (blockRepresentation e)
       (fun _ _ h => isEmpty_equiv_blockRepresentation e h) hcard (irreducibleRepresentation k i)
   intro i j hij
   by_contra hne
-  have hE : ∀ z, centerMonoidAlgebraAlgEquivPi e z (c i) =
-      centerMonoidAlgebraAlgEquivPi e z (c j) := fun z => by
+  have hE : ∀ z, e.centerMonoidAlgebraAlgEquivPi z (c i) =
+      e.centerMonoidAlgebraAlgEquivPi z (c j) := fun z => by
     rw [← centralCharacter_blockRepresentation, ← centralCharacter_blockRepresentation,
       Representation.centralCharacter_eq_of_equiv _ _ (hc i).some,
       Representation.centralCharacter_eq_of_equiv _ _ (hc j).some]
     exact DFunLike.congr_fun hij z
   have hcc : c i = c j := by
-    have h := hE ((centerMonoidAlgebraAlgEquivPi e).symm (Pi.single (c i) 1))
+    have h := hE ((e.centerMonoidAlgebraAlgEquivPi).symm (Pi.single (c i) 1))
     rw [AlgEquiv.apply_symm_apply] at h
     by_contra hcij
     simp [Pi.single_eq_of_ne (Ne.symm hcij)] at h
@@ -217,7 +213,7 @@ theorem eq_of_centralCharacter_eq {z w : Subalgebra.center k k[G]}
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
   obtain ⟨n, d, hd, ⟨e⟩⟩ := exists_algEquiv_pi_matrix k G
   have := hd
-  refine (centerMonoidAlgebraAlgEquivPi e).injective (funext fun a => ?_)
+  refine (e.centerMonoidAlgebraAlgEquivPi).injective (funext fun a => ?_)
   have := isIrreducible_blockRepresentation e a
   obtain ⟨i, hi⟩ :=
     exists_centralCharacter_irreducibleRepresentation_eq k G (blockRepresentation e a)

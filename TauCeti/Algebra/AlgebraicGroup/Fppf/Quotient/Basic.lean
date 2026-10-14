@@ -39,9 +39,6 @@ hypotheses and is a separate downstream theorem.
 
 The construction uses Mathlib's `sheafificationAdjunction`, its lift `Adjunction.mapGrp` to group
 objects, and the finite-product-preserving monoidal structure on type-valued sheafification.
-
-This is the fppf-sheaf-quotient step of Layer 3, "Normality and quotients", in the
-ReductiveGroups roadmap.
 -/
 
 public section

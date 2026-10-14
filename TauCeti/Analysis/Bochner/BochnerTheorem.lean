@@ -154,7 +154,7 @@ private theorem exists_probabilityMeasure_integral_fourierAtom_eq {G : V → ℂ
       fun a b : V => gaussianRegularize G (ε n) (a - b) := fun n =>
     posSemidef_gaussianRegularize hpd (hε_pos n).le
   have hGn_int : ∀ n, Integrable (gaussianRegularize G (ε n)) := fun n =>
-    integrable_gaussianRegularize (norm_apply_le_map_zero_re_of_posSemidef hpd)
+    integrable_gaussianRegularize (hpd.norm_apply_le_map_zero_re)
       hcont.aestronglyMeasurable (hε_pos n)
   have hGn_cont : ∀ n, Continuous (gaussianRegularize G (ε n)) := fun n =>
     continuous_gaussianRegularize hcont (ε n)

@@ -215,3 +215,18 @@ lemma alexanderWhitneyDiagonal_naturality {X Y : TopCat.{w}} (f : X ⟶ Y)
 end AlexanderWhitneyDiagonal
 
 end TopCat
+
+namespace TauCeti
+
+/-- The Alexander–Whitney diagonal factors through coefficient change and the diagonal
+of the space. -/
+lemma alexanderWhitneyDiagonal_def {C : Type u} [Category.{v} C] [Preadditive C]
+    [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
+    {X : TopCat.{w}} {R S T : C} (u : T ⟶ R ⊗ S) :
+    X.alexanderWhitneyDiagonal u =
+      ((SSet.chainComplexFunctor C).map u).app _ ≫
+        SSet.chainComplexMap (TopCat.toSSet.map (lift (𝟙 X) (𝟙 X))) (R ⊗ S) ≫
+          TopCat.alexanderWhitney X X R S :=
+  (rfl)
+
+end TauCeti

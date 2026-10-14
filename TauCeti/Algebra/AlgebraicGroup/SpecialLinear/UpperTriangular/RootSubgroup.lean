@@ -47,7 +47,7 @@ variable (R : Type u) [CommRing R] {n : ℕ} {i j : Fin n}
 
 /-- A root element belongs to the upper-triangular subgroup exactly when its root is
 positive or its additive parameter vanishes. -/
-@[simp 1100]
+@[simp↓ 1100]
 theorem rootSubgroupPoints_mem_iff {A : Type v} [CommRing A] [Algebra R A]
     (hij : i ≠ j)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R)

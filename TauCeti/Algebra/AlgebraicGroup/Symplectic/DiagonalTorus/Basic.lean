@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Basic
 
 /-!
@@ -33,6 +33,7 @@ morphism is surjective; its closed-subgroup interpretation is developed in
 * `TauCeti.Symplectic.diagonalTorusPoints`: the diagonal-torus homomorphism on algebra-valued
   points.
 * `TauCeti.Symplectic.diagonalTorusCoordinateMap`: the corresponding coordinate Hopf-algebra map.
+* `TauCeti.Symplectic.diagonalTorusWeight`: the integral weights of the paired coordinates.
 * `TauCeti.Symplectic.diagonalTorus`: the group-scheme morphism from the split torus to `Sp₂ₘ`.
 
 ## Main results
@@ -43,6 +44,8 @@ morphism is surjective; its closed-subgroup interpretation is developed in
   `TauCeti.Symplectic.mapValue_diagonalTorusPoints`: injectivity and naturality.
 * `TauCeti.Symplectic.diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv`: the pinning equation on
   every root subgroup.
+* `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap`: the ambient weight-torus
+  comparison.
 * `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap_X_castAdd`,
   `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap_X_addNat`, and
   `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne`: the coordinate-map
@@ -327,31 +330,41 @@ theorem coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne
   rw [diagonalTorusCoordinateMap_ambient_X_eq_entry]
   simp [diagonalTorusGenericMatrix, GLSymplecticFin.coe_diagonal, diagGL_apply, hij]
 
-/-- The paired weights of the standard symplectic representation. -/
-private def pairedWeight (i : Fin (m + m)) : ULift.{u} (Fin m) → ℤ :=
-  match finSumFinEquiv.symm i with
-  | Sum.inl k => Pi.single (ULift.up k) 1
-  | Sum.inr k => Pi.single (ULift.up k) (-1)
+/-- The standard weights of the paired diagonal torus: `εᵢ` in the first block and
+`-εᵢ` in the second block. These are integral characters, irrespective of the base ring. -/
+noncomputable def diagonalTorusWeight : (Fin m ⊕ Fin m) → ULift.{u} (Fin m) →₀ ℤ
+  | .inl i => Finsupp.single (ULift.up i) 1
+  | .inr i => -Finsupp.single (ULift.up i) 1
+
+@[simp]
+theorem diagonalTorusWeight_inl (i : Fin m) :
+    diagonalTorusWeight (.inl i) = Finsupp.single (ULift.up i) (1 : ℤ) := (rfl)
+
+@[simp]
+theorem diagonalTorusWeight_inr (i : Fin m) :
+    diagonalTorusWeight (.inr i) = -Finsupp.single (ULift.up i) (1 : ℤ) := (rfl)
 
 /-- Restricting the symplectic diagonal-torus coordinate map to the ambient general linear group
 is the general weight-torus map for the paired weights. -/
-private theorem coordinateMap_comp_diagonalTorusCoordinateMap :
+theorem coordinateMap_comp_diagonalTorusCoordinateMap :
     coordinateMap R m ≫ diagonalTorusCoordinateMap (R := R) (m := m) =
-      GeneralLinear.weightTorusCoordinateMap (pairedWeight (m := m)) := by
+      GeneralLinear.weightTorusCoordinateMap
+        (fun i : Fin (m + m) => ⇑(diagonalTorusWeight (finSumFinEquiv.symm i))) := by
   apply _root_.CommHopfAlgCat.hom_ext
   apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext R (m + m)
   intro i j
   simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply]
   rw [GeneralLinear.weightTorusCoordinateMap_X]
+  simp only [Finsupp.equivFunOnFinite_symm_coe]
   by_cases hij : i = j
   · subst j
     obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
     · simp only [finSumFinEquiv_apply_left]
       rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_castAdd]
-      simp [pairedWeight]
+      simp
     · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
       rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_addNat]
-      simp [pairedWeight, ← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
+      simp [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd, Finsupp.single_neg]
   · rw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _ hij]
     simp [hij]
 
@@ -359,15 +372,19 @@ private theorem coordinateMap_comp_diagonalTorusCoordinateMap :
 commutative base ring. -/
 theorem diagonalTorusCoordinateMap_surjective :
     Function.Surjective (diagonalTorusCoordinateMap (R := R) (m := m)).hom := by
-  have hspan : Submodule.span ℤ (Set.range (pairedWeight (m := m))) = ⊤ := by
+  have hspan : Submodule.span ℤ
+      (Set.range (fun i : Fin (m + m) => ⇑(diagonalTorusWeight (finSumFinEquiv.symm i)))) = ⊤ := by
     apply top_unique
     rw [← (Pi.basisFun ℤ (ULift.{u} (Fin m))).span_eq]
     apply Submodule.span_mono
     rintro _ ⟨i, rfl⟩
     refine ⟨Fin.castAdd m i.down, ?_⟩
-    simp [pairedWeight, Pi.basisFun_apply]
+    ext j
+    simp only [finSumFinEquiv_symm_apply_castAdd, diagonalTorusWeight_inl,
+      Finsupp.single_apply, Pi.basisFun_apply, Pi.single_apply, ULift.up_down]
+    simp only [eq_comm]
   have hsurj := GeneralLinear.weightTorusCoordinateMap_surjective
-    (R := R) (pairedWeight (m := m)) hspan
+    (R := R) (fun i : Fin (m + m) => ⇑(diagonalTorusWeight (finSumFinEquiv.symm i))) hspan
   rw [← coordinateMap_comp_diagonalTorusCoordinateMap] at hsurj
   simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at hsurj
   exact hsurj.of_comp
@@ -399,7 +416,7 @@ theorem diagonalTorusCoordinateMap_baseChange
     coordinateMap_comp_diagonalTorusCoordinateMap]
   rw [← GeneralLinear.weightTorusBaseChangeCoordinateMap_def]
   exact GeneralLinear.weightTorusBaseChangeCoordinateMap_eq R K
-    (pairedWeight (m := m))
+    (fun i : Fin (m + m) => ⇑(diagonalTorusWeight (finSumFinEquiv.symm i)))
 
 /-- **The diagonal torus of `Sp₂ₘ` as a group-scheme morphism** from the rank-`m` split
 torus. -/

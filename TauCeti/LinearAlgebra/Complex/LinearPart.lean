@@ -108,7 +108,6 @@ theorem isComplexLinear_of_apply {F : V →ₗ[ℝ] W} (h : ∀ v, F (J v) = J' 
 
 /-- Raw complex-linearity is preserved and reflected by conjugating source and target along
 linear equivalences. -/
-@[simp]
 theorem isComplexLinear_arrowCongr_iff {V₂ W₂ : Type*}
     [AddCommGroup V₂] [Module ℝ V₂] [AddCommGroup W₂] [Module ℝ W₂]
     {F : V →ₗ[ℝ] W} (eV : V ≃ₗ[ℝ] V₂) (eW : W ≃ₗ[ℝ] W₂) :

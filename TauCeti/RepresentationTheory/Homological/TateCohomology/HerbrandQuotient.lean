@@ -7,8 +7,12 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
+public import Mathlib.RepresentationTheory.Coinduced
 import TauCeti.LinearAlgebra.LinearMap.Cardinality
 import Mathlib.RepresentationTheory.Homological.FiniteCyclic
+import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -65,6 +69,12 @@ integral calculation reads off the low-degree evaluations
 * `TauCeti.TateCohomology.herbrandQuotient_eq_natCard_H2_div_natCard_H1`: the Herbrand quotient
   is `|H²(G, M)| / |H¹(G, M)|`; `TauCeti.TateCohomology.herbrandQuotient_eq_natCard_H2` is the
   case `H¹(G, M) = 0`.
+* `TauCeti.TateCohomology.herbrandQuotient_eq_of_iso`: isomorphic representations have the same
+  Herbrand quotient.
+* `TauCeti.TateCohomology.herbrandQuotient_coind`: **Shapiro's lemma for Herbrand quotients**,
+  `h_G(Coind_S^G A) = h_S(A)` for a subgroup `S` of a finite cyclic group `G`.
+* `TauCeti.TateCohomology.herbrandQuotient_res_of_bijective`: restriction along an isomorphism of
+  finite groups does not change the Herbrand quotient.
 * `TauCeti.TateCohomology.natCard_tateCohomology_mul_of_shortExact`: the exact hexagon of a short
   exact sequence, in the form of an identity between two products of three orders. It assumes no
   finiteness.
@@ -73,6 +83,9 @@ integral calculation reads off the low-degree evaluations
 * `TauCeti.TateCohomology.herbrandQuotient_eq_mul_of_shortExact`: **multiplicativity of the
   Herbrand quotient** in a short exact sequence whose outer terms have finite degree-`-1` Tate
   cohomology.
+* `TauCeti.TateCohomology.herbrandQuotient_eq_div_of_shortExact`: the Herbrand quotient of the
+  last term of a short exact sequence is the quotient of those of the other two, when the first
+  term has finite Tate cohomology and the middle term finite degree-`-1` Tate cohomology.
 * `TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₁` and
   `TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₃`: a finite outer term of
   a short exact sequence may be discarded.
@@ -80,6 +93,8 @@ integral calculation reads off the low-degree evaluations
   `TauCeti.TateCohomology.herbrandQuotient_eq_of_mono_of_finite_cokernel`: the one-sided forms.
 * `TauCeti.TateCohomology.herbrandQuotient_eq_of_finite_kernel_of_finite_cokernel`:
   **invariance of the Herbrand quotient** under a morphism with finite kernel and cokernel.
+* `TauCeti.TateCohomology.herbrandQuotient_eq_mul_of_exact_of_finite_cokernel`: multiplicativity
+  along an exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` whose last map has finite cokernel.
 
 ## References
 
@@ -120,6 +135,14 @@ theorem herbrandQuotient_eq_zero_iff {M : Rep R G} :
     herbrandQuotient M = 0 ↔
       Infinite (tateCohomology M 0) ∨ Infinite (tateCohomology M (-1)) := by
   simp [herbrandQuotient_def, Nat.card_eq_zero]
+
+/-- A representation with nonzero Herbrand quotient has finite Tate cohomology in degrees `0` and
+`-1`. -/
+theorem finite_tateCohomology_of_herbrandQuotient_ne_zero {M : Rep R G}
+    (h : herbrandQuotient M ≠ 0) :
+    Finite (tateCohomology M 0) ∧ Finite (tateCohomology M (-1)) := by
+  rwa [Ne, herbrandQuotient_eq_zero_iff, not_or, not_infinite_iff_finite,
+    not_infinite_iff_finite] at h
 
 /-- For a finite representation of a finite cyclic group the two low-degree Tate groups have the
 same order. -/
@@ -199,6 +222,13 @@ theorem herbrandQuotient_eq_one_of_finite [IsCyclic G] (M : Rep R G) [Finite M] 
     natCard_tateCohomology_zero_eq_natCard_tateCohomology_negOne_of_finite]
   exact div_self (Nat.cast_ne_zero.mpr (Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩))
 
+/-- Isomorphic representations have the same Herbrand quotient. -/
+theorem herbrandQuotient_eq_of_iso {M N : Rep R G} (e : M ≅ N) :
+    herbrandQuotient M = herbrandQuotient N := by
+  rw [herbrandQuotient_def, herbrandQuotient_def,
+    Nat.card_congr ((tateCohomologyFunctor 0).mapIso e).toLinearEquiv.toEquiv,
+    Nat.card_congr ((tateCohomologyFunctor (-1)).mapIso e).toLinearEquiv.toEquiv]
+
 /-- For a finite cyclic group the Herbrand quotient is the ratio of the orders of ordinary group
 cohomology in degrees two and one, `h(M) = #H²(G, M) / #H¹(G, M)`: two-periodicity identifies the
 Tate groups of degrees `0` and `-1` with those of degrees `2` and `1`, which are ordinary group
@@ -239,6 +269,34 @@ theorem herbrandQuotient_trivial_int_eq_card :
   simp
 
 end TrivialInt
+
+/-- **Shapiro's lemma for Herbrand quotients.** For a subgroup `S` of a finite cyclic group `G` and
+a representation `A` of `S`, the coinduced representation `Coind_S^G A` has the same Herbrand
+quotient over `G` as `A` has over `S`. Both quotients are ratios `|H²| / |H¹|` of ordinary group
+cohomology, `S` being cyclic as well, and Shapiro's lemma `groupCohomology.coindIso` identifies the
+cohomology of `Coind_S^G A` with that of `A` in every degree.
+
+This computes the Herbrand quotient of a module whose factors are permuted transitively by `G`
+from that of the stabilizer of one factor. For a cyclic extension `L/K` of number fields and a
+place `v` of `K`, the module `∏_{w ∣ v} L_wˣ` is coinduced in this way from the decomposition group
+of one place `w` acting on `L_wˣ`. -/
+theorem herbrandQuotient_coind [IsCyclic G] (S : Subgroup G) [Fintype S] (A : Rep R S) :
+    herbrandQuotient (Rep.coind S.subtype A) = herbrandQuotient A := by
+  rw [herbrandQuotient_eq_natCard_H2_div_natCard_H1, herbrandQuotient_eq_natCard_H2_div_natCard_H1,
+    Nat.card_congr (groupCohomology.coindIso A 2).toLinearEquiv.toEquiv,
+    Nat.card_congr (groupCohomology.coindIso A 1).toLinearEquiv.toEquiv]
+
+/-- Restriction along an isomorphism of finite groups does not change the Herbrand
+quotient. -/
+theorem herbrandQuotient_res_of_bijective {H : Type u} [Group H] [Fintype H]
+    {f : H →* G} (hf : Function.Bijective f) (M : Rep R G) :
+    herbrandQuotient (Rep.res f M) = herbrandQuotient M := by
+  let e := MulEquiv.ofBijective f hf
+  have he : (e : H →* G) = f := by rfl
+  have h (n : ℤ) := natCard_tateCohomology_eq
+    (Rep.isIntertwiningMap_res M (e : H →* G)) n
+  rw [← he]
+  rw [herbrandQuotient_def, herbrandQuotient_def, h 0, h (-1)]
 
 section ShortExact
 
@@ -369,7 +427,7 @@ theorem natCard_tateCohomology_negOne_dvd_of_shortExact {S : ShortComplex (Rep R
     (hS : S.ShortExact) :
     Nat.card (tateCohomology S.X₂ (-1)) ∣
       Nat.card (tateCohomology S.X₁ (-1)) * Nat.card (tateCohomology S.X₃ (-1)) := by
-  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, h₁, h₂, h₃, h₄, h₅, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
+  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, _, h₂, _, h₄, _, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
   exact ⟨t₂ * t₁, by rw [h₂, h₄, h₆]; ring⟩
 
 /-- **The Herbrand quotient is multiplicative in a short exact sequence.** For a short exact
@@ -396,6 +454,50 @@ theorem herbrandQuotient_eq_mul_of_shortExact {S : ShortComplex (Rep R G)} (hS :
   rw [herbrandQuotient_def, herbrandQuotient_def, herbrandQuotient_def]
   field_simp
   linear_combination -keyQ
+
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic
+group, if the degree-zero Tate cohomology of `X₁` and the degree `-1` Tate cohomology of `X₂` are
+finite, then so is the degree `-1` Tate cohomology of `X₃`. -/
+theorem finite_tateCohomology_negOne_X₃_of_shortExact {S : ShortComplex (Rep R G)}
+    (hS : S.ShortExact) [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₂ (-1))] :
+    Finite (tateCohomology S.X₃ (-1)) := by
+  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, h₁, -, -, h₄, -, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
+  have h1 : Nat.card (tateCohomology S.X₁ 0) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
+  have h2 : Nat.card (tateCohomology S.X₂ (-1)) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
+  rw [h₁] at h1
+  rw [h₆] at h2
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [h₄]
+  exact mul_ne_zero (right_ne_zero_of_mul h1) (left_ne_zero_of_mul h2)
+
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic
+group, if the degree `-1` Tate cohomology of `X₂` and the degree-zero Tate cohomology of `X₃` are
+finite, then so is the degree `-1` Tate cohomology of `X₁`. -/
+theorem finite_tateCohomology_negOne_X₁_of_shortExact {S : ShortComplex (Rep R G)}
+    (hS : S.ShortExact) [Finite (tateCohomology S.X₂ (-1))] [Finite (tateCohomology S.X₃ 0)] :
+    Finite (tateCohomology S.X₁ (-1)) := by
+  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, -, h₂, h₃, -, -, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
+  have h2 : Nat.card (tateCohomology S.X₂ (-1)) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
+  have h3 : Nat.card (tateCohomology S.X₃ 0) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
+  rw [h₆] at h2
+  rw [h₃] at h3
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [h₂]
+  exact mul_ne_zero (right_ne_zero_of_mul h2) (left_ne_zero_of_mul h3)
+
+/-- **The Herbrand quotient of a quotient.** For a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic group in which `X₁` has finite
+Tate cohomology and `X₂` has finite Tate cohomology in degree `-1`, the Herbrand quotient of `X₃`
+is the quotient of those of `X₂` and `X₁`. -/
+theorem herbrandQuotient_eq_div_of_shortExact {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
+    [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₁ (-1))]
+    [Finite (tateCohomology S.X₂ (-1))] :
+    herbrandQuotient S.X₃ = herbrandQuotient S.X₂ / herbrandQuotient S.X₁ := by
+  have := finite_tateCohomology_negOne_X₃_of_shortExact hS
+  have h₁ : herbrandQuotient S.X₁ ≠ 0 := by
+    rw [Ne, herbrandQuotient_eq_zero_iff, not_or, not_infinite_iff_finite, not_infinite_iff_finite]
+    exact ⟨inferInstance, inferInstance⟩
+  rw [herbrandQuotient_eq_mul_of_shortExact hS, mul_div_cancel_left₀ _ h₁]
 
 end Multiplicativity
 
@@ -490,6 +592,40 @@ theorem herbrandQuotient_eq_of_finite_kernel_of_finite_cokernel {M N : Rep R G} 
       (cokernelImageι f)).toLinearEquiv.toEquiv.symm
   exact (herbrandQuotient_eq_of_epi_of_finite_kernel (factorThruImage f)).trans
     (herbrandQuotient_eq_of_mono_of_finite_cokernel (image.ι f))
+
+/-- **Multiplicativity along a sequence with finite cokernel.** Let `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` be an
+exact sequence of representations of a finite cyclic group whose last map has finite cokernel,
+and suppose that `X₁` and `X₃` have finite Tate cohomology in degree `-1`. Then
+`h(X₂) = h(X₁) · h(X₃)`: the image of `X₂ ⟶ X₃` has finite index in `X₃`, so it has the Herbrand
+quotient of `X₃`, and `0 ⟶ X₁ ⟶ X₂ ⟶ image ⟶ 0` is short exact. -/
+theorem herbrandQuotient_eq_mul_of_exact_of_finite_cokernel {S : ShortComplex (Rep R G)}
+    (hS : S.Exact) [Mono S.f] [Finite ↑(cokernel S.g)] [Finite (tateCohomology S.X₁ (-1))]
+    [Finite (tateCohomology S.X₃ (-1))] :
+    herbrandQuotient S.X₂ = herbrandQuotient S.X₁ * herbrandQuotient S.X₃ := by
+  -- the image of `S.g` sits in the short exact sequence `X₁ ⟶ X₂ ⟶ image S.g`
+  let T : ShortComplex (Rep R G) := ShortComplex.mk S.f (factorThruImage S.g) <| by
+    rw [← cancel_mono (image.ι S.g), Category.assoc, image.fac, S.zero, Limits.zero_comp]
+  let φ : T ⟶ S := { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := image.ι S.g }
+  have hT : T.ShortExact :=
+    { exact := (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2 hS
+      mono_f := inferInstanceAs (Mono S.f) }
+  -- and it has finite index in `X₃`, the cokernel of its inclusion being that of `S.g`
+  have : Finite ↑(cokernel (image.ι S.g)) :=
+    Finite.of_equiv _ ((forget₂ (Rep R G) (ModuleCat R)).mapIso
+      (cokernelImageι S.g)).toLinearEquiv.toEquiv.symm
+  have hU := ShortComplex.ShortExact.mk' (ShortComplex.cokernelSequence_exact (image.ι S.g))
+    (inferInstanceAs (Mono (image.ι S.g))) (inferInstanceAs (Epi (cokernel.π (image.ι S.g))))
+  -- the terms of `cokernelSequence` are `image S.g`, `S.X₃` and the cokernel by definition,
+  -- which instance search does not see through
+  have : Finite (tateCohomology (ShortComplex.cokernelSequence (image.ι S.g)).X₂ (-1)) :=
+    inferInstanceAs (Finite (tateCohomology S.X₃ (-1)))
+  have : Finite (tateCohomology (ShortComplex.cokernelSequence (image.ι S.g)).X₃ 0) :=
+    inferInstanceAs (Finite (tateCohomology (cokernel (image.ι S.g)) 0))
+  have : Finite (tateCohomology (image S.g) (-1)) :=
+    finite_tateCohomology_negOne_X₁_of_shortExact (S := ShortComplex.cokernelSequence _) hU
+  have h : herbrandQuotient S.X₂ = herbrandQuotient S.X₁ * herbrandQuotient (image S.g) :=
+    herbrandQuotient_eq_mul_of_shortExact hT
+  rw [h, herbrandQuotient_eq_of_mono_of_finite_cokernel (image.ι S.g)]
 
 end Invariance
 

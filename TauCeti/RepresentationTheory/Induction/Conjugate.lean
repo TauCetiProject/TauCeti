@@ -62,7 +62,7 @@ irreducible ones is not carved out here.
 * `TauCeti.conjNormalRep`, `TauCeti.conjNormalFDRep`: conjugation of a representation of a normal
   subgroup, again a representation of that subgroup; these are the `MulAction` of `G` on
   `Rep k N` and on `FDRep k N`.
-* `TauCeti.conjNormalFDRepIso`: conjugating by an element of `N` itself is an inner twist, so
+* `FDRep.conjNormalIso`: conjugating by an element of `N` itself is an inner twist, so
   it gives an isomorphic representation.
 * `TauCeti.conjNormalFDRepSkeletonSMul`, `TauCeti.conjNormalFDRepSkeletonMulAction`: conjugation
   acting on isomorphism classes of finite-dimensional representations of `N`.
@@ -75,7 +75,7 @@ irreducible ones is not carved out here.
 * `TauCeti.conjNormalRep_one`, `TauCeti.conjNormalRep_mul` and their `FDRep` counterparts: for a
   normal subgroup that coherence becomes a genuine left action of `G`, recorded as `MulAction`
   instances.
-* `TauCeti.Representation.apply_conjNormal_inv`: the basic intertwining identity between an
+* `Representation.apply_conjNormal_inv`: the basic intertwining identity between an
   ambient representation operator and the action of a normal subgroup.
 * `Representation.apply_conjNormal_coe`: its inner counterpart for a representation of
   the normal subgroup itself.
@@ -84,11 +84,6 @@ irreducible ones is not carved out here.
 * `TauCeti.isIrreducible_conjRep_iff`, `TauCeti.isIrreducible_conjFDRep_iff`: conjugation
   preserves irreducibility, because it identifies the invariant subspaces.
 
-## References
-
-The convention and implementation plan follow
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` and its accompanying
-`Suggested.lean`.
 -/
 
 public section
@@ -185,7 +180,7 @@ def conjRepSubrepresentationOrderIso [Semiring k] (s : G) {H : Subgroup G} (A : 
   -- Unfold `conjRep` and `conjRepFunctor` to expose Mathlib's definition of the restricted action.
   change Subrepresentation (A.ρ.comp (conjSubgroupEquiv s H).toMonoidHom) ≃o
     Subrepresentation A.ρ
-  exact resSubrepresentationOrderIso (conjSubgroupEquiv s H).toMonoidHom
+  exact MonoidHom.resSubrepresentationOrderIso (conjSubgroupEquiv s H).toMonoidHom
     (conjSubgroupEquiv s H).surjective A.ρ
 
 /-- The forward invariant-subspace correspondence preserves the underlying submodule. -/
@@ -194,7 +189,7 @@ theorem conjRepSubrepresentationOrderIso_apply_toSubmodule [Semiring k] (s : G)
     {H : Subgroup G} (A : Rep.{w} k H) (S : Subrepresentation (conjRep s A).ρ) :
     HEq (conjRepSubrepresentationOrderIso s A S).toSubmodule S.toSubmodule := by
   unfold conjRepSubrepresentationOrderIso
-  exact heq_of_eq (resSubrepresentationOrderIso_apply_toSubmodule
+  exact heq_of_eq (MonoidHom.resSubrepresentationOrderIso_apply_toSubmodule
     (conjSubgroupEquiv s H).toMonoidHom (conjSubgroupEquiv s H).surjective A.ρ S)
 
 /-- The inverse invariant-subspace correspondence preserves the underlying submodule. -/
@@ -203,7 +198,7 @@ theorem conjRepSubrepresentationOrderIso_symm_apply_toSubmodule [Semiring k] (s 
     {H : Subgroup G} (A : Rep.{w} k H) (S : Subrepresentation A.ρ) :
     HEq ((conjRepSubrepresentationOrderIso s A).symm S).toSubmodule S.toSubmodule := by
   unfold conjRepSubrepresentationOrderIso
-  exact heq_of_eq (resSubrepresentationOrderIso_symm_apply_toSubmodule
+  exact heq_of_eq (MonoidHom.resSubrepresentationOrderIso_symm_apply_toSubmodule
     (conjSubgroupEquiv s H).toMonoidHom (conjSubgroupEquiv s H).surjective A.ρ S)
 
 /-- A conjugate representation is irreducible exactly when the original representation is. -/
@@ -211,7 +206,7 @@ theorem conjRepSubrepresentationOrderIso_symm_apply_toSubmodule [Semiring k] (s 
 theorem isIrreducible_conjRep_iff [Field k] (s : G) {H : Subgroup G} (A : Rep.{w} k H) :
     Representation.IsIrreducible (conjRep s A).ρ ↔
       Representation.IsIrreducible A.ρ :=
-  isIrreducible_comp_equiv_iff (conjSubgroupEquiv s H) A.ρ
+  MulEquiv.isIrreducible_comp_equiv_iff (conjSubgroupEquiv s H) A.ρ
 
 section Coherence
 
@@ -268,7 +263,7 @@ theorem conjRepFunctor_mul (s t : G) (H : Subgroup G) :
   -- `conjSubgroupEquiv (s * t) H`; unfolding the wrapper definitionally is what exposes that
   -- homomorphism, which is the thing `conjSubgroupEquiv_mul` rewrites.
   change Rep.resFunctor (conjSubgroupEquiv (s * t) H).toMonoidHom = _
-  rw [conjSubgroupEquiv_mul, resFunctor_comp, resFunctor_comp]
+  rw [conjSubgroupEquiv_mul, MonoidHom.resFunctor_comp, MonoidHom.resFunctor_comp]
   rfl
 
 /-- Conjugating by `1` does nothing, once `1 · H · 1⁻¹` is identified with `H`. -/
@@ -286,30 +281,30 @@ theorem conjRep_mul (s t : G) {H : Subgroup G} (A : Rep k H) :
   Functor.congr_obj (conjRepFunctor_mul s t H) A
 
 /-- **Conjugation is an equivalence of categories** `Rep k H ≌ Rep k (sHs⁻¹)`: it is restriction
-along the isomorphism `conjSubgroupEquiv s H`, and `resFunctorEquiv` makes any such restriction an
-equivalence.  Its inverse is conjugation by `s⁻¹`, read through `s⁻¹(sHs⁻¹)s = H`
+along the isomorphism `conjSubgroupEquiv s H`, and `MulEquiv.resFunctorEquiv` makes any such
+restriction an equivalence.  Its inverse is conjugation by `s⁻¹`, read through `s⁻¹(sHs⁻¹)s = H`
 (`conjRepEquiv_inverse_eq_conjRepFunctor`).
 
 `conjNormalRepEquiv` is the normal-subgroup form, where source and target coincide, so that the
 equivalence is an autoequivalence and the coherence below becomes an action. -/
 def conjRepEquiv (s : G) (H : Subgroup G) :
     Rep k H ≌ Rep k (MulAut.conj s • H : Subgroup G) :=
-  resFunctorEquiv (conjSubgroupEquiv s H)
+  MulEquiv.resFunctorEquiv (conjSubgroupEquiv s H)
 
 @[simp]
 theorem conjRepEquiv_functor (s : G) (H : Subgroup G) :
     (conjRepEquiv (k := k) s H).functor = conjRepFunctor s H := by
   -- Unfold both wrappers to expose the restriction functor they share.
-  change (resFunctorEquiv (conjSubgroupEquiv s H)).functor =
+  change (MulEquiv.resFunctorEquiv (conjSubgroupEquiv s H)).functor =
     Rep.resFunctor (conjSubgroupEquiv s H).toMonoidHom
-  rw [resFunctorEquiv_functor]
+  rw [MulEquiv.resFunctorEquiv_functor]
 
 @[simp]
 theorem conjRepEquiv_inverse (s : G) (H : Subgroup G) : (conjRepEquiv (k := k) s H).inverse =
       Rep.resFunctor (conjSubgroupEquiv s H).symm.toMonoidHom := by
-  -- Unfold the `conjRepEquiv` wrapper to expose `resFunctorEquiv`.
-  change (resFunctorEquiv (conjSubgroupEquiv s H)).inverse = _
-  rw [resFunctorEquiv_inverse]
+  -- Unfold the `conjRepEquiv` wrapper to expose `MulEquiv.resFunctorEquiv`.
+  change (MulEquiv.resFunctorEquiv (conjSubgroupEquiv s H)).inverse = _
+  rw [MulEquiv.resFunctorEquiv_inverse]
 
 /-- The inverse of the conjugation equivalence is conjugation by `s⁻¹`, once `s⁻¹(sHs⁻¹)s` is
 identified with `H`. -/
@@ -317,12 +312,12 @@ theorem conjRepEquiv_inverse_eq_conjRepFunctor (s : G) (H : Subgroup G) :
     (conjRepEquiv (k := k) s H).inverse =
       conjRepFunctor s⁻¹ (MulAut.conj s • H) ⋙
         Rep.resFunctor (MulEquiv.subgroupCongr (conj_inv_smul_smul s H).symm).toMonoidHom := by
-  -- Unfold the `conjRepFunctor` wrapper on the right, so that `resFunctor_comp` can contract the
-  -- composite into the single restriction that `conjSubgroupEquiv_inv_comp_subgroupCongr`
-  -- identifies with restriction along `(conjSubgroupEquiv s H).symm`.
+  -- Unfold the `conjRepFunctor` wrapper on the right, so that `MonoidHom.resFunctor_comp` can
+  -- contract the composite into one restriction. `conjSubgroupEquiv_inv_comp_subgroupCongr`
+  -- identifies it with restriction along `(conjSubgroupEquiv s H).symm`.
   change _ = Rep.resFunctor (conjSubgroupEquiv s⁻¹ (MulAut.conj s • H)).toMonoidHom ⋙
     Rep.resFunctor _
-  rw [conjRepEquiv_inverse, ← resFunctor_comp, conjSubgroupEquiv_inv_comp_subgroupCongr]
+  rw [conjRepEquiv_inverse, ← MonoidHom.resFunctor_comp, conjSubgroupEquiv_inv_comp_subgroupCongr]
 
 end Coherence
 
@@ -374,7 +369,7 @@ theorem conjFDRepFunctor_mul (s t : G) (H : Subgroup G) :
   -- As in `conjRepFunctor_mul`: unfold the `conjFDRepFunctor` wrapper to expose the homomorphism
   -- `conjSubgroupEquiv (s * t) H` that `conjSubgroupEquiv_mul` rewrites.
   change Action.res (FGModuleCat k) (conjSubgroupEquiv (s * t) H).toMonoidHom = _
-  rw [conjSubgroupEquiv_mul, actionRes_comp, actionRes_comp]
+  rw [conjSubgroupEquiv_mul, MonoidHom.actionRes_comp, MonoidHom.actionRes_comp]
   rfl
 
 /-- Conjugating a finite-dimensional representation by `1` does nothing, once `1 · H · 1⁻¹` is
@@ -427,18 +422,19 @@ theorem conjFDRepEquiv_inverse_eq_conjFDRepFunctor (s : G) (H : Subgroup G) :
         Action.res (FGModuleCat k)
           (MulEquiv.subgroupCongr (conj_inv_smul_smul s H).symm).toMonoidHom := by
   -- As in `conjRepEquiv_inverse_eq_conjRepFunctor`: unfold the `conjFDRepFunctor` wrapper so that
-  -- `actionRes_comp` can contract the composite into a single restriction.
+  -- `MonoidHom.actionRes_comp` can contract the composite into a single restriction.
   change _ = Action.res (FGModuleCat k) (conjSubgroupEquiv s⁻¹ (MulAut.conj s • H)).toMonoidHom ⋙
     Action.res (FGModuleCat k) _
-  rw [conjFDRepEquiv_inverse, ← actionRes_comp, conjSubgroupEquiv_inv_comp_subgroupCongr]
+  rw [conjFDRepEquiv_inverse, ← MonoidHom.actionRes_comp, conjSubgroupEquiv_inv_comp_subgroupCongr]
 
 end FDRep
 
 /-! ## The conjugate action on a finite-dimensional representation
 
 Mathlib develops `FDRep.ρ` and the coercion of an `FDRep` to a type only over a commutative ring,
-so the statements about the conjugate action and the dimension ask for `[CommRing k]`, while the
-definitions and the coherence above need only `[Ring k]`. -/
+so the statements about the conjugate action ask for `[CommRing k]`. The definitions, coherence
+and preservation of finrank need only `[Ring k]`; finrank is taken on the underlying module `.V`.
+-/
 
 section FDRepAction
 
@@ -465,13 +461,19 @@ theorem conjFDRep_ρ_cast (s : G) {H : Subgroup G} (A : FDRep k H)
   -- The cast only moves along the carrier equality, so this is `conjFDRep_ρ` read as an equality.
   eq_of_heq ((cast_heq _ _).trans (conjFDRep_ρ s A x))
 
-/-- Conjugation preserves the dimension (finrank) of a finite-dimensional representation. -/
+end FDRepAction
+
+section FDRepFinrank
+
+variable [Ring k]
+
+/-- Conjugation preserves the finrank of the underlying finitely generated module. -/
 @[simp]
 theorem finrank_conjFDRep (s : G) {H : Subgroup G} (A : FDRep k H) :
-    Module.finrank k (conjFDRep s A) = Module.finrank k A := by
-  exact congrArg (fun V : FGModuleCat k => Module.finrank k V) (conjFDRep_V s A)
+    Module.finrank k (conjFDRep s A).V = Module.finrank k A.V :=
+  congrArg (fun V : FGModuleCat k => Module.finrank k V) (conjFDRep_V s A)
 
-end FDRepAction
+end FDRepFinrank
 
 section FDRepIrreducible
 
@@ -488,7 +490,7 @@ theorem isIrreducible_conjFDRep_iff (s : G) {H : Subgroup G} (A : FDRep k H) :
   change Representation.IsIrreducible
       (A.ρ.comp (conjSubgroupEquiv s H).toMonoidHom) ↔
     Representation.IsIrreducible A.ρ
-  exact isIrreducible_comp_equiv_iff (conjSubgroupEquiv s H) A.ρ
+  exact MulEquiv.isIrreducible_comp_equiv_iff (conjSubgroupEquiv s H) A.ρ
 
 end FDRepIrreducible
 
@@ -525,14 +527,14 @@ section Normal
 
 variable {N : Subgroup G} [hN : N.Normal]
 
-namespace Representation
+section Representation
 
 variable [Semiring k] [AddCommMonoid V] [Module k V] (ρ : _root_.Representation k G V)
 
 /-- Acting by `g` and then by `n ∈ N` is the same as acting by the conjugate `g⁻¹ n g` and then by
 `g`. This conjugation identity underlies both translated normal-subgroup subrepresentations and
 the transport of normal-subgroup weight spaces. -/
-theorem apply_conjNormal_inv (g : G) (n : N) (v : V) :
+theorem _root_.Representation.apply_conjNormal_inv (g : G) (n : N) (v : V) :
     ρ g (ρ (MulAut.conjNormal g⁻¹ n : G) v) = ρ (n : G) (ρ g v) := by
   have hg : g * (MulAut.conjNormal g⁻¹ n : G) = (n : G) * g := by
     rw [MulAut.conjNormal_apply]
@@ -540,24 +542,6 @@ theorem apply_conjNormal_inv (g : G) (n : N) (v : V) :
   rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hg]
 
 end Representation
-
-/-- Conjugating a normal subgroup by `1` is the identity automorphism.  The `MulAut.conjNormal`
-form of `conj_one_smul`. -/
-private theorem conjNormal_inv_one :
-    (MulAut.conjNormal ((1 : G)⁻¹) : MulAut N).toMonoidHom = MonoidHom.id N :=
-  MonoidHom.ext fun x => Subtype.ext (by simp)
-
-/-- Conjugating a normal subgroup by `s * t` is conjugating by `t` after conjugating by `s`.  The
-`MulAut.conjNormal` form of `conj_mul_smul`; note the order, which is the one `Rep.res` reverses
-into a left action. -/
-private theorem conjNormal_inv_mul (s t : G) :
-    (MulAut.conjNormal ((s * t)⁻¹) : MulAut N).toMonoidHom =
-      (MulAut.conjNormal (t⁻¹) : MulAut N).toMonoidHom.comp
-        (MulAut.conjNormal (s⁻¹) : MulAut N).toMonoidHom :=
-  MonoidHom.ext fun x => Subtype.ext (by
-    simp only [MulAut.conjNormal_apply, MonoidHom.coe_comp, Function.comp_apply,
-      MulEquiv.coe_toMonoidHom]
-    group)
 
 /-- On a normal subgroup, the homomorphism `N →* gNg⁻¹ →* N` that `conjRep` restricts along is
 `MulAut.conjNormal g⁻¹`. -/
@@ -617,11 +601,11 @@ theorem res_conjRepFunctor (g : G) :
         Rep.resFunctor
           (MulEquiv.subgroupCongr (Subgroup.Normal.conj_smul_eq_self g N).symm).toMonoidHom =
       conjNormalRepFunctor g := by
-  -- Unfold the `conjRepFunctor` wrapper on the left: `resFunctor_comp` contracts the composite
-  -- only once both halves are visibly `Rep.resFunctor`, and it is the resulting composite
+  -- Unfold the `conjRepFunctor` wrapper on the left: `MonoidHom.resFunctor_comp` contracts the
+  -- composite only once both halves are visibly `Rep.resFunctor`, and it is the resulting composite
   -- homomorphism that `conjSubgroupEquiv_comp_subgroupCongr` identifies.
   change Rep.resFunctor (conjSubgroupEquiv g N).toMonoidHom ⋙ Rep.resFunctor _ = _
-  rw [← resFunctor_comp, conjSubgroupEquiv_comp_subgroupCongr]
+  rw [← MonoidHom.resFunctor_comp, conjSubgroupEquiv_comp_subgroupCongr]
   rfl
 
 /-- On a normal subgroup, `conjNormalRep` is the general conjugate representation `conjRep`, read
@@ -634,22 +618,18 @@ theorem res_conjRep (g : G) (A : Rep k N) :
 /-- Conjugating by `1` is the identity endofunctor. -/
 theorem conjNormalRepFunctor_one :
     conjNormalRepFunctor (k := k) (N := N) (1 : G) = 𝟭 (Rep k N) := by
-  -- `conjNormalRepFunctor 1` is by definition restriction along `MulAut.conjNormal (1 : G)⁻¹`;
-  -- unfolding the wrapper is what exposes that automorphism to `conjNormal_inv_one`.
-  change Rep.resFunctor (MulAut.conjNormal ((1 : G)⁻¹) : MulAut N).toMonoidHom = _
-  rw [conjNormal_inv_one]
-  rfl
+  unfold conjNormalRepFunctor
+  rw [inv_one, map_one]
+  exact MonoidHom.resFunctor_id
 
 /-- Conjugation is a left action, as an equality of endofunctors: `{}^{st}(-) = {}^s({}^t(-))`. -/
 theorem conjNormalRepFunctor_mul (s t : G) :
     conjNormalRepFunctor (k := k) (N := N) (s * t) =
       conjNormalRepFunctor t ⋙ conjNormalRepFunctor s := by
-  -- Unfold the wrapper to expose `MulAut.conjNormal (s * t)⁻¹`, the automorphism
-  -- `conjNormal_inv_mul` splits; `resFunctor_comp` then turns that split into a composite of
-  -- functors.
-  change Rep.resFunctor (MulAut.conjNormal ((s * t)⁻¹) : MulAut N).toMonoidHom = _
-  rw [conjNormal_inv_mul, resFunctor_comp]
-  rfl
+  unfold conjNormalRepFunctor
+  rw [mul_inv_rev, map_mul]
+  simp only [MulAut.mul_def, MulEquiv.toMonoidHom_eq_coe, MulEquiv.toMonoidHom_trans,
+    MonoidHom.resFunctor_comp]
 
 /-- Conjugating by `1` is the identity. -/
 @[simp]
@@ -663,21 +643,21 @@ theorem conjNormalRep_mul (s t : G) (A : Rep k N) :
   Functor.congr_obj (conjNormalRepFunctor_mul s t) A
 
 /-- Conjugation by `g` is an autoequivalence of `Rep k N`, with inverse conjugation by `g⁻¹`: the
-autoequivalence the roadmap asks for.  Conjugation on a normal subgroup is restriction along the
-automorphism `MulAut.conjNormal g⁻¹`, so this is `resFunctorEquiv` for that automorphism, exactly
-as `conjNormalFDRepEquiv` is Mathlib's `Action.resEquiv` for it.
+autoequivalence used in Clifford theory.  Conjugation on a normal subgroup is restriction along the
+automorphism `MulAut.conjNormal g⁻¹`, so this is `MulEquiv.resFunctorEquiv` for that automorphism,
+exactly as `conjNormalFDRepEquiv` is Mathlib's `Action.resEquiv` for it.
 
 The body is sealed; `conjNormalRepEquiv_functor` and `conjNormalRepEquiv_inverse` are the
 interface identifying it with conjugation. -/
 def conjNormalRepEquiv (g : G) : Rep k N ≌ Rep k N :=
-  resFunctorEquiv (MulAut.conjNormal g⁻¹ : MulAut N)
+  MulEquiv.resFunctorEquiv (MulAut.conjNormal g⁻¹ : MulAut N)
 
 @[simp]
 theorem conjNormalRepEquiv_functor (g : G) :
     (conjNormalRepEquiv (k := k) (N := N) g).functor = conjNormalRepFunctor g := by
-  -- Unfold the `conjNormalRepEquiv` wrapper to expose `resFunctorEquiv`.
-  change (resFunctorEquiv (MulAut.conjNormal g⁻¹ : MulAut N)).functor = _
-  rw [resFunctorEquiv_functor]
+  -- Unfold the `conjNormalRepEquiv` wrapper to expose `MulEquiv.resFunctorEquiv`.
+  change (MulEquiv.resFunctorEquiv (MulAut.conjNormal g⁻¹ : MulAut N)).functor = _
+  rw [MulEquiv.resFunctorEquiv_functor]
   rfl
 
 @[simp]
@@ -685,8 +665,8 @@ theorem conjNormalRepEquiv_inverse (g : G) :
     (conjNormalRepEquiv (k := k) (N := N) g).inverse = conjNormalRepFunctor g⁻¹ := by
   -- Unfold the wrapper as above; the inverse is restriction along `(MulAut.conjNormal g⁻¹)⁻¹`,
   -- which `map_inv` identifies with `MulAut.conjNormal (g⁻¹)⁻¹`, as in the `FDRep` mirror.
-  change (resFunctorEquiv (MulAut.conjNormal g⁻¹ : MulAut N)).inverse = _
-  rw [resFunctorEquiv_inverse]
+  change (MulEquiv.resFunctorEquiv (MulAut.conjNormal g⁻¹ : MulAut N)).inverse = _
+  rw [MulEquiv.resFunctorEquiv_inverse]
   exact congrArg (fun e : MulAut N => Rep.resFunctor (k := k) (MulEquiv.toMonoidHom e))
     (map_inv MulAut.conjNormal (g⁻¹ : G)).symm
 
@@ -736,10 +716,10 @@ theorem res_conjFDRepFunctor (g : G) :
         Action.res (FGModuleCat k)
           (MulEquiv.subgroupCongr (Subgroup.Normal.conj_smul_eq_self g N).symm).toMonoidHom =
       conjNormalFDRepFunctor g := by
-  -- As in `res_conjRepFunctor`: unfold the `conjFDRepFunctor` wrapper so that `actionRes_comp`
-  -- can contract the composite into a single restriction.
+  -- As in `res_conjRepFunctor`: unfold the `conjFDRepFunctor` wrapper so that
+  -- `MonoidHom.actionRes_comp` can contract the composite into a single restriction.
   change Action.res (FGModuleCat k) (conjSubgroupEquiv g N).toMonoidHom ⋙ Action.res _ _ = _
-  rw [← actionRes_comp, conjSubgroupEquiv_comp_subgroupCongr]
+  rw [← MonoidHom.actionRes_comp, conjSubgroupEquiv_comp_subgroupCongr]
   rfl
 
 /-- On a normal subgroup, `conjNormalFDRep` is `conjFDRep` read through `gNg⁻¹ = N`. -/
@@ -752,21 +732,19 @@ theorem res_conjFDRep (g : G) (A : FDRep k N) : (Action.res (FGModuleCat k)
 `conjNormalRepFunctor_one`. -/
 theorem conjNormalFDRepFunctor_one :
     conjNormalFDRepFunctor (k := k) (N := N) (1 : G) = 𝟭 (FDRep k N) := by
-  -- As in `conjNormalRepFunctor_one`: unfold the wrapper to expose `MulAut.conjNormal (1 : G)⁻¹`.
-  change Action.res (FGModuleCat k) (MulAut.conjNormal ((1 : G)⁻¹) : MulAut N).toMonoidHom = _
-  rw [conjNormal_inv_one]
-  rfl
+  unfold conjNormalFDRepFunctor
+  rw [inv_one, map_one]
+  exact MonoidHom.actionRes_id
 
 /-- Conjugation is a left action, as an equality of endofunctors.  The `FDRep` mirror of
 `conjNormalRepFunctor_mul`. -/
 theorem conjNormalFDRepFunctor_mul (s t : G) :
     conjNormalFDRepFunctor (k := k) (N := N) (s * t) =
       conjNormalFDRepFunctor t ⋙ conjNormalFDRepFunctor s := by
-  -- As in `conjNormalRepFunctor_mul`: unfold the wrapper to expose `MulAut.conjNormal (s * t)⁻¹`
-  -- for `conjNormal_inv_mul`.
-  change Action.res (FGModuleCat k) (MulAut.conjNormal ((s * t)⁻¹) : MulAut N).toMonoidHom = _
-  rw [conjNormal_inv_mul, actionRes_comp]
-  rfl
+  unfold conjNormalFDRepFunctor
+  rw [mul_inv_rev, map_mul]
+  simp only [MulAut.mul_def, MulEquiv.toMonoidHom_eq_coe, MulEquiv.toMonoidHom_trans,
+    MonoidHom.actionRes_comp]
 
 /-- Conjugating by `1` is the identity. -/
 @[simp]
@@ -813,7 +791,7 @@ theorem smul_eq_conjNormalFDRep (g : G) (A : FDRep k N) : g • A = conjNormalFD
 does not change its isomorphism class: the action of `n` is an isomorphism `{}^n A ≅ A`.
 
 The intertwining property is the computation `n · (n⁻¹xn) = xn` in `N`. -/
-def conjNormalFDRepIso (A : FDRep k N) (n : N) : conjNormalFDRep (n : G) A ≅ A :=
+def _root_.FDRep.conjNormalIso (A : FDRep k N) (n : N) : conjNormalFDRep (n : G) A ≅ A :=
   Action.mkIso (A.ρAut n) fun x => by
     -- `{}^n A` has the same underlying object as `A`, and its action is by definition
     -- `Action.ρ A` at the conjugated element, but there is no restatement of that at the level
@@ -826,8 +804,14 @@ def conjNormalFDRepIso (A : FDRep k N) (n : N) : conjNormalFDRep (n : G) A ≅ A
 
 /-- The isomorphism `{}^n A ≅ A` for `n : N` is the action of `n`. -/
 @[simp]
-theorem conjNormalFDRepIso_hom_hom (A : FDRep k N) (n : N) :
-    (conjNormalFDRepIso A n).hom.hom = Action.ρ A n :=
+theorem _root_.FDRep.conjNormalIso_hom_hom (A : FDRep k N) (n : N) :
+    (A.conjNormalIso n).hom.hom = Action.ρ A n :=
+  (rfl)
+
+/-- The inverse of `{}^n A ≅ A` for `n : N` is the action of `n⁻¹`. -/
+@[simp]
+theorem _root_.FDRep.conjNormalIso_inv_hom (A : FDRep k N) (n : N) :
+    (A.conjNormalIso n).inv.hom = Action.ρ A n⁻¹ :=
   (rfl)
 
 /-- Conjugation acts on the isomorphism classes of finite-dimensional representations of `N`: the
@@ -879,13 +863,19 @@ theorem conjNormalFDRep_ρ_mk (g : G) (A : FDRep k N) (x : N) :
   congr 1
   exact Subtype.ext (by simp)
 
-/-- Conjugation on a normal subgroup preserves the dimension. -/
+end NormalFDRepAction
+
+section NormalFDRepFinrank
+
+variable [Ring k]
+
+/-- Conjugation on a normal subgroup preserves the finrank of the underlying module. -/
 @[simp]
 theorem finrank_conjNormalFDRep (g : G) (A : FDRep k N) :
-    Module.finrank k (conjNormalFDRep g A) = Module.finrank k A :=
-  rfl
+    Module.finrank k (conjNormalFDRep g A).V = Module.finrank k A.V :=
+  congrArg (fun V : FGModuleCat k => Module.finrank k V) (conjNormalFDRep_V g A)
 
-end NormalFDRepAction
+end NormalFDRepFinrank
 
 section NormalCharacter
 
@@ -913,7 +903,7 @@ end TauCeti
 
 /-- For a representation of the normal subgroup itself, acting by `n` and then by `m ∈ N` is the
 same as acting by `m` and then by the conjugate `m n m⁻¹`: the inner case of
-`TauCeti.Representation.apply_conjNormal_inv`. -/
+`Representation.apply_conjNormal_inv`. -/
 theorem Representation.apply_conjNormal_coe {k : Type u} {G : Type v} {V : Type w} [Group G]
     [Semiring k] [AddCommMonoid V] [Module k V] {N : Subgroup G} [N.Normal]
     (σ : Representation k N V) (m n : N) (v : V) :

@@ -167,7 +167,7 @@ theorem mapPointsFunctor_innerConjugationIso_hom
       x.ofConv.comp (Algebra.TensorProduct.productMap
           ((Algebra.ofId R H).comp g.ofConv) (AlgHom.id R H)) =
         Algebra.TensorProduct.productMap (extendPoint H A g).ofConv x.ofConv := by
-    rw [HopfAlgebra.extendPoint_apply, Algebra.TensorProduct.comp_productMap,
+    rw [HopfAlgebra.extendPoint_apply, _root_.AlgHom.comp_productMap,
       AlgHom.comp_id, ← AlgHom.comp_assoc, Algebra.comp_ofId]
   rw [hprod]
   exact (HopfAlgebra.productMap_comp_conjugationAlgHom (R := R) (H := H)

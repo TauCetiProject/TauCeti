@@ -10,6 +10,8 @@ public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Closed
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.ClosedSpan
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Heisenberg
+public import TauCeti.LinearAlgebra.ExteriorPower.Square
+import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.Topology.Connected.TotallyDisconnected
 
 /-!
@@ -24,8 +26,8 @@ file computes the first two pieces:
 * `gr_0(F)` is free over `ℤ_p` on the classes `x_i` of the generators: the map
   `a ↦ Σ_i [x_i ^ a_i]`, `(X → ℤ_p) → gr_0(F)`, is a bijection;
 * for `X` linearly ordered, `gr_1(F)` is free over `ℤ_p` on the brackets `[x_i, x_j]` for
-  `i < j`: the map `c ↦ Σ_{i<j} [⁅x_i, x_j⁆ ^ c_ij]` is a bijection. So `gr_1(F)` is the exterior
-  square of `gr_0(F)`, of rank `#X (#X - 1) / 2`;
+  `i < j`: the map `c ↦ Σ_{i<j} [⁅x_i, x_j⁆ ^ c_ij]` is a bijection. So the bracket identifies
+  `gr_1(F)` with the exterior square of `gr_0(F)`, of rank `#X (#X - 1) / 2`;
 * in particular `[x_i, x_j] ≠ 0` for `i ≠ j`.
 
 Here `g ^ a` is the `p`-adic power `TauCeti.IsProP.padicPow`. Both maps are `ℤ_p`-linear, because
@@ -41,7 +43,18 @@ theorem `TauCeti.exists_sum_gradedBracket_eq_of_range` together with bilinearity
 and the coefficient of `[x_i, x_j]` is read off by the continuous homomorphism to the Heisenberg
 group over `ℤ_p` sending `x_i ↦ (1, 0, 0)`, `x_j ↦ (0, 1, 0)` and the other generators to `1`
 (`TauCeti.freeProP.exists_heisenberg_detect`): its closed lower central series stops at `γ_2 = 1`,
-and the commutator of the two images is `(0, 0, 1)`.
+and the commutator of the two images is `(0, 0, 1)`. The exterior square is then recognized by
+`LinearMap.IsAlt.exteriorSquareEquiv`, since the alternating bracket carries the ordered pairs of
+the degree-zero basis to the degree-one basis.
+
+## Main definitions
+
+* `TauCeti.freeProP.lcsDegreeZeroBasis`, `TauCeti.freeProP.lcsDegreeOneBasis`: the `ℤ_p`-bases
+  `x_i` of `gr_0(F)` and `[x_i, x_j]`, `i < j`, of `gr_1(F)` (classes of the generators and their
+  brackets), for the `ℤ_p`-module structure
+  `TauCeti.freeProP.instModulePadicIntLcsGradedPiece`.
+* `TauCeti.freeProP.exteriorSquareEquivLcsGradedPieceOne`: the isomorphism `⋀²gr_0(F) ≃ gr_1(F)`,
+  `x ∧ y ↦ [x, y]`.
 
 ## Main results
 
@@ -51,6 +64,8 @@ and the commutator of the two images is `(0, 0, 1)`.
 * `TauCeti.lcsGradedPiece_one_freeProP_bijective`: the brackets `[x_i, x_j]`, `i < j`, form a
   `ℤ_p`-basis of `gr_1(F)`.
 * `TauCeti.lcsBracket_freeProP_ne_zero`: the bracket of two distinct generator classes is nonzero.
+* `TauCeti.freeProP.finrank_lcsGradedPiece_zero`, `TauCeti.freeProP.finrank_lcsGradedPiece_one`:
+  `gr_0(F)` and `gr_1(F)` are free of ranks `#X` and `#X choose 2`.
 
 ## References
 
@@ -274,5 +289,130 @@ theorem lcsGradedPiece_one_freeProP_bijective :
   exact sub_eq_zero.mp (eq_zero_of_degreeOneSum_eq_zero p X h')
 
 end DegreeOne
+
+/-! ### The bases and the exterior square -/
+
+namespace freeProP
+
+variable {p X} in
+/-- The graded pieces of the closed lower central series of a free pro-`p` group are
+`ℤ_p`-modules, because the free pro-`p` group is pro-`p` (`TauCeti.isProP_freeProP`). This is
+`TauCeti.IsProP.gradedPieceModule`, the module structure of the abelian pro-`p` group
+`γ_n(F) / γ_{n+1}(F)`. -/
+noncomputable instance instModulePadicIntLcsGradedPiece (n : ℕ) :
+    Module ℤ_[p] (lcsGradedPiece (freeProP p X) n) :=
+  (isProP_freeProP p X).gradedPieceModule 0 n
+
+/-- **The `ℤ_p`-basis of `gr_0` of a free pro-`p` group of finite rank**, formed by the classes
+of the generators `x_i` (`TauCeti.lcsGradedPiece_zero_freeProP_bijective`). -/
+noncomputable def lcsDegreeZeroBasis : Module.Basis X ℤ_[p] (lcsGradedPiece (freeProP p X) 0) :=
+  have h : Function.Bijective (Fintype.linearCombination ℤ_[p]
+      fun i ↦ gradedMkZero 0 (freeProP p X) (of i)) := by
+    convert lcsGradedPiece_zero_freeProP_bijective p X using 1
+    ext a
+    simp [Fintype.linearCombination_apply, IsProP.gradedMkZero_padicPow]
+  Module.Basis.mk (linearIndependent_iff_injective_fintypeLinearCombination.mpr h.1)
+    (by rw [← Fintype.range_linearCombination, LinearMap.range_eq_top.mpr h.2])
+
+@[simp]
+theorem lcsDegreeZeroBasis_apply (i : X) :
+    lcsDegreeZeroBasis p X i = gradedMkZero 0 (freeProP p X) (of i) := by
+  simp [lcsDegreeZeroBasis]
+
+omit [Fintype X] in
+instance [Finite X] : Module.Free ℤ_[p] (lcsGradedPiece (freeProP p X) 0) :=
+  have := Fintype.ofFinite X
+  .of_basis (lcsDegreeZeroBasis p X)
+
+omit [Fintype X] in
+instance [Finite X] : Module.Finite ℤ_[p] (lcsGradedPiece (freeProP p X) 0) :=
+  have := Fintype.ofFinite X
+  .of_basis (lcsDegreeZeroBasis p X)
+
+/-- `gr_0` of the free pro-`p` group on `X` has rank `#X` over `ℤ_p`. -/
+theorem finrank_lcsGradedPiece_zero :
+    Module.finrank ℤ_[p] (lcsGradedPiece (freeProP p X) 0) = Fintype.card X :=
+  Module.finrank_eq_card_basis (lcsDegreeZeroBasis p X)
+
+/-- **The `ℤ_p`-basis of `gr_1` of a free pro-`p` group of finite rank**, formed by the brackets
+`[x_i, x_j]` of the generator classes for `i < j`
+(`TauCeti.lcsGradedPiece_one_freeProP_bijective`). -/
+noncomputable def lcsDegreeOneBasis [LinearOrder X] :
+    Module.Basis {ij : X × X // ij.1 < ij.2} ℤ_[p] (lcsGradedPiece (freeProP p X) 1) :=
+  have h : Function.Bijective (Fintype.linearCombination ℤ_[p]
+      fun ij : {ij : X × X // ij.1 < ij.2} ↦ (lcsBracket (freeProP p X) 0 0
+        (gradedMkZero 0 _ (of ij.1.1)) (gradedMkZero 0 _ (of ij.1.2)) :
+          lcsGradedPiece (freeProP p X) 1)) := by
+    convert lcsGradedPiece_one_freeProP_bijective p X using 1
+    ext c
+    exact (degreeOneSum_eq_linearCombination p X c).symm
+  Module.Basis.mk (linearIndependent_iff_injective_fintypeLinearCombination.mpr h.1)
+    (by rw [← Fintype.range_linearCombination, LinearMap.range_eq_top.mpr h.2])
+
+@[simp]
+theorem lcsDegreeOneBasis_apply [LinearOrder X] (ij : {ij : X × X // ij.1 < ij.2}) :
+    lcsDegreeOneBasis p X ij =
+      lcsBracket (freeProP p X) 0 0 (gradedMkZero 0 _ (of ij.1.1))
+        (gradedMkZero 0 _ (of ij.1.2)) := by
+  simp [lcsDegreeOneBasis]
+
+omit [Fintype X] in
+/-- The bracket `gr_0(F) × gr_0(F) → gr_1(F)` of a free pro-`p` group, as a `ℤ_p`-bilinear map
+(`TauCeti.IsProP.gradedBracket_smul_left`, `TauCeti.IsProP.gradedBracket_smul_right`). -/
+private noncomputable def lcsBracketLinear :
+    lcsGradedPiece (freeProP p X) 0 →ₗ[ℤ_[p]] lcsGradedPiece (freeProP p X) 0 →ₗ[ℤ_[p]]
+      lcsGradedPiece (freeProP p X) 1 :=
+  LinearMap.mk₂ ℤ_[p] (fun x y ↦ lcsBracket (freeProP p X) 0 0 x y)
+    (fun x₁ x₂ y ↦ by rw [map_add, AddMonoidHom.add_apply])
+    (fun u x y ↦ (isProP_freeProP p X).gradedBracket_smul_left u x y)
+    (fun x y₁ y₂ ↦ map_add _ y₁ y₂)
+    (fun u x y ↦ (isProP_freeProP p X).gradedBracket_smul_right u x y)
+
+omit [Fintype X] in
+private theorem lcsBracketLinear_apply (x y : lcsGradedPiece (freeProP p X) 0) :
+    lcsBracketLinear p X x y = lcsBracket (freeProP p X) 0 0 x y :=
+  LinearMap.mk₂_apply ..
+
+omit [Fintype X] in
+private theorem isAlt_lcsBracketLinear : (lcsBracketLinear p X).IsAlt := fun x ↦ by
+  rw [lcsBracketLinear_apply]
+  exact gradedBracket_self x
+
+/-- **`gr_1` of a free pro-`p` group is the exterior square of `gr_0`.** For the free pro-`p` group
+`F` on a finite type, the graded bracket induces an isomorphism of `ℤ_p`-modules
+`⋀²gr_0(F) ≃ gr_1(F)`, `x ∧ y ↦ [x, y]` (`exteriorSquareEquivLcsGradedPieceOne_ιMulti`). -/
+noncomputable def exteriorSquareEquivLcsGradedPieceOne :
+    ⋀[ℤ_[p]]^2 (lcsGradedPiece (freeProP p X) 0) ≃ₗ[ℤ_[p]] lcsGradedPiece (freeProP p X) 1 :=
+  -- Any linear order on `X` indexes the basis of `gr_1`; the map does not depend on it.
+  let _ := LinearOrder.lift' (Fintype.equivFin X) (Fintype.equivFin X).injective
+  (isAlt_lcsBracketLinear p X).exteriorSquareEquiv (lcsDegreeZeroBasis p X)
+    (lcsDegreeOneBasis p X) fun ij ↦ by simp [lcsBracketLinear_apply]
+
+@[simp]
+theorem exteriorSquareEquivLcsGradedPieceOne_ιMulti
+    (v : Fin 2 → lcsGradedPiece (freeProP p X) 0) :
+    exteriorSquareEquivLcsGradedPieceOne p X (exteriorPower.ιMulti ℤ_[p] 2 v) =
+      lcsBracket (freeProP p X) 0 0 (v 0) (v 1) := by
+  let _ := LinearOrder.lift' (Fintype.equivFin X) (Fintype.equivFin X).injective
+  rw [exteriorSquareEquivLcsGradedPieceOne, LinearMap.IsAlt.exteriorSquareEquiv_ιMulti,
+    lcsBracketLinear_apply]
+
+omit [Fintype X] in
+instance [Finite X] : Module.Free ℤ_[p] (lcsGradedPiece (freeProP p X) 1) :=
+  have := Fintype.ofFinite X
+  .of_equiv (exteriorSquareEquivLcsGradedPieceOne p X)
+
+omit [Fintype X] in
+instance [Finite X] : Module.Finite ℤ_[p] (lcsGradedPiece (freeProP p X) 1) :=
+  have := Fintype.ofFinite X
+  .equiv (exteriorSquareEquivLcsGradedPieceOne p X)
+
+/-- `gr_1` of the free pro-`p` group on `X` has rank `#X choose 2` over `ℤ_p`. -/
+theorem finrank_lcsGradedPiece_one :
+    Module.finrank ℤ_[p] (lcsGradedPiece (freeProP p X) 1) = (Fintype.card X).choose 2 := by
+  rw [← (exteriorSquareEquivLcsGradedPieceOne p X).finrank_eq, exteriorPower.finrank_eq,
+    finrank_lcsGradedPiece_zero]
+
+end freeProP
 
 end TauCeti

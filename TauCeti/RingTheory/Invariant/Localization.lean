@@ -1,0 +1,251 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Algebra.Subalgebra.Operations
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
+public import Mathlib.RingTheory.Localization.Basic
+import Mathlib.RingTheory.Ideal.Operations
+
+/-!
+# Invariant rings and localization
+
+Let a group `G` act on a commutative ring `A` by ring automorphisms, and write `Aᴳ` for the
+invariant subring `FixedPoints.subring A G`. This file compares invariants with localization.
+
+For a submonoid `M` of invariant elements, the action extends to the localization `M⁻¹A`
+(`Localization (Algebra.algebraMapSubmonoid A M)`), compatibly with `A → M⁻¹A`. When `G` is
+finite, taking invariants commutes with this localization: `(M⁻¹A)ᴳ` is the localization of `Aᴳ`
+at `M`. A fraction `a / s` fixed by every `g` satisfies `t_g (g • a - a) = 0` for some `t_g ∈ M`,
+which can be replaced by the product `t` of the `t_g` because `G` is finite, and then
+`a / s = t a / (s t)` with `t a` invariant. Taking `M` to be the powers of an invariant `r` gives
+the localization `A[1/r]` of `A` at `r`.
+
+Also for finite `G`, the local homomorphism `(Aᴳ)_P → A_Q` induced by `Aᴳ ⊆ A` at a prime `Q` of
+`A` lying over a prime `P` of `Aᴳ` is injective. If an invariant `a` is killed by some `t ∉ Q`,
+prime avoidance applied to the annihilator of `a`, which is `G`-stable, and the finitely many
+primes `g⁻¹ • Q` gives such a `t` outside every `g⁻¹ • Q`; then the invariant `∏ g, g • t` lies
+outside `P` and kills `a`.
+
+These are the two local facts behind the categorical universal property of the affine invariant
+quotient `Spec A ⟶ Spec Aᴳ` for arbitrary target schemes.
+
+## Main definitions
+
+* `TauCeti.FixedPoints.localizationRingAut M`: the action of `G` on `M⁻¹A` for a submonoid `M`
+  of invariants, which provides the instance
+  `MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M))`.
+* The instance `Algebra (FixedPoints.subring A G)
+  (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G)` given by `A → M⁻¹A`.
+
+## Main results
+
+* `TauCeti.FixedPoints.smul_algebraMap_localization`: `A → M⁻¹A` is `G`-equivariant.
+* `TauCeti.FixedPoints.smul_mk'`: `G` acts on a fraction `a / s` through its numerator.
+* `TauCeti.FixedPoints.isLocalization`: for finite `G`, `(M⁻¹A)ᴳ` is the localization of `Aᴳ`
+  at `M`.
+* `TauCeti.FixedPoints.localRingHom_injective`: for finite `G`, `(Aᴳ)_P → A_Q` is injective.
+
+## References
+
+* M. Demazure and A. Grothendieck, *Schémas en groupes (SGA 3)*, Exposé V, §1.
+-/
+
+public section
+
+namespace TauCeti.FixedPoints
+
+variable {A G : Type*} [CommRing A] [Group G] [MulSemiringAction G A]
+
+section Localization
+
+variable (M : Submonoid (FixedPoints.subring A G))
+
+/-- An element of `G` maps the image in `A` of a submonoid of invariants to itself. -/
+private theorem map_algebraMapSubmonoid_toRingEquiv (g : G) :
+    (Algebra.algebraMapSubmonoid A M).map (MulSemiringAction.toRingEquiv G A g).toMonoidHom =
+      Algebra.algebraMapSubmonoid A M := by
+  ext x
+  simp only [Algebra.algebraMapSubmonoid, Submonoid.mem_map]
+  constructor
+  · rintro ⟨_, ⟨m, hm, rfl⟩, rfl⟩
+    exact ⟨m, hm, (m.2 g).symm⟩
+  · rintro ⟨m, hm, rfl⟩
+    exact ⟨_, ⟨m, hm, rfl⟩, m.2 g⟩
+
+/-- The action of `G` on the localization `M⁻¹A` at a submonoid `M` of invariants, induced by its
+action on `A`. -/
+noncomputable def localizationRingAut :
+    G →* RingAut (Localization (Algebra.algebraMapSubmonoid A M)) where
+  toFun g := IsLocalization.ringEquivOfRingEquiv _ _ (MulSemiringAction.toRingEquiv G A g)
+    (map_algebraMapSubmonoid_toRingEquiv M g)
+  map_one' := RingEquiv.toRingHom_injective <|
+    IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M) <| RingHom.ext fun a ↦ by simp
+  map_mul' g h := RingEquiv.toRingHom_injective <|
+    IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M) <| RingHom.ext fun a ↦ by
+      simp
+
+/-- The action of `G` on `M⁻¹A` given by `localizationRingAut`. -/
+noncomputable instance instMulSemiringActionLocalization :
+    MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M)) :=
+  MulSemiringAction.compHom _ (localizationRingAut M)
+
+/-- `localizationRingAut M g` is the action of `g` on `M⁻¹A`. -/
+theorem localizationRingAut_apply (g : G) (x : Localization (Algebra.algebraMapSubmonoid A M)) :
+    localizationRingAut M g x = g • x :=
+  rfl
+
+/-- The action of `G` on `M⁻¹A` extends the action on `A`. -/
+@[simp]
+theorem smul_algebraMap_localization (g : G) (a : A) :
+    g • algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a =
+      algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) (g • a) :=
+  IsLocalization.ringEquivOfRingEquiv_eq (map_algebraMapSubmonoid_toRingEquiv M g) a
+
+/-- The action of `G` on `M⁻¹A` on fractions: `g • (a / s) = (g • a) / s`, since the
+denominator `s` is invariant. -/
+@[simp]
+theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
+    g • IsLocalization.mk' (Localization (Algebra.algebraMapSubmonoid A M)) a s =
+      IsLocalization.mk' _ (g • a) s := by
+  obtain ⟨m, -, hm⟩ := s.2
+  have hs : g • (s : A) = s := hm ▸ m.2 g
+  rw [IsLocalization.eq_mk'_iff_mul_eq, ← hs, ← smul_algebraMap_localization,
+    ← smul_algebraMap_localization, ← smul_mul', IsLocalization.mk'_spec]
+
+/-- The localization map `A → M⁻¹A` sends invariants to invariants. -/
+theorem algebraMap_mem_fixedPoints (a : FixedPoints.subring A G) :
+    algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a ∈
+      FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G := fun g ↦ by
+  rw [smul_algebraMap_localization, a.2 g]
+
+/-- The algebra structure of `(M⁻¹A)ᴳ` over `Aᴳ` given by the localization map `A → M⁻¹A`. -/
+noncomputable instance instAlgebraLocalization :
+    Algebra (FixedPoints.subring A G)
+      (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G) :=
+  (((algebraMap A (Localization (Algebra.algebraMapSubmonoid A M))).comp
+    (FixedPoints.subring A G).subtype).codRestrict _ (algebraMap_mem_fixedPoints M)).toAlgebra
+
+/-- The algebra map `Aᴳ → (M⁻¹A)ᴳ` is the localization map `A → M⁻¹A`. -/
+@[simp]
+theorem coe_algebraMap_localization (a : FixedPoints.subring A G) :
+    (algebraMap (FixedPoints.subring A G)
+        (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G) a :
+      Localization (Algebra.algebraMapSubmonoid A M)) =
+      algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a :=
+  rfl
+
+/-- **Invariants commute with localization at invariant elements.** For a finite group `G` and a
+submonoid `M` of the invariants `Aᴳ`, the invariants of `M⁻¹A` are the localization of `Aᴳ`
+at `M`. -/
+instance isLocalization [Finite G] :
+    IsLocalization M (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G) := by
+  have hinj : Function.Injective
+      ((↑) : FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G →
+        Localization (Algebra.algebraMapSubmonoid A M)) :=
+    Subtype.val_injective
+  refine (_root_.isLocalization_iff _ _).mpr ⟨?_, ?_, ?_⟩
+  · -- The image of `m ∈ M` is a unit of `M⁻¹A` whose inverse is again invariant.
+    intro m
+    have hu : IsUnit (algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) m) :=
+      IsLocalization.map_units _ ⟨_, Algebra.mem_algebraMapSubmonoid_of_mem m⟩
+    have hg (g : G) :
+        g • (hu.unit : Localization (Algebra.algebraMapSubmonoid A M)) = hu.unit := by
+      simp only [IsUnit.unit_spec, smul_algebraMap_localization, (m : FixedPoints.subring A G).2 g]
+    refine isUnit_iff_exists_inv.mpr
+      ⟨⟨(hu.unit⁻¹ : (Localization (Algebra.algebraMapSubmonoid A M))ˣ), fun g ↦ ?_⟩, hinj ?_⟩
+    · refine Units.eq_inv_of_mul_eq_one_left ?_
+      rw [← hg g, ← smul_mul', Units.mul_inv, smul_one]
+    · simp only [Subring.coe_mul, coe_algebraMap_localization, Subring.coe_one]
+      exact hu.mul_val_inv
+  · -- A fixed fraction `a / s` equals `t a / (s t)` with `t ∈ M` and `t a` invariant.
+    rintro ⟨z, hz⟩
+    obtain ⟨⟨a, _, ⟨s, hs, rfl⟩⟩, ha⟩ := IsLocalization.surj (Algebra.algebraMapSubmonoid A M) z
+    replace ha : z * algebraMap A _ (s : A) = algebraMap A _ a := by
+      simpa only [Algebra.algebraMap_ofSubsemiring_apply] using ha
+    have hfix (g : G) : ∃ t ∈ M, (t : A) * a = t * (g • a) := by
+      have h := congrArg (g • ·) ha
+      simp only [smul_mul', hz g, smul_algebraMap_localization, s.2 g] at h
+      obtain ⟨⟨_, t, ht, rfl⟩, htg⟩ :=
+        IsLocalization.exists_of_eq (M := Algebra.algebraMapSubmonoid A M) (ha.symm.trans h)
+      exact ⟨t, ht, by simpa only [Algebra.algebraMap_ofSubsemiring_apply] using htg⟩
+    choose t ht htg using hfix
+    have := Fintype.ofFinite G
+    set T := ∏ g, t g
+    have hTM : T ∈ M := prod_mem fun g _ ↦ ht g
+    have hT (g : G) : (T : A) * a = T * (g • a) := by
+      obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem t (Finset.mem_univ g)
+      rw [show T = t g * c from hc, Subring.coe_mul, mul_comm (t g : A), mul_assoc, mul_assoc,
+        htg g]
+    have hb : (T : A) * a ∈ FixedPoints.subring A G := fun g ↦ by
+      rw [smul_mul', T.2 g, ← hT g]
+    refine ⟨(⟨_, hb⟩, ⟨s * T, mul_mem hs hTM⟩), hinj ?_⟩
+    simp only [Subring.coe_mul, coe_algebraMap_localization, map_mul]
+    rw [← ha]
+    ring
+  · intro x y hxy
+    have hxy' : algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) x =
+        algebraMap A _ y := by
+      simpa only [coe_algebraMap_localization] using congrArg Subtype.val hxy
+    obtain ⟨⟨_, t, ht, rfl⟩, htxy⟩ := IsLocalization.exists_of_eq
+      (M := Algebra.algebraMapSubmonoid A M) hxy'
+    refine ⟨⟨t, ht⟩, Subtype.ext ?_⟩
+    simpa only [Subring.coe_mul, Algebra.algebraMap_ofSubsemiring_apply] using htxy
+
+end Localization
+
+section LocalRingHom
+
+variable [Finite G]
+
+/-- If an invariant `x` is killed by an element outside a prime `Q`, it is killed by an invariant
+element outside `Q`. This is prime avoidance for the `G`-stable annihilator of `x` and the
+finitely many primes `g⁻¹ • Q`. -/
+theorem exists_mul_eq_zero_of_mul_eq_zero (Q : Ideal A) [Q.IsPrime] (x : FixedPoints.subring A G)
+    {t : A} (htQ : t ∉ Q) (htx : t * x = 0) :
+    ∃ s ∈ FixedPoints.subring A G, s ∉ Q ∧ s * x = 0 := by
+  have := Fintype.ofFinite G
+  set I : Ideal A := (Ideal.span {(x : A)}).annihilator
+  have hI (u : A) : u ∈ I ↔ u * x = 0 := by
+    rw [Submodule.mem_annihilator_span_singleton, smul_eq_mul]
+  obtain ⟨u, huI, hu⟩ : ∃ u ∈ I, ∀ g : G, g • u ∉ Q := by
+    by_contra! h
+    have hsub : (I : Set A) ⊆ ⋃ g ∈ (Finset.univ : Finset G),
+        (Q.comap (MulSemiringAction.toRingHom G A g) : Set A) := fun u hu ↦ by
+      obtain ⟨g, hg⟩ := h u hu
+      exact Set.mem_biUnion (Finset.mem_coe.mpr (Finset.mem_univ g)) hg
+    obtain ⟨g, -, hg⟩ := (Ideal.subset_union_prime 1 1
+      (fun g _ _ _ ↦ Ideal.comap_isPrime _ Q)).mp hsub
+    -- The annihilator of `x` is `G`-stable, so it contains `g⁻¹ • t`, and then `t ∈ Q`.
+    have hmem : g⁻¹ • t ∈ I := by
+      rw [hI, ← x.2 g⁻¹, ← smul_mul', htx, smul_zero]
+    exact htQ (by simpa using hg hmem)
+  refine ⟨∏ g : G, g • u, fun h ↦ ?_, ?_, ?_⟩
+  · rw [Finset.smul_prod']
+    exact Fintype.prod_equiv (Equiv.mulLeft h) _ _ fun g ↦ (mul_smul h g u).symm
+  · exact fun hmem ↦ by
+      obtain ⟨g, -, hg⟩ := (Ideal.IsPrime.prod_mem_iff (p := Q)).mp hmem
+      exact hu g hg
+  · obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem (fun g : G ↦ g • u) (Finset.mem_univ 1)
+    rw [hc, one_smul, mul_comm u, mul_assoc, (hI u).mp huI, mul_zero]
+
+/-- **Invariants inject into stalks.** For a finite group `G`, a prime `Q` of `A` and the prime
+`P` of `Aᴳ` below it, the induced homomorphism of local rings `(Aᴳ)_P → A_Q` is injective. -/
+theorem localRingHom_injective (P : Ideal (FixedPoints.subring A G)) (Q : Ideal A) [P.IsPrime]
+    [Q.IsPrime] (hPQ : P = Q.comap (algebraMap (FixedPoints.subring A G) A)) :
+    Function.Injective
+      (Localization.localRingHom P Q (algebraMap (FixedPoints.subring A G) A) hPQ) := by
+  refine IsLocalization.injective_of_map_algebraMap_zero (M := P.primeCompl) _ _ fun x hx ↦ ?_
+  rw [Localization.localRingHom_to_map,
+    IsLocalization.map_eq_zero_iff Q.primeCompl] at hx
+  obtain ⟨⟨t, htQ⟩, htx⟩ := hx
+  obtain ⟨s, hs, hsQ, hsx⟩ := exists_mul_eq_zero_of_mul_eq_zero Q x htQ htx
+  refine (IsLocalization.map_eq_zero_iff P.primeCompl _ x).mpr
+    ⟨⟨⟨s, hs⟩, fun h ↦ hsQ (by rwa [hPQ] at h)⟩, Subtype.ext hsx⟩
+
+end LocalRingHom
+
+end TauCeti.FixedPoints

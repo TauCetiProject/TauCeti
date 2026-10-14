@@ -96,7 +96,8 @@ absolute value on `L_w` of the image of `x` under `K_v → L_w`. -/
 private theorem normalizedAbsValue_inr_algebraMap_eq_completionMap (w : InfinitePlace L)
     [w.LiesOver v] (x : K) :
     normalizedAbsValue (Sum.inr w) (algebraMap K L x) =
-      completionNormalizedAbsValue w (LiesOver.completionMap (algebraMap K v.Completion x)) := by
+      completionNormalizedAbsValue w
+        (LiesOver.completionMap v w (algebraMap K v.Completion x)) := by
   rw [normalizedAbsValue_inr, ← completionNormalizedAbsValue_algebraMap,
     ← IsScalarTower.algebraMap_apply K L w.Completion,
     IsScalarTower.algebraMap_apply K v.Completion w.Completion]

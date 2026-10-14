@@ -21,9 +21,8 @@ computes its induced fundamental-group homomorphism and proves that its range is
 The computation contains an inverse because the project uses a left action in which a loop class
 acts on the universal cover by prepending its inverse.
 
-This proves the subgroup-recovery part of `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-item 7: for the pointed quotient associated to `H`, prove `p_*(π₁(–)) = H`. It reuses the
-fundamental-group action adapted from Kim Morrison's work in mathlib4#38292 and Mathlib's
+This proves subgroup recovery: for the pointed quotient associated to `H`, `p_*(π₁(–)) = H`. It
+reuses the fundamental-group action adapted from Kim Morrison's work in mathlib4#38292 and Mathlib's
 quotient-cover monodromy comparison due to Junyan Xu. No Mathlib code is vendored.
 
 ## Main declarations
@@ -144,8 +143,6 @@ private theorem monodromy_mapOfEq_subgroupQuotientProj
     rw [FundamentalGroup.mapOfEq_apply]
     let r : C(SubgroupQuotient x₀ H, X) :=
       ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩
-    let q : C(UniversalCover x₀, SubgroupQuotient x₀ H) :=
-      ⟨subgroupQuotientMap x₀ H, hq.continuous⟩
     dsimp only [Γ]
     rw [Path.Homotopic.Quotient.map_cast]
     have hmapped := congrArg (fun δ ↦ δ.map r)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 public import TauCeti.Topology.Covering.Monodromy.Transitive
@@ -45,7 +45,8 @@ types. Full faithfulness is again the lifting criterion, already packaged in
 `TauCeti.Topology.Covering.Monodromy.Basic` and `…Monodromy.Full`, and essential surjectivity is
 again reconstruction at `x₀` followed by transport, but the cover reconstructed from an arbitrary
 `π₁(X, x₀)`-set is the balanced product of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover` rather than a quotient of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`
+rather than a quotient of
 the universal cover by a stabiliser: the latter is connected, so it can only realise a transitive
 action, while the former realises the disjoint union of one such quotient per orbit in one step.
 
@@ -64,15 +65,13 @@ action, while the former realises the disjoint union of one such quotient per or
 
 ## References
 
-This completes the alternative monodromy-functor lens on Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks for the classification of connected covers
-by transitive `π₁(X)`-sets and of covers in general by functors out of the fundamental groupoid;
-see Hatcher, *Algebraic Topology*, Section 1.3. It consumes the based-path universal cover
-adapted from Kim Morrison's
-[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the
-stabiliser-cover reconstruction of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the balanced-product
-cover of `TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover`.
+This is the monodromy-functor classification of covering spaces, with connected covers corresponding
+to transitive actions; see Hatcher, *Algebraic Topology*, Section 1.3. It consumes the based-path
+universal cover adapted from Kim Morrison's
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the stabiliser-cover
+reconstruction of `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the
+balanced-product cover of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`.
 -/
 
 public section

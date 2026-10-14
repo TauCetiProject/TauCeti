@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Sort
+public import TauCeti.Data.Finsupp.OrderedCoupling.Uniqueness
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Uncrossing.Basic
 
@@ -46,6 +47,47 @@ theorem isMonotone_iff (A : TransportMatrix μ ν) :
     A.IsMonotone ↔ ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄,
       i₁ < i₂ → A i₁ j₁ ≠ 0 → A i₂ j₂ ≠ 0 → j₁ ≤ j₂ := (Iff.rfl)
 
+private theorem IsMonotone.isChain_support {A : TransportMatrix μ ν} (hA : A.IsMonotone) :
+    IsChain (· ≤ ·)
+      ((Finsupp.equivFunOnFinite.symm A.toRealFun).support : Set (ι × κ)) := by
+  classical
+  intro p hp q hq _
+  have hp' : A p.1 p.2 ≠ 0 := by
+    intro h
+    simp [toRealFun_apply, h] at hp
+  have hq' : A q.1 q.2 ≠ 0 := by
+    intro h
+    simp [toRealFun_apply, h] at hq
+  rcases lt_trichotomy p.1 q.1 with h | h | h
+  · exact Or.inl ⟨h.le, hA h hp' hq'⟩
+  · rcases le_total p.2 q.2 with hpq | hqp
+    · exact Or.inl ⟨h.le, hpq⟩
+    · exact Or.inr ⟨h.symm.le, hqp⟩
+  · exact Or.inr ⟨h.le, hA h hq' hp'⟩
+
+omit [LinearOrder ι] [LinearOrder κ] in
+private theorem mapDomain_fst_toRealFun (A : TransportMatrix μ ν) :
+    Finsupp.mapDomain Prod.fst (Finsupp.equivFunOnFinite.symm A.toRealFun) =
+      Finsupp.equivFunOnFinite.symm (fun i ↦ (μ i).toReal) := by
+  classical
+  ext i
+  simp only [Finsupp.mapDomain_fintype, Finsupp.finsetSum_apply,
+    Finsupp.coe_equivFunOnFinite_symm, Fintype.sum_prod_type, Finsupp.single_apply]
+  simp only [Finset.sum_ite_irrel, Finset.sum_const_zero, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true]
+  exact A.sum_toRealFun_row i
+
+omit [LinearOrder ι] [LinearOrder κ] in
+private theorem mapDomain_snd_toRealFun (A : TransportMatrix μ ν) :
+    Finsupp.mapDomain Prod.snd (Finsupp.equivFunOnFinite.symm A.toRealFun) =
+      Finsupp.equivFunOnFinite.symm (fun j ↦ (ν j).toReal) := by
+  classical
+  ext j
+  simp only [Finsupp.mapDomain_fintype, Finsupp.finsetSum_apply,
+    Finsupp.coe_equivFunOnFinite_symm, Fintype.sum_prod_type, Finsupp.single_apply]
+  simp only [Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  exact A.sum_toRealFun_col j
+
 /-- The mass of a lower rectangle in a monotone plan is the smaller of the two marginal
 prefix masses. This characterizes the joint distribution entirely in terms of the marginals. -/
 @[simp]
@@ -54,92 +96,40 @@ theorem IsMonotone.sum_le_le_eq_min {A : TransportMatrix μ ν} (hA : A.IsMonoto
     (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, (A.matrix i' j').toReal) =
       min (∑ i' with i' ≤ i, (μ i').toReal) (∑ j' with j' ≤ j, (ν j').toReal) := by
   classical
-  have hsum_real : (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, (A.matrix i' j').toReal) =
-      (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, A.toRealFun (i', j')) := by
-    simp only [toRealFun_apply]
-  rw [hsum_real]
-  let H := ∑ i' with i' ≤ i, ∑ j' with j' ≤ j, A.toRealFun (i', j')
-  let X := ∑ i' with i' ≤ i, ∑ j' with ¬j' ≤ j, A.toRealFun (i', j')
-  let Y := ∑ j' with j' ≤ j, ∑ i' with ¬i' ≤ i, A.toRealFun (i', j')
-  have hX : 0 ≤ X := Finset.sum_nonneg fun i' _ ↦
-    Finset.sum_nonneg fun j' _ ↦ A.toRealFun_nonneg (i', j')
-  have hY : 0 ≤ Y := Finset.sum_nonneg fun j' _ ↦
-    Finset.sum_nonneg fun i' _ ↦ A.toRealFun_nonneg (i', j')
-  have hrow : H + X = ∑ i' with i' ≤ i, (μ i').toReal := by
-    dsimp [H, X]
-    rw [← Finset.sum_add_distrib]
-    simp only [Finset.sum_filter_add_sum_filter_not, A.sum_toRealFun_row]
-  have hcol : H + Y = ∑ j' with j' ≤ j, (ν j').toReal := by
-    dsimp [H, Y]
-    rw [Finset.sum_comm, ← Finset.sum_add_distrib]
-    simp only [Finset.sum_filter_add_sum_filter_not, A.sum_toRealFun_col]
-  -- The opposite off-diagonal rectangles cannot both contain positive mass.
-  have hzero : X = 0 ∨ Y = 0 := by
-    by_cases hex : ∃ i' j', i' ≤ i ∧ ¬j' ≤ j ∧ A i' j' ≠ 0
-    · right
-      obtain ⟨i₀, j₀, hi₀, hj₀, h₀⟩ := hex
-      apply Finset.sum_eq_zero
-      intro j' hj'
-      apply Finset.sum_eq_zero
-      intro i' hi'
-      have hi' : i < i' := lt_of_not_ge (Finset.mem_filter.mp hi').2
-      have hj' : j' ≤ j := (Finset.mem_filter.mp hj').2
-      have hz : A i' j' = 0 := by
-        by_contra hn
-        have := hA (hi₀.trans_lt hi') h₀ hn
-        exact (not_le_of_gt (hj'.trans_lt (lt_of_not_ge hj₀))) this
-      simp only [toRealFun_apply, hz, ENNReal.toReal_zero]
-    · left
-      apply Finset.sum_eq_zero
-      intro i' hi'
-      apply Finset.sum_eq_zero
-      intro j' hj'
-      have hz : A i' j' = 0 := by
-        by_contra hn
-        exact hex ⟨i', j', (Finset.mem_filter.mp hi').2,
-          (Finset.mem_filter.mp hj').2, hn⟩
-      simp only [toRealFun_apply, hz, ENNReal.toReal_zero]
-  rw [← hrow, ← hcol]
-  rcases hzero with h | h
-  · rw [h, add_zero, min_eq_left (le_add_of_nonneg_right hY)]
-  · rw [h, add_zero, min_eq_right (le_add_of_nonneg_right hX)]
+  have h := Finsupp.sum_indicator_prod_eq_inf
+    (Finsupp.equivFunOnFinite.symm A.toRealFun) A.toRealFun_nonneg
+    hA.isChain_support (isLowerSet_Iic i) (isLowerSet_Iic j)
+  rw [← Finsupp.sum_mapDomain_index
+    (h := fun a (r : ℝ) ↦ (Set.Iic i).indicator (fun _ ↦ r) a)
+    (by simp) (by simp [Set.indicator_add]),
+    ← Finsupp.sum_mapDomain_index
+      (h := fun b (r : ℝ) ↦ (Set.Iic j).indicator (fun _ ↦ r) b)
+      (by simp) (by simp [Set.indicator_add]),
+    mapDomain_fst_toRealFun, mapDomain_snd_toRealFun] at h
+  rw [Finsupp.sum_fintype _ _ (by intro p; simp),
+    Finsupp.sum_fintype _ _ (by intro p; simp),
+    Finsupp.sum_fintype _ _ (by intro p; simp)] at h
+  simpa only [Fintype.sum_prod_type, Finsupp.coe_equivFunOnFinite_symm,
+    Set.indicator_apply, Set.mem_prod, Set.mem_Iic, ite_and, Finset.sum_ite_irrel,
+    Finset.sum_const_zero, Finset.sum_filter, toRealFun_apply] using h
 
 /-- Two monotone transportation matrices with the same marginals are equal. -/
 theorem IsMonotone.eq {A B : TransportMatrix μ ν} (hA : A.IsMonotone)
     (hB : B.IsMonotone) : A = B := by
   classical
-  have hprefix (i : ι) (j : κ) :
-      (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, A.toRealFun (i', j')) =
-      (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, B.toRealFun (i', j')) := by
-    simpa only [toRealFun_apply] using
-      (hA.sum_le_le_eq_min i j).trans (hB.sum_le_le_eq_min i j).symm
-  -- Induction recovers each entry from its rectangle mass and the earlier entries.
-  have hreal : ∀ i j, A.toRealFun (i, j) = B.toRealFun (i, j) := by
-    intro i
-    apply wellFounded_lt.induction i
-    intro i hi j
-    apply wellFounded_lt.induction j
-    intro j hj
-    have hsum : (∑ i' with i' ≤ i, ∑ j' with j' ≤ j,
-        (A.toRealFun (i', j') - B.toRealFun (i', j'))) = 0 := by
-      simp_rw [Finset.sum_sub_distrib]
-      exact sub_eq_zero.mpr (hprefix i j)
-    rw [Finset.sum_eq_single_of_mem i (by simp) ?_,
-      Finset.sum_eq_single_of_mem j (by simp) ?_] at hsum
-    · exact sub_eq_zero.mp hsum
-    · intro j' hj' hj'ne
-      exact sub_eq_zero.mpr (hj j' (lt_of_le_of_ne
-        (Finset.mem_filter.mp hj').2 hj'ne))
-    · intro i' hi' hi'ne
-      apply Finset.sum_eq_zero
-      intro j' _
-      exact sub_eq_zero.mpr (hi i' (lt_of_le_of_ne
-        (Finset.mem_filter.mp hi').2 hi'ne) j')
+  have h := Finsupp.eq_of_mapDomain_eq_of_isChain_support
+    (Finsupp.equivFunOnFinite.symm A.toRealFun)
+    (Finsupp.equivFunOnFinite.symm B.toRealFun)
+    A.toRealFun_nonneg B.toRealFun_nonneg hA.isChain_support hB.isChain_support
+    ((mapDomain_fst_toRealFun A).trans (mapDomain_fst_toRealFun B).symm)
+    ((mapDomain_snd_toRealFun A).trans (mapDomain_snd_toRealFun B).symm)
   apply ext
   intro i j
-  have h := congrArg ENNReal.ofReal (hreal i j)
-  simpa only [toRealFun_apply, ENNReal.ofReal_toReal (A.apply_ne_top i j),
-    ENNReal.ofReal_toReal (B.apply_ne_top i j)] using h
+  have hreal := congrArg (fun w : (ι × κ) →₀ ℝ ↦ w (i, j)) h
+  have hentry := congrArg ENNReal.ofReal hreal
+  simpa only [Finsupp.coe_equivFunOnFinite_symm, toRealFun_apply,
+    ENNReal.ofReal_toReal (A.apply_ne_top i j),
+    ENNReal.ofReal_toReal (B.apply_ne_top i j)] using hentry
 
 /-- A finite Monge transport problem has a monotone minimizer. The cost may be any real-valued
 array satisfying the four-point inequality on increasing rows and columns. -/
@@ -176,7 +166,7 @@ theorem exists_isMonotone_forall_cost_le (c : ι × κ → ℝ) (μ : PMF ι) (�
   by_contra hj
   have hj : j₁ < j₂ := lt_of_not_ge hj
   -- Uncrossing preserves the optimal cost but strictly decreases the negative product score.
-  obtain ⟨B, δ, hδ0, hδ, hB, hcost, hle, -⟩ :=
+  obtain ⟨B, δ, _, hδ, hB, _, hle, -⟩ :=
     A.exists_uncross_cost_le c hi.ne hj.ne (hc hi hj)
   have hδpos : 0 < δ := by
     rw [hδ]

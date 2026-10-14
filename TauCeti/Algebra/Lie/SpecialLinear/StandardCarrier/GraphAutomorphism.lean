@@ -75,12 +75,6 @@ def graphRootPerm : Equiv.Perm (Fin r ⊕ Fin r) :=
     graphRootPerm r (graphRootPerm r k) = k := by
   cases k <;> simp [graphRootPerm]
 
-private theorem weight_rev_rev (k : Fin (r + 1)) (i : Fin r) :
-    weight r k.rev i.rev = -weight r k i := by
-  rw [weight_def, weight_def]
-  simp only [← Fin.rev_succ, ← Fin.rev_castSucc, Fin.rev_injective.eq_iff]
-  ring
-
 private theorem torusCharacter_weight_rev_reindex {A : Type*} [CommRing A]
     (s : Fin r → Aˣ) (k : Fin (r + 1)) :
     (TauCeti.torusCharacter s (weight r k.rev))⁻¹ =

@@ -161,13 +161,8 @@ lemma mapPointsFunctor_naturality_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶
 /-- Pre-composition with a surjective coordinate morphism is injective on points. -/
 lemma mapPointsFunctor_app_injective_of_surjective {H K : CommHopfAlgCat.{v} R}
     (φ : H ⟶ K) (hφ : Function.Surjective φ.hom) (A : CommAlgCat.{w} R) :
-    Function.Injective ((mapPointsFunctor φ).app A) := by
-  intro f g hfg
-  apply WithConv.ofConv_injective
-  apply AlgHom.ext
-  intro k
-  obtain ⟨h, rfl⟩ := hφ k
-  exact congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A => p.ofConv h) hfg
+    Function.Injective ((mapPointsFunctor φ).app A) :=
+  AlgHom.mapDomain_injective_of_surjective (A := A) φ.hom hφ
 
 /-- `mapPointsFunctor` sends the identity coordinate morphism to the identity natural
 transformation. -/

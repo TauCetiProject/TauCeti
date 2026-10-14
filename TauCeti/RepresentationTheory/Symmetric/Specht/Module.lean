@@ -161,10 +161,7 @@ theorem smul_tabloid_injective (t : YoungTableau μ) :
 
 /-! ## Polytabloids -/
 
-/-- Classical decidability of membership in the column group, used to form its finite sum, as in
-`TauCeti/RepresentationTheory/Symmetric/Symmetrizer.lean`. -/
-noncomputable local instance (t : YoungTableau μ) : DecidablePred (· ∈ colSubgroup t) :=
-  Classical.decPred _
+attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 
 /-- The **polytabloid** `e_t = b_t · {t}`: the column antisymmetrizer of `t` acting on the tabloid
 of `t` inside the Young permutation module of the shape of `μ`. -/
@@ -360,23 +357,23 @@ instance (μ : YoungDiagram) :
 
 /-- The **Specht module** `S^μ` of a partition `μ` of `n`, bundled as a finite-dimensional
 representation of `Sₙ`: the span of the polytabloids of the tableaux of the Young diagram
-`diagramOf μ`, with the symmetric group on the `(diagramOf μ).card` entries of such a tableau
-identified with `Sₙ` along `card_diagramOf`.
+`YoungDiagram.ofPartition μ`, with the symmetric group on the `(YoungDiagram.ofPartition μ).card`
+entries of such a tableau identified with `Sₙ` along `YoungDiagram.card_ofPartition`.
 
 The tabloid combinatorics is indexed by a diagram, since a tableau is a filling of one, while the
 classification the Specht modules feed is indexed by partitions; this is the partition-indexed
-name.  Its representation unfolds to `spechtSubrepresentation (diagramOf μ)` by `FDRep.of_ρ'`, and
-`spechtSubrepresentation_toSubmodule` identifies the underlying module with the span of the
-polytabloids. -/
+name.  Its representation unfolds to `spechtSubrepresentation (YoungDiagram.ofPartition μ)` by
+`FDRep.of_ρ'`, and `spechtSubrepresentation_toSubmodule` identifies the underlying module with the
+span of the polytabloids. -/
 noncomputable abbrev spechtModule {n : ℕ} (μ : n.Partition) :
     FDRep ℚ (Equiv.Perm (Fin n)) :=
-  FDRep.of ((spechtSubrepresentation (diagramOf μ)).toRepresentation.comp
-    (finCongr (card_diagramOf μ).symm).permCongrHom.toMonoidHom)
+  FDRep.of ((spechtSubrepresentation (YoungDiagram.ofPartition μ)).toRepresentation.comp
+    (finCongr (YoungDiagram.card_ofPartition μ).symm).permCongrHom.toMonoidHom)
 
 /-- The Specht module is nontrivial, so it has positive dimension. -/
 theorem finrank_spechtModule_pos {n : ℕ} (μ : n.Partition) :
     0 < Module.finrank ℚ (spechtModule μ) :=
-  have : Nontrivial (spechtSubrepresentation (diagramOf μ)).toSubmodule :=
+  have : Nontrivial (spechtSubrepresentation (YoungDiagram.ofPartition μ)).toSubmodule :=
     Submodule.nontrivial_iff_ne_bot.mpr fun h =>
       spechtSubrepresentation_ne_bot _ (Subrepresentation.toSubmodule_injective h)
   Module.finrank_pos

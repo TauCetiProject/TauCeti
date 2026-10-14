@@ -29,10 +29,6 @@ affine group over a field implies smoothness, so every torus is smooth.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This completes the smoothness and geometric-connectedness part of Layer 4, "Tori: split and
-non-split", of the ReductiveGroups roadmap. The character lattice of a non-split torus with its
-Galois action remains to be constructed.
 -/
 
 public section

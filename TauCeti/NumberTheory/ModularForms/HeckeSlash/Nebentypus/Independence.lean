@@ -167,8 +167,7 @@ theorem sum_nebentypus_smul_slash_eq_nsmul_twistedHeckeSlashSum
         ⟨a i, IsHeckeTriple.mem_of_mem_doubleCoset D.out.2 (hmem i)⟩ : ℂ) • (f ∣[k] a i) =
       m • twistedHeckeSlashSum k χ D f := by
   classical
-  let _ : Fintype (DecompQuotient ((Gamma0 N).map (mapGL ℚ))
-      ((Gamma0 N).map (mapGL ℚ)) (D.out : GL (Fin 2) ℚ)⁻¹) := Fintype.ofFinite _
+  let _ := fintypeDecompQuotientGamma0 D
   choose g hg using fun i ↦ exists_rightCosetRep_smul_eq D (hmem i)
   rw [twistedHeckeSlashSum_def, Finset.smul_sum,
     ← Finset.sum_fiberwise_of_maps_to (fun i _ ↦ Finset.mem_univ (g i))

@@ -40,8 +40,7 @@ closed subgroup scheme containing the image, constructed in
 * J. S. Milne, *Algebraic Groups* (2017), §6d.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
 
-This is the coordinate prerequisite for the derived group `G_der` in Layer 6 of the
-ReductiveGroups roadmap.
+This is the coordinate prerequisite for the derived group `G_der`.
 -/
 
 public section

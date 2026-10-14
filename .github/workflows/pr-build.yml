@@ -1,5 +1,5 @@
 name: pr-build
-run-name: ${{ github.event_name == 'repository_dispatch' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha || github.run_id) }}
+run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
 # Builds the exact immutable PR head in a TRUSTED, base-branch-defined workflow. A PR cannot
 # change what runs here (pull_request_target uses the base definition). Before Lake sees the
@@ -28,13 +28,15 @@ on:
   # The merge queue tests a batch (one or more PRs combined onto current main) before it lands. We
   # build the COMBINED merge-group commit exactly as GitHub synthesized it and post the `build`
   # status on it so the queue's required check is satisfied. A combined diff that reaches outside
-  # TauCeti/ gets a red scope status; the trusted build harness remains independent of that diff.
+  # TauCeti/ needs exact-revision human approval through bors; the trusted harness
+  # remains independent of that diff.
   merge_group:
     types: [checks_requested]
   # Bors dispatches the exact staging SHA. repository_dispatch uses this trusted
-  # default-branch workflow definition, not a candidate's .github/ files.
+  # default-branch workflow definition, not a candidate's .github/ files. A human
+  # approval also requests ordinary PR CI; that dispatch carries no authority.
   repository_dispatch:
-    types: [tauceti-bors-staging]
+    types: [tauceti-bors-staging, tauceti-bors-pr-approved]
   workflow_dispatch:
     inputs:
       pr: { description: "PR number to build", required: true, type: string }
@@ -44,11 +46,11 @@ permissions:
   statuses: write
 
 concurrency:
-  group: pr-build-${{ github.event_name == 'repository_dispatch' && 'bors-staging' || github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha }}
+  group: pr-build-${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && 'bors-staging' || github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
 env:
-  IS_BATCH: ${{ github.event_name == 'merge_group' || github.event_name == 'repository_dispatch' }}
+  IS_BATCH: ${{ github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') }}
   # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
@@ -60,8 +62,10 @@ jobs:
   # The merge queue and bors staging always build on Namespace: they are the path every PR must
   # pass through to land, so they get the faster machine and never wait for a GitHub slot.
   # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
+  # Bors staging has scheduling priority over PR overflow and a run-specific assignment.
+  # https://namespace.so/docs/solutions/github-actions/runner-controls/job-ordering
   pick-runner:
-    if: github.event_name != 'merge_group' && github.event_name != 'repository_dispatch'
+    if: github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging')
     uses: ./.github/workflows/pick-runner.yml
     permissions:
       actions: read
@@ -76,8 +80,9 @@ jobs:
     if: ${{ !cancelled() }}
     # `container.privileged` is required and documented by Namespace for this case: without it
     # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
-    # at all, for root as well as for the job user. The `-with-features` suffix on the machine
-    # label is what makes the feature label apply.
+    # at all, for root as well as for the job user. The machine name uses `-with-features`;
+    # bors appends its documented `;job.priority=1` option to that machine label. Its run-ID
+    # assignment is a separate option on the feature label.
     #
     # Both the provisioning and the feature are per-organisation configuration. A job whose
     # labels this organisation does not serve is not rejected: it sits queued with an empty
@@ -89,10 +94,10 @@ jobs:
     # Namespace. The event check is redundant with the picker's own `if`, and keeps the merge
     # queue and bors staging on Namespace should that ever change.
     runs-on: >-
-      ${{ github.event_name != 'merge_group' && github.event_name != 'repository_dispatch' && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
-        "nscloud-ubuntu-24.04-amd64-8x16-with-features",
-        "namespace-features:container.privileged=true"
-      ]') }}
+      ${{ github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
+        "nscloud-ubuntu-24.04-amd64-8x16-with-features{0}",
+        "namespace-features:container.privileged=true{1}"
+      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -133,6 +138,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BORS_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
           BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
+          REQUESTED_PR: ${{ inputs.pr || github.event.client_payload.pr }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
             # Build the COMBINED merge-group commit (current base + ALL batched PRs, squash-merged by
@@ -149,7 +155,7 @@ jobs:
             STATUS_SHA='${{ github.event.merge_group.head_sha }}'
             NUM="merge-group"   # not a single PR; scope/diff use the combined base..head diff below
             AUTHOR=""           # author was checked before enqueue; strict config validation repeats below
-          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ] && [ "${{ github.event.action }}" = "tauceti-bors-staging" ]; then
             REPO='${{ github.repository }}'
             SHA="$BORS_HEAD_SHA"
             BASE_REF="$BORS_BASE_SHA"
@@ -175,7 +181,8 @@ jobs:
             STATUS_SHA="$SHA"
             AUTHOR='${{ github.event.pull_request.user.login }}'
           else
-            NUM='${{ inputs.pr }}'
+            NUM="$REQUESTED_PR"
+            [[ "$NUM" =~ ^[1-9][0-9]*$ ]] || { echo "::error::invalid PR number"; exit 1; }
             SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
             REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
             BASE_REF=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .base.ref)
@@ -274,6 +281,7 @@ jobs:
             echo "::warning::cannot determine the complete immutable scope — routing to human"
           fi
           echo "changed files:"; echo "$files"
+          printf '%s\n' "$files" > "$RUNNER_TEMP/scope-files"
           # The root TauCeti.lean is allowed alongside TauCeti/: it is the (intentionally
           # empty) library root, normally untouched, but a PR may edit it. Everything else
           # outside TauCeti/ (scripts/, .github/, arbitrary Lake config) routes to a human.
@@ -301,7 +309,7 @@ jobs:
           # bot (lint-full.yml); its first build is the full lint that shows what to repair. Only
           # that exact shape is exempt from routing an empty diff to a human.
           repair_pr=0
-          if [ -z "$files" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ -z "$files" ] && { [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.action }}" = "tauceti-bors-pr-approved" ]; }; then
             # A dispatched rebuild (e.g. `gh workflow run pr-build.yml -f pr=N`) carries no PR payload.
             IFS=$'\t' read -r PR_HEAD_REF PR_HEAD_REPO PR_USER < <(gh api \
               "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
@@ -309,7 +317,8 @@ jobs:
           fi
           if [ -z "$files" ] \
               && { [ "${{ github.event_name }}" = "pull_request_target" ] \
-                   || [ "${{ github.event_name }}" = "workflow_dispatch" ]; } \
+                   || [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+                   || [ "${{ github.event.action }}" = "tauceti-bors-pr-approved" ]; } \
               && [ "$PR_HEAD_REPO" = "${{ github.repository }}" ] \
               && [[ "$PR_HEAD_REF" == lint-repair/* ]] \
               && [ "$PR_USER" = "tauceti-review-bot[bot]" ]; then
@@ -565,20 +574,17 @@ jobs:
             exit 1
           fi
 
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      - name: Reject option overrides and heartbeat instrumentation
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn '^set_option ' pr/TauCeti/ pr/TauCeti.lean; then
-            echo "::error::TauCeti/ may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
-            exit 1
-          fi
+          python3 gate/scripts/check_source_options.py pr/TauCeti/ pr/TauCeti.lean
 
       # The trusted checker requires each source-only PR that declares a new temporary Mathlib shim
       # to record a concrete expiry target in TauCeti's AI-owned registry. Keeping the registry under
       # TauCeti/ lets a worker add or remove entries in the same autonomous source PR as the shim.
       - name: Temporary Mathlib shims have machine-checkable expiry targets
         id: shim_coverage
-        if: ${{ env.INFRA != '1' && env.OUT_OF_SCOPE != '1' && env.SHIM_CHECK == '1' }}
+        if: ${{ env.INFRA != '1' && env.SHIM_CHECK == '1' }}
         continue-on-error: true
         run: |
           set +e
@@ -610,6 +616,19 @@ jobs:
           ./elan-init -y --default-toolchain none
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      # Workflow-pinned driver, candidate data only: run before package/cache setup and
+      # compilation. The complete exact source inventory is essential even on a one-file PR:
+      # deletions can break unchanged importers; a batch can add its own new dependencies.
+      # The same parsed headers enforce the no-meta-import rule over the whole inventory.
+      # No Lake environment is needed and no candidate code is imported or elaborated.
+      - name: Preflight exact-candidate import headers
+        id: import_headers
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          elan toolchain install "$(cat pr/lean-toolchain)"
+          python3 gate/scripts/check-imports.py --root pr \
+            --lean "$(cd pr && elan which lean)"
 
       - name: Install bubblewrap (pinned + checksum) and self-test (fail closed)
         if: ${{ env.INFRA != '1' }}
@@ -844,6 +863,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
+          IS_BATCH: ${{ env.IS_BATCH }}
           NUM: ${{ steps.pr.outputs.num }}
           # The immutable commits being built: the batch's base, or the PR's base commit
           # (a three-dot compare diffs from the merge base), and the exact head.
@@ -978,10 +998,10 @@ jobs:
           bash gate/scripts/perf/prepare-watchdog-toolchain.sh "$watchdog" "$real_lean"
           echo "WATCHDOG_TOOLCHAIN=$watchdog" >> "$GITHUB_ENV"
 
-      # The environment lint's compiled driver, built on the host from the workflow-pinned
-      # scripts/LintEnvDriver.lean against the pinned Batteries checkout, BEFORE any candidate code
-      # runs: once the candidate's build starts it can rewrite .lake/packages/batteries. It is
-      # mounted read-only into the sandbox, and lint-env.sh refuses to compile it there.
+      # The environment lint and governance audit drivers, built on the host from workflow-pinned
+      # scripts/LintEnvDriver.lean (pinned Batteries) and scripts/Axioms.lean (Lean sysroot),
+      # BEFORE any candidate code runs: the build can rewrite .lake/packages/batteries. Both
+      # executables are mounted read-only together; the sandbox never compiles either driver.
       - name: Build the trusted environment-lint driver (before any candidate code runs)
         if: ${{ env.INFRA != '1' }}
         run: |
@@ -989,6 +1009,7 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           out="$RUNNER_TEMP/lint-env-driver"
           bash gate/scripts/build-lint-driver.sh pr gate/scripts/LintEnvDriver.lean "$out"
+          bash gate/scripts/build-audit-driver.sh pr gate/scripts "$out"
           echo "LINT_DRIVER_DIR=$out" >> "$GITHUB_ENV"
 
       # Which modules the environment lint covers: the TauCeti modules this change touches, or the
@@ -1044,6 +1065,7 @@ jobs:
             --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
             --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
+            --setenv IS_BATCH "${IS_BATCH:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \
             --chdir "$PWD/pr" \
@@ -1082,7 +1104,7 @@ jobs:
       # path first. Only concrete replacements block; broader sentinels remain audit warnings.
       - name: Migrate shims whose exact replacements exist in pinned Mathlib
         id: shim_expiry
-        if: ${{ always() && env.INFRA != '1' && env.OUT_OF_SCOPE != '1' && env.SHIM_CHECK == '1' }}
+        if: ${{ always() && env.INFRA != '1' && env.SHIM_CHECK == '1' }}
         continue-on-error: true
         run: |
           set +e
@@ -1100,7 +1122,13 @@ jobs:
       - name: Report build and bump-guard statuses to the PR head commit
         id: report
         if: always()
-        env: { GH_TOKEN: "${{ github.token }}" }
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED_SCOPE_HEAD: ${{ steps.pr.outputs.sha }}
+          TESTED_SCOPE_BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.mergebase }}
+          SCOPE_PR: ${{ steps.pr.outputs.num }}
+          SCOPE_EVENT: ${{ github.event.action }}
+          SCOPE_BATCH: ${{ github.event.client_payload.batch_id }}
         run: |
           # Posting the three statuses is deliberately NOT all-or-nothing. These are three
           # sequential API calls under `set -e`: a single transient error on an early one used to
@@ -1190,6 +1218,8 @@ jobs:
           elif [ "${{ env.BUMP_BAD }}" = "1" ] || [ "${{ env.INFRA }}" = "1" ] \
              || [ "${{ env.TOO_LARGE }}" = "1" ] || [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             state=failure; desc="build not run — see the scope check"
+          elif [ "${{ steps.import_headers.outcome }}" = "failure" ]; then
+            state=failure; desc="import header preflight failed — see importing-file/header diagnostics"
           elif [ "${{ steps.build.outcome }}" = "failure" ]; then
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           elif { [ -n "${{ env.SHIM_COVERAGE_RC }}" ] \
@@ -1230,8 +1260,6 @@ jobs:
           # status is therefore a trusted, fail-closed input to every automatic merge decision.
           if [ "${{ env.SCOPE_OK }}" != "1" ]; then
             sc_state=failure; sc_desc="trusted scope guard did not complete — re-run pr-build"
-          elif [ "${{ env.OUT_OF_SCOPE }}" = "1" ]; then
-            sc_state=failure; sc_desc="changes outside TauCeti/ — human review + merge required"
           elif [ "${{ env.BUMP_BAD }}" = "1" ]; then
             sc_state=failure; sc_desc="Lake pin change failed the trusted bump validator"
           elif [ "${{ env.INFRA }}" = "1" ]; then
@@ -1242,6 +1270,22 @@ jobs:
             sc_state=failure; sc_desc="could not read PR diff totals from the GitHub API — re-run pr-build"
           elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
             sc_state=failure; sc_desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
+          elif [ "${{ env.OUT_OF_SCOPE }}" = "1" ]; then
+            # Only the path restriction is waivable. Every other scope/config/size
+            # guard above must pass first. Approval comes from bors's HTTPS state,
+            # never the dispatch payload or candidate files. Check at report time
+            # so an r- or changed revision during the build is observed.
+            approval_args=(--head "$TESTED_SCOPE_HEAD" --base "$TESTED_SCOPE_BASE")
+            if [ "$IS_BATCH" != "true" ]; then
+              approval_args+=(--pr "$SCOPE_PR")
+            elif [ "$SCOPE_EVENT" = "tauceti-bors-staging" ]; then
+              approval_args+=(--batch-id "$SCOPE_BATCH" --paths-file "$RUNNER_TEMP/scope-files")
+            fi
+            if python3 gate/scripts/bors_scope_approval.py "${approval_args[@]}"; then
+              sc_state=success; sc_desc="restricted paths approved by a repository admin through bors; other scope guards passed"
+            else
+              sc_state=failure; sc_desc="changes outside TauCeti/ — a repository admin can approve with bors r+ or bors merge"
+            fi
           else
             sc_state=success; sc_desc="changes are in scope (TauCeti/, the allowed root files, and the bibliography only)"
           fi
@@ -1314,7 +1358,7 @@ jobs:
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
   finalize-merge-group-build:
     needs: [sandboxed-build, publish-merge-group-cache]
-    if: ${{ always() && (github.event_name == 'merge_group' || github.event_name == 'repository_dispatch') }}
+    if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
     runs-on: ubuntu-latest
     permissions:
       statuses: write

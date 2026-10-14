@@ -19,8 +19,8 @@ closed-immersion criterion for diagonalizable-group representations applies. Thi
 second coordinate-by-coordinate proof that the restriction map on coordinate rings is
 surjective.
 
-The resulting closed subgroup is the torus in the split root datum of `GL_n`. Proving that it is
-maximal among tori is a separate geometric step in Layer 7 of the ReductiveGroups roadmap.
+The resulting closed subgroup is the torus in the split root datum of `GL_n`. Its maximality among
+tori over a field is proved in `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal`.
 
 ## Main declarations
 
@@ -43,9 +43,6 @@ maximal among tori is a separate geometric step in Layer 7 of the ReductiveGroup
   weight-torus closedness constructions supplied the internal template.
 * `TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.GeneralLinear`, in particular
   `DiagonalizableGroup.isClosedImmersion_diagonalGroupSchemeHom`.
-
-This advances the split maximal-torus and root-datum target in Layer 7 of the ReductiveGroups
-roadmap.
 -/
 
 public section

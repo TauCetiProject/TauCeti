@@ -31,7 +31,9 @@ valuation rings.
   parameter is a domain, so the ideal the parameter generates is prime, the hypothesis the
   statements for an irreducible first equation of `TauCeti.RingTheory.Intersection` take;
 * `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`: a regular local
-  ring is a discrete valuation ring exactly when it has dimension one.
+  ring is a discrete valuation ring exactly when it has dimension one;
+* `TauCeti.IsRegularLocalRing.valuationRing_of_ringKrullDim_le_one`: a regular local ring of
+  dimension at most one is a valuation ring.
 
 ## References
 
@@ -175,6 +177,18 @@ theorem isDiscreteValuationRing_iff_ringKrullDim_eq_one :
   have := (iff_finrank_cotangentSpace R).mp inferInstance
   rw [h] at this
   exact_mod_cast this
+
+/-- A regular local ring of dimension at most one is a valuation ring: a field in dimension zero
+and a discrete valuation ring in dimension one. -/
+theorem valuationRing_of_ringKrullDim_le_one (h : ringKrullDim R ≤ 1) : ValuationRing R := by
+  by_cases h1 : ringKrullDim R = 1
+  · have := isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr h1
+    infer_instance
+  · have : Ring.KrullDimLE 0 R := by
+      rw [Ring.krullDimLE_iff]
+      exact Order.le_of_lt_succ (lt_of_le_of_ne h h1)
+    let := (Ring.KrullDimLE.isField_of_isDomain (R := R)).toField
+    exact ValuationRing.of_field R
 
 end IsRegularLocalRing
 

@@ -58,9 +58,8 @@ the existing dynamic statement that the weight parabolic normalizes its unipoten
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic Levi-decomposition milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap by supplying both represented factors inside the weight parabolic. The
-relative Levi is the acting factor required by the scheme-level semidirect-product decomposition.
+This supplies both represented factors inside the weight parabolic. The relative Levi is the acting
+factor required by the scheme-level semidirect-product decomposition.
 -/
 
 public section
@@ -153,7 +152,7 @@ variable {A : Type v} [CommRing A] [Algebra R A]
 
 /-- A parabolic point belongs to the subgroup cut out by the relative Levi Hopf ideal exactly
 when its ambient general linear point belongs to the weight-Levi subgroup. -/
-@[simp]
+@[simp↓]
 theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
     (f : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
       (CommAlgCat.of R A)) :
@@ -186,7 +185,7 @@ theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
 
 /-- A parabolic point belongs to the subgroup cut out by the relative unipotent Hopf ideal
 exactly when its ambient general linear point belongs to the weight-unipotent subgroup. -/
-@[simp]
+@[simp↓]
 theorem mem_weightUnipotentInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
     (f : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
       (CommAlgCat.of R A)) :
@@ -386,18 +385,12 @@ theorem weightLeviInParabolicGroupSchemeIso_hom_comp_weightLeviToParabolic
   let hq := weightParabolicCoordinateMap_surjective R w
   let _ : Epi q := ConcreteCategory.epi_of_surjective q hq
   rw [← cancel_epi q]
-  have hq_def : weightParabolicCoordinateMap R w =
-      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-        (weightParabolicDefiningHopfIdeal R w) := by
-    ext x
-    rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
   dsimp only [q]
-  rw [hq_def, ← Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
+  rw [weightParabolicCoordinateMap_def, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
   rw [weightLeviInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
     mkQuotient_comp_eqToIso (R := R)
       (weightLeviInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, hq_def]
+    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, weightParabolicCoordinateMap_def]
 
 /-- The quotient-coordinate isomorphism underlying the identification of the relative
 weight-unipotent quotient spectrum. -/
@@ -478,17 +471,11 @@ theorem weightUnipotentInParabolicGroupSchemeIso_hom_comp_weightUnipotentToParab
   let hq := weightParabolicCoordinateMap_surjective R w
   let _ : Epi q := ConcreteCategory.epi_of_surjective q hq
   rw [← cancel_epi q]
-  have hq_def : weightParabolicCoordinateMap R w =
-      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-        (weightParabolicDefiningHopfIdeal R w) := by
-    ext x
-    rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
   dsimp only [q]
-  rw [hq_def, ← Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
+  rw [weightParabolicCoordinateMap_def, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
   rw [weightUnipotentInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
     mkQuotient_comp_eqToIso (R := R)
       (weightUnipotentInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, hq_def]
+    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, weightParabolicCoordinateMap_def]
 
 end TauCeti.GeneralLinear.Dynamic

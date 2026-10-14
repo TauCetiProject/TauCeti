@@ -228,9 +228,6 @@ theorem IsMultiplicative.apply_map {f : GraphParam} (hmul : IsMultiplicative f)
       (Equiv.sumCompl (· ∈ Set.range e))
   have hφ_inl (a : Fin k) : φ (.inl a) = e a := by
     simp [φ]
-  have hφ_inr (a : Fin (Nat.card {x // x ∉ Set.range e})) :
-      φ (.inr a) ∉ Set.range e := by
-    simpa [φ] using ((Finite.equivFin {x // x ∉ Set.range e}).symm a).property
   have hφ : (F ⊕g (⊥ : SimpleGraph (Fin (Nat.card {x // x ∉ Set.range e})))).map φ.toEmbedding =
       F.map e := by
     ext x y

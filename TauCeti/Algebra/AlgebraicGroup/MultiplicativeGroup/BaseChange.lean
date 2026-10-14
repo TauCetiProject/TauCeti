@@ -21,9 +21,8 @@ The equivalence first restricts a base-changed point along `f ↦ f (1 ⊗ T)` u
 `MultiplicativeGroup.pointsMulEquiv`. The characteristic lemmas give the values on
 `1 ⊗ T` and on the inverse map at pure tensors `s ⊗ C r * T n`.
 
-This is the direct Laurent-polynomial `𝔾_m` worked example for the ReductiveGroups roadmap,
-Layer 0 ("R-points as a group" and "Base change. `K ⊗[k] A` as a Hopf algebra over `K`"),
-alongside the more general diagonalizable and split-torus base-change APIs.
+This is the direct Laurent-polynomial `𝔾_m` example, alongside the more general diagonalizable and
+split-torus base-change APIs.
 
 ## Main declarations
 

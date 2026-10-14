@@ -84,6 +84,13 @@ reconciles two independent, mutually-exclusive reaction groups from `core.derive
 | | merged | `:merge:` |
 | | closed, not merged | `:closed-pr:` |
 
+Bors squash batches fast-forward `main` and then close their PRs, so GitHub can
+report `merged=false` even for landed work. For Zulip presentation, a closed PR
+whose title starts with `[Merged by Bors] - ` receives `:merge:`. That prefix is
+removed from the displayed title. This does not change merge readiness or
+GitHub's PR metadata. Run `zulip-pr-backfill.yml` with `bors_only=true` and
+`dry_run=false` to repair existing affected posts and reactions in place.
+
 Each message includes the PR's author and the area from every `roadmap/...`
 label (with `unlabelled` distinct from the deliberate `roadmap/none`). A later
 label change edits the existing message in place, so a roadmap label added after
@@ -195,10 +202,11 @@ while it persists.
 
 This is an **emergency channel, not a help queue.** Every alert means a piece of
 infrastructure needs fixing so the wedge cannot recur, not that a human should
-hand-hold one PR. It fires on: a red, stale last-known-good bump PR; a mathlib pin
-that has stopped advancing; an in-scope, fully-green PR the merge path never
+hand-hold one PR. It fires on: a pinned Mathlib commit that is more than three days
+old, regardless of when the manifest changed, linking the active `bump-mathlib/` repair PR;
+an in-scope, fully-green PR the merge path never
 merged; an open `Review stuck: PR #…` issue; a scheduled workflow that is disabled
-or overdue; `main` gone red; and a long-open mathlib-incompatibility issue. It
+or overdue; and `main` gone red. It
 **deliberately does not** alert on normal backlog (a PR awaiting its first review
 verdict, changes-requested nobody addressed, open roadmap issues); the module
 docstring lists the full catalogue and the reasoning.

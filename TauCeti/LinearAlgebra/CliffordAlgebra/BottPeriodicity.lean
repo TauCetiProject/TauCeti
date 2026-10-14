@@ -32,14 +32,12 @@ signature-switch recurrence `Cliff(p + 2, q) ≅ Cliff(q, p) ⊗ M₂(ℝ)` from
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 7;
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I.
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I. Their `Cl(r, s)` is
+  `CliffordAlgebra (realCliffordForm s r)` here.
 -/
 
 public section
 
-open Module QuadraticMap
 open scoped Matrix TensorProduct
 
 namespace CliffordAlgebra
@@ -80,8 +78,8 @@ private def hyperbolicToMatrix :
 private theorem hyperbolicToMatrix_ι (x : M × (Fin (1 + 1) → ℝ)) :
     hyperbolicToMatrix Q (_root_.CliffordAlgebra.ι _ x) =
       !![algebraMap ℝ _ (x.2 0), _root_.CliffordAlgebra.ι Q x.1 + algebraMap ℝ _ (x.2 1);
-         _root_.CliffordAlgebra.ι Q x.1 - algebraMap ℝ _ (x.2 1), -algebraMap ℝ _ (x.2 0)] := by
-  exact _root_.CliffordAlgebra.lift_ι_apply _ _ x
+         _root_.CliffordAlgebra.ι Q x.1 - algebraMap ℝ _ (x.2 1), -algebraMap ℝ _ (x.2 0)] :=
+  _root_.CliffordAlgebra.lift_ι_apply _ _ x
 
 private def hyperbolicToTensor :
     _root_.CliffordAlgebra (Q.prod (TauCeti.realCliffordForm 1 1)) →ₐ[ℝ]
@@ -148,9 +146,8 @@ private theorem hyperbolicMatrixInclusion_apply
 private theorem hyperbolicMatrixInclusion_comp_oneOneEquiv :
     (hyperbolicMatrixInclusion Q).comp
         TauCeti.realCliffordOneOneEquivMatrix.toAlgHom =
-      hyperbolicRightInclusion Q := by
-  apply AlgHom.ext
-  exact hyperbolicMatrixInclusion_apply Q
+      hyperbolicRightInclusion Q :=
+  AlgHom.ext (hyperbolicMatrixInclusion_apply Q)
 
 private theorem hyperbolicMatrixInclusion_sigmaX :
     hyperbolicMatrixInclusion Q !![(0 : ℝ), 1; 1, 0] = hyperbolicVolume Q := by
@@ -162,8 +159,7 @@ private theorem hyperbolicMatrixInclusion_sigmaX :
 
 private theorem sigmaX_sq :
     (!![(0 : ℝ), 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℝ) * !![0, 1; 1, 0] = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  simp [Matrix.one_fin_two]
 
 private theorem hyperbolicVolume_sq : hyperbolicVolume Q * hyperbolicVolume Q = 1 := by
   rw [← hyperbolicMatrixInclusion_sigmaX, ← map_mul, sigmaX_sq, map_one]
@@ -316,8 +312,8 @@ private theorem hyperbolicToTensor_baseInclusion (x : _root_.CliffordAlgebra Q) 
     hyperbolicToTensor Q (hyperbolicBaseInclusion Q x) =
       (Algebra.TensorProduct.includeLeft :
         _root_.CliffordAlgebra Q →ₐ[ℝ]
-          (_root_.CliffordAlgebra Q ⊗[ℝ] Matrix (Fin 2) (Fin 2) ℝ)) x := by
-  exact DFunLike.congr_fun (hyperbolicToTensor_comp_baseInclusion Q) x
+          (_root_.CliffordAlgebra Q ⊗[ℝ] Matrix (Fin 2) (Fin 2) ℝ)) x :=
+  DFunLike.congr_fun (hyperbolicToTensor_comp_baseInclusion Q) x
 
 private theorem hyperbolicToTensor_comp_matrixInclusion :
     (hyperbolicToTensor Q).comp (hyperbolicMatrixInclusion Q) =
@@ -338,15 +334,13 @@ private theorem hyperbolicToTensor_comp_matrixInclusion :
 private theorem hyperbolicToTensor_matrixInclusion
     (x : Matrix (Fin 2) (Fin 2) ℝ) :
     hyperbolicToTensor Q (hyperbolicMatrixInclusion Q x) =
-      Algebra.TensorProduct.includeRight x := by
-  exact DFunLike.congr_fun (hyperbolicToTensor_comp_matrixInclusion Q) x
+      Algebra.TensorProduct.includeRight x :=
+  DFunLike.congr_fun (hyperbolicToTensor_comp_matrixInclusion Q) x
 
 private theorem hyperbolicToTensor_comp_tensorToHyperbolic :
     (hyperbolicToTensor Q).comp (tensorToHyperbolic Q) = AlgHom.id ℝ _ := by
-  apply AlgHom.toLinearMap_injective
-  apply TensorProduct.ext'
+  apply Algebra.TensorProduct.ext'
   intro x y
-  simp only [AlgHom.toLinearMap_apply]
   rw [AlgHom.comp_apply, tensorToHyperbolic, Algebra.TensorProduct.lift_tmul, map_mul,
     hyperbolicToTensor_baseInclusion, hyperbolicToTensor_matrixInclusion]
   simp
@@ -528,10 +522,8 @@ theorem realCliffordSignatureSwitchRecurrenceEquiv_ι (p q : ℕ)
             realCliffordBottEquiv q p (_root_.CliffordAlgebra.ι _
               (realCliffordSignSwitchStandardIsometry (p + 1) q (0, 1))) := by
   simp only [realCliffordSignatureSwitchRecurrenceEquiv, AlgEquiv.trans_apply,
-    _root_.CliffordAlgebra.equivOfIsometry_apply,
-    _root_.CliffordAlgebra.map_apply_ι, AlgEquiv.trans_apply,
+    _root_.CliffordAlgebra.equivOfIsometry_apply, _root_.CliffordAlgebra.map_apply_ι,
     CliffordAlgebra.signSwitchEquiv_ι, map_add, map_mul, map_smul,
-    AlgEquiv.trans_apply, _root_.CliffordAlgebra.equivOfIsometry_apply,
-    _root_.CliffordAlgebra.map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
+    QuadraticMap.IsometryEquiv.toIsometry_apply]
 
 end TauCeti

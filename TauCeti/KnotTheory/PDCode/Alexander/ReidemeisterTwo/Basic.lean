@@ -30,8 +30,9 @@ generator as its first piece. Sending the middle pieces to these affine combinat
 other half-edge to itself identifies the two Alexander modules.
 
 The two-circle case is treated in
-`TauCeti.KnotTheory.PDCode.Alexander.ReidemeisterTwo.Circles`. The circle-and-arc insertion
-`TauCeti.OrientedPDCode.insertCircleClasp` and the third Reidemeister move are not treated here.
+`TauCeti.KnotTheory.PDCode.Alexander.ReidemeisterTwo.Circles`, and the circle-and-arc insertion
+`TauCeti.OrientedPDCode.insertCircleClasp` in
+`TauCeti.KnotTheory.PDCode.Alexander.ReidemeisterTwo.CircleArc`.
 
 ## Main definitions
 

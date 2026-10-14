@@ -81,7 +81,7 @@ private theorem length_sort_parts_le (ν : n.Partition) (hν : ν.parts.card ≤
 
 /-- The power-sum product of the partition indexing the class of `π` is the power-sum product over
 the cycle type of `π`: both take one power sum per cycle. -/
-private theorem psumPart_eq_psumPart_partition {ρ : n.Partition} {π : Perm (Fin n)}
+theorem psumPart_eq_psumPart_partition {ρ : n.Partition} {π : Perm (Fin n)}
     (hπ : ConjClasses.mk π = partitionEquivConjClasses n ρ) :
     psumPart σ R ρ = psumPart σ R π.partition := by
   rw [psumPart, psumPart, ← (partitionEquivConjClasses n).symm_apply_apply ρ, ← hπ,
@@ -107,7 +107,7 @@ not at all. -/
 private theorem card_filter_youngColouring [DecidableEq σ] (ν : n.Partition)
     (hν : ν.parts.card ≤ Fintype.card σ) (x : σ) :
     #{j | youngColouring ν hν j = x} = partWeight σ ν x := by
-  rw [partWeight_apply, rowLen_diagramOf]
+  rw [partWeight_apply, YoungDiagram.rowLen_ofPartition]
   rcases lt_or_ge (Fintype.equivFin σ x : ℕ) (ν.parts.sort (· ≥ ·)).length with hx | hx
   · -- The letter `x` is the row `i`, whose cells are the fibre of `youngBlock ν` over `i`.
     let i : Fin (ν.parts.sort (· ≥ ·)).length := ⟨Fintype.equivFin σ x, hx⟩
@@ -123,7 +123,6 @@ private theorem card_filter_youngColouring [DecidableEq σ] (ν : n.Partition)
     intro j _ hj
     rw [youngColouring, Function.comp_apply, Function.comp_apply, Equiv.symm_apply_eq,
       Fin.ext_iff, Fin.val_castLE] at hj
-    have hlt := (youngBlock ν j).2
     omega
 
 /-! ### The coefficients of a power-sum product -/

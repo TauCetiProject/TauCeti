@@ -743,7 +743,7 @@ theorem transgression_explicitResConj1 (hN : IsClosed (N : Set G)) (x : H1 G M) 
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
     set c' := cocyclesMap1 G M N M (ContinuousMonoidHom.subgroupSubtype N) (AddMonoidHom.id M)
-      continuous_id (id_subgroupSubtype_smul G M N) c
+      continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M N) c
     rw [transgression_apply G M N hN s hs_cont hs _ c'
         ((explicitRes1_mk G M N c).symm.trans (coe_explicitResConj1 G M N _).symm),
       transgressionCocycle_eq_cocycle, IsTransgressionLift.mk_cocycle_eq _

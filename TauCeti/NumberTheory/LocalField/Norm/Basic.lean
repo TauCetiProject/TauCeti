@@ -61,6 +61,8 @@ Herbrand shift instead.
   integer is irreducible exactly when the residue degree is one.
 * `TauCeti.addVal_norm`: the additive valuation of the norm of an integer is multiplied by the
   inertia degree.
+* `TauCeti.comap_zmultiples_inertiaDegree_le_normGroup`: if the units of `K` are norms, the norm
+  group contains every element whose valuation is divisible by the residue degree.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
 * `TauCeti.continuous_normUnits`: the norm on unit groups is continuous.
@@ -422,6 +424,28 @@ theorem inertiaDegree_dvd_of_mem_normGroup {x : Kˣ}
   have h : Algebra.normUnits K y = x := Units.ext (by simpa using hy)
   subst x
   exact ⟨_, toAdd_normalizedValuation_norm y⟩
+
+/-- If the units of `K` are norms from `L`, then the norm group contains every element of `Kˣ`
+whose valuation is divisible by the residue degree `f(L/K)`: such an element is a power of the
+norm of a uniformizer of `L` times a unit. -/
+theorem comap_zmultiples_inertiaDegree_le_normGroup
+    (hU : unitFiltration K 0 ≤ normGroup K L) :
+    (AddSubgroup.zmultiples (inertiaDegree K L : ℤ)).toSubgroup.comap (normalizedValuation K) ≤
+      normGroup K L := by
+  intro x hx
+  obtain ⟨k, hk⟩ : (inertiaDegree K L : ℤ) ∣ (normalizedValuation K x).toAdd :=
+    Int.mem_zmultiples_iff.mp ((Multiplicative.mem_toSubgroup _ _).mp hx)
+  obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := L) (Multiplicative.ofAdd 1)
+  let y := Algebra.normUnits K ϖ
+  have hy : y ∈ normGroup K L := mem_normGroup_iff.2 ⟨ϖ, by simp [y]⟩
+  -- `x * y ^ (-k)` has valuation zero, so it is a unit and hence a norm.
+  have hunit : x * y ^ (-k) ∈ normGroup K L := by
+    refine hU <| (mem_unitFiltration_zero _).2 <| (normalizedValuation_eq_one_iff _).1 ?_
+    apply Multiplicative.toAdd.injective
+    simp only [y, map_mul, map_zpow, toAdd_mul, toAdd_zpow, toAdd_normalizedValuation_norm, hϖ,
+      toAdd_ofAdd, hk, toAdd_one, smul_eq_mul]
+    ring
+  simpa using mul_mem hunit (zpow_mem hy k)
 
 section Galois
 

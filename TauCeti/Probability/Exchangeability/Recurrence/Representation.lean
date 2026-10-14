@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.DeFinetti.Barycenter
-public import TauCeti.Probability.Exchangeability.Recurrence.Reconstruction
+public import TauCeti.Probability.Recurrent.Excursion
+public import TauCeti.Probability.Exchangeability.Recurrence.Excursion
 -- Non-public: the mixture form of a path law is used only inside proofs.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
 
@@ -19,7 +20,7 @@ exchangeable** process the excursion process is exchangeable, hence conditionall
 excursion law is a mixture.  Combining the two gives the representation
 
 ```text
-pathLaw μ X = (deFinettiBarycenter π).map (pathOfExcursions a₀)
+pathLaw μ X = (Measure.deFinettiBarycenter π).map (pathOfExcursions a₀)
 ```
 
 for a probability measure `π` on laws of finite words: draw an excursion law `P` from `π`, draw
@@ -80,7 +81,7 @@ theorem MarkovExchangeable.conditionallyIID_excursionProcess [IsFiniteMeasure μ
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
   conditionallyIID_of_exchangeable (h.exchangeable_excursionProcess hrec h0)
-    (aemeasurable_excursionProcess h.aemeasurable a₀)
+    (aemeasurable_excursionProcess h.aemeasurable a₀ (measurableSet_singleton a₀))
 
 /-- **A directing measure of an excursion process charges no word through the base state.** An
 excursion never visits the state it is an excursion from, so almost every mixing representative of
@@ -134,7 +135,7 @@ theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabil
     ∃ π : Measure (ProbabilityMeasure (List α)), IsProbabilityMeasure π ∧
       (∀ᵐ P : ProbabilityMeasure (List α) ∂π,
         (P : Measure (List α)) {l : List α | a₀ ∈ l} = 0) ∧
-      pathLaw μ X = (deFinettiBarycenter π).map (pathOfExcursions a₀) := by
+      pathLaw μ X = (Measure.deFinettiBarycenter π).map (pathOfExcursions a₀) := by
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
   obtain ⟨ν, hν⟩ := (h.conditionallyIID_excursionProcess hrec h0).exists_directing
@@ -146,8 +147,8 @@ theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabil
       hν.ae_measure_setOf_mem_eq_zero_of_excursionProcess
     exact ((Measure.measurable_coe hSmeas).comp measurable_subtype_coe)
       (measurableSet_singleton (0 : ENNReal))
-  · rw [hrec.pathLaw_eq_map_pathOfExcursions h.aemeasurable h0,
-      pathLaw_eq_bind_infinitePi_of_mixedIIDWith hmix, deFinettiBarycenter_def]
+  · rw [hrec.pathLaw_eq_map_pathOfExcursions h.aemeasurable (measurableSet_singleton a₀) h0,
+      pathLaw_eq_bind_infinitePi_of_mixedIIDWith hmix, Measure.deFinettiBarycenter_def]
 
 end Probability
 

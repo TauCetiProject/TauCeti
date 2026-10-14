@@ -287,11 +287,12 @@ theorem isArithFrobAt_one_of_pow_eq_one {p n : ℕ} {ρ : L ≃ₐ[ℚ] L}
   rw [← Ideal.Quotient.eq, map_pow, hcard]
   simpa using h
 
+omit [NumberField M] in
 /-- **The relative Frobenius is trivial at such a prime.** Under the hypotheses of
 `NumberField.isArithFrobAt_one_of_pow_eq_one`, and with `L / M` unramified at `Q`, every
-arithmetic Frobenius of `Gal(L/M)` at `Q` is the identity: it agrees with the identity on the
-residue field, and Frobenius elements at an unramified prime are unique. -/
-theorem isArithFrobAt_eq_one_of_pow_eq_one [IsGalois M L] [Algebra.IsUnramifiedAt (𝓞 M) Q]
+arithmetic Frobenius of `Gal(L/M)` at `Q` is the identity. No normality hypothesis on `L/M`
+is needed. -/
+theorem isArithFrobAt_eq_one_of_pow_eq_one [Algebra.IsUnramifiedAt (𝓞 M) Q]
     {p n : ℕ} {ρ : L ≃ₐ[ℚ] L} [Q.LiesOver (Ideal.span {(p : ℤ)})] (hρ : IsArithFrobAt ℤ ρ Q)
     (hρn : ρ ^ n = 1) (hcard : Nat.card (𝓞 M ⧸ Q.under (𝓞 M)) = p ^ n)
     {σ : L ≃ₐ[M] L} (hσ : IsArithFrobAt (𝓞 M) σ Q) :

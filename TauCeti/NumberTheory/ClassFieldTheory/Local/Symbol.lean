@@ -151,6 +151,48 @@ theorem cup_kummerClass_eq_zero_of_add_eq_one
   rw [kummerClass_eq_muNRepH1Equiv_kummerMap, kummerClass_eq_muNRepH1Equiv_kummerMap,
     cup_muNRepH1Equiv, explicitCup11_kummerMap_eq_zero_of_add_eq_one _ _ hn hab, map_zero]
 
+/-! ### Exponents of roots of unity with respect to a primitive root -/
+
+section Log
+
+variable [NeZero n] {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+
+/-- The exponent in `[0, n)` of an `n`-th root of unity of `Fˢ` with respect to `ζ`. -/
+def kummerLog (x : KummerCoeff F n) : ℕ :=
+  ((hζ.map_of_injective (algebraMap F (SeparableClosure F)).injective).isUnit_unit
+    (NeZero.ne n)).zmodEquivRootsOfUnity.symm x |>.val
+
+/-- The chosen-root exponent is less than the order of the root. -/
+theorem kummerLog_lt (x : KummerCoeff F n) : kummerLog hζ x < n :=
+  ZMod.val_lt _
+
+/-- A Kummer coefficient is the chosen primitive root raised to its chosen-root exponent. -/
+theorem coe_toMul_eq_pow_kummerLog (x : KummerCoeff F n) :
+    ((x.toMul : (SeparableClosure F)ˣ) : SeparableClosure F) =
+      algebraMap F (SeparableClosure F) ζ ^ kummerLog hζ x := by
+  set hζs := (hζ.map_of_injective (algebraMap F (SeparableClosure F)).injective).isUnit_unit
+    (NeZero.ne n)
+  have h := hζs.coe_zmodEquivRootsOfUnity_apply_natCast (kummerLog hζ x)
+  rw [kummerLog, ZMod.natCast_zmod_val, AddEquiv.apply_symm_apply] at h
+  rw [h, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
+  rfl
+
+/-- An exponent less than the order of the root equals the chosen-root exponent. -/
+theorem kummerLog_eq {x : KummerCoeff F n} {m : ℕ} (hm : m < n)
+    (hx : ((x.toMul : (SeparableClosure F)ˣ) : SeparableClosure F) =
+      algebraMap F (SeparableClosure F) ζ ^ m) :
+    kummerLog hζ x = m :=
+  (hζ.map_of_injective (algebraMap F (SeparableClosure F)).injective).pow_inj
+    (kummerLog_lt hζ x) hm ((coe_toMul_eq_pow_kummerLog hζ x).symm.trans hx)
+
+/-- Chosen-root exponents add modulo the order of the root. -/
+theorem kummerLog_add (x y : KummerCoeff F n) :
+    kummerLog hζ (x + y) = (kummerLog hζ x + kummerLog hζ y) % n := by
+  rw [kummerLog, map_add, ZMod.val_add]
+  rfl
+
+end Log
+
 /-! ### The coefficient pairing of a primitive root -/
 
 section Pairing
@@ -200,6 +242,15 @@ theorem kummerCupPairing_bil_apply {x : (muNRep n F).V} {i : ℤ}
     exact congrArg _ (Additive.toMul.injective (Subtype.ext hu))
   simp only [kummerCupPairing, LinearMap.mk₂_apply]
   rw [hi, Int.cast_smul_eq_zsmul]
+
+/-- On explicit Kummer coefficients, pairing a power `ζ ^ i` with `y` multiplies `y` by `i`. -/
+theorem kummerCoeffPairing_kummerCupPairing_of_eq_pow {x : KummerCoeff F n} {i : ℤ}
+    (hx : ((x.toMul : (SeparableClosure F)ˣ) : SeparableClosure F) =
+      algebraMap F (SeparableClosure F) ζ ^ i) (y : KummerCoeff F n) :
+    kummerCoeffPairing (kummerCupPairing ζ hζ) x y = i • y := by
+  apply (kummerCoeffEquivMuNRep n F).injective
+  rw [kummerCoeffEquivMuNRep_kummerCoeffPairing, map_zsmul]
+  exact kummerCupPairing_bil_apply ζ hζ (by simpa only [AddEquiv.symm_apply_apply] using hx) _
 
 /-- The Kummer coefficient pairing is scalar multiplication by the chosen-root coordinate. -/
 @[simp]

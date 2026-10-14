@@ -19,6 +19,8 @@ counts need, namely that the continuous dual has the same dimension as the space
 
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
+In real dimension one, equal-norm vectors agree up to sign; in particular, a nonzero-radius
+sphere consists of two antipodal points.
 
 ## Main results
 
@@ -66,6 +68,20 @@ theorem nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv {V W F : Ty
   have h := e.toLinearEquiv.finrank_eq.trans e'.toLinearEquiv.finrank_eq.symm
   rw [Module.finrank_prod, Module.finrank_prod] at h
   omega
+
+/-- In a one-dimensional real normed space, vectors of equal norm agree up to sign. -/
+theorem eq_or_eq_neg_of_norm_eq_of_finrank_eq_one
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (h : Module.finrank ℝ V = 1) {x y : V} (hn : ‖x‖ = ‖y‖) :
+    x = y ∨ x = -y := by
+  by_cases hy : y = 0
+  · left
+    simpa [hy] using hn
+  obtain ⟨c, rfl⟩ := exists_smul_eq_of_finrank_eq_one h hy x
+  have hc : |c| = 1 := by
+    simpa [norm_smul, Real.norm_eq_abs, norm_ne_zero_iff.mpr hy] using hn
+  rcases (abs_eq (by positivity : (0 : ℝ) ≤ 1)).mp hc with hc | hc <;>
+    simp [hc]
 
 section Star
 

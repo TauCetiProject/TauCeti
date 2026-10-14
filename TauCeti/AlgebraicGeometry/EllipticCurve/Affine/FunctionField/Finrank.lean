@@ -51,7 +51,7 @@ function field that sits inside `F(W)` as an intermediate field.
 * `WeierstrassCurve.Affine.finrank_ratFuncRange`: `[F(W) : F(x)] = 2` for that copy. This is the
   degree above a subfield of `F(W)` rather than above an abstract `L`, which is what any argument
   comparing two subfields of `F(W)` — a tower, or a relative degree — needs; the two are related
-  by `TauCeti.AlgHom.finrank_fieldRange`, since the copy and `RatFunc F` are isomorphic as fields
+  by `AlgHom.finrank_fieldRange`, since the copy and `RatFunc F` are isomorphic as fields
   acting on `F(W)`.
 * `WeierstrassCurve.Affine.relfinrank_map_ratFuncRange_fieldRange`: mapping the pair
   `F(x) ⊆ F(W)` along a function-field embedding preserves its relative degree two.
@@ -202,10 +202,10 @@ theorem mem_ratFuncRange {z : W.FunctionField} :
 
 /-- **`[F(W) : F(x)] = 2`**, for the copy of the rational function field inside `F(W)`: the
 `L = RatFunc F` case of `finrank_functionField`, transported along the embedding by
-`TauCeti.AlgHom.finrank_fieldRange`. -/
+`AlgHom.finrank_fieldRange`. -/
 @[simp]
 theorem finrank_ratFuncRange : Module.finrank (ratFuncRange W) W.FunctionField = 2 :=
-  (TauCeti.AlgHom.finrank_fieldRange (IsScalarTower.toAlgHom F (RatFunc F) W.FunctionField)
+  ((IsScalarTower.toAlgHom F (RatFunc F) W.FunctionField).finrank_fieldRange
     fun z ↦ (IsScalarTower.toAlgHom_apply F (RatFunc F) W.FunctionField z).symm).trans
       (finrank_functionField W (RatFunc F))
 

@@ -173,8 +173,7 @@ noncomputable def gradeZeroEquiv : R ≃+* grade I 0 :=
       rw [← hr, monomial_zero_left, SetLike.GradeZero.coe_algebraMap, Subalgebra.coe_algebraMap,
         algebraMap_eq]
 
--- Not `@[simp]`: `gradeZeroEquiv I r` is the simp normal form, e.g. in the left-hand side of
--- `awayEquivAffineBlowup_algebraMap`.
+-- Not `@[simp]`: `gradeZeroEquiv I r` is the simp normal form.
 theorem gradeZeroEquiv_apply (r : R) : gradeZeroEquiv I r = algebraMap R (grade I 0) r :=
   RingEquiv.ofBijective_apply _ _ r
 

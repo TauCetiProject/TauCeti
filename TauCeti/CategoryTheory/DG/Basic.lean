@@ -45,6 +45,9 @@ category; that category and its quotient by homotopy are not built here.
 
 * `TauCeti.dgDifferential_dgComp`: the graded Leibniz rule.
 * `TauCeti.dgComp_assoc`: composition of homogeneous morphisms is associative.
+* `TauCeti.dgDifferential_negOnePow_smul_dgComp` and `TauCeti.negOnePow_smul_dgComp_assoc`: the
+  Leibniz rule and associativity for Keller-ordered composition
+  `g ∘ f = (-1) ^ (p * q) • dgComp f g`.
 * `TauCeti.dgId_dgComp` and `TauCeti.dgComp_dgId`: the identity is a two-sided unit.
 * `TauCeti.dgDifferential_dgId`: the identity is a cycle.
 
@@ -224,6 +227,47 @@ theorem dgComp_assoc {W X Y Z : C} {p q r pq qr n : ℤ} (f : DGHom R p W X) (g 
     ModuleCat.MonoidalCategory.associator_hom_apply,
     ModuleCat.MonoidalCategory.whiskerRight_apply, dgCompMap_tmul] at key
   exact key
+
+/-! ### Keller-ordered composition
+
+Composition in Keller's order, `g ∘ f` for `f` of degree `p` followed by `g` of degree `q`, is
+the enriched composite twisted by the Koszul sign: `g ∘ f = (-1) ^ (p * q) • dgComp f g`.  The
+two lemmas below state the Leibniz rule and associativity for these signed composites. -/
+
+/-- **The Leibniz rule in Keller's order**: for the Keller-ordered composite
+`g ∘ f = (-1) ^ (p * q) • dgComp f g`, `d (g ∘ f) = d g ∘ f + (-1) ^ |g| • g ∘ d f`. -/
+theorem dgDifferential_negOnePow_smul_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = n) :
+    dgDifferential R n ((p * q).negOnePow • dgComp R f g h) =
+      (p * (q + 1)).negOnePow • dgComp R f (dgDifferential R q g) (by omega) +
+        q.negOnePow • ((p + 1) * q).negOnePow • dgComp R (dgDifferential R p f) g (by omega) := by
+  rw [map_zsmul_unit, dgDifferential_dgComp, smul_add, smul_smul, smul_smul]
+  have e₁ : (p * q).negOnePow * p.negOnePow = (p * (q + 1)).negOnePow := by
+    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    exact ⟨0, by ring⟩
+  have e₂ : q.negOnePow * ((p + 1) * q).negOnePow = (p * q).negOnePow := by
+    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    exact ⟨q, by ring⟩
+  rw [e₁, e₂]
+  exact add_comm _ _
+
+/-- **Keller-ordered composition is associative**: the Koszul signs of the two bracketings
+`(k ∘ g) ∘ f` and `k ∘ (g ∘ f)` agree. -/
+theorem negOnePow_smul_dgComp_assoc {W X Y Z : C} {p q r pq qr n : ℤ} (f : DGHom R p W X)
+    (g : DGHom R q X Y) (k : DGHom R r Y Z) (hpq : p + q = pq) (hqr : q + r = qr)
+    (hn : p + q + r = n) :
+    (pq * r).negOnePow • dgComp R ((p * q).negOnePow • dgComp R f g hpq) k
+        (by omega : pq + r = n) =
+      (p * qr).negOnePow • dgComp R f ((q * r).negOnePow • dgComp R g k hqr)
+        (by omega : p + qr = n) := by
+  subst hpq hqr
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, smul_dgComp, dgComp_smul, smul_smul,
+    ← Int.cast_mul]
+  rw [dgComp_assoc R f g k rfl rfl hn]
+  congr 1
+  rw [← Units.val_mul, ← Units.val_mul, ← Int.negOnePow_add, ← Int.negOnePow_add]
+  congr 3
+  ring
 
 /-! ### The identity -/
 

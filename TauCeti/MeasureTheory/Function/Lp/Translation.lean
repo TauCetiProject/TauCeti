@@ -17,9 +17,9 @@ import Mathlib.MeasureTheory.Measure.Prod
 /-!
 # The `Lᵖ` translation estimate
 
-This file develops translation of `Lᵖ` functions by a vector of an additive group carrying a
-right-invariant measure, and the quantitative translation estimate for `C¹` functions on a real
-normed space:
+This file develops continuous translation of `Lᵖ` functions on an additive monoid carrying a
+right-invariant measure, translation equivalences on additive commutative groups, and the
+quantitative translation estimate for `C¹` functions on a real normed space:
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`.
 
@@ -36,7 +36,7 @@ this continuity for a `C¹` function, and needs no integrability of the function
   of `Lᵖ`.
 * `MeasureTheory.Measure.coeFn_translateLp`, `MeasureTheory.MemLp.coeFn_translateLp_toLp`:
   translation is almost everywhere precomposition by addition.
-* `MeasureTheory.Measure.compLpL_translateLp`: translation commutes with postcomposition by a
+* `ContinuousLinearMap.compLpL_translateLp`: translation commutes with postcomposition by a
   continuous linear map.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
   `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group of
@@ -74,7 +74,7 @@ namespace MeasureTheory
 
 namespace Lp
 
-variable {E F : Type*} [AddGroup E] [MeasurableSpace E] [TopologicalSpace E] [ContinuousAdd E]
+variable {E F : Type*} [AddMonoid E] [MeasurableSpace E] [TopologicalSpace E] [ContinuousAdd E]
   [BorelSpace E] [R1Space E] [NormedAddCommGroup F] {mu : Measure E} [mu.IsAddRightInvariant]
   [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -114,8 +114,8 @@ theorem coeFn_translateLp (h : E) (f : Lp F p mu) :
   exact Lp.coeFn_compMeasurePreservingₗᵢEquiv ℝ _ _ _ f
 
 /-- Translation commutes with postcomposition by a continuous linear map. -/
-theorem compLpL_translateLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (L : F →L[ℝ] G) (h : E) (f : Lp F p mu) :
+theorem _root_.ContinuousLinearMap.compLpL_translateLp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (L : F →L[ℝ] G) (h : E) (f : Lp F p mu) :
     L.compLpL p mu (translateLp mu p h f) = translateLp mu p h (L.compLpL p mu f) := by
   apply Lp.ext
   filter_upwards [L.coeFn_compLpL (translateLp mu p h f), coeFn_translateLp (mu := mu) h f,
@@ -183,6 +183,8 @@ theorem coeFn_translateLp_toLp {E F : Type*} [AddCommGroup E] [MeasurableSpace E
   (Measure.coeFn_translateLp h (hf.toLp f)).trans
     ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hf.coeFn_toLp)
 
+section
+
 variable {E F : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E] {mu : Measure E}
   [mu.IsAddRightInvariant] {p : ℝ≥0∞}
 
@@ -197,7 +199,13 @@ theorem comp_add_right_restrict_of_mapsTo [TopologicalSpace F] [ContinuousENorm 
     (measurableEmbedding_addRight h) Omega)).mono_measure
     (Measure.restrict_mono_set mu hVO.subset_preimage)
 
-/-- Translation increments of an `Lᵖ` function tend to zero as the translation tends to zero. -/
+end
+
+variable {E F : Type*} [AddMonoid E] [MeasurableSpace E] {mu : Measure E}
+  [mu.IsAddRightInvariant] {p : ℝ≥0∞}
+
+/-- Translation increments of an `Lᵖ` function on an additive monoid tend to zero as the
+translation tends to zero. -/
 theorem tendsto_eLpNorm_comp_add_sub [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E]
     [R1Space E] [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] [NormedAddCommGroup F]
     {u : E → F} (hu : MemLp u p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞) :
@@ -213,6 +221,40 @@ theorem tendsto_eLpNorm_comp_add_sub [TopologicalSpace E] [ContinuousAdd E] [Bor
         hu.coeFn_toLp))).trans (Filter.EventuallyEq.of_eq (funext fun x ↦ by simp))
 
 end MemLp
+
+/-- Translation is continuous in the `L¹` distance from a fixed translate. -/
+theorem Integrable.continuous_integral_norm_translate_sub
+    {G E : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [MeasurableSpace G] [BorelSpace G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant]
+    [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+    {k : G → E} (hk : Integrable k μ) (b : G) :
+    Continuous (fun c : G ↦ ∫ z : G, ‖k (z - c) - k (z - b)‖ ∂μ) := by
+  let f : G → Lp E 1 μ := fun c ↦
+    Lp.compMeasurePreserving (· + -c) (measurePreserving_add_right μ (-c)) (hk.toL1 k)
+  have hf : Continuous f :=
+    (Lp.continuous_compMeasurePreserving_add_right (by simp) (hk.toL1 k)).comp continuous_neg
+  have hae (c : G) : f c =ᵐ[μ] fun z ↦ k (z - c) := by
+    simpa only [f, sub_eq_add_neg, Function.comp_def] using
+      (Lp.coeFn_compMeasurePreserving (hk.toL1 k) (measurePreserving_add_right μ (-c))).trans
+        ((measurePreserving_add_right μ (-c)).quasiMeasurePreserving.ae_eq_comp hk.coeFn_toL1)
+  have heq (c : G) : ‖f c - f b‖ = ∫ z : G, ‖k (z - c) - k (z - b)‖ ∂μ := by
+    rw [L1.norm_eq_integral_norm]
+    exact integral_congr_ae
+      (((Lp.coeFn_sub (f c) (f b)).trans ((hae c).sub (hae b))).fun_comp (fun x : E ↦ ‖x‖))
+  exact ((hf.sub continuous_const).norm).congr heq
+
+/-- Convergent shifts of an integrable function converge in `L¹`. -/
+theorem Integrable.tendsto_integral_norm_translate_sub
+    {G E α : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [MeasurableSpace G] [BorelSpace G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant]
+    [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+    {k : G → E} (hk : Integrable k μ) {c : α → G} {b : G} {l : Filter α}
+    (hc : Filter.Tendsto c l (nhds b)) :
+    Filter.Tendsto (fun a ↦ ∫ z : G, ‖k (z - c a) - k (z - b)‖ ∂μ) l (nhds 0) := by
+  simpa only [Function.comp_def, sub_self, norm_zero, integral_zero] using
+    (hk.continuous_integral_norm_translate_sub b).continuousAt.tendsto.comp hc
 
 end MeasureTheory
 

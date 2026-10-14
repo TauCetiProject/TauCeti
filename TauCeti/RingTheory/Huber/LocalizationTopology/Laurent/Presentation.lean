@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Quotient
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
 /-!
 # The Laurent quotient of a numerator enlargement, and the maps between it and `A⟨T'/s⟩`
@@ -279,7 +278,7 @@ theorem existsUnique_continuous_ringHom_laurentQuotient_restriction (ht : t ∈ 
   have _ := isHuberRing_locUniformSpace P (T') s S' hden'
   have hu' : IsUnit (toCompletionLoc P (T') s S' hden' s) :=
     isUnit_toCompletionLoc_of_dvd P (T') s S' hden' dvd_rfl
-  set φ := restrictionRingHomOfSubset P T s S hden T' S' hden' hTT' with hφdef
+  set φ := restrictionRingHomOfSubset P T s S hden T' S' hden' hTT'
   have hφ : ContinuousAt φ 0 :=
     (continuous_restrictionRingHomOfSubset P T s S hden T' S' hden' hTT').continuousAt
   set b : Fin 1 → UniformSpace.Completion S' :=

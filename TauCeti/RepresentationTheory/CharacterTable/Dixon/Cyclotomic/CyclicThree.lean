@@ -12,8 +12,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solve
 /-!
 # The cyclotomic Dixon computation for the cyclic group of order three
 
-This file carries the Burnside--Dixon--Schneider computation beyond the rational-table stage for
-the first time.  For `C₃ = Multiplicative (ZMod 3)`, it displays the exact table
+This file carries the Burnside--Dixon--Schneider computation beyond the rational-table stage. For
+`C₃ = Multiplicative (ZMod 3)`, it displays the exact table
 
 ```
 1  1   1
@@ -58,15 +58,10 @@ with the complex character table up to row order.
 
 ## References
 
-This is the `C₃` case of “Small cyclotomic (second milestone)” in Layer 6 of the
-[character theory roadmap][roadmap].
-
 The worked computation follows
 `TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.CyclicTwo`; its prime certificate
 follows `TauCeti.RepresentationTheory.CharacterTable.Dixon.Dihedral`, and the specification bridge
 follows `TauCeti.RepresentationTheory.CharacterTable.Dixon.IntegerChecker`.
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
@@ -257,7 +252,7 @@ theorem cyclicGroupThreeExactCharacterTable_lift_conjugateResidues
 
 /-- **The assembled cyclotomic Dixon--Schneider solver succeeds on the certified `C₃` data.** -/
 theorem isSome_dixonCyclotomicCharacterTable_cyclicGroupThree :
-    ((cyclicClassData 3).dixonCyclotomicCharacterTable? 3 (by simp)
+    ((cyclicClassData 3).dixonCyclotomicCharacterTable? 3
       cyclicGroupThreeDixonPrimeData).isSome = true := by
   apply (cyclicClassData 3).isSome_dixonCyclotomicCharacterTable_of_spec 3 (by simp)
     cyclicGroupThreeDixonPrimeData cyclicGroupThreeExactCharacterTable

@@ -7,8 +7,12 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.FieldTheory.Perfect
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 import Mathlib.Algebra.CharP.Two
+import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
 # The singular points of a Weierstrass model
@@ -35,6 +39,11 @@ equality. Every statement here holds in any characteristic, including two and th
 * `WeierstrassCurve.Affine.isSingular_iff'` and `WeierstrassCurve.Affine.isSingular_iff`: the
   coefficient-level restatements, the second as the two equalities `Nonsingular` negates.
 * `WeierstrassCurve.Affine.isSingular_zero`: singularity at the origin is `a₃ = a₄ = a₆ = 0`.
+* `WeierstrassCurve.Affine.equation_iff_of_isSingular`: the equation expanded at a singular point
+  `(x₁, y₁)` has no constant or linear terms.
+* `WeierstrassCurve.Affine.equation_iff_of_isSingular_zero`: so the equation of a model singular at
+  the origin is `y² + a₁ x y = x³ + a₂ x²`.
+* `WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero`: at such a model, `c₄ = b₂²`.
 * `WeierstrassCurve.Affine.isSingular_iff_variableChange`: singularity at a point is singularity at
   the origin of the model translated there.
 * `WeierstrassCurve.Affine.isSingular_iff_equation_and_not_nonsingular`: the comparison with
@@ -42,6 +51,13 @@ equality. Every statement here holds in any characteristic, including two and th
 * `WeierstrassCurve.Affine.IsSingular.map`, `map_isSingular`, `IsSingular.baseChange` and
   `baseChange_isSingular`: singularity is carried along a coefficient map or a base change, and
   reflected by an injective one.
+* `WeierstrassCurve.Affine.IsSingular.evalEval_polynomialX_mem_maximalIdeal` and
+  `IsSingular.evalEval_polynomialY_mem_maximalIdeal`: over a local ring, at a solution reducing to
+  a singular point both partial values lie in the maximal ideal.
+* `WeierstrassCurve.Δ_mem_sq_of_a₆_eq_zero`: if `a₆ = 0` and `a₃`, `a₄` lie in an ideal `I`,
+  then `Δ ∈ I²`.
+* `WeierstrassCurve.Affine.Δ_mem_sq_of_equation`: at a solution `(x, y)` whose two partial
+  values lie in `I`, `Δ ∈ I²`; for `I = 0` this is `IsSingular.Δ_eq_zero`.
 * `WeierstrassCurve.Affine.exists_isSingular_of_Δ_eq_zero`: over a perfect field, vanishing of the
   discriminant produces a rational singular point.
 * `WeierstrassCurve.Affine.Δ_eq_zero_iff_exists_isSingular`: the resulting characterization of
@@ -52,6 +68,9 @@ equality. Every statement here holds in any characteristic, including two and th
   difference is nilpotent.
 * `WeierstrassCurve.Affine.subsingleton_singular`: over a reduced ring they coincide, so a
   Weierstrass model has at most one singular point.
+* `WeierstrassCurve.Affine.nonsingular_of_isSingular_zero` and
+  `WeierstrassCurve.Affine.ne_zero_of_isSingular_zero`: on a model singular at the origin, the
+  solutions with `x ≠ 0` are exactly the nonsingular points.
 
 ## References
 
@@ -122,6 +141,30 @@ theorem isSingular_zero (W : WeierstrassCurve.Affine R) :
     W.IsSingular 0 0 ↔ W.a₆ = 0 ∧ W.a₄ = 0 ∧ W.a₃ = 0 := by
   rw [IsSingular, equation_zero, evalEval_polynomialX_zero, evalEval_polynomialY_zero, neg_eq_zero]
 
+/-- **The equation expanded at a singular point**: at a singular point `(x₁, y₁)` the constant
+and linear terms of the equation vanish, so it reads
+`(y - y₁)² + a₁ (x - x₁) (y - y₁) = (x - x₁)³ + (3 x₁ + a₂) (x - x₁)²`. -/
+theorem equation_iff_of_isSingular (h : W.IsSingular x₁ y₁) (x y : R) :
+    W.Equation x y ↔ (y - y₁) ^ 2 + W.a₁ * (x - x₁) * (y - y₁) =
+      (x - x₁) ^ 3 + (3 * x₁ + W.a₂) * (x - x₁) ^ 2 := by
+  obtain ⟨hE, hX, hY⟩ := (isSingular_iff' _ _ _).mp h
+  rw [equation_iff] at hE ⊢
+  constructor <;> intro h'
+  · linear_combination h' - hE - (y - y₁) * hY - (x - x₁) * hX
+  · linear_combination h' + hE + (y - y₁) * hY + (x - x₁) * hX
+
+/-- At a model singular at the origin the equation reads `y² + a₁ x y = x³ + a₂ x²`. -/
+theorem equation_iff_of_isSingular_zero (h : W.IsSingular 0 0) (x y : R) :
+    W.Equation x y ↔ y ^ 2 + W.a₁ * x * y = x ^ 3 + W.a₂ * x ^ 2 := by
+  simpa using equation_iff_of_isSingular h x y
+
+
+/-- For a model singular at the origin, `c₄` is the square of `b₂`, the discriminant of the
+tangent quadratic `T² + a₁ T - a₂`. -/
+theorem c₄_eq_b₂_sq_of_isSingular_zero (h : W.IsSingular 0 0) : W.c₄ = W.b₂ ^ 2 := by
+  obtain ⟨-, h₄, h₃⟩ := (isSingular_zero _).1 h
+  simp [c₄, b₄, h₄, h₃]
+
 /-- **The Jacobian criterion is Mathlib's singularity condition**, `Nonsingular` being the
 conjunction of the equation with the negation of both partials vanishing. -/
 theorem isSingular_iff_equation_and_not_nonsingular {W : WeierstrassCurve.Affine R} {x y : R} :
@@ -169,6 +212,72 @@ theorem IsSingular.Δ_eq_zero {x y : R} (h : W.IsSingular x y) : W.Δ = 0 := by
   obtain ⟨hE, hn⟩ := isSingular_iff_equation_and_not_nonsingular.mp h
   by_contra hΔ
   exact hn ((W.equation_iff_nonsingular_of_Δ_ne_zero hΔ).mp hE)
+
+open IsLocalRing in
+/-- **At a solution reducing to a singular point, the `X`-partial lies in `𝔪`.** Over a local ring,
+if `(x, y)` reduces to a singular point of the reduced curve, the `X`-partial derivative of the
+Weierstrass polynomial takes a value at `(x, y)` in the maximal ideal. -/
+theorem IsSingular.evalEval_polynomialX_mem_maximalIdeal [IsLocalRing R] {W : WeierstrassCurve R}
+    {x y : R} (h : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
+    W.toAffine.polynomialX.evalEval x y ∈ maximalIdeal R := by
+  obtain ⟨-, hX, -⟩ := (isSingular_iff' _ _ _).mp h
+  rw [← residue_eq_zero_iff, evalEval_polynomialX]
+  simpa [map_ofNat] using hX
+
+open IsLocalRing in
+/-- **At a solution reducing to a singular point, the `Y`-partial lies in `𝔪`.** Over a local ring,
+if `(x, y)` reduces to a singular point of the reduced curve, the `Y`-partial derivative of the
+Weierstrass polynomial takes a value at `(x, y)` in the maximal ideal. -/
+theorem IsSingular.evalEval_polynomialY_mem_maximalIdeal [IsLocalRing R] {W : WeierstrassCurve R}
+    {x y : R} (h : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
+    W.toAffine.polynomialY.evalEval x y ∈ maximalIdeal R := by
+  obtain ⟨-, -, hY⟩ := (isSingular_iff' _ _ _).mp h
+  rw [← residue_eq_zero_iff, evalEval_polynomialY]
+  simpa [map_ofNat] using hY
+
+end WeierstrassCurve.Affine
+
+/-! ### The discriminant at a point of the curve -/
+
+namespace WeierstrassCurve
+
+variable {R : Type*} [CommRing R]
+
+/-- **The discriminant of an equation through the origin.** If `a₆ = 0`, so that the origin lies
+on the curve, and `a₃` and `a₄` lie in an ideal `I`, then the discriminant lies in `I²`. At the
+origin the two partial derivatives of the Weierstrass polynomial take the values `-a₄` and `a₃`. -/
+theorem Δ_mem_sq_of_a₆_eq_zero (W : WeierstrassCurve R) {I : Ideal R} (h₆ : W.a₆ = 0)
+    (h₃ : W.a₃ ∈ I) (h₄ : W.a₄ ∈ I) : W.Δ ∈ I ^ 2 := by
+  have hΔ : W.Δ = (-W.b₂ ^ 2 * W.a₂ - 8 * (2 * W.a₄ + W.a₁ * W.a₃) * W.a₁ ^ 2 - 27 * W.a₃ ^ 2 +
+      9 * W.b₂ * (2 * W.a₄ + W.a₁ * W.a₃)) * (W.a₃ * W.a₃) +
+      (W.b₂ ^ 2 * W.a₁ - 32 * (2 * W.a₄ + W.a₁ * W.a₃) * W.a₁) * (W.a₃ * W.a₄) +
+      (W.b₂ ^ 2 - 32 * (2 * W.a₄ + W.a₁ * W.a₃)) * (W.a₄ * W.a₄) := by
+    simp only [Δ, b₄, b₆, b₈, h₆]
+    ring
+  rw [hΔ, pow_two]
+  exact add_mem (add_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₃ h₃))
+    (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₃ h₄)))
+    (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₄ h₄))
+
+/-- **The discriminant at a point of the curve.** If `(x, y)` is a solution of the Weierstrass
+equation at which both partial derivatives of the Weierstrass polynomial take values in an ideal
+`I`, then the discriminant lies in `I²`. For `I = 0` this is the vanishing of the discriminant at a
+singular point (`WeierstrassCurve.Affine.IsSingular.Δ_eq_zero`). -/
+theorem Affine.Δ_mem_sq_of_equation (W : Affine R) {I : Ideal R} {x y : R}
+    (h : W.Equation x y) (hX : W.polynomialX.evalEval x y ∈ I)
+    (hY : W.polynomialY.evalEval x y ∈ I) : W.Δ ∈ I ^ 2 := by
+  have := (VariableChange.mk 1 x 0 y • W).Δ_mem_sq_of_a₆_eq_zero
+    (variableChange_translate_a₆_of_equation W h) (variableChange_translate_a₃ W x y ▸ hY)
+    (variableChange_translate_a₄ W x y ▸ I.neg_mem hX)
+  rwa [variableChange_translate_Δ] at this
+
+end WeierstrassCurve
+
+namespace WeierstrassCurve.Affine
+
+open Polynomial
+
+variable {R : Type*} [CommRing R] {W : WeierstrassCurve.Affine R} {x₁ y₁ x₂ y₂ : R}
 
 private theorem exists_isSingular_of_Δ_eq_zero_of_two_eq_zero {F : Type*} [Field F]
     [PerfectField F] (W : WeierstrassCurve.Affine F) (h2 : (2 : F) = 0) (hΔ : W.Δ = 0) :
@@ -388,6 +497,23 @@ theorem subsingleton_singular [IsReduced R] (W : WeierstrassCurve.Affine R) (p q
     eq_of_isSingular_of_isSingular (isSingular_iff_equation_and_not_nonsingular.2 ⟨hp, hp'⟩)
       (isSingular_iff_equation_and_not_nonsingular.2 ⟨hq, hq'⟩)
   exact Prod.ext hx hy
+
+/-- **On a model over a reduced ring singular at the origin, a solution with `x ≠ 0` is a
+nonsingular point**, since the origin is the only singular point. -/
+theorem nonsingular_of_isSingular_zero [IsReduced R] (h0 : W.IsSingular 0 0) {x y : R}
+    (h : W.Equation x y) (hx : x ≠ 0) : W.Nonsingular x y := by
+  by_contra hn
+  exact hx (eq_of_isSingular_of_isSingular
+    (isSingular_iff_equation_and_not_nonsingular.2 ⟨h, hn⟩) h0).1
+
+/-- **On a model over a reduced ring singular at the origin, a nonsingular point has `x ≠ 0`**:
+the equation forces `y ^ 2 = 0`, hence `y = 0`, when `x = 0`. -/
+theorem ne_zero_of_isSingular_zero [IsReduced R] (h0 : W.IsSingular 0 0) {x y : R}
+    (h : W.Nonsingular x y) : x ≠ 0 := by
+  rintro rfl
+  have hy : y ^ 2 = 0 := by simpa using (equation_iff_of_isSingular_zero h0 0 y).1 h.1
+  obtain rfl : y = 0 := IsNilpotent.eq_zero ⟨2, hy⟩
+  exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 h
 
 end WeierstrassCurve.Affine
 

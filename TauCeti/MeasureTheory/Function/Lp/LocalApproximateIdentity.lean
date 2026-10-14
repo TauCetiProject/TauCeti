@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
-public import TauCeti.MeasureTheory.Function.Lp.MollificationBridge
+public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 
 /-!
 # Local convergence of mollifications after zero extension

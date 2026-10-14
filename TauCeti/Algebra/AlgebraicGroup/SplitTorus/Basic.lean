@@ -30,12 +30,6 @@ group `M →* Aˣ`, and the free-abelian-group universal property
 `TauCeti.freeAbelianCharEquiv`, identifying characters of `Multiplicative (σ →₀ ℤ)` with
 families `σ → Aˣ`.
 
-This is a worked-example check for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap), Layer 4 ("Tori: split ... the character
-lattice `X*(T)`") together with the Layer 0 functor-of-points calculation, in the same spirit
-as the existing multiplicative group `𝔾ₘ`, roots of unity `μ_n`, and diagonalizable group
-`D(G)`.
-
 ## Main definitions
 
 * `TauCeti.SplitTorus.characterGroup`: the finitely generated character group of a finite-rank

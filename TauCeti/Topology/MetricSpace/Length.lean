@@ -217,6 +217,38 @@ theorem IsGeodesicSegment.lipschitzOnWith (h : IsGeodesicSegment γ x y) :
   LipschitzOnWith.of_dist_le_mul fun s hs t ht => by
     rw [h.dist_eq s hs t ht, Real.coe_toNNReal _ dist_nonneg, Real.dist_eq, mul_comm]
 
+/-- The point at time `t` of a geodesic segment from `x` to `y` is at distance `t * dist x y`
+from `x`. -/
+theorem IsGeodesicSegment.dist_source_apply (h : IsGeodesicSegment γ x y) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : dist x (γ t) = t * dist x y := by
+  have := h.dist_eq 0 (left_mem_Icc.2 zero_le_one) t ht
+  rwa [h.source, zero_sub, abs_neg, abs_of_nonneg ht.1] at this
+
+/-- The point at time `t` of a geodesic segment from `x` to `y` is at distance
+`(1 - t) * dist x y` from `y`. -/
+theorem IsGeodesicSegment.dist_apply_target (h : IsGeodesicSegment γ x y) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : dist (γ t) y = (1 - t) * dist x y := by
+  have := h.dist_eq t ht 1 (right_mem_Icc.2 zero_le_one)
+  rwa [h.target, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 ht.2)] at this
+
+open Filter Topology in
+/-- A geodesic segment between two points at positive distance leaves its source immediately: as
+`t → 0⁺`, its point at time `t` tends to `x` without being `x`. -/
+theorem IsGeodesicSegment.tendsto_nhdsGT_zero (h : IsGeodesicSegment γ x y)
+    (hxy : 0 < dist x y) : Tendsto γ (𝓝[>] 0) (𝓝[≠] x) := by
+  have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioo (0 : ℝ) 1 := Ioo_mem_nhdsGT one_pos
+  refine tendsto_nhdsWithin_iff.2 ⟨tendsto_iff_dist_tendsto_zero.2 ?_, ?_⟩
+  · have h0 : Tendsto (fun t : ℝ ↦ t * dist x y) (𝓝[>] 0) (𝓝 0) := by
+      simpa using (Continuous.tendsto (f := fun t : ℝ ↦ t * dist x y) (by fun_prop) 0).mono_left
+        (nhdsWithin_le_nhds (a := (0 : ℝ)) (s := Ioi 0))
+    refine h0.congr' ?_
+    filter_upwards [hmem] with t ht
+    rw [dist_comm (γ t) x, h.dist_source_apply ⟨ht.1.le, ht.2.le⟩]
+  · filter_upwards [hmem] with t ht (hγt : γ t = x)
+    have := h.dist_source_apply ⟨ht.1.le, ht.2.le⟩
+    rw [hγt, dist_self] at this
+    exact (mul_pos ht.1 hxy).ne' this.symm
+
 theorem IsGeodesicSegment.continuousOn (h : IsGeodesicSegment γ x y) :
     ContinuousOn γ (Icc 0 1) :=
   h.lipschitzOnWith.continuousOn
@@ -241,6 +273,51 @@ theorem IsGeodesicSegment.reverse (h : IsGeodesicSegment γ x y) :
     have hs' : 1 - s ∈ Icc (0 : ℝ) 1 := ⟨by linarith [hs.2], by linarith [hs.1]⟩
     have ht' : 1 - t ∈ Icc (0 : ℝ) 1 := ⟨by linarith [ht.2], by linarith [ht.1]⟩
     rw [h.dist_eq _ hs' _ ht', dist_comm y x, sub_sub_sub_cancel_left, abs_sub_comm]
+
+/-- The piece of a geodesic segment between the times `a` and `b`, reparametrised over `[0, 1]`, is
+a geodesic segment from `γ a` to `γ b`. -/
+theorem IsGeodesicSegment.comp_lineMap (h : IsGeodesicSegment γ x y) {a b : ℝ}
+    (ha : a ∈ Icc (0 : ℝ) 1) (hb : b ∈ Icc (0 : ℝ) 1) :
+    IsGeodesicSegment (fun t => γ (AffineMap.lineMap a b t)) (γ a) (γ b) where
+  source := by rw [AffineMap.lineMap_apply_zero]
+  target := by rw [AffineMap.lineMap_apply_one]
+  dist_eq s hs t ht := by
+    have hmem {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) : AffineMap.lineMap a b r ∈ Icc (0 : ℝ) 1 := by
+      rw [AffineMap.lineMap_apply_ring']
+      constructor <;> nlinarith [mul_nonneg hr.1 hb.1, mul_nonneg (sub_nonneg.2 hr.2) ha.1,
+        mul_nonneg hr.1 (sub_nonneg.2 hb.2), mul_nonneg (sub_nonneg.2 hr.2) (sub_nonneg.2 ha.2)]
+    rw [h.dist_eq _ (hmem hs) _ (hmem ht), h.dist_eq a ha b hb, ← Real.dist_eq,
+      dist_lineMap_lineMap, Real.dist_eq, Real.dist_eq, mul_assoc]
+
+/-- The point of a geodesic segment at the midpoint of two times `s` and `t` is at distance
+`dist (γ s) (γ t) / 2` from `γ s`. -/
+theorem IsGeodesicSegment.dist_apply_apply_midpoint (h : IsGeodesicSegment γ x y) {s t : ℝ}
+    (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
+    dist (γ s) (γ (midpoint ℝ s t)) = dist (γ s) (γ t) / 2 := by
+  have hm : midpoint ℝ s t = (s + t) / 2 := by
+    rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]
+  have hmI : midpoint ℝ s t ∈ Icc (0 : ℝ) 1 :=
+    ⟨by rw [hm]; linarith [hs.1, ht.1], by rw [hm]; linarith [hs.2, ht.2]⟩
+  have hsub : s - (s + t) / 2 = (s - t) / 2 := by ring
+  rw [h.dist_eq s hs _ hmI, h.dist_eq s hs t ht, hm, hsub, abs_div, abs_two]
+  ring
+
+/-- The point of a geodesic segment at the midpoint of two times `s` and `t` is at distance
+`dist (γ s) (γ t) / 2` from `γ t`. -/
+theorem IsGeodesicSegment.dist_apply_midpoint_apply (h : IsGeodesicSegment γ x y) {s t : ℝ}
+    (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
+    dist (γ (midpoint ℝ s t)) (γ t) = dist (γ s) (γ t) / 2 := by
+  rw [dist_comm, midpoint_comm, h.dist_apply_apply_midpoint ht hs, dist_comm]
+
+/-- An isometry maps a geodesic segment from `x` to `y` to a geodesic segment from `f x` to
+`f y`. -/
+theorem IsGeodesicSegment.comp_isometry {Y : Type*} [PseudoMetricSpace Y] {f : X → Y}
+    (h : IsGeodesicSegment γ x y) (hf : Isometry f) : IsGeodesicSegment (f ∘ γ) (f x) (f y) where
+  source := by rw [Function.comp_apply, h.source]
+  target := by rw [Function.comp_apply, h.target]
+  dist_eq s hs t ht := by
+    simp only [Function.comp_apply, hf.dist_eq]
+    exact h.dist_eq s hs t ht
 
 /-- No piece of a geodesic segment is longer than the affine bound its parametrisation predicts.
 The reverse inequality is `eVariationOn.edist_le`, so the two together identify the length of
@@ -279,6 +356,13 @@ theorem IsGeodesicSpace.exists_eVariationOn_eq [IsGeodesicSpace X] (x y : X) :
     ∃ γ : ℝ → X, IsCurveJoining γ x y ∧ eVariationOn γ (Icc 0 1) = edist x y := by
   obtain ⟨γ, hγ⟩ := IsGeodesicSpace.exists_isGeodesicSegment x y
   exact ⟨γ, hγ.isCurveJoining, hγ.eVariationOn_eq⟩
+
+/-- A space isometric to a geodesic space is a geodesic space. -/
+theorem IsGeodesicSpace.of_isometryEquiv {Y : Type*} [PseudoMetricSpace Y] [IsGeodesicSpace X]
+    (e : X ≃ᵢ Y) : IsGeodesicSpace Y where
+  exists_isGeodesicSegment x y := by
+    obtain ⟨γ, hγ⟩ := IsGeodesicSpace.exists_isGeodesicSegment (e.symm x) (e.symm y)
+    exact ⟨e ∘ γ, by simpa using hγ.comp_isometry e.isometry⟩
 
 /-- **A geodesic space is a length space.** -/
 instance IsGeodesicSpace.toIsLengthSpace [IsGeodesicSpace X] : IsLengthSpace X where

@@ -42,12 +42,8 @@ theorem coveredSquares_union_of_same_side_order
     D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.coveredSquares =
       ({a} ×ˢ (Finset.univ \ insert s (Grid.cIco D.pentagon.bottom s))) ∪
         ({finRotate n a} ×ˢ Grid.cIco D.pentagon.bottom s) := by
-  have hright := D.pentagon.toGridRectangleBetween.right_eq_right_of_left_eq_left
-    D.rectangle hleft
-  have hbottom := D.pentagon.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-    D.rectangle hleft
-  have htop := D.pentagon.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-    D.rectangle hleft
+  rw [D.pentagon.toGridRectangleBetween.coveredSquares_eq_product_of_left_eq_left
+    D.rectangle hleft]
   have hcols : Grid.cIco a (finRotate n a) = {a} :=
     Grid.cIco_eq_singleton_iff.2 ⟨rfl, rfl, D.pentagon.ne_finRotate⟩
   have hrows (t : Fin n) :
@@ -64,15 +60,22 @@ theorem coveredSquares_union_of_same_side_order
     simp only [Finset.mem_insert]
     split_ifs at hsplit <;> grind
   ext p
-  simp only [Finset.mem_union, GridRectangle.mem_coveredSquares,
-    GridRectangle.mem_coveredColumns, GridRectangle.mem_coveredRows,
-    GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
-    GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
-    hleft, hright, hbottom, htop, hthin, D.pentagon.right_eq, hcols,
+  simp only [Finset.mem_union, hthin, D.pentagon.right_eq, hcols,
     D.pentagon.mem_coveredSquares, Finset.mem_product, Finset.mem_singleton,
     Finset.mem_sdiff, Finset.mem_univ, true_and]
   have := hrows p.2
   grind
+
+/-- The constituent domains of a vertical rectangle--pentagon annulus cover disjoint
+squares, so no O-marking contributes twice to its weight. -/
+theorem disjoint_coveredSquares_of_same_side_order
+    (D : GridRectanglePentagonDecomposition a s x x)
+    (hleft : D.rectangle.left = D.pentagon.left) :
+    Disjoint D.rectangle.toGridRectangle.coveredSquares D.pentagon.coveredSquares := by
+  rw [D.pentagon.toGridRectangleBetween.coveredSquares_eq_product_of_left_eq_left
+    D.rectangle hleft]
+  exact (D.pentagon.disjoint_coveredSquares_of_forall_mem_cIco
+    fun _ hp => (Finset.mem_product.1 hp).2).symm
 
 /-- Avoiding any marking state in a thin vertical rectangle--pentagon annulus amounts to
 placing the first column's marking in the omitted closed arc and the second column's
@@ -106,12 +109,8 @@ theorem coveredSquares_union_map_of_same_side_order
       ({a} ×ˢ Grid.cIoo s D.pentagon.top) ∪
         ({finRotate n a} ×ˢ Grid.cIco D.pentagon.top s) := by
   classical
-  have hright := D.pentagon.toGridRectangleBetween.right_eq_right_of_left_eq_left
-    D.rectangle hleft
-  have hbottom := D.pentagon.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-    D.rectangle hleft
-  have htop := D.pentagon.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-    D.rectangle hleft
+  rw [D.pentagon.toGridRectangleBetween.coveredSquares_eq_product_of_left_eq_left
+    D.rectangle hleft]
   have hcols : Grid.cIco a (finRotate n a) = {a} :=
     Grid.cIco_eq_singleton_iff.2 ⟨rfl, rfl, D.pentagon.ne_finRotate⟩
   have hrows (t : Fin n) :
@@ -128,15 +127,28 @@ theorem coveredSquares_union_map_of_same_side_order
   ext p
   simp only [Finset.mem_union, Finset.mem_map_equiv, Equiv.prodCongr_symm,
     Equiv.symm_swap, Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply',
-    Equiv.refl_apply, GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
-    GridRectangleBetween.toGridRectangle_top, hleft, hright, hbottom, htop, hthin,
+    Equiv.refl_apply, hthin,
     D.pentagon.right_eq, hcols, D.pentagon.mem_coveredSquares,
     Finset.mem_product, Finset.mem_singleton, Equiv.swap_apply_eq_iff,
     Equiv.swap_apply_left]
   have := hrows p.2
   grind
+
+/-- Reading the rectangle back in the original columns gives disjoint constituent domains
+for a vertical pentagon--rectangle annulus. -/
+theorem disjoint_coveredSquares_map_of_same_side_order
+    (D : GridPentagonRectangleDecomposition a s x x)
+    (hleft : D.rectangle.left = D.pentagon.left) :
+    Disjoint D.pentagon.coveredSquares (D.rectangle.toGridRectangle.coveredSquares.map
+      ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding) := by
+  rw [D.pentagon.toGridRectangleBetween.coveredSquares_eq_product_of_left_eq_left
+    D.rectangle hleft]
+  apply D.pentagon.disjoint_coveredSquares_of_forall_mem_cIco
+  intro p hp
+  obtain ⟨q, hq, rfl⟩ := Finset.mem_map.1 hp
+  -- The commutation swap acts only on columns, so the row is unchanged.
+  simpa only [Equiv.coe_toEmbedding, Equiv.prodCongr_apply, Prod.map_snd,
+    Equiv.refl_apply] using (Finset.mem_product.1 hq).2
 
 /-- The marking test for a thin vertical pentagon--rectangle annulus, testing the rectangle
 in the commuted marking state and the pentagon in the original marking state. -/

@@ -1,46 +1,36 @@
 import Lean
 
 /-!
-# `axioms`: the axiom-allowlist audit for the `TauCeti` library
+# Shared declaration-ownership and axiom audits
 
-Human-owned governance machinery. This executable builds the `TauCeti` environment from
-its compiled `.olean`s and inspects, for every declaration *defined in `TauCeti`*, the
-axioms it transitively depends on (`Lean.collectAxioms`). It fails unless every such
-declaration uses only the standard allowlist
+`lake exe axioms` and the workflow-pinned native `audit-driver` reject declarations owned
+by two modules when at least one owner is in TauCeti, including compatible duplicate
+user theorems. Ownership comes from each module's `constNames`, before the axiom scan
+uses merged constants. Reserved auxiliaries with no explicit source declaration are exempt.
 
-  `propext`, `Classical.choice`, `Quot.sound`.
-
-Because it works on the kernel environment rather than on source text, it catches what a
-`grep` cannot: `sorry`/`admit` (which surface as `sorryAx`), `native_decide` (which adds
-`Lean.ofReduceBool`), and any home-rolled `axiom`, including ones reaching in through
-imports. Run via `lake exe axioms` (after `lake build`).
+Every TauCeti declaration must depend only on `propext`, `Classical.choice`, and `Quot.sound`.
+This catches `sorry`/`admit`, native-decision axioms, and custom axioms, including private
+ones and dependencies reached through imports. Enumerating sources includes the empty
+root and orphan modules. `--duplicates-only` isolates the ownership fixtures.
 
 By default the audit covers the whole library. If `AXIOMS_ONLY_MODULES` names a file of module
-names (see `scope`), it covers only declarations defined in those modules and in every `TauCeti`
-module that imports one of them, directly or transitively (see `importersClosure`).
+names (see `AxiomAudit.scope`), it covers only declarations defined in those modules and in every
+`TauCeti` module that imports one of them, directly or transitively (see
+`AxiomAudit.importersClosure`).
+
+The separate canonical module-system audit is `scripts/ModuleSystem.lean`; workflows run
+it after this driver to check each compiled artifact's `isModule` flag.
 -/
 
 open Lean
+
+namespace AxiomAudit
 
 /-- The library whose declarations are audited (the AI-owned mathematics). -/
 def auditedRoot : Name := `TauCeti
 
 /-- Axioms permitted anywhere in `TauCeti`. -/
 def allowedAxioms : List Name := [``propext, ``Classical.choice, ``Quot.sound]
-
-/-- Build the environment from the given imported modules and run `act` in `CoreM`.
-Inlined from `importGraph`'s `Core.withImportModules` (Kim Morrison, Paul Lezeau; Apache 2.0).
-
-`trustLevel := 1024` means imported constants are taken as type-correct rather than
-re-checked. That is correct here because CI runs `lake build` (which kernel-checks the
-library from source) *before* `lake exe axioms`; this audit checks *which axioms* a
-declaration depends on, not whether the proofs are valid. It is not a defense against
-stale or hand-forged `.olean`s. -/
-def withImportedEnv {α} (modules : Array Name) (act : CoreM α) : IO α := do
-  initSearchPath (← findSysroot)
-  unsafe Lean.withImportModules (modules.map (fun m => { module := m })) {} (trustLevel := 1024)
-    fun env => Prod.fst <$> Core.CoreM.toIO act
-      (ctx := { fileName := "<axioms>", fileMap := default }) (s := { env := env })
 
 /-- Is `mod` the audited library root or one of its submodules? -/
 def inAuditedLib (mod : Name) : Bool := mod == auditedRoot || auditedRoot.isPrefixOf mod
@@ -180,15 +170,11 @@ def scope : IO (Option (Std.HashSet Name)) := do
     return some (Std.HashSet.ofList (((text.splitOn "\n").map (·.trimAscii.toString)).filter (· ≠ "")
       |>.map String.toName))
 
--- Return the exit code (rather than `IO.Process.exit`) so the Lean runtime tears the
--- imported environment down in order; an abrupt `exit()` can segfault during teardown.
-def main : IO UInt32 := do
-  let modules ← auditedModules
-  let only ← scope
+/-- Render the axiom result and return 1 for violations or an empty unscoped candidate set. -/
+def report (only : Option (Std.HashSet Name)) (audited : Nat) (messages : Array String) : IO UInt32 := do
   if let some s := only then
     IO.println s!"axioms: auditing the {s.size} changed module(s) and everything importing them \
       (AXIOMS_ONLY_MODULES)"
-  let (audited, messages) ← withImportedEnv modules (audit only)
   if audited == 0 && only.isNone then
     -- Governance tooling must fail loudly if it audited nothing (e.g. miswired import).
     IO.eprintln s!"axioms: audited 0 declarations in {auditedRoot}: the audit is miswired."
@@ -201,4 +187,110 @@ def main : IO UInt32 := do
     IO.eprintln s!"axioms: {messages.size} declaration(s) in {auditedRoot} use disallowed axioms:"
     for m in messages do IO.eprintln m
     IO.eprintln s!"allowed: {allowedAxioms}"
+    return 1
+
+end AxiomAudit
+
+namespace DuplicateDeclarations
+
+/-- Inspect the per-module data, not `env.constants`, which has already merged equal theorems.
+All mmap-backed names stay inside `withImportModules`' callback. -/
+def check (env : Environment) (localModules : NameSet) : IO UInt32 := do
+  let modules := env.allImportedModuleNames
+  -- Every violation involves a TauCeti-owned name. Index those names first, then compare
+  -- them against ALL modules, including dependencies; unrelated dependency names need no owner.
+  let mut localNames : NameSet := {}
+  for i in [:modules.size] do
+    if localModules.contains modules[i]! then
+      for name in env.header.moduleData[i]!.constNames do
+        localNames := localNames.insert name
+  let mut owners : NameMap Name := {}
+  let mut collisions : Array (Name × Name × Name) := #[]
+  let mut collisionNames : NameSet := {}
+  for i in [:modules.size] do
+    let mod := modules[i]!
+    for name in env.header.moduleData[i]!.constNames do
+      if !localNames.contains name then continue
+      match owners.find? name with
+      | none => owners := owners.insert name mod
+      | some previous =>
+        if previous != mod && (localModules.contains mod || localModules.contains previous) then
+          collisions := collisions.push (name, previous, mod)
+          collisionNames := collisionNames.insert name
+        if localModules.contains mod then owners := owners.insert name mod
+  -- Declaration ranges matter only for collisions. Keep the same exemption: a reserved
+  -- auxiliary is allowed only when NO module supplies a source declaration range for it.
+  -- In particular, user-written `.eq_1` theorems are still checked.
+  let mut explicitNames : NameSet := {}
+  for i in [:modules.size] do
+    for (name, _) in declRangeExt.getModuleEntries env i do
+      if collisionNames.contains name then
+        explicitNames := explicitNames.insert name
+  let mut bad := 0
+  for (name, previous, mod) in collisions do
+    if !explicitNames.contains name && isReservedName env name then continue
+    IO.eprintln s!"duplicate-declarations: {name} is declared in both {previous} and {mod}"
+    bad := bad + 1
+  if bad != 0 then
+    IO.eprintln "Keep one canonical declaration and import its module from the other files."
+    return 1
+  IO.println s!"duplicate-declarations: checked {localModules.size} TauCeti modules and \
+    {modules.size - localModules.size} dependency modules; no duplicate declarations."
+  return 0
+
+end DuplicateDeclarations
+
+/-!
+## Import and teardown discipline
+
+One private-level import loads the full artifact parts without executing candidate
+initializers (`loadExts := false`). `trustLevel := 1024` accepts constants as type-correct:
+these checks follow a kernel-checked build and do not validate arbitrary compiled proofs.
+Byte integrity alone does not establish proof correctness.
+
+`withImportModules` keeps mmap-backed names alive through both checks and frees the
+regions before returning an exit code. Render every imported name inside the callback.
+A failed ownership check stops the axiom scan.
+-/
+
+/-- Print a phase and write best-effort epoch timestamps to `AUDIT_PHASES_FILE`, if set. -/
+def phase (name : String) : IO Unit := do
+  IO.println s!"audit-driver: phase {name}"
+  (← IO.getStdout).flush
+  if let some path ← IO.getEnv "AUDIT_PHASES_FILE" then
+    -- Telemetry is best-effort and never decides audit success.
+    try
+      let timestamp ← IO.Process.output { cmd := "date", args := #["+%s.%N"] }
+      if timestamp.exitCode == 0 then
+        let file ← IO.FS.Handle.mk path .append
+        file.putStr s!"{name}\t{timestamp.stdout.trimAscii}\n"
+    catch _ => pure ()
+
+/-- Run ownership then axioms, or ownership alone with `--duplicates-only`.
+Return 0 on success, 1 on an audit/import failure, and 2 on unsupported arguments.
+The environment callback/CoreM adapter is inlined from importGraph's `Core.withImportModules`
+(Kim Morrison, Paul Lezeau; Apache 2.0). -/
+def main (args : List String) : IO UInt32 := do
+  if !args.isEmpty && args != ["--duplicates-only"] then
+    IO.eprintln "usage: audit-driver [--duplicates-only]"
+    return 2
+  try
+    phase "audit-import"
+    initSearchPath (← findSysroot)
+    let modules ← AxiomAudit.auditedModules
+    if modules.size <= 1 then
+      throw <| IO.userError "duplicate-declarations: no TauCeti source modules found"
+    let localModules := modules.foldl (fun s n => s.insert n) ({} : NameSet)
+    let only ← AxiomAudit.scope
+    unsafe withImportModules (modules.map fun m => { module := m }) {}
+      (fun env => do
+        phase "audit-duplicates"
+        let status ← DuplicateDeclarations.check env localModules
+        if status != 0 || args == ["--duplicates-only"] then return status
+        phase "audit-axioms"
+        let (audited, messages) ← Prod.fst <$> Core.CoreM.toIO (AxiomAudit.audit only)
+          { fileName := "<axioms>", fileMap := default } { env }
+        AxiomAudit.report only audited messages) (trustLevel := 1024)
+  catch e =>
+    IO.eprintln s!"audit-driver: {e}"
     return 1

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.CounitPoints
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Basic
 
 /-!
 # The adjoint action of the special linear group

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
 # Recovering a subspace from its exterior line
@@ -45,7 +45,7 @@ theorem ιMulti_mem_span_of_mem_span {n : ℕ} (v w : Fin n → M)
   choose w' hw' using hw'
   have h := congrArg (fun x : ⋀[R]^n (Fin n → R) ↦
     (map f) (x : ExteriorAlgebra R (Fin n → R)))
-    (exteriorPower.ιMulti_eq_basis_det_smul b w')
+    (b.exteriorPower_ιMulti_eq_det_smul w')
   have heq : ιMulti R n w = b.det w' • ιMulti R n v := by
     simpa [f, Function.comp_def, hw'] using h
   rw [heq]
