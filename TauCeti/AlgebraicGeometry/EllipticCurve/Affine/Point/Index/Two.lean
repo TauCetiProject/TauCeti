@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import Mathlib.FieldTheory.Perfect
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+-- Proof-only: the coordinates of a solution in `(ϖ)` on the normal form at `III*`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: index two from the sums of points outside a subgroup.
 import TauCeti.GroupTheory.Index.Two
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
