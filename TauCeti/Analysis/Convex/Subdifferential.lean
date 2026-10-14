@@ -191,19 +191,14 @@ theorem _root_.StrictConvexOn.eq_of_mem_subdifferential {s : Set E} {f : E → �
     (hf : StrictConvexOn ℝ s f) {x₁ x₂ : E} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s)
     (h₁ : y ∈ subdifferential B (fun x => (f x : EReal)) x₁)
     (h₂ : y ∈ subdifferential B (fun x => (f x : EReal)) x₂) : x₁ = x₂ := by
-  -- Two subgradient inequalities force `B (x₂ - x₁) y = f x₂ - f x₁`; then the subgradient
-  -- inequality at the midpoint contradicts strict convexity there.
-  by_contra hne
-  rw [mem_subdifferential_coe_iff] at h₁ h₂
-  have hmid := hf.2 hx₁ hx₂ hne (one_half_pos : (0 : ℝ) < 1 / 2) one_half_pos (add_halves 1)
-  have e₁ := h₁ ((1 / 2 : ℝ) • x₁ + (1 / 2 : ℝ) • x₂)
-  have e₂ := h₂ x₁
-  have hm : (1 / 2 : ℝ) • x₁ + (1 / 2 : ℝ) • x₂ - x₁ = (1 / 2 : ℝ) • (x₂ - x₁) := by
-    module
-  rw [hm, map_smul, LinearMap.smul_apply, smul_eq_mul] at e₁
-  rw [← neg_sub x₂ x₁, map_neg, LinearMap.neg_apply] at e₂
-  simp only [smul_eq_mul] at hmid
-  linarith
+  -- A common subgradient `y` makes `x₁` and `x₂` minimisers of the strictly convex `f - B · y`.
+  have hmin {x₀ : E} (h : y ∈ subdifferential B (fun x => (f x : EReal)) x₀) :
+      IsMinOn (f - ⇑(B.flip y)) s x₀ := fun x _ => by
+    have := (mem_subdifferential_coe_iff B f).1 h x
+    simp only [map_sub, LinearMap.sub_apply] at this
+    simp only [Set.mem_ofPred_eq, Pi.sub_apply, LinearMap.flip_apply]
+    linarith
+  exact (hf.sub_concaveOn ((B.flip y).concaveOn hf.1)).eq_of_isMinOn (hmin h₁) (hmin h₂) hx₁ hx₂
 
 /-! ### Subgradient images -/
 
