@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
 public import TauCeti.CategoryTheory.AInfinity.Basic
 public import TauCeti.CategoryTheory.Graded.InducedQuiver
 
@@ -22,21 +23,27 @@ An `A∞` functor from an `A∞` category `ℬ` on `D` to `𝒞`, with object ma
 string of morphisms of `ℬ` to a morphism of `𝒞` between the images of its endpoints, and its
 defining equation is imposed only on composable strings.  It can therefore be stored as an `A∞`
 morphism from the total algebra of `ℬ` to the total algebra of the induced category along `F`.
-The total algebra of `𝒞` itself is not a valid target when `F` is not injective: a string of
-morphisms which is not composable in `ℬ` can become composable after applying `F`, and the
-operations of `𝒞` do not vanish on it.
+This avoids an obstruction that the total algebra of `𝒞` itself can meet as a target when `F` is
+not injective: a string of morphisms which is not composable in `ℬ` can become composable after
+applying `F`, and the operations of `𝒞` need not vanish on it.
 
 The total module of the induced quiver maps to that of `C`
-(`TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap`), but this map is not injective, and it
-intertwines the operations only on composable strings
-(`TauCeti.AInfinityCategory.totalHomMap_induced_m_of_chain`).  So the induced structure is not a
-pullback of `A∞` algebras.  Instead its Stasheff identities are checked string by string: on a
-composable string each Stasheff term is the corresponding term of `𝒞`, which lies in a single hom
-module where the map is injective, and on any other string every term vanishes.
+(`TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap`).  In general this map need not be
+injective, and it intertwines the operations on composable strings
+(`TauCeti.AInfinityCategory.totalHomMap_induced_m_of_chain`) but in general not on other strings.
+So the induced structure is in general not a pullback of `A∞` algebras.  Instead its Stasheff
+identities are checked string by string: on a composable string each Stasheff term is the
+corresponding term of `𝒞`, which lies in a single hom module where the map is injective, and on
+any other string every term vanishes.  When `F` is injective, the map intertwines the operations
+on all strings (`TauCeti.AInfinityCategory.totalHomMap_induced_m`), so it is a strict `A∞`
+morphism of total algebras (`TauCeti.AInfinityCategory.inducedInclusion`).
 
 ## Main definitions
 
 * `TauCeti.AInfinityCategory.induced`: the `A∞` category induced along a map of objects.
+* `TauCeti.AInfinityCategory.inducedInclusion`: along an injective map of objects, the inclusion
+  of the total algebra of morphisms of the induced category into that of `𝒞`, a strict `A∞`
+  morphism.
 
 ## Main results
 
@@ -48,6 +55,8 @@ module where the map is injective, and on any other string every term vanishes.
   induced quiver with these operations.
 * `TauCeti.AInfinityCategory.homDifferential_induced` and
   `TauCeti.AInfinityCategory.comp_induced`: its differential and composition are those of `𝒞`.
+* `TauCeti.AInfinityCategory.totalHomMap_induced_m`: along an injective map of objects, the map
+  of total modules intertwines the operations on all strings.
 
 ## References
 
@@ -465,12 +474,11 @@ theorem eq_induced {𝒟 : AInfinityCategory R (InducedQuiver C F)}
 theorem homDifferential_induced (X Y : InducedQuiver C F) (f : homModule (R := R) X Y) :
     (𝒞.induced F).homDifferential X Y f = 𝒞.homDifferential (F X.obj) (F Y.obj) f := by
   apply homInclusion_injective (F X.obj) (F Y.obj)
-  rw [← totalHomMap_homInclusion, homInclusion_homDifferential, homInclusion_homDifferential,
-    AInfinityAlgebra.differential_apply, AInfinityAlgebra.differential_apply,
-    Matrix.vec_single_eq_const, Matrix.vec_single_eq_const,
-    𝒞.totalHomMap_induced_m_of_chain F (fun _ ↦ X) (fun _ ↦ Y)
-      (fun _ ↦ LinearMap.mem_range_self _ f) fun i j hij ↦ absurd j.isLt (by omega),
-    totalHomMap_homInclusion]
+  rw [← totalHomMap_homInclusion]
+  simpa [homInclusion_homDifferential, AInfinityAlgebra.differential_apply,
+    Matrix.vec_single_eq_const] using
+    𝒞.totalHomMap_induced_m_of_chain F (fun _ : Fin 1 ↦ X) (fun _ ↦ Y)
+      (fun _ ↦ LinearMap.mem_range_self _ f) fun i j hij ↦ absurd j.isLt (by omega)
 
 /-- The composition of the induced category is the composition of `𝒞`. -/
 @[simp]
@@ -486,6 +494,63 @@ theorem comp_induced (X Y Z : InducedQuiver C F) (g : homModule (R := R) Y Z)
   congr 1
   funext i
   fin_cases i <;> simp
+
+section Injective
+
+variable {F} (hF : Function.Injective F)
+include hF
+
+/-- **Along an injective map of objects, the map of total modules intertwines the operations.**
+Including the value of an operation of the induced category into the total module of `𝒞` gives
+the operation of `𝒞` on the included morphisms, on all strings: a string which is not composable
+in the induced quiver is not composable in `C`. -/
+@[simp]
+theorem totalHomMap_induced_m (n : ℕ) (x : Fin n → TotalHom R (InducedQuiver C F)) :
+    totalHomMap R F ((𝒞.induced F).m n x) = 𝒞.m n fun i ↦ totalHomMap R F (x i) := by
+  rcases n with _ | n
+  · simp [AInfinityAlgebra.m_zero]
+  refine sub_eq_zero.1 <| (Submodule.mem_bot R).1 <| multilinearMap_apply_mem
+    (f := (totalHomMap R F).compMultilinearMap ((𝒞.induced F).m (n + 1)) -
+      (𝒞.m (n + 1)).compLinearMap fun _ ↦ totalHomMap R F)
+    (fun X x ↦ ?_) (fun s t x i j hij hne ↦ ?_) x
+  · rw [Submodule.mem_bot, sub_apply, LinearMap.compMultilinearMap_apply,
+      MultilinearMap.compLinearMap_apply, sub_eq_zero]
+    refine 𝒞.totalHomMap_induced_m_of_chain F (fun i ↦ X i.rev.castSucc) (fun i ↦ X i.rev.succ)
+      (fun i ↦ LinearMap.mem_range_self _ _) fun i j hij ↦ congrArg X (Fin.ext ?_)
+    simp only [Fin.val_succ, Fin.val_castSucc, Fin.val_rev]
+    omega
+  · have hne' : F (t j).obj ≠ F (s i).obj := fun e ↦ hne (InducedQuiver.ext (hF e))
+    simp only [sub_apply, LinearMap.compMultilinearMap_apply,
+      MultilinearMap.compLinearMap_apply, totalHomMap_homInclusion,
+      ((𝒞.induced F).isPathCompatible_m (n + 1)).eq_zero_of_ne s t x i j hij hne,
+      (𝒞.isPathCompatible_m (n + 1)).eq_zero_of_ne (fun k ↦ F (s k).obj) (fun k ↦ F (t k).obj) x
+        i j hij hne', map_zero, sub_zero]
+
+/-- The **inclusion of the total algebra of morphisms** of the category induced along an injective
+map of objects into that of `𝒞`, a strict `A∞` morphism. -/
+noncomputable def inducedInclusion :
+    AInfinityStrictHom (𝒞.induced F).toAInfinityAlgebra 𝒞.toAInfinityAlgebra where
+  toLinearMap := totalHomMap R F
+  map_mem' ha := by
+    rw [(𝒞.induced F).grading_eq] at ha
+    rw [𝒞.grading_eq]
+    exact totalHomMap_mem_totalGrading_piece ha
+  map_m' n := MultilinearMap.ext fun x ↦ 𝒞.totalHomMap_induced_m hF n x
+
+/-- The underlying linear map of the inclusion of total algebras of an induced category is the map
+of total modules. -/
+@[simp]
+theorem inducedInclusion_toLinearMap : (𝒞.inducedInclusion hF).toLinearMap = totalHomMap R F := by
+  unfold inducedInclusion
+  rfl
+
+/-- The inclusion of total algebras of an induced category is the map of total modules. -/
+@[simp]
+theorem coe_inducedInclusion : ⇑(𝒞.inducedInclusion hF) = totalHomMap R F :=
+  congrArg (fun g : TotalHom R (InducedQuiver C F) →ₗ[R] TotalHom R C ↦ ⇑g)
+    (𝒞.inducedInclusion_toLinearMap hF)
+
+end Injective
 
 end AInfinityCategory
 
