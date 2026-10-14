@@ -63,6 +63,14 @@ theorem laurentSeriesPrimitive_single (n : ℤ) (a : K) :
   · have h' : m - 1 ≠ n := by omega
     simp [h, h']
 
+/-- A nonzero multiple of `X⁻¹ dX` is not exact, in any characteristic. -/
+theorem single_neg_one_not_mem_range_laurentSeries_derivative {a : K} (ha : a ≠ 0) :
+    single (-1) a ∉ LinearMap.range (LaurentSeries.derivative K) := by
+  rintro ⟨f, hf⟩
+  apply ha
+  simpa [LaurentSeries.derivative_apply] using
+    congrArg (fun g : LaurentSeries K ↦ g.coeff (-1)) hf.symm
+
 variable [CharZero K]
 
 /-- Differentiating the termwise integral removes exactly the residue term. -/
@@ -138,11 +146,5 @@ theorem existsUnique_laurentSeries_primitive (f : LaurentSeries K) (hf : f.coeff
   · exact derivative_laurentSeriesPrimitive_of_coeff_neg_one_eq_zero K hf
   · intro g hg
     simpa [hg.2] using eq_laurentSeriesPrimitive_add_single_of_derivative_eq K hg.1
-
-/-- A nonzero multiple of `X⁻¹ dX` is not exact. -/
-theorem single_neg_one_not_mem_range_laurentSeries_derivative {a : K} (ha : a ≠ 0) :
-    single (-1) a ∉ LinearMap.range (LaurentSeries.derivative K) := by
-  rw [mem_range_laurentSeries_derivative_iff]
-  simpa using ha
 
 end TauCeti
