@@ -144,6 +144,7 @@ theorem homeomorphGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
 include hq hbi hinj in
 /-- The inverse of `homeomorphGenLoop` evaluates at `q z` to the value of the generalized loop
 at `z`. -/
+@[simp]
 theorem homeomorphGenLoop_symm_apply_comp (p : Ω^ N X x) (z : N → I) :
     ((homeomorphGenLoop q b₀ hbi hq hinj).symm p).1 (q z) = p z := by
   have h := congrArg (fun r : Ω^ N X x => r z)
