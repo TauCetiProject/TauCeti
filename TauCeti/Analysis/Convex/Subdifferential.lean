@@ -47,7 +47,8 @@ convex.
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
 * `TauCeti.mem_subdifferential_add_affine_iff` and `TauCeti.subgradientImage_add_affine` —
   adding the affine function `z ↦ B z q + c` translates subdifferentials and subgradient images
-  by `q`;
+  by `q`, and `TauCeti.convex_epigraph_add_affine_iff` — it preserves convexity of the real
+  epigraph;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
 * `StrictConvexOn.eq_of_mem_subdifferential` — a strictly convex function has disjoint
   subdifferentials at distinct points;
@@ -416,6 +417,34 @@ theorem subgradientImage_add_affine (q : F) (c : ℝ) (s : Set E) :
       (· - q) ⁻¹' subgradientImage B f s := by
   ext y
   simp only [mem_subgradientImage_iff, Set.mem_preimage, mem_subdifferential_add_affine_iff]
+
+/-- Adding the affine function `z ↦ B z q + c` to `f` preserves convexity of the real epigraph,
+in both directions. -/
+theorem convex_epigraph_add_affine_iff (q : F) (c : ℝ) :
+    Convex ℝ {p : E × ℝ | f p.1 + ((B p.1 q + c : ℝ) : EReal) ≤ p.2} ↔
+      Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} := by
+  -- The forward implication, for every function and affine function.
+  have key (g : E → EReal) (q : F) (c : ℝ) (hg : Convex ℝ {p : E × ℝ | g p.1 ≤ p.2}) :
+      Convex ℝ {p : E × ℝ | g p.1 + ((B p.1 q + c : ℝ) : EReal) ≤ p.2} := by
+    let L : E × ℝ →ₗ[ℝ] E × ℝ :=
+      (LinearMap.fst ℝ E ℝ).prod (LinearMap.snd ℝ E ℝ - B.flip q ∘ₗ LinearMap.fst ℝ E ℝ)
+    convert (hg.translate_preimage_right ((0 : E), -c)).linear_preimage L using 1
+    ext ⟨z, t⟩
+    simp only [Set.mem_ofPred_eq, Set.preimage_ofPred_eq, Prod.fst_add, zero_add, Prod.snd_add,
+      LinearMap.prod_apply, LinearMap.coe_fst, Function.prod_apply, LinearMap.sub_apply,
+      LinearMap.snd_apply, LinearMap.coe_comp, Function.comp_apply, LinearMap.flip_apply, L]
+    rw [← EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _)),
+      ← EReal.coe_sub]
+    congr! 2
+    ring
+  refine ⟨fun h => ?_, key f q c⟩
+  convert key (fun z => f z + ((B z q + c : ℝ) : EReal)) (-q) (-c) h using 4 with p
+  induction f p.1 with
+  | bot => simp
+  | top => simp
+  | coe r =>
+    simp only [← EReal.coe_add, map_neg, EReal.coe_eq_coe_iff]
+    ring
 
 /-! ### Conjugate-subgradient reciprocity -/
 
