@@ -132,7 +132,7 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet (h : IsMorseS
       ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) 1 (Subtype.val : ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q) → E) := by
   refine exists_isManifold_of_finrankSubspaceCharts fun y ⟨hyu, hys⟩ ↦ ?_
-  have htr := h.transverse hp hq hyu hys
+  have htr := h hp hq hyu hys
   obtain ⟨e, hye, he, hes, hmem⟩ :=
     hp.exists_unstableSet_inter_stableSet_chart hq hfs hf hyu hys htr
   refine ⟨e, _, hye, fun z hz ↦ (he z hz).contMDiffAt, fun z hz ↦ (hes z hz).contMDiffAt, hmem,
@@ -160,7 +160,7 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level (h : Is
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) → E) := by
   have hpq : p ≠ q := by rintro rfl; omega
   refine exists_isManifold_of_finrankSubspaceCharts fun y ⟨⟨hyu, hys⟩, hyc⟩ ↦ ?_
-  have htr := h.transverse hp hq hyu hys
+  have htr := h hp hq hyu hys
   obtain ⟨e, hye, he, hes, hmem⟩ :=
     hp.exists_unstableSet_inter_stableSet_level_chart hq hfs hf hpq hyu hys htr hyc
   refine ⟨e, _, hye, fun z hz ↦ (he z hz).contMDiffAt, fun z hz ↦ (hes z hz).contMDiffAt, hmem,
