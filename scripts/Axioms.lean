@@ -168,11 +168,6 @@ def auditResults (only : Option (Std.HashSet Name)) (groupResults := false) :
         results := results.insert mod (count, msgs.push message)
   return (candidates.size, messages, results)
 
-/-- The authoritative audit's existing count and diagnostics. -/
-def audit (only : Option (Std.HashSet Name)) : CoreM (Nat × Array String) := do
-  let (count, messages, _) ← auditResults only
-  return (count, messages)
-
 -- Return the exit code (rather than `IO.Process.exit`) so the Lean runtime tears the
 -- imported environment down in order; an abrupt `exit()` can segfault during teardown.
 /-- The optional audit scope: `AXIOMS_ONLY_MODULES` names a file listing module names, one per line
@@ -365,7 +360,7 @@ def main (args : List String) : IO UInt32 := do
         let status ← DuplicateDeclarations.check env localModules
         if status != 0 || args == ["--duplicates-only"] then return status
         phase "audit-axioms"
-        let (audited, messages) ← Prod.fst <$> Core.CoreM.toIO (AxiomAudit.audit only)
+        let (audited, messages, _) ← Prod.fst <$> Core.CoreM.toIO (AxiomAudit.auditResults only)
           { fileName := "<axioms>", fileMap := default } { env }
         AxiomAudit.report only audited messages) (trustLevel := 1024)
   catch e =>
