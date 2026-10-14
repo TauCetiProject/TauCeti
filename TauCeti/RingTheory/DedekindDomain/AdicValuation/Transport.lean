@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import Mathlib.RingTheory.Localization.FractionRing
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+public import TauCeti.Topology.Algebra.Valued.WithVal
 
 /-!
 # Adic valuations and completions transport along an isomorphism of Dedekind domains
@@ -137,19 +138,8 @@ variable {R R' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedek
 continuous for the two adic uniformities. -/
 theorem uniformContinuous_withValCongr (σ : K ≃+* K')
     (hσ : ∀ x, w.valuation K' (σ x) = v.valuation K x) :
-    UniformContinuous (WithVal.congr (v.valuation K) (w.valuation K') σ) := by
-  refine uniformContinuous_of_continuousAt_zero _ ?_
-  rw [ContinuousAt, map_zero, (Valued.hasBasis_nhds_zero _ _).tendsto_right_iff]
-  intro γ _
-  -- the preimage of a valuation ball is the valuation ball of the same radius
-  have hcont : Continuous (Valued.v : Valuation (WithVal (v.valuation K)) ℤᵐ⁰) :=
-    Valued.continuous_valuation_of_surjective <| .of_comp (v.valuation_surjective K)
-  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.1 ≠ 0 :=
-    (map_ne_zero_iff _ MonoidWithZeroHom.ValueGroup₀.embedding_injective).mpr γ.ne_zero
-  filter_upwards [hcont.continuousAt.preimage_mem_nhds <| by
-    simpa using Iio_mem_nhds_zero hγ] with x hx
-  rw [Valuation.restrict_lt_iff_lt_embedding]
-  simpa [hσ, WithVal.apply_ofVal] using hx
+    UniformContinuous (WithVal.congr (v.valuation K) (w.valuation K') σ) :=
+  WithVal.uniformContinuous_congr (v.valuation_surjective K) σ hσ
 
 /-- The isomorphism of adic completions `K_v ≃+* K'_w` extending a field isomorphism
 `σ : K ≃+* K'` that carries the `v`-adic valuation to the `w`-adic valuation. -/
