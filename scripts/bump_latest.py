@@ -102,7 +102,7 @@ def ordered_runs(runs, history):
 
 def verify_cache(checkout, target):
     """Only a proven missing cache falls back. Network/tool errors fail the run."""
-    command(["git", "checkout", "--detach", sha(target)], cwd=checkout)
+    command(["git", "checkout", "--force", "--detach", sha(target)], cwd=checkout)
     # The subprocesses execute only trusted upstream sources, in a separate read-only
     # workflow job. Do not inherit GitHub/runner credentials or use warmed oleans.
     probe_home = checkout.parent / "probe-home"
@@ -120,7 +120,6 @@ def verify_cache(checkout, target):
     toolchain = (checkout / "lean-toolchain").read_text().strip()
     command(["elan", "toolchain", "install", toolchain], cwd=checkout, env=env)
     lake = ["elan", "run", toolchain, "lake"]
-    command([*lake, "update"], cwd=checkout, env=env)
     output = command(
         [*lake, "exe", "cache", "--cache-from=master", "get", "Mathlib"],
         cwd=checkout,

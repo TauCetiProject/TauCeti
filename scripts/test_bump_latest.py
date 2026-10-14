@@ -100,7 +100,7 @@ class BumpTests(unittest.TestCase):
             checkout.mkdir()
             (checkout / "lean-toolchain").write_text("leanprover/lean4:v4.35.0\n")
             with patch.object(
-                bl, "command", side_effect=["", "", "", "some files were not found in the cache"]
+                bl, "command", side_effect=["", "", "some files were not found in the cache"]
             ) as cmd:
                 self.assertFalse(bl.verify_cache(checkout, NEW))
                 environment = cmd.call_args.kwargs["env"]
@@ -109,7 +109,7 @@ class BumpTests(unittest.TestCase):
             with patch.object(bl, "command", side_effect=RuntimeError("network down")):
                 with self.assertRaisesRegex(RuntimeError, "network down"):
                     bl.verify_cache(checkout, NEW)
-            with patch.object(bl, "command", side_effect=["", "", "", "downloaded", ""]) as cmd:
+            with patch.object(bl, "command", side_effect=["", "", "downloaded", ""]) as cmd:
                 self.assertTrue(bl.verify_cache(checkout, NEW))
                 self.assertIn("--rehash", cmd.call_args.args[0])
 
