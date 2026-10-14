@@ -782,7 +782,7 @@ of an element of `W^{2,2}(V)`.
 
 No regularity of `∂Ω`, sign of `c`, or smallness of the lower-order terms is assumed, and the
 Lipschitz bound on `a` need not be uniform on `Ω`. -/
-theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn [DecidableEq ι]
+theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
     {lam Lam : ℝ}
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LocallyLipschitzOn (Omega : Set (EuclideanSpace ℝ ι))
@@ -796,6 +796,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
     (hVΩ : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ Omega) :
     ∃ U : Wkp mu V 2 2, Wkp.lowerOrder 1 U =
       W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u := by
+  classical
   -- Near `closure V`, the field agrees with a Lipschitz uniformly elliptic field `a'` on `ℝⁿ`.
   obtain ⟨a', K', U, hVU, hUΩ, ha', hK', haa'⟩ := ha.exists_lipschitzWith_eqOn hK hV hVΩ
   have hUΩ' : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hUΩ

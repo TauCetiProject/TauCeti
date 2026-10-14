@@ -120,15 +120,8 @@ private theorem memLp_energyIntegrand_comp_add
       (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
   obtain ⟨C, hC⟩ := hbdd.exists_norm_le
   have hC' : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ C := fun x => hC _ ⟨x, rfl⟩
-  exact memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
-    ((norm_nonneg (matrixBilinearForm (a 0))).trans (hC' 0))
-    (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <| continuous_of_continuous_matrixBilinearForm
-      (ha.comp (continuous_id.add continuous_const)))
-    aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun x _ eta xi => by
-      simpa [Real.norm_eq_abs] using
-        (matrixBilinearForm (a (x + s))).le_of_opNorm₂_le_of_le (hC' _) le_rfl le_rfl)
-    (fun _ _ => by simp) (fun _ _ => by simp)
+  exact memLp_energyIntegrand_of_continuous (a := fun x => a (x + s)) (Lam := C)
+    (fun x => hC' (x + s)) (ha.comp (continuous_id.add continuous_const)) ⊤
 
 omit [DecidableEq ι] in
 /-- **Discrete integration by parts for a Lipschitz coefficient field.** Testing the difference

@@ -57,7 +57,7 @@ elliptic there with the same constants and Lipschitz, that agrees with `a` on an
 
 One may take `a' = χ a + (1 - χ) λ I` for a smooth cutoff `χ` equal to one near `S` and supported
 in `Ω`. -/
-theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn [DecidableEq ι] {lam Lam : ℝ}
+theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn {lam Lam : ℝ}
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LocallyLipschitzOn (Omega : Set (EuclideanSpace ℝ ι))
       fun x => matrixBilinearForm (a x))
