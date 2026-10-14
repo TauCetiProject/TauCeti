@@ -42,6 +42,9 @@ A homeomorphism with holomorphic inverse is a holomorphic chart
 * `TauCeti.FilledCover.chartedSpace`: the charts of the filled cover.
 * `TauCeti.FilledCover.chartAt_incl_apply_incl`: the chart at a point of `E` reads every point of
   `E` as its image under `p`.
+* `TauCeti.FilledCover.chartAt_incl_source`, `TauCeti.FilledCover.chartAt_incl_target`,
+  `TauCeti.FilledCover.chartAt_incl_symm_apply`: the inverse of the chart at a point `x` of `E` is
+  the local inverse of `p` at `x`.
 * `TauCeti.FilledCover.chartAt_center_source`, `TauCeti.FilledCover.chartAt_center_apply_disc`,
   `TauCeti.FilledCover.chartAt_center_symm_apply`: the chart at an added point is the inverse of the
   filled disc of its component.
@@ -119,6 +122,40 @@ theorem chartAt_incl_apply_incl (x y : E) :
   let := hπ.chartedSpaceComap (H := ℂ)
   exact (PunctureFilling.chartAt_incl_apply_incl _ x y).trans
     (hπ.chartAt_chartedSpaceComap_apply x y)
+
+/-- The chart of the filled cover at a point `x` of `E` is defined on the image in the filled
+cover of the neighbourhood of `x` on which `p` is inverted by its local inverse at `x`. -/
+theorem chartAt_incl_source (x : E) :
+    (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (incl (chart p) x)).source =
+      incl (chart p) ''
+        ((isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).localInverseAt
+          x).target := by
+  have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
+  let := hπ.chartedSpaceComap (H := ℂ)
+  rw [PunctureFilling.chartAt_incl_source, hπ.chartAt_chartedSpaceComap]
+  simp
+
+/-- The chart of the filled cover at a point `x` of `E` takes values in the domain of the local
+inverse of `p` at `x`. -/
+theorem chartAt_incl_target (x : E) :
+    (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (incl (chart p) x)).target =
+      ((isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).localInverseAt
+        x).source := by
+  have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
+  let := hπ.chartedSpaceComap (H := ℂ)
+  rw [PunctureFilling.chartAt_incl_target, hπ.chartAt_chartedSpaceComap]
+  simp
+
+/-- The inverse of the chart of the filled cover at a point `x` of `E` is the local inverse of `p`
+at `x`, followed by the inclusion of `E`. -/
+theorem chartAt_incl_symm_apply (x : E) (z : ℂ) :
+    (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (incl (chart p) x)).symm z =
+      incl (chart p)
+        ((isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).localInverseAt x z) := by
+  have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
+  let := hπ.chartedSpaceComap (H := ℂ)
+  rw [PunctureFilling.chartAt_incl_symm_apply, hπ.chartAt_chartedSpaceComap]
+  simp
 
 /-- The chart of the filled cover at the added point of the component `i` is defined on the filled
 disc of `i`. -/
