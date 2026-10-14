@@ -235,15 +235,19 @@ noncomputable def asModuleEquivAsSubmodule (σ : Subrepresentation ρ) :
 theorem coe_asModuleEquivAsSubmodule_apply (σ : Subrepresentation ρ)
     (x : σ.toRepresentation.asModule) :
     (σ.asModuleEquivAsSubmodule x).1 =
-      (σ.toRepresentation.asModuleEquiv x).1 :=
-  (rfl)
+      (σ.toRepresentation.asModuleEquiv x).1 := by
+  refine (congrArg Subtype.val (LinearEquiv.ofBijective_apply _
+    (hf := σ.asModuleEquivAsSubmodule.bijective) x)).trans ?_
+  exact (LinearMap.codRestrict_apply _ _ x).trans
+    (Representation.IntertwiningMap.equivLinearMapAsModule_apply σ.subtype x)
 
 @[simp]
 theorem coe_asModuleEquivAsSubmodule_symm_apply (σ : Subrepresentation ρ)
     (x : σ.asSubmodule) :
     (σ.asModuleEquivAsSubmodule.symm x).1 =
       _root_.Representation.asModuleEquiv ρ x.1 := by
-  exact congrArg Subtype.val (σ.asModuleEquivAsSubmodule.apply_symm_apply x)
+  exact (coe_asModuleEquivAsSubmodule_apply σ (σ.asModuleEquivAsSubmodule.symm x)).symm.trans
+    (congrArg Subtype.val (σ.asModuleEquivAsSubmodule.apply_symm_apply x))
 
 end AsSubmoduleEquiv
 

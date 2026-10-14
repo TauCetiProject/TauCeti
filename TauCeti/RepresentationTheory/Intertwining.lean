@@ -38,6 +38,8 @@ caller has already done.
 
 ## Main results
 
+* `Representation.IntertwiningMap.equivLinearMapAsModule_apply`: the attached module map acts
+  by the original intertwining map on the underlying types.
 * `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
   action of the monoid algebra, not only with that of the group elements.
 
@@ -66,6 +68,18 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
 variable {A G V W : Type*} [CommSemiring A] [Monoid G]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
   {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
+`Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
+types, so it too may be erased from an application. -/
+@[simp]
+theorem equivLinearMapAsModule_apply
+    {k G V W : Type*} [CommSemiring k] [Monoid G]
+    [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
+    {ρ : Representation k G V} {σ : Representation k G W}
+    (f : IntertwiningMap ρ σ) (x : ρ.asModule) :
+    equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
+  (rfl)
 
 /-- Corestrict an intertwining map to a subrepresentation of the target containing its image. -/
 def codRestrict (f : IntertwiningMap ρ σ) (P : Subrepresentation σ)
