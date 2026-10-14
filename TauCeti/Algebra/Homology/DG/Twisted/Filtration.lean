@@ -152,6 +152,16 @@ noncomputable def indexFiltration (p : ℤ) : Subobject (m.twistedCochainComplex
     (gradedCochainComplexSubobject _ _ _ _ (indexFiltrationSubmodule ind p) fun _ hf ↦
       twistedDifferential_mem_indexFiltrationSubmodule m.m dM m.one_sided hf)
 
+/-- The `p`-th piece of the index filtration is the subcomplex of `gradedCochainComplex` cut out
+by `indexFiltrationSubmodule ind p`, transported along
+`twistedCochainComplex_eq_gradedCochainComplex`. -/
+theorem indexFiltration_eq (p : ℤ) :
+    m.indexFiltration dM hM p = Subobject.mapIsoToOrderIso
+      (eqToIso (twistedCochainComplex_eq_gradedCochainComplex m.mem_graded m.twisting hM).symm)
+      (gradedCochainComplexSubobject _ _ _ _ (indexFiltrationSubmodule ind p) fun _ hf ↦
+        twistedDifferential_mem_indexFiltrationSubmodule m.m dM m.one_sided hf) := by
+  rw [indexFiltration]
+
 /-- The index filtration is increasing. -/
 theorem monotone_indexFiltration : Monotone (m.indexFiltration dM hM) := fun _ _ hpq ↦
   (Subobject.mapIsoToOrderIso _).monotone
@@ -159,13 +169,13 @@ theorem monotone_indexFiltration : Monotone (m.indexFiltration dM hM) := fun _ _
 
 /-- Above every index, the index filtration is the whole twisted complex. -/
 theorem indexFiltration_eq_top {p : ℤ} (hp : ∀ x, ind x ≤ p) : m.indexFiltration dM hM p = ⊤ := by
-  rw [indexFiltration, gradedCochainComplexSubobject_eq_top _ (indexFiltrationSubmodule_eq_top hp),
-    OrderIso.map_top]
+  rw [indexFiltration_eq,
+    gradedCochainComplexSubobject_eq_top _ (indexFiltrationSubmodule_eq_top hp), OrderIso.map_top]
 
 /-- Below every index, the index filtration is the zero subcomplex. -/
 theorem indexFiltration_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) : m.indexFiltration dM hM p = ⊥ := by
-  rw [indexFiltration, gradedCochainComplexSubobject_eq_bot _ (indexFiltrationSubmodule_eq_bot hp),
-    OrderIso.map_bot]
+  rw [indexFiltration_eq,
+    gradedCochainComplexSubobject_eq_bot _ (indexFiltrationSubmodule_eq_bot hp), OrderIso.map_bot]
 
 /-- The **index spectral sequence** of the twisted complex of a twisting cocycle: the spectral
 sequence of its index filtration.  On its first page, numbered `2`, the object at `(p, q)` is the

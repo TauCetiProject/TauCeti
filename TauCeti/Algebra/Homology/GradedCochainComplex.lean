@@ -327,6 +327,11 @@ def gradedCochainComplexInclusion (hle : ∀ p, ℳ' p ≤ ℳ p)
     apply LinearMap.ext
     intro x
     apply Subtype.ext
+    -- The components are typed by `ModuleCat.of R (ℳ p)` rather than by the terms of the
+    -- complexes, so the composites here are ill-typed at implicit transparency and neither
+    -- `ModuleCat.hom_comp` nor `gradedCochainComplexXEquiv_d` can rewrite them.  Unfolding the
+    -- differentials to their defining `ModuleCat.ofHom (dM.restrict _)` instead leaves two sides
+    -- which are both `dM x` by evaluating `LinearMap.restrict` and `Submodule.inclusion`.
     unfold gradedCochainComplex
     simp only [CochainComplex.of_d]
     rfl
@@ -344,6 +349,21 @@ theorem gradedCochainComplexXEquiv_inclusion_f (p : ℤ)
   unfold gradedCochainComplexXEquiv
   rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
   rfl
+
+/-- Inclusions of complexes of nested families compose to the inclusion. -/
+theorem gradedCochainComplexInclusion_comp {ℳ'' : ℤ → Submodule R M} (hle' : ∀ p, ℳ'' p ≤ ℳ' p)
+    (hdeg'' : LinearMap.IsHomogeneous dM ℳ'' ℳ'' 1) :
+    gradedCochainComplexInclusion (hdeg := hdeg') (hsq := fun p x ↦ hsq p ⟨x, hle p x.2⟩) hle'
+        hdeg'' ≫ gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg' =
+      gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq)
+        (fun p ↦ (hle' p).trans (hle p)) hdeg'' := by
+  refine HomologicalComplex.hom_ext _ _ fun p ↦ ?_
+  ext x
+  apply (gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) p).injective
+  apply Subtype.ext
+  rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    gradedCochainComplexXEquiv_inclusion_f, gradedCochainComplexXEquiv_inclusion_f,
+    gradedCochainComplexXEquiv_inclusion_f]
 
 instance : Mono (gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg') :=
   HomologicalComplex.mono_of_mono_f _ fun p ↦
@@ -372,7 +392,7 @@ theorem gradedCochainComplexSubobject_mono {N N' : Submodule R M} (hN : ∀ x �
       gradedCochainComplexSubobject ℳ dM hdeg hsq N' hN' :=
   Subobject.mk_le_mk_of_comm (gradedCochainComplexInclusion (ℳ := fun p ↦ ℳ p ⊓ N')
     (ℳ' := fun p ↦ ℳ p ⊓ N) (fun _ ↦ inf_le_inf_left _ h)
-    (hdeg.inf hN)) (rfl)
+    (hdeg.inf hN)) (gradedCochainComplexInclusion_comp _ _ _ _)
 
 /-- The subcomplex cut out by the whole module is the whole complex. -/
 theorem gradedCochainComplexSubobject_eq_top {N : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
@@ -381,9 +401,15 @@ theorem gradedCochainComplexSubobject_eq_top {N : Submodule R M} (hN : ∀ x ∈
   rw [gradedCochainComplexSubobject_eq_mk]
   -- Each component is the inclusion of `ℳ p ⊓ ⊤` into `ℳ p`, a bijection.
   have (p : ℤ) : IsIso ((gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg)
-      (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p) :=
-    (ConcreteCategory.isIso_iff_bijective _).2
-      ⟨Submodule.inclusion_injective inf_le_left, fun x ↦ ⟨⟨x.1, x.2, trivial⟩, rfl⟩⟩
+      (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p) := by
+    refine (ConcreteCategory.isIso_iff_bijective _).2 ⟨fun y z hyz ↦ ?_, fun x ↦ ?_⟩
+    · refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
+      simpa only [gradedCochainComplexXEquiv_inclusion_f] using
+        congrArg (fun w ↦ (gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) p w : M)) hyz
+    · refine ⟨(gradedCochainComplexXEquiv p).symm
+        ⟨gradedCochainComplexXEquiv p x, (gradedCochainComplexXEquiv p x).2, trivial⟩, ?_⟩
+      refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
+      rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
   have := HomologicalComplex.Hom.isIso_of_components
     (gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg) (hsq := hsq)
       (fun _ ↦ inf_le_left) (hdeg.inf hN))
@@ -395,7 +421,9 @@ theorem gradedCochainComplexSubobject_eq_bot {N : Submodule R M} (hN : ∀ x ∈
   subst h
   refine Subobject.mk_eq_bot_iff_zero.2 (HomologicalComplex.hom_ext _ _ fun p ↦ ?_)
   ext x
-  exact Subtype.ext ((Submodule.mem_bot R).1 x.2.2)
+  refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
+  rw [gradedCochainComplexXEquiv_inclusion_f]
+  simpa using (gradedCochainComplexXEquiv p x).2.2
 
 end Subcomplex
 
