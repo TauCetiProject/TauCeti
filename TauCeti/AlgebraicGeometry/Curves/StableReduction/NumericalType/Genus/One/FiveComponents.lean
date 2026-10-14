@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.FourComponents
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.EdgeFactor
 import Mathlib.Tactic.LinearCombination
 
 /-!
 # Five-component paths of minimal numerical types of genus one
 
 This file classifies the numerical data on a minimal genus-one numerical type whose five
-components form a path. There are five unoriented possibilities. They are cases (17)--(21) in the
-Stacks Project classification: the three internal edges force the middle weights and
-multiplicities, while either endpoint can carry the only nonsimply-laced behaviour.
+components form a path `a - b - c - d - e`. There are five possibilities up to reversing the
+path. They are cases (17)--(21) in the Stacks Project classification. In two of them the only
+edge joining components of different weights is the internal edge `c - d`, with weights
+`(w, w, w, 2w, 2w)` or `(2w, 2w, 2w, w, w)`. In the other three both endpoint edges `a - b` and
+`d - e` join components of different weights, with weights `(w, 2w, 2w, 2w, 4w)`,
+`(w, 2w, 2w, 2w, w)` or `(2w, w, w, w, 2w)`.
 
 The classification is stated first for five components of self-intersection `-2w` and then for a
 minimal numerical type of arithmetic genus one, whose components satisfy those equations.
@@ -205,9 +208,9 @@ private lemma fivePath_factor_cases
     exact (fivePath_factor_cases_triple_false hm₀ hm₁ hm₂ hm₃ hm₄ h₁ h₂ h₃
       (by omega) (by omega) e₂ e₃ e₄ (Or.inr ⟨rfl, rfl⟩)).elim
 
-/-- Five components forming a path and having self-intersection `-2w` have one of the five
-genus-one path shapes, after possibly reversing the path. -/
-theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
+/-- The fibre relations at the five components of a path, after substituting the
+self-intersections `-2w` and the vanishing intersections between nonadjacent components. -/
+private lemma fivePath_fiber_equations
     (hcard : Fintype.card T.Component = 5) {a b c d e : T.Component}
     (haa : T.intersection a a = -(2 * (T.weight a : ℤ)))
     (hbb : T.intersection b b = -(2 * (T.weight b : ℤ)))
@@ -219,7 +222,14 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
     (hbe₀ : T.intersection b e = 0) (hce₀ : T.intersection c e = 0)
     (hab₀ : 0 < T.intersection a b) (hbc₀ : 0 < T.intersection b c)
     (hcd₀ : 0 < T.intersection c d) (hde₀ : 0 < T.intersection d e) :
-    T.IsGenusOneFivePathShape a b c d e ∨ T.IsGenusOneFivePathShape e d c b a := by
+    (T.multiplicity b : ℤ) * T.intersection a b = 2 * T.weight a * T.multiplicity a ∧
+    (T.multiplicity a : ℤ) * T.intersection a b + T.multiplicity c * T.intersection b c =
+      2 * T.weight b * T.multiplicity b ∧
+    (T.multiplicity b : ℤ) * T.intersection b c + T.multiplicity d * T.intersection c d =
+      2 * T.weight c * T.multiplicity c ∧
+    (T.multiplicity c : ℤ) * T.intersection c d + T.multiplicity e * T.intersection d e =
+      2 * T.weight d * T.multiplicity d ∧
+    (T.multiplicity d : ℤ) * T.intersection d e = 2 * T.weight e * T.multiplicity e := by
   have ne_of_nonneg {x y : T.Component}
       (hxx : T.intersection x x = -(2 * (T.weight x : ℤ)))
       (hxy : 0 ≤ T.intersection x y) : x ≠ y := by
@@ -236,6 +246,7 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
   have hcd := ne_of_nonneg hcc hcd₀.le
   have hce := ne_of_nonneg hcc hce₀.ge
   have hde := ne_of_nonneg hdd hde₀.le
+  -- The five distinct components exhaust the numerical type.
   have hu : (univ : Finset T.Component) = {a, b, c, d, e} :=
     (eq_univ_of_card _ (by simp [hcard, hab, hac, had, hae, hbc, hbd, hbe, hcd, hce, hde])).symm
   have relation (r : T.Component) :
@@ -259,10 +270,33 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
     T.intersection_comm d c, hdd] at rd
   rw [T.intersection_comm e a, hae₀, T.intersection_comm e b, hbe₀,
     T.intersection_comm e c, hce₀, T.intersection_comm e d, hee] at re
+  exact ⟨by linear_combination ra, by linear_combination rb, by linear_combination rc,
+    by linear_combination rd, by linear_combination re⟩
+
+/-- Five components forming a path and having self-intersection `-2w` have one of the five
+genus-one path shapes, after possibly reversing the path. -/
+theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
+    (hcard : Fintype.card T.Component = 5) {a b c d e : T.Component}
+    (haa : T.intersection a a = -(2 * (T.weight a : ℤ)))
+    (hbb : T.intersection b b = -(2 * (T.weight b : ℤ)))
+    (hcc : T.intersection c c = -(2 * (T.weight c : ℤ)))
+    (hdd : T.intersection d d = -(2 * (T.weight d : ℤ)))
+    (hee : T.intersection e e = -(2 * (T.weight e : ℤ)))
+    (hac₀ : T.intersection a c = 0) (had₀ : T.intersection a d = 0)
+    (hae₀ : T.intersection a e = 0) (hbd₀ : T.intersection b d = 0)
+    (hbe₀ : T.intersection b e = 0) (hce₀ : T.intersection c e = 0)
+    (hab₀ : 0 < T.intersection a b) (hbc₀ : 0 < T.intersection b c)
+    (hcd₀ : 0 < T.intersection c d) (hde₀ : 0 < T.intersection d e) :
+    T.IsGenusOneFivePathShape a b c d e ∨ T.IsGenusOneFivePathShape e d c b a := by
+  obtain ⟨ra, rb, rc, rd, re⟩ := fivePath_fiber_equations hcard haa hbb hcc hdd hee
+    hac₀ had₀ hae₀ hbd₀ hbe₀ hce₀ hab₀ hbc₀ hcd₀ hde₀
+  -- Factor each edge's intersection number by the weights at its two endpoints.
   obtain ⟨p₀, q₀, hpq₀, hp₀, hq₀⟩ := T.exists_genusOneEdgeFactors (by omega) haa hbb hab₀
   obtain ⟨p₁, q₁, hpq₁, hp₁, hq₁⟩ := T.exists_genusOneEdgeFactors (by omega) hbb hcc hbc₀
   obtain ⟨p₂, q₂, hpq₂, hp₂, hq₂⟩ := T.exists_genusOneEdgeFactors (by omega) hcc hdd hcd₀
   obtain ⟨p₃, q₃, hpq₃, hp₃, hq₃⟩ := T.exists_genusOneEdgeFactors (by omega) hdd hee hde₀
+  -- Dividing each fibre equation by the weight of its component leaves equations between the
+  -- multiplicities and the edge factors.
   have cancelWeight {x : T.Component} {r s : ℤ}
       (h : (T.weight x : ℤ) * r = T.weight x * s) : r = s :=
     mul_left_cancel₀ (by simp) h
@@ -283,6 +317,8 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
   have hcb := T.intersection_comm b c
   have hdc := T.intersection_comm c d
   have hed := T.intersection_comm d e
+  -- Each of the eight oriented factor patterns is one of the five shapes, read along the path
+  -- (the first five) or along its reversal (the last three).
   rcases fivePath_factor_cases (by simp) (by simp) (by simp) (by simp) (by simp)
     hpq₀ hpq₁ hpq₂ hpq₃ e₀ e₁ e₂ e₃ e₄ with
     h | h | h | h | h | h | h | h <;>

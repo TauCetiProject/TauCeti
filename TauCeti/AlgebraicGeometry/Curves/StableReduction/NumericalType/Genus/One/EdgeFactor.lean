@@ -35,6 +35,7 @@ def IsGenusOneEdgeFactor (p q : ℤ) : Prop :=
     (p = 3 ∧ q = 1) ∨ (p = 1 ∧ q = 3)
 
 /-- The five possible endpoint-factor pairs in explicit form. -/
+@[simp]
 theorem isGenusOneEdgeFactor_iff {p q : ℤ} :
     IsGenusOneEdgeFactor p q ↔
       (p = 1 ∧ q = 1) ∨ (p = 2 ∧ q = 1) ∨ (p = 1 ∧ q = 2) ∨
