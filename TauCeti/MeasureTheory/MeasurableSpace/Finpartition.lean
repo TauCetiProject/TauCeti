@@ -12,7 +12,8 @@ import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 /-!
 # Measurable finite partitions
 
-This file records elementary ways to construct measurable finite partitions and shows that
+This file records elementary ways to construct measurable finite partitions (bipartitions, common
+refinements, and the fibres of a measurable map to a finite type) and shows that
 measurability passes from a finer finite partition to a coarser one. It also makes the canonical
 map from a point to its finite-partition index measurable and packages the canonical finite
 partitions of a countably generated measurable space as `Finpartition`s.
@@ -140,6 +141,14 @@ theorem comap_countablePartition_index_top (Ω : Type*) [MeasurableSpace Ω]
     · exact MeasurableSpace.measurableSet_generateFrom
         (Finset.mem_erase.mpr ⟨hsempty,
           (MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mpr hs⟩)
+
+/-- Every part of the partition into the fibres of a measurable map to a finite type is
+measurable. -/
+theorem measurableSet_of_mem_ofFibers {κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] {g : Ω → κ} (hg : Measurable g) {s : Set Ω}
+    (hs : s ∈ (ofFibers g).parts) : MeasurableSet s := by
+  obtain ⟨x, rfl⟩ := mem_ofFibers_parts.1 hs
+  exact hg (measurableSet_singleton _)
 
 /-- Every part of a bipartition along a measurable set is measurable. -/
 theorem measurableSet_of_mem_bipartition {s p : Set Ω} (hs : MeasurableSet s)
