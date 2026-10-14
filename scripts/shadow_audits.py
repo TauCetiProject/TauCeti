@@ -39,11 +39,13 @@ POLICY_FILES = ("Axioms.lean", "ModuleSystem.lean", "build-audit-driver.sh", "sh
 
 
 def digest(value):
+    """Return SHA-256 of a JSON-serializable value with stable key order/encoding."""
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
                                     ensure_ascii=True).encode()).hexdigest()
 
 
 def file_digest(path):
+    """Return SHA-256 of all bytes in the readable pathlib file at path."""
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
@@ -102,11 +104,22 @@ def sandbox_command(command, project, paths, sysroot, driver, scope=None):
 
 
 def run(command, project, paths, sysroot, driver, scope=None):
+    """Run an auditor in the read-only sandbox and return its CompletedProcess.
+
+    Inputs must be built artifact roots and trusted immutable sysroot/driver paths.
+    An optional scope file selects incremental modules. Capture stdout/stderr even
+    for audit failures; sandbox/process errors and the 3000-second timeout raise.
+    """
     return subprocess.run(sandbox_command(command, project, paths, sysroot, driver, scope),
                           env={}, text=True, capture_output=True, timeout=3000)
 
 
 def read_snapshot(result):
+    """Decode the single prefixed JSON snapshot in an auditor's captured stdout.
+
+    Accept audit failure exit codes so failed full checks can still be compared.
+    Raise on missing/multiple snapshots or malformed JSON; do not infer success.
+    """
     rows = [line[len(PREFIX):] for line in result.stdout.splitlines() if line.startswith(PREFIX)]
     if len(rows) != 1:
         raise RuntimeError(f"full audit did not produce one snapshot (exit {result.returncode}):\n"
@@ -115,6 +128,7 @@ def read_snapshot(result):
 
 
 def canonical_result(result):
+    """Keep a result's declaration count and sorted diagnostics for exact comparison."""
     return {"count": result["count"], "messages": sorted(result["messages"])}
 
 
@@ -142,6 +156,11 @@ def closure_keys(inventory, artifacts, identity):
 
 @dataclass(frozen=True)
 class Record:
+    """Private baseline entry: closure key, JSON count/diagnostics payload and HMAC seal.
+
+    The seal binds the module, key and payload to one session's ephemeral secret.
+    These records are not exported or accepted from candidates.
+    """
     key: str
     payload: str
     seal: str
@@ -151,6 +170,7 @@ class ShadowSession:
     """Only results computed by this process may enter its private, ephemeral baseline."""
 
     def __init__(self):
+        """Start with an empty baseline and a fresh process-local sealing secret."""
         self._secret = secrets.token_bytes(32)
         self._records = {}
 
@@ -159,6 +179,15 @@ class ShadowSession:
                         hashlib.sha256).hexdigest()
 
     def plan(self, inventory, artifacts, identity):
+        """Return (all closure keys, eligible local module result mapping).
+
+        Inventory must contain unique modules and their complete import graph;
+        artifacts maps each module to its frozen artifact/source identity, and
+        identity binds trusted policy, pins, driver and the complete toolchain.
+        Reuse requires an unchanged closure key and a valid session seal. This
+        only plans eligibility: fresh global ownership failure must disable reuse.
+        The baseline is unchanged.
+        """
         keys = closure_keys(inventory, artifacts, identity)
         reusable = {}
         for row in inventory:
@@ -172,6 +201,20 @@ class ShadowSession:
         return keys, reusable
 
     def compare(self, snapshot, artifacts, identity, module_system, incremental=None):
+        """Compare reuse plus incremental results with a fresh full audit snapshot.
+
+        Supply the complete frozen inventory, per-module full results and full
+        ownership/axiom statuses in snapshot, plus the current module-system
+        CompletedProcess. Artifacts/identity have the same requirements as plan.
+        Incremental rows must cover exactly the nonreusable local modules; None
+        uses full rows as a synthetic oracle for unit tests only.
+
+        Return equivalence, full/shadow statuses, module count, reused/recomputed/
+        invalidated/removed module lists, explicit result/status mismatches, and
+        fresh global inventory/ownership/module-system evidence. Inventory/scope
+        inconsistencies raise. Replace the baseline with sealed fresh full results
+        even after mismatches; ownership failure disables reuse and clears it.
+        """
         keys = closure_keys(snapshot["inventory"], artifacts, identity)
         locals_ = {row["module"] for row in snapshot["inventory"] if row["local"]}
         full = {row["module"]: canonical_result(row) for row in snapshot["results"]}
@@ -335,6 +378,7 @@ def observe(session, project, paths, sysroot, driver, toolchain_identity):
 
 
 def main():
+    """Write ordered observation reports; exit nonzero on mismatch or full failure."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("projects", type=Path, nargs="+", help="ordered built source snapshots")
     parser.add_argument("--driver", type=Path, required=True, help="trusted prebuilt audit driver")
