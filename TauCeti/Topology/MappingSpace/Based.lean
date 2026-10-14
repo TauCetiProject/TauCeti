@@ -142,6 +142,15 @@ theorem homeomorphGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
   exact precompGenLoop_apply q b₀ (fun z hz => (hbi z).2 hz) f z
 
 include hq hbi hinj in
+/-- The inverse of `homeomorphGenLoop` evaluates at `q z` to the value of the generalized loop
+at `z`. -/
+theorem homeomorphGenLoop_symm_apply_comp (p : Ω^ N X x) (z : N → I) :
+    ((homeomorphGenLoop q b₀ hbi hq hinj).symm p).1 (q z) = p z := by
+  have h := congrArg (fun r : Ω^ N X x => r z)
+    ((homeomorphGenLoop q b₀ hbi hq hinj).apply_symm_apply p)
+  rwa [homeomorphGenLoop_apply] at h
+
+include hq hbi hinj in
 /-- The homeomorphism `homeomorphGenLoop` is natural in `X`: it commutes with postcomposition by
 a based map `g : X → Y`. -/
 theorem homeomorphGenLoop_map {Y : Type*} [TopologicalSpace Y] {y : Y} (g : C(X, Y)) (hg : g x = y)

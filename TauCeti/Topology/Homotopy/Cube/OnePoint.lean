@@ -38,8 +38,8 @@ namespace TauCeti
 
 variable (N : Type*) [Fintype N]
 
-/-- The cube `I^N` with its boundary collapsed to `∞` in `OnePoint (N → ℝ)`: the cube is the
-closed unit ball of the sup norm on `N → ℝ`, collapsed by `TauCeti.unitBallToOnePoint`. -/
+/-- The map from the cube `I^N` collapsing its boundary to `∞` in `OnePoint (N → ℝ)`: the cube is
+the closed unit ball of the sup norm on `N → ℝ`, collapsed by `TauCeti.unitBallToOnePoint`. -/
 def cubeToOnePoint : C((N → I), OnePoint (N → ℝ)) where
   toFun z := unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ)
   continuous_toFun :=
