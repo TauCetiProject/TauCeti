@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.HopfAlgebra.Basic
+public import Mathlib.RingTheory.HopfAlgebra.Convolution
 
 /-!
 # Convolution groups of algebra homomorphisms out of a Hopf algebra
