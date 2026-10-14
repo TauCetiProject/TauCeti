@@ -23,7 +23,7 @@ the transcendence degree of the residue field.
 * `TauCeti.topologicalKrullDimAt`: the local Krull dimension at a point.
 * `TauCeti.iSup_topologicalKrullDimAt`: the global dimension is the supremum of the local
   dimensions.
-* `TauCeti.topologicalKrullDimAt_of_isOpenEmbedding`: local dimension is invariant under open
+* `Topology.IsOpenEmbedding.topologicalKrullDimAt_eq`: local dimension is invariant under open
   embeddings.
 * `TauCeti.topologicalKrullDimAt_of_isHomeomorph`: local dimension is invariant under
   homeomorphisms.
@@ -64,6 +64,7 @@ theorem topologicalKrullDimAt_le (x : X) :
   exact (Homeomorph.Set.univ X).isHomeomorph.topologicalKrullDim_eq
 
 /-- The local dimension at a point is nonnegative. -/
+@[simp]
 theorem topologicalKrullDimAt_nonneg (x : X) : 0 ≤ topologicalKrullDimAt X x := by
   refine le_iInf fun U ↦ ?_
   rw [topologicalKrullDim]
@@ -83,8 +84,16 @@ theorem iSup_topologicalKrullDimAt (X : Type*) [TopologicalSpace X] :
   exact (q.map _ (IrreducibleCloseds.orderIsoOfIsOpenEmbedding f
     U.2.1.isOpenEmbedding_subtypeVal).symm.strictMono).length_le_krullDim
 
+end TauCeti
+
+namespace Topology.IsOpenEmbedding
+
+open TauCeti
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
 /-- An open embedding preserves local Krull dimension. -/
-theorem topologicalKrullDimAt_of_isOpenEmbedding {f : X → Y} (hf : IsOpenEmbedding f) (x : X) :
+theorem topologicalKrullDimAt_eq {f : X → Y} (hf : IsOpenEmbedding f) (x : X) :
     topologicalKrullDimAt X x = topologicalKrullDimAt Y (f x) := by
   apply le_antisymm
   · refine le_iInf fun V ↦ ?_
@@ -92,7 +101,7 @@ theorem topologicalKrullDimAt_of_isOpenEmbedding {f : X → Y} (hf : IsOpenEmbed
       ⟨f ⁻¹' V.1, V.2.1.preimage hf.continuous, V.2.2⟩
     have hdim : topologicalKrullDim U.1 ≤ topologicalKrullDim V.1 :=
       ((hf.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict V.1 fun z ↦
-        show f z.1 ∈ V.1 from z.2).isInducing.topologicalKrullDim_le
+        z.2).isInducing.topologicalKrullDim_le
     exact (iInf_le _ U).trans hdim
   · refine le_iInf fun U ↦ ?_
     let V : {V : Set Y // IsOpen V ∧ f x ∈ V} :=
@@ -100,10 +109,16 @@ theorem topologicalKrullDimAt_of_isOpenEmbedding {f : X → Y} (hf : IsOpenEmbed
     refine (iInf_le _ V).trans_eq ?_
     exact (hf.isEmbedding.homeomorphImage U.1).symm.isHomeomorph.topologicalKrullDim_eq
 
+end Topology.IsOpenEmbedding
+
+namespace TauCeti
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
 /-- A homeomorphism preserves local Krull dimension. -/
 theorem topologicalKrullDimAt_of_isHomeomorph (f : X → Y) (hf : IsHomeomorph f) (x : X) :
     topologicalKrullDimAt X x = topologicalKrullDimAt Y (f x) :=
-  topologicalKrullDimAt_of_isOpenEmbedding hf.isOpenEmbedding x
+  hf.isOpenEmbedding.topologicalKrullDimAt_eq x
 
 /-- An isolated point has local Krull dimension zero. -/
 @[simp]
