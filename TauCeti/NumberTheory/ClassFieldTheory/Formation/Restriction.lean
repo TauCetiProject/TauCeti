@@ -5,8 +5,6 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.RepresentationTheory.Rep.Res
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 
 /-!
