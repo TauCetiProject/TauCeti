@@ -17,8 +17,9 @@ For a subgroup `K` of a finite-dimensional real Lie group `G`, the adjoint actio
 centralizer of `K` fixes the Lie algebra `Lie(K)` pointwise, and the Lie algebra of the
 centralizer brackets to zero with `Lie(K)`. A commutative subgroup lies in its own centralizer, so
 the adjoint action of a commutative `K` fixes `Lie(K)` pointwise and `Lie(K)` is an abelian Lie
-subalgebra of `𝔤`; in particular the Lie algebra of a commutative Lie group is abelian. These are
-the first facts about the Lie algebra `𝔱 = Lie(T)` of a torus `T ≤ G`.
+subalgebra of `𝔤`; in particular the Lie algebra of a commutative Lie group is abelian. This
+applies to the Lie algebra `𝔱` of a torus `T ≤ G`, which is abelian and fixed pointwise by
+`Ad(T)`.
 
 Conjugation by `g` carries the one-parameter subgroup of `X ∈ Lie(K)` to the one-parameter
 subgroup of `Ad g X`; when `g` commutes with the former, uniqueness of the generator of a
@@ -45,9 +46,9 @@ subalgebra they generate by `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2012), Chapter 8,
-  "The Lie Algebra of a Lie Group", and Chapter 20, "One-Parameter Subgroups and the Exponential
-  Map".
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Chapter 8
+  (Vector Fields), § The Lie Algebra of a Lie Group, and Chapter 20 (The Exponential Map),
+  § One-Parameter Subgroups and the Exponential Map.
 -/
 
 public section
@@ -66,9 +67,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- **The adjoint action fixes the generator of a commuting one-parameter subgroup.** Conjugation
-by `g` carries the one-parameter subgroup of `X` to that of `Ad g X`; if `g` commutes with every
-point of the former, the two one-parameter subgroups coincide, so their generators do. -/
+/-- **The adjoint action fixes the generator of a commuting one-parameter subgroup**: if `g`
+commutes with `lieExp (t • X)` for every `t`, then `Ad g X = X`. -/
 theorem Ad_apply_eq_self_of_forall_commute {g : G} {X : LeftInvariantDerivation I G}
     (h : ∀ t : ℝ, Commute g (lieExp (I := I) (t • X))) : Ad (I := I) g X = X := by
   apply oneParameterSubgroup_injective (I := I) (G := G)
@@ -92,15 +92,16 @@ theorem Ad_apply_eq_self_of_mem_centralizer {K : Subgroup G} {g : G}
   | smul c Y _ hY => rw [map_smul, hY]
   | lie Y Z _ _ hY hZ => rw [LieEquiv.map_lie, hY, hZ]
 
-/-- **The Lie algebra of the centralizer of `K` brackets to zero with `Lie(K)`.** For `X` whose
-one-parameter subgroup centralizes `K`, the bracket `⁅X, Y⁆` with `Y ∈ Lie(K)` is the derivative
-at `0` of the adjoint orbit `s ↦ Ad (lieExp (s • X)) Y`, which is constant. -/
+/-- **The Lie algebra of the centralizer of `K` brackets to zero with `Lie(K)`**: for
+`X ∈ Lie(centralizer K)` and `Y ∈ Lie(K)`, `⁅X, Y⁆ = 0`. -/
 theorem lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer {K : Subgroup G}
     {X Y : LeftInvariantDerivation I G}
     (hX : X ∈ lieSubalgebraOfSubgroup (I := I) (Subgroup.centralizer (K : Set G)))
     (hY : Y ∈ lieSubalgebraOfSubgroup (I := I) K) : ⁅X, Y⁆ = 0 := by
   induction hX using lieSubalgebraOfSubgroup_induction with
   | mem Z hZ =>
+    -- The bracket is the derivative at `0` of the adjoint orbit `s ↦ Ad (lieExp (s • Z)) Y`,
+    -- which is constant because `lieExp (s • Z)` centralizes `K`.
     have horbit : (fun s : ℝ => Ad (I := I) (lieExp (I := I) (s • Z)) Y) = fun _ => Y :=
       funext fun s => Ad_apply_eq_self_of_mem_centralizer (hZ s) hY
     have hderiv := hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) Z Y
