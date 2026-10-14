@@ -30,6 +30,8 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   `0 < k ≤ N`, `Hₖ(RPᴺ; R)` is the `2`-torsion of `R`.
 * `TauCeti.RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd`: for odd `N`,
   `H_N(RPᴺ; R) ≅ R`.
+* `TauCeti.RealProjectiveSpace.cellularChainComplex_d_eq_zero_of_two_eq_zero`: if `2 = 0` in `R`,
+  every cellular differential of `RPᴺ` vanishes.
 * `TauCeti.RealProjectiveSpace.isZero_singularHomology_of_lt`: `Hₖ(RPᴺ; R) = 0` for `k > N`.
 * `TauCeti.RealProjectiveSpace.isZero_singularHomology_of_even`: `Hₖ(RPᴺ; R) = 0` for even
   `k > 0` when right multiplication by `2` is injective on `R`.
@@ -74,6 +76,17 @@ vanishes. -/
 private lemma d_eq_zero_of_odd (hk : Odd k) : (K).d k (k - 1) = 0 := by
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by have := hk.pos; omega⟩
   exact d_eq_zero_of_even R (by simpa [Nat.odd_add_one] using hk)
+
+/-- If `2 = 0` in `R`, every differential of the cellular chain complex of `RPᴺ` vanishes: it is
+zero or right multiplication by twice a unit. -/
+theorem cellularChainComplex_d_eq_zero_of_two_eq_zero (h2 : (2 : R) = 0) :
+    (K).d (k + 1) k = 0 := by
+  rcases Nat.even_or_odd k with hk | hk
+  · exact d_eq_zero_of_even R hk
+  rw [cellularChainComplex_d, (cellularDifferential_eq_zero_iff _ R k).2 fun c c' ↦ ?_]
+  · simp
+  obtain ⟨u, hu⟩ := exists_cellularIncidence_cwComplex_eq_two_mul_of_odd R hk c c'
+  rw [hu, h2, zero_mul]
 
 /-- Above the top dimension, the differential of the cellular chain complex of `RPᴺ` vanishes. -/
 private lemma d_eq_zero_of_le (hk : N ≤ k) : (K).d (k + 1) k = 0 := by
