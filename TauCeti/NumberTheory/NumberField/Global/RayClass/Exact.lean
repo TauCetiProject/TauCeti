@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.CongruenceQuotient
 
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
--- Private in `RayClass.Basic`; needed below for `ClassGroup.mk_toPrincipalIdeal`.
-import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
