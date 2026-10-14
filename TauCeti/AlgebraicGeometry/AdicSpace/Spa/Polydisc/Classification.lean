@@ -100,22 +100,6 @@ private theorem valuation_weightedX_sub_weightedC {x : closedPolydisc 1 K} {a : 
   · rw [hsplit, Valuation.map_sub_eq_of_lt_right]
     exact lt_of_not_ge fun h ↦ hb ((hge _).mp ((valuation_le_iff _ _ _).mp h))
 
-/-- If `x(T - a)` is strictly larger than `x(c)` for the constants with `Q c` and strictly smaller
-for the others, then `x(T - b)` is `x(T - a)` when `Q (b - a)` and `x(b - a)` otherwise. -/
-private theorem valuation_weightedX_sub_weightedC_of_lt {x : closedPolydisc 1 K} {a : K}
-    (Q : K → Prop) [DecidablePred Q]
-    (hlt : ∀ c : K, Q c → x.1.valuation (C c) < x.1.valuation (T - C a))
-    (hgt : ∀ c : K, ¬ Q c → x.1.valuation (T - C a) < x.1.valuation (C c)) (b : K) :
-    x.1.valuation (T - C b) =
-      if Q (b - a) then x.1.valuation (T - C a) else x.1.valuation (C (b - a)) := by
-  have hsplit : T - C b = (T - C a) - C (b - a) := by
-    rw [map_sub]
-    ring
-  rw [hsplit]
-  split_ifs with hb
-  · exact Valuation.map_sub_eq_of_lt_left _ (hlt _ hb)
-  · exact Valuation.map_sub_eq_of_lt_right _ (hgt _ hb)
-
 /-- Under the second condition characterising `η_{a,r}`, `x(T - a) ≠ 0`. -/
 private theorem valuation_weightedX_sub_weightedC_ne_zero {x : closedPolydisc 1 K} {a : K}
     (hr₀ : 0 < r) (hle : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) :
@@ -401,11 +385,7 @@ theorem eq_discPointAbove_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (
     (hr₀ : 0 < r) (hr₁ : r < 1) :
     x = discPointAbove a ha hr₀ hr₁ ↔
       ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖ := by
-  have hη (c : K) :
-      (discPointAbove a ha hr₀ hr₁).1.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖ := by
-    rw [discPointAbove_vle_iff, map_sub, taylorHom_weightedX, taylorHom_weightedC,
-      taylorHom_weightedC, add_sub_cancel_right]
-    exact closedDiscGaussValuationAbove_weightedX_le_iff hr₀ hr₁.le c
+  have hη := discPointAbove_vle_weightedC_iff a ha hr₀ hr₁
   refine ⟨by rintro rfl; exact hη, fun h ↦ ?_⟩
   exact eq_of_forall_lt_of_forall_gt (fun c ↦ ‖c‖ ≤ r) (by simpa using hr₀.le)
     (forall_lt_and_forall_gt_of_vle_weightedC_iff hr₀ h)
@@ -420,11 +400,7 @@ theorem eq_discPointBelow_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     x = discPointBelow a ha hr₀ hr₁ ↔
       ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r := by
-  have hη (c : K) :
-      (discPointBelow a ha hr₀ hr₁).1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r := by
-    rw [discPointBelow_vle_iff, map_sub, taylorHom_weightedX, taylorHom_weightedC,
-      taylorHom_weightedC, add_sub_cancel_right]
-    exact closedDiscGaussValuationBelow_weightedC_le_iff hr₀ hr₁ c
+  have hη := discPointBelow_weightedC_vle_iff a ha hr₀ hr₁
   refine ⟨by rintro rfl; exact hη, fun h ↦ ?_⟩
   exact eq_of_forall_lt_of_forall_gt (fun c ↦ ‖c‖ < r) (by simpa using hr₀)
     (forall_lt_and_forall_gt_of_weightedC_vle_iff h)
