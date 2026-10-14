@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
 /-!
 # Principal angles between two subspaces
@@ -17,7 +18,10 @@ the relative position of `U` and `V` is recorded by the two cross-projections
 
 * the *cosine map* `P_V P_U`, which projects vectors of `U` onto `V`, and
 * the *directed sine map* `P_{Vᗮ} P_U`, which keeps the component of a vector of `U` orthogonal
-  to `V`.
+  to `V`,
+
+together with the *double-angle operator* `2 P_{Uᗮ} P_V P_U`, the off-diagonal `U → Uᗮ` block of
+`2 P_V`, in which `sin 2Θ` bounds are stated.
 
 In finite dimension their singular values are the *principal cosines* and the *principal sines*
 of `U` and `V`, each listed in nonincreasing order and padded with zeros, and the *principal
@@ -35,6 +39,7 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
 
 * `Submodule.cosThetaMap U V`: the cosine map `P_V P_U`.
 * `Submodule.sinThetaMap U V`: the directed sine map `P_{Vᗮ} P_U`.
+* `Submodule.sinTwoAngleOperator U V`: the double-angle operator `2 P_{Uᗮ} P_V P_U`.
 * `Submodule.principalCosines U V`, `Submodule.principalSines U V`: the singular values of the
   cosine map and of the directed sine map.
 * `Submodule.principalAngles U V`: the arcsines of the principal sines.
@@ -50,6 +55,12 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
 * `Submodule.principalCosines_eq_zero_iff`: all principal cosines vanish exactly when `U ⟂ V`.
 * `Submodule.sin_principalAngles`: the sine of the `i`-th principal angle is the `i`-th principal
   sine.
+* `Submodule.principalSines_zero`: the largest principal sine is the directed gap `‖P_{Vᗮ} P_U‖`.
+* `Submodule.ncard_principalAngles_eq_pi_div_two`: the number of principal angles from `U` to `V`
+  equal to `π/2` is `dim (U ⊓ Vᗮ)`; hence `Submodule.principalAngles_lt_pi_div_two_iff`: all of
+  them are strictly below `π/2` exactly when no nonzero vector of `U` is orthogonal to `V`.
+* `Submodule.norm_sinTwoAngleOperator_le_one`: the double-angle operator is a contraction, and
+  `Submodule.sinTwoAngleOperator_eq_zero_iff`: it vanishes exactly when `P_U` and `P_V` commute.
 
 ## References
 
@@ -130,6 +141,105 @@ theorem sinThetaMap_eq_zero_iff : U.sinThetaMap V = 0 ↔ U ≤ V := by
 theorem sinThetaMap_self : U.sinThetaMap U = 0 :=
   (sinThetaMap_eq_zero_iff U U).2 le_rfl
 
+/-! ### The double-angle operator -/
+
+/-- The double-angle operator `2 P_{Uᗮ} P_V P_U` of two subspaces with orthogonal projections: the
+off-diagonal `U → Uᗮ` block of `2 P_V` relative to `E = U ⊕ Uᗮ`. It is the operator in which
+`sin 2Θ` perturbation bounds for spectral subspaces are stated. -/
+def sinTwoAngleOperator : E →L[𝕜] E :=
+  (2 : 𝕜) • (Uᗮ.starProjection ∘L V.starProjection ∘L U.starProjection)
+
+theorem sinTwoAngleOperator_def :
+    U.sinTwoAngleOperator V =
+      (2 : 𝕜) • (Uᗮ.starProjection ∘L V.starProjection ∘L U.starProjection) :=
+  (rfl)
+
+@[simp]
+theorem sinTwoAngleOperator_apply (x : E) :
+    U.sinTwoAngleOperator V x =
+      (2 : 𝕜) • Uᗮ.starProjection (V.starProjection (U.starProjection x)) :=
+  (rfl)
+
+/-- The double-angle operator is twice the directed sine map from `V` to `U` composed with the
+cosine map from `U` to `V`: `2 P_{Uᗮ} P_V P_U = 2 (P_{Uᗮ} P_V) (P_V P_U)`. -/
+theorem sinTwoAngleOperator_eq_smul_sinThetaMap_comp_cosThetaMap :
+    U.sinTwoAngleOperator V = (2 : 𝕜) • (V.sinThetaMap U ∘L U.cosThetaMap V) := by
+  ext x
+  simp [starProjection_eq_self_iff.2 (V.starProjection_apply_mem _)]
+
+/-- **The double-angle operator is a contraction**: `‖2 P_{Uᗮ} P_V P_U‖ ≤ 1`, the operator form of
+`sin 2θ ≤ 1`. -/
+theorem norm_sinTwoAngleOperator_le_one : ‖U.sinTwoAngleOperator V‖ ≤ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ ?_
+  set u := U.starProjection x
+  set v := V.starProjection u
+  -- `‖v‖² = ⟪P_V u, u⟫ = ⟪P_U v, u⟫ ≤ ‖P_U v‖ ‖u‖` since `u ∈ U`.
+  have hv : ‖v‖ ^ 2 ≤ ‖U.starProjection v‖ * ‖u‖ := by
+    have h : ⟪v, v⟫_𝕜 = ⟪U.starProjection v, u⟫_𝕜 := by
+      calc ⟪v, v⟫_𝕜 = ⟪V.starProjection v, u⟫_𝕜 :=
+            (inner_starProjection_left_eq_right V _ _).symm
+        _ = ⟪v, U.starProjection u⟫_𝕜 := by
+            rw [starProjection_eq_self_iff.2 (V.starProjection_apply_mem u),
+              starProjection_eq_self_iff.2 (U.starProjection_apply_mem x)]
+        _ = ⟪U.starProjection v, u⟫_𝕜 := (inner_starProjection_left_eq_right U _ _).symm
+    rw [@norm_sq_eq_re_inner 𝕜, h]
+    exact re_inner_le_norm _ _
+  -- With Pythagoras `‖v‖² = ‖P_U v‖² + ‖P_{Uᗮ} v‖²`, this gives `4 ‖P_{Uᗮ} v‖² ≤ ‖u‖²`.
+  have hpy := norm_sq_eq_add_norm_sq_starProjection v U
+  have hu : ‖u‖ ≤ ‖x‖ := U.norm_starProjection_apply_le x
+  have hsq : (2 * ‖Uᗮ.starProjection v‖) ^ 2 ≤ ‖u‖ ^ 2 := by
+    nlinarith [sq_nonneg (‖u‖ - 2 * ‖U.starProjection v‖)]
+  have h2 : 2 * ‖Uᗮ.starProjection v‖ ≤ ‖u‖ :=
+    (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 hsq
+  rw [sinTwoAngleOperator_apply, norm_smul, RCLike.norm_ofNat, one_mul]
+  exact h2.trans hu
+
+/-- The double-angle operator vanishes when `U ≤ V`. -/
+theorem sinTwoAngleOperator_eq_zero_of_le (h : U ≤ V) : U.sinTwoAngleOperator V = 0 := by
+  have hVU : V.starProjection ∘L U.starProjection = U.starProjection := by
+    ext x
+    exact starProjection_eq_self_iff.2 (h (U.starProjection_apply_mem x))
+  rw [sinTwoAngleOperator_def, hVU,
+    (isOrtho_orthogonal_left U).starProjection_comp_starProjection, smul_zero]
+
+/-- The double-angle operator vanishes when `U` and `V` are orthogonal. -/
+theorem sinTwoAngleOperator_eq_zero_of_isOrtho (h : U ⟂ V) : U.sinTwoAngleOperator V = 0 := by
+  rw [sinTwoAngleOperator_eq_smul_sinThetaMap_comp_cosThetaMap,
+    (cosThetaMap_eq_zero_iff U V).2 h, ContinuousLinearMap.comp_zero, smul_zero]
+
+@[simp]
+theorem sinTwoAngleOperator_self : U.sinTwoAngleOperator U = 0 :=
+  sinTwoAngleOperator_eq_zero_of_le U U le_rfl
+
+/-- The double-angle operator vanishes exactly when the orthogonal projections onto `U` and `V`
+commute. -/
+theorem sinTwoAngleOperator_eq_zero_iff :
+    U.sinTwoAngleOperator V = 0 ↔ Commute U.starProjection V.starProjection := by
+  rw [commute_iff_eq, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def]
+  constructor
+  · intro h
+    -- `P_{Uᗮ} P_V P_U = 0` says that `P_V P_U` takes values in `U`, so `P_U P_V P_U = P_V P_U`.
+    have hU (x : E) : U.starProjection (V.starProjection (U.starProjection x)) =
+        V.starProjection (U.starProjection x) := by
+      have hx := congrArg (· x) h
+      simp only [sinTwoAngleOperator_apply, zero_apply, smul_eq_zero,
+        two_ne_zero, false_or, starProjection_apply_eq_zero_iff, orthogonal_orthogonal] at hx
+      exact starProjection_eq_self_iff.2 hx
+    -- Taking adjoints, `P_U P_V = P_U P_V P_U = P_V P_U`.
+    refine ContinuousLinearMap.ext fun y ↦ ext_inner_left 𝕜 fun z ↦ ?_
+    calc ⟪z, U.starProjection (V.starProjection y)⟫_𝕜
+        = ⟪V.starProjection (U.starProjection z), y⟫_𝕜 := by
+          rw [← inner_starProjection_left_eq_right U, inner_starProjection_left_eq_right V]
+      _ = ⟪U.starProjection (V.starProjection (U.starProjection z)), y⟫_𝕜 := by rw [hU]
+      _ = ⟪z, U.starProjection (V.starProjection (U.starProjection y))⟫_𝕜 := by
+          rw [inner_starProjection_left_eq_right U, inner_starProjection_left_eq_right V,
+            inner_starProjection_left_eq_right U]
+      _ = ⟪z, V.starProjection (U.starProjection y)⟫_𝕜 := by rw [hU]
+  · intro h
+    rw [sinTwoAngleOperator_def, ← h, ← ContinuousLinearMap.comp_assoc,
+      (isOrtho_orthogonal_left U).starProjection_comp_starProjection,
+      ContinuousLinearMap.zero_comp, smul_zero]
+
 /-! ### Principal cosines, sines and angles -/
 
 section FiniteDimensional
@@ -202,6 +312,11 @@ theorem principalAngles_le_pi_div_two (i : ℕ) : U.principalAngles V i ≤ Real
 theorem sin_principalAngles (i : ℕ) : Real.sin (U.principalAngles V i) = U.principalSines V i := by
   rw [principalAngles_apply, Real.sin_arcsin (by linarith [principalSines_nonneg U V i])
     (principalSines_le_one U V i)]
+
+/-- The largest principal sine from `U` to `V` is the directed gap `‖P_{Vᗮ} P_U‖`. -/
+theorem principalSines_zero : U.principalSines V 0 = U.directedProjectionGap V := by
+  rw [principalSines_def, ← ContinuousLinearMap.singularValue_eq_linearMap_singularValues,
+    ContinuousLinearMap.singularValue_zero, coe_nnnorm, norm_sinThetaMap]
 
 /-- There are at most `dim U` nonzero principal cosines. -/
 theorem principalCosines_of_finrank_le {i : ℕ} (hi : finrank 𝕜 U ≤ i) :
@@ -353,6 +468,31 @@ principal angles of `U` and `V` are those of `V` and `U`. -/
 theorem principalAngles_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
     U.principalAngles V = V.principalAngles U := by
   rw [principalAngles, principalAngles, principalSines_comm U V h]
+
+/-! ### Right principal angles -/
+
+/-- **Counting right principal angles.** The number of principal angles from `U` to `V` equal to
+`π/2` is the dimension of `U ⊓ Vᗮ`, the subspace of vectors of `U` orthogonal to `V`. -/
+theorem ncard_principalAngles_eq_pi_div_two :
+    {i | U.principalAngles V i = Real.pi / 2}.ncard = finrank 𝕜 ↥(U ⊓ Vᗮ) := by
+  have hset : {i | U.principalAngles V i = Real.pi / 2} = {i | U.principalSines V i = 1} := by
+    ext i
+    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, principalAngles_apply, Real.arcsin_eq_pi_div_two]
+    exact ⟨fun h ↦ le_antisymm (principalSines_le_one U V i) h, ge_of_eq⟩
+  rw [hset, principalSines_def, LinearMap.ncard_ofPred_singularValues_eq _ one_pos, one_pow,
+    RCLike.ofReal_one, eigenspace_sinThetaMap_one]
+
+/-- All principal angles from `U` to `V` are strictly below `π/2` exactly when no nonzero vector
+of `U` is orthogonal to `V`. -/
+theorem principalAngles_lt_pi_div_two_iff :
+    (∀ i, U.principalAngles V i < Real.pi / 2) ↔ Disjoint U Vᗮ := by
+  have hfin : {i | U.principalAngles V i = Real.pi / 2}.Finite :=
+    (U.principalAngles V).hasFiniteSupport.subset fun i (hi : _ = _) ↦ by
+      rw [Function.mem_support, hi]
+      positivity
+  rw [disjoint_iff, ← Submodule.finrank_eq_zero, ← ncard_principalAngles_eq_pi_div_two,
+    Set.ncard_eq_zero hfin, Set.eq_empty_iff_forall_notMem]
+  exact forall_congr' fun i ↦ (principalAngles_le_pi_div_two U V i).lt_iff_ne
 
 end FiniteDimensional
 
