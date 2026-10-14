@@ -30,7 +30,8 @@ The paths of free loops are taken on the fixed interval `I`.
 
 * `TauCeti.ConstLoopPath Q`: the space of paths `I → C(S¹, Q)` from a constant loop to a constant
   loop; `TauCeti.constLoopPath_mem_contractibleLoops` says each such path lies in the contractible
-  free loops `TauCeti.contractibleLoops Q`, the space `𝓛₀Q`.
+  free loops `TauCeti.contractibleLoops Q`, the space `𝓛₀Q`, in which the constant loops embed
+  (`TauCeti.isEmbedding_constContractibleLoop`).
 * `TauCeti.sphere2HomeomorphConstLoopPath`: `Map(S², Q) ≃ₜ ConstLoopPath Q`.
 * `TauCeti.basedMapSphere2HomeomorphBasedConstLoopPath`: `Map_*(S², Q) ≃ₜ` the subspace of
   `ConstLoopPath Q` of paths starting at the constant loop at `⋆`.
@@ -72,6 +73,30 @@ constant loop. -/
 theorem mem_contractibleLoops_iff {γ : C(Circle, Q)} :
     γ ∈ contractibleLoops Q ↔ ∃ q, Joined γ (ContinuousMap.const Circle q) :=
   Iff.rfl
+
+/-- A constant loop is contractible. -/
+theorem const_mem_contractibleLoops (q : Q) : ContinuousMap.const Circle q ∈ contractibleLoops Q :=
+  ⟨q, Joined.refl _⟩
+
+/-- The constant loops, as a continuous map `Q → 𝓛₀Q`. -/
+def constContractibleLoop : C(Q, contractibleLoops Q) :=
+  ⟨fun q => ⟨ContinuousMap.const Circle q, const_mem_contractibleLoops q⟩,
+    ContinuousMap.continuous_const'.subtype_mk _⟩
+
+/-- The underlying free loop of `constContractibleLoop q` is the constant loop at `q`. -/
+@[simp]
+theorem coe_constContractibleLoop (q : Q) :
+    (constContractibleLoop q : C(Circle, Q)) = ContinuousMap.const Circle q := by
+  rw [constContractibleLoop]
+  rfl
+
+/-- The constant loops form a topological embedding `Q → 𝓛₀Q`: evaluation at the point
+`1` of the circle is a continuous left inverse. -/
+theorem isEmbedding_constContractibleLoop :
+    Topology.IsEmbedding (constContractibleLoop (Q := Q)) :=
+  Function.LeftInverse.isEmbedding (f := fun γ : contractibleLoops Q => (γ : C(Circle, Q)) 1)
+    (fun _ => rfl) ((continuous_eval_const (1 : Circle)).comp continuous_subtype_val)
+    constContractibleLoop.continuous
 
 /-- Every loop along a path of free loops that starts at a constant loop is contractible: a path
 in `ConstLoopPath Q` is a path in `𝓛₀Q`. -/
