@@ -57,7 +57,6 @@ theorem coeff_taylor_X_map_C (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
 
 /-- The Taylor coefficients of `P` at the point `a` are the values of its Hasse derivatives:
 `[Y^d] P(a + Y) = (∂^d P)(a)`. -/
-@[simp]
 theorem coeff_taylor (a : σ → R) (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
     (taylor a P).coeff d = eval a (hasseDeriv d P) := by
   rw [← eval_coeff_taylor_map_C, coeff_taylor_X_map_C]

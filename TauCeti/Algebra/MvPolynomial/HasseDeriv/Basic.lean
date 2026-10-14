@@ -33,8 +33,8 @@ Roth's theorem.
 
 * `MvPolynomial.hasseDeriv_monomial`, `MvPolynomial.hasseDeriv_coeff`: the values on monomials
   and the coefficients `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`.
-* `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`: `∂^0` is the identity and every
-  other Hasse derivative kills constants.
+* `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
+  `∂^0` is the identity and every other Hasse derivative kills constants.
 * `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`.
@@ -44,8 +44,9 @@ Roth's theorem.
   `∂^(k eᵢ)` is the univariate `k`-th Hasse derivative, and `∂^d` vanishes whenever `d`
   differentiates in another variable `Xⱼ`.
 * `MvPolynomial.hasseDeriv_comp`: `∂^a ∘ ∂^b = (∏ⱼ (aⱼ + bⱼ choose aⱼ)) • ∂^(a + b)`.
-* `MvPolynomial.hasseDeriv_mul_X`: the Leibniz rule for multiplication by a variable,
-  `∂^d (P Xᵢ) = ∂^(d - eᵢ) P + (∂^d P) Xᵢ` (the first term only when `dᵢ ≠ 0`).
+* `MvPolynomial.hasseDeriv_X`, `MvPolynomial.hasseDeriv_mul_X`: the value on a variable and the
+  Leibniz rule `∂^d (P Xᵢ) = ∂^(d - eᵢ) P + (∂^d P) Xᵢ` (the first term only when
+  `dᵢ ≠ 0`).
 
 ## References
 
@@ -115,6 +116,11 @@ theorem hasseDeriv_C {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) : hasseDeriv d (
   rw [← monomial_zero', hasseDeriv_monomial,
     prod_choose_eq_zero (by simpa [nonpos_iff_eq_zero] using hd)]
   simp
+
+/-- Every Hasse derivative of positive order kills the constant polynomial `1`. -/
+@[simp]
+theorem hasseDeriv_one {d : σ →₀ ℕ} (hd : d ≠ 0) : hasseDeriv d (1 : MvPolynomial σ R) = 0 := by
+  simpa only [map_one] using (hasseDeriv_C (R := R) hd 1)
 
 /-- Hasse derivatives commute with coefficient ring maps. -/
 @[simp]
@@ -252,6 +258,33 @@ theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
   | add p q hp hq =>
     simp only [add_mul, map_add, hp, hq]
     split_ifs <;> abel
+
+/-- The Hasse derivative of a variable is the variable in order zero, `1` in its corresponding
+first order, and `0` in every other order. -/
+@[simp]
+theorem hasseDeriv_X (d : σ →₀ ℕ) (i : σ) :
+    hasseDeriv d (X i : MvPolynomial σ R) =
+      @ite _ (d = 0) (Classical.propDecidable _) (X i)
+        (@ite _ (d = single i 1) (Classical.propDecidable _) 1 0) := by
+  rw [← one_mul (X i), hasseDeriv_mul_X]
+  by_cases hd : d = 0
+  · subst d
+    simp
+  · by_cases hdi : d i = 0
+    · have hds : d ≠ single i 1 := by
+        intro h
+        subst d
+        simp at hdi
+      simp [hd, hdi, hds]
+    · by_cases hds : d = single i 1
+      · subst d
+        simp
+      · have hsub : d - single i 1 ≠ 0 := by
+          intro h
+          apply hds
+          rw [tsub_eq_zero_iff_le] at h
+          exact le_antisymm h (single_le_iff.mpr (Nat.one_le_iff_ne_zero.mpr hdi))
+        simp [hd, hdi, hds, hsub]
 
 /-- `∂^(2, 0) (X₀³ X₁) = 3 X₀ X₁` over `ℤ`. -/
 example : hasseDeriv (single 0 2) (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) ℤ) = 3 * (X 0 * X 1) := by
