@@ -35,7 +35,7 @@ tail and shift-invariant σ-algebras need not agree.
   coordinate `0`, given the invariant σ-algebra.
 
 Adapted from the tail-conditional-law construction in
-`TauCeti.Probability.DeFinetti.DirectingMeasure.Basic`, following
+`TauCeti.Probability.Process.Tail.ConditionalLaw.Basic`, following
 `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/DirectingMeasure.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Here the conditioning σ-algebra is
 `MeasurableSpace.invariants (shift α)` rather than `tailProcess X`, and the bundling uses

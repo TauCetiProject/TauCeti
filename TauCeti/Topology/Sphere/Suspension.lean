@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 public import Mathlib.Topology.UnitInterval
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
 /-!
 # The two-sphere as the suspension of the circle
@@ -22,8 +23,6 @@ circle `{0} × S¹` to the north pole `(1, 0, 0)` and the circle `{1} × S¹` to
 
 * `TauCeti.suspensionToSphere`: the continuous map `I × S¹ → S²`.
 * `TauCeti.suspensionToSphere_surjective`: it is surjective.
-* `TauCeti.cos_pi_mul_injOn`, `TauCeti.sin_pi_mul_pos`: the trigonometric facts about `t ↦ π t`
-  on `I` behind these.
 * `TauCeti.suspensionToSphere_eq_north_iff` and `TauCeti.suspensionToSphere_eq_south_iff`: it
   collapses exactly the two ends to the poles.
 * `TauCeti.eq_or_of_suspensionToSphere_eq`: its other fibres are single points.
@@ -38,9 +37,6 @@ open scoped unitInterval
 
 namespace TauCeti
 
-/-- The unit circle `S¹` in `ℝ²`. -/
-abbrev Sphere1 : Type := sphere (0 : EuclideanSpace ℝ (Fin 2)) 1
-
 /-- The unit sphere `S²` in `ℝ³`. -/
 abbrev Sphere2 : Type := sphere (0 : EuclideanSpace ℝ (Fin 3)) 1
 
@@ -52,15 +48,12 @@ def Sphere2.north : Sphere2 :=
 def Sphere2.south : Sphere2 :=
   ⟨!₂[-1, 0, 0], by simp [EuclideanSpace.norm_eq, Fin.sum_univ_three]⟩
 
-theorem _root_.Circle.re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
-  have := Circle.normSq_coe z
-  rwa [Complex.normSq_apply, ← sq, ← sq] at this
-
 /-- The map `I × S¹ → S²`, `(t, z) ↦ (cos πt, sin πt · z)`. -/
 def suspensionToSphere : C(I × Circle, Sphere2) where
   toFun p :=
     ⟨!₂[cos (π * p.1), sin (π * p.1) * (p.2 : ℂ).re, sin (π * p.1) * (p.2 : ℂ).im], by
-      have h := Circle.re_sq_add_im_sq p.2
+      have h := Circle.normSq_coe p.2
+      simp only [Complex.normSq_apply, ← sq] at h
       rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Real.sqrt_eq_one]
       simp only [Fin.sum_univ_three, Real.norm_eq_abs, sq_abs]
       simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
@@ -94,19 +87,6 @@ theorem suspensionToSphere_apply_two (p : I × Circle) :
     (suspensionToSphere p : EuclideanSpace ℝ (Fin 3)) 2 = sin (π * p.1) * (p.2 : ℂ).im := by
   rw [suspensionToSphere]
   rfl
-
-/-- `t ↦ cos (π t)` is injective on the unit interval. -/
-theorem cos_pi_mul_injOn : Set.InjOn (fun t : I => cos (π * t)) Set.univ := by
-  intro a _ b _ h
-  refine Subtype.ext (mul_left_cancel₀ pi_ne_zero (Real.injOn_cos ?_ ?_ h))
-  · exact ⟨by positivity [a.2.1], mul_le_of_le_one_right pi_pos.le a.2.2⟩
-  · exact ⟨by positivity [b.2.1], mul_le_of_le_one_right pi_pos.le b.2.2⟩
-
-/-- `sin (π t)` is positive on the open unit interval. -/
-theorem sin_pi_mul_pos {t : I} (h0 : t ≠ 0) (h1 : t ≠ 1) : 0 < sin (π * t) := by
-  have ht0 : 0 < (t : ℝ) := lt_of_le_of_ne t.2.1 fun h => h0 (Subtype.ext h.symm)
-  have ht1 : (t : ℝ) < 1 := lt_of_le_of_ne t.2.2 fun h => h1 (Subtype.ext h)
-  exact sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
 
 /-- The collapse sends exactly the end `{0} × S¹` to the north pole. -/
 theorem suspensionToSphere_eq_north_iff (p : I × Circle) :

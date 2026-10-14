@@ -12,8 +12,8 @@ public import TauCeti.Topology.Sphere.Suspension
 /-!
 # Maps from the two-sphere into a topological group
 
-Evaluation at the north pole `Map(S², Q) → Q` has the constant spheres `ContinuousMap.const` as a
-section, and its fibre over the basepoint is the based mapping space `Map_*(S², Q)`. For a
+Evaluation at the north pole `Map(S², G) → G` has the constant spheres `ContinuousMap.const` as a
+section, and its fibre over the identity is the based mapping space `Map_*(S², G)`. For a
 topological group `G` the fibration is trivial, `G × Map_*(S², G) ≃ₜ Map(S², G)`
 (`TauCeti.mappingSpaceGroupHomeomorph`), and by the identification of based maps out of the sphere
 with double loops, `G × Ω²G ≃ₜ Map(S², G)`.
@@ -37,7 +37,7 @@ namespace TauCeti
 
 variable (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
 
-/-- **`Map(S², G) ≃ₜ G × Ω²G` for a topological group `G`**, through the identification of
+/-- **`G × Ω²G ≃ₜ Map(S², G)` for a topological group `G`**, through the identification of
 based maps out of `S²` with the double loop space. -/
 def sphere2GroupHomeomorphIteratedLoopSpace :
     G × (BasedTopologicalSpace.iteratedLoopSpace ⟨G, 1⟩ 2).carrier ≃ₜ C(Sphere2, G) :=
@@ -47,6 +47,7 @@ def sphere2GroupHomeomorphIteratedLoopSpace :
 
 variable {G}
 
+@[simp]
 theorem sphere2GroupHomeomorphIteratedLoopSpace_apply (g : G)
     (γ : (BasedTopologicalSpace.iteratedLoopSpace ⟨G, 1⟩ 2).carrier) :
     sphere2GroupHomeomorphIteratedLoopSpace G (g, γ) =
@@ -58,6 +59,7 @@ theorem sphere2GroupHomeomorphIteratedLoopSpace_apply (g : G)
   rfl
 
 /-- The group coordinate of the decomposition of a sphere map is its value at the north pole. -/
+@[simp]
 theorem sphere2GroupHomeomorphIteratedLoopSpace_symm_fst (f : C(Sphere2, G)) :
     ((sphere2GroupHomeomorphIteratedLoopSpace G).symm f).1 = f Sphere2.north := by
   rw [sphere2GroupHomeomorphIteratedLoopSpace, Homeomorph.symm_trans_apply]

@@ -23,8 +23,7 @@ the frontier, and satisfies
 Thus `u` and the zero function are distinct solutions of the homogeneous Dirichlet problem for
 `-Δ - 1`, and the boundary estimate `u ≤ 0` fails in the interior. In particular, both the weak
 maximum principle and Dirichlet uniqueness can fail when the zeroth-order coefficient is negative.
-This is the first Dirichlet eigenfunction counterexample singled out by the maximum-principle
-acceptance criterion in the PDE roadmap.
+Here `u` is the first Dirichlet eigenfunction of `-Δ` on `[0, π]`.
 
 ## Main declarations
 

@@ -33,8 +33,9 @@ representing morphisms propagates along arrows of `Ell/B` (`RelRepData.rep_mem_o
 (`RelRepData.hasProperty_congr`).
 
 The trivial problem `[Γ(1)]` is the terminal presheaf `𝟙_`, relatively represented by the
-identities of the bases (`RelRepData.tensorUnit`). The simultaneous problem `(𝒫, 𝒬)` is the
-product presheaf `𝒫 ⊗ 𝒬`, relatively represented by the fibre products
+identities of the bases (`RelRepData.tensorUnit`); every problem with exactly one level structure
+on each object is isomorphic to it (`ModuliProblem.isoTensorUnitOfUnique`). The simultaneous
+problem `(𝒫, 𝒬)` is the product presheaf `𝒫 ⊗ 𝒬`, relatively represented by the fibre products
 `𝒫_{E/S} ×_S 𝒬_{E/S}` (`RelRepData.tensor`).
 
 A moduli problem is **rigid** when no automorphism of an elliptic curve `E/S` other than the
@@ -51,6 +52,8 @@ and every problem representable by an object of `Ell/B` is rigid (`isRigid_of_re
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.HasProperty`: a property of morphisms of
   schemes holds for every representing morphism.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.IsRigid`: rigidity.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.isoTensorUnitOfUnique`: a moduli problem with exactly
+  one level structure on every object is the trivial problem `[Γ(1)]`.
 
 ## Main results
 
@@ -101,6 +104,17 @@ noncomputable def fibreIso (f : X ⟶ Y) : P.fibre X ≅ (Over.map f.base).op �
 theorem fibreIso_hom_app (f : X ⟶ Y) (T : (Over X.base)ᵒᵖ) :
     (P.fibreIso f).hom.app T = P.map ((EllObj.baseChangeFunctorIso f).inv.app T.unop).op :=
   (rfl)
+
+/-- **A moduli problem with exactly one level structure on every object is trivial**: if `𝒫(E/S)`
+has exactly one element for every object `(E/S)` of `Ell/B`, then `𝒫` is the trivial moduli
+problem `[Γ(1)]`, the terminal presheaf `𝟙_`. -/
+noncomputable def isoTensorUnitOfUnique [∀ X, Unique (P.obj X)] : P ≅ 𝟙_ (ModuliProblem B) where
+  hom := toUnit _
+  inv :=
+    { app X := TypeCat.ofHom fun _ ↦ default
+      naturality _ _ _ := by ext; exact Subsingleton.elim _ _ }
+  hom_inv_id := by ext; exact Subsingleton.elim _ _
+  inv_hom_id := toUnit_unique _ _
 
 /-- **Relative-representability data** for a moduli problem `𝒫` (Katz–Mazur 4.2): for every
 object `X = (E/S)` of `Ell/B`, a scheme `rep X = 𝒫_{E/S}` over `S` representing the fibre
