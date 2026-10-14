@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
@@ -20,7 +21,9 @@ field extensions `L/K`, including transcendental extensions.
 
 Through Mathlib's `continuousSMul_iff_stabilizer_isOpen` this is what makes the units of an
 algebraic extension a *discrete module* over the Galois group, in the sense continuous cohomology
-asks for; `TauCeti.unitsCoeff_continuousSMul` is that consequence for a separable closure.
+asks for; `TauCeti.unitsCoeff_continuousSMul` is that consequence for a separable closure. The
+additive counterpart is `TauCeti.continuousSMul_forcedDiscrete`: an algebraic extension `L`, with
+the discrete topology imposed by `TauCeti.ForcedDiscrete`, is a discrete `Gal(L/K)`-module.
 
 ## Main results
 
@@ -33,6 +36,8 @@ asks for; `TauCeti.unitsCoeff_continuousSMul` is that consequence for a separabl
 * `IntermediateField.isOpen_ker_comp_restrictNormalHom`: an additive homomorphism from
   `Gal(E/K)` for a finite normal intermediate field `E`, read on `Gal(L/K)` through restriction,
   has open kernel.
+* `TauCeti.continuousSMul_forcedDiscrete`: for an algebraic extension `L/K`, `ForcedDiscrete L` is
+  a discrete `Gal(L/K)`-module.
 -/
 
 public section
@@ -83,3 +88,13 @@ theorem IntermediateField.isOpen_ker_comp_restrictNormalHom {A : Type*} [AddZero
   rw [Additive.mem_toAddSubgroup, ← IntermediateField.restrictNormalHom_ker,
     MonoidHom.mem_ker] at hx
   simp [hx]
+
+namespace TauCeti
+
+/-- **`L` is a discrete `Gal(L/K)`-module for an algebraic extension `L/K`**: every element of `L`
+is integral over `K`, so its stabilizer is open for the Krull topology. -/
+instance continuousSMul_forcedDiscrete [Algebra.IsIntegral K L] :
+    ContinuousSMul Gal(L/K) (ForcedDiscrete L) :=
+  (ForcedDiscrete.continuousSMul_iff L).2 stabilizer_isOpen_of_isIntegral
+
+end TauCeti

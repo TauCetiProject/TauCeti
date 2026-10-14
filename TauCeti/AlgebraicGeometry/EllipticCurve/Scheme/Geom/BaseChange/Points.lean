@@ -31,6 +31,12 @@ through divisors of points, such as points of exact order `N`, pull back along b
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback hg h0`: base change of `S`-points of
   `E` to `S'`-points of `E'`, as a group homomorphism.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsBaseChangeEquiv hg h0`: the group
+  equivalence between points of `E'` and points of `E` valued in `S'`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.universalPoint E`: the diagonal section of
+  `E ×_S E`, as a point of the base change of `E` to `E`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.toBaseChangeSelf hg P'`: the morphism from `E'` to
+  the base change of `E` to `E`, lying over the morphism `S' ⟶ E` given by an `S'`-point `P'`.
 
 ## Main results
 
@@ -42,6 +48,9 @@ through divisors of points, such as points of exact order `N`, pull back along b
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_id` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_comp`: base change of points along
   the identity square is the identity, and along a pasted square it is the composite.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_universalPoint`: every point of
+  every base change of `E` is the base change of the universal point, along the pullback square
+  `isPullback_toBaseChangeSelf`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_left_apply_eq_zero_iff`: the base
   change `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the
   zero section at `f s'`.
@@ -108,10 +117,13 @@ include hg h0 in
 /-- **Base change carries sums of points to sums of points**, in terms of the group law on points
 of `E`. If points `x` and `y` of `E'` with values in a scheme `Z` over `S'` lie over points `x₀`
 and `y₀` of `E` with values in `Z`, viewed as a scheme over `S`, then the sum of `x` and `y` lies
-over the sum of `x₀` and `y₀`. -/
+over the sum of `x₀` and `y₀`. The structure map `f'` of `Z` over `S` is identified with
+`Z.hom ≫ f` by `e`. -/
 theorem mul_left_comp_eq_of_isPullback {Z : Over S'} {x y : Z ⟶ Over.mk E'.structureMap}
-    {x₀ y₀ : Over.mk (Z.hom ≫ f) ⟶ Over.mk E.structureMap} (hx : x.left ≫ g = x₀.left)
+    {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f')
+    {x₀ y₀ : Over.mk f' ⟶ Over.mk E.structureMap} (hx : x.left ≫ g = x₀.left)
     (hy : y.left ≫ g = y₀.left) : (x * y).left ≫ g = (x₀ * y₀).left := by
+  subst f'
   rw [mul_left_comp_of_isPullback hg h0, hom_mul_left]
   congr 1
   apply pullback.hom_ext <;> simp [hx, hy]
@@ -130,6 +142,26 @@ noncomputable def pointsPullback :
     rw [mul_left_comp_of_isPullback hg h0, pointPullback_left_comp, hom_mul_left, ← Category.assoc]
     congr 1
     apply pullback.hom_ext <;> simp [pointPullback_left_comp]
+
+/-- Points of a base change are the points of the original elliptic curve valued in the
+new base. Composition with the pullback projection gives an equivalence of groups. -/
+noncomputable def pointsBaseChangeEquiv :
+    (𝟙_ (Over S') ⟶ Over.mk E'.structureMap) ≃*
+      (Over.mk f ⟶ Over.mk E.structureMap) where
+  toFun P := Over.homMk (P.left ≫ g) (by simp [Category.assoc, hg.w])
+  invFun Q := Over.homMk (hg.lift Q.left (𝟙 S') (by simpa using Over.w Q)) (by simp)
+  left_inv P := point_ext hg (by simp)
+  right_inv Q := by ext1; simp
+  map_mul' P Q := by
+    ext1
+    exact mul_left_comp_eq_of_isPullback hg h0 (Category.id_comp f) rfl rfl
+
+/-- The underlying morphism of the point corresponding to a base-changed point is its
+composite with the pullback projection. -/
+@[simp]
+theorem pointsBaseChangeEquiv_left (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    (pointsBaseChangeEquiv hg h0 P).left = P.left ≫ g := by
+  rfl
 
 /-- The base change `P'` of a point `P` satisfies `P' ≫ g = f ≫ P`. -/
 @[reassoc (attr := simp)]
@@ -160,6 +192,71 @@ theorem pointsPullback_comp {S'' : Scheme.{u}} {E'' : EllipticCurveGeom S''}
     pointsPullback (hg'.paste_horiz hg) (by simp [reassoc_of% h0', h0]) P =
       pointsPullback hg' h0' (pointsPullback hg h0 P) :=
   ((eq_pointsPullback_iff _ _).mpr (by simp)).symm
+
+variable (E) in
+/-- The **universal point** of `E`: the diagonal section of `E ×_S E`, viewed as a point of the
+base change of `E` to `E` itself. Every point of every base change of `E` is a base change of it,
+along the morphism to `E` that the point defines (`pointsPullback_universalPoint`). -/
+noncomputable def universalPoint :
+    𝟙_ (Over E.carrier) ⟶ Over.mk (E.baseChange E.structureMap).structureMap :=
+  Over.homMk ((E.isPullback_baseChange E.structureMap).lift (𝟙 _) (𝟙 _) (by simp)) (by simp)
+
+/-- The universal point composed with the projection to `E` is the identity. -/
+@[reassoc (attr := simp)]
+theorem universalPoint_left_baseChangeIso_hom_fst :
+    (E.universalPoint).left ≫ (E.baseChangeIso E.structureMap).hom ≫
+      pullback.fst E.structureMap E.structureMap = 𝟙 E.carrier :=
+  (E.isPullback_baseChange E.structureMap).lift_fst _ _ _
+
+/-- The morphism from a base change `E'` of `E` to the base change of `E` to `E` itself, lying over
+the morphism `S' ⟶ E` given by an `S'`-point `P'` of `E'`. -/
+noncomputable def toBaseChangeSelf (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    E'.carrier ⟶ (E.baseChange E.structureMap).carrier :=
+  (E.isPullback_baseChange E.structureMap).lift g (E'.structureMap ≫ P'.left ≫ g)
+    (by simp [hg.w])
+
+/-- `toBaseChangeSelf` composed with the projection to `E` is `g`. -/
+theorem toBaseChangeSelf_fst (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    toBaseChangeSelf hg P' ≫ (E.baseChangeIso E.structureMap).hom ≫
+      pullback.fst E.structureMap E.structureMap = g :=
+  (E.isPullback_baseChange E.structureMap).lift_fst _ _ _
+
+/-- `toBaseChangeSelf` lies over the morphism `S' ⟶ E` given by the point `P'`. -/
+theorem toBaseChangeSelf_structureMap (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    toBaseChangeSelf hg P' ≫ (E.baseChange E.structureMap).structureMap =
+      E'.structureMap ≫ P'.left ≫ g :=
+  (E.isPullback_baseChange E.structureMap).lift_snd _ _ _
+
+/-- `E'` is the base change of the base change of `E` to `E` along the morphism `S' ⟶ E` given by
+an `S'`-point `P'` of `E'`, via `toBaseChangeSelf`. -/
+theorem isPullback_toBaseChangeSelf (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    IsPullback (toBaseChangeSelf hg P') E'.structureMap (E.baseChange E.structureMap).structureMap
+      (P'.left ≫ g) := by
+  -- paste with the pullback square of `E ×_S E ⟶ E` over `E ⟶ S` to recover `hg`
+  refine .of_right (h₁₂ := (E.baseChangeIso E.structureMap).hom ≫ pullback.fst _ _) ?_
+    (toBaseChangeSelf_structureMap hg P') (E.isPullback_baseChange E.structureMap)
+  have hw : (P'.left ≫ g) ≫ E.structureMap = f := by simp [hg.w]
+  rwa [toBaseChangeSelf_fst, hw]
+
+include h0 in
+/-- `toBaseChangeSelf` carries the zero section of `E'` to that of the base change of `E` to `E`. -/
+theorem zero_toBaseChangeSelf (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    E'.zero ≫ toBaseChangeSelf hg P' = (P'.left ≫ g) ≫ (E.baseChange E.structureMap).zero := by
+  apply (E.isPullback_baseChange E.structureMap).hom_ext
+  · rw [Category.assoc, toBaseChangeSelf_fst, h0]
+    simp [reassoc_of% hg.w, pullbackSection_fst]
+  · simp [toBaseChangeSelf_structureMap]
+
+include h0 in
+/-- **Every point of a base change of `E` is a base change of the universal point**, along the
+morphism `S' ⟶ E` it defines. -/
+theorem pointsPullback_universalPoint (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    pointsPullback (isPullback_toBaseChangeSelf hg P') (zero_toBaseChangeSelf hg h0 P')
+      E.universalPoint = P' := by
+  refine ((eq_pointsPullback_iff _ _).mpr ?_).symm
+  apply (E.isPullback_baseChange E.structureMap).hom_ext
+  · simp [toBaseChangeSelf_fst]
+  · simp [toBaseChangeSelf_structureMap, universalPoint]
 
 /-- Along a morphism `t : T ⟶ S'`, the base change `P'` of an `S`-point `P` of `E` agrees with the
 zero section of `E'` exactly when `P` agrees with the zero section of `E` along `t ≫ f`. -/
@@ -252,7 +349,7 @@ theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
         (lift σ₁ σ₂).left ≫ ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left := by
       -- Both sides are composites of tensor products with `μ`, i.e. products of points.
       simp only [← Over.comp_left, mul_eq_mul, comp_mul, tensorHom_fst, tensorHom_snd]
-      exact mul_left_comp_eq_of_isPullback hg h0 (by simp [σ₁, i, i', A, ← hρ])
+      exact mul_left_comp_eq_of_isPullback hg h0 rfl (by simp [σ₁, i, i', A, ← hρ])
         (by simp [σ₂, i, i', A, ← hρ])
     rw [key]
     exact hm.trans (Scheme.Hom.le_ker_comp _ _)

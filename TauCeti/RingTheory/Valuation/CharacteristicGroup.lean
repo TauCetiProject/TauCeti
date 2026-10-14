@@ -53,6 +53,8 @@ formalised here.
   cofinal values.
 * `Valuation.mem_characteristicSubgroup_iff` : Membership in `cΓ_v` is bounding by a
   single attained value `≥ 1`.
+* `Valuation.hasFullCharacteristicGroup_of_one_lt` : A valuation into a `MulArchimedean`
+  group with a value `> 1` has full characteristic group.
 * `Valuation.hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top` : The
   elementwise fullness condition is exactly `cΓ_v = Γ_v`.
 * `Valuation.characteristicSubgroup_eq_comap_of_isEquiv` and
@@ -195,6 +197,23 @@ theorem HasFullCharacteristicGroup.exists_inv_le {v : Valuation A Γ₀}
     ∃ t : A, v.restrict t ≠ 0 ∧ (v.restrict t)⁻¹ ≤ γ := by
   obtain ⟨a, ha_inv_le, ha_le⟩ := h γ hγ
   exact ⟨a, (hγ.trans_le ha_le).ne', ha_inv_le⟩
+
+/-- **A valuation of rank at most one with a value `> 1` has full characteristic group.** If the
+codomain is `MulArchimedean` and `1 < v y`, the powers `v (y ^ n)` bound every positive element
+of the value group from above and below. -/
+theorem hasFullCharacteristicGroup_of_one_lt [MulArchimedean Γ₀] {v : Valuation A Γ₀} {y : A}
+    (hy : 1 < v y) : HasFullCharacteristicGroup v := by
+  intro γ hγ
+  set g := ValueGroup₀.embedding γ
+  have hg : 0 < g := by
+    simpa [g] using ValueGroup₀.embedding_strictMono hγ
+  obtain ⟨n, hn⟩ := MulArchimedean.arch (max g g⁻¹) hy
+  have hyn : 0 < v y ^ n := pow_pos (one_pos.trans hy) n
+  refine ⟨y ^ n, ?_, ?_⟩
+  · rw [← ValueGroup₀.embedding_strictMono.le_iff_le, map_inv₀, embedding_restrict, map_pow]
+    exact (inv_le_comm₀ hyn hg).mpr ((le_max_right _ _).trans hn)
+  · rw [← ValueGroup₀.embedding_strictMono.le_iff_le, embedding_restrict, map_pow]
+    exact (le_max_left _ _).trans hn
 
 /-! ### The characteristic subgroup -/
 

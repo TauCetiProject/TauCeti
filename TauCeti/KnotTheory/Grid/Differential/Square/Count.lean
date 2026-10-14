@@ -78,7 +78,7 @@ The intermediate state is retained as part of `GridRectangleDecomposition`; it i
 the first rectangle, but is the index over which the differential-square coefficient is summed. -/
 noncomputable def fullyBlockedDecompositions :
     Finset (GridRectangleDecomposition x z) :=
-  GridRectangleDecomposition.decompositionsOf G.fullyBlockedRectangles x z
+  GridTwoStepDecomposition.decompositionsOf G.fullyBlockedRectangles G.fullyBlockedRectangles x z
 
 /-- A decomposition is fully blocked exactly when each of its two rectangles belongs to the
 corresponding fully blocked rectangle set. -/
@@ -95,7 +95,7 @@ theorem mem_fullyBlockedDecompositions (D : GridRectangleDecomposition x z) :
 /-- The two-step rectangle decompositions from `x` to `z` both of whose rectangles the unblocked
 differential counts: both are empty and cover no `X`-marking. -/
 noncomputable def unblockedDecompositions : Finset (GridRectangleDecomposition x z) :=
-  GridRectangleDecomposition.decompositionsOf G.unblockedRectangles x z
+  GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles G.unblockedRectangles x z
 
 /-- A two-step decomposition is counted by the unblocked differential exactly when each of its
 two rectangles is. -/
@@ -140,7 +140,7 @@ theorem sum_unblockedCoefficient_mul_unblockedCoefficient (x z : GridState n) :
       Finset.sum_mul_sum]
   rw [Finset.sum_congr rfl fun y (_ : y ∈ Finset.univ) => hstep y]
   simp only [unblockedDecompositionWeight_def]
-  exact (GridRectangleDecomposition.sum_decompositionsOf G.unblockedRectangles x z
+  exact (GridTwoStepDecomposition.sum_decompositionsOf G.unblockedRectangles G.unblockedRectangles
     (fun _ r₁ r₂ =>
       G.OMonomial R r₁.toGridRectangle * G.OMonomial R r₂.toGridRectangle)).symm
 
@@ -182,7 +182,8 @@ theorem card_fullyBlockedDecompositions :
     (G.fullyBlockedDecompositions x z).card =
       ∑ y : GridState n,
         (G.fullyBlockedRectangles x y).card * (G.fullyBlockedRectangles y z).card := by
-  exact GridRectangleDecomposition.card_decompositionsOf G.fullyBlockedRectangles x z
+  exact GridTwoStepDecomposition.card_decompositionsOf G.fullyBlockedRectangles
+    G.fullyBlockedRectangles x z
 
 /-- There are no fully blocked decompositions from `x` to a state outside the two-step
 column-swap support of `x`. -/
