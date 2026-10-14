@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus.Basic
 
 /-!
 # Positive square roots and the finite-dimensional operator modulus
