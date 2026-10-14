@@ -213,8 +213,7 @@ private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_c
       derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
   let := weilDifferentialSpaceModule hF
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
-  have hex' : IsIntegrallyClosedIn k' F' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+  have hex' : IsIntegrallyClosedIn k' F' := hex.of_constantCompositum_eq_top h
   have hx' : Transcendental k' (algebraMap F F' x) :=
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars k'
   have hy' : Transcendental k' (algebraMap F F' y) :=
