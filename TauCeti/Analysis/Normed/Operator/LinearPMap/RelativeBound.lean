@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
-public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.LinearAlgebra.LinearPMap
 
 /-!
@@ -31,6 +30,7 @@ use Mathlib's addition of partial linear maps, whose domain is the intersection 
 
 * `LinearPMap.IsRelativelyBounded V A a b`: `V` is `A`-bounded with constants `a, b`.
 * `LinearPMap.IsRelativelyBounded.mono`: increasing the constants.
+* `LinearPMap.IsRelativelyBounded.domain_add`: the domain of `A + V` is the domain of `A`.
 * `LinearPMap.IsRelativelyBounded.add`, `.sub`, `.neg`, `.smul`: the linear calculus.
 * `LinearPMap.isRelativelyBounded_zero`, `ContinuousLinearMap.isRelativelyBounded_toPMap`: the
   zero map and bounded operators.
@@ -69,6 +69,11 @@ theorem mono (h : V.IsRelativelyBounded A a b) (ha : a ≤ a') (hb : b ≤ b') :
   domain_le := h.domain_le
   norm_apply_le x := (h.norm_apply_le x).trans <| add_le_add
     (mul_le_mul_of_nonneg_right ha (norm_nonneg _)) (mul_le_mul_of_nonneg_right hb (norm_nonneg _))
+
+/-- If `V` is relatively bounded with respect to `A`, then `A + V` has the same domain as `A`. -/
+theorem domain_add {V A : E →ₗ.[𝕜] F} (h : V.IsRelativelyBounded A a b) :
+    (A + V).domain = A.domain :=
+  inf_eq_left.2 h.domain_le
 
 /-- Relative bounds add under the sum of two partial linear maps. -/
 theorem add (hV : V.IsRelativelyBounded A a b) (hW : W.IsRelativelyBounded A a' b') :

@@ -108,9 +108,7 @@ theorem surjective_add_of_norm_le (Q K : D →ₗ[𝕜] Y) (hQ : Surjective Q) {
   -- `K` factors through `Q` as `S ∘ Q`, with `S` of norm at most `θ`.
   let S : Y →ₗ[𝕜] Y := (ker Q).liftQ K hker ∘ₗ (Q.quotKerEquivOfSurjective hQ).symm.toLinearMap
   have hS : ∀ z, S (Q z) = K z := fun z ↦ by
-    have : (Q.quotKerEquivOfSurjective hQ).symm (Q z) = Submodule.Quotient.mk z :=
-      (LinearEquiv.symm_apply_eq _).2 (quotKerEquivOfSurjective_apply_mk Q hQ z).symm
-    simp [S, this]
+    simp [S, quotKerEquivOfSurjective_symm_apply]
   have hSb : ∀ y, ‖S y‖ ≤ max θ 0 * ‖y‖ := fun y ↦ by
     obtain ⟨z, rfl⟩ := hQ y
     rw [hS]
