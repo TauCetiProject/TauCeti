@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
-import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace
 
 /-!
 # Epimorphisms of schemes with injective stalk or section maps
@@ -42,8 +42,6 @@ This gluing step follows the proof of Mathlib's
   with injective stalk maps is an epimorphism.
 * `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_app_injective`: a surjective morphism which
   is injective on sections over every open is an epimorphism.
-* `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_isIso_app`: a surjective morphism which is
-  an isomorphism on sections over every open is an epimorphism.
 * `AlgebraicGeometry.Scheme.Hom.stalkMap_pullback_snd_injective`: the stalk maps of a base change
   along an open immersion are injective when those of `f` are.
 * `AlgebraicGeometry.Scheme.Hom.epi_pullback_snd_of_isOpenImmersion`: the base change of such an
@@ -84,12 +82,6 @@ theorem epi_of_surjective_of_app_injective (f : X ⟶ Y) [Surjective f]
   apply Functor.epi_of_epi_map Scheme.forgetToLocallyRingedSpace
   exact LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono _ f.surjective
     fun U ↦ ConcreteCategory.mono_of_injective _ (h U.unop)
-
-/-- A surjective morphism of schemes which is an isomorphism on sections over every open is an
-epimorphism. -/
-theorem epi_of_surjective_of_isIso_app (f : X ⟶ Y) [Surjective f]
-    (h : ∀ U, IsIso (f.app U)) : Epi f :=
-  epi_of_surjective_of_app_injective f fun _ ↦ (ConcreteCategory.bijective_of_isIso _).1
 
 /-- The stalk maps of the base change of `f` along an open immersion are injective when those of
 `f` are. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 import TauCeti.Topology.Sheaves.Presheaf
 
