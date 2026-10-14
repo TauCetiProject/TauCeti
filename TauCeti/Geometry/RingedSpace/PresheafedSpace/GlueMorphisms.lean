@@ -38,14 +38,6 @@ morphism need not be an isomorphism, so the argument here works directly with th
   the given morphism on each open of the cover.
 * `AlgebraicGeometry.PresheafedSpace.hom_ext_of_ofRestrict`: two morphisms out of `X` agreeing on
   every open of a cover are equal.
-
-## Implementation notes
-
-The presheaf of the restriction `X.restrict h` is `h.functor.op ⋙ X.presheaf` only after unfolding
-Mathlib's `AlgebraicGeometry.PresheafedSpace.restrict`, which `rw` does not do. Restriction maps of
-`X.restrict h` are therefore merged with those of `X` by `erw [← X.presheaf.map_comp]`, after which
-the remaining equalities of morphisms of `Opens X` hold by `rfl`, `Opens X` being a preorder. For
-the same reason some rewrites by associativity are replaced by `Category.assoc` used as a term.
 -/
 
 public section
@@ -124,6 +116,13 @@ private theorem ofArrows_piece_mem (W : Opens Y) :
   have h := glueBase_apply U hU f hf ⟨x, hi⟩
   rw [ofRestrict_base] at h
   exact (congrArg (· ∈ W) h).mp hx
+
+/- The presheaf of the restriction `X.restrict h` is `h.functor.op ⋙ X.presheaf` only after
+unfolding Mathlib's `AlgebraicGeometry.PresheafedSpace.restrict`, which `rw` does not do. In the
+proofs below, restriction maps of `X.restrict h` are therefore merged with those of `X` by
+`erw [← X.presheaf.map_comp]`, after which the remaining equalities of morphisms of `Opens X` hold
+by `rfl`, `Opens X` being a preorder. For the same reason some rewrites by associativity are
+replaced by `Category.assoc` used as a term. -/
 
 include hf in
 /-- The components of the `f i` at `W` agree on every open contained in two of the pieces. -/

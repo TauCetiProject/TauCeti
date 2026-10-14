@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.RingedSpace.PresheafedSpace
+public import Mathlib.Geometry.RingedSpace.OpenImmersion
 public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
@@ -44,6 +44,12 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] (X : PresheafedSpace C)
 
+/- The presheaf of the restriction `X.restrict h` is `h.functor.op ⋙ X.presheaf` only after
+unfolding Mathlib's `AlgebraicGeometry.PresheafedSpace.restrict`, which `rw` does not do. In the
+proofs below, restriction maps of `X.restrict h` are therefore merged with those of `X` by
+`erw [← X.presheaf.map_comp]`, after which the remaining equalities of morphisms of `Opens X` hold
+by `rfl`, `Opens X` being a preorder. -/
+
 /-- For opens `V ≤ W` of `X`, the inclusion of the restriction of `X` to `V` into its restriction
 to `W`. Its components are restriction maps of the presheaf of `X`. -/
 @[expose, simps]
@@ -52,7 +58,7 @@ def restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
   base := (Opens.toTopCat X).map (homOfLE h)
   c :=
     { app Q := X.presheaf.map (homOfLE (Opens.functor_obj_map_homOfLE_obj_le h Q.unop)).op
-      -- `erw`: see the implementation notes
+      -- `erw`: see the comment above
       naturality _ _ _ := by
         erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
         rfl }
@@ -77,29 +83,13 @@ theorem restrictHomOfLE_ofRestrict {V W : Opens X} (h : V ≤ W) :
 @[simp]
 theorem restrictHomOfLE_refl (V : Opens X) :
     X.restrictHomOfLE (le_refl V) = 𝟙 (X.restrict V.isOpenEmbedding) := by
-  have hbase : (X.restrictHomOfLE (le_refl V)).base =
-      Hom.base (𝟙 (X.restrict V.isOpenEmbedding)) := by
-    rw [restrictHomOfLE_base, id_base]
-    rfl
-  refine PresheafedSpace.ext _ _ hbase ?_
-  ext Q
-  rw [NatTrans.comp_app, id_c_app, Functor.whiskerRight_app, eqToHom_app, restrictHomOfLE_c_app]
-  erw [← X.presheaf.map_comp]
-  rfl
+  rw [← cancel_mono (X.ofRestrict V.isOpenEmbedding), restrictHomOfLE_ofRestrict, Category.id_comp]
 
 /-- Inclusions between restrictions to nested opens compose. -/
 @[reassoc (attr := simp)]
 theorem restrictHomOfLE_comp {U V W : Opens X} (h : U ≤ V) (k : V ≤ W) :
     X.restrictHomOfLE h ≫ X.restrictHomOfLE k = X.restrictHomOfLE (h.trans k) := by
-  have hbase : (X.restrictHomOfLE h ≫ X.restrictHomOfLE k).base =
-      (X.restrictHomOfLE (h.trans k)).base := by
-    rw [comp_base, restrictHomOfLE_base, restrictHomOfLE_base, restrictHomOfLE_base]
-    rfl
-  refine PresheafedSpace.ext _ _ hbase ?_
-  ext Q
-  rw [NatTrans.comp_app, comp_c_app, Functor.whiskerRight_app, eqToHom_app,
-    restrictHomOfLE_c_app, restrictHomOfLE_c_app, restrictHomOfLE_c_app]
-  erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
-  rfl
+  rw [← cancel_mono (X.ofRestrict W.isOpenEmbedding), Category.assoc, restrictHomOfLE_ofRestrict,
+    restrictHomOfLE_ofRestrict, restrictHomOfLE_ofRestrict]
 
 end AlgebraicGeometry.PresheafedSpace
