@@ -24,8 +24,11 @@ out of the filling is continuous exactly when its restrictions to `E` and to eve
 continuous, each `g ∘ φ i` is continuous, and converges to `c i` along the end of the corresponding
 punctured disc, that is, at the points `φ i w` as `w → 0`
 (`PunctureFilling.continuous_extend_iff`). This is how a map out of `E` is extended over the filled
-punctures, and why a homeomorphism of spaces matching up the ends of the punctured discs extends to
-their fillings (`PunctureFilling.congr`).
+punctures. In particular a continuous map `f : E → E'` with each `f ∘ φ i` continuous and carrying
+the end of each punctured disc `φ i` into the end of `φ' (σ i)` induces a continuous map of
+fillings (`PunctureFilling.continuous_map`), and when all the charts `φ i` and `φ' j` are
+continuous, a homeomorphism of spaces matching up the ends of the punctured discs extends to a
+homeomorphism of their fillings (`PunctureFilling.congr`).
 
 This is how a finite cover of a punctured surface is compactified: each component of the preimage
 of a punctured disc about a puncture is itself a punctured disc, and the filling adds its missing
@@ -307,8 +310,9 @@ section Map
 variable {E' ι' ι'' E'' : Type*} {φ' : ι' → 𝔻* → E'} {φ'' : ι'' → 𝔻* → E''}
 
 /-- The map of puncture fillings which is `f : E → E'` on `E` and sends the added point
-`center φ i` to `center φ' (σ i)`. It is continuous when `f` carries the end of each punctured
-disc `φ i` into the end of `φ' (σ i)` (`PunctureFilling.continuous_map`). -/
+`center φ i` to `center φ' (σ i)`. It is continuous when `f` and every `f ∘ φ i` are continuous
+and `f` carries the end of each punctured disc `φ i` into the end of `φ' (σ i)`
+(`PunctureFilling.continuous_map`). -/
 protected def map (f : E → E') (σ : ι → ι') : PunctureFilling φ → PunctureFilling φ' :=
   extend (incl φ' ∘ f) (center φ' ∘ σ)
 
@@ -565,8 +569,9 @@ theorem continuous_map {f : E → E'} (hf : Continuous f) (hcomp : ∀ i, Contin
     ⟨continuous_incl.comp (hcomp i),
       (tendsto_map'_iff.2 (tendsto_incl_comp_nhds_center (σ i))).comp (hend i)⟩⟩
 
-/-- **Functoriality of the puncture filling in homeomorphisms.** A homeomorphism `e : E ≃ₜ E'` and
-a bijection `σ : ι ≃ ι'` such that `e` carries the end of each punctured disc `φ i` onto the end of
+/-- **Functoriality of the puncture filling in homeomorphisms.** Suppose that all the charts
+`φ i` and `φ' j` are continuous (`hφ`, `hφ'`). A homeomorphism `e : E ≃ₜ E'` and a bijection
+`σ : ι ≃ ι'` such that `e` carries the end of each punctured disc `φ i` onto the end of
 `φ' (σ i)` induce a homeomorphism of the puncture fillings, which is `e` on `E` and sends the added
 point `center φ i` to `center φ' (σ i)`. -/
 protected def congr (hφ : ∀ i, Continuous (φ i)) (hφ' : ∀ i, Continuous (φ' i)) (e : E ≃ₜ E')
