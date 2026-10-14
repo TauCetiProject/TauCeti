@@ -16,10 +16,6 @@ continuously differentiable fixed-coefficient form. The pointwise and on-set for
 local hypotheses needed by later constructions, while the global theorem is the cochain-map law
 used by de Rham cohomology.
 
-The proof reads both sides in preferred charts and applies Mathlib's flat pullback theorem. A
-localized pullback chain rule handles extended charts, whose inverses and coordinate changes are
-only meaningful on the corresponding model ranges.
-
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition 14.26.
@@ -53,14 +49,16 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
   let g := writtenInExtChartAt I I' x f
   have hex : e.symm (e x) = x := by
     simpa only [e] using extChartAt_to_inv (I := I) x
+  -- Near `e x` in the model range, the chart inverse stays where `f` is `C²` and lands, after
+  -- `f`, in the source of the target chart.
   have hflocal : ∀ᶠ y in 𝓝[range I] e x, ContMDiffAt I I' 2 f (e.symm y) := by
     have he : ContinuousWithinAt e.symm (range I) (e x) :=
       (mdifferentiableWithinAt_extChartAt_symm
         (mem_extChartAt_target (I := I) x)).continuousWithinAt
     have hf' := (contMDiffAt_iff_contMDiffAt_nhds (n := (2 : WithTop ℕ∞)) (by norm_num)).mp hf
-    change Tendsto e.symm (𝓝[range I] e x) (𝓝 (e.symm (e x))) at he
-    rw [hex] at he
-    exact he hf'
+    have hlim := he.tendsto
+    rw [hex] at hlim
+    exact hlim.eventually hf'
   have hsource : e.target ∈ 𝓝[range I] e x := extChartAt_target_mem_nhdsWithin x
   have htarget : (f ∘ e.symm) ⁻¹' e'.source ∈ 𝓝[range I] e x := by
     have hfc : ContinuousAt f (e.symm (e x)) := by
@@ -71,6 +69,8 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
     convert extChartAt_source_mem_nhds (I := I') (f x) using 1
     simp only [Function.comp_apply, hex]
   filter_upwards [hsource, htarget, hflocal] with z hz hzf hfx
+  -- At such a point `z`, the coordinate expression `g` is `C²`, stays in the target model range,
+  -- and agrees with `f ∘ e.symm` after composing with `e'.symm`.
   have hzf' : f (e.symm z) ∈ e'.source := hzf
   have hsmooth : ContMDiffWithinAt 𝓘(ℝ, E) I 2 e.symm (range I) z :=
     contMDiffWithinAt_extChartAt_symm_range x hz
@@ -92,6 +92,7 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
   have hcomp : (e'.symm ∘ g) =ᶠ[𝓝[range I] z] (f ∘ e.symm) := by
     filter_upwards [hpre] with w hw
     exact e'.left_inv hw
+  -- Pull `φ` back along both factorizations `f ∘ e.symm` and `e'.symm ∘ g` and compare.
   have hleft := mpullbackWithin_comp_of_preimage_mem_nhdsWithin
     (I := 𝓘(ℝ, E)) (I' := I) (I'' := I') (f := e.symm) (g := f)
     (s := range I) (t := univ) (x := z)
@@ -115,6 +116,7 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
     simp [tangentSpaceCast]
   simp only [mpullbackWithin_univ] at hleft
   have hchain := hleft.symm.trans (hcomposite.symm.trans hright)
+  -- Both chart expressions of forms are pullbacks along inverse extended charts.
   have hsourceForm :
       (mpullback I I' f φ).inChartAt x z =
         mpullbackWithin 𝓘(ℝ, E) I e.symm (range I) (mpullback I I' f φ) z := by
@@ -133,10 +135,9 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
     have h₁ := RoughForm.inChartAt_apply φ (f x) (g z) v
     have h₂ := mpullbackWithin_apply e'.symm (range I') φ (g z) w
     convert h₁.trans h₂.symm using 1
+  -- Pullback along the model-space map `g` is the flat pullback by its Fréchet derivative.
   rw [← hsourceForm, mpullbackWithin_eq_flat] at hchain
-  change (mpullback I I' f φ).inChartAt x z =
-    (mpullbackWithin 𝓘(ℝ, E') I' e'.symm (range I') φ (g z)).compContinuousLinearMap
-      (fderivWithin ℝ g (range I) z) at hchain
+  beta_reduce at hchain
   rw [← htargetForm] at hchain
   apply ContinuousAlternatingMap.ext
   intro v
@@ -144,6 +145,7 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
   have hv := congrArg (fun a ↦ a w) hchain
   dsimp only [Trivial] at hv
   convert hv using 1
+  -- Model-space tangent spaces are definitionally the model spaces.
   rfl
 
 /-- At a point, pullback commutes with the exterior derivative. -/
