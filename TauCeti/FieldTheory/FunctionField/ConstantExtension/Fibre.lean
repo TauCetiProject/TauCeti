@@ -43,8 +43,9 @@ infinite.
 
 ## Main results
 
-* `TauCeti.Place.finite_setOf_restrict_eq_of_constantCompositum_eq_top`: a place of `F / k` has
-  only finitely many places above it in an algebraic constant field extension.
+* `TauCeti.Place.finite_setOf_restrict_eq_of_isIntegral`: a place of `F / k` has only finitely
+  many places above it in an integral extension of function fields, in particular in an
+  algebraic constant field extension.
 * `TauCeti.Place.finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top`: **the degrees of
   the places over `P` add up to `deg P`** in a separable algebraic constant field extension.
 * `TauCeti.Place.ncard_setOf_restrict_eq_le_degree_of_constantCompositum_eq_top`: there are at
@@ -71,27 +72,14 @@ variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- In an integral extension `F' / F`, a function whose only pole is at `P` has its poles exactly
-at the places over `P`. -/
-private theorem ord_algebraMap_neg_iff [Algebra.IsIntegral F F'] {P : Place k F} {z : F}
-    (hP : P.ord z < 0) (hQ : ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord z) (P' : Place k' F') :
-    P'.ord (algebraMap F F' z) < 0 ↔ P'.restrict k F = P := by
-  have he : (0 : ℤ) < ramificationIdx F P' := by exact_mod_cast ramificationIdx_pos F P'
-  rw [ord_algebraMap_restrict k F P' z]
-  refine ⟨fun hlt ↦ ?_, fun hP' ↦ hP' ▸ mul_neg_of_pos_of_neg he hP⟩
-  by_contra hne
-  exact (mul_nonneg he.le (hQ _ hne)).not_gt hlt
-
-/-- **A place has only finitely many extensions to an algebraic constant field extension**: if
-`F' = F · k'` for an algebraic extension `k' / k`, finite or not, then every place of `F / k` has
-only finitely many places of `F' / k'` above it. Neither separability of `k' / k` nor exactness
-of `k` in `F` is needed. -/
-theorem finite_setOf_restrict_eq_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
-    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) (P : Place k F) :
-    letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+/-- **A place has only finitely many extensions to an integral extension of function fields**:
+if `F' / F` is integral, finite or not, and `F' / k'` is again an algebraic function field, then
+every place of `F / k` has only finitely many places of `F' / k'` above it. This covers an
+algebraic constant field extension `F' = F · k'` with `k' / k` infinite, where the fundamental
+inequality bounds nothing. -/
+theorem finite_setOf_restrict_eq_of_isIntegral [Algebra.IsIntegral F F']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (P : Place k F) :
     {P' : Place k' F' | P'.restrict k F = P}.Finite := by
-  let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   -- The places over `P` are the poles in `F'` of a function whose only pole is at `P`.
   obtain ⟨z, hP, hQ⟩ := exists_ord_neg_and_forall_ne_ord_nonneg hF P
   have hz : algebraMap F F' z ≠ 0 := by
@@ -100,7 +88,7 @@ theorem finite_setOf_restrict_eq_of_constantCompositum_eq_top [Algebra.IsAlgebra
     simp at hP
   refine (Divisor.poles hF' (Units.mk0 _ hz)).support.finite_toSet.subset fun P' hP' ↦ ?_
   rw [Finset.mem_coe, Divisor.mem_support_poles_iff, Units.val_mk0]
-  exact (ord_algebraMap_neg_iff hP hQ P').2 hP'
+  exact (ord_algebraMap_neg_iff_restrict_eq k F P' hP hQ).2 hP'
 
 variable [Algebra.IsSeparable k k']
 
@@ -120,8 +108,10 @@ theorem finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top
   classical
   let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hfin := finite_setOf_restrict_eq_of_constantCompositum_eq_top hF h P
+  have hfin := finite_setOf_restrict_eq_of_isIntegral hF hF' P
   obtain ⟨z, hP, hQ⟩ := exists_ord_neg_and_forall_ne_ord_nonneg hF P
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, P.ord z = -(n : ℤ) := ⟨(-P.ord z).toNat, by omega⟩
+  have hn0 : n ≠ 0 := by omega
   have hz0 : z ≠ 0 := by
     rintro rfl
     simp at hP
@@ -130,21 +120,10 @@ theorem finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top
   have hzk' : ¬IsAlgebraic k' (algebraMap F F' z) :=
     (Algebra.IsAlgebraic.transcendental_iff k k').1
       ((transcendental_algebraMap_iff (algebraMap F F').injective).2 hzk)
-  -- In `F`, the pole divisor of `z` is `m P`, with `m = -ord_P z`.
-  have hpoles : Divisor.poles hF (Units.mk0 z hz0) =
-      (-P.ord z) • AlgebraicGeometry.WeilDivisor.ofPoint P := by
-    ext Q
-    rw [Divisor.coeff_poles, Units.val_mk0, AlgebraicGeometry.WeilDivisor.coeff_zsmul]
-    rcases eq_or_ne Q P with rfl | hne
-    · rw [AlgebraicGeometry.WeilDivisor.coeff_ofPoint_self]
-      omega
-    · rw [AlgebraicGeometry.WeilDivisor.coeff_ofPoint_of_ne hne]
-      have := hQ Q hne
-      omega
   -- In `F'`, every place over `P` is unramified, so the pole divisor of `z` is `m` times the sum
   -- of the places over `P`.
   have hpoles' : Divisor.poles hF' (Units.mk0 _ hz) =
-      (-P.ord z) • AlgebraicGeometry.WeilDivisor.ofFinset hfin.toFinset := by
+      (n : ℤ) • AlgebraicGeometry.WeilDivisor.ofFinset hfin.toFinset := by
     ext P'
     rw [Divisor.coeff_poles, Units.val_mk0, AlgebraicGeometry.WeilDivisor.coeff_zsmul,
       AlgebraicGeometry.WeilDivisor.coeff_ofFinset, ord_algebraMap_restrict k F P' z,
@@ -155,17 +134,15 @@ theorem finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top
     · have := hQ _ hP'
       simp only [hP', Set.Finite.mem_toFinset, Set.mem_ofPred_eq, ite_false, mul_zero]
       omega
-  -- The two pole divisors have the same degree `[F : k(z)] = [F' : k'(z)]`.
-  have hdeg : Divisor.degree (Divisor.poles hF' (Units.mk0 _ hz)) =
-      Divisor.degree (Divisor.poles hF (Units.mk0 z hz0)) := by
-    rw [Divisor.degree_poles hF' _ (by simpa using hzk'), Divisor.degree_poles hF _
-      (by simpa using hzk)]
-    exact congrArg Nat.cast (finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top hex h z)
-  rw [hpoles, hpoles', Divisor.degree_zsmul, Divisor.degree_zsmul, Divisor.degree_ofPoint,
-    AlgebraicGeometry.WeilDivisor.ofFinset_eq_sum, map_sum] at hdeg
+  -- The degree of the pole divisor of `z` is `[F' : k'(z)] = [F : k(z)] = n deg P`.
+  have hdeg := Divisor.degree_poles hF' (Units.mk0 _ hz) (by simpa using hzk')
+  rw [hpoles', Divisor.degree_zsmul, AlgebraicGeometry.WeilDivisor.ofFinset_eq_sum, map_sum,
+    Units.val_mk0, finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top hex h z,
+    finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF hn0 hn hQ] at hdeg
   simp only [Divisor.degree_ofPoint] at hdeg
   rw [finsum_mem_eq_finite_toFinset_sum _ hfin]
-  exact_mod_cast mul_left_cancel₀ (by omega : -P.ord z ≠ 0) hdeg
+  push_cast at hdeg
+  exact_mod_cast mul_left_cancel₀ (by exact_mod_cast hn0 : (n : ℤ) ≠ 0) hdeg
 
 /-- **At most `deg P` places lie over `P`**: if `k` is the exact constant field of `F` and
 `F' = F · k'` for a separable algebraic extension `k' / k`, finite or not, then a place `P` of
@@ -177,7 +154,7 @@ theorem ncard_setOf_restrict_eq_le_degree_of_constantCompositum_eq_top
     {P' : Place k' F' | P'.restrict k F = P}.ncard ≤ P.degree := by
   let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hfin := finite_setOf_restrict_eq_of_constantCompositum_eq_top hF h P
+  have hfin := finite_setOf_restrict_eq_of_isIntegral hF hF' P
   rw [← finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top hF hex h P,
     finsum_mem_eq_finite_toFinset_sum _ hfin, Set.ncard_eq_toFinset_card _ hfin,
     Finset.card_eq_sum_ones]
@@ -195,7 +172,8 @@ theorem ncard_setOf_restrict_eq_eq_degree_of_constantCompositum_eq_top [Normal k
     letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
     {P' : Place k' F' | P'.restrict k F = P}.ncard = P.degree := by
   let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
-  have hfin := finite_setOf_restrict_eq_of_constantCompositum_eq_top hF h P
+  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have hfin := finite_setOf_restrict_eq_of_isIntegral hF hF' P
   rw [← finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top hF hex h P,
     finsum_mem_eq_finite_toFinset_sum _ hfin, Set.ncard_eq_toFinset_card _ hfin,
     Finset.card_eq_sum_ones]
