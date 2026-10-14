@@ -21,10 +21,11 @@ topology is the final topology of the inclusion of `E` and of the discs `disc φ
 out of the filling is continuous exactly when its restrictions to `E` and to every filled disc are
 (`PunctureFilling.continuous_iff`). Concretely, the map `PunctureFilling.extend g c` which is
 `g : E → Y` on `E` and `c i` at the added point `center φ i` is continuous exactly when `g` is
-continuous and converges to `c i` along the end of each punctured disc `φ i`, that is, at the
-points `φ i w` as `w → 0` (`PunctureFilling.continuous_extend_iff`). This is how a map out of `E`
-is extended over the filled punctures, and why a homeomorphism of spaces matching up the ends of
-the punctured discs extends to their fillings (`PunctureFilling.congr`).
+continuous, each `g ∘ φ i` is continuous, and converges to `c i` along the end of the corresponding
+punctured disc, that is, at the points `φ i w` as `w → 0`
+(`PunctureFilling.continuous_extend_iff`). This is how a map out of `E` is extended over the filled
+punctures, and why a homeomorphism of spaces matching up the ends of the punctured discs extends to
+their fillings (`PunctureFilling.congr`).
 
 This is how a finite cover of a punctured surface is compactified: each component of the preimage
 of a punctured disc about a puncture is itself a punctured disc, and the filling adds its missing
@@ -256,8 +257,8 @@ variable {Y : Type*}
 
 /-- The map out of the puncture filling which is `g` on `E` and sends the added point
 `center φ i` to `c i`. Every map out of the filling is of this form
-(`PunctureFilling.extend_comp_incl_center`), and it is continuous exactly when `g` is and `g`
-converges to `c i` along the end of each punctured disc `φ i`
+(`PunctureFilling.extend_comp_incl_center`), and it is continuous exactly when `g` and each
+`g ∘ φ i` are continuous and `g` converges to `c i` along the end of each punctured disc `φ i`
 (`PunctureFilling.continuous_extend_iff`). -/
 def extend (g : E → Y) (c : ι → Y) (y : PunctureFilling φ) : Y :=
   y.toSum.elim g c
@@ -288,6 +289,7 @@ theorem extend_comp_incl_center (F : PunctureFilling φ → Y) :
 
 /-- The values of a map out of the puncture filling are those it takes on `E` and at the added
 points. -/
+@[simp]
 theorem range_extend (g : E → Y) (c : ι → Y) :
     range (extend (φ := φ) g c) = range g ∪ range c := by
   refine Subset.antisymm ?_ (union_subset ?_ ?_)
@@ -512,14 +514,15 @@ private theorem tendsto_extend_comp_disc_nhdsNE_iff {g : E → Y} {c : ι → Y}
   rw [← tendsto_map'_iff, map_disc_nhdsNE, tendsto_map'_iff, ← Function.comp_assoc,
     extend_comp_incl]
 
-/-- **Continuity of a map out of the puncture filling.** If the punctured discs are continuous, the
-extension of `g : E → Y` by the values `c i` at the added points is continuous exactly when `g` is
-continuous and converges to `c i` along the end of each punctured disc `φ i`. -/
-theorem continuous_extend_iff (hφ : ∀ i, Continuous (φ i)) {g : E → Y} {c : ι → Y} :
+/-- **Continuity of a map out of the puncture filling.** The extension of `g : E → Y` by the values
+`c i` at the added points is continuous exactly when `g` and each composite `g ∘ φ i` are
+continuous, and `g` converges to `c i` along the end of each punctured disc `φ i`. -/
+theorem continuous_extend_iff {g : E → Y} {c : ι → Y} :
     Continuous (extend (φ := φ) g c) ↔
-      Continuous g ∧ ∀ i, Tendsto (g ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) (𝓝 (c i)) := by
+      Continuous g ∧ ∀ i, Continuous (g ∘ φ i) ∧
+        Tendsto (g ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) (𝓝 (c i)) := by
   rw [continuous_iff, extend_comp_incl]
-  refine and_congr_right fun hg => forall_congr' fun i => ?_
+  refine and_congr_right fun _ => forall_congr' fun i => ?_
   -- Continuity of the `i`-th filled disc at its centre is convergence along the end of `φ i`.
   have h0 : ContinuousAt (extend g c ∘ disc φ i) 0 ↔
       Tendsto (g ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) (𝓝 (c i)) := by
@@ -527,14 +530,22 @@ theorem continuous_extend_iff (hφ : ∀ i, Continuous (φ i)) {g : E → Y} {c 
       extend_center, tendsto_extend_comp_disc_nhdsNE_iff]
   rw [← h0]
   -- Away from the centre, the filled disc is the continuous map `g ∘ φ i`.
-  refine ⟨fun h => h.continuousAt, fun h => continuous_iff_continuousAt.2 fun z => ?_⟩
-  by_cases hz : z = 0
-  · rwa [hz]
-  obtain ⟨w, rfl⟩ : ∃ w, inclusion sdiff_subset w = z := ⟨puncture hz, rfl⟩
-  have hcomp : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
-    funext fun w => by simp
-  rw [← isOpenEmbedding_inclusion_puncture.continuousAt_iff, hcomp]
-  exact (hg.comp (hφ i)).continuousAt
+  constructor
+  · intro h
+    refine ⟨?_, h.continuousAt⟩
+    have hcomp : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
+      funext fun w => by simp
+    rw [← hcomp]
+    exact h.comp (continuous_inclusion _)
+  · rintro ⟨hcomp, h⟩
+    refine continuous_iff_continuousAt.2 fun z => ?_
+    by_cases hz : z = 0
+    · rwa [hz]
+    obtain ⟨w, rfl⟩ : ∃ w, inclusion sdiff_subset w = z := ⟨puncture hz, rfl⟩
+    have heq : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
+      funext fun w => by simp
+    rw [← isOpenEmbedding_inclusion_puncture.continuousAt_iff, heq]
+    exact hcomp.continuousAt
 
 end Extend
 
@@ -542,17 +553,17 @@ section Map
 
 variable {E' ι' : Type*} [TopologicalSpace E'] {φ' : ι' → 𝔻* → E'}
 
-/-- **Functoriality of the puncture filling.** If the punctured discs `φ i` are continuous, the map
-of puncture fillings induced by a continuous `f : E → E'` and a reindexing `σ : ι → ι'` is
-continuous as soon as `f` carries the end of each punctured disc `φ i` into the end of
-`φ' (σ i)`. -/
-theorem continuous_map (hφ : ∀ i, Continuous (φ i)) {f : E → E'} (hf : Continuous f)
+/-- **Functoriality of the puncture filling.** The map of puncture fillings induced by a continuous
+`f : E → E'` and a reindexing `σ : ι → ι'` is continuous if each `f ∘ φ i` is continuous and `f`
+carries the end of each punctured disc `φ i` into the end of `φ' (σ i)`. -/
+theorem continuous_map {f : E → E'} (hf : Continuous f) (hcomp : ∀ i, Continuous (f ∘ φ i))
     {σ : ι → ι'}
     (hend : ∀ i, Tendsto (f ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0))
       (map (φ' (σ i)) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)))) :
     Continuous (PunctureFilling.map (φ := φ) (φ' := φ') f σ) :=
-  (continuous_extend_iff hφ).2 ⟨continuous_incl.comp hf, fun i =>
-    (tendsto_map'_iff.2 (tendsto_incl_comp_nhds_center (σ i))).comp (hend i)⟩
+  continuous_extend_iff.2 ⟨continuous_incl.comp hf, fun i =>
+    ⟨continuous_incl.comp (hcomp i),
+      (tendsto_map'_iff.2 (tendsto_incl_comp_nhds_center (σ i))).comp (hend i)⟩⟩
 
 /-- **Functoriality of the puncture filling in homeomorphisms.** A homeomorphism `e : E ≃ₜ E'` and
 a bijection `σ : ι ≃ ι'` such that `e` carries the end of each punctured disc `φ i` onto the end of
@@ -567,8 +578,10 @@ protected def congr (hφ : ∀ i, Continuous (φ i)) (hφ' : ∀ i, Continuous (
   invFun := PunctureFilling.map e.symm σ.symm
   left_inv y := by induction y using PunctureFilling.induction <;> simp
   right_inv y := by induction y using PunctureFilling.induction <;> simp
-  continuous_toFun := continuous_map hφ e.continuous fun i => (hend i).le
-  continuous_invFun := continuous_map hφ' e.symm.continuous fun j => by
+  continuous_toFun := continuous_map e.continuous (fun i => e.continuous.comp (hφ i)) fun i =>
+    (hend i).le
+  continuous_invFun := continuous_map e.symm.continuous
+      (fun j => e.symm.continuous.comp (hφ' j)) fun j => by
     have h := hend (σ.symm j)
     rw [σ.apply_symm_apply, ← map_map] at h
     rw [Tendsto, ← map_map, ← h, map_map, e.symm_comp_self, map_id]
