@@ -592,9 +592,8 @@ theorem genus_eq_of_isHomogeneous (hG : G.IsHomogeneous d)
       exists_finiteDimensional_lt_card_constantCompositum_eq_top k F (d + 1)
     have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) hc
     have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
-    have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
     have hF : IsFunctionField k F := isFunctionField_of_aeval_eq_zero hirr.of_map.ne_zero hx hgen h₂
-    have hex' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex hc
+    have hex' := hex.of_constantCompositum_eq_top hc
     -- Embed `k'` in `K` over `k`.
     let _ : Algebra k' K := (IsAlgClosed.lift : k' →ₐ[k] K).toRingHom.toAlgebra
     have : IsScalarTower k k' K :=
