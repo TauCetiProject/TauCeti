@@ -17,8 +17,8 @@ public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.RingTheory.Trace.Basic
 import Mathlib.RingTheory.Valuation.Integral
-import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Map
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 import TauCeti.RingTheory.Norm.Quotient
 
 /-!
