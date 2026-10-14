@@ -159,7 +159,7 @@ noncomputable def indexFiltration (p : ℤ) : Subobject (m.twistedCochainComplex
 /-- The `p`-th piece of the index filtration is the subcomplex of `gradedCochainComplex` cut out
 by `indexFiltrationSubmodule ind p`, transported along
 `twistedCochainComplex_eq_gradedCochainComplex`. -/
-theorem indexFiltration_eq (p : ℤ) :
+theorem indexFiltration_def (p : ℤ) :
     m.indexFiltration dM hM p = Subobject.mapIsoToOrderIso
       (eqToIso (twistedCochainComplex_eq_gradedCochainComplex m.mem_graded m.twisting hM).symm)
       (gradedCochainComplexSubobject _ _ _ _ (indexFiltrationSubmodule ind p) fun _ hf ↦
@@ -174,12 +174,12 @@ theorem monotone_indexFiltration : Monotone (m.indexFiltration dM hM) := fun _ _
 
 /-- Above every index, the index filtration is the whole twisted complex. -/
 theorem indexFiltration_eq_top {p : ℤ} (hp : ∀ x, ind x ≤ p) : m.indexFiltration dM hM p = ⊤ := by
-  rw [indexFiltration_eq,
+  rw [indexFiltration_def,
     gradedCochainComplexSubobject_eq_top _ (indexFiltrationSubmodule_eq_top hp), OrderIso.map_top]
 
 /-- Below every index, the index filtration is the zero subcomplex. -/
 theorem indexFiltration_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) : m.indexFiltration dM hM p = ⊥ := by
-  rw [indexFiltration_eq,
+  rw [indexFiltration_def,
     gradedCochainComplexSubobject_eq_bot _ (indexFiltrationSubmodule_eq_bot hp), OrderIso.map_bot]
 
 /-- In degree `n`, the `p`-th piece of the index filtration consists of the families of total
@@ -189,7 +189,7 @@ theorem mem_range_indexFiltration_arrow_f_iff (p n : ℤ)
     f ∈ LinearMap.range ((m.indexFiltration dM hM p).arrow.f n).hom ↔
       ∀ x, p < ind x →
         (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
-  rw [indexFiltration_eq, HomologicalComplex.mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff,
+  rw [indexFiltration_def, HomologicalComplex.mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff,
     mem_range_gradedCochainComplexSubobject_arrow_f_iff, twistedCochainComplexXEquiv_apply,
     mem_indexFiltrationSubmodule_iff]
 
