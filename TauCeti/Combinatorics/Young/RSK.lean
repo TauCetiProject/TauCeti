@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.Partitions
+public import TauCeti.Combinatorics.Young.Schensted.Shape
 public import TauCeti.Combinatorics.Young.StandardTableau.LatticeWord
 public import TauCeti.Combinatorics.Young.StandardTableau.Rows
 public import TauCeti.GroupTheory.Perm.List
@@ -106,7 +107,7 @@ private noncomputable def rskMap {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     ⟨p.2, isLatticeWord_robinsonSchensted_snd w, fun i => by
       rw [← length_getD_robinsonSchensted_fst w]
       rw [← YoungDiagram.getD_rowLens, ← hshape, map_length_castRows]
-      exact length_getD_eq_getD_map_length p.1 i⟩
+      exact (getD_map p.1 [] (n := i) length).symm⟩
   have hμ : YoungDiagram.ofPartition μ = ν := YoungDiagram.ofPartition_toPartition hcard
   exact ⟨μ, castStandardYoungTableau hμ.symm P, castStandardYoungTableau hμ.symm Q⟩
 
@@ -177,7 +178,7 @@ private theorem rskMap_surjective {n : ℕ} : Function.Surjective (rskMap (n := 
   have hshape (i : ℕ) : (rows.getD i []).length = Q.rowWord.count i := by
     rw [Q.count_rowWord, ← YoungDiagram.getD_rowLens,
       ← P.map_length_toRows, ← map_length_castRows]
-    exact length_getD_eq_getD_map_length rows i
+    exact (getD_map rows [] (n := i) length).symm
   obtain ⟨w, hwRS⟩ := (exists_robinsonSchensted_eq_iff (p := (rows, Q.rowWord))).mpr
     ⟨hrows, Q.isLatticeWord_rowWord, hshape⟩
   have hw : w.Perm (finRange n) := by

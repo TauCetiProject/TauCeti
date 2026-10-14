@@ -35,10 +35,12 @@ noncomputable def permutationWordEquiv (n : ℕ) :
       let e : Fin n ≃ Fin w.val.length := finCongr hlen.symm
       let σ : Equiv.Perm (Fin n) := e.trans
         ((w.property.nodup_iff.mpr (nodup_finRange n)).getEquivOfForallMemList w.val hmem)
+      have hσ (i : Fin n) : σ i = w.val.get (Fin.cast hlen.symm i) := by
+        rw [Equiv.trans_apply, Nodup.getEquivOfForallMemList_apply, finCongr_apply]
       refine ⟨σ, Subtype.ext ?_⟩
       calc
-        ofFn σ = ofFn (fun i : Fin n => w.val.get (Fin.cast hlen.symm i)) := by
-          congr 1
+        ofFn σ = ofFn (fun i : Fin n => w.val.get (Fin.cast hlen.symm i)) :=
+          congrArg ofFn (funext hσ)
         _ = w.val := by rw [← List.ofFn_congr hlen w.val.get, List.ofFn_get]⟩
 
 /-- The forward permutation-to-word equivalence is `List.ofFn`. -/

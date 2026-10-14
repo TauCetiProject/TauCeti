@@ -30,39 +30,6 @@ without changing its entries or its shape. Empty shapes are included.
 
 public section
 
-namespace TauCeti
-
-open List
-
-/-- The Young diagram whose row lengths are the lengths of a semistandard list of tableau rows. -/
-def tableauShape {α : Type*} [LinearOrder α]
-    (rows : List (List α)) (hrows : rows.IsTableauRows) : YoungDiagram :=
-  YoungDiagram.ofRowLens (rows.map length) hrows.sortedGE_map_length
-
-/-- The row lengths of the shape inferred from tableau rows are the lengths of those rows. -/
-theorem rowLens_tableauShape {α : Type*} [LinearOrder α]
-    (rows : List (List α)) (hrows : rows.IsTableauRows) :
-    (tableauShape rows hrows).rowLens = rows.map length := by
-  apply YoungDiagram.rowLens_ofRowLens_eq_self
-  intro k hk
-  obtain ⟨row, hrow, rfl⟩ := mem_map.mp hk
-  exact List.length_pos_iff.mpr fun hnil => hrows.nil_notMem (hnil ▸ hrow)
-
-/-- The number of cells in the shape inferred from tableau rows is the length of their
-flattening. -/
-theorem card_tableauShape {α : Type*} [LinearOrder α]
-    (rows : List (List α)) (hrows : rows.IsTableauRows) :
-    (tableauShape rows hrows).card = rows.flatten.length := by
-  rw [← YoungDiagram.sum_rowLens_eq_card, rowLens_tableauShape, length_flatten]
-
-/-- The length of a row read with `getD` equals the corresponding entry in the list of row
-lengths. -/
-theorem length_getD_eq_getD_map_length {α : Type*} (rows : List (List α)) (i : ℕ) :
-    (rows.getD i []).length = (rows.map length).getD i 0 := by
-  exact (getD_map rows [] (n := i) length).symm
-
-end TauCeti
-
 namespace TauCeti.StandardYoungTableau
 
 open List
