@@ -96,7 +96,6 @@ def mapHomeomorph (e : X ≃ₜ Y) (h : e x = y) : Ω^ N X x ≃ₜ Ω^ N Y y wh
       continuous_subtype_val).subtype_mk _
 
 /-- The inverse of `mapHomeomorph e` is `mapHomeomorph e.symm`. -/
-@[simp]
 theorem mapHomeomorph_symm (e : X ≃ₜ Y) (h : e x = y) :
     (mapHomeomorph e h : Ω^ N X x ≃ₜ Ω^ N Y y).symm =
       mapHomeomorph e.symm (e.symm_apply_eq.mpr h.symm) := by
@@ -107,6 +106,7 @@ theorem mapHomeomorph_apply (e : X ≃ₜ Y) (h : e x = y) (p : Ω^ N X x) (t : 
     mapHomeomorph e h p t = e (p t) :=
   map_apply ⟨e, e.continuous⟩ h p t
 
+@[simp]
 theorem mapHomeomorph_symm_apply (e : X ≃ₜ Y) (h : e x = y) (p : Ω^ N Y y) (t : I^N) :
     (mapHomeomorph e h).symm p t = e.symm (p t) :=
   map_apply ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_eq.mpr h.symm) p t
