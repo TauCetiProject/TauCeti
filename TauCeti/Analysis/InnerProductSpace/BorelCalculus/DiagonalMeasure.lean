@@ -68,11 +68,11 @@ private def diagFunctional (ξ : H) : C_c(spectrum ℂ a, ℝ) →ₚ[ℝ] ℝ :
     { toFun g := RCLike.re ⟪ξ, cfcHom (a := a) ‹_› (g.toContinuousMap.realToRCLike ℂ) ξ⟫_ℂ
       map_add' g h := by
         simp only [← realToRCLikeStarAlgHom_apply]
-        rw [show (g + h).toContinuousMap = g.toContinuousMap + h.toContinuousMap from rfl,
+        rw [show (g + h).toContinuousMap = g.toContinuousMap + h.toContinuousMap by ext; simp,
           map_add, map_add, _root_.add_apply, inner_add_right, map_add]
       map_smul' c g := by
         simp only [← realToRCLikeStarAlgHom_apply]
-        rw [show (c • g).toContinuousMap = c • g.toContinuousMap from rfl, map_smul,
+        rw [show (c • g).toContinuousMap = c • g.toContinuousMap by ext; simp, map_smul,
           ← algebraMap_smul ℂ c (M := C(spectrum ℂ a, ℂ)), map_smul, _root_.smul_apply,
           inner_smul_right]
         simp }
