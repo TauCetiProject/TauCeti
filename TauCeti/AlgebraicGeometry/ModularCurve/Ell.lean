@@ -59,6 +59,8 @@ compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_
   of `Ell/B` as a functor from schemes over `S` to `Ell/B`.
 * `TauCeti.AlgebraicGeometry.EllObj.baseChangeFunctorIso f`: for an arrow `f : X ⟶ Y`, the natural
   isomorphism between base change of `X` and base change of `Y` along the composite with `f.base`.
+* `TauCeti.AlgebraicGeometry.EllObj.isoBaseChange g`: for an arrow `g : X ⟶ Y`, the isomorphism of
+  `X` with the base change of `Y` along `g.base`.
 * `TauCeti.AlgebraicGeometry.EllObj.baseChangePointsEquiv X T`: the `T`-points of the base change
   of `X = (S, E)` to `T` are the points of `E` with values in `T`.
 
@@ -353,6 +355,17 @@ theorem isIso_iff_isIso_base (f : X ⟶ Y) : IsIso f ↔ IsIso f.base := by
     have : IsIso ((forget B).map f) := isIso_of_reflects_iso _ (Over.forget B)
     exact Functor.IsStronglyCartesian.isIso_of_base_isIso (forget B) ((forget B).map f) f
 
+/-- The morphism of bases of an isomorphism of `Ell/B` is an isomorphism. -/
+instance isIso_base {X Y : EllObj B} (f : X ⟶ Y) [IsIso f] : IsIso f.base :=
+  (isIso_iff_isIso_base _ f).1 inferInstance
+
+/-- The morphism of bases of the inverse of an isomorphism of `Ell/B` is the inverse of its morphism
+of bases. -/
+@[simp]
+theorem inv_base {X Y : EllObj B} (f : X ⟶ Y) [IsIso f] : (inv f).base = inv f.base := by
+  refine IsIso.eq_inv_of_hom_inv_id ?_
+  rw [← comp_base, IsIso.hom_inv_id, id_base]
+
 /-! ### Base change along an arrow of `Ell/B` -/
 
 /-- The arrow of `Ell/B` from the base change `X.baseChangeFunctor.obj T` of `X = (S, E)` along
@@ -431,6 +444,45 @@ theorem baseChangeFunctorIso_hom_app_comp {X Y : EllObj B} (f : X ⟶ Y) (T : Ov
     (baseChangeFunctorIso f).hom.app T ≫ Y.baseChangeFunctorHom ((Over.map f.base).obj T) =
       X.baseChangeFunctorHom T ≫ f :=
   baseChangeFunctorIsoApp_comp f T
+
+/-! ### Arrows of `Ell/B` as base changes -/
+
+/-- **Every arrow of `Ell/B` exhibits its source as a base change of its target.** For an arrow
+`g : X ⟶ Y` of `Ell/B`, this is the isomorphism of `X` with the base change of `Y` along
+`g.base : X.base ⟶ Y.base`. It lies over the identity of `X.base` (`isoBaseChange_hom_base`), and
+its composite with the projection of the base change to `Y` is `g` (`isoBaseChange_hom_comp`). It
+is the cartesian factorisation of `g` through `Y.baseChangeFunctorHom`. -/
+noncomputable def isoBaseChange {X Y : EllObj B} (g : X ⟶ Y) :
+    X ≅ Y.baseChangeFunctor.obj (Over.mk g.base) :=
+  have : IsIso (Hom.lift (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base)
+      (Category.id_comp g.base)) :=
+    (isIso_iff_isIso_base _ _).2 <| (congrArg IsIso <| Hom.lift_base
+      (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)).mpr
+        (IsIso.id X.base)
+  asIso (Hom.lift (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base)
+    (Category.id_comp g.base))
+
+@[simp]
+theorem isoBaseChange_hom_base {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).hom.base = 𝟙 X.base :=
+  Hom.lift_base (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)
+
+@[simp]
+theorem isoBaseChange_inv_base {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).inv.base = 𝟙 X.base := by
+  rw [← IsIso.Iso.inv_hom, inv_base]
+  simp only [isoBaseChange_hom_base]
+  exact IsIso.inv_id
+
+@[reassoc (attr := simp)]
+theorem isoBaseChange_hom_comp {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).hom ≫ Y.baseChangeFunctorHom (Over.mk g.base) = g :=
+  Hom.lift_comp (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)
+
+@[reassoc (attr := simp)]
+theorem isoBaseChange_inv_comp {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).inv ≫ g = Y.baseChangeFunctorHom (Over.mk g.base) := by
+  rw [Iso.inv_comp_eq, isoBaseChange_hom_comp]
 
 /-! ### Points of base changes -/
 
