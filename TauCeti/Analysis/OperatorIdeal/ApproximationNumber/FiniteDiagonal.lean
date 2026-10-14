@@ -7,16 +7,18 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
+public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 
 /-!
 # Approximation numbers of finite diagonal maps
 
 A bounded map `T : E →L[𝕜] F` is diagonal with respect to an orthonormal basis `(eᵢ)` of `E` when
-the images `T eᵢ` are pairwise orthogonal. Then `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²`, and the
-approximation numbers of `T` are the norms `‖T eᵢ‖` listed in nonincreasing order, followed by
-zeros. No relation between the dimensions of `E` and `F` is needed, and the target need be neither
-complete nor finite-dimensional.
+the images `T eᵢ` are pairwise orthogonal. Then `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²`
+(`LinearMap.norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero`), and the approximation numbers of
+`T` are the norms `‖T eᵢ‖` listed in nonincreasing order, followed by zeros. No relation between
+the dimensions of `E` and `F` is needed, and the target need be neither complete nor
+finite-dimensional.
 
 Both directions come from the min–max bounds for approximation numbers. If every basis vector
 outside an `n`-element index set is sent to a vector of norm at most `c`, then `T` is bounded by `c`
@@ -27,23 +29,21 @@ vectors are sent to vectors of norm at least `c`, then `T` is `c`-coercive on th
 The main application is the rectangular diagonal map. For orthonormal bases `(eᵢ)_{i < m}` of `E`
 and `(fⱼ)_{j < n}` of `F` and scalars `(dₖ)`, it is the map whose matrix in these bases has `dₖ` at
 position `(k, k)` for `k < min m n` and zeros elsewhere, so that `D eₖ = dₖ fₖ` for `k < min m n`
-and `D eₖ = 0` otherwise. This is the shape of the middle factor in the rectangular singular value
-factorization `LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_comp`. Its approximation numbers
-are the magnitudes `‖dₖ‖`, `k < min m n`, arranged in nonincreasing order, and they vanish from
-index `min m n` on.
+and `D eₖ = 0` otherwise (`Matrix.toLin_of_ite_val_eq_apply`). This is the shape of the middle
+factor in the rectangular singular value factorization
+`LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_comp`. Its approximation numbers are the
+magnitudes `‖dₖ‖`, `k < min m n`, arranged in nonincreasing order, and they vanish from index
+`min m n` on.
 
 ## Main declarations
 
-* `LinearMap.norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero`: the Pythagorean identity
-  `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²` for a map with pairwise orthogonal basis images.
 * `ContinuousLinearMap.singularValue_le_of_pairwise_inner_eq_zero` and
   `ContinuousLinearMap.le_singularValue_of_pairwise_inner_eq_zero`: the upper and lower bounds
-  for such maps.
+  for a map with pairwise orthogonal basis images.
 * `ContinuousLinearMap.singularValue_eq_of_pairwise_inner_eq_zero`: the approximation numbers are
   the sorted norms `‖T eᵢ‖`.
-* `Matrix.toLin_rectangularDiagonal_apply`: the rectangular diagonal map on basis vectors.
-* `Matrix.singularValue_toLin_rectangularDiagonal`,
-  `Matrix.singularValue_toLin_rectangularDiagonal_of_le`: the approximation numbers of a
+* `Matrix.singularValue_toLin_of_ite_val_eq`,
+  `Matrix.singularValue_toLin_of_ite_val_eq_eq_zero_of_le`: the approximation numbers of a
   rectangular diagonal map.
 
 ## References
@@ -59,22 +59,6 @@ open scoped NNReal InnerProductSpace
 variable {𝕜 E F ι : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [Fintype ι]
-
-namespace LinearMap
-
-/-- **Pythagoras for a diagonal map.** If `T` sends an orthonormal basis `(eᵢ)` to pairwise
-orthogonal vectors, then `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²`. -/
-theorem norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero (T : E →ₗ[𝕜] F)
-    (e : OrthonormalBasis ι 𝕜 E) (hT : Pairwise fun i j ↦ ⟪T (e i), T (e j)⟫_𝕜 = 0) (x : E) :
-    ‖T x‖ ^ 2 = ∑ i, ‖⟪e i, x⟫_𝕜‖ ^ 2 * ‖T (e i)‖ ^ 2 := by
-  have hv : Pairwise fun i j ↦ ⟪⟪e i, x⟫_𝕜 • T (e i), ⟪e j, x⟫_𝕜 • T (e j)⟫_𝕜 = 0 :=
-    fun i j hij ↦ by simp [inner_smul_left, inner_smul_right, hT hij]
-  conv_lhs => rw [← e.sum_repr' x, map_sum]
-  simp only [map_smul]
-  rw [TauCeti.norm_sum_sq_of_pairwise_inner_eq_zero hv]
-  simp [norm_smul, mul_pow]
-
-end LinearMap
 
 namespace ContinuousLinearMap
 
@@ -162,29 +146,14 @@ namespace Matrix
 
 variable {m n : ℕ}
 
-/-- The rectangular diagonal map with entries `d` in orthonormal bases `(eᵢ)_{i < m}` and
-`(fⱼ)_{j < n}` sends `eᵢ` to `dᵢ fᵢ` when `i < n`, and to `0` otherwise. -/
-theorem toLin_rectangularDiagonal_apply (e : OrthonormalBasis (Fin m) 𝕜 E)
-    (f : OrthonormalBasis (Fin n) 𝕜 F) (d : ℕ → 𝕜) (i : Fin m) :
-    Matrix.toLin e.toBasis f.toBasis (Matrix.of fun (j : Fin n) (i : Fin m) ↦
-      if (j : ℕ) = i then d i else 0) (e i) =
-      if h : (i : ℕ) < n then d i • f ⟨i, h⟩ else 0 := by
-  rw [← e.coe_toBasis, Matrix.toLin_self]
-  split_ifs with h
-  · rw [Finset.sum_eq_single ⟨i, h⟩ (fun j _ hj ↦ by
-      simp [show (j : ℕ) ≠ i from fun h' ↦ hj (Fin.ext h')]) (by simp)]
-    simp
-  · refine Finset.sum_eq_zero fun j _ ↦ ?_
-    simp [show (j : ℕ) ≠ i from fun h' ↦ h (h' ▸ j.isLt)]
-
 /-- The rectangular diagonal map sends the source basis to pairwise orthogonal vectors. -/
-private theorem pairwise_inner_toLin_rectangularDiagonal (e : OrthonormalBasis (Fin m) 𝕜 E)
+private theorem pairwise_inner_toLin_of_ite_val_eq (e : OrthonormalBasis (Fin m) 𝕜 E)
     (f : OrthonormalBasis (Fin n) 𝕜 F) (d : ℕ → 𝕜) :
     Pairwise fun i j : Fin m ↦ ⟪Matrix.toLin e.toBasis f.toBasis (Matrix.of fun (j : Fin n)
       (i : Fin m) ↦ if (j : ℕ) = i then d i else 0) (e i), Matrix.toLin e.toBasis f.toBasis
       (Matrix.of fun (j : Fin n) (i : Fin m) ↦ if (j : ℕ) = i then d i else 0) (e j)⟫_𝕜 = 0 := by
   intro i j hij
-  simp only [toLin_rectangularDiagonal_apply]
+  simp only [toLin_of_ite_val_eq_apply]
   split_ifs with hi hj
   · rw [inner_smul_left, inner_smul_right, f.inner_eq_zero (fun h ↦ hij (Fin.ext
       (by simpa using congrArg Fin.val h))), mul_zero, mul_zero]
@@ -194,7 +163,7 @@ private theorem pairwise_inner_toLin_rectangularDiagonal (e : OrthonormalBasis (
 `dₖ` at position `(k, k)` for `k < min m n` and zeros elsewhere in orthonormal bases of the
 `m`-dimensional space `E` and the `n`-dimensional space `F`. If `σ` lists the indices below
 `min m n` so that the magnitudes `‖d (σ k)‖` are nonincreasing, then `aₖ(D) = ‖d (σ k)‖`. -/
-theorem singularValue_toLin_rectangularDiagonal [FiniteDimensional 𝕜 E]
+theorem singularValue_toLin_of_ite_val_eq [FiniteDimensional 𝕜 E]
     (e : OrthonormalBasis (Fin m) 𝕜 E) (f : OrthonormalBasis (Fin n) 𝕜 F) (d : ℕ → 𝕜)
     (σ : Fin (min m n) ≃ Fin (min m n)) (hσ : Antitone fun k ↦ ‖d (σ k)‖) (k : Fin (min m n)) :
     (LinearMap.toContinuousLinearMap (Matrix.toLin e.toBasis f.toBasis (Matrix.of fun (j : Fin n)
@@ -202,7 +171,7 @@ theorem singularValue_toLin_rectangularDiagonal [FiniteDimensional 𝕜 E]
   set D : E →L[𝕜] F := LinearMap.toContinuousLinearMap (Matrix.toLin e.toBasis f.toBasis
     (Matrix.of fun (j : Fin n) (i : Fin m) ↦ if (j : ℕ) = i then d i else 0)) with hD
   have hDe (i : Fin m) : D (e i) = if h : (i : ℕ) < n then d i • f ⟨i, h⟩ else 0 := by
-    rw [hD, LinearMap.coe_toContinuousLinearMap', toLin_rectangularDiagonal_apply]
+    rw [hD, LinearMap.coe_toContinuousLinearMap', toLin_of_ite_val_eq_apply]
   -- List the source indices below `min m n` in the order given by `σ`.
   let π : Fin (min m n) ↪ Fin m := σ.toEmbedding.trans (Fin.castLEEmb (min_le_left m n))
   have hnorm (k : Fin (min m n)) : ‖D (e (π k))‖ = ‖d (σ k)‖ := by
@@ -213,21 +182,21 @@ theorem singularValue_toLin_rectangularDiagonal [FiniteDimensional 𝕜 E]
       hi ⟨σ.symm ⟨i, lt_min i.isLt hin⟩, Fin.ext (by simp [π])⟩
     simp [hDe, hin]
   rw [ContinuousLinearMap.singularValue_eq_of_pairwise_inner_eq_zero
-    (pairwise_inner_toLin_rectangularDiagonal e f d) π (by simpa only [hnorm] using hσ) h0 k]
+    (pairwise_inner_toLin_of_ite_val_eq e f d) π (by simpa only [hnorm] using hσ) h0 k]
   exact NNReal.coe_injective (by simpa using hnorm k)
 
 /-- **Vanishing tail of a rectangular diagonal map.** The approximation numbers of the rectangular
 diagonal map vanish from index `min m n` on. -/
-theorem singularValue_toLin_rectangularDiagonal_of_le [FiniteDimensional 𝕜 E]
+theorem singularValue_toLin_of_ite_val_eq_eq_zero_of_le [FiniteDimensional 𝕜 E]
     (e : OrthonormalBasis (Fin m) 𝕜 E) (f : OrthonormalBasis (Fin n) 𝕜 F) (d : ℕ → 𝕜) {k : ℕ}
     (hk : min m n ≤ k) :
     (LinearMap.toContinuousLinearMap (Matrix.toLin e.toBasis f.toBasis (Matrix.of fun (j : Fin n)
       (i : Fin m) ↦ if (j : ℕ) = i then d i else 0))).singularValue k = 0 := by
   refine le_antisymm (ContinuousLinearMap.singularValue_le_of_pairwise_inner_eq_zero
-    (pairwise_inner_toLin_rectangularDiagonal e f d)
+    (pairwise_inner_toLin_of_ite_val_eq e f d)
     (s := ({i | (i : ℕ) < n} : Finset (Fin m))) ?_ fun i hi ↦ ?_) zero_le
   · simpa [Fin.card_filter_val_lt] using hk
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
-    simp [toLin_rectangularDiagonal_apply, hi]
+    simp [toLin_of_ite_val_eq_apply, hi]
 
 end Matrix

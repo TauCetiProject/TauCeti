@@ -102,6 +102,8 @@ diagonal map up to isometries on both sides.
   in a reordered diagonal basis.
 * `Matrix.singularValues_toLin_diagonal`: the singular values of the diagonal operator are the
   norms `‖dᵢ‖` listed in nonincreasing order.
+* `Matrix.toLin_of_ite_val_eq_apply`: the rectangular diagonal map with entries `dₖ` sends `eᵢ` to
+  `dᵢ fᵢ` when `i` is also an index of `(fⱼ)`, and to `0` otherwise.
 * `LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_comp`: every map `A : E →ₗ[𝕜] F` is `U D V`
   for linear isometric equivalences `U` of `F` and `V` of `E` and the rectangular diagonal map `D`
   with the singular values of `A` on its diagonal, in any prescribed orthonormal bases.
@@ -602,6 +604,22 @@ theorem _root_.Matrix.singularValues_toLin_diagonal (e : OrthonormalBasis ι �
     (fun i j hij ↦ pow_le_pow_left₀ (norm_nonneg _) (hπ hij) 2)
     (e.adjoint_comp_self_toLin_diagonal_reindex_apply d π) k
 
+omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
+/-- The rectangular diagonal map with entries `d` in orthonormal bases `(eᵢ)_{i < m}` and
+`(fⱼ)_{j < n}` sends `eᵢ` to `dᵢ fᵢ` when `i < n`, and to `0` otherwise. -/
+theorem _root_.Matrix.toLin_of_ite_val_eq_apply {m n : ℕ} (e : OrthonormalBasis (Fin m) 𝕜 E)
+    (f : OrthonormalBasis (Fin n) 𝕜 F) (d : ℕ → 𝕜) (i : Fin m) :
+    Matrix.toLin e.toBasis f.toBasis (Matrix.of fun (j : Fin n) (i : Fin m) ↦
+      if (j : ℕ) = i then d i else 0) (e i) =
+      if h : (i : ℕ) < n then d i • f ⟨i, h⟩ else 0 := by
+  rw [← e.coe_toBasis, Matrix.toLin_self]
+  split_ifs with h
+  · rw [Finset.sum_eq_single ⟨i, h⟩ (fun j _ hj ↦ by
+      simp [show (j : ℕ) ≠ i from fun h' ↦ hj (Fin.ext h')]) (by simp)]
+    simp
+  · refine Finset.sum_eq_zero fun j _ ↦ ?_
+    simp [show (j : ℕ) ≠ i from fun h' ↦ h (h' ▸ j.isLt)]
+
 /-- **Rectangular singular-value factorization.** Every linear map `A : E →ₗ[𝕜] F` between
 finite-dimensional inner product spaces factors as `A = U D V`, where `U` and `V` are linear
 isometric equivalences of `F` and `E`, and `D` is the rectangular diagonal map whose matrix in
@@ -626,15 +644,12 @@ theorem exists_linearIsometryEquiv_eq_comp_toLin_comp (A : E →ₗ[𝕜] F) {m 
     LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv, OrthonormalBasis.equiv_apply_basis,
     Equiv.refl_apply]
-  rw [← e.coe_toBasis, Matrix.toLin_self]
-  simp only [Matrix.of_apply]
-  rcases lt_or_ge (i : ℕ) (finrank 𝕜 F) with hi | hi
-  · rw [Finset.sum_eq_single ⟨i, hi⟩
-      (fun j _ hj ↦ by simp [show (j : ℕ) ≠ i from fun h ↦ hj (Fin.ext h)]) (by simp)]
-    rcases eq_or_ne (A.singularValues i) 0 with hσ | hσ
+  rw [Matrix.toLin_of_ite_val_eq_apply (d := fun i ↦ (A.singularValues i : 𝕜))]
+  split_ifs with hi
+  · rcases eq_or_ne (A.singularValues i) 0 with hσ | hσ
     · simp [hσ]
     · simp [hw i ⟨i, hi⟩ rfl hσ]
-  · simp [A.singularValues_of_finrank_le_right hi]
+  · simp [A.singularValues_of_finrank_le_right (not_lt.mp hi)]
 
 /-- **Singular-value diagonal factorization.** Every endomorphism `A` of a finite-dimensional
 inner product space factors as `A = U D V`, where `U` and `V` are linear isometric equivalences
@@ -686,18 +701,14 @@ theorem exists_orthonormal_eq_sum_singularValues_smul_rankOne (A : E →ₗ[𝕜
     Finset.sum_apply, Pi.smul_apply, InnerProductSpace.rankOne_apply,
     LinearIsometryEquiv.inner_map_map, orthonormal_iff_ite.mp e.orthonormal, ite_smul, one_smul,
     zero_smul, smul_ite, smul_zero]
-  rw [← e.coe_toBasis, Matrix.toLin_self]
-  simp only [Matrix.of_apply]
+  rw [Matrix.toLin_of_ite_val_eq_apply (d := fun i ↦ (A.singularValues i : 𝕜))]
   have hiE (i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F))) : iE i = k ↔ (i : ℕ) = k := Fin.ext_iff
-  rcases lt_or_ge (k : ℕ) (finrank 𝕜 F) with hk | hk
-  · rw [Finset.sum_eq_single ⟨k, hk⟩
-        (fun j _ hj ↦ by simp [show (j : ℕ) ≠ k from fun h ↦ hj (Fin.ext h)]) (by simp),
-      Finset.sum_eq_single ⟨k, lt_min k.2 hk⟩
-        (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
+  split_ifs with hk
+  · rw [Finset.sum_eq_single ⟨k, lt_min k.2 hk⟩
+      (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
     simp [hiE, iF, f]
-  · rw [Finset.sum_eq_zero fun j _ ↦ by simp [show (j : ℕ) ≠ k from fun h ↦ (h ▸ j.2).not_ge hk],
-      Finset.sum_eq_zero fun i _ ↦ by
-        simp [hiE, show (i : ℕ) ≠ k from fun h ↦ (h ▸ i.2).not_ge (min_le_right _ _ |>.trans hk)]]
+  · rw [Finset.sum_eq_zero fun i _ ↦ by
+      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.2.trans_le (min_le_right _ _))]]
     simp
 
 end Diagonal
