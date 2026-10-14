@@ -64,6 +64,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   positive determinant.
 * `LinearMap.IsPositive.exists_pos_mul_norm_sq_le_re_inner`: an injective positive operator on a
   finite-dimensional space is coercive.
+* `ContinuousLinearMap.IsPositive.det_one_sub_smul_id_add_smul_pos`: interpolating the identity
+  with a positive operator `A` as `(1 - t) • 1 + t • A`, `0 ≤ t < 1`, gives positive determinant.
 
 ## References
 
@@ -441,3 +443,28 @@ theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap
   rwa [le_div_iff₀ (pow_pos (norm_pos_iff.2 hw) 2)] at hle
 
 end LinearMap.IsPositive
+
+namespace ContinuousLinearMap.IsPositive
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- For a positive operator `A` on a finite-dimensional real inner product space and `0 ≤ t < 1`,
+the operator `(1 - t) • 1 + t • A` is positive and injective, so its determinant is positive. -/
+theorem det_one_sub_smul_id_add_smul_pos {A : F →L[ℝ] F} (hA : A.IsPositive) {t : ℝ}
+    (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+    0 < ((1 - t) • ContinuousLinearMap.id ℝ F + t • A).det := by
+  set B := (1 - t) • ContinuousLinearMap.id ℝ F + t • A
+  have hB : B.IsPositive :=
+    (ContinuousLinearMap.isPositive_id.smul_of_nonneg (by linarith)).add (hA.smul_of_nonneg ht₀)
+  have hker : LinearMap.ker (B : F →ₗ[ℝ] F) = ⊥ := by
+    refine LinearMap.ker_eq_bot'.2 fun v hv => ?_
+    have hBv : B v = 0 := hv
+    have hAv : 0 ≤ ⟪A v, v⟫_ℝ := hA.inner_nonneg_left v
+    have h0 : ⟪B v, v⟫_ℝ = (1 - t) * ‖v‖ ^ 2 + t * ⟪A v, v⟫_ℝ := by
+      simp [B, inner_add_left, inner_smul_left]
+    rw [hBv, inner_zero_left] at h0
+    have : ‖v‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖v‖, mul_nonneg ht₀ hAv]
+    simpa using this
+  exact ((ContinuousLinearMap.isPositive_toLinearMap_iff B).2 hB).det_pos hker
+
+end ContinuousLinearMap.IsPositive

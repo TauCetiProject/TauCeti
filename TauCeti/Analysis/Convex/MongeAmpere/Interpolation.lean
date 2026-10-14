@@ -75,25 +75,6 @@ open scoped Topology ENNReal InnerProductSpace Gradient
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → EReal}
 
-/-- For a positive operator `A` and `0 ≤ t < 1`, the operator `(1 - t) • 1 + t • A` is positive
-and injective, so its determinant is positive. -/
-private theorem det_one_sub_smul_id_add_smul_pos {A : E →L[ℝ] E} (hA : A.IsPositive) {t : ℝ}
-    (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
-    0 < ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det := by
-  set B := (1 - t) • ContinuousLinearMap.id ℝ E + t • A
-  have hB : B.IsPositive :=
-    (ContinuousLinearMap.isPositive_id.smul_of_nonneg (by linarith)).add (hA.smul_of_nonneg ht₀)
-  have hker : LinearMap.ker (B : E →ₗ[ℝ] E) = ⊥ := by
-    refine LinearMap.ker_eq_bot'.2 fun v hv => ?_
-    have hBv : B v = 0 := hv
-    have hAv : 0 ≤ ⟪A v, v⟫_ℝ := hA.inner_nonneg_left v
-    have h0 : ⟪B v, v⟫_ℝ = (1 - t) * ‖v‖ ^ 2 + t * ⟪A v, v⟫_ℝ := by
-      simp [B, inner_add_left, inner_smul_left]
-    rw [hBv, inner_zero_left] at h0
-    have : ‖v‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖v‖, mul_nonneg ht₀ hAv]
-    simpa using this
-  exact ((ContinuousLinearMap.isPositive_toLinearMap_iff B).2 hB).det_pos hker
-
 /-- The interpolating map `x ↦ (1 - t) • x + t • ∇F x` is measurable. -/
 private theorem measurable_smul_add_smul_gradient [MeasurableSpace E] [BorelSpace E] (t : ℝ) :
     Measurable fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x :=
@@ -104,21 +85,25 @@ within a set `s` at each point of which the subdifferential of `f` is the single
 the expansion `y' = ∇F x + H x (x' - x) + o(‖x' - x‖)`. -/
 private theorem hasFDerivWithinAt_smul_add_smul_gradient {H : E → E →L[ℝ] E} {s : Set E}
     (hP : ∀ x ∈ s, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
-      ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
         ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
     (t : ℝ) {x : E} (hx : x ∈ s) :
     HasFDerivWithinAt (fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x)
       ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x) s x :=
   ((hasFDerivWithinAt_id x s).const_smul (1 - t)).add
     ((hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
-      (fun x' hx' => by rw [(hP x' hx').1]; exact mem_singleton _) (hP x hx).2).const_smul t)
+      (fun x' hx' => by rw [(hP x' hx').1]; exact mem_singleton _) (hP x hx).2.2).const_smul t)
 
 /-- For `0 ≤ t < 1`, the interpolating map `x ↦ (1 - t) • x + t • ∇F x` is injective on a set
-at each point of which the gradient of `F` is a subgradient of `f`. -/
-private theorem injOn_smul_add_smul_gradient {s : Set E}
-    (hs : ∀ x ∈ s, (∇ fun x' => (f x').toReal) x ∈ subdifferential (innerₗ E) f x) {t : ℝ}
-    (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+at each point of which the subdifferential of `f` is the single gradient. -/
+private theorem injOn_smul_add_smul_gradient {H : E → E →L[ℝ] E} {s : Set E}
+    (hP : ∀ x ∈ s, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
     InjOn (fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) s := by
+  have hs : ∀ x ∈ s, (∇ fun x' => (f x').toReal) x ∈ subdifferential (innerₗ E) f x :=
+    fun x hx => by rw [(hP x hx).1]; exact mem_singleton _
   intro x₁ hx₁ x₂ hx₂ h
   have hle := mul_norm_sub_le_norm_smul_add_smul_sub_of_mem_subdifferential ht₀ (hs x₁ hx₁)
     (hs x₂ hx₂)
@@ -128,7 +113,48 @@ private theorem injOn_smul_add_smul_gradient {s : Set E}
     le_antisymm (nonpos_of_mul_nonpos_right hle (by linarith)) (norm_nonneg _)
   rwa [norm_eq_zero, sub_eq_zero] at this
 
+/-- The Jacobian `x ↦ det ((1 - t) • 1 + t • H x)` of the interpolating map is measurable when
+`H` is. -/
+private theorem measurable_ofReal_det_one_sub_smul_id_add_smul [MeasurableSpace E] [BorelSpace E]
+    {H : E → E →L[ℝ] E} (hH : Measurable H) (t : ℝ) :
+    Measurable fun x => ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det :=
+  ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp
+    (measurable_const.add (hH.const_smul t)))
+
+/-- For `0 ≤ t < 1`, the interpolating map `x ↦ (1 - t) • x + t • ∇F x` sends a measurable set at
+each point of which the subdifferential of `f` is the single gradient with a first-order expansion
+to a measurable set. -/
+private theorem measurableSet_image_smul_add_smul_gradient [MeasurableSpace E] [BorelSpace E]
+    {H : E → E →L[ℝ] E} {s : Set E} (hs : MeasurableSet s)
+    (hP : ∀ x ∈ s, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+    MeasurableSet ((fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) '' s) :=
+  measurable_image_of_fderivWithin hs (fun _ hx => hasFDerivWithinAt_smul_add_smul_gradient hP t hx)
+    (injOn_smul_add_smul_gradient hP ht₀ ht₁)
+
 variable [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure]
+
+/-- If almost every point of the interior `D` of the effective domain of a convex `f` has a
+first-order expansion of the subdifferential with derivative `H x`, then every measure `μ ≪ ρ`
+carried by `D` is carried by the measurable set of points supplied by
+`exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient`. -/
+private theorem exists_measurableSet_measure_compl_eq_zero
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) :
+    ∃ S, MeasurableSet S ∧ S ⊆ interior {x | f x ≠ ⊤} ∧ interior {x | f x ≠ ⊤} =ᵐ[ρ] S ∧
+      μ Sᶜ = 0 ∧
+      (∀ x ∈ S, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+        (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+          ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
+      ∃ H' : E → E →L[ℝ] E, Measurable H' ∧ ∀ x ∈ S, H x = H' x := by
+  obtain ⟨S, hSm, hSD, hDS, hS, hH'⟩ :=
+    exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
+  exact ⟨S, hSm, hSD, hDS,
+    (measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD), hS, hH'⟩
 
 /-- **Change of variables along the interpolating map.** Let `s` be a measurable set at each point
 of which the subdifferential of `f : E → EReal` is the single gradient `∇F x` of its real
@@ -148,12 +174,10 @@ theorem withDensity_image_smul_add_smul_gradient_eq_setLIntegral {H : E → E �
         g ((1 - t) • x + t • (∇ fun x' => (f x').toReal) x) ∂ρ := by
   rw [withDensity_apply',
     lintegral_image_eq_lintegral_abs_det_fderiv_mul ρ hs
-      (fun x hx => hasFDerivWithinAt_smul_add_smul_gradient
-        (fun x hx => ⟨(hP x hx).1, (hP x hx).2.2⟩) t hx)
-      (injOn_smul_add_smul_gradient (fun x hx => by rw [(hP x hx).1]; exact mem_singleton _)
-        ht₀ ht₁) g]
+      (fun _ hx => hasFDerivWithinAt_smul_add_smul_gradient hP t hx)
+      (injOn_smul_add_smul_gradient hP ht₀ ht₁) g]
   refine setLIntegral_congr_fun hs fun x hx => ?_
-  rw [abs_of_pos (det_one_sub_smul_id_add_smul_pos (hP x hx).2.1 ht₀ ht₁)]
+  rw [abs_of_pos ((hP x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)]
 
 /-- If `μ` is carried by a measurable set `S` of points at which the subdifferential of `f` is the
 single gradient with a first-order expansion, then for `0 ≤ t < 1` the interpolant `(Tₜ)₊ μ` gives
@@ -168,12 +192,9 @@ private theorem measure_inter_eq_map_image {H : E → E →L[ℝ] E} {S : Set E}
       ((fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) '' (s ∩ S)) := by
   set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
   have hT : Measurable T := measurable_smul_add_smul_gradient t
-  have hinj : InjOn T S :=
-    injOn_smul_add_smul_gradient (fun x hx => by rw [(hS x hx).1]; exact mem_singleton _) ht₀ ht₁
+  have hinj : InjOn T S := injOn_smul_add_smul_gradient hS ht₀ ht₁
   have hmeas : MeasurableSet (T '' (s ∩ S)) :=
-    measurable_image_of_fderivWithin (hs.inter hSm)
-      (fun x hx => hasFDerivWithinAt_smul_add_smul_gradient
-        (fun x hx => ⟨(hS x hx.2).1, (hS x hx.2).2.2⟩) t hx) (hinj.mono inter_subset_right)
+    measurableSet_image_smul_add_smul_gradient (hs.inter hSm) (fun x hx => hS x hx.2) ht₀ ht₁
   rw [map_apply hT hmeas, ← measure_inter_conull (s := T ⁻¹' (T '' (s ∩ S))) hμS,
     hinj.preimage_image_inter inter_subset_right]
 
@@ -190,19 +211,15 @@ theorem map_smul_add_smul_gradient_absolutelyContinuous (hf : Convex ℝ {p : E 
   set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
   have hT : Measurable T := measurable_smul_add_smul_gradient t
   obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hf hbot
-  obtain ⟨S, hSm, -, hDS, hS, H', hH'm, hHS⟩ := exists_measurableSet_ae_eq_interior ρ hf hbot
-    (H := H) (by filter_upwards [hH] with x hx hxD; exact ⟨_, (hx (interior_subset hxD)).2⟩)
-  have hμS : μ Sᶜ = 0 :=
-    (measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD)
+  obtain ⟨S, hSm, -, -, hμS, hS, H', hH'm, hHS⟩ := exists_measurableSet_measure_compl_eq_zero ρ hf
+    hbot (H := H) (by filter_upwards [hH] with x hx hxD; exact ⟨_, (hx (interior_subset hxD)).2⟩)
+    hμ hμD
   refine AbsolutelyContinuous.mk fun A hA hρA => ?_
   set s := T ⁻¹' A ∩ S
   have hs : MeasurableSet s := (hT hA).inter hSm
   -- The image of `s` lies in the null set `A`, and the change of variables formula with the
   -- positive Jacobian `det ((1 - t) • 1 + t • H x)` shows that `s` itself is null.
-  have hdet : Measurable fun x => ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E +
-      t • H' x).det :=
-    ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp
-      (measurable_const.add (hH'm.const_smul t)))
+  have hdet := measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t
   have hint : ∫⁻ x in s, ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H' x).det ∂ρ
       = 0 := by
     have himage := withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs
@@ -215,9 +232,19 @@ theorem map_smul_add_smul_gradient_absolutelyContinuous (hf : Convex ℝ {p : E 
     refine measure_eq_zero_iff_ae_notMem.2 (((setLIntegral_eq_zero_iff hs hdet).1 hint).mono
       fun x hx hxs => ?_)
     refine (ENNReal.ofReal_pos.2 ?_).ne' (hx hxs)
-    exact hHS x hxs.2 ▸ det_one_sub_smul_id_add_smul_pos (hS x hxs.2).2.1 ht₀ ht₁
+    exact hHS x hxs.2 ▸ (hS x hxs.2).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁
   rw [map_apply hT hA, ← measure_inter_conull hμS]
   exact hμ hρs
+
+/-- For `0 ≤ t < 1`, the interpolant of an s-finite measure `μ ≪ ρ` carried by the interior of the
+effective domain is the measure with density its Radon–Nikodym derivative with respect to `ρ`. -/
+private theorem withDensity_rnDeriv_map_smul_add_smul_gradient
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {μ : Measure E} [SFinite μ]
+    (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+    ρ.withDensity ((μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x).rnDeriv ρ) =
+      μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x :=
+  withDensity_rnDeriv_eq _ ρ
+    (map_smul_add_smul_gradient_absolutelyContinuous ρ hf hbot hμ hμD ht₀ ht₁)
 
 /-- **The Jacobian equation along the interpolation of a convex gradient.** Let `f : E → EReal` be
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
@@ -244,16 +271,13 @@ theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradien
   set g := (μ.map T).rnDeriv ρ
   have hT : Measurable T := measurable_smul_add_smul_gradient t
   have hν : ρ.withDensity g = μ.map T :=
-    withDensity_rnDeriv_eq (μ.map T) ρ
-      (map_smul_add_smul_gradient_absolutelyContinuous ρ hf hbot hμ hμD ht₀ ht₁)
-  obtain ⟨S, hSm, -, hDS, hS, H', hH'm, hHS⟩ := exists_measurableSet_ae_eq_interior ρ hf hbot hH
-  have hμS : μ Sᶜ = 0 :=
-    (measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD)
+    withDensity_rnDeriv_map_smul_add_smul_gradient ρ hf hbot hμ hμD ht₀ ht₁
+  obtain ⟨S, hSm, -, hDS, hμS, hS, H', hH'm, hHS⟩ :=
+    exists_measurableSet_measure_compl_eq_zero ρ hf hbot hH hμ hμD
   set φ : E → ℝ≥0∞ := fun x =>
     ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H' x).det * g (T x)
-  have hφ : Measurable φ :=
-    (ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp
-      (measurable_const.add (hH'm.const_smul t)))).mul ((measurable_rnDeriv (μ.map T) ρ).comp hT)
+  have hφ : Measurable φ := (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t).mul
+    ((measurable_rnDeriv (μ.map T) ρ).comp hT)
   -- `μ` has density `φ` on `S`: on each measurable `s ∩ S`, transport `μ` to `ν` by the
   -- injective map `T` and change variables back.
   have hμφ : μ = ρ.withDensity (S.indicator φ) := by
@@ -274,10 +298,11 @@ theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradien
 /-- **Integrals of the density of an interpolant, as integrals over the source.** Under the
 hypotheses of `rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradient`, let
 `μₜ = (Tₜ)₊ μ` with `Tₜ x = (1 - t) • x + t • ∇F x` and `0 ≤ t < 1`, and write
-`Jₜ x = det ((1 - t) • 1 + t • H x)`. For every `Φ : ℝ≥0∞ → ℝ≥0∞` with `Φ 0 = 0`,
-`∫ Φ (dμₜ/dρ) dρ = ∫_D Jₜ x * Φ (dμ/dρ (x) / Jₜ x) dρ`, where `D` is the interior of the effective
-domain of `f`. For an internal energy `∫ U (dμₜ/dρ) dρ` with `U 0 = 0`, applied to the positive and
-negative parts of `U`, this moves the time dependence from the density into the Jacobian `Jₜ`. -/
+`Jₜ x = (1 - t) • 1 + t • H x`. For every `Φ : ℝ≥0∞ → ℝ≥0∞` with `Φ 0 = 0`,
+`∫ Φ (dμₜ/dρ) dρ = ∫_D det (Jₜ x) * Φ (dμ/dρ (x) / det (Jₜ x)) dρ`, where `D` is the interior of
+the effective domain of `f`. For an internal energy `∫ U (dμₜ/dρ) dρ` with `U 0 = 0`, applied to the
+positive and negative parts of `U`, this moves the time dependence from the density into the
+Jacobian `det (Jₜ x)`. -/
 theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
@@ -296,17 +321,10 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
     ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det
   have hT : Measurable T := measurable_smul_add_smul_gradient t
   have hν : ρ.withDensity g = μ.map T :=
-    withDensity_rnDeriv_eq (μ.map T) ρ
-      (map_smul_add_smul_gradient_absolutelyContinuous ρ hf hbot hμ hμD ht₀ ht₁)
-  obtain ⟨S, hSm, hSD, hDS, hS, -⟩ := exists_measurableSet_ae_eq_interior ρ hf hbot hH
-  have hμS : μ Sᶜ = 0 :=
-    (measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD)
-  have hTS : MeasurableSet (T '' S) :=
-    measurable_image_of_fderivWithin hSm
-      (fun x hx => hasFDerivWithinAt_smul_add_smul_gradient
-        (fun x hx => ⟨(hS x hx).1, (hS x hx).2.2⟩) t hx)
-      (injOn_smul_add_smul_gradient (fun x hx => by rw [(hS x hx).1]; exact mem_singleton _)
-        ht₀ ht₁)
+    withDensity_rnDeriv_map_smul_add_smul_gradient ρ hf hbot hμ hμD ht₀ ht₁
+  obtain ⟨S, hSm, hSD, hDS, hμS, hS, -⟩ :=
+    exists_measurableSet_measure_compl_eq_zero ρ hf hbot hH hμ hμD
+  have hTS : MeasurableSet (T '' S) := measurableSet_image_smul_add_smul_gradient hSm hS ht₀ ht₁
   -- The interpolant is carried by `T '' S`, so its density vanishes almost everywhere off it.
   have hνS : μ.map T (T '' S)ᶜ = 0 := by
     rw [map_apply hT hTS.compl]
@@ -319,7 +337,7 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
     filter_upwards [rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradient ρ
       hf hbot hH hμ hμD ht₀ ht₁] with x hx hxS
     have hJ : 0 < ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det :=
-      det_one_sub_smul_id_add_smul_pos (hS x hxS).2.1 ht₀ ht₁
+      (hS x hxS).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁
     rw [hx, indicator_of_mem (hSD hxS), ENNReal.eq_div_iff (ENNReal.ofReal_pos.2 hJ).ne'
       ENNReal.ofReal_ne_top]
   calc ∫⁻ y, Φ (g y) ∂ρ = ∫⁻ y, (T '' S).indicator (fun y => Φ (g y)) y ∂ρ := by

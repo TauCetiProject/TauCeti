@@ -98,7 +98,7 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   are absolutely continuous, with densities `g₀` and `g₁`, the Brenier potential `u` solves the
   Monge–Ampère equation `g₀ x = g₁ (∇ u x) det (D²u x)` almost everywhere, with `D²u` the
   Alexandrov Hessian;
-* `exists_isKantorovichOptimalTransportMap_gradient_and_map_smul_add_smul_absolutelyContinuous` —
+* `exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq_map_smul_add_smul_gradient` —
   when only the source law is absolutely continuous, with density `g₀`, the interpolating maps
   `Tₜ x = (1 - t) • x + t • ∇ u x` push it, for `0 ≤ t < 1`, to absolutely continuous laws with
   densities `gₜ`, and the Jacobian equation `g₀ x = det ((1 - t) • 1 + t • D²u x) gₜ (Tₜ x)` holds
@@ -738,7 +738,8 @@ never takes the value `⊥`, with `D` the interior of its effective domain, such
   `dμ/dρ = 0` almost everywhere off `D`.
 
 The target `ν = μ₁` need not be absolutely continuous. -/
-theorem exists_isKantorovichOptimalTransportMap_gradient_and_map_smul_add_smul_absolutelyContinuous
+theorem
+    exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq_map_smul_add_smul_gradient
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
