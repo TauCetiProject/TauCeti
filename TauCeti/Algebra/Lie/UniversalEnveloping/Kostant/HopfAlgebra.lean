@@ -29,18 +29,14 @@ algebra, and tensor products of flat modules are flat.
   algebra over `ℤ`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantForm_comul` and
   `TauCeti.UniversalEnvelopingAlgebra.kostantForm_counit`: the bundled coalgebra maps are the
-  previously constructed integral restrictions.
+  integral restrictions of the rational coalgebra maps.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantForm_antipode`: the bundled antipode is the
   restriction of the rational universal-enveloping antipode.
 
 ## References
 
-The Hopf order on the Kostant form is standard; see J. E. Humphreys, *Introduction to Lie
-Algebras and Representation Theory*, §26, and J. C. Jantzen, *Representations of Algebraic
-Groups*, II.1. This completes the Hopf-algebra packaging of the Kostant-form prerequisite for the
-explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the `CFSGStatement`
-roadmap.
+The Hopf order on the Kostant form is standard; see J. E. Humphreys, *Introduction to Lie Algebras
+and Representation Theory*, §26, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
 
 public section

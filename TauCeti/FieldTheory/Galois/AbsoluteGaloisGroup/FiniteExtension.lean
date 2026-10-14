@@ -460,6 +460,24 @@ underlying subgroup is the fixing subgroup of the normal intermediate field `σ(
 instance normal_galoisSubgroup : (galoisSubgroup K L σ).toSubgroup.Normal :=
   inferInstanceAs (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).Normal
 
+/-- The quotient by the open subgroup fixing a finite normal extension, identified
+topologically with its finite Galois group. -/
+noncomputable def quotientGaloisSubgroupEquiv :
+    AbsoluteGaloisGroup K ⧸ (galoisSubgroup K L σ).toSubgroup ≃ₜ* Gal(L/K) := by
+  let e := (QuotientGroup.quotientMulEquivOfEq (galoisSubgroup_toSubgroup K L σ)).trans
+    (quotientFixingSubgroupFieldRangeEquiv K L σ)
+  letI := QuotientGroup.discreteTopology (galoisSubgroup K L σ).isOpen
+  exact { e with
+    continuous_toFun := continuous_of_discreteTopology
+    continuous_invFun := continuous_of_discreteTopology }
+
+/-- The quotient identification sends the class of an absolute Galois automorphism to its
+restriction along the chosen embedding of the finite extension. -/
+@[simp]
+theorem quotientGaloisSubgroupEquiv_mk (g : AbsoluteGaloisGroup K) :
+    quotientGaloisSubgroupEquiv K L σ g = σ.restrictNormalHom g := by
+  simp [quotientGaloisSubgroupEquiv, quotientFixingSubgroupFieldRangeEquiv_mk]
+
 /-- **The finite Galois quotient of `G_K` cut out by a finite normal extension**: if the image of
 `G_L` in `G_K = Field.absoluteGaloisGroup K` along `σ` is the normal subgroup `U`, then
 `G_K ⧸ U ≃* Gal(L/K)`, sending the class of `g` to the restriction along `σ` of its action on

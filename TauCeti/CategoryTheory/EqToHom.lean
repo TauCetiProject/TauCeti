@@ -27,6 +27,8 @@ and avoid exposing the definitional equality of the objects being transported.
 * `TauCeti.eq_of_eqToHom_conjugate`: two morphisms with equal conjugates are equal.
 * `TauCeti.eqToHom_conjugate_vertical_square_of_horizontal_square`: commutativity with conjugated
   horizontal edges gives commutativity after moving the conjugations to the vertical edges.
+* `CategoryTheory.Functor.map_heq`: a functor sends morphisms which agree up to equalities of their
+  endpoints to morphisms which agree in the same way.
 -/
 
 public section
@@ -107,3 +109,15 @@ theorem eqToHom_conjugate_vertical_square_of_horizontal_square {C : Type*} [Cate
   (eqToHom_conjugate_square hA hB hD hE p _ _ q).mp (by simpa using h)
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+/-- A functor sends morphisms which agree up to equalities of their endpoints to morphisms which
+agree in the same way. -/
+theorem map_heq {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D) {X Y X' Y' : C}
+    {f : X ⟶ Y} {f' : X' ⟶ Y'} (hX : X = X') (hY : Y = Y') (h : f ≍ f') :
+    F.map f ≍ F.map f' := by
+  subst hX hY
+  rw [eq_of_heq h]
+
+end CategoryTheory.Functor

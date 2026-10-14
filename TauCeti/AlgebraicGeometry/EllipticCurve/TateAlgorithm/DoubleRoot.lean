@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
@@ -354,7 +355,6 @@ theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (Residue
           ¬ ϖ ^ (2 * k + 7) ∣ discrim (VariableChange.mk 1 r 0 t • W).a₂
             (VariableChange.mk 1 r 0 t • W).a₄ (VariableChange.mk 1 r 0 t • W).a₆ ∧
           ϖ ^ (2 * k + 8) ∣ W.Δ) := by
-  have hΔV (r t : R) : (VariableChange.mk 1 r 0 t • W).Δ = W.Δ := by simp [variableChange_Δ]
   -- Two translations compose to a translation.
   have hC (r t r' t' : R) : VariableChange.mk 1 r' 0 t' • VariableChange.mk 1 r 0 t • W =
       VariableChange.mk 1 (r + r') 0 (t + t') • W := by
@@ -373,7 +373,8 @@ theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (Residue
   generalize N + 1 = M at hM
   induction M generalizing k r t with
   | zero =>
-    exact absurd ((pow_dvd_pow ϖ (by omega)).trans (hΔV r t ▸ hW.pow_dvd_Δ)) hM
+    exact absurd ((pow_dvd_pow ϖ (by omega)).trans
+      (variableChange_translate_Δ W r t ▸ hW.pow_dvd_Δ)) hM
   | succ M ih =>
     by_cases hb₆ : ϖ ^ (2 * k + 5) ∣ (VariableChange.mk 1 r 0 t • W).b₆
     · obtain ⟨t', hW'⟩ := hW.exists_isTateEvenStage hϖ hb₆
@@ -385,10 +386,11 @@ theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (Residue
         exact ih (k + 1) (r + r') (t + t') hW'' (fun h ↦ hM ((pow_dvd_pow ϖ (by omega)).trans h))
       · obtain ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩ := hW'
         exact ⟨r, t + t', k, g₁, g₂, g₂', Or.inr ⟨g₃, g₄, g₆, hd,
-          hΔV r (t + t') ▸ IsTateEvenStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
+          variableChange_translate_Δ W r (t + t') ▸
+            IsTateEvenStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
     · obtain ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩ := hW
       exact ⟨r, t, k, g₁, g₂, g₂', Or.inl ⟨g₃, g₄, g₆, hb₆,
-        hΔV r t ▸ IsTateOddStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
+        variableChange_translate_Δ W r t ▸ IsTateOddStage.pow_dvd_Δ ⟨g₁, g₂, g₂', g₃, g₄, g₆⟩⟩⟩
 
 end WeierstrassCurve
 

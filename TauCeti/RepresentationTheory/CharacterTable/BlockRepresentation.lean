@@ -45,11 +45,8 @@ irreducible representations of `G` indexed by the conjugacy classes of `G`.
 
 ## References
 
-This supplies one half of the block ⇆ irreducible-representation matching that Layer 2.5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-asks for, in the concrete form needed by Layer 3's completeness statement. See J.-P. Serre, *Linear
-Representations of Finite Groups*, Section 6.4, or I. M. Isaacs, *Character Theory of Finite
-Groups*, Chapter 1.
+See J.-P. Serre, *Linear Representations of Finite Groups*, Section 6.4, or I. M. Isaacs, *Character
+Theory of Finite Groups*, Chapter 1.
 -/
 
 public section
