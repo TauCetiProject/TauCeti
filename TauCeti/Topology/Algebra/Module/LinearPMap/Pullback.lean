@@ -21,6 +21,10 @@ The identity, composition, and inverse laws allow successive coordinate changes 
 unfolding the construction. For a total linear operator, pullback agrees with ordinary
 conjugation of linear maps.
 
+Apply the API by its qualified names, such as `TauCeti.pullbackLinearPMap A e` and
+`TauCeti.mem_pullbackLinearPMap_domain A e`. Domain membership and successive inverse
+coordinate changes simplify with `simp`.
+
 ## References
 
 J. Weidmann, *Linear Operators in Hilbert Spaces*, Chapter 5 (§5.1), closed operators and their
