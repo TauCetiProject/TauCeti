@@ -27,12 +27,8 @@ polynomials.
 
 Over an integral domain a linearly dependent family has vanishing Hasse Wronskian. Over a field of
 characteristic zero the converse holds, so linear independence is equivalent to nonvanishing of
-the Hasse Wronskian. The proof of the converse reduces, by column operations that do not change
-the determinant, to a family of polynomials of pairwise distinct degrees. For such a family the
-coefficient of the determinant in the top possible degree is the product of the leading
-coefficients times a Vandermonde determinant in the degrees, which is nonzero in characteristic
-zero. In positive characteristic the converse fails: over `𝔽₂` the polynomials `1` and `X²` are
-independent, but `D¹ (X²) = 2X = 0`.
+the Hasse Wronskian. In positive characteristic the converse fails: over `𝔽₂` the polynomials `1`
+and `X²` are independent, but `D¹ (X²) = 2X = 0`.
 
 This is the one-variable Wronskian used in the proof of Roth's lemma on the index of auxiliary
 polynomials.
@@ -90,6 +86,7 @@ theorem hasseWronskian_fin_one (g : Fin 1 → R[X]) : hasseWronskian g = g 0 := 
   rw [hasseWronskian_def, det_fin_one, of_apply, Fin.val_zero, hasseDeriv_zero']
 
 /-- The Hasse Wronskian of two polynomials is Mathlib's Wronskian `g₀ g₁' - g₀' g₁`. -/
+@[simp]
 theorem hasseWronskian_fin_two (g : Fin 2 → R[X]) :
     hasseWronskian g = wronskian (g 0) (g 1) := by
   rw [hasseWronskian_def, det_fin_two, wronskian]
@@ -114,6 +111,7 @@ theorem hasseWronskian_comp_perm (g : Fin m → R[X]) (σ : Equiv.Perm (Fin m)) 
   congr 1
 
 /-- The Hasse Wronskian commutes with maps of coefficient rings. -/
+@[simp]
 theorem hasseWronskian_map (f : R →+* S) (g : Fin m → R[X]) :
     hasseWronskian (fun l ↦ (g l).map f) = (hasseWronskian g).map f := by
   rw [hasseWronskian_def, hasseWronskian_def, ← coe_mapRingHom, RingHom.map_det]
