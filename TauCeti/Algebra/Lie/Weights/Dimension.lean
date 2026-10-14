@@ -54,17 +54,11 @@ complement rather than by removing a named zero weight, which need not exist.
 
 ## References
 
-This is the numerical shadow of the root-space decomposition of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, *"`L = H ⊕ ⨁_{α ∈ roots} Lα` with
-`finrank_rootSpace_eq_one` making each `Lα` a line"*.
+This is the numerical shadow of the root-space decomposition `L = H ⊕ ⨁_{α ∈ roots} Lα`, in which
+`LieAlgebra.IsKilling.finrank_rootSpace_eq_one` makes each `Lα` a line.
 
-It is a prerequisite for, and **not** an instance of, the bookkeeping pin
-`finrank_eq_rank_add_two_mul_card_isPos` of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`: that pin states the parity
-identity with `LieAlgebra.rank ℂ L` where the count below gives `dim H`. Bridging the two is the
-separate Layer 9 target `rank_eq_finrank_cartan`, which compares Mathlib's `LieAlgebra.rank`,
-defined through the nilpotency degree of a generic element, with the dimension of a Cartan
-subalgebra; it is not proved here, and no declaration below claims that pin.
+The counts below use `dim H`, not Mathlib's `LieAlgebra.rank`, which is defined through the
+nilpotency degree of a generic element; identifying the two is not proved here.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Springer GTM 9 (1972),
   §8.1 (the root-space decomposition) and §10.1 (the pairing of positive and negative roots).

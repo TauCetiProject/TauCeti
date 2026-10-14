@@ -26,9 +26,7 @@ Mathlib's bijection `genLoopEquivOfUnique` between the generalized loops indexed
 and the loop space `Ω X x` is continuous both ways for the compact-open topologies.
 
 Transporting a homotopy-group computation across a homeomorphism is the dimension-`N` analogue of
-`TauCeti.FundamentalGroup.homeomorphMulEquiv`, and is part of the higher-homotopy-group API the
-universal-covers roadmap asks for in Stage 3 item 9 (`TauCetiRoadmap/UniversalCovers/README.md`),
-before proving that a covering map induces isomorphisms on `π_n` for `n ≥ 2`.
+`TauCeti.FundamentalGroup.homeomorphMulEquiv`.
 
 ## Main declarations
 

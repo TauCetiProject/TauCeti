@@ -38,10 +38,8 @@ hence preserves their common-kernel Hopf ideal, hence descends to the quotient d
 ## References
 
 This is the graph-automorphism construction used in R. W. Carter, *Finite Groups of Lie Type:
-Conjugacy Classes and Complex Characters*, §1.15, and J. E. Humphreys, *Linear Algebraic
-Groups*, §27. It advances the pinnings and pinned-isomorphism targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`; the resulting automorphisms are required by milestone
-L1 of `TauCetiRoadmap/CFSGStatement/README.md`.
+Conjugacy Classes and Complex Characters*, §1.15, and J. E. Humphreys, *Linear Algebraic Groups*,
+§27.
 -/
 
 public section

@@ -446,6 +446,16 @@ theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_gradient_le u.1
 
+/-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
+theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst : s ⊆ t)
+    (ht : t ⊆ (Omega : Set E)) :
+    (eLpNorm (W1p.gradient u) p (mu.restrict s)).toReal ≤
+      (eLpNorm (W1p.gradient u) p (mu.restrict t)).toReal :=
+  ENNReal.toReal_mono
+    ((eLpNorm_mono_measure _ (Measure.restrict_mono ht le_rfl)).trans_lt
+      (Lp.eLpNorm_lt_top _)).ne
+    (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
+
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :

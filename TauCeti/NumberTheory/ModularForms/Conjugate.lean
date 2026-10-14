@@ -225,11 +225,11 @@ modular form for any `𝒢'` conjugated into `𝒢` by `J = !![-1, 0; 0, 1]`. It
 by the determinant `-1` matrix `J`, so its `q`-expansion has the complex-conjugate
 coefficients (`ModularForm.qExpansion_conj`). -/
 def conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularForm 𝒢 k) : ModularForm 𝒢' k :=
-  _root_.ModularForm.ofLe hJ (_root_.ModularForm.translate f J)
+  _root_.ModularForm.restrict hJ (_root_.ModularForm.translate f J)
 
 lemma coe_conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     ⇑(conj hJ f) = ⇑f ∣[k] J := by
-  rw [conj, _root_.ModularForm.coe_ofLe, _root_.ModularForm.coe_translate]
+  rw [conj, _root_.ModularForm.coe_restrict, _root_.ModularForm.coe_translate]
 
 @[simp]
 lemma conj_apply (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularForm 𝒢 k) (τ : ℍ) :
@@ -307,11 +307,11 @@ namespace CuspForm
 /-- **The conjugate cusp form** `f_ρ(τ) = conj (f (-conj τ))`, the cusp-form counterpart of
 `ModularForm.conj`. -/
 def conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) : CuspForm 𝒢' k :=
-  _root_.CuspForm.ofLe hJ (_root_.CuspForm.translate f J)
+  _root_.CuspForm.restrict hJ (_root_.CuspForm.translate f J)
 
 lemma coe_conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(conj hJ f) = ⇑f ∣[k] J := by
-  rw [conj, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate]
+  rw [conj, _root_.CuspForm.coe_restrict, _root_.CuspForm.coe_translate]
 
 @[simp]
 lemma conj_apply (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) (τ : ℍ) :

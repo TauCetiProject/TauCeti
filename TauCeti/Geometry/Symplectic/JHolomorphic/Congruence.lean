@@ -11,15 +11,11 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 # Congruence lemmas for constant-structure `J`-holomorphic maps
 
 This file records the locality API for the normed-vector-space constant-structure `J`-holomorphic
-predicates used
-by the analytic Heegaard Floer roadmap. A constant-structure `J`-holomorphic condition depends only
-on a local
-representative of the map near the point or within the source set, because the underlying
-Frechet derivative has the same locality property.
+predicates. A constant-structure `J`-holomorphic condition depends only on a local representative of
+the map near the point or within the source set, because the underlying Frechet derivative has the
+same locality property.
 
-These lemmas are the chart-level bookkeeping needed before the roadmap upgrades the local
-Cauchy--Riemann equation to almost complex manifolds, where maps are constantly replaced by
-equal local representatives in overlapping charts and restricted domains.
+These are locality lemmas for the flat constant-structure model.
 
 ## Main declarations
 
