@@ -162,7 +162,7 @@ theorem exists_mem_range_chartι_comp {ι : Type*} (m : ι → M)
   have hspan : N.toSubmodule ⊔ Submodule.span A (Set.range fun i ↦ (1 : A) ⊗ₜ[R] m i) = ⊤ := by
     refine eq_top_iff.mpr (le_sup_of_le_right ?_)
     rw [← Submodule.baseChange_top A, ← hm, Submodule.baseChange_span, ← Set.range_comp]
-    rfl
+    simp only [Function.comp_def, TensorProduct.mk_apply, le_refl]
   obtain ⟨y, hy⟩ : ∃ y : Fin k → ι,
       ¬ chartLocus N (fun i ↦ (1 : A) ⊗ₜ[R] (m ∘ y) i) ≤ p.asIdeal := by
     by_contra! h

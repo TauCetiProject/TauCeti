@@ -34,6 +34,10 @@ local–global principles for finite presentation and flatness.
 
 ## Main results
 
+* `IsLocalizedModule.mk'_mem_iff`: a fraction `f x / s` lies in a submodule over the localization
+  exactly when `f x` does.
+* `TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`: the `A`-linear base change of the
+  structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
 * `Module.Grassmannian.rTensor_mem_map_iff`: membership in the base change of a point along a
   localization.
 * `Module.Grassmannian.eq_of_isLocalized_span`: a point of `G(k, A ⊗[R] M; A)` is determined by
@@ -54,6 +58,25 @@ public section
 universe u v w
 
 open TensorProduct
+
+/-- Let `A` be the localization of `R` at `S`, and `f : M → M'` a localization map at `S` into an
+`A`-module. Then `f x / s` lies in an `A`-submodule `L` of `M'` exactly when `f x` does. -/
+theorem IsLocalizedModule.mk'_mem_iff {R : Type*} [CommSemiring R] {S : Submonoid R}
+    {A : Type*} [CommSemiring A] [Algebra R A] [IsLocalization S A]
+    {M M' : Type*} [AddCommMonoid M] [AddCommMonoid M'] [Module R M] [Module R M'] [Module A M']
+    [IsScalarTower R A M'] (f : M →ₗ[R] M') [IsLocalizedModule S f] {L : Submodule A M'}
+    {x : M} {s : S} : IsLocalizedModule.mk' f x s ∈ L ↔ f x ∈ L := by
+  rw [← IsLocalization.smul_mem_iff (s := s), IsLocalizedModule.mk'_cancel']
+
+/-- The `A`-linear base change of the structure map `A → B` is, as a function, the base change
+of the `R`-algebra map `A →ₐ[R] B`. -/
+theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Type*}
+    [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (x : A ⊗[R] M) :
+    AlgebraTensorModule.rTensor R M (Algebra.linearMap A B) x =
+      (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
+  rw [AlgebraTensorModule.coe_rTensor]
+  exact congrArg (LinearMap.rTensor M · x) (LinearMap.ext fun a ↦ by simp)
 
 namespace Module.Grassmannian
 
@@ -115,7 +138,8 @@ section Glue
 /-! Throughout, the image of `x ∈ A ⊗[R] M` in `B r ⊗[R] M` is written as the base change
 `(IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x` of the structure map. As a function
 this is the `A`-linear map `AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r))`
-(`TensorProduct.AlgebraTensorModule.coe_rTensor`), which is how its `A`-linearity is used. -/
+(`TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`), which is how its `A`-linearity is
+used. -/
 
 variable {A : Type w} [CommRing A] [Algebra R A] {s : Set A}
   {B : s → Type w} [∀ r, CommRing (B r)] [∀ r, Algebra R (B r)] [∀ r, Algebra A (B r)]
@@ -130,9 +154,7 @@ private theorem mem_glueSubmodule_iff {x : A ⊗[R] M} :
     x ∈ glueSubmodule N ↔
       ∀ r : s, (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x ∈ (N r).toSubmodule := by
   simp only [glueSubmodule, Submodule.mem_iInf, Submodule.mem_comap,
-    Submodule.restrictScalars_mem, AlgebraTensorModule.coe_rTensor]
-  -- the coercion of `Algebra.linearMap A (B r)` to an `R`-linear map is the structure map
-  rfl
+    Submodule.restrictScalars_mem, AlgebraTensorModule.rTensor_linearMap_apply]
 
 /-- The image of `a • x` in `B r ⊗[R] M` is `a •` the image of `x`. -/
 private theorem rTensor_smul (r : s) (a : A) (x : A ⊗[R] M) :
@@ -210,12 +232,8 @@ private theorem ker_baseChangeMkQ_glueSubmodule (hs : Ideal.span s = ⊤)
   ext z
   -- write `z = g x / t`; membership of `z` in a `B r`-submodule is membership of `g x`
   obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalizedModule.mk'_surjective (.powers r.1) g z
-  have key (K : Submodule (B r) (B r ⊗[R] M)) :
-      Function.uncurry (IsLocalizedModule.mk' g) (x, t) ∈ K ↔ g x ∈ K := by
-    rw [← IsLocalization.smul_mem_iff (s := t), Function.uncurry_apply_pair,
-      IsLocalizedModule.mk'_cancel']
-  -- `g x` is the image of `x` in `B r ⊗[R] M` (`TensorProduct.AlgebraTensorModule.coe_rTensor`)
-  rw [key, key, show g x = (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x from rfl,
+  rw [Function.uncurry_apply_pair, IsLocalizedModule.mk'_mem_iff, IsLocalizedModule.mk'_mem_iff,
+    AlgebraTensorModule.rTensor_linearMap_apply,
     rTensor_mem_ker_baseChangeMkQ_iff (.powers r.1), rTensor_mem_iff_exists_pow_smul_mem N hs hN]
   simp [Submonoid.mem_powers_iff]
 

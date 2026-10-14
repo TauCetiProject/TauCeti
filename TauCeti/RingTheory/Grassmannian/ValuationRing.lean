@@ -16,7 +16,7 @@ public import TauCeti.RingTheory.Grassmannian.Localization
 Let `M` be a finite module over a commutative ring `R`, let `V` be a valuation ring which is an
 `R`-algebra, and let `K` be its field of fractions. This file proves that every point
 `N ∈ G(k, K ⊗[R] M; K)` is the base change of a unique point of `G(k, V ⊗[R] M; V)`
-(`Module.Grassmannian.existsUnique_map_eq_of_valuationRing`). This is the algebraic content of the
+(`Module.Grassmannian.exists_map_eq_of_valuationRing`). This is the algebraic content of the
 valuative criterion of properness for the Grassmannian scheme.
 
 The extension is the saturation `N ∩ (V ⊗[R] M)`: the vectors of `V ⊗[R] M` whose image in
@@ -31,7 +31,6 @@ holds over every domain, by `Module.Grassmannian.map_injective`.
 
 * `Module.Grassmannian.exists_map_eq_of_valuationRing`: for `M` finite, every point over the
   fraction field of a valuation ring is the base change of a point over the valuation ring.
-* `Module.Grassmannian.existsUnique_map_eq_of_valuationRing`: this point is unique.
 
 ## References
 
@@ -65,9 +64,7 @@ private theorem mem_saturation_iff {N : G(k, K ⊗[R] M; K)} {x : V ⊗[R] M} :
     x ∈ saturation V N ↔
       (IsScalarTower.toAlgHom R V K).toLinearMap.rTensor M x ∈ N.toSubmodule := by
   simp only [saturation, Submodule.mem_comap, Submodule.restrictScalars_mem,
-    AlgebraTensorModule.coe_rTensor]
-  -- the coercion of `Algebra.linearMap V K` to an `R`-linear map is the structure map
-  rfl
+    AlgebraTensorModule.rTensor_linearMap_apply]
 
 variable [IsFractionRing V K]
 
@@ -87,11 +84,8 @@ private theorem ker_baseChangeMkQ_saturation (N : G(k, K ⊗[R] M; K)) :
   ext z
   -- write `z = g x / t`; membership of `z` in a `K`-submodule is membership of `g x`
   obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalizedModule.mk'_surjective (nonZeroDivisors V) g z
-  have key (L : Submodule K (K ⊗[R] M)) :
-      Function.uncurry (IsLocalizedModule.mk' g) (x, t) ∈ L ↔ g x ∈ L := by
-    rw [← IsLocalization.smul_mem_iff (s := t), Function.uncurry_apply_pair,
-      IsLocalizedModule.mk'_cancel']
-  rw [key, key, show g x = (IsScalarTower.toAlgHom R V K).toLinearMap.rTensor M x from rfl,
+  rw [Function.uncurry_apply_pair, IsLocalizedModule.mk'_mem_iff, IsLocalizedModule.mk'_mem_iff,
+    AlgebraTensorModule.rTensor_linearMap_apply,
     rTensor_mem_ker_baseChangeMkQ_iff (nonZeroDivisors V), ← mem_saturation_iff]
   exact ⟨fun ⟨t, ht, h⟩ ↦ (smul_mem_saturation_iff ht).mp h,
     fun h ↦ ⟨1, one_mem _, by rwa [one_smul]⟩⟩
@@ -137,14 +131,5 @@ theorem exists_map_eq_of_valuationRing [Module.Finite R M] (N : G(k, K ⊗[R] M;
   ext : 1
   rw [map_toAlgHom_toSubmodule]
   exact ker_baseChangeMkQ_saturation N
-
-/-- **Points over the fraction field of a valuation ring extend uniquely.** Let `M` be a finite
-`R`-module and `V` a valuation ring with field of fractions `K`. Every point
-`N ∈ G(k, K ⊗[R] M; K)` is the base change of exactly one point of `G(k, V ⊗[R] M; V)`. -/
-theorem existsUnique_map_eq_of_valuationRing [Module.Finite R M] (N : G(k, K ⊗[R] M; K)) :
-    ∃! N₀ : G(k, V ⊗[R] M; V), map (IsScalarTower.toAlgHom R V K) N₀ = N := by
-  obtain ⟨N₀, hN₀⟩ := exists_map_eq_of_valuationRing (V := V) N
-  exact ⟨N₀, hN₀, fun N₁ hN₁ ↦
-    map_injective (IsFractionRing.injective V K) (hN₁.trans hN₀.symm)⟩
 
 end Module.Grassmannian
