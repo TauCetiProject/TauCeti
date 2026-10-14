@@ -72,16 +72,10 @@ noncomputable def completionDecompositionHom :
     P.integers.decompositionSubgroup F →* P.completionPlace.integers.decompositionSubgroup k where
   toFun g := ⟨completionCongr P P _ (valuation_restrictScalars_apply F P g),
     completionCongr_mem_decompositionSubgroup _ _⟩
-  map_one' := Subtype.ext <| AlgEquiv.ext fun x ↦ (DFunLike.congr_fun
-    (eq_completionCongr_of_continuous (valuation_restrictScalars_apply F P 1)
-      (f := RingHom.id P.Completion) continuous_id fun y ↦ by simp) x).symm
+  map_one' := Subtype.ext <| AlgEquiv.ext fun x ↦ DFunLike.congr_fun (completionCongr_refl P) x
   map_mul' g h := Subtype.ext <| AlgEquiv.ext fun x ↦ (DFunLike.congr_fun
-    (eq_completionCongr_of_continuous (valuation_restrictScalars_apply F P (g * h))
-      (f := (completionCongr P P _ (valuation_restrictScalars_apply F P g) :
-          P.Completion →+* P.Completion).comp
-        (completionCongr P P _ (valuation_restrictScalars_apply F P h)))
-      ((continuous_completionCongr _).comp (continuous_completionCongr _))
-      fun y ↦ by simp) x).symm
+    (completionCongr_trans (valuation_restrictScalars_apply F P h)
+      (valuation_restrictScalars_apply F P g)) x).symm
 
 variable {F P}
 

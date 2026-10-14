@@ -142,16 +142,14 @@ theorem uniformContinuous_withValCongr (σ : K ≃+* K')
   WithVal.uniformContinuous_congr (v.valuation_surjective K) σ hσ
 
 /-- The isomorphism of adic completions `K_v ≃+* K'_w` extending a field isomorphism
-`σ : K ≃+* K'` that carries the `v`-adic valuation to the `w`-adic valuation. -/
+`σ : K ≃+* K'` that carries the `v`-adic valuation to the `w`-adic valuation: the transport
+`Valuation.Completion.congr` read through `adicCompletion.equiv`. -/
 noncomputable def adicCompletionCongr (σ : K ≃+* K')
     (hσ : ∀ x, w.valuation K' (σ x) = v.valuation K x) :
     v.adicCompletion K ≃+* w.adicCompletion K' :=
   (adicCompletion.equiv K v).trans <|
-    (UniformSpace.Completion.mapRingEquiv (WithVal.congr (v.valuation K) (w.valuation K') σ)
-      (uniformContinuous_withValCongr v w σ hσ).continuous
-      (uniformContinuous_withValCongr w v σ.symm fun y ↦ by
-        simpa using (hσ (σ.symm y)).symm).continuous).trans
-    (adicCompletion.equiv K' w).symm
+    (Valuation.Completion.congr (v.valuation_surjective K) σ hσ).trans
+      (adicCompletion.equiv K' w).symm
 
 variable {v w} {σ : K ≃+* K'} (hσ : ∀ x, w.valuation K' (σ x) = v.valuation K x)
 
@@ -161,7 +159,7 @@ theorem toCompletion_adicCompletionCongr (x : v.adicCompletion K) :
     (adicCompletionCongr v w σ hσ x).toCompletion =
       UniformSpace.Completion.map (WithVal.congr (v.valuation K) (w.valuation K') σ)
         x.toCompletion :=
-  (rfl)
+  Valuation.Completion.congr_apply _ hσ x.toCompletion
 
 /-- `adicCompletionCongr` extends `σ`. -/
 @[simp]
