@@ -4,8 +4,7 @@
 # Compile the environment-lint driver (scripts/LintEnvDriver.lean) into OUT_DIR/lint-env-driver,
 # in a throwaway Lake workspace under OUT_DIR whose only dependency is PROJECT_ROOT's Batteries
 # checkout, by path, with PROJECT_ROOT's toolchain. Only DRIVER_SOURCE and the Batteries modules it
-# imports are compiled. The sysroot-only governance audit driver is built alongside it
-# from the same trusted script directory.
+# imports are compiled.
 #
 # The result is trusted only if that Batteries checkout was pristine when this ran. pr-build.yml
 # therefore runs this on the host before any candidate code executes and mounts OUT_DIR read-only
@@ -50,8 +49,3 @@ TOML
   LAKE_NO_CACHE=true lake build lint-env-driver)
 install -m 0555 "$WS/.lake/build/bin/lint-env-driver" "$OUT_DIR/lint-env-driver"
 rm -rf "$WS"
-
-# The same read-only mount carries the sysroot-only governance driver. Sources come from
-# DRIVER_SOURCE's workflow-pinned directory, never PROJECT_ROOT's candidate scripts.
-bash "$(dirname "$DRIVER_SOURCE")/build-audit-driver.sh" "$PROJECT_ROOT" \
-  "$(dirname "$DRIVER_SOURCE")" "$OUT_DIR"

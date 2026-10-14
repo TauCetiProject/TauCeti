@@ -66,8 +66,8 @@ class BuildLintDriverTest(unittest.TestCase):
             re.compile(r'elif \[ -n "\$\{WATCHDOG_TOOLCHAIN:-\}" \]; then\n\s+fail ', re.M))
 
     def test_audit_driver_has_the_same_host_trust_boundary(self):
-        self.assertIn('bash "$(dirname "$DRIVER_SOURCE")/build-audit-driver.sh"', BUILD)
-        self.assertIn('"$(dirname "$DRIVER_SOURCE")" "$OUT_DIR"', BUILD)
+        run = steps()[index_of("Build the trusted environment-lint driver")]["run"]
+        self.assertIn('bash gate/scripts/build-audit-driver.sh pr gate/scripts "$out"', run)
         self.assertIn('cp "$TRUSTED_SCRIPTS/Axioms.lean"', AUDIT_BUILD)
         self.assertNotIn('$PROJECT_ROOT/scripts', AUDIT_BUILD)
         self.assertNotIn('[[require]]', AUDIT_BUILD)  # Lean's pinned sysroot only.

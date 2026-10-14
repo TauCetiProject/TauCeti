@@ -1024,6 +1024,7 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           out="$RUNNER_TEMP/lint-env-driver"
           bash gate/scripts/build-lint-driver.sh pr gate/scripts/LintEnvDriver.lean "$out"
+          bash gate/scripts/build-audit-driver.sh pr gate/scripts "$out"
           echo "LINT_DRIVER_DIR=$out" >> "$GITHUB_ENV"
 
       # Which modules the environment lint covers: the TauCeti modules this change touches, or the
