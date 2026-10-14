@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopfAlgebra.Quotient
+public import TauCeti.Algebra.Coalgebra.BaseChange
+public import TauCeti.Algebra.HopfAlgebra.BaseChange
 public import TauCeti.RingTheory.Grassmannian.ClosedCondition
-public import TauCeti.RingTheory.HopfAlgebra.BaseChange
 
 /-!
 # The closed locus of Hopf ideals in the Grassmannian
