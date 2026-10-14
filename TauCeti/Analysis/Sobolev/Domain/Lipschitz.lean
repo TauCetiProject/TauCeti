@@ -260,7 +260,7 @@ theorem isLipschitzDomain_iff {Ω : Opens F} :
   Iff.rfl
 
 omit [FiniteDimensional ℝ F] in
-/-- The open half-space based at `a` with inward unit normal `ν`. -/
+/-- The open half-space based at `a` with defining normal `ν`. -/
 def innerHalfSpace (a ν : F) : Opens F :=
   ⟨{y | 0 < inner ℝ ν (y - a)}, isOpen_lt continuous_const
     (continuous_const.inner (continuous_id.sub continuous_const))⟩
@@ -285,33 +285,46 @@ theorem inner_eq_zero_of_mem_frontier_innerHalfSpace {a ν x : F}
     (continuous_const.inner (continuous_id.sub continuous_const)) hx).symm
 
 omit [FiniteDimensional ℝ F] in
-/-- **The open half-space with unit inward normal `ν` is a Lipschitz domain.** -/
-theorem isLipschitzDomain_innerHalfSpace (a ν : F) (hν : ‖ν‖ = 1) :
+/-- **Every open half-space is a Lipschitz domain.** -/
+theorem isLipschitzDomain_innerHalfSpace (a ν : F) :
     IsLipschitzDomain (innerHalfSpace a ν) := by
-  rw [isLipschitzDomain_iff]
-  intro x hx
-  have hx0 := inner_eq_zero_of_mem_frontier_innerHalfSpace hx
-  refine ⟨{
-    mem_frontier := hx
-    normal := ν
-    norm_normal := hν
-    normalRadius := 1
-    normalRadius_pos := zero_lt_one
-    tangentRadius := 1
-    tangentRadius_pos := zero_lt_one
-    height := 0
-    exists_lipschitzWith_height := ⟨0, LipschitzWith.const 0⟩
-    height_zero := rfl
-    mem_iff := ?_ }⟩
-  intro y _
-  have hcoord : inner ℝ ν (y - a) = inner ℝ ν (y - x) := by
-    calc
-      inner ℝ ν (y - a) = inner ℝ ν (y - x) + inner ℝ ν (x - a) := by
-        rw [← inner_add_right]
-        congr 2
-        abel
-      _ = inner ℝ ν (y - x) := by rw [hx0, add_zero]
-  simp only [Pi.zero_apply, mem_innerHalfSpace, boundaryNormalCoordinate]
-  rw [hcoord]
+  have unit_case (μ : F) (hμ : ‖μ‖ = 1) : IsLipschitzDomain (innerHalfSpace a μ) := by
+    rw [isLipschitzDomain_iff]
+    intro x hx
+    have hx0 := inner_eq_zero_of_mem_frontier_innerHalfSpace hx
+    refine ⟨{
+      mem_frontier := hx
+      normal := μ
+      norm_normal := hμ
+      normalRadius := 1
+      normalRadius_pos := zero_lt_one
+      tangentRadius := 1
+      tangentRadius_pos := zero_lt_one
+      height := 0
+      exists_lipschitzWith_height := ⟨0, LipschitzWith.const 0⟩
+      height_zero := rfl
+      mem_iff := ?_ }⟩
+    intro y _
+    have hcoord : inner ℝ μ (y - a) = inner ℝ μ (y - x) := by
+      calc
+        inner ℝ μ (y - a) = inner ℝ μ (y - x) + inner ℝ μ (x - a) := by
+          rw [← inner_add_right]
+          congr 2
+          abel
+        _ = inner ℝ μ (y - x) := by rw [hx0, add_zero]
+    simp only [Pi.zero_apply, mem_innerHalfSpace, boundaryNormalCoordinate]
+    rw [hcoord]
+  by_cases hν : ν = 0
+  · subst ν
+    rw [isLipschitzDomain_iff]
+    simp [innerHalfSpace]
+  · let μ := ‖ν‖⁻¹ • ν
+    have hνnorm : 0 < ‖ν‖ := norm_pos_iff.mpr hν
+    have hμ : ‖μ‖ = 1 := by
+      simp [μ, norm_smul, hν]
+    rw [show innerHalfSpace a ν = innerHalfSpace a μ by
+      ext y
+      simp [μ, inner_smul_left, hνnorm]]
+    exact unit_case μ hμ
 
 end TauCeti
