@@ -160,8 +160,8 @@ theorem character_prod (p : (Φ.prod Ψ).AlgebraicComplexPoint) :
     ← character_add]
   -- The product character is the sum of its two restrictions pulled back along the projections.
   congr 2
-  ext x
-  simp [← map_add]
+  rw [FanHom.fst_latticeMap, FanHom.snd_latticeMap,
+    AddMonoidHom.comp_inl_comp_fst_add_comp_inr_comp_snd]
 
 /-- The character function of a character of the product lattice, at the complex point with
 coordinates `q`, is the product of the character functions of its two restrictions at the two
