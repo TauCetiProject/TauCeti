@@ -284,6 +284,21 @@ def cellularSingularHomologyIsoOfCWComplex [FiniteDimensional C]
       ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C) :=
   cellularSingularHomologyIso C R n ≪≫ (asIso ((complexBasePair C).singularHomologyπ R n)).symm
 
+/-- The absolute cellular–singular comparison followed by the quotient map for the empty
+subspace is the relative comparison `TauCeti.cellularSingularHomologyIso`. -/
+@[simp, reassoc]
+lemma cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ [FiniteDimensional C]
+    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (n : ℕ) :
+    (cellularSingularHomologyIsoOfCWComplex C R n).hom ≫
+        (complexBasePair C).singularHomologyπ R n =
+      (cellularSingularHomologyIso C R n).hom := by
+  -- The body is well typed only after unfolding `singularHomologyFunctor`, so `rw [Iso.trans_hom]`
+  -- fails to match it; we close the goal with a term instead.
+  unfold cellularSingularHomologyIsoOfCWComplex
+  exact (Category.assoc _ _ _).trans
+    (((cellularSingularHomologyIso C R n).hom ≫=
+      (asIso ((complexBasePair C).singularHomologyπ R n)).inv_hom_id).trans (Category.comp_id _))
+
 /-- **Cellular homology is ordinary singular homology** for a finite-dimensional CW structure on
 the whole space `X`. -/
 def cellularSingularHomologyIsoUniv [CWComplex (Set.univ : Set X)]
@@ -294,6 +309,17 @@ def cellularSingularHomologyIsoUniv [CWComplex (Set.univ : Set X)]
   cellularSingularHomologyIsoOfCWComplex Set.univ R n ≪≫
     ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).mapIso
       (TopCat.isoOfHomeo (Homeomorph.Set.univ X))
+
+/-- The comparison `TauCeti.cellularSingularHomologyIsoUniv` is the absolute comparison for
+`Set.univ`, followed by the map induced by the homeomorphism `Set.univ ≃ₜ X`. -/
+lemma cellularSingularHomologyIsoUniv_hom [CWComplex (Set.univ : Set X)]
+    [FiniteDimensional (Set.univ : Set X)]
+    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ) :
+    (cellularSingularHomologyIsoUniv R n).hom =
+      (cellularSingularHomologyIsoOfCWComplex Set.univ R n).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).map
+          (TopCat.isoOfHomeo (Homeomorph.Set.univ X)).hom := by
+  rw [cellularSingularHomologyIsoUniv, Iso.trans_hom, Functor.mapIso_hom]
 
 end Absolute
 
