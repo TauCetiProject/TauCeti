@@ -123,17 +123,18 @@ private theorem positiveHorseshoeStep_nonempty
   have hQi : iQ ≫ pQ = 0 := by
     dsimp [iQ, pQ]
     rw [Category.assoc, Q.iCycles_toCycles, comp_zero]
-  have hPS₀ := P.cyclesShortComplex_shortExact n (n + 1) (by simp) (hP.acyclic (n + 1))
-  have hQS₀ := Q.cyclesShortComplex_shortExact n (n + 1) (by simp) (hQ.acyclic (n + 1))
-  rw [HomologicalComplex.cyclesShortComplex_def] at hPS₀ hQS₀
   let SP₀ := ShortComplex.mk (P.iCycles n) (P.toCycles n (n + 1))
     (P.iCycles_toCycles n (n + 1))
   let SP := ShortComplex.mk iP pP hPi
   let SQ₀ := ShortComplex.mk (Q.iCycles n) (Q.toCycles n (n + 1))
     (Q.iCycles_toCycles n (n + 1))
   let SQ := ShortComplex.mk iQ pQ hQi
-  change SP₀.ShortExact at hPS₀
-  change SQ₀.ShortExact at hQS₀
+  have hPS₀ : SP₀.ShortExact := by
+    simpa only [SP₀, ← HomologicalComplex.cyclesShortComplex_def] using
+      P.cyclesShortComplex_shortExact n (n + 1) (by simp) (hP.acyclic (n + 1))
+  have hQS₀ : SQ₀.ShortExact := by
+    simpa only [SQ₀, ← HomologicalComplex.cyclesShortComplex_def] using
+      Q.cyclesShortComplex_shortExact n (n + 1) (by simp) (hQ.acyclic (n + 1))
   have hPS : (ShortComplex.mk iP pP hPi).ShortExact :=
     ShortComplex.shortExact_of_iso (S₁ := SP₀) (S₂ := SP)
       (ShortComplex.isoMk U.leftIso.symm (Iso.refl _) (Iso.refl _)
@@ -189,17 +190,18 @@ private theorem negativeHorseshoeStep_nonempty
   have hQi : Q.iCycles n ≫ pQ = 0 := by
     dsimp [pQ]
     rw [Q.iCycles_toCycles_assoc, zero_comp]
-  have hPS₀ := P.cyclesShortComplex_shortExact n (n + 1) (by simp) (hP.acyclic (n + 1))
-  have hQS₀ := Q.cyclesShortComplex_shortExact n (n + 1) (by simp) (hQ.acyclic (n + 1))
-  rw [HomologicalComplex.cyclesShortComplex_def] at hPS₀ hQS₀
   let SP₀ := ShortComplex.mk (P.iCycles n) (P.toCycles n (n + 1))
     (P.iCycles_toCycles n (n + 1))
   let SP := ShortComplex.mk (P.iCycles n) pP hPi
   let SQ₀ := ShortComplex.mk (Q.iCycles n) (Q.toCycles n (n + 1))
     (Q.iCycles_toCycles n (n + 1))
   let SQ := ShortComplex.mk (Q.iCycles n) pQ hQi
-  change SP₀.ShortExact at hPS₀
-  change SQ₀.ShortExact at hQS₀
+  have hPS₀ : SP₀.ShortExact := by
+    simpa only [SP₀, ← HomologicalComplex.cyclesShortComplex_def] using
+      P.cyclesShortComplex_shortExact n (n + 1) (by simp) (hP.acyclic (n + 1))
+  have hQS₀ : SQ₀.ShortExact := by
+    simpa only [SQ₀, ← HomologicalComplex.cyclesShortComplex_def] using
+      Q.cyclesShortComplex_shortExact n (n + 1) (by simp) (hQ.acyclic (n + 1))
   have hPS : (ShortComplex.mk (P.iCycles n) pP hPi).ShortExact :=
     ShortComplex.shortExact_of_iso (S₁ := SP₀) (S₂ := SP)
       (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) V.leftIso.symm
@@ -387,6 +389,9 @@ private theorem completeHorseshoe_left_comm
   rw [← cancel_mono (completeMiddleIso hP hQ U (n + 1)).hom]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
   -- Expose the three integer-constructor cases so adjacent recursive states have matching indices.
+  -- In each case, `change` only unfolds the constructor clauses of `completeHorseshoe`,
+  -- `completeHorseshoeIso` and `completeMiddleIso`, writing the goal as a composite of the
+  -- horseshoe-step fields whose compatibility equations are then rewritten.
   cases n with
   | ofNat n =>
       change biprod.inl ≫ (positiveStepAt hP hQ U n).middleIso.inv ≫
@@ -430,6 +435,8 @@ private theorem completeHorseshoe_left_comm
             (negativeStepAt hP hQ U n).left_f]
           simp only [Int.natCast_add, Int.cast_ofNat_Int, eqToIso_refl, Iso.trans_refl,
             Iso.inv_hom_id_assoc]
+          -- The cycle indices `-(n + 1 + 1) + 1` and `-(n + 1)` left by the recursive states are
+          -- the integer `Int.negSucc n` by evaluation; restate them as such to match `P.d`.
           change P.toCycles (Int.negSucc (n + 1)) (Int.negSucc n) ≫
               P.iCycles (Int.negSucc n) ≫ biprod.inl =
             P.d (Int.negSucc (n + 1)) (Int.negSucc n) ≫ biprod.inl
@@ -445,6 +452,9 @@ private theorem completeHorseshoe_right_comm
   rw [← cancel_epi (completeMiddleIso hP hQ U n).inv]
   simp only [Category.assoc, Iso.inv_hom_id_assoc]
   -- Expose the three integer-constructor cases so adjacent recursive states have matching indices.
+  -- In each case, `change` only unfolds the constructor clauses of `completeHorseshoe`,
+  -- `completeHorseshoeIso` and `completeMiddleIso`, writing the goal as a composite of the
+  -- horseshoe-step fields whose compatibility equations are then rewritten.
   cases n with
   | ofNat n =>
       change biprod.snd ≫ Q.d (n : ℤ) ((n + 1 : ℕ) : ℤ) =
@@ -471,6 +481,10 @@ private theorem completeHorseshoe_right_comm
               (positiveStepAt hP hQ U 0).sourceIso.inv ≫
               (positiveStepAt hP hQ U 0).presentation.f ≫
               (positiveStepAt hP hQ U 0).middleIso.hom ≫ biprod.snd
+          -- Zero-index identification: `positiveState 0` and `negativeState 0` are both the
+          -- initial extension `U`, and `((0 : ℕ) : ℤ)` and `-((0 : ℕ) : ℤ)` both evaluate to `0`,
+          -- so the two composites below agree by `rfl`; this links the positive and negative
+          -- halves of the horseshoe.
           rw [(positiveStepAt hP hQ U 0).right_f,
             show (positiveState hP hQ U 0).S.g ≫
                 (positiveState hP hQ U 0).rightIso.hom ≫ Q.iCycles ((0 : ℕ) : ℤ) =
