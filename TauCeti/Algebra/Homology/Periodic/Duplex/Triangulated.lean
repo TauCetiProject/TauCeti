@@ -188,6 +188,54 @@ noncomputable def mapConeTriangleIso {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y
   · rw [periodicComplexEquivalenceFunctor_mapTriangle_coneTriangle_mor₃]
     simp [e₁, e₃, eqToHom_map]
 
+omit [HasZeroObject C] in
+/-- The first component of the cone-triangle comparison is the canonical transport. -/
+@[simp]
+theorem mapConeTriangleIso_hom_hom₁ {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+    (mapConeTriangleIso f).hom.hom₁ = eqToHom (by simp) := by
+  unfold mapConeTriangleIso; rfl
+
+omit [HasZeroObject C] in
+/-- The second component of the cone-triangle comparison is the canonical transport. -/
+@[simp]
+theorem mapConeTriangleIso_hom_hom₂ {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+    (mapConeTriangleIso f).hom.hom₂ = eqToHom (by simp) := by
+  unfold mapConeTriangleIso; rfl
+
+omit [HasZeroObject C] in
+/-- The third component of the cone-triangle comparison is the canonical transport followed by
+the inverse of the cone comparison, passed to the homotopy category. -/
+@[simp]
+theorem mapConeTriangleIso_hom_hom₃ {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+    (mapConeTriangleIso f).hom.hom₃ =
+      eqToHom (by simp) ≫ (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
+        (CurvedDuplex.homotopyCofiberIsoToPeriodicComplexCone f).inv := by
+  unfold mapConeTriangleIso; rfl
+
+omit [HasZeroObject C] in
+/-- The first component of the inverse cone-triangle comparison is the canonical transport. -/
+@[simp]
+theorem mapConeTriangleIso_inv_hom₁ {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+    (mapConeTriangleIso f).inv.hom₁ = eqToHom (by simp) := by
+  unfold mapConeTriangleIso; rfl
+
+omit [HasZeroObject C] in
+/-- The second component of the inverse cone-triangle comparison is the canonical transport. -/
+@[simp]
+theorem mapConeTriangleIso_inv_hom₂ {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+    (mapConeTriangleIso f).inv.hom₂ = eqToHom (by simp) := by
+  unfold mapConeTriangleIso; rfl
+
+omit [HasZeroObject C] in
+/-- The third component of the inverse cone-triangle comparison is the cone comparison, passed to
+the homotopy category, followed by the canonical transport. -/
+@[simp]
+theorem mapConeTriangleIso_inv_hom₃ {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+    (mapConeTriangleIso f).inv.hom₃ =
+      (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
+          (CurvedDuplex.homotopyCofiberIsoToPeriodicComplexCone f).hom ≫ eqToHom (by simp) := by
+  unfold mapConeTriangleIso; rfl
+
 /-- The equivalence from curvature-zero duplexes to two-periodic complexes preserves
 distinguished triangles. -/
 noncomputable instance periodicComplexEquivalenceFunctorIsTriangulated :
