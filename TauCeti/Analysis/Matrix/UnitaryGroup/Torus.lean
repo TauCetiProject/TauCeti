@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Matrix.Normal
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.Algebra.Group.Subgroup.Centralizer
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Algebra.Notation.Pi.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -142,7 +142,7 @@ theorem centralizer_unitaryTorus :
       (Subgroup.mem_centralizer_iff.mp hg _ (unitaryTorusHom_mem_unitaryTorus z))
     rwa [Submonoid.coe_mul, Submonoid.coe_mul, coe_unitaryTorusHom] at h
   exact apply_eq_zero_of_commute_diagonal hcomm fun h =>
-    Circle.mulSingle_exp_pi_apply_ne hij (Circle.coe_inj.mp h)
+    Pi.mulSingle_apply_ne_of_ne_one Circle.exp_pi_ne_one hij (Circle.coe_inj.mp h)
 
 /-- **The diagonal torus is a maximal commutative subgroup of `U(n)`**: a commutative subgroup
 containing it is equal to it. In particular the diagonal torus is a maximal torus of `U(n)`. -/
