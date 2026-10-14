@@ -373,10 +373,13 @@ theorem exists_lipschitzWith_gradient_perturb (hf : Differentiable ℝ f)
     (hK : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (hc : ∀ i, HasCompactSupport (h i)) (s : EuclideanSpace ℝ ι) :
     ∃ K' : ℝ≥0, LipschitzWith K' (∇ (perturb f h s)) := by
-  have hA : IsCompact (⋃ i, tsupport (h i)) := isCompact_iUnion fun i ↦ hc i
-  have hcs : HasCompactSupport fun x ↦ ∑ i, s i • ∇ (h i) x :=
-    HasCompactSupport.intro hA fun x hx ↦ Finset.sum_eq_zero fun i _ ↦ by
-      rw [gradient_of_notMem_tsupport fun hmem ↦ hx (mem_iUnion.2 ⟨i, hmem⟩), smul_zero]
+  have hg : ∀ i, HasCompactSupport (∇ (h i)) := fun i ↦
+    ((hc i).fderiv ℝ).comp_left (g := (InnerProductSpace.toDual ℝ E).symm) (map_zero _)
+  have hcs : HasCompactSupport fun x ↦ ∑ i, s i • ∇ (h i) x := by
+    convert HasCompactSupport.finset_sum (s := Finset.univ)
+      fun i _ ↦ (hg i).smul_left (f := fun _ ↦ s i) using 1
+    ext x
+    simp
   have hd : ContDiff ℝ 1 fun x ↦ ∑ i, s i • ∇ (h i) x :=
     ContDiff.sum fun i _ ↦
       contDiff_const.smul ((hh i).gradient_right (m := 1) (by norm_num))
