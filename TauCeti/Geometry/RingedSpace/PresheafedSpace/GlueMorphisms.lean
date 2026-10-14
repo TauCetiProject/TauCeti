@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.RingedSpace.OpenImmersion
 public import TauCeti.Geometry.RingedSpace.PresheafedSpace.Restrict
 
 /-!
