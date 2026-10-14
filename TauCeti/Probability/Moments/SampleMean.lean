@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.Independence.Integration
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.FiniteMean
-public import TauCeti.Analysis.Matrix.SampleSecondMoment
 
 /-!
 # Second moments of sample means
@@ -30,10 +29,6 @@ sum of the expected squared norms. Only pairwise independence is used, through t
 cross term vanish. The sample mean is `TauCeti.finiteMean`, and the scalar statement is the
 case `E = ℝ`.
 
-The empirical second-moment matrix `TauCeti.sampleSecondMoment` of real random vectors is the
-sample mean of their outer products, so each of its entries is a sample mean of products of
-coordinates and the scalar identity bounds its mean-square error.
-
 ## Main statements
 
 * `TauCeti.integral_norm_sum_sq_of_pairwise_indepFun`: Bienaymé's identity for random vectors.
@@ -42,8 +37,6 @@ coordinates and the scalar identity bounds its mean-square error.
 * `TauCeti.integral_norm_finiteMean_sub_sq_of_forall_eq` and
   `TauCeti.integral_norm_finiteMean_sub_sq_le_of_forall_le`: the mean-square error is `γ / r`
   when every per-sample error equals `γ`, and at most `γ / r` when every one is at most `γ`.
-* `TauCeti.integral_sampleSecondMoment_apply_sub_sq_le`: each entry of the empirical second-moment
-  matrix has mean-square error at most `v / r` when the per-sample errors are at most `v`.
 
 ## References
 
@@ -92,8 +85,6 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
   refine sum_congr rfl fun i hi ↦ ?_
   rw [integral_finsetSum _ fun j hj ↦ hint i hi j hj,
     sum_eq_single_of_mem i hi fun j hj hji ↦ hcross i hi j hj hji]
-
-section SampleMean
 
 variable [Fintype ι] [Nonempty ι]
 
@@ -152,36 +143,5 @@ theorem integral_norm_finiteMean_sub_sq_le_of_forall_le [IsProbabilityMeasure μ
     _ = γ / Fintype.card ι := by
         rw [sum_const, card_univ, nsmul_eq_mul]
         field_simp
-
-end SampleMean
-
-section SecondMomentMatrix
-
-variable {κ : Type*} [Fintype ι]
-
-/-- An entry of a random empirical second-moment matrix is square-integrable when the
-corresponding products of coordinates of the samples are. -/
-theorem memLp_sampleSecondMoment_apply {V : ι → Ω → κ → ℝ} {k l : κ}
-    (hV : ∀ i, MemLp (fun ω ↦ V i ω k * V i ω l) 2 μ) :
-    MemLp (fun ω ↦ sampleSecondMoment (V · ω) k l) 2 μ := by
-  simp_rw [sampleSecondMoment_apply, finiteMean_eq_inv_smul_sum, smul_eq_mul]
-  exact (memLp_finsetSum _ fun i _ ↦ hV i).const_mul _
-
-/-- **Per-entry second-moment bound for the empirical second moment.** Fix coordinates `k, l` and
-let `Yᵢ = Vᵢₖ Vᵢₗ`. If the `Yᵢ` are square-integrable, pairwise independent, have common mean
-`M k l` and centered second moments at most `v`, then the corresponding entry of the empirical
-second-moment matrix of the `r` samples has mean-square error at most `v / r`. -/
-theorem integral_sampleSecondMoment_apply_sub_sq_le [IsProbabilityMeasure μ] [Nonempty ι]
-    {V : ι → Ω → κ → ℝ} {M : Matrix κ κ ℝ} {k l : κ}
-    (hV : ∀ i, MemLp (fun ω ↦ V i ω k * V i ω l) 2 μ)
-    (hmean : ∀ i, ∫ ω, V i ω k * V i ω l ∂μ = M k l)
-    (hindep : Pairwise fun i j ↦ (fun ω ↦ V i ω k * V i ω l) ⟂ᵢ[μ] fun ω ↦ V j ω k * V j ω l)
-    {v : ℝ} (hv : ∀ i, ∫ ω, (V i ω k * V i ω l - M k l) ^ 2 ∂μ ≤ v) :
-    ∫ ω, (sampleSecondMoment (V · ω) k l - M k l) ^ 2 ∂μ ≤ v / Fintype.card ι := by
-  simpa only [sampleSecondMoment_apply, Real.norm_eq_abs, sq_abs] using
-    integral_norm_finiteMean_sub_sq_le_of_forall_le hV hmean hindep
-      (by simpa only [Real.norm_eq_abs, sq_abs] using hv)
-
-end SecondMomentMatrix
 
 end TauCeti

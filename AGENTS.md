@@ -71,8 +71,7 @@ scope do not coincide.
   them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving
   monotonically forward) is machine-validated by the `bump-guard` check and is welcome, but
   never edit the lakefile or move a pin backward. Mathlib's lakefile `rev` must always remain
-  `master`; `lake-manifest.json` alone records the exact commit used by ordinary bumps and
-  first-known-bad repair PRs.
+  `master`; `lake-manifest.json` alone records the exact commit used by dependency bump repair PRs.
 - **Never delete a PR's human-owned changes to get it past the build gate.** When a PR
   *intentionally* touches `scripts/`, `.github/`, or the lakefile (for example, a PR that adds
   a new CI check), those changes are the deliverable, not an obstacle. The gate routes such a

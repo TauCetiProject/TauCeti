@@ -6,19 +6,20 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Contraction
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
-# Scalar extension of linear Hom spaces
+# Scalar extension of linear maps and Hom spaces
 
 The canonical map from `A ⊗[R] Hom_R(M,N)` to `Hom_A(A ⊗[R] M, A ⊗[R] N)` sends
 `a ⊗ f` to `a • f.baseChange A`. It is an equivalence when `M` is finite projective;
 no finiteness condition is needed on `N` or on the commutative value algebra `A`.
 This comparison allows a scalar-extended Hom representation to act on scalar-extended vectors.
 
-The equivalence uses Mathlib's `lTensorHomEquivHomLTensor` and
-`LinearMap.liftBaseChangeEquiv`, following the construction of
-`TauCeti.Module.Dual.baseChangeEvaluationEquiv`.
+When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
+maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
+linear maps after extension of scalars.
 -/
 
 public section
@@ -73,6 +74,8 @@ theorem baseChangeTensorHom_distribBaseChange_symm_tmul
 variable [Module.Finite R M] [Module.Projective R M]
 
 /-- Scalar extension commutes with linear Hom out of a finite projective module. -/
+-- Construct the Hom comparison from Mathlib's `lTensorHomEquivHomLTensor` and
+-- `LinearMap.liftBaseChangeEquiv`, as in `TauCeti.Module.Dual.baseChangeEvaluationEquiv`.
 noncomputable def baseChangeTensorHomEquiv :
     A ⊗[R] (M →ₗ[R] N) ≃ₗ[A] (A ⊗[R] M →ₗ[A] A ⊗[R] N) :=
   LinearEquiv.ofBijective (baseChangeTensorHom R A M N) <| by
@@ -107,5 +110,38 @@ theorem baseChangeTensorHomEquiv_symm_baseChange (f : M →ₗ[R] N) :
         (f.baseChange A) = 1 ⊗ₜ[R] f := by
   apply (baseChangeTensorHomEquiv (R := R) (A := A) (M := M) (N := N)).injective
   simp
+
+end LinearMap
+
+public section
+
+open TensorProduct
+
+namespace LinearMap
+
+universe u v w x
+
+variable {R : Type u} {A : Type v} {M : Type w} {N : Type x}
+variable [CommRing R] [Ring A] [Algebra R A]
+variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+variable [Module.FaithfullyFlat R A]
+
+/-- Over a faithfully flat coefficient algebra, extension of scalars loses no information about a
+linear map: two maps agreeing after extension of scalars are equal.
+
+Mathlib's `LinearMap.baseChangeHom_injective` proves injectivity under the incomparable hypotheses
+that `A` is merely faithful over `R` and that the *target* module `N` is flat over `R`; faithful
+flatness of the coefficient algebra asks nothing of `N`. -/
+theorem baseChange_injective :
+    Function.Injective (baseChange A : (M →ₗ[R] N) → A ⊗[R] M →ₗ[A] A ⊗[R] N) := by
+  intro f g h
+  apply sub_eq_zero.mp
+  apply (Module.FaithfullyFlat.zero_iff_lTensor_zero R A (f - g)).mpr
+  have hTensor : f.lTensor A = g.lTensor A := by
+    apply LinearMap.ext
+    intro z
+    simpa only [← baseChange_eq_ltensor] using DFunLike.congr_fun h z
+  rw [lTensor_sub, hTensor]
+  exact _root_.sub_self (g.lTensor A)
 
 end LinearMap
