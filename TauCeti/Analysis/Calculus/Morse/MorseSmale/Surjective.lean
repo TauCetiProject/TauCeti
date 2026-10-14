@@ -124,8 +124,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
         contribution f hf x T g.1)) = ⊤ := by
   set φ := negativeGradientFlow f hf
   set N : ℝ → E →L[ℝ] E := fun σ ↦ fderiv ℝ (φ (-σ)) (φ σ x)
-  have hφd : ∀ t, Differentiable ℝ (φ t) := fun t ↦
-    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+  have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
   have hγ : Continuous fun σ ↦ φ σ x :=
     (contDiff_negativeGradientFlow f hf hfs).continuous.comp
       (continuous_id.prodMk continuous_const)
@@ -155,7 +154,8 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   set z := φ σ₀ x
   have hgradc : Continuous (∇ f) := (hfs.gradient_right (m := 1) (by norm_num)).continuous
   obtain ⟨ρ, hρ, hρz⟩ := Metric.eventually_nhds_iff.1
-    (hgradc.continuousAt.eventually_ne (gradient_negativeGradientFlow_ne_zero f hf hx σ₀))
+    (hgradc.continuousAt.eventually_ne
+      ((gradient_negativeGradientFlow_eq_zero_iff f hf x σ₀).not.2 hx))
   let θ : ContDiffBump z := ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
   have hθr : θ.rOut = ρ / 2 := rfl
   have hθz : θ z = 1 := θ.one_of_mem_closedBall (Metric.mem_closedBall_self θ.rIn_pos.le)
@@ -216,7 +216,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
       hF (IsIntegralCurve.strictAnti_comp_neg_gradient
         ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
         (fun _ ↦ (hfs.differentiable (by norm_num)) _)
-        (gradient_negativeGradientFlow_ne_zero f hf hx)) hσ₀ (hkey (m σ₀))
+        (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)) hσ₀ (hkey (m σ₀))
     have hθz' : θ (φ σ₀ x) = 1 := hθz
     have hθ'z' : fderiv ℝ θ (φ σ₀ x) = 0 := hθ'z
     simpa [hθz', hθ'z'] using h0
@@ -255,8 +255,7 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
       ((fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf hgc hgs T) (x, 0)).comp
         (ContinuousLinearMap.inr ℝ E _))) :
       EuclideanSpace ℝ (Fin (Module.finrank ℝ (Submodule.span ℝ S))) →L[ℝ] E)
-  have hφd : ∀ t, Differentiable ℝ (φ t) := fun t ↦
-    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+  have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
   -- `Dφ_T(x)` maps the contributions of the family into the range of the parameter derivative.
   have hv : ∀ i, MT (v i) ∈ LinearMap.range L := fun i ↦ by
     refine ⟨-EuclideanSpace.single i 1, ?_⟩

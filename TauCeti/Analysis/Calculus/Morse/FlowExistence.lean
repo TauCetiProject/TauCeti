@@ -35,7 +35,10 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 * `TauCeti.negativeGradientFlow`: the negative gradient flow of a function with globally Lipschitz
   gradient.
 * `TauCeti.contDiff_negativeGradientFlow` and `TauCeti.contDiff_negativeGradientFlow_apply`: for a
-  globally `C²` function, this flow is `C¹` jointly and at each fixed time.
+  globally `C²` function, this flow is `C¹` jointly and at each fixed time
+  (`TauCeti.differentiable_negativeGradientFlow_apply`: each time map is differentiable).
+* `TauCeti.hasDerivAt_fderiv_negativeGradientFlow`: the variational equation
+  `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
   orbits.
@@ -93,6 +96,12 @@ theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith 
   apply contDiff_flowOfLipschitz_apply 0 (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := 1) (by norm_num)).neg
 
+/-- For a globally `C²` function, each time-`t` map of the negative-gradient flow is
+differentiable. -/
+theorem differentiable_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) (t : ℝ) : Differentiable ℝ (negativeGradientFlow f hf t) :=
+  (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+
 /-- **The variational equation of the negative-gradient flow**: for a globally `C²` function,
 `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`. -/
 theorem hasDerivAt_fderiv_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f))
@@ -121,7 +130,7 @@ theorem fderiv_negativeGradientFlow_apply_gradient (f : E → ℝ) (hf : Lipschi
     beta_reduce at this
     rwa [Flow.map_zero_apply] at this
   have := fderiv_flow_apply_of_hasDerivAt (hv x) (hv _)
-    ((contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero x)
+    (differentiable_negativeGradientFlow_apply f hf hfs t x)
   rwa [map_neg, neg_inj] at this
 
 /-- The inverse `Dφ_{-σ}(φ_σ x)` of the derivative of the negative-gradient flow along an orbit is
@@ -129,18 +138,8 @@ continuous in `σ`. -/
 theorem continuous_fderiv_negativeGradientFlow_neg (f : E → ℝ) (hf : LipschitzWith K (∇ f))
     (hfs : ContDiff ℝ 2 f) (x : E) :
     Continuous fun σ ↦
-      fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x) := by
-  have hφd : ∀ t, Differentiable ℝ (negativeGradientFlow f hf t) := fun t ↦
-    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
-  have hinv : ∀ σ, Ring.inverse (fderiv ℝ (negativeGradientFlow f hf σ) x) =
-      fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x) := fun σ ↦
-    ring_inverse_fderiv_flow (hφd _ _) (hφd σ x)
-  simp_rw [← hinv]
-  refine continuous_iff_continuousAt.2 fun σ ↦ ?_
-  let U : (E →L[ℝ] E)ˣ := ⟨_, _, fderiv_flow_comp_neg (hφd (-σ) _) (hφd σ x),
-    fderiv_flow_neg_comp (hφd (-σ) _) (hφd σ x)⟩
-  exact (NormedRing.inverse_continuousAt U).comp_of_eq
-    (hasDerivAt_fderiv_negativeGradientFlow f hf hfs x σ).continuousAt rfl
+      fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x) :=
+  continuous_fderiv_flowOfLipschitz_neg hf.neg (hfs.gradient_right (m := 1) (by norm_num)).neg x
 
 /-- **Every global negative gradient trajectory is an orbit** of the negative gradient flow. -/
 theorem eq_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f)) {γ : ℝ → E}
@@ -201,14 +200,15 @@ theorem forall_negativeGradientFlow_eq_self_iff (f : E → ℝ) (hf : LipschitzW
     (∀ t, negativeGradientFlow f hf t x = x) ↔ ∇ f x = 0 := by
   rw [negativeGradientFlow, forall_flowOfLipschitz_eq_self_iff, neg_eq_zero]
 
-/-- An orbit of the negative-gradient flow through a point that is not critical meets no critical
-point. -/
-theorem gradient_negativeGradientFlow_ne_zero (f : E → ℝ) (hf : LipschitzWith K (∇ f)) {x : E}
-    (hx : ∇ f x ≠ 0) (t : ℝ) : ∇ f (negativeGradientFlow f hf t x) ≠ 0 := by
-  intro h0
+/-- **An orbit meets the critical points only if it is constant**: a point of the orbit of `x`
+under the negative-gradient flow is a zero of `∇ f` exactly when `x` is. -/
+@[simp]
+theorem gradient_negativeGradientFlow_eq_zero_iff (f : E → ℝ) (hf : LipschitzWith K (∇ f))
+    (x : E) (t : ℝ) : ∇ f (negativeGradientFlow f hf t x) = 0 ↔ ∇ f x = 0 := by
+  refine ⟨fun h0 ↦ ?_, fun h0 ↦ by rwa [(forall_negativeGradientFlow_eq_self_iff f hf x).2 h0 t]⟩
   have hfix := (forall_negativeGradientFlow_eq_self_iff f hf _).2 h0 (-t)
   rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at hfix
-  exact hx (hfix ▸ h0)
+  exact hfix ▸ h0
 
 /-- **Lyapunov descent along the negative gradient flow**: a function decreases along any orbit
 on which it is differentiable.  This is the point at which differentiability of `f` is needed, the

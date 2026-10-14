@@ -30,11 +30,13 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz`: the differential form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz_apply`: the differential form applied to a vector.
 * `TauCeti.fderiv_flow_add`, `TauCeti.fderiv_flow_neg_comp`, `TauCeti.fderiv_flow_comp_neg`,
-  `TauCeti.ring_inverse_fderiv_flow`: for a flow whose time maps are differentiable at the relevant
-  points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is invertible with inverse
-  `Dϕ_{-t}(ϕ_t x)`.
+  `TauCeti.fderivFlowUnit`, `TauCeti.ringInverse_fderiv_flow`: for a flow whose time maps are
+  differentiable at the relevant points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
+  invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
 * `TauCeti.fderiv_flow_apply_of_hasDerivAt`: the derivative of a flow carries its velocity field
   along.
+* `TauCeti.continuous_fderiv_flowOfLipschitz`, `TauCeti.continuous_fderiv_flowOfLipschitz_neg`:
+  for a `C¹` field, `τ ↦ Dφ_τ(x)` and its inverse `σ ↦ Dφ_{-σ}(φ_σ x)` are continuous.
 -/
 
 public section
@@ -63,7 +65,7 @@ theorem differentiable_flowOfLipschitz_apply (t : ℝ) :
     (by norm_num)
 
 /-- The derivative of the time-`τ` map at a fixed point is continuous in `τ`. -/
-private theorem continuous_fderiv_flowOfLipschitz (x : E) :
+theorem continuous_fderiv_flowOfLipschitz (x : E) :
     Continuous fun τ : ℝ ↦ fderiv ℝ (flowOfLipschitz v hv τ) x := by
   have hG := contDiff_uncurry_flowOfLipschitz hv hvs
   have heq : ∀ τ : ℝ, fderiv ℝ (flowOfLipschitz v hv τ) x =
@@ -188,13 +190,34 @@ theorem fderiv_flow_apply_fderiv_flow_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (
     fderiv ℝ (ϕ t) x (fderiv ℝ (ϕ (-t)) (ϕ t x) w) = w :=
   congrArg (· w) (fderiv_flow_comp_neg hs ht)
 
+/-- **The derivative of a flow as a unit.** When the time-`t` map is differentiable at `x` and the
+time-`(-t)` map at `ϕ t x`, the derivative `Dϕ_t(x)` is invertible, with inverse
+`Dϕ_{-t}(ϕ_t x)`. -/
+noncomputable def fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+    (ht : DifferentiableAt ℝ (ϕ t) x) : (E →L[ℝ] E)ˣ :=
+  ⟨_, _, fderiv_flow_comp_neg hs ht, fderiv_flow_neg_comp hs ht⟩
+
+omit [CompleteSpace E] in
+@[simp]
+theorem coe_fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+    (ht : DifferentiableAt ℝ (ϕ t) x) :
+    (fderivFlowUnit hs ht : E →L[ℝ] E) = fderiv ℝ (ϕ t) x :=
+  (rfl)
+
+omit [CompleteSpace E] in
+@[simp]
+theorem coe_inv_fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+    (ht : DifferentiableAt ℝ (ϕ t) x) :
+    ((fderivFlowUnit hs ht)⁻¹ : (E →L[ℝ] E)ˣ) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
+  (rfl)
+
 omit [CompleteSpace E] in
 /-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. -/
 @[simp]
-theorem ring_inverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+theorem ringInverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
-  Ring.inverse_unit ⟨_, _, fderiv_flow_comp_neg hs ht, fderiv_flow_neg_comp hs ht⟩
+  Ring.inverse_unit (fderivFlowUnit hs ht)
 
 omit [CompleteSpace E] in
 /-- **The derivative of a flow carries its velocity field along**: if the orbits of `x` and of
@@ -210,5 +233,27 @@ theorem fderiv_flow_apply_of_hasDerivAt {a b : E} (hx : HasDerivAt (fun s ↦ ϕ
   exact h1.unique hy
 
 end Composition
+
+section Inverse
+
+variable (hv : LipschitzWith K v) (hvs : ContDiff ℝ 1 v)
+
+include hvs
+
+/-- **The inverse derivative along an orbit is continuous**: for a globally Lipschitz `C¹` field,
+`σ ↦ Dφ_{-σ}(φ_σ x)`, the inverse of `Dφ_σ(x)`, is continuous. -/
+theorem continuous_fderiv_flowOfLipschitz_neg (x : E) :
+    Continuous fun σ ↦ fderiv ℝ (flowOfLipschitz v hv (-σ)) (flowOfLipschitz v hv σ x) := by
+  have hd := differentiable_flowOfLipschitz_apply hv hvs
+  have hinv : ∀ σ, Ring.inverse (fderiv ℝ (flowOfLipschitz v hv σ) x) =
+      fderiv ℝ (flowOfLipschitz v hv (-σ)) (flowOfLipschitz v hv σ x) := fun σ ↦
+    ringInverse_fderiv_flow (hd _ _) (hd σ x)
+  simp_rw [← hinv]
+  refine continuous_iff_continuousAt.2 fun σ ↦ ?_
+  have hU := NormedRing.inverse_continuousAt (fderivFlowUnit (hd (-σ) _) (hd σ x))
+  rw [coe_fderivFlowUnit] at hU
+  exact hU.comp_of_eq (continuous_fderiv_flowOfLipschitz hv hvs x).continuousAt rfl
+
+end Inverse
 
 end TauCeti
