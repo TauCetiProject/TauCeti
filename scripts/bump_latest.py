@@ -12,12 +12,11 @@ import tempfile
 from pathlib import Path
 
 from bump_manifest import problems
-from pr_status.core import automatic_bump
+from pr_status.core import KEEP_LABELS, automatic_bump
 
 REPO = "TauCetiProject/TauCeti"
 MATHLIB = "leanprover-community/mathlib4"
 BOT = "tauceti-review-bot[bot]"
-HOLD = {"keep", "hold", "wip", "human", "do-not-close"}
 
 
 def command(args, *, cwd=None, env=None, combined=False):
@@ -74,7 +73,7 @@ def bump_state(current, prs):
     """A held PR is left alone; otherwise only an obsolete target may be closed."""
     active, obsolete = [], []
     for pr in prs:
-        if pr.get("draft") or {p["name"].lower() for p in pr.get("labels", [])} & HOLD:
+        if pr.get("draft") or {p["name"].lower() for p in pr.get("labels", [])} & KEEP_LABELS:
             active.append(pr)
             continue
         data = api(f"repos/{REPO}/contents/lake-manifest.json?ref={sha(pr['head']['sha'])}")

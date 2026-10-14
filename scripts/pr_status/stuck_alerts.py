@@ -13,8 +13,8 @@ alerted" list below for ordinary backlog that does not belong here.
 
 Detectors (each names the infra failure it implies):
 
-  2. stale-pin       main's pinned mathlib commit is over three days old. Bumps may
-                     be stalled or advancing too slowly through old incompatibilities;
+  2. stale-pin       main's pinned mathlib commit is over three days old. The active
+                     fixed-target bump has not landed yet, or update.yml is failing;
                      recent manifest edits do not restore freshness.
   3. stranded-pr     A PR that is in-scope (TauCeti/ + allowed roots, bump-guard
                      green for any pin change), `build` green, every blocking

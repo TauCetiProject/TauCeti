@@ -18,6 +18,7 @@ import threading
 import time
 
 REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
+KEEP_LABELS = {"keep", "hold", "wip", "human", "do-not-close"}
 
 
 def automatic_bump(pr, *, repo=None):

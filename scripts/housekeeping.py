@@ -87,7 +87,7 @@ TARGET_ID_RE = re.compile(r'"id"\s*:\s*"([^"]+)"')
 # (lifetime review passes) and `states` (per-rubric verdict). A rubric `state` not in {green, stale} is
 # blocking ("stale" is a prior approval carried forward, not a block).
 NONBLOCKING_STATES = {"green", "stale"}
-KEEP_LABELS = {"keep", "hold", "wip", "human", "do-not-close"}
+KEEP_LABELS = core.KEEP_LABELS
 BUDGET_COMMENT = (
     "Closing automatically: this PR was reviewed to the round cap without reaching an all-green review, "
     "so the queue housekeeping is retiring it to keep things moving. The branch is kept, so nothing is "
