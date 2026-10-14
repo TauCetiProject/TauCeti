@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.ContDiff.Support
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Extending finite-dimensional smooth germs
@@ -39,8 +39,14 @@ theorem ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact [FiniteDimensional 
     ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ tsupport g ⊆ U ∧
       ∀ x ∈ K, g =ᶠ[nhds x] f := by
   obtain ⟨ψ, hψ, -, hψone, hψcpt, hψsupp⟩ := hK.exists_contDiff_cutoff hU hKU
-  refine ⟨fun x ↦ ψ x • f x, (hψ.of_le (by simp)).smul_of_tsupport_subset hf hU hψsupp,
-    hψcpt.smul_right, (tsupport_smul_subset_left ψ f).trans hψsupp, ?_⟩
+  have hg : ContDiff ℝ n (fun x ↦ ψ x • f x) := by
+    apply ContMDiff.contDiff
+    refine contMDiff_of_tsupport fun x hx ↦ ?_
+    have hxU : x ∈ U := hψsupp (tsupport_smul_subset_left ψ f hx)
+    exact ((hψ.of_le (by simp)).contDiffAt.smul
+      ((hf x hxU).contDiffAt (hU.mem_nhds hxU))).contMDiffAt
+  refine ⟨fun x ↦ ψ x • f x, hg, hψcpt.smul_right,
+    (tsupport_smul_subset_left ψ f).trans hψsupp, ?_⟩
   intro x hx
   filter_upwards [isOpen_interior.mem_nhds (hψone hx)] with y hy
   have hone : ψ y = 1 := by
