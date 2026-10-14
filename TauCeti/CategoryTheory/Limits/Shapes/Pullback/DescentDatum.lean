@@ -48,6 +48,9 @@ construct.
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
   `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`, with the morphism
   `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`.
+* `TauCeti.DescentDatum.baseChangePullbackAlongHom p q X₀`: the isomorphism from the canonical
+  descent datum on the base change of `X₀ ×_S T` along `T ×_S S' ⟶ T` to the base change along
+  `q : T ⟶ S` of the canonical descent datum on `X₀ ×_S S'`.
 * `TauCeti.DescentDatum.transportArrow e D`: the descent datum relative to `q` obtained from a
   descent datum `D` relative to `p` along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q`,
   functorial on morphisms, inverse to transport along `e.symm` (`transportArrowSymmHom`), and
@@ -59,6 +62,8 @@ Effectivity is invariant under isomorphisms of arrows
 (`TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_transportArrow`), so an effectivity theorem
 proved for a normal form of `p`, such as `Spec` of a ring map, applies to every arrow isomorphic
 to it.
+Effectivity is also stable under base change along any `q : T ⟶ S`
+(`TauCeti.DescentDatum.exists_baseChange_hom_isIso_pullbackAlong`).
 
 ## References
 
@@ -523,6 +528,102 @@ variable (p) in
 theorem baseChangeHom_comp {X Y Z : Over S} (f : X ⟶ Y) (g : Y ⟶ Z) :
     baseChangeHom p (f ≫ g) = (baseChangeHom p g).comp (baseChangeHom p f) :=
   Hom.ext ((Over.pullback p).map_comp f g)
+
+section PullbackBaseChange
+
+variable {T : C} (q : T ⟶ S)
+
+/-- The underlying isomorphism of `baseChangePullbackAlongHom`: on points it sends
+`((x, t), (t, s))` to `((x, s), (t, s))`. Both sides are identified with `X₀ ×_S (T ×_S S')` by
+pasting pullback squares. -/
+private noncomputable def baseChangePullbackAlongIso (X₀ : Over S) :
+    pullback (pullback.snd X₀.hom q) (pullback.fst q p) ≅
+      pullback (pullback.snd X₀.hom p) (pullback.snd q p) :=
+  pullbackLeftPullbackSndIso X₀.hom q (pullback.fst q p) ≪≫
+    pullback.congrHom rfl pullback.condition ≪≫
+    (pullbackLeftPullbackSndIso X₀.hom p (pullback.snd q p)).symm
+
+variable (p) in
+/-- Base change of canonical descent data: for `X₀` over `S` and `q : T ⟶ S`, the canonical
+descent datum on the base change of `X₀ ×_S T` along `T ×_S S' ⟶ T` is isomorphic
+(`isIso_baseChangePullbackAlongHom_hom`) to the base change along `q` of the canonical descent
+datum on `X₀ ×_S S'`. -/
+noncomputable def baseChangePullbackAlongHom (X₀ : Over S) :
+    Hom (baseChange (pullback.fst q p) ((Over.pullback q).obj X₀))
+      ((baseChange p X₀).pullbackAlong q) where
+  hom := (Over.isoMk (baseChangePullbackAlongIso q X₀)
+    (by simp [baseChangePullbackAlongIso])).hom
+  map_act := by
+    -- The characteristic lemmas of the two actions, with `Over.pullback` unfolded to the
+    -- `pullback` projections in which the goal is stated.
+    have h₁ := @pullbackAlong_act_fst_assoc _ _ _ _ _ p _ q _ (baseChange p X₀)
+    have h₂ := pullbackAlong_act_snd q (baseChange p X₀)
+    have h₃ := @pullbackAlongActionComparison_snd_assoc _ _ _ _ _ p _ q ((Over.pullback p).obj X₀)
+    have h₄ := pullbackAlongActionComparison_fst (p := p) q ((Over.pullback p).obj X₀)
+    have h₅ := @baseChange_act_fst_assoc _ _ _ _ _ (pullback.fst q p) ((Over.pullback q).obj X₀)
+    have h₆ := @baseChange_act_snd_assoc _ _ _ _ _ (pullback.fst q p) ((Over.pullback q).obj X₀)
+    have h₇ := baseChange_act_snd (pullback.fst q p) ((Over.pullback q).obj X₀)
+    simp only [Over.pullback_obj_hom, Over.pullback_obj_left] at h₁ h₂ h₃ h₄ h₅ h₆ h₇ ⊢
+    refine pullback.hom_ext (pullback.hom_ext ?_ ?_) ?_
+    · simp [baseChangePullbackAlongIso, h₁, h₃, h₅]
+    · simp [baseChangePullbackAlongIso, h₁, h₄, h₆]
+    · simp [baseChangePullbackAlongIso, h₂, h₇]
+
+variable (p) in
+/-- The comparison `baseChangePullbackAlongHom` keeps the point of `X₀`. -/
+@[reassoc (attr := simp)]
+theorem baseChangePullbackAlongHom_hom_left_fst_fst (X₀ : Over S) :
+    (baseChangePullbackAlongHom p q X₀).hom.left ≫
+        pullback.fst (pullback.snd X₀.hom p) (pullback.snd q p) ≫ pullback.fst X₀.hom p =
+      pullback.fst (pullback.snd X₀.hom q) (pullback.fst q p) ≫ pullback.fst X₀.hom q := by
+  simp [baseChangePullbackAlongHom, baseChangePullbackAlongIso]
+
+variable (p) in
+/-- The comparison `baseChangePullbackAlongHom` keeps the point of `S'`. -/
+@[reassoc (attr := simp)]
+theorem baseChangePullbackAlongHom_hom_left_fst_snd (X₀ : Over S) :
+    (baseChangePullbackAlongHom p q X₀).hom.left ≫
+        pullback.fst (pullback.snd X₀.hom p) (pullback.snd q p) ≫ pullback.snd X₀.hom p =
+      pullback.snd (pullback.snd X₀.hom q) (pullback.fst q p) ≫ pullback.snd q p := by
+  simp [baseChangePullbackAlongHom, baseChangePullbackAlongIso]
+
+variable (p) in
+/-- The comparison `baseChangePullbackAlongHom` lies over `T ×_S S'`. -/
+@[reassoc (attr := simp)]
+theorem baseChangePullbackAlongHom_hom_left_snd (X₀ : Over S) :
+    (baseChangePullbackAlongHom p q X₀).hom.left ≫
+        pullback.snd (pullback.snd X₀.hom p) (pullback.snd q p) =
+      pullback.snd (pullback.snd X₀.hom q) (pullback.fst q p) := by
+  simp [baseChangePullbackAlongHom, baseChangePullbackAlongIso]
+
+variable (p) in
+/-- The comparison `baseChangePullbackAlongHom` is an isomorphism of descent data. -/
+instance isIso_baseChangePullbackAlongHom_hom (X₀ : Over S) :
+    IsIso (baseChangePullbackAlongHom p q X₀).hom := by
+  rw [baseChangePullbackAlongHom]
+  infer_instance
+
+variable (p) in
+/-- The comparison `baseChangePullbackAlongHom` is natural in the object over `S`. -/
+theorem baseChangePullbackAlongHom_naturality {X₀ Y₀ : Over S} (g : X₀ ⟶ Y₀) :
+    (baseChangePullbackAlongHom p q Y₀).comp
+        (baseChangeHom (pullback.fst q p) ((Over.pullback q).map g)) =
+      ((baseChangeHom p g).pullbackAlong q).comp (baseChangePullbackAlongHom p q X₀) := by
+  ext
+  refine pullback.hom_ext (pullback.hom_ext ?_ ?_) ?_ <;> simp
+
+/-- **Effectivity is stable under base change.** If `D` is isomorphic to the canonical descent
+datum on the base change of `X₀` along `p`, then for every `q : T ⟶ S` the base-changed datum
+`D.pullbackAlong q` is isomorphic to the canonical descent datum on the base change of
+`X₀ ×_S T` along `T ×_S S' ⟶ T`. -/
+theorem exists_baseChange_hom_isIso_pullbackAlong {X : Over S'} {D : DescentDatum p X}
+    {X₀ : Over S} (f : Hom (baseChange p X₀) D) [IsIso f.hom] :
+    ∃ g : Hom (baseChange (pullback.fst q p) ((Over.pullback q).obj X₀)) (D.pullbackAlong q),
+      IsIso g.hom :=
+  ⟨(f.pullbackAlong q).comp (baseChangePullbackAlongHom p q X₀),
+    by simp only [Hom.comp_hom]; infer_instance⟩
+
+end PullbackBaseChange
 
 section ArrowIso
 
