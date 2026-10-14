@@ -77,9 +77,8 @@ private theorem sIntegerResidue_eq (I : Ideal R)
     (hb : b - 1 ∈ I) (hab : algebraMap R K a = algebraMap R K b * (x : K)) :
     sIntegerResidue I x = Ideal.Quotient.mk I a := by
   obtain ⟨a', b', hb', hab', hr⟩ := exists_sIntegerResidue_eq I x
-  have hmk {y : R} (hy : y - 1 ∈ I) : Ideal.Quotient.mk I y = 1 := by
-    rw [← map_one (Ideal.Quotient.mk I)]
-    exact Ideal.Quotient.eq.mpr hy
+  have hmk {y : R} (hy : y - 1 ∈ I) : Ideal.Quotient.mk I y = 1 :=
+    (Ideal.Quotient.mk_eq_one_iff_sub_mem _).mpr hy
   have key : a * b' = a' * b :=
     IsFractionRing.injective R K (by rw [map_mul, map_mul, hab, hab']; ring)
   have h := congrArg (Ideal.Quotient.mk I) key
@@ -99,24 +98,20 @@ def sIntegerToQuotient (I : Ideal R) :
     obtain ⟨a, b, hb, hab, hr⟩ := exists_sIntegerResidue_eq I x
     obtain ⟨c, d, hd, hcd, hs⟩ := exists_sIntegerResidue_eq I y
     have hbd : b * d - 1 ∈ I := by
-      have heq : b * d - 1 = (b - 1) * d + (d - 1) := by ring
-      rw [heq]
-      exact I.add_mem (I.mul_mem_right _ hb) hd
+      simpa using I.mul_sub_mul_mem hb hd
     rw [sIntegerResidue_eq I (x + y) (a := a * d + c * b) (b := b * d) hbd
       (by simp only [map_add, map_mul, Subalgebra.coe_add, hab, hcd]; ring),
       map_add, map_mul, map_mul, ← hr, ← hs]
-    have hbm : Ideal.Quotient.mk I b = 1 := by
-      simpa using (Ideal.Quotient.eq.mpr hb : Ideal.Quotient.mk I b = Ideal.Quotient.mk I 1)
-    have hdm : Ideal.Quotient.mk I d = 1 := by
-      simpa using (Ideal.Quotient.eq.mpr hd : Ideal.Quotient.mk I d = Ideal.Quotient.mk I 1)
+    have hbm : Ideal.Quotient.mk I b = 1 :=
+      (Ideal.Quotient.mk_eq_one_iff_sub_mem _).mpr hb
+    have hdm : Ideal.Quotient.mk I d = 1 :=
+      (Ideal.Quotient.mk_eq_one_iff_sub_mem _).mpr hd
     simp [hbm, hdm]
   map_mul' x y := by
     obtain ⟨a, b, hb, hab, hr⟩ := exists_sIntegerResidue_eq I x
     obtain ⟨c, d, hd, hcd, hs⟩ := exists_sIntegerResidue_eq I y
     have hbd : b * d - 1 ∈ I := by
-      have heq : b * d - 1 = (b - 1) * d + (d - 1) := by ring
-      rw [heq]
-      exact I.add_mem (I.mul_mem_right _ hb) hd
+      simpa using I.mul_sub_mul_mem hb hd
     rw [sIntegerResidue_eq I (x * y) (a := a * c) (b := b * d) hbd
       (by simp only [map_mul, Subalgebra.coe_mul, hab, hcd]; ring), map_mul, hr, hs]
 
@@ -146,26 +141,13 @@ theorem sIntegerToQuotient_surjective (I : Ideal R) :
 theorem ker_sIntegerToQuotient (I : Ideal R) :
     RingHom.ker (I.sIntegerToQuotient (K := K)) = Ideal.map
       (algebraMap R (({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K)) I := by
-  let A := ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K
-  let f := algebraMap R A
-  have hle : Ideal.map f I ≤ RingHom.ker (I.sIntegerToQuotient (K := K)) := by
-    apply Ideal.map_le_iff_le_comap.mpr
-    intro a ha
-    simpa only [f, A, Ideal.mem_comap, RingHom.mem_ker, sIntegerToQuotient_algebraMap,
-      Ideal.Quotient.eq_zero_iff_mem] using ha
-  refine le_antisymm (fun x hx ↦ ?_) hle
-  obtain ⟨a, b, hb, hab, -⟩ := exists_sIntegerResidue_eq I x
-  have ha : a ∈ I := by
-    rw [RingHom.mem_ker, I.sIntegerToQuotient_eq x hb hab,
-      Ideal.Quotient.eq_zero_iff_mem] at hx
-    exact hx
-  have habA : f a = f b * x := Subtype.ext (by simpa [f] using hab)
-  have hax : f b * x ∈ Ideal.map f I := habA ▸ Ideal.mem_map_of_mem f ha
-  have hbx : (f b - 1) * x ∈ Ideal.map f I := by
-    rw [← map_one f, ← map_sub]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem f hb)
-  have heq : f b * x - (f b - 1) * x = x := by ring
-  exact heq ▸ Ideal.sub_mem _ hax hbx
+  have hcomap : Ideal.comap
+      (algebraMap R (({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K))
+      (RingHom.ker (I.sIntegerToQuotient (K := K))) = I := by
+    ext a
+    simp only [Ideal.mem_comap, RingHom.mem_ker, sIntegerToQuotient_algebraMap,
+      Ideal.Quotient.eq_zero_iff_mem]
+  rw [← integer_map_comap_eq K _ (RingHom.ker (I.sIntegerToQuotient (K := K))), hcomap]
 
 /-- Every residue unit lifts to a unit of the locally integral ring.
 The lift need not be a unit of the base ring. -/
