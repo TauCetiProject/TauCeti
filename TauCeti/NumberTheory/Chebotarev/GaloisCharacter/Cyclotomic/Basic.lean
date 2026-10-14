@@ -80,6 +80,14 @@ theorem mem_cyclotomicModulus_support_iff {v : HeightOneSpectrum (𝓞 K)} :
     v ∈ (cyclotomicModulus K m).support ↔ (m : 𝓞 K) ∈ v.asIdeal := by
   rw [Modulus.mem_support_iff, cyclotomicModulus_finitePart, Ideal.dvd_span_singleton]
 
+/-- The cyclotomic modulus of level `m` divides that of every multiple `n` of `m`. -/
+theorem cyclotomicModulus_dvd_cyclotomicModulus {n : ℕ} [NeZero n] (h : m ∣ n) :
+    cyclotomicModulus K m ∣ cyclotomicModulus K n :=
+  Modulus.dvd_iff.mpr ⟨by
+    rw [cyclotomicModulus_finitePart, cyclotomicModulus_finitePart,
+      Ideal.span_singleton_dvd_span_singleton_iff_dvd]
+    exact Nat.cast_dvd_cast h, fun w _ ↦ mem_cyclotomicModulus_infinitePart K n w⟩
+
 /-- A height-one prime is prime to the cyclotomic modulus exactly when it does not divide `m`. -/
 theorem asIdeal_mem_integralIdealsPrimeTo_cyclotomicModulus_iff {v : HeightOneSpectrum (𝓞 K)} :
     v.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m) ↔ (m : 𝓞 K) ∉ v.asIdeal :=
