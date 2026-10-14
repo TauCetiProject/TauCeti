@@ -124,12 +124,6 @@ theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional �
     mul_le_mul_of_nonneg_left hw' (sq_nonneg ‖U.starProjection v‖),
     pow_le_pow_left₀ (by positivity) hinner 2]
 
-/-- A vector differs from its orthogonal projection onto `U` by a vector of `Uᗮ`; this is
-`Submodule.sub_starProjection_mem_orthogonal` with the difference taken the other way. -/
-theorem starProjection_sub_mem_orthogonal (v : E) : U.starProjection v - v ∈ Uᗮ := by
-  rw [← neg_mem_iff, neg_sub]
-  exact U.sub_starProjection_mem_orthogonal v
-
 /-- A vector whose norm is at most that of its orthogonal projection onto `U` is that projection,
 since the projection never increases the norm and only fixes the norm of vectors of `U`. -/
 theorem eq_starProjection_of_norm_le {w : E} (hw : ‖w‖ ≤ ‖U.starProjection w‖) :
@@ -146,7 +140,7 @@ theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :
     rw [norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero v w
       (inner_right_of_mem_orthogonal hv hw)]
     exact le_add_of_nonneg_right (mul_self_nonneg _)
-  · have hle := h _ (U.starProjection_sub_mem_orthogonal v)
+  · have hle := h _ (sub_mem_comm_iff.1 (U.sub_starProjection_mem_orthogonal v))
     rw [add_sub_cancel] at hle
     rw [U.eq_starProjection_of_norm_le hle]
     exact U.starProjection_apply_mem v

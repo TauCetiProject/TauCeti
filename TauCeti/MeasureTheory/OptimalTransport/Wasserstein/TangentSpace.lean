@@ -211,7 +211,8 @@ theorem integral_fderiv_starProjection_wassersteinTangentSpace (v : Lp E 2 μ) {
     ∫ x, fderiv ℝ φ x ((wassersteinTangentSpace μ).starProjection v x) ∂μ =
       ∫ x, fderiv ℝ φ x (v x) ∂μ :=
   sub_mem_orthogonal_wassersteinTangentSpace_iff.1
-    ((wassersteinTangentSpace μ).starProjection_sub_mem_orthogonal v) φ hφ hφc
+    (sub_mem_comm_iff.1 ((wassersteinTangentSpace μ).sub_starProjection_mem_orthogonal v))
+    φ hφ hφc
 
 /-- The orthogonal projection of a field `v` onto the tangent space is the unique tangent field
 with the divergence of `v`. -/
@@ -222,7 +223,8 @@ theorem starProjection_wassersteinTangentSpace_eq_iff {u v : Lp E 2 μ} :
   rw [← sub_mem_orthogonal_wassersteinTangentSpace_iff]
   refine ⟨?_, fun ⟨hu, huv⟩ ↦ ?_⟩
   · rintro rfl
-    exact ⟨Submodule.starProjection_apply_mem _ _, Submodule.starProjection_sub_mem_orthogonal _ _⟩
+    exact ⟨Submodule.starProjection_apply_mem _ _,
+      sub_mem_comm_iff.1 (Submodule.sub_starProjection_mem_orthogonal _)⟩
   · exact Submodule.eq_starProjection_of_mem_orthogonal' hu (neg_mem huv) (by abel)
 
 /-- The projection of a field onto the tangent space depends only on its divergence. -/
