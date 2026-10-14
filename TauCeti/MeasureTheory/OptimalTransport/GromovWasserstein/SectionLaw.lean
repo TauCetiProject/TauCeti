@@ -57,6 +57,8 @@ inequality needs no measurability of the section-law distance.
   `TauCeti.aemeasurable_kernelSectionLawWassersteinSpace` — for a kernel of finite `p`-size, the
   section-law map agrees almost everywhere with the section laws and is almost everywhere
   measurable;
+* `TauCeti.kernelSectionLawWassersteinSpace_ae_eq_of_memLp` — for a kernel of finite `p`-size,
+  the section-law map does not depend on its Dirac default up to almost-everywhere equality;
 * `TauCeti.eLpNorm_kernelSectionLawEDist_le_gromovWassersteinDistortion` — the `Lᵖ(π)` norm of the
   section-law distance is at most the distortion of the coupling `π`;
 * `TauCeti.iInf_eLpNorm_kernelSectionLawEDist_le_gromovWassersteinEDist` — the section-law lower
@@ -354,6 +356,18 @@ theorem coe_kernelSectionLawWassersteinSpace_ae_eq (hp0 : p ≠ 0) (hp : p ≠ �
       =ᵐ[μ] kernelSectionLaw μ ω := by
   filter_upwards [ae_hasFiniteMoment_kernelSectionLaw hp0 hp hω hm] with x hx
   exact coe_kernelSectionLawWassersteinSpace_of_hasFiniteMoment hx
+
+/-- For a kernel of finite `p`-size, `0 < p < ∞`, the section-law map does not depend on the
+default `z₀` up to almost-everywhere equality: changing the Dirac default changes it only on a
+null set. -/
+theorem kernelSectionLawWassersteinSpace_ae_eq_of_memLp (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hω : AEMeasurable ω (μ.prod μ)) {z : Z} (hm : MemLp (fun q ↦ edist (ω q) z) p (μ.prod μ))
+    (z₀ z₁ : Z) :
+    kernelSectionLawWassersteinSpace p μ ω z₀ =ᵐ[μ] kernelSectionLawWassersteinSpace p μ ω z₁ := by
+  filter_upwards [ae_hasFiniteMoment_kernelSectionLaw hp0 hp hω hm] with x hx
+  ext1
+  simp only [coe_kernelSectionLawWassersteinSpace, hx, ↓reduceIte]
+  rfl
 
 /-- For a finite exponent `0 < p < ∞`, the section-law map of a measurable kernel is measurable. -/
 theorem measurable_kernelSectionLawWassersteinSpace (hp0 : p ≠ 0) (hp : p ≠ ∞)
