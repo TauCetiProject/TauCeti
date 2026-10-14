@@ -368,6 +368,13 @@ instance : TotallySeparatedSpace (Field.absoluteGaloisGroup K) :=
 -- the two instances above are what make the profinite group object available
 example : ProfiniteGrp := ProfiniteGrp.of (Field.absoluteGaloisGroup K)
 
+/-- A natural number invertible in `K` is nonzero in `Kˢ`, so that results over `Kˢ` needing
+`(m : Kˢ) ≠ 0` apply. -/
+theorem _root_.IsUnit.natCast_separableClosure_ne_zero {K : Type*} [Field K] {m : ℕ}
+    (hm : IsUnit (m : K)) : (m : SeparableClosure K) ≠ 0 := by
+  rw [← map_natCast (algebraMap K (SeparableClosure K))]
+  exact (map_ne_zero _).2 hm.ne_zero
+
 /-- The absolute Galois group of a separably closed field is trivial. -/
 instance [IsSepClosed K] : Subsingleton (AbsoluteGaloisGroup K) := by
   have hbot : separableClosure K (AlgebraicClosure K) = ⊥ :=

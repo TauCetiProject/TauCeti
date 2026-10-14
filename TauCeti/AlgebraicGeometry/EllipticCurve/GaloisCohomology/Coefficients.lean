@@ -226,13 +226,6 @@ theorem torsionCoeffIncl_apply {m : ℕ} (P : W.TorsionCoeff m) :
     W.torsionCoeffIncl m P = (P : W.PointCoeff) :=
   (rfl)
 
-/-- A natural number invertible in `K` is nonzero in `Kˢ`, as the results over `Kˢ` that this file
-applies require. -/
-theorem _root_.IsUnit.natCast_separableClosure_ne_zero {m : ℕ} (hm : IsUnit (m : K)) :
-    (m : SeparableClosure K) ≠ 0 := by
-  rw [← map_natCast (algebraMap K (SeparableClosure K))]
-  exact (map_ne_zero _).2 hm.ne_zero
-
 open scoped Classical in
 /-- **`E(Kˢ)[m]` has `m²` points** when `m` is invertible in `K`. -/
 theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
