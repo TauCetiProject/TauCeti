@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
-public import TauCeti.Algebra.Bialgebra.TensorProduct
 
 /-!
 # Comultiplication as a convolution product
@@ -108,10 +107,10 @@ identity `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight` rather th
 theorem toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
     (phi : H ⊗[R] H →ₐ[R] A) :
     toConv (phi.comp (Bialgebra.comulAlgHom R H)) =
-      toConv (phi.comp (Bialgebra.TensorProduct.includeLeft
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom) *
-      toConv (phi.comp (Bialgebra.TensorProduct.includeRight
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom) := by
+      toConv (phi.comp (Algebra.TensorProduct.includeLeft
+        (R := R) (A := H) (B := H))) *
+      toConv (phi.comp (Algebra.TensorProduct.includeRight
+        (R := R) (A := H) (B := H))) := by
   apply WithConv.ofConv_injective
   apply AlgHom.toLinearMap_injective
   apply WithConv.toConv_injective
@@ -123,8 +122,7 @@ theorem toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
             (R := R) (A := H) (B := H)).toLinearMap).ofConv := by
     rw [← Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H)]
     simp
-  simp only [AlgHom.comp_toLinearMap, Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom, hcomul]
+  simp only [AlgHom.comp_toLinearMap, hcomul]
   exact congrArg WithConv.toConv (LinearMap.algHom_comp_convMul_distrib phi _ _)
 
 end Semiring
@@ -136,17 +134,15 @@ two canonical tensor-factor points. This is the algebra-hom form of
 `Coalgebra.comul_eq_convMul_includeLeft_includeRight`. -/
 theorem comulPoint_eq_include_mul :
     toConv (Bialgebra.comulAlgHom R H) =
-      toConv (Bialgebra.TensorProduct.includeLeft
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom *
-      toConv (Bialgebra.TensorProduct.includeRight
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom := by
+      toConv (Algebra.TensorProduct.includeLeft
+        (R := R) (A := H) (B := H)) *
+      toConv (Algebra.TensorProduct.includeRight
+        (R := R) (A := H) (B := H)) := by
   apply WithConv.ofConv_injective
   apply AlgHom.toLinearMap_injective
   apply WithConv.toConv_injective
   rw [AlgHom.toLinearMap_convMul]
-  simpa only [Bialgebra.toLinearMap_comulAlgHom,
-    Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom] using
+  simpa only [Bialgebra.toLinearMap_comulAlgHom] using
       (Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H))
 
 end Bialgebra

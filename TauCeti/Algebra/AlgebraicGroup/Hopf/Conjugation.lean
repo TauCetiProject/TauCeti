@@ -246,12 +246,6 @@ private theorem toConv_assoc_comp_map_comul_comp_includeLeft :
     simp only [up, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
   rw [hfactor, Bialgebra.toConv_comp_comulAlgHom]
   congr 1
-  · apply congrArg WithConv.toConv
-    ext h
-    simp [up, Algebra.TensorProduct.one_def]
-  · apply congrArg WithConv.toConv
-    ext h
-    simp [up]
 
 /-- The coordinate morphism of left conjugation satisfies the action-associativity law.
 

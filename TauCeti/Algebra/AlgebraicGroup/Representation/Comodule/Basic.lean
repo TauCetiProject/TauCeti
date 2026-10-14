@@ -381,19 +381,19 @@ private theorem recoveredCoaction_counit
   exact counit_rTensor_universalGeneratorDown Theta v
 
 private noncomputable abbrev includeLeftAlgHom : H →ₐ[R] H ⊗[R] H :=
-  (Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+  (Algebra.TensorProduct.includeLeft (R := R) (A := H) (B := H))
 
 private noncomputable abbrev includeRightAlgHom : H →ₐ[R] H ⊗[R] H :=
-  (Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+  (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H))
 
 private theorem includeRight_mul_includeLeft (a b : H) :
     includeRightAlgHom (R := R) (H := H) a *
         includeLeftAlgHom (R := R) (H := H) b =
       b ⊗ₜ[R] a := by
   have hleft : includeLeftAlgHom (R := R) (H := H) b = b ⊗ₜ[R] 1 :=
-    Bialgebra.TensorProduct.includeLeft_apply b
+    Algebra.TensorProduct.includeLeft_apply b
   have hright : includeRightAlgHom (R := R) (H := H) a = 1 ⊗ₜ[R] a :=
-    Bialgebra.TensorProduct.includeRight_apply a
+    Algebra.TensorProduct.includeRight_apply a
   rw [hleft, hright, Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_one]
 
 private noncomputable def liftedIncludeLeftAlgHom (_V : Type w) :
