@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
 public import TauCeti.NumberTheory.RamificationInertia.HilbertTheory.IntermediateRing
 
 /-!
