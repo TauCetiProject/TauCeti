@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 
+import Mathlib.RingTheory.HopfAlgebra.Quotient
+
 /-!
 # Hopf algebra morphisms
 
@@ -59,8 +61,7 @@ theorem coe_comp_antipode (φ : F) :
             (toConv (HopfAlgebra.antipode R)) (toConv LinearMap.id)).symm
       _ = _ := by
         rw [LinearMap.antipode_mul_id]
-        ext a
-        simp [AlgHomClass.commutes]
+        exact LinearMap.algHom_comp_convOne (AlgHom.ofClass φ)
   · apply WithConv.ofConv_injective
     calc
       _ = (toConv (LinearMap.id : B →ₗ[R] B) *
@@ -71,8 +72,7 @@ theorem coe_comp_antipode (φ : F) :
             (toConv (HopfAlgebra.antipode R)) (CoalgHom.ofClass φ)).symm
       _ = _ := by
         rw [LinearMap.id_mul_antipode]
-        ext a
-        simp
+        exact LinearMap.convOne_comp_coalgHom (CoalgHom.ofClass φ)
 
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, pointwise. -/
 @[simp]
