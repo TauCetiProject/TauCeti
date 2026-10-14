@@ -37,7 +37,6 @@ is a topological surface, and properness of `π` is a consequence of compactness
 
 ## Main definitions
 
-* `TauCeti.ThricePuncturedSphere.marked`: the marked points `0`, `1`, `∞` of `OnePoint ℂ`.
 * `TauCeti.TopBranchedCover n`: a topological branched cover of the sphere of degree `n` with
   branch values in `{0, 1, ∞}`.
 * `TauCeti.TopBranchedCover.Iso`: isomorphisms, homeomorphisms commuting with the projections.
@@ -274,11 +273,6 @@ end Iso
 
 /-! ### The sphere over itself -/
 
-/-- The identity of the sphere is locally the first power map. -/
-private theorem isLocalPowerAt_id (z : OnePoint ℂ) : IsLocalPowerAt (id : OnePoint ℂ → _) z 1 :=
-  (Homeomorph.refl (OnePoint ℂ)).isLocalHomeomorph.isLocalHomeomorphOn.isLocalPowerAt_one
-    (s := univ) (mem_univ z) (mem_chart_source ℂ z)
-
 /-- The sphere `OnePoint ℂ` over itself by the identity: the topological branched cover of
 degree `1`, unbranched everywhere. -/
 def sphere : TopBranchedCover 1 where
@@ -289,7 +283,7 @@ def sphere : TopBranchedCover 1 where
   isCoveringMapOn := (isLocalHomeomorph_iff_isCoveringMap.1
     (Homeomorph.refl (OnePoint ℂ)).isLocalHomeomorph).isCoveringMapOn.mono (subset_univ _)
   natCard_preimage_singleton _ _ := by simp
-  exists_isLocalPowerAt_of_mem_marked z _ := ⟨1, isLocalPowerAt_id z⟩
+  exists_isLocalPowerAt_of_mem_marked z _ := ⟨1, isLocalPowerAt_id (mem_chart_source ℂ z)⟩
 
 /-- The canonical homeomorphism from the total space of `sphere` to the Riemann sphere. -/
 def sphereHomeomorph : sphere.Z ≃ₜ OnePoint ℂ :=
@@ -302,7 +296,7 @@ theorem sphere_π_apply (z : sphere.Z) : sphere.π z = sphereHomeomorph z := by 
 /-- The sphere over itself is unbranched: all its local degrees are `1`. -/
 @[simp]
 theorem sphere_localDegree (z : sphere.Z) : sphere.localDegree z = 1 :=
-  sphere.localDegree_eq_iff.2 (isLocalPowerAt_id z)
+  sphere.localDegree_eq_iff.2 (isLocalPowerAt_id (mem_chart_source (M := OnePoint ℂ) ℂ z))
 
 end TopBranchedCover
 

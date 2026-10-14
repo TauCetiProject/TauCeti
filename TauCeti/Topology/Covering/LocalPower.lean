@@ -47,6 +47,8 @@ is what adds up the local degrees over a fibre of a finite branched covering.
 * `TauCeti.IsLocalPowerAt.comp_homeomorph`: invariance under a homeomorphism of the source.
 * `IsLocalHomeomorphOn.isLocalPowerAt_one`: a local homeomorphism is locally the first power map
   wherever the target has a chart.
+* `TauCeti.isLocalPowerAt_id`: the identity is locally the first power map wherever there is a
+  chart.
 
 ## References
 
@@ -214,3 +216,9 @@ theorem IsLocalHomeomorphOn.isLocalPowerAt_one {X Y : Type*} [TopologicalSpace X
   rw [OpenPartialHomeomorph.trans_target] at hw
   rw [OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply, φ.right_inv hw.2,
     τ.right_inv hw.1, pow_one]
+
+/-- **The identity is locally the first power map** at every point in the source of some chart. -/
+theorem TauCeti.isLocalPowerAt_id {X : Type*} [TopologicalSpace X] {x : X}
+    {ψ : OpenPartialHomeomorph X ℂ} (hx : x ∈ ψ.source) : IsLocalPowerAt (id : X → X) x 1 :=
+  (Homeomorph.refl X).isLocalHomeomorph.isLocalHomeomorphOn.isLocalPowerAt_one (s := univ)
+    (mem_univ x) hx
