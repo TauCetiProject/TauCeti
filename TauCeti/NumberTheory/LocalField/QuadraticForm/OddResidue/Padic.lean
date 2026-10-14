@@ -12,7 +12,6 @@ import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.HilbertSymbol.Henselian
 import TauCeti.NumberTheory.LocalField.Henselian
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Hilbert symbols of integers over `ℚ_p` for odd `p`
@@ -55,27 +54,15 @@ namespace TauCeti.Padic
 variable (p : ℕ) [Fact p.Prime]
 
 variable {p} in
-/-- For an odd prime `p`, the integer `2` is a unit of the integer ring of `ℚ_p`. -/
-private theorem isUnit_two_integers (hp : p ≠ 2) : IsUnit (2 : 𝒪[ℚ_[p]]) :=
-  (natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
-    (_root_.Padic.natCastValuation_two p hp)
-
-variable {p} in
-/-- An integer prime to `p` is a unit of the integer ring of `ℚ_p`. -/
-private theorem isUnit_intCast_integers {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) : IsUnit (m : 𝒪[ℚ_[p]]) := by
-  have h : IsUnit (m : ℤ_[p]) := PadicInt.isUnit_iff.2 <| (PadicInt.norm_le_one _).antisymm <|
-    not_lt.1 fun h ↦ hm ((PadicInt.norm_int_lt_one_iff_dvd m).1 h)
-  simpa using h.map (_root_.Padic.integerRingEquiv p).symm
-
-variable {p} in
 /-- **The Hilbert symbol of two `p`-adic units.** For an odd prime `p` and integers `m` and `n`
 prime to `p`, the Hilbert symbol `(m, n)` over `ℚ_p` is `1`. -/
 theorem hilbertSymbol_intCast_intCast_eq_one (hp : p ≠ 2) {m n : ℤ} (hm : ¬ (p : ℤ) ∣ m)
     (hn : ¬ (p : ℤ) ∣ n) :
     hilbertSymbol (Units.mk0 (m : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hm (h ▸ dvd_zero _)))
       (Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _))) = 1 := by
-  have h := hilbertSymbol_units_map_eq_one (K := ℚ_[p]) (isUnit_two_integers hp)
-    (isUnit_intCast_integers hm).unit (isUnit_intCast_integers hn).unit
+  have h := hilbertSymbol_units_map_eq_one (K := ℚ_[p]) (_root_.Padic.isUnit_two_integerRing hp)
+    (_root_.Padic.isUnit_intCast_integerRing hm).unit
+    (_root_.Padic.isUnit_intCast_integerRing hn).unit
   convert h using 2 <;> ext <;> simp
 
 variable {p} in
@@ -88,7 +75,7 @@ theorem hilbertSymbol_intCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℤ} (hn :
       legendreSym p n := by
   classical
   -- `n` is an integral unit of `ℚ_[p]`.
-  have hu := isUnit_intCast_integers hn
+  have hu := _root_.Padic.isUnit_intCast_integerRing hn
   have hmk : Units.map (Subring.subtype 𝒪[ℚ_[p]] : 𝒪[ℚ_[p]] →* ℚ_[p]) hu.unit =
       Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)) :=
     Units.ext (by simp)
@@ -105,7 +92,7 @@ theorem hilbertSymbol_intCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℤ} (hn :
     exact ⟨fun h ↦ h.map E, fun h ↦ by simpa using h.map E.symm⟩
   have hn0 : (n : ZMod p) ≠ 0 := by
     rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
-  rw [← hmk, hilbertSymbol_unit_uniformizer_eq_ite (isUnit_two_integers hp) _
+  rw [← hmk, hilbertSymbol_unit_uniformizer_eq_ite (_root_.Padic.isUnit_two_integerRing hp) _
     (isUniformizer_natCast_self p)]
   split_ifs with h <;> rw [hres] at h
   · exact ((legendreSym.eq_one_iff p hn0).2 h).symm
@@ -122,7 +109,7 @@ a sum of two squares in `ℚ_p`. -/
 theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     hilbertSymbol (-1 : ℚ_[p]ˣ)
       (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) = -1 := by
-  have h2 := TauCeti.Padic.isUnit_two_integers (p := p) (by omega)
+  have h2 := isUnit_two_integerRing (p := p) (by omega)
   have hu : (normalizedValuation ℚ_[p] (-1 : ℚ_[p]ˣ)).toAdd = 0 := by
     rw [toAdd_normalizedValuation_eq_valuation]
     simpa [padicValInt] using valuation_intCast (p := p) (-1)
