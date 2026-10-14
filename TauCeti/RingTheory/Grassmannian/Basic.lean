@@ -33,6 +33,9 @@ kernel of `baseChangeMkQ B N` for the given algebra structure on `B`.
   `b ⊗ₜ [1 ⊗ₜ m]`.
 * `Module.Grassmannian.baseChangeMkQ_rTensor`: `baseChangeMkQ B N` sends the image of
   `x ∈ A ⊗[R] M` to `1 ⊗ₜ [x]`.
+* `Module.Grassmannian.ker_baseChangeMkQ`: the kernel of `baseChangeMkQ B N` is spanned by the
+  image of `N`, and `Module.Grassmannian.ker_baseChangeMkQ_le_ker_iff`: a linear map vanishes on it
+  exactly when it vanishes on the image of `N`.
 * `Module.Grassmannian.map_toAlgHom_toSubmodule`: the base change of a point along the structure
   map of an `A`-algebra `B` is the kernel of `baseChangeMkQ B N`.
 * `Module.Grassmannian.rTensor_mem_map`: a vector of a point maps into every base change of it.
@@ -98,6 +101,36 @@ theorem baseChangeMkQ_rTensor [Algebra A B] [IsScalarTower R A B] (N : Submodule
     simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul, ← Submodule.Quotient.mk_smul,
       TensorProduct.smul_tmul']
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, tmul_add]
+
+/-- By right exactness of the tensor product, the kernel of `baseChangeMkQ B N` is spanned over `B`
+by the image of `N`. -/
+theorem ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B] (N : Submodule A (A ⊗[R] M)) :
+    LinearMap.ker (baseChangeMkQ B N) =
+      Submodule.span B ((IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M '' N) := by
+  have hker : LinearMap.ker (N.mkQ.baseChange B) = N.baseChange B := by
+    ext x
+    rw [LinearMap.mem_ker, LinearMap.baseChange_eq_ltensor, ← LinearMap.mem_ker, lTensor_mkQ,
+      Submodule.baseChange, LinearMap.mem_range, LinearMap.mem_range]
+    simp only [LinearMap.baseChange_eq_ltensor]
+  have hcancel (x : A ⊗[R] M) : AlgebraTensorModule.cancelBaseChange R A B B M ((1 : B) ⊗ₜ x) =
+      (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul a m => simp [Algebra.algebraMap_eq_smul_one]
+    | add x y hx hy => simp [tmul_add, hx, hy]
+  rw [baseChangeMkQ, LinearMap.ker_comp, hker, Submodule.comap_equiv_eq_map_symm,
+    LinearEquiv.symm_symm, Submodule.baseChange_eq_span, Submodule.map_span, Submodule.map_coe,
+    ← Set.image_comp]
+  exact congrArg _ (Set.image_congr fun x _ ↦ hcancel x)
+
+/-- A `B`-linear map `Φ` out of `B ⊗[R] M` vanishes on the kernel of `baseChangeMkQ B N` exactly
+when it vanishes on the image of `N`. -/
+theorem ker_baseChangeMkQ_le_ker_iff [Algebra A B] [IsScalarTower R A B]
+    (N : Submodule A (A ⊗[R] M)) {Y : Type*} [AddCommGroup Y] [Module B Y]
+    (Φ : B ⊗[R] M →ₗ[B] Y) :
+    LinearMap.ker (baseChangeMkQ B N) ≤ LinearMap.ker Φ ↔
+      ∀ x ∈ N, Φ ((IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x) = 0 := by
+  rw [ker_baseChangeMkQ, Submodule.span_le, Set.image_subset_iff]
+  rfl
 
 /-- With an algebra structure in place, the base change `map f N` along the structure map
 `f : A → B` is the kernel of `baseChangeMkQ B N`. -/
