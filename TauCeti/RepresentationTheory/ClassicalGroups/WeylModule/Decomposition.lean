@@ -65,24 +65,7 @@ variable (k : Type*) (n d : ℕ)
 
 section CommRing
 
-variable [CommRing k]
-
-/-- Relabeling the tensor factors along `Fin m ≃ Fin d` carries the image of an element of
-`k[S_m]` onto the image of its transport to `k[S_d]`. -/
-private theorem map_reindex_range_asAlgebraHom {m : ℕ} (h : m = d)
-    (a : MonoidAlgebra k (Equiv.Perm (Fin m))) :
-    (LinearMap.range ((permTensorAction k n m).asAlgebraHom a)).map
-        (PiTensorProduct.reindex k (fun _ => Fin n → k) (finCongr h) :
-          ⨂[k]^m (Fin n → k) →ₗ[k] ⨂[k]^d (Fin n → k)) =
-      LinearMap.range ((permTensorAction k n d).asAlgebraHom
-        (MonoidAlgebra.domCongr k k (finCongr h).permCongrHom a)) := by
-  subst h
-  have he : (Equiv.refl (Fin m)).permCongrHom = MulEquiv.refl _ := by
-    ext
-    simp
-  simp [he]
-
-variable [Algebra ℚ k]
+variable [CommRing k] [Algebra ℚ k]
 
 /-- **The Weyl module of the shape of `μ` is the image of the Young symmetrizer `c_μ`**, after
 relabeling the tensor factors of `(kⁿ)^{⊗|μ|}` along `YoungDiagram.card_ofPartition`. -/

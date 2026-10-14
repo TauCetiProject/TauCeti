@@ -50,7 +50,7 @@ divisors whose additive group has no `2`-torsion.
 * `Representation.asAlgebraHom_domCongr` and `Representation.asAlgebraHom_eq_sum`: the action of
   a transported element is the action through the pulled-back representation, and over a finite
   monoid the action of `x` is `∑ g, x g • ρ g`.
-* `Representation.asAlgebraHom_quotient_mkQ`: the action on a quotient representation is induced
+* `Representation.asAlgebraHom_quotient_mk`: the action on a quotient representation is induced
   by the action on the representation.
 * `Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg`: with doubling injective on `V`, an
   algebra element negated by right multiplication by an element fixing `v` annihilates `v`.
@@ -133,6 +133,7 @@ theorem mem_centralizer_range_asAlgebraHom_iff (ρ : Representation k G V) {x : 
 
 /-- **The monoid-algebra action is natural in the monoid.** Acting by the transport of `x` along
 an isomorphism `e : G ≃* H` is acting by `x` through the representation pulled back along `e`. -/
+@[simp]
 theorem asAlgebraHom_domCongr {H : Type*} [Monoid H] (ρ : Representation k H V) (e : G ≃* H)
     (x : MonoidAlgebra k G) :
     ρ.asAlgebraHom (MonoidAlgebra.domCongr k k e x) =
@@ -160,12 +161,14 @@ variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
 
 /-- **The monoid-algebra action on a quotient representation** is induced by the action on the
 representation: `x` sends the class of `v` to the class of `x · v`. -/
-theorem asAlgebraHom_quotient_mkQ (ρ : Representation k G V) (N : Submodule k V)
+@[simp]
+theorem asAlgebraHom_quotient_mk (ρ : Representation k G V) (N : Submodule k V)
     (hN : ∀ g, N ≤ N.comap (ρ g)) (x : MonoidAlgebra k G) (v : V) :
-    (ρ.quotient N hN).asAlgebraHom x (N.mkQ v) = N.mkQ (ρ.asAlgebraHom x v) := by
+    (ρ.quotient N hN).asAlgebraHom x (Submodule.Quotient.mk v) =
+      Submodule.Quotient.mk (ρ.asAlgebraHom x v) := by
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
-  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy]
+  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy, Submodule.Quotient.mk_add]
   | single g r => simp [asAlgebraHom_single]
 
 end Quotient

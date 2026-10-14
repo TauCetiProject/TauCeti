@@ -31,6 +31,8 @@ infinite field.
 * `TauCeti.permTensorPowerRep` combines the two commuting actions into one representation of
   `S_d × GL n k`, and `TauCeti.range_asAlgebraHom_permTensorAction_le_comap` says that the image of
   any element of `k[S_d]`, such as a Young symmetrizer, is a `GL n k`-subrepresentation.
+* `TauCeti.map_reindex_range_asAlgebraHom`: relabeling the tensor factors along `Fin m ≃ Fin d`
+  carries the image of an element of `k[S_m]` onto the image of its transport to `k[S_d]`.
 * `TauCeti.trace_permTensorAction_conj_mul_tensorPowerRep`: for any `g ∈ GL n k`, the trace of a
   permutation of the tensor factors composed with `g^{⊗d}` is a class function of the permutation.
 * `TauCeti.tensorPowerPermIntertwiningMap` packages `g^{⊗d}` as an intertwining map of the
@@ -114,6 +116,22 @@ theorem range_asAlgebraHom_permTensorAction_le_comap (a : MonoidAlgebra k (Equiv
   have h := commute_permTensorActionAlgHom_tensorPowerRep k n d a g
   rw [permTensorActionAlgHom_def] at h
   exact ⟨tensorPowerRep k n d g x, LinearMap.congr_fun h.eq x⟩
+
+/-- **Relabeling the tensor factors transports the image of an element of `k[S_m]`**: along
+`Fin m ≃ Fin d`, it carries the image of `a` in `(kⁿ)^{⊗m}` onto the image in `(kⁿ)^{⊗d}` of the
+transport of `a` to `k[S_d]`. -/
+theorem map_reindex_range_asAlgebraHom {m : ℕ} (h : m = d)
+    (a : MonoidAlgebra k (Equiv.Perm (Fin m))) :
+    (LinearMap.range ((permTensorAction k n m).asAlgebraHom a)).map
+        (PiTensorProduct.reindex k (fun _ => Fin n → k) (finCongr h) :
+          ⨂[k]^m (Fin n → k) →ₗ[k] ⨂[k]^d (Fin n → k)) =
+      LinearMap.range ((permTensorAction k n d).asAlgebraHom
+        (MonoidAlgebra.domCongr k k (finCongr h).permCongrHom a)) := by
+  subst h
+  have he : (Equiv.refl (Fin m)).permCongrHom = MulEquiv.refl _ := by
+    ext
+    simp
+  simp [he]
 
 /-- **The joint action of `S_d × GL n k` on `(kⁿ)^{⊗d}`**: a pair `(σ, g)` acts by permuting the
 tensor factors by `σ` after applying `g` in every factor.  It is a representation of the product
