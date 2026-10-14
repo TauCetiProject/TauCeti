@@ -26,12 +26,6 @@ Both are stated for `integralClosure (𝓞 K) L` rather than for `𝓞 L`, becau
 descent actually produces — `WeierstrassCurve.Affine.ringOfIntegersFactor` is an integral closure
 in a quotient `K[X] ⧸ (p)`, not a ring of integers presented as such.
 
-## Main definitions
-
-* `NumberField.integralClosureEquivRingOfIntegers` : the identification of the integral closure
-  with `𝓞 L`, the identity on underlying elements of `L`
-  (`NumberField.algebraMap_integralClosureEquivRingOfIntegers`).
-
 ## Main results
 
 * `NumberField.finite_classGroup_integralClosure` : the **class number theorem** for it.
@@ -70,45 +64,31 @@ theorem NumberField.finite_classGroup_integralClosure :
     (S := integralClosure (𝓞 K) L) AbsoluteValue.absIsAdmissible
   exact Finite.of_fintype _
 
-/-- The integral closure of `𝓞 K` in a finite extension `L` of the number field `K` is the ring of
-integers of `L`. -/
-noncomputable def NumberField.integralClosureEquivRingOfIntegers :
-    integralClosure (𝓞 K) L ≃ₐ[𝓞 K] 𝓞 L :=
-  have : NumberField L := .of_module_finite K L
-  IsIntegralClosure.equiv (𝓞 K) (integralClosure (𝓞 K) L) L (𝓞 L)
-
-/-- `NumberField.integralClosureEquivRingOfIntegers` is the identity on the underlying elements
-of `L`. -/
-@[simp]
-theorem NumberField.algebraMap_integralClosureEquivRingOfIntegers
-    (x : integralClosure (𝓞 K) L) :
-    algebraMap (𝓞 L) L (integralClosureEquivRingOfIntegers K L x) = x :=
-  have : NumberField L := .of_module_finite K L
-  IsIntegralClosure.algebraMap_equiv (𝓞 K) (integralClosure (𝓞 K) L) L (𝓞 L) x
-
 /-- **Dirichlet's unit theorem** (finite generation) for the integral closure of `𝓞 K` in a
 finite extension `L` of the number field `K`: its unit group is finitely generated. -/
 theorem NumberField.fg_units_integralClosure :
     Group.FG (integralClosure (𝓞 K) L)ˣ := by
   have : NumberField L := .of_module_finite K L
-  let e := (integralClosureEquivRingOfIntegers K L).toRingEquiv.toMulEquiv
+  let e := (RingOfIntegers.algEquiv K L (integralClosure (𝓞 K) L)).symm.toRingEquiv.toMulEquiv
   have : Group.FG (𝓞 L)ˣ := Group.fg_iff_monoid_fg.mpr inferInstance
   exact Group.fg_of_surjective (f := (Units.mapEquiv e.symm).toMonoidHom)
     (Units.mapEquiv e.symm).surjective
 
+omit [NumberField K] [FiniteDimensional K L] in
 /-- The unit rank of the integral closure of `𝓞 K` in a finite extension `L` of the number field `K`
 is the unit rank `r₁ + r₂ - 1` of `L`. -/
 theorem NumberField.finrank_units_integralClosure [NumberField L] :
     Module.finrank ℤ (Additive (integralClosure (𝓞 K) L)ˣ) = Units.rank L := by
   rw [← Units.finrank_eq L]
-  let e := (integralClosureEquivRingOfIntegers K L).toRingEquiv.toMulEquiv
+  let e := (RingOfIntegers.algEquiv K L (integralClosure (𝓞 K) L)).symm.toRingEquiv.toMulEquiv
   exact (Units.mapEquiv e).toAdditive.toIntLinearEquiv.finrank_eq
 
+omit [NumberField K] [FiniteDimensional K L] in
 /-- The integral closure of `𝓞 K` in a finite extension `L` of the number field `K` is a principal
 ideal domain exactly when the ring of integers of `L` is, that is when `L` has class number `1`. -/
 theorem NumberField.isPrincipalIdealRing_integralClosure_iff :
     IsPrincipalIdealRing (integralClosure (𝓞 K) L) ↔ IsPrincipalIdealRing (𝓞 L) :=
-  let e := (integralClosureEquivRingOfIntegers K L).toRingEquiv
+  let e := (RingOfIntegers.algEquiv K L (integralClosure (𝓞 K) L)).symm.toRingEquiv
   ⟨fun _ ↦ .of_surjective e.toRingHom e.surjective,
     fun _ ↦ .of_surjective e.symm.toRingHom e.symm.surjective⟩
 
