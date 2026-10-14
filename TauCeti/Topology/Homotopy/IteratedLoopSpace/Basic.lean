@@ -91,21 +91,31 @@ def loopSpace (f : Hom X Y) : Hom X.loopSpace Y.loopSpace where
   map_basepoint := by
     exact DFunLike.ext _ _ fun _ => f.map_basepoint
 
-theorem loopSpace_apply (f : Hom X Y) (γ : X.loopSpace.carrier) (t : unitInterval) :
+/-- The induced loop map postcomposes loops with `f`, for a loop viewed as an element of the
+carrier of `ΩX`. -/
+theorem loopSpace_apply' (f : Hom X Y) (γ : X.loopSpace.carrier) (t : unitInterval) :
     f.loopSpace γ t = f (γ t) := by
   rw [loopSpace]
   rfl
 
+/-- The induced loop map postcomposes loops with `f`. -/
+@[simp]
+theorem loopSpace_apply (f : Hom X Y) (γ : Path X.basepoint X.basepoint) (t : unitInterval) :
+    @DFunLike.coe (Path Y.basepoint Y.basepoint) unitInterval (fun _ => Y.carrier) _
+      (@DFunLike.coe (X.loopSpace.Hom Y.loopSpace) (Path X.basepoint X.basepoint)
+        (fun _ => Path Y.basepoint Y.basepoint) _ f.loopSpace γ) t = f (γ t) :=
+  loopSpace_apply' f γ t
+
 @[simp]
 theorem loopSpace_id (X : BasedTopologicalSpace.{u}) : (Hom.id X).loopSpace = Hom.id X.loopSpace :=
   DFunLike.ext _ _ fun γ => DFunLike.ext _ _ fun t => by
-    rw [loopSpace_apply, Hom.id_apply, Hom.id_apply]
+    rw [loopSpace_apply', Hom.id_apply, Hom.id_apply]
 
 @[simp]
 theorem loopSpace_comp (g : Hom Y Z) (f : Hom X Y) :
     (g.comp f).loopSpace = g.loopSpace.comp f.loopSpace :=
   DFunLike.ext _ _ fun γ => DFunLike.ext _ _ fun t => by
-    simp only [loopSpace_apply, Hom.comp_apply]
+    simp only [loopSpace_apply', Hom.comp_apply]
 
 /-- The map `Ω^[k] f : Ω^[k] X → Ω^[k] Y` induced by a based map `f`. -/
 def iteratedLoopSpace : (k : ℕ) → {X Y : BasedTopologicalSpace.{u}} → Hom X Y →

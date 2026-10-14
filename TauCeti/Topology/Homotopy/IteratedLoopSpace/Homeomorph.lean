@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
-public import TauCeti.Topology.Homotopy.IteratedLoopSpace
+public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Basic
 
 /-!
 # Iterated loop spaces as spaces of cube loops
@@ -89,7 +89,7 @@ theorem genLoopLoopHomeomorph_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y
         (GenLoop.genLoopLoopHomeomorph X.basepoint k p) := by
   refine GenLoop.ext _ _ fun t => ?_
   rw [GenLoop.genLoopLoopHomeomorph_apply]
-  exact (Hom.loopSpace_apply f _ _).trans
+  exact (Hom.loopSpace_apply' f _ _).trans
     (congrArg f (GenLoop.genLoopLoopHomeomorph_apply X.basepoint k p t).symm)
 
 /-- **Naturality of the cube-loop homeomorphism**: a based map `f` acts on iterated loops
