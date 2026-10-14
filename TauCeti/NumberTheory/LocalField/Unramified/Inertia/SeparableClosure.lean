@@ -52,7 +52,6 @@ variable (K) in
 /-- **Inertia in the Galois group of the separable closure.** The image of the inertia subgroup
 `I_K ≤ Gal(K^{alg}/K)` under restriction to the separable closure is the subgroup of
 `Gal(Kˢ/K)` fixing the maximal unramified extension of `K` inside `Kˢ`. -/
-@[simp]
 theorem map_inertiaSubgroup_absoluteGaloisGroupRestrictEquiv :
     (inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom =
       (maximalUnramifiedExtension K (SeparableClosure K)).fixingSubgroup := by
