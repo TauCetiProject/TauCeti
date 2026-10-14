@@ -31,6 +31,7 @@ variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S]
   [AddCommGroup M] [Module R M]
 
 /-- For a finite family, flat base change preserves the annihilator of its span. -/
+@[simp]
 theorem annihilator_flat_baseChange_generators {ι : Type*} [Finite ι]
     [Module.Flat R S] (g : ι → M) :
     (Submodule.span S (Set.range fun i ↦ (1 : S) ⊗ₜ[R] g i)).annihilator =
@@ -58,6 +59,7 @@ theorem annihilator_flat_baseChange_generators {ι : Type*} [Finite ι]
 
 /-- For a flat coefficient algebra, the annihilator of a finite module extends exactly.
 This is Stacks Project, Lemma 10.40.4 (Tag 07T8). -/
+@[simp]
 theorem annihilator_flat_baseChange [Module.Flat R S] [Module.Finite R M] :
     Module.annihilator S (S ⊗[R] M) =
       (Module.annihilator R M).map (algebraMap R S) := by
@@ -71,6 +73,7 @@ theorem annihilator_flat_baseChange [Module.Flat R S] [Module.Finite R M] :
 
 /-- Flat scalar extension preserves the annihilator of the element `1 ⊗ₜ m`.
 The ambient module need not be finite. -/
+@[simp]
 theorem element_annihilator_flat_baseChange [Module.Flat R S] (m : M) :
     (Submodule.span S {(1 : S) ⊗ₜ[R] m}).annihilator =
       (Submodule.span R {m}).annihilator.map (algebraMap R S) := by
