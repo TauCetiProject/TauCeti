@@ -62,16 +62,8 @@ theorem differentiable_flowOfLipschitz_apply (t : ℝ) :
 
 /-- The derivative of the time-`τ` map at a fixed point is continuous in `τ`. -/
 private theorem continuous_fderiv_flowOfLipschitz (x : E) :
-    Continuous fun τ : ℝ ↦ fderiv ℝ (flowOfLipschitz v hv τ) x := by
-  have hG := contDiff_uncurry_flowOfLipschitz hv hvs
-  have heq : ∀ τ : ℝ, fderiv ℝ (flowOfLipschitz v hv τ) x =
-      (fderiv ℝ (Function.uncurry (flowOfLipschitz v hv)) (τ, x)).comp
-        (ContinuousLinearMap.inr ℝ ℝ E) := fun τ ↦
-    ((hG.differentiable one_ne_zero (τ, x)).hasFDerivAt.comp x
-      (hasFDerivAt_prodMk_right τ x)).fderiv
-  simp_rw [heq]
-  have hc : Continuous fun τ : ℝ ↦ (τ, x) := by fun_prop
-  exact ((hG.continuous_fderiv one_ne_zero).comp hc).clm_comp continuous_const
+    Continuous fun τ : ℝ ↦ fderiv ℝ (flowOfLipschitz v hv τ) x :=
+  Continuous.fderiv_one (contDiff_uncurry_flowOfLipschitz hv hvs) continuous_const
 
 /-- The integrand of the variational equation is continuous in time. -/
 private theorem continuous_variational_integrand (x : E) :
