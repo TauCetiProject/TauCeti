@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Homology.Homotopy
 public import TauCeti.RepresentationTheory.Continuous.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Comparing a contractible complex with the coinduced resolution
@@ -25,7 +24,8 @@ The contraction data is `TopRep.ResolutionContraction X J`: an equivariant augme
 `ι : X ⟶ J⁰`, linear maps `proj : J⁰ → X` and `hom n : Jⁿ⁺¹ → Jⁿ` with
 `proj ∘ ι = id`, `ι ∘ proj + hom 0 ∘ d = id` and `d ∘ hom n + hom (n + 1) ∘ d = id`, together with
 joint continuity of their conjugates `x • hom n (x⁻¹ • v)` in `v` and `x`. For smooth discrete
-representations the continuity is automatic (`TauCeti.IsSmoothDiscrete.continuous_conj`).
+representations the continuity is automatic (`TauCeti.IsSmoothDiscrete.continuous_conj`, in the
+smooth discrete module).
 
 The comparison `TopRep.ResolutionContraction.comparison` is built degree by degree from the lift
 into a coinduced representation: `F⁰ v x = x • proj (x⁻¹ • v)` and
@@ -65,8 +65,6 @@ this comparison.
   identity of `X` induces the same map on the cohomology of invariants as the comparison.
 * `TopRep.comparison_resolutionContraction`: evaluation at `1` compares the coinduced resolution
   with itself by the identity.
-* `TauCeti.IsSmoothDiscrete.continuous_conj`: the continuity condition holds between smooth
-  discrete representations.
 
 ## References
 
@@ -388,24 +386,3 @@ theorem comparison_resolutionContraction :
 end ResolutionContraction
 
 end TopRep
-
-namespace TauCeti
-
-variable {k : Type*} [Ring k] [TopologicalSpace k] {G : Type*} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G]
-
-attribute [local instance] TopRep.distribMulAction in
-/-- Between **smooth discrete** representations, every linear map has jointly continuous
-conjugates `(v, x) ↦ x • φ (x⁻¹ • v)`, so the continuity conditions of
-`TopRep.ResolutionContraction` hold automatically on complexes of smooth discrete
-representations. -/
-theorem IsSmoothDiscrete.continuous_conj {Y Z : TopRep k G} (hY : IsSmoothDiscrete k Y)
-    (hZ : IsSmoothDiscrete k Z) (φ : Y.V →ₗ[k] Z.V) :
-    Continuous fun p : Y.V × G ↦ Z.ρ p.2 (φ (Y.ρ p.2⁻¹ p.1)) := by
-  have := hY.discreteTopology
-  have := hY.continuousSMul
-  have := hZ.continuousSMul
-  simp only [← TopRep.distribMulAction_smul]
-  fun_prop
-
-end TauCeti
