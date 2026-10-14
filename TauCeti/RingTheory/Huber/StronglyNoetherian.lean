@@ -72,6 +72,9 @@ discrete case below is proved through it.
 * `Ideal.isClosed_weightedRestrictedSubring_one_weight`: every ideal in an
   uncompleted restricted-series ring over a complete Hausdorff strongly noetherian Tate ring is
   closed.
+* `Ideal.isClosed_restrictedMvPowerSeriesCompletion`: every ideal of the completed
+  `A⟨X₁, …, Xₖ⟩` over a strongly noetherian Tate ring, not necessarily complete or Hausdorff, is
+  closed.
 
 * `TauCeti.Huber.IsStronglyNoetherian.of_surjective`: strong noetherianness passes along a
   continuous surjection carrying neighbourhoods of zero onto neighbourhoods of zero, out of a
@@ -180,6 +183,26 @@ theorem _root_.Ideal.isClosed_weightedRestrictedSubring_one_weight {k : ℕ}
 
 end ClosedIdeal
 
+section ClosedIdealCompletion
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  [IsStronglyNoetherian A]
+
+/-- **Every ideal of `A⟨X₁, …, Xₖ⟩` is closed**, for a strongly noetherian Tate ring `A`, which
+need not be complete or Hausdorff: `A⟨X₁, …, Xₖ⟩` is a complete metrisable noetherian Tate ring.
+Compare `Ideal.isClosed_weightedRestrictedSubring_one_weight`, the same statement for the
+uncompleted algebra over a complete Hausdorff `A`. -/
+theorem _root_.Ideal.isClosed_restrictedMvPowerSeriesCompletion {k : ℕ}
+    (I : Ideal (restrictedMvPowerSeriesCompletion k A)) :
+    IsClosed (I : Set (restrictedMvPowerSeriesCompletion k A)) := by
+  have : IsTateRing (restrictedMvPowerSeriesCompletion k A) :=
+    IsTateRing.of_continuous (continuous_algebraMap_restrictedMvPowerSeriesCompletion k A)
+  have : (𝓤 (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  exact isClosed_of_isNoetherian I
+
+end ClosedIdealCompletion
+
 /-! ### The discrete case -/
 
 /-- **A noetherian ring with the discrete topology is strongly noetherian.** This is the
@@ -207,7 +230,9 @@ of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` requires of the b
 instance IsStronglyNoetherian.restrictedMvPowerSeriesCompletion [IsHuberRing A]
     [IsStronglyNoetherian A] (k : ℕ) :
     IsStronglyNoetherian (restrictedMvPowerSeriesCompletion k A) where
-  isNoetherianRing m := isNoetherianRing_of_ringEquiv _ (iterateRingEquiv k m A)
+  isNoetherianRing m := isNoetherianRing_of_ringEquiv _
+    (iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ rfl) fun _ ↦ by simp [UniformSpace.Completion.coe_one])
 
 /-! ### Zero variables -/
 

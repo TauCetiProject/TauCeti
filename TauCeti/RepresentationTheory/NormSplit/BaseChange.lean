@@ -108,7 +108,7 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Rep
       abel
   obtain ⟨φ, ψ, hψ, hx⟩ := key m
   refine ⟨φ + ψ, LinearMap.ext fun x ↦ ?_⟩
-  rw [LinearMap.id_apply, map_add, LinearMap.add_apply, norm_linHom_apply ρ ψ]
+  rw [LinearMap.id_apply, map_add, LinearMap.add_apply, norm_linHom_apply ρ ρ ψ]
   conv_rhs => rw [hx x]
   congr 1
   have hg (g : G) : ρ g (ψ (ρ g⁻¹ x)) = ψ x := by

@@ -40,26 +40,6 @@ theorem f4_pairing_specialIsogenyIndexEquiv_eq_of_length_eq
   rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
     rw [hα] at h <;> omega
 
-/-- Evaluation of the quotient-to-ideal equivalence on a long root vector. -/
-theorem f4ShortRootQuotientToIdealEquiv_mkQ_rootVector
-    (γ : Fin 48) (hγ : f4Length γ = 2) :
-    f4ShortRootQuotientToIdealEquiv
-        (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
-      f4ShortRootLieIdealBasis
-        (f4ShortRootWeightIndexEquiv.symm (Sum.inl
-          ⟨f4SpecialIsogenyIndexEquiv γ, by
-            exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩)) := by
-  let i : F4ShortRootIndex :=
-    ⟨f4SpecialIsogenyIndexEquiv γ, by
-      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩
-  have hq := f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis γ hγ
-  calc
-    _ = f4ShortRootQuotientToIdealEquiv
-        (f4ShortRootQuotientBasis
-          (f4ShortRootWeightIndexEquiv.symm (Sum.inl i))) :=
-      congrArg f4ShortRootQuotientToIdealEquiv hq
-    _ = _ := f4ShortRootQuotientToIdealEquiv_basis _
-
 private theorem f4ShortRootIdealFirstColumn_eq_zero_of_no_short_sum
     (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
     (hα : f4Length (f4SignedSimpleRootIndex k) = 1)

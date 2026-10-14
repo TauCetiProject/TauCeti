@@ -24,6 +24,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
 
 * `WeierstrassCurve.projModelFunctionFieldEquiv`: the isomorphism
   `W.projModel.functionField ≃+* W.toAffine.FunctionField`.
+* `WeierstrassCurve.projModelFunctionFieldAlgebra`: the transported `R`-algebra structure on
+  `W.projModel.functionField`.
+* `WeierstrassCurve.projModelFunctionFieldAlgEquiv`: the comparison as an `R`-algebra equivalence.
 
 ## Main results
 
@@ -150,6 +153,33 @@ noncomputable def projModelFunctionFieldEquiv [IsDomain R] :
   -- function field of an integral scheme is the fraction field of the sections over any nonempty
   -- affine open, so both sides are fraction fields of the same ring
   IsFractionRing.ringEquivOfRingEquiv W.chartSectionsEquivCoordinateRing
+
+/-- The algebra structure on the projective function field transported from the affine
+function field. -/
+noncomputable instance projModelFunctionFieldAlgebra [IsDomain R] :
+    Algebra R W.projModel.functionField := by
+  let f : R →+* W.projModel.functionField :=
+    W.projModelFunctionFieldEquiv.symm.toRingHom.comp (algebraMap R W.toAffine.FunctionField)
+  exact f.toAlgebra
+
+/-- The function-field comparison between the projective model and the affine equation, as an
+equivalence of `R`-algebras. -/
+noncomputable def projModelFunctionFieldAlgEquiv [IsDomain R] :
+    W.projModel.functionField ≃ₐ[R] W.toAffine.FunctionField :=
+  AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) (by
+    intro x
+    -- The transported algebra map is the affine algebra map followed by the inverse comparison.
+    -- Expose that composite so the ring equivalence and its inverse cancel by `simp`.
+    change W.projModelFunctionFieldEquiv
+      (W.projModelFunctionFieldEquiv.symm (algebraMap R W.toAffine.FunctionField x)) = _
+    simp)
+
+/-- The underlying ring equivalence of the algebra comparison is the original function-field
+comparison. -/
+@[simp]
+theorem projModelFunctionFieldAlgEquiv_toRingEquiv [IsDomain R] :
+    W.projModelFunctionFieldAlgEquiv.toRingEquiv = W.projModelFunctionFieldEquiv :=
+  (rfl)
 
 /-- On the standard affine chart `D₊(Z)`, `projModelFunctionFieldEquiv` sends the rational
 function `p(X, Y, Z) / Zⁿ`, for `p` whose class in the homogeneous coordinate ring has degree `n`,

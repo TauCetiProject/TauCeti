@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.Coproduct
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
 
 /-!
 # The cellular boundary on a cell generator
@@ -67,33 +68,37 @@ lemma coe_characteristicCellPairMap_fst_apply {n : ℕ} (j : cell C n)
     coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd]
   rfl
 
-/-- The attaching map of a cell into the preceding skeleton, obtained by restricting its
-Euclidean characteristic map to the boundary sphere. -/
-def cellAttachingMap {n : ℕ} (j : cell C n) :
-    TopCat.diskBoundary.{w} n ⟶ skeletonObj C n :=
-  TopPair.Hom.snd (characteristicCellPairMap C j)
+/-- The ambient component of the single-cell pair map is the characteristic map
+`TauCeti.cellDiskHom` of the cell. -/
+lemma characteristicCellPairMap_fst {n : ℕ} (j : cell C n) :
+    TopPair.Hom.fst (characteristicCellPairMap C j) = cellDiskHom j := by
+  ext x
+  exact Subtype.ext <| (coe_characteristicCellPairMap_fst_apply C j x).trans <|
+    (congrArg (map n j) (coe_diskHomeomorphClosedBall_apply x).symm).trans
+      (coe_cellDiskHom_apply j x).symm
 
-/-- The attaching map followed by skeletal inclusion is the characteristic map restricted to
-the disk boundary. -/
-@[reassoc]
-lemma cellAttachingMap_comp_inclusion {n : ℕ} (j : cell C n) :
-    cellAttachingMap C j ≫ (skeletonPair C n).map =
-      TopCat.diskBoundaryInclusion n ≫ TopPair.Hom.fst (characteristicCellPairMap C j) :=
-  TopPair.Hom.w (characteristicCellPairMap C j)
-
-/-- The attaching map is the boundary restriction of the characteristic map in rescaled
-Euclidean coordinates. -/
-@[simp]
-lemma coe_cellAttachingMap_apply {n : ℕ} (j : cell C n)
-    (x : TopCat.diskBoundary.{w} n) :
-    (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C n)) (cellAttachingMap C j) x).1 =
-      map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph x.down) := by
-  have h := ConcreteCategory.congr_hom (cellAttachingMap_comp_inclusion C j) x
-  have hval := congrArg Subtype.val h
-  exact hval.trans (coe_characteristicCellPairMap_fst_apply C j
-    (TopCat.diskBoundaryInclusion n x))
+/-- The subspace component of the single-cell pair map is the attaching map
+`TauCeti.cellAttachingMap` of the cell. -/
+lemma characteristicCellPairMap_snd {n : ℕ} (j : cell C n) :
+    TopPair.Hom.snd (characteristicCellPairMap C j) = cellAttachingMap j := by
+  ext x
+  exact Subtype.ext <| (congrArg Subtype.val (ConcreteCategory.congr_hom
+    (TopPair.Hom.w (characteristicCellPairMap C j)) x)).trans <|
+    (congrArg Subtype.val (ConcreteCategory.congr_hom (characteristicCellPairMap_fst C j)
+      (TopCat.diskBoundaryInclusion n x))).trans <|
+    (coe_cellDiskHom_apply j _).trans (coe_cellAttachingMap_apply j x).symm
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+
+/-- The inverse of `TauCeti.cellularChainGroupIso` on the summand of the cell `j` is the inverse of
+`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` followed by the map induced by the characteristic map of `j`. -/
+@[reassoc]
+lemma ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap (n : ℕ)
+    [HasExactColimitsOfShape (Discrete (cell C n)) A] (j : cell C n) :
+    Sigma.ι (fun _ : cell C n ↦ R) j ≫ (cellularChainGroupIso C R n).inv =
+      (singularHomologyDiskBoundaryPairIso R n).inv ≫
+        TopPair.singularHomologyMap (characteristicCellPairMap C j) R n :=
+  ι_cellularChainGroupIso_inv C R n j
 
 /-- **The cellular boundary on a cell generator**: take the reduced fundamental class of the
 boundary sphere, include it in ordinary homology, apply the attaching map, and pass to the
@@ -106,10 +111,10 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularDifferential (n : ℕ)
         (cellularChainGroupIso C R (n + 1)).inv ≫ cellularDifferential C R n =
       (reducedSingularHomologyTopCatSphereIso R n).inv ≫
         (reducedSingularHomologyι R n).app (TopCat.diskBoundary.{w} (n + 1)) ≫
-          SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap C j)) R n ≫
+          SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) R n ≫
             skeletonPairπ C R n := by
   rw [ι_cellularChainGroupIso_inv_assoc,
-    cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ]
+    cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ, ← characteristicCellPairMap_snd]
   -- The connecting morphism is natural for the single-cell characteristic pair map.
   have h := TopPair.singularHomologyδ_naturality R (characteristicCellPairMap C j) (n + 1) n
   -- The sphere is the disk boundary, and skeletal homology is singular homology presented

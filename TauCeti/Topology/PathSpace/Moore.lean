@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.MetricSpace.ProperSpace.Real
@@ -30,9 +29,9 @@ A path does not determine its length: the constant path of any length has the sa
 map.  So a Moore path is not a bundled function, and equality of Moore paths is checked on the
 length and on the path (`MoorePath.ext`).
 
-The Moore loop space is not homeomorphic to Mathlib's loop space `Path x x` of loops parametrized
-by the unit interval: when `X` is a point, the Moore loops at it form a copy of `[0, ∞)`
-(`MooreLoopSpace.lengthHomeomorph`).
+The Moore loop space need not be homeomorphic to Mathlib's loop space `Path x x` of loops
+parametrized by the unit interval: when `X` is a point, the Moore loops at it form a copy of
+`[0, ∞)` (`MooreLoopSpace.lengthHomeomorph`).
 
 ## Main definitions
 
@@ -89,7 +88,7 @@ structure MoorePath (X : Type*) [TopologicalSpace X] extends C(ℝ≥0, X) where
 
 namespace MoorePath
 
-variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 instance : CoeFun (MoorePath X) fun _ ↦ ℝ≥0 → X :=
   ⟨fun γ ↦ γ.toContinuousMap⟩
@@ -385,12 +384,9 @@ theorem target_symm (γ : MoorePath X) : γ.symm.target = γ.source := by
   rw [target_def, length_symm, symm_apply, tsub_self, source_def]
 
 @[simp]
-theorem symm_symm (γ : MoorePath X) : γ.symm.symm = γ := by
-  refine ext rfl fun t ↦ ?_
-  rw [symm_apply, symm_apply, length_symm]
-  rcases le_total t γ.length with ht | ht
-  · rw [tsub_tsub_cancel_of_le ht]
-  · rw [tsub_eq_zero_of_le ht, tsub_zero, γ.apply_of_length_le ht, target_def]
+theorem symm_symm (γ : MoorePath X) : γ.symm.symm = γ :=
+  ext rfl fun t ↦ by
+    rw [symm_apply, symm_apply, length_symm, tsub_tsub_eq_min, min_comm, apply_min_length]
 
 @[simp]
 theorem symm_refl (x : X) : (refl x).symm = refl x :=
@@ -401,6 +397,7 @@ theorem symm_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).symm = co
   ext rfl fun _ ↦ rfl
 
 /-- Reversal exchanges the order of a concatenation. -/
+@[simp]
 theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
     (γ.trans δ h).symm = δ.symm.trans γ.symm (by rw [target_symm, source_symm, h]) := by
   refine ext (add_comm _ _) fun t ↦ ?_
@@ -413,6 +410,15 @@ theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
     rw [trans_apply_of_length_le _ _ _ ht', symm_apply, length_symm, add_tsub_cancel_left,
       add_comm γ.length, add_tsub_add_eq_tsub_left]
     exact trans_apply_of_le _ _ _ tsub_le_self
+
+/-- Reversing a continuous family of Moore paths is continuous. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_symm {f : Y → MoorePath X} (hf : Continuous f) :
+    Continuous fun y ↦ (f y).symm := by
+  refine continuous_iff.2 ⟨by simp only [length_symm]; fun_prop, ?_⟩
+  simp only [symm_apply]
+  exact (hf.comp continuous_fst).moorePath_eval
+    (((continuous_length.comp hf).comp continuous_fst).sub continuous_snd)
 
 /-! ### Reparametrization to a given length -/
 
@@ -526,6 +532,7 @@ theorem map_trans (f : C(X, Y)) (γ δ : MoorePath X) (h : γ.target = δ.source
 theorem map_id (γ : MoorePath X) : γ.map (.id X) = γ :=
   (rfl)
 
+@[simp]
 theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MoorePath X) :
     (γ.map f).map g = γ.map (g.comp f) :=
   (rfl)
@@ -545,6 +552,21 @@ theorem mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
     γ ∈ pathsBetween A B ↔ γ.source ∈ A ∧ γ.target ∈ B :=
   Iff.rfl
 
+/-- Endpoint evaluation on the Moore path space, taking values in `A × B`. -/
+def endpointsBetween (A B : Set X) : C(pathsBetween A B, A × B) where
+  toFun γ := (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,
+    ⟨γ.val.target, (mem_pathsBetween.mp γ.property).2⟩)
+  continuous_toFun :=
+    ((continuous_source.comp continuous_subtype_val).subtype_mk _).prodMk
+      ((continuous_target.comp continuous_subtype_val).subtype_mk _)
+
+-- Keep endpoint evaluation bundled under `simp` so endpoint-preserving comparison lemmas fire.
+theorem endpointsBetween_apply (A B : Set X) (γ : pathsBetween A B) :
+    endpointsBetween A B γ =
+      (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,
+        ⟨γ.val.target, (mem_pathsBetween.mp γ.property).2⟩) :=
+  (rfl)
+
 /-- The paths between two closed subsets form a closed subspace of the Moore paths. -/
 theorem isClosed_pathsBetween {A B : Set X} (hA : IsClosed A) (hB : IsClosed B) :
     IsClosed (pathsBetween A B) :=
@@ -553,6 +575,16 @@ theorem isClosed_pathsBetween {A B : Set X} (hA : IsClosed A) (hB : IsClosed B) 
 theorem refl_mem_pathsBetween {A B : Set X} {x : X} (hA : x ∈ A) (hB : x ∈ B) :
     refl x ∈ pathsBetween A B :=
   ⟨hA, hB⟩
+
+/-- The constant Moore paths of duration zero, parametrized by `A ∩ B`. -/
+def constantBetween (A B : Set X) : C(↥(A ∩ B), pathsBetween A B) where
+  toFun x := ⟨refl x.val, refl_mem_pathsBetween x.property.1 x.property.2⟩
+  continuous_toFun := (continuous_refl.comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem coe_constantBetween (A B : Set X) (x : ↥(A ∩ B)) :
+    (constantBetween A B x : MoorePath X) = refl x.val :=
+  (rfl)
 
 theorem trans_mem_pathsBetween {A B : Set X} {γ δ : MoorePath X} (hγ : γ.source ∈ A)
     (hδ : δ.target ∈ B) (h : γ.target = δ.source) : γ.trans δ h ∈ pathsBetween A B :=
@@ -759,7 +791,7 @@ theorem map_id :
 theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (f : C(X, Y))
     (hg : g y = z) (hf : f x = y) :
     map (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) = (map g hg).comp (map f hf) :=
-  ContinuousMonoidHom.ext fun _ ↦ ext <| by simp [MoorePath.map_map]
+  ContinuousMonoidHom.ext fun _ ↦ ext <| by simp
 
 end MooreLoopSpace
 

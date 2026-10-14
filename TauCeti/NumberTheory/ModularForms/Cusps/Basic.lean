@@ -247,7 +247,12 @@ lemma Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
 
 end IntegerCuspWidth
 
-/-! ### The strict period `1` of `Γ₁(N)` -/
+/-! ### The strict period `1` of `Γ₀(N)` and `Γ₁(N)` -/
+
+/-- `1` is a strict period of `Γ₀(N)`, viewed in `GL (Fin 2) ℝ`. -/
+theorem one_mem_strictPeriods_Gamma0_map (N : ℕ) :
+    (1 : ℝ) ∈ ((CongruenceSubgroup.Gamma0 N).map (mapGL ℝ)).strictPeriods := by
+  simp [CongruenceSubgroup.strictPeriods_Gamma0]
 
 /-- **`1` is a strict period of `Γ₁(N)`**, viewed in `GL (Fin 2) ℝ`.
 

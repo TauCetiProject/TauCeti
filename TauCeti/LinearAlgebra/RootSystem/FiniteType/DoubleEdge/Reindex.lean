@@ -45,7 +45,7 @@ namespace TauCeti
 
 open SimpleGraph
 
-variable {B : Type*} [Fintype B] {A : Matrix B B ℤ} {n : ℕ}
+variable {B : Type*} {A : Matrix B B ℤ} {n : ℕ}
 
 /-! ## The double-edge model read along its path -/
 
@@ -167,7 +167,7 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
 multiple edge; in particular it already forces the opposite entry `A u v` to be `-1`. The path
 argument below discharges it. -/
 private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_simple
-    [DecidableEq B] (h : IsFiniteType A)
+    [Fintype B] [DecidableEq B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Connected) (hdeg : ∀ i, (diagramGraph A).degree i ≤ 2)
     {u v : B} (hvu : A v u = -2)
     (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
@@ -339,7 +339,7 @@ the only multiple edge, and the finite-type sign conditions then determine every
 entry. -/
 -- `degree` needs finite neighbour sets while the theorem type is elaborated, so this decidability
 -- instance cannot be confined to the proof.
-theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [DecidableEq B]
+theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [DecidableEq B]
     (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) (hdeg : ∀ i, (diagramGraph A).degree i ≤ 2)
     {u v : B} (hvu : A v u = -2) :

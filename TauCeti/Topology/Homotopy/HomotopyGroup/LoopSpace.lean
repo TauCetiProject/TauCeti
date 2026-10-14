@@ -38,7 +38,7 @@ concatenation in the matching direction.
 * `GenLoop.homotopic_homeomorph_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
 * `HomotopyGroup.congrEquiv`, `HomotopyGroup.congrMulEquiv`: reindexing the cube directions
-  along `M ≃ N`.
+  along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv`.
 * `HomotopyGroup.zerothHomotopyEquiv`: **`π_N(X, x)` is the set of path components of
   `Ω^ N X x`**, with `Path.joined_iff_homotopic` its one-dimensional form and
   `HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup` the degree-zero shift
@@ -137,6 +137,109 @@ theorem genLoopGenLoopEquiv_transAt (i : M) (p q : Ω^ M (Ω^ N X x) _root_.GenL
 
 end Sum
 
+section Loop
+
+variable (x) in
+/-- Currying one extra cube direction: cube loops in the directions `M` of the loop space
+`Ω X x`, based at the constant loop, are cube loops of `X` in the directions `M ⊕ Fin 1`. -/
+def genLoopLoopSumHomeomorph (M : Type*) :
+    Ω^ M (Ω X x) (Path.refl x) ≃ₜ Ω^ (M ⊕ Fin 1) X x :=
+  (mapHomeomorph (homeomorphOfUnique (Fin 1)).symm
+      ((Homeomorph.symm_apply_eq _).mpr (homeomorphOfUnique_const (Fin 1)).symm)).trans
+    (genLoopGenLoopEquiv x)
+
+variable (x) in
+/-- The extra cube direction of `genLoopLoopSumHomeomorph` is the path parameter. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_apply (M : Type*) (p : Ω^ M (Ω X x) (Path.refl x))
+    (t : I^(M ⊕ Fin 1)) :
+    genLoopLoopSumHomeomorph x M p t = p (fun i => t (Sum.inl i)) (t (Sum.inr 0)) := by
+  rw [genLoopLoopSumHomeomorph, Homeomorph.trans_apply]
+  simp
+
+variable (x) in
+/-- The homeomorphism `genLoopLoopSumHomeomorph` is based: it carries the constant cube loop to
+the constant cube loop. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_const (M : Type*) :
+    genLoopLoopSumHomeomorph x M (GenLoop.const : Ω^ M (Ω X x) (Path.refl x)) = GenLoop.const := by
+  refine _root_.GenLoop.ext _ _ fun t => ?_
+  simp [genLoopLoopSumHomeomorph_apply]
+
+variable (x) in
+/-- The inverse of `genLoopLoopSumHomeomorph` also carries the constant cube loop to the constant
+cube loop. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_symm_const (M : Type*) :
+    (genLoopLoopSumHomeomorph x M).symm (GenLoop.const : Ω^ (M ⊕ Fin 1) X x) =
+      (GenLoop.const : Ω^ M (Ω X x) (Path.refl x)) :=
+  (genLoopLoopSumHomeomorph x M).symm_apply_eq.2 (genLoopLoopSumHomeomorph_const x M).symm
+
+variable (x) in
+/-- The inverse of `genLoopLoopSumHomeomorph` evaluated at the cube coordinates `s` in the
+directions `M` and the path parameter `u`. -/
+@[simp]
+theorem genLoopLoopSumHomeomorph_symm_apply (M : Type*) (q : Ω^ (M ⊕ Fin 1) X x)
+    (s : I^M) (u : I) :
+    (genLoopLoopSumHomeomorph x M).symm q s u = q (Sum.elim s fun _ => u) := by
+  have h := genLoopLoopSumHomeomorph_apply x M ((genLoopLoopSumHomeomorph x M).symm q)
+    (Sum.elim s fun _ => u)
+  rw [Homeomorph.apply_symm_apply] at h
+  simpa using h.symm
+
+variable (x) in
+/-- Currying the last cube direction: cube loops in `k` directions of the loop space `Ω X x`,
+based at the constant loop, are cube loops of `X` in `k + 1` directions. This is
+`genLoopLoopSumHomeomorph` with the directions `Fin k ⊕ Fin 1` identified with `Fin (k + 1)`. -/
+def genLoopLoopHomeomorph (k : ℕ) :
+    Ω^ (Fin k) (Ω X x) (Path.refl x) ≃ₜ Ω^ (Fin (k + 1)) X x :=
+  (genLoopLoopSumHomeomorph x (Fin k)).trans (GenLoop.congr x finSumFinEquiv)
+
+variable (x) in
+/-- The last cube direction of `genLoopLoopHomeomorph` is the path parameter. -/
+@[simp]
+theorem genLoopLoopHomeomorph_apply (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x))
+    (t : I^(Fin (k + 1))) :
+    genLoopLoopHomeomorph x k p t = p (fun i => t i.castSucc) (t (Fin.last k)) := by
+  rw [genLoopLoopHomeomorph, Homeomorph.trans_apply, congr_apply,
+    genLoopLoopSumHomeomorph_apply]
+  have h' (i : Fin k) : finSumFinEquiv (Sum.inl i) = i.castSucc := rfl
+  have h'' : finSumFinEquiv (Sum.inr (0 : Fin 1)) = Fin.last k := rfl
+  rw [h'']
+  simp only [h']
+
+variable (x) in
+/-- The homeomorphism `genLoopLoopHomeomorph` is based: it carries the constant cube loop to
+the constant cube loop. -/
+@[simp]
+theorem genLoopLoopHomeomorph_const (k : ℕ) :
+    genLoopLoopHomeomorph x k (GenLoop.const : Ω^ (Fin k) (Ω X x) (Path.refl x)) =
+      GenLoop.const := by
+  refine _root_.GenLoop.ext _ _ fun t => ?_
+  simp [genLoopLoopHomeomorph_apply]
+
+variable (x) in
+/-- The inverse of `genLoopLoopHomeomorph` also carries the constant cube loop to the constant
+cube loop. -/
+@[simp]
+theorem genLoopLoopHomeomorph_symm_const (k : ℕ) :
+    (genLoopLoopHomeomorph x k).symm (GenLoop.const : Ω^ (Fin (k + 1)) X x) =
+      (GenLoop.const : Ω^ (Fin k) (Ω X x) (Path.refl x)) :=
+  (genLoopLoopHomeomorph x k).symm_apply_eq.2 (genLoopLoopHomeomorph_const x k).symm
+
+variable (x) in
+/-- The inverse of `genLoopLoopHomeomorph` evaluated at the first `k` coordinates `s` and the
+path parameter `u`. -/
+@[simp]
+theorem genLoopLoopHomeomorph_symm_apply (k : ℕ) (q : Ω^ (Fin (k + 1)) X x)
+    (s : I^(Fin k)) (u : I) :
+    (genLoopLoopHomeomorph x k).symm q s u = q (Fin.snoc s u) := by
+  have h := genLoopLoopHomeomorph_apply x k ((genLoopLoopHomeomorph x k).symm q) (Fin.snoc s u)
+  rw [Homeomorph.apply_symm_apply] at h
+  simpa using h.symm
+
+end Loop
+
 end GenLoop
 
 namespace HomotopyGroup
@@ -160,6 +263,17 @@ theorem congrEquiv_mk (e : M ≃ N) (p : Ω^ M X x) :
 theorem congrEquiv_symm_mk (e : M ≃ N) (q : Ω^ N X x) :
     (congrEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) = ⟦_root_.GenLoop.congr x e.symm q⟧ :=
   by rw [congrEquiv.eq_1]; rfl
+
+/-- Reindexing the cube directions commutes with the maps induced by based continuous maps. -/
+@[simp]
+theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y)
+    (e : M ≃ N) (a : HomotopyGroup M X x) :
+    map f hf (congrEquiv e a) = congrEquiv e (map f hf a) := by
+  induction a using Quotient.inductionOn
+  rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk]
+  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`; they differ only in the order in which
+  -- the two compositions are bundled.
+  rfl
 
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
@@ -221,6 +335,22 @@ theorem zerothHomotopyEquiv_symm_mk (p : Ω^ N X x) :
     zerothHomotopyEquiv.symm (⟦p⟧ : HomotopyGroup N X x) =
       (⟦p⟧ : ZerothHomotopy (Ω^ N X x)) :=
   by rw [zerothHomotopyEquiv.eq_1]; rfl
+
+/-- Mathlib's homeomorphism `Ω^ N X x ≃ₜ X` for empty `N` evaluates a zero-dimensional
+generalized loop at the unique point of the cube. -/
+@[simp]
+theorem _root_.genLoopHomeoOfIsEmpty_apply [IsEmpty N] (p : Ω^ N X x) :
+    genLoopHomeoOfIsEmpty N x p = p 0 :=
+  rfl
+
+/-- Mathlib's bijection between the homotopy group indexed by an empty type and the path
+components of `X` sends the class of a zero-dimensional generalized loop to the path component of
+its value. -/
+@[simp]
+theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_mk [IsEmpty N] (p : Ω^ N X x) :
+    homotopyGroupEquivZerothHomotopyOfIsEmpty N x (⟦p⟧ : HomotopyGroup N X x) =
+      ZerothHomotopy.mk (p 0) :=
+  rfl
 
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the

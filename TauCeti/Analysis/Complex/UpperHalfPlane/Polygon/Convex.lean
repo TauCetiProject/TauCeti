@@ -173,6 +173,14 @@ theorem carrier_subset_closure_leftHalfPlane (i : Fin n) :
     P.carrier ⊆ closure (leftHalfPlane (P.sideGeodesic i)) :=
   fun _ hz ↦ (P.mem_carrier_iff _).mp hz i
 
+/-- The carrier contains the geodesic segment between any two of its points. -/
+theorem geodesicSegment_subset_carrier {z w : ℍ} (hz : z ∈ P.carrier) (hw : w ∈ P.carrier) :
+    geodesicSegment z w ⊆ P.carrier := by
+  intro v hv
+  exact (P.mem_carrier_iff v).mpr fun i ↦ geodesicSegment_subset_closure_leftHalfPlane
+    (P.carrier_subset_closure_leftHalfPlane i hz)
+    (P.carrier_subset_closure_leftHalfPlane i hw) hv
+
 /-- The carrier is cut out by the side forms of the edges. -/
 theorem mem_carrier_iff_sideForm_nonpos (z : ℍ) :
     z ∈ P.carrier ↔ ∀ i, sideForm (P.sideGeodesic i) z ≤ 0 :=

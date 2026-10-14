@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
@@ -41,8 +40,16 @@ subgroups is separate from this carrier construction.
 * `TauCeti.TypeBSpinCarrier.rootSubgroup`: its numbered simple-root subgroup morphisms.
 * `TauCeti.TypeBSpinCarrier.weightTorus`: its closed split weight torus.
 * `TauCeti.TypeBSpinCarrier.points`: its matrix-valued points over a commutative ring.
-* `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints`: the torus conjugation
-  equation on matrix-valued points.
+* `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints` and
+  `TauCeti.TypeBSpinCarrier.weightTorus_conj_rootSubgroup`: the torus conjugation equation on
+  matrix-valued points and on scheme points.
+* `TauCeti.TypeBSpinCarrier.rootGeneratorWeight_inl_eq_root_simpleIndex`,
+  `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex`,
+  `TauCeti.TypeBSpinCarrier.weightTorus_conj_rootSubgroup_root_simpleIndex`, and their
+  negative-root counterparts: the generator weights are the named simple roots of
+  `TauCeti.DynkinType.simplyConnectedRootDatum` at `B (n + 1)`, and the conjugation equations
+  take them as exponents. They assume `(DynkinType.B (n + 1)).Valid`, which fails at `n = 0`,
+  where the carrier still exists.
 * `TauCeti.TypeBSpinCarrier.rep_rootGenerator_inl_castSucc` and its three siblings: each numbered
   simple generator acts on the spin module by creation and contraction of exterior coordinates.
 * `TauCeti.TypeBSpinCarrier.pow_two_rep_rootGenerator_eq_zero`: each numbered simple generator
@@ -118,6 +125,7 @@ noncomputable def basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
   Fintype.equivFin (Finset (Fin (n + 1))) (DynkinType.typeBSpinReflection i (signSet n a))
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
+@[simp]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
     signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) := by
   simp [basisReflection, signSet]
@@ -233,8 +241,8 @@ theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) 
         (TauCeti.typeBSimpleRootGeneratorFamily (.inr (Fin.last n)))) x =
       CliffordAlgebra.involute
         (CliffordAlgebra.contractLeft ((polarizationBasis n).coord (Fin.last n)) x) := by
-  -- `rw` with the terminal-generator equation times out on the concrete carrier here, while
-  -- `simp only` performs the same rewrite.
+  -- `simp only` performs this rewrite about fifteen times faster than `rw` with the same
+  -- terminal-generator equations on the concrete carrier.
   simp only [TauCeti.typeBSimpleRootGeneratorFamily_inr,
     TauCeti.typeBSimpleNegativeRootGenerator_last]
   have h := SpinPolarizationData.typeBSpinRep_shortNegativeRootGenerator_apply (polarization n)
@@ -515,6 +523,15 @@ theorem points_def (A : Type v) [CommRing A] :
       TauCeti.GeneralLinear.hopfIdealPointsSubgroup (dimension n) (definingIdeal n) A := by
   rw [points, definingIdeal]
   exact kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
+
+/-- The carrier points are the points of the generic Kostant toral closure they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n A =
+      kostantToralPointsSubgroup
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+        (latticeBasis n) (basisWeight n) A := (rfl)
 
 /-- A matrix is a carrier point exactly when its associated convolution point kills the
 defining Hopf ideal. -/

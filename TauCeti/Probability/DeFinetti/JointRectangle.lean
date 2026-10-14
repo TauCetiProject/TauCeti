@@ -9,8 +9,8 @@ module
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 -- Non-public: the prefix factorization and directing measure, the joint-rectangle common ending,
 -- the path-law transfer, and the machinery the symmetry transport runs on.
--- Public: `directingProbabilityMeasure` names the witness in the exported statement.
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+-- Public: `tailConditionalProbabilityMeasure` names the witness in the exported statement.
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 import TauCeti.Probability.DeFinetti.DirectingMeasure.BlockCylinder
 import TauCeti.Probability.DeFinetti.BlockFactorization
 import TauCeti.Probability.DeFinetti.ConditionalCommonEnding
@@ -44,7 +44,8 @@ supply that, all private.
 cylinder is the integral of the directing-measure product over that event. Since `ν` is
 `tailProcess`-measurable, `ν ⁻¹' S` is a tail event, so `setIntegral_condExp` may be tested against
 it and the prefix factorization replaces the conditional expectation. The real/`ℝ≥0∞` conversion it
-runs on is `DirectingMeasure/Integral.lean`, shared with `BlockFactorization`.
+runs on is `TauCeti.Probability.Process.Tail.ConditionalLaw.Integral`, shared with
+`BlockFactorization`.
 
 **Symmetry transport.** A finitely supported permutation realising an injective selection on the
 initial segment carries the prefix identity to that selection. It fixes `ν`, because tail events lie
@@ -58,8 +59,6 @@ what keeps `[StandardBorelSpace Ω]` out of the exported statement:
 space.
 
 The joint rectangles are then fed to `conditionallyIID_of_jointRectangles`.
-
-This advances `TauCetiRoadmap/Exchangeability/README.md`, **Layer 6** — the conditional summit.
 
 ## Sources
 
@@ -90,16 +89,16 @@ block cylinder is the integral of the directing-measure product over that event.
 
 The tail event is `tailProcess X`-measurable, so `setIntegral_condExp` may be tested against it, and
 the prefix factorization then replaces the conditional expectation; the real/`ℝ≥0∞` conversion is
-`ofReal_integral_eq_lintegral_prod_directingMeasure`. -/
+`ofReal_integral_eq_lintegral_prod_tailConditionalMeasure`. -/
 private theorem measure_inter_blockCylinder_eq_setLIntegral
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {r : ℕ} {B : Fin r → Set α} (hB : ∀ i, MeasurableSet (B i))
     {S : Set (ProbabilityMeasure α)} (hS : MeasurableSet S) :
-    μ ((directingProbabilityMeasure μ X ⁻¹' S)
+    μ ((tailConditionalProbabilityMeasure μ X ⁻¹' S)
         ∩ blockCylinder X (fun i : Fin r => (i : ℕ)) B)
-      = ∫⁻ ω in directingProbabilityMeasure μ X ⁻¹' S,
-          ∏ i, directingMeasure μ X ω (B i) ∂μ :=
+      = ∫⁻ ω in tailConditionalProbabilityMeasure μ X ⁻¹' S,
+          ∏ i, tailConditionalMeasure μ X ω (B i) ∂μ :=
   measure_inter_blockCylinder_eq_setLIntegral_of_condExp hX_meas hB
     (condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure hX hX_meas hB) hS
 
@@ -141,10 +140,10 @@ private theorem measure_inter_blockCylinder_eq_setLIntegral_of_injective
     {m : ℕ} {k : Fin m → ℕ} (hk : Function.Injective k)
     {B : Fin m → Set α} (hB : ∀ i, MeasurableSet (B i))
     {S : Set (ProbabilityMeasure α)} (hS : MeasurableSet S) :
-    μ ((directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
+    μ ((tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
         ∩ blockCylinder (fun j (x : ℕ → α) => x j) k B)
-      = ∫⁻ ω in directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S,
-          ∏ i, directingMeasure μ (fun j (x : ℕ → α) => x j) ω (B i) ∂μ := by
+      = ∫⁻ ω in tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S,
+          ∏ i, tailConditionalMeasure μ (fun j (x : ℕ → α) => x j) ω (B i) ∂μ := by
   have hY_meas : ∀ j, Measurable (fun x : ℕ → α => x j) := fun j => measurable_pi_apply j
   obtain ⟨π, hπfin, hπval⟩ := Equiv.Perm.exists_finite_compl_fixedBy_apply_eq
     (⟨Fin.val, Fin.val_injective⟩ : Fin m ↪ ℕ) ⟨k, hk⟩
@@ -152,34 +151,35 @@ private theorem measure_inter_blockCylinder_eq_setLIntegral_of_injective
   -- The directing measure is `pathTail`-measurable, hence measurable for the exchangeable
   -- σ-algebra, hence fixed by the reindexing; so the event it defines is pulled back to itself.
   have hSfix : permReindex π ⁻¹'
-      (directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
-      = directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S := by
+      (tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
+      = tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S := by
     rw [← Set.preimage_comp, comp_permReindex_eq_of_measurable_exchangeableSigma
-      (measurable_tailProcess_directingProbabilityMeasure.mono pathTail_le_exchangeableSigma le_rfl)
+      (measurable_tailProcess_tailConditionalProbabilityMeasure.mono
+        pathTail_le_exchangeableSigma le_rfl)
       hπfin]
   have hcyl := blockCylinder_eq_preimage_permReindex (B := B) hπval
   have hmp : MeasurePreserving (permReindex (α := α) π) μ μ :=
     (exchangeableLaw_of_contractable hX).measurePreserving_permReindex π
   have hmeas : MeasurableSet
-      ((directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
+      ((tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
         ∩ blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin m => (i : ℕ)) B) :=
-    (measurable_directingProbabilityMeasure (μ := μ)
+    (measurable_tailConditionalProbabilityMeasure (μ := μ)
         (tailProcess_le_ambient 0 fun j _ => hY_meas j) hS).inter
       (measurableSet_blockCylinder (fun i => hY_meas _) hB)
-  calc μ ((directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
+  calc μ ((tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
         ∩ blockCylinder (fun j (x : ℕ → α) => x j) k B)
       = μ (permReindex π ⁻¹'
-          ((directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
+          ((tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
             ∩ blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin m => (i : ℕ)) B)) := by
         rw [Set.preimage_inter, hSfix, ← hcyl]
-    _ = μ ((directingProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
+    _ = μ ((tailConditionalProbabilityMeasure μ (fun j (x : ℕ → α) => x j) ⁻¹' S)
           ∩ blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin m => (i : ℕ)) B) :=
         hmp.measure_preimage hmeas.nullMeasurableSet
     _ = _ := measure_inter_blockCylinder_eq_setLIntegral hX hY_meas hB hS
 
 /-- **The conditional summit on path space, at the canonical directing measure.** A contractable
 coordinate process on a standard Borel state space is conditionally i.i.d. **with** witness the tail
-conditional law `directingProbabilityMeasure`.
+conditional law `tailConditionalProbabilityMeasure`.
 
 Stated at the named witness rather than existentially: the directing measure is the object the
 conditional predicate is about, so discarding it would lose the identity downstream users need. -/
@@ -187,14 +187,14 @@ theorem conditionallyIIDWith_of_contractable_pathSpace
     [StandardBorelSpace α] [Nonempty α] {μ : Measure (ℕ → α)} [IsFiniteMeasure μ]
     (hX : Contractable μ fun j (x : ℕ → α) => x j) :
     ConditionallyIIDWith μ (fun j (x : ℕ → α) => x j)
-      (directingProbabilityMeasure μ fun j (x : ℕ → α) => x j) := by
+      (tailConditionalProbabilityMeasure μ fun j (x : ℕ → α) => x j) := by
   have hY_meas : ∀ j, Measurable (fun x : ℕ → α => x j) := fun j => measurable_pi_apply j
   refine conditionallyIIDWith_of_measure_inter_blockCylinder_eq_setLIntegral
     (fun j => (hY_meas j).aemeasurable)
-    (measurable_directingProbabilityMeasure (μ := μ)
+    (measurable_tailConditionalProbabilityMeasure (μ := μ)
       (tailProcess_le_ambient 0 fun j _ => hY_meas j))
     fun m sel hsel S hS B hB => ?_
-  simpa only [directingProbabilityMeasure_toMeasure] using
+  simpa only [tailConditionalProbabilityMeasure_toMeasure] using
     measure_inter_blockCylinder_eq_setLIntegral_of_injective hX hsel.injective hB hS
 
 end Probability

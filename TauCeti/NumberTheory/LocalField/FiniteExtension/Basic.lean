@@ -59,16 +59,16 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
   the norm topology.
 * `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
 * `AlgEquiv.continuous_of_valuativeExtension`: `K`-algebra automorphisms of `M` are continuous.
-* `AlgHom.valuativeExtension`: a `K`-algebra map from `M` to a field whose valuative relation
-  extends that of `K` makes that field a valuative extension of `M`.
+* `AlgHom.valuativeExtension`: a `K`-algebra map from `M` to a commutative ring whose valuative
+  relation extends that of `K` makes that ring a valuative extension of `M`.
 * `Valuation.Integers.isIntegral_iff_valuation_le_one`: for any valuative relation on `M`
   extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
   its valuation is at most `1`.
 * `TauCeti.integerRing_eq_integralClosure`: `𝒪[M]` is the integral closure of `𝒪[K]` in `M`.
 * `TauCeti.integerRingEquivIntegralClosure`: the resulting `𝒪[K]`-algebra equivalence between
   `𝒪[M]` and the integral closure of `𝒪[K]` in `M`.
-* `AlgHom.integerRingHom`: a `K`-algebra map of finite extensions restricts to an
-  `𝒪[K]`-algebra map of their rings of integers.
+* `AlgHom.integerRingHom`: a `K`-algebra map from a finite extension to any compatible valued
+  field restricts to an `𝒪[K]`-algebra map of their rings of integers.
 * `AlgHom.residueFieldHom`: the resulting `𝓀[K]`-embedding of residue fields, which is
   functorial (`AlgHom.residueFieldHom_comp`, `AlgHom.residueFieldHom_id`); the restriction to
   rings of integers is local (`AlgHom.isLocalHom_integerRingHom`).
@@ -374,10 +374,10 @@ theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (
     ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.ge)
 
 /-- **Embeddings respect the extended valuations.** A `K`-algebra map `ι : M →ₐ[K] N` from a
-finite extension `M` of a nonarchimedean local field `K` to a field `N`, for valuative relations
-on `M` and on `N` both extending that of `K`, makes `N` a valuative extension of `M` through
+finite extension `M` of a nonarchimedean local field `K` to a commutative ring `N`, with valuative
+relations on `M` and `N` both extending that of `K`, makes `N` a valuative extension of `M` through
 `ι.toAlgebra`. -/
-theorem _root_.AlgHom.valuativeExtension {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
+theorem _root_.AlgHom.valuativeExtension {N : Type*} [CommRing N] [ValuativeRel N] [Algebra K N]
     [ValuativeExtension K N] [ValuativeRel M] [ValuativeExtension K M] (ι : M →ₐ[K] N) :
     letI := ι.toAlgebra
     ValuativeExtension M N := by
@@ -480,36 +480,7 @@ theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪
     (e.integerRingEquiv x : M) = e (x : L) := by
   simp [AlgEquiv.integerRingEquiv]
 
-/-- A base-field algebra map restricts to an algebra map of integer rings. -/
-def _root_.AlgHom.integerRingHom (ι : L →ₐ[K] M) : 𝒪[L] →ₐ[𝒪[K]] 𝒪[M] :=
-  ((integerRingEquivIntegralClosure K M).symm.toAlgHom.comp
-    (ι.restrictScalars 𝒪[K]).mapIntegralClosure).comp (integerRingEquivIntegralClosure K L)
-
-/-- The integer-ring map acts by the original field map. -/
-@[simp]
-theorem _root_.AlgHom.coe_integerRingHom_apply (ι : L →ₐ[K] M) (x : 𝒪[L]) :
-    (ι.integerRingHom x : M) = ι (x : L) := by
-  simp [AlgHom.integerRingHom]
-
 end IntegerRingEquiv
-
-/-- The algebra map of a finite compatible extension is continuous for the given valuative
-topologies. -/
-theorem continuous_algebraMap_of_valuativeExtension [ValuativeRel M] [ValuativeExtension K M]
-    [TopologicalSpace M] [IsValuativeTopology M] : Continuous (algebraMap K M) := by
-  have h : @Continuous K M (normalizedNormedFieldTopology K)
-      (finiteExtensionNormedFieldTopology K M) (algebraMap K M) := by
-    let nM := finiteExtensionNormedField K M
-    let nK := normalizedNontriviallyNormedField K
-    let _ := nM
-    let _ := nK
-    apply Isometry.continuous
-    apply (isometry_iff_dist_eq).mpr
-    intro x y
-    rw [dist_eq_norm, dist_eq_norm, ← map_sub, finiteExtensionNormedField_norm_algebraMap,
-      normalizedNormedField_norm_def]
-  rw [normalizedNormedField_topology_eq K, finiteExtensionNormedFieldTopology_eq K M] at h
-  exact h
 
 variable {K M} in
 /-- **Galois automorphisms are continuous.** Every `K`-algebra automorphism of a finite extension
@@ -533,27 +504,33 @@ open TauCeti
 variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [Algebra K L] [ValuativeExtension K L]
   [Module.Finite K L] [Field M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M]
-  [Module.Finite K M]
 
-/-- A `K`-embedding of finite extensions of a nonarchimedean local field restricts to a local
-homomorphism of their rings of integers. -/
+/-- A base-field algebra map from a finite extension to a compatible valued field restricts to
+an algebra map of integer rings. -/
+def integerRingHom (ι : L →ₐ[K] M) : 𝒪[L] →ₐ[𝒪[K]] 𝒪[M] := by
+  let _ := ι.toAlgebra
+  have := ι.valuativeExtension
+  refine
+    { ι.toRingHom.restrict 𝒪[L] 𝒪[M] (fun x hx ↦ ?_) with
+      commutes' := fun x ↦ Subtype.ext ?_ }
+  · exact (Valuation.HasExtension.val_map_le_one_iff (valuation L) (valuation M) x).2 hx
+  · simp
+
+/-- The integer-ring map acts by the original field map. -/
+@[simp]
+theorem coe_integerRingHom_apply (ι : L →ₐ[K] M) (x : 𝒪[L]) :
+    (ι.integerRingHom x : M) = ι (x : L) := (rfl)
+
+/-- A `K`-embedding from a finite extension of a nonarchimedean local field to a compatible
+valued field restricts to a local homomorphism of their rings of integers. -/
 instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerRingHom := by
-  -- `𝒪[M]` is integral over `𝒪[K]`, hence over `𝒪[L]`, and an injective integral homomorphism
-  -- is local.
-  have hint : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]).IsIntegral := by
-    refine RingHom.IsIntegral.tower_top (algebraMap 𝒪[K] 𝒪[L]) _ ?_
-    rw [ι.integerRingHom.comp_algebraMap]
-    intro x
-    have hx := (Valuation.Integers.isIntegral_iff_valuation_le_one
-      (Valuation.integer.integers (valuation K)) (x : M)).2 x.2
-    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom 𝒪[K] 𝒪[M] M)
-      Subtype.val_injective).1 hx
-  have hinj : Function.Injective (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) := fun x y h ↦
-    Subtype.ext (ι.injective (by simpa using congrArg Subtype.val h))
-  exact ⟨(hint.isLocalHom hinj).map_nonunit⟩
+  let _ := ι.toAlgebra
+  have := ι.valuativeExtension
+  exact ⟨(inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M])).map_nonunit⟩
 
-/-- The embedding of residue fields induced by a `K`-embedding of finite extensions of a
-nonarchimedean local field `K`. It is linear over the residue field of `K`. -/
+/-- The embedding of residue fields induced by a `K`-embedding from a finite extension of a
+nonarchimedean local field `K` to a compatible valued field. It is linear over the residue field
+of `K`. -/
 noncomputable def residueFieldHom (ι : L →ₐ[K] M) : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M] :=
   IsLocalRing.ResidueField.mapAlgHom' ι.integerRingHom
 
@@ -568,7 +545,7 @@ theorem residueFieldHom_residue (ι : L →ₐ[K] M) (x : 𝒪[L]) :
 /-- Passing to residue fields is functorial. -/
 @[simp]
 theorem residueFieldHom_comp {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
-    [ValuativeExtension K N] [Module.Finite K N] (ι₂ : M →ₐ[K] N) (ι₁ : L →ₐ[K] M) :
+    [ValuativeExtension K N] [Module.Finite K M] (ι₂ : M →ₐ[K] N) (ι₁ : L →ₐ[K] M) :
     (ι₂.comp ι₁).residueFieldHom = ι₂.residueFieldHom.comp ι₁.residueFieldHom := by
   ext x
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x

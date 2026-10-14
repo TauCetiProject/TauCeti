@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.D4.Tripled.Basic
+public import TauCeti.Algebra.Lie.D4.Tripled.BlockIntertwiners
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
 
 /-!
@@ -35,6 +35,10 @@ basis sign.
 * `TauCeti.D4Tripled.raisingMatrix_vectorIndex`,
   `TauCeti.D4Tripled.loweringMatrix_vectorIndex`, and
   `TauCeti.D4Tripled.cartanGeneratorMatrix_vectorIndex`: the signed generator comparisons.
+* `TauCeti.D4Tripled.vectorBlockEquiv`: the signed linear equivalence from the standard
+  vector module to the natural block.
+* `TauCeti.D4Tripled.vectorBlockEquiv_raising_mulVec` and its lowering and Cartan analogues:
+  the corresponding generator-action intertwiners.
 * `TauCeti.D4Tripled.raisingMatrix_vectorIndex_mul_diagonal` and its lowering and Cartan
   counterparts: the same comparisons as matrix intertwining identities.
 
@@ -43,6 +47,8 @@ basis sign.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 20.
 -/
+
+open scoped Matrix
 
 namespace TauCeti.D4Tripled
 
@@ -135,15 +141,6 @@ public theorem d4TripledWeight_vectorIndex (a : Fin 4 ⊕ Fin 4) (i : Fin 4) :
   rcases a with a | a <;> fin_cases a <;> fin_cases i <;>
     simp [vectorIndex, typeDSimpleRoot_of_add_one_lt, typeDSimpleRoot_of_not_add_one_lt]
 
-/- The positive and negative generator comparisons share the same finite normalization after
-their respective public entry formulas have reduced the matrix definitions. -/
-local macro "solve_vector_generator" : tactic => set_option hygiene false in
-  `(tactic| (
-    rcases a with a | a <;> rcases b with b | b
-    all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
-      simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector,
-        CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]))
-
 /-- The natural block of a tripled raising matrix is the standard vector raising matrix after the
 alternating basis normalization. With `D` the diagonal matrix of `vectorBasisSign`, the restricted
 tripled matrix `B` and standard matrix `A` satisfy `B * D = D * A` entrywise. -/
@@ -152,7 +149,10 @@ public theorem raisingMatrix_vectorIndex (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
       vectorBasisSign a * TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i a b := by
   rw [D4Tripled.raisingMatrix_apply]
   simp only [vectorIndex_eq_d4TripledReflection_iff]
-  solve_vector_generator
+  rcases a with a | a <;> rcases b with b | b
+  all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
+    simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector,
+      CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]
 
 /-- The natural block of a tripled lowering matrix is the standard vector lowering matrix after
 the same alternating basis normalization. -/
@@ -161,7 +161,10 @@ public theorem loweringMatrix_vectorIndex (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
       vectorBasisSign a * TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i a b := by
   rw [D4Tripled.loweringMatrix_apply]
   simp only [vectorIndex_eq_d4TripledReflection_iff]
-  solve_vector_generator
+  rcases a with a | a <;> rcases b with b | b
+  all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
+    simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector,
+      CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]
 
 /-- The natural block of a tripled Cartan-generator matrix is the standard vector Cartan matrix
 after the alternating basis normalization. -/
@@ -209,5 +212,189 @@ public theorem cartanGeneratorMatrix_vectorIndex_mul_diagonal (i : Fin 4) :
   ext a b
   simpa only [Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.submatrix_apply] using
     cartanGeneratorMatrix_vectorIndex i a b
+
+public section
+
+/-! ## The signed vector-block equivalence -/
+
+/-- The standard split vector coordinates, identified with the natural block of the tripled
+type-`D₄` table. -/
+noncomputable def vectorBlockIndexEquiv : (Fin 4 ⊕ Fin 4) ≃ Block 0 :=
+  Equiv.ofBijective
+    (fun a => ⟨vectorIndex a, d4TripledSummand_vectorIndex a⟩)
+    ⟨fun _ _ h => vectorIndex_injective (congrArg Subtype.val h), fun a => by
+      have ha : a.1 ∈ Set.range vectorIndex := by
+        rw [range_vectorIndex]
+        exact a.2
+      obtain ⟨x, hx⟩ := ha
+      exact ⟨x, Subtype.ext hx⟩⟩
+
+/-- The underlying table coordinate of `vectorBlockIndexEquiv` is `vectorIndex`. -/
+@[simp]
+theorem coe_vectorBlockIndexEquiv (a : Fin 4 ⊕ Fin 4) :
+    (vectorBlockIndexEquiv a).1 = vectorIndex a := by
+  exact congrArg Subtype.val (Equiv.ofBijective_apply _ _ a)
+
+private noncomputable def vectorSignEquiv :
+    (Fin 4 ⊕ Fin 4 → ℚ) ≃ₗ[ℚ] (Fin 4 ⊕ Fin 4 → ℚ) where
+  toFun v a := vectorBasisSign a * v a
+  invFun v a := vectorBasisSign a * v a
+  left_inv v := by
+    funext a
+    dsimp
+    rw [← mul_assoc, ← Int.cast_mul, vectorBasisSign_mul_self]
+    simp
+  right_inv v := by
+    funext a
+    dsimp
+    rw [← mul_assoc, ← Int.cast_mul, vectorBasisSign_mul_self]
+    simp
+  map_add' x y := by
+    funext a
+    simp only [Pi.add_apply]
+    ring
+  map_smul' c x := by
+    funext a
+    simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
+    ring
+
+/-- The standard split vector module, written in the signed coordinates of the natural block of
+the tripled type-`D₄` table. -/
+noncomputable def vectorBlockEquiv :
+    (Fin 4 ⊕ Fin 4 → ℚ) ≃ₗ[ℚ] (Block 0 → ℚ) :=
+  vectorSignEquiv.trans
+    (LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) vectorBlockIndexEquiv)
+
+/-- Evaluation of the vector-block equivalence on a standard coordinate. -/
+@[simp]
+theorem vectorBlockEquiv_apply_apply (v : Fin 4 ⊕ Fin 4 → ℚ)
+    (a : Fin 4 ⊕ Fin 4) :
+    vectorBlockEquiv v (vectorBlockIndexEquiv a) = vectorBasisSign a * v a := by
+  simp [vectorBlockEquiv, vectorSignEquiv]
+
+private theorem cast_typeDStd_raisingMatrix (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
+    (TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i a b : ℚ) =
+      TypeDStd.raisingMatrix (K := ℚ) 4 (by omega) i a b := by
+  by_cases hi : (i : ℕ) + 1 < 4
+  · rw [TypeDStd.raisingMatrix_of_chain 4 (by omega) hi,
+      TypeDStd.raisingMatrix_of_chain 4 (by omega) hi]
+    rcases a with a | a <;> rcases b with b | b <;>
+      simp [Matrix.fromBlocks, Matrix.single_apply]
+  · rw [TypeDStd.raisingMatrix_of_fork 4 (by omega) hi,
+      TypeDStd.raisingMatrix_of_fork 4 (by omega) hi]
+    rcases a with a | a <;> rcases b with b | b <;>
+      simp [Matrix.fromBlocks, Matrix.single_apply]
+
+private theorem cast_typeDStd_loweringMatrix (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
+    (TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i a b : ℚ) =
+      TypeDStd.loweringMatrix (K := ℚ) 4 (by omega) i a b := by
+  by_cases hi : (i : ℕ) + 1 < 4
+  · rw [TypeDStd.loweringMatrix_of_chain 4 (by omega) hi,
+      TypeDStd.loweringMatrix_of_chain 4 (by omega) hi]
+    rcases a with a | a <;> rcases b with b | b <;>
+      simp [Matrix.fromBlocks, Matrix.single_apply]
+  · rw [TypeDStd.loweringMatrix_of_fork 4 (by omega) hi,
+      TypeDStd.loweringMatrix_of_fork 4 (by omega) hi]
+    rcases a with a | a <;> rcases b with b | b <;>
+      simp [Matrix.fromBlocks, Matrix.single_apply]
+
+private theorem cast_typeDStd_cartanGenerator (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
+    (((TypeDStd.cartanGenerator (K := ℤ) 4 (by omega) i :
+        LieAlgebra.Orthogonal.typeD (Fin 4) ℤ) :
+          Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℤ) a b : ℚ) =
+      ((TypeDStd.cartanGenerator (K := ℚ) 4 (by omega) i :
+        LieAlgebra.Orthogonal.typeD (Fin 4) ℚ) :
+          Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℚ) a b := by
+  rw [TypeDStd.val_cartanGenerator, TypeDStd.val_cartanGenerator]
+  rcases a with a | a <;> rcases b with b | b <;>
+    simp [typeDDiagonalMatrix_apply]
+
+private theorem vectorBlockEquiv_mulVec
+    (A : Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℚ)
+    (B : Matrix (Block 0) (Block 0) ℚ)
+    (h : ∀ a b, (vectorBasisSign a : ℚ) * A a b =
+      B (vectorBlockIndexEquiv a) (vectorBlockIndexEquiv b) * vectorBasisSign b)
+    (v : Fin 4 ⊕ Fin 4 → ℚ) :
+    vectorBlockEquiv (A *ᵥ v) = B *ᵥ vectorBlockEquiv v := by
+  funext a
+  obtain ⟨a, rfl⟩ := vectorBlockIndexEquiv.surjective a
+  simp only [vectorBlockEquiv_apply_apply, Matrix.mulVec, dotProduct]
+  rw [Finset.mul_sum]
+  refine Fintype.sum_equiv vectorBlockIndexEquiv (fun b =>
+    (vectorBasisSign a : ℚ) * (A a b * v b))
+    (fun b => B (vectorBlockIndexEquiv a) b * vectorBlockEquiv v b) ?_
+  intro b
+  rw [vectorBlockEquiv_apply_apply]
+  calc
+    (vectorBasisSign a : ℚ) * (A a b * v b) =
+        ((vectorBasisSign a : ℚ) * A a b) * v b := by ring
+    _ = (B (vectorBlockIndexEquiv a) (vectorBlockIndexEquiv b) *
+          (vectorBasisSign b : ℚ)) * v b := by rw [h]
+    _ = _ := by ring
+
+/-- The signed vector-block equivalence intertwines every positive simple-root operator with the
+raising matrix on the natural block. -/
+@[simp]
+theorem vectorBlockEquiv_raising_mulVec (i : Fin 4) (v : Fin 4 ⊕ Fin 4 → ℚ) :
+    vectorBlockEquiv (TypeDStd.raisingMatrix (K := ℚ) 4 (by omega) i *ᵥ v) =
+      blockRaisingMatrix ℚ 0 i *ᵥ vectorBlockEquiv v := by
+  apply vectorBlockEquiv_mulVec
+  intro a b
+  simp only [blockRaisingMatrix_apply, coe_vectorBlockIndexEquiv]
+  have h := congrArg (Int.castRingHom ℚ) (raisingMatrix_vectorIndex i a b)
+  simp only [map_mul] at h
+  -- The public comparison is integral, so expose its entrywise cast before rewriting over ℚ.
+  change (raisingMatrix i (vectorIndex a) (vectorIndex b) : ℚ) *
+      (vectorBasisSign b : ℚ) =
+    (vectorBasisSign a : ℚ) *
+      (TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i a b : ℚ) at h
+  rw [cast_typeDStd_raisingMatrix] at h
+  exact h.symm
+
+/-- The signed vector-block equivalence intertwines every negative simple-root operator with the
+lowering matrix on the natural block. -/
+@[simp]
+theorem vectorBlockEquiv_lowering_mulVec (i : Fin 4) (v : Fin 4 ⊕ Fin 4 → ℚ) :
+    vectorBlockEquiv (TypeDStd.loweringMatrix (K := ℚ) 4 (by omega) i *ᵥ v) =
+      blockLoweringMatrix ℚ 0 i *ᵥ vectorBlockEquiv v := by
+  apply vectorBlockEquiv_mulVec
+  intro a b
+  simp only [blockLoweringMatrix_apply, coe_vectorBlockIndexEquiv]
+  have h := congrArg (Int.castRingHom ℚ) (loweringMatrix_vectorIndex i a b)
+  simp only [map_mul] at h
+  -- The public comparison is integral, so expose its entrywise cast before rewriting over ℚ.
+  change (loweringMatrix i (vectorIndex a) (vectorIndex b) : ℚ) *
+      (vectorBasisSign b : ℚ) =
+    (vectorBasisSign a : ℚ) *
+      (TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i a b : ℚ) at h
+  rw [cast_typeDStd_loweringMatrix] at h
+  exact h.symm
+
+/-- The signed vector-block equivalence intertwines every Cartan generator with the diagonal
+weight matrix on the natural block. -/
+@[simp]
+theorem vectorBlockEquiv_cartanGenerator_mulVec (i : Fin 4)
+    (v : Fin 4 ⊕ Fin 4 → ℚ) :
+    vectorBlockEquiv
+        (typeDDiagonalMatrix (fun j =>
+          (typeDSimpleRoot 4 (by omega) i j : ℚ)) *ᵥ v) =
+      blockCartanGeneratorMatrix ℚ 0 i *ᵥ vectorBlockEquiv v := by
+  apply vectorBlockEquiv_mulVec
+  intro a b
+  simp only [blockCartanGeneratorMatrix_apply, coe_vectorBlockIndexEquiv]
+  have h := congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_vectorIndex i a b)
+  simp only [map_mul] at h
+  -- The public comparison is integral, so expose its entrywise cast before rewriting over ℚ.
+  change (cartanGeneratorMatrix i (vectorIndex a) (vectorIndex b) : ℚ) *
+      (vectorBasisSign b : ℚ) =
+    (vectorBasisSign a : ℚ) *
+      ((((TypeDStd.cartanGenerator (K := ℤ) 4 (by omega) i :
+        LieAlgebra.Orthogonal.typeD (Fin 4) ℤ) :
+          Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℤ) a b : ℚ)) at h
+  rw [cast_typeDStd_cartanGenerator] at h
+  rw [TypeDStd.val_cartanGenerator] at h
+  exact h.symm
+
+end
 
 end TauCeti.D4Tripled

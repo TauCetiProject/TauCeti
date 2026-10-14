@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Induction.Clifford.Alternating.Basic
 public import TauCeti.RepresentationTheory.Induction.LiesOver
 import TauCeti.RepresentationTheory.CharacterTable.Determined
 import TauCeti.RepresentationTheory.Induction.IndexTwo
-import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
+import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction
 
 /-!
 # Restricting an induced alternating-group character
@@ -127,9 +127,9 @@ theorem liesOver_alternatingGroup_iff_nonempty_iso_indFDRep
     simple_indFDRep_ofLinearCharacter_alternatingGroup hχ
   constructor
   · intro h
-    -- `finrank_hom_indFDRep` transports Mathlib's `Rep.indResHomEquiv`.
+    -- `FDRep.finrank_hom_indFDRep` follows from `FDRep.indResFDRepHomEquiv`.
     have hpos : 0 < Module.finrank k (indFDRep (ofLinearCharacter χ) ⟶ W) := by
-      rw [finrank_hom_indFDRep]
+      rw [FDRep.finrank_hom_indFDRep]
       exact Module.finrank_pos_iff_exists_ne_zero.mpr (liesOver_iff.mp h)
     apply (finrank_hom_simple_simple_eq_one_iff k _ _).mp
     exact Nat.le_antisymm (finrank_hom_simple_simple_le_one k _ _) hpos

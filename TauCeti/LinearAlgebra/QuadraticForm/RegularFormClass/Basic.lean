@@ -50,6 +50,10 @@ rank is additive.
 * `TauCeti.exists_presentedForm_equivalent`: every regular form has a diagonal presentation.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
+* `TauCeti.formClass_lift_radical_eq_of_equivalent`: equivalent forms have equal regular quotient
+  classes.
+* `TauCeti.formClass_lift_radical_eq`: a zero-plus-regular splitting computes the regular quotient
+  class.
 * `TauCeti.RegularFormPresentation.prod_append`: concatenation multiplies the weight products.
 * `TauCeti.presentedFormAppendIsometryEquiv`: concatenating weights presents the orthogonal sum.
 * `TauCeti.presentedFormConsIsometryEquiv`: peeling the first weight off presents the form as a
@@ -665,6 +669,23 @@ theorem formClass_eq_iff (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (R : Qua
   obtain ⟨q, hq⟩ := exists_presentedForm_equivalent R hR
   rw [formClass_mk Q hQ p hp, formClass_mk R hR q hq, RegularFormClass.mk_eq_mk_iff]
   exact ⟨fun h => hp.trans (h.trans hq.symm), fun h => hp.symm.trans (h.trans hq)⟩
+
+/-- Isometric forms, including degenerate ones, have the same isometry class after quotienting
+by their radicals. -/
+theorem formClass_lift_radical_eq_of_equivalent {Q : QuadraticForm K V} {R : QuadraticForm K W}
+    (h : Q.Equivalent R) :
+    formClass (Q.lift Q.radical le_rfl) Q.nondegenerate_lift_radical =
+      formClass (R.lift R.radical le_rfl) R.nondegenerate_lift_radical :=
+  (formClass_eq_iff _ _ _ _).2 h.lift_radical
+
+/-- The class of the regular part of `Q` is the class of the regular summand in any splitting of
+`Q` as the orthogonal sum of a zero form and a regular form. -/
+theorem formClass_lift_radical_eq {T : Type*} [AddCommGroup T] [Module K T]
+    {Q : QuadraticForm K V} {R : QuadraticForm K W} (hR : R.Nondegenerate)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod R)) :
+    formClass _ Q.nondegenerate_lift_radical = formClass R hR :=
+  (formClass_eq_iff _ _ _ _).mpr
+    (Q.equivalent_lift_radical_of_equivalent_zero_prod h hR.radical_eq_bot)
 
 /-- The class of a presented form is the class of its presentation. -/
 @[simp]

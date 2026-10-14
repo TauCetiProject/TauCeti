@@ -62,9 +62,6 @@ and Chevalley groups*, Proc. Amer. Math. Soc. **145** (2017), 3233--3247. The pa
 diagram symmetry to a graph automorphism follows R. W. Carter, *Finite Groups of Lie Type:
 Conjugacy Classes and Complex Characters*, §1.15.
 
-This is a prerequisite for the pinned isomorphism theorem in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L1, ordinary and
-graph-twisted Steinberg maps, of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -187,7 +184,7 @@ theorem geckWeight_geckDiagramIndexEquiv (hsigma : sigma ∈ t.diagramSymmetry)
       rw [geckDiagramIndexEquiv_apply_inr, geckWeight_inr, geckWeight_inr]
       simpa only [rationalDiagramAut_indexEquiv, coe_simpleSupportEquiv,
         diagramRootPerm_simpleIndex] using
-          pairingIn_indexEquiv ℤ (t.rationalDiagramAut ht hsigma).toHom x
+          (t.rationalDiagramAut ht hsigma).toHom.pairingIn_indexEquiv ℤ x
             (t.simpleSupportEquiv ht i)
 
 /-! ## The coordinate permutation in the finite-ordinal indexing -/

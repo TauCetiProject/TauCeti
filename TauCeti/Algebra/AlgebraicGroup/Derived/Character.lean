@@ -38,7 +38,7 @@ variable {R H : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 @[simp]
 theorem sub_one_mem_derivedDefiningIdeal (x : GroupLike R H) :
     (x : H) - 1 ∈ CommHopfAlgCat.derivedDefiningIdeal (R := R) H := by
-  let f := TauCeti.GroupLike.evaluationBialgHom R H
+  let f := MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)
   have hmem : MonoidAlgebra.single x (1 : R) - 1 ∈
       CommHopfAlgCat.derivedDefiningIdeal (R := R) (MonoidAlgebra R (GroupLike R H)) := by
     rw [(CommHopfAlgCat.derivedDefiningIdeal_eq_augmentation_iff_isCocomm _).mpr inferInstance,

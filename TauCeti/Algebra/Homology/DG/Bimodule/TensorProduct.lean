@@ -86,13 +86,14 @@ local instance : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒞).oppos
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul 𝒜
+local instance tensorGradedOuterLeft : SetLike.GradedSMul 𝒜
     (grading (𝒜 := ℬ) (InternalGrading.ofDecomposition ℳ)
       (InternalGrading.ofDecomposition 𝒩)).piece :=
   gradedSMul_left (InternalGrading.ofDecomposition ℳ)
     (InternalGrading.ofDecomposition 𝒩) A 𝒜
 
-local instance : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒞).opposite.piece
+local instance tensorGradedOuterRight :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒞).opposite.piece
     (grading (𝒜 := ℬ) (InternalGrading.ofDecomposition ℳ)
       (InternalGrading.ofDecomposition 𝒩)).piece :=
   gradedSMul_right (InternalGrading.ofDecomposition ℳ)
@@ -173,6 +174,28 @@ theorem differential_smul_right (hM : IsDGRightModule hB ℳ dM)
     DistribSMul.toLinearMap_apply, LinearMap.smul_apply] at h
   rw [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
   exact sub_eq_iff_eq_add'.mp (sub_eq_zero.mp h)
+
+/-- Tensoring a DG bimodule with a left DG module retains the outer left DG action. -/
+theorem isDGLeftModule_tensorProduct (hM : IsDGBimodule hA hB ℳ dM)
+    (hN : IsDGLeftModule hB 𝒩 dN) :
+    IsDGLeftModule hA
+      (grading (𝒜 := ℬ) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition 𝒩)).piece
+      (differential hM.isDGRightModule hN) where
+  isHomogeneous := isHomogeneous_differential hM.isDGRightModule hN
+  sq_zero := differential_sq_zero hM.isDGRightModule hN
+  leibniz := fun ha z ↦ differential_smul_left hM hN ha z
+
+/-- Tensoring a right DG module with a DG bimodule retains the outer right DG action. -/
+theorem isDGRightModule_tensorProduct (hM : IsDGRightModule hB ℳ dM)
+    (hN : IsDGBimodule hB hC 𝒩 dN) :
+    IsDGRightModule hC
+      (grading (𝒜 := ℬ) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition 𝒩)).piece
+      (differential hM hN.toIsDGLeftModule) where
+  isHomogeneous := isHomogeneous_differential hM hN.toIsDGLeftModule
+  sq_zero := differential_sq_zero hM hN.toIsDGLeftModule
+  leibniz := fun hz c ↦ differential_smul_right hM hN hz c
 
 /-- The ordinary balanced tensor product of an `(A, B)` DG bimodule and a `(B, C)` DG
 bimodule is an `(A, C)` DG bimodule, with the outer actions on its two factors. -/

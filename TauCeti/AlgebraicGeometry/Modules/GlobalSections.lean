@@ -244,6 +244,29 @@ lemma baseRingToStructurePresheaf_app_eq_appLE (U : X.Opens) :
   -- `app ⊤` followed by that restriction.
   rfl
 
+variable {R} in
+/-- Compatible structure morphisms make the actions of the two base rings on sections
+into a scalar tower. -/
+theorem baseRingToStructurePresheaf_app_algebraMap
+    {S : Type u} [CommRing S] [Algebra R S] [X.Over (Spec (.of S))]
+    (h : (X ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S)) =
+      (X ↘ Spec (.of R))) (U : X.Opens) (r : R) :
+    (X.baseRingToStructurePresheaf S).app (op U) (algebraMap R S r) =
+      (X.baseRingToStructurePresheaf R).app (op U) r := by
+  have htop := congrArg Scheme.Hom.appTop h
+  rw [Scheme.Hom.comp_appTop] at htop
+  have hΓ : CommRingCat.ofHom (algebraMap R S) ≫ (Scheme.ΓSpecIso (.of S)).inv ≫
+      (X ↘ Spec (.of S)).appTop =
+      (Scheme.ΓSpecIso (.of R)).inv ≫ (X ↘ Spec (.of R)).appTop := by
+    rw [Scheme.ΓSpecIso_inv_naturality_assoc, htop]
+  rw [Scheme.baseRingToStructurePresheaf_app, Scheme.baseRingToStructurePresheaf_app,
+    CommRingCat.comp_apply, CommRingCat.comp_apply, CommRingCat.ofHom_apply,
+    CommRingCat.ofHom_apply, Scheme.Modules.baseRingToGlobalSections_apply,
+    Scheme.Modules.baseRingToGlobalSections_apply]
+  -- The base-ring maps use global sections followed by restriction to `U`.
+  exact congrArg (fun a ↦ X.presheaf.map U.leTop.op a)
+    (ConcreteCategory.congr_hom hΓ r)
+
 end AlgebraicGeometry.Scheme
 
 namespace AlgebraicGeometry.Scheme.Modules

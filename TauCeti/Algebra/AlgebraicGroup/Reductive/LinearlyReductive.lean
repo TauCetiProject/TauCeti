@@ -36,9 +36,10 @@ not suffice here: a closed subgroup of a linearly reductive group is not visibly
 reductive. Complete reducibility is therefore used on representations of the ambient group, and
 normality is what makes the invariants of the subgroup an ambient subrepresentation.
 
-For the object properties this gives one half of the Layer 6 comparison: a smooth, geometrically
-connected finite-type affine group whose geometric fibre is linearly reductive is reductive. The
-converse implication in characteristic zero is a separate development.
+For the object properties this gives one direction of the comparison between linear reductivity and
+reductivity, valid in every characteristic: a smooth, geometrically connected finite-type affine
+group whose geometric fibre is linearly reductive is reductive. The converse implication in
+characteristic zero is not proved here.
 
 ## Main declarations
 
@@ -62,11 +63,6 @@ converse implication in characteristic zero is a separate development.
 * J. S. Milne, *Algebraic Groups* (2017), Corollary 12.45 and §22.42.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §3.2 and §8.3.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
-
-This advances the Layer 6 milestone "Reductive and semisimple groups" of the ReductiveGroups
-roadmap, whose instruction is to "provide both definitions and the char-0 equivalence so
-downstream work can pick either": this is the implication from linear reductivity to reductivity,
-and it holds in every characteristic.
 -/
 
 public section
@@ -330,9 +326,8 @@ variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 /-- **A smooth, geometrically connected finite-type affine group whose geometric fibre is
 linearly reductive is reductive.**
 
-This is the implication from linear reductivity to reductivity in Layer 6 of the ReductiveGroups
-roadmap. Linear reductivity is asked of the geometric fibre because reductivity is defined after
-extension to an algebraic closure. -/
+This is the implication from linear reductivity to reductivity. Linear reductivity is asked of
+the geometric fibre because reductivity is defined after extension to an algebraic closure. -/
 theorem of_smooth_of_geometricallyConnected_of_baseChange_linearlyReductive
     (hsm : Algebra.Smooth k H)
     (hconn : geometricallyConnectedCommHopfAlgProperty k H.obj)

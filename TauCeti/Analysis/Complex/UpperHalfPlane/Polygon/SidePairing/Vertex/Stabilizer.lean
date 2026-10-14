@@ -275,6 +275,26 @@ theorem map_stabilizer_eq_zpowers_cycleMap {j : Fin n} {z : ℍ} (hz : P.vertex 
   · have hgΓ : g ∈ Γ := (Subgroup.zpowers_le.2 (σ.cycleMap_mem hmap j)) hg
     exact ⟨⟨g, hgΓ⟩, (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj hgΓ).2 hg, rfl⟩
 
+/-- A finite vertex has trivial stabilizer exactly when its cycle transformation is the
+identity. Thus the nontrivial finite cycles are precisely the elliptic vertex cycles. -/
+theorem stabilizer_eq_bot_iff_cycleMap_eq_one {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    MulAction.stabilizer Γ z = ⊥ ↔ σ.cycleMap j = 1 := by
+  rw [← Subgroup.map_eq_bot_iff_of_injective (MulAction.stabilizer Γ z) Γ.subtype_injective,
+    σ.map_stabilizer_eq_zpowers_cycleMap hz hmap hdisj, Subgroup.zpowers_eq_bot]
+
+/-- The order of the stabilizer of a finite vertex equals the order of its cycle
+transformation, including the trivial cycle of order one. -/
+theorem natCard_stabilizer_eq_orderOf_cycleMap {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    Nat.card (MulAction.stabilizer Γ z) = orderOf (σ.cycleMap j) := by
+  rw [← Subgroup.card_map_of_injective Γ.subtype_injective,
+    σ.map_stabilizer_eq_zpowers_cycleMap hz hmap hdisj, Nat.card_zpowers]
+
 /-- **The angle sum at a finite vertex of a fundamental polygon is `2π / m`**, where `m` is the
 order of the stabilizer of the vertex. Under the hypotheses of
 `smul_eq_self_iff_mem_zpowers_cycleMap`, the stabilizer of the vertex in `Γ` has order `m` with
@@ -284,8 +304,7 @@ theorem natCard_stabilizer_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.verte
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     (Nat.card (MulAction.stabilizer Γ z) : ℝ) * σ.cycleAngleSum j = 2 * π := by
-  rw [← Subgroup.card_map_of_injective Γ.subtype_injective,
-    σ.map_stabilizer_eq_zpowers_cycleMap hz hmap hdisj, Nat.card_zpowers,
-    σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj]
+  rw [σ.natCard_stabilizer_eq_orderOf_cycleMap hz hmap hdisj]
+  exact σ.orderOf_cycleMap_mul_cycleAngleSum hz hmap hdisj
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

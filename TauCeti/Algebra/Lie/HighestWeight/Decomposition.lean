@@ -32,9 +32,9 @@ multiplicities are nonzero, so all but finitely many summands are indexed by the
 
 The companion statement `LieModule.nonempty_lieModuleEquiv_isotypicComponent` of
 `TauCeti/Algebra/Lie/UniversalEnveloping/Multiplicity.lean` decomposes one isotypic component as a
-power `S^{⊕ m}` of a single irreducible. It is not what proves the theorem below, since nothing
-so far exhibits `M` as the direct sum of its isotypic components; the decomposition into
-irreducibles is regrouped directly instead.
+power `S^{⊕ m}` of a single irreducible. It is not what proves the theorem below: the proof does not
+decompose `M` into its isotypic components, but regroups the decomposition into irreducibles
+directly.
 
 ## The argument
 
@@ -91,10 +91,6 @@ multiplicity the sum omits is zero.
   finite-dimensional module is the multiplicity-weighted sum of the irreducible characters.**
 
 ## References
-
-This is the packaged-decomposition item of the milestone "isotypic components and multiplicities,
-through the enveloping-algebra dictionary" in the Layer 6 decomposition toolkit of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §6.3 (complete
   reducibility) and §§20.3, 21.2 (the classification of the finite-dimensional irreducible

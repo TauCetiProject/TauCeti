@@ -38,11 +38,9 @@ open Bundle Set
 open scoped Manifold ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E F Q Q' : Type*}
+  {E F : Type*}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup Q] [NormedSpace 𝕜 Q]
-  [NormedAddCommGroup Q'] [NormedSpace 𝕜 Q']
   {H G : Type*} [TopologicalSpace H] [TopologicalSpace G]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
   {M N : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -50,8 +48,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace TauCeti
 
+variable {Q Q' : Type*}
+  [TopologicalSpace Q] [AddCommGroup Q] [Module 𝕜 Q]
+  [TopologicalSpace Q'] [AddCommGroup Q'] [Module 𝕜 Q']
+
 /-- Valid complementary coordinates for the differential are related by an invertible
-operator when both source and target tangent charts contain the evaluation points. -/
+operator when both source and target tangent charts contain the evaluation points.
+The complementary parameter spaces need only be topological modules. -/
 theorem isInvertible_normalQuotientCoordinateChange [IsManifold I 1 M] [IsManifold J 1 N]
     (f : M → N) (x₀ x₁ x : M) (B : Q →L[𝕜] F) (B' : Q' →L[𝕜] F)
     (hx₀ : x ∈ (chartAt H x₀).source) (hx₁ : x ∈ (chartAt H x₁).source)
@@ -69,7 +72,10 @@ theorem isInvertible_normalQuotientCoordinateChange [IsManifold I 1 M] [IsManifo
 
 end TauCeti
 
-variable {m n : ℕ∞ω} [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+variable {Q Q' : Type*}
+  [NormedAddCommGroup Q] [NormedSpace 𝕜 Q]
+  [NormedAddCommGroup Q'] [NormedSpace 𝕜 Q']
+  {m n : ℕ∞ω} [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
   {f : M → N} {s : Set M}
 
 /-- Changes between fixed complementary normal coordinates are `C^m` on an open overlap
@@ -97,17 +103,10 @@ theorem ContMDiffOn.normalQuotientCoordinateChange [CompleteSpace (E × Q')]
   intro x hx
   have hA := (hf.contMDiffAt (hs.mem_nhds hx)).mfderiv_inTangentCoordinates
     hmn (hx₁ x hx) (hy₁ x hx)
-  have hcop : ContMDiffAt I 𝓘(𝕜, (E × Q') →L[𝕜] F) m
-      (fun y => (inTangentCoordinates I J id f (mfderiv I J f) x₁ y).coprod B') x := by
-    exact (ContinuousLinearMap.coprodEquivL (𝕜 := 𝕜) (E := E) (F := Q')
-      (G := F) 𝕜).contDiff.contDiffAt.comp_contMDiffAt
-        (hA.prodMk_space (contMDiffAt_const (c := B')))
-  have hinv := (hB' x hx).contDiffAt_map_inverse.comp_contMDiffAt
-    (f := fun y => (inTangentCoordinates I J id f (mfderiv I J f) x₁ y).coprod B') hcop
-  have hcoord := (contMDiffAt_const (c := ContinuousLinearMap.snd 𝕜 E Q')).clm_comp hinv
+  have hcoord := (contDiffAt_id.quotientRangeCoordinate B' (hB' x hx)).comp_contMDiffAt
+    (f := inTangentCoordinates I J id f (mfderiv I J f) x₁) hA
   have htrans := ((hf.contMDiffAt (hs.mem_nhds hx)).of_le (le_self_add.trans hmn)).coordChangeL
     (e := trivializationAt F (TangentSpace J) (f x₀))
     (e' := trivializationAt F (TangentSpace J) (f x₁))
     (by simpa using hy₀ x hx) (by simpa using hy₁ x hx)
-  simpa only [ContinuousLinearMap.quotientRangeCoordinate_def, Function.comp_apply] using
-    (hcoord.clm_comp (htrans.clm_comp (contMDiffAt_const (c := B)))).contMDiffWithinAt
+  exact (hcoord.clm_comp (htrans.clm_comp (contMDiffAt_const (c := B)))).contMDiffWithinAt

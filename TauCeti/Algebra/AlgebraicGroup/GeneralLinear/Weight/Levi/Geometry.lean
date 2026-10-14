@@ -42,7 +42,6 @@ domain, and geometric-connectedness arguments, are adapted from the construction
 
 public section
 
-open CategoryTheory
 open scoped TensorProduct
 
 namespace TauCeti.GeneralLinear
@@ -286,8 +285,6 @@ theorem weightLeviCoordinateAlgEquiv_symm_algebraMap_X
 /-- The weight-Levi coordinate algebra is smooth over its base ring. -/
 instance instSmoothWeightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
     Algebra.Smooth R (weightLeviCoordinateHopfAlgebra R w) := by
-  let _ : Algebra.Smooth R (MvPolynomial (WeightLeviIndex w) R) :=
-    ⟨inferInstance, inferInstance⟩
   let _ : Algebra.Smooth R (WeightLeviCoordinateRing R w) :=
     ⟨inferInstance, inferInstance⟩
   exact Algebra.Smooth.of_equiv (weightLeviCoordinateAlgEquiv R w).symm

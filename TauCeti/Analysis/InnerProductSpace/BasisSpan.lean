@@ -17,6 +17,9 @@ subspace spanned by the corresponding basis vectors.
 ## Main results
 
 * `OrthonormalBasis.spanIndices_eq_span`: the explicit span characterization.
+* `OrthonormalBasis.span_range_comp_subtypeVal_eq_spanIndices`: the restriction
+  `b ∘ (↑) : s → E` of the basis to the coordinate block `s`, an orthonormal family by
+  `Orthonormal.comp`, spans the selected subspace.
 * `OrthonormalBasis.spanIndices_mono`: monotonicity under index-set inclusion.
 * `OrthonormalBasis.mem_spanIndices_of_mem`: selected basis vectors belong to the span.
 * `OrthonormalBasis.mem_spanIndices_iff`: membership means coordinates vanish
@@ -53,6 +56,12 @@ noncomputable def spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
 Use this identity to apply `Submodule.span`'s induction or universal property. -/
 theorem spanIndices_eq_span (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
     b.spanIndices s = Submodule.span 𝕜 (b '' s) := (rfl)
+
+/-- The basis vectors indexed by the coordinate block `s`, as a family indexed by `s`, span the
+selected subspace. -/
+theorem span_range_comp_subtypeVal_eq_spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
+    Submodule.span 𝕜 (Set.range (b ∘ ((↑) : s → ι))) = b.spanIndices s := by
+  rw [spanIndices_eq_span, Set.range_comp, Subtype.range_coe]
 
 /-- Selecting more indices spans more. -/
 theorem spanIndices_mono (b : OrthonormalBasis ι 𝕜 E) {s t : Set ι} (h : s ⊆ t) :
@@ -111,6 +120,13 @@ theorem finrank_spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Finset ι) :
   rw [b.spanIndices_eq_span, Set.image_eq_range, h]
   simp
 
+/-- The span of the basis vectors with index below `n` has rank at most `n`. -/
+theorem rank_spanIndices_val_lt_le {m : ℕ} (b : OrthonormalBasis (Fin m) 𝕜 E) (n : ℕ) :
+    Module.rank 𝕜 (b.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin m))) ≤ n := by
+  let := Module.Finite.of_basis b.toBasis
+  rw [← Module.finrank_eq_rank, b.finrank_spanIndices, Fin.card_filter_val_lt]
+  exact_mod_cast min_le_right m n
+
 /-- The span of a selected set of basis vectors has dimension equal to the
 number of selected indices. -/
 theorem finrank_spanIndices_set (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
@@ -148,6 +164,14 @@ theorem orthogonal_spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
       omega
     simp only [Set.ncard_eq_toFinset_card'] at h2 h3
     omega
+
+/-- A vector orthogonal to the first `n` basis vectors lies in the remaining span. -/
+theorem mem_spanIndices_le_of_mem_orthogonal {m : ℕ} (b : OrthonormalBasis (Fin m) 𝕜 E)
+    {n : ℕ} {x : E}
+    (hx : x ∈ (b.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin m)))ᗮ) :
+    x ∈ b.spanIndices {i | n ≤ (i : ℕ)} := by
+  refine b.spanIndices_mono (fun i hi ↦ ?_) ((b.orthogonal_spanIndices _).le hx)
+  simpa using hi
 
 end OrthonormalBasis
 

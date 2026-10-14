@@ -48,10 +48,6 @@ open scoped TensorProduct Topology
 
 noncomputable section
 
-/-- The canonical invertibility witness for two over the rationals. -/
-local instance lowRankInvertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
 /-- A direct witness keeps the base-change dimension calculation within the deterministic
 instance-search budget. -/
 private theorem lowRankStrongRankConditionPadic (p : Nat.Primes) : StrongRankCondition ℚ_[p] := by

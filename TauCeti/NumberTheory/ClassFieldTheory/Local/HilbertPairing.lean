@@ -80,8 +80,7 @@ theorem forall_localSymbol_kummerClass_eq_zero_iff (b : Kˣ) :
   have := finiteExtension_isNonarchimedeanLocalField K K⟮s⟯
   have := finiteExtension_valuativeExtension K K⟮s⟯
   have := isGalois_of_pow_eq_of_adjoin_eq_top hζ b.ne_zero ht htop
-  obtain ⟨g, hg, -, -⟩ := exists_forall_mem_zpowers_apply_eq hζ b.ne_zero ht htop
-  have : IsCyclic (K⟮s⟯ ≃ₐ[K] K⟮s⟯) := ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
+  have := isCyclic_of_pow_eq_of_adjoin_eq_top hζ b.ne_zero ht htop
   have h1 : finrank K K⟮s⟯ = 1 := by
     rw [← index_normGroup_of_isCyclic K K⟮s⟯, hnorm, Subgroup.index_top]
   -- so `s` lies in `K`, and `b` is an `n`-th power there

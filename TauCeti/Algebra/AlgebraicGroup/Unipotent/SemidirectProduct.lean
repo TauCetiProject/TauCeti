@@ -35,10 +35,9 @@ tensor product of the coordinate algebras.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Proposition 2.4.12.
 
-This supplies the smooth-unipotence step in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. The binary product of two radical candidates is formed as the image of
-multiplication from their conjugation semidirect product; the source must first be known to be
-smooth unipotent.
+This supplies the smooth-unipotence step for the unipotent radical. The binary product of two
+radical candidates is formed as the image of multiplication from their conjugation semidirect
+product; the source must first be known to be smooth unipotent.
 -/
 
 public section

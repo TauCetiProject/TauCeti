@@ -618,6 +618,12 @@ end PathAlgebra
 
 /-! ### The path basis -/
 
+/-- A quiver with finitely many total paths has finitely many vertices. -/
+instance Quiver.finite_of_finite_totalPath (Q : Type u) [Quiver.{v} Q]
+    [Finite (Quiver.TotalPath Q)] : Finite Q :=
+  Finite.of_injective (fun q : Q ↦ (⟨q, q, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q))
+    (fun _ _ h ↦ congrArg Sigma.fst h)
+
 section Basis
 
 variable (k : Type w) (Q : Type u) [Semiring k] [Quiver.{v} Q]
@@ -635,7 +641,7 @@ theorem coe_pathAlgebraBasis :
   Finsupp.coe_basisSingleOne
 
 /-- The path algebra of a quiver with finitely many paths is a finite `k`-module. -/
-theorem module_finite_pathAlgebra [Finite (Quiver.TotalPath Q)] :
+instance module_finite_pathAlgebra [Finite (Quiver.TotalPath Q)] :
     Module.Finite k (pathAlgebra k Q) :=
   Module.Finite.of_basis (pathAlgebraBasis k Q)
 

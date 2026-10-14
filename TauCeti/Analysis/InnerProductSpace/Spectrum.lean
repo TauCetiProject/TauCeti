@@ -32,7 +32,8 @@ any chosen set of its eigenvectors. In particular, the negative and positive spe
 spanned by the eigenvectors with negative and with positive eigenvalue, are disjoint, invariant
 under the operator, and together span the whole space when the operator is injective. Writing
 the determinant as the product of the eigenvalues shows that a positive operator has nonnegative
-determinant.
+determinant, and its smallest eigenvalue, the infimum of the Rayleigh quotient, bounds an injective
+positive operator below.
 
 No separability is assumed anywhere: the basis is indexed by a set of vectors of `E`, exactly as
 in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well carry an infinite-dimensional
@@ -59,6 +60,12 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   finite-dimensional spectral splitting.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
+* `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
+  positive determinant.
+* `LinearMap.IsPositive.exists_pos_mul_norm_sq_le_re_inner`: an injective positive operator on a
+  finite-dimensional space is coercive.
+* `ContinuousLinearMap.IsPositive.det_one_sub_smul_id_add_smul_pos`: interpolating the identity
+  with a positive operator `A` as `(1 - t) • 1 + t • A`, `0 ≤ t < 1`, gives positive determinant.
 
 ## References
 
@@ -403,4 +410,61 @@ theorem det_nonneg (hT : T.IsPositive) : 0 ≤ T.det := by
   rw [hT.isSymmetric.det_eq_prod_eigenvalues rfl, ← RCLike.ofReal_prod]
   exact RCLike.ofReal_nonneg.2 (Finset.prod_nonneg fun i _ => hT.nonneg_eigenvalues rfl i)
 
+/-- An injective positive operator on a finite-dimensional inner product space has positive
+determinant. -/
+theorem det_pos (hT : T.IsPositive) (hker : LinearMap.ker T = ⊥) : 0 < T.det :=
+  lt_of_le_of_ne hT.det_nonneg fun h => LinearMap.det_eq_zero_iff_ker_ne_bot.1 h.symm hker
+
+/-- An injective positive operator on a finite-dimensional inner product space is coercive:
+`c ‖v‖ ^ 2 ≤ re ⟪T v, v⟫` for some `c > 0`, namely its smallest eigenvalue. -/
+theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap.ker T = ⊥) :
+    ∃ c > 0, ∀ v, c * ‖v‖ ^ 2 ≤ RCLike.re ⟪T v, v⟫_𝕜 := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact ⟨1, one_pos, fun v => by simp [Subsingleton.elim v 0]⟩
+  -- The infimum `c` of the Rayleigh quotient is an eigenvalue, nonzero by injectivity.
+  set c := ⨅ x : {x : E // x ≠ 0}, RCLike.re ⟪T x, x⟫_𝕜 / ‖(x : E)‖ ^ 2
+  obtain ⟨v, hv⟩ := hT.isSymmetric.hasEigenvalue_iInf_of_finiteDimensional.exists_hasEigenvector
+  have hTv : T v = (c : 𝕜) • v := hv.apply_eq_smul
+  have hc0 : c ≠ 0 := fun h => hv.2 (LinearMap.ker_eq_bot'.1 hker v (by simp [hTv, h]))
+  have hcv : RCLike.re ⟪T v, v⟫_𝕜 = c * ‖v‖ ^ 2 := by
+    rw [hTv, inner_smul_left, inner_self_eq_norm_sq_to_K, RCLike.conj_ofReal, ← RCLike.ofReal_pow,
+      ← RCLike.ofReal_mul, RCLike.ofReal_re]
+  have hcnn : 0 ≤ c := by
+    have := hT.re_inner_nonneg_left v
+    rw [hcv] at this
+    exact nonneg_of_mul_nonneg_left this (pow_pos (norm_pos_iff.2 hv.2) 2)
+  refine ⟨c, lt_of_le_of_ne hcnn (Ne.symm hc0), fun w => ?_⟩
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  have hle : c ≤ RCLike.re ⟪T w, w⟫_𝕜 / ‖w‖ ^ 2 :=
+    ciInf_le ⟨0, by
+      rintro _ ⟨x, rfl⟩
+      exact div_nonneg (hT.re_inner_nonneg_left x) (by positivity)⟩ (⟨w, hw⟩ : {x : E // x ≠ 0})
+  rwa [le_div_iff₀ (pow_pos (norm_pos_iff.2 hw) 2)] at hle
+
 end LinearMap.IsPositive
+
+namespace ContinuousLinearMap.IsPositive
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- For a positive operator `A` on a finite-dimensional real inner product space and `0 ≤ t < 1`,
+the operator `(1 - t) • 1 + t • A` is positive and injective, so its determinant is positive. -/
+theorem det_one_sub_smul_id_add_smul_pos {A : F →L[ℝ] F} (hA : A.IsPositive) {t : ℝ}
+    (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+    0 < ((1 - t) • ContinuousLinearMap.id ℝ F + t • A).det := by
+  set B := (1 - t) • ContinuousLinearMap.id ℝ F + t • A
+  have hB : B.IsPositive :=
+    (ContinuousLinearMap.isPositive_id.smul_of_nonneg (by linarith)).add (hA.smul_of_nonneg ht₀)
+  have hker : LinearMap.ker (B : F →ₗ[ℝ] F) = ⊥ := by
+    refine LinearMap.ker_eq_bot'.2 fun v hv => ?_
+    have hBv : B v = 0 := hv
+    have hAv : 0 ≤ ⟪A v, v⟫_ℝ := hA.inner_nonneg_left v
+    have h0 : ⟪B v, v⟫_ℝ = (1 - t) * ‖v‖ ^ 2 + t * ⟪A v, v⟫_ℝ := by
+      simp [B, inner_add_left, inner_smul_left]
+    rw [hBv, inner_zero_left] at h0
+    have : ‖v‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖v‖, mul_nonneg ht₀ hAv]
+    simpa using this
+  exact ((ContinuousLinearMap.isPositive_toLinearMap_iff B).2 hB).det_pos hker
+
+end ContinuousLinearMap.IsPositive

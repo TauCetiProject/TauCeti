@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SelmerGroupA
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SquarefreeDiscriminant
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 
 /-!
@@ -25,16 +26,18 @@ over a number field `F`, with étale algebra `W.A = F[X] ⧸ (f)` and square cla
 
 This file compares the two at the places outside `S`, in both directions: a class unramified
 outside `S` localizes to an unramified class at each place `v ∉ S`, and conversely a class that
-localizes to an unramified class at every place `v ∉ S` is unramified outside `S`. At a good place
-the curve over the completion has no bad primes (`badPrimes_adicCompletionIntegers`), so Step 6
-of weak Mordell–Weil over the completion puts the local descent image among the unramified
-classes. Combined with the local-to-global direction for `S` the bad primes, a class whose
-localization lies in the local descent image at every good finite place lies in `A(S,2)`.
+localizes to an unramified class at every place `v ∉ S` is unramified outside `S`. At a place `v`
+at which `a₂`, `a₄` and `a₆` are integral and `disc f` has valuation at most `1`, Step 6 of weak
+Mordell–Weil over the completion puts the local descent image among the unramified classes
+(`range_μ_le_selmerGroupA_empty`). Combined with the local-to-global direction, a class whose
+localization lies in the local descent image at every finite place outside `S` lies in `A(S,2)`,
+for any `S` outside which these conditions hold.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.badPrimes_adicCompletionIntegers`: at a good place `v`, the curve
-  base-changed to the completion `F_v` has no bad primes over its valuation ring.
+* `WeierstrassCurve.Affine.range_μ_le_selmerGroupA_empty`: at a finite place with integral
+  coefficients and `disc f` of valuation at most `1`, the local descent image over the completion
+  is unramified, in every residue characteristic.
 * `WeierstrassCurve.Affine.localRes_mem_selmerGroupA` (global to local): a square class
   unramified outside `S` localizes to an unramified class at every finite place outside `S`.
 * `WeierstrassCurve.Affine.mem_selmerGroupA_of_forall_localRes` (local to global): a square class
@@ -49,7 +52,9 @@ Adapted from Michael Stoll's elliptic-curves formalisation
 `AdjoinRoot.map_comp_algebraMap` from `EllipticCurves/Mathlib/Basic.lean`. The source states
 square classes as its own `Units.modPow`; they are re-spelled here to this repository's single
 spelling `Mˣ ⧸ (powMonoidHom n).range`, and `HeightOneSpectrum.below` is Mathlib's
-`HeightOneSpectrum.under`.
+`HeightOneSpectrum.under`. `range_μ_le_selmerGroupA_empty` is the source's
+`range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr` at its later revision `3bfe124`,
+`EllipticCurves/SelmerGroup.lean`.
 
 -/
 
@@ -84,31 +89,6 @@ private instance instIsScalarTowerRingOfIntegersFactor (p : W.f.Factors) :
     @IsScalarTower (𝓞 F) (W.ringOfIntegersFactor (𝓞 F) p) (𝕃 p)
       Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
   .of_algebraMap_eq' rfl
-
-/-- Goodness transfers to the completion: over the valuation ring of a good place, the
-base-changed curve has no bad primes. -/
-lemma badPrimes_adicCompletionIntegers {v : HeightOneSpectrum (𝓞 F)}
-    (hv : v ∉ W.badPrimes (𝓞 F)) : 𝕎[v].badPrimes 𝒪_[v] = ∅ := by
-  ext P
-  simp only [Set.mem_empty_iff_false, iff_false, mem_badPrimes_iff]
-  have hPval (z : F) : P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
-    valuation_adicCompletion_algebraMap v P z
-  have hone {y : F} {c : F_[v]} (hc : c = algebraMap F F_[v] y)
-      (h : P.valuation F_[v] c ≠ 1) : v.valuation F y ≠ 1 := by
-    rwa [hc, hPval] at h
-  have hsupp {y : F} {c : F_[v]} (hc : c = algebraMap F F_[v] y)
-      (h : 1 < P.valuation F_[v] c) : ¬ v.valuation F y ≤ 1 :=
-    not_le.mpr <| by rwa [hc, hPval] at h
-  rintro (h | h | h | h | h)
-  · exact hone (by rw [map_ofNat]) h (W.valuation_two_eq_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hone (_root_.WeierstrassCurve.map_Δ ..) h
-      (W.valuation_Δ_eq_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (_root_.WeierstrassCurve.map_a₂ ..) h
-      (W.valuation_a₂_le_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (_root_.WeierstrassCurve.map_a₄ ..) h
-      (W.valuation_a₄_le_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (_root_.WeierstrassCurve.map_a₆ ..) h
-      (W.valuation_a₆_le_one_of_notMem_badPrimes (𝓞 F) hv)
 
 /- The base-change map on a field factor is integral on the ring of integers. -/
 private lemma isIntegral_mapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
@@ -376,6 +356,28 @@ private lemma map_projFactor {p : W.f.Factors} {q : 𝕎[v].f.Factors}
 end Semilocal
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
+
+open scoped Classical in
+/-- **Step 6 over a completion**: at a finite place `v` of `F` at which `a₂`, `a₄` and `a₆` are
+integral and `disc f` has valuation at most `1`, that is `exp (-1) ≤ v (disc f)`, the image of the
+local descent map over the completion `F_v` consists of unramified square classes. The residue
+characteristic is unrestricted, so this holds at a place above `2` as soon as the cubic `f` has
+separable reduction there. -/
+theorem range_μ_le_selmerGroupA_empty {v : HeightOneSpectrum (𝓞 F)}
+    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+    (hd : WithZero.exp (-1) ≤ v.valuation F W.f.discr) :
+    (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
+  have key (P : HeightOneSpectrum 𝒪_[v]) (z : F) :
+      P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
+    v.valuation_adicCompletion_algebraMap P z
+  have : CharZero F_[v] := charZero_of_injective_algebraMap (algebraMap F F_[v]).injective
+  refine 𝕎[v].range_μ_le_selmerGroupA_of_exp_neg_one_le (fun P _ ↦ ?_) (fun P _ ↦ ?_)
+    (fun P _ ↦ ?_) fun P _ ↦ ?_
+  · simpa [toAffine, key] using ha₂
+  · simpa [toAffine, key] using ha₄
+  · simpa [toAffine, key] using ha₆
+  · rw [W.baseChange_discr_f, key]
+    exact hd
 
 open AdjoinRoot in
 open scoped Classical in

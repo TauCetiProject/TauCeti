@@ -17,6 +17,8 @@ import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Cyclotomic
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
 # Local Artin symbols on roots of unity
@@ -72,6 +74,8 @@ cyclotomic character at units and at a uniformizer.
   from the residue characteristic, `χ_p(Art_K(x)) = q ^ v_K(x)`.
 * `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_norm`: the cyclotomic
   character of the Artin symbol of `x ∈ Lˣ` is that of the Artin symbol of `N_{L/K} x`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_congr`: the cyclotomic
+  character of the Artin symbols is unchanged by a continuous isomorphism of local fields.
 * `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_padic_uniformizer`: the `p`-adic
   cyclotomic character of the Artin symbol of `p` over `ℚ_[p]` is `1`.
 * `TauCeti.ClassFieldTheory.exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one`: an
@@ -169,17 +173,9 @@ theorem localArtinMap_cyclotomic_uniformizer (L : Type*) [Field L] [Algebra K L]
     rintro rfl
     exact (Finite.one_lt_card (α := 𝓀[K])).ne' (Nat.coprime_zero_right _ |>.mp hm)
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap K π)
-  set τ' := ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K τ)
-  -- `σ` and the restriction `τ'` of `τ` represent the same Artin symbol, so they agree on `ζ`,
-  -- on which `Gal(L/K)` acts through the abelian group `(ℤ/dℤ)ˣ`.
-  have hστ : σ ζ = τ' ζ := by
-    have hζ' := IsPrimitiveRoot.orderOf ζ
-    have : NeZero (orderOf ζ) :=
-      ⟨(orderOf_pos_iff.2 (isOfFinOrder_iff_pow_eq_one.2 ⟨m, Nat.pos_of_ne_zero hm0, hζ⟩)).ne'⟩
-    have h := congrArg (Abelianization.lift (hζ'.autToPow K))
-      (Additive.ofMul.injective (hσ.symm.trans (artinMap_restrict K L ι π τ hτ)))
-    rw [Abelianization.lift_apply_of, Abelianization.lift_apply_of] at h
-    rw [← hζ'.autToPow_spec K σ, ← hζ'.autToPow_spec K τ', h]
+  -- `σ` and the restriction of `τ` represent the same Artin symbol, so they agree on `ζ`.
+  have hστ := AlgEquiv.apply_eq_apply_of_abelianization_of_eq
+    (Additive.ofMul.injective (hσ.symm.trans (artinMap_restrict K L ι π τ hτ))) hm0 hζ
   -- `τ` acts on the root of unity `ι ζ` by the `q`-th power map.
   have hιζ := absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_self K hπ hτ
     (Nat.totient_pos.2 (Nat.pos_of_ne_zero hm0)).ne'
@@ -281,6 +277,37 @@ theorem abelianizedLocalCyclotomicCharacter_artinMap_norm (p : ℕ) [Fact p.Prim
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap L x)
   rw [← hτ, ← artinMap_norm L iota x τ hτ, abelianizedLocalCyclotomicCharacter_mk,
     abelianizedLocalCyclotomicCharacter_mk, localCyclotomicCharacter_absoluteGaloisGroupExtend]
+
+/-- **The cyclotomic character of Artin symbols is natural in the local field.** For a continuous
+isomorphism `e : K ≃+* K'` of nonarchimedean local fields, the absolute Artin symbols of `x ∈ Kˣ`
+and of `e x ∈ K'ˣ` have the same `p`-adic cyclotomic character:
+
+```text
+χ_K (Art_K x) = χ_{K'} (Art_{K'} (e x)).
+```
+
+This is how the cyclotomic character of Artin symbols is computed in a model of a local field,
+such as `ℚ_[p]` for a completion of `ℚ`. -/
+theorem abelianizedLocalCyclotomicCharacter_artinMap_congr (p : ℕ) [Fact p.Prime] {K' : Type}
+    [Field K'] [ValuativeRel K'] [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+    (e : K ≃+* K') (he : Continuous e) (x : Kˣ) :
+    abelianizedLocalCyclotomicCharacter p K (artinMap K x) =
+      abelianizedLocalCyclotomicCharacter p K' (artinMap K' (Units.map e.toMonoidHom x)) := by
+  -- Regard `K` as an extension of degree one of `K'` along `e⁻¹`, whose norm is `e`.
+  let _ : Algebra K' K := e.symm.toRingHom.toAlgebra
+  let eA : K' ≃ₐ[K'] K := AlgEquiv.ofRingEquiv (f := e.symm) fun _ ↦ rfl
+  have : FiniteDimensional K' K := eA.toLinearEquiv.finiteDimensional
+  have : Algebra.IsSeparable K' K := Algebra.IsSeparable.of_algHom K' K' eA.symm.toAlgHom
+  have : ValuativeExtension K' K := ⟨fun a b ↦ by
+    rw [RingHom.algebraMap_toAlgebra, ← e.toRingHom.map_vle_map_iff_of_continuous he]
+    simp⟩
+  have hnorm : Algebra.normUnits K' x = Units.map e.toMonoidHom x := by
+    ext
+    rw [Algebra.coe_normUnits, ← eA.apply_symm_apply (x : K), Algebra.norm_eq_of_algEquiv,
+      Algebra.norm_self, MonoidHom.id_apply, Units.coe_map]
+    -- `eA⁻¹` is `e` as a function.
+    rfl
+  rw [abelianizedLocalCyclotomicCharacter_artinMap_norm K' p x, hnorm]
 
 /-! ### The Artin symbol of `p` on roots of unity of `p`-power order -/
 

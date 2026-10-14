@@ -335,14 +335,7 @@ theorem map_bot (f : Comodule.Hom R C M N) : (⊥ : Subcomodule R C M).map f = �
   ext n
   simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
-/-- The image of the top subcomodule is the range of the comodule morphism as a submodule. -/
-@[simp]
-theorem map_top_toSubmodule (f : Comodule.Hom R C M N) :
-    ((⊤ : Subcomodule R C M).map f).toSubmodule = LinearMap.range f.toLinearMap := by
-  rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]
-
 /-- The identity comodule morphism leaves a subcomodule unchanged. -/
-@[simp]
 theorem map_id (A : Subcomodule R C M) : A.map (Comodule.Hom.id R C M) = A := by
   ext n
   simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.id_toLinearMap,
@@ -374,7 +367,7 @@ def range (f : Hom R C M N) : Subcomodule R C N :=
 @[simp]
 theorem range_toSubmodule (f : Hom R C M N) :
     (range (R := R) (C := C) f).toSubmodule = LinearMap.range f.toLinearMap := by
-  rw [range, Subcomodule.map_top_toSubmodule]
+  rw [range, Subcomodule.map_toSubmodule, Subcomodule.top_toSubmodule, Submodule.map_top]
 
 /-- The range of a comodule morphism out of a finitely generated module is finitely generated
 as an `R`-module. -/

@@ -340,6 +340,15 @@ theorem isOptimalCoupling_iff :
   ⟨fun h ↦ ⟨h.toIsCoupling, fun _ hσ ↦ h.lintegral_le hσ⟩, fun ⟨hπ, h⟩ ↦
     ⟨hπ, le_antisymm (le_transportCost h) (transportCost_le_lintegral hπ c)⟩⟩
 
+/-- Scaling a cost by a finite nonnegative constant preserves optimality, including when the
+constant is zero or the optimal cost is infinite. No measurability of the cost is required. -/
+protected theorem IsOptimalCoupling.const_mul (h : IsOptimalCoupling c π μ ν)
+    {a : ℝ≥0∞} (ha : a ≠ ⊤) :
+    IsOptimalCoupling (fun z ↦ a * c z) π μ ν := by
+  refine isOptimalCoupling_iff.2 ⟨h.toIsCoupling, fun σ hσ ↦ ?_⟩
+  rw [lintegral_const_mul' a c ha, lintegral_const_mul' a c ha]
+  exact mul_le_mul_of_nonneg_left (h.lintegral_le hσ) (by positivity)
+
 /-- Every coupling out of a Dirac measure is optimal, because there is only one. -/
 theorem IsCoupling.isOptimalCoupling_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c)
     {x : X} (hπ : IsCoupling π (Measure.dirac x) ν) :

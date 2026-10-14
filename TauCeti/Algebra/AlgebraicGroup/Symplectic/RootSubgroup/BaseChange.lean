@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Adjoint
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 
 /-!
@@ -19,14 +19,14 @@ families. In particular, the integral root maps retain their parameter and signs
 positive characteristic and over nonreduced rings. No flatness assumption is needed.
 
 This supplies the root-map compatibility used when transporting symplectic pinnings
-between bases. The calculation uses `rootSubgroupCoordinateMap_apply_X` and
-`RootSubgroupIndex.map_tangentMatrix`, so there is no new presentation of the root maps.
-It follows the quotient-cancellation construction in
-`SpecialLinear.RootSubgroup.BaseChange` and the coordinate calculation in
-`GeneralLinear.Root.BaseChange`.
+between bases.
+The cotangent-dual comparison also preserves every normalized root vector,
+so the chosen root-space generators agree under geometric base change.
 
 ## References
 
+* `SpecialLinear.RootSubgroup.BaseChange`, `GeneralLinear.Root.BaseChange`, and
+  `SpecialLinear.Root.BaseChange`: the corresponding root-map and root-vector comparisons.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 * J. S. Milne, *Algebraic Groups* (2017), §§21 and 24.6.
 -/
@@ -91,5 +91,35 @@ theorem baseChangeMap_rootSubgroupCoordinateMap_comp_baseChangeIso_hom
     exact congrArg (1 + ·) ((root.map_tangentMatrix f.toAddMonoidHom
       (SymmetricAlgebra.ι R R 1)).trans (congrArg root.tangentMatrix hcoord))
   exact (hf _).symm.trans (congrFun (congrFun hmatrix a) b)
+
+section RootVectors
+
+variable (R : Type u) (K : Type v) [CommRing R] [CommRing K] [Algebra R K]
+
+/-- Geometric scalar extension preserves each normalized symplectic root vector
+and its scalar parameter, including in characteristic two. -/
+@[simp↓]
+theorem cotangentDualBaseChangeEquiv_tmul_rootVector
+    (root : GLSymplecticFin.RootSubgroupIndex m) (c : K) :
+    cotangentDualBaseChangeEquiv R K m
+        (c ⊗ₜ[R] (Derivation.cotangentLinearEquiv (B := R)).symm
+          (rootVector (R := R) (B := R) root)) =
+      c • (Derivation.cotangentLinearEquiv (B := K)).symm
+        (rootVector (R := K) (B := K) root) := by
+  apply (Derivation.cotangentLinearEquiv (R := K)
+    (A := coordinateHopfAlgebra K m) (B := K)).injective
+  rw [cotangentLinearEquiv_cotangentDualBaseChangeEquiv]
+  apply (tangentLieEquivSp (R := K) (B := K) m).injective
+  simp only [LieEquiv.coe_toLieHom]
+  -- Elaborated rewriting aligns the quotient-indexed tangent and cotangent modules.
+  erw [tangentLieEquivSp_apply, tangentMatrix_tangentCoefficientLieEquiv,
+    tangentScalarExtensionEquiv_tmul_rootVector, tangentLieEquivSp_apply,
+    map_smul, LinearEquiv.apply_symm_apply, map_smul]
+  apply Subtype.ext
+  rw [tangentMatrix_derivationComp_rootSubgroup, LinearEquiv.apply_symm_apply,
+    SetLike.val_smul, tangentMatrix_rootVector]
+  simpa only [smul_eq_mul, mul_one] using (root.tangentMatrix (R := K)).map_smul c 1
+
+end RootVectors
 
 end TauCeti.Symplectic

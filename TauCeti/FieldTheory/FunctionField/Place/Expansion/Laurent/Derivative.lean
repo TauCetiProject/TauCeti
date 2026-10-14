@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Frobenius
 public import TauCeti.FieldTheory.FunctionField.Place.Approximation
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.ChangeOfUniformizer
+public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.CoefficientField
 
 /-!
 # Laurent expansions of derivatives, and residues of differentials
@@ -19,9 +20,7 @@ Let `P` be a rational place of `F / k` and let `t` have order one at `P`, with `
 with Laurent expansion in `t`: the expansion of `dz/dt` is the formal derivative of the expansion
 of `z`. Both sides are `k`-derivations of `F` into `k((T))` taking `t` to `1`, and a derivation of
 `F` is determined by its value at a separating element
-(`Derivation.apply_eq_derivativeOfSeparating_smul`). The argument applies to any `k`-algebra map
-from `F` to Laurent series sending `t` to the variable
-(`TauCeti.map_derivativeOfSeparating_eq_derivative`).
+(`Derivation.apply_eq_derivativeOfSeparating_smul`).
 
 This identifies the function-field derivative `ds/dt` with the series `s'(T)` used in the
 change-of-uniformizer formula (`TauCeti.Place.residue_eq_residue_mul`), giving Stichtenoth's
@@ -38,14 +37,20 @@ Over a perfect field every prime element of a place is separating
 differential at a rational place needs no choice of uniformizer at all:
 `TauCeti.Place.kaehlerResidueOfPerfectField` computes it with any prime element.
 
-The compatibility with expansions also gives the order of a derivative:
-if `z` vanishes to order at least `m` at `P`, then `dz/dt ≡ m z / t` modulo functions vanishing to
-order at least `m`, and iterating, `dⁱz/dtⁱ` is congruent to `m (m - 1) ⋯ (m - i + 1) z / tⁱ`.
-This is the local input for computing orders of Wronskians at rational places.
+The compatibility of expansions with derivatives holds for every `k`-algebra map `F → A((X))`
+sending `t` to `X` (`TauCeti.algHom_derivativeOfSeparating`), so it also holds at a place of any
+degree whose residue field `F_P` is separable over `k`, for the expansion with coefficients in
+`F_P` (`TauCeti.Place.laurentSeriesExpansionResidueField`). It gives the order of a derivative
+there: if `z` vanishes to order at least `m` at `P`, then `dz/dt ≡ m z / t` modulo functions
+vanishing to order at least `m`, and iterating, `dⁱz/dtⁱ` is congruent to
+`m (m - 1) ⋯ (m - i + 1) z / tⁱ`. In particular, for a separating uniformizer `t` at such a
+place `P`, `dz/dt` is integral at `P` whenever `z` is. This is the local input for computing
+orders of Wronskians, and for comparing regular Kähler differentials with regular Weil
+differentials.
 
-The expansion of a derivative, the transformation formula and the residue of a differential carry
-over to a place `P` of arbitrary degree whose residue field `F_P` is separable over `k`, with
-Laurent expansions and residues taking values in `F_P`
+The transformation formula and the residue of a differential also carry over to a place `P` of
+arbitrary degree whose residue field `F_P` is separable over `k`, with Laurent expansions and
+residues taking values in `F_P`
 (`TauCeti.Place.laurentSeriesExpansionResidueField`, `TauCeti.Place.residueResidueField`).
 The residue `res_P(ω) ∈ F_P` of a Kähler differential is again well defined, and so is its trace
 `Tr_{F_P/k} res_P(ω) ∈ k`, the `k`-valued residue at a place of higher degree (Stichtenoth,
@@ -63,11 +68,18 @@ Remark 4.3.7). At a rational place the latter is the residue `TauCeti.Place.kaeh
 
 ## Main results
 
+* `TauCeti.algHom_derivativeOfSeparating`: a `k`-algebra map `F → A((X))` sending `t` to `X`
+  carries `dz/dt` to the formal derivative.
 * `TauCeti.Place.laurentSeriesExpansion_derivativeOfSeparating`: the Laurent expansion of `dz/dt`
   in `t` is the derivative of the Laurent expansion of `z`.
 * `TauCeti.Place.residue_eq_residue_mul_derivativeOfSeparating`: **the transformation formula**
   `res_{P,s}(z) = res_{P,t}(z · ds/dt)`.
 * `TauCeti.Place.residue_derivativeOfSeparating`: `res_{P,t}(dy/dt) = 0`.
+* `TauCeti.Place.laurentSeriesExpansionResidueField_derivativeOfSeparating`: at a place with
+  separable residue field, the Laurent expansion of `dz/dt` with coefficients in `F_P` is the
+  derivative of the Laurent expansion of `z`.
+* `TauCeti.Place.derivativeOfSeparating_mem_integers`: for a separating uniformizer `t` at a
+  place `P` with separable residue field, `dz/dt` is integral at `P` whenever `z` is.
 * `TauCeti.Place.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration`: if `z` vanishes to
   order at least `m`, then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo order `m - i + 1`.
 * `TauCeti.Place.kaehlerResidue_eq_kaehlerResidue`: the residue of a differential is independent
@@ -75,10 +87,8 @@ Remark 4.3.7). At a rational place the latter is the residue `TauCeti.Place.kaeh
 * `TauCeti.Place.kaehlerResidue_D`: exact differentials have residue zero.
 * `TauCeti.Place.kaehlerResidueOfPerfectField_smul_D`: over a perfect field, `res_P(z dt)` is
   `res_{P,t}(z)` for every prime element `t`.
-* `TauCeti.Place.laurentSeriesExpansionResidueField_derivativeOfSeparating` and
-  `TauCeti.Place.residueResidueField_eq_residueResidueField_mul_derivativeOfSeparating`: the
-  expansion of a derivative and the transformation formula at a place with separable residue
-  field.
+* `TauCeti.Place.residueResidueField_eq_residueResidueField_mul_derivativeOfSeparating`: the
+  transformation formula at a place with separable residue field.
 * `TauCeti.Place.kaehlerResidueResidueField_eq_kaehlerResidueResidueField` and
   `TauCeti.Place.kaehlerTraceResidue_eq_kaehlerTraceResidue`: there too, the residue of a
   differential is independent of the uniformizer used to compute it.
@@ -99,57 +109,47 @@ open KaehlerDifferential
 
 namespace TauCeti
 
-section Derivation
-
-variable {k F : Type*} [Field k] [Field F] [Algebra k F] {t : F}
-  (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
-
-/-- **Differentiation commutes with expansion.** If a `k`-algebra map `e` from `F` to Laurent
-series over a commutative ring `K` sends the separating element `t` to the variable `T`, then it
-carries `dz/dt` to the formal derivative of `e z`. -/
-theorem map_derivativeOfSeparating_eq_derivative {K : Type*} [CommRing K] [Algebra k K]
-    (e : F →ₐ[k] K⸨X⸩) (he : e t = HahnSeries.single 1 1) (z : F) :
-    e (derivativeOfSeparating htr z) = LaurentSeries.derivative K (e z) := by
-  -- Both `z ↦ e (dz/dt)` and `z ↦ (e z)'` are `k`-derivations of `F` taking `t` to `1`, and a
-  -- derivation of `F` is determined by its value at a separating element. Make `K⸨X⸩` an
-  -- `F`-module through `e`, so that `z ↦ (e z)'` is a derivation.
-  let _ : Module F K⸨X⸩ := Module.compHom _ e.toRingHom
-  have hsmul (z : F) (f : K⸨X⸩) : z • f = e z * f := rfl
-  -- The `k`-module structure on `K⸨X⸩` found by instance search is the coefficientwise one.
-  have hk (c : k) (f : K⸨X⸩) : algebraMap k K⸨X⸩ c * f = c • f := by
-    ext n
-    simp [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply, Algebra.smul_def]
-  have he' (c : k) (z : F) : e (c • z) = c • e z := by
-    rw [Algebra.smul_def, map_mul, AlgHom.commutes, hk]
-  have _ : IsScalarTower k F K⸨X⸩ := ⟨fun c z f ↦ by
-    -- `z • f` is `e z * f` by the definition of `Module.compHom`.
+/-- **Laurent expansions of derivatives.** Let `t` be a separating element of `F / k` and let
+`e : F → A((X))` be a `k`-algebra map into Laurent series over a `k`-algebra `A` with `e t = X`.
+Then `e` carries `dz/dt` to the formal derivative of `e z`. -/
+theorem algHom_derivativeOfSeparating {k F A : Type*} [Field k] [Field F] [Algebra k F]
+    [CommRing A] [Algebra k A] {t : F} (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
+    {e : F →ₐ[k] LaurentSeries A} (he : e t = HahnSeries.single 1 1) (z : F) :
+    e (derivativeOfSeparating htr z) = LaurentSeries.derivative A (e z) := by
+  -- Give `A((X))` the `F`-algebra structure induced by the expansion map.
+  let _ : Algebra F (LaurentSeries A) := e.toRingHom.toAlgebra
+  -- The `k`-module structure on `A((X))` found by instance search is the coefficientwise one.
+  have hek (c : k) (z : F) : e (c • z) = c • e z := by
+    rw [Algebra.smul_def, map_mul, AlgHom.commutes, laurentSeries_algebraMap_mul_eq_smul]
+  have _ : IsScalarTower k F (LaurentSeries A) := ⟨fun c z f ↦ by
+    -- The induced algebra acts by multiplication with the expansion of the scalar.
     change e (c • z) * f = c • (e z * f)
-    rw [he', ← hk, ← hk, mul_assoc]⟩
-  let D : Derivation k F K⸨X⸩ :=
-    { toFun z := LaurentSeries.derivative K (e z)
-      map_add' := by simp
-      map_smul' c z := by
-        rw [RingHom.id_apply, he', ← algebraMap_smul K c (e z), map_smul, algebraMap_smul]
-      map_one_eq_zero' := by
-        simpa only [LinearMap.coe_mk, AddHom.coe_mk, map_one, laurentSeriesDerivation_apply] using
-          (laurentSeriesDerivation K).map_one_eq_zero
-      leibniz' a b := by
-        simpa only [LinearMap.coe_mk, AddHom.coe_mk, map_mul, hsmul, smul_eq_mul,
-          laurentSeriesDerivation_apply] using
-          (laurentSeriesDerivation K).leibniz (e a) (e b) }
+    rw [hek, ← laurentSeries_algebraMap_mul_eq_smul, ← laurentSeries_algebraMap_mul_eq_smul,
+      mul_assoc]⟩
+  -- The source of the Laurent derivation uses algebra scalars, while its target uses
+  -- coefficientwise scalars. Both actions factor through `A`, giving scalar compatibility.
+  have _ : @IsScalarTower k A (LaurentSeries A)
+      Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
+    .of_algebraMap_eq fun c ↦ by
+      simp only [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply,
+        Algebra.algebraMap_self, RingHom.id_apply]
+  have _ : IsScalarTower k A (LaurentSeries A) := ⟨fun c a f ↦ by
+    ext n
+    simp only [HahnSeries.coeff_smul, Algebra.smul_def, Algebra.algebraMap_self,
+      RingHom.id_apply, mul_assoc]⟩
+  let D : Derivation k F (LaurentSeries A) :=
+    ((laurentSeriesDerivation A).restrictScalars k).compAlgebraMap F
   -- By the chain rule `D z = (dz/dt) • D t`, and `D t = (X)' = 1`. Unfolding `D` and the
-  -- `Module.compHom` scalar action turns the chain rule into an identity of Laurent series.
+  -- induced algebra's scalar action turns the chain rule into an identity of Laurent series.
   have h := D.apply_eq_derivativeOfSeparating_smul htr z
-  change LaurentSeries.derivative K (e z) =
-    e (derivativeOfSeparating htr z) * LaurentSeries.derivative K (e t) at h
+  simp only [D, Derivation.compAlgebraMap_apply, Derivation.restrictScalars_apply,
+    laurentSeriesDerivation_apply, Algebra.smul_def] at h
+  change LaurentSeries.derivative A (e z) =
+    e (derivativeOfSeparating htr z) * LaurentSeries.derivative A (e t) at h
   rw [h, he]
   simp
 
-end Derivation
-
-end TauCeti
-
-namespace TauCeti.Place
+namespace Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 variable (P : Place k F) {s t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
@@ -164,7 +164,7 @@ Laurent expansion of `z`. -/
 theorem laurentSeriesExpansion_derivativeOfSeparating (z : F) :
     P.laurentSeriesExpansion hP ht (derivativeOfSeparating htr z) =
       LaurentSeries.derivative k (P.laurentSeriesExpansion hP ht z) :=
-  map_derivativeOfSeparating_eq_derivative htr _ (P.laurentSeriesExpansion_uniformizer hP ht) z
+  algHom_derivativeOfSeparating htr (P.laurentSeriesExpansion_uniformizer hP ht) z
 
 /-- **Stichtenoth's transformation formula** `res_{P,s}(z) = res_{P,t}(z · ds/dt)` for two
 uniformizers `s` and `t` at a rational place, with `t` separating (Proposition 4.2.9). -/
@@ -181,35 +181,53 @@ theorem residue_derivativeOfSeparating (y : F) :
     LaurentSeries.hasseDeriv_coeff]
   simp
 
+end Expansion
+
+/-! ### Expansions with coefficients in the residue field -/
+
+section ResidueField
+
+variable [Algebra.IsSeparable k P.ResidueField] (htr : Transcendental k t)
+  [Algebra.IsSeparable k⟮t⟯ F]
+
+/-- **The Laurent expansion of a derivative, at a place of any degree.** At a place `P` whose
+residue field is separable over `k`, with `t` separating and of order one at `P`, the Laurent
+expansion in `t` of `dz/dt`, with coefficients in the residue field, is the formal derivative of
+the Laurent expansion of `z`. -/
+theorem laurentSeriesExpansionResidueField_derivativeOfSeparating (z : F) :
+    P.laurentSeriesExpansionResidueField ht (derivativeOfSeparating htr z) =
+      LaurentSeries.derivative P.ResidueField (P.laurentSeriesExpansionResidueField ht z) :=
+  algHom_derivativeOfSeparating htr (P.laurentSeriesExpansionResidueField_uniformizer ht) z
+
 /-! ### Orders of derivatives -/
 
-include hP ht in
+include ht in
 /-- **The leading term of a derivative.** If `z` vanishes to order at least `m` at `P`, then
 `dz/dt ≡ m z / t` modulo functions vanishing to order at least `m`. This holds in every
 characteristic. -/
 theorem derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F}
     (hz : z ∈ P.filtration m) :
     derivativeOfSeparating htr z - m • (t⁻¹ * z) ∈ P.filtration m := by
-  have hinv : (HahnSeries.single (1 : ℤ) (1 : k))⁻¹ = HahnSeries.single (-1) 1 :=
+  have hinv : (HahnSeries.single (1 : ℤ) (1 : P.ResidueField))⁻¹ = HahnSeries.single (-1) 1 :=
     inv_eq_of_mul_eq_one_right (by simp [HahnSeries.single_mul_single])
-  rw [mem_filtration_iff, ← P.valuation_laurentSeriesExpansion hP ht, map_sub, map_zsmul,
-    map_mul, map_inv₀, laurentSeriesExpansion_uniformizer,
-    laurentSeriesExpansion_derivativeOfSeparating, hinv]
+  rw [mem_filtration_iff, ← P.valuation_laurentSeriesExpansionResidueField ht, map_sub, map_zsmul,
+    map_mul, map_inv₀, laurentSeriesExpansionResidueField_uniformizer,
+    laurentSeriesExpansionResidueField_derivativeOfSeparating, hinv]
   apply LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le
-  rw [valuation_laurentSeriesExpansion]
+  rw [valuation_laurentSeriesExpansionResidueField]
   exact (P.mem_filtration_iff).mp hz
 
-include hP ht in
+include ht in
 /-- Differentiation with respect to a separating uniformizer preserves the valuation ring
-at a rational place, in every characteristic. -/
+at a place with separable residue field, in every characteristic. -/
 theorem derivativeOfSeparating_mem_integers {z : F} (hz : z ∈ P.integers) :
     derivativeOfSeparating htr z ∈ P.integers := by
   have hz' : z ∈ P.filtration 0 := by
     simpa [P.mem_filtration_iff, P.mem_integers_iff] using hz
-  have h := P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hz'
+  have h := P.derivativeOfSeparating_sub_zsmul_mem_filtration ht htr hz'
   simpa [P.mem_filtration_iff, P.mem_integers_iff] using h
 
-include hP ht in
+include ht in
 /-- Differentiation with respect to a prime element lowers the order at `P` by at most one. -/
 theorem derivativeOfSeparating_mem_filtration {m : ℤ} {z : F} (hz : z ∈ P.filtration m) :
     derivativeOfSeparating htr z ∈ P.filtration (m - 1) := by
@@ -218,9 +236,9 @@ theorem derivativeOfSeparating_mem_filtration {m : ℤ} {z : F} (hz : z ∈ P.fi
   have h : m • (t⁻¹ * z) ∈ P.filtration (m - 1) :=
     zsmul_mem (by simpa [neg_add_eq_sub] using P.mul_mem_filtration ht' hz) m
   simpa using add_mem (P.filtration_antitone (by omega)
-    (P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hz)) h
+    (P.derivativeOfSeparating_sub_zsmul_mem_filtration ht htr hz)) h
 
-include hP ht in
+include ht in
 /-- The `i`-th derivative with respect to a prime element lowers the order at `P` by at most
 `i`. -/
 theorem iterate_derivativeOfSeparating_mem_filtration {m : ℤ} {z : F}
@@ -230,9 +248,9 @@ theorem iterate_derivativeOfSeparating_mem_filtration {m : ℤ} {z : F}
   | zero => simpa using hz
   | succ i ih =>
     rw [Function.iterate_succ_apply']
-    simpa [sub_sub] using P.derivativeOfSeparating_mem_filtration hP ht htr ih
+    simpa [sub_sub] using P.derivativeOfSeparating_mem_filtration ht htr ih
 
-include hP ht in
+include ht in
 /-- **The leading term of an iterated derivative.** If `z` vanishes to order at least `m` at `P`,
 then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo functions vanishing to order at least
 `m - i + 1`. The coefficient is the descending Pochhammer symbol evaluated at `m`. -/
@@ -248,8 +266,8 @@ theorem iterate_derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F
     have hw : t⁻¹ ^ i * z ∈ P.filtration (m - i) := by
       convert P.mul_mem_filtration hti hz using 2
       ring
-    have h1 := P.derivativeOfSeparating_mem_filtration hP ht htr ih
-    have h2 := zsmul_mem (P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hw)
+    have h1 := P.derivativeOfSeparating_mem_filtration ht htr ih
+    have h2 := zsmul_mem (P.derivativeOfSeparating_sub_zsmul_mem_filtration ht htr hw)
       ((descPochhammer ℤ i).eval m)
     -- Differentiate the `i`-th congruence, and use the leading term of `d(t⁻ⁱ z)/dt`.
     have key : (⇑(derivativeOfSeparating htr))^[i + 1] z -
@@ -265,7 +283,7 @@ theorem iterate_derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F
     rw [key]
     refine add_mem (P.filtration_antitone ?_ h1) (P.filtration_antitone ?_ h2) <;> omega
 
-end Expansion
+end ResidueField
 
 /-! ### Residues of Kähler differentials -/
 
@@ -367,15 +385,6 @@ section ResidueField
 
 variable [Algebra.IsSeparable k P.ResidueField] (htr : Transcendental k t)
   [Algebra.IsSeparable k⟮t⟯ F]
-
-/-- **The Laurent expansion of a derivative at a place with separable residue field.** If the
-separating element `t` has order one at `P`, the Laurent expansion in `t` of `dz/dt`, with
-coefficients in `F_P`, is the formal derivative of that of `z`. -/
-theorem laurentSeriesExpansionResidueField_derivativeOfSeparating (z : F) :
-    P.laurentSeriesExpansionResidueField ht (derivativeOfSeparating htr z) =
-      LaurentSeries.derivative P.ResidueField (P.laurentSeriesExpansionResidueField ht z) :=
-  map_derivativeOfSeparating_eq_derivative htr _
-    (P.laurentSeriesExpansionResidueField_uniformizer ht) z
 
 /-- **Stichtenoth's transformation formula** `res_{P,s}(z) = res_{P,t}(z · ds/dt)` at a place
 with separable residue field, for two uniformizers `s` and `t` with `t` separating, the residues
@@ -493,4 +502,6 @@ theorem kaehlerTraceResidue_eq_kaehlerResidue :
 
 end ResidueField
 
-end TauCeti.Place
+end Place
+
+end TauCeti
