@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Dual.Divisibility
 
 /-!
 # Modular bilinear forms
@@ -68,18 +69,6 @@ open Module Matrix
 section Division
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {a : R}
-
-/-- If `a` is a non-zero-divisor dividing every value of a linear functional `f`, then `f` is `a`
-times a linear functional. -/
-theorem _root_.LinearMap.exists_smul_eq_of_forall_dvd {f : M →ₗ[R] R}
-    (ha : a ∈ nonZeroDivisors R) (h : ∀ x, a ∣ f x) : ∃ g : M →ₗ[R] R, a • g = f := by
-  choose c hc using h
-  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
-  refine ⟨{ toFun := c, map_add' := fun x y ↦ hcan _ _ ?_, map_smul' := fun r x ↦ hcan _ _ ?_ },
-    LinearMap.ext fun x ↦ ?_⟩
-  · rw [← hc, mul_add, ← hc, ← hc, map_add]
-  · rw [← hc, RingHom.id_apply, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_eq_mul]
-  · simp [hc]
 
 /-- If `a` is a non-zero-divisor dividing every value of `B`, then `B` is `a` times a bilinear
 form. -/
