@@ -152,6 +152,27 @@ noncomputable def ofBasisAction (ρ : Representation A G V)
   rw [haction]
   exact (hcoordinates g (e v)).symm
 
+/-- The equivalence built by `ofBasisAction` sends a vector to its coordinates after applying the
+given linear equivalence. -/
+@[simp]
+theorem ofBasisAction_apply (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) (v : V) :
+    ofBasisAction ρ σ e b a haction hcoordinates v = b.equivFun (e v) :=
+  (rfl)
+
+/-- The inverse of the equivalence built by `ofBasisAction` reconstructs a vector from its
+coordinates and applies the inverse of the given linear equivalence. -/
+@[simp]
+theorem ofBasisAction_symm_apply (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) (w : ι → A) :
+    (ofBasisAction ρ σ e b a haction hcoordinates).symm w =
+      e.symm (b.equivFun.symm w) :=
+  (rfl)
+
 end Basis
 
 section Tensor

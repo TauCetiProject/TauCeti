@@ -346,7 +346,9 @@ variable (K : Type u) [Field K]
 private theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 6 := by
   simp [SplitEvenSpace]
 
-private theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
+/-- The isotropic summand in the canonical split polarization of three hyperbolic planes is
+nonzero. -/
+theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
   Submodule.finrank_eq_zero.not.1 <| by
     rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
       ((hyperbolicSix_finrank K).trans (by norm_num : 6 = 2 * 3))]
@@ -369,10 +371,7 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =
       (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
-        (Submodule.finrank_eq_zero.not.1 <| by
-          rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-            (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 3) = 2 * 3)]
-          norm_num)
+        (hyperbolicSix_W_ne_bot K)
         (by simp [SplitEvenSpace]) x := by
   simp [hyperbolicSixEvenEquivMatrixProd]
 

@@ -49,16 +49,9 @@ universe u
 
 variable (K : Type u) [Field K]
 
-private theorem hyperbolicSixSpinPlus_W_ne_bot :
-    (splitEvenPolarization K 3).W ≠ ⊥ :=
-  Submodule.finrank_eq_zero.not.1 <| by
-    rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-      (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 3) = 2 * 3)]
-    norm_num
-
 private theorem hyperbolicSix_spinPlus_finrank :
     finrank K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) = 4 := by
-  rw [finrank_spinPlus _ (hyperbolicSixSpinPlus_W_ne_bot K)]
+  rw [finrank_spinPlus _ (hyperbolicSix_W_ne_bot K)]
   rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
     (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 3) = 2 * 3)]
   norm_num
@@ -109,7 +102,7 @@ private theorem hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix
         (spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
           (splitEvenPolarization_line K 3)
           (spinGroupToEven (splitEvenForm K 3) g)) := by
-  let hW := hyperbolicSixSpinPlus_W_ne_bot K
+  let hW := hyperbolicSix_W_ne_bot K
   let hV : finrank K (SplitEvenSpace K 3) = 2 * 3 := by simp [SplitEvenSpace]
   let x := spinGroupToEven (splitEvenForm K 3) g
   calc
