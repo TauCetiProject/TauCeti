@@ -173,12 +173,9 @@ noncomputable def fromExtendScalars (hP : IsDGRightModule hB ℳP dP)
           have hd : dP (φ m).val = (φ (dM m)).val := by
             simpa only [IsDGRightModule.val_restrictScalarsDifferential] using
               congrArg DGRightModule.RestrictScalars.val (φ.map_d m)
-          rw [LinearMap.comp_apply, LinearMap.comp_apply, BalancedTensorProduct.lift_tmul, hF,
-            hP.leibniz hφm x.val, hd,
-            IsDGRightModule.extendScalarsDifferential_tmul_of_mem f hM m.2, map_add,
-            map_smul (BalancedTensorProduct.lift F hFb),
-            BalancedTensorProduct.lift_tmul, BalancedTensorProduct.lift_tmul, hF, hF,
-            DGAlgHom.val_codomainBimoduleDifferential, Units.smul_def, Int.cast_smul_eq_zsmul]
+          rw [LinearMap.comp_apply, LinearMap.comp_apply,
+            IsDGRightModule.extendScalarsDifferential_tmul_of_mem f hM m.2, Int.cast_smul_eq_zsmul]
+          simp [hF, hP.leibniz hφm x.val, hd, Units.smul_def]
       exact LinearMap.congr_fun key z }
 
 /-- The morphism out of the extension sends `m ⊗ b` to `φ(m) b`. -/
@@ -195,10 +192,9 @@ theorem fromExtendScalars_tmul (φ : DGRightModuleHom hM (hP.restrictScalars f))
 theorem fromExtendScalars_comp (φ : DGRightModuleHom hN (hP.restrictScalars f))
     (g : DGRightModuleHom hM hN) :
     (φ.comp g).fromExtendScalars f hP = (φ.fromExtendScalars f hP).comp (g.extendScalars f) := by
-  ext z
-  induction z using BalancedTensorProduct.induction_on with
-  | ht m x => simp
-  | ha z z' hz hz' => simp only [map_add, hz, hz']
+  refine toLinearMap_injective <| LinearMap.restrictScalars_injective R <|
+    BalancedTensorProduct.hom_ext fun m x ↦ ?_
+  simp
 
 /-- The morphism into the restriction is natural in the target module. -/
 theorem toRestrictScalars_comp {Q : Type*} [AddCommGroup Q] [Module R Q] [Module Bᵐᵒᵖ Q]
@@ -219,15 +215,14 @@ noncomputable def extendRestrictScalarsEquiv (hM : IsDGRightModule hA ℳ dM)
   toFun g := g.toRestrictScalars f
   invFun φ := φ.fromExtendScalars f hP
   left_inv g := by
-    ext z
-    induction z using BalancedTensorProduct.induction_on with
-    | ht m x =>
-      rw [fromExtendScalars_tmul, val_toRestrictScalars, ← map_smul,
-        BalancedTensorProduct.smul_tmul_right]
-      congr 2
-      ext
-      simp
-    | ha z z' hz hz' => simp only [map_add, hz, hz']
+    refine toLinearMap_injective <| LinearMap.restrictScalars_injective R <|
+      BalancedTensorProduct.hom_ext fun m x ↦ ?_
+    simp only [LinearMap.restrictScalars_apply, coe_toLinearMap]
+    rw [fromExtendScalars_tmul, val_toRestrictScalars, ← map_smul,
+      BalancedTensorProduct.smul_tmul_right]
+    congr 2
+    ext
+    simp
   right_inv φ := by
     ext m
     simp

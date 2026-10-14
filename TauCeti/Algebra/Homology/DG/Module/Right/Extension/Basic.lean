@@ -254,19 +254,24 @@ theorem extendScalars_tmul (g : DGRightModuleHom hM hN) (m : M)
 @[simp]
 theorem extendScalars_id :
     (DGRightModuleHom.id hM).extendScalars f = DGRightModuleHom.id (hM.extendScalars f) := by
+  have h : (DGRightModuleHom.id hM).toLinearMap.restrictScalars R = LinearMap.id :=
+    LinearMap.ext (id_apply hM)
   ext z
-  induction z using BalancedTensorProduct.induction_on with
-  | ht m x => simp
-  | ha x y hx hy => simp only [map_add, hx, hy]
+  simp only [extendScalars, h, id_apply]
+  exact LinearMap.congr_fun BalancedTensorProduct.map_id z
 
 /-- Extension of scalars preserves composition. -/
 @[simp]
 theorem extendScalars_comp (g : DGRightModuleHom hN hP) (k : DGRightModuleHom hM hN) :
     (g.comp k).extendScalars f = (g.extendScalars f).comp (k.extendScalars f) := by
+  have h : (g.comp k).toLinearMap.restrictScalars R =
+      g.toLinearMap.restrictScalars R ∘ₗ k.toLinearMap.restrictScalars R :=
+    LinearMap.ext (comp_apply g k)
   ext z
-  induction z using BalancedTensorProduct.induction_on with
-  | ht m x => simp
-  | ha x y hx hy => simp only [map_add, hx, hy]
+  simp only [extendScalars, h, comp_apply]
+  exact LinearMap.congr_fun (BalancedTensorProduct.map_comp (A := A)
+    (k.toLinearMap.restrictScalars R) LinearMap.id (g.toLinearMap.restrictScalars R)
+    LinearMap.id _ (fun _ _ ↦ rfl) _ (fun _ _ ↦ rfl)) z
 
 end DGRightModuleHom
 
