@@ -424,6 +424,14 @@ theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     N ≤ ((g.comp (quotientMk N) : G →* H)).ker :=
   fun x hx => by simp [MonoidHom.mem_ker, (QuotientGroup.eq_one_iff x).mpr hx]
 
+end ContinuousMonoidHom
+
+namespace TauCeti.ContinuousMonoidHom
+
+open _root_.ContinuousMonoidHom
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
 /-- Precomposition with the quotient projection identifies continuous homomorphisms on the
 quotient with continuous homomorphisms whose kernels contain the normal subgroup. -/
 def quotientHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
@@ -439,9 +447,11 @@ def quotientHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G
 
 /-- Evaluation of the forward quotient homomorphism equivalence. -/
 @[simp]
-theorem quotientHomEquiv_apply_coe {H : Type*} [Monoid H] [TopologicalSpace H]
+theorem _root_.ContinuousMonoidHom.quotientHomEquiv_apply_coe
+    {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    ((quotientHomEquiv N g : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
+    ((TauCeti.ContinuousMonoidHom.quotientHomEquiv N g :
+      {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
       g.comp (quotientMk N) := (rfl)
 
 /-- Evaluation of the inverse quotient homomorphism equivalence. -/
@@ -450,4 +460,4 @@ theorem quotientHomEquiv_symm_apply {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (f : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) :
     (quotientHomEquiv N).symm f = quotientLift N f.val f.property := (rfl)
 
-end ContinuousMonoidHom
+end TauCeti.ContinuousMonoidHom
