@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Galois
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Bilinear
+import TauCeti.LinearAlgebra.Determinant.Basic
 -- Proof-only: the fixed field of all automorphisms of a Galois extension is the base field.
 import Mathlib.FieldTheory.Galois.Infinite
 
@@ -56,32 +58,6 @@ namespace TauCeti.Isogeny
 variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F] (W : WeierstrassCurve F)
   [W.IsElliptic] (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0)
 
-/-- On a basis `(P, Q)` of `E[N]`, no nonzero scalar kills `e_N(P, Q)`: if `r • e_N(P, Q) = 0`,
-then `r • P` pairs trivially with every `T = a • P + c • Q`, since `e_N(P, T) = c • e_N(P, Q)`. -/
-private theorem eq_zero_of_smul_weilPairing_eq_zero
-    (b : Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)))
-    {r : ZMod N} (hr : r • weilPairing W N hN (b 0) (b 1) = 0) : r = 0 := by
-  -- the pairing is `ZMod N`-linear in each variable. Its domain is written `Submodule.torsionBy`,
-  -- while the `ZMod N`-module structure is on `AddSubgroup.torsionBy`, the same subtype of points,
-  -- so `M` is named for `ZMod.map_smul`.
-  have hl (S T : AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) (c : ZMod N) :
-      weilPairing W N hN (c • S) T = c • weilPairing W N hN S T := by
-    rw [← AddMonoidHom.flip_apply, ZMod.map_smul (M := AddSubgroup.torsionBy W.toAffine.Point _),
-      AddMonoidHom.flip_apply]
-  have hr' (S T : AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) (c : ZMod N) :
-      weilPairing W N hN S (c • T) = c • weilPairing W N hN S T :=
-    ZMod.map_smul (M := AddSubgroup.torsionBy W.toAffine.Point _) _ c T
-  have h : r • b 0 = 0 := by
-    refine weilPairing_nondegenerate W N hN fun T ↦ ?_
-    -- `T`, read in the `ZMod N`-module `AddSubgroup.torsionBy`, to expand it in the basis `b`
-    let T' : AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) := T
-    have hT : weilPairing W N hN (b 0) T' = b.repr T' 1 • weilPairing W N hN (b 0) (b 1) := by
-      conv_lhs => rw [← b.sum_repr T']
-      rw [map_sum, Fin.sum_univ_two, hr', hr', weilPairing_self, smul_zero, zero_add]
-    calc weilPairing W N hN (r • b 0) T = r • weilPairing W N hN (b 0) T' := hl _ _ _
-      _ = 0 := by rw [hT, smul_comm, hr, smul_zero]
-  exact b.linearIndependent.smul_left_injective 0 (h.trans (zero_smul _ _).symm)
-
 /-- **The Weil pairing takes a primitive `N`-th root of unity as a value** (Silverman III.8.1.1),
 over a separably closed field in which `N` is invertible. -/
 theorem exists_isPrimitiveRoot_weilPairing :
@@ -92,8 +68,9 @@ theorem exists_isPrimitiveRoot_weilPairing :
     IsPrimitiveRoot.coe_submonoidClass_iff.2
       ⟨by rw [← toMul_nsmul, nsmul_additive_rootsOfUnity_eq_zero, toMul_zero],
       fun l hl ↦ (ZMod.natCast_eq_zero_iff l N).1 <|
-        eq_zero_of_smul_weilPairing_eq_zero W N hN b ?_⟩⟩
-  rw [Nat.cast_smul_eq_nsmul]
+        (isAlt_weilPairingBilin W N hN).eq_zero_of_smul_apply_basis_eq_zero b
+          (separatingLeft_weilPairingBilin W N hN) ?_⟩⟩
+  rw [weilPairingBilin_apply, Nat.cast_smul_eq_nsmul]
   exact Additive.toMul.injective (by simpa [toMul_nsmul] using hl)
 
 /-- **The Weil pairing is onto `μ_N` in its second variable** for a suitable first argument, over
@@ -157,31 +134,18 @@ theorem exists_isPrimitiveRoot_of_card_torsionBy [DecidableEq F] (hN : (N : F) �
   classical
   let K := SeparableClosure F
   have hNK : (N : K) ≠ 0 := by rwa [← map_natCast (algebraMap F K), map_ne_zero]
-  -- the inclusion `E(F) → E(K)`; `WeierstrassCurve.Affine.pointMap` is the same map, but stated
-  -- for the classical decidable equality on `F`, not the one the torsion subgroup in `h` uses
-  let f : W.toAffine.Point →+ (W⁄K).toAffine.Point :=
-    (Affine.Point.map (W' := W.toAffine) (Algebra.ofId F K)).comp
-      (Affine.Point.equivBaseChangeSelf W.toAffine).toAddMonoidHom
-  have hf : Function.Injective f :=
-    (Affine.Point.map_injective _).comp (Affine.Point.equivBaseChangeSelf W.toAffine).injective
-  -- it carries `E[N](F)` onto `E[N](K)`, since both have `N²` points
-  obtain ⟨b⟩ := nonempty_basis_torsionBy (W⁄K) N hNK
-  have : Finite (AddSubgroup.torsionBy (W⁄K).toAffine.Point (N : ℤ)) :=
-    Finite.of_equiv (Fin 2 → ZMod N) b.equivFun.symm.toEquiv
-  have hmap : (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)).map f =
-      AddSubgroup.torsionBy (W⁄K).toAffine.Point (N : ℤ) := by
-    refine AddSubgroup.eq_of_le_of_card_ge ?_ ?_
-    · rintro _ ⟨P, hP, rfl⟩
-      exact AddSubgroup.torsionBy.nsmul_iff.2 <| by
-        rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 hP, map_zero]
-    · rw [Nat.card_congr b.equivFun.toEquiv, AddSubgroup.card_map_of_injective hf, h,
-        Nat.card_fun, Nat.card_zmod, Nat.card_fin]
+  -- `E[N](F) → E[N](K)` is onto, since both have `N²` points
+  have hbij := W.torsionMapAlong_bijective_of_natCard (algebraMap F K) (N := N)
+    (by rwa [Int.cast_natCast]) (by rw [h, Int.natAbs_natCast])
   -- so every `F`-automorphism of `K` fixes `E[N](K)`
   refine exists_isPrimitiveRoot_of_forall_torsionGaloisAction_eq_one (K := K) W hNK fun σ ↦
     Multiplicative.toAdd.injective <| AddEquiv.ext fun T ↦ Subtype.ext ?_
-  obtain ⟨P, -, hP⟩ := hmap.ge T.2
-  rw [torsionGaloisAction_apply_coe, pointGaloisAction_apply, toAdd_one, AddAut.zero_apply, ← hP]
-  simp only [f, AddMonoidHom.comp_apply, Affine.Point.map_map]
+  obtain ⟨P, hP⟩ := hbij.2 ⟨T.1, T.2⟩
+  have hP' := congrArg Subtype.val hP
+  rw [coe_torsionMapAlong_apply, Affine.Point.mapAlong_eq_map] at hP'
+  rw [torsionGaloisAction_apply_coe, pointGaloisAction_apply, toAdd_one, AddAut.zero_apply, ← hP']
+  -- `P` is read on `W⁄F`, which is `W`, for `Affine.Point.map_map`
+  refine (Affine.Point.map_map (W' := W.toAffine) _ _ (P : W.toAffine.Point)).trans ?_
   rw [Subsingleton.elim (σ.toAlgHom.comp (Algebra.ofId F K)) (Algebra.ofId F K)]
 
 end WeierstrassCurve
