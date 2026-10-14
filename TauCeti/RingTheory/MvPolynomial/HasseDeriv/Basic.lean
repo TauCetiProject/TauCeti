@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Equiv
-public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Data.Finsupp.Choose
@@ -144,7 +142,8 @@ theorem degreeOf_hasseDeriv_le (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : 
   omega
 
 /-- Differentiating `∂^(k eᵢ)` with respect to `Xᵢ` gives `(k + 1) ∂^((k + 1) eᵢ)`. -/
-private theorem pderiv_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ R) :
+@[simp]
+theorem pderiv_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ R) :
     pderiv i (hasseDeriv (single i k) P) = (k + 1) • hasseDeriv (single i (k + 1)) P := by
   induction P using MvPolynomial.induction_on' with
   | monomial n a =>
