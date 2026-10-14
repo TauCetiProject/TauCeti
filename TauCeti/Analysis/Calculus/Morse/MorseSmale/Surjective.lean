@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Perturbation
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import TauCeti.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.BumpComp
 import TauCeti.Dynamics.Flow.Variational
