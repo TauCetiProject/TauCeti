@@ -605,10 +605,16 @@ irreducible over `K` (`TauCeti.isIntegrallyClosedIn_of_irreducible_map` for the 
 theorem isIntegrallyClosedIn_of_isHomogeneous (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
     {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
-    IsIntegrallyClosedIn k F :=
-  isIntegrallyClosedIn_of_irreducible_map (L := K) hx hgen
-    (irreducible_map_dehomogenize_two hG hsm h)
-    (by rwa [aeval_dehomogenize, insertNth_two])
+    IsIntegrallyClosedIn k F := by
+  have hirr := irreducible_map_dehomogenize_two hG hsm h
+  have h₂ : aeval ![x, y] (dehomogenize 2 G) = 0 := by rwa [aeval_dehomogenize, insertNth_two]
+  let eK := Polynomial.Bivariate.equivMvPolynomial K
+  have hirr' : Irreducible (eK.symm ((dehomogenize 2 G).map (algebraMap k K))) :=
+    (MulEquiv.irreducible_iff eK.symm.toMulEquiv).mpr hirr
+  rw [Polynomial.Bivariate.equivMvPolynomial_symm_map] at hirr'
+  exact isIntegrallyClosedIn_of_irreducible_map (L := K) hx hgen hirr'
+    ((AlgHom.congr_fun
+      (Polynomial.Bivariate.aevalAeval_comp_equivMvPolynomial_symm (R := k) x y) _).trans h₂)
 
 omit [IsAlgClosed K] in
 /-- The hypotheses of `TauCeti.genus_eq_of_isHomogeneous` survive a constant field extension
