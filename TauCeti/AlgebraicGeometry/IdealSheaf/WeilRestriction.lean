@@ -238,12 +238,19 @@ the Weil restriction of the inverse image of `V(I)` in `T ×_S Y` along `T ×_S 
 inverse image of the Weil restriction of `V(I)` along `g`. -/
 theorem weilRestriction_comap (I : Y.IdealSheafData) {T : Scheme.{u}} (t : T ⟶ S) :
     (I.comap (pullback.snd t g)).weilRestriction (pullback.fst t g) =
-      (I.weilRestriction g).comap t :=
+      (I.weilRestriction g).comap t := by
   -- both sides have the same morphisms factoring through their closed subschemes
-  ext_of_le_ker_iff fun s ↦ by
+  have key {T' : Scheme.{u}} (s : T' ⟶ T) :
+      (I.comap (pullback.snd t g)).weilRestriction (pullback.fst t g) ≤ s.ker ↔
+        (I.weilRestriction g).comap t ≤ s.ker := by
     rw [weilRestriction_le_ker_iff, ← le_map_iff_comap_le, map_ker, ← le_map_iff_comap_le,
       map_ker, weilRestriction_le_ker_iff, ← pullbackRightPullbackFstIso_hom_snd,
       Scheme.Hom.ker_comp_of_isIso]
+  exact le_antisymm
+    (((key ((I.weilRestriction g).comap t).subschemeι).2 (ker_subschemeι _).ge).trans
+      (ker_subschemeι _).le)
+    (((key ((I.comap (pullback.snd t g)).weilRestriction (pullback.fst t g)).subschemeι).1
+      (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
 
 end Scheme.IdealSheafData
 
