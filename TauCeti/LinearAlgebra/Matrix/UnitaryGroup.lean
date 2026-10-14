@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!
 # Coordinate action of unitary matrices
 
 `Matrix.UnitaryGroup.toLinearEquiv_apply` describes the linear equivalence associated to a unitary
-matrix by its matrix-vector action.
+matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitaryGroup` records that
+permutation matrices are unitary.
 -/
 
 public section
@@ -31,3 +33,16 @@ theorem toLinearEquiv_apply (U : Matrix.unitaryGroup n R) (x : n → R) :
 
 end Matrix.UnitaryGroup
 
+namespace Matrix
+
+variable {R : Type u} [CommRing R] [StarRing R]
+variable {n : Type v} [Fintype n] [DecidableEq n]
+
+/-- A permutation matrix is unitary: its conjugate transpose is the permutation matrix of the
+inverse permutation. -/
+theorem permMatrix_mem_unitaryGroup (σ : Equiv.Perm n) :
+    σ.permMatrix R ∈ unitaryGroup n R := by
+  rw [mem_unitaryGroup_iff, star_eq_conjTranspose, conjTranspose_permMatrix, ← permMatrix_mul,
+    inv_mul_cancel, permMatrix_one]
+
+end Matrix
