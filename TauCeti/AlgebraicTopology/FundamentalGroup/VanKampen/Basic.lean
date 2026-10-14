@@ -377,6 +377,66 @@ theorem isPushout_fundamentalGroup (hCover : interior A ∪ interior B = univ)
     · exact (congrArg GrpCat.Hom.hom h₂).trans (vanKampenDesc_comp_map_right hCover hA hB hAB
         hxA hxB _ _ (congrArg GrpCat.Hom.hom s.condition)).symm
 
+/-- The overlap square commutes after identifying the nested subspaces inside `C`. -/
+private theorem fundamentalGroup_subspace_inclusion_square {C S T : Set X}
+    (hSC : S ⊆ C) (hTC : T ⊆ C) (hST : S ⊆ T) (x : X) (hxS : x ∈ S) :
+    let S' : Set C := Subtype.val ⁻¹' S
+    let T' : Set C := Subtype.val ⁻¹' T
+    let eS : S' ≃ₜ S := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun s hs => ⟨⟨s, hSC hs⟩, rfl⟩)
+    let eT : T' ≃ₜ T := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun t ht => ⟨⟨t, hTC ht⟩, rfl⟩)
+    let x' : C := ⟨x, hSC hxS⟩
+    GrpCat.ofHom (_root_.FundamentalGroup.map
+        (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) ⟨x', hxS⟩) ≫
+        (FundamentalGroup.homeomorphMulEquivOfEq eT rfl).toGrpIso.hom =
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl).toGrpIso.hom ≫
+        GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion hST) ⟨x, hxS⟩) := by
+  intro S' T' eS eT x'
+  ext p
+  -- Pin the group carriers before unfolding the categorical wrappers: composition simp
+  -- cannot infer them through the homeomorphism-induced isomorphisms at nested subtypes.
+  change FundamentalGroup.homeomorphMulEquivOfEq eT rfl
+      (_root_.FundamentalGroup.map (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T'))
+        (⟨x', hxS⟩ : S') p) =
+    _root_.FundamentalGroup.map (ContinuousMap.inclusion hST) ⟨x, hxS⟩
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl p)
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply,
+    FundamentalGroup.homeomorphMulEquivOfEq_apply,
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')),
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion hST)]
+  exact (FundamentalGroup.mapOfEq_comp ⟨eT, eT.continuous⟩
+    (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) rfl rfl p).trans
+    ((FundamentalGroup.mapOfEq_congr
+      (f₂ := (ContinuousMap.inclusion hST).comp ⟨eS, eS.continuous⟩)
+      (by ext z; rfl) _ _ p).trans
+      (FundamentalGroup.mapOfEq_comp (ContinuousMap.inclusion hST)
+        ⟨eS, eS.continuous⟩ rfl rfl p).symm)
+
+/-- The map into `C` factors through the identification of a nested subspace with `S`. -/
+private theorem fundamentalGroup_subspace_subtypeVal_square {C S : Set X}
+    (hSC : S ⊆ C) (x : X) (hxS : x ∈ S) :
+    let S' : Set C := Subtype.val ⁻¹' S
+    let eS : S' ≃ₜ S := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      (fun s hs => ⟨⟨s, hSC hs⟩, rfl⟩)
+    let x' : C := ⟨x, hSC hxS⟩
+    GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal S') ⟨x', hxS⟩) =
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl).toGrpIso.hom ≫
+        GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion hSC) ⟨x, hxS⟩) := by
+  intro S' eS x'
+  ext p
+  -- As in the overlap square, expose the induced maps after fixing their group carriers.
+  change _root_.FundamentalGroup.map (ContinuousMap.subtypeVal S') ⟨x', hxS⟩ p =
+    _root_.FundamentalGroup.map (ContinuousMap.inclusion hSC) ⟨x, hxS⟩
+      (FundamentalGroup.homeomorphMulEquivOfEq eS rfl p)
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply,
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion hSC),
+    ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.subtypeVal S')]
+  -- The canonical homeomorphism forgets the outer subtype, so composing it with
+  -- inclusion is definitionally the subtype-value map.
+  exact (FundamentalGroup.mapOfEq_comp (ContinuousMap.inclusion hSC)
+    ⟨eS, eS.continuous⟩ rfl rfl p).symm
+
 /-- Based van Kampen for a union of two open subspaces. All the maps are induced by
 inclusions, and neither inclusion from the overlap needs to induce an injective map. -/
 theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
@@ -431,73 +491,14 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
       GrpCat.of (_root_.FundamentalGroup ↥(A ∩ B) ⟨x, hxA, hxB⟩) :=
     (FundamentalGroup.homeomorphMulEquivOfEq eAB
     (rfl : eAB ⟨x', hxA, hxB⟩ = ⟨x, hxA, hxB⟩)).toGrpIso
-  -- Naturality of basepoint-preserving transport, shared by all four inclusion squares.
-  have hMap {Y Z W T : Type _} [TopologicalSpace Y] [TopologicalSpace Z]
-      [TopologicalSpace W] [TopologicalSpace T] {y : Y} {z : Z} {w : W} {t : T}
-      (f : C(Y, Z)) (g : C(Z, T)) (f' : C(Y, W)) (g' : C(W, T))
-      (hf : f y = z) (hg : g z = t) (hf' : f' y = w) (hg' : g' w = t)
-      (h : g.comp f = g'.comp f') (p : _root_.FundamentalGroup Y y) :
-      _root_.FundamentalGroup.mapOfEq g hg (_root_.FundamentalGroup.mapOfEq f hf p) =
-        _root_.FundamentalGroup.mapOfEq g' hg' (_root_.FundamentalGroup.mapOfEq f' hf' p) :=
-    (FundamentalGroup.mapOfEq_comp g f hf hg p).trans
-      ((FundamentalGroup.mapOfEq_congr h _ _ p).trans
-        (FundamentalGroup.mapOfEq_comp g' f' hf' hg' p).symm)
   refine (isPushout_fundamentalGroup hCover hA' hB' hAB' hxA hxB).of_iso
     iAB iA iB (Iso.refl _) ?_ ?_ ?_ ?_
-  -- GrpCat composition simp fails its implicit-transparency type check on the nested
-  -- subtype endpoints. Pin the carriers, then use the homeomorphism evaluation API.
-  · ext g
-    change FundamentalGroup.homeomorphMulEquivOfEq eA rfl
-      (_root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left)
-        (⟨x', hxA, hxB⟩ : ↥(A' ∩ B')) g) =
-      _root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left)
-        (⟨x, hxA, hxB⟩ : ↥(A ∩ B))
-        (FundamentalGroup.homeomorphMulEquivOfEq eAB rfl g)
-    simp only [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_rfl]
-    have h := hMap (ContinuousMap.inclusion (inter_subset_left : A' ∩ B' ⊆ A'))
-      ⟨eA, eA.continuous⟩ ⟨eAB, eAB.continuous⟩
-      (ContinuousMap.inclusion (inter_subset_left : A ∩ B ⊆ A))
-      rfl rfl rfl rfl (by ext z; rfl) g
-    erw [FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl,
-      FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl] at h
-    exact h
-  · ext g
-    change FundamentalGroup.homeomorphMulEquivOfEq eB rfl
-      (_root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
-        (⟨x', hxA, hxB⟩ : ↥(A' ∩ B')) g) =
-      _root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
-        (⟨x, hxA, hxB⟩ : ↥(A ∩ B))
-        (FundamentalGroup.homeomorphMulEquivOfEq eAB rfl g)
-    simp only [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_rfl]
-    have h := hMap (ContinuousMap.inclusion (inter_subset_right : A' ∩ B' ⊆ B'))
-      ⟨eB, eB.continuous⟩ ⟨eAB, eAB.continuous⟩
-      (ContinuousMap.inclusion (inter_subset_right : A ∩ B ⊆ B))
-      rfl rfl rfl rfl (by ext z; rfl) g
-    erw [FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl,
-      FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl] at h
-    exact h
-  · ext g
-    change _root_.FundamentalGroup.map (ContinuousMap.subtypeVal A') ⟨x', hxA⟩ g =
-      _root_.FundamentalGroup.map (ContinuousMap.inclusion subset_union_left) (⟨x, hxA⟩ : A)
-        (FundamentalGroup.homeomorphMulEquivOfEq eA rfl g)
-    simp only [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_rfl]
-    have h := hMap (ContinuousMap.subtypeVal A') (ContinuousMap.id ↥(A ∪ B))
-      ⟨eA, eA.continuous⟩ (ContinuousMap.inclusion (subset_union_left : A ⊆ A ∪ B))
-      rfl rfl rfl rfl (by ext z; rfl) g
-    erw [FundamentalGroup.mapOfEq_id, FundamentalGroup.mapOfEq_rfl,
-      FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl] at h
-    exact h
-  · ext g
-    change _root_.FundamentalGroup.map (ContinuousMap.subtypeVal B') ⟨x', hxB⟩ g =
-      _root_.FundamentalGroup.map (ContinuousMap.inclusion subset_union_right) (⟨x, hxB⟩ : B)
-        (FundamentalGroup.homeomorphMulEquivOfEq eB rfl g)
-    simp only [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_rfl]
-    have h := hMap (ContinuousMap.subtypeVal B') (ContinuousMap.id ↥(A ∪ B))
-      ⟨eB, eB.continuous⟩ (ContinuousMap.inclusion (subset_union_right : B ⊆ A ∪ B))
-      rfl rfl rfl rfl (by ext z; rfl) g
-    erw [FundamentalGroup.mapOfEq_id, FundamentalGroup.mapOfEq_rfl,
-      FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl] at h
-    exact h
+  · exact fundamentalGroup_subspace_inclusion_square
+      (inter_subset_left.trans subset_union_left) subset_union_left inter_subset_left x ⟨hxA, hxB⟩
+  · exact fundamentalGroup_subspace_inclusion_square
+      (inter_subset_left.trans subset_union_left) subset_union_right inter_subset_right x ⟨hxA, hxB⟩
+  · exact fundamentalGroup_subspace_subtypeVal_square subset_union_left x hxA
+  · exact fundamentalGroup_subspace_subtypeVal_square subset_union_right x hxB
 
 /-- The canonical homomorphism from the free product of the fundamental groups of two
 subspaces to the fundamental group of the ambient space. -/
