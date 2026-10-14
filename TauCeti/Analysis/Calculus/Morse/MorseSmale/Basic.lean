@@ -30,12 +30,18 @@ hypotheses of the statements that use it, as in the pointwise theorems it is mea
 * `TauCeti.isMorseSmale_iff`: the unfolded form of the predicate.
 * `TauCeti.IsMorseSmale.transverse`: its pointwise elimination.
 * `TauCeti.isMorseSmale_congr`: the predicate does not depend on the Lipschitz witness.
+* `TauCeti.IsMorseSmale.morseIndex_lt`: for a Morse–Smale function, a trajectory between two
+  different nondegenerate critical points runs from higher to strictly lower Morse index.
+* `TauCeti.IsMorseSmale.unstableSet_inter_stableSet_eq_empty`: consequently no trajectory runs
+  from `p` to a different nondegenerate critical point `q` with `morseIndex f p ≤ morseIndex f q`.
 * `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet`: under the Morse–Smale
   condition, the set of points on trajectories from `p` to `q` is a `C¹` manifold of dimension
   `morseIndex f p - morseIndex f q`, embedded in `E`.
-* `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level`: each level slice of
-  it, the space of unparametrized trajectories, is a `C¹` manifold of dimension
-  `morseIndex f p - morseIndex f q - 1`, embedded in `E`.
+* `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level`: each level slice
+  `W^u(p) ∩ W^s(q) ∩ {f = c}` of it is a `C¹` manifold of dimension
+  `morseIndex f p - morseIndex f q - 1`, embedded in `E`. For `f q < c < f p` every trajectory
+  from `p` to `q` crosses this slice exactly once, so it is then a model of the space of
+  unparametrized trajectories; for other values of `c` it is empty when `p ≠ q`.
 
 ## References
 
@@ -53,7 +59,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- **The Morse–Smale condition.** For a function `f` with `K`-Lipschitz gradient, the unstable set
 of each critical point `p` and the stable set of each critical point `q` of the negative-gradient
-flow are transverse at each common point `y`: their tangent spaces at `y` span the whole space. -/
+flow are transverse at each common point `y`: the spans of their tangent cones at `y` together span
+the whole space. (When `f` is `C²` and `p`, `q` are nondegenerate, these sets are manifolds near `y`
+and these spans are their tangent spaces.) -/
 def IsMorseSmale (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) : Prop :=
   ∀ ⦃p q y : E⦄, fderiv ℝ f p = 0 → fderiv ℝ f q = 0 →
     y ∈ Flow.unstableSet (negativeGradientFlow f hf) p →
@@ -71,9 +79,9 @@ theorem isMorseSmale_iff (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (�
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤ :=
   Iff.rfl
 
-/-- **Pointwise transversality.** For a Morse–Smale function, the tangent spaces at a common point
-of the unstable set of a critical point and the stable set of a critical point span the whole
-space. -/
+/-- **Pointwise transversality.** For a Morse–Smale function, the spans of the tangent cones at a
+common point of the unstable set of a critical point and the stable set of a critical point
+together span the whole space. -/
 theorem IsMorseSmale.transverse {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)}
     (h : IsMorseSmale f hf) {p q y : E} (hp : fderiv ℝ f p = 0) (hq : fderiv ℝ f q = 0)
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
@@ -88,7 +96,31 @@ theorem isMorseSmale_congr (f : E → ℝ) {K K' : ℝ≥0} (hf : LipschitzWith 
     (hf' : LipschitzWith K' (∇ f)) : IsMorseSmale f hf ↔ IsMorseSmale f hf' := by
   rw [isMorseSmale_iff, isMorseSmale_iff, negativeGradientFlow_congr f hf hf']
 
-variable {p q : E} {c : ℝ}
+variable {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
+
+/-- **The Morse index drops along trajectories.** For a `C²` Morse–Smale function, a trajectory of
+the negative-gradient flow from a nondegenerate critical point `p` to a different nondegenerate
+critical point `q` forces `morseIndex f q < morseIndex f p`. -/
+theorem IsMorseSmale.morseIndex_lt (h : IsMorseSmale f hf) (hp : IsNondegenerateCriticalPoint f p)
+    (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hpq : p ≠ q)
+    (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
+    (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
+    morseIndex f q < morseIndex f p :=
+  hp.morseIndex_lt_of_mem_unstableSet_inter_stableSet hq hfs hf hpq hyu hys
+    (h.transverse hp.fderiv_eq_zero hq.fderiv_eq_zero hyu hys)
+
+/-- **No trajectories up the index.** For a `C²` Morse–Smale function, the unstable set of a
+nondegenerate critical point `p` does not meet the stable set of a different nondegenerate critical
+point `q` whose Morse index is at least that of `p`. -/
+theorem IsMorseSmale.unstableSet_inter_stableSet_eq_empty (h : IsMorseSmale f hf)
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
+    (hfs : ContDiff ℝ 2 f) (hpq : p ≠ q) (hind : morseIndex f p ≤ morseIndex f q) :
+    Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      Flow.stableSet (negativeGradientFlow f hf) q = ∅ :=
+  Set.eq_empty_iff_forall_notMem.2 fun _ hy ↦
+    (h.morseIndex_lt hp hq hfs hpq hy.1 hy.2).not_ge hind
+
+variable {c : ℝ}
 
 /-- **The connecting locus is a manifold.** Under the Morse–Smale condition, for nondegenerate
 critical points `p` and `q` of a `C²` function, the set `W^u(p) ∩ W^s(q)` of points on trajectories
@@ -108,17 +140,19 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet (h : IsMorseS
   have htr := h.transverse hp.fderiv_eq_zero hq.fderiv_eq_zero hyu hys
   obtain ⟨e, hye, he, hes, hmem⟩ :=
     hp.exists_unstableSet_inter_stableSet_chart hq hfs hf hyu hys htr
-  refine ⟨e, _, hye, he, hes, hmem, ?_⟩
+  refine ⟨e, _, hye, fun z hz ↦ (he z hz).contMDiffAt, fun z hz ↦ (hes z hz).contMDiffAt, hmem,
+    ?_⟩
   have hdim := hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex hq hfs hf
     hyu hys htr
   rw [hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr] at hdim
   omega
 
-/-- **The space of unparametrized trajectories is a manifold.** Under the Morse–Smale condition,
-for nondegenerate critical points `p` and `q` of a `C²` function, each level slice
+/-- **Level slices of the connecting locus are manifolds.** Under the Morse–Smale condition, for
+nondegenerate critical points `p` and `q` of a `C²` function, each level slice
 `W^u(p) ∩ W^s(q) ∩ {f = c}` is a `C¹` manifold of dimension `morseIndex f p - morseIndex f q - 1`:
-it is modelled on any subspace `L` of that dimension, and its inclusion into `E` is
-`C¹`. -/
+it is modelled on any subspace `L` of that dimension, and its inclusion into `E` is `C¹`. (For an
+intermediate level `f q < c < f p` this slice meets each trajectory from `p` to `q` exactly once;
+for other levels it may be empty.) -/
 theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level (h : IsMorseSmale f hf)
     (hfs : ContDiff ℝ 2 f) (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) {L : Submodule ℝ E}
@@ -134,7 +168,8 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level (h : Is
   have htr := h.transverse hp.fderiv_eq_zero hq.fderiv_eq_zero hyu hys
   obtain ⟨e, hye, he, hes, hmem⟩ :=
     hp.exists_unstableSet_inter_stableSet_level_chart hq hfs hf hpq hyu hys htr hyc
-  refine ⟨e, _, hye, he, hes, hmem, ?_⟩
+  refine ⟨e, _, hye, fun z hz ↦ (he z hz).contMDiffAt, fun z hz ↦ (hes z hz).contMDiffAt, hmem,
+    ?_⟩
   have hdim := hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_level_add_morseIndex hq
     hfs hf hpq hyu hys htr hyc
   rw [hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs hf hpq hyu hys htr hyc]
