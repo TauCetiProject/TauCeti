@@ -31,7 +31,7 @@ condition is automatic (`Topology.CWComplex.mkFinite`).
   (`TauCeti.finite_cwComplexProd`).
 * `TauCeti.cellProdEquiv`: the `n`-cells of `C ×ˢ D` are the pairs of a `p`-cell of `C` and a
   `q`-cell of `D` with `p + q = n`.  The characteristic map, open cell, closed cell and boundary
-  of a product cell are described by `TauCeti.map_cellProdEquiv_symm`,
+  of a product cell are described by `TauCeti.map_cellProdEquiv_symm_apply`,
   `TauCeti.openCell_cellProdEquiv_symm`, `TauCeti.closedCell_cellProdEquiv_symm` and
   `TauCeti.cellFrontier_cellProdEquiv_symm`.
 * `TauCeti.nat_card_cell_prod`: `C ×ˢ D` has `∑_{p + q = n} #(p-cells of C) · #(q-cells of D)`
@@ -229,7 +229,7 @@ private theorem map_cellProdEquiv_symm_eq_prodCellMap :
 /-- The characteristic map of a product cell is the product of the characteristic maps of its
 factors, after splitting the coordinates of `Fin n → ℝ` into `(Fin p → ℝ) × (Fin q → ℝ)`. -/
 @[simp]
-theorem map_cellProdEquiv_symm (x : Fin n → ℝ) :
+theorem map_cellProdEquiv_symm_apply (x : Fin n → ℝ) :
     map n ((cellProdEquiv n).symm c) x =
       (map _ c.2.1 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2)).symm x).1,
         map _ c.2.2 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2)).symm x).2) := by
