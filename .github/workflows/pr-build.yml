@@ -1002,6 +1002,8 @@ jobs:
         run: |
           ELAN_TOOLCHAIN="$(cat pr/lean-toolchain)" \
             python3 gate/scripts/test_lake_cache_reuse.py --integration
+          ELAN_TOOLCHAIN="$(cat pr/lean-toolchain)" \
+            python3 gate/scripts/test_lake_cache_publish.py --integration
 
       - name: Prepare trusted read-only Lean watchdog toolchain
         if: ${{ env.INFRA != '1' }}
@@ -1089,9 +1091,14 @@ jobs:
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage
         if: ${{ env.IS_BATCH == 'true' && env.STAGE_LAKE_CACHE == '1' && steps.build.outcome == 'success' }}
+        env:
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          LAKE_CACHE_FULL_PUBLICATION: ${{ vars.LAKE_CACHE_FULL_PUBLICATION }}
         run: |
           set -euo pipefail
-          test -s pr/.lake/cache-staging/outputs.jsonl
+          python3 gate/scripts/lake_cache_publish.py stage pr "$RUNNER_TEMP/lake-cache-staging" \
+            --index gate/lake-cache-reuse.json
+          test -s "$RUNNER_TEMP/lake-cache-staging/outputs.jsonl"
           TOOLCHAIN="$(cat pr/lean-toolchain)"
           case "$TOOLCHAIN" in
             leanprover/lean4:[A-Za-z0-9]*) ;;
@@ -1105,7 +1112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lake-cache-staging-${{ steps.pr.outputs.status_sha }}
-          path: pr/.lake/cache-staging
+          path: ${{ runner.temp }}/lake-cache-staging
           if-no-files-found: error
           retention-days: 1
           compression-level: 0

@@ -100,7 +100,12 @@ def snapshot(root: Path, package: str = "TauCeti") -> dict:
                     continue
     except OSError:
         pass  # No downloaded cache is a normal cold build.
-    return {"version": 1, "entries": entries}
+    try:
+        with directory(root, Path()) as parent, regular_file(parent, "lean-toolchain") as handle:
+            toolchain = handle.read(1024).decode().strip()
+    except (OSError, ValueError):
+        toolchain = ""
+    return {"version": 1, "toolchain": toolchain, "entries": entries}
 
 
 def reconnect(root: Path, saved: dict) -> int:

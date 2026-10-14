@@ -136,18 +136,19 @@ class SharedPublicationContract(unittest.TestCase):
 
     def test_publisher_uses_the_shared_helper_not_a_shell_url_copy(self):
         confirm = step(self.publisher, "Confirm the exact revision map on the public endpoint")
-        self.assertIn("python3 scripts/lake_cache_probe.py", confirm)
-        self.assertIn('--expected "$STAGING/outputs.jsonl"', confirm)
+        self.assertIn("python3 publisher-tools/scripts/lake_cache_probe.py", confirm)
+        self.assertIn('--expected "$RUNNER_TEMP/lake-publication-plan/outputs.jsonl"', confirm)
         self.assertNotIn("TOOLCHAIN_DIR=", self.publisher)
         self.assertNotIn("PUBLIC_URL=", self.publisher)
 
-    def test_shared_helper_runs_only_after_the_key_bearing_step(self):
+    def test_shared_helper_is_workflow_pinned_and_runs_without_the_key(self):
         checkout = step(
-            self.publisher, "Check out the toolchain pin and key-free confirmation helper",
+            self.publisher, "Check out workflow-pinned publication planning tools",
         )
         upload = step(self.publisher, "Publish the staged Lake cache")
         confirm = step(self.publisher, "Confirm the exact revision map on the public endpoint")
         self.assertIn("scripts/lake_cache_probe.py", checkout)
+        self.assertIn("ref: ${{ github.workflow_sha }}", checkout)
         self.assertIn("LAKE_CACHE_KEY_RAW", upload)
         self.assertNotIn("lake_cache_probe.py", upload)
         self.assertNotIn("LAKE_CACHE_KEY", confirm)
