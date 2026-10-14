@@ -41,7 +41,7 @@ namespace TauCeti.SmoothEmbedding
 variable {𝕜 E F P H G M N : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+  [TopologicalSpace P] [AddCommGroup P] [Module 𝕜 P]
   [TopologicalSpace H] [TopologicalSpace G]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
@@ -100,9 +100,9 @@ private noncomputable def normalSourceHomeomorphOfComplement
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U) :
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2)) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     {p : TotalSpace P (fun x ↦ f.NormalSpace x hn) // p.proj ∈ U} ≃ₜ U × P := by
   letI := f.instTopologicalSpaceNormalBundle (K := P) hn
@@ -225,17 +225,8 @@ private noncomputable def normalSourceHomeomorphOfComplement
     continuous_toFun := hnormalToQ
     continuous_invFun := hqToNormal
   }
-  have hcoord' : Continuous
-      (fun p : U × F => (A p.1).quotientRangeCoordinate B p.2) := by
-    have hop : Continuous (fun p : U × F =>
-        (inTangentCoordinates I J _root_.id (f : M → N)
-          (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B) :=
-      (hcoord.domRestrict (f := fun x ↦
-        (inTangentCoordinates I J _root_.id (f : M → N)
-          (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B)).comp continuous_fst
-    exact hop.clm_apply continuous_snd
   exact normalQHomeomorph.trans (rangeQuotientHomeomorph A B
-    (fun x => hB x x.2) hq hcoord')
+    (fun x => hB x x.2) hq hcoord)
 
 private theorem normalSourceHomeomorphOfComplement_apply
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
@@ -244,9 +235,9 @@ private theorem normalSourceHomeomorphOfComplement_apply
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U)
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2))
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) (hp : p.proj ∈ U) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     normalSourceHomeomorphOfComplement f hn x₀ U hUopen hU B hB hcoord ⟨p, hp⟩ =
@@ -278,9 +269,9 @@ private theorem normalSourceHomeomorphOfComplement_symm_apply
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U)
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2))
     (p : M × P) (hp : p.1 ∈ U) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     (normalSourceHomeomorphOfComplement f hn x₀ U hUopen hU B hB hcoord).symm
@@ -306,17 +297,19 @@ private theorem normalSourceHomeomorphOfComplement_symm_apply
 coordinates. The total space retains its quotient topology from ambient tangent representatives.
 
 The open set must lie in the source and ambient tangent-chart domains, and `B` must complement the
-coordinate differential throughout it. Continuity of the quotient-coordinate operator is the
-only regularity input needed for this topological trivialization. -/
+coordinate differential throughout it. Joint continuity of the quotient coordinates of ambient
+representatives over the open set is the only regularity input needed for this topological
+trivialization. For a normed model fibre it follows from continuity of the operator-valued
+quotient coordinate, via `ContinuousOn.clm_apply`. -/
 def normalSpaceTrivializationOfComplement (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (x₀ : M) (U : Set M) (hUopen : IsOpen U)
     (hU : U ⊆ (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source)
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U) :
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2)) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     Trivialization P (π P (fun x ↦ f.NormalSpace x hn)) := by
   letI := f.instTopologicalSpaceNormalBundle (K := P) hn
@@ -393,9 +386,9 @@ def normalSpaceTrivializationOfComplement (f : SmoothEmbedding I J n M N) (hn : 
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U) :
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2)) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     (f.normalSpaceTrivializationOfComplement hn x₀ U hUopen hU B hB hcoord).baseSet = U := by
   simp [normalSpaceTrivializationOfComplement]
@@ -408,9 +401,9 @@ def normalSpaceTrivializationOfComplement (f : SmoothEmbedding I J n M N) (hn : 
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U)
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2))
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) (hp : p.proj ∈ U) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     f.normalSpaceTrivializationOfComplement hn x₀ U hUopen hU B hB hcoord p =
@@ -427,9 +420,9 @@ complementary ambient tangent vector. -/
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U)
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2))
     (p : M × P) (hp : p.1 ∈ U) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     (f.normalSpaceTrivializationOfComplement hn x₀ U hUopen hU B hB
@@ -446,9 +439,9 @@ instance instIsLinearNormalSpaceTrivializationOfComplement
     (B : P →L[𝕜] F)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (hcoord : ContinuousOn
-      (fun x ↦ (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) U) :
+    (hcoord : Continuous (fun p : U × F ↦
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2)) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     (f.normalSpaceTrivializationOfComplement hn x₀ U hUopen hU B hB hcoord).IsLinear 𝕜 where
   linear x hx := by
