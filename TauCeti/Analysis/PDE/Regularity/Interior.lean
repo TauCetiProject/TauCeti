@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Basic
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.PDE.Regularity.LipschitzCoefficient
 
 /-!
 # Interior `H²` regularity for a constant principal coefficient
@@ -18,18 +19,19 @@ solution of the divergence-form equation
 `-div(A ∇u) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)` and `b, c ∈ L∞(Ω)`,
 
 meaning `∫_Ω (⟨∇v, A ∇u⟩ + ⟨b, ∇u⟩ v + c u v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`.
-No boundary condition is imposed on `u` and nothing is assumed about `∂Ω`. This file proves that
+No boundary condition is imposed on `u` and nothing is assumed about `∂Ω`. Then
 `u ∈ H²_loc(Ω)`: on every open `V` whose closure is compact and contained in `Ω`, the restriction
-of `u` is the first-order part of an element of `W^{2,2}(V)`.
+of `u` is the first-order part of an element of `W^{2,2}(V)`. This is the constant-coefficient
+case of the interior regularity theorem for locally Lipschitz coefficients
+(`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`).
 
 ## Localization
 
 The lower-order terms belong to `L²`, so moving them to the right-hand side gives
 `-div(A ∇u) = g` with `g = f - ⟨b, ∇u⟩ - c u ∈ L²(Ω)`. No sign or smallness condition on `b`
-or `c` is needed. The whole-space theorem
-`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq` does the analytic work; what is proved here
-is that a cutoff of a local solution is a global one. For `ψ` smooth and compactly supported in
-`Ω`, the product `ψ u`, extended by zero, lies in `H¹(ℝⁿ)` and solves
+or `c` is needed. For a constant coefficient a cutoff of a local solution is a global solution
+with an explicit `L²` forcing, which is what this file proves. For `ψ` smooth and compactly
+supported in `Ω`, the product `ψ u`, extended by zero, lies in `H¹(ℝⁿ)` and solves
 
 `-div(A ∇(ψ u)) = ψ g - ⟨∇u, A ∇ψ⟩ - ⟨∇ψ, A ∇u⟩ - u div(A ∇ψ)` on `ℝⁿ`,
 
@@ -39,7 +41,9 @@ functions `φ` on `ℝⁿ`, which suffices by density
 (`TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`). The term `ψ ∇u` is handled by
 testing the equation for `u` against `ψ φ ∈ H¹₀(Ω)`, and the term `u ∇ψ` by the definition of the
 weak derivative of `u`, tested against the components of `φ A ∇ψ`, which are test functions on
-`Ω`. Choosing `ψ = 1` near `closure V` makes `ψ u` agree with `u` on `V`.
+`Ω`. Choosing `ψ = 1` near `closure V` makes `ψ u` agree with `u` on `V`, so that regularity of
+`u` near a compact set follows from regularity of whole-space solutions with `L²` forcing, such as
+`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq`.
 
 ## Main declarations
 
@@ -674,7 +678,9 @@ in the sense that `∫_Ω (⟨∇v, A ∇u⟩ + ⟨b, ∇u⟩ v + c u v) = ∫_�
 whose closure is compact and contained in `Ω`, the restriction of `u` is the first-order part
 of an element of `W^{2,2}(V)`.
 
-No regularity of `∂Ω`, sign of `c`, or smallness of the lower-order terms is assumed. -/
+No regularity of `∂Ω`, sign of `c`, or smallness of the lower-order terms is assumed. This is the
+constant-coefficient case of
+`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`. -/
 theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
@@ -686,29 +692,9 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL {lam : ℝ} (hlam : 0
     (hVΩ : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ Omega) :
     ∃ U : Wkp mu V 2 2, Wkp.lowerOrder 1 U =
       W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u := by
-  obtain ⟨g, hg⟩ :=
-    exists_forcing_energyFormH1_principal_eq (memLp_top_const (energyIntegrand A 0 0)) hb hc hu
-  obtain ⟨w, f', hw, -, hgrad, -⟩ :=
-    exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact hg hV hVΩ
-  have htop : mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) = mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  -- On `V`, the gradient of the localized solution is that of `u`.
-  have hgradV : ∀ᵐ x ∂mu.restrict V, W1p.gradient (w : W1p mu ⊤ 2) x =
-      W1p.gradient (W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u) x := by
-    filter_upwards [W1p.gradient_restrictL_ae (SetLike.coe_subset_coe.mp
-        (subset_closure.trans hVΩ)) u,
-      (ae_restrict_iff' V.isOpen.measurableSet).2
-        (hgrad.mono fun x hx hxV => hx (subset_closure hxV))] with x h1 h2
-    rw [h1, h2]
-  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun i j => ?_
-  obtain ⟨G, -, hG⟩ := UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient hlam hA hw
-    (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
-  have hmem : MemLp G 2 (mu.restrict V) :=
-    (Lp.memLp G).mono_measure (by rw [htop]; exact Measure.restrict_le_self)
-  refine ⟨hmem.toLp G, ((hG.mono le_top).congr_ae ?_).congr_ae_deriv hmem.coeFn_toLp.symm⟩
-  filter_upwards [hgradV] with x hx
-  rw [hx]
+  classical
+  exact (uniformlyEllipticOn_const _ hlam hA).exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
+    (LocallyLipschitz.const _).locallyLipschitzOn hb hc hu hV hVΩ
 
 end PDE
 

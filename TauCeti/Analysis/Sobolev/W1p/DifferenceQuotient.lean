@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Sobolev.DifferenceQuotient
 
 /-!
 # Difference quotients of `W^{1,p}(Ω)` functions
@@ -40,6 +41,9 @@ space; neither operation changes `u` or its gradient near the segments.
   gradient are characterized by `_ae` lemmas and whose defining formula is
   `TauCeti.W1p.differenceQuotient_def`.
 * `TauCeti.W1p.eLpNorm_value_comp_add_sub_le`: the local translation estimate on `W^{1,p}(Ω)`.
+* `TauCeti.W1p.exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_norm_gradient_le`: on the
+  whole space, gradients of the difference quotients of `u ∈ H¹(ℝⁿ)` bounded uniformly in the step
+  give second weak derivatives of `u` in `L²`.
 * `TauCeti.W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient bound.
 * `TauCeti.W1p.eventually_eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient
   bound for all sufficiently small `t`.
@@ -288,6 +292,58 @@ theorem W1p.eventually_eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ �
   rw [dist_zero_right] at ht
   rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_nonneg hs.1]
   exact (mul_le_of_le_one_left (norm_nonneg _) hs.2).trans ht
+
+/-- **Bounded difference quotients of the gradient give second weak derivatives.** If the
+gradients of the difference quotients of `u ∈ H¹(ℝⁿ)` in the direction `w` are bounded by `C` in
+`L²`, uniformly in the step `t`, then for every `y` the derivative `∂_y u = ⟪∇u, y⟫` has a weak
+derivative in the direction `w`, with `‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ C`.
+
+This is the step of the difference-quotient method that turns the uniform bound of an energy
+estimate into second derivatives in `L²`, by the difference-quotient criterion
+`TauCeti.exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le`. -/
+theorem W1p.exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_norm_gradient_le
+    (u : W1p mu ⊤ 2) (w : E) {C : ℝ}
+    (hC : ∀ t : ℝ, ‖W1p.gradient
+      (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u)‖ ≤ C) (y : E) :
+    ∃ G : Lp ℝ 2 (mu.restrict ((⊤ : Opens E) : Set E)),
+      ‖G‖ ≤ ‖y‖ * C ∧ HasWeakLineDerivOn mu ⊤ (fun x ↦ ⟪W1p.gradient u x, y⟫_ℝ) G w := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  have hloc : LocallyIntegrableOn (fun x ↦ ⟪W1p.gradient u x, y⟫_ℝ)
+      ((⊤ : Opens E) : Set E) mu := by
+    simpa using ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn y).locallyIntegrableOn_deriv
+  -- The uniform bound on the difference quotients of `∂_y u`, on the whole space.
+  have hglobal : ∀ t : ℝ, eLpNorm
+      (fun x ↦ t⁻¹ * (⟪W1p.gradient u (x + t • w), y⟫_ℝ - ⟪W1p.gradient u x, y⟫_ℝ)) 2
+      (mu.restrict ((⊤ : Opens E) : Set E)) ≤ ENNReal.ofReal (‖y‖ * C) := by
+    intro t
+    obtain ⟨g, hg⟩ : ∃ g : W1p mu ⊤ 2,
+        g = W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u := ⟨_, rfl⟩
+    have hgC : ‖W1p.gradient g‖ ≤ C := hg ▸ hC t
+    have hae : (fun x ↦ t⁻¹ * (⟪W1p.gradient u (x + t • w), y⟫_ℝ - ⟪W1p.gradient u x, y⟫_ℝ))
+        =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)] fun x ↦ ⟪W1p.gradient g x, y⟫_ℝ := by
+      filter_upwards [hg ▸ W1p.gradient_differenceQuotient_ae le_rfl w t
+        (Set.mapsTo_univ (· + t • w) _) u] with x hx
+      rw [hx, inner_smul_left, inner_sub_left]
+      simp [mul_sub]
+    rw [eLpNorm_congr_ae hae]
+    calc eLpNorm (fun x ↦ ⟪W1p.gradient g x, y⟫_ℝ) 2 (mu.restrict ((⊤ : Opens E) : Set E))
+        ≤ eLpNorm (‖y‖ • (W1p.gradient g : E → E)) 2 (mu.restrict ((⊤ : Opens E) : Set E)) :=
+          eLpNorm_mono_ae ((Lp.aestronglyMeasurable (W1p.gradient g)).inner_const)
+            (Filter.Eventually.of_forall fun x ↦ by
+              rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm,
+                mul_comm]
+              exact abs_real_inner_le_norm _ y)
+      _ = ‖y‖ₑ * eLpNorm (W1p.gradient g : E → E) 2 (mu.restrict ((⊤ : Opens E) : Set E)) := by
+          rw [eLpNorm_const_smul, enorm_norm]
+      _ = ‖y‖ₑ * ENNReal.ofReal ‖W1p.gradient g‖ := by
+          rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _)]
+      _ ≤ ‖y‖ₑ * ENNReal.ofReal C := by gcongr
+      _ = ENNReal.ofReal (‖y‖ * C) := by
+          rw [← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg y)]
+  exact exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le hloc w
+    (by positivity) fun K hK _ ↦ Filter.Eventually.frequently <|
+      Filter.Eventually.of_forall fun t ↦
+        le_trans (eLpNorm_mono_measure _ (Measure.restrict_mono hK le_rfl)) (hglobal t)
 
 /-- **The whole-space difference-quotient bound.** On `Ω = ⊤` no compactness is needed: the
 `Lᵖ` norm of the difference quotient of `u ∈ W^{1,p}(ℝⁿ)` in the direction `v` is at most

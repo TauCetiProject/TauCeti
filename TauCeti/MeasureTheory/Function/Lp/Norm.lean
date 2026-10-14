@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -24,6 +25,8 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy--Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖ ‖g‖` for
+  `L²` functions, integrated against a measure dominated by theirs.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
@@ -96,6 +99,30 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
   have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
   rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
     Real.rpow_one]
+
+/-- **Cauchy--Schwarz for `L²` functions on dominating measures.** If `m ≤ m₁` and `m ≤ m₂`,
+then for `f ∈ L²(m₁)` and `g ∈ L²(m₂)` the integral of `‖f‖ ‖g‖` against `m` is at most
+`‖f‖ ‖g‖`. Restricting both functions to a smaller set is the case `m = μ.restrict s`. -/
+theorem Lp.integral_norm_mul_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
+    {m m₁ m₂ : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] (h₁ : m ≤ m₁)
+    (h₂ : m ≤ m₂) (f : Lp F 2 m₁) (g : Lp G 2 m₂) : ∫ x, ‖f x‖ * ‖g x‖ ∂m ≤ ‖f‖ * ‖g‖ := by
+  have hf := ((Lp.memLp f).mono_measure h₁).norm
+  have hg := ((Lp.memLp g).mono_measure h₂).norm
+  -- The `L²(m)` inner product of the pointwise norms.
+  have h := real_inner_le_norm (hf.toLp _) (hg.toLp _)
+  rw [L2.inner_def, Lp.norm_toLp, Lp.norm_toLp,
+    eLpNorm_norm _ ((Lp.aestronglyMeasurable f).mono_measure h₁),
+    eLpNorm_norm _ ((Lp.aestronglyMeasurable g).mono_measure h₂)] at h
+  calc ∫ x, ‖f x‖ * ‖g x‖ ∂m = ∫ x, inner ℝ (hf.toLp _ x) (hg.toLp _ x) ∂m := by
+        refine integral_congr_ae ?_
+        filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x h1 h2
+        simp [h1, h2, mul_comm]
+    _ ≤ (eLpNorm f 2 m).toReal * (eLpNorm g 2 m).toReal := h
+    _ ≤ ‖f‖ * ‖g‖ := by
+        rw [Lp.norm_def, Lp.norm_def]
+        exact mul_le_mul (ENNReal.toReal_mono (Lp.eLpNorm_ne_top f) (eLpNorm_mono_measure _ h₁))
+          (ENNReal.toReal_mono (Lp.eLpNorm_ne_top g) (eLpNorm_mono_measure _ h₂))
+          ENNReal.toReal_nonneg ENNReal.toReal_nonneg
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/
