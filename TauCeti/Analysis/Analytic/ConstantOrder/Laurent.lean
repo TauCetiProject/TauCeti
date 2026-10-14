@@ -16,9 +16,6 @@ coordinate hyperplane has locally constant slice order on that hyperplane. The L
 representation is allowed to use an integer exponent; analyticity forces that exponent to
 be nonnegative. This lets finite extensions of meromorphic root branches retain their
 contact orders after poles have been removed from other branches.
-
-The proof uses Mathlib's compatibility of analytic and meromorphic orders and its
-characterization of meromorphic order by Laurent unit forms.
 -/
 
 public section
