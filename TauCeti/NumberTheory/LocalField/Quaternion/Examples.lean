@@ -27,8 +27,9 @@ completions of `ℚ`, Hamilton's quaternions ramify exactly at `2` and at `∞`.
 
 **Two dyadic symbols.** `ℍ[ℚ_2,2,5]` is a division algebra, since `(2, 5)_{ℚ_2} = -1`
 (`TauCeti.hilbertSymbol_two_five_padicTwo`), while `ℍ[ℚ_2,5,5]` splits, with the witness
-`5 = 5² - 5 · 2²` of the norm equation. At `(a, b) = (2, 5)` every condition of the four-fold
-splitting criterion fails, and at `(a, b) = (5, 5)` every one holds.
+`5 = 5² - 5 · 2²` of the norm equation. The splitting criterion is five-way: splitting together
+with four equivalent norm and isotropy conditions. At `(a, b) = (2, 5)` every one of the five
+conditions fails, and at `(a, b) = (5, 5)` every one holds.
 
 **Split algebras over `ℚ`.** `ℍ[ℚ,1,b]` is isomorphic to `M₂(ℚ)` for every `b ∈ ℚˣ`
 (`TauCeti.QuaternionAlgebra.oneEquivMatrix`).
@@ -38,6 +39,13 @@ splitting criterion fails, and at `(a, b) = (5, 5)` every one holds.
 * `Padic.hilbertSymbol_neg_one_neg_one_of_ne_two`: `(-1, -1)_{ℚ_p} = +1` for an odd prime `p`.
 * `Padic.nonempty_algEquiv_matrix_neg_one_neg_one_iff`: `ℍ[ℚ_p,-1,-1] ≃ₐ M₂(ℚ_p)` exactly when
   `p ≠ 2`.
+* `TauCeti.hilbertSymbol_neg_one_neg_one_rat`, `TauCeti.hilbertSymbol_neg_one_neg_one_real`:
+  `(-1, -1)_ℚ = (-1, -1)_ℝ = -1`.
+* `TauCeti.nonempty_algEquiv_matrix_tfae_two_five_padicTwo`,
+  `TauCeti.nonempty_algEquiv_matrix_tfae_five_five_padicTwo`: the splitting criterion over `ℚ_2`
+  at `(2, 5)` and `(5, 5)`, with the parameters written as literals.
+* `TauCeti.isUnit_of_ne_zero_two_five_padicTwo`: `ℍ[ℚ_2,2,5]` is a division algebra.
+* `TauCeti.nonempty_algEquiv_matrix_five_five_padicTwo`: `ℍ[ℚ_2,5,5]` splits.
 
 ## References
 
@@ -84,57 +92,62 @@ namespace TauCeti
 
 /-! ### Hamilton's quaternions over `ℚ` and `ℝ` -/
 
-/-- `ℍ[ℚ,-1,-1]` is a division algebra, by Mathlib's `DivisionRing ℍ[ℚ]`. -/
+/-- `ℍ[ℚ,-1,-1]` is a division algebra. This is `Ne.isUnit` for Mathlib's `DivisionRing ℍ[ℚ]`,
+so it is not restated as a named theorem. -/
 example : ∀ x : ℍ[ℚ,-1,-1], x ≠ 0 → IsUnit x := fun _ hx ↦ hx.isUnit
 
 /-- `ℍ[ℚ,-1,-1]` does not split. -/
-example : ¬Nonempty (ℍ[ℚ,-1,-1] ≃ₐ[ℚ] Matrix (Fin 2) (Fin 2) ℚ) := by
+theorem not_nonempty_algEquiv_matrix_neg_one_neg_one_rat :
+    ¬Nonempty (ℍ[ℚ,-1,-1] ≃ₐ[ℚ] Matrix (Fin 2) (Fin 2) ℚ) := by
   have h := QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_forall_isUnit (-1 : ℚˣ) (-1)
   simp only [Units.val_neg, Units.val_one] at h
   rw [h, not_not]
   exact fun _ hx ↦ hx.isUnit
 
 /-- `(-1, -1)_ℚ = -1`: `-1` is not a sum of two rational squares. -/
-example : hilbertSymbol (-1 : ℚˣ) (-1) = -1 := by
+theorem hilbertSymbol_neg_one_neg_one_rat : hilbertSymbol (-1 : ℚˣ) (-1) = -1 := by
   have h := hilbertSymbol_eq_neg_one_iff_forall_isUnit (-1 : ℚˣ) (-1)
   simp only [Units.val_neg, Units.val_one] at h
   exact h.mpr fun _ hx ↦ hx.isUnit
 
 /-- `(-1, -1)_ℝ = -1`, read off the division ring `ℍ[ℝ]`. -/
-example : hilbertSymbol (-1 : ℝˣ) (-1) = -1 := by
+theorem hilbertSymbol_neg_one_neg_one_real : hilbertSymbol (-1 : ℝˣ) (-1) = -1 := by
   have h := hilbertSymbol_eq_neg_one_iff_forall_isUnit (-1 : ℝˣ) (-1)
   simp only [Units.val_neg, Units.val_one] at h
   exact h.mpr fun _ hx ↦ hx.isUnit
 
-/-- Hamilton's quaternions split over `ℚ_3`. -/
+/-- Hamilton's quaternions split over `ℚ_3`: the case `p = 3` of
+`Padic.nonempty_algEquiv_matrix_neg_one_neg_one_iff`. -/
 example : Nonempty (ℍ[ℚ_[3],-1,-1] ≃ₐ[ℚ_[3]] Matrix (Fin 2) (Fin 2) ℚ_[3]) :=
   (Padic.nonempty_algEquiv_matrix_neg_one_neg_one_iff 3).mpr (by decide)
 
 /-- Hamilton's quaternions do not split over `ℚ_2`. -/
-example : ¬Nonempty (ℍ[ℚ_[2],-1,-1] ≃ₐ[ℚ_[2]] Matrix (Fin 2) (Fin 2) ℚ_[2]) :=
+theorem not_nonempty_algEquiv_matrix_neg_one_neg_one_padicTwo :
+    ¬Nonempty (ℍ[ℚ_[2],-1,-1] ≃ₐ[ℚ_[2]] Matrix (Fin 2) (Fin 2) ℚ_[2]) :=
   fun h ↦ (Padic.nonempty_algEquiv_matrix_neg_one_neg_one_iff 2).mp h rfl
 
 /-! ### Split algebras over `ℚ` -/
 
-/-- `ℍ[ℚ,1,b]` splits for every `b ∈ ℚˣ`. -/
+/-- `ℍ[ℚ,1,b]` splits for every `b ∈ ℚˣ`, witnessed by
+`TauCeti.QuaternionAlgebra.oneEquivMatrix`. -/
 example (b : ℚˣ) : Nonempty (ℍ[ℚ,1,(b : ℚ)] ≃ₐ[ℚ] Matrix (Fin 2) (Fin 2) ℚ) :=
   ⟨QuaternionAlgebra.oneEquivMatrix b⟩
 
-/-! ### The four-fold criterion over `ℚ_2` at `(2, 5)`: every condition fails -/
+/-! ### The five-way splitting criterion over `ℚ_2` at `(2, 5)`: every condition fails -/
 
 section TwoFive
 
 /-- The splitting criterion `TauCeti.QuaternionAlgebra.nonempty_algEquiv_matrix_tfae` at
 `(a, b) = (2, 5)` over `ℚ_2`, with the parameters written as literals. -/
-private theorem tfae_two_five_padicTwo :
+theorem nonempty_algEquiv_matrix_tfae_two_five_padicTwo :
     [Nonempty (ℍ[ℚ_[2],2,5] ≃ₐ[ℚ_[2]] Matrix (Fin 2) (Fin 2) ℚ_[2]),
       ∃ z : QuadraticAlgebra ℚ_[2] 2 0, z.norm = 5,
       ∃ x y : ℚ_[2], (5 : ℚ_[2]) = x ^ 2 - 2 * y ^ 2,
       ¬(weightedSumSquares ℚ_[2] ![1, -2, -5]).Anisotropic,
-      ¬(_root_.QuaternionAlgebra.normForm (2 : ℚ_[2]) 0 5).Anisotropic].TFAE :=
-  -- `Units.val_mk0` holds by `rfl`, so this is the criterion at the units `2` and `5`.
-  QuaternionAlgebra.nonempty_algEquiv_matrix_tfae (Units.mk0 (2 : ℚ_[2]) two_ne_zero)
+      ¬(_root_.QuaternionAlgebra.normForm (2 : ℚ_[2]) 0 5).Anisotropic].TFAE := by
+  have h := QuaternionAlgebra.nonempty_algEquiv_matrix_tfae (Units.mk0 (2 : ℚ_[2]) two_ne_zero)
     (Units.mk0 5 (by norm_num))
+  rwa [Units.val_mk0, Units.val_mk0] at h
 
 /-- `ℍ[ℚ_2,2,5]` does not split, because `(2, 5)_{ℚ_2} = -1`. -/
 theorem not_nonempty_algEquiv_matrix_two_five_padicTwo :
@@ -145,67 +158,83 @@ theorem not_nonempty_algEquiv_matrix_two_five_padicTwo :
   exact absurd h1 (by decide)
 
 /-- `ℍ[ℚ_2,2,5]` is a division algebra. -/
-example : ∀ x : ℍ[ℚ_[2],2,5], x ≠ 0 → IsUnit x :=
-  (hilbertSymbol_eq_neg_one_iff_forall_isUnit _ _).mp hilbertSymbol_two_five_padicTwo
+theorem isUnit_of_ne_zero_two_five_padicTwo {x : ℍ[ℚ_[2],2,5]} (hx : x ≠ 0) : IsUnit x :=
+  (hilbertSymbol_eq_neg_one_iff_forall_isUnit _ _).mp hilbertSymbol_two_five_padicTwo x hx
 
 /-- `5` is not a norm from `ℚ_2(√2)`. -/
-example : ¬∃ z : QuadraticAlgebra ℚ_[2] 2 0, z.norm = 5 := fun h ↦
-  not_nonempty_algEquiv_matrix_two_five_padicTwo ((tfae_two_five_padicTwo.out 1 2).mpr h)
+theorem not_exists_norm_eq_two_five_padicTwo :
+    ¬∃ z : QuadraticAlgebra ℚ_[2] 2 0, z.norm = 5 := fun h ↦
+  not_nonempty_algEquiv_matrix_two_five_padicTwo
+    ((nonempty_algEquiv_matrix_tfae_two_five_padicTwo.out 1 2).mpr h)
 
 /-- `5 = x² - 2 y²` has no solution in `ℚ_2`. -/
-example : ¬∃ x y : ℚ_[2], (5 : ℚ_[2]) = x ^ 2 - 2 * y ^ 2 := fun h ↦
-  not_nonempty_algEquiv_matrix_two_five_padicTwo ((tfae_two_five_padicTwo.out 1 3).mpr h)
+theorem not_exists_eq_sq_sub_mul_sq_two_five_padicTwo :
+    ¬∃ x y : ℚ_[2], (5 : ℚ_[2]) = x ^ 2 - 2 * y ^ 2 := fun h ↦
+  not_nonempty_algEquiv_matrix_two_five_padicTwo
+    ((nonempty_algEquiv_matrix_tfae_two_five_padicTwo.out 1 3).mpr h)
 
 /-- `⟨1, -2, -5⟩` is anisotropic over `ℚ_2`. -/
-example : (weightedSumSquares ℚ_[2] ![1, -2, -5]).Anisotropic := not_not.mp fun h ↦
-  not_nonempty_algEquiv_matrix_two_five_padicTwo ((tfae_two_five_padicTwo.out 1 4).mpr h)
+theorem anisotropic_weightedSumSquares_two_five_padicTwo :
+    (weightedSumSquares ℚ_[2] ![1, -2, -5]).Anisotropic := not_not.mp fun h ↦
+  not_nonempty_algEquiv_matrix_two_five_padicTwo
+    ((nonempty_algEquiv_matrix_tfae_two_five_padicTwo.out 1 4).mpr h)
 
 /-- The norm form `⟨⟨2, 5⟩⟩ = ⟨1, -2, -5, 10⟩` of `ℍ[ℚ_2,2,5]` is anisotropic. -/
-example : (_root_.QuaternionAlgebra.normForm (2 : ℚ_[2]) 0 5).Anisotropic := not_not.mp fun h ↦
-  not_nonempty_algEquiv_matrix_two_five_padicTwo ((tfae_two_five_padicTwo.out 1 5).mpr h)
+theorem anisotropic_normForm_two_five_padicTwo :
+    (_root_.QuaternionAlgebra.normForm (2 : ℚ_[2]) 0 5).Anisotropic := not_not.mp fun h ↦
+  not_nonempty_algEquiv_matrix_two_five_padicTwo
+    ((nonempty_algEquiv_matrix_tfae_two_five_padicTwo.out 1 5).mpr h)
 
 end TwoFive
 
-/-! ### The four-fold criterion over `ℚ_2` at `(5, 5)`: every condition holds -/
+/-! ### The five-way splitting criterion over `ℚ_2` at `(5, 5)`: every condition holds -/
 
 section FiveFive
 
 /-- The splitting criterion `TauCeti.QuaternionAlgebra.nonempty_algEquiv_matrix_tfae` at
 `(a, b) = (5, 5)` over `ℚ_2`, with the parameters written as literals. -/
-private theorem tfae_five_five_padicTwo :
+theorem nonempty_algEquiv_matrix_tfae_five_five_padicTwo :
     [Nonempty (ℍ[ℚ_[2],5,5] ≃ₐ[ℚ_[2]] Matrix (Fin 2) (Fin 2) ℚ_[2]),
       ∃ z : QuadraticAlgebra ℚ_[2] 5 0, z.norm = 5,
       ∃ x y : ℚ_[2], (5 : ℚ_[2]) = x ^ 2 - 5 * y ^ 2,
       ¬(weightedSumSquares ℚ_[2] ![1, -5, -5]).Anisotropic,
-      ¬(_root_.QuaternionAlgebra.normForm (5 : ℚ_[2]) 0 5).Anisotropic].TFAE :=
-  -- `Units.val_mk0` holds by `rfl`, so this is the criterion at the unit `5`.
-  QuaternionAlgebra.nonempty_algEquiv_matrix_tfae (Units.mk0 (5 : ℚ_[2]) (by norm_num))
+      ¬(_root_.QuaternionAlgebra.normForm (5 : ℚ_[2]) 0 5).Anisotropic].TFAE := by
+  have h := QuaternionAlgebra.nonempty_algEquiv_matrix_tfae (Units.mk0 (5 : ℚ_[2]) (by norm_num))
     (Units.mk0 5 (by norm_num))
+  rwa [Units.val_mk0] at h
 
 /-- The witness `5 = 5² - 5 · 2²` of the norm equation of `ℚ_2(√5)`. -/
-private theorem exists_five_eq_sq_sub_five_mul_sq_padicTwo :
+theorem exists_eq_sq_sub_mul_sq_five_five_padicTwo :
     ∃ x y : ℚ_[2], (5 : ℚ_[2]) = x ^ 2 - 5 * y ^ 2 :=
   ⟨5, 2, by norm_num⟩
 
 /-- `ℍ[ℚ_2,5,5]` splits. -/
-example : Nonempty (ℍ[ℚ_[2],5,5] ≃ₐ[ℚ_[2]] Matrix (Fin 2) (Fin 2) ℚ_[2]) :=
-  (tfae_five_five_padicTwo.out 1 3).mpr exists_five_eq_sq_sub_five_mul_sq_padicTwo
+theorem nonempty_algEquiv_matrix_five_five_padicTwo :
+    Nonempty (ℍ[ℚ_[2],5,5] ≃ₐ[ℚ_[2]] Matrix (Fin 2) (Fin 2) ℚ_[2]) :=
+  (nonempty_algEquiv_matrix_tfae_five_five_padicTwo.out 1 3).mpr
+    exists_eq_sq_sub_mul_sq_five_five_padicTwo
 
 /-- `(5, 5)_{ℚ_2} = +1`. -/
-example : hilbertSymbol (Units.mk0 (5 : ℚ_[2]) (by norm_num)) (Units.mk0 5 (by norm_num)) = 1 :=
-  (hilbertSymbol_eq_one_iff _ _).mpr exists_five_eq_sq_sub_five_mul_sq_padicTwo
+theorem hilbertSymbol_five_five_padicTwo :
+    hilbertSymbol (Units.mk0 (5 : ℚ_[2]) (by norm_num)) (Units.mk0 5 (by norm_num)) = 1 :=
+  (hilbertSymbol_eq_one_iff _ _).mpr exists_eq_sq_sub_mul_sq_five_five_padicTwo
 
 /-- `5` is a norm from `ℚ_2(√5)`. -/
-example : ∃ z : QuadraticAlgebra ℚ_[2] 5 0, z.norm = 5 :=
-  (tfae_five_five_padicTwo.out 2 3).mpr exists_five_eq_sq_sub_five_mul_sq_padicTwo
+theorem exists_norm_eq_five_five_padicTwo : ∃ z : QuadraticAlgebra ℚ_[2] 5 0, z.norm = 5 :=
+  (nonempty_algEquiv_matrix_tfae_five_five_padicTwo.out 2 3).mpr
+    exists_eq_sq_sub_mul_sq_five_five_padicTwo
 
 /-- `⟨1, -5, -5⟩` is isotropic over `ℚ_2`. -/
-example : ¬(weightedSumSquares ℚ_[2] ![1, -5, -5]).Anisotropic :=
-  (tfae_five_five_padicTwo.out 4 3).mpr exists_five_eq_sq_sub_five_mul_sq_padicTwo
+theorem not_anisotropic_weightedSumSquares_five_five_padicTwo :
+    ¬(weightedSumSquares ℚ_[2] ![1, -5, -5]).Anisotropic :=
+  (nonempty_algEquiv_matrix_tfae_five_five_padicTwo.out 4 3).mpr
+    exists_eq_sq_sub_mul_sq_five_five_padicTwo
 
 /-- The norm form `⟨⟨5, 5⟩⟩ = ⟨1, -5, -5, 25⟩` of `ℍ[ℚ_2,5,5]` is isotropic. -/
-example : ¬(_root_.QuaternionAlgebra.normForm (5 : ℚ_[2]) 0 5).Anisotropic :=
-  (tfae_five_five_padicTwo.out 5 3).mpr exists_five_eq_sq_sub_five_mul_sq_padicTwo
+theorem not_anisotropic_normForm_five_five_padicTwo :
+    ¬(_root_.QuaternionAlgebra.normForm (5 : ℚ_[2]) 0 5).Anisotropic :=
+  (nonempty_algEquiv_matrix_tfae_five_five_padicTwo.out 5 3).mpr
+    exists_eq_sq_sub_mul_sq_five_five_padicTwo
 
 end FiveFive
 
