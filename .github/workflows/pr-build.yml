@@ -617,6 +617,15 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
+      # Restore-only and after config/bump validation. The isolated main-defined warmer
+      # writes official release snapshots; candidate code sees .elan only read-only below.
+      - name: Restore or install the exact official Lean toolchain
+        if: ${{ env.INFRA != '1' }}
+        uses: ./gate/.github/actions/restore-lean-toolchain
+        with:
+          project-dir: pr
+          tooling-dir: gate
+
       - name: Install bubblewrap (pinned + checksum) and self-test (fail closed)
         if: ${{ env.INFRA != '1' }}
         run: |
