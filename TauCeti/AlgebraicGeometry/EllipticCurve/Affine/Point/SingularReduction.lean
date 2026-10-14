@@ -353,10 +353,13 @@ theorem some_notMem_nonsingularReduction_iff
       (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hy)] at hm
     exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 hm
 
+-- `high`: both this and `some_notMem_nonsingularReduction_iff` match integral coordinates, and
+-- this one must fire first to keep the maximal-ideal form.
 /-- **When the reduction is singular at the origin, a point with integral coordinates has singular
 reduction exactly when both coordinates lie in the maximal ideal.** This is
 `WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff` for coordinates in the valuation
 ring. -/
+@[simp↓ high]
 theorem some_coe_notMem_nonsingularReduction_iff
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
