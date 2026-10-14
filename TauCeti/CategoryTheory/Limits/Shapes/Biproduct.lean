@@ -33,9 +33,9 @@ inductive step for computing additive invariants of finite biproducts. An additi
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
-and compatible with lifts and, for additive functors, descents. Unlike `Functor.mapBiprod`, it
-uses whichever biproduct of the images is in scope, so these lemmas apply to a biproduct fixed by
-an instance on the target category. For a functor out of `Cᵒᵖ`, the
+and compatible with lifts and, for functors preserving the biproduct, descents. Unlike
+`Functor.mapBiprod`, it uses whichever biproduct of the images is in scope, so these lemmas apply
+to a biproduct fixed by an instance on the target category. For a functor out of `Cᵒᵖ`, the
 comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` through `biprod.opIso` has inverse
 given by the images of the projections
 (`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
@@ -270,15 +270,6 @@ theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
     simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
   · rw [← F.map_comp, biprod.inl_fst, F.map_id]
 
-/-- For an additive functor, the biproduct comparison followed by the map out of the biproduct
-of the images is the image of the map out of the biproduct. -/
-@[reassoc (attr := simp)]
-theorem biprodComparison_comp_biprod_desc {X Y W : C} [HasBinaryBiproduct X Y]
-    [HasBinaryBiproduct (F.obj X) (F.obj Y)] (f : X ⟶ W) (g : Y ⟶ W) :
-    biprodComparison F X Y ≫ biprod.desc (F.map f) (F.map g) = F.map (biprod.desc f g) := by
-  simp only [biprod.desc_eq, Preadditive.comp_add, F.map_add, biprodComparison_fst_assoc,
-    biprodComparison_snd_assoc, F.map_comp]
-
 section Comparison
 
 variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
@@ -291,6 +282,24 @@ theorem map_biprod_lift_comp_biprodComparison {W X Y : C} [HasBinaryBiproduct X 
     [HasBinaryBiproduct (F.obj X) (F.obj Y)] (f : W ⟶ X) (g : W ⟶ Y) :
     F.map (biprod.lift f g) ≫ biprodComparison F X Y = biprod.lift (F.map f) (F.map g) := by
   ext <;> simp [← F.map_comp]
+
+/-- For a functor preserving the binary biproduct, the biproduct comparison followed by the map
+out of the biproduct of the images is the image of the map out of the biproduct. -/
+@[reassoc (attr := simp)]
+theorem biprodComparison_comp_biprod_desc [F.PreservesZeroMorphisms] {X Y W : C}
+    [HasBinaryBiproduct X Y] [HasBinaryBiproduct (F.obj X) (F.obj Y)]
+    [PreservesBinaryBiproduct X Y F] (f : X ⟶ W) (g : Y ⟶ W) :
+    biprodComparison F X Y ≫ biprod.desc (F.map f) (F.map g) = F.map (biprod.desc f g) := by
+  apply BinaryCofan.IsColimit.hom_ext
+    (isBinaryBilimitOfPreserves F (BinaryBiproduct.isBilimit X Y)).isColimit
+  · have h : F.map biprod.inl ≫ biprodComparison F X Y = biprod.inl := by
+      ext <;> simp [← F.map_comp]
+    change F.map biprod.inl ≫ _ = F.map biprod.inl ≫ _
+    rw [reassoc_of% h, biprod.inl_desc, ← F.map_comp, biprod.inl_desc]
+  · have h : F.map biprod.inr ≫ biprodComparison F X Y = biprod.inr := by
+      ext <;> simp [← F.map_comp]
+    change F.map biprod.inr ≫ _ = F.map biprod.inr ≫ _
+    rw [reassoc_of% h, biprod.inr_desc, ← F.map_comp, biprod.inr_desc]
 
 /-- The biproduct comparison `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural in `X` and `Y`. -/
 @[reassoc]
