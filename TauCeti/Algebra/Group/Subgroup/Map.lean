@@ -54,8 +54,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   isomorphisms `subgroupOfEquivOfLe` and `congrOfMapEq` commute with the inclusions of subgroups.
 * `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` on a `G`-set agree
   on elements with the same image in `G`.
-* `MonoidHom.closure_preimage_eq_of_injective`: taking subgroup closure commutes with preimage
-  under an injective homomorphism when the generating set lies in its range.
+* `MonoidHom.closure_preimage_eq_of_injective`, `AddMonoidHom.closure_preimage_eq_of_injective`:
+  taking subgroup closure commutes with preimage under an injective homomorphism when the
+  generating set lies in its range.
 -/
 
 public section
@@ -96,6 +97,11 @@ theorem _root_.Subgroup.subgroupOf_smul_eq (U V : Subgroup G)
 generating set lies in its range. In particular, this applies to the inclusion of a subgroup
 containing the generating set. Mathlib's `MonoidHom.closure_preimage_le` is the inequality that
 holds for every homomorphism and every set. -/
+@[to_additive /-- Taking additive subgroup closure commutes with preimage under an injective
+homomorphism when the generating set lies in its range. In particular, this applies to the
+inclusion of an additive subgroup containing the generating set. Mathlib's
+`AddMonoidHom.closure_preimage_le` is the inequality that holds for every homomorphism and every
+set. -/]
 theorem _root_.MonoidHom.closure_preimage_eq_of_injective (f : G →* H)
     (hf : Function.Injective f) {s : Set H} (hs : s ⊆ Set.range f) :
     Subgroup.closure (f ⁻¹' s) = (Subgroup.closure s).comap f := by
