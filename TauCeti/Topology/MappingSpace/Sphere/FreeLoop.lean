@@ -66,6 +66,13 @@ space to a constant loop. -/
 def contractibleLoops : Set C(Circle, Q) :=
   {γ | ∃ q, Joined γ (ContinuousMap.const Circle q)}
 
+/-- A free loop is contractible exactly when it is joined, by a path in the free loop space, to a
+constant loop. -/
+@[simp]
+theorem mem_contractibleLoops_iff {γ : C(Circle, Q)} :
+    γ ∈ contractibleLoops Q ↔ ∃ q, Joined γ (ContinuousMap.const Circle q) :=
+  Iff.rfl
+
 /-- Every loop along a path of free loops that starts at a constant loop is contractible: a path
 in `ConstLoopPath Q` is a path in `𝓛₀Q`. -/
 theorem constLoopPath_mem_contractibleLoops (p : ConstLoopPath Q) (t : I) :
