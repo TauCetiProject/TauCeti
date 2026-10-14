@@ -34,8 +34,8 @@ Projecting along a nondegenerate edge is never regular (`Polygon.not_isRegularPr
 
 ## Main definitions
 
-* `Polygon.projAlong R p₀ d`: the projection `P → V ⧸ R ∙ d` along the direction `d`, with
-  origin `p₀`.
+* `Polygon.projAlong R p₀ d`: the affine projection `P →ᵃ[R] V ⧸ R ∙ d` along the direction `d`,
+  with origin `p₀`.
 * `Polygon.IsRegularProjection R poly π`: no three distinct points of the polygon have the same
   image under `π`, and no vertex has the same image as another point of the polygon.
 
@@ -86,10 +86,11 @@ section ProjAlong
 variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 variable (R) in
-/-- The **projection along `d`** with origin `p₀`: the map `P → V ⧸ R ∙ d` sending `p` to the
-class of `p -ᵥ p₀`. Its fibres are the lines parallel to `d` (`projAlong_eq_projAlong_iff`). -/
-def projAlong (p₀ : P) (d : V) (p : P) : V ⧸ R ∙ d :=
-  Submodule.Quotient.mk (p -ᵥ p₀)
+/-- The **projection along `d`** with origin `p₀`: the affine map `P →ᵃ[R] V ⧸ R ∙ d` sending
+`p` to the class of `p -ᵥ p₀`. Its fibres are the lines parallel to `d`
+(`projAlong_eq_projAlong_iff`). -/
+def projAlong (p₀ : P) (d : V) : P →ᵃ[R] V ⧸ R ∙ d :=
+  (R ∙ d).mkQ.toAffineMap.comp (AffineEquiv.vaddConst R p₀).symm.toAffineMap
 
 /-- The projection along `d` sends `p` to the class of `p -ᵥ p₀`. -/
 theorem projAlong_apply (p₀ : P) (d : V) (p : P) :
