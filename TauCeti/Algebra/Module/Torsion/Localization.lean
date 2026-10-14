@@ -20,19 +20,19 @@ torsion groups as the groups `G` with `ℚ ⊗ G = 0`.
 
 ## Main results
 
-* `Module.isTorsion'_iff_subsingleton_tensorProduct`: `M` is `S`-torsion if and only if
+* `Submonoid.isTorsion'_iff_subsingleton_tensorProduct`: `M` is `S`-torsion if and only if
   `A ⊗[R] M` is trivial, for a localization `A` of `R` at `S`.
-* `Module.isTorsion_iff_subsingleton_tensorProduct`: `M` is torsion if and only if `K ⊗[R] M` is
-  trivial, for the total ring of fractions `K` of `R`.
-* `isAddTorsion_iff_subsingleton_rat_tensorProduct`: an abelian group `G` is torsion if and only
-  if `ℚ ⊗[ℤ] G` is trivial.
+* `TauCeti.Module.isTorsion_iff_subsingleton_tensorProduct`: `M` is torsion if and only if
+  `K ⊗[R] M` is trivial, for the total ring of fractions `K` of `R`.
+* `TauCeti.isAddTorsion_iff_subsingleton_rat_tensorProduct`: an abelian group `G` is torsion if
+  and only if `ℚ ⊗[ℤ] G` is trivial.
 -/
 
 public section
 
 open TensorProduct
 
-namespace Module
+namespace Submonoid
 
 variable {R : Type*} [CommSemiring R] (S : Submonoid R) (A : Type*) [CommSemiring A] [Algebra R A]
   [IsLocalization S A] {M : Type*} [AddCommMonoid M] [Module R M]
@@ -40,22 +40,25 @@ variable {R : Type*} [CommSemiring R] (S : Submonoid R) (A : Type*) [CommSemirin
 /-- A module is `S`-torsion if and only if its base change to a localization at `S` is
 trivial. -/
 theorem isTorsion'_iff_subsingleton_tensorProduct :
-    IsTorsion' M S ↔ Subsingleton (A ⊗[R] M) := by
-  have : IsLocalizedModule S (TensorProduct.mk R A M 1) :=
-    (isLocalizedModule_iff_isBaseChange S A _).2 (TensorProduct.isBaseChange R M A)
+    Module.IsTorsion' M S ↔ Subsingleton (A ⊗[R] M) := by
   rw [IsLocalizedModule.subsingleton_iff S (TensorProduct.mk R A M 1)]
-  simp [IsTorsion', Submonoid.smul_def]
+  simp [Module.IsTorsion', Submonoid.smul_def]
+
+end Submonoid
+
+namespace TauCeti
 
 /-- A module is torsion if and only if its base change to the total ring of fractions is
 trivial. -/
-theorem isTorsion_iff_subsingleton_tensorProduct {R : Type*} [CommRing R] (K : Type*) [CommRing K]
-    [Algebra R K] [IsFractionRing R K] {M : Type*} [AddCommMonoid M] [Module R M] :
-    IsTorsion R M ↔ Subsingleton (K ⊗[R] M) :=
-  isTorsion'_iff_subsingleton_tensorProduct (nonZeroDivisors R) K
-
-end Module
+theorem Module.isTorsion_iff_subsingleton_tensorProduct {R : Type*} [CommSemiring R] (K : Type*)
+    [CommSemiring K] [Algebra R K] [IsFractionRing R K] {M : Type*} [AddCommMonoid M]
+    [Module R M] :
+    Module.IsTorsion R M ↔ Subsingleton (K ⊗[R] M) :=
+  (nonZeroDivisors R).isTorsion'_iff_subsingleton_tensorProduct K
 
 /-- An abelian group `G` is torsion if and only if its rationalization `ℚ ⊗[ℤ] G` is trivial. -/
 theorem isAddTorsion_iff_subsingleton_rat_tensorProduct {G : Type*} [AddCommGroup G] :
     IsAddTorsion G ↔ Subsingleton (ℚ ⊗[ℤ] G) :=
   isAddTorsion_iff_isTorsion_int.trans (Module.isTorsion_iff_subsingleton_tensorProduct ℚ)
+
+end TauCeti

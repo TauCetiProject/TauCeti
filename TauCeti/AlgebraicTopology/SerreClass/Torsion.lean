@@ -13,9 +13,9 @@ public import TauCeti.AlgebraicTopology.SerreClass.PowerTorsion
 
 The torsion abelian groups, those in which every element has finite order, form a Serre class:
 the class contains the zero group and is closed under subgroups, quotients and extensions.
-Equivalently, by `isAddTorsion_iff_subsingleton_rat_tensorProduct`, it is the class of abelian
-groups `G` with `ℚ ⊗ G = 0`. It is the class of the rational form of Serre's Hurewicz theorem
-modulo a class of abelian groups.
+Equivalently, by `TauCeti.isAddTorsion_iff_subsingleton_rat_tensorProduct`, it is the class of
+abelian groups `G` with `ℚ ⊗ G = 0`. It is the class of the rational form of Serre's Hurewicz
+theorem modulo a class of abelian groups.
 
 For every nonzero natural number `d`, the class `isKilledBySomePower d` of groups annihilated by
 some power of `d` is contained in the torsion class (`isKilledBySomePower_le_isTorsion`).
