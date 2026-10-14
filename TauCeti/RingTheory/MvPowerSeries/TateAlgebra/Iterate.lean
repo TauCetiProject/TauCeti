@@ -163,6 +163,19 @@ theorem coeff_restrictedOptionEquiv (f : ExtraTate) (n : ℕ) :
   rw [coe_restrictedOptionEquiv_symm, AlgEquiv.apply_symm_apply, PowerSeries.coeff_map] at h'
   exact h'
 
+/-- The Fubini comparison sends a constant `r` to the constant univariate series whose
+coefficient is the constant `r` of the remaining-variable Tate algebra. -/
+@[simp]
+theorem restrictedOptionEquiv_algebraMap (r : R) :
+    restrictedOptionEquiv (algebraMap R ExtraTate r) =
+      algebraMap Tate IteratedTate (algebraMap R Tate r) := by
+  apply Subtype.ext
+  ext n : 1
+  apply Subtype.ext
+  rw [coeff_restrictedOptionEquiv, coe_algebraMap_isRestrictedSubring, optionEquivLeft_C,
+    PowerSeries.coe_algebraMap_isRestrictedSubring, PowerSeries.coeff_C, PowerSeries.coeff_C]
+  split_ifs <;> simp
+
 /-- The Fubini comparison preserves the Gauss norm. -/
 @[simp]
 theorem norm_restrictedOptionEquiv (f : ExtraTate) : ‖restrictedOptionEquiv f‖ = ‖f‖ := by
