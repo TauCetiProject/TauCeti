@@ -74,24 +74,38 @@ class Sampler:
         self.missing = set()
         self.cpu_s = 0
         self.started = self.ended = None
+        self.lock = threading.Lock()
+        self.cached = self._summary()
 
     def sample(self):
-        start = time.thread_time()
-        self.attempts += 1
+        # The completion sample can race a watcher already past its loop guard.
+        # Reserve attempts under the same lock as sampling; never wait on a
+        # slow optional proc read just to return the command's outcome.
+        if not self.lock.acquire(blocking=False):
+            return False
         try:
-            value = snapshot()
-            self.started = self.started or time.monotonic()
-            self.ended = time.monotonic()
-            self.first = self.first or value
-            self.last = value
-            self.samples += 1
-            self.missing.update(value['missing'])
-            if 'host_used_bytes' in value:
-                self.peak = max(self.peak or 0, value['host_used_bytes'])
-        except Exception:
-            self.missing.add('sampler-error')
+            if self.attempts >= MAX_SAMPLES:
+                return False
+            start = time.thread_time()
+            self.attempts += 1
+            try:
+                value = snapshot()
+                self.started = self.started or time.monotonic()
+                self.ended = time.monotonic()
+                self.first = self.first or value
+                self.last = value
+                self.samples += 1
+                self.missing.update(value['missing'])
+                if 'host_used_bytes' in value:
+                    self.peak = max(self.peak or 0, value['host_used_bytes'])
+            except Exception:
+                self.missing.add('sampler-error')
+            finally:
+                self.cpu_s += time.thread_time() - start
+                self.cached = self._summary()
+            return True
         finally:
-            self.cpu_s += time.thread_time() - start
+            self.lock.release()
 
     def watch(self, done):
         while self.attempts < MAX_SAMPLES and not done.wait(INTERVAL):
@@ -101,6 +115,20 @@ class Sampler:
                 self.missing.add('sampler-error')
 
     def summary(self):
+        if not self.lock.acquire(blocking=False):
+            # One immutable completed summary; do not read mutable state while
+            # the watcher is publishing its next sample.
+            result = dict(self.cached)
+            result['missing'] = sorted(set(result['missing']) | {'sample-in-progress-at-finish'})
+            result['sample_attempts'] = self.attempts
+            result['sample_limit_reached'] = self.attempts >= MAX_SAMPLES
+            return result
+        try:
+            return self._summary()
+        finally:
+            self.lock.release()
+
+    def _summary(self):
         first, last = self.first or {}, self.last or {}
         def delta(key):
             if key not in first or key not in last:

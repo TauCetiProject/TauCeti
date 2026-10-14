@@ -108,6 +108,30 @@ class HostResourcesTests(unittest.TestCase):
             self.assertTrue(sampler.summary()['sample_limit_reached'])
             self.assertIn('sampler-error', sampler.summary()['missing'])
 
+    def test_completion_race_cannot_exceed_cap_or_block_final_summary(self):
+        sampler = host.Sampler()
+        entered, release = host.threading.Event(), host.threading.Event()
+        def slow_snapshot():
+            entered.set()
+            self.assertTrue(release.wait(5))
+            return {'missing': []}
+        with patch.object(host, 'snapshot', side_effect=slow_snapshot) as snapshot, \
+                patch.object(host, 'MAX_SAMPLES', 1):
+            watcher = host.threading.Thread(target=sampler.sample)
+            watcher.start()
+            try:
+                self.assertTrue(entered.wait(5))
+                self.assertFalse(sampler.sample())
+                self.assertIn('sample-in-progress-at-finish', sampler.summary()['missing'])
+            finally:
+                release.set()
+                watcher.join(5)
+            self.assertFalse(watcher.is_alive())
+            self.assertFalse(sampler.sample())
+            self.assertEqual(sampler.attempts, 1)
+            self.assertEqual(sampler.samples, 1)
+            self.assertEqual(snapshot.call_count, 1)
+
     def publication(self, directory):
         workflow = (HERE.parent / '.github/workflows/publish-lake-cache.yml').read_text()
         step = workflow.split('- name: Observe publication volume')[1]
