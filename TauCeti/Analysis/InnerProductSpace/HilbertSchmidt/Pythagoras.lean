@@ -50,7 +50,7 @@ theorem tsum_hilbertSchmidtEnergy_comp_left (T : E →L[𝕜] F) (b : HilbertBas
 
 /-- Splitting the target into a projected subspace and its orthogonal complement splits
 Hilbert–Schmidt energy as a sum, including when the energy is infinite. -/
-theorem hilbertSchmidtEnergy_starProjection_comp_add (T : E →L[𝕜] F)
+theorem hilbertSchmidtEnergy_starProjection_comp_add_orthogonal (T : E →L[𝕜] F)
     (b : HilbertBasis ι 𝕜 E) (V : Submodule 𝕜 F) [V.HasOrthogonalProjection] :
     (V.starProjection ∘L T).hilbertSchmidtEnergy b +
       (Vᗮ.starProjection ∘L T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
@@ -76,7 +76,7 @@ theorem tsum_hilbertSchmidtEnergy_comp_right (T : E →L[𝕜] F) (b : HilbertBa
 
 /-- Splitting the source into a projected subspace and its orthogonal complement splits
 Hilbert–Schmidt energy as a sum, including when the energy is infinite. -/
-theorem hilbertSchmidtEnergy_comp_starProjection_add (T : E →L[𝕜] F)
+theorem hilbertSchmidtEnergy_comp_starProjection_add_orthogonal (T : E →L[𝕜] F)
     (b : HilbertBasis ι 𝕜 E) (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
     (T ∘L U.starProjection).hilbertSchmidtEnergy b +
       (T ∘L Uᗮ.starProjection).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
@@ -84,7 +84,7 @@ theorem hilbertSchmidtEnergy_comp_starProjection_add (T : E →L[𝕜] F)
   simp_rw [← hilbertSchmidtEnergy_adjoint _ b c, adjoint_comp]
   simpa only [← star_eq_adjoint, (isSelfAdjoint_starProjection U).star_eq,
     (isSelfAdjoint_starProjection Uᗮ).star_eq] using
-    hilbertSchmidtEnergy_starProjection_comp_add (adjoint T) c U
+    hilbertSchmidtEnergy_starProjection_comp_add_orthogonal (adjoint T) c U
 
 /-- Squared-norm splittings on the target and on the adjoints of source operators give the
 joint Pythagoras identity for Hilbert–Schmidt energy. No summability hypothesis is needed. -/
