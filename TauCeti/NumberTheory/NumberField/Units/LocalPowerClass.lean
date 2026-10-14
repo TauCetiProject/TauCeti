@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Frobenius.Kummer.LocalUnit
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import Mathlib.RingTheory.DedekindDomain.SInteger
-import TauCeti.NumberTheory.LocalField.PowerSubgroup.Units
+import TauCeti.NumberTheory.NumberField.Global.Places.UnitPowerClasses
 import TauCeti.NumberTheory.NumberField.Units.SUnit
 import TauCeti.RingTheory.Valuation.UnitGroup
 
@@ -180,20 +180,24 @@ theorem unitLocalPowerClassMap_surjective {n : ℕ} (hn : n ≠ 0) [Finite S] [F
   have hrange : Nat.card (unitLocalPowerClassMap S T hST n).range = D.relIndex (S.unit K) := by
     rw [← Subgroup.index_ker,
       ker_unitLocalPowerClassMap S T hST hn L σ Q hσ hL hζ havoid hroots, Subgroup.relIndex]
-  -- Each local factor `U_v ⧸ U_vⁿ` of the target has `#μ_n(K_v) = n` elements.
+  -- Each local factor `U_v ⧸ U_vⁿ` of the target has `n` elements, since `U(K_v, 0) ≃ 𝒪_vˣ`.
   have hloc (v : T) : Nat.card (unitFiltration (v.1.adicCompletion K) 0 ⧸
-      (powMonoidHom n : unitFiltration (v.1.adicCompletion K) 0 →* _).range) = n := by
-    have hunit : IsUnit (n : 𝒪[v.1.adicCompletion K]) :=
-      (v.1.isUnit_natCast_integer_adicCompletion_iff n).mpr (havoid v)
-    rw [← Subgroup.index_eq_card,
-      ← Subgroup.index_map_equiv _ unitFiltrationZeroEquivIntegerUnits,
-      MulEquiv.map_range_powMonoidHom, Subgroup.index_eq_card,
-      card_integerUnitPowerClasses_of_isUnit hunit]
-    exact (hζK.map_of_injective (algebraMap K (v.1.adicCompletion K)).injective).card_rootsOfUnity
+      (powMonoidHom n : unitFiltration (v.1.adicCompletion K) 0 →* _).range) =
+      Nat.card ((v.1.adicCompletionIntegers K)ˣ ⧸
+        (powMonoidHom n : (v.1.adicCompletionIntegers K)ˣ →* _).range) := by
+    rw [← Subgroup.index_eq_card, ← Subgroup.index_map_equiv _
+      (unitFiltrationZeroEquivIntegerUnits.trans
+        (Units.mapEquiv (v.1.integerEquivAdicCompletionIntegers (K := K)).toMulEquiv)),
+      MulEquiv.map_range_powMonoidHom, Subgroup.index_eq_card]
   have := Fintype.ofFinite T
   have htarget : Nat.card (UnitLocalPowerClasses T n) = n ^ Nat.card T := by
-    rw [Nat.card_pi, Finset.prod_congr rfl fun v _ ↦ hloc v, Finset.prod_const, Finset.card_univ,
-      Nat.card_eq_fintype_card]
+    rw [Nat.card_pi, Finset.prod_congr rfl fun v _ ↦ hloc v,
+      Finset.prod_set_coe (f := fun v : HeightOneSpectrum (𝓞 K) ↦
+        Nat.card ((v.adicCompletionIntegers K)ˣ ⧸
+          (powMonoidHom n : (v.adicCompletionIntegers K)ˣ →* _).range)),
+      GlobalNumberFields.prod_card_unitPowerClasses n _
+        fun v hv ↦ havoid ⟨v, Set.mem_toFinset.mp hv⟩,
+      Set.toFinset_card, Nat.card_eq_fintype_card]
   have : Finite (UnitLocalPowerClasses T n) :=
     Nat.finite_of_card_ne_zero (htarget ▸ pow_ne_zero _ hn)
   rw [← MonoidHom.range_eq_top]
