@@ -280,18 +280,18 @@ theorem subdifferential_fenchelConjugate_subset_of_eq_top {K : Set G}
       rw [hr, EReal.coe_sub_le_comm] at h₁
       rw [EReal.coe_sub_le_comm]
       refine le_trans ?_ h₁
-      rw [← EReal.coe_sub, ← EReal.coe_sub, EReal.coe_le_coe_iff]
-      rw [innerₗ_apply_apply, innerₗ_apply_apply, inner_sub_right, real_inner_comm w y, hw]
+      simp only [innerₗ_apply_apply, inner_sub_right, real_inner_comm w y, hw]
+      norm_cast
       linarith [hℓK y hy]
     · rw [hg y hy, EReal.sub_top]
       exact bot_le
   have hsub := (add_le_of_mem_subdifferential (innerₗ G) hz (x - w)).trans hle
-  rw [hr, sub_sub_cancel_left, innerₗ_apply_apply, inner_neg_left, hw, ← EReal.coe_add,
-    EReal.coe_le_coe_iff] at hsub
+  simp only [hr, sub_sub_cancel_left, innerₗ_apply_apply, inner_neg_left, hw] at hsub
+  norm_cast at hsub
   linarith
 
 /-- **Confining the slopes of a function to a closed convex set.** On a real Hilbert space, let
-`K` be closed and convex. Gvery `u : G → EReal` lies above a convex, lower semicontinuous `v`
+`K` be closed and convex. Every `u : G → EReal` lies above a convex, lower semicontinuous `v`
 whose subgradients all lie in `K` and which keeps every subgradient of `u` that lies in `K`:
 `∂u(x) ∩ K ⊆ ∂v(x)` for every `x`. One such `v` is the conjugate of the function equal to `u⋆` on
 `K` and to `⊤` off `K`. -/
