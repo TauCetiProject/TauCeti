@@ -116,6 +116,14 @@ theorem sqrtFive_sq : sqrtFive ^ 2 = 5 := by
   rw [map_ofNat (AdjoinRoot.of (X ^ 2 - C 5 : ℚ_[2][X])) 5, sub_eq_zero] at h
   exact h
 
+/-- `√5` does not belong to the embedded base field `ℚ_2`. -/
+theorem sqrtFive_not_mem : sqrtFive ∉ Set.range (algebraMap ℚ_[2] DyadicSqrtFive) := by
+  rintro ⟨c, hc⟩
+  apply Padic.not_isSquare_five
+  refine ⟨c, ?_⟩
+  apply (algebraMap ℚ_[2] DyadicSqrtFive).injective
+  rw [map_mul, hc, ← _root_.sq, sqrtFive_sq, map_ofNat]
+
 /-- `√5` generates `ℚ_2(√5)` over `ℚ_2`. -/
 theorem adjoin_sqrtFive_eq_top : IntermediateField.adjoin ℚ_[2] {sqrtFive} = ⊤ :=
   IntermediateField.adjoin_root_eq_top _

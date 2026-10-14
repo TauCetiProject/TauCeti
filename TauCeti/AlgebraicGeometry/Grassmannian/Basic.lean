@@ -29,9 +29,12 @@ isomorphisms `TripleAlgebra.cycle` between the triple overlaps satisfy the cocyc
 `Module.Grassmannian.glueData`.
 
 The gluing data are exposed, so the general API of `AlgebraicGeometry.Scheme.GlueData` applies to
-the Grassmannian: the chart at `x` is the open subscheme `(glueData R M k).ι x`, the charts cover
-the Grassmannian (`(glueData R M k).openCover`), and the charts at `x` and `y` intersect in their
-overlap `Spec (OverlapAlgebra R x y)` (`(glueData R M k).vPullbackConeIsLimit x y`). The structure
+the Grassmannian. The chart at `x` is the open immersion
+`Module.Grassmannian.chartι R x : Spec (ChartAlgebra R x) ⟶ G(k, M)`, the morphism
+`(glueData R M k).ι x` of the gluing data. The charts cover the Grassmannian
+(`Module.Grassmannian.chartι_jointly_surjective`), and the charts at `x` and `y` intersect in their
+overlap `Spec (OverlapAlgebra R x y)` (`Module.Grassmannian.isPullback_chartι`), where they are
+identified by the transition isomorphism (`Module.Grassmannian.transition_chartι`). The structure
 morphisms `Spec (ChartAlgebra R x) ⟶ Spec R` of the charts glue to the structure morphism
 `Module.Grassmannian.toSpec` of the Grassmannian.
 
@@ -42,11 +45,13 @@ morphisms `Spec (ChartAlgebra R x) ⟶ Spec R` of the charts glue to the structu
 * `Module.Grassmannian.glueData R M k`: the gluing data of the standard charts.
 * `Module.Grassmannian.scheme R M k`: the scheme glued from the standard charts.
 * `Module.Grassmannian.toSpec R M k`: its structure morphism to `Spec R`.
+* `Module.Grassmannian.chartι R x`: the open immersion of the chart at `x`.
 
 ## Main results
 
-* `Module.Grassmannian.ι_toSpec`: the structure morphism restricts on each chart to the structure
-  morphism of the chart.
+* `Module.Grassmannian.chartι_toSpec`: the structure morphism restricts on each chart to the
+  structure morphism of the chart.
+* `Module.Grassmannian.isPullback_chartι`: the charts at `x` and `y` intersect in their overlap.
 
 ## References
 
@@ -177,14 +182,52 @@ noncomputable def toSpec : scheme R M k ⟶ Spec (.of R) :=
         simp [← IsScalarTower.algebraMap_apply]
       exact h
 
+variable {M k} in
+/-- The **chart at `x`** of the Grassmannian: the open immersion
+`Spec (ChartAlgebra R x) ⟶ G(k, M)` of the standard chart at `x`, that is, the morphism
+`(glueData R M k).ι x` of the gluing data. -/
+noncomputable def chartι (x : Fin k → M) : Spec (.of (ChartAlgebra R x)) ⟶ scheme R M k :=
+  (glueData R M k).ι x
+
 variable {R M k}
+
+instance (x : Fin k → M) : IsOpenImmersion (chartι R x) :=
+  Scheme.GlueData.ι_isOpenImmersion (glueData R M k) x
 
 /-- On the chart at `x`, the structure morphism of the Grassmannian is the structure morphism
 `Spec (ChartAlgebra R x) ⟶ Spec R` of the chart. -/
 @[reassoc, simp]
-theorem ι_toSpec (x : Fin k → M) :
-    (glueData R M k).ι x ≫ toSpec R M k =
+theorem chartι_toSpec (x : Fin k → M) :
+    chartι R x ≫ toSpec R M k =
       Spec.map (CommRingCat.ofHom (algebraMap R (ChartAlgebra R x))) :=
   Multicoequalizer.π_desc _ _ _ _ _
+
+/-- **The charts cover the Grassmannian.** -/
+theorem chartι_jointly_surjective (z : scheme R M k) :
+    ∃ (x : Fin k → M) (y : Spec (.of (ChartAlgebra R x))), chartι R x y = z :=
+  (glueData R M k).ι_jointly_surjective z
+
+/-- **The charts at `x` and at `y` intersect in their overlap.** The square formed by the inclusions
+of `Spec (OverlapAlgebra R x y)` into the chart at `x` and, through the transition isomorphism, into
+the chart at `y` is a pullback square over the Grassmannian. -/
+theorem isPullback_chartι (x y : Fin k → M) :
+    IsPullback (Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R x) (OverlapAlgebra R x y))))
+      (Spec.map (CommRingCat.ofHom
+          (transitionAlgEquiv R x y : OverlapAlgebra R y x →+* OverlapAlgebra R x y)) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R y) (OverlapAlgebra R y x))))
+      (chartι R x) (chartι R y) :=
+  IsPullback.of_isLimit ((glueData R M k).vPullbackConeIsLimit x y)
+
+/-- **The charts agree on their overlap.** On the overlap of the charts at `x` and `y`, the chart at
+`x` is the chart at `y` composed with the transition isomorphism. -/
+@[reassoc]
+theorem transition_chartι (x y : Fin k → M) :
+    Spec.map (CommRingCat.ofHom
+        (transitionAlgEquiv R x y : OverlapAlgebra R y x →+* OverlapAlgebra R x y)) ≫
+      Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R y) (OverlapAlgebra R y x))) ≫
+        chartι R y =
+      Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R x) (OverlapAlgebra R x y))) ≫
+        chartι R x :=
+  (glueData R M k).glue_condition x y
 
 end Module.Grassmannian
