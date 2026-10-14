@@ -136,39 +136,17 @@ theorem linearDisjoint_fieldRange_of_finrank_constantCompositum_eq [FiniteDimens
 
 /-- **Linear disjointness from the finite subextensions**: if `k' / k` is algebraic and every
 finite subextension `M` of `k' / k` satisfies `[F · M : F] = [M : k]`, then the image of `k'` in
-`F'` and `F` are linearly disjoint over `k`.  Finitely many constants lie in a finite subextension,
+`F'` and `F` are linearly disjoint over `k`.  By
+`TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional` it suffices to treat each `M`,
 where `TauCeti.linearDisjoint_fieldRange_of_finrank_constantCompositum_eq` applies.  The extension
 `k' / k` may be infinite, for instance an algebraic closure of `k`. -/
 theorem linearDisjoint_fieldRange_of_forall_finrank_constantCompositum_eq
     [Algebra.IsAlgebraic k k']
     (h : ∀ M : IntermediateField k k', FiniteDimensional k M →
       finrank F (constantCompositum F M F') = finrank k M) :
-    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
-  set K := (IsScalarTower.toAlgHom k k' F').fieldRange
-  let e := (IsScalarTower.toAlgHom k k' F').equivFieldRange
-  have he (y : K) : algebraMap k' F' (e.symm y) = y := by
-    conv_rhs => rw [← e.apply_symm_apply y]
-    rw [AlgHom.equivFieldRange_apply_coe, IsScalarTower.toAlgHom_apply]
-  let b := Basis.ofVectorSpace k K
-  refine .of_basis_left b (linearIndependent_iff_finset_linearIndependent.2 fun s ↦ ?_)
-  -- the finitely many basis vectors indexed by `s` are constants of a finite subextension `M`
-  let M : IntermediateField k k' :=
-    IntermediateField.adjoin k (Set.range fun i : s ↦ e.symm (b i))
-  have : FiniteDimensional k M := IntermediateField.finiteDimensional_adjoin fun _ _ ↦
-    (Algebra.IsAlgebraic.isAlgebraic _).isIntegral
-  let KM := (IsScalarTower.toAlgHom k M F').fieldRange
-  have hM : KM.LinearDisjoint F :=
-    linearDisjoint_fieldRange_of_finrank_constantCompositum_eq (h M this)
-  let v : s → KM := fun i ↦
-    ⟨b i, ⟨⟨e.symm (b i), IntermediateField.subset_adjoin k _ ⟨i, rfl⟩⟩, he (b i)⟩⟩
-  have hb : LinearIndependent k (K.val ∘ b) :=
-    b.linearIndependent.map' K.val.toLinearMap (LinearMap.ker_eq_bot.2 Subtype.val_injective)
-  have hv : LinearIndependent k v :=
-    .of_comp KM.val.toLinearMap (hb.comp _ Subtype.val_injective)
-  -- `v` and the basis vectors indexed by `s` have the same underlying elements of `F'`
-  convert hM.linearIndependent_left hv using 1
-  ext i
-  simp [v]
+    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F :=
+  linearDisjoint_fieldRange_of_forall_finiteDimensional fun M _ ↦
+    linearDisjoint_fieldRange_of_finrank_constantCompositum_eq (h M ‹_›)
 
 variable [Algebra.IsSeparable k k']
 variable (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)

@@ -23,6 +23,8 @@ declarations live in Mathlib's `IntermediateField` namespace so that this dot no
 `IntermediateField.LinearDisjoint.linearIndependent_algebraMap_comp` extends scalars on the other
 side: if the image of `k'` in a common overfield `E` is linearly disjoint from `F` over `k`, a
 family of `F` linearly independent over `k` stays linearly independent over `k'` in `E`.
+`TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional` reduces that linear disjointness,
+for algebraic `k' / k`, to the finite subextensions of `k' / k`.
 -/
 
 public section
@@ -90,6 +92,37 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_algebraMap_com
     fun _ _ ↦ by
       simp only [AddMonoidHom.id_apply, Algebra.smul_def, IntermediateField.algebraMap_apply,
         AlgHom.equivFieldRange_apply_coe, IsScalarTower.toAlgHom_apply]
+
+/-- **Linear disjointness from the finite subextensions**: if `k' / k` is algebraic and the image
+in `E` of every finite subextension `M` of `k' / k` is linearly disjoint from `F` over `k`, then so
+is the image of `k'`.  Finitely many elements of `k'` lie in a finite subextension. -/
+theorem linearDisjoint_fieldRange_of_forall_finiteDimensional [Algebra.IsAlgebraic k k']
+    (h : ∀ M : IntermediateField k k', FiniteDimensional k M →
+      (IsScalarTower.toAlgHom k M E).fieldRange.LinearDisjoint F) :
+    (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
+  set K := (IsScalarTower.toAlgHom k k' E).fieldRange
+  let e := (IsScalarTower.toAlgHom k k' E).equivFieldRange
+  have he (y : K) : algebraMap k' E (e.symm y) = y := by
+    conv_rhs => rw [← e.apply_symm_apply y]
+    rw [AlgHom.equivFieldRange_apply_coe, IsScalarTower.toAlgHom_apply]
+  let b := Module.Basis.ofVectorSpace k K
+  refine .of_basis_left b (linearIndependent_iff_finset_linearIndependent.2 fun s ↦ ?_)
+  -- the finitely many basis vectors indexed by `s` come from a finite subextension `M`
+  let M : IntermediateField k k' :=
+    IntermediateField.adjoin k (Set.range fun i : s ↦ e.symm (b i))
+  have : FiniteDimensional k M := IntermediateField.finiteDimensional_adjoin fun _ _ ↦
+    (Algebra.IsAlgebraic.isAlgebraic _).isIntegral
+  let KM := (IsScalarTower.toAlgHom k M E).fieldRange
+  let v : s → KM := fun i ↦
+    ⟨b i, ⟨⟨e.symm (b i), IntermediateField.subset_adjoin k _ ⟨i, rfl⟩⟩, he (b i)⟩⟩
+  have hb : LinearIndependent k (K.val ∘ b) :=
+    b.linearIndependent.map' K.val.toLinearMap (LinearMap.ker_eq_bot.2 Subtype.val_injective)
+  have hv : LinearIndependent k v :=
+    .of_comp KM.val.toLinearMap (hb.comp _ Subtype.val_injective)
+  -- `v` and the basis vectors indexed by `s` have the same underlying elements of `E`
+  convert (h M this).linearIndependent_left hv using 1
+  ext i
+  simp [v]
 
 end ExtendScalars
 
