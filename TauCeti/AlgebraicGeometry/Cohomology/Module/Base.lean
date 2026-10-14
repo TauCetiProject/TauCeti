@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
 For a scheme over a base commutative ring, restricting the global-functions actions of
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic` along the induced map on global functions gives
 the corresponding actions of the base ring: the module structure on cohomology, the linearity
-of the maps induced by morphisms of coefficient sheaves, and the degree-zero identification
-with global sections.
+of the maps induced by morphisms of coefficient sheaves (and the linear equivalences induced by
+isomorphisms), and the degree-zero identification with global sections.
 
 The base-ring statements live in their own file, rather than alongside the global-functions
 ones, to keep each file's kernel-checking time inside the CI per-file budget: every declaration
@@ -104,6 +104,17 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_add
   simp only [cohomologyMapBaseLinear_apply, LinearMap.add_apply]
   rw [Functor.map_add]
   rfl
+
+variable {X} in
+/-- An isomorphism of sheaves of modules on a scheme over a commutative ring induces a linear
+equivalence over the base ring on cohomology. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBaseLinearEquivOfIso
+    (e : M ≅ N) (i : ℕ) :
+    Cohomology M i ≃ₗ[R] Cohomology N i :=
+  LinearEquiv.ofLinearMap (cohomologyMapBaseLinear R X e.hom i)
+    (cohomologyMapBaseLinear R X e.inv i)
+    (by rw [← cohomologyMapBaseLinear_comp, e.inv_hom_id, cohomologyMapBaseLinear_id])
+    (by rw [← cohomologyMapBaseLinear_comp, e.hom_inv_id, cohomologyMapBaseLinear_id])
 
 /-- For a scheme over a commutative ring, the canonical identification of zeroth cohomology with
 global sections is linear over the base ring. -/
