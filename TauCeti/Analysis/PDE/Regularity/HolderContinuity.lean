@@ -148,8 +148,9 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
     rw [mul_assoc]
     simp only [D]
     gcongr _ * (1 + ?_) ^ _ * ?_
-    · exact mul_div_sq_le_sq_of_mul_le_mul ((norm_nonneg _).trans (hb_bound x (hKΩ hx))) hR.le
-        h.pos hβR
+    · have hbeta := (norm_nonneg _).trans (hb_bound x (hKΩ hx))
+      exact pow_le_pow_left₀ (div_nonneg (mul_nonneg hbeta hR.le) h.pos.le)
+        ((div_le_iff₀ h.pos).2 hβR) 2
     · exact hN x hx
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
     have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by

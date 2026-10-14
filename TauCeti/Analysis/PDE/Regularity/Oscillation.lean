@@ -63,8 +63,6 @@ case `b = 0`, `σ = 0`.
 
 ## Main declarations
 
-* `TauCeti.PDE.mul_div_sq_le_sq_of_mul_le_mul`: the drift ratio bound `(βR/λ)² ≤ σ²` from
-  `βR ≤ σλ`.
 * `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_lowerOrder`: the reduction of the supremum for
   subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`, at nonnegative levels.
 * `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_drift`: the reduction of the supremum for
@@ -106,13 +104,6 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
-
-/-- **The drift ratio is bounded by `σ`.** If `0 ≤ β`, `0 ≤ R`, `0 < λ` and `βR ≤ σλ`, then
-`(βR/λ)² ≤ σ²`. This bounds the factors `√(1 + (βR/λ)²)` and `(1 + (βR/λ)²)ⁿ` of the lower-order
-level-set decay and local boundedness estimates by constants depending only on `σ`. -/
-theorem mul_div_sq_le_sq_of_mul_le_mul {beta R σ : ℝ} (hbeta : 0 ≤ beta) (hR : 0 ≤ R)
-    (hlam : 0 < lam) (hβR : beta * R ≤ σ * lam) : (beta * R / lam) ^ 2 ≤ σ ^ 2 :=
-  pow_le_pow_left₀ (by positivity) ((div_le_iff₀ hlam).2 hβR) 2
 
 /-- **Reduction of the supremum with lower-order terms (De Giorgi).** Let `n ≥ 1` be the
 dimension, and fix a proportion `θ > 0` and a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`,
@@ -179,9 +170,10 @@ theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ 
     simpa using hx
   -- `(βR/λ)² ≤ σ²`, since `0 ≤ βR/λ ≤ σ`.
   have hy : (beta * R / lam) ^ 2 ≤ σ ^ 2 :=
-    mul_div_sq_le_sq_of_mul_le_mul
-      ((norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self (by positivity))))) hR.le h.pos
-      hβR
+    have hbeta : 0 ≤ beta :=
+      (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self (by positivity))))
+    pow_le_pow_left₀ (div_nonneg (mul_nonneg hbeta hR.le) h.pos.le)
+      ((div_le_iff₀ h.pos).2 hβR) 2
   set l := M - (M - k) / 2 ^ j
   have hlM : l ≤ M := sub_le_self _ (by positivity)
   have hkl : k ≤ l := by
@@ -684,7 +676,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift
   have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self hR)))
   -- `(βR/λ)² ≤ σ²`, since `0 ≤ βR/λ ≤ σ`.
   have hy : (beta * R / lam) ^ 2 ≤ σ ^ 2 :=
-    mul_div_sq_le_sq_of_mul_le_mul hbeta hR.le h.pos hβR
+    pow_le_pow_left₀ (div_nonneg (mul_nonneg hbeta hR.le) h.pos.le) ((div_le_iff₀ h.pos).2 hβR) 2
   set K := D * R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   -- Local boundedness: `u ∈ [-K, K]` on `B(x₀, R/2)`.
   have hK : ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ∈ Icc (-K) K := by
