@@ -12,6 +12,8 @@ name: Shadow incremental audit research
     - scripts/build-audit-driver.sh
     - scripts/shadow_audits.py
     - scripts/test_shadow_audits.py
+    - scripts/test_bwrap_pin.py
+    - scripts/test_elan_pin.py
     - .github/workflows/shadow-audits.yml
     - lean-toolchain
     - lake-manifest.json
@@ -22,6 +24,8 @@ name: Shadow incremental audit research
     - scripts/build-audit-driver.sh
     - scripts/shadow_audits.py
     - scripts/test_shadow_audits.py
+    - scripts/test_bwrap_pin.py
+    - scripts/test_elan_pin.py
     - .github/workflows/shadow-audits.yml
     - lean-toolchain
     - lake-manifest.json
@@ -202,6 +206,10 @@ jobs:
             "userns=$host_ns->$sb_ns); refusing to run candidate code"
           exit 1
         fi
+    - name: Validate shared sandbox and toolchain pins
+      run: |
+        python3 scripts/test_bwrap_pin.py
+        python3 scripts/test_elan_pin.py
     - name: Full versus shadow acceptance fixtures
       run: |-
         LEAN="$(elan which lean)"
