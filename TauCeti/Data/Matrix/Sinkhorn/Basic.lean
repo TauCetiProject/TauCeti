@@ -277,9 +277,7 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornStep_iterate_le {P K : M
       tanh (K.projectiveDiameter / 4) ^ (2 * n) * hilbertProjectiveDist u₀ u := by
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
   · simp [hilbertProjectiveDist_def]
-  -- a positive row sum needs a column
-  have : Nonempty κ := Finset.univ_nonempty_iff.1 (Finset.nonempty_of_sum_ne_zero
-    ((((hasMarginals_def P a b).1 hPm).1 i).trans_ne (ha i).ne'))
+  have : Nonempty κ := hPm.nonempty_of_row_sum_ne_zero (ha i).ne'
   have h := Matrix.hilbertProjectiveDist_sinkhornStep_iterate_le hK ha hb hu₀ hu n
   rwa [Function.iterate_fixed (hP.sinkhornStep_eq hPm hK hu hv)] at h
 
@@ -299,10 +297,8 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornUpdate_iterate_le {P K :
       (mul_nonneg (pow_nonneg (tanh_projectiveDiameter_div_four_nonneg K) _)
         (hilbertProjectiveDist_nonneg u₀ u))
   obtain ⟨j⟩ := id hκ
+  have : Nonempty ι := hPm.nonempty_of_col_sum_ne_zero (hb j).ne'
   rw [hasMarginals_def] at hPm
-  -- a positive column sum needs a row
-  have : Nonempty ι :=
-    Finset.univ_nonempty_iff.1 (Finset.nonempty_of_sum_ne_zero ((hPm.2 j).trans_ne (hb j).ne'))
   have hKt : ∀ j i, 0 < Kᵀ j i := fun j i ↦ by simpa using hK i j
   have hcol := hilbertProjectiveDist_sinkhornUpdate_le hKt (fun j ↦ (hb j).ne')
     (sinkhornStep_iterate_pos hK ha hb hu₀ n) hu

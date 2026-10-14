@@ -6,7 +6,6 @@ Authors: the Tau Ceti contributors
 module
 
 public import TauCeti.Data.Matrix.Sinkhorn.Basic
-import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Explicit rates for the Sinkhorn iteration
@@ -45,11 +44,6 @@ between the minimum `relEntropy P K` and the dual value at the logarithms of the
 Sinkhorn plan after `n` steps is the relative entropy of `P` against that plan, hence at most
 `(∑ i, a i) * δ n`.
 
-## Main definitions
-
-* `Matrix.relEntropyDual K a b f g`: the dual objective of the entropy minimisation with marginals
-  `a` and `b` against `K`, at the potentials `f` and `g`.
-
 ## Main results
 
 * `Matrix.hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter` and
@@ -65,10 +59,6 @@ Sinkhorn plan after `n` steps is the relative entropy of `P` against that plan, 
   Sinkhorn plan after `n` steps agree with those of the scaling up to the factor `exp (δ n)`.
 * `Matrix.abs_sum_sinkhornPlan_iterate_apply_sub_le` and
   `Matrix.sum_abs_sum_sinkhornPlan_iterate_apply_sub_le`: the column-sum residual after `n` steps.
-* `Matrix.IsDiagonalScaling.relEntropy_sub_relEntropyDual`: the duality gap at the potentials of a
-  diagonal scaling `R` of `K` is the relative entropy against `R` plus the mass excess of `R`.
-* `Matrix.relEntropyDual_le_relEntropy` and `Matrix.IsDiagonalScaling.relEntropyDual_eq_relEntropy`:
-  weak duality, and strong duality with attainment at the Sinkhorn–Knopp scaling.
 * `Matrix.IsDiagonalScaling.relEntropy_sub_relEntropyDual_iterate_le`: the objective gap of the
   Sinkhorn iteration after `n` steps is at most `(∑ i, a i) * δ n`.
 
@@ -109,33 +99,17 @@ theorem hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter
     rw [Subsingleton.elim ((K.sinkhornStep a b)^[n] x) ((K.sinkhornStep a b)^[n] y),
       hilbertProjectiveDist_self]
     exact mul_nonneg (pow_nonneg ht _) (projectiveDiameter_nonneg K)
-  rcases isEmpty_or_nonempty κ with hκ | hκ
-  · simpa [hilbertProjectiveDist_def] using
-      mul_nonneg (pow_nonneg ht (2 * n)) (projectiveDiameter_nonneg K)
   have hKt : ∀ j i, 0 < Kᵀ j i := fun j i ↦ by simpa using hK i j
-  induction n with
-  | zero =>
-    simpa using hilbertProjectiveDist_sinkhornUpdate_le_projectiveDiameter hKt
-      (fun j ↦ (hb j).ne') (fun i ↦ (hx i).le) (fun i ↦ (hy i).le)
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', Function.iterate_succ_apply', sinkhornStep_def,
-      sinkhornStep_def]
-    -- the column factors after `n` steps, and the two half-steps that lead to the next ones
-    set c := Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] x)
-    set c' := Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] y)
-    have hc : ∀ j, 0 < c j := sinkhornUpdate_pos hKt hb (sinkhornStep_iterate_pos hK ha hb hx n)
-    have hc' : ∀ j, 0 < c' j :=
-      sinkhornUpdate_pos hKt hb (sinkhornStep_iterate_pos hK ha hb hy n)
-    have hcol := hilbertProjectiveDist_sinkhornUpdate_le hKt (fun j ↦ (hb j).ne')
-      (sinkhornUpdate_pos hK ha hc) (sinkhornUpdate_pos hK ha hc')
-    rw [projectiveDiameter_transpose] at hcol
-    calc _ ≤ tanh (K.projectiveDiameter / 4) *
-          hilbertProjectiveDist (K.sinkhornUpdate a c) (K.sinkhornUpdate a c') := hcol
-      _ ≤ tanh (K.projectiveDiameter / 4) * (tanh (K.projectiveDiameter / 4) *
-          (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter)) :=
-        mul_le_mul_of_nonneg_left ((hilbertProjectiveDist_sinkhornUpdate_le hK
-          (fun i ↦ (ha i).ne') hc hc').trans (mul_le_mul_of_nonneg_left ih ht)) ht
-      _ = tanh (K.projectiveDiameter / 4) ^ (2 * (n + 1)) * K.projectiveDiameter := by ring
+  -- the column factors follow the Sinkhorn iteration of `Kᵀ` from the first column update
+  have hsemi : Function.Semiconj (Kᵀ.sinkhornUpdate b) (K.sinkhornStep a b)
+      (Kᵀ.sinkhornStep b a) := fun z ↦ by simp [sinkhornStep_def]
+  rw [hsemi.iterate_right, hsemi.iterate_right]
+  have h := hilbertProjectiveDist_sinkhornStep_iterate_le hKt hb ha (sinkhornUpdate_pos hKt hb hx)
+    (sinkhornUpdate_pos hKt hb hy) n
+  have h0 := hilbertProjectiveDist_sinkhornUpdate_le_projectiveDiameter hKt (fun j ↦ (hb j).ne')
+    (fun i ↦ (hx i).le) (fun i ↦ (hy i).le)
+  rw [projectiveDiameter_transpose] at h h0
+  exact h.trans (mul_le_mul_of_nonneg_left h0 (pow_nonneg ht _))
 
 /-- From any two strictly positive initial row factors, the row factors of the Sinkhorn iteration
 after `n + 1` steps are within
@@ -184,9 +158,7 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_pr
   · simpa [hilbertProjectiveDist_def] using mul_nonneg
       (pow_nonneg (tanh_projectiveDiameter_div_four_nonneg K) (2 * n)) (projectiveDiameter_nonneg K)
   obtain ⟨j⟩ := id hκ
-  -- a positive column sum needs a row
-  have : Nonempty ι := Finset.univ_nonempty_iff.1 (Finset.nonempty_of_sum_ne_zero
-    ((((hasMarginals_def P a b).1 hPm).2 j).trans_ne (hb j).ne'))
+  have : Nonempty ι := hPm.nonempty_of_col_sum_ne_zero (hb j).ne'
   have hv' : Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] u) = v := by
     rw [Function.iterate_fixed (hP.sinkhornStep_eq hPm hK hu hv)]
     exact hP.sinkhornUpdate_transpose_eq ((hasMarginals_def P a b).1 hPm).2 hK hu
@@ -211,9 +183,7 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul
       (pow_nonneg (tanh_projectiveDiameter_div_four_nonneg K) (2 * n + 1))
       (projectiveDiameter_nonneg K)
   obtain ⟨i⟩ := id hι
-  -- a positive row sum needs a column
-  have : Nonempty κ := Finset.univ_nonempty_iff.1 (Finset.nonempty_of_sum_ne_zero
-    ((((hasMarginals_def P a b).1 hPm).1 i).trans_ne (ha i).ne'))
+  have : Nonempty κ := hPm.nonempty_of_row_sum_ne_zero (ha i).ne'
   have h := Matrix.hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul_projectiveDiameter hK ha
     hb hu₀ hu n
   rwa [Function.iterate_fixed (hP.sinkhornStep_eq hPm hK hu hv)] at h
@@ -305,89 +275,7 @@ theorem sum_abs_sum_sinkhornPlan_iterate_apply_sub_le {K : Matrix ι κ ℝ} (hK
   exact Finset.sum_le_sum fun j _ ↦
     abs_sum_sinkhornPlan_iterate_apply_sub_le hK ha hb hP hPm hu hv hu₀ n j
 
-/-! ### The dual objective -/
-
-/-- The dual objective of the minimisation of `Matrix.relEntropy · K` over the nonnegative matrices
-with row sums `a` and column sums `b`, at the row potentials `f` and the column potentials `g`:
-`∑ i, a i * f i + ∑ j, b j * g j + ∑ i, a i - ∑ i, ∑ j, exp (f i) * K i j * exp (g j)`.
-
-This is the Lagrangian dual of the minimisation, with the potentials shifted by one so that the
-optimal potentials of a diagonal scaling `u i * K i j * v j` are `log u` and `log v`. It is at most
-every primal value (`Matrix.relEntropyDual_le_relEntropy`), with equality at the minimiser
-(`Matrix.IsDiagonalScaling.relEntropyDual_eq_relEntropy`). -/
-noncomputable def relEntropyDual (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ) (f : ι → ℝ)
-    (g : κ → ℝ) : ℝ :=
-  ∑ i, a i * f i + ∑ j, b j * g j + ∑ i, a i - ∑ i, ∑ j, exp (f i) * K i j * exp (g j)
-
-/-- The defining formula of the dual objective. -/
-theorem relEntropyDual_def (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ) (f : ι → ℝ) (g : κ → ℝ) :
-    K.relEntropyDual a b f g =
-      ∑ i, a i * f i + ∑ j, b j * g j + ∑ i, a i - ∑ i, ∑ j, exp (f i) * K i j * exp (g j) :=
-  (rfl)
-
-/-- **The duality gap at a diagonal scaling**: if `R` is the diagonal scaling of a strictly positive
-`K` by strictly positive factors `u` and `v`, then for every `Q` with row sums `a` and column sums
-`b`, the gap between `relEntropy Q K` and the dual objective at the potentials `log u` and `log v`
-is `relEntropy Q R` plus the excess `∑ i, ∑ j, R i j - ∑ i, a i` of the mass of `R` over that
-of `Q`. -/
-theorem IsDiagonalScaling.relEntropy_sub_relEntropyDual {R K : Matrix ι κ ℝ} {u : ι → ℝ}
-    {v : κ → ℝ} (hR : IsDiagonalScaling R K u v) (hK : ∀ i j, 0 < K i j) (hu : ∀ i, 0 < u i)
-    (hv : ∀ j, 0 < v j) {a : ι → ℝ} {b : κ → ℝ} {Q : Matrix ι κ ℝ} (hQ : HasMarginals Q a b) :
-    relEntropy Q K - K.relEntropyDual a b (fun i ↦ log (u i)) (fun j ↦ log (v j)) =
-      relEntropy Q R + ∑ i, ∑ j, R i j - ∑ i, a i := by
-  rw [isDiagonalScaling_def] at hR
-  have hlog : ∀ i j, log (R i j) = log (K i j) + (log (u i) + log (v j)) := fun i j ↦ by
-    rw [hR i j, log_mul (mul_pos (hu i) (hK i j)).ne' (hv j).ne', log_mul (hu i).ne' (hK i j).ne']
-    ring
-  have hQK : relEntropy Q K =
-      relEntropy Q R + ∑ i, ∑ j, Q i j * (log (u i) + log (v j)) := by
-    simp only [relEntropy_def, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hlog]
-    ring
-  have hRsum : ∑ i, ∑ j, exp (log (u i)) * K i j * exp (log (v j)) = ∑ i, ∑ j, R i j := by
-    simp only [exp_log (hu _), exp_log (hv _), hR]
-  rw [relEntropyDual_def, hRsum, hQK, hQ.sum_sum_mul_add]
-  ring
-
-/-- **Weak duality** for the entropy minimisation: against a strictly positive `K`, the dual
-objective at any potentials `f` and `g` is at most the relative entropy of every nonnegative `Q`
-with row sums `a` and column sums `b`. -/
-theorem relEntropyDual_le_relEntropy {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j) {a : ι → ℝ}
-    {b : κ → ℝ} {Q : Matrix ι κ ℝ} (hQ0 : ∀ i j, 0 ≤ Q i j) (hQ : HasMarginals Q a b)
-    (f : ι → ℝ) (g : κ → ℝ) : K.relEntropyDual a b f g ≤ relEntropy Q K := by
-  -- the diagonal scaling `R` of `K` by `exp f` and `exp g`, whose potentials are `f` and `g`
-  set R : Matrix ι κ ℝ := of fun i j ↦ exp (f i) * K i j * exp (g j)
-  have hR : IsDiagonalScaling R K (fun i ↦ exp (f i)) (fun j ↦ exp (g j)) :=
-    (isDiagonalScaling_def _ _ _ _).2 fun i j ↦ of_apply _ i j
-  have hRpos := hR.pos hK (fun i ↦ exp_pos (f i)) (fun j ↦ exp_pos (g j))
-  have hgap := hR.relEntropy_sub_relEntropyDual hK (fun i ↦ exp_pos (f i))
-    (fun j ↦ exp_pos (g j)) hQ
-  simp only [log_exp] at hgap
-  -- Gibbs' inequality for unequal masses: `∑ (Q - R) ≤ relEntropy Q R`, cell by cell
-  have hcell : ∑ i, ∑ j, (Q i j - R i j) ≤ relEntropy Q R := by
-    rw [relEntropy_def]
-    exact Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ by
-      linarith [mul_log_sub_mul_log_ge (R i j) (Q i j) (hRpos i j) (hQ0 i j)]
-  have hmass : ∑ i, ∑ j, Q i j = ∑ i, a i :=
-    Finset.sum_congr rfl fun i _ ↦ ((hasMarginals_def Q a b).1 hQ).1 i
-  simp only [Finset.sum_sub_distrib, hmass] at hcell
-  linarith
-
-/-- **Strong duality** for the entropy minimisation: if `P` is the diagonal scaling of a strictly
-positive `K` by strictly positive factors `u` and `v`, with row sums `a` and column sums `b`, the
-dual objective at the potentials `log u` and `log v` is `relEntropy P K`. With
-`Matrix.relEntropyDual_le_relEntropy`, these potentials maximise the dual objective, and its maximum
-is the minimum of the relative entropy. -/
-theorem IsDiagonalScaling.relEntropyDual_eq_relEntropy {P K : Matrix ι κ ℝ} {u : ι → ℝ}
-    {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hK : ∀ i j, 0 < K i j) (hu : ∀ i, 0 < u i)
-    (hv : ∀ j, 0 < v j) {a : ι → ℝ} {b : κ → ℝ} (hPm : HasMarginals P a b) :
-    K.relEntropyDual a b (fun i ↦ log (u i)) (fun j ↦ log (v j)) = relEntropy P K := by
-  have hgap := hP.relEntropy_sub_relEntropyDual hK hu hv hPm
-  have hmass : ∑ i, ∑ j, P i j = ∑ i, a i :=
-    Finset.sum_congr rfl fun i _ ↦ ((hasMarginals_def P a b).1 hPm).1 i
-  have hself : relEntropy P P = 0 := by simp [relEntropy_def]
-  linarith
+/-! ### The objective -/
 
 /-- **Objective gap of the Sinkhorn iteration**: if `P` is the diagonal scaling of a strictly
 positive `K` by strictly positive factors with row sums `a` and column sums `b`, so that
@@ -404,15 +292,12 @@ theorem IsDiagonalScaling.relEntropy_sub_relEntropyDual_iterate_le {P K : Matrix
         (fun i ↦ log (K.sinkhornStep a b ((K.sinkhornStep a b)^[n] u₀) i))
         (fun j ↦ log (Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] u₀) j)) ≤
       (∑ i, a i) * (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) := by
-  rw [hasMarginals_def] at hPm
   rcases isEmpty_or_nonempty κ with hκ | hκ
   · -- a positive row sum needs a column, so there are no rows either
-    have : IsEmpty ι := ⟨fun i ↦ (ha i).ne' (by simpa using (hPm.1 i).symm)⟩
+    have : IsEmpty ι := ⟨fun i ↦ hκ.false (hPm.nonempty_of_row_sum_ne_zero (ha i).ne').some⟩
     simp [relEntropy_def, relEntropyDual_def]
   obtain ⟨j⟩ := id hκ
-  -- a positive column sum needs a row
-  have : Nonempty ι :=
-    Finset.univ_nonempty_iff.1 (Finset.nonempty_of_sum_ne_zero ((hPm.2 j).trans_ne (hb j).ne'))
+  have : Nonempty ι := hPm.nonempty_of_col_sum_ne_zero (hb j).ne'
   set x := (K.sinkhornStep a b)^[n] u₀
   have hx : ∀ i, 0 < x i := sinkhornStep_iterate_pos hK ha hb hu₀ n
   have hrow := sinkhornStep_pos hK ha hb hx
@@ -422,21 +307,21 @@ theorem IsDiagonalScaling.relEntropy_sub_relEntropyDual_iterate_le {P K : Matrix
   -- the gap is the relative entropy of `P` against the Sinkhorn plan, of the same mass
   have hRsum : ∑ i, ∑ j, K.sinkhornPlan a b x i j = ∑ i, a i :=
     Finset.sum_congr rfl fun i _ ↦ sum_sinkhornPlan_apply hK a hb hx i
-  have hPsum : ∑ i, a i = ∑ i, ∑ j, P i j := Finset.sum_congr rfl fun i _ ↦ (hPm.1 i).symm
-  rw [hR.relEntropy_sub_relEntropyDual hK hrow hcol ((hasMarginals_def P a b).2 hPm), hRsum,
-    add_sub_cancel_right, hPsum, Finset.sum_mul, relEntropy_def]
+  rw [hR.relEntropy_sub_relEntropyDual (fun i j ↦ (hK i j).ne') hrow hcol hPm, hRsum,
+    add_sub_cancel_right, ← hPm.sum_sum_eq, Finset.sum_mul, relEntropy_def]
   refine Finset.sum_le_sum fun i _ ↦ ?_
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun j _ ↦ ?_
   -- cell by cell, `P i j ≤ exp δ * R i j` bounds `log (P i j) - log (R i j)` by `δ`
-  have hle := le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply hK ha hb hP
-    ((hasMarginals_def P a b).2 hPm) hu hv hu₀ n i j
+  have hle := le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply hK ha hb hP hPm hu hv
+    hu₀ n i j
   have hPpos := hP.pos hK hu hv i j
   have hlog : log (P i j) ≤ tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter +
       log (K.sinkhornPlan a b x i j) := by
     rw [← log_exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter),
       ← log_mul (exp_pos _).ne' (hRpos i j).ne']
     exact log_le_log hPpos hle
-  nlinarith
+  have := mul_le_mul_of_nonneg_left hlog hPpos.le
+  linarith
 
 end Matrix
