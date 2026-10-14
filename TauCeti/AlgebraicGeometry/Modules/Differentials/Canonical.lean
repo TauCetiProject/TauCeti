@@ -11,12 +11,11 @@ public import TauCeti.AlgebraicGeometry.LineBundle.SerreDuality
 /-!
 # The differential line bundle and canonical divisors
 
-On an integral curve over a perfect exact constant field with infinitely many rational places,
-with invertible differential sheaf and discrete valuation rings with rational associated places
-at its codimension-one points, the sheaf of relative differentials is the sheaf of a canonical
-divisor. A separating rational function `t` gives the rational basis
-`dt`; its Weil divisor `K` identifies a regular differential `f dt` with a section `f` of
-`𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula.
+On an integral curve over a perfect exact constant field, with invertible differential sheaf and
+discrete valuation rings with rational associated places at its codimension-one points, the sheaf
+of relative differentials is the sheaf of a canonical divisor. A separating rational function `t`
+gives the rational basis `dt`; its Weil divisor `K` identifies a regular differential `f dt` with a
+section `f` of `𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula.
 
 For a proper curve this identifies the differential line bundle with the canonical bundle
 constructed from Weil differentials over an algebraically closed field. The core comparison
@@ -113,7 +112,6 @@ variable [PerfectField k] [IsLocallyNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
-  (hinf : {P : Place k X.functionField | P.degree = 1}.Infinite)
   (hdeg : ∀ y : CodimensionOnePoint X, (X.toPlace (k := k) (y : X)).degree = 1)
 
 variable (hdim : ∀ y : X, coheight y ≤ 1) (K : SchemeWeilDivisor X)
@@ -122,7 +120,7 @@ variable (hdim : ∀ y : X, coheight y ≤ 1) (K : SchemeWeilDivisor X)
       (weilDifferentialOfSeparating hF ht).2
       (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)))
 
-include hF hinf hdeg hdim hK in
+include hF hdeg hdim hK in
 private lemma range_differentialCoordinateHom_app (U : X.Opens)
     (s : Γ(Scheme.rationalFunctions X, U)) :
     s ∈ Set.range ((differentialCoordinateHom ht).app U) ↔
@@ -131,7 +129,7 @@ private lemma range_differentialCoordinateHom_app (U : X.Opens)
   · let := hU
     rw [SchemeWeilDivisor.mem_sections_iff]
     simp_rw [hK]
-    rw [← smul_D_mem_range_rationalDifferential_iff hF hk hinf ht U (fun y _ ↦ hdim y)
+    rw [← smul_D_mem_range_rationalDifferential_iff hF hk ht U (fun y _ ↦ hdim y)
       (fun _ _ ↦ inferInstance) (fun y _ ↦ hdeg y),
       ← differentialCoordinateEquiv_symm_apply ht]
     constructor
@@ -148,23 +146,23 @@ private lemma range_differentialCoordinateHom_app (U : X.Opens)
       iff_true]
     exact ⟨0, Subsingleton.elim _ _⟩
 
-include hF hinf hdeg hdim hK in
+include hF hdeg hdim hK in
 private lemma differentialCoordinateHom_mem (U : X.Opens)
     (s : Γ(X.relativeDifferentials k, U)) :
     (differentialCoordinateHom ht).app U s ∈ SchemeWeilDivisor.sections K U :=
-  (range_differentialCoordinateHom_app ht hF hk hinf hdeg hdim K hK U _).mp ⟨s, rfl⟩
+  (range_differentialCoordinateHom_app ht hF hk hdeg hdim K hK U _).mp ⟨s, rfl⟩
 
 /-- Reading a differential in the rational basis `dt` identifies `Ω_{X/k}` with `𝒪_X(K)`,
 where `K` has the Weil orders of `dt` as its coefficients. The constant field is perfect and
-exact, there are infinitely many rational places, and all codimension-one places are rational.
-The differential sheaf is assumed invertible. -/
+exact, and all codimension-one places are rational. The differential sheaf is assumed
+invertible. -/
 def relativeDifferentialsIsoDivisorSheaf :
     X.relativeDifferentials k ≅ SchemeWeilDivisor.sheaf K := by
   let φ := SchemeWeilDivisor.sheafLift K (differentialCoordinateHom ht)
-    (differentialCoordinateHom_mem ht hF hk hinf hdeg hdim K hK)
+    (differentialCoordinateHom_mem ht hF hk hdeg hdim K hK)
   haveI : IsIso φ := SchemeWeilDivisor.isIso_sheafLift K _ _
     (fun U ↦ differentialCoordinateHom_app_injective ht U)
-    (fun U s hs ↦ (range_differentialCoordinateHom_app ht hF hk hinf hdeg hdim K hK U s).mpr hs)
+    (fun U s hs ↦ (range_differentialCoordinateHom_app ht hF hk hdeg hdim K hK U s).mpr hs)
   exact asIso φ
 
 /-- The divisor-sheaf isomorphism sends a differential to its rational coefficient in `dt`. -/
@@ -172,7 +170,7 @@ def relativeDifferentialsIsoDivisorSheaf :
 lemma relativeDifferentialsIsoDivisorSheaf_hom_app (U : X.Opens) [Nonempty U]
     (s : Γ(X.relativeDifferentials k, U)) :
     Scheme.rationalFunctionsEquiv U ((SchemeWeilDivisor.sheafι K).app U
-      ((relativeDifferentialsIsoDivisorSheaf ht hF hk hinf hdeg hdim K hK).hom.app U s)) =
+      ((relativeDifferentialsIsoDivisorSheaf ht hF hk hdeg hdim K hK).hom.app U s)) =
       (kaehlerBasisOfSeparating ht).coord () (rationalDifferential k U s) := by
   rw [relativeDifferentialsIsoDivisorSheaf, asIso_hom,
     SchemeWeilDivisor.sheafι_app_sheafLift, differentialCoordinateHom_app,
@@ -183,13 +181,13 @@ lemma relativeDifferentialsIsoDivisorSheaf_hom_app (U : X.Opens) [Nonempty U]
 lemma relativeDifferentialsIsoDivisorSheaf_inv_app (U : X.Opens) [Nonempty U]
     (s : Γ(SchemeWeilDivisor.sheaf K, U)) :
     rationalDifferential k U
-        ((relativeDifferentialsIsoDivisorSheaf ht hF hk hinf hdeg hdim K hK).inv.app U s) =
+        ((relativeDifferentialsIsoDivisorSheaf ht hF hk hdeg hdim K hK).inv.app U s) =
       Scheme.rationalFunctionsEquiv U ((SchemeWeilDivisor.sheafι K).app U s) •
         KaehlerDifferential.D k X.functionField t := by
-  let e := relativeDifferentialsIsoDivisorSheaf ht hF hk hinf hdeg hdim K hK
+  let e := relativeDifferentialsIsoDivisorSheaf ht hF hk hdeg hdim K hK
   have he : e.hom.app U (e.inv.app U s) = s :=
     congr($(e.inv_hom_id).val.app (op U) s)
-  have h := relativeDifferentialsIsoDivisorSheaf_hom_app ht hF hk hinf hdeg hdim K hK U
+  have h := relativeDifferentialsIsoDivisorSheaf_hom_app ht hF hk hdeg hdim K hK U
     (e.inv.app U s)
   rw [he] at h
   apply (differentialCoordinateEquiv ht).injective
@@ -230,7 +228,6 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
       rw [(SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
       exact divisorClass_weilDifferentialDivisor hF isIntegrallyClosedIn_of_isAlgClosed ω.2 hω)
   exact ⟨relativeDifferentialsIsoDivisorSheaf ht hF isIntegrallyClosedIn_of_isAlgClosed
-    (Place.infinite_setOf_degree_eq_one hF)
     (fun y ↦ (X.toPlace (k := k) (y : X)).degree_eq_one_of_isAlgClosed_of_isFunctionField hF)
     hdim K hK ≪≫ e.symm⟩
 
