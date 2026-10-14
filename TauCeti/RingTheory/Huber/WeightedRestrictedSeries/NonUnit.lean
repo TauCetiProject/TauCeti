@@ -34,7 +34,8 @@ weight is used.
 * `TauCeti.Huber.not_isUnit_weightedX`: `Xᵢ` is not a unit of `A⟨X⟩_T`.
 * `TauCeti.Huber.not_isUnit_one_sub_weightedX`: `1 - Xᵢ` is not a unit of `A⟨X⟩` when `A` is
   nonzero and Hausdorff.
-* `TauCeti.Huber.span_weightedX_one_sub_weightedX`: `Xᵢ` and `1 - Xᵢ` generate the unit ideal.
+* `TauCeti.Huber.span_weightedX_one_sub_weightedX_eq_top`: `Xᵢ` and `1 - Xᵢ` generate the unit
+  ideal.
 
 ## References
 
@@ -72,7 +73,7 @@ theorem not_isUnit_one_sub_weightedX [T0Space A] [Nontrivial A] (i : Fin k) :
   exact one_ne_zero (tendsto_const_nhds_iff.mp hlim)
 
 /-- **`Xᵢ` and `1 - Xᵢ` generate the unit ideal** of `A⟨X⟩_T`: they sum to `1`. -/
-theorem span_weightedX_one_sub_weightedX {T : Fin k → Set A} {hT : IsWeightFamily T}
+theorem span_weightedX_one_sub_weightedX_eq_top {T : Fin k → Set A} {hT : IsWeightFamily T}
     (i : Fin k) : Ideal.span {weightedX T hT i, 1 - weightedX T hT i} = ⊤ :=
   Ideal.eq_top_of_isUnit_mem _
     (Ideal.add_mem _ (Ideal.subset_span (Set.mem_insert _ _))
@@ -90,7 +91,7 @@ example (K : Type*) [NontriviallyNormedField K] [IsUltrametricDist K] :
       ¬IsUnit (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) ∧
       ¬IsUnit (1 - weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) := by
   refine ⟨inferInstance, ?_, not_isUnit_weightedX 0, not_isUnit_one_sub_weightedX 0⟩
-  rw [span_weightedX_one_sub_weightedX, Submodule.top_coe]
+  rw [span_weightedX_one_sub_weightedX_eq_top, Submodule.top_coe]
   exact isOpen_univ
 
 end TauCeti.Huber
