@@ -26,6 +26,8 @@ value at the north pole.
   `TauCeti.sphere2GroupHomotopyEquivMoore_symm_apply_fst`: the value at the north pole of the image
   of `(g, γ)` is `g`, and the group coordinate of the image under the homotopy inverse is the value
   at the north pole.
+* `TauCeti.sphere2GroupHomotopyEquivMoore_symm_apply_snd`: the Moore-loop coordinate of the image
+  under the homotopy inverse is the fixed-interval double loop, as a length-one Moore loop.
 
 ## References
 
@@ -81,5 +83,17 @@ theorem sphere2GroupHomotopyEquivMoore_symm_apply_fst (f : C(Sphere2, G)) :
     ((sphere2GroupHomotopyEquivMoore G).symm f).1 = f Sphere2.north := by
   rw [sphere2GroupHomotopyEquivMoore]
   exact sphereGroupHomeomorphIteratedLoopSpace_symm_fst (s₀ := Sphere2.north) f
+
+/-- The Moore-loop coordinate of the image under the homotopy inverse of
+`sphere2GroupHomotopyEquivMoore` is the corresponding fixed-interval double loop, reparametrized to
+a Moore loop of length one: the homotopy inverse of `MooreLoopSpace.homotopyEquivPath` is
+`Path.toMooreLoop`. -/
+@[simp]
+theorem sphere2GroupHomotopyEquivMoore_symm_apply_snd (f : C(Sphere2, G)) :
+    ((sphere2GroupHomotopyEquivMoore G).symm f).2 =
+      Path.toMooreLoop ((sphereGroupHomeomorphIteratedLoopSpace 2 G Sphere2.north).symm f).2 := by
+  rw [sphere2GroupHomotopyEquivMoore]
+  exact MooreLoopSpace.homotopyEquivPath_symm_apply (X := Path (1 : G) 1) (x := Path.refl 1)
+    ((sphereGroupHomeomorphIteratedLoopSpace 2 G Sphere2.north).symm f).2
 
 end TauCeti
