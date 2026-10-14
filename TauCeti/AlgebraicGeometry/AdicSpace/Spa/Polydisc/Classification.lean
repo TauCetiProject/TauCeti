@@ -667,88 +667,72 @@ private theorem exists_eq_of_forall_cutRadius_le [IsAlgClosed K] {x : closedPoly
     exact Or.inr (Or.inl ⟨a, ha, c₀, hc₀ ▸ hr₀, hr₁', (eq_discPointAbove_iff x ha _ _).mpr
       (vle_weightedC_iff_of_lt ha hc₀.ge hgt)⟩)
 
-/-- **Two points that take the same values on the discs of a sequence without common point are
-equal**: if the discs `D(aₙ, |cₙ|)` have no common point in `K`, and `x(T - aₙ) < x(e)` and
-`y(T - aₙ) < y(e)` for every `n` and every constant `e` with `‖cₙ‖ < ‖e‖`, then `x = y`. Both
-points then take the value of the constant `b - aₙ` on `T - b`, for `n` with `b ∉ D(aₙ, |cₙ|)`. -/
-private theorem eq_of_forall_valuation_lt [IsAlgClosed K] {a c : ℕ → K}
-    (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) {x y : closedPolydisc 1 K}
-    (hx : ∀ n e, ‖c n‖ < ‖e‖ → x.1.valuation (T - C (a n)) < x.1.valuation (C e))
-    (hy : ∀ n e, ‖c n‖ < ‖e‖ → y.1.valuation (T - C (a n)) < y.1.valuation (C e)) :
-    x = y := by
-  choose N hN using hempty
-  have hd (b : K) : b - a (N b) ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt (hN b))
-  have hval (z : closedPolydisc 1 K)
-      (hz : ∀ n e, ‖c n‖ < ‖e‖ → z.1.valuation (T - C (a n)) < z.1.valuation (C e)) (b : K) :
-      z.1.valuation (T - C b) = z.1.valuation (C (b - a (N b))) := by
-    rw [weightedX_sub_weightedC_eq_sub (a (N b)) b]
-    exact Valuation.map_sub_eq_of_lt_right _ (hz _ _ (hN b))
-  refine eq_of_valuation_eq_ite (a := a 0) (fun _ ↦ False) (fun b ↦ b - a (N b)) (fun b _ ↦ hd b)
-    (fun b ↦ by rw [ite_false, hval x hx]) (fun b ↦ by rw [ite_false, hval y hy])
-    (hval x hx (a 0) ▸ (closedPolydisc_valuation_weightedC_eq_zero_iff x _).not.mpr (hd _))
-    (hval y hy (a 0) ▸ (closedPolydisc_valuation_weightedC_eq_zero_iff y _).not.mpr (hd _))
-    fun e ↦ ?_
-  rw [hval x hx, hval y hy, closedPolydisc_valuation_weightedC_le_iff,
-    closedPolydisc_valuation_weightedC_le_iff,
-    closedPolydisc_valuation_weightedC_le_iff, closedPolydisc_valuation_weightedC_le_iff]
-  exact ⟨Iff.rfl, Iff.rfl⟩
+/-! ### Recognising points of type (4) -/
 
-/-- **A point whose radius is smallest about no centre** is the point attached to a decreasing
-sequence of discs with no common point in `K`: centres `aₙ` whose radii decrease to the infimum
-`r` of all radii, and discs `D(aₙ, ρ(aₙ))`. -/
+section NestedDiscRecognition
+
+variable {a c : ℕ → K} (ha : ∀ n, ‖a n‖ ≤ 1) (hc₀ : ∀ n, c n ≠ 0)
+  (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
+  (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖)
+
+/-- **With no common point of the discs in `K`, the point is the only point lying in all of them**,
+over an algebraically closed field: a point `x` of the closed unit disc is `η` if and only if
+`x ∈ D(aₙ, |cₙ|)` for every `n`. These are the points of type (4) in Wedhorn's Example 7.57. -/
+theorem eq_nestedDiscPoint_iff [IsAlgClosed K] (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖)
+    (x : closedPolydisc 1 K) :
+    x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc ↔ ∀ n, x ∈ closedSubdisc (a n) (c n) := by
+  refine ⟨fun h n ↦ h ▸ nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n,
+    fun hx ↦ eq_of_forall_valuation_weightedX_sub_weightedC_eq fun b ↦ ?_⟩
+  -- a disc `D(aₙ, |cₙ|)` avoiding `b` makes both points take the value of `aₙ - b` on `T - b`
+  obtain ⟨n, hn⟩ := hempty b
+  refine ⟨a n - b, sub_ne_zero.mpr fun h ↦ ?_,
+    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc (hx n) hn,
+    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc
+      (nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n) hn⟩
+  rw [h, sub_self, norm_zero] at hn
+  exact (norm_nonneg _).not_gt hn
+
+/-! ### Points without a minimum on linear polynomials -/
+
+/-- **The points of type (4) of the closed unit disc**, over an algebraically closed complete
+nonarchimedean field: a point `x` is the point attached to a decreasing sequence of discs with no
+common point in `K` if and only if `b ↦ x(T - b)` attains no minimum. -/
+theorem exists_eq_nestedDiscPoint_iff [IsAlgClosed K] (x : closedPolydisc 1 K) :
+    (∃ (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1) (c : ℕ → K) (hc₀ : ∀ n, c n ≠ 0)
+      (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
+      (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
+      (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc) ↔
+    ¬ ∃ a₀ : K, ∀ b : K, x.1.toValuativeRel.vle (T - C a₀) (T - C b) := by
+  refine ⟨fun ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty, hx⟩ ↦ ?_, fun hmin ↦ ?_⟩
+  · subst hx
+    exact not_exists_forall_nestedDiscPoint_vle ha hc₀ hc₁ hac hcc hempty
+  obtain ⟨a, c, ha, hc₀, hc₁, hac, hcc, hempty, hx⟩ := exists_forall_mem_closedSubdisc hmin
+  exact ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty,
+    (eq_nestedDiscPoint_iff ha hc₀ hc₁ hac hcc hempty x).mpr hx⟩
+
+end NestedDiscRecognition
+
+/-- A point with no smallest radius has no smallest value on the linear polynomials, so the
+canonical nested-disc recognition theorem supplies its empty-intersection sequence. -/
 private theorem exists_eq_nestedDiscPoint [IsAlgClosed K] {x : closedPolydisc 1 K}
     (hB : ∀ a : K, ‖a‖ ≤ 1 → ∃ b : K, ‖b‖ ≤ 1 ∧ cutRadius x b < cutRadius x a) :
     ∃ (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1) (c : ℕ → K) (hc₀ : ∀ n, c n ≠ 0)
       (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
       (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
       (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc := by
-  set t := cutRadius x '' {b : K | ‖b‖ ≤ 1}
-  have hne : t.Nonempty := ⟨_, 0, by simp, rfl⟩
-  have hbdd : BddBelow t := ⟨0, by rintro _ ⟨b, -, rfl⟩; exact cutRadius_nonneg x b⟩
-  -- the infimum of the radii is not attained
-  have hnot : sInf t ∉ t := by
-    rintro ⟨a, ha, hra⟩
-    obtain ⟨b, hb, hlt⟩ := hB a ha
-    exact (hra ▸ hlt).not_ge (csInf_le hbdd ⟨b, hb, rfl⟩)
-  obtain ⟨u, hu, -, hlim, hmem⟩ :=
-    (isGLB_csInf hne hbdd).exists_seq_strictAnti_tendsto_of_notMem hnot hne
-  choose a ha hau using hmem
-  have hlt_succ (n : ℕ) : cutRadius x (a (n + 1)) < cutRadius x (a n) := by
-    rw [hau, hau]
-    exact hu n.lt_succ_self
-  set c : ℕ → K := fun n ↦ a n - a (n + 1)
-  -- the radius about `aₙ` is the distance to `aₙ₊₁`
-  have hc (n : ℕ) : ‖c n‖ = cutRadius x (a n) :=
-    (cutRadius_eq_norm (ha n) (valuation_eq_of_cutRadius_lt (ha (n + 1)) (hlt_succ n))).symm
-  -- every centre lies outside some disc `D(aₙ, ρ(aₙ))`
-  have hempty (b : K) : ∃ n, ‖c n‖ < ‖b - a n‖ := by
-    by_cases hb : ‖b‖ ≤ 1
-    · have hlt : sInf t < cutRadius x b :=
-        lt_of_le_of_ne (csInf_le hbdd ⟨b, hb, rfl⟩) fun h ↦ hnot (h ▸ ⟨b, hb, rfl⟩)
-      obtain ⟨n, hn⟩ := (hlim.eventually (gt_mem_nhds hlt)).exists
-      rw [← hau n] at hn
-      exact ⟨n, by rwa [hc, ← cutRadius_eq_norm hb (valuation_eq_of_cutRadius_lt (ha n) hn)]⟩
-    · have h₁ : 1 < ‖b‖ := not_le.mp hb
-      have h₂ : ‖b‖ ≤ max ‖b - a 0‖ ‖a 0‖ := by
-        simpa using IsUltrametricDist.norm_add_le_max (b - a 0) (a 0)
-      refine ⟨0, ((hc 0).trans_le (cutRadius_le_one x (ha 0))).trans_lt (h₁.trans_le ?_)⟩
-      exact (le_max_iff.mp h₂).resolve_right fun h ↦ (h.trans (ha 0)).not_gt h₁
-  have hc₀ (n : ℕ) : c n ≠ 0 :=
-    norm_pos_iff.mp ((hc n).symm ▸ (cutRadius_nonneg x _).trans_lt (hlt_succ n))
-  have hc₁ (n : ℕ) : ‖c n‖ ≤ 1 := (hc n).trans_le (cutRadius_le_one x (ha n))
-  have hac (n : ℕ) : ‖a (n + 1) - a n‖ ≤ ‖c n‖ := (norm_sub_rev _ _).le
-  have hcc (n : ℕ) : ‖c (n + 1)‖ ≤ ‖c n‖ := by
-    rw [hc, hc]
-    exact (hlt_succ n).le
-  refine ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty, eq_of_forall_valuation_lt hempty
-    (fun n e h ↦ valuation_lt_of_cutRadius_lt_norm (ha n) (hc n ▸ h)) fun n e h ↦ ?_⟩
-  -- the point of the discs is at most `‖cₙ‖` on `T - aₙ`
-  rw [← not_le, valuation_le_iff, nestedDiscPoint_vle_iff, not_le, ← NNReal.coe_lt_coe,
-    coe_nestedDiscValuation_weightedX_sub_weightedC, nestedDiscValuation_weightedC, coe_nnnorm]
-  refine (ciInf_le ⟨0, ?_⟩ n).trans_lt ?_
-  · rintro _ ⟨m, rfl⟩
-    exact (norm_nonneg _).trans (le_max_left _ _)
-  · rwa [sub_self, norm_zero, max_eq_left (norm_nonneg _)]
+  apply (exists_eq_nestedDiscPoint_iff x).mpr
+  rintro ⟨a, hmin⟩
+  have ha : ‖a‖ ≤ 1 := by
+    by_contra! ha
+    have hv := valuation_weightedX_sub_weightedC_lt_of_one_lt x
+      (b := (0 : K)) (b' := a) (by simp) ha
+    exact hv.not_ge ((valuation_le_iff _ _ _).mpr (hmin 0))
+  obtain ⟨b, hb, hlt⟩ := hB a ha
+  have heq := valuation_eq_of_cutRadius_lt hb hlt
+  have hlt' : cutRadius x b < ‖a - b‖ := (cutRadius_eq_norm ha heq) ▸ hlt
+  have hv := valuation_lt_of_cutRadius_lt_norm hb hlt'
+  rw [← heq] at hv
+  exact hv.not_ge ((valuation_le_iff _ _ _).mpr (hmin b))
 
 /-- **The points of the closed unit disc with trivial support**, over an algebraically closed
 complete nonarchimedean field: every such point is one of
@@ -806,49 +790,5 @@ theorem exists_eq_classicalPoint_or_discPoint_or_discPointAbove_or_discPointBelo
   · exact Or.inr (exists_eq_discPoint_or_discPointAbove_or_discPointBelow_or_nestedDiscPoint x hx)
   · exact Or.inl ((supp_ne_bot_iff_exists_eq_classicalPoint x).mp hx)
 
-/-! ### Recognising points of type (4) -/
-
-section NestedDiscRecognition
-
-variable {a c : ℕ → K} (ha : ∀ n, ‖a n‖ ≤ 1) (hc₀ : ∀ n, c n ≠ 0)
-  (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
-  (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖)
-
-/-- **With no common point of the discs in `K`, the point is the only point lying in all of them**,
-over an algebraically closed field: a point `x` of the closed unit disc is `η` if and only if
-`x ∈ D(aₙ, |cₙ|)` for every `n`. These are the points of type (4) in Wedhorn's Example 7.57. -/
-theorem eq_nestedDiscPoint_iff [IsAlgClosed K] (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖)
-    (x : closedPolydisc 1 K) :
-    x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc ↔ ∀ n, x ∈ closedSubdisc (a n) (c n) := by
-  refine ⟨fun h n ↦ h ▸ nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n,
-    fun hx ↦ eq_of_forall_valuation_weightedX_sub_weightedC_eq fun b ↦ ?_⟩
-  -- a disc `D(aₙ, |cₙ|)` avoiding `b` makes both points take the value of `aₙ - b` on `T - b`
-  obtain ⟨n, hn⟩ := hempty b
-  refine ⟨a n - b, sub_ne_zero.mpr fun h ↦ ?_,
-    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc (hx n) hn,
-    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc
-      (nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n) hn⟩
-  rw [h, sub_self, norm_zero] at hn
-  exact (norm_nonneg _).not_gt hn
-
-/-! ### Points without a minimum on linear polynomials -/
-
-/-- **The points of type (4) of the closed unit disc**, over an algebraically closed complete
-nonarchimedean field: a point `x` is the point attached to a decreasing sequence of discs with no
-common point in `K` if and only if `b ↦ x(T - b)` attains no minimum. -/
-theorem exists_eq_nestedDiscPoint_iff [IsAlgClosed K] (x : closedPolydisc 1 K) :
-    (∃ (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1) (c : ℕ → K) (hc₀ : ∀ n, c n ≠ 0)
-      (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
-      (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
-      (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc) ↔
-    ¬ ∃ a₀ : K, ∀ b : K, x.1.toValuativeRel.vle (T - C a₀) (T - C b) := by
-  refine ⟨fun ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty, hx⟩ ↦ ?_, fun hmin ↦ ?_⟩
-  · subst hx
-    exact not_exists_forall_nestedDiscPoint_vle ha hc₀ hc₁ hac hcc hempty
-  obtain ⟨a, c, ha, hc₀, hc₁, hac, hcc, hempty, hx⟩ := exists_forall_mem_closedSubdisc hmin
-  exact ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty,
-    (eq_nestedDiscPoint_iff ha hc₀ hc₁ hac hcc hempty x).mpr hx⟩
-
-end NestedDiscRecognition
 
 end TauCeti.ValuationSpectrum
