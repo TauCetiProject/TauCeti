@@ -142,16 +142,11 @@ private theorem reduced_pole (hm : ¬ p ∣ m) :
 
 variable [CharP k p]
 
-omit [Fact p.Prime] in
-/-- The characteristic of `k(x)` is the characteristic of `k`. -/
-private theorem charP_ratFunc : CharP (RatFunc k) p := charP_of_injective_algebraMap' k p
-
 variable {m} in
 /-- When `p ∤ m`, `x ^ m` is not of the form `w ^ p - w`: it has a pole of order prime to `p` at
 infinity. -/
 private theorem ne_pow_sub_self (hm : ¬ p ∣ m) :
     ∀ w : RatFunc k, w ^ p - w ≠ RatFunc.X ^ m := by
-  have := charP_ratFunc k p
   obtain ⟨hneg, hdvd⟩ := reduced_pole k p hm
   exact ne_pow_sub_self_of_exists_reduced_artinSchreier_pole (v := (Place.infty k).valuation) p
     (Fact.out : p.Prime).one_lt
@@ -162,7 +157,6 @@ variable {m} in
 /-- The Artin–Schreier equation of `y ^ p - y = x ^ m` is irreducible over `k(x)` when `p ∤ m`. -/
 theorem irreducible_equationPolynomial (hm : ¬ p ∣ m) :
     Irreducible (equationPolynomial k p m) :=
-  have := charP_ratFunc k p
   ArtinSchreier.irreducible_X_pow_sub_X_sub_C p (ne_pow_sub_self k p hm)
 
 variable [hm : Fact (¬ p ∣ m)]
@@ -177,7 +171,6 @@ theorem adjoin_genY_eq_top : (RatFunc k)⟮genY k p m⟯ = ⊤ :=
 
 /-- The function field has degree `p` over `k(x)`. -/
 theorem finrank_eq : Module.finrank (RatFunc k) (FunctionField k p m) = p :=
-  have := charP_ratFunc k p
   ArtinSchreier.finrank_eq (genY_pow_sub_genY k p m) (adjoin_genY_eq_top k p m)
     (ne_pow_sub_self k p hm.out)
 
@@ -187,7 +180,6 @@ instance : FiniteDimensional (RatFunc k) (FunctionField k p m) :=
 
 /-- The function field is a Galois extension of `k(x)`, as every Artin–Schreier extension is. -/
 instance : IsGalois (RatFunc k) (FunctionField k p m) :=
-  have := charP_ratFunc k p
   ArtinSchreier.isGalois (genY_pow_sub_genY k p m) (adjoin_genY_eq_top k p m)
 
 /-- The curve `y ^ p - y = x ^ m` has an algebraic function field over `k`. -/
@@ -196,9 +188,8 @@ theorem isFunctionField : IsFunctionField k (FunctionField k p m) :=
 
 /-- **The constants of `y ^ p - y = x ^ m` are exactly `k`**: the pole at infinity is totally
 ramified. -/
-theorem isIntegrallyClosedIn : IsIntegrallyClosedIn k (FunctionField k p m) := by
-  have := charP_ratFunc k p
-  exact isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole
+theorem isIntegrallyClosedIn : IsIntegrallyClosedIn k (FunctionField k p m) :=
+  isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole
     (IsFunctionField.ratFunc k) inferInstance p (adjoin_genY_eq_top k p m)
     (genY_pow_sub_genY k p m) (Place.infty k) ⟨0, reduced_pole k p hm.out⟩
 
@@ -210,18 +201,16 @@ variable {k p m} {P : Place k (FunctionField k p m)}
 
 /-- **The place at infinity is totally ramified**: a place over it has ramification index `p`. -/
 theorem ramificationIdx_eq_of_restrict_eq_infty (hP : P.restrict k (RatFunc k) = Place.infty k) :
-    Place.ramificationIdx (RatFunc k) P = p := by
-  have := charP_ratFunc k p
-  exact Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k (RatFunc k) p
+    Place.ramificationIdx (RatFunc k) P = p :=
+  Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k (RatFunc k) p
     (adjoin_genY_eq_top k p m) (genY_pow_sub_genY k p m)
     (by rw [hP]; exact ⟨0, reduced_pole k p hm.out⟩)
 
 /-- **The place at infinity is wild**: its ramification index `p` vanishes in its residue
 field. -/
 theorem isWild_of_restrict_eq_infty (hP : P.restrict k (RatFunc k) = Place.infty k) :
-    Place.IsWild k (RatFunc k) P := by
-  have := charP_ratFunc k p
-  exact Place.isWild_of_exists_reduced_artinSchreier_pole k (RatFunc k) p
+    Place.IsWild k (RatFunc k) P :=
+  Place.isWild_of_exists_reduced_artinSchreier_pole k (RatFunc k) p
     (adjoin_genY_eq_top k p m) (genY_pow_sub_genY k p m)
     (by rw [hP]; exact ⟨0, reduced_pole k p hm.out⟩)
 
@@ -229,9 +218,8 @@ theorem isWild_of_restrict_eq_infty (hP : P.restrict k (RatFunc k) = Place.infty
 reduced pole of order `m`. -/
 theorem differentExponent_eq_of_restrict_eq_infty
     (hP : P.restrict k (RatFunc k) = Place.infty k) :
-    Place.differentExponent k (RatFunc k) P = (p - 1) * (m + 1) := by
-  have := charP_ratFunc k p
-  exact Place.differentExponent_eq_of_sub_pow_sub_self_ord_eq_neg k (RatFunc k)
+    Place.differentExponent k (RatFunc k) P = (p - 1) * (m + 1) :=
+  Place.differentExponent_eq_of_sub_pow_sub_self_ord_eq_neg k (RatFunc k)
     (IsFunctionField.ratFunc k) (isFunctionField k p m) p m (adjoin_genY_eq_top k p m)
     (genY_pow_sub_genY k p m) (w := 0) (by rw [hP]; exact ord_infty_sub k p m)
     (by rw [hP]; exact (reduced_pole k p hm.out).2)
@@ -272,17 +260,15 @@ variable {k p m} {P : Place k (FunctionField k p m)}
 /-- **The finite places are unramified**: away from infinity `x ^ m` is regular. -/
 theorem ramificationIdx_eq_one_of_restrict_ne_infty
     (hP : P.restrict k (RatFunc k) ≠ Place.infty k) :
-    Place.ramificationIdx (RatFunc k) P = 1 := by
-  have := charP_ratFunc k p
-  exact Place.ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers k (RatFunc k) p
+    Place.ramificationIdx (RatFunc k) P = 1 :=
+  Place.ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers k (RatFunc k) p
     (adjoin_genY_eq_top k p m) (genY_pow_sub_genY k p m) ⟨0, pow_mem_integers k p m hP⟩
 
 /-- The different exponent vanishes at the finite places. -/
 theorem differentExponent_eq_zero_of_restrict_ne_infty
     (hP : P.restrict k (RatFunc k) ≠ Place.infty k) :
-    Place.differentExponent k (RatFunc k) P = 0 := by
-  have := charP_ratFunc k p
-  exact Place.differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers k (RatFunc k) p
+    Place.differentExponent k (RatFunc k) P = 0 :=
+  Place.differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers k (RatFunc k) p
     (adjoin_genY_eq_top k p m) (genY_pow_sub_genY k p m) ⟨0, pow_mem_integers k p m hP⟩
 
 end Finite
@@ -336,7 +322,6 @@ theorem degree_different :
 `k(x)` with the different `(p - 1) (m + 1) P_∞`. -/
 theorem two_mul_genus :
     2 * genus k (FunctionField k p m) = (p - 1) * (m - 1) := by
-  have := charP_ratFunc k p
   have hm0 : m ≠ 0 := by rintro rfl; exact hm.out (dvd_zero p)
   have h := two_mul_genus_eq_of_exists_reduced_artinSchreier_pole_ratFunc p
     (adjoin_genY_eq_top k p m) (genY_pow_sub_genY k p m) (Place.infty k) m
