@@ -165,6 +165,17 @@ theorem ContractionSemigroup.continuous_ofMeasureLpMultiplication {m : α → �
     Continuous (fun t : ℝ≥0 => ofMeasureLpMultiplication hm hp t f) :=
   measureLpMultiplicationOperator_continuous hm hp f
 
+/-- At a nonnegative real time, the multiplication semigroup acts by `exp (-t * m)` almost
+everywhere. -/
+theorem ContractionSemigroup.ofMeasureLpMultiplication_realOperator_apply_ae {m : α → ℝ≥0}
+    (hm : AEMeasurable m μ) (hp : p ≠ ∞) {t : ℝ} (ht : 0 ≤ t) (f : Lp E p μ) :
+    (ofMeasureLpMultiplication hm hp).realOperator t f =ᵐ[μ]
+      fun a => Real.exp (-(t * m a)) • f a := by
+  rw [StronglyContinuousSemigroup.realOperator_def,
+    ContractionSemigroup.toStronglyContinuousSemigroup_apply]
+  simpa only [Real.coe_toNNReal t ht] using
+    ofMeasureLpMultiplication_apply_apply_ae hm hp t.toNNReal f
+
 /-- Almost everywhere equal multipliers define the same multiplication semigroup. -/
 theorem ContractionSemigroup.ofMeasureLpMultiplication_congr_ae {m n : α → ℝ≥0}
     (hm : AEMeasurable m μ) (hp : p ≠ ∞) (h : m =ᵐ[μ] n) :
