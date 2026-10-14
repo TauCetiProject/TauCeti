@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.Young.Partitions
 public import TauCeti.Combinatorics.Young.StandardTableau.LatticeWord
 public import TauCeti.Combinatorics.Young.StandardTableau.Rows
-import Mathlib.Data.List.NodupEquivFin
+public import TauCeti.GroupTheory.Perm.List
 
 /-!
 # The Robinson--Schensted correspondence for permutations
@@ -33,39 +33,6 @@ public section
 namespace TauCeti
 
 open List
-
-private noncomputable def permutationWordEquiv (n : ℕ) :
-    Equiv.Perm (Fin n) ≃ {w : List (Fin n) // w.Perm (finRange n)} :=
-  Equiv.ofBijective
-    (fun σ => ⟨ofFn σ, by simpa [List.ofFn_eq_map] using σ.map_finRange_perm⟩)
-    ⟨fun σ τ h => Equiv.ext fun i =>
-        congrFun (List.ofFn_injective (congrArg Subtype.val h)) i,
-      fun w => by
-      have hlen : w.val.length = n := w.property.length_eq.trans length_finRange
-      have hmem (x : Fin n) : x ∈ w.val := w.property.symm.subset (mem_finRange x)
-      let e : Fin n ≃ Fin w.val.length := finCongr hlen.symm
-      let σ : Equiv.Perm (Fin n) := e.trans
-        ((w.property.nodup_iff.mpr (nodup_finRange n)).getEquivOfForallMemList w.val hmem)
-      refine ⟨σ, Subtype.ext ?_⟩
-      change ofFn (fun i : Fin n => w.val.get (Fin.cast hlen.symm i)) = w.val
-      rw [← List.ofFn_congr hlen w.val.get, List.ofFn_get]⟩
-
-private def tableauShape {α : Type*} [LinearOrder α]
-    (rows : List (List α)) (hrows : rows.IsTableauRows) : YoungDiagram :=
-  YoungDiagram.ofRowLens (rows.map length) hrows.sortedGE_map_length
-
-private theorem rowLens_tableauShape {α : Type*} [LinearOrder α]
-    (rows : List (List α)) (hrows : rows.IsTableauRows) :
-    (tableauShape rows hrows).rowLens = rows.map length := by
-  apply YoungDiagram.rowLens_ofRowLens_eq_self
-  intro k hk
-  obtain ⟨row, hrow, rfl⟩ := mem_map.mp hk
-  exact List.length_pos_iff.mpr fun hnil => hrows.nil_notMem (hnil ▸ hrow)
-
-private theorem card_tableauShape {α : Type*} [LinearOrder α]
-    (rows : List (List α)) (hrows : rows.IsTableauRows) :
-    (tableauShape rows hrows).card = rows.flatten.length := by
-  rw [← YoungDiagram.sum_rowLens_eq_card, rowLens_tableauShape, length_flatten]
 
 private def castRows {m n : ℕ} (h : m = n) (rows : List (List (Fin n))) :
     List (List (Fin m)) := by
@@ -139,9 +106,7 @@ private noncomputable def rskMap {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     ⟨p.2, isLatticeWord_robinsonSchensted_snd w, fun i => by
       rw [← length_getD_robinsonSchensted_fst w]
       rw [← YoungDiagram.getD_rowLens, ← hshape, map_length_castRows]
-      change (p.1.getD i []).length =
-        (p.1.map length).getD i (length ([] : List (Fin n)))
-      rw [getD_map]⟩
+      exact length_getD_eq_getD_map_length p.1 i⟩
   have hμ : YoungDiagram.ofPartition μ = ν := YoungDiagram.ofPartition_toPartition hcard
   exact ⟨μ, castStandardYoungTableau hμ.symm P, castStandardYoungTableau hμ.symm Q⟩
 
@@ -212,8 +177,7 @@ private theorem rskMap_surjective {n : ℕ} : Function.Surjective (rskMap (n := 
   have hshape (i : ℕ) : (rows.getD i []).length = Q.rowWord.count i := by
     rw [Q.count_rowWord, ← YoungDiagram.getD_rowLens,
       ← P.map_length_toRows, ← map_length_castRows]
-    change (rows.getD i []).length = (rows.map length).getD i (length ([] : List (Fin n)))
-    rw [getD_map]
+    exact length_getD_eq_getD_map_length rows i
   obtain ⟨w, hwRS⟩ := (exists_robinsonSchensted_eq_iff (p := (rows, Q.rowWord))).mpr
     ⟨hrows, Q.isLatticeWord_rowWord, hshape⟩
   have hw : w.Perm (finRange n) := by
@@ -222,7 +186,9 @@ private theorem rskMap_surjective {n : ℕ} : Function.Surjective (rskMap (n := 
     exact hletters.symm.trans hcontent
   obtain ⟨σ, hσ⟩ := (permutationWordEquiv n).surjective ⟨w, hw⟩
   refine ⟨σ, rskData_injective ?_⟩
-  have hword : List.ofFn σ = w := congrArg Subtype.val hσ
+  have hword : List.ofFn σ = w := by
+    have := congrArg Subtype.val hσ
+    simpa only [permutationWordEquiv_apply_coe] using this
   rw [rskData_rskMap, hword, hwRS]
   simp [rskData, rows, map_val_castRows]
 
