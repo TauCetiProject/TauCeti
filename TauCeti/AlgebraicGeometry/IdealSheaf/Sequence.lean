@@ -9,10 +9,6 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
-public import Mathlib.Topology.Sheaves.LocallySurjective
-import Mathlib.Algebra.Category.Grp.Abelian
-import Mathlib.Algebra.Category.Grp.EpiMono
-import Mathlib.CategoryTheory.Sites.Abelian
 
 /-!
 # The exact sequence of a closed subscheme
@@ -118,19 +114,9 @@ def isLimitKernelForkSheafι :
 
 /-- The restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}` is an epimorphism: on an affine open it is the
 quotient map `Γ(X, U) ⟶ Γ(X, U) ⧸ I(U)`, and affine opens form a basis. -/
-instance epi_toPushforwardSubscheme : Epi I.toPushforwardSubscheme := by
-  let F := TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X
-  have hepi : Epi (F.map I.toPushforwardSubscheme) := by
-    refine (TopCat.Sheaf.isLocallySurjective_iff_epi _).mp ?_
-    refine (TopCat.Presheaf.isLocallySurjective_iff _).mpr fun U t z hz ↦ ?_
-    obtain ⟨_, ⟨V, hV, rfl⟩, hzV, hVU⟩ :=
-      X.isBasis_affineOpens.exists_subset_of_mem_open hz U.2
-    obtain ⟨s, hs⟩ := I.subschemeι_app_surjective ⟨V, hV⟩
-      (((Scheme.Modules.pushforward I.subschemeι).obj
-        (SheafOfModules.unit I.subscheme.ringCatSheaf)).presheaf.map (homOfLE hVU).op t)
-    exact ⟨V, hVU, ⟨s, hs⟩, hzV⟩
-  have : F.Faithful := inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
-  exact F.epi_of_epi_map hepi
+instance epi_toPushforwardSubscheme : Epi I.toPushforwardSubscheme :=
+  Scheme.Modules.Hom.epi_of_surjective_on_affineOpens _ fun U hU ↦
+    I.subschemeι_app_surjective ⟨U, hU⟩
 
 /-- **The exact sequence of a closed subscheme**
 `0 ⟶ I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)} ⟶ 0`. -/
