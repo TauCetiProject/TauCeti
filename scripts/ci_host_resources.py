@@ -20,6 +20,7 @@ import time
 
 INTERVAL = 5
 MAX_SAMPLES = 2880
+DESCENDANT_GRACE = 1.0
 MAX_READ = 65536
 
 
@@ -211,19 +212,37 @@ def main():
               'command_max_process_rss_bytes': 0, 'command_block_input_ops': 0,
               'command_block_output_ops': 0}
     reaped = 0
+    reaped_signals = []
     code = None
+    drain_deadline = None
     try:
         while True:
             try:
-                pid, status, usage = os.wait4(-1 if restore_subreaper else child.pid, 0)
+                pid, status, usage = os.wait4(-1 if restore_subreaper else child.pid, os.WNOHANG)
             except InterruptedError:
                 continue
             except ChildProcessError:
                 break
+            if pid == 0:
+                if code is None and child.returncode is not None:
+                    code = child.returncode
+                    sampler.missing.add('primary-resource-accounting-unavailable')
+                if code is not None:
+                    if drain_deadline is None:
+                        drain_deadline = time.monotonic() + DESCENDANT_GRACE
+                    if cancelled or time.monotonic() >= drain_deadline:
+                        sampler.missing.add('descendant-accounting-unfinished')
+                        break
+                time.sleep(.02)
+                continue
             reaped += 1
+            reaped_code = os.waitstatus_to_exitcode(status)
+            if reaped_code < 0:
+                reaped_signals.append(-reaped_code)
             if pid == child.pid:
-                code = os.waitstatus_to_exitcode(status)
+                code = reaped_code
                 child.returncode = code
+                drain_deadline = time.monotonic() + DESCENDANT_GRACE
             totals['command_cpu_user_s'] += usage.ru_utime
             totals['command_cpu_system_s'] += usage.ru_stime
             totals['command_max_process_rss_bytes'] = max(
@@ -242,7 +261,7 @@ def main():
         code = child.returncode
         sampler.missing.add('primary-resource-accounting-unavailable')
     assert code is not None
-    interrupted = bool(cancelled) or code < 0
+    interrupted = bool(cancelled or reaped_signals) or code < 0 or 'descendant-accounting-unfinished' in sampler.missing
     if restore_subreaper and interrupted:
         # Killing a PID-namespace init can destroy live children before their
         # resource usage propagates. Preserve these lower bounds as partial.
@@ -266,7 +285,8 @@ def main():
                   'exit_code': code, 'cancel_signals': cancelled,
                   'command_accounting_scope': ('partial-reaped-descendants' if interrupted else 'reaped-descendants')
                       if restore_subreaper else 'direct-child-only',
-                  'reaped_processes': reaped, **totals,
+                  'reaped_processes': reaped, 'reaped_termination_signals': reaped_signals, **totals,
+                  'observer_cpu_s': time.process_time(),
                   **sampler.summary()}
         out = Path(args.out)
         temporary = out.with_suffix('.tmp')

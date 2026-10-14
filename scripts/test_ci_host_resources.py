@@ -86,6 +86,87 @@ class HostResourcesTests(unittest.TestCase):
             self.assertEqual(value['command_accounting_scope'], 'direct-child-only')
             self.assertIn('descendant-accounting-unavailable', value['missing'])
 
+    def test_signal_killed_adopted_worker_marks_accounting_partial(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            command = [sys.executable, '-c', textwrap.dedent('''
+                import os, signal, time
+                if os.fork() == 0:
+                    time.sleep(.05)
+                    sum(i*i for i in range(1000000))
+                    os.kill(os.getpid(), signal.SIGKILL)
+                os._exit(0)
+            ''')]
+            self.assertEqual(self.invoke(command, out), 0)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['exit_code'], 0)
+            self.assertEqual(value['cancel_signals'], [])
+            self.assertEqual(value['reaped_termination_signals'], [signal.SIGKILL])
+            self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+            self.assertIn('descendant-accounting-interrupted', value['missing'])
+
+    def test_unfinished_adopted_worker_cannot_delay_completion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out, ready = Path(directory) / 'resources.json', Path(directory) / 'worker'
+            command = [sys.executable, '-c', textwrap.dedent(f'''
+                import os, time
+                from pathlib import Path
+                if os.fork() == 0:
+                    Path({str(ready)!r}).write_text(str(os.getpid()))
+                    time.sleep(30)
+                    os._exit(0)
+                os._exit(7)
+            ''')]
+            try:
+                with patch.object(host, 'DESCENDANT_GRACE', .1):
+                    start = time.monotonic()
+                    self.assertEqual(self.invoke(command, out), 7)
+                    self.assertLess(time.monotonic() - start, 2)
+                value = json.loads(out.read_text())
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-unfinished', value['missing'])
+            finally:
+                if ready.exists():
+                    worker = int(ready.read_text())
+                    os.kill(worker, signal.SIGKILL)
+                    os.waitpid(worker, 0)
+
+    def test_cancellation_after_monitor_exit_flushes_without_waiting_for_worker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out, ready = Path(directory) / 'resources.json', Path(directory) / 'worker'
+            command = textwrap.dedent(f'''
+                import os, time
+                from pathlib import Path
+                if os.fork() == 0:
+                    Path({str(ready)!r}).write_text(str(os.getpid()))
+                    time.sleep(30)
+                    os._exit(0)
+                os._exit(0)
+            ''')
+            child = subprocess.Popen([sys.executable, str(HERE / 'ci_host_resources.py'),
+                '--out', str(out), '--', sys.executable, '-c', command])
+            try:
+                deadline = time.monotonic() + 10
+                while not ready.exists() and time.monotonic() < deadline:
+                    time.sleep(.01)
+                self.assertTrue(ready.exists())
+                time.sleep(.05)
+                child.send_signal(signal.SIGTERM)
+                self.assertEqual(child.wait(timeout=3), 0)
+                value = json.loads(out.read_text())
+                self.assertEqual(value['cancel_signals'], [signal.SIGTERM])
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-unfinished', value['missing'])
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if ready.exists():
+                    try:
+                        os.kill(int(ready.read_text()), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
     def test_signal_completion_race_preserves_status_when_popen_reaps_first(self):
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory) / 'resources.json'
