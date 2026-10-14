@@ -113,6 +113,13 @@ theorem antitone_decreasingMerge (ha : BddAbove (Set.range a)) (hb : BddAbove (S
   antitone_nat_of_succ_le fun _ ↦ decreasingMerge_le fun _ _ hq hr ↦
     le_decreasingMerge ha hb (hq.comp (Fin.castSucc_injective _)) fun i ↦ hr i.castSucc
 
+/-- A finset of naturals with more than `k` elements contains an element at least `k`. -/
+private theorem exists_le_of_lt_card {t : Finset ℕ} {k : ℕ} (hk : k < t.card) :
+    ∃ m ∈ t, k ≤ m := by
+  by_contra! h
+  exact hk.not_ge ((Finset.card_le_card fun m hm ↦ Finset.mem_range.mpr (h m hm)).trans
+    (Finset.card_range k).le)
+
 /-- For antitone sequences, a threshold is attained by `n + 1` distinct entries exactly when it
 bounds the first `i` terms of `a` and the first `j` terms of `b` for some `i + j = n + 1`. -/
 private theorem exists_injective_iff (ha : Antitone a) (hb : Antitone b) :
@@ -131,15 +138,9 @@ private theorem exists_injective_iff (ha : Antitone a) (hb : Antitone b) :
       exact hr l
     refine ⟨u.toLeft.card, u.toRight.card, Finset.card_toLeft_add_card_toRight.trans hu,
       fun k hk ↦ ?_, fun k hk ↦ ?_⟩
-    · obtain ⟨m, hm, hkm⟩ : ∃ m ∈ u.toLeft, k ≤ m := by
-        by_contra! h
-        exact hk.not_ge ((Finset.card_le_card fun m hm ↦ Finset.mem_range.mpr (h m hm)).trans
-          (Finset.card_range k).le)
+    · obtain ⟨m, hm, hkm⟩ := exists_le_of_lt_card hk
       exact (hmem _ (Finset.mem_toLeft.mp hm)).trans (ha hkm)
-    · obtain ⟨m, hm, hkm⟩ : ∃ m ∈ u.toRight, k ≤ m := by
-        by_contra! h
-        exact hk.not_ge ((Finset.card_le_card fun m hm ↦ Finset.mem_range.mpr (h m hm)).trans
-          (Finset.card_range k).le)
+    · obtain ⟨m, hm, hkm⟩ := exists_le_of_lt_card hk
       exact (hmem _ (Finset.mem_toRight.mp hm)).trans (hb hkm)
   · -- Take the first `i` indices of `a` followed by the first `j` indices of `b`.
     rintro ⟨i, j, hij, hi, hj⟩

@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.LinearMap
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
-# The `ℓ^p` product: coordinate bounds and components of indicators
+# The `ℓ^p` product: coordinate bounds, components of indicators, and block sums
 
 Mathlib bounds each factor of `WithLp p (α × β)` by the whole (`WithLp.norm_fst_le` and
 `WithLp.norm_snd_le`) and computes the norm exactly for `p = 1` and `p = 2`.  This file records
@@ -25,8 +25,8 @@ Mathlib's `norm_indicator_eq_indicator_norm` does for the norm.
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
-orthogonal block sum `f ⊕ g`. Its rank is the sum of the ranks of `f` and `g`, and its operator
-norm is the larger of the two operator norms.
+orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
+ranks of `f` and `g`, and its operator norm is the larger of the two operator norms.
 
 ## Main statements
 
@@ -38,6 +38,7 @@ norm is the larger of the two operator norms.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
   of the component.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
+* `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
 -/
@@ -120,6 +121,18 @@ end Indicator
 
 end TauCeti
 
+namespace LinearMap
+
+/-- Lifting a linear map to `WithLp` does not change its rank. -/
+theorem rank_withLpMap {p : ℝ≥0∞} {K V V' : Type*} [Ring K] [AddCommGroup V] [Module K V]
+    [AddCommGroup V'] [Module K V'] (f : V →ₗ[K] V') : (f.withLpMap p).rank = f.rank := by
+  -- Conjugating by the linear equivalences `WithLp.linearEquiv` does not change the range's rank.
+  rw [LinearMap.rank, LinearMap.withLpMap, LinearMap.range_comp,
+    LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
+  exact LinearEquiv.rank_map_eq _ _
+
+end LinearMap
+
 namespace ContinuousLinearMap
 
 section Topological
@@ -150,7 +163,51 @@ theorem coe_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
       ((f : α →ₗ[𝕜] α').prodMap (g : β →ₗ[𝕜] β')).withLpMap p :=
   (rfl)
 
+/-- The block sum of zero maps is zero. -/
+theorem withLpProdMap_zero :
+    (0 : α →L[𝕜] α').withLpProdMap p (0 : β →L[𝕜] β') = 0 := by
+  ext x
+  simp
+
 end Topological
+
+section Seminormed
+
+-- `Fact (1 ≤ p)` and the seminorms on `α'` and `β'` provide the topological additive group
+-- structure on `WithLp p (α' × β')`, which the operations on continuous linear maps into it need.
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 α β α' β' : Type*} [Semiring 𝕜]
+  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
+  [SeminormedAddCommGroup α'] [Module 𝕜 α'] [SeminormedAddCommGroup β'] [Module 𝕜 β']
+
+/-- The block sum of sums is the sum of the block sums. -/
+theorem withLpProdMap_add (f f' : α →L[𝕜] α') (g g' : β →L[𝕜] β') :
+    (f + f').withLpProdMap p (g + g') = f.withLpProdMap p g + f'.withLpProdMap p g' := by
+  ext x
+  simp [← WithLp.toLp_add]
+
+end Seminormed
+
+section SeminormedRing
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 α β α' β' : Type*} [Ring 𝕜]
+  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
+  [SeminormedAddCommGroup α'] [Module 𝕜 α'] [SeminormedAddCommGroup β'] [Module 𝕜 β']
+
+/-- The block sum of negations is the negation of the block sum. -/
+theorem withLpProdMap_neg (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
+    (-f).withLpProdMap p (-g) = -f.withLpProdMap p g := by
+  ext x
+  simp [← WithLp.toLp_neg]
+
+/-- The block sum of differences is the difference of the block sums. -/
+theorem withLpProdMap_sub (f f' : α →L[𝕜] α') (g g' : β →L[𝕜] β') :
+    (f - f').withLpProdMap p (g - g') = f.withLpProdMap p g - f'.withLpProdMap p g' := by
+  ext x
+  simp [← WithLp.toLp_sub]
+
+end SeminormedRing
 
 /-- The rank of a block sum is the sum of the ranks of the blocks. -/
 theorem rank_withLpProdMap {p : ℝ≥0∞} {𝕜 α β : Type*} {α' : Type u} {β' : Type v}
@@ -159,24 +216,7 @@ theorem rank_withLpProdMap {p : ℝ≥0∞} {𝕜 α β : Type*} {α' : Type u} 
     [TopologicalSpace α'] [AddCommGroup α'] [Module 𝕜 α']
     [TopologicalSpace β'] [AddCommGroup β'] [Module 𝕜 β'] (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     (f.withLpProdMap p g).rank = Cardinal.lift.{v} f.rank + Cardinal.lift.{u} g.rank := by
-  -- Conjugating by the linear equivalences `WithLp.linearEquiv` does not change the range's rank.
-  rw [← LinearMap.rank_prodMap, coe_withLpProdMap, LinearMap.rank, LinearMap.withLpMap,
-    LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
-  exact LinearEquiv.rank_map_eq _ _
-
-section Seminormed
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 α β α' β' : Type*} [Ring 𝕜]
-  [SeminormedAddCommGroup α] [Module 𝕜 α] [SeminormedAddCommGroup β] [Module 𝕜 β]
-  [SeminormedAddCommGroup α'] [Module 𝕜 α'] [SeminormedAddCommGroup β'] [Module 𝕜 β']
-
-/-- The block sum of differences is the difference of the block sums. -/
-theorem withLpProdMap_sub (f f' : α →L[𝕜] α') (g g' : β →L[𝕜] β') :
-    (f - f').withLpProdMap p (g - g') = f.withLpProdMap p g - f'.withLpProdMap p g' := by
-  ext x
-  simp [← WithLp.toLp_sub]
-
-end Seminormed
+  rw [coe_withLpProdMap, LinearMap.rank_withLpMap, LinearMap.rank_prodMap]
 
 section Normed
 

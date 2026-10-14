@@ -41,7 +41,7 @@ The two inequalities hold separately at greater generality.
   and the first `j` of `T₂` exceed `t`, coercive subspaces of ranks `i` and `j` for the blocks
   combine into a subspace of rank `n + 1` on which `T₁ ⊕ T₂` is `t`-coercive. This needs the
   converse min–max localization `TauCeti.HasMinMaxLowerBound` for each block, which holds for
-  complete inner product source spaces.
+  maps from complete inner product spaces into inner product spaces.
 
 ## Main results
 
@@ -49,7 +49,7 @@ The two inequalities hold separately at greater generality.
 * `ContinuousLinearMap.decreasingMerge_le_singularValue_withLpProdMap`: the reverse inequality,
   for blocks with the converse min–max localization property.
 * `ContinuousLinearMap.singularValue_withLpProdMap`: `aₙ(T₁ ⊕ T₂) = (a(T₁) ⊔↓ a(T₂))ₙ` for blocks
-  with complete inner product source spaces.
+  from complete inner product spaces into inner product spaces.
 
 ## References
 
@@ -142,10 +142,11 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E₁ E₂ F₁ F₂ : Type*} [R
   [SeminormedAddCommGroup F₁] [InnerProductSpace 𝕜 F₁]
   [SeminormedAddCommGroup F₂] [InnerProductSpace 𝕜 F₂]
 
-/-- **Approximation numbers of an orthogonal block sum.** For bounded maps out of complete inner
-product spaces, the approximation numbers of the orthogonal block sum `T₁ ⊕ T₂` are the generalized
-decreasing merge of those of the blocks: `aₙ(T₁ ⊕ T₂) = (a(T₁) ⊔↓ a(T₂))ₙ`. The same holds for the
-block sum on the `ℓ^p` products, for every `1 ≤ p ≤ ∞`. -/
+/-- **Approximation numbers of an orthogonal block sum.** For bounded maps from complete inner
+product spaces into inner product spaces, the approximation numbers of the orthogonal block sum
+`T₁ ⊕ T₂` are the generalized decreasing merge of those of the blocks:
+`aₙ(T₁ ⊕ T₂) = (a(T₁) ⊔↓ a(T₂))ₙ`. The same holds for the block sum on the `ℓ^p` products, for
+every `1 ≤ p ≤ ∞`. -/
 theorem singularValue_withLpProdMap (T₁ : E₁ →L[𝕜] F₁) (T₂ : E₂ →L[𝕜] F₂) (n : ℕ) :
     (T₁.withLpProdMap p T₂).singularValue n =
       decreasingMerge T₁.singularValue T₂.singularValue n :=
