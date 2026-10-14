@@ -352,6 +352,14 @@ lemma homologyMap_comp_singularHomologyπ (n : ℕ) :
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).homologyMap_hom_homologyπ R n
 
+variable {P P'} in
+/-- The map from ambient to relative singular homology is natural in maps of pairs. -/
+@[reassoc (attr := simp)]
+lemma singularHomologyπ_naturality (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n ≫ P'.singularHomologyπ R n =
+      P.singularHomologyπ R n ≫ TopPair.singularHomologyMap f R n :=
+  SSetPair.homologyπ_naturality (toSSetPair.map f) R n
+
 end Homology
 
 section LongExactSequence
