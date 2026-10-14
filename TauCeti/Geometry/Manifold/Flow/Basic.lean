@@ -127,7 +127,7 @@ theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
       fun p : ℝ × M ↦ (p.2, p.1)) =
     fun p : ℝ × M ↦ flowOf v p.1 p.2 := by
     funext p
-    exact flowOf_apply v p.1 p.2
+    exact (flowOf_apply v p.1 p.2).symm
   have hdomain : (fun p : ℝ × M ↦ (p.2, p.1)) ⁻¹'
       maximalIntegralCurveFlowDomain v = flowDomain v := by
     rfl
