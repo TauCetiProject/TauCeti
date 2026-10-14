@@ -226,13 +226,20 @@ theorem torsionCoeffIncl_apply {m : ℕ} (P : W.TorsionCoeff m) :
     W.torsionCoeffIncl m P = (P : W.PointCoeff) :=
   (rfl)
 
+/-- A natural number invertible in `K` is nonzero in `Kˢ`, as the results over `Kˢ` that this file
+applies require. -/
+theorem _root_.IsUnit.natCast_separableClosure_ne_zero {m : ℕ} (hm : IsUnit (m : K)) :
+    (m : SeparableClosure K) ≠ 0 := by
+  rw [← map_natCast (algebraMap K (SeparableClosure K))]
+  exact (map_ne_zero _).2 hm.ne_zero
+
 open scoped Classical in
 /-- **`E(Kˢ)[m]` has `m²` points** when `m` is invertible in `K`. -/
 theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
     Nat.card (W.TorsionCoeff m) = m ^ 2 := by
   have hm' : (((m : ℕ) : ℤ) : SeparableClosure K) ≠ 0 := by
-    rw [Int.cast_natCast, ← map_natCast (algebraMap K (SeparableClosure K))]
-    exact (map_ne_zero _).2 hm.ne_zero
+    rw [Int.cast_natCast]
+    exact hm.natCast_separableClosure_ne_zero
   rw [Nat.card_congr (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _).toEquiv]
   -- `W.PointCoeff` carries the group law for one choice of decidable equality on `Kˢ`, and
   -- `natCard_torsionBy` is stated for another; the two choices agree.
@@ -254,10 +261,8 @@ def kummerShortExact [W.IsElliptic] (m : ℕ) (hm : IsUnit (m : K)) :
   incl_injective := Subtype.val_injective
   proj_surjective P := by
     classical
-    have hm' : ((m : ℕ) : SeparableClosure K) ≠ 0 := by
-      rw [← map_natCast (algebraMap K (SeparableClosure K))]
-      exact (map_ne_zero _).2 hm.ne_zero
-    obtain ⟨Q, hQ⟩ := Affine.nsmul_surjective (W⁄(SeparableClosure K)).toAffine hm'
+    obtain ⟨Q, hQ⟩ := Affine.nsmul_surjective (W⁄(SeparableClosure K)).toAffine
+      hm.natCast_separableClosure_ne_zero
       (W.pointCoeffEquiv.symm P)
     refine ⟨W.pointCoeffEquiv Q, ?_⟩
     rw [nsmulAddMonoidHom_apply, ← map_nsmul]

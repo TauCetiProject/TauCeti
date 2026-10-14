@@ -212,9 +212,7 @@ theorem twoTorsionCharacter_eq_zero_iff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) :
     {S : W.TorsionCoeff 2} :
     W.twoTorsionCharacter hT hψ h2 S = 0 ↔
       (S : W.PointCoeff) = 0 ∨ (S : W.PointCoeff) = W.basePointCoeff (some e t hT) := by
-  have h2L : (2 : SeparableClosure K) ≠ 0 := by
-    rw [← map_ofNat (algebraMap K (SeparableClosure K)), ← Nat.cast_ofNat]
-    exact (map_ne_zero _).2 h2.ne_zero
+  have h2L : (2 : SeparableClosure K) ≠ 0 := by exact_mod_cast h2.natCast_separableClosure_ne_zero
   have hneg : (-1 : (SeparableClosure K)ˣ) ≠ 1 := fun h ↦ h2L <| by
     have := congrArg (fun u : (SeparableClosure K)ˣ ↦ (u : SeparableClosure K)) h
     simp only [Units.val_neg, Units.val_one] at this
@@ -231,20 +229,18 @@ it appears in Silverman X.1.4. -/
 theorem twoTorsionCharacter_eq_weilPairing [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
     (S : W.TorsionCoeff 2) :
     W.twoTorsionCharacter hT hψ h2 S =
-      Isogeny.weilPairing (W⁄(SeparableClosure K)) 2
-        (by rw [← map_natCast (algebraMap K _)]; exact (map_ne_zero _).2 h2.ne_zero)
+      Isogeny.weilPairing (W⁄(SeparableClosure K)) 2 h2.natCast_separableClosure_ne_zero
         (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _ S)
         (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _ (W.twoTorsionCoeff hT hψ)) := by
   set φ := AddEquiv.torsionByCongr W.pointCoeffEquiv.symm ((2 : ℕ) : ℤ)
   set e := (Isogeny.weilPairing (W⁄(SeparableClosure K)) 2
-    (by rw [← map_natCast (algebraMap K _)]; exact (map_ne_zero _).2 h2.ne_zero)).flip
-      (φ (W.twoTorsionCoeff hT hψ))
+    h2.natCast_separableClosure_ne_zero).flip (φ (W.twoTorsionCoeff hT hψ)) with he_def
   set H := AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)
   -- `e₂(·, T)` is trivial on `O` and on `T`, since it is alternating, and nontrivial on
   -- `E(Kˢ)[2]`, since it is nondegenerate and `T ≠ O`; so its kernel is the subgroup `{O, T}` of
   -- index two, and it takes the value `-1` off it.
-  -- the right-hand side is `e (φ S)`, by `AddMonoidHom.flip_apply`
-  change _ = e (φ S)
+  -- the right-hand side is `e (φ S)`
+  rw [← AddMonoidHom.flip_apply, ← he_def]
   -- `e₂(·, T)` vanishes on `{O, T}`
   have hH {S : W.TorsionCoeff 2} (hS : S ∈ H) : e (φ S) = 0 := by
     rcases (mem_zmultiples_twoTorsionCoeff_iff W hT hψ).1 hS with h | h
@@ -328,10 +324,16 @@ private theorem evalEval_polynomialY_galois (σ : AbsoluteGaloisGroup K)
       (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval (σ x) (σ y) := by
   simp [Affine.evalEval_polynomialY, WeierstrassCurve.baseChange, map_ofNat]
 
+omit [DecidableEq K] in
+/-- The Galois group acts on a unit `Units.mk0 a _` of `Kˢ` through `a`. -/
+private theorem val_smul_mk0 (σ : AbsoluteGaloisGroup K) {a : SeparableClosure K} (ha : a ≠ 0) :
+    ((σ • Units.mk0 a ha : (SeparableClosure K)ˣ) : SeparableClosure K) = σ a := by
+  rw [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0]
+
 open scoped Classical in
 /-- **The Galois action on a half of a point of `E(K)`**: if `2Q` lies in `E(K)`, then the
-coordinates of `σ Q` are those of `Q + S`, for the point `S = σ Q - Q` of order two, and `S` is `O`
-or `T` exactly when `σ Q - Q` is. -/
+coordinates of `σ Q` are those of `Q + S`, for the point `S = σ Q - Q`, which has `2S = O`, and `S`
+is `O` or `T` exactly when `σ Q - Q` is. -/
 private theorem coords_smul_eq_and_add_self_eq_zero {P : W.toAffine.Point}
     {x y : SeparableClosure K} {hQ : (W⁄(SeparableClosure K)).toAffine.Nonsingular x y}
     (h2Q : 2 • W.pointCoeffEquiv (some x y hQ) = W.basePointCoeff P) (σ : AbsoluteGaloisGroup K) :
@@ -401,17 +403,13 @@ private theorem exists_sq_eq_and_smul_eq {xP yP : K} (hP : W.toAffine.Nonsingula
       pow_eq_zero_iff (n := 2) two_ne_zero |>.1 <| by rw [← hdup, sub_self, zero_mul]
     have hxne := Affine.X_ne_of_evalEval_polynomialY_ne_zero hT'.1 hψ' hQ'.1 hy
     refine ⟨Units.mk0 (x - ι xP) (sub_ne_zero.2 hxne), Units.ext ?_, fun σ ↦ Units.ext ?_⟩
-    · rw [Units.val_pow_eq_pow_val, Units.val_mk0, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+    · simp only [Units.val_pow_eq_pow_val, Units.val_mk0, Units.coe_map, RingHom.toMonoidHom_eq_coe,
         MonoidHom.coe_ofClass, coe_twoDescentUnit_some_of_eq _ _ _ _ rfl, map_neg]
       linear_combination hx2
     · obtain ⟨hσx, -, hS, hiff⟩ := hσ σ
-      rw [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0,
-        Units.val_mul, Units.val_mk0, map_sub, AlgEquiv.commutes, hσx,
-        Affine.xCoord_add_sub hT' hψ' hQ' hy (by rwa [hc']) hS, apply_ite Units.val]
-      simp only [hiff]
-      split_ifs
-      · rw [Units.val_one]
-      · rw [Units.val_neg, Units.val_one]
+      simp only [Units.val_mul, val_smul_mk0, Units.val_mk0]
+      rw [map_sub, AlgEquiv.commutes, hσx, Affine.xCoord_add_sub hT' hψ' hQ' hy (by rwa [hc']) hS]
+      simp only [hiff, apply_ite Units.val, Units.val_one, Units.val_neg, ι]
   · -- `P ≠ T`: the root is `((x - e)² + W_X(e, t)) / ψ₂(Q)`
     set ψ := (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y
     set c := W.toAffine.polynomialX.evalEval e t
@@ -420,19 +418,14 @@ private theorem exists_sq_eq_and_smul_eq {xP yP : K} (hP : W.toAffine.Nonsingula
     have hα0 : ((x - ι e) ^ 2 + ι c) / ψ ≠ 0 := fun h0 ↦ hxe <| ι.injective <| by
       rwa [h0, zero_pow two_ne_zero, eq_comm, sub_eq_zero] at hα2
     refine ⟨Units.mk0 _ hα0, Units.ext ?_, fun σ ↦ Units.ext ?_⟩
-    · rw [Units.val_pow_eq_pow_val, Units.val_mk0, hα2, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-        MonoidHom.coe_ofClass, coe_twoDescentUnit_some_of_ne _ _ _ _ hxe, map_sub]
+    · simp [hα2, coe_twoDescentUnit_some_of_ne _ _ _ _ hxe]
     · obtain ⟨hσx, hσy, hS, hiff⟩ := hσ σ
       have hroot :=
         Affine.sq_xCoord_add_sub_add_evalEval_polynomialX_div hT' hψ' hQ' hy hS
       rw [hc'] at hroot
-      rw [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0,
-        Units.val_mul, Units.val_mk0, map_div₀, map_add, map_pow, map_sub, AlgEquiv.commutes,
-        AlgEquiv.commutes, evalEval_polynomialY_galois, hσx, hσy, hroot, apply_ite Units.val]
-      simp only [hiff]
-      split_ifs
-      · rw [Units.val_one]
-      · rw [Units.val_neg, Units.val_one]
+      simp only [Units.val_mul, val_smul_mk0, Units.val_mk0, map_div₀, map_add, map_pow, map_sub]
+      rw [AlgEquiv.commutes, AlgEquiv.commutes, evalEval_polynomialY_galois, hσx, hσy, hroot]
+      simp only [hiff, apply_ite Units.val, Units.val_one, Units.val_neg, ι, ψ]
 
 /-- **The Kummer map of `[2]`, read through a point of order two, is `x - e`** (Silverman X.1.4).
 Let `T = (e, t)` be a point of `W(K)` of order two, with `2` invertible in `K`. The character

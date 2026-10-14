@@ -20,9 +20,10 @@ for the value at `T` of minus the partial derivative of the Weierstrass polynomi
 nonzero, since `T` is nonsingular and the other partial derivative `ψ₂(e, t)` vanishes; when the
 equation is `y² = (x - e)(x - e')(x - e'')`, it is `(e - e')(e - e'')`.
 
-An affine point `(x, y)` has order two exactly when `ψ₂(x, y) = 0`, and the points of order two
-are `O`, `T` and the points `(e₀, t₀)` with `ψ₂(e₀, t₀) = 0` and `e₀ ≠ e`. This file records these
-facts and the formulas in which `c_T` appears, valid in every characteristic.
+An affine point `(x, y)` has order two exactly when `ψ₂(x, y) = 0`, and the points `S` with
+`2S = O` (the `2`-torsion) are `O`, `T` and the points `(e₀, t₀)` with `ψ₂(e₀, t₀) = 0` and
+`e₀ ≠ e`. This file records these facts and the formulas in which `c_T` appears, valid in every
+characteristic.
 
 * Translation by `T` inverts `x - e` up to `c_T`: for an affine point `P = (x, y)` with `x ≠ e`,
   `(x(P + T) - e)(x - e) = c_T`, and `ψ₂(P + T)(x - e) = -ψ₂(P)(x(P + T) - e)`.
@@ -40,8 +41,8 @@ of multiplication by `2` (Silverman X.1.4).
 
 * `WeierstrassCurve.Affine.some_add_self_eq_zero_iff`: `(x, y)` has order two exactly when
   `ψ₂(x, y) = 0`.
-* `WeierstrassCurve.Affine.eq_zero_or_eq_or_exists_of_add_self_eq_zero`: a point of order two is
-  `O`, `T`, or a point of order two over another root.
+* `WeierstrassCurve.Affine.eq_zero_or_eq_or_exists_of_add_self_eq_zero`: a point `S` with
+  `2S = O` is `O`, `T`, or a point of order two over another root.
 * `WeierstrassCurve.Affine.evalEval_polynomialX_add_evalEval_polynomialX`: for two distinct points
   of order two, `c_T + c_{T₀} = (e - e₀)²`.
 * `WeierstrassCurve.Affine.xCoord_add_sub_mul_sub`: `(x(P + T) - e)(x - e) = c_T`.
@@ -204,7 +205,7 @@ theorem evalEval_polynomialY_add_ne_zero (h : W.Nonsingular x y)
   exact hA
 
 /-- **The square root of `x(2P) - e` under translation by `E[2]`**: if `T = (e, t)` has
-`ψ₂(e, t) = 0`, `P = (x, y)` has `ψ₂(x, y) ≠ 0` and `S` has order two, then `r(P + S) = ±r(P)` for
+`ψ₂(e, t) = 0`, `P = (x, y)` has `ψ₂(x, y) ≠ 0` and `2S = O`, then `r(P + S) = ±r(P)` for
 `r = ((x - e)² + W_X(e, t)) / ψ₂`, with the sign `+` exactly when `S ∈ {O, T}`. -/
 theorem sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular e t)
     (hψ : W.polynomialY.evalEval e t = 0) (h : W.Nonsingular x y)
@@ -239,7 +240,7 @@ theorem sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular e t)
       ψ * ((x - e₀) - (x' - e₀)) * hA
 
 /-- **The square root of `c_T` under translation by `E[2]`**: if `T = (e, t)` has `ψ₂(e, t) = 0`,
-`P = (x, y)` has `ψ₂(x, y) ≠ 0` and `(x - e)² = c_T`, as when `2P = T`, and `S` has order two, then
+`P = (x, y)` has `ψ₂(x, y) ≠ 0` and `(x - e)² = c_T`, as when `2P = T`, and `2S = O`, then
 `x(P + S) - e = ±(x - e)`, with the sign `+` exactly when `S ∈ {O, T}`. -/
 theorem xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
     (h : W.Nonsingular x y) (hy : W.polynomialY.evalEval x y ≠ 0)
