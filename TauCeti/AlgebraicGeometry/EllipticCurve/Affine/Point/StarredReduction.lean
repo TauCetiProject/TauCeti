@@ -47,6 +47,8 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
   Step 8 such a solution gives a root of the residue quadratic modulo `ϖ`
   (`WeierstrassCurve.exists_eq_sq_mul_of_equation`), and on the normal form of Tate's algorithm
   at `III*` it has `ϖ² ∣ x` and `ϖ³ ∣ y` (`WeierstrassCurve.sq_dvd_and_pow_three_dvd_of_equation`).
+* `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal`: at an additive symbol,
+  if no integral solution has both coordinates divisible by `ϖ`, then `E₀(F) = W(F)`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal_IStar_zero`: at `I₀*`, if
   the residue cubic has no root in `k`, then `E₀(F) = W(F)`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal_IVStar`: at `IV*`, if the
@@ -170,7 +172,7 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 the maximal ideal, and no integral solution has both coordinates divisible by `ϖ`, then every point
 has nonsingular reduction. The stopping test forces `ϖ ≠ 0`, so `ϖ` is prime, which the hypothesis
 on solutions may use. -/
-private theorem nonsingularReduction_eq_top_of_isTateTerminal {ϖ : v.valuationSubring}
+theorem nonsingularReduction_eq_top_of_isTateTerminal {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     {s : TauCeti.ReductionSymbol} (hs : (integralModel v.valuationSubring W).IsTateTerminal ϖ s)
     (hsI : ∀ n, s ≠ .I n)
