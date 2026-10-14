@@ -444,6 +444,17 @@ theorem fiberRightAction_apply (L : LocalCoefficientSystem.{u, v, w} R X)
     fiberRightAction L g = op (monodromyRepresentation L x g⁻¹) :=
   (rfl)
 
+/-- **The right action on the fiber of a pullback**: the right action of `π₁(X, x)` on the fiber
+`(f^* L)_x = L_{f x}` is that of `π₁(Y, f x)` on the fiber of `L`, along `π₁(f)`. -/
+theorem fiberRightAction_pullback {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) :
+    fiberRightAction (x := x) ((pullback (R := R) f).obj L) =
+      (fiberRightAction (x := f x) L).comp (FundamentalGroup.map f x) :=
+  -- The fibers `(f^* L)_x` and `L_{f x}` agree by definition, which `rw` cannot see through, so
+  -- this is the one place where the two right actions are compared up to unfolding.
+  MonoidHom.ext fun g ↦ congrArg (fun h ↦ op (monodromyRepresentation L (f x) h))
+    (map_inv (FundamentalGroup.map f x) g)
+
 variable {R : Type u} [CommRing R]
 
 /-- The right action of group algebra elements on fibers is natural in the local system. -/
