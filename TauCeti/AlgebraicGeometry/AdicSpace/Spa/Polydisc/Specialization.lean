@@ -78,16 +78,6 @@ local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily
 
 /-! ### Transferring comparisons along a specialization -/
 
-/-- A point of the closed unit disc compares constants by their norms. -/
-private theorem valuation_weightedC_le_iff (x : closedPolydisc 1 K) (c d : K) :
-    x.1.valuation (C c) ≤ x.1.valuation (C d) ↔ ‖c‖ ≤ ‖d‖ := by
-  rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
-
-/-- A point of the closed unit disc does not vanish on a nonzero constant. -/
-private theorem valuation_weightedC_ne_zero (x : closedPolydisc 1 K) {c : K} (hc : c ≠ 0) :
-    x.1.valuation (C c) ≠ 0 := fun h ↦ hc <| norm_le_zero_iff.mp <| by
-  simpa [h] using (valuation_weightedC_le_iff x c 0).mp
-
 omit [IsUltrametricDist K] in
 /-- **Comparisons at a specialization hold at the generization.** If `x ⤳ z`, then
 `z(f) ≤ z(g) ≠ 0` implies `x(f) ≤ x(g)`: the basic open `{v : v(f) ≤ v(g) ≠ 0}` contains `z`,
@@ -123,7 +113,7 @@ private theorem forall_lt_and_forall_gt_of_specializes {x z : closedPolydisc 1 K
   obtain ⟨d, hd, hPd⟩ := hP
   have hz₀ : z.1.valuation (T - C a) ≠ 0 :=
     (zero_le.trans_lt (valuation_lt_of_specializes h (hx.1 d hPd)
-      (Or.inl (valuation_weightedC_ne_zero z hd)))).ne'
+      (Or.inl ((closedPolydisc_valuation_weightedC_eq_zero_iff z d).not.mpr hd)))).ne'
   exact ⟨fun c hc ↦ valuation_lt_of_specializes h (hx.1 c hc) (Or.inr hz₀),
     fun c hc ↦ valuation_lt_of_specializes h (hx.2 c hc) (Or.inl hz₀)⟩
 
@@ -159,11 +149,10 @@ private theorem exists_eq_discPointAbove_of_discPoint_specializes {a : K} (ha : 
       simpa using (valuation_le_iff _ _ _).mpr (((mem_closedPolydisc_iff 1 K z.1).mp z.2).2 _
         (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight 0)))
     have hCa : z.1.valuation (C a) ≤ 1 := by
-      simpa using (valuation_weightedC_le_iff z a 1).mpr (by simpa using ha)
-    have hc₀1 : z.1.valuation (C c₀) = 1 := by
-      have hc : ‖c₀‖ = ‖(1 : K)‖ := by rw [hc₀, hr1, norm_one]
-      simpa using le_antisymm ((valuation_weightedC_le_iff z c₀ 1).mpr hc.le)
-        ((valuation_weightedC_le_iff z 1 c₀).mpr hc.ge)
+      simpa using (closedPolydisc_valuation_weightedC_le_iff z a 1).mpr (by simpa using ha)
+    have hc₀1 : z.1.valuation (C c₀) = 1 :=
+      (closedPolydisc_valuation_weightedC_eq_of_norm_eq z (by rw [hc₀, hr1, norm_one] :
+        ‖c₀‖ = ‖(1 : K)‖)).trans (by simp)
     exact (hlt₀.trans_le ((Valuation.map_sub _ _ _).trans (max_le hT hCa))).ne hc₀1
   obtain ⟨-, hgt⟩ := forall_lt_and_forall_gt_of_discPoint_specializes ha hr₀ hr₁ h
   refine ⟨hr, (eq_discPointAbove_iff z ha hr₀ hr).mpr fun c ↦ ?_⟩
@@ -171,7 +160,8 @@ private theorem exists_eq_discPointAbove_of_discPoint_specializes {a : K} (ha : 
   refine ⟨fun hle ↦ lt_of_not_ge fun hc ↦ ?_, fun hc ↦ (hgt c hc).le⟩
   -- `z(c₀) < z(T - a) ≤ z(c) ≤ z(c₀)`
   exact lt_irrefl _
-    (hlt₀.trans_le (hle.trans ((valuation_weightedC_le_iff z c c₀).mpr (by rwa [hc₀]))))
+    (hlt₀.trans_le (hle.trans
+      ((closedPolydisc_valuation_weightedC_le_iff z c c₀).mpr (by rwa [hc₀]))))
 
 /-- A specialization `z` of `η_{a,r}` with `z(T - a)` below a constant `c₀` of norm `r` is
 `η_{a,r⁻}`. -/
@@ -185,7 +175,8 @@ private theorem eq_discPointBelow_of_discPoint_specializes {a : K} (ha : ‖a‖
   refine ⟨fun hle ↦ lt_of_not_ge fun hc ↦ ?_, fun hc ↦ (hlt c hc).le⟩
   -- `z(c) ≤ z(T - a) < z(c₀) ≤ z(c)`
   exact lt_irrefl _
-    (hle.trans_lt (hgt₀.trans_le ((valuation_weightedC_le_iff z c₀ c).mpr (by rwa [hc₀]))))
+    (hle.trans_lt (hgt₀.trans_le
+      ((closedPolydisc_valuation_weightedC_le_iff z c₀ c).mpr (by rwa [hc₀]))))
 
 /-- A specialization `z` of `η_{a,r}` at which `z(T - a)` has the value of every constant of norm
 `r` is `η_{a,r}`, or is `η_{b,r⁻}` for some `b` with `‖b - a‖ = r`. -/
