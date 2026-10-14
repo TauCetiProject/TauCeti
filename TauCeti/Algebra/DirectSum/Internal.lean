@@ -29,7 +29,9 @@ map whose range contains the homogeneous projections of its elements, with
 
 A third group is about maps compatible with a decomposition: if a linear map carries each
 summand of a spanning family into the corresponding member of an independent family, then its
-kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`.
+kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely,
+`iSupIndep.map_of_ker_inf_iSup_le` shows that a linear map preserves independence when the
+part of its kernel in the span is spanned by its intersections with the summands.
 
 The file also specializes the compactness bound
 `TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
@@ -328,35 +330,33 @@ theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [
   exact Submodule.sum_mem _ fun i hi ↦
     Submodule.mem_iSup_of_mem i ⟨LinearMap.mem_ker.2 (hzero i hi), hc i⟩
 
-/-- **A homogeneous submodule can be quotiented componentwise.** If `A` is an independent
-family and the part of `U` in the span of `A` is contained in the sum of its intersections with
-the members of `A`, then the members of `A` in `M ⧸ U` are again independent. -/
-theorem iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    {A : ι → Submodule R M} (hA : iSupIndep A) {U : Submodule R M}
-    (hU : U ⊓ (⨆ i, A i) ≤ ⨆ i, U ⊓ A i) : iSupIndep fun i ↦ (A i).map U.mkQ := by
+end TauCeti
+
+/-- A linear map preserves independence of a family of submodules if the part of its kernel
+in their span is spanned by its intersections with the family. In particular, a quotient by a
+homogeneous submodule preserves independence. -/
+theorem iSupIndep.map_of_ker_inf_iSup_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] {A : ι → Submodule R M}
+    (hA : iSupIndep A) (f : M →ₗ[R] N)
+    (hker : LinearMap.ker f ⊓ (⨆ i, A i) ≤ ⨆ i, LinearMap.ker f ⊓ A i) :
+    iSupIndep fun i ↦ (A i).map f := by
   rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
   classical
   intro s v hv hv0 j hj
-  have hall : ∀ i : ι, ∃ y, y ∈ A i ∧ (i ∈ s → U.mkQ y = v i) ∧ (i ∉ s → y = 0) := by
+  have hall : ∀ i : ι, ∃ y, y ∈ A i ∧ (i ∈ s → f y = v i) ∧ (i ∉ s → y = 0) := by
     intro i
     by_cases hi : i ∈ s
-    · obtain ⟨y, hy, hq⟩ := Submodule.mem_map.1 (hv i hi)
-      exact ⟨y, hy, fun _ ↦ hq, fun h ↦ absurd hi h⟩
+    · obtain ⟨y, hy, hf⟩ := Submodule.mem_map.1 (hv i hi)
+      exact ⟨y, hy, fun _ ↦ hf, fun h ↦ absurd hi h⟩
     · exact ⟨0, Submodule.zero_mem _, fun h ↦ absurd h hi, fun _ ↦ rfl⟩
-  choose a haA haQ ha0 using hall
-  have hasum : ∑ i ∈ s, a i ∈ U := by
-    apply (Submodule.Quotient.mk_eq_zero (p := U)).mp
-    calc
-      Submodule.Quotient.mk (∑ i ∈ s, a i) = ∑ i ∈ s, U.mkQ (a i) := by
-        rw [← Submodule.mkQ_apply]
-        rw [map_sum]
-      _ = ∑ i ∈ s, v i := Finset.sum_congr rfl fun i hi ↦ haQ i hi
-      _ = 0 := hv0
+  choose a haA haf ha0 using hall
+  have hasum : ∑ i ∈ s, a i ∈ LinearMap.ker f := by
+    rw [LinearMap.mem_ker, map_sum]
+    exact (Finset.sum_congr rfl fun i hi ↦ haf i hi).trans hv0
   have hasumA : ∑ i ∈ s, a i ∈ ⨆ i, A i :=
     Submodule.sum_mem _ fun i _ ↦ Submodule.mem_iSup_of_mem i (haA i)
-  have hasum' : ∑ i ∈ s, a i ∈ ⨆ i, U ⊓ A i := by
-    exact hU ⟨hasum, hasumA⟩
-  obtain ⟨c, hc, hca⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1 hasum'
+  obtain ⟨c, hc, hca⟩ :=
+    (Submodule.mem_iSup_iff_exists_finsupp _ _).1 (hker ⟨hasum, hasumA⟩)
   have haj : a j = c j := by
     refine (iSupIndep_iff_finsetSum_eq_imp_eq A).1 hA (s ∪ c.support) a c
       (fun i _ ↦ ⟨haA i, (hc i).2⟩) ?_ j (Finset.mem_union_left _ hj)
@@ -370,11 +370,8 @@ theorem iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M
         _ = ∑ i ∈ s ∪ c.support, c i := by
           apply Finset.sum_subset (Finset.subset_union_right)
           simp
-  rw [← haQ j hj, haj]
-  rw [Submodule.mkQ_apply]
-  exact (Submodule.Quotient.mk_eq_zero (p := U)).mpr (hc j).1
-
-end TauCeti
+  rw [← haf j hj, haj]
+  exact (hc j).1
 
 namespace DirectSum.IsInternal
 
