@@ -38,10 +38,7 @@ that the product of fundamental-group elements traverses the right factor first.
 def fundamentalGroupHom (x : X) : MooreLoopSpace X x →* FundamentalGroup X x where
   toFun γ := Inv.inv (α := FundamentalGroup X x) (Path.Homotopic.Quotient.mk γ.toPath)
   map_one' := by
-    have h : (1 : MooreLoopSpace X x).toPath = Path.refl x := by
-      ext t
-      simp [toPath_apply]
-    rw [h]
+    rw [toPath_one]
     exact inv_one
   map_mul' γ δ := by
     let a : FundamentalGroup X x := Path.Homotopic.Quotient.mk γ.toPath
