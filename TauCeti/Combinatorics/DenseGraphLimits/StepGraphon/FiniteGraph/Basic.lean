@@ -210,6 +210,7 @@ theorem exists_stepGraphon_eq_finiteGraphGraphon [NeZero m] (G : SimpleGraph (Fi
 /-- **The graphon of a finite graph is its own block average** over the `m` cells of the unit
 interval: every cell has volume `1 / m`, so averaging over the cell rectangles returns the
 adjacency indicator unchanged. -/
+@[simp]
 theorem stepGraphonAvg_finiteGraphGraphon [NeZero m] (G : SimpleGraph (Fin m)) :
     stepGraphonAvg (μ := volume) (Finpartition.ofFibers (cellFin m))
         (fun _ hp => Finpartition.measurableSet_of_mem_ofFibers measurable_cellFin hp)
