@@ -84,6 +84,8 @@ theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [Topologi
     laplaceBeltrami I f x = divergence I (riemannianGradient I f) x := by
   rw [laplaceBeltrami]
 
+/-- In any orthonormal basis, the divergence is the sum of the diagonal inner products of the
+covariant derivative of the vector field. -/
 theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
