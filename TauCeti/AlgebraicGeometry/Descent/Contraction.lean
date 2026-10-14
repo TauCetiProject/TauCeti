@@ -99,14 +99,18 @@ private noncomputable def descPsh : Y.toPresheafedSpace ⟶ Z.toPresheafedSpace 
       naturality W W' i := by
         simp [map_appLE_assoc, appLE_map] }
 
+/-- On sections over `W`, the composite `c ≫ g` is the restriction of `h` from `h⁻¹ W` to
+`c⁻¹ g⁻¹ W`, since the inverse of `c` on sections cancels against `c`. -/
+private theorem comp_descPsh_c_app (W : Z.Opens) :
+    (c.toPshHom ≫ descPsh c hq hc h hh).c.app (op W) =
+      h.appLE W _ (preimage_descBase_le c hq h hh W) :=
+  ((Category.assoc _ _ _).trans (congrArg _ (@IsIso.inv_hom_id _ _ _ _ _ (hc _)))).trans
+    (Category.comp_id _)
+
 private theorem comp_descPsh : c.toPshHom ≫ descPsh c hq hc h hh = h.toPshHom := by
   refine PresheafedSpace.ext_of_app (comp_descBase c hq h hh) fun W ↦ ?_
-  suffices ∀ i : op (h ⁻¹ᵁ W) ⟶ op (h ⁻¹ᵁ W),
-      h.app W ≫ X.presheaf.map i = h.app W by
-    simpa [descPsh, appLE, ← Functor.map_comp] using this _
-  intro i
-  rw [Subsingleton.elim i (𝟙 _)]
-  simp
+  rw [comp_descPsh_c_app]
+  exact (appLE_map _ _ _).trans (app_eq_appLE h).symm
 
 private theorem isLocalHom_stalkMap_descPsh (y : Y) :
     IsLocalHom ((descPsh c hq hc h hh).stalkMap y).hom := by

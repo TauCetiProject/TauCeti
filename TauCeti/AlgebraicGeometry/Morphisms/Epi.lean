@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
+import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 /-!
 # Epimorphisms of schemes with injective stalk or section maps
@@ -23,7 +24,9 @@ quotient of an affine scheme by a finite group, whose stalk maps are injective b
 
 The same argument works with the maps on sections `Γ(Y, U) → Γ(X, f⁻¹ U)` in place of the stalk
 maps. Their injectivity holds when `𝒪_Y → f_* 𝒪_X` is an isomorphism, a condition on sections
-rather than on stalks, which is how contraction morphisms of curves are controlled.
+rather than on stalks, which is how contraction morphisms of curves are controlled. This version
+uses nothing about schemes and is deduced from its presheafed-space form
+`AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`.
 
 Both hypotheses survive base change along an open immersion `U ⟶ Y`: surjectivity is stable under
 base change, and the stalk maps of `X ×_Y U ⟶ U` are those of `f`, up to the stalk isomorphisms of
@@ -78,18 +81,11 @@ with `f` agree on points because `f` is surjective, and on sections because `f` 
 sections. -/
 theorem epi_of_surjective_of_app_injective (f : X ⟶ Y) [Surjective f]
     (h : ∀ U, Function.Injective (f.app U)) : Epi f := by
-  refine ⟨fun {Z} g g' e ↦ Scheme.Hom.ext ?_ fun U ↦ ?_⟩
-  · ext y
-    obtain ⟨x, rfl⟩ := f.surjective y
-    exact congr($e x)
-  have : Mono (f.app (g' ⁻¹ᵁ U)) := ConcreteCategory.mono_of_injective _ (h _)
-  -- Both sides of `e` restrict sections over `U` to `f⁻¹ (g'⁻¹ U)`; compare them via `appLE`.
-  have key : ∀ (f₁ f₂ : X ⟶ Z), f₁ = f₂ → ∀ h₁ h₂,
-      f₁.appLE U (f ⁻¹ᵁ g' ⁻¹ᵁ U) h₁ = f₂.appLE U (f ⁻¹ᵁ g' ⁻¹ᵁ U) h₂ := by
-    rintro _ _ rfl _ _
-    rfl
-  rw [← cancel_mono (f.app (g' ⁻¹ᵁ U)), Category.assoc, f.app_eq_appLE, map_appLE]
-  exact (comp_appLE f g U _ _).symm.trans ((key _ _ e _ _).trans (comp_appLE f g' U _ _))
+  apply Functor.epi_of_epi_map Scheme.forgetToLocallyRingedSpace
+  apply Functor.epi_of_epi_map LocallyRingedSpace.forgetToSheafedSpace
+  apply Functor.epi_of_epi_map SheafedSpace.forgetToPresheafedSpace
+  exact PresheafedSpace.epi_of_base_surjective_of_c_app_mono _ f.surjective
+    fun U ↦ ConcreteCategory.mono_of_injective _ (h U.unop)
 
 /-- A surjective morphism of schemes which is an isomorphism on sections over every open is an
 epimorphism. -/
