@@ -71,6 +71,17 @@ lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
         0 (by norm_num))
   exact Homeomorph.ulift.symm.pathConnectedSpace
 
+/-- The inclusion of the boundary sphere into the `n`-dimensional disk is a closed embedding. -/
+lemma isClosedEmbedding_diskBoundaryInclusion (n : ℕ) :
+    Topology.IsClosedEmbedding (TopCat.diskBoundaryInclusion.{u} n) := by
+  have : T2Space (TopCat.disk.{u} n) := by
+    -- Typeclass synthesis does not unfold the `TopCat.disk` wrapper, whose carrier is the
+    -- lifted closed ball.
+    change T2Space (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
+    infer_instance
+  exact (TopCat.diskBoundaryInclusion n).hom.continuous.isClosedEmbedding
+    ((TopCat.mono_iff_injective _).mp inferInstance)
+
 end TauCeti.TopCat
 
 namespace TauCeti
@@ -78,16 +89,8 @@ namespace TauCeti
 /-- The standard pair consisting of the `n`-dimensional disk and its boundary, used to express
 relative singular homology of the disk with respect to its boundary. -/
 abbrev diskBoundaryPair (n : ℕ) : TopPair.{u} :=
-  TopPair.of (TopCat.diskBoundaryInclusion n) (by
-    let hT2 : T2Space (TopCat.disk n) := by
-      -- Typeclass synthesis does not unfold the `TopCat.disk` wrapper, whose carrier is the
-      -- lifted closed ball.
-      change T2Space (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
-      infer_instance
-    exact
-      (((ConcreteCategory.hom (TopCat.diskBoundaryInclusion n)).continuous_toFun).isClosedEmbedding
-        ((TopCat.mono_iff_injective _).mp
-          (inferInstance : Mono (TopCat.diskBoundaryInclusion n)))).isEmbedding)
+  TopPair.of (TopCat.diskBoundaryInclusion n)
+    (TopCat.isClosedEmbedding_diskBoundaryInclusion n).isEmbedding
 
 @[simp]
 lemma diskBoundaryPair_fst (n : ℕ) :
