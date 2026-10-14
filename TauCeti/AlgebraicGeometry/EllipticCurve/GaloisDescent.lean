@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Galois descent for Weierstrass curve data
@@ -95,16 +96,11 @@ theorem mem_range_baseChange_iff_fixed (C : VariableChange L) :
         f C ∈ Set.range (algebraMap K L) :=
       (InfiniteGalois.mem_range_algebraMap_iff_fixed _).2 fun σ ↦ by rw [← hf, h]
     -- `map` applies σ coefficientwise; the unit coefficient coerces via `Units.map`.
-    obtain ⟨u, hu⟩ := fixed (fun D ↦ (D.u : L)) fun _ ↦ rfl
-    obtain ⟨r, hr⟩ := fixed VariableChange.r fun _ ↦ rfl
-    obtain ⟨s, hs⟩ := fixed VariableChange.s fun _ ↦ rfl
-    obtain ⟨t, ht⟩ := fixed VariableChange.t fun _ ↦ rfl
-    have hu₀ : u ≠ 0 := by
-      rintro rfl
-      exact C.u.ne_zero (hu.symm.trans (map_zero _))
-    refine ⟨⟨Units.mk0 u hu₀, r, s, t⟩, ?_⟩
-    -- `baseChange` is `map (algebraMap K L)`, and `Units.mk0` has value `u`.
-    exact VariableChange.ext (Units.ext hu) hr hs ht
+    exact (VariableChange.mem_range_baseChange_iff C).2
+      ⟨fixed (fun D ↦ (D.u : L)) fun _ ↦ rfl,
+        fixed VariableChange.r fun _ ↦ rfl,
+        fixed VariableChange.s fun _ ↦ rfl,
+        fixed VariableChange.t fun _ ↦ rfl⟩
 
 end VariableChange
 
