@@ -61,6 +61,8 @@ def basedMapSphereHomeomorph :
   BasedMap.homeomorphGenLoop (sphereCollapse k s₀) s₀ (sphereCollapse_eq_basepoint_iff k s₀)
     (sphereCollapse_surjective k s₀) fun _ _ h => eq_or_mem_boundary_of_sphereCollapse_eq k s₀ h
 
+/-- The homeomorphism `basedMapSphereHomeomorph` takes a based map `f` to the generalized loop
+`z ↦ f (sphereCollapse z)`. -/
 @[simp]
 theorem basedMapSphereHomeomorph_apply
     (f : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x) (z : Fin k → I) :
@@ -98,6 +100,8 @@ def basedMapSphereHomeomorphIteratedLoopSpace (k : ℕ) [NeZero k] (X : BasedTop
       (X.iteratedLoopSpace k).carrier :=
   (basedMapSphereHomeomorph k X.basepoint s₀).trans (iteratedLoopSpaceHomeomorph k X).symm
 
+/-- The cube-loop homeomorphism of the iterated loop space takes a based sphere map to the
+generalized loop of `basedMapSphereHomeomorph`. -/
 @[simp]
 theorem iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace (k : ℕ) [NeZero k]
     (X : BasedTopologicalSpace.{u}) (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)

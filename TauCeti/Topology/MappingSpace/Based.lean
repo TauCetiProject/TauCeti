@@ -57,22 +57,26 @@ variable {B X Y : Type*} [TopologicalSpace B] [TopologicalSpace X] [TopologicalS
 def map (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) : BasedMap B Y b₀ y :=
   ⟨g.comp f.1, by rw [ContinuousMap.comp_apply, f.2, hg]⟩
 
+/-- The map induced on based mapping spaces postcomposes with `g`. -/
 @[simp]
 theorem map_apply (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) (b : B) :
     (map g hg f).1 b = g (f.1 b) := by
   rw [map]
   rfl
 
+/-- The map induced by the identity is the identity. -/
 @[simp]
 theorem map_id (f : BasedMap B X b₀ x) : map (ContinuousMap.id X) rfl f = f :=
   Subtype.ext rfl
 
+/-- The map induced by a composite is the composite of the induced maps. -/
 @[simp]
 theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g y = z)
     (h : C(X, Y)) (hh : h x = y) (f : BasedMap B X b₀ x) :
     map g hg (map h hh f) = map (g.comp h) (by rw [ContinuousMap.comp_apply, hh, hg]) f :=
   Subtype.ext rfl
 
+/-- The map induced on based mapping spaces by a based map is continuous. -/
 theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
     Continuous (map (B := B) (b₀ := b₀) g hg) :=
   continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtype_val)
@@ -87,6 +91,7 @@ out of `B` to generalized loops. -/
 def precompGenLoop (f : BasedMap B X b₀ x) : Ω^ N X x :=
   ⟨f.1.comp q, fun z hz => by simpa [hb z hz] using f.2⟩
 
+/-- The generalized loop of a based map `f` takes the value `f (q z)` at `z`. -/
 @[simp]
 theorem precompGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
     precompGenLoop q b₀ hb f z = f.1 (q z) := by
@@ -99,6 +104,8 @@ variable [T2Space B] (hq : Surjective q)
   (hinj : ∀ z z', q z = q z' → z = z' ∨ (z ∈ Cube.boundary N ∧ z' ∈ Cube.boundary N))
 
 include hq in
+/-- Precomposition with a continuous surjection `q` from a compact space to a Hausdorff space is
+a topological embedding of the based mapping space in the generalized loops. -/
 theorem isEmbedding_precompGenLoop : IsEmbedding (precompGenLoop (X := X) (x := x) q b₀ hb) := by
   have hcont : Continuous (precompGenLoop (X := X) (x := x) q b₀ hb) :=
     continuous_induced_rng.2
@@ -111,6 +118,8 @@ theorem isEmbedding_precompGenLoop : IsEmbedding (precompGenLoop (X := X) (x := 
 variable (hb' : ∀ z, q z = b₀ → z ∈ Cube.boundary N)
 
 include hq hb hb' hinj in
+/-- If `q` is injective off the cube boundary and collapses exactly the boundary to `b₀`, every
+generalized loop is the precomposition of a based map out of `B` with `q`. -/
 theorem precompGenLoop_surjective : Surjective (precompGenLoop (X := X) (x := x) q b₀ hb) := by
   have hqm : IsQuotientMap q :=
     (q.continuous.isClosedMap).isQuotientMap q.continuous hq
@@ -135,6 +144,8 @@ noncomputable def homeomorphGenLoop : BasedMap B X b₀ x ≃ₜ Ω^ N X x :=
     (precompGenLoop_surjective q b₀ (fun z hz => (hbi z).2 hz) hq hinj
       (fun z hz => (hbi z).1 hz))
 
+/-- The homeomorphism `homeomorphGenLoop` takes a based map `f` to the generalized loop
+`z ↦ f (q z)`. -/
 @[simp]
 theorem homeomorphGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
     homeomorphGenLoop q b₀ hbi hq hinj f z = f.1 (q z) := by

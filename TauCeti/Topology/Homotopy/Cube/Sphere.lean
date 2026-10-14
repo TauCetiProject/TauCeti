@@ -40,12 +40,15 @@ def sphereCollapse (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
   (ContinuousMap.mk (onePointHomeomorphSphere k s₀)
     (onePointHomeomorphSphere k s₀).continuous).comp (cubeToOnePoint (Fin k))
 
+/-- The collapse onto the sphere is the collapse of the cube onto `OnePoint (Fin k → ℝ)` followed by
+the homeomorphism with the sphere. -/
 theorem sphereCollapse_apply (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
     (z : Fin k → I) :
     sphereCollapse k s₀ z = onePointHomeomorphSphere k s₀ (cubeToOnePoint (Fin k) z) := by
   rw [sphereCollapse]
   rfl
 
+/-- The collapse sends a point of the cube to the basepoint exactly when it is on the boundary. -/
 @[simp]
 theorem sphereCollapse_eq_basepoint_iff (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
     (z : Fin k → I) : sphereCollapse k s₀ z = s₀ ↔ z ∈ Cube.boundary (Fin k) := by
@@ -54,6 +57,7 @@ theorem sphereCollapse_eq_basepoint_iff (s₀ : sphere (0 : EuclideanSpace ℝ (
   exact ⟨fun hz => (onePointHomeomorphSphere k s₀).injective (hz.trans h.symm),
     fun hz => by rw [hz, h]⟩
 
+/-- Two cube points with the same image under the collapse are equal, or both on the boundary. -/
 theorem eq_or_mem_boundary_of_sphereCollapse_eq
     (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) {z z' : Fin k → I}
     (h : sphereCollapse k s₀ z = sphereCollapse k s₀ z') :
