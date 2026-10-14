@@ -34,6 +34,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.mem_orthogonal_span_singleton_iff`,
   `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: membership in the orthogonal complement of
   the span of one or two vectors.
+* `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
+  which the form is right-separating are independent.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -81,6 +83,16 @@ theorem mem_orthogonal_span_pair_iff (B : LinearMap.BilinForm K V) {x y z : V} :
   · rintro ⟨hx, hy⟩ n hn
     obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hn
     simp [hx, hy]
+
+/-- A family of pairwise orthogonal submodules, on each of which the form is right-separating, is
+independent. -/
+theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι : Type*}
+    {N : ι → Submodule K V} (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    (hN : ∀ i, (B.restrict (N i)).SeparatingRight) : iSupIndep N := by
+  refine fun i ↦ Submodule.disjoint_def.mpr fun x hxi hx ↦ ?_
+  have hle : ⨆ (j) (_ : j ≠ i), N j ≤ B.orthogonal (N i) :=
+    iSup₂_le fun j hj y hy z hz ↦ hO i j (Ne.symm hj) z hz y hy
+  exact congrArg Subtype.val (hN i ⟨x, hxi⟩ fun z ↦ hle hx z z.2)
 
 end LinearMap.BilinForm
 

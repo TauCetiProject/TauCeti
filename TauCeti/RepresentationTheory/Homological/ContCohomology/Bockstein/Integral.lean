@@ -163,14 +163,8 @@ theorem coeffMap_integralBocksteinShortExact_incl (n : ℕ) [NeZero n] (i : ℕ)
     coeffMap (ofDiscreteModuleMap (integralBocksteinShortExact G n).incl.toIntLinearMap
       (integralBocksteinShortExact G n).incl_equivariant) i =
       n • 𝟙 (continuousCohomology i (ofDiscreteModule ℤ G (ULift.{u} ℤ))) := by
-  have h : ofDiscreteModuleMap (integralBocksteinShortExact G n).incl.toIntLinearMap
-      (integralBocksteinShortExact G n).incl_equivariant =
-      n • 𝟙 (ofDiscreteModule ℤ G (ULift.{u} ℤ)) := by
-    ext x
-    rfl
-  rw [h]
-  exact (continuousCohomologyFunctor ℤ G i).map_nsmul.trans
-    (congrArg (n • ·) ((continuousCohomologyFunctor ℤ G i).map_id _))
+  simpa only [integralBocksteinShortExact_incl] using
+    (coeffMap_nsmulAddMonoidHom (G := G) (M := ULift.{u} ℤ) n i)
 
 /-- A class in integral degree `i + 1` comes from the integral Bockstein exactly when it is
 annihilated by `n`. -/

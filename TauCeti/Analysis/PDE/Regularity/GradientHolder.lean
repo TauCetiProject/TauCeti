@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
 public import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.BallAverage
@@ -171,8 +172,7 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
   -- On `B_r`, the field `G - G x₀` is bounded by `K r^α`.
   have hbd : ∀ x ∈ ball x₀ r, ‖G x - G x₀‖ ≤ K * r ^ (α : ℝ) := fun x hx => by
     rw [← dist_eq_norm]
-    calc dist (G x) (G x₀) ≤ K * dist x x₀ ^ (α : ℝ) := hG.dist_le hx (mem_ball_self hr)
-      _ ≤ K * r ^ (α : ℝ) := by gcongr; exact (mem_ball.1 hx).le
+    exact hG.dist_le_mul_rpow_of_mem_ball hx
   have hGc : MemLp (fun x => G x - G x₀) 2
       (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     MemLp.of_bound (((hG.continuousOn hα).aestronglyMeasurable
@@ -182,7 +182,8 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
   obtain ⟨w, -, -, ⟨h, hh, hwh⟩, hest⟩ :=
     exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball (Omega := B) (z := x₀)
       (R := r) subset_rfl (W1p.restrictL hB u)
-  have hest' := hest hGc.toLp (forall_energyFormH1_restrictL_eq_inner hB hu hGc)
+  have hest' := hest hGc.toLp (forall_energyFormH1_restrictL_eq_inner hB
+    (memLp_top_const (energyIntegrand (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) 0 0)) hu hGc)
   -- The gradient of the replacement is harmonic.
   obtain ⟨H, hH, hwH⟩ :=
     W1p.exists_harmonicOnNhd_ae_eq_gradient (hh.weaklyHarmonicOn.congr_ae hwh.symm)
@@ -317,7 +318,7 @@ private theorem exists_setAverage_norm_gradient_sub_le {α : ℝ≥0} (hα : 0 <
   have hR : 0 < R := ht.trans_le htR
   have hsub := (ball_subset_ball htR).trans hball
   -- The averages over `closedBall x t` and `ball x t` agree.
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball x ht)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball x t)]
   -- Jensen's inequality bounds the mean oscillation by the square mean oscillation.
   have hJ : (⨍ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖) ^ 2 ≤
       (∫ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖ ^ 2) /
@@ -367,7 +368,7 @@ private theorem norm_setAverage_closedBall_gradient_le
         (R ^ (-((n : ℝ) + 1) / 2) * ‖W1p.gradient u‖) := by
   have hω : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     measureReal_ball_pos _ _ one_pos
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball z hR)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball z R)]
   -- Hölder's bound `‖⨍_B f‖ ≤ |B|^{-1/2} ‖f‖_{L²(B)}` on an average, with
   -- `‖f‖_{L²(B)} ≤ ‖f‖_{L²(Ω)}`.
   have h := (enorm_setAverage_le (mu := volume) (p := 2) one_le_two ENNReal.ofNat_ne_top
@@ -467,7 +468,8 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
           ((closedBall_subset_ball ht).trans (hball z hz)) measure_closedBall_lt_top.ne
       · rw [ht]
         exact ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two (hball z hz)
-          measure_ball_lt_top.ne).congr_set_ae (volume.addHaar_closedBall_ae_eq_ball z hR)
+          measure_ball_lt_top.ne).congr_set_ae
+            (volume.addHaar_closedBall_ae_eq_ball z R)
   obtain ⟨a, ha⟩ : ∃ a, a = R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖ := ⟨_, rfl⟩
   have ha0 : 0 ≤ a := ha ▸ by positivity
   rw [← ha]
