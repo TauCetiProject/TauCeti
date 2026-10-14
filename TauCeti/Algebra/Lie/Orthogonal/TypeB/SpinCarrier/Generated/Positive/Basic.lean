@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Smooth
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Connected
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.GeometricallyReduced
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
-import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # The positive subgroup of the generated type-B spin carrier
@@ -20,9 +20,8 @@ ideal killed by those coordinate maps. Over any field this positive subgroup is 
 geometrically connected. The restriction from the full generated carrier is surjective, and
 the positive root and torus maps factor through it.
 
-This construction supplies the canonical positive subgroup needed for a Borel subgroup and a
-pinning of the generated spin carrier. It does not yet prove maximal solvability or identify the
-subgroup with a Borel.
+This construction supplies the canonical positive subgroup used to build a Borel subgroup and a
+pinning of the generated spin carrier.
 
 ## Main declarations
 
@@ -165,8 +164,8 @@ theorem mem_carrierDefiningIdeal
     x ∈ carrierDefiningIdeal n A ↔ (restriction n A).hom x = 0 := by
   rw [← kerOfSurjective_restriction, HopfIdeal.mem_kerOfSurjective]
 
-/-- The full carrier's positive generators restrict to the positive subgroup's generator
-lifts. -/
+/-- Each positive numbered-root and weight-torus lift of the full generated carrier factors
+through restriction to the positive subgroup, followed by that subgroup's generator lift. -/
 @[reassoc (attr := simp)]
 theorem restriction_comp_commonKernelLift (j : Fin (n + 1) ⊕ Unit) :
     restriction n A ≫ CommHopfAlgCat.commonKernelLift (generator n A) j =
@@ -203,11 +202,10 @@ variable (k : Type u) [Field k]
 /-- The positive subgroup generated over any field is smooth, including over imperfect fields. -/
 theorem smooth_coordinateHopfAlgebra :
     smoothCommHopfAlgProperty k (coordinateHopfAlgebra n k) := by
-  let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain n k j) := by
-    rintro (i | ⟨⟩)
-    · exact isGeometricallyReduced_of_smooth k _
-    · exact (DiagonalizableGroup.geometricallyReduced_coordinateRing k
-        (SplitTorus.characterGroup (Fin (n + 1)))).isGeometricallyReduced
+  let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain n k j) := fun j ↦
+    TypeBSpinCarrier.isGeometricallyReduced_generatorCoordinateAlgebra n k (match j with
+      | .inl i => .inl (.inl i)
+      | .inr u => .inr u)
   exact
     CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_geometricallyReduced
       (generator n k)
@@ -215,16 +213,11 @@ theorem smooth_coordinateHopfAlgebra :
 /-- The positive subgroup generated over any field is geometrically connected. -/
 theorem geometricallyConnected_coordinateHopfAlgebra :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra n k) := by
-  apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
-    (generator n k)
-  rintro (i | ⟨⟩)
-  · rw [geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed]
-    intro K _ _ _
-    have := AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k K
-    let e := Algebra.TensorProduct.comm k (AdditiveGroup.coordinateHopfAlgebra k) K
-    exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
-  · exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
-      (SplitTorus.characterGroup (Fin (n + 1)))
+  exact geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
+    (generator n k) (fun j ↦
+      TypeBSpinCarrier.geometricallyConnected_generatorCoordinateAlgebra n k (match j with
+        | .inl i => .inl (.inl i)
+        | .inr u => .inr u))
 
 end
 
