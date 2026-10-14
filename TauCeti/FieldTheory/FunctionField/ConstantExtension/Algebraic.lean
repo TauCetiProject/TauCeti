@@ -45,13 +45,12 @@ theorem isAlgebraic_constantCompositum
   exact (IsIntegral.algebraMap
     ((Algebra.IsAlgebraic.isAlgebraic (R := k) c).isIntegral)).tower_top
 
-/-- An algebraic algebra of constants makes the whole field algebraic over the original one, when
-the ambient field is the compositum. No finite-degree or separability assumption on the constants
-is needed. -/
+/-- If `F'` is the compositum of `F` with an algebraic algebra of constants, then `F'` is
+algebraic over `F`. -/
 theorem isAlgebraic_of_constantCompositum_eq_top
     {k' : Type u'} [CommRing k'] [Algebra k k'] [Algebra k' F']
-    [IsScalarTower k k' F'] [Algebra.IsAlgebraic k k']
-    (h : constantCompositum F k' F' = ⊤) : Algebra.IsAlgebraic F F' := by
+    [IsScalarTower k k' F'] [Algebra.IsAlgebraic k k'] (h : constantCompositum F k' F' = ⊤) :
+    Algebra.IsAlgebraic F F' := by
   have halg := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
   rw [h] at halg
   exact IntermediateField.topEquiv.isAlgebraic_iff.mp halg
@@ -99,7 +98,7 @@ theorem IsFunctionField.of_constantCompositum_eq_top
   let : Algebra.EssFiniteType k F := hF.essFiniteType
   let : Algebra.EssFiniteType k' F' := essFiniteType_of_constantCompositum_eq_top (k := k) h
   rw [isFunctionField_iff_trdeg_eq_one]
-  let : Algebra.IsAlgebraic F F' := isAlgebraic_of_constantCompositum_eq_top (k := k) h
+  have := isAlgebraic_of_constantCompositum_eq_top (k := k) h
   rw [trdeg_eq_of_isAlgebraic_base (R := k)]
   exact hF.trdeg_eq_one_of_isAlgebraic
 

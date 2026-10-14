@@ -11,10 +11,11 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalize
 /-!
 # The symplectic diagonal normalizer acts faithfully modulo the torus
 
-Over a field with a unit different from its inverse, the normalizer of the paired diagonal
+Over a domain with a unit different from its inverse, the normalizer of the paired diagonal
 torus consists exactly of the symplectic monomial matrices. Its permutation action on the
 `2m` coordinate lines has kernel the diagonal torus, and therefore induces an injective
-homomorphism from the normalizer quotient to the symmetric group.
+homomorphism from the normalizer quotient to the symmetric group. In rank zero the
+normalizer quotient is trivial over every commutative ring.
 
 This supplies the coordinate-line action used to compare the normalizer quotient with the
 type-C Weyl group. The image of the action is not computed here. The unit hypothesis separates
@@ -53,7 +54,18 @@ theorem mem_normalizer_diagonalTorus_of_coe_mem [CommRing k] {g : GLSymplecticFi
     Subgroup.coe_mul, Subgroup.coe_inv] using
     Subgroup.mem_normalizer_iff.mp hg (h : GL (Fin (m + m)) k)
 
-variable [Field k] (u : kˣ) (hu : u ≠ u⁻¹)
+/-- In rank zero, the paired diagonal normalizer quotient is trivial over any commutative
+ring. -/
+instance [CommRing k] [IsEmpty (Fin m)] :
+    Subsingleton (Subgroup.normalizerQuotient (diagonalTorus k m)) := by
+  have hm : m = 0 := Fin.isEmpty_iff.mp inferInstance
+  subst m
+  apply QuotientGroup.subsingleton_iff.mpr
+  apply top_unique
+  intro g _
+  exact mem_diagonalTorus_iff.mpr (Matrix.isDiag_of_subsingleton _)
+
+variable [CommRing k] [IsCancelMulZero k] (u : kˣ) (hu : u ≠ u⁻¹)
 
 include u hu
 

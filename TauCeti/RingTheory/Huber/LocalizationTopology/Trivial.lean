@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
 public import TauCeti.RingTheory.Huber.RingOfDefinition
 
 /-!
@@ -121,6 +121,21 @@ theorem locIdealImage_denom_one (n : ℕ) : locIdealImage P T 1 A n = P.idealIma
     simpa using algebraMap_mem_locIdealImage P T 1 A hy
 
 end Topological
+
+/-- The trivial rational presentation `({1}, 1)`, whose rational subset is the whole spectrum. -/
+noncomputable def Presentation.trivial [TopologicalSpace A] (P : PairOfDefinition A) :
+    Presentation P :=
+  ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩
+
+/-- The numerator set of the trivial presentation is the singleton containing `1`. -/
+@[simp]
+theorem Presentation.trivial_num [TopologicalSpace A] (P : PairOfDefinition A) :
+    (Presentation.trivial P).num = {1} := (rfl)
+
+/-- The denominator of the trivial presentation is `1`. -/
+@[simp]
+theorem Presentation.trivial_den [TopologicalSpace A] (P : PairOfDefinition A) :
+    (Presentation.trivial P).den = 1 := (rfl)
 
 section Topological
 

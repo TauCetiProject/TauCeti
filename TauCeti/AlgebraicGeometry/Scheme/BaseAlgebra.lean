@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
-public import TauCeti.AlgebraicGeometry.ResidueDegree
 public import Mathlib.AlgebraicGeometry.FunctionField
+public import Mathlib.AlgebraicGeometry.ResidueField
 
 /-!
 # Algebra structures induced by a scheme over an affine base
@@ -30,8 +30,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   algebra structures.
 * `Scheme.baseStalkFunctionFieldIsScalarTower`: compatibility of the base, stalk, and
   function-field algebra structures.
-* `Scheme.finrank_residueField_eq_residueDegree`: over a field, the dimension of a residue field
-  is the residue degree of the structure morphism.
+* `Scheme.residueFieldBaseAlgebra_eq_compHom`: the base-ring algebra structure on a residue field
+  is the one used by Mathlib's `Scheme.Hom.residueDegree_eq_finrank`.
 -/
 
 public section
@@ -160,6 +160,21 @@ lemma _root_.AlgebraicGeometry.Scheme.residue_baseRingToStalk (x : X) (c : k) :
     X.germ_residue (U := ⊤) x trivial
   simp only [Scheme.baseRingToStalk, RingHom.comp_apply, ← CommRingCat.comp_apply, h]
 
+/-- The base-ring algebra structure on a residue field evaluates at `x` the pullback of a
+function on `Spec k` along the structure morphism. This is the algebra structure in Mathlib's
+`Scheme.Hom.residueDegree_eq_finrank`, so over a field `finrank k κ(x)` is the residue degree of
+the structure morphism at `x`. -/
+lemma _root_.AlgebraicGeometry.Scheme.residueFieldBaseAlgebra_eq_compHom (x : X) :
+    Scheme.residueFieldBaseAlgebra k X x = Algebra.compHom (X.residueField x)
+      ((X.Γevaluation x).hom.comp
+        ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop).hom) := by
+  refine Algebra.algebra_ext _ _ fun c ↦ ?_
+  rw [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk,
+    Algebra.compHom_algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
+    RingHom.comp_apply, Scheme.residue_baseRingToStalk,
+    Scheme.Modules.baseRingToGlobalSections_apply, RingHom.comp_apply, CommRingCat.hom_comp,
+    RingHom.comp_apply]
+
 /-- The canonical maps from the base ring through a stalk to the function field form a scalar
 tower. -/
 instance _root_.AlgebraicGeometry.Scheme.baseStalkFunctionFieldIsScalarTower [IsIntegral X]
@@ -257,32 +272,6 @@ theorem _root_.AlgebraicGeometry.Scheme.globalRationalFunctionsEquivFunctionFiel
   rfl
 
 end RationalFunctions
-
-section Field
-
-variable (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
-
-/-- Over a field, the dimension of a scheme-theoretic residue field is the residue degree of the
-structure morphism. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.finrank_residueField_eq_residueDegree (x : X) :
-    Module.finrank k (X.residueField x) = (X ↘ Spec (.of k)).residueDegree x := by
-  let f := X ↘ Spec (.of k)
-  let _ : Algebra ((Spec (.of k)).residueField (f x)) (X.residueField x) :=
-    (f.residueFieldMap x).hom.toAlgebra
-  rw [Scheme.Hom.residueDegree]
-  let e : k ≃+* (Spec (.of k)).residueField (f x) := RingEquiv.ofBijective
-    (((Spec (.of k)).Γevaluation (f x)).hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom)
-    (TauCeti.AlgebraicGeometry.Γevaluation_comp_ΓSpecIso_inv_bijective k (f x))
-  refine Algebra.finrank_eq_of_equiv_equiv e (RingEquiv.refl (X.residueField x)) ?_
-  ext c
-  simp only [RingHom.algebraMap_toAlgebra, e, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, RingEquiv.ofBijective_apply, RingHom.comp_apply,
-    RingEquiv.refl_apply]
-  rw [Scheme.Γevaluation_naturality_apply, Scheme.residue_baseRingToStalk,
-    Scheme.Modules.baseRingToGlobalSections_apply]
-
-end Field
 
 end
 

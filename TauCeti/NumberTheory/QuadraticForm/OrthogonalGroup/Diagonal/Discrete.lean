@@ -6,18 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Full
-public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.CompactOpen
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.EventualContainment
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
 import TauCeti.NumberTheory.Padics.RatCast
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Rational orthogonal and Spin points are discrete in the full adeles
 
-Let `Q` be a quadratic form on a finite-dimensional rational vector space `V`, and let `U` be
-compatible compact-open reference data whose orthogonal reference subgroups are, at almost every
-prime, contained in the stabilizer of the `ℤ_p`-span of a fixed rational basis `b`. This file
-proves that the rational points `O(V)(ℚ)`, `SO(V)(ℚ)` and `Spin(V)(ℚ)` form discrete subgroups of
-the full adelic groups `O(V)(𝔸)`, `SO(V)(𝔸)` and `Spin(V)(𝔸)` built from `U`.
+Let `Q` be a nondegenerate quadratic form on a finite-dimensional rational vector space `V`,
+and let `U` be any compatible compact-open reference data. Compactness and eventual membership
+of rational reflections imply that the reference subgroups are eventually integral in any
+rational basis. This file proves that the rational points `O(V)(ℚ)`, `SO(V)(ℚ)` and `Spin(V)(ℚ)`
+form discrete subgroups of the full adelic groups `O(V)(𝔸)`, `SO(V)(𝔸)` and `Spin(V)(𝔸)`
+built from `U`.
 
 For `O` the argument is the classical one. In the neighbourhood of the identity consisting of the
 adelic isometries whose real component has matrix entries of absolute value less than `2` in `b`,
@@ -29,9 +31,12 @@ diagonal image. The real factor is what bounds the size of these integer entries
 For `SO` the neighbourhood is pulled back along the injective inclusion `SO → O`, and for `Spin`
 along `Spin → SO`, whose rational fibres have at most two points for a nondegenerate form.
 
-The integral reference family `OrthogonalCompactOpens.integral` of a basis satisfies the
-integrality hypothesis at every prime, so its rational points are discrete in its full adelic
-groups.
+The same argument applies to degenerate forms for `O` and `SO` whenever eventual containment
+in an integral family is supplied explicitly.
+
+In rank at most one, `SO(V)(ℚ)` is trivial even for a degenerate form, so its full adelic
+diagonal is discrete without either nondegeneracy or an eventual-integrality hypothesis.
+The corresponding `O` and `Spin` results below retain their nondegeneracy hypothesis.
 
 ## Main results
 
@@ -39,8 +44,10 @@ groups.
   `OrthogonalCompactOpens.discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal`,
   `OrthogonalCompactOpens.discreteTopology_range_fullAdelicSpinDiagonal`: the rational points
   are discrete in the full adelic groups.
-* `OrthogonalCompactOpens.discreteTopology_range_fullAdelicOrthogonalDiagonal_integral` and its
-  `SO` and `Spin` companions: the same for the integral family of a basis.
+* The `O` and `SO` criteria with suffix `_of_eventually_integral` also
+  apply to degenerate forms.
+* `discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_finrank_le_one` removes the
+  nondegeneracy hypothesis for `SO` in rank at most one.
 
 ## References
 
@@ -168,7 +175,7 @@ private theorem exists_mem_nhds_finite_preimage_fullAdelicSpinDiagonal (hQ : Q.N
 /-- **Rational isometries are discrete in the full adeles.** If the orthogonal reference
 subgroups of `U` are, at almost every prime, integral in a rational basis `b`, then the diagonal
 image of `O(V)(ℚ)` is a discrete subgroup of `O(V)(𝔸)`. -/
-theorem discreteTopology_range_fullAdelicOrthogonalDiagonal
+theorem discreteTopology_range_fullAdelicOrthogonalDiagonal_of_eventually_integral
     (hU : ∀ᶠ p : Nat.Primes in cofinite,
       U.orthogonal p ≤ integralOrthogonalSubgroup (Q.baseChange ℚ_[p]) (b.baseChange ℚ_[p])) :
     DiscreteTopology U.fullAdelicOrthogonalDiagonal.range := by
@@ -178,7 +185,7 @@ theorem discreteTopology_range_fullAdelicOrthogonalDiagonal
 /-- **Rational proper isometries are discrete in the full adeles.** If the orthogonal reference
 subgroups of `U` are, at almost every prime, integral in a rational basis `b`, then the diagonal
 image of `SO(V)(ℚ)` is a discrete subgroup of `SO(V)(𝔸)`. -/
-theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal
+theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_eventually_integral
     (hU : ∀ᶠ p : Nat.Primes in cofinite,
       U.orthogonal p ≤ integralOrthogonalSubgroup (Q.baseChange ℚ_[p]) (b.baseChange ℚ_[p])) :
     DiscreteTopology U.fullAdelicSpecialOrthogonalDiagonal.range := by
@@ -186,39 +193,46 @@ theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal
     U.exists_mem_nhds_finite_preimage_fullAdelicSpecialOrthogonalDiagonal hU
   exact MonoidHom.discreteTopology_range_of_finite_preimage _ hW hfin
 
-/-- **Rational Spin points are discrete in the full adeles.** For a nondegenerate form, if the
-orthogonal reference subgroups of `U` are, at almost every prime, integral in a rational basis
-`b`, then the diagonal image of `Spin(V)(ℚ)` is a discrete subgroup of `Spin(V)(𝔸)`. -/
-theorem discreteTopology_range_fullAdelicSpinDiagonal (hQ : Q.Nondegenerate)
-    (hU : ∀ᶠ p : Nat.Primes in cofinite,
-      U.orthogonal p ≤ integralOrthogonalSubgroup (Q.baseChange ℚ_[p]) (b.baseChange ℚ_[p])) :
+/-- **Low-rank rational proper isometries are discrete in the full adeles.** In rank at most one,
+the rational special orthogonal group is trivial, so neither nondegeneracy nor an integrality
+hypothesis on the compatible compact-open tuple is needed. -/
+theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_finrank_le_one
+    (hV : Module.finrank ℚ V ≤ 1) :
+    DiscreteTopology U.fullAdelicSpecialOrthogonalDiagonal.range := by
+  have hbot := specialOrthogonalGroup_eq_bot_of_finrank_le_one Q hV
+  let _ : Subsingleton (specialOrthogonalGroup Q) := hbot ▸ inferInstance
+  let _ : Subsingleton U.fullAdelicSpecialOrthogonalDiagonal.range :=
+    (Set.subsingleton_coe _).mpr U.fullAdelicSpecialOrthogonalDiagonal.subsingleton_coe_range
+  exact Subsingleton.discreteTopology
+
+/-- Rational isometries of a nondegenerate rational quadratic space form a discrete subgroup of
+the full adelic orthogonal group for every compatible compact-open reference family. -/
+theorem discreteTopology_range_fullAdelicOrthogonalDiagonal (hQ : Q.Nondegenerate) :
+    DiscreteTopology U.fullAdelicOrthogonalDiagonal.range := by
+  classical
+  let b := Module.Free.chooseBasis ℚ V
+  exact U.discreteTopology_range_fullAdelicOrthogonalDiagonal_of_eventually_integral
+    (U.eventually_orthogonal_le_integralOrthogonalSubgroup hQ b)
+
+/-- Rational proper isometries of a nondegenerate rational quadratic space form a discrete
+subgroup of the full adelic special orthogonal group for every compatible reference family. -/
+theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal (hQ : Q.Nondegenerate) :
+    DiscreteTopology U.fullAdelicSpecialOrthogonalDiagonal.range := by
+  classical
+  let b := Module.Free.chooseBasis ℚ V
+  exact
+    U.discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_eventually_integral
+      (U.eventually_orthogonal_le_integralOrthogonalSubgroup hQ b)
+
+/-- Rational Spin points of a nondegenerate rational quadratic space form a discrete subgroup
+of the full adelic Spin group for every compatible compact-open reference family. -/
+theorem discreteTopology_range_fullAdelicSpinDiagonal (hQ : Q.Nondegenerate) :
     DiscreteTopology U.fullAdelicSpinDiagonal.range := by
-  obtain ⟨W, hW, hfin⟩ := U.exists_mem_nhds_finite_preimage_fullAdelicSpinDiagonal hQ hU
+  classical
+  let b := Module.Free.chooseBasis ℚ V
+  obtain ⟨W, hW, hfin⟩ := U.exists_mem_nhds_finite_preimage_fullAdelicSpinDiagonal hQ
+    (U.eventually_orthogonal_le_integralOrthogonalSubgroup hQ b)
   exact MonoidHom.discreteTopology_range_of_finite_preimage _ hW hfin
-
-variable (b)
-
-/-- The rational isometries are discrete in the full adelic orthogonal group of the integral
-reference family of a basis. -/
-theorem discreteTopology_range_fullAdelicOrthogonalDiagonal_integral (hQ : Q.Nondegenerate) :
-    DiscreteTopology (integral Q hQ b).fullAdelicOrthogonalDiagonal.range :=
-  discreteTopology_range_fullAdelicOrthogonalDiagonal _ (b := b)
-    (.of_forall fun p ↦ (integral_orthogonal Q hQ b p).le)
-
-/-- The rational proper isometries are discrete in the full adelic special orthogonal group of
-the integral reference family of a basis. -/
-theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_integral
-    (hQ : Q.Nondegenerate) :
-    DiscreteTopology (integral Q hQ b).fullAdelicSpecialOrthogonalDiagonal.range :=
-  discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal _ (b := b)
-    (.of_forall fun p ↦ (integral_orthogonal Q hQ b p).le)
-
-/-- The rational Spin points are discrete in the full adelic Spin group of the integral reference
-family of a basis. -/
-theorem discreteTopology_range_fullAdelicSpinDiagonal_integral (hQ : Q.Nondegenerate) :
-    DiscreteTopology (integral Q hQ b).fullAdelicSpinDiagonal.range :=
-  discreteTopology_range_fullAdelicSpinDiagonal _ hQ (b := b)
-    (.of_forall fun p ↦ (integral_orthogonal Q hQ b p).le)
 
 end
 
