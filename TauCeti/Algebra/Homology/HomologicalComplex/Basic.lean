@@ -30,9 +30,7 @@ requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`). The isomorphisms `homologyIsoSc'`
-are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`). An identification
-`eqToHom` of complexes induces the identification of their homology
-(`HomologicalComplex.homologyMap_eqToHom`).
+are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
 -/
 
 public section
@@ -240,15 +238,6 @@ lemma homologyMap_comp_homologyIsoSc'_hom :
 
 end HomologyIsoSc'
 
-/-- The map induced on homology by an identification `eqToHom` of complexes is the identification
-of their homology. -/
-@[simp]
-lemma homologyMap_eqToHom {D : Type*} [Category* D] [HasZeroMorphisms D]
-    {A B : HomologicalComplex D c} (e : A = B) (i : ι) [A.HasHomology i] [B.HasHomology i] :
-    homologyMap (eqToHom e) i = eqToHom (by subst e; rfl) := by
-  subst e
-  simp
-
 end HomologicalComplex
 
 namespace ChainComplex
@@ -265,3 +254,23 @@ lemma cycles₀Iso_inv_naturality (φ : K ⟶ L) :
   simp
 
 end ChainComplex
+
+namespace HomologicalComplex
+
+section HomologyTransport
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [CategoryWithHomology C]
+  {ι : Type*} {c : ComplexShape ι} {L L' M M' : HomologicalComplex C c}
+
+/-- A morphism transported along equalities of complexes induces the corresponding transport
+of the homology map. -/
+lemma homologyMap_comp_eqToHom (ψ : L ⟶ L') (hM : M = L) (hM' : M' = L')
+    (τ : M ⟶ M') (hτ : τ = eqToHom hM ≫ ψ ≫ eqToHom hM'.symm) (q : ι) :
+    homologyMap τ q ≫ eqToHom (congrArg (·.homology q) hM') =
+      eqToHom (congrArg (·.homology q) hM) ≫ homologyMap ψ q := by
+  subst hM hM' hτ
+  simp
+
+end HomologyTransport
+
+end HomologicalComplex

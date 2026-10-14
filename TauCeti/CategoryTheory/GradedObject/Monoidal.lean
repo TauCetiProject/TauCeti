@@ -34,9 +34,8 @@ facts about these coproducts which are used to compare homology of tensor produc
   (`CategoryTheory.GradedObject.Monoidal.id_tensorHom_eq_mapMap`), so these facts apply to it.
 * For graded objects indexed by `ℕ`, if `Y 0 = 0` then the summands of `X ⊗ Y` in degree
   `m + 1` are those of `X` tensored with `Y` shifted down by one, in degree `m`
-  (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`), naturally in `X` and `Y`
-  (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso_hom_naturality`).  This identifies the
-  degree shift of a connecting morphism between tensor products.
+  (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`).  This identifies the degree shift of
+  a connecting morphism between tensor products.
 -/
 
 public section
@@ -191,17 +190,6 @@ lemma ι_tensorObjSuccIso_inv (p q : ℕ) (h : p + (q + 1) = m + 1) :
     ιTensorObj X Y p (q + 1) (m + 1) h ≫ (tensorObjSuccIso X Y hY m).inv =
       ιTensorObj X (fun q ↦ Y (q + 1)) p q m (by omega) := by
   simp [tensorObjSuccIso]
-
-variable {X Y} {X' Y' : GradedObject ℕ C} (hY' : IsZero (Y' 0)) [HasTensor X' Y']
-  [HasTensor X' (fun q ↦ Y' (q + 1))]
-
-/-- `tensorObjSuccIso` is natural in both graded objects. -/
-@[reassoc]
-lemma tensorObjSuccIso_hom_naturality (f : X ⟶ X') (g : Y ⟶ Y') :
-    (tensorObjSuccIso X Y hY m).hom ≫ tensorHom f g (m + 1) =
-      tensorHom f (fun q ↦ g (q + 1)) m ≫ (tensorObjSuccIso X' Y' hY' m).hom := by
-  refine tensorObj_ext _ _ fun p q h ↦ ?_
-  simp
 
 end Monoidal
 
