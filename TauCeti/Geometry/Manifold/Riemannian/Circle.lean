@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
-public import TauCeti.Geometry.Sphere.Circle
 
 /-!
 # The round metric on the unit circle
