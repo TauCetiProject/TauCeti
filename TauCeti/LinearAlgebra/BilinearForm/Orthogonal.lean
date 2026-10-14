@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
@@ -49,6 +50,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   restriction splits a bilinear module over a commutative ring.
 * `LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective`: a perfect symmetric
   restriction splits a bilinear module over a commutative ring.
+* `LinearMap.BilinForm.isPerfPair_restrict_of_isCompl_orthogonal`: a symmetric perfect pairing
+  remains perfect on a submodule complementary to its orthogonal complement.
+* `LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl`: double orthogonality for an
+  orthogonally split submodule over a commutative ring.
 * `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
   the cyclic restriction perfect.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`: a vector whose self-pairing is
@@ -207,6 +212,51 @@ theorem isCompl_orthogonal_of_restrict_bijective
     simpa [LinearMap.BilinForm.restrict_apply, LinearMap.BilinForm.flip_apply] using
       (hB.eq y x)
   exact B.isCompl_orthogonal_of_flip_restrict_bijective S (hflip ▸ h)
+
+/-- A symmetric perfect pairing restricts to a perfect pairing on any submodule complementary
+to its orthogonal complement. No field or finite generation hypothesis is needed. -/
+theorem isPerfPair_restrict_of_isCompl_orthogonal
+    (B : LinearMap.BilinForm R M) [B.IsPerfPair] (hB : B.IsSymm)
+    (S : Submodule R M) (hS : IsCompl S (B.orthogonal S)) :
+    (B.restrict S).IsPerfPair := by
+  have hmap (C : LinearMap.BilinForm R M) [C.IsPerfPair] (hC : C.IsSymm) :
+      S.dualAnnihilator.map C.toPerfPair.symm.toLinearMap = C.orthogonal S := by
+    ext x
+    constructor
+    · rintro ⟨f, hf, rfl⟩ y hy
+      rw [hC.eq]
+      exact congrArg (fun g : Module.Dual R M ↦ g y)
+        (C.apply_symm_toPerfPair_self f) |>.trans (((Submodule.mem_dualAnnihilator f).mp hf) y hy)
+    · intro hx
+      refine ⟨C x, (Submodule.mem_dualAnnihilator (C x)).mpr fun y hy ↦ ?_,
+        C.toPerfPair.symm_apply_apply x⟩
+      rw [hC.eq]
+      exact hx y hy
+  have hflip : LinearMap.flip B = B := LinearMap.ext₂ fun x y ↦ hB.eq y x
+  have : (LinearMap.flip B).IsPerfPair := LinearMap.IsPerfPair.flip inferInstance
+  have hp : B.IsPerfectCompl S S :=
+    ⟨by rwa [hmap B hB], by rwa [hmap (LinearMap.flip B) (hflip.symm ▸ hB), hflip]⟩
+  have h := LinearMap.IsPerfPair.restrict B S.subtype S.subtype
+    S.injective_subtype S.injective_subtype (by simpa using hp)
+  exact h
+
+/-- For a right-separating reflexive form, a submodule complementary to its orthogonal complement
+equals its double orthogonal complement, over an arbitrary commutative ring. -/
+theorem orthogonal_orthogonal_of_isCompl (B : LinearMap.BilinForm R M)
+    (hB : B.IsRefl) (hsep : B.SeparatingRight) (S : Submodule R M)
+    (hS : IsCompl S (B.orthogonal S)) : B.orthogonal (B.orthogonal S) = S := by
+  apply le_antisymm _ (le_orthogonal_orthogonal hB)
+  intro x hx
+  obtain ⟨s, hs, t, ht, rfl⟩ :=
+    Submodule.mem_sup.mp (hS.sup_eq_top ▸ Submodule.mem_top (x := x))
+  have ht0 : t = 0 := hsep t fun y ↦ by
+    obtain ⟨s', hs', t', ht', rfl⟩ :=
+      Submodule.mem_sup.mp (hS.sup_eq_top ▸ Submodule.mem_top (x := y))
+    have h := hx t' ht'
+    have hst' : B s t' = 0 := ht' s hs
+    have ht't : B t' t = 0 := by simpa [hB.eq_zero hst'] using h
+    simp [ht s' hs', ht't]
+  simpa [ht0] using hs
 
 /-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
 theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
