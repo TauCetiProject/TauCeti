@@ -366,20 +366,6 @@ open Filter Topology
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
 
 omit [IsUltrametricDist K] in
-/-- The constant `b₂ - b₁` is the difference `(T - b₁) - (T - b₂)`. -/
-private theorem weightedC_sub_eq_sub_sub (b₁ b₂ : K) :
-    (C (b₂ - b₁) : 𝒯 K) = (T - C b₁) - (T - C b₂) := by
-  rw [map_sub]
-  ring
-
-omit [IsUltrametricDist K] in
-/-- If `x(T - b₂) < x(T - b₁)`, then `x(T - b₁)` is the value of the constant `b₂ - b₁`. -/
-theorem valuation_weightedX_sub_weightedC_eq_of_lt {x : closedPolydisc 1 K} {b₁ b₂ : K}
-    (h : x.1.valuation (T - C b₂) < x.1.valuation (T - C b₁)) :
-    x.1.valuation (T - C b₁) = x.1.valuation (C (b₂ - b₁)) := by
-  rw [weightedC_sub_eq_sub_sub, x.1.valuation.map_sub_eq_of_lt_left h]
-
-omit [IsUltrametricDist K] in
 /-- If `b ↦ x(T - b)` attains no minimum, then every value `x(T - b)` is the value of a nonzero
 constant. -/
 private theorem exists_valuation_weightedX_sub_weightedC_eq {x : closedPolydisc 1 K}
@@ -392,15 +378,6 @@ private theorem exists_valuation_weightedX_sub_weightedC_eq {x : closedPolydisc 
   refine ⟨b' - b, fun h0 ↦ ?_, he⟩
   rw [h0, map_zero, map_zero] at he
   exact (zero_le.trans_lt hb').ne' he
-
-/-- If `x(T - b₁) = x(e₁)`, `x(T - b₂) = x(e₂)` and `‖e₂‖ ≤ ‖e₁‖`, then `‖b₂ - b₁‖ ≤ ‖e₁‖`. -/
-theorem norm_sub_le_of_valuation_eq {x : closedPolydisc 1 K} {b₁ b₂ e₁ e₂ : K}
-    (h₁ : x.1.valuation (T - C b₁) = x.1.valuation (C e₁))
-    (h₂ : x.1.valuation (T - C b₂) = x.1.valuation (C e₂)) (he : ‖e₂‖ ≤ ‖e₁‖) :
-    ‖b₂ - b₁‖ ≤ ‖e₁‖ := by
-  rw [← closedPolydisc_valuation_weightedC_le_iff x, weightedC_sub_eq_sub_sub]
-  refine (Valuation.map_sub _ _ _).trans (max_le h₁.le ?_)
-  rwa [h₂, closedPolydisc_valuation_weightedC_le_iff]
 
 /-- For `b` in the unit disc and `b'` off it, `x(T - b) ≤ x(1) < x(b') = x(T - b')`. -/
 theorem valuation_weightedX_sub_weightedC_lt_of_one_lt (x : closedPolydisc 1 K)
