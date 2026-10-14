@@ -24,6 +24,8 @@ here.
 ## Main declarations
 
 * `generatedPositiveDefiningIdeal`: the positive subgroup's ideal in the generated carrier.
+* `upperTriangular_le_comapOfSurjective_of_geometricallySolvable_of_le`: a reduced connected
+  solvable carrier overgroup pulls back to an upper-triangular subgroup of `GL₇`.
 * `upperTriangular_le_comapOfSurjective_of_isBorelCandidate_of_le`: a Borel candidate containing
   the positive subgroup pulls back to an upper-triangular subgroup of `GL₇`.
 
@@ -84,6 +86,12 @@ def generatedPositiveDefiningIdeal : HopfIdeal k (generatedCoordinateHopfAlgebra
   HopfIdeal.kerOfSurjective (generatedPositiveRestriction k).hom
     (generatedPositiveRestriction_surjective k)
 
+/-- The generated positive ideal is the kernel of positive restriction. -/
+theorem generatedPositiveDefiningIdeal_def :
+    generatedPositiveDefiningIdeal k =
+      HopfIdeal.kerOfSurjective (generatedPositiveRestriction k).hom
+        (generatedPositiveRestriction_surjective k) := (rfl)
+
 /-- Membership in the generated positive ideal is vanishing under positive restriction. -/
 @[simp]
 theorem mem_generatedPositiveDefiningIdeal (x : generatedCoordinateHopfAlgebra k) :
@@ -99,18 +107,47 @@ theorem comapOfSurjective_generatedPositiveDefiningIdeal_eq_ker_standardCoordina
         (standardCoordinateMap_surjective k) := by
   ext x
   rw [HopfIdeal.mem_comapOfSurjective, mem_generatedPositiveDefiningIdeal,
-    HopfIdeal.mem_kerOfSurjective]
-  have hcomp := congrArg (fun f ↦ f.hom x)
-    (generatedCoordinateMap_comp_generatedPositiveRestriction k)
-  change (generatedPositiveRestriction k).hom ((generatedCoordinateMap k).hom x) =
-    (standardCoordinateMap k).hom x at hcomp
-  rw [hcomp]
+    HopfIdeal.mem_kerOfSurjective, ← CommHopfAlgCat.comp_apply,
+    generatedCoordinateMap_comp_generatedPositiveRestriction]
 
 end ScalarExtension
 
 section AlgebraicallyClosed
 
 variable (k : Type u) [Field k] [Algebra (ZMod 3) k] [IsAlgClosed k]
+
+/-- A reduced connected solvable subgroup of the scalar-extended carrier which contains the
+positive subgroup pulls back to an upper-triangular subgroup of `GL₇`. -/
+theorem upperTriangular_le_comapOfSurjective_of_geometricallySolvable_of_le
+    (I : HopfIdeal k (generatedCoordinateHopfAlgebra k))
+    [IsReduced (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I)]
+    (hconn : geometricallyConnectedCommHopfAlgProperty k
+      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I))
+    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k
+      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I))
+    (hcontain : I ≤ generatedPositiveDefiningIdeal k) :
+    GeneralLinear.UpperTriangular.definingHopfIdeal k 7 ≤
+      I.comapOfSurjective (generatedCoordinateMap k).hom
+        (generatedCoordinateMap_surjective k) := by
+  let J := I.comapOfSurjective (generatedCoordinateMap k).hom
+    (generatedCoordinateMap_surjective k)
+  let e := CommHopfAlgCat.quotientIsoOfSurjective (generatedCoordinateMap k)
+    (generatedCoordinateMap_surjective k) I
+  let _ : IsReduced
+      (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 7) J) :=
+    isReduced_of_injective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).1
+  apply upperTriangular_le_of_geometricallySolvable k J
+    ((geometricallyConnectedCommHopfAlgProperty k).prop_of_iso e.symm hconn)
+    ((geometricallySolvablePointsCommHopfAlgProperty k).prop_of_iso e.symm hsolv)
+  have hcomap : J ≤ (generatedPositiveDefiningIdeal k).comapOfSurjective
+      (generatedCoordinateMap k).hom (generatedCoordinateMap_surjective k) :=
+    HopfIdeal.comapOfSurjective_mono (generatedCoordinateMap k).hom
+      (generatedCoordinateMap_surjective k) hcontain
+  rw [comapOfSurjective_generatedPositiveDefiningIdeal_eq_ker_standardCoordinateMap] at hcomap
+  change J.toIdeal ≤ RingHom.ker (standardCoordinateMap k).hom.toAlgHom
+  rw [← HopfIdeal.kerOfSurjective_toIdeal (standardCoordinateMap k).hom
+    (standardCoordinateMap_surjective k)]
+  exact HopfIdeal.toIdeal_le_toIdeal.mpr hcomap
 
 /-- A Borel candidate in the scalar-extended carrier which contains the positive subgroup
 pulls back to an upper-triangular subgroup of `GL₇`.
@@ -125,33 +162,11 @@ theorem upperTriangular_le_comapOfSurjective_of_isBorelCandidate_of_le
     GeneralLinear.UpperTriangular.definingHopfIdeal k 7 ≤
       I.comapOfSurjective (generatedCoordinateMap k).hom
         (generatedCoordinateMap_surjective k) := by
-  let J := I.comapOfSurjective (generatedCoordinateMap k).hom
-    (generatedCoordinateMap_surjective k)
-  let e := CommHopfAlgCat.quotientIsoOfSurjective (generatedCoordinateMap k)
-    (generatedCoordinateMap_surjective k) I
-  have hsmooth : smoothCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 7) J) :=
-    (smoothCommHopfAlgProperty k).prop_of_iso e.symm hI.smooth
   let _ : IsReduced
-      (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 7) J) :=
-    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k _).mp hsmooth).isReduced
-  apply upperTriangular_le_of_geometricallySolvable k J
-    ((geometricallyConnectedCommHopfAlgProperty k).prop_of_iso e.symm
-      hI.geometricallyConnected)
-    ((geometricallySolvablePointsCommHopfAlgProperty k).prop_of_iso e.symm
-      hI.geometricallySolvable)
-  intro x hx
-  rw [RingHom.mem_ker]
-  have hxI : (generatedCoordinateMap k).hom x ∈ I :=
-    HopfIdeal.mem_comapOfSurjective.mp hx
-  have hxpos := hcontain hxI
-  rw [mem_generatedPositiveDefiningIdeal] at hxpos
-  have hcomp := congrArg (fun f ↦ f.hom x)
-    (generatedCoordinateMap_comp_generatedPositiveRestriction k)
-  change (generatedPositiveRestriction k).hom ((generatedCoordinateMap k).hom x) =
-    (standardCoordinateMap k).hom x at hcomp
-  rw [hxpos] at hcomp
-  exact hcomp.symm
+      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I) :=
+    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k _).mp hI.smooth).isReduced
+  exact upperTriangular_le_comapOfSurjective_of_geometricallySolvable_of_le k I
+    hI.geometricallyConnected hI.geometricallySolvable hcontain
 
 end AlgebraicallyClosed
 
