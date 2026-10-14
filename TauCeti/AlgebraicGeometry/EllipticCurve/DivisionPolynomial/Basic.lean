@@ -176,14 +176,17 @@ theorem a₂_mul_ψ₂_sq_eq_eval_Ψ₃ {W : WeierstrassCurve R} {x y : R} (h : 
   linear_combination (-W.a₁ * (2 * y + W.a₁ * x + W.a₃) - (s * (2 * y + W.a₁ * x + W.a₃) +
     (W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2))) * hs + (W.a₁ ^ 2 + 4 * W.a₂ + 12 * x) * h
 
+/-- `x = u⁻² (u² x)` for the scaling `u` of a change of variables. -/
+private theorem VariableChange.eq_inv_sq_mul (C : VariableChange R) (x : R) :
+    x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
+  linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
+
 /-- After a change of variables `C`, the polynomial `Ψ₂Sq`, which agrees with `(2y + a₁x + a₃)²`
 on the curve, transforms as `Ψ₂Sq'(x) = u⁻⁶ Ψ₂Sq(u²x + r)`. -/
 theorem eval_variableChange_Ψ₂Sq (C : VariableChange R) (x : R) :
     (C • W).Ψ₂Sq.eval x = C.u⁻¹ ^ 6 * W.Ψ₂Sq.eval (C.u ^ 2 * x + C.r) := by
   -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
-  have hx : x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
-    linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
-  conv_lhs => rw [hx]
+  conv_lhs => rw [VariableChange.eq_inv_sq_mul C x]
   simp only [Ψ₂Sq, eval_add, eval_mul, eval_pow, eval_C, eval_X, variableChange_b₂,
     variableChange_b₄, variableChange_b₆]
   ring
@@ -193,9 +196,7 @@ theorem eval_variableChange_Ψ₂Sq (C : VariableChange R) (x : R) :
 theorem eval_variableChange_Ψ₃ (C : VariableChange R) (x : R) :
     (C • W).Ψ₃.eval x = C.u⁻¹ ^ 8 * W.Ψ₃.eval (C.u ^ 2 * x + C.r) := by
   -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
-  have hx : x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
-    linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
-  conv_lhs => rw [hx]
+  conv_lhs => rw [VariableChange.eq_inv_sq_mul C x]
   simp only [eval_Ψ₃, variableChange_b₂, variableChange_b₄, variableChange_b₆, variableChange_b₈]
   ring
 

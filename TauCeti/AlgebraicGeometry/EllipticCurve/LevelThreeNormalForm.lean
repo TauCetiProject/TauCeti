@@ -33,9 +33,11 @@ Conversely, let `W` be a Weierstrass curve over a commutative ring `R` in which 
 let `P = (x₁, y₁)` and `Q = (x₂, y₂)` be points of `W` at which the `3`-division polynomial `Ψ₃`
 vanishes, the `2`-division polynomial `ψ₂ = 2Y + a₁X + a₃` is a unit, and with `x₂ - x₁` a unit.
 Over a field these say that `P` and `Q` have order `3` and that `Q` is not `±P`, so that `(P, Q)`
-is a basis of the `3`-torsion; over a ring they say this at every point of `Spec R`. Then exactly
-one change of variables carries `W` to a level-three normal form, `P` to `(0, 0)` and `Q` to the
-point above (`WeierstrassCurve.existsUnique_variableChange_levelThreeNormalForm`). The Legendre
+is a basis of the `3`-torsion; over a ring they say this at every point of `Spec R`
+(`WeierstrassCurve.IsThreeTorsionBasis`). Then exactly one change of variables,
+`WeierstrassCurve.toLevelThreeNormalForm`, carries `W` to a level-three normal form, `P` to
+`(0, 0)` and `Q` to the point above
+(`WeierstrassCurve.existsUnique_variableChange_levelThreeNormalForm`). The Legendre
 form attached to a basis of the `2`-torsion is unique only after the choice of an invariant
 differential, because `[-1]` fixes every point of order `2`. No such choice is needed here:
 `[-1]` moves a basis of the `3`-torsion, and the scaling `u` is determined by `P` and `Q`.
@@ -53,16 +55,24 @@ Finally, `WeierstrassCurve.UniversalLevelThree.curve` is the level-three normal 
 `ℤ[μ, ζ] / (ζ² + ζ + 1)` localised away from the discriminant, that is over
 `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`. It is elliptic, carries the basis `(P, Q)` of its `3`-torsion, and
 every Weierstrass curve with such a basis over a ring in which `3` is a unit is isomorphic to its
-base change along exactly one ring homomorphism, by exactly one change of variables matching the
-bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
+base change along exactly one ring homomorphism
+(`WeierstrassCurve.UniversalLevelThree.classifyingHom`), by exactly one change of variables matching
+the bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
 
 ## Main definitions
 
 * `WeierstrassCurve.levelThreeNormalForm μ`: the curve `Y² + 3μXY + (μ³ - 1)Y = X³`.
+* `WeierstrassCurve.IsThreeTorsionBasis W x₁ y₁ x₂ y₂`: `(x₁, y₁)` and `(x₂, y₂)` form a basis of
+  the `3`-torsion of `W` in every fibre, over a ring in which `3` is a unit.
+* `WeierstrassCurve.toLevelThreeNormalForm h`, `WeierstrassCurve.levelThreeParameter h`,
+  `WeierstrassCurve.levelThreeRootOfUnity h`: the change of variables carrying such a basis to
+  level-three normal form, and the `μ` and `ζ` it reaches.
 * `WeierstrassCurve.UniversalLevelThree.Ring`, `WeierstrassCurve.UniversalLevelThree.curve`: the
   ring `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` and the level-three normal form over it.
 * `WeierstrassCurve.UniversalLevelThree.lift`: the classifying homomorphism of a level-three normal
   form with a chosen root of `ζ² + ζ + 1`.
+* `WeierstrassCurve.UniversalLevelThree.classifyingHom h`: the classifying homomorphism of a
+  Weierstrass curve with a basis of its `3`-torsion.
 
 ## Main results
 
@@ -71,8 +81,12 @@ bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
 * `WeierstrassCurve.equation_levelThreeNormalForm_basisPoint`,
   `WeierstrassCurve.eval_Ψ₃_levelThreeNormalForm_basisPoint`: the point `Q` lies on the curve and
   has order `3`.
+* `WeierstrassCurve.toLevelThreeNormalForm_smul`, `WeierstrassCurve.eq_toLevelThreeNormalForm`:
+  `toLevelThreeNormalForm h` reaches a level-three normal form, and is the only change of variables
+  doing so that matches the bases.
 * `WeierstrassCurve.existsUnique_variableChange_levelThreeNormalForm`: a curve with a basis of its
   `3`-torsion is a unique change of variables away from a level-three normal form.
+* `WeierstrassCurve.toLevelThreeNormalForm_map`: the change of variables commutes with base change.
 * `WeierstrassCurve.exists_variableChange_levelThreeNormalForm_iff`: for elliptic `W` the
   hypotheses are also necessary.
 * `WeierstrassCurve.UniversalLevelThree.existsUnique_lift`: the universal property of the
@@ -80,10 +94,13 @@ bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
 * `WeierstrassCurve.UniversalLevelThree.map_lift`, `WeierstrassCurve.UniversalLevelThree.eq_lift`,
   `WeierstrassCurve.UniversalLevelThree.comp_lift`: the classifying homomorphism of an elliptic
   level-three normal form with a root of `ζ² + ζ + 1`, its uniqueness and its naturality.
+* `WeierstrassCurve.UniversalLevelThree.comp_classifyingHom`: the classifying homomorphism of a
+  basis of the `3`-torsion is natural in the base ring.
 
 ## Implementation notes
 
-The `UniversalLevelThree` namespace follows the layout of the `UniversalTate` namespace in
+`WeierstrassCurve.toLevelThreeNormalForm` and its lemmas follow `WeierstrassCurve.toTateNormalForm`,
+and the `UniversalLevelThree` namespace follows the layout of the `UniversalTate` namespace, in
 `TauCeti/AlgebraicGeometry/EllipticCurve/TateNormalForm.lean`: the ring is `Localization.Away` of
 the discriminant of a polynomial curve, and `Ring.ringHom_ext`, `lift`, `map_lift`, `comp_lift` and
 `eq_lift` correspond to the lemmas of the same names there. The polynomial ring is replaced by its
@@ -220,34 +237,74 @@ theorem map_levelThreeNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :
     (levelThreeNormalForm μ).map φ = levelThreeNormalForm (φ μ) := by
   ext <;> simp [map_ofNat]
 
+/-! ### Bases of the `3`-torsion -/
+
+/-- The points `P = (x₁, y₁)` and `Q = (x₂, y₂)` form a **basis of the `3`-torsion** of `W` in every
+fibre, over a ring in which `3` is a unit: they lie on `W`, the `3`-division polynomial `Ψ₃`
+vanishes at both, the `2`-division polynomial `ψ₂ = 2Y + a₁X + a₃` is a unit at both, and
+`x₂ - x₁` is a unit. Over a field these say that `P` and `Q` have order `3` and that `Q` is not
+`±P`. -/
+structure IsThreeTorsionBasis (W : WeierstrassCurve R) (x₁ y₁ x₂ y₂ : R) : Prop where
+  /-- `3` is a unit. -/
+  isUnit_three : IsUnit (3 : R)
+  /-- `P` lies on `W`. -/
+  equation_fst : W.toAffine.Equation x₁ y₁
+  /-- `Q` lies on `W`. -/
+  equation_snd : W.toAffine.Equation x₂ y₂
+  /-- `Ψ₃` vanishes at `P`. -/
+  eval_Ψ₃_fst : W.Ψ₃.eval x₁ = 0
+  /-- `Ψ₃` vanishes at `Q`. -/
+  eval_Ψ₃_snd : W.Ψ₃.eval x₂ = 0
+  /-- `ψ₂` is a unit at `P`. -/
+  isUnit_ψ₂_fst : IsUnit (W.ψ₂.evalEval x₁ y₁)
+  /-- `ψ₂` is a unit at `Q`. -/
+  isUnit_ψ₂_snd : IsUnit (W.ψ₂.evalEval x₂ y₂)
+  /-- The `x`-coordinates of `P` and `Q` differ by a unit. -/
+  isUnit_sub : IsUnit (x₂ - x₁)
+
+variable {W : WeierstrassCurve R} {x₁ y₁ x₂ y₂ : R}
+
+/-- A basis of the `3`-torsion remains one after base change. -/
+theorem IsThreeTorsionBasis.map (h : W.IsThreeTorsionBasis x₁ y₁ x₂ y₂) {A : Type*} [CommRing A]
+    (φ : R →+* A) : (W.map φ).IsThreeTorsionBasis (φ x₁) (φ y₁) (φ x₂) (φ y₂) where
+  isUnit_three := by simpa only [map_ofNat] using h.isUnit_three.map φ
+  equation_fst := h.equation_fst.map φ
+  equation_snd := h.equation_snd.map φ
+  eval_Ψ₃_fst := by rw [map_Ψ₃, Polynomial.eval_map_apply, h.eval_Ψ₃_fst, map_zero]
+  eval_Ψ₃_snd := by rw [map_Ψ₃, Polynomial.eval_map_apply, h.eval_Ψ₃_snd, map_zero]
+  isUnit_ψ₂_fst := by
+    rw [map_ψ₂, Polynomial.map_mapRingHom_evalEval]
+    exact h.isUnit_ψ₂_fst.map φ
+  isUnit_ψ₂_snd := by
+    rw [map_ψ₂, Polynomial.map_mapRingHom_evalEval]
+    exact h.isUnit_ψ₂_snd.map φ
+  isUnit_sub := by simpa using h.isUnit_sub.map φ
+
 /-! ### Changes of variables to level-three normal form -/
 
-/-- The scaling step. On `Y² + a₁XY + a₃Y = X³`, let `(x, y)` be a point with `x` a unit at which
-`ψ₂ = 2y + a₁x + a₃` is a unit and `3x³ + a₁²x² + 3a₁a₃x + 3a₃² = Ψ₃(x) / x` vanishes. Then the
-scaling by `u = v / (3x)`, where `v = 3a₃ + a₁x`, carries the curve to the level-three normal form
-with `μ = a₁x / v`, and `(x, y)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` with
-`ζ = (a₁x + 3y) / v`. -/
-private theorem exists_scaling {a₁ a₃ x y : R} (h3 : IsUnit (3 : R)) (hx : IsUnit x)
+/-- On `Y² + a₁XY + a₃Y = X³`, let `(x, y)` be a point at which `3`, `ψ₂ = 2y + a₁x + a₃` are units
+and `3x³ + a₁²x² + 3a₁a₃x + 3a₃² = Ψ₃(x) / x` vanishes. Then `v = 3a₃ + a₁x` is a unit, because
+`v² = -3ψ₂²`. -/
+private theorem isUnit_scaling {a₁ a₃ x y : R} (h3 : IsUnit (3 : R))
     (hψ : IsUnit (2 * y + a₁ * x + a₃)) (hE : y ^ 2 + a₁ * x * y + a₃ * y = x ^ 3)
     (hF : 3 * x ^ 3 + a₁ ^ 2 * x ^ 2 + 3 * a₁ * a₃ * x + 3 * a₃ ^ 2 = 0) :
-    ∃ (u : Rˣ) (μ ζ : R), ζ ^ 2 + ζ + 1 = 0 ∧ a₁ = u * (3 * μ) ∧ a₃ = u ^ 3 * (μ ^ 3 - 1) ∧
+    IsUnit (3 * a₃ + a₁ * x) := by
+  have hv₂ : (3 * a₃ + a₁ * x) ^ 2 = -3 * (2 * y + a₁ * x + a₃) ^ 2 := by
+    linear_combination 12 * hE + 4 * hF
+  exact (isUnit_pow_iff two_ne_zero).mp (hv₂ ▸ h3.neg.mul (hψ.pow 2))
+
+/-- The scaling step. On `Y² + a₁XY + a₃Y = X³`, let `(x, y)` be a point with `x` a unit at which
+`3x³ + a₁²x² + 3a₁a₃x + 3a₃² = Ψ₃(x) / x` vanishes and `v = 3a₃ + a₁x` is a unit. If
+`u (3x) = v`, `μ v = a₁x` and `ζ v = a₁x + 3y`, then the scaling by `u` carries the curve to the
+level-three normal form with parameter `μ`, and `(x, y)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`.
+-/
+private theorem scaling_spec {a₁ a₃ x y : R} (h3 : IsUnit (3 : R)) (hx : IsUnit x)
+    (hv : IsUnit (3 * a₃ + a₁ * x)) (hE : y ^ 2 + a₁ * x * y + a₃ * y = x ^ 3)
+    (hF : 3 * x ^ 3 + a₁ ^ 2 * x ^ 2 + 3 * a₁ * a₃ * x + 3 * a₃ ^ 2 = 0) {u : Rˣ} {μ ζ : R}
+    (hu : (u : R) * (3 * x) = 3 * a₃ + a₁ * x) (hμ : μ * (3 * a₃ + a₁ * x) = a₁ * x)
+    (hζ : ζ * (3 * a₃ + a₁ * x) = a₁ * x + 3 * y) :
+    ζ ^ 2 + ζ + 1 = 0 ∧ a₁ = u * (3 * μ) ∧ a₃ = u ^ 3 * (μ ^ 3 - 1) ∧
       x = u ^ 2 * -(μ ^ 2 + μ + 1) ∧ y = u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) := by
-  -- `v = 3a₃ + a₁x` is a unit because `v² = -3ψ₂²` on the curve
-  have hv : IsUnit (3 * a₃ + a₁ * x) := by
-    have hv₂ : (3 * a₃ + a₁ * x) ^ 2 = -3 * (2 * y + a₁ * x + a₃) ^ 2 := by
-      linear_combination 12 * hE + 4 * hF
-    exact (isUnit_pow_iff two_ne_zero).mp (hv₂ ▸ h3.neg.mul (hψ.pow 2))
-  set w : R := ↑hv.unit⁻¹
-  have hw : (3 * a₃ + a₁ * x) * w = 1 := hv.mul_val_inv
-  set u : Rˣ := hv.unit * (h3.mul hx).unit⁻¹
-  have hu : (u : R) * (3 * x) = 3 * a₃ + a₁ * x := by
-    simp only [u, Units.val_mul, IsUnit.unit_spec]
-    linear_combination (3 * a₃ + a₁ * x) * (h3.mul hx).mul_val_inv
-  have hμ : a₁ * x * w * (3 * a₃ + a₁ * x) = a₁ * x := by linear_combination a₁ * x * hw
-  have hζ : (a₁ * x + 3 * y) * w * (3 * a₃ + a₁ * x) = a₁ * x + 3 * y := by
-    linear_combination (a₁ * x + 3 * y) * hw
-  set μ := a₁ * x * w
-  set ζ := (a₁ * x + 3 * y) * w
   -- `x = u² x₀`, after multiplying by the unit `(3x)² v²`
   have hx₀ : x = u ^ 2 * -(μ ^ 2 + μ + 1) := by
     refine ((hv.pow 2).mul (h3.mul hx |>.pow 2)).mul_left_cancel ?_
@@ -255,7 +312,7 @@ private theorem exists_scaling {a₁ a₃ x y : R} (h3 : IsUnit (3 : R)) (hx : I
         (3 * a₃ + a₁ * x)) * hμ + 3 * (3 * a₃ + a₁ * x) ^ 2 * hF +
       ((a₁ * x) ^ 2 + a₁ * x * (3 * a₃ + a₁ * x) + (3 * a₃ + a₁ * x) ^ 2) *
         (u * (3 * x) + (3 * a₃ + a₁ * x)) * hu
-  refine ⟨u, μ, ζ, ?_, ?_, ?_, hx₀, ?_⟩
+  refine ⟨?_, ?_, ?_, hx₀, ?_⟩
   · -- `v² (ζ² + ζ + 1) = (a₁x + 3y)² + (a₁x + 3y) v + v² = 9E + 3F`
     refine (hv.pow 2).mul_right_eq_zero.mp ?_
     linear_combination (ζ * (3 * a₃ + a₁ * x) + (a₁ * x + 3 * y) + (3 * a₃ + a₁ * x)) * hζ +
@@ -272,29 +329,35 @@ private theorem exists_scaling {a₁ a₃ x y : R} (h3 : IsUnit (3 : R)) (hx : I
     linear_combination (-(3 * a₃ + a₁ * x) * u * (μ - ζ)) * hx₀ - y * hu + u * x * hμ -
       u * x * hζ
 
-variable {W : WeierstrassCurve R} {x₁ y₁ x₂ y₂ : R}
+namespace IsThreeTorsionBasis
 
-/-- Existence of the change of variables to level-three normal form. -/
-private theorem exists_variableChange_levelThreeNormalForm (h3 : IsUnit (3 : R))
-    (hP : W.toAffine.Equation x₁ y₁) (hQ : W.toAffine.Equation x₂ y₂)
-    (hΨP : W.Ψ₃.eval x₁ = 0) (hΨQ : W.Ψ₃.eval x₂ = 0)
-    (hψP : IsUnit (W.ψ₂.evalEval x₁ y₁)) (hψQ : IsUnit (W.ψ₂.evalEval x₂ y₂))
-    (hx : IsUnit (x₂ - x₁)) :
-    ∃ C : VariableChange R, C.r = x₁ ∧ C.t = y₁ ∧ ∃ μ ζ : R, ζ ^ 2 + ζ + 1 = 0 ∧
-      C • W = levelThreeNormalForm μ ∧ x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r ∧
-      y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t := by
-  rw [ψ₂, Affine.evalEval_polynomialY] at hψP hψQ
-  -- the shear `σ` making the tangent at `P` horizontal; `a₂` then vanishes because `Ψ₃(x₁) = 0`
-  obtain ⟨σ, hσ⟩ : ∃ σ, σ * (2 * y₁ + W.a₁ * x₁ + W.a₃) =
-      W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2 :=
-    ⟨(W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) * ↑hψP.unit⁻¹, by
-      linear_combination (W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) * hψP.val_inv_mul⟩
+variable (h : W.IsThreeTorsionBasis x₁ y₁ x₂ y₂)
+
+include h in
+/-- `ψ₂(P) = 2y₁ + a₁x₁ + a₃` is a unit. -/
+private theorem isUnit_ψ₂_fst' : IsUnit (2 * y₁ + W.a₁ * x₁ + W.a₃) := by
+  have h₁ := h.isUnit_ψ₂_fst
+  rwa [ψ₂, Affine.evalEval_polynomialY] at h₁
+
+include h in
+/-- The shear step. If `σ ψ₂(P) = a₄ + 2a₂x₁ - a₁y₁ + 3x₁²`, the change of variables
+`(1, x₁, σ, y₁)` carries `W` to `Y² + A₁XY + A₃Y = X³` with `A₁ = a₁ + 2σ` and `A₃ = ψ₂(P)` (`a₂`
+vanishes because `Ψ₃(x₁) = 0`), and `Q` to the point `(X, Y) = (x₂ - x₁, y₂ - y₁ - σ (x₂ - x₁))`
+of it, at which `3X³ + A₁²X² + 3A₁A₃X + 3A₃² = Ψ₃(X) / X` vanishes. -/
+private theorem shear_spec {σ : R}
+    (hσ : σ * (2 * y₁ + W.a₁ * x₁ + W.a₃) = W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) :
+    W.a₂ - σ * W.a₁ + 3 * x₁ - σ ^ 2 = 0 ∧
+      (y₂ - y₁ - σ * (x₂ - x₁)) ^ 2 + (W.a₁ + 2 * σ) * (x₂ - x₁) * (y₂ - y₁ - σ * (x₂ - x₁)) +
+        (2 * y₁ + W.a₁ * x₁ + W.a₃) * (y₂ - y₁ - σ * (x₂ - x₁)) = (x₂ - x₁) ^ 3 ∧
+      3 * (x₂ - x₁) ^ 3 + (W.a₁ + 2 * σ) ^ 2 * (x₂ - x₁) ^ 2 +
+        3 * (W.a₁ + 2 * σ) * (2 * y₁ + W.a₁ * x₁ + W.a₃) * (x₂ - x₁) +
+        3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) ^ 2 = 0 := by
   have ha₂ : W.a₂ - σ * W.a₁ + 3 * x₁ - σ ^ 2 = 0 := by
-    have h := a₂_mul_ψ₂_sq_eq_eval_Ψ₃ hP hσ
-    rw [hΨP] at h
-    exact (hψP.pow 2).mul_left_eq_zero.mp h
+    have h₁ := a₂_mul_ψ₂_sq_eq_eval_Ψ₃ h.equation_fst hσ
+    rw [h.eval_Ψ₃_fst] at h₁
+    exact (h.isUnit_ψ₂_fst'.pow 2).mul_left_eq_zero.mp h₁
+  have hP := h.equation_fst
   rw [Affine.equation_iff] at hP
-  -- after the change of variables `(1, x₁, σ, y₁)` the curve is `Y² + A₁XY + A₃Y = X³`
   set C₁ : VariableChange R := ⟨1, x₁, σ, y₁⟩
   have hC₁ : C₁ • W = ⟨W.a₁ + 2 * σ, 0, 2 * y₁ + W.a₁ * x₁ + W.a₃, 0, 0⟩ := by
     ext <;> simp only [C₁, variableChange_a₁, variableChange_a₂, variableChange_a₃,
@@ -303,33 +366,187 @@ private theorem exists_variableChange_levelThreeNormalForm (h3 : IsUnit (3 : R))
     · ring
     · linear_combination -hσ
     · linear_combination -hP
-  -- and `Q` becomes the point `(X, Y) = (x₂ - x₁, y₂ - y₁ - σ (x₂ - x₁))` of it
   have hE : (C₁ • W).toAffine.Equation (x₂ - x₁) (y₂ - y₁ - σ * (x₂ - x₁)) := by
     rw [← Affine.variableChange_equation]
-    convert hQ using 1 <;> simp only [C₁, Units.val_one, one_pow, one_mul] <;> ring
+    convert h.equation_snd using 1 <;> simp only [C₁, Units.val_one, one_pow, one_mul] <;> ring
   have hΨ : (C₁ • W).Ψ₃.eval (x₂ - x₁) = 0 := by
     rw [eval_variableChange_Ψ₃]
-    simp only [C₁, inv_one, Units.val_one, one_pow, one_mul, sub_add_cancel, hΨQ]
+    simp only [C₁, inv_one, Units.val_one, one_pow, one_mul, sub_add_cancel, h.eval_Ψ₃_snd]
   rw [hC₁, Affine.equation_iff] at hE
   rw [hC₁, eval_Ψ₃] at hΨ
   simp only [b₂, b₄, b₆, b₈] at hE hΨ
-  obtain ⟨u, μ, ζ, hζ, ha₁, ha₃, hX, hY⟩ := exists_scaling (a₁ := W.a₁ + 2 * σ)
-    (a₃ := 2 * y₁ + W.a₁ * x₁ + W.a₃) (y := y₂ - y₁ - σ * (x₂ - x₁)) h3 hx
-    (by convert hψQ using 1; ring) (by linear_combination hE)
-    (hx.mul_right_eq_zero.mp (by linear_combination hΨ))
-  refine ⟨⟨u, x₁, σ, y₁⟩, rfl, rfl, μ, ζ, hζ, ?_, by linear_combination hX,
-    by linear_combination hY + σ * hX⟩
-  have hu := u.inv_mul
+  exact ⟨ha₂, by linear_combination hE,
+    h.isUnit_sub.mul_right_eq_zero.mp (by linear_combination hΨ)⟩
+
+/-- The shear `s = (a₄ + 2a₂x₁ - a₁y₁ + 3x₁²) / ψ₂(P)` makes the tangent at `P` horizontal. -/
+private theorem slope_spec :
+    (W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) * ↑h.isUnit_ψ₂_fst.unit⁻¹ *
+      (2 * y₁ + W.a₁ * x₁ + W.a₃) = W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2 := by
+  have hψ : (2 * y₁ + W.a₁ * x₁ + W.a₃) * ↑h.isUnit_ψ₂_fst.unit⁻¹ = 1 := by
+    rw [← Affine.evalEval_polynomialY, ← ψ₂]
+    exact h.isUnit_ψ₂_fst.mul_val_inv
+  linear_combination (W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) * hψ
+
+/-- The numerator `v = 3ψ₂(P) + (a₁ + 2s)(x₂ - x₁)` of the scaling is a unit. -/
+private theorem isUnit_scalingNumerator :
+    IsUnit (3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) + (W.a₁ + 2 *
+      ((W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) * ↑h.isUnit_ψ₂_fst.unit⁻¹)) *
+        (x₂ - x₁)) := by
+  obtain ⟨-, hE, hF⟩ := h.shear_spec h.slope_spec
+  refine isUnit_scaling h.isUnit_three ?_ hE hF
+  have hψ := h.isUnit_ψ₂_snd
+  rw [ψ₂, Affine.evalEval_polynomialY] at hψ
+  convert hψ using 1
+  ring
+
+end IsThreeTorsionBasis
+
+variable (h : W.IsThreeTorsionBasis x₁ y₁ x₂ y₂)
+
+/-- The **change of variables to level-three normal form** of a basis `(P, Q)` of the `3`-torsion:
+`r = x₁`, `s = (a₄ + 2a₂x₁ - a₁y₁ + 3x₁²) / ψ₂(P)`, `t = y₁` and `u = v / (3 (x₂ - x₁))`, where
+`v = 3ψ₂(P) + (a₁ + 2s)(x₂ - x₁)`. It carries `W` to the level-three normal form with parameter
+`μ = levelThreeParameter h` (`toLevelThreeNormalForm_smul`), `P` to `(0, 0)` and `Q` to
+`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` with `ζ = levelThreeRootOfUnity h`, and it is the only
+change of variables doing so (`eq_toLevelThreeNormalForm`). -/
+noncomputable def toLevelThreeNormalForm : VariableChange R where
+  u := h.isUnit_scalingNumerator.unit * (h.isUnit_three.mul h.isUnit_sub).unit⁻¹
+  r := x₁
+  s := (W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) * ↑h.isUnit_ψ₂_fst.unit⁻¹
+  t := y₁
+
+@[simp]
+theorem toLevelThreeNormalForm_u : ((toLevelThreeNormalForm h).u : R) =
+    (3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) + (W.a₁ + 2 * (toLevelThreeNormalForm h).s) * (x₂ - x₁)) *
+      ↑(h.isUnit_three.mul h.isUnit_sub).unit⁻¹ := by
+  simp only [toLevelThreeNormalForm, Units.val_mul, IsUnit.unit_spec]
+
+@[simp] theorem toLevelThreeNormalForm_r : (toLevelThreeNormalForm h).r = x₁ := (rfl)
+
+@[simp]
+theorem toLevelThreeNormalForm_s : (toLevelThreeNormalForm h).s =
+    (W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2) * ↑h.isUnit_ψ₂_fst.unit⁻¹ :=
+  (rfl)
+
+@[simp] theorem toLevelThreeNormalForm_t : (toLevelThreeNormalForm h).t = y₁ := (rfl)
+
+/-- The parameter `μ = (a₁ + 2s) / (3u)` of the level-three normal form reached by
+`toLevelThreeNormalForm h`. -/
+noncomputable def levelThreeParameter : R :=
+  ↑(toLevelThreeNormalForm h).u⁻¹ * (W.a₁ + 2 * (toLevelThreeNormalForm h).s) *
+    ↑h.isUnit_three.unit⁻¹
+
+/-- The root `ζ = μ + (y₂ - y₁ - s (x₂ - x₁)) / (u (x₂ - x₁))` of `ζ² + ζ + 1` such that
+`toLevelThreeNormalForm h` carries `Q` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`. -/
+noncomputable def levelThreeRootOfUnity : R :=
+  levelThreeParameter h + ↑(toLevelThreeNormalForm h).u⁻¹ *
+    (y₂ - y₁ - (toLevelThreeNormalForm h).s * (x₂ - x₁)) * ↑h.isUnit_sub.unit⁻¹
+
+/-- The properties of `toLevelThreeNormalForm h`, `levelThreeParameter h` and
+`levelThreeRootOfUnity h`. -/
+private theorem toLevelThreeNormalForm_spec :
+    levelThreeRootOfUnity h ^ 2 + levelThreeRootOfUnity h + 1 = 0 ∧
+      toLevelThreeNormalForm h • W = levelThreeNormalForm (levelThreeParameter h) ∧
+      x₂ = (toLevelThreeNormalForm h).u ^ 2 *
+        -(levelThreeParameter h ^ 2 + levelThreeParameter h + 1) + (toLevelThreeNormalForm h).r ∧
+      y₂ = (toLevelThreeNormalForm h).u ^ 3 * ((levelThreeParameter h ^ 2 + levelThreeParameter h +
+        1) * (levelThreeParameter h - levelThreeRootOfUnity h)) + (toLevelThreeNormalForm h).u ^ 2 *
+          (toLevelThreeNormalForm h).s * -(levelThreeParameter h ^ 2 + levelThreeParameter h + 1) +
+        (toLevelThreeNormalForm h).t := by
+  have hσ : (toLevelThreeNormalForm h).s * (2 * y₁ + W.a₁ * x₁ + W.a₃) =
+      W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2 := h.slope_spec
+  have hv : IsUnit (3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) +
+      (W.a₁ + 2 * (toLevelThreeNormalForm h).s) * (x₂ - x₁)) := h.isUnit_scalingNumerator
+  have hu : ((toLevelThreeNormalForm h).u : R) * (3 * (x₂ - x₁)) = 3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) +
+      (W.a₁ + 2 * (toLevelThreeNormalForm h).s) * (x₂ - x₁) := by
+    rw [toLevelThreeNormalForm_u]
+    linear_combination (3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) +
+      (W.a₁ + 2 * (toLevelThreeNormalForm h).s) * (x₂ - x₁)) *
+        (h.isUnit_three.mul h.isUnit_sub).val_inv_mul
+  have hμ : levelThreeParameter h = ↑(toLevelThreeNormalForm h).u⁻¹ *
+      (W.a₁ + 2 * (toLevelThreeNormalForm h).s) * ↑h.isUnit_three.unit⁻¹ := rfl
+  have hζ : levelThreeRootOfUnity h = levelThreeParameter h + ↑(toLevelThreeNormalForm h).u⁻¹ *
+      (y₂ - y₁ - (toLevelThreeNormalForm h).s * (x₂ - x₁)) * ↑h.isUnit_sub.unit⁻¹ := rfl
+  have hr : (toLevelThreeNormalForm h).r = x₁ := rfl
+  have ht : (toLevelThreeNormalForm h).t = y₁ := rfl
+  have hw₃ := h.isUnit_three.val_inv_mul
+  have hwₓ := h.isUnit_sub.val_inv_mul
+  obtain ⟨ha₂, hE, hF⟩ := h.shear_spec hσ
+  have hP := h.equation_fst
+  rw [Affine.equation_iff] at hP
+  rw [hr, ht]
+  generalize toLevelThreeNormalForm h = C at *
+  generalize levelThreeRootOfUnity h = ζ at *
+  generalize levelThreeParameter h = μ at *
+  have hu' := C.u.inv_mul
+  -- `μ v = a₁x` and `ζ v = a₁x + 3y` in the coordinates of the scaling step, using `u (3x) = v`
+  have hμv : μ * (3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) + (W.a₁ + 2 * C.s) * (x₂ - x₁)) =
+      (W.a₁ + 2 * C.s) * (x₂ - x₁) := by
+    rw [hμ]
+    linear_combination (-(↑C.u⁻¹ * (W.a₁ + 2 * C.s) * ↑h.isUnit_three.unit⁻¹)) * hu +
+      (W.a₁ + 2 * C.s) * (x₂ - x₁) * ↑h.isUnit_three.unit⁻¹ * 3 * hu' +
+      (W.a₁ + 2 * C.s) * (x₂ - x₁) * hw₃
+  have hζv : ζ * (3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) + (W.a₁ + 2 * C.s) * (x₂ - x₁)) =
+      (W.a₁ + 2 * C.s) * (x₂ - x₁) + 3 * (y₂ - y₁ - C.s * (x₂ - x₁)) := by
+    rw [hζ]
+    linear_combination hμv - ↑C.u⁻¹ * (y₂ - y₁ - C.s * (x₂ - x₁)) * ↑h.isUnit_sub.unit⁻¹ * hu +
+      3 * (y₂ - y₁ - C.s * (x₂ - x₁)) * ↑h.isUnit_sub.unit⁻¹ * (x₂ - x₁) * hu' +
+      3 * (y₂ - y₁ - C.s * (x₂ - x₁)) * hwₓ
+  obtain ⟨hζ₀, ha₁, ha₃, hX, hY⟩ :=
+    scaling_spec h.isUnit_three h.isUnit_sub hv hE hF hu hμv hζv
+  refine ⟨hζ₀, ?_, by linear_combination hX, by linear_combination hY + C.s * hX⟩
   ext
   · simp only [variableChange_a₁, levelThreeNormalForm_a₁, ha₁, Units.inv_mul_cancel_left]
-  · simp only [variableChange_a₂, levelThreeNormalForm_a₂, ha₂, mul_zero]
-  · rw [variableChange_a₃, levelThreeNormalForm_a₃]
-    linear_combination (↑u⁻¹ : R) ^ 3 * ha₃ +
-      (μ ^ 3 - 1) * (((↑u⁻¹ : R) * u) ^ 2 + (↑u⁻¹ : R) * u + 1) * hu
-  · rw [variableChange_a₄, levelThreeNormalForm_a₄]
-    linear_combination -(↑u⁻¹ : R) ^ 4 * hσ
-  · rw [variableChange_a₆, levelThreeNormalForm_a₆]
-    linear_combination -(↑u⁻¹ : R) ^ 6 * hP
+  · simp only [variableChange_a₂, hr, levelThreeNormalForm_a₂, ha₂, mul_zero]
+  · rw [variableChange_a₃, hr, ht, levelThreeNormalForm_a₃]
+    linear_combination (↑C.u⁻¹ : R) ^ 3 * ha₃ +
+      (μ ^ 3 - 1) * (((↑C.u⁻¹ : R) * C.u) ^ 2 + (↑C.u⁻¹ : R) * C.u + 1) * hu'
+  · rw [variableChange_a₄, hr, ht, levelThreeNormalForm_a₄]
+    linear_combination -(↑C.u⁻¹ : R) ^ 4 * hσ
+  · rw [variableChange_a₆, hr, ht, levelThreeNormalForm_a₆]
+    linear_combination -(↑C.u⁻¹ : R) ^ 6 * hP
+
+/-- The root of unity of a basis of the `3`-torsion is a root of `ζ² + ζ + 1`. -/
+theorem levelThreeRootOfUnity_sq_add_levelThreeRootOfUnity_add_one :
+    levelThreeRootOfUnity h ^ 2 + levelThreeRootOfUnity h + 1 = 0 :=
+  (toLevelThreeNormalForm_spec h).1
+
+/-- **Existence of level-three normal form.** The change of variables `toLevelThreeNormalForm h`
+carries `W` to the level-three normal form with parameter `levelThreeParameter h`. -/
+theorem toLevelThreeNormalForm_smul :
+    toLevelThreeNormalForm h • W = levelThreeNormalForm (levelThreeParameter h) :=
+  (toLevelThreeNormalForm_spec h).2.1
+
+/-- The change of variables `toLevelThreeNormalForm h` carries `Q = (x₂, y₂)` to a point with
+`x`-coordinate `-(μ² + μ + 1)`, where `μ = levelThreeParameter h`. -/
+theorem toLevelThreeNormalForm_basisPoint_x :
+    x₂ = (toLevelThreeNormalForm h).u ^ 2 *
+      -(levelThreeParameter h ^ 2 + levelThreeParameter h + 1) + x₁ :=
+  (toLevelThreeNormalForm_spec h).2.2.1
+
+/-- The change of variables `toLevelThreeNormalForm h` carries `Q = (x₂, y₂)` to a point with
+`y`-coordinate `(μ² + μ + 1)(μ - ζ)`, where `μ = levelThreeParameter h` and
+`ζ = levelThreeRootOfUnity h`. -/
+theorem toLevelThreeNormalForm_basisPoint_y :
+    y₂ = (toLevelThreeNormalForm h).u ^ 3 * ((levelThreeParameter h ^ 2 + levelThreeParameter h +
+      1) * (levelThreeParameter h - levelThreeRootOfUnity h)) + (toLevelThreeNormalForm h).u ^ 2 *
+        (toLevelThreeNormalForm h).s * -(levelThreeParameter h ^ 2 + levelThreeParameter h + 1) +
+      y₁ :=
+  (toLevelThreeNormalForm_spec h).2.2.2
+
+/-- The level-three normal form reached by `toLevelThreeNormalForm h` is elliptic: its parameter
+`μ` has `μ³ - 1 = u⁻³ ψ₂(P)` a unit. -/
+theorem isElliptic_levelThreeNormalForm_levelThreeParameter :
+    (levelThreeNormalForm (levelThreeParameter h)).IsElliptic := by
+  refine (isElliptic_levelThreeNormalForm_iff _).mpr ⟨h.isUnit_three, ?_⟩
+  have h₃ := congr_arg a₃ (toLevelThreeNormalForm_smul h)
+  rw [variableChange_a₃, toLevelThreeNormalForm_r, toLevelThreeNormalForm_t,
+    levelThreeNormalForm_a₃] at h₃
+  rw [← h₃]
+  refine ((Units.isUnit _).pow 3).mul ?_
+  convert h.isUnit_ψ₂_fst using 1
+  rw [ψ₂, Affine.evalEval_polynomialY]
+  ring
 
 /-- The identities satisfied by a change of variables to level-three normal form: they determine
 `s`, `u`, `μ` and `ζ` in turn. -/
@@ -360,48 +577,76 @@ private theorem variableChange_levelThreeNormalForm_spec {C : VariableChange R} 
   · linear_combination 3 * hu₃ + (x₂ - x₁) * hu₁ + 3 * C.u * (1 - μ) * hx₂
   · linear_combination -hy₂ + (C.s - C.u * (μ - ζ)) * hx₂
 
-/-- **Level-three normal form.** Let `3` be a unit in `R`, and let `P = (x₁, y₁)` and
-`Q = (x₂, y₂)` be points of `W` at which the `3`-division polynomial `Ψ₃` vanishes and the
-`2`-division polynomial `ψ₂` is a unit, with `x₂ - x₁` a unit: a basis of the `3`-torsion of `W`
-in every fibre. Then exactly one change of variables carries `W` to a level-three normal form
-`Y² + 3μXY + (μ³ - 1)Y = X³`, `P` to `(0, 0)` and `Q` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`
-for a root `ζ` of `ζ² + ζ + 1`. Here a point `(x, y)` of `C • W` corresponds to the point
-`(u²x + r, u³y + u²sx + t)` of `W`. -/
-theorem existsUnique_variableChange_levelThreeNormalForm (h3 : IsUnit (3 : R))
-    (hP : W.toAffine.Equation x₁ y₁) (hQ : W.toAffine.Equation x₂ y₂)
-    (hΨP : W.Ψ₃.eval x₁ = 0) (hΨQ : W.Ψ₃.eval x₂ = 0)
-    (hψP : IsUnit (W.ψ₂.evalEval x₁ y₁)) (hψQ : IsUnit (W.ψ₂.evalEval x₂ y₂))
-    (hx : IsUnit (x₂ - x₁)) :
+/-- **Uniqueness of level-three normal form.** A change of variables carrying `W` to a level-three
+normal form, `P` to `(0, 0)` (that is, with `r = x₁` and `t = y₁`) and `Q` to
+`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` is `toLevelThreeNormalForm h`. -/
+theorem eq_toLevelThreeNormalForm {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ ζ : R}
+    (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
+    (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
+    C = toLevelThreeNormalForm h := by
+  obtain ⟨-, hC₀, hx₀, hy₀⟩ := toLevelThreeNormalForm_spec h
+  obtain ⟨hs, hu, -, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂ hy₂
+  obtain ⟨hs₀, hu₀, -, -⟩ := variableChange_levelThreeNormalForm_spec
+    (toLevelThreeNormalForm_r h) (toLevelThreeNormalForm_t h) hC₀ hx₀ hy₀
+  have hss : C.s = (toLevelThreeNormalForm h).s :=
+    h.isUnit_ψ₂_fst'.mul_right_cancel (hs.trans hs₀.symm)
+  ext : 1
+  · exact Units.ext <| (h.isUnit_three.mul h.isUnit_sub).mul_right_cancel <| by rw [hu, hu₀, hss]
+  · rw [hr, toLevelThreeNormalForm_r]
+  · exact hss
+  · rw [ht, toLevelThreeNormalForm_t]
+
+/-- The parameter of the level-three normal form reached in `eq_toLevelThreeNormalForm` is
+`levelThreeParameter h`. -/
+theorem eq_levelThreeParameter {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ ζ : R}
+    (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
+    (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
+    μ = levelThreeParameter h := by
+  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂
+  obtain ⟨-, hC₀, hx₀, hy₀⟩ := toLevelThreeNormalForm_spec h
+  obtain ⟨-, -, hμ, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂ hy₂
+  obtain ⟨-, -, hμ₀, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hC₀ hx₀ hy₀
+  exact ((toLevelThreeNormalForm h).u.isUnit.mul h.isUnit_three).mul_left_cancel
+    (by linear_combination hμ - hμ₀)
+
+/-- The root of unity in `eq_toLevelThreeNormalForm` is `levelThreeRootOfUnity h`. -/
+theorem eq_levelThreeRootOfUnity {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ ζ : R}
+    (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
+    (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
+    ζ = levelThreeRootOfUnity h := by
+  obtain rfl := eq_levelThreeParameter h hr ht hC hx₂ hy₂
+  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂
+  obtain ⟨-, hC₀, hx₀, hy₀⟩ := toLevelThreeNormalForm_spec h
+  obtain ⟨-, -, -, hζ⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂ hy₂
+  obtain ⟨-, -, -, hζ₀⟩ := variableChange_levelThreeNormalForm_spec hr ht hC₀ hx₀ hy₀
+  exact ((toLevelThreeNormalForm h).u.isUnit.mul h.isUnit_sub).mul_left_cancel
+    (by linear_combination hζ - hζ₀)
+
+include h in
+/-- **Level-three normal form.** Let `(P, Q)` be a basis of the `3`-torsion of `W`, with
+`P = (x₁, y₁)` and `Q = (x₂, y₂)`. Then exactly one change of variables carries `W` to a
+level-three normal form `Y² + 3μXY + (μ³ - 1)Y = X³`, `P` to `(0, 0)` and `Q` to
+`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` for a root `ζ` of `ζ² + ζ + 1`. Here a point `(x, y)` of
+`C • W` corresponds to the point `(u²x + r, u³y + u²sx + t)` of `W`. -/
+theorem existsUnique_variableChange_levelThreeNormalForm :
     ∃! C : VariableChange R, C.r = x₁ ∧ C.t = y₁ ∧ ∃ μ ζ : R, ζ ^ 2 + ζ + 1 = 0 ∧
       C • W = levelThreeNormalForm μ ∧ x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r ∧
       y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t := by
-  obtain ⟨C, hC⟩ := exists_variableChange_levelThreeNormalForm h3 hP hQ hΨP hΨQ hψP hψQ hx
-  refine ⟨C, hC, fun C' hC' ↦ ?_⟩
-  obtain ⟨hr, ht, μ, ζ, -, hW, hx₂, hy₂⟩ := hC
-  obtain ⟨hr', ht', μ', ζ', -, hW', hx₂', hy₂'⟩ := hC'
-  obtain ⟨hs, hu, -, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hW hx₂ hy₂
-  obtain ⟨hs', hu', -, -⟩ := variableChange_levelThreeNormalForm_spec hr' ht' hW' hx₂' hy₂'
-  rw [ψ₂, Affine.evalEval_polynomialY] at hψP
-  have hss : C'.s = C.s := hψP.mul_right_cancel (hs'.trans hs.symm)
-  ext : 1
-  · exact Units.ext <| (h3.mul hx).mul_right_cancel <| by rw [hu', hu, hss]
-  · rw [hr, hr']
-  · exact hss
-  · rw [ht, ht']
+  obtain ⟨hζ, hC, hx₂, hy₂⟩ := toLevelThreeNormalForm_spec h
+  exact ⟨toLevelThreeNormalForm h, ⟨rfl, rfl, _, _, hζ, hC, hx₂, hy₂⟩,
+    fun _ ⟨hr, ht, _, _, _, hC, hx₂, hy₂⟩ ↦ eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂⟩
 
 /-- For elliptic `W`, a change of variables carrying `W` to a level-three normal form, `(x₁, y₁)`
-to `(0, 0)` and `(x₂, y₂)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` exists exactly when `3` is a
-unit and `(x₁, y₁)`, `(x₂, y₂)` are points of `W` at which `Ψ₃` vanishes and `ψ₂` is a unit, with
-`x₂ - x₁` a unit. -/
+to `(0, 0)` and `(x₂, y₂)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` exists exactly when
+`(x₁, y₁)`, `(x₂, y₂)` is a basis of the `3`-torsion of `W`: `3` is a unit, and they are points of
+`W` at which `Ψ₃` vanishes and `ψ₂` is a unit, with `x₂ - x₁` a unit. -/
 theorem exists_variableChange_levelThreeNormalForm_iff [W.IsElliptic] :
     (∃ C : VariableChange R, C.r = x₁ ∧ C.t = y₁ ∧ ∃ μ ζ : R, ζ ^ 2 + ζ + 1 = 0 ∧
       C • W = levelThreeNormalForm μ ∧ x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r ∧
       y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) ↔
-      IsUnit (3 : R) ∧ W.toAffine.Equation x₁ y₁ ∧ W.toAffine.Equation x₂ y₂ ∧
-        W.Ψ₃.eval x₁ = 0 ∧ W.Ψ₃.eval x₂ = 0 ∧ IsUnit (W.ψ₂.evalEval x₁ y₁) ∧
-        IsUnit (W.ψ₂.evalEval x₂ y₂) ∧ IsUnit (x₂ - x₁) := by
-  refine ⟨fun ⟨C, hr, ht, μ, ζ, hζ, hC, hx₂, hy₂⟩ ↦ ?_, fun ⟨h3, hP, hQ, hΨP, hΨQ, hψP, hψQ, hx⟩ ↦
-    (existsUnique_variableChange_levelThreeNormalForm h3 hP hQ hΨP hΨQ hψP hψQ hx).exists⟩
+      W.IsThreeTorsionBasis x₁ y₁ x₂ y₂ := by
+  refine ⟨fun ⟨C, hr, ht, μ, ζ, hζ, hC, hx₂, hy₂⟩ ↦ ?_, fun h ↦
+    (existsUnique_variableChange_levelThreeNormalForm h).exists⟩
   have : (levelThreeNormalForm μ).IsElliptic := hC ▸ inferInstance
   obtain ⟨h3, hμ⟩ := (isElliptic_levelThreeNormalForm_iff μ).mp this
   -- `μ² + μ + 1` divides the unit `μ³ - 1`, and `(2ζ + 1)² = -3`
@@ -433,6 +678,40 @@ theorem exists_variableChange_levelThreeNormalForm_iff [W.IsElliptic] :
   · rw [hx₂, hr, add_sub_cancel_right]
     exact (hu.pow 2).mul hμ'.neg
 
+/-- The change of variables to level-three normal form, its parameter and its root of unity commute
+with base change. -/
+private theorem toLevelThreeNormalForm_map_spec {A : Type*} [CommRing A] (φ : R →+* A) :
+    (toLevelThreeNormalForm h).map φ = toLevelThreeNormalForm (h.map φ) ∧
+      φ (levelThreeParameter h) = levelThreeParameter (h.map φ) ∧
+      φ (levelThreeRootOfUnity h) = levelThreeRootOfUnity (h.map φ) := by
+  obtain ⟨-, hC, hx₂, hy₂⟩ := toLevelThreeNormalForm_spec h
+  have hC' : (toLevelThreeNormalForm h).map φ • W.map φ =
+      levelThreeNormalForm (φ (levelThreeParameter h)) := by
+    rw [map_variableChange, hC, map_levelThreeNormalForm]
+  replace hx₂ := congr_arg φ hx₂
+  replace hy₂ := congr_arg φ hy₂
+  simp only [map_add, map_mul, map_pow, map_neg, map_one, map_sub] at hx₂ hy₂
+  exact ⟨eq_toLevelThreeNormalForm (h.map φ) rfl rfl hC' hx₂ hy₂,
+    eq_levelThreeParameter (h.map φ) rfl rfl hC' hx₂ hy₂,
+    eq_levelThreeRootOfUnity (h.map φ) rfl rfl hC' hx₂ hy₂⟩
+
+/-- **Level-three normal form commutes with base change.** The image of `toLevelThreeNormalForm h`
+under a ring homomorphism `φ` is the change of variables to level-three normal form of the image
+basis of the `3`-torsion of `W.map φ`. -/
+theorem toLevelThreeNormalForm_map {A : Type*} [CommRing A] (φ : R →+* A) :
+    (toLevelThreeNormalForm h).map φ = toLevelThreeNormalForm (h.map φ) :=
+  (toLevelThreeNormalForm_map_spec h φ).1
+
+/-- The parameter of the level-three normal form commutes with base change. -/
+theorem levelThreeParameter_map {A : Type*} [CommRing A] (φ : R →+* A) :
+    φ (levelThreeParameter h) = levelThreeParameter (h.map φ) :=
+  (toLevelThreeNormalForm_map_spec h φ).2.1
+
+/-- The root of unity of a basis of the `3`-torsion commutes with base change. -/
+theorem levelThreeRootOfUnity_map {A : Type*} [CommRing A] (φ : R →+* A) :
+    φ (levelThreeRootOfUnity h) = levelThreeRootOfUnity (h.map φ) :=
+  (toLevelThreeNormalForm_map_spec h φ).2.2
+
 /-! ### The universal curve with a basis of its `3`-torsion -/
 
 namespace UniversalLevelThree
@@ -461,9 +740,9 @@ noncomputable def rootOfUnity : Ring :=
 
 /-- The root of unity `ζ` of `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is a root of `ζ² + ζ + 1`. -/
 theorem rootOfUnity_sq_add_rootOfUnity_add_one : rootOfUnity ^ 2 + rootOfUnity + 1 = 0 := by
-  rw [rootOfUnity, ← map_pow, ← map_add, ← map_one (algebraMap PolyRing Ring), ← map_add,
-    ← map_pow, ← map_add, ← map_one (Ideal.Quotient.mk _), ← map_add,
-    Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _)), map_zero]
+  simpa only [rootOfUnity, map_add, map_pow, map_one, map_zero] using
+    congr_arg (algebraMap PolyRing Ring)
+    (Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _))
 
 /-- The **universal curve with a basis of its `3`-torsion**: the level-three normal form over
 `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`, with the basis `(0, 0)`, `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`. -/
@@ -557,63 +836,72 @@ theorem comp_lift {S : Type*} [CommRing S] (φ : R →+* S) (hΔ : IsUnit (level
     (hζ : ζ ^ 2 + ζ + 1 = 0) :
     φ.comp (lift hΔ hζ) = lift (μ := φ μ) (ζ := φ ζ)
       (by rw [← map_levelThreeNormalForm, map_Δ]; exact hΔ.map φ)
-      (by rw [← map_pow, ← map_add, ← map_one φ, ← map_add, hζ, map_zero]) := by
+      (by simpa using congr_arg φ hζ) := by
   ext <;> simp
 
-variable {W : WeierstrassCurve R} {x₁ y₁ x₂ y₂ : R}
+/-- The **classifying homomorphism** `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)] →+* R` of a basis `(P, Q)` of the
+`3`-torsion of `W`: the classifying homomorphism of the level-three normal form reached by
+`toLevelThreeNormalForm h`, with the root of unity `levelThreeRootOfUnity h`. -/
+noncomputable def classifyingHom : Ring →+* R :=
+  lift (isElliptic_levelThreeNormalForm_levelThreeParameter h).isUnit
+    (levelThreeRootOfUnity_sq_add_levelThreeRootOfUnity_add_one h)
 
-/-- **The universal property of the curve with a basis of its `3`-torsion.** Let `3` be a unit in
-`R`, and let `P = (x₁, y₁)` and `Q = (x₂, y₂)` be points of `W` at which `Ψ₃` vanishes and `ψ₂` is a
-unit, with `x₂ - x₁` a unit. Then there is exactly one pair of a ring homomorphism
-`f : ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)] →+* R` and a change of variables `C` such that `C` carries `W` to the
-base change of `UniversalLevelThree.curve` along `f`, `P` to `(0, 0)` and `Q` to the image of the
-universal second basis point `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`. -/
-theorem existsUnique_lift (h3 : IsUnit (3 : R))
-    (hP : W.toAffine.Equation x₁ y₁) (hQ : W.toAffine.Equation x₂ y₂)
-    (hΨP : W.Ψ₃.eval x₁ = 0) (hΨQ : W.Ψ₃.eval x₂ = 0)
-    (hψP : IsUnit (W.ψ₂.evalEval x₁ y₁)) (hψQ : IsUnit (W.ψ₂.evalEval x₂ y₂))
-    (hx : IsUnit (x₂ - x₁)) :
+/-- The classifying homomorphism of a basis of the `3`-torsion sends the parameter to
+`levelThreeParameter h`. -/
+@[simp]
+theorem classifyingHom_parameter : classifyingHom h parameter = levelThreeParameter h :=
+  lift_parameter ..
+
+/-- The classifying homomorphism of a basis of the `3`-torsion sends the root of unity to
+`levelThreeRootOfUnity h`. -/
+@[simp]
+theorem classifyingHom_rootOfUnity : classifyingHom h rootOfUnity = levelThreeRootOfUnity h :=
+  lift_rootOfUnity ..
+
+/-- The base change of the universal curve along the classifying homomorphism of a basis of the
+`3`-torsion of `W` is the level-three normal form reached by `toLevelThreeNormalForm h`. -/
+@[simp]
+theorem map_classifyingHom :
+    curve.map (classifyingHom h) = levelThreeNormalForm (levelThreeParameter h) :=
+  map_lift ..
+
+/-- The classifying homomorphism of a basis of the `3`-torsion is natural in the base ring: followed
+by a ring homomorphism `φ : R →+* S`, it is the classifying homomorphism of the image basis of the
+`3`-torsion of `W.map φ`. -/
+theorem comp_classifyingHom {S : Type*} [CommRing S] (φ : R →+* S) :
+    φ.comp (classifyingHom h) = classifyingHom (h.map φ) := by
+  ext <;> simp [levelThreeParameter_map, levelThreeRootOfUnity_map]
+
+include h in
+/-- **The universal property of the curve with a basis of its `3`-torsion.** Let `(P, Q)` be a
+basis of the `3`-torsion of `W`, with `P = (x₁, y₁)` and `Q = (x₂, y₂)`. Then there is exactly one
+pair of a ring homomorphism `f : ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)] →+* R` and a change of variables `C`
+such that `C` carries `W` to the base change of `UniversalLevelThree.curve` along `f`, `P` to
+`(0, 0)` and `Q` to the image of the universal second basis point
+`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`, namely `(classifyingHom h, toLevelThreeNormalForm h)`. -/
+theorem existsUnique_lift :
     ∃! p : (Ring →+* R) × VariableChange R, p.2.r = x₁ ∧ p.2.t = y₁ ∧ p.2 • W = curve.map p.1 ∧
       x₂ = p.2.u ^ 2 * p.1 (-(parameter ^ 2 + parameter + 1)) + p.2.r ∧
       y₂ = p.2.u ^ 3 * p.1 ((parameter ^ 2 + parameter + 1) * (parameter - rootOfUnity)) +
         p.2.u ^ 2 * p.2.s * p.1 (-(parameter ^ 2 + parameter + 1)) + p.2.t := by
-  obtain ⟨C, ⟨hr, ht, μ, ζ, hζ, hC, hx₂, hy₂⟩, huniq⟩ :=
-    existsUnique_variableChange_levelThreeNormalForm h3 hP hQ hΨP hΨQ hψP hψQ hx
-  -- the level-three normal form reached is elliptic: `μ³ - 1` is `u⁻³ ψ₂(P)`
-  have hμ : IsUnit (μ ^ 3 - 1) := by
-    have h := congr_arg a₃ hC
-    rw [variableChange_a₃, hr, ht, levelThreeNormalForm_a₃] at h
-    rw [← h]
-    refine ((Units.isUnit _).pow 3).mul ?_
-    convert hψP using 1
-    rw [ψ₂, Affine.evalEval_polynomialY]
-    ring
-  have hΔ : IsUnit (levelThreeNormalForm μ).Δ :=
-    have := (isElliptic_levelThreeNormalForm_iff μ).mpr ⟨h3, hμ⟩
-    (levelThreeNormalForm μ).isUnit_Δ
-  refine ⟨(lift hΔ hζ, C), ⟨hr, ht, by rw [map_lift, hC], ?_, ?_⟩, ?_⟩
-  · simpa using hx₂
-  · simpa using hy₂
-  rintro ⟨f, C'⟩ ⟨hr', ht', hC', hx₂', hy₂'⟩
-  simp only [map_neg, map_add, map_mul, map_pow, map_one, map_sub] at hx₂' hy₂'
-  rw [curve_eq, map_levelThreeNormalForm] at hC'
-  have hζ' : f rootOfUnity ^ 2 + f rootOfUnity + 1 = 0 := by
-    rw [← map_pow, ← map_add, ← map_one f, ← map_add, rootOfUnity_sq_add_rootOfUnity_add_one,
-      map_zero]
-  obtain rfl : C = C' := (huniq C' ⟨hr', ht', _, _, hζ', hC', hx₂', hy₂'⟩).symm
-  -- `μ` and `ζ` are determined by `C`
-  obtain ⟨-, -, hμ₁, hζ₁⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂ hy₂
-  obtain ⟨-, -, hμ₂, hζ₂⟩ := variableChange_levelThreeNormalForm_spec hr' ht' hC' hx₂' hy₂'
-  have hfμ : f parameter = μ :=
-    ((C.u.isUnit.mul h3).mul_left_cancel (by linear_combination hμ₂ - hμ₁))
-  have hfζ : f rootOfUnity = ζ := by
-    refine (C.u.isUnit.mul hx).mul_left_cancel ?_
-    rw [hfμ] at hζ₂
-    linear_combination hζ₂ - hζ₁
+  refine ⟨(classifyingHom h, toLevelThreeNormalForm h), ⟨rfl, rfl, ?_, ?_, ?_⟩, ?_⟩
+  · rw [map_classifyingHom, toLevelThreeNormalForm_smul]
+  · simpa only [map_neg, map_add, map_mul, map_pow, map_one, classifyingHom_parameter,
+      toLevelThreeNormalForm_r] using
+      toLevelThreeNormalForm_basisPoint_x h
+  · simpa only [map_neg, map_add, map_mul, map_pow, map_one, map_sub, classifyingHom_parameter,
+      classifyingHom_rootOfUnity, toLevelThreeNormalForm_t] using
+      toLevelThreeNormalForm_basisPoint_y h
+  rintro ⟨f, C⟩ ⟨hr, ht, hC, hx₂, hy₂⟩
+  simp only [map_neg, map_add, map_mul, map_pow, map_one, map_sub] at hx₂ hy₂
+  rw [curve_eq, map_levelThreeNormalForm] at hC
+  have hfμ := eq_levelThreeParameter h hr ht hC hx₂ hy₂
+  have hfζ := eq_levelThreeRootOfUnity h hr ht hC hx₂ hy₂
+  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂
   simp only [Prod.mk.injEq, and_true]
   ext
-  · rw [hfμ, lift_parameter]
-  · rw [hfζ, lift_rootOfUnity]
+  · rw [hfμ, classifyingHom_parameter]
+  · rw [hfζ, classifyingHom_rootOfUnity]
 
 end UniversalLevelThree
 
