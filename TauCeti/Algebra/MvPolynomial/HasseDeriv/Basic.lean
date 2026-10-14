@@ -262,10 +262,9 @@ theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
 /-- The Hasse derivative of a variable is the variable in order zero, `1` in its corresponding
 first order, and `0` in every other order. -/
 @[simp]
-theorem hasseDeriv_X (d : σ →₀ ℕ) (i : σ) :
+theorem hasseDeriv_X [DecidableEq σ] (d : σ →₀ ℕ) (i : σ) :
     hasseDeriv d (X i : MvPolynomial σ R) =
-      @ite _ (d = 0) (Classical.propDecidable _) (X i)
-        (@ite _ (d = single i 1) (Classical.propDecidable _) 1 0) := by
+      if d = 0 then X i else if d = single i 1 then 1 else 0 := by
   rw [← one_mul (X i), hasseDeriv_mul_X]
   by_cases hd : d = 0
   · subst d
