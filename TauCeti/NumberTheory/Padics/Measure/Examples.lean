@@ -36,7 +36,7 @@ example : zeroExtendClopen s ℤ (.const s 7) (0 : Fin 2) = 7 := by
   exact zeroExtendClopen_apply_mem s ℤ _ ⟨0, rfl⟩
 
 example : zeroExtendClopen s ℤ (.const s 7) (1 : Fin 2) = 0 := by
-  exact zeroExtendClopen_apply_not_mem s ℤ _ (by simp [s])
+  exact zeroExtendClopen_apply_notMem s ℤ _ (by simp [s])
 
 example : zeroExtendClopen (⊥ : Clopens (Fin 2)) ℤ 0 = 0 := by simp
 
@@ -44,11 +44,11 @@ example : restrictClopen s ℤ
     ((2 : ℤ) • dirac ℤ (0 : Fin 2) - (3 : ℤ) • dirac ℤ (1 : Fin 2)) =
     (2 : ℤ) • dirac ℤ (⟨0, rfl⟩ : s) := by
   rw [map_sub, map_smul, map_smul, restrictClopen_dirac_mem s ℤ ⟨0, rfl⟩,
-    restrictClopen_dirac_not_mem s ℤ (by simp [s])]
+    restrictClopen_dirac_notMem s ℤ (by simp [s])]
   simp
 
 example : restrictClopen s ℤ (dirac ℤ (1 : Fin 2)) = 0 :=
-  restrictClopen_dirac_not_mem s ℤ (by simp [s])
+  restrictClopen_dirac_notMem s ℤ (by simp [s])
 
 example {X : Type*} [TopologicalSpace X] [CompactSpace X] {R : Type*} [NormedCommRing R]
     (μ : D(X, R)) : restrictClopen (⊥ : Clopens X) R μ = 0 := by simp
@@ -62,11 +62,11 @@ example : clopenDecomposition s ℤ
   apply Prod.ext
   · dsimp only
     rw [map_sub, map_smul, map_smul, restrictClopen_dirac_mem s ℤ ⟨0, rfl⟩,
-      restrictClopen_dirac_not_mem s ℤ (by simp [s])]
+      restrictClopen_dirac_notMem s ℤ (by simp [s])]
     simp
   · dsimp only
     rw [map_sub, map_smul, map_smul,
-      restrictClopen_dirac_not_mem sᶜ ℤ (by simp [← SetLike.mem_coe, Clopens.coe_compl, s]),
+      restrictClopen_dirac_notMem sᶜ ℤ (by simp [← SetLike.mem_coe, Clopens.coe_compl, s]),
       restrictClopen_dirac_mem sᶜ ℤ
         ⟨1, by simp [← SetLike.mem_coe, Clopens.coe_compl, s]⟩]
     simp
@@ -85,7 +85,7 @@ example {X : Type*} [TopologicalSpace X] [CompactSpace X] {R : Type*} [NormedCom
 example {X : Type*} [TopologicalSpace X] [CompactSpace X] {R : Type*} [NormedCommRing R]
     (μ : D(X, R)) : map (ContinuousMap.subtypeVal ((⊥ : Clopens X)ᶜ : Clopens X))
       (restrictClopen (⊥ : Clopens X)ᶜ R μ) = μ := by
-  have h := map_subtype_restrictClopen_add_compl (⊥ : Clopens X) R μ
+  have h := map_subtypeVal_restrictClopen_add_compl (⊥ : Clopens X) R μ
   simpa only [restrictClopen_bot, map_zero, zero_add] using h
 
 end TauCeti

@@ -105,7 +105,7 @@ theorem zeroExtendClopen_apply_mem (f : C(s, R)) (x : s) :
   zeroExtendClopenFun_mem s R f x
 
 @[simp]
-theorem zeroExtendClopen_apply_not_mem (f : C(s, R)) {x : X} (hx : x ∉ s) :
+theorem zeroExtendClopen_apply_notMem (f : C(s, R)) {x : X} (hx : x ∉ s) :
     zeroExtendClopen s R f x = 0 :=
   zeroExtendClopenFun_not_mem s R f hx
 
@@ -166,7 +166,7 @@ theorem zeroExtendClopen_comp_restrictPreimage {Y : Type*} [TopologicalSpace Y] 
       zeroExtendClopen_apply_mem s R _ ⟨x, hxs⟩]
     rfl
   · have hxs : x ∉ s := hx
-    simp only [ContinuousMap.comp_apply, zeroExtendClopen_apply_not_mem t R g hx,
-      zeroExtendClopen_apply_not_mem s R _ hxs]
+    simp only [ContinuousMap.comp_apply, zeroExtendClopen_apply_notMem t R g hx,
+      zeroExtendClopen_apply_notMem s R _ hxs]
 
 end TauCeti

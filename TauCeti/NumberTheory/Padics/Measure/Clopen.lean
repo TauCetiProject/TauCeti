@@ -48,7 +48,7 @@ theorem restrictClopen_apply (μ : D(X, R)) (f : C(s, R)) :
   by simp [restrictClopen, ContinuousLinearMap.comp_apply]
 
 @[simp]
-theorem restrictClopen_map_subtype (ν : D(s, R)) :
+theorem restrictClopen_map_subtypeVal (ν : D(s, R)) :
     restrictClopen s R (map (X := s) (ContinuousMap.subtypeVal (s : Set X)) ν) = ν := by
   ext f
   simp only [restrictClopen_apply, map_apply]
@@ -57,7 +57,7 @@ theorem restrictClopen_map_subtype (ν : D(s, R)) :
   exact zeroExtendClopen_apply_mem s R f x
 
 /-- Pushing a clopen restriction back to the ambient space gives its test-function projector. -/
-theorem map_subtype_restrictClopen_apply (μ : D(X, R)) (f : C(X, R)) :
+theorem map_subtypeVal_restrictClopen_apply (μ : D(X, R)) (f : C(X, R)) :
     map (ContinuousMap.subtypeVal s) (restrictClopen s R μ) f =
       μ ((LocallyConstant.charFn R s.isClopen).toContinuousMap * f) := by
   rw [map_apply, restrictClopen_apply, comp_subtypeVal_eq_restrict,
@@ -71,11 +71,11 @@ theorem restrictClopen_dirac_mem (x : s) :
   exact zeroExtendClopen_apply_mem s R f x
 
 @[simp]
-theorem restrictClopen_dirac_not_mem {x : X} (hx : x ∉ s) :
+theorem restrictClopen_dirac_notMem {x : X} (hx : x ∉ s) :
     restrictClopen s R (dirac R x) = 0 := by
   ext f
   rw [restrictClopen_apply, dirac_apply, zero_apply]
-  exact zeroExtendClopen_apply_not_mem s R f hx
+  exact zeroExtendClopen_apply_notMem s R f hx
 
 /-- Every measure restricts to zero on the empty clopen. -/
 @[simp]
@@ -90,7 +90,7 @@ theorem restrictClopen_bot (μ : D(X, R)) : restrictClopen (⊥ : Clopens X) R �
 
 /-- A measure comes uniquely from the clopen subtype exactly when it annihilates
 all ambient tests vanishing on that clopen. The preimage is its clopen restriction. -/
-theorem existsUnique_map_subtype_iff (μ : D(X, R)) :
+theorem existsUnique_map_subtypeVal_iff_of_clopen (μ : D(X, R)) :
     (∃! ν : D(s, R), map (ContinuousMap.subtypeVal s) ν = μ) ↔
       ∀ f : C(X, R), (∀ x : s, f x = 0) → μ f = 0 := by
   constructor
@@ -110,7 +110,7 @@ theorem existsUnique_map_subtype_iff (μ : D(X, R)) :
       rw [map_sub, sub_eq_zero] at hzero
       exact hzero.symm
     refine ⟨restrictClopen s R μ, hmap, fun ν hν ↦ ?_⟩
-    rw [← hν, restrictClopen_map_subtype]
+    rw [← hν, restrictClopen_map_subtypeVal]
 
 /-- Restricting a measure carried by a disjoint clopen gives zero. -/
 @[simp]
@@ -122,12 +122,12 @@ theorem restrictClopen_map_of_disjoint (t : Clopens X) (hst : Disjoint s t)
   have hzero : (zeroExtendClopen s R f).comp
       (ContinuousMap.subtypeVal t) = 0 := by
     ext x
-    exact zeroExtendClopen_apply_not_mem s R f
+    exact zeroExtendClopen_apply_notMem s R f
       (fun hx ↦ Set.disjoint_left.mp (Clopens.coe_disjoint.mpr hst) hx x.property)
   rw [hzero, map_zero]
 
 /-- Recombining the two complementary restrictions recovers the ambient measure. -/
-theorem map_subtype_restrictClopen_add_compl (μ : D(X, R)) :
+theorem map_subtypeVal_restrictClopen_add_compl (μ : D(X, R)) :
     map (ContinuousMap.subtypeVal s) (restrictClopen s R μ) +
       map (ContinuousMap.subtypeVal (sᶜ : Clopens X)) (restrictClopen sᶜ R μ) = μ := by
   ext f
@@ -142,7 +142,7 @@ noncomputable def clopenDecomposition : D(X, R) ≃ₗ[R] D(s, R) × D((sᶜ : C
     map (ContinuousMap.subtypeVal (sᶜ : Clopens X)) νη.2
   left_inv := by
     intro μ
-    exact map_subtype_restrictClopen_add_compl s R μ
+    exact map_subtypeVal_restrictClopen_add_compl s R μ
   right_inv := by
     intro νη
     -- The constructor presents the forward map as the coerced product linear map.
@@ -152,11 +152,11 @@ noncomputable def clopenDecomposition : D(X, R) ≃ₗ[R] D(s, R) × D((sᶜ : C
       map (ContinuousMap.subtypeVal (sᶜ : Clopens X)) νη.2)) = νη
     apply Prod.ext
     · dsimp only
-      rw [map_add, restrictClopen_map_subtype,
+      rw [map_add, restrictClopen_map_subtypeVal,
         restrictClopen_map_of_disjoint s R sᶜ disjoint_compl_right, add_zero]
     · dsimp only
       rw [map_add, restrictClopen_map_of_disjoint sᶜ R s disjoint_compl_left,
-        restrictClopen_map_subtype, zero_add]
+        restrictClopen_map_subtypeVal, zero_add]
 
 @[simp]
 theorem clopenDecomposition_apply (μ : D(X, R)) :
