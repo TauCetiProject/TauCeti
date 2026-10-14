@@ -59,13 +59,9 @@ points of `f`, is admissible. -/
 private theorem isAdmissiblePerturbation_bump_mul (hfs : ContDiff ℝ 2 f) {z : E}
     (θ : ContDiffBump z) (hθ : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0) {c : ℝ}
     (ψ : ContDiffBump c) (w : E) :
-    IsAdmissiblePerturbation f fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫) where
-  contDiff := θ.contDiff.mul ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
-  hasCompactSupport := θ.hasCompactSupport.mul_right
-  disjoint := Set.disjoint_left.2 fun p hp hp0 ↦ by
-    have hpθ : p ∈ tsupport (θ : E → ℝ) := tsupport_mul_subset_left hp
-    rw [θ.tsupport_eq] at hpθ
-    exact hθ p hpθ hp0
+    IsAdmissiblePerturbation f fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫) :=
+  isAdmissiblePerturbation_contDiffBump_mul θ hθ
+    ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
 
 /-- The derivative of a test perturbation `θ (ψ ∘ f) ⟪w, ·⟫` in a direction `v` killed by
 `Df(p)`. -/
