@@ -18,7 +18,10 @@ The cellular chain groups with coefficients in a ring have bases indexed by the 
 This file puts the cellular differential in those coordinates. Each boundary column is a
 finitely supported function on the cells in the preceding dimension, even for an infinite CW
 complex. The incidence coefficients reconstruct the differential, and consecutive columns
-satisfy the finite-sum relation expressing that its square is zero.
+satisfy the finite-sum relation expressing that its square is zero. In a degree with a single
+cell, the chain group is the coefficient ring itself (`TauCeti.cellularChainCoord`), and between
+two such degrees the differential is right multiplication by the incidence coefficient
+(`TauCeti.cellularChainCoord_d`).
 
 The columns are also identified with the attaching maps: send the reduced fundamental class of
 the boundary sphere through the attaching map, pass to skeletal relative homology, and take
@@ -193,5 +196,32 @@ lemma sum_cellularIncidence_mul (n : ℕ) (k : cell C n) (j : cell C (n + 2)) :
   have h := congrArg (fun f : cell C n →₀ R ↦ f k)
     (cellularBoundaryColumn_sum_smul C R n j)
   simpa [Finsupp.sum, Finsupp.sum_apply] using h
+
+section Subsingleton
+
+variable {n : ℕ} [Subsingleton (cell C n)]
+
+/-- In a degree `n` with a single cell `c`, the cellular chain group of `C` with coefficients in
+`R` is `R`, through the coordinate of `c`. -/
+def cellularChainCoord (c : cell C n) : (cellularChainComplex C (ModuleCat.of R R)).X n ≃ₗ[R] R :=
+  (eqToIso (cellularChainComplex_X C _ n)).toLinearEquiv ≪≫ₗ
+    (cellularChainBasis C R n).repr ≪≫ₗ Finsupp.uniqueLinearEquiv R R c
+
+/-- If `C` has a single cell `c` in degree `n` and a single cell `c'` in degree `n + 1`, then in
+the coordinates `cellularChainCoord` the cellular differential is right multiplication by the
+incidence coefficient of `c` in the boundary of `c'`. -/
+lemma cellularChainCoord_d [Subsingleton (cell C (n + 1))] (c : cell C n) (c' : cell C (n + 1))
+    (x : (cellularChainComplex C (ModuleCat.of R R)).X (n + 1)) :
+    cellularChainCoord C R c ((cellularChainComplex C (ModuleCat.of R R)).d (n + 1) n x) =
+      cellularChainCoord C R c' x * cellularIncidence C R n c c' := by
+  simp only [cellularChainCoord, LinearEquiv.trans_apply, Finsupp.uniqueLinearEquiv_apply]
+  rw [cellularChainComplex_d]
+  simp only [Iso.toLinearEquiv_apply, eqToIso.hom, ← ConcreteCategory.comp_apply, Category.assoc,
+    eqToHom_trans, eqToHom_refl, Category.comp_id]
+  rw [ConcreteCategory.comp_apply, cellularChainBasis_repr_differential_apply,
+    Finset.sum_eq_single c' (fun b _ hb ↦ absurd (Subsingleton.elim b c') hb)
+      (fun h ↦ by rw [Finsupp.notMem_support_iff.1 h, zero_mul])]
+
+end Subsingleton
 
 end TauCeti
