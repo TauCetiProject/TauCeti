@@ -212,7 +212,7 @@ def main():
               'command_max_process_rss_bytes': 0, 'command_block_input_ops': 0,
               'command_block_output_ops': 0}
     reaped = 0
-    reaped_signals = []
+    reaped_signals = set()
     code = None
     drain_deadline = None
     try:
@@ -237,7 +237,7 @@ def main():
             reaped += 1
             reaped_code = os.waitstatus_to_exitcode(status)
             if reaped_code < 0:
-                reaped_signals.append(-reaped_code)
+                reaped_signals.add(-reaped_code)
             if pid == child.pid:
                 code = reaped_code
                 child.returncode = code
@@ -284,7 +284,7 @@ def main():
                   'exit_code': code, 'cancel_signals': cancelled,
                   'command_accounting_scope': ('partial-reaped-descendants' if interrupted else 'reaped-descendants')
                       if restore_subreaper else 'direct-child-only',
-                  'reaped_processes': reaped, 'reaped_termination_signals': reaped_signals, **totals,
+                  'reaped_processes': reaped, 'reaped_termination_signals': sorted(reaped_signals), **totals,
                   'observer_cpu_s': time.process_time(),
                   **sampler.summary()}
         out = Path(args.out)

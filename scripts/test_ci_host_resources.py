@@ -149,7 +149,7 @@ class HostResourcesTests(unittest.TestCase):
                     time.sleep(.01)
                     if cancel and len(calls) == 1:
                         handlers[signal.SIGTERM](signal.SIGTERM, None)
-                    return primary[0][0] + 1, 0, primary[0][2]
+                    return primary[0][0] + 1, signal.SIGKILL, primary[0][2]
                 with patch.object(host, 'DESCENDANT_GRACE', .05), \
                         patch.object(host.os, 'wait4', side_effect=continuous_reaps), \
                         patch.object(host.signal, 'signal', side_effect=lambda sig, fn: handlers.update({sig: fn})):
@@ -158,6 +158,7 @@ class HostResourcesTests(unittest.TestCase):
                 self.assertLess(value['elapsed_s'], 1)
                 self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
                 self.assertIn('descendant-accounting-unfinished', value['missing'])
+                self.assertEqual(value['reaped_termination_signals'], [signal.SIGKILL])
 
     def test_cancellation_after_monitor_exit_flushes_without_waiting_for_worker(self):
         with tempfile.TemporaryDirectory() as directory:
