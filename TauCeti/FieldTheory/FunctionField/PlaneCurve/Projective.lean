@@ -606,7 +606,8 @@ theorem isIntegrallyClosedIn_of_isHomogeneous (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
     {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
     IsIntegrallyClosedIn k F :=
-  isIntegrallyClosedIn_of_irreducible_map K (irreducible_map_dehomogenize_two hG hsm h) hx hgen
+  isIntegrallyClosedIn_of_irreducible_map (L := K) hx hgen
+    (irreducible_map_dehomogenize_two hG hsm h)
     (by rwa [aeval_dehomogenize, insertNth_two])
 
 omit [IsAlgClosed K] in
