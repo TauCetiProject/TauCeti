@@ -248,7 +248,7 @@ lemma baseChangePointsMulEquiv_mapDomain {H L : _root_.CommHopfAlgCat.{v} k}
   let : Algebra k A := Algebra.compHom A (algebraMap k K)
   let : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   simpa [baseChangePointsMulEquiv, hom_baseChangeMap]
-    using AlgHom.baseChangePointsMulEquiv_symm_mapDomain (k := k) (K := K)
+    using BialgHom.baseChangePointsMulEquiv_symm_mapDomain (k := k) (K := K)
       (A := H) (B := L) (R := A) φ.hom f
 
 variable {H : _root_.CommHopfAlgCat.{v} k} {L : _root_.CommHopfAlgCat.{max w v} K}

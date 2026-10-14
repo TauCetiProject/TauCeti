@@ -44,6 +44,8 @@ the inverse.
   convolution monoids, with `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
   functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
   information when `φ` does not.
+* `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
+  gives the corresponding constant point.
 
 ## References
 
@@ -188,6 +190,24 @@ lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
     AlgHom.comp_assoc]
 
 end Bialgebra
+
+section BialgebraConstantPoint
+
+variable {R H₁ A : Type*} [CommSemiring R] [CommSemiring H₁] [_root_.Bialgebra R H₁]
+variable [CommSemiring A] [Algebra R A]
+
+/-- Mapping a base-valued point first to the coordinate algebra and then through an
+algebra-valued point gives the corresponding constant point in the value algebra. -/
+lemma _root_.WithConv.mapValue_algebraOfId (x : WithConv (H₁ →ₐ[R] A))
+    (g : WithConv (H₁ →ₐ[R] R)) :
+    mapValue (H := H₁) x.ofConv
+        (mapValue (H := H₁) (Algebra.ofId R H₁) g) =
+      mapValue (H := H₁) (Algebra.ofId R A) g := by
+  have h := DFunLike.congr_fun
+    (mapValue_comp (H := H₁) x.ofConv (Algebra.ofId R H₁)) g
+  simpa [Algebra.comp_ofId] using h.symm
+
+end BialgebraConstantPoint
 
 section CommHopf
 

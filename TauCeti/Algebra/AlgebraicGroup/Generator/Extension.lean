@@ -143,8 +143,8 @@ theorem IsAGenerator.of_isShortExact [Module.Free R Q] [Module.Finite R Q]
     (h₂ : (BialgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
     (hφ₂ : IsAGenerator φ₂) : IsAGenerator φ := by
   refine isAGenerator_iff.mpr <| isFullSetOfSections_iff.mpr fun T _ _ _ f ↦ ?_
-  have h₁T := AlgHom.mapDomain_comp_pointsBaseChange_comp T i.hom h₁
-  have h₂T := AlgHom.mapDomain_comp_pointsBaseChange_comp T p.hom h₂
+  have h₁T := BialgHom.mapDomain_comp_pointsBaseChange_comp T i.hom h₁
+  have h₂T := BialgHom.mapDomain_comp_pointsBaseChange_comp T p.hom h₂
   simpa [AlgHom.ofConv_pointsBaseChange] using norm_eq_prod_of_isShortExact (h.baseChange T) hj
     hq hjq h₁T h₂T (hφ₁.baseChange T) (hφ₂.baseChange T) f
 
