@@ -40,6 +40,9 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
 
 ## Main results
 
+* `WeierstrassCurve.sq_dvd_and_dvd_cubic_of_equation`: over a domain with a prime `ϖ`, on the
+  normal form of Step 6 of Tate's algorithm, a solution `(ϖ X, y)` with `ϖ ∣ y` has `ϖ² ∣ y`, and
+  `X` is a root of the residue cubic modulo `ϖ`.
 * `WeierstrassCurve.exists_dvd_cubic_of_equation`,
   `WeierstrassCurve.exists_dvd_quadratic_of_equation` and
   `WeierstrassCurve.pow_six_dvd_a₆_of_equation`: over a domain with a prime `ϖ`, a solution with
@@ -73,6 +76,26 @@ section Domain
 
 variable {R : Type*} [CommRing R] [IsDomain R] (W : WeierstrassCurve R) {ϖ : R}
 
+/-- **On the normal form of Step 6 of Tate's algorithm, a solution `(ϖ X, y)` with `ϖ ∣ y` has
+`ϖ² ∣ y`, and `X` is a root of the residue cubic modulo `ϖ`.** Over a domain with a prime `ϖ`,
+suppose that `ϖ ∣ a₁`, `ϖ² ∣ a₃`, `a₂ = ϖ A₂`, `a₄ = ϖ² A₄` and `a₆ = ϖ³ A₆`; the residue cubic is
+`T³ + A₂ T² + A₄ T + A₆`. -/
+theorem sq_dvd_and_dvd_cubic_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁) {A₂ A₄ A₆ : R}
+    (h₂ : W.a₂ = ϖ * A₂) (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : W.a₄ = ϖ ^ 2 * A₄) (h₆ : W.a₆ = ϖ ^ 3 * A₆)
+    {X y : R} (h : W.toAffine.Equation (ϖ * X) y) (hy : ϖ ∣ y) :
+    ϖ ^ 2 ∣ y ∧ ϖ ∣ X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ := by
+  obtain ⟨A₁, hA₁⟩ := h₁
+  obtain ⟨A₃, hA₃⟩ := h₃
+  obtain ⟨Y, rfl⟩ := hy
+  rw [Affine.equation_iff, hA₁, h₂, hA₃, h₄, h₆] at h
+  -- `ϖ² Y² ≡ 0` modulo `ϖ³`
+  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2) <|
+    (mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero)).mp
+      ⟨X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ - A₁ * X * Y - A₃ * Y, by linear_combination h⟩
+  -- `ϖ³ (X³ + A₂ X² + A₄ X + A₆) ≡ 0` modulo `ϖ⁴`
+  exact ⟨⟨Y, by ring⟩, (mul_dvd_mul_iff_left (pow_ne_zero 3 hϖ.ne_zero)).mp
+    ⟨Y ^ 2 + A₁ * X * Y + A₃ * Y, by linear_combination -h⟩⟩
+
 /-- **On the normal form of Step 6 of Tate's algorithm, a solution divisible by `ϖ` reduces to a
 root of the residue cubic.** Over a domain with a prime `ϖ`, suppose that `ϖ ∣ a₁`, `ϖ² ∣ a₃`,
 `a₂ = ϖ A₂`, `a₄ = ϖ² A₄` and `a₆ = ϖ³ A₆`. If `(x, y)` is a solution with `ϖ ∣ x` and `ϖ ∣ y`, then
@@ -81,18 +104,8 @@ theorem exists_dvd_cubic_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁) {A�
     (h₂ : W.a₂ = ϖ * A₂) (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : W.a₄ = ϖ ^ 2 * A₄) (h₆ : W.a₆ = ϖ ^ 3 * A₆)
     {x y : R} (h : W.toAffine.Equation x y) (hx : ϖ ∣ x) (hy : ϖ ∣ y) :
     ∃ t, ϖ ∣ t ^ 3 + A₂ * t ^ 2 + A₄ * t + A₆ := by
-  obtain ⟨A₁, hA₁⟩ := h₁
-  obtain ⟨A₃, hA₃⟩ := h₃
   obtain ⟨X, rfl⟩ := hx
-  obtain ⟨Y, rfl⟩ := hy
-  rw [Affine.equation_iff, hA₁, h₂, hA₃, h₄, h₆] at h
-  -- `ϖ² Y² ≡ 0` modulo `ϖ³`
-  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2) <|
-    (mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero)).mp
-      ⟨X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ - A₁ * X * Y - A₃ * Y, by linear_combination h⟩
-  -- `ϖ³ (X³ + A₂ X² + A₄ X + A₆) ≡ 0` modulo `ϖ⁴`
-  exact ⟨X, (mul_dvd_mul_iff_left (pow_ne_zero 3 hϖ.ne_zero)).mp
-    ⟨Y ^ 2 + A₁ * X * Y + A₃ * Y, by linear_combination -h⟩⟩
+  exact ⟨X, (W.sq_dvd_and_dvd_cubic_of_equation hϖ h₁ h₂ h₃ h₄ h₆ h hy).2⟩
 
 /-- On the normal form of Step 8 of Tate's algorithm, a solution divisible by `ϖ` is divisible
 by `ϖ²`. -/

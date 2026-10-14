@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
--- Proof-only: the points with singular reduction when the reduction is singular at the origin.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+-- Proof-only: the points with singular reduction when the reduction is singular at the origin, and
+-- the solutions divisible by `ϖ` on the normal form of `I₀*`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: a common root of a cubic and its derivative divides the discriminant.
 import TauCeti.Algebra.CubicDiscriminant
 
@@ -82,31 +83,6 @@ public section
 open IsLocalRing Polynomial
 
 namespace WeierstrassCurve
-
-section Domain
-
-variable {R : Type*} [CommRing R] [IsDomain R] (W : WeierstrassCurve R) {ϖ : R}
-
-/-- **On the normal form of `I₀*`, a solution `(ϖ X, y)` with `ϖ ∣ y` has `ϖ² ∣ y`, and `X` is a
-root of the residue cubic modulo `ϖ`.** Here `ϖ` is prime, `ϖ ∣ a₁`, `ϖ² ∣ a₃`, `a₂ = ϖ A₂`,
-`a₄ = ϖ² A₄` and `a₆ = ϖ³ A₆`. -/
-private theorem sq_dvd_and_dvd_cubic_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁) {A₂ A₄ A₆ : R}
-    (h₂ : W.a₂ = ϖ * A₂) (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : W.a₄ = ϖ ^ 2 * A₄) (h₆ : W.a₆ = ϖ ^ 3 * A₆)
-    {X y : R} (h : W.toAffine.Equation (ϖ * X) y) (hy : ϖ ∣ y) :
-    ϖ ^ 2 ∣ y ∧ ϖ ∣ X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ := by
-  obtain ⟨A₁, hA₁⟩ := h₁
-  obtain ⟨A₃, hA₃⟩ := h₃
-  obtain ⟨Y, rfl⟩ := hy
-  rw [Affine.equation_iff, hA₁, h₂, hA₃, h₄, h₆] at h
-  -- `ϖ² Y² ≡ 0` modulo `ϖ³`
-  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2) <|
-    (mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero)).mp
-      ⟨X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ - A₁ * X * Y - A₃ * Y, by linear_combination h⟩
-  -- `ϖ³ (X³ + A₂ X² + A₄ X + A₆) ≡ 0` modulo `ϖ⁴`
-  exact ⟨⟨Y, by ring⟩, (mul_dvd_mul_iff_left (pow_ne_zero 3 hϖ.ne_zero)).mp
-    ⟨Y ^ 2 + A₁ * X * Y + A₃ * Y, by linear_combination -h⟩⟩
-
-end Domain
 
 namespace Affine
 
