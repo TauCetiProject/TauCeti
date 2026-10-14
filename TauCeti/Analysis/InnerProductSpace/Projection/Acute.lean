@@ -38,7 +38,7 @@ when the directed gap is less than `√2/2`.
 
 * `Submodule.isAcute_iff_disjoint`: acuteness in terms of the subspaces `U ⊓ Vᗮ` and `V ⊓ Uᗮ`.
 * `Submodule.IsAcute.of_projectionGap_lt_one`: a pair with gap less than `1` is acute.
-* `Submodule.isAcute_iff_principalAngles_lt_pi_div_two`: in finite dimension, a pair is acute
+* `Submodule.isAcute_iff_forall_principalAngles_lt_pi_div_two`: in finite dimension, a pair is acute
   exactly when all principal angles in both directions are strictly below `π/2`;
   `Submodule.isAcute_iff_projectionGap_lt_one_of_finrank_eq` for subspaces of equal dimension.
 * `Submodule.principalTangents_apply_eq_div`: `tan θᵢ = sᵢ / √(1 - sᵢ²)` for the principal
@@ -48,7 +48,7 @@ when the directed gap is less than `√2/2`.
   locus.
 * `Submodule.AvoidsQuarterTurn.of_projectionGap_lt`: a pair with gap less than `√2/2` avoids the
   quarter turn, since then all principal angles are below `π/4`
-  (`Submodule.principalAngles_lt_pi_div_four_iff`).
+  (`Submodule.forall_principalAngles_lt_pi_div_four_iff`).
 
 ## References
 
@@ -109,23 +109,24 @@ variable [FiniteDimensional 𝕜 E]
 
 /-- In finite dimension, a pair of subspaces is acute exactly when all principal angles from `U`
 to `V` and from `V` to `U` are strictly below `π/2`. -/
-theorem isAcute_iff_principalAngles_lt_pi_div_two :
+theorem isAcute_iff_forall_principalAngles_lt_pi_div_two :
     U.IsAcute V ↔
       (∀ i, U.principalAngles V i < Real.pi / 2) ∧ ∀ i, V.principalAngles U i < Real.pi / 2 := by
-  rw [isAcute_iff_disjoint, principalAngles_lt_pi_div_two_iff, principalAngles_lt_pi_div_two_iff]
+  rw [isAcute_iff_disjoint, forall_principalAngles_lt_pi_div_two_iff,
+    forall_principalAngles_lt_pi_div_two_iff]
 
 /-- For subspaces of the same dimension, the pair is acute exactly when all principal angles from
 `U` to `V` are strictly below `π/2`. -/
-theorem isAcute_iff_principalAngles_lt_pi_div_two_of_finrank_eq
+theorem isAcute_iff_forall_principalAngles_lt_pi_div_two_of_finrank_eq
     (h : finrank 𝕜 U = finrank 𝕜 V) :
     U.IsAcute V ↔ ∀ i, U.principalAngles V i < Real.pi / 2 := by
-  rw [isAcute_iff_principalAngles_lt_pi_div_two, principalAngles_comm V U h.symm, and_self]
+  rw [isAcute_iff_forall_principalAngles_lt_pi_div_two, principalAngles_comm V U h.symm, and_self]
 
 /-- For subspaces of the same dimension, the pair is acute exactly when `‖P_U - P_V‖ < 1`. -/
 theorem isAcute_iff_projectionGap_lt_one_of_finrank_eq (h : finrank 𝕜 U = finrank 𝕜 V) :
     U.IsAcute V ↔ U.projectionGap V < 1 := by
-  rw [isAcute_iff_principalAngles_lt_pi_div_two_of_finrank_eq U V h,
-    principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one,
+  rw [isAcute_iff_forall_principalAngles_lt_pi_div_two_of_finrank_eq U V h,
+    forall_principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one,
     projectionGap_eq_directedProjectionGap_of_finrank_eq U V h]
 
 /-! ### Principal tangents -/
@@ -133,7 +134,7 @@ theorem isAcute_iff_projectionGap_lt_one_of_finrank_eq (h : finrank 𝕜 U = fin
 /-- The principal tangents of `U` and `V`: the tangents of the principal angles from `U` to `V`,
 in the order of the principal angles and padded with zeros. They are meaningful on the pole-free
 locus where every principal angle is strictly below `π/2`
-(`Submodule.principalAngles_lt_pi_div_two_iff`); a principal angle equal to `π/2` contributes
+(`Submodule.forall_principalAngles_lt_pi_div_two_iff`); a principal angle equal to `π/2` contributes
 `Real.tan (π / 2) = 0`. -/
 def principalTangents : ℕ →₀ ℝ :=
   (U.principalAngles V).mapRange Real.tan Real.tan_zero
@@ -224,7 +225,7 @@ theorem avoidsQuarterTurn_self : U.AvoidsQuarterTurn U := by
 theorem AvoidsQuarterTurn.of_directedProjectionGap_lt (h : U.directedProjectionGap V < √2 / 2) :
     U.AvoidsQuarterTurn V :=
   (avoidsQuarterTurn_iff_principalAngles U V).2 fun i ↦
-    ((principalAngles_lt_pi_div_four_iff U V).2 h i).ne
+    ((forall_principalAngles_lt_pi_div_four_iff U V).2 h i).ne
 
 /-- A pair whose gap `‖P_U - P_V‖` is less than `√2/2` avoids the quarter turn. -/
 theorem AvoidsQuarterTurn.of_projectionGap_lt (h : U.projectionGap V < √2 / 2) :

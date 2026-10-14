@@ -59,14 +59,15 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
   hence `Submodule.forall_principalSines_lt_iff`: all principal sines are below `c` exactly when
   the directed gap is.
 * `Submodule.ncard_ofPred_principalAngles_eq_pi_div_two`: the number of principal angles from `U`
-  to `V` equal to `π/2` is `dim (U ⊓ Vᗮ)`; hence `Submodule.principalAngles_lt_pi_div_two_iff`:
-  all of them are strictly below `π/2` exactly when no nonzero vector of `U` is orthogonal to `V`.
+  to `V` equal to `π/2` is `dim (U ⊓ Vᗮ)`; hence
+  `Submodule.forall_principalAngles_lt_pi_div_two_iff`: all of them are strictly below `π/2`
+  exactly when no nonzero vector of `U` is orthogonal to `V`.
 * `Submodule.directedProjectionGap_lt_one_iff`: the directed gap from `U` to `V` is less than `1`
   exactly when no nonzero vector of `U` is orthogonal to `V`.
 * `Submodule.forall_principalAngles_lt_iff`: all principal angles are below a threshold
   `θ ∈ [-π/2, π/2]` exactly when the directed gap is less than `sin θ`; in particular
-  (`Submodule.principalAngles_lt_pi_div_four_iff`) they are below `π/4` exactly when the directed
-  gap is less than `√2/2`.
+  (`Submodule.forall_principalAngles_lt_pi_div_four_iff`) they are below `π/4` exactly when the
+  directed gap is less than `√2/2`.
 * `Submodule.norm_sinTwoAngleOperator_le_one`: the double-angle operator is a contraction, and
   `Submodule.sinTwoAngleOperator_eq_zero_iff`: it vanishes exactly when `P_U` and `P_V` commute.
 
@@ -500,7 +501,7 @@ theorem ncard_ofPred_principalAngles_eq_pi_div_two :
 
 /-- All principal angles from `U` to `V` are strictly below `π/2` exactly when no nonzero vector
 of `U` is orthogonal to `V`. -/
-theorem principalAngles_lt_pi_div_two_iff :
+theorem forall_principalAngles_lt_pi_div_two_iff :
     (∀ i, U.principalAngles V i < Real.pi / 2) ↔ Disjoint U Vᗮ := by
   have hfin : {i | U.principalAngles V i = Real.pi / 2}.Finite :=
     (U.principalAngles V).hasFiniteSupport.subset fun i (hi : _ = _) ↦ by
@@ -522,19 +523,19 @@ theorem forall_principalAngles_lt_iff {θ : ℝ} (hθ : θ ∈ Set.Icc (-(Real.p
 
 /-- All principal angles from `U` to `V` are strictly below `π/2` exactly when the directed gap
 `‖P_{Vᗮ} P_U‖`, the largest principal sine, is less than `1`. -/
-theorem principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one :
+theorem forall_principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one :
     (∀ i, U.principalAngles V i < Real.pi / 2) ↔ U.directedProjectionGap V < 1 := by
   rw [forall_principalAngles_lt_iff U V ⟨by linarith [Real.pi_pos], le_rfl⟩, Real.sin_pi_div_two]
 
 /-- In finite dimension, the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1` exactly
 when no nonzero vector of `U` is orthogonal to `V`. -/
 theorem directedProjectionGap_lt_one_iff : U.directedProjectionGap V < 1 ↔ Disjoint U Vᗮ := by
-  rw [← principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one,
-    principalAngles_lt_pi_div_two_iff]
+  rw [← forall_principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one,
+    forall_principalAngles_lt_pi_div_two_iff]
 
 /-- All principal angles from `U` to `V` are strictly below `π/4` exactly when the directed gap
 `‖P_{Vᗮ} P_U‖` is less than `√2/2`. -/
-theorem principalAngles_lt_pi_div_four_iff :
+theorem forall_principalAngles_lt_pi_div_four_iff :
     (∀ i, U.principalAngles V i < Real.pi / 4) ↔ U.directedProjectionGap V < √2 / 2 := by
   rw [forall_principalAngles_lt_iff U V ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩,
     Real.sin_pi_div_four]
