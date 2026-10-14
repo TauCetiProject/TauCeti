@@ -86,14 +86,14 @@ theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
   have cone (U : Set (TopCat.diskBoundary.{u} n)) (hU : IsOpen U) :
       ∃ U' : Set (TopCat.disk.{u} n), IsOpen U' ∧ TopCat.diskBoundaryInclusion n ⁻¹' U' = U ∧
         ∀ z ∈ U', ∃ s ∈ U, μ s = ‖ν z‖⁻¹ • ν z := by
-    obtain ⟨Ũ, hŨ, rfl⟩ := hμ.isInducing.isOpen_iff.1 hU
-    refine ⟨N ∩ (fun z ↦ ‖ν z‖⁻¹ • ν z) ⁻¹' Ũ, hρ.isOpen_inter_preimage hN hŨ, ?_, ?_⟩
+    obtain ⟨W, hW, rfl⟩ := hμ.isInducing.isOpen_iff.1 hU
+    refine ⟨N ∩ (fun z ↦ ‖ν z‖⁻¹ • ν z) ⁻¹' W, hρ.isOpen_inter_preimage hN hW, ?_, ?_⟩
     · ext s
       simp [N, hνμ, hμ₁, show (2 : ℝ)⁻¹ < 1 by norm_num]
-    · rintro z ⟨hz, hzŨ⟩
+    · rintro z ⟨hz, hzW⟩
       have h₁ : ‖‖ν z‖⁻¹ • ν z‖ = 1 := by
         rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (lt_trans (by norm_num) hz).ne']
-      exact ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, hzŨ, rfl⟩
+      exact ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, hzW, rfl⟩
   rw [extendsDisjointOpens_iff]
   intro U V hU hV hUV
   obtain ⟨U', hU', hU'U, hU'₁⟩ := cone U hU
