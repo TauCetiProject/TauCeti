@@ -293,7 +293,7 @@ inequality
 
 for every smooth `ψ` compactly supported in `Ω`. This is the only way the equation enters
 De Giorgi's iteration. -/
-@[expose] def CaccioppoliAbove (u : W1p mu Omega 2) (k A B : ℝ) : Prop :=
+def CaccioppoliAbove (u : W1p mu Omega 2) (k A B : ℝ) : Prop :=
   ∀ l, k ≤ l → ∀ (hl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
     {ψ : EuclideanSpace ℝ ι → ℝ}, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
       tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
@@ -304,6 +304,49 @@ De Giorgi's iteration. -/
           B * ∫ x in Omega,
             ψ x ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ^ 2 ∂mu
 
+omit [DecidableEq ι] in
+/-- Membership in De Giorgi's class above `k`: the Caccioppoli inequality for the truncations
+`(u - l)⁺` at every level `l ≥ k` with `(u - l)⁺ ∈ L²(Ω)`, against every admissible cutoff. -/
+theorem CaccioppoliAbove.intro {u : W1p mu Omega 2} {k A B : ℝ}
+    (h : ∀ l, k ≤ l → ∀ (hl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
+      {ψ : EuclideanSpace ℝ ι → ℝ}, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
+        tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+        ∫ x in Omega, ψ x ^ 2 *
+            ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x‖ ^ 2 ∂mu ≤
+          A * ∫ x in Omega,
+              ‖∇ ψ x‖ ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ^ 2 ∂mu +
+            B * ∫ x in Omega,
+              ψ x ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ^ 2 ∂mu) :
+    CaccioppoliAbove u k A B :=
+  h
+
+omit [DecidableEq ι] in
+/-- For `u` in De Giorgi's class above `k`, the truncation `w = (u - l)⁺` at a level `l ≥ k`
+with `w ∈ L²(Ω)` satisfies `∫_Ω ψ² ‖∇w‖² ≤ A ∫_Ω ‖∇ψ‖² w² + B ∫_Ω ψ² w²` for every smooth `ψ`
+compactly supported in `Ω`. -/
+theorem CaccioppoliAbove.setIntegral_sq_mul_norm_gradient_sq_le {u : W1p mu Omega 2}
+    {k A B : ℝ} (h : CaccioppoliAbove u k A B) {l : ℝ} (hkl : k ≤ l)
+    (hl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ∫ x in Omega, ψ x ^ 2 *
+        ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x‖ ^ 2 ∂mu ≤
+      A * ∫ x in Omega,
+          ‖∇ ψ x‖ ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ^ 2 ∂mu +
+        B * ∫ x in Omega,
+          ψ x ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ^ 2 ∂mu :=
+  h l hkl hl hψ hcpt hts
+
+omit [DecidableEq ι] in
+/-- De Giorgi's class shrinks as the level rises and grows with the constants `A` and `B`. -/
+theorem CaccioppoliAbove.mono {u : W1p mu Omega 2} {k k' A A' B B' : ℝ}
+    (h : CaccioppoliAbove u k A B) (hk : k ≤ k') (hA : A ≤ A') (hB : B ≤ B') :
+    CaccioppoliAbove u k' A' B' :=
+  .intro fun l hkl hl _ hψ hcpt hts =>
+    (h.setIntegral_sq_mul_norm_gradient_sq_le (hk.trans hkl) hl hψ hcpt hts).trans <|
+      add_le_add (mul_le_mul_of_nonneg_right hA (integral_nonneg fun _ => by positivity))
+        (mul_le_mul_of_nonneg_right hB (integral_nonneg fun _ => by positivity))
+
 /-- Weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` belong to De Giorgi's class above every level, with
 `A = (2Λ/λ)²` and `B = 0`. -/
 theorem UniformlyEllipticOn.caccioppoliAbove
@@ -313,7 +356,7 @@ theorem UniformlyEllipticOn.caccioppoliAbove
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) (k : ℝ) :
     CaccioppoliAbove u k ((2 * Lam / lam) ^ 2) 0 := by
-  intro l _ hl ψ hψ hcpt hts
+  refine .intro fun l _ hl ψ hψ hcpt hts => ?_
   rw [zero_mul, add_zero]
   exact h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hl hψ hcpt hts
 
@@ -404,7 +447,8 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
         rw [hx]
         exact pow_le_pow_left₀ (le_max_right _ _) (max_le_max (sub_le_sub_left hkl.le _) le_rfl) 2)
   have hstep := setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli hq hS hkl hwk hψ hcpt hts hψG hA
-    (B := B) ((hcacc l (hk0.trans hkl.le) hwl hψ hcpt hts).trans
+    (B := B)
+    ((hcacc.setIntegral_sq_mul_norm_gradient_sq_le (hk0.trans hkl.le) hwl hψ hcpt hts).trans
       (add_le_add le_rfl (mul_le_mul_of_nonneg_left hzero hB)))
   -- Integrability of the truncations on `Ω`, and nonnegativity.
   have hint : ∀ m : ℝ, k₀ ≤ m →

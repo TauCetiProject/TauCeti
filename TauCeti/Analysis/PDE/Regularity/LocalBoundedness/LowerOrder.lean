@@ -85,7 +85,7 @@ theorem UniformlyEllipticOn.caccioppoliAbove_lowerOrder
         energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0)
     {k : ℝ} (hk : 0 ≤ k) :
     CaccioppoliAbove u k (2 * (2 * Lam / lam) ^ 2) ((2 * beta / lam) ^ 2) := by
-  intro l hkl hl ψ hψ hcpt hts
+  refine .intro fun l hkl hl ψ hψ hcpt hts => ?_
   rw [W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) (hk.trans hkl) u hl]
   exact h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_nonpos ha hb hc
     hb_bound hc_bound hc_nonneg hu (hk.trans hkl) hψ hcpt hts
