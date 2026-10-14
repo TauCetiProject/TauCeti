@@ -214,21 +214,14 @@ noncomputable instance periodicComplexEquivalenceFunctorIsTriangulated :
       (PeriodicComplex.mappingCone_mem_distTriang ((CurvedDuplex.toPeriodicComplex C R).map f)) _
       ((periodicComplexEquivalence C R).functor.mapTriangle.mapIso e ≪≫ mapConeTriangleIso f)
 
-/-- The inverse periodic-complex equivalence commutes with integral shifts via the canonical
-mate of the forward shift comparison. -/
-@[instance_reducible]
-noncomputable def periodicComplexEquivalenceInverseCommShift :
-    (periodicComplexEquivalence C R).inverse.CommShift ℤ :=
-  (periodicComplexEquivalence C R).commShiftInverse ℤ
-
 /-- **Curvature-zero duplexes and two-periodic complexes have triangle-equivalent homotopy
 categories.** The forward functor uses the explicit parity-shift comparison, and the inverse
 shift comparison is its canonical mate. -/
 theorem periodicComplexEquivalenceIsTriangulated :
-    letI := periodicComplexEquivalenceInverseCommShift (C := C) (R := R)
+    letI := (periodicComplexEquivalence C R).commShiftInverse ℤ
     letI := (periodicComplexEquivalence C R).commShift_of_functor ℤ
     (periodicComplexEquivalence C R).IsTriangulated := by
-  let := periodicComplexEquivalenceInverseCommShift (C := C) (R := R)
+  let := (periodicComplexEquivalence C R).commShiftInverse ℤ
   let := (periodicComplexEquivalence C R).commShift_of_functor ℤ
   exact Equivalence.IsTriangulated.mk' _ inferInstance
 
