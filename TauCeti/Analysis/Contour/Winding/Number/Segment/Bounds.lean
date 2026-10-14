@@ -7,6 +7,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Formula
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Complex.WindingNormalization
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -94,29 +95,24 @@ theorem windingNumber_segment_re_mem_Ioo {p q z : ℂ} (hleft : 0 < ((z - p) / (
   rw [he]
   exact windingNumber_unitSegment_re_bounds hleft
 
-private theorem absolutelyContinuous_segment (p q : ℂ) :
-    AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 :=
-  (show ContDiffOn ℝ 1 (fun t : ℝ ↦ p + t • (q - p)) (uIcc 0 1) from
-    by fun_prop).absolutelyContinuousOnInterval
-
-private theorem notMem_segment_trace {p q z : ℂ} (hz : z ∉ segment ℝ p q) :
-    z ∉ (fun t : ℝ ↦ p + t • (q - p)) '' uIcc 0 1 := by
-  simpa only [uIcc_of_le zero_le_one, ← segment_eq_image'] using hz
-
 /-- An increasing affine parametrization preserves the winding number of a straight segment. -/
 theorem windingNumber_segment_interval {p q z : ℂ} {a b : ℝ} (hab : a < b)
     (hz : z ∉ segment ℝ p q) :
     windingNumber (fun t : ℝ ↦ p + ((t - a) / (b - a)) • (q - p)) a b z =
       windingNumber (fun t : ℝ ↦ p + t • (q - p)) 0 1 z := by
   let θ := fun t : ℝ ↦ (t - a) / (b - a)
-  have hγ := absolutelyContinuous_segment p q
+  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 := by
+    apply (lipschitzWith_lineMap (𝕜 := ℝ) p q).lipschitzOnWith.absolutelyContinuousOnInterval.congr
+    intro t _
+    rw [AffineMap.lineMap_apply_module', add_comm]
   have hθ : AbsolutelyContinuousOnInterval θ a b := by
     have h : ContDiffOn ℝ 1 θ (uIcc a b) := by dsimp [θ]; fun_prop
     exact h.absolutelyContinuousOnInterval
   have hmono : MonotoneOn θ (Icc a b) := by
     intro x _ y _ hxy
     exact div_le_div_of_nonneg_right (sub_le_sub_right hxy a) (sub_pos.mpr hab).le
-  have havoid := notMem_segment_trace hz
+  have havoid : z ∉ (fun t : ℝ ↦ p + t • (q - p)) '' uIcc 0 1 := by
+    simpa only [uIcc_of_le zero_le_one, ← segment_eq_image'] using hz
   exact AbsolutelyContinuousOnInterval.windingNumber_comp_of_monotoneOn
     hγ hθ hab.le hmono (by simp) (by simp [(sub_pos.mpr hab).ne']) havoid
 
@@ -124,13 +120,16 @@ theorem windingNumber_segment_interval {p q z : ℂ} {a b : ℝ} (hab : a < b)
 theorem windingNumber_segment_swap {p q z : ℂ} (hz : z ∉ segment ℝ p q) :
     windingNumber (fun t : ℝ ↦ q + t • (p - q)) 0 1 z =
       -windingNumber (fun t : ℝ ↦ p + t • (q - p)) 0 1 z := by
-  have hγ := absolutelyContinuous_segment p q
+  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 := by
+    apply (lipschitzWith_lineMap (𝕜 := ℝ) p q).lipschitzOnWith.absolutelyContinuousOnInterval.congr
+    intro t _
+    rw [AffineMap.lineMap_apply_module', add_comm]
   have hθ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ 1 - t) 0 1 := by
     have h : ContDiffOn ℝ 1 (fun t : ℝ ↦ 1 - t) (uIcc 0 1) := by fun_prop
     exact h.absolutelyContinuousOnInterval
   have h := hγ.windingNumber_comp_of_antitoneOn hθ
     zero_le_one (fun x _ y _ hxy ↦ sub_le_sub_left hxy 1) (by norm_num) (by norm_num)
-    (notMem_segment_trace hz)
+    (by simpa only [uIcc_of_le zero_le_one, ← segment_eq_image'] using hz)
   apply Eq.trans _ h
   apply windingNumber_congr_curve
   intro t _

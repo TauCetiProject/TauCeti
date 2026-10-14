@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
@@ -35,6 +36,8 @@ fundamental-theorem results to curves.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional` and
   `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub_of_finiteDimensional`: integrability and
   the fundamental theorem for the canonical derivative of such a curve.
+* `ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`: a continuous curve
+  with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space.
 -/
@@ -165,3 +168,26 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'
   rw [dist_eq_norm, intervalIntegral.integral_interval_sub_left hx hy,
     Real.dist_eq, intervalIntegral.integral_interval_sub_left hx.norm hy.norm]
   exact intervalIntegral.norm_integral_le_abs_integral_norm
+
+/-- A continuous curve with an integrable derivative outside a countable exceptional set is
+absolutely continuous on its parameter interval. -/
+theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {f f' : ℝ → F} {a b : ℝ} {s : Set ℝ} (hf : ContinuousOn f (uIcc a b))
+    (hs : s.Countable)
+    (hd : ∀ t ∈ Ioo (min a b) (max a b) \ s, HasDerivAt f (f' t) t)
+    (hi : IntervalIntegrable f' volume a b) : AbsolutelyContinuousOnInterval f a b := by
+  have hbase : min a b ∈ uIcc a b := ⟨le_rfl, min_le_max⟩
+  have hI := hi.absolutelyContinuousOnInterval_intervalIntegral' hbase
+  have hc : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ f (min a b)) a b :=
+    (LipschitzWith.const (f (min a b))).lipschitzOnWith.absolutelyContinuousOnInterval
+  apply (hc.add hI).congr
+  intro t ht
+  have hsub : uIcc (min a b) t ⊆ uIcc a b := uIcc_subset_uIcc hbase ht
+  have hFTC := integral_eq_of_hasDerivAt_off_countable f f' hs (hf.mono hsub)
+    (fun u hu ↦ hd u ⟨⟨by simpa only [min_eq_left ht.1] using hu.1.1,
+      (by simpa only [max_eq_right ht.1] using hu.1.2 : u < t).trans_le ht.2⟩, hu.2⟩)
+    (hi.mono_set hsub)
+  change f (min a b) + (∫ u in min a b..t, f' u) = f t
+  rw [hFTC]
+  abel

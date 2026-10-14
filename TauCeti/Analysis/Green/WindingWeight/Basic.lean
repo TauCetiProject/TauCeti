@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Contour.Winding.Continuity
 import TauCeti.Analysis.Complex.CauchyKernel
 import TauCeti.MeasureTheory.Integral.KernelPotential
-import TauCeti.MeasureTheory.Integral.NormRpow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
