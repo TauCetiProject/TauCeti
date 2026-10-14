@@ -25,7 +25,9 @@ Conversely, a section which is such a pullback of `(0, 0)` satisfies the three c
 (`EllipticCurveGeom.exists_tateNormalForm_iff`). So `Spec ℤ[A, B][Δ⁻¹]` is a fine moduli scheme
 for elliptic curves with a section `P` such that `P`, `2P` and `3P` are nowhere the zero section,
 with universal family the projective model of the universal Tate normal form. No hypothesis on `S`
-is needed; in particular `S` may be nonreduced or non-affine.
+is needed; in particular `S` may be nonreduced or non-affine. By the uniqueness of the classifying
+morphism, an automorphism of `E` over `S` fixing the zero section and `P` is the identity
+(`EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq`).
 
 The coefficient ring `ℤ[A, B][Δ⁻¹]` (`WeierstrassCurve.UniversalTate.Ring`) lies in `Type`. For
 schemes in an arbitrary universe the universal Tate normal form is read over its copy
@@ -43,6 +45,8 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
   unique cartesian pointed morphism to the universal Tate normal form.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_tateNormalForm_iff`: such a morphism exists
   exactly when `P`, `2P` and `3P` miss the zero section everywhere.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq`: an automorphism
+  of `E` over `S` fixing such a section `P` is the identity.
 * `WeierstrassCurve.UniversalTate.point_ne_projModelZero`,
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero` and
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero`: the universal point
@@ -572,6 +576,22 @@ theorem exists_tateNormalForm_iff :
       simpa only [← Scheme.Hom.comp_apply, hgP, h₀] using congrArg g hs),
     fun s hs ↦ point_projModelMulBy_two_ne_projModelZero (f s) (hn 2 s hs),
     fun s hs ↦ point_projModelMulBy_three_ne_projModelZero (f s) (hn 3 s hs)⟩
+
+include hP h₁ h₂ h₃ in
+/-- **Automorphisms fixing a point of order at least four are trivial.** Let `P` be a section of
+`E` such that none of `P`, `2P` and `3P` meets the zero section over any point of `S`. An
+automorphism `τ` of `E` over `S`, given as a cartesian square over the identity of `S`, which fixes
+the zero section and `P` is the identity. The cartesian hypothesis cannot be dropped: if `P` is
+killed by `N`, multiplication by `N + 1` fixes the zero section and `P`. -/
+theorem eq_id_of_isPullback_of_comp_eq {τ : E.carrier ⟶ E.carrier}
+    (hτ : IsPullback τ E.structureMap E.structureMap (𝟙 S)) (h0 : E.zero ≫ τ = E.zero)
+    (hPτ : P ≫ τ = P) : τ = 𝟙 _ := by
+  -- composing the classifying morphism of `(E, P)` with `τ` gives a second classifying morphism
+  obtain ⟨⟨f, g⟩, ⟨hg, hg0, hgP⟩, huniq⟩ := E.existsUnique_tateNormalForm hP h₁ h₂ h₃
+  have hτg : τ ≫ g = g := congrArg Prod.snd <| huniq (f, τ ≫ g)
+    ⟨by simpa using hτ.paste_horiz hg, by simp [reassoc_of% h0, hg0],
+      by simp [reassoc_of% hPτ, hgP]⟩
+  exact hg.hom_ext (by simpa using hτg) (by simpa using hτ.w)
 
 end EllipticCurveGeom
 
