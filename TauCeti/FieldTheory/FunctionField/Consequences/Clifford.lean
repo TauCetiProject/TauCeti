@@ -294,14 +294,13 @@ theorem dim_add_dim_le_one_add_dim_add (hF : IsFunctionField k F)
     dim A + dim B ≤ 1 + dim (A + B) := by
   rcases finite_or_infinite k with hk | hk
   · -- pass to a finite constant field extension with more than `deg B + 1` elements, which
-    -- preserves degrees and dimensions and keeps the (perfect) constant field exact
+    -- preserves degrees and dimensions and keeps the constant field exact
     obtain ⟨F', k', hk', hcard, h⟩ :=
       exists_finiteDimensional_lt_card_constantCompositum_eq_top k F ((degree B).toNat + 1)
     have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
     have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
-    have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
     have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-    have hex' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+    have hex' := hex.of_constantCompositum_eq_top h
     have hdim := dim_add_dim_le_one_add_dim_add_of_lt_card hF' hex'
       (A := conorm k' F' A) (B := conorm k' F' B)
       (by rwa [dim_conorm hex h hF']) (by rwa [dim_conorm hex h hF'])
