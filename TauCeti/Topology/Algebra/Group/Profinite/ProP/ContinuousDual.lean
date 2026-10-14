@@ -126,7 +126,7 @@ from the quotient with continuous homomorphisms from `G` for a discrete target o
 def frattiniQuotientHomEquiv {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) :
     ((G ⧸ proPFrattini p G) →ₜ* H) ≃ (G →ₜ* H) :=
-  (TauCeti.ContinuousMonoidHom.quotientHomEquiv (proPFrattini p G)).trans
+  (_root_.Subgroup.quotientHomEquiv (proPFrattini p G)).trans
     (Equiv.subtypeUnivEquiv fun f => proPFrattini_le_ker hH f)
 
 /-- Evaluation of precomposition with the Frattini quotient projection. -/
@@ -137,7 +137,7 @@ theorem frattiniQuotientHomEquiv_apply {H : Type*} [Group H]
     frattiniQuotientHomEquiv hH g =
       g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) := by
   dsimp [frattiniQuotientHomEquiv]
-  exact _root_.ContinuousMonoidHom.quotientHomEquiv_apply_coe _ _
+  exact _root_.Subgroup.quotientHomEquiv_apply_coe _ _
 
 /-- Evaluation of the inverse Frattini quotient homomorphism equivalence. -/
 @[simp]
@@ -148,7 +148,7 @@ theorem frattiniQuotientHomEquiv_symm_apply {H : Type*} [Group H]
       ContinuousMonoidHom.quotientLift (proPFrattini p G) f
         (proPFrattini_le_ker hH f) := by
   dsimp [frattiniQuotientHomEquiv]
-  exact TauCeti.ContinuousMonoidHom.quotientHomEquiv_symm_apply _ _
+  exact _root_.Subgroup.quotientHomEquiv_symm_apply _ _
 
 /-- Continuous homomorphisms to a discrete group of cardinality `p` factor uniquely through the
 pro-`p` Frattini quotient. -/

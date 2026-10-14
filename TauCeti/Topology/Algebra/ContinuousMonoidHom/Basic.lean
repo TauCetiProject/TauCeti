@@ -426,9 +426,9 @@ theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
 
 end ContinuousMonoidHom
 
-namespace TauCeti.ContinuousMonoidHom
+namespace Subgroup
 
-open _root_.ContinuousMonoidHom
+open ContinuousMonoidHom TauCeti.ContinuousMonoidHom
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
@@ -447,10 +447,10 @@ def quotientHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G
 
 /-- Evaluation of the forward quotient homomorphism equivalence. -/
 @[simp]
-theorem _root_.ContinuousMonoidHom.quotientHomEquiv_apply_coe
+theorem quotientHomEquiv_apply_coe
     {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    ((TauCeti.ContinuousMonoidHom.quotientHomEquiv N g :
+    ((quotientHomEquiv N g :
       {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
       g.comp (quotientMk N) := (rfl)
 
@@ -460,4 +460,4 @@ theorem quotientHomEquiv_symm_apply {H : Type*} [Monoid H] [TopologicalSpace H]
     (N : Subgroup G) [N.Normal] (f : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) :
     (quotientHomEquiv N).symm f = quotientLift N f.val f.property := (rfl)
 
-end TauCeti.ContinuousMonoidHom
+end Subgroup
