@@ -37,8 +37,8 @@ The paths of free loops are taken on the fixed interval `I`.
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §5.2, the identification of the space of paths in `𝓛₀Q` with the double loop
-  space.
+  Applications to cotangent bundles*, arXiv:2404.07953, §5.2, the identification of the space of
+  paths in `𝓛₀Q` with the double loop space.
 -/
 
 public section
