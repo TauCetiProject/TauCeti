@@ -185,6 +185,20 @@ theorem galClassFieldEquiv_symm_mk (V : OpenNormalSubgroup (AbsoluteGaloisGroup 
   exact this.trans ((congrArg _ (NormalLayer.galOfOpenNormalEquiv_mk V σ)).trans
     (InfiniteGalois.normalAutEquivQuotient_apply _ _))
 
+/-- The fixed field of the top subgroup `V` of the layer `V ◁ G_F` is the class field of `V`. -/
+theorem fixedField_top_ofOpenNormal_eq_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
+    fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = classField F V := by
+  rw [NormalLayer.top_ofOpenNormal, ← InfiniteGalois.fixedField_fixingSubgroup (classField F V),
+    fixingSubgroup_classField]
+
+/-- The inverse of `galClassFieldEquiv` sends the class of `u ∈ G_F` to an automorphism of the
+class field acting as `u`. -/
+theorem coe_galClassFieldEquiv_symm_apply (V : OpenNormalSubgroup (AbsoluteGaloisGroup F))
+    (u : (NormalLayer.ofOpenNormal V).ground) (x : classField F V) :
+    ((galClassFieldEquiv V).symm u x : SeparableClosure F) = (u : AbsoluteGaloisGroup F) x := by
+  rw [galClassFieldEquiv_symm_mk]
+  exact AlgEquiv.restrictNormal_commutes _ _ x
+
 /-- Read in `G_F ⧸ V`, `galClassFieldEquiv` sends the restriction of `σ ∈ G_F` to the class field
 to the class of `σ`. -/
 @[simp]

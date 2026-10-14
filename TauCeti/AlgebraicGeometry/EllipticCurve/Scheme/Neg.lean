@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # The negation morphism of the projective Weierstrass model
