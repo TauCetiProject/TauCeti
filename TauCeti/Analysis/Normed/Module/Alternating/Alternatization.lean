@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
-public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
 # Continuous linear alternatization
@@ -28,18 +27,28 @@ noncomputable section
 namespace ContinuousMultilinearMap
 
 variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [Fintype ι] [DecidableEq ι]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Fintype ι] [DecidableEq ι]
 
 /-- The signed permutation sum has operator norm at most the factorial of the arity. -/
 theorem norm_alternatization_le
     (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     ‖ContinuousMultilinearMap.alternatization f‖ ≤ (Fintype.card ι).factorial * ‖f‖ := by
   rw [← ContinuousAlternatingMap.norm_toContinuousMultilinearMap]
-  simp only [ContinuousMultilinearMap.alternatization_apply_toContinuousMultilinearMap]
+  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
+  change ‖ContinuousMultilinearMap.alternatization f m‖ ≤ _
+  rw [ContinuousMultilinearMap.alternatization_apply_apply]
   calc
-    _ ≤ ∑ σ : Equiv.Perm ι, ‖Equiv.Perm.sign σ • f.domDomCongr σ‖ := norm_sum_le _ _
-    _ = (Fintype.card ι).factorial * ‖f‖ := by simp [Fintype.card_perm]
+    _ ≤ ∑ σ : Equiv.Perm ι, ‖Equiv.Perm.sign σ • f (m ∘ σ)‖ := norm_sum_le _ _
+    _ = ∑ σ : Equiv.Perm ι, ‖f (m ∘ σ)‖ := by simp only [norm_units_zsmul]
+    _ ≤ ∑ _σ : Equiv.Perm ι, ‖f‖ * ∏ i, ‖m i‖ := by
+      apply Finset.sum_le_sum
+      intro σ _
+      simpa only [Function.comp_apply, Equiv.prod_comp σ (fun i ↦ ‖m i‖)] using
+        f.le_opNorm (m ∘ σ)
+    _ = _ := by
+      simp only [Finset.sum_const, Finset.card_univ, Fintype.card_perm, nsmul_eq_mul,
+        mul_assoc]
 
 /-- Alternatization, the signed sum over permutations, as a continuous linear map. -/
 def alternatizationCLM :
