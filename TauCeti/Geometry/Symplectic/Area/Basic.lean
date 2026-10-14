@@ -93,7 +93,7 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         abs_of_nonneg (le_trans ha.le hr.1)] using (mem_Icc.mp hr)
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
-  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
+  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
   linarith

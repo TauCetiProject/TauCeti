@@ -48,6 +48,8 @@ a genuine positive natural number.
   field is perfect.
 * `TauCeti.Place.isSeparable_residueField_of_degree_eq_one`: the residue field of a rational place
   is separable over the constants.
+* `TauCeti.Place.isSeparable_residueField_of_perfectField`: over a perfect field of constants every
+  residue field is separable over the constants.
 
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
@@ -269,6 +271,14 @@ theorem isSeparable_residueField_of_degree_eq_one (hP : P.degree = 1) :
   Algebra.IsSeparable.of_algHom k k (AlgEquiv.ofBijective (Algebra.ofId k P.ResidueField)
     ⟨(algebraMap k P.ResidueField).injective,
       P.degree_eq_one_iff_algebraMap_surjective.mp hP⟩).symm.toAlgHom
+
+variable (P) in
+/-- Over a perfect field of constants the residue field of every place of an algebraic function
+field is separable over the constants, being a finite extension of a perfect field. -/
+theorem isSeparable_residueField_of_perfectField [PerfectField k] (hF : IsFunctionField k F) :
+    Algebra.IsSeparable k P.ResidueField :=
+  have := P.finiteDimensional_residueField hF
+  inferInstance
 
 end Place
 

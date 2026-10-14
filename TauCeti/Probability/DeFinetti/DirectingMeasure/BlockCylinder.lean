@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Integral
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Integral
 public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.Process.Tail.Basic
 
@@ -15,7 +15,7 @@ public import TauCeti.Probability.Process.Tail.Basic
 One lemma, the integration step shared by the routes that condition on the **tail** σ-algebra:
 
 ```text
-μ ((ν ⁻¹' S) ∩ blockCylinder X k B) = ∫⁻ ω in ν ⁻¹' S, ∏ i, directingMeasure μ X ω (B i) ∂μ
+μ ((ν ⁻¹' S) ∩ blockCylinder X k B) = ∫⁻ ω in ν ⁻¹' S, ∏ i, tailConditionalMeasure μ X ω (B i) ∂μ
 ```
 
 given the conditional factorization of the block along `k`. That factorization is a **hypothesis**,
@@ -33,7 +33,7 @@ The argument is three steps. A directing-measure event is tail-measurable, so te
 factorization against it is `setIntegral_condExp`. The cylinder's mass is the integral of its
 indicator, which is `integral_blockIndicatorProd` read against the restricted measure. And the
 conversion to `ℝ≥0∞` happens once, at the end, via
-`ofReal_integral_eq_lintegral_prod_directingMeasure`.
+`ofReal_integral_eq_lintegral_prod_tailConditionalMeasure`.
 
 The result feeds `conditionallyIIDWith_of_measure_inter_blockCylinder_eq_setLIntegral`, whose
 `hcore` hypothesis it is in exactly this shape.
@@ -61,25 +61,25 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_condExp [StandardBorelSpa
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, Measurable (X n))
     {r : ℕ} {k : Fin r → ℕ} {B : Fin r → Set α} (hB : ∀ i, MeasurableSet (B i))
     (hfac : μ[blockIndicatorProd X k B | tailProcess X]
-      =ᵐ[μ] fun ω => ∏ i, (directingMeasure μ X ω).real (B i))
+      =ᵐ[μ] fun ω => ∏ i, (tailConditionalMeasure μ X ω).real (B i))
     {S : Set (ProbabilityMeasure α)} (hS : MeasurableSet S) :
-    μ ((directingProbabilityMeasure μ X ⁻¹' S) ∩ blockCylinder X k B)
-      = ∫⁻ ω in directingProbabilityMeasure μ X ⁻¹' S,
-          ∏ i, directingMeasure μ X ω (B i) ∂μ := by
+    μ ((tailConditionalProbabilityMeasure μ X ⁻¹' S) ∩ blockCylinder X k B)
+      = ∫⁻ ω in tailConditionalProbabilityMeasure μ X ⁻¹' S,
+          ∏ i, tailConditionalMeasure μ X ω (B i) ∂μ := by
   have hTail : tailProcess X ≤ ‹MeasurableSpace Ω› :=
     tailProcess_le_ambient 0 fun j _ => hX_meas j
   have : IsFiniteMeasure (μ.trim hTail) := isFiniteMeasure_trim hTail
-  set A : Set Ω := directingProbabilityMeasure μ X ⁻¹' S
+  set A : Set Ω := tailConditionalProbabilityMeasure μ X ⁻¹' S
   have hA_tail : MeasurableSet[tailProcess X] A :=
-    measurable_tailProcess_directingProbabilityMeasure hS
+    measurable_tailProcess_tailConditionalProbabilityMeasure hS
   have hA : MeasurableSet A := hTail _ hA_tail
-  have hg_int : Integrable (fun ω => ∏ i, (directingMeasure μ X ω).real (B i)) μ :=
-    integrable_prod_directingMeasure_real hTail hB
+  have hg_int : Integrable (fun ω => ∏ i, (tailConditionalMeasure μ X ω).real (B i)) μ :=
+    integrable_prod_tailConditionalMeasure_real hTail hB
   have hind_int : Integrable (blockIndicatorProd X k B) μ :=
     integrable_blockIndicatorProd (fun i => (hX_meas _).aemeasurable) hB
   -- The factorization, tested against the tail event `A`.
   have hchain : ∫ ω in A, blockIndicatorProd X k B ω ∂μ
-      = ∫ ω in A, ∏ i, (directingMeasure μ X ω).real (B i) ∂μ := by
+      = ∫ ω in A, ∏ i, (tailConditionalMeasure μ X ω).real (B i) ∂μ := by
     rw [← setIntegral_condExp hTail hind_int hA_tail]
     exact setIntegral_congr_ae hA (hfac.mono fun ω hω _ => hω)
   -- The left side is the real mass of the intersection, via the block-indicator integral read
@@ -92,7 +92,7 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_condExp [StandardBorelSpa
       Set.inter_comm, measureReal_def]
   have hne : μ (A ∩ blockCylinder X k B) ≠ ⊤ := measure_ne_top μ _
   rw [← ENNReal.ofReal_toReal hne, ← measureReal_def, ← hleft, hchain,
-    ofReal_integral_eq_lintegral_prod_directingMeasure hg_int.restrict]
+    ofReal_integral_eq_lintegral_prod_tailConditionalMeasure hg_int.restrict]
 
 end Probability
 

@@ -24,12 +24,13 @@ reflections in `eᵢ - eⱼ` exchange `eᵢ` and `eⱼ`, and those in `± (eᵢ 
 it is determined by that permutation. Conversely the sign changes and the transpositions generate
 the hyperoctahedral group, so its imprimitive action on `Fin m × Bool` is exactly the image.
 
-Over a field with a unit different from its inverse, the normalizer quotient of the diagonal torus
+Over a domain with a unit different from its inverse, the normalizer quotient of the diagonal torus
 in `Sp₂ₘ(k)` is the same hyperoctahedral group
 (`TauCeti.GLSymplecticFin.diagonalNormalizerQuotientMulEquivWreathProduct`). Composing the two
 identifications, the final section identifies the group-of-points Weyl group `N(T)(k)/T(k)` with
 the Weyl group of the root datum, the class of each Weyl representative `n_α` going to the
-reflection in `α`.
+reflection in `α`. In rank zero this comparison holds over every commutative ring,
+without a separating unit.
 
 ## Main definitions
 
@@ -353,10 +354,27 @@ theorem diagonalWreathProductMulEquivWeylGroup_symm_ofIdx_difference {i j : Fin 
 
 section Normalizer
 
-variable {k : Type*} [Field k] (c : kˣ) (hc : c ≠ c⁻¹)
+/-- In rank zero, the paired diagonal normalizer quotient agrees with the root-datum Weyl
+group over any commutative ring: both groups are trivial. -/
+def diagonalNormalizerQuotientMulEquivWeylGroupOfIsEmpty
+    (k : Type*) [CommRing k] (m : ℕ) [IsEmpty (Fin m)] :
+    Subgroup.normalizerQuotient (GLSymplecticFin.diagonalTorus k m) ≃*
+      (diagonalRootDatum.{u} m).weylGroup :=
+  (diagonalNormalizerQuotientMulEquivWreathProductOfIsEmpty k m).trans
+    (diagonalWreathProductMulEquivWeylGroup m)
+
+/-- Every normalizer class maps to the identity Weyl element in rank zero. -/
+@[simp]
+theorem diagonalNormalizerQuotientMulEquivWeylGroupOfIsEmpty_apply
+    (k : Type*) [CommRing k] (m : ℕ) [IsEmpty (Fin m)]
+    (q : Subgroup.normalizerQuotient (GLSymplecticFin.diagonalTorus k m)) :
+    diagonalNormalizerQuotientMulEquivWeylGroupOfIsEmpty.{u} k m q = 1 := by
+  rw [Subsingleton.elim q 1, map_one]
+
+variable {k : Type*} [CommRing k] [IsCancelMulZero k] (c : kˣ) (hc : c ≠ c⁻¹)
 
 variable (m) in
-/-- **The Weyl group of `Sp₂ₘ` as a normalizer quotient.** Over a field with a unit `c ≠ c⁻¹`, the
+/-- **The Weyl group of `Sp₂ₘ` as a normalizer quotient.** Over a domain with a unit `c ≠ c⁻¹`, the
 normalizer quotient `N(T)(k)/T(k)` of the diagonal torus of `Sp₂ₘ(k)` is the Weyl group of the
 type `Cₘ` root datum `diagonalRootDatum`. Both are identified with the hyperoctahedral group
 `Sym(Bool) ≀ Sym(m)`. -/
