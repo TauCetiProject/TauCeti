@@ -11,11 +11,13 @@ public import TauCeti.Geometry.Manifold.LinearSlice
 /-!
 # The Morse–Smale condition for a negative-gradient flow
 
-Let `E` be a finite-dimensional real inner product space and `f : E → ℝ` a function whose gradient
+Let `E` be a real Hilbert space and `f : E → ℝ` a function whose gradient
 is globally Lipschitz, so that the negative-gradient flow `negativeGradientFlow f hf` exists for all
 time. The results on transverse intersections and level slices of connecting trajectories
 (`TauCeti.Analysis.Calculus.Morse.Transversality`, `…TrajectorySpace`) take transversality of the
-unstable set of `p` and the stable set of `q` at a point `y` as a hypothesis.
+unstable set of `p` and the stable set of `q` at a point `y` as a hypothesis. The predicate and its
+elementary API need only completeness of `E`; the consequences drawn from it assume `E`
+finite-dimensional.
 
 `IsMorseSmale f hf` states that this transversality holds at every common point of the unstable
 set of every nondegenerate critical point `p` and the stable set of every nondegenerate critical
@@ -57,7 +59,7 @@ open scoped Gradient NNReal Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 /-- **The Morse–Smale condition.** For a function `f` with `K`-Lipschitz gradient, the unstable set
 of each nondegenerate critical point `p` and the stable set of each nondegenerate critical point `q`
@@ -101,7 +103,7 @@ theorem isMorseSmale_congr (f : E → ℝ) {K K' : ℝ≥0} (hf : LipschitzWith 
     (hf' : LipschitzWith K' (∇ f)) : IsMorseSmale f hf ↔ IsMorseSmale f hf' := by
   rw [isMorseSmale_iff, isMorseSmale_iff, negativeGradientFlow_congr f hf hf']
 
-variable {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
+variable [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
 
 /-- **The Morse index drops along trajectories.** For a `C²` Morse–Smale function, a trajectory of
 the negative-gradient flow from a nondegenerate critical point `p` to a different nondegenerate
