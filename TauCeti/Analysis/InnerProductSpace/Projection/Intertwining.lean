@@ -151,7 +151,8 @@ private theorem surjective_operatorAbs_overlap (hP : CompleteOrthogonalIdempoten
   apply LinearMap.ker_eq_bot.mpr
   simpa only [projectionFamilyOverlap_def, Module.End.mul_eq_comp] using
     projectionFamilyOverlap_injective hP.complete hP'.toOrthogonalIdempotents
-      (fun j ↦ (LinearMap.disjoint_ker_iff_injOn).1 (hnd j))
+      ((projectionFamilyNondegenerate_iff P P').mpr
+        (fun j ↦ (LinearMap.disjoint_ker_iff_injOn).1 (hnd j)))
 
 variable (hP : ∀ j, (P j).IsSymmetricProjection) (hPsum : ∑ j, P j = 1)
   (hP' : ∀ j, (P' j).IsSymmetricProjection) (hP'sum : ∑ j, P' j = 1)
