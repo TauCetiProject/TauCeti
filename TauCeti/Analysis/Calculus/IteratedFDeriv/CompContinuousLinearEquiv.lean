@@ -13,10 +13,11 @@ import TauCeti.Topology.MetricSpace.Holder
 # Iterated derivatives under a linear change of variables
 
 For a continuous linear equivalence `e`, the iterated derivative of `f ∘ e` at `y` is the iterated
-derivative of `f` at `e y` precomposed with `e` in every slot. Hence the norm of the iterated
-derivative of `f` at `e y` is at most `‖e⁻¹‖ ^ i` times the norm of the `i`-th derivative of
-`f ∘ e` at `y`, and a Hölder bound for the `i`-th derivative of `f ∘ e` transfers to one for
-the `i`-th derivative of `f`, at the cost of the factor `‖e⁻¹‖ ^ (i + r)`. No differentiability
+derivative of `f` at `e y` precomposed with `e` in every slot. Hence the norm of the `i`-th
+derivative of `f ∘ e` at `y` is at most `‖e‖ ^ i` times that of `f` at `e y`, and the norm of the
+`i`-th derivative of `f` at `e y` is at most `‖e⁻¹‖ ^ i` times that of `f ∘ e` at `y`. A Hölder
+bound for the `i`-th derivative of `f ∘ e` transfers to one for the `i`-th derivative of `f`, at
+the cost of the factor `‖e⁻¹‖ ^ (i + r)`. No differentiability
 of `f` is needed.
 -/
 
@@ -39,6 +40,14 @@ theorem iteratedFDeriv_comp_right (e : G ≃L[𝕜] E) (f : E → F) (x : G) (i 
   simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ] using
     e.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (Set.mem_univ _) i
 
+/-- Under a linear change of variables `e`, the `i`-th derivative of `f ∘ e` at `y` is bounded by
+`‖e‖ ^ i` times the `i`-th derivative of `f` at `e y`. -/
+theorem norm_iteratedFDeriv_comp_right_le (e : G ≃L[𝕜] E) (f : E → F) (y : G) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i (f ∘ e) y‖ ≤ ‖(e : G →L[𝕜] E)‖ ^ i * ‖iteratedFDeriv 𝕜 i f (e y)‖ := by
+  rw [e.iteratedFDeriv_comp_right]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans_eq ?_
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_comm]
+
 /-- Under a linear change of variables `e`, the `i`-th derivative of `f` at `e y` is bounded by
 `‖e⁻¹‖ ^ i` times the `i`-th derivative of `f ∘ e` at `y`. -/
 theorem norm_iteratedFDeriv_le_pow_mul_norm_iteratedFDeriv_comp_right (e : G ≃L[𝕜] E)
@@ -48,12 +57,7 @@ theorem norm_iteratedFDeriv_le_pow_mul_norm_iteratedFDeriv_comp_right (e : G ≃
   have hf : (f ∘ e) ∘ e.symm = f := by
     funext z
     simp
-  have h : iteratedFDeriv 𝕜 i f (e y) =
-      (iteratedFDeriv 𝕜 i (f ∘ e) y).compContinuousLinearMap fun _ => (e.symm : E →L[𝕜] G) := by
-    simpa only [hf, symm_apply_apply] using e.symm.iteratedFDeriv_comp_right (f ∘ e) (e y) i
-  rw [h]
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans_eq ?_
-  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_comm]
+  simpa only [hf, symm_apply_apply] using e.symm.norm_iteratedFDeriv_comp_right_le (f ∘ e) (e y) i
 
 open scoped NNReal in
 /-- **Hölder continuity of iterated derivatives under a linear change of variables.** If the
@@ -63,32 +67,28 @@ theorem holderOnWith_iteratedFDeriv_of_comp_right (e : G ≃L[𝕜] E) {f : E �
     {C r : ℝ≥0} {i : ℕ} (h : HolderOnWith C r (iteratedFDeriv 𝕜 i (f ∘ e)) (e ⁻¹' s)) :
     HolderOnWith (C * ‖(e.symm : E →L[𝕜] G)‖₊ ^ i * ‖(e.symm : E →L[𝕜] G)‖₊ ^ (r : ℝ)) r
       (iteratedFDeriv 𝕜 i f) s := by
-  have hf : (f ∘ e) ∘ e.symm = f := by
-    funext z
-    simp
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  have hx' : e.symm x ∈ e ⁻¹' s := by simpa using hx
-  have hy' : e.symm y ∈ e ⁻¹' s := by simpa using hy
-  have hsub : ∀ A B : ContinuousMultilinearMap 𝕜 (fun _ : Fin i => G) F,
-      A.compContinuousLinearMap (fun _ => (e.symm : E →L[𝕜] G)) -
-        B.compContinuousLinearMap (fun _ => (e.symm : E →L[𝕜] G)) =
-      (A - B).compContinuousLinearMap fun _ => (e.symm : E →L[𝕜] G) := fun A B => by
-    ext
-    simp
-  rw [← hf, e.symm.iteratedFDeriv_comp_right, e.symm.iteratedFDeriv_comp_right, dist_eq_norm,
-    hsub]
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, ← dist_eq_norm]
-  calc dist (iteratedFDeriv 𝕜 i (f ∘ e) (e.symm x)) (iteratedFDeriv 𝕜 i (f ∘ e) (e.symm y)) *
-        ‖(e.symm : E →L[𝕜] G)‖ ^ i
-      ≤ C * (‖(e.symm : E →L[𝕜] G)‖ * dist x y) ^ (r : ℝ) * ‖(e.symm : E →L[𝕜] G)‖ ^ i := by
-        gcongr
-        refine (h.dist_le hx' hy').trans ?_
-        gcongr
-        exact (e.symm : E →L[𝕜] G).lipschitzWith.dist_le_mul x y
-    _ = _ := by
-        rw [Real.mul_rpow (norm_nonneg _) dist_nonneg]
-        push_cast
-        ring
+  -- `Dⁱf = L ∘ Dⁱ(f ∘ e) ∘ e⁻¹`, where `L` precomposes with `e⁻¹` in every slot.
+  set L := ContinuousMultilinearMap.compContinuousLinearMapL (F := F)
+    fun _ : Fin i => (e.symm : E →L[𝕜] G)
+  have hf : iteratedFDeriv 𝕜 i f = L ∘ iteratedFDeriv 𝕜 i (f ∘ e) ∘ (e.symm : E →L[𝕜] G) := by
+    funext x
+    have hfe : (f ∘ e) ∘ e.symm = f := by
+      funext z
+      simp
+    simpa [L, hfe] using e.symm.iteratedFDeriv_comp_right (f ∘ e) x i
+  have hL : ‖L‖₊ ≤ ‖(e.symm : E →L[𝕜] G)‖₊ ^ i := by
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    simpa using ContinuousMultilinearMap.norm_compContinuousLinearMapL_le F
+      fun _ : Fin i => (e.symm : E →L[𝕜] G)
+  have hmaps : Set.MapsTo (e.symm : E →L[𝕜] G) s (e ⁻¹' s) := fun x hx => by simpa using hx
+  have hcomp := L.lipschitzWith.holderWith.comp_holderOnWith
+    (h.comp ((e.symm : E →L[𝕜] G).lipschitzWith.holderWith.holderOnWith s) hmaps)
+  rw [mul_one, one_mul, NNReal.coe_one, NNReal.rpow_one] at hcomp
+  rw [hf]
+  refine hcomp.mono_const ?_
+  calc ‖L‖₊ * (C * ‖(e.symm : E →L[𝕜] G)‖₊ ^ (r : ℝ))
+      ≤ ‖(e.symm : E →L[𝕜] G)‖₊ ^ i * (C * ‖(e.symm : E →L[𝕜] G)‖₊ ^ (r : ℝ)) := by gcongr
+    _ = _ := by ring
 
 end ContinuousLinearEquiv
