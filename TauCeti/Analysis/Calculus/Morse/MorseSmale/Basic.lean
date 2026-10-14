@@ -31,8 +31,8 @@ the regularity of `f` is a separate hypothesis of the statements that use it.
 * `TauCeti.IsMorseSmale f hf`: the unstable set of each nondegenerate critical point `p` and the
   stable set of each nondegenerate critical point `q` are transverse at each of their common
   points.
-* `TauCeti.isMorseSmale_iff`: the unfolded form of the predicate, its introduction and
-  elimination rule outside this file.
+* `TauCeti.IsMorseSmale.of_forall` and `TauCeti.IsMorseSmale.transverse_at`: its introduction
+  and pointwise elimination rules.
 * `TauCeti.isMorseSmale_congr`: the predicate does not depend on the Lipschitz witness.
 * `TauCeti.IsMorseSmale.morseIndex_lt`: for a Morse–Smale function, a trajectory between two
   different nondegenerate critical points runs from higher to strictly lower Morse index.
@@ -64,8 +64,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 /-- **The Morse–Smale condition.** For a function `f` with `K`-Lipschitz gradient, the unstable set
 of each nondegenerate critical point `p` and the stable set of each nondegenerate critical point `q`
 of the negative-gradient flow are transverse at each common point `y`: the spans of their tangent
-cones at `y` together span the whole space. (When `f` is `C²`, these sets are manifolds near `y`
-and these spans are their tangent spaces.) -/
+cones at `y` together span the whole space. (When `E` is finite-dimensional and `f` is `C²`, these
+sets are `C¹` manifolds near `y`, by the slice charts
+`IsNondegenerateCriticalPoint.exists_unstableSet_chart` and `…exists_stableSet_chart`, and these
+spans are their tangent spaces.) -/
 def IsMorseSmale (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) : Prop :=
   ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p → IsNondegenerateCriticalPoint f q →
     y ∈ Flow.unstableSet (negativeGradientFlow f hf) p →
@@ -73,23 +75,36 @@ def IsMorseSmale (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) : 
     Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤
 
-/-- The introduction and elimination rule for `IsMorseSmale`: transversality of the unstable set of
-each nondegenerate critical point `p` and the stable set of each nondegenerate critical point `q`
-at each common point. -/
-theorem isMorseSmale_iff (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) :
-    IsMorseSmale f hf ↔ ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p →
-      IsNondegenerateCriticalPoint f q →
-      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p →
-      y ∈ Flow.stableSet (negativeGradientFlow f hf) q →
+/-- **The introduction rule for `IsMorseSmale`.** A function is Morse–Smale once, at every point
+`y` of `W^u(p) ∩ W^s(q)` for nondegenerate critical points `p` and `q`, the spans of the tangent
+cones of the unstable set of `p` and the stable set of `q` together span the whole space. -/
+theorem IsMorseSmale.of_forall {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)}
+    (h : ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p → IsNondegenerateCriticalPoint f q →
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
+        Flow.stableSet (negativeGradientFlow f hf) q →
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤ :=
-  Iff.rfl
+        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
+    IsMorseSmale f hf :=
+  fun _ _ _ hp hq hyu hys ↦ h hp hq ⟨hyu, hys⟩
+
+/-- **The pointwise elimination rule for `IsMorseSmale`.** For a Morse–Smale function, at a point
+`y` of `W^u(p) ∩ W^s(q)`, for nondegenerate critical points `p` and `q`, the spans of the tangent
+cones of the unstable set of `p` and the stable set of `q` together span the whole space. -/
+theorem IsMorseSmale.transverse_at {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)}
+    (h : IsMorseSmale f hf) {p q y : E} (hp : IsNondegenerateCriticalPoint f p)
+    (hq : IsNondegenerateCriticalPoint f q)
+    (hy : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      Flow.stableSet (negativeGradientFlow f hf) q) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤ :=
+  h hp hq hy.1 hy.2
 
 /-- **Independence of the Lipschitz witness.** The Morse–Smale condition does not depend on the
 Lipschitz bound used to define the negative-gradient flow. -/
 theorem isMorseSmale_congr (f : E → ℝ) {K K' : ℝ≥0} (hf : LipschitzWith K (∇ f))
     (hf' : LipschitzWith K' (∇ f)) : IsMorseSmale f hf ↔ IsMorseSmale f hf' := by
-  rw [isMorseSmale_iff, isMorseSmale_iff, negativeGradientFlow_congr f hf hf']
+  unfold IsMorseSmale
+  rw [negativeGradientFlow_congr f hf hf']
 
 variable [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
 
@@ -102,7 +117,7 @@ theorem IsMorseSmale.morseIndex_lt (h : IsMorseSmale f hf) (hp : IsNondegenerate
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
     morseIndex f q < morseIndex f p :=
   hp.morseIndex_lt_of_mem_unstableSet_inter_stableSet hq hfs hf hpq hyu hys
-    (h hp hq hyu hys)
+    (h.transverse_at hp hq ⟨hyu, hys⟩)
 
 /-- **No trajectories up the index.** For a `C²` Morse–Smale function, the unstable set of a
 nondegenerate critical point `p` does not meet the stable set of a different nondegenerate critical
