@@ -71,12 +71,16 @@ variable {X}
 instance (A : GradedQuasicoherentAlgebra X) (n : ℕ) : (A.obj.X n).IsQuasicoherent :=
   A.property n
 
-/-- The faithful functor forgetting the algebra structure while retaining the grading. -/
-abbrev toGradedModules :
+/-- The faithful functor forgetting the algebra structure while retaining the grading. The
+definition is exposed so that the underlying graded objects reduce in the types of its
+characteristic equations. -/
+@[expose]
+def toGradedModules :
     GradedQuasicoherentAlgebra X ⥤ GradedObject ℕ X.Modules :=
   (isGradedQuasicoherentAlgebra X).ι ⋙ CommMon.forget _
 
-instance : (toGradedModules (X := X)).Faithful := inferInstance
+instance : (toGradedModules (X := X)).Faithful :=
+  inferInstanceAs ((isGradedQuasicoherentAlgebra X).ι ⋙ CommMon.forget _).Faithful
 
 /-- Forgetting a graded quasicoherent algebra gives its underlying graded module. -/
 @[simp]
@@ -164,7 +168,7 @@ def one (A : GradedQuasicoherentAlgebra X) : 𝟙_ X.Modules ⟶ A.obj.X 0 :=
   (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv ≫ η[A.obj.X] 0
 
 /-- A graded algebra morphism preserves the unit in degree zero. -/
-@[reassoc (attr := simp)]
+@[reassoc, simp]
 theorem one_map {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) :
     A.one ≫ f.hom.hom.hom 0 = B.one := by
   let φ : A.obj.X ⟶ B.obj.X := f.hom.hom.hom
