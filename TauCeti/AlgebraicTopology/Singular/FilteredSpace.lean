@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Triple
-public import TauCeti.Topology.Category.TopPair
 
 /-!
 # The spectral sequence of a filtered space
@@ -400,8 +399,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
 singular chains. -/
 private lemma δ_comp_extendHomologyIso_hom (n : ℕ) (m₀ m₁ : ℤ) (h₀ : m₀ = -(n + 1 : ℕ))
     (h₁ : m₁ = -n) (h : (ComplexShape.up ℤ).Rel m₀ m₁) :
-    (show (gradedShortComplex R hX q).ShortExact from
-        kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ m₀ m₁ h ≫
+    (kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ m₀ m₁ h ≫
         HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₁ m₁ ≫
           (extendHomologyIso _ ComplexShape.embeddingDownNat h₁.symm).hom =
       HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₃ m₀ ≫
