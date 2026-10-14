@@ -36,7 +36,7 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
 * `WeierstrassCurve.Affine.Point.mapAlong_add` and `mapAlong_zsmul`: over fields the transport is
   additive and commutes with integer multiples.
 * `WeierstrassCurve.torsionMapAlong`: over fields, its restriction `E[N] → (W.map f)[N]` to the
-  `N`-torsion.
+  `N`-torsion, injective by `WeierstrassCurve.torsionMapAlong_injective`.
 
 `Affine.Point.map` is already an `AddMonoidHom`, so installing `f.toAlgebra` locally and rewriting
 with `mapAlong_eq_map` gives `map_add`, `map_zero` and `map_zsmul` from Mathlib directly, including
@@ -224,6 +224,13 @@ theorem _root_.WeierstrassCurve.coe_torsionMapAlong_apply (N : ℤ)
     (W.torsionMapAlong f N S : (W.map f).toAffine.Point) =
       (S : W.toAffine.Point).mapAlong f f.injective := by
   simp [WeierstrassCurve.torsionMapAlong]
+
+variable (W) in
+/-- **The torsion map is injective**, since the point map is. -/
+theorem _root_.WeierstrassCurve.torsionMapAlong_injective (N : ℤ) :
+    Function.Injective (W.torsionMapAlong f N) := fun S T h ↦
+  Subtype.ext (WeierstrassCurve.Affine.Point.mapAlong_injective f f.injective
+    (by simpa using congrArg Subtype.val h))
 
 end FieldHom
 

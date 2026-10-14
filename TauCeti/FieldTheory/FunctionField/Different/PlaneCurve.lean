@@ -16,6 +16,7 @@ import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 
 /-!
@@ -247,6 +248,24 @@ theorem finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero {g : MvPolynomial (Fin 2
   rw [finrank_ratFunc_eq_natDegree_of_aeval_eq_zero hirr
       (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hgen hy,
     Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
+
+/-- **The monomials of degree less than `n` in the coordinates of a plane curve are
+independent**: let `g ∈ k[X, Y]` be irreducible of total degree `n`, with the coefficient of `Yⁿ`
+equal to `1`, and let `g(x, y) = 0`. Then the products `x ^ i y ^ j` with `i + j < n` are linearly
+independent over `k`, since `y` has degree `n` over `k(x)`. -/
+theorem linearIndepOn_pow_mul_pow_of_aeval_eq_zero {g : MvPolynomial (Fin 2) k}
+    (hirr : Irreducible g) (hlead : g.coeff (Finsupp.single 1 g.totalDegree) = 1) {y : F}
+    (hy : MvPolynomial.aeval ![algebraMap (RatFunc k) F RatFunc.X, y] g = 0) :
+    LinearIndepOn k (fun p : ℕ × ℕ ↦ algebraMap (RatFunc k) F RatFunc.X ^ p.1 * y ^ p.2)
+      {p | p.1 + p.2 < g.totalDegree} := by
+  have hdeg : (minpoly (RatFunc k) y).natDegree = g.totalDegree := by
+    rw [minpoly_ratFunc_eq_map_of_aeval_eq_zero hirr
+        (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hy,
+      (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead).natDegree_map,
+      Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
+  refine (RatFunc.transcendental_X.linearIndepOn_pow_mul_pow y).mono fun p hp ↦ ?_
+  simp only [Set.mem_ofPred_eq, hdeg] at hp ⊢
+  omega
 
 variable [Algebra.IsSeparable (RatFunc k) F]
 

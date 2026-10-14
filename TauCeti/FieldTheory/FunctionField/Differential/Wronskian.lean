@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Rescale
 import Mathlib.LinearAlgebra.Vandermonde
+import TauCeti.FieldTheory.FunctionField.Place.Degree
 
 /-!
 # Wronskians in function fields
@@ -35,7 +36,8 @@ and columns the Wronskian matrix reduces modulo `P` to a Vandermonde matrix in t
 `ord_P W(f₀, …, fₙ₋₁) ≥ a₀ + ⋯ + aₙ₋₁ - n (n - 1) / 2`
 
 in every characteristic, with equality, and a nonzero Wronskian, as soon as the orders `aⱼ` are
-pairwise distinct in `k`; in characteristic zero, as soon as they are pairwise distinct. This is
+pairwise distinct in `k`; in characteristic zero, as soon as they are pairwise distinct. The lower
+bound holds more generally at every place whose residue field is separable over `k`. This is
 the local computation behind the description of Weierstrass weights by orders of Wronskians.
 
 ## Main results
@@ -44,7 +46,7 @@ the local computation behind the description of Weierstrass weights by orders of
   constant field, the Wronskian detects linear independence.
 * `TauCeti.wronskian_eq_pow_mul_wronskian_derivativeOfSeparating`: the change-of-parameter law.
 * `TauCeti.Place.wronskian_derivativeOfSeparating_mem_filtration`: the lower bound on the order of
-  the Wronskian at a rational place, in every characteristic.
+  the Wronskian at a place with separable residue field, in every characteristic.
 * `TauCeti.Place.ord_wronskian_derivativeOfSeparating`: the order of the Wronskian of functions
   whose orders at a rational place are pairwise distinct in `k`.
 
@@ -58,7 +60,7 @@ public section
 
 namespace TauCeti
 
-open scoped IntermediateField
+open scoped _root_.IntermediateField
 
 section CharZero
 
@@ -101,13 +103,13 @@ open Matrix
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F) {t : F}
   (hP : P.degree = 1) (ht : P.ord t = 1) (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
 
-include hP ht in
-/-- **A lower bound for the order of a Wronskian.** At a rational place `P` with a separating
-prime element `t`, if each `f j` vanishes to order at least `m j`, then the Wronskian with respect
-to `t` vanishes to order at least `∑ j, m j - n (n - 1) / 2`. This holds in every
-characteristic. -/
-theorem wronskian_derivativeOfSeparating_mem_filtration {n : ℕ} {f : Fin n → F} {m : Fin n → ℤ}
-    (hf : ∀ j, f j ∈ P.filtration (m j)) :
+include ht in
+/-- **A lower bound for the order of a Wronskian.** At a place `P` with residue field separable
+over `k` and a separating prime element `t`, if each `f j` vanishes to order at least `m j`, then
+the Wronskian with respect to `t` vanishes to order at least `∑ j, m j - n (n - 1) / 2`. This
+holds in every characteristic. -/
+theorem wronskian_derivativeOfSeparating_mem_filtration [Algebra.IsSeparable k P.ResidueField]
+    {n : ℕ} {f : Fin n → F} {m : Fin n → ℤ} (hf : ∀ j, f j ∈ P.filtration (m j)) :
     (derivativeOfSeparating htr).wronskian f ∈
       P.filtration (∑ j, m j - (n * (n - 1) / 2 : ℕ)) := by
   rw [Derivation.wronskian_def, det_apply, ← Finset.sum_range_id, Nat.cast_sum,
@@ -118,7 +120,7 @@ theorem wronskian_derivativeOfSeparating_mem_filtration {n : ℕ} {f : Fin n →
   refine zsmul_mem ?_ _
   have h := P.prod_mem_filtration Finset.univ (a := fun j ↦ m j - ((σ j : ℕ) : ℤ))
     (z := fun j ↦ (⇑(derivativeOfSeparating htr))^[σ j] (f j))
-    (fun j _ ↦ P.iterate_derivativeOfSeparating_mem_filtration hP ht htr (hf j) (σ j))
+    (fun j _ ↦ P.iterate_derivativeOfSeparating_mem_filtration ht htr (hf j) (σ j))
   rwa [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun i ↦ ((i : ℕ) : ℤ))] at h
 
 include hP ht in
@@ -131,6 +133,7 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
       ((f j)⁻¹ * (⇑(derivativeOfSeparating htr))^[i] (f j))).det ≠ 0 ∧
     P.ord (of fun i j : Fin n ↦ t ^ (i : ℕ) *
       ((f j)⁻¹ * (⇑(derivativeOfSeparating htr))^[i] (f j))).det = 0 := by
+  have := P.isSeparable_residueField_of_degree_eq_one hP
   generalize hNdef : (of fun i j : Fin n ↦ t ^ (i : ℕ) *
       ((f j)⁻¹ * (⇑(derivativeOfSeparating htr))^[i] (f j))) = N
   have ht0 : t ≠ 0 := by
@@ -139,7 +142,7 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
   let c : Matrix (Fin n) (Fin n) ℤ := of fun i j ↦ (descPochhammer ℤ i).eval (P.ord (f j))
   -- Each normalized entry is congruent to the integer `(ord f_j)(ord f_j - 1)⋯` modulo `𝔪_P`.
   have hentry (i j : Fin n) : N i j - (c i j : F) ∈ P.filtration 1 := by
-    have hE := P.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr
+    have hE := P.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration ht htr
       (P.mem_filtration_ord (f j)) i
     have hw : t ^ (i : ℕ) * (f j)⁻¹ ∈ P.filtration (i - P.ord (f j)) := by
       convert P.mul_mem_filtration (P.mem_filtration_ord (t ^ (i : ℕ)))
