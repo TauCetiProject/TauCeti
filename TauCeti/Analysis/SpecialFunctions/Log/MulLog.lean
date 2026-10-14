@@ -148,8 +148,8 @@ theorem sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub {a u : ℝ} (ha : 0 < a) (hu
 point `a` is at most quadratic in `u - a`: for every nonnegative `u`,
 `u * log u - a * log a - (u - a) * (log a + 1) ≤ (u - a) ^ 2 / a`. The left side is
 `u * log (u / a) - u + a`, a relative-entropy integrand, and the right side the corresponding
-`χ²` integrand; the bound is `log x ≤ x - 1` at `x = u / a`. Together with
-`Real.mul_log_sub_mul_log_ge` it gives the second-order expansion of `u ↦ u * log u` at `a`. -/
+`χ²` integrand. Together with `Real.mul_log_sub_mul_log_ge`, the gap lies between `0` and
+`(u - a) ^ 2 / a`, so it is `O((u - a) ^ 2)`. -/
 theorem mul_log_sub_mul_log_sub_le_sq_div {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u) :
     u * log u - a * log a - (u - a) * (log a + 1) ≤ (u - a) ^ 2 / a := by
   rw [le_div_iff₀ ha]

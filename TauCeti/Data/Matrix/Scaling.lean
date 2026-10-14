@@ -119,6 +119,13 @@ def HasMarginals (P : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ) : Prop
 @[simp] theorem hasMarginals_def (P : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ) :
     HasMarginals P a b ↔ (∀ i, (∑ j, P i j) = a i) ∧ (∀ j, (∑ i, P i j) = b j) := Iff.rfl
 
+/-- Every entry of a nonnegative matrix is at most its row sum and its column sum. -/
+theorem HasMarginals.apply_le {P : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ}
+    (hP : HasMarginals P a b) (h0 : ∀ i j, 0 ≤ P i j) (i : ι) (j : κ) :
+    P i j ≤ a i ∧ P i j ≤ b j :=
+  ⟨hP.1 i ▸ Finset.single_le_sum (fun j' _ ↦ h0 i j') (Finset.mem_univ j),
+    hP.2 j ▸ Finset.single_le_sum (fun i' _ ↦ h0 i' j) (Finset.mem_univ i)⟩
+
 omit [Fintype ι] [Fintype κ] in
 /-- `P` is the diagonal scaling of `K` by the row factors `u` and the column factors `v`, that is
 `P i j = u i * K i j * v j` for all `i` and `j`. -/
@@ -250,8 +257,7 @@ theorem isCompact_setOf_nonneg_hasMarginals (a : ι → ℝ) (b : κ → ℝ) :
   have hbound : ∀ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) → HasMarginals P a b →
       ∀ i j, P i j ≤ A := by
     intro P hP0 hPa i j
-    calc P i j ≤ ∑ k, P i k := Finset.single_le_sum (fun k _ => hP0 i k) (Finset.mem_univ j)
-      _ = a i := hPa.1 i
+    calc P i j ≤ a i := (hPa.apply_le hP0 i j).1
       _ ≤ ∑ k, a k := Finset.single_le_sum
           (fun k _ => by rw [← hPa.1 k]; exact Finset.sum_nonneg fun l _ => hP0 k l)
           (Finset.mem_univ i)

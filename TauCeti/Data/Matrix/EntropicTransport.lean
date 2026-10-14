@@ -146,13 +146,6 @@ def transportPolytope (a : ι → ℝ) (b : κ → ℝ) : Set (Matrix ι κ ℝ)
     P ∈ transportPolytope a b ↔ (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b :=
   Iff.rfl
 
-/-- Every entry of a plan in the transport polytope is at most its row sum and its column sum. -/
-private theorem apply_le_of_mem_transportPolytope (hP : P ∈ transportPolytope a b) (i : ι)
-    (j : κ) : P i j ≤ a i ∧ P i j ≤ b j := by
-  obtain ⟨hPa, hPb⟩ := (hasMarginals_def P a b).1 hP.2
-  exact ⟨hPa i ▸ Finset.single_le_sum (fun j' _ ↦ hP.1 i j') (Finset.mem_univ j),
-    hPb j ▸ Finset.single_le_sum (fun i' _ ↦ hP.1 i' j) (Finset.mem_univ i)⟩
-
 /-- The entropically regularised transport objective of a plan `P` for the cost `C` at temperature
 `ε`: the transport cost `∑ i, ∑ j, C i j * P i j` plus `ε` times the relative entropy of `P`
 against the product `a ⊗ b` of the marginals. -/
@@ -323,9 +316,7 @@ theorem norm_sub_le_of_isMinOn_entropicTransportObjective (hε : 0 < ε) (ha : �
   have hQpos := pos_of_isMinOn_entropicTransportObjective hε ha hb hQ hQmin
   -- Every entry of a plan is at most its row sum, hence at most the total mass.
   have hle {R : Matrix ι κ ℝ} (hR : R ∈ transportPolytope a b) (i : ι) (j : κ) : R i j ≤ m :=
-    calc R i j ≤ ∑ j', R i j' :=
-          Finset.single_le_sum (fun j' _ ↦ hR.1 i j') (Finset.mem_univ j)
-      _ = a i := ((hasMarginals_def R a b).1 hR.2).1 i
+    calc R i j ≤ a i := (hR.2.apply_le hR.1 i j).1
       _ ≤ m := Finset.single_le_sum (fun i' _ ↦ (ha i').le) (Finset.mem_univ i)
   -- Strong monotonicity of the logarithm on `(0, m]`, summed over the entries.
   have hsq : ‖P - Q‖ ^ 2 ≤ m * ∑ i, ∑ j, (P i j - Q i j) * (log (P i j) - log (Q i j)) := by
@@ -433,8 +424,8 @@ theorem le_entropicTransportObjective (hε : 0 < ε) (hQ : Q ∈ transportPolyto
     ∑ i, a i * f i + ∑ j, b j * g j +
         ε * (∑ i, a i - ∑ i, ∑ j, a i * b j * exp ((f i + g j - C i j) / ε)) ≤
       C.entropicTransportObjective ε a b Q := by
-  have hrow (i : ι) (j : κ) : Q i j ≤ a i := (apply_le_of_mem_transportPolytope hQ i j).1
-  have hcol (i : ι) (j : κ) : Q i j ≤ b j := (apply_le_of_mem_transportPolytope hQ i j).2
+  have hrow (i : ι) (j : κ) : Q i j ≤ a i := (hQ.2.apply_le hQ.1 i j).1
+  have hcol (i : ι) (j : κ) : Q i j ≤ b j := (hQ.2.apply_le hQ.1 i j).2
   obtain ⟨hQ0, hQm⟩ := hQ
   obtain ⟨hQa, hQb⟩ := (hasMarginals_def Q a b).1 hQm
   -- Cell by cell, this is the supporting line of `u ↦ u * log u` at the Gibbs density
@@ -563,8 +554,8 @@ private theorem entropicTransportObjective_eq_sum_sub (hQ : Q ∈ transportPolyt
       Q i j * log (vecMulVec a b i j) = Q i j * (log (a i) + log (b j)) := by
     rcases (hQ.1 i j).eq_or_lt with h0 | hpos
     · simp [← h0]
-    have hai := hpos.trans_le (apply_le_of_mem_transportPolytope hQ i j).1
-    have hbj := hpos.trans_le (apply_le_of_mem_transportPolytope hQ i j).2
+    have hai := hpos.trans_le (hQ.2.apply_le hQ.1 i j).1
+    have hbj := hpos.trans_le (hQ.2.apply_le hQ.1 i j).2
     rw [vecMulVec_apply, log_mul hai.ne' hbj.ne']
   have hlog := hQ.2.sum_sum_mul_add (fun i ↦ log (a i)) fun j ↦ log (b j)
   rw [entropicTransportObjective_def, relEntropy_def]
@@ -573,6 +564,34 @@ private theorem entropicTransportObjective_eq_sum_sub (hQ : Q ∈ transportPolyt
   rw [hlog]
   simp only [Finset.sum_add_distrib, ← Finset.mul_sum]
   ring
+
+omit [Fintype ι] [Fintype κ] in
+/-- A plan of Gibbs form `a i * b j * exp ((f i + g j - C i j) / ε)` for strictly positive
+marginals has strictly positive entries. -/
+private theorem pos_of_eq_mul_exp {f : ι → ℝ} {g : κ → ℝ} (ha : ∀ i, 0 < a i)
+    (hb : ∀ j, 0 < b j) (hPfg : ∀ i j, P i j = a i * b j * exp ((f i + g j - C i j) / ε))
+    (i : ι) (j : κ) : 0 < P i j := by
+  rw [hPfg]
+  exact mul_pos (mul_pos (ha i) (hb j)) (exp_pos _)
+
+/-- The first-order term of the expansion in the marginals: on a plan `P` of Gibbs form,
+`C + ε * log P + ε` is the row term `f i + ε * log (a i) + ε` plus the column term
+`g j + ε * log (b j)`, so it integrates against a matrix `D` with marginals `h` and `k` to the sum
+of their integrals against `h` and `k`. -/
+private theorem sum_sum_mul_add_mul_log_add_eq {f : ι → ℝ} {g : κ → ℝ} (hε : ε ≠ 0)
+    (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j)
+    (hPfg : ∀ i j, P i j = a i * b j * exp ((f i + g j - C i j) / ε)) {D : Matrix ι κ ℝ}
+    {h : ι → ℝ} {k : κ → ℝ} (hD : HasMarginals D h k) :
+    ∑ i, ∑ j, D i j * (C i j + ε * log (P i j) + ε) =
+      ∑ i, h i * (f i + ε * log (a i) + ε) + ∑ j, k j * (g j + ε * log (b j)) := by
+  have hlog (i : ι) (j : κ) : C i j + ε * log (P i j) + ε =
+      (f i + ε * log (a i) + ε) + (g j + ε * log (b j)) := by
+    rw [hPfg, log_mul (mul_pos (ha i) (hb j)).ne' (exp_pos _).ne', log_exp,
+      log_mul (ha i).ne' (hb j).ne']
+    field_simp
+    ring
+  simp only [hlog]
+  exact hD.sum_sum_mul_add (fun i ↦ f i + ε * log (a i) + ε) fun j ↦ g j + ε * log (b j)
 
 /-- The upper half of the expansion of the value in the marginals: moving the optimal plan `P` of
 Gibbs form by a matrix `D` with marginals `a' - a` and `b' - b` that keeps it nonnegative, the
@@ -585,9 +604,7 @@ private theorem entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ → �
     C.entropicTransportValue ε a' b' - C.entropicTransportValue ε a b -
         (∑ i, f i * (a' i - a i) + ∑ j, (g j - ε) * (b' j - b j)) ≤
       ε * ∑ i, ∑ j, D i j ^ 2 / P i j := by
-  have hPpos (i : ι) (j : κ) : 0 < P i j := by
-    rw [hPfg]
-    exact mul_pos (mul_pos (ha i) (hb j)) (exp_pos _)
+  have hPpos := pos_of_eq_mul_exp ha hb hPfg
   have hQ : P + D ∈ transportPolytope a' b' := by
     refine ⟨fun i j ↦ hPD i j, ?_⟩
     simpa using hP.2.add hD
@@ -619,17 +636,8 @@ private theorem entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ → �
     Finset.sum_le_sum fun j _ ↦ by linarith [mul_log_sub_mul_log_ge _ _ (hb j) (hb' j)]
   simp only [Finset.sum_add_distrib] at hrow hcol
   -- The first-order term: `C + ε * log P` is a row term plus a column term on the support.
-  have hlin : ∑ i, ∑ j, D i j * (C i j + ε * log (P i j) + ε) =
-      ∑ i, (a' i - a i) * (f i + ε * log (a i) + ε) +
-        ∑ j, (b' j - b j) * (g j + ε * log (b j)) := by
-    have hlog (i : ι) (j : κ) : C i j + ε * log (P i j) + ε =
-        (f i + ε * log (a i) + ε) + (g j + ε * log (b j)) := by
-      rw [hPfg, log_mul (mul_pos (ha i) (hb j)).ne' (exp_pos _).ne', log_exp,
-        log_mul (ha i).ne' (hb j).ne']
-      field_simp
-      ring
-    simp only [hlog]
-    simpa using hD.sum_sum_mul_add (fun i ↦ f i + ε * log (a i) + ε) fun j ↦ g j + ε * log (b j)
+  have hlin := sum_sum_mul_add_mul_log_add_eq hε.ne' ha hb hPfg hD
+  simp only [Pi.sub_apply] at hlin
   have hrow' : ∑ i, (a' i - a i) * (f i + ε * log (a i) + ε) -
       ε * ∑ i, (a' i - a i) * (log (a i) + 1) = ∑ i, f i * (a' i - a i) := by
     rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
@@ -688,6 +696,26 @@ private theorem le_entropicTransportValue_sub_sub {f : ι → ℝ} {g : κ → �
   rw [e1, e2, e3] at hw
   linarith
 
+/-- The cell bounds behind the quadratic remainder in the marginals: if `|x|, |y| ≤ δ` and
+`|d| ≤ 3 * δ`, then `x * y * e` and `d ^ 2 / p` are both at most `(e + 9 / p) * δ ^ 2`, for
+positive `p` and `e`. -/
+private theorem mul_mul_le_and_sq_div_le {x y d p e δ : ℝ} (hp : 0 < p) (he : 0 < e)
+    (hx : |x| ≤ δ) (hy : |y| ≤ δ) (hd : |d| ≤ 3 * δ) :
+    x * y * e ≤ (e + 9 / p) * δ ^ 2 ∧ d ^ 2 / p ≤ (e + 9 / p) * δ ^ 2 := by
+  have hδ : 0 ≤ δ := (abs_nonneg _).trans hx
+  constructor
+  · have hxy : x * y ≤ δ ^ 2 :=
+      calc x * y ≤ |x * y| := le_abs_self _
+        _ = |x| * |y| := abs_mul _ _
+        _ ≤ δ * δ := mul_le_mul hx hy (abs_nonneg _) hδ
+        _ = δ ^ 2 := (sq δ).symm
+    have h9 : 0 ≤ 9 / p * δ ^ 2 := by positivity
+    nlinarith [mul_le_mul_of_nonneg_right hxy he.le]
+  · have hd2 : d ^ 2 ≤ 9 * δ ^ 2 := by nlinarith [sq_abs d, abs_nonneg d]
+    calc d ^ 2 / p ≤ 9 * δ ^ 2 / p := by gcongr
+      _ = 9 / p * δ ^ 2 := by ring
+      _ ≤ (e + 9 / p) * δ ^ 2 := by nlinarith [mul_nonneg he.le (sq_nonneg δ)]
+
 /-- The quantitative expansion of the value in the marginals: for marginals `(a', b')` of equal
 total mass, within a third of the smallest entry of the optimal plan `P` of Gibbs form from
 `(a, b)` in the sup norm, the first-order remainder is at most
@@ -701,9 +729,7 @@ private theorem abs_entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ �
         (∑ i, f i * (p.1 i - a i) + ∑ j, (g j - ε) * (p.2 j - b j))| ≤
       ε * (∑ i, ∑ j, (exp ((f i + g j - C i j) / ε) + 9 / P i j)) * ‖p - (a, b)‖ ^ 2 := by
   obtain ⟨hPa, hPb⟩ := (hasMarginals_def P a b).1 hP.2
-  have hPpos (i : ι) (j : κ) : 0 < P i j := by
-    rw [hPfg]
-    exact mul_pos (mul_pos (ha i) (hb j)) (exp_pos _)
+  have hPpos := pos_of_eq_mul_exp ha hb hPfg
   set δ := ‖p - (a, b)‖
   have hδ : 0 ≤ δ := norm_nonneg _
   have hh (i : ι) : |p.1 i - a i| ≤ δ :=
@@ -713,13 +739,9 @@ private theorem abs_entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ �
   -- Both index types are empty, or both are nonempty.
   rcases isEmpty_or_nonempty κ with hκ | hκ
   · have : IsEmpty ι := ⟨fun i ↦ (ha i).ne' (by simp [← hPa i])⟩
-    have hp : p = (a, b) := Subsingleton.elim _ _
-    simp [hp]
-  have : Nonempty ι := by
-    by_contra hι
-    rw [not_nonempty_iff] at hι
-    obtain ⟨j⟩ := hκ
-    exact (hb j).ne' (by simp [← hPb j])
+    simp [Subsingleton.elim p (a, b)]
+  have : Nonempty ι := hκ.elim fun j ↦
+    Finset.univ_nonempty_iff.1 (Finset.nonempty_of_sum_ne_zero (hPb j ▸ (hb j).ne'))
   -- Follow the perturbation of the marginals by a perturbation `D` of `P`.
   obtain ⟨D, hD, hDle⟩ := exists_hasMarginals_abs_le (h := p.1 - a) (k := p.2 - b)
     (by simp only [Pi.sub_apply, Finset.sum_sub_distrib, hpS, hP.2.sum_eq]) hh hk
@@ -729,32 +751,15 @@ private theorem abs_entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ �
   have hlow := le_entropicTransportValue_sub_sub (C := C) hε ha hb hP hPfg
     ⟨P + D, hPD, by simpa using hP.2.add hD⟩
   -- Both remainders are bounded cell by cell.
-  have hcellE (i : ι) (j : κ) : (p.1 i - a i) * (p.2 j - b j) * exp ((f i + g j - C i j) / ε) ≤
-      (exp ((f i + g j - C i j) / ε) + 9 / P i j) * δ ^ 2 := by
-    have hE := exp_pos ((f i + g j - C i j) / ε)
-    have hhk : (p.1 i - a i) * (p.2 j - b j) ≤ δ ^ 2 := by
-      calc (p.1 i - a i) * (p.2 j - b j) ≤ |(p.1 i - a i) * (p.2 j - b j)| := le_abs_self _
-        _ = |p.1 i - a i| * |p.2 j - b j| := abs_mul _ _
-        _ ≤ δ * δ := mul_le_mul (hh i) (hk j) (abs_nonneg _) hδ
-        _ = δ ^ 2 := (sq δ).symm
-    have h9 : 0 ≤ 9 / P i j * δ ^ 2 := by have := hPpos i j; positivity
-    nlinarith [mul_le_mul_of_nonneg_right hhk hE.le]
-  have hcellD (i : ι) (j : κ) : D i j ^ 2 / P i j ≤
-      (exp ((f i + g j - C i j) / ε) + 9 / P i j) * δ ^ 2 := by
-    have hD2 : D i j ^ 2 ≤ 9 * δ ^ 2 := by
-      nlinarith [sq_abs (D i j), abs_nonneg (D i j), hDle i j]
-    have hE := exp_pos ((f i + g j - C i j) / ε)
-    calc D i j ^ 2 / P i j ≤ 9 * δ ^ 2 / P i j := by gcongr; exact (hPpos i j).le
-      _ = 9 / P i j * δ ^ 2 := by ring
-      _ ≤ (exp ((f i + g j - C i j) / ε) + 9 / P i j) * δ ^ 2 := by
-        nlinarith [mul_nonneg hE.le (sq_nonneg δ)]
+  have hcell (i : ι) (j : κ) := mul_mul_le_and_sq_div_le (hPpos i j)
+    (exp_pos ((f i + g j - C i j) / ε)) (hh i) (hk j) (hDle i j)
   have hK : ε * (∑ i, ∑ j, (exp ((f i + g j - C i j) / ε) + 9 / P i j)) * δ ^ 2 =
       ε * ∑ i, ∑ j, (exp ((f i + g j - C i j) / ε) + 9 / P i j) * δ ^ 2 := by
     simp only [mul_assoc, Finset.sum_mul]
   have hE' := mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
-    Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ hcellE i j) hε.le
+    Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ (hcell i j).1) hε.le
   have hD' := mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
-    Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ hcellD i j) hε.le
+    Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ (hcell i j).2) hε.le
   rw [abs_le]
   constructor <;> linarith
 
@@ -772,9 +777,7 @@ theorem isBigO_entropicTransportValue_sub_sub {f : ι → ℝ} {g : κ → ℝ} 
         C.entropicTransportValue ε a b -
           (∑ i, f i * (p.1 i - a i) + ∑ j, (g j - ε) * (p.2 j - b j))) =O[
         𝓝[{p | ∑ i, p.1 i = ∑ j, p.2 j}] (a, b)] fun p ↦ ‖p - (a, b)‖ ^ 2 := by
-  have hPpos (i : ι) (j : κ) : 0 < P i j := by
-    rw [hPfg]
-    exact mul_pos (mul_pos (ha i) (hb j)) (exp_pos _)
+  have hPpos := pos_of_eq_mul_exp ha hb hPfg
   -- Near `(a, b)`, every entry of `P` exceeds three times the size of the perturbation.
   have hev : ∀ᶠ p in 𝓝[{p | ∑ i, p.1 i = ∑ j, p.2 j}] (a, b),
       (∑ i, p.1 i = ∑ j, p.2 j) ∧ ∀ i j, 3 * ‖p - (a, b)‖ ≤ P i j := by
