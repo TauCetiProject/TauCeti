@@ -10,10 +10,14 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduc
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 -- Proof-only: the chord through two points with singular reduction.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.IndexTwo
+-- Proof-only: the residue quadratic at an odd stage of the `Iₙ*` subprocedure.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: index two from sums of outside elements.
 import TauCeti.GroupTheory.Index.Two
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
 import TauCeti.RingTheory.Henselian.Basic
+-- Proof-only: units and the maximal ideal of a local ring with principal maximal ideal.
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 -- Proof-only: a root of a quadratic with unit discriminant is simple.
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
@@ -89,6 +93,7 @@ All in the namespace `WeierstrassCurve.Affine`:
 public section
 
 open IsLocalRing Polynomial
+open TauCeti.IsLocalRing (isUnit_add_of_dvd isUnit_iff_not_dvd mem_maximalIdeal_iff_dvd)
 
 namespace WeierstrassCurve
 
@@ -165,21 +170,6 @@ private theorem pow_dvd_and_pow_dvd_of_equation (hπ : Prime π) {k : ℕ} (h₁
       ((pow_dvd_pow π (by omega)).trans h₆) h
     exact ⟨⟨X, by ring⟩, ⟨Y, by ring⟩⟩
 
-/-- **The last stage `n = 2k + 1` of the `Iₙ*` subprocedure, on points.** With `π ∣ a₁`,
-`π ∣ a₂`, `a₃ = π^(k+2) A₃`, `π^(k+3) ∣ a₄` and `a₆ = π^(2k+4) A₆`, a solution
-`(π^(k+2) X, π^(k+2) Y)` makes `Y` a root of `T² + A₃ T − A₆` modulo `π`. -/
-private theorem dvd_quadratic_of_equation_odd (hπ : π ≠ 0) {k : ℕ} (h₁ : π ∣ W.a₁)
-    (h₂ : π ∣ W.a₂) {A₃ A₆ : R} (h₃ : W.a₃ = π ^ (k + 2) * A₃) (h₄ : π ^ (k + 3) ∣ W.a₄)
-    (h₆ : W.a₆ = π ^ (2 * k + 4) * A₆) {X Y : R}
-    (h : W.toAffine.Equation (π ^ (k + 2) * X) (π ^ (k + 2) * Y)) :
-    π ∣ Y ^ 2 + A₃ * Y - A₆ := by
-  obtain ⟨α₁, hα₁⟩ := h₁
-  obtain ⟨α₂, hα₂⟩ := h₂
-  obtain ⟨α₄, hα₄⟩ := h₄
-  rw [Affine.equation_iff, hα₁, hα₂, h₃, hα₄, h₆] at h
-  exact ⟨π ^ (k + 1) * X ^ 3 + α₂ * X ^ 2 + α₄ * X - α₁ * X * Y,
-    mul_left_cancel₀ (pow_ne_zero (2 * k + 4) hπ) (by linear_combination h)⟩
-
 /-- **The last stage `n = 2k + 2` of the `Iₙ*` subprocedure, on points.** With `π ∣ a₁`,
 `a₂ = π A₂`, `π^(k+3) ∣ a₃`, `a₄ = π^(k+3) A₄` and `a₆ = π^(2k+5) A₆`, a solution
 `(π^(k+2) X, π^(k+2) Y)` makes `X` a root of `A₂ T² + A₄ T + A₆` modulo `π`. -/
@@ -204,35 +194,6 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 
 /-- The valuation ring of `v`. -/
 local notation "𝒪" => v.valuationSubring
-
-/-! ### The maximal ideal -/
-
-/-- Membership in the maximal ideal `(ϖ)` of the valuation ring is divisibility by `ϖ`. -/
-private theorem mem_maximalIdeal_iff_dvd {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {z : v.valuationSubring} :
-    z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-  rw [hϖ, Ideal.mem_span_singleton]
-
-/-- An element of the valuation ring is a unit exactly when it is not divisible by a generator `ϖ`
-of the maximal ideal. -/
-private theorem isUnit_iff_not_dvd {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {z : v.valuationSubring} :
-    IsUnit z ↔ ¬ ϖ ∣ z := by
-  rw [← mem_maximalIdeal_iff_dvd v hϖ, mem_maximalIdeal, mem_nonunits_iff, not_not]
-
-/-- An element of the valuation ring that is a unit plus a multiple of `ϖ` is a unit. -/
-private theorem isUnit_add_of_dvd {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {a b : v.valuationSubring}
-    (ha : IsUnit a) (hb : ϖ ∣ b) : IsUnit (a + b) := by
-  rw [isUnit_iff_not_dvd v hϖ] at ha ⊢
-  exact fun hd ↦ ha (by simpa using dvd_sub hd hb)
-
-/-- An element of the valuation ring divisible by a generator `ϖ` of the maximal ideal has
-valuation `< 1`. -/
-private theorem valuation_lt_one_of_dvd {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {z : v.valuationSubring}
-    (hz : ϖ ∣ z) : v (z : F) < 1 :=
-  (Valuation.mem_maximalIdeal_iff (v := v)).1 ((mem_maximalIdeal_iff_dvd v hϖ).2 hz)
 
 /-! ### The normal form of the stopping test -/
 
@@ -285,9 +246,9 @@ private theorem stage_data {ϖ : v.valuationSubring}
     rintro rfl
     exact h₂' (by simp [hA₂])
   refine ⟨(Ideal.span_singleton_prime hϖ0).mp (hϖ ▸ (maximalIdeal.isMaximal _).isPrime),
-    (mem_maximalIdeal_iff_dvd v hϖ).2 ((dvd_pow_self ϖ (by norm_num)).trans h₃),
-    (mem_maximalIdeal_iff_dvd v hϖ).2 ((dvd_pow_self ϖ (by norm_num)).trans h₄),
-    (mem_maximalIdeal_iff_dvd v hϖ).2 ((dvd_pow_self ϖ (by norm_num)).trans h₆), A₂, hA₂,
+    (mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ (by norm_num)).trans h₃),
+    (mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ (by norm_num)).trans h₄),
+    (mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ (by norm_num)).trans h₆), A₂, hA₂,
     fun hd ↦ h₂' ?_⟩
   rw [hA₂, pow_two]
   exact mul_dvd_mul_left ϖ hd
@@ -358,7 +319,7 @@ private theorem exists_root_of_mem_farPoints_odd {ϖ : v.valuationSubring}
     hA₂' h₃' h₄ h₆' hE hx hy
   have hq := (integralModel _ W).dvd_quadratic_of_equation_odd hp.ne_zero h₁ h₂ h₃ h₄ h₆ hE
   exact ⟨residue _ Y,
-    by simpa using (residue_eq_zero_iff _).2 ((mem_maximalIdeal_iff_dvd v hϖ).2 hq)⟩
+    by simpa using (residue_eq_zero_iff _).2 ((mem_maximalIdeal_iff_dvd hϖ).2 hq)⟩
 
 /-- At `I*_{2k+1}`, with `a₃ = ϖ^(k+2) A₃` and `a₆ = ϖ^(2k+4) A₆`, a root `t` of the residue
 quadratic `T² + A₃ T − A₆` gives a point `(0, ϖ^(k+2) Y)`, when the valuation ring is Henselian:
@@ -375,7 +336,7 @@ private theorem exists_mem_farPoints_odd [HenselianLocalRing v.valuationSubring]
   obtain ⟨hp, -⟩ := stage_data v hϖ (isTateOddStage_zero_of_isTateTerminal_IStar v h)
   obtain ⟨-, hb₆⟩ := isTateOddStage_of_isTateTerminal_IStar v h
   have hD : IsUnit (A₃ ^ 2 + 4 * A₆) := by
-    rw [isUnit_iff_not_dvd v hϖ]
+    rw [isUnit_iff_not_dvd hϖ]
     rintro ⟨e, he⟩
     exact hb₆ ⟨e, by rw [b₆, h₃, h₆]; linear_combination ϖ ^ (2 * k + 4) * he⟩
   -- lift the root `t` to a root `Y` of `T² + A₃ T − A₆`
@@ -406,9 +367,8 @@ private theorem exists_mem_farPoints_odd [HenselianLocalRing v.valuationSubring]
       show 2 * (ϖ ^ (k + 2) * Y) + ϖ ^ (k + 2) * A₃ = ϖ ^ (k + 2) * (2 * Y + A₃) by ring]
     exact mul_ne_zero (pow_ne_zero _ hp.ne_zero) hu.ne_zero
   have hF : W.Nonsingular ((0 : v.valuationSubring) : F)
-      ((ϖ ^ (k + 2) * Y : v.valuationSubring) : F) := by
-    have := (Wo.toAffine.map_nonsingular (IsFractionRing.injective _ F) _ _).mpr hns
-    rwa [← baseChange_integralModel_eq v.valuationSubring W]
+      ((ϖ ^ (k + 2) * Y : v.valuationSubring) : F) :=
+    (nonsingular_integralModel_iff v).1 hns
   exact ⟨Point.some _ _ hF, _, _, hF, rfl, dvd_zero _,
     ((pow_dvd_pow ϖ (by omega)).mul_right Y)⟩
 
@@ -433,7 +393,7 @@ private theorem exists_root_of_mem_farPoints_even {ϖ : v.valuationSubring}
     ((pow_dvd_pow ϖ (by omega)).trans h₃) ⟨A₄, h₄⟩ ⟨ϖ * A₆, by rw [h₆]; ring⟩ hE hx hy
   have hq := (integralModel _ W).dvd_quadratic_of_equation_even hp h₁ h₂ h₃ h₄ h₆ hE
   exact ⟨residue _ X,
-    by simpa using (residue_eq_zero_iff _).2 ((mem_maximalIdeal_iff_dvd v hϖ).2 hq)⟩
+    by simpa using (residue_eq_zero_iff _).2 ((mem_maximalIdeal_iff_dvd hϖ).2 hq)⟩
 
 /-- At `I*_{2k+2}`, with `a₂ = ϖ A₂`, `a₄ = ϖ^(k+3) A₄` and `a₆ = ϖ^(2k+5) A₆`, a root `t` of the
 residue quadratic `A₂ T² + A₄ T + A₆` gives a point `(ϖ^(k+2) X, 0)`, when the valuation ring is
@@ -457,7 +417,7 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
     exact hdisc ⟨e, by rw [discrim, h₂, h₄, h₆]; linear_combination ϖ ^ (2 * k + 6) * he⟩
   have hsimple (z : v.valuationSubring) (hz : ϖ ∣ A₂ * z ^ 2 + A₄ * z + A₆) :
       IsUnit (2 * A₂ * z + A₄) := by
-    rw [isUnit_iff_not_dvd v hϖ]
+    rw [isUnit_iff_not_dvd hϖ]
     intro hd
     refine hD (hp.dvd_of_dvd_pow (n := 1) ?_)
     rw [pow_one, show A₄ ^ 2 - 4 * A₂ * A₆ =
@@ -477,15 +437,15 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
     ring
   obtain ⟨X₀, rfl⟩ := residue_surjective t
   have hX₀ : ϖ ∣ A₂ * X₀ ^ 2 + A₄ * X₀ + A₆ := by
-    rw [← mem_maximalIdeal_iff_dvd v hϖ, ← residue_eq_zero_iff]
+    rw [← mem_maximalIdeal_iff_dvd hϖ, ← residue_eq_zero_iff]
     simpa using ht
   obtain ⟨X, hX, -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal f
-    (a₀ := X₀) (by rw [heval, mem_maximalIdeal_iff_dvd v hϖ]; exact dvd_add (dvd_mul_right _ _) hX₀)
-    (by rw [hder]; exact isUnit_add_of_dvd v hϖ (hsimple X₀ hX₀) (dvd_mul_right _ _))
+    (a₀ := X₀) (by rw [heval, mem_maximalIdeal_iff_dvd hϖ]; exact dvd_add (dvd_mul_right _ _) hX₀)
+    (by rw [hder]; exact isUnit_add_of_dvd hϖ (hsimple X₀ hX₀) (dvd_mul_right _ _))
   have hroot := hX.eq_zero
   rw [heval] at hroot
   have hu : IsUnit (2 * A₂ * X + A₄ + ϖ * (3 * ϖ ^ k * X ^ 2)) :=
-    isUnit_add_of_dvd v hϖ (hsimple X ⟨-(ϖ ^ k * X ^ 3), by linear_combination hroot⟩)
+    isUnit_add_of_dvd hϖ (hsimple X ⟨-(ϖ ^ k * X ^ 3), by linear_combination hroot⟩)
       (dvd_mul_right _ _)
   -- the point `(ϖ^(k+2) X, 0)`
   have hns : Wo.toAffine.Nonsingular (ϖ ^ (k + 2) * X) 0 := by
@@ -496,68 +456,13 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
       ϖ ^ (k + 3) * A₄) = -ϖ ^ (k + 3) * (2 * A₂ * X + A₄ + ϖ * (3 * ϖ ^ k * X ^ 2)) by ring]
     exact mul_ne_zero (neg_ne_zero.2 (pow_ne_zero _ hp.ne_zero)) hu.ne_zero
   have hF : W.Nonsingular ((ϖ ^ (k + 2) * X : v.valuationSubring) : F)
-      ((0 : v.valuationSubring) : F) := by
-    have := (Wo.toAffine.map_nonsingular (IsFractionRing.injective _ F) _ _).mpr hns
-    rwa [← baseChange_integralModel_eq v.valuationSubring W]
+      ((0 : v.valuationSubring) : F) :=
+    (nonsingular_integralModel_iff v).1 hns
   exact ⟨Point.some _ _ hF, _, _, hF, rfl, (pow_dvd_pow ϖ (by omega)).mul_right X, dvd_zero _⟩
 
 /-! ### Points with singular reduction -/
 
 variable [DecidableEq F]
-
-/-- A point with singular reduction is `(x, y)` with `x` and `y` in the maximal ideal, when the
-reduction is singular at the origin. -/
-private theorem exists_eq_some_of_notMem
-    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
-    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
-    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
-    {P : W.Point} (hP : P ∉ W.nonsingularReduction v) :
-    ∃ (x y : v.valuationSubring) (h : W.Nonsingular (x : F) (y : F)), P = .some _ _ h ∧
-      x ∈ maximalIdeal v.valuationSubring ∧ y ∈ maximalIdeal v.valuationSubring := by
-  rcases P with _ | ⟨x, y, hxy⟩
-  · exact absurd (zero_mem _) hP
-  obtain ⟨hx, hy⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ hxy).1 hP
-  exact ⟨⟨x, (v.mem_valuationSubring_iff x).2 hx.le⟩, ⟨y, (v.mem_valuationSubring_iff y).2 hy.le⟩,
-    hxy, rfl, (Valuation.mem_maximalIdeal_iff (v := v)).2 hx,
-    (Valuation.mem_maximalIdeal_iff (v := v)).2 hy⟩
-
-/-- **The chord through two points with singular reduction whose sum has singular reduction.**
-The slope `ℓ` is integral, the sum is a point `(x₃, y₃)` with integral coordinates, and with
-`ν = y₁ − ℓ x₁` the Weierstrass cubic restricted to the line `y = ℓ x + ν` has roots `x₁`, `x₂`,
-`x₃`: `x₁ + x₂ + x₃ = ℓ² + a₁ ℓ − a₂` and `x₁ x₂ x₃ = ν² + a₃ ν − a₆`. -/
-private theorem exists_chord
-    (hm₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
-    (hm₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
-    (hm₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
-    {x₁ y₁ x₂ y₂ : v.valuationSubring} {h₁ : W.Nonsingular (x₁ : F) (y₁ : F)}
-    {h₂ : W.Nonsingular (x₂ : F) (y₂ : F)} (hP : Point.some _ _ h₁ ∉ W.nonsingularReduction v)
-    (hQ : Point.some _ _ h₂ ∉ W.nonsingularReduction v)
-    (hPQ : Point.some _ _ h₁ + Point.some _ _ h₂ ∉ W.nonsingularReduction v) :
-    ∃ (L x₃ y₃ : v.valuationSubring) (h₃ : W.Nonsingular (x₃ : F) (y₃ : F)),
-      Point.some _ _ h₁ + Point.some _ _ h₂ = Point.some _ _ h₃ ∧
-      L ^ 2 + (integralModel v.valuationSubring W).a₁ * L -
-        (integralModel v.valuationSubring W).a₂ = x₁ + x₂ + x₃ ∧
-      x₁ * x₂ * x₃ = (y₁ - L * x₁) ^ 2 + (integralModel v.valuationSubring W).a₃ * (y₁ - L * x₁) -
-        (integralModel v.valuationSubring W).a₆ := by
-  obtain ⟨L, -, hL, -, -, -⟩ := exists_slope_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hP hQ hPQ
-  have hxy : ¬((x₁ : F) = x₂ ∧ (y₁ : F) = W.negY x₂ y₂) := fun ⟨hx, hy⟩ ↦
-    hPQ (by rw [Point.add_of_Y_eq hx hy]; exact zero_mem _)
-  rw [Point.add_some hxy] at hPQ ⊢
-  obtain ⟨hx₃, hy₃⟩ := (some_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ _).1 hPQ
-  refine ⟨L, ⟨_, (v.mem_valuationSubring_iff _).2 hx₃.le⟩,
-    ⟨_, (v.mem_valuationSubring_iff _).2 hy₃.le⟩, nonsingular_add h₁ h₂ hxy, rfl, ?_, ?_⟩
-  · apply Subtype.ext
-    push_cast
-    rw [coe_integralModel_a₁, coe_integralModel_a₂, ← hL, addX]
-    ring
-  · have key := W.addPolynomial_slope h₁.left h₂.left hxy
-    rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
-    have hd := congrArg Cubic.d ((Cubic.toPoly_injective _ _).1 key)
-    rw [← hL] at hd
-    apply Subtype.ext
-    push_cast
-    rw [coe_integralModel_a₃, coe_integralModel_a₆, ← hL]
-    linear_combination hd
 
 /-- A point `(ϖ² X, ϖ² Y)` has singular reduction. -/
 private theorem notMem_of_mem_farPoints {ϖ : v.valuationSubring}
@@ -567,9 +472,9 @@ private theorem notMem_of_mem_farPoints {ϖ : v.valuationSubring}
     (hm₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
     {P : W.Point} (hP : P ∈ farPoints v ϖ) : P ∉ W.nonsingularReduction v := by
   obtain ⟨x, y, h, rfl, hx, hy⟩ := hP
-  exact (some_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ h).2
-    ⟨valuation_lt_one_of_dvd v hϖ ((dvd_pow_self ϖ two_ne_zero).trans hx),
-      valuation_lt_one_of_dvd v hϖ ((dvd_pow_self ϖ two_ne_zero).trans hy)⟩
+  exact (some_coe_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ h).2
+    ⟨(mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ two_ne_zero).trans hx),
+      (mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ two_ne_zero).trans hy)⟩
 
 /-- **Two points with singular reduction, neither of the form `(ϖ² X, ϖ² Y)`, add to a point
 with nonsingular reduction.** Both are `(ϖ Xᵢ, ϖ² Yᵢ)` with `Xᵢ ≡ −A₂`. If their sum `(x₃, y₃)` had
@@ -583,24 +488,26 @@ private theorem add_mem_of_notMem_farPoints {ϖ : v.valuationSubring}
     (hPF : P ∉ farPoints v ϖ) (hQF : Q ∉ farPoints v ϖ) : P + Q ∈ W.nonsingularReduction v := by
   obtain ⟨hp, hm₃, hm₄, hm₆, A₂, hA₂, hA₂'⟩ := stage_data v hϖ hst
   obtain ⟨⟨α₁, hα₁⟩, -, -, ⟨α₃, hα₃⟩, -, ⟨α₆, hα₆⟩⟩ := isTateOddStage_iff.1 hst
-  obtain ⟨x₁, y₁, h₁, rfl, hx₁, hy₁⟩ := exists_eq_some_of_notMem v hm₃ hm₄ hm₆ hP
-  obtain ⟨x₂, y₂, h₂, rfl, hx₂, hy₂⟩ := exists_eq_some_of_notMem v hm₃ hm₄ hm₆ hQ
+  obtain ⟨x₁, y₁, h₁, rfl, hx₁, hy₁⟩ :=
+    exists_eq_some_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hP
+  obtain ⟨x₂, y₂, h₂, rfl, hx₂, hy₂⟩ :=
+    exists_eq_some_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hQ
   obtain ⟨X₁, Y₁, rfl, rfl, hX₁, ⟨c₁, hc₁⟩⟩ := exists_eq_of_notMem_farPoints v hp hst hA₂ h₁
-    ((mem_maximalIdeal_iff_dvd v hϖ).1 hx₁) ((mem_maximalIdeal_iff_dvd v hϖ).1 hy₁) hPF
+    ((mem_maximalIdeal_iff_dvd hϖ).1 hx₁) ((mem_maximalIdeal_iff_dvd hϖ).1 hy₁) hPF
   obtain ⟨X₂, Y₂, rfl, rfl, hX₂, ⟨c₂, hc₂⟩⟩ := exists_eq_of_notMem_farPoints v hp hst hA₂ h₂
-    ((mem_maximalIdeal_iff_dvd v hϖ).1 hx₂) ((mem_maximalIdeal_iff_dvd v hϖ).1 hy₂) hQF
+    ((mem_maximalIdeal_iff_dvd hϖ).1 hx₂) ((mem_maximalIdeal_iff_dvd hϖ).1 hy₂) hQF
   by_contra hPQ
-  obtain ⟨L, x₃, y₃, h₃, heq, he₁, he₃⟩ := exists_chord v hm₃ hm₄ hm₆ hP hQ hPQ
+  obtain ⟨L, x₃, y₃, h₃, -, heq, he₁, -, he₃⟩ :=
+    exists_chord_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hPQ
   rw [heq] at hPQ
-  obtain ⟨X₃, rfl⟩ := (mem_maximalIdeal_iff_dvd v hϖ).1
-    ((Valuation.mem_maximalIdeal_iff (v := v)).2
-      ((some_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ h₃).1 hPQ).1)
+  obtain ⟨X₃, rfl⟩ := (mem_maximalIdeal_iff_dvd hϖ).1
+    ((some_coe_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ h₃).1 hPQ).1
   -- `ϖ ∣ ℓ`
   obtain ⟨L, rfl⟩ : ϖ ∣ L := hp.dvd_of_dvd_pow (n := 2)
     ⟨X₁ + X₂ + X₃ - α₁ * L + A₂, by rw [hα₁, hA₂] at he₁; linear_combination he₁⟩
   -- `ϖ² ∣ x₃`
   have hu : IsUnit (X₁ * X₂) :=
-    ((isUnit_iff_not_dvd v hϖ).2 hX₁).mul ((isUnit_iff_not_dvd v hϖ).2 hX₂)
+    ((isUnit_iff_not_dvd hϖ).2 hX₁).mul ((isUnit_iff_not_dvd hϖ).2 hX₂)
   obtain ⟨X₃, rfl⟩ : ϖ ∣ X₃ := by
     refine (hu.dvd_mul_left).1 ⟨(Y₁ - L * X₁) ^ 2 + α₃ * (Y₁ - L * X₁) - α₆, ?_⟩
     refine mul_left_cancel₀ (pow_ne_zero 3 hp.ne_zero) ?_
@@ -621,12 +528,13 @@ private theorem add_notMem_of_mem_farPoints {ϖ : v.valuationSubring}
     (hP : P ∉ W.nonsingularReduction v) (hPF : P ∉ farPoints v ϖ) (hQ : Q ∈ farPoints v ϖ) :
     P + Q ∉ W.nonsingularReduction v := by
   obtain ⟨hp, hm₃, hm₄, hm₆, A₂, hA₂, -⟩ := stage_data v hϖ hst
-  obtain ⟨x₁, y₁, h₁, rfl, hx₁, hy₁⟩ := exists_eq_some_of_notMem v hm₃ hm₄ hm₆ hP
+  obtain ⟨x₁, y₁, h₁, rfl, hx₁, hy₁⟩ :=
+    exists_eq_some_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hP
   obtain ⟨X₁, Y₁, rfl, rfl, hX₁, -⟩ := exists_eq_of_notMem_farPoints v hp hst hA₂ h₁
-    ((mem_maximalIdeal_iff_dvd v hϖ).1 hx₁) ((mem_maximalIdeal_iff_dvd v hϖ).1 hy₁) hPF
+    ((mem_maximalIdeal_iff_dvd hϖ).1 hx₁) ((mem_maximalIdeal_iff_dvd hϖ).1 hy₁) hPF
   obtain ⟨x₂, y₂, h₂, rfl, ⟨X₂, rfl⟩, ⟨Y₂, rfl⟩⟩ := hQ
   -- `x₁ − x₂ = ϖ u` with `u = X₁ − ϖ X₂` a unit
-  have hu : IsUnit (X₁ - ϖ * X₂) := (isUnit_iff_not_dvd v hϖ).2 fun hd ↦
+  have hu : IsUnit (X₁ - ϖ * X₂) := (isUnit_iff_not_dvd hϖ).2 fun hd ↦
     hX₁ (by simpa using dvd_add hd (dvd_mul_right ϖ X₂))
   obtain ⟨i, hi⟩ := hu.exists_right_inv
   have hi' : ((X₁ - ϖ * X₂ : v.valuationSubring) : F) * (i : F) = 1 := by
@@ -665,10 +573,11 @@ private theorem add_notMem_of_mem_farPoints {ϖ : v.valuationSubring}
     rw [addY, negAddY, hx₃, negY, ← coe_integralModel_a₁ v, ← coe_integralModel_a₃ v]
     push_cast
     ring
-  rw [hx₃, hy₃]
-  refine ⟨valuation_lt_one_of_dvd v hϖ hdX₃, valuation_lt_one_of_dvd v hϖ ?_⟩
+  rw [hx₃, hy₃, ← Valuation.mem_maximalIdeal_iff, ← Valuation.mem_maximalIdeal_iff,
+    mem_maximalIdeal_iff_dvd hϖ, mem_maximalIdeal_iff_dvd hϖ]
+  refine ⟨hdX₃, ?_⟩
   refine dvd_sub (dvd_sub (dvd_neg.2 (dvd_add ?_ ?_)) (hdX₃.mul_left _))
-    ((mem_maximalIdeal_iff_dvd v hϖ).1 hm₃)
+    ((mem_maximalIdeal_iff_dvd hϖ).1 hm₃)
   · exact (dvd_mul_right ϖ _).mul_right _
   · exact (dvd_pow_self ϖ two_ne_zero).mul_right _
 
@@ -682,12 +591,11 @@ private theorem add_notMem_farPoints {ϖ : v.valuationSubring}
   intro hPQ
   obtain ⟨hp, hm₃, hm₄, hm₆, A₂, hA₂, hA₂'⟩ := stage_data v hϖ hst
   obtain ⟨⟨α₁, hα₁⟩, -⟩ := isTateOddStage_iff.1 hst
-  have hPb := notMem_of_mem_farPoints v hϖ hm₃ hm₄ hm₆ hP
-  have hQb := notMem_of_mem_farPoints v hϖ hm₃ hm₄ hm₆ hQ
   have hPQb := notMem_of_mem_farPoints v hϖ hm₃ hm₄ hm₆ hPQ
   obtain ⟨x₁, y₁, h₁, rfl, ⟨X₁, rfl⟩, -⟩ := hP
   obtain ⟨x₂, y₂, h₂, rfl, ⟨X₂, rfl⟩, -⟩ := hQ
-  obtain ⟨L, x₃, y₃, h₃, heq, he₁, -⟩ := exists_chord v hm₃ hm₄ hm₆ hPb hQb hPQb
+  obtain ⟨L, x₃, y₃, h₃, -, heq, he₁, -, -⟩ :=
+    exists_chord_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hPQb
   obtain ⟨x₃', y₃', h₃', he, ⟨X₃, rfl⟩, -⟩ := hPQ
   obtain rfl : x₃ = ϖ ^ 2 * X₃ :=
     Subtype.val_injective (Point.some.inj (heq.symm.trans he)).1
@@ -730,6 +638,16 @@ private theorem mem_nearSubgroup {ϖ : v.valuationSubring}
     P ∈ nearSubgroup v hϖ hst ↔ P ∉ farPoints v ϖ :=
   Iff.rfl
 
+/-- Two points of the form `(ϖ² X, ϖ² Y)` add to a point not of that form. -/
+private theorem add_mem_nearSubgroup {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) {P Q : W.Point}
+    (hP : P ∉ nearSubgroup v hϖ hst) (hQ : Q ∉ nearSubgroup v hϖ hst) :
+    P + Q ∈ nearSubgroup v hϖ hst :=
+  (mem_nearSubgroup v hϖ hst).2 <| add_notMem_farPoints v hϖ hst
+    (not_not.1 ((mem_nearSubgroup v hϖ hst).not.1 hP))
+    (not_not.1 ((mem_nearSubgroup v hϖ hst).not.1 hQ))
+
 /-- `E₀(F)` lies in the subgroup of points not of the form `(ϖ² X, ϖ² Y)`. -/
 private theorem le_nearSubgroup {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
@@ -753,19 +671,15 @@ private theorem index_nearSubgroup_dvd_two {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) :
     (nearSubgroup v hϖ hst).index ∣ 2 :=
-  AddSubgroup.index_dvd_two_of_add_mem fun _ _ hP hQ ↦ (mem_nearSubgroup v hϖ hst).2 <|
-    add_notMem_farPoints v hϖ hst (not_not.1 ((mem_nearSubgroup v hϖ hst).not.1 hP))
-      (not_not.1 ((mem_nearSubgroup v hϖ hst).not.1 hQ))
+  AddSubgroup.index_dvd_two_of_add_mem fun _ _ ↦ add_mem_nearSubgroup v hϖ hst
 
 /-- If some point has the form `(ϖ² X, ϖ² Y)`, the subgroup of the other points has index `2`. -/
 private theorem index_nearSubgroup_eq_two {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) {P : W.Point}
     (hP : P ∈ farPoints v ϖ) : (nearSubgroup v hϖ hst).index = 2 :=
-  AddSubgroup.index_eq_two_of_add_mem (fun _ _ hP hQ ↦ (mem_nearSubgroup v hϖ hst).2 <|
-    add_notMem_farPoints v hϖ hst (not_not.1 ((mem_nearSubgroup v hϖ hst).not.1 hP))
-      (not_not.1 ((mem_nearSubgroup v hϖ hst).not.1 hQ)))
-    (a := P) fun hK ↦ (mem_nearSubgroup v hϖ hst).1 hK hP
+  AddSubgroup.index_eq_two_of_add_mem (fun _ _ ↦ add_mem_nearSubgroup v hϖ hst) (a := P)
+    fun hK ↦ (mem_nearSubgroup v hϖ hst).1 hK hP
 
 /-- If no point has the form `(ϖ² X, ϖ² Y)`, the subgroup of the other points is everything. -/
 private theorem index_nearSubgroup_eq_one {ϖ : v.valuationSubring}
@@ -801,13 +715,13 @@ private theorem exists_notMem_notMem_farPoints [HenselianLocalRing v.valuationSu
     rw [show 3 * z ^ 2 + 2 * A₂ * z + ϖ * α₄ = A₂ ^ 2 + ϖ * (3 * ϖ * m ^ 2 - 4 * A₂ * m + α₄) by
       rw [show z = ϖ * m - A₂ by linear_combination hm]
       ring]
-    exact isUnit_add_of_dvd v hϖ (((isUnit_iff_not_dvd v hϖ).2 hA₂').pow 2) (dvd_mul_right ϖ _)
+    exact isUnit_add_of_dvd hϖ (((isUnit_iff_not_dvd hϖ).2 hA₂').pow 2) (dvd_mul_right ϖ _)
   have hf₀ : f.eval (-A₂) ∈ maximalIdeal v.valuationSubring := by
-    rw [mem_maximalIdeal_iff_dvd v hϖ]
+    rw [mem_maximalIdeal_iff_dvd hϖ]
     exact ⟨α₆ - α₄ * A₂, by simp [hf]; ring⟩
   obtain ⟨X₀, hX₀, hX₀A⟩ :=
     HenselianLocalRing.is_henselian f hmon (-A₂) hf₀ (hder _ ▸ hunit _ (by simp))
-  rw [sub_neg_eq_add, mem_maximalIdeal_iff_dvd v hϖ] at hX₀A
+  rw [sub_neg_eq_add, mem_maximalIdeal_iff_dvd hϖ] at hX₀A
   have hroot : X₀ ^ 3 + A₂ * X₀ ^ 2 + ϖ * α₄ * X₀ + ϖ * α₆ = 0 := by
     simpa [hf] using hX₀.eq_zero
   -- the point `(ϖ X₀, 0)`
@@ -817,12 +731,10 @@ private theorem exists_notMem_notMem_farPoints [HenselianLocalRing v.valuationSu
     rw [hA₂, hα₄, show Wo.a₁ * 0 - (3 * (ϖ * X₀) ^ 2 + 2 * (ϖ * A₂) * (ϖ * X₀) +
       ϖ ^ (0 + 3) * α₄) = -ϖ ^ 2 * (3 * X₀ ^ 2 + 2 * A₂ * X₀ + ϖ * α₄) by ring]
     exact mul_ne_zero (neg_ne_zero.2 (pow_ne_zero 2 hp.ne_zero)) (hunit X₀ hX₀A).ne_zero
-  have hF : W.Nonsingular ((ϖ * X₀ : v.valuationSubring) : F) ((0 : v.valuationSubring) : F) := by
-    have := (Wo.toAffine.map_nonsingular (IsFractionRing.injective _ F) _ _).mpr hns
-    rwa [← baseChange_integralModel_eq v.valuationSubring W]
-  refine ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ hF).2
-    ⟨valuation_lt_one_of_dvd v hϖ (dvd_mul_right ϖ X₀),
-      valuation_lt_one_of_dvd v hϖ (dvd_zero ϖ)⟩, ?_⟩
+  have hF : W.Nonsingular ((ϖ * X₀ : v.valuationSubring) : F) ((0 : v.valuationSubring) : F) :=
+    (nonsingular_integralModel_iff v).1 hns
+  refine ⟨Point.some _ _ hF, (some_coe_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ hF).2
+    ⟨(mem_maximalIdeal_iff_dvd hϖ).2 (dvd_mul_right ϖ X₀), zero_mem _⟩, ?_⟩
   rintro ⟨x, y, h, he, ⟨X, rfl⟩, -⟩
   have hx : ϖ * X₀ = ϖ ^ 2 * X := Subtype.val_injective (Point.some.inj he).1
   have hX₀ : ϖ ∣ X₀ := ⟨X, mul_left_cancel₀ hp.ne_zero (by rw [hx]; ring)⟩

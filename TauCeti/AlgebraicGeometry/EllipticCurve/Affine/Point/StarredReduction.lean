@@ -46,6 +46,9 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
   both coordinates divisible by `ϖ` on the normal forms of Steps 6, 8 and 10 of Tate's algorithm
   gives a root of the residue cubic modulo `ϖ`, a root of the residue quadratic modulo `ϖ`, and
   `ϖ⁶ ∣ a₆`, respectively.
+* `WeierstrassCurve.dvd_quadratic_of_equation_odd`: on the normal form of an odd stage `k` of the
+  `Iₙ*` subprocedure of Step 7, a solution `(ϖ^(k+2) X, ϖ^(k+2) Y)` makes `Y` a root of the residue
+  quadratic modulo `ϖ`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal`: at an additive symbol,
   if no integral solution has both coordinates divisible by `ϖ`, then `E₀(F) = W(F)`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal_IStar_zero`: at `I₀*`, if
@@ -120,6 +123,23 @@ private theorem sq_dvd_and_sq_dvd_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.
       ⟨Y ^ 2 + A₁ * X * Y + A₃ * Y - A₂ * X ^ 2 - A₄ * X - A₆, by linear_combination -h⟩
   exact ⟨⟨X, by ring⟩, ⟨Y, by ring⟩⟩
 
+/-- **On the normal form of an odd stage of the `Iₙ*` subprocedure of Step 7 of Tate's algorithm,
+a solution `(ϖ^(k+2) X, ϖ^(k+2) Y)` makes `Y` a root of the residue quadratic modulo `ϖ`.** Over a
+domain with `ϖ ≠ 0`, suppose that `ϖ ∣ a₁`, `ϖ ∣ a₂`, `a₃ = ϖ^(k+2) A₃`, `ϖ^(k+3) ∣ a₄` and
+`a₆ = ϖ^(2k+4) A₆`. Then `ϖ ∣ Y² + A₃ Y − A₆`. At `k = 0` this covers the normal form of Step 8. -/
+theorem dvd_quadratic_of_equation_odd (hϖ : ϖ ≠ 0) {k : ℕ} (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ∣ W.a₂)
+    {A₃ A₆ : R} (h₃ : W.a₃ = ϖ ^ (k + 2) * A₃) (h₄ : ϖ ^ (k + 3) ∣ W.a₄)
+    (h₆ : W.a₆ = ϖ ^ (2 * k + 4) * A₆) {X Y : R}
+    (h : W.toAffine.Equation (ϖ ^ (k + 2) * X) (ϖ ^ (k + 2) * Y)) :
+    ϖ ∣ Y ^ 2 + A₃ * Y - A₆ := by
+  obtain ⟨α₁, hα₁⟩ := h₁
+  obtain ⟨α₂, hα₂⟩ := h₂
+  obtain ⟨α₄, hα₄⟩ := h₄
+  rw [Affine.equation_iff, hα₁, hα₂, h₃, hα₄, h₆] at h
+  -- `ϖ^(2k+4) (Y² + A₃ Y − A₆) ≡ 0` modulo `ϖ^(2k+5)`
+  exact ⟨ϖ ^ (k + 1) * X ^ 3 + α₂ * X ^ 2 + α₄ * X - α₁ * X * Y,
+    mul_left_cancel₀ (pow_ne_zero (2 * k + 4) hϖ) (by linear_combination h)⟩
+
 /-- **On the normal form of Step 8 of Tate's algorithm, a solution divisible by `ϖ` gives a root
 of the residue quadratic.** Over a domain with a prime `ϖ`, suppose that `ϖ ∣ a₁`, `ϖ² ∣ a₂`,
 `ϖ³ ∣ a₄`, `a₃ = ϖ² A₃` and `a₆ = ϖ⁴ A₆`. If `(x, y)` is a solution with `ϖ ∣ x` and `ϖ ∣ y`, then
@@ -129,13 +149,8 @@ theorem exists_dvd_quadratic_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁)
     (h : W.toAffine.Equation x y) (hx : ϖ ∣ x) (hy : ϖ ∣ y) : ∃ t, ϖ ∣ t ^ 2 + A₃ * t - A₆ := by
   obtain ⟨⟨X, rfl⟩, ⟨Y, rfl⟩⟩ :=
     W.sq_dvd_and_sq_dvd_of_equation hϖ h₁ h₂ ⟨A₃, h₃⟩ h₄ ⟨A₆, h₆⟩ h hx hy
-  obtain ⟨A₁, hA₁⟩ := h₁
-  obtain ⟨A₂, hA₂⟩ := h₂
-  obtain ⟨A₄, hA₄⟩ := h₄
-  rw [Affine.equation_iff, hA₁, hA₂, h₃, hA₄, h₆] at h
-  -- `ϖ⁴ (Y² + A₃ Y − A₆) ≡ 0` modulo `ϖ⁵`
-  exact ⟨Y, (mul_dvd_mul_iff_left (pow_ne_zero 4 hϖ.ne_zero)).mp
-    ⟨ϖ * X ^ 3 + ϖ * A₂ * X ^ 2 + A₄ * X - A₁ * X * Y, by linear_combination h⟩⟩
+  exact ⟨Y, W.dvd_quadratic_of_equation_odd hϖ.ne_zero (k := 0) h₁
+    ((dvd_pow_self ϖ two_ne_zero).trans h₂) h₃ h₄ h₆ h⟩
 
 /-- **On the normal form of Step 10 of Tate's algorithm, a solution divisible by `ϖ` forces
 `ϖ⁶ ∣ a₆`.** Over a domain with a prime `ϖ`, suppose that `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`,

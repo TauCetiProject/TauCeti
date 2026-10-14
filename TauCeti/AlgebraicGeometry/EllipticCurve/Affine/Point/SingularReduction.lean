@@ -73,6 +73,9 @@ are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of
 * `WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff`: when the reduction is singular
   at the origin, an affine point has singular reduction exactly when both of its coordinates lie in
   the maximal ideal.
+* `WeierstrassCurve.Affine.some_coe_notMem_nonsingularReduction_iff` and
+  `WeierstrassCurve.Affine.exists_eq_some_of_notMem_nonsingularReduction`: the same for points with
+  coordinates in the valuation ring, and every point with singular reduction has such coordinates.
 
 ## References
 
@@ -349,6 +352,36 @@ theorem some_notMem_nonsingularReduction_iff
       (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hx),
       (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hy)] at hm
     exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 hm
+
+/-- **When the reduction is singular at the origin, a point with integral coordinates has singular
+reduction exactly when both coordinates lie in the maximal ideal.** This is
+`WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff` for coordinates in the valuation
+ring. -/
+theorem some_coe_notMem_nonsingularReduction_iff
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x y : v.valuationSubring} (h : W.Nonsingular (x : F) (y : F)) :
+    Point.some _ _ h ∉ W.nonsingularReduction v ↔
+      x ∈ maximalIdeal v.valuationSubring ∧ y ∈ maximalIdeal v.valuationSubring := by
+  rw [some_notMem_nonsingularReduction_iff v h₃ h₄ h₆, Valuation.mem_maximalIdeal_iff,
+    Valuation.mem_maximalIdeal_iff]
+
+/-- **When the reduction is singular at the origin, a point with singular reduction is `(x, y)`
+with `x` and `y` in the maximal ideal of the valuation ring.** -/
+theorem exists_eq_some_of_notMem_nonsingularReduction
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {P : W.Point} (hP : P ∉ W.nonsingularReduction v) :
+    ∃ (x y : v.valuationSubring) (h : W.Nonsingular (x : F) (y : F)), P = .some _ _ h ∧
+      x ∈ maximalIdeal v.valuationSubring ∧ y ∈ maximalIdeal v.valuationSubring := by
+  rcases P with _ | ⟨x, y, hxy⟩
+  · exact absurd (zero_mem _) hP
+  obtain ⟨hx, hy⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ hxy).1 hP
+  exact ⟨⟨x, (v.mem_valuationSubring_iff x).2 hx.le⟩, ⟨y, (v.mem_valuationSubring_iff y).2 hy.le⟩,
+    hxy, rfl, (Valuation.mem_maximalIdeal_iff (v := v)).2 hx,
+    (Valuation.mem_maximalIdeal_iff (v := v)).2 hy⟩
 
 end Affine
 

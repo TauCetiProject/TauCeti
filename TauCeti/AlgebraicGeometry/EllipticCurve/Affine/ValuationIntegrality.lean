@@ -50,8 +50,9 @@ the `IsDedekindDomain.HeightOneSpectrum.valuation` of a varying prime, which can
   coordinates have poles in ratio two to three, over any value group.
 * `WeierstrassCurve.Affine.valuation_y_le_one_of_valuation_x_le_one`: an integral `x`-coordinate
   forces an integral `y`-coordinate, over any value group.
-* `WeierstrassCurve.Affine.equation_integralModel_iff`: an integral pair solves `W` exactly when it
-  solves the integral model.
+* `WeierstrassCurve.Affine.equation_integralModel_iff` and
+  `WeierstrassCurve.Affine.nonsingular_integralModel_iff`: an integral pair solves `W`, or is a
+  nonsingular point of `W`, exactly when the same holds for the integral model.
 * `WeierstrassCurve.Affine.valuation_le_one_of_valuation_addX_le_one`: a chord whose two points and
   third intersection point have integral `x`-coordinates has an integral slope.
 * `WeierstrassCurve.Affine.valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two`:
@@ -290,6 +291,16 @@ theorem equation_integralModel_iff {x y : v.valuationSubring} :
       W.Equation x y := by
     rw [baseChange_integralModel_eq]
   exact (map_equation _ Subtype.val_injective x y).symm.trans h
+
+/-- **An integral nonsingular point of `W` is a nonsingular point of its integral model**, and
+conversely. -/
+@[simp]
+theorem nonsingular_integralModel_iff {x y : v.valuationSubring} :
+    (integralModel v.valuationSubring W).toAffine.Nonsingular x y ↔ W.Nonsingular x y := by
+  have h : ((integralModel v.valuationSubring W).baseChange F).toAffine.Nonsingular x y ↔
+      W.Nonsingular x y := by
+    rw [baseChange_integralModel_eq]
+  exact (map_nonsingular _ Subtype.val_injective x y).symm.trans h
 
 /-- **The slope of a chord with integral `x`-coordinates is integral.** If `x₁`, `x₂` and the
 `x`-coordinate `x₃ = ℓ² + a₁ ℓ − a₂ − x₁ − x₂` of the third intersection point are integral, then

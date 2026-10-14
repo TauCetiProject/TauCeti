@@ -64,6 +64,10 @@ The cases `c_v = 1` are `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_
 
 ## Main results
 
+* `WeierstrassCurve.Affine.exists_chord_of_notMem_nonsingularReduction`: when the sum of two
+  points with integral coordinates has singular reduction, the chord through the two points has
+  integral slope, and the three `x`-coordinates are the roots of the Weierstrass cubic restricted
+  to it.
 * `WeierstrassCurve.Affine.exists_slope_of_notMem_nonsingularReduction`: when two points and their
   sum have singular reduction, the slope of the chord through the two points is integral and its
   residue is a root of the tangent quadratic.
@@ -116,11 +120,64 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 
 variable [DecidableEq F]
 
-/-- **The chord through two points with singular reduction whose sum has singular reduction.** At
-a reduction singular at the origin, the slope `ℓ = W.slope x₁ x₂ y₁ y₂` of the line through the two
-points `(x₁, y₁)` and `(x₂, y₂)` is integral and its residue is a root of the tangent quadratic
-`T² + a₁ T − a₂`, and with `ν = y₁ − ℓ x₁ ∈ 𝔪` the coefficient `a₄ − a₃ ℓ − (2 ℓ + a₁) ν` of the
-Weierstrass cubic restricted to the line lies in `𝔪²`. -/
+/-- **The chord through two integral points whose sum has singular reduction.** At a reduction
+singular at the origin, let `(x₁, y₁)` and `(x₂, y₂)` be points with integral coordinates whose sum
+`(x₃, y₃)` has singular reduction. The slope `ℓ = W.slope x₁ x₂ y₁ y₂` is integral, so are `x₃`
+and `y₃`, and with `ν = y₁ − ℓ x₁` the Weierstrass cubic restricted to the line `y = ℓ x + ν` is
+`−(X − x₁)(X − x₂)(X − x₃)`: `x₁ + x₂ + x₃ = ℓ² + a₁ ℓ − a₂`,
+`x₁ x₂ + x₁ x₃ + x₂ x₃ = a₄ − a₃ ℓ − (2 ℓ + a₁) ν` and `x₁ x₂ x₃ = ν² + a₃ ν − a₆`. -/
+theorem exists_chord_of_notMem_nonsingularReduction
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x₁ y₁ x₂ y₂ : v.valuationSubring} {h₁ : W.Nonsingular (x₁ : F) (y₁ : F)}
+    {h₂ : W.Nonsingular (x₂ : F) (y₂ : F)}
+    (hPQ : Point.some _ _ h₁ + Point.some _ _ h₂ ∉ W.nonsingularReduction v) :
+    ∃ (ℓ x₃ y₃ : v.valuationSubring) (h : W.Nonsingular (x₃ : F) (y₃ : F)),
+      (ℓ : F) = W.slope x₁ x₂ y₁ y₂ ∧ Point.some _ _ h₁ + Point.some _ _ h₂ = Point.some _ _ h ∧
+      ℓ ^ 2 + (integralModel v.valuationSubring W).a₁ * ℓ -
+        (integralModel v.valuationSubring W).a₂ = x₁ + x₂ + x₃ ∧
+      (integralModel v.valuationSubring W).a₄ - (integralModel v.valuationSubring W).a₃ * ℓ -
+        (2 * ℓ + (integralModel v.valuationSubring W).a₁) * (y₁ - ℓ * x₁) =
+          x₁ * x₂ + x₁ * x₃ + x₂ * x₃ ∧
+      x₁ * x₂ * x₃ = (y₁ - ℓ * x₁) ^ 2 + (integralModel v.valuationSubring W).a₃ * (y₁ - ℓ * x₁) -
+        (integralModel v.valuationSubring W).a₆ := by
+  have hxy : ¬((x₁ : F) = x₂ ∧ (y₁ : F) = W.negY x₂ y₂) := fun ⟨hx, hy⟩ ↦
+    hPQ (by rw [Point.add_of_Y_eq hx hy]; exact zero_mem _)
+  rw [Point.add_some hxy] at hPQ ⊢
+  obtain ⟨hx₃, hy₃⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ _).1 hPQ
+  obtain ⟨L, hL⟩ : ∃ L : v.valuationSubring, (L : F) = W.slope x₁ x₂ y₁ y₂ :=
+    ⟨⟨_, (v.mem_valuationSubring_iff _).2 (valuation_le_one_of_valuation_addX_le_one v
+      ((v.mem_valuationSubring_iff _).1 x₁.2) ((v.mem_valuationSubring_iff _).1 x₂.2) hx₃.le)⟩,
+      rfl⟩
+  -- `W(X, ℓ (X − x₁) + y₁) = −(X − x₁) (X − x₂) (X − x₃)`
+  have key := W.addPolynomial_slope h₁.left h₂.left hxy
+  rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
+  have hc := congrArg Cubic.c ((Cubic.toPoly_injective _ _).1 key)
+  have hd := congrArg Cubic.d ((Cubic.toPoly_injective _ _).1 key)
+  rw [← hL] at hc hd
+  refine ⟨L, ⟨_, (v.mem_valuationSubring_iff _).2 hx₃.le⟩,
+    ⟨_, (v.mem_valuationSubring_iff _).2 hy₃.le⟩, nonsingular_add h₁ h₂ hxy, hL, rfl, ?_, ?_, ?_⟩
+  · apply Subtype.ext
+    push_cast
+    rw [coe_integralModel_a₁, coe_integralModel_a₂, ← hL, addX]
+    ring
+  · apply Subtype.ext
+    push_cast
+    have h2 : ((2 : v.valuationSubring) : F) = 2 := by
+      simpa using map_ofNat (algebraMap v.valuationSubring F) 2
+    rw [coe_integralModel_a₁, coe_integralModel_a₃, coe_integralModel_a₄, h2, ← hL]
+    linear_combination hc
+  · apply Subtype.ext
+    push_cast
+    rw [coe_integralModel_a₃, coe_integralModel_a₆, ← hL]
+    linear_combination hd
+
+/-- **The slope of a chord through two points with singular reduction whose sum has singular
+reduction.** At a reduction singular at the origin, the slope `ℓ = W.slope x₁ x₂ y₁ y₂` of the line
+through the two points `(x₁, y₁)` and `(x₂, y₂)` is integral and its residue is a root of the
+tangent quadratic `T² + a₁ T − a₂`, and with `ν = y₁ − ℓ x₁ ∈ 𝔪` the coefficient
+`a₄ − a₃ ℓ − (2 ℓ + a₁) ν` of the Weierstrass cubic restricted to the line lies in `𝔪²`. -/
 theorem exists_slope_of_notMem_nonsingularReduction
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
@@ -136,53 +193,20 @@ theorem exists_slope_of_notMem_nonsingularReduction
       (integralModel v.valuationSubring W).a₄ - (integralModel v.valuationSubring W).a₃ * ℓ -
         (2 * ℓ + (integralModel v.valuationSubring W).a₁) * ν ∈
           maximalIdeal v.valuationSubring ^ 2 := by
-  set O := v.valuationSubring
-  set Wo := integralModel O W
-  obtain ⟨hx₁, hy₁⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ h₁).1 hP
-  obtain ⟨hx₂, -⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ h₂).1 hQ
-  have hxy : ¬(x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := by
-    rintro ⟨rfl, rfl⟩
-    exact hPQ (by rw [Point.add_of_Y_eq rfl rfl]; exact zero_mem _)
-  rw [Point.add_some hxy] at hPQ
-  obtain ⟨hx₃, -⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ _).1 hPQ
-  set ℓ := W.slope x₁ x₂ y₁ y₂
-  set x₃ := W.addX x₁ x₂ ℓ with hx₃def
-  have hO {z : F} (hz : v z < 1) : z ∈ O := (v.mem_valuationSubring_iff z).2 hz.le
-  set X₁ : O := ⟨x₁, hO hx₁⟩
-  set X₂ : O := ⟨x₂, hO hx₂⟩
-  set X₃ : O := ⟨x₃, hO hx₃⟩
-  set Y₁ : O := ⟨y₁, hO hy₁⟩
-  have hX₁ : X₁ ∈ maximalIdeal O := (Valuation.mem_maximalIdeal_iff (v := v)).2 hx₁
-  have hX₂ : X₂ ∈ maximalIdeal O := (Valuation.mem_maximalIdeal_iff (v := v)).2 hx₂
-  have hX₃ : X₃ ∈ maximalIdeal O := (Valuation.mem_maximalIdeal_iff (v := v)).2 hx₃
-  have hY₁ : Y₁ ∈ maximalIdeal O := (Valuation.mem_maximalIdeal_iff (v := v)).2 hy₁
-  have hℓ : ℓ ∈ O := (v.mem_valuationSubring_iff ℓ).2
-    (valuation_le_one_of_valuation_addX_le_one v hx₁.le hx₂.le hx₃.le)
-  set L : O := ⟨ℓ, hℓ⟩
-  -- the coefficient of `X` in `W(X, ℓ (X − x₁) + y₁) = −(X − x₁) (X − x₂) (X − x₃)`
-  have hc : 2 * x₁ * ℓ ^ 2 + (W.a₁ * x₁ - 2 * y₁ - W.a₃) * ℓ + (-W.a₁ * y₁ + W.a₄) =
-      x₁ * x₂ + x₁ * x₃ + x₂ * x₃ := by
-    have key := W.addPolynomial_slope h₁.left h₂.left hxy
-    rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
-    exact congrArg Cubic.c ((Cubic.toPoly_injective _ _).1 key)
-  refine ⟨L, Y₁ - L * X₁, rfl, sub_mem hY₁ ((maximalIdeal O).mul_mem_left _ hX₁), ?_, ?_⟩
-  · have hs : L ^ 2 + Wo.a₁ * L - Wo.a₂ = X₁ + X₂ + X₃ := by
-      apply Subtype.ext
-      push_cast
-      rw [coe_integralModel_a₁, coe_integralModel_a₂]
-      simp only [L, X₁, X₂, X₃, hx₃def, addX]
-      ring
-    rw [hs]
+  obtain ⟨X₁, Y₁, h₁', he₁, hX₁, hY₁⟩ :=
+    exists_eq_some_of_notMem_nonsingularReduction v h₃ h₄ h₆ hP
+  obtain ⟨rfl, rfl⟩ := Point.some.inj he₁
+  obtain ⟨X₂, Y₂, h₂', he₂, hX₂, -⟩ :=
+    exists_eq_some_of_notMem_nonsingularReduction v h₃ h₄ h₆ hQ
+  obtain ⟨rfl, rfl⟩ := Point.some.inj he₂
+  obtain ⟨L, X₃, Y₃, h, hL, heq, hs, hc, -⟩ :=
+    exists_chord_of_notMem_nonsingularReduction v h₃ h₄ h₆ hPQ
+  rw [heq] at hPQ
+  obtain ⟨hX₃, -⟩ := (some_coe_notMem_nonsingularReduction_iff v h₃ h₄ h₆ h).1 hPQ
+  refine ⟨L, Y₁ - L * X₁, hL, sub_mem hY₁ ((maximalIdeal _).mul_mem_left _ hX₁), ?_, ?_⟩
+  · rw [hs]
     exact add_mem (add_mem hX₁ hX₂) hX₃
-  · have hs : Wo.a₄ - Wo.a₃ * L - (2 * L + Wo.a₁) * (Y₁ - L * X₁) =
-        X₁ * X₂ + X₁ * X₃ + X₂ * X₃ := by
-      apply Subtype.ext
-      push_cast
-      have h2 : ((2 : O) : F) = 2 := by simpa using map_ofNat (algebraMap O F) 2
-      rw [coe_integralModel_a₁, coe_integralModel_a₃, coe_integralModel_a₄, h2]
-      simp only [L, X₁, X₂, X₃, Y₁]
-      linear_combination hc
-    rw [hs, pow_two]
+  · rw [hc, pow_two]
     exact add_mem (add_mem (Ideal.mul_mem_mul hX₁ hX₂) (Ideal.mul_mem_mul hX₁ hX₃))
       (Ideal.mul_mem_mul hX₂ hX₃)
 
@@ -357,9 +381,8 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_III
     refine hϖ0 (hXd.mul_left_eq_zero.1 ?_)
     linear_combination hx + s * hy + hβ - s * hα
   have hF : W.Nonsingular ((ϖ * X : v.valuationSubring) : F)
-      ((ϖ * (s * X) : v.valuationSubring) : F) := by
-    have := (Wo.toAffine.map_nonsingular (IsFractionRing.injective _ F) _ _).mpr hns
-    rwa [← baseChange_integralModel_eq v.valuationSubring W]
+      ((ϖ * (s * X) : v.valuationSubring) : F) :=
+    (nonsingular_integralModel_iff v).1 hns
   have hmem (z : v.valuationSubring) : v ((ϖ * z : v.valuationSubring) : F) < 1 :=
     (Valuation.mem_maximalIdeal_iff (v := v)).1 ((key _).2 (dvd_mul_right ϖ z))
   exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v ((key _).2 ⟨α, hα⟩)
