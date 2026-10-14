@@ -124,7 +124,6 @@ theorem vanishingIdeal_single (p : X) (n : ℕ) (U : Opens X) :
     · simp [Finsupp.single_eq_of_ne hx]
 
 /-- A point with multiplicity one imposes precisely evaluation-zero on sections. -/
-@[simp]
 theorem mem_vanishingIdeal_single_one (p : X) (U : Opens X)
     (f : (holomorphicStructureSheaf I X).obj.obj (op U)) :
     f ∈ vanishingIdeal I X (Finsupp.single p 1) U ↔ ∀ hp : p ∈ U, f ⟨p, hp⟩ = 0 := by
