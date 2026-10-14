@@ -94,6 +94,18 @@ theorem genLoopLoopSumHomeomorph_symm_apply (M : Type*) (q : Ω^ (M ⊕ Fin 1) X
   rw [Homeomorph.apply_symm_apply] at h
   simpa using h.symm
 
+/-- **Naturality of the currying homeomorphism**: `genLoopLoopSumHomeomorph` commutes with the maps
+induced on cube loops by a based continuous map `f : X → Y`, and by any map `F` of loop spaces
+that postcomposes loops with `f`, for any index type of cube directions. -/
+theorem genLoopLoopSumHomeomorph_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
+    (hFf : ∀ γ t, F γ t = f (γ t)) (M : Type*) (p : Ω^ M (Ω X x) (Path.refl x)) :
+    genLoopLoopSumHomeomorph y M
+        (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
+      map f hf (genLoopLoopSumHomeomorph x M p) := by
+  refine GenLoop.ext _ _ fun t => ?_
+  rw [genLoopLoopSumHomeomorph_apply]
+  exact (hFf _ _).trans (congrArg f (genLoopLoopSumHomeomorph_apply x M p t).symm)
+
 variable (x) in
 /-- Currying the last cube direction: cube loops in `k` directions of the loop space `Ω X x`,
 based at the constant loop, are cube loops of `X` in `k + 1` directions. This is
@@ -154,5 +166,15 @@ theorem genLoopLoopHomeomorph_symm_apply (k : ℕ) (q : Ω^ (Fin (k + 1)) X x)
   simpa using h.symm
 
 end Loop
+
+/-- **Naturality of the currying homeomorphism** for `k` cube directions: the specialization of
+`genLoopLoopSumHomeomorph_map` to `Fin k`. -/
+theorem genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
+    (hFf : ∀ γ t, F γ t = f (γ t)) (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x)) :
+    genLoopLoopHomeomorph y k (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
+      map f hf (genLoopLoopHomeomorph x k p) := by
+  refine GenLoop.ext _ _ fun t => ?_
+  rw [genLoopLoopHomeomorph_apply]
+  exact (hFf _ _).trans (congrArg f (genLoopLoopHomeomorph_apply x k p t).symm)
 
 end GenLoop
