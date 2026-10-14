@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.WeilDivisor.AbelJacobi.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PointSeparation
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Basic
 
 /-!
@@ -35,9 +34,9 @@ preserves degrees and linear equivalence; the genus of `X` is the genus of `k(X)
 
 ## Main declarations
 
-* `SchemeWeilDivisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one` and
-  `SchemeWeilDivisor.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
-  degree one is linearly equivalent to exactly one point of residue degree one;
+* `SchemeWeilDivisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
+  degree one is linearly equivalent to a point of residue degree one; uniqueness follows from
+  `SchemeWeilDivisor.eq_of_linearlyEquivalent_ofPoint_of_genus_pos`;
 * `SchemeWeilDivisor.degreeOneEquivPicZero`: the bijection `x ↦ [𝒪_X(x - x₀)]` from the points of
   residue degree one onto `Pic⁰ X`, with `SchemeWeilDivisor.coe_degreeOneEquivPicZero_apply`;
 * `SchemeWeilDivisor.degreeOneEquivPicZero_base` and
@@ -105,33 +104,6 @@ theorem exists_linearlyEquivalent_ofPoint_of_genus_eq_one
       equivFunctionFieldDivisor_ofPoint, hPx]
     exact hlin
 
-/-- **Linearly equivalent points of residue degree one on a curve of genus one are equal.** Here
-`X` is a proper integral curve over `k` whose codimension-one local rings are discrete valuation
-rings, with `k` integrally closed in `k(X)`, and only the point `x` is required to have residue
-degree one. -/
-theorem eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one
-    (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1) {x y : CodimensionOnePoint X}
-    (hx : (X ↘ Spec (.of k)).residueDegree x = 1)
-    (h : (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent (WeilDivisor.ofPoint x)
-      (WeilDivisor.ofPoint y)) :
-    x = y := by
-  have : X.IsSeparated := ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
-  have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
-    (UniversallyClosed.eq_valuativeCriterion ▸
-      (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
-  have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
-    k hX.out x.2
-  have hgF : genus k X.functionField = 1 :=
-    (genus_eq_genus_functionField hex hX.out hF hk).symm.trans hg
-  apply (CodimensionOnePoint.equivPlace hex hX.out).injective
-  rw [CodimensionOnePoint.equivPlace_apply, CodimensionOnePoint.equivPlace_apply]
-  refine Place.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one hF hk hgF
-    (by rw [X.toPlace_degree_eq_residueDegree, hx]) ?_
-  rw [← equivFunctionFieldDivisor_ofPoint hex hX.out,
-    ← equivFunctionFieldDivisor_ofPoint hex hX.out,
-    linearlyEquivalent_equivFunctionFieldDivisor_iff hex hX.out hF]
-  exact h
-
 end DegreeOne
 
 /-! ### The points of residue degree one as `Pic⁰ X` -/
@@ -198,7 +170,7 @@ private lemma injective_abelJacobiClass :
     abel
   rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff, hdiff,
     ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hlin
-  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one k hk hg x.2 hlin)
+  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_pos k hk (by omega) x.2 hlin)
 
 /-- In genus one, every degree-zero divisor class is the Abel–Jacobi class of a point of residue
 degree one: if `D` has degree zero, then `D + x₀` is linearly equivalent to a point `x`, so that
