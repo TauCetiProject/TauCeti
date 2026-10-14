@@ -80,6 +80,8 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_le_of_norm_apply_le`: if `‖A x‖ ≤ c ‖x‖` for every `x`, with
+  `c ≥ 0`, then `σᵢ(A) ≤ c` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
   `B` have the same singular values.
 * `LinearMap.singularValues_operatorAbs`: the modulus `|A| = √(A† A)` has the same singular values
@@ -514,6 +516,15 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
     (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) (i : ℕ) :
     (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
+
+/-- If `‖A x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `A` has operator norm at most `c`), then
+every singular value of `A` is at most `c`. -/
+theorem singularValues_le_of_norm_apply_le {A : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ x, ‖A x‖ ≤ c * ‖x‖) (i : ℕ) : A.singularValues i ≤ c := by
+  rcases lt_or_ge i (finrank 𝕜 E) with hi | hi
+  · simpa [norm_apply_rightSingularBasis] using h (A.rightSingularBasis ⟨i, hi⟩)
+  · rw [A.singularValues_of_finrank_le hi]
+    exact hc
 
 /-- Two maps with the same source and `‖B x‖ = ‖A x‖` for every `x` have the same singular
 values. -/

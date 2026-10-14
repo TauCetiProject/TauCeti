@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
@@ -120,18 +121,8 @@ private theorem fittingIdeal_pullback_SpecMap
   have : Module.Finite S Γ(N, ⊤) := N.finite_moduleSpecΓ
   have : Module.Finite R (moduleSpecΓFunctor.obj M) := M.finite_moduleSpecΓ
   have : Module.Finite S (moduleSpecΓFunctor.obj N) := N.finite_moduleSpecΓ
-  let eM : tilde (moduleSpecΓFunctor.obj M) ≅ M :=
-    @asIso (Spec R).Modules _ _ _ M.fromTildeΓ
-      (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent M)
   let := φ.hom.toAlgebra
-  -- `tildeFunctorCompPullbackIso` is the canonical comparison between pullback
-  -- of an associated sheaf and extension of scalars.
-  let e : (ModuleCat.extendScalars φ.hom).obj (moduleSpecΓFunctor.obj M) ≅
-      moduleSpecΓFunctor.obj N :=
-    (tilde.toTildeΓNatIso (R := S)).app _ ≪≫
-      (moduleSpecΓFunctor (R := S)).mapIso
-        (((AlgebraicGeometry.tildeFunctorCompPullbackIso φ).app _).symm ≪≫
-          (Scheme.Modules.pullback (Spec.map φ)).mapIso eM)
+  let e := φ.moduleSpecΓPullbackIso M
   have : Module.Finite S ((ModuleCat.extendScalars φ.hom).obj
       (moduleSpecΓFunctor.obj M)) := Module.Finite.equiv e.toLinearEquiv.symm
   have hfit : TauCeti.fittingIdeal S Γ(N, ⊤) k =
