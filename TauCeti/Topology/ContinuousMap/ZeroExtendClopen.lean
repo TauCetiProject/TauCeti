@@ -145,16 +145,12 @@ theorem zeroExtendClopen_restrict (f : C(X, R)) :
 theorem zeroExtendClopen_restrict_add_compl (f : C(X, R)) :
     zeroExtendClopen s R (f.restrict s) +
       zeroExtendClopen sᶜ R (f.restrict (sᶜ : Clopens X)) = f := by
+  rw [zeroExtendClopen_restrict, zeroExtendClopen_restrict]
   ext x
-  by_cases hx : x ∈ s
-  · have hxc : x ∉ sᶜ := by simpa only [← SetLike.mem_coe, Clopens.coe_compl,
-      Set.mem_compl_iff, not_not] using hx
-    simp only [ContinuousMap.add_apply, zeroExtendClopen_apply_mem s R _ ⟨x, hx⟩,
-      zeroExtendClopen_apply_not_mem sᶜ R _ hxc,
-      ContinuousMap.restrict_apply f s ⟨x, hx⟩, add_zero]
-  · simp only [ContinuousMap.add_apply, zeroExtendClopen_apply_not_mem s R _ hx,
-      zeroExtendClopen_apply_mem sᶜ R _ ⟨x, hx⟩,
-      ContinuousMap.restrict_apply f (sᶜ : Clopens X) ⟨x, hx⟩, zero_add]
+  simp only [ContinuousMap.add_apply, ContinuousMap.mul_apply, LocallyConstant.toContinuousMap,
+    ContinuousMap.coe_mk, LocallyConstant.coe_charFn, ← Set.indicator_mul_left,
+    Pi.one_apply, one_mul, Clopens.coe_compl]
+  exact congrFun (Set.indicator_self_add_compl (s : Set X) (f : X → R)) x
 
 /-- Extension by zero commutes with pullback when the source clopen is the preimage. -/
 theorem zeroExtendClopen_comp_restrictPreimage {Y : Type*} [TopologicalSpace Y] [CompactSpace Y]
