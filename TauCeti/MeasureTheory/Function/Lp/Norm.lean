@@ -34,6 +34,8 @@ bounds.
   `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
   integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
   to any constant.
+* `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
+  function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
 -/
 
 public section
@@ -163,6 +165,28 @@ theorem MemLp.integrableOn_norm_sub_sq_of_subset
   have hgs : MemLp g 2 (μ.restrict s) := by
     simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
   exact (hgs.sub (memLp_const c)).integrable_norm_pow two_ne_zero
+
+/-- On a set `s` of finite measure, a function in `Lᵖ(s)`, `1 ≤ p < ∞`, bounded almost
+everywhere on `s` by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`. Unlike
+`MeasureTheory.Lp.norm_le_of_ae_bound`, no sign condition on `M` is needed. -/
+theorem MemLp.norm_toLp_le_measureReal_rpow_mul {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    (hs : μ s ≠ ⊤) (hg : MemLp g p (μ.restrict s)) {M : ℝ}
+    (hgM : ∀ᵐ x ∂μ.restrict s, ‖g x‖ ≤ M) :
+    ‖hg.toLp g‖ ≤ μ.real s ^ p.toReal⁻¹ * M := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · -- On a null set both sides vanish.
+    have hp0 : p.toReal⁻¹ ≠ 0 :=
+      inv_ne_zero (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp).ne'
+    rw [Lp.norm_toLp, Measure.restrict_eq_zero.2 h0, eLpNorm_measure_zero, measureReal_def, h0,
+      ENNReal.toReal_zero, Real.zero_rpow hp0, zero_mul]
+  · -- Otherwise the bound holds at some point, so `0 ≤ M`.
+    have : (ae (μ.restrict s)).NeBot := ae_neBot.2 (by rwa [Ne, Measure.restrict_eq_zero])
+    obtain ⟨x, hx⟩ := hgM.exists
+    have h := Lp.norm_le_of_ae_bound ((norm_nonneg _).trans hx) (f := hg.toLp g) (by
+      filter_upwards [hg.coeFn_toLp, hgM] with y hy hyM
+      rwa [hy])
+    rwa [← measureReal_restrict_apply_univ]
 
 end Restrict
 

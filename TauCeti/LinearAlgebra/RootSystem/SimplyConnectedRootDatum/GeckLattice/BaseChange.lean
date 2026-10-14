@@ -61,10 +61,6 @@ reductive or that the represented weight torus is maximal.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * B. Conrad, *Reductive Group Schemes*, §1.
-
-This advances the base-change target in Layer 9 of the ReductiveGroups roadmap. The resulting
-specialized pinned carrier is an input to milestone L0, "pinned ambient groups", of the
-CFSGStatement roadmap.
 -/
 
 public section
