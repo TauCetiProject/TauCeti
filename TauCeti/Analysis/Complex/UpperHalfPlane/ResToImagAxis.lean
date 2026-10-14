@@ -122,20 +122,13 @@ theorem resToImagAxis_mul (F G : ℍ → ℂ) :
   funext t
   rcases le_or_gt t 0 with ht | ht <;> simp [resToImagAxis_of_pos, resToImagAxis_of_nonpos, ht]
 
-/-- The restriction commutes with scalar multiplication. -/
+/-- The restriction commutes with scalar multiplication, by any scalar acting on `ℂ` and
+fixing `0` (in particular complex, real and rational scalars). -/
 @[simp]
-theorem resToImagAxis_smul (c : ℂ) (F : ℍ → ℂ) :
+theorem resToImagAxis_smul {α : Type*} [SMulZeroClass α ℂ] (c : α) (F : ℍ → ℂ) :
     resToImagAxis (c • F) = c • resToImagAxis F := by
   funext t
   rcases le_or_gt t 0 with ht | ht <;> simp [resToImagAxis_of_pos, resToImagAxis_of_nonpos, ht]
-
-/-- The real-scalar form of `resToImagAxis_smul`: the complex-scalar law does not fire on
-`(c : ℝ) • F`. Private, since its three consumers — `RealOnImagAxis.const_smul`,
-`PosOnImagAxis.const_smul` and `EventuallyPosOnImagAxis.const_smul` — are all in this file. -/
-@[simp]
-private theorem resToImagAxis_real_smul (c : ℝ) (F : ℍ → ℂ) :
-    resToImagAxis (c • F) = c • resToImagAxis F := by
-  simpa [Complex.real_smul] using resToImagAxis_smul (c : ℂ) F
 
 /-! ### Behaviour at `i∞` -/
 
@@ -258,7 +251,6 @@ theorem mul {F G : ℍ → ℂ} (hF : RealOnImagAxis F) (hG : RealOnImagAxis G) 
 @[fun_prop]
 theorem const_smul {F : ℍ → ℂ} {c : ℝ} (hF : RealOnImagAxis F) : RealOnImagAxis (c • F) :=
   fun t ht ↦ by
-  rw [resToImagAxis_real_smul]
   simp [Complex.real_smul, Complex.mul_im, hF t ht]
 
 /-- Natural powers preserve real-valuedness on the imaginary axis. -/
@@ -301,7 +293,6 @@ theorem mul {F G : ℍ → ℂ} (hF : PosOnImagAxis F) (hG : PosOnImagAxis G) :
 theorem const_smul {F : ℍ → ℂ} {c : ℝ} (hF : PosOnImagAxis F) (hc : 0 < c) :
     PosOnImagAxis (c • F) :=
   ⟨hF.1.const_smul, fun t ht ↦ by
-    rw [resToImagAxis_real_smul]
     simpa [Complex.real_smul, Complex.mul_re] using mul_pos hc (hF.2 t ht)⟩
 
 /-- Natural powers preserve positivity on the imaginary axis. -/
@@ -353,7 +344,6 @@ theorem const_smul {F : ℍ → ℂ} {c : ℝ} (hF : EventuallyPosOnImagAxis F) 
     EventuallyPosOnImagAxis (c • F) :=
   ⟨hF.1.const_smul, by
     filter_upwards [hF.2] with t hf
-    rw [resToImagAxis_real_smul]
     simpa [Complex.real_smul, Complex.mul_re] using mul_pos hc hf⟩
 
 /-- Natural powers preserve eventual positivity on the imaginary axis. -/
