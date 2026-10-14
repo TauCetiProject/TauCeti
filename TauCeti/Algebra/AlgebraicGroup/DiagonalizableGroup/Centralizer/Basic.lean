@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Char
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Representability
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
+import TauCeti.Algebra.TensorProduct.MapLinear
 
 /-!
 # The centralizer of a diagonalizable subgroup
@@ -38,7 +39,8 @@ group exactly when `D(X)` is a central closed subgroup of `G`.
 ## Main declarations
 
 * `BialgHom.centralizerDefect`: the conjugation defect of a coordinate, in `H ⊗[R] R[X]`.
-* `BialgHom.centralizerCoefficient`: its coefficient at a character.
+* `BialgHom.centralizerCoefficient`: its coefficient at a character; `centralizerDefect_def`
+  and `centralizerCoefficient_def` are the public formulas for these two definitions.
 * `BialgHom.centralizerHopfIdeal`: the Hopf ideal cutting out the centralizer of the diagonalizable
   subgroup.
 * `BialgHom.centralizerHopfIdeal_le_ker_iff`: an algebra-valued point kills the centralizer
@@ -101,6 +103,13 @@ of `R[X]`. These coefficients generate the centralizer ideal. -/
 noncomputable def centralizerCoefficient (x : H) (χ : X) : H :=
   LinearMap.tensorComponent (Comodule.monoidCoeff R X χ) (centralizerDefect π x)
 
+/-- The defining formula of a coefficient of the conjugation defect. This is the public interface
+to the definition, whose body is not exposed outside this module. -/
+theorem centralizerCoefficient_def (x : H) (χ : X) :
+    centralizerCoefficient π x χ =
+      LinearMap.tensorComponent (Comodule.monoidCoeff R X χ) (centralizerDefect π x) := by
+  rfl
+
 /-- A linear map out of `H` kills every coefficient of a conjugation defect exactly when it kills
 the defect itself, after tensoring with the identity of `R[X]`. -/
 theorem map_centralizerDefect_eq_zero_iff {A : Type x} [AddCommMonoid A] [Module R A]
@@ -122,16 +131,6 @@ theorem map_centralizerDefect_eq_zero_iff {A : Type x} [AddCommMonoid A] [Module
 private noncomputable def centralizerIdeal : Ideal H :=
   Ideal.span (Set.range fun p : H × X ↦ centralizerCoefficient π p.1 p.2)
 
-/-- Tensoring an algebra map with the identity acts as the tensor product of the underlying linear
-maps. -/
-private theorem tensorProduct_map_id_apply {A : Type x} [CommRing A] [Algebra R A]
-    (g : H →ₐ[R] A) (z : H ⊗[R] MonoidAlgebra R X) :
-    Algebra.TensorProduct.map g (AlgHom.id R (MonoidAlgebra R X)) z =
-      TensorProduct.map g.toLinearMap LinearMap.id z := by
-  induction z with
-  | tmul a b => simp
-  | add z₁ z₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-
 /-- A point kills the coefficient ideal exactly when it kills every conjugation defect. -/
 private theorem centralizerIdeal_le_ker_iff {A : Type x} [CommRing A] [Algebra R A]
     (g : H →ₐ[R] A) :
@@ -141,7 +140,8 @@ private theorem centralizerIdeal_le_ker_iff {A : Type x} [CommRing A] [Algebra R
   rw [centralizerIdeal, Ideal.span_le]
   simp only [Set.range_subset_iff, Prod.forall, SetLike.mem_coe, RingHom.mem_ker]
   refine forall_congr' fun x ↦ ?_
-  rw [tensorProduct_map_id_apply, map_centralizerDefect_eq_zero_iff]
+  rw [Algebra.TensorProduct.map_apply_eq_map, AlgHom.toLinearMap_id,
+    map_centralizerDefect_eq_zero_iff]
   simp only [AlgHom.toLinearMap_apply]
 
 /-- Evaluating the conjugation defect at a point `g` of `G` and then along an algebra map `ψ` out

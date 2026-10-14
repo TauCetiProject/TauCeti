@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Bas
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.RootSpace
 import TauCeti.Algebra.DualNumber.Convolution
+import TauCeti.Algebra.TensorProduct.MapLinear
 
 /-!
 # The Lie algebra of the centralizer of a diagonalizable subgroup
@@ -139,17 +140,41 @@ private theorem snd_tangentPoint_conjugate {B : Type*} [CommRing B] [Algebra R B
   simpa only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, sndHom_apply,
     AlgHom.toLinearMap_apply, S, q, p, D, G] using ha
 
-variable (π : H →ₐc[R] MonoidAlgebra R X)
+/-- The infinitesimal coefficient of the product map of two dual-number points, on a pure
+tensor. -/
+private theorem snd_productMap_tmul {C : Type*} [CommRing C] [Algebra R C]
+    (f g : H →ₐ[R] DualNumber C) (a b : H) :
+    snd (Algebra.TensorProduct.productMap f g (a ⊗ₜ[R] b)) =
+      fst (f a) * snd (g b) + snd (f a) * fst (g b) := by
+  rw [Algebra.TensorProduct.productMap_apply_tmul, snd_mul, op_smul_eq_mul, smul_eq_mul]
 
-/-- Tensoring a linear map with the identity after applying `π` to the second factor is tensoring
-it with `π`. -/
-private theorem map_id_algebraTensorProduct_map_id {A : Type*} [AddCommMonoid A] [Module R A]
-    (f : H →ₗ[R] A) (z : H ⊗[R] H) :
-    TensorProduct.map f LinearMap.id (Algebra.TensorProduct.map (AlgHom.id R H) π.toAlgHom z) =
-      TensorProduct.map f π.toAlgHom.toLinearMap z := by
-  induction z with
-  | tmul a b => simp
-  | add z₁ z₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+/-- A point pushed into the dual numbers by the constant inclusion takes constant values. -/
+private theorem mapValue_inlAlgHom_ofConv_apply {C : Type*} [CommRing C] [Algebra R C]
+    (g : WithConv (H →ₐ[R] C)) (h : H) :
+    (AlgHom.mapValue (H := H) (inlAlgHom R C C) g).ofConv h = inl (g.ofConv h) := by
+  simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, inlAlgHom_apply]
+
+/-- The values of a point regarded as counit-algebra-valued, through the identification of the
+counit algebra with its coefficient ring. -/
+private theorem pointInCounitAlgebra_ofConv_apply {B : Type*} [CommRing B] [Algebra R B]
+    (g : WithConv (H →ₐ[R] B)) (h : H) :
+    (Derivation.pointInCounitAlgebra B g).ofConv h =
+      (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm (g.ofConv h) := by
+  rw [Derivation.pointInCounitAlgebra_apply]
+  exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply R H B _).symm
+
+/-- The values of a tangent vector with extended coefficients, through the identification of the
+counit algebras with their coefficient rings. -/
+private theorem algEquivSelf_mapValue_ofId_apply {B : Type*} [CommRing B] [Algebra R B]
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (a : H) :
+    Bialgebra.CounitAlgebra.algEquivSelf R H B (Derivation.mapValue (Algebra.ofId R B) d a) =
+      algebraMap R B (Bialgebra.CounitAlgebra.algEquivSelf R H R (d a)) := by
+  have h := LinearMap.congr_fun (Derivation.coe_mapValue_linearMap (Algebra.ofId R B) d) a
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Derivation.coeFn_coe] at h
+  simp only [h, Bialgebra.CounitAlgebra.mapAlgHom_apply, Bialgebra.CounitAlgebra.algEquivSelf_map,
+    Algebra.ofId_apply]
+
+variable (π : H →ₐc[R] MonoidAlgebra R X)
 
 /-- Evaluating a tangent vector of `G` on the conjugation of a coordinate, in the conjugating
 variable, with the universal point of `D(X)` in the conjugated variable, computes the convolution
@@ -186,34 +211,18 @@ private theorem lid_map_conjugationAlgHom (d : Derivation R H (Bialgebra.CounitA
       (Bialgebra.CounitAlgebra.algEquivSelf R H A).toLinearMap ∘ₗ
         (sndHom (Bialgebra.CounitAlgebra R H A) (Bialgebra.CounitAlgebra R H A)).restrictScalars R
           ∘ₗ (Algebra.TensorProduct.productMap T.ofConv Q.ofConv).toLinearMap := by
-    -- The universal point and the tangent vector are rewritten through the well-typed
-    -- identifications of the counit algebra with its coefficient ring.
-    have hpdef : p = AlgHom.mapValue (H := H)
-        (Bialgebra.CounitAlgebra.algEquivSelf R H A).symm.toAlgHom (toConv π.toAlgHom) := by
-      apply ofConv_injective
-      ext h
-      rw [Derivation.pointInCounitAlgebra_apply, AlgHom.mapValue_apply, ofConv_toConv,
-        ofConv_toConv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
-      exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply R H A _).symm
     apply TensorProduct.ext'
     intro a b
-    have hQ : Q.ofConv b = inl (p.ofConv b) := by
-      simp only [Q, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, inlAlgHom_apply]
     have hT : snd (T.ofConv a) = d' a :=
       derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d') a
-    have hd' : d' a = Bialgebra.CounitAlgebra.mapAlgHom (A := H) (Algebra.ofId R A) (d a) := by
-      have h := LinearMap.congr_fun (Derivation.coe_mapValue_linearMap (Algebra.ofId R A) d) a
-      simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Derivation.coeFn_coe] using h
-    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply]
-    rw [LinearMap.restrictScalars_apply, sndHom_apply,
-      AlgHom.toLinearMap_apply, Algebra.TensorProduct.productMap_apply_tmul, snd_mul,
-      op_smul_eq_mul, hQ, fst_inl, snd_inl, smul_zero, zero_add, hT, hd', hpdef,
-      AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, TensorProduct.map_tmul,
-      LinearEquiv.coe_coe, TensorProduct.lid_tmul, map_mul]
-    simp only [LinearMap.comp_apply, Derivation.coeFn_coe, AlgHom.toLinearMap_apply,
-      AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply, Bialgebra.CounitAlgebra.mapAlgHom_apply,
-      Bialgebra.CounitAlgebra.algEquivSelf_map, Algebra.ofId_apply, Algebra.smul_def,
-      BialgHom.coe_toAlgHom]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.map_tmul,
+      TensorProduct.lid_tmul, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe,
+      AlgHom.toLinearMap_apply, LinearMap.restrictScalars_apply, sndHom_apply,
+      snd_productMap_tmul, Q, mapValue_inlAlgHom_ofConv_apply, fst_inl, snd_inl, mul_zero,
+      zero_add, hT, map_mul, d', algEquivSelf_mapValue_ofId_apply, p,
+      pointInCounitAlgebra_ofConv_apply, AlgEquiv.apply_symm_apply, BialgHom.coe_toAlgHom,
+      Algebra.smul_def]
+    -- The carrier of `CommAlgCat.of R R[X]` is `R[X]`.
     rfl
   exact LinearMap.congr_fun hmaps _
 
@@ -261,8 +270,9 @@ theorem cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_iff
       simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe,
         EmbeddingLike.map_eq_zero_iff]
     rw [hcoeff, ← (TensorProduct.lid R (MonoidAlgebra R X)).map_eq_zero_iff,
-      centralizerDefect_def, map_sub, map_sub, map_id_algebraTensorProduct_map_id,
-      lid_map_conjugationAlgHom, TensorProduct.map_tmul]
+      centralizerDefect_def, map_sub, map_sub, TensorProduct.map_algebraTensorProduct_map,
+      AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, lid_map_conjugationAlgHom,
+      TensorProduct.map_tmul]
     simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero,
       TensorProduct.zero_tmul, sub_zero, EmbeddingLike.map_eq_zero_iff, D, P, d', p, A]
   rw [forall_congr' hgen]
