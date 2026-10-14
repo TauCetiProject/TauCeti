@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.RootsOfUnity
@@ -74,12 +75,6 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic] (m : ℕ)
   (hm : IsUnit (m : K))
 
 include hm in
-/-- An integer invertible in `K` is nonzero in the separable closure `Kˢ`. -/
-private theorem natCast_separableClosure_ne_zero : (m : SeparableClosure K) ≠ 0 := by
-  rw [← map_natCast (algebraMap K (SeparableClosure K)), map_ne_zero]
-  exact hm.ne_zero
-
-include hm in
 /-- An integer invertible in `K` is nonzero. -/
 private theorem neZero_of_isUnit : NeZero m :=
   NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
@@ -93,7 +88,7 @@ def torsionCoeffWeilPairing : W.TorsionCoeff m →+ W.TorsionCoeff m →+ Kummer
   haveI := neZero_of_isUnit m hm
   let f := (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm.toAddMonoidHom
   ((Isogeny.weilPairing (W⁄(SeparableClosure K)) m
-    (natCast_separableClosure_ne_zero m hm)).compl₂ f).comp f
+    hm.natCast_ne_zero_of_algebra).compl₂ f).comp f
 
 open scoped Classical in
 /-- `torsionCoeffWeilPairing` is the Weil pairing of `W` over `Kˢ`, read through the identification
@@ -113,8 +108,8 @@ theorem torsionCoeffWeilPairing_smul (σ : AbsoluteGaloisGroup K) (P Q : W.Torsi
     W.torsionCoeffWeilPairing m hm (σ • P) (σ • Q) = σ • W.torsionCoeffWeilPairing m hm P Q := by
   classical
   have := neZero_of_isUnit m hm
-  rw [torsionCoeffWeilPairing_apply _ _ _ (natCast_separableClosure_ne_zero m hm),
-    torsionCoeffWeilPairing_apply _ _ _ (natCast_separableClosure_ne_zero m hm),
+  rw [torsionCoeffWeilPairing_apply _ _ _ hm.natCast_ne_zero_of_algebra,
+    torsionCoeffWeilPairing_apply _ _ _ hm.natCast_ne_zero_of_algebra,
     torsionByCongr_pointCoeffEquiv_symm_smul, torsionByCongr_pointCoeffEquiv_symm_smul,
     weilPairing_torsionGaloisAction]
   exact Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
@@ -128,9 +123,9 @@ theorem torsionCoeffWeilPairing_nondegenerate {P : W.TorsionCoeff m}
   have := neZero_of_isUnit m hm
   refine (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm.injective ?_
   rw [map_zero]
-  refine Isogeny.weilPairing_nondegenerate _ m (natCast_separableClosure_ne_zero m hm)
+  refine Isogeny.weilPairing_nondegenerate _ m hm.natCast_ne_zero_of_algebra
     fun Q ↦ ?_
-  simpa [torsionCoeffWeilPairing_apply _ _ _ (natCast_separableClosure_ne_zero m hm)] using
+  simpa [torsionCoeffWeilPairing_apply _ _ _ hm.natCast_ne_zero_of_algebra] using
     hP (AddEquiv.torsionByCongr W.pointCoeffEquiv m Q)
 
 include hm in
@@ -150,7 +145,7 @@ private theorem smul_kummerCoeff_eq_self_of_forall_smul_eq_self
   refine Additive.toMul.injective <| Subtype.ext <| Units.ext ?_
   simpa [AlgEquiv.smul_units_def] using
     W.algEquiv_apply_eq_self_of_torsionGaloisAction_eq_one
-      (natCast_separableClosure_ne_zero m hm) hσ
+      hm.natCast_ne_zero_of_algebra hσ
       (ζ := ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K))
       (by rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 x.toMul.2, Units.val_one])
 
@@ -204,9 +199,8 @@ theorem torsionCoeffWeilPairing_torsionCoeffBaseChange (P Q : W.TorsionCoeff m) 
       kummerCoeffBaseChange m τ (W.torsionCoeffWeilPairing m hm P Q) := by
   classical
   have := neZero_of_isUnit m hm
-  have hm' := natCast_separableClosure_ne_zero m hm
-  have hmτ : (m : SeparableClosure L) ≠ 0 := by
-    rwa [← map_natCast (τ : SeparableClosure K →+* SeparableClosure L), map_ne_zero]
+  have hm' : (m : SeparableClosure K) ≠ 0 := hm.natCast_ne_zero_of_algebra
+  have hmτ : (m : SeparableClosure L) ≠ 0 := hm.natCast_ne_zero_of_algebra
   rw [torsionCoeffWeilPairing_apply _ _ _ hmτ, torsionCoeffWeilPairing_apply _ _ _ hm',
     torsionByCongr_symm_torsionCoeffBaseChange, torsionByCongr_symm_torsionCoeffBaseChange,
     weilPairing_torsionByCongr_cast _ _ hmτ, weilPairing_torsionMapAlong _ _ _ hm']
