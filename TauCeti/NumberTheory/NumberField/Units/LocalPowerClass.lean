@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius.Kummer.LocalUnit
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 import TauCeti.RingTheory.Valuation.UnitGroup
 
 /-!
