@@ -65,13 +65,6 @@ open Matrix
 
 variable {n : ℕ}
 
-/-- As an invertible matrix, the diagonal unitary matrix with entries `z i` is the diagonal element
-of the general linear group with the entries `z i` viewed as units of `ℂ`. -/
-@[simp]
-theorem toUnits_unitaryTorusHom {ι : Type*} [Fintype ι] [DecidableEq ι] (z : ι → Circle) :
-    Unitary.toUnits (unitaryTorusHom ι z) = diagGL fun i => Circle.toUnits (z i) :=
-  Units.ext <| by simp
-
 /-- A unitary matrix lies in the diagonal torus of `U(n)` exactly when, as an invertible matrix,
 it lies in the diagonal torus of `GL_n(ℂ)`. -/
 theorem mem_unitaryTorus_iff_toUnits_mem {g : unitaryGroup (Fin n) ℂ} :
@@ -103,7 +96,7 @@ theorem mem_normalizer_unitaryTorus_iff_toUnits_mem {g : unitaryGroup (Fin n) �
     rw [mem_unitaryTorus_iff_toUnits_mem, map_mul, map_mul, map_inv,
       toUnits_unitaryTorusHom] at hconj
     exact ⟨_, hconj,
-      (unitSphereToUnits_injective (𝕜 := ℂ)).ne (mulSingle_exp_pi_apply_ne hij)⟩
+      (unitSphereToUnits_injective (𝕜 := ℂ)).ne (Circle.mulSingle_exp_pi_apply_ne hij)⟩
   obtain ⟨d, σ, hdσ⟩ := exists_eq_diagGL_mul_permutationGL_of_forall_ne hsep
   rw [hdσ]
   exact (Subgroup.normalizer (diagonalTorus ℂ n : Set (GL (Fin n) ℂ))).mul_mem
@@ -151,14 +144,6 @@ theorem unitaryTorusNormalizerPerm_eq_one_iff
     unitaryTorusNormalizerPerm g = 1 ↔ (g : unitaryGroup (Fin n) ℂ) ∈ unitaryTorus (Fin n) := by
   rw [unitaryTorusNormalizerPerm_apply, diagonalNormalizerPerm_eq_one_iff,
     mem_unitaryTorus_iff_toUnits_mem]
-
-/-- As an invertible matrix, the unitary permutation matrix of a permutation is its permutation
-matrix in the general linear group. -/
-@[simp]
-theorem toUnits_permutationUnitary {R : Type*} [CommRing R] [StarRing R] {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (σ : Equiv.Perm ι) :
-    Unitary.toUnits (permutationUnitary (R := R) σ) = permutationGL σ :=
-  Units.ext <| by rw [Unitary.val_toUnits_apply, permutationGL_coe, coe_permutationUnitary]
 
 /-- A permutation matrix normalizes the diagonal torus of `U(n)`. -/
 theorem permutationUnitary_mem_normalizer (σ : Equiv.Perm (Fin n)) :

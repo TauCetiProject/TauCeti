@@ -15,10 +15,15 @@ its group structure.  This file records the identification as a homeomorphism, s
 stated for unit spheres of real normed spaces (such as their CW structures) apply to `Circle`
 without unfolding the synonym.
 
+It also records that the point `-1 = exp (π i)` placed at one coordinate of a family of points
+of the circle, with `1` elsewhere, separates that coordinate from every other one.
+
 ## Main declarations
 
 * `Circle.homeomorphSphere`: `Circle ≃ₜ sphere (0 : ℂ) 1`, the identity on underlying complex
   numbers.
+* `TauCeti.Circle.mulSingle_exp_pi_apply_ne`: `Pi.mulSingle i (Circle.exp π)` takes different
+  values at `i` and at any `j ≠ i`.
 -/
 
 public section
@@ -44,3 +49,15 @@ theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
   (rfl)
 
 end Circle
+
+namespace TauCeti.Circle
+
+/-- The point `-1 = exp (π i)` of the circle at the coordinate `i`, and `1` elsewhere, separates
+`i` from every other coordinate. -/
+theorem mulSingle_exp_pi_apply_ne {ι : Type*} [DecidableEq ι] {i j : ι} (hij : i ≠ j) :
+    (Pi.mulSingle i (Circle.exp Real.pi) : ι → Circle) i ≠
+      (Pi.mulSingle i (Circle.exp Real.pi) : ι → Circle) j := by
+  rw [Pi.mulSingle_eq_same, Pi.mulSingle_eq_of_ne hij.symm]
+  exact Circle.exp_pi_ne_one
+
+end TauCeti.Circle

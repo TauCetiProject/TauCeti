@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 
 /-!
 # Coordinate action of unitary matrices
@@ -14,7 +15,8 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 `Matrix.UnitaryGroup.toLinearEquiv_apply` describes the linear equivalence associated to a unitary
 matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitaryGroup` records that
 permutation matrices are unitary. Accordingly `Matrix.permutationUnitary` is
-`Matrix.permMatrixHom` with values in the unitary group.
+`Matrix.permMatrixHom` with values in the unitary group; as an invertible matrix it is
+`TauCeti.permutationGL` (`Matrix.toUnits_permutationUnitary`).
 -/
 
 public section
@@ -58,5 +60,13 @@ def permutationUnitary : Equiv.Perm n →* unitaryGroup n R :=
 theorem coe_permutationUnitary (σ : Equiv.Perm n) :
     (permutationUnitary (R := R) σ : Matrix n n R) = σ⁻¹.permMatrix R :=
   (rfl)
+
+/-- As an invertible matrix, the unitary permutation matrix of a permutation is its permutation
+matrix in the general linear group. -/
+@[simp]
+theorem toUnits_permutationUnitary (σ : Equiv.Perm n) :
+    Unitary.toUnits (permutationUnitary (R := R) σ) = TauCeti.permutationGL σ :=
+  Units.ext <| by
+    rw [Unitary.val_toUnits_apply, TauCeti.permutationGL_coe, coe_permutationUnitary]
 
 end Matrix
