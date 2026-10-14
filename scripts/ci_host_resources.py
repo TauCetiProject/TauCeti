@@ -236,6 +236,11 @@ def main():
         if restore_subreaper:
             restore_subreaper()
     assert code is not None
+    interrupted = bool(cancelled) or code < 0
+    if restore_subreaper and interrupted:
+        # Killing a PID-namespace init can destroy live children before their
+        # resource usage propagates. Preserve these lower bounds as partial.
+        sampler.missing.add('descendant-accounting-interrupted')
     child.returncode = code
     done.set()
     if thread.ident is not None:
@@ -253,7 +258,8 @@ def main():
                   'dependency_bump': os.environ.get('CI_RESOURCE_DEPENDENCY_BUMP', 'unknown'),
                   'started_at': started, 'completed_at': now(), 'elapsed_s': time.monotonic() - start,
                   'exit_code': code, 'cancel_signals': cancelled,
-                  'command_accounting_scope': 'reaped-descendants' if restore_subreaper else 'direct-child-only',
+                  'command_accounting_scope': ('partial-reaped-descendants' if interrupted else 'reaped-descendants')
+                      if restore_subreaper else 'direct-child-only',
                   'reaped_processes': reaped, **totals,
                   **sampler.summary()}
         out = Path(args.out)

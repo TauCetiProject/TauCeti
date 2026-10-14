@@ -119,6 +119,8 @@ class HostResourcesTests(unittest.TestCase):
                 value = json.loads(out.read_text())
                 self.assertEqual(value['cancel_signals'], [signal.SIGTERM])
                 self.assertEqual(value['exit_code'], -signal.SIGTERM)
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-interrupted', value['missing'])
             finally:
                 if child.poll() is None:
                     child.kill()
