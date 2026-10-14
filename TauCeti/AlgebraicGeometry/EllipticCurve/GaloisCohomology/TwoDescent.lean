@@ -138,12 +138,19 @@ private def negOneRootOfUnity : rootsOfUnity 2 (SeparableClosure K) :=
   ⟨-1, by rw [mem_rootsOfUnity, neg_one_sq]⟩
 
 omit [DecidableEq K] in
+/-- The value of `negOneRootOfUnity` in `(Kˢ)ˣ`. -/
+private theorem coe_negOneRootOfUnity :
+    ((negOneRootOfUnity (K := K) : rootsOfUnity 2 (SeparableClosure K)) :
+      (SeparableClosure K)ˣ) = -1 :=
+  rfl
+
+omit [DecidableEq K] in
 /-- The Galois group fixes `-1`. -/
 private theorem smul_negOneRootOfUnity (σ : AbsoluteGaloisGroup K) :
     σ • (Additive.ofMul (negOneRootOfUnity (K := K)) : KummerCoeff K 2) =
       Additive.ofMul negOneRootOfUnity :=
   Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
-    simp [negOneRootOfUnity, AlgEquiv.smul_units_def]
+    simp [coe_negOneRootOfUnity, AlgEquiv.smul_units_def]
 
 /-- **The character `E(Kˢ)[2] → μ₂` attached to a point `T` of order two**, trivial exactly on
 `{O, T}`: a homomorphism of discrete `G_K`-modules, for `2` invertible in `K`, since `{O, T}` has
@@ -164,7 +171,7 @@ def twoTorsionCharacter [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
     · rw [ite_eq_right fun h ↦ h₁ (hadd.1 h |>.2 h₂), ite_eq_right h₁, ite_eq_left h₂, add_zero]
     · rw [ite_eq_left (hadd.2 (iff_of_false h₁ h₂)), ite_eq_right h₁, ite_eq_right h₂]
       exact Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
-        simp [negOneRootOfUnity]
+        simp [coe_negOneRootOfUnity]
   map_smul' σ S := by
     have hσ : σ • S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) ↔
         S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ) := by
@@ -194,10 +201,10 @@ theorem coe_toMul_twoTorsionCharacter [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K
       else -1 := by
   rw [twoTorsionCharacter_apply]
   by_cases h : S ∈ AddSubgroup.zmultiples (W.twoTorsionCoeff hT hψ)
-  · rw [ite_eq_left h, ite_eq_left ((mem_zmultiples_twoTorsionCoeff_iff W hT hψ).1 h)]
-    rfl
-  · rw [ite_eq_right h, ite_eq_right (mt (mem_zmultiples_twoTorsionCoeff_iff W hT hψ).2 h)]
-    rfl
+  · rw [ite_eq_left h, ite_eq_left ((mem_zmultiples_twoTorsionCoeff_iff W hT hψ).1 h), toMul_zero,
+      OneMemClass.coe_one]
+  · rw [ite_eq_right h, ite_eq_right (mt (mem_zmultiples_twoTorsionCoeff_iff W hT hψ).2 h),
+      toMul_ofMul, coe_negOneRootOfUnity]
 
 /-- **`twoTorsionCharacter` is trivial exactly on `{O, T}`.** -/
 theorem twoTorsionCharacter_eq_zero_iff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K))
