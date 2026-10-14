@@ -31,7 +31,7 @@ endomorphism of `N`. Reduction of endomorphisms is onto because `N` is projectiv
 (`Ideal.endMapQ_surjective`), and its kernel is `r • End_A(N)`
 (`Ideal.endMapQ_span_algebraMap_eq_zero_iff`). The results only assume that the ring
 `End_A(N)` is `(r)`-adically complete, which holds in the setting above because `End_A(N)` is
-then finite over `R`; `TauCeti.IsAdicComplete.exists_isIdempotentElem_eq` then lifts the
+then finite over `R`; `IsAdicComplete.exists_isIdempotentElem_eq` then lifts the
 idempotent. Over a semiprimary ring the same lifting needs no completeness, the kernel being nil;
 that case is used in `TauCeti/Algebra/Module/ProjectiveCover/Existence.lean`.
 
@@ -64,7 +64,7 @@ endomorphism ring is `(r)`-adically complete, every idempotent endomorphism of `
 reduction of an idempotent endomorphism of `N`.
 
 The completeness hypothesis holds when `R` is Noetherian and `(r)`-adically complete and `N` is
-finitely generated over `R`, by `Module.Finite.linearMap_of_isNoetherianRing` and
+finitely generated over `R`, by `Module.Finite.linearMap_of_isNoetherian` and
 `IsAdicComplete.of_finite`. -/
 theorem exists_isIdempotentElem_endMapQ_eq
     {e : Module.End A (N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N))}

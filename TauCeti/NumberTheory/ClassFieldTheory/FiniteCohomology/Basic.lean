@@ -162,6 +162,6 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
     (hA : IsSmoothDiscrete (ZMod n) A) [Finite A.V] {i : ℕ} (hi : i ≤ 1) :
     Finite (continuousCohomology i A) := by
   exact finite_continuousCohomology_of_prime_ge_two hn A hA i
-    fun _ _ _ _ _ _ _ _ _ _ _ _ j hj₀ hj ↦ by omega
+    fun _ _ _ _ _ _ _ _ _ _ _ _ _ hj₀ hj ↦ by omega
 
 end TauCeti.ClassFieldTheory

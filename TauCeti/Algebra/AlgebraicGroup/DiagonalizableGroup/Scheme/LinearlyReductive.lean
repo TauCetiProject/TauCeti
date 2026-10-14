@@ -27,9 +27,6 @@ diagonalizable-group-scheme property.
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 3.2.
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.12.
-
-This is the diagonalizable-group example for the complete-reducibility characterization in
-Layer 6 of the ReductiveGroups roadmap.
 -/
 
 public section

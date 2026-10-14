@@ -21,6 +21,10 @@ For a graded algebra over a coefficient ring, homogeneous localization inherits 
 coefficient algebra structure, and fractions with a fixed homogeneous denominator depend
 linearly on their numerator. This permits scalar extension of the homogeneous affine charts.
 
+The file also records that the restriction map `A_{(f)} →+* A_{(fg)}` is injective when `g` is a
+nonzerodivisor of `A`, and that a homogeneous localization is reduced whenever the corresponding
+localization is.
+
 ## Main definitions
 
 * `HomogeneousLocalization.Away.mkLinearMap`: the linear numerator map for a fixed denominator.
@@ -35,8 +39,12 @@ linearly on their numerator. This permits scalar extension of the homogeneous af
   `awayMap` from `A_{(f)}` to `A_{(fg)}`.
 * `HomogeneousLocalization.Away.lift_comp_map`: `lift` is compatible with the map induced by a
   graded ring homomorphism.
+* `HomogeneousLocalization.Away.map_surjective`: a surjective graded ring homomorphism induces
+  surjections of homogeneous localizations at homogeneous elements.
 * `HomogeneousLocalization.Away.lift_eq_of_forall_mem`: rescaling the homogeneous coordinates,
   so that `ψ a = cⁿ φ a` on the degree-`n` part, does not change `lift`.
+* `HomogeneousLocalization.awayMap_injective`: the restriction `awayMap` from `A_{(f)}` to
+  `A_{(fg)}` is injective when `g` is a nonzerodivisor of `A`.
 * `HomogeneousLocalization.isReduced`: a homogeneous localization is reduced whenever the
   corresponding localization is, in particular for any reduced graded ring.
 
@@ -124,6 +132,19 @@ theorem Away.lift_comp_map (φ : B →+* R) (F : 𝒜 →+*ᵍ ℬ) {s : A} (hs 
   refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
   simp [IsLocalization.Away.lift_eq, IsLocalization.Away.map]
 
+/-- A surjective graded ring homomorphism `F` induces a surjection `A_{(s)} →+* B_{(F s)}` for
+every homogeneous `s`: a fraction `b / F(s)ⁿ` with `b` of degree `n • d` is the image of
+`a / sⁿ`, where `a` is the degree-`n • d` component of any preimage of `b`. -/
+theorem Away.map_surjective {F : 𝒜 →+*ᵍ ℬ} (hF : Function.Surjective F) {s : A} {d : ι}
+    (hs : s ∈ 𝒜 d) : Function.Surjective (Away.map F s) := by
+  intro z
+  obtain ⟨n, b, hb, rfl⟩ := Away.mk_surjective ℬ (Graded.map_mem F hs) z
+  obtain ⟨a, rfl⟩ := hF b
+  refine ⟨Away.mk 𝒜 hs n (DirectSum.decompose 𝒜 a (n • d)) (SetLike.coe_mem _), ?_⟩
+  rw [Away.map_mk]
+  congr 1
+  rw [GradedRingHom.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ hb]
+
 /-- Rescaling homogeneous coordinates does not change `Away.lift`: if `ψ a = cⁿ φ a` for every
 `a` of degree `n`, then `φ` and `ψ` induce the same homomorphism `A_{(f)} →+* R`. -/
 theorem Away.lift_eq_of_forall_mem {𝒜 : ℕ → σ} [GradedRing 𝒜] (φ ψ : A →+* R) (c : Rˣ)
@@ -136,6 +157,24 @@ theorem Away.lift_eq_of_forall_mem {𝒜 : ℕ → σ} [GradedRing 𝒜] (φ ψ 
     Units.inv_mul_eq_iff_eq_mul]
   simp only [Units.val_pow_eq_pow_val, IsUnit.unit_spec, h _ _ ha, h _ _ hfd, smul_eq_mul]
   ring
+
+/-- The restriction `awayMap : A_{(f)} →+* A_{(fg)}`, `a / fⁿ ↦ a gⁿ / (fg)ⁿ`, is injective when
+`g` is a nonzerodivisor of `A`. -/
+theorem awayMap_injective {e : ι} {f g x : A} (hg : g ∈ 𝒜 e) (hx : x = f * g)
+    (h : g ∈ nonZeroDivisors A) : Function.Injective (awayMap 𝒜 hg hx) := by
+  intro z w hzw
+  rw [ext_iff_val, val_awayMap, val_awayMap] at hzw
+  -- `awayMap` restricts `A_f →+* A_{fg}`, which is injective if it kills no nonzero `a / 1`
+  refine val_injective _ <| IsLocalization.injective_of_map_algebraMap_zero (M := .powers f) _ _
+    (fun a ha ↦ ?_) hzw
+  -- the image of `a / 1` in `A_{fg}` vanishes, so `(fg)ᵏ a = 0` for some `k`
+  rw [IsLocalization.Away.lift_eq] at ha
+  obtain ⟨k, hk⟩ := IsLocalization.Away.exists_of_eq x (ha.trans (map_zero _).symm)
+  -- as `g` is a nonzerodivisor, `fᵏ a = 0`, so `a / 1` vanishes in `A_f`
+  rw [mul_zero, hx, mul_pow, mul_right_comm,
+    mul_right_mem_nonZeroDivisors_eq_zero_iff (pow_mem h k)] at hk
+  exact (IsLocalization.map_eq_zero_iff (.powers f) _ a).mpr
+    ⟨⟨f ^ k, pow_mem (Submonoid.mem_powers f) k⟩, hk⟩
 
 variable (𝒜) in
 /-- A homogeneous localization at `x` is reduced whenever the localization at `x` is reduced; in

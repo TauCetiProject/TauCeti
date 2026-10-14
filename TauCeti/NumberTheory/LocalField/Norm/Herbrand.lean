@@ -8,10 +8,8 @@ module
 public import TauCeti.NumberTheory.LocalField.Different.Herbrand
 public import TauCeti.NumberTheory.LocalField.Herbrand.Tower
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
-import TauCeti.GroupTheory.Solvable
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
+import TauCeti.NumberTheory.LocalField.FiniteExtension.GaloisInduction
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
-import TauCeti.NumberTheory.LocalField.Solvable
 
 /-!
 # The norm on the unit filtration, with the Herbrand shift
@@ -22,10 +20,12 @@ carries the unit filtration of `L` into that of `K` after the Herbrand shift:
 
 `N_{L/K}(U(L, ψℕ_{L/K}(n))) ⊆ U(K, n)`   and   `N_{L/K}(U(L, ψℕ_{L/K}(n) + 1)) ⊆ U(K, n + 1)`
 
-for every `n : ℕ`. The shift cannot be dropped: `N_{L/K}(U(L, n)) ⊆ U(K, n)` fails in general
-for ramified extensions. These inclusions are the input to the comparison of the norm group of
-an abelian extension with its upper ramification filtration, through which its conductor is
-computed.
+for every `n : ℕ`. Read without the shift, these give
+`N_{L/K}(U(L, i)) ⊆ U(K, ⌊φ_{L/K}(i)⌋)`. The shift cannot be dropped:
+`N_{L/K}(U(L, n)) ⊆ U(K, n)` fails in general for ramified extensions
+(`TauCeti.not_map_normUnits_unitFiltration_le`). These inclusions are the input to the
+comparison of the norm group of an abelian extension with its upper ramification filtration,
+through which its conductor is computed.
 
 The proof is Serre's. The trace bound in
 `TauCeti.NumberTheory.LocalField.Different.Herbrand` comes first: Hilbert's formula
@@ -43,6 +43,8 @@ is transitive, `N_{L/K} = N_{F/K} ∘ N_{L/F}`, and so is the inverse Herbrand f
 * `TauCeti.map_normUnits_unitFiltration_psiNat_add_one_le`:
   `N_{L/K}(U(L, ψℕ_{L/K}(n) + 1)) ⊆ U(K, n + 1)`.
 * `TauCeti.map_normUnits_unitFiltration_psiNat_le`: `N_{L/K}(U(L, ψℕ_{L/K}(n))) ⊆ U(K, n)`.
+* `TauCeti.map_normUnits_unitFiltration_le_floor_herbrand`: the unshifted form,
+  `N_{L/K}(U(L, i)) ⊆ U(K, ⌊φ_{L/K}(i)⌋)`.
 
 ## References
 
@@ -131,36 +133,24 @@ private theorem normShift_of_forall_finrank_lt
       rw [← natCard_lowerRamificationGroup_zero K L,
         Subgroup.eq_bot_of_subsingleton (lowerRamificationGroup K L 0), Subgroup.card_bot]
     simpa [hψ, he] using map_normUnits_unitFiltration_le K L (n + 1)
-  · obtain ⟨H, hH, hp⟩ := Group.IsSolvable.exists_normal_index_prime (L ≃ₐ[K] L)
-    let F := IntermediateField.fixedField H
+  · obtain ⟨F, hGalois, hp, hlt⟩ := exists_prime_degree_intermediateField K L
     let _ := finiteIntermediateFieldValuativeRel K L F
     let _ := finiteIntermediateFieldTopology K L F
     have := finiteIntermediateField_isNonarchimedeanLocalField K L F
     have := finiteIntermediateField_valuativeExtension K L F
+    have := hGalois
     have := IsGalois.tower_top_of_isGalois K F L
-    have hF : finrank K F = H.index := by
-      rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-        IntermediateField.fixingSubgroup_fixedField]
-    have hlt : finrank F L < finrank K L := by
-      rw [← Module.finrank_mul_finrank K F L, hF]
-      have := hp.two_le
-      have := Module.finrank_pos (R := F) (M := L)
-      nlinarith
-    exact NormShift.trans (normShift_of_finrank_prime (hF ▸ hp)) (ih F hlt)
+    exact NormShift.trans (normShift_of_finrank_prime hp) (ih F hlt)
 
 /-- The Herbrand-shifted inclusion for every finite Galois extension `L/F` with `F` in the
 universe of `L` and `[L : F] ≤ d`, by induction on `d`. -/
 private theorem normShift_of_finrank_le (d : ℕ) :
     ∀ (F : Type v) [Field F] [ValuativeRel F] [TopologicalSpace F]
       [IsNonarchimedeanLocalField F] [Algebra F L] [ValuativeExtension F L] [Module.Finite F L]
-      [IsGalois F L], finrank F L ≤ d → NormShift F L := by
-  induction d with
-  | zero =>
-    intro F _ _ _ _ _ _ _ _ h
-    exact absurd h (Nat.not_le.2 Module.finrank_pos)
-  | succ d ih =>
-    intro F _ _ _ _ _ _ _ _ h
-    exact normShift_of_forall_finrank_lt fun F' _ _ _ _ _ _ _ _ h' ↦ ih F' (by omega)
+      [IsGalois F L], finrank F L ≤ d → NormShift F L :=
+  finiteGaloisLocalField_induction_finrank_le L
+    (fun F _ _ _ _ _ _ _ _ ↦ NormShift F L)
+    (fun F _ _ _ _ _ _ _ _ ↦ normShift_of_forall_finrank_lt (K := F)) d
 
 variable (K L) in
 /-- **The norm on the unit filtration, with the Herbrand shift.** For a finite Galois extension
@@ -182,6 +172,20 @@ theorem map_normUnits_unitFiltration_psiNat_le (n : ℕ) :
     exact (Subgroup.map_mono (unitFiltration_antitone
       (Nat.succ_le_of_lt (psiNat_strictMono K L n.lt_succ_self)))).trans
       (map_normUnits_unitFiltration_psiNat_add_one_le K L n)
+
+variable (K L) in
+/-- **The norm on the unit filtration, without the Herbrand shift.** For a finite Galois extension
+`L/K` of nonarchimedean local fields, `N_{L/K}(U(L, i)) ⊆ U(K, ⌊φ_{L/K}(i)⌋)` for every `i : ℕ`.
+This is the shifted inclusion at depth `⌊φ_{L/K}(i)⌋`, since `ψℕ_{L/K}(⌊φ_{L/K}(i)⌋) ≤ i`. The
+target depth cannot be raised to `i` in general: by `TauCeti.not_map_normUnits_unitFiltration_le`,
+`N_{L/K}(U(L,i)) ⊄ U(K,i)` for `i ≥ 2` when `L/K` is ramified of degree prime to the residue
+characteristic. -/
+theorem map_normUnits_unitFiltration_le_floor_herbrand (i : ℕ) :
+    (unitFiltration L i).map (Algebra.normUnits K) ≤
+      unitFiltration K ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ :=
+  (Subgroup.map_mono (unitFiltration_antitone
+    ((psiNat_le_iff_le_floor_herbrand K L).2 le_rfl))).trans
+    (map_normUnits_unitFiltration_psiNat_le K L _)
 
 end Norm
 

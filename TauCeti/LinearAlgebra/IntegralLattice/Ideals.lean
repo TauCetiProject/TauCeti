@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -100,27 +100,55 @@ theorem isEven_iff_normIdeal_le_span_singleton_two (L : IntegralLattice V) :
   rw [L.isEven_iff_forall_norm, L.normIdeal_le_iff]
   simp only [Ideal.mem_span_singleton, ← even_iff_two_dvd, L.even_integralNorm_iff]
 
+/-- A linear map preserving integral pairings gives containment of scale ideals. -/
+theorem scaleIdeal_le_of_integralForm_eq (L : IntegralLattice V) {M : IntegralLattice W}
+    (f : L →ₗ[ℤ] M)
+    (hf : ∀ x y, L.integralForm x y = M.integralForm (f x) (f y)) :
+    L.scaleIdeal ≤ M.scaleIdeal := by
+  apply (L.integralForm.scaleIdeal_le_iff M.scaleIdeal).mpr
+  intro x y
+  rw [hf]
+  exact M.integralForm.apply_mem_scaleIdeal _ _
+
+/-- A linear map preserving integral pairings gives containment of norm ideals. -/
+theorem normIdeal_le_of_integralForm_eq (L : IntegralLattice V) {M : IntegralLattice W}
+    (f : L →ₗ[ℤ] M)
+    (hf : ∀ x y, L.integralForm x y = M.integralForm (f x) (f y)) :
+    L.normIdeal ≤ M.normIdeal := by
+  apply (L.normIdeal_le_iff M.normIdeal).mpr
+  intro x
+  rw [L.integralNorm_apply, hf, ← M.integralNorm_apply]
+  exact M.integralNorm_mem_normIdeal _
+
+/-- Inclusion of carriers with the same ambient form gives containment of scale ideals. -/
+theorem scaleIdeal_le_of_form_eq_of_le (L M : IntegralLattice V) (hform : L.form = M.form)
+    (hle : L.carrier ≤ M.carrier) : L.scaleIdeal ≤ M.scaleIdeal :=
+  L.scaleIdeal_le_of_integralForm_eq (Submodule.inclusion hle)
+    (fun x y ↦ (L.integralForm_inclusion M hform hle x y).symm)
+
+/-- Inclusion of carriers with the same ambient form gives containment of norm ideals. -/
+theorem normIdeal_le_of_form_eq_of_le (L M : IntegralLattice V) (hform : L.form = M.form)
+    (hle : L.carrier ≤ M.carrier) : L.normIdeal ≤ M.normIdeal :=
+  L.normIdeal_le_of_integralForm_eq (Submodule.inclusion hle)
+    (fun x y ↦ (L.integralForm_inclusion M hform hle x y).symm)
+
 namespace Isometry
 
 variable {L : IntegralLattice V} {M : IntegralLattice W}
 
 /-- An integral-lattice isometry maps scale ideals into one another. -/
-theorem scaleIdeal_le (e : Isometry L M) : L.scaleIdeal ≤ M.scaleIdeal := by
-  apply (L.integralForm.scaleIdeal_le_iff M.scaleIdeal).mpr
-  intro x y
-  rw [← e.carrierEquiv_map_integralForm x y]
-  exact M.integralForm.apply_mem_scaleIdeal _ _
+theorem scaleIdeal_le (e : Isometry L M) : L.scaleIdeal ≤ M.scaleIdeal :=
+  L.scaleIdeal_le_of_integralForm_eq e.carrierEquiv.toLinearMap
+    (fun x y ↦ (e.carrierEquiv_map_integralForm x y).symm)
 
 /-- An integral-lattice isometry preserves the scale ideal. -/
 theorem scaleIdeal_eq (e : Isometry L M) : L.scaleIdeal = M.scaleIdeal :=
   le_antisymm e.scaleIdeal_le e.symm.scaleIdeal_le
 
 /-- An integral-lattice isometry maps norm ideals into one another. -/
-theorem normIdeal_le (e : Isometry L M) : L.normIdeal ≤ M.normIdeal := by
-  apply (L.normIdeal_le_iff M.normIdeal).mpr
-  intro x
-  rw [← e.integralNorm_carrierEquiv x]
-  exact M.integralNorm_mem_normIdeal _
+theorem normIdeal_le (e : Isometry L M) : L.normIdeal ≤ M.normIdeal :=
+  L.normIdeal_le_of_integralForm_eq e.carrierEquiv.toLinearMap
+    (fun x y ↦ (e.carrierEquiv_map_integralForm x y).symm)
 
 /-- An integral-lattice isometry preserves the norm ideal. -/
 theorem normIdeal_eq (e : Isometry L M) : L.normIdeal = M.normIdeal :=

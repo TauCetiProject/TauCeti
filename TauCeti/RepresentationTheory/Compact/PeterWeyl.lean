@@ -150,6 +150,12 @@ namespace IrrepModel
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
 
+open scoped MonoidAlgebra in
+/-- The group-algebra module of an irreducible model is simple. -/
+instance isSimpleModule_asModule (m : IrrepModel 𝕜 G) :
+    IsSimpleModule 𝕜[G] m.rep.toRepresentation.asModule :=
+  (Representation.irreducible_iff_isSimpleModule_asModule _).mp m.isIrreducible
+
 /-- The canonical linear isometry from the scalar field to the standard one-dimensional carrier of
 an `IrrepModel`. It matches the standard orthonormal bases on the two spaces. -/
 noncomputable def oneDimensionalEquiv :

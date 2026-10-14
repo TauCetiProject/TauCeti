@@ -101,7 +101,7 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
   classical
   have := Fintype.ofFinite X
   set n : pLowerCentralSeries p (freeProP p X) 1 :=
-    ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩ with hn
+    ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩
   set ρ := gradedMk p (freeProP p X) 1 n with hρ
   -- The matrix of the degree-one form in the dual basis of the generators, lifted to `ℤ_p` and
   -- transposed; its determinant is a unit because the form is nondegenerate.
@@ -161,7 +161,7 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
   obtain ⟨v, ⟨hv, hAv⟩, huniq⟩ :=
     IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (p : ℤ_[p]) A hMdet 1 h₀ hlin
   have hv₁ : ∀ i, (p : ℤ_[p]) ∣ v i - 1 := fun i ↦ by simpa using hv i
-  set χF := ψ v hv₁ with hχF
+  set χF := ψ v hv₁
   -- Every continuous crossed homomorphism for `χF` kills `r`, by linearity in the generator values.
   have hkill : ∀ F : freeProP p X → ℤ_[p], Continuous F → IsCrossedHom χF F → F r = 0 := by
     intro F hFc hF

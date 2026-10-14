@@ -59,8 +59,8 @@ group scheme of type `D₄`.
 * `TauCeti.D4Tripled.hopfSpec_map_rootSubgroupIntegralCoordinateMap_op` and
   `TauCeti.D4Tripled.hopfSpec_map_weightTorusIntegralCoordinateMap_op`: the integral coordinate
   maps represent the existing root-subgroup and weight-torus morphisms.
-* `pointsMulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap` and
-  `pointsMulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap`: over `ℤ`, the integral
+* `mulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap` and
+  `mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap`: over `ℤ`, the integral
   coordinate maps induce the named root-subgroup and weight-torus points.
 * `baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap` and
   `baseChangePointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordinateMap`:
@@ -272,7 +272,7 @@ noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
           (baseChangeDefiningIdeal A)) B ≃*
       points B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso A) B).trans
-    (pointsMulEquiv (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
+    (pointsPresentation (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- The base-change points equivalence preserves the ambient invertible matrix. -/
 @[simp]
@@ -284,7 +284,8 @@ theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
       GeneralLinear.pointsMulEquiv 24
         (CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra A 24)
           (baseChangeDefiningIdeal A) B q) := by
-  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, coe_pointsMulEquiv_apply]
+  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
   exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
     24 definingIdeal (baseChangeDefiningIdeal A) (baseChangeCoordinateIso A)
     (mkQuotient_comp_baseChangeCoordinateIso_hom A) B q
@@ -311,9 +312,15 @@ theorem baseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (f : B ⟶ C
         (HopfAlgebra.mapPoints
           (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 24)
             (baseChangeDefiningIdeal A)) f q) =
-      pointsMap f.hom (baseChangePointsMulEquiv A B q) := by
+      (pointsPresentation B).map (pointsPresentation C) f.hom
+        (baseChangePointsMulEquiv A B q) := by
   simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply]
-  rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints, pointsMulEquiv_mapPoints]
+  rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
+    (pointsPresentation
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (pointsPresentation
+        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
+      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
   have hring :
       ((((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
         (f.hom : ↑B →+* ↑C) := by
@@ -353,15 +360,15 @@ theorem mkQuotient_comp_rootSubgroupIntegralCoordinateMap (k : Fin 4 ⊕ Fin 4) 
 
 /-- On points, the integral factored coordinate map is the named numbered root subgroup. -/
 @[simp]
-theorem pointsMulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
+theorem mulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
     (B : CommAlgCat.{w} ℤ) (k : Fin 4 ⊕ Fin 4)
     (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ) B) :
-    pointsMulEquiv B
+    (pointsPresentation B).mulEquiv
         ((CommHopfAlgCat.mapPointsFunctor (rootSubgroupIntegralCoordinateMap k)).app B q) =
       rootSubgroupPoints k B (AdditiveGroup.gaPointsMulEquiv q) := by
   rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
   apply Subtype.ext
-  rw [coe_pointsMulEquiv_apply, coe_rootSubgroupPoints]
+  rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_rootSubgroupPoints]
   have h := pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
@@ -501,16 +508,16 @@ theorem mkQuotient_comp_weightTorusIntegralCoordinateMap :
 
 /-- On points, the integral factored coordinate map is the named weight torus. -/
 @[simp]
-theorem pointsMulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
+theorem mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
     (B : CommAlgCat.{w} ℤ)
     (q : HopfAlgebra.points (R := ℤ)
       (H := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin 4))).obj) B) :
-    pointsMulEquiv B
+    (pointsPresentation B).mulEquiv
         ((CommHopfAlgCat.mapPointsFunctor weightTorusIntegralCoordinateMap).app B q) =
       weightTorusPoints B (SplitTorus.pointsMulEquiv q) := by
   rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
   apply Subtype.ext
-  rw [coe_pointsMulEquiv_apply, coe_weightTorusPoints]
+  rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_weightTorusPoints]
   have h := pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup

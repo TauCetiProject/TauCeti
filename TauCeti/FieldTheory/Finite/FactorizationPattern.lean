@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 public import TauCeti.FieldTheory.Finite.Irreducible
 
 import Mathlib.Algebra.Polynomial.BigOperators
+import TauCeti.RingTheory.Polynomial.Factors
 
 /-!
 # Squarefree polynomials with prescribed factorization patterns over finite fields
@@ -60,17 +61,9 @@ theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_
     exists_monic_irreducible_natDegree_eq_ne_X k (n - 1) (by omega)
   let s : Multiset k[X] := {X, h}
   have smonic : ∀ p ∈ s, p.Monic := by simp [s, monic_X, hmonic]
-  have sirr : ∀ p ∈ s, Irreducible p := by simp [s, irreducible_X, hirr]
-  have hfac : normalizedFactors s.prod = s := by
-    rw [normalizedFactors_prod_eq s sirr]
-    exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
-  have gsq : Squarefree s.prod := by
-    rw [squarefree_iff_nodup_normalizedFactors
-        (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
-    simp [s, Ne.symm hX]
-  have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
-  refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq,
-    by simpa [s, hdeg] using gfac⟩
+  obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod smonic
+    (by simp [s, irreducible_X, hirr]) (by simp [s, Ne.symm hX])
+  refine ⟨s.prod, gmonic, ?_, gsq, by rw [hfac]; simp [s, hdeg]⟩
   rw [natDegree_multiset_prod_of_monic s smonic]
   simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
     Multiset.sum_cons, Multiset.sum_singleton, natDegree_X, hdeg]
@@ -98,24 +91,16 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
     have hq : h ≠ q := fun h' ↦ by rw [h'] at hdeg; omega
     let s : Multiset k[X] := {q, X, h}
     have smonic : ∀ p ∈ s, p.Monic := by simp [s, monic_X, qmonic, hmonic]
-    have sirr : ∀ p ∈ s, Irreducible p := by simp [s, irreducible_X, qirr, hirr]
-    have hfac : normalizedFactors s.prod = s := by
-      rw [normalizedFactors_prod_eq s sirr]
-      exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
-    have gsq : Squarefree s.prod := by
-      rw [squarefree_iff_nodup_normalizedFactors
-          (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
-      simp [s, qX, Ne.symm hq, Ne.symm hX]
-    have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
-    refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq, ?_, ?_⟩
+    obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod smonic
+      (by simp [s, irreducible_X, qirr, hirr]) (by simp [s, qX, Ne.symm hq, Ne.symm hX])
+    refine ⟨s.prod, gmonic, ?_, gsq, ?_, ?_⟩
     · rw [natDegree_multiset_prod_of_monic s smonic]
-      simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
-        Multiset.sum_cons, Multiset.sum_singleton, natDegree_X, qdeg, hdeg]
-      omega
-    · rw [gfac]
       simp [s, qdeg, hdeg]
       omega
-    · rw [gfac]
+    · rw [hfac]
+      simp [s, qdeg, hdeg]
+      omega
+    · rw [hfac]
       simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
         Multiset.mem_cons, Multiset.mem_singleton, natDegree_X, qdeg, hdeg]
       rintro d (rfl | rfl | rfl) hd
@@ -128,24 +113,16 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
     have hq : h ≠ q := fun h' ↦ by rw [h'] at hdeg; omega
     let s : Multiset k[X] := {q, h}
     have smonic : ∀ p ∈ s, p.Monic := by simp [s, qmonic, hmonic]
-    have sirr : ∀ p ∈ s, Irreducible p := by simp [s, qirr, hirr]
-    have hfac : normalizedFactors s.prod = s := by
-      rw [normalizedFactors_prod_eq s sirr]
-      exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
-    have gsq : Squarefree s.prod := by
-      rw [squarefree_iff_nodup_normalizedFactors
-          (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
-      simp [s, Ne.symm hq]
-    have gfac : (normalizedFactors s.prod).map natDegree = s.map natDegree := by rw [hfac]
-    refine ⟨s.prod, by simpa using monic_multiset_prod_of_monic s id smonic, ?_, gsq, ?_, ?_⟩
+    obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod smonic
+      (by simp [s, qirr, hirr]) (by simp [s, Ne.symm hq])
+    refine ⟨s.prod, gmonic, ?_, gsq, ?_, ?_⟩
     · rw [natDegree_multiset_prod_of_monic s smonic]
-      simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
-        Multiset.sum_cons, Multiset.sum_singleton, qdeg, hdeg]
-      omega
-    · rw [gfac]
       simp [s, qdeg, hdeg]
       omega
-    · rw [gfac]
+    · rw [hfac]
+      simp [s, qdeg, hdeg]
+      omega
+    · rw [hfac]
       simp only [s, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
         Multiset.mem_cons, Multiset.mem_singleton, qdeg, hdeg]
       rintro d (rfl | rfl) hd

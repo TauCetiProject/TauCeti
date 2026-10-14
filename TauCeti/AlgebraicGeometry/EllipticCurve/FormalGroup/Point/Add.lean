@@ -114,15 +114,11 @@ private theorem some_formalThirdRootEval_eq_some_formalAddEval {I : Ideal O} (hI
   have hE₂ : PowerSeries.HasEval t₂ := hI.isTopologicallyNilpotent_of_mem h₂
   have hET : PowerSeries.HasEval (W.formalThirdRootEval t₁ t₂) :=
     W.hasEval_formalThirdRootEval hE₁ hE₂
-  have hTmem : W.formalThirdRootEval t₁ t₂ ∈ I := by
-    simpa using W.formalThirdRootEval_mem hI (k := 1) (by simpa using h₁) (by simpa using h₂)
   -- the addition series is the formal inverse of the third root, so the two coordinate identities
   -- of the inverse law are exactly what distinguishes the two points
   rw [Affine.Point.some.injEq, W.formalAddEval_eq hE₁ hE₂]
-  exact ⟨(W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hET
-      (W.hasEval_formalInverseEval hI hTmem)).symm,
-    (W.neg_one_div_algebraMap_formalWEval_formalInverseEval hET
-      (W.hasEval_formalInverseEval hI hTmem)).symm⟩
+  exact ⟨(W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hET).symm,
+    (W.neg_one_div_algebraMap_formalWEval_formalInverseEval hET).symm⟩
 
 omit [(W.baseChange K).IsElliptic] in
 open scoped Classical in
@@ -146,12 +142,9 @@ private theorem some_add_some_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I
     Affine.Point.some _ _ hn₁ + Affine.Point.some _ _ hn₂ = Affine.Point.some _ _ hnF := by
   have hE₁ : PowerSeries.HasEval t₁ := hI.isTopologicallyNilpotent_of_mem h₁
   have hE₂ : PowerSeries.HasEval t₂ := hI.isTopologicallyNilpotent_of_mem h₂
-  have hET : PowerSeries.HasEval (W.formalThirdRootEval t₁ t₂) :=
-    W.hasEval_formalThirdRootEval hE₁ hE₂
   have hne : ∀ {s : O}, s ≠ 0 → algebraMap O K s ≠ 0 := fun hs0 ↦ by simpa using hs0
-  have hTmem : W.formalThirdRootEval t₁ t₂ ∈ I := by
-    simpa using W.formalThirdRootEval_mem hI (k := 1) (by simpa using h₁) (by simpa using h₂)
-  have hwT0 := W.algebraMap_formalWEval_ne_zero (S := K) hI hTmem
+  have hwT0 := W.algebraMap_formalWEval_ne_zero (S := K)
+    (W.hasEval_formalThirdRootEval hE₁ hE₂)
     (hne (W.formalThirdRootEval_ne_zero hE₁ hE₂ hx))
   -- the chord data, read in `K`: each is the image under `algebraMap O K` of an identity of the
   -- `Eval` and `PairEval` layers, pushed through the ring hom into the shape `chord_point_add` and
@@ -176,8 +169,8 @@ private theorem some_add_some_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I
   have hxK := hne (sub_ne_zero.2 hx)
   rw [map_sub, map_mul, map_mul] at hxK
   obtain ⟨h₃, hadd⟩ := chord_point_add (W.baseChange K) hq₁ hq₂ hslope hint hrel hwT hA
-    (W.algebraMap_formalWEval_ne_zero hI h₁ (hne h₁0))
-    (W.algebraMap_formalWEval_ne_zero hI h₂ (hne h₂0)) hwT0 hxK hn₁ hn₂
+    (W.algebraMap_formalWEval_ne_zero hE₁ (hne h₁0))
+    (W.algebraMap_formalWEval_ne_zero hE₂ (hne h₂0)) hwT0 hxK hn₁ hn₂
   exact hadd.trans (W.some_formalThirdRootEval_eq_some_formalAddEval hI h₁ h₂ h₃ hnF)
 
 open scoped Classical in
@@ -212,7 +205,7 @@ theorem add_eq_formalPoint_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I) {
       (-1 / algebraMap O K (W.formalWEval s)) := fun hs hs0 ↦ by
     simpa only [neg_div, one_div] using Affine.equation_iff_nonsingular.mp
       (W.equation_formalPoint (hI.isTopologicallyNilpotent_of_mem hs)
-        (W.algebraMap_formalWEval_ne_zero hI hs (hne hs0)))
+        (W.algebraMap_formalWEval_ne_zero (hI.isTopologicallyNilpotent_of_mem hs) (hne hs0)))
   rw [W.formalPoint_of_param_ne_zero hI h₁ h₁0, W.formalPoint_of_param_ne_zero hI h₂ h₂0,
     W.formalPoint_of_param_ne_zero hI _ hF0]
   -- `Affine.Point.mk` is the `some` constructor at `-(w(t))⁻¹`

@@ -221,7 +221,7 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
     intro x
     simpa only [g] using DFunLike.congr_fun h x
   have hg : g = ε := by
-    rw [← AffineGroup.Product.productMap_restrict g, hleftMap, hrightMap]
+    rw [← _root_.AlgHom.productMap_comp_includeLeft_includeRight g, hleftMap, hrightMap]
     apply Algebra.TensorProduct.ext'
     intro h l
     rw [Algebra.TensorProduct.productMap_apply_tmul]
@@ -250,8 +250,6 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
   apply SetLike.ext
   intro x
   rw [HopfIdeal.mem_augmentation]
-  -- Expose membership in the underlying ideal, as required by `mkQuotient_eq_zero_iff`.
-  change x ∈ I.toIdeal ↔ _
   rw [← FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff P₀ I]
   rw [hq]
   constructor

@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
+public import Mathlib.Topology.Continuous
 
 /-!
-# Rings with a zero sequence of units
+# Zero sequences of units
 
 Henkel's open mapping theorem is stated for a topological ring carrying a *zero sequence of
 units*: a sequence of units converging to zero. This file isolates that hypothesis and proves the
@@ -18,13 +19,13 @@ some term of the sequence, so the dilates of a neighbourhood cover the space act
 The class carries no continuity, and this file assumes no continuity *instance* either, so each
 result below takes an explicit `hc : ContinuousAt (fun a : A ↦ a • x) 0` — continuity of the
 scalar action in the scalar alone, at zero, for the vector in question. Without it the statements
-are false for a `MonoidWithZero` with an arbitrary topology. `ContinuousSMul A M` would do but is
+are false for a monoid with an arbitrary topology. `ContinuousSMul A M` would do but is
 joint continuity, strictly more than these proofs use.
 
-Nothing here is Huber-specific, or even ring-specific. The hypothesis is about `A`, but the
-results act on a space `M` carrying a zero and a scalar multiplication by `A` — `[Zero M]`,
-`[TopologicalSpace M]`, and a scalar multiplication, with no additive structure on `M` required,
-so `M` is *not* assumed to be a module.
+Nothing here is Huber-specific, or even ring-specific: `A` needs only `[Monoid A]`, `[Zero A]`,
+and `[TopologicalSpace A]`. No compatibility between zero and multiplication is required.
+The results act on a topological space `M` with `[Zero M]` and scalar multiplication by `A`.
+No additive structure on `M` is required, so `M` is not assumed to be a module.
 
 How much scalar multiplication is needed splits the file in two. The two pointwise absorption
 results ask for `[SMul A M]` and `h0 : (0 : A) • x = 0` at the given vector. The covering
@@ -44,7 +45,7 @@ pseudouniformiser, say — keeps it rather than trading it for an opaque choice.
 
 ## Main definitions
 
-* `TauCeti.HasZeroSequenceOfUnits`: the ring admits a sequence of units tending to zero.
+* `TauCeti.HasZeroSequenceOfUnits`: the monoid admits a sequence of units tending to zero.
 
 ## Main results
 
@@ -59,6 +60,11 @@ the two pointwise results only at their own.
   it produces some `v : Aˣ`, with no sequence and no term index. Being an absorption result it too
   needs only `[SMul A M]` and `0 • x = 0` at the given vector.
 
+The class also gives, with no action involved,
+`TauCeti.HasZeroSequenceOfUnits.nhdsWithin_isUnit_neBot`: zero is a limit of units, the hypothesis
+under which Mathlib's `Submodule.eq_top_of_nonempty_interior'` rules out proper submodules with
+nonempty interior.
+
 ## References
 
 * L. Henkel, *An Open Mapping Theorem for rings which have a zero sequence of units*,
@@ -72,9 +78,11 @@ open Filter Topology Pointwise
 
 namespace TauCeti
 
-variable (A : Type*) [MonoidWithZero A] [TopologicalSpace A]
+variable (A : Type*) [Monoid A] [Zero A] [TopologicalSpace A]
 
-/-- Henkel's hypothesis on the base ring: there is a sequence of units converging to zero.
+/-- There is a sequence of units converging to zero. For a ring, this is Henkel's hypothesis.
+
+Only a monoid with a distinguished zero and a topology is needed to state the condition.
 
 A discrete ring has none unless it is trivial, and that is the intended exclusion: the theorem
 needs to shrink a neighbourhood by an invertible factor. -/
@@ -114,10 +122,7 @@ theorem exists_smul_mem_of_tendsto_zero (x : M) (h0 : (0 : A) • x = 0)
     (hc : ContinuousAt (fun a : A ↦ a • x) 0)
     {U : Set M} (hU : U ∈ 𝓝 (0 : M)) :
     ∃ n : ℕ, ((u n : A)) • x ∈ U := by
-  have hsmul : Tendsto (fun n ↦ ((u n : A)) • x) atTop (𝓝 ((0 : A) • x)) :=
-    Filter.Tendsto.comp hc hu
-  rw [h0] at hsmul
-  exact (hsmul.eventually_mem hU).exists
+  exact ((hc.tendsto.comp hu).eventually_mem (h0 ▸ hU)).exists
 
 end SMul
 
@@ -156,6 +161,15 @@ theorem exists_unit_smul_mem (x : M) (h0 : (0 : A) • x = 0)
   obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
   obtain ⟨n, hn⟩ := exists_smul_mem_of_tendsto_zero hu x h0 hc hU
   exact ⟨u n, hn⟩
+
+/-- **Zero is a limit of units.** The terms of a zero sequence of units lie in `{x | IsUnit x}`
+and converge to `0`, so `0` is in the closure of the units. This is the form of the hypothesis
+taken by Mathlib's `Submodule.eq_top_of_nonempty_interior'`, and the analogue of
+`NormedField.nhdsWithin_isUnit_neBot`. -/
+instance nhdsWithin_isUnit_neBot : NeBot (𝓝[{x : A | IsUnit x}] 0) := by
+  obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
+  exact mem_closure_iff_nhdsWithin_neBot.mp <|
+    mem_closure_of_tendsto hu (Eventually.of_forall fun n ↦ (u n).isUnit)
 
 end HasZeroSequenceOfUnits
 

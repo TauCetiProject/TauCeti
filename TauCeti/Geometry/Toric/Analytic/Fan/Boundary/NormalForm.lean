@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Manifold
 

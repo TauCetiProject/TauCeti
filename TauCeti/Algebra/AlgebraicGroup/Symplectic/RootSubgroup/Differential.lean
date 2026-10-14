@@ -5,9 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent.Basic
 
 /-!
 # Differentials of symplectic root subgroups
@@ -145,6 +145,14 @@ theorem range_derivationCompLieHom_rootSubgroup_eq_span
     refine ⟨(AdditiveGroup.gaTangentLinearEquiv (R := R) (B := B)).symm c, ?_⟩
     rw [derivationCompLieHom_apply, derivationComp_rootSubgroup_eq_smul_rootVector,
       LinearEquiv.apply_symm_apply]
+
+/-- Extension from the base ring to a coefficient algebra preserves the normalized
+root-subgroup tangent vector. -/
+@[simp]
+theorem mapValue_rootVector (root : GLSymplecticFin.RootSubgroupIndex m) :
+    Derivation.mapValue (Algebra.ofId R B) (rootVector (R := R) (B := R) root) =
+      rootVector (R := R) (B := B) root := by
+  exact AdditiveGroup.mapValue_derivationComp_gaTangentLinearEquiv_symm_one (Algebra.ofId R B) _
 
 /-- The normalized root vector is nonzero whenever the coefficient algebra is nontrivial. -/
 theorem rootVector_ne_zero [Nontrivial B] (root : GLSymplecticFin.RootSubgroupIndex m) :

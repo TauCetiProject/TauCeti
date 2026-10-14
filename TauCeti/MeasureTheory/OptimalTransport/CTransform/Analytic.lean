@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.EReal.Residuation
 public import TauCeti.MeasureTheory.MeasurableSpace.Analytic
-public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.CTransform.CyclicalMonotonicity
+public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Extended
 
 /-!
 # Analytic measurability of the infimal `c`-transform
@@ -20,6 +22,15 @@ measurability regime used to integrate general Kantorovich potentials without in
 Borel measurability.
 
 The symmetric transform is included with the same hypotheses on the transposed integrand.
+For extended costs, additive residuation supplies safe integrands even at infinite values.
+The extended-transform results require only a standard Borel indexing space and a Polish Borel
+space for the output; Borel costs and potentials give completion-measurable transforms.
+
+The same projection argument applies to Rüschendorf's potential `TauCeti.rockafellarPotential`
+of a Borel set `S`, an infimum over finite chains of points of `S`: for each chain length, a strict
+sublevel set is the projection of a Borel set of chains and targets, so the potential is
+null-measurable. This is what lets the contact potential of a measurable `c`-cyclically monotone
+set be integrated.
 
 ## Main results
 
@@ -29,7 +40,13 @@ The symmetric transform is included with the same hypotheses on the transposed i
   completing any s-finite Borel measure;
 * `TauCeti.nullMeasurable_cTransform`: the transform itself is null-measurable for each s-finite
   Borel measure;
-* the corresponding three results with `cTransformSymm` in their names.
+* the corresponding three results with `cTransformSymm` in their names;
+* `TauCeti.analyticSet_setOf_cTransformExtended_lt` and
+  `TauCeti.nullMeasurable_cTransformExtended`: analytic sublevels and completion measurability
+  for extended costs, together with their symmetric counterparts;
+* `TauCeti.analyticSet_setOf_rockafellarPotential_lt` and
+  `TauCeti.nullMeasurable_rockafellarPotential`: the same two statements for Rüschendorf's
+  potential of a Borel set.
 
 ## References
 
@@ -44,6 +61,57 @@ open MeasureTheory Set
 noncomputable section
 
 namespace TauCeti
+
+section ExtendedForward
+
+variable {X Y : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+  [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  {c : X × Y → EReal} {φ : X → EReal}
+
+/-- Borel strict sublevels of the residual integrand give analytic strict sublevels of the
+extended-cost transform. -/
+theorem analyticSet_setOf_cTransformExtended_lt (a : EReal)
+    (h : MeasurableSet {z : X × Y | AddQuantale.rightAddResiduation (φ z.1) (c z) < a}) :
+    AnalyticSet {y | cTransformExtended c φ y < a} := by
+  simpa only [cTransformExtended_apply] using
+    MeasureTheory.analyticSet_setOf_iInf_lt
+      (fun z : X × Y ↦ AddQuantale.rightAddResiduation (φ z.1) (c z)) a h
+
+/-- The extended-cost transform is measurable in the completion of each s-finite Borel measure
+when the cost and potential are Borel. -/
+theorem nullMeasurable_cTransformExtended (μ : Measure Y) [SFinite μ]
+    (hc : Measurable c) (hφ : Measurable φ) :
+    NullMeasurable (cTransformExtended c φ) μ :=
+  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
+    (analyticSet_setOf_cTransformExtended_lt a
+      (((hφ.comp measurable_fst).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
+
+end ExtendedForward
+
+section ExtendedSymmetric
+
+variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
+  [MeasurableSpace Y] [StandardBorelSpace Y]
+  {c : X × Y → EReal} {ψ : Y → EReal}
+
+/-- Borel strict sublevels of the symmetric residual integrand give analytic strict sublevels. -/
+theorem analyticSet_setOf_cTransformSymmExtended_lt (a : EReal)
+    (h : MeasurableSet {z : X × Y | AddQuantale.rightAddResiduation (ψ z.2) (c z) < a}) :
+    AnalyticSet {x | cTransformSymmExtended c ψ x < a} := by
+  simpa only [cTransformSymmExtended_eq_cTransformExtended] using
+    analyticSet_setOf_cTransformExtended_lt (c := fun z : Y × X ↦ c (z.2, z.1)) a
+      (h.preimage measurable_swap)
+
+/-- The symmetric extended-cost transform is measurable after completing each s-finite Borel
+measure on the source when the cost and potential are Borel. -/
+theorem nullMeasurable_cTransformSymmExtended (μ : Measure X) [SFinite μ]
+    (hc : Measurable c) (hψ : Measurable ψ) :
+    NullMeasurable (cTransformSymmExtended c ψ) μ :=
+  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
+    (analyticSet_setOf_cTransformSymmExtended_lt a
+      (((hψ.comp measurable_snd).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
+
+end ExtendedSymmetric
 
 variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
@@ -99,5 +167,44 @@ theorem nullMeasurable_cTransformSymm (μ : Measure X) [SFinite μ]
     NullMeasurable (cTransformSymm c ψ) μ :=
   measurable_of_Iio fun a =>
     nullMeasurableSet_setOf_cTransformSymm_lt μ a (h measurableSet_Iio)
+
+/-- For a Borel cost and a Borel set `S`, every strict sublevel set of Rüschendorf's potential
+`TauCeti.rockafellarPotential c S p` is analytic. -/
+theorem analyticSet_setOf_rockafellarPotential_lt {S : Set (X × Y)} (hc : Measurable c)
+    (hS : MeasurableSet S) (p : X × Y) (a : EReal) :
+    AnalyticSet {x | rockafellarPotential c S p x < a} := by
+  -- The admissibility conditions on a chain are folded into the integrand as the value `⊤`.
+  set f : (n : ℕ) → (Fin (n + 1) → X × Y) × X → EReal := fun n z =>
+    ⨅ (_ : z.1 0 = p) (_ : ∀ i, z.1 i ∈ S), (rockafellarChainValue c z.1 z.2 : EReal) with hf
+  have hset : {x | rockafellarPotential c S p x < a} = ⋃ n, {x | (⨅ w, f n (w, x)) < a} := by
+    ext x
+    simp [rockafellarPotential_def, hf, iInf_lt_iff]
+  rw [hset]
+  refine AnalyticSet.iUnion fun n => MeasureTheory.analyticSet_setOf_iInf_lt (f n) a ?_
+  have hchain : Measurable fun z : (Fin (n + 1) → X × Y) × X =>
+      (rockafellarChainValue c z.1 z.2 : EReal) := by
+    simp_rw [rockafellarChainValue_def]
+    fun_prop
+  have heq : {z | f n z < a} =
+      {z | z.1 0 = p} ∩ (⋂ i, {z | z.1 i ∈ S}) ∩ {z | (rockafellarChainValue c z.1 z.2 : EReal) < a}
+      := by
+    ext z
+    simp only [hf, mem_ofPred_eq, iInf_lt_iff, mem_inter_iff, mem_iInter, exists_prop]
+    tauto
+  rw [heq]
+  exact (((measurable_pi_apply 0).comp measurable_fst (measurableSet_singleton p)).inter
+    (MeasurableSet.iInter fun i => (measurable_pi_apply i).comp measurable_fst hS)).inter
+      (hchain measurableSet_Iio)
+
+/-- **Rüschendorf's potential is universally measurable.** For a Borel cost and a Borel set `S`,
+the potential `TauCeti.rockafellarPotential c S p` is measurable for the completion of every
+s-finite Borel measure on the source. As for the `c`-transform, this is deliberately
+`NullMeasurable`, not Borel `Measurable`. -/
+theorem nullMeasurable_rockafellarPotential (μ : Measure X) [SFinite μ] {S : Set (X × Y)}
+    (hc : Measurable c) (hS : MeasurableSet S) (p : X × Y) :
+    NullMeasurable (rockafellarPotential c S p) μ :=
+  measurable_of_Iio fun a =>
+    MeasureTheory.AnalyticSet.nullMeasurableSet
+      (analyticSet_setOf_rockafellarPotential_lt hc hS p a) μ
 
 end TauCeti

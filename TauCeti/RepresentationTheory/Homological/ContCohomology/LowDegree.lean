@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle.Topology
 
 import Mathlib.Tactic.Abel
+import TauCeti.Topology.Discrete
 
 /-!
 # The explicit low-degree complex of continuous cochains
@@ -49,6 +50,10 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.d1_comp_d0` and `TauCeti.ContCohomology.d2_comp_d1`: `d ∘ d = 0`.
 * `TauCeti.ContCohomology.B1_le_Z1` and `TauCeti.ContCohomology.B2_le_Z2`: the form of `d ∘ d = 0`
   that the two quotients need, coboundaries being continuous.
+* `TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1` and `mem_Z2_of_injective_comp_mem_Z2`:
+  continuous cocycles descend along an injective equivariant map into a discrete module, whatever
+  the topology of the source, with `mem_Z1_of_injective_comp_eq_d0` and
+  `mem_Z2_of_injective_comp_eq_d1` their forms over a coboundary.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
   `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton_coefficients` and
@@ -699,6 +704,75 @@ theorem B2_le_Z2 : B2 G M ≤ Z2 G M := by
   exact mem_Z2_iff.2 ⟨continuous_d1_apply hc, d2_apply_eq_zero_iff.1 (d2_comp_d1_apply c)⟩
 
 end ContinuityMulAction
+
+section InjectiveDescent
+
+/-! An injection into a discrete space reflects continuity, whatever the topology of its source
+(`TauCeti.continuous_of_injective_comp`), and an injective equivariant map reflects the cocycle
+identities, so continuous cocycles descend along such a map. -/
+
+variable {G : Type u} [TopologicalSpace G]
+  {A : Type*} [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  {B : Type*} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+  {φ : A →+ B}
+
+section Mul
+
+variable [Mul G] [DistribSMul G A] [DistribSMul G B]
+
+/-- **A `1`-cochain on `A` lying over a continuous `1`-cocycle on `B` along an injective
+equivariant map is one.** Both halves of membership in `Z¹` descend: continuity because an
+injection into the discrete `B` reflects it, whatever the topology of `A`, and the cocycle identity
+because the map is injective. -/
+theorem mem_Z1_of_injective_comp_mem_Z1 (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {a : G → A} {e : G → B}
+    (hae : ∀ g : G, φ (a g) = e g) (he : e ∈ Z1 G B) : a ∈ Z1 G A := by
+  obtain ⟨hcont, hcocycle⟩ := mem_Z1_iff.1 he
+  refine mem_Z1_iff.2 ⟨continuous_of_injective_comp hφ ?_, fun g h => ?_⟩
+  · simpa only [hae] using hcont
+  · refine hφ ?_
+    simp only [map_add, heq, hae]
+    exact hcocycle g h
+
+/-- **A `2`-cochain on `A` lying over a continuous `2`-cocycle on `B` along an injective
+equivariant map is one**, the degree-`2` counterpart of
+`TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1`. -/
+theorem mem_Z2_of_injective_comp_mem_Z2 (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {a : G × G → A} {z : G × G → B}
+    (haz : ∀ p : G × G, φ (a p) = z p) (hz : z ∈ Z2 G B) : a ∈ Z2 G A := by
+  obtain ⟨hcont, hcocycle⟩ := mem_Z2_iff.1 hz
+  refine mem_Z2_iff.2 ⟨continuous_of_injective_comp hφ ?_, fun g h j => ?_⟩
+  · simpa only [haz] using hcont
+  · refine hφ ?_
+    simp only [map_add, heq, haz]
+    exact hcocycle g h j
+
+end Mul
+
+variable [Monoid G] [DistribMulAction G A] [DistribMulAction G B] [ContinuousSMul G B]
+
+/-- **A cochain on `A` lying over a coboundary of `B` along an injective equivariant map is a
+continuous `1`-cocycle**: the case `e = d⁰ b` of
+`TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1`, a coboundary being a continuous cocycle
+already. -/
+theorem mem_Z1_of_injective_comp_eq_d0 (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {b : B} {a : G → A}
+    (hab : ∀ g : G, φ (a g) = g • b - b) : a ∈ Z1 G A :=
+  mem_Z1_of_injective_comp_mem_Z1 hφ heq (e := d0 G B b)
+    (fun g => (hab g).trans (d0_apply b g).symm) (B1_le_Z1 G B (d0_mem_B1 b))
+
+/-- **A `2`-cochain on `A` lying over the coboundary of a continuous `1`-cochain on `B` along an
+injective equivariant map is a continuous `2`-cocycle**: the case `z = d¹ e` of
+`TauCeti.ContCohomology.mem_Z2_of_injective_comp_mem_Z2`. -/
+theorem mem_Z2_of_injective_comp_eq_d1 [ContinuousMul G] (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {e : G → B} (hc : Continuous e)
+    {a : G × G → A} (hae : ∀ g h : G, φ (a (g, h)) = g • e h - e (g * h) + e g) :
+    a ∈ Z2 G A :=
+  mem_Z2_of_injective_comp_mem_Z2 hφ heq (z := d1 G B e)
+    (fun p => (hae p.1 p.2).trans (d1_apply e p.1 p.2).symm)
+    (B2_le_Z2 G B (mem_B2_iff.2 ⟨e, hc, rfl⟩))
+
+end InjectiveDescent
 
 section CohomologyDegree1
 

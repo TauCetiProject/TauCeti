@@ -33,6 +33,10 @@ This advances Layer 3 of the Lie-groups roadmap.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
+* `TauCeti.Lie.lieMap_injective_of_mfderiv_injective`: injectivity of the identity differential
+  implies injectivity of the Lie map.
+* `TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt`: the Lie-algebra equivalence induced by a smooth
+  homomorphism that is a local diffeomorphism at the identity.
 * `TauCeti.Lie.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a homomorphism that is a
   local diffeomorphism at the identity is bijective.
 -/
@@ -334,6 +338,23 @@ theorem continuous_lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [
 
 namespace TauCeti.Lie
 
+/-- A smooth homomorphism whose differential at the identity is injective induces an injective
+Lie-algebra homomorphism. -/
+theorem lieMap_injective_of_mfderiv_injective
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (hφ : Function.Injective (mfderiv I I' φ 1)) :
+    Function.Injective (lieMap φ) := by
+  intro X Y hXY
+  let sourceEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let targetEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))
+  have h := congrArg targetEquiv hXY
+  rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap] at h
+  exact sourceEquiv.injective (hφ h)
+
 /-- The Lie map of a smooth homomorphism that is a local diffeomorphism at the identity is
 bijective: under evaluation at the identity it is the differential there, a linear equivalence. -/
 theorem lieMap_bijective_of_isLocalDiffeomorphAt [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
@@ -349,5 +370,55 @@ theorem lieMap_bijective_of_isLocalDiffeomorphAt [FiniteDimensional ℝ E] [Fini
   refine ⟨fun D₁ D₂ hD ↦ e.injective (L.injective ((h D₁).symm.trans ((congrArg e' hD).trans
     (h D₂)))), fun D' ↦ ⟨e.symm (L.symm (e' D')), e'.injective ((h _).trans
       (by simp only [LieEquiv.apply_symm_apply]; exact L.apply_symm_apply _))⟩⟩
+
+/-- A smooth homomorphism that is a local diffeomorphism at the identity induces an equivalence of
+Lie algebras. -/
+noncomputable def lieEquivOfIsLocalDiffeomorphAt
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1) :
+    LeftInvariantDerivation I G ≃ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
+  LieEquiv.ofBijective (lieMap φ) (lieMap_bijective_of_isLocalDiffeomorphAt φ hφ)
+
+/-- The Lie-algebra equivalence induced by a local diffeomorphism acts by the Lie functor. -/
+@[simp]
+theorem lieEquivOfIsLocalDiffeomorphAt_apply
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1)
+    (X : LeftInvariantDerivation I G) :
+    lieEquivOfIsLocalDiffeomorphAt φ hφ X = lieMap φ X := by
+  simp [lieEquivOfIsLocalDiffeomorphAt]
+
+/-- The Lie homomorphism underlying the equivalence induced by a local diffeomorphism is its Lie
+map. -/
+@[simp]
+theorem lieEquivOfIsLocalDiffeomorphAt_toLieHom
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1) :
+    (lieEquivOfIsLocalDiffeomorphAt φ hφ).toLieHom = lieMap φ := by
+  apply LieHom.ext
+  intro X
+  exact lieEquivOfIsLocalDiffeomorphAt_apply φ hφ X
+
+/-- The inverse Lie-algebra equivalence of a local diffeomorphism sends the Lie map of a derivation
+back to that derivation. -/
+@[simp]
+theorem lieEquivOfIsLocalDiffeomorphAt_symm_apply_lieMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1)
+    (X : LeftInvariantDerivation I G) :
+    (lieEquivOfIsLocalDiffeomorphAt φ hφ).symm (lieMap φ X) = X := by
+  rw [← lieEquivOfIsLocalDiffeomorphAt_apply φ hφ]
+  exact (lieEquivOfIsLocalDiffeomorphAt φ hφ).symm_apply_apply X
+
+/-- The Lie map of a local diffeomorphism sends the inverse Lie-algebra equivalence of a derivation
+back to that derivation. -/
+@[simp]
+theorem lieMap_lieEquivOfIsLocalDiffeomorphAt_symm_apply
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1)
+    (Y : LeftInvariantDerivation I' G') :
+    lieMap φ ((lieEquivOfIsLocalDiffeomorphAt φ hφ).symm Y) = Y := by
+  rw [← lieEquivOfIsLocalDiffeomorphAt_apply φ hφ]
+  exact (lieEquivOfIsLocalDiffeomorphAt φ hφ).apply_symm_apply Y
 
 end TauCeti.Lie

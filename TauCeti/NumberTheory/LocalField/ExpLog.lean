@@ -124,7 +124,6 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
   -- `(p - 1) * v_p(n) < n`, since `p ^ v_p(n)` divides `n`.
   have hq : (p - 1) * padicValNat p n < n := by
     have h : p * padicValNat p n ≤ n := mul_padicValNat_le
-    have hp := (Fact.out : p.Prime).one_lt
     rw [Nat.sub_one_mul]
     rcases Nat.eq_zero_or_pos (padicValNat p n) with h0 | h0
     · simp [h0, Nat.pos_of_ne_zero hn]

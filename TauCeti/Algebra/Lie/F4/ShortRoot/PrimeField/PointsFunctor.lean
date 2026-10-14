@@ -23,6 +23,8 @@ Hopf-ideal point functor through the named carrier presentation.
 * `PrimeField.pointsMap` is functoriality under a homomorphism of `ZMod 2`-algebras.
 * `PrimeField.pointsMap_id`, `PrimeField.pointsMap_comp`, and
   `PrimeField.pointsMap_injective` expose the generic Hopf-ideal functor laws.
+* `PrimeField.baseChangePointsEquiv` identifies points of the scalar-extended coordinate algebra
+  with the named matrix-valued points over the extension ring.
 * `PrimeField.weightTorusPoints_conj_rootSubgroupPoints` is the pinning equation.
 
 The carrier remains distinct from the base change of the integral toral closure: only the proven
@@ -79,7 +81,7 @@ theorem points_eq_hopfIdealPointsSubgroup (A : Type v) [CommRing A] [Algebra (ZM
 
 /-- A matrix is a point of the carrier over `𝔽₂` exactly when its associated convolution point
 kills the carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 26) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
@@ -302,9 +304,9 @@ theorem pointsMap_rootSubgroupPoints {A : Type v} {B : Type w}
       Multiplicative.ofAdd (f (Multiplicative.toAdd u)) := rfl
   rw [← hparam]
   simpa only [coe_pointsMap, coe_rootSubgroupPoints, AlgHom.toRingHom_eq_coe,
-    _root_.TauCeti.F4ShortRoot.coe_pointsMap] using
+    ↓_root_.TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] using
     congrArg Subtype.val
-      (_root_.TauCeti.F4ShortRoot.pointsMap_rootSubgroupPoints f.toRingHom k u)
+      (_root_.TauCeti.F4ShortRoot.map_rootSubgroupPoints f.toRingHom k u)
 
 /-- The induced map carries a weight-torus point coordinatewise along the algebra homomorphism. -/
 @[simp]
@@ -318,9 +320,9 @@ theorem pointsMap_weightTorusPoints {A : Type v} {B : Type w}
       fun i ↦ Units.map (f : A →* B) (s i) := rfl
   rw [← hparam]
   simpa only [coe_pointsMap, coe_weightTorusPoints, AlgHom.toRingHom_eq_coe,
-    _root_.TauCeti.F4ShortRoot.coe_pointsMap] using
+    ↓_root_.TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] using
     congrArg Subtype.val
-      (_root_.TauCeti.F4ShortRoot.pointsMap_weightTorusPoints f.toRingHom s)
+      (_root_.TauCeti.F4ShortRoot.map_weightTorusPoints f.toRingHom s)
 
 local notation "𝔽₂" => ZMod 2
 local notation "H₂₆" => GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26
@@ -334,6 +336,14 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
     (MulEquiv.subgroupCongr (by
       rw [points_eq_hopfIdealPointsSubgroup, definingIdeal_def]))
 
+/-- Points of the scalar-extended carrier coordinate algebra are the named matrix-valued
+prime-field carrier points over the extension ring. -/
+noncomputable def baseChangePointsEquiv (k : Type v) [CommRing k] [Algebra 𝔽₂ k] :
+    HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) Q)
+      (CommAlgCat.of k k) ≃* points k :=
+  (AlgHom.baseChangePointsMulEquiv (k := 𝔽₂) (K := k) (A := Q) (R := k)).symm.trans
+    (coordinatePointsEquiv k)
+
 /-- The coordinate-point equivalence evaluates the ambient matrix coordinates. -/
 @[simp] theorem coe_coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽₂ A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
@@ -343,6 +353,47 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
   simp only [coordinatePointsEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply]
   rw [GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply,
     CommHopfAlgCat.quotientPointsHom_apply]
+
+/-- The base-change point equivalence evaluates the ambient matrix coordinates of the point's
+restriction along `q ↦ 1 ⊗ q`. -/
+@[simp] theorem coe_baseChangePointsEquiv (k : Type v) [CommRing k] [Algebra 𝔽₂ k]
+    (q : HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) Q)
+      (CommAlgCat.of k k)) :
+    (baseChangePointsEquiv k q : GL (Fin 26) k) =
+      GeneralLinear.pointsMulEquiv 26 (WithConv.toConv
+        (((AlgHom.baseChangePointsMulEquiv (k := 𝔽₂) (K := k) (A := Q) (R := k)).symm q).ofConv.comp
+          (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) := by
+  rw [baseChangePointsEquiv, MulEquiv.trans_apply, coe_coordinatePointsEquiv]
+
+/-- The inverse base-change point equivalence is the base change of the inverse
+coordinate-point equivalence. -/
+@[simp] theorem baseChangePointsEquiv_symm_apply (k : Type v) [CommRing k] [Algebra 𝔽₂ k]
+    (g : points k) :
+    (baseChangePointsEquiv k).symm g =
+      AlgHom.baseChangePointsMulEquiv (k := 𝔽₂) (K := k) (A := Q) (R := k)
+        ((coordinatePointsEquiv k).symm g) := by
+  rw [baseChangePointsEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
+
+/-- A generator's quotient-coordinate point evaluates to its ambient matrix point. -/
+theorem coe_coordinatePointsEquiv_commonKernelLift
+    (j : (Fin 4 ⊕ Fin 4) ⊕ Unit) (A : Type v) [CommRing A] [Algebra 𝔽₂ A]
+    (q : HopfAlgebra.points (H := generatorCodomain j) (CommAlgCat.of 𝔽₂ A)) :
+    (coordinatePointsEquiv A ((CommHopfAlgCat.mapPointsFunctor
+        (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q) :
+        GL (Fin 26) A) =
+      GeneralLinear.pointsMulEquiv 26
+        ((CommHopfAlgCat.mapPointsFunctor (generator j)).app (CommAlgCat.of 𝔽₂ A) q) := by
+  calc
+    _ = GeneralLinear.pointsMulEquiv 26
+        (CommHopfAlgCat.quotientPointsHom H₂₆ J (CommAlgCat.of 𝔽₂ A)
+          ((CommHopfAlgCat.mapPointsFunctor
+            (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q)) := by
+      exact (coe_coordinatePointsEquiv A _).trans (congrArg (GeneralLinear.pointsMulEquiv 26)
+          (CommHopfAlgCat.quotientPointsHom_apply H₂₆ J (CommAlgCat.of 𝔽₂ A) _).symm)
+    _ = _ := congrArg _ (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+        J (CommHopfAlgCat.commonKernelLift generator j) (generator j)
+        (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator j)
+        (CommAlgCat.of 𝔽₂ A) q).symm
 
 /-- The quotient-coordinate equivalence commutes with change of coefficient algebra. -/
 @[simp] theorem coordinatePointsEquiv_mapPoints {A : Type v} {B : Type w}

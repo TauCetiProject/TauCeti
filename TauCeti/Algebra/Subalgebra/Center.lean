@@ -27,8 +27,9 @@ and the ring of scalars a central subalgebra provides.
 * `TauCeti.centerPiAlgEquiv` splits the center of a product of algebras as the product of the
   centers, upgrading Mathlib's `Subalgebra.center_pi` from an equality of subalgebras of
   `Π i, S i` to an algebra equivalence with `Π i, Subalgebra.center R (S i)`.
-* `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with the base
-  field, so that its dimension is one (`TauCeti.finrank_center_of_isCentral`).
+* `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with its base
+  semiring when the scalar action is faithful. Its dimension is therefore one
+  (`TauCeti.finrank_center_of_isCentral`).
 * `TauCeti.isCentral_iff_surjective_algebraMap` records that a commutative algebra is central
   exactly when its structure map is surjective, the precise sense in which centrality is a strong
   condition on a field extension.
@@ -223,30 +224,10 @@ namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
-/-- An algebra equivalence carries the center onto the center. -/
-theorem map_center_eq_center (e : A ≃ₐ[R] B) :
-    (Subalgebra.center R A).map (e : A →ₐ[R] B) = Subalgebra.center R B := by
-  refine le_antisymm ?_ ?_
-  · rintro _ hx
-    obtain ⟨a, ha, rfl⟩ := Subalgebra.mem_map.mp hx
-    rw [Subalgebra.mem_center_iff] at ha ⊢
-    intro b'
-    obtain ⟨a', rfl⟩ := e.surjective b'
-    simp only [AlgEquiv.coe_toAlgHom]
-    rw [← map_mul, ← map_mul, ha a']
-  · intro b hb
-    rw [Subalgebra.mem_center_iff] at hb
-    refine Subalgebra.mem_map.mpr ⟨e.symm b, ?_, e.apply_symm_apply b⟩
-    rw [Subalgebra.mem_center_iff]
-    intro a
-    apply e.injective
-    rw [map_mul, map_mul, e.apply_symm_apply]
-    exact hb (e a)
-
 /-- The center of an algebra, transported along an algebra equivalence. -/
 def centerCongr (e : A ≃ₐ[R] B) :
     Subalgebra.center R A ≃ₐ[R] Subalgebra.center R B :=
-  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (map_center_eq_center e))
+  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (Subalgebra.map_center_eq e))
 
 @[simp]
 theorem centerCongr_apply_coe (e : A ≃ₐ[R] B) (x : Subalgebra.center R A) :
@@ -297,18 +278,19 @@ end Pi
 
 section IsCentral
 
-variable (K D : Type*) [Field K] [Semiring D] [Nontrivial D] [Algebra K D]
-  [Algebra.IsCentral K D]
+variable (K D : Type*) [CommSemiring K] [Semiring D] [Algebra K D]
+  [FaithfulSMul K D] [Algebra.IsCentral K D]
 
-/-- The center of a central algebra is the base field. -/
+/-- The center of a central algebra with faithful scalars is the base semiring. -/
 noncomputable def centerAlgEquivOfIsCentral : Subalgebra.center K D ≃ₐ[K] K :=
-  (Subalgebra.equivOfEq _ _ (Algebra.IsCentral.center_eq_bot K D)).trans (Algebra.botEquiv K D)
+  (Subalgebra.equivOfEq _ _ (Algebra.IsCentral.center_eq_bot K D)).trans
+    (Algebra.botEquivOfInjective (FaithfulSMul.algebraMap_injective K D))
 
 /-- The inverse of `centerAlgEquivOfIsCentral` is the structure map of the algebra. -/
 @[simp]
 theorem coe_centerAlgEquivOfIsCentral_symm (r : K) :
     ((centerAlgEquivOfIsCentral K D).symm r : D) = algebraMap K D r := by
-  simp [centerAlgEquivOfIsCentral]
+  simpa using congrArg Subtype.val ((centerAlgEquivOfIsCentral K D).symm.commutes r)
 
 /-- `centerAlgEquivOfIsCentral` sends a central element to the scalar it is the image of. -/
 @[simp]
@@ -316,7 +298,7 @@ theorem algebraMap_centerAlgEquivOfIsCentral (x : Subalgebra.center K D) :
     algebraMap K D (centerAlgEquivOfIsCentral K D x) = (x : D) := by
   rw [← coe_centerAlgEquivOfIsCentral_symm, AlgEquiv.symm_apply_apply]
 
-/-- A central algebra has a one-dimensional center. -/
+/-- A central algebra with faithful scalars has a one-dimensional center. -/
 @[simp]
 theorem finrank_center_of_isCentral : Module.finrank K (Subalgebra.center K D) = 1 :=
   ((centerAlgEquivOfIsCentral K D).toLinearEquiv.finrank_eq).trans (CommSemiring.finrank_self K)

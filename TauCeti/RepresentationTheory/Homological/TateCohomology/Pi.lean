@@ -7,43 +7,53 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.TrivialityCriterion
 public import TauCeti.RepresentationTheory.Pi
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
-# Low-degree Tate cohomology of a product of representations
+# Tate cohomology of a product of representations
 
 Let `G` be a finite group and `M i` a family of representations of `G`, indexed by an arbitrary
-type `ι`. This file shows that Tate cohomology in degrees `0` and `-1` commutes with the product
-`Rep.pi M`:
+type `ι`. This file shows that Tate cohomology commutes with the product `Rep.pi M` in every
+integer degree:
 
-`H-hat^0(G, ∏ i, M i) ≃ ∏ i, H-hat^0(G, M i)` and
-`H-hat^(-1)(G, ∏ i, M i) ≃ ∏ i, H-hat^(-1)(G, M i)`,
+`H-hat^n(G, ∏ i, M i) ≃ ∏ i, H-hat^n(G, M i)`,
 
-the `i`-th component being induced by the projection onto `M i`. Both rest on the low-degree
-descriptions `H-hat^0 = Mᴳ / N_G M` and `H-hat^(-1) = ker N_G / I_G M`, where invariants, norms and
-the augmentation submodule `I_G M` of a product are all computed componentwise. For the norm image
-and the augmentation submodule this needs a choice in every factor at once, and for the latter
-also the finiteness of `G` (`Representation.mem_coinvariantsKer_pi_iff`).
+the `i`-th component being induced by the projection onto `M i` (`linearEquivPi`).
+
+Degrees `0` and `-1` rest on the low-degree descriptions `H-hat^0 = Mᴳ / N_G M` and
+`H-hat^(-1) = ker N_G / I_G M`, where invariants, norms and the augmentation submodule `I_G M` of a
+product are all computed componentwise. For the norm image and the augmentation submodule this
+needs a choice in every factor at once, and for the latter also the finiteness of `G`
+(`Representation.mem_coinvariantsKer_pi_iff`). By Tate's triviality criterion, which needs only
+two consecutive degrees on the subgroups of prime-power order, a product of cohomologically
+trivial representations is then cohomologically trivial (`isZero_res_pi`). The
+products of the dimension-shifting sequences `0 → M i → Coind_⊥^G (M i) → ⋯ → 0` and
+`0 → ⋯ → Ind_⊥^G (M i) → M i → 0` are short exact with cohomologically trivial middle terms, so
+their connecting maps, which are natural in the projections, carry the low-degree computation to
+every degree.
 
 Consequently the **Herbrand quotient of a product** is the product of the Herbrand quotients of
 the factors, as soon as all but finitely many factors have trivial Tate cohomology in degrees `0`
-and `-1`. This is the shape of the `S`-ideles of a cyclic extension `L/K` of number fields: they
+and `-1`. This is the shape of the `S`-ideles of a Galois extension `L/K` of number fields: they
 are the product over the places `v` of `K` of the Galois modules `∏_{w ∣ v} L_wˣ` for `v ∈ S` and
 `∏_{w ∣ v} 𝒪_wˣ` for `v ∉ S`, and the factors of the second kind are cohomologically trivial
 when `L/K` is unramified at `v`.
 
 ## Main definitions
 
-* `TauCeti.TateCohomology.H0LinearEquivPi`: `H-hat^0(G, ∏ i, M i) ≃ ∏ i, H-hat^0(G, M i)`.
-* `TauCeti.TateCohomology.HNegOneLinearEquivPi`:
-  `H-hat^(-1)(G, ∏ i, M i) ≃ ∏ i, H-hat^(-1)(G, M i)`.
+* `TauCeti.TateCohomology.linearEquivPi`: `H-hat^n(G, ∏ i, M i) ≃ ∏ i, H-hat^n(G, M i)` for every
+  `n : ℤ`.
 
 ## Main results
 
-* `TauCeti.TateCohomology.H0LinearEquivPi_H0π` and
-  `TauCeti.TateCohomology.HNegOneLinearEquivPi_HNegOneπ`: the equivalences send the class of an
-  element to the family of the classes of its components.
+* `TauCeti.TateCohomology.linearEquivPi_zero_H0π` and
+  `TauCeti.TateCohomology.linearEquivPi_negOne_HNegOneπ`: in degrees `0` and `-1` the equivalence
+  sends the class of an element to the family of the classes of its components.
+* `TauCeti.TateCohomology.isZero_res_pi`: a product of cohomologically trivial
+  representations is cohomologically trivial.
 * `TauCeti.TateCohomology.herbrandQuotient_pi`: `h(∏ i, M i) = ∏ i ∈ s, h(M i)` when the factors
   outside the finite set `s` have trivial Tate cohomology in degrees `0` and `-1`.
 
@@ -58,7 +68,7 @@ public noncomputable section
 
 universe u
 
-open CategoryTheory LinearMap
+open CategoryTheory Limits LinearMap Rep
 
 namespace TauCeti.TateCohomology
 
@@ -104,19 +114,6 @@ private theorem H0ToPi_bijective : Function.Bijective (H0ToPi M) := by
       fun i ↦ (y i).2⟩, funext fun i ↦ ?_⟩
     rw [H0ToPi_H0π, ← hy i]
 
-/-- **Degree-zero Tate cohomology commutes with products**:
-`H-hat^0(G, ∏ i, M i) ≃ ∏ i, H-hat^0(G, M i)`, with components induced by the projections. -/
-def H0LinearEquivPi : tateCohomology (Rep.pi M) 0 ≃ₗ[R] ∀ i, tateCohomology (M i) 0 :=
-  LinearEquiv.ofBijective (H0ToPi M) (H0ToPi_bijective M)
-
-/-- The degree-zero equivalence sends the class of an invariant element of the product to the
-family of the classes of its components. -/
-@[simp]
-theorem H0LinearEquivPi_H0π (y : (Rep.pi M).ρ.invariants) (i : ι) :
-    H0LinearEquivPi M (H0π (Rep.pi M) y) i =
-      H0π (M i) ⟨y.1 i, ((Representation.mem_invariants_pi_iff _).1 y.2) i⟩ :=
-  H0ToPi_H0π M y i
-
 /-! ### Degree minus one -/
 
 /-- The family of the maps `H-hat^(-1)(G, ∏ j, M j) → H-hat^(-1)(G, M i)` induced by the
@@ -149,18 +146,133 @@ private theorem HNegOneToPi_bijective : Function.Bijective (HNegOneToPi M) := by
       (Representation.mem_ker_norm_pi_iff _).2 fun i ↦ (y i).2⟩, funext fun i ↦ ?_⟩
     rw [HNegOneToPi_HNegOneπ, ← hy i]
 
-/-- **Degree `-1` Tate cohomology commutes with products**:
-`H-hat^(-1)(G, ∏ i, M i) ≃ ∏ i, H-hat^(-1)(G, M i)`, with components induced by the projections. -/
-def HNegOneLinearEquivPi : tateCohomology (Rep.pi M) (-1) ≃ₗ[R] ∀ i, tateCohomology (M i) (-1) :=
-  LinearEquiv.ofBijective (HNegOneToPi M) (HNegOneToPi_bijective M)
+/-! ### Products of cohomologically trivial representations -/
 
-/-- The degree `-1` equivalence sends the class of a norm-zero element of the product to the
-family of the classes of its components. -/
+omit [Fintype G] in
+/-- **A product of cohomologically trivial representations is cohomologically trivial.** By Tate's
+triviality criterion it suffices to check degrees `-1` and `0` on the subgroups of prime-power
+order, where the Tate cohomology of the product is the product of the Tate cohomologies. -/
+theorem isZero_res_pi [Finite G]
+    (hM : ∀ i (S : Subgroup G) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (Rep.res S.subtype (M i)) n))
+    (S : Subgroup G) [Fintype S] (n : ℤ) :
+    IsZero (tateCohomology (Rep.res S.subtype (Rep.pi M)) n) := by
+  refine isZero_of_forall_isPGroup (Rep.pi M) (q := -1) (fun p _ P _ _ ↦ ?_)
+    (fun p _ P _ _ ↦ ?_) S n
+  -- Restricting the product to `P` gives the product of the restrictions.
+  · refine IsZero.of_iso ?_ ((tateCohomologyFunctor (-1)).mapIso (Rep.resPiIso M P.subtype))
+    have (i : ι) := ModuleCat.subsingleton_of_isZero (hM i P (-1))
+    have :=
+      (Equiv.ofBijective _ (HNegOneToPi_bijective fun i ↦ Rep.res P.subtype (M i))).subsingleton
+    exact ModuleCat.isZero_of_subsingleton _
+  · rw [neg_add_cancel]
+    refine IsZero.of_iso ?_ ((tateCohomologyFunctor 0).mapIso (Rep.resPiIso M P.subtype))
+    have (i : ι) := ModuleCat.subsingleton_of_isZero (hM i P 0)
+    have := (Equiv.ofBijective _ (H0ToPi_bijective fun i ↦ Rep.res P.subtype (M i))).subsingleton
+    exact ModuleCat.isZero_of_subsingleton _
+
+/-- A product of cohomologically trivial representations has vanishing Tate cohomology. -/
+theorem isZero_pi
+    (hM : ∀ i (S : Subgroup G) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (Rep.res S.subtype (M i)) n))
+    (n : ℤ) : IsZero (tateCohomology (Rep.pi M) n) :=
+  isZero_of_forall_isZero_res _ (isZero_res_pi M hM) n
+
+/-! ### Every degree -/
+
+/-- The family of the maps `H-hat^n(G, ∏ j, M j) → H-hat^n(G, M i)` induced by the projections. -/
+private def toPi (n : ℤ) : tateCohomology (Rep.pi M) n →ₗ[R] ∀ i, tateCohomology (M i) n :=
+  LinearMap.pi fun i ↦ ((tateCohomologyFunctor n).map (Rep.piProj M i)).hom
+
+private theorem map_isIntertwiningMap_proj (n : ℤ) (i : ι) :
+    map (isIntertwiningMap_proj M i) n = (tateCohomologyFunctor n).map (Rep.piProj M i) := by
+  rw [map_refl]
+  congr 1
+  ext x
+  exact (Rep.piProj_hom_apply i x).symm
+
+private theorem toPi_zero : toPi M 0 = H0ToPi M := by
+  ext x i
+  simp only [toPi, H0ToPi, LinearMap.pi_apply, map_isIntertwiningMap_proj]
+
+private theorem toPi_negOne : toPi M (-1) = HNegOneToPi M := by
+  ext x i
+  simp only [toPi, HNegOneToPi, LinearMap.pi_apply, map_isIntertwiningMap_proj]
+
+/-- The connecting maps of a product of short exact sequences with cohomologically trivial middle
+terms transport bijectivity of `toPi` from the third to the first terms, one degree up. -/
+private theorem toPi_bijective_of_shortExact {A B C : ι → Rep R G} (f : ∀ i, A i ⟶ B i)
+    (g : ∀ i, B i ⟶ C i) (hfg : ∀ i, f i ≫ g i = 0)
+    (hS : ∀ i, (ShortComplex.mk (f i) (g i) (hfg i)).ShortExact)
+    (hB : ∀ i (S : Subgroup G) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (Rep.res S.subtype (B i)) n))
+    (n : ℤ) :
+    Function.Bijective (toPi C n) ↔ Function.Bijective (toPi A (n + 1)) := by
+  have hP := Rep.shortExact_pi (fun i ↦ ShortComplex.mk (f i) (g i) (hfg i)) hS
+  have hB' (i : ι) := isZero_of_forall_isZero_res _ (hB i)
+  -- the connecting map of the product, and the product of the connecting maps
+  have hδ := δ_bijective_of_isZero_X₂ hP n (isZero_pi _ hB n)
+    (isZero_pi _ hB (n + 1))
+  let e (i : ι) :=
+    Equiv.ofBijective _ (δ_bijective_of_isZero_X₂ (hS i) n (hB' i n) (hB' i (n + 1)))
+  have hcomm : toPi A (n + 1) ∘ (_root_.TateCohomology.δ hP n).hom =
+      Equiv.piCongrRight e ∘ toPi C n := by
+    funext x
+    funext i
+    exact congr($(_root_.TateCohomology.δ_naturality hP (hS i)
+      { τ₁ := Rep.piProj A i, τ₂ := Rep.piProj B i, τ₃ := Rep.piProj C i
+        comm₁₂ := (Rep.piMap_piProj f i).symm, comm₂₃ := (Rep.piMap_piProj g i).symm } n).hom x)
+  rw [← Function.Bijective.of_comp_iff' (Equiv.piCongrRight e).bijective, ← hcomm,
+    Function.Bijective.of_comp_iff _ hδ]
+
+/-- `toPi` is bijective in every degree, for every family: degree `0` is the low-degree
+computation, and the dimension-shifting sequences move bijectivity up and down one degree. -/
+private theorem toPi_bijective (n : ℤ) : ∀ M : ι → Rep R G, Function.Bijective (toPi M n) := by
+  induction n using Int.induction_on with
+  | zero => exact fun M ↦ toPi_zero M ▸ H0ToPi_bijective M
+  | succ n ih =>
+    intro M
+    exact (toPi_bijective_of_shortExact (fun i ↦ coindBotUnit (M i))
+      (fun i ↦ dimensionShiftUpπ (M i)) (fun i ↦ coindBotUnit_comp_dimensionShiftUpπ (M i))
+      (fun i ↦ by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact (M i))
+      (fun i S _ m ↦ isZero_res_coindBot S (M i).V m) n).1 (ih _)
+  | pred n ih =>
+    intro M
+    refine (toPi_bijective_of_shortExact (fun i ↦ dimensionShiftDownι (M i))
+      (fun i ↦ indBotCounit (M i)) (fun i ↦ dimensionShiftDownι_comp_indBotCounit (M i))
+      (fun i ↦ by
+        simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact (M i))
+      (fun i S _ m ↦ isZero_res_indBot S (M i).V m) _).2 ?_
+    rw [sub_add_cancel]
+    exact ih _
+
+/-- **Tate cohomology commutes with products** in every integer degree:
+`H-hat^n(G, ∏ i, M i) ≃ ∏ i, H-hat^n(G, M i)`, the `i`-th component being induced by the
+projection onto `M i`. -/
+def linearEquivPi (n : ℤ) : tateCohomology (Rep.pi M) n ≃ₗ[R] ∀ i, tateCohomology (M i) n :=
+  LinearEquiv.ofBijective (toPi M n) (toPi_bijective n M)
+
+/-- The `i`-th component of `linearEquivPi` is induced by the projection onto `M i`. -/
 @[simp]
-theorem HNegOneLinearEquivPi_HNegOneπ (y : ker (Rep.pi M).ρ.norm) (i : ι) :
-    HNegOneLinearEquivPi M (HNegOneπ (Rep.pi M) y) i =
-      HNegOneπ (M i) ⟨y.1 i, (Representation.mem_ker_norm_pi_iff _).1 y.2 i⟩ :=
-  HNegOneToPi_HNegOneπ M y i
+theorem linearEquivPi_apply (n : ℤ) (x : tateCohomology (Rep.pi M) n) (i : ι) :
+    linearEquivPi M n x i = ((tateCohomologyFunctor n).map (Rep.piProj M i)).hom x :=
+  (rfl)
+
+/-- In degree `0`, `linearEquivPi` sends the class of an invariant element of the product to the
+family of the classes of its components. -/
+theorem linearEquivPi_zero_H0π (y : (Rep.pi M).ρ.invariants) (i : ι) :
+    linearEquivPi M 0 (H0π (Rep.pi M) y) i =
+      H0π (M i) ⟨y.1 i, ((Representation.mem_invariants_pi_iff _).1 y.2) i⟩ := by
+  rw [← H0ToPi_H0π, ← toPi_zero]
+  rfl
+
+/-- In degree `-1`, `linearEquivPi` sends the class of a norm-zero element of the product to the
+family of the classes of its components. -/
+theorem linearEquivPi_negOne_HNegOneπ (y : ker (Rep.pi M).ρ.norm) (i : ι) :
+    linearEquivPi M (-1) (HNegOneπ (Rep.pi M) y) i =
+      HNegOneπ (M i) ⟨y.1 i, (Representation.mem_ker_norm_pi_iff _).1 y.2 i⟩ := by
+  rw [← HNegOneToPi_HNegOneπ, ← toPi_negOne]
+  rfl
 
 /-! ### The Herbrand quotient of a product -/
 
@@ -173,7 +285,7 @@ theorem herbrandQuotient_pi (s : Finset ι)
     (h1 : ∀ i ∉ s, Subsingleton (tateCohomology (M i) (-1))) :
     herbrandQuotient (Rep.pi M) = ∏ i ∈ s, herbrandQuotient (M i) := by
   simp only [herbrandQuotient_def]
-  rw [Nat.card_congr (H0LinearEquivPi M).toEquiv, Nat.card_congr (HNegOneLinearEquivPi M).toEquiv,
+  rw [Nat.card_congr (linearEquivPi M 0).toEquiv, Nat.card_congr (linearEquivPi M (-1)).toEquiv,
     Nat.card_pi_eq_prod_of_card_eq_one s fun i hi ↦ have := h0 i hi; Nat.card_of_subsingleton 0,
     Nat.card_pi_eq_prod_of_card_eq_one s fun i hi ↦ have := h1 i hi; Nat.card_of_subsingleton 0,
     Nat.cast_prod, Nat.cast_prod, Finset.prod_div_distrib]

@@ -199,7 +199,7 @@ noncomputable def presentedFormTensorIsometryEquiv (p q : RegularFormPresentatio
     intro x
     rw [weightedSumSquares_apply, presentedForm_apply]
     apply Finset.sum_congr rfl
-    intro k hk
+    intro k _
     congr 1
     let e := presentedFormTensorIndexEquiv p q
     have hk' : k = e (e.symm k) := (e.apply_symm_apply k).symm

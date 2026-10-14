@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
 import Mathlib.AlgebraicGeometry.PullbackCarrier
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Prime
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 
 /-!
 # Charts of the projective Weierstrass model
@@ -18,6 +21,10 @@ model and let `S = Spec R`. This file presents the standard affine chart `D₊(X
 immersion from the spectrum of the chart ring `ChartRing i = R[X₀, X₁, X₂] ⧸ (W, Xᵢ - 1)`, and the
 product `D₊(Xᵢ) ×_S D₊(Xⱼ)` of two charts as an open immersion from the spectrum of
 `ChartRing i ⊗[R] ChartRing j` into `E ×_S E`.
+
+The affine chart `D₊(Z)` is scheme-theoretically dense in `E`, with no hypothesis on `R` or on
+`W`. Hence, by `TauCeti.ext_of_isSchemeTheoreticallyDominant`, two morphisms from `E` to a scheme
+separated over a base that agree over the base and on `D₊(Z)` are equal.
 
 ## Main definitions
 
@@ -31,6 +38,8 @@ product `D₊(Xᵢ) ×_S D₊(Xⱼ)` of two charts as an open immersion from the
 * `WeierstrassCurve.opensRange_chartι`: the image of the chart `chartι W i` is the standard affine
   open `D₊(Xᵢ)`.
 * `WeierstrassCurve.exists_mem_range_chartι`: the three charts cover the projective model.
+* `WeierstrassCurve.isSchemeTheoreticallyDominant_chartι_two`: the chart `D₊(Z)` is
+  scheme-theoretically dense in the projective model.
 * `WeierstrassCurve.chartι_projModelOver`: on the chart `D₊(Xᵢ)`, the structure morphism of the
   projective model is `Spec` of the structure map `R → ChartRing i`.
 * `WeierstrassCurve.chartPairι_fst` and `WeierstrassCurve.chartPairι_snd`: the two projections of
@@ -55,6 +64,14 @@ file `AdditionSpecPoints.lean` of the same directory: `specMap_pieceAwayZι_fst`
 `SpecMap_desc_chartPairι`. The source computes the two projections of a point of a piece of its
 cover through the left and right inclusions of the tensor product; here a point of the product of
 two charts is built from its two components through the pushout property of the tensor product.
+
+`isSchemeTheoreticallyDominant_chartι_two` corresponds to `projModel_hom_ext_of_affine` in the
+file `PoleFiltration.lean` of the same directory, which states that two morphisms from the
+projective model to a separated scheme that agree on the chart `D₊(Z)` are equal, and proves it
+chart by chart. Here the statement is that the chart is scheme-theoretically dominant in the sense
+of Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant`, deduced from
+`AlgebraicGeometry.Proj.isSchemeTheoreticallyDominant_awayι` and
+`WeierstrassCurve.Projective.coord_two_mem_nonZeroDivisors`.
 -/
 
 public section
@@ -104,6 +121,14 @@ theorem exists_mem_range_chartι (y : W.projModel) : ∃ i, y ∈ Set.range (W.c
     exact TopologicalSpace.Opens.mem_top y
   obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hy
   exact ⟨i, Set.mem_range.mpr (Scheme.Hom.mem_opensRange.mp hi)⟩
+
+/-- The standard affine chart `D₊(Z)` is scheme-theoretically dense in the projective Weierstrass
+model: the open immersion `chartι W 2` is scheme-theoretically dominant. -/
+instance isSchemeTheoreticallyDominant_chartι_two : IsSchemeTheoreticallyDominant (W.chartι 2) := by
+  have := Proj.isSchemeTheoreticallyDominant_awayι W.toProjective.grading
+    (W.toProjective.coord_mem_grading 2) one_pos W.toProjective.coord_two_mem_nonZeroDivisors
+  rw [chartι]
+  infer_instance
 
 /-- On the chart `D₊(Xᵢ)`, the structure morphism of the projective model is `Spec` of the
 structure map `R → ChartRing i`. -/

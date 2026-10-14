@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.Int.Basic
+import Mathlib.LinearAlgebra.Basis.Prod
+import Mathlib.LinearAlgebra.Projection
+import Mathlib.LinearAlgebra.Transvection.Basic
 
 /-!
 # Primitive vectors in integer modules
@@ -35,6 +38,9 @@ rational ray is initially described by arbitrary nonzero lattice vectors.
 * `Module.Basis.isPrimitive`: a vector of an integral basis is primitive.
 * `TauCeti.IsPrimitive.exists_basis`: conversely, a primitive vector of a finite free integer
   module belongs to some integral basis of it.
+* `Module.Basis.exists_basis_eq_iff`: the relative version. The vectors `b 0, …, b (i - 1)` of a
+  basis `b` followed by `v` extend to a basis exactly when some integer-valued linear functional
+  vanishes on `b 0, …, b (i - 1)` and takes the value one on `v`.
 -/
 
 public section
@@ -183,3 +189,66 @@ theorem IsPrimitive.exists_basis [Module.Free ℤ M] [Module.Finite ℤ M] {v : 
   · simp
 
 end TauCeti
+
+namespace Module.Basis
+
+variable {M : Type*} [AddCommGroup M] [Module ℤ M]
+
+/-- Let `b` be an integral basis indexed by `Fin n`. The vectors `b 0, …, b (i - 1), v` extend to
+an integral basis, that is, some basis agrees with `b` before `i` and has `v` at `i`, exactly when
+some integer-valued linear functional vanishes on `b 0, …, b (i - 1)` and takes the value one on
+`v`. For `i = 0` this is the characterization of primitive vectors as the members of bases. -/
+theorem exists_basis_eq_iff {n : ℕ} (b : Basis (Fin n) ℤ M) (i : Fin n) (v : M) :
+    (∃ e : Basis (Fin n) ℤ M, (∀ j < i, e j = b j) ∧ e i = v) ↔
+      ∃ f : M →ₗ[ℤ] ℤ, (∀ j < i, f (b j) = 0) ∧ f v = 1 := by
+  classical
+  constructor
+  · rintro ⟨e, he, rfl⟩
+    exact ⟨e.coord i, fun j hj ↦ by simp [← he j hj, hj.ne], by simp⟩
+  rintro ⟨f, hf, hv⟩
+  let s : Set (Fin n) := {j | j < i}
+  -- `M` is the direct sum of the spans `P` of `b 0, …, b (i - 1)` and `N` of the other vectors.
+  let P := Submodule.span ℤ (Set.range (b ∘ ((↑) : s → Fin n)))
+  let N := Submodule.span ℤ (Set.range (b ∘ ((↑) : ↥sᶜ → Fin n)))
+  -- Use the submodule structures, rather than `AddCommGroup.toIntModule`, on `P` and `N`.
+  let : Module ℤ P := P.module
+  let : Module ℤ N := N.module
+  let : Module ℤ (P × N) := Prod.instModule
+  let bP : Basis s ℤ P := .span (b.linearIndependent.comp ((↑) : s → Fin n) Subtype.val_injective)
+  let bN : Basis ↥sᶜ ℤ N :=
+    .span (b.linearIndependent.comp ((↑) : ↥sᶜ → Fin n) Subtype.val_injective)
+  have hPN : IsCompl P N := by
+    simpa only [P, N, Set.range_comp, Subtype.range_coe] using
+      b.linearIndependent.isCompl_span_image b.span_eq (isCompl_compl (x := s))
+  have hPf : P ≤ LinearMap.ker f := Submodule.span_le.2 <| by
+    rintro _ ⟨j, rfl⟩
+    exact hf j j.2
+  have : Module.Free ℤ N := Module.Free.of_basis bN
+  have : Module.Finite ℤ N := Module.Finite.of_basis bN
+  -- Split `v` into its components in `P` and `N`; the component in `N` is primitive there.
+  set w := (Submodule.prodEquivOfIsCompl P N hPN).symm v
+  have hvw : v = (w.1 : M) + w.2 := by
+    rw [← Submodule.coe_prodEquivOfIsCompl' (h := hPN), LinearEquiv.apply_symm_apply]
+  have hw1 : f w.1 = 0 := hPf w.1.2
+  have hw2 : f w.2 = 1 := by rw [← hv, hvw, map_add, hw1, zero_add]
+  obtain ⟨m, c, k, hck⟩ := TauCeti.IsPrimitive.exists_basis (M := N) ⟨f.comp N.subtype, hw2⟩
+  -- Combine `b 0, …, b (i - 1)` with `c`, placing `c k` at position `i`.
+  have hi : i ∈ sᶜ := lt_irrefl i
+  let τ : ↥sᶜ ≃ Fin m := (bN.indexEquiv c).trans (Equiv.swap (bN.indexEquiv c ⟨i, hi⟩) k)
+  have hτ : τ ⟨i, hi⟩ = k := by simp [τ]
+  let σ : s ⊕ Fin m ≃ Fin n := (Equiv.sumCongr (Equiv.refl s) τ.symm).trans (Equiv.Set.sumCompl s)
+  let d := ((bP.prod c).map (Submodule.prodEquivOfIsCompl P N hPN)).reindex σ
+  -- Finally add the component of `v` in `P` to the vector at position `i`.
+  refine ⟨d.map (LinearEquiv.transvection (f := f) (v := (w.1 : M)) hw1), fun j hj ↦ ?_, ?_⟩
+  · have hσ : σ.symm j = Sum.inl ⟨j, hj⟩ := by
+      simp [σ, Equiv.Set.sumCompl_symm_apply_of_mem (s := s) hj]
+    have hd : d j = b j := by simp [d, hσ, bP, Basis.span_apply _ (⟨j, hj⟩ : s)]
+    rw [Basis.map_apply, LinearEquiv.transvection.apply, hd, hf j hj]
+    module
+  · have hσ : σ.symm i = Sum.inr k := by
+      simp [σ, Equiv.Set.sumCompl_symm_apply_of_notMem (s := s) hi, hτ]
+    have hd : d i = w.2 := by simp [d, hσ, hck]
+    rw [Basis.map_apply, LinearEquiv.transvection.apply, hd, hw2, hvw]
+    module
+
+end Module.Basis

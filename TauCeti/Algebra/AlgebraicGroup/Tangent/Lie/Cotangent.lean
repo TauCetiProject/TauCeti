@@ -30,8 +30,7 @@ packages the comparison as a Lie equivalence.
 
 * J. S. Milne, *Algebraic Groups* (2017), §10.a and item 10.20.
 
-This identifies the fixed module used by the adjoint representation with `Lie(G)` in Layer 2 of
-the ReductiveGroups roadmap.
+This identifies the fixed module used by the adjoint representation with `Lie(G)`.
 -/
 
 public section

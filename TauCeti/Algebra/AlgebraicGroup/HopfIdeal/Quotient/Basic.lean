@@ -132,9 +132,9 @@ lemma mkQuotient_ker (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
 
 /-- An element maps to zero in the quotient exactly when it belongs to the Hopf ideal. -/
 lemma mkQuotient_eq_zero_iff (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
-    (mkQuotient H I).hom h = 0 ↔ h ∈ I.toIdeal := by
+    (mkQuotient H I).hom h = 0 ↔ h ∈ I := by
   rw [mkQuotient_apply]
-  exact Ideal.Quotient.eq_zero_iff_mem
+  exact Ideal.Quotient.eq_zero_iff_mem.trans HopfIdeal.mem_toIdeal
 
 /-- The quotient morphism is surjective. -/
 lemma mkQuotient_surjective (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
@@ -201,42 +201,22 @@ theorem liftQuotient_surjective_of_surjective (I : HopfIdeal R H) (f : H ⟶ K)
   obtain ⟨x, rfl⟩ := hsurj y
   exact ⟨Ideal.Quotient.mkₐ R I.toIdeal x, liftQuotient_mk I f hf x⟩
 
-/-- Auxiliary quotient isomorphism when the source ideal is the kernel of the composite
-with the target quotient morphism. -/
-private noncomputable def quotientIsoOfSurjectiveAux (f : H ⟶ K)
-    (hf : Function.Surjective f.hom) (I : HopfIdeal R K) (J : HopfIdeal R H)
-    (hJ : J = HopfIdeal.kerOfSurjective
-      ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f.hom)
-      ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf)) :
-    quotient H J ≅ quotient K I :=
-  _root_.CommHopfAlgCat.isoMk <| hJ.symm ▸
-    HopfIdeal.kerLiftBialgEquiv
-      ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f.hom)
-      ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf)
-
-private lemma quotientIsoOfSurjectiveAux_hom_mk (f : H ⟶ K)
-    (hf : Function.Surjective f.hom) (I : HopfIdeal R K) (J : HopfIdeal R H)
-    (hJ : J = HopfIdeal.kerOfSurjective
-      ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f.hom)
-      ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf)) (x : H) :
-    (quotientIsoOfSurjectiveAux f hf I J hJ).hom.hom
-        (Ideal.Quotient.mk J.toIdeal x) =
-      Ideal.Quotient.mkₐ R I.toIdeal (f.hom x) := by
+/-- Transporting the quotient object along an equality of Hopf ideals transports its quotient
+morphism. This is the identity that lets an automorphism preserving a Hopf ideal be compared with
+the isomorphism it induces on the quotient. -/
+theorem mkQuotient_comp_eqToHom {I J : HopfIdeal R H} (hIJ : I = J) :
+    mkQuotient H J ≫ eqToHom (congrArg (quotient H) hIJ.symm) = mkQuotient H I := by
   subst J
-  rw [quotientIsoOfSurjectiveAux]
-  exact HopfIdeal.kerLiftBialgEquiv_apply
-    ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f.hom)
-    ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf) _ |>.trans <|
-      HopfIdeal.kerLiftBialgHom_mk
-        ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f.hom)
-        ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf) x
+  rfl
 
 /-- A surjective morphism of commutative Hopf algebras identifies the quotient by the
 inverse-image Hopf ideal with the corresponding quotient of the target. -/
 noncomputable def quotientIsoOfSurjective (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (I : HopfIdeal R K) : quotient H (I.comapOfSurjective f.hom hf) ≅ quotient K I :=
-  quotientIsoOfSurjectiveAux f hf I (I.comapOfSurjective f.hom hf)
-    (HopfIdeal.comapOfSurjective_eq_kerOfSurjective I f.hom hf)
+  eqToIso (congrArg (quotient H) (HopfIdeal.comapOfSurjective_eq_kerOfSurjective I f.hom hf)) ≪≫
+    _root_.CommHopfAlgCat.isoMk (HopfIdeal.kerLiftBialgEquiv
+      ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f.hom)
+      ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf))
 
 /-- The forward quotient isomorphism induced by a surjective morphism commutes with the
 quotient morphisms. -/
@@ -245,29 +225,22 @@ lemma mkQuotient_comp_quotientIsoOfSurjective_hom (f : H ⟶ K)
     (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
     mkQuotient H (I.comapOfSurjective f.hom hf) ≫ (quotientIsoOfSurjective f hf I).hom =
       f ≫ mkQuotient K I := by
+  rw [quotientIsoOfSurjective, Iso.trans_hom, eqToIso.hom, ← Category.assoc,
+    mkQuotient_comp_eqToHom (HopfIdeal.comapOfSurjective_eq_kerOfSurjective I f.hom hf).symm]
   ext x
-  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply,
-    mkQuotient_apply, mkQuotient_apply, quotientIsoOfSurjective]
-  exact quotientIsoOfSurjectiveAux_hom_mk f hf I _ _ x
+  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply, mkQuotient_apply,
+    mkQuotient_apply]
+  exact (HopfIdeal.kerLiftBialgEquiv_apply _ _ _).trans (HopfIdeal.kerLiftBialgHom_mk _ _ x)
 
 /-- The forward quotient isomorphism induced by a surjective morphism evaluates on quotient
 classes by applying the morphism before taking the target quotient. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfSurjective_hom_mk (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (I : HopfIdeal R K) (x : H) :
     (quotientIsoOfSurjective f hf I).hom.hom
         (Ideal.Quotient.mk (I.comapOfSurjective f.hom hf).toIdeal x) =
-      Ideal.Quotient.mkₐ R I.toIdeal (f.hom x) := by
-  rw [quotientIsoOfSurjective]
-  exact quotientIsoOfSurjectiveAux_hom_mk f hf I _ _ x
-
-/-- Transporting the quotient object along an equality of Hopf ideals transports its quotient
-morphism. This is the identity that lets an automorphism preserving a Hopf ideal be compared with
-the isomorphism it induces on the quotient. -/
-theorem mkQuotient_comp_eqToHom {I J : HopfIdeal R H} (hIJ : I = J) :
-    mkQuotient H J ≫ eqToHom (congrArg (quotient H) hIJ.symm) = mkQuotient H I := by
-  subst J
-  rfl
+      Ideal.Quotient.mkₐ R I.toIdeal (f.hom x) :=
+  congr($(mkQuotient_comp_quotientIsoOfSurjective_hom f hf I).hom x)
 
 /-- An isomorphism of commutative Hopf algebras induces an isomorphism from the quotient by
 the inverse-image Hopf ideal to the corresponding quotient of the target. -/
@@ -359,7 +332,7 @@ lemma mkQuotient_comp_quotientIsoOfComapEq_inv (e : H ≅ K) (I : HopfIdeal R K)
 
 /-- The forward quotient isomorphism induced by an ambient isomorphism evaluates on quotient
 classes by applying the ambient isomorphism before taking the target quotient. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfIso_hom_mk (e : H ≅ K) (I : HopfIdeal R K) (x : H) :
     (quotientIsoOfIso e I).hom.hom
         (Ideal.Quotient.mk
@@ -370,7 +343,7 @@ lemma quotientIsoOfIso_hom_mk (e : H ≅ K) (I : HopfIdeal R K) (x : H) :
 
 /-- The inverse quotient isomorphism induced by an ambient isomorphism evaluates on quotient
 classes by applying the inverse ambient isomorphism before taking the source quotient. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfIso_inv_mk (e : H ≅ K) (I : HopfIdeal R K) (y : K) :
     (quotientIsoOfIso e I).inv.hom (Ideal.Quotient.mk I.toIdeal y) =
       Ideal.Quotient.mkₐ R
@@ -658,7 +631,7 @@ lemma mkQuotient_ker (H : FiniteTypeCommHopfAlgCat.{u, v} R) (I : HopfIdeal R H)
 /-- An element maps to zero in the finite-type quotient exactly when it belongs to the Hopf
 ideal. -/
 lemma mkQuotient_eq_zero_iff (H : FiniteTypeCommHopfAlgCat.{u, v} R)
-    (I : HopfIdeal R H) (h : H) : toBialgHom (mkQuotient H I) h = 0 ↔ h ∈ I.toIdeal :=
+    (I : HopfIdeal R H) (h : H) : toBialgHom (mkQuotient H I) h = 0 ↔ h ∈ I :=
   CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I h
 
 variable {H K : FiniteTypeCommHopfAlgCat.{u, v} R}

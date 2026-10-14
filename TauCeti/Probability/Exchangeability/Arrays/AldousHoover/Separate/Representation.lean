@@ -246,8 +246,6 @@ theorem SeparatelyExchangeable.exists_map_separateArray_eq [StandardBorelSpace �
     Set.disjoint_left.2 fun _ ⟨a, ha⟩ ⟨i, hi⟩ => hge i ⟨a, ha.trans hi.symm⟩
   -- The three layers of the coding: the hidden block is coded by the global variable, the
   -- crossing strips by the row and column variables, and the visible cells by the cell variables.
-  have hB : Measurable fun (x : ℕ × ℕ → α) (q : ℕ × ℕ) => x (e q.1, e q.2) :=
-    Measurable.of_eval fun q => measurable_pi_apply _
   set B : ProbabilityMeasure (ℕ × ℕ → α) := ⟨ρ.map fun x q => x (e q.1, e q.2), inferInstance⟩
   set φ := unitIntervalCoding (ℕ × ℕ → α) B
   have hφ : Measurable φ := measurable_unitIntervalCoding B

@@ -41,7 +41,7 @@ the dimension `f^μ`, and the cycle types. So the classical statement that this 
 Schur polynomial `s_μ` becomes an identity about the symmetric group alone, between the Young
 symmetrizer and the power-sum expansion of `s_μ`. That identity is Frobenius's, and the
 conclusion is drawn in `TauCeti/RepresentationTheory/ClassicalGroups/WeylModule/Character.lean`
-(`TauCeti.char_weylRepOfShape_diagramOf_diagonal`).
+(`TauCeti.char_weylRepOfShape_ofPartition_diagonal`).
 
 ## Main results
 

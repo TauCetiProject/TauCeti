@@ -29,10 +29,13 @@ Nullified members, repeated roots, the empty family and stacks without sections 
 ## Main results
 
 * `TauCeti.exists_isCAD_signInvariant`: every finite set of polynomials has an adapted CAD.
-* `TauCeti.IsSemialgebraic.image_tail`: **projection closure**. Forgetting the coordinate `0`
-  maps semialgebraic subsets of `ℝ ^ (n + 1)` to semialgebraic subsets of `ℝ ^ n`. A
-  semialgebraic set is a sign condition on finitely many polynomials, so it is a union of cells of
-  an adapted CAD, and its projection is a union of cells of the projected CAD.
+* `TauCeti.HasSemialgebraicProjections ℝ`: **projection closure**, the Tarski–Seidenberg theorem.
+  Forgetting the coordinate `0` maps semialgebraic subsets of `ℝ ^ (n + 1)` to semialgebraic
+  subsets of `ℝ ^ n` (`TauCeti.HasSemialgebraicProjections.isSemialgebraic_image_tail`). A
+  semialgebraic set is a sign condition on finitely many polynomials, so it is a union of cells
+  of an adapted CAD, and its projection is a union of cells of the projected CAD. With this
+  instance the results of `TauCeti.Geometry.RealAlgebraic.Semialgebraic.QuantifierElimination` and
+  `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image` apply to `ℝ`.
 * `TauCeti.exists_finite_image_sign_eval_eq`: finitely many sample points realize every sign
   vector of a finite family of polynomials.
 
@@ -85,15 +88,17 @@ theorem exists_isCAD_signInvariant (F : Finset (MvPolynomial (Fin n) ℝ)) :
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
     exact (hθ C hC).2 E hE f hf
 
-/-- **Projection closure.** The projection of a semialgebraic subset of `ℝ ^ (n + 1)` forgetting
-the coordinate `0` is semialgebraic. -/
-theorem IsSemialgebraic.image_tail {s : Set (Fin (n + 1) → ℝ)} (hs : IsSemialgebraic s) :
-    IsSemialgebraic (Fin.tail '' s) := by
-  classical
-  obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
-  obtain ⟨𝒞, h𝒞, hp⟩ := exists_isCAD_signInvariant (Finset.univ.image p)
-  exact h𝒞.isSemialgebraic_image_tail_setOf_sign_eval
-    (fun i ↦ hp _ (Finset.mem_image_of_mem _ (Finset.mem_univ i))) Φ
+/-- **The Tarski–Seidenberg theorem.** The projection of a semialgebraic subset of `ℝ ^ (n + 1)`
+forgetting the coordinate `0` is semialgebraic. So quantifier elimination, the identification of
+semialgebraic sets with definable sets, and the image and composition laws of semialgebraic
+functions, which assume `HasSemialgebraicProjections`, hold over `ℝ` unconditionally. -/
+instance : HasSemialgebraicProjections ℝ where
+  isSemialgebraic_image_tail {_ _} hs := by
+    classical
+    obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
+    obtain ⟨𝒞, h𝒞, hp⟩ := exists_isCAD_signInvariant (Finset.univ.image p)
+    exact h𝒞.isSemialgebraic_image_tail_setOf_sign_eval
+      (fun i ↦ hp _ (Finset.mem_image_of_mem _ (Finset.mem_univ i))) Φ
 
 /-- **Sample points.** For finitely many real polynomials `p i` in `n` variables there is a
 finite set of points of `ℝ ^ n` at which the `p i` take every sign vector that they take on

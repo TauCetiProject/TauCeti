@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -29,7 +29,7 @@ This file builds that vocabulary:
 * the group `idealsPrimeTo 𝔪` of invertible fractional ideals and the monoid
   `integralIdealsPrimeTo 𝔪` of nonzero integral ideals that are prime to the finite part.
 
-The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway 𝔪.support` and
+The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway K 𝔪.support` and
 `TauCeti.NumberFieldArithmetic.integralIdealsAway 𝔪.support`: there is exactly one group of
 prime-to fractional ideals and one monoid of prime-to integral ideals, and both are the ones built
 away from a finite set of primes.
@@ -504,7 +504,7 @@ multiplicity vanishes at every prime dividing the finite part.  There is one suc
 built away from a finite set of primes. -/
 noncomputable abbrev idealsPrimeTo (𝔪 : Modulus K) :
     Subgroup (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
-  NumberFieldArithmetic.idealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.idealsAway K 𝔪.support
 
 /-- Coprimality of a nonzero integral ideal to a modulus: it is prime to the support, that is, to
 the finite part.  This is the membership predicate of `integralIdealsPrimeTo`. -/
@@ -537,7 +537,7 @@ as `I` and the finite part fail to generate the unit ideal. -/
 theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ I ⊔ 𝔪.finitePart = ⊤ := by
   rw [isCoprimeTo_iff]
-  refine and_congr_right fun hI ↦ ⟨fun h ↦ ?_, fun h v hv hdvd ↦ ?_⟩
+  refine and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h v hv hdvd ↦ ?_⟩
   · refine Ideal.isCoprime_iff_sup_eq.mp (Ideal.coprime_of_no_prime_ge fun 𝔭 h𝔭I h𝔭m h𝔭 ↦ ?_)
     have h𝔭bot : 𝔭 ≠ ⊥ := fun hbot ↦ 𝔪.finitePart_ne_bot (le_bot_iff.mp (hbot ▸ h𝔭m))
     exact h ⟨𝔭, h𝔭, h𝔭bot⟩ ((mem_support_iff _ _).mpr (Ideal.dvd_iff_le.mpr h𝔭m))
@@ -549,7 +549,7 @@ theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K
 /-- **The monoid of nonzero integral ideals prime to a modulus.**  There is one such monoid, the
 one built away from a finite set of primes; its membership predicate is `Modulus.IsCoprimeTo`. -/
 noncomputable abbrev integralIdealsPrimeTo (𝔪 : Modulus K) : Submonoid (Ideal (𝓞 K)) :=
-  NumberFieldArithmetic.integralIdealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) 𝔪.support
 
 theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     I ∈ integralIdealsPrimeTo 𝔪 ↔ 𝔪.IsCoprimeTo I :=

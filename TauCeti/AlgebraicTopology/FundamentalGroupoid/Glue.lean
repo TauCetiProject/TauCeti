@@ -484,7 +484,7 @@ private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : �
   rcases Nat.eq_zero_or_pos N with rfl | hN
   · obtain rfl : k = 0 := by omega
     simp [pt_zero]
-  have hN' : (0 : ℝ) < N := by exact_mod_cast hN
+  have _ : (0 : ℝ) < N := by exact_mod_cast hN
   refine Path.trans_apply_of_le γ δ ?_ _ ?_
   · rw [coe_pt (by omega : k ≤ N + N), div_le_iff₀ (by push_cast; positivity)]
     push_cast
@@ -498,11 +498,11 @@ private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : �
 private lemma trans_pt_right {x y z : X} (γ : Path x y) (δ : Path y z) {N : ℕ} (hN : N ≠ 0)
     (k : ℕ) : γ.trans δ (pt (N + N) (N + k)) = δ (pt N k) := by
   rcases le_or_gt k N with hk | hk
-  · have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
+  · have _ : (0 : ℝ) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
     refine Path.trans_apply_of_ge γ δ ?_ _ ?_
     · rw [coe_pt (by omega : N + k ≤ N + N), le_div_iff₀ (by push_cast; positivity)]
       push_cast
-      have hk' : (0 : ℝ) ≤ k := by positivity
+      have _ : (0 : ℝ) ≤ k := by positivity
       linarith
     · rw [coe_pt hk, coe_pt (by omega : N + k ≤ N + N)]
       push_cast
@@ -532,7 +532,7 @@ private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N
   refine Path.trans_apply_of_ge γ δ ?_ _ ?_
   · rw [coe_convexComb_pt (by omega : N + k < N + N), le_div_iff₀ (by push_cast; positivity)]
     push_cast
-    have hk' : (0 : ℝ) ≤ k := by positivity
+    have _ : (0 : ℝ) ≤ k := by positivity
     linarith [t.2.1]
   · rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : N + k < N + N)]
     push_cast
@@ -601,7 +601,7 @@ private lemma lift_trans {x y z : X} (γ : Path x y) (δ : Path y z) :
         pathVal_congr hU F hF _ _ (trans_pt_left γ δ (by omega)) (trans_pt_left γ δ hk)
           (trans_subpath_left γ δ (by omega)) _ (hγ.subpath_mem k)]
       simp
-  have second : ∀ k (hk : k ≤ N),
+  have second : ∀ k (_ : k ≤ N),
       Functor.OfSequence.map (segVal hU F hF (γ.trans δ) hγδ) N (N + k) (N.le_add_right k) =
         eqToHom (by rw [← trans_pt_right γ δ hN 0, Nat.add_zero]) ≫
           Functor.OfSequence.map (segVal hU F hF δ hδ) 0 k k.zero_le ≫

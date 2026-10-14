@@ -176,8 +176,7 @@ theorem ReducedTensorWords.splice_twistedTuple_smul (G : InternalGrading R M) (q
       (((q * ∑ j ∈ Finset.range p, if h : j < n then 𝒟 ⟨j, h⟩ else 0).negOnePow : ℤ) : R) •
         splice R x 0 n p d e := by
   by_cases hfit : 0 < d ∧ p + d ≤ n
-  · have hp : p ≤ n := by omega
-    rw [splice_eq_of_tprod R (twistedTuple G q x 0 p) e hfit.1 hfit.2 (by omega),
+  · rw [splice_eq_of_tprod R (twistedTuple G q x 0 p) e hfit.1 hfit.2 (by omega),
       splice_eq_of_tprod R x e hfit.1 hfit.2 (by omega)]
     let deg : ℕ → ℤ := fun j => if h : j < n then 𝒟 ⟨j, h⟩ else 0
     let c : Fin (n + 1 - d) → R := fun j =>
@@ -896,12 +895,12 @@ theorem ReducedTensorWords.letter_comp_gradedCoderiv (G : InternalGrading R M)
   simp only [map_sum]
   refine (Finset.sum_eq_single 0 ?_ ?_).trans ?_
   · intro p _ hp
-    refine Finset.sum_eq_zero fun d hd ↦
+    refine Finset.sum_eq_zero fun d _ ↦
       letter_splice_eq_zero_of_not_whole R (twistedTuple G q x 0 p) _ (by omega)
   · intro hp
     exact absurd hp (by simp [hn])
   · refine (Finset.sum_eq_single n.1 ?_ ?_).trans ?_
-    · intro d hd hd'
+    · intro d _ hd'
       exact letter_splice_eq_zero_of_not_whole R (twistedTuple G q x 0 0) _ (by omega)
     · intro hcon
       exact absurd hcon (by simp)

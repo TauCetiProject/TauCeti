@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 public import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # The narrow class group of a number field
@@ -235,10 +236,7 @@ theorem mkPrincipal_eq_one_of_isTotallyPositive {x : Kˣ} (hx : IsTotallyPositiv
 `𝓞 K`, so `(x)` and `(-x)` are the same fractional ideal. This is what makes the image of
 `mkPrincipal` a quotient of the group of sign patterns *modulo the global sign*. -/
 @[simp] theorem mkPrincipal_neg (x : Kˣ) : mkPrincipal (-x) = mkPrincipal (K := K) x := by
-  rw [mkPrincipal_apply, mkPrincipal_apply]
-  refine congrArg mk (Units.ext ?_)
-  rw [coe_toPrincipalIdeal, coe_toPrincipalIdeal, Units.val_neg]
-  exact spanSingleton_eq_spanSingleton.mpr ⟨-1, by simp⟩
+  rw [mkPrincipal_apply, mkPrincipal_apply, toPrincipalIdeal_neg]
 
 /-- The kernel of the forgetful map `Cl⁺(K) → Cl(K)` is killed by `2`: by exactness it is the image
 of `mkPrincipal`, which is `2`-torsion. So the narrow-vs-ordinary defect is an elementary abelian

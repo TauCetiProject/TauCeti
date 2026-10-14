@@ -128,7 +128,7 @@ theorem cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal
     refine Finset.sum_congr rfl fun x _ ↦ congrArg _ ?_
     exact extEulerMatrix_of_of (h := hadm) (X := S x) (Y := S j)
       (hi := hb x) (hj := hb j)
-  rw [hentry, cartanMap_of A (P i).property, finiteModulesExactK0Equiv_of,
+  rw [hentry, cartanMap_of A (P i), finiteModulesExactK0Equiv_of,
     Matrix.diagonal_apply, hΦ]
   have : IsSimpleModule A (S j).obj := hS j
   have : IsSimpleModule A (S i).obj := hS i

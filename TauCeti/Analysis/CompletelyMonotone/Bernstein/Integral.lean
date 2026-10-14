@@ -66,7 +66,7 @@ theorem isBernsteinFunction_halfLinePrimitive (hf : IsCompletelyMonotoneOnIoi f)
   rw [isBernsteinFunction_iff]
   refine ⟨hcontinuous, hcontDiff, fun t ht ↦ ?_, ?_⟩
   · rw [halfLinePrimitive_def]
-    exact intervalIntegral.integral_nonneg ht fun x hx ↦
+    exact intervalIntegral.integral_nonneg ht fun x _ ↦
       hf.nonneg_of_continuousWithinAt (hcont 0 self_mem_Ici) (le_max_right x 0)
   · exact hf.congr fun t ht ↦ deriv_halfLinePrimitive hcont ht.le
 

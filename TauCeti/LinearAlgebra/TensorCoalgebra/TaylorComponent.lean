@@ -77,7 +77,7 @@ theorem taylorComponent_comp_gradedCoderiv_of_tprod
       exact Finset.sum_congr rfl fun p _ ↦ by
         simp only [map_sum, LinearMap.comp_apply]
     _ = _ := by
-      refine Finset.sum_congr rfl fun p hp ↦ ?_
+      refine Finset.sum_congr rfl fun p _ ↦ ?_
       apply (Finset.sum_subset ?_ ?_).symm
       · intro d hd
         rw [Finset.mem_Icc] at hd

@@ -53,7 +53,8 @@ theorem exists_pow_smul_mem_of_fg (P Q : PairOfDefinition A) {s : A}
     | zero => exact (Submodule.span A (M₀ : Set M)).zero_mem
     | add x y _ _ ihx ihy => exact (Submodule.span A (M₀ : Set M)).add_mem ihx ihy
     | smul a x _ ih => exact (Submodule.span A (M₀ : Set M)).smul_mem (a : A) ih
-  obtain ⟨d, hd⟩ := P.exists_pow_smul_le hs hsP M₀ N hNspan
+  obtain ⟨d, hd⟩ := P.ringOfDefinition.exists_pow_smul_le P.isOpen_ringOfDefinition
+    hs hsP M₀ N hNspan
     (Submodule.fg_span G.finite_toSet)
   obtain ⟨j, hj⟩ := Q.isBounded_ringOfDefinition.exists_pow_mul_subset hs
     (P.isOpen_ringOfDefinition.mem_nhds P.ringOfDefinition.zero_mem)

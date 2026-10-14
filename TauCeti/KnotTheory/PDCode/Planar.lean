@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.PDCode.Components
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
-public import TauCeti.Combinatorics.PermutationTriple.OrbitDecomposition
+public import TauCeti.Combinatorics.PermutationTriple.OrbitDecomposition.Basic
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate

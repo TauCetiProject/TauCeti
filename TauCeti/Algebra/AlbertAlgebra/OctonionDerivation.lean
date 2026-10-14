@@ -159,6 +159,25 @@ theorem offDiagMap_injective : Function.Injective (offDiagMap (R := R)) := by
     (fun F : Module.End R (AlbertAlgebra R) => (F (offDiagSingle 0 x)).offDiag 0) h
   simpa using h'
 
+/-- The range consists exactly of elements with zero diagonal and off-diagonal entries in the
+original range. -/
+theorem offDiagMap_range_iff {R : Type*} [CommSemiring R]
+    (f : Module.End R (TauCeti.Octonion R)) (A : TauCeti.AlbertAlgebra R) :
+    A ∈ LinearMap.range (TauCeti.AlbertAlgebra.offDiagMap f) ↔
+      A.diag = 0 ∧ ∀ i, A.offDiag i ∈ LinearMap.range f := by
+  constructor
+  · rintro ⟨B, rfl⟩
+    constructor
+    · simp
+    · intro i
+      exact LinearMap.mem_range.mpr ⟨B.offDiag i, by simp⟩
+  · rintro ⟨hdiag, hmem⟩
+    refine ⟨⟨0, fun i => Classical.choose (LinearMap.mem_range.mp (hmem i))⟩, ?_⟩
+    apply TauCeti.AlbertAlgebra.ext
+    · simp [hdiag]
+    · funext i
+      simpa using (Classical.choose_spec (LinearMap.mem_range.mp (hmem i)))
+
 end Endomorphism
 
 /-! ### The induced derivation -/

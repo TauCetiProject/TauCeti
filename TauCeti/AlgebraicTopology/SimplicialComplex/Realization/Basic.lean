@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.SimplicialComplex.AffineIndependentUnion
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
+public import Mathlib.Topology.UnitInterval
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
@@ -108,6 +109,11 @@ theorem faceBarycenter_apply (K : AbstractSimplicialComplex ι) (σ : Face K) (v
 topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
   TopologicalSpace.induced (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) inferInstance
+
+/-- Closed coordinate simplices are Hausdorff, including on an infinite vertex type. -/
+instance instT2SpaceStandardSimplex (σ : Finset ι) : T2Space (StandardSimplex σ) :=
+  (Topology.IsEmbedding.induced
+    (fun _ _ h => Subtype.ext (Finsupp.ext fun v => congrFun h v))).t2Space
 
 /-- Every closed coordinate simplex is compact, even in an infinite vertex set. -/
 instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (StandardSimplex σ) := by
@@ -231,7 +237,7 @@ theorem StandardSimplex.nonneg {σ : Finset ι} (x : StandardSimplex σ) (v : ι
       obtain ⟨w, _, rfl⟩ := hy
       by_cases h : w = v <;> simp [h])
     (by
-      intro y hy z hz a b ha hb hab
+      intro y hy z hz a b ha hb _
       simp only [Set.mem_ofPred_eq, Finsupp.add_apply, Finsupp.smul_apply] at hy hz ⊢
       exact add_nonneg (mul_nonneg ha hy) (mul_nonneg hb hz))
     x.2
@@ -318,6 +324,23 @@ theorem StandardSimplex.mem_convexHull_support {σ : Finset ι} (x : StandardSim
   rw [heq] at hx
   exact hx
 
+/-- Moving a point of a closed simplex towards a vertex stays in the enlarged simplex. -/
+theorem StandardSimplex.smul_add_single_mem [DecidableEq ι] {σ : Finset ι} (x : StandardSimplex σ)
+    (v : ι) (t : unitInterval) :
+    (1 - (t : ℝ)) • x.1 + (t : ℝ) • Finsupp.single v 1 ∈
+      convexHull ℝ ((insert v σ).image (fun w => Finsupp.single w (1 : ℝ)) :
+        Set (ι →₀ ℝ)) := by
+  apply (convex_convexHull ℝ _)
+  · exact convexHull_mono (Finset.coe_subset.mpr
+      (Finset.image_mono _ (Finset.subset_insert v σ))) (by
+        -- Set images remove the equality-instance choice in the finite image of `σ`.
+        simpa only [Finset.coe_image] using x.2)
+  · exact subset_convexHull ℝ _ (Finset.mem_coe.mpr
+      (Finset.mem_image.mpr ⟨v, Finset.mem_insert_self v σ, rfl⟩))
+  · exact sub_nonneg.mpr t.2.2
+  · exact t.2.1
+  · ring
+
 /-- The support of a realization point is an abstract face. -/
 theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.1.support ∈ K := by
   obtain ⟨σ, hσ, hx⟩ := mem_realization_iff.1 x.2
@@ -395,6 +418,13 @@ theorem vertex_val (K : AbstractSimplicialComplex ι) (v : ι) :
     (vertex K v : ι →₀ ℝ) = Finsupp.single v 1 :=
   (rfl)
 
+/-- The barycentric support of a realization vertex is its singleton vertex set. -/
+-- Simplify the support before vertex_val rewrites the vertex's coordinates.
+@[simp↓]
+theorem support_vertex (K : AbstractSimplicialComplex ι) (v : ι) :
+    (vertex K v : ι →₀ ℝ).support = {v} := by
+  rw [vertex_val, Finsupp.support_single _ one_ne_zero]
+
 /-- A realization point is a vertex exactly when its coordinate at that vertex is one. -/
 @[simp]
 theorem Realization.eq_vertex_iff (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :
@@ -421,6 +451,16 @@ theorem Realization.eq_vertex_iff (K : AbstractSimplicialComplex ι) (x : Realiz
       simp only [Finsupp.support_erase, Finset.mem_erase]
       exact ⟨by simpa only [Finset.mem_singleton] using h, hw⟩
     exact (Finsupp.mem_support_iff.mp hw') (hzero w hw')
+
+/-- A realization point supported on a singleton is the corresponding vertex. -/
+theorem Realization.eq_vertex_of_support_eq (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {v : ι} (h : x.1.support = {v}) : x = vertex K v := by
+  apply Subtype.ext
+  rw [vertex_val]
+  let w : Convexity.StdSimplex ℝ ι :=
+    ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩
+  exact congrArg Convexity.StdSimplex.weights
+    ((Convexity.StdSimplex.support_weights_eq_singleton (w := w)).mp h)
 
 /-- Distinct vertices give distinct points in the geometric realization. -/
 theorem vertex_injective (K : AbstractSimplicialComplex ι) :

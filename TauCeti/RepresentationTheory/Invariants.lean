@@ -15,6 +15,7 @@ import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
@@ -64,6 +65,7 @@ finite-dimensional representations.
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
   `Representation.norm` scaled by the inverse of the group order.
+* `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
 * `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
@@ -75,8 +77,15 @@ finite-dimensional representations.
   lifts invariant vectors when its target is projective over the target group algebra.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
   invariants.
+* `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
+  does not change the invariants.
+* `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
+  be compared along a surjective homomorphism of groups.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
+* `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
+* `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
+  vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
 * `Representation.IsIrreducible.invariants_eq_bot`: a nontrivial irreducible representation has no
@@ -108,6 +117,12 @@ theorem averageMap_eq_invOf_card_smul_norm :
   simp only [averageMap, GroupAlgebra.average, map_smul, map_sum, MonoidAlgebra.of_apply,
     asAlgebraHom_single_one, norm]
 
+/-- **Averaging does not see the action**: `avg ∘ ρ g = avg`, as `average k G * g = average k G`
+in the group algebra (`GroupAlgebra.mul_average_right`). -/
+theorem averageMap_comp_ρ (g : G) : ρ.averageMap ∘ₗ ρ g = ρ.averageMap := by
+  rw [averageMap, ← asAlgebraHom_single_one, ← Module.End.mul_eq_comp, ← map_mul,
+    GroupAlgebra.mul_average_right]
+
 /-- **The group sum has the invariants as its range.** When `#G` is invertible in `k`, the operator
 `Representation.norm ρ = ∑ g, ρ g` maps onto the invariants of `ρ`: it agrees with the averaging
 projection up to the unit `#G`, so the two have the same image. -/
@@ -130,6 +145,19 @@ theorem range_norm_trivial (k H : Type*) [CommSemiring k] [Group H] [Fintype H] 
     LinearMap.range (Representation.trivial k H k).norm = Ideal.span {(Nat.card H : k)} := by
   ext x
   simp [Representation.norm, Ideal.mem_span_singleton', mul_comm]
+
+end Representation
+
+namespace Representation
+
+/-- **Restriction along a surjective homomorphism does not change the invariants**: a vector is
+fixed by every `f g` exactly when it is fixed by every element of `H`. -/
+theorem invariants_comp_of_surjective {k G H V : Type*} [CommRing k] [Group G] [Group H]
+    [AddCommGroup V] [Module k V] (ρ : Representation k H V) (f : G →* H)
+    (hf : Function.Surjective f) : invariants (ρ.comp f) = ρ.invariants := by
+  ext v
+  simp only [mem_invariants, MonoidHom.comp_apply]
+  exact ⟨fun h g ↦ by obtain ⟨g, rfl⟩ := hf g; exact h g, fun h g ↦ h (f g)⟩
 
 end Representation
 
@@ -283,10 +311,36 @@ theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
 
 end Representation.Equiv
 
+namespace Representation
+
+variable {k G H V V' W W' : Type*} [CommRing k] [Group G] [Group H]
+  [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
+  [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W']
+
+/-- **Invariant dimensions of tensor products along a surjective homomorphism of groups.** If the
+restrictions of `X` and `Y` along a surjective `f : G →* H` are equivalent to `X'` and `Y'`, then
+`X ⊗ Y` and `X' ⊗ Y'` have invariants of the same dimension: restriction along `f` does not change
+the invariants (`Representation.invariants_comp_of_surjective`), and it commutes with tensor
+products. -/
+theorem finrank_invariants_tprod_of_comp {f : G →* H} (hf : Function.Surjective f)
+    {X : Representation k H V} {Y : Representation k H W} {X' : Representation k G V'}
+    {Y' : Representation k G W'} (e₁ : Equiv (X.comp f) X') (e₂ : Equiv (Y.comp f) Y') :
+    Module.finrank k (X.tprod Y).invariants = Module.finrank k (X'.tprod Y').invariants := by
+  rw [← invariants_comp_of_surjective (X.tprod Y) f hf]
+  exact (e₁.tprod e₂).invariantsLinearEquiv.finrank_eq
+
+end Representation
+
 namespace Rep
 
 open CategoryTheory
 open scoped MonoidAlgebra
+
+/-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
+@[simp]
+theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
+    (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.1 = x.1 := by
+  simpa [sub_hom, sub_eq_zero] using x.2
 
 variable {k G : Type*} [CommRing k] [Group G]
 
@@ -302,6 +356,29 @@ theorem invariantsFunctor_map_surjective_of_surjective_of_projective {A B : Rep 
   have : Epi f := (epi_iff_surjective f).2 hf
   have : IsSplitEpi f := ⟨⟨Projective.factorThru (𝟙 B) f, Projective.factorThru_comp _ _⟩⟩
   exact (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- **Intertwiners out of the trivial line are the invariant vectors.** A morphism
+`Rep.trivial k G k ⟶ A` is determined by the image of `1`, which is invariant, and an invariant
+vector `x` is the image of `1` under `r ↦ r • x`. -/
+noncomputable def trivialHomEquivInvariants (A : Rep k G) :
+    (Rep.trivial k G k ⟶ A) ≃ₗ[k] A.ρ.invariants where
+  toFun f := ⟨f.hom 1, fun g ↦ by simpa using (hom_comm_apply f g 1).symm⟩
+  invFun x := ConcreteCategory.ofHom
+    ⟨LinearMap.toSpanSingleton k A x, fun g ↦ LinearMap.ext fun r ↦ by simp [x.2 g]⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv f := hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext_ring <| one_smul k _
+  right_inv x := Subtype.ext (one_smul k (x : A))
+
+@[simp]
+theorem coe_trivialHomEquivInvariants_apply (A : Rep k G) (f : Rep.trivial k G k ⟶ A) :
+    (trivialHomEquivInvariants A f : A) = f.hom 1 :=
+  (rfl)
+
+@[simp]
+theorem trivialHomEquivInvariants_symm_apply_hom (A : Rep k G) (x : A.ρ.invariants) (r : k) :
+    ((trivialHomEquivInvariants A).symm x).hom r = r • (x : A) :=
+  (rfl)
 
 end Rep
 

@@ -175,7 +175,6 @@ theorem hasseInvariant_eq_one_of_rank_le_one {x : RegularFormClass K} (hx : x.ra
     rw [hasseInvariant_mk]
     refine prod_eq_one fun i _ => prod_eq_one fun j hj => ?_
     have hij := Fin.lt_def.mp (mem_Ioi.mp hj)
-    have hj := j.isLt
     omega
 
 /-- The zero class has trivial Hasse invariant. -/

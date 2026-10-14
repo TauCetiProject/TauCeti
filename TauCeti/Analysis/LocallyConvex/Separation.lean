@@ -49,7 +49,7 @@ theorem exists_strongDual_neg_pos_ne_zero {d₁ d₂ : E} (h : (0 : E) ∉ segme
   rw [map_zero] at hf0
   by_cases hfu : f u = 0
   · -- Perturb `f` by a small multiple of `ℓ₀`, small enough to keep both signs.
-    set ε := c / (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) with hε
+    set ε := c / (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) with _
     have hpos : 0 < |ℓ₀ d₁| + |ℓ₀ d₂| + 1 := by positivity
     have hεpos : 0 < ε := div_pos hf0 hpos
     have hεc : ε * (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) = c := div_mul_cancel₀ _ hpos.ne'

@@ -170,7 +170,7 @@ private theorem bartlett_row_const (n : ℝ) (i : ℕ) :
   have : (0 : ℝ) < 2 ^ ((i : ℝ) / 2) := by positivity
   have : (0 : ℝ) < π ^ ((i : ℝ) / 2) := by positivity
   have : (0 : ℝ) < 2 ^ (n / 2) := by positivity
-  rcases eq_or_ne (Real.Gamma (n / 2 - (i : ℝ) / 2)) 0 with hΓ | hΓ
+  rcases eq_or_ne (Real.Gamma (n / 2 - (i : ℝ) / 2)) 0 with hΓ | _
   · simp [hΓ]
   · field_simp
 

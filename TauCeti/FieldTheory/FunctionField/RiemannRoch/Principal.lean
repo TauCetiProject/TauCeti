@@ -33,6 +33,12 @@ so that `ℓ` depends only on the linear equivalence class of a divisor.  It is 
   `ℓ(D) = ℓ(0)` contains at most one effective divisor (Remark 1.4.5).
 * `TauCeti.riemannRochSpace_ne_bot_iff`: `L(D) ≠ 0` exactly when `D` is linearly equivalent to
   an effective divisor (Remark 1.4.5(b)).
+* `TauCeti.poles_le_iff_mem_riemannRochSpace`: for effective `D`, `z ∈ L(D)` exactly when the pole
+  divisor of `z` is at most `D`.
+* `TauCeti.poles_eq_sup_poles_of_mem_riemannRochSpace`: if `u = x - c y` and `y ∈ L((u)_∞)`, then
+  `(u)_∞ = (x)_∞ ⊔ (y)_∞`.
+* `TauCeti.span_pow_mul_pow_le_riemannRochSpace_zsmul_sup_poles`: the monomials `x ^ i y ^ j` with
+  `i + j ≤ n` lie in `L(n ((x)_∞ ⊔ (y)_∞))`.
 
 None of this needs the product formula `deg (div z) = 0` (Stichtenoth, Theorem 1.4.11), which is
 separate work; every statement here is independent of it.
@@ -211,14 +217,42 @@ theorem mem_riemannRochSpace_poles (hF : IsFunctionField k F) (z : Fˣ) :
   rw [mem_riemannRochSpace_units_iff hF, ← Divisor.zeros_sub_poles, sub_add_cancel]
   exact (Divisor.isEffective_zeros hF z).zero_le
 
+/-- **The poles of `z` are bounded by an effective divisor `D` exactly when `z ∈ L(D)`**. -/
+theorem poles_le_iff_mem_riemannRochSpace (hF : IsFunctionField k F) {D : Divisor k F}
+    (hD : WeilDivisor.IsEffective D) (z : Fˣ) :
+    Divisor.poles hF z ≤ D ↔ (z : F) ∈ riemannRochSpace D := by
+  refine ⟨fun h ↦ riemannRochSpace_mono h (mem_riemannRochSpace_poles hF z), fun h ↦ ?_⟩
+  rw [mem_riemannRochSpace_units_iff hF, WeilDivisor.le_iff] at h
+  refine WeilDivisor.le_iff.mpr fun P ↦ ?_
+  have hP := h P
+  rw [WeilDivisor.coeff_zero, WeilDivisor.coeff_add, Divisor.coeff_principal] at hP
+  rw [Divisor.coeff_poles]
+  have := (WeilDivisor.isEffective_iff D).mp hD P
+  omega
+
+/-- **The poles of a linear combination `x - c y` with `y ∈ L((x - c y)_∞)`**: if `u = x - c y`
+and `y` has no worse poles than `u`, then `(u)_∞ = (x)_∞ ⊔ (y)_∞`. -/
+theorem poles_eq_sup_poles_of_mem_riemannRochSpace (hF : IsFunctionField k F) {x y u : Fˣ}
+    {c : k} (hu : (u : F) = x - c • (y : F))
+    (hy : (y : F) ∈ riemannRochSpace (Divisor.poles hF u)) :
+    Divisor.poles hF u = Divisor.poles hF x ⊔ Divisor.poles hF y := by
+  have hux : (x : F) = u + c • (y : F) := by
+    rw [hu, sub_add_cancel]
+  have hsup : WeilDivisor.IsEffective (Divisor.poles hF x ⊔ Divisor.poles hF y) :=
+    (Divisor.isEffective_poles hF x).sup
+  refine le_antisymm ((poles_le_iff_mem_riemannRochSpace hF hsup u).mpr ?_) (sup_le ?_ ?_)
+  · rw [hu]
+    exact sub_mem (riemannRochSpace_mono le_sup_left (mem_riemannRochSpace_poles hF x))
+      (Submodule.smul_mem _ c
+        (riemannRochSpace_mono le_sup_right (mem_riemannRochSpace_poles hF y)))
+  · rw [poles_le_iff_mem_riemannRochSpace hF (Divisor.isEffective_poles hF u), hux]
+    exact add_mem (mem_riemannRochSpace_poles hF u) (Submodule.smul_mem _ c hy)
+  · exact (poles_le_iff_mem_riemannRochSpace hF (Divisor.isEffective_poles hF u) y).mpr hy
+
 /-- The `n`-th power of a nonzero function has poles bounded by `n` times its pole divisor. -/
 theorem pow_mem_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :
-    (z : F) ^ n ∈ riemannRochSpace ((n : ℤ) • Divisor.poles hF z) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
-    exact mul_mem_riemannRochSpace_add ih (mem_riemannRochSpace_poles hF z)
+    (z : F) ^ n ∈ riemannRochSpace ((n : ℤ) • Divisor.poles hF z) :=
+  pow_mem_riemannRochSpace_zsmul (mem_riemannRochSpace_poles hF z) n
 
 /-- `z ^ i ∈ L(m · (z)_∞)` whenever `i ≤ m`: in particular the powers `1, z, …, z^{n-1}` of a
 nonzero function lie in `L((n - 1) · (z)_∞)`. -/
@@ -226,5 +260,25 @@ theorem pow_mem_riemannRochSpace_zsmul_poles_of_le (hF : IsFunctionField k F) (z
     {m : ℤ} (h : (i : ℤ) ≤ m) : (z : F) ^ i ∈ riemannRochSpace (m • Divisor.poles hF z) :=
   riemannRochSpace_mono ((Divisor.isEffective_poles hF z).zsmul_le_zsmul h)
     (pow_mem_riemannRochSpace_zsmul_poles hF z i)
+
+/-- **The monomials of degree at most `n` in `x` and `y` lie in `L(n ((x)_∞ ⊔ (y)_∞))`**: for
+nonzero `x` and `y`, the span of the products `x ^ i y ^ j` with `i + j ≤ n` is contained in
+`L(n ((x)_∞ ⊔ (y)_∞))`. -/
+theorem span_pow_mul_pow_le_riemannRochSpace_zsmul_sup_poles (hF : IsFunctionField k F)
+    (x y : Fˣ) (n : ℤ) :
+    Submodule.span k
+        ((fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) '' {p | ((p.1 + p.2 : ℕ) : ℤ) ≤ n}) ≤
+      riemannRochSpace (n • (Divisor.poles hF x ⊔ Divisor.poles hF y)) := by
+  rw [Submodule.span_le]
+  rintro _ ⟨p, hp, rfl⟩
+  have hH := (Divisor.isEffective_poles hF x).sup (E := Divisor.poles hF y)
+  have hmem := mul_mem_riemannRochSpace_add
+    (pow_mem_riemannRochSpace_zsmul (riemannRochSpace_mono (le_sup_left (b := Divisor.poles hF y))
+      (mem_riemannRochSpace_poles hF x)) p.1)
+    (pow_mem_riemannRochSpace_zsmul (riemannRochSpace_mono (le_sup_right (a := Divisor.poles hF x))
+      (mem_riemannRochSpace_poles hF y)) p.2)
+  rw [← add_zsmul] at hmem
+  exact riemannRochSpace_mono (hH.zsmul_le_zsmul (by simp only [Set.mem_ofPred_eq] at hp; omega))
+    hmem
 
 end TauCeti

@@ -34,6 +34,9 @@ same way.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.laurentCoverOpen_inv_mul_true` and
+  `TauCeti.ValuationSpectrum.laurentCoverOpen_inv_mul_false` : for a unit `u`, the pieces of the
+  Laurent cover of `u⁻¹ g` are `R({g, u}/u) = {|g| ≤ |u|}` and `R({u}/g) = {|g| ≥ |u|}`.
 * `TauCeti.ValuationSpectrum.injective_presentationLimitMap_laurentCoverOpen` : restriction from
   `X` to the two pieces is injective.
 * `TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen` : sections over
@@ -195,6 +198,28 @@ the unit ideal, which is open. -/
 theorem laurentCoverOpen_mem_spaRationalOpens (f : A) (b : Bool) :
     laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus :=
   spaBasicOpen_mem_spaRationalOpens <| isOpen_span_of_one_mem <| by cases b <;> simp
+
+omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] in
+variable (Aplus) in
+/-- **The Laurent cover of `u⁻¹ g` for a unit `u`, first piece**: `{|u⁻¹ g| ≤ 1}` is
+`R({g, u}/u) = {|g| ≤ |u|}`. -/
+theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :
+    laurentCoverOpen Aplus (↑u⁻¹ * g) true = spaBasicOpen Aplus {g, ↑u} u := by
+  ext v
+  have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
+  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.2,
+    inv_mul_le_iff₀ (zero_lt_iff.mpr hu)]
+
+omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] in
+variable (Aplus) in
+/-- **The Laurent cover of `u⁻¹ g` for a unit `u`, second piece**: `{|u⁻¹ g| ≥ 1}` is
+`R({u}/g) = {|g| ≥ |u|}`. -/
+theorem laurentCoverOpen_inv_mul_false (u : Aˣ) (g : A) :
+    laurentCoverOpen Aplus (↑u⁻¹ * g) false = spaBasicOpen Aplus {↑u} g := by
+  ext v
+  have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
+  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.2,
+    le_inv_mul_iff₀ (zero_lt_iff.mpr hu)]
 
 /-! ### Transport from the completed rational localisations -/
 

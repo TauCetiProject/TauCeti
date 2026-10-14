@@ -11,6 +11,8 @@ public import TauCeti.Algebra.Module.AuslanderReiten.ProjectiveSummand
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Stable
 public import TauCeti.Algebra.Category.ModuleCat.ProjectiveStable.Reflection
 
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
+
 /-!
 # Indecomposability of minimal transposes
 
@@ -95,7 +97,7 @@ theorem indecomposable_stableTransposeObj_iff (P : FiniteProjectivePresentation 
           P.exact P.surjective P.exact P.surjective).comp MulOpposite.unop_injective,
         (AuslanderReitenTranspose.stableMap_surjective
           P.exact P.surjective P.exact P.surjective).comp MulOpposite.unop_surjective⟩
-    have : IsLocalRing (End X) := IsLocalRing.of_ringEquiv e
+    have : IsLocalRing (End X) := e.isLocalRing
     exact indecomposable_of_injective_of_isLocalRing (R := End X)
       (fun h ↦ one_ne_zero (α := End X) ((IsZero.iff_id_eq_zero _).mp h)) id
       Function.injective_id rfl rfl (fun _ ↦ rfl)
@@ -121,10 +123,6 @@ theorem isIndecomposableModule_auslanderReitenTranspose_iff
       ((P.indecomposable_stableTransposeObj_iff hM hiM).mpr hpM)).mpr
     intro Q r hQ
     let := hQ
-    have hzero := hP.isSuperfluous_ker.subsingleton_of_retract_auslanderReitenTranspose
-      r.r.hom r.i.hom (by
-        simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
-          congrArg ModuleCat.Hom.hom r.retract)
-    exact ModuleCat.isZero_iff_subsingleton.mpr hzero
+    exact hP.isSuperfluous_ker.isZero_of_retract_auslanderReitenTranspose r
 
 end TauCeti.FiniteProjectivePresentation

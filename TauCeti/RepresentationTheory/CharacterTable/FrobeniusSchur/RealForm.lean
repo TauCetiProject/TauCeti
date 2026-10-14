@@ -56,10 +56,6 @@ real-structure vocabulary of `TauCeti/RepresentationTheory/RealForm.lean`:
 
 ## References
 
-This is the "realizable" direction of the milestone `frobeniusSchurIndicatorRep_eq_one_realizable`
-pinned in the `Suggested.lean` accompanying Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 4.
 -/

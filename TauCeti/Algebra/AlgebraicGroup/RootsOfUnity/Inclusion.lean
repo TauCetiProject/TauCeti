@@ -47,10 +47,8 @@ injective (a monomorphism of functors) and natural in the value algebra.
   `μ_n → 𝔾ₘ` is a monomorphism of group functors.
 * `TauCeti.RootsOfUnityGroup.mapValue_inclusion`: the inclusion is natural in the value algebra.
 
-This is a worked-example check for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 4: "`μ_n = D(ℤ/n)`", "`𝔾_m = D(ℤ)`",
-and the diagonalizable anti-equivalence `M ↦ D(M)`), assembling the `μ_n` and `𝔾ₘ` worked
-examples through the diagonalizable-group functoriality `DiagonalizableGroup.pointsMap`.
+This assembles the `μ_n` and `𝔾ₘ` examples through the diagonalizable-group functoriality
+`DiagonalizableGroup.pointsMap`.
 
 ## References
 

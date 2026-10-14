@@ -308,6 +308,15 @@ lemma IsSmoothDiscrete.of_injective {X Y : TopRep R G} (f : X ⟶ Y)
   rw [hstab]
   exact hY.stabilizer_isOpen _
 
+/-- Smooth discreteness is preserved by isomorphisms of topological representations. -/
+instance : ObjectProperty.IsClosedUnderIsomorphisms
+    (fun X : TopRep.{w} R G => IsSmoothDiscrete R X) where
+  of_iso e hX := by
+    refine IsSmoothDiscrete.of_injective e.inv ?_ hX
+    intro x y h
+    have hh := congrArg (fun z => e.hom.hom z) h
+    simpa using hh
+
 omit [TopologicalSpace G] in
 /-- A discrete object is the image of its own underlying module under the dictionary; openness of
 the stabilizers plays no part, and a smooth discrete object supplies the discreteness through
@@ -486,8 +495,15 @@ def ofDiscreteModuleIso (e : M ≃ₗ[R] N) (he : ∀ (g : G) (m : M), e (g • 
     (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
     (ofDiscreteModuleIso e he).hom = ofDiscreteModuleMap e.toLinearMap he := (rfl)
 
+/-- The inverse direction of `ofDiscreteModuleIso e he` is `ofDiscreteModuleMap` of `e.symm`. -/
+@[simp] lemma ofDiscreteModuleIso_inv (e : M ≃ₗ[R] N)
+    (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
+    (ofDiscreteModuleIso e he).inv = ofDiscreteModuleMap e.symm.toLinearMap
+      (fun g n ↦ e.injective (by rw [he]; simp)) := (rfl)
+
 /-- The inverse direction of `ofDiscreteModuleIso e he` acts on underlying modules as `e.symm`. -/
-@[simp] lemma ofDiscreteModuleIso_inv_hom_apply (e : M ≃ₗ[R] N)
+-- Not `@[simp]`: `ofDiscreteModuleIso_inv` rewrites the inverse in its left-hand side first.
+lemma ofDiscreteModuleIso_inv_hom_apply (e : M ≃ₗ[R] N)
     (he : ∀ (g : G) (m : M), e (g • m) = g • e m) (n : N) :
     (ofDiscreteModuleIso e he).inv.hom n = e.symm n := (rfl)
 
@@ -757,25 +773,12 @@ def smoothDiscreteResFunctor :
   map_id _ := rfl
   map_comp _ _ := rfl
 
-private theorem smoothDiscreteResFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ := rfl
-
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
 theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     (smoothDiscreteResFunctor R G U).obj A =
       ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
-  smoothDiscreteResFunctor_obj_impl R G U A
-
-private theorem smoothDiscreteResFunctor_map_apply_impl
-    {A B : SmoothDiscreteTopRep.{u, v, w} R G} (f : A ⟶ B) (x : A.obj.V) :
-    (show B.obj.V from
-      (((eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-          (smoothDiscreteResFunctor_obj R G U B))).hom.comp
-        ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
-          (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-            (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x) = f.hom.hom x := rfl
+  (rfl)
 
 -- `dsimp% only` on the left-hand side: see the comment on `ofDiscreteModulePair_hom_apply`. Here
 -- `simp` also unfolds the `have` that `show … from` elaborates to, and the `.obj` of `⟨_, _⟩`.
@@ -790,7 +793,7 @@ theorem smoothDiscreteResFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w}
         ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
           (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
             (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x)) = f.hom.hom x :=
-  smoothDiscreteResFunctor_map_apply_impl R G U f x
+  (rfl)
 
 end Restriction
 
@@ -848,7 +851,9 @@ action. -/
 continuous `G`-action and the smooth discrete objects of `TopRep R G`. It is the identity on
 underlying modules in both directions, the action being read off by `TopRep.distribMulAction`, so
 every component of the unit and of the counit is an identity morphism. -/
-@[expose] def discreteRepEquivSmoothTopRep :
+@[expose, simps! functor inverse unitIso_hom_app unitIso_inv_app counitIso_hom_app
+  counitIso_inv_app]
+def discreteRepEquivSmoothTopRep :
     DiscreteRep.{u, v, w} R G ≌ SmoothDiscreteTopRep.{u, v, w} R G where
   functor := toSmoothDiscrete R G
   inverse := ofSmoothDiscrete R G
@@ -859,33 +864,13 @@ every component of the unit and of the counit is an identity morphism. -/
   counitIso := NatIso.ofComponents (fun X ↦ Iso.refl X) fun _ ↦
     ObjectProperty.hom_ext _ (TopRep.hom_ext (DFunLike.ext _ _ fun _ ↦ rfl))
 
-/-- The functor of `discreteRepEquivSmoothTopRep` is `toSmoothDiscrete`. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_functor :
-    (discreteRepEquivSmoothTopRep R G).functor = toSmoothDiscrete R G := (rfl)
+/-- `toSmoothDiscrete` is an equivalence of categories, with inverse `ofSmoothDiscrete`. -/
+instance isEquivalence_toSmoothDiscrete : (toSmoothDiscrete.{u, v, w} R G).IsEquivalence :=
+  (discreteRepEquivSmoothTopRep R G).isEquivalence_functor
 
-/-- The inverse functor of `discreteRepEquivSmoothTopRep` is `ofSmoothDiscrete`. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_inverse :
-    (discreteRepEquivSmoothTopRep R G).inverse = ofSmoothDiscrete R G := (rfl)
-
-/-- Each component of the unit of `discreteRepEquivSmoothTopRep` is an identity morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_unitIso_hom_app (X : DiscreteRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).unitIso.hom.app X = 𝟙 X := (rfl)
-
-/-- Each component of the inverse of the unit of `discreteRepEquivSmoothTopRep` is an identity
-morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_unitIso_inv_app (X : DiscreteRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).unitIso.inv.app X = 𝟙 X := (rfl)
-
-/-- Each component of the counit of `discreteRepEquivSmoothTopRep` is an identity morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_counitIso_hom_app
-    (X : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).counitIso.hom.app X = 𝟙 X := (rfl)
-
-/-- Each component of the inverse of the counit of `discreteRepEquivSmoothTopRep` is an identity
-morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_counitIso_inv_app
-    (X : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).counitIso.inv.app X = 𝟙 X := (rfl)
+/-- `ofSmoothDiscrete` is an equivalence of categories, with inverse `toSmoothDiscrete`. -/
+instance isEquivalence_ofSmoothDiscrete : (ofSmoothDiscrete.{u, v, w} R G).IsEquivalence :=
+  (discreteRepEquivSmoothTopRep R G).isEquivalence_inverse
 
 end CoefficientEquivalence
 
@@ -893,20 +878,19 @@ end CoefficientEquivalence
 
 section NotSmooth
 
-/-- The group of the non-example below carries the indiscrete topology, whose only open sets are
-`∅` and the whole group. -/
-local instance instTopologicalSpaceUnitsZModThree : TopologicalSpace (ZMod 3)ˣ := ⊤
-
 /-- An object of `TopRep R G` whose underlying module is discrete need not be smooth. Here the
 two-element group `(ZMod 3)ˣ` acts on the discrete module `ZMod 3` by multiplication, so the
-stabilizer of `1` is the singleton `{1}`; giving the group the indiscrete topology makes that
-singleton non-open. This is why the dictionary above has the discrete `G`-modules *with continuous
-`G`-action* as its source, and it is what the hypothesis `ContinuousSMul G M` of
-`TauCeti.ofDiscreteModule_isSmoothDiscrete` rules out. Stating it needs `TauCeti.ofDiscreteModule`
-to be available without that hypothesis, which is why the hypothesis sits on the results that use
-it rather than on the construction. -/
+stabilizer of `1` is the singleton `{1}`; giving the group the indiscrete topology `⊤`, whose only
+open sets are `∅` and the whole group, makes that singleton non-open. The statement names that
+topology explicitly: it is not the topology `(ZMod 3)ˣ` has as the unit group of the discrete ring
+`ZMod 3`, for which the same object is smooth. This is why the dictionary above has the discrete
+`G`-modules *with continuous `G`-action* as its source, and it is what the hypothesis
+`ContinuousSMul G M` of `TauCeti.ofDiscreteModule_isSmoothDiscrete` rules out. Stating it needs
+`TauCeti.ofDiscreteModule` to be available without that hypothesis, which is why the hypothesis
+sits on the results that use it rather than on the construction. -/
 lemma not_isSmoothDiscrete_ofDiscreteModule_units_zmod :
-    ¬ IsSmoothDiscrete ℤ (ofDiscreteModule ℤ (ZMod 3)ˣ (ZMod 3)) := by
+    ¬ @IsSmoothDiscrete ℤ _ _ (ZMod 3)ˣ _ ⊤ (ofDiscreteModule ℤ (ZMod 3)ˣ (ZMod 3)) := by
+  let : TopologicalSpace (ZMod 3)ˣ := ⊤
   intro h
   have hopen := h.stabilizer_isOpen (1 : ZMod 3)
   simp only [ofDiscreteModule_ρ_apply_apply] at hopen

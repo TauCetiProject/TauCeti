@@ -222,22 +222,13 @@ vector. -/
 @[simp] theorem f4ModularCoroot_castAdd (i : Fin 4) :
     f4ModularCoroot (Fin.castAdd 44 i) =
       f4ModularSimpleCoroot (Fin.cast rank_F4.symm i) := by
-  rw [f4ModularCoroot_eq_sum_simple, f4Coroot_castAdd]
-  simp only [Pi.single_apply]
-  rw [Finset.sum_eq_single (Fin.cast rank_F4.symm i)]
+  rw [f4ModularCoroot_eq_sum_simple, f4Coroot_castAdd,
+    Fintype.sum_eq_single (Fin.cast rank_F4.symm i)]
   · simp
-  · intro j _ hj
-    have hcast : Fin.cast rank_F4 j ≠ i := by
-      intro hij
-      apply hj
-      apply Fin.cast_injective rank_F4
-      simpa using hij
-    split_ifs with hji
-    · exact (hcast hji).elim
-    · rw [Int.cast_zero, zero_smul]
-  · intro h
-    have hm : Fin.cast rank_F4.symm i ∈ Finset.univ := Finset.mem_univ _
-    exact (h hm).elim
+  · intro j hj
+    have hcast : Fin.cast rank_F4 j ≠ i := fun h =>
+      hj (by rw [← h, Fin.cast_cast, Fin.cast_eq_self])
+    rw [Pi.single_eq_of_ne hcast, Int.cast_zero, zero_smul]
 
 /-- The exact integral root-edge bracket inherited by the Chevalley lattice. -/
 theorem exists_f4Integral_lie_rootVector_eq_zsmul_of_add (α β γ : Fin 48)
@@ -332,15 +323,6 @@ abbrev f4PinnedRootIndex (α : (F4.cartanSubalgebra valid_F4).root) : Fin 48 :=
       f4ModularRootVector (f4PinnedRootIndex α) := by
   rw [f4ModularRootVector_eq_basis, f4KillingRootLabel_f4PinnedRootIndex]
 
-/-- In the pinned F₄ table the root opposite to a simple root is the corresponding entry in the
-second half of the table. -/
-@[simp] theorem f4OppositeRootIndex_castAdd (i : Fin 4) :
-    f4OppositeRootIndex (Fin.castAdd 44 i) =
-      Fin.addNat (Fin.castAdd 20 i) 24 := by
-  rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm]
-  revert i
-  decide
-
 /-- The pinned root index of a positive or negative simple root. -/
 def f4SignedSimpleRootIndex : Fin 4 ⊕ Fin 4 → Fin 48
   | .inl i => Fin.castAdd 44 i
@@ -353,16 +335,6 @@ def f4SignedSimpleRootIndex : Fin 4 ⊕ Fin 4 → Fin 48
 /-- A negative simple-root label is the index opposite to the corresponding positive root. -/
 @[simp] theorem f4SignedSimpleRootIndex_inr (i : Fin 4) :
     f4SignedSimpleRootIndex (.inr i) = f4OppositeRootIndex (Fin.castAdd 44 i) := (rfl)
-
-/-- A pinned positive or negative simple root vector in the reduced Chevalley lattice. -/
-noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
-    f4ModularChevalleyLieAlgebra :=
-  f4ModularRootVector (f4SignedSimpleRootIndex k)
-
-/-- A signed simple root vector is the modular root vector at its pinned root index. -/
-@[simp] theorem f4ModularSignedSimpleRootVector_eq (k : Fin 4 ⊕ Fin 4) :
-    f4ModularSignedSimpleRootVector k = f4ModularRootVector (f4SignedSimpleRootIndex k) := by
-  rw [f4ModularSignedSimpleRootVector]
 
 /-- Opposite roots have the same coroot after reduction modulo two. -/
 @[simp] theorem f4ModularCoroot_f4OppositeRootIndex (α : Fin 48) :
@@ -476,7 +448,7 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
 
 /-- A root vector has zero coordinate at any different root label. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero
-    (ε γ : Fin 48) (hεγ : f4KillingRootLabel ε ≠ f4KillingRootLabel γ) :
+    (ε γ : Fin 48) (hεγ : ε ≠ γ) :
     f4ModularChevalleyBasis.repr (f4ModularRootVector ε)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
   simp only [f4ModularRootVector_eq_basis, Basis.repr_self]
@@ -511,8 +483,8 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
       Finsupp.zero_apply, ne_eq, not_true_eq_false] at hne
   obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot δ β hsum hbot
   obtain ⟨z, -, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add δ β ε hε
-  by_cases heq : f4KillingRootLabel ε = f4KillingRootLabel γ
-  · obtain rfl : ε = γ := f4KillingRoot_injective (congrArg Subtype.val heq)
+  by_cases heq : ε = γ
+  · subst heq
     exact hε
   simp only [hlie, map_smul, Finsupp.smul_apply,
     f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero ε γ heq, smul_zero, ne_eq,
@@ -525,17 +497,9 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
       ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
       (Sum.inl (f4KillingRootLabel β)) =
       (f4Root β (Fin.cast rank_F4 i) : ZMod 2) := by
-  let c : ZMod 2 := f4SimplyConnectedRootDatum.pairing β
-    (Fin.castAdd 44 (Fin.cast rank_F4 i))
-  have hlie : ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆ =
-      c • f4ModularRootVector β := f4Modular_lie_simpleCoroot_rootVector i β
-  have hcoeff : f4SimplyConnectedRootDatum.pairing β
-      (Fin.castAdd 44 (Fin.cast rank_F4 i)) = f4Root β (Fin.cast rank_F4 i) := by
-    rw [f4SimplyConnectedRootDatum_pairing, f4Coroot_castAdd,
-      dotProduct_single_one]
-  rw [hlie, map_smul, Finsupp.smul_apply,
-    f4ModularChevalleyBasis_repr_rootVector_self, smul_eq_mul, mul_one]
-  simp only [c, hcoeff]
+  rw [f4Modular_lie_simpleCoroot_rootVector, map_smul, Finsupp.smul_apply,
+    f4ModularChevalleyBasis_repr_rootVector_self, smul_eq_mul, mul_one,
+    f4SimplyConnectedRootDatum_pairing, f4Coroot_castAdd, dotProduct_single_one]
 
 /-- A root-vector bracket has no coordinate at an unrelated root label. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
@@ -550,7 +514,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
 
 /-- A simple-coroot bracket has no coordinate away from its root label. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
-    (i : Fin F4.rank) (β γ : Fin 48) (hβγ : f4KillingRootLabel β ≠ f4KillingRootLabel γ) :
+    (i : Fin F4.rank) (β γ : Fin 48) (hβγ : β ≠ γ) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
         (Sum.inl (f4KillingRootLabel γ)) = 0 := by
@@ -565,7 +529,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
         (Sum.inl (f4KillingRootLabel β)) = 0 := by
   apply f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
   intro h
-  exact f4KillingRootLabel_ne_of_root_eq_add δ β β
+  exact f4_ne_of_root_eq_add δ β β
     (by simpa only [f4SimplyConnectedRootDatum_root] using h) rfl
 
 /-! ## Integral root exponentials -/
@@ -698,7 +662,7 @@ theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
       f4ChevalleyLieLattice 1 (f4RootAdjointDerivation_dividedPower_mem k 1)) y =
         ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆ := by
   apply Subtype.ext
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_one,
+  rw [coe_integralDividedPower_one_apply,
     Module.End.smul_def, LieSubalgebra.coe_bracket, coe_f4IntegralRootVector,
     f4RootAdjointDerivation_toLinearMap, ad_apply]
 
@@ -710,8 +674,7 @@ theorem f4RootExponential_tmul {A : Type*} [CommRing A] [Algebra ℤ A]
       (1 ⊗ₜ[ℤ] y) +
         t • (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) +
         t ^ 2 • (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) := by
-  rw [f4RootExponential]
-  rw [baseChangeExp_tmul_of_pow_smul_eq_zero
+  rw [f4RootExponential, baseChangeExp_tmul_of_pow_smul_eq_zero
     (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k) t 1 y
@@ -719,13 +682,7 @@ theorem f4RootExponential_tmul {A : Type*} [CommRing A] [Algebra ℤ A]
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero,
     pow_one, integralDividedPower_zero, Module.End.one_apply,
     integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie,
-    f4IntegralDividedAdjointSquare, mul_one]
-  have hscalar (s : A) (z : f4ChevalleyLieLattice) :
-      s ⊗ₜ[ℤ] z = s • (1 ⊗ₜ[ℤ] z) := by
-    simpa only [mul_one] using TensorProduct.tmul_eq_smul_one_tmul s z
-  exact congrArg₂ (fun u v : A ⊗[ℤ] f4ChevalleyLieLattice => (1 ⊗ₜ[ℤ] y + u) + v)
-    (hscalar t ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆)
-    (hscalar (t ^ 2) (f4IntegralDividedAdjointSquare k y))
+    f4IntegralDividedAdjointSquare, mul_one, ← TensorProduct.tmul_eq_smul_one_tmul]
 
 /-- The integral exponential of a signed simple root as a Lie algebra automorphism after
 arbitrary scalar extension. -/

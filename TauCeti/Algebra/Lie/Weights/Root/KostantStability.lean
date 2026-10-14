@@ -49,8 +49,7 @@ by the second bracket to zero.
 Together with the binomial coefficients of the Cartan generators, which act diagonally on root
 vectors, this is exactly the invariance needed to make `L` a module over the Kostant `ℤ`-form of
 `U(L)` preserving a finite free lattice; that consequence is drawn in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Adjoint.Basic`. This advances Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of `CFSGStatement`.
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Adjoint.Basic`.
 
 ## Main results
 
@@ -148,7 +147,7 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
     · refine Or.inl ?_
       rw [hstep, hx.toIsSl2System.lie_eq_zero_of_rootSpace_add_eq_bot α γ hbot, smul_zero]
     refine Or.inr ?_
-    set δ : Weight K H L := ⟨(α : H → K) + (γ : H → K), hbot⟩ with hδ
+    set δ : Weight K H L := ⟨(α : H → K) + (γ : H → K), hbot⟩
     have hδcoe : (δ : H → K) = (α : H → K) + (γ : H → K) := rfl
     have hδnz : δ.IsNonZero := by
       rw [Weight.IsNonZero, Weight.IsZero, hδcoe]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separable
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Degree
 
 /-!
@@ -13,7 +13,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.De
 
 Over a finite field `𝔽_q` the kernel of `1 − π_q` is the set of all rational points, and its
 degree is their number `#E(𝔽_q)`. So `1 − π_q` satisfies the hypothesis `#ker φ = deg φ` of
-`Isogeny/Dual/Basic.lean`, and `[#E(𝔽_q)]` factors through it. The factor is the dual
+`TauCeti.Isogeny.existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree_of_card_ker_eq`, and
+`[#E(𝔽_q)]` factors through it. The factor is the dual
 `(1 − π_q)^`, of degree `#E(𝔽_q)`. The classical identities `(1 − π_q)^ = 1 − π̂_q` and
 `π_q + π̂_q = [a_q]` are not proved here.
 
@@ -44,7 +45,7 @@ theorem existsUnique_comp_oneSubFrobeniusIsogeny_eq_mulByIntIsogenyOfNeZero
         rw [WeierstrassCurve.pointCount_def]
         omega : (W.pointCount : ℤ) ≠ 0) := by
   classical
-  have h := existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree
+  have h := existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree_of_card_ker_eq
     (card_ker_oneSubFrobeniusIsogeny_eq_degree W)
   simp_rw [degree_oneSubFrobeniusIsogeny_eq_pointCount] at h
   exact h

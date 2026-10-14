@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
-# Dirac measures: pushforwards and additive rigidity
+# Dirac measures: pushforwards, additive rigidity and finite convex combinations
 
 Mathlib's `MeasureTheory.Measure.map_dirac'` computes `(Measure.dirac x).map T = Measure.dirac
 (T x)` for a measurable `T`. A Dirac measure leaves a map no room to be modified on a null set:
@@ -22,13 +23,22 @@ A Dirac measure is also rigid under addition: if two measures sum to a Dirac mas
 multiple of that same Dirac mass. This identifies the atomic extreme rays in cones represented
 by positive measures.
 
+Finally, the probability measures carried by a finite set are exactly the finite convex
+combinations of Dirac measures at its points, with nonnegative real weights summing to `1`.
+
 ## Main results
 
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
+* `TauCeti.MeasureTheory.measurePreserving_const_dirac` — a constant map out of a probability
+  space onto a point `b` is measure preserving onto `Measure.dirac b`.
 * `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
   avoiding a point is a multiple of its Dirac measure.
+* `TauCeti.exists_eq_sum_smul_dirac_of_ae_mem_finset` — a probability measure carried by a
+  finite set is a convex combination of the Dirac measures at its points.
+* `TauCeti.isProbabilityMeasure_sum_smul_dirac` — conversely, a convex combination of Dirac
+  measures is a probability measure.
 * `TauCeti.eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are
   supported at the same point.
 -/
@@ -36,6 +46,7 @@ by positive measures.
 public section
 
 open MeasureTheory
+open scoped NNReal
 
 namespace Measure
 
@@ -84,6 +95,32 @@ end MeasureTheory.Measure
 
 namespace TauCeti
 
+/-- A probability measure carried by a finite set `s` is a convex combination of the Dirac
+measures at the points of `s`: indexed by `s` itself, its weights are the masses of the points,
+as `ℝ≥0` values summing to `1`. -/
+theorem exists_eq_sum_smul_dirac_of_ae_mem_finset {X : Type*} [MeasurableSpace X]
+    [MeasurableSingletonClass X] {μ : Measure X} [IsProbabilityMeasure μ] {s : Finset X}
+    (hμ : ∀ᵐ x ∂μ, x ∈ s) :
+    ∃ w : s → ℝ≥0, ∑ x, w x = 1 ∧ μ = ∑ x : s, w x • Measure.dirac (x : X) := by
+  have h := Measure.ae_mem_finset_iff.1 hμ
+  have hsum : ∑ x ∈ s, μ {x} = 1 := by
+    simpa using (congrArg (fun ν : Measure X ↦ ν Set.univ) h).symm
+  refine ⟨fun x ↦ (μ {(x : X)}).toNNReal, ENNReal.coe_injective ?_, ?_⟩
+  · simp only [ENNReal.ofNNReal_finsetSum, ENNReal.coe_toNNReal (measure_ne_top _ _),
+      ENNReal.coe_one]
+    rwa [Finset.sum_coe_sort s fun x ↦ μ {x}]
+  · conv_lhs => rw [h]
+    rw [← Finset.sum_coe_sort s]
+    simp only [ENNReal.smul_def, ENNReal.coe_toNNReal (measure_ne_top _ _)]
+
+/-- For weights summing to `1`, the weighted law `∑ j, w j • δ_{y j}` of finitely many points is a
+probability measure. -/
+theorem isProbabilityMeasure_sum_smul_dirac {J X : Type*} [Fintype J] [MeasurableSpace X]
+    {w : J → ℝ≥0} (hw : ∑ j, w j = 1) (y : J → X) :
+    IsProbabilityMeasure (∑ j, w j • Measure.dirac (y j)) :=
+  Measure.sum_fintype (fun j ↦ w j • Measure.dirac (y j)) ▸
+    (hw ▸ hasSum_fintype w).isProbabilityMeasure_sum_dirac_nnreal
+
 /-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
 theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
     {μ ν : Measure X} {x : X}
@@ -97,5 +134,21 @@ theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableS
     exact add_eq_zero.mp h'
   exact ⟨μ.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).1),
     ν.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).2)⟩
+
+end TauCeti
+
+namespace TauCeti
+
+namespace MeasureTheory
+
+variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+
+/-- A constant map out of a probability space onto a point `b` is measure preserving onto
+`Measure.dirac b`, with no hypothesis on either measurable space. -/
+theorem measurePreserving_const_dirac {μ : Measure X} [IsProbabilityMeasure μ] (b : Y) :
+    MeasurePreserving (fun _ : X => b) μ (Measure.dirac b) :=
+  ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
+
+end MeasureTheory
 
 end TauCeti

@@ -22,8 +22,9 @@ coordinates: a degree drop contributes roots at zero in the reflected family, wh
 all invertible roots retain their original multiplicities. In a translated reciprocal
 coordinate, these correspond to the original finite roots away from the translation center.
 
-The multiplicity transport works over arbitrary commutative rings, including rings with
-zero divisors. No splitting hypothesis is needed.
+The multiplicity transport at invertible roots works over arbitrary commutative rings,
+including rings with zero divisors. The zero-root statements work over arbitrary rings.
+No splitting hypothesis is needed.
 -/
 
 public section
@@ -55,9 +56,7 @@ theorem rootMultiplicity_reflect [CommRing R] (p : R[X]) {N : ℕ}
   let : Invertible (↑u : R) := u.isUnit.invertible
   obtain ⟨q, heq, hqroot⟩ := p.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hp (↑u)
   let m := p.rootMultiplicity (↑u)
-  have hq : q ≠ 0 := by
-    intro hq
-    exact hp (by simpa only [hq, mul_zero] using heq)
+  have hq : q ≠ 0 := right_ne_zero_of_mul (heq ▸ hp)
   have hdeg : p.natDegree = m + q.natDegree := by
     rw [heq, ((monic_X_sub_C (↑u)).pow m).natDegree_mul' hq]
     simp [m, (monic_X_sub_C (↑u : R)).natDegree_pow]
@@ -71,9 +70,7 @@ theorem rootMultiplicity_reflect [CommRing R] (p : R[X]) {N : ℕ}
       (C ((-(↑u : R)) ^ m) * q.reflect (N - m)) * (X - C (↑u⁻¹ : R)) ^ m := by
     have hpow : ((X - C (↑u : R)) ^ m).reflect m =
         (C (-(↑u : R)) * (X - C (↑u⁻¹ : R))) ^ m := by
-      have h := reflect_pow (X - C (↑u : R)) (N := 1) (by simp) m
-      rw [Nat.mul_one, hlinear] at h
-      exact h
+      rw [← hlinear, ← reflect_pow _ (N := 1) (by simp), Nat.mul_one]
     conv_lhs => rw [heq]
     conv_lhs => arg 1; rw [← Nat.add_sub_of_le hmN]
     rw [reflect_mul _ _ (by simp [m, (monic_X_sub_C (↑u : R)).natDegree_pow]) hqN,
@@ -96,7 +93,7 @@ theorem rootMultiplicity_reflect [CommRing R] (p : R[X]) {N : ℕ}
 /-- The excess of a reflection bound over the degree of a nonzero polynomial is exactly
 the multiplicity of zero in its reflection. -/
 @[simp]
-theorem rootMultiplicity_reflect_zero [CommRing R] (p : R[X]) (hp : p ≠ 0) {N : ℕ}
+theorem rootMultiplicity_reflect_zero [Ring R] (p : R[X]) (hp : p ≠ 0) {N : ℕ}
     (hN : p.natDegree ≤ N) :
     (p.reflect N).rootMultiplicity 0 = N - p.natDegree := by
   rw [rootMultiplicity_eq_natTrailingDegree']
@@ -128,7 +125,7 @@ theorem rootMultiplicity_map_reverse [Semiring R] [CommRing S] (p : R[X])
 /-- When a nonzero specialization drops degree, that degree drop is exactly the multiplicity
 of zero in the specialized formal reversal. -/
 @[simp]
-theorem rootMultiplicity_map_reverse_zero [Semiring R] [CommRing S] (p : R[X])
+theorem rootMultiplicity_map_reverse_zero [Semiring R] [Ring S] (p : R[X])
     (f : R →+* S) (hp : p.map f ≠ 0) :
     (p.reverse.map f).rootMultiplicity 0 = p.natDegree - (p.map f).natDegree := by
   rw [reverse, ← reflect_map]

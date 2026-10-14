@@ -28,7 +28,10 @@ point, and the Lie bracket sends `𝔤_α × 𝔤_β` into `𝔤_{αβ}`.
 
 Nothing here asserts that `π` is a closed immersion, that `D(M)` is a torus, let alone a maximal
 one, or that `G` is reductive. When `π` does exhibit a split maximal torus `T` in a reductive `G`,
-`nontrivialAdjointWeights π` is the set of roots of the split pair `(G, T)`.
+`nontrivialAdjointWeights π` is the set of roots of the split pair `(G, T)`. The character and
+cocharacter lattices of the root datum `(X*(T), Φ, X_*(T), Φ^∨)`, with their pairing, are in
+`TauCeti.Algebra.AlgebraicGroup.Cocharacter`; this file supplies the weight decomposition from
+which `Φ` is read off.
 
 ## Main definitions
 
@@ -55,18 +58,6 @@ one, or that `G` is reductive. When `π` does exhibit a split maximal torus `T` 
   point permutes the nontrivial adjoint weights, hence the roots of a split reductive pair.
 * `Derivation.image_nontrivialAdjointWeights_normalizerCharacterHom`: the actual character
   action of the scheme normalizer preserves the nontrivial adjoint weights.
-
-## Roadmap
-
-Layer 7 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the root datum
-`(X*(T), Φ, X_*(T), Φ^∨)` of a split pair `(G, T)`, taking the split case first. The character and
-cocharacter lattices with their pairing are already in
-`TauCeti.Algebra.AlgebraicGroup.Cocharacter`; this file supplies the weight decomposition that
-`Φ` is read off, the remaining piece of the root datum that comes from the group rather than the
-torus. Layer 9's split reductive group
-schemes over `ℤ` take the split maximal torus as part of their data and are defined by conditions
-on exactly this decomposition, and milestone `L0` of `TauCetiRoadmap/CFSGStatement/README.md`
-consumes those pinned Chevalley--Demazure groups.
 
 ## References
 

@@ -161,8 +161,8 @@ theorem chord_quotient_mem_slitPlane (hL : L ≠ 0) {a b : ℝ}
     mul_ne_zero hL (Complex.ofReal_ne_zero.mpr ha_ne)
   have hL_b : L * ((b - t₀ : ℝ) : ℂ) ≠ 0 :=
     mul_ne_zero hL (Complex.ofReal_ne_zero.mpr hb_ne)
-  set z := (γ b - s) / (L * ((b - t₀ : ℝ) : ℂ)) with hz
-  set w := (γ a - s) / (L * ((a - t₀ : ℝ) : ℂ)) with hw
+  set z := (γ b - s) / (L * ((b - t₀ : ℝ) : ℂ)) with _hz
+  set w := (γ a - s) / (L * ((a - t₀ : ℝ) : ℂ)) with _hw
   have h_ratio : (γ b - s) / (γ a - s) =
       (((b - t₀) / (a - t₀) : ℝ) : ℂ) * (z / w) := by
     rw [show (γ b - s) / (γ a - s) =
@@ -251,7 +251,7 @@ theorem tendsto_arg_chord_div_tangent_nhdsGT (h_at : γ t₀ = s) (hL : L ≠ 0)
       (𝓝[>] t₀) (𝓝 1) := by
     refine hq.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with t ht
-    have hne : t - t₀ ≠ 0 := sub_ne_zero.mpr ht.ne'
+    have _ : t - t₀ ≠ 0 := sub_ne_zero.mpr ht.ne'
     push_cast
     field_simp
   have hpos : ∀ᶠ t in 𝓝[>] t₀, 0 < (t - t₀)⁻¹ := by

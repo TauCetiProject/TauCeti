@@ -17,8 +17,9 @@ Multiplication of rational functions sends sections of `𝒪_X(D)` and `𝒪_X(E
 additive. A local equation of `E` trivializes the multiplication map: multiplication by the
 equation and its inverse give its local inverse.
 
-The multiplication isomorphism supplies the tensor law needed to construct the Picard group
-in `CartierDivisor/Picard.lean`.
+`CartierDivisor/Picard.lean` uses the isomorphism to prove that this class map is additive
+(`Scheme.CartierDivisor.toLineBundleClass_add`). The group structure on line-bundle classes is
+defined in `LineBundle/Class.lean`.
 
 ## Main declarations
 

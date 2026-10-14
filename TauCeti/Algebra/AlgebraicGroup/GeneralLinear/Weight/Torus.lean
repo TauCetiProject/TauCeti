@@ -14,7 +14,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Relabel
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 
 /-!
@@ -108,6 +108,20 @@ noncomputable def weightTorusCoordinateBialgHom (wt : Fin N → sigma → ℤ) :
   let _ : Fintype sigma := Fintype.ofFinite sigma
   exact DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
     (fun i => SplitTorus.weightCharacter (wt i))
+
+/-- The direct weight-torus morphism is the diagonal representation with the prescribed
+integral weight characters. -/
+@[simp]
+theorem weightTorusCoordinateBialgHom_def [Fintype sigma] (wt : Fin N → sigma → ℤ) :
+    weightTorusCoordinateBialgHom (S := S) wt =
+      DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
+        (fun i ↦ SplitTorus.weightCharacter (wt i)) := by
+  rw [weightTorusCoordinateBialgHom]
+  congr 1
+  funext i
+  apply Multiplicative.toAdd.injective
+  ext j
+  simp
 
 /-- A generic matrix entry maps under the direct weight-torus bialgebra morphism to the
 prescribed character on the diagonal, and to zero off the diagonal. -/

@@ -113,7 +113,7 @@ private theorem coalgHom_of_tprod (f : ReducedTensorWords R M →ₗ[R] N) {n : 
   rcases Nat.eq_zero_or_pos d.1 with hd | hd
   · rw [dite_eq_right (by omega), hd, subword_length_zero, map_zero, map_zero, LinearMap.zero_apply,
       LinearMap.zero_apply]
-  · have hdn := d.isLt
+  · have _ := d.isLt
     rw [dite_eq_left hd, subword_eq_of_tprod R x hd (by omega),
       subword_eq_of_tprod R x (a := d.1) (b := n - d.1) (by omega) (by omega), toModule_of]
     simp only [LinearMap.coe_comp, Function.comp_apply, TensorPower.splitAt_tprod,

@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
+public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 
 /-!
 # The additive group scheme
@@ -23,8 +23,9 @@ Hopf algebra
 The generator is primitive, its counit is zero, and its antipode is `-x`. Applying relative
 spectrum packages this Hopf algebra as a group object over `Spec R`. This file exposes the
 underlying spectrum, structural morphism, multiplication source, and the three group operations
-through Tau Ceti's generic Hopf-spectrum projection interface, which is otherwise out of reach:
-the resulting group scheme is a `def` whose body is not exposed outside this module.
+through Tau Ceti's generic Hopf-spectrum projection interface. Downstream that interface does not
+apply to the group scheme directly, because the group scheme is a `def` whose body is not exposed
+outside this module; it applies only after rewriting with `TauCeti.AdditiveGroup.groupScheme_def`.
 
 The singleton basis of `R` identifies the coordinate algebra with a polynomial algebra on the
 same-universe singleton `ULift (Fin 1)`. Contravariant spectrum and Mathlib's affine-space
@@ -43,15 +44,10 @@ affine-space APIs.
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebra`: the symmetric Hopf algebra representing `G_a`.
 * `TauCeti.AdditiveGroup.coordinateAlgEquiv`: its rank-one polynomial presentation.
-* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: its prime spectrum
-  is connected over a domain.
 * `TauCeti.AdditiveGroup.isReduced_coordinateHopfAlgebra`: it is reduced over a reduced ring.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
   one-space over the base.
-* `TauCeti.AdditiveGroup.groupScheme_one_left`,
-  `TauCeti.AdditiveGroup.groupScheme_mul_left`, and
-  `TauCeti.AdditiveGroup.groupScheme_inv_left`: the underlying scheme maps of its operations.
 * `TauCeti.AdditiveGroup.isAffine_groupScheme` and
   `TauCeti.AdditiveGroup.locallyOfFinitePresentation_groupScheme`: affineness and local finite
   presentation. Local finite type follows by instance search.
@@ -80,13 +76,12 @@ the Lean Zulip discussion
 public section
 
 open CategoryTheory
-open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
 namespace AdditiveGroup
 
-open AlgebraicGeometry Module MonObj MonoidalCategory WithConv
+open AlgebraicGeometry Module MonObj MonoidalCategory
 
 universe u
 
@@ -131,11 +126,6 @@ instance instSmoothSymmetricAlgebra : Algebra.Smooth R (SymmetricAlgebra R R) :=
     ⟨inferInstance, inferInstance⟩
   Algebra.Smooth.of_equiv (coordinateAlgEquiv R).symm
 
-/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
-theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra [IsDomain R] :
-    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra R)) :=
-  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra R R)))
-
 /-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
 algebra on the single generator `x`. -/
 theorem isReduced_coordinateHopfAlgebra [IsReduced R] :
@@ -151,7 +141,7 @@ noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
     (Opposite.op (coordinateHopfAlgebra R))
 
 /-- The additive group scheme is the relative spectrum of its coordinate Hopf algebra. -/
-public lemma groupScheme_def :
+lemma groupScheme_def :
     groupScheme R =
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
         (Opposite.op (coordinateHopfAlgebra R)) := by
@@ -160,10 +150,10 @@ public lemma groupScheme_def :
 
 -- The generic `hopfSpec_obj_*` lemmas are stated for the literal functor object, whereas
 -- `groupScheme` is a `def` whose body is not exposed outside this module. Downstream the generic
--- lemmas therefore cannot be applied to `(groupScheme R).X` at all, and `simp` cannot see through
--- the wrapper. The specializations below are the projection interface across it: each unfolds the
--- wrapper once and then defers to the corresponding generic lemma, so no spectrum or
--- group-operation computation is redone here.
+-- lemmas therefore apply to `(groupScheme R).X` only after rewriting with `groupScheme_def`, and
+-- `simp` cannot see through the wrapper. The specializations below are the projection interface
+-- across it: each unfolds the wrapper once and then defers to the corresponding generic lemma, so
+-- no spectrum or group-operation computation is redone here.
 
 /-- The scheme underlying the additive group scheme is the spectrum of its symmetric coordinate
 algebra. -/
@@ -181,53 +171,6 @@ lemma groupScheme_X_hom :
         Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R R))) := by
   unfold groupScheme
   convert hopfSpec_obj_X_hom R (coordinateHopfAlgebra R) using 1
-
-/-- The source of multiplication is the standard affine fibre product of two copies of the
-coordinate spectrum over `Spec R`. -/
-@[simp↓]
-lemma groupScheme_tensor_X_left :
-    ((groupScheme R).X ⊗ (groupScheme R).X).left =
-      Limits.pullback
-        (Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R R))))
-        (Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R R)))) := by
-  unfold groupScheme
-  convert hopfSpec_obj_tensor_X_left R (coordinateHopfAlgebra R) using 1
-
-/-- The unit of the additive group scheme is induced contravariantly by the symmetric-algebra
-counit. -/
-@[simp]
-lemma groupScheme_one_left :
-    η[(groupScheme R).X].left =
-      Spec.map (CommRingCat.ofHom
-        (Bialgebra.counitAlgHom R (SymmetricAlgebra R R))) ≫
-      eqToHom (groupScheme_X_left R).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_one_left R (coordinateHopfAlgebra R) using 1
-
-/-- Multiplication on the additive group scheme is induced contravariantly by the primitive
-comultiplication. The first two maps identify its source with the spectrum of the tensor square. -/
-@[simp]
-lemma groupScheme_mul_left :
-    μ[(groupScheme R).X].left =
-      eqToHom (groupScheme_tensor_X_left R) ≫
-        (pullbackSpecIso R (SymmetricAlgebra R R) (SymmetricAlgebra R R)).hom ≫
-        Spec.map (CommRingCat.ofHom
-          (Bialgebra.comulAlgHom R (SymmetricAlgebra R R))) ≫
-        eqToHom (groupScheme_X_left R).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_mul_left R (coordinateHopfAlgebra R) using 1
-
-/-- Inversion on the additive group scheme is induced contravariantly by the antipode
-`x ↦ -x`. -/
-@[simp]
-lemma groupScheme_inv_left :
-    ι[(groupScheme R).X].left =
-      eqToHom (groupScheme_X_left R) ≫
-        Spec.map (CommRingCat.ofHom
-          (HopfAlgebra.antipodeAlgHom R (SymmetricAlgebra R R))) ≫
-        eqToHom (groupScheme_X_left R).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_inv_left R (coordinateHopfAlgebra R) using 1
 
 /-- The underlying scheme isomorphism from the additive group to affine one-space. -/
 private noncomputable def groupSchemeAffineSpaceIsoLeft :
@@ -302,7 +245,8 @@ noncomputable def groupSchemePointMulEquiv :
     (coordinateHopfAlgebra R) A (groupScheme_def R)
 
 /-- The underlying map of the spectrum point associated to an algebra point. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     (groupSchemePointMulEquiv A f).left =
@@ -370,7 +314,8 @@ lemma toAdd_schemePointsMulEquiv
   exact toAdd_gaPointsMulEquiv _
 
 /-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
-recovers the canonical algebra point. -/
+gives the value of the algebra-points equivalence `gaPointsMulEquiv` at the underlying algebra
+point. -/
 @[simp]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R →ₐ[R] A)) :

@@ -44,9 +44,6 @@ the desired representability.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Sections 6.7 and 14.
-
-This completes the algebraically closed-field representability step of Layer 3, "Identity
-component `G°` and component group `π₀(G)`", of the ReductiveGroups roadmap.
 -/
 
 public section

@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Weights
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import Mathlib.GroupTheory.Solvable
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ClosedSubgroup
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
+import TauCeti.RingTheory.FiniteType.FiniteRange
 
 /-!
 # Scalar action of connected normal solvable subgroups
@@ -21,6 +23,18 @@ This is the representation-theoretic step in eliminating solvable radicals of cl
 
 The proof combines `Comodule.hasNonzeroWeightVector_of_isSolvable` with
 `Comodule.normalWeightSubcomodule`.
+
+When the representation is moreover faithful and the scalars are confined to roots of unity of
+a fixed order, as the determinant forces for `SLₙ` and the alternating form for `Sp₂ₘ`, the
+subgroup is trivial: the scalar is a matrix coefficient with finite image on rational points,
+hence constant on the reduced connected subgroup, hence equal to its value one at the identity.
+
+## Main declarations
+
+* `TauCeti.HopfIdeal.exists_basePointsRepresentation_eq_smul`: the scalar action.
+* `TauCeti.HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one`:
+  a connected reduced normal solvable closed subgroup acting on a faithful simple representation
+  by roots of unity of bounded order is trivial.
 
 ## References
 
@@ -96,5 +110,86 @@ theorem exists_basePointsRepresentation_eq_smul
   exact hw
 
 end
+
+section Faithful
+
+universe u
+
+-- Faithfulness of a representation is stated with the field, the Hopf algebra and the module in
+-- one universe, so this consequence is stated in that generality.
+variable {k H V : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
+  [Algebra.FiniteType k H] [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
+  [AddCommGroup V] [Module k V] [Comodule k H V] [FiniteDimensional k V] [Nontrivial V]
+  [IsSimpleOrder (Subcomodule k H V)]
+
+/-- A connected reduced normal solvable closed subgroup acting on a faithful simple
+finite-dimensional representation only by `N`-th roots of unity, for some fixed `N > 0`, is the
+identity subgroup. The scalar is the matrix coefficient of a vector against a functional taking
+the value one on it; its finite image on rational points makes it constant on the reduced
+connected subgroup, and its value at the identity is one. -/
+theorem eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one
+    (I : HopfIdeal k H) (hI : I.IsNormal)
+    [IsReduced (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I)]
+    [ConnectedSpace (PrimeSpectrum
+      (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I))]
+    [Group.IsSolvable (WithConv
+      (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I →ₐ[k] k))]
+    (hV : Comodule.IsFaithful (k := k) (H := H) (V := V)) {N : ℕ} (hN : 0 < N)
+    (hpow : ∀ (g : WithConv
+        (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I →ₐ[k] k)) (c : k),
+      Comodule.basePointsRepresentation (R := k) (H := H) V
+        (AlgHom.mapDomain (CommHopfAlgCat.mkQuotient
+          (_root_.CommHopfAlgCat.of k H) I).hom g) = c • (1 : Module.End k V) → c ^ N = 1) :
+    I = HopfIdeal.augmentation k H := by
+  classical
+  let A := _root_.CommHopfAlgCat.of k H
+  let Q := CommHopfAlgCat.quotient A I
+  let q := (CommHopfAlgCat.mkQuotient A I).hom
+  let _ : Comodule k Q V := Comodule.Corestrict q.toCoalgHom
+  apply Comodule.eq_augmentation_of_isFaithful_of_quotient_coact_eq_tmul_one (M := V) I hV
+  -- A vector and a functional pairing to one; their matrix coefficient reads off the scalar.
+  let b := Module.Basis.ofVectorSpace k V
+  obtain ⟨i⟩ := b.index_nonempty
+  let e : V := b i
+  let φ : Module.Dual k V := b.coord i
+  have hφ : φ e = 1 := by simp [φ, e]
+  let a : Q := Comodule.matrixCoefficient (R := k) (C := Q) φ e
+  have hscalar (g : WithConv (Q →ₐ[k] k)) :
+      ∃ c : kˣ, Comodule.basePointsRepresentation (R := k) (H := H) V (AlgHom.mapDomain q g) =
+        (c : k) • (1 : Module.End k V) :=
+    exists_basePointsRepresentation_eq_smul I hI g
+  have heval (g : WithConv (Q →ₐ[k] k)) (c : kˣ)
+      (hc : Comodule.basePointsRepresentation (R := k) (H := H) V (AlgHom.mapDomain q g) =
+        (c : k) • (1 : Module.End k V)) :
+      g.ofConv a = (c : k) := by
+    rw [Comodule.apply_matrixCoefficient, Comodule.basePointsRepresentation_corestrict q, hc]
+    simp [hφ]
+  -- The scalar is a matrix coefficient with values among the `N`-th roots of unity.
+  have hfinite : (Set.range fun f : Q →ₐ[k] k ↦ f a).Finite := by
+    apply (Polynomial.nthRootsFinset N (1 : k)).finite_toSet.subset
+    rintro _ ⟨f, rfl⟩
+    obtain ⟨c, hc⟩ := hscalar (toConv f)
+    rw [Finset.mem_coe, Polynomial.mem_nthRootsFinset hN]
+    exact (congrArg (fun z : k ↦ z ^ N) (heval (toConv f) c hc)).trans
+      (hpow (toConv f) c hc)
+  -- Connectedness makes the finite-image coefficient constant, with value one at the identity.
+  have ha : a = algebraMap k Q (1 : k) := by
+    have h := eq_algebraMap_of_finite_range_eval a hfinite (1 : WithConv (Q →ₐ[k] k)).ofConv
+    have hidentity : (1 : WithConv (Q →ₐ[k] k)).ofConv a = 1 := by
+      rw [Comodule.apply_matrixCoefficient, map_one]
+      simp [hφ]
+    simpa only [hidentity] using h
+  intro v
+  rw [← Comodule.corestrict_coact_apply (R := k) (C := H) (D := Q) q.toCoalgHom]
+  apply (Comodule.coact_eq_tmul_one_iff_forall_basePointsRepresentation_eq v).mpr
+  intro g
+  obtain ⟨c, hc⟩ := hscalar g
+  have hc1 : (c : k) = 1 := by
+    rw [← heval g c hc, ha]
+    simp
+  rw [Comodule.basePointsRepresentation_corestrict q, hc, hc1]
+  simp
+
+end Faithful
 
 end TauCeti.HopfIdeal

@@ -110,35 +110,8 @@ theorem map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal 
         (weightTorusPoints k).range := by
   rw [← map_quotientPointsSubgroup_weightTorusDefiningIdeal k]
   ext g
-  simp only [Subgroup.mem_map_equiv]
-  -- Expose the composite point equivalence so that membership uses the generic restriction
-  -- criterion for scalar-extended Hopf ideals, rather than a new tensor-product argument.
-  change (baseChangePointsEquiv k).symm g ∈
-    CommHopfAlgCat.quotientPointsSubgroup _ _ _ ↔
-      (pointsMulEquiv (CommAlgCat.of (ZMod 3) k)).symm g ∈
-        CommHopfAlgCat.quotientPointsSubgroup _ _ _
-  have h := CommHopfAlgCat.mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff
-    (K := k) (CommAlgCat.of k k) weightTorusDefiningIdeal ((baseChangePointsEquiv k).symm g)
-  -- Compare evaluations to avoid identifying presentations of the restricted algebra.
-  have hval (x : carrierAlgebra) :
-      (CommHopfAlgCat.baseChangePointsMulEquiv (K := k) (CommAlgCat.of k k)
-        carrierAlgebra ((baseChangePointsEquiv k).symm g)).ofConv x =
-      ((pointsMulEquiv (CommAlgCat.of (ZMod 3) k)).symm g).ofConv x := by
-    rw [CommHopfAlgCat.baseChangePointsMulEquiv_apply_apply
-      (CommAlgCat.of k k) carrierAlgebra ((baseChangePointsEquiv k).symm g) x]
-    simp only [baseChangePointsEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
-      AlgHom.baseChangePointsMulEquiv_apply_tmul, one_smul]
-  constructor
-  · intro hg
-    have hz := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp (h.mp hg)
-    apply (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr
-    intro x hx
-    exact (hval x).symm.trans (hz x hx)
-  · intro hg
-    apply h.mpr
-    apply (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr
-    intro x hx
-    exact (hval x).trans ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp hg x hx)
+  simp only [Subgroup.mem_map_equiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
+  exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem _ _).symm
 
 end Extension
 
@@ -265,6 +238,31 @@ def splitMaximalTorusCoordinateMap : carrierAlgebra ⟶
       (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj :=
   weightTorusCoordinateMap ≫ weightTorusCoordinateIso.hom
 
+/-- In the ambient matrix coordinates, the standard-coordinate torus has the original
+short-root weights, indexed by the lifted node type. -/
+theorem mkQuotient_comp_splitMaximalTorusCoordinateMap :
+    CommHopfAlgCat.mkQuotient _ (CommHopfAlgCat.commonKernelHopfIdeal generator) ≫
+        splitMaximalTorusCoordinateMap =
+      GeneralLinear.weightTorusCoordinateMap
+        (R := ZMod 3) (fun (i : Fin 7) (j : ULift.{0} (Fin 2)) => weight i j.down) := by
+  rw [splitMaximalTorusCoordinateMap, ← Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
+    GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext (ZMod 3) 7
+  intro i j
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
+  rw [GeneralLinear.weightTorusCoordinateMap_X,
+    GeneralLinear.weightTorusCoordinateMap_X]
+  split_ifs with hij
+  · rw [weightTorusCoordinateIso_hom_single]
+    congr 1
+    apply Multiplicative.ofAdd.injective
+    ext l
+    simp [weightTorusCharacterEquiv, AddEquiv.toMultiplicative_apply_apply,
+      Finsupp.domCongr_apply, Finsupp.equivMapDomain_apply]
+  · exact map_zero _
+
 /-- The standard-coordinate weight-torus morphism is surjective. -/
 theorem splitMaximalTorusCoordinateMap_surjective :
     Function.Surjective splitMaximalTorusCoordinateMap.hom := by
@@ -322,6 +320,14 @@ def splitMaximalTorus : SplitMaximalTorus (ZMod 3) carrierAlgebra 2 where
 theorem splitMaximalTorus_coordinateMap :
     splitMaximalTorus.coordinateMap = splitMaximalTorusCoordinateMap := by
   rfl
+
+/-- The chosen split maximal torus is cut out by the weight-torus ideal. -/
+@[simp]
+theorem splitMaximalTorus_definingIdeal :
+    splitMaximalTorus.definingIdeal = weightTorusDefiningIdeal := by
+  ext x
+  rw [SplitMaximalTorus.mem_definingIdeal, splitMaximalTorus_coordinateMap,
+    ← ker_splitMaximalTorusCoordinateMap, HopfIdeal.mem_kerOfSurjective]
 
 end
 

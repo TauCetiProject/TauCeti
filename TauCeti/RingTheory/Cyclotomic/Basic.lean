@@ -276,6 +276,20 @@ theorem coeff_zero (j : ℕ) : (0 : Cyclotomic e).coeff j = 0 := by
   rw [← coeff_toPolynomial, eq_zero_of_dvd_of_degree_lt hdvd (degree_toPolynomial_lt _),
     Polynomial.coeff_zero]
 
+/-- An integer has only a constant power-basis coordinate when the conductor is nonzero. -/
+@[simp]
+theorem coeff_intCast [NeZero e] (z : ℤ) (j : ℕ) :
+    (z : Cyclotomic e).coeff j = if j = 0 then z else 0 := by
+  rw [← coeff_toPolynomial, intCast_def, toPolynomial, coeffs_ofCoeffList,
+    ofCoeffList_modByCyclotomic]
+  have hdegree : (Polynomial.C z).degree < (cyclotomic e ℤ).degree :=
+    lt_of_le_of_lt Polynomial.degree_C_le
+      (degree_cyclotomic_pos e ℤ (Nat.pos_of_ne_zero (NeZero.ne e)))
+  simp only [TauCeti.Polynomial.ofCoeffList_cons, TauCeti.Polynomial.ofCoeffList_nil,
+    List.length_nil, pow_zero, mul_one, add_zero]
+  rw [(modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).mpr hdegree]
+  exact Polynomial.coeff_C
+
 /-- **Multiplication by an integer constant scales every coefficient.**  A constant multiple
 raises no power of `ζ`, so no reduction modulo `Φ_e` takes place. -/
 @[simp]
@@ -454,6 +468,13 @@ theorem evalCoeffs_eq_eval₂ {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R)
     (x : Cyclotomic e) :
     evalCoeffs f r x = x.toPolynomial.eval₂ f r := by
   rw [evalCoeffs, toPolynomial, TauCeti.Polynomial.eval₂_ofCoeffList]
+
+/-- Mapping a Horner evaluation through a ring homomorphism maps the coefficients and the
+point of evaluation. The semirings need not be commutative. -/
+theorem _root_.RingHom.map_evalCoeffs {R S : Type*} [Semiring R] [Semiring S]
+    (g : R →+* S) (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
+    g (evalCoeffs f r x) = evalCoeffs (g.comp f) (g r) x := by
+  rw [evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
 
 /-- The bundled evaluation at a root of the cyclotomic polynomial is the Horner evaluation
 `TauCeti.Cyclotomic.evalCoeffs`. -/

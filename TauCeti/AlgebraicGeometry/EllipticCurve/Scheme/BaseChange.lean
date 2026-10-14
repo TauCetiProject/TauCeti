@@ -33,6 +33,8 @@ Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomor
 
 * `WeierstrassCurve.projModelBaseChange W f`: the morphism `projModel (W.map f) ⟶ projModel W`
   induced by extending coefficients along `f`.
+* `WeierstrassCurve.projModelOverBaseChangeIso W f`: the isomorphism in `Over (Spec R')` between
+  `Over.mk (W.map f).projModelOver` and the base change of `Over.mk W.projModelOver` along `Spec f`.
 * `WeierstrassCurve.projModelMapIso W φ`: for a ring isomorphism `φ : R ≃+* R'`, the base change
   morphism along `φ` as an isomorphism `projModel (W.map φ) ≅ projModel W`.
 
@@ -44,9 +46,13 @@ Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomor
   morphism, the structure morphisms and `Spec f` is a pullback square.
 * `WeierstrassCurve.projModelZero_projModelBaseChange`: the base change morphism carries the zero
   section to the zero section.
+* `WeierstrassCurve.isPullback_projModelZero_projModelBaseChange`: the zero section of
+  `projModel (W.map f)` is the base change of the zero section of `projModel W` along `Spec f`.
 * `WeierstrassCurve.projModelPoint_projModelBaseChange`: the base change morphism sends the point
   with homogeneous coordinates `P`, over `g : R' →+* S`, to the point with the same homogeneous
   coordinates, over `g.comp f`.
+* `WeierstrassCurve.projModelAffinePoint_projModelBaseChange`: the base change morphism sends the
+  point `[f x : f y : 1]` to the pullback along `Spec f` of the point `[x : y : 1]`.
 * `WeierstrassCurve.projModelBaseChange_id` and `WeierstrassCurve.projModelBaseChange_comp`: base
   change is compatible with the identity and with composition of ring homomorphisms.
 * `WeierstrassCurve.projModelVariableChangeIso_hom_projModelBaseChange`: base change is compatible
@@ -86,7 +92,7 @@ which push a point of a chart of `projModel (W.map f)` through the base change m
 
 public section
 
-open CategoryTheory AlgebraicGeometry HomogeneousLocalization MvPolynomial
+open CategoryTheory Limits AlgebraicGeometry HomogeneousLocalization MvPolynomial
 
 universe u
 
@@ -245,6 +251,33 @@ theorem projModelBaseChange_projModelOver :
       (W.map f).projModelOver ≫ Spec.map (CommRingCat.ofHom f) :=
   (W.isPullback_projModelBaseChange f).w
 
+/-- The projective model of `W.map f` over `Spec R'` is the base change of the projective model of
+`W` along `Spec f : Spec R' ⟶ Spec R`: the isomorphism in `Over (Spec R')` between
+`Over.mk (W.map f).projModelOver` and the image of `Over.mk W.projModelOver` under the pullback
+functor along `Spec f`, given by the base change square `isPullback_projModelBaseChange`. -/
+noncomputable def projModelOverBaseChangeIso :
+    Over.mk (W.map f).projModelOver ≅
+      (Over.pullback (Spec.map (CommRingCat.ofHom f))).obj (Over.mk W.projModelOver) :=
+  Over.isoMk (W.isPullback_projModelBaseChange f).isoPullback (by simp)
+
+/-- The first component of the base change isomorphism is the base change morphism
+`projModel (W.map f) ⟶ projModel W`. -/
+@[reassoc (attr := simp)]
+theorem projModelOverBaseChangeIso_hom_left_fst :
+    (W.projModelOverBaseChangeIso f).hom.left ≫
+        pullback.fst W.projModelOver (Spec.map (CommRingCat.ofHom f)) =
+      W.projModelBaseChange f := by
+  simp [projModelOverBaseChangeIso]
+
+/-- The second component of the base change isomorphism is the structure morphism of
+`projModel (W.map f)`. -/
+@[reassoc (attr := simp)]
+theorem projModelOverBaseChangeIso_hom_left_snd :
+    (W.projModelOverBaseChangeIso f).hom.left ≫
+        pullback.snd W.projModelOver (Spec.map (CommRingCat.ofHom f)) =
+      (W.map f).projModelOver := by
+  simp [projModelOverBaseChangeIso]
+
 /-! ### The zero section -/
 
 /-- The base change morphism carries the zero section `[0 : 1 : 0]` of `projModel (W.map f)` to
@@ -255,6 +288,18 @@ theorem projModelZero_projModelBaseChange :
       Spec.map (CommRingCat.ofHom f) ≫ W.projModelZero := by
   rw [projModelBaseChange]
   exact W.projModelZero_map _ _ f 1 fun _ _ _ ↦ by simp [evalZero_baseChangeGradedHom]
+
+/-- The zero section of `projModel (W.map f)` is the base change of the zero section of
+`projModel W` along `Spec f : Spec R' ⟶ Spec R`: the square formed by the two zero sections, the
+base change morphism and `Spec f` is a pullback square. -/
+theorem isPullback_projModelZero_projModelBaseChange :
+    IsPullback (W.map f).projModelZero (Spec.map (CommRingCat.ofHom f))
+      (W.projModelBaseChange f) W.projModelZero :=
+  .of_right
+    (by simpa only [W.projModelZero_projModelOver, (W.map f).projModelZero_projModelOver]
+      using IsPullback.id_horiz (Spec.map (CommRingCat.ofHom f)))
+    (W.projModelZero_projModelBaseChange f)
+    (W.isPullback_projModelBaseChange f).flip
 
 /-! ### Points -/
 
@@ -272,6 +317,17 @@ theorem projModelPoint_projModelBaseChange {S : Type u} [CommRing S] {g : R' →
   obtain ⟨p, -, rfl⟩ := W.toProjective.mem_grading_iff.mp ha
   simp only [Units.val_one, one_pow, one_mul, baseChangeGradedHom_mk, Projective.evalHom_mk,
     eval₂_map]
+
+/-- The base change morphism sends the point `[f x : f y : 1]` of `projModel (W.map f)` to the
+point `[x : y : 1]` of `projModel W`, pulled back along `Spec f`. -/
+@[reassoc (attr := simp)]
+theorem projModelAffinePoint_projModelBaseChange {x y : R} (h : W.toAffine.Equation x y) :
+    (W.map f).projModelAffinePoint (h.map f) ≫ W.projModelBaseChange f =
+      Spec.map (CommRingCat.ofHom f) ≫ W.projModelAffinePoint h := by
+  rw [projModelAffinePoint_def, projModelAffinePoint_def, projModelPoint_projModelBaseChange,
+    SpecMap_projModelPoint, projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
+  exact ⟨(RingHom.id_comp f).trans (RingHom.comp_id f).symm,
+    funext fun k ↦ by fin_cases k <;> simp⟩
 
 /-! ### Identity and composition -/
 

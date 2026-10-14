@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SheetCount
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.MultipleEnds.Univalence
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SimpleBoundary
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.RegularEdge
 import TauCeti.Order.Interval.Finite
 
@@ -72,31 +73,14 @@ theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary
     · intro hτ
       obtain rfl := Set.mem_singleton_iff.mp hτ
       simp [Fh]
-  obtain ⟨d, -, hd⟩ :=
-    exists_constant_schwarzChristoffelPrimitive_fiber_ncard a e z₀ hfinite hinfty hinj
-  have hd1 : d = 1 := by
-    have h := hd (F z) (mem_image_of_mem F hzH)
-    rw [hfiber] at h
-    simpa using h.symm
-  have hF_inj : InjOn F upperHalfPlaneSet := by
-    intro z hz y hy hzy
-    have hzw : F z ∉ range (schwarzChristoffelCompactifiedBoundary a e z₀) :=
-      Set.disjoint_left.mp
-        (disjoint_image_schwarzChristoffelPrimitive_range a e z₀ hfinite hinfty hinj)
-        (mem_image_of_mem F hz)
-    have hfin := finite_schwarzChristoffelPrimitive_fiber a e z₀ hfinite hinfty hzw
-    have hcard := hd (F z) (mem_image_of_mem F hz)
-    rw [hd1] at hcard
-    have hone : (Fh ⁻¹' {F z}).ncard ≤ 1 := by simpa using hcard.le
-    have hzmem : (⟨z, hz⟩ : ℍ) ∈ Fh ⁻¹' {F z} := by
-      simp only [Set.mem_preimage, Set.mem_singleton_iff]
-      rfl
-    have hymem : (⟨y, hy⟩ : ℍ) ∈ Fh ⁻¹' {F z} := by
-      simp only [Set.mem_preimage, Set.mem_singleton_iff]
-      exact hzy.symm
-    have heq : (⟨z, hz⟩ : ℍ) = ⟨y, hy⟩ :=
-      (Set.ncard_le_one_iff hfin).mp hone hzmem hymem
-    exact congrArg (fun τ : ℍ => (τ : ℂ)) heq
+  have havoid : Disjoint (F '' upperHalfPlaneSet)
+      (schwarzChristoffelFiniteBoundary a e z₀) := by
+    rw [schwarzChristoffelFiniteBoundary_eq_range_compactifiedBoundary a e z₀ hfinite hinfty]
+    exact disjoint_image_schwarzChristoffelPrimitive_range a e z₀ hfinite hinfty hinj
+  have hF_inj : InjOn F upperHalfPlaneSet :=
+    (injOn_schwarzChristoffelPrimitive_iff_fiber_ncard_eq_one a e z₀
+      (fun j => (hfinite j).le) havoid (mem_image_of_mem F hzH)).mpr
+      (by rw [hfiber, ncard_singleton])
   have himage := image_schwarzChristoffelPrimitive_eq_connectedComponentIn
     a e z₀ hfinite hinfty hinj
   exact ⟨himage ▸ mapsTo_image F _, hF_inj, himage ▸ surjOn_image F _⟩

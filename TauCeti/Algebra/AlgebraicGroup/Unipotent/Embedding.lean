@@ -30,8 +30,7 @@ unipotence property implies the required hypothesis on `k`-points by extension t
 algebraic closure.
 
 Reducedness is explicit in this file because it is exactly the hypothesis used by point
-separation. A future smooth-implies-geometrically-reduced theorem will discharge it for the
-roadmap's smooth formulation.
+separation.
 
 ## Main declarations
 
@@ -52,9 +51,6 @@ roadmap's smooth formulation.
 * T. A. Springer, *Linear Algebraic Groups*, Proposition 2.4.12: a subgroup of `GLₙ` consisting
   of unipotent matrices is conjugate into `Uₙ`. A. Borel, *Linear Algebraic Groups*, §4.8 has the
   same statement, with its Corollary the closed-subgroup form proved here.
-
-This closes the Kolchin and faithful-embedding step of Layer 5, "Unipotent groups", of the
-ReductiveGroups roadmap for reduced groups over an algebraically closed field.
 -/
 
 public section

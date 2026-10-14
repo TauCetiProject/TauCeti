@@ -192,23 +192,47 @@ theorem left_ne_apex : poly i ≠ c := by
 theorem apex_ne_right : c ≠ poly (finRotate n i) := by
   simpa using h.affineIndependent.injective.ne (a₁ := 2) (a₂ := 1) (by decide)
 
+/-- The end of the replaced edge is not on the first new edge. -/
+theorem right_notMem_affineSegment : poly (finRotate n i) ∉ affineSegment R (poly i) c := by
+  intro hx
+  have hx' : poly (finRotate n i) ∈ affineSpan R
+      ((![poly i, poly (finRotate n i), c] : Fin 3 → P) '' {0, 2}) := by
+    simpa using affineSegment_subset_affineSpan R (poly i) c hx
+  have := (h.affineIndependent.mem_affineSpan_iff 1 {0, 2}).1 hx'
+  norm_num at this
+
+/-- The start of the replaced edge is not on the second new edge. -/
+theorem left_notMem_affineSegment : poly i ∉ affineSegment R c (poly (finRotate n i)) := by
+  intro hx
+  have hx' : poly i ∈ affineSpan R
+      ((![poly i, poly (finRotate n i), c] : Fin 3 → P) '' {2, 1}) := by
+    simpa using affineSegment_subset_affineSpan R c (poly (finRotate n i)) hx
+  have := (h.affineIndependent.mem_affineSpan_iff 0 {2, 1}).1 hx'
+  norm_num at this
+
 end IsDeltaMove
 
 end Distinctness
 
 section Boundary
 
-variable [IsOrderedRing R]
-
 namespace IsDeltaMove
 
 variable (h : poly.IsDeltaMove R i c)
 include h
 
+section
+
+variable [ZeroLEOneClass R]
+
 /-- The two new edges meet only at the new vertex. -/
 theorem affineSegment_inter_affineSegment :
     affineSegment R (poly i) c ∩ affineSegment R c (poly (finRotate n i)) = {c} :=
   h.affineIndependent.comm_right.affineSegment_inter_eq_endpoint
+
+end
+
+variable [IsOrderedRing R]
 
 /-- The replaced edge is a side of the triangle of a Δ-move. -/
 theorem edgeSet_subset_closedInterior : poly.edgeSet R i ⊆ h.triangle.closedInterior :=
@@ -257,6 +281,8 @@ theorem closedInterior_inter_boundary_insertVertex :
 
 end IsDeltaMove
 
+variable [IsOrderedRing R]
+
 /-- **The textbook form of a Δ-move.** For a simple polygon, inserting `c` after vertex `i` is a
 Δ-move exactly when the edge's endpoints and `c` span a triangle meeting the polygon exactly in
 edge `i` (Burde–Zieschang, Definition 1.6). -/
@@ -295,18 +321,6 @@ namespace IsDeltaMove
 
 variable (h : poly.IsDeltaMove R i c)
 include h
-
-/-- The end of the replaced edge is not on the first new edge. -/
-theorem right_notMem_affineSegment : poly (finRotate n i) ∉ affineSegment R (poly i) c := by
-  intro hB
-  have := h.affineSegment_inter_affineSegment.subset ⟨hB, right_mem_affineSegment _ _ _⟩
-  exact h.apex_ne_right (this : _ = c).symm
-
-/-- The start of the replaced edge is not on the second new edge. -/
-theorem left_notMem_affineSegment : poly i ∉ affineSegment R c (poly (finRotate n i)) := by
-  intro hA
-  have := h.affineSegment_inter_affineSegment.subset ⟨left_mem_affineSegment _ _ _, hA⟩
-  exact h.left_ne_apex (this : _ = c)
 
 /-- **The inverse of a Δ-move keeps a polygon simple.** If the polygon is simple after a Δ-move, it
 was simple before. -/
@@ -471,7 +485,7 @@ theorem toPolygon_insertVertex_one (t : Affine.Triangle R P) (c : P) :
   congrArg Polygon.mk <| (Polygon.insertVertex_vertices _ _ _).trans <| funext fun j => by
     fin_cases j <;> rfl
 
-variable [PartialOrder R] [IsOrderedRing R]
+variable [PartialOrder R] [IsOrderedAddMonoid R]
 
 /-- **A triangle becomes a parallelogram by a Δ-move.** For a triangle with vertices `a`, `b`, `d`,
 inserting the fourth vertex `c = b + (d - a)` of the parallelogram after `b` is a Δ-move across the
@@ -499,14 +513,9 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
       ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
     have hdb : d -ᵥ b = (d -ᵥ a) - (b -ᵥ a) := (vsub_sub_vsub_cancel_right d b a).symm
     have hcb : c -ᵥ b = d -ᵥ a := vadd_vsub _ _
-    have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] :=
-      LinearIndependent.pair_iff.2 fun r s hrs => by
-        obtain ⟨h₁, h₂⟩ := LinearIndependent.pair_iff.1 hli (-r) (r + s) (by
-          rw [← hrs, smul_sub, add_smul, neg_smul]
-          abel)
-        rw [neg_eq_zero] at h₁
-        rw [h₁, zero_add] at h₂
-        exact ⟨h₁, h₂⟩
+    have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] := by
+      simpa only [sub_eq_add_neg, add_comm (d -ᵥ a), LinearIndependent.pair_add_left_iff,
+        LinearIndependent.pair_neg_left_iff] using hli
     convert hli' using 1
     ext j
     fin_cases j

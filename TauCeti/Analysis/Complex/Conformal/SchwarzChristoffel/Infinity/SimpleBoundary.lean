@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Covering
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.MultipleEnds.Covering
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.ExteriorPoint
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Jordan
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
@@ -104,9 +105,11 @@ theorem image_schwarzChristoffelPrimitive_eq_connectedComponentIn_of_neg_one_le_
         (schwarzChristoffelPrimitive a e z₀ z₀) := by
   have hdisj := disjoint_image_schwarzChristoffelPrimitive_range_of_neg_one_le_sum
     a e z₀ hfinite hlow hhigh hinj
-  refine image_schwarzChristoffelPrimitive_eq_of_subset_of_neg_one_le_sum
-    a e z₀ hfinite hlow isPreconnected_connectedComponentIn
-    (disjoint_left.mpr fun w hw => connectedComponentIn_subset _ _ hw) ?_
+  refine image_schwarzChristoffelPrimitive_eq_of_subset_of_neg_one_le_prevertex_sum
+    a e z₀ (fun j => (hfinite j).le) isPreconnected_connectedComponentIn ?_ ?_
+  · rw [disjoint_image_left,
+      preimage_range_schwarzChristoffelSphereBoundary_of_neg_one_le_sum a e z₀ hfinite hlow]
+    exact disjoint_left.mpr fun w hw => connectedComponentIn_subset _ _ hw
   exact ((convex_halfSpace_im_gt 0).isPreconnected.image _
     (differentiableOn_schwarzChristoffelPrimitive a e z₀).continuousOn).subset_connectedComponentIn
     (mem_image_of_mem _ z₀.im_pos) (subset_compl_iff_disjoint_right.mpr hdisj)
@@ -161,7 +164,10 @@ theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary_of_neg_one_le_sum
   have : SimplyConnectedSpace U := hsimply.simplyConnectedSpace
   rw [← image_schwarzChristoffelPrimitive_eq_connectedComponentIn_of_neg_one_le_sum
     a e z₀ hfinite hlow hhigh hinj]
-  exact bijOn_schwarzChristoffelPrimitive_of_subset_of_neg_one_le_sum
-    a e z₀ hfinite hlow hdisj subset_rfl
+  apply bijOn_schwarzChristoffelPrimitive_of_subset_of_neg_one_le_prevertex_sum
+    a e z₀ (fun j => (hfinite j).le) ?_ subset_rfl
+  rw [disjoint_image_left,
+    preimage_range_schwarzChristoffelSphereBoundary_of_neg_one_le_sum a e z₀ hfinite hlow]
+  exact hdisj
 
 end TauCeti

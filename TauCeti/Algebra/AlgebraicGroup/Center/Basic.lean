@@ -369,7 +369,7 @@ noncomputable abbrev centerPointsSubgroup (H : _root_.CommHopfAlgCat.{v} k)
   quotientPointsSubgroup H (centerDefiningIdeal H) A
 
 /-- Membership in the represented center is universal centrality in the functor of points. -/
-@[simp]
+@[simp↓]
 theorem mem_centerPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} k)
     (A : CommAlgCat.{v} k) (g : HopfAlgebra.points (R := k) (H := H) A) :
     g ∈ centerPointsSubgroup H A ↔ HopfAlgebra.IsCentralPoint g := by

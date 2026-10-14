@@ -40,6 +40,8 @@ mapping theorem for σ-compact groups.
   `TauCeti.GlobalNumberFields.adeleBaseChangeHom_snd`: the infinite and finite components are
   the infinite- and finite-adele comparisons.
 * `TauCeti.GlobalNumberFields.adeleBaseChangeHom_bijective`: the map is bijective.
+* `TauCeti.GlobalNumberFields.isOpenMap_adeleBaseChangeEquiv`: the comparison sends open sets to
+  open sets for the module topology.
 * `TauCeti.GlobalNumberFields.adeleBaseChangeEquiv_tmul_one`,
   `TauCeti.GlobalNumberFields.adeleBaseChangeEquiv_apply_prod`: the continuous comparison
   extends `𝔸_K → 𝔸_L` and is the product of the infinite- and finite-adele comparisons.
@@ -219,6 +221,11 @@ def adeleBaseChangeEquiv :
     { toAlgEquiv := e
       continuous_toFun := hc
       continuous_invFun := (e.toEquiv.toHomeomorphOfContinuousOpen hc ho).symm.continuous }
+
+/-- The adelic base-change comparison maps open sets to open sets for the module topology on
+the tensor product. -/
+theorem isOpenMap_adeleBaseChangeEquiv : IsOpenMap (adeleBaseChangeEquiv K L) :=
+  (adeleBaseChangeEquiv K L).isOpenMap
 
 /-- Forgetting continuity recovers the algebraic base-change equivalence. -/
 @[simp]
