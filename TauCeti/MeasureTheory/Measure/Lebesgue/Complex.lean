@@ -64,12 +64,12 @@ theorem volume_setOf_re_mem_Icc_im_eq {a b : ℝ} {f : ℝ → ℝ} (hf : Contin
   simpa only [S, preimage_ofPred_eq, Complex.measurableEquivRealProd_apply] using ht.trans hzero
 
 /-- Interchanging the coordinates preserves planar area. -/
-theorem measurePreserving_coordinateSwap :
-    MeasurePreserving coordinateSwap (volume : Measure ℂ) volume := by
-  have heq : (coordinateSwap : ℂ → ℂ) =
+theorem measurePreserving_coordinateSwapCLE :
+    MeasurePreserving coordinateSwapCLE (volume : Measure ℂ) volume := by
+  have heq : (coordinateSwapCLE : ℂ → ℂ) =
       measurableEquivRealProd.symm ∘ Prod.swap ∘ measurableEquivRealProd := by
     funext z
-    simp only [Function.comp_apply, coordinateSwap_apply, measurableEquivRealProd_apply,
+    simp only [Function.comp_apply, coordinateSwapCLE_apply, measurableEquivRealProd_apply,
       Prod.swap_prod_mk, measurableEquivRealProd_symm_apply]
   rw [heq]
   exact Complex.volume_preserving_equiv_real_prod.symm.comp

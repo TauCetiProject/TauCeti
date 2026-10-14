@@ -12,8 +12,8 @@ public import TauCeti.LinearAlgebra.Complex.Determinant
 /-!
 # Real coordinates of the complex plane
 
-The real linear coordinate interchange supplies its underlying homeomorphism and has
-determinant `-1`, recording the reversal of orientation.
+The real linear coordinate interchange is an involution with determinant `-1`, recording
+the reversal of orientation.
 -/
 
 public section
@@ -49,16 +49,5 @@ theorem det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.toLinearMap.det 
 @[simp]
 theorem linearEquiv_det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.det = -1 := by
   simp [← Units.val_inj]
-
-/-- The homeomorphism underlying the real linear coordinate interchange. -/
-noncomputable def coordinateSwap : ℂ ≃ₜ ℂ := coordinateSwapCLE.toHomeomorph
-
-/-- The continuous linear coordinate swap induces the coordinate-swap homeomorphism. -/
-@[simp]
-theorem coordinateSwapCLE_toHomeomorph : coordinateSwapCLE.toHomeomorph = coordinateSwap := (rfl)
-
-/-- Coordinate swap sends `(x,y)` to `(y,x)`. -/
-@[simp]
-theorem coordinateSwap_apply (z : ℂ) : coordinateSwap z = ⟨z.im, z.re⟩ := (rfl)
 
 end Complex
