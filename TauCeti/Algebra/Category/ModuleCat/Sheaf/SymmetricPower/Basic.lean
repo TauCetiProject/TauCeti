@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
-public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 
 /-!
