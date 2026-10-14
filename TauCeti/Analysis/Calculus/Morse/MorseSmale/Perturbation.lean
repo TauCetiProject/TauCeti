@@ -513,9 +513,9 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) (0, e)).1
   set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
   have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
-  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv_flow (hs t) (hφd t x)
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv (hs t) (hφd t x)
   have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
-    Flow.fderiv_flow_apply_fderiv_flow_neg (hs t) (hφd t x) v
+    Flow.fderiv_apply_fderiv_neg (hs t) (hφd t x) v
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
     hasDerivAt_fderiv_negativeGradientFlow f hf hfs x
   have hu : ∀ t, HasDerivAt u (-(fderiv ℝ (∇ f) (φ t x)) (u t) - b t) t := fun t ↦ by
@@ -523,8 +523,8 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   -- The inverse of `Dφₜ(x)` moves with derivative `Dφ_{-t}(φₜ x) ∘ D(∇f)(φₜ x)`.
   have hN : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ))
       (N t * (fderiv ℝ (∇ f) (φ t x)).comp (M t) * N t) t := fun t ↦ by
-    have hU := hasFDerivAt_ringInverse (𝕜 := ℝ) (Flow.fderivFlowUnit (hs t) (hφd t x))
-    rw [Flow.coe_fderivFlowUnit] at hU
+    have hU := hasFDerivAt_ringInverse (𝕜 := ℝ) (Flow.fderivUnit (hs t) (hφd t x))
+    rw [Flow.coe_fderivUnit] at hU
     refine (hU.comp_hasDerivAt t (hM t)).congr_deriv ?_
     simp [N]
   have hW : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ) (u τ)) (-(N t (b t))) t := fun t ↦ by
