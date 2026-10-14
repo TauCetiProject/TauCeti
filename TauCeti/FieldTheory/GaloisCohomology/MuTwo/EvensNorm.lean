@@ -98,11 +98,7 @@ theorem coordC_kummerInd (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.fi
     (a : Lˣ) (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) (s : AbsoluteGaloisGroup K)
     (hs : s ∉ galoisSubgroup K L σ) {x : L} (hx : x ∉ Set.range (algebraMap K L))
     (h : AbsoluteGaloisGroup K) : coordC (kummerInd σ hdeg a r hr s hs h) = rootSign (σ x) h := by
-  have hG := mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two K L σ hdeg hx (g := h)
-  rw [kummerInd_def, coordC_indexTwoInd]
-  by_cases hh : h ∈ galoisSubgroup K L σ
-  · rw [Subgroup.toAdd_indexTwoCharacter_of_mem _ hh, rootSign_of_apply_eq (hG.1 hh)]
-  · rw [Subgroup.toAdd_indexTwoCharacter_of_notMem _ hh, rootSign_of_apply_ne (mt hG.2 hh)]
+  rw [kummerInd_def, coordC_indexTwoInd, toAdd_indexTwoCharacter_galoisSubgroup_eq_rootSign σ _ hx]
 
 /-- The pullback `c_{D₁₆} ∘ (ρ_a × ρ_a)` of the `D₁₆` extension cocycle along `kummerInd` is
 continuous: `ρ_a` is locally constant, because `galoisSubgroup K L σ` is open and the Kummer

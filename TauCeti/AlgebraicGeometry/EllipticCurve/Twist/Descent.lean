@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Galois
 import TauCeti.FieldTheory.GaloisCohomology.AdditiveHilbert90
 import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 
