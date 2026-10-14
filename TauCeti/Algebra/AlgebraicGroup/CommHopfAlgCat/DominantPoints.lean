@@ -107,7 +107,7 @@ theorem mapPointsFunctor_app_surjective_of_injective
     (baseChangeMap (K := L) f) hd (eH p)
   refine ⟨eK.symm q, eH.injective ?_⟩
   rw [mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply,
-    AlgHom.baseChangePointsMulEquiv_mapDomain]
+    BialgHom.baseChangePointsMulEquiv_mapDomain]
   exact (congrArg (AlgHom.mapDomain (baseChangeMap (K := L) f).hom)
     (eK.apply_symm_apply q)).trans hq
 
