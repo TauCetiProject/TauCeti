@@ -18,7 +18,9 @@ by a null set. Consequently the ratio of the measures of two closed balls is con
 ratio of their radii raised to the dimension, and the part of a ball outside a translate of
 itself is controlled by the distance between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
-homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`.
+homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing
+the measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
+closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension.
 
 ## Main results
 
@@ -37,6 +39,7 @@ homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|�
   unit ball.
 * `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
+* `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 -/
 
 public section
@@ -141,6 +144,27 @@ theorem _root_.MeasureTheory.Measure.map_addHaar_homothety
   rw [hfun, ← Measure.map_map (measurable_const_add _) (measurable_const_smul _),
     map_addHaar_smul mu hr, Measure.map_smul _ (measurable_const_add _).aemeasurable,
     map_add_left_eq_self]
+
+/-- **The determinant is bounded by the operator norm**: `|det f| ≤ ‖f‖ ^ n` for a linear
+endomorphism `f` of a real normed space of finite dimension `n`. The image of the closed unit ball
+under `f` lies in the closed ball of radius `‖f‖`, and its measure is `|det f|` times that of the
+closed unit ball. -/
+theorem _root_.ContinuousLinearMap.abs_det_le_opNorm_pow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    (f : E →L[ℝ] E) : |f.det| ≤ ‖f‖ ^ finrank ℝ E := by
+  borelize E
+  set mu : Measure E := addHaar
+  have hsub : (f : E →ₗ[ℝ] E) '' closedBall 0 1 ⊆ closedBall 0 ‖f‖ := by
+    rintro _ ⟨x, hx, rfl⟩
+    rw [mem_closedBall_zero_iff] at hx ⊢
+    calc ‖f x‖ ≤ ‖f‖ * ‖x‖ := f.le_opNorm x
+      _ ≤ ‖f‖ * 1 := by gcongr
+      _ = ‖f‖ := mul_one _
+  have h := measure_mono (μ := mu) hsub
+  rw [mu.addHaar_image_linearMap, mu.addHaar_closedBall 0 (norm_nonneg f),
+    mu.addHaar_closedBall 0 zero_le_one, one_pow, ENNReal.ofReal_one, one_mul] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 <|
+    (ENNReal.mul_le_mul_iff_left (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne).1 h
 
 end TauCeti
 

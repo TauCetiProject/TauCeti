@@ -33,6 +33,8 @@ This advances Layer 3 of the Lie-groups roadmap.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
+* `TauCeti.Lie.lieMap_injective_of_mfderiv_injective`: injectivity of the identity differential
+  implies injectivity of the Lie map.
 * `TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt`: the Lie-algebra equivalence induced by a smooth
   homomorphism that is a local diffeomorphism at the identity.
 * `TauCeti.Lie.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a homomorphism that is a
@@ -335,6 +337,23 @@ theorem continuous_lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [
   exact (lieMap φ).toLinearMap.continuous_of_finiteDimensional
 
 namespace TauCeti.Lie
+
+/-- A smooth homomorphism whose differential at the identity is injective induces an injective
+Lie-algebra homomorphism. -/
+theorem lieMap_injective_of_mfderiv_injective
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (hφ : Function.Injective (mfderiv I I' φ 1)) :
+    Function.Injective (lieMap φ) := by
+  intro X Y hXY
+  let sourceEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let targetEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))
+  have h := congrArg targetEquiv hXY
+  rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap] at h
+  exact sourceEquiv.injective (hφ h)
 
 /-- The Lie map of a smooth homomorphism that is a local diffeomorphism at the identity is
 bijective: under evaluation at the identity it is the differential there, a linear equivalence. -/

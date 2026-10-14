@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The gradient is an isometric conjugate-linear image of the Fréchet derivative
@@ -49,6 +50,9 @@ theorem about `‖Dφ‖`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
+* `TauCeti.norm_gradient_fderiv_apply_le`: `‖∇ (∂ᵥ f) x‖ ≤ ‖v‖ ‖D²f x‖`.
+* `TauCeti.norm_iteratedFDeriv_two_sub_le_sum`: the operator norm of `D²f x - D²f y` is at most
+  the sum, over an orthonormal basis `(bᵢ)`, of `‖∇ (∂_{bᵢ} f) x - ∇ (∂_{bᵢ} f) y‖`.
 -/
 
 public section
@@ -154,5 +158,47 @@ theorem isSymmetric_of_hasFDerivAt_gradient {E : Type*} [NormedAddCommGroup E]
   intro v w
   simpa [L, real_inner_comm] using
     second_derivative_symmetric_of_eventually h₁ (L.hasFDerivAt.comp x hH) v w
+
+/-- The gradient of a directional derivative is controlled by the second derivative:
+`‖∇ (∂ᵥ f) x‖ ≤ ‖v‖ ‖D²f x‖`, wherever `fderiv ℝ f` is differentiable. -/
+theorem norm_gradient_fderiv_apply_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] {f : E → ℝ} {x : E} (hx : DifferentiableAt ℝ (fderiv ℝ f) x) (v : E) :
+    ‖∇ (fun y => fderiv ℝ f y v) x‖ ≤ ‖v‖ * ‖iteratedFDeriv ℝ 2 f x‖ := by
+  rw [norm_gradient_eq_norm_fderiv]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w => ?_
+  rw [fderiv_clm_apply_const_apply hx v w]
+  have h := (iteratedFDeriv ℝ 2 f x).le_opNorm ![w, v]
+  rw [iteratedFDeriv_two_apply] at h
+  simpa [Fin.prod_univ_two, mul_comm, mul_left_comm, mul_assoc] using h
+
+/-- **The second derivative through the gradients of directional derivatives.** For an
+orthonormal basis `(bᵢ)`, the operator norm of `D²f x - D²f y` is at most
+`∑ᵢ ‖∇ (∂_{bᵢ} f) x - ∇ (∂_{bᵢ} f) y‖`, wherever `fderiv ℝ f` is differentiable at `x` and `y`.
+So a Hölder or Lipschitz bound on the gradients of the directional derivatives of `f` along a basis
+is one on `D²f`. -/
+theorem norm_iteratedFDeriv_two_sub_le_sum {E ι : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    {f : E → ℝ} {x y : E} (hx : DifferentiableAt ℝ (fderiv ℝ f) x)
+    (hy : DifferentiableAt ℝ (fderiv ℝ f) y) :
+    ‖iteratedFDeriv ℝ 2 f x - iteratedFDeriv ℝ 2 f y‖ ≤
+      ∑ i, ‖∇ (fun z => fderiv ℝ f z (b i)) x - ∇ (fun z => fderiv ℝ f z (b i)) y‖ := by
+  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m => ?_
+  -- Expand the second slot in the basis `b`.
+  have hB : ∀ z, DifferentiableAt ℝ (fderiv ℝ f) z → iteratedFDeriv ℝ 2 f z m =
+      ∑ i, b.repr (m 1) i * ⟪∇ (fun w => fderiv ℝ f w (b i)) z, m 0⟫_ℝ := by
+    intro z hz
+    rw [iteratedFDeriv_two_apply]
+    conv_lhs => rw [← b.sum_repr (m 1)]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [map_smul, smul_eq_mul, inner_gradient_left, fderiv_clm_apply_const_apply hz]
+  rw [sub_apply, hB x hx, hB y hy, ← Finset.sum_sub_distrib, Fin.prod_univ_two, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+  rw [← mul_sub, ← inner_sub_left, norm_mul]
+  calc ‖b.repr (m 1) i‖ * ‖⟪_, m 0⟫_ℝ‖ ≤ ‖m 1‖ * (‖_‖ * ‖m 0‖) := by
+        gcongr
+        · exact (PiLp.norm_apply_le (b.repr (m 1)) i).trans_eq (b.repr.norm_map (m 1))
+        · exact norm_inner_le_norm _ _
+    _ = _ := by ring
 
 end TauCeti

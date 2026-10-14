@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Pair
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
@@ -115,92 +115,6 @@ variable {A A' B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
 
-/-- In an unweighted algebra the weighted variables `t Xᵢ`, `t ∈ {1}`, are the variables. -/
-private theorem weightedC_mul_weightedX_one_weight {n : ℕ} {R : Type*} [CommRing R]
-    [TopologicalSpace R] [NonarchimedeanRing R] (i : Fin n) {t : R} (ht : t ∈ ({1} : Set R)) :
-    weightedC (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight t *
-      weightedX _ isWeightFamily_one_weight i = weightedX _ isWeightFamily_one_weight i := by
-  rw [Set.mem_singleton_iff.mp ht, map_one, one_mul]
-
-/-- The completed plus ring of an unweighted pair contains the variables. -/
-private theorem coe_weightedX_mem_weighted_completion_plus {n : ℕ} {R : Type*} [CommRing R]
-    [TopologicalSpace R] [IsTopologicalRing R] [IsHuberRing R] (Q : Pair R) (i : Fin n) :
-    ((weightedX (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight i :
-      weightedRestrictedSubring _ _) : restrictedMvPowerSeriesCompletion n R) ∈
-      (Q.weighted isWeightFamily_one_weight).completion.plus := by
-  rw [← weightedC_mul_weightedX_one_weight i rfl]
-  exact Q.weightedC_mul_weightedX_mem_weighted_completion_plus _ rfl
-
-/-- The iteration isomorphism `A⟨X₁, …, X_{k+m}⟩ ≅ A⟨X₁, …, Xₖ⟩⟨Y₁, …, Y_m⟩` is a quotient
-mapping of the unweighted completed pairs: it matches their plus rings. -/
-private theorem exists_isQuotientMapping_iterateRingEquiv [IsHuberRing A] (S : Pair A)
-    (k m : ℕ) :
-    ∃ e : Hom (S.weighted (isWeightFamily_one_weight (k := k + m))).completion
-      ((S.weighted (isWeightFamily_one_weight (k := k))).completion.weighted
-        (isWeightFamily_one_weight (k := m))).completion,
-      e.IsQuotientMapping ∧ ∀ x, e.toRingHom x = iterateSplitHom isWeightFamily_one_weight
-        isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ rfl)
-        (fun _ ↦ by simp [Completion.coe_one]) x := by
-  -- the trivial weights of the last `m` variables have trivial image in `A⟨X₁, …, Xₖ⟩`
-  have hUW : ∀ j : Fin m, algebraMap A (restrictedMvPowerSeriesCompletion k A) ''
-      (fun _ : Fin (k + m) ↦ ({1} : Set A)) (Fin.natAdd k j) = {1} :=
-    fun _ ↦ by simp [Completion.coe_one]
-  let P := (S.weighted (isWeightFamily_one_weight (k := k))).completion
-  -- the inclusion of the first block of variables preserves the plus rings
-  have hfirst : P.plus ≤ (S.weighted (isWeightFamily_one_weight (k := k + m))).completion.plus.comap
-      (iterateFirstBlockHom isWeightFamily_one_weight isWeightFamily_one_weight
-        (fun _ ↦ rfl)) :=
-    S.weighted_completion_plus_le_comap _ _ (continuous_iterateFirstBlockHom ..)
-      (fun a ha ↦ by
-        rw [iterateFirstBlockHom_coe_weightedC,
-          algebraMap_completion_weightedRestrictedSubring_apply]
-        exact S.weightedC_mem_weighted_completion_plus _ ha)
-      (fun i t ht ↦ by
-        rw [weightedC_mul_weightedX_one_weight i ht, iterateFirstBlockHom_coe_weightedX]
-        exact coe_weightedX_mem_weighted_completion_plus S _)
-  let e : Hom (S.weighted (isWeightFamily_one_weight (k := k + m))).completion
-      (P.weighted (isWeightFamily_one_weight (k := m))).completion :=
-    { toRingHom := iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
-        isWeightFamily_one_weight (fun _ ↦ rfl) hUW
-      continuous_toRingHom := continuous_iterateRingEquiv ..
-      map_mem_plus := fun x hx ↦ by
-        simp only [RingHom.coe_coe, iterateRingEquiv_apply]
-        refine S.weighted_completion_plus_le_comap _ _ (continuous_iterateSplitHom ..)
-          (fun a ha ↦ ?_) (fun i t ht ↦ ?_) hx
-        · rw [iterateSplitHom_coe_weightedC, iterateStructureHom_apply]
-          exact P.weightedC_mem_weighted_completion_plus _
-            (S.weightedC_mem_weighted_completion_plus _ ha)
-        · rw [weightedC_mul_weightedX_one_weight i ht, iterateSplitHom_coe_weightedX]
-          refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) i
-          · rw [iterateVar_castAdd]
-            exact P.weightedC_mem_weighted_completion_plus _
-              (coe_weightedX_mem_weighted_completion_plus S i)
-          · rw [iterateVar_natAdd]
-            exact coe_weightedX_mem_weighted_completion_plus P j }
-  have hes : ∀ x, e.toRingHom x = iterateSplitHom isWeightFamily_one_weight
-      isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ rfl) hUW x :=
-    fun _ ↦ iterateRingEquiv_apply ..
-  refine ⟨e, Hom.isQuotientMapping_of_isIntegral_weighted e ?_ (fun c hc ↦ ?_)
-    (fun j t ht ↦ ?_), hes⟩
-  · exact (Homeomorph.mk (iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
-      isWeightFamily_one_weight (fun _ ↦ rfl) hUW).toEquiv (continuous_iterateRingEquiv ..)
-      (continuous_iterateRingEquiv_symm ..)).isOpenQuotientMap
-  · -- a constant `c ∈ A⟨X⟩⁺` is the image of `c` in the first block
-    have h := congrArg (fun φ ↦ φ c) (iterateSplitHom_comp_iterateFirstBlockHom
-      isWeightFamily_one_weight isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ rfl)
-      hUW)
-    simp only [RingHom.coe_comp, Function.comp_apply,
-      algebraMap_completion_weightedRestrictedSubring_apply] at h
-    rw [← h, ← hes]
-    exact isIntegral_algebraMap (R := Subring.map e.toRingHom _)
-      (x := ⟨_, Subring.mem_map.mpr ⟨_, hfirst hc, rfl⟩⟩)
-  · -- the variable `Yⱼ` is the image of `X_{k+j}`
-    rw [weightedC_mul_weightedX_one_weight j ht,
-      ← iterateVar_natAdd (isWeightFamily_one_weight (k := k) (A := A)) isWeightFamily_one_weight,
-      ← iterateSplitHom_coe_weightedX _ _ isWeightFamily_one_weight (fun _ ↦ rfl) hUW, ← hes]
-    exact isIntegral_algebraMap (R := Subring.map _ _)
-      (x := ⟨_, Subring.mem_map.mpr ⟨_, coe_weightedX_mem_weighted_completion_plus S _, rfl⟩⟩)
-
 /-- A quotient mapping `π : (A', A'⁺) → (B, B⁺)`, applied coefficientwise, induces a quotient
 mapping `(A'⟨Y₁, …, Y_m⟩, A'⟨Y⟩⁺) → (B⟨Y₁, …, Y_m⟩, B⟨Y⟩⁺)` of the completed unweighted pairs. -/
 private theorem exists_isQuotientMapping_weightedMapCompletion {S : Pair A'} {U : Pair B}
@@ -254,13 +168,19 @@ theorem Hom.IsTopologicallyFiniteType.comp [IsTateRing A] {S : Pair A} {U : Pair
   have : IsTateRing B := IsTateRing.of_continuous f.continuous_toRingHom
   obtain ⟨k, π, hπ, rfl⟩ := hf.exists_isQuotientMapping_one_weight
   obtain ⟨m, ρ, hρ, rfl⟩ := hg.exists_isQuotientMapping_one_weight
-  obtain ⟨e, he, hes⟩ := exists_isQuotientMapping_iterateRingEquiv S k m
+  have hUW : ∀ j : Fin m, algebraMap A (restrictedMvPowerSeriesCompletion k A) ''
+      (fun _ : Fin (k + m) ↦ ({1} : Set A)) (Fin.natAdd k j) = {1} :=
+    fun _ ↦ by simp [Completion.coe_one]
+  let e := S.iterateSplitHom isWeightFamily_one_weight isWeightFamily_one_weight
+    isWeightFamily_one_weight (fun _ ↦ rfl) hUW
+  have he := S.isQuotientMapping_iterateSplitHom isWeightFamily_one_weight
+    isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ rfl) hUW
   obtain ⟨β, hβ, hβF⟩ := exists_isQuotientMapping_weightedMapCompletion hπ m
   refine isTopologicallyFiniteType_iff.mpr ⟨k + m, fun _ ↦ {1}, fun _ ↦ Set.finite_singleton 1,
     isWeightFamily_one_weight, ρ.comp (β.comp e), hρ.comp (hβ.comp he),
     Hom.ext (RingHom.ext fun a ↦ ?_)⟩
   -- on a constant each of the three maps acts as the corresponding structure map
-  simp [hes, hβF, algebraMap_completion_weightedRestrictedSubring_apply]
+  simp [e, hβF, algebraMap_completion_weightedRestrictedSubring_apply]
 
 end Pair
 
