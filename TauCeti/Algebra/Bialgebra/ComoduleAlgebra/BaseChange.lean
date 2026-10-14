@@ -139,8 +139,8 @@ noncomputable abbrev baseChange (hB : ∀ b : B, algebraMap B A b ∈ coinvarian
       have hassoc : ∀ s, TensorProduct.assoc R (B' ⊗[B] A) H H ((φ.rTensor H).rTensor H s) =
           φ.rTensor (H ⊗[R] H) (TensorProduct.assoc R A H H s) := by
         intro s
-        simpa [LinearMap.rTensor, TensorProduct.map_id] using
-          (TensorProduct.map_map_assoc φ LinearMap.id LinearMap.id s).symm
+        rw [LinearMap.rTensor_tensor, LinearMap.comp_apply, LinearMap.comp_apply,
+          LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
       have hcomm : ∀ u, φ.rTensor (H ⊗[R] H) (Coalgebra.comul.lTensor A u) =
           Coalgebra.comul.lTensor (B' ⊗[B] A) (φ.rTensor H u) := by
         intro u
@@ -237,6 +237,16 @@ theorem galoisMap_baseChange_surjective (hB : ∀ b : B, algebraMap B A b ∈ co
   rw [coe_galoisMap_baseChange, EquivLike.comp_surjective, EquivLike.surjective_comp]
   exact LinearMap.lTensor_surjective B' (by simpa using h)
 
+/-- Flat base change preserves injectivity of the Galois map. -/
+theorem galoisMap_baseChange_injective [Module.Flat B B']
+    (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A)
+    (h : Function.Injective (galoisMap B hB)) :
+    letI := baseChange B' hB
+    Function.Injective (galoisMap B' (algebraMap_mem_coinvariants_baseChange hB)) := by
+  let := baseChange B' hB
+  rw [coe_galoisMap_baseChange, EquivLike.comp_injective, EquivLike.injective_comp]
+  exact Module.Flat.lTensor_preserves_injective_linearMap _ (by simpa using h)
+
 /-- **Base change of a Hopf–Galois extension.** Base change preserves bijectivity of the Galois
 map: if `Spec A × Spec H ⟶ Spec A ×_{Spec B} Spec A` is an isomorphism, so is its base change
 along any `Spec B' ⟶ Spec B`. -/
@@ -268,16 +278,6 @@ variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Semiring H] [B
   [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
   {B : Type x} [CommRing B] [Algebra R B] [Algebra B A] [IsScalarTower R B A]
   (B' : Type y) [CommRing B'] [Algebra R B'] [Algebra B B'] [IsScalarTower R B B']
-
-/-- Flat base change preserves injectivity of the Galois map. -/
-theorem galoisMap_baseChange_injective [Module.Flat B B']
-    (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A)
-    (h : Function.Injective (galoisMap B hB)) :
-    letI := baseChange B' hB
-    Function.Injective (galoisMap B' (algebraMap_mem_coinvariants_baseChange hB)) := by
-  let := baseChange B' hB
-  rw [coe_galoisMap_baseChange, EquivLike.comp_injective, EquivLike.injective_comp]
-  exact Module.Flat.lTensor_preserves_injective_linearMap _ (by simpa using h)
 
 variable [Module.FaithfullyFlat B B']
 
