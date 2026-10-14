@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
-public import TauCeti.Analysis.Complex.Conformal.LocalNormalForm
+public import TauCeti.Analysis.Complex.LocalNormalForm
 
 /-!
 # Local power coordinates for holomorphic maps of Riemann surfaces
@@ -56,20 +56,22 @@ theorem exists_chart_eq_pow_localMultiplicity
   let c := chartAt ℂ x
   have hc : c ∈ maximalAtlas 𝓘(ℂ) 1 X := chart_mem_maximalAtlas x
   have hx : x ∈ c.source := mem_chart_source ℂ x
-  let F : ℂ → ℂ := fun z ↦ e' (f (c.symm z)) - e' (f x)
+  let F : ℂ → ℂ := fun z ↦ e' (f (c.symm z))
   have hF : AnalyticAt ℂ F (c x) :=
-    (analyticAt_chart_comp_comp_symm hc he' hx hfx hf).sub analyticAt_const
+    analyticAt_chart_comp_comp_symm hc he' hx hfx hf
   have hm : 0 < localMultiplicity f x := (localMultiplicity_pos_iff hf).2 hne
-  have hmult : localMultiplicity f x = analyticOrderNatAt F (c x) :=
-    localMultiplicity_eq_analyticOrderNatAt hc he' hx hfx hf
-  have hFtop : analyticOrderAt F (c x) ≠ ⊤ := by
+  have hmult : localMultiplicity f x =
+      analyticOrderNatAt (fun z ↦ F z - F (c x)) (c x) := by
+    simpa only [F, c.left_inv hx] using
+      localMultiplicity_eq_analyticOrderNatAt hc he' hx hfx hf
+  have hFtop : analyticOrderAt (fun z ↦ F z - F (c x)) (c x) ≠ ⊤ := by
     intro ht
     rw [hmult, analyticOrderNatAt, ht, ENat.toNat_top] at hm
     exact Nat.lt_irrefl 0 hm
-  have horder : analyticOrderAt F (c x) = localMultiplicity f x := by
+  have horder : analyticOrderAt (fun z ↦ F z - F (c x)) (c x) = localMultiplicity f x := by
     rw [hmult, Nat.cast_analyticOrderNatAt hFtop]
   obtain ⟨a, hxa, ha0, ha, hai, hpow⟩ :=
-    hF.exists_openPartialHomeomorph_eq_pow hm horder
+    hF.exists_openPartialHomeomorph_sub_eq_pow hm horder
   -- The analytic coordinate and its inverse give a chart in the maximal holomorphic atlas.
   let b := c.trans a
   have hb : b ∈ maximalAtlas 𝓘(ℂ) 1 X := by
@@ -105,7 +107,7 @@ theorem exists_chart_eq_pow_localMultiplicity
     have hyb := (hes ▸ hy).1
     refine ⟨(hU ((hes ▸ hy).2)).1, ?_⟩
     have h := hpow (c y) hyb.2
-    simpa only [F, c.left_inv hyb.1, e, b, OpenPartialHomeomorph.restr_apply,
+    simpa only [F, c.left_inv hyb.1, c.left_inv hx, e, b, OpenPartialHomeomorph.restr_apply,
       OpenPartialHomeomorph.trans_apply] using h
 
 end TauCeti.RiemannSurface

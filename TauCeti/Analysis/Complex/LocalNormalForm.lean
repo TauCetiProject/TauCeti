@@ -6,18 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.BranchLogRoot
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Analytic
+public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
+public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 
 /-!
-# Local power coordinates for a holomorphic zero
+# Local power coordinates for a holomorphic germ
 
-A holomorphic function with a zero of finite positive order `m` is the `m`th power of a
-biholomorphic coordinate centered at that zero. The coordinate and its inverse are analytic on
-their domains, and the power identity holds throughout the coordinate domain. This is the planar
+A holomorphic function whose difference from its value at a point has finite positive order `m`
+is, after subtracting that value, the `m`th power of a biholomorphic coordinate centered at
+the point. The coordinate and its inverse are analytic on their domains, and the power identity
+holds throughout the coordinate domain. This is the planar
 local model for ramification of holomorphic maps between Riemann surfaces.
-
-The construction uses Mathlib's `AnalyticAt.analyticOrderAt_eq_natCast`, the holomorphic root
-criterion `TauCeti.exists_eventuallyEq_pow_iff_dvd`, and the analytic inverse function theorem.
 
 ## References
 
@@ -31,15 +30,18 @@ open Filter Set Topology
 
 namespace AnalyticAt
 
-/-- A holomorphic zero of finite positive order admits a centered biholomorphic coordinate
-in which the function is exactly a power. Both directions of the coordinate are analytic. -/
-theorem exists_openPartialHomeomorph_eq_pow {f : ℂ → ℂ} {z₀ : ℂ} {m : ℕ}
-    (hf : AnalyticAt ℂ f z₀) (hm : 0 < m) (horder : analyticOrderAt f z₀ = m) :
+/-- A holomorphic germ of finite positive order after subtracting its value admits a centered
+biholomorphic coordinate in which that difference is exactly a power. Both directions of the
+coordinate are analytic. -/
+theorem exists_openPartialHomeomorph_sub_eq_pow {f : ℂ → ℂ} {z₀ : ℂ} {m : ℕ}
+    (hf : AnalyticAt ℂ f z₀) (hm : 0 < m)
+    (horder : analyticOrderAt (fun z ↦ f z - f z₀) z₀ = m) :
     ∃ e : OpenPartialHomeomorph ℂ ℂ, z₀ ∈ e.source ∧ e z₀ = 0 ∧
       AnalyticOnNhd ℂ e e.source ∧ AnalyticOnNhd ℂ e.symm e.target ∧
-      ∀ z ∈ e.source, f z = e z ^ m := by
+      ∀ z ∈ e.source, f z - f z₀ = e z ^ m := by
   -- Absorb the nonvanishing factor into a root; the resulting coordinate has nonzero derivative.
-  obtain ⟨g, hg, hg0, hfg⟩ := hf.analyticOrderAt_eq_natCast.mp horder
+  obtain ⟨g, hg, hg0, hfg⟩ :=
+    (hf.sub analyticAt_const).analyticOrderAt_eq_natCast.mp horder
   obtain ⟨h, hh, hgh⟩ := (TauCeti.exists_eventuallyEq_pow_iff_dvd hg hm.ne').2
     (by rw [hg.analyticOrderAt_eq_zero.mpr hg0]; exact dvd_zero _)
   have hh0 : h z₀ ≠ 0 := by
@@ -52,19 +54,22 @@ theorem exists_openPartialHomeomorph_eq_pow {f : ℂ → ℂ} {z₀ : ℂ} {m : 
     have hd := ((hasDerivAt_id z₀).sub_const z₀).mul hh.differentiableAt.hasDerivAt
     have heq : deriv ψ z₀ = h z₀ := by simpa [ψ, Pi.mul_apply] using hd.deriv
     rwa [heq]
-  have hpow : ∀ᶠ z in 𝓝 z₀, f z = ψ z ^ m := by
+  have hpow : ∀ᶠ z in 𝓝 z₀, f z - f z₀ = ψ z ^ m := by
     filter_upwards [hfg, hgh] with z hz hz'
+    simp only [Pi.sub_apply] at hz
     simp only [hz, hz', smul_eq_mul, ψ, Pi.mul_apply, mul_pow]
   let e₀ := (hψ.hasStrictDerivAt.hasStrictFDerivAt_equiv hψd).toOpenPartialHomeomorph ψ
   have he₀ : (e₀ : ℂ → ℂ) = ψ :=
     HasStrictFDerivAt.toOpenPartialHomeomorph_coe _
   have hz₀ : z₀ ∈ e₀.source := HasStrictFDerivAt.mem_toOpenPartialHomeomorph_source _
   have hinv : AnalyticAt ℂ e₀.symm (ψ z₀) := by
-    simpa only [HasStrictDerivAt.localInverse, HasStrictFDerivAt.localInverse_def, e₀]
-      using hψ.analyticAt_localInverse hψd
+    rw [← he₀]
+    apply e₀.analyticAt_symm' hz₀ (he₀ ▸ hψ)
+    simpa only [he₀] using
+      (hψ.hasStrictDerivAt.hasStrictFDerivAt_equiv hψd).hasFDerivAt.fderiv
   -- Shrink simultaneously for the power identity and analyticity of both coordinate directions.
   have hnhds : ∀ᶠ z in 𝓝 z₀,
-      AnalyticAt ℂ ψ z ∧ AnalyticAt ℂ e₀.symm (ψ z) ∧ f z = ψ z ^ m :=
+      AnalyticAt ℂ ψ z ∧ AnalyticAt ℂ e₀.symm (ψ z) ∧ f z - f z₀ = ψ z ^ m :=
     hψ.eventually_analyticAt.and
       ((hψ.continuousAt.eventually hinv.eventually_analyticAt).and hpow)
   obtain ⟨U, hUsub, hUopen, hzU⟩ := mem_nhds_iff.mp hnhds
