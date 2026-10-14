@@ -121,10 +121,13 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- For the real inner product `re ⟪x, y⟫`, the adjoint of the realification of a bounded
 operator is the realification of its adjoint. -/
 @[simp]
-theorem adjoint_restrictScalars (T : E →L[𝕜] E) :
+theorem adjoint_restrictScalars {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] (T : E →L[𝕜] F) :
     letI := InnerProductSpace.rclikeToReal 𝕜 E
+    letI := InnerProductSpace.rclikeToReal 𝕜 F
     adjoint (T.restrictScalars ℝ) = (adjoint T).restrictScalars ℝ := by
   let := InnerProductSpace.rclikeToReal 𝕜 E
+  let := InnerProductSpace.rclikeToReal 𝕜 F
   refine ((eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
   simp only [real_inner_eq_re_inner 𝕜, coe_restrictScalars', adjoint_inner_left]
 
