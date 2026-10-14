@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Adjoints of isometric isomorphisms, of `L²` coordinate projections, and norm bounds
+# Adjoints of isometric isomorphisms, of `L²` coordinate projections, norm bounds, and `1 + X†X`
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -23,9 +24,15 @@ Two families of adjoints of linear maps between finite-dimensional inner product
 Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 (`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
+
+For bounded operators on a possibly infinite-dimensional Hilbert space, `1 + X†X` is invertible
+(`ContinuousLinearMap.isUnit_one_add_adjoint_comp_self`), because
+`⟪(1 + X†X) x, x⟫ = ‖x‖² + ‖X x‖²` bounds it below.
 -/
 
 public section
+
+section FiniteDimensional
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
@@ -80,3 +87,24 @@ theorem norm_adjoint_apply_le {C : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
         exact C.toContinuousLinearMap.opNorm_le_bound hc hC) y
 
 end LinearMap
+
+end FiniteDimensional
+
+namespace ContinuousLinearMap
+
+open scoped InnerProductSpace InnerProduct
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E]
+
+/-- On a complete space, `1 + X†X` is invertible for every bounded operator `X`, since
+`⟪(1 + X†X) x, x⟫ = ‖x‖² + ‖X x‖² ≥ ‖x‖²`. -/
+theorem isUnit_one_add_adjoint_comp_self (X : E →L[𝕜] E) :
+    IsUnit (1 + X† ∘L X) := by
+  refine isUnit_of_forall_le_norm_inner_map _ one_pos fun x => ?_
+  have h : ⟪(1 + X† ∘L X) x, x⟫_𝕜 = ((‖x‖ ^ 2 + ‖X x‖ ^ 2 : ℝ) : 𝕜) := by
+    simp [inner_add_left, adjoint_inner_left, inner_self_eq_norm_sq_to_K]
+  rw [h, RCLike.norm_ofReal, NNReal.coe_one, mul_one, abs_of_nonneg (by positivity)]
+  exact le_add_of_nonneg_right (sq_nonneg _)
+
+end ContinuousLinearMap

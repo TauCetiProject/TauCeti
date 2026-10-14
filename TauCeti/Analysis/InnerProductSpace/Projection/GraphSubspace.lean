@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import TauCeti.Analysis.Real.Sqrt
 
@@ -329,16 +329,6 @@ end Gap
 section Projection
 
 variable [CompleteSpace E]
-
-/-- On a complete space, `1 + X†X` is invertible for every bounded operator `X`, since
-`⟪(1 + X†X) x, x⟫ = ‖x‖² + ‖X x‖² ≥ ‖x‖²`. -/
-theorem _root_.ContinuousLinearMap.isUnit_one_add_adjoint_comp_self (X : E →L[𝕜] E) :
-    IsUnit (1 + X† ∘L X) := by
-  refine isUnit_of_forall_le_norm_inner_map _ one_pos fun x => ?_
-  have h : ⟪(1 + X† ∘L X) x, x⟫_𝕜 = ((‖x‖ ^ 2 + ‖X x‖ ^ 2 : ℝ) : 𝕜) := by
-    simp [inner_add_left, adjoint_inner_left, inner_self_eq_norm_sq_to_K]
-  rw [h, RCLike.norm_ofReal, NNReal.coe_one, mul_one, abs_of_nonneg (by positivity)]
-  exact le_add_of_nonneg_right (sq_nonneg _)
 
 variable {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {X : E →L[𝕜] E}
 
