@@ -54,11 +54,11 @@ variable (P Q) in
 with its `k`-linearity. -/
 noncomputable def completionCongr (σ : F ≃ₐ[k] F')
     (hσ : ∀ x, Q.valuation (σ x) = P.valuation x) : P.Completion ≃ₐ[k] Q.Completion :=
-  AlgEquiv.ofRingEquiv (f := Valuation.Completion.congr P.valuation_surjective σ.toRingEquiv hσ)
+  AlgEquiv.ofRingEquiv (f := Valuation.Completion.congr σ.toRingEquiv hσ)
     fun c ↦ by
       rw [← P.completionEmbedding.commutes, ← Q.completionEmbedding.commutes, ← σ.commutes,
         completionEmbedding_apply, completionEmbedding_apply]
-      exact Valuation.Completion.congr_coe _ hσ _
+      exact Valuation.Completion.congr_coe hσ _
 
 variable {σ : F ≃ₐ[k] F'} (hσ : ∀ x, Q.valuation (σ x) = P.valuation x)
 
@@ -67,17 +67,17 @@ variable {σ : F ≃ₐ[k] F'} (hσ : ∀ x, Q.valuation (σ x) = P.valuation x)
 theorem completionCongr_completionEmbedding (x : F) :
     completionCongr P Q σ hσ (P.completionEmbedding x) = Q.completionEmbedding (σ x) := by
   rw [completionEmbedding_apply, completionEmbedding_apply]
-  exact Valuation.Completion.congr_coe (σ := σ.toRingEquiv) _ hσ x
+  exact Valuation.Completion.congr_coe (σ := σ.toRingEquiv) hσ x
 
 /-- `completionCongr` is continuous. -/
 theorem continuous_completionCongr : Continuous (completionCongr P Q σ hσ) :=
-  Valuation.Completion.continuous_congr _ hσ
+  Valuation.Completion.continuous_congr hσ
 
 /-- **`completionCongr` is the only continuous extension of `σ`.** -/
 theorem eq_completionCongr_of_continuous {f : P.Completion →+* Q.Completion} (hf : Continuous f)
     (hfF : ∀ x : F, f (P.completionEmbedding x) = Q.completionEmbedding (σ x)) :
     f = (completionCongr P Q σ hσ : P.Completion →+* Q.Completion) :=
-  Valuation.Completion.eq_congr_of_continuous (σ := σ.toRingEquiv) _ hσ hf fun x ↦ by
+  Valuation.Completion.eq_congr_of_continuous (σ := σ.toRingEquiv) hσ hf fun x ↦ by
     rw [← completionEmbedding_apply, ← completionEmbedding_apply]
     exact hfF x
 
@@ -85,7 +85,7 @@ theorem eq_completionCongr_of_continuous {f : P.Completion →+* Q.Completion} (
 @[simp]
 theorem valuation_completionCongr (x : P.Completion) :
     Valued.v (completionCongr P Q σ hσ x) = Valued.v x :=
-  Valuation.Completion.valued_congr _ hσ x
+  Valuation.Completion.valued_congr P.valuation_surjective hσ x
 
 /-- `completionCongr` maps the completed valuation ring of `P` into that of `Q`, and only it. -/
 theorem completionCongr_mem_integers_iff {x : P.Completion} :
@@ -98,7 +98,7 @@ variable (P) in
 theorem completionCongr_refl :
     completionCongr P P (AlgEquiv.refl : F ≃ₐ[k] F) (fun _ ↦ by rw [AlgEquiv.coe_refl, id]) =
       AlgEquiv.refl :=
-  AlgEquiv.ext fun x ↦ DFunLike.congr_fun (Valuation.Completion.congr_refl P.valuation_surjective) x
+  AlgEquiv.ext fun x ↦ DFunLike.congr_fun Valuation.Completion.congr_refl x
 
 /-- `completionCongr` is compatible with composition. -/
 @[simp]
@@ -106,7 +106,7 @@ theorem completionCongr_trans {τ : F' ≃ₐ[k] F''} (hτ : ∀ y, R.valuation 
     (completionCongr P Q σ hσ).trans (completionCongr Q R τ hτ) =
       completionCongr P R (σ.trans τ) (fun x ↦ by rw [AlgEquiv.trans_apply, hτ, hσ]) :=
   AlgEquiv.ext fun x ↦ DFunLike.congr_fun (Valuation.Completion.congr_trans (σ := σ.toRingEquiv)
-    (τ := τ.toRingEquiv) _ hσ Q.valuation_surjective hτ) x
+    (τ := τ.toRingEquiv) hσ hτ) x
 
 /-- The inverse of `completionCongr` is `completionCongr` of the inverse. -/
 @[simp]
@@ -114,7 +114,7 @@ theorem completionCongr_symm :
     (completionCongr P Q σ hσ).symm =
       completionCongr Q P σ.symm (fun y ↦ by rw [← hσ, AlgEquiv.apply_symm_apply]) :=
   AlgEquiv.ext fun x ↦
-    DFunLike.congr_fun (Valuation.Completion.congr_symm (σ := σ.toRingEquiv) _ hσ) x
+    DFunLike.congr_fun (Valuation.Completion.congr_symm (σ := σ.toRingEquiv) hσ) x
 
 variable (σ : F ≃ₐ[k] F) (hσ : ∀ x, P.valuation (σ x) = P.valuation x)
 

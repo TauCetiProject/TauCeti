@@ -59,32 +59,40 @@ variable {k F F' : Type*} [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 variable (F) (P : Place k F')
 
-/-- An element of the decomposition group of `P`, viewed as a `k`-automorphism, preserves the
-valuation of `P`. -/
-private theorem valuation_restrictScalars_apply (g : P.integers.decompositionSubgroup F) (x : F') :
-    P.valuation (((g : F' ≃ₐ[F] F').restrictScalars k) x) = P.valuation x :=
-  valuation_decompositionSubgroup_apply F P g x
-
 /-- **The action of the decomposition group on the completion**: an element of the decomposition
 group of `P` extends by continuity to an automorphism of the completion at `P` that preserves the
 completed valuation ring. -/
 noncomputable def completionDecompositionHom :
     P.integers.decompositionSubgroup F →* P.completionPlace.integers.decompositionSubgroup k where
-  toFun g := ⟨completionCongr P P _ (valuation_restrictScalars_apply F P g),
+  toFun g := ⟨completionCongr P P ((g : F' ≃ₐ[F] F').restrictScalars k) (fun x ↦ by
+      simpa only [AlgEquiv.restrictScalars_apply] using
+        valuation_decompositionSubgroup_apply F P g x),
     completionCongr_mem_decompositionSubgroup _ _⟩
+  -- Restricting scalars leaves the underlying equivalence unchanged, so the identity case is
+  -- definitionally the `AlgEquiv.refl` case of `completionCongr_refl`.
   map_one' := Subtype.ext <| AlgEquiv.ext fun x ↦ DFunLike.congr_fun (completionCongr_refl P) x
+  -- Multiplication of algebra equivalences is reverse composition, also after restricting scalars.
   map_mul' g h := Subtype.ext <| AlgEquiv.ext fun x ↦ (DFunLike.congr_fun
-    (completionCongr_trans (valuation_restrictScalars_apply F P h)
-      (valuation_restrictScalars_apply F P g)) x).symm
+    (completionCongr_trans (P := P) (Q := P) (R := P)
+      (σ := ((h : F' ≃ₐ[F] F').restrictScalars k))
+      (τ := ((g : F' ≃ₐ[F] F').restrictScalars k))
+      (fun x ↦ by simpa only [AlgEquiv.restrictScalars_apply] using
+        valuation_decompositionSubgroup_apply F P h x)
+      (fun x ↦ by simpa only [AlgEquiv.restrictScalars_apply] using
+        valuation_decompositionSubgroup_apply F P g x))
+    x).symm
 
 variable {F P}
 
 /-- An element of the decomposition group acts on the completion by `completionCongr`. -/
 theorem coe_completionDecompositionHom (g : P.integers.decompositionSubgroup F) :
     (completionDecompositionHom F P g : P.Completion ≃ₐ[k] P.Completion) =
-      completionCongr P P ((g : F' ≃ₐ[F] F').restrictScalars k) (fun x ↦ by
-        rw [AlgEquiv.restrictScalars_apply, valuation_decompositionSubgroup_apply]) :=
-  (rfl)
+      completionCongr P P ((g : F' ≃ₐ[F] F').restrictScalars k)
+        (fun x ↦ by simpa only [AlgEquiv.restrictScalars_apply] using
+          valuation_decompositionSubgroup_apply F P g x) :=
+  by
+    change completionCongr P P ((g : F' ≃ₐ[F] F').restrictScalars k) _ = _
+    rfl
 
 /-- The action of the decomposition group on the completion extends its action on `F'`. -/
 @[simp]
