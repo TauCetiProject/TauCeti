@@ -86,6 +86,7 @@ theorem homeomorphFactorsThrough_apply [CompactSpace A] [T2Space B] (q : C(A, B)
 
 /-- The inverse of `homeomorphFactorsThrough` evaluates, at the image under `q` of a point, to the
 value at that point of the map out of the source. -/
+@[simp]
 theorem homeomorphFactorsThrough_symm_apply_comp [CompactSpace A] [T2Space B] (q : C(A, B))
     (hq : Function.Surjective q) (g : {g : C(A, X) // Function.FactorsThrough g q}) (a : A) :
     (homeomorphFactorsThrough q hq).symm g (q a) = g.1 a := by
