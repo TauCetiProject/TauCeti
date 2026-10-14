@@ -113,11 +113,8 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_isCoprime
       intro hav
       exact v.isPrime.ne_top ((Ideal.eq_top_iff_one v.asIdeal).mpr
         (by simpa using v.asIdeal.sub_mem hav (Ideal.le_of_dvd hv ham)))
-    have hprincipal := count_toPrincipalIdeal_eq_neg_log_valuation K v (Units.mk0 _ haK)
-    rw [coe_toPrincipalIdeal, Units.val_mk0, HeightOneSpectrum.valuation_of_algebraMap,
-      HeightOneSpectrum.intValuation_eq_one_iff.mpr hav, WithZero.log_one, neg_zero] at hprincipal
     rw [hJ, count_mul K v (spanSingleton_ne_zero_iff.mpr haK) hI0, hI v hv,
-      add_zero, hprincipal]
+      add_zero, count_spanSingleton_algebraMap_eq_zero_of_notMem K v hav]
   refine ⟨a, J, ha0, ham, hJ0, Ideal.coprime_of_no_prime_ge ?_, hJ⟩
   intro P hJP hmP hP
   have hP0 : P ≠ ⊥ := fun h0 ↦ hJ0 (le_bot_iff.mp (h0 ▸ hJP))
