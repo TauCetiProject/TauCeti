@@ -242,7 +242,7 @@ theorem integral_laplacian_mul_newtonianKernel (hn : 3 ≤ n)
         (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) := by
     filter_upwards [volume.ae_ne 0] with x hx
     exact sum_fderiv_newtonianKernel_mul_fderiv hn b f hx
-  rw [integral_laplacian_mul_eq_neg_integral_sum (locallyIntegrable_newtonianKernel n)
+  rw [(locallyIntegrable_newtonianKernel n).integral_laplacian_mul_eq_neg_integral_sum
       (locallyIntegrable_fderiv_newtonianKernel n)
       (fun _ ↦ integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn) hf hc b,
     integral_congr_ae hsum, integral_const_mul, hrad]

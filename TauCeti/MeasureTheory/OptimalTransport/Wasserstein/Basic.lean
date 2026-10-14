@@ -86,12 +86,14 @@ what the gluing lemma consumes.
   along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
-* `TauCeti.hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top` — a law of finite weighted
+* `TauCeti.hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top` — a law of finite weighted
   Wasserstein cost against finitely many laws, one of positive weight and finite moment, has finite
   moment;
 * `TauCeti.exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le` — a probability measure
   `W₂`-close to two Dirac laws gives, off any null set, a point `z` with
   `d(x₀, z)² + d(z, x₁)² ≤ 2 R²`;
+* `TauCeti.HasFiniteMoment.smul_measure` and `TauCeti.HasFiniteMoment.add_measure` — finite
+  moments survive finite scalings and sums of finite measures, hence mixtures;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
 * `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
@@ -434,6 +436,12 @@ theorem hasFiniteMoment_def :
     HasFiniteMoment p ν ↔ ∃ x : X, MemLp (fun y ↦ edist x y) p ν :=
   Iff.rfl
 
+/-- Scaling a measure by a finite constant preserves finite `p`-moments. -/
+theorem HasFiniteMoment.smul_measure {ν : Measure X} (h : HasFiniteMoment p ν) {c : ℝ≥0∞}
+    (hc : c ≠ ∞) : HasFiniteMoment p (c • ν) :=
+  let ⟨x, hx⟩ := h
+  ⟨x, hx.smul_measure hc⟩
+
 /-- **The unique-coupling identity.** A Dirac source has exactly one coupling with each
 probability target, so the Wasserstein distance from `δ x` is the `L^p (ν)` seminorm of the ground
 distance to `x`. This is the identity that later identifies the finite-moment space `P_p (X)` with
@@ -678,6 +686,26 @@ theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
       measurable_edist_right.aestronglyMeasurable, lt_top_iff_ne_top]
   simp only [enorm_eq_self]
 
+/-- The sum of two finite measures with finite `p`-moments has finite `p`-moment. -/
+theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] {μ ν : Measure X}
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : HasFiniteMoment p μ)
+    (hν : HasFiniteMoment p ν) : HasFiniteMoment p (μ + ν) := by
+  obtain ⟨x, hx⟩ := id hμ
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact ⟨x, memLp_zero_iff_aestronglyMeasurable.2 measurable_edist_right.aestronglyMeasurable⟩
+  rcases eq_or_ne p ∞ with rfl | hp
+  · -- At `p = ∞`, both moment conditions are essential bounds about `x`.
+    have hy := hν.memLp (x := x) measurable_edist_right.aestronglyMeasurable
+    refine ⟨x, MemLp.of_enorm_bound measurable_edist_right.aestronglyMeasurable
+      (C := max (eLpNormEssSup (fun y ↦ edist x y) μ) (eLpNormEssSup (fun y ↦ edist x y) ν))
+      (max_ne_top (eLpNormEssSup_le_eLpNorm_top.trans_lt hx.eLpNorm_lt_top).ne
+        (eLpNormEssSup_le_eLpNorm_top.trans_lt hy.eLpNorm_lt_top).ne) ?_⟩
+    exact ae_add_measure_iff.2 ⟨ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_left _ _),
+      ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_right _ _)⟩
+  rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x] at hμ hν ⊢
+  rw [lintegral_add_measure]
+  exact ENNReal.add_ne_top.2 ⟨hμ, hν⟩
+
 /-- On an ordinary pseudometric space, the finite-moment condition is equivalent to finite
 Wasserstein distance from the Dirac law at any prescribed basepoint. -/
 theorem hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top
@@ -774,21 +802,21 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
         (measurable_id.prodMk measurable_id).aemeasurable]
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
 
-/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ n` has
+/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
 finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment
-and `n ≠ 0`: the corresponding summand bounds `W_p(ν, μ i)`. -/
-theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top
+and `0 < q`: the corresponding summand bounds `W_p(ν, μ i)`. -/
+theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
     {μ : ι → Measure X} {ν : Measure X} [IsProbabilityMeasure ν] {i : ι} (hi : i ∈ s)
-    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {n : ℕ}
-    (hn : n ≠ 0) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ n ≠ ∞) :
+    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
+    (hq : 0 < q) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ q ≠ ∞) :
     HasFiniteMoment p ν := by
-  have hi' : w i * wassersteinEDist p ν (μ i) ^ n ≠ ∞ :=
-    ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ n)
+  have hi' : w i * wassersteinEDist p ν (μ i) ^ q ≠ ∞ :=
+    ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ q)
       (fun _ _ ↦ bot_le) hi)
   rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ,
     wassersteinEDist_comm hd]
-  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_pow hn, ENNReal.mul_top hwi])
+  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
 
 end Anchor
 

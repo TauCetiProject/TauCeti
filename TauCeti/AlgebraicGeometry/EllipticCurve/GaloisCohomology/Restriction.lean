@@ -36,6 +36,11 @@ which commute with the map induced by the inclusion `E[m] → E`
 these are the localisation maps at `v`, out of which the Selmer and Shafarevich–Tate groups are
 cut.
 
+The group and coordinate maps depend on `τ`, but their induced cohomology maps do not:
+`pointRes_eq_pointRes` and `torsionRes_eq_torsionRes` in
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/EmbeddingIndependence.lean` prove
+independence of this choice.
+
 The main result is that restriction is compatible with the Kummer maps
 (`WeierstrassCurve.torsionRes_kummerMap`): the restriction of the Kummer class of `P ∈ E(K)` is
 the Kummer class over `L` of the image of `P` in `E(L)`. This is what lets the image of a
@@ -127,6 +132,18 @@ theorem pointCoeffBaseChange_smul (g : AbsoluteGaloisGroup L) (P : W.PointCoeff)
       pointCoeffBaseChange_pointCoeffEquiv_some, smul_pointCoeffEquiv, Affine.Point.map_some]
     simp only [AlgEquiv.coe_toAlgHom, absoluteGaloisGroupMap_commutes]
 
+open scoped Classical in
+/-- Precomposing an embedding by a Galois automorphism composes the coordinate map with
+the same automorphism's action on points. -/
+theorem pointCoeffBaseChange_comp (σ : AbsoluteGaloisGroup K) (P : W.PointCoeff) :
+    W.pointCoeffBaseChange (τ.comp σ.toAlgHom) P = W.pointCoeffBaseChange τ (σ • P) := by
+  obtain ⟨P, rfl⟩ := W.pointCoeffEquiv.surjective P
+  rcases P with _ | ⟨x, y, h⟩
+  · simp only [← Affine.Point.zero_def, map_zero, smul_zero]
+  · rw [smul_pointCoeffEquiv, Affine.Point.map_some,
+      pointCoeffBaseChange_pointCoeffEquiv_some, pointCoeffBaseChange_pointCoeffEquiv_some]
+    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+
 variable [DecidableEq K] [DecidableEq L] in
 /-- **On points of `E(K)`, `pointCoeffBaseChange τ` is base change to `L`**: the image in `E(Lˢ)`
 of a point of `E(K)` is the image of its base change in `E(L)`. -/
@@ -167,6 +184,16 @@ theorem torsionCoeffBaseChange_smul (g : AbsoluteGaloisGroup L) (P : W.TorsionCo
   Subtype.ext <| by
     rw [coe_torsionCoeffBaseChange, coe_smul_torsionCoeff, coe_smul_torsionCoeff,
       coe_torsionCoeffBaseChange, pointCoeffBaseChange_smul]
+
+/-- Precomposing an embedding by a Galois automorphism composes its map on torsion points
+with the same automorphism's action. -/
+theorem torsionCoeffBaseChange_comp (σ : AbsoluteGaloisGroup K) (m : ℕ)
+    (P : W.TorsionCoeff m) :
+    W.torsionCoeffBaseChange (τ.comp σ.toAlgHom) m P =
+      W.torsionCoeffBaseChange τ m (σ • P) := by
+  apply Subtype.ext
+  rw [coe_torsionCoeffBaseChange, coe_torsionCoeffBaseChange, coe_smul_torsionCoeff,
+    pointCoeffBaseChange_comp]
 
 /-! ### Restriction on first cohomology -/
 
