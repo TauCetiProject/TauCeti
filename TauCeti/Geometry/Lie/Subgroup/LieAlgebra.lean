@@ -82,6 +82,8 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
   subset of `𝔤`.
 * `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`: the Lie algebra of `K` is invariant under the
   adjoint action of `K`.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_le_comap_Ad_sub_id`: the same, in the form `Ad g - 1` maps
+  `Lie(K)` into itself, as `Submodule.mapQ` consumes it.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
   intersection is the intersection of the Lie algebras.
 
@@ -377,5 +379,13 @@ theorem Ad_mem_lieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
   lieSubalgebraOfSubgroup_le_iff
       (L := (lieSubalgebraOfSubgroup (I := I) K).comap (Ad (I := I) g).toLieHom)
       |>.mpr (fun _ hY => mem_lieSubalgebraOfSubgroup_of_forall (lieExp_smul_Ad_mem hg hY)) hX
+
+/-- **`Ad g - 1` preserves the Lie algebra of `K` for `g ∈ K`**, in the form that lets it descend
+to the quotient `𝔤 ⧸ Lie(K)` through `Submodule.mapQ`. -/
+theorem lieSubalgebraOfSubgroup_le_comap_Ad_sub_id {K : Subgroup G} {g : G} (hg : g ∈ K) :
+    (lieSubalgebraOfSubgroup (I := I) K).toSubmodule ≤
+      Submodule.comap ((Ad (I := I) g).toLinearEquiv.toLinearMap - LinearMap.id)
+        (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
+  fun _ hX => sub_mem (Ad_mem_lieSubalgebraOfSubgroup hg hX) hX
 
 end TauCeti.Lie
