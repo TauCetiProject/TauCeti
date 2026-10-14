@@ -153,6 +153,18 @@ theorem IsJordanSplitting.pow_dvd_apply {π : R} {N : ℕ → Submodule R M}
   · rw [h.apply_eq_zero i k hik x hx y hy]
     exact dvd_zero _
 
+/-- Pairing a recomposed vector with the `i`-th constituent only sees its `i`-th component. -/
+theorem IsJordanSplitting.apply_dfinsuppSum {π : R} {N : ℕ → Submodule R M}
+    [∀ i (x : N i), Decidable (x ≠ 0)]
+    (h : B.IsJordanSplitting π N) (f : Π₀ i, N i) (i : ℕ) (y : N i) :
+    B (f.sum fun _ z ↦ (z : M)) y = B (f i) y := by
+  classical
+  rw [DFinsupp.sum, map_sum, LinearMap.sum_apply]
+  refine Finset.sum_eq_single i
+    (fun k _ hki ↦ h.apply_eq_zero k i hki _ (f k).2 y y.2) ?_
+  intro hi
+  rw [DFinsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply]
+
 /-- A Jordan splitting of a finitely generated module has finitely many nonzero constituents. -/
 theorem IsJordanSplitting.hasFiniteSupport [Module.Finite R M] {π : R}
     {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) : {i | N i ≠ ⊥}.Finite := by
@@ -300,14 +312,9 @@ theorem IsJordanSplitting.mem_biSup_sup_smul_top (h : B.IsJordanSplitting π N)
   refine Submodule.mem_sup_right ?_
   -- The components of index `i < j` are divisible by `π`: against `N i`, the vector pairs as its
   -- `i`-th component does, so these values are divisible by `π ^ (i + 1)`.
-  have hcomp : ∀ y ∈ N i, B (f.sum fun _ z ↦ (z : M)) y = B (f i) y := fun y hy ↦ by
-    rw [DFinsupp.sum, map_sum, LinearMap.sum_apply]
-    refine Finset.sum_eq_single i (fun k _ hki ↦ h.apply_eq_zero k i hki _ (f k).2 y hy) ?_
-    intro hi
-    rw [DFinsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply]
   obtain ⟨z, hz⟩ :=
     (h.isModular i).exists_eq_smul_of_forall_dvd (pow_mem hπ i) hπ (x := f i) fun y ↦ by
-      rw [← pow_succ, restrict_apply, domRestrict_apply, ← hcomp y y.2]
+      rw [← pow_succ, restrict_apply, domRestrict_apply, ← h.apply_dfinsuppSum f i y]
       exact (pow_dvd_pow π (by omega)).trans (hx y)
   rw [hz, Submodule.coe_smul]
   exact Submodule.smul_mem_smul (Ideal.mem_span_singleton_self π) Submodule.mem_top

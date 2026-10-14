@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting
+public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 
 /-!
