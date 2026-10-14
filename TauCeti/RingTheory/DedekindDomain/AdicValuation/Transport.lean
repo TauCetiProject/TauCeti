@@ -146,13 +146,14 @@ noncomputable def adicCompletionCongr (σ : K ≃+* K')
 
 variable {v w} {σ : K ≃+* K'} (hσ : ∀ x, w.valuation K' (σ x) = v.valuation K x)
 
-/-- On the underlying uniform-space completions, `adicCompletionCongr` is the completion of `σ`. -/
+/-- On the underlying uniform-space completions, `adicCompletionCongr` is
+`Valuation.Completion.congr`. -/
 @[simp]
 theorem toCompletion_adicCompletionCongr (x : v.adicCompletion K) :
     (adicCompletionCongr v w σ hσ x).toCompletion =
-      UniformSpace.Completion.map (WithVal.congr (v.valuation K) (w.valuation K') σ)
-        x.toCompletion :=
-  Valuation.Completion.congr_apply hσ x.toCompletion
+      Valuation.Completion.congr σ hσ x.toCompletion := by
+  rw [adicCompletionCongr, RingEquiv.trans_apply, RingEquiv.trans_apply,
+    adicCompletion.equiv_apply, ← adicCompletion.equiv_apply, RingEquiv.apply_symm_apply]
 
 /-- `adicCompletionCongr` extends `σ`. -/
 @[simp]
@@ -160,7 +161,7 @@ theorem adicCompletionCongr_algebraMap (x : K) :
     adicCompletionCongr v w σ hσ (algebraMap K (v.adicCompletion K) x) =
       algebraMap K' (w.adicCompletion K') (σ x) := by
   apply adicCompletion.ext
-  exact Valuation.Completion.congr_coe hσ x
+  simp [algebraMap_adicCompletion]
 
 /-- `adicCompletionCongr` is continuous. -/
 theorem continuous_adicCompletionCongr : Continuous (adicCompletionCongr v w σ hσ) :=
@@ -172,32 +173,19 @@ theorem continuous_adicCompletionCongr : Continuous (adicCompletionCongr v w σ 
 theorem eq_adicCompletionCongr_of_continuous {f : v.adicCompletion K →+* w.adicCompletion K'}
     (hf : Continuous f)
     (hfK : ∀ x : K, f (algebraMap K _ x) = algebraMap K' (w.adicCompletion K') (σ x)) :
-    f = (adicCompletionCongr v w σ hσ).toRingHom := by
-  have htransport :
-      (adicCompletion.equiv K' w).toRingHom.comp
-          (f.comp (adicCompletion.equiv K v).symm.toRingHom) =
-        (Valuation.Completion.congr σ hσ).toRingHom :=
-    Valuation.Completion.eq_congr_of_continuous hσ
-      ((adicCompletion.continuous_toCompletion K' w).comp
-        (hf.comp (adicCompletion.continuous_ofCompletion K v))) fun x ↦ by
-          have h := congrArg adicCompletion.toCompletion (hfK x)
-          simp only [algebraMap_adicCompletion, Function.comp_apply,
-            Algebra.algebraMap_self_apply] at h
-          rwa [RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-            RingEquiv.coe_toRingHom, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-            adicCompletion.equiv_apply,
-            ← adicCompletion.toCompletion_ofCompletion K v (x : (v.valuation K).Completion),
-            ← adicCompletion.equiv_apply K v, RingEquiv.symm_apply_apply]
-  ext x
-  exact DFunLike.congr_fun htransport x.toCompletion
+    f = (adicCompletionCongr v w σ hσ).toRingHom :=
+  DFunLike.coe_injective <| (v.denseRange_algebraMap K).equalizer hf
+    (continuous_adicCompletionCongr hσ) (funext fun x ↦ by
+      rw [Function.comp_apply, Function.comp_apply, hfK x, RingEquiv.toRingHom_eq_coe,
+        RingEquiv.coe_toRingHom, adicCompletionCongr_algebraMap])
 
 /-- `adicCompletionCongr` for the identity is the identity. -/
 @[simp]
 theorem adicCompletionCongr_one :
     adicCompletionCongr v v (1 : K ≃+* K) (fun _ ↦ rfl) =
       RingEquiv.refl (v.adicCompletion K) := by
-  ext x
-  exact DFunLike.congr_fun Valuation.Completion.congr_refl x.toCompletion
+  apply RingEquiv.toRingHom_injective
+  exact (eq_adicCompletionCongr_of_continuous (fun _ ↦ rfl) continuous_id fun _ ↦ rfl).symm
 
 /-- Transporting completions along two field isomorphisms is transport along their composite. -/
 @[simp]
@@ -208,7 +196,8 @@ theorem adicCompletionCongr_trans {R'' K'' : Type*} [CommRing R''] [IsDedekindDo
       adicCompletionCongr v u (σ.trans τ) (fun x ↦ by
         rw [RingEquiv.trans_apply, hτ, hσ]) := by
   ext x
-  exact DFunLike.congr_fun (Valuation.Completion.congr_trans hσ hτ) x.toCompletion
+  rw [RingEquiv.trans_apply, toCompletion_adicCompletionCongr, toCompletion_adicCompletionCongr,
+    toCompletion_adicCompletionCongr, ← RingEquiv.trans_apply, Valuation.Completion.congr_trans]
 
 /-- The inverse of `adicCompletionCongr` is the completion of the inverse isomorphism. -/
 @[simp]
@@ -216,16 +205,16 @@ theorem adicCompletionCongr_symm :
     (adicCompletionCongr v w σ hσ).symm =
       adicCompletionCongr w v σ.symm (fun y ↦ by simpa using (hσ (σ.symm y)).symm) := by
   ext x
-  exact DFunLike.congr_fun (Valuation.Completion.congr_symm hσ) x.toCompletion
+  rw [toCompletion_adicCompletionCongr, ← Valuation.Completion.congr_symm hσ,
+    RingEquiv.eq_symm_apply, ← toCompletion_adicCompletionCongr hσ, RingEquiv.apply_symm_apply]
 
 /-- `adicCompletionCongr` preserves the valuations of the completions. -/
 @[simp]
 theorem valued_adicCompletionCongr (x : v.adicCompletion K) :
     Valued.v (adicCompletionCongr v w σ hσ x) = Valued.v x := by
   rw [← adicCompletion.valued_toCompletion, toCompletion_adicCompletionCongr,
-    ← Valuation.Completion.congr_apply hσ]
-  exact (Valuation.Completion.valued_congr (v.valuation_surjective K) hσ x.toCompletion).trans
-    (adicCompletion.valued_toCompletion K v x)
+    Valuation.Completion.valued_congr (v.valuation_surjective K),
+    adicCompletion.valued_toCompletion]
 
 end Completion
 
