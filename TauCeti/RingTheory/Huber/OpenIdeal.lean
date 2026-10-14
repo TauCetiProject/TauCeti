@@ -73,8 +73,11 @@ as `fg_extendedIdealOfDefinition` is, by `Ideal.FG.map`. Its
 `projects/AdicSpaces/Adic spaces/OpenIdeals.lean` is headed "We prove Lemma 6.6 … of
 [Wedhorn, *Adic Spaces*]" and reaches the radical criterion as
 `ideal_isOpen_iff_topologicalNilradical_le_radical`, phrased through the topological nilradical
-and hypothesising a finitely generated ideal of definition; the form below instead names the pair
-of definition and routes the whole lemma through `Ideal.map_pow`.
+and hypothesising a finitely generated ideal of definition. Here the pair-based form
+`PairOfDefinition.isOpen_iff_le_radical` names the pair of definition and routes the lemma through
+`Ideal.map_pow`; the intrinsic form `isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical`,
+which names no pair and is the counterpart of AINTLIB's statement, is derived from it via
+`isTopologicallyNilpotent_of_mem_idealOfDefinition`.
 
 The product lemmas below are independent of it in a stronger sense: AINTLIB's
 `ValuationSpectrum.HasRationalPresentation` (`projects/AdicSpaces/Adic spaces/RationalSubsets.lean`)
