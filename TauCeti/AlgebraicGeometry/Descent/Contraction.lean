@@ -136,16 +136,17 @@ noncomputable def descOfIsQuotientMap : Y ⟶ Z :=
 theorem comp_descOfIsQuotientMap : c ≫ c.descOfIsQuotientMap hq hc h hh = h :=
   Scheme.Hom.ext' (LocallyRingedSpace.Hom.ext' (comp_descPsh c hq hc h hh))
 
-include hq hc in
-private theorem epi_of_isQuotientMap_of_isIso_app : Epi c :=
-  have : Surjective c := ⟨hq.surjective⟩
-  epi_of_surjective_of_app_injective c fun _ ↦ (ConcreteCategory.bijective_of_isIso _).1
-
 /-- The morphism descended along `c` is the only morphism through which `h` factors. -/
 theorem eq_descOfIsQuotientMap {g : Y ⟶ Z} (hg : c ≫ g = h) :
     g = c.descOfIsQuotientMap hq hc h hh := by
   have := epi_of_isQuotientMap_of_isIso_app c hq hc
   rw [← cancel_epi c, hg, comp_descOfIsQuotientMap]
+
+/-- Descending a morphism already expressed as a composite through `c` recovers that morphism. -/
+@[simp]
+theorem descOfIsQuotientMap_comp (g : Y ⟶ Z) (hh' : Function.FactorsThrough (c ≫ g) c) :
+    c.descOfIsQuotientMap hq hc (c ≫ g) hh' = g :=
+  (eq_descOfIsQuotientMap c hq hc (c ≫ g) hh' rfl).symm
 
 include hq hc hh in
 /-- **The universal property of a contraction.** If `c : X ⟶ Y` is a topological quotient map for
