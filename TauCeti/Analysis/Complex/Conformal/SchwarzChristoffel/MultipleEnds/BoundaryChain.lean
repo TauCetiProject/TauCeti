@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.MultipleEnds.FiniteBoundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Ray
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Ray
+-- Infinity.Ray imports this privately; the interval covering lemmas are needed below.
 import TauCeti.Data.Fin.Basic
 
 /-!
