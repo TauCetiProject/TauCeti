@@ -105,13 +105,8 @@ noncomputable instance (X : (EllObj B)ᵒᵖ) : Unique ((gammaOne B 1).obj X) wh
 variable (B) in
 /-- **`[Γ₁(1)]` is the trivial moduli problem** `[Γ(1)]`: the only point of exact order one of an
 elliptic curve is its zero section. -/
-noncomputable def gammaOneOneIso : gammaOne B 1 ≅ 𝟙_ (ModuliProblem B) where
-  hom := toUnit _
-  inv :=
-    { app X := TypeCat.ofHom fun _ ↦ default
-      naturality _ _ _ := by ext; exact Subsingleton.elim _ _ }
-  hom_inv_id := by ext; exact Subsingleton.elim _ _
-  inv_hom_id := toUnit_unique _ _
+noncomputable def gammaOneOneIso : gammaOne B 1 ≅ 𝟙_ (ModuliProblem B) :=
+  isoTensorUnitOfUnique _
 
 end ModuliProblem
 

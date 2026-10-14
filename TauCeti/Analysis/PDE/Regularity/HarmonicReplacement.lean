@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
-public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
@@ -48,12 +47,6 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
   weak derivatives of a weakly harmonic function are weakly harmonic.
 * `TauCeti.PDE.exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball`: **harmonic
   replacement** on a bounded domain, with its harmonic representative and the energy estimate.
-* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`: the hypothesis of the energy estimate
-  on a ball. If `u` solves `-Δu = -div G` weakly on `Ω`, tested against test functions, then on
-  every open `B ⊆ Ω` it satisfies `∫_B ⟨∇u, ∇v⟩ = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)`
-  and every constant `c` with `G - c ∈ L²(B)`, since constants have zero divergence.
-* `TauCeti.PDE.inner_toLp_gradient_ofTestFunctionₗ`: the test-function case,
-  `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`.
 
 ## References
 
@@ -203,100 +196,6 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
     exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero fun φ =>
       hw0 ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩, fun G hG => ?_⟩
   simpa using h1.mul_norm_gradient_sub_le aestronglyMeasurable_const hsub hw0 hG
-
-section Transfer
-
-omit [DecidableEq ι] in
-/-- Subtracting a constant `c` from a square-integrable field `G` on `B` does not change its
-pairing with gradients of test functions on `B`. -/
-theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)}
-    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι}
-    (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B)) (φ : 𝓓(B, ℝ)) :
-    ⟪hGc.toLp, W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ)⟫_ℝ =
-      ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
-  -- The constant `c` integrates to zero against `∇φ`.
-  have hpt : ∀ x, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ = lineDeriv ℝ (φ : _ → ℝ) x c :=
-    fun x => by
-      rw [real_inner_comm, gradient, InnerProductSpace.toDual_symm_apply,
-        (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
-  have hcint : IntegrableOn (fun x => ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
-    simpa [hpt] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
-      (locallyIntegrableOn_const (1 : ℝ) (μ := mu) (s := B)) φ c).integrableOn
-  have hc : ∫ x in B, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu = 0 := by
-    rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
-    simpa only [hpt] using TestFunction.integral_lineDeriv_eq_zero (μ := mu) φ c
-  have hGint : IntegrableOn (fun x => ⟪G x - c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
-    refine (L2.integrable_inner hGc.toLp
-      (gradientTestFunctionLp (mu := mu) (Omega := B) 2 φ)).congr ?_
-    filter_upwards [hGc.coeFn_toLp,
-      gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
-    rw [hx, hφx]
-  rw [L2.inner_def]
-  calc ∫ x in B, ⟪MemLp.toLp _ hGc x, W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ) x⟫_ℝ ∂mu
-      = ∫ x in B, (⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ -
-          ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [hGc.coeFn_toLp,
-          gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, hφx, inner_sub_left]
-    _ = ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
-        rw [integral_sub ((hGint.add hcint).congr (ae_of_all _ fun x => by simp)) hcint, hc,
-          sub_zero]
-
-/-- The weak equation `-Δu = -div G` on `Ω`, tested against test functions, holds on every open
-`B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`, provided
-`G - c` is square integrable on `B`: constants have zero divergence. -/
-theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι)}
-    (hB : B ≤ Omega) {u : W1p mu Omega 2} {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu)
-    {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
-    (v : W1p0 mu B 2) :
-    energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
-      ⟪hGc.toLp, W1p.gradient (v : W1p mu B 2)⟫_ℝ := by
-  set L : W1p mu B 2 →L[ℝ] ℝ :=
-    (innerSL ℝ (W1p.gradient (W1p.restrictL hB u) - hGc.toLp)).comp W1p.gradientL
-  have hL : ∀ w, L w = energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL hB u) w -
-      ⟪hGc.toLp, W1p.gradient w⟫_ℝ := fun w => by
-    simp only [L, ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.gradientL_apply,
-      inner_sub_left, energyFormH1_one_zero_zero_eq_inner]
-  -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
-  suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
-    have := hzero v.2
-    simp only [mem_ofPred_eq, hL] at this
-    linarith
-  refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_
-  simp only [mem_ofPred_eq, hL, inner_toLp_gradient_ofTestFunctionₗ hGc φ, sub_eq_zero]
-  -- The test function `φ` on `B` is also a test function `φ'` on `Ω`, and
-  -- `∫_B ⟪∇u, ∇φ⟫ = ∫_Ω ⟪∇u, ∇φ'⟫ = ∫_Ω ⟪G, ∇φ'⟫ = ∫_B ⟪G, ∇φ⟫`.
-  set φ' : 𝓓(Omega, ℝ) := ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hB⟩
-  have hφB : tsupport (φ : EuclideanSpace ℝ ι → ℝ) ⊆ B := φ.tsupport_subset
-  have hφΩ : tsupport (φ : EuclideanSpace ℝ ι → ℝ) ⊆ Omega := hφB.trans hB
-  have hΩ : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ') =
-      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := hu φ'
-  rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def] at hΩ ⊢
-  rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient G hφB,
-    ← φ.setIntegral_inner_gradient_eq_integral_inner_gradient G hφΩ, ← hΩ]
-  calc ∫ x in B, ⟪W1p.gradient (W1p.restrictL hB u) x,
-        W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ) x⟫_ℝ ∂mu
-      = ∫ x in B, ⟪W1p.gradient u x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [W1p.gradient_restrictL_ae hB u,
-          gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, hφx]
-    _ = ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
-        rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ hφB,
-          φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ hφΩ]
-    _ = ∫ x in Omega, ⟪W1p.gradient u x,
-          W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ') x⟫_ℝ ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) (Omega := Omega) 2 φ']
-          with x hφx
-        rw [W1p.gradient_ofTestFunctionₗ, hφx]
-        -- `φ'` is `φ` regarded as a test function on `Ω`: the same underlying function.
-        rfl
-
-end Transfer
 
 end PDE
 
