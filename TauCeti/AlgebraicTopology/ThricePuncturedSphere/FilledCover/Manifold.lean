@@ -107,8 +107,12 @@ include hp hfin
 /-- **The charts of the filled cover.** The filled cover of a covering map `p : E → ℂ ∖ {0, 1}`
 with finite fibres is charted over `ℂ` as a puncture filling: `E` carries the charts of `ℂ` pulled
 back along `p`, and the added point of each component `i` the inverse of the filled disc of its
-filling chart `FilledCover.chart p i`. -/
-@[instance_reducible]
+filling chart `FilledCover.chart p i`.
+
+It is irreducible, so that its characteristic chart lemmas below (`chartAt_incl_*`,
+`chartAt_center_*`) can be simp lemmas: otherwise simp would unfold it and prove them from the
+generic `PunctureFilling` ones. -/
+@[irreducible]
 def chartedSpace : ChartedSpace ℂ (FilledCover p) :=
   letI := (isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).chartedSpaceComap
     (H := ℂ)
@@ -116,8 +120,10 @@ def chartedSpace : ChartedSpace ℂ (FilledCover p) :=
 
 /-- The chart of the filled cover at a point `x` of `E` reads every point `y` of `E` as its image
 `p y` in `ℂ`. -/
+@[simp]
 theorem chartAt_incl_apply_incl (x y : E) :
     @chartAt ℂ _ _ _ (chartedSpace hp hfin) (incl (chart p) x) (incl (chart p) y) = p y := by
+  unfold chartedSpace
   have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
   let := hπ.chartedSpaceComap (H := ℂ)
   exact (PunctureFilling.chartAt_incl_apply_incl _ x y).trans
@@ -125,11 +131,13 @@ theorem chartAt_incl_apply_incl (x y : E) :
 
 /-- The chart of the filled cover at a point `x` of `E` is defined on the image in the filled
 cover of the neighbourhood of `x` on which `p` is inverted by its local inverse at `x`. -/
+@[simp]
 theorem chartAt_incl_source (x : E) :
     (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (incl (chart p) x)).source =
       incl (chart p) ''
         ((isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).localInverseAt
           x).target := by
+  unfold chartedSpace
   have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
   let := hπ.chartedSpaceComap (H := ℂ)
   rw [PunctureFilling.chartAt_incl_source, hπ.chartAt_chartedSpaceComap]
@@ -137,10 +145,12 @@ theorem chartAt_incl_source (x : E) :
 
 /-- The chart of the filled cover at a point `x` of `E` takes values in the domain of the local
 inverse of `p` at `x`. -/
+@[simp]
 theorem chartAt_incl_target (x : E) :
     (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (incl (chart p) x)).target =
       ((isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).localInverseAt
         x).source := by
+  unfold chartedSpace
   have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
   let := hπ.chartedSpaceComap (H := ℂ)
   rw [PunctureFilling.chartAt_incl_target, hπ.chartAt_chartedSpaceComap]
@@ -148,10 +158,12 @@ theorem chartAt_incl_target (x : E) :
 
 /-- The inverse of the chart of the filled cover at a point `x` of `E` is the local inverse of `p`
 at `x`, followed by the inclusion of `E`. -/
+@[simp]
 theorem chartAt_incl_symm_apply (x : E) (z : ℂ) :
     (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (incl (chart p) x)).symm z =
       incl (chart p)
         ((isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).localInverseAt x z) := by
+  unfold chartedSpace
   have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
   let := hπ.chartedSpaceComap (H := ℂ)
   rw [PunctureFilling.chartAt_incl_symm_apply, hπ.chartAt_chartedSpaceComap]
@@ -159,44 +171,54 @@ theorem chartAt_incl_symm_apply (x : E) (z : ℂ) :
 
 /-- The chart of the filled cover at the added point of the component `i` is defined on the filled
 disc of `i`. -/
+@[simp]
 theorem chartAt_center_source (i : FilledPoint p) :
     (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i)).source =
-      range (disc (chart p) i) :=
+      range (disc (chart p) i) := by
+  unfold chartedSpace
   let := (isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).chartedSpaceComap
     (H := ℂ)
-  PunctureFilling.chartAt_center_source _ i
+  exact PunctureFilling.chartAt_center_source _ i
 
 /-- The chart of the filled cover at the added point of a component takes values in the unit
 disc. -/
+@[simp]
 theorem chartAt_center_target (i : FilledPoint p) :
-    (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i)).target = ball (0 : ℂ) 1 :=
+    (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i)).target = ball (0 : ℂ) 1 := by
+  unfold chartedSpace
   let := (isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).chartedSpaceComap
     (H := ℂ)
-  PunctureFilling.chartAt_center_target _ i
+  exact PunctureFilling.chartAt_center_target _ i
 
 /-- The chart of the filled cover at the added point of the component `i` reads the point
 `disc (chart p) i z` of the filled disc of `i` as `z`. -/
+@[simp]
 theorem chartAt_center_apply_disc (i : FilledPoint p) (z : ball (0 : ℂ) 1) :
-    @chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i) (disc (chart p) i z) = z :=
+    @chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i) (disc (chart p) i z) = z := by
+  unfold chartedSpace
   let := (isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).chartedSpaceComap
     (H := ℂ)
-  PunctureFilling.chartAt_center_apply_disc _ i z
+  exact PunctureFilling.chartAt_center_apply_disc _ i z
 
 /-- The chart of the filled cover at the added point of a component sends that point to `0`. -/
+@[simp]
 theorem chartAt_center_apply_center (i : FilledPoint p) :
-    @chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i) (center (chart p) i) = 0 :=
+    @chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i) (center (chart p) i) = 0 := by
+  unfold chartedSpace
   let := (isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).chartedSpaceComap
     (H := ℂ)
-  PunctureFilling.chartAt_center_apply_center _ i
+  exact PunctureFilling.chartAt_center_apply_center _ i
 
 /-- The inverse of the chart of the filled cover at the added point of the component `i` is the
 filled disc of `i`. -/
+@[simp]
 theorem chartAt_center_symm_apply (i : FilledPoint p) (z : ball (0 : ℂ) 1) :
     (@chartAt ℂ _ _ _ (chartedSpace hp hfin) (center (chart p) i)).symm z =
-      disc (chart p) i z :=
+      disc (chart p) i z := by
+  unfold chartedSpace
   let := (isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph).chartedSpaceComap
     (H := ℂ)
-  PunctureFilling.chartAt_center_symm_apply _ i z
+  exact PunctureFilling.chartAt_center_symm_apply _ i z
 
 /-- Along the filling chart of the component `i` over `q`, the cover `p` is `w ↦ w ^ degree p i`
 followed by the inverse of the standard coordinate of `D_q*`. -/
@@ -212,8 +234,10 @@ theorem isManifold {n : ℕ∞ω} :
   have hπ := isOpenEmbedding_coe.isLocalHomeomorph.comp hp.isLocalHomeomorph
   let := hπ.chartedSpaceComap (H := ℂ)
   have : IsManifold 𝓘(ℂ) ω E := hπ.isManifold_chartedSpaceComap
-  let := chartedSpace hp hfin
-  suffices IsManifold 𝓘(ℂ) ω (FilledCover p) from IsManifold.of_le le_top
+  suffices @IsManifold _ _ _ _ _ _ _ 𝓘(ℂ) ω (FilledCover p) _ (chartedSpace hp hfin) by
+    let := chartedSpace hp hfin
+    exact IsManifold.of_le le_top
+  unfold chartedSpace
   -- The inverse of each filling chart is holomorphic: in the charts of `E` it is
   -- `w ↦ coordInv q (w ^ degree p i)`.
   refine PunctureFilling.isManifold (isOpenEmbedding_chart hp hfin) fun i ↦
