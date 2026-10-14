@@ -129,11 +129,9 @@ theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
   obtain ⟨L, hL, hgL⟩ := exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
     (k := k) (F := F) (by rw [h]; exact IntermediateField.mem_top (x := (g : F')))
   let E := constantCompositum F L F'
-  let : Algebra L E := ((algebraMap L F').codRestrict E
-    (algebraMap_mem_constantCompositum F L F')).toAlgebra
-  have : IsScalarTower L E F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k L E := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+  let : Algebra L E := constantCompositumAlgebra F L F'
+  have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
+  have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
   have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
   let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
   let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)
@@ -160,9 +158,9 @@ theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
     rw [algebraMap_residueField (R := k'), algebraMap_residueField (R := L),
       IsLocalRing.ResidueField.algebraMap_residue]
     refine congrArg _ (Subtype.ext ?_)
-    rw [coe_algebraMap_constants, coe_algebraMap_integers, coe_algebraMap_constants,
-      ← IsScalarTower.algebraMap_apply L E F', IsScalarTower.algebraMap_apply L k' F',
-      IntermediateField.algebraMap_apply]
+    simpa [Q, coe_algebraMap_constants, coe_algebraMap_integers] using
+      (IsScalarTower.algebraMap_apply L k' F' c).symm.trans
+        (IsScalarTower.algebraMap_apply L E F' c)
   | zero => simp
   | add x y _ _ hx hy => simpa using add_mem hx hy
   | smul r x _ hx =>
