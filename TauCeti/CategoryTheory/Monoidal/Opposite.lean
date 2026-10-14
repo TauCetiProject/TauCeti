@@ -41,9 +41,8 @@ variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 /-- A functor between monoidal categories, applied to the underlying objects and morphisms of their
 monoidal opposites. -/
 @[expose]
-def opMop (F : C ⥤ D) : Cᴹᵒᵖ ⥤ Dᴹᵒᵖ where
-  obj X := mop (F.obj (unmop X))
-  map f := (F.map f.unmop).mop
+def opMop (F : C ⥤ D) : Cᴹᵒᵖ ⥤ Dᴹᵒᵖ :=
+  unmopFunctor C ⋙ F ⋙ mopFunctor D
 
 omit [MonoidalCategory C] [MonoidalCategory D] in
 /-- The monoidal opposite of a functor applies the original functor to the underlying object. -/
@@ -66,31 +65,31 @@ instance opMopMonoidal (F : C ⥤ D) [F.Monoidal] : F.opMop.Monoidal :=
       μIso X Y := (Monoidal.μIso F (unmop Y) (unmop X)).mop
       μIso_hom_natural_left f X := by
         apply Quiver.Hom.unmop_inj
-        simpa only [opMop, unmop_comp, unmop_whiskerRight, unmop_tensorObj,
+        simpa only [opMop_obj, opMop_map, unmop_comp, unmop_whiskerRight, unmop_tensorObj,
           Monoidal.μIso_hom, Functor.mapIso_hom, mopFunctor_map, Quiver.Hom.unmop_mop] using
           LaxMonoidal.μ_natural_right F (unmop X) f.unmop
       μIso_hom_natural_right X f := by
         apply Quiver.Hom.unmop_inj
-        simpa only [opMop, unmop_comp, unmop_whiskerLeft, unmop_tensorObj,
+        simpa only [opMop_obj, opMop_map, unmop_comp, unmop_whiskerLeft, unmop_tensorObj,
           Monoidal.μIso_hom, Functor.mapIso_hom, mopFunctor_map, Quiver.Hom.unmop_mop] using
           LaxMonoidal.μ_natural_left F f.unmop (unmop X)
       associativity X Y Z := by
         apply Quiver.Hom.unmop_inj
-        simpa only [opMop, unmop_comp, unmop_whiskerRight, unmop_whiskerLeft, unmop_tensorObj,
-          Monoidal.μIso_hom, Functor.mapIso_hom, mopFunctor_map, Quiver.Hom.unmop_mop,
-          unmop_hom_associator] using
+        simpa only [opMop_obj, opMop_map, unmop_comp, unmop_whiskerRight, unmop_whiskerLeft,
+          unmop_tensorObj, Monoidal.μIso_hom, Functor.mapIso_hom, mopFunctor_map,
+          Quiver.Hom.unmop_mop, unmop_hom_associator] using
             LaxMonoidal.associativity_inv F (unmop Z) (unmop Y) (unmop X)
       left_unitality X := by
         apply Quiver.Hom.unmop_inj
-        simpa only [opMop, unmop_comp, unmop_whiskerRight, unmop_tensorObj, unmop_tensorUnit,
-          Monoidal.εIso_hom, Monoidal.μIso_hom, Functor.mapIso_hom, mopFunctor_map,
-          Quiver.Hom.unmop_mop, unmop_hom_leftUnitor] using
+        simpa only [opMop_obj, opMop_map, unmop_comp, unmop_whiskerRight, unmop_tensorObj,
+          unmop_tensorUnit, Monoidal.εIso_hom, Monoidal.μIso_hom, Functor.mapIso_hom,
+          mopFunctor_map, Quiver.Hom.unmop_mop, unmop_hom_leftUnitor] using
             LaxMonoidal.right_unitality F (unmop X)
       right_unitality X := by
         apply Quiver.Hom.unmop_inj
-        simpa only [opMop, unmop_comp, unmop_whiskerLeft, unmop_tensorObj, unmop_tensorUnit,
-          Monoidal.εIso_hom, Monoidal.μIso_hom, Functor.mapIso_hom, mopFunctor_map,
-          Quiver.Hom.unmop_mop, unmop_hom_rightUnitor] using
+        simpa only [opMop_obj, opMop_map, unmop_comp, unmop_whiskerLeft, unmop_tensorObj,
+          unmop_tensorUnit, Monoidal.εIso_hom, Monoidal.μIso_hom, Functor.mapIso_hom,
+          mopFunctor_map, Quiver.Hom.unmop_mop, unmop_hom_rightUnitor] using
             LaxMonoidal.left_unitality F (unmop X) }
 
 variable (F : C ⥤ D) [F.Monoidal]
