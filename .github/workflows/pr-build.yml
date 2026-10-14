@@ -1039,6 +1039,7 @@ jobs:
           # restores TauCeti's oleans purely from the locally-populated $LAKE_CACHE_DIR; when it is
           # not, this is a normal full build. Either way, no network from in here.
           LAKE_NO_CACHE: "true"
+          CI_RESOURCE_WORKFLOW_SHA: ${{ github.workflow_sha }}
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
@@ -1056,7 +1057,8 @@ jobs:
           # would let candidate code drop a `lake` or `bash` earlier on PATH than the real one and
           # have the later audits run it. The explicit PATH below is the other half of that: it
           # never contains a directory the sandbox can write.
-          env -i /usr/bin/bwrap --tmpfs / \
+          python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
+            env -i /usr/bin/bwrap --tmpfs / \
             --ro-bind /usr /usr --ro-bind /etc /etc \
             --symlink usr/bin /bin --symlink usr/sbin /sbin \
             --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
@@ -1309,6 +1311,18 @@ jobs:
             exit 1
           fi
           [ "$state" = "success" ]
+
+      # Host resource observations are outside all candidate-writable mounts.
+      - name: Upload trusted host resource observations (statistics only)
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-host-resources-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-host-resources.json
+          if-no-files-found: warn
+          retention-days: 30
 
       # Statistics for TauCetiCI (https://github.com/TauCetiProject/TauCetiCI): when each phase of
       # the sandboxed build started, how many modules were built or restored from the cache, the

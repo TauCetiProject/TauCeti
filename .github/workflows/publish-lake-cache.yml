@@ -234,3 +234,53 @@ jobs:
           else
             echo 'published=false' >> "$GITHUB_OUTPUT"
           fi
+
+      # Runs after the secret-bearing step; measures flat file metadata only.
+      # Payload size is attempted publication volume, not network transfer bytes.
+      - name: Observe publication volume (statistics only)
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 1
+        env:
+          STAGING: ${{ runner.temp }}/lake-cache-staging
+          UPLOADED: ${{ steps.upload.outputs.uploaded }}
+          CONFIRMED: ${{ steps.confirm.outputs.published }}
+        run: |
+          python3 - <<'PY'
+          import json, os, stat
+          from pathlib import Path
+          entries = 0
+          objects = total = 0
+          complete = True
+          try:
+              with os.scandir(os.environ['STAGING']) as files:
+                  for item in files:
+                      entries += 1
+                      if entries > 100000:
+                          complete = False
+                          break
+                      info = item.stat(follow_symlinks=False)
+                      if stat.S_ISREG(info.st_mode):
+                          objects += 1
+                          total += info.st_size
+          except OSError:
+              complete = False
+          value = {'schema': 'tauceti-ci.publication/v1', 'trust': 'publisher-host',
+                   'run_id': os.environ['GITHUB_RUN_ID'],
+                   'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+                   'staged_objects': objects, 'staged_bytes': total, 'complete': complete,
+                   'uploaded': os.environ['UPLOADED'] == 'true',
+                   'confirmed': os.environ['CONFIRMED'] == 'true'}
+          Path(os.environ['RUNNER_TEMP'], 'ci-publication.json').write_text(json.dumps(value) + '\n')
+          PY
+
+      - name: Upload publication observations
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-publication-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-publication.json
+          if-no-files-found: warn
+          retention-days: 30
