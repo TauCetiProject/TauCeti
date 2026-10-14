@@ -19,8 +19,8 @@ projection a `C^n` local diffeomorphism.
 
 We use `IsLocalHomeomorph.chartedSpaceComap` for the lifted atlas and Mathlib's
 `OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn` to recognize its charts.
-With `open TauCeti`, `hp.chartedSpaceComap_atlas_subset_maximalAtlas` and
-`hp.compatible_chartedSpaceComap` express the inclusion and compatibility.
+The theorems `TauCeti.chartedSpaceComap_atlas_subset_maximalAtlas` and
+`TauCeti.compatible_chartedSpaceComap` express the inclusion and compatibility.
 
 For a covering map `hp : IsCoveringMap p`, equip its total space with
 `hp.isLocalHomeomorph.chartedSpaceComap`. A continuous lift `f` of a `C^n` map is then `C^n` by
@@ -39,7 +39,7 @@ public section
 open Set IsManifold TauCeti
 open scoped Manifold ContDiff
 
-namespace TauCeti.IsLocalHomeomorph
+namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -53,7 +53,7 @@ theorem chartedSpaceComap_atlas_subset_maximalAtlas [IsManifold I n M] [IsManifo
     {p : M → B} (hp : IsLocalHomeomorph p) (hpd : IsLocalDiffeomorph I I n p) :
     hp.chartedSpaceComap.atlas ⊆ maximalAtlas I n M := by
   intro e he
-  obtain ⟨x, rfl⟩ := (hp.mem_atlas_chartedSpaceComap_iff e).mp he
+  obtain ⟨x, rfl⟩ := (mem_atlas_chartedSpaceComap_iff hp e).mp he
   let L := hp.localInverseAt x
   let e := chartAt H (p x)
   have hL : ContMDiffOn I I n L L.source :=
@@ -78,6 +78,6 @@ theorem compatible_chartedSpaceComap [IsManifold I n M] [IsManifold I n B]
     {e e' : OpenPartialHomeomorph M H} (he : e ∈ maximalAtlas I n M)
     (he' : e' ∈ hp.chartedSpaceComap.atlas) :
     e.symm.trans e' ∈ contDiffGroupoid n I :=
-  compatible_of_mem_maximalAtlas he (hp.chartedSpaceComap_atlas_subset_maximalAtlas hpd he')
+  compatible_of_mem_maximalAtlas he (chartedSpaceComap_atlas_subset_maximalAtlas hp hpd he')
 
-end TauCeti.IsLocalHomeomorph
+end TauCeti
