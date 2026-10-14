@@ -37,6 +37,8 @@ by `n` multiplies this dimension by `qⁿ`.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shortExact`: `gdim_e` is additive on short exact
   sequences.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shiftObj`: `gdim_e(M{n}) = qⁿ gdim_e(M)`.
+* `TauCeti.GradedModuleCat.laurentEval_one_smulGradedDimension`: at `q = 1`, `gdim_e(M)` is the
+  dimension of `e • M`.
 * `TauCeti.GradedModuleCat.eq_zero_of_iso_shiftObj`: a nonzero finite-dimensional graded module
   is isomorphic to no nontrivial shift of itself.
 
@@ -201,6 +203,21 @@ theorem smulGradedDimension_one_ne_zero [Module.Finite k M] [Nontrivial M] :
   have hbot : (⊥ : Submodule k M) = ⊤ := by
     rw [← M.grading.isInternal.submodule_iSup_eq_top, funext hpiece, iSup_bot]
   exact not_subsingleton M ((Submodule.subsingleton_iff k).1 (subsingleton_iff_bot_eq_top.1 hbot))
+
+variable {e} in
+/-- **At `q = 1` the graded dimension of `e • M` is the dimension of `e • M`**, for `e` of degree
+zero: the subspaces `e • Mₚ` form an internal direct sum decomposition of `e • M`. No idempotence
+is needed. -/
+theorem laurentEval_one_smulGradedDimension (he₀ : e ∈ 𝒜 0) [Module.Finite k M] :
+    laurentEval (1 : ℤˣ) (M.smulGradedDimension e) =
+      Module.finrank k ↥(e • (⊤ : Submodule k M)) := by
+  have hind : iSupIndep fun p => e • M.grading.piece p :=
+    M.grading.isInternal.submodule_iSupIndep.mono fun p => smul_grading_piece_le he₀ M p
+  have hsup : ⨆ p, e • M.grading.piece p = e • (⊤ : Submodule k M) := by
+    rw [← Submodule.smul_iSup', M.grading.isInternal.submodule_iSup_eq_top]
+  rw [smulGradedDimension, laurentEval_one_gradedDimension, ← hsup,
+    ← DirectSum.range_coeLinearMap,
+    LinearMap.finrank_range_of_inj (f := DirectSum.coeLinearMap _) hind.dfinsupp_lsum_injective]
 
 /-- **A nonzero finite-dimensional graded module is isomorphic to no nontrivial shift of
 itself**: shifting by `n` multiplies its nonzero graded dimension by `qⁿ`. -/
