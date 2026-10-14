@@ -187,6 +187,15 @@ theorem singularValues_of_finrank_le_right (A : E →ₗ[𝕜] F) {i : ℕ} (hi 
   rw [← singularValues_adjoint]
   exact (adjoint A).singularValues_of_finrank_le hi
 
+/-- A sum `∑ᵢ f(σᵢ(A))` over the first `dim E` singular values is the `Finsupp` sum of `f` over
+all singular values, provided `f 0 = 0`. -/
+theorem sum_fin_singularValues {M : Type*} [AddCommMonoid M] (A : E →ₗ[𝕜] F) (f : ℝ → M)
+    (hf : f 0 = 0) :
+    ∑ i : Fin (finrank 𝕜 E), f (A.singularValues i) = A.singularValues.sum fun _ s ↦ f s := by
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ f (A.singularValues i)),
+    Finsupp.sum_of_support_subset _ (A.support_singularValues ▸
+      Finset.range_subset_range.mpr A.finrank_range_le) _ fun _ _ ↦ hf]
+
 /-- The squared singular values of `A` are the sorted eigenvalues of the target Gram operator
 `A A†`, at every index below the dimension of the target. -/
 theorem sq_singularValues_eq_eigenvalues_self_comp_adjoint (A : E →ₗ[𝕜] F) {n : ℕ}

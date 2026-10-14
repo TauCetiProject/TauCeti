@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
 public import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.BallAverage
@@ -171,8 +172,7 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
   -- On `B_r`, the field `G - G x₀` is bounded by `K r^α`.
   have hbd : ∀ x ∈ ball x₀ r, ‖G x - G x₀‖ ≤ K * r ^ (α : ℝ) := fun x hx => by
     rw [← dist_eq_norm]
-    calc dist (G x) (G x₀) ≤ K * dist x x₀ ^ (α : ℝ) := hG.dist_le hx (mem_ball_self hr)
-      _ ≤ K * r ^ (α : ℝ) := by gcongr; exact (mem_ball.1 hx).le
+    exact hG.dist_le_mul_rpow_of_mem_ball hx
   have hGc : MemLp (fun x => G x - G x₀) 2
       (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     MemLp.of_bound (((hG.continuousOn hα).aestronglyMeasurable
@@ -182,7 +182,8 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
   obtain ⟨w, -, -, ⟨h, hh, hwh⟩, hest⟩ :=
     exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball (Omega := B) (z := x₀)
       (R := r) subset_rfl (W1p.restrictL hB u)
-  have hest' := hest hGc.toLp (forall_energyFormH1_restrictL_eq_inner hB hu hGc)
+  have hest' := hest hGc.toLp (forall_energyFormH1_restrictL_eq_inner hB
+    (memLp_top_const (energyIntegrand (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) 0 0)) hu hGc)
   -- The gradient of the replacement is harmonic.
   obtain ⟨H, hH, hwH⟩ :=
     W1p.exists_harmonicOnNhd_ae_eq_gradient (hh.weaklyHarmonicOn.congr_ae hwh.symm)

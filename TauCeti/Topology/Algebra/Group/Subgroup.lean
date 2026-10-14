@@ -101,8 +101,6 @@ series of a profinite group.
 * `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` group with
   continuous translations has discrete range when some neighbourhood of the identity has finite
   preimage.
-* `MonoidHom.not_discreteTopology_range_of_tendsto_one`: a homomorphism has
-  nondiscrete range if eventually nonidentity images converge to the identity.
 * `MonoidHom.isEmbedding_of_isCompact_preimage`: a continuous injective homomorphism between
   groups with continuous left translations, with Hausdorff target, is an embedding when some
   neighbourhood of the identity has compact preimage.
@@ -581,27 +579,6 @@ theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*}
   refine (hfin.image f.rangeRestrict).subset ?_
   rintro ⟨_, g, rfl⟩ hg
   exact ⟨g, hg, Subtype.ext rfl⟩
-
-open Filter in
-open scoped Topology in
-/-- A homomorphism has nondiscrete range if the images of a family converge to the
-identity along a nontrivial filter while those images are eventually nonidentity. No topology on
-the source monoid or continuity of the homomorphism is required. -/
-theorem _root_.MonoidHom.not_discreteTopology_range_of_tendsto_one {G H X : Type*} [Monoid G]
-    [Monoid H] [TopologicalSpace H] (f : G →* H)
-    {l : Filter X} [NeBot l] {s : X → G} (hs : Tendsto (fun x ↦ f (s x)) l (𝓝 1))
-    (hne : ∀ᶠ x in l, f (s x) ≠ 1) : ¬ DiscreteTopology (Set.range f) := by
-  intro hD
-  -- Mathlib defines the submonoid range carrier to be `Set.range f`.
-  let : DiscreteTopology (MonoidHom.mrange f) := hD
-  have ht : Tendsto (fun x ↦ f.mrangeRestrict (s x)) l (𝓝 1) :=
-    tendsto_subtype_rng.mpr hs
-  have hev : ∀ᶠ x in l, f.mrangeRestrict (s x) = 1 := by
-    simpa only [nhds_discrete, tendsto_pure] using ht
-  obtain ⟨x, hxne, hxeq⟩ := (hne.and hev).exists
-  apply hxne
-  simpa only [MonoidHom.coe_mrangeRestrict, OneMemClass.coe_one] using
-    congrArg Subtype.val hxeq
 
 open scoped Topology in
 /-- A continuous injective homomorphism between groups with continuous left translations, with
