@@ -74,10 +74,7 @@ variable {X}
 instance (A : GradedQuasicoherentAlgebra X) (n : ℕ) : (A.obj.X n).IsQuasicoherent :=
   A.property n
 
-/-- The faithful functor forgetting the algebra structure while retaining the grading. The
-definition is exposed so that the underlying graded objects reduce in the types of its
-characteristic equations. -/
-@[expose]
+/-- The faithful functor forgetting the algebra structure while retaining the grading. -/
 def toGradedModules :
     GradedQuasicoherentAlgebra X ⥤ GradedObject ℕ X.Modules :=
   (isGradedQuasicoherentAlgebra X).ι ⋙ CommMon.forget _
@@ -89,13 +86,18 @@ instance : (toGradedModules (X := X)).Faithful :=
 @[simp]
 theorem toGradedModules_obj (A : GradedQuasicoherentAlgebra X) :
     (toGradedModules (X := X)).obj A = A.obj.X :=
-  rfl
+  (rfl)
 
 /-- Forgetting a graded algebra morphism gives its underlying morphism of graded modules. -/
 @[simp]
 theorem toGradedModules_map {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) :
-    (toGradedModules (X := X)).map f = f.hom.hom.hom :=
-  rfl
+    (toGradedModules (X := X)).map f =
+      eqToHom (toGradedModules_obj A) ≫ f.hom.hom.hom ≫ eqToHom (toGradedModules_obj B).symm := by
+  cases toGradedModules_obj A
+  cases toGradedModules_obj B
+  -- The functor is not exposed, so its action on morphisms is identified with the underlying
+  -- graded morphism only after the object equations are eliminated.
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- Two morphisms of graded quasicoherent algebras agree when they agree in every degree. -/
 @[ext]
@@ -106,10 +108,7 @@ theorem hom_ext {A B : GradedQuasicoherentAlgebra X} (f g : A ⟶ B)
   exact GradedObject.hom_ext _ _ h
 
 /-- Extract the degree-`n` component of a graded quasicoherent algebra as a quasicoherent sheaf.
-On morphisms this is the degree-`n` component of the underlying graded algebra morphism. The
-definition is exposed so that the component objects and maps reduce in the types of its
-characteristic equations. -/
-@[expose]
+On morphisms this is the degree-`n` component of the underlying graded algebra morphism. -/
 def degree (n : ℕ) : GradedQuasicoherentAlgebra X ⥤ QuasicoherentSheaf X where
   obj A := ⟨A.obj.X n, inferInstance⟩
   map f := ⟨f.hom.hom.hom n⟩
@@ -121,13 +120,17 @@ underlying graded module. -/
 @[simp]
 theorem degree_obj_obj (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
     ((degree (X := X) n).obj A).obj = A.obj.X n :=
-  rfl
+  (rfl)
 
 /-- The degree functor acts on a graded algebra morphism by its component in that degree. -/
 @[simp]
 theorem degree_map_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) (n : ℕ) :
-    ((degree (X := X) n).map f).hom = f.hom.hom.hom n :=
-  rfl
+    ((degree (X := X) n).map f).hom =
+      eqToHom (degree_obj_obj A n) ≫ f.hom.hom.hom n ≫ eqToHom (degree_obj_obj B n).symm := by
+  cases degree_obj_obj A n
+  cases degree_obj_obj B n
+  -- As for `toGradedModules_map`, eliminate the object equations before the identity laws.
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- Extract the degree-one component of a graded quasicoherent algebra. This is the component
 that generates a free graded algebra and therefore the coefficient sheaf of a linear scheme. -/
