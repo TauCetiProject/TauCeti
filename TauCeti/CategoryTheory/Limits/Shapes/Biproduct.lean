@@ -33,8 +33,8 @@ inductive step for computing additive invariants of finite biproducts. An additi
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
-and compatible with lifts and, for functors preserving the biproduct, descents. Unlike the
-`Functor.mapBiprod` lemmas, the naturality and lift statements need no preservation hypothesis.
+and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statements need no
+preservation hypothesis.
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
 (`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
@@ -281,17 +281,6 @@ theorem map_biprod_lift_comp_biprodComparison {W X Y : C} [HasBinaryBiproduct X 
     [HasBinaryBiproduct (F.obj X) (F.obj Y)] (f : W ⟶ X) (g : W ⟶ Y) :
     F.map (biprod.lift f g) ≫ biprodComparison F X Y = biprod.lift (F.map f) (F.map g) := by
   ext <;> simp [← F.map_comp]
-
-/-- For a functor preserving the binary biproduct, the biproduct comparison followed by the map
-out of the biproduct of the images is the image of the map out of the biproduct. -/
-@[reassoc (attr := simp)]
-theorem biprodComparison_comp_biprod_desc [F.PreservesZeroMorphisms] {X Y W : C}
-    [HasBinaryBiproduct X Y] [HasBinaryBiproduct (F.obj X) (F.obj Y)]
-    [PreservesBinaryBiproduct X Y F] (f : X ⟶ W) (g : Y ⟶ W) :
-    biprodComparison F X Y ≫ biprod.desc (F.map f) (F.map g) = F.map (biprod.desc f g) :=
-  -- `(F.mapBiprod X Y).hom` is `biprodComparison F X Y` by definition (`Functor.mapBiprod_hom`),
-  -- and the two `HasBinaryBiproduct` instances on the images agree by proof irrelevance.
-  biprod.mapBiprod_hom_desc F X Y f g
 
 /-- The biproduct comparison `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural in `X` and `Y`. -/
 @[reassoc]

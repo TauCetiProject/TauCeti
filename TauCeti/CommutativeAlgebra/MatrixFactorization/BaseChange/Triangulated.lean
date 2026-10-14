@@ -183,14 +183,12 @@ private theorem diskSumComparison_comp_diskSumToParityShift (f : S →+* T) (hw 
         (parityShiftCompBaseChangeToCurvedDuplexIso f hw).hom.app X := by
   have := preservesBinaryBiproducts_of_preservesBiproducts (scalarExtension f)
   apply CurvedDuplex.hom_ext
-  · have h := Functor.biprodComparison_comp_biprod_desc (scalarExtension f) (𝟙 X.obj.X₁)
-      (-X.obj.d₀)
+  · have h := biprod.mapBiprod_hom_desc (scalarExtension f) _ _ (𝟙 X.obj.X₁) (-X.obj.d₀)
     rw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_neg] at h
     simp only [CurvedDuplex.comp_f₀, baseChangeToCurvedDuplex_map_f₀, diskSumToParityShift_hom,
       CurvedDuplex.diskSumToParityShift_f₀, parityShiftCompBaseChangeToCurvedDuplexIso_hom_app_f₀]
     exact h.trans (Category.comp_id _).symm
-  · have h := Functor.biprodComparison_comp_biprod_desc (scalarExtension f) (-X.obj.d₁)
-      (-𝟙 X.obj.X₀)
+  · have h := biprod.mapBiprod_hom_desc (scalarExtension f) _ _ (-X.obj.d₁) (-𝟙 X.obj.X₀)
     rw [CategoryTheory.Functor.map_neg, CategoryTheory.Functor.map_neg,
       CategoryTheory.Functor.map_id] at h
     simp only [CurvedDuplex.comp_f₁, baseChangeToCurvedDuplex_map_f₁, diskSumToParityShift_hom,
