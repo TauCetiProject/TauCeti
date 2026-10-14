@@ -39,6 +39,7 @@ is what adds up the local degrees over a fibre of a finite branched covering.
 ## Main results
 
 * `TauCeti.IsLocalPowerAt.ne_zero`: the exponent is positive.
+* `TauCeti.IsLocalPowerAt.continuousAt`: a local power map is continuous at the modelled point.
 * `TauCeti.IsLocalPowerAt.eventually_ne`: `x` is isolated in its fibre.
 * `TauCeti.IsLocalPowerAt.exists_ncard_inter_preimage_eq`: the exponent counts the preimages near
   `x` of the points near `f x`.
@@ -64,7 +65,7 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {
 /-- The map `f` is **locally the `e`-th power map at `x`**: there are a chart `φ` of `X` centred at
 `x` and a chart `ψ` of `Y` centred at `f x` such that `f` maps the source of `φ` into the source of
 `ψ` and `ψ (f (φ.symm w)) = w ^ e` for every `w` in the image of `φ`. The exponent is positive
-(`TauCeti.IsLocalPowerAt.ne_zero`) and, for `f` continuous at `x`, unique
+(`TauCeti.IsLocalPowerAt.ne_zero`) and unique
 (`TauCeti.IsLocalPowerAt.unique`). -/
 def IsLocalPowerAt (f : X → Y) (x : X) (e : ℕ) : Prop :=
   ∃ (φ : OpenPartialHomeomorph X ℂ) (ψ : OpenPartialHomeomorph Y ℂ),
@@ -79,6 +80,22 @@ theorem isLocalPowerAt_iff :
   Iff.rfl
 
 namespace IsLocalPowerAt
+
+/-- A map that is locally a power map at `x` is continuous at `x`. -/
+theorem continuousAt (h : IsLocalPowerAt f x e) : ContinuousAt f x := by
+  obtain ⟨φ, ψ, hx, hmaps, -, -, hpow⟩ := h
+  have hψx : f x ∈ ψ.source := hmaps hx
+  have hmodel : f =ᶠ[𝓝 x] fun x' => ψ.symm ((φ x') ^ e) := by
+    filter_upwards [φ.open_source.mem_nhds hx] with x' hx'
+    calc
+      f x' = ψ.symm (ψ (f x')) := (ψ.left_inv (hmaps hx')).symm
+      _ = ψ.symm ((φ x') ^ e) := by
+        congr 1
+        simpa only [φ.left_inv hx'] using hpow (φ x') (φ.map_source hx')
+  have hpowx : (φ x) ^ e = ψ (f x) := by
+    simpa only [φ.left_inv hx] using (hpow (φ x) (φ.map_source hx)).symm
+  exact ((ψ.continuousAt_symm (ψ.map_source hψx)).comp_of_eq
+    ((φ.continuousAt hx).pow e) hpowx).congr_of_eventuallyEq hmodel
 
 /-- The exponent of a local power map is positive: `w ↦ w ^ 0` does not vanish at `0`. -/
 theorem ne_zero (h : IsLocalPowerAt f x e) : e ≠ 0 := by
@@ -102,13 +119,13 @@ theorem eventually_ne (h : IsLocalPowerAt f x e) : ∀ᶠ x' in 𝓝[≠] x, f x
   refine hne (φ.injOn hx' hx ?_)
   rw [hφx, ← pow_eq_zero_iff he, ← hpow _ (φ.map_source hx'), φ.left_inv hx', heq, hψx]
 
-/-- **The exponent counts preimages.** If `f` is locally the `e`-th power map at `x` and continuous
-there, then inside any neighbourhood `N` of `x` there is an open neighbourhood `V` of `x` such that
+/-- **The exponent counts preimages.** If `f` is locally the `e`-th power map at `x`, then inside
+any neighbourhood `N` of `x` there is an open neighbourhood `V` of `x` such that
 every point `y ≠ f x` close enough to `f x` has exactly `e` preimages in `V`. -/
-theorem exists_ncard_inter_preimage_eq (h : IsLocalPowerAt f x e) (hf : ContinuousAt f x)
-    {N : Set X} (hN : N ∈ 𝓝 x) :
+theorem exists_ncard_inter_preimage_eq (h : IsLocalPowerAt f x e) {N : Set X} (hN : N ∈ 𝓝 x) :
     ∃ V ⊆ N, IsOpen V ∧ x ∈ V ∧ ∀ᶠ y in 𝓝[≠] f x, (V ∩ f ⁻¹' {y}).ncard = e := by
   classical
+  have hf := h.continuousAt
   have he := h.ne_zero
   obtain ⟨φ, ψ, hx, hmaps, hφx, hψx, hpow⟩ := h
   have hψ : f x ∈ ψ.source := hmaps hx
@@ -152,15 +169,14 @@ theorem exists_ncard_inter_preimage_eq (h : IsLocalPowerAt f x e) (hf : Continuo
   rw [← (φ.injOn.mono fun _ hx' => hx'.1.1).ncard_image, himage, Set.ncard_coe_finset,
     (Complex.isPrimitiveRoot_exp e he).card_nthRootsFinset_of_pow_eq hα hψy]
 
-/-- **The exponent of a local power map is unique**: if `f` is continuous at `x`, two pairs of
-charts exhibiting `f` near `x` as `w ↦ w ^ e` and as `w ↦ w ^ e'` have `e = e'`. -/
-theorem unique {e' : ℕ} (h : IsLocalPowerAt f x e) (h' : IsLocalPowerAt f x e')
-    (hf : ContinuousAt f x) : e = e' := by
+/-- **The exponent of a local power map is unique**: two pairs of charts exhibiting `f` near `x` as
+`w ↦ w ^ e` and as `w ↦ w ^ e'` have `e = e'`. -/
+theorem unique {e' : ℕ} (h : IsLocalPowerAt f x e) (h' : IsLocalPowerAt f x e') : e = e' := by
   suffices key : ∀ {e e' : ℕ}, IsLocalPowerAt f x e → IsLocalPowerAt f x e' → e ≤ e' from
     (key h h').antisymm (key h' h)
   intro e e' h h'
-  obtain ⟨V', -, hV'o, hxV', hV'⟩ := h'.exists_ncard_inter_preimage_eq hf univ_mem
-  obtain ⟨V, hVV', -, -, hV⟩ := h.exists_ncard_inter_preimage_eq hf (hV'o.mem_nhds hxV')
+  obtain ⟨V', -, hV'o, hxV', hV'⟩ := h'.exists_ncard_inter_preimage_eq univ_mem
+  obtain ⟨V, hVV', -, -, hV⟩ := h.exists_ncard_inter_preimage_eq (hV'o.mem_nhds hxV')
   have := h.nhdsNE_neBot
   obtain ⟨y, hy, hy'⟩ := (hV.and hV').exists
   rw [← hy, ← hy']

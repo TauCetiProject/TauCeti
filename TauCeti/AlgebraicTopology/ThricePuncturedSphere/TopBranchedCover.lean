@@ -27,9 +27,8 @@ the thrice-punctured sphere on the topological side and by Belyi maps on the ana
 The local exponent is a topological invariant (`TauCeti.IsLocalPowerAt.unique`), so every point
 `z` has a well-defined *local degree* `TauCeti.TopBranchedCover.localDegree`, equal to `1` off the
 marked fibres. Every fibre of `π` is finite, and the local degrees over any point add up to the
-degree: `∑ e = n`. The proof compares the fibre over a marked point with a nearby unmarked
-fibre, which has `n` points: by compactness of `Z`, all of them lie near the marked fibre, and
-near a point of local degree `e` there are exactly `e` of them.
+degree: `∑ e = n`. Thus the local degrees in each fibre form a partition of the covering degree,
+recording how sheets coalesce over branch values.
 
 The data carries no atlas. The local models at marked points and the covering map elsewhere
 already provide a chart around every point (`TauCeti.TopBranchedCover.exists_mem_source`), so `Z`
@@ -63,6 +62,8 @@ is a topological surface, and properness of `π` is a consequence of compactness
   punctured surface).
 * O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
   §4 (the multiplicities over every point of a proper map add up to its degree).
+* `TauCeti.Analysis.Complex.RiemannSurface.Degree`, whose analytic fibre-sum argument supplies the
+  proof plan adapted to the topological local-degree setting here.
 -/
 
 public section
@@ -72,29 +73,6 @@ noncomputable section
 open Filter Set Topology OnePoint
 
 namespace TauCeti
-
-namespace ThricePuncturedSphere
-
-/-- The three **marked points** `0`, `1` and `∞` of the Riemann sphere `OnePoint ℂ`. Their
-complement is the thrice-punctured sphere (`range_toOnePoint_eq_compl_marked`). -/
-def marked : Set (OnePoint ℂ) :=
-  {((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), ∞}
-
-/-- The marked points are `0`, `1` and `∞`. -/
-@[simp]
-theorem mem_marked {w : OnePoint ℂ} :
-    w ∈ marked ↔ w = ((0 : ℂ) : OnePoint ℂ) ∨ w = ((1 : ℂ) : OnePoint ℂ) ∨ w = ∞ :=
-  Iff.rfl
-
-/-- There are finitely many marked points. -/
-theorem finite_marked : marked.Finite := by
-  simp [marked]
-
-/-- The thrice-punctured sphere is the complement of the marked points in `OnePoint ℂ`. -/
-theorem range_toOnePoint_eq_compl_marked : range toOnePoint = markedᶜ :=
-  range_toOnePoint
-
-end ThricePuncturedSphere
 
 open ThricePuncturedSphere
 
@@ -175,13 +153,14 @@ theorem isLocalPowerAt_localDegree (z : X.Z) : IsLocalPowerAt X.π z (X.localDeg
 /-- The local degree is the unique exponent for which `π` is locally a power map. -/
 theorem localDegree_eq_iff {z : X.Z} {e : ℕ} : X.localDegree z = e ↔ IsLocalPowerAt X.π z e :=
   ⟨fun h => h ▸ X.isLocalPowerAt_localDegree z,
-    fun h => (X.isLocalPowerAt_localDegree z).unique h X.π.continuous.continuousAt⟩
+    fun h => (X.isLocalPowerAt_localDegree z).unique h⟩
 
 /-- Local degrees are positive. -/
 theorem localDegree_pos (z : X.Z) : 0 < X.localDegree z :=
   Nat.pos_of_ne_zero (X.isLocalPowerAt_localDegree z).ne_zero
 
 /-- Off the marked fibres, the local degree is `1`. -/
+@[simp]
 theorem localDegree_eq_one {z : X.Z} (hz : X.π z ∉ marked) : X.localDegree z = 1 :=
   X.localDegree_eq_iff.2 (X.isLocalPowerAt_one hz)
 
@@ -205,7 +184,7 @@ theorem finsum_mem_preimage_singleton_localDegree (y : OnePoint ℂ) :
   obtain ⟨U, hU, hUdisj⟩ := hF.t2_separation
   choose V hVU hVo hzV hV using fun z =>
     (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq
-      X.π.continuous.continuousAt ((hU z).2.mem_nhds (hU z).1)
+      ((hU z).2.mem_nhds (hU z).1)
   -- Away from the `V z`, the image of `π` is a compact set missing `y`.
   have hK : IsClosed (X.π '' (⋃ z ∈ F, V z)ᶜ) :=
     ((isOpen_biUnion fun z _ => hVo z).isClosed_compl.isCompact.image X.π.continuous).isClosed
@@ -287,7 +266,8 @@ theorem trans_toHomeomorph (ι : Iso X Y) (κ : Iso Y W) :
 theorem localDegree_apply (ι : Iso X Y) (z : X.Z) :
     Y.localDegree (ι.toHomeomorph z) = X.localDegree z := by
   have h := (Y.isLocalPowerAt_localDegree (ι.toHomeomorph z)).comp_homeomorph ι.toHomeomorph
-  rw [show ⇑Y.π ∘ ι.toHomeomorph = X.π from funext ι.π_apply] at h
+  have hπ : ⇑Y.π ∘ ι.toHomeomorph = X.π := funext ι.π_apply
+  rw [hπ] at h
   exact (X.localDegree_eq_iff.2 h).symm
 
 end Iso
@@ -310,6 +290,16 @@ def sphere : TopBranchedCover 1 where
     (Homeomorph.refl (OnePoint ℂ)).isLocalHomeomorph).isCoveringMapOn.mono (subset_univ _)
   natCard_preimage_singleton _ _ := by simp
   exists_isLocalPowerAt_of_mem_marked z _ := ⟨1, isLocalPowerAt_id z⟩
+
+/-- The canonical homeomorphism from the total space of `sphere` to the Riemann sphere. -/
+def sphereHomeomorph : sphere.Z ≃ₜ OnePoint ℂ :=
+  Homeomorph.refl _
+
+/-- The projection of `sphere` is its canonical homeomorphism to the Riemann sphere. -/
+@[simp]
+theorem sphere_π_apply (z : sphere.Z) : sphere.π z = sphereHomeomorph z := by
+  change z = z
+  rfl
 
 /-- The sphere over itself is unbranched: all its local degrees are `1`. -/
 @[simp]
