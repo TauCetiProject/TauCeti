@@ -10,9 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
-# Absolute continuity of positive real powers
+# Absolute continuity of nonnegative real powers
 
-Positive real powers are absolutely continuous on every finite interval, including intervals
+Nonnegative real powers are absolutely continuous on every finite interval, including intervals
 meeting zero where the derivative may be unbounded. Square root is the exponent `1/2` case.
 These results supply the regularity of power changes of parameter without a Lipschitz assumption.
 -/
@@ -21,9 +21,14 @@ public section
 
 open MeasureTheory Set
 
-/-- A positive real power is absolutely continuous on every finite interval. -/
-theorem Real.absolutelyContinuousOnInterval_rpow_const_const {p : ℝ} (hp : 0 < p) (a b : ℝ) :
+/-- A nonnegative real power is absolutely continuous on every finite interval. -/
+theorem Real.absolutelyContinuousOnInterval_rpow_const {p : ℝ} (hp : 0 ≤ p := by positivity)
+    (a b : ℝ) :
     AbsolutelyContinuousOnInterval (fun x : ℝ ↦ x ^ p) a b := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simpa only [Real.rpow_zero] using
+      (LipschitzWith.const (1 : ℝ)).lipschitzOnWith.absolutelyContinuousOnInterval
+        (a := a) (b := b)
   let m : ℝ → ℝ := fun t ↦ p * t ^ (p - 1)
   have hexp : (-1 : ℝ) < p - 1 := by linarith
   have hm : IntervalIntegrable m volume a b :=
@@ -41,5 +46,5 @@ theorem Real.absolutelyContinuousOnInterval_rpow_const_const {p : ℝ} (hp : 0 <
 /-- Square root is absolutely continuous on every finite interval. -/
 theorem Real.absolutelyContinuousOnInterval_sqrt (a b : ℝ) :
     AbsolutelyContinuousOnInterval Real.sqrt a b :=
-  (Real.absolutelyContinuousOnInterval_rpow_const_const (p := 1 / 2) (by norm_num) a b).congr
+  (Real.absolutelyContinuousOnInterval_rpow_const (p := 1 / 2) (by norm_num) a b).congr
     (fun t _ ↦ (Real.sqrt_eq_rpow t).symm)
