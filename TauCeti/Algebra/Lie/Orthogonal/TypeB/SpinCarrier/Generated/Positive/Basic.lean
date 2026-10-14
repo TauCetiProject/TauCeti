@@ -38,6 +38,7 @@ pinning of the generated spin carrier.
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.h and Chapter 17.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26–28.
+* Related formalization: `TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.Basic`.
 -/
 
 public section

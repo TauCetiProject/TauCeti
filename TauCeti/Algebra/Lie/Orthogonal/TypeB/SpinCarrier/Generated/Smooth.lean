@@ -25,6 +25,7 @@ subgroup; it says nothing about the base change of the integral carrier, which c
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
+* Related formalization: `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
 -/
 
 public section

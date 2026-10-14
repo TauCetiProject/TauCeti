@@ -25,6 +25,7 @@ subgroup; it says nothing about the base change of the integral carrier, which c
 
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
+* Related formalization: `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Connected`.
 -/
 
 public section
