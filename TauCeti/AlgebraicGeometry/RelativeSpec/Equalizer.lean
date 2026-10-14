@@ -56,16 +56,6 @@ noncomputable section
 
 variable {X : Scheme.{u}} {A B : CommMon X.Modules}
 
-/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras commutes with
-restriction of sections. -/
-lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_restrictSections (f : A ⟶ B) {U V : X.Opens}
-    (i : V ⟶ U) (x : Γ(A.X, U)) :
-    CommMon.sectionsAlgHom f V (A.restrictSections i x) =
-      B.restrictSections i (CommMon.sectionsAlgHom f U x) := by
-  rw [CommMon.sectionsAlgHom_apply, CommMon.sectionsAlgHom_apply, CommMon.restrictSections_apply]
-  exact (PresheafOfModules.naturality_apply f.hom.hom.val i.op x).trans
-    (B.restrictSections_apply i _).symm
-
 variable (f g : A ⟶ B)
 
 /-- The `Γ(X, U)`-subalgebra of sections of `A` over `U` on which the algebra morphisms `f` and
@@ -259,7 +249,7 @@ def _root_.CategoryTheory.CommMon.relativeSpecEqualizerGluingData :
 /-- The gluing diagram of the relative spectrum of the equalizer is locally directed. -/
 instance _root_.CategoryTheory.CommMon.isLocallyDirected_relativeSpecEqualizerGluingData :
     ((CommMon.relativeSpecEqualizerGluingData f g).functor ⋙ Scheme.forget).IsLocallyDirected :=
-  Scheme.Cover.RelativeGluingData.instIsLocallyDirectedI₀CompFunctorForgetOfIsThin ..
+  isLocallyDirected_relativeGluingData _
 
 /-- The relative spectrum of the equalizer of two morphisms `f g : A ⟶ B` of quasi-coherent
 commutative `𝒪ₓ`-algebras, glued from the affine schemes `Spec (CommMon.equalizerSections f g U)`
@@ -283,12 +273,12 @@ def _root_.CategoryTheory.CommMon.relativeSpecEqualizerCover :
 
 instance _root_.CategoryTheory.CommMon.isOpenImmersion_relativeSpecEqualizerCover_f
     (U : X.AffineZariskiSite) : IsOpenImmersion ((CommMon.relativeSpecEqualizerCover f g).f U) :=
-  (CommMon.relativeSpecEqualizerCover f g).map_prop U
+  isOpenImmersion_relativeGluingData_cover_f _ U
 
 lemma _root_.CategoryTheory.CommMon.relativeSpecEqualizerCover_X (U : X.AffineZariskiSite) :
     (CommMon.relativeSpecEqualizerCover f g).X U =
       Spec (CommRingCat.of (CommMon.equalizerSections f g U.1)) :=
-  (rfl)
+  relativeGluingData_cover_X _ U
 
 /-- Over an affine open `U`, the structure morphism of the relative spectrum of the equalizer is
 `Spec` of the structure map `Γ(X, U) ⟶ CommMon.equalizerSections f g U`. -/
@@ -297,17 +287,15 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecEqualizerCover_f_relativeSpecEqu
     (U : X.AffineZariskiSite) :
     (CommMon.relativeSpecEqualizerCover f g).f U ≫ CommMon.relativeSpecEqualizerToBase f g =
       Spec.map ((CommMon.toEqualizerSectionsPresheaf f g).app (op U.1)) ≫ U.2.fromSpec :=
-  colimit.ι_desc _ _
+  relativeGluingData_cover_f_toBase (CommMon.coequifibered_toEqualizerSectionsPresheaf f g) U
 
 /-- The preimage of an affine open `U` under the structure morphism of the relative spectrum of
 the equalizer is the image of its chart over `U`. -/
 lemma _root_.CategoryTheory.CommMon.relativeSpecEqualizerToBase_preimage
     (U : X.AffineZariskiSite) :
     CommMon.relativeSpecEqualizerToBase f g ⁻¹ᵁ U.1 =
-      ((CommMon.relativeSpecEqualizerCover f g).f U).opensRange := by
-  have h := (CommMon.relativeSpecEqualizerGluingData f g).toBase_preimage_eq_opensRange_ι U
-  simp only [Scheme.Opens.opensRange_ι] at h
-  exact h
+      ((CommMon.relativeSpecEqualizerCover f g).f U).opensRange :=
+  relativeGluingData_toBase_preimage (CommMon.coequifibered_toEqualizerSectionsPresheaf f g) U
 
 /-- Over an affine open `U` of `X`, the relative spectrum of the equalizer is
 `Spec (CommMon.equalizerSections f g U)`. -/
@@ -317,21 +305,12 @@ lemma _root_.CategoryTheory.CommMon.isPullback_relativeSpecEqualizerCover
         U.2.isoSpec.inv)
       ((CommMon.relativeSpecEqualizerCover f g).f U) U.1.ι
       (CommMon.relativeSpecEqualizerToBase f g) :=
-  (CommMon.relativeSpecEqualizerGluingData f g).isPullback_natTrans_ι_toBase U
+  isPullback_relativeGluingData_cover (CommMon.coequifibered_toEqualizerSectionsPresheaf f g) U
 
 /-- The structure morphism of the relative spectrum of the equalizer is affine. -/
 instance _root_.CategoryTheory.CommMon.isAffineHom_relativeSpecEqualizerToBase :
-    IsAffineHom (CommMon.relativeSpecEqualizerToBase f g) := by
-  refine isAffineHom_of_forall_exists_isAffineOpen _ fun x ↦ ?_
-  obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.mp
-    ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
-  let V : X.AffineZariskiSite := ⟨U.1, U.2⟩
-  refine ⟨V.1, hxU, V.2, ?_⟩
-  have : IsAffine ((CommMon.relativeSpecEqualizerCover f g).X V) := by
-    rw [CommMon.relativeSpecEqualizerCover_X]
-    infer_instance
-  rw [CommMon.relativeSpecEqualizerToBase_preimage f g V]
-  exact isAffineOpen_opensRange _
+    IsAffineHom (CommMon.relativeSpecEqualizerToBase f g) :=
+  isAffineHom_relativeGluingData_toBase (CommMon.coequifibered_toEqualizerSectionsPresheaf f g)
 
 /-- Maps out of the relative spectrum of the equalizer are determined on its affine charts. -/
 lemma _root_.CategoryTheory.CommMon.relativeSpecEqualizer_hom_ext {T : Scheme.{u}}
@@ -365,31 +344,30 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecEqualizerπ_relativeSpecEqualize
       A.relativeSpecToBase := by
   apply A.relativeSpec_hom_ext
   intro U
-  -- Rebind the chart inclusions at their explicit spectrum sources, rather than the
-  -- definitionally equal objects of the open covers, so that ordinary rewriting applies.
+  -- Rebind the chart inclusions and the ring maps at their explicit sources and targets,
+  -- rather than the definitionally equal objects of the open covers and of the presheaves, so
+  -- that ordinary rewriting applies.
   let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
   let ιE : Spec (CommRingCat.of (CommMon.equalizerSections f g U.1)) ⟶
       CommMon.relativeSpecEqualizer f g := (CommMon.relativeSpecEqualizerCover f g).f U
-  have hπ : ιA ≫ CommMon.relativeSpecEqualizerπ f g =
-      Spec.map ((CommMon.equalizerSectionsPresheafι f g).app (op U.1)) ≫ ιE :=
+  let iU : CommRingCat.of (CommMon.equalizerSections f g U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
+    (CommMon.equalizerSectionsPresheafι f g).app (op U.1)
+  let eU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of (CommMon.equalizerSections f g U.1) :=
+    (CommMon.toEqualizerSectionsPresheaf f g).app (op U.1)
+  let aU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
+    A.toSectionsPresheaf.app (op U.1)
+  have hπ : ιA ≫ CommMon.relativeSpecEqualizerπ f g = Spec.map iU ≫ ιE :=
     CommMon.relativeSpecCover_f_relativeSpecEqualizerπ f g U
-  have hE : ιE ≫ CommMon.relativeSpecEqualizerToBase f g =
-      Spec.map ((CommMon.toEqualizerSectionsPresheaf f g).app (op U.1)) ≫ U.2.fromSpec :=
+  have hE : ιE ≫ CommMon.relativeSpecEqualizerToBase f g = Spec.map eU ≫ U.2.fromSpec :=
     CommMon.relativeSpecEqualizerCover_f_relativeSpecEqualizerToBase f g U
-  have hA : ιA ≫ A.relativeSpecToBase =
-      Spec.map (A.toSectionsPresheaf.app (op U.1)) ≫ U.2.fromSpec :=
+  have hA : ιA ≫ A.relativeSpecToBase = Spec.map aU ≫ U.2.fromSpec :=
     A.relativeSpecCover_f_relativeSpecToBase U
-  have hcomp : (CommMon.toEqualizerSectionsPresheaf f g).app (op U.1) ≫
-      (CommMon.equalizerSectionsPresheafι f g).app (op U.1) = A.toSectionsPresheaf.app (op U.1) :=
-    (NatTrans.comp_app _ _ _).symm.trans (NatTrans.congr_app
-      (CommMon.toEqualizerSectionsPresheaf_comp_equalizerSectionsPresheafι f g) (op U.1))
-  have h : ιA ≫ CommMon.relativeSpecEqualizerπ f g ≫ CommMon.relativeSpecEqualizerToBase f g =
-      ιA ≫ A.relativeSpecToBase :=
-    (Category.assoc _ _ _).symm.trans <|
-      ((congrArg (· ≫ _) hπ).trans (Category.assoc _ _ _)).trans <|
-        (congrArg (_ ≫ ·) hE).trans <| ((Spec.map_comp_assoc _ _ _).symm.trans
-          (congrArg (fun h ↦ Spec.map h ≫ U.2.fromSpec) hcomp)).trans hA.symm
-  exact h
+  have hcomp : eU ≫ iU = aU :=
+    NatTrans.congr_app (CommMon.toEqualizerSectionsPresheaf_comp_equalizerSectionsPresheafι f g)
+      (op U.1)
+  change ιA ≫ CommMon.relativeSpecEqualizerπ f g ≫ CommMon.relativeSpecEqualizerToBase f g =
+    ιA ≫ A.relativeSpecToBase
+  rw [reassoc_of% hπ, hE, ← Spec.map_comp_assoc, hcomp, hA]
 
 /-- `CommMon.relativeSpecEqualizerπ` coequalizes the morphisms of relative spectra induced by
 `f` and `g`. -/
@@ -399,34 +377,32 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecMap_relativeSpecEqualizerπ :
       CommMon.relativeSpecMap g ≫ CommMon.relativeSpecEqualizerπ f g := by
   apply B.relativeSpec_hom_ext
   intro U
-  -- Rebind the chart inclusions at their explicit spectrum sources, as above.
+  -- Rebind the chart inclusions and the ring maps at their explicit sources, as above.
   let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
   let ιB : Spec (CommRingCat.of Γ(B.X, U.1)) ⟶ B.relativeSpec := B.relativeSpecCover.f U
-  have hπ : ιA ≫ CommMon.relativeSpecEqualizerπ f g =
-      Spec.map ((CommMon.equalizerSectionsPresheafι f g).app (op U.1)) ≫
-        (CommMon.relativeSpecEqualizerCover f g).f U :=
+  let ιE : Spec (CommRingCat.of (CommMon.equalizerSections f g U.1)) ⟶
+      CommMon.relativeSpecEqualizer f g := (CommMon.relativeSpecEqualizerCover f g).f U
+  let iU : CommRingCat.of (CommMon.equalizerSections f g U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
+    (CommMon.equalizerSectionsPresheafι f g).app (op U.1)
+  let hU (h : A ⟶ B) : CommRingCat.of Γ(A.X, U.1) ⟶ CommRingCat.of Γ(B.X, U.1) :=
+    CommRingCat.ofHom (CommMon.sectionsAlgHom h U.1).toRingHom
+  have hπ : ιA ≫ CommMon.relativeSpecEqualizerπ f g = Spec.map iU ≫ ιE :=
     CommMon.relativeSpecCover_f_relativeSpecEqualizerπ f g U
+  have hB (h : A ⟶ B) : ιB ≫ CommMon.relativeSpecMap h = Spec.map (hU h) ≫ ιA :=
+    CommMon.relativeSpecCover_f_relativeSpecMap h U
   -- On the chart over `U`, both composites are `Spec` of the inclusion of the equalizer
   -- sections followed by the algebra map on sections.
-  have key : ∀ h : A ⟶ B, ιB ≫ CommMon.relativeSpecMap h ≫ CommMon.relativeSpecEqualizerπ f g =
-      Spec.map ((CommMon.equalizerSectionsPresheafι f g).app (op U.1) ≫
-        CommRingCat.ofHom (CommMon.sectionsAlgHom h U.1).toRingHom) ≫
-        (CommMon.relativeSpecEqualizerCover f g).f U := fun h ↦
-    calc ιB ≫ CommMon.relativeSpecMap h ≫ CommMon.relativeSpecEqualizerπ f g
-        = (ιB ≫ CommMon.relativeSpecMap h) ≫ CommMon.relativeSpecEqualizerπ f g :=
-          (Category.assoc _ _ _).symm
-      _ = Spec.map (CommRingCat.ofHom (CommMon.sectionsAlgHom h U.1).toRingHom) ≫
-            ιA ≫ CommMon.relativeSpecEqualizerπ f g :=
-          (congrArg (· ≫ _) (CommMon.relativeSpecCover_f_relativeSpecMap h U)).trans
-            (Category.assoc _ _ _)
-      _ = _ := (congrArg (_ ≫ ·) hπ).trans (Spec.map_comp_assoc _ _ _).symm
-  have hι := NatTrans.congr_app (CommMon.equalizerSectionsPresheafι_comp_sectionsPresheafMap f g)
-    (op U.1)
-  simp only [NatTrans.comp_app, CommMon.sectionsPresheafMap_app] at hι
-  have h : ιB ≫ CommMon.relativeSpecMap f ≫ CommMon.relativeSpecEqualizerπ f g =
-      ιB ≫ CommMon.relativeSpecMap g ≫ CommMon.relativeSpecEqualizerπ f g :=
-    (key f).trans ((congrArg (fun h ↦ Spec.map h ≫ _) hι).trans (key g).symm)
-  exact h
+  have key (h : A ⟶ B) : ιB ≫ CommMon.relativeSpecMap h ≫ CommMon.relativeSpecEqualizerπ f g =
+      Spec.map (iU ≫ hU h) ≫ ιE := by
+    rw [reassoc_of% hB h, hπ, ← Spec.map_comp_assoc]
+  have hι : iU ≫ hU f = iU ≫ hU g := by
+    have h := NatTrans.congr_app
+      (CommMon.equalizerSectionsPresheafι_comp_sectionsPresheafMap f g) (op U.1)
+    rwa [NatTrans.comp_app, NatTrans.comp_app, CommMon.sectionsPresheafMap_app,
+      CommMon.sectionsPresheafMap_app] at h
+  change ιB ≫ CommMon.relativeSpecMap f ≫ CommMon.relativeSpecEqualizerπ f g =
+    ιB ≫ CommMon.relativeSpecMap g ≫ CommMon.relativeSpecEqualizerπ f g
+  rw [key f, key g, hι]
 
 end
 
