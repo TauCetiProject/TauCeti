@@ -16,6 +16,11 @@ import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 A linear map induces a degree-preserving map of symmetric algebras. The bundled graded
 map allows linear equivalences to act on the projective spectrum of the symmetric algebra.
 The construction uses `SymmetricAlgebra.map` and the grading by powers of the generator range.
+
+More generally, a linear map from `M` into the degree-one part of a graded algebra `A` lifts to a
+degree-preserving map `Sym M → A`, which is surjective when the image generates `A`. This presents
+a graded algebra generated in degree one as a graded quotient of a symmetric algebra, the algebraic
+form of an embedding of its projective spectrum into a projective space.
 -/
 
 public section
@@ -70,5 +75,45 @@ theorem gradedMap_gradedZeroRingHom (f : M →ₗ[R] M) :
     (by simpa [homogeneousSubmodule] using a.property)
   simp only [GradedRingHom.gradedZeroRingHom_apply_coe, gradedMap_apply, RingHom.id_apply]
   rw [← hr, AlgHom.commutes]
+
+section GradedLift
+
+variable {A : Type*} [CommSemiring A] [Algebra R A] (𝒜 : ℕ → Submodule R A)
+  [SetLike.GradedMonoid 𝒜]
+
+/-- The degree-preserving ring map out of a symmetric algebra induced by a linear map into the
+degree-one part of a graded algebra: the lift of `f`, which sends a product of `n` generators to a
+product of `n` elements of degree one. -/
+noncomputable def gradedLift (f : M →ₗ[R] 𝒜 1) : homogeneousSubmodule R M →+*ᵍ 𝒜 where
+  __ := (lift ((𝒜 1).subtype ∘ₗ f)).toRingHom
+  map_mem {_ _} hx := by
+    induction hx using Submodule.pow_induction_on_left' with
+    | algebraMap r => simpa using SetLike.algebraMap_mem_graded 𝒜 r
+    | add x y _ _ _ hx hy => simpa using add_mem hx hy
+    | mem_mul m hm i x _ ih =>
+      obtain ⟨y, rfl⟩ := hm
+      simpa [add_comm 1 i] using SetLike.mul_mem_graded (f y).2 ih
+
+/-- The graded lift agrees with the symmetric-algebra lift on every element. -/
+@[simp]
+theorem gradedLift_apply (f : M →ₗ[R] 𝒜 1) (a : SymmetricAlgebra R M) :
+    gradedLift R 𝒜 f a = lift ((𝒜 1).subtype ∘ₗ f) a := (rfl)
+
+/-- The graded lift sends a generator `m` to `f m`. -/
+theorem gradedLift_ι (f : M →ₗ[R] 𝒜 1) (m : M) : gradedLift R 𝒜 f (ι R M m) = f m := by
+  simp
+
+/-- The graded lift is surjective when the degree-one elements `f m` generate the target as an
+`R`-algebra. -/
+theorem gradedLift_surjective {f : M →ₗ[R] 𝒜 1}
+    (hf : Algebra.adjoin R (Set.range fun m ↦ (f m : A)) = ⊤) :
+    Function.Surjective (gradedLift R 𝒜 f) := by
+  -- the range of the lift is a subalgebra containing every generator `f m`
+  refine (AlgHom.range_eq_top (lift ((𝒜 1).subtype ∘ₗ f))).mp (top_le_iff.mp ?_)
+  rw [← hf, Algebra.adjoin_le_iff]
+  rintro _ ⟨m, rfl⟩
+  exact ⟨ι R M m, by simp⟩
+
+end GradedLift
 
 end SymmetricAlgebra
