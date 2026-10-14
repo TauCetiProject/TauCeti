@@ -26,7 +26,7 @@ variable {α 𝕜 V : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] {μ : Measure α} {p q : ℝ≥0∞}
   [p.HolderConjugate q] {f : α → StrongDual 𝕜 V} {g : α → V}
 
-/-- Evaluating a dual-valued `Lᵖ` function on an `Lᑫ` function is integrable when the
+/-- Evaluating a dual-valued `L^p` function on an `L^q` function is integrable when the
 exponents are Hölder conjugate. -/
 theorem integrable_apply (hf : MemLp f p μ) (hg : MemLp g q μ) :
     Integrable (fun x ↦ f x (g x)) μ :=
