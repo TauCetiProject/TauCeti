@@ -297,9 +297,7 @@ def sphereHomeomorph : sphere.Z ≃ₜ OnePoint ℂ :=
 
 /-- The projection of `sphere` is its canonical homeomorphism to the Riemann sphere. -/
 @[simp]
-theorem sphere_π_apply (z : sphere.Z) : sphere.π z = sphereHomeomorph z := by
-  change z = z
-  rfl
+theorem sphere_π_apply (z : sphere.Z) : sphere.π z = sphereHomeomorph z := by rfl
 
 /-- The sphere over itself is unbranched: all its local degrees are `1`. -/
 @[simp]
