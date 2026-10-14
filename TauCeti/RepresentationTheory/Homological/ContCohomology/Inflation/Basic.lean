@@ -52,6 +52,8 @@ at `H²(G, M)`.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
   restriction in degree `1`.
+* `TauCeti.ContCohomology.finite_ker_explicitRes1`: for `N` of finite index with finite invariants
+  `M ^ N`, the kernel of restriction in degree `1` is finite.
 * `TauCeti.ContCohomology.explicitInfl2_injective`: inflation is injective in degree `2` when
   `H¹(N, M) = 0`, for coefficients of any topology.
 * `TauCeti.ContCohomology.explicitInfRes2_exact`: for an open normal subgroup `N` with
@@ -368,6 +370,14 @@ theorem explicitInfRes_exact :
       simp [hzdef, ← h]
     exact ⟨(descendZ1 z hzN : H1 (G ⧸ N) (FixedPoints.addSubgroup N M)),
       (explicitInfl1_descendZ1 z hzN).trans hzc⟩
+
+/-- **The kernel of restriction to a subgroup of finite index is finite** when the invariants
+`M ^ N` are finite. By exactness of the inflation-restriction sequence the kernel is the image of
+`H¹(G ⧸ N, M ^ N)`, whose cocycles are maps between two finite sets. -/
+theorem finite_ker_explicitRes1 [N.FiniteIndex] [Finite (FixedPoints.addSubgroup N M)] :
+    Finite (explicitRes1 G M N).ker := by
+  rw [← explicitInfRes_exact]
+  exact Set.finite_range _ |>.to_subtype
 
 end DegreeOne
 
