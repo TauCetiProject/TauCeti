@@ -327,6 +327,18 @@ theorem crossUnipotentMatrix_inj {a b c d e f a' b' c' d' e' f' : R} :
   · rintro ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
     rfl
 
+/-- Multiplication in the six-coordinate normal form is polynomial over the base ring. -/
+theorem crossUnipotentMatrix_mul (a b c d e f a' b' c' d' e' f' : R) :
+    crossUnipotentMatrix a b c d e f * crossUnipotentMatrix a' b' c' d' e' f' =
+      crossUnipotentMatrix (a + a') (b + b') (c + c' + a * b')
+        (d + d' + a * (a' * b' - c') + c * a')
+        (e + e' + a * (a' ^ 2 * b' - a' * c' - d') + c * a' ^ 2 + 2 * d * a')
+        (f + f' + a * (a' * b' * c' - c' ^ 2 - b' * d') +
+          c * (a' * c' - d') + 2 * d * c' + e * b') := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [crossUnipotentMatrix_def, Matrix.mul_apply, Fin.sum_univ_seven] <;> ring
+
 /-- Equality of upper-unitriangular cross-product automorphisms can be tested on six entries,
 provided multiplication by two is injective. -/
 theorem _root_.Matrix.PreservesG2Cross.eq_iff_of_isUpperUnitriangular

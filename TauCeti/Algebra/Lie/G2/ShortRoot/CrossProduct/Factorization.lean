@@ -58,18 +58,6 @@ theorem positiveRootMatrix_zero (i : Fin 6) : positiveRootMatrix i (0 : R) = 1 :
   fin_cases i <;> ext a b <;> fin_cases a <;> fin_cases b <;>
     simp [positiveRootMatrix_def, crossUnipotentMatrix_def]
 
-/-- Multiplication in the six-coordinate normal form is polynomial over the base ring. -/
-theorem crossUnipotentMatrix_mul (a b c d e f a' b' c' d' e' f' : R) :
-    crossUnipotentMatrix a b c d e f * crossUnipotentMatrix a' b' c' d' e' f' =
-      crossUnipotentMatrix (a + a') (b + b') (c + c' + a * b')
-        (d + d' + a * (a' * b' - c') + c * a')
-        (e + e' + a * (a' ^ 2 * b' - a' * c' - d') + c * a' ^ 2 + 2 * d * a')
-        (f + f' + a * (a' * b' * c' - c' ^ 2 - b' * d') +
-          c * (a' * c' - d') + 2 * d * c' + e * b') := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [crossUnipotentMatrix_def, Matrix.mul_apply, Fin.sum_univ_seven] <;> ring
-
 /-- Each coordinate-axis root matrix is additive in its parameter. -/
 theorem positiveRootMatrix_add (i : Fin 6) (s t : R) :
     positiveRootMatrix i (s + t) = positiveRootMatrix i s * positiveRootMatrix i t := by

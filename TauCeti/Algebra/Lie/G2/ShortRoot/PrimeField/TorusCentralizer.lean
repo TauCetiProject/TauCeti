@@ -59,12 +59,7 @@ theorem exists_weightTorusPoints_eq_iff_isDiag (g : points A) :
       (mem_diagonalTorus_iff.mpr hg)
     have hcross := preservesG2Cross_of_mem_points g.property
     rw [← hd, diagGL_coe] at hcross
-    have h2 : IsUnit (2 : A) := by
-      have h : IsUnit ((algebraMap (ZMod 3) A) 2) :=
-        ((ZMod.isUnit_iff_coprime 2 3).mpr (by decide)).map
-          (algebraMap (ZMod 3) A).toMonoidHom
-      rwa [map_ofNat] at h
-    obtain ⟨s, hs⟩ := (preservesG2Cross_diagonal_iff h2.isRegular d).mp hcross
+    obtain ⟨s, hs⟩ := (preservesG2Cross_diagonal_iff (isUnit_two A).isRegular d).mp hcross
     refine ⟨s, Subtype.ext (Units.ext ?_)⟩
     rw [coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal,
       ← hd, diagGL_coe]

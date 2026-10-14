@@ -72,29 +72,14 @@ private theorem coe_rootSubgroupPoints_int (k : Fin 2 ⊕ Fin 2) (t : ℤ) :
     ((rootSubgroupPoints k A (.ofAdd (t : A)) : GL (Fin 7) A) :
         Matrix (Fin 7) (Fin 7) A) = (simpleRootMatrix k t).map (Int.castRingHom A) := by
   rcases k with i | i <;> fin_cases i <;>
-    simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one]
-  · rw [coe_rootSubgroupPoints_inl_zero]
-    ext i j
+    simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, coe_rootSubgroupPoints_inl_zero,
+      coe_rootSubgroupPoints_inl_one, coe_rootSubgroupPoints_inr_zero,
+      coe_rootSubgroupPoints_inr_one] <;>
+    ext i j <;>
     simp only [simpleRootMatrix, Fin.isValue, ↓reduceIte, Matrix.map_apply, Matrix.add_apply,
       Matrix.smul_apply, smul_eq_mul, Int.coe_castRingHom, Int.cast_add, Int.cast_mul,
-      Int.cast_pow]
+      Int.cast_pow] <;>
     simp [Matrix.one_apply, Matrix.single_apply]
-  · rw [coe_rootSubgroupPoints_inl_one]
-    ext i j
-    simp only [simpleRootMatrix, Fin.isValue, Matrix.map_apply, Matrix.add_apply,
-      Matrix.smul_apply, smul_eq_mul, Int.coe_castRingHom, Int.cast_add, Int.cast_mul]
-    simp [Matrix.one_apply]
-  · rw [coe_rootSubgroupPoints_inr_zero]
-    ext i j
-    simp only [simpleRootMatrix, Fin.isValue, ↓reduceIte, Matrix.map_apply, Matrix.add_apply,
-      Matrix.smul_apply, smul_eq_mul, Int.coe_castRingHom, Int.cast_add, Int.cast_mul,
-      Int.cast_pow]
-    simp [Matrix.one_apply, Matrix.single_apply]
-  · rw [coe_rootSubgroupPoints_inr_one]
-    ext i j
-    simp only [simpleRootMatrix, Fin.isValue, Matrix.map_apply, Matrix.add_apply,
-      Matrix.smul_apply, smul_eq_mul, Int.coe_castRingHom, Int.cast_add, Int.cast_mul]
-    simp [Matrix.one_apply]
 
 private theorem simpleRootMatrix_weyl (i : Fin 2) :
     simpleRootMatrix (.inl i) 1 * simpleRootMatrix (.inr i) (-1) *
@@ -281,11 +266,7 @@ theorem isUpperUnitriangular_iff_exists_positiveRootSubgroupPoints_product (g : 
           positiveRootSubgroupPoints A 5 (.ofAdd f) := by
   constructor
   · intro hu
-    have h2 : IsRegular (2 : A) := by
-      have hunit : IsUnit (2 : A) := by
-        have : IsUnit (2 : ZMod 3) := by decide
-        simpa only [map_ofNat] using this.map (algebraMap (ZMod 3) A)
-      exact hunit.isRegular
+    have h2 := (isUnit_two A).isRegular
     have hg := eq_crossUnipotentMatrix_of_preservesG2Cross h2 hu
       (preservesG2Cross_of_mem_points g.property)
     let m : Matrix (Fin 7) (Fin 7) A := g.val
