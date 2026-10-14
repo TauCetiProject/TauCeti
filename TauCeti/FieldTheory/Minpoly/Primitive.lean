@@ -63,6 +63,9 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [CharZero F] {F' : Type*} [Field F'] [CharZero F']
 
+private lemma natDegree_normalize_int (P : ℤ[X]) : (normalize P).natDegree = P.natDegree :=
+  natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (normalize_associated P))
+
 /-- The *primitive minimal polynomial* `F_x ∈ ℤ[X]` of `x` over `ℚ`: the primitive integer
 multiple of `minpoly ℚ x` with positive leading coefficient. It is obtained by clearing the
 denominators of `minpoly ℚ x`, taking the primitive part and normalizing the sign.
@@ -86,6 +89,7 @@ theorem primitiveMinpoly_map (f : F →+* F') (x : F) :
   primitiveMinpoly_eq_of_minpoly_eq (minpoly.algHom_eq f.toRatAlgHom f.injective x)
 
 /-- The junk value: `F_x = 1` for `x` transcendental over `ℚ`. -/
+@[simp]
 theorem primitiveMinpoly_of_not_isAlgebraic {x : F} (hx : ¬IsAlgebraic ℚ x) :
     primitiveMinpoly x = 1 := by
   rw [primitiveMinpoly, minpoly.eq_zero (isAlgebraic_iff_isIntegral.not.mp hx),
@@ -97,6 +101,7 @@ theorem isPrimitive_primitiveMinpoly (x : F) : (primitiveMinpoly x).IsPrimitive 
   isPrimitive_of_dvd (isPrimitive_primPart _) (normalize_dvd_iff.mpr dvd_rfl)
 
 /-- The primitive minimal polynomial is nonzero, also for transcendental `x`. -/
+@[simp]
 theorem primitiveMinpoly_ne_zero (x : F) : primitiveMinpoly x ≠ 0 :=
   (isPrimitive_primitiveMinpoly x).ne_zero
 
@@ -130,7 +135,7 @@ theorem map_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
   have hdeg : ((primitiveMinpoly x).map (Int.castRingHom ℚ)).natDegree ≤
       (minpoly ℚ x).natDegree := by
     rw [natDegree_map_eq_of_injective (RingHom.injective_int _), primitiveMinpoly,
-      normalize_apply, coe_normUnit, natDegree_mul_C (by simp), natDegree_primPart,
+      natDegree_normalize_int, natDegree_primPart,
       ← natDegree_map_eq_of_injective (RingHom.injective_int (Int.castRingHom ℚ)) q, hbq]
     exact natDegree_smul_le _ _
   rw [eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le
@@ -138,6 +143,7 @@ theorem map_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
     leadingCoeff_map_of_injective (RingHom.injective_int _), eq_intCast]
 
 /-- For algebraic `x`, the primitive minimal polynomial vanishes at `x`. -/
+@[simp]
 theorem aeval_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
     aeval x (primitiveMinpoly x) = 0 := by
   rw [← aeval_map_algebraMap ℚ, algebraMap_int_eq, map_primitiveMinpoly hx, aeval_mul,
