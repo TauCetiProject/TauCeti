@@ -403,6 +403,11 @@ theorem isWeightFamily_one_weight : IsWeightFamily (fun _ : Fin k ↦ ({1} : Set
   refine Filter.mem_of_superset hU fun u hu ↦ ?_
   exact AddSubgroup.subset_closure ⟨1, by simp, u, hu, by simp⟩
 
+/-- Two weight families on disjoint blocks of variables append to a weight family. -/
+theorem IsWeightFamily.append {m : ℕ} {T : Fin k → Set A} {S : Fin m → Set A}
+    (hT : IsWeightFamily T) (hS : IsWeightFamily S) : IsWeightFamily (Fin.append T S) :=
+  Fin.addCases (fun i ↦ by simpa using hT i) (fun j ↦ by simpa using hS j)
+
 /-- Wedhorn (5.6.1): a power series is *`T`-restricted* if, for every open subgroup `U` of `A`,
 all but finitely many of its coefficients lie in `Tν · U`. -/
 def IsWeightedRestricted (T : Fin k → Set A) (f : MvPowerSeries (Fin k) A) : Prop :=
@@ -1317,9 +1322,8 @@ instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
   isUniformAddGroup_of_addCommGroup
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
-    ContinuousConstSMul A (weightedRestrictedSubring T hT) :=
-  ⟨fun a ↦ (continuous_const_mul (algebraMap A (weightedRestrictedSubring T hT) a)).congr
-    fun f ↦ (Algebra.smul_def a f).symm⟩
+    ContinuousSMul A (weightedRestrictedSubring T hT) :=
+  continuousSMul_of_algebraMap _ _ (continuous_weightedC hT)
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
     UniformContinuousConstSMul A (weightedRestrictedSubring T hT) :=
