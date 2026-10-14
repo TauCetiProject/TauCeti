@@ -129,6 +129,29 @@ theorem truncate_apply (n : ℕ) (x : CompletedTensorWords R M) (k : ℕ) :
     truncate R M n x k = if k < n then x k else 0 := by
   simp [truncate, DFinsupp.lmk, DFinsupp.mk_apply]
 
+/-- A finite truncation is the sum of its included length components. -/
+theorem truncate_eq_sum (n : ℕ) (x : CompletedTensorWords R M) :
+    truncate R M n x = ∑ k ∈ Finset.range n, TensorWords.of R M k (x k) := by
+  classical
+  ext j
+  simp only [truncate_apply, DirectSum.sum_apply]
+  by_cases hj : j < n
+  · rw [ite_eq_left hj, Finset.sum_eq_single j]
+    · simp only [← TensorWords.component_apply, TensorWords.component_of]
+    · intro k _ hkj
+      simpa only [← TensorWords.component_apply] using
+        TensorWords.component_of_of_ne R M hkj (x k)
+    · simp [hj]
+  · rw [ite_eq_right hj]
+    symm
+    apply Finset.sum_eq_zero
+    intro k hk
+    have hkj : k ≠ j := by
+      have := Finset.mem_range.mp hk
+      omega
+    simpa only [← TensorWords.component_apply] using
+      TensorWords.component_of_of_ne R M hkj (x k)
+
 /-- Truncating twice retains the components below the smaller cutoff. -/
 @[simp]
 theorem truncate_truncate (n m : ℕ) (x : CompletedTensorWords R M) :

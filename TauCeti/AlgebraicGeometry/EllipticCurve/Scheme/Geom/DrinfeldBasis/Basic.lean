@@ -28,6 +28,8 @@ characteristic `p`, the subgroup scheme `E[p]` is the divisor `p²[0]`, so the h
 whose points are the zero section is a Drinfeld basis of `E[p]`. It is the integral counterpart
 of the naive `[Γ(N)]`-structures (`EllipticCurveGeom.IsFiberwiseInjective`), which ask instead
 that the `φ a` be distinct in every fibre and are the right notion only where `N` is invertible.
+Every naive full level structure is a Drinfeld basis over an arbitrary base; this direction is
+proved in `DrinfeldBasis.Naive`. The converse where `N` is invertible remains to be established.
 
 The divisor `∑_a [φ a]` is the divisor of a finite family of `S`-points of `E`
 (`EllipticCurveGeom.pointsDivisor`), the product of the ideal sheaves of the sections `φ a`; it is
