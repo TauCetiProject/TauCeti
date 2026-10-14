@@ -163,10 +163,10 @@ theorem isIntegrallyClosedIn_of_irreducible_map {L : Type*} [Field L] [Algebra k
   let e := Bivariate.equivMvPolynomial k
   have hq : Irreducible ((e φ).map (algebraMap k L)) := by
     apply (MulEquiv.irreducible_iff (Bivariate.equivMvPolynomial L).symm).mp
-    simpa only [Bivariate.equivMvPolynomial_symm_map, AlgEquiv.symm_apply_apply] using hφ
+    simpa only [e, Bivariate.equivMvPolynomial_symm_map, AlgEquiv.symm_apply_apply] using hφ
   have heval : MvPolynomial.aeval ![x, y] (e φ) = 0 := by
     rw [← Bivariate.aevalAeval_comp_equivMvPolynomial_symm, AlgHom.comp_apply]
-    simpa only [AlgEquiv.symm_apply_apply] using h
+    simpa only [e, AlgEquiv.symm_apply_apply] using h
   have := isDomain_tensorProduct_of_irreducible_map L hq hx hxy heval
   exact algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.mp
     (algebraicClosure_eq_bot_of_isDomain_tensorProduct L)
