@@ -45,8 +45,9 @@ open scoped InnerProductSpace Topology
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {A : ℝ → E →L[ℝ] E} {u : ℝ → E}
 
--- The two integrable coefficient terms shared by the identity and the estimate.
-private theorem integrable_energy_terms (hA : ContDiff ℝ 1 A) (hu : ContDiff ℝ 1 u)
+/-- The squared coefficient norm and coefficient-derivative quadratic form are integrable
+along a compactly supported continuous path. -/
+theorem integrable_norm_apply_sq_and_inner_deriv_apply (hA : ContDiff ℝ 1 A) (hu : Continuous u)
     (hc : HasCompactSupport u) :
     Integrable (fun s ↦ ‖A s (u s)‖ ^ 2) ∧
       Integrable (fun s ↦ ⟪u s, deriv A s (u s)⟫_ℝ) := by
@@ -57,10 +58,10 @@ private theorem integrable_energy_terms (hA : ContDiff ℝ 1 A) (hu : ContDiff �
   have hcA : HasCompactSupport (fun s ↦ ‖A s (u s)‖ ^ 2) :=
     hAu.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
   have hiA : Integrable (fun s ↦ ‖A s (u s)‖ ^ 2) :=
-    ((hA.continuous.clm_apply hu.continuous).norm.pow 2).integrable_of_hasCompactSupport hcA
+    ((hA.continuous.clm_apply hu).norm.pow 2).integrable_of_hasCompactSupport hcA
   have hiCorr : Integrable (fun s ↦ ⟪u s, deriv A s (u s)⟫_ℝ) :=
     Continuous.integrable_of_hasCompactSupport
-      (hu.continuous.inner (hA.continuous_deriv_one.clm_apply hu.continuous)) hcorr
+      (hu.inner (hA.continuous_deriv_one.clm_apply hu)) hcorr
   exact ⟨hiA, hiCorr⟩
 
 /-- The energy identity for `d/ds + A(s)`. The coefficient derivative contributes with a minus
@@ -72,7 +73,7 @@ theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
       (∫ s, ‖deriv u s‖ ^ 2) + (∫ s, ‖A s (u s)‖ ^ 2) -
         ∫ s, ⟪u s, deriv A s (u s)⟫_ℝ := by
   -- Compact support makes every term in the integration-by-parts identity integrable.
-  obtain ⟨hiA, hiCorr⟩ := integrable_energy_terms hA hu hc
+  obtain ⟨hiA, hiCorr⟩ := integrable_norm_apply_sq_and_inner_deriv_apply hA hu.continuous hc
   have hpot : HasCompactSupport (fun s ↦ ⟪u s, A s (u s)⟫_ℝ) :=
     hc.mono (fun s hs hu0 ↦ hs (by simp [hu0]))
   have hcross : HasCompactSupport (fun s ↦ ⟪deriv u s, A s (u s)⟫_ℝ) :=
@@ -117,7 +118,7 @@ theorem integral_norm_deriv_sq_add_mul_integral_norm_sq_le (hA : ContDiff ℝ 1 
     (hsmall : ∀ s ∈ Function.support u, ⟪u s, deriv A s (u s)⟫_ℝ ≤ β * ‖u s‖ ^ 2) :
     (∫ s, ‖deriv u s‖ ^ 2) + (α ^ 2 - β) * (∫ s, ‖u s‖ ^ 2) ≤
       ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := by
-  obtain ⟨hiA, hiCorr⟩ := integrable_energy_terms hA hu hc
+  obtain ⟨hiA, hiCorr⟩ := integrable_norm_apply_sq_and_inner_deriv_apply hA hu.continuous hc
   have hcu : HasCompactSupport (fun s ↦ ‖u s‖ ^ 2) :=
     hc.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
   have hiu : Integrable (fun s ↦ ‖u s‖ ^ 2) :=

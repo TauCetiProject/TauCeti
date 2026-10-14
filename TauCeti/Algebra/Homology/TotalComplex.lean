@@ -47,7 +47,9 @@ compares the homology sequences of these short exact sequences.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
 * `HomologicalComplex₂.quasiIso_totalAugmentation_of_rows`: exact augmented rows make the
-  augmentation of the total complex a quasi-isomorphism.
+  augmentation of the total complex a quasi-isomorphism, and so does any augmentation through
+  which such an augmentation factors by a quasi-isomorphism
+  (`HomologicalComplex₂.quasiIso_totalAugmentation_of_rows_of_quasiIso`).
 
 ## References
 
@@ -570,6 +572,21 @@ theorem quasiIso_totalAugmentation_of_rows
   have := quasiIso_total_map_of_rows φ hφ
   have := isIso_totalAugmentation_single E
   rw [← total_map_totalAugmentation K φ _ (single_d_comp_singleObjXSelf_hom E)]
+  infer_instance
+
+/-- **Exact augmented rows followed by a quasi-isomorphism.** If the augmented rows of a map `φ`
+from `K` to the bicomplex with the single column `E` are exact, and an augmentation `ε` of `K`
+factors as the column `0` of `φ` followed by a quasi-isomorphism `g : E ⟶ E'`, then the induced
+augmentation of the total complex is a quasi-isomorphism. -/
+theorem quasiIso_totalAugmentation_of_rows_of_quasiIso
+    (φ : K ⟶ (HomologicalComplex.single _ (ComplexShape.down ℕ) 0).obj E)
+    (hφ : ∀ q, QuasiIso (((eval C _ q).mapHomologicalComplex _).map φ)) {E' : ChainComplex C ℕ}
+    (g : E ⟶ E') [QuasiIso g] {ε : K.X 0 ⟶ E'} (hε : K.d 1 0 ≫ ε = 0)
+    (h : (φ.f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 E).hom) ≫ g = ε) :
+    QuasiIso (K.totalAugmentation ε hε) := by
+  subst h
+  have := quasiIso_totalAugmentation_of_rows φ hφ
+  rw [← totalAugmentation_comp _ _ (d_comp_f_zero_singleObjXSelf_hom K φ)]
   infer_instance
 
 end HomologicalComplex₂
