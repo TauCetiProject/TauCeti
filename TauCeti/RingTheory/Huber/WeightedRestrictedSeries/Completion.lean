@@ -395,7 +395,10 @@ theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
       exact R.mul_mem hp (hX i)
   have hdense : Dense (R : Set (Completion (weightedRestrictedSubring T hT))) :=
     Completion.denseRange_coe.dense_of_mapsTo (Completion.continuous_coe _)
-      (dense_weightedPolynomials hT) (by rintro _ ⟨p, rfl⟩; exact hpoly p)
+      (dense_weightedPolynomials hT) (by
+        intro f hf
+        obtain ⟨p, rfl⟩ := RingHom.mem_range.mp hf
+        exact hpoly p)
   exact closure_minimal (fun _ hx ↦ hx)
     (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR)) (hdense y)
 

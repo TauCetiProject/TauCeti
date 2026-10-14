@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
+public import Mathlib.Data.Finite.Sigma
 
 /-!
 # Finite subsets of a set as finsets of the subtype
