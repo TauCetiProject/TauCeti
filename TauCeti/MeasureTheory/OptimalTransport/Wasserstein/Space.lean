@@ -641,6 +641,27 @@ theorem WassersteinSpace.dist_sq_eq_integral {ν₀ ν₁ : WassersteinSpace 2 E
   exact ((ENNReal.ofReal_eq_ofReal_iff (integral_nonneg fun _ ↦ by positivity)
     (sq_nonneg _)).1 hW).symm
 
+/-- A coupling `π` of two laws of `P₂(E)` whose quadratic cost `∫ ‖x - y‖² dπ` is at most their
+squared quadratic Wasserstein distance is an optimal coupling for the quadratic cost. This is the
+converse of `TauCeti.WassersteinSpace.dist_sq_eq_integral`. -/
+theorem WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsCoupling π ((ν₀ : ProbabilityMeasure E) : Measure E)
+      ((ν₁ : ProbabilityMeasure E) : Measure E))
+    (h : ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π ≤ dist ν₀ ν₁ ^ 2) :
+    IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E) := by
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hπ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hπ.snd_eq ▸ ν₁.hasFiniteMoment)
+  refine isOptimalCoupling_iff.2 ⟨hπ, fun σ hσ ↦ ?_⟩
+  have : IsProbabilityMeasure σ := hσ.isProbabilityMeasure
+  have hiσ := integrable_norm_sub_sq_of_hasFiniteMoment (hσ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hσ.snd_eq ▸ ν₁.hasFiniteMoment)
+  simp only [ENNReal.rpow_two]
+  rw [lintegral_edist_sq_eq_ofReal_integral hi, lintegral_edist_sq_eq_ofReal_integral hiσ]
+  exact ENNReal.ofReal_le_ofReal (h.trans (WassersteinSpace.dist_sq_le_integral hσ))
+
 end SecondMoment
 
 end TauCeti
