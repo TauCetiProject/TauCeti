@@ -13,14 +13,17 @@ After the sandbox exits, workflow-pinned tooling reads archive bytes without
 following symlinks, stages changed objects, and omits only objects matching the
 snapshot and a public HEAD's size/MD5 ETag. HEAD is an optimization filter, not the
 final integrity check. Unknown ETags, missing/corrupt objects, changed toolchains
-and stale snapshots fall back to staging built bytes. Availability probing stops
-after 60 seconds or 32 misses (plus at most 16 outstanding requests).
+and stale snapshots fall back to staging built bytes. Public reads share curl
+connections in batches of at most 128 objects with 64 active transfers. No new
+availability batch starts after 60 seconds or 32 observed misses; outstanding
+HEAD requests have a 15-second timeout.
 
 The isolated publisher rejects unrecognized map schemas, unsafe names, nested
 paths, symlinks, nonregular entries, extra files and inconsistent manifests. It
 GETs every omitted object and checks SHA-256, size and MD5 against the expected
-record, with three attempts of at most 30 seconds each and 16 workers. Any failure
-stops further verification and prevents publication. The publisher freezes the
+record, with three attempts of at most 30 seconds per transfer. Verified objects
+are retained within each batch, so retries fetch only missing/corrupt objects.
+A failed batch stops further verification and prevents publication. The publisher freezes the
 validated upload files and URL plan outside the hostile staging directory. Only
 inline workflow shell and curl receive credentials: artifacts upload first with
 bounded retries, then the full map uploads and is confirmed byte for byte using

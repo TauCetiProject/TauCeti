@@ -58,7 +58,7 @@ class PublicationTests(unittest.TestCase):
         self.plan = self.root / "plan"
 
     def stage_outputs(self, available=True, full=False):
-        with patch.object(publish, "available", return_value=available), contextlib.redirect_stdout(io.StringIO()):
+        with patch.object(publish, "available", side_effect=lambda _public, records: set(records) if available else set()), contextlib.redirect_stdout(io.StringIO()):
             return publish.stage(self.project, self.index, self.stage, PUBLIC, full)
 
     def prepare(self):
@@ -74,7 +74,7 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual((self.stage / OTHER).read_bytes(), b"new archive")
         with patch.object(publish, "verify_remote", return_value=len(self.data)) as verify:
             stats = self.prepare()
-        verify.assert_called_once_with(PUBLIC, NAME, record(self.data))
+        verify.assert_called_once_with(PUBLIC, {NAME: record(self.data)})
         self.assertEqual(stats["uploaded_objects"], 1)
         config = (self.plan / "artifacts.curl").read_text()
         self.assertNotIn(NAME, config)
@@ -100,7 +100,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_widespread_misses_have_a_bounded_full_staging_fallback(self):
         records, lines = {}, ['"2026-03-17"']
-        for i in range(100):
+        for i in range(300):
             name = f"{i:016x}.ltar"
             (self.artifacts / name).write_bytes(self.data)
             records[f"{i:016x}"] = [name, hashlib.sha256(self.data).hexdigest()]
@@ -108,12 +108,13 @@ class PublicationTests(unittest.TestCase):
         (self.project / ".lake/outputs.jsonl").write_text("\n".join(lines) + "\n")
         self.saved["entries"] = records
         self.index.write_text(json.dumps(self.saved))
-        with patch.object(publish, "available", return_value=False) as probe:
+        with patch.object(publish, "available", return_value=set()) as probe:
             stats = self.stage_outputs_with_probe()
-        self.assertLessEqual(probe.call_count, 32 + publish.WORKERS)
+        self.assertEqual(probe.call_count, 1)
+        self.assertLessEqual(len(probe.call_args.args[1]), publish.BATCH_SIZE)
         self.assertEqual(stats["inherited"], 0)
-        self.assertEqual(stats["fallback_objects"], 100)
-        self.assertEqual(len(list(self.stage.glob("*.ltar"))), 100)
+        self.assertEqual(stats["fallback_objects"], 300)
+        self.assertEqual(len(list(self.stage.glob("*.ltar"))), 300)
 
     def stage_outputs_with_probe(self):
         with contextlib.redirect_stdout(io.StringIO()):
@@ -230,24 +231,35 @@ class PublicationTests(unittest.TestCase):
 
     def test_remote_sha_check_retries_bounded_and_does_not_trust_sidecars(self):
         attempts = []
-        def fetch(args, **kwargs):
-            attempts.append(args)
-            Path(args[args.index("--output") + 1]).write_bytes(b"corrupt")
-            return subprocess.CompletedProcess(args, 0)
-        with patch.object(publish.subprocess, "run", side_effect=fetch):
+        def fetch(_public, records, target, head=False):
+            attempts.append(set(records))
+            for name in records:
+                (target / name).write_bytes(b"corrupt")
+        with patch.object(publish, "transfer", side_effect=fetch):
             with self.assertRaisesRegex(ValueError, "FULL_PUBLICATION=1"):
-                publish.verify_remote(PUBLIC, NAME, record(self.data))
+                publish.verify_remote(PUBLIC, {NAME: record(self.data)})
         self.assertEqual(len(attempts), 3)
-        self.assertTrue(all("--max-time" in args for args in attempts))
-        # Even when HEAD accepted a false MD5 assertion, SHA-256 is checked here.
         attempts.clear()
-        def eventual(args, **kwargs):
-            attempts.append(args)
-            Path(args[args.index("--output") + 1]).write_bytes(b"corrupt" if len(attempts) == 1 else self.data)
-            return subprocess.CompletedProcess(args, 0)
-        with patch.object(publish.subprocess, "run", side_effect=eventual):
-            self.assertEqual(publish.verify_remote(PUBLIC, NAME, record(self.data)), len(self.data))
-        self.assertEqual(len(attempts), 2)
+        def eventual(_public, records, target, head=False):
+            attempts.append(set(records))
+            for name in records:
+                (target / name).write_bytes(b"corrupt" if name == NAME and len(attempts) == 1 else self.data)
+        with patch.object(publish, "transfer", side_effect=eventual):
+            self.assertEqual(publish.verify_remote(PUBLIC, {NAME: record(self.data), OTHER: record(self.data)}), 2 * len(self.data))
+        self.assertEqual(attempts, [{NAME, OTHER}, {NAME}])
+
+    def test_public_transfer_has_bounded_requests_and_no_auth_options(self):
+        with patch.object(publish.subprocess, "run") as run:
+            publish.transfer(PUBLIC, {NAME: record(self.data)}, self.root)
+        args = run.call_args.args[0]
+        self.assertEqual(args[args.index("--parallel-max") + 1], str(publish.WORKERS))
+        self.assertEqual(args[args.index("--max-time") + 1], "30")
+        self.assertEqual(args[args.index("--max-filesize") + 1], str(len(self.data) + 1))
+        config = Path(args[args.index("--config") + 1]).read_text()
+        self.assertIn(publish.artifact_url(PUBLIC, NAME), config)
+        self.assertNotIn("--user", args)
+        self.assertNotIn("--aws-sigv4", args)
+        self.assertNotIn("LAKE_CACHE_KEY", config)
 
     def test_failed_inheritance_never_emits_upload_plan(self):
         self.stage_outputs()

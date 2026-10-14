@@ -11,7 +11,6 @@ rerun the producer with LAKE_CACHE_FULL_PUBLICATION=1 to repair from built bytes
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -19,14 +18,14 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
-import threading
 import time
 import urllib.parse
 
 from lake_cache_probe import DEFAULT_REPOSITORY as REPOSITORY, exact_map_url, parse_map, TOOLCHAIN
 from lake_cache_reuse import ARCHIVE, SHA256, directory, read_toolchain, regular_file
 
-WORKERS = 16
+WORKERS = 64
+BATCH_SIZE = 128
 MAX_MAP = 16 * 1024 * 1024
 
 
@@ -65,19 +64,44 @@ def hashes(handle) -> dict:
     return {"sha256": sha.hexdigest(), "md5": md5.hexdigest(), "size": size}
 
 
-def available(base: str, name: str, record: dict) -> bool:
+def transfer(public: str, records: dict, target: Path, head: bool = False) -> None:
+    """Use one bounded curl batch, sharing connections without credentials."""
+    config = target / "requests.curl"
+    config.write_text("".join(
+        f"url = {json.dumps(artifact_url(public, name))}\n"
+        f"output = {json.dumps(str(target / name))}\n" for name in records))
+    args = ["curl", "--parallel", "--parallel-max", str(WORKERS), "--fail", "--silent",
+            "--show-error", "--max-time", "15" if head else "30",
+            "--config", str(config)]
+    if head:
+        args.append("--head")
+    else:
+        args += ["--max-filesize", str(max(r["size"] for r in records.values()) + 1)]
+    # A batch can partly succeed. Inspect each response/file; a failed transfer
+    # never establishes availability and is retried or staged from built bytes.
+    subprocess.run(args, capture_output=True)
+
+
+def available(public: str, records: dict) -> set[str]:
     """An inconclusive HEAD is a staging miss, so its archive is transferred."""
-    result = subprocess.run(
-        ["curl", "--head", "--fail", "--silent", "--show-error", "--max-time", "15",
-         artifact_url(base, name)], capture_output=True, text=True)
-    headers = {}
-    for line in result.stdout.splitlines():
-        if ":" in line:
-            key, value = line.split(":", 1)
-            headers[key.lower()] = value.strip()
-    return (result.returncode == 0
-            and headers.get("etag") == f'"{record["md5"]}"'
-            and headers.get("content-length") == str(record["size"]))
+    found = set()
+    with tempfile.TemporaryDirectory(prefix="lake-object-head-") as temporary:
+        target = Path(temporary)
+        transfer(public, records, target, head=True)
+        for name, record in records.items():
+            try:
+                raw = (target / name).read_text()
+            except (OSError, UnicodeError):
+                continue
+            headers = {}
+            for line in raw.splitlines():
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    headers[key.lower()] = value.strip()
+            if (headers.get("etag") == f'"{record["md5"]}"'
+                    and headers.get("content-length") == str(record["size"])):
+                found.add(name)
+    return found
 
 
 def stage(project: Path, index: Path, destination: Path, public: str,
@@ -111,25 +135,17 @@ def stage(project: Path, index: Path, destination: Path, public: str,
                 records[name] = hashes(handle)
         candidates = [name for name in sorted(names)
                       if inherited.get(name) == records[name]["sha256"]]
-        # Stop probing after 60 seconds or 32 misses. An outage must quickly
-        # degrade to full staging, not incur one timeout for every archive.
-        deadline = time.monotonic() + 60
-        lock, misses = threading.Lock(), 0
-
-        def probe(name):
-            nonlocal misses
-            with lock:
-                if misses >= 32 or time.monotonic() >= deadline:
-                    return False
-            found = available(public, name, records[name])
-            if not found:
-                with lock:
-                    misses += 1
-            return found
-
-        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
-            present = list(pool.map(probe, candidates))
-        omitted = {name for name, found in zip(candidates, present) if found}
+        # Start no further batches after 60 seconds or 32 observed misses.
+        # One batch has at most 128 requests and 64 active transfers. Connection
+        # reuse avoids one TLS session and curl process per archive.
+        deadline, misses, omitted = time.monotonic() + 60, 0, set()
+        for offset in range(0, len(candidates), BATCH_SIZE):
+            if misses >= 32 or time.monotonic() >= deadline:
+                break
+            batch = candidates[offset:offset + BATCH_SIZE]
+            found = available(public, {name: records[name] for name in batch})
+            omitted.update(found)
+            misses += len(batch) - len(found)
         # Fresh destination owned by the host, never a candidate directory.
         destination.mkdir(parents=True, exist_ok=False)
         (destination / "outputs.jsonl").write_bytes(raw)
@@ -148,23 +164,30 @@ def stage(project: Path, index: Path, destination: Path, public: str,
     return stats
 
 
-def verify_remote(public: str, name: str, record: dict) -> int:
-    # Three bounded GETs. Do not trust ETags, hash sidecars, or producer assertions
-    # as the final integrity test. No candidate code runs on this publisher runner.
-    with tempfile.TemporaryDirectory(prefix="lake-object-check-") as temporary:
-        target = Path(temporary) / "object"
-        for _ in range(3):
-            result = subprocess.run(
-                ["curl", "--fail", "--silent", "--show-error", "--max-time", "30",
-                 "--max-filesize", str(record["size"] + 1), "--output", str(target),
-                 artifact_url(public, name)], capture_output=True)
-            if result.returncode == 0:
-                with target.open("rb") as handle:
-                    actual = hashes(handle)
-                if actual == record:
-                    return record["size"]
-        raise ValueError(f"inherited object {name} unavailable or corrupt; "
-                         "rerun producer with LAKE_CACHE_FULL_PUBLICATION=1")
+def verify_remote(public: str, records: dict) -> int:
+    """GET and SHA-256 verify all inherited bytes in bounded, retryable batches."""
+    names = sorted(records)
+    for offset in range(0, len(names), BATCH_SIZE):
+        remaining = {name: records[name] for name in names[offset:offset + BATCH_SIZE]}
+        with tempfile.TemporaryDirectory(prefix="lake-object-check-") as temporary:
+            target = Path(temporary)
+            for _ in range(3):
+                transfer(public, remaining, target)
+                for name, record in list(remaining.items()):
+                    try:
+                        with (target / name).open("rb") as handle:
+                            actual = hashes(handle)
+                    except OSError:
+                        continue
+                    if actual == record:
+                        del remaining[name]
+                if not remaining:
+                    break
+            if remaining:
+                name = next(iter(remaining))
+                raise ValueError(f"inherited object {name} unavailable or corrupt; "
+                                 "rerun producer with LAKE_CACHE_FULL_PUBLICATION=1")
+    return sum(record["size"] for record in records.values())
 
 
 def prepare(staging: Path, plan: Path, toolchain: str, revision: str,
@@ -219,19 +242,7 @@ def prepare(staging: Path, plan: Path, toolchain: str, revision: str,
             if name in records and actual != records[name]:
                 raise ValueError("staged object digest mismatch")
             records[name] = actual
-    failed = threading.Event()
-
-    def verify(name):
-        if failed.is_set():
-            return 0
-        try:
-            return verify_remote(public, name, records[name])
-        except Exception:
-            failed.set()
-            raise
-
-    with ThreadPoolExecutor(max_workers=WORKERS) as pool:
-        verified_bytes = sum(pool.map(verify, sorted(inherited)))
+    verified_bytes = verify_remote(public, {name: records[name] for name in sorted(inherited)})
     plan.mkdir(parents=True, exist_ok=False)
     # Freeze host-validated files in a private directory before the key-bearing step.
     shutil.copyfile(staging / "outputs.jsonl", plan / "outputs.jsonl")

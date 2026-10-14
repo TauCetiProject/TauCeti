@@ -158,7 +158,7 @@ jobs:
           PLAN="$RUNNER_TEMP/lake-publication-plan"
           started=$SECONDS
           if [ -s "$PLAN/artifacts.curl" ]; then
-            curl --parallel --parallel-max 16 --fail-early --fail --silent --show-error \
+            curl --parallel --parallel-max 50 --fail-early --fail --silent --show-error \
               --retry 2 --retry-all-errors --max-time 120 \
               --aws-sigv4 aws:amz:auto:s3 --user "$KEY" --request PUT \
               --header 'Content-Type: application/vnd.reservoir.artifact' \
