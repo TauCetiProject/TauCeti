@@ -62,66 +62,75 @@ theorem _root_.IsOpen.measurableSet_image_extChartAt_source_inter
 
 /-- A set is chart measurable when its part in each preferred chart has measurable coordinate
 image. This condition does not install a measurable-space structure on the manifold. -/
-def IsChartMeasurable [MeasurableSpace E] (s : Set M) : Prop :=
+def IsChartMeasurable (I : ModelWithCorners 𝕜 E H) [MeasurableSpace E] (s : Set M) : Prop :=
   ∀ x : M, MeasurableSet ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' s)
 
-/-- The empty set is chart measurable without a compatibility assumption on the model measure. -/
+/-- The empty set is chart measurable for any measurable structure on the model space;
+no `OpensMeasurableSpace` assumption is needed. -/
 @[simp]
 theorem isChartMeasurable_empty [MeasurableSpace E] :
-    IsChartMeasurable (I := I) (∅ : Set M) := by
+    IsChartMeasurable I (∅ : Set M) := by
   intro x
   simp only [Set.preimage_empty, Set.inter_empty, MeasurableSet.empty]
 
 /-- The whole manifold is chart measurable when open model sets are measurable. -/
 @[simp]
 theorem isChartMeasurable_univ [MeasurableSpace E] [OpensMeasurableSpace E] :
-    IsChartMeasurable (I := I) (Set.univ : Set M) := by
+    IsChartMeasurable I (Set.univ : Set M) := by
   intro x
   simpa only [Set.preimage_univ, Set.inter_univ] using measurableSet_extChartAt_target (I := I) x
 
 /-- Chart measurability is equivalent to measurability of the source-restricted chart images. -/
 theorem isChartMeasurable_iff [MeasurableSpace E] (s : Set M) :
-    IsChartMeasurable (I := I) s ↔
+    IsChartMeasurable I s ↔
       ∀ x : M, MeasurableSet ((extChartAt I x) '' ((extChartAt I x).source ∩ s)) := by
   simp only [IsChartMeasurable, PartialEquiv.image_source_inter_eq']
 
 /-- Open sets are chart measurable. -/
 theorem _root_.IsOpen.isChartMeasurable [MeasurableSpace E] [OpensMeasurableSpace E]
-    {s : Set M} (hs : IsOpen s) : IsChartMeasurable (I := I) s := by
+    {s : Set M} (hs : IsOpen s) : IsChartMeasurable I s := by
   rw [isChartMeasurable_iff]
   exact fun x ↦ hs.measurableSet_image_extChartAt_source_inter x
 
 /-- Chart measurability is closed under intersections. -/
 theorem IsChartMeasurable.inter [MeasurableSpace E] {s t : Set M}
-    (hs : IsChartMeasurable (I := I) s) (ht : IsChartMeasurable (I := I) t) :
-    IsChartMeasurable (I := I) (s ∩ t) := by
+    (hs : IsChartMeasurable I s) (ht : IsChartMeasurable I t) :
+    IsChartMeasurable I (s ∩ t) := by
   intro x
   rw [Set.preimage_inter, Set.inter_inter_distrib_left]
   exact (hs x).inter (ht x)
 
 /-- Chart measurability is closed under unions. -/
 theorem IsChartMeasurable.union [MeasurableSpace E] {s t : Set M}
-    (hs : IsChartMeasurable (I := I) s) (ht : IsChartMeasurable (I := I) t) :
-    IsChartMeasurable (I := I) (s ∪ t) := by
+    (hs : IsChartMeasurable I s) (ht : IsChartMeasurable I t) :
+    IsChartMeasurable I (s ∪ t) := by
   intro x
   rw [Set.preimage_union, Set.inter_union_distrib_left]
   exact (hs x).union (ht x)
 
+/-- Chart measurability is closed under countable indexed unions. -/
+theorem IsChartMeasurable.iUnion [MeasurableSpace E] {ι : Type*} [Countable ι]
+    {s : ι → Set M} (hs : ∀ i, IsChartMeasurable I (s i)) :
+    IsChartMeasurable I (⋃ i, s i) := by
+  intro x
+  rw [Set.preimage_iUnion, Set.inter_iUnion]
+  exact MeasurableSet.iUnion fun i ↦ hs i x
+
 /-- Chart measurability is closed under differences. -/
 theorem IsChartMeasurable.diff [MeasurableSpace E] {s t : Set M}
-    (hs : IsChartMeasurable (I := I) s) (ht : IsChartMeasurable (I := I) t) :
-    IsChartMeasurable (I := I) (s \ t) := by
+    (hs : IsChartMeasurable I s) (ht : IsChartMeasurable I t) :
+    IsChartMeasurable I (s \ t) := by
   intro x
   simpa only [Set.preimage_sdiff, Set.inter_sdiff_distrib_left] using (hs x).diff (ht x)
 
 /-- Chart measurability is closed under complements when open model sets are measurable. -/
 theorem IsChartMeasurable.compl [MeasurableSpace E] [OpensMeasurableSpace E] {s : Set M}
-    (hs : IsChartMeasurable (I := I) s) : IsChartMeasurable (I := I) sᶜ := by
+    (hs : IsChartMeasurable I s) : IsChartMeasurable I sᶜ := by
   simpa only [Set.compl_eq_univ_sdiff] using (isChartMeasurable_univ (I := I)).diff hs
 
 /-- A chart-measurable set contained in a chart source has measurable coordinate image. -/
 theorem IsChartMeasurable.image_extChartAt [MeasurableSpace E] {s : Set M}
-    (hs : IsChartMeasurable (I := I) s) (x : M) (hsub : s ⊆ (extChartAt I x).source) :
+    (hs : IsChartMeasurable I s) (x : M) (hsub : s ⊆ (extChartAt I x).source) :
     MeasurableSet ((extChartAt I x) '' s) := by
   rw [(extChartAt I x).image_eq_target_inter_inv_preimage hsub]
   exact hs x
@@ -171,6 +180,8 @@ theorem exists_finite_precompact_chart_cover [LocallyCompactSpace H] {s : Set M}
 
 variable [MeasurableSpace M] [BorelSpace M]
 
+section BorelModel
+
 /-- The Borel measurable space on the model vector space, used in this file. -/
 local instance extChartAtMeasurableSpaceE : MeasurableSpace E := borel E
 
@@ -201,5 +212,17 @@ theorem _root_.MeasurableSet.image_extChartAt {s : Set M} (hs : MeasurableSet s)
   rw [← Set.inter_eq_left.mpr hsource, ← Set.image_domRestrict]
   exact (measurableEmbedding_extChartAt_restrict (I := I) x).measurableSet_image.mpr
     (hs.preimage measurable_subtype_coe)
+
+end BorelModel
+
+/-- A Borel-measurable subset of the manifold is chart measurable whenever open model sets
+are measurable. -/
+theorem _root_.MeasurableSet.isChartMeasurable [MeasurableSpace E] [OpensMeasurableSpace E]
+    {s : Set M} (hs : MeasurableSet s) : IsChartMeasurable I s := by
+  rw [isChartMeasurable_iff]
+  intro x
+  exact OpensMeasurableSpace.borel_le _ <|
+    ((isOpen_extChartAt_source (I := I) x).measurableSet.inter hs).image_extChartAt
+      (I := I) x Set.inter_subset_left
 
 end TauCeti
