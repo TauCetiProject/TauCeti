@@ -33,7 +33,7 @@ concurrency:
 jobs:
   shadow:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       BWRAP_VER: 0.9.0-1build1
       BWRAP_DEB_SHA256: dde30d1f24da50446d647ed504ec8dc5a714f171974d054c70a589b48ba38b48
@@ -42,6 +42,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         persist-credentials: false
+        fetch-depth: 0
     - name: Install elan (pinned + checksum) and the toolchain
       env:
         ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
@@ -209,11 +210,46 @@ jobs:
         export LEAN LEAN_SYSROOT
         export SHADOW_REPORT="$RUNNER_TEMP/shadow-audit-report.json"
         python3 scripts/test_shadow_audits.py
+    # Whole-library research is main-only and independent of every production workflow.
+    # Public downloads and build outputs live only on this ephemeral hosted runner.
+    - name: Prepare full-library research inputs
+      if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+      run: |
+        sudo sysctl -w vm.max_map_count=1048576
+        lake exe cache get
+        {
+          echo "LAKE_CACHE_DIR=$GITHUB_WORKSPACE/.lake/cache"
+          echo "LAKE_ARTIFACT_CACHE=true"
+          echo "LAKE_RESTORE_ARTIFACTS=true"
+        } >> "$GITHUB_ENV"
+    - name: Restore only public publisher-produced artifacts
+      if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+      env:
+        PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+        PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+      run: bash scripts/lake-cache-get.sh .
+    - name: Build the main-only research snapshot
+      if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+      env:
+        LAKE_NO_CACHE: 'true'
+      run: lake build --iofail
+    - name: Compare full-library cold and warm shadow passes
+      if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+      env:
+        LAKE_NO_CACHE: 'true'
+      run: |
+        bash scripts/build-audit-driver.sh . scripts "$RUNNER_TEMP/shadow-driver"
+        lake env python3 scripts/shadow_audits.py . . \
+          --driver "$RUNNER_TEMP/shadow-driver/audit-driver" \
+          --sysroot "$(lean --print-prefix)" \
+          --output "$RUNNER_TEMP/shadow-library-report.json"
     - name: Upload untrusted research report
       if: ${{ always() }}
       uses: actions/upload-artifact@v4
       with:
         name: shadow-audit-research
-        path: ${{ runner.temp }}/shadow-audit-report.json
+        path: |
+          ${{ runner.temp }}/shadow-audit-report.json
+          ${{ runner.temp }}/shadow-library-report.json
         if-no-files-found: warn
         retention-days: 7

@@ -340,6 +340,15 @@ class ShadowWorkflowTest(unittest.TestCase):
             self.assertNotIn(forbidden, text)
         self.assertIn("persist-credentials: false", text)
         self.assertIn("python3 scripts/test_shadow_audits.py", text)
+        full_steps = [step for step in workflow["jobs"]["shadow"]["steps"]
+                      if "main-only" in step.get("name", "") or
+                      "full-library" in step.get("name", "") or
+                      "publisher-produced" in step.get("name", "")]
+        self.assertEqual(len(full_steps), 4)
+        for step in full_steps:
+            self.assertEqual(step["if"],
+                             "${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}")
+        self.assertIn('lake env python3 scripts/shadow_audits.py . .', text)
 
     def test_production_consumers_do_not_enable_shadow_modes(self):
         for name in (".github/workflows/pr-build.yml", ".github/workflows/ci.yml",
