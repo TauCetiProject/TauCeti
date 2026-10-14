@@ -35,9 +35,7 @@ open Set
 
 namespace AbstractSimplicialComplex
 
-attribute [local instance] Classical.decEq
-
-variable {ι : Type*} {K : AbstractSimplicialComplex ι} {v : ι}
+variable {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {v : ι}
 
 /-- The affine contraction of a weak realized cone onto its apex, relative to the apex.
 At time `t` the coordinate vector is `(1 - t) • x + t • single v 1`. -/
@@ -47,13 +45,16 @@ def coneContraction (h : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimp
   toFun p := ⟨(1 - (p.1 : ℝ)) • p.2.1 + (p.1 : ℝ) • Finsupp.single v 1,
     mem_realization_iff.mpr ⟨insert v (carrier K p.2).1,
       h.insert_mem (carrier K p.2).2,
-      StandardSimplex.smul_add_single_mem ⟨p.2.1, mem_convexHull_carrier K p.2⟩ v p.1⟩⟩
+      by
+        -- Set images remove the equality-instance choice in the realization's finite image.
+        simpa only [Finset.coe_image] using
+          StandardSimplex.smul_add_single_mem ⟨p.2.1, mem_convexHull_carrier K p.2⟩ v p.1⟩⟩
   continuous_toFun := by
     apply continuous_prod_iff_faceInclusion.mpr
     intro σ
     let g : unitInterval × StandardSimplex σ.1 → StandardSimplex (insert v σ.1) :=
       fun p => ⟨(1 - (p.1 : ℝ)) • p.2.1 + (p.1 : ℝ) • Finsupp.single v 1,
-        p.2.smul_add_single_mem v p.1⟩
+        by simpa only [Finset.coe_image] using p.2.smul_add_single_mem v p.1⟩
     have hg : Continuous g := by
       apply continuous_induced_rng.mpr
       apply continuous_pi
@@ -103,9 +104,11 @@ theorem contractibleSpace_realization_of_isCone
   (contractible_iff_id_nullhomotopic _).mpr
     ⟨vertex K v, ⟨(coneContraction h).toHomotopy⟩⟩
 
+omit [DecidableEq ι] in
 /-- The realization of the combinatorial cone on any abstract complex is contractible. -/
 theorem contractibleSpace_realization_cone (K : AbstractSimplicialComplex ι) :
-    ContractibleSpace (Realization (cone K)) :=
-  contractibleSpace_realization_of_isCone (isCone_cone (inst := Classical.decEq _) K)
+    ContractibleSpace (Realization (cone K)) := by
+  classical
+  exact contractibleSpace_realization_of_isCone (isCone_cone K)
 
 end AbstractSimplicialComplex
