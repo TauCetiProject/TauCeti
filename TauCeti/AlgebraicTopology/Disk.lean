@@ -75,8 +75,10 @@ lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
 
 /-- The `n`-dimensional disk is Hausdorff, being homeomorphic to a closed ball in Euclidean
 space. -/
-instance t2Space_disk (n : ℕ) : T2Space (TopCat.disk n) :=
-  (Homeomorph.ulift (X := Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).isEmbedding.t2Space
+instance t2Space_disk (n : ℕ) : T2Space (TopCat.disk.{u} n) :=
+  -- The `TopCat` carrier of `TopCat.disk n` is, by definition, the lift of the metric closed
+  -- ball; instance synthesis does not unfold the `TopCat.disk` wrapper on its own.
+  inferInstanceAs (T2Space (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk is a closed embedding, being an
 injective map from a compact space to a Hausdorff one. -/
