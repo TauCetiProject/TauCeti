@@ -432,7 +432,7 @@ theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (�
     ContDiff ℝ 1 (Function.uncurry (perturbedFlow f h hf hh hc)) := by
   have hF : ContDiff ℝ ((0 : ℕ) + 1) (perturbedField f h) := by
     simpa using contDiff_perturbedField hfs hh
-  unfold perturbedFlow
+  rw [perturbedFlow_eq_flowOfLipschitz]
   simpa using contDiff_flowOfLipschitz 0 (perturbedField f h)
     (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hF
 
