@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
-public import TauCeti.AlgebraicGeometry.Cohomology.Genus
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
 
 /-!
@@ -23,8 +23,10 @@ global functions. Consequently every divisor of degree at least the genus is lin
 equivalent to an effective divisor, even on a curve without a rational point. This is the
 point-free effectivity input for Abel maps from spaces of effective divisors.
 
-The proof uses `SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add` and
-`Scheme.baseRingToGlobalSections_bijective_of_geometricallyIntegral`.
+The divisor-degree formula `SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add`
+relates the Euler characteristics of a divisor sheaf and the structure sheaf.
+`Scheme.baseRingToGlobalSections_bijective_of_geometricallyIntegral` identifies global
+functions with the ground field.
 
 ## References
 
@@ -82,11 +84,12 @@ theorem relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf_of_geo
       (finrank k (Scheme.Modules.Cohomology (sheaf D) 0) : ℤ) := by
   let _ : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have h :=
-    finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf_of_geometricallyIntegral
-      k hdim D
-  have := Int.natCast_nonneg (finrank k (Scheme.Modules.Cohomology (sheaf D) 1))
-  omega
+  have hcoheight (x : X) : coheight x ≤ 1 := by
+    exact_mod_cast (coheight_le_topologicalKrullDim x).trans hdim.le
+  have := finiteDimensional_cohomology_one_trivial_of_isProper k hdim
+  simpa only [Scheme.genus_def] using
+    relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf k hcoheight
+      (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective D
 
 /-- Every divisor of degree at least the genus on a geometrically integral proper curve with
 discrete valuation stalks is linearly equivalent to an effective divisor. A rational point is
@@ -104,13 +107,9 @@ theorem nonempty_completeLinearSystem_of_genus_le_relativeDegree_of_geometricall
       toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
   have hcoheight (x : X) : coheight x ≤ 1 := by
     exact_mod_cast (coheight_le_topologicalKrullDim x).trans hdim.le
-  have := finiteDimensional_globalSections_sheaf k hcoheight D
-  rw [nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf,
-    ← Module.finrank_pos_iff_of_free (R := k),
-    ← Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections]
-  have h :=
-    relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf_of_geometricallyIntegral
-      k hdim D
-  omega
+  have := finiteDimensional_cohomology_one_trivial_of_isProper k hdim
+  exact nonempty_completeLinearSystem_of_genus_le_relativeDegree k hcoheight
+    (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective
+    ((Scheme.genus_def k X).symm ▸ hD)
 
 end TauCeti.AlgebraicGeometry.SchemeWeilDivisor

@@ -19,7 +19,8 @@ point, a perfectness assumption, or a finite-type assumption.
 The canonical map from the ground field to global sections is bijective. This is the
 normalization needed for the formula `χ(𝒪_X) = 1 - g` on geometrically integral proper curves.
 
-The proof combines Mathlib's `isIntegral_appTop_of_universallyClosed` with
+Mathlib's `isIntegral_appTop_of_universallyClosed` gives integrality of global functions.
+The exact constant-field condition is available as
 `isIntegrallyClosedIn_functionField_of_geometricallyIntegral`.
 
 ## References
