@@ -42,9 +42,6 @@ power series do: substituting `φ` and then `ψ` is substituting `φ (ψ)`. The 
   `HahnSeries.embDomainRingHom` along `n ↦ e * n`, with coefficient formulas
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_mul` and
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_of_not_dvd`.
-
-Along the way, `TauCeti.LaurentSeries.valuation_eq_exp_neg_order` records that a nonzero Laurent
-series `f` has valuation `exp (-ord f)`.
 -/
 
 public section
@@ -55,35 +52,6 @@ open HahnSeries PowerSeries WithZero
 namespace TauCeti.LaurentSeries
 
 variable {K : Type*} [Field K]
-
-/-- A unit of `K⟦X⟧`, that is a power series of nonzero constant coefficient, has valuation one
-in `K⸨X⸩`. -/
-theorem valuation_coe_of_isUnit {h : K⟦X⟧} (hh : IsUnit h) : Valued.v (h : K⸨X⸩) = 1 :=
-  Valuation.Integers.one_of_isUnit' hh fun g ↦ (_root_.LaurentSeries.val_le_one_iff_eq_coe K _).mpr
-    ⟨g, rfl⟩
-
-/-- The power series part of a nonzero Laurent series is a unit: its constant coefficient is the
-leading coefficient. -/
-theorem isUnit_powerSeriesPart {f : K⸨X⸩} (hf : f ≠ 0) : IsUnit f.powerSeriesPart := by
-  rw [isUnit_iff_constantCoeff, ← coeff_zero_eq_constantCoeff_apply,
-    _root_.LaurentSeries.powerSeriesPart_coeff, Nat.cast_zero, add_zero, isUnit_iff_ne_zero]
-  exact coeff_order_eq_zero.not.mpr hf
-
-/-- A nonzero Laurent series `f` has valuation `exp (-ord f)`. -/
-theorem valuation_eq_exp_neg_order {f : K⸨X⸩} (hf : f ≠ 0) : Valued.v f = exp (-f.order) := by
-  nth_rw 1 [← f.single_order_mul_powerSeriesPart]
-  rw [map_mul, valuation_coe_of_isUnit (isUnit_powerSeriesPart hf), mul_one,
-    _root_.LaurentSeries.valuation_single_zpow]
-
-/-- A nonzero power series `g` has valuation `exp (-ord g)` in `K⸨X⸩`. -/
-theorem valuation_coe {g : K⟦X⟧} (hg : g ≠ 0) :
-    Valued.v (g : K⸨X⸩) = exp (-(g.order.toNat : ℤ)) := by
-  have hu : IsUnit g.divXPowOrder := by
-    rw [isUnit_iff_constantCoeff, isUnit_iff_ne_zero]
-    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hg
-  nth_rw 1 [← X_pow_order_mul_divXPowOrder (f := g)]
-  rw [PowerSeries.coe_mul, map_mul, PowerSeries.coe_pow, _root_.LaurentSeries.valuation_X_pow,
-    valuation_coe_of_isUnit hu, mul_one]
 
 variable {φ : K⟦X⟧} (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0)
 
@@ -184,21 +152,25 @@ theorem continuous_substAlgHom : Continuous (substAlgHom hφ hφ₀) := by
   exact (mul_le_of_le_one_left' (pow_le_one' hf.2.le m)).trans_lt hf.1
 
 /-- Substituting `φ` and then `ψ` is substituting `φ (ψ)`. The hypotheses on `φ (ψ)` follow from
-those on `φ` and `ψ` (`PowerSeries.constantCoeff_subst_eq_zero`, `PowerSeries.subst_eq_zero_iff`),
-and are taken as arguments so that any proofs of them can be used. -/
-theorem substAlgHom_comp_substAlgHom {ψ : K⟦X⟧} (hψ : constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0)
-    (hφψ : constantCoeff (φ.subst ψ : K⟦X⟧) = 0) (hφψ₀ : (φ.subst ψ : K⟦X⟧) ≠ 0) :
-    (substAlgHom hψ hψ₀).comp (substAlgHom hφ hφ₀) = substAlgHom hφψ hφψ₀ := by
+those on `φ` and `ψ` (`PowerSeries.constantCoeff_subst_eq_zero`,
+`PowerSeries.subst_eq_zero_iff`). -/
+theorem substAlgHom_comp_substAlgHom {ψ : K⟦X⟧} (hψ : constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0) :
+    (substAlgHom hψ hψ₀).comp (substAlgHom hφ hφ₀) =
+      substAlgHom (constantCoeff_subst_eq_zero hψ φ hφ)
+        ((subst_eq_zero_iff hψ hψ₀).not.mpr hφ₀) := by
   refine AlgHom.toRingHom_injective (IsFractionRing.ringHom_ext (A := K⟦X⟧) fun f ↦ ?_)
   rw [RingHom.coe_coe, RingHom.coe_coe, AlgHom.comp_apply, _root_.LaurentSeries.coe_algebraMap,
-    substAlgHom_coe, substAlgHom_coe, substAlgHom_coe,
+    substAlgHom_coe, substAlgHom_coe,
     subst_comp_subst_apply (.of_constantCoeff_zero' hφ) (.of_constantCoeff_zero' hψ)]
+  exact (substAlgHom_coe _ _ f).symm
 
 /-- Substituting `φ` and then `ψ` is substituting `φ (ψ)`. -/
-theorem substAlgHom_substAlgHom {ψ : K⟦X⟧} (hψ : constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0)
-    (hφψ : constantCoeff (φ.subst ψ : K⟦X⟧) = 0) (hφψ₀ : (φ.subst ψ : K⟦X⟧) ≠ 0) (f : K⸨X⸩) :
-    substAlgHom hψ hψ₀ (substAlgHom hφ hφ₀ f) = substAlgHom hφψ hφψ₀ f :=
-  congr($(substAlgHom_comp_substAlgHom hφ hφ₀ hψ hψ₀ hφψ hφψ₀) f)
+theorem substAlgHom_comp_substAlgHom_apply {ψ : K⟦X⟧} (hψ : constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0)
+    (f : K⸨X⸩) :
+    substAlgHom hψ hψ₀ (substAlgHom hφ hφ₀ f) =
+      substAlgHom (constantCoeff_subst_eq_zero hψ φ hφ)
+        ((subst_eq_zero_iff hψ hψ₀).not.mpr hφ₀) f :=
+  congr($(substAlgHom_comp_substAlgHom hφ hφ₀ hψ hψ₀) f)
 
 /-- The ramified substitution `X ↦ X ^ e`, for `e ≠ 0`, multiplies all exponents by `e`: it is the
 exponent embedding `HahnSeries.embDomainRingHom` along `n ↦ e * n`. -/
