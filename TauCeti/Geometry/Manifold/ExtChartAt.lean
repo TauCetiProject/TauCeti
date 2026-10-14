@@ -65,6 +65,20 @@ image. This condition does not install a measurable-space structure on the manif
 def IsChartMeasurable [MeasurableSpace E] (s : Set M) : Prop :=
   ∀ x : M, MeasurableSet ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' s)
 
+/-- The empty set is chart measurable without a compatibility assumption on the model measure. -/
+@[simp]
+theorem isChartMeasurable_empty [MeasurableSpace E] :
+    IsChartMeasurable (I := I) (∅ : Set M) := by
+  intro x
+  simp only [Set.preimage_empty, Set.inter_empty, MeasurableSet.empty]
+
+/-- The whole manifold is chart measurable when open model sets are measurable. -/
+@[simp]
+theorem isChartMeasurable_univ [MeasurableSpace E] [OpensMeasurableSpace E] :
+    IsChartMeasurable (I := I) (Set.univ : Set M) := by
+  intro x
+  simpa only [Set.preimage_univ, Set.inter_univ] using measurableSet_extChartAt_target (I := I) x
+
 /-- Chart measurability is equivalent to measurability of the source-restricted chart images. -/
 theorem isChartMeasurable_iff [MeasurableSpace E] (s : Set M) :
     IsChartMeasurable (I := I) s ↔
@@ -85,12 +99,25 @@ theorem IsChartMeasurable.inter [MeasurableSpace E] {s t : Set M}
   rw [Set.preimage_inter, Set.inter_inter_distrib_left]
   exact (hs x).inter (ht x)
 
+/-- Chart measurability is closed under unions. -/
+theorem IsChartMeasurable.union [MeasurableSpace E] {s t : Set M}
+    (hs : IsChartMeasurable (I := I) s) (ht : IsChartMeasurable (I := I) t) :
+    IsChartMeasurable (I := I) (s ∪ t) := by
+  intro x
+  rw [Set.preimage_union, Set.inter_union_distrib_left]
+  exact (hs x).union (ht x)
+
 /-- Chart measurability is closed under differences. -/
 theorem IsChartMeasurable.diff [MeasurableSpace E] {s t : Set M}
     (hs : IsChartMeasurable (I := I) s) (ht : IsChartMeasurable (I := I) t) :
     IsChartMeasurable (I := I) (s \ t) := by
   intro x
   simpa only [Set.preimage_sdiff, Set.inter_sdiff_distrib_left] using (hs x).diff (ht x)
+
+/-- Chart measurability is closed under complements when open model sets are measurable. -/
+theorem IsChartMeasurable.compl [MeasurableSpace E] [OpensMeasurableSpace E] {s : Set M}
+    (hs : IsChartMeasurable (I := I) s) : IsChartMeasurable (I := I) sᶜ := by
+  simpa only [Set.compl_eq_univ_sdiff] using (isChartMeasurable_univ (I := I)).diff hs
 
 /-- A chart-measurable set contained in a chart source has measurable coordinate image. -/
 theorem IsChartMeasurable.image_extChartAt [MeasurableSpace E] {s : Set M}
