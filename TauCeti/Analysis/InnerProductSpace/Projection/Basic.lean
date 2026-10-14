@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
@@ -80,23 +81,34 @@ theorem norm_starProjection_comp_starProjection_comm :
     (norm_starProjection_comp_starProjection_le V U)
 
 /-- A map `T P_U` that factors through the projection onto `U` has rank at most `dim U`. -/
-theorem finrank_range_comp_starProjection_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 U] (T : E →L[𝕜] F) :
-    Module.finrank 𝕜 (LinearMap.range ((T ∘L U.starProjection : E →L[𝕜] F) : E →ₗ[𝕜] F)) ≤
+theorem finrank_range_comp_starProjection_le {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    [FiniteDimensional 𝕜 U] (T : E →ₗ[𝕜] F) :
+    Module.finrank 𝕜 (LinearMap.range (T ∘ₗ (U.starProjection : E →ₗ[𝕜] E))) ≤
       Module.finrank 𝕜 U := by
-  have hU : LinearMap.range (U.starProjection : E →ₗ[𝕜] E) = U := range_starProjection U
-  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp, hU]
+  rw [LinearMap.range_comp, range_starProjection]
   exact finrank_map_le _ _
 
 omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
-/-- For subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same dimension. -/
-theorem finrank_inf_orthogonal_comm [FiniteDimensional 𝕜 E]
+/-- For finite-dimensional subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same
+dimension. -/
+theorem finrank_inf_orthogonal_comm [FiniteDimensional 𝕜 U] [FiniteDimensional 𝕜 V]
     (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
     Module.finrank 𝕜 ↥(U ⊓ Vᗮ) = Module.finrank 𝕜 ↥(V ⊓ Uᗮ) := by
-  have h₁ := finrank_sup_add_finrank_inf_eq U Vᗮ
-  have h₂ := finrank_add_finrank_orthogonal (U ⊔ Vᗮ)
-  rw [← inf_orthogonal, orthogonal_orthogonal, inf_comm] at h₂
-  have h₃ := finrank_add_finrank_orthogonal V
+  -- `U ⊓ Vᗮ` and `V ⊓ Uᗮ` are the kernels of `P_V|_U : U → V` and of its adjoint `P_U|_V`, and a
+  -- map and its adjoint have the same rank.
+  have hker (U V : Submodule 𝕜 E) [FiniteDimensional 𝕜 U] [FiniteDimensional 𝕜 V] :
+      Module.finrank 𝕜 ↥(U ⊓ Vᗮ) = Module.finrank 𝕜
+        (LinearMap.ker (V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype)) := by
+    rw [LinearMap.ker_comp, ← map_comap_subtype, finrank_map_subtype_eq]
+    exact congrArg (fun W : Submodule 𝕜 E ↦ Module.finrank 𝕜 (W.comap U.subtype))
+      ker_orthogonalProjectionOnto.symm
+  let T : U →ₗ[𝕜] V := V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype
+  have hT : T.adjoint = U.orthogonalProjectionOnto.toLinearMap ∘ₗ V.subtype :=
+    ((LinearMap.eq_adjoint_iff _ _).2 fun v u ↦ by simp [T]).symm
+  have h₁ := T.finrank_range_add_finrank_ker
+  have h₂ := T.adjoint.finrank_range_add_finrank_ker
+  rw [T.finrank_range_adjoint, hT, ← hker] at h₂
+  rw [← hker] at h₁
   omega
 
 /-- For finite-dimensional subspaces with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on

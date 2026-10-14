@@ -159,6 +159,10 @@ theorem principalSines_def :
     U.principalSines V = (U.sinThetaMap V : E →ₗ[𝕜] E).singularValues :=
   (rfl)
 
+theorem principalAngles_def :
+    U.principalAngles V = (U.principalSines V).mapRange Real.arcsin Real.arcsin_zero :=
+  (rfl)
+
 theorem principalAngles_apply (i : ℕ) :
     U.principalAngles V i = Real.arcsin (U.principalSines V i) := by
   rw [principalAngles, Finsupp.mapRange_apply]
