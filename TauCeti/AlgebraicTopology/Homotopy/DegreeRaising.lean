@@ -16,9 +16,10 @@ public import TauCeti.Topology.MappingSpace.Sphere.DoubleLoop
 
 A double loop is a loop in the loop space, so evaluation on the circle gives a map
 `S¹ × Ω²X → ΩX` (`TauCeti.BasedTopologicalSpace.evalCircle`). The circle is parametrized by the
-standard loop `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`) both in this identification of double
-loops with maps from the circle and in the fundamental class below, which is the class of that same
-loop. So `β_*` is oriented by the standard parametrization of the interval and the circle. On singular homology with
+standard loop `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`) both in this identification of
+double loops with maps from the circle and in the fundamental class below, which is the class of
+that same loop. So `β_*` is oriented by the standard parametrization of the interval and the
+circle. On singular homology with
 coefficients in the unit `𝟙` of a monoidal category such as `ModuleCat R`, composing the cross
 product with the fundamental class of the circle with the map induced by this evaluation gives the
 degree-raising map
