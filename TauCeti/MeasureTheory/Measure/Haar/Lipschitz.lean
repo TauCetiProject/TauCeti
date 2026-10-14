@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.Hausdorff
+public import Mathlib.Geometry.Euclidean.Volume.Measure
 
 /-!
 # Lipschitz images of Haar-null sets
@@ -17,17 +18,21 @@ on the source and the target. In dimension `d` the Hausdorff measure `μH[d]` is
 measure, so every additive Haar measure is mutually absolutely continuous with it. Lipschitz maps
 increase the Hausdorff `d`-measure by at most the factor `K ^ d`
 (`LipschitzOnWith.hausdorffMeasure_image_le`), and a set of zero Hausdorff `d`-measure has zero
-Hausdorff `d'`-measure for every `d' ≥ d`.
+Hausdorff `d'`-measure for every `d' ≥ d`. The same factor `K ^ d` bounds the growth of the
+normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]`.
 
 ## Main statements
 
 * `LipschitzOnWith.addHaar_image_eq_zero` — a map Lipschitz on a Haar-null set has a Haar-null
   image, from a finite-dimensional real normed space to one of at least the same dimension.
+* `LipschitzOnWith.euclideanHausdorffMeasure_image_le` — a `K`-Lipschitz map increases `μHE[d]`
+  by at most the factor `K ^ d`.
 -/
 
 public section
 
 open MeasureTheory MeasureTheory.Measure Module
+open scoped NNReal ENNReal
 
 namespace LipschitzOnWith
 
@@ -55,5 +60,26 @@ theorem addHaar_image_eq_zero (μ : Measure E) [IsAddHaarMeasure μ] (ν : Measu
   refine absolutelyContinuous_isAddHaarMeasure ν (μH[finrank ℝ F] : Measure F) ?_
   exact le_antisymm ((hausdorffMeasure_mono (by exact_mod_cast hdim) _).trans himage.le)
     (zero_le)
+
+end LipschitzOnWith
+
+namespace LipschitzOnWith
+
+variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+
+/-- A map that is `K`-Lipschitz on `s` increases the `d`-dimensional Euclidean Hausdorff measure
+of `s` by at most the factor `K ^ d`. -/
+theorem euclideanHausdorffMeasure_image_le {K : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : LipschitzOnWith K f s) (d : ℕ) :
+    μHE[d] (f '' s) ≤ (K : ℝ≥0∞) ^ d * μHE[d] s := by
+  simp_rw [euclideanHausdorffMeasure_def, Measure.smul_apply, nnreal_smul_coe_apply]
+  calc _ ≤ (addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin d))) μH[d] : ℝ≥0∞) *
+        ((K : ℝ≥0∞) ^ (d : ℝ) * μH[d] s) := by
+        gcongr
+        exact hf.hausdorffMeasure_image_le d.cast_nonneg
+    _ = _ := by
+        rw [ENNReal.rpow_natCast]
+        exact mul_left_comm _ _ _
 
 end LipschitzOnWith
