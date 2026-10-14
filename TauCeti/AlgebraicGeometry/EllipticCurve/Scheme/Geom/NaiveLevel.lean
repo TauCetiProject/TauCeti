@@ -9,6 +9,7 @@ import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
 
 /-!
 # Naive level structures on an elliptic curve
@@ -29,10 +30,11 @@ For `A = ℤ/Nℤ` with `N ≠ 0` such a homomorphism is an `S`-point `P` of `E[
 (`EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`), that is, a basis of the `N`-torsion in
 every geometric fibre in which `N` is invertible: over a separably closed field in which `N` is
 invertible, the injective homomorphisms `(ℤ/Nℤ)² →* E(K)` are exactly those with image `E[N](K)`
-(`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`), and every elliptic curve there has
-one (`EllipticCurveGeom.exists_isFiberwiseInjective`). Over a base on which `N` is invertible these
-are the naive `[Γ₁(N)]`- and `[Γ(N)]`-structures, which are compared with Drinfeld level structures
-in Katz–Mazur §3.7.
+(`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`), every elliptic curve there has
+one (`EllipticCurveGeom.exists_isFiberwiseInjective`), and any two differ by a unique matrix in
+`GL₂(ℤ/Nℤ)` acting on `(ℤ/Nℤ)²` (`EllipticCurveGeom.IsFiberwiseInjective.existsUnique_eq_comp`).
+Over a base on which `N` is invertible these are the naive `[Γ₁(N)]`- and `[Γ(N)]`-structures,
+which are compared with Drinfeld level structures in Katz–Mazur §3.7.
 
 The condition is pointwise, so it is stable under arbitrary base change
 (`EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`), and it descends along surjective base
@@ -66,6 +68,8 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`: over a
   separably closed field in which `N` is invertible, the naive `[Γ(N)]`-structures are the bases of
   `E[N](K)`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.existsUnique_eq_comp`:
+  there, `GL₂(ℤ/Nℤ)` acts simply transitively on the naive `[Γ(N)]`-structures.
 
 ## References
 
@@ -296,6 +300,30 @@ theorem exists_isFiberwiseInjective (hN : (N : K) ≠ 0) :
   have hg : IsPullback e.inv E.structureMap W.toEllipticCurveGeom.structureMap (𝟙 _) :=
     .of_horiz_isIso ⟨by simp [Iso.inv_comp_eq, he]⟩
   exact ⟨_, hφW.pointsPullback hg (by simp [← h0])⟩
+
+/-- **`GL₂(ℤ/Nℤ)` acts simply transitively on the naive `[Γ(N)]`-structures over a separably
+closed field.** If `N` is invertible in `K`, then any two homomorphisms
+`φ ψ : (ℤ/Nℤ)² →* E(K)` injective on fibres differ by a unique invertible matrix `g` acting on
+`(ℤ/Nℤ)²`: `ψ = φ ∘ g`. Both are isomorphisms onto `E[N](K)`, and `g` is the matrix of
+`φ⁻¹ ∘ ψ`. -/
+theorem IsFiberwiseInjective.existsUnique_eq_comp (hN : (N : K) ≠ 0)
+    {φ ψ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)}
+    (hφ : E.IsFiberwiseInjective φ) (hψ : E.IsFiberwiseInjective ψ) :
+    ∃! g : GL (Fin 2) (ZMod N), ψ = φ.comp (zmodProdMulAutEquiv N g).toMonoidHom := by
+  have hφi := (isFiberwiseInjective_iff_injective E φ).mp hφ
+  have hψi := (isFiberwiseInjective_iff_injective E ψ).mp hψ
+  -- `φ` and `ψ` are isomorphisms onto the same subgroup `E[N](K)`
+  have hrange : ψ.range = φ.range := by
+    rw [(isFiberwiseInjective_iff_range_eq_ker E hN ψ).mp hψ,
+      (isFiberwiseInjective_iff_range_eq_ker E hN φ).mp hφ]
+  let σ := (MonoidHom.ofInjective hψi).trans
+    ((MulEquiv.subgroupCongr hrange).trans (MonoidHom.ofInjective hφi).symm)
+  have hσ : ψ = φ.comp σ.toMonoidHom := MonoidHom.ext fun a ↦ by
+    simp [σ, MonoidHom.apply_ofInjective_symm, MonoidHom.ofInjective_apply]
+  refine ⟨(zmodProdMulAutEquiv N).symm σ, by simpa using hσ, fun g hg ↦ ?_⟩
+  rw [MulEquiv.eq_symm_apply]
+  refine MulEquiv.ext fun a ↦ hφi ?_
+  simpa using (DFunLike.congr_fun hg a).symm.trans (DFunLike.congr_fun hσ a)
 
 end SepClosed
 
