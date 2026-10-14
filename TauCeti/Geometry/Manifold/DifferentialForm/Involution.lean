@@ -173,20 +173,24 @@ end Involution
 
 /-- The invariant part of a compactly supported form has compact support under a proper map. -/
 theorem isCompact_tsupport_invariantPart {τ : X → X} (hτ : IsProperMap τ)
-    {φ : RoughForm I X F k} (hφ : IsCompact φ.tsupport) :
-    IsCompact (invariantPart τ φ).tsupport := by
+    {φ : RoughForm I X F k}
+    (hφ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (invariantPart τ φ)) := by
   rw [invariantPart]
-  exact (hφ.union (φ.isCompact_tsupport_mpullback hτ hφ)).of_isClosed_subset
-    (RoughForm.isClosed_tsupport _)
-    ((RoughForm.tsupport_smul_subset _ _).trans (RoughForm.tsupport_add_subset _ _))
+  exact (hφ.union (RoughForm.isCompact_tsupport_mpullback hτ hφ)).of_isClosed_subset
+    (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
+    ((RoughForm.tsupport_smul_subset _ _).trans
+      (tsupport_add (α := E [⋀^Fin k]→L[ℝ] F) _ _))
 
 /-- The anti-invariant part of a compactly supported form has compact support under a proper map. -/
 theorem isCompact_tsupport_antiInvariantPart {τ : X → X} (hτ : IsProperMap τ)
-    {φ : RoughForm I X F k} (hφ : IsCompact φ.tsupport) :
-    IsCompact (antiInvariantPart τ φ).tsupport := by
+    {φ : RoughForm I X F k}
+    (hφ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (antiInvariantPart τ φ)) := by
   rw [antiInvariantPart]
-  exact (hφ.union (φ.isCompact_tsupport_mpullback hτ hφ)).of_isClosed_subset
-    (RoughForm.isClosed_tsupport _)
-    ((RoughForm.tsupport_smul_subset _ _).trans (RoughForm.tsupport_sub_subset _ _))
+  exact (hφ.union (RoughForm.isCompact_tsupport_mpullback hτ hφ)).of_isClosed_subset
+    (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
+    ((RoughForm.tsupport_smul_subset _ _).trans
+      (tsupport_sub (α := E [⋀^Fin k]→L[ℝ] F) _ _))
 
 end TauCeti

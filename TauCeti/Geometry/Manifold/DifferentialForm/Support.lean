@@ -11,11 +11,10 @@ public import Mathlib.Topology.Maps.Proper.Basic
 /-!
 # Topological support of rough differential forms
 
-This file defines the topological support of a rough differential form and establishes its basic
-behavior under the pointwise operations and pullback.  A rough form is a dependent function whose
-fibre at `x` is `TangentSpace I x [⋀^Fin k]→L[ℝ] F`, so Mathlib's `tsupport` only elaborates on it
-once the model-space codomain `E [⋀^Fin k]→L[ℝ] F` is supplied explicitly.  `RoughForm.tsupport`
-is Mathlib's `tsupport` at that codomain, and the basic lemmas below are Mathlib's.
+This file establishes how the topological support of a rough differential form behaves under
+scalar multiplication and pullback.  A rough form is a dependent function whose fibre at `x` is
+`TangentSpace I x [⋀^Fin k]→L[ℝ] F`, so Mathlib's `tsupport` is used with the model-space codomain
+`E [⋀^Fin k]→L[ℝ] F` supplied explicitly.
 -/
 
 public section
@@ -36,28 +35,6 @@ variable {E H X E' H' Y F : Type*}
 
 namespace RoughForm
 
-/-- The topological support of a rough form: Mathlib's `tsupport`, read with the model-space
-codomain `E [⋀^Fin k]→L[ℝ] F` of every fibre. -/
-def tsupport (φ : RoughForm I X F k) : Set X := _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ
-
-/-- Every point where a rough form is nonzero belongs to its topological support. -/
-theorem support_subset_tsupport (φ : RoughForm I X F k) : {x | φ x ≠ 0} ⊆ φ.tsupport :=
-  subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ
-
-/-- The topological support of a rough form is closed. -/
-theorem isClosed_tsupport (φ : RoughForm I X F k) : IsClosed φ.tsupport :=
-  _root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ
-
-/-- The support of a sum is contained in the union of the supports. -/
-theorem tsupport_add_subset [ContinuousAdd F] (φ ψ : RoughForm I X F k) :
-    (φ + ψ).tsupport ⊆ φ.tsupport ∪ ψ.tsupport :=
-  tsupport_add (α := E [⋀^Fin k]→L[ℝ] F) φ ψ
-
-/-- The support of a difference is contained in the union of the supports. -/
-theorem tsupport_sub_subset [IsTopologicalAddGroup F] (φ ψ : RoughForm I X F k) :
-    (φ - ψ).tsupport ⊆ φ.tsupport ∪ ψ.tsupport :=
-  tsupport_sub (α := E [⋀^Fin k]→L[ℝ] F) φ ψ
-
 section SMul
 
 variable [ContinuousConstSMul ℝ F]
@@ -67,13 +44,14 @@ variable [ContinuousConstSMul ℝ F]
 -- directly.
 /-- Scalar multiplication does not enlarge the support of a rough form. -/
 theorem tsupport_smul_subset (c : ℝ) (φ : RoughForm I X F k) :
-    (c • φ).tsupport ⊆ φ.tsupport := by
-  refine closure_minimal ?_ φ.isClosed_tsupport
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (c • φ) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ := by
+  refine closure_minimal ?_ (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ)
   intro x hx
   by_contra hxsupport
   have hφ : φ x = 0 := by
     by_contra h
-    exact hxsupport (φ.support_subset_tsupport h)
+    exact hxsupport (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ h)
   apply hx
   ext v
   simp [hφ]
@@ -83,10 +61,13 @@ end SMul
 
 /-- The topological support of a pullback is contained in the preimage of the original support. -/
 theorem tsupport_mpullback_subset_preimage {f : X → Y} (hf : Continuous f)
-    (φ : RoughForm I' Y F k) : (mpullback I I' f φ).tsupport ⊆ f ⁻¹' φ.tsupport := by
-  refine closure_minimal ?_ (φ.isClosed_tsupport.preimage hf)
+    (φ : RoughForm I' Y F k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (mpullback I I' f φ) ⊆
+      f ⁻¹' _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ := by
+  refine closure_minimal ?_
+    ((_root_.isClosed_tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ).preimage hf)
   intro x hx
-  apply φ.support_subset_tsupport
+  apply subset_tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ
   intro hφ
   apply hx
   ext v
@@ -95,10 +76,12 @@ theorem tsupport_mpullback_subset_preimage {f : X → Y} (hf : Continuous f)
 
 /-- Pullback by a proper map preserves compact topological support. -/
 theorem isCompact_tsupport_mpullback {f : X → Y} (hf : IsProperMap f)
-    {φ : RoughForm I' Y F k} (hφ : IsCompact φ.tsupport) :
-    IsCompact (mpullback I I' f φ).tsupport :=
+    {φ : RoughForm I' Y F k}
+    (hφ : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (mpullback I I' f φ)) :=
   (hf.isCompact_preimage hφ).of_isClosed_subset
-    (isClosed_tsupport _) (φ.tsupport_mpullback_subset_preimage hf.continuous)
+    (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
+    (tsupport_mpullback_subset_preimage hf.continuous φ)
 
 end RoughForm
 
