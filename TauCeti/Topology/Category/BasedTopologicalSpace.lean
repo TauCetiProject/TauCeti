@@ -132,6 +132,17 @@ instance : Category BasedTopologicalSpace.{u} where
   comp_id := Hom.id_comp
   assoc f g h := (Hom.comp_assoc h g f).symm
 
+/-- The identity of the category of based spaces is `Hom.id`. -/
+@[simp]
+theorem id_eq_hom_id (X : BasedTopologicalSpace.{u}) : (𝟙 X : X ⟶ X) = Hom.id X :=
+  rfl
+
+/-- Composition in the category of based spaces is `Hom.comp`, in the opposite order. -/
+@[simp]
+theorem comp_eq_hom_comp {X Y Z : BasedTopologicalSpace.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    f ≫ g = Hom.comp g f :=
+  rfl
+
 end BasedTopologicalSpace
 
 end TauCeti
