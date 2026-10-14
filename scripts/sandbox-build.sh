@@ -63,10 +63,13 @@ lake build --iofail 2>&1 | { tee --output-error=warn "$TELEMETRY/lake-build.log"
 AUDIT_DRIVER_EXE="$(dirname "$LINT_DRIVER_EXE")/audit-driver"
 test -x "$AUDIT_DRIVER_EXE"
 phase audit-setup
-# Match the former per-process watchdog deadline; each check still returns its own failure.
+# This is a full-library pass, so use the existing environment-lint liveness budget,
+# not the 300s compiler deadline. A shared process must not shrink the former audits
+# into one per-module compilation budget. Phase telemetry exposes growth before tuning
+# this trusted bound; timeout remains a process/liveness failure, not an audit finding.
 AUDIT_TIMEOUT="$(command -v timeout)"
-AUDIT_PHASES_FILE="$TELEMETRY/phases.tsv" lake env "$AUDIT_TIMEOUT" --signal=TERM --kill-after=10s \
-  300s "$AUDIT_DRIVER_EXE"
+AUDIT_PHASES_FILE="$TELEMETRY/phases.tsv" lake env "$AUDIT_TIMEOUT" --signal=TERM --kill-after=30 \
+  3000s "$AUDIT_DRIVER_EXE"
 
 # Environment lint (the compiled driver in LINT_DRIVER_EXE): Mathlib's default `#lint` set minus
 # docBlame, plus a
