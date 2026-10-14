@@ -234,7 +234,7 @@ def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
 
 /-- Twisted chains in a simplicial degree are the coproduct of the coefficient fibres at the
 initial vertices of its singular simplices. -/
-def isColimitTwistedChainsCofan (n : SimplexCategoryᵒᵖ) :
+def isColimitCofanTwistedChains (n : SimplexCategoryᵒᵖ) :
     IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) :=
   coproductIsCoproduct _
 

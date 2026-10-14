@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
-public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
 
 /-!
 # The tensor diagonal of twisted singular chains
@@ -46,9 +44,19 @@ namespace TauCeti.LocalCoefficientSystem
 variable {R : Type (max v w)} [CommRing R] {X Y : TopCat.{v}}
   (L K : LocalCoefficientSystem.{max v w, v, max v w} R X)
 
+/-- Compute tensor composition from the two simplex-inclusion equations, keeping the
+coefficient fibres in the presentations selected by those inclusions. -/
+private lemma tensor_ιTwistedChains_comp (n : SimplexCategoryᵒᵖ)
+    (σ : (TopCat.toSSet.obj X).obj n) {A B : ModuleCat.{max v w} R}
+    {a : (twistedChains L).obj n ⟶ A} {b : (twistedChains K).obj n ⟶ B}
+    {c : L.obj (initialVertex σ) ⟶ A} {d : K.obj (initialVertex σ) ⟶ B}
+    (h₁ : ιTwistedChains L σ ≫ a = c) (h₂ : ιTwistedChains K σ ≫ b = d) :
+    (ιTwistedChains L σ ⊗ₘ ιTwistedChains K σ) ≫ (a ⊗ₘ b) = c ⊗ₘ d := by
+  rw [tensorHom_comp_tensorHom, h₁, h₂]
+
 private def twistedChainsTensorDiagonalApp (n : SimplexCategoryᵒᵖ) :
     (twistedChains (L ⊗ K)).obj n ⟶ (twistedChains L ⊗ twistedChains K).obj n :=
-  (isColimitTwistedChainsCofan (L ⊗ K) n).desc
+  (isColimitCofanTwistedChains (L ⊗ K) n).desc
     (Cofan.mk _ fun σ ↦ ιTwistedChains L σ ⊗ₘ ιTwistedChains K σ)
 
 @[reassoc]
@@ -56,7 +64,7 @@ private lemma ιTwistedChains_twistedChainsTensorDiagonalApp (n : SimplexCategor
     (σ : (TopCat.toSSet.obj X).obj n) :
     ιTwistedChains (L ⊗ K) σ ≫ twistedChainsTensorDiagonalApp L K n =
       ιTwistedChains L σ ⊗ₘ ιTwistedChains K σ :=
-  (isColimitTwistedChainsCofan (L ⊗ K) n).fac
+  (isColimitCofanTwistedChains (L ⊗ K) n).fac
     (Cofan.mk _ fun τ ↦ ιTwistedChains L τ ⊗ₘ ιTwistedChains K τ) ⟨σ⟩
 
 /-- The tensor diagonal of twisted singular simplicial chains sends the tensor-coefficient
@@ -65,8 +73,9 @@ def twistedChainsTensorDiagonal :
     twistedChains (L ⊗ K) ⟶ twistedChains L ⊗ twistedChains K where
   app := twistedChainsTensorDiagonalApp L K
   naturality {m n} α := by
-    -- Tensor normalization changes the dependent fibre presentation. Typed transitivity keeps
-    -- the fibres selected by the simplex inclusions until their characteristic equations apply.
+    -- `simp only` with the inclusion equations and `tensorObj_map` rewrites the left side,
+    -- then cannot match the right inclusion-diagonal composite after its tensor fibre changes
+    -- presentation. Typed transitivity preserves those carriers until the equations apply.
     apply twistedChains_hom_ext
     intro σ
     refine (ιTwistedChains_map_assoc (L ⊗ K) α σ _).trans ?_
@@ -74,8 +83,8 @@ def twistedChainsTensorDiagonal :
       (ιTwistedChains_twistedChainsTensorDiagonalApp L K n _)).trans ?_
     refine Eq.trans ?_ (ιTwistedChains_twistedChainsTensorDiagonalApp_assoc L K m σ _).symm
     exact (tensorHom_comp_tensorHom _ _ _ _).trans
-      ((congrArg₂ (fun a b ↦ a ⊗ₘ b) (ιTwistedChains_map L α σ).symm
-        (ιTwistedChains_map K α σ).symm).trans (tensorHom_comp_tensorHom _ _ _ _).symm)
+      (tensor_ιTwistedChains_comp L K m σ
+        (ιTwistedChains_map L α σ) (ιTwistedChains_map K α σ)).symm
 
 /-- On the coefficient fibre of a simplex, the tensor diagonal is the tensor product of the
 two simplex inclusions. -/
@@ -112,40 +121,38 @@ lemma twistedChainsTensorDiagonal_naturality (η : L ⟶ L') (θ : K ⟶ K') :
   funext n
   apply twistedChains_hom_ext
   intro σ
+  -- `simp only` reaches the tensor of coefficient components but then cannot match the
+  -- right inclusion-diagonal composite on its normalized dependent tensor fibre.
   refine (ιTwistedChains_twistedChainsCoefficientMap_app_assoc (η ⊗ₘ θ) n σ _).trans ?_
   refine (congrArg ((η ⊗ₘ θ).app (initialVertex σ) ≫ ·)
     (ιTwistedChains_twistedChainsTensorDiagonal_app L' K' n σ)).trans ?_
   refine Eq.trans ?_ (ιTwistedChains_twistedChainsTensorDiagonal_app_assoc L K n σ _).symm
   exact (tensorHom_comp_tensorHom _ _ _ _).trans
-    ((congrArg₂ (fun a b ↦ a ⊗ₘ b)
-      (ιTwistedChains_twistedChainsCoefficientMap_app η n σ).symm
-      (ιTwistedChains_twistedChainsCoefficientMap_app θ n σ).symm).trans
-        (tensorHom_comp_tensorHom _ _ _ _).symm)
+    (tensor_ιTwistedChains_comp L K n σ
+      (ιTwistedChains_twistedChainsCoefficientMap_app η n σ)
+      (ιTwistedChains_twistedChainsCoefficientMap_app θ n σ)).symm
 
 section Space
 
 variable (f : X ⟶ Y) (L K : LocalCoefficientSystem.{max v w, v, max v w} R Y)
 
 /-- The tensor diagonal commutes with a continuous map. The pullback tensor comparison is the
-cotensorator of the existing pointwise monoidal pullback functor. -/
+canonical identity on coefficient fibres. -/
 @[reassoc]
 lemma twistedChainsTensorDiagonal_space_naturality :
     twistedChainsMap f (L ⊗ K) ≫ twistedChainsTensorDiagonal L K =
-      twistedChainsCoefficientMap (Functor.OplaxMonoidal.δ
-        ((Functor.whiskeringLeft _ _ (ModuleCat.{max v w} R)).obj
-          (FundamentalGroupoid.map f.hom)) L K) ≫
+      twistedChainsCoefficientMap (pullbackTensorIso f.hom L K).hom ≫
         twistedChainsTensorDiagonal ((pullback f.hom).obj L) ((pullback f.hom).obj K) ≫
           (twistedChainsMap f L ⊗ₘ twistedChainsMap f K) := by
   apply NatTrans.ext
   funext n
   apply twistedChains_hom_ext
   intro σ
-  -- Select the monoidal instance on the underlying whiskering functor: instance search does
-  -- not unfold the public pullback presentation. Its cotensorator is the identity on fibres.
-  let δ := Functor.OplaxMonoidal.δ
-    ((Functor.whiskeringLeft _ _ (ModuleCat.{max v w} R)).obj
-      (FundamentalGroupoid.map f.hom)) L K
-  have hδ : δ.app (initialVertex σ) = 𝟙 _ := rfl
+  -- `simp only` exposes the identity comparison, but cannot eliminate it or match the
+  -- diagonal equations across the pullback-tensor fibre presentations.
+  let δ := (pullbackTensorIso f.hom L K).hom
+  have hδ : δ.app (initialVertex σ) = 𝟙 _ :=
+    pullbackTensorIso_hom_app f.hom L K (initialVertex σ)
   refine (ιTwistedChains_twistedChainsMap_app_assoc f (L ⊗ K) n σ _).trans ?_
   refine (ιTwistedChains_twistedChainsTensorDiagonal_app L K n _).trans ?_
   refine Eq.trans ?_ (ιTwistedChains_twistedChainsCoefficientMap_app_assoc δ n σ _).symm
@@ -153,10 +160,9 @@ lemma twistedChainsTensorDiagonal_space_naturality :
   refine Eq.trans ?_ (Category.id_comp _).symm
   refine Eq.trans ?_ (ιTwistedChains_twistedChainsTensorDiagonal_app_assoc
     ((pullback f.hom).obj L) ((pullback f.hom).obj K) n σ _).symm
-  exact ((tensorHom_comp_tensorHom _ _ _ _).trans
-    (congrArg₂ (fun a b ↦ a ⊗ₘ b)
-      (ιTwistedChains_twistedChainsMap_app f L n σ)
-      (ιTwistedChains_twistedChainsMap_app f K n σ))).symm
+  exact (tensor_ιTwistedChains_comp ((pullback f.hom).obj L) ((pullback f.hom).obj K) n σ
+    (ιTwistedChains_twistedChainsMap_app f L n σ)
+    (ιTwistedChains_twistedChainsMap_app f K n σ)).symm
 
 end Space
 
