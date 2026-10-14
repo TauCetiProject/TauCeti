@@ -99,29 +99,13 @@ theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal (hB : B.IsSymm)
       IsSymm.isUnit_pairGramDet_of_dvd_apply_self (B := B) hB (heven (b 0)) h2 hpair
   have hv : LinearIndependent R v :=
     linearIndependent_of_isUnit_det isUnit_one.mem_nonZeroDivisors hG hGdet
-  have hspan : Submodule.span R (Set.range v) = Submodule.span R ({b 0, b i} : Set M) := by
-    congr 1
-    ext z
-    simp [v, Matrix.range_cons, Matrix.range_empty, or_comm]
   let S := Submodule.span R (Set.range v)
-  have hmod : (B.restrict S).IsModular 1 := by
-    dsimp only [S]
-    exact isModular_restrict_span_range isUnit_one.mem_nonZeroDivisors hG hGdet
-  let T := Submodule.span R ({b 0, b i} : Set M)
-  let e : S ≃ₗ[R] T := LinearEquiv.ofEq S T hspan
-  have hcongr : LinearMap.BilinForm.congr e (B.restrict S) = B.restrict T := by
-    ext x y
-    have he : e.symm = LinearEquiv.ofEq T S hspan.symm := rfl
-    simp only [LinearMap.BilinForm.congr_apply, LinearMap.BilinForm.restrict_apply,
-      LinearMap.domRestrict_apply, he, LinearEquiv.coe_ofEq_apply]
-  have hmodT : (B.restrict T).IsModular 1 := by
-    rw [← hcongr]
-    exact hmod.congr e
-  refine ⟨T, ?_, isModular_one_iff.mp hmodT, ?_⟩
-  · change finrank R (Submodule.span R ({b 0, b i} : Set M)) = 2
-    rw [← hspan, finrank_span_eq_card hv]
+  have hmod : (B.restrict S).IsModular 1 :=
+    isModular_restrict_span_range isUnit_one.mem_nonZeroDivisors hG hGdet
+  refine ⟨S, ?_, isModular_one_iff.mp hmod, ?_⟩
+  · rw [finrank_span_eq_card hv]
     decide
-  · exact hmodT.isCompl_orthogonal hB isUnit_one.mem_nonZeroDivisors
+  · exact hmod.isCompl_orthogonal hB isUnit_one.mem_nonZeroDivisors
       (fun _ _ ↦ one_dvd _)
 
 end LinearMap.BilinForm
