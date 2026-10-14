@@ -402,11 +402,15 @@ theorem distortionTau_time_one (h : K * θ ^ 2 < (N - 1) * π ^ 2) :
   · rw [distortionTau_of_le_one hN, ite_eq_right (h.trans_le (mul_nonpos_of_nonpos_of_nonneg
       (sub_nonpos.2 hN) (sq_nonneg π))).not_gt, ENNReal.ofReal_one]
 
-/-- For `N > 1`, below the critical distance, `τ_{K,N}^{(0)}(θ) = 0`. -/
-theorem distortionTau_time_zero (hN : 1 < N) (h : K * θ ^ 2 < (N - 1) * π ^ 2) :
+/-- Below the critical distance, `τ_{K,N}^{(0)}(θ) = 0`. -/
+@[simp]
+theorem distortionTau_time_zero (h : K * θ ^ 2 < (N - 1) * π ^ 2) :
     distortionTau K N 0 θ = 0 := by
-  rw [distortionTau_of_one_lt hN h, ENNReal.ofReal_zero,
-    ENNReal.zero_rpow_of_pos (by have := zero_lt_one.trans hN; positivity), zero_mul]
+  rcases lt_or_ge 1 N with hN | hN
+  · rw [distortionTau_of_one_lt hN h, ENNReal.ofReal_zero,
+      ENNReal.zero_rpow_of_pos (by have := zero_lt_one.trans hN; positivity), zero_mul]
+  · rw [distortionTau_of_le_one hN, ite_eq_right (h.trans_le (mul_nonpos_of_nonpos_of_nonneg
+      (sub_nonpos.2 hN) (sq_nonneg π))).not_gt, ENNReal.ofReal_zero]
 
 end Tau
 
