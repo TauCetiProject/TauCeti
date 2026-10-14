@@ -45,8 +45,9 @@ theorem cellAttachingMap_sphereMappingConeTopCell_apply (x : TopCat.diskBoundary
         (cellAttachingMap (sphereMappingConeTopCell h f)) x =
       sphereMappingConeSkeletonHomeomorph h f (f x.down) := by
   let _ := sphereMappingConeCWComplex h f
-  exact Subtype.ext ((coe_cellAttachingMap_apply _ x).trans
-    ((map_sphereMappingConeTopCell_unitBallHomeomorph_coe_sphere h f x.down).trans
-      (coe_sphereMappingConeSkeletonHomeomorph_apply h f _).symm))
+  apply Subtype.ext
+  rw [coe_cellAttachingMap_apply, coe_diskHomeomorphClosedBall_apply]
+  exact (map_sphereMappingConeTopCell_unitBallHomeomorph_coe_sphere h f x.down).trans
+    (coe_sphereMappingConeSkeletonHomeomorph_apply h f _).symm
 
 end TauCeti
