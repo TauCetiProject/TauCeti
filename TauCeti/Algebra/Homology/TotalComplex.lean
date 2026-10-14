@@ -44,6 +44,9 @@ compares the homology sequences of these short exact sequences.
   of bicomplexes.
 * `HomologicalComplex₂.isIso_totalAugmentation_single`: the total complex of a bicomplex with a
   single column is that column.
+* `HomologicalComplex₂.rowZeroShortComplex`: the degreewise split short exact sequence
+  `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`, where `HomologicalComplex₂.rowsSucc K` is the bicomplex
+  of the rows `≥ 1` of `K`.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
 * `HomologicalComplex₂.quasiIso_totalAugmentation_of_rows`: exact augmented rows make the
@@ -241,7 +244,7 @@ omit [HasFiniteCoproducts C] in
 /-- The rows `≥ 1` of `K`, reindexed so that row `q + 1` of `K` is row `q`. The summands are
 `(K.X p).X (q + 1)` up to reducible unfolding, which lets rewriting identify them with those of
 `K`. -/
-private abbrev rowsSucc : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ) where
+abbrev rowsSucc : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ) where
   X p :=
     { X q := (K.X p).X (q + 1)
       d q q' := (K.X p).d (q + 1) (q' + 1)
@@ -252,7 +255,7 @@ private abbrev rowsSucc : HomologicalComplex₂ C (ComplexShape.down ℕ) (Compl
     ext q; exact HomologicalComplex.congr_hom (K.d_comp_d p p' p'') (q + 1)
 
 /-- The inclusion of row `0` into the total complex. -/
-private noncomputable def rowZeroι :
+noncomputable def rowZeroι :
     ((eval C (ComplexShape.down ℕ) 0).mapHomologicalComplex (ComplexShape.down ℕ)).obj K ⟶
       K.total (ComplexShape.down ℕ) where
   f n := K.ιTotal (ComplexShape.down ℕ) n 0 n (by simp)
@@ -262,10 +265,12 @@ private noncomputable def rowZeroι :
       d₁_eq K _ (ComplexShape.down_mk _ _ rfl) 0 n (by simp)]
     simp
 
+/-- The inclusion of row `0` sends the summand `(K.X n).X 0` into the total complex in degree
+`n`. -/
 @[simp]
-private lemma rowZeroι_f (n : ℕ) :
+lemma rowZeroι_f (n : ℕ) :
     (rowZeroι K).f n = K.ιTotal (ComplexShape.down ℕ) n 0 n (by simp) :=
-  rfl
+  (rfl)
 
 /-- The projection of the total complex in degree `n + 1` onto the total complex of `rowsSucc K`
 in degree `n`, killing row `0`. -/
@@ -395,7 +400,7 @@ variable [HasZeroObject C]
 
 /-- The projection of the total complex onto the total complex of the rows `≥ 1`, placed one
 degree higher. -/
-private noncomputable def dropRowZero :
+noncomputable def dropRowZero :
     K.total (ComplexShape.down ℕ) ⟶
       ((rowsSucc K).total (ComplexShape.down ℕ)).extend embeddingDownNatSucc :=
   embeddingDownNatSucc.liftExtend (dropRowZeroAux K) (hasLift_dropRowZeroAux K)
@@ -409,14 +414,14 @@ private lemma dropRowZero_f_succ (n : ℕ) :
   exact Category.id_comp _
 
 @[reassoc (attr := simp)]
-private lemma rowZeroι_dropRowZero : rowZeroι K ≫ dropRowZero K = 0 := by
+lemma rowZeroι_dropRowZero : rowZeroι K ≫ dropRowZero K = 0 := by
   ext (_ | n)
   · exact (isZero_extend_X _ _ 0 fun _ ↦ by simp).eq_of_tgt _ _
   · simp [dropRowZero_f_succ]
 
 /-- The short complex `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`. It is an abbreviation so that its
 objects are reducibly those of `K`. -/
-private noncomputable abbrev rowZeroShortComplex :
+noncomputable abbrev rowZeroShortComplex :
     ShortComplex (HomologicalComplex C (ComplexShape.down ℕ)) :=
   ShortComplex.mk (rowZeroι K) (dropRowZero K) (rowZeroι_dropRowZero K)
 
@@ -495,7 +500,9 @@ end Preadditive
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 
-private lemma rowZeroShortComplex_shortExact
+/-- The short complex `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]` is short exact; it is split in each
+degree. -/
+lemma rowZeroShortComplex_shortExact
     (K : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)) :
     (rowZeroShortComplex K).ShortExact :=
   shortExact_of_degreewise_shortExact _ fun n ↦ (rowZeroShortComplexXSplitting K n).shortExact
