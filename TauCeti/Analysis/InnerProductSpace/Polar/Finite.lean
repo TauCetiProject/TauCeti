@@ -220,6 +220,30 @@ theorem polarFactor_adjoint (A : E →ₗ[𝕜] F) : A.adjoint.polarFactor = A.p
       rwa [← orthogonal_range, range_polarFactor, orthogonal_range]
     exact mem_ker.mp hy'
 
+/-- The polar decomposition of the adjoint, in terms of the adjoint of the polar factor:
+`A† = U† |A†|`. -/
+@[simp]
+theorem adjoint_polarFactor_comp_operatorAbs_adjoint (A : E →ₗ[𝕜] F) :
+    A.polarFactor.adjoint ∘ₗ A.adjoint.operatorAbs = A.adjoint := by
+  rw [← polarFactor_adjoint, polarFactor_comp_operatorAbs]
+
+/-- The polar decomposition of the adjoint, applied to a vector: `U† (|A†| y) = A† y`. -/
+@[simp]
+theorem adjoint_polarFactor_apply_operatorAbs_adjoint_apply (A : E →ₗ[𝕜] F) (y : F) :
+    A.polarFactor.adjoint (A.adjoint.operatorAbs y) = A.adjoint y :=
+  LinearMap.congr_fun A.adjoint_polarFactor_comp_operatorAbs_adjoint y
+
+/-- The adjoint of the canonical polar factor has the same kernel as the adjoint. -/
+@[simp]
+theorem ker_adjoint_polarFactor (A : E →ₗ[𝕜] F) : A.polarFactor.adjoint.ker = A.adjoint.ker := by
+  rw [← polarFactor_adjoint, ker_polarFactor]
+
+/-- The adjoint of the canonical polar factor has the same range as the adjoint. -/
+@[simp]
+theorem range_adjoint_polarFactor (A : E →ₗ[𝕜] F) :
+    A.polarFactor.adjoint.range = A.adjoint.range := by
+  rw [← polarFactor_adjoint, range_polarFactor]
+
 /-- **Left polar decomposition:** `A = |A†| U` for the canonical polar factor `U` of `A`. -/
 @[simp]
 theorem operatorAbs_adjoint_comp_polarFactor (A : E →ₗ[𝕜] F) :
