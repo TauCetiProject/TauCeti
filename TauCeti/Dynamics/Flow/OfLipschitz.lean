@@ -31,6 +31,8 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.eq_flowOfLipschitz_of_isIntegralCurveOn`: the corresponding uniqueness statement for a
   solution on any time set containing the interval between zero and the chosen time.
 * `TauCeti.flowOfLipschitz_congr`: it does not depend on the chosen Lipschitz bound.
+* `TauCeti.flowOfLipschitz_apply_eq_of_eqOn`: flows of two Lipschitz fields agree at time `t` on
+  `y` when the fields agree along the orbit segment from `0` to `t`.
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
