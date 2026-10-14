@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
-public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.GroupTheory.DoubleCoset.Map
-public import TauCeti.GroupTheory.DoubleCoset.Orbits
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
 
 /-!
@@ -55,8 +53,12 @@ including `FixedPoints.subalgebra A B H`.
 * G. J. Janusz, *Algebraic Number Fields*, Chapter I.
 
 The construction generalizes the number-field double-coset law in
-`TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic`, using Mathlib's
-`Algebra.IsInvariant.exists_smul_of_under_eq` and `Algebra.IsInvariant.orbit_eq_primesOver`.
+`TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic`; the local-degree cardinality
+argument is adapted from the number-field specializations formerly housed in
+`TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariants`. It uses Mathlib's
+`Algebra.IsInvariant.exists_smul_of_under_eq` and `Algebra.IsInvariant.orbit_eq_primesOver`,
+and the rank identity is reindexed from Mathlib's
+`Ideal.sum_ramification_inertia_eq_finrank`.
 -/
 
 public section
