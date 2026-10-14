@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 
 /-!
 # The ray class group as a quotient of the idele class group
@@ -43,6 +44,7 @@ description determines a well-defined homomorphism on idele classes.
   congruent to one is the ray class of the fractional ideal of its finite component.
 * `TauCeti.GlobalNumberFields.rayClassQuotient_surjective`: the map is surjective.
 * `TauCeti.GlobalNumberFields.ker_rayClassQuotient`: its kernel is `raySubgroup 𝔪`.
+* `TauCeti.GlobalNumberFields.finiteIndex_raySubgroup`: hence the ray subgroup has finite index.
 * `TauCeti.GlobalNumberFields.classMap_comp_rayClassQuotient`: the maps are compatible with the
   transition maps between ray class groups.
 
@@ -308,6 +310,12 @@ theorem ker_rayClassQuotient (𝔪 : Modulus K) : (rayClassQuotient 𝔪).ker = 
   obtain ⟨α, hα⟩ := exists_unitEmbedding_mul_mem_ideleCongrOneSubgroup 𝔪 x
   rw [mk_eq_mk_unitEmbedding_mul x α, MonoidHom.mem_ker]
   exact rayClassQuotient_mk_eq_one_iff_of_mem hα
+
+/-- **The ray subgroup has finite index**: it is the kernel of the surjection `rayClassQuotient 𝔪`
+onto the finite ray class group. -/
+instance finiteIndex_raySubgroup (𝔪 : Modulus K) : (raySubgroup 𝔪).FiniteIndex := by
+  rw [← ker_rayClassQuotient]
+  infer_instance
 
 /-- **The ray class maps are compatible with the transition maps**: for `𝔪 ∣ 𝔫`, the ray class of
 an idele class modulo `𝔫`, carried to the ray class group of `𝔪`, is its ray class modulo `𝔪`. -/

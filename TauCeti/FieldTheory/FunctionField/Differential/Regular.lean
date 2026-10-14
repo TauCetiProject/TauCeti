@@ -50,8 +50,9 @@ smooth curve with a canonical divisor sheaf.
 * R. Hartshorne, *Algebraic Geometry*, II, Section 8, and IV, Section 1.
 
 The Kähler–Weil comparison and its residue formula are those of
-`kaehlerDifferentialEquivWeilDifferentialOfSeparating` and
-`repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating`.
+`kaehlerDifferentialEquivWeilDifferentialOfSeparating`,
+`repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating` and, over a
+perfect constant field, `Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent`.
 -/
 
 public section

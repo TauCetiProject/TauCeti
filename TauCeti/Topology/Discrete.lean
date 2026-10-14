@@ -9,7 +9,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Order
 
 /-!
-# Continuity of maps into discrete spaces
+# Maps and convergence in discrete spaces
 
 A continuous map into a discrete space is locally constant, and this file records three
 consequences. Pointwise continuous families of equivalences have continuous inverse evaluation
@@ -20,6 +20,11 @@ surjection onto a discrete space (`TauCeti.exists_continuous_lift`), and an inje
 discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); these give
 surjectivity and the descent of cocycle conditions for continuous cochains of discrete modules
 in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`.
+
+A family eventually contained in a subset and converging to one of its points witnesses
+nondiscreteness when it is frequently unequal to that point (`Filter.Tendsto.not_isDiscrete`).
+This criterion uses only the target topology and applies to ranges of homomorphisms whose
+nonidentity values accumulate at the identity.
 -/
 
 public section
@@ -61,3 +66,19 @@ theorem continuous_of_injective_comp {X A B : Type*} [TopologicalSpace X] [Topol
   (IsLocallyConstant.desc a f ((IsLocallyConstant.iff_continuous _).2 h) hf).continuous
 
 end TauCeti
+
+open Topology
+
+namespace Filter
+
+/-- A subset containing the limit of an eventually contained family is nondiscrete if the family
+is frequently different from the limit. -/
+theorem Tendsto.not_isDiscrete {X Y : Type*} [TopologicalSpace Y] {f : X → Y} {l : Filter X}
+    {a : Y} {s : Set Y} (hf : Tendsto f l (𝓝 a)) (ha : a ∈ s)
+    (hs : ∀ᶠ x in l, f x ∈ s) (hne : ∃ᶠ x in l, f x ≠ a) : ¬ IsDiscrete s := by
+  intro hD
+  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hf hs
+  rw [nhdsWithin_of_mem_discrete hD ha, tendsto_pure] at heq
+  exact hne (heq.mono fun _ h hne ↦ hne h)
+
+end Filter

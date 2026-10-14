@@ -199,6 +199,18 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_D
   rw [← derivativeOfSeparating_smul_D hx y, map_smul,
     kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self]
 
+/-- The Kähler–Weil comparison determined by `x` preserves coordinates: the coordinate in `dx` of
+the Weil differential attached to `ω` is the coordinate of `ω` in `dx`. -/
+theorem coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (ω : Ω[F⁄k]) :
+    letI := weilDifferentialSpaceModule hF
+    (weilDifferentialBasisOfSeparating hF hex hx).coord ()
+        (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω) =
+      (kaehlerBasisOfSeparating hx).coord () ω := by
+  let := weilDifferentialSpaceModule hF
+  simp [kaehlerDifferentialEquivWeilDifferentialOfSeparating, Basis.equiv]
+
 /-! ### The divisor of `dx` -/
 
 section RatFunc
