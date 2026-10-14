@@ -71,14 +71,11 @@ constant on the fibres of the quotient map `q`: precomposition with `q` is a hom
 noncomputable def homeomorphFactorsThrough [CompactSpace A] [T2Space B] (q : C(A, B))
     (hq : Function.Surjective q) :
     C(B, X) ≃ₜ {g : C(A, X) // Function.FactorsThrough g q} :=
-  (isEmbedding_precomp_of_surjective q hq).toHomeomorph.trans
-    (Homeomorph.setCongr (by
-      ext g
-      refine ⟨?_, fun hg => ?_⟩
-      · rintro ⟨f, rfl⟩ a b h
-        exact congrArg f h
-      · have hqm : IsQuotientMap q := q.continuous.isClosedMap.isQuotientMap q.continuous hq
-        exact ⟨hqm.lift g hg, hqm.lift_comp g hg⟩))
+  have hqm : IsQuotientMap q := q.continuous.isClosedMap.isQuotientMap q.continuous hq
+  have hcont : Continuous (hqm.liftEquiv (Z := X)).symm :=
+    continuous_induced_rng.2 (continuous_precomp q)
+  (hqm.liftEquiv (Z := X)).symm.toHomeomorphOfIsInducing
+    (IsInducing.of_comp hcont continuous_subtype_val (isInducing_precomp_of_surjective q hq))
 
 @[simp]
 theorem homeomorphFactorsThrough_apply [CompactSpace A] [T2Space B] (q : C(A, B))
