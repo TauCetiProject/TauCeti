@@ -124,9 +124,7 @@ private theorem locallyOfFiniteType_ofRestrict_comp_of_toRingHom_eq {T : Finset 
 /-- **A finite-type morphism over a Tate ring restricts to every open of its source**: let
 `φ : (A, A⁺) → (B, B⁺)` be topologically of finite type, with `A` a Tate ring and `Spa(B, B⁺)`
 sheafy. For every open `W` of `Spa(B, B⁺)`, the restriction `W → Spa(A, A⁺)` of
-`Spa(φ) : Spa(B, B⁺) ⟶ Spa(A, A⁺)` is locally of finite type. On a rational subset `R(T/s)` of
-`Spa(B, B⁺)` it is, up to isomorphism, the morphism induced by the composite of `φ` with the
-rational localisation `(B, B⁺) → (B⟨T/s⟩, B_V⁺)`, and rational subsets form a basis. -/
+`Spa(φ) : Spa(B, B⁺) ⟶ Spa(A, A⁺)` is locally of finite type. -/
 theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
     (W : Opens (presentationLimitPreAdicSpace P' U'.plus
       U'.isRingOfIntegralElements.isPowerBounded_of_mem hP')) :
@@ -138,23 +136,6 @@ theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
           U.isRingOfIntegralElements.isPowerBounded_of_mem
           U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
   have hU' := U'.isRingOfIntegralElements.isPowerBounded_of_mem
-  -- restrictions along open embeddings with the same range are isomorphic
-  have htrans : ∀ {V V' : TopCat.{u}}
-      {g : V ⟶ (presentationLimitPreAdicSpace P' U'.plus hU' hP').toTopCat}
-      {g' : V' ⟶ (presentationLimitPreAdicSpace P' U'.plus hU' hP').toTopCat}
-      (hg : IsOpenEmbedding g) (hg' : IsOpenEmbedding g'), Set.range g = Set.range g' →
-      LocallyOfFiniteType ((presentationLimitPreAdicSpace P' U'.plus hU' hP').ofRestrict hg' ≫
-        presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
-          U.isRingOfIntegralElements.isPowerBounded_of_mem hU' hP hP' hsheaf) →
-      LocallyOfFiniteType ((presentationLimitPreAdicSpace P' U'.plus hU' hP').ofRestrict hg ≫
-        presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
-          U.isRingOfIntegralElements.isPowerBounded_of_mem hU' hP hP' hsheaf) := by
-    intro _ _ _ _ hg hg' e h
-    rw [← restrictIsoOfRangeEq_hom_ofRestrict _ hg hg' e, Category.assoc,
-      MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}]
-    exact h
   -- every point of `W` lies in a rational subset `R(T/s)` contained in `W`
   refine LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le W fun y ↦ ?_
   obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U'.plus) y.2
@@ -169,7 +150,8 @@ theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
   have hrange : Set.range (Opens.inclusion' (spaBasicOpen U'.plus T s)) =
       Set.range (spaComapLocHom P' U'.plus T s _ hden) := by
     rw [Opens.set_range_inclusion', coe_spaComapLocHom, range_spaComapLoc P' U'.plus hP' T s _ hden]
-  refine htrans _ (isOpenEmbedding_spaComapLocHom P' U'.plus hP' T s _ hden) hrange ?_
+  refine LocallyOfFiniteType.ofRestrict_comp_of_range_eq _
+    (isOpenEmbedding_spaComapLocHom P' U'.plus hP' T s _ hden) hrange ?_
   -- the rational localisation `ψ : (B, B⁺) → (B⟨T/s⟩, B_V⁺)` is topologically of finite type,
   -- hence so is `ψ ∘ φ` over the Tate ring `A`, and `Spa(B⟨T/s⟩, B_V⁺)` is sheafy
   have hψ := P'.isTopologicallyFiniteType_toCompletionLocHom U' hP' T s _ hden

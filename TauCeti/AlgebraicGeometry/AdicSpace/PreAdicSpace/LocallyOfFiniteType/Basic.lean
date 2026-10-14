@@ -45,6 +45,8 @@ holds for every homomorphism topologically of finite type
 * `TauCeti.PreAdicSpace.LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le`: the restriction
   of `f` to an open of the source is locally of finite type once its restrictions to smaller opens
   around every point are.
+* `TauCeti.PreAdicSpace.LocallyOfFiniteType.ofRestrict_comp_of_range_eq`: restrictions of `f`
+  along two open embeddings with the same range are locally of finite type together.
 * `TauCeti.PreAdicSpace.LocallyOfFiniteType.comp_of_isOpenImmersion`: composing with an open
   immersion into a larger target preserves being locally of finite type.
 
@@ -190,12 +192,12 @@ theorem LocallyOfFiniteType.of_iSup_eq_top {f : X ⟶ Y} {ι : Type*} (U : ι �
 
 /-- **Being locally of finite type on an open can be checked on smaller opens**: if every point
 of an open `W` of `X` has an open neighbourhood `V ≤ W` on which `f` is locally of finite type,
-then so is the restriction `W → Y` of `f`. The opens `V`, read as opens of the restriction to `W`,
-cover it, and `of_iSup_eq_top` applies. -/
+then so is the restriction `W → Y` of `f`. -/
 theorem LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le {f : X ⟶ Y} (W : Opens X)
     (h : ∀ x : W, ∃ V : Opens X, x.1 ∈ V ∧ V ≤ W ∧
       LocallyOfFiniteType (X.ofRestrict V.isOpenEmbedding ≫ f)) :
     LocallyOfFiniteType (X.ofRestrict W.isOpenEmbedding ≫ f) := by
+  -- the opens `V`, read as opens of the restriction to `W`, cover it
   choose V hxV hVW hV using h
   refine of_iSup_eq_top (fun x ↦ (Opens.map (X.ofRestrict W.isOpenEmbedding).base).obj (V x))
     (eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, Opens.mem_map.mpr (hxV x)⟩) fun x ↦ ?_
@@ -207,6 +209,17 @@ theorem LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le {f : X ⟶ Y} (W
   rw [← Category.assoc, ← restrictRestrictIso_hom_ofRestrict, Category.assoc,
     MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}, hO]
   exact hV x
+
+/-- **Restrictions along open embeddings with the same range**: if two open embeddings `g` and
+`g'` into `X` have the same range, then `f` restricted along `g` is locally of finite type as soon
+as `f` restricted along `g'` is. -/
+theorem LocallyOfFiniteType.ofRestrict_comp_of_range_eq {f : X ⟶ Y} {V V' : TopCat.{u}}
+    {g : V ⟶ X.toTopCat} {g' : V' ⟶ X.toTopCat} (hg : IsOpenEmbedding g)
+    (hg' : IsOpenEmbedding g') (e : Set.range g = Set.range g')
+    (h : LocallyOfFiniteType (X.ofRestrict hg' ≫ f)) :
+    LocallyOfFiniteType (X.ofRestrict hg ≫ f) := by
+  rwa [← restrictIsoOfRangeEq_hom_ofRestrict X hg hg' e, Category.assoc,
+    MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}]
 
 /-- **Composing with an open immersion into a larger target preserves being locally of finite
 type**: an open `V` of `Y` over which `f` is induced by a morphism of Huber pairs is identified,
