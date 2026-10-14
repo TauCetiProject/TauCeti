@@ -104,13 +104,9 @@ theorem functionFieldAlgHom_homOfAlgHom
   have h := ((Scheme.Hom.eq_functionFieldMap_iff (homOfAlgHom φ).hom
     (CommRingCat.ofHom φ.toRingHom)).mpr
     (Scheme.fromSpecStalk_homOfFunctionField hX _ _).symm).symm
-  refine AlgHom.toRingHom_injective ?_
-  change (homOfAlgHom φ).hom.functionFieldMap.hom = _
-  rw [h]
-  -- `rw [CommRingCat.hom_ofHom]` fails here: the ring structure of the field `k(X)` is only
-  -- defeq to that of the `CommRingCat` object `k(X)` at default transparency, so the lemma is
-  -- applied with `exact`.
-  exact CommRingCat.hom_ofHom _
+  ext x
+  rw [Scheme.Hom.functionFieldAlgHom_apply]
+  exact congr($h x)
 
 /-- **A dominant `k`-morphism is induced by its pullback of rational functions**: `f : X ⟶ Y` is
 `homOfAlgHom` of `f^* : k(Y) → k(X)`. -/
@@ -170,7 +166,7 @@ field is an equivalence `RegularProperCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ`
 curves over `k` with dominant `k`-morphisms to algebraic function fields of one variable over `k`
 with `k`-embeddings, reversing the direction of morphisms. -/
 noncomputable def functionFieldEquivalence :
-    RegularProperCurveCat k ≌ (FunctionFieldCat.{u, u} k)ᵒᵖ :=
+    RegularProperCurveCat k ≌ (FunctionFieldCat.{u} k)ᵒᵖ :=
   (functionFieldFunctor k).asEquivalence
 
 @[simp]
