@@ -18,7 +18,9 @@ has degree `(-2, -1)`. Homogeneous projection preserves both cycles and boundari
 has a homogeneous representative precisely when it belongs to the corresponding piece.
 
 The cycle pieces are defined over commutative semirings, and their internal direct sum
-decomposition is available over commutative rings. The homology grading and its consequences
+decomposition is available over commutative rings, using the chain decomposition
+`isInternal_bigradedChainMinusPiece`, whose internality criterion requires a ring.
+The homology grading and its consequences
 require a commutative ring of characteristic two (`[CommRing R] [CharP R 2]`).
 
 These pieces are modules over the ground ring, not over the polynomial coefficient ring.
