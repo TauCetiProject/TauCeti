@@ -38,7 +38,7 @@ relating the compatibility of the cup product with connecting maps in its two va
 * `TauCeti.TateCohomology.isZero_X₃_of_surjective_of_injective`: the converse, from two
   consecutive degrees.
 * `TauCeti.TateCohomology.isZero_X₁_of_surjective_of_injective`: surjectivity in degree `n - 1` and
-  injectivity in degree `n` of the map induced by `X₂ ⟶ X₃` force `Ĥⁿ(G, X₁)` to vanish.
+  injectivity in degree `n` of the map induced by `X₂ ⟶ X₃` force `H-hat^n(G, X₁)` to vanish.
 * `TauCeti.TateCohomology.isZero_X₂_of_isZero_X₁_of_isZero_X₃`,
   `TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁`,
   `TauCeti.TateCohomology.isZero_X₁_of_isZero_X₃_of_isZero_X₂`: two-out-of-three for the
@@ -96,7 +96,7 @@ theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   exact (ModuleCat.mono_iff_injective _).2 hinj
 
 /-- If the map induced by `X₂ ⟶ X₃` on Tate cohomology is surjective in degree `m` and injective
-in degree `n = m + 1`, then `Ĥⁿ(G, X₁) = 0`. -/
+in degree `n = m + 1`, then `H-hat^n(G, X₁) = 0`. -/
 theorem isZero_X₁_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
     (hsurj : Function.Surjective ((tateCohomologyFunctor m).map S.g))
     (hinj : Function.Injective ((tateCohomologyFunctor n).map S.g)) :

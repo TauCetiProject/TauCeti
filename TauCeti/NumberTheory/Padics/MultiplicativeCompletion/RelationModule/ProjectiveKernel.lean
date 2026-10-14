@@ -25,10 +25,10 @@ onto on `H²(G, -)`, then its kernel is a projective `ℤ_p[G]`-module; if moreo
 
 On every `p`-subgroup `S` of `G` both modules have the low-degree cohomology of a class module:
 `H¹(S, A(L)) = 0` and `H²(S, A(L))` has order `#S` (NSW (3.6.4), read through local reciprocity),
-while `Ĥ³(S, R) = 0` and `Ĥ²(S, R) ≅ ℤ_p ⧸ #S` by the dimension shift along Lyndon's sequence. Some
-class of `A(L)` restricts to a generator of `H²(S, A(L))` on every subgroup, so a map onto
-`H²(G, A(L))` is onto `H²(S, A(L))`, and then bijective by counting. On `ℓ`-subgroups for
-`ℓ ≠ p` all positive-degree cohomology of `ℤ_p`-modules vanishes. Tate's isomorphism criterion
+while `H-hat^3(S, R) = 0` and `H-hat^2(S, R) ≅ ℤ_p ⧸ #S` by the dimension shift along Lyndon's
+sequence. Some class of `A(L)` restricts to a generator of `H²(S, A(L))` on every subgroup, so a
+map onto `H²(G, A(L))` is onto `H²(S, A(L))`, and then bijective by counting. On `ℓ`-subgroups
+for `ℓ ≠ p` all positive-degree cohomology of `ℤ_p`-modules vanishes. Tate's isomorphism criterion
 and the theorem of Nakayama and Rim then make the kernel of `β` projective
 (`TauCeti.TateCohomology.projective_X₁_of_forall_isPGroup`). For `[K : ℚ_p] + 2` generators the
 rational dimension count and Swan's theorem identify it with `ℤ_p[G]`
@@ -72,7 +72,7 @@ variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] 
   [ValuativeExtension ℚ_[p] L]
 
 /-- A map from the relation module to `A(L)` which is onto on `H²(G, -)` is bijective on
-`Ĥ²(S, -)` for every `p`-subgroup `S`: a class of `A(L)` restricting to a generator on every
+`H-hat^2(S, -)` for every `p`-subgroup `S`: a class of `A(L)` restricting to a generator on every
 subgroup lies in its image, and both groups have `#S` elements. -/
 private theorem bijective_tateCohomology_two_res_of_surjective {ι : Type} [Fintype ι]
     {g : ι → L ≃ₐ[K] L} (hg : Subgroup.closure (Set.range g) = ⊤)
@@ -188,8 +188,9 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
     exact @Equiv.subsingleton _ _
       ((TateCohomology.isoGroupCohomology (n + 1)).app _).toLinearEquiv.toEquiv
       (groupCohomology.subsingleton_of_isUnit_natCard (res S.subtype B) hunit n)
-  -- Tate's criterion in degrees `1, 2, 3`: `Ĥ¹(S, A(L))` and `Ĥ³(S, R)` vanish, and the map is
-  -- bijective on `Ĥ²(S, -)`, on `p`-subgroups by `bijective_tateCohomology_two_res_of_surjective`.
+  -- Tate's criterion in degrees `1, 2, 3`: `H-hat^1(S, A(L))` and `H-hat^3(S, R)` vanish, and the
+  -- map is bijective on `H-hat^2(S, -)`, on `p`-subgroups by
+  -- `bijective_tateCohomology_two_res_of_surjective`.
   have : Module.Projective Λ T.X₁.ρ.asModule := by
     refine TateCohomology.projective_X₁_of_forall_isPGroup
       (fun _ ↦ PadicInt.isUnit_natCast_or_isMaximal_span) hT (q := 2) (fun ℓ _ S _ hS ↦ ?_)

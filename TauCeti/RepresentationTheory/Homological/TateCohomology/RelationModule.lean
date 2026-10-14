@@ -22,19 +22,20 @@ finite type which generates `G`. Lyndon's sequence `0 → R → k[G]^ι → I_G 
 relation module `TauCeti.MonoidAlgebra.relationModule k G g` and `I_G` the augmentation ideal, and
 the augmentation sequence `0 → I_G → k[G] → k → 0` both have a free middle term, which has no Tate
 cohomology on any finite subgroup. Their connecting homomorphisms therefore compose to an
-isomorphism `Ĥⁿ(S, k) ≅ Ĥⁿ⁺²(S, R)` for every finite subgroup `S` of `G` and every `n : ℤ`.
+isomorphism `H-hat^n(S, k) ≅ H-hat^(n+2)(S, R)` for every finite subgroup `S` of `G` and every
+`n : ℤ`.
 
-In particular `Ĥ³(S, R) ≅ H¹(S, k) = Hom(S, k)` vanishes when `k` has no additive torsion, and
-`Ĥ²(S, R) ≅ Ĥ⁰(S, k) = k ⧸ #S k`. These are the degree-two and degree-three inputs of Tate's
-isomorphism criterion for a map from the relation module to a module with the same low-degree
-cohomology, such as the completed multiplicative group of a local field.
+In particular `H-hat^3(S, R) ≅ H¹(S, k) = Hom(S, k)` vanishes when `k` has no additive torsion,
+and `H-hat^2(S, R) ≅ H-hat^0(S, k) = k ⧸ #S k`. These are the degree-two and degree-three inputs
+of Tate's isomorphism criterion for a map from the relation module to a module with the same
+low-degree cohomology, such as the completed multiplicative group of a local field.
 
 ## Main statements
 
-* `TauCeti.TateCohomology.isZero_tateCohomology_three_res_relationModule`: `Ĥ³(S, R) = 0` when `k`
-  has no additive torsion.
-* `TauCeti.TateCohomology.natCard_tateCohomology_two_res_relationModule`: `Ĥ²(S, R)` has as many
-  elements as `k ⧸ #S k`.
+* `TauCeti.TateCohomology.isZero_tateCohomology_three_res_relationModule`: `H-hat^3(S, R) = 0`
+  when `k` has no additive torsion.
+* `TauCeti.TateCohomology.natCard_tateCohomology_two_res_relationModule`: `H-hat^2(S, R)` has as
+  many elements as `k ⧸ #S k`.
 
 ## References
 
@@ -136,9 +137,9 @@ private theorem relationModuleShortComplex_shortExact (hg : Subgroup.closure (Se
 
 variable (k) in
 /-- **The double dimension shift of the relation module**: for a family `g` generating `G` and a
-finite subgroup `S`, `Ĥⁿ(S, k) ≅ Ĥⁿ⁺²(S, R)`, where `R` is the relation module of `g`. It is the
-composite of the connecting homomorphisms of the augmentation sequence `0 → I_G → k[G] → k → 0`
-and of Lyndon's sequence `0 → R → k[G]^ι → I_G → 0`. -/
+finite subgroup `S`, `H-hat^n(S, k) ≅ H-hat^(n+2)(S, R)`, where `R` is the relation module of
+`g`. It is the composite of the connecting homomorphisms of the augmentation sequence
+`0 → I_G → k[G] → k → 0` and of Lyndon's sequence `0 → R → k[G]^ι → I_G → 0`. -/
 private def relationModuleShiftIso (hg : Subgroup.closure (Set.range g) = ⊤) (S : Subgroup G)
     [Fintype S] (n : ℤ) :
     tateCohomology (res S.subtype (trivial k G k)) n ≅
@@ -154,8 +155,8 @@ private def relationModuleShiftIso (hg : Subgroup.closure (Set.range g) = ⊤) (
       (isZero_res_ofModuleMonoidAlgebra_obj (.of _ (ι → MonoidAlgebra k G)) S _)
 
 variable (k) in
-/-- **`Ĥ³(S, R) = 0`** for the relation module `R` of a family generating `G`, a finite subgroup
-`S` and a coefficient ring `k` without additive torsion: it is `H¹(S, k) = Hom(S, k)`. -/
+/-- **`H-hat^3(S, R) = 0`** for the relation module `R` of a family generating `G`, a finite
+subgroup `S` and a coefficient ring `k` without additive torsion: it is `H¹(S, k) = Hom(S, k)`. -/
 theorem isZero_tateCohomology_three_res_relationModule [IsAddTorsionFree k]
     (hg : Subgroup.closure (Set.range g) = ⊤) (S : Subgroup G) [Fintype S] :
     IsZero (tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of
@@ -166,8 +167,8 @@ theorem isZero_tateCohomology_three_res_relationModule [IsAddTorsionFree k]
     (relationModuleShiftIso k hg S 1).symm
 
 variable (k) in
-/-- **`Ĥ²(S, R) ≅ k ⧸ #S k`** for the relation module `R` of a family generating `G` and a finite
-subgroup `S`, as a count of elements: it is `Ĥ⁰(S, k)`. -/
+/-- **`H-hat^2(S, R) ≅ k ⧸ #S k`** for the relation module `R` of a family generating `G` and a
+finite subgroup `S`, as a count of elements: it is `H-hat^0(S, k)`. -/
 theorem natCard_tateCohomology_two_res_relationModule (hg : Subgroup.closure (Set.range g) = ⊤)
     (S : Subgroup G) [Fintype S] :
     Nat.card (tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of

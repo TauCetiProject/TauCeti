@@ -68,7 +68,7 @@ theorem projective_X₁_of_forall_isPGroup
       Function.Injective ((tateCohomologyFunctor (q + 1)).map ((resFunctor S.subtype).map T.g))) :
     Module.Projective (MonoidAlgebra k G) T.X₁.ρ.asModule :=
   Rep.projective_of_isZero_res hk T.X₁ fun S _ n ↦
-    -- On `S`, the map `X₂ ⟶ X₃` is bijective in every degree, so `Ĥⁿ(S, X₁)` vanishes.
+    -- On `S`, the map `X₂ ⟶ X₃` is bijective in every degree, so `H-hat^n(S, X₁)` vanishes.
     isZero_X₁_of_surjective_of_injective ((Rep.shortExact_res S.subtype).2 hT) (n - 1) n
       (by omega) (map_res_bijective_of_forall_isPGroup T.g hsurj hbij hinj S (n - 1)).2
       (map_res_bijective_of_forall_isPGroup T.g hsurj hbij hinj S n).1
