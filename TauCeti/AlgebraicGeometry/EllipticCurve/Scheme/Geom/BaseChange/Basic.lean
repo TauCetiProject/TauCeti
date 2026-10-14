@@ -30,7 +30,8 @@ Smoothness of relative dimension one, properness and the local-model condition
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeLift hg₁ hg₂ hh`: for a base change square
   `hg₁` of `E` along `u : T₁ ⟶ S`, a morphism from an elliptic curve `E₂` to `E` over `v : T₂ ⟶ S`
   and `h : T₂ ⟶ T₁` with `h ≫ u = v`, the induced morphism `E₂ ⟶ E₁` over `h`; it is a base change
-  square (`isPullback_baseChangeLift`) preserving zero sections (`zero_baseChangeLift`).
+  square when `g₂` also exhibits a base change (`isPullback_baseChangeLift`), and preserves zero
+  sections when both `g₁` and `g₂` preserve them (`zero_baseChangeLift`).
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.carrierMap hg hh` and
   `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelMap hg hh`: for a base change square
   `hg` of a morphism with a section, and charts `k` and `c` of its two sides whose bases are related
