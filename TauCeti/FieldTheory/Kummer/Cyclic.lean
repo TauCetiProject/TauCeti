@@ -70,8 +70,7 @@ theorem isSplittingField_X_pow_sub_C_of_adjoin_eq_top (hs : s ^ n = algebraMap K
     exact X_pow_sub_C_splits_of_isPrimitiveRoot (hζ.map_of_injective (algebraMap K L).injective) hs
   · rw [eq_top_iff, ← IntermediateField.top_toSubalgebra, ← hgen,
       IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-        (isAlgebraic_iff_isIntegral.2 ⟨_, monic_X_pow_sub_C b (NeZero.ne n), by
-          rw [eval₂_sub, eval₂_X_pow, eval₂_C, hs, sub_self]⟩)]
+        (IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)).isAlgebraic]
     exact Algebra.adjoin_mono (Set.singleton_subset_iff.2
       ((Polynomial.mem_rootSet_X_pow_sub_C (NeZero.ne n)).2 hs))
 
@@ -176,9 +175,7 @@ theorem finrank_eq_of_pow_eq_of_adjoin_eq_top (hb : ∀ d, d ∣ n → d ≠ 1 �
     rw [pow_one, map_zero] at hs
     rw [← IntermediateField.finrank_top', ← hgen, hs, IntermediateField.adjoin_zero,
       IntermediateField.finrank_bot]
-  have hint : IsIntegral K s :=
-    ⟨X ^ n - C b, monic_X_pow_sub_C b (NeZero.ne n), by
-      rw [eval₂_sub, eval₂_X_pow, eval₂_C, hs, sub_self]⟩
+  have hint : IsIntegral K s := IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)
   have : FiniteDimensional K L := by
     have := IntermediateField.adjoin.finiteDimensional hint
     rw [hgen] at this
@@ -187,9 +184,9 @@ theorem finrank_eq_of_pow_eq_of_adjoin_eq_top (hb : ∀ d, d ∣ n → d ≠ 1 �
   obtain ⟨g, hg, hdn, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hb0 hs hgen
   set d := finrank K L
   -- `s ^ d` is fixed by the generator `g` of `Gal(L/K)`, so it lies in `K`
+  have hζd : (ζ ^ (n / d)) ^ d = 1 := by rw [← pow_mul, Nat.div_mul_cancel hdn, hζ.pow_eq_one]
   have hgd : g ∈ MulAction.stabilizer (L ≃ₐ[K] L) (s ^ d) := by
-    rw [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, map_pow, hgs, mul_pow, ← map_pow,
-      ← pow_mul, Nat.div_mul_cancel hdn, hζ.pow_eq_one, map_one, one_mul]
+    simp [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, hgs, mul_pow, ← map_pow, hζd]
   obtain ⟨c, hc⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (s ^ d)).2 fun σ ↦ by
     simpa only [AlgEquiv.smul_def] using
       MulAction.mem_stabilizer_iff.1 ((Subgroup.zpowers_le.2 hgd) (hg σ))
