@@ -207,6 +207,22 @@ def cellularChainCoord (c : cell C n) : (cellularChainComplex C (ModuleCat.of R 
   (eqToIso (cellularChainComplex_X C _ n)).toLinearEquiv ≪≫ₗ
     (cellularChainBasis C R n).repr ≪≫ₗ Finsupp.uniqueLinearEquiv R R c
 
+/-- The chain with coordinate `r` is `r` times the cellular basis vector of the unique cell. -/
+lemma cellularChainCoord_symm_apply (c : cell C n) (r : R) :
+    (cellularChainCoord C R c).symm r =
+      eqToHom (cellularChainComplex_X C (ModuleCat.of R R) n).symm
+        (r • cellularChainBasis C R n c) := by
+  apply (cellularChainCoord C R c).injective
+  simp [cellularChainCoord]
+
+/-- The cellular basis vector of the unique cell has coordinate `1`. -/
+lemma cellularChainCoord_cellularChainBasis (c : cell C n) :
+    cellularChainCoord C R c
+      (eqToHom (cellularChainComplex_X C (ModuleCat.of R R) n).symm
+        (cellularChainBasis C R n c)) = 1 := by
+  rw [← one_smul R (cellularChainBasis C R n c), ← cellularChainCoord_symm_apply,
+    LinearEquiv.apply_symm_apply]
+
 /-- If `C` has a single cell `c` in degree `n` and a single cell `c'` in degree `n + 1`, then in
 the coordinates `cellularChainCoord` the cellular differential is right multiplication by the
 incidence coefficient of `c` in the boundary of `c'`. -/
