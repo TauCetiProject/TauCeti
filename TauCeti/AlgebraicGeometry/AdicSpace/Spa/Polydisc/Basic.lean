@@ -48,6 +48,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   `mem_closedPolydisc_iff` as its membership rule.
 * `TauCeti.ValuationSpectrum.evalAtHom`: evaluation of restricted power series at `a ∈ (A°)ᵏ`, as a
   ring homomorphism `A⟨T⟩ →+* A`.
+* `TauCeti.ValuationSpectrum.evalAtAlgHom`: over a field, the same evaluation as an algebra
+  homomorphism `K⟨T⟩ →ₐ[K] K`.
 * `TauCeti.ValuationSpectrum.classicalPoint`: the classical point of the closed polydisc attached
   to a point of `Spa (A, A°)` and a tuple `a ∈ (A°)ᵏ`.
 * `TauCeti.ValuationSpectrum.taylorHom`: the translation `Tᵢ ↦ Tᵢ + aᵢ` of `A⟨T⟩` by
@@ -60,6 +62,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
 * `TauCeti.ValuationSpectrum.continuous_evalAtHom` and
   `TauCeti.ValuationSpectrum.evalAtHom_mem_powerBoundedSubring`: evaluation at `a` is a morphism
   of Huber pairs `(A⟨T⟩, A⟨T⟩°) → (A, A°)`.
+* `TauCeti.ValuationSpectrum.evalAtHom_surjective`: over a field, evaluation is surjective, and
+  its kernel is a closed maximal ideal with residue field finite over the field.
 * `TauCeti.ValuationSpectrum.classicalPoint_vle`: the classical point compares `f` and `g` as `x`
   compares `f (a)` and `g (a)`.
 * `TauCeti.ValuationSpectrum.classicalPoint_injective`: when `x` has trivial support, the
@@ -172,6 +176,51 @@ theorem evalAtHom_weightedX (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
 theorem evalAtHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (c : A) :
     evalAtHom a ha (weightedC _ isWeightFamily_one_weight c) = c :=
   weightedEvalHom_weightedC _ _ _ c
+
+section Field
+
+variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K] [NonarchimedeanRing K]
+
+/-- Evaluation at `a ∈ (K°)ᵏ` as a `K`-algebra map `K⟨T₁, …, Tₖ⟩ → K`. -/
+noncomputable def evalAtAlgHom (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight →ₐ[K] K :=
+  { evalAtHom a ha with commutes' := evalAtHom_weightedC a ha }
+
+/-- `evalAtAlgHom` is `evalAtHom` as a function. -/
+@[simp]
+theorem evalAtAlgHom_apply (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
+    evalAtAlgHom a ha f = evalAtHom a ha f :=
+  (rfl)
+
+/-- Evaluation at `a` is surjective, since it fixes the constants. -/
+theorem evalAtHom_surjective (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    Function.Surjective (evalAtHom a ha) :=
+  fun c ↦ ⟨weightedC _ isWeightFamily_one_weight c, evalAtHom_weightedC a ha c⟩
+
+/-- The kernel of evaluation at `a`, the maximal ideal of the `K`-rational point `a` of the closed
+polydisc. -/
+instance isMaximal_ker_evalAtHom (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    (RingHom.ker (evalAtHom a ha)).IsMaximal :=
+  RingHom.ker_isMaximal_of_surjective _ (evalAtHom_surjective a ha)
+
+/-- The residue field of `K⟨T₁, …, Tₖ⟩` at the kernel of evaluation at `a` is `K`, so it is finite
+over `K`. -/
+instance finiteDimensional_quotient_ker_evalAtHom (a : Fin k → K)
+    (ha : ∀ i, IsPowerBounded (a i)) :
+    FiniteDimensional K (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight ⧸ RingHom.ker (evalAtHom a ha)) :=
+  Module.Finite.equiv (Ideal.quotientKerAlgEquivOfSurjective (f := evalAtAlgHom a ha)
+    (evalAtHom_surjective a ha)).symm.toLinearEquiv
+
+/-- The kernel of evaluation at `a` is closed, as the kernel of a continuous map to a Hausdorff
+ring. -/
+theorem isClosed_ker_evalAtHom (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    IsClosed (RingHom.ker (evalAtHom a ha) : Set (weightedRestrictedSubring
+      (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)) :=
+  isClosed_singleton.preimage (continuous_evalAtHom a ha)
+
+end Field
 
 /-- Evaluation at `a` carries `A⟨T⟩°` into `A°`. Together with `continuous_evalAtHom` this makes
 evaluation a morphism of Huber pairs `(A⟨T⟩, A⟨T⟩°) → (A, A°)`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
 public import TauCeti.RingTheory.Valuation.Spectral
 
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
@@ -40,11 +40,6 @@ Both steps work for any continuous `K`-algebra map `φ : A → L` to a finite fi
 For a complete Huber ring every maximal ideal is closed (`TauCeti.Huber.isClosed_of_isMaximal`).
 For an affinoid `K`-algebra, finiteness of the residue fields is Wedhorn's Proposition 5.61.
 
-On the closed polydisc `Spa (K⟨T₁, …, Tₖ⟩, K⟨T₁, …, Tₖ⟩°)` the kernel of evaluation at a point
-`a ∈ (K°)ᵏ` is a closed maximal ideal with residue field `K`. Its classical point is the point
-`x_a : f ↦ |f(a)|` already constructed as `TauCeti.ValuationSpectrum.classicalPoint`, the points
-of type (1) in Wedhorn's Example 7.57.
-
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.maximalIdealPoint`: the classical point of `Spa (A, A°)` attached to
@@ -63,9 +58,7 @@ of type (1) in Wedhorn's Example 7.57.
   map `ψ : A → K` it compares elements by the norms of their values under `ψ`.
 * `TauCeti.ValuationSpectrum.supp_maximalIdealPoint`: its support is `𝔪`.
 * `TauCeti.ValuationSpectrum.maximalIdealPoint_inj`: distinct maximal ideals give distinct
-  points, so `Max (A)` embeds in `Spa (A, A°)`.
-* `TauCeti.ValuationSpectrum.classicalPoint_val_eq_maximalIdealPoint_val`: the classical point
-  `x_a` of the closed polydisc is the classical point at the kernel of evaluation at `a`.
+  points when they are closed and their residue fields are finite over `K`.
 
 ## References
 
@@ -171,8 +164,9 @@ theorem supp_maximalIdealPoint (h𝔪 : IsClosed (𝔪 : Set A)) :
   ext a
   simp [maximalIdealPoint_val, Valuation.mem_supp_iff, Ideal.Quotient.eq_zero_iff_mem]
 
-/-- **Distinct maximal ideals give distinct classical points**, since each point recovers its
-ideal as its support. So `Max (A)` embeds in `Spa (A, A°)`. -/
+/-- **Distinct eligible maximal ideals give distinct classical points**, since each point recovers
+its ideal as its support. Thus the closed maximal ideals whose residue fields are finite over `K`
+give distinct points of `Spa (A, A°)`. -/
 theorem maximalIdealPoint_inj {𝔫 : Ideal A} [𝔫.IsMaximal] [FiniteDimensional K (A ⧸ 𝔫)]
     (h𝔪 : IsClosed (𝔪 : Set A)) (h𝔫 : IsClosed (𝔫 : Set A)) :
     maximalIdealPoint K 𝔪 h𝔪 = maximalIdealPoint K 𝔫 h𝔫 ↔ 𝔪 = 𝔫 := by
@@ -180,64 +174,5 @@ theorem maximalIdealPoint_inj {𝔫 : Ideal A} [𝔫.IsMaximal] [FiniteDimension
   rw [← supp_maximalIdealPoint (K := K) h𝔪, ← supp_maximalIdealPoint (K := K) h𝔫, h]
 
 end MaximalIdeal
-
-/-! ### The classical points of the closed polydisc -/
-
-section Polydisc
-
-variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K] [NonarchimedeanRing K] {k : ℕ}
-
-/-- Evaluation at `a ∈ (K°)ᵏ` as a `K`-algebra map `K⟨T₁, …, Tₖ⟩ → K`. -/
-private def evalAtAlgHom (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight →ₐ[K] K :=
-  { evalAtHom a ha with commutes' := evalAtHom_weightedC a ha }
-
-/-- `evalAtAlgHom` is `evalAtHom` as a function. -/
-private theorem evalAtAlgHom_apply (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i))
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    evalAtAlgHom a ha f = evalAtHom a ha f :=
-  (rfl)
-
-/-- Evaluation at `a` is surjective, since it fixes the constants. -/
-private theorem evalAtHom_surjective (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    Function.Surjective (evalAtHom a ha) :=
-  fun c ↦ ⟨weightedC _ isWeightFamily_one_weight c, evalAtHom_weightedC a ha c⟩
-
-/-- The kernel of evaluation at `a`, the maximal ideal of the `K`-rational point `a` of the closed
-polydisc. -/
-instance isMaximal_ker_evalAtHom (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    (RingHom.ker (evalAtHom a ha)).IsMaximal :=
-  RingHom.ker_isMaximal_of_surjective _ (evalAtHom_surjective a ha)
-
-/-- The residue field of `K⟨T₁, …, Tₖ⟩` at the kernel of evaluation at `a` is `K`, so it is finite
-over `K`. -/
-instance finiteDimensional_quotient_ker_evalAtHom (a : Fin k → K)
-    (ha : ∀ i, IsPowerBounded (a i)) :
-    FiniteDimensional K (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
-      isWeightFamily_one_weight ⧸ RingHom.ker (evalAtHom a ha)) :=
-  Module.Finite.equiv (Ideal.quotientKerAlgEquivOfSurjective (f := evalAtAlgHom a ha)
-    (evalAtHom_surjective a ha)).symm.toLinearEquiv
-
-/-- The kernel of evaluation at `a` is closed, as the kernel of a continuous map to a Hausdorff
-ring. -/
-theorem isClosed_ker_evalAtHom (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    IsClosed (RingHom.ker (evalAtHom a ha) : Set (weightedRestrictedSubring
-      (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)) :=
-  isClosed_singleton.preimage (continuous_evalAtHom a ha)
-
-/-- **The classical points of the closed polydisc are classical points of its adic spectrum**: the
-point `x_a : f ↦ |f(a)|` attached to `a ∈ (K°)ᵏ` is the classical point at the maximal ideal of
-`a`, the kernel of evaluation at `a`. It does not depend on the auxiliary point `x` of
-`Spa (K, K°)`. -/
-theorem classicalPoint_val_eq_maximalIdealPoint_val [IsUltrametricDist K]
-    (x : spa (powerBoundedSubring K)) (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    (classicalPoint x a ha).1 =
-      (maximalIdealPoint K (RingHom.ker (evalAtHom a ha)) (isClosed_ker_evalAtHom a ha)).1 :=
-  ext' fun f g ↦ by
-    rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.2,
-      maximalIdealPoint_vle_iff_of_ker_eq (𝔪 := RingHom.ker (evalAtHom a ha)) _
-        (evalAtAlgHom a ha) rfl, evalAtAlgHom_apply, evalAtAlgHom_apply]
-
-end Polydisc
 
 end TauCeti.ValuationSpectrum
