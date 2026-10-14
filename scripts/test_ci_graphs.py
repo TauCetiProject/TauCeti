@@ -72,6 +72,23 @@ class MergeQueueChartsTest(unittest.TestCase):
         self.assertEqual(m["picker"]["2026-10-06"], [1, 0])
         self.assertEqual(sum(m["fails"]["2026-10-06"].values()), 1)
 
+    def test_reusable_workflow_builds_preserve_all_daily_metrics(self):
+        self.build(1, "pr", kind="github")
+        self.build(2, "bors_staging")
+        self.build(3, "pr", "failure", kind="github")
+        self.build(4, "pr", "cancelled")
+        self.db.execute("INSERT INTO steps VALUES (10, 'Build exact candidate under bwrap', 500)")
+        expected = self.metrics()
+        self.db.execute("UPDATE jobs SET name = 'build-candidate / ' || name")
+        self.assertEqual(self.metrics(), expected)
+
+    def test_fleet_classifies_nested_builds_by_the_leaf_job_name(self):
+        for kind, trigger in [("github", "pr"), ("github", "workflow_dispatch"),
+                              ("namespace", "pr"), ("namespace", "bors_staging")]:
+            with self.subTest(kind=kind, trigger=trigger):
+                self.assertEqual(fleet.classify("build-candidate / sandboxed-build", kind, trigger),
+                                 fleet.classify("sandboxed-build", kind, trigger))
+
     def test_landing_time_is_main_arrival_not_staging_creation(self):
         self.arrival("a", 42, "2026-10-05T10:00:00Z", "2026-10-06T01:00:00Z")
         self.arrival("b", 43, "2026-10-05T11:00:00Z", "2026-10-06T01:00:00Z")

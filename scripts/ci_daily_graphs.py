@@ -74,6 +74,11 @@ def step_phase(name: str) -> str:
     return "setup and checks"
 
 
+def job_name(name: str) -> str:
+    """Leaf name of a direct or nested GitHub Actions job."""
+    return name.rsplit(" / ", 1)[-1]
+
+
 # --- metrics ------------------------------------------------------------------------------------
 
 
@@ -84,6 +89,7 @@ def days_between(first: str, last: str) -> list[str]:
 
 def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
     """Per-day series for every daily chart, over complete UTC days first..last."""
+    db.create_function("job_name", 1, job_name, deterministic=True)
     days = days_between(first, last)
     lo, hi = f"{first}T00:00:00Z", f"{last}T23:59:59Z"
     # Every attempt's build job (jobs keeps all attempts; runs only the latest):
@@ -92,7 +98,7 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
         SELECT substr(j.created_at, 1, 10), r.trigger, j.runner_kind, j.conclusion, j.wait_s, j.run_s,
                j.failure_class, j.job_id, r.run_id
         FROM jobs j JOIN runs r USING (repo, run_id)
-        WHERE r.repo = 'TauCeti' AND r.workflow = '{PR_BUILD}' AND j.name = '{BUILD}'
+        WHERE r.repo = 'TauCeti' AND r.workflow = '{PR_BUILD}' AND job_name(j.name) = '{BUILD}'
           AND r.trigger IN ('pr', 'merge_queue', 'bors_staging') AND j.runner_kind IN ('github', 'namespace')
           AND j.created_at BETWEEN ? AND ?""", (lo, hi)).fetchall()
 
@@ -123,7 +129,7 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
     # Waits of the other (short) GitHub jobs, from what was recorded (a sample, for most workflows).
     for day, wait_s in db.execute("""
             SELECT substr(j.created_at, 1, 10), j.wait_s FROM jobs j JOIN runs r USING (repo, run_id)
-            WHERE j.runner_kind = 'github' AND j.name NOT IN ('sandboxed-build', 'verify', 'build')
+            WHERE j.runner_kind = 'github' AND job_name(j.name) NOT IN ('sandboxed-build', 'verify', 'build')
               AND j.wait_s IS NOT NULL AND j.created_at BETWEEN ? AND ?""", (lo, hi)):
         wait[(day, "other GitHub jobs")].append(wait_s / 60)
 
@@ -177,7 +183,7 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
     for day, kind, trigger, concl, run_s in db.execute("""
             SELECT substr(j.started_at, 1, 10), j.runner_kind, r.trigger, j.conclusion, j.run_s
             FROM jobs j JOIN runs r USING (repo, run_id)
-            WHERE r.repo = 'TauCeti' AND j.name IN ('sandboxed-build', 'verify', 'build', 'performance-gate')
+            WHERE r.repo = 'TauCeti' AND job_name(j.name) IN ('sandboxed-build', 'verify', 'build', 'performance-gate')
               AND j.run_s IS NOT NULL AND j.started_at BETWEEN ? AND ?""", (lo, hi)):
         if kind == "namespace":
             minutes[day]["Namespace"] += run_s / 60

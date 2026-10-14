@@ -75,7 +75,7 @@ def iso(t: float) -> str:
 
 
 def classify(name: str, kind: str, trigger: str) -> tuple[str, str]:
-    build = name in BUILD_JOBS
+    build = ci_daily_graphs.job_name(name) in BUILD_JOBS
     if kind == "namespace":
         key = ("ns-mq" if trigger in ci_daily_graphs.MERGE_TRIGGERS
                else "ns-pr" if trigger == "pr" else "ns-other")
@@ -120,7 +120,7 @@ def load_jobs(db: sqlite3.Connection, since: float, until: float) -> list[dict]:
             "weight": total / fetched if fetched else 1.0,
             "created": ts(created), "started": ts(started) if started else None,
             "completed": ts(completed) if completed else None,
-            "picked_ns": kind == "namespace" and trigger == "pr" and name == "sandboxed-build",
+            "picked_ns": kind == "namespace" and trigger == "pr" and ci_daily_graphs.job_name(name) == "sandboxed-build",
         })
 
     typical = {}
