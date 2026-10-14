@@ -29,15 +29,18 @@ while it acts on the restriction through `C_*(Ωf)`, whose degree-zero part is t
   `classicalDGLocalSystem x (f^* L) ≅ (DGLocalSystem.pullback R f rfl).obj
   (classicalDGLocalSystem (f x) L)`, the identity on the underlying fiber.
 * `TauCeti.classicalDGLocalSystemPullbackIsoOfEq`: the same for a basepoint equation `f x = y`.
+* `TauCeti.classicalDGLocalSystemPullbackFiber`: the fiber identification `(f^* L)_x = L_{f x}`.
 * `TauCeti.classicalDGLocalSystemFunctorPullbackIso`: the naturality of
-  `classicalDGLocalSystemPullbackIso` in `L`, as an isomorphism
+  `classicalDGLocalSystemPullbackIsoOfEq` in `L`, as an isomorphism
   of functors `f^* ⋙ classicalDGLocalSystemFunctor R x ≅
-  classicalDGLocalSystemFunctor R (f x) ⋙ DGLocalSystem.pullback R f rfl`.
+  classicalDGLocalSystemFunctor R y ⋙ DGLocalSystem.pullback R f hf` for `hf : f x = y`.
 
 ## Main results
 
 * `TauCeti.classicalAction_pullback`: the action of a chain on the fiber of `f^* L` is the action
   of its image under `C_*(Ωf)` on the fiber of `L`.
+* `TauCeti.classicalDGLocalSystemPullbackIsoOfEq_hom_naturality`: naturality of the pullback
+  isomorphism in the local system, for any basepoint equation `f x = y`.
 
 ## References
 
@@ -63,6 +66,8 @@ variable {R : Type u} [CommRing R] {X Y : TopCat.{u}}
 
 /-- **The action on the fiber of a pullback**: a chain of `C_*(Ω_x X; R)` acts on the fiber of
 `f^* L` as its image under `C_*(Ωf)` acts on the fiber of `L` at `f x`. -/
+-- Not `@[simp]`: the `simpNF` linter rejects it, since `LocalCoefficientSystem.pullback_obj_obj`
+-- rewrites the fiber `(f^* L)_x` in the type of its left-hand side.
 theorem classicalAction_pullback (f : C(X, Y)) {x : X} (L : LocalCoefficientSystem.{u, u, w} R Y)
     (a : loopChainAlgebra X x R) :
     classicalAction (x := x) ((LocalCoefficientSystem.pullback (R := R) f).obj L) (op a) =
@@ -70,15 +75,29 @@ theorem classicalAction_pullback (f : C(X, Y)) {x : X} (L : LocalCoefficientSyst
   rw [classicalAction_op_apply, classicalAction_op_apply, loopChainToGroupAlgebra_loopChainMap,
     FundamentalGroup.mapOfEq_rfl, MonoidAlgebra.mapDomainRingHom_apply,
     MonoidAlgebra.lift_mapDomain]
-  -- The fibers `(f^* L)_x` and `L_{f x}` agree only up to unfolding, so the two right actions are
-  -- compared as a term rather than by rewriting.
-  refine congrArg (fun F ↦ unop (MonoidAlgebra.lift R
+  exact congrArg (fun F ↦ unop (MonoidAlgebra.lift R
     (Module.End R (L.obj (FundamentalGroupoid.mk (f x))))ᵐᵒᵖ (FundamentalGroup X x) F
-      (loopChainToGroupAlgebra X x R a))) (MonoidHom.ext fun g ↦ ?_)
-  exact (LocalCoefficientSystem.fiberRightAction_apply _ g).trans
-    ((congrArg op (congrArg (LocalCoefficientSystem.monodromyRepresentation L (f x))
-      (map_inv (FundamentalGroup.map f x) g))).trans
-        (LocalCoefficientSystem.fiberRightAction_apply L _).symm)
+      (loopChainToGroupAlgebra X x R a))) (LocalCoefficientSystem.fiberRightAction_pullback f L)
+
+variable (R) in
+/-- **The fiber identification** `(f^* L)_x = L_{f x}`: the identity of the fiber of the pullback,
+as a map to the restriction of scalars of the fiber of `L` along `C_*(Ωf)`. -/
+def classicalDGLocalSystemPullbackFiber (f : C(X, Y)) (x : X)
+    (L : LocalCoefficientSystem.{u, u, w} R Y) :
+    classicalDGLocalSystem x ((LocalCoefficientSystem.pullback (R := R) f).obj L) →
+      (DGLocalSystem.pullback R f rfl).obj (classicalDGLocalSystem (f x) L) :=
+  (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
+    (classicalDGLocalSystem (f x) L)).symm
+
+/-- The fiber identification is the identity of the underlying fiber. -/
+@[simp]
+theorem restrictScalarsEquiv_classicalDGLocalSystemPullbackFiber (f : C(X, Y)) (x : X)
+    (L : LocalCoefficientSystem.{u, u, w} R Y)
+    (m : classicalDGLocalSystem x ((LocalCoefficientSystem.pullback (R := R) f).obj L)) :
+    DGRightModuleCat.restrictScalarsEquiv _ _ (classicalDGLocalSystemPullbackFiber R f x L m) =
+      m :=
+  (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
+    (classicalDGLocalSystem (f x) L)).apply_symm_apply m
 
 variable (R) in
 /-- The identity of the fiber `(f^* L)_x = L_{f x}`, as a linear equivalence over the opposite of
@@ -88,21 +107,16 @@ def classicalDGLocalSystemPullbackEquiv (f : C(X, Y)) (x : X)
     classicalDGLocalSystem x ((LocalCoefficientSystem.pullback (R := R) f).obj L) ≃ₗ[
       (loopChainAlgebra X x R)ᵐᵒᵖ]
       (DGLocalSystem.pullback R f rfl).obj (classicalDGLocalSystem (f x) L) where
-  toFun := (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
-    (classicalDGLocalSystem (f x) L)).symm
+  toFun := classicalDGLocalSystemPullbackFiber R f x L
   invFun := DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
     (classicalDGLocalSystem (f x) L)
-  map_add' := map_add _
+  map_add' := map_add (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
+    (classicalDGLocalSystem (f x) L)).symm
   map_smul' a m := (DGRightModuleCat.restrictScalarsEquiv _ _).injective (by
-    rw [DGRightModuleCat.restrictScalarsEquiv_smul, RingHom.id_apply]
-    -- The fibers `(f^* L)_x` and `L_{f x}` agree only up to unfolding, so the equation is
-    -- assembled as a term rather than by rewriting.
-    exact ((DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
-      (classicalDGLocalSystem (f x) L)).apply_symm_apply _).trans
-        ((LinearMap.congr_fun (classicalAction_pullback f L a.unop) m).trans
-          (congrArg (op (loopChainMap R f rfl a.unop) • ·)
-            ((DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
-              (classicalDGLocalSystem (f x) L)).apply_symm_apply m).symm)))
+    rw [DGRightModuleCat.restrictScalarsEquiv_smul, RingHom.id_apply,
+      restrictScalarsEquiv_classicalDGLocalSystemPullbackFiber,
+      restrictScalarsEquiv_classicalDGLocalSystemPullbackFiber]
+    exact LinearMap.congr_fun (classicalAction_pullback f L a.unop) m)
   left_inv := (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
     (classicalDGLocalSystem (f x) L)).apply_symm_apply
   right_inv := (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
@@ -115,8 +129,7 @@ theorem restrictScalarsEquiv_classicalDGLocalSystemPullbackEquiv (f : C(X, Y)) (
     (L : LocalCoefficientSystem.{u, u, w} R Y)
     (m : classicalDGLocalSystem x ((LocalCoefficientSystem.pullback (R := R) f).obj L)) :
     DGRightModuleCat.restrictScalarsEquiv _ _ (classicalDGLocalSystemPullbackEquiv R f x L m) = m :=
-  (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R f rfl)
-    (classicalDGLocalSystem (f x) L)).apply_symm_apply m
+  restrictScalarsEquiv_classicalDGLocalSystemPullbackFiber f x L m
 
 /-- The inverse of `classicalDGLocalSystemPullbackEquiv` takes the underlying element. -/
 @[simp]
@@ -192,8 +205,18 @@ theorem classicalDGLocalSystemPullbackIsoOfEq_rfl (f : C(X, Y)) (x : X)
       classicalDGLocalSystemPullbackIso R f x L :=
   (rfl)
 
+/-- The isomorphism `classicalDGLocalSystemPullbackIso` is the identity of the underlying fiber
+`(f^* L)_x = L_{f x}`. -/
+theorem restrictScalarsEquiv_classicalDGLocalSystemPullbackIso_hom_apply (f : C(X, Y)) (x : X)
+    (L : LocalCoefficientSystem.{u, u, w} R Y)
+    (m : classicalDGLocalSystem x ((LocalCoefficientSystem.pullback (R := R) f).obj L)) :
+    DGRightModuleCat.restrictScalarsEquiv _ _ ((classicalDGLocalSystemPullbackIso R f x L).hom m) =
+      m := by
+  rw [classicalDGLocalSystemPullbackIso_hom_apply,
+    restrictScalarsEquiv_classicalDGLocalSystemPullbackEquiv]
+
 /-- Naturality of `classicalDGLocalSystemPullbackIso` in the local system. -/
-theorem classicalDGLocalSystemPullbackIso_hom_naturality (f : C(X, Y)) (x : X)
+private theorem classicalDGLocalSystemPullbackIso_hom_naturality (f : C(X, Y)) (x : X)
     {L L' : LocalCoefficientSystem.{u, u, w} R Y} (φ : L ⟶ L') :
     classicalDGLocalSystemMap (x := x) ((LocalCoefficientSystem.pullback (R := R) f).map φ) ≫
         (classicalDGLocalSystemPullbackIso R f x L').hom =
@@ -211,36 +234,43 @@ theorem classicalDGLocalSystemPullbackIso_hom_naturality (f : C(X, Y)) (x : X)
     (P := (DGLocalSystem.pullback R f rfl).obj (classicalDGLocalSystem (f x) L'))
     (classicalDGLocalSystemMap _) _ m).trans
       ((DGRightModuleCat.restrictScalarsEquiv _ _).injective ?_)
-  -- The fibers of `f^* L` and `L` agree only up to unfolding, so the equation is assembled as a
-  -- term rather than by rewriting.
-  have hL := (congrArg _ (classicalDGLocalSystemPullbackIso_hom_apply f x L m)).trans
-    (restrictScalarsEquiv_classicalDGLocalSystemPullbackEquiv f x L m)
-  have hL' := (congrArg _ (classicalDGLocalSystemPullbackIso_hom_apply f x L'
-    (classicalDGLocalSystemMap ((LocalCoefficientSystem.pullback (R := R) f).map φ) m))).trans
-      (restrictScalarsEquiv_classicalDGLocalSystemPullbackEquiv f x L' _)
-  exact hL'.trans ((classicalDGLocalSystemMap_apply _ m).trans
-    ((classicalDGLocalSystemMap_apply φ m).symm.trans
+  -- Both sides are `φ` applied to `m`, through the fiber identification.
+  exact (restrictScalarsEquiv_classicalDGLocalSystemPullbackIso_hom_apply f x L' _).trans
+    ((classicalDGLocalSystemMap_apply _ m).trans ((classicalDGLocalSystemMap_apply φ m).symm.trans
       ((DGRightModuleCat.restrictScalars_map_apply (loopChainMap R f rfl)
         (M := classicalDGLocalSystem (f x) L) (N := classicalDGLocalSystem (f x) L')
         (classicalDGLocalSystemMap φ) ((classicalDGLocalSystemPullbackIso R f x L).hom m)).trans
-          (congrArg (classicalDGLocalSystemMap φ) hL)).symm))
+          (congrArg (classicalDGLocalSystemMap φ)
+            (restrictScalarsEquiv_classicalDGLocalSystemPullbackIso_hom_apply f x L m))).symm))
+
+/-- **Naturality of `classicalDGLocalSystemPullbackIsoOfEq` in the local system**, for a based
+map `f : (X, x) → (Y, y)`. -/
+theorem classicalDGLocalSystemPullbackIsoOfEq_hom_naturality (f : C(X, Y)) {x : X} {y : Y}
+    (hf : f x = y) {L L' : LocalCoefficientSystem.{u, u, w} R Y} (φ : L ⟶ L') :
+    classicalDGLocalSystemMap (x := x) ((LocalCoefficientSystem.pullback (R := R) f).map φ) ≫
+        (classicalDGLocalSystemPullbackIsoOfEq R f hf L').hom =
+      (classicalDGLocalSystemPullbackIsoOfEq R f hf L).hom ≫
+        (DGLocalSystem.pullback R f hf).map (classicalDGLocalSystemMap φ) := by
+  subst hf
+  exact classicalDGLocalSystemPullbackIso_hom_naturality f x φ
 
 variable (R) in
-/-- **Naturality of `classicalDGLocalSystemPullbackIso` in the local system**: for a based map
-`f : (X, x) → (Y, f x)`, taking DG local systems commutes with pulling back along `f`, up to the
-identity of the fibers. -/
-def classicalDGLocalSystemFunctorPullbackIso (f : C(X, Y)) (x : X) :
+/-- **Taking DG local systems commutes with pullback**: for a based map `f : (X, x) → (Y, y)`,
+the isomorphisms `classicalDGLocalSystemPullbackIsoOfEq` form an isomorphism of functors
+`f^* ⋙ classicalDGLocalSystemFunctor R x ≅ classicalDGLocalSystemFunctor R y ⋙
+DGLocalSystem.pullback R f hf`. -/
+def classicalDGLocalSystemFunctorPullbackIso (f : C(X, Y)) {x : X} {y : Y} (hf : f x = y) :
     LocalCoefficientSystem.pullback (R := R) f ⋙ classicalDGLocalSystemFunctor.{u, w} R x ≅
-      classicalDGLocalSystemFunctor R (f x) ⋙ DGLocalSystem.pullback R f rfl :=
-  NatIso.ofComponents (classicalDGLocalSystemPullbackIso R f x) fun φ ↦
-    classicalDGLocalSystemPullbackIso_hom_naturality f x φ
+      classicalDGLocalSystemFunctor R y ⋙ DGLocalSystem.pullback R f hf :=
+  NatIso.ofComponents (classicalDGLocalSystemPullbackIsoOfEq R f hf) fun φ ↦
+    classicalDGLocalSystemPullbackIsoOfEq_hom_naturality f hf φ
 
 /-- The component of `classicalDGLocalSystemFunctorPullbackIso` at `L`. -/
 @[simp]
-theorem classicalDGLocalSystemFunctorPullbackIso_app (f : C(X, Y)) (x : X)
-    (L : LocalCoefficientSystem.{u, u, w} R Y) :
-    (classicalDGLocalSystemFunctorPullbackIso R f x).app L =
-      classicalDGLocalSystemPullbackIso R f x L :=
+theorem classicalDGLocalSystemFunctorPullbackIso_app (f : C(X, Y)) {x : X} {y : Y}
+    (hf : f x = y) (L : LocalCoefficientSystem.{u, u, w} R Y) :
+    (classicalDGLocalSystemFunctorPullbackIso R f hf).app L =
+      classicalDGLocalSystemPullbackIsoOfEq R f hf L :=
   (rfl)
 
 end TauCeti
