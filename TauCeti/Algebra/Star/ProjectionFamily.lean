@@ -85,10 +85,4 @@ theorem mul_projectionFamilyOverlap (hQ : OrthogonalIdempotents Q) (P : ι → R
   classical
   simp [projectionFamilyOverlap_def, Finset.mul_sum, ← mul_assoc, hQ.mul_eq, ite_mul]
 
-/-- The overlap intertwines each source idempotent with its matched target idempotent. -/
-theorem projectionFamilyOverlap_mul_eq_mul_projectionFamilyOverlap
-    (hP : OrthogonalIdempotents P) (hQ : OrthogonalIdempotents Q) (i : ι) :
-    projectionFamilyOverlap P Q * P i = Q i * projectionFamilyOverlap P Q := by
-  simp only [hP.projectionFamilyOverlap_mul, hQ.mul_projectionFamilyOverlap]
-
 end OrthogonalIdempotents
