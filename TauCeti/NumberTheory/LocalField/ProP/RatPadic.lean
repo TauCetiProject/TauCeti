@@ -19,12 +19,8 @@ dyadic Demushkin group `D₀`.
 
 The field `ℚ₂` contains exactly two `2`-power roots of unity, `±1`, and has degree `N = 1` over
 itself, so it lies in the odd dyadic case and `G_{ℚ₂}(2)` is a Demushkin group of rank
-`N + 2 = 3`. The odd-degree marked theorem
-`TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_odd` at `N = 1` presents it by the relator
-`x₁² x₂⁴ (x₂, x₃)`, which is the defining relator of
-`D₀ = ⟨A, S, Y ∣ A²S⁴(S,Y)⟩` (`TauCeti.d0Relator_eq_demushkinWordTwoOdd`). Its values `-1`, `1`,
-`(-3)⁻¹` of the cyclotomic orientation on the preimages of `A`, `S`, `Y` are those that
-characterize `TauCeti.standardD0Orientation` (`TauCeti.standardD0Orientation_unique`).
+`N + 2 = 3`. This module identifies `G_{ℚ₂}(2)` with `D₀`, both as an unmarked group and with
+the standard orientation of `D₀` corresponding to the cyclotomic orientation of `G_{ℚ₂}(2)`.
 
 ## Main results
 
