@@ -40,6 +40,8 @@ primitivity of the product action requires additional hypotheses and is not asse
 * `TauCeti.WreathProduct.imprimitiveToPerm`: the imprimitive permutation representation on
   `ι × Λ`.
 * `TauCeti.WreathProduct.productToPerm`: the product permutation representation on `ι → Λ`.
+* `TauCeti.WreathProduct.flatten`: the embedding `(D ≀ Sym(κ)) ≀ Sym(ι) →* D ≀ Sym(ι × κ)` of an
+  iterated wreath product, injective for nonempty `κ` (`TauCeti.WreathProduct.flatten_injective`).
 
 ## Main results
 
@@ -479,6 +481,71 @@ theorem mem_range_imprimitiveToPerm_bool_iff {σ : Equiv.Perm (ι × Bool)} :
     exact mem_range_imprimitiveToPerm_iff.mpr ⟨τ, fun x ↦ hfib hσ x.1 x.2 false⟩
 
 end Imprimitive
+
+section Flatten
+
+variable {κ : Type w}
+
+/-- **Flattening an iterated wreath product**, the homomorphism
+`(D ≀ Sym(κ)) ≀ Sym(ι) →* D ≀ Sym(ι × κ)`. Its base coordinate at `(i, k)` is the base
+coordinate at `k` of the coordinate of `w` at `i` (`flatten_left`), and its top permutation is
+`(i, k) ↦ (σ i, τ_{σ i} k)`, where `σ` is the top permutation of `w` and `τ_j` that of its
+coordinate at `j` (`flatten_right_apply`): the imprimitive action of `w` read through the top
+permutations of its coordinates. It is injective when `κ` is nonempty (`flatten_injective`). -/
+def flatten : WreathProduct (WreathProduct D κ) ι →* WreathProduct D (ι × κ) where
+  toFun w := ⟨fun x ↦ (w.left x.1).left x.2,
+    imprimitiveToPerm (Equiv.Perm κ) ι κ (map SemidirectProduct.rightHom w)⟩
+  map_one' := by
+    apply SemidirectProduct.ext
+    · funext x
+      simp
+    · simp
+  map_mul' w z := by
+    apply SemidirectProduct.ext
+    · funext x
+      simp [Equiv.Perm.smul_def, ← map_inv]
+    · simp
+
+/-- The base coordinates of a flattened element are the base coordinates of its coordinates. -/
+@[simp]
+theorem flatten_left (w : WreathProduct (WreathProduct D κ) ι) (x : ι × κ) :
+    (flatten w).left x = (w.left x.1).left x.2 := by
+  simp [flatten]
+
+/-- The top permutation of a flattened element permutes the blocks `{i} × κ` by the top
+permutation of the element, and inside each block by the top permutation of the coordinate. -/
+@[simp]
+theorem flatten_right_apply (w : WreathProduct (WreathProduct D κ) ι) (x : ι × κ) :
+    (flatten w).right x = (w.right x.1, (w.left (w.right x.1)).right x.2) := by
+  simp [flatten]
+
+/-- Flattening is natural in the base group. -/
+theorem flatten_map {D' : Type*} [Group D'] (f : D →* D')
+    (w : WreathProduct (WreathProduct D κ) ι) :
+    flatten (map (map f) w) = map f (flatten w) := by
+  apply SemidirectProduct.ext
+  · funext x
+    simp
+  · ext x <;> simp
+
+/-- Flattening an iterated wreath product is injective when the inner index type is nonempty. -/
+theorem flatten_injective [Nonempty κ] :
+    Function.Injective (flatten : WreathProduct (WreathProduct D κ) ι →* _) := by
+  intro w z h
+  obtain ⟨k⟩ := ‹Nonempty κ›
+  have hright : w.right = z.right := Equiv.ext fun i ↦ by
+    simpa using congrArg Prod.fst (congrArg (fun v ↦ v.right (i, k)) h)
+  apply SemidirectProduct.ext _ hright
+  funext i
+  apply SemidirectProduct.ext
+  · funext l
+    simpa using congrArg (fun v ↦ v.left (i, l)) h
+  · apply Equiv.ext
+    intro l
+    have hz : z.right (w.right.symm i) = i := by rw [← hright, Equiv.apply_symm_apply]
+    simpa [hz] using congrArg Prod.snd (congrArg (fun v ↦ v.right (w.right.symm i, l)) h)
+
+end Flatten
 
 section Product
 
