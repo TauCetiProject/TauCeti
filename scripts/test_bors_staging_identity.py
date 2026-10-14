@@ -13,8 +13,9 @@ PAYLOAD = dict(batch_id=12, head_sha='a' * 40, base_sha='b' * 40, base_ref='main
 
 def group(*, event='repository_dispatch', action='tauceti-bors-staging',
           run=1, repo=1, payload=None, pr='', manual=''):
+    data = PAYLOAD if payload is None else dict.fromkeys(PAYLOAD) | payload
     github = NS(event_name=event, run_id=run, repository_id=repo, event=NS(
-        action=action, client_payload=NS(**(PAYLOAD if payload is None else payload), pr=pr),
+        action=action, client_payload=NS(**data, pr=pr),
         pull_request=NS(number=pr if event == 'pull_request_target' else ''),
         merge_group=NS(head_sha='c' * 40 if event == 'merge_group' else '')))
     expression = WORKFLOW['concurrency']['group'].split('${{', 1)[1].removesuffix('}}')
@@ -39,6 +40,8 @@ class ConcurrencyTests(unittest.TestCase):
 
     def test_missing_fields_fall_back_to_independent_run_keys(self):
         for field in PAYLOAD:
+            self.assertEqual(group(payload={k: v for k, v in PAYLOAD.items() if k != field}),
+                             'pr-build-bors-staging-run-1')
             for value in ['', None, False, 0]:
                 with self.subTest(field=field, value=value):
                     data = {**PAYLOAD, field: value}
