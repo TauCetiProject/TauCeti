@@ -27,7 +27,7 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   Mathlib's `IsUnit.squarefree`). It is phrased with `Squarefree` dot-notation, so a caller
   holding `ha : Squarefree a` and `hu : ¬ IsUnit a` can write `ha.not_isSquare hu`.
 * `Squarefree.neg`: negation preserves squarefreeness in any ring with distributive negation.
-* `squarefree_map_iff`: a multiplicative equivalence preserves and reflects squarefreeness.
+* `TauCeti.squarefree_map_iff`: a multiplicative equivalence preserves and reflects squarefreeness.
 * `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
   rational square.
 * `isSquare_mul_sq_iff`: in a commutative group with zero, multiplying by a nonzero square does
@@ -82,7 +82,7 @@ theorem Squarefree.neg {R : Type*} [Monoid R] [HasDistribNeg R] {n : R}
 
 /-- A multiplicative equivalence preserves and reflects squarefreeness. -/
 @[simp]
-theorem squarefree_map_iff {F M N : Type*} [Monoid M] [Monoid N] [EquivLike F M N]
+theorem TauCeti.squarefree_map_iff {F M N : Type*} [Monoid M] [Monoid N] [EquivLike F M N]
     [MulEquivClass F M N] (f : F) {a : M} : Squarefree (f a) ↔ Squarefree a := by
   refine ⟨fun h x hx ↦ (isUnit_map_iff f x).mp (h _ (by simpa using map_dvd f hx)),
     fun h y hy ↦ ?_⟩

@@ -234,7 +234,7 @@ theorem exp_neg_one_le_valuation_intCast (v : HeightOneSpectrum (𝓞 ℚ)) {n :
     (hn : Squarefree n) : WithZero.exp (-1) ≤ v.valuation ℚ (n : ℚ) := by
   rw [← map_intCast (algebraMap (𝓞 ℚ) ℚ), v.valuation_of_algebraMap]
   apply v.exp_neg_one_le_intValuation_of_squarefree
-  exact (squarefree_map_iff Rat.ringOfIntegersEquiv).1 (by simpa using hn)
+  exact (TauCeti.squarefree_map_iff Rat.ringOfIntegersEquiv).1 (by simpa using hn)
 
 end Rat.HeightOneSpectrum
 
