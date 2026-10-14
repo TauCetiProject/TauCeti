@@ -55,6 +55,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   weak gradient.
 * `TauCeti.W1p0.setIntegral_inner_gradient_eq_zero`: on a bounded `Ω`, the weak gradient of
   `u ∈ W^{1,p}_0(Ω)` has integral zero.
+* `TauCeti.W1p0.not_exists_value_ae_eq_const_of_inner_gradient_eq_one`: on a bounded nonempty
+  `Ω`, a function with the boundary values of `g`, where `⟪∇g, w⟫ = 1`, is not constant.
 
 ## References
 
@@ -349,8 +351,8 @@ theorem W1p0.setIntegral_inner_gradient_eq_zero (hΩ : Bornology.IsBounded (Omeg
   have hleft : ∀ x, lineDeriv ℝ (φ : E → ℝ) x w •
       (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) x = 0 := fun x => by
     by_cases hx : x ∈ (Omega : Set E)
-    · rw [((φ.contDiff (n := 1)).differentiable one_ne_zero x).lineDeriv_eq_fderiv,
-        (hφΩ x hx).fderiv_eq, fderiv_const_apply, zero_apply, zero_smul]
+    · simp [((φ.contDiff (n := 1)).differentiable one_ne_zero x).lineDeriv_eq_fderiv,
+        (hφΩ x hx).fderiv_eq]
     · rw [Set.indicator_of_notMem hx, smul_zero]
   have hright : ∀ x, (φ : E → ℝ) x • innerSL ℝ
       ((Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) x) w =
@@ -361,6 +363,35 @@ theorem W1p0.setIntegral_inner_gradient_eq_zero (hΩ : Bornology.IsBounded (Omeg
       · simp [Set.indicator_of_notMem hx]
   simp only [hleft, integral_zero, hright,
     integral_indicator Omega.isOpen.measurableSet] at hid
+  linarith
+
+/-- **A function with the boundary values of `g` is not constant when `⟪∇g, w⟫ = 1`.**
+On a bounded nonempty `Ω`, if `⟪∇g, w⟫ = 1` almost everywhere, then no `u ∈ W^{1,p}(Ω)` with
+`u - g ∈ W^{1,p}_0(Ω)` is almost everywhere constant: otherwise `∫_Ω ⟪∇(u - g), w⟫ = -μ(Ω)` would
+vanish by `TauCeti.W1p0.setIntegral_inner_gradient_eq_zero`. -/
+theorem W1p0.not_exists_value_ae_eq_const_of_inner_gradient_eq_one
+    (hΩ : Bornology.IsBounded (Omega : Set E)) (hne : (Omega : Set E).Nonempty)
+    {u g : W1p mu Omega p} {w : E}
+    (hg : ∀ᵐ x ∂mu.restrict Omega, ⟪W1p.gradient g x, w⟫_ℝ = 1)
+    (hug : u - g ∈ w1p0Submodule mu Omega p) :
+    ¬ ∃ c : ℝ, W1p.value u =ᵐ[mu.restrict Omega] fun _ => c := by
+  rintro ⟨c, hc⟩
+  have hfin : mu (Omega : Set E) < ⊤ := hΩ.measure_lt_top
+  have : IsFiniteMeasure (mu.restrict (Omega : Set E)) := isFiniteMeasure_restrict.2 hfin.ne
+  have hconst : W1p.value u = W1p.value (W1p.const c : W1p mu Omega p) := by
+    refine Lp.ext (hc.trans ?_)
+    rw [W1p.value_const]
+    exact (Lp.coeFn_const p (mu.restrict Omega) c).symm
+  have hgu : W1p.gradient (u - g) = -W1p.gradient g := by
+    simp [W1p.ext_value hconst]
+  have hgrad : ∀ᵐ x ∂mu.restrict Omega, ⟪W1p.gradient (u - g) x, w⟫_ℝ = -1 := by
+    filter_upwards [hg, Lp.coeFn_neg (W1p.gradient g)] with x hgx hnx
+    simp only [hgu, hnx, Pi.neg_apply, inner_neg_left, hgx]
+  have hint := W1p0.setIntegral_inner_gradient_eq_zero hΩ ⟨u - g, hug⟩ w
+  rw [integral_congr_ae hgrad] at hint
+  have hpos : 0 < mu.real (Omega : Set E) :=
+    ENNReal.toReal_pos (Omega.isOpen.measure_pos mu hne).ne' hfin.ne
+  simp at hint
   linarith
 
 end TauCeti

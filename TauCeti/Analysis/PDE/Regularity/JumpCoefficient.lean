@@ -33,7 +33,7 @@ coordinate `x₀` almost everywhere, and `∫_Ω κ ∇u · ∇v = 0` for every 
 * the problem has exactly one weak solution, by Lax–Milgram; a priori it is only known to lie in
   `H¹(Ω)`;
 * the solution is not constant, since a constant minus `x₀` is not in `H¹₀(Ω)`
-  (`TauCeti.W1p0.setIntegral_inner_gradient_eq_zero`);
+  (`TauCeti.W1p0.not_exists_value_ae_eq_const_of_inner_gradient_eq_one`);
 * by De Giorgi's theorem its precise representative is Hölder continuous on every compact subset
   of `Ω`, with an exponent `α ∈ (0, 1]` depending only on the dimension.
 
@@ -97,7 +97,8 @@ theorem not_continuousAt_jumpCoefficient {x : EuclideanSpace ℝ (Fin (n + 1))} 
   simp [jumpCoefficient, hx] at this
 
 /-- The coordinate function `x₀` on a bounded open set, as an element of `H¹(Ω)` whose weak
-gradient is `e₀`. -/
+gradient has component `1` along `e₀`; this specializes
+`TauCeti.W1p.exists_value_gradient_ae_eq_continuousLinearMap` to the coordinate functional. -/
 private theorem exists_value_ae_eq_apply_zero {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
     ∃ g : W1p volume Omega 2,
@@ -105,60 +106,13 @@ private theorem exists_value_ae_eq_apply_zero {Omega : Opens (EuclideanSpace ℝ
         (fun x => x 0) ∧
       ∀ᵐ x ∂volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
         ⟪W1p.gradient g x, EuclideanSpace.single 0 1⟫_ℝ = 1 := by
-  have hK : IsCompact (closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    hb.isCompact_closure
-  have hx₀ : ContDiffOn ℝ 1 (fun x : EuclideanSpace ℝ (Fin (n + 1)) => x 0) univ := by fun_prop
-  have hg : ∃ g : W1p volume Omega 2,
-      W1p.value g =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
-        (fun x => x 0) ∧
-      W1p.gradient g =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
-        ∇ (fun x : EuclideanSpace ℝ (Fin (n + 1)) => x 0) :=
-    W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact isOpen_univ hx₀ hK subset_closure
-      (subset_univ _)
-  obtain ⟨g, hgv, hgg⟩ := hg
-  refine ⟨g, hgv, ?_⟩
-  have hf : (fun y : EuclideanSpace ℝ (Fin (n + 1)) => y 0) =
-      EuclideanSpace.proj (0 : Fin (n + 1)) := by
-    ext y
-    simp
-  filter_upwards [hgg] with x hx
-  rw [hx, ← InnerProductSpace.toDual_apply_apply, toDual_gradient, hf, ContinuousLinearMap.fderiv]
-  simp
-
-/-- On a bounded nonempty open set, a function of `H¹(Ω)` with the boundary values of a function
-`g` whose gradient has component `1` along `e₀` is not constant. -/
-private theorem not_exists_value_ae_eq_const {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) {u g : W1p volume Omega 2}
-    (hg : ∀ᵐ x ∂volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ⟪W1p.gradient g x, EuclideanSpace.single 0 1⟫_ℝ = 1)
-    (hug : u - g ∈ w1p0Submodule volume Omega 2) :
-    ¬ ∃ c : ℝ, W1p.value u =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
-      fun _ => c := by
-  rintro ⟨c, hc⟩
-  have hfin : volume (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) < ⊤ := hb.measure_lt_top
-  have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isFiniteMeasure_restrict.2 hfin.ne
-  -- A constant has zero gradient, so `∫_Ω ⟪∇(u - g), e₀⟫ = -|Ω|`, which is not zero.
-  have hgu : W1p.gradient u = 0 := by
-    rw [W1p.ext_value (Lp.ext (hc.trans (by rw [W1p.value_const]; exact
-      (Lp.coeFn_const _ _ c).symm))), W1p.gradient_const]
-  have hsub : W1p.gradient (u - g) = W1p.gradient u - W1p.gradient g := by
-    rw [← W1p.gradientL_apply, map_sub, W1p.gradientL_apply, W1p.gradientL_apply]
-  have hgrad : ∀ᵐ x ∂volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ⟪W1p.gradient (u - g) x, EuclideanSpace.single 0 1⟫_ℝ = -1 := by
-    filter_upwards [hg, Lp.coeFn_sub (W1p.gradient u) (W1p.gradient g),
-      Lp.coeFn_zero (EuclideanSpace ℝ (Fin (n + 1))) 2
-        (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
-      with x hgx hsx hzx
-    rw [hsub, hsx, Pi.sub_apply, hgu, hzx, Pi.zero_apply, zero_sub, inner_neg_left, hgx]
-  have hint : ∫ x in Omega, ⟪W1p.gradient (u - g) x, EuclideanSpace.single 0 1⟫_ℝ = 0 :=
-    W1p0.setIntegral_inner_gradient_eq_zero hb ⟨u - g, hug⟩ (EuclideanSpace.single 0 1)
-  rw [integral_congr_ae hgrad] at hint
-  have hpos : 0 < volume.real (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
-    ENNReal.toReal_pos (Omega.isOpen.measure_pos volume hne).ne' hfin.ne
-  simp at hint
-  linarith
+  obtain ⟨g, hgv, hgg⟩ := W1p.exists_value_gradient_ae_eq_continuousLinearMap (mu := volume)
+    (p := 2) hb (EuclideanSpace.proj (0 : Fin (n + 1)))
+  refine ⟨g, ?_, ?_⟩
+  · filter_upwards [hgv] with x hx
+    simp [hx]
+  · filter_upwards [hgg] with x hx
+    simp [hx, InnerProductSpace.toDual_symm_apply]
 
 /-- The Dirichlet problem for the jump coefficient: on a bounded open set and for every
 `g ∈ H¹(Ω)`, the weak solution of `-div(κ ∇u) = 0` in `Ω`, `u = g` on `∂Ω` exists and is
@@ -218,9 +172,9 @@ theorem exists_holderOnWith_preciseRepresentative_jumpCoefficient (n : ℕ) :
     (ι := Fin (n + 1)) (mu := volume) (lam := 1) (Lam := 2)
   refine ⟨α, hα, hα1, fun {Omega} hb hne => ?_⟩
   have hg := exists_value_ae_eq_apply_zero hb
-  obtain ⟨g, hgv, hgg⟩ := hg
-  refine ⟨g, hgv, existsUnique_jumpCoefficient hb g, fun u hu => ⟨?_, fun K hK hKΩ => ?_⟩⟩
-  · exact not_exists_value_ae_eq_const hb hne hgg hu.1
+  obtain ⟨g, hgx, hge⟩ := hg
+  refine ⟨g, hgx, existsUnique_jumpCoefficient hb g, fun u hu => ⟨?_, fun K hK hKΩ => ?_⟩⟩
+  · exact W1p0.not_exists_value_ae_eq_const_of_inner_gradient_eq_one hb hne hge hu.1
   · exact hDG (uniformlyEllipticOn_jumpCoefficient _)
       stronglyMeasurable_jumpCoefficient.aestronglyMeasurable hu.2 hK hKΩ
 
