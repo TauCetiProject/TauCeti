@@ -28,6 +28,8 @@ hence the normal spaces, of an immersed submanifold vary smoothly.
   finite-dimensional space is invertible exactly when the operator is injective.
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
+* `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
+  `B B†`.
 * `LinearMap.finrank_orthogonal_range_of_injective`: the dimension of the orthogonal
   complement of the range of an injective operator.
 * `Submodule.starProjection_inverse_apply`: if the compression to `W` of the orthogonal projection
@@ -69,6 +71,29 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProje
   simp only [comp_apply, one_apply_eq_self] at h
   rw [coe_coe, inner_sub_left]
   simp only [← adjoint_inner_left, h, sub_self]
+
+omit [CompleteSpace F] [CompleteSpace V] in
+/-- An operator followed by the orthogonal projection onto its range is unchanged. -/
+@[simp]
+theorem starProjection_range_comp (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] :
+    B.range.starProjection ∘L B = B := by
+  ext x
+  exact Submodule.starProjection_eq_self_iff.2 (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
+
+omit [CompleteSpace F] [CompleteSpace V] in
+/-- An operator followed by the orthogonal projection onto the complement of its range is zero. -/
+@[simp]
+theorem starProjection_orthogonal_range_comp (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] :
+    B.rangeᗮ.starProjection ∘L B = 0 := by
+  ext x
+  exact Submodule.starProjection_orthogonal_apply_eq_zero
+    (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
+
+/-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
+theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
+    [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
+  have h := (isometry_iff_adjoint_comp_self B).1 hB
+  rw [starProjection_range_eq (h ▸ isUnit_one), h, Ring.inverse_one, one_def, id_comp]
 
 end ContinuousLinearMap
 
