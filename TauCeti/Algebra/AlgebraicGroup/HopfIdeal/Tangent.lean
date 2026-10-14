@@ -302,8 +302,9 @@ theorem lieSubalgebra_map {K : Type*} [CommRing K] [HopfAlgebra R K]
   simp only [Set.forall_mem_image, derivationComp_apply]
   exact ⟨fun h x hx ↦ h hx, fun h x hx ↦ h x hx⟩
 
-/-- Along a surjective coordinate morphism `f`, precomposition with `f` identifies the tangent
-Lie algebra of a closed subgroup with that of its inverse image. -/
+/-- Along a closed immersion given by a surjective coordinate morphism `f`, precomposition with `f`
+identifies the tangent Lie algebra of a closed subgroup with that of its image (the subgroup cut
+out by `J.comapOfSurjective f`). -/
 theorem derivationComp_mem_lieSubalgebra_comapOfSurjective_iff {K : Type*} [CommRing K]
     [HopfAlgebra R K] (J : HopfIdeal R K) (f : H →ₐc[R] K) (hf : Function.Surjective f)
     (d : Derivation R K (Bialgebra.CounitAlgebra R K B)) :

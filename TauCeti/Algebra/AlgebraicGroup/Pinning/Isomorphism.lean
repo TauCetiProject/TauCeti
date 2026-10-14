@@ -56,15 +56,6 @@ variable {R : Type u} [CommRing R] {H L : CommHopfAlgCat.{u} R}
 
 namespace SplitMaximalTorus
 
-/-- The coordinate map of a transported torus is restriction along the bialgebra equivalence
-underlying the isomorphism. -/
-private theorem hom_comapOfIso_coordinateMap (T : SplitMaximalTorus R L r) (e : H ≅ L) :
-    (T.comapOfIso e).coordinateMap.hom =
-      T.coordinateMap.hom.comp (CommHopfAlgCat.ofIso e : H →ₐc[R] L) := by
-  rw [comapOfIso_coordinateMap, CommHopfAlgCat.hom_comp]
-  -- `CommHopfAlgCat.ofIso e` has `e.hom` as its underlying bialgebra morphism.
-  rfl
-
 variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R L)]
 
@@ -151,10 +142,11 @@ theorem coe_comapOfIso_rootSpaceEquiv_apply (P : Pinning R L r) (e : H ≅ L)
       Derivation.dualCotangentMap e.hom.hom
         (P.rootSpaceEquiv ⟨α.val,
           (P.isSimpleRoot_comapOfIso_iff e _).mp α.property⟩ c) := by
-  -- Unfold the transported trivialization to the original one followed by the weight-space
-  -- equivalence of `CommHopfAlgCat.ofIso e`, whose underlying bialgebra morphism is `e.hom`.
-  change ((Derivation.adjointWeightSpaceEquiv (CommHopfAlgCat.ofIso e) P.torus.coordinateMap.hom
-      (Multiplicative.ofAdd α.val) _ : Module.Dual R (Bialgebra.CotangentSpace R H))) = _
+  rw [← CommHopfAlgCat.coe_ofIso]
+  -- The transported trivialization is the original one followed by the weight-space equivalence
+  -- of `CommHopfAlgCat.ofIso e` and a `LinearEquiv.ofEq` retyping. `LinearEquiv.trans_apply`
+  -- cannot be rewritten here: the field's codomain is stated for `(P.comapOfIso e).torus`, which
+  -- is not reducibly `P.torus.comapOfIso e`, so `exact` unfolds the chain instead.
   exact Derivation.coe_adjointWeightSpaceEquiv_apply _ _ _ _
 
 /-- **The root vectors of a transported pinning** are the images of the root vectors of the

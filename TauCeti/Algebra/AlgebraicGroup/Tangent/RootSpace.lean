@@ -404,23 +404,6 @@ section Transport
 variable {R H L M : Type u} [CommRing R] [CommRing H] [CommRing L] [HopfAlgebra R H]
   [HopfAlgebra R L] [CommGroup M]
 
-/-- Regarding a composite point as counit-algebra valued commutes with restriction along `φ`. -/
-private theorem pointInCounitAlgebra_comp (φ : H →ₐc[R] L) (π : L →ₐc[R] MonoidAlgebra R M) :
-    pointInCounitAlgebra (H := H) (CommAlgCat.of R (MonoidAlgebra R M))
-        (toConv ((π.comp φ : H →ₐc[R] MonoidAlgebra R M) : H →ₐ[R] MonoidAlgebra R M)) =
-      AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R H (MonoidAlgebra R M)) φ
-        (pointInCounitAlgebra (H := L) (CommAlgCat.of R (MonoidAlgebra R M))
-          (toConv (π : L →ₐ[R] MonoidAlgebra R M))) := by
-  apply WithConv.ofConv_injective
-  ext h
-  have h₁ := pointInCounitAlgebra_apply (H := H) (CommAlgCat.of R (MonoidAlgebra R M))
-    (toConv ((π.comp φ : H →ₐc[R] MonoidAlgebra R M) : H →ₐ[R] MonoidAlgebra R M)) h
-  have h₂ := pointInCounitAlgebra_apply (H := L) (CommAlgCat.of R (MonoidAlgebra R M))
-    (toConv (π : L →ₐ[R] MonoidAlgebra R M)) (φ h)
-  -- `AlgHom.mapDomain` evaluates by precomposition; its two counit-algebra codomains are
-  -- definitionally the same value algebra.
-  exact h₁.trans h₂.symm
-
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)]
   [Module.Finite R (Bialgebra.CotangentSpace R L)]
@@ -446,7 +429,7 @@ theorem dualCotangentMap_mem_adjointWeightSpace_iff (φ : H →ₐc[R] L)
     ← LinearMap.lTensor_tmul, ← LinearMap.lTensor_tmul,
     tangentScalarExtensionEquiv_lTensor_dualCotangentMap,
     tangentScalarExtensionEquiv_lTensor_dualCotangentMap, derivationComp_adDerivation,
-    pointInCounitAlgebra_comp]
+    BialgHom.comp_toAlgHom, pointInCounitAlgebra_comp]
 
 /-- The differential of a bialgebra equivalence carries each adjoint weight space onto the
 weight space of the same character for the transported diagonalizable subgroup. -/

@@ -353,6 +353,12 @@ lemma dualCotangentEquiv_apply (e : A ≃ₐc[R] A')
     dualCotangentEquiv e y = dualCotangentMap (e : A →ₐc[R] A') y :=
   (rfl)
 
+@[simp]
+lemma dualCotangentEquiv_symm_apply (e : A ≃ₐc[R] A')
+    (y : Module.Dual R (Bialgebra.CotangentSpace R A)) :
+    (dualCotangentEquiv e).symm y = dualCotangentMap (e.symm : A' →ₐc[R] A) y :=
+  (rfl)
+
 lemma coe_dualCotangentEquiv (e : A ≃ₐc[R] A') :
     (dualCotangentEquiv e : Module.Dual R (Bialgebra.CotangentSpace R A') →ₗ[R]
       Module.Dual R (Bialgebra.CotangentSpace R A)) = dualCotangentMap (e : A →ₐc[R] A') :=
