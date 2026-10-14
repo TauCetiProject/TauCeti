@@ -479,7 +479,6 @@ instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerR
   have hmap : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) = algebraMap 𝒪[L] 𝒪[M] := by
     ext x
     simp only [coe_integerRingHom_apply, ValuativeExtension.coe_algebraMap_integerRing]
-    rfl
   have hlocal : IsLocalHom (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) :=
     hmap.symm ▸ (inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M]))
   exact ⟨hlocal.map_nonunit⟩
