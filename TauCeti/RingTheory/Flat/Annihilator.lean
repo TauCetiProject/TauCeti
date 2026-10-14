@@ -16,9 +16,6 @@ generation hypothesis permits testing annihilation on a finite family, whose ten
 product commutes with its product of targets. The cyclic statement applies to the
 element `1 ⊗ₜ m`, without any finiteness hypothesis on the ambient module.
 
-The argument reuses `LinearMap.ker_baseChange_of_flat` and Mathlib's finite product
-comparison `TensorProduct.piRight`.
-
 These formulas identify the scheme theoretic support of a finite module after flat
 base change. The main result is Stacks Project, Lemma 10.40.4,
 [Tag 07T8](https://stacks.math.columbia.edu/tag/07T8).
