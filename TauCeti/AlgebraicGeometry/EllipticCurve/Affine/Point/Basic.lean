@@ -40,6 +40,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
+* `WeierstrassCurve.Affine.Point.map_eq_self_iff`: a field endomorphism fixes a point exactly
+  when it fixes both coordinates.
 * `WeierstrassCurve.Affine.Point.exists_map_eq_iff`: a point descends along a field embedding
   exactly when both coordinates do.
 * `WeierstrassCurve.Affine.Point.cast_zero` and `WeierstrassCurve.Affine.Point.cast_some`:
@@ -149,6 +151,14 @@ theorem yCoord_map (f : F →ₐ[S] K) (P : (W⁄F).toAffine.Point) :
   cases P with
   | zero => exact f.toRingHom.map_zero.symm
   | some x y h => (rfl)
+
+/-- **An endomorphism of the field fixes a point exactly when it fixes both coordinates.** The
+point at infinity also satisfies the criterion, since its coordinate accessors are zero. -/
+theorem map_eq_self_iff (f : F →ₐ[S] F) (P : (W⁄F).toAffine.Point) :
+    Point.map f P = P ↔ f (xCoord P) = xCoord P ∧ f (yCoord P) = yCoord P := by
+  cases P with
+  | zero => simp [← Point.zero_def]
+  | some x y h => simp [Point.map_some]
 
 /-- A point descends along a field embedding exactly when both coordinates lie in its image.
 The point at infinity also satisfies the criterion, since its coordinate accessors are zero. -/
