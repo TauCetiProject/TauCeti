@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
-public import TauCeti.NumberTheory.NumberField.Units.SUnit
+public import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 
 /-!
 # Fundamental systems of S-units
@@ -65,11 +65,9 @@ private instance instModuleFiniteAdditiveUnitQuotTorsion :
 def basisModTorsion :
     Basis (Fin (NumberField.Units.rank K + Nat.card S)) ℤ
       (Additive (S.unit K ⧸ CommGroup.torsion (S.unit K))) :=
-  Basis.reindex (Module.Free.chooseBasis ℤ _)
-    (Fintype.equivOfCardEq <| by
-      rw [Fintype.card_fin, ← Module.finrank_eq_card_chooseBasisIndex]
-      simpa [finrank_sUnits_numberField K S] using!
-        (finrank_quotient_torsion_eq (M := Additive (S.unit K))))
+  Module.finBasisOfFinrankEq ℤ _ <| by
+    simpa [finrank_sUnits_numberField K S] using!
+      (finrank_quotient_torsion_eq (M := Additive (S.unit K)))
 
 /-- A fundamental system of S-units, obtained by lifting `basisModTorsion` through the quotient
 by torsion. -/
@@ -79,6 +77,7 @@ def fundSystem : Fin (NumberField.Units.rank K + Nat.card S) → S.unit K :=
 
 /-- The image of a fundamental S-unit in the quotient by torsion is the corresponding basis
 vector. -/
+@[simp]
 theorem fundSystem_mk (i : Fin (NumberField.Units.rank K + Nat.card S)) :
     Additive.ofMul (QuotientGroup.mk (fundSystem S i)) = basisModTorsion S i := by
   simp_rw [fundSystem, ← Equiv.eq_symm_apply, Additive.ofMul_symm_eq, Quotient.out_eq']
@@ -96,7 +95,7 @@ theorem fun_eq_repr {x ζ : S.unit K} {f : Fin (NumberField.Units.rank K + Nat.c
         = ∑ i, f i • Additive.ofMul (QuotientGroup.mk (fundSystem S i)) := by
           rw [h, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr hζ, one_mul,
             QuotientGroup.mk_prod, ofMul_prod]
-          rfl
+          simp only [QuotientGroup.mk_zpow, ofMul_zpow]
     _ = ∑ i, f i • basisModTorsion S i := by simp_rw [fundSystem_mk S]
 
 /-- Every S-unit has a unique expression as a torsion S-unit times a product of integral powers
@@ -107,10 +106,14 @@ theorem exist_unique_eq_mul_prod (x : S.unit K) :
       x = ζe.1 * ∏ i, fundSystem S i ^ ζe.2 i := by
   let ζ := x * (∏ i, fundSystem S i ^ ((basisModTorsion S).repr
     (Additive.ofMul (QuotientGroup.mk x)) i))⁻¹
+  have quotient_prod (f : Fin (NumberField.Units.rank K + Nat.card S) → ℤ) :
+      Additive.ofMul (QuotientGroup.mk (∏ i, fundSystem S i ^ f i)) =
+        ∑ i, f i • basisModTorsion S i := by
+    rw [QuotientGroup.mk_prod, ofMul_prod]
+    simp only [QuotientGroup.mk_zpow, ofMul_zpow, fundSystem_mk]
   have h_tors : ζ ∈ CommGroup.torsion (S.unit K) := by
     rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← ofMul_eq_zero,
-      ofMul_mul, ofMul_inv, QuotientGroup.mk_prod, ofMul_prod]
-    simp_rw [QuotientGroup.mk_zpow, ofMul_zpow, fundSystem, QuotientGroup.out_eq']
+      ofMul_mul, ofMul_inv, quotient_prod]
     rw [add_eq_zero_iff_eq_neg, neg_neg]
     exact ((basisModTorsion S).sum_repr (Additive.ofMul (QuotientGroup.mk x))).symm
   refine ⟨⟨⟨ζ, h_tors⟩, ((basisModTorsion S).repr
