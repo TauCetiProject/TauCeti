@@ -57,7 +57,18 @@ theorem mem_convexSection_iff :
     y ∈ convexSection Ω u x ℓ h ↔ y ∈ Ω ∧ u y < u x + ℓ (y - x) + h := by
   rfl
 
+/-- A section is contained in its domain. -/
+theorem convexSection_subset : convexSection Ω u x ℓ h ⊆ Ω := fun _ hy ↦ hy.1
+
+/-- A section is the strict sublevel set of the potential minus the slope on its domain. -/
+theorem convexSection_eq_sep_sub :
+    convexSection Ω u x ℓ h = {y ∈ Ω | (u - ℓ) y < u x - ℓ x + h} := by
+  ext y
+  simp only [mem_convexSection_iff, mem_ofPred_eq, Pi.sub_apply, map_sub]
+  constructor <;> rintro ⟨hy, hb⟩ <;> exact ⟨hy, by linarith⟩
+
 /-- Increasing the height enlarges a section. -/
+@[gcongr]
 theorem convexSection_mono_height (hhk : h ≤ k) :
     convexSection Ω u x ℓ h ⊆ convexSection Ω u x ℓ k := by
   intro y hy
@@ -65,11 +76,7 @@ theorem convexSection_mono_height (hhk : h ≤ k) :
 
 /-- A section of a convex function is convex, even when the slope is not supporting. -/
 theorem convex_convexSection (hu : ConvexOn ℝ Ω u) : Convex ℝ (convexSection Ω u x ℓ h) := by
-  have heq : convexSection Ω u x ℓ h = {y ∈ Ω | (u - ℓ) y < u x - ℓ x + h} := by
-    ext y
-    simp only [mem_convexSection_iff, mem_ofPred_eq, Pi.sub_apply, map_sub]
-    constructor <;> rintro ⟨hy, hb⟩ <;> exact ⟨hy, by linarith⟩
-  rw [heq]
+  rw [convexSection_eq_sep_sub]
   exact (hu.sub (ℓ.concaveOn hu.1)).convex_lt _
 
 /-- A supporting slope gives a nonempty section exactly at positive heights. -/
@@ -86,7 +93,6 @@ theorem convexSection_nonempty_iff (hx : x ∈ Ω)
     exact ⟨x, by simp [mem_convexSection_iff, hx, hh]⟩
 
 /-- At a supporting slope, precisely the nonpositive heights give an empty section. -/
-@[simp]
 theorem convexSection_eq_empty_iff (hx : x ∈ Ω)
     (hℓ : ∀ y ∈ Ω, u x + (ℓ y - ℓ x) ≤ u y) :
     convexSection Ω u x ℓ h = ∅ ↔ h ≤ 0 := by
@@ -162,12 +168,7 @@ variable [TopologicalSpace E]
 continuous. Convexity is not needed for this assertion. -/
 theorem isOpen_convexSection (hΩ : IsOpen Ω) (hu : ContinuousOn u Ω) (hℓ : Continuous ℓ) :
     IsOpen (convexSection Ω u x ℓ h) := by
-  have heq : convexSection Ω u x ℓ h =
-      Ω ∩ (fun y ↦ u y - ℓ y) ⁻¹' Iio (u x - ℓ x + h) := by
-    ext y
-    simp only [mem_convexSection_iff, mem_inter_iff, mem_preimage, mem_Iio, map_sub]
-    constructor <;> rintro ⟨hy, hb⟩ <;> exact ⟨hy, by linarith⟩
-  rw [heq]
+  rw [convexSection_eq_sep_sub]
   exact (hu.sub hℓ.continuousOn).isOpen_inter_preimage hΩ isOpen_Iio
 
 /-- Within the domain, the closure of a section lies in every section of strictly larger
@@ -176,17 +177,12 @@ theorem closure_convexSection_inter_subset (hu : ContinuousOn u Ω) (hℓ : Cont
     (hhk : h < k) :
     closure (convexSection Ω u x ℓ h) ∩ Ω ⊆ convexSection Ω u x ℓ k := by
   rintro y ⟨hy, hyΩ⟩
-  have hsub : convexSection Ω u x ℓ h ⊆ Ω := fun _ hz ↦ hz.1
-  have hbound : u y - ℓ y ≤ u x - ℓ x + h :=
+  have hsub : convexSection Ω u x ℓ h ⊆ Ω := convexSection_subset
+  rw [convexSection_eq_sep_sub] at hy hsub ⊢
+  have hbound : (u - ℓ) y ≤ u x - ℓ x + h :=
     ContinuousWithinAt.closure_le hy (((hu.sub hℓ.continuousOn) y hyΩ).mono hsub)
-      continuousWithinAt_const (fun z hz ↦ by
-        have hb := hz.2
-        simp only [map_sub] at hb
-        simp only [Pi.sub_apply]
-        linarith)
-  refine ⟨hyΩ, ?_⟩
-  simp only [map_sub]
-  linarith
+      continuousWithinAt_const (fun _ hz ↦ hz.2.le)
+  exact ⟨hyΩ, hbound.trans_lt (add_lt_add_right hhk _)⟩
 
 end Topology
 
