@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Group.HomCompletion
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Variational.Fredholm
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
+public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
 /-!
 # The spectrum of a coercive variational problem
@@ -32,8 +33,8 @@ of the eigenspaces also hold without completeness; the Hilbert-basis theorem ass
 soon as `B` is, and its nonzero eigenvalues are exactly the reciprocals of the variational
 eigenvalues: `S` has eigenvalue `κ⁻¹` at `κ • J u` precisely when `u` solves the variational
 eigenvalue problem for `κ`. Mathlib's spectral theorem for compact symmetric operators applies
-on the completion of `H`. The factorization through `V` brings every nonzero eigenvector back
-into `H`, yielding spectral existence and trivial orthogonal complement of the eigenspaces.
+on the completion of `H`. The factorization through `V` brings eigenvectors at nonzero eigenvalues
+back into `H`, yielding spectral existence and trivial orthogonal complement of the eigenspaces.
 Eigenspaces at *nonzero* eigenvalues are finite dimensional. The eigenspace at `0` is the kernel
 of `S`, which is `(range J)ᗮ` and so can be infinite dimensional; it vanishes when `J` has dense
 range.
@@ -170,20 +171,21 @@ theorem norm_formSolutionOperator_toComplL (hB : IsCoercive B) (J : V →L[ℝ] 
   let S := hB.formSolutionOperator J
   -- Use the bounded-additive completion norm theorem through the underlying function.
   let Sg := S.toAddMonoidHom.mkNormedAddGroupHom ‖S‖ S.le_opNorm
-  have hSg : ⇑Sg = S :=
-    (NormedAddGroupHom.coe_mkNormedAddGroupHom _ _ _).trans
-      ((LinearMap.toAddMonoidHom_coe _).trans (ContinuousLinearMap.coe_coe S))
+  have hSg : ⇑Sg = S := by
+    simpa only [LinearMap.toAddMonoidHom_coe (S : H →ₗ[ℝ] H),
+      ContinuousLinearMap.coe_coe S] using
+      NormedAddGroupHom.coe_mkNormedAddGroupHom S.toAddMonoidHom ‖S‖ S.le_opNorm
   have hext : ⇑(hB.formSolutionOperator (Completion.toComplL.comp J)) = Sg.completion := by
     apply Completion.ext (hB.formSolutionOperator (Completion.toComplL.comp J)).continuous
       Sg.completion.continuous
     intro h
     simp only [formSolutionOperator_toComplL_apply, NormedAddGroupHom.completion_coe, hSg, S]
   calc
-    ‖hB.formSolutionOperator (Completion.toComplL.comp J)‖ = ‖Sg.completion‖ := by
-      rw [ContinuousLinearMap.norm_def, NormedAddGroupHom.norm_def, hext]
+    ‖hB.formSolutionOperator (Completion.toComplL.comp J)‖ = ‖Sg.completion‖ :=
+      ContinuousLinearMap.norm_eq_normedAddGroupHom _ _ (congrFun hext)
     _ = ‖Sg‖ := Sg.norm_completion
-    _ = ‖hB.formSolutionOperator J‖ := by
-      simp only [NormedAddGroupHom.norm_def, ContinuousLinearMap.norm_def, hSg, S]
+    _ = ‖hB.formSolutionOperator J‖ :=
+      (S.norm_eq_normedAddGroupHom Sg fun h => (congrFun hSg h).symm).symm
 
 /-! ### Compactness, symmetry, positivity -/
 
@@ -460,6 +462,28 @@ theorem finiteDimensional_eigenspace_formSolutionOperator (hB : IsCoercive B) {J
   IsCompactOperator.finiteDimensional_eigenspace
     (hB.isCompactOperator_formSolutionOperator hJ) hmu
 
+/-- Every vector in an eigenspace of the completed solution operator at a nonzero eigenvalue
+comes from the same eigenspace of the original operator. -/
+theorem exists_mem_eigenspace_formSolutionOperator_of_mem_eigenspace_toComplL
+    (hB : IsCoercive B) (J : V →L[ℝ] H) {mu : ℝ} {w : Completion H} (hmu : mu ≠ 0)
+    (hw : w ∈ eigenspace
+      (hB.formSolutionOperator (Completion.toComplL.comp J) : Completion H →ₗ[ℝ] Completion H)
+      mu) :
+    ∃ y ∈ eigenspace (hB.formSolutionOperator J : H →ₗ[ℝ] H) mu, (y : Completion H) = w := by
+  let Jc : V →L[ℝ] Completion H := Completion.toComplL.comp J
+  have heq : hB.formSolutionOperator Jc w = mu • w := mem_eigenspace_iff.mp hw
+  let y : H := mu⁻¹ • J (hB.formSolutionMap Jc w)
+  have hy : (y : Completion H) = w := by
+    have hfactor : (J (hB.formSolutionMap Jc w) : Completion H) =
+        hB.formSolutionOperator Jc w := by
+      simp only [formSolutionOperator_apply, Jc, ContinuousLinearMap.comp_apply,
+        Completion.coe_toComplL]
+    simp only [y, Completion.coe_smul, hfactor, heq, smul_smul, inv_mul_cancel₀ hmu, one_smul]
+  refine ⟨y, mem_eigenspace_iff.mpr ?_, hy⟩
+  apply Completion.coe_injective
+  simpa only [ContinuousLinearMap.coe_coe, ← formSolutionOperator_toComplL_apply, hy,
+    Completion.coe_smul] using heq
+
 /-- **The spectral theorem for the solution operator**: its eigenspaces have trivial orthogonal
 complement in `H`, even when `H` is incomplete. -/
 theorem orthogonalComplement_iSup_eigenspaces_formSolutionOperator_eq_bot (hB : IsCoercive B)
@@ -485,18 +509,8 @@ theorem orthogonalComplement_iSup_eigenspaces_formSolutionOperator_eq_bot (hB : 
     rw [hinner, heq, inner_smul_right]
     rcases eq_or_ne mu 0 with rfl | hmu
     · simp
-    · let y : H := mu⁻¹ • J (hB.formSolutionMap Jc w)
-      have hy : (y : Completion H) = w := by
-        have hfactor : (J (hB.formSolutionMap Jc w) : Completion H) = Sc w := by
-          simp only [Sc, formSolutionOperator_apply, Jc, ContinuousLinearMap.comp_apply,
-            Completion.coe_toComplL]
-        simp only [y, Completion.coe_smul, hfactor, heq, smul_smul, inv_mul_cancel₀ hmu,
-          one_smul]
-      have hy_eigen : y ∈ eigenspace (hB.formSolutionOperator J : H →ₗ[ℝ] H) mu := by
-        apply mem_eigenspace_iff.mpr
-        apply Completion.coe_injective
-        simpa only [ContinuousLinearMap.coe_coe, ← formSolutionOperator_toComplL_apply, hy,
-          Completion.coe_smul] using heq
+    · obtain ⟨y, hy_eigen, hy⟩ :=
+        hB.exists_mem_eigenspace_formSolutionOperator_of_mem_eigenspace_toComplL J hmu hw
       have hxy := (Submodule.mem_orthogonal' _ x).mp hx y (Submodule.mem_iSup_of_mem mu hy_eigen)
       rw [← hy, Completion.inner_coe, hxy, mul_zero]
   have hx_eigen : x ∈ eigenspace (hB.formSolutionOperator J : H →ₗ[ℝ] H) 0 := by
