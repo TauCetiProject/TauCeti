@@ -14,6 +14,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+import TauCeti.Analysis.Convex.FenchelMoreau
 import TauCeti.Analysis.Convex.MongeAmpere.Decomposition
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 
