@@ -48,6 +48,8 @@ and every problem representable by an object of `Ell/B` is rigid (`isRigid_of_re
 * `TauCeti.AlgebraicGeometry.ModuliProblem.fibre`: the functor `T ↦ 𝒫(E_T/T)` on schemes over the
   base of `E`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData`: relative-representability data.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.universal`: the universal level structure
+  over the representing scheme `𝒫_{E/S}`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.HasProperty`: a property of morphisms of
   schemes holds for every representing morphism.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.IsRigid`: rigidity.
@@ -114,6 +116,14 @@ structure RelRepData where
 namespace RelRepData
 
 variable {P Q} (D : P.RelRepData)
+
+/-- The **universal level structure** of a relatively representable moduli problem `𝒫` over an
+object `X = (E/S)` of `Ell/B`: the `𝒫`-structure on the base change of `E` to the representing
+scheme `𝒫_{E/S}` which corresponds to the identity of `𝒫_{E/S}`. Every level structure on a base
+change of `E` is pulled back from it (`Functor.RepresentableBy.homEquiv_eq`). -/
+@[expose]
+noncomputable def universal (X : EllObj B) : P.obj (op (X.baseChangeFunctor.obj (D.rep X))) :=
+  (D.representableBy X).homEquiv (𝟙 (D.rep X))
 
 /-- Along an arrow `f : X ⟶ Y` of `Ell/B`, the base change of the representing scheme over `Y`
 along `f.base` represents the fibre of the problem over `X`. -/

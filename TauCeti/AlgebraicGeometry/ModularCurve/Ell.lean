@@ -349,6 +349,17 @@ theorem isIso_iff_isIso_base (f : X ⟶ Y) : IsIso f ↔ IsIso f.base := by
     have : IsIso ((forget B).map f) := isIso_of_reflects_iso _ (Over.forget B)
     exact Functor.IsStronglyCartesian.isIso_of_base_isIso (forget B) ((forget B).map f) f
 
+/-- The morphism of bases of an isomorphism of `Ell/B` is an isomorphism. -/
+instance isIso_base {X Y : EllObj B} (f : X ⟶ Y) [IsIso f] : IsIso f.base :=
+  (isIso_iff_isIso_base _ f).1 inferInstance
+
+/-- The morphism of bases of the inverse of an isomorphism of `Ell/B` is the inverse of its morphism
+of bases. -/
+@[simp]
+theorem inv_base {X Y : EllObj B} (f : X ⟶ Y) [IsIso f] : (inv f).base = inv f.base := by
+  refine IsIso.eq_inv_of_hom_inv_id ?_
+  rw [← comp_base, IsIso.hom_inv_id, id_base]
+
 /-! ### Base change along an arrow of `Ell/B` -/
 
 /-- The arrow of `Ell/B` from the base change `X.baseChangeFunctor.obj T` of `X = (S, E)` along
@@ -447,6 +458,13 @@ noncomputable def isoBaseChange {X Y : EllObj B} (g : X ⟶ Y) :
 theorem isoBaseChange_hom_base {X Y : EllObj B} (g : X ⟶ Y) :
     (isoBaseChange g).hom.base = 𝟙 X.base :=
   (rfl)
+
+@[simp]
+theorem isoBaseChange_inv_base {X Y : EllObj B} (g : X ⟶ Y) :
+    (isoBaseChange g).inv.base = 𝟙 X.base := by
+  rw [← IsIso.Iso.inv_hom, inv_base]
+  simp only [isoBaseChange_hom_base]
+  exact IsIso.inv_id
 
 @[reassoc (attr := simp)]
 theorem isoBaseChange_hom_comp {X Y : EllObj B} (g : X ⟶ Y) :

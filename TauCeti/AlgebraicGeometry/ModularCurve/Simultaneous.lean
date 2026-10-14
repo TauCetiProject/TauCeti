@@ -33,15 +33,11 @@ projection `U_{𝒫_U} ⟶ U` is cartesian.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.universal`: the universal level structure
-  over the representing scheme `𝒫_{E/S}`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.tensorRepresentableBy`: the simultaneous
   problem `𝒫 ⊗ 𝒬` is represented by the base change of `U` to `𝒫_U`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.homEquiv_eq_map_universal`: every level
-  structure on a base change `E_T` is the pull-back of the universal one along `T ⟶ 𝒫_{E/S}`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.tensorRepresentableBy_homEquiv`: the
   bijection of `tensorRepresentableBy` pulls back the two universal level structures.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.IsRigid.mono_pullback_lift`: for a rigid `𝒫`, the
@@ -67,21 +63,41 @@ namespace ModuliProblem
 
 variable {B : Scheme.{u}} {P Q : ModuliProblem B}
 
+/-! The product presheaf acts componentwise. Mathlib's `Functor.Monoidal.tensorObj_map` and
+`tensor_apply` do not compose to give these, as the types of the two sides of the former differ
+syntactically. -/
+
+private theorem tensor_map_apply {F G : ModuliProblem B} {X Y : (EllObj B)ᵒᵖ} (f : X ⟶ Y)
+    (x : (F ⊗ G).obj X) : (F ⊗ G).map f x = (F.map f x.1, G.map f x.2) :=
+  (rfl)
+
+private theorem tensor_map_fst {F G : ModuliProblem B} {X Y : (EllObj B)ᵒᵖ} (f : X ⟶ Y)
+    (x : (F ⊗ G).obj X) : ((F ⊗ G).map f x).1 = F.map f x.1 :=
+  (rfl)
+
+private theorem tensor_map_snd {F G : ModuliProblem B} {X Y : (EllObj B)ᵒᵖ} (f : X ⟶ Y)
+    (x : (F ⊗ G).obj X) : ((F ⊗ G).map f x).2 = G.map f x.2 :=
+  (rfl)
+
+private theorem whiskerLeft_app_fst {Q' : ModuliProblem B} (g : Q ⟶ Q') {X : (EllObj B)ᵒᵖ}
+    (x : (P ⊗ Q).obj X) : ((P ◁ g).app X x).1 = x.1 :=
+  (rfl)
+
+private theorem whiskerLeft_app_snd {Q' : ModuliProblem B} (g : Q ⟶ Q') {X : (EllObj B)ᵒᵖ}
+    (x : (P ⊗ Q).obj X) : ((P ◁ g).app X x).2 = g.app X x.2 :=
+  (rfl)
+
+private theorem fst_app_apply {X : (EllObj B)ᵒᵖ} (x : (P ⊗ Q).obj X) :
+    (fst P Q).app X x = x.1 :=
+  (rfl)
+
+private theorem snd_app_apply {X : (EllObj B)ᵒᵖ} (x : (P ⊗ Q).obj X) :
+    (snd P Q).app X x = x.2 :=
+  (rfl)
+
 namespace RelRepData
 
 variable (D : P.RelRepData)
-
-/-- The **universal level structure** of a relatively representable moduli problem `𝒫` over an
-object `X = (E/S)` of `Ell/B`: the `𝒫`-structure on the base change of `E` to the representing
-scheme `𝒫_{E/S}` which corresponds to the identity of `𝒫_{E/S}`. -/
-noncomputable def universal (X : EllObj B) : P.obj (op (X.baseChangeFunctor.obj (D.rep X))) :=
-  (D.representableBy X).homEquiv (𝟙 (D.rep X))
-
-/-- Every level structure on a base change `E_T` of `X = (E/S)` is the pull-back of the universal
-level structure along the corresponding morphism `T ⟶ 𝒫_{E/S}` of schemes over `S`. -/
-theorem homEquiv_eq_map_universal {X : EllObj B} {T : Over X.base} (k : T ⟶ D.rep X) :
-    (D.representableBy X).homEquiv k = P.map (X.baseChangeFunctor.map k).op (D.universal X) :=
-  (D.representableBy X).homEquiv_eq k
 
 variable {U : EllObj B} (R : Q.RepresentableBy U)
 
@@ -95,10 +111,8 @@ private noncomputable def tensorMap {X : EllObj B} (f : X ⟶ U.baseChangeFuncto
 private theorem tensorMap_comp {X X' : EllObj B} (f : X ⟶ X')
     (g : X' ⟶ U.baseChangeFunctor.obj (D.rep U)) :
     D.tensorMap R (f ≫ g) = (P ⊗ Q).map f.op (D.tensorMap R g) := by
-  -- `(P ⊗ Q).map f.op` acts componentwise on pairs, by definition of the product of presheaves
-  change (P.map (f ≫ g).op _, R.homEquiv ((f ≫ g) ≫ _)) =
-    (P.map f.op (P.map g.op _), Q.map f.op (R.homEquiv (g ≫ _)))
-  rw [Category.assoc, R.homEquiv_comp, op_comp, Functor.map_comp_apply]
+  rw [tensor_map_apply, tensorMap, tensorMap, Category.assoc, R.homEquiv_comp, op_comp,
+    Functor.map_comp_apply]
 
 /-- The morphism of bases of an arrow `f : X ⟶ U_{𝒫_U}`, as a morphism to `𝒫_U` of schemes over
 `U.base`, where `X.base` lies over `U.base` through the composite `g` of `f` with the projection
@@ -137,7 +151,8 @@ private theorem map_universal_eq {X : EllObj B} {g : X ⟶ U}
     P.map f.op (D.universal U) =
       P.map (EllObj.isoBaseChange g).hom.op ((D.representableBy U).homEquiv (D.overHom f hf)) := by
   conv_lhs => rw [D.eq_isoBaseChange_hom_comp f hf]
-  rw [op_comp, Functor.map_comp_apply, ← homEquiv_eq_map_universal]
+  rw [op_comp, Functor.map_comp_apply]
+  exact congrArg _ ((D.representableBy U).homEquiv_eq _).symm
 
 private theorem tensorMap_injective {X : EllObj B} :
     Function.Injective (D.tensorMap R (X := X)) := by
@@ -164,12 +179,9 @@ private theorem tensorMap_surjective {X : EllObj B} :
     rw [overHom_left, EllObj.comp_base, EllObj.isoBaseChange_hom_base,
       EllObj.baseChangeFunctor_map_base]
     exact Category.id_comp _
-  refine ⟨(EllObj.isoBaseChange g).hom ≫ U.baseChangeFunctor.map k, Prod.ext ?_ ?_⟩
-  · change P.map _ (D.universal U) = α
-    rw [D.map_universal_eq _ hg, hk', hk, ← Functor.map_comp_apply, ← op_comp, Iso.hom_inv_id,
-      op_id, Functor.map_id_apply]
-  · change R.homEquiv _ = R.homEquiv g
-    rw [hg]
+  refine ⟨(EllObj.isoBaseChange g).hom ≫ U.baseChangeFunctor.map k, ?_⟩
+  rw [tensorMap, D.map_universal_eq _ hg, hk', hk, ← Functor.map_comp_apply, ← op_comp,
+    Iso.hom_inv_id, op_id, Functor.map_id_apply, hg]
 
 /-- **The simultaneous problem with a representable problem is representable.** If `𝒫` is
 relatively representable and `𝒬` is represented by an object `U = (E_U/M)` of `Ell/B`, then the
@@ -182,6 +194,9 @@ noncomputable def tensorRepresentableBy :
   homEquiv := Equiv.ofBijective (D.tensorMap R) ⟨D.tensorMap_injective R, D.tensorMap_surjective R⟩
   homEquiv_comp f g := D.tensorMap_comp R f g
 
+/-- The bijection of `tensorRepresentableBy` sends an arrow `f : X ⟶ U_{𝒫_U}` to the pull-back of
+the universal `𝒫`-structure along `f`, paired with the `𝒬`-structure classifying the composite of
+`f` with the projection to `U`. -/
 theorem tensorRepresentableBy_homEquiv {X : EllObj B}
     (f : X ⟶ U.baseChangeFunctor.obj (D.rep U)) :
     (D.tensorRepresentableBy R).homEquiv f =
@@ -219,8 +234,10 @@ private theorem IsRigid.eq_of_comp_base_eq (hP : P.IsRigid)
   let σ₂ := EllObj.Hom.lift (ey ≫ a₂) (ex ≫ a₂) (𝟙 T) (hh a₂ h₂)
   have hσ₁b : σ₁.base = 𝟙 T := EllObj.Hom.lift_base _ _ _ _
   have hσ₂b : σ₂.base = 𝟙 T := EllObj.Hom.lift_base _ _ _ _
-  have hσ₁ := congrArg R₁.homEquiv (EllObj.Hom.lift_comp (ey ≫ a₁) (ex ≫ a₁) (𝟙 T) (hh a₁ h₁))
-  have hσ₂ := congrArg R₂.homEquiv (EllObj.Hom.lift_comp (ey ≫ a₂) (ex ≫ a₂) (𝟙 T) (hh a₂ h₂))
+  have hσ₁ : R₁.homEquiv (σ₁ ≫ ey ≫ a₁) = R₁.homEquiv (ex ≫ a₁) :=
+    congrArg R₁.homEquiv (EllObj.Hom.lift_comp _ _ _ _)
+  have hσ₂ : R₂.homEquiv (σ₂ ≫ ey ≫ a₂) = R₂.homEquiv (ex ≫ a₂) :=
+    congrArg R₂.homEquiv (EllObj.Hom.lift_comp _ _ _ _)
   have hex : R.homEquiv ex = (P ⊗ (Q₁ ⊗ Q₂)).map ex.op (R.homEquiv (𝟙 V)) := by
     rw [← R.homEquiv_comp, Category.comp_id]
   have hey : R.homEquiv ey = (P ⊗ (Q₁ ⊗ Q₂)).map ey.op (R.homEquiv (𝟙 V)) := by
@@ -228,35 +245,27 @@ private theorem IsRigid.eq_of_comp_base_eq (hP : P.IsRigid)
   rw [R₁.homEquiv_comp, R₁.homEquiv_comp, R₁.homEquiv_comp, ha₁] at hσ₁
   rw [R₂.homEquiv_comp, R₂.homEquiv_comp, R₂.homEquiv_comp, ha₂] at hσ₂
   generalize R.homEquiv (𝟙 V) = ξ at hσ₁ hσ₂ hex hey
-  obtain ⟨p, q₁, q₂⟩ := ξ
-  -- the components of these identities, read off from the definition of the product presheaves
-  have hp₁ : P.map σ₁.op (P.map ey.op p) = P.map ex.op p := congrArg Prod.fst hσ₁
-  have hq₁ : Q₁.map σ₁.op (Q₁.map ey.op q₁) = Q₁.map ex.op q₁ := congrArg Prod.snd hσ₁
-  have hp₂ : P.map σ₂.op (P.map ey.op p) = P.map ex.op p := congrArg Prod.fst hσ₂
-  have hq₂ : Q₂.map σ₂.op (Q₂.map ey.op q₂) = Q₂.map ex.op q₂ := congrArg Prod.snd hσ₂
+  obtain ⟨hp₁, hq₁⟩ := Prod.ext_iff.1 hσ₁
+  obtain ⟨hp₂, hq₂⟩ := Prod.ext_iff.1 hσ₂
+  simp only [tensor_map_fst, tensor_map_snd, whiskerLeft_app_fst, whiskerLeft_app_snd,
+    fst_app_apply, snd_app_apply] at hp₁ hq₁ hp₂ hq₂
   -- `σ₁` and `σ₂` are isomorphisms over `T`, and `σ₁ ≫ σ₂⁻¹` fixes the `𝒫`-structure
   have : IsIso σ₂ := (EllObj.isIso_iff_isIso_base _ _).2 (by rw [hσ₂b]; exact IsIso.id T)
-  have hinv : (inv σ₂).base = 𝟙 T := by
-    have h := congrArg EllObj.Hom.base (IsIso.inv_hom_id σ₂)
-    rw [EllObj.comp_base, hσ₂b, EllObj.id_base] at h
-    exact (Category.comp_id _).symm.trans h
-  have hinvp : P.map (inv σ₂).op (P.map ex.op p) = P.map ey.op p := by
+  have hinvp : P.map (inv σ₂).op (P.map ex.op ξ.1) = P.map ey.op ξ.1 := by
     rw [← hp₂, ← Functor.map_comp_apply, ← op_comp, IsIso.inv_hom_id, op_id, Functor.map_id_apply]
   have hσ : σ₁ = σ₂ := by
     rw [← comp_inv_eq_id σ₂]
-    refine P.isRigid_iff.1 hP _ ?_ (P.map ex.op p) ?_
-    · rw [EllObj.comp_base, hσ₁b, hinv]
-      exact Category.comp_id _
+    refine P.isRigid_iff.1 hP _ ?_ (P.map ex.op ξ.1) ?_
+    · simp only [EllObj.comp_base, EllObj.inv_base, hσ₁b, hσ₂b]
+      exact (Category.id_comp _).trans IsIso.inv_id
     · rw [op_comp, Functor.map_comp_apply, hinvp, hp₁]
   rw [hσ] at hq₁
   -- the common isomorphism carries the arrow `ey` to `ex`
   have hcomp : σ₂ ≫ ey = ex := by
     refine R.homEquiv.injective ?_
     rw [R.homEquiv_comp, hey, hex]
-    -- `(P ⊗ (Q₁ ⊗ Q₂)).map` acts componentwise on triples, by definition of the product presheaf
-    change (P.map σ₂.op (P.map ey.op p), Q₁.map σ₂.op (Q₁.map ey.op q₁),
-      Q₂.map σ₂.op (Q₂.map ey.op q₂)) = (P.map ex.op p, Q₁.map ex.op q₁, Q₂.map ex.op q₂)
-    rw [hp₂, hq₁, hq₂]
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp only [tensor_map_fst, tensor_map_snd]
+    exacts [hp₂, hq₁, hq₂]
   have h := congrArg EllObj.Hom.base hcomp
   rw [EllObj.comp_base, hσ₂b] at h
   simp only [ex, ey, EllObj.baseChangeFunctorHom_base, Over.mk_hom] at h
