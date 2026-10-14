@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import TauCeti.Algebra.TensorProduct.BaseChange
-import TauCeti.Algebra.Coalgebra.BaseChange
 
 /-!
 # Bialgebra maps and base change for tensor products
@@ -137,17 +136,8 @@ private theorem baseChangeTensorAlgEquiv_map_comp_comul :
       (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom := by
   apply AlgHom.toLinearMap_injective
   ext h l
-  simpa only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
-    LinearMap.coe_restrictScalars, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul,
-    Bialgebra.comulAlgHom_apply, TauCeti.Coalgebra.baseChange_comul_tmul, TensorProduct.comul_tmul,
-    Algebra.TensorProduct.map_tmul, AlgHom.id_apply, ← AlgEquiv.coe_toLinearEquiv,
-    Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv,
-    Algebra.TensorProduct.tensorTensorTensorComm_toLinearEquiv] using
-    DFunLike.congr_fun
-      (Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_comp_tensorTensorTensorComm
-        k K H H L L)
-      (1 ⊗ₜ[k] (Coalgebra.comul (R := k) h ⊗ₜ[k] Coalgebra.comul (R := k) l))
+  simp [← (Coalgebra.Repr.arbitrary k h).eq, ← (Coalgebra.Repr.arbitrary k l).eq,
+    TensorProduct.tmul_sum, TensorProduct.sum_tmul]
 
 /-- **Base change commutes with tensor products of bialgebras.**
 
