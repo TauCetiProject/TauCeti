@@ -8,10 +8,11 @@ module
 public import Mathlib.RingTheory.Algebraic.Basic
 
 /-!
-# Translation of transcendental elements
+# Transcendental elements under translations and algebra maps
 
 Adding a base-ring constant to a transcendental element preserves transcendence, over an
-arbitrary commutative ring and in an arbitrary ring algebra.
+arbitrary commutative ring and in an arbitrary ring algebra. So does applying an injective algebra
+homomorphism, the transcendental counterpart of Mathlib's `isAlgebraic_algHom_iff`.
 -/
 
 public section
@@ -30,5 +31,11 @@ theorem add_algebraMap (hx : Transcendental R x) (c : R) :
   apply (comp_X_add_C_eq_zero_iff (t := c)).mp
   apply hx
   simpa only [aeval_comp, map_add, aeval_X, aeval_C] using hp
+
+/-- An injective algebra homomorphism carries a transcendental element to a transcendental
+element. -/
+protected theorem algHom {B G : Type*} [Ring B] [Algebra R B] [FunLike G A B] [AlgHomClass G R A B]
+    (f : G) (hf : Function.Injective f) (hx : Transcendental R x) : Transcendental R (f x) :=
+  (isAlgebraic_algHom_iff (AlgHom.ofClass f) hf).not.mpr hx
 
 end Transcendental

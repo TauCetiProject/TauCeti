@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Div
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Int.Basic
 
 /-!
@@ -19,9 +21,17 @@ Weierstrass coefficients can therefore be checked over `ℤ`, by computation, an
 The proof peels off one factor of `p` at a time: if `p` does not divide an integer `y`, then `p`
 and `y` are coprime in `ℤ`, so `(p : R) ∣ (y : R)` would make `(p : R)` divide `1`.
 
+If moreover every element of `R` is congruent to an integer modulo `p`, as when `R` has residue
+field `𝔽_p`, then roots modulo `p` in `R` of an integer polynomial are read in `ZMod p`, where they
+can be found by a finite search.
+
 ## Main results
 
 * `Nat.Prime.pow_dvd_intCast_iff`: `(p : R) ^ n ∣ (x : R) ↔ (p : ℤ) ^ n ∣ x`.
+* `Nat.Prime.exists_dvd_eval_map_iff`: an integer polynomial has a root modulo `p` in `R` exactly
+  when it has a root in `ZMod p`.
+* `Nat.Prime.not_dvd_eval_map_of_forall_ne_zero`: an integer polynomial with no root in `ZMod p`
+  has no root modulo `p` in `R`.
 -/
 
 public section
@@ -47,5 +57,42 @@ theorem pow_dvd_intCast_iff {p : ℕ} (hp : p.Prime) {R : Type*} [CommRing R] [I
     have hab' := congrArg (Int.cast : ℤ → R) hab
     push_cast at hab'
     exact isUnit_of_dvd_one (hab' ▸ dvd_add (dvd_mul_left _ _) (dvd_mul_of_dvd_right hy _))
+
+open Polynomial in
+/-- **Roots modulo `p` of an integer polynomial are read in `ZMod p`** over a domain `R` in which
+the prime `p` is a nonzero nonunit and every element is congruent to an integer modulo `p`, for
+instance a discrete valuation ring with uniformiser `p` and residue field `𝔽_p`. -/
+theorem exists_dvd_eval_map_iff {p : ℕ} (hp : p.Prime) {R : Type*} [CommRing R] [IsDomain R]
+    (h₀ : (p : R) ≠ 0) (hu : ¬ IsUnit (p : R)) (hR : ∀ x : R, ∃ n : ℤ, (p : R) ∣ x - n)
+    (f : ℤ[X]) :
+    (∃ s : R, (p : R) ∣ (f.map (Int.castRingHom R)).eval s) ↔
+      ∃ x : ZMod p, (f.map (Int.castRingHom (ZMod p))).eval x = 0 := by
+  have hdvd (z : ℤ) : (p : R) ∣ (z : R) ↔ (z : ZMod p) = 0 := by
+    rw [ZMod.intCast_zmod_eq_zero_iff_dvd]
+    simpa using hp.pow_dvd_intCast_iff h₀ hu 1 z
+  constructor
+  · rintro ⟨s, hs⟩
+    obtain ⟨n, hn⟩ := hR s
+    refine ⟨n, ?_⟩
+    have h := _root_.dvd_sub hs (hn.trans (sub_dvd_eval_sub s (n : R) (f.map (Int.castRingHom R))))
+    rw [_root_.sub_sub_cancel, eval_intCast_map, eq_intCast] at h
+    rw [eval_intCast_map, eq_intCast]
+    exact (hdvd _).1 h
+  · rintro ⟨x, hx⟩
+    obtain ⟨n, rfl⟩ := ZMod.intCast_surjective x
+    refine ⟨n, ?_⟩
+    rw [eval_intCast_map, eq_intCast] at hx ⊢
+    exact (hdvd _).2 hx
+
+open Polynomial in
+/-- **An integer polynomial with no root in `ZMod p` has no root modulo `p`** over a domain `R`
+as in `Nat.Prime.exists_dvd_eval_map_iff`. The hypothesis on `ZMod p` is a finite search. -/
+theorem not_dvd_eval_map_of_forall_ne_zero {p : ℕ} (hp : p.Prime) {R : Type*} [CommRing R]
+    [IsDomain R] (h₀ : (p : R) ≠ 0) (hu : ¬ IsUnit (p : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (p : R) ∣ x - n) {f : ℤ[X]}
+    (hf : ∀ x : ZMod p, (f.map (Int.castRingHom (ZMod p))).eval x ≠ 0) (s : R) :
+    ¬ (p : R) ∣ (f.map (Int.castRingHom R)).eval s := fun hs ↦
+  let ⟨x, hx⟩ := (hp.exists_dvd_eval_map_iff h₀ hu hR f).1 ⟨s, hs⟩
+  hf x hx
 
 end Nat.Prime
