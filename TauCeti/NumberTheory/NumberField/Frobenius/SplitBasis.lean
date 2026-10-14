@@ -141,24 +141,10 @@ theorem exists_finset_closure_artinElementAway_eq_range_restrictScalarsHom
   -- Extract a basis of `Gal(M/L)` from the Frobenius elements at `Y`, and the places carrying it.
   obtain ⟨B, hBY, hBcl, hcard⟩ :=
     exists_finset_subset_closure_eq_natCard_eq_pow hp hexp (artinElementAway hab S hur '' Y)
-  have hBY' (b : B) : ∃ v ∈ Y, artinElementAway hab S hur v = b := hBY b.2
-  choose g hgY hgF using hBY'
-  have hg : Function.Injective g := fun b b' h ↦ Subtype.ext (by rw [← hgF b, ← hgF b', h])
-  set T : Finset (HeightOneSpectrum (𝓞 K)) := Finset.univ.image g
-  have hTY {v : HeightOneSpectrum (𝓞 K)} (hv : v ∈ T) : v ∈ Y := by
-    obtain ⟨b, -, rfl⟩ := Finset.mem_image.mp hv
-    exact hgY b
-  have himage : artinElementAway hab S hur '' (T : Set (HeightOneSpectrum (𝓞 K))) = B := by
-    ext σ
-    constructor
-    · rintro ⟨v, hv, rfl⟩
-      obtain ⟨b, -, rfl⟩ := Finset.mem_image.mp hv
-      rw [hgF]
-      exact b.2
-    · exact fun hσ ↦ ⟨g ⟨σ, hσ⟩, Finset.mem_image_of_mem _ (Finset.mem_univ _), hgF _⟩
+  obtain ⟨T, hTY, hinj, himage⟩ := Finset.exists_subset_injOn_image_eq_of_surjOn Y B hBY
   refine ⟨T, Finset.disjoint_left.mpr fun _ hvS hvT ↦ (hTY hvT).1 hvS, ?_, ?_, ?_⟩
-  · rw [himage, hBcl, hY]
-  · rw [Finset.card_image_of_injective _ hg, Finset.card_univ, Fintype.card_coe, ← hcard, hY,
+  · rw [← Finset.coe_image, himage, hBcl, hY]
+  · rw [← Finset.card_image_of_injOn hinj, himage, ← hcard, hY,
       ← Nat.card_congr (MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective K)).toEquiv,
       IsGalois.card_aut_eq_finrank]
   · intro v hvT
