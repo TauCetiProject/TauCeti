@@ -5,15 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Norms of products of orthogonal projections
+# Products of orthogonal projections
 
 For submodules `U` and `V` of an inner product space admitting orthogonal projections `P_U` and
 `P_V`, the two products `P_U P_V` and `P_V P_U` have the same operator norm. Since
 `P_V P_U = (P_U P_V)†`, this is the identity `‖T‖ = ‖T†‖`, stated here without any completeness
 hypothesis on the ambient space, where the adjoint of a bounded operator need not exist.
+
+A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
+`dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
+same dimension.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -21,6 +27,8 @@ For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
+* `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
+* `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -71,6 +79,37 @@ theorem norm_starProjection_comp_starProjection_comm :
     ‖U.starProjection ∘L V.starProjection‖ = ‖V.starProjection ∘L U.starProjection‖ :=
   (norm_starProjection_comp_starProjection_le U V).antisymm
     (norm_starProjection_comp_starProjection_le V U)
+
+/-- A map `T P_U` that factors through the projection onto `U` has rank at most `dim U`. -/
+theorem finrank_range_comp_starProjection_le {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    [FiniteDimensional 𝕜 U] (T : E →ₗ[𝕜] F) :
+    Module.finrank 𝕜 (LinearMap.range (T ∘ₗ (U.starProjection : E →ₗ[𝕜] E))) ≤
+      Module.finrank 𝕜 U := by
+  rw [LinearMap.range_comp, range_starProjection]
+  exact finrank_map_le _ _
+
+omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
+/-- For finite-dimensional subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same
+dimension. -/
+theorem finrank_inf_orthogonal_comm [FiniteDimensional 𝕜 U] [FiniteDimensional 𝕜 V]
+    (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
+    Module.finrank 𝕜 ↥(U ⊓ Vᗮ) = Module.finrank 𝕜 ↥(V ⊓ Uᗮ) := by
+  -- `U ⊓ Vᗮ` and `V ⊓ Uᗮ` are the kernels of `P_V|_U : U → V` and of its adjoint `P_U|_V`, and a
+  -- map and its adjoint have the same rank.
+  have hker (U V : Submodule 𝕜 E) [FiniteDimensional 𝕜 U] [FiniteDimensional 𝕜 V] :
+      Module.finrank 𝕜 ↥(U ⊓ Vᗮ) = Module.finrank 𝕜
+        (LinearMap.ker (V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype)) := by
+    rw [LinearMap.ker_comp, ← map_comap_subtype, finrank_map_subtype_eq]
+    exact congrArg (fun W : Submodule 𝕜 E ↦ Module.finrank 𝕜 (W.comap U.subtype))
+      ker_orthogonalProjectionOnto.symm
+  let T : U →ₗ[𝕜] V := V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype
+  have hT : T.adjoint = U.orthogonalProjectionOnto.toLinearMap ∘ₗ V.subtype :=
+    ((LinearMap.eq_adjoint_iff _ _).2 fun v u ↦ by simp [T]).symm
+  have h₁ := T.finrank_range_add_finrank_ker
+  have h₂ := T.adjoint.finrank_range_add_finrank_ker
+  rw [T.finrank_range_adjoint, hT, ← hker] at h₂
+  rw [← hker] at h₁
+  omega
 
 /-- For finite-dimensional subspaces with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on
 the cosines of `U` towards `V` transfers to the same lower bound for `V` towards `U`. -/

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
@@ -57,6 +59,9 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.eq_of_comp_left_eq`: points
   in the image of a homomorphism injective on every fibre are distinguished by every field-valued
   point of the base.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.left_apply_injective` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.disjoint_range`: distinct
+  indices give distinct points in each fibre and disjoint section images.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_forall_residueField`:
   injectivity on fibres is injectivity on the fibre over every residue field.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_iff`: the naive
@@ -171,6 +176,27 @@ theorem IsFiberwiseInjective.eq_of_comp_left_eq (hφ : E.IsFiberwiseInjective φ
     (h : t ≫ (φ c₁).left = t ≫ (φ c₂).left) : c₁ = c₂ :=
   hφ.injective_pointsPullback (E.isPullback_baseChange t) (by simp)
     ((eq_pointsPullback_iff _ _).mpr (by rw [MonoidHom.comp_apply, pointsPullback_left_comp, h]))
+
+/-- The underlying points of a fibrewise injective family of sections are distinct over each
+point of the base. -/
+theorem IsFiberwiseInjective.left_apply_injective (h : E.IsFiberwiseInjective φ) (s : S) :
+    Function.Injective (fun a ↦ (φ a).left s) := by
+  intro a b hab
+  obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
+  have hp : S.fromSpecResidueField s p = s := Scheme.fromSpecResidueField_apply s p
+  refine h.eq_of_comp_left_eq (S.fromSpecResidueField s) ?_
+  exact (comp_eq_comp_iff_of_section (left_comp_structureMap _) (left_comp_structureMap _) _ p).mpr
+    ((congrArg (φ a).left hp).trans (hab.trans (congrArg (φ b).left hp).symm))
+
+/-- Distinct sections of a fibrewise injective family have disjoint images. -/
+theorem IsFiberwiseInjective.disjoint_range (h : E.IsFiberwiseInjective φ) {a b : A}
+    (hab : a ≠ b) : Disjoint (Set.range (φ a).left) (Set.range (φ b).left) := by
+  refine Set.disjoint_left.mpr ?_
+  rintro x ⟨s, rfl⟩ ⟨t, ht⟩
+  have hs : t = s := by
+    simpa [← Scheme.Hom.comp_apply] using congrArg E.structureMap ht
+  subst t
+  exact hab (h.left_apply_injective s ht.symm)
 
 /-- **Injectivity on fibres is checked on residue fields.** A homomorphism `φ : A →* E(S)` is
 injective on every fibre exactly when, for every point `s` of `S`, `φ` followed by restriction to
