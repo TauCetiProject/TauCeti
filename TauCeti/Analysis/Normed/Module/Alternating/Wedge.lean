@@ -170,7 +170,8 @@ variable [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F�
 /-- The interior product is an antiderivation of degree `-1` for the paired wedge:
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (k + 1) φ ∧ ι_v ψ` for a `(k + 1)`-form `φ`, where the interior
 product `ι_v` is `ContinuousAlternatingMap.curryLeft`. The degree `k + (l + 1)` of the first term
-is identified with `k + 1 + l` by `Fin.cast`. -/
+is identified with `k + 1 + l` by `Fin.cast`. The coefficient spaces are normed because Mathlib's
+`curryLeft` requires a normed target, both for the input forms and for their paired wedge. -/
 theorem curryLeft_pairedWedge (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) :

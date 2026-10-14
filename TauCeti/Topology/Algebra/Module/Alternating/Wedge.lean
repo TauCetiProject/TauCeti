@@ -147,6 +147,7 @@ omit [ContinuousAdd E] [ContinuousSMul ℝ E]
   [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
   [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- On one-forms, the paired wedge is the usual two-term alternating product. -/
+@[simp]
 theorem pairedWedge_apply_one_one {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
     (φ : E [⋀^Fin 1]→L[ℝ] F₁) (ψ : E [⋀^Fin 1]→L[ℝ] F₂) (v w : E) :
