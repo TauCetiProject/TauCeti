@@ -36,6 +36,7 @@ noncomputable def permutationWordEquiv (n : ℕ) :
       let σ : Equiv.Perm (Fin n) := e.trans
         ((w.property.nodup_iff.mpr (nodup_finRange n)).getEquivOfForallMemList w.val hmem)
       have hσ (i : Fin n) : σ i = w.val.get (Fin.cast hlen.symm i) := by
+        dsimp only [σ]
         rw [Equiv.trans_apply, Nodup.getEquivOfForallMemList_apply, finCongr_apply]
       refine ⟨σ, Subtype.ext ?_⟩
       calc
