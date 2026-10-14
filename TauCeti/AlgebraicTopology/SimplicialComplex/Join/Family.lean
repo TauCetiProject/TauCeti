@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
+
+-- Unfold the standard complex to apply the coordinate characterization for onFinsupp.
+import all TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 
 /-!
 # Joins of discrete families
@@ -21,7 +25,8 @@ classifying spaces.
 
 The construction follows J. Milnor, *Construction of universal bundles, II*, Ann. of Math.
 63 (1956). It uses Mathlib's `AbstractSimplicialComplex` and the weak realization and simplicial
-realization maps in `TauCeti.AlgebraicTopology.SimplicialComplex.Realization`.
+realization maps in `TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic` and
+`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map`.
 -/
 
 public section
@@ -53,14 +58,15 @@ theorem eq_of_mem_sigmaJoin {σ : Finset (Σ i, A i)} (hσ : σ ∈ sigmaJoin A)
     {v w : Σ i, A i} (hv : v ∈ σ) (hw : w ∈ σ) (h : v.1 = w.1) : v = w :=
   (mem_sigmaJoin_iff A).mp hσ |>.2 hv hw h
 
-variable {A} {B C : I → Type*}
+variable {A} {J K : Type*} {B : J → Type*} {C : K → Type*}
 
-/-- Maps of the discrete families induce a simplicial map, preserving the index of each vertex.
+/-- An injective map of indices and maps of the discrete families induce a simplicial map.
 No injectivity assumption is required on the family maps. -/
-def sigmaJoinMap [DecidableEq (Σ i, B i)] (f : ∀ i, A i → B i) :
+def sigmaJoinMap [DecidableEq (Σ j, B j)] (e : I → J) (he : Function.Injective e)
+    (f : ∀ i, A i → B (e i)) :
     SimplicialMap (sigmaJoin A).toPreAbstractSimplicialComplex
       (sigmaJoin B).toPreAbstractSimplicialComplex where
-  toFun := Sigma.map id f
+  toFun := Sigma.map e f
   map_face' := by
     intro σ hσ
     rw [_root_.AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
@@ -68,28 +74,30 @@ def sigmaJoinMap [DecidableEq (Σ i, B i)] (f : ∀ i, A i → B i) :
     intro v hv w hw heq
     obtain ⟨v', hv', rfl⟩ := Finset.mem_image.mp hv
     obtain ⟨w', hw', rfl⟩ := Finset.mem_image.mp hw
-    exact congrArg (fun v : Σ i, A i => (⟨v.1, f v.1 v.2⟩ : Σ i, B i))
-      (eq_of_mem_sigmaJoin A hσ hv' hw' heq)
+    exact congrArg (Sigma.map e f) (eq_of_mem_sigmaJoin A hσ hv' hw' (he heq))
 
 @[simp]
-theorem sigmaJoinMap_apply [DecidableEq (Σ i, B i)] (f : ∀ i, A i → B i)
-    (v : Σ i, A i) : sigmaJoinMap f v = ⟨v.1, f v.1 v.2⟩ :=
+theorem sigmaJoinMap_apply [DecidableEq (Σ j, B j)] (e : I → J)
+    (he : Function.Injective e) (f : ∀ i, A i → B (e i)) (v : Σ i, A i) :
+    sigmaJoinMap e he f v = ⟨e v.1, f v.1 v.2⟩ :=
   (rfl)
 
-/-- The identity family map induces the identity simplicial map. -/
+/-- The identity on indices and families induces the identity simplicial map. -/
 @[simp]
 theorem sigmaJoinMap_id [DecidableEq (Σ i, A i)] :
-    sigmaJoinMap (fun _ x => x) =
+    sigmaJoinMap id Function.injective_id (fun _ x => x) =
       SimplicialMap.id (sigmaJoin A).toPreAbstractSimplicialComplex := by
   apply DFunLike.ext
   intro v
   simp
 
-/-- The family construction respects composition strictly. -/
+/-- The indexed family construction respects composition strictly. -/
 @[simp]
-theorem sigmaJoinMap_comp [DecidableEq (Σ i, B i)] [DecidableEq (Σ i, C i)]
-    (g : ∀ i, B i → C i) (f : ∀ i, A i → B i) :
-    (sigmaJoinMap g).comp (sigmaJoinMap f) = sigmaJoinMap (fun i x => g i (f i x)) := by
+theorem sigmaJoinMap_comp [DecidableEq (Σ j, B j)] [DecidableEq (Σ k, C k)]
+    (e : I → J) (he : Function.Injective e) (g : J → K) (hg : Function.Injective g)
+    (h : ∀ j, B j → C (g j)) (f : ∀ i, A i → B (e i)) :
+    (sigmaJoinMap g hg h).comp (sigmaJoinMap e he f) =
+      sigmaJoinMap (g ∘ e) (hg.comp he) (fun i x => h (e i) (f i x)) := by
   apply DFunLike.ext
   intro v
   simp
@@ -100,17 +108,8 @@ variable (A)
 finite-index subjoins of the countable join. -/
 def subjoinInclusion [DecidableEq (Σ i, A i)] (s : Set I) :
     SimplicialMap (sigmaJoin (fun i : s => A i)).toPreAbstractSimplicialComplex
-      (sigmaJoin A).toPreAbstractSimplicialComplex where
-  toFun := Sigma.map Subtype.val (fun _ => id)
-  map_face' := by
-    intro σ hσ
-    rw [_root_.AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
-    refine ⟨Finset.image_nonempty.mpr hσ.1, ?_⟩
-    intro v hv w hw heq
-    obtain ⟨v', hv', rfl⟩ := Finset.mem_image.mp hv
-    obtain ⟨w', hw', rfl⟩ := Finset.mem_image.mp hw
-    exact congrArg (fun v : Σ i : s, A i => (⟨v.1.1, v.2⟩ : Σ i, A i))
-      (eq_of_mem_sigmaJoin _ hσ hv' hw' (Subtype.ext heq))
+      (sigmaJoin A).toPreAbstractSimplicialComplex :=
+  sigmaJoinMap Subtype.val Subtype.val_injective (fun _ => id)
 
 @[simp]
 theorem subjoinInclusion_apply [DecidableEq (Σ i, A i)] (s : Set I)
@@ -132,19 +131,15 @@ theorem mem_sigmaJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
   classical
   -- Match the classical vertex equality used by the standard simplex coordinate API.
   let : DecidableEq (Σ i, A i) := Classical.decEq _
+  rw [standardGeometricComplex, Geometry.SimplicialComplex.mem_space_onFinsupp_iff,
+    _root_.AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex, mem_sigmaJoin_iff]
   constructor
-  · intro hx
-    let y : Realization (sigmaJoin A) := ⟨x, hx⟩
-    exact ⟨Realization.nonneg _ y, Realization.sum_eq_one _ y,
-      (mem_sigmaJoin_iff A).mp (support_mem _ y) |>.2⟩
+  · rintro ⟨hnonneg, hsum, _, hinj⟩
+    exact ⟨hnonneg, hsum, hinj⟩
   · rintro ⟨hnonneg, hsum, hinj⟩
-    have hne : x.support.Nonempty := by
-      apply Finsupp.support_nonempty_iff.mpr
-      intro hzero
-      simp [hzero] at hsum
-    apply mem_realization_iff.mpr
-    refine ⟨x.support, (mem_sigmaJoin_iff A).mpr ⟨hne, hinj⟩, ?_⟩
-    rw [Finset.coe_image, mem_standardSimplex_iff]
-    exact ⟨hnonneg, hsum, Finset.Subset.rfl⟩
+    refine ⟨hnonneg, hsum, ?_, hinj⟩
+    apply Finsupp.support_nonempty_iff.mpr
+    intro hzero
+    simp [hzero] at hsum
 
 end TauCeti.AbstractSimplicialComplex

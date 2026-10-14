@@ -21,7 +21,8 @@ Its value at a point `x : universalGSpace G` is `universalGSpaceMap φ x`; the l
 The construction follows J. Milnor, *Construction of universal bundles, II*, Ann. of Math.
 63 (1956). It uses the indexed join in
 `TauCeti.AlgebraicTopology.SimplicialComplex.Join.Family` and the weak realization and simplicial
-realization maps in `TauCeti.AlgebraicTopology.SimplicialComplex.Realization`.
+realization maps in `TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic` and
+`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map`.
 -/
 
 public section
@@ -52,7 +53,7 @@ variable {G} {H : Type*} [MulOneClass G] [MulOneClass H]
 vertex labels and leaving indices unchanged. -/
 noncomputable def universalGSpaceMap (φ : G →* H) : C(universalGSpace G, universalGSpace H) := by
   classical
-  exact (sigmaJoinMap (fun _ : ℕ => φ)).realizationMap
+  exact (sigmaJoinMap id Function.injective_id (fun _ : ℕ => φ)).realizationMap
 
 /-- The induced map pushes forward barycentric coordinates. -/
 @[simp]
@@ -84,6 +85,6 @@ theorem universalGSpaceMap_comp {K : Type*} [MulOneClass K] (ψ : H →* K) (φ 
   classical
   unfold universalGSpaceMap
   rw [← SimplicialMap.realizationMap_comp, sigmaJoinMap_comp]
-  simp only [MonoidHom.coe_comp, Function.comp_def]
+  congr 1
 
 end TauCeti.ClassifyingSpace
