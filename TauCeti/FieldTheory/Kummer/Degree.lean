@@ -58,8 +58,8 @@ base field here need not be, so the pairing below takes its values in the top fi
   unity, two elements of a field extension with the same `n`-th power differ by a factor from the
   base; so if `a` has an `n`-th root in a `K`-algebra `R` mapping to `M`, every `n`-th root of
   `a` in `M` comes from `R` (`TauCeti.mem_range_algebraMap_of_pow_eq`).
-* `TauCeti.adjoin_pow_eq_algebraMap_eq_top`: `K(Δ^{1/n})` is generated over `K` by the `n`-th
-  roots of elements of `Δ` that it contains.
+* `TauCeti.adjoin_pow_eq_algebraMap_kummerField_eq_top`: `K(Δ^{1/n})` is generated over `K` by
+  the `n`-th roots of elements of `Δ` that it contains.
 * `AlgEquiv.apply_div_self_eq_of_pow_eq`, `AlgEquiv.apply_div_self_eq_mul_of_pow_eq`,
   `AlgEquiv.mul_apply_div_self_of_pow_eq`: the Kummer pairing `σ y / y` only depends on `y ^ n`,
   and it is multiplicative in `y ^ n` and in `σ`.
@@ -139,7 +139,7 @@ theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
 
 /-- The Kummer field `K(Δ^{1/n})` is generated over `K` by the `n`-th roots of the elements of `Δ`
 that it contains, viewed as elements of `K(Δ^{1/n})` itself. -/
-theorem adjoin_pow_eq_algebraMap_eq_top :
+theorem adjoin_pow_eq_algebraMap_kummerField_eq_top :
     adjoin K {y : kummerField E n Δ | ∃ a ∈ Δ, y ^ n = algebraMap K _ a} = ⊤ := by
   apply lift_injective
   rw [lift_adjoin, lift_top]
