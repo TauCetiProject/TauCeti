@@ -63,18 +63,12 @@ theorem index_range_eq_natAbs_det_toMatrix {ι : Type*} [Fintype ι] [DecidableE
     (b : Module.Basis ι ℤ M) (c : Module.Basis ι ℤ N) {f : M →ₗ[ℤ] N}
     (hf : Function.Injective f) :
     (range f).toAddSubgroup.index = (toMatrix b c f).det.natAbs := by
-  have : Module.Free ℤ N := .of_basis c
-  have : Module.Finite ℤ N := .of_basis c
-  have h := Submodule.natAbs_det_basis_change c (range f) (b.map (LinearEquiv.ofInjective f hf))
-  have hv : ((↑) ∘ b.map (LinearEquiv.ofInjective f hf) : ι → N) = f ∘ b := by
-    ext i
-    simp
-  have hmat : toMatrix b c f = c.toMatrix (f ∘ b) := by
-    ext i j
-    simp [toMatrix_apply, Module.Basis.toMatrix_apply]
-  rw [hv, Module.Basis.det_apply] at h
-  -- `AddSubgroup.index` is the cardinality of the same quotient, read as an additive group
-  rw [hmat]
-  exact h.symm
+  rw [AddSubgroup.index_eq_natAbs_det c (range f).toAddSubgroup
+    (b.map (LinearEquiv.ofInjective f hf)), Module.Basis.det_apply]
+  congr 2
+  ext i j
+  simp only [toMatrix_apply, Module.Basis.toMatrix_apply, Module.Basis.map_apply]
+  -- the `j`-th basis vector of the image is `f (b j)`, coerced through `AddSubgroup`
+  exact congr(c.repr $(LinearEquiv.ofInjective_apply f (h := hf) (b j)) i)
 
 end LinearMap

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.PointModTorsion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.PointModTorsion.Basic
 -- The Gram-congruence lemmas are used only inside the proofs below, so the import is private:
 -- `toMatrix₂Aux` itself comes from Mathlib through the public import above.
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence

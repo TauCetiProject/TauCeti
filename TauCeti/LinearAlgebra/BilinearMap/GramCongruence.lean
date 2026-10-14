@@ -32,7 +32,7 @@ argument. This gives the involution-transpose formula for a sesquilinear form.
   ring homomorphism governing the corresponding argument.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrix`: the change-of-basis law, oriented as Mathlib's
   is, with the change-of-basis matrices pushed into the codomain. The codomain need only be a
-  possibly noncommutative semiring.
+  possibly noncommutative semiring, and the new families need not be bases.
 * `LinearMap.toMatrix₂Aux_compl₁₂`: the matrix of such a map composed with linear maps on both
   sides, with the matrices of the linear maps pushed into the codomain.
 * `LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux`: for a map on a single `ℤ`-module, the signed
@@ -123,14 +123,14 @@ variable {R S M₁ M₂ ι₁ ι₂ ι₁' ι₂' : Type*} [CommSemiring R] [Add
 /-- **The change-of-basis law for the matrix of a bilinear map valued outside the scalars.** The
 change-of-basis matrices enter through `algebraMap R S`, since the matrix of `B` has entries in
 `S`. Compare `LinearMap.toMatrix₂_mul_basis_toMatrix`, which is the case `S = R`. The codomain
-need not be commutative: the images of `algebraMap` are central, which is all the proof uses. -/
+need not be commutative: the images of `algebraMap` are central, which is all the proof uses.
+The new families `c₁` and `c₂` need not be bases. -/
 @[simp]
 theorem toMatrix₂Aux_mul_map_basis_toMatrix [Fintype ι₁] [Fintype ι₂] (B : M₁ →ₗ[R] M₂ →ₗ[R] S)
-    (b₁ : Module.Basis ι₁ R M₁) (b₂ : Module.Basis ι₂ R M₂) (c₁ : Module.Basis ι₁' R M₁)
-    (c₂ : Module.Basis ι₂' R M₂) :
+    (b₁ : Module.Basis ι₁ R M₁) (b₂ : Module.Basis ι₂ R M₂) (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) :
     ((b₁.toMatrix c₁).map (algebraMap R S))ᵀ * toMatrix₂Aux R (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
         ((b₂.toMatrix c₂).map (algebraMap R S)) =
-      toMatrix₂Aux R (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) B := by
+      toMatrix₂Aux R c₁ c₂ B := by
   ext i j
   simp only [toMatrix₂Aux_apply, Matrix.mul_apply, Matrix.transpose_apply, Matrix.map_apply,
     Module.Basis.toMatrix_apply, Finset.sum_mul]
@@ -158,18 +158,17 @@ theorem toMatrix₂Aux_compl₁₂ [Fintype ι₁] [Fintype ι₂] [Fintype ι�
     toMatrix₂Aux R (b₁' : ι₁' → M₁') (b₂' : ι₂' → M₂') (B.compl₁₂ l r) =
       ((toMatrix b₁' b₁ l).map (algebraMap R S))ᵀ * toMatrix₂Aux R (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
         (toMatrix b₂' b₂ r).map (algebraMap R S) := by
-  ext i j
-  simp only [toMatrix₂Aux_apply, compl₁₂_apply, Matrix.mul_apply, Matrix.transpose_apply,
-    Matrix.map_apply, LinearMap.toMatrix_apply, Finset.sum_mul]
-  -- As for `toMatrix₂Aux_mul_map_basis_toMatrix`, expand over `b₁` and `b₂` and align the sums.
-  rw [← LinearMap.sum_repr_mul_repr_mul b₁ b₂ (l (b₁' i)) (r (b₂' j)),
-    Finsupp.sum_fintype _ _ fun _ ↦ by simp]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [Finsupp.sum_fintype _ _ fun _ ↦ by simp]
-  refine Finset.sum_congr rfl fun m _ ↦ ?_
-  simp only [Algebra.smul_def]
-  rw [mul_assoc, ← Algebra.commutes]
+  -- the matrix of `l` in `b₁'`, `b₁` is the matrix of the family `l ∘ b₁'` in `b₁`, and similarly
+  -- for `r`, so this is the change-of-basis law for the families `l ∘ b₁'` and `r ∘ b₂'`
+  have hl : toMatrix b₁' b₁ l = b₁.toMatrix (l ∘ b₁') := by
+    ext
+    simp [LinearMap.toMatrix_apply, Module.Basis.toMatrix_apply]
+  have hr : toMatrix b₂' b₂ r = b₂.toMatrix (r ∘ b₂') := by
+    ext
+    simp [LinearMap.toMatrix_apply, Module.Basis.toMatrix_apply]
+  rw [hl, hr, toMatrix₂Aux_mul_map_basis_toMatrix]
+  ext
+  simp
 
 end BasisChange
 
