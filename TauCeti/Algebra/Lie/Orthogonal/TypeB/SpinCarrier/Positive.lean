@@ -161,7 +161,7 @@ theorem inclusion_def :
 
 /-- Including the positive subgroup into the full carrier and then into the ambient general linear
 group is the direct Kostant torus-subsystem inclusion. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem inclusion_comp_carrierι :
     inclusion n ≫ TypeBSpinCarrier.carrierι n =
       eqToHom (groupScheme_eq_kostantTorusSubsystemGroupScheme n) ≫
@@ -213,7 +213,7 @@ theorem rootSubgroup_def (i : Fin (n + 1)) :
   (rfl)
 
 /-- Including a positive simple-root subgroup into the full carrier recovers its named root map. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem rootSubgroup_comp_inclusion (i : Fin (n + 1)) :
     rootSubgroup n i ≫ inclusion n = TypeBSpinCarrier.rootSubgroup n (.inl i) := by
   have h := kostantRootSubgroupToTorusSubsystem_comp_kostantTorusSubsystemToToral
@@ -248,7 +248,7 @@ theorem weightTorus_def :
   (rfl)
 
 /-- Including the positive subgroup's weight torus recovers the full carrier's weight torus. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem weightTorus_comp_inclusion :
     weightTorus n ≫ inclusion n = TypeBSpinCarrier.weightTorus n := by
   have h := kostantWeightTorusToTorusSubsystem_comp_kostantTorusSubsystemToToral
