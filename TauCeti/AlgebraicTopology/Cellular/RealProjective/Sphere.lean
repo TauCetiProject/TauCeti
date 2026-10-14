@@ -19,9 +19,9 @@ file writes the collapse explicitly as the map
 `TauCeti.RealProjectiveSpace.toSphere : RPⁿ ⟶ Sⁿ`, `[v] ↦ 2 vₙ v - eₙ`,
 
 which is well defined because the formula is even in `v`. It sends exactly the classes with
-`vₙ = 0`, that is `RPⁿ⁻¹`, to `-eₙ` (`TauCeti.RealProjectiveSpace.coe_toSphere_mk_eq_neg_iff`), and
-on the open top cell it is a homeomorphism onto `Sⁿ ∖ {-eₙ}` with inverse
-`w ↦ [(w + eₙ) / ‖w + eₙ‖]`.
+`vₙ = 0`, that is `RPⁿ⁻¹`, to `-eₙ`
+(`TauCeti.RealProjectiveSpace.coe_toSphere_mk_eq_neg_single_iff`), and on the open top cell it is
+a homeomorphism onto `Sⁿ ∖ {-eₙ}` with inverse `w ↦ [(w + eₙ) / ‖w + eₙ‖]`.
 
 The main result computes its effect on top homology in characteristic `2`
 (`TauCeti.RealProjectiveSpace.isIso_singularHomologyMap_toSphere`): for a ring `R` with `2 = 0`,
@@ -33,7 +33,7 @@ that the splitting of the universal coefficient sequence for cohomology cannot b
 The proof reads both top homology groups in the local homology at `[eₙ₊₁]` and at its image `eₙ₊₁`.
 
 * In characteristic `2` the top cellular differential of `RPⁿ⁺¹` vanishes, being twice a unit or
-  zero (`TauCeti.RealProjectiveSpace.exists_cellularIncidence_cwComplex_eq_two_mul_of_odd`), so the
+  zero (`TauCeti.RealProjectiveSpace.cellularChainComplex_d_eq_zero_of_two_eq_zero`), so the
   top homology of `RPⁿ⁺¹` is the chain group of its single top cell. That cell computes the local
   homology at any point of its open cell (`TauCeti.isIso_cellLocalClass`).
 * The punctured sphere is contractible, so `Hₙ₊₁(Sⁿ⁺¹) ⟶ Hₙ₊₁(Sⁿ⁺¹, Sⁿ⁺¹ ∖ {eₙ₊₁})` is an
@@ -80,9 +80,9 @@ private theorem toSphereAux_neg (v : sphere (0 : E) 1) : toSphereAux n (-v) = to
   simp [toSphereAux, coe_neg_sphere]
 
 /-- **The collapse map `RPⁿ ⟶ Sⁿ`**, `[v] ↦ 2 vₙ v - eₙ`. It collapses `RPⁿ⁻¹`, the classes
-with `vₙ = 0`, to the point `-eₙ` (`TauCeti.RealProjectiveSpace.coe_toSphere_mk_eq_neg_iff`), and
-maps the open top cell `RPⁿ ∖ RPⁿ⁻¹` homeomorphically onto `Sⁿ ∖ {-eₙ}`; so it identifies
-`RPⁿ / RPⁿ⁻¹` with `Sⁿ`. -/
+with `vₙ = 0`, to the point `-eₙ`
+(`TauCeti.RealProjectiveSpace.coe_toSphere_mk_eq_neg_single_iff`), and maps the open top cell
+`RPⁿ ∖ RPⁿ⁻¹` homeomorphically onto `Sⁿ ∖ {-eₙ}`; so it identifies `RPⁿ / RPⁿ⁻¹` with `Sⁿ`. -/
 def toSphere : C(RealProjectiveSpace n, sphere (0 : E) 1) where
   toFun := RealProjectiveSpace.lift n (toSphereAux n) (toSphereAux_neg n)
   continuous_toFun := (isQuotientMap_mk n).continuous_iff.2 <|
@@ -96,7 +96,7 @@ theorem coe_toSphere_mk (v : sphere (0 : E) 1) :
   congrArg Subtype.val (RealProjectiveSpace.lift_mk n (toSphereAux n) (toSphereAux_neg n) v)
 
 /-- The collapse map sends exactly the classes of `RPⁿ⁻¹`, those with `vₙ = 0`, to `-eₙ`. -/
-theorem coe_toSphere_mk_eq_neg_iff (v : sphere (0 : E) 1) :
+theorem coe_toSphere_mk_eq_neg_single_iff (v : sphere (0 : E) 1) :
     (toSphere n (mk n v) : E) = -EuclideanSpace.single (Fin.last n) 1 ↔
       (v : E) (Fin.last n) = 0 := by
   have hv : (v : E) ≠ 0 := ne_zero_of_mem_unit_sphere v
@@ -104,7 +104,7 @@ theorem coe_toSphere_mk_eq_neg_iff (v : sphere (0 : E) 1) :
     or_iff_right two_ne_zero]
 
 /-- The collapse map sends only the class of `±eₙ` to `eₙ`. -/
-theorem coe_toSphere_mk_eq_iff (v : sphere (0 : E) 1) :
+theorem coe_toSphere_mk_eq_single_iff (v : sphere (0 : E) 1) :
     (toSphere n (mk n v) : E) = EuclideanSpace.single (Fin.last n) 1 ↔
       (v : E) = EuclideanSpace.single (Fin.last n) 1 ∨
         (v : E) = -EuclideanSpace.single (Fin.last n) 1 := by
@@ -172,7 +172,7 @@ private theorem toSphereInv_toSphere {p : RealProjectiveSpace n}
     toSphereInv n (toSphere n p) = p := by
   induction p using RealProjectiveSpace.inductionOn with | h v => ?_
   have hvn : (v : E) (Fin.last n) ≠ 0 := fun h ↦
-    hp (by rw [(coe_toSphere_mk_eq_neg_iff n v).2 h, neg_add_cancel])
+    hp (by rw [(coe_toSphere_mk_eq_neg_single_iff n v).2 h, neg_add_cancel])
   rw [toSphereInv, dite_eq_right_of_eq_false (eq_false hp), mk_eq_mk_iff]
   -- `toSphere (mk v) + eₙ = 2 vₙ v`, whose normalisation is `± v` according to the sign of `vₙ`.
   have hs : (toSphere n (mk n v) : E) + EuclideanSpace.single (Fin.last n) 1 =
@@ -221,6 +221,11 @@ private def toSphereChart : OpenPartialHomeomorph (RealProjectiveSpace n) (spher
   continuousOn_toFun := (toSphere n).continuous.continuousOn
   continuousOn_invFun := continuousOn_toSphereInv n
 
+@[simp]
+private theorem toSphereChart_apply (p : RealProjectiveSpace n) :
+    toSphereChart n p = toSphere n p :=
+  (rfl)
+
 /-- The class of `eₙ`, the centre of the open top cell of `RPⁿ`. -/
 private abbrev basePoint : RealProjectiveSpace n :=
   mk n (singleLast n)
@@ -242,12 +247,10 @@ private theorem mapsTo_toSphere_compl :
   intro p hp hq
   refine hp ?_
   induction p using RealProjectiveSpace.inductionOn with | h v => ?_
-  have : (toSphere n (mk n v) : E) = EuclideanSpace.single (Fin.last n) 1 := by
-    rw [show toSphere n (mk n v) = toSphereChart n (basePoint n) from hq]
-    exact congrArg Subtype.val (toSphere_basePoint n)
+  rw [Set.mem_singleton_iff, TopCat.ofHom_apply, toSphereChart_apply, toSphere_basePoint] at hq
   rw [Set.mem_singleton_iff, basePoint, mk_eq_mk_iff, Subtype.ext_iff, Subtype.ext_iff,
     coe_neg_sphere, coe_singleLast]
-  exact (coe_toSphere_mk_eq_iff n v).1 this
+  exact (coe_toSphere_mk_eq_single_iff n v).1 (by rw [hq, coe_singleLast])
 
 /-- The collapse map as a map of pairs `(RPⁿ, RPⁿ ∖ {[eₙ]}) ⟶ (Sⁿ, Sⁿ ∖ {eₙ})`. -/
 private def toSpherePairMap :
@@ -310,25 +313,6 @@ variable (R : Type) [Ring R]
 /-- `RPⁿ⁺¹` as the carrier of its CW structure. -/
 local notation "RPCW" => (univ : Set (RealProjectiveSpace (n + 1)))
 
-/-- If `f` is a map of pairs which is a homeomorphism on the ambient spaces, the quotient map to
-the relative homology of its target is an isomorphism as soon as its composite with `f` is. -/
-private theorem isIso_of_singularHomologyπ_naturality {P P' : TopPair.{0}} (f : P ⟶ P') {k : ℕ}
-    [IsIso (TopPair.Hom.fst f)]
-    (hc : IsIso (P.singularHomologyπ (ModuleCat.of R R) k ≫
-      TopPair.singularHomologyMap f (ModuleCat.of R R) k)) :
-    IsIso (P'.singularHomologyπ (ModuleCat.of R R) k) := by
-  -- Singular homology of a space is by definition the homology of its singular simplicial set, so
-  -- the map on ambient homology is the image of an isomorphism under a functor.
-  have : IsIso (SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst f)) (ModuleCat.of R R) k) :=
-    inferInstanceAs (IsIso (((AlgebraicTopology.singularHomologyFunctor _ k).obj
-      (ModuleCat.of R R)).map (TopPair.Hom.fst f)))
-  have : IsIso (SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst f)) (ModuleCat.of R R) k ≫
-      P'.singularHomologyπ (ModuleCat.of R R) k) := by
-    rw [TopPair.singularHomologyπ_naturality]
-    exact hc
-  exact IsIso.of_isIso_comp_left
-    (SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst f)) (ModuleCat.of R R) k) _
-
 /-- The `(n + 1)`-skeleton of `RPⁿ⁺¹` is the whole space. -/
 private theorem skeletonLT_eq_univ :
     (skeletonLT RPCW ((n + 1 + 1 : ℕ) : ℕ∞) :
@@ -352,24 +336,13 @@ private theorem skeletonBasePoint_mem_openCell :
   rw [mk_mem_openCell_iff]
   exact ⟨by simp, fun j hj ↦ absurd hj (not_lt.2 (Fin.le_last j))⟩
 
-/-- In characteristic `2` the top cellular differential of `RPⁿ⁺¹` vanishes: it is twice a unit
-or zero. -/
-private theorem cellularChainComplex_d_eq_zero (h2 : (2 : R) = 0) :
-    (cellularChainComplex RPCW (ModuleCat.of R R)).d (n + 1) n = 0 := by
-  rw [cellularChainComplex_d, (cellularDifferential_eq_zero_iff _ R n).2 fun c c' ↦ ?_]
-  · simp
-  rcases Nat.even_or_odd n with hn | hn
-  · exact cellularIncidence_cwComplex_eq_zero_of_even R hn c c'
-  · obtain ⟨u, hu⟩ := exists_cellularIncidence_cwComplex_eq_two_mul_of_odd R hn c c'
-    rw [hu, h2, zero_mul]
-
 /-- In characteristic `2` every top cellular chain of `RPⁿ⁺¹` is a cycle, so
 `Hₙ₊₁(Xⁿ⁺¹, ∅) ⟶ Hₙ₊₁(Xⁿ⁺¹, Xⁿ)` is an isomorphism. -/
 private theorem isIso_singularHomologyMap_skeletonBasePairToSkeletonPair (h2 : (2 : R) = 0) :
     IsIso ((skeletonBasePair RPCW (n + 1)).singularHomologyMap
       (skeletonBasePairToSkeletonPair _ (n + 1)) (ModuleCat.of R R) (n + 1)) := by
   have := (cellularChainComplex RPCW (ModuleCat.of R R)).isIso_iCycles (n + 1) n (by simp)
-    (cellularChainComplex_d_eq_zero n R h2)
+    (cellularChainComplex_d_eq_zero_of_two_eq_zero R h2)
   have : IsIso ((skeletonBasePair RPCW (n + 1)).singularHomologyMap
       (skeletonBasePairToSkeletonPair _ (n + 1)) (ModuleCat.of R R) (n + 1) ≫
         eqToHom (cellularChainComplex_X _ (ModuleCat.of R R) (n + 1)).symm) := by
@@ -419,8 +392,9 @@ private theorem isIso_singularHomologyπ_skeleton (h2 : (2 : R) = 0) :
     Set.isEmpty_coe_sort.2 (by simp [skeletonLT_zero_eq_base])
   have := isIso_singularHomologyMap_skeletonBasePairToSkeletonPair n R h2
   have := isIso_singularHomologyMap_skeletonPairToComplSingleton n R
-  refine isIso_of_singularHomologyπ_naturality R (skeletonBasePairToSkeletonPair RPCW (n + 1) ≫
-    skeletonPairToComplSingleton RPCW (skeletonBasePoint n) hx) ?_
+  refine TopPair.isIso_singularHomologyπ_of_isIso_comp
+    (skeletonBasePairToSkeletonPair RPCW (n + 1) ≫
+      skeletonPairToComplSingleton RPCW (skeletonBasePoint n) hx) (ModuleCat.of R R) ?_
   rw [TopPair.singularHomologyMap_comp]
   infer_instance
 
@@ -441,12 +415,8 @@ private theorem isIso_singularHomologyπ_complSingleton (h2 : (2 : R) = 0) :
   have : IsIso (TopPair.Hom.fst iP.hom) :=
     ⟨TopPair.Hom.fst iP.inv, by rw [← TopPair.Hom.fst_comp, iP.hom_inv_id, TopPair.Hom.fst_id],
       by rw [← TopPair.Hom.fst_comp, iP.inv_hom_id, TopPair.Hom.fst_id]⟩
-  have : IsIso (TopPair.singularHomologyMap iP.hom (ModuleCat.of R R) (n + 1)) :=
-    ⟨TopPair.singularHomologyMap iP.inv (ModuleCat.of R R) (n + 1),
-      by rw [← TopPair.singularHomologyMap_comp, iP.hom_inv_id, TopPair.singularHomologyMap_id],
-      by rw [← TopPair.singularHomologyMap_comp, iP.inv_hom_id, TopPair.singularHomologyMap_id]⟩
   have := isIso_singularHomologyπ_skeleton n R h2
-  exact isIso_of_singularHomologyπ_naturality R iP.hom inferInstance
+  exact TopPair.isIso_singularHomologyπ_of_isIso_comp iP.hom (ModuleCat.of R R) inferInstance
 
 end Cellular
 
@@ -461,16 +431,9 @@ theorem isIso_singularHomologyMap_toSphere (R : Type) [Ring R] (h2 : (2 : R) = 0
   have hRP := isIso_singularHomologyπ_complSingleton n R h2
   have hloc := isIso_singularHomologyMap_toSpherePairMap (n + 1) (ModuleCat.of R R) (n + 1)
   have hS := isIso_singularHomologyπ_sphere (n + 1) (ModuleCat.of R R) n
-  -- The ambient component of `toSpherePairMap` is the collapse map, and singular homology of a
-  -- space is by definition the homology of its singular simplicial set.
-  have hfst : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) (n + 1)).obj
-      (ModuleCat.of R R)).map (TopCat.ofHom (toSphere (n + 1))) =
-      SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst (toSpherePairMap (n + 1))))
-        (ModuleCat.of R R) (n + 1) := by
-    rw [toSpherePairMap, TopPair.ofSubsetMap_fst]
-    rfl
-  -- Read the collapse map through the local homology at `[eₙ₊₁]` and at `eₙ₊₁`; the instances
-  -- above match these maps only up to unfolding, so they are supplied as terms.
+  have hfst : TopPair.Hom.fst (toSpherePairMap (n + 1)) = TopCat.ofHom (toSphere (n + 1)) :=
+    TopPair.ofSubsetMap_fst _ _
+  -- Read the collapse map through the local homology at `[eₙ₊₁]` and at `eₙ₊₁`.
   have hcomp : IsIso (SSet.homologyMap (TopCat.toSSet.map
       (TopPair.Hom.fst (toSpherePairMap (n + 1)))) (ModuleCat.of R R) (n + 1) ≫
         (TopPair.ofSubset ({toSphereChart (n + 1) (basePoint (n + 1))}ᶜ :
@@ -478,7 +441,9 @@ theorem isIso_singularHomologyMap_toSphere (R : Type) [Ring R] (h2 : (2 : R) = 0
             (ModuleCat.of R R) (n + 1)) := by
     rw [TopPair.singularHomologyπ_naturality]
     exact IsIso.comp_isIso' hRP hloc
-  rw [hfst]
+  rw [singularHomologyFunctor_obj_map, ← hfst]
+  -- The composite in `hcomp` typechecks only after unfolding `TopPair.toSSetPair_obj_right`, so
+  -- instance search cannot match it and the instances are supplied as terms.
   exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hS hcomp
 
 end TauCeti.RealProjectiveSpace
