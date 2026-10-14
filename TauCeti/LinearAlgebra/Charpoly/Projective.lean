@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.RingTheory.TensorProduct.Free
+public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Determinant.Projective
 
 /-!
@@ -80,6 +81,12 @@ free module of finite rank it is the reverse of `LinearMap.charpoly f`
 (`projectiveCharpolyRev_eq_reverse_charpoly`). -/
 noncomputable def projectiveCharpolyRev (f : Module.End R M) : R[X] :=
   projectiveDet (1 - (X : R[X]) • f.baseChange R[X])
+
+/-- The reversed characteristic polynomial is the determinant `LinearMap.projectiveDet` of
+`1 - X f` on `R[X] ⊗[R] M`. -/
+theorem projectiveCharpolyRev_def (f : Module.End R M) :
+    projectiveCharpolyRev f = projectiveDet (1 - (X : R[X]) • f.baseChange R[X]) :=
+  (rfl)
 
 /-- If `π : F → M` and `σ : M → F` split `M` off a free module `F` with basis `b`, the reversed
 characteristic polynomial of `f` is that of the matrix of `σ ∘ f ∘ π` in `b`. -/
@@ -180,26 +187,6 @@ theorem projectiveCharpolyRev_eq_map_of_comp_eq {R' M' : Type*} [CommRing R'] [A
     · subst hk; simp
     · simp [hk]
   simp [toMatrix_eq_toMatrix', toMatrix'_apply, π', σ', hsingle, hfg]
-
-omit [Module.Finite R M] [Module.Projective R M] in
-/-- An endomorphism `g` of `F` with `g ∘ σ = σ ∘ f` satisfies `p(g) ∘ σ = σ ∘ p(f)` for every
-polynomial `p`. -/
-private theorem aeval_comp_eq_comp_aeval {F : Type*} [AddCommGroup F] [Module R F]
-    {f : Module.End R M} {g : Module.End R F} {σ : M →ₗ[R] F} (hg : g ∘ₗ σ = σ ∘ₗ f)
-    (p : R[X]) : aeval g p ∘ₗ σ = σ ∘ₗ aeval f p := by
-  have hpow (k : ℕ) : (g ^ k) ∘ₗ σ = σ ∘ₗ f ^ k := by
-    induction k with
-    | zero => simp [Module.End.one_eq_id]
-    | succ k ih =>
-      rw [pow_succ, pow_succ, Module.End.mul_eq_comp, Module.End.mul_eq_comp, comp_assoc, hg,
-        ← comp_assoc, ih, comp_assoc]
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq => rw [map_add, map_add, add_comp, comp_add, hp, hq]
-  | monomial k a =>
-    ext x
-    have hx := congr($(hpow k) x)
-    simp only [comp_apply] at hx
-    simp [aeval_monomial, Module.End.mul_apply, hx]
 
 /-- **Cayley–Hamilton on a finite projective module.** For some `n` bounding the degree of the
 reversed characteristic polynomial `Q` of `f`, the reflection `X ^ n · Q(1/X)` of `Q` kills `f`;

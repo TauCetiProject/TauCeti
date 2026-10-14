@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.Polynomial.Subring
 public import TauCeti.LinearAlgebra.Charpoly.Projective
-public import TauCeti.RingTheory.TensorProduct.LiftRingHom
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Invariants of a finite locally free equivalence relation
@@ -151,9 +151,7 @@ theorem isSpecEquivRel_tensorProduct (C A : Type u) [CommRing C] [CommRing A] [A
   have hC : (includeLeftRingHom : A →+* A ⊗[C] A).comp (algebraMap C A) =
       (includeRight.toRingHom : A →+* A ⊗[C] A).comp (algebraMap C A) := by
     ext c
-    simp only [coe_comp, Function.comp_apply, includeLeftRingHom_apply, AlgHom.toRingHom_eq_coe,
-      coe_coe, includeRight_apply]
-    rw [← Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.algebraMap_apply']
+    simp [tmul_one_eq_one_tmul]
   refine ⟨fun T _ x y hl hr ↦ ringHom_ext hl hr,
     fun T _ u ↦ ⟨liftRingHom u u rfl, by simp, by simp⟩,
     fun T _ x ↦ ⟨liftRingHom (x.comp includeRight.toRingHom) (x.comp includeLeftRingHom) ?_,
@@ -222,9 +220,7 @@ private theorem shearHom_comp_shearRight :
   · rw [comp_assoc, shearRight_comp_left h]
     ext a
     -- both sides are `s a ⊗ 1 = 1 ⊗ s a`
-    simp only [coe_comp, Function.comp_apply, includeLeftRingHom_apply, shearHom_tmul_one,
-      inv_apply_right, AlgHom.toRingHom_eq_coe, coe_coe, includeRight_apply]
-    rw [← Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.algebraMap_apply']
+    simp [shearHom_tmul_one, tmul_one_eq_one_tmul]
   · ext a
     simp [shearRight_apply_right, shearHom_one_tmul_right]
 
