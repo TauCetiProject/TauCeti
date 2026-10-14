@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Place.Proper
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Congr
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Place
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
@@ -26,8 +27,9 @@ scheme-theoretic Weil divisors with divisors of the function field.
 
 This file records the characteristic properties of that identification. It preserves point
 divisors, coefficientwise order and effectivity, the residue-degree-weighted degree, and principal
-divisors. Consequently it also preserves linear equivalence. These comparisons allow the
-scheme-theoretic divisor and principal-parts constructions to use the function-field divisor API.
+divisors. Consequently it also preserves linear equivalence, and identifies the divisor class
+group of `X` with that of `k(X)`. These comparisons allow the scheme-theoretic divisor and
+principal-parts constructions to use the function-field divisor API.
 
 On global sections, a section of the divisor sheaf `𝒪_X(D)` is a rational function whose order
 at every codimension-one point `x` is at least `-D(x)`, which is exactly membership in the
@@ -43,6 +45,8 @@ Riemann–Roch space `L(D)` of the corresponding function-field divisor. Hence
   divisors;
 * `SchemeWeilDivisor.linearlyEquivalent_equivFunctionFieldDivisor_iff`: compatibility with
   linear equivalence;
+* `SchemeWeilDivisor.classGroupEquivFunctionField`: the induced isomorphism `Cl(X) ≃+ Cl(k(X))` of
+  divisor class groups;
 * `SchemeWeilDivisor.globalSectionsEquivRiemannRochSpace`: `Γ(X, 𝒪_X(D)) ≃ L(D)`;
 * `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_eq_dim`: `dim_k H⁰(X, 𝒪_X(D)) = ℓ(D)`.
 
@@ -409,6 +413,39 @@ theorem linearlyEquivalent_equivFunctionFieldDivisor_iff
   · rintro ⟨g, hg⟩
     refine ⟨g, ?_⟩
     rw [← equivFunctionFieldDivisor_principalDivisor, ← map_sub, hg]
+
+/-- **The divisor class group of `X` is the divisor class group of `k(X)`.** Reindexing along the
+equivalence between codimension-one points and places carries principal divisors to principal
+divisors, so it induces `Cl(X) ≃+ Cl(k(X))`. -/
+def classGroupEquivFunctionField
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (hF : IsFunctionField k X.functionField) :
+    (WeilDivisor.OrderSystem.ofScheme X).ClassGroup ≃+ (Place.orderSystem hF).ClassGroup :=
+  WeilDivisor.OrderSystem.classGroupCongr (CodimensionOnePoint.equivPlace hex hdim)
+    (AddEquiv.refl _) (equivFunctionFieldDivisor_principalDivisor hex hdim hF)
+
+/-- `classGroupEquivFunctionField` sends the class of a divisor to the class of the corresponding
+function-field divisor. -/
+@[simp]
+theorem classGroupEquivFunctionField_divisorClass
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (hF : IsFunctionField k X.functionField)
+    (D : SchemeWeilDivisor X) :
+    classGroupEquivFunctionField hex hdim hF ((WeilDivisor.OrderSystem.ofScheme X).divisorClass D) =
+      (Place.orderSystem hF).divisorClass (equivFunctionFieldDivisor hex hdim D) :=
+  WeilDivisor.OrderSystem.classGroupCongr_divisorClass _ _ _ D
+
+/-- The inverse of `classGroupEquivFunctionField` sends the class of a function-field divisor to
+the class of the corresponding divisor on `X`. -/
+@[simp]
+theorem classGroupEquivFunctionField_symm_divisorClass
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (hF : IsFunctionField k X.functionField)
+    (E : Divisor k X.functionField) :
+    (classGroupEquivFunctionField hex hdim hF).symm ((Place.orderSystem hF).divisorClass E) =
+      (WeilDivisor.OrderSystem.ofScheme X).divisorClass
+        ((equivFunctionFieldDivisor hex hdim).symm E) :=
+  WeilDivisor.OrderSystem.classGroupCongr_symm_divisorClass _ _ _ E
 
 end SchemeWeilDivisor
 

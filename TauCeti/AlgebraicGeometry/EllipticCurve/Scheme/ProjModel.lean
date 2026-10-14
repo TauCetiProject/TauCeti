@@ -33,7 +33,8 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 ## Main definitions
 
 * `WeierstrassCurve.projModel W`: the projective Weierstrass model, a scheme.
-* `WeierstrassCurve.projModelOver W`: its structure morphism to `Spec R`.
+* `WeierstrassCurve.projModelOver W`: its structure morphism to `Spec R`, which makes
+  `projModel W` a scheme over `Spec R`.
 * `WeierstrassCurve.projModelZero W`: the zero section `[0 : 1 : 0]`, a morphism
   `Spec R ⟶ projModel W`, defined on the standard affine chart `D₊(Y)`.
 * `WeierstrassCurve.projModelVariableChangeIso W C`: the isomorphism
@@ -103,6 +104,21 @@ noncomputable def projModelOver : W.projModel ⟶ Spec (.of R) :=
 instance isProper_projModelOver : IsProper W.projModelOver := by
   unfold projModelOver
   infer_instance
+
+/-- The projective Weierstrass model is a scheme over `Spec R` through its structure morphism
+`projModelOver`. -/
+noncomputable instance : W.projModel.Over (Spec (.of R)) where
+  hom := W.projModelOver
+
+/-- The structure morphism of the projective Weierstrass model as a scheme over `Spec R` is
+`projModelOver`. -/
+@[simp]
+theorem over_projModel : W.projModel ↘ Spec (.of R) = W.projModelOver :=
+  (rfl)
+
+/-- The projective Weierstrass model is proper over `Spec R`, as a scheme over `Spec R`. -/
+instance isProper_over_projModel : IsProper (W.projModel ↘ Spec (.of R)) :=
+  inferInstanceAs (IsProper W.projModelOver)
 
 /-- The structure morphisms of equal Weierstrass curves agree through the identification of their
 projective models. -/
