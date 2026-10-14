@@ -75,19 +75,20 @@ private lemma continuous_sphereIncl (hi : i + 1 ≤ N) : Continuous (sphereIncl 
 private lemma cellAttachingMap_apply_eq_mk (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) (v : TopCat.diskBoundary.{0} (i + 1)) :
     (ConcreteCategory.hom (Y := TopCat.of (skeletonLT (univ : Set (RealProjectiveSpace N))
-      (i + 1 : ℕ))) (cellAttachingMap univ c) v).1 = mk N (sphereIncl hi v) := by
+      (i + 1 : ℕ))) (cellAttachingMap c) v).1 = mk N (sphereIncl hi v) := by
   have hv : (EuclideanSpace.equiv (Fin (i + 1)) ℝ).unitBallHomeomorph v.down ∈ closedBall 0 1 :=
     mem_closedBall_zero_iff.2
       ((EuclideanSpace.equiv (Fin (i + 1)) ℝ).norm_unitBallHomeomorph_le_one_iff.2
         (norm_eq_of_mem_sphere v.down).le)
-  rw [coe_cellAttachingMap_apply, map_cwComplex ⟨i + 1, by omega⟩ c, cellMap_apply _ hv]
+  rw [coe_cellAttachingMap_apply, coe_diskHomeomorphClosedBall_apply,
+    map_cwComplex ⟨i + 1, by omega⟩ c, cellMap_apply _ hv]
   congr 2
   exact congrArg (hemispherePoint N) (Homeomorph.symm_apply_apply _ _)
 
 /-- The attaching map of the `(i + 1)`-cell of `RPᴺ` is invariant under the antipodal map. -/
 private lemma cellAttachingMap_diskBoundaryNeg (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) (v : TopCat.diskBoundary.{0} (i + 1)) :
-    cellAttachingMap univ c (diskBoundaryNeg (i + 1) v) = cellAttachingMap univ c v := by
+    cellAttachingMap c (diskBoundaryNeg (i + 1) v) = cellAttachingMap c v := by
   apply Subtype.ext
   rw [cellAttachingMap_apply_eq_mk hi, cellAttachingMap_apply_eq_mk hi, ← mk_neg]
   congr 1
@@ -114,7 +115,7 @@ private lemma diskBoundaryNeg_pole_ne (i : ℕ) : diskBoundaryNeg (i + 1) (pole 
 consists of the pole and its antipode. -/
 private lemma eq_pole_or_eq_of_cellAttachingMap_eq (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) {v : TopCat.diskBoundary.{0} (i + 1)}
-    (hv : cellAttachingMap univ c v = cellAttachingMap univ c (pole i)) :
+    (hv : cellAttachingMap c v = cellAttachingMap c (pole i)) :
     v = pole i ∨ v = diskBoundaryNeg (i + 1) (pole i) := by
   have hv' := congrArg Subtype.val hv
   rw [cellAttachingMap_apply_eq_mk hi, cellAttachingMap_apply_eq_mk hi, mk_eq_mk_iff] at hv'
@@ -131,7 +132,7 @@ private lemma eq_pole_or_eq_of_cellAttachingMap_eq (hi : i + 1 ≤ N)
 private lemma cellAttachingMap_pole_mem_openCell (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) i)
     (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
-    ((cellAttachingMap univ c' (pole i) : skeletonLT (univ : Set (RealProjectiveSpace N))
+    ((cellAttachingMap c' (pole i) : skeletonLT (univ : Set (RealProjectiveSpace N))
       (i + 1 : ℕ)) : RealProjectiveSpace N) ∈ Topology.RelCWComplex.openCell i c := by
   rw [Topology.RelCWComplex.openCell, map_cwComplex ⟨i, by omega⟩ c, image_cellMap_ball,
     cellAttachingMap_apply_eq_mk hi, mk_mem_openCell_iff]
@@ -170,7 +171,7 @@ private lemma diskBoundaryNeg_pole_notMem_upperHemisphere (i : ℕ) :
 quotient map `Sᴺ → RPᴺ` is an open embedding on the open set `{y | yᵢ > 0}`. -/
 private lemma isEmbedding_cellAttachingMap_restrict (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
-    IsEmbedding ((upperHemisphere i).domRestrict (cellAttachingMap univ c)) := by
+    IsEmbedding ((upperHemisphere i).domRestrict (cellAttachingMap c)) := by
   rw [← IsEmbedding.subtypeVal.of_comp_iff]
   let V : Set (sphere (0 : EuclideanSpace ℝ (Fin (N + 1))) 1) :=
     {y | 0 < (y : EuclideanSpace ℝ (Fin (N + 1))) ⟨i, by omega⟩}
@@ -216,7 +217,7 @@ private lemma exists_mem_upperHemisphere_cellAttachingMap_eq (hi : i + 1 ≤ N)
     (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1))
     (z : skeletonLT (univ : Set (RealProjectiveSpace N)) (i + 1 : ℕ))
     (hz : (z : RealProjectiveSpace N) ∈ Topology.RelCWComplex.openCell i c) :
-    ∃ u ∈ upperHemisphere i, cellAttachingMap univ c' u = z := by
+    ∃ u ∈ upperHemisphere i, cellAttachingMap c' u = z := by
   rw [Topology.RelCWComplex.openCell, map_cwComplex ⟨i, by omega⟩ c] at hz
   obtain ⟨w, hw, hwz⟩ := hz
   set v := (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph.symm w
@@ -243,8 +244,8 @@ private lemma mapsTo_diskBoundaryNeg_compl_pole (i : ℕ) :
 antipode into the complement of the class of the pole. -/
 private lemma mapsTo_cellAttachingMap_compl_pole (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
-    MapsTo (cellAttachingMap univ c) ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ)
-      {cellAttachingMap univ c (pole i)}ᶜ := fun _ hv h ↦
+    MapsTo (cellAttachingMap c) ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ)
+      {cellAttachingMap c (pole i)}ᶜ := fun _ hv h ↦
   (eq_pole_or_eq_of_cellAttachingMap_eq hi c h).elim hv.1 hv.2
 
 /-- The attaching map of the `(i + 1)`-cell of `RPᴺ` sends the upper hemisphere minus the pole
@@ -252,9 +253,9 @@ into the complement of the class of the pole. -/
 private lemma mapsTo_cellAttachingMap_upperHemisphere_compl_pole (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
     MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-        C(upperHemisphere i, TopCat.diskBoundary.{0} (i + 1))) ≫ cellAttachingMap univ c)
+        C(upperHemisphere i, TopCat.diskBoundary.{0} (i + 1))) ≫ cellAttachingMap c)
       (Subtype.val ⁻¹' {pole i}ᶜ : Set (upperHemisphere i))
-      {cellAttachingMap univ c (pole i)}ᶜ := fun u hu h ↦
+      {cellAttachingMap c (pole i)}ᶜ := fun u hu h ↦
   (eq_pole_or_eq_of_cellAttachingMap_eq hi c h).elim hu fun h' ↦
     diskBoundaryNeg_pole_notMem_upperHemisphere i (h' ▸ u.2)
 
@@ -266,15 +267,15 @@ private lemma isIso_singularHomologyMap_upperHemisphere {A : Type*} [Category A]
     (c : cell (univ : Set (RealProjectiveSpace N)) i)
     (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1))
     (hfU : MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-        C(upperHemisphere i, TopCat.diskBoundary.{0} (i + 1))) ≫ cellAttachingMap univ c')
+        C(upperHemisphere i, TopCat.diskBoundary.{0} (i + 1))) ≫ cellAttachingMap c')
       (Subtype.val ⁻¹' {pole i}ᶜ : Set (upperHemisphere i))
-      {cellAttachingMap univ c' (pole i)}ᶜ) (n : ℕ) :
+      {cellAttachingMap c' (pole i)}ᶜ) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfU) R n) := by
   refine TopPair.isIso_singularHomologyMap_of_open_cover R (TopPair.ofSubsetMap _ hfU) ?_ ?_
     (fun b : Bool ↦ bif b
       then (Subtype.val ⁻¹' Topology.RelCWComplex.openCell i c :
         Set (skeletonLT (univ : Set (RealProjectiveSpace N)) (i + 1 : ℕ)))
-      else {cellAttachingMap univ c' (pole i)}ᶜ)
+      else {cellAttachingMap c' (pole i)}ᶜ)
     (fun b ↦ ?_) ?_ (fun b ↦ ?_) n
   · rw [TopPair.ofSubsetMap_fst]
     exact isEmbedding_cellAttachingMap_restrict hi c'
@@ -282,13 +283,13 @@ private lemma isIso_singularHomologyMap_upperHemisphere {A : Type*} [Category A]
     refine ⟨⟨u, fun hu ↦ y.2 ?_⟩, rfl⟩
     refine hy.trans ?_
     rw [TopPair.ofSubsetMap_fst_apply]
-    exact congrArg (cellAttachingMap univ c') hu
+    exact congrArg (cellAttachingMap c') hu
   · cases b
     · have : T1Space (skeletonLT (univ : Set (RealProjectiveSpace N)) (i + 1 : ℕ)) := inferInstance
       exact @isOpen_compl_singleton _ _ this _
     · exact isOpen_preimage_val_openCell i subset_rfl c
   · refine eq_univ_of_forall fun z ↦ mem_iUnion.2 ?_
-    by_cases hz : z = cellAttachingMap univ c' (pole i)
+    by_cases hz : z = cellAttachingMap c' (pole i)
     · exact ⟨true, hz ▸ cellAttachingMap_pole_mem_openCell hi c c'⟩
     · exact ⟨false, hz⟩
   · cases b
@@ -333,7 +334,7 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
       fun _ h ↦ h.1) (ModuleCat.of R R) i ≫ inv (TopPair.singularHomologyMap
         (TopPair.excisionMap (upperHemisphere i) {pole i}ᶜ) (ModuleCat.of R R) i) := ⟨_, rfl⟩
   have hmain := TopPair.comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ModuleCat.of R R) ha
-    (diskBoundaryNeg_pole_ne i) hapU (cellAttachingMap univ c')
+    (diskBoundaryNeg_pole_ne i) hapU (cellAttachingMap c')
     (cellAttachingMap_diskBoundaryNeg hi c') hfP i ((-1) ^ (i + 1)) s
     (hs ▸ diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap_diskBoundaryNeg
       (ModuleCat.of R R) haP) t
@@ -341,18 +342,18 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
   -- The image of `s` under the attaching map is the image of the sphere generator in the local
   -- homology of the skeleton at the class of the pole.
   have hloc := singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul univ R
-    (cellAttachingMap univ c' (pole i)) hx c'
+    (cellAttachingMap c' (pole i)) hx c'
   have hs1 : (s ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfP) (ModuleCat.of R R) i) 1 =
       cellularIncidence univ R i c c' • cellLocalClass univ (ModuleCat.of R R)
-        (cellAttachingMap univ c' (pole i)) hx 1 := by
+        (cellAttachingMap c' (pole i)) hx 1 := by
     rw [hs, diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap]
     exact hloc
-  set μ := inv (cellLocalClass univ (ModuleCat.of R R) (cellAttachingMap univ c' (pole i)) hx)
+  set μ := inv (cellLocalClass univ (ModuleCat.of R R) (cellAttachingMap c' (pole i)) hx)
     ((t ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfU) (ModuleCat.of R R) i) 1)
     with hμ
   refine ⟨μ, ?_, fun hi0 ↦ ?_⟩
   · have h := congrArg (inv (cellLocalClass univ (ModuleCat.of R R)
-      (cellAttachingMap univ c' (pole i)) hx)) (hs1.symm.trans (congrArg (fun g ↦ g 1) hmain))
+      (cellAttachingMap c' (pole i)) hx)) (hs1.symm.trans (congrArg (fun g ↦ g 1) hmain))
     have hz (n : ℤ) {X : ModuleCat R} (g : ModuleCat.of R R ⟶ X) (y : R) : (n • g) y = n • g y := by
       simp
     rw [map_smul, IsIso.hom_inv_id_apply, smul_eq_mul, mul_one, hz, map_zsmul, ← hμ,
@@ -370,7 +371,7 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
     -- An automorphism of `R` as a module over itself is right multiplication by a unit.
     have hbij := ConcreteCategory.bijective_of_isIso (t ≫ TopPair.singularHomologyMap
       (TopPair.ofSubsetMap _ hfU) (ModuleCat.of R R) _ ≫ inv (cellLocalClass univ
-        (ModuleCat.of R R) (cellAttachingMap univ c' (pole _)) hx))
+        (ModuleCat.of R R) (cellAttachingMap c' (pole _)) hx))
     exact (((Module.End.isUnit_iff _).2 hbij).map (RingEquiv.moduleEndSelf R).symm).unop
 
 /-- **The cellular incidence numbers of real projective space.** The incidence coefficient of the
