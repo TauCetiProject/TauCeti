@@ -29,9 +29,9 @@ No injectivity is asserted: the represented torus can meet the root-generated su
 identifying the join with an external semidirect product on the nose would need an additional
 disjointness hypothesis. The surjection nevertheless gives the normal form `g = x * t` for every
 element of `B_S(A)`. Taking `S = Set.univ`, where `U_S(A)` is the full elementary subgroup by
-`kostantSubsystemSubgroup_univ`, this is the pointwise assembly step toward the pinned
-Chevalley--Demazure group scheme; representability of the assembled functor and the Borel and
-maximal-torus properties remain later parts of Layer 9 of the reductive-groups roadmap.
+`kostantSubsystemSubgroup_univ`, this assembles the torus and the elementary subgroup pointwise;
+representability of the assembled functor and the Borel and maximal-torus properties are not treated
+here.
 
 The two group-theoretic ingredients — the range of the semidirect-product multiplication map and
 the resulting membership normal form — are proved for an arbitrary normalizing pair of subgroups in

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 public import Mathlib.Topology.Homotopy.Basic
-public import TauCeti.Analysis.Normed.Module.Ball.RadialPush
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellDeformation
 
 /-!

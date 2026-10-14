@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basis
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Isomorphism
 
 /-!
 # The zigzag relations are homogeneous and the induced grading
@@ -148,6 +149,27 @@ theorem zigzagMk_mem_zigzagGrade {n : ℕ} {y : pathAlgebra k (DoubledQuiver G)}
 theorem mem_zigzagGrade_iff {n : ℕ} {x : nonisolatedZigzagQuotient k G} :
     x ∈ zigzagGrade k G n ↔ ∃ y ∈ grade k (DoubledQuiver G) n, zigzagMk k G y = x := by
   simp only [zigzagGrade, TauCeti.GradedAlgebra.mem_quotientPiece_iff, zigzagMk_apply]
+
+/-- Graph relabelling preserves and reflects the descended path-length grading. -/
+@[simp]
+theorem nonisolatedZigzagQuotientEquiv_mem_zigzagGrade_iff
+    {W : Type*} [Finite W] {H : SimpleGraph W} (e : G ≃g H)
+    {n : ℕ} {x : nonisolatedZigzagQuotient k G} :
+    nonisolatedZigzagQuotientEquiv k e x ∈ zigzagGrade k H n ↔
+      x ∈ zigzagGrade k G n := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy, hxy⟩ := (mem_zigzagGrade_iff k H).mp hx
+    have h := congrArg (nonisolatedZigzagQuotientEquiv k e).symm hxy
+    simp only [AlgEquiv.symm_apply_apply] at h
+    rw [nonisolatedZigzagQuotientEquiv_symm,
+      nonisolatedZigzagQuotientEquiv_zigzagMk] at h
+    rw [← h]
+    exact zigzagMk_mem_zigzagGrade k G ((pathAlgebraEquiv_mem_grade_iff k e.symm).mpr hy)
+  · intro hx
+    obtain ⟨y, hy, rfl⟩ := (mem_zigzagGrade_iff k G).mp hx
+    rw [nonisolatedZigzagQuotientEquiv_zigzagMk]
+    exact zigzagMk_mem_zigzagGrade k H ((pathAlgebraEquiv_mem_grade_iff k e).mpr hy)
 
 /-- **The quotient is the internal direct sum of its graded pieces**: this is the comparison of
 the direct-sum graded algebra with the ungraded quotient asked for by the roadmap, in the

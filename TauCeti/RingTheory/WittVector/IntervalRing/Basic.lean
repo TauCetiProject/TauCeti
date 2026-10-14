@@ -56,6 +56,8 @@ extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its un
 
 ## Main results
 
+* `TauCeti.WittVector.gaussValuationAway_algHom` : the extended Gauss valuations are preserved by
+  `𝕎 O`-algebra homomorphisms between localisations away from `p [ϖ]`.
 * `TauCeti.WittVector.norm_algebraMap_intervalRing` : `‖x‖ = max(λ_{ρ₁}(x), λ_{ρ₂}(x))` for
   `x ∈ 𝕎 O`.
 * `TauCeti.WittVector.isPseudoUniformizer_natCast_intervalRing` : `p` is a pseudouniformiser of
@@ -66,6 +68,7 @@ extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its un
   is its unit ball `B^{I,+}`; `TauCeti.WittVector.IntervalLocalization.coe_powerBoundedSubring` is
   the same statement on `𝕎 O[1/(p [ϖ])]`.
 * `TauCeti.WittVector.isUniform_intervalRing` : `B^I` is uniform.
+* `TauCeti.WittVector.norm_ringInverse_natCast_intervalRing` : `‖p⁻¹‖ = max(ρ₁⁻¹, ρ₂⁻¹)` in `B^I`.
 * `TauCeti.WittVector.continuous_algebraMap_intervalLocalization` and
   `TauCeti.WittVector.continuous_algebraMap_intervalRing` : `𝕎 O → 𝕎 O[1/(p [ϖ])]` and
   `𝕎 O → B^I` are continuous for the `(p, [ϖ])`-adic topology on `𝕎 O`.
@@ -142,6 +145,20 @@ theorem gaussValuationAway_eq_zero_iff (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ 
     (hρ : ρ ∈ Set.Ioo 0 1) {x : B} : gaussValuationAway p hv hϖ ρ hρ B x = 0 ↔ x = 0 :=
   Valuation.extendToLocalization_eq_zero_iff _ _ fun _ ↦
     (gaussValuation_eq_zero_iff hv hρ.1 hρ.2).mp
+
+/-- The Gauss valuations of two localizations of `𝕎 O` away from `p [ϖ]` correspond under any
+`𝕎 O`-algebra homomorphism between them. -/
+@[simp]
+theorem gaussValuationAway_algHom (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}
+    (hρ : ρ ∈ Set.Ioo 0 1) {B' : Type*} [CommRing B'] [Algebra (_root_.WittVector p O) B']
+    [IsLocalization.Away ((p : _root_.WittVector p O) * teichmuller p ϖ) B'] (f : B →ₐ[𝕎 O] B')
+    (x : B) : gaussValuationAway p hv hϖ ρ hρ B' (f x) = gaussValuationAway p hv hϖ ρ hρ B x := by
+  obtain ⟨⟨y, s⟩, rfl⟩ :=
+    IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
+  have h : f (IsLocalization.mk' B y s) = IsLocalization.mk' B' y s := by
+    rw [eq_comm, IsLocalization.mk'_eq_iff_eq_mul, ← f.commutes, ← f.commutes, ← map_mul,
+      IsLocalization.mk'_spec]
+  rw [h, gaussValuationAway_mk', gaussValuationAway_mk']
 
 end Away
 
@@ -342,6 +359,31 @@ theorem isPseudoUniformizer_teichmuller_intervalRing :
   · rw [norm_algebraMap_intervalRing, gaussValuation_teichmuller, gaussValuation_teichmuller,
       max_self]
     exact_mod_cast hϖ'
+
+/-- `Ring.inverse p` in `B^I` is the image of `p⁻¹ ∈ 𝕎 O[1/(p [ϖ])]`. -/
+theorem ringInverse_natCast_intervalRing :
+    Ring.inverse (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) =
+      (((IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit⁻¹ : _ˣ) :
+        IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) := by
+  set u := (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit
+  have h : (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) =
+      (Units.map (Completion.coeRingHom : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ →+*
+        IntervalRing p hv hϖ hϖ' hρ₁ hρ₂).toMonoidHom u : _) := by
+    simp [u]
+  rw [h, Ring.inverse_unit, Units.coe_map_inv]
+  -- `Completion.coeRingHom` is the coercion `𝕎 O[1/(p [ϖ])] → B^I`
+  rfl
+
+/-- The norm of `p⁻¹` in `B^I` is `max(ρ₁⁻¹, ρ₂⁻¹)`. -/
+@[simp]
+theorem norm_ringInverse_natCast_intervalRing :
+    ‖Ring.inverse (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)‖ = max (ρ₁ : ℝ)⁻¹ (ρ₂ : ℝ)⁻¹ := by
+  have hp (ρ : ℝ≥0) (hρ : ρ ∈ Set.Ioo 0 1) :
+      gaussValuationAway p hv hϖ ρ hρ (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) p = ρ := by
+    rw [← map_natCast (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)),
+      gaussValuationAway_algebraMap, gaussValuation_p]
+  rw [ringInverse_natCast_intervalRing, Completion.norm_coe, IntervalLocalization.norm_def,
+    map_units_inv, map_units_inv, IsUnit.unit_spec, hp, hp, NNReal.coe_inv, NNReal.coe_inv]
 
 /-- **The norm of `B^I` is power-multiplicative**: `‖x ^ n‖ = ‖x‖ ^ n`. -/
 theorem isPowMul_norm_intervalRing : IsPowMul (‖·‖ : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂ → ℝ) :=

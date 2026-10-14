@@ -11,16 +11,18 @@ public import TauCeti.Combinatorics.Young.Partitions
 /-!
 # Conjugate partitions and dominance
 
-This file defines the conjugate of a natural-number partition by transposing its Young diagram.
-It proves that conjugation is an involution and reverses the dominance order.
+Mathlib defines the conjugate `Nat.Partition.conjugate` of a natural-number partition by
+transposing its Young diagram, and proves that conjugation is an involution
+(`Nat.Partition.conjugate_conjugate`).  This file records the parts and the Young diagram of the
+conjugate, and proves that conjugation reverses the dominance order.
 
-The reversal theorem is the remaining part of the “Orders on partitions” target in Layer 0 of
-the symmetric-group and Schur–Weyl roadmap.  It supplies the order duality used later for the
-row/column symmetry of Specht modules and permutation modules.
+The reversal theorem supplies the order duality behind the row/column symmetry of Specht
+modules and permutation modules.
 
 The Young diagrams of the two extreme partitions, which the duality exchanges, are recorded
 with the partition–diagram correspondence in `TauCeti/Combinatorics/Young/Partitions.lean`
-(`TauCeti.rowLen_diagramOf_ones_le_one` and `TauCeti.colLen_diagramOf_indiscrete_le_one`).
+(`YoungDiagram.rowLen_ofPartition_ones_le_one` and
+`YoungDiagram.colLen_ofPartition_indiscrete_le_one`).
 
 ## References
 
@@ -153,46 +155,47 @@ private theorem sum_map_min_le_of_prefix_sum_le {l₁ l₂ : List ℕ}
   have hsplit₂ := sum_min_add_sum_sub l₂ k
   omega
 
-/-- The conjugate of a partition is obtained by transposing its Young diagram. -/
-def conjugate {n : ℕ} (μ : n.Partition) : n.Partition :=
-  toPartition (diagramOf μ).transpose (by simp)
+end TauCeti
+
+/-- The Young diagram of the conjugate partition is the transposed Young diagram. -/
+@[simp]
+theorem YoungDiagram.ofPartition_conjugate {n : ℕ} (μ : n.Partition) :
+    YoungDiagram.ofPartition μ.conjugate = (YoungDiagram.ofPartition μ).transpose := by
+  rw [Nat.Partition.conjugate]
+  exact YoungDiagram.ofPartition_toPartition _
+
+namespace Nat.Partition
 
 /-- The parts of the conjugate partition are the row lengths of the transposed diagram. -/
 @[simp]
 theorem conjugate_parts {n : ℕ} (μ : n.Partition) :
-    (conjugate μ).parts = ((diagramOf μ).transpose.rowLens : Multiset ℕ) :=
-  toPartition_parts _ _
-
-/-- The Young diagram of the conjugate partition is the transposed Young diagram. -/
-@[simp]
-theorem diagramOf_conjugate {n : ℕ} (μ : n.Partition) :
-    diagramOf (conjugate μ) = (diagramOf μ).transpose :=
-  diagramOf_toPartition _ _
-
-/-- Conjugating a partition twice recovers the original partition. -/
-@[simp]
-theorem conjugate_conjugate {n : ℕ} (μ : n.Partition) :
-    conjugate (conjugate μ) = μ := by
-  apply diagramOf_injective
-  simp
+    μ.conjugate.parts = ((YoungDiagram.ofPartition μ).transpose.rowLens : Multiset ℕ) := by
+  rw [Nat.Partition.conjugate]
+  exact YoungDiagram.toPartition_parts _ _
 
 -- Not `@[simp]`: with `conjugate_parts` in the default simp set the left-hand side is no
 -- longer in simp normal form (the parts reduce to the transposed row lengths before sorting).
 /-- The decreasing parts of the conjugate partition are the row lengths of the transposed
 diagram. -/
 theorem conjugate_parts_sort {n : ℕ} (μ : n.Partition) :
-    (conjugate μ).parts.sort (· ≥ ·) = (diagramOf μ).transpose.rowLens := by
-  rw [← rowLens_diagramOf (conjugate μ), diagramOf_conjugate]
+    μ.conjugate.parts.sort (· ≥ ·) = (YoungDiagram.ofPartition μ).transpose.rowLens := by
+  rw [← YoungDiagram.rowLens_ofPartition_eq_sort_parts μ.conjugate,
+    YoungDiagram.ofPartition_conjugate]
+
+end Nat.Partition
+
+namespace TauCeti
 
 /-- **Conjugation of partitions reverses dominance.** If `μ` dominates `ν`, then the conjugate
 of `ν` dominates the conjugate of `μ`. -/
 protected theorem Dominates.conjugate {n : ℕ} {μ ν : n.Partition} (h : Dominates μ ν) :
-    Dominates (conjugate ν) (conjugate μ) := by
+    Dominates ν.conjugate μ.conjugate := by
   rw [dominates_iff]
   intro k
-  rw [conjugate_parts_sort, conjugate_parts_sort, sum_take_transpose_rowLens,
-    sum_take_transpose_rowLens]
-  rw [rowLens_diagramOf, rowLens_diagramOf]
+  rw [Nat.Partition.conjugate_parts_sort, Nat.Partition.conjugate_parts_sort,
+    sum_take_transpose_rowLens, sum_take_transpose_rowLens,
+    YoungDiagram.rowLens_ofPartition_eq_sort_parts,
+    YoungDiagram.rowLens_ofPartition_eq_sort_parts]
   apply sum_map_min_le_of_prefix_sum_le
   · exact (Multiset.pairwise_sort ν.parts (· ≥ ·)).sortedGE
   · calc
@@ -211,7 +214,7 @@ protected theorem Dominates.conjugate {n : ℕ} {μ ν : n.Partition} (h : Domin
 of `ν` exactly when `ν` dominates `μ`. -/
 @[simp]
 theorem conjugate_dominates_conjugate_iff {n : ℕ} {μ ν : n.Partition} :
-    Dominates (conjugate μ) (conjugate ν) ↔ Dominates ν μ :=
+    Dominates μ.conjugate ν.conjugate ↔ Dominates ν μ :=
   ⟨fun h => by simpa using h.conjugate, fun h => h.conjugate⟩
 
 end TauCeti

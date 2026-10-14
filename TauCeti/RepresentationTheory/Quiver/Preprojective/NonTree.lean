@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.NeighborChoice
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Orientation
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Sinkless
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GradedResolution
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
 /-!
@@ -33,6 +33,8 @@ orientation of such a graph, over every commutative ring, the Koszul complex of 
 is exact at its left end, so it is a projective resolution of the vertex module. This covers the
 cycles `A~ₙ` (`n ≥ 2`) and every connected graph with more edges than a spanning tree, all of which
 are non-Dynkin; the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`, `E₈~`, are not covered.
+The shifted graded Koszul complex is consequently a linear graded projective resolution
+of each right vertex module, over the ordinary opposite algebra.
 
 ## Main results
 
@@ -41,6 +43,9 @@ are non-Dynkin; the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`, `E�
 * `TauCeti.forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_isAcyclic`: **the Koszul
   complex of the preprojective algebra of any orientation of a connected graph which is not a tree
   (more generally, of a preconnected graph which is not acyclic) is exact at its left end.**
+* `TauCeti.preprojectiveKoszulLeft_injective_of_not_isAcyclic`: injectivity of the bundled map.
+* `TauCeti.isLinear_preprojectiveGradedKoszulResolution_of_not_isAcyclic`: linear graded
+  projective resolutions for every orientation, without a hypothesis on its sinks.
 
 ## References
 
@@ -123,6 +128,25 @@ theorem forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_isAcyclic
   obtain ⟨f, hf⟩ := hG.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic hc
   obtain ⟨σ, hσ⟩ := exists_forall_exists_nonempty_reorient_hom o hf
   exact forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_reorient k σ hσ v hy
+
+/-- For every orientation of a finite preconnected graph containing a cycle, the left
+Koszul differential at each vertex is injective. The chosen orientation may have sinks. -/
+theorem preprojectiveKoszulLeft_injective_of_not_isAcyclic
+    (hG : G.Preconnected) (hc : ¬G.IsAcyclic) (o : Orientation G)
+    (v : OrientedQuiver G o) : Function.Injective (preprojectiveKoszulLeft k v) :=
+  (preprojectiveKoszulLeft_injective_iff k v).2 fun _ hy =>
+    (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_isAcyclic k hG hc o v hy).1
+
+/-- The right vertex module of every orientation of a finite preconnected graph containing
+a cycle has a linear graded Koszul resolution. Its projective terms are generated in internal
+degrees zero, one and two, respectively, and all later terms vanish. -/
+theorem isLinear_preprojectiveGradedKoszulResolution_of_not_isAcyclic
+    (hG : G.Preconnected) (hc : ¬G.IsAcyclic) (o : Orientation G)
+    (v : OrientedQuiver G o) :
+    (preprojectiveGradedKoszulResolution k v
+      (preprojectiveKoszulLeft_injective_of_not_isAcyclic k hG hc o v)).IsLinear :=
+  isLinear_preprojectiveGradedKoszulResolution k v
+    (preprojectiveKoszulLeft_injective_of_not_isAcyclic k hG hc o v)
 
 end Graph
 

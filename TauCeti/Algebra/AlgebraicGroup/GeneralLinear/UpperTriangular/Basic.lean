@@ -478,7 +478,7 @@ theorem rootSubgroup_comp_inclusion (hij : i < j) :
   rw [← coordinateMap_def, coordinateMap_comp_rootSubgroupCoordinateMap] at hcomp
   rw [rootSubgroup_def, inclusion, GeneralLinear.rootSubgroup_def,
     GeneralLinear.weightParabolicInclusion_def, ← hcomp]
-  simp only [Category.assoc, eqToHom_refl, Category.id_comp, eqToIso.hom]
+  simp only [Category.assoc, eqToHom_refl, Category.id_comp]
 
 end RootSubgroup
 

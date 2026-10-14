@@ -26,9 +26,9 @@ Sandwiching a relator between two basis paths either produces a path of length a
 when both outer paths are trivial, the relator itself, so this map kills the relation ideal. It
 therefore separates the candidate basis classes, which it sends to distinct basis paths.
 
-The hypothesis is that every vertex has a neighbour: an isolated vertex carries no backtrack, so
-its volume class does not exist. For a preconnected graph with at least two vertices the hypothesis
-is automatic, which is the form the roadmap's dimension count takes.
+The hypothesis is that every vertex has a neighbour: an isolated vertex carries no backtrack, so its
+volume class does not exist. For a preconnected graph with at least two vertices the hypothesis is
+automatic.
 
 ## Main definitions
 
@@ -50,11 +50,8 @@ is automatic, which is the form the roadmap's dimension count takes.
 
 ## References
 
-This is the first two clauses of Layer 2 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, whose
-target signatures `zigzagBasis` and `finrank_zigzagAlgebra` appear in
-`TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`. See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section

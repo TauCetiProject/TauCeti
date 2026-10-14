@@ -32,8 +32,9 @@ require a commutative target.
   reassociating `y ⊗ 1` is the base change of `b ↦ f (b ⊗ 1)`.
 * `AlgHom.sectionBaseChange`: the base change `T ⊗[A] B →ₐ[T] T` of an `A`-algebra map
   `s : B →ₐ[A] A`, that is, the pullback to `Spec T` of the section of `Spec B → Spec A` given by
-  `s`, with its value `AlgHom.sectionBaseChange_sum_tmul` on sums of pure tensors and its
-  naturality `AlgHom.sectionBaseChange_rTensor` in `T`.
+  `s`, with its value `AlgHom.sectionBaseChange_sum_tmul` on sums of pure tensors, its
+  naturality `AlgHom.sectionBaseChange_rTensor` in `T`, and its transitivity
+  `AlgHom.sectionBaseChange_sectionBaseChange` along `A → A' → T`.
 -/
 
 public section
@@ -150,6 +151,25 @@ theorem sectionBaseChange_rTensor (s : B →ₐ[A] A) {T T' : Type*} [CommSemiri
     s.sectionBaseChange T' (Algebra.TensorProduct.rTensor B φ x) = φ (s.sectionBaseChange T x) := by
   induction x using TensorProduct.inductionOn with
   | tmul t b => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Base change of a section is transitive: along `A → A' → T`, base changing `s` to `A'` and
+then to `T` is base changing `s` to `T`, through the identification
+`T ⊗[A'] (A' ⊗[A] B) ≃ T ⊗[A] B`. -/
+@[simp]
+theorem sectionBaseChange_sectionBaseChange {B : Type*} [CommSemiring B] [Algebra A B]
+    (s : B →ₐ[A] A) {A' T : Type*} [CommSemiring A'] [Algebra A A'] [CommSemiring T]
+    [Algebra A T] [Algebra A' T] [IsScalarTower A A' T] (x : T ⊗[A'] (A' ⊗[A] B)) :
+    (s.sectionBaseChange A').sectionBaseChange T x =
+      s.sectionBaseChange T (Algebra.TensorProduct.cancelBaseChange A A' T T B x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul t y =>
+    induction y using TensorProduct.inductionOn with
+    | tmul a b =>
+      simp only [sectionBaseChange_tmul, Algebra.TensorProduct.cancelBaseChange_tmul,
+        Algebra.smul_def, IsScalarTower.algebraMap_apply A A' T, map_mul]
+      ac_rfl
+    | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
   | add x y hx hy => simp only [map_add, hx, hy]
 
 end AlgHom
