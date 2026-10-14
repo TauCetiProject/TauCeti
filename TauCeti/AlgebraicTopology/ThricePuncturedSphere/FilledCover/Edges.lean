@@ -164,12 +164,13 @@ private theorem chart_radialPath_mem_unitSegment_zero (hp : IsCoveringMap p)
     (coe_coord_of_eq_zero hq ⟨_, hw0⟩).symm.trans hcoordw
   have hpath : ((radialPath w k t : 𝔻*) : ℂ) = s • (w : ℂ) := by
     simp [radialPath, s]
+  have hpath_mul : ((radialPath w k t : 𝔻*) : ℂ) = (s : ℂ) * (w : ℂ) := by
+    rw [hpath, real_smul]
   have hmap : (p (chart p (overZero p b) (radialPath w k t)) : ℂ) =
       (s ^ e) • (p (chart p (overZero p b) w) : ℂ) := by
-    apply mul_left_cancel₀ (show (2 : ℂ) ≠ 0 by norm_num)
-    rw [hcoordu', hpath]
-    change ((s : ℂ) * (w : ℂ)) ^ e =
-      2 * ((s ^ e) • (p (chart p (overZero p b) w) : ℂ))
+    have htwo_ne : (2 : ℂ) ≠ 0 := by norm_num
+    apply mul_left_cancel₀ htwo_ne
+    rw [hcoordu', hpath_mul]
     rw [mul_pow, ← hcoordw']
     rw [real_smul]
     rw [ofReal_pow]
@@ -217,12 +218,13 @@ private theorem chart_radialPath_mem_unitSegment_one (hp : IsCoveringMap p)
     (coe_coord_of_eq_one hq ⟨_, hw1⟩).symm.trans hcoordw
   have hpath : ((radialPath w k t : 𝔻*) : ℂ) = s • (w : ℂ) := by
     simp [radialPath, s]
+  have hpath_mul : ((radialPath w k t : 𝔻*) : ℂ) = (s : ℂ) * (w : ℂ) := by
+    rw [hpath, real_smul]
   have hgap : 1 - (p (chart p (overOne p b) (radialPath w k t)) : ℂ) =
       (s ^ e) • (1 - (p (chart p (overOne p b) w) : ℂ)) := by
-    apply mul_left_cancel₀ (show (2 : ℂ) ≠ 0 by norm_num)
-    rw [hcoordu', hpath]
-    change ((s : ℂ) * (w : ℂ)) ^ e =
-      2 * ((s ^ e) • (1 - (p (chart p (overOne p b) w) : ℂ)))
+    have htwo_ne : (2 : ℂ) ≠ 0 := by norm_num
+    apply mul_left_cancel₀ htwo_ne
+    rw [hcoordu', hpath_mul]
     rw [mul_pow, ← hcoordw', real_smul, ofReal_pow]
     ring
   have hmap : (p (chart p (overOne p b) (radialPath w k t)) : ℂ) =
@@ -283,10 +285,11 @@ theorem center_overZero_mem_closure_edge_iff {n : ℕ} (hp : IsCoveringMap p)
     · have hlim := (PunctureFilling.continuous_disc (φ := chart p)
         (overZero p b)).continuousAt.tendsto.comp (tendsto_radialPoint_zero w)
       simpa only [f, PunctureFilling.disc_zero] using hlim
-    · rw [show f k = PunctureFilling.incl (chart p)
-          (chart p (overZero p b) (radialPoint w k)) by
+    · have hfk : f k = PunctureFilling.incl (chart p)
+          (chart p (overZero p b) (radialPoint w k)) := by
         simp only [f, Function.comp_apply]
-        exact PunctureFilling.disc_inclusion (overZero p b) (radialPoint w k)]
+        exact PunctureFilling.disc_inclusion (overZero p b) (radialPoint w k)
+      rw [hfk]
       apply (mem_edge_iff hp ν i _).2
       have hy : p (chart p (overZero p b) (radialPoint w k)) ∈ unitSegment := by
         simpa using chart_radialPath_mem_unitSegment_zero hp hfin b w hx k 0
@@ -342,10 +345,11 @@ theorem center_overOne_mem_closure_edge_iff {n : ℕ} (hp : IsCoveringMap p)
     · have hlim := (PunctureFilling.continuous_disc (φ := chart p)
         (overOne p b)).continuousAt.tendsto.comp (tendsto_radialPoint_zero w)
       simpa only [f, PunctureFilling.disc_zero] using hlim
-    · rw [show f k = PunctureFilling.incl (chart p)
-          (chart p (overOne p b) (radialPoint w k)) by
+    · have hfk : f k = PunctureFilling.incl (chart p)
+          (chart p (overOne p b) (radialPoint w k)) := by
         simp only [f, Function.comp_apply]
-        exact PunctureFilling.disc_inclusion (overOne p b) (radialPoint w k)]
+        exact PunctureFilling.disc_inclusion (overOne p b) (radialPoint w k)
+      rw [hfk]
       apply (mem_edge_iff hp ν i _).2
       have hy : p (chart p (overOne p b) (radialPoint w k)) ∈ unitSegment := by
         simpa using chart_radialPath_mem_unitSegment_one hp hfin b w hx k 0
