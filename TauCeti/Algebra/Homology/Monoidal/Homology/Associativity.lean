@@ -78,7 +78,7 @@ lemma cyclesCross_assoc :
   simp only [curriedAssociatorNatIso_hom_app_app_app] at hι
   have h := congrArg (((K.iCycles p ⊗ₘ L.iCycles q) ⊗ₘ M.iCycles r) ≫ ·) hι
   rw [Category.assoc, associator_naturality_assoc] at h
-  -- The component of the complex associator is exactly mapBifunctorAssociatorX.
+  -- Normalize both sides into whiskered form to match the summand identity h.
   simp only [tensorHom_def, Category.assoc, cyclesCross_iCycles_assoc]
   rw [whisker_exchange_assoc]
   simp only [← comp_whiskerRight_assoc, ← whiskerLeft_comp_assoc,
@@ -126,17 +126,18 @@ lemma homologyCross_assoc :
   simp only [CokernelCofork.map_π, Cofork.π_ofπ, Functor.comp_map]
   simp only [tensorRight, tensorLeft, Functor.flip_obj_map, curriedTensor_map_app,
     curriedTensor_obj_map]
+  -- Express the three quotient maps as a single tensor product.
   simp only [← comp_whiskerRight_assoc]
-  rw [← tensorHom_def (K.homologyπ p) (L.homologyπ q),
+  simp only [← tensorHom_def (K.homologyπ p) (L.homologyπ q),
     ← tensorHom_def_assoc (K.homologyπ p ⊗ₘ L.homologyπ q) (M.homologyπ r)]
-  rw [← tensorHom_def_assoc (K.homologyπ p ⊗ₘ L.homologyπ q) (M.homologyπ r)]
-  simp only [← tensorHom_id, ← id_tensorHom, associator_naturality_assoc]
-  simp only [tensorHom_comp_tensorHom_assoc, Category.comp_id,
-    homologyπ_tensorHom_homologyCross]
-  rw [← whiskerRight_comp_tensorHom_assoc, ← whiskerLeft_comp_tensorHom_assoc]
-  simp only [homologyπ_tensorHom_homologyCross_assoc, homologyπ_naturality]
-  rw [cyclesCross_assoc_assoc K L M p q r pq qr n hpq hqr hn hn']
-  simp only [homologyπ_tensorHom_homologyCross]
+  simp only [← tensorHom_id, ← id_tensorHom, associator_naturality_assoc,
+    tensorHom_comp_tensorHom_assoc, Category.comp_id, homologyπ_tensorHom_homologyCross]
+  simp only [← whiskerRight_comp_tensorHom_assoc, ← whiskerLeft_comp_tensorHom_assoc,
+    homologyπ_tensorHom_homologyCross_assoc, homologyπ_naturality]
+  -- Both iterated homology products are now classes of iterated cycle products.
+  simpa only [homologyπ_tensorHom_homologyCross] using
+    cyclesCross_assoc_assoc K L M p q r pq qr n hpq hqr hn hn'
+      ((tensorObj K (tensorObj L M)).homologyπ n)
 
 end Homology
 
