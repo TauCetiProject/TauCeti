@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
-import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Product
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
@@ -102,7 +102,9 @@ theorem finrank_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structure
     ((E.pointsDivisor x).subschemeι ≫ E.structureMap).finrank s = Fintype.card A := by
   have (a : A) : IsClosedImmersion (x a).left :=
     (x a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
-  rw [pointsDivisor_def, Scheme.IdealSheafData.finrank_prod_subschemeι_comp _ _
+  have := (isRelativeEffectiveCartier_pointsDivisor x).isFinite
+  rw [pointsDivisor_def] at this ⊢
+  rw [finrank_prod_subschemeι_comp Finset.univ (fun a ↦ (x a).left.ker)
     (fun a _ ↦ Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension
       (x a).left (left_comp_structureMap _))]
   have hr (a : A) : ((x a).left.ker.subschemeι ≫ E.structureMap).finrank = 1 :=
