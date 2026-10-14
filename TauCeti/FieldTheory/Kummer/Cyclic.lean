@@ -228,7 +228,7 @@ theorem X_pow_sub_C_irreducible_of_isPrimitiveRoot
   set α := rootOfSplitsXPowSubC (NeZero.pos n) b L
   have hgen := AdjoinSimple.adjoin_gen_eq_top (F := K) α
   have hs : AdjoinSimple.gen K α ^ n = algebraMap K K⟮α⟯ b :=
-    Subtype.ext (rootOfSplitsXPowSubC_pow b L)
+    Subtype.ext (by simpa using rootOfSplitsXPowSubC_pow b L)
   have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζ hb hs hgen
   have : FiniteDimensional K K⟮α⟯ := Module.finite_of_finrank_pos (hfin.symm ▸ NeZero.pos n)
   have H := irreducible_X_pow_sub_C_of_root_adjoin_eq_top (by rwa [hfin]) hgen
