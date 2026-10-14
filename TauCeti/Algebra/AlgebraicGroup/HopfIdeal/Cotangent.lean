@@ -30,7 +30,9 @@ Dualizing recovers the injective differential constructed in
 
 * `TauCeti.HopfIdeal.conormalSubspace`: the image of the defining Hopf ideal in the ambient
   augmentation cotangent space.
-* `TauCeti.HopfIdeal.quotientCotangentMap`: the map on cotangent spaces induced by the quotient.
+* `TauCeti.HopfIdeal.quotientCotangentMap`: the map on cotangent spaces induced by the quotient,
+  in the presentation used by the exactness API; `TauCeti.HopfIdeal.cotangentSpaceMap_mkBialgHom`
+  identifies it with the general cotangent map `TauCeti.Bialgebra.cotangentSpaceMap`.
 * `TauCeti.HopfIdeal.quotientCotangentMap_toCotangent`: the quotient map on an augmentation-ideal
   representative.
 * `TauCeti.HopfIdeal.cotangentLinearEquiv_comp_quotientCotangentMap`: dualizing the cotangent map
@@ -157,6 +159,17 @@ theorem quotientCotangentMap_cotangentMap (I : HopfIdeal k H) (x : H) :
     Bialgebra.cotangentMap_apply]
   apply (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).toCotangent.congr_arg
   -- Both the quotient counit and its algebra map compute on representatives definitionally.
+  rfl
+
+/-- The quotient cotangent map is the cotangent map of the quotient bialgebra morphism. -/
+theorem cotangentSpaceMap_mkBialgHom (I : HopfIdeal k H) :
+    Bialgebra.cotangentSpaceMap (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal) =
+      quotientCotangentMap I := by
+  ext x
+  obtain ⟨x, rfl⟩ := (Bialgebra.AugmentationIdeal k H).toCotangent_surjective x
+  rw [← Bialgebra.cotangentMap_augmentation, Bialgebra.cotangentSpaceMap_cotangentMap,
+    quotientCotangentMap_cotangentMap]
+  -- The quotient bialgebra morphism and the quotient algebra map agree on representatives.
   rfl
 
 /-- Under cotangent duality, precomposition by the quotient cotangent map is the differential
