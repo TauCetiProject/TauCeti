@@ -319,8 +319,10 @@ theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
 /-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
 theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
     (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
-    (H ⊓ K.comap f).map f = H.map f ⊓ K :=
-  SetLike.coe_injective (Set.image_inter_preimage f H K)
+    (H ⊓ K.comap f).map f = H.map f ⊓ K := by
+  apply SetLike.coe_injective
+  simp only [Subgroup.coe_map, Subgroup.coe_inf, Subgroup.coe_comap]
+  exact Set.image_inter_preimage f H K
 
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
