@@ -19,7 +19,8 @@ Galois group.
 
 ## Main result
 
-* `TauCeti.exists_relationModule_surjective_of_tameFrame_h2Iso`: chooses the tame-frame relation
+* `TauCeti.exists_relationModule_surjective_of_tameFrame_h2Iso_of_exact`: chooses the tame-frame
+  relation
   module surjection together with its kernel identification and the induced degree-two cohomology
   isomorphism.
 
@@ -40,7 +41,7 @@ variable {p : ℕ} [Fact p.Prime] {L : Type} [Field L] {K : Type} [Field K] [Alg
 /-- There is a surjective tame-frame relation-module map to the completed multiplicative module
 whose kernel is isomorphic to the free rank-one group-algebra module, and whose induced map on
 degree-two group cohomology is an isomorphism. -/
-theorem exists_relationModule_surjective_of_tameFrame_h2Iso
+theorem exists_relationModule_surjective_of_tameFrame_h2Iso_of_exact
     [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K]
     [IsScalarTower ℚ_[p] K L] [IsGalois K L]
     {Y P₀ P₁ : Type*} [AddCommGroup Y]
