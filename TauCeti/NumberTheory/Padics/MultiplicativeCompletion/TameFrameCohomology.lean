@@ -71,11 +71,8 @@ theorem exists_relationModule_surjective_of_tameFrame_h2Iso_of_exact
           (ofModuleMonoidAlgebra.map (ModuleCat.ofHom β))) := by
   obtain ⟨β, hβ, hker⟩ := exists_relationModule_surjective_of_tameFrame_of_exact
     hdρ hd hρ hιπ hι hπ h σ τ hgen hτ hg
-  obtain ⟨e⟩ := hker
-  let Λ := MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)
-  let _ : Module.Projective Λ (LinearMap.ker β) := Module.Projective.of_equiv e.symm
   have := Module.Finite.right ℚ_[p] K L
-  have hmap := groupCohomology.isIso_map_of_surjective_of_projective_ker β hβ 1
-  exact ⟨β, hβ, ⟨e⟩, hmap⟩
+  have hmap := groupCohomology.isIso_map_of_surjective_of_free_ker β hβ hker 1
+  exact ⟨β, hβ, hker, hmap⟩
 
 end TauCeti
