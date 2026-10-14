@@ -98,8 +98,7 @@ lemma cochainValuesEquiv_d (n : ℕ)
         ((K.chainComplex (ModuleCat.of k k)).d (n + 1) n ≫ φ) σ =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ i.val • cochainValuesEquiv k M K n φ (K.δ i σ) := by
   rw [cochainValuesEquiv_apply]
-  change (K.ιChainComplex σ ≫ (K.chainComplex (ModuleCat.of k k)).d (n + 1) n ≫ φ) 1 = _
-  rw [K.ιChainComplex_d_assoc]
+  rw [← ModuleCat.comp_apply, K.ιChainComplex_d_assoc]
   simp only [Preadditive.sum_comp, Preadditive.zsmul_comp, ModuleCat.hom_sum,
     ModuleCat.hom_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, ModuleCat.hom_comp,
     LinearMap.comp_apply, cochainValuesEquiv_apply]

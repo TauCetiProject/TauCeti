@@ -142,10 +142,6 @@ lemma simplicialCochainComplexIntegralIso_hom_naturality {L : SSet.{0}} (f : K �
     simp only [LinearEquiv.apply_symm_apply, cochainValuesEquiv_chainComplexMap]
   ext n φ
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f]
-  change ((cochainComplexMap f).f n ≫
-      (simplicialCochainComplexIntegralIso k M K).hom.f n) φ =
-    ((simplicialCochainComplexIntegralIso k M L).hom.f n ≫
-      (cochainComplexMap f).f n) φ
   rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
     simplicialCochainComplexIntegralIso_hom_f_apply,
     SSet.cochainComplexMap_f_apply, SSet.cochainComplexMap_f_apply,
