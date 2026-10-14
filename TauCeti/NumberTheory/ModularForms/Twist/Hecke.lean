@@ -22,14 +22,15 @@ prime `p ∤ L` the Hecke operators of the two levels are intertwined by the twi
 On the `m`-th `q`-expansion coefficient this is the identity
 `ψ(pm) a_{pm} + χ(p)ψ(p)² p^{k-1} ψ(m/p) a_{m/p} = ψ(p) ψ(m) (a_{pm} + χ(p) p^{k-1} a_{m/p})`,
 the terms with `a_{m/p}` present only when `p ∣ m`; it uses only the multiplicativity of `ψ`.
-In particular the twist of a `T_p`-eigenvector with eigenvalue `c` is a `T_p`-eigenvector with
-eigenvalue `ψ(p) c`.
+In particular, if `T_p f = c • f`, then `T_p (f ⊗ ψ) = (ψ(p) c) • (f ⊗ ψ)`: the twist satisfies the
+eigenrelation with eigenvalue `ψ(p) c`, and is a `T_p`-eigenvector whenever it is nonzero (the
+twist can annihilate a nonzero form).
 
 ## Main results
 
 * `ModularForm.heckeTNat_twist`: `T_p (f ⊗ ψ) = ψ(p) • (T_p f) ⊗ ψ` for `p ∤ L`.
 * `CuspForm.heckeTCuspNat_twist`: the same identity for cusp forms.
-* `CuspForm.heckeTCuspNat_twist_eq_smul`: the twist of a `T_p`-eigenvector.
+* `CuspForm.heckeTCuspNat_twist_eq_smul`: the twist of a `T_p`-eigenrelation.
 
 ## References
 
@@ -48,15 +49,6 @@ namespace TauCeti
 
 variable {M N L p : ℕ} {k : ℤ}
 
-/-- The nebentypus `χψ²` of a twist, evaluated at a prime `p` coprime to the twisted level. -/
-private lemma twistCharacter_unitOfCoprime (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L)
-    (hML : M * M ∣ L) (χ : (ZMod N)ˣ →* ℂˣ) (hpL : p.Coprime L) :
-    (((χ.comp (unitsMap (dvd_of_mul_right_dvd hNL)) *
-        (ψ.toUnitHom.comp (unitsMap (dvd_of_mul_left_dvd hML))) ^ 2)
-        (unitOfCoprime p hpL) : ℂˣ) : ℂ) =
-      χ (unitOfCoprime p (hpL.coprime_dvd_right (dvd_of_mul_right_dvd hNL))) * ψ p ^ 2 := by
-  simp
-
 /-- **Twisting intertwines the Hecke operators at a prime not dividing the level.** For a
 Dirichlet character `ψ` modulo `M`, `f ∈ M_k(Γ₁(N), χ)` and a prime `p ∤ L`,
 `T_p (f ⊗ ψ) = ψ(p) • (T_p f) ⊗ ψ`, with `T_p` taken at level `L` on the left and at level `N`
@@ -71,15 +63,15 @@ theorem _root_.ModularForm.heckeTNat_twist [NeZero M] [NeZero N] [NeZero L]
   have hpN := hpL.coprime_dvd_right (dvd_of_mul_right_dvd hNL)
   refine (ModularForm.qExpansion_inj one_pos (one_mem_strictPeriods_Gamma1_map L)).1
     (PowerSeries.ext fun m ↦ ?_)
-  rw [heckeTNat_def (N := L),
+  simp only [heckeTNat_def,
     qExpansion_coeff_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace k hp
-      hpL _ (ModularForm.twist_mem_modFormCharSpace ψ hNL hML hf) m,
-    twistCharacter_unitOfCoprime ψ hNL hML χ hpL, FunLike.coe_smul,
+      hpL _ (ModularForm.twist_mem_modFormCharSpace ψ hNL hML hf),
+    qExpansion_coeff_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace k hp
+      hpN χ hf, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (one_mem_strictPeriods_Gamma1_map L),
-    PowerSeries.coeff_smul, ModularForm.qExpansion_twist_coeff, ModularForm.qExpansion_twist_coeff,
-    ModularForm.qExpansion_twist_coeff, heckeTNat_def (N := N),
-    qExpansion_coeff_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace k hp
-      hpN χ hf m, smul_eq_mul]
+    PowerSeries.coeff_smul, ModularForm.qExpansion_twist_coeff, smul_eq_mul,
+    MonoidHom.mul_apply, MonoidHom.comp_apply, MonoidHom.pow_apply, unitsMap_unitOfCoprime,
+    Units.val_mul, Units.val_pow_eq_pow_val, MulChar.coe_toUnitHom, coe_unitOfCoprime]
   split_ifs with hpm
   · obtain ⟨m, rfl⟩ := hpm
     rw [Nat.mul_div_cancel_left m hp.pos]
@@ -106,8 +98,10 @@ theorem _root_.CuspForm.heckeTCuspNat_twist [NeZero M] [NeZero N] [NeZero L]
   ext τ
   simpa using DFunLike.congr_fun h τ
 
-/-- **The twist of a `T_p`-eigenvector is a `T_p`-eigenvector.** If `f ∈ S_k(Γ₁(N), χ)` satisfies
-`T_p f = c • f` at a prime `p ∤ L`, then `T_p (f ⊗ ψ) = (ψ(p) c) • (f ⊗ ψ)`. -/
+/-- **Twisting preserves a `T_p`-eigenrelation.** If `f ∈ S_k(Γ₁(N), χ)` satisfies
+`T_p f = c • f` at a prime `p ∤ L`, then `T_p (f ⊗ ψ) = (ψ(p) c) • (f ⊗ ψ)`. So `f ⊗ ψ` is a
+`T_p`-eigenvector with eigenvalue `ψ(p) c` whenever it is nonzero; the twist of a nonzero form
+can vanish. -/
 theorem _root_.CuspForm.heckeTCuspNat_twist_eq_smul [NeZero M] [NeZero N] [NeZero L]
     (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L) (hML : M * M ∣ L) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ)
