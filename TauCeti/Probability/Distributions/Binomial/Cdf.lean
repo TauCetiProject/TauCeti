@@ -14,8 +14,7 @@ public import TauCeti.Probability.Cdf
 The real-valued binomial law `Bin(ℝ, n, p)` has a step-function cdf. It vanishes below zero,
 equals one at and above `n`, and between those endpoints is the regularized incomplete beta
 value `I_{1-p}(n - ⌊x⌋₊, ⌊x⌋₊ + 1)`. The formula includes zero trials and both endpoint
-success probabilities. In particular, no positive-parameter beta identity is applied to an
-atomic boundary law.
+success probabilities.
 
 This connects the native cumulative-mass formula to the usual real cdf, so real-valued
 binomial variables can use the same cdf API as continuous distributions.
@@ -34,6 +33,7 @@ namespace TauCeti.Probability
 
 /-- The cdf of a real binomial law is the regularized incomplete beta value at the natural
 floor of the cutoff inside its support, zero below the support, and one above it. -/
+@[simp]
 theorem cdf_map_cast_binomial (n : ℕ) (p : unitInterval) (x : ℝ) :
     cdf Bin(ℝ, n, p) x =
       if x < 0 then 0 else if (n : ℝ) ≤ x then 1 else
