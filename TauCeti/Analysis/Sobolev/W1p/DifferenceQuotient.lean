@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Difference quotients of `W^{1,p}(Ω)` functions
@@ -49,6 +50,9 @@ space; neither operation changes `u` or its gradient near the segments.
   bound for all sufficiently small `t`.
 * `TauCeti.W1p.norm_value_differenceQuotient_le`: on the whole space the bound holds for every
   step `t`, with no compactness, in the form `‖D^t_v u‖_p ≤ ‖v‖ ‖∇u‖_p`.
+* `TauCeti.W1p.abs_integral_value_mul_gradient_differenceQuotient_le`: on the whole space a
+  difference quotient moves from `∇v` onto a field `z Φ`, with `z ∈ H¹(ℝⁿ)` and `Φ` a bounded,
+  Lipschitz field of linear forms, at the cost of the `H¹` norm of `z`.
 
 ## References
 
@@ -64,7 +68,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace Filter Topology
-open scoped Distributions ENNReal Gradient InnerProductSpace
+open scoped Distributions ENNReal Gradient InnerProductSpace NNReal
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -398,5 +402,155 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
     _ = ‖v‖ * ‖W1p.gradient u‖ := by
         rw [ENNReal.toReal_mul, ← Lp.norm_def]
         simp
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- **The product rule for difference quotients, pointwise.** If `Φ` is a field of linear forms
+bounded by `C` and `L`-Lipschitz, then for a real function `Z`, a vector `g`, a point `x`, a
+direction `e` and a step `t`,
+
+`|t⁻¹ (Z(x - t e) Φ(x - t e) g - Z(x) Φ(x) g)|`
+  `≤ C |t⁻¹ (Z(x) - Z(x - t e))| ‖g‖ + L ‖e‖ |Z(x)| ‖g‖`. -/
+private theorem norm_inv_mul_sub_le
+    {Φ : E → StrongDual ℝ E} {C : ℝ} {L : ℝ≥0}
+    (hC : ∀ x, ‖Φ x‖ ≤ C) (hL : LipschitzWith L Φ) {Z : E → ℝ}
+    {g x e : E} {t : ℝ} :
+    ‖t⁻¹ * (Z (x - t • e) * Φ (x - t • e) g - Z x * Φ x g)‖
+      ≤ C * (‖t⁻¹ * (Z x - Z (x - t • e))‖ * ‖g‖) + L * ‖e‖ * (‖Z x‖ * ‖g‖) := by
+  have hsplit : t⁻¹ * (Z (x - t • e) * Φ (x - t • e) g - Z x * Φ x g)
+      = -(t⁻¹ * (Z x - Z (x - t • e))) * Φ (x - t • e) g
+        + Z x * (t⁻¹ * (Φ (x - t • e) - Φ x) g) := by
+    rw [_root_.sub_apply]
+    ring
+  -- The difference quotient of `Φ` is bounded by the Lipschitz constant.
+  have hΦd : |t⁻¹| * ‖Φ (x - t • e) - Φ x‖ ≤ L * ‖e‖ := by
+    have h1 : ‖Φ (x - t • e) - Φ x‖ ≤ L * (|t| * ‖e‖) := by
+      simpa [dist_eq_norm, norm_smul] using hL.dist_le_mul (x - t • e) x
+    rcases eq_or_ne t 0 with rfl | ht
+    · simp only [_root_.inv_zero, abs_zero, zero_mul]
+      positivity
+    · calc |t⁻¹| * ‖Φ (x - t • e) - Φ x‖ ≤ |t⁻¹| * (L * (|t| * ‖e‖)) := by gcongr
+        _ = L * ‖e‖ := by
+            rw [abs_inv]
+            field_simp
+  have h2 : ‖Φ (x - t • e) g‖ ≤ C * ‖g‖ :=
+    ((Φ (x - t • e)).le_opNorm g).trans (mul_le_mul_of_nonneg_right (hC _) (norm_nonneg _))
+  have h3 : ‖t⁻¹ * (Φ (x - t • e) - Φ x) g‖ ≤ L * ‖e‖ * ‖g‖ := by
+    rw [norm_mul, Real.norm_eq_abs]
+    calc |t⁻¹| * ‖(Φ (x - t • e) - Φ x) g‖ ≤ |t⁻¹| * (‖Φ (x - t • e) - Φ x‖ * ‖g‖) := by
+          gcongr
+          exact (Φ (x - t • e) - Φ x).le_opNorm g
+      _ = (|t⁻¹| * ‖Φ (x - t • e) - Φ x‖) * ‖g‖ := by ring
+      _ ≤ L * ‖e‖ * ‖g‖ := by gcongr
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_mul, norm_mul, norm_neg]
+  calc ‖t⁻¹ * (Z x - Z (x - t • e))‖ * ‖Φ (x - t • e) g‖ +
+        ‖Z x‖ * ‖t⁻¹ * (Φ (x - t • e) - Φ x) g‖
+      ≤ ‖t⁻¹ * (Z x - Z (x - t • e))‖ * (C * ‖g‖) + ‖Z x‖ * (L * ‖e‖ * ‖g‖) := by gcongr
+    _ = C * (‖t⁻¹ * (Z x - Z (x - t • e))‖ * ‖g‖) + L * ‖e‖ * (‖Z x‖ * ‖g‖) := by ring
+
+/-- **Moving a difference quotient onto a Lipschitz-weighted field.** Let `z ∈ H¹(ℝⁿ)` and let
+`Φ` be a field of linear forms bounded by `C` and `L`-Lipschitz. For every `v ∈ H¹(ℝⁿ)`, every
+direction `e` and every step `t`,
+
+`|∫ z Φ(∇Dᵗ v)| ≤ ‖e‖ (C ‖∇z‖_{L²} + L ‖z‖_{L²}) ‖∇v‖_{L²}`.
+
+A translation moves the difference quotient from `∇v` onto the field `z Φ`, and the product rule
+for difference quotients splits `D⁻ᵗ(z Φ)` into `(D⁻ᵗ z) Φ(· - t e)`, bounded through
+`‖D⁻ᵗ z‖_{L²} ≤ ‖e‖ ‖∇z‖_{L²}`, and `z D⁻ᵗ Φ`, bounded through the Lipschitz constant. -/
+theorem W1p.abs_integral_value_mul_gradient_differenceQuotient_le
+    {Φ : E → StrongDual ℝ E} {C : ℝ} {L : ℝ≥0}
+    (hC : ∀ x, ‖Φ x‖ ≤ C) (hL : LipschitzWith L Φ) (z v : W1p mu ⊤ 2)
+    (e : E) (t : ℝ) :
+    |∫ x, W1p.value z x * Φ x (W1p.gradient
+      (W1p.differenceQuotient le_rfl e t (Set.mapsTo_univ (· + t • e) _) v) x) ∂mu|
+      ≤ ‖e‖ * (C * ‖W1p.gradient z‖ + L * ‖W1p.value z‖) * ‖W1p.gradient v‖ := by
+  have hle : mu ≤ mu.restrict ((⊤ : Opens E) : Set E) := by
+    rw [Opens.coe_top, Measure.restrict_univ]
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  set Z : E → ℝ := fun x ↦ W1p.value z x
+  set G : E → E := fun x ↦ W1p.gradient v x
+  set Dz := W1p.value (W1p.differenceQuotient le_rfl e (-t) (Set.mapsTo_univ (· + (-t) • e) _) z)
+  have hZ : MemLp Z 2 mu := (Lp.memLp (W1p.value z)).mono_measure hle
+  have hG : MemLp G 2 mu := (Lp.memLp (W1p.gradient v)).mono_measure hle
+  have hDz : MemLp (Dz : E → ℝ) 2 mu := (Lp.memLp Dz).mono_measure hle
+  have hΦm : AEStronglyMeasurable Φ mu := hL.continuous.aestronglyMeasurable
+  have happ : ∀ {p : E → E} {q : E →
+      StrongDual ℝ E}, AEStronglyMeasurable q mu →
+      AEStronglyMeasurable p mu → AEStronglyMeasurable (fun x ↦ q x (p x)) mu :=
+    fun hq hp ↦ (continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable
+      (hq.prodMk hp)
+  -- Translates of `Z`, `G` and `Φ`.
+  have hZs : MemLp (fun x ↦ Z (x - t • e)) 2 mu := by
+    have := hZ.comp_measurePreserving (measurePreserving_add_right mu (-(t • e)))
+    simpa [Function.comp_def, sub_eq_add_neg] using this
+  have hGs : MemLp (fun x ↦ G (x + t • e)) 2 mu :=
+    hG.comp_measurePreserving (measurePreserving_add_right mu _)
+  have hΦs : AEStronglyMeasurable (fun x ↦ Φ (x - t • e)) mu :=
+    (hL.continuous.comp (continuous_sub_right _)).aestronglyMeasurable
+  have hint : ∀ {P : E → ℝ} {q : E →
+      StrongDual ℝ E} {p : E → E},
+      MemLp P 2 mu → AEStronglyMeasurable q mu → (∀ x, ‖q x‖ ≤ C) → MemLp p 2 mu →
+      Integrable (fun x ↦ P x * q x (p x)) mu := fun {P q p} hP hq hqC hp ↦
+    ((hP.norm.integrable_mul hp.norm).const_mul C).mono'
+      (hP.aestronglyMeasurable.mul (happ hq hp.aestronglyMeasurable))
+      (Filter.Eventually.of_forall fun x ↦ by
+        rw [Pi.mul_apply, norm_mul, mul_left_comm]
+        exact mul_le_mul_of_nonneg_left (((q x).le_opNorm _).trans
+          (mul_le_mul_of_nonneg_right (hqC x) (norm_nonneg _))) (norm_nonneg _))
+  have hI1 := hint hZ hΦm hC hGs
+  have hI2 := hint hZ hΦm hC hG
+  have hI3 := hint hZs hΦs (fun x ↦ hC _) hG
+  -- The difference quotient, moved by a translation from `∇v` onto `z Φ`.
+  have htrans : ∫ x, Z x * Φ x (G (x + t • e)) ∂mu =
+      ∫ x, Z (x - t • e) * Φ (x - t • e) (G x) ∂mu := by
+    rw [← integral_add_right_eq_self (fun x ↦ Z (x - t • e) * Φ (x - t • e) (G x)) (t • e)]
+    simp only [add_sub_cancel_right]
+  have hrepr : ∫ x, W1p.value z x * Φ x (W1p.gradient
+      (W1p.differenceQuotient le_rfl e t (Set.mapsTo_univ (· + t • e) _) v) x) ∂mu
+      = ∫ x, t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x)) ∂mu := by
+    calc _ = ∫ x, t⁻¹ * (Z x * Φ x (G (x + t • e)) - Z x * Φ x (G x)) ∂mu := by
+          refine integral_congr_ae ?_
+          filter_upwards [(W1p.gradient_differenceQuotient_ae le_rfl e t
+            (Set.mapsTo_univ (· + t • e) _) v).filter_mono (ae_mono hle)] with x hx
+          rw [hx, map_smul, map_sub, smul_eq_mul]
+          ring
+      _ = t⁻¹ * (∫ x, Z x * Φ x (G (x + t • e)) ∂mu - ∫ x, Z x * Φ x (G x) ∂mu) := by
+          rw [integral_const_mul, integral_sub hI1 hI2]
+      _ = _ := by
+          rw [htrans, ← integral_sub hI3 hI2, ← integral_const_mul]
+  -- The pointwise bound by the product rule for difference quotients.
+  have hpt : ∀ᵐ x ∂mu, ‖t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x))‖
+      ≤ C * (‖Dz x‖ * ‖G x‖) + L * ‖e‖ * (‖Z x‖ * ‖G x‖) := by
+    filter_upwards [(W1p.value_differenceQuotient_ae le_rfl e (-t)
+      (Set.mapsTo_univ (· + (-t) • e) _) z).filter_mono (ae_mono hle)] with x hx
+    have hDx : Dz x = t⁻¹ * (Z x - Z (x - t • e)) := by
+      rw [hx, neg_smul, ← sub_eq_add_neg, inv_neg]
+      ring
+    rw [hDx]
+    exact norm_inv_mul_sub_le hC hL
+  -- Cauchy--Schwarz, and the difference-quotient bound on `z`.
+  have hDzG := Lp.integral_norm_mul_norm_le hle hle Dz (W1p.gradient v)
+  have hZG := Lp.integral_norm_mul_norm_le hle hle (W1p.value z) (W1p.gradient v)
+  have hDzn : ‖Dz‖ ≤ ‖e‖ * ‖W1p.gradient z‖ :=
+    W1p.norm_value_differenceQuotient_le (by norm_num) e (-t) z
+  have hint1 : Integrable (fun x ↦ ‖Dz x‖ * ‖G x‖) mu := hDz.norm.integrable_mul hG.norm
+  have hint2 : Integrable (fun x ↦ ‖Z x‖ * ‖G x‖) mu := hZ.norm.integrable_mul hG.norm
+  rw [hrepr]
+  calc |∫ x, t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x)) ∂mu|
+      ≤ ∫ x, ‖t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x))‖ ∂mu := by
+        rw [← Real.norm_eq_abs]
+        exact norm_integral_le_integral_norm _
+    _ ≤ ∫ x, (C * (‖Dz x‖ * ‖G x‖) + L * ‖e‖ * (‖Z x‖ * ‖G x‖)) ∂mu :=
+        integral_mono_ae ((hI3.sub hI2).const_mul t⁻¹).norm
+          ((hint1.const_mul C).add (hint2.const_mul _)) hpt
+    _ = C * ∫ x, ‖Dz x‖ * ‖G x‖ ∂mu + L * ‖e‖ * ∫ x, ‖Z x‖ * ‖G x‖ ∂mu := by
+        rw [integral_add (hint1.const_mul C) (hint2.const_mul _), integral_const_mul,
+          integral_const_mul]
+    _ ≤ C * (‖Dz‖ * ‖W1p.gradient v‖) + L * ‖e‖ * (‖W1p.value z‖ * ‖W1p.gradient v‖) := by
+        gcongr
+    _ ≤ C * ((‖e‖ * ‖W1p.gradient z‖) * ‖W1p.gradient v‖) +
+          L * ‖e‖ * (‖W1p.value z‖ * ‖W1p.gradient v‖) := by gcongr
+    _ = ‖e‖ * (C * ‖W1p.gradient z‖ + L * ‖W1p.value z‖) * ‖W1p.gradient v‖ := by ring
 
 end TauCeti

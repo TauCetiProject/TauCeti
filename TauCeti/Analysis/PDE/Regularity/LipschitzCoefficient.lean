@@ -40,15 +40,16 @@ supported in `Ω`, let `w ∈ H¹(ℝⁿ)` be `ψ u` extended by zero. Testing t
 
 `a(w, v) = ∫_Ω (ψ g - ⟨∇ψ, a ∇u⟩) v + ∫_Ω u ⟨∇v, a ∇ψ⟩`.
 
-For a constant coefficient matrix `A` the last term is integrated by parts against the
-classical divergence of `A ∇ψ`, which gives an `L²` forcing
-(`TauCeti/Analysis/PDE/Regularity/Interior.lean`). For a Lipschitz `a` that divergence exists only
-almost everywhere, and no Leibniz rule for Lipschitz multipliers is needed here: the
-difference-quotient method only asks for bounds on `a(w, Dᵗ v)`. In the last term a translation
-moves the difference quotient from `∇v` onto the field `u a ∇ψ`, and the product rule for
-difference quotients bounds it by the `H¹` norm of `u` near `supp ψ`, the bound on `a ∇ψ` and its
-Lipschitz constant. So `|a(w, Dᵗ v)| ≤ M ‖∇v‖_{L²}` uniformly in `t`, and the whole-space
-difference-quotient estimate for such a functional forcing
+For a constant coefficient matrix `A` the last term could be integrated by parts against the
+classical divergence `div(A ∇ψ)` (`TauCeti.PDE.divMatrixGradient`), giving an `L²` forcing. For a
+Lipschitz `a` that divergence exists only almost everywhere, and no Leibniz rule for Lipschitz
+multipliers is needed here: the difference-quotient method only asks for bounds on `a(w, Dᵗ v)`.
+In the last term a translation moves the difference quotient from `∇v` onto the field `u a ∇ψ`,
+and the product rule for difference quotients bounds it by the `H¹` norm of `u` near `supp ψ`, the
+bound on `a ∇ψ` and its Lipschitz constant
+(`TauCeti.W1p.abs_integral_value_mul_gradient_differenceQuotient_le`). So
+`|a(w, Dᵗ v)| ≤ M ‖∇v‖_{L²}` uniformly in `t`, and the whole-space difference-quotient estimate
+for such a functional forcing
 (`TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_abs_energyFormH1_le`)
 bounds `∇Dᵗ w` uniformly in `t`. The difference-quotient criterion then gives the second weak
 derivatives of `w`, which agree with those of `u` on `V`.
@@ -62,9 +63,9 @@ of `H¹(ℝⁿ)` whose difference quotients are controlled on the whole space.
 
 ## Main declarations
 
-* `TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_abs_energyFormH1_le`:
-  the whole-space difference-quotient estimate for a forcing functional bounded on difference
-  quotients.
+* `TauCeti.PDE.exists_uniformlyEllipticOn_univ_lipschitzWith_eqOn`: a uniformly elliptic,
+  locally Lipschitz coefficient field on `Ω` agrees near a compact subset of `Ω` with one that is
+  uniformly elliptic and Lipschitz on the whole space.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`:
   interior `H²` regularity for locally Lipschitz principal coefficients.
 
@@ -182,7 +183,7 @@ with the same constants, with `x ↦ ã(x)` Lipschitz on the whole space, and eq
 
 One may take `ã = χ a + (1 - χ) λ I` for a smooth cutoff `χ` equal to one near `S` and compactly
 supported in `Ω`. -/
-private theorem exists_uniformlyEllipticOn_univ_lipschitzWith_eqOn
+theorem exists_uniformlyEllipticOn_univ_lipschitzWith_eqOn
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LocallyLipschitzOn (Omega : Set (EuclideanSpace ℝ ι)) fun x => matrixBilinearForm (a x))
     {S : Set (EuclideanSpace ℝ ι)} (hS : IsCompact S) (hSΩ : S ⊆ Omega) :
@@ -200,65 +201,26 @@ private theorem exists_uniformlyEllipticOn_univ_lipschitzWith_eqOn
       fun x hx => image_eq_zero_of_notMem_tsupport hx,
     fun x hx => glueCoefficient_of_eq_one (by simpa using interior_subset (hχ_one hx))⟩
 
-/-! ### The difference-quotient estimate with a functional forcing -/
-
-/-- **The difference-quotient energy estimate for a functional forcing.** Let `a` be uniformly
-elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be `K`-Lipschitz in the
-operator norm of its bilinear forms. Let `u ∈ H¹(ℝⁿ)` be such that the functional `v ↦ a(u, v)` is
-bounded on the difference quotients in the direction `w`:
-
-`|a(u, Dᵗ v)| ≤ M ‖∇v‖_{L²}` for every `v ∈ H¹(ℝⁿ)` and every step `t`.
-
-Then `‖∇Dᵗ u‖_{L²} ≤ (M + K ‖w‖ ‖∇u‖_{L²}) / λ` for every step `t`.
-
-For a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` with `f ∈ L²` the hypothesis holds with
-`M = ‖w‖ ‖f‖_{L²}`, which is
-`TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith`. The
-functional form also admits forcing terms in divergence form `-div F`, for which
-`a(u, Dᵗ v) = ∫ ⟨F, ∇Dᵗ v⟩` is bounded by moving the difference quotient onto `F`. -/
-theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_abs_energyFormH1_le
-    (ha : UniformlyEllipticOn univ a lam Lam)
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
-    {u : W1p mu ⊤ 2} (w : EuclideanSpace ℝ ι) {M : ℝ} (hM : 0 ≤ M)
-    (hu : ∀ (t : ℝ) (v : W1p mu ⊤ 2), |energyFormH1 a 0 0 u
-      (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) v)|
-        ≤ M * ‖W1p.gradient v‖)
-    (t : ℝ) :
-    ‖W1p.gradient (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u)‖
-      ≤ (M + K * ‖w‖ * ‖W1p.gradient u‖) / lam := by
-  have hlam := ha.pos
-  have hbdd : Bornology.IsBounded (Set.range fun x => matrixBilinearForm (a x)) :=
-    isBounded_iff_forall_norm_le.2 ⟨Lam, by
-      rintro _ ⟨x, rfl⟩
-      exact ha.opNorm_matrixBilinearForm_le (mem_univ x)⟩
-  -- The discrete integration-by-parts estimate, with `Dᵗ u` in the second argument.
-  have hDQ := abs_energyFormH1_differenceQuotient_add_le hbdd hK w t u
-    (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u)
-  obtain ⟨g, hg⟩ : ∃ g : W1p mu ⊤ 2,
-      g = W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u := ⟨_, rfl⟩
-  rw [← hg] at hDQ ⊢
-  -- Ellipticity bounds the Dirichlet energy of the difference quotient from below.
-  have hlow : lam * ‖W1p.gradient g‖ ^ 2 ≤ energyFormH1 a 0 0 g g :=
-    mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (gamma := 0) ha
-      (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
-        continuous_of_continuous_matrixBilinearForm hK.continuous)
-      aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp) (fun _ _ => le_rfl) g
-  -- The hypothesis, tested against the reverse difference quotient of `Dᵗ u`.
-  have hsol := hu (-t) g
-  have hkey : lam * ‖W1p.gradient g‖ ^ 2
-      ≤ (M + K * ‖w‖ * ‖W1p.gradient u‖) * ‖W1p.gradient g‖ := by
-    have h1 := (abs_le.1 hDQ).2
-    have h2 := (abs_le.1 hsol).1
-    nlinarith
-  rcases eq_or_lt_of_le (norm_nonneg (W1p.gradient g)) with hzero | hpos
-  · rw [← hzero]
-    exact div_nonneg (by positivity) hlam.le
-  · rw [le_div_iff₀ hlam]
-    nlinarith
-
 /-! ### The localized equation -/
 
 variable {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2} {ψ : EuclideanSpace ℝ ι → ℝ}
+
+/-- Evaluating an a.e. strongly measurable field of bilinear forms on two a.e. strongly measurable
+vector fields gives an a.e. strongly measurable function. -/
+private theorem aestronglyMeasurable_apply_apply {X E : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {ν : Measure X} {B : X → E →L[ℝ] E →L[ℝ] ℝ}
+    {p q : X → E} (hB : AEStronglyMeasurable B ν) (hp : AEStronglyMeasurable p ν)
+    (hq : AEStronglyMeasurable q ν) : AEStronglyMeasurable (fun x => B x (p x) (q x)) ν :=
+  ((continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
+    (continuous_snd.comp continuous_snd)).comp_aestronglyMeasurable (hB.prodMk (hp.prodMk hq))
+
+/-- A function bounded almost everywhere by a constant times the product of the norms of two `L²`
+functions is integrable. -/
+private theorem integrable_of_norm_le_mul_norm_mul_norm {X F G : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup F] [NormedAddCommGroup G] {ν : Measure X} {h : X → ℝ} {P : X → F}
+    {R : X → G} {C : ℝ} (hP : MemLp P 2 ν) (hR : MemLp R 2 ν) (hh : AEStronglyMeasurable h ν)
+    (hle : ∀ᵐ x ∂ν, ‖h x‖ ≤ C * (‖P x‖ * ‖R x‖)) : Integrable h ν :=
+  ((hP.norm.integrable_mul hR.norm).const_mul C).mono' hh hle
 
 omit [DecidableEq ι] in
 /-- **The weak equation tested against `ψ v`.** For a weak solution `u` of `-div(a ∇u) = f` in
@@ -304,11 +266,6 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
   have hψm : AEStronglyMeasurable ψ (mu.restrict Omega) := hψ.continuous.aestronglyMeasurable
   have hgψm : AEStronglyMeasurable (∇ ψ) (mu.restrict Omega) :=
     (ContDiff.continuous_gradient hψ).aestronglyMeasurable
-  have happ : ∀ {p q : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι},
-      AEStronglyMeasurable p (mu.restrict Omega) → AEStronglyMeasurable q (mu.restrict Omega) →
-      AEStronglyMeasurable (fun x => matrixBilinearForm (a x) (p x) (q x)) (mu.restrict Omega) :=
-    fun hp hq => ((continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
-      (continuous_snd.comp continuous_snd)).comp_aestronglyMeasurable (hB.prodMk (hp.prodMk hq))
   have hBψ : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ η : EuclideanSpace ℝ ι,
       ‖matrixBilinearForm (a x) η (∇ ψ x)‖ ≤ Lam * M * ‖η‖ ∧
         ‖matrixBilinearForm (a x) (∇ ψ x) η‖ ≤ Lam * M * ‖η‖ := fun x hx η =>
@@ -316,31 +273,34 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
       (by ring), (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hΛ x hx) (hgradM x) le_rfl⟩
   have hI1 : Integrable (fun x => ψ x * matrixBilinearForm (a x) (W1p.gradient v x)
       (W1p.gradient u x)) (mu.restrict Omega) :=
-    ((hgv.norm.integrable_mul hgu.norm).const_mul (M * Lam)).mono'
-      (hψm.mul (happ hgv.aestronglyMeasurable hgu.aestronglyMeasurable))
+    integrable_of_norm_le_mul_norm_mul_norm (C := M * Lam) hgv hgu
+      (hψm.mul (aestronglyMeasurable_apply_apply hB hgv.aestronglyMeasurable
+        hgu.aestronglyMeasurable))
       (hmem.mono fun x hx => by
-        rw [Pi.mul_apply, norm_mul, Real.norm_eq_abs, mul_assoc]
+        rw [norm_mul, Real.norm_eq_abs, mul_assoc]
         exact mul_le_mul (hψM x) (((matrixBilinearForm (a x)).le_opNorm₂ _ _).trans
           (by rw [mul_assoc]; gcongr; exact hΛ x hx)) (norm_nonneg _) hM)
   have hI2 : Integrable (fun x => W1p.value v x * matrixBilinearForm (a x) (∇ ψ x)
       (W1p.gradient u x)) (mu.restrict Omega) :=
-    ((hvv.norm.integrable_mul hgu.norm).const_mul (Lam * M)).mono'
-      (hvv.aestronglyMeasurable.mul (happ hgψm hgu.aestronglyMeasurable))
+    integrable_of_norm_le_mul_norm_mul_norm (C := Lam * M) hvv hgu
+      (hvv.aestronglyMeasurable.mul
+        (aestronglyMeasurable_apply_apply hB hgψm hgu.aestronglyMeasurable))
       (hmem.mono fun x hx => by
-        rw [Pi.mul_apply, norm_mul, mul_left_comm]
+        rw [norm_mul, mul_left_comm]
         exact mul_le_mul_of_nonneg_left (hBψ x hx _).2 (norm_nonneg _))
   have hI3 : Integrable (fun x => ψ x * f x * W1p.value v x) (mu.restrict Omega) :=
-    (((Lp.memLp f).norm.integrable_mul hvv.norm).const_mul M).mono'
+    integrable_of_norm_le_mul_norm_mul_norm (C := M) (Lp.memLp f) hvv
       ((hψm.mul (Lp.aestronglyMeasurable f)).mul hvv.aestronglyMeasurable)
       (Filter.Eventually.of_forall fun x => by
-        rw [Pi.mul_apply, norm_mul, norm_mul, Real.norm_eq_abs, mul_assoc]
+        rw [norm_mul, norm_mul, Real.norm_eq_abs, mul_assoc]
         exact mul_le_mul_of_nonneg_right (hψM x) (by positivity))
   have hI4 : Integrable (fun x => W1p.value u x * matrixBilinearForm (a x) (W1p.gradient v x)
       (∇ ψ x)) (mu.restrict Omega) :=
-    ((huv.norm.integrable_mul hgv.norm).const_mul (Lam * M)).mono'
-      (huv.aestronglyMeasurable.mul (happ hgv.aestronglyMeasurable hgψm))
+    integrable_of_norm_le_mul_norm_mul_norm (C := Lam * M) huv hgv
+      (huv.aestronglyMeasurable.mul
+        (aestronglyMeasurable_apply_apply hB hgv.aestronglyMeasurable hgψm))
       (hmem.mono fun x hx => by
-        rw [Pi.mul_apply, norm_mul, mul_left_comm]
+        rw [norm_mul, mul_left_comm]
         exact mul_le_mul_of_nonneg_left (hBψ x hx _).1 (norm_nonneg _))
   -- The tested equation: `∫ ψ B(∇v, ∇u) + ∫ v B(∇ψ, ∇u) = ∫ ψ f v`.
   have hlhs : ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient v₀ x) (W1p.gradient u x) ∂mu
@@ -441,157 +401,6 @@ private theorem energyFormH1_eq_setIntegral_add_integral {ã : EuclideanSpace �
   rw [hE, setIntegral_matrixBilinearForm_cutoff_eq hB hΛ hu hψ hψc hts v, hz]
 
 omit [DecidableEq ι] in
-/-- **The product rule for difference quotients, pointwise.** If `Φ` is a field of linear forms
-bounded by `C` and `L`-Lipschitz, then for a real function `Z`, a vector `g`, a point `x`, a
-direction `e` and a step `t`,
-
-`|t⁻¹ (Z(x - t e) Φ(x - t e) g - Z(x) Φ(x) g)|`
-  `≤ C |t⁻¹ (Z(x) - Z(x - t e))| ‖g‖ + L ‖e‖ |Z(x)| ‖g‖`. -/
-private theorem norm_inv_mul_sub_le
-    {Φ : EuclideanSpace ℝ ι → StrongDual ℝ (EuclideanSpace ℝ ι)} {C : ℝ} {L : ℝ≥0}
-    (hC : ∀ x, ‖Φ x‖ ≤ C) (hL : LipschitzWith L Φ) {Z : EuclideanSpace ℝ ι → ℝ}
-    {g x e : EuclideanSpace ℝ ι} {t : ℝ} :
-    ‖t⁻¹ * (Z (x - t • e) * Φ (x - t • e) g - Z x * Φ x g)‖
-      ≤ C * (‖t⁻¹ * (Z x - Z (x - t • e))‖ * ‖g‖) + L * ‖e‖ * (‖Z x‖ * ‖g‖) := by
-  have hsplit : t⁻¹ * (Z (x - t • e) * Φ (x - t • e) g - Z x * Φ x g)
-      = -(t⁻¹ * (Z x - Z (x - t • e))) * Φ (x - t • e) g
-        + Z x * (t⁻¹ * (Φ (x - t • e) - Φ x) g) := by
-    rw [_root_.sub_apply]
-    ring
-  -- The difference quotient of `Φ` is bounded by the Lipschitz constant.
-  have hΦd : |t⁻¹| * ‖Φ (x - t • e) - Φ x‖ ≤ L * ‖e‖ := by
-    have h1 : ‖Φ (x - t • e) - Φ x‖ ≤ L * (|t| * ‖e‖) := by
-      simpa [dist_eq_norm, norm_smul] using hL.dist_le_mul (x - t • e) x
-    rcases eq_or_ne t 0 with rfl | ht
-    · simp only [_root_.inv_zero, abs_zero, zero_mul]
-      positivity
-    · calc |t⁻¹| * ‖Φ (x - t • e) - Φ x‖ ≤ |t⁻¹| * (L * (|t| * ‖e‖)) := by gcongr
-        _ = L * ‖e‖ := by
-            rw [abs_inv]
-            field_simp
-  have h2 : ‖Φ (x - t • e) g‖ ≤ C * ‖g‖ :=
-    ((Φ (x - t • e)).le_opNorm g).trans (mul_le_mul_of_nonneg_right (hC _) (norm_nonneg _))
-  have h3 : ‖t⁻¹ * (Φ (x - t • e) - Φ x) g‖ ≤ L * ‖e‖ * ‖g‖ := by
-    rw [norm_mul, Real.norm_eq_abs]
-    calc |t⁻¹| * ‖(Φ (x - t • e) - Φ x) g‖ ≤ |t⁻¹| * (‖Φ (x - t • e) - Φ x‖ * ‖g‖) := by
-          gcongr
-          exact (Φ (x - t • e) - Φ x).le_opNorm g
-      _ = (|t⁻¹| * ‖Φ (x - t • e) - Φ x‖) * ‖g‖ := by ring
-      _ ≤ L * ‖e‖ * ‖g‖ := by gcongr
-  rw [hsplit]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_mul, norm_mul, norm_neg]
-  calc ‖t⁻¹ * (Z x - Z (x - t • e))‖ * ‖Φ (x - t • e) g‖ +
-        ‖Z x‖ * ‖t⁻¹ * (Φ (x - t • e) - Φ x) g‖
-      ≤ ‖t⁻¹ * (Z x - Z (x - t • e))‖ * (C * ‖g‖) + ‖Z x‖ * (L * ‖e‖ * ‖g‖) := by gcongr
-    _ = C * (‖t⁻¹ * (Z x - Z (x - t • e))‖ * ‖g‖) + L * ‖e‖ * (‖Z x‖ * ‖g‖) := by ring
-
-omit [DecidableEq ι] in
-/-- **Moving a difference quotient onto a Lipschitz-weighted field.** Let `z ∈ H¹(ℝⁿ)` and let
-`Φ` be a field of linear forms bounded by `C` and `L`-Lipschitz. For every `v ∈ H¹(ℝⁿ)`, every
-direction `e` and every step `t`,
-
-`|∫ z Φ(∇Dᵗ v)| ≤ ‖e‖ (C ‖∇z‖_{L²} + L ‖z‖_{L²}) ‖∇v‖_{L²}`.
-
-A translation moves the difference quotient from `∇v` onto the field `z Φ`, and the product rule
-for difference quotients splits `D⁻ᵗ(z Φ)` into `(D⁻ᵗ z) Φ(· - t e)`, bounded through
-`‖D⁻ᵗ z‖_{L²} ≤ ‖e‖ ‖∇z‖_{L²}`, and `z D⁻ᵗ Φ`, bounded through the Lipschitz constant. -/
-private theorem abs_integral_value_mul_gradient_differenceQuotient_le
-    {Φ : EuclideanSpace ℝ ι → StrongDual ℝ (EuclideanSpace ℝ ι)} {C : ℝ} {L : ℝ≥0}
-    (hC : ∀ x, ‖Φ x‖ ≤ C) (hL : LipschitzWith L Φ) (z v : W1p mu ⊤ 2)
-    (e : EuclideanSpace ℝ ι) (t : ℝ) :
-    |∫ x, W1p.value z x * Φ x (W1p.gradient
-      (W1p.differenceQuotient le_rfl e t (Set.mapsTo_univ (· + t • e) _) v) x) ∂mu|
-      ≤ ‖e‖ * (C * ‖W1p.gradient z‖ + L * ‖W1p.value z‖) * ‖W1p.gradient v‖ := by
-  have hle : mu ≤ mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  set Z : EuclideanSpace ℝ ι → ℝ := fun x => W1p.value z x
-  set G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun x => W1p.gradient v x
-  set Dz := W1p.value (W1p.differenceQuotient le_rfl e (-t) (Set.mapsTo_univ (· + (-t) • e) _) z)
-  have hZ : MemLp Z 2 mu := (Lp.memLp (W1p.value z)).mono_measure hle
-  have hG : MemLp G 2 mu := (Lp.memLp (W1p.gradient v)).mono_measure hle
-  have hDz : MemLp (Dz : EuclideanSpace ℝ ι → ℝ) 2 mu := (Lp.memLp Dz).mono_measure hle
-  have hΦm : AEStronglyMeasurable Φ mu := hL.continuous.aestronglyMeasurable
-  have happ : ∀ {p : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {q : EuclideanSpace ℝ ι →
-      StrongDual ℝ (EuclideanSpace ℝ ι)}, AEStronglyMeasurable q mu →
-      AEStronglyMeasurable p mu → AEStronglyMeasurable (fun x => q x (p x)) mu :=
-    fun hq hp => (continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable
-      (hq.prodMk hp)
-  -- Translates of `Z`, `G` and `Φ`.
-  have hZs : MemLp (fun x => Z (x - t • e)) 2 mu := by
-    have := hZ.comp_measurePreserving (measurePreserving_add_right mu (-(t • e)))
-    simpa [Function.comp_def, sub_eq_add_neg] using this
-  have hGs : MemLp (fun x => G (x + t • e)) 2 mu :=
-    hG.comp_measurePreserving (measurePreserving_add_right mu _)
-  have hΦs : AEStronglyMeasurable (fun x => Φ (x - t • e)) mu :=
-    (hL.continuous.comp (continuous_sub_right _)).aestronglyMeasurable
-  have hint : ∀ {P : EuclideanSpace ℝ ι → ℝ} {q : EuclideanSpace ℝ ι →
-      StrongDual ℝ (EuclideanSpace ℝ ι)} {p : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι},
-      MemLp P 2 mu → AEStronglyMeasurable q mu → (∀ x, ‖q x‖ ≤ C) → MemLp p 2 mu →
-      Integrable (fun x => P x * q x (p x)) mu := fun {P q p} hP hq hqC hp =>
-    ((hP.norm.integrable_mul hp.norm).const_mul C).mono'
-      (hP.aestronglyMeasurable.mul (happ hq hp.aestronglyMeasurable))
-      (Filter.Eventually.of_forall fun x => by
-        rw [Pi.mul_apply, norm_mul, mul_left_comm]
-        exact mul_le_mul_of_nonneg_left (((q x).le_opNorm _).trans
-          (mul_le_mul_of_nonneg_right (hqC x) (norm_nonneg _))) (norm_nonneg _))
-  have hI1 := hint hZ hΦm hC hGs
-  have hI2 := hint hZ hΦm hC hG
-  have hI3 := hint hZs hΦs (fun x => hC _) hG
-  -- The difference quotient, moved by a translation from `∇v` onto `z Φ`.
-  have htrans : ∫ x, Z x * Φ x (G (x + t • e)) ∂mu =
-      ∫ x, Z (x - t • e) * Φ (x - t • e) (G x) ∂mu := by
-    rw [← integral_add_right_eq_self (fun x => Z (x - t • e) * Φ (x - t • e) (G x)) (t • e)]
-    simp only [add_sub_cancel_right]
-  have hrepr : ∫ x, W1p.value z x * Φ x (W1p.gradient
-      (W1p.differenceQuotient le_rfl e t (Set.mapsTo_univ (· + t • e) _) v) x) ∂mu
-      = ∫ x, t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x)) ∂mu := by
-    calc _ = ∫ x, t⁻¹ * (Z x * Φ x (G (x + t • e)) - Z x * Φ x (G x)) ∂mu := by
-          refine integral_congr_ae ?_
-          filter_upwards [(W1p.gradient_differenceQuotient_ae le_rfl e t
-            (Set.mapsTo_univ (· + t • e) _) v).filter_mono (ae_mono hle)] with x hx
-          rw [hx, map_smul, map_sub, smul_eq_mul]
-          ring
-      _ = t⁻¹ * (∫ x, Z x * Φ x (G (x + t • e)) ∂mu - ∫ x, Z x * Φ x (G x) ∂mu) := by
-          rw [integral_const_mul, integral_sub hI1 hI2]
-      _ = _ := by
-          rw [htrans, ← integral_sub hI3 hI2, ← integral_const_mul]
-  -- The pointwise bound by the product rule for difference quotients.
-  have hpt : ∀ᵐ x ∂mu, ‖t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x))‖
-      ≤ C * (‖Dz x‖ * ‖G x‖) + L * ‖e‖ * (‖Z x‖ * ‖G x‖) := by
-    filter_upwards [(W1p.value_differenceQuotient_ae le_rfl e (-t)
-      (Set.mapsTo_univ (· + (-t) • e) _) z).filter_mono (ae_mono hle)] with x hx
-    have hDx : Dz x = t⁻¹ * (Z x - Z (x - t • e)) := by
-      rw [hx, neg_smul, ← sub_eq_add_neg, inv_neg]
-      ring
-    rw [hDx]
-    exact norm_inv_mul_sub_le hC hL
-  -- Cauchy--Schwarz, and the difference-quotient bound on `z`.
-  have hDzG := Lp.integral_norm_mul_norm_le hle hle Dz (W1p.gradient v)
-  have hZG := Lp.integral_norm_mul_norm_le hle hle (W1p.value z) (W1p.gradient v)
-  have hDzn : ‖Dz‖ ≤ ‖e‖ * ‖W1p.gradient z‖ :=
-    W1p.norm_value_differenceQuotient_le (by norm_num) e (-t) z
-  have hint1 : Integrable (fun x => ‖Dz x‖ * ‖G x‖) mu := hDz.norm.integrable_mul hG.norm
-  have hint2 : Integrable (fun x => ‖Z x‖ * ‖G x‖) mu := hZ.norm.integrable_mul hG.norm
-  rw [hrepr]
-  calc |∫ x, t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x)) ∂mu|
-      ≤ ∫ x, ‖t⁻¹ * (Z (x - t • e) * Φ (x - t • e) (G x) - Z x * Φ x (G x))‖ ∂mu := by
-        rw [← Real.norm_eq_abs]
-        exact norm_integral_le_integral_norm _
-    _ ≤ ∫ x, (C * (‖Dz x‖ * ‖G x‖) + L * ‖e‖ * (‖Z x‖ * ‖G x‖)) ∂mu :=
-        integral_mono_ae ((hI3.sub hI2).const_mul t⁻¹).norm
-          ((hint1.const_mul C).add (hint2.const_mul _)) hpt
-    _ = C * ∫ x, ‖Dz x‖ * ‖G x‖ ∂mu + L * ‖e‖ * ∫ x, ‖Z x‖ * ‖G x‖ ∂mu := by
-        rw [integral_add (hint1.const_mul C) (hint2.const_mul _), integral_const_mul,
-          integral_const_mul]
-    _ ≤ C * (‖Dz‖ * ‖W1p.gradient v‖) + L * ‖e‖ * (‖W1p.value z‖ * ‖W1p.gradient v‖) := by
-        gcongr
-    _ ≤ C * ((‖e‖ * ‖W1p.gradient z‖) * ‖W1p.gradient v‖) +
-          L * ‖e‖ * (‖W1p.value z‖ * ‖W1p.gradient v‖) := by gcongr
-    _ = ‖e‖ * (C * ‖W1p.gradient z‖ + L * ‖W1p.value z‖) * ‖W1p.gradient v‖ := by ring
-
-omit [DecidableEq ι] in
 /-- **The localized forcing is bounded on difference quotients.** Let `u` be a weak solution of
 `-div(a ∇u) = f` in `Ω`, with `a` bounded by `Λ` on `Ω`, let `ψ` be a smooth cutoff compactly
 supported in `Ω`, and let `w`, `z` and `ã` be as in
@@ -648,15 +457,10 @@ private theorem exists_abs_energyFormH1_differenceQuotient_le
   have hG₀ : MemLp G₀ 2 (mu.restrict Omega) := by
     rw [funext hG₀x]
     have hmem := ae_restrict_mem (μ := mu) hΩ
-    have hcont : Continuous fun p : (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) ×
-        EuclideanSpace ℝ ι × EuclideanSpace ℝ ι => p.1 p.2.1 p.2.2 :=
-      (continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
-        (continuous_snd.comp continuous_snd)
     have hBm : AEStronglyMeasurable (fun x => matrixBilinearForm (a x) (∇ ψ x)
         (W1p.gradient u x)) (mu.restrict Omega) :=
-      hcont.comp_aestronglyMeasurable (hB.prodMk
-        ((ContDiff.continuous_gradient hψ).aestronglyMeasurable.prodMk
-          (Lp.aestronglyMeasurable (W1p.gradient u))))
+      aestronglyMeasurable_apply_apply hB (ContDiff.continuous_gradient hψ).aestronglyMeasurable
+        (Lp.aestronglyMeasurable (W1p.gradient u))
     refine MemLp.sub ((Lp.memLp f).of_le_mul (c := M)
       (hψ.continuous.aestronglyMeasurable.mul (Lp.aestronglyMeasurable f))
       (Filter.Eventually.of_forall fun x => by
@@ -669,7 +473,7 @@ private theorem exists_abs_energyFormH1_differenceQuotient_le
     ⟨hG₀.toLp G₀, hG₀.coeFn_toLp⟩
   refine ⟨‖e‖ * (‖G₀L‖ + (Λ' * M * ‖W1p.gradient z‖ +
     ↑(1 * K' * M.toNNReal + Λ'.toNNReal * Lg) * ‖W1p.value z‖)), by positivity, fun t v => ?_⟩
-  have hsecond := abs_integral_value_mul_gradient_differenceQuotient_le hΦC hΦL z v e t
+  have hsecond := W1p.abs_integral_value_mul_gradient_differenceQuotient_le hΦC hΦL z v e t
   have hv'n := W1p.norm_value_differenceQuotient_le (mu := mu) (by norm_num) e t v
   obtain ⟨v', hv'⟩ : ∃ v', v' = W1p.differenceQuotient le_rfl e t
     (Set.mapsTo_univ (· + t • e) _) v := ⟨_, rfl⟩
@@ -696,8 +500,8 @@ private theorem exists_abs_energyFormH1_differenceQuotient_le
 /-! ### Interior `H²` regularity -/
 
 /-- **Interior `H²` regularity for Lipschitz principal coefficients.** Let `a` be uniformly
-elliptic on `Ω` with `x ↦ a(x)` Lipschitz on `Ω`, in the operator norm of its bilinear forms, let
-`b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
+elliptic on `Ω` with `x ↦ a(x)` locally Lipschitz on `Ω`, in the operator norm of its bilinear
+forms, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
 
 `-∂ⱼ(aⁱʲ ∂ᵢu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`,
 
