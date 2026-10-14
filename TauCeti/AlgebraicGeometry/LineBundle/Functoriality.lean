@@ -44,12 +44,6 @@ namespace InvertibleSheaf
 
 variable {X Y Z : Scheme.{u}}
 
-/-- The underlying sheaf of a line bundle is quasicoherent. -/
-instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
-  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
-  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
-  inferInstanceAs F.IsQuasicoherent
-
 /-- Pullback of a line bundle along the identity morphism is naturally isomorphic to the
 original line bundle. -/
 def pullbackId (X : Scheme.{u}) : pullback (𝟙 X) ≅ 𝟭 (InvertibleSheaf X) :=

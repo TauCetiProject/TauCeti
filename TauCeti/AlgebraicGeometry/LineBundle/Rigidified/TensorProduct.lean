@@ -249,8 +249,6 @@ lemma toLineBundleClass_one : toLineBundleClass (1 : RigidifiedLineBundleClass s
   toLineBundleClass_trivial
 
 /-- Forgetting the rigidification, as a homomorphism to the Picard group of `Y`. -/
--- Exposed so that homomorphisms built from it apply to a class by forgetting its rigidification.
-@[expose]
 def toLineBundleClassHom : RigidifiedLineBundleClass s →* LineBundleClass Y :=
   MonoidHom.mk' toLineBundleClass toLineBundleClass_mul
 
@@ -340,8 +338,6 @@ lemma pullback_mul (w : s' ≫ h = g ≫ s) (a b : RigidifiedLineBundleClass s) 
 
 /-- Pullback of classes of rigidified line bundles along a commutative square, as a group
 homomorphism. -/
--- Exposed so that a functor whose action is `pullbackHom` acts definitionally by pullback.
-@[expose]
 def pullbackHom (w : s' ≫ h = g ≫ s) :
     RigidifiedLineBundleClass s →* RigidifiedLineBundleClass s' :=
   MonoidHom.mk' (pullback w) (pullback_mul w)

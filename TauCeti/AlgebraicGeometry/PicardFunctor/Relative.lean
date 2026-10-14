@@ -142,7 +142,35 @@ lemma rigidifiedPicardGroupFunctor_map_apply {T T' : (Over S)ᵒᵖ} (φ : T ⟶
     (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop)) :
     (rigidifiedPicardGroupFunctor f x₀ hx₀).map φ a = RigidifiedLineBundleClass.pullback
       (baseChangeSection_comp_pullback_map f x₀ hx₀ φ.unop) a :=
-  (rfl)
+  RigidifiedLineBundleClass.pullbackHom_apply _ a
+
+private def rigidifiedPicardComparisonHom (T : (Over S)ᵒᵖ) :
+    RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop) →*
+      LineBundleClass (pullback T.unop.hom f) ⧸
+        (LineBundleClass.pullbackHom (pullback.fst T.unop.hom f)).range :=
+  (QuotientGroup.mk' _).comp RigidifiedLineBundleClass.toLineBundleClassHom
+
+@[simp]
+private lemma rigidifiedPicardComparisonHom_apply (T : (Over S)ᵒᵖ)
+    (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop)) :
+    rigidifiedPicardComparisonHom f x₀ hx₀ T a =
+      (QuotientGroup.mk (RigidifiedLineBundleClass.toLineBundleClass a) :
+        LineBundleClass (pullback T.unop.hom f) ⧸
+          (LineBundleClass.pullbackHom (pullback.fst T.unop.hom f)).range) := by
+  rw [rigidifiedPicardComparisonHom, MonoidHom.comp_apply,
+    RigidifiedLineBundleClass.toLineBundleClassHom_apply, QuotientGroup.mk'_apply]
+
+private lemma rigidifiedPicardComparisonHom_bijective (T : (Over S)ᵒᵖ) :
+    Function.Bijective (rigidifiedPicardComparisonHom f x₀ hx₀ T) := by
+  have h := RigidifiedLineBundleClass.mk_toLineBundleClass_bijective
+    (baseChangeSection_fst f x₀ hx₀ T.unop)
+  constructor
+  · intro a b hab
+    apply h.1
+    simpa only [rigidifiedPicardComparisonHom_apply] using hab
+  · intro b
+    obtain ⟨a, ha⟩ := h.2 b
+    exact ⟨a, by simpa only [rigidifiedPicardComparisonHom_apply] using ha⟩
 
 /-- **The rigidified Picard functor is the relative Picard presheaf, as presheaves of groups.**
 For a morphism `f : X ⟶ S` with a section `x₀`, forgetting the rigidification identifies the group
@@ -151,13 +179,23 @@ of classes of line bundles on `X_T` rigidified along `x₀_T`, under tensor prod
 def rigidifiedPicardGroupFunctorIso :
     rigidifiedPicardGroupFunctor f x₀ hx₀ ≅ relativePicardPresheaf f :=
   NatIso.ofComponents (fun T ↦ (MulEquiv.ofBijective
-    ((QuotientGroup.mk' _).comp RigidifiedLineBundleClass.toLineBundleClassHom)
-    (RigidifiedLineBundleClass.mk_toLineBundleClass_bijective
-      (baseChangeSection_fst f x₀ hx₀ T.unop))).toCommGrpIso) (by
+    (rigidifiedPicardComparisonHom f x₀ hx₀ T)
+    (rigidifiedPicardComparisonHom_bijective f x₀ hx₀ T)).toCommGrpIso) (by
       intro T T' φ
-      ext a
+      ext (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop))
       -- Both components send a class to the image of its underlying line-bundle class, so
       -- naturality is compatibility of forgetting the rigidification with pullback.
+      change (MulEquiv.ofBijective
+          (rigidifiedPicardComparisonHom f x₀ hx₀ T')
+          (rigidifiedPicardComparisonHom_bijective f x₀ hx₀ T'))
+            (RigidifiedLineBundleClass.pullbackHom _ a) =
+        (relativePicardPresheaf f).map φ
+          ((MulEquiv.ofBijective
+            (rigidifiedPicardComparisonHom f x₀ hx₀ T)
+            (rigidifiedPicardComparisonHom_bijective f x₀ hx₀ T)) a)
+      rw [MulEquiv.ofBijective_apply, rigidifiedPicardComparisonHom_apply,
+        RigidifiedLineBundleClass.pullbackHom_apply, MulEquiv.ofBijective_apply,
+        rigidifiedPicardComparisonHom_apply]
       exact (congrArg QuotientGroup.mk
         (RigidifiedLineBundleClass.toLineBundleClass_pullback _ a)).trans
           (relativePicardPresheaf_map_mk f φ _).symm)
@@ -170,7 +208,11 @@ lemma rigidifiedPicardGroupFunctorIso_hom_app_apply (T : (Over S)ᵒᵖ)
     (rigidifiedPicardGroupFunctorIso f x₀ hx₀).hom.app T a =
       (QuotientGroup.mk (RigidifiedLineBundleClass.toLineBundleClass a) :
         (relativePicardPresheaf f).obj T) :=
-  (rfl)
+  by
+    change (MulEquiv.ofBijective
+      (rigidifiedPicardComparisonHom f x₀ hx₀ T)
+      (rigidifiedPicardComparisonHom_bijective f x₀ hx₀ T)) a = _
+    rw [MulEquiv.ofBijective_apply, rigidifiedPicardComparisonHom_apply]
 
 /-- **The rigidified Picard functor is the relative Picard presheaf.** For a morphism
 `f : X ⟶ S` with a section `x₀`, forgetting the rigidification identifies the classes of line
@@ -179,9 +221,15 @@ over `S`. This is the isomorphism of presheaves of groups `rigidifiedPicardGroup
 underlying presheaves of sets. -/
 def rigidifiedPicardFunctorIso :
     rigidifiedPicardFunctor f x₀ hx₀ ≅ relativePicardPresheaf f ⋙ forget CommGrpCat :=
-  -- The underlying presheaf of sets of `rigidifiedPicardGroupFunctor` is `rigidifiedPicardFunctor`
-  -- by definition: both have the rigidified classes as values and act by their pullback.
-  Functor.isoWhiskerRight (rigidifiedPicardGroupFunctorIso f x₀ hx₀) (forget CommGrpCat)
+  (NatIso.ofComponents (F := rigidifiedPicardFunctor f x₀ hx₀)
+    (G := rigidifiedPicardGroupFunctor f x₀ hx₀ ⋙ forget CommGrpCat)
+    (fun _ ↦ Iso.refl _) (by
+    intro T T' φ
+    ext a
+    change RigidifiedLineBundleClass.pullback _ a =
+      RigidifiedLineBundleClass.pullbackHom _ a
+    exact (RigidifiedLineBundleClass.pullbackHom_apply _ a).symm)) ≪≫
+      Functor.isoWhiskerRight (rigidifiedPicardGroupFunctorIso f x₀ hx₀) (forget CommGrpCat)
 
 /-- The comparison `rigidifiedPicardFunctorIso` sends the class of a rigidified line bundle to the
 image of its underlying line-bundle class. -/
@@ -190,7 +238,9 @@ lemma rigidifiedPicardFunctorIso_hom_app (T : (Over S)ᵒᵖ)
     (rigidifiedPicardFunctorIso f x₀ hx₀).hom.app T a =
       (QuotientGroup.mk (RigidifiedLineBundleClass.toLineBundleClass a) :
         (relativePicardPresheaf f).obj T) :=
-  (rfl)
+  by
+    change (rigidifiedPicardGroupFunctorIso f x₀ hx₀).hom.app T a = _
+    exact rigidifiedPicardGroupFunctorIso_hom_app_apply f x₀ hx₀ T a
 
 end
 
