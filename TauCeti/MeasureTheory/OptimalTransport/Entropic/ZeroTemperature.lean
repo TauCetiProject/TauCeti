@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.MeasurableSpace.Metric
 public import TauCeti.MeasureTheory.OptimalTransport.Compactness
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 
 /-!
 # The zero-temperature limit of entropic optimal transport
@@ -72,6 +73,9 @@ is replaced by `M` on every resulting product cell outside `K ×ˢ L`.
 * `TauCeti.isOptimalCoupling_of_tendsto_of_entropicTransportCost`: when the values converge to the
   transport cost and the cost is lower semicontinuous, every weak limit of entropic optimizers at
   temperatures `ε → 0⁺` is an optimal transport plan.
+* `TauCeti.tendsto_entropicTransportCost_edist_rpow`: on a Polish metric space, for the cost
+  `d ^ p` with `0 < p < ∞`, the regularised cost converges to `W_p ^ p` as soon as one of the two
+  laws has finite `p`-moment.
 
 ## References
 
@@ -520,5 +524,69 @@ theorem isOptimalCoupling_of_tendsto_of_entropicTransportCost {c : X × Y → �
     _ = transportCost c μ.toMeasure ν.toMeasure := (hval.comp hεs).liminf_eq
 
 end ClusterPoints
+
+/-! ### The Wasserstein cost -/
+
+section Wasserstein
+
+variable {X : Type*} [MeasurableSpace X] [MetricSpace X] [PolishSpace X] [BorelSpace X]
+  {p : ℝ≥0∞}
+
+/-- **The zero-temperature limit of the entropic Wasserstein cost.** On a Polish metric space, for
+`0 < p < ∞`, as `ε → 0⁺` the entropically regularised transport cost for the cost `d ^ p`
+converges to `W_p(ν, μ) ^ p`, provided `μ` has finite `p`-moment. No moment hypothesis is needed
+on `ν`: without one both sides are `∞`. -/
+theorem tendsto_entropicTransportCost_edist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (ν μ : Measure X)
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure μ] (hμ : HasFiniteMoment p μ) :
+    Tendsto (fun ε ↦ entropicTransportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ε ν μ)
+      (𝓝[>] 0) (𝓝 (wassersteinEDist p ν μ ^ p.toReal)) := by
+  have hd : Measurable fun z : X × X ↦ edist z.1 z.2 := measurable_edist
+  rw [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+  by_cases hν : HasFiniteMoment p ν
+  swap
+  · -- Without a moment on `ν` the transport cost is infinite, and so are all regularised costs.
+    have hW : wassersteinEDist p ν μ = ∞ := by
+      by_contra h
+      exact hν ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2
+        (by rwa [wassersteinEDist_comm hd]))
+    have htop : transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ν μ = ∞ := by
+      rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, hW,
+        ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp)]
+    have hconst (ε : ℝ≥0) :
+        entropicTransportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ε ν μ = ∞ :=
+      top_le_iff.1 (htop ▸ transportCost_le_entropicTransportCost)
+    simp only [hconst, htop]
+    exact tendsto_const_nhds
+  -- With moments on both sides, `d ^ p` has an integrable split upper bound.
+  obtain ⟨x₀, -⟩ := hasFiniteMoment_def.1 hμ
+  set K := ENNReal.LpAddConst (ENNReal.ofReal p.toReal)⁻¹
+  have hK : K ≠ ∞ := (ENNReal.LpAddConst_lt_top _).ne
+  have hint {ρ : Measure X} [IsProbabilityMeasure ρ] (hρ : HasFiniteMoment p ρ) :
+      ∫⁻ x, K * edist x₀ x ^ p.toReal ∂ρ ≠ ∞ := by
+    rw [lintegral_const_mul' _ _ hK]
+    exact ENNReal.mul_ne_top hK
+      ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x₀ ρ).1 hρ)
+  have hm : Measurable fun x : X ↦ K * edist x₀ x ^ p.toReal :=
+    (measurable_edist_right.pow_const _).const_mul _
+  have hc : Continuous fun z : X × X ↦ nndist z.1 z.2 ^ p.toReal :=
+    (NNReal.continuous_rpow_const ENNReal.toReal_nonneg).comp continuous_nndist
+  have hcoe : (fun z : X × X ↦ ((nndist z.1 z.2 ^ p.toReal : ℝ≥0) : ℝ≥0∞)) =
+      fun z ↦ edist z.1 z.2 ^ p.toReal := by
+    ext z
+    rw [ENNReal.coe_rpow_of_nonneg _ ENNReal.toReal_nonneg, edist_nndist]
+  have h := tendsto_entropicTransportCost_transportCost_of_le_add isTightMeasureSet_singleton
+    isTightMeasureSet_singleton hc hm.aemeasurable (hint hν) hm.aemeasurable (hint hμ)
+    (μ := ν) (ν := μ) fun x y ↦ by
+      calc ((nndist x y ^ p.toReal : ℝ≥0) : ℝ≥0∞) = edist x y ^ p.toReal :=
+            congrFun hcoe (x, y)
+        _ ≤ (edist x₀ x + edist x₀ y) ^ p.toReal := by
+          gcongr
+          exact edist_triangle_left _ _ _
+        _ ≤ K * (edist x₀ x ^ p.toReal + edist x₀ y ^ p.toReal) :=
+          ENNReal.rpow_add_le_mul_rpow_add_rpow' _ _ ENNReal.toReal_nonneg
+        _ = K * edist x₀ x ^ p.toReal + K * edist x₀ y ^ p.toReal := mul_add _ _ _
+  rwa [hcoe] at h
+
+end Wasserstein
 
 end TauCeti
