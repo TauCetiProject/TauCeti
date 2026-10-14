@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.HasseDeriv
+public import TauCeti.Algebra.MvPolynomial.Equiv
+public import TauCeti.Data.Finsupp.Choose
 
 /-!
 # Hasse derivatives of multivariate polynomials
@@ -77,12 +79,6 @@ theorem hasseDeriv_monomial (d m : σ →₀ ℕ) (a : R) :
     hasseDeriv d (monomial m a) =
       monomial (m - d) (((d.prod fun j k ↦ (m j).choose k : ℕ) : R) * a) := by
   simp [hasseDeriv]
-
-/-- The multi-index binomial coefficient vanishes unless `d ≤ m`. -/
-private theorem prod_choose_eq_zero {d m : σ →₀ ℕ} (h : ¬d ≤ m) :
-    (d.prod fun j k ↦ (m j).choose k) = 0 := by
-  obtain ⟨j, hj⟩ : ∃ j, m j < d j := by simpa [Finsupp.le_def] using h
-  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (Nat.choose_eq_zero_of_lt hj)
 
 /-- The coefficients of a Hasse derivative:
 `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`. -/
@@ -170,12 +166,6 @@ theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ
     rw [Function.iterate_succ_apply', ← ih, map_nsmul, pderiv_hasseDeriv_single, smul_smul,
       Nat.factorial_succ, mul_comm]
 
-/-- A univariate monomial placed in the variable `Xᵢ`. -/
-private theorem toMvPolynomial_monomial (i : σ) (n : ℕ) (a : R) :
-    (Polynomial.monomial n a).toMvPolynomial i = monomial (single i n) a := by
-  simp [Polynomial.toMvPolynomial, X_pow_eq_monomial, ← Polynomial.C_mul_X_pow_eq_monomial,
-    C_mul_monomial]
-
 /-- On a polynomial in the single variable `Xᵢ`, the Hasse derivative `∂^(k eᵢ)` is the
 univariate `k`-th Hasse derivative. -/
 theorem hasseDeriv_single_toMvPolynomial (i : σ) (k : ℕ) (p : Polynomial R) :
@@ -183,7 +173,7 @@ theorem hasseDeriv_single_toMvPolynomial (i : σ) (k : ℕ) (p : Polynomial R) :
       (Polynomial.hasseDeriv k p).toMvPolynomial i := by
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
-  | monomial n a => simp [toMvPolynomial_monomial, single_tsub]
+  | monomial n a => simp [single_tsub]
 
 /-- On a polynomial in the single variable `Xᵢ`, every Hasse derivative `∂^d` that differentiates
 in another variable `Xⱼ` (that is, `dⱼ ≠ 0` for some `j ≠ i`) vanishes. -/
@@ -192,15 +182,9 @@ theorem hasseDeriv_toMvPolynomial_eq_zero {d : σ →₀ ℕ} {i j : σ} (hij : 
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | monomial n a =>
-    rw [toMvPolynomial_monomial, hasseDeriv_monomial, prod_choose_eq_zero fun h ↦ hd ?_]
+    rw [Polynomial.toMvPolynomial_monomial, hasseDeriv_monomial, prod_choose_eq_zero fun h ↦ hd ?_]
     · simp
     · simpa [hij, hij.symm] using Finsupp.le_def.1 h j
-
-/-- The multi-index binomial coefficient as a product over any finite set of indices containing
-the support of the lower index. -/
-private theorem prod_choose_eq_prod {d : σ →₀ ℕ} (m : σ →₀ ℕ) {s : Finset σ}
-    (hs : d.support ⊆ s) : (d.prod fun j k ↦ (m j).choose k) = ∏ j ∈ s, (m j).choose (d j) :=
-  Finsupp.prod_of_support_subset _ hs _ fun _ _ ↦ Nat.choose_zero_right _
 
 /-- The composition rule `∂^a ∘ ∂^b = (∏ⱼ (aⱼ + bⱼ choose aⱼ)) • ∂^(a + b)`. -/
 theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
@@ -229,40 +213,19 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
   rw [tsub_apply, Finsupp.add_apply, Nat.choose_symm_add]
   linarith
 
-/-- Pascal's rule for the multi-index binomial coefficient, in the coordinate `i`. -/
-private theorem prod_choose_add_single [DecidableEq σ] (n d : σ →₀ ℕ) (i : σ) :
-    (d.prod fun j k ↦ ((n + single i 1 : σ →₀ ℕ) j).choose k) =
-      (d.prod fun j k ↦ (n j).choose k) +
-        if i ∈ d.support then (d - single i 1).prod fun j k ↦ (n j).choose k else 0 := by
-  rw [prod_choose_eq_prod _ subset_rfl, prod_choose_eq_prod _ subset_rfl]
-  split_ifs with hi
-  · rw [prod_choose_eq_prod _ support_tsub, ← Finset.mul_prod_erase _ _ hi,
-      ← Finset.mul_prod_erase _ _ hi, ← Finset.mul_prod_erase _ _ hi]
-    have h1 : ∏ j ∈ d.support.erase i, ((n + single i 1 : σ →₀ ℕ) j).choose (d j) =
-        ∏ j ∈ d.support.erase i, (n j).choose (d j) :=
-      Finset.prod_congr rfl fun j hj ↦ by simp [Finset.ne_of_mem_erase hj]
-    have h2 : ∏ j ∈ d.support.erase i, (n j).choose ((d - single i 1 : σ →₀ ℕ) j) =
-        ∏ j ∈ d.support.erase i, (n j).choose (d j) :=
-      Finset.prod_congr rfl fun j hj ↦ by simp [Finset.ne_of_mem_erase hj]
-    rw [h1, h2, ← add_mul]
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero (Finsupp.mem_support_iff.1 hi)
-    congr 1
-    rw [Finsupp.add_apply, tsub_apply, single_eq_same, hk, Nat.add_sub_cancel,
-      Nat.choose_succ_succ', add_comm]
-  · rw [add_zero]
-    refine Finset.prod_congr rfl fun j hj ↦ ?_
-    have hij : i ≠ j := fun h ↦ hi (h ▸ hj)
-    simp [hij]
-
 /-- The Leibniz rule for multiplication by a variable:
 `∂^d (P Xᵢ) = ∂^(d - eᵢ) P + (∂^d P) Xᵢ`, where the first term is present only when `dᵢ ≠ 0`. -/
 theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
     hasseDeriv d (P * X i) =
       (if d i = 0 then 0 else hasseDeriv (d - single i 1) P) + hasseDeriv d P * X i := by
   classical
-  rw [show (if d i = 0 then 0 else hasseDeriv (d - single i 1) P) =
-    (if i ∈ d.support then hasseDeriv (d - single i 1) P else 0) by
-      simp [Finsupp.mem_support_iff]]
+  -- Restate the condition `dᵢ ≠ 0` as `i ∈ d.support`, the form in which Pascal's rule
+  -- `prod_choose_add_single` splits off the extra term.
+  have hcond : (if d i = 0 then 0 else hasseDeriv (d - single i 1) P) =
+      if i ∈ d.support then hasseDeriv (d - single i 1) P else 0 := by
+    simp [Finsupp.mem_support_iff]
+  rw [hcond]
+  clear hcond
   induction P using MvPolynomial.induction_on' with
   | monomial n a =>
     -- A monomial whose coefficient carries the binomial factor of `d'` only depends on its
