@@ -187,7 +187,10 @@ jobs:
               raise SystemExit("invalid bors batch identity")
           query = urllib.parse.urlencode({"base": branch, "batch_id": batch})
           url = "https://bors.taucetiproject.org/repositories/1/active-batches?" + query
-          with urllib.request.urlopen(url, timeout=30) as response:
+          request = urllib.request.Request(url, headers={
+              "User-Agent": "TauCetiTrainIdentity/1.0", "Cache-Control": "no-cache"
+          })
+          with urllib.request.urlopen(request, timeout=30) as response:
               raw = response.read(2 * 1024 * 1024 + 1)
           if len(raw) > 2 * 1024 * 1024:
               raise SystemExit("bors observation exceeds bound")

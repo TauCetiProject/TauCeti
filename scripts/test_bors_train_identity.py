@@ -26,8 +26,10 @@ def resolve(observation):
         with mock.patch('urllib.request.urlopen') as request:
             request.return_value.__enter__.return_value.read.return_value = json.dumps(observation).encode()
             exec(compile(RESOLVER, '<workflow resolver>', 'exec'), {})
-            assert request.call_args.args[0] == ('https://bors.taucetiproject.org/repositories/1/'
+            assert request.call_args.args[0].full_url == ('https://bors.taucetiproject.org/repositories/1/'
                                                  'active-batches?base=main&batch_id=7')
+            assert request.call_args.args[0].get_header('User-agent') == 'TauCetiTrainIdentity/1.0'
+            assert request.call_args.args[0].get_header('Cache-control') == 'no-cache'
     return output.getvalue().strip()
 
 
