@@ -270,14 +270,16 @@ theorem finiteAdelicSpecialOrthogonalDoubleCosetConj_symm_apply_mk
   DoubleCoset.quotientConjRight_symm_apply_mk U.finiteAdelicSpecialOrthogonalDiagonal.range
     (integralSubgroup U.specialOrthogonal) g y
 
-/-! ### Change of compatible tuple -/
+/-! ### Change of quadratic space and compatible tuple -/
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {Q' : QuadraticForm ℚ W}
 
 /-- Componentwise equivalences which preserve every orthogonal reference subgroup and carry the
 rational diagonal subgroup onto the target diagonal subgroup identify the finite adelic class
 sets. -/
-def finiteAdelicOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
+def finiteAdelicOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
-      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q.baseChange ℚ_[p]))
+      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.orthogonal p) (U'.orthogonal p))
     (hdiag : U.finiteAdelicOrthogonalDiagonal.range.map
       (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) :
@@ -292,9 +294,9 @@ def finiteAdelicOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
 omit [FiniteDimensional ℚ V] in
 /-- Change of orthogonal tuple applies the componentwise equivalence to representatives. -/
 @[simp]
-theorem finiteAdelicOrthogonalDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q)
+theorem finiteAdelicOrthogonalDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
-      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q.baseChange ℚ_[p]))
+      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.orthogonal p) (U'.orthogonal p))
     (hdiag : U.finiteAdelicOrthogonalDiagonal.range.map
       (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) :
@@ -316,9 +318,9 @@ omit [FiniteDimensional ℚ V] in
 /-- The inverse change of orthogonal tuple applies the inverse componentwise equivalence to
 representatives. -/
 @[simp]
-theorem finiteAdelicOrthogonalDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOpens Q)
+theorem finiteAdelicOrthogonalDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
-      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q.baseChange ℚ_[p]))
+      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.orthogonal p) (U'.orthogonal p))
     (hdiag : U.finiteAdelicOrthogonalDiagonal.range.map
       (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) :
@@ -339,9 +341,9 @@ theorem finiteAdelicOrthogonalDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCom
 /-- Componentwise equivalences which preserve every Spin reference subgroup and carry the
 rational diagonal subgroup onto the target diagonal subgroup identify the finite adelic class
 sets. -/
-def finiteAdelicSpinDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
+def finiteAdelicSpinDoubleCosetCongr (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
-      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q.baseChange ℚ_[p]))
+      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.spin p) (U'.spin p))
     (hdiag : U.finiteAdelicSpinDiagonal.range.map
       (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) :
@@ -355,9 +357,9 @@ def finiteAdelicSpinDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
 omit [FiniteDimensional ℚ V] in
 /-- Change of Spin tuple applies the componentwise equivalence to representatives. -/
 @[simp]
-theorem finiteAdelicSpinDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q)
+theorem finiteAdelicSpinDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
-      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q.baseChange ℚ_[p]))
+      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.spin p) (U'.spin p))
     (hdiag : U.finiteAdelicSpinDiagonal.range.map
       (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) :
@@ -376,9 +378,9 @@ omit [FiniteDimensional ℚ V] in
 /-- The inverse change of Spin tuple applies the inverse componentwise equivalence to
 representatives. -/
 @[simp]
-theorem finiteAdelicSpinDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOpens Q)
+theorem finiteAdelicSpinDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
-      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q.baseChange ℚ_[p]))
+      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.spin p) (U'.spin p))
     (hdiag : U.finiteAdelicSpinDiagonal.range.map
       (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) :
@@ -393,13 +395,15 @@ theorem finiteAdelicSpinDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOp
     (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
     (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ) y
 
+variable [FiniteDimensional ℚ W]
+
 /-- Componentwise equivalences which preserve every special-orthogonal reference subgroup and
 carry the rational diagonal subgroup onto the target diagonal subgroup identify the finite adelic
 class sets. -/
-def finiteAdelicSpecialOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
+def finiteAdelicSpecialOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
       specialOrthogonalGroup (Q.baseChange ℚ_[p]) ≃*
-        specialOrthogonalGroup (Q.baseChange ℚ_[p]))
+        specialOrthogonalGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.specialOrthogonal p) (U'.specialOrthogonal p))
     (hdiag : U.finiteAdelicSpecialOrthogonalDiagonal.range.map
       (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ) :
@@ -417,10 +421,10 @@ def finiteAdelicSpecialOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q
 representatives. -/
 @[simp]
 theorem finiteAdelicSpecialOrthogonalDoubleCosetCongr_apply_mk
-    (U' : OrthogonalCompactOpens Q)
+    (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
       specialOrthogonalGroup (Q.baseChange ℚ_[p]) ≃*
-        specialOrthogonalGroup (Q.baseChange ℚ_[p]))
+        specialOrthogonalGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.specialOrthogonal p) (U'.specialOrthogonal p))
     (hdiag : U.finiteAdelicSpecialOrthogonalDiagonal.range.map
       (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ) :
@@ -444,10 +448,10 @@ theorem finiteAdelicSpecialOrthogonalDoubleCosetCongr_apply_mk
 to representatives. -/
 @[simp]
 theorem finiteAdelicSpecialOrthogonalDoubleCosetCongr_symm_apply_mk
-    (U' : OrthogonalCompactOpens Q)
+    (U' : OrthogonalCompactOpens Q')
     (φ : ∀ p : Nat.Primes,
       specialOrthogonalGroup (Q.baseChange ℚ_[p]) ≃*
-        specialOrthogonalGroup (Q.baseChange ℚ_[p]))
+        specialOrthogonalGroup (Q'.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.specialOrthogonal p) (U'.specialOrthogonal p))
     (hdiag : U.finiteAdelicSpecialOrthogonalDiagonal.range.map
       (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ) :
