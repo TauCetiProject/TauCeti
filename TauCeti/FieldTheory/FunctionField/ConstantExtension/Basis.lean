@@ -138,6 +138,26 @@ theorem constantBasis_repr_algebraMap {ι : Type*} (b : Basis ι k k') (c : k') 
       simp
   rw [hc, Basis.repr_linearCombination, Finsupp.mapRange_apply]
 
+/-- Raising to the power `q ^ n`, for `q` the exponential characteristic, raises the coordinates
+in a basis of constants to the power `q ^ n`, read off in the basis of constants given by the
+`q ^ n`-th powers of the original `k`-basis of `k'`. -/
+private theorem constantBasis_mapPowExpCharPowOfIsSeparable_repr_pow (q n : ℕ) [ExpChar k q]
+    [ExpChar F' q] {ι : Type*} (b : Basis ι k k') (z : F') (i : ι) :
+    (constantBasis hex h (b.mapPowExpCharPowOfIsSeparable q n)).repr (z ^ q ^ n) i =
+      (constantBasis hex h b).repr z i ^ q ^ n := by
+  have hb (j : ι) : b.mapPowExpCharPowOfIsSeparable q n j = b j ^ q ^ n := Basis.mk_apply _ _ j
+  have h0 : (0 : F) ^ q ^ n = 0 := zero_pow (expChar_pow_pos F' q n).ne'
+  let B := constantBasis hex h b
+  have hz : z ^ q ^ n = Finsupp.linearCombination F
+      (constantBasis hex h (b.mapPowExpCharPowOfIsSeparable q n))
+      ((B.repr z).mapRange (· ^ q ^ n) h0) := by
+    conv_lhs => rw [← B.linearCombination_repr z]
+    rw [Finsupp.linearCombination_apply, Finsupp.linearCombination_apply,
+      Finsupp.sum_mapRange_index (by simp), ← iterateFrobenius_def, map_finsuppSum]
+    refine Finsupp.sum_congr fun j _ ↦ ?_
+    rw [iterateFrobenius_def, smul_pow, constantBasis_apply, constantBasis_apply, hb, map_pow]
+  rw [hz, Basis.repr_linearCombination, Finsupp.mapRange_apply]
+
 include hex h in
 /-- **The constant field of a separable constant field extension** (Stichtenoth,
 Proposition 3.6.1(a)): if `k` is the exact constant field of `F` and `k' / k` is separable
@@ -157,7 +177,6 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top : IsIntegrallyClosedIn
   refine isIntegrallyClosedIn_iff_forall_isAlgebraic.2 fun z hz ↦ ?_
   let q := ringExpChar k
   have : ExpChar k' q := expChar_of_injective_algebraMap (algebraMap k k').injective q
-  have : ExpChar F q := expChar_of_injective_algebraMap (algebraMap k F).injective q
   have : ExpChar F' q := expChar_of_injective_algebraMap (algebraMap k F').injective q
   -- Some power `z ^ q ^ n` is separable over `k'`, hence a constant.
   obtain ⟨g, hg, n, hgz⟩ := (minpoly.irreducible hz.isIntegral).hasSeparableContraction q
@@ -170,18 +189,8 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top : IsIntegrallyClosedIn
   -- Compare coordinates in the bases of constants given by `b` and by its `q ^ n`-th powers.
   let b := Basis.ofVectorSpace k k'
   let B := constantBasis hex h b
-  let B' := constantBasis hex h (b.mapPowExpCharPowOfIsSeparable q n)
-  have hpow : z ^ q ^ n = Finsupp.linearCombination F B'
-      ((B.repr z).mapRange (iterateFrobenius F q n) (map_zero _)) := by
-    conv_lhs => rw [← B.linearCombination_repr z]
-    rw [Finsupp.linearCombination_apply, Finsupp.linearCombination_apply,
-      Finsupp.sum_mapRange_index (by simp), ← iterateFrobenius_def, map_finsuppSum]
-    refine Finsupp.sum_congr fun i _ ↦ ?_
-    simp [B, B', Module.Basis.mapPowExpCharPowOfIsSeparable, Algebra.smul_def,
-      iterateFrobenius_def, mul_pow]
   have hcoord (i) : ∃ a : k, algebraMap k F a = B.repr z i := by
-    have hi := congrArg (fun w ↦ B'.repr w i) hpow
-    simp only [B'.repr_linearCombination, Finsupp.mapRange_apply, iterateFrobenius_def] at hi
+    have hi := constantBasis_mapPowExpCharPowOfIsSeparable_repr_pow hex h q n b z i
     rw [← hc, constantBasis_repr_algebraMap] at hi
     let _ := hex
     exact IsIntegrallyClosedIn.isIntegral_iff.mp <| (IsAlgebraic.of_pow
