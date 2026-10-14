@@ -122,18 +122,25 @@ structure IsRegularProjection (poly : Polygon P n) (π : P → Q) : Prop where
   eq_vertex_of_apply_eq (i : Fin n) ⦃x : P⦄ : x ∈ poly.boundary R → π x = π (poly i) →
     x = poly i
 
-variable [IsOrderedRing R] {poly : Polygon P n}
+variable {poly : Polygon P n}
 
 /-- Regularity of a projection only depends on its fibres on the polygon. -/
 theorem isRegularProjection_congr {π : P → Q} {π' : P → Q'}
     (h : ∀ x ∈ poly.boundary R, ∀ y ∈ poly.boundary R, π x = π y ↔ π' x = π' y) :
     poly.IsRegularProjection R π ↔ poly.IsRegularProjection R π' := by
+  have hvertex {x : P} (hx : x ∈ poly.boundary R) (i : Fin n) :
+      poly i ∈ poly.boundary R := by
+    obtain ⟨_, t, ht, _⟩ := mem_boundary_iff.1 hx
+    have : ZeroLEOneClass R := ⟨ht.1.trans ht.2⟩
+    exact poly.apply_mem_boundary R i
   refine ⟨fun hπ ↦ ⟨fun x y z hx hy hz hxy hxz ↦ ?_, fun i x hx hxi ↦ ?_⟩,
     fun hπ ↦ ⟨fun x y z hx hy hz hxy hxz ↦ ?_, fun i x hx hxi ↦ ?_⟩⟩
   · exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz ((h x hx y hy).2 hxy) ((h x hx z hz).2 hxz)
-  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (poly.apply_mem_boundary R i)).2 hxi)
+  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (hvertex hx i)).2 hxi)
   · exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz ((h x hx y hy).1 hxy) ((h x hx z hz).1 hxz)
-  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (poly.apply_mem_boundary R i)).1 hxi)
+  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (hvertex hx i)).1 hxi)
+
+variable [ZeroLEOneClass R]
 
 /-- Projecting along a nondegenerate edge of a polygon is not a regular projection: both endpoints
 of the edge have the same image. -/
@@ -146,20 +153,27 @@ theorem not_isRegularProjection_edge (p₀ : P) {i : Fin n} (hi : poly i ≠ pol
 
 end Defs
 
-section Dense
+section EdgeVector
 
-variable [NormedAddCommGroup V] [NormedSpace ℝ V] [AddTorsor V P]
+variable [AddCommGroup V] [AddTorsor V P]
 
 /-- The direction `poly (i + 1) -ᵥ poly i` of the edge `i` of a polygon. -/
 private def edgeVector (poly : Polygon P n) (i : Fin n) : V :=
   poly (finRotate n i) -ᵥ poly i
 
+variable [Module ℝ V] in
 private theorem exists_eq_smul_edgeVector_vadd {poly : Polygon P n} {x : P}
     (hx : x ∈ poly.boundary ℝ) : ∃ i : Fin n, ∃ t : ℝ, x = t • poly.edgeVector i +ᵥ poly i := by
   obtain ⟨i, t, -, rfl⟩ := mem_boundary_iff.1 hx
   exact ⟨i, t, AffineMap.lineMap_apply _ _ _⟩
 
-/-- The `(i, j, k)` term of `irregularCover`: the directions of irregular projections coming from
+end EdgeVector
+
+section Dense
+
+variable [NormedAddCommGroup V] [NormedSpace ℝ V] [AddTorsor V P]
+
+/-- The `(i, j, k)` term of `irregularCover`: a set covering irregular directions coming from
 a vertex `poly i` and a point of edge `j`, or from three points of the edges `i`, `j`, `k`. -/
 private def irregularCoverTerm (poly : Polygon P n) (e : V ≃L[ℝ] (Fin 3 → ℝ)) (i j k : Fin n) :
     Set V :=
@@ -312,16 +326,26 @@ theorem dense_setOf_isRegularProjection (hV : finrank ℝ V = 3) (poly : Polygon
     by_contra hne
     exact hd (mem_irregularCover_of_vertex e hx ha hne)
 
+end Dense
+
+section Exists
+
+variable [AddCommGroup V] [Module ℝ V] [AddTorsor V P]
+
 /-- Every polygon in a three-dimensional real affine space has a regular projection along some
 nonzero direction `d`. -/
 theorem exists_ne_zero_isRegularProjection (hV : finrank ℝ V = 3) (poly : Polygon P n)
     (p₀ : P) : ∃ d : V, d ≠ 0 ∧ poly.IsRegularProjection ℝ (projAlong ℝ p₀ d) := by
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
+  let e : V ≃ₗ[ℝ] (Fin 3 → ℝ) := LinearEquiv.ofFinrankEq V (Fin 3 → ℝ) (by simp [hV])
+  let := NormedAddCommGroup.induced V (Fin 3 → ℝ) e e.injective
+  let := NormedSpace.induced ℝ V (Fin 3 → ℝ) e
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ hV
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   obtain ⟨d, hd0, hd⟩ := (dense_setOf_isRegularProjection hV poly p₀).inter_open_nonempty
     {0}ᶜ isOpen_compl_singleton ⟨v, hv⟩
   exact ⟨d, hd0, hd⟩
 
-end Dense
+end Exists
 
 end Polygon
