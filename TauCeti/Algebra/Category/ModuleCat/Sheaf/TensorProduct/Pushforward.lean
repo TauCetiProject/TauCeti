@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ChangeOfRings
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Functor
 
@@ -50,8 +51,10 @@ maps of the pullback along a composite are the composites of the comparison maps
 
 ## Main declarations
 
-* `SheafOfModules.presheafPushforward`: the pushforward of presheaves of modules underlying the
-  pushforward of sheaves of modules, with its lax symmetric monoidal structure;
+* `SheafOfModules.presheafPushforwardLaxMonoidal` and
+  `SheafOfModules.presheafPushforwardLaxBraided`: the lax symmetric monoidal structure on the
+  pushforward of presheaves of modules underlying the pushforward of sheaves of modules
+  (`SheafOfModules.presheafPushforward`);
 * `SheafOfModules.pushforwardLaxMonoidal` and `SheafOfModules.pushforwardLaxBraided`, with
   `SheafOfModules.pushforward_ε` and `SheafOfModules.pushforward_μ`;
 * `SheafOfModules.pullbackOplaxMonoidal`, with `SheafOfModules.pullback_η` and
@@ -90,25 +93,6 @@ variable {D : Type u} [SmallCategory D] {K : GrothendieckTopology D}
   [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
   {F : C ⥤ D} [F.IsContinuous J K] {S : Sheaf J CommRingCat.{u}} {R : Sheaf K CommRingCat.{u}}
   (φ : ringCatSheaf S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj (ringCatSheaf R))
-
-/-- The morphism of presheaves of commutative rings underlying `φ`. Its body is exposed so that
-sectionwise constructions over presheaves of commutative rings, pushed forward along it, are
-pushforwards along `φ.hom`. -/
-@[expose]
-def commRingCatHom : S.obj ⟶ F.op ⋙ R.obj where
-  app U := CommRingCat.ofHom (φ.hom.app U).hom
-  naturality _ _ f := by
-    ext x
-    exact congr($(φ.hom.naturality f).hom x)
-
-/-- The pushforward of presheaves of modules underlying `SheafOfModules.pushforward φ`. It is
-Mathlib's `PresheafOfModules.pushforward φ.hom`, with source and target written as presheaves of
-modules over the presheaves of rings `(ringCatSheaf R).obj` and `(ringCatSheaf S).obj`, so that it
-composes with `SheafOfModules.forget` and with sheafification. -/
-@[expose]
-def presheafPushforward :
-    PresheafOfModules.{u} (ringCatSheaf R).obj ⥤ PresheafOfModules.{u} (ringCatSheaf S).obj :=
-  PresheafOfModules.pushforward φ.hom
 
 /-- The pushforward of presheaves of modules is lax monoidal, sectionwise
 (`TauCeti.PresheafOfModules.pushforwardLaxMonoidal`). It is characterized by
@@ -155,14 +139,6 @@ private lemma braiding_hom_forget_pushforward_obj (M N : SheafOfModules.{u} (rin
       ((_root_.SheafOfModules.forget (ringCatSheaf S)).obj
         ((_root_.SheafOfModules.pushforward φ).obj N))).hom =
       (β_ ((presheafPushforward φ).obj M.val) ((presheafPushforward φ).obj N.val)).hom :=
-  (rfl)
-
-/-- On underlying presheaves of modules, the pushforward of a morphism of sheaves of modules is
-the pushforward of the underlying morphism of presheaves. -/
-lemma forget_map_pushforward_map {M N : SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ N) :
-    (_root_.SheafOfModules.forget (ringCatSheaf S)).map
-        ((_root_.SheafOfModules.pushforward φ).map f) =
-      (presheafPushforward φ).map ((_root_.SheafOfModules.forget (ringCatSheaf R)).map f) :=
   (rfl)
 
 section Comp

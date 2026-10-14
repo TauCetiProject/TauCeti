@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Pullback
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
 
 /-!
 # The exterior-power pullback comparison for sheaves of modules
