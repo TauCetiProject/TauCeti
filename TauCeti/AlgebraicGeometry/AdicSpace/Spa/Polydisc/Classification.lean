@@ -133,26 +133,6 @@ private theorem valuation_weightedX_sub_weightedC {x : closedPolydisc 1 K} {a : 
   · rw [weightedX_sub_weightedC_eq_sub a b, Valuation.map_sub_eq_of_lt_right]
     exact lt_of_not_ge fun h ↦ hb ((hge _).mp ((valuation_le_iff _ _ _).mp h))
 
-/-- If `x(T - a)` is strictly larger than `x(c)` for the constants with `Q c` and strictly smaller
-for the others, then `x(T - b)` is `x(T - a)` when `Q (b - a)` and `x(b - a)` otherwise. -/
-private theorem valuation_weightedX_sub_weightedC_of_lt {x : closedPolydisc 1 K} {a : K}
-    (Q : K → Prop) [DecidablePred Q]
-    (hlt : ∀ c : K, Q c → x.1.valuation (C c) < x.1.valuation (T - C a))
-    (hgt : ∀ c : K, ¬ Q c → x.1.valuation (T - C a) < x.1.valuation (C c)) (b : K) :
-    x.1.valuation (T - C b) =
-      if Q (b - a) then x.1.valuation (T - C a) else x.1.valuation (C (b - a)) := by
-  rw [weightedX_sub_weightedC_eq_sub a b]
-  split_ifs with hb
-  · exact Valuation.map_sub_eq_of_lt_left _ (hlt _ hb)
-  · exact Valuation.map_sub_eq_of_lt_right _ (hgt _ hb)
-
-/-- If `x(T - a) < x(b - a)`, then `x(T - b) = x(b - a)`. -/
-private theorem valuation_weightedX_sub_weightedC_eq_of_lt {x : closedPolydisc 1 K} {a b : K}
-    (h : x.1.valuation (T - C a) < x.1.valuation (C (b - a))) :
-    x.1.valuation (T - C b) = x.1.valuation (C (b - a)) := by
-  rw [weightedX_sub_weightedC_eq_sub a b]
-  exact Valuation.map_sub_eq_of_lt_right _ h
-
 /-- Under the second condition characterising `η_{a,r}`, `x(T - a) ≠ 0`. -/
 private theorem valuation_weightedX_sub_weightedC_ne_zero {x : closedPolydisc 1 K} {a : K}
     (hr₀ : 0 < r) (hle : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) :
@@ -402,7 +382,8 @@ private theorem cutRadius_le_max [IsAlgClosed K] {x : closedPolydisc 1 K} {b b' 
 private theorem valuation_eq_of_cutRadius_lt [IsAlgClosed K] {x : closedPolydisc 1 K} {b b' : K}
     (hb' : ‖b'‖ ≤ 1) (h : cutRadius x b' < cutRadius x b) :
     x.1.valuation (T - C b) = x.1.valuation (C (b - b')) := by
-  refine valuation_weightedX_sub_weightedC_eq_of_lt (valuation_lt_of_cutRadius_lt_norm hb' ?_)
+  rw [weightedX_sub_weightedC_eq_sub b' b]
+  refine Valuation.map_sub_eq_of_lt_right _ (valuation_lt_of_cutRadius_lt_norm hb' ?_)
   by_contra! h'
   exact ((cutRadius_le_max hb').trans (max_le le_rfl h')).not_gt h
 
@@ -699,8 +680,9 @@ private theorem eq_of_forall_valuation_lt [IsAlgClosed K] {a c : ℕ → K}
   have hd (b : K) : b - a (N b) ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt (hN b))
   have hval (z : closedPolydisc 1 K)
       (hz : ∀ n e, ‖c n‖ < ‖e‖ → z.1.valuation (T - C (a n)) < z.1.valuation (C e)) (b : K) :
-      z.1.valuation (T - C b) = z.1.valuation (C (b - a (N b))) :=
-    valuation_weightedX_sub_weightedC_eq_of_lt (hz _ _ (hN b))
+      z.1.valuation (T - C b) = z.1.valuation (C (b - a (N b))) := by
+    rw [weightedX_sub_weightedC_eq_sub (a (N b)) b]
+    exact Valuation.map_sub_eq_of_lt_right _ (hz _ _ (hN b))
   refine eq_of_valuation_eq_ite (a := a 0) (fun _ ↦ False) (fun b ↦ b - a (N b)) (fun b _ ↦ hd b)
     (fun b ↦ by rw [ite_false, hval x hx]) (fun b ↦ by rw [ite_false, hval y hy])
     (hval x hx (a 0) ▸ (closedPolydisc_valuation_weightedC_eq_zero_iff x _).not.mpr (hd _))
