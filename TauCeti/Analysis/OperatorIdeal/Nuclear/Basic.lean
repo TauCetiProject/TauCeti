@@ -139,11 +139,10 @@ theorem nuclearENorm_eq_zero (T : E →L[𝕜] F) :
     T.nuclearENorm = 0 ↔ T = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   have hz : ‖T‖ₑ = 0 := le_antisymm (h ▸ T.enorm_le_nuclearENorm) bot_le
-  rw [enorm_eq_nnnorm, ENNReal.coe_eq_zero] at hz
-  have hn : ‖T‖ = 0 := by simpa using congrArg NNReal.toReal hz
+  have hn : ‖T‖ = 0 := by simpa using congrArg ENNReal.toReal hz
+  -- Mathlib's opNorm_zero_iff requires a normed source; here the source is only seminormed.
   ext x
-  apply norm_eq_zero.mp
-  exact le_antisymm (by simpa [hn] using T.le_opNorm x) (norm_nonneg _)
+  exact norm_le_zero_iff.mp (by simpa [hn] using T.le_opNorm x)
 
 end Separated
 
