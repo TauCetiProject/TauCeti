@@ -24,8 +24,8 @@ are the topological charts used to extend the covering map across the punctures.
 ## Main declarations
 
 * `TauCeti.FilledCover.chartedSpace`: the charted-space structure on a filled finite cover.
-* `TauCeti.FilledCover.chartAt_incl_apply`: the chart on the original cover reads points through
-  the covering map.
+* `TauCeti.FilledCover.chartAt_incl_apply_incl`: the chart on the original cover reads points
+  through the covering map.
 * `TauCeti.FilledCover.chartAt_center_apply_disc`: the chart at an added point is inverse to its
   filled disc.
 
@@ -64,7 +64,8 @@ def chartedSpace {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphe
 
 /-- At a point of the original cover, the preferred chart on the filled cover reads a nearby
 point through the covering map and the standard complex chart of the thrice-punctured sphere. -/
-theorem chartAt_incl_apply {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphere}
+theorem chartAt_incl_apply_incl {E : Type*} [TopologicalSpace E]
+    {p : E → ThricePuncturedSphere}
     (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere} (hfin : Finite (p ⁻¹' {z₀}))
     (x y : E) :
     @chartAt ℂ _ _ _ (chartedSpace hp hfin) (PunctureFilling.incl (chart p) x)
