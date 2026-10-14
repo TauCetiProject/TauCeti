@@ -200,7 +200,6 @@ theorem equation_levelThreeNormalForm_basisPoint {ζ : R} (hζ : ζ ^ 2 + ζ + 1
 
 /-- On the level-three normal form the `3`-division polynomial `Ψ₃` vanishes at `-(μ² + μ + 1)`:
 the points above it have order `3`. -/
-@[simp]
 theorem eval_Ψ₃_levelThreeNormalForm_basisPoint :
     (levelThreeNormalForm μ).Ψ₃.eval (-(μ ^ 2 + μ + 1)) = 0 := by
   rw [eval_Ψ₃, levelThreeNormalForm_b₂, levelThreeNormalForm_b₄, levelThreeNormalForm_b₆,
@@ -209,7 +208,6 @@ theorem eval_Ψ₃_levelThreeNormalForm_basisPoint :
 
 /-- On the level-three normal form the `2`-division polynomial `ψ₂` takes the value
 `-(2ζ + 1)(μ² + μ + 1)` at `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`. -/
-@[simp]
 theorem evalEval_ψ₂_levelThreeNormalForm_basisPoint (ζ : R) :
     (levelThreeNormalForm μ).ψ₂.evalEval (-(μ ^ 2 + μ + 1)) ((μ ^ 2 + μ + 1) * (μ - ζ)) =
       -(2 * ζ + 1) * (μ ^ 2 + μ + 1) := by
