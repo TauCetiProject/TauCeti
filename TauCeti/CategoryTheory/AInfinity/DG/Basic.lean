@@ -38,6 +38,8 @@ resulting `A∞` category.
 
 * `TauCeti.DGCategory.gradedLinearQuiver`: the graded linear quiver of a DG category.
 * `TauCeti.DGCategory.homLof`: the inclusion of the morphisms of degree `n` into a hom module.
+* `TauCeti.DGCategory.grHomEquiv`: the morphisms of degree `n` are the morphisms of degree `n` of
+  the graded linear quiver.
 * `TauCeti.DGCategory.toAInfinityCategory`: the `A∞` category of a DG category.
 
 ## Main results
@@ -96,6 +98,17 @@ theorem homLof_mem_piece {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     homLof X Y n f ∈ (grading (R := R) X Y).piece n := by
   rw [grading_piece]
   exact LinearMap.mem_range_self _ f
+
+/-- The morphisms of degree `n` of a differential graded category are the morphisms of degree `n`
+of its graded linear quiver, through `TauCeti.DGCategory.homLof`. -/
+noncomputable def grHomEquiv (X Y : C) (n : ℤ) : DGHom R n X Y ≃ₗ[R] grHom R X Y n :=
+  (InternalGrading.gradedObjectPieceEquiv R (dgHomComplex R X Y).X n).trans
+    (LinearEquiv.ofEq _ _ (InternalGrading.ofGradedObject_piece R _ n).symm)
+
+@[simp]
+theorem coe_grHomEquiv {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
+    (grHomEquiv X Y n f : homModule (R := R) X Y) = homLof X Y n f :=
+  InternalGrading.gradedObjectPieceEquiv_apply R _ n f
 
 /-- Induction on the hom module of the graded linear quiver of a differential graded category:
 a property closed under sums and holding on homogeneous morphisms holds everywhere. -/
