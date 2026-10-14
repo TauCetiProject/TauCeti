@@ -787,6 +787,57 @@ theorem HasMarginals.sum_sum_mul_add {Q : Matrix ι κ ℝ} {a : ι → ℝ} {b 
   · rw [Finset.sum_comm]
     simp_rw [← Finset.sum_mul, hQ.2]
 
+/-- The row sums and the column sums of a matrix have the same total. -/
+theorem HasMarginals.sum_eq {P : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ}
+    (hP : HasMarginals P a b) : ∑ i, a i = ∑ j, b j := by
+  simp only [← hP.1, ← hP.2]
+  exact Finset.sum_comm
+
+/-- Row sums `h` and column sums `k` of the same total, with entries bounded by `δ`, are the
+marginals of a matrix with entries bounded by `3 * δ`, independently of the sizes of `ι` and `κ`:
+the matrix `h i / card κ + k j / card ι - (∑ i, h i) / (card ι * card κ)`.
+
+This is how a perturbation of the marginals of a strictly positive plan is followed by a
+perturbation of the plan that stays nonnegative. -/
+theorem exists_hasMarginals_abs_le [Nonempty ι] [Nonempty κ] {h : ι → ℝ} {k : κ → ℝ}
+    (hhk : ∑ i, h i = ∑ j, k j) {δ : ℝ} (hh : ∀ i, |h i| ≤ δ) (hk : ∀ j, |k j| ≤ δ) :
+    ∃ D : Matrix ι κ ℝ, HasMarginals D h k ∧ ∀ i j, |D i j| ≤ 3 * δ := by
+  have hm : (1 : ℝ) ≤ Fintype.card ι := Nat.one_le_cast.2 Fintype.card_pos
+  have hn : (1 : ℝ) ≤ Fintype.card κ := Nat.one_le_cast.2 Fintype.card_pos
+  have hm0 : (Fintype.card ι : ℝ) ≠ 0 := by positivity
+  have hn0 : (Fintype.card κ : ℝ) ≠ 0 := by positivity
+  have hδ : 0 ≤ δ := (abs_nonneg _).trans (hh (Classical.arbitrary ι))
+  refine ⟨of fun i j ↦ h i / Fintype.card κ + k j / Fintype.card ι -
+      (∑ i', h i') / (Fintype.card ι * Fintype.card κ),
+    (hasMarginals_def _ _ _).2 ⟨fun i ↦ ?_, fun j ↦ ?_⟩, fun i j ↦ ?_⟩
+  · simp only [of_apply, div_eq_mul_inv, Finset.sum_sub_distrib, Finset.sum_add_distrib,
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Finset.sum_mul, ← hhk]
+    field_simp
+    ring
+  · simp only [of_apply, div_eq_mul_inv, Finset.sum_sub_distrib, Finset.sum_add_distrib,
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Finset.sum_mul]
+    field_simp
+    ring
+  · have hS : |∑ i', h i'| ≤ Fintype.card ι * δ :=
+      calc |∑ i', h i'| ≤ ∑ i', |h i'| := Finset.abs_sum_le_sum_abs _ _
+        _ ≤ ∑ _i : ι, δ := Finset.sum_le_sum fun i _ ↦ hh i
+        _ = Fintype.card ι * δ := by simp
+    have h1 : |h i / Fintype.card κ| ≤ δ := by
+      rw [abs_div, Nat.abs_cast, div_le_iff₀ (by linarith)]
+      nlinarith [hh i]
+    have h2 : |k j / Fintype.card ι| ≤ δ := by
+      rw [abs_div, Nat.abs_cast, div_le_iff₀ (by linarith)]
+      nlinarith [hk j]
+    have h3 : |(∑ i', h i') / (Fintype.card ι * Fintype.card κ)| ≤ δ := by
+      have hmn : (0 : ℝ) < Fintype.card ι * Fintype.card κ := by positivity
+      rw [abs_div, abs_of_pos hmn, div_le_iff₀ hmn]
+      nlinarith [mul_le_mul_of_nonneg_left hn
+        (mul_nonneg (by linarith : (0 : ℝ) ≤ Fintype.card ι) hδ)]
+    rw [of_apply]
+    linarith [abs_sub (h i / Fintype.card κ + k j / Fintype.card ι)
+      ((∑ i', h i') / (Fintype.card ι * Fintype.card κ)),
+      abs_add_le (h i / Fintype.card κ) (k j / Fintype.card ι)]
+
 /-! ### Gibbs' inequality -/
 
 /-- Gibbs' inequality in its quantitative form: the relative entropy of a nonnegative matrix `Q`
