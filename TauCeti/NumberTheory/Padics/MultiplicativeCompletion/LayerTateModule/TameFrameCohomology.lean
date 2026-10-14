@@ -14,6 +14,14 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Projectiv
 This file packages the degree-two cohomological compatibility of the tame-frame relation-module
 surjection on a finite Galois layer.
 
+In the proof of (7.4.1), both the relation module of a generating family of `G = Gal(L/K)` and
+the `p`-adic completion `A(L)` of `Lˣ` occur as kernels of extensions of the augmentation ideal
+of `ℤ_p[G]`, and such extensions are classified by degree-two cohomology of their kernels.
+Because the kernel of the tame-frame surjection is free, hence cohomologically trivial, the
+surjection identifies `H²(G, -)` of the relation module with `H²(G, A(L))`. This is the
+compatibility used to compare the extension class of the free presentation with that of the
+arithmetic extension at the finite layer.
+
 ## Main result
 
 * `TauCeti.exists_relationModule_surjective_of_tameFrame_h2Iso`: the tame-frame relation-module
