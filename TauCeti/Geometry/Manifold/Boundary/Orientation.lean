@@ -193,8 +193,8 @@ theorem smul {f : M → ℝ} (hV : IsOutwardPointingField V)
     IsOutwardPointingField (fun x ↦ f x • V x) := by
   refine ⟨hf.smul_section hV.1, fun x hx ↦ (hV.2 x hx).smul_pos (hpos x hx)⟩
 
-/-- Smooth nonnegative convex combinations of outward-pointing fields remain outward-pointing.
-The coefficient sum is required only on the boundary, where the outward condition is tested. -/
+/-- Smooth convex combinations of outward-pointing fields remain outward-pointing.
+The coefficients are smooth globally, nonnegative on the boundary, and sum to one there. -/
 theorem smul_add_smul {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
     (hV : IsOutwardPointingField V) (hW : IsOutwardPointingField W)
     {f g : M → ℝ} (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f)
