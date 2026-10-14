@@ -13,6 +13,10 @@ This catches `sorry`/`admit`, native-decision axioms, and custom axioms, includi
 ones and dependencies reached through imports. Enumerating sources includes the empty
 root and orphan modules. `--duplicates-only` isolates the ownership fixtures.
 
+`ShadowAudit` emits per-owner inventory and results for the research harness
+`scripts/shadow_audits.py` through the optional `--shadow-*` modes. Production workflows
+do not use those modes; the default audit and its diagnostics are unchanged.
+
 The separate canonical module-system audit is `scripts/ModuleSystem.lean`; workflows run
 it after this driver to check each compiled artifact's `isModule` flag.
 -/
@@ -329,6 +333,11 @@ def phase (name : String) : IO Unit := do
     catch _ => pure ()
 
 /-- Run ownership then axioms, or ownership alone with `--duplicates-only`.
+The research-only `--shadow-inventory` prints the complete JSON module inventory and returns 0.
+`--shadow-snapshot` runs full ownership/axiom checks and emits JSON results per owner;
+`--shadow-incremental` does the same with the axiom scope from `AXIOMS_ONLY_MODULES`
+(including importers). Both result modes return the maximum ownership/axiom status.
+Production workflows do not use these shadow modes or consume their JSON output.
 Return 0 on success, 1 on an audit/import failure, and 2 on unsupported arguments.
 The environment callback/CoreM adapter is inlined from importGraph's `Core.withImportModules`
 (Kim Morrison, Paul Lezeau; Apache 2.0). -/
