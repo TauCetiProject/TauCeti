@@ -231,6 +231,17 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.relativeSpecFunctionsToScheme_naturali
   rw [← Spec.map_comp_assoc, hring]
   simp only [Spec.map_comp_assoc, hspec, Category.assoc]
 
+/-- The inverse form of `Scheme.Hom.relativeSpecFunctionsToScheme_naturality`: a scheme morphism
+over the base is, through the identifications with the relative spectra of the function
+algebras, the relative spectrum of pullback of functions. -/
+@[reassoc]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.inv_relativeSpecFunctionsToScheme_naturality
+    (g : V ⟶ W) (h : g ≫ q = p) :
+    g ≫ inv q.relativeSpecFunctionsToScheme = inv p.relativeSpecFunctionsToScheme ≫
+      CommMon.relativeSpecMap (Scheme.Hom.pushforwardStructureAlgebraMap g h) := by
+  rw [IsIso.comp_inv_eq, Category.assoc, Scheme.Hom.relativeSpecFunctionsToScheme_naturality,
+    IsIso.inv_hom_id_assoc]
+
 variable (p)
 
 /-- The canonical isomorphism recovering an affine scheme over `X` from its function algebra.

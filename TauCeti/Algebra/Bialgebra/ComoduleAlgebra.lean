@@ -54,6 +54,8 @@ trivial torsor `G ⟶ Spec R`.
 * `TauCeti.ComoduleAlgebra`: a right comodule algebra over a bialgebra.
 * `TauCeti.ComoduleAlgebra.coactAlgHom`: the coaction as an algebra homomorphism.
 * `TauCeti.ComoduleAlgebra.coinvariants`: the subalgebra of coinvariants.
+* `TauCeti.ComoduleAlgebra.coactAlgHomOver`: the coaction as a `B`-algebra homomorphism, for an
+  algebra `B` acting by coinvariants.
 * `TauCeti.ComoduleAlgebra.galoisMap`: the Galois map `A ⊗[B] A → A ⊗[R] H`.
 * `TauCeti.ComoduleAlgebra.coinvariantsEquiv`: for a faithfully flat extension with injective
   Galois map, the algebra isomorphism `B ≃ A^{co H}`.
@@ -180,11 +182,16 @@ variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Semiring H]
   (B : Type x) [CommSemiring B] [Algebra R B] [Algebra B A] [IsScalarTower R B A]
 
 /-- The coaction, regarded as a `B`-algebra homomorphism when `B` acts on `A` by coinvariants. -/
-private noncomputable def coactAlgHomOver (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A) :
+noncomputable def coactAlgHomOver (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A) :
     A →ₐ[B] A ⊗[R] H where
   toRingHom := (coactAlgHom R H A).toRingHom
   commutes' b := by
     simpa [Algebra.TensorProduct.algebraMap_apply] using mem_coinvariants.1 (hB b)
+
+@[simp]
+theorem coactAlgHomOver_apply (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A) (a : A) :
+    coactAlgHomOver B hB a = Comodule.coact (R := R) (C := H) a :=
+  (rfl)
 
 /-- The **Galois map** `A ⊗[B] A → A ⊗[R] H`, `a ⊗ a' ↦ (a ⊗ 1) coact(a')`, of a comodule
 algebra `A` over an algebra `B` acting by coinvariants. It is the coordinate map of

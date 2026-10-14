@@ -98,18 +98,18 @@ structure IsSymmetricFrobeniusFunctional (φ : A →ₗ[k] k) : Prop where
   /-- The functional is symmetric in the factors of a product. -/
   apply_mul_comm : ∀ a b : A, φ (a * b) = φ (b * a)
 
-end CommSemiring
-
-section CommRing
-
-variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
-
 /-- Unfolding the nondegeneracy of `(a, b) ↦ φ (a * b)` into its two separating conditions. -/
 theorem isFrobeniusFunctional_iff :
     φ.IsFrobeniusFunctional ↔
       (∀ a : A, (∀ b, φ (a * b) = 0) → a = 0) ∧ ∀ b : A, (∀ a, φ (a * b) = 0) → b = 0 := by
   simp [IsFrobeniusFunctional, Nondegenerate, SeparatingLeft,
     SeparatingRight]
+
+end CommSemiring
+
+section CommRing
+
+variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
 
 section Nondegenerate
 

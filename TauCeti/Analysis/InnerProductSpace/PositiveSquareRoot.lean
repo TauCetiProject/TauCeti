@@ -29,7 +29,11 @@ polar decomposition.
 * `LinearMap.operatorAbs`: the modulus `sqrt (A† A)` of a rectangular linear map.
 * `LinearMap.norm_operatorAbs_apply`: `‖|A|x‖ = ‖Ax‖`.
 * `LinearMap.ker_operatorAbs`, `LinearMap.range_operatorAbs`: the kernel and range of the modulus.
+* `LinearMap.commute_operatorAbs_of_commute`: an endomorphism commuting with `A† A` commutes
+  with `|A|`.
 * `LinearMap.commute_operatorAbs`: a normal endomorphism commutes with its modulus.
+* `LinearMap.operatorAbs_comp_of_commute`: `|A P| = |A| P` for an orthogonal projection `P`
+  commuting with `A† A`.
 
 ## References
 
@@ -179,13 +183,36 @@ theorem range_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.range = A.ker�
   rw [operatorAbs, (isPositive_adjoint_comp_self A).range_sqrt,
     range_adjoint_comp_self, ← orthogonal_ker]
 
+/-- An endomorphism commuting with the source Gram operator `A† A` commutes with the modulus. -/
+theorem commute_operatorAbs_of_commute {A : E →ₗ[𝕜] F} {S : E →ₗ[𝕜] E}
+    (h : Commute S (A.adjoint ∘ₗ A)) : Commute S A.operatorAbs := by
+  simpa only [operatorAbs, IsPositive.sqrt] using
+    (isSymmetric_adjoint_comp_self A).commute_cfc h Real.sqrt
+
 /-- A normal finite-dimensional endomorphism commutes with its modulus. -/
 theorem commute_operatorAbs (A : E →ₗ[𝕜] E) [IsStarNormal A] :
     Commute A A.operatorAbs := by
-  have hA : Commute A (A.adjoint ∘ₗ A) := by
-    simpa only [Module.End.mul_eq_comp, star_eq_adjoint] using
-      star_comm_self.symm.mul_right (Commute.refl A)
-  simpa only [operatorAbs, IsPositive.sqrt] using
-    (isSymmetric_adjoint_comp_self A).commute_cfc hA Real.sqrt
+  refine commute_operatorAbs_of_commute ?_
+  simpa only [Module.End.mul_eq_comp, star_eq_adjoint] using
+    star_comm_self.symm.mul_right (Commute.refl A)
+
+/-- If an orthogonal projection `P` commutes with the source Gram operator `A† A`, then the
+modulus of `A P` is `|A| P`. -/
+theorem operatorAbs_comp_of_commute {A : E →ₗ[𝕜] F} {P : E →ₗ[𝕜] E}
+    (hP : P.IsSymmetricProjection) (h : Commute P (A.adjoint ∘ₗ A)) :
+    (A ∘ₗ P).operatorAbs = A.operatorAbs ∘ₗ P := by
+  have hc : Commute P A.operatorAbs := commute_operatorAbs_of_commute h
+  have hPP : P * P = P := hP.isIdempotentElem.eq
+  have hconj : A.operatorAbs ∘ₗ P = P.adjoint ∘ₗ A.operatorAbs ∘ₗ P := by
+    rw [hP.isSymmetric.adjoint_eq, ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp,
+      ← mul_assoc, hc.eq, mul_assoc, hPP, Module.End.mul_eq_comp]
+  refine ((isPositive_adjoint_comp_self (A ∘ₗ P)).sqrt_unique ?_ ?_).symm
+  · rw [hconj]
+    exact A.isPositive_operatorAbs.adjoint_conj P
+  · have hgram : (A ∘ₗ P).adjoint ∘ₗ A ∘ₗ P = P ∘ₗ (A.adjoint ∘ₗ A) ∘ₗ P := by
+      simp only [adjoint_comp, hP.isSymmetric.adjoint_eq, comp_assoc]
+    rw [hgram, ← operatorAbs_sq]
+    simp only [← Module.End.mul_eq_comp, mul_assoc]
+    rw [hc.left_comm (A.operatorAbs * P), hc.left_comm P, hPP]
 
 end LinearMap
