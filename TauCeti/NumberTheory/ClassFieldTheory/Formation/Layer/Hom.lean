@@ -133,6 +133,18 @@ theorem cohomologyMap_def (n : ℕ) :
       (Representation.IsIntertwiningMap.ofRes E.isIntertwiningMap) n :=
   (rfl)
 
+/-- The image of the class of a cocycle `c` under the map of second cohomology induced by a layer
+morphism `E` is the class of the cocycle
+`(γ, δ) ↦ E.coeffMap (c (E.galEquiv.symm γ, E.galEquiv.symm δ))`. -/
+theorem exists_cohomologyMap_H2π (c : cocycles₂ (L.rep F)) :
+    ∃ c' : cocycles₂ (L'.rep F'), E.cohomologyMap 2 (H2π _ c) = H2π _ c' ∧
+      ∀ γ δ : L'.Gal, c' (γ, δ) = E.coeffMap (c (E.galEquiv.symm γ, E.galEquiv.symm δ)) := by
+  rw [cohomologyMap_def, groupCohomology.H2π_comp_map_apply]
+  refine ⟨_, rfl, fun γ δ => ?_⟩
+  rw [TauCeti.groupCohomology.mapCocycles₂_apply]
+  exact LinearMap.congr_fun
+    (Representation.IsIntertwiningMap.ofRes_hom_toLinearMap E.isIntertwiningMap) _
+
 /-- The map `H^r(U/V, A^V) ⟶ H^r(U'/V', A'^{V'})` of Tate cohomology induced by a layer morphism,
 in every integer degree: the Tate map of its compatible pair. -/
 def tateCohomologyMap (r : ℤ) : L.TateH F r ⟶ L'.TateH F' r :=

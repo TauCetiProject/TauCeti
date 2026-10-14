@@ -36,12 +36,13 @@ identifications of Tate cohomology.
 If `F` and `F'` carry class formations whose invariant maps correspond under the isomorphism of
 `H²`, then the isomorphism carries the fundamental class to the fundamental class
 (`ClassFormation.fundamentalClass_layerEquiv`), so Tate's isomorphism, the Nakayama map, Artin
-reciprocity and the Artin map are all transported
-(`ClassFormation.tateIso_layerEquiv`, `ClassFormation.nakayamaNegTwo_layerEquiv`,
-`ClassFormation.artinEquiv_layerEquiv`, `ClassFormation.artinMap_layerEquiv`). This is how the
-Artin map of one class formation is read as an Artin map of another: for a finite extension of
-local fields it identifies the local Artin map of the extension with an abstract Artin map of the
-formation of the base, once the two invariant maps are compared.
+reciprocity and the Artin map are all transported by the statements for the underlying layer
+morphism (`ClassFormation.tateIso_layerHom`, `ClassFormation.nakayamaNegTwo_layerHom`,
+`ClassFormation.artinEquiv_layerHom`, `ClassFormation.artinMap_layerHom`). The last is restated for
+layer isomorphisms as `ClassFormation.artinMap_layerEquiv`. This is how the Artin map of one class
+formation is read as an Artin map of another: for a finite extension of local fields it identifies
+the local Artin map of the extension with an abstract Artin map of the formation of the base, once
+the two invariant maps are compared.
 
 ## Main definitions
 
@@ -127,11 +128,6 @@ isomorphism. -/
 theorem toLayerHom_coeffMap : E.toLayerHom.coeffMap = (E.coeffEquiv : F.level L.top →ₗ[ℤ] _) :=
   (rfl)
 
-include E in
-/-- Isomorphic layers have the same degree. -/
-theorem degree_eq : L'.degree = L.degree :=
-  E.toLayerHom.degree_eq
-
 /-! ### Cohomology -/
 
 /-- The isomorphism `H^n(U/V, A^V) ≅ H^n(U'/V', A'^{V'})` of ordinary cohomology induced by a layer
@@ -161,9 +157,8 @@ layer isomorphism `E` is the class of the cocycle
 theorem exists_cohomologyIso_hom_H2π (c : cocycles₂ (L.rep F)) :
     ∃ c' : cocycles₂ (L'.rep F'), (E.cohomologyIso 2).hom (H2π _ c) = H2π _ c' ∧
       ∀ γ δ : L'.Gal, c' (γ, δ) = E.coeffEquiv (c (E.galEquiv.symm γ, E.galEquiv.symm δ)) := by
-  rw [cohomologyIso_def, groupCohomology.mapIso_hom,
-    groupCohomology.H2π_comp_map_apply]
-  exact ⟨_, rfl, fun γ δ => rfl⟩
+  rw [cohomologyIso_hom]
+  exact E.toLayerHom.exists_cohomologyMap_H2π c
 
 /-- The isomorphism `H^r(U/V, A^V) ≅ H^r(U'/V', A'^{V'})` of Tate cohomology induced by a layer
 isomorphism, in every integer degree. -/
@@ -337,37 +332,6 @@ theorem fundamentalClass_layerEquiv
     (E.cohomologyIso 2).hom (cf.fundamentalClass L) = cf'.fundamentalClass L' := by
   simp only [LayerEquiv.cohomologyIso_hom] at hinv ⊢
   exact fundamentalClass_layerHom cf cf' E.toLayerHom hinv
-
-/-- **Tate's isomorphism is transported by a layer isomorphism matching the invariant maps**: the
-image of `x ∪ u_{U/V}` is the cup product of the image of `x` with `u_{U'/V'}`. -/
-theorem tateIso_layerEquiv
-    (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x) (r : ℤ)
-    (x : L.TrivialTateH r) :
-    (E.tateCohomologyIso (r + 2)).hom (cf.tateIso L r x) =
-      cf'.tateIso L' r ((E.toLayerHom.trivialTateCohomologyIso r).hom x) := by
-  have hu := fundamentalClass_layerEquiv cf cf' E hinv
-  rw [LayerEquiv.cohomologyIso_hom] at hu
-  rw [LayerEquiv.tateCohomologyIso_hom]
-  exact tateIso_layerHom cf cf' E.toLayerHom hu r x
-
-/-- **The Nakayama map is transported by a layer isomorphism matching the invariant maps.** -/
-theorem nakayamaNegTwo_layerEquiv
-    (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x)
-    (σ : Additive (Abelianization L.Gal)) :
-    cf'.nakayamaNegTwo L' (E.galEquiv.abelianizationCongr.toAdditive σ) =
-      E.normQuotientEquiv (cf.nakayamaNegTwo L σ) := by
-  have hu := fundamentalClass_layerEquiv cf cf' E hinv
-  rw [LayerEquiv.cohomologyIso_hom] at hu
-  simpa using nakayamaNegTwo_layerHom cf cf' E.toLayerHom hu σ
-
-/-- **Artin reciprocity is transported by a layer isomorphism matching the invariant maps.** -/
-theorem artinEquiv_layerEquiv
-    (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x) (y : L.NormQuotient F) :
-    cf'.artinEquiv L' (E.normQuotientEquiv y) =
-      E.galEquiv.abelianizationCongr.toAdditive (cf.artinEquiv L y) := by
-  have hu := fundamentalClass_layerEquiv cf cf' E hinv
-  rw [LayerEquiv.cohomologyIso_hom] at hu
-  simpa using artinEquiv_layerHom cf cf' E.toLayerHom hu y
 
 /-- **The Artin map is transported by a layer isomorphism matching the invariant maps**: the Artin
 symbol in `L'` of the image of `a` is the image under `(U/V)^ab ≃ (U'/V')^ab` of the Artin symbol
