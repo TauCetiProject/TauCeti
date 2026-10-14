@@ -166,6 +166,25 @@ lemma coe_mapIso {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme G) :
   unfold mapIso
   rfl
 
+/-- Postcomposing a closed immersion with an isomorphism of group schemes gives a closed
+immersion. -/
+instance isClosedImmersion_comp_iso_hom {H K : Grp (Over X)} (i : K ⟶ G)
+    [IsClosedImmersion i.hom.hom.left] (e : G ≅ H) :
+    IsClosedImmersion (i ≫ e.hom).hom.hom.left := by
+  rw [← closedSubgroupMorphismProperty_iff,
+    (closedSubgroupMorphismProperty X).cancel_right_of_respectsIso,
+    closedSubgroupMorphismProperty_iff]
+  infer_instance
+
+/-- Transporting the closed subgroup represented by a closed immersion along an isomorphism gives
+the closed subgroup represented by the composite. -/
+@[simp]
+lemma mapIso_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ G)
+    [IsClosedImmersion i.hom.hom.left] :
+    mapIso e (mk i) = mk (i ≫ e.hom) :=
+  Subtype.ext (by
+    rw [coe_mapIso, coe_mk, coe_mk, Subobject.mapIsoToOrderIso_apply, Subobject.map_mk])
+
 end ClosedSubgroupScheme
 
 end TauCeti

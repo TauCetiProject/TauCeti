@@ -322,9 +322,9 @@ theorem closedSubgroup_le_iff
     (isNilpotent_rep_rootGenerator n) (Set.range Sum.inl)
   let E := ClosedSubgroupScheme.mapIso e
   have hQ : E (closedSubgroup n) = Q := by
+    simp only [E, closedSubgroup, ClosedSubgroupScheme.mapIso_mk]
     apply Subtype.ext
-    rw [ClosedSubgroupScheme.coe_mapIso, coe_closedSubgroup]
-    change Subobject.mk (inclusion n ≫ e.hom) = Q.1
+    rw [ClosedSubgroupScheme.coe_mk]
     calc
       _ = Subobject.mk (kostantTorusSubsystemToToral
           (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
