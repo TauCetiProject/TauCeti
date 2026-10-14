@@ -260,7 +260,7 @@ theorem finrank_cohomology_zero_relativeDifferentials :
         (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
     finrank k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 0) = X.genus k := by
   obtain ⟨e⟩ := nonempty_iso_relativeDifferentials_canonicalBundle hF hk hdim hex
-  exact InvertibleSheaf.finrank_cohomology_zero_eq_genus hex hdim hF hk
+  exact InvertibleSheaf.finrank_cohomology_zero_eq_genus_of_mk_eq_canonicalBundle hex hdim hF hk
     ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
 
 include hF hk hdim hex in
@@ -268,7 +268,7 @@ include hF hk hdim hex in
 theorem finrank_cohomology_one_relativeDifferentials :
     finrank k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) = 1 := by
   obtain ⟨e⟩ := nonempty_iso_relativeDifferentials_canonicalBundle hF hk hdim hex
-  exact InvertibleSheaf.finrank_cohomology_one_eq_one hex hdim hF hk
+  exact InvertibleSheaf.finrank_cohomology_one_eq_one_of_mk_eq_canonicalBundle hex hdim hF hk
     ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
 
 include hF hk hdim hex in

@@ -170,30 +170,25 @@ theorem finrank_cohomology_one_eq_finrank_cohomology_zero_tensor_dual
 
 /-- **The canonical line bundle has `g` independent global sections**: for every representative
 `ω` of the canonical class, `dim H⁰(X, ω) = g`, where `g = dim H¹(X, 𝒪_X)`. -/
-theorem finrank_cohomology_zero_eq_genus (ω : InvertibleSheaf X)
+theorem finrank_cohomology_zero_eq_genus_of_mk_eq_canonicalBundle (ω : InvertibleSheaf X)
     (hω : LineBundleClass.mk ω = LineBundleClass.mk (canonicalBundle hex hdim hF hk)) :
     haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k
       (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
         (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
     finrank k (Scheme.Modules.Cohomology ω.obj 0) = X.genus k := by
-  have h : LineBundleClass.mk (tensorProduct ω (dual (trivial X))) = LineBundleClass.mk ω := by
-    rw [LineBundleClass.mk_tensorProduct, ← LineBundleClass.inv_mk, LineBundleClass.mk_trivial,
-      inv_one, mul_one]
+  obtain ⟨i⟩ := LineBundleClass.mk_eq_mk_iff.mp (LineBundleClass.mk_tensorProduct_dual_trivial ω)
   rw [Scheme.genus_def, finrank_cohomology_one_eq_finrank_cohomology_zero_tensor_dual
-    hex hdim hF hk (trivial X) ω hω,
-    Scheme.Modules.finrank_cohomology_congr k (LineBundleClass.mk_eq_mk_iff.mp h).some 0]
+    hex hdim hF hk (trivial X) ω hω, Scheme.Modules.finrank_cohomology_congr k i 0]
 
 /-- **The canonical line bundle has one-dimensional `H¹`**: for every representative `ω` of the
 canonical class, `dim H¹(X, ω) = 1`, dual to the constants `H⁰(X, 𝒪_X) = k`. -/
-theorem finrank_cohomology_one_eq_one (ω : InvertibleSheaf X)
+theorem finrank_cohomology_one_eq_one_of_mk_eq_canonicalBundle (ω : InvertibleSheaf X)
     (hω : LineBundleClass.mk ω = LineBundleClass.mk (canonicalBundle hex hdim hF hk)) :
     finrank k (Scheme.Modules.Cohomology ω.obj 1) = 1 := by
-  have h : LineBundleClass.mk (tensorProduct ω (dual (trivial X))) = LineBundleClass.mk ω := by
-    rw [LineBundleClass.mk_tensorProduct, ← LineBundleClass.inv_mk, LineBundleClass.mk_trivial,
-      inv_one, mul_one]
   obtain ⟨e⟩ := nonempty_cohomologyZeroDualEquivCohomologyOne_tensor_dual
     hex hdim hF hk (trivial X) ω hω
-  rw [← Scheme.Modules.finrank_cohomology_congr k (LineBundleClass.mk_eq_mk_iff.mp h).some 1,
+  obtain ⟨i⟩ := LineBundleClass.mk_eq_mk_iff.mp (LineBundleClass.mk_tensorProduct_dual_trivial ω)
+  rw [← Scheme.Modules.finrank_cohomology_congr k i 1,
     ← e.finrank_eq, Subspace.dual_finrank_eq,
     SchemeWeilDivisor.finrank_cohomology_zero_trivial_eq_one_of_isIntegrallyClosedIn
       hex hdim hF hk]
