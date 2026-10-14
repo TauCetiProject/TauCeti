@@ -385,14 +385,18 @@ theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
     (y : Completion (weightedRestrictedSubring T hT)) : y ∈ R := by
   have hpoly (p : MvPolynomial (Fin k) A) : ((weightedPolynomialHom T hT p :
       weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) ∈ R := by
-    induction p using MvPolynomial.induction_on with
-    | C a =>
-      rw [weightedPolynomialHom_C, ← algebraMap_completion_weightedRestrictedSubring_apply]
-      exact hC a
-    | add p q hp hq => simpa only [map_add, Completion.coe_add] using R.add_mem hp hq
-    | mul_X p i hp =>
-      rw [map_mul, Completion.coe_mul, weightedPolynomialHom_X]
-      exact R.mul_mem hp (hX i)
+    -- Write the composite inclusion as polynomial evaluation and apply `eval₂_mem`.
+    have h := MvPolynomial.eval₂_mem (p := p) (s := R)
+      (f := (Completion.coeRingHom.comp (weightedPolynomialHom T hT)).comp MvPolynomial.C)
+      (fun ν _ ↦ by
+        rw [RingHom.comp_apply, RingHom.comp_apply, weightedPolynomialHom_C]
+        exact algebraMap_completion_weightedRestrictedSubring_apply _ _ hT (p.coeff ν) ▸
+          hC (p.coeff ν))
+      (v := Completion.coeRingHom.comp (weightedPolynomialHom T hT) ∘ MvPolynomial.X)
+      (fun i ↦ by
+        rw [Function.comp_apply, RingHom.comp_apply, weightedPolynomialHom_X]
+        exact hX i)
+    rwa [← MvPolynomial.eval₂_comp_left, MvPolynomial.eval₂_eta] at h
   have hdense : Dense (R : Set (Completion (weightedRestrictedSubring T hT))) :=
     Completion.denseRange_coe.dense_of_mapsTo (Completion.continuous_coe _)
       (dense_weightedPolynomials hT) (by
