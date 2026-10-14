@@ -77,6 +77,71 @@ theorem tensorMap_apply (c d : ℕ)
           (TensorWords.component R Q q ∘ₗ g ∘ₗ TensorWords.of R N j) (z i j) := by
   simp [tensorMap]
 
+/-- Tensoring identity maps gives the identity for every pair of cutoffs. -/
+@[simp]
+theorem tensorMap_id (c d : ℕ) :
+    tensorMap c d (LinearMap.id : TensorWords R M →ₗ[R] _)
+      (LinearMap.id : TensorWords R N →ₗ[R] _) = LinearMap.id := by
+  classical
+  apply LinearMap.ext
+  intro z
+  funext p q
+  simp only [tensorMap_apply, LinearMap.id_comp, LinearMap.id_apply]
+  rw [Finset.sum_eq_single p]
+  · rw [Finset.sum_eq_single q]
+    · have hm : TensorWords.component R M p ∘ₗ TensorWords.of R M p = LinearMap.id := by
+        ext x
+        simp
+      have hn : TensorWords.component R N q ∘ₗ TensorWords.of R N q = LinearMap.id := by
+        ext x
+        simp
+      simp [hm, hn]
+    · intro j _ hj
+      have hzero : TensorWords.component R N q ∘ₗ TensorWords.of R N j = 0 := by
+        apply LinearMap.ext
+        intro x
+        simp [TensorWords.component_of_of_ne R N hj]
+      simp [hzero]
+    · simp [Finset.mem_range]; omega
+  · intro i _ hi
+    have hzero : TensorWords.component R M p ∘ₗ TensorWords.of R M i = 0 := by
+      apply LinearMap.ext
+      intro x
+      simp [TensorWords.component_of_of_ne R M hi]
+    simp [hzero]
+  · simp [Finset.mem_range]; omega
+
+/-- The completed tensor action is independent of the chosen valid length bounds. -/
+theorem tensorMap_eq (c d c' d' : ℕ)
+    (f : TensorWords R M →ₗ[R] TensorWords R P)
+    (g : TensorWords R N →ₗ[R] TensorWords R Q)
+    (hc : HasLengthBound c f) (hd : HasLengthBound d g)
+    (hc' : HasLengthBound c' f) (hd' : HasLengthBound d' g) :
+    tensorMap c d f g = tensorMap c' d' f g := by
+  classical
+  have hmono (a b a' b' : ℕ) (ha : HasLengthBound a f) (hb : HasLengthBound b g)
+      (haa' : a ≤ a') (hbb' : b ≤ b') : tensorMap a b f g = tensorMap a' b' f g := by
+    apply LinearMap.ext
+    intro z
+    funext p q
+    simp only [tensorMap_apply]
+    trans ∑ i ∈ Finset.range (p + 1 + a'), ∑ j ∈ Finset.range (q + 1 + b),
+      TensorProduct.map
+        (TensorWords.component R P p ∘ₗ f ∘ₗ TensorWords.of R M i)
+        (TensorWords.component R Q q ∘ₗ g ∘ₗ TensorWords.of R N j) (z i j)
+    · apply Finset.sum_subset (Finset.range_mono (by omega))
+      intro i _ hi
+      have hi' : p + 1 + a ≤ i := by simpa using hi
+      simp [ha.component_comp_of_eq_zero p i hi']
+    · apply Finset.sum_congr rfl
+      intro i _
+      apply Finset.sum_subset (Finset.range_mono (by omega))
+      intro j _ hj
+      have hj' : q + 1 + b ≤ j := by simpa using hj
+      simp [hb.component_comp_of_eq_zero q j hj']
+  exact (hmono c d (max c c') (max d d') hc hd (le_max_left _ _) (le_max_left _ _)).trans
+    (hmono c' d' (max c c') (max d d') hc' hd' (le_max_right _ _) (le_max_right _ _)).symm
+
 /-- Each output coordinate depends only on the indicated finite input rectangle. -/
 theorem tensorMap_apply_eq_of_eq (c d : ℕ)
     (f : TensorWords R M →ₗ[R] TensorWords R P)

@@ -52,8 +52,7 @@ theorem deconcatenation_extend_of_isGradedCoderivation (c : ℕ)
   have htensor : LinearMap.lTensor (TensorWords R M) b ∘ₗ
       LinearMap.rTensor (TensorWords R M) (TensorWords.map (G.koszulTwist q)) =
       TensorProduct.map (TensorWords.map (G.koszulTwist q)) b := by
-    simp only [LinearMap.lTensor_def, LinearMap.rTensor_def, ← TensorProduct.map_comp,
-      LinearMap.id_comp, LinearMap.comp_id]
+    exact LinearMap.lTensor_comp_rTensor _ _ _
   have htensor_apply := LinearMap.congr_fun htensor (TensorWords.deconcatenation R M w)
   simp only [LinearMap.comp_apply] at htensor_apply
   rw [hleft]

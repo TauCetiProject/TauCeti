@@ -58,6 +58,25 @@ theorem HasLengthBound.mono {c d : ℕ} {f : TensorWords R M →ₗ[R] TensorWor
   have hcut : k + 1 + c ≤ k + 1 + d := Nat.add_le_add_left hcd _
   rw [← hf k (truncate R M (k + 1 + d) x), truncate_truncate, min_eq_left hcut, hf]
 
+/-- A bounded map has zero length components on inputs beyond its cutoff. -/
+theorem HasLengthBound.component_comp_of_eq_zero {c : ℕ}
+    {f : TensorWords R M →ₗ[R] TensorWords R N} (hf : HasLengthBound c f)
+    (k i : ℕ) (hi : k + 1 + c ≤ i) :
+    TensorWords.component R N k ∘ₗ f ∘ₗ TensorWords.of R M i = 0 := by
+  apply LinearMap.ext
+  intro x
+  have ht : truncate R M (k + 1 + c) (TensorWords.of R M i x) = 0 := by
+    ext j
+    simp only [truncate_apply, DFinsupp.zero_apply]
+    by_cases hj : j < k + 1 + c
+    · have hij : i ≠ j := by omega
+      rw [ite_eq_left hj]
+      simpa only [← TensorWords.component_apply] using
+        TensorWords.component_of_of_ne R M hij x
+    · simp [hj]
+  simp only [LinearMap.comp_apply, TensorWords.component_apply, LinearMap.zero_apply]
+  rw [← hf k (TensorWords.of R M i x), ht, map_zero, DFinsupp.zero_apply]
+
 /-- Construct a linear map on completed tensor words by reading each output coordinate
 from a finite truncation of the input. It agrees with `f` on finite words when `f` has
 length bound `c`. -/
