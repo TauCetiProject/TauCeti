@@ -198,25 +198,19 @@ theorem eventually_fiberMultiplicitySum_eq [CompactSpace X] [T2Space X] [T2Space
       (.of_forall fun z ↦ hf z) (hne x) ((hO x).2.mem_nhds (hO x).1)
     exact ⟨U, hU, hUO, V, hfx ▸ hV, fun y' hy' ↦ ⟨(hcount y' hy').2.1, (hcount y' hy').2.2⟩⟩
   choose! U hU hUO V hV hcount using hloc
-  -- Outside the interiors of the `U x` the map misses `y`, hence a whole neighbourhood of `y`.
-  have hK : IsCompact (⋃ x ∈ f ⁻¹' {y}, interior (U x))ᶜ :=
-    (isOpen_biUnion fun x _ ↦ isOpen_interior).isClosed_compl.isCompact
-  have hyK : y ∉ f '' (⋃ x ∈ f ⁻¹' {y}, interior (U x))ᶜ := by
-    rintro ⟨x, hxK, hfx⟩
-    exact hxK (mem_iUnion₂.2 ⟨x, hfx, mem_interior_iff_mem_nhds.2 (hU x hfx)⟩)
-  have hV₀ : (f '' (⋃ x ∈ f ⁻¹' {y}, interior (U x))ᶜ)ᶜ ∈ 𝓝 y :=
-    (hK.image hf.continuous).isClosed.isOpen_compl.mem_nhds hyK
-  filter_upwards [hV₀, (biInter_mem hS).2 hV] with y' hy'₀ hy'V
+  -- Since `f` is closed, the preimage of some neighbourhood `t` of `y` lies in the union of the
+  -- `U x`.
+  obtain ⟨t, ht, htU⟩ := mem_comap.1 (hf.continuous.isClosedMap.comap_nhds_le
+    (mem_nhdsSet_iff_forall.2 fun x hx ↦ mem_of_superset (hU x hx) (subset_biUnion_of_mem hx)))
+  filter_upwards [ht, (biInter_mem hS).2 hV] with y' hy't hy'V
   have hy'V' : ∀ x ∈ f ⁻¹' {y}, y' ∈ V x := mem_iInter₂.1 hy'V
   -- The fibre of `y'` is the disjoint union of its pieces inside the `U x`.
   have hfib : f ⁻¹' {y'} = ⋃ x ∈ f ⁻¹' {y}, (f ⁻¹' {y'} ∩ U x) := by
     ext x'
     refine ⟨fun hx' ↦ ?_, fun hx' ↦ ?_⟩
-    · have hx'U : x' ∈ ⋃ x ∈ f ⁻¹' {y}, interior (U x) := by
-        by_contra h
-        exact hy'₀ ⟨x', h, hx'⟩
-      obtain ⟨x, hx, hx'U⟩ := mem_iUnion₂.1 hx'U
-      exact mem_iUnion₂.2 ⟨x, hx, hx', interior_subset hx'U⟩
+    · obtain ⟨x, hx, hx'U⟩ :=
+        mem_iUnion₂.1 (htU (mem_preimage.2 ((mem_singleton_iff.1 hx') ▸ hy't)))
+      exact mem_iUnion₂.2 ⟨x, hx, hx', hx'U⟩
     · obtain ⟨x, -, hx'⟩ := mem_iUnion₂.1 hx'
       exact hx'.1
   have hdisj : (f ⁻¹' {y}).PairwiseDisjoint fun x ↦ f ⁻¹' {y'} ∩ U x :=

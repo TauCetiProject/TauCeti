@@ -40,6 +40,7 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover n`: a topological branched cover of the sphere of degree `n` with
   branch values in `{0, 1, ∞}`.
 * `TauCeti.TopBranchedCover.Iso`: isomorphisms, homeomorphisms commuting with the projections.
+* `TauCeti.TopBranchedCover.IsoClass n`: branched covers of degree `n` up to isomorphism.
 * `TauCeti.TopBranchedCover.localDegree`: the local degree at a point.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
@@ -184,24 +185,23 @@ theorem finsum_mem_preimage_singleton_localDegree (y : OnePoint ℂ) :
   choose V hVU hVo hzV hV using fun z =>
     (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq
       ((hU z).2.mem_nhds (hU z).1)
-  -- Away from the `V z`, the image of `π` is a compact set missing `y`.
-  have hK : IsClosed (X.π '' (⋃ z ∈ F, V z)ᶜ) :=
-    ((isOpen_biUnion fun z _ => hVo z).isClosed_compl.isCompact.image X.π.continuous).isClosed
-  have hyK : y ∉ X.π '' (⋃ z ∈ F, V z)ᶜ := fun ⟨z, hzK, hz⟩ => hzK (mem_biUnion hz (hzV z))
-  have hnear : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked ∧ y' ∉ X.π '' (⋃ z ∈ F, V z)ᶜ ∧
+  -- Since `π` is closed, the preimage of some neighbourhood `t` of `y` lies in the union of the
+  -- `V z`.
+  obtain ⟨t, ht, htV⟩ := mem_comap.1 (X.isProperMap.isClosedMap.comap_nhds_le
+    ((isOpen_biUnion fun z _ => hVo z).mem_nhdsSet.2 fun z hz => mem_biUnion hz (hzV z)))
+  have hnear : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked ∧ y' ∈ t ∧
       ∀ z ∈ F, (V z ∩ X.π ⁻¹' {y'}).ncard = X.localDegree z := by
     have hmarked : (marked \ {y})ᶜ ∈ 𝓝 y :=
       (finite_marked.sdiff).isClosed.isOpen_compl.mem_nhds fun h => h.2 rfl
-    filter_upwards [nhdsWithin_le_nhds hmarked, self_mem_nhdsWithin,
-      nhdsWithin_le_nhds (hK.isOpen_compl.mem_nhds hyK),
-      hF.eventually_all.2 fun z (hz : X.π z = y) => hz ▸ hV z] with y' hy'm hy'y hy'K hy'V
-    exact ⟨fun h => hy'm ⟨h, hy'y⟩, hy'K, hy'V⟩
+    filter_upwards [nhdsWithin_le_nhds hmarked, self_mem_nhdsWithin, nhdsWithin_le_nhds ht,
+      hF.eventually_all.2 fun z (hz : X.π z = y) => hz ▸ hV z] with y' hy'm hy'y hy't hy'V
+    exact ⟨fun h => hy'm ⟨h, hy'y⟩, hy't, hy'V⟩
   -- Pick an unmarked `y'` near `y`: its `n` preimages are distributed among the `V z`.
-  obtain ⟨y', hy'm, hy'K, hy'V⟩ := hnear.exists
+  obtain ⟨y', hy'm, hy't, hy'V⟩ := hnear.exists
   have hcover : X.π ⁻¹' {y'} = ⋃ z ∈ F, V z ∩ X.π ⁻¹' {y'} := by
     refine Subset.antisymm (fun z' hz' => ?_) (iUnion₂_subset fun _ _ => inter_subset_right)
-    have hz'V : z' ∈ ⋃ z ∈ F, V z := by_contra fun h => hy'K ⟨z', h, hz'⟩
-    obtain ⟨z, hz, hz'z⟩ := mem_iUnion₂.1 hz'V
+    obtain ⟨z, hz, hz'z⟩ :=
+      mem_iUnion₂.1 (htV (mem_preimage.2 ((mem_singleton_iff.1 hz') ▸ hy't)))
     exact mem_biUnion hz ⟨hz'z, hz'⟩
   refine Eq.trans ?_ (X.natCard_preimage_singleton y' hy'm)
   rw [Nat.card_coe_set_eq, hcover,
@@ -270,6 +270,30 @@ theorem localDegree_apply (ι : Iso X Y) (z : X.Z) :
   exact (X.localDegree_eq_iff.2 h).symm
 
 end Iso
+
+/-- Branched covers related by isomorphism. -/
+instance isoSetoid (n : ℕ) : Setoid (TopBranchedCover n) where
+  r X Y := Nonempty (Iso X Y)
+  iseqv := ⟨fun X => ⟨Iso.refl X⟩, fun ⟨ι⟩ => ⟨ι.symm⟩, fun ⟨ι⟩ ⟨κ⟩ => ⟨ι.trans κ⟩⟩
+
+/-- Topological branched covers of the sphere of degree `n` with branch values in `{0, 1, ∞}`,
+up to isomorphism. -/
+def IsoClass (n : ℕ) : Type 1 :=
+  Quotient (isoSetoid n)
+
+/-- The isomorphism class of a branched cover. -/
+def IsoClass.mk (X : TopBranchedCover n) : IsoClass n :=
+  Quotient.mk _ X
+
+/-- Two branched covers have the same isomorphism class exactly when they are isomorphic. -/
+@[simp]
+theorem IsoClass.mk_eq_mk_iff {X Y : TopBranchedCover n} :
+    IsoClass.mk X = IsoClass.mk Y ↔ Nonempty (Iso X Y) :=
+  Quotient.eq
+
+/-- Every isomorphism class is the class of a branched cover. -/
+theorem IsoClass.mk_surjective : Function.Surjective (IsoClass.mk (n := n)) :=
+  Quotient.mk_surjective
 
 /-! ### The sphere over itself -/
 
