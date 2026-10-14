@@ -23,18 +23,17 @@ is then a strict contraction for `g₀`. The identity `J² = -1` becomes the lin
 `C J₀ = -J₀ C`. Conversely every `J₀`-antilinear strict contraction `C` comes from the tame
 structure `J = J₀ (1 + C)(1 - C)⁻¹`.
 
-Thus the Cayley transform identifies the `ω`-tame complex structures with the *Cayley ball*
-`TauCeti.SymplecticForm.cayleyBall ω J₀`: the `J₀`-antilinear endomorphisms that strictly
-contract `v ↦ ω(v, J₀ v)`. This ball is convex and contains `0`, the transform of `J₀`. So the
-Cayley transform is a global coordinate system on the tame structures with values in the linear
-space of `J₀`-antilinear endomorphisms. Straight lines in the ball give explicit families of
-tame structures: two tame structures are joined by the inverse transforms of the points of the
-segment between their Cayley transforms. This is the linear algebra behind the contractibility
-of the space of tame almost complex structures.
+Thus the Cayley transform `TauCeti.AlmostComplexStructure.cayley` identifies the `ω`-tame
+complex structures with the *Cayley ball* `TauCeti.SymplecticForm.cayleyBall ω J₀`: the
+`J₀`-antilinear endomorphisms that strictly contract `v ↦ ω(v, J₀ v)`. This ball is convex and
+contains `0`, the transform of `J₀`. So the Cayley transform is a global coordinate system on the
+tame structures with values in the linear space of `J₀`-antilinear endomorphisms. Straight lines
+in the ball give explicit families of tame structures: two tame structures are joined by the
+inverse transforms of the points of the segment between their Cayley transforms. This is the
+linear algebra behind the contractibility of the space of tame almost complex structures.
 
 ## Main definitions
 
-* `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform of `J` relative to `J₀`.
 * `TauCeti.SymplecticForm.cayleyBall`: the `J₀`-antilinear strict contractions for
   `v ↦ ω(v, J₀ v)`.
 * `TauCeti.SymplecticForm.Compatible.cayleyEquiv`: for `ω`-compatible `J₀`, the Cayley transform
@@ -43,6 +42,9 @@ of the space of tame almost complex structures.
 ## Main results
 
 * `TauCeti.SymplecticForm.Compatible.convex_cayleyBall`: the Cayley ball is convex.
+* `TauCeti.SymplecticForm.Tames.isUnit_one_sub_mul` and
+  `TauCeti.SymplecticForm.isUnit_one_sub_of_mem_cayleyBall`: the denominators `1 - J₀ J` of the
+  transform and `1 - C` of its inverse are invertible.
 * `TauCeti.SymplecticForm.Compatible.cayley_mem_cayleyBall`: the Cayley transform of a tame
   structure lies in the Cayley ball.
 * `TauCeti.SymplecticForm.Compatible.cayleyEquiv_symm_apply_toLinearMap`: the inverse transform
@@ -66,31 +68,6 @@ noncomputable section
 namespace TauCeti
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-namespace AlmostComplexStructure
-
-/-- The **Cayley transform** of `J` relative to `J₀`. Writing `J = J₀ A`, that is `A = -J₀ J`,
-it is `(A - 1)(A + 1)⁻¹ = -(1 + J₀ J)(1 - J₀ J)⁻¹`.
-
-The inverse is `Ring.inverse`, so the value is `0` when `1 - J₀ J` is not invertible. For
-structures tamed by a form compatible with `J₀`, the endomorphism `1 - J₀ J` is invertible and
-the transform is a
-bijection onto the Cayley ball (`TauCeti.SymplecticForm.Compatible.cayleyEquiv`). -/
-def cayley (J₀ J : AlmostComplexStructure V) : Module.End ℝ V :=
-  -((1 + J₀.toLinearMap * J.toLinearMap) * Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap))
-
-/-- The defining formula of the Cayley transform. -/
-lemma cayley_def (J₀ J : AlmostComplexStructure V) :
-    J₀.cayley J =
-      -((1 + J₀.toLinearMap * J.toLinearMap) *
-        Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap)) := (rfl)
-
-/-- A complex structure has Cayley transform `0` relative to itself. -/
-@[simp]
-lemma cayley_self (J₀ : AlmostComplexStructure V) : J₀.cayley J₀ = 0 := by
-  simp [cayley_def]
-
-end AlmostComplexStructure
 
 namespace SymplecticForm
 
@@ -148,7 +125,7 @@ theorem Compatible.convex_cayleyBall (h₀ : ω.Compatible J₀) : Convex ℝ (�
 
 /-- For two structures tamed by `ω`, the endomorphism `1 - J₀ J` is invertible, since
 `ω(v, J₀ (v - J₀ J v)) = ω(v, J₀ v) + ω(v, J v)` is positive for `v ≠ 0`. -/
-private lemma Tames.isUnit_one_sub_mul [FiniteDimensional ℝ V] (h₀ : ω.Tames J₀)
+lemma Tames.isUnit_one_sub_mul [FiniteDimensional ℝ V] (h₀ : ω.Tames J₀)
     (h : ω.Tames J) : IsUnit (1 - J₀.toLinearMap * J.toLinearMap) := by
   refine (LinearMap.isUnit_iff_ker_eq_bot _).mpr (LinearMap.ker_eq_bot'.mpr fun v hv => ?_)
   by_contra hne
@@ -216,7 +193,7 @@ theorem Compatible.cayley_mem_cayleyBall [FiniteDimensional ℝ V] (h₀ : ω.Co
 
 /-- An element `C` of the Cayley ball has `1 - C` invertible: `C v = v` is impossible for a strict
 contraction unless `v = 0`. -/
-private lemma isUnit_one_sub_of_mem_cayleyBall [FiniteDimensional ℝ V] {C : Module.End ℝ V}
+lemma isUnit_one_sub_of_mem_cayleyBall [FiniteDimensional ℝ V] {C : Module.End ℝ V}
     (hC : C ∈ ω.cayleyBall J₀) : IsUnit (1 - C) := by
   refine (LinearMap.isUnit_iff_ker_eq_bot _).mpr (LinearMap.ker_eq_bot'.mpr fun v hv => ?_)
   by_contra hne

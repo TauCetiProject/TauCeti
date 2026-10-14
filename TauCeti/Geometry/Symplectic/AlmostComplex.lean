@@ -33,6 +33,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
 * `TauCeti.AlmostComplexStructure.product`: the standard almost complex structure on
   `V × V`, sending `(x, y)` to `(-y, x)`.
+* `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform `-(1 + J₀ J)(1 - J₀ J)⁻¹` of `J`
+  relative to `J₀`.
 
 The definitions follow the standard conventions in McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Section 2.2, specialized here to the
@@ -163,6 +165,27 @@ lemma neg_apply (J : AlmostComplexStructure V) (v : V) :
 @[simp]
 lemma product_apply (v : V × V) :
     product V v = (-v.2, v.1) := rfl
+
+/-- The **Cayley transform** of `J` relative to `J₀`. Writing `J = J₀ A`, that is `A = -J₀ J`,
+it is `(A - 1)(A + 1)⁻¹ = -(1 + J₀ J)(1 - J₀ J)⁻¹`.
+
+The inverse is `Ring.inverse`, so the value is `0` when `1 - J₀ J` is not invertible. For
+structures tamed by a form compatible with `J₀`, the endomorphism `1 - J₀ J` is invertible and
+the transform is a
+bijection onto the Cayley ball (`TauCeti.SymplecticForm.Compatible.cayleyEquiv`). -/
+noncomputable def cayley (J₀ J : AlmostComplexStructure V) : Module.End ℝ V :=
+  -((1 + J₀.toLinearMap * J.toLinearMap) * Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap))
+
+/-- The defining formula of the Cayley transform. -/
+lemma cayley_def (J₀ J : AlmostComplexStructure V) :
+    J₀.cayley J =
+      -((1 + J₀.toLinearMap * J.toLinearMap) *
+        Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap)) := (rfl)
+
+/-- A complex structure has Cayley transform `0` relative to itself. -/
+@[simp]
+lemma cayley_self (J₀ : AlmostComplexStructure V) : J₀.cayley J₀ = 0 := by
+  simp [cayley_def]
 
 end AlmostComplexStructure
 
