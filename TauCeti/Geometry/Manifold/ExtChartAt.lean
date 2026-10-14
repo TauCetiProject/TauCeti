@@ -135,14 +135,6 @@ theorem IsChartMeasurable.image_extChartAt [MeasurableSpace E] {s : Set M}
   rw [(extChartAt I x).image_eq_target_inter_inv_preimage hsub]
   exact hs x
 
-/-- The coordinate image of the difference of two open sets is measurable when the first set
-lies in the chart source. -/
-theorem _root_.IsOpen.measurableSet_image_extChartAt_sdiff
-    [MeasurableSpace E] [OpensMeasurableSpace E] {u v : Set M}
-    (hu : IsOpen u) (hv : IsOpen v) (x : M) (hs : u ⊆ (extChartAt I x).source) :
-    MeasurableSet ((extChartAt I x) '' (u \ v)) :=
-  (hu.isChartMeasurable.diff hv.isChartMeasurable).image_extChartAt x (Set.sdiff_subset.trans hs)
-
 /-- Every point has an open neighborhood whose extended-chart image is contained in a compact
 subset of the chart target. The manifold need not be Hausdorff. -/
 theorem exists_precompact_extChartAt_neighborhood [LocallyCompactSpace H] (x : M) :

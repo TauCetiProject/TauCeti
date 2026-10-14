@@ -16,10 +16,14 @@ model.
 
 Mathlib states chart independence for charts of the atlas. The charts produced by local normal
 forms, such as the charts of `Manifold.IsImmersionAt`, are only known to lie in the maximal atlas,
-so the statements here are proved for every chart of `IsManifold.maximalAtlas`. Membership in the
+so the chart-independence statements here are proved for every chart of
+`IsManifold.maximalAtlas`. Membership in the
 maximal atlas makes a chart a local diffeomorphism, so Mathlib's
 `IsLocalDiffeomorphAt.isInteriorPoint_iff` gives chart independence without a global `IsManifold`
 assumption on the charted space.
+
+Under `IsManifold` at nonzero regularity, the preferred extended chart also sends an intrinsic
+interior point to coordinates with a neighborhood inside the extended chart target.
 -/
 
 public section
