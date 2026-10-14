@@ -41,16 +41,20 @@ def affinePullbackQ (A : ℂ →ᴬ[ℝ] ℂ) (P Q : ℂ → ℝ) (z : ℂ) : �
   oneForm P Q (A z) (A.contLinear Complex.I)
 
 /-- The horizontal pullback coefficient in real coordinates. -/
+@[simp]
 theorem affinePullbackP_apply (A : ℂ →ᴬ[ℝ] ℂ) (P Q : ℂ → ℝ) (z : ℂ) :
     affinePullbackP A P Q z =
-      P (A z) * (A.contLinear 1).re + Q (A z) * (A.contLinear 1).im :=
-  oneForm_apply P Q (A z) (A.contLinear 1)
+      P (A z) * (A.linear 1).re + Q (A z) * (A.linear 1).im := by
+  simpa only [affinePullbackP, ContinuousAffineMap.coe_contLinear] using
+    oneForm_apply P Q (A z) (A.contLinear 1)
 
 /-- The vertical pullback coefficient in real coordinates. -/
+@[simp]
 theorem affinePullbackQ_apply (A : ℂ →ᴬ[ℝ] ℂ) (P Q : ℂ → ℝ) (z : ℂ) :
     affinePullbackQ A P Q z =
-      P (A z) * (A.contLinear Complex.I).re + Q (A z) * (A.contLinear Complex.I).im :=
-  oneForm_apply P Q (A z) (A.contLinear Complex.I)
+      P (A z) * (A.linear Complex.I).re + Q (A z) * (A.linear Complex.I).im := by
+  simpa only [affinePullbackQ, ContinuousAffineMap.coe_contLinear] using
+    oneForm_apply P Q (A z) (A.contLinear Complex.I)
 
 /-- The coefficient definitions give the actual pullback as a continuous linear map. -/
 theorem oneForm_affinePullback (A : ℂ →ᴬ[ℝ] ℂ) (P Q : ℂ → ℝ) (z : ℂ) :
@@ -141,7 +145,11 @@ theorem integrableOn_curl_affinePullback_iff (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set 
   rw [A.integrableOn_image_iff volume hs,
     integrableOn_congr_fun
       (fun z hz ↦ curl_affinePullback A.toContinuousAffineMap (hP z hz) (hQ z hz)) hs]
-  exact integrable_smul_iff A.linear.isUnit_det'.ne_zero _
+  simp only [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
+    AffineEquiv.linear_toAffineMap, ContinuousAffineEquiv.coe_toContinuousAffineMap]
+  simpa only [IntegrableOn, Pi.smul_def, smul_eq_mul, Function.comp_def] using
+    (integrable_smul_iff (μ := volume.restrict s) A.linear.isUnit_det'.ne_zero
+      (curl P Q ∘ A))
 
 /-- Curl integration transports with the orientation factor `det A / |det A|`. The source
 hypotheses hold, in particular, for fields locally real `C¹` on the affine image. -/
@@ -155,8 +163,12 @@ theorem integral_curl_affinePullback (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
         ∫ z in A '' s, curl P Q z := by
   calc
     _ = ∫ z in s, A.linear.toLinearMap.det *
-        curl P Q (A z) := setIntegral_congr_fun hs fun z hz ↦
-          curl_affinePullback A.toContinuousAffineMap (hP z hz) (hQ z hz)
+        curl P Q (A z) := by
+      apply setIntegral_congr_fun hs
+      intro z hz
+      simpa only [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
+        AffineEquiv.linear_toAffineMap, ContinuousAffineEquiv.coe_toContinuousAffineMap] using
+        curl_affinePullback A.toContinuousAffineMap (hP z hz) (hQ z hz)
     _ = _ := by
       rw [integral_const_mul, A.integral_image volume hs, smul_eq_mul]
       field_simp [abs_ne_zero.mpr A.linear.isUnit_det'.ne_zero]
@@ -180,17 +192,21 @@ theorem curl_coordinateSwap {P Q : ℂ → ℝ} {z : ℂ}
   have hp : affinePullbackP Complex.coordinateSwapCLE.toContinuousAffineEquiv.toContinuousAffineMap
       P Q = Q ∘ Complex.coordinateSwapCLE := by
     ext w
-    rw [affinePullbackP_apply,
-      ContinuousLinearEquiv.toContinuousAffineEquiv_toContinuousAffineMap]
-    simp only [ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearEquiv.coe_coe,
+    rw [affinePullbackP_apply]
+    simp only [← ContinuousAffineMap.coe_contLinear_eq_linear,
+      ContinuousLinearEquiv.toContinuousAffineEquiv_toContinuousAffineMap,
+      ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.coe_coe,
+      ContinuousLinearEquiv.coe_coe,
       Complex.coordinateSwapCLE_apply, ContinuousLinearMap.toContinuousAffineMap_contLinear,
       Complex.one_im, Complex.one_re, mul_zero, mul_one, zero_add, Function.comp_apply]
   have hq : affinePullbackQ Complex.coordinateSwapCLE.toContinuousAffineEquiv.toContinuousAffineMap
       P Q = P ∘ Complex.coordinateSwapCLE := by
     ext w
-    rw [affinePullbackQ_apply,
-      ContinuousLinearEquiv.toContinuousAffineEquiv_toContinuousAffineMap]
-    simp only [ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearEquiv.coe_coe,
+    rw [affinePullbackQ_apply]
+    simp only [← ContinuousAffineMap.coe_contLinear_eq_linear,
+      ContinuousLinearEquiv.toContinuousAffineEquiv_toContinuousAffineMap,
+      ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.coe_coe,
+      ContinuousLinearEquiv.coe_coe,
       Complex.coordinateSwapCLE_apply, ContinuousLinearMap.toContinuousAffineMap_contLinear,
       Complex.I_im, Complex.I_re, mul_one, mul_zero, add_zero, Function.comp_apply]
   have he := curl_affinePullback

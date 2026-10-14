@@ -79,6 +79,10 @@ theorem integrableOn_image_iff (A : E ≃ᴬ[ℝ] E) (μ : Measure E) [IsAddHaar
     (f := A) (f' := fun _ ↦ A.toContinuousAffineMap.contLinear)
     (fun _ _ ↦ A.toContinuousAffineMap.hasFDerivWithinAt)
     A.injective.injOn f]
-  exact integrable_smul_iff (abs_ne_zero.mpr A.linear.isUnit_det'.ne_zero) _
+  simp only [ContinuousLinearMap.det, ContinuousAffineMap.coe_contLinear_eq_linear,
+    ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap, AffineEquiv.linear_toAffineMap]
+  simpa only [IntegrableOn, Pi.smul_def, Function.comp_def] using
+    (integrable_smul_iff (μ := μ.restrict s) (abs_ne_zero.mpr A.linear.isUnit_det'.ne_zero)
+      (f ∘ A))
 
 end ContinuousAffineEquiv

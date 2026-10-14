@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Basic
@@ -47,15 +46,6 @@ open MeasureTheory Set
 namespace AbsolutelyContinuousOnInterval
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {γ V : ℝ → F} {a b : ℝ}
-
-/-- Composing an absolutely continuous curve with a continuous affine map preserves absolute
-continuity. No bound on the curve's speed is needed. -/
-theorem comp_continuousAffineMap {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (A : F →ᴬ[ℝ] G) :
-    AbsolutelyContinuousOnInterval (A ∘ γ) a b := by
-  rw [A.decomp]
-  exact ((isometry_add_right (A 0)).lipschitzWith.comp
-    A.contLinear.lipschitzWith).comp_absolutelyContinuousOnInterval hγ
 
 /-- *Fundamental theorem of calculus* along an absolutely continuous curve: if `γ` is absolutely
 continuous on `uIcc a b` with derivative `V t` at almost every `t ∈ uIoc a b` and `φ` is `C¹`, then

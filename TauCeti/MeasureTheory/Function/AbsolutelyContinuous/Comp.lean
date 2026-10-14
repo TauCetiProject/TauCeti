@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
@@ -33,6 +34,16 @@ theorem LocallyLipschitzOn.comp_absolutelyContinuousOnInterval
   exact hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
 
 namespace AbsolutelyContinuousOnInterval
+
+/-- Composing an absolutely continuous curve with a continuous affine map preserves absolute
+continuity. No bound on the curve's speed is needed. -/
+theorem comp_continuousAffineMap {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {γ : ℝ → F} {a b : ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (A : F →ᴬ[ℝ] G) :
+    AbsolutelyContinuousOnInterval (A ∘ γ) a b := by
+  rw [A.decomp]
+  exact ((isometry_add_right (A 0)).lipschitzWith.comp
+    A.contLinear.lipschitzWith).comp_absolutelyContinuousOnInterval hγ
 
 /-- Composing an absolutely continuous curve with a map that is `C¹` at every point of its trace
 preserves absolute continuity. The smoothness assumption is local to the trace. -/
