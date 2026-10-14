@@ -28,7 +28,7 @@ existing matrix-product model.
 
 ## Main results
 
-* `TauCeti.exists_hyperbolicSix_halfSpin_equiv_stdRep_and_dual`: the even half-spin module is the
+* `TauCeti.nonempty_hyperbolicSix_halfSpin_equiv_stdRep_and_dual`: the even half-spin module is the
   pulled-back standard `GL₄` module, and the odd half-spin module is its dual.
 
 ## References
@@ -86,8 +86,8 @@ theorem coe_hyperbolicSixSpinToGeneralLinear_apply
     (hyperbolicSixSpinToGeneralLinear K g : Matrix (Fin 4) (Fin 4) K) =
       (hyperbolicSixEvenEquivMatrixProd K
         (spinGroupToEven (splitEvenForm K 3) g)).1 := by
-  change (hyperbolicSixEvenUnitaryEquivGeneralLinear K
-      (spinGroupToEvenUnitary (splitEvenForm K 3) g) : Matrix (Fin 4) (Fin 4) K) = _
+  rw [hyperbolicSixSpinToGeneralLinear, MonoidHom.comp_apply]
+  simp only [MulEquiv.coe_toMonoidHom]
   rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
   have heven : evenUnitaryGroupEvenPart (splitEvenForm K 3)
       (spinGroupToEvenUnitary (splitEvenForm K 3) g) =
@@ -133,13 +133,11 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdRep :
   let ep : spinPlus (splitEvenForm K 3) P ≃ₗ[K]
       (spinPlusSubrep P hline).toSubmodule :=
     LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
-  refine ⟨Representation.Equiv.mk (ep.symm.trans b.equivFun) ?_⟩
-  intro g
-  apply LinearMap.ext
-  intro s
-  have haction : ep.symm ((spinPlusSubrep P hline).toRepresentation g s) =
-      spinPlusAction (splitEvenForm K 3) P hline
-        (spinGroupToEven (splitEvenForm K 3) g) (ep.symm s) := by
+  refine ⟨Representation.Equiv.ofBasisAction _
+    ((stdRep K 4).comp (hyperbolicSixSpinToGeneralLinear K)) ep.symm b
+    (fun g ↦ spinPlusAction (splitEvenForm K 3) P hline
+      (spinGroupToEven (splitEvenForm K 3) g)) ?_ ?_⟩
+  · intro g s
     apply Subtype.ext
     have hsub :
         ((ep.symm ((spinPlusSubrep P hline).toRepresentation g s) :
@@ -155,40 +153,19 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdRep :
     exact hsub.trans (congrArg (fun x ↦
       ((spinPlusAction (splitEvenForm K 3) P hline x (ep.symm s) :
         spinPlus (splitEvenForm K 3) P) : ExteriorAlgebra K P.W)) heven.symm)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-    MonoidHom.comp_apply, stdRep_apply_apply]
-  rw [haction]
-  have hmatrix :
-      (hyperbolicSixSpinToGeneralLinear K g : Matrix (Fin 4) (Fin 4) K) =
-        Algebra.endAlgEquivMatrix K (spinPlus (splitEvenForm K 3) P)
-          (hyperbolicSix_spinPlus_finrank K)
-          (spinPlusAction (splitEvenForm K 3) P hline
-            (spinGroupToEven (splitEvenForm K 3) g)) := by
-    simpa only [P, hline] using
-      hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix K g
-  calc
-    b.repr (spinPlusAction (splitEvenForm K 3) P hline
-        (spinGroupToEven (splitEvenForm K 3) g) (ep.symm s)) =
-        Matrix.mulVec
-          (Algebra.endAlgEquivMatrix K (spinPlus (splitEvenForm K 3) P)
-            (hyperbolicSix_spinPlus_finrank K)
-            (spinPlusAction (splitEvenForm K 3) P hline
-              (spinGroupToEven (splitEvenForm K 3) g)))
-          (b.repr (ep.symm s)) := by
-      simpa only [b] using
-        (Algebra.endAlgEquivMatrix_mulVec_repr K (spinPlus (splitEvenForm K 3) P)
-          (hyperbolicSix_spinPlus_finrank K)
-          (spinPlusAction (splitEvenForm K 3) P hline
-            (spinGroupToEven (splitEvenForm K 3) g)) (ep.symm s)).symm
-    _ = Matrix.mulVec
-        (hyperbolicSixSpinToGeneralLinear K g : Matrix (Fin 4) (Fin 4) K)
-        (b.repr (ep.symm s)) := by
-      exact congrArg (fun A ↦ Matrix.mulVec A (b.repr (ep.symm s))) hmatrix.symm
+  · intro g s
+    simp only [MonoidHom.comp_apply, stdRep_apply_apply]
+    rw [hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix]
+    simpa only [P, hline, b] using
+      Algebra.endAlgEquivMatrix_mulVec_repr K (spinPlus (splitEvenForm K 3) P)
+        (hyperbolicSix_spinPlus_finrank K)
+        (spinPlusAction (splitEvenForm K 3) P hline
+          (spinGroupToEven (splitEvenForm K 3) g)) s
 
 /-- For three hyperbolic planes, the even half-spin representation is the standard
 four-dimensional representation pulled back along `hyperbolicSixSpinToGeneralLinear`, and the odd
 half-spin representation is its dual. -/
-theorem exists_hyperbolicSix_halfSpin_equiv_stdRep_and_dual :
+theorem nonempty_hyperbolicSix_halfSpin_equiv_stdRep_and_dual :
     Nonempty
         ((spinPlusSubrep (splitEvenPolarization K 3)
           (splitEvenPolarization_line K 3)).toRepresentation.Equiv

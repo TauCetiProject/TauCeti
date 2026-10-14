@@ -127,15 +127,13 @@ theorem det_endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) (f : Modul
 
 /-- The matrix supplied by `endAlgEquivMatrix` acts on coordinates as the original endomorphism.
 This is the computation rule for the otherwise opaque choice of basis. -/
+@[simp]
 theorem endAlgEquivMatrix_mulVec_repr {n : ℕ} (hn : Module.finrank K M = n)
     (f : Module.End K M) (x : M) :
     Matrix.mulVec (endAlgEquivMatrix K M hn f)
         ((Module.finBasisOfFinrankEq K M hn).repr x) =
       (Module.finBasisOfFinrankEq K M hn).repr (f x) := by
-  change Matrix.mulVec
-      (LinearMap.toMatrix (Module.finBasisOfFinrankEq K M hn)
-        (Module.finBasisOfFinrankEq K M hn) f)
-      ((Module.finBasisOfFinrankEq K M hn).repr x) = _
+  rw [endAlgEquivMatrix]
   exact LinearMap.toMatrix_mulVec_repr (Module.finBasisOfFinrankEq K M hn)
     (Module.finBasisOfFinrankEq K M hn) f x
 

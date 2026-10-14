@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.MatrixProd
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.RepresentationTheory.Intertwining
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The half-spin representations of the four-dimensional Spin group
@@ -93,47 +94,43 @@ theorem
   let em : spinMinus Q P ≃ₗ[K] (spinMinusSubrep P hline).toSubmodule :=
     LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm
   refine ⟨hline, f, ⟨?_, ?_⟩⟩
-  · refine ⟨Representation.Equiv.mk (ep.symm.trans bplus.equivFun) ?_⟩
-    intro g
-    apply LinearMap.ext
-    intro s
-    have haction : ep.symm ((spinPlusSubrep P hline).toRepresentation g s) =
-        spinPlusAction Q P hline (spinGroupToEven Q g) (ep.symm s) := by
+  · refine ⟨Representation.Equiv.ofBasisAction _
+      ((stdSLRep K 2).comp ((MonoidHom.fst _ _).comp f.toMonoidHom)) ep.symm bplus
+      (fun g ↦ spinPlusAction Q P hline (spinGroupToEven Q g)) ?_ ?_⟩
+    · intro g s
       apply Subtype.ext
       have heven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
         Subtype.ext (coe_spinGroupToEven_apply Q g)
       rw [heven]
       simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
         (coe_spinPlusAction_spinGroup_apply P hline g (ep.symm s)).symm
-    -- Transport the actual subrepresentation to its parity submodule, then use Mathlib's
-    -- coordinate formula for the matrix of an endomorphism.
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      MonoidHom.comp_apply, MonoidHom.coe_fst, MulEquiv.coe_toMonoidHom, stdSLRep_apply_apply]
-    have hfactor : ((f g).1 : Matrix (Fin 2) (Fin 2) K) =
-        LinearMap.toMatrix bplus bplus
-          (spinPlusAction Q P hline (spinGroupToEven Q g)) := congrArg Prod.fst (hmatrix g)
-    rw [haction, hfactor]
-    exact (LinearMap.toMatrix_mulVec_repr bplus bplus
-      (spinPlusAction Q P hline (spinGroupToEven Q g)) (ep.symm s)).symm
-  · refine ⟨Representation.Equiv.mk (em.symm.trans bminus.equivFun) ?_⟩
-    intro g
-    apply LinearMap.ext
-    intro s
-    have haction : em.symm ((spinMinusSubrep P hline).toRepresentation g s) =
-        spinMinusAction Q P hline (spinGroupToEven Q g) (em.symm s) := by
+    · intro g s
+      simp only [MonoidHom.comp_apply, MonoidHom.coe_fst, MulEquiv.coe_toMonoidHom,
+        stdSLRep_apply_apply]
+      have hfactor : ((f g).1 : Matrix (Fin 2) (Fin 2) K) =
+          LinearMap.toMatrix bplus bplus
+            (spinPlusAction Q P hline (spinGroupToEven Q g)) := congrArg Prod.fst (hmatrix g)
+      rw [hfactor]
+      exact LinearMap.toMatrix_mulVec_repr bplus bplus
+        (spinPlusAction Q P hline (spinGroupToEven Q g)) s
+  · refine ⟨Representation.Equiv.ofBasisAction _
+      ((stdSLRep K 2).comp ((MonoidHom.snd _ _).comp f.toMonoidHom)) em.symm bminus
+      (fun g ↦ spinMinusAction Q P hline (spinGroupToEven Q g)) ?_ ?_⟩
+    · intro g s
       apply Subtype.ext
       have heven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
         Subtype.ext (coe_spinGroupToEven_apply Q g)
       rw [heven]
       simpa only [em, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
         (coe_spinMinusAction_spinGroup_apply P hline g (em.symm s)).symm
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      MonoidHom.comp_apply, MonoidHom.coe_snd, MulEquiv.coe_toMonoidHom, stdSLRep_apply_apply]
-    have hfactor : ((f g).2 : Matrix (Fin 2) (Fin 2) K) =
-        LinearMap.toMatrix bminus bminus
-          (spinMinusAction Q P hline (spinGroupToEven Q g)) := congrArg Prod.snd (hmatrix g)
-    rw [haction, hfactor]
-    exact (LinearMap.toMatrix_mulVec_repr bminus bminus
-      (spinMinusAction Q P hline (spinGroupToEven Q g)) (em.symm s)).symm
+    · intro g s
+      simp only [MonoidHom.comp_apply, MonoidHom.coe_snd, MulEquiv.coe_toMonoidHom,
+        stdSLRep_apply_apply]
+      have hfactor : ((f g).2 : Matrix (Fin 2) (Fin 2) K) =
+          LinearMap.toMatrix bminus bminus
+            (spinMinusAction Q P hline (spinGroupToEven Q g)) := congrArg Prod.snd (hmatrix g)
+      rw [hfactor]
+      exact LinearMap.toMatrix_mulVec_repr bminus bminus
+        (spinMinusAction Q P hline (spinGroupToEven Q g)) s
 
 end TauCeti
