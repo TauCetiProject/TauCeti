@@ -12,8 +12,10 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 # Interior products of rough differential forms
 
 Insertion of a vector field into the first slot lowers the degree of a bundle-valued form by
-one. It is linear in the field and in the form, squares to zero, and anticommutes with insertion
-of another field. Pullback commutes with insertion of related fields, also within arbitrary sets.
+one and squares to zero without further continuity assumptions on the coefficient fibres.
+Additivity in the field and the form requires `ContinuousAdd` on each fibre, scalar laws require
+`ContinuousConstSMul ℝ`, and anticommutation requires `IsTopologicalAddGroup`.
+Pullback commutes with insertion of related fields, also within arbitrary sets.
 These operations provide the algebraic input for Cartan's calculus and contraction of volume forms.
 
 We use Mathlib's `AlternatingMap.curryLeft` and retain continuity of the remaining variables.
@@ -70,6 +72,7 @@ theorem bundleInterior_zero (X : (x : M) → TangentSpace I x) :
   simp
 
 /-- Interior product is additive in the vector field. -/
+@[simp]
 theorem bundleInterior_add_field [∀ x, ContinuousAdd (V x)]
     (X Y : (x : M) → TangentSpace I x) (ω : RoughBundleForm I M V (k + 1)) :
     bundleInterior (X + Y) ω = bundleInterior X ω + bundleInterior Y ω := by
@@ -78,6 +81,7 @@ theorem bundleInterior_add_field [∀ x, ContinuousAdd (V x)]
   exact (ω x).toAlternatingMap.map_vecCons_add v (X x) (Y x)
 
 /-- Interior product respects pointwise scalar multiplication of the vector field. -/
+@[simp]
 theorem bundleInterior_smul_field [∀ x, ContinuousConstSMul ℝ (V x)]
     (a : M → ℝ) (X : (x : M) → TangentSpace I x) (ω : RoughBundleForm I M V (k + 1)) :
     bundleInterior (fun x ↦ a x • X x) ω = fun x ↦ a x • bundleInterior X ω x := by
@@ -94,6 +98,7 @@ theorem bundleInterior_add [∀ x, ContinuousAdd (V x)]
   simp
 
 /-- Interior product respects pointwise scalar multiplication of the form. -/
+@[simp]
 theorem bundleInterior_smul [∀ x, ContinuousConstSMul ℝ (V x)]
     (a : M → ℝ) (X : (x : M) → TangentSpace I x) (ω : RoughBundleForm I M V (k + 1)) :
     bundleInterior X (fun x ↦ a x • ω x) = fun x ↦ a x • bundleInterior X ω x := by
@@ -179,10 +184,6 @@ def RoughForm.interior (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 1)) : RoughForm I M F k :=
   bundleInterior X ω
 
-/-- The fixed-coefficient interior product is the bundle interior product. -/
-theorem RoughForm.interior_eq_bundleInterior (X : (x : M) → TangentSpace I x)
-    (ω : RoughForm I M F (k + 1)) : ω.interior X = bundleInterior X ω := (rfl)
-
 /-- Evaluation of the interior product is insertion into the first slot. -/
 @[simp]
 theorem RoughForm.interior_apply (X : (x : M) → TangentSpace I x)
@@ -201,12 +202,33 @@ theorem RoughForm.interior_zero (X : (x : M) → TangentSpace I x) :
     (0 : RoughForm I M F (k + 1)).interior X = 0 :=
   bundleInterior_zero X
 
+/-- Interior product is additive in the vector field. -/
+@[simp]
+theorem RoughForm.interior_add_field [ContinuousAdd F]
+    (X Y : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 1)) :
+    ω.interior (X + Y) = ω.interior X + ω.interior Y :=
+  bundleInterior_add_field X Y ω
+
+/-- Interior product respects pointwise scalar multiplication of the vector field. -/
+@[simp]
+theorem RoughForm.interior_smul_field [ContinuousConstSMul ℝ F]
+    (a : M → ℝ) (X : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 1)) :
+    ω.interior (fun x ↦ a x • X x) = fun x ↦ a x • ω.interior X x :=
+  bundleInterior_smul_field a X ω
+
 /-- Interior product distributes over addition of forms. -/
 @[simp]
 theorem RoughForm.interior_add [ContinuousAdd F]
     (X : (x : M) → TangentSpace I x) (ω η : RoughForm I M F (k + 1)) :
     (ω + η).interior X = ω.interior X + η.interior X :=
   bundleInterior_add X ω η
+
+/-- Interior product respects pointwise scalar multiplication of the form. -/
+@[simp]
+theorem RoughForm.interior_smul_pointwise [ContinuousConstSMul ℝ F]
+    (a : M → ℝ) (X : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 1)) :
+    RoughForm.interior X (fun x ↦ a x • ω x) = fun x ↦ a x • ω.interior X x :=
+  bundleInterior_smul a X ω
 
 /-- Interior product commutes with constant scalar multiplication of forms. -/
 @[simp]
@@ -227,6 +249,33 @@ theorem RoughForm.interior_swap [IsTopologicalAddGroup F]
     (ω.interior Y).interior X = -(ω.interior X).interior Y :=
   bundleInterior_swap X Y ω
 
+/-- Within-set pullback of a fixed-coefficient interior product, for fields related at a point. -/
+theorem mpullbackWithin_interior_at {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
+    (f : M → M') (s : Set M) (X : (x : M) → TangentSpace I x)
+    (Y : (y : M') → TangentSpace I' y) (ω : RoughForm I' M' F (k + 1)) {x : M}
+    (hXY : mfderivWithin I I' f s x (X x) = Y (f x)) :
+    mpullbackWithin I I' f s (ω.interior Y) x =
+      (mpullbackWithin I I' f s ω).interior X x := by
+  ext v
+  simpa only [mpullbackWithin_apply, RoughForm.interior_apply,
+    bundleMpullbackWithin_apply, bundleInterior_apply] using
+    congrArg (fun η ↦ η v) (bundleMpullbackWithin_interior_at f s X Y ω hXY)
+
+/-- Pullback of a fixed-coefficient interior product, for fields related at a point. -/
+theorem mpullback_interior_at {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
+    (f : M → M') (X : (x : M) → TangentSpace I x)
+    (Y : (y : M') → TangentSpace I' y) (ω : RoughForm I' M' F (k + 1)) {x : M}
+    (hXY : mfderiv I I' f x (X x) = Y (f x)) :
+    mpullback I I' f (ω.interior Y) x = (mpullback I I' f ω).interior X x := by
+  ext v
+  simpa only [mpullback_apply, RoughForm.interior_apply,
+    bundleMpullback_apply, bundleInterior_apply] using
+    congrArg (fun η ↦ η v) (bundleMpullback_interior_at f X Y ω hXY)
+
 /-- Within-set pullback of a fixed-coefficient interior product, for related fields. -/
 theorem mpullbackWithin_interior {E' H' M' : Type*}
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -234,9 +283,8 @@ theorem mpullbackWithin_interior {E' H' M' : Type*}
     (f : M → M') (s : Set M) (X : (x : M) → TangentSpace I x)
     (Y : (y : M') → TangentSpace I' y) (ω : RoughForm I' M' F (k + 1))
     (hXY : ∀ x, mfderivWithin I I' f s x (X x) = Y (f x)) :
-    mpullbackWithin I I' f s (ω.interior Y) = (mpullbackWithin I I' f s ω).interior X := by
-  simp only [RoughForm.interior_eq_bundleInterior, mpullbackWithin_eq_bundleMpullbackWithin]
-  exact bundleMpullbackWithin_interior f s X Y ω hXY
+    mpullbackWithin I I' f s (ω.interior Y) = (mpullbackWithin I I' f s ω).interior X :=
+  funext fun x ↦ mpullbackWithin_interior_at f s X Y ω (hXY x)
 
 /-- Pullback of a fixed-coefficient interior product, for related fields. -/
 theorem mpullback_interior {E' H' M' : Type*}
@@ -245,9 +293,8 @@ theorem mpullback_interior {E' H' M' : Type*}
     (f : M → M') (X : (x : M) → TangentSpace I x)
     (Y : (y : M') → TangentSpace I' y) (ω : RoughForm I' M' F (k + 1))
     (hXY : ∀ x, mfderiv I I' f x (X x) = Y (f x)) :
-    mpullback I I' f (ω.interior Y) = (mpullback I I' f ω).interior X := by
-  simp only [RoughForm.interior_eq_bundleInterior, mpullback_eq_bundleMpullback]
-  exact bundleMpullback_interior f X Y ω hXY
+    mpullback I I' f (ω.interior Y) = (mpullback I I' f ω).interior X :=
+  funext fun x ↦ mpullback_interior_at f X Y ω (hXY x)
 
 /-- On the model space, the interior product is Mathlib's continuous currying operation. -/
 theorem RoughForm.interior_modelSpace {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]

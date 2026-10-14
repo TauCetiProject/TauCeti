@@ -207,11 +207,6 @@ def mpullbackWithin (I : ModelWithCorners ℝ E H) (I' : ModelWithCorners ℝ E'
     (f : M → M') (s : Set M) (ω : RoughForm I' M' F k) : RoughForm I M F k :=
   bundleMpullbackWithin I I' f s ω
 
-/-- Fixed-coefficient within-set pullback is the trivial-bundle specialization. -/
-theorem mpullbackWithin_eq_bundleMpullbackWithin (f : M → M') (s : Set M)
-    (ω : RoughForm I' M' F k) :
-    mpullbackWithin I I' f s ω = bundleMpullbackWithin I I' f s ω := (rfl)
-
 /-- Evaluation of fixed-coefficient within-set pullback on tangent vectors. -/
 @[simp]
 theorem mpullbackWithin_apply (f : M → M') (s : Set M) (ω : RoughForm I' M' F k)
@@ -224,10 +219,6 @@ theorem mpullbackWithin_apply (f : M → M') (s : Set M) (ω : RoughForm I' M' F
 def mpullback (I : ModelWithCorners ℝ E H) (I' : ModelWithCorners ℝ E' H')
     (f : M → M') (ω : RoughForm I' M' F k) : RoughForm I M F k :=
   bundleMpullback I I' f ω
-
-/-- Fixed-coefficient pullback is the trivial-bundle specialization. -/
-theorem mpullback_eq_bundleMpullback (f : M → M') (ω : RoughForm I' M' F k) :
-    mpullback I I' f ω = bundleMpullback I I' f ω := (rfl)
 
 /-- Evaluation of fixed-coefficient pullback on tangent vectors. -/
 @[simp]
