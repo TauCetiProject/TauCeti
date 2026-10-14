@@ -21,8 +21,10 @@ value at the north pole.
 ## Main declarations
 
 * `TauCeti.sphere2GroupHomotopyEquivMoore`: `G × Ω^M(ΩG) ≃ₕ Map(S², G)`.
-* `TauCeti.sphere2GroupHomotopyEquivMoore_apply_north`: the value at the north pole of the image
-  of `(g, γ)` is `g`.
+* `TauCeti.sphere2GroupHomotopyEquivMoore_apply_north` and
+  `TauCeti.sphere2GroupHomotopyEquivMoore_symm_apply_fst`: the value at the north pole of the image
+  of `(g, γ)` is `g`, and the group coordinate of the image under the homotopy inverse is the value
+  at the north pole.
 
 ## References
 
@@ -70,5 +72,12 @@ theorem sphere2GroupHomotopyEquivMoore_apply_north (g : G)
       (g, MooreLoopSpace.homotopyEquivPath (Path.refl (1 : G)) γ))
   rw [Homeomorph.symm_apply_apply] at h
   exact h.symm
+
+/-- The group coordinate of the image under the homotopy inverse of `sphere2GroupHomotopyEquivMoore`
+is the value at the north pole. -/
+theorem sphere2GroupHomotopyEquivMoore_symm_apply_fst (f : C(Sphere2, G)) :
+    ((sphere2GroupHomotopyEquivMoore G).symm f).1 = f Sphere2.north := by
+  rw [sphere2GroupHomotopyEquivMoore]
+  exact sphere2GroupHomeomorphIteratedLoopSpace_symm_fst f
 
 end TauCeti
