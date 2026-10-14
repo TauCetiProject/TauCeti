@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.FunctorCategory
 
 /-!
 # Simultaneous moduli problems with a representable factor
@@ -63,38 +64,6 @@ namespace ModuliProblem
 
 variable {B : Scheme.{u}} {P Q : ModuliProblem B}
 
-/-! The product presheaf acts componentwise. Mathlib's `Functor.Monoidal.tensorObj_map` and
-`tensor_apply` do not compose to give these, as the types of the two sides of the former differ
-syntactically. -/
-
-private theorem tensor_map_apply {F G : ModuliProblem B} {X Y : (EllObj B)ᵒᵖ} (f : X ⟶ Y)
-    (x : (F ⊗ G).obj X) : (F ⊗ G).map f x = (F.map f x.1, G.map f x.2) :=
-  (rfl)
-
-private theorem tensor_map_fst {F G : ModuliProblem B} {X Y : (EllObj B)ᵒᵖ} (f : X ⟶ Y)
-    (x : (F ⊗ G).obj X) : ((F ⊗ G).map f x).1 = F.map f x.1 :=
-  (rfl)
-
-private theorem tensor_map_snd {F G : ModuliProblem B} {X Y : (EllObj B)ᵒᵖ} (f : X ⟶ Y)
-    (x : (F ⊗ G).obj X) : ((F ⊗ G).map f x).2 = G.map f x.2 :=
-  (rfl)
-
-private theorem whiskerLeft_app_fst {Q' : ModuliProblem B} (g : Q ⟶ Q') {X : (EllObj B)ᵒᵖ}
-    (x : (P ⊗ Q).obj X) : ((P ◁ g).app X x).1 = x.1 :=
-  (rfl)
-
-private theorem whiskerLeft_app_snd {Q' : ModuliProblem B} (g : Q ⟶ Q') {X : (EllObj B)ᵒᵖ}
-    (x : (P ⊗ Q).obj X) : ((P ◁ g).app X x).2 = g.app X x.2 :=
-  (rfl)
-
-private theorem fst_app_apply {X : (EllObj B)ᵒᵖ} (x : (P ⊗ Q).obj X) :
-    (fst P Q).app X x = x.1 :=
-  (rfl)
-
-private theorem snd_app_apply {X : (EllObj B)ᵒᵖ} (x : (P ⊗ Q).obj X) :
-    (snd P Q).app X x = x.2 :=
-  (rfl)
-
 namespace RelRepData
 
 variable (D : P.RelRepData)
@@ -111,8 +80,8 @@ private noncomputable def tensorMap {X : EllObj B} (f : X ⟶ U.baseChangeFuncto
 private theorem tensorMap_comp {X X' : EllObj B} (f : X ⟶ X')
     (g : X' ⟶ U.baseChangeFunctor.obj (D.rep U)) :
     D.tensorMap R (f ≫ g) = (P ⊗ Q).map f.op (D.tensorMap R g) := by
-  rw [tensor_map_apply, tensorMap, tensorMap, Category.assoc, R.homEquiv_comp, op_comp,
-    Functor.map_comp_apply]
+  rw [Functor.Monoidal.tensorObj_map_apply, tensorMap, tensorMap, Category.assoc, R.homEquiv_comp,
+    op_comp, Functor.map_comp_apply]
 
 /-- The morphism of bases of an arrow `f : X ⟶ U_{𝒫_U}`, as a morphism to `𝒫_U` of schemes over
 `U.base`, where `X.base` lies over `U.base` through the composite `g` of `f` with the projection
@@ -152,7 +121,7 @@ private theorem map_universal_eq {X : EllObj B} {g : X ⟶ U}
       P.map (EllObj.isoBaseChange g).hom.op ((D.representableBy U).homEquiv (D.overHom f hf)) := by
   conv_lhs => rw [D.eq_isoBaseChange_hom_comp f hf]
   rw [op_comp, Functor.map_comp_apply]
-  exact congrArg _ ((D.representableBy U).homEquiv_eq _).symm
+  rw [D.representableBy_homEquiv]
 
 private theorem tensorMap_injective {X : EllObj B} :
     Function.Injective (D.tensorMap R (X := X)) := by
@@ -247,8 +216,9 @@ private theorem IsRigid.eq_of_comp_base_eq (hP : P.IsRigid)
   generalize R.homEquiv (𝟙 V) = ξ at hσ₁ hσ₂ hex hey
   obtain ⟨hp₁, hq₁⟩ := Prod.ext_iff.1 hσ₁
   obtain ⟨hp₂, hq₂⟩ := Prod.ext_iff.1 hσ₂
-  simp only [tensor_map_fst, tensor_map_snd, whiskerLeft_app_fst, whiskerLeft_app_snd,
-    fst_app_apply, snd_app_apply] at hp₁ hq₁ hp₂ hq₂
+  simp only [Functor.Monoidal.tensorObj_map_apply_fst, Functor.Monoidal.tensorObj_map_apply_snd,
+    Functor.Monoidal.whiskerLeft_app_apply_fst, Functor.Monoidal.whiskerLeft_app_apply_snd,
+    Functor.Monoidal.fst_app_apply, Functor.Monoidal.snd_app_apply] at hp₁ hq₁ hp₂ hq₂
   -- `σ₁` and `σ₂` are isomorphisms over `T`, and `σ₁ ≫ σ₂⁻¹` fixes the `𝒫`-structure
   have : IsIso σ₂ := (EllObj.isIso_iff_isIso_base _ _).2 (by rw [hσ₂b]; exact IsIso.id T)
   have hinvp : P.map (inv σ₂).op (P.map ex.op ξ.1) = P.map ey.op ξ.1 := by
@@ -264,7 +234,8 @@ private theorem IsRigid.eq_of_comp_base_eq (hP : P.IsRigid)
   have hcomp : σ₂ ≫ ey = ex := by
     refine R.homEquiv.injective ?_
     rw [R.homEquiv_comp, hey, hex]
-    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp only [tensor_map_fst, tensor_map_snd]
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;>
+      simp only [Functor.Monoidal.tensorObj_map_apply_fst, Functor.Monoidal.tensorObj_map_apply_snd]
     exacts [hp₂, hq₁, hq₂]
   have h := congrArg EllObj.Hom.base hcomp
   rw [EllObj.comp_base, hσ₂b] at h
