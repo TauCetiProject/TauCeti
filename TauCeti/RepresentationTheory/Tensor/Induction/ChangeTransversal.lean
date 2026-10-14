@@ -191,21 +191,13 @@ theorem tensorInducedChangeTransversal_naturality
   apply Representation.IntertwiningMap.ext
   apply LinearMap.ext
   intro z
-  rw [Representation.IntertwiningMap.toLinearMap_apply,
-    Representation.IntertwiningMap.toLinearMap_apply,
-    Representation.IntertwiningMap.comp_apply, Representation.IntertwiningMap.comp_apply,
-    Representation.Equiv.coe_toIntertwiningMap, Representation.Equiv.coe_toIntertwiningMap,
-    tensorInducedChangeTransversal_apply, tensorInducedChangeTransversalLinearEquiv_apply,
-    tensorInducedChangeTransversal_apply, tensorInducedChangeTransversalLinearEquiv_apply,
-    ← Representation.IntertwiningMap.toLinearMap_apply,
-    ← Representation.IntertwiningMap.toLinearMap_apply,
+  have h := LinearMap.congr_fun
+    ((f.wreathTensor (G ⧸ U)).isIntertwining' (monomialChangeTransversal U s t)) z
+  simp only [Representation.IntertwiningMap.wreathTensor_toLinearMap, LinearMap.comp_apply] at h
+  simpa only [Representation.IntertwiningMap.comp_toLinearMap, LinearMap.comp_apply,
     Representation.IntertwiningMap.tensorInduced_toLinearMap,
-    Representation.IntertwiningMap.tensorInduced_toLinearMap,
-    ← Representation.IntertwiningMap.wreathTensor_toLinearMap,
-    Representation.IntertwiningMap.toLinearMap_apply,
-    Representation.IntertwiningMap.toLinearMap_apply]
-  exact Representation.IntertwiningMap.isIntertwining
-    (ρ.wreathTensor (G ⧸ U)) (τ.wreathTensor (G ⧸ U))
-    (f.wreathTensor (G ⧸ U)) (monomialChangeTransversal U s t) z
+    Representation.IntertwiningMap.toLinearMap_apply, Representation.Equiv.coe_toIntertwiningMap,
+    tensorInducedChangeTransversal_apply, tensorInducedChangeTransversalLinearEquiv_apply]
+    using h
 
 end Subgroup
