@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 
 /-!
@@ -99,6 +100,13 @@ theorem IsHomogeneous.comp {P : Type uP} {σP : Type*} [AddCommMonoid P] [Module
     IsHomogeneous (g.comp f) 𝒜 𝒞 (q + r) := by
   intro p x hx
   simpa only [_root_.LinearMap.comp_apply, add_assoc] using hg (hf hx)
+
+/-- A homogeneous linear map stays homogeneous between the families cut down by submodules `U`
+and `V` with `f` carrying `U` into `V`. -/
+theorem IsHomogeneous.inf {𝒜 : ι → Submodule R M} {ℬ : ι → Submodule R N} {q : ι}
+    {f : M →ₗ[R] N} (hf : IsHomogeneous f 𝒜 ℬ q) {U : Submodule R M} {V : Submodule R N}
+    (hUV : ∀ x ∈ U, f x ∈ V) : IsHomogeneous f (fun p ↦ 𝒜 p ⊓ U) (fun p ↦ ℬ p ⊓ V) q :=
+  fun _ _ hx ↦ ⟨hf hx.1, hUV _ hx.2⟩
 
 end Semiring
 
