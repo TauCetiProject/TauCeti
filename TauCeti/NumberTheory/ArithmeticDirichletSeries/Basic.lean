@@ -9,7 +9,7 @@ public import Mathlib.Basic.Complex.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
-import TauCeti.RingTheory.DedekindDomain.Ideal
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # Arithmetic functions on nonzero ideals

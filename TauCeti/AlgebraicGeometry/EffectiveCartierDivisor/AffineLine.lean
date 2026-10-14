@@ -101,9 +101,9 @@ theorem Monic.isRelativeEffectiveCartier_zeroIdealSheaf {p : R[X]} (hp : p.Monic
   refine ⟨?_, ?_⟩
   · rw [zeroIdealSheaf_eq_ofIdealTop, Ideal.map_span, Set.image_singleton]
     apply Scheme.IdealSheafData.isEffectiveCartier_ofIdealTop_span_singleton
-    let e := (Scheme.ΓSpecIso (.of R[X])).symm.commRingCatIsoToRingEquiv
-    exact (Equiv.isSMulRegular_congr (e := e.toEquiv)
-      (fun b ↦ e.map_mul p b)).mp hp.isRegular.left.isSMulRegular
+    intro U
+    exact (isAffineOpen_top _).isSMulRegular_map le_top
+      (Scheme.isSMulRegular_ΓSpecIso_inv hp.isRegular.left.isSMulRegular)
   · have := hp.free_adjoinRoot
     have hflat : Flat (Spec.map (CommRingCat.ofHom (algebraMap R (AdjoinRoot p)))) :=
       Flat.SpecMap_iff.mpr <|

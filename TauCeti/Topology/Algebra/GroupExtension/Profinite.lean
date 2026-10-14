@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Separation.Connected
 public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
 public import TauCeti.Topology.Algebra.GroupExtension.FactorSet
 
@@ -161,22 +162,20 @@ quotient because the projection is a continuous bijection out of a compact space
 theorem exists_continuous_section [T2Space G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) : ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
   -- identify `G` with the quotient of `E` by the kernel of the projection
-  set N := S.rightHom.ker
-  let q : E ⧸ N ≃ G :=
-    (QuotientGroup.quotientKerEquivOfSurjective S.rightHom S.rightHom_surjective).toEquiv
-  -- `quotientKerEquivOfSurjective` is `QuotientGroup.kerLift` up to the identification of the
-  -- range with `G`, so on a class it is the projection by definition
-  have hq : ∀ x : E, q (QuotientGroup.mk x) = S.rightHom x := fun _ => rfl
-  have hqc : Continuous q :=
-    (QuotientGroup.isQuotientMap_mk N).continuous_iff.2 <| by
-      simpa only [Function.comp_def, hq] using hrh
-  let e : (E ⧸ N) ≃ₜ G := Continuous.homeoOfEquivCompactToT2 (f := q) hqc
-  have he : ∀ x : E, e (QuotientGroup.mk x) = S.rightHom x := hq
+  let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
+  set N := f.toMonoidHom.ker
+  -- Both the section and the equivalence use the bundled projection's kernel, which is
+  -- definitionally the original projection's kernel for the closedness proof below.
+  -- Bundling continuity leaves the projection's values unchanged.
+  have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
+  let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
   -- pull the continuous section of `E → E ⧸ N` back along that identification
   obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N (isClosed_ker_rightHom hinl)
-  have hone : e.symm 1 = QuotientGroup.mk 1 := e.symm_apply_eq.2 (by rw [he, map_one])
+  have hone : e.symm 1 = QuotientGroup.mk 1 := by
+    rw [← S.rightHom.map_one, ← hf, f.quotientKerEquivOfSurjective_symm_apply]
   have hsec' : ∀ g : G, S.rightHom (s (e.symm g)) = g := fun g => by
-    rw [← he, hsec, Homeomorph.apply_symm_apply]
+    rw [← hf, ← f.quotientKerEquivOfSurjective_apply_mk S.rightHom_surjective, hsec,
+      ContinuousMulEquiv.apply_symm_apply]
   have hone' : s (e.symm 1) = 1 := by rw [hone]; exact hs₁
   -- the coercion of a `GroupExtension.Section` is its underlying function, so `hone'` is the
   -- normalization of the section just built
@@ -343,6 +342,8 @@ namespace ProfiniteGroupExtension
 attribute [instance] instGroup instTopologicalSpace instIsTopologicalGroup instCompactSpace
   instTotallyDisconnectedSpace
 
+section OfFactorSet
+
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
   [IsTopologicalGroup M] [ContinuousSMul G M] [CompactSpace M] [TotallyDisconnectedSpace M]
   (α : FactorSet G M) (hα : Continuous ⇑α)
@@ -369,6 +370,46 @@ abbrev ofFactorSet : ProfiniteGroupExtension G M where
 @[simp]
 theorem ofFactorSet_toGroupExtension : (ofFactorSet α hα).toGroupExtension = α.groupExtension :=
   rfl
+
+end OfFactorSet
+
+/-! ### Relabelling the quotient
+
+A continuous multiplicative equivalence transports an extension between different models of
+the same quotient group, provided the prescribed actions on the kernel agree. The total group
+and kernel remain unchanged.
+-/
+
+section RelabelQuotient
+
+variable {H : Type u} [Group H] [TopologicalSpace H] [MulDistribMulAction H M]
+  (X : ProfiniteGroupExtension G M) (e : G ≃ₜ* H)
+  (hsmul : ∀ (g : G) (m : M), e g • m = g • m)
+
+/-- Relabel the quotient of a profinite extension, retaining its total group and kernel.
+The prescribed actions on the kernel must agree through the quotient equivalence. -/
+abbrev relabelQuotient : ProfiniteGroupExtension H M where
+  E := X.E
+  toGroupExtension := X.toGroupExtension.relabelQuotient e.toMulEquiv
+  continuous_inl := by simpa using X.continuous_inl
+  continuous_rightHom := by
+    simpa using e.continuous.comp X.continuous_rightHom
+  inducesAction := X.inducesAction.relabelQuotient e.toMulEquiv hsmul
+
+/-- The underlying exact sequence is obtained by relabelling the quotient. -/
+@[simp]
+theorem relabelQuotient_toGroupExtension :
+    (X.relabelQuotient e hsmul).toGroupExtension =
+      X.toGroupExtension.relabelQuotient e.toMulEquiv :=
+  (rfl)
+
+/-- The relabelled projection applies the quotient equivalence after the original projection. -/
+theorem relabelQuotient_rightHom_apply (x : X.E) :
+    (X.relabelQuotient e hsmul).toGroupExtension.rightHom x =
+      e (X.toGroupExtension.rightHom x) := by
+  simp
+
+end RelabelQuotient
 
 end ProfiniteGroupExtension
 

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Properties
+public import Mathlib.AlgebraicGeometry.FunctionField
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+public import Mathlib.AlgebraicGeometry.Stalk
 
 import TauCeti.Topology.KrullDimension
 
@@ -20,6 +22,9 @@ points of coheight zero are the maximal ones, this identifies the points of cohe
 irreducible scheme with its generic point. On an irreducible scheme of dimension at most one,
 every other point then has codimension exactly one.
 
+On an integral scheme `X`, the morphism `Spec k(X) ⟶ X` from the spectrum of the function field
+to the generic point is quasi-compact, since `Spec k(X)` is a single point.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_genericPoint`: the generic point of an irreducible
@@ -31,6 +36,8 @@ every other point then has codimension exactly one.
 * `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, the points of codimension one are exactly the points other
   than the generic point.
+* `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
+  `Spec k(X) ⟶ X` of an integral scheme is quasi-compact.
 -/
 
 public section
@@ -69,6 +76,13 @@ theorem coheight_eq_one_iff_ne_genericPoint
     exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
   rw [← hle.ge_iff_eq, Order.one_le_iff_pos, Order.coheight_pos, not_iff_not,
     isMax_iff_eq_genericPoint]
+
+/-- The generic point `Spec k(X) ⟶ X` of an integral scheme is quasi-compact, since `Spec k(X)` is
+a single point. -/
+instance quasiCompact_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegral X] :
+    QuasiCompact (X.fromSpecStalk (genericPoint X)) :=
+  have : Finite (Spec X.functionField) := inferInstanceAs (Finite (PrimeSpectrum X.functionField))
+  ⟨fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
 
 end Scheme
 
