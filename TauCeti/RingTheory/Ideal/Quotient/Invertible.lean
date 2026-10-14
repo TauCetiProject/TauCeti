@@ -8,7 +8,7 @@ module
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.LinearAlgebra.Dimension.Tower
 public import TauCeti.RingTheory.PicardGroup.Quotient
-public import TauCeti.RingTheory.Ideal.Quotient.ModuleFinite
+public import TauCeti.RingTheory.Ideal.Quotient.Finite
 
 /-!
 # Quotients by products with invertible ideals
@@ -52,16 +52,23 @@ theorem finrank_quotient_mul (K : Type*) [Field K] [Algebra K R] (I J : Ideal R)
   let eTop (L : Submodule K R) :
       ((⊤ : Submodule K R) ⧸ L.submoduleOf ⊤) ≃ₗ[K] R ⧸ L :=
     Submodule.Quotient.equiv _ _ (LinearEquiv.ofTop ⊤ rfl) (by
-      change Submodule.map (⊤ : Submodule K R).subtype
-        (Submodule.comap (⊤ : Submodule K R).subtype L) = L
-      rw [Submodule.map_comap_subtype, top_inf_eq])
+      rw [LinearEquiv.toLinearMap_ofTop, Submodule.submoduleOf,
+        Submodule.map_comap_subtype, top_inf_eq])
   let eIJ := (eTop p).trans (Submodule.Quotient.restrictScalarsEquiv K (I * J))
   let eQ := (eTop q).trans (Submodule.Quotient.restrictScalarsEquiv K I)
+  -- The canonical scalar-restriction equivalence preserves ideal carriers and subtype maps.
+  let eRestrict : q ≃ₗ[K] I := (I.restrictScalarsEquiv K).restrictScalars K
+  have hsub : (p.submoduleOf q).map eRestrict.toLinearMap =
+      (Submodule.comap I.subtype (I * J)).restrictScalars K := by
+    rw [Submodule.map_equiv_eq_comap_symm]
+    ext x
+    rfl
   let eIK : (q ⧸ p.submoduleOf q) ≃ₗ[K] R ⧸ J :=
-    (Submodule.Quotient.restrictScalarsEquiv K
-      (Submodule.comap I.subtype (I * J))).trans (eI.restrictScalars K)
+    (Submodule.Quotient.equiv _ _ eRestrict hsub).trans
+      ((Submodule.Quotient.restrictScalarsEquiv K
+        (Submodule.comap I.subtype (I * J))).trans (eI.restrictScalars K))
   have h := TauCeti.rank_quotient_submoduleOf_tower
-    (p := p) (q := q) (r := ⊤) (show p ≤ q from Ideal.mul_le_left) le_top
+    (p := p) (q := q) (r := ⊤) (by exact Ideal.mul_le_left) le_top
   rw [eIJ.rank_eq, eIK.rank_eq, eQ.rank_eq, add_comm] at h
   simpa only [← Module.finrank_eq_rank, ← Nat.cast_add, Nat.cast_inj] using h
 
