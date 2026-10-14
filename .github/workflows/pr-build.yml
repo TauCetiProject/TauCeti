@@ -1040,6 +1040,9 @@ jobs:
           # not, this is a normal full build. Either way, no network from in here.
           LAKE_NO_CACHE: "true"
           CI_RESOURCE_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          CI_RESOURCE_TESTED_HEAD: ${{ steps.pr.outputs.status_sha }}
+          CI_RESOURCE_TESTED_BASE: ${{ steps.pr.outputs.base_sha }}
+          CI_RESOURCE_DEPENDENCY_BUMP: ${{ env.PINS_KNOWN == '1' && (env.BUMP == '1' && '1' || '0') || 'unknown' }}
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned

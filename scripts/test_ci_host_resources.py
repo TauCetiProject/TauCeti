@@ -84,6 +84,19 @@ class HostResourcesTests(unittest.TestCase):
         self.assertIsNone(sampler.summary()['host_cpu_busy_fraction'])
         self.assertIn('pressure/io', sampler.summary()['missing'])
 
+    def test_workflow_source_and_actual_candidate_metadata_remain_distinct(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)/'resources.json'
+            with patch.dict(os.environ, {'CI_RESOURCE_WORKFLOW_SHA': 'a'*40,
+                    'CI_RESOURCE_TESTED_HEAD': 'b'*40, 'CI_RESOURCE_TESTED_BASE': 'c'*40,
+                    'CI_RESOURCE_DEPENDENCY_BUMP': '0', 'GITHUB_SHA': 'd'*40}):
+                self.assertEqual(self.invoke([sys.executable, '-c', 'pass'], out), 0)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['workflow_sha'], 'a'*40)
+            self.assertEqual(value['tested_head_sha'], 'b'*40)
+            self.assertEqual(value['tested_base_sha'], 'c'*40)
+            self.assertEqual(value['dependency_bump'], '0')
+
     def test_failed_sample_attempts_obey_the_same_cap(self):
         sampler = host.Sampler()
         done = type('Done', (), {'wait': lambda self, interval: False})()
