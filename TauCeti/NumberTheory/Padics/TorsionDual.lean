@@ -278,6 +278,15 @@ end TorsionDual
 
 section Bijective
 
+/-!
+## Kernel and cokernel of the connecting map
+
+Throughout this section, the quotient `M / M[p^∞]` is assumed projective over `ℤ_p`. Under this
+hypothesis, the kernel consists of the functionals extending along `f`. When `P₀` is also
+projective, the connecting map induces the cokernel equivalence. Finite generation of `M`
+implies the common quotient-projectivity hypothesis.
+-/
+
 variable [Module ℤ_[p] M] [IsScalarTower ℤ_[p] A M]
 
 variable [Module.Projective ℤ_[p] (M ⧸ pPowerTorsion p A M)]
@@ -324,8 +333,8 @@ theorem ker_torsionDualMap :
   exact extendDual_eq_of_eq hf hfi ψ (pr (f k)) (k := k) (by
     simp [pr, hf.apply_apply_eq_zero])
 
-/-- The connecting map is surjective when `P₀` and the quotient of `M` by its `p`-power torsion
-are projective over `ℤ_p`: every character of the torsion comes from a functional on `P₁`. -/
+/-- The connecting map is surjective when `P₀` is projective over `ℤ_p`: every character of the
+`p`-power torsion of `M` comes from a functional on `P₁`. -/
 theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
     Function.Surjective (torsionDualMap p hf hfi hπ) := by
   intro χ
