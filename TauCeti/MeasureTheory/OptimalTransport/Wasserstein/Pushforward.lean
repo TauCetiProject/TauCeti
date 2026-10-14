@@ -279,9 +279,7 @@ end WassersteinSpace
 
 section Isometry
 
-/-- A measurable embedding that is an isometry preserves Wasserstein distance. Every coupling of
-the pushed-forward measures is concentrated on the product of the ranges, where a measurable left
-inverse of the embedding is again isometric and pulls the coupling back. -/
+/-- Pushforward by an isometric measurable embedding preserves Wasserstein distance. -/
 @[simp]
 theorem wassersteinEDist_map_eq
     (hdY : Measurable fun z : Y × Y ↦ edist z.1 z.2) (hf : MeasurableEmbedding f)
@@ -304,6 +302,8 @@ theorem wassersteinEDist_map_eq
   have hmap (m : Measure X) : (m.map f).map g = m := by
     rw [Measure.map_map hg hf.measurable]
     simp [Function.comp_def, hgf]
+  -- Every coupling of the pushed-forward measures is concentrated on the product of the ranges,
+  -- where `g` is again isometric and pulls the coupling back.
   refine le_of_forall_gt fun c hc ↦ ?_
   obtain ⟨π, hπ, hπc⟩ := wassersteinEDist_lt_iff.1 hc
   have hrange : ∀ᵐ z ∂π, z.1 ∈ Set.range f ∧ z.2 ∈ Set.range f :=

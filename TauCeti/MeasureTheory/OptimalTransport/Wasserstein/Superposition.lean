@@ -60,6 +60,9 @@ so it is the image of a law on `C([a, b], X)`, which represents `μ`.
 
 * `TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_eq`: **Lisini's superposition
   principle** in a complete separable metric space.
+* `TauCeti.ae_forall_apply_mem_of_dense`: a law on continuous paths whose time marginals at the
+  times of a countable dense set are concentrated on a closed set is concentrated on the paths
+  with values in that set.
 
 ## References
 
@@ -81,9 +84,11 @@ section Superposition
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Lisini's superposition principle in a separable Banach space `E`, from which the metric
-version `TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_eq` follows by an isometric
-embedding. -/
+/-- In a separable Banach space `E`, a curve `μ` in `P_p(E)`, absolutely continuous on `[a, b]` with
+finite `p`-action, is the curve of time marginals of a probability measure on `C([a, b], E)`
+concentrated on absolutely continuous paths, whose expected `p`-action is the `p`-action of `μ`.
+The metric version `TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_eq` follows by an
+isometric embedding, and also adds the averaged-speed identity. -/
 private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace (hp1 : 1 < p)
     (hp : p ≠ ∞)
     {μ : ℝ → WassersteinSpace p E} {a b : ℝ} (hab : a < b)
@@ -177,6 +182,21 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
 
 end Superposition
 
+section Concentration
+
+/-- A law on paths `C(T, E)` whose time marginals at the times of a countable dense set `D` are
+concentrated on a closed set `F` is concentrated on the paths with values in `F` at all times. -/
+theorem ae_forall_apply_mem_of_dense {T E : Type*} [TopologicalSpace T] [TopologicalSpace E]
+    [MeasurableSpace C(T, E)] {η : Measure C(T, E)} {D : Set T} (hDc : D.Countable)
+    (hDd : Dense D) {F : Set E} (hF : IsClosed F) (h : ∀ t ∈ D, ∀ᵐ γ ∂η, γ t ∈ F) :
+    ∀ᵐ γ ∂η, ∀ t, γ t ∈ F := by
+  have : Countable D := hDc.to_subtype
+  filter_upwards [ae_all_iff.2 fun t : D ↦ h t t.2] with γ hγ t
+  have hsub := (hF.preimage γ.continuous).closure_subset_iff.2 fun s hs ↦ hγ ⟨s, hs⟩
+  exact hsub (hDd.closure_eq ▸ mem_univ t)
+
+end Concentration
+
 section MetricSpace
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
@@ -223,24 +243,17 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
   -- `η` is concentrated on the paths with values in the closed set `range ι`: it is so at the
   -- times of a countable dense subset of `[a, b]`, because the time marginals of `η` are images
   -- of laws on `X`, hence at all times by continuity of the paths.
-  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Icc a b)
-  have : Countable D := hDc.to_subtype
-  have hD : ∀ᵐ γ ∂η, ∀ t : D, γ t ∈ range ι := by
-    refine ae_all_iff.2 fun t ↦ ?_
+  have hD (t : Icc a b) : ∀ᵐ γ ∂η, γ t ∈ range ι := by
     have := ae_map_mem_range hιm.measurableSet_range hιm.measurable.aemeasurable
       (μ := ((μ t : ProbabilityMeasure X) : Measure X))
-    rw [← hιWμ, ← hηmarg t t.1.2] at this
+    rw [← hιWμ, ← hηmarg t t.2] at this
     filter_upwards [ae_of_ae_map (measurable_IccExtend_apply hab.le _).aemeasurable this]
       with γ hγ
     rwa [IccExtend_val] at hγ
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Icc a b)
   have hrange : ∀ᵐ γ ∂η, γ ∈ range Φ := by
-    filter_upwards [hD] with γ hγ
-    have hall : ∀ t, γ t ∈ range ι := by
-      have hcl : IsClosed {t | γ t ∈ range ι} :=
-        hι.isClosedEmbedding.isClosed_range.preimage γ.continuous
-      have hsub := hcl.closure_subset_iff.2 fun t ht ↦ hγ ⟨t, ht⟩
-      rw [hDd.closure_eq] at hsub
-      exact fun t ↦ hsub (mem_univ t)
+    filter_upwards [ae_forall_apply_mem_of_dense hDc hDd hι.isClosedEmbedding.isClosed_range
+      fun t _ ↦ hD t] with γ hall
     choose g hg using hall
     have hgc : Continuous g := hι.isEmbedding.continuous_iff.2 (by simpa [Function.comp_def, hg]
       using γ.continuous)
@@ -262,7 +275,7 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
     have h' : (ηX.map fun γ : C(Icc a b, X) ↦ IccExtend hab.le γ t).map ι =
         ((μ t : ProbabilityMeasure X) : Measure X).map ι := by
       rwa [Measure.map_map hιm.measurable (measurable_IccExtend_apply hab.le t)]
-    simpa only [hιm.comap_map] using congrArg (Measure.comap ι) h'
+    exact hιm.map_injective h'
   have hprob : IsProbabilityMeasure ηX :=
     ⟨by rw [← preimage_univ (f := Φ), ← hΦ.map_apply, hηX, measure_univ]⟩
   have heq : ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂ηX =
