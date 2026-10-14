@@ -35,7 +35,8 @@ continuous multiplicative isomorphism has the same underlying function. A topolo
 continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
 range, with forward and inverse computation rules. The file also records the
 pointwise characterization of finite-order continuous homomorphisms and the open kernel of a
-finite-order continuous character into the units of a `T1` topological field.
+finite-order continuous character into the units of a `T1` commutative integral domain with
+continuous multiplication.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -75,12 +76,14 @@ theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, ContinuousMonoidHom.pow_apply,
     ContinuousMonoidHom.coe_one, Pi.one_apply]
 
-/-- A finite-order continuous character into the units of a `T₁` topological field has open
-kernel. -/
+/-- A finite-order continuous character into the units of a `T₁` commutative integral domain
+with continuous multiplication has open kernel. -/
 theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
-    {M K : Type*} [Monoid M] [TopologicalSpace M] [Field K] [TopologicalSpace K]
-    [IsTopologicalRing K] [T1Space K] {χ : M →ₜ* Kˣ}
+    {M K : Type*} [Monoid M] [TopologicalSpace M] [CommRing K] [IsDomain K]
+    [TopologicalSpace K] [ContinuousMul K] [T1Space K] {χ : M →ₜ* Kˣ}
     (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
+  let _ : T1Space Kˣ :=
+    t1Space_of_injective_of_continuous Units.val_injective Units.continuous_val
   obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
   let _ : NeZero n := ⟨hn.ne'⟩
   have hmem : ∀ x, χ x ∈ rootsOfUnity n K := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
@@ -287,23 +290,9 @@ end ContinuousMonoidHom
 def _root_.Subgroup.inverseConjugationHom [SeparatelyContinuousMul G] (N : Subgroup G) [N.Normal]
     (g : G) : N →ₜ* N where
   toMonoidHom := (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
-  continuous_toFun := by
-    have hf : Continuous (fun n : N =>
-        (⟨g⁻¹ * (n : G) * g, by
-          simpa only [inv_inv] using
-            (inferInstance : N.Normal).conj_mem (n : G) n.property g⁻¹⟩ : N)) := by
-      -- Conjugation by a fixed element is already a Mathlib continuity theorem.
-      exact (((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
-        continuous_subtype_val).subtype_mk (fun n => by
-          simpa only [Function.comp_apply, inv_inv] using
-            (inferInstance : N.Normal).conj_mem (n : G) n.property g⁻¹)).congr fun n => by
-          apply Subtype.ext
-          simp
-    exact hf.congr fun n => by
-      -- The bundled automorphism and the displayed inverse-conjugation formula are definitionally
-      -- the same map after taking underlying values.
-      apply Subtype.ext
-      simp
+  continuous_toFun :=
+    ((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
+      continuous_subtype_val).subtype_mk _
 
 /-- Evaluation of inverse conjugation on a subgroup element. -/
 @[simp]
