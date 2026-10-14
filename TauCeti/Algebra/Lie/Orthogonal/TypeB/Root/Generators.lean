@@ -113,10 +113,22 @@ def typeBShortRootDividedSquare (i : ι) :
     Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
   -single (.inr (.inl i)) (.inr (.inr i)) 1
 
+/-- The positive short-root divided square as the negative matrix unit `-Eᵢ,₋ᵢ`. -/
+theorem typeBShortRootDividedSquare_def (i : ι) :
+    typeBShortRootDividedSquare (K := K) i =
+      -single (.inr (.inl i)) (.inr (.inr i)) 1 :=
+  (rfl)
+
 /-- The integral divided square `f_{εᵢ}^{(2)}` of a negative short-root vector. -/
 def typeBShortNegativeRootDividedSquare (i : ι) :
     Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
   -single (.inr (.inr i)) (.inr (.inl i)) 1
+
+/-- The negative short-root divided square as the negative matrix unit `-E₋ᵢ,ᵢ`. -/
+theorem typeBShortNegativeRootDividedSquare_def (i : ι) :
+    typeBShortNegativeRootDividedSquare (K := K) i =
+      -single (.inr (.inr i)) (.inr (.inl i)) 1 :=
+  (rfl)
 
 /-! ### Bourbaki simple-root matrices -/
 
@@ -210,21 +222,21 @@ theorem typeBDifferenceRootMatrix_mul_self (i j : ι) (hij : i ≠ j) :
 theorem typeBShortRootMatrix_mul_self (i : ι) :
     typeBShortRootMatrix (K := K) i * typeBShortRootMatrix i =
       2 • typeBShortRootDividedSquare i := by
-  simp [typeBShortRootMatrix, typeBShortRootDividedSquare, mul_sub, sub_mul,
+  simp [typeBShortRootMatrix, typeBShortRootDividedSquare_def, mul_sub, sub_mul,
     Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne]
 
 /-- The left-associated cube of a positive short-root matrix vanishes. -/
 theorem typeBShortRootMatrix_cube (i : ι) :
     typeBShortRootMatrix (K := K) i * typeBShortRootMatrix i * typeBShortRootMatrix i = 0 := by
   rw [typeBShortRootMatrix_mul_self, Matrix.smul_mul]
-  simp [typeBShortRootMatrix, typeBShortRootDividedSquare, mul_sub,
+  simp [typeBShortRootMatrix, typeBShortRootDividedSquare_def, mul_sub,
     Matrix.single_mul_single_of_ne]
 
 /-- The square of a negative short-root vector is twice its integral divided square. -/
 theorem typeBShortNegativeRootMatrix_mul_self (i : ι) :
     typeBShortNegativeRootMatrix (K := K) i * typeBShortNegativeRootMatrix i =
       2 • typeBShortNegativeRootDividedSquare i := by
-  simp [typeBShortNegativeRootMatrix, typeBShortNegativeRootDividedSquare, mul_sub, sub_mul,
+  simp [typeBShortNegativeRootMatrix, typeBShortNegativeRootDividedSquare_def, mul_sub, sub_mul,
     Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne]
 
 /-- The left-associated cube of a negative short-root matrix vanishes. -/
@@ -232,7 +244,7 @@ theorem typeBShortNegativeRootMatrix_cube (i : ι) :
     typeBShortNegativeRootMatrix (K := K) i * typeBShortNegativeRootMatrix i *
       typeBShortNegativeRootMatrix i = 0 := by
   rw [typeBShortNegativeRootMatrix_mul_self, Matrix.smul_mul]
-  simp [typeBShortNegativeRootMatrix, typeBShortNegativeRootDividedSquare, mul_sub,
+  simp [typeBShortNegativeRootMatrix, typeBShortNegativeRootDividedSquare_def, mul_sub,
     Matrix.single_mul_single_of_ne]
 
 /-- A simple-root matrix squares to twice its integral divided square. -/
