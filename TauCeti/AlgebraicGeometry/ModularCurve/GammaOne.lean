@@ -132,7 +132,7 @@ section RelRep
 `X = (E/S)` of `Ell/B` and a scheme `T` over `S`, the `[Γ₁(N)]`-structures on the base change `E_T`
 of `E` correspond to the morphisms `T ⟶ E.exactOrderScheme N` over `S`: a structure, a `T`-point
 `P` of `E_T` of exact order `N`, corresponds to the morphism whose image in `E` is `P` followed by
-the projection `E_T ⟶ E` (`gammaOneBaseChangeEquiv_apply_comp_left`). -/
+the projection `E_T ⟶ E` (`gammaOneBaseChangeEquiv_apply_left_comp`). -/
 noncomputable def gammaOneBaseChangeEquiv (X : EllObj B) (T : Over X.base) :
     (gammaOne B N).obj (op (X.baseChangeFunctor.obj T)) ≃ (T ⟶ X.curve.exactOrderScheme N) :=
   (gammaOneEquiv _).trans <|
@@ -142,12 +142,12 @@ noncomputable def gammaOneBaseChangeEquiv (X : EllObj B) (T : Over X.base) :
 /-- The morphism `T ⟶ E.exactOrderScheme N` of a `[Γ₁(N)]`-structure on `E_T`, followed by the
 inclusion of the exact-order scheme in `E`, is the point of the structure followed by the
 projection `E_T ⟶ E`. -/
-theorem gammaOneBaseChangeEquiv_apply_comp_left (X : EllObj B) (T : Over X.base)
+@[reassoc (attr := simp)]
+theorem gammaOneBaseChangeEquiv_apply_left_comp (X : EllObj B) (T : Over X.base)
     (α : (gammaOne B N).obj (op (X.baseChangeFunctor.obj T))) :
-    (gammaOneBaseChangeEquiv X T α ≫ X.curve.exactOrderSchemeι N).left =
-      (gammaOneEquiv _ α).1.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ := by
-  rw [Over.comp_left, EllipticCurveGeom.exactOrderSchemeι_left]
-  exact EllipticCurveGeom.exactOrderPointsEquivOfIsPullback_apply_left_comp _ _ _
+    (gammaOneBaseChangeEquiv X T α).left ≫ (X.curve.exactOrderLocus N).subschemeι =
+      (gammaOneEquiv _ α).1.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
+  EllipticCurveGeom.exactOrderPointsEquivOfIsPullback_apply_left_comp _ _ _
 
 /-- **Naturality of `gammaOneBaseChangeEquiv`.** Along a morphism `k : T' ⟶ T` of schemes over the
 base of `X`, the morphism `T' ⟶ E.exactOrderScheme N` of the pull-back to `E_{T'}` of a
@@ -158,10 +158,9 @@ theorem gammaOneBaseChangeEquiv_map (X : EllObj B) {T' T : Over X.base} (k : T' 
       k ≫ gammaOneBaseChangeEquiv X T α := by
   -- both sides are compared as points of `E` with values in `T'`
   refine (cancel_mono (X.curve.exactOrderSchemeι N)).mp ?_
-  rw [Category.assoc]
   ext1
-  rw [Over.comp_left _ _ _ k, gammaOneBaseChangeEquiv_apply_comp_left,
-    gammaOneBaseChangeEquiv_apply_comp_left, gammaOneEquiv_map]
+  simp only [Over.comp_left, Category.assoc, EllipticCurveGeom.exactOrderSchemeι_left,
+    gammaOneBaseChangeEquiv_apply_left_comp, gammaOneEquiv_map]
   -- the morphism `E_{T'} ⟶ E_T` lies over `k` and composes with `E_T ⟶ E` to `E_{T'} ⟶ E`
   have hk := congrArg EllObj.Hom.total (X.baseChangeFunctor_map_baseChangeFunctorHom k)
   simp only [EllObj.comp_total, EllObj.baseChangeFunctorHom_total] at hk

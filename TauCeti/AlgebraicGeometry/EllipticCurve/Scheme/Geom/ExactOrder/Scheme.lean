@@ -160,14 +160,13 @@ theorem exactOrderSchemeι_comp_mulBy : E.exactOrderSchemeι N ≫ E.mulBy N = 1
       (E.baseChangeIso (E.exactOrderScheme N).hom).hom ≫ pullback.fst _ _ =
         (E.exactOrderScheme N).hom ≫ E.zero := by
     simp
-  let P := (exactOrderPointsEquivOfIsPullback N hg h0).symm (𝟙 _)
-  have hP : P.1 ≫ (E.baseChange _).mulBy N = 1 := P.2.comp_mulBy_eq_one
-  ext1
+  have hP := ((exactOrderPointsEquivOfIsPullback N hg h0).symm (𝟙 _)).2.comp_mulBy_eq_one
   have hι := exactOrderPointsEquivOfIsPullback_symm_apply_left_comp hg h0 (𝟙 _)
-  rw [Category.id_comp] at hι
-  rw [Over.comp_left, ← hι, Category.assoc, ← mulBy_left_comp_of_isPullback hg h0,
-    ← Category.assoc, ← Over.comp_left, hP, hom_one_left, hom_one_left]
-  simp
+  simp only [Over.mk_hom, Category.id_comp, exactOrderSchemeι_left] at hι
+  ext1
+  -- `[N]` commutes with the projection of the base change, and kills the universal point
+  simpa [mulBy_left_comp_of_isPullback_assoc hg h0, reassoc_of% hι, -comp_mulBy] using
+    congrArg (·.left ≫ (E.baseChangeIso (E.exactOrderScheme N).hom).hom ≫ pullback.fst _ _) hP
 
 variable (E N) in
 /-- **The exact-order scheme is finite** over `S` for `N ≠ 0`: it is a closed subscheme of the
