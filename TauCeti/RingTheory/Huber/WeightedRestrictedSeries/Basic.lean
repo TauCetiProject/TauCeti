@@ -57,7 +57,7 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
 * `TauCeti.Huber.IsWeightFamily.isOpen_span`: weights generate open ideals under separately
   continuous addition.
 * `TauCeti.Huber.IsWeightedRestricted.mul` gives multiplicative closure; `finite_coeff_notMem`
-  identifies the exceptional finite set, and `exists_coeff_mem_weightMul` corrects it.
+  identifies the exceptional finite set.
 * `TauCeti.Huber.weightedNhd_subgroups_basis` gives the ring topology through
   `hasBasis_nhds_zero_weightedTopology`, `isTopologicalRing_weightedTopology`,
   `nonarchimedeanRing_weightedTopology` and `continuous_weightedC`.
