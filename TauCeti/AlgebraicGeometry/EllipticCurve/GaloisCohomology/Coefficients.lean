@@ -69,7 +69,8 @@ automorphisms of an algebraic closure are the points over the perfect closure of
   `WeierstrassCurve.pointGaloisAction`, and
   `WeierstrassCurve.torsionByCongr_pointCoeffEquiv_symm_smul` its torsion counterpart
   `WeierstrassCurve.torsionGaloisAction`.
-* `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`.
+* `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`,
+  and `WeierstrassCurve.exists_baseTorsionCoeff_eq_of_forall_smul_eq` its torsion counterpart.
 
 ## Implementation notes
 
@@ -352,6 +353,10 @@ theorem smul_baseTorsionCoeff {m : ℕ} (σ : AbsoluteGaloisGroup K)
     σ • W.baseTorsionCoeff m T = W.baseTorsionCoeff m T :=
   Subtype.ext (by rw [coe_smul_torsionCoeff, coe_baseTorsionCoeff, smul_basePointCoeff])
 
+/-- The inclusion `E(K)[m] → E(Kˢ)[m]` is injective. -/
+theorem baseTorsionCoeff_injective (m : ℕ) : Function.Injective (W.baseTorsionCoeff m) :=
+  fun _ _ h => Subtype.ext (W.basePointCoeff_injective (congrArg Subtype.val h))
+
 /-- **A point of `E(Kˢ)` fixed by the whole Galois group comes from `E(K)`.** This is the
 fixed-field theorem `InfiniteGalois.mem_range_algebraMap_iff_fixed` for the separable closure,
 applied to the two coordinates of the point. -/
@@ -376,6 +381,17 @@ theorem mem_H0_pointCoeff_iff {P : W.PointCoeff} :
       (W.toAffine.baseChange_nonsingular (Algebra.ofId K (SeparableClosure K)).injective
         x₀ y₀).1 h
     exact ⟨.some x₀ y₀ h₀, by rw [basePointCoeff_some]⟩
+
+/-- **A point of `E(Kˢ)[m]` fixed by the whole Galois group comes from `E(K)[m]`**, the torsion
+counterpart of `WeierstrassCurve.mem_H0_pointCoeff_iff`. -/
+theorem exists_baseTorsionCoeff_eq_of_forall_smul_eq {m : ℕ} {Q : W.TorsionCoeff m}
+    (h : ∀ σ : AbsoluteGaloisGroup K, σ • Q = Q) :
+    ∃ T : AddSubgroup.torsionBy W.toAffine.Point m, W.baseTorsionCoeff m T = Q := by
+  obtain ⟨T, hT⟩ := W.mem_H0_pointCoeff_iff.1 <| (FixedPoints.mem_addSubgroup _ _ _).2
+    fun σ => by simpa using congrArg Subtype.val (h σ)
+  refine ⟨⟨T, AddSubgroup.torsionBy.nsmul_iff.2 (W.basePointCoeff_injective ?_)⟩,
+    Subtype.ext (by rw [coe_baseTorsionCoeff, hT])⟩
+  rw [map_nsmul, hT, map_zero, AddSubgroup.torsionBy.nsmul_iff.1 Q.2]
 
 /-- **The invariants of `E(Kˢ)` are the points of `E(K)`**, that is `H⁰(G_K, E(Kˢ)) ≅ E(K)`. The
 two sides are different Lean types, so this canonical isomorphism, and not an equality, is what a

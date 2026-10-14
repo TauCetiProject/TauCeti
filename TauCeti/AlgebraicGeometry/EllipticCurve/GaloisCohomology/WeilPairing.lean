@@ -79,13 +79,18 @@ private theorem natCast_separableClosure_ne_zero : (m : SeparableClosure K) ≠ 
   rw [← map_natCast (algebraMap K (SeparableClosure K)), map_ne_zero]
   exact hm.ne_zero
 
+include hm in
+/-- An integer invertible in `K` is nonzero. -/
+private theorem neZero_of_isUnit : NeZero m :=
+  NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
+
 /-! ### The Weil pairing on `E(Kˢ)[m]` -/
 
 open scoped Classical in
 /-- **The Weil pairing on the coefficient module** `E(Kˢ)[m]`, with values in `μ_m`: the Weil
 pairing `e_m` of `W` over the separable closure `Kˢ`, for `m` invertible in `K`. -/
 def torsionCoeffWeilPairing : W.TorsionCoeff m →+ W.TorsionCoeff m →+ KummerCoeff K m :=
-  haveI : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
+  haveI := neZero_of_isUnit m hm
   let f := (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm.toAddMonoidHom
   ((Isogeny.weilPairing (W⁄(SeparableClosure K)) m
     (natCast_separableClosure_ne_zero m hm)).compl₂ f).comp f
@@ -107,7 +112,7 @@ theorem torsionCoeffWeilPairing_apply [NeZero m] (hm' : (m : SeparableClosure K)
 theorem torsionCoeffWeilPairing_smul (σ : AbsoluteGaloisGroup K) (P Q : W.TorsionCoeff m) :
     W.torsionCoeffWeilPairing m hm (σ • P) (σ • Q) = σ • W.torsionCoeffWeilPairing m hm P Q := by
   classical
-  have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
+  have := neZero_of_isUnit m hm
   rw [torsionCoeffWeilPairing_apply _ _ _ (natCast_separableClosure_ne_zero m hm),
     torsionCoeffWeilPairing_apply _ _ _ (natCast_separableClosure_ne_zero m hm),
     torsionByCongr_pointCoeffEquiv_symm_smul, torsionByCongr_pointCoeffEquiv_symm_smul,
@@ -120,7 +125,7 @@ theorem torsionCoeffWeilPairing_smul (σ : AbsoluteGaloisGroup K) (P Q : W.Torsi
 theorem torsionCoeffWeilPairing_nondegenerate {P : W.TorsionCoeff m}
     (hP : ∀ Q, W.torsionCoeffWeilPairing m hm P Q = 0) : P = 0 := by
   classical
-  have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
+  have := neZero_of_isUnit m hm
   refine (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm.injective ?_
   rw [map_zero]
   refine Isogeny.weilPairing_nondegenerate _ m (natCast_separableClosure_ne_zero m hm)
@@ -135,7 +140,7 @@ private theorem smul_kummerCoeff_eq_self_of_forall_smul_eq_self
     (h : ∀ (σ : AbsoluteGaloisGroup K) (P : W.TorsionCoeff m), σ • P = P)
     (σ : AbsoluteGaloisGroup K) (x : KummerCoeff K m) : σ • x = x := by
   classical
-  have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
+  have := neZero_of_isUnit m hm
   have hσ : W.torsionGaloisAction m σ = 1 := by
     refine Multiplicative.toAdd.injective (AddEquiv.ext fun P ↦ ?_)
     have := W.torsionByCongr_pointCoeffEquiv_symm_smul σ
@@ -154,26 +159,6 @@ private theorem smul_kummerCoeff_eq_self_of_forall_smul_eq_self
 section BaseChange
 
 variable {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-
-/-- The Weil pairing of a Weierstrass curve is unchanged when the curve is transported along an
-equality, the torsion points being transported with it. -/
-private theorem weilPairing_torsionByCongr_cast {F : Type*} [Field F] [DecidableEq F]
-    [IsSepClosed F] {V₁ V₂ : WeierstrassCurve F} [V₁.IsElliptic] [V₂.IsElliptic] (h : V₁ = V₂)
-    (N : ℕ) [NeZero N] (hN₁ : (N : F) ≠ 0) (hN₂ : (N : F) ≠ 0)
-    (P Q : Submodule.torsionBy ℤ V₁.toAffine.Point (N : ℤ)) :
-    Isogeny.weilPairing V₂ N hN₂
-        (AddEquiv.torsionByCongr
-          (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) h) N P)
-        (AddEquiv.torsionByCongr
-          (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) h) N Q) =
-      Isogeny.weilPairing V₁ N hN₁ P Q := by
-  subst h
-  -- after `subst`, both transports are the identity on points
-  have hc (R : Submodule.torsionBy ℤ V₁.toAffine.Point (N : ℤ)) :
-      AddEquiv.torsionByCongr
-        (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) rfl) N R = R :=
-    Subtype.ext (by simp)
-  rw [hc, hc]
 
 omit [W.IsElliptic] in
 /-- The base change of `W` to `Kˢ`, transported along `τ : Kˢ → Lˢ`, is the base change of `W⁄L`
@@ -207,7 +192,7 @@ private theorem torsionByCongr_symm_torsionCoeffBaseChange (P : W.TorsionCoeff m
   · rw [pointCoeffBaseChange_pointCoeffEquiv_some, AddEquiv.symm_apply_apply,
       Affine.Point.mapAlong_some, AddEquiv.cast_apply,
       Affine.Point.cast_some (W.map_baseChange_separableClosure τ)]
-    rfl
+    simp
 
 variable {m}
 
@@ -218,7 +203,7 @@ theorem torsionCoeffWeilPairing_torsionCoeffBaseChange (P Q : W.TorsionCoeff m) 
         (W.torsionCoeffBaseChange τ m P) (W.torsionCoeffBaseChange τ m Q) =
       kummerCoeffBaseChange m τ (W.torsionCoeffWeilPairing m hm P Q) := by
   classical
-  have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
+  have := neZero_of_isUnit m hm
   have hm' := natCast_separableClosure_ne_zero m hm
   have hmτ : (m : SeparableClosure L) ≠ 0 := by
     rwa [← map_natCast (τ : SeparableClosure K →+* SeparableClosure L), map_ne_zero]
@@ -311,13 +296,7 @@ theorem explicitCoeff1_weilPairingCoeff_injective
     exact zero_mem _
   refine funext fun g ↦ W.torsionCoeffWeilPairing_nondegenerate m hm fun Q ↦ ?_
   -- `Q` is fixed by `G_K`, so it is the image of a point `T ∈ E(K)[m]`
-  obtain ⟨T, rfl⟩ : ∃ T : AddSubgroup.torsionBy W.toAffine.Point m,
-      W.baseTorsionCoeff m T = Q := by
-    obtain ⟨T, hT⟩ := W.mem_H0_pointCoeff_iff.1 <| (FixedPoints.mem_addSubgroup _ _ _).2
-      fun σ ↦ by simpa using congrArg Subtype.val (h σ Q)
-    refine ⟨⟨T, AddSubgroup.torsionBy.nsmul_iff.2 (W.basePointCoeff_injective ?_)⟩,
-      Subtype.ext (by rw [coe_baseTorsionCoeff, hT])⟩
-    rw [map_nsmul, hT, map_zero, AddSubgroup.torsionBy.nsmul_iff.1 Q.2]
+  obtain ⟨T, rfl⟩ := W.exists_baseTorsionCoeff_eq_of_forall_smul_eq fun σ ↦ h σ Q
   -- the image of `z` under `e_m(·, T)` is a coboundary, and `G_K` acts trivially on `μ_m`
   have hcT : explicitCoeff1 _ _ (W.weilPairingCoeff m hm T) continuous_of_discreteTopology
       (z : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) = 0 := congrFun hc T
@@ -338,7 +317,7 @@ theorem finite_of_forall_finite_image_explicitCoeff1_weilPairingCoeff
         A).Finite) :
     A.Finite := by
   have : Finite (AddSubgroup.torsionBy W.toAffine.Point m) :=
-    W.finite_torsionBy (Int.natCast_ne_zero.2 (NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)).ne)
+    W.finite_torsionBy (Int.natCast_ne_zero.2 (neZero_of_isUnit m hm).ne)
   refine ((Set.Finite.pi hA).preimage
     (W.explicitCoeff1_weilPairingCoeff_injective m hm h).injOn).subset fun c hc ↦ ?_
   simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const]
