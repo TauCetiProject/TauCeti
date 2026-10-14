@@ -57,6 +57,7 @@ automorphisms of an algebraic closure are the points over the perfect closure of
 * `WeierstrassCurve.torsionCoeffIncl`: the equivariant inclusion `E(Kˢ)[m] → E(Kˢ)`.
 * `WeierstrassCurve.kummerShortExact`: the Kummer sequence `0 → E[m] → E → E → 0` of `W`.
 * `WeierstrassCurve.basePointCoeff`: the inclusion `E(K) → E(Kˢ)`.
+* `WeierstrassCurve.baseTorsionCoeff`: its restriction `E(K)[m] → E(Kˢ)[m]`.
 * `WeierstrassCurve.basePointEquivInvariants`: the isomorphism `E(K) ≅ H⁰(G_K, E(Kˢ))`.
 
 ## Main results
@@ -65,7 +66,9 @@ automorphisms of an algebraic closure are the points over the perfect closure of
   `WeierstrassCurve.TorsionCoeff.instContinuousSMul`: the coefficients are discrete modules.
 * `WeierstrassCurve.finite_torsionCoeff`: `E(Kˢ)[m]` is finite for `W` elliptic and `m ≠ 0`.
 * `WeierstrassCurve.pointGaloisAction_apply_eq_smul`: the action is
-  `WeierstrassCurve.pointGaloisAction`.
+  `WeierstrassCurve.pointGaloisAction`, and
+  `WeierstrassCurve.torsionByCongr_pointCoeffEquiv_symm_smul` its torsion counterpart
+  `WeierstrassCurve.torsionGaloisAction`.
 * `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`.
 
 ## Implementation notes
@@ -216,6 +219,18 @@ instance TorsionCoeff.instContinuousSMul (m : ℕ) :
   AddSubgroup.restrictDistribMulAction_continuousSMul _ fun σ _ => smul_mem_torsionCoeff σ
 
 open scoped Classical in
+/-- **The action on `E(Kˢ)[m]` is `WeierstrassCurve.torsionGaloisAction`**, read through the
+identification `WeierstrassCurve.pointCoeffEquiv` of `E(Kˢ)` with the points of `W⁄Kˢ`. -/
+theorem torsionByCongr_pointCoeffEquiv_symm_smul {m : ℕ} (σ : AbsoluteGaloisGroup K)
+    (P : W.TorsionCoeff m) :
+    (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm (σ • P) =
+      Multiplicative.toAdd (W.torsionGaloisAction m σ)
+        ((AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm P) := by
+  apply Subtype.ext
+  rw [torsionGaloisAction_apply_coe, pointGaloisAction_apply]
+  simp
+
+open scoped Classical in
 /-- For `W` elliptic and `m ≠ 0`, the `m`-torsion `E(Kˢ)[m]` of `W` over the separable closure is
 finite. -/
 instance finite_torsionCoeff [W.IsElliptic] (m : ℕ) [NeZero m] : Finite (W.TorsionCoeff m) :=
@@ -315,6 +330,27 @@ theorem smul_basePointCoeff (σ : AbsoluteGaloisGroup K) (P : W.toAffine.Point) 
     AddMonoidHom.comp_apply, Affine.Point.map_map]
   rw [Subsingleton.elim (σ.toAlgHom.comp (Algebra.ofId K (SeparableClosure K)))
     (Algebra.ofId K (SeparableClosure K))]
+
+/-- **The inclusion `E(K)[m] → E(Kˢ)[m]`**, the restriction of `WeierstrassCurve.basePointCoeff`
+to the `m`-torsion. -/
+def baseTorsionCoeff (m : ℕ) :
+    AddSubgroup.torsionBy W.toAffine.Point m →+ W.TorsionCoeff m :=
+  (W.basePointCoeff.comp (AddSubgroup.torsionBy W.toAffine.Point m).subtype).codRestrict _
+    fun T => by
+      rw [AddSubgroup.torsionBy.nsmul_iff, AddMonoidHom.comp_apply, ← map_nsmul,
+        AddSubgroup.coe_subtype, AddSubgroup.torsionBy.nsmul_iff.1 T.2, map_zero]
+
+@[simp]
+theorem coe_baseTorsionCoeff {m : ℕ} (T : AddSubgroup.torsionBy W.toAffine.Point m) :
+    (W.baseTorsionCoeff m T : W.PointCoeff) = W.basePointCoeff T :=
+  (rfl)
+
+/-- **A point of `E(K)[m]` is fixed by `G_K`** after mapping into `E(Kˢ)[m]`. -/
+@[simp]
+theorem smul_baseTorsionCoeff {m : ℕ} (σ : AbsoluteGaloisGroup K)
+    (T : AddSubgroup.torsionBy W.toAffine.Point m) :
+    σ • W.baseTorsionCoeff m T = W.baseTorsionCoeff m T :=
+  Subtype.ext (by rw [coe_smul_torsionCoeff, coe_baseTorsionCoeff, smul_basePointCoeff])
 
 /-- **A point of `E(Kˢ)` fixed by the whole Galois group comes from `E(K)`.** This is the
 fixed-field theorem `InfiniteGalois.mem_range_algebraMap_iff_fixed` for the separable closure,
