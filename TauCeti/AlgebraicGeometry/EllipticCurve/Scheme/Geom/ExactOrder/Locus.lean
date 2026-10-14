@@ -251,26 +251,30 @@ theorem subschemeι_exactOrderLocus_comp_mulBy (N : ℕ) :
   simp only [hom_one_left, Category.assoc, h0, reassoc_of% hP]
   simp
 
-/-- The canonical morphism from the exact-order locus to `E[N]`, induced by the fact that the
-exact-order locus is killed by `N`. -/
+/-- The canonical morphism from the exact-order locus to `E[N]`, the lift (`torsionLift`) of the
+inclusion of the exact-order locus into `E`, which is killed by `N`. -/
 noncomputable def exactOrderLocusToTorsion (N : ℕ) :
     (E.exactOrderLocus N).subscheme ⟶ (E.torsion N).X.left :=
-  (E.isPullback_torsion N).lift _ _ (E.subschemeι_exactOrderLocus_comp_mulBy N)
+  (torsionLift (Over.homMk (E.exactOrderLocus N).subschemeι :
+      Over.mk ((E.exactOrderLocus N).subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap)
+    (Over.OverMorphism.ext <| by
+      simpa only [Over.comp_left, hom_one_left, Over.homMk_left, Over.mk_hom, Category.assoc] using
+        E.subschemeι_exactOrderLocus_comp_mulBy N)).left
 
 /-- The morphism from the exact-order locus to `E[N]`, followed by the inclusion into `E`, is the
 inclusion of the exact-order locus into `E`. -/
 @[reassoc (attr := simp)]
 theorem exactOrderLocusToTorsion_comp_torsionι (N : ℕ) :
     E.exactOrderLocusToTorsion N ≫ (E.torsionι N).left =
-      (E.exactOrderLocus N).subschemeι :=
-  (E.isPullback_torsion N).lift_fst _ _ _
+      (E.exactOrderLocus N).subschemeι := by
+  simp [exactOrderLocusToTorsion, ← Over.comp_left]
 
 /-- The morphism from the exact-order locus to `E[N]` lies over `S`. -/
 @[reassoc (attr := simp)]
 theorem exactOrderLocusToTorsion_comp_structureMap (N : ℕ) :
     E.exactOrderLocusToTorsion N ≫ (E.torsion N).X.hom =
       (E.exactOrderLocus N).subschemeι ≫ E.structureMap :=
-  (E.isPullback_torsion N).lift_snd _ _ _
+  Over.w _
 
 /-- The canonical morphism from the exact-order locus to `E[N]` is a closed immersion. -/
 instance isClosedImmersion_exactOrderLocusToTorsion (N : ℕ) :
