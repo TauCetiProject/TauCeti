@@ -23,7 +23,7 @@ dimension of the center:
 The bound is the counting half of Artin-Wedderburn, obtained without choosing a presentation
 `R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)`: for such a product the center is `∏ᵢ Z(Dᵢ)`, of dimension at least the number
 of blocks, and the argument here says exactly that intrinsically. Where
-`TauCeti.card_blocks_eq` compares two presentations, this bound mentions none.
+`RingEquiv.card_blocks_eq` compares two presentations, this bound mentions none.
 
 The mechanism is that each isotypic component of the regular module contains a nonzero *central*
 element (`TauCeti.exists_ne_zero_mem_center_of_mem_isotypicComponents`). Writing `1 = ∑_c e_c` along

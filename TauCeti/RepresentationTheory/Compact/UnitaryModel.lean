@@ -60,6 +60,8 @@ of unitary irreducible representations. The mathematical development follows Dan
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory RCLike TauCeti TauCeti.ContRepresentation
 open scoped InnerProductSpace
 
@@ -77,23 +79,25 @@ private local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
 
 /-- **A finite-dimensional continuous representation of a compact group is conjugate to a unitary
 one.** There is a continuous linear automorphism `e` of the carrier for which the transported
-representation `TauCeti.ContRepresentation.congr e π` preserves the inner product.
+representation `ContinuousLinearEquiv.congr e π` preserves the inner product.
 
 This is the unitarian trick in its usable form. Haar averaging supplies the invariant
 positive-definite form `⟪S ·, ·⟫`; the automorphism `A` carrying the standard inner product to
 that form (`TauCeti.exists_continuousLinearEquiv_inner_map_map`) conjugates the invariance of the
 form into unitarity of `A⁻¹ ∘ π · ∘ A`. -/
 theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    ∃ e : V ≃L[𝕜] V, IsUnitary (congr e π) := by
+    ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
   obtain ⟨A, hA⟩ := exists_continuousLinearEquiv_inner_map_map (π.gramOperator hπ)
     (π.isSymmetric_gramOperator hπ) fun _ hv ↦ π.re_inner_gramOperator_self_pos hπ hv
   -- The same standardization with the Gram operator on the second argument, which is the side
   -- `inner_gramOperator_map_map` states invariance of the averaged form on.
   have hA' : ∀ x y : V, ⟪A x, π.gramOperator hπ (A y)⟫_𝕜 = ⟪x, y⟫_𝕜 := fun x y ↦ by
     rw [← inner_conj_symm, hA, inner_conj_symm]
-  have hunitary : ∀ (g : G) (x y : V), ⟪congr A.symm π g x, congr A.symm π g y⟫_𝕜 = ⟪x, y⟫_𝕜 := by
+  have hunitary : ∀ (g : G) (x y : V), ⟪ContinuousLinearEquiv.congr A.symm π g x,
+      ContinuousLinearEquiv.congr A.symm π g y⟫_𝕜 = ⟪x, y⟫_𝕜 := by
     intro g x y
-    rw [congr_apply, congr_apply, ContinuousLinearEquiv.symm_symm,
+    rw [ContinuousLinearEquiv.congr_apply, ContinuousLinearEquiv.congr_apply,
+        ContinuousLinearEquiv.symm_symm,
       ← hA' (A.symm (π g (A x))) (A.symm (π g (A y))), ContinuousLinearEquiv.apply_symm_apply,
       ContinuousLinearEquiv.apply_symm_apply, π.inner_gramOperator_map_map hπ, hA']
   exact ⟨A.symm, (isUnitary_iff_norm_map _).mpr fun g ↦
@@ -103,7 +107,7 @@ theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continu
 a matrix coefficient of a unitary one**, on the same carrier and at suitably moved vectors.
 
 Matrix coefficients depend only on the equivalence class of a representation
-(`TauCeti.ContRepresentation.matrixCoeff_congr_adjoint`), so the conjugate unitary model produced
+(`ContinuousLinearEquiv.matrixCoeff_congr_adjoint`), so the conjugate unitary model produced
 by `ContRepresentation.exists_isUnitary_congr` produces every matrix coefficient of the
 original. -/
 theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
@@ -111,8 +115,10 @@ theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ 
     ∃ (ρ : ContRepresentation 𝕜 G V) (hρ : Continuous ρ), IsUnitary ρ ∧
       ∃ v' w' : V, matrixCoeff π hπ v w = matrixCoeff ρ hρ v' w' :=
   let ⟨e, he⟩ := exists_isUnitary_congr π hπ
-  ⟨congr e π, continuous_congr e hπ, he, e v, ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
-    (matrixCoeff_congr_adjoint e (continuous_congr e hπ) v w).symm⟩
+  ⟨ContinuousLinearEquiv.congr e π, ContinuousLinearEquiv.continuous_congr e hπ, he, e v,
+      ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
+    (ContinuousLinearEquiv.matrixCoeff_congr_adjoint e (ContinuousLinearEquiv.continuous_congr e
+        hπ) v w).symm⟩
 
 end Unitarization
 

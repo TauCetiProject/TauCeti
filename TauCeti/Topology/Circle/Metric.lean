@@ -172,7 +172,6 @@ antipodal points are the furthest apart, and beyond them the chord shrinks again
 theorem dist_circleMap_le_dist_circleMap_of_abs_sub_le (ζ : ℂ) (ρ : ℝ) {θ₀ u v : ℝ}
     (huv : |u - θ₀| ≤ |v - θ₀|) (hv : |v - θ₀| ≤ π) :
     dist (circleMap ζ ρ u) (circleMap ζ ρ θ₀) ≤ dist (circleMap ζ ρ v) (circleMap ζ ρ θ₀) := by
-  have hu : |u - θ₀| ≤ π := huv.trans hv
   have hdu : dist (circleMap ζ ρ u) (circleMap ζ ρ θ₀) = 2 * |ρ| * Real.sin (|u - θ₀| / 2) :=
     dist_circleMap_eq_two_mul_sin_abs ζ ρ (by linarith [Real.pi_pos])
   have hdv : dist (circleMap ζ ρ v) (circleMap ζ ρ θ₀) = 2 * |ρ| * Real.sin (|v - θ₀| / 2) :=
@@ -413,7 +412,6 @@ theorem min_angleDiff_le_pi_div_two_mul_dist (x y : Circle) :
   -- The chord formula, read off from `y = exp (angleDiff x y + arg x)`.
   have hy : Circle.exp (Circle.angleDiff x y + Complex.arg (x : ℂ)) = y := by
     rw [Circle.exp_add, Circle.exp_arg, Circle.exp_angleDiff_mul]
-  have hπ : 0 < π := Real.pi_pos
   have hdist : dist x y = 2 * Real.sin (Circle.angleDiff x y / 2) := by
     have hrw : dist x y = dist (Circle.exp (Complex.arg (x : ℂ)))
         (Circle.exp (Circle.angleDiff x y + Complex.arg (x : ℂ))) := by

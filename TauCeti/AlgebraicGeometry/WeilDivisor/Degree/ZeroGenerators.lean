@@ -39,11 +39,8 @@ class is a sum of the classes of `[x] - [x₀]`. It is the combinatorial input t
 available at the free Weil-divisor level before line bundles, principal divisors, the Picard
 scheme, or the Jacobian variety exist.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve: Weil
-divisors `⊕_x ℤ`", "Degree", and "`Pic⁰ X = ker deg` (as an abstract group)", and feeds the
-Layer D/F Abel-map prerequisite `D ↦ 𝒪_X(D - d·x₀)`. No external mathematics is vendored; the
-proofs reuse Tau Ceti's `WeilDivisor` API and Mathlib's finitely-supported induction and subgroup
-`closure` machinery.
+No external mathematics is vendored; the proofs reuse Tau Ceti's `WeilDivisor` API and Mathlib's
+finitely-supported induction and subgroup `closure` machinery.
 -/
 
 public section

@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.LocalRing.Etale
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 public import TauCeti.NumberTheory.LocalField.Different.Basic
+import TauCeti.Algebra.CharP.LocalRing
+import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 
 /-!
 # Unramified extensions of local fields via generators
@@ -18,6 +20,11 @@ Conversely every unramified extension is of this form: `𝒪[L]` is generated ov
 element at which its minimal polynomial has unit derivative. This is the criterion through which
 unramifiedness is transported along base change and composita.
 
+The basic instance is a radical extension: if `L = K(β)` with `β^n = a ∈ Kˣ`, where `n` is prime
+to the residue characteristic and divides `v_K(a)`, then `L/K` is unramified. Dividing `β` by a
+power of a uniformizer of `K` turns it into a unit `y` with `y^n` a unit of `𝒪[K]`, and `X^n − y^n`
+has unit derivative `n y^{n−1}` at `y`.
+
 ## Main results
 
 * `TauCeti.isUnramified_of_adjoin_eq_top_of_isUnit_aeval_derivative`: `L = K(b)` is unramified
@@ -25,6 +32,8 @@ unramifiedness is transported along base change and composita.
 * `TauCeti.isUnramified_iff_exists_adjoin_eq_top_and_isUnit_aeval_derivative_minpoly`: `L/K` is
   unramified exactly when `𝒪[L]` is generated over `𝒪[K]` by an element at which its minimal
   polynomial has unit derivative.
+* `TauCeti.isUnramified_of_adjoin_eq_top_of_pow_eq`: `K(a^{1/n})/K` is unramified when `n` is
+  prime to the residue characteristic and divides `v_K(a)`.
 
 ## References
 
@@ -77,6 +86,64 @@ theorem isUnramified_of_adjoin_eq_top_of_isUnit_aeval_derivative {b : 𝒪[L]}
   have hd := conductor_mul_differentIdeal 𝒪[K] K L b hK
   rw [Ideal.span_singleton_eq_top.2 hu'] at hd
   exact (differentIdeal_eq_top_iff K L).1 (eq_top_iff.2 (hd ▸ Ideal.mul_le_right))
+
+/-- **Radical extensions by roots of units are unramified.** Let `L = K(β)` with `β^n = a` for
+some `a ∈ Kˣ`, where the residue characteristic `p` of `K` does not divide `n`. If `n` divides
+the normalized valuation `v_K(a)`, then `L/K` is unramified. -/
+theorem isUnramified_of_adjoin_eq_top_of_pow_eq {n : ℕ} (hn : ¬ ringChar 𝓀[K] ∣ n) {β : L}
+    (hβ : IntermediateField.adjoin K {β} = ⊤) {a : Kˣ} (ha : β ^ n = algebraMap K L a)
+    (hdvd : (n : ℤ) ∣ (normalizedValuation K a).toAdd) : IsUnramified K L := by
+  have := finite_of_valuativeExtension K L
+  have hn0 : n ≠ 0 := by rintro rfl; exact hn (dvd_zero _)
+  -- Write `a = u π^{nk}` with `π` a uniformizer and `u` a unit of `𝒪[K]`.
+  obtain ⟨k, hk⟩ := hdvd
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  obtain ⟨u, m, hu1, rfl⟩ := exists_eq_mul_zpow_of_irreducible hϖ a
+  set π : Kˣ := Units.mk0 (ϖ : K) (fun h => hϖ.ne_zero (Subtype.ext h))
+  have hm : m = n * k := by
+    rwa [map_mul, map_zpow, (normalizedValuation_eq_one_iff u).2 hu1,
+      normalizedValuation_irreducible hϖ, one_mul, ← ofAdd_zsmul, toAdd_ofAdd, smul_eq_mul,
+      mul_one] at hk
+  subst hm
+  -- `y = β / π^k` is an `n`-th root of `u`.
+  set y : L := β * algebraMap K L ((π ^ k)⁻¹ : Kˣ) with hy_def
+  have hyn : y ^ n = algebraMap K L u := by
+    rw [hy_def, mul_pow, ha, ← map_pow, ← map_mul]
+    congr 1
+    rw [← Units.val_pow_eq_pow_val, ← Units.val_mul, inv_pow, ← zpow_natCast, ← zpow_mul,
+      mul_comm (n : ℤ) k]
+    simp [zpow_mul]
+  set c : 𝒪[K] := ⟨u, (Valuation.mem_integer_iff _ _).2 hu1.le⟩
+  have hc : IsUnit c := (Valuation.Integers.isUnit_iff_valuation_eq_one
+      (Valuation.integer.integers (valuation K))).2 hu1
+  -- `y` is integral over `𝒪[K]`, hence lies in `𝒪[L]`, where it is a unit.
+  have hyO : y ∈ 𝒪[L] := by
+    rw [integerRing_eq_integralClosure K L]
+    refine ⟨X ^ n - C c, monic_X_pow_sub_C c hn0, ?_⟩
+    rw [← aeval_def, map_sub, map_pow, aeval_X, aeval_C, hyn,
+      IsScalarTower.algebraMap_apply 𝒪[K] K L, sub_eq_zero]
+    rfl
+  set b : 𝒪[L] := ⟨y, hyO⟩
+  have hbn : b ^ n = algebraMap 𝒪[K] 𝒪[L] c := Subtype.ext (by simp [b, c, hyn])
+  have hb : IsUnit b := (isUnit_pow_iff hn0).1 (hbn ▸ hc.map _)
+  have hnL : IsUnit (n : 𝒪[L]) := by
+    simpa using ((IsLocalRing.isUnit_natCast_iff_not_dvd (R := 𝒪[K])).2 hn).map
+      (algebraMap 𝒪[K] 𝒪[L])
+  -- So `b` is a simple root of `X^n − c`.
+  refine isUnramified_of_adjoin_eq_top_of_isUnit_aeval_derivative (b := b)
+    (p := X ^ n - C c) ?_ ?_ ?_
+  · -- `K(y) = K(β)`, since `y` and `β` differ by a factor in `K`.
+    refine top_le_iff.1 (hβ ▸ IntermediateField.adjoin_simple_le_iff.2 ?_)
+    have : β = y * algebraMap K L (π ^ k : Kˣ) := by
+      rw [hy_def, mul_assoc, ← map_mul, ← Units.val_mul, inv_mul_cancel, Units.val_one, map_one,
+        mul_one]
+    rw [this]
+    exact mul_mem (IntermediateField.mem_adjoin_simple_self K _)
+      (IntermediateField.algebraMap_mem _ _)
+  · rw [map_sub, map_pow, aeval_X, aeval_C, hbn, sub_self]
+  · rw [derivative_sub, derivative_X_pow, derivative_C, sub_zero, map_mul, map_pow, aeval_X,
+      aeval_C]
+    simpa using hnL.mul (hb.pow _)
 
 /-- **Unramified extensions are generated by simple roots of integral polynomials.** An extension
 `L/K` of nonarchimedean local fields is unramified exactly when `𝒪[L]` is generated as an

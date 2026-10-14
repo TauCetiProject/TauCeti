@@ -30,9 +30,6 @@ The construction follows the formal pattern of
 Laurent-polynomial induction and the formulas for the counit and comultiplication of `T` come from
 Mathlib's `Mathlib.Algebra.Polynomial.Laurent` and
 `Mathlib.RingTheory.Bialgebra.MonoidAlgebra`.
-
-This realizes the `𝔾ₘ` item in the ReductiveGroups roadmap's "Worked examples" section using
-its Layer 2 tangent/Lie algebra infrastructure.
 -/
 
 public section

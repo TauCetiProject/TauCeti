@@ -298,7 +298,7 @@ the whole space consumes, stated for the bundled quotient
 theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) (u : W1p mu ⊤ p) :
     ‖W1p.value (W1p.differenceQuotient le_rfl v t (Set.mapsTo_univ (· + t • v) _) u)‖
       ≤ ‖v‖ * ‖W1p.gradient u‖ := by
-  set nu := mu.restrict ((⊤ : Opens E) : Set E) with hnu
+  set nu := mu.restrict ((⊤ : Opens E) : Set E) with _
   set q := W1p.differenceQuotient le_rfl v t (Set.mapsTo_univ (· + t • v) _) u with hq
   -- The inner product against `v` is dominated by `‖v‖` times the gradient.
   have hmeas : AEStronglyMeasurable (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) nu :=

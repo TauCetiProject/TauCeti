@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.EqToHom
+public import Mathlib.CategoryTheory.Preadditive.Basic
 
 /-!
 # Transporting categorical morphisms along object equalities
@@ -18,6 +19,9 @@ and avoid exposing the definitional equality of the objects being transported.
 
 * `TauCeti.eqToHom_conjugate_cancel`: transporting a morphism and then transporting it back leaves
   it unchanged.
+* `TauCeti.eqToHom_conjugate_eq_id`, `TauCeti.eqToHom_conjugate_eq_comp` and
+  `TauCeti.eqToHom_conjugate_add`: transporting an identity, a composite or a sum gives the
+  identity, the composite of the transports or the sum of the transports.
 * `TauCeti.eqToHom_conjugate_square`: conjugating every edge preserves and reflects commutativity of
   a square.
 * `TauCeti.eq_of_eqToHom_conjugate`: two morphisms with equal conjugates are equal.
@@ -38,6 +42,35 @@ theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
   subst X'
   subst Y'
   simp
+
+/-- **A transported identity is the identity**: conjugating a morphism equal to `𝟙 Y` by the
+object equality `X = Y` gives `𝟙 X`. -/
+theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
+    (f : Y ⟶ Y) (hf : f = 𝟙 Y) : eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
+  subst h
+  simp [hf]
+
+/-- **Transport distributes over composition**: if `f = g ≫ h`, the transport of `f` is the
+composite of the transports of `g` and `h`. -/
+theorem eqToHom_conjugate_eq_comp {C : Type*} [Category* C] {X X' Y Y' Z Z' : C}
+    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (f : X' ⟶ Z') (g : X' ⟶ Y') (h : Y' ⟶ Z')
+    (hf : f = g ≫ h) :
+    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
+      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
+  subst hX
+  subst hY
+  subst hZ
+  simp [hf]
+
+/-- **Transport is additive**: in a preadditive category, if `f = g + h`, the transport of `f` is
+the sum of the transports of `g` and `h`. -/
+theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C] {X X' Y Y' : C}
+    (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'} (hfgh : f = g + h) :
+    eqToHom hX ≫ f ≫ eqToHom hY
+      = (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
+  subst hX
+  subst hY
+  simp [hfgh]
 
 /-- **Conjugating a commuting square by object equalities leaves it commuting**, and nothing else
 becomes commuting that way: the square of transported edges commutes exactly when the original

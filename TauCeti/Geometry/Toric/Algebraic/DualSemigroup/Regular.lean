@@ -42,7 +42,9 @@ rank of the lattice. Finite generation for all lattice-rational cones is proved 
 * `TauCeti.Toric.IsRegularCone.nonempty_dualSemigroup_addEquiv`: the dual semigroup of a regular
   cone with `k` rays in a lattice of rank `n` is isomorphic to `ℕ ^ k × ℤ ^ (n - k)`.
 * `TauCeti.Toric.IsRegularCone.mem_iff_forall_realCharacter_nonneg`: a regular cone is the set of
-  points at which every character of its dual semigroup is nonnegative.
+  points at which every character of its dual semigroup is nonnegative, and
+  `TauCeti.Toric.IsRegularCone.mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top`: it
+  suffices to test a generating family.
 
 ## References
 
@@ -291,6 +293,26 @@ theorem mem_iff_forall_realCharacter_nonneg (hi : IsIntegralLattice i) (hσ : Is
   rw [hB]
   exact σ.smul_mem (hcoord (Sum.inl ρ) ▸ h _ (hmem (Sum.inl ρ)))
     (ρ.1.isFaceOf.le (hb ρ).mem)
+
+/-- A regular cone is cut out by any generating family of its dual semigroup: a point lies in the
+cone exactly when the real extension of every character of the family is nonnegative at it. -/
+theorem mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {ι : Type*} {s : ι → dualSemigroup hi σ}
+    (hs : AddSubmonoid.closure (Set.range s) = ⊤) {v : V} :
+    v ∈ σ ↔ ∀ j, 0 ≤ hi.realCharacter (s j) v := by
+  refine ⟨fun hv j ↦ (mem_dualSemigroup hi _).1 (s j).2 hv, fun h ↦ ?_⟩
+  -- Nonnegativity at `v` is preserved under sums, so it spreads from the family to its closure.
+  have key (x : dualSemigroup hi σ) : 0 ≤ hi.realCharacter x v := by
+    induction (hs ▸ AddSubmonoid.mem_top x : x ∈ AddSubmonoid.closure (Set.range s))
+      using AddSubmonoid.closure_induction with
+    | mem x hx =>
+      obtain ⟨j, rfl⟩ := hx
+      exact h j
+    | zero => simp
+    | add x y _ _ hx hy =>
+      rw [AddSubmonoid.coe_add, map_add, LinearMap.add_apply]
+      exact add_nonneg hx hy
+  exact (mem_iff_forall_realCharacter_nonneg hi hσ).2 fun m hm ↦ key ⟨m, hm⟩
 
 end IsRegularCone
 

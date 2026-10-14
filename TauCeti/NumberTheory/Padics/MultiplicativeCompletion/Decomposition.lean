@@ -63,9 +63,9 @@ NSW (7.4.1).
 
 * `TauCeti.nonempty_linearEquiv_tameFrameModule_prod`: an extension of `I_G` by `A(L)` of
   projective dimension at most one is isomorphic to `M₀ ⊕ ℤ_p[G]^N`.
-* `TauCeti.exists_relationModule_surjective_of_tameFrame`: on a layer with a generating pair
-  `σ, τ`, `τ` of order prime to `p`, the relation module of every generating family of size
-  `N + 2` maps onto `A(L)` with kernel `ℤ_p[G]`.
+* `TauCeti.exists_relationModule_surjective_of_tameFrame_of_exact`: given such a `Y`, on a layer
+  with a generating pair `σ, τ`, `τ` of order prime to `p`, the relation module of every
+  generating family of size `N + 2` maps onto `A(L)` with kernel `ℤ_p[G]`.
 
 ## References
 
@@ -163,8 +163,9 @@ generated projective `ℤ_p[G]`-modules, which is an extension `0 → A(L) → Y
 augmentation ideal by the `p`-adic completion `A(L)` of `Lˣ`. Let `σ, τ` generate `G`, with the
 order of `τ` prime to `p`. Then for every generating family `g` of `G` of size `N + 2`, the relation
 module of `g` maps onto `A(L)` with kernel isomorphic to `ℤ_p[G]`. -/
-theorem exists_relationModule_surjective_of_tameFrame [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L]
-    [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K L] [IsGalois K L]
+theorem exists_relationModule_surjective_of_tameFrame_of_exact
+    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K]
+    [IsScalarTower ℚ_[p] K L] [IsGalois K L]
     {Y P₀ P₁ : Type*} [AddCommGroup Y] [Module Λ Y]
     [AddCommGroup P₀] [Module Λ P₀] [Module.Finite Λ P₀] [Module.Projective Λ P₀]
     [AddCommGroup P₁] [Module Λ P₁] [Module.Finite Λ P₁] [Module.Projective Λ P₁]

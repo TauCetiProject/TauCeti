@@ -34,10 +34,6 @@ Both halves are consequences of Mathlib's covering-space lifting toolkit.
 The conclusion is packaged as a multiplicative equivalence `π_n(E, e) ≃* π_n(X, p e)` for
 `n ≥ 2`, in the general indexed form and in the `Fin (n + 2)` form.
 
-This is Stage 3, item 10 of the Tau Ceti universal-covers roadmap
-(`TauCetiRoadmap/UniversalCovers/README.md`): "`p_* : π_n(X̃) ≅ π_n(X)` for `n ≥ 2`, any
-cover".
-
 ## Main declarations
 
 * `GenLoop.map_homotopic_iff`: postcomposition with a covering map reflects (and

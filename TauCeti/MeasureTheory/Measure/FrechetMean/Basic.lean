@@ -21,6 +21,8 @@ This file defines the radius and its power functional at the measurable pseudome
 Fréchet barycenter is required to have finite radius and to minimize it globally; the finiteness
 clause prevents an identically infinite functional from making every point a barycenter. For a
 finite positive exponent, minimizing the radius is equivalent to minimizing its `p`-th power.
+For a finite weighted family of points, given as a finite weighted sum of Dirac masses, the power
+functional is the weighted sum of the powers of the distances to those points.
 
 For `1 ≤ p`, on a proper metric space, a probability law whose radius is finite somewhere has a
 nonempty compact set of Fréchet barycenters. The proof uses the reverse triangle inequality for
@@ -78,6 +80,17 @@ theorem frechetRadius_rpow_eq_frechetPower {p : ℝ≥0∞} (hp₀ : p ≠ 0) (h
     frechetRadius p μ x ^ p.toReal = frechetPower p μ x := by
   rw [frechetRadius_def, frechetPower_def]
   exact eLpNorm_rpow_eq_lintegral hp₀ hp_top hx
+
+/-- The Fréchet power functional of a finite weighted family of points is the weighted sum of the
+powers of the distances to those points. -/
+theorem frechetPower_sum_smul_dirac [OpensMeasurableSpace X] {ι R : Type*} [SMul R ℝ≥0∞]
+    [IsScalarTower R ℝ≥0∞ ℝ≥0∞] (s : Finset ι) (w : ι → R) (y : ι → X) (p : ℝ≥0∞) (x : X) :
+    frechetPower p (∑ i ∈ s, w i • Measure.dirac (y i)) x =
+      ∑ i ∈ s, w i • edist x (y i) ^ p.toReal := by
+  have hm : Measurable fun z ↦ edist x z ^ p.toReal :=
+    (continuous_const.edist continuous_id).measurable.pow_const _
+  simp only [frechetPower_def, lintegral_finsetSum_measure, lintegral_smul_measure,
+    lintegral_dirac' _ hm]
 
 /-- A raw minimizer of the extended-valued Fréchet radius. If the radius is identically infinite,
 every point satisfies this predicate; use `TauCeti.IsFrechetBarycenter` when finiteness matters. -/

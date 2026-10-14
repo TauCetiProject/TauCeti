@@ -143,7 +143,6 @@ private lemma exists_eq_jordanParam_image (e : C ≃ₜ Circle) (hSC : S ⊆ C) 
     (hpre : IsPreconnected S) (hne : S.Nonempty) (hSne : S ≠ C) :
     ∃ a b : ℝ, a ≤ b ∧ b - a < 2 * π ∧ S = jordanParam e '' (Circle.exp '' Icc a b) := by
   set g : Circle → X := jordanParam e
-  have hginj : Function.Injective g := jordanParam_injective e
   have hgrange : range g = C := range_jordanParam e
   set T : Set Circle := g ⁻¹' S
   have himg : g '' T = S := image_preimage_eq_of_subset (hgrange ▸ hSC)

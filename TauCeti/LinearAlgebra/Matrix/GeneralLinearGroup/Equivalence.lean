@@ -20,7 +20,7 @@ semiring.
 * `Matrix.GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq`: inverting a two-sided
   invertible transformation.
 * `Equiv.reindexGL`: reindexing the rows and columns of a general linear group along an
-  equivalence of index types, with `Equiv.reindexGL_refl` and `Equiv.reindexGL_symm`.
+  equivalence of index types, with identity, inverse, and composition laws.
 -/
 
 namespace Matrix.GeneralLinearGroup
@@ -56,12 +56,12 @@ public section
 universe u
 
 variable {n p : Type*} [Fintype n] [DecidableEq n] [Fintype p] [DecidableEq p]
-  (e : n ≃ p) (R : Type u) [CommSemiring R]
+  (e : n ≃ p) (R : Type u) [Semiring R]
 
 /-- Reindexing along an equivalence of index types, as a group isomorphism of general linear
 groups. -/
 def reindexGL : GL n R ≃* GL p R :=
-  Units.mapEquiv (Matrix.reindexAlgEquiv R R e).toRingEquiv.toMulEquiv
+  Units.mapEquiv (Matrix.reindexRingEquiv R e).toMulEquiv
 
 @[simp]
 theorem coe_reindexGL (M : GL n R) :
@@ -75,11 +75,31 @@ theorem reindexGL_refl : (Equiv.refl n).reindexGL R = MulEquiv.refl (GL n R) := 
   simp
 
 /-- Reindexing along the inverse equivalence is the inverse isomorphism. -/
+@[simp ←]
 theorem reindexGL_symm : e.symm.reindexGL R = (e.reindexGL R).symm := by
   refine MulEquiv.ext fun M => (e.reindexGL R).injective ?_
   rw [MulEquiv.apply_symm_apply]
   ext i j
   simp
+
+/-- Successive reindexings compose according to the equivalences of index types. -/
+@[simp]
+theorem reindexGL_trans_reindexGL {q : Type*} [Fintype q] [DecidableEq q] (e' : p ≃ q) :
+    (e.reindexGL R).trans (e'.reindexGL R) = (e.trans e').reindexGL R := by
+  ext M i j
+  simp
+
+/-- Reindexing back after reindexing recovers the original invertible matrix. -/
+@[simp]
+theorem reindexGL_symm_apply_reindexGL (M : GL n R) :
+    e.symm.reindexGL R (e.reindexGL R M) = M := by
+  rw [reindexGL_symm, MulEquiv.symm_apply_apply]
+
+/-- Reindexing after reindexing back recovers the original invertible matrix. -/
+@[simp]
+theorem reindexGL_apply_symm_reindexGL (M : GL p R) :
+    e.reindexGL R (e.symm.reindexGL R M) = M := by
+  rw [reindexGL_symm, MulEquiv.apply_symm_apply]
 
 end
 

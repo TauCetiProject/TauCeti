@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import TauCeti.Probability.Exchangeability.MarkovExchangeable
-public import TauCeti.Probability.Recurrent
+public import TauCeti.Probability.Recurrent.Basic
 
 /-!
 # A nonrecurrent Markov exchangeable process

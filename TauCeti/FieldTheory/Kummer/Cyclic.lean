@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.KummerExtension
+public import TauCeti.Algebra.Polynomial.XPowSubC
 public import TauCeti.FieldTheory.Kummer.Character
-public import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
 # Radical extensions over a field with enough roots of unity

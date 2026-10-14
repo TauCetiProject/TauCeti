@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.ClosedRange
-public import TauCeti.Analysis.Fredholm.Index
 
 /-!
 # Injective and surjective criteria for Fredholm operators
@@ -29,12 +28,6 @@ kernel of an operator of finite rank is Fredholm.
   criterion.
 * `TauCeti.isFredholm_ker_subtypeL`: the inclusion of the kernel of an operator of finite rank is
   Fredholm.
-* `ContinuousLinearMap.index_of_surjective` and
-  `ContinuousLinearMap.index_of_injective`: the index in the two one-sided cases.
-* `ContinuousLinearMap.finrank_ker_eq_iff_index_eq`: for a surjective operator, index `n`
-  and kernel dimension `n` are the same statement.
-* `ContinuousLinearMap.bijective_of_surjective_of_index_eq_zero`: a surjective operator of
-  index zero with finite-dimensional kernel is bijective.
 * `ContinuousLinearMap.IsFredholm.of_bijective`: a bijective continuous linear map between Banach
   spaces is Fredholm.
 
@@ -132,42 +125,6 @@ lemma isFredholm_ker_subtypeL (hT : LinearMap.HasFiniteRange (T : E →ₗ[K] F)
   · rw [Submodule.toLinearMap_subtypeL, Submodule.ker_subtype]
     exact Submodule.closedComplemented_bot
 
-
-omit [IsRCLikeNormedField K] [CompleteSpace E] [CompleteSpace F] in
-/-- A surjective continuous linear map has index the dimension of its kernel. -/
-lemma _root_.ContinuousLinearMap.index_of_surjective (T : E →L[K] F) (hT : Function.Surjective T) :
-    ContinuousLinearMap.index T = (finrank K (LinearMap.ker (T : E →ₗ[K] F)) : ℤ) := by
-  rw [ContinuousLinearMap.index_def, LinearMap.index_of_surjective hT]
-
-omit [IsRCLikeNormedField K] [CompleteSpace E] [CompleteSpace F] in
-/-- For a surjective continuous linear map, having index `n` and having a kernel of dimension `n`
-are the same statement. This is `ContinuousLinearMap.index_of_surjective` with the cast to
-`ℤ` discharged. -/
-lemma _root_.ContinuousLinearMap.finrank_ker_eq_iff_index_eq {n : ℕ} (T : E →L[K] F)
-    (hT : Function.Surjective T) :
-    finrank K (LinearMap.ker (T : E →ₗ[K] F)) = n ↔ ContinuousLinearMap.index T = n := by
-  rw [ContinuousLinearMap.index_of_surjective T hT, Nat.cast_inj]
-
-omit [IsRCLikeNormedField K] [CompleteSpace E] [CompleteSpace F] in
-/-- A surjective operator of index zero with finite-dimensional kernel is bijective: its index is
-the dimension of that kernel, so a vanishing index makes the kernel trivial. Only finiteness of the
-kernel is used, not the full Fredholm property, which for a surjective operator is anyway
-equivalent to it by `TauCeti.isFredholm_iff_finite_ker_of_surjective`. This is the converse of
-`ContinuousLinearMap.index_eq_zero_of_bijective` for a surjective operator. -/
-lemma _root_.ContinuousLinearMap.bijective_of_surjective_of_index_eq_zero (T : E →L[K] F)
-    (hfin : FiniteDimensional K (LinearMap.ker (T : E →ₗ[K] F))) (hT : Function.Surjective T)
-    (hindex : ContinuousLinearMap.index T = 0) : Function.Bijective T := by
-  have := hfin
-  have hker : LinearMap.ker (T : E →ₗ[K] F) = ⊥ :=
-    Submodule.finrank_eq_zero.1
-      ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq T hT).2 (by exact_mod_cast hindex))
-  exact ⟨LinearMap.ker_eq_bot.1 hker, hT⟩
-
-omit [IsRCLikeNormedField K] [CompleteSpace E] [CompleteSpace F] in
-/-- An injective continuous linear map has index the negative of the dimension of its cokernel. -/
-lemma _root_.ContinuousLinearMap.index_of_injective (T : E →L[K] F) (hT : Function.Injective T) :
-    ContinuousLinearMap.index T = -(finrank K (F ⧸ LinearMap.range (T : E →ₗ[K] F)) : ℤ) := by
-  rw [ContinuousLinearMap.index_def, LinearMap.index_of_injective hT]
 
 
 omit [IsRCLikeNormedField K] in

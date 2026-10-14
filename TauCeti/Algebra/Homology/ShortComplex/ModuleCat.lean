@@ -9,10 +9,14 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
-# Finiteness and dimension of homology of short complexes of modules
+# Homology of short complexes of modules
 
 For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules, its homology is the kernel of the second map
-modulo the range of the first.  This file records two consequences of that description:
+modulo the range of the first.  The projection of Mathlib's explicit left homology data
+`S.moduleCatLeftHomologyData` from the kernel onto the homology is surjective, and identifies two
+elements exactly when their difference is in the range of the first map
+(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  This file also records
+two finiteness consequences of that description:
 
 * over a ring for which the middle module is noetherian, the homology is finitely generated;
 * over a division ring, when the middle term is finite-dimensional, the dimension of the homology
@@ -56,5 +60,25 @@ theorem finrank_homology_add_finrank_range_f (S : ShortComplex (ModuleCat.{v} k)
   -- `LinearMap.subtype_comp_codRestrict` fails because Mathlib's corestriction proof is only
   -- well-typed up to unfolding the concrete-category coercions.
   rfl
+
+section LeftHomologyData
+
+variable {R : Type u} [Ring R] (S : ShortComplex (ModuleCat.{v} R))
+
+/-- Two cycles of a short complex of modules have the same class in the explicit left homology
+exactly when their difference is a boundary. -/
+lemma moduleCatLeftHomologyData_π_hom_eq_iff (c c' : LinearMap.ker S.g.hom) :
+    S.moduleCatLeftHomologyData.π.hom c = S.moduleCatLeftHomologyData.π.hom c' ↔
+      ∃ y, S.f.hom y = (c : S.X₂) - c' :=
+  (Submodule.Quotient.eq _).trans
+    ⟨fun ⟨y, hy⟩ ↦ ⟨y, congrArg Subtype.val hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Subtype.ext hy⟩⟩
+
+/-- Every class of the explicit left homology of a short complex of modules is the class of a
+cycle. -/
+lemma moduleCatLeftHomologyData_π_hom_surjective :
+    Function.Surjective S.moduleCatLeftHomologyData.π.hom :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+end LeftHomologyData
 
 end CategoryTheory.ShortComplex

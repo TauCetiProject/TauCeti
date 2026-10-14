@@ -31,8 +31,8 @@ Hochschild's `Z(U(L)) ∩ U⁺(L)`.  At the two generators this reads
 `ι x ^ p - ι x` and `ι y ^ p`, the two shapes a linearized polynomial can take: the adjoint action
 of the dilation is idempotent, and that of the translation squares to zero.
 
-The characteristic is assumed positive throughout, that is `p ≠ 1`: in characteristic zero the
-displayed polynomial is `ι u - ι u = 0` and the statements below would say nothing.
+The polynomial statements assume positive characteristic, that is `p ≠ 1`: in characteristic
+zero the displayed polynomial is `ι u - ι u = 0` and would say nothing.
 
 The exponent is genuinely needed.  No nonzero element of `AffineLine K` becomes central in `U(L)`
 (`TauCeti.LieAlgebra.AffineLine.ι_mem_center_iff_eq_zero`), so the polynomials above are not
@@ -49,8 +49,8 @@ element central and `ι x` is itself a central `p`-polynomial.
   `p`-polynomial of an arbitrary element.
 * `TauCeti.LieAlgebra.AffineLine.ι_dilation_pow_sub_ι_dilation_mem_center` and
   `TauCeti.LieAlgebra.AffineLine.ι_translation_pow_mem_center`: the two generators.
-* `TauCeti.LieAlgebra.AffineLine.ι_mem_center_iff_eq_zero`: over a field, the canonical copy of
-  the Lie algebra meets the centre of `U(L)` only in `0`.
+* `TauCeti.LieAlgebra.AffineLine.ι_mem_center_iff_eq_zero`: over any commutative ring, the
+  canonical copy of the Lie algebra meets the centre of `U(L)` only in `0`.
 
 ## References
 
@@ -125,44 +125,38 @@ theorem ι_translation_ne_zero [Nontrivial K] :
   rw [UniversalEnvelopingAlgebra.representation_ι_ad, map_zero] at hrep
   exact ad_translation_ne_zero K hrep
 
-end CommRing
-
-section Field
-
-variable (K : Type*) [Field K]
-
 /-- **The canonical copy of the affine line meets the centre of `U(L)` only in `0`.**  Hence the
 passage to `p`-th powers in `TauCeti.LieAlgebra.AffineLine.ι_pow_sub_smul_ι_mem_center` is not an
 artifact: apart from `0`, no element of the Lie algebra is already central in its enveloping
 algebra. -/
+@[simp↓]
 theorem ι_mem_center_iff_eq_zero {u : AffineLine K} :
     _root_.UniversalEnvelopingAlgebra.ι K u ∈
         Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K (AffineLine K)) ↔ u = 0 := by
   refine ⟨fun h => ?_, fun h => by rw [h, map_zero]; exact Subalgebra.zero_mem _⟩
-  have hy : _root_.UniversalEnvelopingAlgebra.ι K (translation K) ≠ 0 := ι_translation_ne_zero K
   have hcent := (UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι K (AffineLine K)).mp h
-  -- Bracketing against the translation reads off the dilation coordinate of `u`.
-  have hfst : u.1 • _root_.UniversalEnvelopingAlgebra.ι K (translation K) = 0 := by
-    have := hcent (translation K)
-    rw [← LieHom.map_lie] at this
-    have hlie : ⁅u, translation K⁆ = u.1 • translation K := by ext <;> simp
-    rwa [hlie, map_smul] at this
-  -- Bracketing against the dilation reads off its translation coordinate.
-  have hsnd : (-u.2) • _root_.UniversalEnvelopingAlgebra.ι K (translation K) = 0 := by
-    have := hcent (dilation K)
-    rw [← LieHom.map_lie] at this
-    have hlie : ⁅u, dilation K⁆ = (-u.2) • translation K := by ext <;> simp
-    rwa [hlie, map_smul] at this
-  rw [smul_eq_zero] at hfst hsnd
-  refine ext (hfst.resolve_right hy) ?_
-  have := hsnd.resolve_right hy
-  simpa using neg_eq_zero.mp this
+  have had (v : AffineLine K) : LieAlgebra.ad K (AffineLine K) ⁅u, v⁆ = 0 := by
+    have hv := hcent v
+    rw [← LieHom.map_lie] at hv
+    have hrep := congrArg
+      (UniversalEnvelopingAlgebra.representation K (AffineLine K) (AffineLine K)) hv
+    simpa only [UniversalEnvelopingAlgebra.representation_ι_ad, map_zero] using hrep
+  -- Evaluate the adjoint actions at the dilation to read off both coordinates, without
+  -- cancelling scalar multiples in the enveloping algebra.
+  have hfst := congrArg (fun f : Module.End K (AffineLine K) ↦ (f (dilation K)).2)
+    (had (translation K))
+  have hsnd := congrArg (fun f : Module.End K (AffineLine K) ↦ (f (dilation K)).2)
+    (had (dilation K))
+  simp only [LieAlgebra.ad_apply, snd_lie, snd_dilation, fst_dilation, snd_translation,
+    fst_translation, mul_zero, mul_one, sub_zero, zero_sub, neg_neg, neg_eq_zero,
+    LinearMap.zero_apply, Prod.snd_zero] at hfst hsnd
+  exact ext hfst hsnd
 
-end Field
+end CommRing
 
 section WorkedExamples
 
-/-! ### The acceptance checks in characteristics `2` and `3`
+/-! ### Examples in characteristics `2` and `3`
 
 The two smallest positive characteristics, over the prime fields, with the two central
 `p`-polynomials made completely explicit. -/

@@ -16,9 +16,9 @@ The coordinate ring of the upper-unitriangular group `U_m` is the polynomial alg
 strictly upper-triangular matrix entries. After every field extension it remains a polynomial
 algebra over a field, hence a domain. Its prime spectrum is therefore connected.
 
-This file records geometric connectedness in both synchronized models used by the reductive-groups
-roadmap: as an object property of the coordinate Hopf algebra and as geometric connectedness of the
-structural morphism of the affine group scheme.
+This file records geometric connectedness in both synchronized models: as an object property of the
+coordinate Hopf algebra and as geometric connectedness of the structural morphism of the affine
+group scheme.
 
 ## Main declarations
 
@@ -31,11 +31,6 @@ structural morphism of the affine group scheme.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
-
-This supplies the connectedness of the standard ambient group in Layer 5, "Unipotent groups", of
-the ReductiveGroups roadmap. Together with its existing smoothness and unipotence, it completes
-the model required by the characterization of smooth connected unipotent groups as closed
-subgroups of some `U_n`.
 -/
 
 public section

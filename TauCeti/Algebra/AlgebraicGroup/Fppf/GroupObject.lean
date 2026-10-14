@@ -19,9 +19,6 @@ This file relates group-valued presheaves and sheaves on the affine fppf site to
 type-valued presheaves and sheaves. In particular, it presents the convolution-points sheaf of a
 commutative Hopf algebra as a group object, functorially in the Hopf algebra through
 `pointsFppfGroupObjectMap`, and exposes the group-object sheafification adjunction.
-
-This is infrastructure for the fppf-sheaf-quotient step of Layer 3, "Normality and quotients", in
-the ReductiveGroups roadmap.
 -/
 
 @[expose] public section
@@ -54,7 +51,7 @@ noncomputable def groupFunctorGrp {C : Type u} [Category.{v} C]
         { app := fun X => ↾fun _ => (1 : F.obj X)
           naturality := by
             intro X Y f
-            ext x
+            ext _
             exact (F.map f).hom.map_one.symm }
       mul :=
         { app := fun X => ↾fun p => p.1 * p.2

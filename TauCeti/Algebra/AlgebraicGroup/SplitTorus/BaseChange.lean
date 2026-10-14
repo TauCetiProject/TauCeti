@@ -24,9 +24,6 @@ by `freeAbelianCharEquiv`. The pointwise API reads a base-changed point on the s
 coordinate characters `1 ⊗ single (ofAdd (single i 1)) 1`, records the inverse evaluation,
 and gives the finite-rank specialization.
 
-This advances the ReductiveGroups roadmap, Layer 0 ("Base change. `K ⊗[k] A` as a Hopf
-algebra over `K`") and Layer 4 ("Tori: split ... the character lattice `X*(T)`").
-
 ## Main declarations
 
 * `TauCeti.SplitTorus.baseChangePointsMulEquiv`: the multiplicative equivalence from

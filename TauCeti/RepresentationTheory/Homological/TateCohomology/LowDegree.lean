@@ -17,8 +17,9 @@ of a finite group, degree zero is the quotient of the invariant submodule by the
 norm, and degree `-1` is the kernel of the norm modulo the augmentation submodule `I_G M`. For a
 trivial representation `A`, the comparison with first group homology identifies degree `-2` with
 `Gᵃᵇ ⊗[ℤ] A`, and hence, for the trivial integral representation, with the additive form of the
-abelianization. For the trivial integral representation the same descriptions evaluate degree
-zero as `ZMod |G|` and make degree `-1` trivial.
+abelianization. For the trivial representation `R` the same descriptions evaluate degree zero as
+`R ⧸ |G|R`, hence as `ZMod |G|` for the trivial integral representation, whose degree `-1` they
+make trivial.
 
 The degree-zero and degree-`-1` constructions are adapted from
 `ClassFieldTheory/Cohomology/TateCohomology.lean` and
@@ -36,6 +37,8 @@ homology, `groupHomology.H1AddEquivOfIsTrivial`, and the tensor-product right un
   `Ĥ⁻²(G, A) ≃+ Gᵃᵇ ⊗[ℤ] A` for a trivial representation `A`.
 * `TauCeti.TateCohomology.HNegTwoAddEquivAbelianization`:
   `Ĥ⁻²(G, ℤ) ≃+ Additive (Gᵃᵇ)`.
+* `TauCeti.TateCohomology.H0LinearEquivTrivial`: for the trivial representation `R`, degree zero
+  is `R ⧸ |G|R`.
 * `TauCeti.TateCohomology.H0LinearEquivTrivialIntZModCard`: for the trivial integral
   representation, degree zero is `ZMod |G|`.
 
@@ -436,6 +439,39 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_symm_tmul (g : G) (a : A) :
         (H1π A ((cycles₁IsoOfIsTrivial A).inv (Finsupp.single g a))) := by
   simp [AddEquiv.symm_apply_eq]
 
+variable (R G) in
+/-- Degree-zero Tate cohomology of the trivial representation `R` is `R ⧸ |G|R`. -/
+def H0LinearEquivTrivial :
+    tateCohomology (Rep.trivial R G R) 0 ≃ₗ[R] R ⧸ Ideal.span {(Nat.card G : R)} := by
+  -- A trivial representation is its own invariant submodule, so the inclusion of the invariants
+  -- is an equivalence onto `R`.
+  let e : (Rep.trivial R G R).ρ.invariants ≃ₗ[R] R :=
+    LinearEquiv.ofTop _ (Representation.invariants_eq_top _)
+  have he : (e : (Rep.trivial R G R).ρ.invariants →ₗ[R] R) =
+      (Rep.trivial R G R).ρ.invariants.subtype := by
+    ext x
+    simp [e]
+  have hsurjective : Function.Surjective
+      ⇑(Rep.trivial R G R).ρ.invariants.subtype :=
+    LinearMap.range_eq_top.mp <| by
+      rw [Submodule.range_subtype, Representation.invariants_eq_top]
+  refine (H0IsoNormQuotient (Rep.trivial R G R)).toLinearEquiv ≪≫ₗ
+    Submodule.Quotient.equiv _ _ e ?_
+  rw [he, Submodule.submoduleOf, Submodule.map_comap_eq_of_surjective hsurjective,
+    Representation.range_norm_trivial]
+
+-- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
+/-- The degree-zero equivalence for the trivial representation sends an invariant representative
+to its residue class modulo the order of the group. -/
+@[simp]
+theorem H0LinearEquivTrivial_H0π (x : (Rep.trivial R G R).ρ.invariants) :
+    (dsimp% only (H0LinearEquivTrivial R G (H0π (Rep.trivial R G R) x))) =
+      Ideal.Quotient.mk _ (x : R) := by
+  simp only [H0LinearEquivTrivial, LinearEquiv.trans_apply]
+  rw [Iso.toLinearEquiv_apply, H0π_comp_H0IsoNormQuotient_hom_apply,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  rfl
+
 end General
 
 section Abelianization
@@ -492,24 +528,8 @@ variable (H : Type) [Group H] [Fintype H]
 
 /-- Degree-zero Tate cohomology with trivial integral coefficients is `ZMod |H|`. -/
 def H0LinearEquivTrivialIntZModCard :
-    tateCohomology (Rep.trivial ℤ H ℤ) 0 ≃ₗ[ℤ] ZMod (Nat.card H) := by
-  -- A trivial representation is its own invariant submodule, so the inclusion of the invariants
-  -- is an equivalence onto `ℤ`.
-  let e : (Rep.trivial ℤ H ℤ).ρ.invariants ≃ₗ[ℤ] ℤ :=
-    LinearEquiv.ofTop _ (Representation.invariants_eq_top _)
-  have he : (e : (Rep.trivial ℤ H ℤ).ρ.invariants →ₗ[ℤ] ℤ) =
-      (Rep.trivial ℤ H ℤ).ρ.invariants.subtype := by
-    ext x
-    simp [e]
-  have hsurjective : Function.Surjective
-      ⇑(Rep.trivial ℤ H ℤ).ρ.invariants.subtype :=
-    LinearMap.range_eq_top.mp <| by
-      rw [Submodule.range_subtype, Representation.invariants_eq_top]
-  refine (H0IsoNormQuotient (Rep.trivial ℤ H ℤ)).toLinearEquiv ≪≫ₗ
-    Submodule.Quotient.equiv _ _ e ?_ ≪≫ₗ
-      (Int.quotientSpanNatEquivZMod _).toIntLinearEquiv
-  rw [he, Submodule.submoduleOf, Submodule.map_comap_eq_of_surjective hsurjective,
-    Representation.range_norm_trivial]
+    tateCohomology (Rep.trivial ℤ H ℤ) 0 ≃ₗ[ℤ] ZMod (Nat.card H) :=
+  H0LinearEquivTrivial ℤ H ≪≫ₗ (Int.quotientSpanNatEquivZMod _).toIntLinearEquiv
 
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
 /-- The degree-zero equivalence sends an invariant representative to its residue class modulo the
@@ -517,9 +537,7 @@ order of the group. -/
 @[simp]
 theorem H0LinearEquivTrivialIntZModCard_H0π (x : (Rep.trivial ℤ H ℤ).ρ.invariants) :
     (dsimp% only (H0LinearEquivTrivialIntZModCard H (H0π (Rep.trivial ℤ H ℤ) x))) = (x : ℤ) := by
-  simp only [H0LinearEquivTrivialIntZModCard, LinearEquiv.trans_apply]
-  rw [Iso.toLinearEquiv_apply, H0π_comp_H0IsoNormQuotient_hom_apply,
-    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  rw [H0LinearEquivTrivialIntZModCard, LinearEquiv.trans_apply, H0LinearEquivTrivial_H0π]
   rfl
 
 /-- The class of `1 ∈ ℤ` in degree-zero Tate cohomology with trivial integral coefficients. -/

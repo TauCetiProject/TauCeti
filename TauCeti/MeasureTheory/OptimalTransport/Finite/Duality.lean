@@ -64,10 +64,9 @@ codomain: the inner supremum is `⊤` at a plan whose marginals are wrong.
   the same certificate read through `TauCeti.contactSet`;
 * `TauCeti.TransportMatrix.forall_cost_le_iff_exists_forall_add_le_and_support_subset_contactSet`
   — existential complementary slackness, with finite dual attainment supplying the potentials;
-* `TauCeti.finiteDualValue_eq_kantorovichDualValue`,
-  `TauCeti.TransportMatrix.cost_eq_integral` and
-  `TauCeti.TransportMatrix.isCoupling_toPMF_toMeasure` — the bridges to the measure-level dual
-  value, primal value and couplings.
+* `TauCeti.finiteDualValue_eq_kantorovichDualValue` and
+  `TauCeti.TransportMatrix.cost_eq_integral` — the bridges to the measure-level dual
+  and primal values.
 
 ## References
 
@@ -270,7 +269,8 @@ theorem isCompact_realPlans : IsCompact (RealPlans μ ν) :=
   IsCompact.of_isClosed_subset isCompact_stdSimplexSet isClosed_realPlans
     realPlans_subset_stdSimplex
 
-private theorem realPlans_nonempty (μ : PMF ι) (ν : PMF κ) : (RealPlans μ ν).Nonempty :=
+/-- The real plans with prescribed marginals form a nonempty set: the independent plan is one. -/
+theorem realPlans_nonempty (μ : PMF ι) (ν : PMF κ) : (RealPlans μ ν).Nonempty :=
   ⟨(TransportMatrix.independent μ ν).toRealFun,
     TransportMatrix.toRealFun_mem_realPlans _⟩
 
@@ -368,12 +368,11 @@ theorem exists_forall_finiteDualValue_le (c : ι × κ → ℝ) (μ : PMF ι) (�
   have : Nonempty ι := ⟨μ.support_nonempty.some⟩
   have : Nonempty κ := ⟨ν.support_nonempty.some⟩
   obtain ⟨q₀, hq₀⟩ := Finite.exists_max fun q : ι × κ ↦ |c q|
-  set M : ℝ := |c q₀| with hMdef
+  set M : ℝ := |c q₀|
   have hM : ∀ q, |c q| ≤ M := hq₀
   have hM0 : 0 ≤ M := abs_nonneg _
   set K : Set ((ι → ℝ) × (κ → ℝ)) :=
     {p | (∀ i j, p.1 i + p.2 j ≤ c (i, j)) ∧ (∀ i, |p.1 i| ≤ 2 * M) ∧ ∀ j, |p.2 j| ≤ 3 * M}
-    with hKdef
   have hKclosed : IsClosed K := by
     have h1 : IsClosed {p : (ι → ℝ) × (κ → ℝ) | ∀ i j, p.1 i + p.2 j ≤ c (i, j)} := by
       simp only [Set.ofPred_forall]
@@ -728,17 +727,6 @@ theorem TransportMatrix.cost_eq_integral (c : ι × κ → ℝ) (A : TransportMa
     A.cost c = ∫ q, c q ∂A.toPMF.toMeasure := by
   rw [PMF.integral_eq_sum, cost_def]
   simp [smul_eq_mul, mul_comm]
-
-omit [MeasurableSingletonClass ι] [MeasurableSingletonClass κ] in
-/-- The measure a finite transportation matrix defines is a coupling of the two marginals. -/
-theorem TransportMatrix.isCoupling_toPMF_toMeasure (A : TransportMatrix μ ν) :
-    IsCoupling A.toPMF.toMeasure μ.toMeasure ν.toMeasure where
-  fst_eq := by
-    rw [MeasureTheory.Measure.fst,
-      PMF.toMeasure_map Prod.fst A.toPMF measurable_fst, A.map_fst_toPMF]
-  snd_eq := by
-    rw [MeasureTheory.Measure.snd,
-      PMF.toMeasure_map Prod.snd A.toPMF measurable_snd, A.map_snd_toPMF]
 
 end Measure
 

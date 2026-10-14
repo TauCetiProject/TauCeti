@@ -1,0 +1,137 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators
+import Mathlib.LinearAlgebra.Determinant
+import Mathlib.LinearAlgebra.Matrix.Block
+
+/-!
+# The simple-coroot basis of the split type-B Cartan
+
+The Bourbaki simple coroots of `Bₙ₊₁` have diagonal coordinates
+`ε₀ - ε₁, …, εₙ₋₁ - εₙ, 2εₙ`. They form a basis of the diagonal Cartan over any
+commutative ring in which `2` is invertible. This identifies the concrete Cartan with the
+simple-coroot coordinates used by highest-weight theory, and supplies its independence and
+Lie-span statements for the construction of a split Lie algebra basis.
+
+The change-of-basis determinant is `2`, including in rank one. Thus the ring hypothesis is
+essential: in characteristic two the final coroot vanishes.
+
+## References
+
+* N. Bourbaki, *Groupes et algèbres de Lie*, Chapters 4--6, Plate II.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §13.
+-/
+
+public section
+
+namespace TauCeti
+
+variable {K : Type*} [CommRing K] {n : ℕ}
+
+private def corootInCartan (i : Fin (n + 1)) : typeBDiagonalCartan K (Fin (n + 1)) :=
+  ⟨typeBSimpleCorootGenerator i, typeBSimpleCorootGenerator_mem_typeBDiagonalCartan i⟩
+
+private theorem corootInCartan_last :
+    corootInCartan (K := K) (Fin.last n) = typeBDiagonalEquiv (2 • Pi.single (Fin.last n) 1) := by
+  apply Subtype.ext
+  exact typeBSimpleCorootGenerator_last.trans (typeBShortCorootGenerator_eq_diagonal _)
+
+private theorem corootInCartan_castSucc (i : Fin n) :
+    corootInCartan (K := K) i.castSucc =
+      typeBDiagonalEquiv (Pi.single i.castSucc 1 - Pi.single i.succ 1) := by
+  apply Subtype.ext
+  exact (typeBSimpleCorootGenerator_castSucc i).trans
+    (typeBDifferenceCorootGenerator_eq_diagonal _ _ _)
+
+private theorem corootInCartan_repr_last (j : Fin (n + 1)) :
+    (typeBDiagonalCartanBasis (K := K)).repr (corootInCartan (Fin.last n)) j =
+      if Fin.last n = j then 2 else 0 := by
+  rw [corootInCartan_last]
+  simp [typeBDiagonalCartanBasis_repr_apply, typeBDiagonalMatrix_apply, Pi.single_apply, eq_comm]
+
+private theorem corootInCartan_repr_castSucc (i : Fin n) (j : Fin (n + 1)) :
+    (typeBDiagonalCartanBasis (K := K)).repr (corootInCartan i.castSucc) j =
+      (if i.castSucc = j then 1 else 0) - (if i.succ = j then 1 else 0) := by
+  rw [corootInCartan_castSucc]
+  simp [typeBDiagonalCartanBasis_repr_apply, typeBDiagonalMatrix_apply, Pi.single_apply, eq_comm]
+
+private theorem det_corootInCartan :
+    (typeBDiagonalCartanBasis (K := K) (ι := Fin (n + 1))).det corootInCartan = 2 := by
+  rw [Module.Basis.det_apply, Matrix.det_of_isLowerTriangular]
+  · rw [Fin.prod_univ_castSucc]
+    simp only [Module.Basis.toMatrix_apply, corootInCartan_repr_castSucc, corootInCartan_repr_last]
+    simp [Fin.castSucc_lt_succ.ne']
+  · intro i j hij
+    rw [Module.Basis.toMatrix_apply]
+    have hij' : i < j := hij
+    clear hij
+    revert hij'
+    refine Fin.lastCases ?_ (fun k => ?_) j
+    · intro hij
+      rw [corootInCartan_repr_last]
+      simp [ne_of_gt hij]
+    · intro hij
+      rw [corootInCartan_repr_castSucc]
+      have hki : k.castSucc ≠ i := ne_of_gt hij
+      have hsi : k.succ ≠ i := by
+        intro h
+        subst i
+        exact (not_lt_of_ge k.castSucc_lt_succ.le) hij
+      simp [hki, hsi]
+
+variable [Invertible (2 : K)]
+
+private theorem isBasis_corootInCartan :
+    LinearIndependent K (corootInCartan (K := K) (n := n)) ∧
+      Submodule.span K (Set.range (corootInCartan (K := K) (n := n))) = ⊤ := by
+  apply (typeBDiagonalCartanBasis (K := K)).is_basis_iff_det.mpr
+  rw [det_corootInCartan]
+  exact isUnit_of_invertible (2 : K)
+
+/-- The Bourbaki simple coroots as a basis of the split type-`Bₙ₊₁` diagonal Cartan. -/
+noncomputable def typeBSimpleCorootBasis (n : ℕ) :
+    Module.Basis (Fin (n + 1)) K (typeBDiagonalCartan K (Fin (n + 1))) :=
+  Module.Basis.mk isBasis_corootInCartan.1 isBasis_corootInCartan.2.ge
+
+/-- The simple-coroot basis has the existing numbered coroot generators as its vectors. -/
+@[simp]
+theorem coe_typeBSimpleCorootBasis_apply (i : Fin (n + 1)) :
+    ((typeBSimpleCorootBasis (K := K) n i : typeBDiagonalCartan K (Fin (n + 1))) :
+      LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) = typeBSimpleCorootGenerator i := by
+  rw [typeBSimpleCorootBasis, Module.Basis.mk_apply]
+  rfl
+
+/-- The numbered simple coroots are linearly independent in the split type-`B` Lie algebra. -/
+theorem linearIndependent_typeBSimpleCorootGenerator :
+    LinearIndependent K (typeBSimpleCorootGenerator (K := K) (n := n)) := by
+  convert (typeBSimpleCorootBasis (K := K) n).linearIndependent.map'
+    (typeBDiagonalCartan K (Fin (n + 1))).toSubmodule.subtype
+    (Submodule.ker_subtype _) using 1
+  funext i
+  exact (coe_typeBSimpleCorootBasis_apply i).symm
+
+/-- The Lie subalgebra generated by the simple coroots is the entire diagonal Cartan. -/
+theorem typeBDiagonalCartan_eq_lieSpan_typeBSimpleCorootGenerator :
+    typeBDiagonalCartan K (Fin (n + 1)) =
+      LieSubalgebra.lieSpan K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+        (Set.range (typeBSimpleCorootGenerator (K := K))) := by
+  apply le_antisymm
+  · intro x hx
+    let y : typeBDiagonalCartan K (Fin (n + 1)) := ⟨x, hx⟩
+    have hy := (typeBSimpleCorootBasis (K := K) n).sum_repr y
+    have heq := congrArg (typeBDiagonalCartan K (Fin (n + 1))).toSubmodule.subtype hy
+    simp only [map_sum, map_smul, Submodule.subtype_apply, coe_typeBSimpleCorootBasis_apply,
+      y] at heq
+    rw [← heq]
+    exact Submodule.sum_mem _ fun i _ => Submodule.smul_mem _ _
+      (LieSubalgebra.subset_lieSpan ⟨i, rfl⟩)
+  · rw [LieSubalgebra.lieSpan_le]
+    rintro x ⟨i, rfl⟩
+    exact typeBSimpleCorootGenerator_mem_typeBDiagonalCartan i
+
+end TauCeti

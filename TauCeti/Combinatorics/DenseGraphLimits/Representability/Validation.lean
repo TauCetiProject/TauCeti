@@ -38,10 +38,23 @@ windows of `Fin (2 + 2)` are never the edgeless graph and the edge, which has pr
 under the product law; and the pattern of two disjoint edges has upper mass `1 / 2`, not
 `1 / 2 * 1 / 2`.
 
+## Main definitions
+
+* `TauCeti.DenseGraphLimits.edgePow` — the edge-power parameter `F ↦ c ^ e(F)`;
+* `TauCeti.DenseGraphLimits.coinLaw` — the exchangeable graph law that is complete or edgeless with
+  probability `1 / 2` each.
+
 ## Main results
 
+* `graphParamMobius_edgePow` — the Möbius masses of `edgePow c` are binomial;
+* `graphParamMobius_edgePow_two_bot`, `graphParamMobius_edgePow_two_top`,
+  `graphParamMobius_edgePow_two_bot_add_top`, `graphParamMobius_edgePow_two_one_bot` — on `Fin 2`
+  with `c = 2` the masses are `-1` and `2`, summing to one and restricting consistently to `Fin 1`;
+* `graphParamMobius_edgePow_half` — for `c = 1 / 2` the masses are uniform;
 * `TauCeti.DenseGraphLimits.exists_not_isReflectionPositive` — an isomorphism-invariant,
-  multiplicative, normalized graph parameter need not be reflection positive.
+  multiplicative, normalized graph parameter need not be reflection positive;
+* `upperMass_coinLaw_twoDisjointEdges_ne_mul` and `not_isDissociated_coinLaw` — the upper masses of
+  `coinLaw` are not multiplicative, and `coinLaw` is not dissociated.
 
 ## References
 
@@ -62,12 +75,18 @@ namespace TauCeti.DenseGraphLimits
 /-! ### The edge-power parameters -/
 
 /-- The edge-power parameter `F ↦ c ^ e(F)`. -/
-private def edgePow (c : ℝ) : GraphParam := fun _ F ↦ c ^ Nat.card F.edgeSet
+def edgePow (c : ℝ) : GraphParam := fun _ F ↦ c ^ Nat.card F.edgeSet
 
-private theorem isIsoInvariant_edgePow (c : ℝ) : IsIsoInvariant (edgePow c) :=
+/-- The edge-power parameter evaluates to `c` raised to the number of edges. -/
+@[simp] theorem edgePow_apply (c : ℝ) (n : ℕ) (F : SimpleGraph (Fin n)) :
+    edgePow c n F = c ^ Nat.card F.edgeSet := (rfl)
+
+/-- The edge-power parameter is isomorphism invariant. -/
+theorem isIsoInvariant_edgePow (c : ℝ) : IsIsoInvariant (edgePow c) :=
   isIsoInvariant_iff.2 fun _ _ _ _ ⟨e⟩ ↦ by simp only [edgePow, Nat.card_congr e.mapEdgeSet]
 
-private theorem isMultiplicative_edgePow (c : ℝ) : IsMultiplicative (edgePow c) :=
+/-- The edge-power parameter is multiplicative over disjoint unions. -/
+theorem isMultiplicative_edgePow (c : ℝ) : IsMultiplicative (edgePow c) :=
   isMultiplicative_iff.2 fun _ _ F₁ F₂ ↦ by
     have h : Nat.card ((F₁ ⊕g F₂).map finSumFinEquiv.toEmbedding).edgeSet =
         Nat.card F₁.edgeSet + Nat.card F₂.edgeSet :=
@@ -75,14 +94,15 @@ private theorem isMultiplicative_edgePow (c : ℝ) : IsMultiplicative (edgePow c
         (Nat.card_congr SimpleGraph.edgeSetSumEquiv).trans Nat.card_sum
     simp only [edgePow, h, pow_add]
 
-private theorem isNormalized_edgePow (c : ℝ) : IsNormalized (edgePow c) := by
+/-- The edge-power parameter is normalized. -/
+theorem isNormalized_edgePow (c : ℝ) : IsNormalized (edgePow c) := by
   simp [isNormalized_iff, edgePow]
 
 /-- **The Möbius masses of the edge-power parameter are binomial**:
 `f†(F) = c ^ e(F) * (1 - c) ^ (C(n, 2) - e(F))`.  By Möbius inversion it suffices that these sum to
 `c ^ e(F)` over the supergraphs of `F`, which is the binomial theorem for `c + (1 - c)` over the
 edges of the complete graph missing from `F`. -/
-private theorem graphParamMobius_edgePow (c : ℝ) (n : ℕ) (F : SimpleGraph (Fin n)) :
+theorem graphParamMobius_edgePow (c : ℝ) (n : ℕ) (F : SimpleGraph (Fin n)) :
     graphParamMobius (edgePow c) n F =
       c ^ Nat.card F.edgeSet * (1 - c) ^ (n.choose 2 - Nat.card F.edgeSet) := by
   classical
@@ -125,13 +145,13 @@ private theorem graphParamMobius_edgePow (c : ℝ) (n : ℕ) (F : SimpleGraph (F
 
 /-- On `Fin 2`, the edge-power parameter with `c = 2` has Möbius mass `-1` at the edgeless
 graph. -/
-private theorem graphParamMobius_edgePow_two_bot :
+theorem graphParamMobius_edgePow_two_bot :
     graphParamMobius (edgePow 2) 2 (⊥ : SimpleGraph (Fin 2)) = -1 := by
   rw [graphParamMobius_edgePow]
   norm_num
 
 /-- On `Fin 2`, the edge-power parameter with `c = 2` has Möbius mass `2` at the edge. -/
-private theorem graphParamMobius_edgePow_two_top :
+theorem graphParamMobius_edgePow_two_top :
     graphParamMobius (edgePow 2) 2 (⊤ : SimpleGraph (Fin 2)) = 2 := by
   classical
   have h : Nat.card (⊤ : SimpleGraph (Fin 2)).edgeSet = 1 := by
@@ -143,20 +163,21 @@ private theorem graphParamMobius_edgePow_two_top :
 
 /-- The two computed masses sum to one, as `graphParamMobius_sum_eq_one` predicts without
 reflection positivity. -/
-example : graphParamMobius (edgePow 2) 2 ⊥ + graphParamMobius (edgePow 2) 2 ⊤ = 1 := by
+theorem graphParamMobius_edgePow_two_bot_add_top :
+    graphParamMobius (edgePow 2) 2 ⊥ + graphParamMobius (edgePow 2) 2 ⊤ = 1 := by
   rw [graphParamMobius_edgePow_two_bot, graphParamMobius_edgePow_two_top]
   norm_num
 
 /-- The negative mass is a genuine Möbius mass of an isomorphism-invariant, multiplicative,
 normalized parameter, and it is consistent: the mass of the one-vertex graph is the total mass of
 the graphs on `Fin 2` restricting to it, here `-1 + 2`. -/
-example : graphParamMobius (edgePow 2) 1 ⊥ =
+theorem graphParamMobius_edgePow_two_one_bot : graphParamMobius (edgePow 2) 1 ⊥ =
     graphParamMobius (edgePow 2) 2 ⊥ + graphParamMobius (edgePow 2) 2 ⊤ := by
   rw [graphParamMobius_edgePow_two_bot, graphParamMobius_edgePow_two_top, graphParamMobius_edgePow]
   norm_num
 
 /-- For `c = 1 / 2` the masses are uniform: `G(n, 1 / 2)` is the uniform random graph. -/
-example (n : ℕ) (F : SimpleGraph (Fin n)) :
+theorem graphParamMobius_edgePow_half (n : ℕ) (F : SimpleGraph (Fin n)) :
     graphParamMobius (edgePow (1 / 2)) n F = (1 / 2) ^ n.choose 2 := by
   classical
   have hF : Nat.card F.edgeSet ≤ n.choose 2 := by
@@ -183,17 +204,19 @@ theorem exists_not_isReflectionPositive :
 /-! ### A law that is not dissociated -/
 
 /-- The level-`k` law that is the complete or the edgeless graph with probability `1 / 2` each. -/
-private def coinMeasure (k : ℕ) : Measure (SimpleGraph (Fin k)) :=
+def coinMeasure (k : ℕ) : Measure (SimpleGraph (Fin k)) :=
   (2⁻¹ : ℝ≥0∞) • Measure.dirac ⊥ + (2⁻¹ : ℝ≥0∞) • Measure.dirac ⊤
 
-private theorem coinMeasure_apply (k : ℕ) (s : Set (SimpleGraph (Fin k))) :
+/-- The sum of the weighted membership indicators of `⊥` and `⊤` on `s`.
+For `2 ≤ k`, their singleton masses are `1 / 2`; for `k ≤ 1`, they coincide and have mass `1`. -/
+theorem coinMeasure_apply (k : ℕ) (s : Set (SimpleGraph (Fin k))) :
     coinMeasure k s = 2⁻¹ * s.indicator 1 ⊥ + 2⁻¹ * s.indicator 1 ⊤ := by
   simp [coinMeasure, Measure.dirac_apply' _ (MeasurableSet.of_discrete (s := s))]
 
 /-- The exchangeable graph law that is complete or edgeless with probability `1 / 2` each: a
 pullback of the complete graph along an injection is complete, and of the edgeless graph is
 edgeless. -/
-private def coinLaw : ExchangeableGraphLaw where
+def coinLaw : ExchangeableGraphLaw where
   law := coinMeasure
   prob k := ⟨by simp [coinMeasure_apply, ENNReal.inv_two_add_inv_two]⟩
   consistent f := by
@@ -203,36 +226,39 @@ private def coinLaw : ExchangeableGraphLaw where
     · simp [SimpleGraph.comap_top f.injective]
     all_goals exact hf.aemeasurable
 
-private theorem coinLaw_law (k : ℕ) : coinLaw.law k = coinMeasure k := (rfl)
+/-- The level-`k` law of `coinLaw` is `coinMeasure k`. -/
+@[simp] theorem coinLaw_law (k : ℕ) : coinLaw.law k = coinMeasure k := (rfl)
 
 /-- Every pattern other than the edgeless one has upper mass `1 / 2` under `coinLaw`: it is
 contained in the complete graph but not in the edgeless one. -/
-private theorem upperMass_coinLaw_of_ne_bot {k : ℕ} {F : SimpleGraph (Fin k)} (hF : F ≠ ⊥) :
+theorem upperMass_coinLaw_of_ne_bot {k : ℕ} {F : SimpleGraph (Fin k)} (hF : F ≠ ⊥) :
     coinLaw.upperMass F = 2⁻¹ := by
   rw [ExchangeableGraphLaw.upperMass_def, coinLaw_law]
   simp [coinMeasure_apply, hF, le_bot_iff]
 
-/-- The disjoint union of two edges, as a pattern on `Fin (2 + 2)`. -/
-private abbrev twoEdges : SimpleGraph (Fin (2 + 2)) :=
+/-- The disjoint union of two edges, as a pattern on `Fin (2 + 2)`: one edge in each of the two
+windows `Fin.castAdd 2` and `Fin.natAdd 2`. -/
+abbrev twoDisjointEdges : SimpleGraph (Fin (2 + 2)) :=
   ((⊤ : SimpleGraph (Fin 2)) ⊕g (⊤ : SimpleGraph (Fin 2))).map finSumFinEquiv.toEmbedding
 
-private theorem twoEdges_ne_bot : twoEdges ≠ ⊥ := fun h ↦ by
-  have hadj : twoEdges.Adj (finSumFinEquiv (Sum.inl 0)) (finSumFinEquiv (Sum.inl 1)) :=
+/-- The pattern of two disjoint edges is not edgeless. -/
+theorem twoDisjointEdges_ne_bot : twoDisjointEdges ≠ ⊥ := fun h ↦ by
+  have hadj : twoDisjointEdges.Adj (finSumFinEquiv (Sum.inl 0)) (finSumFinEquiv (Sum.inl 1)) :=
     (SimpleGraph.map_adj _ _ _ _).2 ⟨Sum.inl 0, Sum.inl 1, by simp, rfl, rfl⟩
   rw [h] at hadj
   exact hadj
 
 /-- **The upper masses of `coinLaw` are not multiplicative**: two disjoint edges are present with
 probability `1 / 2`, not `1 / 2 * 1 / 2`. -/
-example : coinLaw.upperMass twoEdges ≠
+theorem upperMass_coinLaw_twoDisjointEdges_ne_mul : coinLaw.upperMass twoDisjointEdges ≠
     coinLaw.upperMass (⊤ : SimpleGraph (Fin 2)) * coinLaw.upperMass (⊤ : SimpleGraph (Fin 2)) := by
-  rw [upperMass_coinLaw_of_ne_bot twoEdges_ne_bot, upperMass_coinLaw_of_ne_bot top_ne_bot]
+  rw [upperMass_coinLaw_of_ne_bot twoDisjointEdges_ne_bot, upperMass_coinLaw_of_ne_bot top_ne_bot]
   norm_num
 
 /-- **`coinLaw` is not dissociated, read off the definition**: the two windows of `Fin (2 + 2)`
 are never the edgeless graph and the edge together, an event of probability `1 / 4` under the
 product of the two marginals. -/
-example : ¬ coinLaw.IsDissociated := by
+theorem not_isDissociated_coinLaw : ¬ coinLaw.IsDissociated := by
   intro h
   have hpair : (coinLaw.law (2 + 2)).map
         (fun G ↦ (SimpleGraph.comap (Fin.castAdd 2) G, SimpleGraph.comap (Fin.natAdd 2) G))
@@ -248,10 +274,11 @@ example : ¬ coinLaw.IsDissociated := by
   simp [coinMeasure_apply, Set.indicator_of_notMem hmem] at hpair
 
 /-- **`coinLaw` is not dissociated, read off the bridge** `isDissociated_iff_upperMass_mul`, in
-agreement with the direct computation above. -/
+agreement with the direct computation `not_isDissociated_coinLaw`. -/
 example : ¬ coinLaw.IsDissociated := fun h ↦ by
   have hmul := (isDissociated_iff_upperMass_mul coinLaw).1 h 2 2 ⊤ ⊤
-  rw [upperMass_coinLaw_of_ne_bot twoEdges_ne_bot, upperMass_coinLaw_of_ne_bot top_ne_bot] at hmul
+  rw [upperMass_coinLaw_of_ne_bot twoDisjointEdges_ne_bot,
+    upperMass_coinLaw_of_ne_bot top_ne_bot] at hmul
   norm_num at hmul
 
 end TauCeti.DenseGraphLimits

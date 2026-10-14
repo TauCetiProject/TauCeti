@@ -12,6 +12,8 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
 import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.RingTheory.KrullSchmidt.Indecomposable
+import Mathlib.RingTheory.Artinian.Module
 
 /-!
 # Recognizing indecomposable objects from their endomorphisms
@@ -51,6 +53,9 @@ decomposition of the whole object.
 * `TauCeti.idempotent_eq_zero_or_id_of_indecomposable`: the converse of the first criterion, over
   an idempotent-complete category, packaged with it as
   `TauCeti.indecomposable_iff_idempotent_eq_zero_or_id`.
+* `TauCeti.isLocalRing_end_of_indecomposable`: over a field, in an idempotent-complete linear
+  category, an indecomposable object with a finite-dimensional endomorphism algebra has a local
+  endomorphism ring.
 * `TauCeti.isIso_of_isIso_comp`: an invertible composite `f ≫ g` through an object with only
   trivial idempotent endomorphisms has `f` invertible.
 * `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor preserving zero morphisms
@@ -240,6 +245,22 @@ theorem indecomposable_of_finrank_end_eq_one {k : Type*} [DivisionRing k] [Linea
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp (smul_left_injective k hid he) with rfl | rfl
   · exact Or.inl (zero_smul k (𝟙 X))
   · exact Or.inr (one_smul k (𝟙 X))
+
+/-- **An indecomposable object with a finite-dimensional endomorphism algebra has a local
+endomorphism ring**, in a linear category over a field in which idempotents split. Indecomposability
+leaves `0` and `1` as the only idempotents of `End X`, and a finite-dimensional algebra with no
+other idempotents is local by Fitting's lemma
+(`TauCeti.isLocalRing_of_isIndecomposableModule_self`). -/
+theorem isLocalRing_end_of_indecomposable {k : Type*} [Field k] [Linear k C]
+    [HasBinaryBiproducts C] [IsIdempotentComplete C] {X : C} [FiniteDimensional k (X ⟶ X)]
+    (hX : Indecomposable X) : IsLocalRing (End X) := by
+  have : FiniteDimensional k (End X) := ‹FiniteDimensional k (X ⟶ X)›
+  have hA : IsFiniteLength (End X) (End X) := isFiniteLength_iff_isNoetherian_isArtinian.2
+    ⟨isNoetherian_of_tower k inferInstance, isArtinian_of_tower k inferInstance⟩
+  refine isLocalRing_of_isIndecomposableModule_self hA ((isIndecomposableModule_self_iff _).2
+    ⟨nontrivial_of_ne (𝟙 X) 0 fun h ↦ hX.1 ((IsZero.iff_id_eq_zero X).2 h), fun e he ↦ ?_⟩)
+  simpa only [End.one_def] using
+    idempotent_eq_zero_or_id_of_indecomposable hX ((End.mul_def e e).symm.trans he.eq)
 
 end TauCeti
 

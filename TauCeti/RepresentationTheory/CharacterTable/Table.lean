@@ -55,8 +55,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.card_inv_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.card_inv_mul_sum_characterTable_mul_conj`: **first (row) orthogonality**, over `k` and in
   its Hermitian form over `ℂ`; `TauCeti.card_inv_mul_sum_card_conjClass_mul_characterTable_mul_conj`
-  is the latter summed one column at a time, the form in which the roadmap's specification of a
-  character table asks for it;
+  is the latter summed one column at a time, the form in which `TauCeti.IsCharacterTableSpec` asks
+  for it;
   `TauCeti.characterPairing_ofCharacter_irreducibleRepresentation_orthonormal` is the same relation
   phrased as orthonormality for the character pairing.
 * `TauCeti.exists_irreducibleCharacter_eq_one`: the trivial character is a row of the table, and
@@ -83,18 +83,13 @@ set free of a universe parameter beyond those of `k` and `G`. Nothing is lost:
 The rows are indexed by `Fin (Nat.card (ConjClasses G))` rather than by a bare `Fin r`, so that the
 squareness of the table is visible in its type.
 
-The roadmap pins the character table over `ℂ`. Everything holds over any algebraically closed field
-in which `|G|` is invertible except the Hermitian refinements, which are stated over `ℂ`, and the
-divisibility of the degrees by `|G|`, which additionally assumes `CharZero k`. So the table is
-defined over such a `k`, and `TauCeti.characterTable ℂ G` is the pinned object.
+Everything holds over any algebraically closed field in which `|G|` is invertible except the
+Hermitian refinements, which are stated over `ℂ`, and the divisibility of the degrees by `|G|`,
+which additionally assumes `CharZero k`. So the table is defined over such a `k`, and
+`TauCeti.characterTable ℂ G` is the classical complex character table.
 
 ## References
 
-This is Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md):
-the character table as an object, with its second orthogonality relation
-(`char_column_orthogonality` in that roadmap's `Suggested.lean`) and the degrees in its
-identity-class column.
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2, or J.-P. Serre, *Linear
 Representations of Finite Groups* (1977), Section 2.5.
 -/
@@ -557,9 +552,8 @@ theorem card_inv_mul_sum_characterTable_mul_conj [Fintype G]
 
 /-- **First (row) orthogonality over `ℂ`, summed one column at a time**: the Hermitian pairing of
 two rows of the complex character table, collected over the conjugacy classes with the class sizes
-as weights. This is the shape in which the roadmap's specification of a character table asks for row
-orthonormality; `TauCeti.card_inv_mul_sum_characterTable_mul_conj` is the same statement summed over
-the group.
+as weights. This is the shape in which `TauCeti.IsCharacterTableSpec` asks for row orthonormality;
+`TauCeti.card_inv_mul_sum_characterTable_mul_conj` is the same statement summed over the group.
 
 The enumeration of the conjugacy classes is an explicit `Fintype` argument rather than a classical
 one, so that the statement is about whichever enumeration the caller has in hand; a caller with

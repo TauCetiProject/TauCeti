@@ -50,7 +50,8 @@ variable {h : ℝ} {F : Type*} [FunLike F ℍ ℂ] {f : F}
 
 /-- A function on `ℍ` that is `h`-periodic with cusp function analytic at `0` tends to
 `valueAtInfty` along `atImInfty`. -/
-public lemma tendsto_valueAtInfty (hh : 0 < h) (hper : Function.Periodic (⇑f ∘ ofComplex) h)
+public lemma tendsto_valueAtInfty {f : ℍ → ℂ} (hh : 0 < h)
+    (hper : Function.Periodic (f ∘ ofComplex) h)
     (hfanalytic : AnalyticAt ℂ (cuspFunction h f) 0) :
     Tendsto (fun τ : ℍ ↦ f τ) atImInfty (𝓝 (valueAtInfty f)) := by
   have ht : Tendsto (fun τ : ℍ ↦ f τ) atImInfty (𝓝 (cuspFunction h f 0)) := by

@@ -32,9 +32,6 @@ extension `K ⊗[k] H` is geometrically reduced over any field extension `K / k`
 For preservation, reducedness is transported along the equivalence cancelling successive scalar
 extensions. For descent, the two scalar extensions are compared in a common overfield, then
 reducedness descends along the resulting injective map.
-
-This advances Layer 2, "Smoothness and dimension tools via `Lie(G)`", of the ReductiveGroups
-roadmap.
 -/
 
 public section

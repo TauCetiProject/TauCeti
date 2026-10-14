@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Geodesics and the exponential map in inner-product spaces
@@ -125,42 +125,10 @@ theorem christoffelMap_leviCivita_model_space (x : F) :
     christoffelMap (Module.finBasis ℝ F)
       ((leviCivitaConnection 𝓘(ℝ, F) F).isCovariantDerivativeOn
         (s := (trivializationAt F (TangentSpace 𝓘(ℝ, F)) x).baseSet)) x = 0 := by
-  let b := Module.finBasis ℝ F
-  let e := trivializationAt F (TangentSpace 𝓘(ℝ, F)) x
-  -- Unfold the two local abbreviations to match the public statement of `christoffelMap`.
-  change christoffelMap b
-    ((leviCivitaConnection 𝓘(ℝ, F) F).isCovariantDerivativeOn (s := e.baseSet)) x = 0
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F (TangentSpace 𝓘(ℝ, F)) x
-  have hframe (i : Fin (finrank ℝ F)) : e.localFrame b i = fun _ : F ↦ b i := by
-    funext y
-    have hy : y ∈ e.baseSet := by
-      -- `e` is the model-space tangent trivialization, whose base set is all of `F`.
-      change y ∈ (trivializationAt F (TangentSpace 𝓘(ℝ, F)) x).baseSet
-      rw [TangentBundle.trivializationAt_baseSet]
-      rw [chartAt_self_eq]
-      exact mem_univ y
-    rw [Bundle.Trivialization.localFrame_apply_of_mem_baseSet _ _ hy,
-      Bundle.Trivialization.basisAt, Basis.map_apply,
-      Bundle.Trivialization.linearEquivAt_symm_apply, ← e.symmL_apply (R := ℝ) hy]
-    -- Its fiber equivalence is the identity on the model vector space.
-    change (trivializationAt F (TangentSpace 𝓘(ℝ, F)) x).symmL ℝ y (b i) = b i
-    rw [TangentBundle.symmL_model_space]
-    rfl
-  apply ContinuousLinearMap.coe_injective
-  apply b.ext
-  intro i
-  apply ContinuousLinearMap.coe_injective
-  apply b.ext
-  intro j
-  -- Evaluate the bilinear Christoffel map on the chosen basis vectors.
-  change christoffelMap b
-    ((leviCivitaConnection 𝓘(ℝ, F) F).isCovariantDerivativeOn (s := e.baseSet)) x
-      (b i) (b j) = 0
-  have hz : (0 : TangentSpace 𝓘(ℝ, F) x →L[ℝ] TangentSpace 𝓘(ℝ, F) x) (b j) = 0 :=
-    rfl
-  rw [christoffelMap_apply_basis b _ hx j i]
-  simp only [christoffelSymbol_apply, hframe, leviCivitaConnection_const_model_space,
-    hz, map_zero, zero_smul, Finset.sum_const_zero]
+  ext v u
+  rw [christoffelMap_model_space, leviCivitaConnection_const_model_space]
+  -- The zero map on tangent vectors, evaluated at `u`.
+  rfl
 
 /-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the
 standard Riemannian metric, with its evident initial point and velocity. -/

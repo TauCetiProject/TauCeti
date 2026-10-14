@@ -125,7 +125,7 @@ theorem forall_heckeTCompositeGamma0_eq_coeff_smul_iff
   · intro heig
     constructor
     · intro u v huv
-      rcases eq_or_ne u 0 with rfl | hu
+      rcases eq_or_ne u 0 with rfl | _
       · have hv : v = 1 := by simpa using huv
         simp [hv, h₁]
       rcases eq_or_ne v 0 with rfl | hv

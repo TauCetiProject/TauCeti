@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.BaseChange
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.IntegralMatrix
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Geometry
 
 /-!
 # The doubled E₆ carrier preserves its minuscule summands

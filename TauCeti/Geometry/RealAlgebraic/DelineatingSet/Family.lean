@@ -9,6 +9,8 @@ public import TauCeti.Geometry.RealAlgebraic.DelineatingSet.Basic
 public import TauCeti.Geometry.RealAlgebraic.CAD.Basic
 public import TauCeti.Geometry.RealAlgebraic.OrderInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
+public import TauCeti.Analysis.Analytic.Submanifold.ZeroDimensional
+import Mathlib.Topology.Connected.TotallyDisconnected
 
 /-!
 # Simultaneous delineating refinement over a point
@@ -21,7 +23,9 @@ its length is bounded by the sum of the degrees of the delineating polynomials.
 Over the reals, this is a semialgebraic stack of analytic submanifolds: its sections have
 dimension zero and its sectors have dimension one. Every input is also sign-invariant on each
 cell. This supplies the simultaneous local refinement needed when lifting a polynomial family
-over a zero-dimensional base cell. The empty family and zero polynomials are allowed.
+over a zero-dimensional base cell. The cell version accepts any preconnected
+zero-dimensional analytic submanifold: its chart condition forces it to be a singleton.
+The empty family and zero polynomials are allowed.
 
 ## References
 
@@ -111,5 +115,29 @@ theorem exists_isSemialgebraicStack_orderAt_eq
     refine ⟨ho, ?_⟩
     exact (isConnected_of_mem_stackCells isConnected_singleton hstack.continuous
       hstack.strictMono hE).isPreconnected.signInvariant_eval_of_orderAt_eq ho
+
+/-- Simultaneous delineating refinement over a preconnected zero-dimensional analytic cell.
+Every input has constant ambient order and sign on every part, including nullified inputs.
+The resulting parts are analytic submanifolds of dimension zero or one, and the number of
+sections is bounded by the degrees of the mixed-derivative specializations at any base point.
+No singleton representation of the base cell is required. -/
+theorem exists_isSemialgebraicStack_orderAt_eq_of_isAnalyticSubmanifold_zero
+    (F : Finset (MvPolynomial (Fin (n + 1)) ℝ)) {S : Set (Fin n → ℝ)}
+    (hS : IsAnalyticSubmanifold 0 S) (hconn : IsPreconnected S) :
+    ∃ (k : ℕ) (c : Fin k → ℝ), IsSemialgebraicStack S (fun i _ ↦ c i) ∧
+      (∀ α ∈ S, ∀ t, t ∈ Set.range c ↔ ∃ f ∈ F, ∃ q ∈ f.delineatingSet α, q.IsRoot t) ∧
+      (∀ α ∈ S, k ≤ ∑ f ∈ F, ∑ q ∈ f.delineatingSet α, q.natDegree) ∧
+      ∀ E ∈ stackCells S (fun i _ ↦ c i),
+        (∃ d ≤ 1, IsAnalyticSubmanifold d E) ∧
+        ∀ f ∈ F, (∀ y ∈ E, ∀ y' ∈ E, f.orderAt y = f.orderAt y') ∧
+          SignInvariant (fun y ↦ eval y f) E := by
+  obtain ⟨α, hα⟩ := hS.nonempty
+  have hsingleton : S = {α} :=
+    (hconn.isDiscrete_iff_subsingleton.mp hS.isDiscrete).eq_singleton_of_mem hα
+  subst S
+  obtain ⟨k, c, hstack, hroots, hbound, hcells⟩ :=
+    F.exists_isSemialgebraicStack_orderAt_eq α
+  exact ⟨k, c, hstack, by simpa only [mem_singleton_iff, forall_eq] using hroots,
+    by simpa only [mem_singleton_iff, forall_eq] using hbound, hcells⟩
 
 end Finset

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
 public import TauCeti.Algebra.Module.GradedModule.Shift
 
@@ -249,7 +250,7 @@ theorem isHomogeneous_span_piece (d : ℤ) :
   obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.mp hx
   rw [DirectSum.decompose_sum, DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Submodule.sum_mem _ fun i _ => ?_
-  have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property
+  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property
     (a := c i) (i := p - d)
   rw [sub_add_cancel] at h
   rw [h]
@@ -266,7 +267,7 @@ theorem IsGeneratedInDegree.piece_add_eq_smul (hG : G.IsGeneratedInDegree A d) (
   rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Submodule.sum_mem _ fun i _ ↦ ?_
-  rw [DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2]
+  rw [_root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2]
   exact Submodule.smul_mem_smul (DirectSum.decompose 𝒜 (c i) m).2 (g i).2
 
 /-- Over a nonnegatively graded algebra, a graded module generated in degree `d` has no nonzero

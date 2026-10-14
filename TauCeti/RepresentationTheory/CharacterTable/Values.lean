@@ -28,7 +28,7 @@ soon as `n` is invertible in the coefficient field, since `X ^ n - 1` is then sq
 
 Integrality needs no splitting hypothesis, because base change to an algebraic closure transports
 the character value along the field embedding; that reduction is
-`TauCeti.End.isIntegral_trace_of_pow_eq_one`. Over `ℚ` it gives more than integrality over `ℤ`: a
+`Module.End.isIntegral_trace_of_pow_eq_one`. Over `ℚ` it gives more than integrality over `ℤ`: a
 rational algebraic integer is an integer, so a rational character is **integer-valued**. That is
 what makes the character table of a group with rational representations, the symmetric group for
 instance, a matrix of integers.
@@ -36,7 +36,7 @@ instance, a matrix of integers.
 The facts about `ρ g` as a bare endomorphism live in `TauCeti.LinearAlgebra.End.FiniteOrder`.
 
 The conjugation identity `conj (χ g) = χ g⁻¹` also holds for a unitary representation of a
-topological group, where it is `TauCeti.ContRepresentation.character_apply_inv` and comes from the
+topological group, where it is `ContRepresentation.character_apply_inv` and comes from the
 action of `g⁻¹` being the adjoint of the action of `g`. Here it is proved for an arbitrary complex
 representation of a group, from the eigenvalues alone, with no invariant inner product in sight.
 
@@ -98,7 +98,7 @@ variable {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G] [AddCommGro
 /-- If `g ^ n = 1` then every eigenvalue of `ρ g` is an `n`-th root of unity. -/
 theorem pow_eq_one_of_mem_roots_charpoly (ρ : Representation k G V) {g : G} {n : ℕ}
     (hg : g ^ n = 1) {μ : k} (hμ : μ ∈ (ρ g).charpoly.roots) : μ ^ n = 1 :=
-  TauCeti.End.pow_eq_one_of_isRoot_charpoly (by rw [← map_pow, hg, map_one])
+  Module.End.pow_eq_one_of_isRoot_charpoly (by rw [← map_pow, hg, map_one])
     (isRoot_of_mem_roots hμ)
 
 /-- **A character value is a sum of roots of unity.** If `g ^ n = 1` and the characteristic
@@ -129,17 +129,17 @@ algebraically closed one for instance, semisimplicity of `ρ g` is its diagonali
 in which it underlies the eigenvalue description of character values. -/
 theorem isSemisimple_of_pow_eq_one (ρ : Representation k G V) {g : G} {n : ℕ} (hn : (n : k) ≠ 0)
     (hg : g ^ n = 1) : End.IsSemisimple (ρ g) :=
-  TauCeti.End.isSemisimple_of_pow_eq_one hn (by rw [← map_pow, hg, map_one])
+  Module.End.isSemisimple_of_pow_eq_one hn (by rw [← map_pow, hg, map_one])
 
 /-- **Character values are algebraic integers**: over any field, the value of a character at an
 element of finite order is integral over `ℤ`. Once the characteristic polynomial of `ρ g` splits
 this is the statement that a sum of roots of unity is an algebraic integer, and the general case
 follows from that one by base change to an algebraic closure
-(`TauCeti.End.isIntegral_trace_of_pow_eq_one`). -/
+(`Module.End.isIntegral_trace_of_pow_eq_one`). -/
 theorem isIntegral_char (ρ : Representation k G V) {g : G} {n : ℕ}
     (hn : n ≠ 0) (hg : g ^ n = 1) : IsIntegral ℤ (ρ.character g) := by
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
-  exact TauCeti.End.isIntegral_trace_of_pow_eq_one hn hf
+  exact Module.End.isIntegral_trace_of_pow_eq_one hn hf
 
 /-- **Character values lie in every subring containing the relevant roots of unity.** If the
 characteristic polynomial of `ρ g` splits, `g ^ n = 1`, and the subring `A` of `k` contains every
@@ -234,7 +234,7 @@ theorem conj_char_eq_char_inv (ρ : Representation ℂ G V) {g : G} {n : ℕ} (h
   have hinv : g⁻¹ = g ^ (n - 1) :=
     inv_eq_of_mul_eq_one_right (by rw [mul_pow_sub_one hn, hg])
   simp only [Representation.character, hinv, map_pow]
-  exact TauCeti.End.conj_trace_eq_trace_pow_sub_one hn hf
+  exact Module.End.conj_trace_eq_trace_pow_sub_one hn hf
 
 end ComplexDivisionMonoid
 

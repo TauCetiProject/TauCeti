@@ -629,7 +629,7 @@ theorem zsmul_point_eq_smulX_smulY : n ≠ 0 →
         ← addY_smul_one_smul_one, show (2 : ℤ) = 1 + 1 by norm_num, add_zsmul, eq]
       exact ⟨Affine.nonsingular_add ns ns fun h ↦ smulY_ne_negY one_ne_zero h.2,
         Affine.Point.add_self_of_Y_ne (smulY_ne_negY one_ne_zero)⟩
-    set n2 := n + 1 + 1 with hn2
+    set n2 := n + 1 + 1
     obtain ⟨ns2, eq2⟩ := ih n2 (by omega) (by omega)
     have ne : smulX n2 ≠ smulX 1 := smulX_ne_smulX (by omega) (by omega)
     obtain ⟨ns1, eq1⟩ := ih (n + 1) (by omega) (by omega)

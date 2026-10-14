@@ -253,7 +253,7 @@ with the same `HasDerivWithinAt` witness on their common initial segment. -/
 theorem IsPwC1ImmersionOn.derivWithin_ne_zero_right (h : IsPwC1ImmersionOn γ a b) {t d : ℝ}
     (ht₀ : t ∈ Ico (min a b) (max a b)) (htd : t < d) :
     derivWithin γ (Icc t d) t ≠ 0 := by
-  obtain ⟨d', hlt', -, hC1', hne'⟩ := h.exists_Icc_piece_right ht₀
+  obtain ⟨d', hlt', -, _, hne'⟩ := h.exists_Icc_piece_right ht₀
   rw [derivWithin_Icc_left_endpoint_congr htd hlt']
   exact hne' t (left_mem_Icc.mpr hlt'.le)
 
@@ -262,7 +262,7 @@ mirror of `IsPwC1ImmersionOn.derivWithin_ne_zero_right` above. -/
 theorem IsPwC1ImmersionOn.derivWithin_ne_zero_left (h : IsPwC1ImmersionOn γ a b) {c t : ℝ}
     (ht₀ : t ∈ Ioc (min a b) (max a b)) (hct : c < t) :
     derivWithin γ (Icc c t) t ≠ 0 := by
-  obtain ⟨c', hlt', -, hC1', hne'⟩ := h.exists_Icc_piece_left ht₀
+  obtain ⟨c', hlt', -, _, hne'⟩ := h.exists_Icc_piece_left ht₀
   rw [derivWithin_Icc_right_endpoint_congr hct hlt']
   exact hne' t (right_mem_Icc.mpr hlt'.le)
 
@@ -351,7 +351,7 @@ theorem IsPwC1ImmersionOn.exists_deriv_slope_right_limit (h : IsPwC1ImmersionOn 
     (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
     ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L) ∧
       Tendsto (slope γ t₀) (𝓝[>] t₀) (𝓝 L) := by
-  obtain ⟨d, hlt, hsub, hC1, hne⟩ := h.exists_Icc_piece_right ht₀
+  obtain ⟨d, hlt, _, hC1, hne⟩ := h.exists_Icc_piece_right ht₀
   refine ⟨derivWithin γ (Icc t₀ d) t₀, hne t₀ (left_mem_Icc.mpr hlt.le), ?_, ?_⟩
   · have h1 : Tendsto (derivWithin γ (Icc t₀ d)) (𝓝[Ioo t₀ d] t₀)
         (𝓝 (derivWithin γ (Icc t₀ d) t₀)) :=
@@ -380,7 +380,7 @@ theorem IsPwC1ImmersionOn.exists_deriv_slope_left_limit (h : IsPwC1ImmersionOn �
     (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
     ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L) ∧
       Tendsto (slope γ t₀) (𝓝[<] t₀) (𝓝 L) := by
-  obtain ⟨c, hlt, hsub, hC1, hne⟩ := h.exists_Icc_piece_left ht₀
+  obtain ⟨c, hlt, _, hC1, hne⟩ := h.exists_Icc_piece_left ht₀
   refine ⟨derivWithin γ (Icc c t₀) t₀, hne t₀ (right_mem_Icc.mpr hlt.le), ?_, ?_⟩
   · have h1 : Tendsto (derivWithin γ (Icc c t₀)) (𝓝[Ioo c t₀] t₀)
         (𝓝 (derivWithin γ (Icc c t₀) t₀)) :=

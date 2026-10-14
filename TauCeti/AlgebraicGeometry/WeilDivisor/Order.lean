@@ -12,10 +12,9 @@ public import Mathlib.Order.Preorder.Finsupp
 /-!
 # The order on Weil divisors and the positive/negative part decomposition
 
-This file continues the Jacobian roadmap's Layer A formal Weil divisor API
-(`TauCeti.AlgebraicGeometry.WeilDivisor.Basic`) by recording the lattice-ordered-group structure of
-formal divisors and the canonical decomposition of a divisor into its effective positive and
-negative parts.
+This file extends the formal Weil divisor API (`TauCeti.AlgebraicGeometry.WeilDivisor.Basic`) by
+recording the lattice-ordered-group structure of formal divisors and the canonical decomposition of
+a divisor into its effective positive and negative parts.
 
 The point set `X →₀ ℤ` already carries the coefficientwise partial order, the lattice
 operations `⊔`/`⊓`, and (because `ℤ` is an ordered group) the lattice-ordered-group positive and
@@ -30,9 +29,6 @@ This reuses Mathlib's lattice-ordered-group `posPart`/`negPart` API
 (`Mathlib.Algebra.Order.Group.PosPart`) and the coefficientwise order and lattice on finitely
 supported functions (`Mathlib.Order.Preorder.Finsupp`, `Mathlib.Data.Finsupp.Order`); no
 external mathematics is vendored.
-
-This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve: Weil divisors
-`⊕_x ℤ`", "principal divisors", and "Degree".
 -/
 
 public section
@@ -66,9 +62,13 @@ lemma isEffective_iff_zero_le {D : WeilDivisor X} : IsEffective D ↔ 0 ≤ D :=
   rw [isEffective_iff, le_iff]
   simp
 
+/-- The divisor of a single point is nonnegative. -/
+lemma zero_le_ofPoint (x : X) : 0 ≤ ofPoint x :=
+  isEffective_iff_zero_le.mp (isEffective_ofPoint x)
+
 /-- Adding a point to a divisor gives a larger divisor. -/
 lemma le_add_ofPoint (D : WeilDivisor X) (x : X) : D ≤ D + ofPoint x :=
-  le_add_of_nonneg_right (isEffective_iff_zero_le.mp (isEffective_ofPoint x))
+  le_add_of_nonneg_right (zero_le_ofPoint x)
 
 /-- Membership in the effective submonoid is nonnegativity in the coefficientwise order. -/
 lemma mem_effectiveSubmonoid_iff_zero_le {D : WeilDivisor X} :

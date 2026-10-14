@@ -22,9 +22,8 @@ of points:
 * at every **exterior** point `w` — one with `R < dist w c` — it is `0`
   (`windingNumber_circleMap_eq_zero_of_lt_dist`).
 
-Together these are the roadmap's `n_c(circle) = 1` normalization and its companion "`n` is `0`
-outside" (`ContourIntegration/README.md`, the worked examples). They upgrade the raw-index-integral
-raw index-integral value `windingNumber_circle` to statements about the `windingNumber`
+Together these are the normalization `n_c(circle) = 1` and its companion "`n` is `0` outside". They
+upgrade the raw index-integral value `windingNumber_circle` to statements about the `windingNumber`
 *definition*, connecting the principal-value packaging to the elementary circle computation and to
 Mathlib's disc Cauchy theory.
 
@@ -57,16 +56,12 @@ across the whole disc, so its circle integral vanishes.
 * `TauCeti.Contour.windingNumber_circleMap_eq_zero_of_lt_dist` — `n_w(circle) = 0` for `w` outside
   the disc.
 
-This is a Layer-1 acceptance criterion of the Hungerbühler–Wasem generalized residue theorem
-(HW Thm 3.3).
-
 ## Provenance
 
 The arc index-integral material (`indexIntegral_arc_interval`, `indexIntegral_arc` and their
-specialization `windingNumber_circle`) was
-migrated and adapted from the AINTLIB `LeanModularForms` project
-(`ForMathlib/HungerbuhlerWasem/Crossing.lean`), specialised to the raw-function
-(`γ : ℝ → ℂ` on `[a, b]`) design of the contour-integration roadmap.
+specialization `windingNumber_circle`) was migrated and adapted from the AINTLIB `LeanModularForms`
+project (`ForMathlib/HungerbuhlerWasem/Crossing.lean`), specialised to the raw-function (`γ : ℝ → ℂ`
+on `[a, b]`) design used here.
 
 ## References
 
@@ -103,9 +98,6 @@ theorem indexIntegral_arc_interval {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (a b : 
   rw [intervalIntegral.integral_const, Complex.real_smul]
   field_simp
 
-@[deprecated (since := "2026-07-29")]
-alias windingNumber_modelSector_interval := indexIntegral_arc_interval
-
 /-- **The normalized index integral of a circular arc** (Hungerbühler–Wasem (2.4)). The arc
 `γ θ = z₀ + r·e^{iθ}` about its centre `z₀`, traversed over `[0, α]`, has normalized index integral
 `(2πi)⁻¹ ∫_0^α (γ̇ / (γ − z₀)) dθ = α / 2π`: an arc of *signed* angular extent `α` contributes
@@ -116,8 +108,7 @@ The `α = 2π` specialization is `windingNumber_circle`; the `α = π` and `α =
 formula names by their points are `windingNumber_at_i` and `windingNumber_at_rho`, in
 `ModelSector/Winding.lean`.
 
-`ContourIntegration/Suggested.lean` lists this statement as `windingNumber_modelSector`, which is
-retained below as a deprecated alias. The closed model-sector curve — a different statement — is
+This single arc is not the closed model-sector curve, whose winding number is
 `TauCeti.Contour.windingNumber_closedModelSector` in `ModelSector/Closed.lean`. -/
 theorem indexIntegral_arc {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (α : ℝ) :
     (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
@@ -126,9 +117,6 @@ theorem indexIntegral_arc {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (α : ℝ) :
   rw [indexIntegral_arc_interval hr]
   push_cast
   ring
-
-@[deprecated (since := "2026-07-29")]
-alias windingNumber_modelSector := indexIntegral_arc
 
 /-- **A full circle (`[0, 2π]`) has winding number `1`** — the closed-curve normalization, the
 `[0, 2π]` specialization of `indexIntegral_arc` (`2π / 2π = 1`). Its value also follows from
@@ -284,10 +272,10 @@ theorem windingNumber_circleMap_center_eq_half {c : ℂ} {R : ℝ} (hR : R ≠ 0
   rw [sub_zero]
   field_simp
 
-/-- **`n_w(circle) = 0` outside the disc** — the roadmap's "`n` is `0` outside" companion to the
-centre normalization. For a point `w` strictly outside the closed disc (`R < dist w c`, with
-`R ≥ 0`), the generalized winding number of `circleMap c R` over `[0, 2π]` about `w` vanishes: the
-kernel is holomorphic across the disc, so the Cauchy-kernel circle integral is `0`. -/
+/-- **`n_w(circle) = 0` outside the disc** — the "`n` is `0` outside" companion to the centre
+normalization. For a point `w` strictly outside the closed disc (`R < dist w c`, with `R ≥ 0`), the
+generalized winding number of `circleMap c R` over `[0, 2π]` about `w` vanishes: the kernel is
+holomorphic across the disc, so the Cauchy-kernel circle integral is `0`. -/
 theorem windingNumber_circleMap_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR : 0 ≤ R)
     (hw : R < dist w c) : windingNumber (circleMap c R) 0 (2 * Real.pi) w = 0 := by
   have havoid : ∀ θ, circleMap c R θ ≠ w := fun θ =>

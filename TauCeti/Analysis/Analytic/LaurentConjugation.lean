@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Complex.Basic
-import TauCeti.Analysis.Complex.RemovableSingularity
 
 /-!
 # Conjugation of Laurent unit germs
@@ -47,6 +47,7 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
     (heq : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
       p.2 ^ m * u p = conj ((conj p.2) ^ n * v (τ p.1, conj p.2))) :
     m = n ∧ ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), u p = conj (v (τ p.1, conj p.2)) := by
+  -- Compare the exponents on the central real slice.
   let f : ℝ → ℂ := fun t ↦ (t : ℂ) ^ m * u (x₀, (t : ℂ))
   have hreal : AnalyticAt ℝ (fun t : ℝ ↦ (t : ℂ)) 0 := by
     convert Complex.ofRealCLM.analyticAt 0 using 1
@@ -74,11 +75,9 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
     ⟨_, hvR, by simpa using hv0, eventually_nhdsWithin_iff.mpr hslice⟩
   refine ⟨hmn, ?_⟩
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hT : ContinuousAt T (x₀, 0) := (hτ.comp continuousAt_fst).prodMk
-    (Complex.continuous_conj.continuousAt.comp continuousAt_snd)
-  have hT0 : T (x₀, 0) = (x₀, 0) := by simp [T, hτ0]
   have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
-    simpa only [hT0] using hT.tendsto
+    simpa only [T, Prod.map_def, hτ0, map_zero] using hτ.tendsto.prodMap_nhds
+      (Complex.continuous_conj.tendsto (0 : ℂ))
   have hunit : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 → u p = conj (v (T p)) := by
     filter_upwards [heq] with p hp hp0
     have hp' := hp hp0
@@ -90,22 +89,22 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
     hu.eventually_analyticAt.and (hTt.eventually hv.eventually_analyticAt)
   obtain ⟨U, s, hU, hx₀, hs, h0s, hsub⟩ := mem_nhds_prod_iff'.mp (hunit.and hana)
   have hext (x : E) (hx : x ∈ U) :
-      EqOn (fun q : Unit × ℂ ↦ u (x, q.2))
-        (fun q ↦ conj (v (τ x, conj q.2))) (univ ×ˢ s) := by
-    refine TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := 0) hs ?_ ?_ ?_
-    · intro q hq
-      exact (((hsub ⟨hx, hq.2⟩).2.1).continuousAt.comp
-        (continuous_const.prodMk continuous_snd).continuousAt).continuousWithinAt
-    · intro q hq
-      have hvq : ContinuousAt v (τ x, conj q.2) :=
-        (hsub (a := (x, q.2)) ⟨hx, hq.2⟩).2.2.continuousAt
+      EqOn (fun z : ℂ ↦ u (x, z)) (fun z ↦ conj (v (τ x, conj z))) s := by
+    have hpunct : EqOn (fun z : ℂ ↦ u (x, z))
+        (fun z ↦ conj (v (τ x, conj z))) (s \ {0}) := fun z hz ↦
+      (hsub ⟨hx, hz.1⟩).1 hz.2
+    refine hpunct.of_subset_closure ?_ ?_ sdiff_subset ?_
+    · intro z hz
+      exact ((hsub ⟨hx, hz⟩).2.1.continuousAt.comp
+        (continuous_const.prodMk continuous_id).continuousAt).continuousWithinAt
+    · intro z hz
+      have hvz : ContinuousAt v (τ x, conj z) :=
+        (hsub (a := (x, z)) ⟨hx, hz⟩).2.2.continuousAt
       exact (Complex.continuous_conj.continuousAt.comp
-        (hvq.comp (f := fun q : Unit × ℂ ↦ (τ x, conj q.2))
-          (continuous_const.prodMk (Complex.continuous_conj.comp
-            continuous_snd)).continuousAt)).continuousWithinAt
-    · intro q hq
-      exact (hsub ⟨hx, hq.2.1⟩).1 hq.2.2
+        (hvz.comp (f := fun z : ℂ ↦ (τ x, conj z))
+          (continuous_const.prodMk Complex.continuous_conj).continuousAt)).continuousWithinAt
+    · simpa only [Set.sdiff_eq] using (dense_compl_singleton (0 : ℂ)).open_subset_closure_inter hs
   filter_upwards [prod_mem_nhds (hU.mem_nhds hx₀) (hs.mem_nhds h0s)] with p hp
-  exact (hext p.1 hp.1) (x := ((), p.2)) ⟨mem_univ (), hp.2⟩
+  exact hext p.1 hp.1 hp.2
 
 end AnalyticAt

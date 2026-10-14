@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.Convex.SimplicialComplex.AffineIndependentUnion
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
+import Mathlib.Analysis.Convex.Topology
+import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
+import Mathlib.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # Geometric realization of an abstract simplicial complex
@@ -106,6 +109,26 @@ topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
   TopologicalSpace.induced (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) inferInstance
 
+/-- Every closed coordinate simplex is compact, even in an infinite vertex set. -/
+instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (StandardSimplex σ) := by
+  let c := Finsupp.lcoeFun (R := ℝ) (α := ι) (M := ℝ)
+  have hc : IsCompact
+      (c '' convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) := by
+    rw [c.image_convexHull]
+    exact ((σ.image (fun v => Finsupp.single v (1 : ℝ))).finite_toSet.image c).isCompact_convexHull
+      ℝ
+  have hind : Topology.IsInducing (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) :=
+    Topology.IsInducing.induced _
+  have hr : range (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) =
+      c '' convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) := by
+    have hcoe : (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) = ⇑c ∘ Subtype.val :=
+      funext fun x => by simp [c]
+    rw [hcoe]
+    exact (range_comp c Subtype.val).trans (congrArg (fun s => c '' s) Subtype.range_coe)
+  refine ⟨hind.isCompact_iff.mpr ?_⟩
+  rw [image_univ, hr]
+  exact hc
+
 /-- A geometric face is exactly the image of an abstract face under the coordinate embedding. -/
 theorem mem_standardGeometricComplex_faces_iff (K : AbstractSimplicialComplex ι)
     (τ : Finset (ι →₀ ℝ)) :
@@ -142,6 +165,13 @@ theorem continuous_faceInclusion (K : AbstractSimplicialComplex ι) (σ : Face K
   continuous_iff_coinduced_le.2 (le_iSup (fun τ : Face K =>
     TopologicalSpace.coinduced (faceInclusion K τ) inferInstance) σ)
 
+/-- A subset of a weak realization is closed exactly when its inverse image in every closed
+simplex is closed. -/
+theorem isClosed_iff_faceInclusion {K : AbstractSimplicialComplex ι} {s : Set (Realization K)} :
+    IsClosed s ↔ ∀ σ : Face K, IsClosed (faceInclusion K σ ⁻¹' s) := by
+  -- The realization topology is the supremum of the coinduced face topologies.
+  simp only [isClosed_iSup_iff, isClosed_coinduced]
+
 /-- A map out of a realization is continuous exactly when its restriction to every face is
 continuous. -/
 theorem continuous_iff_faceInclusion {K : AbstractSimplicialComplex ι}
@@ -157,6 +187,17 @@ theorem continuous_realization_coe (K : AbstractSimplicialComplex ι) :
   intro σ
   exact continuous_induced_dom.congr fun x => by
     exact congrArg (fun y : ι →₀ ℝ => (y : ι → ℝ)) (faceInclusion_val K σ x).symm
+
+/-- Distinct realization points have distinct barycentric coordinates. -/
+theorem injective_realization_coe (K : AbstractSimplicialComplex ι) :
+    Function.Injective (fun x : Realization K => (x.1 : ι → ℝ)) :=
+  fun _ _ h => Subtype.ext (Finsupp.ext fun v => congrFun h v)
+
+/-- The weak realization is Hausdorff: distinct points have distinct continuous
+barycentric coordinates. -/
+instance instT2SpaceRealization (K : AbstractSimplicialComplex ι) : T2Space (Realization K) :=
+  T2Space.of_injective_continuous
+    (injective_realization_coe K) (continuous_realization_coe K)
 
 /-- The coordinate image of every abstract face is a face of the geometric complex. -/
 theorem image_single_mem_standardGeometricComplex_faces {K : AbstractSimplicialComplex ι}
@@ -190,7 +231,7 @@ theorem StandardSimplex.nonneg {σ : Finset ι} (x : StandardSimplex σ) (v : ι
       obtain ⟨w, _, rfl⟩ := hy
       by_cases h : w = v <;> simp [h])
     (by
-      intro y hy z hz a b ha hb hab
+      intro y hy z hz a b ha hb _
       simp only [Set.mem_ofPred_eq, Finsupp.add_apply, Finsupp.smul_apply] at hy hz ⊢
       exact add_nonneg (mul_nonneg ha hy) (mul_nonneg hb hz))
     x.2
@@ -317,6 +358,18 @@ theorem Realization.nonneg (K : AbstractSimplicialComplex ι) (x : Realization K
     0 ≤ x.1 v :=
   StandardSimplex.nonneg (σ := (carrier K x).1) ⟨x.1, mem_convexHull_carrier K x⟩ v
 
+/-- The barycentric coordinates of a realization point sum to one. -/
+@[simp]
+theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realization K) :
+    x.1.sum (fun _ r => r) = 1 :=
+  StandardSimplex.sum_eq_one ⟨x.1, mem_convexHull_carrier K x⟩
+
+/-- Every barycentric coordinate of a realization point is at most one. -/
+theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :
+    x.1 v ≤ 1 :=
+  Convexity.StdSimplex.weights_apply_le_one
+    ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩ v
+
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}
     (hx : x.1 ∈ convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) :
@@ -341,6 +394,50 @@ noncomputable def vertex (K : AbstractSimplicialComplex ι) (v : ι) : Realizati
 theorem vertex_val (K : AbstractSimplicialComplex ι) (v : ι) :
     (vertex K v : ι →₀ ℝ) = Finsupp.single v 1 :=
   (rfl)
+
+/-- The barycentric support of a realization vertex is its singleton vertex set. -/
+-- Simplify the support before vertex_val rewrites the vertex's coordinates.
+@[simp↓]
+theorem support_vertex (K : AbstractSimplicialComplex ι) (v : ι) :
+    (vertex K v : ι →₀ ℝ).support = {v} := by
+  rw [vertex_val, Finsupp.support_single _ one_ne_zero]
+
+/-- A realization point is a vertex exactly when its coordinate at that vertex is one. -/
+@[simp]
+theorem Realization.eq_vertex_iff (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :
+    x = vertex K v ↔ x.1 v = 1 := by
+  constructor
+  · rintro rfl
+    simp
+  · intro hv
+    have hsum := Finsupp.add_sum_erase' x.1 v (fun _ r => r) (fun _ => rfl)
+    rw [Realization.sum_eq_one, hv] at hsum
+    have he : (x.1.erase v).sum (fun _ r => r) = 0 := by linarith
+    have hzero : ∀ w ∈ (x.1.erase v).support, (x.1.erase v) w = 0 := by
+      apply (Finset.sum_eq_zero_iff_of_nonneg ?_).mp he
+      intro w _
+      by_cases h : w = v
+      · simp [h]
+      · simpa [Finsupp.erase_ne h] using Realization.nonneg K x w
+    apply Subtype.ext
+    rw [vertex_val, Finsupp.eq_single_iff]
+    refine ⟨?_, hv⟩
+    intro w hw
+    by_contra h
+    have hw' : w ∈ (x.1.erase v).support := by
+      simp only [Finsupp.support_erase, Finset.mem_erase]
+      exact ⟨by simpa only [Finset.mem_singleton] using h, hw⟩
+    exact (Finsupp.mem_support_iff.mp hw') (hzero w hw')
+
+/-- A realization point supported on a singleton is the corresponding vertex. -/
+theorem Realization.eq_vertex_of_support_eq (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {v : ι} (h : x.1.support = {v}) : x = vertex K v := by
+  apply Subtype.ext
+  rw [vertex_val]
+  let w : Convexity.StdSimplex ℝ ι :=
+    ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩
+  exact congrArg Convexity.StdSimplex.weights
+    ((Convexity.StdSimplex.support_weights_eq_singleton (w := w)).mp h)
 
 /-- Distinct vertices give distinct points in the geometric realization. -/
 theorem vertex_injective (K : AbstractSimplicialComplex ι) :

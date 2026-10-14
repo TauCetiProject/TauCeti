@@ -37,8 +37,14 @@ compact, but the empty fan is not complete.
 
 * `TauCeti.Toric.IsIntegralLattice.exists_complexTorus_norm_eq`: for every `v` in `V`, a torus
   point at which every character `m` has absolute value `exp (-⟨m, v⟩)`.
+* `TauCeti.Toric.IsIntegralLattice.exists_realCharacter_apply_eq_neg_log_norm`: for every torus
+  point `t`, a point of `V` at which every character `m` takes the value `-log ‖t m‖`.
 * `TauCeti.Toric.Fan.isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_le_one`:
-  the part of a chart where every monomial has absolute value at most `1` is compact.
+  the part of a chart where every monomial has absolute value at most `1` is compact, and
+  `TauCeti.Toric.Fan.isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_le`:
+  so is the part where the monomials of a generating family are bounded by any constant, and
+  `TauCeti.Toric.Fan.isOpen_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_lt`:
+  the part where they are strictly bounded is open.
 * `TauCeti.Toric.Fan.mem_of_mapClusterPt_analyticTorusι`: if the torus points along the ray
   through `w` cluster at a point of the chart of a cone `σ`, then `w ∈ σ`.
 * `TauCeti.Toric.Fan.compactSpace_analyticRealization_of_isComplete`: the realization of a
@@ -81,6 +87,19 @@ theorem _root_.TauCeti.Toric.IsIntegralLattice.exists_complexTorus_norm_eq
               ring }, fun m ↦ ?_⟩
   simp [Complex.norm_exp]
 
+/-- Conversely, every torus point `t` has a point `w` of `V` at which every integral character
+`m` takes the value `-log ‖t m‖`. -/
+theorem _root_.TauCeti.Toric.IsIntegralLattice.exists_realCharacter_apply_eq_neg_log_norm
+    (h : IsIntegralLattice i) (t : ComplexTorus N) :
+    ∃ w : V, ∀ m, h.realCharacter m w = -Real.log ‖((t m : ℂˣ) : ℂ)‖ :=
+  h.exists_realCharacter_apply_eq
+    { toFun m := -Real.log ‖((t m : ℂˣ) : ℂ)‖
+      map_zero' := by simp
+      map_add' a b := by
+        rw [AddChar.map_add_eq_mul, Units.val_mul, norm_mul,
+          Real.log_mul (norm_ne_zero_iff.2 (t a).ne_zero) (norm_ne_zero_iff.2 (t b).ne_zero)]
+        ring }
+
 /-- The part of the chart of a cone `σ` where every monomial has absolute value at most `1` is a
 compact subset of the realization. -/
 theorem isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_le_one
@@ -93,6 +112,37 @@ theorem isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_le_
   -- The compact set lives in the chart, whose topology is not found by instance search.
   exact @IsCompact.image _ _ (Φ.analyticAffineChart σ).str _ _ _ h
     (Φ.analyticAffineChartι hΦ σ).hom.continuous
+
+/-- For a finite generating family `g` of the dual semigroup of a cone `σ`, the part of the chart
+of `σ` where the monomials of `g` have absolute value at most `R` is a compact subset of the
+realization. -/
+theorem isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_le
+    (σ : Φ.cones) {r : ℕ} (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) r) (R : ℝ) :
+    IsCompact (Φ.analyticAffineChartι hΦ σ ''
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+        ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ ≤ R}) := by
+  have h := isCompact_setOf_forall_norm_apply_single_toFun_le g R
+  rw [← Φ.analyticAffineChart_str_eq σ] at h
+  -- The compact set lives in the chart, whose topology is not found by instance search.
+  exact @IsCompact.image _ _ (Φ.analyticAffineChart σ).str _ _ _ h
+    (Φ.analyticAffineChartι hΦ σ).hom.continuous
+
+/-- For a finite generating family `g` of the dual semigroup of a cone `σ`, the part of the chart
+of `σ` where the monomials of `g` have absolute value less than `R` is open in the realization. -/
+theorem isOpen_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_lt
+    (σ : Φ.cones) {r : ℕ} (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) r) (R : ℝ) :
+    IsOpen (Φ.analyticAffineChartι hΦ σ ''
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+        ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ < R}) := by
+  have h : IsOpen[affinePointTopology g]
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+        ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ < R} := by
+    let _ := affinePointTopology g
+    simp only [ofPred_forall]
+    exact isOpen_iInter_of_finite fun j ↦
+      isOpen_lt (continuous_norm.comp (continuous_apply_single g _)) continuous_const
+  rw [← Φ.analyticAffineChart_str_eq σ g] at h
+  exact (Φ.isOpenEmbedding_analyticAffineChartι hΦ σ).isOpenMap _ h
 
 /-- A torus point at which every character of the dual semigroup of a cone `σ` has absolute value
 at most `1` lies in the part of the chart of `σ` where every monomial has absolute value at
@@ -115,19 +165,12 @@ private theorem analyticTorusι_mem_iUnion_image (hc : Φ.IsComplete) (hΦ0 : No
       {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
         ∀ s, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1} := by
   -- The point `w` of `V` at which the characters take the values `-log ‖t m‖`.
-  let f : (N →+ ℤ) →+ ℝ :=
-    { toFun m := -Real.log ‖((t m : ℂˣ) : ℂ)‖
-      map_zero' := by simp
-      map_add' a b := by
-        rw [AddChar.map_add_eq_mul, Units.val_mul, norm_mul,
-          Real.log_mul (norm_ne_zero_iff.2 (t a).ne_zero) (norm_ne_zero_iff.2 (t b).ne_zero)]
-        ring }
-  obtain ⟨w, hw⟩ := Φ.lattice.exists_realCharacter_apply_eq f
+  obtain ⟨w, hw⟩ := Φ.lattice.exists_realCharacter_apply_eq_neg_log_norm t
   obtain ⟨σ, hσ, hwσ⟩ := Φ.isComplete_iff.1 hc w
   refine mem_iUnion.2 ⟨⟨σ, hσ⟩,
     Φ.analyticTorusι_mem_image_setOf_forall_norm_apply_single_le_one hΦ hΦ0 fun s ↦ ?_⟩
-  have hs : 0 ≤ f s := hw s ▸ (mem_dualSemigroup _ _).1 s.2 hwσ
-  have hfs : f s = -Real.log ‖((t s : ℂˣ) : ℂ)‖ := rfl
+  have hs := (mem_dualSemigroup _ _).1 s.2 hwσ
+  rw [hw] at hs
   exact (Real.log_nonpos_iff (norm_nonneg _)).1 (by linarith)
 
 /-- The analytic realization of a complete regular fan is compact. -/

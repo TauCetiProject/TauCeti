@@ -25,6 +25,16 @@ of discrete `G_K`-modules given by `principalIdele` and `ideleClassMk`. The glob
 formation lives on `globalFormation K`, while the local invariants are summed on the second
 cohomology of the layers of `ideleFormation K`.
 
+By Galois descent for ideles (`mem_range_ideleCoeffOfIntermediateField_iff`), the level of
+`ideleFormation K` at every open subgroup `U` is the idele group `I_E` of its fixed field `E`, a
+finite subextension of `Kˢ/K` that need not be Galois over `K` (`ideleLevelEquiv`). An element of
+`G_K` restricting to an automorphism `e` of `E` acts on it by transport along `e`
+(`ideleLevelEquiv_units_map_adeleEquiv`); when `E` is Galois over `K`, this is the action of
+`Gal(E/K)` (`ideleLevelEquiv_smul`). So for a finite Galois extension `L/K` inside `Kˢ`, the
+coefficient module of the layer of `L` is the `Gal(L/K)`-module `I_L`, and the second cohomology
+of that layer is `H²(Gal(L/K), I_L)`; for a layer `V ◁ U` with fixed fields `E ⊇ F`, its top and
+ground levels are `I_E` and `I_F`.
+
 Both coefficient modules are discrete with open stabilizers, so the continuous cohomology of `G_K`
 with coefficients in either of them is the colimit of the cohomology of the finite quotients
 `G_K ⧸ U` with coefficients in the `U`-invariants, by the general
@@ -37,6 +47,15 @@ with coefficients in either of them is the colimit of the cohomology of the fini
 * `TauCeti.ClassFieldTheory.ideleCoeffEquivIdeleFormation K`,
   `TauCeti.ClassFieldTheory.ideleClassCoeffEquivGlobalFormation K`: their coefficient modules as
   `IdeleCoeff K` and `IdeleClassCoeff K`.
+* `TauCeti.ClassFieldTheory.ideleLevelEquiv hU`: the level of the idele formation at an open
+  subgroup with fixed field `E` is the idele group `I_E`.
+
+## Main results
+
+* `TauCeti.ClassFieldTheory.mem_level_ideleFormation_iff`: the level of the idele formation at an
+  open subgroup with fixed field `E` consists of the ideles of `E`.
+* `TauCeti.ClassFieldTheory.ideleLevelEquiv_units_map_adeleEquiv`,
+  `TauCeti.ClassFieldTheory.ideleLevelEquiv_smul`: `ideleLevelEquiv` is Galois equivariant.
 
 ## Implementation notes
 
@@ -100,5 +119,78 @@ theorem ideleClassCoeffEquivGlobalFormation_smul (g : AbsoluteGaloisGroup K)
     ideleClassCoeffEquivGlobalFormation K (g • x) =
       (globalFormation K).toRep.ρ g (ideleClassCoeffEquivGlobalFormation K x) :=
   (rfl)
+
+/-! ### The levels of the idele formation -/
+
+section Level
+
+open IntermediateField NumberField
+
+variable {K} {E : IntermediateField K (SeparableClosure K)} [NumberField E]
+  {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = E)
+
+include hU in
+/-- **The level of the idele formation at an open subgroup with fixed field `E`** consists of the
+ideles of `E`. -/
+theorem mem_level_ideleFormation_iff {x : IdeleCoeff K} :
+    (dsimp% only (ideleCoeffEquivIdeleFormation K x ∈ (ideleFormation K).level U)) ↔
+      x ∈ (ideleCoeffOfIntermediateField K E).range := by
+  rw [Formation.mem_level, mem_range_ideleCoeffOfIntermediateField_iff,
+    ← toSubgroup_eq_fixingSubgroup_of_fixedField_eq hU]
+  refine forall₂_congr fun u _ ↦ ?_
+  rw [← ideleCoeffEquivIdeleFormation_smul, (ideleCoeffEquivIdeleFormation K).injective.eq_iff]
+
+/-- The additive map `I_E → (I_{Kˢ})^U` underlying `ideleLevelEquiv`. -/
+private def ideleLevelHom : Additive (IdeleGroup (𝓞 E) E) →+ (ideleFormation K).level U :=
+  AddMonoidHom.codRestrict ((ideleCoeffEquivIdeleFormation K).toAddMonoidHom.comp
+      (ideleCoeffOfIntermediateField K E)) _
+    fun a ↦ (mem_level_ideleFormation_iff hU).2 ⟨a, rfl⟩
+
+private theorem bijective_ideleLevelHom : Function.Bijective (ideleLevelHom hU) := by
+  refine ⟨fun a b hab ↦ ideleCoeffOfIntermediateField_injective
+    ((ideleCoeffEquivIdeleFormation K).injective (congrArg Subtype.val hab)), fun z ↦ ?_⟩
+  obtain ⟨z, hz⟩ := z
+  obtain ⟨x, rfl⟩ := (ideleCoeffEquivIdeleFormation K).surjective z
+  obtain ⟨a, rfl⟩ := (mem_level_ideleFormation_iff hU).1 hz
+  exact ⟨a, rfl⟩
+
+/-- **The level of the idele formation is the idele group of the fixed field**: if the fixed
+field of the open subgroup `U` is the finite subextension `E`, then `ideleCoeffOfIntermediateField`
+identifies the ideles `I_E` of `E` with the level `(I_{Kˢ})^U` of `ideleFormation K`. Applied to
+the open normal subgroup fixing a finite Galois extension `L/K`, it identifies the top level of
+the layer of `L` with `I_L`. -/
+def ideleLevelEquiv : Additive (IdeleGroup (𝓞 E) E) ≃+ (ideleFormation K).level U :=
+  AddEquiv.ofBijective (ideleLevelHom hU) (bijective_ideleLevelHom hU)
+
+/-- `ideleLevelEquiv hU` sends an idele of `E` to the same idele of `Kˢ`. -/
+@[simp]
+theorem ideleLevelEquiv_apply_coe (a : Additive (IdeleGroup (𝓞 E) E)) :
+    (dsimp% only
+      ((ideleLevelEquiv hU a : (ideleFormation K).level U) : (ideleFormation K).toRep.V)) =
+      ideleCoeffEquivIdeleFormation K (ideleCoeffOfIntermediateField K E a) :=
+  (rfl)
+
+/-- **`ideleLevelEquiv` is Galois equivariant**: if `g ∈ G_K` restricts on `E` to the automorphism
+`e` of `E`, then `g` acts on the level as `e` acts on the ideles of `E`. -/
+theorem ideleLevelEquiv_units_map_adeleEquiv (g : AbsoluteGaloisGroup K) (e : E ≃+* E)
+    (he : ∀ x : E, ((e x : E) : SeparableClosure K) = g x) (a : IdeleGroup (𝓞 E) E) :
+    (dsimp% only ((ideleLevelEquiv hU
+        (.ofMul (Units.map (GlobalNumberFields.adeleEquiv E E e).toMonoidHom a)) :
+          (ideleFormation K).level U) : (ideleFormation K).toRep.V)) =
+      (ideleFormation K).toRep.ρ g (ideleLevelEquiv hU (.ofMul a)) := by
+  rw [ideleLevelEquiv_apply_coe, ideleLevelEquiv_apply_coe,
+    ← smul_ideleCoeffOfIntermediateField g e he, ideleCoeffEquivIdeleFormation_smul]
+
+/-- **`ideleLevelEquiv` is Galois equivariant**: if `E` is normal over `K`, then `g ∈ G_K` acts on
+the level as its restriction to `Gal(E/K)` acts on the ideles of `E`. -/
+theorem ideleLevelEquiv_smul [Normal K E] (g : AbsoluteGaloisGroup K) (a : IdeleGroup (𝓞 E) E) :
+    (dsimp% only ((ideleLevelEquiv hU
+        (.ofMul (Units.map (GlobalNumberFields.adeleGaloisAction K E (g.restrictNormal E)) a)) :
+          (ideleFormation K).level U) : (ideleFormation K).toRep.V)) =
+      (ideleFormation K).toRep.ρ g (ideleLevelEquiv hU (.ofMul a)) := by
+  rw [ideleLevelEquiv_apply_coe, ideleLevelEquiv_apply_coe,
+    ← smul_ideleCoeffOfIntermediateField_of_normal, ideleCoeffEquivIdeleFormation_smul]
+
+end Level
 
 end TauCeti.ClassFieldTheory

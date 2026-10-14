@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Weights.Root.CorootSpan
 public import TauCeti.Algebra.Lie.Weights.Root.KostantStability
-public import TauCeti.LinearAlgebra.RootSystem.EquivInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 public import TauCeti.RingTheory.DividedPowers.Associative
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.RootSystem
@@ -118,7 +118,8 @@ theorem f4KillingRootSystem_chainBotCoeff (α β : Fin 48) :
   calc
     _ = (F4.rationalRootSystem valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
-      chainBotCoeff_indexEquiv (F4.rationalRootSystemEquiv valid_F4)
+      (F4.rationalRootSystemEquiv valid_F4).toHom.chainBotCoeff_indexEquiv
+        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
@@ -137,7 +138,8 @@ theorem f4KillingRootSystem_chainTopCoeff (α β : Fin 48) :
   calc
     _ = (F4.rationalRootSystem valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
-      chainTopCoeff_indexEquiv (F4.rationalRootSystemEquiv valid_F4)
+      (F4.rationalRootSystemEquiv valid_F4).toHom.chainTopCoeff_indexEquiv
+        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
@@ -388,18 +390,23 @@ theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
       congrArg (F4.rationalRootSystemEquiv valid_F4).indexEquiv hsource.symm
     _ = (rootSystem (F4.cartanSubalgebra valid_F4)).reflectionPerm
         (f4KillingRootLabel α) (f4KillingRootLabel α) :=
-      indexEquiv_reflectionPerm (F4.rationalRootSystemEquiv valid_F4).toHom _ _
+      (F4.rationalRootSystemEquiv valid_F4).toHom.indexEquiv_reflectionPerm _ _
     _ = _ := rootSystem_reflectionPerm_self_eq_neg _
 
+/-- Distinct pinned indices define distinct rational Killing root labels. -/
+theorem f4KillingRootLabel_injective : Function.Injective f4KillingRootLabel :=
+  (F4.rationalRootSystemEquiv valid_F4).indexEquiv.injective.comp (Fin.cast_injective _)
+
+-- `high`: at the default priority `simp` unfolds the abbreviation `f4KillingRootLabel`, rewrites
+-- with `EquivLike.apply_eq_iff_eq` first, and gets stuck at `f4RootIndex α = f4RootIndex β`.
+/-- Two pinned indices have the same rational Killing root label exactly when they agree. -/
+@[simp high] theorem f4KillingRootLabel_inj {α β : Fin 48} :
+    f4KillingRootLabel α = f4KillingRootLabel β ↔ α = β :=
+  f4KillingRootLabel_injective.eq_iff
+
 /-- Distinct pinned indices define distinct rational Killing roots. -/
-theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := by
-  intro α β h
-  have hlabel : f4KillingRootLabel α = f4KillingRootLabel β := by
-    apply Subtype.ext
-    exact h
-  have hi := (F4.rationalRootSystemEquiv valid_F4).indexEquiv.injective hlabel
-  apply Fin.ext
-  exact congrArg Fin.val hi
+theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := fun _ _ h =>
+  f4KillingRootLabel_injective (Subtype.ext h)
 
 /-- The Killing root at the opposite pinned index is the negative root. -/
 @[simp] theorem f4KillingRoot_f4OppositeRootIndex (α : Fin 48) :
@@ -432,16 +439,15 @@ theorem f4KillingRootLabel_surjective : Function.Surjective f4KillingRootLabel :
   simp only [f4KillingRootLabel, f4RootIndex, Fin.cast_cast, Fin.cast_eq_self]
   exact Equiv.apply_symm_apply (F4.rationalRootSystemEquiv valid_F4).indexEquiv γ
 
-/-- An edge labelled by a nonzero root changes the pinned root label. -/
-theorem f4KillingRootLabel_ne_of_root_eq_add (α β γ : Fin 48)
+/-- An edge labelled by a nonzero root changes the pinned root index. -/
+theorem f4_ne_of_root_eq_add (α β γ : Fin 48)
     (hγ : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
-    f4KillingRootLabel β ≠ f4KillingRootLabel γ := by
-  intro heq
-  have hindex : β = γ := f4KillingRoot_injective (congrArg Subtype.val heq)
+    β ≠ γ := by
+  rintro rfl
   have hzero : f4SimplyConnectedRootDatum.root α = 0 := by
     apply add_left_cancel (a := f4SimplyConnectedRootDatum.root β)
-    simpa only [add_zero, hindex] using hγ.symm
+    simpa only [add_zero] using hγ.symm
   exact f4SimplyConnectedRootDatum.ne_zero α hzero
 
 

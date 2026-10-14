@@ -109,8 +109,6 @@ lemma unitDiscStandardAutomorphismEquiv_symm_eq (u : Circle) (a : Complex.UnitDi
   have hu : (u : ℂ) ≠ 0 := u.coe_ne_zero
   have hconj : (starRingEnd ℂ) (u : ℂ) = (u : ℂ)⁻¹ := by
     rw [← Circle.coe_inv_eq_conj, Circle.coe_inv]
-  have hd₁ : 1 - (starRingEnd ℂ) (a : ℂ) * ((u : ℂ)⁻¹ * (z : ℂ)) ≠ 0 := by
-    simpa using one_sub_conj_mul_ne_zero_unitDisc (u⁻¹ • z) a
   have hd₂ : 1 - (starRingEnd ℂ) ((u : ℂ) * -(a : ℂ)) * (z : ℂ) ≠ 0 := by
     simpa using one_sub_conj_mul_ne_zero_unitDisc z (u • (-a))
   rw [map_mul, map_neg, hconj] at hd₂

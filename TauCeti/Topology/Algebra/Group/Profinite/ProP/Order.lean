@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
 public import TauCeti.Topology.Algebra.Group.Profinite.Order
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
@@ -26,6 +27,10 @@ divisibility arguments.
   vanishing of every exponent away from `p`.
 * `isProP_iff_profiniteOrder_le_primePower`: the equivalent supernatural divisibility
   criterion.
+* `proPKernel_eq_top_of_profiniteOrder_apply_eq_zero`: if `p` does not divide the supernatural
+  order of a profinite group, then the group has no nontrivial pro-`p` quotient.
+* `maximalProPQuotient.subsingleton_of_profiniteOrder_apply_eq_zero`: the corresponding maximal
+  pro-`p` quotient is trivial.
 
 ## References
 
@@ -101,5 +106,34 @@ theorem isProP_iff_profiniteOrder_le_primePower :
     rw [Supernatural.primePower_apply_of_ne (p := (⟨p, Fact.out⟩ : Nat.Primes)) (q := q)
       fun hq' ↦ hqp (congrArg Subtype.val hq')] at hq
     exact bot_unique hq
+
+section MaximalProPQuotient
+
+/-- **A prime absent from the supernatural order gives no nontrivial pro-`p` quotient.** If the
+`p`-exponent of the supernatural order of a profinite group `G` is zero, then its pro-`p` kernel
+is all of `G`. -/
+theorem proPKernel_eq_top_of_profiniteOrder_apply_eq_zero
+    (h : profiniteOrder G (⟨p, Fact.out⟩ : Nat.Primes) = 0) : proPKernel p G = ⊤ := by
+  rw [proPKernel_eq_top_iff]
+  intro U hU
+  rw [← QuotientGroup.subsingleton_iff]
+  apply (Nat.card_eq_one_iff_unique.mp ?_).1
+  apply hU.card_eq_or_dvd.resolve_right
+  intro hp
+  have hle : (padicValNat p (Nat.card (G ⧸ U.toSubgroup)) : ℕ∞) ≤
+      profiniteOrder G ⟨p, Fact.out⟩ :=
+    (Supernatural.ofNat_apply _ ⟨p, Fact.out⟩).symm.trans_le
+      (Supernatural.le_iff.mp (ofNat_card_quotient_le_profiniteOrder G U) _)
+  rw [h, nonpos_iff_eq_zero, Nat.cast_eq_zero] at hle
+  exact (dvd_iff_padicValNat_ne_zero Nat.card_pos.ne').mp hp hle
+
+/-- **The maximal pro-`p` quotient is trivial when `p` is absent from the supernatural order.** -/
+theorem maximalProPQuotient.subsingleton_of_profiniteOrder_apply_eq_zero
+    (h : profiniteOrder G (⟨p, Fact.out⟩ : Nat.Primes) = 0) :
+    Subsingleton (maximalProPQuotient p G) :=
+  maximalProPQuotient.subsingleton_iff.mpr
+    (proPKernel_eq_top_of_profiniteOrder_apply_eq_zero h)
+
+end MaximalProPQuotient
 
 end TauCeti

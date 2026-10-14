@@ -71,9 +71,9 @@ The definitions themselves need only a commutative ring, and are stated there.
 
 ## Implementation notes
 
-The weight space is indexed by `l : Fin n → ℤ`, not by a character of the torus, because that is
-the index the highest-weight theory of the roadmap runs on; `TauCeti.weightChar` is the translation
-between the two, and the separation hypothesis says the translation is faithful.
+The weight space is indexed by `l : Fin n → ℤ`, not by a character of the torus, because that is the
+index the highest-weight theory runs on; `TauCeti.weightChar` is the translation between the two,
+and the separation hypothesis says the translation is faithful.
 
 The intersection defining `TauCeti.weightSpace` runs over `t : Fin n → kˣ` rather than over
 `TauCeti.diagonalTorus k n` itself: `TauCeti.diagGL` is onto the torus
@@ -85,8 +85,6 @@ acts on a weight vector by an honest scalar, and independence is available in th
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
@@ -128,6 +126,14 @@ theorem apply_of_mem_weightSpace {ρ : Representation k (GL (Fin n) k) W} {l : F
     (hw : w ∈ weightSpace ρ l) (t : Fin n → kˣ) :
     ρ (diagGL t) w = ((weightChar k l t : kˣ) : k) • w :=
   (mem_weightSpace_iff ρ l w).mp hw t
+
+/-- A scalar matrix acts on a weight vector by the scalar raised to the weight's coordinate sum. -/
+theorem apply_scalar_of_mem_weightSpace {ρ : Representation k (GL (Fin n) k) W}
+    {l : Fin n → ℤ} {w : W} (hw : w ∈ weightSpace ρ l) (z : kˣ) :
+    ρ (GeneralLinearGroup.scalar (Fin n) z) w = ((z ^ (∑ i, l i) : kˣ) : k) • w := by
+  have h := apply_of_mem_weightSpace hw (fun _ ↦ z)
+  rw [weightChar_apply, torusCharacter_def, Finset.prod_zpow_eq_zpow_sum, diagGL_const] at h
+  exact h
 
 /-- **An operator commuting with the torus action preserves every weight space.**  A weight space
 is a joint eigenspace of the torus, and an operator commuting with an endomorphism carries each of
@@ -179,6 +185,31 @@ theorem weightSpace_toRepresentation_eq_bot_iff {ρ : Representation k (GL (Fin 
   rw [weightSpace_toRepresentation, ← Submodule.disjoint_iff_comap_eq_bot, disjoint_iff]
 
 end Subrepresentation
+
+namespace Representation.IntertwiningMap
+
+open TauCeti
+
+/-- Integer weight spaces spanning a representation also span any equivariant quotient. -/
+theorem iSup_weightSpace_eq_top_of_surjective {k : Type u} [CommRing k] {n : ℕ}
+    {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+    {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
+    (f : IntertwiningMap ρ σ) (hf : Function.Surjective f)
+    (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) :
+    ⨆ l : Fin n → ℤ, weightSpace σ l = ⊤ := by
+  have hmap (l : Fin n → ℤ) : (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
+    rintro _ ⟨v, hv, rfl⟩
+    rw [mem_weightSpace_iff]
+    intro t
+    rw [f.toLinearMap_apply, ← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
+  apply top_le_iff.mp
+  calc
+    ⊤ = (⨆ l : Fin n → ℤ, weightSpace ρ l).map f.toLinearMap := by
+      rw [hρ, Submodule.map_top, LinearMap.range_eq_top.mpr hf]
+    _ = ⨆ l : Fin n → ℤ, (weightSpace ρ l).map f.toLinearMap := Submodule.map_iSup _ _
+    _ ≤ ⨆ l : Fin n → ℤ, weightSpace σ l := iSup_mono hmap
+
+end Representation.IntertwiningMap
 
 namespace TauCeti
 

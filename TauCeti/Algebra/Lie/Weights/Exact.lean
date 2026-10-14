@@ -32,11 +32,6 @@ therefore gives a preimage lying in the `χ`-weight space.
 * `TauCeti.finrank_genWeightSpace_add_finrank_genWeightSpace_eq`: generalized weight-space
   dimensions are additive in a short exact sequence.
 
-## Roadmap
-
-This is the weight-space input for additivity of formal characters in Layer 6, "Formal
-characters", of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.5.

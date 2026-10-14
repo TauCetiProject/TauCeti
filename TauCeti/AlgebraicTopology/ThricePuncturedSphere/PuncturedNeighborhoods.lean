@@ -33,6 +33,8 @@ punctures: their pairwise disjointness lets the three fillings be performed inde
 * `puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf`,
   `puncturedNeighborhoodOneHomeomorphPuncturedDiscOneHalf`, and
   `puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf`: their standard local coordinates.
+* `puncturedDiscOneHalfHomeomorphPuncturedDisc`: multiplication by `2`, from the disc of radius
+  `1 / 2` to the punctured unit disc `ball 0 1 \ {0}` that carries the power-map covers.
 -/
 
 public section
@@ -283,6 +285,36 @@ theorem coe_puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf_symm_apply
         1 / (1 / ((puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf.symm w :
           ↥puncturedNeighborhoodInf) : ThricePuncturedSphere)) := by rw [one_div_one_div]
     _ = 1 / (w : ℂ) := congrArg (1 / ·) h
+
+/-! ### Rescaling to the punctured unit disc -/
+
+/-- Multiplication by `2` identifies the punctured disc of radius `1 / 2` with the punctured unit
+disc `ball 0 1 \ {0}`, on which the power-map covers `TauCeti.puncturedDiscPow` live. -/
+noncomputable def puncturedDiscOneHalfHomeomorphPuncturedDisc :
+    ↥puncturedDiscOneHalf ≃ₜ ↥(Metric.ball (0 : ℂ) 1 \ {0}) :=
+  (Homeomorph.mulLeft₀ (2 : ℂ) two_ne_zero).subtype fun z ↦ by
+    simp only [mem_puncturedDiscOneHalf, Homeomorph.coe_mulLeft₀, mem_sdiff, Metric.mem_ball,
+      dist_zero_right, mem_singleton_iff, norm_mul, Complex.norm_ofNat, mul_eq_zero,
+      OfNat.ofNat_ne_zero, false_or, norm_pos_iff]
+    constructor
+    · rintro ⟨h0, h1⟩
+      exact ⟨by linarith, h0⟩
+    · rintro ⟨h1, h0⟩
+      exact ⟨h0, by linarith⟩
+
+@[simp]
+theorem coe_puncturedDiscOneHalfHomeomorphPuncturedDisc (w : ↥puncturedDiscOneHalf) :
+    (puncturedDiscOneHalfHomeomorphPuncturedDisc w : ℂ) = 2 * (w : ℂ) :=
+  (rfl)
+
+@[simp]
+theorem coe_puncturedDiscOneHalfHomeomorphPuncturedDisc_symm_apply
+    (z : ↥(Metric.ball (0 : ℂ) 1 \ {0})) :
+    (puncturedDiscOneHalfHomeomorphPuncturedDisc.symm z : ℂ) = (z : ℂ) / 2 := by
+  have h := congrArg Subtype.val (puncturedDiscOneHalfHomeomorphPuncturedDisc.apply_symm_apply z)
+  rw [coe_puncturedDiscOneHalfHomeomorphPuncturedDisc] at h
+  rw [← h]
+  ring
 
 end ThricePuncturedSphere
 
