@@ -29,7 +29,6 @@ while it acts on the restriction through `C_*(Ωf)`, whose degree-zero part is t
   `classicalDGLocalSystem x (f^* L) ≅ (DGLocalSystem.pullback R f rfl).obj
   (classicalDGLocalSystem (f x) L)`, the identity on the underlying fiber.
 * `TauCeti.classicalDGLocalSystemPullbackIsoOfEq`: the same for a basepoint equation `f x = y`.
-* `TauCeti.classicalDGLocalSystemPullbackFiber`: the fiber identification `(f^* L)_x = L_{f x}`.
 * `TauCeti.classicalDGLocalSystemFunctorPullbackIso`: the naturality of
   `classicalDGLocalSystemPullbackIsoOfEq` in `L`, as an isomorphism
   of functors `f^* ⋙ classicalDGLocalSystemFunctor R x ≅
@@ -80,9 +79,9 @@ theorem classicalAction_pullback (f : C(X, Y)) {x : X} (L : LocalCoefficientSyst
       (loopChainToGroupAlgebra X x R a))) (LocalCoefficientSystem.fiberRightAction_pullback f L)
 
 variable (R) in
-/-- **The fiber identification** `(f^* L)_x = L_{f x}`: the identity of the fiber of the pullback,
-as a map to the restriction of scalars of the fiber of `L` along `C_*(Ωf)`. -/
-def classicalDGLocalSystemPullbackFiber (f : C(X, Y)) (x : X)
+/-- The fiber identification `(f^* L)_x = L_{f x}`, typed on the fiber of the pullback so that its
+characteristic lemma below can be used by `rw`. -/
+private def classicalDGLocalSystemPullbackFiber (f : C(X, Y)) (x : X)
     (L : LocalCoefficientSystem.{u, u, w} R Y) :
     classicalDGLocalSystem x ((LocalCoefficientSystem.pullback (R := R) f).obj L) →
       (DGLocalSystem.pullback R f rfl).obj (classicalDGLocalSystem (f x) L) :=
@@ -90,8 +89,7 @@ def classicalDGLocalSystemPullbackFiber (f : C(X, Y)) (x : X)
     (classicalDGLocalSystem (f x) L)).symm
 
 /-- The fiber identification is the identity of the underlying fiber. -/
-@[simp]
-theorem restrictScalarsEquiv_classicalDGLocalSystemPullbackFiber (f : C(X, Y)) (x : X)
+private theorem restrictScalarsEquiv_classicalDGLocalSystemPullbackFiber (f : C(X, Y)) (x : X)
     (L : LocalCoefficientSystem.{u, u, w} R Y)
     (m : classicalDGLocalSystem x ((LocalCoefficientSystem.pullback (R := R) f).obj L)) :
     DGRightModuleCat.restrictScalarsEquiv _ _ (classicalDGLocalSystemPullbackFiber R f x L m) =
