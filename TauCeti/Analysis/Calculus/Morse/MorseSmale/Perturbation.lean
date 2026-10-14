@@ -359,12 +359,13 @@ private theorem perturbedFlow_eq_flowOfLipschitz (hf : LipschitzWith K (∇ f))
   (rfl)
 
 /-- **Independence of the Lipschitz witness.** The perturbed flow does not depend on the Lipschitz
-bound for `∇ f` used to construct it: the Lipschitz constant of the augmented field is chosen from a
-proposition that does not mention that bound. -/
+bound for `∇ f` used to construct it: both are flows of the same augmented field, which do not
+depend on the Lipschitz constant (`flowOfLipschitz_congr`). -/
 theorem perturbedFlow_congr {K' : ℝ≥0} (hf : LipschitzWith K (∇ f)) (hf' : LipschitzWith K' (∇ f))
     (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
     perturbedFlow f h hf hh hc = perturbedFlow f h hf' hh hc :=
-  (rfl)
+  (perturbedFlow_eq_flowOfLipschitz hf hh hc).trans
+    ((flowOfLipschitz_congr _ _).trans (perturbedFlow_eq_flowOfLipschitz hf' hh hc).symm)
 
 /-- **The perturbed flow is `C¹`**, jointly in time, the initial condition and the parameter. -/
 theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
