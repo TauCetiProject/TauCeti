@@ -65,6 +65,13 @@ image. This condition does not install a measurable-space structure on the manif
 def IsChartMeasurable (I : ModelWithCorners 𝕜 E H) [MeasurableSpace E] (s : Set M) : Prop :=
   ∀ x : M, MeasurableSet ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' s)
 
+/-- Chart measurability in the defining target-intersection form, without unfolding
+the predicate. -/
+theorem isChartMeasurable_def [MeasurableSpace E] (s : Set M) :
+    IsChartMeasurable I s ↔
+      ∀ x : M, MeasurableSet ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' s) :=
+  Iff.rfl
+
 /-- The empty set is chart measurable for any measurable structure on the model space;
 no `OpensMeasurableSpace` assumption is needed. -/
 @[simp]
