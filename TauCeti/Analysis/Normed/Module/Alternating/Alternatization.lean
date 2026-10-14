@@ -32,7 +32,8 @@ variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [Fintype ι] [DecidableEq ι]
 
 /-- The signed permutation sum has operator norm at most the factorial of the arity. -/
-theorem norm_alternatization_le (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
+theorem _root_.ContinuousMultilinearMap.norm_alternatization_le
+    (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     ‖ContinuousMultilinearMap.alternatization f‖ ≤ (Fintype.card ι).factorial * ‖f‖ := by
   rw [← ContinuousAlternatingMap.norm_toContinuousMultilinearMap]
   simp only [ContinuousMultilinearMap.alternatization_apply_toContinuousMultilinearMap]
@@ -51,15 +52,16 @@ def alternatizationCLM :
         ext v
         simp [ContinuousMultilinearMap.alternatization_apply_apply, Finset.smul_sum,
           smul_comm c] }
-    (Fintype.card ι).factorial norm_alternatization_le
+    (Fintype.card ι).factorial ContinuousMultilinearMap.norm_alternatization_le
 
 /-- The continuous linear alternatization evaluates to Mathlib's signed permutation sum. -/
-@[simp] theorem alternatizationCLM_apply
+@[simp] theorem _root_.ContinuousMultilinearMap.alternatizationCLM_apply
     (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     alternatizationCLM f = ContinuousMultilinearMap.alternatization f := (rfl)
 
 /-- Alternatization multiplies an alternating map by the factorial of its arity. -/
-@[simp] theorem alternatization_toContinuousMultilinearMap (f : E [⋀^ι]→L[𝕜] F) :
+@[simp] theorem _root_.ContinuousAlternatingMap.alternatization_toContinuousMultilinearMap
+    (f : E [⋀^ι]→L[𝕜] F) :
     ContinuousMultilinearMap.alternatization f.toContinuousMultilinearMap =
       (Fintype.card ι).factorial • f := by
   apply ContinuousAlternatingMap.toAlternatingMap_injective

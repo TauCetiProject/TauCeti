@@ -60,8 +60,9 @@ theorem contDiff_compContinuousLinearMapCLM (n : WithTop ℕ∞) :
     ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.toContinuousMultilinearMapCLM_apply,
     ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear_apply_apply]
-  rw [← toContinuousMultilinearMap_compContinuousLinearMap,
-    alternatizationCLM_apply, alternatization_toContinuousMultilinearMap,
+  rw [← ContinuousAlternatingMap.toContinuousMultilinearMap_compContinuousLinearMap,
+    ContinuousMultilinearMap.alternatizationCLM_apply,
+    ContinuousAlternatingMap.alternatization_toContinuousMultilinearMap,
     ← Nat.cast_smul_eq_nsmul 𝕜,
     inv_smul_smul₀ (NeZero.ne ((Fintype.card ι).factorial : 𝕜))]
 

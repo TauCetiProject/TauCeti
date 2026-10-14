@@ -20,7 +20,7 @@ public section
 namespace TauCeti
 
 /-- Taking the underlying multilinear map commutes with continuous linear pullback. -/
-@[simp] theorem toContinuousMultilinearMap_compContinuousLinearMap
+@[simp] theorem _root_.ContinuousAlternatingMap.toContinuousMultilinearMap_compContinuousLinearMap
     {R E F G ι : Type*} [Semiring R]
     [AddCommMonoid E] [Module R E] [TopologicalSpace E]
     [AddCommMonoid F] [Module R F] [TopologicalSpace F]
