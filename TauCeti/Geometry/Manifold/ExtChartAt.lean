@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
-public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
@@ -18,8 +17,9 @@ restricted to its source is a measurable embedding for Borel measurable spaces. 
 form used to transport measures between a manifold and coordinates.
 
 Before choosing a measurable structure on the manifold, chart measurability expresses
-measurability in each preferred chart. Compact sets admit finite open chart covers whose
-coordinate images lie in compact subsets of the chart targets, even without Hausdorffness.
+measurability in each preferred chart. When the chart space `H` is locally compact, compact sets
+admit finite open chart covers whose coordinate images lie in compact subsets of the chart targets,
+even without Hausdorffness.
 
 ## Main results
 
@@ -30,7 +30,7 @@ coordinate images lie in compact subsets of the chart targets, even without Haus
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
-  coordinate bounds for compact subsets.
+  coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
 -/
 
 public section
@@ -43,15 +43,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- A preferred chart target is a neighborhood of the coordinates of an intrinsic interior
-point. The model itself may have boundary or corners. -/
-theorem extChartAt_target_mem_nhds_of_isInteriorPoint [IsManifold I 1 M]
-    (α : M) {x : M} (hx : x ∈ (extChartAt I α).source) (hi : I.IsInteriorPoint x) :
-    (extChartAt I α).target ∈ nhds (extChartAt I α x) := by
-  have h := (I.isInteriorPoint_iff_of_mem_atlas one_ne_zero (chart_mem_atlas H α)
-    (by simpa only [extChartAt_source] using hx)).mp hi
-  exact mem_interior_iff_mem_nhds.mp h
 
 /-- An extended chart target is measurable in the model space. -/
 theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpace E]
@@ -68,21 +59,6 @@ theorem _root_.IsOpen.measurableSet_image_extChartAt_source_inter
   obtain ⟨v, hv, heq⟩ := continuousOn_iff'.mp (continuousOn_extChartAt_symm (I := I) x) u hu
   rw [(extChartAt I x).image_source_inter_eq', Set.inter_comm, heq]
   exact hv.measurableSet.inter (measurableSet_extChartAt_target (I := I) x)
-
-/-- The coordinate image of the difference of two open sets is measurable when the first set
-lies in the chart source. -/
-theorem _root_.IsOpen.measurableSet_image_extChartAt_sdiff
-    [MeasurableSpace E] [OpensMeasurableSpace E] {u v : Set M}
-    (hu : IsOpen u) (hv : IsOpen v) (x : M) (hs : u ⊆ (extChartAt I x).source) :
-    MeasurableSet ((extChartAt I x) '' (u \ v)) := by
-  rw [((extChartAt I x).injOn.mono hs).image_sdiff]
-  have hmu : MeasurableSet ((extChartAt I x) '' u) := by
-    simpa only [Set.inter_eq_self_of_subset_right hs] using
-      hu.measurableSet_image_extChartAt_source_inter (I := I) x
-  have hmuv : MeasurableSet ((extChartAt I x) '' (u ∩ v)) := by
-    simpa only [Set.inter_eq_self_of_subset_right (Set.inter_subset_left.trans hs)] using
-      (hu.inter hv).measurableSet_image_extChartAt_source_inter (I := I) x
-  exact hmu.diff hmuv
 
 /-- A set is chart measurable when its part in each preferred chart has measurable coordinate
 image. This condition does not install a measurable-space structure on the manifold. -/
@@ -106,13 +82,7 @@ theorem IsChartMeasurable.inter [MeasurableSpace E] {s t : Set M}
     (hs : IsChartMeasurable (I := I) s) (ht : IsChartMeasurable (I := I) t) :
     IsChartMeasurable (I := I) (s ∩ t) := by
   intro x
-  have heq : (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' (s ∩ t) =
-      ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' s) ∩
-        ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' t) := by
-    ext y
-    simp only [Set.mem_inter_iff, Set.mem_preimage]
-    tauto
-  rw [heq]
+  rw [Set.preimage_inter, Set.inter_inter_distrib_left]
   exact (hs x).inter (ht x)
 
 /-- Chart measurability is closed under differences. -/
@@ -128,6 +98,14 @@ theorem IsChartMeasurable.image_extChartAt [MeasurableSpace E] {s : Set M}
     MeasurableSet ((extChartAt I x) '' s) := by
   rw [(extChartAt I x).image_eq_target_inter_inv_preimage hsub]
   exact hs x
+
+/-- The coordinate image of the difference of two open sets is measurable when the first set
+lies in the chart source. -/
+theorem _root_.IsOpen.measurableSet_image_extChartAt_sdiff
+    [MeasurableSpace E] [OpensMeasurableSpace E] {u v : Set M}
+    (hu : IsOpen u) (hv : IsOpen v) (x : M) (hs : u ⊆ (extChartAt I x).source) :
+    MeasurableSet ((extChartAt I x) '' (u \ v)) :=
+  (hu.isChartMeasurable.diff hv.isChartMeasurable).image_extChartAt x (Set.sdiff_subset.trans hs)
 
 /-- Every point has an open neighborhood whose extended-chart image is contained in a compact
 subset of the chart target. The manifold need not be Hausdorff. -/

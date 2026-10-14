@@ -35,6 +35,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {k : WithTop ℕ∞}
   {e e' : OpenPartialHomeomorph M H} {x : M}
 
+/-- A preferred chart target is a neighborhood of the coordinates of an intrinsic interior
+point at any nonzero manifold regularity. The model may have boundary or corners. -/
+theorem extChartAt_target_mem_nhds_of_isInteriorPoint [IsManifold I k M] (hk : k ≠ 0)
+    (α : M) {x : M} (hx : x ∈ (extChartAt I α).source) (hi : I.IsInteriorPoint x) :
+    (extChartAt I α).target ∈ nhds (extChartAt I α x) := by
+  have h := (I.isInteriorPoint_iff_of_mem_atlas hk (chart_mem_atlas H α)
+    (by simpa only [extChartAt_source] using hx)).mp hi
+  exact mem_interior_iff_mem_nhds.mp h
+
 /-- An interior point of a charted space is detected by any maximal-atlas chart around it,
 provided its differentiability exponent is nonzero. -/
 theorem isInteriorPoint_iff_mem_interior_range (hk : k ≠ 0)
