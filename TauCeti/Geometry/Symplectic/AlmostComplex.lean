@@ -79,6 +79,13 @@ lemma apply_apply (J : AlmostComplexStructure V) (v : V) : J (J v) = -v := by
   have h := LinearMap.congr_fun J.square_neg v
   simpa using h
 
+/-- In the endomorphism ring, an almost complex structure squares to `-1`. -/
+@[simp]
+lemma toLinearMap_mul_self (J : AlmostComplexStructure V) :
+    J.toLinearMap * J.toLinearMap = -1 := by
+  ext v
+  exact J.apply_apply v
+
 /-- The underlying linear map of an almost complex structure is injective. -/
 lemma injective (J : AlmostComplexStructure V) : Function.Injective J := by
   intro v w h
