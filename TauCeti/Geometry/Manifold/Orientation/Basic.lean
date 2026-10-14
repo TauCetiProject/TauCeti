@@ -55,6 +55,19 @@ theorem mk_eq_mk_iff (a b : OrientationLift I M ι) :
       apply (OrientationLift.setoid_rel b.flip b).mpr
       exact .inr b.flip_flip.symm
 
+/-- Define a function on orientations from a function on lifts invariant under diagonal flip. -/
+def lift {α : Sort*} (f : OrientationLift I M ι → α)
+    (hflip : ∀ l, f l.flip = f l) : Orientation I M ι → α :=
+  Quotient.lift f (fun a b h ↦ by
+    rcases (OrientationLift.setoid_rel a b).mp h with rfl | rfl
+    · rfl
+    · exact (hflip a).symm)
+
+/-- A function induced from lifts evaluates on a represented orientation at its lift. -/
+@[simp] theorem lift_mk {α : Sort*} (f : OrientationLift I M ι → α)
+    (hflip : ∀ l, f l.flip = f l) (l : OrientationLift I M ι) :
+    lift f hflip (mk l) = f l := (rfl)
+
 /-- Every manifold orientation has a source-indexed lift. -/
 theorem exists_lift (o : Orientation I M ι) : ∃ l : OrientationLift I M ι, mk l = o :=
   Quotient.inductionOn o fun l ↦ ⟨l, rfl⟩
@@ -71,15 +84,8 @@ theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ 
 
 /-- Reverse the tangent orientations by reversing the model orientation of a lift. -/
 def neg (o : Orientation I M ι) : Orientation I M ι :=
-  Quotient.map (sa := OrientationLift.setoid (I := I) (M := M) (ι := ι))
-    (sb := OrientationLift.setoid (I := I) (M := M) (ι := ι)) Neg.neg (fun a b h ↦ by
-      -- Quotient.map hides the relation behind the two quotient setoid parameters.
-      change OrientationLift.setoid.r a b at h
-      change OrientationLift.setoid.r (-a) (-b)
-      rw [OrientationLift.setoid_rel] at h ⊢
-      rcases h with rfl | rfl
-      · exact .inl rfl
-      · exact .inr a.flip_neg.symm) o
+  lift (fun l ↦ mk (-l)) (fun l ↦
+    (mk_eq_mk_iff _ _).mpr (.inr l.flip_neg.symm)) o
 
 instance : Neg (Orientation I M ι) := ⟨Orientation.neg⟩
 
@@ -91,13 +97,9 @@ variable [IsManifold I 1 M]
 /-- The induced orientation of the tangent bundle. -/
 def toVectorBundleOrientation (o : Orientation I M ι) :
     TauCeti.VectorBundleOrientation E (TangentSpace I : M → Type _) ι :=
-  Quotient.lift OrientationLift.toVectorBundleOrientation (fun a b h ↦ by
-    apply TauCeti.VectorBundleOrientation.ext
-    intro x
-    rcases (OrientationLift.setoid_rel a b).mp h with rfl | rfl
-    · rfl
-    · simpa only [OrientationLift.toVectorBundleOrientation_apply] using
-        (a.orientationAt_flip x).symm) o
+  lift OrientationLift.toVectorBundleOrientation (fun l ↦ by
+    ext x
+    simpa only [OrientationLift.toVectorBundleOrientation_apply] using l.orientationAt_flip x) o
 
 @[simp]
 theorem toVectorBundleOrientation_mk (o : OrientationLift I M ι) :
