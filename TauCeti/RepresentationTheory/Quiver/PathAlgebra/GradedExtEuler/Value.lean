@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.Admissible
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Basic
 
 import Mathlib.Tactic.LinearCombination
 
