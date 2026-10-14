@@ -120,14 +120,11 @@ the right action of `GL₂(ℤ/Nℤ)`: reindexing the points `φ a` does not cha
 theorem drinfeldBasisLocus_comp_mulEquiv
     (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
     (σ : Multiplicative (ZMod N × ZMod N) ≃* Multiplicative (ZMod N × ZMod N)) :
-    E.drinfeldBasisLocus N (φ.comp ↑σ) = E.drinfeldBasisLocus N φ :=
-  -- both sides have the same morphisms factoring through their closed subschemes
-  ext_of_le_ker_iff fun t ↦ by
-    have ht := E.isPullback_baseChange t
-    have h0t : (E.baseChange t).zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ =
-        t ≫ E.zero := by simp
-    rw [← isDrinfeldBasis_pointsPullback_iff ht h0t, ← isDrinfeldBasis_pointsPullback_iff ht h0t,
-      ← MonoidHom.comp_assoc, isDrinfeldBasis_comp_mulEquiv_iff]
+    E.drinfeldBasisLocus N (φ.comp ↑σ) = E.drinfeldBasisLocus N φ := by
+  rw [drinfeldBasisLocus, drinfeldBasisLocus]
+  congr 1
+  rw [MonoidHom.coe_comp, MonoidHom.coe_ofClass]
+  exact pointsDivisor_comp_equiv φ σ.toEquiv
 
 /-- **The Drinfeld-basis locus commutes with base change.** For a morphism `g : E' ⟶ E` of
 elliptic curves forming a pullback square over `f : S' ⟶ S` and carrying the zero section of `E'`
