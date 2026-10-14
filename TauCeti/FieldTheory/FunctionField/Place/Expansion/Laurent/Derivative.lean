@@ -43,9 +43,10 @@ degree whose residue field `F_P` is separable over `k`, for the expansion with c
 `F_P` (`TauCeti.Place.laurentSeriesExpansionResidueField`). It gives the order of a derivative
 there: if `z` vanishes to order at least `m` at `P`, then `dz/dt ≡ m z / t` modulo functions
 vanishing to order at least `m`, and iterating, `dⁱz/dtⁱ` is congruent to
-`m (m - 1) ⋯ (m - i + 1) z / tⁱ`. In particular `dz/dt` is regular wherever `z` is. This is the
-local input for computing orders of Wronskians, and for comparing regular Kähler differentials
-with regular Weil differentials.
+`m (m - 1) ⋯ (m - i + 1) z / tⁱ`. In particular, for a separating uniformizer `t` at such a
+place `P`, `dz/dt` is integral at `P` whenever `z` is. This is the local input for computing
+orders of Wronskians, and for comparing regular Kähler differentials with regular Weil
+differentials.
 
 ## Main definitions
 
@@ -66,7 +67,8 @@ with regular Weil differentials.
 * `TauCeti.Place.laurentSeriesExpansionResidueField_derivativeOfSeparating`: at a place with
   separable residue field, the Laurent expansion of `dz/dt` with coefficients in `F_P` is the
   derivative of the Laurent expansion of `z`.
-* `TauCeti.Place.derivativeOfSeparating_mem_integers`: `dz/dt` is regular wherever `z` is.
+* `TauCeti.Place.derivativeOfSeparating_mem_integers`: for a separating uniformizer `t` at a
+  place `P` with separable residue field, `dz/dt` is integral at `P` whenever `z` is.
 * `TauCeti.Place.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration`: if `z` vanishes to
   order at least `m`, then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo order `m - i + 1`.
 * `TauCeti.Place.kaehlerResidue_eq_kaehlerResidue`: the residue of a differential is independent

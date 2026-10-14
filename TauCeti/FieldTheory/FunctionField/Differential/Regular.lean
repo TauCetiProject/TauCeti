@@ -97,37 +97,6 @@ theorem mem_range_map_iff_coord_mem_integers [Algebra.IsSeparable k P.ResidueFie
     simpa [kaehlerBasisOfSeparating_apply] using
       (kaehlerBasisOfSeparating htr).sum_repr ω
 
-/-- The residue pairing against integral functions detects whether the coefficient of a
-rational differential in a separating-uniformizer basis is integral. -/
-theorem coord_mem_integers_iff_forall_kaehlerResidue_smul_eq_zero (ω : Ω[F⁄k]) :
-    (kaehlerBasisOfSeparating htr).coord () ω ∈ P.integers ↔
-      ∀ u ∈ P.integers, P.kaehlerResidue hP ht htr (u • ω) = 0 := by
-  let a := (kaehlerBasisOfSeparating htr).coord () ω
-  have hω : a • D k F t = ω := by
-    simpa [a, kaehlerBasisOfSeparating_apply] using
-      (kaehlerBasisOfSeparating htr).sum_repr ω
-  constructor
-  · intro ha u hu
-    rw [← hω, smul_smul, kaehlerResidue_smul_D]
-    exact P.residue_eq_zero_of_mem_integers hP ht (P.integers.mul_mem _ _ hu ha)
-  · intro h
-    by_contra ha
-    have ha0 : a ≠ 0 := by
-      intro ha0
-      have haz : a ∈ P.integers := ha0 ▸ P.integers.zero_mem
-      exact ha haz
-    have ht0 : t ≠ 0 := htr.ne_zero
-    have hord : P.ord a < 0 := lt_of_not_ge (P.mem_integers_iff_ord_nonneg.not.mp ha)
-    have hu : (a * t)⁻¹ ∈ P.integers := by
-      rw [P.mem_integers_iff_ord_nonneg, P.ord_inv, P.ord_mul ha0 ht0, ht]
-      omega
-    have hzero := h (a * t)⁻¹ hu
-    rw [← hω, smul_smul, kaehlerResidue_smul_D] at hzero
-    have hmul : (a * t)⁻¹ * a = t⁻¹ := by
-      field_simp
-    rw [hmul, residue_inv_uniformizer] at hzero
-    exact one_ne_zero hzero
-
 include ht in
 /-- At a place with separable residue field, the trace residue pairing against integral functions
 detects whether the coefficient of a Kähler differential in a separating-uniformizer basis is
@@ -159,6 +128,17 @@ theorem coord_mem_integers_iff_forall_traceResidue_coord_smul_eq_zero
       field_simp
     rw [hmul, traceResidue_mul_inv_uniformizer, hc] at hzero
     exact one_ne_zero hzero
+
+/-- The residue pairing against integral functions detects whether the coefficient of a
+rational differential in a separating-uniformizer basis is integral. -/
+theorem coord_mem_integers_iff_forall_kaehlerResidue_smul_eq_zero (ω : Ω[F⁄k]) :
+    (kaehlerBasisOfSeparating htr).coord () ω ∈ P.integers ↔
+      ∀ u ∈ P.integers, P.kaehlerResidue hP ht htr (u • ω) = 0 := by
+  let _ : FiniteDimensional k P.ResidueField :=
+    .of_finrank_eq_succ (P.degree_eq_finrank.symm.trans hP)
+  let _ := P.isSeparable_residueField_of_degree_eq_one hP
+  rw [P.coord_mem_integers_iff_forall_traceResidue_coord_smul_eq_zero ht htr]
+  simp_rw [← P.kaehlerResidue_eq_traceResidue_coord hP ht htr]
 
 variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
   (hinf : {Q : Place k F | Q.degree = 1}.Infinite)
