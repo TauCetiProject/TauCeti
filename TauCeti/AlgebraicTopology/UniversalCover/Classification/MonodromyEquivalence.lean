@@ -65,15 +65,13 @@ action, while the former realises the disjoint union of one such quotient per or
 
 ## References
 
-This completes the alternative monodromy-functor lens on Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks for the classification of connected covers
-by transitive `π₁(X)`-sets and of covers in general by functors out of the fundamental groupoid;
-see Hatcher, *Algebraic Topology*, Section 1.3. It consumes the based-path universal cover
-adapted from Kim Morrison's
-[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the
-stabiliser-cover reconstruction of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the balanced-product
-cover of `TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`.
+This is the monodromy-functor classification of covering spaces, with connected covers corresponding
+to transitive actions; see Hatcher, *Algebraic Topology*, Section 1.3. It consumes the based-path
+universal cover adapted from Kim Morrison's
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the stabiliser-cover
+reconstruction of `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the
+balanced-product cover of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`.
 -/
 
 public section

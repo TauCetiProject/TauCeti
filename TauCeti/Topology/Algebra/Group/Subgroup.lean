@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.Topology.Algebra.Group.Subgroup
+public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Neighborhood
 import Mathlib.Algebra.Ring.Int.Parity
@@ -44,6 +45,8 @@ series of a profinite group.
 ## Main results
 
 * `Subgroup.continuous_inclusion`: the inclusion of a subgroup into a larger one is continuous.
+* `Subgroup.subgroupOfContinuousMulEquivOfLe_smul`: the topological identification of a subgroup
+  with its copy inside a larger subgroup respects every restricted ambient action.
 * `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
   using `U.subgroupOf D`, is continuous.
 * `Dense.denseRange_subgroupOf_codRestrict`: a dense subgroup meets an open subgroup densely.
@@ -135,6 +138,16 @@ end TauCeti
 namespace Subgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
+
+-- Normalize the action before `subgroupOfContinuousMulEquivOfLe_apply` rewrites the scalar.
+/-- The canonical topological identification of `V.subgroupOf U` with `V` respects every action
+restricted from the ambient group. -/
+@[simp↓]
+theorem subgroupOfContinuousMulEquivOfLe_smul {M : Type*} [SMul G M]
+    {U V : Subgroup G} (hVU : V ≤ U) (x : V.subgroupOf U) (m : M) :
+    subgroupOfContinuousMulEquivOfLe hVU x • m = x • m := by
+  -- The identification preserves the ambient scalar, through which both subgroup actions factor.
+  rfl
 
 /-- The center of a Hausdorff group with separately continuous multiplication is closed. -/
 instance isClosed_center [SeparatelyContinuousMul G] [T2Space G] :
