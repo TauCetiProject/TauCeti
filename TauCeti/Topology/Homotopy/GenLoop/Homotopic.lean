@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.GenLoop.Homeomorph
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 
 /-!
 # Homotopy of generalized loops is path connectedness

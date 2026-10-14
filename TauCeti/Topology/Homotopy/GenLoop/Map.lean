@@ -27,6 +27,8 @@ namespace GenLoop
 variable {N X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   {x : X} {y : Y} {z : Z}
 
+-- exposed: `GenLoop.Homeomorph` proves `Homeomorph.genLoopHomeomorph` continuity goals by
+-- unfolding `map`
 /-- A based continuous map sends generalized loops to generalized loops by postcomposition. -/
 @[expose] def map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) : Ω^ N Y y :=
   ⟨f.comp p.1, fun t ht => by simpa [hf] using congrArg f (_root_.GenLoop.boundary p t ht)⟩
