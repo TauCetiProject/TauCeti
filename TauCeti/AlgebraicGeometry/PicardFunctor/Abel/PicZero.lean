@@ -129,12 +129,14 @@ theorem abelJacobiMapOfDegree_app_mem_relativePicardDegreeZeroSubfunctor_obj (d 
   have hpow : (abelMap f).app T (ULift.up ((graphDivisor f).app T (basePoint hx₀ T.unop))) ^ d =
       (abelMap f).app T (ULift.up ((graphDivisor f).app T (basePoint hx₀ T.unop) ^ d)) := by
     simp only [← abelMapMonoidHom_apply, map_pow]
+  -- The fibre degree of `𝒪(D) * 𝒪(d • x₀_T)⁻¹` is the difference of the two fibre degrees.
   rw [abelJacobiMapOfDegree_app_apply, hpow, div_eq_mul_inv,
-    relativePicardFiberDegree_mul_of_smooth, relativePicardFiberDegree_inv_of_smooth,
-    relativePicardFiberDegree_abelMap_app_of_mem f ξ D.2,
-    relativePicardFiberDegree_abelMap_app_of_mem f ξ
-      (graphDivisor_basePoint_pow_mem_relativeEffectiveCartierDegreeSubfunctor_obj f hx₀ d T),
-    add_neg_cancel]
+    relativePicardFiberDegree_mul_of_smooth, relativePicardFiberDegree_inv_of_smooth]
+  -- Both divisors have degree `d`.
+  have hD := relativePicardFiberDegree_abelMap_app_of_mem f ξ D.2
+  have hx := relativePicardFiberDegree_abelMap_app_of_mem f ξ
+    (graphDivisor_basePoint_pow_mem_relativeEffectiveCartierDegreeSubfunctor_obj f hx₀ d T)
+  omega
 
 /-- The image of the Abel–Jacobi map of degree `d` lies in the degree-zero subfunctor
 `Pic⁰_{X/S}` of the relative Picard presheaf. -/

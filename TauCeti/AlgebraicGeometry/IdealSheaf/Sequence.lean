@@ -81,7 +81,7 @@ lemma sheafι_toPushforwardSubscheme : I.sheafι ≫ I.toPushforwardSubscheme = 
 
 /-- The sequence `I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)}` of `𝒪_X`-modules attached to the closed subscheme cut
 out by `I`. It is short exact (`shortComplex_shortExact`). -/
-def shortComplex : ShortComplex X.Modules :=
+@[expose] def shortComplex : ShortComplex X.Modules :=
   ShortComplex.mk I.sheafι I.toPushforwardSubscheme I.sheafι_toPushforwardSubscheme
 
 @[simp]
@@ -95,6 +95,14 @@ lemma shortComplex_X₃ :
     I.shortComplex.X₃ =
       (Scheme.Modules.pushforward I.subschemeι).obj
         (SheafOfModules.unit I.subscheme.ringCatSheaf) := (rfl)
+
+/-- The first arrow of `I.shortComplex` is the inclusion `I ⟶ 𝒪_X`. -/
+@[simp]
+lemma shortComplex_f : I.shortComplex.f = I.sheafι := (rfl)
+
+/-- The second arrow of `I.shortComplex` is the restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}`. -/
+@[simp]
+lemma shortComplex_g : I.shortComplex.g = I.toPushforwardSubscheme := (rfl)
 
 /-- `I` is the kernel of the restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}`. -/
 def isLimitKernelForkSheafι :
