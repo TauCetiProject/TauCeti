@@ -116,10 +116,10 @@ variable {R : Type uR} {A : Type uA} {M : Type uM} [CommRing R] [Semiring A]
   {P : Type uP} [Fintype P] {ind : P → ℤ}
   (m : P → P → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
 
-/-- The twisted differential of a matrix satisfying the one-sidedness condition preserves the
-index filtration: a generator `x` only contributes to the components `y` with `ind y < ind x`. -/
+/-- The twisted differential of a matrix with no coefficients that strictly increase index
+preserves the index filtration. -/
 theorem twistedDifferential_mem_indexFiltrationSubmodule
-    (hm : ∀ x y, ind x ≤ ind y → m x y = 0) {p : ℤ} {f : P → M}
+    (hm : ∀ x y, ind x < ind y → m x y = 0) {p : ℤ} {f : P → M}
     (hf : f ∈ indexFiltrationSubmodule (R := R) ind p) :
     twistedDifferential m ℳ dM f ∈ indexFiltrationSubmodule (R := R) ind p := by
   rw [mem_indexFiltrationSubmodule_iff] at hf ⊢
@@ -127,7 +127,7 @@ theorem twistedDifferential_mem_indexFiltrationSubmodule
   rw [twistedDifferential_apply, hf y hy, map_zero, zero_add]
   refine Finset.sum_eq_zero fun x _ ↦ ?_
   rcases le_or_gt (ind x) p with hx | hx
-  · rw [hm x y (hx.trans hy.le), MulOpposite.op_zero, zero_smul]
+  · rw [hm x y (hx.trans_lt hy), MulOpposite.op_zero, zero_smul]
   · rw [hf x hx, map_zero, smul_zero]
 
 end Differential
@@ -153,7 +153,8 @@ noncomputable def indexFiltration (p : ℤ) : Subobject (m.twistedCochainComplex
   Subobject.mapIsoToOrderIso
     (eqToIso (twistedCochainComplex_eq_gradedCochainComplex m.mem_graded m.twisting hM).symm)
     (gradedCochainComplexSubobject _ _ _ _ (indexFiltrationSubmodule ind p) fun _ hf ↦
-      twistedDifferential_mem_indexFiltrationSubmodule m.m dM m.one_sided hf)
+      twistedDifferential_mem_indexFiltrationSubmodule m.m dM
+        (fun x y hxy ↦ m.one_sided x y hxy.le) hf)
 
 /-- The `p`-th piece of the index filtration is the subcomplex of `gradedCochainComplex` cut out
 by `indexFiltrationSubmodule ind p`, transported along
@@ -162,7 +163,8 @@ theorem indexFiltration_eq (p : ℤ) :
     m.indexFiltration dM hM p = Subobject.mapIsoToOrderIso
       (eqToIso (twistedCochainComplex_eq_gradedCochainComplex m.mem_graded m.twisting hM).symm)
       (gradedCochainComplexSubobject _ _ _ _ (indexFiltrationSubmodule ind p) fun _ hf ↦
-        twistedDifferential_mem_indexFiltrationSubmodule m.m dM m.one_sided hf) := by
+        twistedDifferential_mem_indexFiltrationSubmodule m.m dM
+          (fun x y hxy ↦ m.one_sided x y hxy.le) hf) := by
   rw [indexFiltration]
 
 /-- The index filtration is increasing. -/

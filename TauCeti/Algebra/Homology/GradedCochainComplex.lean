@@ -395,15 +395,16 @@ theorem mem_range_gradedCochainComplexSubobject_arrow_f_iff (N : Submodule R M)
   rw [gradedCochainComplexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
     HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
-  constructor
-  · rintro ⟨y, rfl⟩
-    rw [gradedCochainComplexXEquiv_inclusion_f]
-    exact (gradedCochainComplexXEquiv p y).2.2
-  · intro hx
-    refine
-      ⟨(gradedCochainComplexXEquiv p).symm ⟨_, (gradedCochainComplexXEquiv p x).2, hx⟩, ?_⟩
-    refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
-    rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
+  change x ∈ LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ N ≤ ℳ p)) ↔ _
+  rw [Submodule.range_inclusion]
+  let x' : ℳ p := x
+  change x' ∈ Submodule.comap (ℳ p).subtype (ℳ p ⊓ N) ↔ _
+  have hx : gradedCochainComplexXEquiv p x = x' := by
+    unfold gradedCochainComplexXEquiv
+    rw [gradedCochainComplex_X_proof_eq_rfl]
+    rfl
+  rw [hx]
+  exact and_iff_right x'.2
 
 /-- The subcomplex cut out by a submodule is monotone in the submodule. -/
 theorem gradedCochainComplexSubobject_mono {N N' : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
@@ -422,14 +423,11 @@ theorem gradedCochainComplexSubobject_eq_top {N : Submodule R M} (hN : ∀ x ∈
   -- Each component is the inclusion of `ℳ p ⊓ ⊤` into `ℳ p`, a bijection.
   have (p : ℤ) : IsIso ((gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg)
       (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p) := by
-    refine (ConcreteCategory.isIso_iff_bijective _).2 ⟨fun y z hyz ↦ ?_, fun x ↦ ?_⟩
-    · refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
-      simpa only [gradedCochainComplexXEquiv_inclusion_f] using
-        congrArg (fun w ↦ (gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) p w : M)) hyz
-    · refine ⟨(gradedCochainComplexXEquiv p).symm
-        ⟨gradedCochainComplexXEquiv p x, (gradedCochainComplexXEquiv p x).2, trivial⟩, ?_⟩
-      refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
-      rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
+    apply (ConcreteCategory.isIso_iff_bijective _).2
+    change Function.Bijective (Submodule.inclusion (inf_le_left : ℳ p ⊓ ⊤ ≤ ℳ p))
+    refine ⟨Submodule.inclusion_injective _, ?_⟩
+    rw [← LinearMap.range_eq_top, Submodule.range_inclusion]
+    simp
   have := HomologicalComplex.Hom.isIso_of_components
     (gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg) (hsq := hsq)
       (fun _ ↦ inf_le_left) (hdeg.inf hN))
