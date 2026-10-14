@@ -77,6 +77,8 @@ is rational and this is `∑_P res_P (ω) = 0`.
   `dy = (dy/dx) · dx`, given a rational place at which `x - a` and `y - b` are prime elements.
 * `TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul`: **the chain rule
   `dy = (dy/dx) · dx`** over any exact constant field.
+* `TauCeti.Place.ord_derivativeOfSeparating_eq_sub`: `ord_P (dy/dx) = v_P(dy) - v_P(dx)` at every
+  place.
 * `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq`: the Kähler–Weil comparison is
   independent of the separating element.
 * `TauCeti.Place.traceResidue_coord_smul_eq_repartitionDualComponent`: **local components are
@@ -219,6 +221,27 @@ theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul (hF : IsFunc
   obtain ⟨P', rfl⟩ := Place.restrict_surjective (hF.of_constantCompositum_eq_top h) P
   exact weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_constantCompositum h hF hx hy
     (hdeg P' rfl) hx0.ge hy0.ge hqs hrs hqx hry
+
+/-- **The order of a derivative is a difference of orders of differentials**: over an exact
+constant field, for separating elements `x` and `y` and any place `P`,
+`ord_P (dy/dx) = v_P(dy) - v_P(dx)`. This is the chain rule `dy = (dy/dx) · dx` read at `P`. -/
+theorem Place.ord_derivativeOfSeparating_eq_sub (P : Place k F)
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {x y : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
+    (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F] :
+    P.ord (derivativeOfSeparating hx y) =
+      weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hy).2
+          (by simpa using weilDifferentialOfSeparating_ne_zero hF hy) P -
+        weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).2
+          (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) P := by
+  let := weilDifferentialSpaceModule hF
+  have hchain := congrArg Subtype.val
+    (weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hex hx hy)
+  rw [coe_weilDifferentialSpaceModule_smul] at hchain
+  rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex _ _
+    (weilDifferentialOfSeparating hF hx).2
+    (by simpa using weilDifferentialOfSeparating_ne_zero hF hx)
+    (derivativeOfSeparating_ne_zero hx hy) hchain P, add_sub_cancel_right]
 
 /-- **The Kähler–Weil comparison does not depend on the separating element** (Stichtenoth,
 Theorem 4.3.2): over any exact constant field, the comparisons built from any two separating

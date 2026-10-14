@@ -124,19 +124,9 @@ theorem ord_wronskian_derivativeOfSeparating_basis_eq [PerfectField k]
   obtain ⟨htr, hsep⟩ := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
   have hd0 := derivativeOfSeparating_ne_zero hx htr
   -- By the chain rule `dt = (dt/dx) · dx`, the order of `dt/dx` at `P` is `-v_P(dx)`.
-  have hchain : (weilDifferentialOfSeparating hF htr : Module.Dual k ↥(repartitionSpace k F)) =
-      repartitionDualMul hF (Units.mk0 _ hd0 : F) (weilDifferentialOfSeparating hF hx) := by
-    rw [weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hex hx htr,
-      coe_weilDifferentialSpaceModule_smul, Units.val_mk0]
-  have hdx := weilDifferentialDivisor_repartitionDualMul hF hex
-    (weilDifferentialOfSeparating hF hx).2
-    (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) (Units.mk0 _ hd0)
-  rw [← weilDifferentialDivisor_congr hF hex hchain (weilDifferentialOfSeparating hF htr).2
-    (by simpa using weilDifferentialOfSeparating_ne_zero hF htr)] at hdx
-  have hord := congrArg (fun D : Divisor k F ↦ D.coeff P) hdx
-  simp only [coeff_weilDifferentialDivisor,
-    weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr hP ht,
-    AlgebraicGeometry.WeilDivisor.coeff_add, Divisor.coeff_principal, Units.val_mk0] at hord
+  have := P.isSeparable_residueField_of_degree_eq_one hP
+  have hord := P.ord_derivativeOfSeparating_eq_sub hF hex hx htr
+  rw [weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr ht] at hord
   -- Assemble: `W_x(f) = (dt/dx) ^ (g choose 2) · W_t(f)`.
   have hN : n * (n - 1) / 2 = (genus k F).choose 2 := by
     rw [eq_genus_of_basis hF hex hW b, Nat.choose_two_right]
@@ -145,7 +135,7 @@ theorem ord_wronskian_derivativeOfSeparating_basis_eq [PerfectField k]
       (P.wronskian_derivativeOfSeparating_basis_ne_zero hP ht htr hF hex hW hgaps b),
     P.ord_pow, P.ord_wronskian_derivativeOfSeparating_basis_eq_weierstrassWeight_sub hP ht htr hF
       hex hW hgaps b]
-  linear_combination -((genus k F).choose 2 : ℤ) * hord
+  linear_combination ((genus k F).choose 2 : ℤ) * hord
 
 end Place
 

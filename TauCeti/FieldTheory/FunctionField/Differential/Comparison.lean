@@ -33,8 +33,9 @@ attached to `ω` are the residues of `ω`
 The divisor of `dx` is explicit: `(dx) = -2 (x)_∞ + Diff(F / k(x))` (Stichtenoth, Remark 4.3.7(c)).
 It is the divisor of a cotrace, `Con (η) + Diff(F / k(x))`, where the normalized differential `η` of
 `k(x)` has divisor `-2 P_∞`, and the conorm of `P_∞ = (X)_∞` is the pole divisor of `x`.  In
-particular `-2 (x)_∞ + Diff(F / k(x))` is a canonical divisor of `F`.  At a rational place where
-`x` is a prime element, the place is unramified and tame over `k(x)`, so `dx` has order zero there.
+particular `-2 (x)_∞ + Diff(F / k(x))` is a canonical divisor of `F`.  At a place with separable
+residue field where `x` is a prime element, the place is unramified and tame over `k(x)`, so `dx`
+has order zero there.
 
 ## Main definitions
 
@@ -57,7 +58,7 @@ particular `-2 (x)_∞ + Diff(F / k(x))` is a canonical divisor of `F`.  At a ra
 * `TauCeti.divisorClass_neg_two_zsmul_poles_add_different_eq_canonicalClass`:
   `-2 (x)_∞ + Diff(F / k(x))` represents the canonical class.
 * `TauCeti.weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero`: `dx` has order zero at a
-  rational place at which `x` is a prime element.
+  place with separable residue field at which `x` is a prime element.
 
 ## References
 
@@ -295,11 +296,13 @@ theorem weilDifferentialDivisor_weilDifferentialOfSeparating (hF : IsFunctionFie
   exact weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential hF hex
 
 /-- **The differential of a prime element has order zero**: if `t` is a separating element of
-`F / k` with exact constant field and `t` is a prime element at a rational place `P`, then the
+`F / k` with exact constant field and `t` is a prime element at a place `P` whose residue field is
+separable over `k` (for instance a rational place, or any place over a perfect field), then the
 Weil differential `dt` has order zero at `P`. -/
 theorem weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {t : F} (ht : Transcendental k t)
-    [Algebra.IsSeparable k⟮t⟯ F] {P : Place k F} (hP : P.degree = 1) (htP : P.ord t = 1) :
+    [Algebra.IsSeparable k⟮t⟯ F] {P : Place k F} [Algebra.IsSeparable k P.ResidueField]
+    (htP : P.ord t = 1) :
     weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF ht).2
       (by simpa using weilDifferentialOfSeparating_ne_zero hF ht) P = 0 := by
   let _ := ratFuncAlgebraOfTranscendental ht
@@ -311,16 +314,11 @@ theorem weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero (hF : IsFunct
     have h := Place.ord_algebraMap_restrict k (RatFunc k) P RatFunc.X
     rw [algebraMap_ratFuncAlgebraOfTranscendental_X, htP] at h
     exact_mod_cast Int.eq_one_of_mul_eq_one_right (by positivity) h.symm
-  -- `P` is tame over `k(t)`: its residue field is that of the place below.
+  -- `P` is tame over `k(t)`: its residue field is separable over `k`, hence over the residue
+  -- field of the place below.
   have htame : Place.IsTame k (RatFunc k) P := by
-    have hf : Place.relativeDegree k (RatFunc k) P = 1 := Nat.eq_one_of_mul_eq_one_left
-      (hP ▸ Place.degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k) P).symm
-    rw [Place.relativeDegree_def, ← Subalgebra.bot_eq_top_iff_finrank_eq_one] at hf
     rw [Place.isTame_iff_isSeparable_residueField, he, Nat.cast_one]
-    refine ⟨⟨fun z ↦ ?_⟩, one_ne_zero⟩
-    obtain ⟨a, ha⟩ := Algebra.mem_bot.mp (hf ▸ Algebra.mem_top : z ∈ (⊥ : Subalgebra _ _))
-    rw [← ha]
-    exact isSeparable_algebraMap a
+    exact ⟨Algebra.isSeparable_tower_top_of_isSeparable k _ _, one_ne_zero⟩
   have hd := (Divisor.coeff_different_add_one_eq_ramificationIdx_iff
     (IsFunctionField.ratFunc k) P).mpr htame
   rw [he, Nat.cast_one, add_eq_right] at hd
