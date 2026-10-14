@@ -77,6 +77,16 @@ theorem iteratedLoopSpaceHomeomorph_basepoint :
       (iteratedLoopSpaceHomeomorph_basepoint k X.loopSpace)).trans
         (GenLoop.genLoopLoopHomeomorph_const X.basepoint k)
 
+/-- The inverse of the homeomorphism carries the constant cube loop to the constant iterated
+loop. -/
+@[simp]
+theorem iteratedLoopSpaceHomeomorph_symm_const (k : ℕ) (X : BasedTopologicalSpace.{u}) :
+    (iteratedLoopSpaceHomeomorph k X).symm
+        (GenLoop.const : GenLoop (Fin k) X.carrier X.basepoint) =
+      (X.iteratedLoopSpace k).basepoint :=
+  (iteratedLoopSpaceHomeomorph k X).symm_apply_eq.2
+    (iteratedLoopSpaceHomeomorph_basepoint k X).symm
+
 end BasedTopologicalSpace
 
 end TauCeti

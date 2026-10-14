@@ -171,6 +171,15 @@ theorem genLoopLoopHomeomorph_const (k : ℕ) :
   simp [genLoopLoopHomeomorph_apply]
 
 variable (x) in
+/-- The inverse of `genLoopLoopHomeomorph` also carries the constant cube loop to the constant
+cube loop. -/
+@[simp]
+theorem genLoopLoopHomeomorph_symm_const (k : ℕ) :
+    (genLoopLoopHomeomorph x k).symm (GenLoop.const : Ω^ (Fin (k + 1)) X x) =
+      (GenLoop.const : Ω^ (Fin k) (Ω X x) (Path.refl x)) :=
+  (genLoopLoopHomeomorph x k).symm_apply_eq.2 (genLoopLoopHomeomorph_const x k).symm
+
+variable (x) in
 /-- The inverse of `genLoopLoopHomeomorph` evaluated at the first `k` coordinates `s` and the
 path parameter `u`. -/
 @[simp]
