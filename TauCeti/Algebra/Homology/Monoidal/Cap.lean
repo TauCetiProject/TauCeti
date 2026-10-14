@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.LinearYoneda
-public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
 
 /-!

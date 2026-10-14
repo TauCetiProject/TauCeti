@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.TateCohomology.Basic
-public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Tate cohomology of a directed union of subrepresentations
