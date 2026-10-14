@@ -27,8 +27,8 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
 /-- A fixed Laurent unit form off a coordinate hyperplane makes the slice order of an
-analytic function locally constant on the hyperplane. The equality need not be supplied
-on the hyperplane itself. -/
+analytic function with complete codomain locally constant on the hyperplane. The equality
+need not be supplied on the hyperplane itself. -/
 theorem AnalyticAt.eventually_analyticOrderAt_eq_of_zpow_smul_unit
     {G w : E × 𝕜 → F} {x₀ : E} {y₀ : 𝕜} {b : ℤ}
     (hG : AnalyticAt 𝕜 G (x₀, y₀)) (hw : AnalyticAt 𝕜 w (x₀, y₀))
