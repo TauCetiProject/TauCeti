@@ -21,6 +21,9 @@ groups (`TauCeti.localHomology`).
 * `TauCeti.localHomology_hom_ext_of_union`: for closed `S` and `T` with
   `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, maps into `Hₖ(M, M ∖ (S ∪ T))` are determined by their
   restrictions to `S` and to `T`.
+* `TauCeti.exists_localHomologyRestriction_union_eq`: with coefficients in a module, classes along
+  closed sets `S` and `T` with the same restriction to `S ∩ T` are the restrictions of a single
+  class along `S ∪ T`.
 -/
 
 public section
@@ -69,5 +72,58 @@ theorem localHomology_hom_ext_of_union {S T : Set M} (hS : IsClosed S) (hT : IsC
   ext
   · simpa using hS
   · simpa using hT
+
+section Module
+
+variable {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ)
+
+/-- **Local homology classes on two closed sets glue.** Let `S` and `T` be closed. Classes of
+`Hₖ(M, M ∖ S)` and `Hₖ(M, M ∖ T)` with the same restriction to `S ∩ T` are the restrictions of a
+single class of `Hₖ(M, M ∖ (S ∪ T))`. This is exactness of the relative Mayer–Vietoris sequence
+at `Hₖ(M, M ∖ S) ⊞ Hₖ(M, M ∖ T)`. -/
+theorem exists_localHomologyRestriction_union_eq {S T : Set M} (hS : IsClosed S)
+    (hT : IsClosed T) {k : ℕ} (α : (localHomology N S k : ModuleCat.{w} Λ))
+    (β : (localHomology N T k : ModuleCat.{w} Λ))
+    (h : localHomologyRestriction N inter_subset_left k α =
+      localHomologyRestriction N inter_subset_right k β) :
+    ∃ γ : (localHomology N (S ∪ T) k : ModuleCat.{w} Λ),
+      localHomologyRestriction N subset_union_left k γ = α ∧
+        localHomologyRestriction N subset_union_right k γ = β := by
+  have hex := TopCat.relativeMayerVietoris_exact₂ N (X := TopCat.of M) hS.isOpen_compl
+    hT.isOpen_compl k
+  rw [ShortComplex.moduleCat_exact_iff] at hex
+  simp only [localHomologyRestriction_def] at h ⊢
+  -- As in `TauCeti.localHomology_hom_ext_of_union`, the sequence is stated for `Sᶜ ∩ Tᶜ` and
+  -- `Sᶜ ∪ Tᶜ`, which are `(S ∪ T)ᶜ` and `(S ∩ T)ᶜ` only propositionally, so generalize them.
+  suffices key : ∀ (W₁ W₂ : Set (TopCat.of M)) (_ : W₁ = Sᶜ ∩ Tᶜ) (_ : W₂ = Sᶜ ∪ Tᶜ)
+      (hW₁S : W₁ ⊆ Sᶜ) (hW₁T : W₁ ⊆ Tᶜ) (hSW₂ : Sᶜ ⊆ W₂) (hTW₂ : Tᶜ ⊆ W₂),
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hSW₂) N k α =
+          TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hTW₂) N k β →
+        ∃ γ : ((TopPair.ofSubset W₁).singularHomology N k : ModuleCat.{w} Λ),
+          TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hW₁S) N k γ = α ∧
+            TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hW₁T) N k γ = β from
+    key _ _ (compl_union S T) (compl_inter S T) _ _ _ _ h
+  rintro W₁ W₂ rfl rfl hW₁S hW₁T hSW₂ hTW₂ h
+  let HS := (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomology N k
+  let HT := (TopPair.ofSubset (Tᶜ : Set (TopCat.of M))).singularHomology N k
+  obtain ⟨γ, hγ⟩ := hex ((biprod.inl : HS ⟶ HS ⊞ HT) α - (biprod.inr : HT ⟶ HS ⊞ HT) β) (by
+    rw [map_sub, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply]
+    dsimp only
+    rw [TopCat.inl_relativeMayerVietorisFromBiprod, TopCat.inr_relativeMayerVietorisFromBiprod]
+    exact sub_eq_zero.2 h)
+  dsimp only at hγ
+  refine ⟨γ, ?_, ?_⟩
+  · have := congrArg (biprod.fst : HS ⊞ HT ⟶ HS) hγ
+    rw [← ConcreteCategory.comp_apply, TopCat.relativeMayerVietorisToBiprod_fst, map_sub,
+      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, biprod.inl_fst,
+      biprod.inr_fst] at this
+    simpa using this
+  · have := congrArg (biprod.snd : HS ⊞ HT ⟶ HT) hγ
+    rw [← ConcreteCategory.comp_apply, TopCat.relativeMayerVietorisToBiprod_snd, map_sub,
+      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, biprod.inl_snd,
+      biprod.inr_snd] at this
+    simpa using this
+
+end Module
 
 end TauCeti
