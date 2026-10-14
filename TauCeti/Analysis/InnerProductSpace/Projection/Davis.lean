@@ -96,7 +96,7 @@ theorem commute_operatorAbs_projectionFamilyOverlap (hP : OrthogonalIdempotents 
          _ = (star D * D) * P i := by rw [← hD, mul_assoc]
   have hcomm : Commute (P i) (D.adjoint ∘ₗ D) := by
     simpa only [LinearMap.star_eq_adjoint, Module.End.mul_eq_comp] using hcomm'
-  exact commute_operatorAbs_of_commute hcomm
+  exact LinearMap.commute_operatorAbs_of_commute hcomm
 
 end OrthogonalIdempotents
 
