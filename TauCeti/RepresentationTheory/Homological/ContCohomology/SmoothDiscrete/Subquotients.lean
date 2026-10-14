@@ -33,9 +33,8 @@ theorem IsSmoothDiscrete.subrepresentation (hX : IsSmoothDiscrete R X)
   hX.of_injective (TopRep.subrepresentationι X W hW)
     (TopRep.subrepresentationι_injective X W hW)
 
-/-- The quotient by an invariant submodule of a smooth discrete representation is smooth discrete.
-Its point stabilizers contain the open stabilizers of representatives, hence are open when
-multiplication in the group is separately continuous. -/
+/-- Over a group with separately continuous multiplication, the quotient of a smooth discrete
+representation by an invariant submodule is smooth discrete with its quotient topology. -/
 theorem IsSmoothDiscrete.quotient {G : Type*} [Group G] [TopologicalSpace G]
     [SeparatelyContinuousMul G] {X : TopRep R G}
     (hX : IsSmoothDiscrete R X) (W : Submodule R X.V)
