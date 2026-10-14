@@ -130,7 +130,8 @@ private theorem integral_exp_mul_I_mul_reciprocalKernel_of_one_le {x : ℝ} (hx 
           ring
   simp only [hk]
   rw [integral_const_mul, ← integral_integral_swap hf, hy, hval]
-  rw [← mul_assoc, neg_mul, Complex.I_mul_I, neg_neg, one_mul, Complex.ofReal_inv]
+  push_cast
+  linear_combination (-(x : ℂ)⁻¹) * Complex.I_mul_I
 
 /-- **The exterior reciprocal Fourier identity.** For `|x| ≥ 1`, the Fourier integral of the
 Haagerup–Zsidó kernel is `∫ e^{itx} k(t) dt = 1 / x`. -/
@@ -138,11 +139,13 @@ theorem integral_exp_mul_I_mul_reciprocalKernel {x : ℝ} (hx : 1 ≤ |x|) :
     ∫ t : ℝ, Complex.exp ((x : ℂ) * t * Complex.I) * reciprocalKernel t = (x : ℂ)⁻¹ := by
   rcases le_abs'.mp hx with hx | hx
   · -- For `x ≤ -1`, reflect `t ↦ -t` and use that the kernel is odd.
-    rw [← integral_neg_eq_self, ← neg_neg (x : ℂ)⁻¹, neg_inv, ← Complex.ofReal_neg,
-      ← integral_exp_mul_I_mul_reciprocalKernel_of_one_le (le_neg.mpr hx), ← integral_neg]
-    refine integral_congr_ae (.of_forall fun t ↦ ?_)
-    simp only [reciprocalKernel_neg, Complex.ofReal_neg]
-    ring_nf
+    have h := integral_exp_mul_I_mul_reciprocalKernel_of_one_le (le_neg.mpr hx)
+    rw [← integral_neg_eq_self]
+    calc _ = -∫ t : ℝ, Complex.exp (((-x : ℝ) : ℂ) * t * Complex.I) * reciprocalKernel t := by
+          rw [← integral_neg]
+          refine integral_congr_ae (.of_forall fun t ↦ ?_)
+          simp [reciprocalKernel_neg]
+      _ = (x : ℂ)⁻¹ := by rw [h]; push_cast; ring
   · exact integral_exp_mul_I_mul_reciprocalKernel_of_one_le hx
 
 /-- **The exterior reciprocal identity in Mathlib's Fourier normalisation.** With
