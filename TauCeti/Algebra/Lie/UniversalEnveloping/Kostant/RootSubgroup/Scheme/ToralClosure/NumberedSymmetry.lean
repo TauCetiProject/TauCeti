@@ -77,10 +77,6 @@ This is the graph-automorphism construction of R. W. Carter, *Finite Groups of L
 Classes and Complex Characters*, §1.15, and J. E. Humphreys, *Linear Algebraic Groups*, §27, carried
 out on the carrier assembled from a torus and root subgroups in R. W. Carter, *Simple Groups of Lie
 Type*, §§4.4 and 7.1.
-
-It advances the pinnings and pinned-isomorphism targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`; the resulting automorphisms are required by milestone L1
-of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ReductionModVariables
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Stabilization.XHomotopy
 
 /-!
@@ -126,6 +126,33 @@ end Grading
 section Reduction
 
 variable (R : Type*) [CommSemiring R]
+
+/-- Setting the variables to zero leaves the center projection as coefficient restriction. -/
+@[simp]
+theorem constantCoeffReduction_stabilizeXCenterProjection_apply
+    (c : GridChain R (n + 1)) (x : GridState n) :
+    (G.stabilizeXCenterProjection s R).constantCoeffReduction c x =
+      c (x.insertPoint s.succ (G.X s).succ) := by
+  let b := c.mapRange (C : R →+* MvPolynomial (Fin (n + 1)) R) (map_zero _)
+  have hb : b.mapRange constantCoeff (map_zero _) = c := by
+    ext y
+    simp [b]
+  rw [← hb, LinearMap.constantCoeffReduction_mapRange_constantCoeff,
+    Finsupp.mapRange_apply, stabilizeXCenterProjection_apply]
+  simp [b]
+
+/-- Setting the variables to zero leaves the off-center projection as coefficient restriction. -/
+@[simp]
+theorem constantCoeffReduction_stabilizeXOffCenterProjection_apply
+    (c : GridChain R (n + 1)) (y : G.StabilizeXOffCenterState s) :
+    (G.stabilizeXOffCenterProjection s R).constantCoeffReduction c y = c y := by
+  let b := c.mapRange (C : R →+* MvPolynomial (Fin (n + 1)) R) (map_zero _)
+  have hb : b.mapRange constantCoeff (map_zero _) = c := by
+    ext z
+    simp [b]
+  rw [← hb, LinearMap.constantCoeffReduction_mapRange_constantCoeff,
+    Finsupp.mapRange_apply, stabilizeXOffCenterProjection_apply]
+  simp [b]
 
 /-- The reduction of the center differential modulo the variables counts the fully blocked
 rectangles of `G`: over `ZMod 2` it is the fully blocked differential of `G`. -/
