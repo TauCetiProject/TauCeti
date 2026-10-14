@@ -44,6 +44,14 @@ Humans can raise issues against the code, and leave implementation (and review) 
 - **[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview)** — the review rubrics and
   the machinery that runs review.
 
+## Mathlib updates
+
+The hourly dependency updater selects the newest successfully built Mathlib master commit
+whose full cache it can verify. It opens one bot bump PR and keeps that target fixed while
+workers repair TauCeti, saving partial source repairs between sessions. Full CI, axiom audits,
+review, and Bors integration must pass before it lands. The next hourly run selects another
+recent target. Downstream-reports remains external reporting and does not control these updates.
+
 ## Relationship to Lean Pool
 
 Tau Ceti and [Lean Pool](https://github.com/Vilin97/lean-pool) are complementary. Lean Pool is

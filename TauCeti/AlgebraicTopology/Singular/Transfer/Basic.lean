@@ -28,6 +28,9 @@ each simplex, so `f_* ∘ transfer = transfer`. When `p` is the quotient coverin
 a finite group `G`, the lifts of `p ∘ τ` are the translates `g • τ`, so
 `transfer ∘ p_* = ∑_{g ∈ G} g_*`.
 
+The variable-degree and constant-degree transfer formulas on chains and homology are in
+`TauCeti.AlgebraicTopology.Singular.Transfer.Degree`.
+
 ## Main declarations
 
 * `IsCoveringMap.bijOn_simplexMap_apply`: evaluation at a point of the simplex identifies the
@@ -38,9 +41,6 @@ a finite group `G`, the lifts of `p ∘ τ` are the translates `g • τ`, so
   the lifts of each singular simplex.
 * `IsCoveringMap.singularTransfer`: the transfer chain map `C(B; R) ⟶ C(E; R)`, with
   `IsCoveringMap.ιChainComplex_singularTransfer_f` its value on a singular simplex.
-* `IsCoveringMap.singularTransfer_comp_chainComplexMap`: `p_* ∘ transfer = d • id` on singular
-  chains for a covering whose fibres all have `d` points, and
-  `IsCoveringMap.homologyMap_singularTransfer_comp_homologyMap` the same on singular homology.
 * `IsCoveringMap.singularTransfer_comp_chainComplexMap_of_comp_eq`: `f_* ∘ transfer = transfer`
   on singular chains for a bijective self-map `f` of `E` over `B`, and
   `IsCoveringMap.homologyMap_singularTransfer_comp_homologyMap_of_comp_eq` the same on singular
@@ -226,28 +226,6 @@ lemma ιChainComplex_singularTransfer_f_comp_chainComplexMap_f (hp : IsCoveringM
   simp only [SSet.ι_chainComplexMap_f]
   rw [Finset.sum_congr rfl fun τ hτ ↦ by rw [(Set.Finite.mem_toFinset _).mp hτ],
     Finset.sum_const, hcard]
-
-/-- **The transfer formula** `p_* ∘ transfer = d • id` on singular chains, for a covering map
-whose fibres all have `d` points. -/
-theorem singularTransfer_comp_chainComplexMap (hp : IsCoveringMap p)
-    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (R : C) {d : ℕ} (hd : ∀ b, Nat.card (p ⁻¹' {b}) = d) :
-    hp.singularTransfer hfin R ≫ SSet.chainComplexMap (TopCat.toSSet.map p) R = d • 𝟙 _ := by
-  ext n σ
-  rw [HomologicalComplex.comp_f,
-    ιChainComplex_singularTransfer_f_comp_chainComplexMap_f hp hfin R σ
-      (SimplexCategory.toTopInitialVertex _), hd, HomologicalComplex.nsmul_f_apply,
-    HomologicalComplex.id_f, Preadditive.comp_nsmul, Category.comp_id]
-
-/-- **The transfer formula** `p_* ∘ transfer = d • id` on singular homology, for a covering map
-whose fibres all have `d` points. -/
-theorem homologyMap_singularTransfer_comp_homologyMap [CategoryWithHomology C]
-    (hp : IsCoveringMap p) (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (R : C) {d : ℕ}
-    (hd : ∀ b, Nat.card (p ⁻¹' {b}) = d) (n : ℕ) :
-    HomologicalComplex.homologyMap (hp.singularTransfer hfin R) n ≫
-        SSet.homologyMap (TopCat.toSSet.map p) R n = d • 𝟙 _ := by
-  rw [← HomologicalComplex.homologyMap_comp, singularTransfer_comp_chainComplexMap hp hfin R hd]
-  exact (HomologicalComplex.homologyFunctor C _ n).map_nsmul.trans
-    (congrArg (d • ·) ((HomologicalComplex.homologyFunctor C _ n).map_id _))
 
 /-- **The transfer is invariant under deck transformations**: `f_* ∘ transfer = transfer` on
 singular chains for every bijective self-map `f` of `E` over `B`, since `f` permutes the lifts of
