@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
+public import TauCeti.FieldTheory.KrullTopology
 
 /-!
 # Complements on admissible changes of variables
@@ -26,6 +27,9 @@ changes is again one). Comparing an isomorphism with its conjugate via the last 
 produces the Galois cocycle used by the twist classification. A change of variables over an
 extension descends to the base field exactly when its four coefficients do
 (`VariableChange.mem_range_baseChange_iff`).
+Conjugation by algebra automorphisms is an action (`VariableChange.map_map_algEquiv`), and over an
+algebraic extension the Galois orbit of a change of variables is locally constant for the Krull
+topology (`VariableChange.isLocallyConstant_map_of_isAlgebraic`).
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
@@ -301,6 +305,14 @@ lemma map_smul_baseChange_eq (σ : L →ₐ[R] L) {V W : WeierstrassCurve R}
   have hmv := map_variableChange (W := V.baseChange L) (C := ρ) (φ := (σ : L →+* L))
   rwa [hρ, hV, hW] at hmv
 
+variable {L} in
+/-- **Conjugation by algebra automorphisms is an action**: conjugating a change of variables by
+`σ` and then by `τ` is conjugating by `τ * σ`. -/
+lemma VariableChange.map_map_algEquiv (C : VariableChange L) (σ τ : L ≃ₐ[R] L) :
+    (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : L ≃ₐ[R] L) : L →+* L) := by
+  rw [map_map]
+  exact congrArg C.map (RingHom.ext fun x ↦ (AlgEquiv.mul_apply τ σ x).symm)
+
 end BaseChange
 
 /-- **A change of variables descends exactly when its coefficients do.** A change of variables
@@ -319,6 +331,18 @@ lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing 
       rintro rfl
       exact C.u.ne_zero (hu.symm.trans (map_zero _))
     exact ⟨⟨Units.mk0 u hu₀, r, s, t⟩, VariableChange.ext (Units.ext hu) hr hs ht⟩
+
+/-- **The Galois orbit of a change of variables is locally constant.** Over an algebraic
+extension `L/K` the map `σ ↦ σ C` on `Gal(L/K)` is locally constant for the Krull topology, the
+four coefficients of `C` being algebraic over `K`. -/
+theorem VariableChange.isLocallyConstant_map_of_isAlgebraic {K L : Type*} [Field K] [Field L]
+    [Algebra K L] [Algebra.IsAlgebraic K L] (C : VariableChange L) :
+    IsLocallyConstant fun σ : Gal(L/K) ↦ C.map (σ : L →+* L) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun σ₀ ↦ ?_
+  have h (x : L) := (IsLocallyConstant.iff_eventually_eq _).1
+    (Algebra.IsIntegral.isIntegral (R := K) x).isLocallyConstant_apply σ₀
+  filter_upwards [h C.u, h C.r, h C.s, h C.t] with σ hu hr hs ht
+  exact VariableChange.ext (Units.ext hu) hr hs ht
 
 end WeierstrassCurve
 

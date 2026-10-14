@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
-public import TauCeti.FieldTheory.KrullTopology
 import TauCeti.FieldTheory.GaloisCohomology.AdditiveHilbert90
 import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 
@@ -23,10 +22,11 @@ of variables is a locally constant map `f : G → VariableChange L` with
 This file proves that every such cocycle is a coboundary: `f σ = C * (σ C)⁻¹` for some change of
 variables `C` over `L`. In the language of nonabelian Galois cohomology, `H¹(G, VariableChange L)`
 is trivial. The proof is a dévissage along the coordinates. The scaling `u` of a cocycle is a
-cocycle with values in `Lˣ`, which is a coboundary by Hilbert 90; twisting `f` by
-`(u, 0, 0, 0)` makes `u` identically `1`. On the changes with `u = 1` the coordinate `r` is
-additive, so it is a cocycle with values in `L`, a coboundary by the additive Hilbert 90, and a
-twist by `(1, r, 0, 0)` makes it vanish; then `s` and finally `t` are dealt with in the same way.
+cocycle with values in `Lˣ`, which is a coboundary by Hilbert 90: writing `u σ = σ x / x`,
+twisting `f` by `(x⁻¹, 0, 0, 0)` makes `u ≡ 1`. On the changes with `u = 1` the coordinate `r` is
+additive, so it is a cocycle with values in `L`, a coboundary by the additive Hilbert 90: writing
+`r σ = σ x - x`, a twist by `(1, -x, 0, 0)` makes it vanish. Then `s` and finally `t` are dealt
+with in the same way.
 
 The consequence is **effective descent** for pointed twists. If `W` is a Weierstrass curve over
 `K` and the cocycle `f` takes values in the automorphisms of `W` over `L`, that is
@@ -58,22 +58,6 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 namespace VariableChange
 
-/-- Conjugating a change of variables by `σ` and then by `τ` is conjugating by `τ * σ`. -/
-private theorem map_map_algEquiv (C : VariableChange L) (σ τ : Gal(L/K)) :
-    (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : Gal(L/K)) : L →+* L) := by
-  rw [map_map]
-  exact congrArg C.map (RingHom.ext fun x ↦ (AlgEquiv.mul_apply τ σ x).symm)
-
-/-- Over an algebraic extension the Galois orbit map of a change of variables is locally
-constant for the Krull topology, its four coefficients being algebraic. -/
-private theorem isLocallyConstant_map [Algebra.IsAlgebraic K L] (C : VariableChange L) :
-    IsLocallyConstant fun σ : Gal(L/K) ↦ C.map (σ : L →+* L) := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun σ₀ ↦ ?_
-  have h (x : L) := (IsLocallyConstant.iff_eventually_eq _).1
-    (Algebra.IsIntegral.isIntegral (R := K) x).isLocallyConstant_apply σ₀
-  filter_upwards [h C.u, h C.r, h C.s, h C.t] with σ hu hr hs ht
-  exact VariableChange.ext (Units.ext hu) hr hs ht
-
 variable {f : Gal(L/K) → VariableChange L}
 
 /-- Twisting a cocycle `f` by `A`, that is `σ ↦ A⁻¹ * f σ * σ A`, gives a cocycle. -/
@@ -89,7 +73,7 @@ private theorem twist_cocycle (hf : ∀ σ τ, f (σ * τ) = f σ * (f τ).map (
 private theorem isLocallyConstant_twist [Algebra.IsAlgebraic K L] (hc : IsLocallyConstant f)
     (A : VariableChange L) :
     IsLocallyConstant fun σ : Gal(L/K) ↦ A⁻¹ * f σ * A.map (σ : L →+* L) :=
-  hc.comp₂ (isLocallyConstant_map A) fun X Y ↦ A⁻¹ * X * Y
+  hc.comp₂ A.isLocallyConstant_map_of_isAlgebraic fun X Y ↦ A⁻¹ * X * Y
 
 /-- If the twist of `f` by `A` is the coboundary of `C`, then `f` is the coboundary of `A * C`. -/
 private theorem exists_eq_mul_map_inv_of_twist (A : VariableChange L)
