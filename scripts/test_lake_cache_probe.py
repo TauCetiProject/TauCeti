@@ -46,6 +46,20 @@ class ExactMapProbe(unittest.TestCase):
         )
         self.assertTrue(found, reason)
 
+    def test_shared_parser_preserves_probe_version_policy(self):
+        raw = b'"future-schema"\n["44b76000326a96d8","40b5fb725e1abfb8.ltar"]\n'
+        version, entries = cache_probe.parse_map(raw)
+        self.assertEqual(version, "future-schema")
+        self.assertEqual(entries, [("44b76000326a96d8", "40b5fb725e1abfb8.ltar")])
+        found, _url, reason = cache_probe.probe(ENDPOINT, TOOLCHAIN, SHA, response(raw.decode()))
+        self.assertTrue(found, reason)
+        for malformed in (b'""\n["44b76000326a96d8","40b5fb725e1abfb8.ltar"]\n',
+                          b'"2026-03-17"\n[true,"40b5fb725e1abfb8.ltar"]\n',
+                          b'"2026-03-17"\n["44b76000326a96d8","../escape.ltar"]\n',
+                          b'"2026-03-17"\n["44b76000326a96d8"]\n', b"\xff"):
+            with self.subTest(raw=malformed), self.assertRaises((UnicodeError, ValueError)):
+                cache_probe.parse_map(malformed)
+
     def test_a_curl_failure_is_an_inconclusive_miss(self):
         found, _url, reason = cache_probe.probe(
             ENDPOINT, TOOLCHAIN, SHA, response("", 22, "HTTP 404"),

@@ -25,8 +25,9 @@ validated upload files and URL plan outside the hostile staging directory. Only
 inline workflow shell and curl receive credentials: artifacts upload first with
 bounded retries, then the full map uploads and is confirmed byte for byte using
 workflow-pinned, key-free tooling. Partial artifact uploads are safe to retry;
-they do not install a partial revision map. Legacy full staging artifacts remain
-supported during rollout.
+they do not install a partial revision map. A staging tree without
+`publication.json` is treated as full staging: every mapped object is hashed and
+uploaded.
 
 If an inherited object disappears after producer staging, publication fails
 closed. Set repository variable `LAKE_CACHE_FULL_PUBLICATION=1` and launch a
@@ -40,9 +41,9 @@ and seconds. Publisher logs report upload bytes, SHA verification download bytes
 and elapsed verification/upload time. Map/manifest and protocol overhead are not
 included in archive-byte totals. Inherited SHA verification consumes downloads;
 repeated IDs alone do not establish net byte or elapsed savings. Compare complete
-staging, artifact transfer, verification and upload phases for a fresh main or
-bors dispatch after landing. Re-running a workflow created before landing still
-uses its old workflow-pinned tooling.
+staging, artifact transfer, verification and upload phases when measuring savings.
+A workflow rerun uses the same pinned tooling as its original run; create a new
+run to exercise an updated workflow.
 
 Run regression checks with:
 

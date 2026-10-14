@@ -219,6 +219,10 @@ class PublicationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.prepare()
 
+    def test_publication_requires_known_schema_from_shared_parser(self):
+        with self.assertRaisesRegex(ValueError, "unsupported"):
+            publish.mapping(self.raw.replace(b"2026-03-17", b"future-schema"))
+
     def test_old_full_staging_producer_remains_supported(self):
         self.stage_outputs(available=False)
         (self.stage / "publication.json").unlink()

@@ -23,10 +23,9 @@ import threading
 import time
 import urllib.parse
 
-from lake_cache_probe import exact_map_url, TOOLCHAIN
-from lake_cache_reuse import ARCHIVE, HASH, SHA256, directory, regular_file
+from lake_cache_probe import DEFAULT_REPOSITORY as REPOSITORY, exact_map_url, parse_map, TOOLCHAIN
+from lake_cache_reuse import ARCHIVE, SHA256, directory, read_toolchain, regular_file
 
-REPOSITORY = "TauCetiProject/TauCeti"
 WORKERS = 16
 MAX_MAP = 16 * 1024 * 1024
 
@@ -49,20 +48,12 @@ def artifact_url(base: str, name: str) -> str:
 def mapping(raw: bytes) -> set[str]:
     if len(raw) > MAX_MAP:
         raise ValueError("oversized output map")
-    lines = raw.decode().splitlines()
-    if len(lines) < 2 or json.loads(lines[0]) != "2026-03-17":
-        raise ValueError("unsupported or empty Lake output map")
-    names, inputs = set(), set()
-    for line in lines[1:]:
-        entry = json.loads(line)
-        if (not isinstance(entry, list) or len(entry) != 2
-                or not isinstance(entry[0], str) or not HASH.fullmatch(entry[0])
-                or not isinstance(entry[1], str) or not ARCHIVE.fullmatch(entry[1])
-                or entry[0] in inputs):
-            raise ValueError("invalid or duplicate Lake mapping")
-        inputs.add(entry[0])
-        names.add(entry[1])
-    return names
+    version, entries = parse_map(raw)
+    if version != "2026-03-17":
+        raise ValueError("unsupported Lake output map schema")
+    if len({input_hash for input_hash, _ in entries}) != len(entries):
+        raise ValueError("duplicate Lake mapping input")
+    return {archive for _, archive in entries}
 
 
 def hashes(handle) -> dict:
@@ -97,8 +88,7 @@ def stage(project: Path, index: Path, destination: Path, public: str,
     with directory(project, Path(".lake")) as parent, regular_file(parent, "outputs.jsonl") as handle:
         raw = handle.read(MAX_MAP + 1)
     names = mapping(raw)
-    with directory(project, Path()) as parent, regular_file(parent, "lean-toolchain") as handle:
-        toolchain = handle.read(1024).decode().strip()
+    toolchain = read_toolchain(project)
     if not TOOLCHAIN.fullmatch(toolchain):
         raise ValueError("invalid toolchain")
     try:
@@ -219,7 +209,7 @@ def prepare(staging: Path, plan: Path, toolchain: str, revision: str,
                         or type(record["size"]) is not int or not 0 < record["size"] <= 1024**3):
                     raise ValueError("invalid object digest/size")
         else:
-            # Old in-flight producers remain publishable during independent rollout.
+            # A tree without a manifest is full staging: hash and upload every mapped object.
             records, inherited = {}, set()
         if entries - {"outputs.jsonl", "publication.json"} != names - inherited:
             raise ValueError("staged objects do not match the complete map/manifest")

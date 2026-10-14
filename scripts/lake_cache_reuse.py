@@ -63,6 +63,12 @@ def regular_file(parent: int, name: str):
         os.close(fd)
 
 
+def read_toolchain(root: Path) -> str:
+    """Read the toolchain pin without following candidate symlinks."""
+    with directory(root, Path()) as parent, regular_file(parent, "lean-toolchain") as handle:
+        return handle.read(1024).decode().strip()
+
+
 def read_json(root: Path, relative: Path):
     with directory(root, relative.parent) as parent, regular_file(parent, relative.name) as handle:
         return json.load(handle)
@@ -101,8 +107,7 @@ def snapshot(root: Path, package: str = "TauCeti") -> dict:
     except OSError:
         pass  # No downloaded cache is a normal cold build.
     try:
-        with directory(root, Path()) as parent, regular_file(parent, "lean-toolchain") as handle:
-            toolchain = handle.read(1024).decode().strip()
+        toolchain = read_toolchain(root)
     except (OSError, ValueError):
         toolchain = ""
     return {"version": 1, "toolchain": toolchain, "entries": entries}
