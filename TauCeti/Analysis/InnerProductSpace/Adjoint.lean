@@ -10,7 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Adjoints of isometric isomorphisms, of `L²` coordinate projections, norm bounds, and `1 + X†X`
+# Adjoints of isometric isomorphisms, of `L²` coordinate projections, norm bounds, and `1 + T`
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -25,9 +25,9 @@ Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 (`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
 
-For bounded operators on a possibly infinite-dimensional Hilbert space, `1 + X†X` is invertible
-(`ContinuousLinearMap.isUnit_one_add_adjoint_comp_self`), because
-`⟪(1 + X†X) x, x⟫ = ‖x‖² + ‖X x‖²` bounds it below.
+For a positive operator `T` on a possibly infinite-dimensional Hilbert space, `1 + T` is
+invertible (`ContinuousLinearMap.IsPositive.isUnit_one_add`), because
+`re ⟪(1 + T) x, x⟫ ≥ ‖x‖²` bounds it below. This applies in particular to `T = X†X`.
 -/
 
 public section
@@ -97,14 +97,15 @@ open scoped InnerProductSpace InnerProduct
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [CompleteSpace E]
 
-/-- On a complete space, `1 + X†X` is invertible for every bounded operator `X`, since
-`⟪(1 + X†X) x, x⟫ = ‖x‖² + ‖X x‖² ≥ ‖x‖²`. -/
-theorem isUnit_one_add_adjoint_comp_self (X : E →L[𝕜] E) :
-    IsUnit (1 + X† ∘L X) := by
+/-- On a complete space, `1 + T` is invertible for every positive operator `T`, since
+`re ⟪(1 + T) x, x⟫ = ‖x‖² + re ⟪T x, x⟫ ≥ ‖x‖²`. For instance `1 + X†X` is invertible, by
+`ContinuousLinearMap.isPositive_adjoint_comp_self`. -/
+theorem IsPositive.isUnit_one_add {T : E →L[𝕜] E} (hT : T.IsPositive) : IsUnit (1 + T) := by
   refine isUnit_of_forall_le_norm_inner_map _ one_pos fun x => ?_
-  have h : ⟪(1 + X† ∘L X) x, x⟫_𝕜 = ((‖x‖ ^ 2 + ‖X x‖ ^ 2 : ℝ) : 𝕜) := by
-    simp [inner_add_left, adjoint_inner_left, inner_self_eq_norm_sq_to_K]
-  rw [h, RCLike.norm_ofReal, NNReal.coe_one, mul_one, abs_of_nonneg (by positivity)]
-  exact le_add_of_nonneg_right (sq_nonneg _)
+  rw [NNReal.coe_one, mul_one]
+  calc ‖x‖ ^ 2 ≤ RCLike.re ⟪(1 + T) x, x⟫_𝕜 := by
+        rw [add_apply, one_apply_eq_self, inner_add_left, map_add, inner_self_eq_norm_sq]
+        exact le_add_of_nonneg_right (hT.re_inner_nonneg_left x)
+    _ ≤ ‖⟪(1 + T) x, x⟫_𝕜‖ := RCLike.re_le_norm _
 
 end ContinuousLinearMap

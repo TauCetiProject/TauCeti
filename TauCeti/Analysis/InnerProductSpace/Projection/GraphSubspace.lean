@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Arsinh
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
-public import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Angular operators and graph subspaces
@@ -249,7 +249,7 @@ theorem directedProjectionGap_graphSubspace_left
           gcongr
           exact norm_starProjection_apply_le _ _
   refine le_antisymm hle (hX.div_sqrt_le_of_forall_norm_apply_le (norm_nonneg _) ?_ fun u hu => ?_)
-  · exact hle.trans_lt (Real.div_sqrt_one_add_sq_lt_one _)
+  · exact hle.trans_lt (Real.tanh_arsinh _ ▸ Real.tanh_lt_one _)
   · -- On `u + X u ∈ G`, the operator `P_{Uᗮ} P_G` returns `X u`.
     have h := le_opNorm (Uᗮ.starProjection ∘L G.starProjection) (u + X u)
     rwa [comp_apply, starProjection_eq_self_iff.mpr (add_apply_mem_graphSubspace hu),
@@ -320,7 +320,7 @@ theorem projectionGap_graphSubspace [(U.graphSubspace X).HasOrthogonalProjection
 theorem projectionGap_graphSubspace_lt_one [(U.graphSubspace X).HasOrthogonalProjection] :
     projectionGap U (U.graphSubspace X) < 1 := by
   rw [hX.projectionGap_graphSubspace]
-  exact Real.div_sqrt_one_add_sq_lt_one _
+  exact Real.tanh_arsinh _ ▸ Real.tanh_lt_one _
 
 end IsAngularOperator
 
@@ -349,7 +349,7 @@ theorem adjoint_comp_starProjection : X† ∘L U.starProjection = 0 := by
 
 /-- **The graph projection formula**: on a complete space, the orthogonal projection onto the graph
 subspace is `A (1 + X†X)⁻¹ A†` with `A = P_U + X`. The operator `1 + X†X` is invertible by
-`ContinuousLinearMap.isUnit_one_add_adjoint_comp_self`. -/
+`ContinuousLinearMap.IsPositive.isUnit_one_add`. -/
 theorem starProjection_graphSubspace [(U.graphSubspace X).HasOrthogonalProjection] :
     (U.graphSubspace X).starProjection =
       (U.starProjection + X) ∘L Ring.inverse (1 + X† ∘L X) ∘L (U.starProjection + X)† := by
@@ -366,7 +366,7 @@ theorem starProjection_graphSubspace [(U.graphSubspace X).HasOrthogonalProjectio
         zero_add, add_zero]
     exact DFunLike.congr_fun h y
   have hTT : ∀ y, (1 + X† ∘L X) (Ring.inverse (1 + X† ∘L X) y) = y := fun y =>
-    DFunLike.congr_fun (Ring.mul_inverse_cancel _ X.isUnit_one_add_adjoint_comp_self) y
+    DFunLike.congr_fun (Ring.mul_inverse_cancel _ X.isPositive_adjoint_comp_self.isUnit_one_add) y
   set A := U.starProjection + X
   set T := 1 + X† ∘L X
   ext x
