@@ -111,10 +111,10 @@ theorem exists_generating_tuple_quotient_of_classModuleMap
     have hcomp : (QuotientGroup.mapOfLE (le_sup_right : U.toSubgroup ≤ V)).comp
         q.toMonoidHom =
           (abelianizationProPExtension p (Field.absoluteGaloisGroup K) V).rightHom := by
-      apply QuotientGroup.monoidHom_ext
-      ext x
-      simp [q]
-      rfl
+      simpa only [q, abelianizationProPExtension_rightHom] using
+        QuotientGroup.mapOfLE_comp
+          (abelianizationProPExtensionKernel_le_of_commutator_wildInertiaSubgroup_le K p U hU)
+          (le_sup_right : U.toSubgroup ≤ V)
     -- Evaluate the bundled map through its monoid-hom projection so the composition
     -- identity applies without depending on simplification of quotient carriers.
     change ((QuotientGroup.mapOfLE (le_sup_right : U.toSubgroup ≤ V)).comp
