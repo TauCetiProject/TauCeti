@@ -201,7 +201,7 @@ theorem geometricallyConnected_coordinateHopfAlgebra :
   apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
     (generator k)
   rintro (i | ⟨⟩)
-  · exact AdditiveGroup.geometricallyConnected_coordinateHopfAlgebra k
+  · exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
       (SplitTorus.characterGroup (Fin 6))
 

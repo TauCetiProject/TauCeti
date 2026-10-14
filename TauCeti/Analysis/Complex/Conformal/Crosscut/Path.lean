@@ -10,7 +10,7 @@ public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Complex.Conformal.Crosscut.EndpointLimit
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Endpoints
 import TauCeti.Analysis.Complex.Conformal.ClusterSet
-import TauCeti.Topology.Path.ExtendIoo
+import TauCeti.Topology.Path.Extend.Ioo
 
 /-!
 # A finite-length image crosscut as a path
@@ -37,7 +37,7 @@ Write
 The open interval `Ioo a b` parametrises `ball c r ∩ sphere ζ ρ`. At every point of its frontier,
 the endpoint-limit theorem gives a limit of `f` along the crosscut. Composing with `circleMap`
 turns those into limits of the angular composite `g = f ∘ circleMap ζ ρ` at `a` and at `b`, which
-is exactly the data `TauCeti.Path.ofContinuousOnIoo` of `TauCeti/Topology/Path/ExtendIoo.lean`
+is exactly the data `TauCeti.Path.ofContinuousOnIoo` of `TauCeti/Topology/Path/Extend/Ioo.lean`
 consumes: a function continuous on an open interval with a limit at each end traces a path between
 those two limits, whose range is the closure of the curve
 (`TauCeti.Path.range_ofContinuousOnIoo`) and which follows `g` along
@@ -67,7 +67,7 @@ Layer L5 is absent from
 human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. Mathlib
 supplies `Path` and the injectivity of `circleMap` on an interval shorter than a full turn; the
 extension of a curve across the two ends of an open interval is packaged as a path in
-`TauCeti/Topology/Path/ExtendIoo.lean`. Mathlib has no boundary-crosscut or endpoint-limit result.
+`TauCeti/Topology/Path/Extend/Ioo.lean`. Mathlib has no boundary-crosscut or endpoint-limit result.
 No Mathlib source is vendored.
 
 ## References

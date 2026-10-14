@@ -244,7 +244,7 @@ theorem geometricallyConnected_coordinateHopfAlgebra :
   apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
     generator
   rintro (i | ⟨⟩)
-  · exact AdditiveGroup.geometricallyConnected_coordinateHopfAlgebra (ZMod 3)
+  · exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra (ZMod 3)
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing (ZMod 3)
       (SplitTorus.characterGroup (Fin 2))
 
