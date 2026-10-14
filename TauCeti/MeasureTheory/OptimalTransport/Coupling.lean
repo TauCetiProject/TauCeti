@@ -373,6 +373,26 @@ protected theorem map_right (hπ : IsCoupling π μ ν) {g : Y → Y'} (hg : Mea
     IsCoupling (π.map (Prod.map id g)) μ (ν.map g) := by
   simpa only [Measure.map_id] using hπ.map measurable_id hg
 
+/-- Pushing a coupling forward coordinatewise along maps that are almost everywhere measurable for
+the two marginals couples the two pushforwards. -/
+protected theorem map₀ (hπ : IsCoupling π μ ν) {f : X → X'} {g : Y → Y'} (hf : AEMeasurable f μ)
+    (hg : AEMeasurable g ν) : IsCoupling (π.map (Prod.map f g)) (μ.map f) (ν.map g) := by
+  have hfπ := hf.comp_quasiMeasurePreserving hπ.measurePreserving_fst.quasiMeasurePreserving
+  have hgπ := hg.comp_quasiMeasurePreserving hπ.measurePreserving_snd.quasiMeasurePreserving
+  constructor
+  · calc
+      _ = π.map (f ∘ Prod.fst) := Measure.fst_map_prodMk₀ hfπ hgπ
+      _ = μ.map f := by
+        rw [← AEMeasurable.map_map_of_aemeasurable
+          (hπ.measurePreserving_fst.map_eq.symm ▸ hf) measurable_fst.aemeasurable]
+        exact congrArg (Measure.map f) hπ.measurePreserving_fst.map_eq
+  · calc
+      _ = π.map (g ∘ Prod.snd) := Measure.snd_map_prodMk₀ hfπ hgπ
+      _ = ν.map g := by
+        rw [← AEMeasurable.map_map_of_aemeasurable
+          (hπ.measurePreserving_snd.map_eq.symm ▸ hg) measurable_snd.aemeasurable]
+        exact congrArg (Measure.map g) hπ.measurePreserving_snd.map_eq
+
 /-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
 coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
 protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}

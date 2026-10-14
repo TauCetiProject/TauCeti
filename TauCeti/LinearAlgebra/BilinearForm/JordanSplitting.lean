@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Modular
 import TauCeti.Algebra.DirectSum.Internal
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.RingTheory.Nakayama
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.RingTheory.Valuation.FinsetDvd
@@ -31,6 +33,14 @@ separate the form into its valuation scales, reducing its analysis to perfect pa
 scale. This decomposition supports the local analysis and classification of integral forms,
 including the dyadic case, for instance `R = ℤ_2`, where constituents need not be diagonalizable.
 
+A Jordan splitting is not unique, but the ranks of its constituents are invariants of the form
+(`LinearMap.BilinForm.IsJordanSplitting.finrank_eq`), and hence of its isometry class
+(`LinearMap.BilinForm.IsJordanSplitting.finrank_eq_of_equivalent`). This holds over every local
+domain `R` and every nonzero non-unit `π`, in particular at the dyadic prime. The vectors `x` with
+`π ^ j ∣ B x y` for all `y` are, modulo `π M`, exactly the sums of vectors of the constituents of
+index at least `j`. By Nakayama's lemma the sum of these constituents therefore has the same rank
+for any two splittings, and the rank of the `j`-th constituent is a difference of two such ranks.
+
 ## Main definitions
 
 * `LinearMap.BilinForm.IsJordanSplitting`: a family `N : ℕ → Submodule R M` is a Jordan splitting
@@ -41,10 +51,15 @@ including the dyadic case, for instance `R = ℤ_2`, where constituents need not
 * `LinearMap.BilinForm.IsJordanSplitting.hasFiniteSupport`: a finitely generated module has only
   finitely many nonzero Jordan constituents.
 * `LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`: Jordan splittings exist.
+* `LinearMap.BilinForm.IsJordanSplitting.finrank_eq`: any two Jordan splittings have constituents
+  of equal rank.
+* `LinearMap.BilinForm.IsJordanSplitting.finrank_eq_of_equivalent`: the ranks of the constituents
+  are invariants of the isometry class of the form.
 
 ## References
 
-* O. T. O'Meara, *Introduction to Quadratic Forms*, 91:9.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, §91C, for Jordan splittings, and 91:9, for
+  the invariance of the ranks of their constituents.
 * J. W. S. Cassels, *Rational Quadratic Forms*, Chapter 8, Lemma 4.1 and Theorem 4.1.
 -/
 
@@ -124,6 +139,19 @@ theorem isJordanSplitting_congr_iff {M' : Type*} [AddCommMonoid M'] [Module R M'
     simpa only [congr_congr, e.self_trans_symm, congr_refl, LinearEquiv.refl_apply,
       ← Submodule.map_comp, e.symm_comp, Submodule.map_id] using h.congr e.symm,
     fun h ↦ h.congr e⟩
+
+/-- Every value of `B` at a vector of the constituent `N i` of a Jordan splitting is divisible by
+`π ^ i`. -/
+theorem IsJordanSplitting.pow_dvd_apply {π : R} {N : ℕ → Submodule R M}
+    (h : B.IsJordanSplitting π N) {i : ℕ} {x : M} (hx : x ∈ N i) (y : M) : π ^ i ∣ B x y := by
+  refine Submodule.iSup_induction N (motive := fun y ↦ π ^ i ∣ B x y)
+    (h.isInternal.submodule_iSup_eq_top ▸ Submodule.mem_top) (fun k y hy ↦ ?_) (by simp)
+    fun y z hy hz ↦ by simpa only [map_add] using dvd_add hy hz
+  by_cases hik : i = k
+  · subst hik
+    simpa using (h.isModular i).dvd ⟨x, hx⟩ ⟨y, hy⟩
+  · rw [h.apply_eq_zero i k hik x hx y hy]
+    exact dvd_zero _
 
 /-- A Jordan splitting of a finitely generated module has finitely many nonzero constituents. -/
 theorem IsJordanSplitting.hasFiniteSupport [Module.Finite R M] {π : R}
@@ -238,5 +266,130 @@ theorem IsSymm.exists_isJordanSplitting [Module.Finite R M] (hB : B.IsSymm)
       exact (mul_eq_zero.mp hb).resolve_left hr
   let : Free R M := inferInstance
   exact exists_isJordanSplitting_of_free hB hnd hπ
+
+section Uniqueness
+
+/-! ### Uniqueness of the ranks of the constituents -/
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {π : R}
+  {N : ℕ → Submodule R M}
+
+/-- The vectors of the constituents of index at least `j` of a Jordan splitting pair into
+`π ^ j R`. -/
+theorem IsJordanSplitting.pow_dvd_apply_of_mem_biSup (h : B.IsJordanSplitting π N) {j : ℕ}
+    {x : M} (hx : x ∈ ⨆ i ∈ Set.Ici j, N i) (y : M) : π ^ j ∣ B x y := by
+  have hle : ⨆ i ∈ Set.Ici j, N i ≤ ⨅ y, Submodule.comap (B.flip y) (Ideal.span {π ^ j}) :=
+    iSup₂_le fun i hi x hx ↦ Submodule.mem_iInf _ |>.mpr fun y ↦ by
+      simpa [Ideal.mem_span_singleton] using (pow_dvd_pow π hi).trans (h.pow_dvd_apply hx y)
+  simpa [Ideal.mem_span_singleton] using Submodule.mem_iInf _ |>.mp (hle hx) y
+
+/-- **A vector pairing into `π ^ j R` lies in the constituents of index at least `j`, modulo `π`.**
+If `π` is a non-zero-divisor and every value `B x y` is divisible by `π ^ j`, then `x` is the sum
+of a vector of the constituents of index at least `j` of a Jordan splitting and a vector of `π M`.
+-/
+theorem IsJordanSplitting.mem_biSup_sup_smul_top (h : B.IsJordanSplitting π N)
+    (hπ : π ∈ nonZeroDivisors R) {j : ℕ} {x : M} (hx : ∀ y, π ^ j ∣ B x y) :
+    x ∈ (⨆ i ∈ Set.Ici j, N i) ⊔ Ideal.span {π} • ⊤ := by
+  classical
+  obtain ⟨f, rfl⟩ := (Submodule.mem_iSup_iff_exists_dfinsupp' N x).mp
+    (h.isInternal.submodule_iSup_eq_top ▸ Submodule.mem_top)
+  refine Submodule.dfinsuppSum_mem _ _ _ fun i _ ↦ ?_
+  by_cases hi : j ≤ i
+  · exact Submodule.mem_sup_left
+      (le_iSup₂ (f := fun i (_ : i ∈ Set.Ici j) ↦ N i) i (Set.mem_Ici.mpr hi) (f i).2)
+  refine Submodule.mem_sup_right ?_
+  -- The components of index `i < j` are divisible by `π`: against `N i`, the vector pairs as its
+  -- `i`-th component does, so these values are divisible by `π ^ (i + 1)`.
+  have hcomp : ∀ y ∈ N i, B (f.sum fun _ z ↦ (z : M)) y = B (f i) y := fun y hy ↦ by
+    rw [DFinsupp.sum, map_sum, LinearMap.sum_apply]
+    refine Finset.sum_eq_single i (fun k _ hki ↦ h.apply_eq_zero k i hki _ (f k).2 y hy) ?_
+    intro hi
+    rw [DFinsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply]
+  obtain ⟨z, hz⟩ :=
+    (h.isModular i).exists_eq_smul_of_forall_dvd (pow_mem hπ i) hπ (x := f i) fun y ↦ by
+      rw [← pow_succ, restrict_apply, domRestrict_apply, ← hcomp y y.2]
+      exact (pow_dvd_pow π (by omega)).trans (hx y)
+  rw [hz, Submodule.coe_smul]
+  exact Submodule.smul_mem_smul (Ideal.mem_span_singleton_self π) Submodule.mem_top
+
+/-- The constituents of index at least `j` of a Jordan splitting have rank at most that of the
+constituents of index at least `j` of any other Jordan splitting. By Nakayama's lemma, the second
+family and the constituents of index below `j` of the first one span the module, since they
+already span it modulo `π`. -/
+private theorem IsJordanSplitting.rank_biSup_le [IsDomain R] [IsLocalRing R] [Module.Finite R M]
+    {N' : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) (h' : B.IsJordanSplitting π N')
+    (hπ : π ≠ 0) (hπ' : ¬IsUnit π) (j : ℕ) :
+    Module.rank R ↥(⨆ i ∈ Set.Ici j, N i) ≤ Module.rank R ↥(⨆ i ∈ Set.Ici j, N' i) := by
+  set A := ⨆ i ∈ Set.Ici j, N i
+  set A' := ⨆ i ∈ Set.Ici j, N' i
+  set C := ⨆ i ∈ Set.Iio j, N i
+  have hAC : A ⊔ C = ⊤ := by
+    rw [← iSup_union, Set.Ici_union_Iio, iSup_univ, h.isInternal.submodule_iSup_eq_top]
+  have hAC' : A ⊓ C = ⊥ := (h.isInternal.submodule_iSupIndep.disjoint_biSup_biSup
+    (Set.disjoint_left.mpr fun i hi hi' ↦ (Set.mem_Iio.mp hi').not_ge hi)).eq_bot
+  have hle : A ≤ A' ⊔ Ideal.span {π} • ⊤ := fun x hx ↦
+    h'.mem_biSup_sup_smul_top (mem_nonZeroDivisors_of_ne_zero hπ)
+      (h.pow_dvd_apply_of_mem_biSup hx)
+  have htop : A' ⊔ C = ⊤ := by
+    refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson_bot
+      (I := Ideal.span {π}) Module.Finite.fg_top ?_ ?_)
+    · rw [IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top, Ideal.span_singleton_le_iff_mem]
+      exact (IsLocalRing.mem_maximalIdeal π).mpr hπ'
+    · exact hAC.ge.trans
+        (sup_le (hle.trans (sup_le_sup_right le_sup_left _)) (le_sup_right.trans le_sup_left))
+  have hrank := Submodule.rank_sup_add_rank_inf_eq A C
+  have hrank' := Submodule.rank_add_le_rank_add_rank A' C
+  rw [hAC, hAC', rank_bot, add_zero] at hrank
+  rw [htop, hrank] at hrank'
+  exact (Cardinal.add_le_add_iff_of_lt_aleph0
+    ((Submodule.rank_le C).trans_lt (rank_lt_aleph0 R M))).mp hrank'
+
+/-- In a Jordan splitting, the constituents of index at least `j` are the `j`-th constituent and
+those of index at least `j + 1`. -/
+private theorem IsJordanSplitting.rank_biSup_Ici [IsDomain R] (h : B.IsJordanSplitting π N)
+    (j : ℕ) : Module.rank R ↥(⨆ i ∈ Set.Ici j, N i) =
+      Module.rank R (N j) + Module.rank R ↥(⨆ i ∈ Set.Ici (j + 1), N i) := by
+  have hdisj : N j ⊓ ⨆ i ∈ Set.Ici (j + 1), N i = ⊥ :=
+    (h.isInternal.submodule_iSupIndep.disjoint_biSup (by simp)).eq_bot
+  have hIci : Set.Ici j = insert j (Set.Ici (j + 1)) := by
+    ext i
+    simp only [Set.mem_Ici, Set.mem_insert_iff]
+    omega
+  rw [hIci, iSup_insert, ← Submodule.rank_sup_add_rank_inf_eq, hdisj, rank_bot, add_zero]
+
+/-- **The ranks of the constituents of a Jordan splitting are invariants of the form.** Over a
+local domain, any two Jordan splittings of a bilinear form on a finite module with respect to the
+same nonzero non-unit `π` have constituents of equal rank at every index. -/
+theorem IsJordanSplitting.finrank_eq [IsDomain R] [IsLocalRing R] [Module.Finite R M]
+    {N' : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) (h' : B.IsJordanSplitting π N')
+    (hπ : π ≠ 0) (hπ' : ¬IsUnit π) (j : ℕ) : finrank R (N j) = finrank R (N' j) := by
+  have hA : ∀ j,
+      Module.rank R ↥(⨆ i ∈ Set.Ici j, N i) = Module.rank R ↥(⨆ i ∈ Set.Ici j, N' i) :=
+    fun j ↦ (h.rank_biSup_le h' hπ hπ' j).antisymm (h'.rank_biSup_le h hπ hπ' j)
+  have hj := hA j
+  rw [h.rank_biSup_Ici, h'.rank_biSup_Ici, ← hA (j + 1),
+    Cardinal.add_right_inj_of_lt_aleph0 ((Submodule.rank_le _).trans_lt (rank_lt_aleph0 R M))]
+    at hj
+  rw [finrank, finrank, hj]
+
+/-- **The ranks of the Jordan constituents are isometry invariants.** Over a local domain, if a
+bilinear form is isometric to a bilinear form on a finite module, then Jordan splittings of the
+two forms with respect to the same nonzero non-unit `π` have constituents of equal rank at every
+index. -/
+theorem IsJordanSplitting.finrank_eq_of_equivalent [IsDomain R] [IsLocalRing R] {M' : Type*}
+    [AddCommGroup M'] [Module R M'] [Module.Finite R M'] {B' : BilinForm R M'}
+    {N' : ℕ → Submodule R M'} (h : B.IsJordanSplitting π N) (h' : B'.IsJordanSplitting π N')
+    (hB : B.Equivalent B') (hπ : π ≠ 0) (hπ' : ¬IsUnit π) (j : ℕ) :
+    finrank R (N j) = finrank R (N' j) := by
+  obtain ⟨e⟩ := hB
+  have he : LinearMap.BilinForm.congr e.toLinearEquiv B = B' := LinearMap.ext₂ fun x y ↦ by
+    obtain ⟨x, rfl⟩ := e.toLinearEquiv.surjective x
+    obtain ⟨y, rfl⟩ := e.toLinearEquiv.surjective y
+    rw [congr_apply, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply]
+    exact (e.map_app y x).symm
+  rw [← (e.toLinearEquiv).finrank_map_eq (N j)]
+  exact (he ▸ h.congr e.toLinearEquiv).finrank_eq h' hπ hπ' j
+
+end Uniqueness
 
 end LinearMap.BilinForm
