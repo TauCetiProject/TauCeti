@@ -364,17 +364,6 @@ theorem ord_algebraMap_restrict (f : F) :
   rw [← ord_comap F P' f, ramificationIdx, key,
     ← Valuation.ord_normalization_mul_ordIndex _ f, mul_comm]
 
-/-- A function of `F` whose only pole is at `P` has its poles in `F'` exactly at the places
-over `P`. -/
-theorem ord_algebraMap_neg_iff_restrict_eq {P : Place k F} {z : F} (hP : P.ord z < 0)
-    (hQ : ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord z) :
-    P'.ord (algebraMap F F' z) < 0 ↔ P'.restrict k F = P := by
-  have he : (0 : ℤ) < ramificationIdx F P' := by exact_mod_cast ramificationIdx_pos F P'
-  rw [ord_algebraMap_restrict k F P' z]
-  refine ⟨fun hlt ↦ ?_, fun hP' ↦ hP' ▸ mul_neg_of_pos_of_neg he hP⟩
-  by_contra hne
-  exact (mul_nonneg he.le (hQ _ hne)).not_gt hlt
-
 /-- An element of `F` is integral at the restriction exactly when it is integral at `P'`. -/
 theorem mem_integers_restrict_iff (f : F) :
     f ∈ (P'.restrict k F).integers ↔ algebraMap F F' f ∈ P'.integers := by

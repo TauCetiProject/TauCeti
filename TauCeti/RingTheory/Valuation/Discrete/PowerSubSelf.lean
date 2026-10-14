@@ -14,8 +14,15 @@ For a discrete valuation and `n > 1`, a pole of `y` is a pole of `y ^ n - y` of 
 multiplied by `n`. Conversely, `y ^ n - y` cannot have a pole unless `y` does. Thus an
 element with negative order not divisible by `n` is not of the form `y ^ n - y`.
 
-A prime-to-`n` pole is maximal among representatives `u - (w ^ n - w)`. In prime
-characteristic, this also gives uniqueness of the reduced Artin–Schreier pole order.
+More generally, if no `n`-th power `y ^ n` agrees with `u` beyond the leading order of `u`,
+then `TauCeti.ord_sub_pow_sub_self_eq_min` computes the order of every representative
+`u - (w ^ n - w)` as `min (ord u) (n * ord w)`. Such a substitution can only create a deeper pole.
+The hypothesis holds automatically when `n` does not divide the order of `u`, so a prime-to-`n`
+pole is maximal among representatives. In prime characteristic, this also gives uniqueness of
+the reduced Artin–Schreier pole order. When `n` does divide the negative order of `u`,
+`TauCeti.ord_sub_pow_sub_self_neg_and_dvd` shows that every representative keeps a pole of order
+divisible by `n`. This is the obstruction to reducing Artin–Schreier representatives over an
+imperfect residue field.
 
 The pole and maximality results need no characteristic hypothesis. In characteristic `p`,
 with `n = p`, they give the local nontriviality criterion for an Artin–Schreier equation:
@@ -100,25 +107,76 @@ theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
   rw [← hw, sub_pow_expChar]
   ring
 
+/-- If `n` does not divide the order of `u`, then no `n`-th power agrees with `u` beyond the
+leading order of `u`. -/
+theorem ord_sub_pow_le_of_not_dvd {n : ℕ} {u : F} (hdiv : ¬(n : ℤ) ∣ v.ord u) (y : F) :
+    v.ord (u - y ^ n) ≤ v.ord u := by
+  have hu0 : u ≠ 0 := by
+    rintro rfl
+    simp at hdiv
+  rcases eq_or_ne (y ^ n) 0 with hy | hy
+  · simp [hy]
+  rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne hu0 (neg_ne_zero.mpr hy)
+    (by rw [v.ord_neg, v.ord_pow]; exact fun h ↦ hdiv ⟨v.ord y, h⟩)]
+  exact min_le_left _ _
+
+/-- Let `u` have a pole, and suppose that no `n`-th power `y ^ n` agrees with `u` beyond the
+leading order of `u`. Then for `n > 1` every representative `u - (w ^ n - w)` has order
+`min (ord u) (n * ord w)`. A substitution cannot cancel the pole of `u`; it can only replace it
+by the deeper pole of `w ^ n`. No characteristic hypothesis is needed. -/
+theorem ord_sub_pow_sub_self_eq_min {n : ℕ} (hn : 1 < n) {u : F} (hu : v.ord u < 0)
+    (hroot : ∀ y : F, v.ord (u - y ^ n) ≤ v.ord u) (w : F) :
+    v.ord (u - (w ^ n - w)) = min (v.ord u) (n * v.ord w) := by
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp [zero_pow (by omega : n ≠ 0), hu.le]
+  have hu0 : u ≠ 0 := by
+    rintro rfl
+    simp at hu
+  have hwn : w ^ n ≠ 0 := pow_ne_zero _ hw0
+  have ha0 : u - w ^ n ≠ 0 := by
+    intro h
+    have := hroot w
+    rw [h, v.ord_zero] at this
+    omega
+  -- The power term: `u - w ^ n` has order `min (ord u) (n * ord w)`.
+  have ha : v.ord (u - w ^ n) = min (v.ord u) (n * v.ord w) := by
+    rcases lt_or_ge ((n : ℤ) * v.ord w) (v.ord u) with hlt | hge
+    · rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne hu0 (neg_ne_zero.mpr hwn)
+        (by rw [v.ord_neg, v.ord_pow]; omega), v.ord_neg, v.ord_pow]
+    · have hmin := v.min_ord_le_ord_add (f := u) (g := -w ^ n) (by rwa [← sub_eq_add_neg])
+      rw [v.ord_neg, v.ord_pow, ← sub_eq_add_neg, min_eq_left hge] at hmin
+      rw [min_eq_left hge]
+      exact le_antisymm (hroot w) hmin
+  -- The linear term `w` has strictly larger order, so it does not change the order.
+  have hlt : min (v.ord u) (n * v.ord w) < v.ord w := by
+    rcases lt_or_ge (v.ord w) 0 with hneg | hnonneg
+    · have : (1 : ℤ) < n := by exact_mod_cast hn
+      exact (min_le_right _ _).trans_lt (by nlinarith)
+    · exact (min_le_left _ _).trans_lt (hu.trans_le hnonneg)
+  rw [show u - (w ^ n - w) = (u - w ^ n) + w by ring,
+    v.ord_add_eq_min_of_ord_ne ha0 hw0 (by rw [ha]; exact hlt.ne), ha, min_eq_left hlt.le]
+
 /-- A negative order not divisible by `n > 1` is maximal among all representatives
 `u - (w ^ n - w)`. No perfection or characteristic hypothesis is needed for this
 obstruction to improving a pole. -/
 theorem ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u : F}
     (hu : v.ord u < 0) (hdiv : ¬(n : ℤ) ∣ v.ord u) (w : F) :
-    v.ord (u - (w ^ n - w)) ≤ v.ord u := by
-  have hu0 : u ≠ 0 := by rintro rfl; simp at hu
-  rcases eq_or_ne (w ^ n - w) 0 with hw0 | hw0
-  · simp [hw0]
-  have hne : v.ord (w ^ n - w) ≠ v.ord u := by
-    intro heq
-    have hwneg : v.ord w < 0 :=
-      (v.ord_pow_sub_self_neg_iff hn w).mp (heq ▸ hu)
-    have horder : v.ord (w ^ n - w) = (n : ℤ) * v.ord w :=
-      v.ord_pow_sub_self_of_ord_neg hn hwneg
-    exact hdiv ⟨v.ord w, heq.symm.trans horder⟩
-  rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne hu0 (neg_ne_zero.mpr hw0)
-    (by simpa only [v.ord_neg] using hne.symm), v.ord_neg]
-  exact min_le_left _ _
+    v.ord (u - (w ^ n - w)) ≤ v.ord u :=
+  (ord_sub_pow_sub_self_eq_min hn hu (ord_sub_pow_le_of_not_dvd hdiv) w).trans_le
+    (min_le_left _ _)
+
+/-- Let `n > 1` divide the negative order of `u`, and suppose that no `n`-th power agrees
+with `u` beyond the leading order of `u`. Then every representative `u - (w ^ n - w)` has a
+pole whose order is divisible by `n`: no substitution makes `u` integral or produces a pole of
+order prime to `n`. -/
+theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} (hn : 1 < n) {u : F} (hu : v.ord u < 0)
+    (hdvd : (n : ℤ) ∣ v.ord u) (hroot : ∀ y : F, v.ord (u - y ^ n) ≤ v.ord u) (w : F) :
+    v.ord (u - (w ^ n - w)) < 0 ∧ (n : ℤ) ∣ v.ord (u - (w ^ n - w)) := by
+  rw [ord_sub_pow_sub_self_eq_min hn hu hroot w]
+  refine ⟨(min_le_left _ _).trans_lt hu, ?_⟩
+  rcases min_choice (v.ord u) (n * v.ord w) with h | h <;> rw [h]
+  · exact hdvd
+  · exact dvd_mul_right _ _
 
 /-- Two representatives of an Artin–Schreier class with prime-to-`p` poles have the
 same order. Thus the reduced pole order is independent of the substitution used to
