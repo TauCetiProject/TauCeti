@@ -395,16 +395,16 @@ theorem mem_range_gradedCochainComplexSubobject_arrow_f_iff (N : Submodule R M)
   rw [gradedCochainComplexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
     HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
-  change x ∈ LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ N ≤ ℳ p)) ↔ _
-  rw [Submodule.range_inclusion]
-  let x' : ℳ p := x
-  change x' ∈ Submodule.comap (ℳ p).subtype (ℳ p ⊓ N) ↔ _
-  have hx : gradedCochainComplexXEquiv p x = x' := by
-    unfold gradedCochainComplexXEquiv
-    rw [gradedCochainComplex_X_proof_eq_rfl]
-    rfl
-  rw [hx]
-  exact and_iff_right x'.2
+  constructor
+  · rintro ⟨y, rfl⟩
+    rw [gradedCochainComplexXEquiv_inclusion_f]
+    exact ((gradedCochainComplexXEquiv p y).2 : _ ∈ ℳ p ⊓ N).2
+  · intro hx
+    refine ⟨(gradedCochainComplexXEquiv p).symm
+      ⟨gradedCochainComplexXEquiv p x, (gradedCochainComplexXEquiv p x).2, hx⟩, ?_⟩
+    apply (gradedCochainComplexXEquiv p).injective
+    apply Subtype.ext
+    rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
 
 /-- The subcomplex cut out by a submodule is monotone in the submodule. -/
 theorem gradedCochainComplexSubobject_mono {N N' : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)

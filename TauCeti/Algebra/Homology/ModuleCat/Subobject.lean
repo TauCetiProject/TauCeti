@@ -21,7 +21,7 @@ elements along `eqToHom`.
 
 ## Main results
 
-* `TauCeti.HomologicalComplex.mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff`: degreewise
+* `HomologicalComplex.mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff`: degreewise
   membership in a subcomplex transported along an equality of complexes.
 -/
 
@@ -29,7 +29,7 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti.HomologicalComplex
+namespace HomologicalComplex
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
 
@@ -44,4 +44,4 @@ theorem mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff.{v}
   rw [eqToIso_refl, show Subobject.mapIsoToOrderIso (Iso.refl C) S = S from Subobject.map_id S,
     eqToHom_refl, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
 
-end TauCeti.HomologicalComplex
+end HomologicalComplex
