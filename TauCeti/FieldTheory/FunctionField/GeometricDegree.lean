@@ -374,24 +374,18 @@ theorem geometricDegree_eq_relfinrank_adjoin (hex' : IsIntegrallyClosedIn k' F')
   have hk' : Subfield.closure (Set.range (algebraMap k' Ω)) ≤ K.toSubfield :=
     Subfield.closure_le.2 fun _ ⟨c, hc⟩ ↦ hc ▸ K.algebraMap_mem c
   have hFK : (adjoin F (K : Set Ω)).toSubfield = (K ⊔ C).toSubfield := by
-    rw [adjoin_toSubfield, sup_toSubfield, adjoin_toSubfield, hKS, Subfield.closure_union,
-      ← sup_assoc, sup_eq_left.2 hk']
+    simp [C, adjoin_toSubfield, sup_toSubfield, hKS, Subfield.closure_union, ← sup_assoc, hk']
   have hF'K : ((adjoin F' (K : Set Ω)).restrictScalars F).toSubfield = (K ⊔ B).toSubfield := by
-    rw [restrictScalars_toSubfield, adjoin_toSubfield, sup_toSubfield, hKS,
-      AlgHom.fieldRange_toSubfield, IsScalarTower.coe_toAlgHom, ← RingHom.coe_fieldRange,
-      Subfield.closure_eq]
+    simp [B, fk, adjoin_toSubfield, sup_toSubfield, hKS, ← RingHom.coe_fieldRange]
   have hE : ((constantCompositum F k' F').map fF).toSubfield = C.toSubfield := by
-    rw [constantCompositum_def, adjoin_map, adjoin_toSubfield, adjoin_toSubfield,
-      Set.union_comm, ← Set.range_comp]
-    congr 3
-    funext c
-    exact (IsScalarTower.algebraMap_apply k' F' Ω c).symm
+    simp [C, fF, constantCompositum_def, adjoin_map, adjoin_toSubfield, Set.union_comm,
+      ← Set.range_comp, ← RingHom.coe_comp, ← IsScalarTower.algebraMap_eq]
   have htop : ((⊤ : IntermediateField F F').map fF).toSubfield = B.toSubfield := by
-    rw [← AlgHom.fieldRange_eq_map, AlgHom.fieldRange_toSubfield, AlgHom.fieldRange_toSubfield,
-      IsScalarTower.coe_toAlgHom, IsScalarTower.coe_toAlgHom]
-  rw [geometricDegree_def, ← relfinrank_top_right, ← relfinrank_map_map _ _ fF]
-  rw [IntermediateField.relfinrank, IntermediateField.relfinrank, hFK, hF'K, hE, htop]
-  exact (K.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint B C hCB hld).symm
+    simp [B, fF, fk, ← AlgHom.fieldRange_eq_map]
+  rw [geometricDegree_def, ← relfinrank_top_right, ← relfinrank_map_map _ _ fF,
+    relfinrank_eq_relfinrank_of_toSubfield_eq hE htop,
+    ← K.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint B C hCB hld]
+  exact relfinrank_eq_relfinrank_of_toSubfield_eq hFK.symm hF'K.symm
 
 variable [Field k] [Algebra k k'] [Algebra k F] [Algebra k F'] [IsScalarTower k k' F']
   [IsScalarTower k F F'] in

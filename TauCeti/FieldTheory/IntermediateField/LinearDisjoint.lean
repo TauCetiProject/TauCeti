@@ -24,15 +24,21 @@ independent over `A`.
 
 ## Main results
 
-* `IntermediateField.coe_sup_eq_span_of_isAlgebraic`: for `A` algebraic, `A ⊔ D` is the `A`-span
-  of `D`.
-* `IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgebraic`: linear independence
-  over `C ≤ B` persists over `A ⊔ C`.
+* `IntermediateField.coe_sup_eq_span_of_isAlgebraic_left`: for `A` algebraic, `A ⊔ D` is the
+  `A`-span of `D`.
+* `TauCeti.linearIndependent_of_linearIndependent_mul_of_mem_span`: if a family `γ` spans `S` over
+  `R` and the products `γ m * β i` are linearly independent over `R`, then `β` is linearly
+  independent over `S`.
+* `IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgebraic_left`: linear
+  independence over `C ≤ B` persists over `A ⊔ C`.
 * `IntermediateField.relrank_sup_sup_eq_relrank_of_linearDisjoint` and
   `IntermediateField.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint`:
   `[A ⊔ B : A ⊔ C] = [B : C]`. Apply them as
   `A.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint B C hCB h`, where `hCB : C ≤ B` and
   `h : A.LinearDisjoint B`; the algebraicity of `A` is supplied by an instance.
+* `IntermediateField.relrank_eq_relrank_of_toSubfield_eq` and
+  `IntermediateField.relfinrank_eq_relfinrank_of_toSubfield_eq`: relative degrees depend only on
+  the underlying subfields, so they can be compared across base fields.
 
 The declarations live in Mathlib's `IntermediateField` namespace so that this dot notation works.
 -/
@@ -70,7 +76,7 @@ theorem _root_.IntermediateField.relfinrank_sup_right_eq_finrank_of_linearDisjoi
 /-- **The compositum with an algebraic extension is a span.** If `A` is algebraic over `k`, the
 compositum `A ⊔ D` is the `A`-span of `D`: it is the ring `A[D]`, and `D` is closed under
 multiplication. -/
-theorem _root_.IntermediateField.coe_sup_eq_span_of_isAlgebraic (A D : IntermediateField k L)
+theorem _root_.IntermediateField.coe_sup_eq_span_of_isAlgebraic_left (A D : IntermediateField k L)
     [Algebra.IsAlgebraic k A] :
     ((A ⊔ D : IntermediateField k L) : Set L) = Submodule.span A (D : Set L) := by
   have hclosure : (Submonoid.closure (D : Set L) : Set L) ⊆ Submodule.span A (D : Set L) :=
@@ -82,10 +88,46 @@ theorem _root_.IntermediateField.coe_sup_eq_span_of_isAlgebraic (A D : Intermedi
     IntermediateField.adjoin_intermediateField_toSubalgebra_of_isAlgebraic_left,
     ← Subalgebra.coe_toSubmodule, Algebra.adjoin_eq_span_of_subset A hclosure]
 
+/-- A span over an intermediate field lies in the span over any larger intermediate field. -/
+theorem _root_.IntermediateField.span_subset_span_of_le {S S' : IntermediateField k L}
+    (h : S ≤ S') (t : Set L) : (Submodule.span S t : Set L) ⊆ Submodule.span S' t :=
+  letI : Algebra S S' := (IntermediateField.inclusion h).toAlgebra
+  haveI : IsScalarTower S S' L := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  Submodule.span_subset_span S S' t
+
+/-- **Linear independence over a field spanned by a family.** If every element of `S` is an
+`R`-linear combination of a family `γ` in `L`, and the products `γ m * β i` are linearly
+independent over `R`, then `β` is linearly independent over `S`. -/
+theorem linearIndependent_of_linearIndependent_mul_of_mem_span {R S : Type*} [CommRing R]
+    [Field S] [Algebra R L] [Algebra S L] {κ ι : Type*} {γ : κ → L} {β : ι → L}
+    (hγ : ∀ x : S, algebraMap S L x ∈ Submodule.span R (Set.range γ))
+    (h : LinearIndependent R fun p : ι × κ ↦ γ p.2 * β p.1) :
+    LinearIndependent S β := by
+  classical
+  rw [linearIndependent_iff']
+  intro s g hg i hi
+  choose c hc using fun j ↦ (Finsupp.mem_span_range_iff_exists_finsupp).mp (hγ (g j))
+  let T := s.biUnion fun j ↦ (c j).support
+  have hgT : ∀ j ∈ s, algebraMap S L (g j) = ∑ m ∈ T, c j m • γ m := fun j hj ↦ by
+    rw [← hc j, Finsupp.sum_of_support_subset _
+      (Finset.subset_biUnion_of_mem (fun j ↦ (c j).support) hj)]
+    intro m _
+    simp
+  have hzero : ∑ p ∈ s ×ˢ T, c p.1 p.2 • (γ p.2 * β p.1) = 0 := by
+    rw [Finset.sum_product, ← hg]
+    refine Finset.sum_congr rfl fun j hj ↦ ?_
+    rw [Algebra.smul_def, hgT j hj, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun m _ ↦ (smul_mul_assoc _ _ _).symm
+  have hc0 := (linearIndependent_iff'.mp h) (s ×ˢ T) (fun p ↦ c p.1 p.2) hzero
+  refine (algebraMap S L).injective ?_
+  rw [hgT i hi, map_zero]
+  exact Finset.sum_eq_zero fun m hm ↦ by
+    rw [hc0 (i, m) (Finset.mem_product.mpr ⟨hi, hm⟩), zero_smul]
+
 /-- **Linear disjointness survives adjoining part of the other side.** Let `A` be algebraic over
 `k` and linearly disjoint from `B`, and let `C ≤ B`. A family in `B` that is linearly
 independent over `C` stays linearly independent over the compositum `A ⊔ C`. -/
-theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgebraic
+theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgebraic_left
     {A B C : IntermediateField k L} [Algebra.IsAlgebraic k A] (h : A.LinearDisjoint B)
     (hCB : C ≤ B) {ι : Type*} {β : ι → L} (hβB : ∀ i, β i ∈ B) (hβ : LinearIndependent C β) :
     LinearIndependent (A ⊔ C : IntermediateField k L) β := by
@@ -102,39 +144,17 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgeb
     have hA := h.linearIndependent_right hkB
     exact (hA.comp (Equiv.prodComm _ _) (Equiv.injective _))
   -- every element of `A ⊔ C` is an `A`-combination of the `γ m`
-  have hspan : ∀ x ∈ (A ⊔ C : IntermediateField k L),
-      x ∈ Submodule.span A (Set.range γ') := by
-    intro x hx
-    have hC : (C : Set L) ⊆ Submodule.span A (Set.range γ') := by
-      intro c hc
-      have hck : c ∈ Submodule.span k (Set.range γ') := by
-        have hmem := γ.mem_span (⟨c, hc⟩ : C)
-        have := Submodule.mem_map_of_mem (f := C.val.toLinearMap) hmem
-        rwa [Submodule.map_span, ← Set.range_comp] at this
-      exact Submodule.span_le_restrictScalars k A _ hck
-    rw [← SetLike.mem_coe, IntermediateField.coe_sup_eq_span_of_isAlgebraic] at hx
-    exact Submodule.span_le.mpr hC hx
-  rw [linearIndependent_iff']
-  intro s g hg i hi
-  choose c hc using fun j ↦ (Finsupp.mem_span_range_iff_exists_finsupp).mp (hspan _ (g j).2)
-  let T := s.biUnion fun j ↦ (c j).support
-  have hgT : ∀ j ∈ s, ((g j : L)) = ∑ m ∈ T, ((c j m : A) : L) * γ' m := fun j hj ↦ by
-    rw [← hc j, Finsupp.sum_of_support_subset _
-      (Finset.subset_biUnion_of_mem (fun j ↦ (c j).support) hj)]
-    · simp only [Algebra.smul_def, IntermediateField.algebraMap_apply, T]
-    · intro m _
-      simp
-  have hzero : ∑ p ∈ s ×ˢ T, c p.1 p.2 • (γ' p.2 * β p.1) = 0 := by
-    rw [Finset.sum_product, ← hg]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [Algebra.smul_def, IntermediateField.algebraMap_apply, hgT j hj, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun m _ ↦ ?_
-    rw [Algebra.smul_def, IntermediateField.algebraMap_apply, mul_assoc]
-  have hc0 := (linearIndependent_iff'.mp hprod) (s ×ˢ T) (fun p ↦ c p.1 p.2) hzero
-  refine Subtype.ext ?_
-  rw [hgT i hi, ZeroMemClass.coe_zero]
-  refine Finset.sum_eq_zero fun m hm ↦ ?_
-  rw [hc0 (i, m) (Finset.mem_product.mpr ⟨hi, hm⟩), ZeroMemClass.coe_zero, zero_mul]
+  refine linearIndependent_of_linearIndependent_mul_of_mem_span (fun x ↦ ?_) hprod
+  have hC : (C : Set L) ⊆ Submodule.span A (Set.range γ') := by
+    intro c hc
+    have hck : c ∈ Submodule.span k (Set.range γ') := by
+      have hmem := γ.mem_span (⟨c, hc⟩ : C)
+      have := Submodule.mem_map_of_mem (f := C.val.toLinearMap) hmem
+      rwa [Submodule.map_span, ← Set.range_comp] at this
+    exact Submodule.span_le_restrictScalars k A _ hck
+  have hx : (x : L) ∈ ((A ⊔ C : IntermediateField k L) : Set L) := x.2
+  rw [IntermediateField.coe_sup_eq_span_of_isAlgebraic_left] at hx
+  exact Submodule.span_le.mpr hC hx
 
 /-- **Base change by an algebraic linearly disjoint extension preserves relative degrees.** If `A`
 is algebraic over `k` and linearly disjoint from `B`, then adjoining `A` does not change the
@@ -150,18 +170,7 @@ theorem _root_.IntermediateField.relrank_sup_sup_eq_relrank_of_linearDisjoint
   have hβ : LinearIndependent C β :=
     β₀.linearIndependent.map' (IntermediateField.extendScalars hCB).val.toLinearMap
       (LinearMap.ker_eq_bot.2 Subtype.val_injective)
-  have hβ' := h.linearIndependent_sup_of_isAlgebraic hCB hβB hβ
-  -- the span of `β` over `A ⊔ C` absorbs spans over smaller fields of sets it contains
-  have hmono : ∀ S : IntermediateField k L, S ≤ A ⊔ C → ∀ t : Set L,
-      t ⊆ Submodule.span (A ⊔ C : IntermediateField k L) (Set.range β) →
-      ∀ x ∈ Submodule.span S t,
-        x ∈ Submodule.span (A ⊔ C : IntermediateField k L) (Set.range β) := by
-    intro S hS t ht x hx
-    induction hx using Submodule.span_induction with
-    | mem x hx => exact ht hx
-    | zero => exact zero_mem _
-    | add x y _ _ hx hy => exact add_mem hx hy
-    | smul a x _ hx => exact Submodule.smul_mem _ (⟨a, hS a.2⟩ : (A ⊔ C : IntermediateField k L)) hx
+  have hβ' := h.linearIndependent_sup_of_isAlgebraic_left hCB hβB hβ
   -- `A ⊔ B` is spanned over `A ⊔ C` by the basis `β` of `B / C`
   have hspan : Subalgebra.toSubmodule (IntermediateField.extendScalars hle).toSubalgebra =
       Submodule.span (A ⊔ C : IntermediateField k L) (Set.range β) := by
@@ -172,11 +181,11 @@ theorem _root_.IntermediateField.relrank_sup_sup_eq_relrank_of_linearDisjoint
         have := Submodule.mem_map_of_mem
           (f := (IntermediateField.extendScalars hCB).val.toLinearMap) hmem
         rw [Submodule.map_span, ← Set.range_comp] at this
-        exact hmono C le_sup_right _ Submodule.subset_span b this
+        exact IntermediateField.span_subset_span_of_le le_sup_right _ this
       have hAB : x ∈ Submodule.span A (B : Set L) := by
-        rw [← SetLike.mem_coe, ← IntermediateField.coe_sup_eq_span_of_isAlgebraic]
+        rw [← SetLike.mem_coe, ← IntermediateField.coe_sup_eq_span_of_isAlgebraic_left]
         exact hx
-      exact hmono A le_sup_left _ hB x hAB
+      exact Submodule.span_le.mpr hB (IntermediateField.span_subset_span_of_le le_sup_left _ hAB)
     · rintro _ ⟨i, rfl⟩
       exact le_sup_right (a := A) (hβB i)
   rw [IntermediateField.relrank_eq_rank_of_le hle, IntermediateField.relrank_eq_rank_of_le hCB,
@@ -191,5 +200,21 @@ theorem _root_.IntermediateField.relfinrank_sup_sup_eq_relfinrank_of_linearDisjo
     IntermediateField.relfinrank (A ⊔ C) (A ⊔ B) =
       IntermediateField.relfinrank C B :=
   congrArg Cardinal.toNat (A.relrank_sup_sup_eq_relrank_of_linearDisjoint B C hCB h)
+
+/-- The relative degree of intermediate fields depends only on their underlying subfields, so it
+can be compared across different base fields. -/
+theorem _root_.IntermediateField.relrank_eq_relrank_of_toSubfield_eq {k' : Type*} [Field k']
+    [Algebra k' L] {A B : IntermediateField k L} {A' B' : IntermediateField k' L}
+    (hA : A.toSubfield = A'.toSubfield) (hB : B.toSubfield = B'.toSubfield) :
+    IntermediateField.relrank A B = IntermediateField.relrank A' B' :=
+  congrArg₂ Subfield.relrank hA hB
+
+/-- The relative degree of intermediate fields depends only on their underlying subfields, so it
+can be compared across different base fields. -/
+theorem _root_.IntermediateField.relfinrank_eq_relfinrank_of_toSubfield_eq {k' : Type*}
+    [Field k'] [Algebra k' L] {A B : IntermediateField k L} {A' B' : IntermediateField k' L}
+    (hA : A.toSubfield = A'.toSubfield) (hB : B.toSubfield = B'.toSubfield) :
+    IntermediateField.relfinrank A B = IntermediateField.relfinrank A' B' :=
+  congrArg Cardinal.toNat (IntermediateField.relrank_eq_relrank_of_toSubfield_eq hA hB)
 
 end TauCeti
