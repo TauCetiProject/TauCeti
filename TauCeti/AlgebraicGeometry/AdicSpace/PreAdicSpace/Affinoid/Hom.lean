@@ -22,10 +22,6 @@ This is the global-sections direction of the correspondence between affinoid mor
 Huber-pair morphisms. It supplies the ring map to which a quotient factorisation can be applied.
 No sheaf condition is required for this direction of the correspondence.
 
-The construction uses Mathlib's `PresheafedSpace.Γ` and `Iso.homCongr`, the topological
-isomorphism `presentationLimitTopIso`, and the characterisation of open integrally closed
-subrings by valuations in `mem_of_forall_vle_one`.
-
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §8.1 and §8.3.
@@ -90,6 +86,9 @@ variable {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
   (P' : PairOfDefinition B) (Bplus : Subring B)
   (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (hP' : P'.ringOfDefinition ≤ Bplus)
 
+-- The construction uses Mathlib's `PresheafedSpace.Γ` and `Iso.homCongr` with the topological
+-- isomorphism `presentationLimitTopIso`; preservation of plus rings below uses the
+-- characterisation of open integrally closed subrings by valuations in `mem_of_forall_vle_one`.
 private noncomputable def globalSectionsPullback
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP) :

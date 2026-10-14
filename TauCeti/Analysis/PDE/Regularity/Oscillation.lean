@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.LevelSetDecay
-public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness
+public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Base
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
