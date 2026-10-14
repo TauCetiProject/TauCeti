@@ -29,8 +29,8 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.fderiv_flowOfLipschitz_eq_id_add_integral`: the integral form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz`: the differential form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz_apply`: the differential form applied to a vector.
-* `TauCeti.fderiv_flow_add`, `TauCeti.fderiv_flow_neg_comp`, `TauCeti.fderiv_flow_comp_neg`,
-  `TauCeti.fderivFlowUnit`, `TauCeti.ringInverse_fderiv_flow`: for a flow whose time maps are
+* `Flow.fderiv_flow_add`, `Flow.fderiv_flow_neg_comp`, `Flow.fderiv_flow_comp_neg`,
+  `Flow.fderivFlowUnit`, `Flow.ringInverse_fderiv_flow`: for a flow whose time maps are
   differentiable at the relevant points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
   invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
 -/
@@ -132,11 +132,13 @@ theorem hasDerivAt_fderiv_flowOfLipschitz_apply (x w : E) (t : ℝ) :
 
 end Smooth
 
-section Composition
 
-variable {ϕ : Flow ℝ E} {s t : ℝ} {x : E}
+end TauCeti
 
-omit [CompleteSpace E] in
+namespace Flow
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ϕ : Flow ℝ E} {s t : ℝ} {x : E}
+
 /-- **The chain rule for the group law of a flow**: `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`. -/
 theorem fderiv_flow_add (hs : DifferentiableAt ℝ (ϕ s) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
@@ -145,7 +147,6 @@ theorem fderiv_flow_add (hs : DifferentiableAt ℝ (ϕ s) (ϕ t x))
   rw [e]
   exact fderiv_comp x hs ht
 
-omit [CompleteSpace E] in
 /-- The derivative of the time-`(-t)` map at `ϕ t x` is a left inverse of `Dϕ_t(x)`. -/
 @[simp]
 theorem fderiv_flow_neg_comp (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
@@ -153,7 +154,6 @@ theorem fderiv_flow_neg_comp (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (fderiv ℝ (ϕ (-t)) (ϕ t x)).comp (fderiv ℝ (ϕ t) x) = ContinuousLinearMap.id ℝ E := by
   rw [← fderiv_flow_add hs ht, neg_add_cancel, Flow.map_zero, fderiv_id]
 
-omit [CompleteSpace E] in
 /-- The derivative of the time-`(-t)` map at `ϕ t x` is a right inverse of `Dϕ_t(x)`. -/
 @[simp]
 theorem fderiv_flow_comp_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
@@ -164,14 +164,12 @@ theorem fderiv_flow_comp_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
   rw [add_neg_cancel, Flow.map_zero, fderiv_id, hx] at this
   exact this.symm
 
-omit [CompleteSpace E] in
 @[simp]
 theorem fderiv_flow_neg_apply_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) (w : E) :
     fderiv ℝ (ϕ (-t)) (ϕ t x) (fderiv ℝ (ϕ t) x w) = w :=
   congrArg (· w) (fderiv_flow_neg_comp hs ht)
 
-omit [CompleteSpace E] in
 @[simp]
 theorem fderiv_flow_apply_fderiv_flow_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) (w : E) :
@@ -185,21 +183,18 @@ noncomputable def fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) : (E →L[ℝ] E)ˣ :=
   ⟨_, _, fderiv_flow_comp_neg hs ht, fderiv_flow_neg_comp hs ht⟩
 
-omit [CompleteSpace E] in
 @[simp]
 theorem coe_fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     (fderivFlowUnit hs ht : E →L[ℝ] E) = fderiv ℝ (ϕ t) x :=
   (rfl)
 
-omit [CompleteSpace E] in
 @[simp]
 theorem coe_inv_fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     ((fderivFlowUnit hs ht)⁻¹ : (E →L[ℝ] E)ˣ) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
   (rfl)
 
-omit [CompleteSpace E] in
 /-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. -/
 @[simp]
 theorem ringInverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
@@ -207,6 +202,4 @@ theorem ringInverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
   Ring.inverse_unit (fderivFlowUnit hs ht)
 
-end Composition
-
-end TauCeti
+end Flow
