@@ -124,8 +124,8 @@ private theorem isZero_succ_of_isPGroup (p : ℕ) [Fact p.Prime] {q : ℕ}
       groupCohomology.mapIso (T.equivMapOfInjective S.subtype S.subtype_injective)
         (LinearEquiv.refl k _) (fun _ => rfl) (m + 1)
   -- Inflation from `S ⧸ T` is an isomorphism in every positive degree.
-  have e (m : ℕ) := @asIso _ _ _ _ (infRes (res S.subtype A) T m).f
-    (isIso_infRes_f (res S.subtype A) m fun i _ => hTzero i)
+  have e (m : ℕ) := @asIso _ _ _ _ (HInfRes (res S.subtype A) T (m + 1)).f
+    (isIso_HInfRes_f (res S.subtype A) m fun i _ => hTzero i)
   have : IsCyclic (S ⧸ T) := isCyclic_of_prime_card (p := p) (by rw [← hTindex, Subgroup.index])
   exact (e n).isZero_iff.1 <| isZero_succ_of_isCyclic_of_isZero _
     ((e q).isZero_iff.2 (h₁ S hS)) ((e (q + 1)).isZero_iff.2 (h₂ S hS)) n

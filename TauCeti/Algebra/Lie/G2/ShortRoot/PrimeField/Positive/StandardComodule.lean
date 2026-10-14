@@ -85,6 +85,11 @@ def standardComodule : Comodule k
     (CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra) (Fin 7 → k) :=
   GeneralLinear.corestrictStandardComodule k 7 (standardCoordinateMap k).hom
 
+/-- The positive standard comodule is the corestriction along its standard coordinate map. -/
+theorem standardComodule_def :
+    standardComodule k =
+      GeneralLinear.corestrictStandardComodule k 7 (standardCoordinateMap k).hom := (rfl)
+
 attribute [local instance] standardComodule
 
 /-- On the weight torus, the standard representation is the direct sum of its seven weight lines. -/

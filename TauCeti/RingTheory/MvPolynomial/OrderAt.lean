@@ -58,6 +58,8 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
 * `MvPolynomial.orderAt_taylor`, `MvPolynomial.orderAt_map`: the order is unchanged by Taylor
   shifts, after translating the point, and by injective coefficient maps.
+* `Polynomial.orderAt_comp_X_add_C`: translating the distinguished variable of a polynomial
+  family translates its ambient order.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
@@ -385,6 +387,28 @@ theorem orderAt_map {S : Type*} [CommSemiring S] {f : R →+* S} (hf : Function.
     (map f p).orderAt (fun i ↦ f (a i)) = p.orderAt a := by
   refine eq_of_forall_le_iff fun n ↦ ?_
   simp only [le_orderAt_iff, ← map_taylor, coeff_map, map_eq_zero_iff f hf]
+
+/-- Translating the distinguished variable of a polynomial family by `r` translates its ambient
+order: with the distinguished variable as the coordinate `0`, the order of `p(X + r)` at `(t, a)`
+is the order of `p` at `(t + r, a)`. -/
+@[simp]
+theorem _root_.Polynomial.orderAt_comp_X_add_C {n : ℕ} (p : Polynomial (MvPolynomial (Fin n) R))
+    (r t : R) (a : Fin n → R) :
+    ((finSuccEquiv R n).symm (p.comp (Polynomial.X + Polynomial.C (C r)))).orderAt
+        (Fin.cons t a) =
+      ((finSuccEquiv R n).symm p).orderAt (Fin.cons (t + r) a) := by
+  have hid : (taylor (0 : Fin n → R) : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R) =
+      RingHom.id _ :=
+    RingHom.ext taylor_zero
+  have hshift : (finSuccEquiv R n).symm (p.comp (Polynomial.X + Polynomial.C (C r))) =
+      taylor (Fin.cons r 0) ((finSuccEquiv R n).symm p) := by
+    apply (finSuccEquiv R n).injective
+    rw [AlgEquiv.apply_symm_apply, finSuccEquiv_taylor, AlgEquiv.apply_symm_apply, Fin.cons_zero,
+      Fin.tail_cons, hid, Polynomial.map_id, Polynomial.taylor_apply]
+  rw [hshift, orderAt_taylor]
+  congr 1
+  ext i
+  cases i using Fin.cases <;> simp
 
 end CommSemiring
 

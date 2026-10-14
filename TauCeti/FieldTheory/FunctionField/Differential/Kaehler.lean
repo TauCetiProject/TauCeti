@@ -52,6 +52,8 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
   an exact characteristic-zero function field.
 * `Derivation.apply_eq_derivativeOfSeparating_smul`: the chain rule `D y = (dy/dx) • D x` for
   every derivation `D` of `F` over `k`.
+* `TauCeti.derivativeOfSeparating_algebraMap`: `dy/dx` is stable under extension of scalars
+  `F / k → F' / k'`.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a
   fixed parameter over a perfect field.
 * `TauCeti.nontrivial_kaehlerDifferential`, `TauCeti.finrank_kaehlerDifferential_pos`: an
@@ -208,6 +210,29 @@ theorem derivativeOfSeparating_ne_zero {y : F} (hy : Transcendental k y)
   exact D_ne_zero_of_separating hy hD.symm
 
 end Separating
+
+section ExtendScalars
+
+variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F']
+variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+/-- **Derivatives are stable under extension of scalars**: if `x` is separating for `F / k` and its
+image is separating for `F' / k'`, then differentiating with respect to `x` commutes with
+`F → F'`: `dy/dx` computed in `F'` is the image of `dy/dx` computed in `F`. -/
+theorem derivativeOfSeparating_algebraMap {x : F} (hx : Transcendental k x)
+    [Algebra.IsSeparable k⟮x⟯ F] (hx' : Transcendental k' (algebraMap F F' x))
+    [Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F'] (y : F) :
+    derivativeOfSeparating hx' (algebraMap F F' y) =
+      algebraMap F F' (derivativeOfSeparating hx y) := by
+  -- `y ↦ dy/dx` in `F'` restricts to a `k`-derivation `F → F'`, so the chain rule for `x` applies
+  -- to it.
+  have h := (((derivativeOfSeparating hx').restrictScalars k).compAlgebraMap F)
+    |>.apply_eq_derivativeOfSeparating_smul hx y
+  simp only [Derivation.compAlgebraMap_apply, Derivation.restrictScalars_apply,
+    derivativeOfSeparating_self] at h
+  rw [h, Algebra.smul_def, mul_one]
+
+end ExtendScalars
 
 /-- Differentiation with respect to a separating element kills exactly the constants of
 an exact characteristic-zero function field. -/

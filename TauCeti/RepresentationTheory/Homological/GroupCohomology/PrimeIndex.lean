@@ -89,7 +89,7 @@ private theorem isZero_groupCohomology_one_res_of_isPGroup [Finite G] (A : Rep k
     have := hn ▸ N.card_mul_index
     nlinarith
   -- `H¹(H ⧸ N, A^N) ⟶ H¹(H, A) ⟶ H¹(N, A)` is exact with vanishing outer terms
-  have hS := infRes_exact (res f A) (S := N) 0 fun i hi => absurd hi (Nat.not_lt_zero i)
+  have hS := H1InfRes_exact (res f A) N
   exact hS.isZero_X₂ ((h1 p H hH f hf N hp).eq_of_src _ _)
     ((ih _ hlt N (hH.to_subgroup N) (f.comp N.subtype) (hf.comp Subtype.val_injective)
       rfl).eq_of_tgt _ _)

@@ -79,8 +79,8 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
   (`hasBasis_nhds_zero_weightedTopology`, `isTopologicalRing_weightedTopology`,
   `nonarchimedeanRing_weightedTopology`, `continuous_weightedC`).
   `TauCeti.Huber.weightedC_mem_weightedNhd` records that a constant series meets the `U` bound
-  exactly when its value does, and `TauCeti.Huber.isOpen_weightedNhd` that `U⟨X⟩` is open whenever
-  `U` is.
+  exactly when its value does, `weightedC_mul_weightedX_pow_mem_weightedNhd` bounds monomials,
+  and `TauCeti.Huber.isOpen_weightedNhd` that `U⟨X⟩` is open whenever `U` is.
 * `TauCeti.Huber.weightedRestrictedSubring_one_weight`: for the trivial weight this is the ordinary
   ring of restricted power series (Wedhorn Example 5.54), with
   `TauCeti.Huber.subringCongr_one_weight_weightedX` and
@@ -867,6 +867,16 @@ theorem weightedC_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
       exact ha
     · exact (weightMul T ν U).zero_mem
 
+/-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` when `c` meets the bound `T(j eᵢ) · U` of its degree. -/
+theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ}
+    (hc : c ∈ weightMul T (Finsupp.single i j) U) :
+    weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U := fun ν ↦ by
+  classical
+  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, coe_weightedC, coe_weightedX,
+    MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow]
+  split_ifs with h <;> simp [h, hc]
+
 /-- `R⟨X⟩_T` for a subring `R` of `A`: the series all of whose coefficients meet the `R` bound,
 `aν ∈ Tν · R` for every `ν`. Its carrier is the subgroup `TauCeti.Huber.weightedNhd` of `R`; that
 it is a subring is coefficientwise multiplicativity of `R`.
@@ -1339,9 +1349,8 @@ instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
   isUniformAddGroup_of_addCommGroup
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
-    ContinuousConstSMul A (weightedRestrictedSubring T hT) :=
-  ⟨fun a ↦ (continuous_const_mul (algebraMap A (weightedRestrictedSubring T hT) a)).congr
-    fun f ↦ (Algebra.smul_def a f).symm⟩
+    ContinuousSMul A (weightedRestrictedSubring T hT) :=
+  continuousSMul_of_algebraMap _ _ (continuous_weightedC hT)
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
     UniformContinuousConstSMul A (weightedRestrictedSubring T hT) :=

@@ -75,8 +75,6 @@ the scalars and the vectors, the disjointness of the two pins that step down to 
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 2, "Vectors from the Clifford algebra".
 * N. Bourbaki, *Algebra I, Chapters 1-3* (1989), §9.
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
 -/

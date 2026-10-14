@@ -426,16 +426,12 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
       ← IsScalarTower.algebraMap_apply k F F']
   set F₁' := constantCompositum F₁ k' F'
   set F₂' := constantCompositum F₂ k' F'
-  let : Algebra k' F₁' := ((algebraMap k' F').codRestrict F₁'
-    (algebraMap_mem_constantCompositum F₁ k' F')).toAlgebra
-  let : Algebra k' F₂' := ((algebraMap k' F').codRestrict F₂'
-    (algebraMap_mem_constantCompositum F₂ k' F')).toAlgebra
-  have : IsScalarTower k' F₁' F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k' F₂' F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k' F₁' := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
-  have : IsScalarTower k k' F₂' := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
+  let : Algebra k' F₁' := constantCompositumAlgebra F₁ k' F'
+  let : Algebra k' F₂' := constantCompositumAlgebra F₂ k' F'
+  have : IsScalarTower k' F₁' F' := isScalarTower_constantCompositum F₁ k' F'
+  have : IsScalarTower k' F₂' F' := isScalarTower_constantCompositum F₂ k' F'
+  have : IsScalarTower k k' F₁' := isScalarTower_base_constantCompositum k F₁ k' F'
+  have : IsScalarTower k k' F₂' := isScalarTower_base_constantCompositum k F₂ k' F'
   -- The composita `F₁ · k'` and `F₂ · k'` inside `F'` have the genera and degrees of `F₁`, `F₂`.
   obtain ⟨-, hF₁', _, _, hn₁, hg₁⟩ := constantCompositum_subfield (F₁ := F₁) hF hex h
   obtain ⟨hcc₂, hF₂', _, _, hn₂, hg₂⟩ := constantCompositum_subfield (F₁ := F₂) hF hex h
@@ -552,7 +548,7 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
   set f : k[X] := (∏ R ∈ hSR.toFinset, minpoly k (α R)) * ∏ Q ∈ TQ, minpoly k (β Q)
   have hf0 : f ≠ 0 := mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun R _ ↦ minpoly.ne_zero (hαint R))
     (Finset.prod_ne_zero_iff.mpr fun Q _ ↦ minpoly.ne_zero (hβint Q))
-  obtain ⟨F', k', _, _, hsplit, h⟩ :=
+  obtain ⟨F', k', _, _, hsplit, -, h⟩ :=
     exists_finiteDimensional_normal_splits_constantCompositum_eq_top F f
   -- The residue fields of the chosen places embed into `k'`, since `f` splits in `k'`.
   exact genus_le_of_constantCompositum_eq_top hF hex h hy hmin hsep c z hyz hc hz'
