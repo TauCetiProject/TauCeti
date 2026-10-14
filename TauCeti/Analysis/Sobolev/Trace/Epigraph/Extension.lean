@@ -39,14 +39,14 @@ open scoped ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {φ : C(E, ℝ)} {L : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-
 /-- The derivative bound supplies the Lipschitz constant used by graph flattening. -/
 private theorem lipschitzWith_of_bound (hφ : ContDiff ℝ 1 φ)
     (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     LipschitzWith ⟨L, nonneg_of_forall_norm_fderiv_le hL⟩ φ :=
   lipschitzWith_of_nnnorm_fderiv_le (hφ.differentiable one_ne_zero)
     fun y ↦ by exact_mod_cast hL y
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Unflatten a whole-space Sobolev function. -/
 private def unflattenWholeL (hφ : ContDiff ℝ 1 φ)
@@ -55,8 +55,8 @@ private def unflattenWholeL (hφ : ContDiff ℝ 1 φ)
       W1p volume (⊤ : Opens (WithLp 2 (ℝ × E))) p :=
   W1p.compMeasurePreservingL (M := 1 + L)
     (measurePreserving_graphFlattening φ φ.continuous) (by simp)
-    (lipschitzWith_graphFlattening (lipschitzWith_of_bound hφ hL)).locallyLipschitz
-      .locallyLipschitzOn
+    (lipschitzWith_graphFlattening
+      (lipschitzWith_of_bound hφ hL)).locallyLipschitz.locallyLipschitzOn
     fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x
 
 private theorem norm_unflattenWholeL_le (hφ : ContDiff ℝ 1 φ)
@@ -78,8 +78,8 @@ private theorem value_unflattenWholeL_ae (hφ : ContDiff ℝ 1 φ)
   simpa only [Opens.coe_top, Measure.restrict_univ] using
     W1p.value_compMeasurePreservingL_ae (p := p) (M := 1 + L) (U := ⊤) (V := ⊤)
       (measurePreserving_graphFlattening φ φ.continuous) (by simp)
-      (lipschitzWith_graphFlattening (lipschitzWith_of_bound hφ hL)).locallyLipschitz
-      .locallyLipschitzOn
+      (lipschitzWith_graphFlattening
+      (lipschitzWith_of_bound hφ hL)).locallyLipschitz.locallyLipschitzOn
       (fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x) u
 
 /-- Unflattening transforms the weak gradient by the adjoint derivative of the graph chart. -/
@@ -93,8 +93,8 @@ private theorem gradient_unflattenWholeL_ae (hφ : ContDiff ℝ 1 φ)
   simpa only [Opens.coe_top, Measure.restrict_univ] using
     W1p.gradient_compMeasurePreservingL_ae (p := p) (M := 1 + L) (U := ⊤) (V := ⊤)
       (measurePreserving_graphFlattening φ φ.continuous) (by simp)
-      (lipschitzWith_graphFlattening (lipschitzWith_of_bound hφ hL)).locallyLipschitz
-      .locallyLipschitzOn
+      (lipschitzWith_graphFlattening
+      (lipschitzWith_of_bound hφ hL)).locallyLipschitz.locallyLipschitzOn
       (fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x) u
 
 /-- Extension from the region above a `C¹` graph with bounded derivative to the whole
