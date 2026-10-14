@@ -39,7 +39,7 @@ def plain_https_endpoint(value: str) -> str:
 
 def exact_map_url(endpoint: str, toolchain: str, revision: str,
                   repository: str = DEFAULT_REPOSITORY) -> str:
-    """Return the public revision-map URL written by ``lake cache put-staged``."""
+    """Return Lake's revision-map URL for the given endpoint, toolchain and revision."""
     endpoint = plain_https_endpoint(endpoint)
     if not REVISION.fullmatch(revision):
         raise ValueError("the revision is not a lowercase 40-character Git object ID")
