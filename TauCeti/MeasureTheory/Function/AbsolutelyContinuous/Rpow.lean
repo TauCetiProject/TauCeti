@@ -22,7 +22,7 @@ public section
 open MeasureTheory Set
 
 /-- A positive real power is absolutely continuous on every finite interval. -/
-theorem Real.absolutelyContinuousOnInterval_rpow {p : ℝ} (hp : 0 < p) (a b : ℝ) :
+theorem Real.absolutelyContinuousOnInterval_rpow_const_const {p : ℝ} (hp : 0 < p) (a b : ℝ) :
     AbsolutelyContinuousOnInterval (fun x : ℝ ↦ x ^ p) a b := by
   let m : ℝ → ℝ := fun t ↦ p * t ^ (p - 1)
   have hexp : (-1 : ℝ) < p - 1 := by linarith
@@ -41,5 +41,5 @@ theorem Real.absolutelyContinuousOnInterval_rpow {p : ℝ} (hp : 0 < p) (a b : �
 /-- Square root is absolutely continuous on every finite interval. -/
 theorem Real.absolutelyContinuousOnInterval_sqrt (a b : ℝ) :
     AbsolutelyContinuousOnInterval Real.sqrt a b :=
-  (Real.absolutelyContinuousOnInterval_rpow (p := 1 / 2) (by norm_num) a b).congr
+  (Real.absolutelyContinuousOnInterval_rpow_const_const (p := 1 / 2) (by norm_num) a b).congr
     (fun t _ ↦ (Real.sqrt_eq_rpow t).symm)
