@@ -55,17 +55,22 @@ def circleLoop : C(Fin 1 → I, Sphere1) where
     · simp only [Fin.mk_one]
       fun_prop
 
+/-- The first coordinate of the standard loop at `t` is `cos 2πt`. -/
+@[simp]
 theorem circleLoop_apply_zero (t : Fin 1 → I) :
     (circleLoop t : EuclideanSpace ℝ (Fin 2)) 0 = cos (2 * π * t 0) := by
   rw [circleLoop]
   rfl
 
+/-- The second coordinate of the standard loop at `t` is `sin 2πt`. -/
+@[simp]
 theorem circleLoop_apply_one (t : Fin 1 → I) :
     (circleLoop t : EuclideanSpace ℝ (Fin 2)) 1 = sin (2 * π * t 0) := by
   rw [circleLoop]
   rfl
 
-private theorem exists_int_of_circleLoop_eq {a b : ℝ} (hc : cos (2 * π * a) = cos (2 * π * b))
+/-- If `cos` and `sin` agree at `2πa` and `2πb`, then `a` and `b` differ by an integer. -/
+theorem exists_int_eq_add_of_cos_sin_eq {a b : ℝ} (hc : cos (2 * π * a) = cos (2 * π * b))
     (hs : sin (2 * π * a) = sin (2 * π * b)) : ∃ n : ℤ, a = b + n := by
   have h : Complex.exp ((2 * π * a : ℝ) * Complex.I) =
       Complex.exp ((2 * π * b : ℝ) * Complex.I) := by
@@ -82,12 +87,14 @@ private theorem exists_int_of_circleLoop_eq {a b : ℝ} (hc : cos (2 * π * a) =
   have hpi : (2 * π) ≠ 0 := by positivity
   exact mul_left_cancel₀ hpi (by linarith)
 
-private theorem mem_boundary_fin_one_iff (t : Fin 1 → I) :
+/-- A point of the interval `I¹` is on its boundary exactly when its coordinate is `0` or `1`. -/
+theorem mem_boundary_fin_one_iff (t : Fin 1 → I) :
     t ∈ Cube.boundary (Fin 1) ↔ (t 0 : ℝ) = 0 ∨ (t 0 : ℝ) = 1 := by
   simp only [Cube.boundary, Set.mem_ofPred_eq, Fin.exists_fin_one, Subtype.ext_iff,
     Set.Icc.coe_zero, Set.Icc.coe_one]
 
 /-- The standard loop sends a point of the interval to `(1, 0)` exactly when it is an end point. -/
+@[simp]
 theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
     circleLoop t = Sphere1.east ↔ t ∈ Cube.boundary (Fin 1) := by
   rw [mem_boundary_fin_one_iff]
@@ -123,7 +130,7 @@ theorem eq_or_of_circleLoop_eq {t t' : Fin 1 → I} (h : circleLoop t = circleLo
   have hc := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
   have hs := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 1) h
   simp only [circleLoop_apply_zero, circleLoop_apply_one] at hc hs
-  obtain ⟨n, hn⟩ := exists_int_of_circleLoop_eq hc hs
+  obtain ⟨n, hn⟩ := exists_int_eq_add_of_cos_sin_eq hc hs
   have ha := (t 0).2
   have hb := (t' 0).2
   have h1 : (-1 : ℝ) ≤ n := by linarith [ha.1, ha.2, hb.1, hb.2]
