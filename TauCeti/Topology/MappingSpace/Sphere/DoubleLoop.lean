@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Homeomorph
-public import TauCeti.Topology.MappingSpace.Based
-public import TauCeti.Topology.Sphere.StandardCircle
+public import TauCeti.Topology.MappingSpace.Sphere.Circle
 
 /-!
 # The double loop space inside the free loop space of the loop space
@@ -52,14 +50,6 @@ universe u
 
 variable (X : BasedTopologicalSpace.{u})
 
-/-- Based maps from the circle to a based space `Y` are the loops `Ω Y`, through the standard
-parametrization `circleLoop` of the circle. -/
-def basedMapCircleHomeomorph (Y : BasedTopologicalSpace.{u}) :
-    BasedMap Sphere1 Y.carrier Sphere1.east Y.basepoint ≃ₜ (Y.iteratedLoopSpace 1).carrier :=
-  (BasedMap.homeomorphGenLoop circleLoop Sphere1.east circleLoop_eq_east_iff
-    circleLoop_surjective fun _ _ h => eq_or_of_circleLoop_eq h).trans
-      (iteratedLoopSpaceHomeomorph 1 Y).symm
-
 -- `Ω^[2] X` is `Ω^[1] (Ω X)` by the definition of the iterate, so the inverse of
 -- `basedMapCircleHomeomorph (Ω X)` is defined on the double loop space.
 /-- **Double loops are based maps from the circle to the loop space**: `Ω²X ≃ₜ Map_*(S¹, ΩX)`,
@@ -69,14 +59,7 @@ def loopSpace2Homeomorph :
       BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint :=
   (basedMapCircleHomeomorph X.loopSpace).symm
 
-/-- A based map `φ` from the circle, read as a loop, is the generalized loop `t ↦ φ (circleLoop t)`:
-the value of the loop at `t` is the value of `φ` at the point `(cos 2πt, sin 2πt)`. -/
-theorem iteratedLoopSpaceHomeomorph_basedMapCircleHomeomorph (Y : BasedTopologicalSpace.{u})
-    (φ : BasedMap Sphere1 Y.carrier Sphere1.east Y.basepoint) (t : Fin 1 → unitInterval) :
-    iteratedLoopSpaceHomeomorph 1 Y (basedMapCircleHomeomorph Y φ) t = φ.1 (circleLoop t) := by
-  rw [basedMapCircleHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
-  exact BasedMap.homeomorphGenLoop_apply _ _ _ _ _ _ _
-
+/-- Reading the double loop `γ` as a based map from the circle and back gives `γ`. -/
 theorem basedMapCircleHomeomorph_loopSpace2Homeomorph (γ : (X.iteratedLoopSpace 2).carrier) :
     basedMapCircleHomeomorph X.loopSpace (loopSpace2Homeomorph X γ) = γ :=
   (basedMapCircleHomeomorph X.loopSpace).apply_symm_apply γ
@@ -86,6 +69,7 @@ def loopSpace2ToMapCircle : C((X.iteratedLoopSpace 2).carrier, C(Sphere1, X.loop
   ⟨fun γ => (loopSpace2Homeomorph X γ).1,
     continuous_subtype_val.comp (loopSpace2Homeomorph X).continuous⟩
 
+/-- The double loop as a map from the circle is the underlying map of the based map. -/
 theorem loopSpace2ToMapCircle_apply (γ : (X.iteratedLoopSpace 2).carrier) :
     loopSpace2ToMapCircle X γ = (loopSpace2Homeomorph X γ).1 := by
   rw [loopSpace2ToMapCircle]
@@ -103,6 +87,7 @@ def evalCircle :
     continuous_eval.comp (Continuous.prodMk
       ((loopSpace2ToMapCircle X).continuous.comp continuous_snd) continuous_fst)⟩
 
+/-- Evaluating a double loop on the circle is evaluating its map from the circle. -/
 @[simp]
 theorem evalCircle_apply (z : Sphere1) (γ : (X.iteratedLoopSpace 2).carrier) :
     evalCircle X (z, γ) = loopSpace2ToMapCircle X γ z := by
@@ -110,17 +95,6 @@ theorem evalCircle_apply (z : Sphere1) (γ : (X.iteratedLoopSpace 2).carrier) :
   rfl
 
 variable {X} {Y : BasedTopologicalSpace.{u}}
-
-/-- Naturality of `basedMapCircleHomeomorph` in the based space. -/
-theorem basedMapCircleHomeomorph_map (f : Hom X Y)
-    (φ : BasedMap Sphere1 X.carrier Sphere1.east X.basepoint) :
-    basedMapCircleHomeomorph Y (BasedMap.map f.toContinuousMap f.map_basepoint φ) =
-      f.iteratedLoopSpace 1 (basedMapCircleHomeomorph X φ) := by
-  apply (iteratedLoopSpaceHomeomorph 1 Y).injective
-  rw [iteratedLoopSpaceHomeomorph_map, basedMapCircleHomeomorph, basedMapCircleHomeomorph,
-    Homeomorph.trans_apply, Homeomorph.trans_apply, Homeomorph.apply_symm_apply,
-    Homeomorph.apply_symm_apply]
-  exact BasedMap.homeomorphGenLoop_map _ _ _ _ _ _ _ _
 
 /-- **Naturality of `Ω²X ≃ₜ Map_*(S¹, ΩX)`** in the based space `X`. -/
 theorem loopSpace2Homeomorph_map (f : Hom X Y) (γ : (X.iteratedLoopSpace 2).carrier) :
