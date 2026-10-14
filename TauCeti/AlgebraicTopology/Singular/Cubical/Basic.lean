@@ -132,6 +132,19 @@ theorem face_comp {n : ℕ} (i : Fin (n + 1)) (t : I) (f : C(X, Y)) (c : Singula
   ext x
   simp
 
+/-- A cube composed with the face inclusion `face i t id` of the standard cube is its face. -/
+theorem comp_face_id {n : ℕ} (c : SingularCube X (n + 1)) (i : Fin (n + 1)) (t : I) :
+    c.comp (face i t (ContinuousMap.id _)) = face i t c := by
+  rw [← face_comp, ContinuousMap.comp_id]
+
+/-- The cubical identity for the face inclusions of the standard cube. -/
+theorem face_id_comp_face_id {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) (a b : I) :
+    (face i a (ContinuousMap.id _)).comp (face j b (ContinuousMap.id _)) =
+      (face (i.succAbove j) b (ContinuousMap.id _)).comp
+        (face (j.predAbove i) a (ContinuousMap.id _)) := by
+  rw [comp_face_id, comp_face_id]
+  exact face_face i j a b (ContinuousMap.id _)
+
 /-- Faces commute with reindexing. -/
 theorem face_cast {n m : ℕ} (h : n = m) (i : Fin (n + 1)) (t : I)
     (c : SingularCube X (n + 1)) :
