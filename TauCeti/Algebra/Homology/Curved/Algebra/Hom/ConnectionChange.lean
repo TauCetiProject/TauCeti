@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Homology.Curved.Algebra.Hom.Basic
-public import TauCeti.Algebra.Homology.Curved.Algebra.ConnectionChange
+public import TauCeti.Algebra.Homology.Curved.Algebra.ConnectionChange.Basic
 
 /-!
 # Strict curved morphisms under simultaneous connection changes

@@ -129,11 +129,8 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 def pullbackExteriorPowerComparison (n : ℕ) :
     SheafOfModules.exteriorPower Y.sheaf n ⋙ pullback f ⟶
       pullback f ⋙ SheafOfModules.exteriorPower X.sheaf n :=
-  -- The site-level construction asks for the right adjoint by instance; for schemes it is
-  -- recorded on `Scheme.Modules.pushforward`.
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
-  TauCeti.SheafOfModules.pullbackExteriorPowerComparison f.toRingCatSheafHom n
+  TauCeti.SheafOfModules.pullbackExteriorPowerComparison
+    (pullbackPushforwardAdjunction f) n
 
 /-- The adjunction equation characterizing the pullback comparison for modules on schemes: its
 transpose is the exterior power of the unit `M ⟶ f_* f^* M` followed by the exterior-power
@@ -144,10 +141,8 @@ theorem unit_comp_pushforward_map_pullbackExteriorPowerComparison_app (n : ℕ) 
       (SheafOfModules.exteriorPower Y.sheaf n).map ((pullbackPushforwardAdjunction f).unit.app M) ≫
         (TauCeti.SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n).app
           ((pullback f).obj M) :=
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
-  TauCeti.SheafOfModules.unit_comp_pushforward_map_pullbackExteriorPowerComparison_app
-    f.toRingCatSheafHom n M
+  TauCeti.SheafOfModules.unit_comp_pushforward_pullbackExteriorPowerComparison
+    (pullbackPushforwardAdjunction f) n M
 
 /-- In degree one, the pullback comparison for modules on schemes is the identity of `f^* M`,
 read through the identifications `⋀¹ M ≅ M`. -/
@@ -155,17 +150,13 @@ theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso (M : Y.Modu
     (pullbackExteriorPowerComparison f 1).app M ≫
         (SheafOfModules.exteriorPowerOneIso X.sheaf).hom.app ((pullback f).obj M) =
       (pullback f).map ((SheafOfModules.exteriorPowerOneIso Y.sheaf).hom.app M) :=
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
   TauCeti.SheafOfModules.pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso
-    f.toRingCatSheafHom M
+    (pullbackPushforwardAdjunction f) M
 
 /-- The pullback comparison for modules on schemes is an isomorphism in degree one. -/
 instance isIso_pullbackExteriorPowerComparison_one :
     IsIso (pullbackExteriorPowerComparison f 1) :=
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
-  TauCeti.SheafOfModules.isIso_pullbackExteriorPowerComparison_one f.toRingCatSheafHom
+  TauCeti.SheafOfModules.isIso_pullbackExteriorPowerComparison_one (pullbackPushforwardAdjunction f)
 
 end
 
