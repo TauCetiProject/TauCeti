@@ -118,6 +118,18 @@ instance instContMDiffVectorBundleContinuousAlternatingMap
 
 end CoordinateChange
 
+/-- Coordinate changes of the alternating-map bundle are differentiable when the domain and
+codomain bundles have `C^1` coordinate changes. -/
+theorem mdifferentiableOn_continuousAlternatingMapCoordChange
+    [ContMDiffVectorBundle 1 F₁ E₁ IB] [ContMDiffVectorBundle 1 F₂ E₂ IB]
+    {e₁ e₁' : Trivialization F₁ (π F₁ E₁)} {e₂ e₂' : Trivialization F₂ (π F₂ E₂)}
+    [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₁']
+    [MemTrivializationAtlas e₂] [MemTrivializationAtlas e₂'] :
+    MDifferentiableOn IB 𝓘(𝕜, (F₁ [⋀^ι]→L[𝕜] F₂) →L[𝕜] F₁ [⋀^ι]→L[𝕜] F₂)
+      (continuousAlternatingMapCoordChange 𝕜 ι e₁ e₁' e₂ e₂')
+      (e₁.baseSet ∩ e₂.baseSet ∩ (e₁'.baseSet ∩ e₂'.baseSet)) :=
+  (contMDiffOn_continuousAlternatingMapCoordChange (n := 1)).mdifferentiableOn one_ne_zero
+
 section FiniteOrder
 
 variable [ENat.LEInfty n] [ContMDiffVectorBundle n F₁ E₁ IB]
@@ -163,6 +175,25 @@ theorem contMDiffAt_continuousAlternatingMap_bundle (f : M → A) :
           (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
             (f x).1 (f y).1 (f x).1 (f y).1 (f y).2) x :=
   contMDiffAt_totalSpace
+
+/-- Relative differentiability of a map into the alternating bundle is differentiability of
+its base map and preferred fibre coordinates. -/
+theorem mdifferentiableWithinAt_continuousAlternatingMap_bundle (f : M → A) :
+    MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) f s x ↔
+      MDifferentiableWithinAt IM IB (fun y ↦ (f y).1) s x ∧
+        MDifferentiableWithinAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)
+          (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
+            (f x).1 (f y).1 (f x).1 (f y).1 (f y).2) s x :=
+  mdifferentiableWithinAt_totalSpace IB ..
+
+/-- Pointwise differentiability in the alternating bundle can be checked in fibre coordinates. -/
+theorem mdifferentiableAt_continuousAlternatingMap_bundle (f : M → A) :
+    MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) f x ↔
+      MDifferentiableAt IM IB (fun y ↦ (f y).1) x ∧
+        MDifferentiableAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)
+          (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
+            (f x).1 (f y).1 (f x).1 (f y).1 (f y).2) x :=
+  mdifferentiableAt_totalSpace ..
 
 end Coordinates
 
