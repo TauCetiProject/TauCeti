@@ -50,6 +50,10 @@ then shows that every partner is of the kind above, so the two descriptions agre
   counted common-terminal-side sources and the counted mixed `right = left` overlaps sharing one
   side column whose turn row lies outside the rows from the pentagon's bottom to the rectangle's
   bottom.
+* `pentagonTerminalSelfPairSources_union_filter_hasMixedSideOverlap_eq_selfPairs`: the source and
+  mixed-partner pieces partition the terminal self-pairs.
+* `TauCeti.GridDiagram.sum_pentagonTerminalSelfPairs_eq_sum_sources_add_sum_mixed`: an additive
+  weight on the terminal self-pairs splits over those two pieces.
 
 ## References
 
@@ -173,11 +177,11 @@ private noncomputable def rightLeftSelfRecut (E : GridPentagonRectangleDecomposi
     (hturn : s ∉ Grid.cIco E.pentagon.bottom E.rectangle.bottom) :
     GridPentagonRectangleDecomposition a s x z where
   middle := (E.toRectangleDecomposition.recut hone hfirst hsecond).middle
-  pentagon := GridPentagonBetween.ofRightEq
+  first := GridPentagonBetween.ofRightEq
     (E.toRectangleDecomposition.recut hone hfirst hsecond).first
     (E.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn).1
     (E.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn).2.2
-  rectangle := (E.toRectangleDecomposition.recut hone hfirst hsecond).second
+  second := (E.toRectangleDecomposition.recut hone hfirst hsecond).second
 
 /-- Forgetting the turn row of the promoted recut recovers the generic recut. -/
 private theorem rightLeftSelfRecut_toRectangleDecomposition
@@ -190,7 +194,7 @@ private theorem rightLeftSelfRecut_toRectangleDecomposition
     (E.rightLeftSelfRecut hcommon hone hfirst hsecond hturn).toRectangleDecomposition =
       E.toRectangleDecomposition.recut hone hfirst hsecond := by
   apply GridRectangleDecomposition.ext <;>
-    simp [rightLeftSelfRecut,
+    simp [rightLeftSelfRecut, GridPentagonRectangleDecomposition.pentagon,
       (E.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn).1]
 
 /-- The promoted recut recuts the original domain. -/
@@ -327,5 +331,59 @@ theorem mem_pentagonTerminalSelfPairs_iff_sides
     · exact (G.mem_pentagonTerminalSelfPairs C E).2 (Or.inl
         ((G.mem_pentagonTerminalSelfPairSources C E).2 ⟨hE, hsource⟩))
     · exact G.mem_pentagonTerminalSelfPairs_of_right_eq_left C E hE hcommon hother hturn
+
+open scoped Classical in
+/-- The terminal self-pairs are their same-side source terms together with their mixed-side
+partners. -/
+theorem pentagonTerminalSelfPairSources_union_filter_hasMixedSideOverlap_eq_selfPairs :
+    G.pentagonTerminalSelfPairSources C x z ∪
+        (G.pentagonTerminalSelfPairs C x z).filter
+          (fun D => D.toRectangleDecomposition.HasMixedSideOverlap) =
+      G.pentagonTerminalSelfPairs C x z := by
+  ext D
+  simp only [Finset.mem_union, Finset.mem_filter]
+  constructor
+  · rintro (hsource | ⟨hpair, -⟩)
+    · exact (G.mem_pentagonTerminalSelfPairs C D).2 (Or.inl hsource)
+    · exact hpair
+  · intro hpair
+    obtain ⟨hcounted, hsource | ⟨hcommon, hother, -⟩⟩ :=
+      (G.mem_pentagonTerminalSelfPairs_iff_sides C D).1 hpair
+    · exact Or.inl ((G.mem_pentagonTerminalSelfPairSources C D).2 ⟨hcounted, hsource⟩)
+    · right
+      refine ⟨hpair, ?_⟩
+      rw [GridRectangleDecomposition.hasMixedSideOverlap_iff]
+      refine ⟨D.toRectangleDecomposition.hasOneCommonSide_of_left_eq_right
+        (by simpa using hcommon.symm) (by simpa using hother.symm), Or.inl ?_⟩
+      simpa using hcommon.symm
+
+open scoped Classical in
+private theorem disjoint_pentagonTerminalSelfPairSources_filter_hasMixedSideOverlap :
+    Disjoint (G.pentagonTerminalSelfPairSources C x z)
+      ((G.pentagonTerminalSelfPairs C x z).filter
+        (fun D => D.toRectangleDecomposition.HasMixedSideOverlap)) := by
+  refine Finset.disjoint_left.2 fun D hsource hmixed => ?_
+  obtain ⟨-, hcommon, hcol⟩ := (G.mem_pentagonTerminalSelfPairSources C D).1 hsource
+  have hone := D.toRectangleDecomposition.hasOneCommonSide_of_right_eq_right
+    (by simpa using hcommon.symm) (by simpa using (Grid.ne_left_of_mem_cIoo hcol).symm)
+  have hsame : D.toRectangleDecomposition.HasSameSideOverlap := by
+    rw [GridRectangleDecomposition.hasSameSideOverlap_iff]
+    exact ⟨hone, Or.inr (by simpa using hcommon.symm)⟩
+  exact D.toRectangleDecomposition.not_hasMixedSideOverlap_of_hasSameSideOverlap hsame
+    (Finset.mem_filter.1 hmixed).2
+
+open scoped Classical in
+/-- An additive weight on the complete terminal self-pair family is the sum of its same-side
+source contribution and its mixed-side partner contribution. -/
+theorem sum_pentagonTerminalSelfPairs_eq_sum_sources_add_sum_mixed
+    {M : Type*} [AddCommMonoid M]
+    (w : GridPentagonRectangleDecomposition C.column C.turnRow x z → M) :
+    ∑ D ∈ G.pentagonTerminalSelfPairs C x z, w D =
+      (∑ D ∈ G.pentagonTerminalSelfPairSources C x z, w D) +
+        ∑ D ∈ (G.pentagonTerminalSelfPairs C x z).filter
+          (fun D => D.toRectangleDecomposition.HasMixedSideOverlap), w D := by
+  rw [← Finset.sum_union
+    (G.disjoint_pentagonTerminalSelfPairSources_filter_hasMixedSideOverlap C),
+    G.pentagonTerminalSelfPairSources_union_filter_hasMixedSideOverlap_eq_selfPairs C]
 
 end TauCeti.GridDiagram

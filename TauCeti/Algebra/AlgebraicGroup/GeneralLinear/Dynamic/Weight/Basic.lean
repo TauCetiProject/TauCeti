@@ -46,8 +46,8 @@ the coefficient is read directly, so zero divisors cause no problem.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This supplies the higher-rank block-cocharacter calculation requested by the dynamic-parabolic
-route in Layer 7, "Structure theory", of the ReductiveGroups roadmap.
+This supplies the higher-rank block-cocharacter calculation for the dynamic approach to parabolic
+subgroups.
 -/
 
 public section

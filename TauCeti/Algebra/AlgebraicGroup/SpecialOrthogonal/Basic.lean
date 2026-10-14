@@ -32,13 +32,11 @@ are already identified with orthogonality and determinant one.
 
 As with the orthogonal construction, this is the special orthogonal group of the **standard
 symmetric bilinear form**: the scheme of the functor `A ↦ {M | M Mᵀ = 1, det M = 1}` over every
-commutative ring. In characteristic two the quadratic-form special orthogonal group (cut out by
-the Dickson invariant rather than the determinant) differs from this determinant-one cut, and
-smoothness becomes sensitive to the rank and regularity of the form; no smoothness is claimed
-here, so the construction is stated over an arbitrary commutative ring without restriction.
-This completes the construction-and-points boundary of the `SOₙ` worked example of the
-ReductiveGroups roadmap, at the same stage as the symplectic example: construction and points
-identification, with no smoothness or reductivity claim.
+commutative ring. In characteristic two the quadratic-form special orthogonal group (cut out by the
+Dickson invariant rather than the determinant) differs from this determinant-one cut, and smoothness
+becomes sensitive to the rank and regularity of the form; no smoothness is claimed here, so the
+construction is stated over an arbitrary commutative ring without restriction. Smoothness when `2`
+is invertible is proved in `TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth`.
 
 ## Main declarations
 

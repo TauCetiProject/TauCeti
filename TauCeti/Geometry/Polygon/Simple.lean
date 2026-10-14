@@ -52,7 +52,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 ## Main results
 
 * `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
-* `Polygon.IsSimple.three_le`: a simple polygon over an ordered field has at least three vertices.
+* `Polygon.IsSimple.three_le`: a nonempty simple polygon over a densely ordered ring acting
+  torsion freely has at least three vertices.
 * `Polygon.range_boundaryParam`: the parametrization runs over the whole boundary.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
   give the same point exactly when they agree modulo `n`.
@@ -128,32 +129,33 @@ end IsSimple
 
 section ThreeLE
 
-variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
-  [AddTorsor V P] {poly : Polygon P n}
+variable [Ring R] [LinearOrder R] [IsStrictOrderedRing R] [DenselyOrdered R]
+  [AddCommGroup V] [Module R V] [Module.IsTorsionFree R V] [AddTorsor V P] {poly : Polygon P n}
 
-/-- **A simple polygon has at least three vertices.** A polygon with one vertex has a degenerate
-edge, and the two edges of a polygon with two vertices overlap. -/
+/-- **A nonempty simple polygon has at least three vertices.** Over a densely ordered ring
+acting torsion freely, a polygon with one vertex has a degenerate edge, and the two edges of a
+polygon with two vertices share a point other than their end points. -/
 theorem IsSimple.three_le [NeZero n] (h : poly.IsSimple R) : 3 ≤ n := by
   have h2 := h.hasNondegenerateEdges.two_le
   by_contra hn
   obtain rfl : n = 2 := by omega
   have h01 : poly 0 ≠ poly 1 := h.hasNondegenerateEdges 0
-  have hhalf : (2⁻¹ : R) ∈ Icc (0 : R) 1 := ⟨by positivity, by norm_num⟩
+  obtain ⟨s, hs0, hs1⟩ := exists_between (zero_lt_one : (0 : R) < 1)
   have hrot0 : finRotate 2 0 = 1 := by simp [finRotate_apply]
   have hrot1 : finRotate 2 1 = 0 := by simp [finRotate_apply]
-  have hm0 : AffineMap.lineMap (poly 0) (poly 1) (2⁻¹ : R) ∈ poly.edgeSet R 0 := by
+  have hm0 : AffineMap.lineMap (poly 0) (poly 1) s ∈ poly.edgeSet R 0 := by
     rw [edgeSet, hrot0]
-    exact ⟨2⁻¹, hhalf, rfl⟩
-  have hm1 : AffineMap.lineMap (poly 0) (poly 1) (2⁻¹ : R) ∈ poly.edgeSet R 1 := by
+    exact ⟨s, ⟨hs0.le, hs1.le⟩, rfl⟩
+  have hm1 : AffineMap.lineMap (poly 0) (poly 1) s ∈ poly.edgeSet R 1 := by
     rw [edgeSet, hrot1, affineSegment_comm]
-    exact ⟨2⁻¹, hhalf, rfl⟩
+    exact ⟨s, ⟨hs0.le, hs1.le⟩, rfl⟩
   rcases h.eq_vertex_of_mem_edgeSet Fin.zero_ne_one hm0 hm1 with ⟨-, hx⟩ | ⟨-, hx⟩
   · rcases AffineMap.lineMap_eq_right_iff.1 hx with h' | h'
     · exact h01 h'
-    · norm_num at h'
+    · exact hs1.ne h'
   · rcases AffineMap.lineMap_eq_left_iff.1 hx with h' | h'
     · exact h01 h'
-    · norm_num at h'
+    · exact hs0.ne' h'
 
 end ThreeLE
 
@@ -225,6 +227,7 @@ theorem periodic_boundaryParam : Periodic poly.boundaryParam n := fun t => by
     vertexIndex_add_natCast_self]
 
 /-- The boundary parametrization runs over the whole boundary of the polygon. -/
+@[simp]
 theorem range_boundaryParam : range poly.boundaryParam = poly.boundary ℝ := by
   refine Subset.antisymm ?_ fun x hx => ?_
   · rintro _ ⟨t, rfl⟩
@@ -246,6 +249,7 @@ theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.bo
   poly.periodic_boundaryParam.lift_coe t
 
 /-- The circle parametrization runs over the whole boundary of the polygon. -/
+@[simp]
 theorem range_boundaryParamCircle : range poly.boundaryParamCircle = poly.boundary ℝ := by
   rw [← poly.range_boundaryParam, ← QuotientAddGroup.mk_surjective.range_comp]
   exact congrArg range (funext poly.boundaryParamCircle_coe)
@@ -542,6 +546,7 @@ theorem realize_toCircle (t : ℝ) :
     Homeomorph.symm_apply_apply, Polygon.boundaryParamCircle_coe]
 
 /-- The realization runs over the whole boundary of the polygon. -/
+@[simp]
 theorem range_realize : range p.realize = p.toPolygon.boundary ℝ := by
   rw [realize, (Homeomorph.surjective _).range_comp, Polygon.range_boundaryParamCircle]
 
