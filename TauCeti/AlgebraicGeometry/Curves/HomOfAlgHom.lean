@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap
 public import TauCeti.AlgebraicGeometry.Curves.Category
 
 /-!
