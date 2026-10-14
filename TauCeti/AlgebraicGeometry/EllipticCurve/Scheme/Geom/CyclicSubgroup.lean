@@ -103,14 +103,11 @@ theorem IsOfExactOrder.isCyclicSubgroup_multiplesDivisor
   flat := inferInstance
   locallyOfFinitePresentation := inferInstance
   finrank_eq s := congrFun (finrank_multiplesDivisor P N) s
-  exists_cover := by
-    letI : MorphismProperty.ContainsIdentities
-        (@Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
-      ⟨fun _ ↦ ⟨inferInstance, inferInstance⟩⟩
-    exact ⟨Scheme.coverOfIsIso
-        (P := (@Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u})) (𝟙 S),
-      fun _ ↦ ⟨E, 𝟙 _, .id_horiz _, (Category.comp_id _).trans (Category.id_comp _).symm, P, h,
-        Scheme.IdealSheafData.comap_id _⟩⟩
+  exists_cover := ⟨Scheme.Hom.cover
+      (P := (@Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u})) (𝟙 S)
+      ⟨inferInstance, inferInstance⟩,
+    fun _ ↦ ⟨E, 𝟙 _, .id_horiz _, (Category.comp_id _).trans (Category.id_comp _).symm, P, h,
+      Scheme.IdealSheafData.comap_id _⟩⟩
 
 section BaseChange
 
