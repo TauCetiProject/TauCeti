@@ -141,10 +141,20 @@ The closed subscheme of `J.comap g` is the base change of that of `J`
 (`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`), so the instance
 arguments follow from those for `J` by `MorphismProperty.of_isPullback`. -/
 theorem comap_incidenceLocus {X' S' : Scheme.{u}} {g : X' ⟶ X} {f' : X' ⟶ S'} {t : S' ⟶ S}
-    (H : IsPullback g f' f t) [IsFinite ((J.comap g).subschemeι ≫ f')]
-    [Flat ((J.comap g).subschemeι ≫ f')]
-    [LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f')] :
+    (H : IsPullback g f' f t) :
+    letI : IsFinite ((J.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+    letI : Flat ((J.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+    letI : LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
     (incidenceLocus f I J).comap t = incidenceLocus f' (I.comap g) (J.comap g) := by
+  let _ : IsFinite ((J.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+  let _ : Flat ((J.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+  let _ : LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
   -- both sides have the same morphisms factoring through their closed subschemes
   have key {T : Scheme.{u}} (s : T ⟶ S') : (incidenceLocus f I J).comap t ≤ s.ker ↔
       incidenceLocus f' (I.comap g) (J.comap g) ≤ s.ker := by
@@ -219,12 +229,32 @@ variable {f} in
 over `t : S' ⟶ S`, the inverse image along `t` of the equality locus of `V(I)` and `V(J)` is the
 equality locus of their inverse images in `X'`. -/
 theorem comap_equalityLocus {X' S' : Scheme.{u}} {g : X' ⟶ X} {f' : X' ⟶ S'} {t : S' ⟶ S}
-    (H : IsPullback g f' f t) [IsFinite ((I.comap g).subschemeι ≫ f')]
-    [Flat ((I.comap g).subschemeι ≫ f')]
-    [LocallyOfFinitePresentation ((I.comap g).subschemeι ≫ f')]
-    [IsFinite ((J.comap g).subschemeι ≫ f')] [Flat ((J.comap g).subschemeι ≫ f')]
-    [LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f')] :
+    (H : IsPullback g f' f t) :
+    letI : IsFinite ((I.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) inferInstance
+    letI : Flat ((I.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) inferInstance
+    letI : LocallyOfFinitePresentation ((I.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) inferInstance
+    letI : IsFinite ((J.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+    letI : Flat ((J.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+    letI : LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f') :=
+      MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
     (equalityLocus f I J).comap t = equalityLocus f' (I.comap g) (J.comap g) := by
+  let _ : IsFinite ((I.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) inferInstance
+  let _ : Flat ((I.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) inferInstance
+  let _ : LocallyOfFinitePresentation ((I.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) inferInstance
+  let _ : IsFinite ((J.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+  let _ : Flat ((J.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
+  let _ : LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f') :=
+    MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
   rw [equalityLocus_eq_sup, equalityLocus_eq_sup, comap_sup, comap_incidenceLocus I J H,
     comap_incidenceLocus J I H]
 
