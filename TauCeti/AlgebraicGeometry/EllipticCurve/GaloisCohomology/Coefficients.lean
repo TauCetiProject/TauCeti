@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
@@ -54,7 +55,8 @@ automorphisms of an algebraic closure are the points over the perfect closure of
 * `WeierstrassCurve.TorsionCoeff`: the `m`-torsion of `W.PointCoeff`, a discrete `G_K`-module.
 * `WeierstrassCurve.torsionCoeffIncl`: the equivariant inclusion `E(Kˢ)[m] → E(Kˢ)`.
 * `WeierstrassCurve.kummerShortExact`: the Kummer sequence `0 → E[m] → E → E → 0` of `W`.
-* `WeierstrassCurve.basePointCoeff`: the inclusion `E(K) → E(Kˢ)`.
+* `WeierstrassCurve.basePointCoeff`: the inclusion `E(K) → E(Kˢ)`, the transport of points along
+  `K → Kˢ` (`WeierstrassCurve.basePointCoeff_eq_pointCoeffEquiv_mapAlong`).
 * `WeierstrassCurve.basePointEquivInvariants`: the isomorphism `E(K) ≅ H⁰(G_K, E(Kˢ))`.
 
 ## Main results
@@ -290,6 +292,20 @@ theorem basePointCoeff_some {x y : K} (h : W.toAffine.Nonsingular x y) :
   simp only [basePointCoeff, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     Affine.Point.equivBaseChangeSelf_some, Affine.Point.map_some]
   rfl
+
+open scoped Classical in
+/-- **The inclusion `E(K) → E(Kˢ)` is the transport of points along `algebraMap K Kˢ`**
+(`WeierstrassCurve.Affine.Point.mapAlong`), read in `W.PointCoeff`. -/
+theorem basePointCoeff_eq_pointCoeffEquiv_mapAlong (P : W.toAffine.Point) :
+    W.basePointCoeff P = W.pointCoeffEquiv (P.mapAlong (algebraMap K (SeparableClosure K))
+      (algebraMap K (SeparableClosure K)).injective) := by
+  rcases P with _ | ⟨x, y, h⟩
+  · rw [← Affine.Point.zero_def, map_zero, Affine.Point.mapAlong_zero]
+    exact (map_zero W.pointCoeffEquiv).symm
+  -- `W⁄Kˢ` and `W.map (algebraMap K Kˢ)` are identified only at default transparency, so the
+  -- affine case is closed by `exact` rather than by rewriting
+  · exact (W.basePointCoeff_some h).trans
+      (congrArg W.pointCoeffEquiv (Affine.Point.mapAlong_some _ _ h).symm)
 
 /-- The inclusion `E(K) → E(Kˢ)` is injective. -/
 theorem basePointCoeff_injective : Function.Injective W.basePointCoeff := by
