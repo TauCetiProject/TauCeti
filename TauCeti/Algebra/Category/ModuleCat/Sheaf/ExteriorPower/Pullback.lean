@@ -229,45 +229,29 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
           ((_root_.SheafOfModules.exteriorPowerOneIso R).hom.app M)).val =
       (PresheafOfModulesOfCommRing.exteriorPowerOneIso S.obj).hom.app
         ((_root_.SheafOfModules.pushforward φ).obj M).val := by
-    let η := (PresheafOfModules.sheafificationAdjunction
-      (𝟙 (ringCatSheaf R).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) 1).obj M.val)
-    let c := (PresheafOfModules.pushforwardExteriorPowerComparison
-      (commRingCatHom φ) 1).app M.val
-    let P := presheafPushforward φ
-    let e := (_root_.SheafOfModules.forget _).map
-      (_root_.SheafOfModules.exteriorPowerIso 1 M).inv
-    let f := ((_root_.SheafOfModules.exteriorPowerOneIso R).hom.app M).val
-    calc
-      _ = c ≫ P.map (η ≫ e) ≫ P.map f := by
-        simpa only [Category.assoc] using congrArg (· ≫ P.map f)
-          (unit_comp_forget_map_pushforwardExteriorPowerComparison_app φ 1 M)
-      _ = c ≫ P.map ((η ≫ e) ≫ f) := by
-        simp only [Functor.map_comp, Category.assoc]
-      _ = c ≫ P.map ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app
-          M.val) := by
-        exact congrArg (fun g ↦ c ≫ P.map g) ((Category.assoc _ _ _).trans
-          (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app M))
-      _ = _ := PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
+    -- Reassociate to expose the comparison's sheafification-unit characterization.
+    -- Term equalities keep the coefficient functors definitionally aligned, unlike `calc`.
+    refine (Category.assoc _ _ _).symm.trans ?_
+    refine (congrArg (· ≫ _)
+      (unit_comp_forget_map_pushforwardExteriorPowerComparison_app φ 1 M)).trans ?_
+    refine (Category.assoc _ _ _).trans ?_
+    -- Combine the two pushed-forward maps and identify degree one before pushing forward.
+    refine (congrArg (_ ≫ ·) ?_).trans ?_
+    · refine ((presheafPushforward φ).map_comp _ _).symm.trans ?_
+      exact congrArg (presheafPushforward φ).map ((Category.assoc _ _ _).trans
+        (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app M))
+    · exact PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
         (commRingCatHom φ) M.val
+  -- Transport both sides through the adjunction using their unit characterizations.
   refine (Adjunction.homEquiv_unit _ _ _ _).trans ?_
   refine key.trans ?_
-  calc
-    (PresheafOfModulesOfCommRing.exteriorPowerOneIso S.obj).hom.app
-        ((_root_.SheafOfModules.pushforward φ).obj M).val =
-      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) 1).obj
-          ((_root_.SheafOfModules.pushforward φ).obj M).val) ≫
-        ((_root_.SheafOfModules.exteriorPowerIso 1 _).inv ≫
-          (_root_.SheafOfModules.exteriorPowerOneIso S).hom.app
-            ((_root_.SheafOfModules.pushforward φ).obj M)).val :=
-      (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app
-        ((_root_.SheafOfModules.pushforward φ).obj M)).symm
-    _ = _ := (Adjunction.homEquiv_unit
-      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)) _ _
-      ((_root_.SheafOfModules.exteriorPowerIso 1 _).inv ≫
-        (_root_.SheafOfModules.exteriorPowerOneIso S).hom.app
-          ((_root_.SheafOfModules.pushforward φ).obj M))).symm
+  refine (_root_.SheafOfModules.unit_comp_val_exteriorPowerOneIso_hom_app
+    ((_root_.SheafOfModules.pushforward φ).obj M)).symm.trans ?_
+  exact (Adjunction.homEquiv_unit
+    (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)) _ _
+    ((_root_.SheafOfModules.exteriorPowerIso 1 _).inv ≫
+      (_root_.SheafOfModules.exteriorPowerOneIso S).hom.app
+        ((_root_.SheafOfModules.pushforward φ).obj M))).symm
 
 
 variable {φ} {G : _root_.SheafOfModules.{u} (ringCatSheaf S) ⥤
