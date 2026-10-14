@@ -45,6 +45,8 @@ theorem LinearIsometry.contDiff_comp_iff (i : E →ₗᵢ[𝕜] F)
         add_mem' := fun ha hb v ↦ i.toLinearMap.range.add_mem (ha v) (hb v)
         smul_mem' := fun c _ ha v ↦ i.toLinearMap.range.smul_mem c (ha v) }
     have hR (m : ℕ) : IsClosed (R m : Set (D [×m]→L[𝕜] F)) := by
+      -- Unfold the carrier of R and the linear-map range to expose the pointwise
+      -- conditions whose closedness follows from continuous evaluation.
       change IsClosed {a : D [×m]→L[𝕜] F | ∀ v, a v ∈ range i}
       simp only [ofPred_forall]
       exact isClosed_iInter fun v ↦ hi.preimage (continuous_eval_const v)
@@ -74,6 +76,8 @@ theorem LinearIsometry.contDiff_comp_iff (i : E →ₗᵢ[𝕜] F)
       else 0
     have hJp (m : ℕ) (hm : (m : WithTop ℕ∞) ≤ n) (x : D) : J m (p x m) = q x m := by
       ext v
+      -- J is postcomposition by i, so its evaluation is definitionally i (p x m v).
+      -- Exposing this expression lets the range-equivalence cancellation below apply.
       change i (p x m v) = q x m v
       simp only [p, dite_eq_left hm, ContinuousLinearMap.compContinuousMultilinearMap_coe,
         Function.comp_apply]
@@ -83,6 +87,8 @@ theorem LinearIsometry.contDiff_comp_iff (i : E →ₗᵢ[𝕜] F)
     · intro x
       apply i.injective
       rw [ContinuousMultilinearMap.curry0_apply]
+      -- Postcomposition by i at the unique zero-arity tuple is evaluation of J 0.
+      -- This definitional conversion puts the goal in the form established by hJp.
       change J 0 (p x 0) 0 = i (f x)
       rw [hJp 0 (by simp)]
       exact hq.zero_eq x

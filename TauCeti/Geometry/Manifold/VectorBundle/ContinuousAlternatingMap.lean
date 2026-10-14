@@ -59,7 +59,9 @@ variable [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E�
   [MemTrivializationAtlas e₂] [MemTrivializationAtlas e₂']
 
 /-- Coordinate changes of the alternating-map bundle have the same regularity as the
-coordinate changes of its domain and codomain bundles. -/
+coordinate changes of its domain and codomain bundles, provided the arity factorial is
+nonzero in `𝕜` at the analytic order `ω`. Finite orders and `∞` have no characteristic
+restriction. -/
 theorem contMDiffOn_continuousAlternatingMapCoordChange
     (hn : n = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
       intro h
@@ -87,7 +89,8 @@ theorem contMDiffOn_continuousAlternatingMapCoordChange
 
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
-/-- Mathlib's alternating-map vector prebundle has smooth coordinate changes. -/
+/-- Mathlib's alternating-map vector prebundle has smooth coordinate changes.
+The analytic order `ω` requires a nonzero arity factorial in `𝕜`. -/
 theorem isContMDiffContinuousAlternatingMapVectorPrebundle
     (hn : n = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
       intro h
@@ -105,8 +108,8 @@ instance instIsContMDiffContinuousAlternatingMapVectorPrebundleOfFactorialNeZero
     (Bundle.ContinuousAlternatingMap.vectorPrebundle 𝕜 ι F₁ E₁ F₂ E₂).IsContMDiff IB n :=
   isContMDiffContinuousAlternatingMapVectorPrebundle
 
-/-- Continuous alternating maps between two `C^n` vector bundles form a `C^n` vector
-bundle with Mathlib's existing alternating-map topology and atlas. -/
+/-- Smooth coordinate changes of Mathlib's alternating-map prebundle induce a `C^n`
+vector bundle with its existing topology and atlas. -/
 instance instContMDiffVectorBundleContinuousAlternatingMap
     [(Bundle.ContinuousAlternatingMap.vectorPrebundle 𝕜 ι F₁ E₁ F₂ E₂).IsContMDiff IB n] :
     ContMDiffVectorBundle n (F₁ [⋀^ι]→L[𝕜] F₂) (fun b ↦ E₁ b [⋀^ι]→L[𝕜] E₂ b) IB :=

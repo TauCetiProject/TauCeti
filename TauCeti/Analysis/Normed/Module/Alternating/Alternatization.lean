@@ -11,10 +11,11 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 # Continuous linear alternatization
 
 Mathlib's `ContinuousMultilinearMap.alternatization` is the signed permutation sum.
-Here it is bundled as a continuous linear map, with its factorial norm bound and its
-value on alternating maps. Dividing by the factorial gives a retraction onto alternating
-maps when the factorial is nonzero in the scalar field, useful for transporting smoothness
-from multilinear maps.
+Here it is bundled as a continuous linear map, with its factorial norm bound.
+Its value on alternating maps is given by the factorial identity in
+`TauCeti.Topology.Algebra.Module.Alternating.Basic`. Dividing by the factorial gives a
+retraction onto alternating maps when the factorial is nonzero in the scalar field,
+useful for transporting smoothness from multilinear maps.
 
 The construction uses Yury Kudryashov's alternatization in
 `Mathlib.Topology.Algebra.Module.Alternating.Basic`.
@@ -36,6 +37,8 @@ theorem norm_alternatization_le
     ‖ContinuousMultilinearMap.alternatization f‖ ≤ (Fintype.card ι).factorial * ‖f‖ := by
   rw [← ContinuousAlternatingMap.norm_toContinuousMultilinearMap]
   refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
+  -- An alternating map and its underlying multilinear map have the same evaluation
+  -- by definition. Expose alternatization itself to use its signed-sum formula.
   change ‖ContinuousMultilinearMap.alternatization f m‖ ≤ _
   rw [ContinuousMultilinearMap.alternatization_apply_apply]
   calc
