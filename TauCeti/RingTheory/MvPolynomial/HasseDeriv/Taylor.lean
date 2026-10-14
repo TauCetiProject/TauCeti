@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import TauCeti.RingTheory.MvPolynomial.HasseDeriv
+public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 
 /-!
