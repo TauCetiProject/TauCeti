@@ -43,8 +43,8 @@ make the right dual functor `C ⥤ (Cᵒᵖ)ᴹᵒᵖ` monoidal.
 * `CategoryTheory.ExactPairing.rightMate_associator_hom`,
   `CategoryTheory.ExactPairing.rightMate_leftUnitor_hom` and
   `CategoryTheory.ExactPairing.rightMate_rightUnitor_hom`: mates of the structure morphisms;
-* `TauCeti.rightAdjointMate_eq_rightMate` and `TauCeti.rightDualIso_hom`: Mathlib's
-  `rightAdjointMate` and `rightDualIso` as mates.
+* `TauCeti.rightAdjointMate_eq_rightMate` and `CategoryTheory.ExactPairing.rightDualIso_hom`:
+  Mathlib's `rightAdjointMate` and `rightDualIso` as mates.
 
 ## References
 
@@ -109,6 +109,7 @@ theorem comp_rightMate {X X' Y Y' Z Z' : C} (pX : ExactPairing X X') (pY : Exact
   @comp_rightAdjointMate C _ _ X Y Z ⟨X'⟩ ⟨Y'⟩ ⟨Z'⟩ f g
 
 /-- The mate of `f ▷ Z` with respect to the tensor product pairings is `Z' ◁ fᘁ`. -/
+@[simp]
 theorem rightMate_whiskerRight {X X' Y Y' Z Z' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (pZ : ExactPairing Z Z') (f : X ⟶ Y) :
     rightMate (tensor : ExactPairing (X ⊗ Z) (Z' ⊗ X')) (tensor : ExactPairing (Y ⊗ Z) (Z' ⊗ Y'))
@@ -124,6 +125,7 @@ theorem rightMate_whiskerRight {X X' Y Y' Z Z' : C} (pX : ExactPairing X X')
       rw [tensor_evaluation]; monoidal
 
 /-- The mate of `Z ◁ f` with respect to the tensor product pairings is `fᘁ ▷ Z'`. -/
+@[simp]
 theorem rightMate_whiskerLeft {X X' Y Y' Z Z' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (pZ : ExactPairing Z Z') (f : X ⟶ Y) :
     rightMate (tensor : ExactPairing (Z ⊗ X) (X' ⊗ Z')) (tensor : ExactPairing (Z ⊗ Y) (Y' ⊗ Z'))
@@ -147,6 +149,7 @@ theorem rightMate_whiskerLeft {X X' Y Y' Z Z' : C} (pX : ExactPairing X X')
 
 /-- The mate of a tensor product of morphisms with respect to the tensor product pairings is the
 tensor product of their mates, in the reverse order. -/
+@[simp]
 theorem rightMate_tensorHom {X₁ X₁' X₂ X₂' Y₁ Y₁' Y₂ Y₂' : C} (pX₁ : ExactPairing X₁ X₁')
     (pX₂ : ExactPairing X₂ X₂') (pY₁ : ExactPairing Y₁ Y₁') (pY₂ : ExactPairing Y₂ Y₂')
     (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
@@ -158,6 +161,7 @@ theorem rightMate_tensorHom {X₁ X₁' X₂ X₂' Y₁ Y₁' Y₂ Y₂' : C} (p
 
 /-- The mate of the associator of `X`, `Y`, `Z` with respect to the tensor product pairings is the
 associator of their duals. -/
+@[simp]
 theorem rightMate_associator_hom {X X' Y Y' Z Z' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (pZ : ExactPairing Z Z') :
     rightMate (tensor : ExactPairing ((X ⊗ Y) ⊗ Z) (Z' ⊗ Y' ⊗ X'))
@@ -170,6 +174,7 @@ theorem rightMate_associator_hom {X X' Y Y' Z Z' : C} (pX : ExactPairing X X')
 
 /-- The mate of the left unitor of `X` with respect to the tensor product of the self-pairing
 of the unit with `(X, X')` is the inverse right unitor of `X'`. -/
+@[simp]
 theorem rightMate_leftUnitor_hom {X X' : C} (pX : ExactPairing X X') :
     rightMate (tensor : ExactPairing (𝟙_ C ⊗ X) (X' ⊗ 𝟙_ C)) pX (λ_ X).hom = (ρ_ X').inv := by
   refine rightHom_ext (X := 𝟙_ C ⊗ X) ?_
@@ -179,12 +184,22 @@ theorem rightMate_leftUnitor_hom {X X' : C} (pX : ExactPairing X X') :
 
 /-- The mate of the right unitor of `X` with respect to the tensor product of `(X, X')` with the
 self-pairing of the unit is the inverse left unitor of `X'`. -/
+@[simp]
 theorem rightMate_rightUnitor_hom {X X' : C} (pX : ExactPairing X X') :
     rightMate (tensor : ExactPairing (X ⊗ 𝟙_ C) (𝟙_ C ⊗ X')) pX (ρ_ X).hom = (λ_ X').inv := by
   refine rightHom_ext (X := X ⊗ 𝟙_ C) ?_
   rw [rightMate_comp_evaluation]
   simp only [tensor_evaluation, TauCeti.ExactPairing.unit_evaluation]
   monoidal
+
+/-- The comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂` between two right duals of `X` is the mate of
+the identity of `X`. -/
+theorem rightDualIso_hom {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : ExactPairing X Y₂) :
+    (rightDualIso p₁ p₂).hom = rightMate p₂ p₁ (𝟙 X) :=
+  rightHom_ext (X := X) (by
+    rw [rightMate_comp_evaluation]
+    -- `rightDualIso` is defined as the mate of `𝟙 X` with `p₂` and `p₁` made ambient.
+    exact @rightAdjointMate_comp_evaluation C _ _ X X ⟨Y₂⟩ ⟨Y₁⟩ (𝟙 X))
 
 end CategoryTheory.ExactPairing
 
@@ -197,14 +212,5 @@ theorem rightAdjointMate_eq_rightMate {X Y : C} [HasRightDual X] [HasRightDual Y
     fᘁ = ExactPairing.rightMate HasRightDual.exact HasRightDual.exact f :=
   ExactPairing.rightHom_ext (X := X) (by
     rw [rightAdjointMate_comp_evaluation, ExactPairing.rightMate_comp_evaluation])
-
-/-- The comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂` between two right duals of `X` is the mate of
-the identity of `X`. -/
-theorem rightDualIso_hom {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : ExactPairing X Y₂) :
-    (rightDualIso p₁ p₂).hom = ExactPairing.rightMate p₂ p₁ (𝟙 X) :=
-  ExactPairing.rightHom_ext (X := X) (by
-    rw [ExactPairing.rightMate_comp_evaluation]
-    -- `rightDualIso` is defined as the mate of `𝟙 X` with `p₂` and `p₁` made ambient.
-    exact @rightAdjointMate_comp_evaluation C _ _ X X ⟨Y₂⟩ ⟨Y₁⟩ (𝟙 X))
 
 end TauCeti

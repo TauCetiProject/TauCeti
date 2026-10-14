@@ -76,8 +76,9 @@ theorem rightDualTensorIso_associativity (X Y Z : C) [HasRightDual X] [HasRightD
     ← comp_rightMate, ← comp_rightMate, ← comp_rightMate, ← comp_rightMate]
   simp
 
-/-- The comparison `(𝟙_ C ⊗ X)ᘁ ≅ Xᘁ ⊗ (𝟙_ C)ᘁ`, followed by the identification of `(𝟙_ C)ᘁ`
-with `𝟙_ C`, is the mate of the left unitor of `X` followed by the right unitor of `Xᘁ`. -/
+/-- The mate `Xᘁ ⟶ (𝟙_ C ⊗ X)ᘁ` of the left unitor of `X`, followed by the comparison
+`(𝟙_ C ⊗ X)ᘁ ≅ Xᘁ ⊗ (𝟙_ C)ᘁ` and the identification of `(𝟙_ C)ᘁ` with `𝟙_ C`, is the inverse
+right unitor `Xᘁ ⟶ Xᘁ ⊗ 𝟙_ C` of `Xᘁ`. -/
 theorem rightDualTensorIso_leftUnitality (X : C) [HasRightDual X] [HasRightDual (𝟙_ C)]
     [HasRightDual (𝟙_ C ⊗ X)] :
     (ρ_ Xᘁ).inv = ((λ_ X).hom)ᘁ ≫ (rightDualTensorIso (𝟙_ C) X).hom ≫
@@ -87,8 +88,9 @@ theorem rightDualTensorIso_leftUnitality (X : C) [HasRightDual X] [HasRightDual 
     ← rightMate_leftUnitor_hom (HasRightDual.exact (X := X)), ← comp_rightMate, ← comp_rightMate]
   simp
 
-/-- The comparison `(X ⊗ 𝟙_ C)ᘁ ≅ (𝟙_ C)ᘁ ⊗ Xᘁ`, followed by the identification of `(𝟙_ C)ᘁ`
-with `𝟙_ C`, is the mate of the right unitor of `X` followed by the left unitor of `Xᘁ`. -/
+/-- The mate `Xᘁ ⟶ (X ⊗ 𝟙_ C)ᘁ` of the right unitor of `X`, followed by the comparison
+`(X ⊗ 𝟙_ C)ᘁ ≅ (𝟙_ C)ᘁ ⊗ Xᘁ` and the identification of `(𝟙_ C)ᘁ` with `𝟙_ C`, is the inverse
+left unitor `Xᘁ ⟶ 𝟙_ C ⊗ Xᘁ` of `Xᘁ`. -/
 theorem rightDualTensorIso_rightUnitality (X : C) [HasRightDual X] [HasRightDual (𝟙_ C)]
     [HasRightDual (X ⊗ 𝟙_ C)] :
     (λ_ Xᘁ).inv = ((ρ_ X).hom)ᘁ ≫ (rightDualTensorIso X (𝟙_ C)).hom ≫
