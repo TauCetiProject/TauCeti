@@ -12,21 +12,22 @@ public import Mathlib.MeasureTheory.Function.Holder
 /-!
 # The closed-graph step for weak Sobolev spaces
 
-This file packages the successor step shared by the iterated weak Sobolev spaces. Given a
-seminormed space `X` and a continuous linear map from `X` to an `Lᵖ` space of `F`-valued fields,
-`TauCeti.WeakDerivStep` adjoins an `Lᵖ` weak Fréchet derivative of that field. The admissibility
-condition is a closed subspace, so the resulting graph space is complete whenever `X` is. The
-construction works on any real normed domain with measurable opens and a measure finite on compact
-sets. Its intrinsic weak-derivative characterization additionally needs local finiteness of the
-measure restricted to the open set, while finite dimensionality is needed only for extensionality
-via uniqueness of weak derivatives. The constructor takes an existing weak derivative and needs no
-local-finiteness assumption.
+This file packages the successor step shared by the iterated weak Sobolev spaces. Given a real
+module `X` with a topology and a continuous linear map from `X` to an `Lᵖ` space of `F`-valued
+fields, `TauCeti.WeakDerivStep` adjoins an `Lᵖ` weak Fréchet derivative of that field. The
+admissibility condition is a closed subspace. If `X` carries a complete uniform structure,
+the resulting graph space is complete. The construction works on any real normed domain with
+measurable opens and a measure finite on compact sets. Its intrinsic weak-derivative
+characterization additionally needs local finiteness of the measure restricted to the open set,
+while finite dimensionality is needed only for extensionality via uniqueness of weak
+derivatives. The constructor takes an existing weak derivative and needs no local-finiteness
+assumption.
 
 The construction is independent of the order of differentiation. It is iterated by `Wkp`,
 which starts from the weak gradient and adjoins one weak derivative per order; the projections,
 constructors, norm bounds, and completeness there specialize the results proved here.
 
-The graph carries the Euclidean (`WithLp 2`) product norm
+When `X` is seminormed, the graph carries the Euclidean (`WithLp 2`) product norm
 
 `(∥x∥_X² + ∥Du∥_p²)¹⁄²`,
 
@@ -37,7 +38,7 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
 
 * `TauCeti.weakDerivStepSubmodule`: the closed graph of one weak-derivative step.
 * `TauCeti.mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn`: its intrinsic characterization.
-* `TauCeti.WeakDerivStep`: the resulting complete seminormed space, with projections
+* `TauCeti.WeakDerivStep`: the resulting graph space, with projections
   `TauCeti.WeakDerivStep.prev` and `TauCeti.WeakDerivStep.weakFDeriv`, constructor
   `TauCeti.WeakDerivStep.mk`, and extensionality `TauCeti.WeakDerivStep.ext`.
 
@@ -58,16 +59,20 @@ open scoped ContDiff Distributions ENNReal
 
 variable {E F X : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [CompleteSpace F] [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+  [CompleteSpace F]
   {mu : Measure E} [IsFiniteMeasureOnCompacts mu] {Omega : Opens E} {p : ENNReal}
   [Fact (1 <= p)]
 
 /-- The ambient graph space obtained by adjoining an `Lᵖ` candidate weak derivative to `X`,
-carrying the Euclidean (`WithLp 2`) product norm of its two components.  They are projected out
-by `WithLp.fst` and `WithLp.snd`. -/
+with the product topology and, when `X` is seminormed, the Euclidean (`WithLp 2`) product norm.
+Its components are projected out by `WithLp.fst` and `WithLp.snd`. -/
 abbrev WeakDerivStepJetLp (mu : Measure E) (Omega : Opens E) (p : ENNReal) (X F : Type*)
     [NormedAddCommGroup F] [NormedSpace ℝ F] :=
   WithLp 2 (X × Lp (E →L[ℝ] F) p (mu.restrict Omega))
+
+section TopologicalModule
+
+variable [AddCommGroup X] [Module ℝ X] [TopologicalSpace X]
 
 private def weakDerivStepBaseL
     (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
@@ -196,8 +201,8 @@ theorem mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn
     exact add_eq_zero_iff_eq_neg.mpr
       ((h v).integral_lineDeriv_smul_eq_neg_integral_smul phi)
 
-/-- One weak-derivative graph step over the field selected by `base`. It is complete when `X` is
-complete. -/
+/-- One weak-derivative graph step over the field selected by `base`. For `X` with a complete
+uniform structure, this graph space is complete. -/
 abbrev WeakDerivStep (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E) (p : ENNReal)
     [Fact (1 <= p)] (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :=
   (weakDerivStepSubmodule mu Omega p base).toSubmodule
@@ -269,8 +274,9 @@ theorem weakFDeriv_mk
 theorem hasWeakFDerivOn_base_prev [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) :
-    HasWeakFDerivOn mu Omega (base (prev base u)) (weakFDeriv base u) :=
-  (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn base u.1).mp u.2
+    HasWeakFDerivOn mu Omega (base (prev base u)) (weakFDeriv base u) := by
+  simpa only [prev_coe, weakFDeriv_coe] using
+    (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn base u.1).mp u.2
 
 /-- Two elements of a weak-derivative graph are equal when their preceding components and their
 adjoined weak derivatives are equal. -/
@@ -292,6 +298,30 @@ theorem ext [FiniteDimensional ℝ E] [BorelSpace E]
     exact hasWeakFDerivOn_base_prev base v
   exact ext_prev_weakFDeriv hprev (Lp.ext ((hasWeakFDerivOn_base_prev base u).ae_eq hv))
 
+/-- Convergence in a weak-derivative graph step is equivalent to convergence of the preceding
+component and of the adjoined weak derivative. -/
+theorem tendsto_iff_prev_weakFDeriv {base : X →L[ℝ] Lp F p (mu.restrict Omega)} {I : Type*}
+    {l : Filter I} {v : I → WeakDerivStep mu Omega p base} {u : WeakDerivStep mu Omega p base} :
+    Filter.Tendsto v l (nhds u) ↔
+      Filter.Tendsto (fun i => prev base (v i)) l (nhds (prev base u)) ∧
+      Filter.Tendsto (fun i => weakFDeriv base (v i)) l (nhds (weakFDeriv base u)) := by
+  simp only [prev_coe, weakFDeriv_coe]
+  refine (tendsto_subtype_rng (f := v) (x := u)).trans ?_
+  rw [(WithLp.prodContinuousLinearEquiv 2 ℝ _ _).toHomeomorph.isEmbedding.tendsto_nhds_iff]
+  simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
+    WithLp.prodContinuousLinearEquiv_apply]
+  exact Prod.tendsto_iff _ _
+
+end WeakDerivStep
+
+end TopologicalModule
+
+namespace WeakDerivStep
+
+section SeminormedModule
+
+variable [SeminormedAddCommGroup X] [Module ℝ X]
+
 /-- The graph norm controls the preceding component. -/
 theorem norm_prev_le (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) : ‖prev base u‖ ≤ ‖u‖ := by
@@ -311,25 +341,19 @@ theorem norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
   rw [← Submodule.norm_coe, prev_coe, weakFDeriv_coe]
   exact WithLp.prod_norm_sq_eq_of_L2 u.1
 
-/-- Convergence in a weak-derivative graph step is equivalent to convergence of the preceding
-component and of the adjoined weak derivative. -/
-theorem tendsto_iff_prev_weakFDeriv {base : X →L[ℝ] Lp F p (mu.restrict Omega)} {I : Type*}
-    {l : Filter I} {v : I → WeakDerivStep mu Omega p base} {u : WeakDerivStep mu Omega p base} :
-    Filter.Tendsto v l (nhds u) ↔
-      Filter.Tendsto (fun i => prev base (v i)) l (nhds (prev base u)) ∧
-      Filter.Tendsto (fun i => weakFDeriv base (v i)) l (nhds (weakFDeriv base u)) := by
-  simp only [prev_coe, weakFDeriv_coe]
-  refine (tendsto_subtype_rng (f := v) (x := u)).trans ?_
-  rw [(WithLp.prodContinuousLinearEquiv 2 ℝ _ _).toHomeomorph.isEmbedding.tendsto_nhds_iff]
-  simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
-    WithLp.prodContinuousLinearEquiv_apply]
-  exact Prod.tendsto_iff _ _
+end SeminormedModule
+
+section UniformModule
+
+variable [AddCommGroup X] [Module ℝ X] [UniformSpace X]
 
 /-- A weak-derivative graph step over a complete preceding space is complete because it is a
 closed subspace. -/
 instance [CompleteSpace X] (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
     CompleteSpace (WeakDerivStep mu Omega p base) :=
   (weakDerivStepSubmodule mu Omega p base).isClosed.completeSpace_coe
+
+end UniformModule
 
 end WeakDerivStep
 

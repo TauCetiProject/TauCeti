@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
@@ -28,7 +29,12 @@ nonnegativity, ordering and symmetry instances of the singular-value API rather 
 arguments; the bound `cos θₖ ≤ 1` comes from the overlap operator being a contraction. The sum of
 their squares is the squared Frobenius norm `∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²` of the overlap matrix, which gives
 the *squared Frobenius sine* `sin²_F Θ = ∑ₖ (1 - cos² θₖ)` of two families of the same size as
-`d - ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`.
+`d - ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`. Equivalently, `sin²_F Θ = ∑ⱼ ‖P_{Uᗮ} vⱼ‖²` is the total squared
+distance of the `vⱼ` from the span `U` of the `uᵢ`. When the `uᵢ` are the members of an orthonormal
+basis `(bₖ)` indexed by a coordinate block `s`, `P_{Uᗮ}` is the projection onto the span of the
+complementary block, which gives the cross-block form `sin²_F Θ = ∑ⱼ ∑_{k ∉ s} ‖⟪bₖ, vⱼ⟫‖²`.
+For two eigenbases of symmetric operators and a common index block, this expresses the Frobenius
+sine between corresponding eigenspaces through the overlaps of eigenvectors across the blocks.
 
 The overlap operator and its Frobenius identity make sense for arbitrary finite families; the
 principal cosines and the squared Frobenius sine are defined only for orthonormal families.
@@ -42,6 +48,10 @@ principal cosines and the squared Frobenius sine are defined only for orthonorma
   `cosPrincipalAngles_antitone` and `cosPrincipalAngles_comm`.
 * `TauCeti.sinThetaSq`: the squared Frobenius sine of two orthonormal families, with
   `TauCeti.sinThetaSq_eq_card_sub_sum_norm_inner_sq` and `TauCeti.sinThetaSq_self`.
+* `TauCeti.sinThetaSq_eq_sum_norm_starProjection_orthogonal_sq`: `sin²_F Θ = ∑ⱼ ‖P_{Uᗮ} vⱼ‖²`.
+* `TauCeti.sinThetaSq_comp_subtypeVal_eq_sum_compl_norm_inner_sq` and
+  `TauCeti.sinThetaSq_comp_subtypeVal_comp_subtypeVal_eq_sum_compl_norm_inner_sq`: the cross-block
+  form of the squared Frobenius sine for coordinate blocks of orthonormal bases.
 
 ## References
 
@@ -49,6 +59,8 @@ principal cosines and the squared Frobenius sine are defined only for orthonorma
   Math. Comp. 27 (1973), 579–594.
 * G. H. Golub and C. F. Van Loan, *Matrix Computations*, fourth edition, Johns Hopkins University
   Press, 2013, Section 6.4.3.
+* Y. Yu, T. Wang and R. J. Samworth, *A useful variant of the Davis–Kahan theorem for
+  statisticians*, Biometrika 102 (2015), 315–323.
 -/
 
 public section
@@ -210,5 +222,51 @@ theorem cosPrincipalAngles_self_of_lt {v : ι → E} (hv : Orthonormal 𝕜 v) {
       ((sinThetaSq_def hv hv).symm.trans (sinThetaSq_self hv)) k (Finset.mem_range.mpr hk)
   rwa [sub_eq_zero, eq_comm,
     pow_eq_one_iff_of_nonneg (cosPrincipalAngles_nonneg hv hv k) two_ne_zero] at h
+
+/-! ### The squared Frobenius sine through projections and coordinate blocks -/
+
+/-- The squared Frobenius sine is the total squared distance of the second family from the span
+`U` of the first: `sin²_F Θ = ∑ⱼ ‖P_{Uᗮ} vⱼ‖²`. -/
+theorem sinThetaSq_eq_sum_norm_starProjection_orthogonal_sq {u v : ι → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
+    (hU : Submodule.span 𝕜 (Set.range u) = U) :
+    sinThetaSq hu hv = ∑ j, ‖Uᗮ.starProjection (v j)‖ ^ 2 := by
+  rw [sinThetaSq_eq_card_sub_sum_norm_inner_sq, ← Finset.card_univ, Finset.card_eq_sum_ones,
+    Nat.cast_sum, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  -- `1 = ‖vⱼ‖² = ‖P_U vⱼ‖² + ‖P_{Uᗮ} vⱼ‖²`, and `‖P_U vⱼ‖² = ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`.
+  rw [← hu.norm_starProjection_sq_eq_sum hU, Nat.cast_one, ← one_pow 2, ← hv.1 j,
+    U.norm_sq_eq_add_norm_sq_starProjection (v j), add_sub_cancel_left]
+
+/-- **Cross-block form of the squared Frobenius sine.** Let `u` be the members of an orthonormal
+basis `b` indexed by a coordinate block `s`, and let `v` be any orthonormal family indexed by `s`.
+Then `sin²_F Θ = ∑ⱼ ∑_{k ∉ s} ‖⟪bₖ, vⱼ⟫‖²`: the squared Frobenius sine is the energy of the `vⱼ` in
+the complementary coordinates. -/
+theorem sinThetaSq_comp_subtypeVal_eq_sum_compl_norm_inner_sq [DecidableEq ι]
+    (b : OrthonormalBasis ι 𝕜 E) (s : Finset ι) {v : s → E} (hv : Orthonormal 𝕜 v) :
+    sinThetaSq (b.orthonormal.comp _ Subtype.val_injective) hv =
+      ∑ j, ∑ k ∈ sᶜ, ‖⟪b k, v j⟫_𝕜‖ ^ 2 := by
+  have := Module.Finite.of_basis b.toBasis
+  rw [sinThetaSq_eq_sum_norm_starProjection_orthogonal_sq _ hv
+    (b.span_range_comp_subtypeVal_eq_spanIndices s)]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  -- The orthogonal complement of the block span is the span of the complementary block.
+  have hc : Submodule.span 𝕜 (Set.range (b ∘ ((↑) : (sᶜ : Finset ι) → ι))) =
+      (b.spanIndices s)ᗮ := by
+    rw [b.orthogonal_spanIndices, ← Finset.coe_compl, b.span_range_comp_subtypeVal_eq_spanIndices]
+  rw [(b.orthonormal.comp _ Subtype.val_injective).norm_starProjection_sq_eq_sum hc]
+  exact Finset.sum_coe_sort sᶜ fun k ↦ ‖⟪b k, v j⟫_𝕜‖ ^ 2
+
+/-- **Eigenblock sine formula.** For two orthonormal bases `b` and `c` and a common coordinate block
+`s`, the squared Frobenius sine between the blocks `(bᵢ)_{i ∈ s}` and `(cⱼ)_{j ∈ s}` is the
+cross-block sum `∑_{j ∈ s} ∑_{k ∉ s} ‖⟪bₖ, cⱼ⟫‖²`. Applied to eigenbases of two symmetric operators,
+this compares the eigenspaces selected by the same eigenvalue indices. -/
+theorem sinThetaSq_comp_subtypeVal_comp_subtypeVal_eq_sum_compl_norm_inner_sq [DecidableEq ι]
+    (b c : OrthonormalBasis ι 𝕜 E) (s : Finset ι) :
+    sinThetaSq (b.orthonormal.comp _ Subtype.val_injective)
+        (c.orthonormal.comp ((↑) : s → ι) Subtype.val_injective) =
+      ∑ j ∈ s, ∑ k ∈ sᶜ, ‖⟪b k, c j⟫_𝕜‖ ^ 2 := by
+  rw [sinThetaSq_comp_subtypeVal_eq_sum_compl_norm_inner_sq]
+  exact Finset.sum_coe_sort s fun j ↦ ∑ k ∈ sᶜ, ‖⟪b k, c j⟫_𝕜‖ ^ 2
 
 end TauCeti

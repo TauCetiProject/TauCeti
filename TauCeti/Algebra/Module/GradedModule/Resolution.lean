@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Projective
+public import TauCeti.Algebra.DirectSum.Exact
 public import TauCeti.Algebra.Module.GradedModule.Generated
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
@@ -47,6 +47,10 @@ degree zero.
   algebra, the `n`th term of a linear resolution vanishes in internal degrees below `n`.
 * `TauCeti.GradedProjectiveResolution.IsLinear.isGeneratedInDegree_zero`: a module with a linear
   resolution is generated in degree zero.
+* `TauCeti.GradedProjectiveResolution.directSum`: the componentwise direct sum of a family of
+  graded projective resolutions.
+* `TauCeti.GradedProjectiveResolution.isLinear_directSum_iff`: the direct-sum resolution is linear
+  exactly when every component resolution is linear.
 
 ## Implementation notes
 
@@ -165,6 +169,87 @@ theorem IsLinear.isGeneratedInDegree_zero (hr : r.IsLinear) : G.IsGeneratedInDeg
   refine Submodule.span_mono ?_ (Submodule.apply_mem_span_image_of_mem_span r.π hy)
   rintro _ ⟨z, hz, rfl⟩
   simpa using r.isHomogeneous_π.map_mem hz
+
+end GradedProjectiveResolution
+
+/-! ### Direct sums -/
+
+namespace GradedProjectiveResolution
+
+universe ui uN uX
+
+variable {𝒜}
+variable {ι : Type ui} {N : ι → Type uN}
+  [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)] [∀ i, Module A (N i)]
+  [∀ i, IsScalarTower k A (N i)]
+  (G : ∀ i, InternalGrading k (N i)) [∀ i, SetLike.GradedSMul 𝒜 (G i).piece]
+  (r : ∀ i, GradedProjectiveResolution.{uk, uA, uN, uX} 𝒜 (G i))
+
+/-- The componentwise direct sum of a family of graded projective resolutions. Its terms,
+differentials and augmentation are direct sums of the corresponding component data. -/
+noncomputable abbrev directSum :
+    GradedProjectiveResolution 𝒜 (InternalGrading.directSum G) where
+  X n := DirectSum ι fun i ↦ (r i).X n
+  grading n := InternalGrading.directSum fun i ↦ (r i).grading n
+  gradedSMul n := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff] at hx ⊢
+    exact fun i ↦ SetLike.GradedSMul.smul_mem (B := ((r i).grading n).piece) ha (hx i)⟩
+  projective n := Module.Projective.directSum_iff.mpr fun i ↦ (r i).projective n
+  d n := DirectSum.lmap fun i ↦ (r i).d n
+  «π» := DirectSum.lmap fun i ↦ (r i).π
+  isHomogeneous_d n := LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+    rw [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff] at hx ⊢
+    exact fun i ↦ by
+      rw [DirectSum.lmap_apply]
+      simpa using ((r i).isHomogeneous_d n).map_mem (hx i)
+  isHomogeneous_π := LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+    rw [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff] at hx ⊢
+    exact fun i ↦ by
+      rw [DirectSum.lmap_apply]
+      simpa using (r i).isHomogeneous_π.map_mem (hx i)
+  surjective_π := (DirectSum.lmap_surjective _).2 fun i ↦ (r i).surjective_π
+  exact_d_π := Function.Exact.directSum fun i ↦ (r i).exact_d_π
+  exact_d_d n := Function.Exact.directSum fun i ↦ (r i).exact_d_d n
+
+omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
+  [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in
+/-- The terms of the direct-sum resolution are the direct sums of the component terms. -/
+@[simp]
+theorem directSum_X (n : ℕ) :
+    (directSum G r).X n = DirectSum ι fun i ↦ (r i).X n := (rfl)
+
+omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
+  [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in
+/-- The grading on each term of the direct-sum resolution is componentwise. -/
+@[simp]
+theorem directSum_grading (n : ℕ) :
+    (directSum G r).grading n = InternalGrading.directSum fun i ↦ (r i).grading n := (rfl)
+
+omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
+  [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in
+/-- The differentials of the direct-sum resolution are componentwise. -/
+@[simp]
+theorem directSum_d (n : ℕ) :
+    (directSum G r).d n = DirectSum.lmap fun i ↦ (r i).d n := (rfl)
+
+omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
+  [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in
+/-- The augmentation of the direct-sum resolution is componentwise. -/
+@[simp]
+theorem directSum_π : (directSum G r).π = DirectSum.lmap fun i ↦ (r i).π := (rfl)
+
+omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
+  [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in
+/-- The componentwise direct-sum resolution is linear exactly when every component resolution is
+linear. -/
+@[simp]
+theorem isLinear_directSum_iff : (directSum G r).IsLinear ↔ ∀ i, (r i).IsLinear := by
+  rw [isLinear_iff]
+  constructor
+  · intro h i n
+    exact (InternalGrading.isGeneratedInDegree_directSum_iff _ _).1 (h n) i
+  · intro h n
+    exact (InternalGrading.isGeneratedInDegree_directSum_iff _ _).2 fun i ↦ h i n
 
 end GradedProjectiveResolution
 

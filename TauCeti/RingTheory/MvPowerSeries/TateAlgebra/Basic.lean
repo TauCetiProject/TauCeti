@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
@@ -43,6 +44,9 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `NormMulClass` from its coefficient ring.
 * `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
   coefficient ring are dense.
+* `MvPowerSeries.isRestricted_renameEquiv_iff`: renaming the variables along an equivalence
+  reindexes the polyradii, and `MvPowerSeries.IsRestricted.renameAlgEquiv` is the resulting
+  algebra isomorphism of restricted-series subrings.
 * `MvPowerSeries.mk_monomial_eq_algebraMap_mul_prod`: a restricted monomial `r Xᵗ` is the constant
   `r` times the product of the variables.
 * Over a normed field, the restricted-series subring is a `NormedAlgebra` over its coefficients.
@@ -434,6 +438,46 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
   rw [h, norm_C]
 
 end NormedCommRing
+
+section Rename
+
+variable {σ τ R : Type*} [NormedCommRing R]
+
+/-- **Restrictedness is invariant under renaming the variables.** Renaming along an equivalence
+`e : σ ≃ τ` gives a series restricted at the polyradii `c` exactly when the original series is
+restricted at the reindexed polyradii `c ∘ e`. -/
+theorem isRestricted_renameEquiv_iff (e : σ ≃ τ) {c : τ → ℝ} {f : MvPowerSeries σ R} :
+    IsRestricted c (renameEquiv R e f) ↔ IsRestricted (c ∘ e) f := by
+  -- the weighted coefficients of `f` are those of the renamed series, reindexed along `e`
+  have h : (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * t.prod ((c ∘ e) · ^ ·)) =
+      (fun u : τ →₀ ℕ ↦ ‖coeff u (renameEquiv R e f)‖ * u.prod (c · ^ ·)) ∘
+        Finsupp.equivCongrLeft e := by
+    funext t
+    have hc : coeff (t.equivMapDomain e) (rename e f) = coeff t f := by
+      simpa [Finsupp.embDomain_eq_mapDomain, Finsupp.equivMapDomain_eq_mapDomain] using
+        coeff_embDomain_rename e.toEmbedding f t
+    simp [hc, Finsupp.prod_equivMapDomain]
+  rw [IsRestricted, IsRestricted, h, ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
+  exact (tendsto_comap'_iff (by rw [(Finsupp.equivCongrLeft e).range_eq_univ]; exact univ_mem)).symm
+
+variable [IsUltrametricDist R]
+
+/-- **Renaming the variables of restricted series.** Renaming along an equivalence `e : σ ≃ τ` is
+an `R`-algebra isomorphism from the series restricted at the reindexed polyradii `c ∘ e` to the
+series restricted at `c`. -/
+noncomputable def IsRestricted.renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ) :
+    IsRestricted.subring (R := R) (c ∘ e) ≃ₐ[R] IsRestricted.subring (R := R) c :=
+  AlgEquiv.ofRingEquiv (f := (renameEquiv R e).toRingEquiv.restrict _ _ fun _ ↦
+    (isRestricted_renameEquiv_iff e).symm) fun r ↦ Subtype.ext (rename_C _ r)
+
+/-- The renaming isomorphism of restricted series is `MvPowerSeries.renameEquiv` on the
+underlying series. -/
+@[simp]
+theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
+    (f : IsRestricted.subring (R := R) (c ∘ e)) :
+    (renameAlgEquiv e c f : MvPowerSeries τ R) = renameEquiv R e f := (rfl)
+
+end Rename
 
 section NormedField
 
