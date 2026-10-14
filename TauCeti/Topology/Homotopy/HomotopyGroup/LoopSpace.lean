@@ -196,6 +196,14 @@ def genLoopLoopHomeomorph (k : ℕ) :
   (genLoopLoopSumHomeomorph x (Fin k)).trans (GenLoop.congr x finSumFinEquiv)
 
 variable (x) in
+/-- `genLoopLoopHomeomorph` is `genLoopLoopSumHomeomorph` followed by the reindexing of the cube
+directions `Fin k ⊕ Fin 1 ≃ Fin (k + 1)`. -/
+theorem genLoopLoopHomeomorph_apply_eq (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x)) :
+    genLoopLoopHomeomorph x k p =
+      GenLoop.congr x finSumFinEquiv (genLoopLoopSumHomeomorph x _ p) := by
+  rw [genLoopLoopHomeomorph, Homeomorph.trans_apply]
+
+variable (x) in
 /-- The last cube direction of `genLoopLoopHomeomorph` is the path parameter. -/
 @[simp]
 theorem genLoopLoopHomeomorph_apply (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x))
