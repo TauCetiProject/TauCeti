@@ -478,7 +478,7 @@ instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerR
   have := ι.valuativeExtension
   have hmap : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) = algebraMap 𝒪[L] 𝒪[M] := by
     ext x
-    simp only [coe_integerRingHom_apply, ValuativeExtension.coe_algebraMap_integerRing]
+    simp only [coe_integerRingHom_apply, TauCeti.coe_algebraMap_integerRing]
   have hlocal : IsLocalHom (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) :=
     hmap.symm ▸ (inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M]))
   exact ⟨hlocal.map_nonunit⟩
@@ -527,6 +527,7 @@ field carrying a valuation extending the base-field valuation. -/
 theorem valuativeExtension [ValuativeRel Ω] [ValuativeExtension K Ω]
     (E : IntermediateField K Ω) [Algebra.IsAlgebraic K E] [ValuativeRel E]
     [ValuativeExtension K E] : ValuativeExtension E Ω := by
-  simpa using E.val.valuativeExtension
+  have h := E.val.valuativeExtension
+  exact ⟨fun a b ↦ h.vle_iff_vle a b⟩
 
 end IntermediateField
