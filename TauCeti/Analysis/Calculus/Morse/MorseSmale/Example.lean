@@ -439,6 +439,8 @@ theorem isMorseSmale_cosAddHalfSq :
     IsMorseSmale cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq := by
   rw [isMorseSmale_iff]
   intro p q y hp hq hyu hys
+  replace hp := hp.fderiv_eq_zero
+  replace hq := hq.fderiv_eq_zero
   have hpc := fderiv_cosAddHalfSq_eq_zero_iff.1 hp
   have hqc := fderiv_cosAddHalfSq_eq_zero_iff.1 hq
   have hcos : Real.cos (q 0) = 1 ∨ Real.cos (q 0) = -1 :=
