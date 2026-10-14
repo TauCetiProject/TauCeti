@@ -64,7 +64,7 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
 * `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
   homomorphism to the units of `ZMod (p ^ n)`; it is surjective, that is, every unit of
-  `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]` (`PadicInt.surjective_unitsToZModPow`),
+  `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]` (`PadicInt.unitsToZModPow_surjective`),
   compatible with the reductions `ZMod.unitsMap` between levels
   (`PadicInt.unitsMap_unitsToZModPow`), and trivial at level `0`
   (`PadicInt.unitsToZModPow_zero_apply`).
@@ -314,7 +314,7 @@ theorem coe_unitsToZModPow_apply (n : ℕ) (u : ℤ_[p]ˣ) :
 lifts to a unit of `ℤ_[p]`. For `n > 0` this holds because truncation is a surjective local
 homomorphism out of the local ring `ℤ_[p]`; for `n = 0` the target `ZMod 1` is the trivial ring,
 so there is nothing to lift. -/
-theorem surjective_unitsToZModPow (n : ℕ) :
+theorem unitsToZModPow_surjective (n : ℕ) :
     Function.Surjective (unitsToZModPow (p := p) n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance

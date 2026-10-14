@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.Topology.Separation.DisjointCover
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 
@@ -33,7 +34,7 @@ the finite groups `(ℤ/p^nℤ)ˣ` a complete system of finite coordinates for `
   space `R` (`TauCeti.dense_setOf_comp_unitsToZModPow`).
 
 The factor of a function through the surjection `unitsToZModPow n` is unique
-(`Function.Surjective.injective_comp_right` applied to `PadicInt.surjective_unitsToZModPow`,
+(`Function.Surjective.injective_comp_right` applied to `PadicInt.unitsToZModPow_surjective`,
 or `MonoidHom.cancel_right` for homomorphisms).
 
 These are the statements that let one integrate against a measure on `ℤ_pˣ` through its images
@@ -62,7 +63,7 @@ truncation `PadicInt.unitsToZModPow n`, whose kernel is the principal unit group
 noncomputable def unitToZModPowQuotient (n : ℕ) :
     ℤ_[p]ˣ ⧸ unitsPrincipal p n ≃* (ZMod (p ^ n))ˣ :=
   (QuotientGroup.quotientMulEquivOfEq (ker_unitsToZModPow p n).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _ (PadicInt.surjective_unitsToZModPow n))
+    (QuotientGroup.quotientKerEquivOfSurjective _ (PadicInt.unitsToZModPow_surjective n))
 
 /-- The congruence quotient sends the coset of `u` to the truncation of `u` modulo `p ^ n`. -/
 @[simp]
@@ -70,6 +71,22 @@ theorem unitToZModPowQuotient_mk (n : ℕ) (u : ℤ_[p]ˣ) :
     unitToZModPowQuotient p n (u : ℤ_[p]ˣ ⧸ unitsPrincipal p n) =
       PadicInt.unitsToZModPow n u :=
   (rfl)
+
+/-- The congruence quotient is the native first-isomorphism-theorem equivalence for truncation,
+after identifying its kernel with the principal unit group. -/
+theorem unitToZModPowQuotient_eq_native (n : ℕ) :
+    unitToZModPowQuotient p n =
+      (QuotientGroup.quotientMulEquivOfEq (ker_unitsToZModPow p n).symm).trans
+        (QuotientGroup.quotientKerEquivOfSurjective _
+          (PadicInt.unitsToZModPow_surjective n)) := by
+  apply MulEquiv.ext
+  intro x
+  induction x using QuotientGroup.induction_on with
+  | H u =>
+    rw [unitToZModPowQuotient_mk, MulEquiv.trans_apply,
+      QuotientGroup.quotientMulEquivOfEq_mk,
+      QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+    rfl
 
 /-- The inverse of the congruence quotient sends the truncation of `u` modulo `p ^ n` to the coset
 of `u`. -/

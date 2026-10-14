@@ -144,7 +144,7 @@ automorphism of the `p^n`-th roots of unity, `ζ ↦ ζ^a` with `a` prime to `p`
 element of `G_{ℚ_p}`. -/
 theorem surjective_toZModPow_localCyclotomicCharacter_ratPadic (n : ℕ) :
     Function.Surjective (PadicInt.unitsToZModPow n ∘ localCyclotomicCharacter p ℚ_[p]) :=
-  (PadicInt.surjective_unitsToZModPow n).comp (surjective_localCyclotomicCharacter_ratPadic p)
+  (PadicInt.unitsToZModPow_surjective n).comp (surjective_localCyclotomicCharacter_ratPadic p)
 
 end RatPadic
 

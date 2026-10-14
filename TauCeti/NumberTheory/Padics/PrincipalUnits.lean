@@ -278,7 +278,7 @@ variable (p) in
 @[simp]
 theorem index_unitsPrincipal (f : ℕ) : (unitsPrincipal p f).index = Nat.totient (p ^ f) := by
   rw [← ker_unitsToZModPow, Subgroup.index_ker,
-    MonoidHom.range_eq_top_of_surjective _ (PadicInt.surjective_unitsToZModPow f),
+    MonoidHom.range_eq_top_of_surjective _ (PadicInt.unitsToZModPow_surjective f),
     Subgroup.card_top, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 variable (p) in
