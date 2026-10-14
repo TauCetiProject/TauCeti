@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+import Mathlib.Data.Finset.Powerset
 import Mathlib.Topology.DiscreteSubset
 
 /-!
@@ -16,9 +17,9 @@ and consequently uses only finitely many vertices. This permits maps from compac
 including spheres and cubes, to be studied inside finite polyhedra even when the ambient
 complex is neither finite nor locally finite.
 
-The key observation is that a set containing at most one point with each barycentric support
-is closed: its intersection with any closed simplex is finite. Choosing one point for each
-support occurring in a compact set therefore gives a compact discrete set.
+The compact-support finiteness results provide a finite vertex set containing the support
+of every point in a compact subset. They apply to arbitrary vertex types and require no
+local finiteness assumption on the complex.
 
 ## References
 

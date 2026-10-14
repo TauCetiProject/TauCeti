@@ -13,13 +13,12 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Ba
 # Vertex restrictions and compact factorization
 
 The realization of a vertex restriction is the closed subspace of points supported on those
-vertices. In particular, every continuous map from a compact space factors continuously
-through a restriction to finitely many vertices. This reduces nullhomotopy constructions
-for spheres and cubes in infinite weak polyhedra to finite vertex sets.
+vertices. Every continuous map with compact image factors continuously through a restriction
+to finitely many vertices. In particular, this applies to maps from compact spaces, reducing
+nullhomotopy constructions for spheres and cubes in infinite weak polyhedra to finite vertex sets.
 
-The identification uses `PreAbstractSimplicialComplex.relabelingHomeomorph`, rather than
-constructing another barycentric pullback. All topologies are weak realization topologies;
-neither the complex nor the ambient vertex type needs to be locally finite or countable.
+All topologies are weak realization topologies; neither the complex nor the ambient vertex
+type needs to be locally finite or countable.
 
 ## References
 
@@ -56,21 +55,23 @@ def restrictRealizationHomeomorph :
   exact a.symm.trans (e.trans (Homeomorph.setCongr (Set.ext fun x =>
     (mem_map_restrict_iff K s x.1.support).trans (and_iff_right (support_mem K x)))))
 
+private theorem restrictRealizationHomeomorph_val (x : Realization (K.restrict s)) :
+    (K.restrictRealizationHomeomorph s x).1.1 =
+      Finsupp.mapDomain (Subtype.val : s → ι) x.1 := by
+  -- The equal-set homeomorphisms retype the point without changing its coordinates.
+  convert (K.restrict s).toPreAbstractSimplicialComplex.relabelingHomeomorph_val
+    (Function.Embedding.subtype (· ∈ s)) le_rfl
+    (fun σ hσ => (mem_map_restrict_iff K s σ).mp hσ |>.1)
+    ⟨x, support_mem (K.restrict s) x⟩ using 1 <;> rfl
+
 /-- The restriction homeomorphism followed by the subtype inclusion is the simplicial
 realization of the vertex inclusion. -/
 @[simp]
 theorem restrictRealizationHomeomorph_apply (x : Realization (K.restrict s)) :
     (K.restrictRealizationHomeomorph s x).1 = (K.restrictInclusion s).realizationMap x := by
   apply Subtype.ext
-  dsimp only [restrictRealizationHomeomorph]
-  -- `erw` identifies the SetLike coercions of the restriction's underlying precomplex.
-  erw [Homeomorph.trans_apply, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
-    Homeomorph.symm_trans_apply, TauCeti.Homeomorph.setCongr_symm_apply,
-    PreAbstractSimplicialComplex.relabelingHomeomorph_val]
-  · simp only [PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
-      coe_restrictInclusion]
-    rfl
-  · rfl
+  simp only [restrictRealizationHomeomorph_val,
+    PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val, coe_restrictInclusion]
 
 /-- The inverse restriction homeomorphism pulls barycentric coordinates back along the
 vertex inclusion. -/
@@ -116,13 +117,13 @@ theorem mem_range_restrictInclusion_realizationMap (x : Realization K) :
     refine ⟨(K.restrictRealizationHomeomorph s).symm ⟨x, hx⟩, ?_⟩
     rw [← restrictRealizationHomeomorph_apply, Homeomorph.apply_symm_apply]
 
-/-- Every continuous map out of a compact space factors continuously through a finite vertex
+/-- Every continuous map with compact image factors continuously through a finite vertex
 restriction. The statement includes empty domains and imposes no hypothesis on the vertices. -/
-theorem exists_finite_restrict_factorization {X : Type*} [TopologicalSpace X] [CompactSpace X]
-    (f : C(X, Realization K)) :
+theorem exists_finite_restrict_factorization {X : Type*} [TopologicalSpace X]
+    (f : C(X, Realization K)) (hf : IsCompact (range f)) :
     ∃ V : Finset ι, ∃ g : C(X, Realization (K.restrict (V : Set ι))),
       (K.restrictInclusion (V : Set ι)).realizationMap.comp g = f := by
-  obtain ⟨V, hV⟩ := exists_finset_support_subset_of_isCompact (isCompact_range f.continuous)
+  obtain ⟨V, hV⟩ := exists_finset_support_subset_of_isCompact hf
   let e := K.restrictRealizationHomeomorph (V : Set ι)
   let h : C(X, {x : Realization K // (x.1.support : Set ι) ⊆ (V : Set ι)}) :=
     ⟨fun x => ⟨f x, hV (f x) (mem_range_self x)⟩,
