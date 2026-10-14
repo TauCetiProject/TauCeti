@@ -219,7 +219,7 @@ class ScopeApprovalTests(unittest.TestCase):
 
 class WorkflowTests(unittest.TestCase):
     def setUp(self):
-        self.workflow = yaml.safe_load((ROOT / '.github/workflows/pr-build.yml').read_text())
+        self.workflow = yaml.safe_load((ROOT / '.github/workflows/pr-build-jobs.yml').read_text())
         self.steps = self.workflow['jobs']['sandboxed-build']['steps']
         self.report = next(s['run'] for s in self.steps if s.get('id') == 'report')
 
@@ -260,7 +260,8 @@ class WorkflowTests(unittest.TestCase):
     def test_pr_approval_dispatch_is_not_a_batch(self):
         self.assertIn("github.event.action == 'tauceti-bors-staging'", self.workflow['env']['IS_BATCH'])
         self.assertIn('tauceti-bors-pr-approved', str(self.workflow))
-        self.assertIn('github.event.client_payload.pr', self.workflow['concurrency']['group'])
+        entrypoint = yaml.safe_load((ROOT / '.github/workflows/pr-build.yml').read_text())
+        self.assertIn('github.event.client_payload.pr', entrypoint['concurrency']['group'])
 
 
 if __name__ == '__main__':

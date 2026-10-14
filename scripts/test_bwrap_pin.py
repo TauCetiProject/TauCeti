@@ -2,12 +2,12 @@
 
 Run with: python3 scripts/test_bwrap_pin.py
 
-pr-build.yml sandboxes untrusted PR sources; pr-profile.yml measures them; nightly-verify.yml
+pr-build-jobs.yml sandboxes untrusted PR sources; pr-profile.yml measures them; nightly-verify.yml
 sandboxes a cache-restored build that imports the artifacts it is judging. All three pin the
 bubblewrap package, its .deb's SHA-256 and the SHA-256 of the binary that .deb installs, and
 any of them would be weakened by trusting a different binary than the others.
 
-The pin is deliberately duplicated rather than shared through a composite action: pr-build.yml
+The pin is deliberately duplicated rather than shared through a composite action: pr-build-jobs.yml
 sits on the merge queue's critical path and runs from the base definition under
 pull_request_target, so a shared action could not be exercised by the PR that introduced it.
 This test is what stops the copies drifting.
@@ -30,7 +30,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WORKFLOWS = (
-    ROOT / ".github/workflows/pr-build.yml",
+    ROOT / ".github/workflows/pr-build-jobs.yml",
     ROOT / ".github/workflows/pr-profile.yml",
     ROOT / ".github/workflows/nightly-verify.yml",
 )
@@ -97,7 +97,7 @@ class BwrapPin(unittest.TestCase):
 
     # Which trees each workflow checks out and must normalise before touching.
     TREES = {
-        "pr-build.yml": ("pr",),
+        "pr-build-jobs.yml": ("pr",),
         "pr-profile.yml": ("base", "head"),
         "nightly-verify.yml": ("reference",),
     }

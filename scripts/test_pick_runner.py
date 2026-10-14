@@ -16,7 +16,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 PICKER = yaml.safe_load((ROOT / ".github/workflows/pick-runner.yml").read_text())
-BUILD = yaml.safe_load((ROOT / ".github/workflows/pr-build.yml").read_text())
+BUILD = yaml.safe_load((ROOT / ".github/workflows/pr-build-jobs.yml").read_text())
 NS = "nscloud-ubuntu-24.04-amd64-8x16-with-features"
 
 # Use real jq to exercise the workflow's filters, including pagination and errors.

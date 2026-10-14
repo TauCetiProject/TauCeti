@@ -122,7 +122,7 @@ class ReuseTests(unittest.TestCase):
         self.assertEqual(reuse.reconnect(self.root, self.saved), 0)
 
     def test_sandbox_snapshot_is_readonly_and_before_build(self):
-        workflow = (ROOT / ".github/workflows/pr-build.yml").read_text()
+        workflow = (ROOT / ".github/workflows/pr-build-jobs.yml").read_text()
         snapshot = "python3 gate/scripts/lake_cache_reuse.py snapshot pr gate/lake-cache-reuse.json"
         self.assertLess(workflow.index("run: bash gate/scripts/lake-cache-get.sh pr"), workflow.index(snapshot))
         self.assertLess(workflow.index(snapshot), workflow.index("- name: Build exact candidate under bwrap"))
@@ -132,7 +132,7 @@ class ReuseTests(unittest.TestCase):
         self.assertLess(build.index("lake_cache_reuse.py"), build.index("lake build --no-build --rehash -o"))
 
     def test_toolchain_bumps_test_the_validated_candidate_pin_before_building(self):
-        workflow = (ROOT / ".github/workflows/pr-build.yml").read_text()
+        workflow = (ROOT / ".github/workflows/pr-build-jobs.yml").read_text()
         block = workflow.split("- name: Validate Lake archive reuse against a changed toolchain", 1)[1].split("- name:", 1)[0]
         self.assertIn("env.INFRA != '1' && env.TOOLCHAIN_CHANGED == '1'", block)
         self.assertIn('ELAN_TOOLCHAIN="$(cat pr/lean-toolchain)"', block)

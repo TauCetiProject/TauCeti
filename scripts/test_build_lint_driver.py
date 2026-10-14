@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 BUILD = (ROOT / "scripts" / "build-lint-driver.sh").read_text()
 LINT_ENV = (ROOT / "scripts" / "lint-env.sh").read_text()
 SANDBOX = (ROOT / "scripts" / "sandbox-build.sh").read_text()
-PR_BUILD_TEXT = (ROOT / ".github" / "workflows" / "pr-build.yml").read_text()
+PR_BUILD_TEXT = (ROOT / ".github" / "workflows" / "pr-build-jobs.yml").read_text()
 PR_BUILD = yaml.safe_load(PR_BUILD_TEXT)
 
 
