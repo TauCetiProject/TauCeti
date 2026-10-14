@@ -195,10 +195,7 @@ theorem exists_twistCocycle_eq (W : WeierstrassCurve K)
     ((IsLocallyConstant.iff_continuous c).2 c.continuous).comp
       fun a ↦ ((W.autCoeffEquiv L).symm a).val
   have hf (σ τ : Gal(L/K)) : f (σ * τ) = f σ * (f τ).map (σ : L →+* L) := by
-    have h := congrArg (fun a ↦ ((W.autCoeffEquiv L).symm a).val) (c.map_mul' σ τ)
-    change ((W.autCoeffEquiv L).symm (c.toFun (σ * τ))).val =
-      ((W.autCoeffEquiv L).symm (c.toFun σ)).val *
-        ((W.autCoeffEquiv L).symm (c.toFun τ)).val.map (σ : L →+* L)
+    have h := congrArg (fun a ↦ ((W.autCoeffEquiv L).symm a).val) (c.apply_mul σ τ)
     simpa only [_root_.map_mul, Subgroup.coe_mul, autCoeffEquiv_symm_smul] using h
   obtain ⟨V, C, hC, h⟩ :=
     exists_smul_baseChange_eq_and_eq_mul_map_inv W hc hf fun σ ↦
