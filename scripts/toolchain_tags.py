@@ -285,7 +285,13 @@ STATUSES = ("tagged", "ready", "pending", "pending-security-audit", "ahead", "bl
 
 
 def security_snapshot():
-    """Fresh remote refs plus first-parent order. No local fallback can authorize a tag."""
+    """Return (cursor SHA, covered commit SHAs) from fresh remote refs.
+
+    The covered set is main's first-parent prefix, including the cursor. Missing
+    or invalid refs, shallow history, or a cursor outside that history raise
+    RuntimeError; other remote or Git failures also propagate. No local
+    fallback can authorize a tag.
+    """
     cursor = gh_optional(f"repos/{REPO}/git/ref/heads/security-audit", jq=".object.sha")
     if not cursor or not re.fullmatch(r"[0-9a-f]{40}", cursor):
         raise RuntimeError("security-audit cursor is missing or invalid")
