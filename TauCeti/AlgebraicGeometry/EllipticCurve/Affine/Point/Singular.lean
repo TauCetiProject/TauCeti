@@ -678,16 +678,18 @@ theorem natCard_torsionBy_dvd_of_Δ_eq_zero (hΔ : W.Δ = 0) {n : ℕ} (hn : (n 
     (by rw [degree_quadratic one_ne_zero]; decide)
   have hK := natCard_torsionBy_dvd_of_isSingular h (α := α) (by simpa [sub_eq_add_neg] using hα)
     (n := n) (by rwa [← map_natCast f, _root_.map_ne_zero])
-  -- and the `n`-torsion over `F` embeds into the `n`-torsion over the closure
-  let φ : W.toAffine.Point →+ (W.map f).toAffine.Point :=
-    AddMonoidHom.mk' (Point.mapAlong f f.injective) (Point.mapAlong_add f f.injective)
-  have hle : (AddSubgroup.torsionBy W.toAffine.Point n).map φ ≤
-      AddSubgroup.torsionBy (W.map f).toAffine.Point n := by
-    rintro _ ⟨P, hP, rfl⟩
-    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 hP,
-      _root_.map_zero]
-  rw [← AddSubgroup.card_map_of_injective (f := φ) (Point.mapAlong_injective f f.injective)]
-  exact (AddSubgroup.card_dvd_of_le hle).trans hK
+  have hf : Function.Injective (W.torsionMapAlong f n) := fun P Q hPQ ↦ by
+    apply TauCeti.injective_torsionByMap
+      (f := (AddMonoidHom.mk' (Point.mapAlong f f.injective)
+        (Point.mapAlong_add f f.injective)).toIntLinearMap)
+      (Point.mapAlong_injective f f.injective)
+    apply Subtype.ext
+    rw [TauCeti.coe_torsionByMap_apply, TauCeti.coe_torsionByMap_apply]
+    change Point.mapAlong f f.injective (P : W.toAffine.Point) =
+      Point.mapAlong f f.injective (Q : W.toAffine.Point)
+    simpa only [coe_torsionMapAlong_apply] using congrArg Subtype.val hPQ
+  exact (AddSubgroup.card_dvd_of_injective (W.torsionMapAlong f n)
+    hf).trans hK
 
 end Point
 

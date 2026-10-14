@@ -68,6 +68,8 @@ All results are in the namespace `WeierstrassCurve.Affine.Point`.
   `p ∉ u ^ (p - 1)`, reduction is injective on the torsion subgroup of `W(F)`.
 * `card_torsion_dvd_card_reduction`: under the same hypotheses, the order of the torsion subgroup
   of `W(F)` divides the number of points of the reduced curve.
+* `eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero`: at bad reduction, a point of
+  `E₀(F)` killed by an integer prime to `u` cannot lie in the kernel of reduction.
 * `natCard_nonsingularReduction_inf_torsionBy_dvd`: at bad reduction, the number of points of
   `W(F)[n]` with nonsingular reduction divides `n`, for `n ∉ u`.
 * `natCard_torsionBy_dvd_mul_index_nonsingularReduction`: at bad reduction, `#W(F)[n]` divides
@@ -252,6 +254,22 @@ section BadReduction
 
 variable [IsIntegral (u.valuation F).valuationSubring W] [W.IsElliptic] [DecidableEq F]
 
+/-- **At bad reduction, nonsingular reduction has no torsion prime to `u` in its kernel**
+(Silverman AEC VII.3.1(b)): a point in `E₀(F)` killed by an integer `n ∉ u` that reduces to the
+point at infinity is the point at infinity. -/
+theorem eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero {n : ℕ}
+    [DecidableEq (ResidueField (u.valuation F).valuationSubring)]
+    (hn : (n : A) ∉ u.asIdeal) {P : W.nonsingularReduction (u.valuation F)}
+    (hP : W.nonsingularReductionHom (u.valuation F) P = 0) (h : n • (P : W.Point) = 0) :
+    P = 0 := by
+  classical
+  apply Subtype.ext
+  by_contra hP0
+  rcases (nonsingularReductionHom_eq_zero_iff _ _).1 hP with h0 | hx
+  · exact hP0 h0
+  · exact hx.not_ge
+      (valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero u hn hP0 h).1
+
 /-- **At bad reduction, the `n`-torsion with nonsingular reduction is small** (Silverman AEC
 VII.7.1): if the integral model of `W` at `u` has singular reduction, then for `n ∉ u` the number of
 points of `W(F)[n]` with nonsingular reduction divides `n`. In particular `E₀(F) ∩ W(F)[n]` is
@@ -274,11 +292,12 @@ theorem natCard_nonsingularReduction_inf_torsionBy_dvd (hΔ : u.valuation F W.Δ
   let ρ := (W.nonsingularReductionHom (u.valuation F)).comp
     (AddSubgroup.inclusion (inf_le_left (b := AddSubgroup.torsionBy W.Point n)))
   have hρ : Function.Injective ρ := by
-    refine (injective_iff_map_eq_zero ρ).2 fun P hP ↦ Subtype.ext <| by_contra fun hP0 ↦ ?_
-    rcases (nonsingularReductionHom_eq_zero_iff _ _).1 hP with h0 | hx
-    · exact hP0 h0
-    · exact hx.not_ge (valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero u hn
-        hP0 (AddSubgroup.torsionBy.nsmul_iff.1 P.2.2)).1
+    refine (injective_iff_map_eq_zero ρ).2 fun P hP ↦ ?_
+    have hP' := eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero u hn hP
+      ((AddSubgroup.torsionBy.nsmul_iff (A := W.Point)).1 P.2.2)
+    have hPval := congrArg
+      (fun Q : W.nonsingularReduction (u.valuation F) ↦ (Q : W.Point)) hP'
+    exact Subtype.ext hPval
   -- and its image consists of `n`-torsion points of the singular reduced curve
   have hρn (P) : ρ P ∈ AddSubgroup.torsionBy _ n := by
     have hnP : n • P = 0 := Subtype.ext (AddSubgroup.torsionBy.nsmul_iff.1 P.2.2)
