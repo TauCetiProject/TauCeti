@@ -55,48 +55,50 @@ private instance instModuleFiniteAdditiveUnit : Module.Finite ℤ (Additive (S.u
   rw [Module.Finite.iff_addGroup_fg]
   infer_instance
 
-private instance instModuleFiniteAdditiveUnitQuotTorsion :
-    Module.Finite ℤ (Additive (S.unit K ⧸ CommGroup.torsion (S.unit K))) :=
-  Module.Finite.of_surjective
-    (MonoidHom.toAdditive (QuotientGroup.mk' (CommGroup.torsion (S.unit K)))).toIntLinearMap
-    (QuotientGroup.mk'_surjective (CommGroup.torsion (S.unit K)))
+omit [Finite S] in
+private theorem ofMul_mem_torsion_iff {x : S.unit K} :
+    Additive.ofMul x ∈ Submodule.torsion ℤ (Additive (S.unit K)) ↔
+      x ∈ CommGroup.torsion (S.unit K) := by
+  rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_int, AddCommGroup.mem_torsion,
+    isOfFinAddOrder_ofMul_iff, CommGroup.mem_torsion]
 
-/-- A basis of the group of S-units modulo its torsion subgroup. -/
+/-- A basis of the group of S-units modulo its torsion submodule. -/
 def basisModTorsion :
     Basis (Fin (NumberField.Units.rank K + Nat.card S)) ℤ
-      (Additive (S.unit K ⧸ CommGroup.torsion (S.unit K))) :=
-  Module.finBasisOfFinrankEq ℤ _ <| by
-    simpa [finrank_sUnits_numberField K S] using!
-      (finrank_quotient_torsion_eq (M := Additive (S.unit K)))
+      (Additive (S.unit K) ⧸ Submodule.torsion ℤ (Additive (S.unit K))) :=
+  Module.finBasisOfFinrankEq ℤ _ <|
+    (finrank_quotient_eq_of_le_torsion le_rfl).trans (finrank_sUnits_numberField K S)
 
 /-- A fundamental system of S-units, obtained by lifting `basisModTorsion` through the quotient
 by torsion. -/
 def fundSystem : Fin (NumberField.Units.rank K + Nat.card S) → S.unit K :=
-  fun i ↦ Quotient.out ((basisModTorsion S i).toMul :
-    S.unit K ⧸ CommGroup.torsion (S.unit K))
+  fun i ↦ (Quotient.out (basisModTorsion S i)).toMul
 
 /-- The image of a fundamental S-unit in the quotient by torsion is the corresponding basis
 vector. -/
 @[simp]
 theorem fundSystem_mk (i : Fin (NumberField.Units.rank K + Nat.card S)) :
-    Additive.ofMul (QuotientGroup.mk (fundSystem S i)) = basisModTorsion S i := by
-  simp_rw [fundSystem, ← Equiv.eq_symm_apply, Additive.ofMul_symm_eq, Quotient.out_eq']
+    Submodule.Quotient.mk (Additive.ofMul (fundSystem S i)) = basisModTorsion S i := by
+  rw [fundSystem, ofMul_toMul]
+  exact Quotient.out_eq' _
+
+/-- The image in the quotient by torsion of a product of integral powers of the fundamental
+system is the corresponding integral combination of basis vectors. -/
+private theorem mk_prod_fundSystem_zpow (f : Fin (NumberField.Units.rank K + Nat.card S) → ℤ) :
+    Submodule.Quotient.mk (Additive.ofMul (∏ i, fundSystem S i ^ f i)) =
+      ∑ i, f i • basisModTorsion S i := by
+  simp only [ofMul_prod, ofMul_zpow, ← Submodule.mkQ_apply, map_sum, map_zsmul]
+  simp only [Submodule.mkQ_apply, fundSystem_mk]
 
 /-- The exponents in any torsion-times-fundamental-system expression are the basis coordinates
 of the S-unit modulo torsion. -/
 theorem fun_eq_repr {x ζ : S.unit K} {f : Fin (NumberField.Units.rank K + Nat.card S) → ℤ}
     (hζ : ζ ∈ CommGroup.torsion (S.unit K))
     (h : x = ζ * ∏ i, fundSystem S i ^ f i) :
-    f = (basisModTorsion S).repr (Additive.ofMul (QuotientGroup.mk x)) := by
-  suffices Additive.ofMul (QuotientGroup.mk x) = ∑ i, f i • basisModTorsion S i by
-    rw [← (basisModTorsion S).repr_sum_self f, ← this]
-  calc
-    Additive.ofMul (QuotientGroup.mk x)
-        = ∑ i, f i • Additive.ofMul (QuotientGroup.mk (fundSystem S i)) := by
-          rw [h, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr hζ, one_mul,
-            QuotientGroup.mk_prod, ofMul_prod]
-          simp only [QuotientGroup.mk_zpow, ofMul_zpow]
-    _ = ∑ i, f i • basisModTorsion S i := by simp_rw [fundSystem_mk S]
+    f = (basisModTorsion S).repr (Submodule.Quotient.mk (Additive.ofMul x)) := by
+  rw [h, ofMul_mul, Submodule.Quotient.mk_add,
+    (Submodule.Quotient.mk_eq_zero _).mpr ((ofMul_mem_torsion_iff S).mpr hζ), zero_add,
+    mk_prod_fundSystem_zpow, (basisModTorsion S).repr_sum_self f]
 
 /-- Every S-unit has a unique expression as a torsion S-unit times a product of integral powers
 of the fundamental system. -/
@@ -104,24 +106,16 @@ theorem exist_unique_eq_mul_prod (x : S.unit K) :
     ∃! ζe : CommGroup.torsion (S.unit K) ×
         (Fin (NumberField.Units.rank K + Nat.card S) → ℤ),
       x = ζe.1 * ∏ i, fundSystem S i ^ ζe.2 i := by
-  let ζ := x * (∏ i, fundSystem S i ^ ((basisModTorsion S).repr
-    (Additive.ofMul (QuotientGroup.mk x)) i))⁻¹
-  have quotient_prod (f : Fin (NumberField.Units.rank K + Nat.card S) → ℤ) :
-      Additive.ofMul (QuotientGroup.mk (∏ i, fundSystem S i ^ f i)) =
-        ∑ i, f i • basisModTorsion S i := by
-    rw [QuotientGroup.mk_prod, ofMul_prod]
-    simp only [QuotientGroup.mk_zpow, ofMul_zpow, fundSystem_mk]
+  let e := (basisModTorsion S).repr (Submodule.Quotient.mk (Additive.ofMul x))
+  let ζ := x * (∏ i, fundSystem S i ^ e i)⁻¹
   have h_tors : ζ ∈ CommGroup.torsion (S.unit K) := by
-    rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← ofMul_eq_zero,
-      ofMul_mul, ofMul_inv, quotient_prod]
-    rw [add_eq_zero_iff_eq_neg, neg_neg]
-    exact ((basisModTorsion S).sum_repr (Additive.ofMul (QuotientGroup.mk x))).symm
-  refine ⟨⟨⟨ζ, h_tors⟩, ((basisModTorsion S).repr
-    (Additive.ofMul (QuotientGroup.mk x)) :
-      Fin (NumberField.Units.rank K + Nat.card S) → ℤ)⟩, ?_, ?_⟩
+    rw [← ofMul_mem_torsion_iff, ← Submodule.Quotient.mk_eq_zero, ofMul_mul, ofMul_inv,
+      Submodule.Quotient.mk_add, Submodule.Quotient.mk_neg, mk_prod_fundSystem_zpow,
+      (basisModTorsion S).sum_repr, add_neg_cancel]
+  refine ⟨⟨⟨ζ, h_tors⟩, (e : Fin (NumberField.Units.rank K + Nat.card S) → ℤ)⟩, ?_, ?_⟩
   · simp only [ζ, _root_.inv_mul_cancel_right]
   · rintro ⟨⟨ζ', h_tors'⟩, η⟩ hf
-    simp only [ζ, ← fun_eq_repr S h_tors' hf, Prod.mk.injEq, Subtype.mk.injEq, and_true]
+    simp only [ζ, e, ← fun_eq_repr S h_tors' hf, Prod.mk.injEq, Subtype.mk.injEq, and_true]
     nth_rewrite 1 [hf]
     rw [_root_.mul_inv_cancel_right]
 
