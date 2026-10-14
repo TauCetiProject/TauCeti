@@ -213,7 +213,6 @@ variable {m}
 
 /-- **The Weil pairing commutes with change of field** (Silverman III.8.1): for an embedding
 `τ : Kˢ → Lˢ` over `K`, `e_m(τ P, τ Q) = τ (e_m(P, Q))`. -/
-@[simp]
 theorem torsionCoeffWeilPairing_torsionCoeffBaseChange (P Q : W.TorsionCoeff m) :
     (W⁄L).torsionCoeffWeilPairing m (by simpa using hm.map (algebraMap K L))
         (W.torsionCoeffBaseChange τ m P) (W.torsionCoeffBaseChange τ m Q) =
