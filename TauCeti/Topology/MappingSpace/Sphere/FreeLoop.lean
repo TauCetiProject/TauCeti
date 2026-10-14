@@ -12,15 +12,17 @@ public import TauCeti.Topology.Sphere.Suspension
 /-!
 # Mapping spaces of the two-sphere as spaces of paths of free loops
 
-Let `𝓛Q = C(S¹, Q)` be the free loop space of `Q`, with the compact-open topology, and let `𝓛₀Q`
-be its component of contractible loops, the loops joined by a path to a constant loop. A path in
-`𝓛Q` that starts at a constant loop stays in `𝓛₀Q`. The sphere `S²` is the unreduced suspension
-of `S¹`, so, by currying `I × S¹ → Q` to a path of loops `I → 𝓛Q`:
+Let `𝓛Q = C(S¹, Q)` be the free loop space of `Q`, with the compact-open topology. The sphere `S²`
+is the unreduced suspension of `S¹`, so, by currying `I × S¹ → Q` to a path of loops `I → 𝓛Q`:
 
-* `Map(S², Q)` is homeomorphic to the space of paths in `𝓛₀Q` from a constant loop to a constant
+* `Map(S², Q)` is homeomorphic to the space of paths in `𝓛Q` from a constant loop to a constant
   loop;
 * `Map_*(S², Q)`, the maps sending the north pole to `⋆`, is homeomorphic to the space of such
   paths starting at the constant loop at `⋆`.
+
+A path in `𝓛Q` that starts at a constant loop stays in the component `𝓛₀Q` of contractible loops,
+which is why these are the spaces of paths in `𝓛₀Q` from a constant loop to a constant loop; the
+statements here are about paths in `𝓛Q`.
 
 The paths of free loops are taken on the fixed interval `I`.
 
@@ -35,7 +37,8 @@ The paths of free loops are taken on the fixed interval `I`.
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §5.2 (Lemma `kpi1`).
+  Applications to cotangent bundles*, arXiv:2404.07953, §5.2, the identification of the space of
+  paths in `𝓛₀Q` with the double loop space.
 -/
 
 public section

@@ -38,10 +38,8 @@ holds at the level of defining Hopf ideals, not only after choosing a value alge
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic Levi-decomposition milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap. The kernel identification is the normal-factor input for identifying
-the represented weight parabolic with the semidirect product of its weight-unipotent and
-weight-Levi subgroups.
+The kernel identification is the normal-factor input for identifying the represented weight
+parabolic with the semidirect product of its weight-unipotent and weight-Levi subgroups.
 -/
 
 public section

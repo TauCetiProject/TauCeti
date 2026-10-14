@@ -18,8 +18,8 @@ closed, hence compact, so every subbasic compact-open condition on `B` is the pu
 subbasic compact-open condition on `A`.
 
 Combined with the fact that a continuous surjection from a compact space to a Hausdorff space is a
-quotient map, this identifies mapping spaces out of a quotient such as `I^n / ∂I^n ≅ S^n` with
-subspaces of mapping spaces out of the cube.
+quotient map, this identifies mapping spaces out of a quotient such as `I^n / ∂I^n ≅ S^n`
+(for `n ≥ 1`) with subspaces of mapping spaces out of the cube.
 
 ## Main declarations
 

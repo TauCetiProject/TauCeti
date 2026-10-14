@@ -43,9 +43,7 @@ itself a quotient covering map for any group.
 
 ## References
 
-This completes the existence half in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-item 7: construct the pointed connected cover `UniversalCover x₀ / H`. It uses the universal
-cover adapted from Kim Morrison's
+This file uses the universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) and Mathlib's
 quotient-covering-map interface due to Junyan Xu.
 -/
