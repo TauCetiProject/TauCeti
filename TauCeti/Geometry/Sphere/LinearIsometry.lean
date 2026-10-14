@@ -181,6 +181,7 @@ theorem coe_smul_unitSphere (e : E ≃ₗᵢ[R] E) (x : sphere (0 : E) 1) :
 
 /-- The isometry equivalence of unit spheres induced by a linear isometry equivalence of `E` is
 the action of that isometry on the unit sphere. -/
+@[simp]
 theorem unitSphereIsometryEquiv_apply_eq_smul (e : E ≃ₗᵢ[R] E) (x : sphere (0 : E) 1) :
     unitSphereIsometryEquiv e x = e • x :=
   Subtype.ext ((coe_unitSphereIsometryEquiv_apply e x).trans (coe_smul_unitSphere e x).symm)

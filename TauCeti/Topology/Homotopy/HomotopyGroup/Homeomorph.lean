@@ -107,6 +107,22 @@ theorem _root_.Homeomorph.genLoopHomeomorph_apply (e : X ≃ₜ Y) (h : e x = y)
     Homeomorph.genLoopHomeomorph e h p t = e (p t) :=
   map_apply ⟨e, e.continuous⟩ h p t
 
+/-- The homeomorphism `Homeomorph.genLoopHomeomorph e` is based: it carries the constant
+generalized loop to the constant generalized loop. -/
+@[simp]
+theorem _root_.Homeomorph.genLoopHomeomorph_const (e : X ≃ₜ Y) (h : e x = y) :
+    Homeomorph.genLoopHomeomorph e h (_root_.GenLoop.const : Ω^ N X x) = _root_.GenLoop.const :=
+  map_const ⟨e, e.continuous⟩ h
+
+/-- The inverse of `Homeomorph.genLoopHomeomorph e` also carries the constant generalized loop to
+the constant generalized loop. -/
+@[simp]
+theorem _root_.Homeomorph.genLoopHomeomorph_symm_const (e : X ≃ₜ Y) (h : e x = y) :
+    (Homeomorph.genLoopHomeomorph e h).symm (_root_.GenLoop.const : Ω^ N Y y) =
+      _root_.GenLoop.const :=
+  ((Homeomorph.genLoopHomeomorph e h).symm_apply_eq.2
+    (Homeomorph.genLoopHomeomorph_const e h).symm)
+
 @[simp]
 theorem _root_.Homeomorph.genLoopHomeomorph_symm_apply (e : X ≃ₜ Y) (h : e x = y)
     (p : Ω^ N Y y) (t : I^N) :
