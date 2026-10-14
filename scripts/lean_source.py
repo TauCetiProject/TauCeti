@@ -55,8 +55,8 @@ NAMESPACE = re.compile(
 TOP_LEVEL_CONNECTIVES = ("->", "→", "⟶", "⥤", "≃", "≅", "×", "⊕", "⊗", "↪", "↠")
 
 # Common type notations whose underlying receiver type is not visible as an identifier in the
-# source. Longer tokens must be tested first because several are extensions of shorter ones.
-NOTATION_RECEIVERS = (
+# source. Sort by length so the lexer's longest registered token wins over any shorter prefix.
+NOTATION_RECEIVERS = tuple(sorted((
     ("→ₛₗᵢ[", "LinearIsometry"),
     ("≃ₛₗᵢ[", "LinearIsometryEquiv"),
     ("→ₗᵢ⋆[", "LinearIsometry"),
@@ -64,6 +64,8 @@ NOTATION_RECEIVERS = (
     ("→ₗᵢ[", "LinearIsometry"),
     ("≃ₗᵢ[", "LinearIsometryEquiv"),
     ("→+*", "RingHom"),
+    ("→+*o", "OrderRingHom"),
+    ("→+*ᵍ", "GradedRingHom"),
     ("≃+*", "RingEquiv"),
     ("→SL[", "ContinuousLinearMap"),
     ("≃SL[", "ContinuousLinearEquiv"),
@@ -98,7 +100,11 @@ NOTATION_RECEIVERS = (
     ("≃ₜ+", "ContinuousAddEquiv"),
     ("≃ₜ", "Homeomorph"),
     ("→*", "MonoidHom"),
+    ("→*o", "OrderMonoidHom"),
+    ("→*₀", "MonoidWithZeroHom"),
+    ("→*₀o", "OrderMonoidWithZeroHom"),
     ("→+", "AddMonoidHom"),
+    ("→+o", "OrderAddMonoidHom"),
     ("→o", "OrderHom"),
     ("≃*", "MulEquiv"),
     ("≃+", "AddEquiv"),
@@ -113,7 +119,7 @@ NOTATION_RECEIVERS = (
     ("⊕", "Sum"),
     ("↪", "Embedding"),
     ("≃", "Equiv"),
-)
+), key=lambda item: len(item[0]), reverse=True))
 
 SPECIAL_NOTATION_RECEIVERS = (
     (re.compile(r"\[×[^]]*\]$"), "→L[", "ContinuousMultilinearMap"),
@@ -631,7 +637,11 @@ def own_declaration_paths_parallel(sources: dict[pathlib.Path, str]) -> set[tupl
 
 
 def _notation_receiver_at(text: str, position: int) -> str | None:
-    """Recognize a type-notation token at ``position``, including compact map notation."""
+    """Recognize the longest supported type-notation token at ``position``.
+
+    Registered arrow tokens need no trailing boundary: Lean tokenizes ``A→+other`` as
+    ``A →+o ther``. Bracketed notation likewise permits a compact scalar argument.
+    """
     for token, receiver in NOTATION_RECEIVERS:
         if text.startswith(token, position):
             end = position + len(token)

@@ -119,7 +119,8 @@ end TauCeti.Algebra.TensorProduct
     def test_returned_bundled_map_arrows_are_not_function_arrows(self):
         for arrow in ("→ₐ[R]", "→ₐc[R]", "→ₗ[R]", "→ₗc[R]", "→ₛₗ[σ]", "→L[𝕜]",
                       "→SL[σ]", "→L⋆[𝕜]", "→ₗ⋆[R]", "→ₛₗᵢ[σ]", "→ₗ.[R]",
-                      "→ₗ⁅R⁆", "→+*", "→*", "→+", "→o", "→ₐc", "→ₗc"):
+                      "→ₗ⁅R⁆", "→+*", "→*", "→+", "→o", "→ₐc", "→ₗc",
+                      "→+o", "→*o", "→*₀", "→*₀o", "→+*o", "→+*ᵍ"):
             source = f"""\
 namespace TauCeti.Foo
 def returnedMap : Foo {arrow} B := f
@@ -131,6 +132,52 @@ end TauCeti.Foo
             with self.subTest(arrow=arrow):
                 self.assertEqual([finding.declaration for finding in findings(source)],
                                  ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction"])
+
+    def test_longer_bundled_arrows_use_their_own_receiver_namespace(self):
+        cases = (
+            ("→+o", "OrderAddMonoidHom", ("AddMonoidHom",)),
+            ("→*o", "OrderMonoidHom", ("MonoidHom",)),
+            ("→*₀", "MonoidWithZeroHom", ("MonoidHom",)),
+            ("→*₀o", "OrderMonoidWithZeroHom", ("MonoidHom", "MonoidWithZeroHom")),
+            ("→+*o", "OrderRingHom", ("AddMonoidHom", "RingHom")),
+            ("→+*ᵍ", "GradedRingHom", ("AddMonoidHom", "RingHom")),
+        )
+        for arrow, owner, shorter_owners in cases:
+            for separator in (" ", ""):
+                # A compact target can begin with the suffix of a longer registered token:
+                # for example, A→+other lexes as A →+o ther, not A →+ other.
+                binder_type = f"A{separator}{arrow}{separator}ther"
+                source = f"""\
+namespace TauCeti.{owner}
+def actualReceiver (f : {binder_type}) := f
+end TauCeti.{owner}
+"""
+                for shorter in shorter_owners:
+                    source += f"""\
+namespace TauCeti.{shorter}
+def differentReceiver (f : {binder_type}) := f
+end TauCeti.{shorter}
+"""
+                with self.subTest(arrow=arrow, separator=separator):
+                    self.assertEqual(
+                        [finding.declaration for finding in
+                         findings(source, {owner, *shorter_owners})],
+                        [f"TauCeti.{owner}.actualReceiver"],
+                    )
+
+    def test_longer_bundled_maps_do_not_claim_sort_ownership(self):
+        for arrow in ("→+o", "→*o", "→*₀", "→*₀o", "→+*o", "→+*ᵍ"):
+            source = f"""\
+namespace TauCeti
+def Foo : Type u {arrow} A := f
+namespace Foo
+def stillMisplaced (x : _root_.Foo) := x
+end Foo
+end TauCeti
+"""
+            with self.subTest(arrow=arrow):
+                self.assertEqual([finding.declaration for finding in findings(source)],
+                                 ["TauCeti.Foo.stillMisplaced"])
 
     def test_plain_arrows_next_to_identifier_prefixes_remain_function_arrows(self):
         source = """\
