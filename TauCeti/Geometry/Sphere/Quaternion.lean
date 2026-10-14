@@ -129,7 +129,7 @@ theorem contMDiff_quaternionFrame {n : ℕ} [Fact (finrank ℝ E = n + 1)] (j : 
 
 end Smooth
 
-section Orthonormal
+section LineIsometry
 
 variable [IsScalarTower ℝ ℍᵐᵒᵖ E]
 
@@ -144,11 +144,16 @@ theorem quaternionLineIsometry_apply {x : E} (hx : ‖x‖ = 1) (q : ℍ) :
     quaternionLineIsometry hx q = x <• q :=
   (rfl)
 
+end LineIsometry
+
 /-- Right multiplication of a unit vector carries an orthonormal family of quaternions to an
 orthonormal family of vectors. -/
 theorem orthonormal_op_smul {x : E} (hx : ‖x‖ = 1) {ι : Type*} {v : ι → ℍ}
-    (hv : Orthonormal ℝ v) : Orthonormal ℝ fun i ↦ x <• v i :=
-  hv.comp_linearIsometry (quaternionLineIsometry hx)
+    (hv : Orthonormal ℝ v) : Orthonormal ℝ fun i ↦ x <• v i := by
+  classical
+  rw [orthonormal_iff_ite] at hv ⊢
+  intro i j
+  simp [hx, hv]
 
 /-- The quaternionic frame of a unit vector is orthonormal. -/
 theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
@@ -159,8 +164,6 @@ theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
   convert orthonormal_op_smul hx hijk using 1
   ext j
   fin_cases j <;> simp
-
-end Orthonormal
 
 /-- The quaternionic coordinate space `PiLp p (fun _ : ι ↦ ℍ)` has real dimension
 `4 * Fintype.card ι` for every `p`. For `p = 2` this is `ℍ^ι`, whose unit sphere is therefore a
