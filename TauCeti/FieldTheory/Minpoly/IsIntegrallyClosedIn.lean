@@ -202,9 +202,7 @@ which extends scalars on the other side of the linearly disjoint pair `F`, `k'`.
 theorem linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn_of_isSeparable
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k'] {ι : Type*} {v : ι → F}
     (hv : LinearIndependent k v) : LinearIndependent k' (algebraMap F E ∘ v) :=
-  ((linearDisjoint_fieldRange_of_isIntegrallyClosedIn (E := E) hex).linearIndependent_right'
-    hv).map_of_injective_injective (IsScalarTower.toAlgHom k k' E).equivFieldRange
-    (AddMonoidHom.id E) (by simp) (by simp) fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl
+  (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex).linearIndependent_algebraMap_comp hv
 
 /-! ### Constants of the compositum -/
 

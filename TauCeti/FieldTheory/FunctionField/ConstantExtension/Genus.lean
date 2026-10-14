@@ -154,15 +154,10 @@ private theorem genus_le_genus_of_linearDisjoint [Algebra.IsAlgebraic k k']
   -- the pole divisor `B` of a transcendental `x` and its counterpart `B'` in `F'`
   obtain ⟨x, hx⟩ := hF.exists_transcendental
   have := hF.finiteDimensional_adjoin hx
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact hx isAlgebraic_zero
-  set z := Units.mk0 x hx0
+  set z := Units.mk0 x hx.ne_zero
   set B := Divisor.poles hF z
   set B' := Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)
-  have hx' : Transcendental k' (algebraMap F F' x) :=
-    (Algebra.IsAlgebraic.transcendental_iff k k').1
-      ((transcendental_algebraMap_iff (algebraMap F F').injective).2 hx)
+  have hx' : Transcendental k' (algebraMap F F' x) := hx.algebraMap_of_isAlgebraic
   have := hF'.finiteDimensional_adjoin hx'
   have hdegB' : Divisor.degree B' = Module.finrank k'⟮algebraMap F F' x⟯ F' :=
     Divisor.degree_poles hF' _ (by simpa [z, Transcendental] using hx')
@@ -172,21 +167,6 @@ private theorem genus_le_genus_of_linearDisjoint [Algebra.IsAlgebraic k k']
   have hpos : 0 < Divisor.degree B' := by
     rw [hdegB']
     exact_mod_cast Module.finrank_pos
-  -- a `k`-basis of `L(l B)` stays linearly independent over `k'` inside `L(l B')`
-  have hdim (l : ℕ) : (l • B).dim ≤ (l • B').dim := by
-    have := finiteDimensional_riemannRochSpace hF (l • B)
-    have := finiteDimensional_riemannRochSpace hF' (l • B')
-    let b := Module.finBasis k (riemannRochSpace (l • B))
-    have hli : LinearIndependent k' (algebraMap F F' ∘ (Subtype.val ∘ b)) :=
-      (H.linearIndependent_right' (b.linearIndependent.map' (riemannRochSpace (l • B)).subtype
-        (Submodule.ker_subtype _))).map_of_injective_injective
-        (IsScalarTower.toAlgHom k k' F').equivFieldRange (AddMonoidHom.id F') (by simp) (by simp)
-        fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl
-    let v : Fin (Module.finrank k (riemannRochSpace (l • B))) → riemannRochSpace (l • B') :=
-      fun i ↦
-        ⟨algebraMap F F' (b i), (mem_riemannRochSpace_nsmul_poles_map_iff hF hF' l z _).2 (b i).2⟩
-    have hv : LinearIndependent k' v := .of_comp (riemannRochSpace (l • B')).subtype hli
-    simpa [Divisor.dim_def] using hv.fintype_card_le_finrank
   refine genus_le fun D' ↦ ?_
   -- `L(l B' - D')` is nonzero for large `l`, so `deg D' + 1 - ℓ(D')` is at most the value at
   -- `l B'`, which is at most the value at `l B`
@@ -201,7 +181,8 @@ private theorem genus_le_genus_of_linearDisjoint [Algebra.IsAlgebraic k k']
   have hcomp := Divisor.dim_sub_degree_le_of_riemannRochSpace_ne_bot hF' hne
   have hR := Divisor.degree_add_one_sub_dim_le_genus hF (l • B)
   rw [map_nsmul, nsmul_eq_mul] at hcomp hR
-  have := hdim l
+  have hdim : (l • B).dim ≤ (l • B').dim :=
+    Divisor.dim_nsmul_poles_le_of_linearDisjoint hF hF' H l z
   have : (l : ℤ) * Divisor.degree B' ≤ l * Divisor.degree B :=
     mul_le_mul_of_nonneg_left hdeg (Nat.cast_nonneg l)
   omega
@@ -234,13 +215,8 @@ private theorem genus_le_genus_aux (n : ℕ) :
   have := finiteDimensional_of_constantCompositum_eq_top (k := K) hEM
   have hFEM : IsFunctionField M EM := hE.of_constantCompositum_eq_top hEM
   have : Algebra.IsAlgebraic M k' := .tower_top (K := K) M
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact hx isAlgebraic_zero
-  set z := Units.mk0 x hx0
-  have hx' : Transcendental M (algebraMap E EM x) :=
-    (Algebra.IsAlgebraic.transcendental_iff K M).1
-      ((transcendental_algebraMap_iff (algebraMap E EM).injective).2 hx)
+  set z := Units.mk0 x hx.ne_zero
+  have hx' : Transcendental M (algebraMap E EM x) := hx.algebraMap_of_isAlgebraic
   -- `[M : K] · [E · M : M(x)] = [E · M : E] · n`, and `[E · M : E] < [M : K]`
   have hlt : Module.finrank M⟮algebraMap E EM x⟯ EM < n := by
     have hconorm := Divisor.finrank_mul_degree_conorm M EM hE (Divisor.poles hE z)
@@ -283,9 +259,7 @@ theorem genus_le_genus_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
   have hFE : IsFunctionField M E := hF.of_constantCompositum_eq_top hE
   have : Algebra.IsAlgebraic M k' := .tower_top (K := k) M
   obtain ⟨x, hx⟩ := hF.exists_transcendental
-  have hx' : Transcendental M (algebraMap F E x) :=
-    (Algebra.IsAlgebraic.transcendental_iff k M).1
-      ((transcendental_algebraMap_iff (algebraMap F E).injective).2 hx)
+  have hx' : Transcendental M (algebraMap F E x) := hx.algebraMap_of_isAlgebraic
   calc genus k' F'
       ≤ genus M E :=
         genus_le_genus_aux _ M E hFE (constantCompositum_eq_top_of_eq_top F k' F' E h) _ hx' rfl
@@ -309,15 +283,10 @@ theorem genus_eq_genus_of_constantCompositum_eq_top (hF : IsFunctionField k F)
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   -- the pole divisor `B` of a transcendental `x` and its counterpart `B'` in `F'`
   obtain ⟨x, hx⟩ := hF.exists_transcendental
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact hx isAlgebraic_zero
-  set z := Units.mk0 x hx0
+  set z := Units.mk0 x hx.ne_zero
   set B := Divisor.poles hF z
   set B' := Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)
-  have hx' : Transcendental k' (algebraMap F F' x) :=
-    (Algebra.IsAlgebraic.transcendental_iff k k').1
-      ((transcendental_algebraMap_iff (algebraMap F F').injective).2 hx)
+  have hx' : Transcendental k' (algebraMap F F' x) := hx.algebraMap_of_isAlgebraic
   have hdegB : Divisor.degree B = Module.finrank k⟮x⟯ F := Divisor.degree_poles hF z hx
   have hdeg : Divisor.degree B' = Divisor.degree B := by
     rw [hdegB, ← finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top hex h x]

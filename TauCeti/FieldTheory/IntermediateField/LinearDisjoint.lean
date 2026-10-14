@@ -19,6 +19,10 @@ The main result is `IntermediateField.relfinrank_sup_sup_eq_relfinrank_of_linear
 as `A.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint B C hCB h`, where `hCB : C ≤ B` and
 `h : A.LinearDisjoint B`; the finite-dimensionality of `A` is supplied by an instance. The
 declarations live in Mathlib's `IntermediateField` namespace so that this dot notation works.
+
+`IntermediateField.LinearDisjoint.linearIndependent_algebraMap_comp` extends scalars on the other
+side: if the image of `k'` in a common overfield `E` is linearly disjoint from `F` over `k`, a
+family of `F` linearly independent over `k` stays linearly independent over `k'` in `E`.
 -/
 
 public section
@@ -68,5 +72,25 @@ theorem _root_.IntermediateField.relfinrank_sup_sup_eq_relfinrank_of_linearDisjo
   rw [hAC] at hmulC
   have hpos : 0 < Module.finrank k A := Module.finrank_pos
   exact (Nat.eq_of_mul_eq_mul_left hpos (by rw [hmulC, ← hmulB, mul_comm])).symm
+
+section ExtendScalars
+
+variable {k' : Type*} {F : Type*} {E : Type*} [Field k'] [Field F] [Field E]
+variable [Algebra k k'] [Algebra k F] [Algebra k E] [Algebra k' E] [Algebra F E]
+variable [IsScalarTower k k' E] [IsScalarTower k F E]
+
+/-- **Linear independence over `k` persists over `k'` under linear disjointness**: if the image of
+`k'` in `E` and `F` are linearly disjoint over `k`, then a family of elements of `F` linearly
+independent over `k` stays linearly independent over `k'` inside `E`. -/
+theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_algebraMap_comp
+    (H : (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F) {ι : Type*} {v : ι → F}
+    (hv : LinearIndependent k v) : LinearIndependent k' (algebraMap F E ∘ v) :=
+  (H.linearIndependent_right' hv).map_of_injective_injective
+    (IsScalarTower.toAlgHom k k' E).equivFieldRange (AddMonoidHom.id E) (by simp) (by simp)
+    fun _ _ ↦ by
+      simp only [AddMonoidHom.id_apply, Algebra.smul_def, IntermediateField.algebraMap_apply,
+        AlgHom.equivFieldRange_apply_coe, IsScalarTower.toAlgHom_apply]
+
+end ExtendScalars
 
 end TauCeti
