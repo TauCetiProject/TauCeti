@@ -22,6 +22,12 @@ any standard affine chart of a projective hypersurface; for a plane curve, take 
 Euler's identity recovers the omitted partial derivative. No invertibility of the
 degree is needed, so the criterion also applies when the characteristic divides the degree.
 
+Conversely, a homogeneous polynomial is recovered from its degree and its equation in one chart
+(`TauCeti.dehomogenize_injOn`), and every polynomial of total degree at most `N` is the equation of
+some homogeneous polynomial of degree `N` (`TauCeti.exists_isHomogeneous_dehomogenize_eq`).
+Together they lift a factorization in an affine chart to a factorization of the homogeneous
+equation, up to a power of the omitted coordinate.
+
 Combined with the weak Nullstellensatz, the pointwise criterion gives an identity of ideals:
 if every point of a projective hypersurface over an algebraically closed extension `K` of `k`
 lying in a standard affine chart is nonsingular, then in that chart the equation and its partial
@@ -104,36 +110,79 @@ theorem totalDegree_dehomogenize_le (i : Fin (n + 1)) (p : MvPolynomial (Fin (n 
   refine (totalDegree_monomial_le _ _).trans (le_trans ?_ (le_totalDegree hs))
   simp [Finsupp.sum_fintype, Fin.sum_univ_succAbove _ i]
 
+/-- For a homogeneous `p` of degree `d` and an exponent `s` of total degree `d`, the coefficient
+of `p` at `s` is the coefficient of the affine equation at the restriction of `s` to the retained
+coordinates. The `i`-th entry of `s` is determined by the others, so no information is lost. -/
+theorem coeff_dehomogenize_of_isHomogeneous {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ}
+    (hp : p.IsHomogeneous d) (i : Fin (n + 1)) {s : Fin (n + 1) →₀ ℕ} (hs : s.degree = d) :
+    (dehomogenize i p).coeff (Finsupp.equivFunOnFinite.symm (s ∘ i.succAbove)) = p.coeff s := by
+  classical
+  -- The total degree of an exponent splits into its `i`-th entry and the retained entries.
+  have hdeg (t : Fin (n + 1) →₀ ℕ) : t.degree = t i + ∑ m, t (i.succAbove m) := by
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_succAbove _ i]
+  conv_lhs => rw [p.as_sum]
+  rw [map_sum, coeff_sum]
+  simp_rw [dehomogenize_monomial, coeff_monomial]
+  rw [Finset.sum_eq_single s]
+  · simp
+  · intro t ht hne
+    refine ite_eq_right fun h ↦ hne ?_
+    have hts : ∀ m, t (i.succAbove m) = s (i.succAbove m) := fun m ↦ by
+      simpa using DFunLike.congr_fun h m
+    -- By homogeneity `t` has total degree `d`, which fixes its `i`-th entry.
+    have ht' : t.degree = d := by
+      rw [Finsupp.degree_eq_weight_one]
+      exact hp (mem_support_iff.mp ht)
+    have hti : t i = s i := by
+      have h1 := hdeg t
+      have h2 := hdeg s
+      simp only [hts] at h1
+      omega
+    ext l
+    exact Fin.succAboveCases i hti hts l
+  · intro h
+    simp [notMem_support_iff.mp h]
+
 /-- For a homogeneous `p` of degree `d`, the coefficient of `X_j ^ d` in the affine equation is
 the coefficient of the corresponding power `X_{i.succAbove j} ^ d` in `p`. -/
 theorem coeff_dehomogenize_single {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ}
     (hp : p.IsHomogeneous d) (i : Fin (n + 1)) (j : Fin n) :
     (dehomogenize i p).coeff (Finsupp.single j d) =
       p.coeff (Finsupp.single (i.succAbove j) d) := by
-  classical
-  conv_lhs => rw [p.as_sum]
-  rw [map_sum, coeff_sum]
-  simp_rw [dehomogenize_monomial, coeff_monomial]
-  rw [Finset.sum_eq_single (Finsupp.single (i.succAbove j) d)]
-  · refine ite_eq_left ?_
-    ext l
-    simp [Finsupp.single_apply, Fin.succAbove_right_injective.eq_iff]
-  · intro s hs hne
-    refine ite_eq_right fun h ↦ hne ?_
-    have hsj : ∀ m, s (i.succAbove m) = Finsupp.single j d m := fun m ↦ by
-      simpa using DFunLike.congr_fun h m
-    -- By homogeneity the coordinate `i` of `s` vanishes.
-    have hdeg : s i + ∑ m, s (i.succAbove m) = d := by
-      have := hp (mem_support_iff.mp hs)
-      simpa [Finsupp.weight_apply, Finsupp.sum_fintype, Fin.sum_univ_succAbove _ i] using this
-    simp only [hsj, Finsupp.single_apply, Finset.sum_ite_eq, Finset.mem_univ, ite_true] at hdeg
-    ext l
-    refine Fin.succAboveCases i ?_ (fun m ↦ ?_) l
-    · simp [(Fin.succAbove_ne i j).symm]
-      omega
-    · simp [hsj, Finsupp.single_apply, Fin.succAbove_right_injective.eq_iff]
-  · intro h
-    simp [notMem_support_iff.mp h]
+  rw [← coeff_dehomogenize_of_isHomogeneous hp i (by simp)]
+  congr 1
+  ext l
+  simp [Finsupp.single_apply, Fin.succAbove_right_injective.eq_iff]
+
+/-- **Dehomogenization is injective on homogeneous polynomials of a fixed degree**: a homogeneous
+polynomial is determined by its degree and its equation in any standard affine chart. -/
+theorem dehomogenize_injOn (i : Fin (n + 1)) (d : ℕ) :
+    Set.InjOn (dehomogenize (R := R) i) {p | p.IsHomogeneous d} := by
+  intro p hp q hq h
+  ext s
+  by_cases hs : s.degree = d
+  · rw [← coeff_dehomogenize_of_isHomogeneous hp i hs,
+      ← coeff_dehomogenize_of_isHomogeneous hq i hs, h]
+  · rw [hp.coeff_eq_zero hs, hq.coeff_eq_zero hs]
+
+/-- **Homogenization**: every polynomial `p` in `n` variables of total degree at most `N` is the
+equation in the `i`-th standard affine chart of a homogeneous polynomial of degree `N` in `n + 1`
+variables, obtained by padding each homogeneous component of `p` with a power of `X_i`. -/
+theorem exists_isHomogeneous_dehomogenize_eq (i : Fin (n + 1)) {p : MvPolynomial (Fin n) R}
+    {N : ℕ} (hp : p.totalDegree ≤ N) :
+    ∃ q : MvPolynomial (Fin (n + 1)) R, q.IsHomogeneous N ∧ dehomogenize i q = p := by
+  set p' := rename i.succAbove p
+  have hp' : p'.totalDegree ≤ N := (totalDegree_rename_le _ _).trans hp
+  refine ⟨∑ j ∈ Finset.range (N + 1), homogeneousComponent j p' * X i ^ (N - j),
+    IsHomogeneous.sum _ _ _ fun j hj ↦ ?_, ?_⟩
+  · have := (homogeneousComponent_isHomogeneous j p').mul (isHomogeneous_X_pow i (N - j))
+    rwa [Nat.add_sub_cancel' (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))] at this
+  · simp only [map_sum, map_mul, map_pow, dehomogenize_X, Fin.insertNth_apply_same, one_pow,
+      mul_one]
+    rw [← map_sum, ← Finset.sum_subset (Finset.range_subset_range.mpr (Nat.succ_le_succ hp')),
+      sum_homogeneousComponent, dehomogenize_rename_succAbove]
+    intro j _ hj
+    exact homogeneousComponent_eq_zero _ _ (by simpa [Nat.lt_succ_iff] using hj)
 
 /-- Changing coefficients commutes with dehomogenization. -/
 @[simp]

@@ -47,6 +47,9 @@ Smoothness of relative dimension one, properness and the local-model condition
   `modelMap hg hh` is a base change square of projective models carrying the zero section to the
   zero section. Statements about the projective models of Weierstrass equations which are
   compatible with such squares therefore pass to elliptic curves along base change squares.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelPoint_modelMap_of_comp_eq`: if an
+  endomorphism of `X` over `S` fixes a section, the induced endomorphism of the projective model of
+  a chart fixes its model point.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_chart_comp_baseMap`: for elliptic curves over
   `S` and `S'` and a morphism `f : S' ⟶ S`, the charts of the curve over `S'` whose bases map over
   `f` into bases of charts of the curve over `S` cover `S'`.
@@ -292,6 +295,18 @@ theorem projModelZero_modelMap (h0 : zero' ≫ g = f ≫ zero) :
       (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ c.equation.projModelZero := by
   rw [← cancel_epi k.baseIso.hom, ← k.modelIso_zero_assoc]
   simp [modelMap, pulledZero_carrierMap_assoc hg hh h0]
+
+variable (c) in
+/-- If an endomorphism `σ` of `X` over `S`, cartesian over the identity, fixes a section `P`, then
+the induced endomorphism of the projective model of the chart fixes the model point of `P`. -/
+theorem modelPoint_modelMap_of_comp_eq {P : S ⟶ X} (hP : P ≫ π = 𝟙 S) {σ : X ⟶ X}
+    (hσ : IsPullback σ π π (𝟙 S)) (hσP : P ≫ σ = P) :
+    c.modelPoint hP ≫ modelMap hσ (by simp : 𝟙 c.base ≫ c.baseMap = c.baseMap ≫ 𝟙 S) =
+      c.modelPoint hP := by
+  have : c.chartPoint hP ≫ carrierMap hσ (by simp : 𝟙 c.base ≫ c.baseMap = c.baseMap ≫ 𝟙 S) =
+      c.chartPoint hP :=
+    c.isPullback.hom_ext (by simp [hσP]) (by simp)
+  simp only [modelPoint_def, Category.assoc, modelIso_hom_modelMap, reassoc_of% this]
 
 end PointedWeierstrassChart
 

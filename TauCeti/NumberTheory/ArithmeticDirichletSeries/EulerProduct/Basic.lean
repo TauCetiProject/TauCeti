@@ -179,6 +179,15 @@ theorem constantCoeff_localPowerSeries (f : IdealArithmeticFunction K)
   rw [coeff_localPowerSeries]
   exact congrArg f (Subtype.ext (pow_zero P.asIdeal))
 
+omit [NumberField K] in
+/-- Conjugating ideal coefficients conjugates the coefficients of every local power series. -/
+@[simp]
+theorem localPowerSeries_star (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    (star f).localPowerSeries P = (f.localPowerSeries P).map (starRingEnd ℂ) := by
+  ext n
+  simp
+
 /-- The canonical local arithmetic factor at `P`, obtained by substituting `N(P)⁻ˢ` into the
 formal prime-power series through Mathlib's `ArithmeticFunction.ofPowerSeries`. -/
 noncomputable def localArithmeticFactor (f : IdealArithmeticFunction K)
@@ -212,6 +221,16 @@ theorem localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq (f : IdealArith
   rw [localArithmeticFactor, ArithmeticFunction.ofPowerSeries_apply
     (NumberField.HeightOneSpectrum.one_lt_absNorm P),
     Function.extend_apply' _ _ _ (by simpa using hm), Pi.zero_apply]
+
+/-- The local arithmetic factor of a conjugate ideal function has conjugate values. -/
+@[simp]
+theorem localArithmeticFactor_star_apply (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) (n : ℕ) :
+    (star f).localArithmeticFactor P n = star (f.localArithmeticFactor P n) := by
+  by_cases hn : ∃ e : ℕ, Ideal.absNorm P.asIdeal ^ e = n
+  · obtain ⟨e, rfl⟩ := hn
+    simp
+  · simp [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ P hn]
 
 /-- A nonzero value of a local arithmetic factor is supported on a power of the prime-ideal
 norm. -/

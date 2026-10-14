@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantIdeal
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GlobalExistence
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # The reduced minimal equation of an elliptic curve over `ℚ`

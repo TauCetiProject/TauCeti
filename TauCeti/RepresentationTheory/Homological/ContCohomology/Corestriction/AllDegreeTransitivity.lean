@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.AllDegrees
 public import TauCeti.GroupTheory.Index.Basic
-public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
+public import TauCeti.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.Group.Subgroup.Map
 
@@ -55,13 +55,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
-omit [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-  [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M] in
-private theorem id_subgroupOf_smul (x : V.subgroupOf U) (m : M) :
-    (LinearMap.id : M →ₗ[ℤ] M)
-        ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) x • m) =
-      x • m := rfl
-
 /-- Transport continuous cohomology from a subgroup `V` to its canonical copy
 `V.subgroupOf U` inside a larger subgroup `U`. -/
 noncomputable def subgroupOfMap (n : ℕ) :
@@ -71,7 +64,7 @@ noncomputable def subgroupOfMap (n : ℕ) :
     (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
     (ofDiscreteModulePair
       (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →* V)
-      (LinearMap.id : M →ₗ[ℤ] M) (id_subgroupOf_smul U V hVU M)) n
+      (LinearMap.id : M →ₗ[ℤ] M) (Subgroup.subgroupOfContinuousMulEquivOfLe_smul hVU)) n
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 /-- The defining equation for transport to the canonical copy `V.subgroupOf U`. -/
@@ -81,7 +74,7 @@ theorem subgroupOfMap_def (n : ℕ) :
         (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
         (ofDiscreteModulePair
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →* V)
-          (LinearMap.id : M →ₗ[ℤ] M) (by intro x m; rfl)) n := by
+          (LinearMap.id : M →ₗ[ℤ] M) (Subgroup.subgroupOfContinuousMulEquivOfLe_smul hVU)) n := by
   rfl
 
 /-- **All-degree corestriction along an inclusion** `V ≤ U`: transport the cohomology of `V` to
@@ -210,7 +203,7 @@ theorem shapiroMap_trans (n : ℕ) :
   let τ : V.subgroupOf U →ₜ* V :=
     (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U ≃ₜ* V)
   let pT := ofDiscreteModulePair (τ : V.subgroupOf U →* V)
-    (LinearMap.id : M →ₗ[ℤ] M) (id_subgroupOf_smul U V hVU M)
+    (LinearMap.id : M →ₗ[ℤ] M) (Subgroup.subgroupOfContinuousMulEquivOfLe_smul hVU)
   simp only [shapiroMap_def, subgroupOfMap]
   -- Expose the compatible-pair maps hidden by the Shapiro and coefficient-map wrappers.
   change _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) p n ≫
