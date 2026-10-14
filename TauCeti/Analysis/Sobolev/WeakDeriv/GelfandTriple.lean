@@ -23,6 +23,8 @@ Neither `u` nor `ι ∘ u` is assumed to have any continuity in time. This file 
 * every such `w` satisfies the **energy identity**
   `‖w t‖² - ‖w s‖² = 2 ∫ₛᵗ u'(r)(u r) dr` for all `s, t ∈ [a, b]`
   (`TauCeti.HasWeakLineDerivOn.norm_sq_sub_norm_sq_eq_of_gelfandDual`);
+* two such functions satisfy the mixed integration-by-parts formula
+  (`TauCeti.HasWeakLineDerivOn.inner_sub_inner_eq_integral_of_gelfandDual`);
 * and the bound `‖w t‖² ≤ ⨍_{(a, b)} ‖ι u‖² + 2 ∫_{(a, b)} |u'(u)|`, which controls
   `sup_t ‖w t‖` by the norms of `u` in `L²(a, b; V)` and of `u'` in `L²(a, b; V*)`
   (`TauCeti.HasWeakLineDerivOn.norm_sq_le_of_gelfandDual`).
@@ -276,6 +278,37 @@ theorem HasWeakLineDerivOn.norm_sq_sub_norm_sq_eq_of_gelfandDual
   rw [← intervalIntegral.integral_const_mul]
   exact ((h.norm_sq_of_gelfandDual hu hu').integral_eq_sub (hp.const_mul 2) (hw.norm.pow 2)
     (hae.fun_comp fun y ↦ ‖y‖ ^ 2) hs ht).symm
+
+/-- **Integration by parts in a Gelfand triple.** If `u, z ∈ L²(a,b;V)` have dual-valued
+weak time derivatives `u', z' ∈ L²(a,b;V*)`, then their continuous pivot representatives
+`w, q` satisfy `⟪w t, q t⟫ - ⟪w s, q s⟫ = ∫ₛᵗ (u'(z) + z'(u))`, including endpoint times.
+Neither injectivity nor dense range of the pivot map is required. -/
+theorem HasWeakLineDerivOn.inner_sub_inner_eq_integral_of_gelfandDual
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ ι.gelfandDual (ι (u t))) u' 1)
+    {z : ℝ → V} {z' : ℝ → StrongDual ℝ V}
+    (hz : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ ι.gelfandDual (ι (z t))) z' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo a b)))
+    (hu' : MemLp u' 2 (volume.restrict (Ioo a b)))
+    (hzL : MemLp z 2 (volume.restrict (Ioo a b)))
+    (hz' : MemLp z' 2 (volume.restrict (Ioo a b)))
+    {w q : ℝ → H} (hw : ContinuousOn w (Icc a b)) (hq : ContinuousOn q (Icc a b))
+    (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
+    (hzae : (fun t ↦ ι (z t)) =ᵐ[volume.restrict (Ioo a b)] q)
+    {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ⟪w t, q t⟫_ℝ - ⟪w s, q s⟫_ℝ =
+      ∫ r in s..t, (u' r (z r) + z' r (u r)) := by
+  have hprod := HasWeakLineDerivOn.bilin ι.flip_gelfandDual_comp h hz hu hu' hzL hz'
+  have hp : IntegrableOn (fun r ↦ u' r (z r) + z' r (u r)) (Ioo a b) :=
+    (memLp_one_iff_integrable.1
+      ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hzL)).add
+    (memLp_one_iff_integrable.1
+      ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hz' hu))
+  exact (hprod.integral_eq_sub hp (hw.inner hq) (by
+    filter_upwards [hae, hzae] with r hr hzr
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.gelfandDual_apply, hr, hzr])
+      hs ht).symm
 
 /-- **The `C([a, b]; H)` bound in a Gelfand triple.** Let `a < b`, let `u ∈ L²(a, b; V)` be such
 that `t ↦ ι.gelfandDual (ι (u t))` has weak derivative `u' ∈ L²(a, b; V*)` on `(a, b)`, and let `w`
