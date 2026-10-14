@@ -110,7 +110,7 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 /-- The valuation ring of `v`. -/
 local notation "𝒪" => v.valuationSubring
 
-/-! ### The maximal ideal and the coefficients -/
+/-! ### The maximal ideal and numerals -/
 
 /-- Membership in the maximal ideal `(ϖ)` of the valuation ring is divisibility by `ϖ`. -/
 private theorem mem_maximalIdeal_iff_dvd {ϖ : v.valuationSubring}
@@ -129,22 +129,6 @@ private theorem valuation_lt_one_of_dvd {ϖ : v.valuationSubring}
 private theorem coe_ofNat (n : ℕ) [n.AtLeastTwo] :
     ((ofNat(n) : v.valuationSubring) : F) = ofNat(n) := by
   simpa using map_ofNat (algebraMap v.valuationSubring F) n
-
-/-- The coefficient `a₁` of the integral model, coerced to `F`, is that of `W`. -/
-private theorem coe_integralModel_a₁ : ((integralModel v.valuationSubring W).a₁ : F) = W.a₁ := by
-  simpa using integralModel_a₁_eq v.valuationSubring W
-
-/-- The coefficient `a₂` of the integral model, coerced to `F`, is that of `W`. -/
-private theorem coe_integralModel_a₂ : ((integralModel v.valuationSubring W).a₂ : F) = W.a₂ := by
-  simpa using integralModel_a₂_eq v.valuationSubring W
-
-/-- The coefficient `a₃` of the integral model, coerced to `F`, is that of `W`. -/
-private theorem coe_integralModel_a₃ : ((integralModel v.valuationSubring W).a₃ : F) = W.a₃ := by
-  simpa using integralModel_a₃_eq v.valuationSubring W
-
-/-- The coefficient `a₄` of the integral model, coerced to `F`, is that of `W`. -/
-private theorem coe_integralModel_a₄ : ((integralModel v.valuationSubring W).a₄ : F) = W.a₄ := by
-  simpa using integralModel_a₄_eq v.valuationSubring W
 
 /-! ### The data of the stopping test -/
 
