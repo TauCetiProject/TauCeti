@@ -32,7 +32,7 @@ summand of a spanning family into the corresponding member of an independent fam
 kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`.
 
 The file also specializes the compactness bound
-`TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
+`iSupIndep.finite_ne_bot_of_isCompactElement` to submodules,
 `TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
@@ -295,7 +295,7 @@ private theorem Submodule.finite_ne_bot_of_iSupIndep_of_fg_aux
     {R ι M : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] {A : ι → Submodule R M} (hAi : iSupIndep A) (hAf : (⨆ i, A i).FG) :
     {i | A i ≠ ⊥}.Finite :=
-  finite_ne_bot_of_iSupIndep_of_isCompactElement hAi ((Submodule.fg_iff_compact _).mp hAf)
+  hAi.finite_ne_bot_of_isCompactElement ((Submodule.fg_iff_compact _).mp hAf)
 
 /-- An independent family of submodules spanning a finitely generated submodule has only finitely
 many nonzero members. -/
