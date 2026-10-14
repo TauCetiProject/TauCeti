@@ -64,6 +64,10 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
   `E[n]` is the inverse image `[n]⁻¹[0]` of the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_torsion_hom`: `E[n]` is
   locally of finite presentation over `S`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.subschemeι_ker_torsionι_left_structureMap`: the
+  closed subscheme of the ideal sheaf of `E[n]` is `E[n]` over `S`, so it is locally of finite
+  presentation over `S` as well
+  (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_ker_torsionι_left`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap`: the `n`-torsion commutes
   with base change.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap_torsionι` and
@@ -253,6 +257,19 @@ instance isProper_torsion_hom : IsProper (E.torsion n).X.hom := by
 instance locallyOfFinitePresentation_torsion_hom :
     LocallyOfFinitePresentation (E.torsion n).X.hom :=
   MorphismProperty.of_isPullback (E.isPullback_torsion n) inferInstance
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is `E[n]` over `S`. -/
+theorem subschemeι_ker_torsionι_left_structureMap :
+    (E.torsionι n).left.ker.subschemeι ≫ E.structureMap =
+      inv (E.torsionι n).left.toImage ≫ (E.torsion n).X.hom := by
+  rw [IsIso.eq_inv_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, torsionι_left_structureMap]
+
+/-- The closed subscheme of the ideal sheaf of `E[n]` is locally of finite presentation over
+`S`. -/
+instance locallyOfFinitePresentation_ker_torsionι_left :
+    LocallyOfFinitePresentation ((E.torsionι n).left.ker.subschemeι ≫ E.structureMap) := by
+  rw [subschemeι_ker_torsionι_left_structureMap]
+  infer_instance
 
 /-! ### Base change -/
 

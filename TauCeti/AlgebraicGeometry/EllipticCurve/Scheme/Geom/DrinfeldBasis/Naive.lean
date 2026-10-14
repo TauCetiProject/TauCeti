@@ -50,17 +50,6 @@ theorem IsFiberwiseInjective.isDrinfeldBasis
   have hi : i.toImage ≫ i.ker.subschemeι ≫ E.structureMap = (E.torsion N).X.hom := by
     rw [← Category.assoc, Scheme.Hom.toImage_imageι]
     exact E.torsionι_left_structureMap N
-  have hg : i.ker.subschemeι ≫ E.structureMap = inv i.toImage ≫ (E.torsion N).X.hom := by
-    rw [← hi]
-    simp
-  have : Flat (i.ker.subschemeι ≫ E.structureMap) := by
-    rw [hg]
-    have := E.flat_torsion_hom hn
-    infer_instance
-  have : IsFinite (i.ker.subschemeι ≫ E.structureMap) := by
-    rw [hg]
-    have := E.isFinite_torsion_hom hn
-    infer_instance
   have hrel := E.isRelativeEffectiveCartier_pointsDivisor φ
   have := hrel.flat
   have hprod : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by

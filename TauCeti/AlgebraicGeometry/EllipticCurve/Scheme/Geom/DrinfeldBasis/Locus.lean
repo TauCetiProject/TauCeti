@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.DrinfeldBasis.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.IncidenceLocus
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 
 /-!
@@ -25,10 +24,7 @@ subscheme `E[N]`. Both `D` and `E[N]` are finite locally free over `S` and commu
 change, so the Drinfeld-basis locus is their equality locus
 (`AlgebraicGeometry.Scheme.IdealSheafData.equalityLocus`): the intersection of the locus where
 the finite locally free family `D ⟶ E` lies in `E[N]` and the locus where the finite locally free
-family `E[N] ⟶ E` lies in `D`, each cut out by a Weil restriction of a closed subscheme. The
-instances `EllipticCurveGeom.isFinite_ker_torsionι_left`, `EllipticCurveGeom.flat_ker_torsionι_left`
-and `EllipticCurveGeom.locallyOfFinitePresentation_ker_torsionι_left` record that the closed
-subscheme of the ideal sheaf of `E[N]` is finite locally free over `S`.
+family `E[N] ⟶ E` lies in `D`, each cut out by a Weil restriction of a closed subscheme.
 
 The locus commutes with base change (`EllipticCurveGeom.drinfeldBasisLocus_pointsPullback`), is
 invariant under automorphisms of `(ℤ/Nℤ)²`, in particular under `GL₂(ℤ/Nℤ)`
@@ -76,34 +72,6 @@ universe u
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ) [NeZero N]
-
-omit [NeZero N] in
-/-- The closed subscheme of the ideal sheaf of `E[N]` is `E[N]` over `S`. -/
-private theorem subschemeι_ker_torsionι_left_structureMap :
-    (E.torsionι N).left.ker.subschemeι ≫ E.structureMap =
-      inv (E.torsionι N).left.toImage ≫ (E.torsion N).X.hom := by
-  rw [IsIso.eq_inv_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, torsionι_left_structureMap]
-
-/-- The closed subscheme of the ideal sheaf of `E[N]` is finite over `S`. -/
-instance isFinite_ker_torsionι_left :
-    IsFinite ((E.torsionι N).left.ker.subschemeι ≫ E.structureMap) := by
-  have := E.isFinite_torsion_hom (Int.natCast_ne_zero.mpr (NeZero.ne N))
-  rw [subschemeι_ker_torsionι_left_structureMap]
-  infer_instance
-
-/-- The closed subscheme of the ideal sheaf of `E[N]` is flat over `S`. -/
-instance flat_ker_torsionι_left :
-    Flat ((E.torsionι N).left.ker.subschemeι ≫ E.structureMap) := by
-  have := E.flat_torsion_hom (Int.natCast_ne_zero.mpr (NeZero.ne N))
-  rw [subschemeι_ker_torsionι_left_structureMap]
-  infer_instance
-
-/-- The closed subscheme of the ideal sheaf of `E[N]` is locally of finite presentation over
-`S`. -/
-instance locallyOfFinitePresentation_ker_torsionι_left :
-    LocallyOfFinitePresentation ((E.torsionι N).left.ker.subschemeι ≫ E.structureMap) := by
-  rw [subschemeι_ker_torsionι_left_structureMap]
-  infer_instance
 
 /-- The ideal sheaf on `S` of the **Drinfeld-basis locus** of a homomorphism
 `φ : (ℤ/Nℤ)² →* E(S)` (Katz–Mazur, 1.6.2 and §3.1): a morphism `S' ⟶ S` factors through its
