@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 public import TauCeti.Topology.Order.Interval
@@ -18,7 +18,7 @@ public import TauCeti.Topology.Order.Interval
 
 For a curve `γ : ℝ → X` in an extended pseudometric space, the *metric derivative* at `t` is
 `|γ'|(t) = limsup_{s → t, s ≠ t} edist (γ s) (γ t) / |s - t|`, the metric replacement for the norm
-of the velocity of a curve in a normed space (`HasDerivAt.metricDerivative_eq`). It is the speed
+of the velocity of a curve in a seminormed space (`HasDerivAt.metricDerivative_eq`). It is the speed
 that the action `∫ |γ'|(t)ᵖ dt` of a curve integrates, and so the basic object behind absolutely
 continuous curves in metric spaces, dynamic transport plans and metric gradient flows.
 
@@ -62,7 +62,7 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
 
 ## Main results
 
-* `HasDerivAt.tendsto_edist_div` and `HasDerivAt.metricDerivative_eq`: on a normed space the
+* `HasDerivAt.tendsto_edist_div` and `HasDerivAt.metricDerivative_eq`: on a seminormed space the
   difference quotients converge to the norm of the derivative, which is the metric derivative.
 * `TauCeti.continuousAt_of_metricDerivative_ne_top`: a curve is continuous wherever its metric
   derivative is finite.
@@ -186,18 +186,26 @@ theorem ae_metricDerivative_le {m : ℝ → ℝ≥0∞} {a b : ℝ}
 
 end PseudoEMetricSpace
 
-/-- The difference quotients `edist (γ s) (γ t) / edist s t` of a curve in a normed space converge
-to the norm of its derivative. -/
-theorem _root_.HasDerivAt.tendsto_edist_div {E : Type*} [NormedAddCommGroup E]
+/-- The difference quotients `edist (γ s) (γ t) / edist s t` of a curve in a seminormed space
+converge to the norm of its derivative. -/
+theorem _root_.HasDerivAt.tendsto_edist_div {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {γ : ℝ → E} {v : E} {t : ℝ} (h : HasDerivAt γ v t) :
     Tendsto (fun s ↦ edist (γ s) (γ t) / edist s t) (𝓝[≠] t) (𝓝 ‖v‖ₑ) := by
-  refine ((continuous_enorm.tendsto v).comp (hasDerivAt_iff_tendsto_slope.1 h)).congr' <|
+  -- Use the topological derivative criterion, which does not require the seminorm to separate
+  -- points, to obtain convergence of the slopes.
+  have hlim := h.hasFDerivAt.isLittleOTVS.tendsto_inv_smul
+  have hslope : Tendsto (fun s ↦ (s - t)⁻¹ • (γ s - γ t)) (𝓝[≠] t) (𝓝 v) := by
+    have hlim' := (hlim.mono_left (nhdsWithin_le_nhds (s := {t}ᶜ))).add_const v
+    simp only [zero_add] at hlim'
+    refine hlim'.congr' <| eventually_nhdsWithin_of_forall fun s hs ↦ ?_
+    simp [smul_sub, inv_smul_smul₀ (sub_ne_zero.2 hs)]
+  refine ((continuous_enorm.tendsto v).comp hslope).congr' <|
     eventually_nhdsWithin_of_forall fun s hs ↦ ?_
-  simp only [Function.comp_apply, slope_def_module, enorm_smul, enorm_inv (sub_ne_zero.2 hs),
+  simp only [Function.comp_apply, enorm_smul, enorm_inv (sub_ne_zero.2 hs),
     edist_eq_enorm_sub, ENNReal.div_eq_inv_mul]
 
-/-- On a normed space the metric derivative of a curve is the norm of its derivative. -/
-theorem _root_.HasDerivAt.metricDerivative_eq {E : Type*} [NormedAddCommGroup E]
+/-- On a seminormed space the metric derivative of a curve is the norm of its derivative. -/
+theorem _root_.HasDerivAt.metricDerivative_eq {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {γ : ℝ → E} {v : E} {t : ℝ} (h : HasDerivAt γ v t) :
     metricDerivative γ t = ‖v‖ₑ :=
   metricDerivative_eq_of_tendsto h.tendsto_edist_div
@@ -516,13 +524,6 @@ fixed time of the path extended by constants outside `[a, b]` is measurable. -/
 theorem measurable_metricDerivative_IccExtend_apply {a b : ℝ} (hab : a ≤ b) (t : ℝ) :
     Measurable fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) t :=
   (measurable_metricDerivative_IccExtend hab).of_uncurry_right
-
-/-- On the space `C([a, b], X)` of continuous paths, evaluating the path extended by constants
-outside `[a, b]` at a fixed time is measurable. -/
-theorem measurable_IccExtend_apply [MeasurableSpace X] [BorelSpace X] {a b : ℝ} (hab : a ≤ b)
-    (t : ℝ) : Measurable fun γ : C(Icc a b, X) ↦ IccExtend hab γ t := by
-  simp only [IccExtend_apply]
-  exact (continuous_eval_const _).measurable
 
 end Measurable
 
