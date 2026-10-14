@@ -47,6 +47,10 @@ object stabilizes after finitely many pages to the corresponding graded piece of
 ## Main definitions and results
 
 * `HomologicalComplex₂.rowFiltration`: the filtration of the total complex by rows.
+* `HomologicalComplex₂.ιTotalRowsGE`: the summand inclusions of the total complex of the rows
+  `≥ s`, which describe the projection `HomologicalComplex₂.toTotalRowsGE` onto it.
+* `HomologicalComplex₂.rowFiltrationGradedIso`: the graded pieces of the row filtration are the
+  rows.
 * `HomologicalComplex₂.rowFiltrationSpectralSequence`: its spectral sequence.
 * `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso`: the first page is the homology
   of the rows.
@@ -80,8 +84,10 @@ section Preadditive
 variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteCoproducts C] [HasZeroObject C]
 
 /-- The total complex of the rows `≥ s` of `K`, placed in the degrees they occupy in the total
-complex of `K`. It is the quotient of the total complex of `K` by its rows `< s`. -/
-def totalRowsGE (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : ℕ → ChainComplex C ℕ
+complex of `K`. It is the quotient of the total complex of `K` by its rows `< s`. It is an
+abbreviation so that, for `s + 1`, it is reducibly the extension of the total complex of the rows
+`≥ s` of `K.rowsSucc`, which lets `simp` compose the maps into it. -/
+abbrev totalRowsGE (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : ℕ → ChainComplex C ℕ
   | 0 => K.total (down ℕ)
   | s + 1 => (totalRowsGE K.rowsSucc s).extend embeddingDownNatSucc
 
@@ -99,8 +105,9 @@ def totalRowsGEMap (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) :
   | s + 1 => HomologicalComplex.extendMap (totalRowsGEMap K.rowsSucc s) embeddingDownNatSucc
 
 /-- The row `s` of `K`, placed in the degrees it occupies in the total complex of `K`: its term
-in degree `p + s` is `(K.X p).X s`. -/
-def totalRow (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : ℕ → ChainComplex C ℕ
+in degree `p + s` is `(K.X p).X s`. It is an abbreviation for the same reason as
+`HomologicalComplex₂.totalRowsGE`. -/
+abbrev totalRow (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : ℕ → ChainComplex C ℕ
   | 0 => ((HomologicalComplex.eval C (down ℕ) 0).mapHomologicalComplex (down ℕ)).obj K
   | s + 1 => (totalRow K.rowsSucc s).extend embeddingDownNatSucc
 
@@ -120,21 +127,90 @@ def totalRowXIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) :
     (K.rowsSucc.totalRow s).extendXIso embeddingDownNatSucc (i := p + s) rfl ≪≫
       totalRowXIso K.rowsSucc s p
 
+/-- The inclusion of the summand `(K.X p).X q`, for `s ≤ q`, into the total complex of the rows
+`≥ s` in degree `n = p + q`. -/
+def ιTotalRowsGE (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) :
+    (s p q n : ℕ) → s ≤ q → p + q = n → ((K.X p).X q ⟶ (K.totalRowsGE s).X n)
+  | 0, p, q, n, _, h => K.ιTotal (down ℕ) p q n h
+  | s + 1, p, q + 1, n + 1, _, h =>
+    -- The summand `(K.rowsSucc.X p).X q` is `(K.X p).X (q + 1)` by definition.
+    K.rowsSucc.ιTotalRowsGE s p q n (by omega) (by omega) ≫
+      ((K.rowsSucc.totalRowsGE s).extendXIso embeddingDownNatSucc (i := n) rfl).inv
+  | _ + 1, _, 0, _, hs, _ => absurd hs (by omega)
+  | _ + 1, _, _ + 1, 0, _, h => absurd h (by omega)
+
 variable (K : HomologicalComplex₂ C (down ℕ) (down ℕ))
+
+/-- The projection onto the total complex of the rows `≥ 0` is the identity. -/
+@[simp]
+lemma toTotalRowsGE_zero : K.toTotalRowsGE 0 = 𝟙 _ := (rfl)
+
+/-- The projection onto the total complex of the rows `≥ s` is the identity on the summands of the
+rows `≥ s`. -/
+@[reassoc (attr := simp)]
+lemma ιTotal_toTotalRowsGE_f (s p q n : ℕ) (hs : s ≤ q) (h : p + q = n) :
+    K.ιTotal (down ℕ) p q n h ≫ (K.toTotalRowsGE s).f n = K.ιTotalRowsGE s p q n hs h := by
+  induction s generalizing K q n with
+  | zero => simp [ιTotalRowsGE]
+  | succ s ih =>
+    obtain ⟨q, rfl⟩ : ∃ q', q = q' + 1 := ⟨q - 1, by omega⟩
+    obtain ⟨n, rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+    simp [toTotalRowsGE, ιTotalRowsGE,
+      HomologicalComplex.extendMap_f _ embeddingDownNatSucc (embeddingDownNatSucc_f n),
+      reassoc_of% (ih K.rowsSucc q n (by omega) (by omega))]
+
+/-- The projection onto the total complex of the rows `≥ s` vanishes on the rows `< s`. -/
+@[reassoc (attr := simp)]
+lemma ιTotal_toTotalRowsGE_f_of_lt (s p q n : ℕ) (hq : q < s) (h : p + q = n) :
+    K.ιTotal (down ℕ) p q n h ≫ (K.toTotalRowsGE s).f n = 0 := by
+  induction s generalizing K q n with
+  | zero => omega
+  | succ s ih =>
+    rcases q with _ | q
+    · simp [toTotalRowsGE]
+    · obtain ⟨n, rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+      simp [toTotalRowsGE,
+        HomologicalComplex.extendMap_f _ embeddingDownNatSucc (embeddingDownNatSucc_f n),
+        reassoc_of% (ih K.rowsSucc q n (by omega) (by omega))]
+
+/-- The inclusion of the row `s` into the total complex of the rows `≥ s` is the inclusion of the
+summands `(K.X p).X s`. -/
+@[reassoc (attr := simp)]
+lemma totalRowXIso_inv_totalRowι_f (s p : ℕ) :
+    (K.totalRowXIso s p).inv ≫ (K.totalRowι s).f (p + s) =
+      K.ιTotalRowsGE s p s (p + s) le_rfl rfl := by
+  induction s generalizing K with
+  | zero => simp [totalRowXIso, totalRowι, ιTotalRowsGE]
+  | succ s ih =>
+    simp [totalRowXIso, totalRowι, ιTotalRowsGE,
+      HomologicalComplex.extendMap_f _ embeddingDownNatSucc (i := p + s) (i' := p + (s + 1)) rfl,
+      reassoc_of% (ih K.rowsSucc)]
 
 /-- The projections onto the total complexes of the rows `≥ s` and `≥ s + 1` are compatible. -/
 @[reassoc (attr := simp)]
 lemma toTotalRowsGE_comp_totalRowsGEMap (s : ℕ) :
     K.toTotalRowsGE s ≫ K.totalRowsGEMap s = K.toTotalRowsGE (s + 1) := by
   induction s generalizing K with
-  | zero =>
-    -- `K.totalRowsGE 1` is `(K.rowsSucc.total _).extend _` by definition.
-    exact (Category.id_comp _).trans ((Category.comp_id _).symm.trans
-      (congrArg (K.dropRowZero ≫ ·) (HomologicalComplex.extendMap_id _ _).symm))
+  | zero => simp [toTotalRowsGE, totalRowsGEMap]
   | succ s ih =>
-    exact (Category.assoc _ _ _).trans (congrArg (K.dropRowZero ≫ ·)
-      ((HomologicalComplex.extendMap_comp _ _ _).symm.trans
-        (congrArg (HomologicalComplex.extendMap · _) (ih K.rowsSucc))))
+    simp [toTotalRowsGE, totalRowsGEMap, ← HomologicalComplex.extendMap_comp, ih]
+
+/-- The projection of the total complex of the rows `≥ s` onto that of the rows `≥ s + 1` is the
+identity on the summands of the rows `≥ s + 1`. -/
+@[reassoc (attr := simp)]
+lemma ιTotalRowsGE_totalRowsGEMap_f (s p q n : ℕ) (hs : s + 1 ≤ q) (h : p + q = n) :
+    K.ιTotalRowsGE s p q n (by omega) h ≫ (K.totalRowsGEMap s).f n =
+      K.ιTotalRowsGE (s + 1) p q n hs h := by
+  simp only [← K.ιTotal_toTotalRowsGE_f, Category.assoc, ← HomologicalComplex.comp_f,
+    toTotalRowsGE_comp_totalRowsGEMap]
+
+/-- The projection of the total complex of the rows `≥ s` onto that of the rows `≥ s + 1` vanishes
+on the summands of the row `s`. -/
+@[reassoc (attr := simp)]
+lemma ιTotalRowsGE_self_totalRowsGEMap_f (s p n : ℕ) (h : p + s = n) :
+    K.ιTotalRowsGE s p s n le_rfl h ≫ (K.totalRowsGEMap s).f n = 0 := by
+  simp only [← K.ιTotal_toTotalRowsGE_f, Category.assoc, ← HomologicalComplex.comp_f,
+    toTotalRowsGE_comp_totalRowsGEMap, K.ιTotal_toTotalRowsGE_f_of_lt (s + 1) p s n (by omega)]
 
 /-- The row `s` is killed by the projection onto the total complex of the rows `≥ s + 1`. -/
 @[reassoc (attr := simp)]
@@ -142,10 +218,7 @@ lemma totalRowι_comp_totalRowsGEMap (s : ℕ) :
     K.totalRowι s ≫ K.totalRowsGEMap s = 0 := by
   induction s generalizing K with
   | zero => exact K.rowZeroι_dropRowZero
-  | succ s ih =>
-    exact (HomologicalComplex.extendMap_comp _ _ _).symm.trans
-      ((congrArg (HomologicalComplex.extendMap · _) (ih K.rowsSucc)).trans
-        (HomologicalComplex.extendMap_zero _ _ _))
+  | succ s ih => simp [totalRowι, totalRowsGEMap, ← HomologicalComplex.extendMap_comp, ih]
 
 /-- The total complex of the rows `≥ s` vanishes below degree `s`. -/
 lemma isZero_totalRowsGE_X (s n : ℕ) (hn : n < s) : IsZero ((K.totalRowsGE s).X n) := by
@@ -177,8 +250,7 @@ lemma totalRowShortComplex_shortExact (s : ℕ) : (K.totalRowShortComplex s).Sho
 /-- The total complex of the rows `≥ s` is a quotient of the total complex. -/
 instance epi_toTotalRowsGE (s : ℕ) : Epi (K.toTotalRowsGE s) := by
   induction s with
-  -- `K.toTotalRowsGE 0` is the identity of the total complex by definition.
-  | zero => exact (inferInstance : Epi (𝟙 (K.total (down ℕ))))
+  | zero => rw [toTotalRowsGE_zero]; infer_instance
   | succ s ih =>
     have := (K.totalRowShortComplex_shortExact s).epi_g
     rw [← toTotalRowsGE_comp_totalRowsGEMap]
@@ -240,39 +312,81 @@ lemma monotone_rowFiltration : Monotone K.rowFiltration := by
         rw [← HomologicalComplex.extendMap_comp, toTotalRowsGE_comp_totalRowsGEMap])
   exact this.comp fun _ _ h ↦ Int.toNat_le_toNat h
 
+/-- The row filtration at `q` only depends on `q.toNat`. -/
+lemma rowFiltration_toNat (q : ℤ) : K.rowFiltration q = K.rowFiltration q.toNat := by
+  simp [rowFiltration]
+
+/-- The kernel of the projection of the total complex of the rows `≥ s` onto that of the rows
+`≥ s + 1` is the row `s`, placed in the degrees it occupies in the total complex. -/
+def kernelTotalRowsGEMapIso (s : ℕ) :
+    kernel (HomologicalComplex.extendMap (K.totalRowsGEMap s) embeddingDownNat) ≅
+      (K.totalRow s).extend embeddingDownNat :=
+  (kernelIsKernel _).conePointUniqueUpToIso
+    ((K.totalRowShortComplex_shortExact s).extend embeddingDownNat).fIsKernel
+
+/-- The isomorphism `HomologicalComplex₂.kernelTotalRowsGEMapIso` is compatible with the inclusion
+of the row `s`. -/
+@[reassoc (attr := simp)]
+lemma kernelTotalRowsGEMapIso_hom_totalRowι (s : ℕ) :
+    (K.kernelTotalRowsGEMapIso s).hom ≫
+      HomologicalComplex.extendMap (K.totalRowι s) embeddingDownNat = kernel.ι _ :=
+  (kernelIsKernel _).conePointUniqueUpToIso_hom_comp _ WalkingParallelPair.zero
+
 /-- The quotient of the rows `< s + 1` by the rows `< s` of the total complex of `K` is the row
-`s`, placed in the degrees it occupies in the total complex. -/
+`s`, placed in the degrees it occupies in the total complex
+(`HomologicalComplex₂.π_rowFiltrationGradedIso_hom_totalRowι`). -/
 def rowFiltrationGradedIso (s : ℕ) :
     cokernel ((CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration).map
       (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : (s : ℤ) = s) rfl))) ≅
       (K.totalRow s).extend embeddingDownNat :=
-  cokernel.mapIso _ _ (CochainComplex.filtrationFunctorObjIso _ _ _)
-      (CochainComplex.filtrationFunctorObjIso _ _ _)
-      (CochainComplex.filtrationFunctor_map_comp_objIso_hom _ _ _) ≪≫
+  CochainComplex.cokernelFiltrationFunctorMapIso _ _ _ ≪≫
     TauCeti.cokernelOfLEKernelSubobjectIso
       (HomologicalComplex.extendMap (K.toTotalRowsGE s) embeddingDownNat)
       (HomologicalComplex.extendMap (K.totalRowsGEMap s) embeddingDownNat)
       (by rw [CochainComplex.filtrationEInt_coe, rowFiltration_natCast])
       (by rw [CochainComplex.filtrationEInt_coe, rowFiltration_natCast_add_one]) _ ≪≫
-    (kernelIsKernel _).conePointUniqueUpToIso
-      ((K.totalRowShortComplex_shortExact s).extend embeddingDownNat).fIsKernel
+    K.kernelTotalRowsGEMapIso s
+
+/-- The identification `HomologicalComplex₂.rowFiltrationGradedIso` of the graded piece with the
+row `s` is induced by the projection of the rows `< s + 1` onto the total complex of the rows
+`≥ s`. -/
+@[reassoc (attr := simp)]
+lemma π_rowFiltrationGradedIso_hom_totalRowι (s : ℕ) :
+    cokernel.π _ ≫ (K.rowFiltrationGradedIso s).hom ≫
+      HomologicalComplex.extendMap (K.totalRowι s) embeddingDownNat =
+    (CochainComplex.filtrationFunctorObjIso K.rowFiltration K.monotone_rowFiltration
+        ((s + 1 : ℤ) : EInt)).hom ≫
+      (CochainComplex.filtrationEInt K.rowFiltration ((s + 1 : ℤ) : EInt)).arrow ≫
+      HomologicalComplex.extendMap (K.toTotalRowsGE s) embeddingDownNat := by
+  simp [rowFiltrationGradedIso]
 
 /-- The row filtration is trivial in the rows `≤ 0`. -/
 lemma rowFiltration_eq_bot (q : ℤ) (hq : q ≤ 0) : K.rowFiltration q = ⊥ := by
-  -- `K.toTotalRowsGE 0` is the identity of the total complex by definition.
-  have : IsIso (K.toTotalRowsGE 0) := (inferInstance : IsIso (𝟙 (K.total (down ℕ))))
-  have : IsIso (HomologicalComplex.extendMap (K.toTotalRowsGE 0) embeddingDownNat) :=
-    inferInstanceAs (IsIso ((embeddingDownNat.extendFunctor C).map _))
-  refine (congrArg (fun m : ℕ ↦
-    kernelSubobject (HomologicalComplex.extendMap (K.toTotalRowsGE m) embeddingDownNat))
-    (by omega : q.toNat = 0)).trans ?_
+  rw [rowFiltration_toNat, show q.toNat = 0 by omega, rowFiltration_natCast, toTotalRowsGE_zero,
+    HomologicalComplex.extendMap_id]
   exact Subobject.mk_eq_bot_iff_zero.2 (kernel.ι_of_mono _)
+
+/-- The summand `(K.X p).X q` of the total complex in degree `n`, placed in degree `-n`, lies in
+the rows `< b` when `q < b`. -/
+lemma exists_lift_ιTotal_rowFiltration (b : ℤ) (p q n : ℕ) (hq : (q : ℤ) < b) (h : p + q = n) :
+    ∃ g : (K.X p).X q ⟶ (K.rowFiltration b : CochainComplex C ℤ).X (-n),
+      g ≫ (K.rowFiltration b).arrow.f (-n) = K.ιTotal (down ℕ) p q n h ≫
+        ((K.total (down ℕ)).extendXIso embeddingDownNat (by simp)).inv := by
+  let a := HomologicalComplex.extendMap (K.toTotalRowsGE b.toNat) embeddingDownNat
+  rw [show K.rowFiltration b = kernelSubobject a by rw [rowFiltration_toNat, rowFiltration_natCast]]
+  -- Kernels of complexes are computed degreewise.
+  obtain ⟨l, hl⟩ := KernelFork.IsLimit.lift'
+    (KernelFork.mapIsLimit _ (kernelIsKernel a) (HomologicalComplex.eval C (up ℤ) (-n)))
+    (K.ιTotal (down ℕ) p q n h ≫ ((K.total (down ℕ)).extendXIso embeddingDownNat (by simp)).inv)
+    (by simp [a, HomologicalComplex.extendMap_f _ embeddingDownNat (i := n) (i' := -n) (by simp),
+      K.ιTotal_toTotalRowsGE_f_of_lt_assoc b.toNat p q n (by omega) h])
+  refine ⟨l ≫ (kernelSubobjectIso a).inv.f (-n), ?_⟩
+  simpa [← HomologicalComplex.comp_f] using hl
 
 /-- The quotient of the total complex of `K` by its rows `< b` has no cohomology in degrees
 `> -b`: it is the total complex of the rows `≥ b`, which lives in the chain degrees `≥ b`. -/
 lemma isZero_homology_cokernel_rowFiltration_arrow (b m : ℤ) (hm : -b < m) :
     IsZero ((cokernel (K.rowFiltration b).arrow).homology m) := by
-  let a := HomologicalComplex.extendMap (K.toTotalRowsGE b.toNat) embeddingDownNat
   have hX : IsZero (((K.totalRowsGE b.toNat).extend embeddingDownNat).X m) := by
     by_cases hm' : 0 < m
     · exact (K.totalRowsGE b.toNat).isZero_extend_X embeddingDownNat m
@@ -280,13 +394,9 @@ lemma isZero_homology_cokernel_rowFiltration_arrow (b m : ℤ) (hm : -b < m) :
     · obtain ⟨n, rfl⟩ : ∃ n : ℕ, m = -n := ⟨(-m).toNat, by omega⟩
       exact (K.isZero_totalRowsGE_X b.toNat n (by omega)).of_iso
         ((K.totalRowsGE b.toNat).extendXIso embeddingDownNat (by simp))
-  -- The quotient of the total complex by the kernel of the epimorphism `a` is its target.
-  have e : cokernel (K.rowFiltration b).arrow ≅ (K.totalRowsGE b.toNat).extend embeddingDownNat :=
-    cokernelIsoOfEq (kernelSubobject_arrow a).symm ≪≫
-      cokernelEpiComp (kernelSubobjectIso a).hom (kernel.ι a) ≪≫
-      (cokernelIsCokernel _).coconePointUniqueUpToIso
-        (Abelian.epiIsCokernelOfKernel _ (kernelIsKernel a))
-  exact ((HomologicalComplex.homologyFunctor C (up ℤ) m).mapIso e).symm.isZero_iff.1
+  exact ((HomologicalComplex.homologyFunctor C (up ℤ) m).mapIso
+    (TauCeti.cokernelKernelSubobjectArrowIso _
+      (by rw [rowFiltration_toNat, rowFiltration_natCast]))).symm.isZero_iff.1
     (ShortComplex.isZero_homology_of_isZero_X₂ _ hX)
 
 /-! ### The spectral sequence -/
@@ -333,20 +443,12 @@ lemma isZero_rowFiltrationSpectralSequence_page_two_X_of_pos (p : ℤ) (s : ℕ)
 /-- The first page of the spectral sequence of the row filtration vanishes in negative rows. -/
 lemma isZero_rowFiltrationSpectralSequence_page_two_X_of_neg (p q : ℤ) (hq : q < 0) :
     IsZero ((K.rowFiltrationSpectralSequence.page 2).X (p, q)) := by
-  have key (X Y : Subobject ((K.total (down ℕ)).extend embeddingDownNat)) (h : X ≤ Y)
-      (hXY : X = Y) : IsZero (cokernel (X.ofLE Y h)) := by
-    subst hXY
-    rw [Subobject.ofLE_refl]
-    exact isZero_cokernel_of_epi _
   refine ((HomologicalComplex.homologyFunctor C (up ℤ) (p + q)).map_isZero
-    ((key _ _ _ ?_).of_iso (cokernel.mapIso _ _ (CochainComplex.filtrationFunctorObjIso _ _ _)
-      (CochainComplex.filtrationFunctorObjIso _ _ _)
-      (CochainComplex.filtrationFunctor_map_comp_objIso_hom _ _ _)))).of_iso
+    ((IsZero.of_epi (cokernel.π _) ?_).of_iso
+      (CochainComplex.cokernelFiltrationFunctorMapIso _ _ _))).of_iso
     (CochainComplex.spectralSequenceFirstPageXIsoCokernel _ (p, q) q (q + 1) rfl rfl (p + q) rfl)
-  simp only [CochainComplex.filtrationEInt_coe, rowFiltration]
-  exact congrArg (fun m : ℕ ↦
-    kernelSubobject (HomologicalComplex.extendMap (K.toTotalRowsGE m) embeddingDownNat))
-    (by omega)
+  rw [CochainComplex.filtrationEInt_coe, K.rowFiltration_eq_bot _ (by omega)]
+  exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
 
 /-- The abutment of the spectral sequence of the row filtration in degree `-n` is the homology of
 the total complex of `K` in degree `n`. -/

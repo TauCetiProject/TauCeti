@@ -27,6 +27,8 @@ an abelian category is short exact as soon as it is short exact objectwise.
   `a` an epimorphism, `kernel a ⟶ kernel (a ≫ b) ⟶ kernel b` is short exact.
 * `TauCeti.cokernelOfLEKernelSubobjectIso`: for an epimorphism `a`, the quotient of the kernel of
   `a ≫ b` by the kernel of `a` is the kernel of `b`.
+* `TauCeti.cokernelKernelSubobjectArrowIso`: for an epimorphism `a`, the quotient by the kernel of
+  `a` is the target of `a`.
 * `TauCeti.cokernelSequenceToSnakeInputL₃`: the morphism from `Y ⟶ Z ⟶ cokernel b` to that
   sequence.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
@@ -92,19 +94,67 @@ lemma kernelCokernelCompSequence_snakeInput_L₀_shortExact [Epi a] :
   · exact ((kernelCokernelCompSequence_exact a b).exact 1).epi_f
       ((isZero_cokernel_of_epi a).eq_of_tgt _ _)
 
+variable {a b} in
+/-- The short complex `S ⟶ T ⟶ kernel b` for subobjects `S = kernelSubobject a` and
+`T = kernelSubobject (a ≫ b)`, the second map being induced by `a`. -/
+private noncomputable abbrev ofLEKernelSubobjectShortComplex {S T : Subobject X}
+    (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
+    ShortComplex C :=
+  ShortComplex.mk (Subobject.ofLE S T h)
+    (kernel.lift b (T.arrow ≫ a)
+      (by subst hT; rw [Category.assoc]; exact kernelSubobject_arrow_comp _)) (by
+      subst hS hT
+      rw [← cancel_mono (kernel.ι b)]
+      simp)
+
+variable {a b} in
+private lemma ofLEKernelSubobjectShortComplex_shortExact [Epi a] {S T : Subobject X}
+    (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
+    (ofLEKernelSubobjectShortComplex hS hT h).ShortExact := by
+  subst hS hT
+  exact ShortComplex.shortExact_of_iso (S₁ := (kernelCokernelCompSequence.snakeInput a b).L₀)
+    (ShortComplex.isoMk (kernelSubobjectIso a).symm (kernelSubobjectIso (a ≫ b)).symm (Iso.refl _)
+      (by simp [← cancel_mono (kernelSubobject (a ≫ b)).arrow,
+        kernelCokernelCompSequence.snakeInput])
+      (by simp [← cancel_mono (kernel.ι b), kernelCokernelCompSequence.snakeInput]))
+    (kernelCokernelCompSequence_snakeInput_L₀_shortExact a b)
+
 /-- For an epimorphism `a`, the cokernel of the inclusion of the kernel of `a` into the kernel of
-`a ≫ b` is the kernel of `b`. The two subobjects are given up to equality, for flexibility. -/
+`a ≫ b` is the kernel of `b`, the isomorphism being induced by `a`
+(`TauCeti.π_cokernelOfLEKernelSubobjectIso_hom_ι`). The two subobjects are given up to equality,
+for flexibility. -/
 noncomputable def cokernelOfLEKernelSubobjectIso [Epi a] {S T : Subobject X}
     (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
-    cokernel (Subobject.ofLE S T h) ≅ kernel b := by
-  subst hS hT
-  exact cokernelIsoOfEq (g := (kernelSubobjectIso a).hom ≫
-      kernel.map a (a ≫ b) (𝟙 _) b (by simp) ≫ (kernelSubobjectIso (a ≫ b)).inv)
-    (by simp [← cancel_mono (kernelSubobject (a ≫ b)).arrow]) ≪≫
-    cokernelEpiComp _ _ ≪≫ cokernelCompIsIso (kernel.map a (a ≫ b) (𝟙 _) b (by simp))
-      (kernelSubobjectIso (a ≫ b)).inv ≪≫
-    (cokernelIsCokernel _).coconePointUniqueUpToIso
-      (kernelCokernelCompSequence_snakeInput_L₀_shortExact a b).gIsCokernel
+    cokernel (Subobject.ofLE S T h) ≅ kernel b :=
+  (cokernelIsCokernel _).coconePointUniqueUpToIso
+    (ofLEKernelSubobjectShortComplex_shortExact hS hT h).gIsCokernel
+
+/-- The isomorphism `TauCeti.cokernelOfLEKernelSubobjectIso` is induced by `a`. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelOfLEKernelSubobjectIso_hom_ι [Epi a] {S T : Subobject X}
+    (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
+    cokernel.π (Subobject.ofLE S T h) ≫ (cokernelOfLEKernelSubobjectIso a b hS hT h).hom ≫
+      kernel.ι b = T.arrow ≫ a := by
+  have := (cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom
+    (ofLEKernelSubobjectShortComplex_shortExact hS hT h).gIsCokernel WalkingParallelPair.one
+  dsimp at this
+  rw [cokernelOfLEKernelSubobjectIso, reassoc_of% this, kernel.lift_ι]
+
+/-- For an epimorphism `a`, the cokernel of the inclusion of the kernel of `a` is the target of
+`a`, the isomorphism being induced by `a` (`TauCeti.π_cokernelKernelSubobjectArrowIso_hom`). The
+subobject is given up to equality, for flexibility. -/
+noncomputable def cokernelKernelSubobjectArrowIso [Epi a] {S : Subobject X}
+    (hS : S = kernelSubobject a) : cokernel S.arrow ≅ Y :=
+  (cokernelIsCokernel _).coconePointUniqueUpToIso
+    (Abelian.epiIsCokernelOfKernel _ (IsKernel.isoKernel _ _ (kernelIsKernel a)
+      ((Subobject.isoOfEq _ _ hS).trans (kernelSubobjectIso a)) (by subst hS; simp)))
+
+/-- The isomorphism `TauCeti.cokernelKernelSubobjectArrowIso` is induced by `a`. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelKernelSubobjectArrowIso_hom [Epi a] {S : Subobject X}
+    (hS : S = kernelSubobject a) :
+    cokernel.π S.arrow ≫ (cokernelKernelSubobjectArrowIso a hS).hom = a :=
+  (cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom _ WalkingParallelPair.one
 
 /-- The morphism of short complexes from `Y ⟶ Z ⟶ cokernel b` to
 `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` given by the cokernel projections of `a` and
