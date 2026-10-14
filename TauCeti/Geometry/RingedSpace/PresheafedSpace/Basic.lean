@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.RingedSpace.PresheafedSpace
+public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace
 
 /-!
 # Morphisms of presheafed spaces determined by sections
@@ -22,7 +22,9 @@ A morphism `f : X ⟶ Y` of presheafed spaces which is surjective on points and 
 agree after composing with `f` agree on points because `f` is surjective, and then on sections
 because the maps on sections of `f` can be cancelled. This is the sectionwise analogue of
 Mathlib's `AlgebraicGeometry.SheafedSpace.epi_of_base_surjective_of_stalk_mono`, and applies when
-`𝒪_Y ⟶ f_* 𝒪_X` is an isomorphism.
+`𝒪_Y ⟶ f_* 𝒪_X` is an isomorphism. The same criterion holds for morphisms of locally ringed
+spaces, since a morphism of locally ringed spaces is determined by its underlying morphism of
+presheafed spaces.
 
 ## Main results
 
@@ -30,6 +32,8 @@ Mathlib's `AlgebraicGeometry.SheafedSpace.epi_of_base_surjective_of_stalk_mono`,
   underlying map and on sections over every open are equal.
 * `AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`: a morphism which is
   surjective on points and a monomorphism on sections over every open is an epimorphism.
+* `AlgebraicGeometry.LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono`: the same criterion
+  for morphisms of locally ringed spaces.
 -/
 
 public section
@@ -70,3 +74,15 @@ theorem epi_of_base_surjective_of_c_app_mono (f : X ⟶ Y) (h₁ : Function.Surj
   exact congr(NatTrans.app (Hom.c $e) (op U))
 
 end AlgebraicGeometry.PresheafedSpace
+
+namespace AlgebraicGeometry.LocallyRingedSpace
+
+/-- **A morphism of locally ringed spaces which is surjective on points and a monomorphism on
+sections is an epimorphism.** -/
+theorem epi_of_base_surjective_of_c_app_mono {X Y : LocallyRingedSpace} (f : X ⟶ Y)
+    (h₁ : Function.Surjective f.base) (h₂ : ∀ U, Mono (f.c.app U)) : Epi f := by
+  apply Functor.epi_of_epi_map LocallyRingedSpace.forgetToSheafedSpace
+  apply Functor.epi_of_epi_map SheafedSpace.forgetToPresheafedSpace
+  exact PresheafedSpace.epi_of_base_surjective_of_c_app_mono _ h₁ h₂
+
+end AlgebraicGeometry.LocallyRingedSpace

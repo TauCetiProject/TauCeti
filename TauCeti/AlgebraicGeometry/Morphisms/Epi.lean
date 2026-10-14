@@ -25,8 +25,8 @@ quotient of an affine scheme by a finite group, whose stalk maps are injective b
 The same argument works with the maps on sections `Γ(Y, U) → Γ(X, f⁻¹ U)` in place of the stalk
 maps. Their injectivity holds when `𝒪_Y → f_* 𝒪_X` is an isomorphism, a condition on sections
 rather than on stalks, which is how contraction morphisms of curves are controlled. This version
-uses nothing about schemes and is deduced from its presheafed-space form
-`AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`.
+uses nothing about schemes and is deduced from its locally-ringed-space form
+`AlgebraicGeometry.LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono`.
 
 Both hypotheses survive base change along an open immersion `U ⟶ Y`: surjectivity is stable under
 base change, and the stalk maps of `X ×_Y U ⟶ U` are those of `f`, up to the stalk isomorphisms of
@@ -82,9 +82,7 @@ sections. -/
 theorem epi_of_surjective_of_app_injective (f : X ⟶ Y) [Surjective f]
     (h : ∀ U, Function.Injective (f.app U)) : Epi f := by
   apply Functor.epi_of_epi_map Scheme.forgetToLocallyRingedSpace
-  apply Functor.epi_of_epi_map LocallyRingedSpace.forgetToSheafedSpace
-  apply Functor.epi_of_epi_map SheafedSpace.forgetToPresheafedSpace
-  exact PresheafedSpace.epi_of_base_surjective_of_c_app_mono _ f.surjective
+  exact LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono _ f.surjective
     fun U ↦ ConcreteCategory.mono_of_injective _ (h U.unop)
 
 /-- A surjective morphism of schemes which is an isomorphism on sections over every open is an

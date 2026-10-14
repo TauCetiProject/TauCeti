@@ -34,7 +34,7 @@ inverse of `c` on sections. The composite `c ≫ g` is then `h` as a morphism of
 Every point of `Y` is `c x` for some `x`, and the stalk map of `h` at `x` is the stalk map of `g`
 at `c x` followed by that of `c` at `x`, so the stalk maps of `g` are local because those of `h`
 are. Uniqueness holds because `c` is surjective and injective on sections, hence an epimorphism
-(`AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`).
+(`AlgebraicGeometry.LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono`).
 
 The construction is compatible with any commutative square, in particular with base change: if
 `c' : X' ⟶ Y'` has the same two properties and `u ≫ c = c' ≫ v`, then the descent of `u ≫ h`
@@ -156,19 +156,10 @@ noncomputable def descOfIsQuotientMap : Y ⟶ Z :=
 theorem comp_descOfIsQuotientMap : c ≫ c.descOfIsQuotientMap hq hc h hh = h :=
   LocallyRingedSpace.Hom.ext' (comp_descPsh c hq hc h hh)
 
-include hq hc in
-/-- A quotient map of locally ringed spaces which is an isomorphism on sections is an
-epimorphism. -/
-private theorem epi_of_isQuotientMap : Epi c := by
-  apply Functor.epi_of_epi_map LocallyRingedSpace.forgetToSheafedSpace
-  apply Functor.epi_of_epi_map SheafedSpace.forgetToPresheafedSpace
-  exact PresheafedSpace.epi_of_base_surjective_of_c_app_mono _ hq.surjective fun U ↦
-    (hc U).mono_of_iso
-
 /-- The morphism descended along `c` is the only morphism through which `h` factors. -/
 theorem eq_descOfIsQuotientMap {g : Y ⟶ Z} (hg : c ≫ g = h) :
     g = c.descOfIsQuotientMap hq hc h hh := by
-  have := epi_of_isQuotientMap c hq hc
+  have := epi_of_base_surjective_of_c_app_mono c hq.surjective fun U ↦ (hc U).mono_of_iso
   rw [← cancel_epi c, hg, comp_descOfIsQuotientMap]
 
 /-- Descending a morphism already expressed as a composite through `c` recovers that morphism. -/
@@ -190,7 +181,7 @@ theorem existsUnique_comp_eq_of_isQuotientMap : ∃! g : Y ⟶ Z, c ≫ g = h :=
 @[reassoc]
 theorem descOfIsQuotientMap_comp_eq {S : LocallyRingedSpace.{u}} {p : Y ⟶ S} {q : Z ⟶ S}
     (e : h ≫ q = c ≫ p) : c.descOfIsQuotientMap hq hc h hh ≫ q = p := by
-  have := epi_of_isQuotientMap c hq hc
+  have := epi_of_base_surjective_of_c_app_mono c hq.surjective fun U ↦ (hc U).mono_of_iso
   rw [← cancel_epi c, comp_descOfIsQuotientMap_assoc, e]
 
 /-- **Descent commutes with base change.** Given a commutative square `u ≫ c = c' ≫ v` in which
