@@ -354,7 +354,7 @@ lemma homologyMap_comp_singularHomologyπ (n : ℕ) :
 
 variable {P P'} in
 /-- The map from ambient to relative singular homology is natural in maps of pairs. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma singularHomologyπ_naturality (n : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n ≫ P'.singularHomologyπ R n =
       P.singularHomologyπ R n ≫ TopPair.singularHomologyMap f R n :=
