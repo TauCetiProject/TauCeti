@@ -246,27 +246,11 @@ noncomputable def extendScalars (f : DGAlgHom hA hB) :
   map_id _ := DGRightModuleHom.extendScalars_id f
   map_comp g k := DGRightModuleHom.extendScalars_comp f k g
 
-private theorem extendScalars_obj_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uA, max uB uM} hA) :
-    (extendScalars f).obj M = of (M.isDGRightModule.extendScalars f) := rfl
-
-/-- The object produced by bundled extension of scalars is the bundled balanced tensor product. -/
-theorem extendScalars_obj (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uA, max uB uM} hA) :
-    (extendScalars f).obj M = of (M.isDGRightModule.extendScalars f) :=
-  extendScalars_obj_def f M
-
 /-- The underlying `R`-module of a bundled extension is the balanced tensor product. -/
 noncomputable def extendScalarsEquiv (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) :
-    (extendScalars f).obj M ≃ₗ[R] DGRightModule.ExtendScalars f M := by
-  rw [extendScalars_obj]
-
-private theorem extendScalarsEquiv_map_def (f : DGAlgHom hA hB)
-    {M N : DGRightModuleCat.{uR, uA, max uB uM} hA} (g : M ⟶ N)
-    (x : (extendScalars f).obj M) :
-    extendScalarsEquiv f N ((extendScalars f).map g x) =
-      g.extendScalars f (extendScalarsEquiv f M x) := rfl
+    (extendScalars f).obj M ≃ₗ[R] DGRightModule.ExtendScalars f M :=
+  LinearEquiv.refl R _
 
 /-- Bundled extension of scalars maps a morphism by applying it to the first tensor factor. -/
 @[simp]
@@ -274,28 +258,15 @@ theorem extendScalarsEquiv_map (f : DGAlgHom hA hB)
     {M N : DGRightModuleCat.{uR, uA, max uB uM} hA} (g : M ⟶ N)
     (x : (extendScalars f).obj M) :
     extendScalarsEquiv f N ((extendScalars f).map g x) =
-      g.extendScalars f (extendScalarsEquiv f M x) :=
-  extendScalarsEquiv_map_def f g x
-
-private theorem extendScalarsEquiv_smul_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (b : Bᵐᵒᵖ)
-    (x : (extendScalars f).obj M) :
-    extendScalarsEquiv f M (b • x) = b • extendScalarsEquiv f M x := rfl
+      g.extendScalars f (extendScalarsEquiv f M x) := by
+  rfl
 
 /-- The underlying equivalence of a bundled extension respects the right action. -/
 @[simp]
 theorem extendScalarsEquiv_smul (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (b : Bᵐᵒᵖ)
     (x : (extendScalars f).obj M) :
-    extendScalarsEquiv f M (b • x) = b • extendScalarsEquiv f M x :=
-  extendScalarsEquiv_smul_def f M b x
-
-private theorem mem_extendScalars_obj_grading_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (q : ℤ)
-    (x : (extendScalars f).obj M) :
-    x ∈ ((extendScalars f).obj M).grading q ↔
-      extendScalarsEquiv f M x ∈
-        IsDGRightModule.extendScalarsGrading (M := M) (ℳ := M.grading) f q := by
+    extendScalarsEquiv f M (b • x) = b • extendScalarsEquiv f M x := by
   rfl
 
 /-- The grading of a bundled extension is the total grading on the balanced tensor product. -/
@@ -305,33 +276,27 @@ theorem mem_extendScalars_obj_grading (f : DGAlgHom hA hB)
     (x : (extendScalars f).obj M) :
     x ∈ ((extendScalars f).obj M).grading q ↔
       extendScalarsEquiv f M x ∈
-        IsDGRightModule.extendScalarsGrading (M := M) (ℳ := M.grading) f q :=
-  mem_extendScalars_obj_grading_def f M q x
-
-private theorem extendScalarsEquiv_differential_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (x : (extendScalars f).obj M) :
-    extendScalarsEquiv f M (((extendScalars f).obj M).differential x) =
-      M.isDGRightModule.extendScalarsDifferential f (extendScalarsEquiv f M x) := rfl
+        IsDGRightModule.extendScalarsGrading (M := M) (ℳ := M.grading) f q := by
+  rfl
 
 /-- The differential of a bundled extension is the balanced tensor differential. -/
 @[simp]
 theorem extendScalarsEquiv_differential (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (x : (extendScalars f).obj M) :
     extendScalarsEquiv f M (((extendScalars f).obj M).differential x) =
-      M.isDGRightModule.extendScalarsDifferential f (extendScalarsEquiv f M x) :=
-  extendScalarsEquiv_differential_def f M x
+      M.isDGRightModule.extendScalarsDifferential f (extendScalarsEquiv f M x) := by
+  rfl
 
 /-- The bundled extended object is the object obtained by bundling the unbundled balanced tensor
 product. This is the identity isomorphism; it is named because `extendScalars` is not exposed, so
 the identification is only visible inside this module. -/
-noncomputable def extendScalarsObjIso (f : DGAlgHom hA hB)
+private noncomputable def extendScalarsObjIso (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) :
     (extendScalars f).obj M ≅ of (M.isDGRightModule.extendScalars f) :=
   Iso.refl _
 
 /-- The canonical extended-object isomorphism acts by the carrier equivalence. -/
-@[simp]
-theorem extendScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
+private theorem extendScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (x : (extendScalars f).obj M) :
     (extendScalarsObjIso f M).hom x = extendScalarsEquiv f M x := by
   -- Retype the identity morphism at its own endpoints.
@@ -340,8 +305,7 @@ theorem extendScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
   rfl
 
 /-- The inverse canonical extended-object isomorphism inverts the carrier equivalence. -/
-@[simp]
-theorem extendScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
+private theorem extendScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA)
     (x : DGRightModule.ExtendScalars f M) :
     (extendScalarsObjIso f M).inv x = (extendScalarsEquiv f M).symm x := by
@@ -350,7 +314,7 @@ theorem extendScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
     Iso.inv_hom_id, id_apply]
 
 /-- The canonical extended-object isomorphisms are natural in the module. -/
-theorem extendScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
+private theorem extendScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
     {M N : DGRightModuleCat.{uR, uA, max uB uM} hA} (g : M ⟶ N) :
     (extendScalars f).map g ≫ (extendScalarsObjIso f N).hom =
       (extendScalarsObjIso f M).hom ≫ g.extendScalars f := by
@@ -360,7 +324,7 @@ theorem extendScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
 
 /-- The unbundled extension–restriction bijection, transported across the bundled object
 identifications. -/
-noncomputable def extendRestrictScalarsHomEquiv (f : DGAlgHom hA hB)
+private noncomputable def extendRestrictScalarsHomEquiv (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA)
     (P : DGRightModuleCat.{uR, uB, max uB uM} hB) :
     ((extendScalars f).obj M ⟶ P) ≃ (M ⟶ (restrictScalars f).obj P) :=
@@ -417,7 +381,7 @@ noncomputable def extendRestrictScalarsAdj (f : DGAlgHom hA hB) :
         rw [← hn] }
 
 /-- The adjunction sends a morphism `g` out of `M ⊗_A B` to `m ↦ g(m ⊗ 1)`. -/
-theorem extendRestrictScalarsAdj_homEquiv_apply (f : DGAlgHom hA hB)
+private theorem extendRestrictScalarsAdj_homEquiv_apply (f : DGAlgHom hA hB)
     {M : DGRightModuleCat.{uR, uA, max uB uM} hA} {P : DGRightModuleCat.{uR, uB, max uB uM} hB}
     (g : (extendScalars f).obj M ⟶ P) :
     (extendRestrictScalarsAdj f).homEquiv M P g =
@@ -443,7 +407,7 @@ theorem extendRestrictScalarsAdj_homEquiv_apply_apply (f : DGAlgHom hA hB)
   rw [DGRightModuleHom.val_toRestrictScalars, comp_apply, extendScalarsObjIso_inv_apply]
 
 /-- The inverse of the adjunction sends a morphism `φ` into `f^* P` to `m ⊗ b ↦ φ(m) b`. -/
-theorem extendRestrictScalarsAdj_homEquiv_symm_apply (f : DGAlgHom hA hB)
+private theorem extendRestrictScalarsAdj_homEquiv_symm_apply (f : DGAlgHom hA hB)
     {M : DGRightModuleCat.{uR, uA, max uB uM} hA} {P : DGRightModuleCat.{uR, uB, max uB uM} hB}
     (φ : M ⟶ (restrictScalars f).obj P) :
     ((extendRestrictScalarsAdj f).homEquiv M P).symm φ =

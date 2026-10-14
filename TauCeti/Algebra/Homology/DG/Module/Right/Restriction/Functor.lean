@@ -52,21 +52,10 @@ noncomputable def restrictScalars (f : DGAlgHom hA hB) :
   map_id _ := DGRightModuleHom.restrictScalars_id f
   map_comp g k := DGRightModuleHom.restrictScalars_comp f k g
 
-private theorem restrictScalars_obj_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uB, uM} hB) :
-    (restrictScalars f).obj M = of (M.isDGRightModule.restrictScalars f) := rfl
-
-/-- The object produced by bundled restriction of scalars is the bundled unbundled restriction. -/
-theorem restrictScalars_obj (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uB, uM} hB) :
-    (restrictScalars f).obj M = of (M.isDGRightModule.restrictScalars f) :=
-  restrictScalars_obj_def f M
-
 /-- Restriction of scalars preserves the underlying module over the ground ring. -/
 noncomputable def restrictScalarsEquiv (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uB, uM} hB) : (restrictScalars f).obj M ≃ₗ[R] M := by
-  rw [restrictScalars_obj]
-  exact DGRightModule.RestrictScalars.linearEquiv f M
+    (M : DGRightModuleCat.{uR, uB, uM} hB) : (restrictScalars f).obj M ≃ₗ[R] M :=
+  DGRightModule.RestrictScalars.linearEquiv f M
 
 /-- The restricted action is the original action through the algebra morphism. -/
 @[simp]
