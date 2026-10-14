@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
@@ -24,6 +24,8 @@ open MeasureTheory Set
 /-- Square root is absolutely continuous on every finite interval. -/
 theorem Real.absolutelyContinuousOnInterval_sqrt (a b : ℝ) :
     AbsolutelyContinuousOnInterval Real.sqrt a b := by
+  -- Real powers at negative inputs vanish for exponents ±1/2, since their cosine factor is zero.
+  -- The power primitive therefore agrees with square root even at negative endpoints.
   let m : ℝ → ℝ := fun t ↦ (1 / 2 : ℝ) * t ^ (-(1 / 2 : ℝ))
   have hm : IntervalIntegrable m volume a b :=
     (intervalIntegral.intervalIntegrable_rpow' (by norm_num : (-1 : ℝ) < -(1 / 2 : ℝ))).const_mul _
@@ -32,7 +34,9 @@ theorem Real.absolutelyContinuousOnInterval_sqrt (a b : ℝ) :
   intro t _
   dsimp only [m, Function.comp_apply]
   rw [intervalIntegral.integral_const_mul,
-    integral_rpow (Or.inl (by norm_num : (-1 : ℝ) < -(1 / 2 : ℝ)))]
+    integral_rpow (Or.inl (by norm_num : (-1 : ℝ) < -(1 / 2 : ℝ))),
+    Real.sqrt_eq_rpow, Real.sqrt_eq_rpow]
   norm_num
-  rw [Real.sqrt_eq_rpow, Real.sqrt_eq_rpow]
+  -- The remaining identity is
+  -- `1/2 * ((t^(1/2) - a^(1/2))/(1/2)) + a^(1/2) = t^(1/2)`.
   ring
