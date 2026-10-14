@@ -33,6 +33,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `Module.finBasisOfFinrankEq`.
 * `TauCeti.Algebra.det_endAlgEquivMatrix`: the matrix of an endomorphism has the determinant of
   the endomorphism, whichever basis was chosen.
+* `TauCeti.Algebra.endAlgEquivMatrix_mulVec_repr`: the characteristic action of that matrix on
+  coordinate vectors.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
@@ -122,5 +124,19 @@ This does not depend on the basis that `endAlgEquivMatrix` chooses. -/
 theorem det_endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) (f : Module.End K M) :
     (endAlgEquivMatrix K M hn f).det = LinearMap.det f :=
   LinearMap.det_toMatrix (Module.finBasisOfFinrankEq K M hn) f
+
+/-- The matrix supplied by `endAlgEquivMatrix` acts on coordinates as the original endomorphism.
+This is the computation rule for the otherwise opaque choice of basis. -/
+theorem endAlgEquivMatrix_mulVec_repr {n : ℕ} (hn : Module.finrank K M = n)
+    (f : Module.End K M) (x : M) :
+    Matrix.mulVec (endAlgEquivMatrix K M hn f)
+        ((Module.finBasisOfFinrankEq K M hn).repr x) =
+      (Module.finBasisOfFinrankEq K M hn).repr (f x) := by
+  change Matrix.mulVec
+      (LinearMap.toMatrix (Module.finBasisOfFinrankEq K M hn)
+        (Module.finBasisOfFinrankEq K M hn) f)
+      ((Module.finBasisOfFinrankEq K M hn).repr x) = _
+  exact LinearMap.toMatrix_mulVec_repr (Module.finBasisOfFinrankEq K M hn)
+    (Module.finBasisOfFinrankEq K M hn) f x
 
 end TauCeti.Algebra
