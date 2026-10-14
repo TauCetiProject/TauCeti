@@ -56,6 +56,9 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   injectivity on fibres is injectivity.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`: injectivity
   on fibres is stable under base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.eq_of_comp_left_eq`: points
+  in the image of a homomorphism injective on every fibre are distinguished by every field-valued
+  point of the base.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.left_apply_injective` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.disjoint_range`: distinct
   indices give distinct points in each fibre and disjoint section images.
@@ -165,25 +168,25 @@ theorem IsFiberwiseInjective.injective_pointsPullback (h : E.IsFiberwiseInjectiv
     Function.Injective ((EllipticCurveGeom.pointsPullback hg h0).comp φ) :=
   (E'.isFiberwiseInjective_iff_injective _).mp (h.pointsPullback hg h0)
 
+/-- **Points of a fibrewise injective homomorphism are distinguished on field points.** If
+`φ : A →* E(S)` is injective on every fibre and `φ c₁`, `φ c₂` agree after composition with a
+point `t : Spec K ⟶ S` with values in a field, then `c₁ = c₂`. -/
+theorem IsFiberwiseInjective.eq_of_comp_left_eq (hφ : E.IsFiberwiseInjective φ) {K : Type u}
+    [Field K] (t : Spec (.of K) ⟶ S) {c₁ c₂ : A}
+    (h : t ≫ (φ c₁).left = t ≫ (φ c₂).left) : c₁ = c₂ :=
+  hφ.injective_pointsPullback (E.isPullback_baseChange t) (by simp)
+    ((eq_pointsPullback_iff _ _).mpr (by rw [MonoidHom.comp_apply, pointsPullback_left_comp, h]))
+
 /-- The underlying points of a fibrewise injective family of sections are distinct over each
 point of the base. -/
 theorem IsFiberwiseInjective.left_apply_injective (h : E.IsFiberwiseInjective φ) (s : S) :
     Function.Injective (fun a ↦ (φ a).left s) := by
-  let t := S.fromSpecResidueField s
-  let hg := E.isPullback_baseChange t
-  have h0 : (E.baseChange t).zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ = t ≫ E.zero :=
-    by simp
-  let ψ := (EllipticCurveGeom.pointsPullback hg h0).comp φ
   intro a b hab
   obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
-  have ht : t ≫ (φ a).left = t ≫ (φ b).left :=
-    (comp_eq_comp_iff_of_section (left_comp_structureMap _) (left_comp_structureMap _) t p).mpr
-      (by
-        have hp : t p = s := Scheme.fromSpecResidueField_apply s p
-        exact (congrArg (φ a).left hp).trans (hab.trans (congrArg (φ b).left hp).symm))
-  have he : ψ a = ψ b := Over.OverMorphism.ext <|
-    hg.hom_ext (by simp [ψ, pointsPullback_left_comp, ht]) (by simp [ψ])
-  exact h.injective_pointsPullback hg h0 he
+  have hp : S.fromSpecResidueField s p = s := Scheme.fromSpecResidueField_apply s p
+  refine h.eq_of_comp_left_eq (S.fromSpecResidueField s) ?_
+  exact (comp_eq_comp_iff_of_section (left_comp_structureMap _) (left_comp_structureMap _) _ p).mpr
+    ((congrArg (φ a).left hp).trans (hab.trans (congrArg (φ b).left hp).symm))
 
 /-- Distinct sections of a fibrewise injective family have disjoint images. -/
 theorem IsFiberwiseInjective.disjoint_range (h : E.IsFiberwiseInjective φ) {a b : A}

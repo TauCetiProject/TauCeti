@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
@@ -13,6 +14,9 @@ public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 -- Proof-only: finiteness of the torsion of an elliptic curve.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
+
+-- Non-public: the nonvanishing of `m` in `Kˢ` is used only inside proofs.
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # The Galois coefficient modules of an elliptic curve
@@ -69,6 +73,7 @@ automorphisms of an algebraic closure are the points over the perfect closure of
   `WeierstrassCurve.pointGaloisAction`, and
   `WeierstrassCurve.torsionByCongr_pointCoeffEquiv_symm_smul` its torsion counterpart
   `WeierstrassCurve.torsionGaloisAction`.
+* `WeierstrassCurve.natCard_torsionCoeff`: `E(Kˢ)[m]` has `m²` points for `m` invertible in `K`.
 * `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`,
   and `WeierstrassCurve.exists_baseTorsionCoeff_eq_of_forall_smul_eq` its torsion counterpart.
 
@@ -250,6 +255,21 @@ theorem torsionCoeffIncl_apply {m : ℕ} (P : W.TorsionCoeff m) :
     W.torsionCoeffIncl m P = (P : W.PointCoeff) :=
   (rfl)
 
+open scoped Classical in
+/-- **`E(Kˢ)[m]` has `m²` points** when `m` is invertible in `K`. -/
+theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
+    Nat.card (W.TorsionCoeff m) = m ^ 2 := by
+  have hm' : (((m : ℕ) : ℤ) : SeparableClosure K) ≠ 0 := by
+    rw [Int.cast_natCast]
+    exact hm.natCast_ne_zero_of_algebra
+  rw [Nat.card_congr (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _).toEquiv]
+  -- `W.PointCoeff` carries the group law for one choice of decidable equality on `Kˢ`, and
+  -- `natCard_torsionBy` is stated for another; the two choices agree.
+  have hI : (fun a b ↦ Subtype.instDecidableEq a b : DecidableEq (SeparableClosure K)) =
+      fun a b ↦ Classical.propDecidable (a = b) := Subsingleton.elim _ _
+  rw [hI, WeierstrassCurve.natCard_torsionBy (W.baseChange (SeparableClosure K)) hm',
+    Int.natAbs_natCast]
+
 /-! ### The Kummer sequence -/
 
 /-- **The Kummer sequence** `0 → E(Kˢ)[m] → E(Kˢ) → E(Kˢ) → 0` of `W`, for `m` invertible in
@@ -263,10 +283,8 @@ def kummerShortExact [W.IsElliptic] (m : ℕ) (hm : IsUnit (m : K)) :
   incl_injective := Subtype.val_injective
   proj_surjective P := by
     classical
-    have hm' : ((m : ℕ) : SeparableClosure K) ≠ 0 := by
-      rw [← map_natCast (algebraMap K (SeparableClosure K))]
-      exact (map_ne_zero _).2 hm.ne_zero
-    obtain ⟨Q, hQ⟩ := Affine.nsmul_surjective (W⁄(SeparableClosure K)).toAffine hm'
+    obtain ⟨Q, hQ⟩ := Affine.nsmul_surjective (W⁄(SeparableClosure K)).toAffine
+      hm.natCast_ne_zero_of_algebra
       (W.pointCoeffEquiv.symm P)
     refine ⟨W.pointCoeffEquiv Q, ?_⟩
     rw [nsmulAddMonoidHom_apply, ← map_nsmul]
