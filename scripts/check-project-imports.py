@@ -2,7 +2,7 @@
 """Preflight project-local imports against the complete exact candidate source tree.
 
 No Lake environment or compiled artifacts are used. ProjectImports.lean uses the
-pinned Lean header parser and reads candidate sources only as data. External
+pinned Lean and Lake header parsers and reads candidate sources only as data. External
 imports, elaboration, and all existing build/audit gates remain Lake's responsibility.
 """
 from __future__ import annotations

@@ -273,12 +273,12 @@ jobs:
       - name: Lake archive reuse integration tests
         run: python3 scripts/test_lake_cache_reuse.py --integration
 
-      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
-      # The build globs every TauCeti/ module directly, so nothing depends on a root that
-      # re-exports the library.
       - name: Preflight project imports against the complete source inventory
         run: python3 scripts/check-project-imports.py
 
+      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
+      # The build globs every TauCeti/ module directly, so nothing depends on a root that
+      # re-exports the library.
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the step above filled;

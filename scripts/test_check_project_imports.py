@@ -127,16 +127,34 @@ theorem example' : True := trivial
             "module\nimport /- unterminated TauCeti.Gone\n",
             "module\nimport TauCeti.«unterminated\n",
             "module\npublic import all TauCeti.Gone\n",
-            "module\nprivate import TauCeti.Gone\n",
-            "module\n/-! doc before import -/\nimport TauCeti.Gone\n",
-            "module\ndef x := 1\nimport TauCeti.Gone\n",
-            "module\nimport TauCeti\nTauCeti.Gone\n",
+            "module\nimport allTauCeti.Gone\n",
+            "module\nimportTauCeti.Gone\n",
+            "module\npublic importTauCeti.Gone\n",
         ]
         for header in headers:
             with self.subTest(header=header):
                 status, output = self.run_check({"TauCeti/Bad.lean": header})
                 self.assertEqual(status, 1, output)
                 self.assertIn("TauCeti/Bad.lean", output)
+                if "importTauCeti.Gone" in header or "allTauCeti.Gone" in header:
+                    self.assertIn("missing project import TauCeti.Gone:", output)
+
+    def test_parser_disagreement_fails_even_when_dependency_exists(self):
+        status, output = self.run_check({
+            "TauCeti/Bad.lean": "module\nimport allTauCeti.Dep\n",
+            "TauCeti/Dep.lean": "module\n",
+        })
+        self.assertEqual(status, 1, output)
+        self.assertIn("Lean and Lake disagree", output)
+
+    def test_body_syntax_is_left_to_lake(self):
+        # A core-only command parser cannot understand these valid Mathlib forms. The
+        # preflight must read imports without trying to parse/elaborate the body.
+        status, output = self.run_check({
+            "TauCeti/Lemma.lean": "module\nimport Mathlib\nlemma one : 1 = 1 := by norm_num\n",
+            "TauCeti/Variable.lean": "module\nimport Mathlib\nvariable {R : Type*}\n",
+        })
+        self.assertEqual(status, 0, output)
 
     def test_bad_utf8_and_symlinks_fail_closed(self):
         status, output = self.run_check({}, raw={"TauCeti/Bad.lean": b"module\n\xff"})
@@ -177,6 +195,8 @@ theorem example' : True := trivial
         self.assertIn("python3 gate/scripts/check-project-imports.py --root pr", step)
         self.assertIn('$(cd pr && elan which lean)', step)
         self.assertNotIn("--changed", step)
+        self.assertIn("steps.project_imports.outcome", text)
+        self.assertIn("project import preflight failed", text)
         self.assertLess(start, text.index("      - name: Fetch Mathlib"))
         self.assertLess(start, text.index("      - name: Build exact candidate"))
         ci = (workflows / "ci.yml").read_text()

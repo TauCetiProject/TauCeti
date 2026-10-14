@@ -622,6 +622,7 @@ jobs:
       # deletions can break unchanged importers; a batch can add its own new dependencies.
       # No Lake environment is needed and no candidate code is imported or elaborated.
       - name: Preflight exact-candidate project imports
+        id: project_imports
         if: ${{ env.INFRA != '1' }}
         run: |
           elan toolchain install "$(cat pr/lean-toolchain)"
@@ -1242,6 +1243,8 @@ jobs:
           elif [ "${{ env.BUMP_BAD }}" = "1" ] || [ "${{ env.INFRA }}" = "1" ] \
              || [ "${{ env.TOO_LARGE }}" = "1" ] || [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             state=failure; desc="build not run — see the scope check"
+          elif [ "${{ steps.project_imports.outcome }}" = "failure" ]; then
+            state=failure; desc="project import preflight failed — see importing-file/header diagnostics"
           elif [ "${{ steps.build.outcome }}" = "failure" ]; then
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           elif { [ -n "${{ env.SHIM_COVERAGE_RC }}" ] \
