@@ -167,7 +167,7 @@ end Equivalence
 
 section Invariants
 
-variable [Module.Finite A B] [Module.IsTorsionFree A B] [IsScalarTower A C B]
+variable [IsScalarTower A C B]
 
 /-- The local degree of the contraction of `σ • Q` is the relative index of the
 corresponding conjugate decomposition group. -/
@@ -182,6 +182,9 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_of_isIntegralClosure_eq_relInd
   let _ : IsDedekindDomain C :=
     TauCeti.IsIntegralClosure.isDedekindDomain A K ↥(fixedField H) C
   let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField H
+  let _ : Module.Finite A B := IsIntegralClosure.finite A K M B
+  let _ : Module.IsTorsionFree A M := .trans_faithfulSMul A K M
+  let _ : Module.IsTorsionFree A B := IsIntegralClosure.isTorsionFree A M
   let _ : Module.IsTorsionFree C B := inferInstance
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
@@ -209,6 +212,9 @@ theorem ramificationIdx_under_smul_of_isIntegralClosure_eq_relIndex_inertia
   let _ : IsDedekindDomain C :=
     TauCeti.IsIntegralClosure.isDedekindDomain A K ↥(fixedField H) C
   let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField H
+  let _ : Module.Finite A B := IsIntegralClosure.finite A K M B
+  let _ : Module.IsTorsionFree A M := .trans_faithfulSMul A K M
+  let _ : Module.IsTorsionFree A B := IsIntegralClosure.isTorsionFree A M
   let _ : Module.IsTorsionFree C B := inferInstance
   let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
   let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
