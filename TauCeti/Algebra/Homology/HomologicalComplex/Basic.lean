@@ -254,3 +254,23 @@ lemma cycles₀Iso_inv_naturality (φ : K ⟶ L) :
   simp
 
 end ChainComplex
+
+namespace HomologicalComplex
+
+section HomologyTransport
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [CategoryWithHomology C]
+  {ι : Type*} {c : ComplexShape ι} {L L' M M' : HomologicalComplex C c}
+
+/-- A morphism transported along equalities of complexes induces the corresponding transport
+of the homology map. -/
+lemma homologyMap_comp_eqToHom (ψ : L ⟶ L') (hM : M = L) (hM' : M' = L')
+    (τ : M ⟶ M') (hτ : τ = eqToHom hM ≫ ψ ≫ eqToHom hM'.symm) (q : ι) :
+    homologyMap τ q ≫ eqToHom (congrArg (·.homology q) hM') =
+      eqToHom (congrArg (·.homology q) hM) ≫ homologyMap ψ q := by
+  subst hM hM' hτ
+  simp
+
+end HomologyTransport
+
+end HomologicalComplex

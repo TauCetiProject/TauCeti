@@ -70,6 +70,11 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
   a point has naive exact order `N` exactly when its order in the group of points is `N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfNaiveExactOrder.pointsPullback`: points of
   naive exact order `N` are stable under base change of the elliptic curve.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfNaiveExactOrder_pointsBaseChangeEquiv_iff`:
+  identifying points of a base change with points valued in the new base preserves and reflects
+  naive exact order.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_isOfNaiveExactOrder_over`: over each
+  separably closed field point where `N` is invertible, there is a point of naive exact order `N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder`: a
   homomorphism `ℤ/Nℤ →* E(S)` is a naive `[Γ₁(N)]`-structure exactly when the image of `1` has naive
   exact order `N`.
@@ -179,27 +184,30 @@ variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.car
   {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
   (h0 : E'.zero ≫ g = f ≫ E.zero)
 
+/-- Under the group equivalence identifying points of a base change with points valued in
+the new base, naive exact order is preserved and reflected. -/
+theorem isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
+    {P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap} :
+    E.IsOfNaiveExactOrder (pointsBaseChangeEquiv hg h0 P) N ↔ E'.IsOfNaiveExactOrder P N := by
+  simp only [isOfNaiveExactOrder_iff, ← map_pow, ← map_one (pointsBaseChangeEquiv hg h0),
+    (pointsBaseChangeEquiv hg h0).injective.eq_iff]
+  refine and_congr Iff.rfl (forall_congr' fun d ↦ ?_)
+  refine imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
+  exact (isEmpty_equalizer_iff_of_isPullback hg (Category.id_comp f) (P ^ d) 1 _ _
+    (pointsBaseChangeEquiv_left hg h0 _).symm
+    (pointsBaseChangeEquiv_left hg h0 _).symm).symm
+
 /-- **Points of naive exact order `N` are stable under base change**: if an `S`-point `P` of `E`
 has naive exact order `N`, then so does its base change, the `S'`-point `P'` of `E'`. -/
 theorem IsOfNaiveExactOrder.pointsPullback {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
     (h : E.IsOfNaiveExactOrder P N) : E'.IsOfNaiveExactOrder (pointsPullback hg h0 P) N := by
-  refine ⟨by rw [← map_pow, h.pow_eq_one, map_one], fun d hd hdN ↦ ?_⟩
-  have := h.isEmpty_equalizer hd hdN
-  rw [isEmpty_equalizer_congr (map_pow _ P d).symm rfl]
-  -- the equalizer of `P' ^ d` and `1`, viewed over `S`, maps to the equalizer of `P ^ d` and `1`
-  let ι' := equalizer.ι (EllipticCurveGeom.pointsPullback hg h0 (P ^ d)) 1
-  let V : Over S := Over.mk (ι'.left ≫ f)
-  have hV : (toUnit V).left = ι'.left ≫ f := by simp [V]
-  have hι : (equalizer (EllipticCurveGeom.pointsPullback hg h0 (P ^ d)) 1).hom = ι'.left := by
-    simpa using (Over.w ι').symm
-  have hc := congrArg CommaMorphism.left
-    (equalizer.condition (EllipticCurveGeom.pointsPullback hg h0 (P ^ d)) 1)
-  have hv : toUnit V ≫ P ^ d = toUnit V ≫ 1 := by
+  apply (isOfNaiveExactOrder_pointsBaseChangeEquiv_iff hg h0).mp
+  have hP : pointsBaseChangeEquiv hg h0 (EllipticCurveGeom.pointsPullback hg h0 P) =
+      toUnit (Over.mk f) ≫ P := by
     ext1
-    simp only [Over.comp_left, comp_one, hom_one_left, hV, Category.assoc] at hc ⊢
-    rw [← pointsPullback_left_comp hg h0, reassoc_of% hc, hι, h0]
-    simp [V]
-  exact Function.isEmpty (equalizer.lift (toUnit V) hv).left
+    simp
+  rw [hP]
+  exact h.comp (toUnit (Over.mk f))
 
 end BaseChange
 
@@ -252,6 +260,42 @@ theorem isFiberwiseInjective_iff_isOfNaiveExactOrder
   rw [hc, map_zpow, ← orderOf_dvd_iff_zpow_eq_one, hord, ← ZMod.intCast_zmod_eq_zero_iff_dvd,
     ZMod.intCast_zmod_cast] at ha
   exact toAdd_eq_zero.mp ha
+
+/-! ### Existence over separably closed fields -/
+
+variable (E)
+
+section SepClosed
+
+variable {K : Type u} [Field K] [IsSepClosed K]
+  (E : EllipticCurveGeom (Spec (.of K)))
+
+/-- Over a separably closed field where `N` is invertible, an elliptic curve has a point of
+naive exact order `N`. -/
+theorem exists_isOfNaiveExactOrder (hN : (N : K) ≠ 0) :
+    ∃ P : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap, E.IsOfNaiveExactOrder P N := by
+  obtain ⟨φ, hφ⟩ := E.exists_isFiberwiseInjective hN
+  let i : Multiplicative (ZMod N) →* Multiplicative (ZMod N × ZMod N) :=
+    (AddMonoidHom.inl (ZMod N) (ZMod N)).toMultiplicative
+  have hi : Function.Injective i := fun a b h ↦
+    Multiplicative.toAdd.injective (congrArg Prod.fst (congrArg Multiplicative.toAdd h))
+  exact ⟨_, E.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp (hφ.comp hi)⟩
+
+end SepClosed
+
+/-- For a geometric point of the base in a characteristic prime to `N`, there is a point
+of naive exact order `N` above it, valued in the same separably closed field. -/
+theorem exists_isOfNaiveExactOrder_over {K : Type u} [Field K] [IsSepClosed K]
+    (t : Spec (.of K) ⟶ S) (hN : (N : K) ≠ 0) :
+    ∃ P : Over.mk t ⟶ Over.mk E.structureMap, E.IsOfNaiveExactOrder P N := by
+  obtain ⟨P, hP⟩ := (E.baseChange t).exists_isOfNaiveExactOrder hN
+  let hg := E.isPullback_baseChange t
+  have h0 : (E.baseChange t).zero ≫ (E.baseChangeIso t).hom ≫
+      pullback.fst E.structureMap t = t ≫ E.zero := by simp
+  exact ⟨pointsBaseChangeEquiv hg h0 P,
+    (isOfNaiveExactOrder_pointsBaseChangeEquiv_iff hg h0).mpr hP⟩
+
+variable {E}
 
 /-! ### The functor of points of naive exact order `N` -/
 

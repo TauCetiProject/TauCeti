@@ -50,6 +50,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   for `R` cancellative and `N` torsion-free.
 * `LinearMap.IsAlt.compl₁₂_self_eq_det_smul` and `LinearMap.det_eq_of_compl₁₂_self_eq_smul`: the
   same two statements for an alternating bilinear form on a module of rank two.
+* `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: a left-separating alternating form on a
+  module of rank two takes a value with zero annihilator on a basis.
 * `LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft`: the recovery statement over any
   commutative ring, for a left-separating form.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
@@ -184,6 +186,18 @@ theorem det_eq_of_compl₁₂_self_eq_smul [IsCancelMulZero R] [Module.IsTorsion
     {φ : M →ₗ[R] M} {d : R} (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d :=
   smul_left_injective R hω <| (halt.compl₁₂_self_eq_det_smul b φ).symm.trans h
 
+/-- **A left-separating alternating bilinear form on a rank-two module takes a value with zero
+annihilator on a basis**, over any commutative ring: if `r • ω (b 0) (b 1) = 0`, then `r • b 0`
+pairs to zero with every `y`, since `ω (b 0) y` is a multiple of `ω (b 0) (b 1)`, so `r = 0`. -/
+theorem IsAlt.eq_zero_of_smul_apply_basis_eq_zero (b : Basis (Fin 2) R M)
+    {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (hω : ω.SeparatingLeft) {r : R}
+    (hr : r • ω (b 0) (b 1) = 0) : r = 0 := by
+  have hb : r • b 0 = 0 := hω _ fun y ↦ by
+    conv_lhs => rw [← b.sum_repr y]
+    simp only [Fin.sum_univ_two, map_add, map_smul, smul_apply, halt (b 0), hr, smul_zero,
+      add_zero]
+  simpa using congr(b.repr $hb 0)
+
 /-- **The multiplier of a left-separating alternating bilinear form on a rank-two module is the
 determinant**, over any commutative ring. Left separation of `ω` takes the place of the
 cancellation hypotheses of `LinearMap.det_eq_of_compl₁₂_self_eq_smul`; this is the form that
@@ -193,12 +207,10 @@ theorem det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft (b : Basis (Fin 2) 
     {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (hω : ω.SeparatingLeft) {φ : M →ₗ[R] M} {d : R}
     (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d := by
   have hd : LinearMap.det φ • ω = d • ω := (halt.compl₁₂_self_eq_det_smul b φ).symm.trans h
-  -- the difference kills `ω (b 0)`, so it kills `b 0` by left separation, so it vanishes
-  have hb : (LinearMap.det φ - d) • b 0 = 0 := hω _ fun y ↦ by
-    rw [map_smul, smul_apply, sub_smul, sub_eq_zero]
-    simpa using congr($hd (b 0) y)
-  rw [← sub_eq_zero]
-  simpa using congr(b.repr $hb 0)
+  -- the difference kills `ω (b 0) (b 1)`, so it vanishes
+  refine sub_eq_zero.1 <| halt.eq_zero_of_smul_apply_basis_eq_zero b hω ?_
+  rw [sub_smul, sub_eq_zero]
+  simpa using congr($hd (b 0) (b 1))
 
 /-- The **Weinstein–Aronszajn identity** for linear maps: for linear maps `X : F' →ₗ[R] F` and
 `Y : F →ₗ[R] F'` between free modules of finite rank, `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)`. This
