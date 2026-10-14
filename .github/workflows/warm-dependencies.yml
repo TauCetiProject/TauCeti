@@ -122,11 +122,11 @@ jobs:
           key: ${{ steps.lean.outputs.key }}
 
       - name: Restore official Mathlib downloads
-        if: ${{ !inputs.cold }}
         id: mathlib
         uses: ./.github/actions/restore-mathlib-ltars
         with:
           project-dir: warm-input/project
+          cold: ${{ inputs.cold && 'true' || 'false' }}
 
       - name: Fetch official Mathlib dependencies and require a complete cache
         env:
@@ -134,9 +134,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Cold mode still uses the same job-private store and producer key.
-          export MATHLIB_CACHE_DIR="${MATHLIB_CACHE_DIR:-$GITHUB_WORKSPACE/.mathlib-ltar-cache}"
-          echo "MATHLIB_CACHE_DIR=$MATHLIB_CACHE_DIR" >> "$GITHUB_ENV"
           cd warm-input/project
           if ! lake exe cache get 2>&1 | tee "$RUNNER_TEMP/mathlib-cache.log"; then
             lake exe cache get! 2>&1 | tee "$RUNNER_TEMP/mathlib-cache.log"
@@ -149,8 +146,8 @@ jobs:
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
-          path: ${{ env.MATHLIB_CACHE_DIR }}/*.ltar
-          key: mathlib-ltar-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('warm-input/project/lean-toolchain') }}-${{ hashFiles('warm-input/project/lake-manifest.json') }}
+          path: ${{ steps.mathlib.outputs.cache-dir }}/*.ltar
+          key: ${{ steps.mathlib.outputs.cache-primary-key }}
 
       - name: Check eligible parent cache availability (read only)
         env:

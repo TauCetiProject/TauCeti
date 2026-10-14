@@ -30,11 +30,10 @@ immutable key continues to take the fresh-install path; retire it by changing th
 keeps its existing `cache get!` refetch fallback. The warmer refuses partial Mathlib
 cache availability and publishes no Mathlib snapshot after a failed fetch.
 
-## Rollout and verification
+## Verification
 
-Human-owned workflow/scripts changes require human review and bors approval.
-Local tests or the old main-defined PR build do not exercise a changed workflow.
-After landing, dispatch **new runs on main**, not reruns of an old definition:
+To verify a change to workflow-pinned tooling, dispatch new runs on main.
+Rerunning an earlier run uses its earlier workflow definition:
 
 ```sh
 gh workflow run warm-dependencies.yml --repo TauCetiProject/TauCeti --ref main -F cold=true
@@ -46,16 +45,17 @@ gh workflow run pr-build.yml --repo TauCetiProject/TauCeti --ref main -f pr=SOUR
 Use run/jobs APIs for exact state and timings. Start one
 `gh run watch RUN_ID --repo TauCetiProject/TauCeti --exit-status --interval 120`
 monitor per run. Confirm cold then warm restoration, complete official Mathlib
-downloads, eligible-parent availability/fallback, and the sandbox canary. The
+downloads, eligible-parent availability/fallback, and the synthetic sandbox canary.
+The probe replicates the read-only elan mount, absent Mathlib store, offline network
+and disabled nested user namespaces. It invokes its own bwrap policy rather than
+pr-build.yml's actual sandbox command. The
 capacity dispatch requests three independent jobs on the existing 8-vCPU/16-GB
 Namespace staging shape, records CPU/memory and holds the consumers for 60 seconds
-to expose overlapping availability. It tests dependency setup and the sandbox on
+to expose overlapping availability. It tests dependency setup and the synthetic sandbox on
 three runners; it does not certify performance of three full-library compilations.
 Use their job start/finish intervals and distinct runner IDs to assess capacity.
 The normal warm run requests one runner. No speculative bors merges are enabled.
 
 After a fresh source PR build, inspect the toolchain restore/verification and full
-build/audit results. Record production evidence on #16234; do not close it or post
-`rollout-verified:` until review, landing and the requested production acceptance
-checks have completed. Dependency priming cannot remove necessary cold TauCeti
-source compilation after a Mathlib/toolchain change. Hardware sizing remains #16245.
+build/audit results, including the actual staging sandbox. Dependency priming cannot
+remove necessary cold TauCeti source compilation after a Mathlib/toolchain change.

@@ -173,6 +173,36 @@ class Config(unittest.TestCase):
 
 
 class Boundary(unittest.TestCase):
+    def test_mathlib_cold_selection_preserves_publisher_key_and_directory(self):
+        action = yaml.safe_load((ROOT / ".github/actions/restore-mathlib-ltars/action.yml").read_text())
+        select, restore = action["runs"]["steps"]
+        self.assertNotIn("if", select)
+        self.assertEqual(restore["if"], "inputs.cold != 'true'")
+        self.assertEqual(action["outputs"]["cache-primary-key"]["value"],
+                         "${{ steps.cache_dir.outputs.key }}")
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for directory in ("", str(root / "custom")):
+                env_file, outputs = root / "env", root / "outputs"
+                subprocess.run(["bash", "-c", select["run"]], check=True, env={
+                    **os.environ, "CONFIGURED_CACHE_DIR": directory,
+                    "GITHUB_WORKSPACE": temp, "GITHUB_ENV": str(env_file),
+                    "GITHUB_OUTPUT": str(outputs), "CACHE_KEY_PREFIX": "snapshot-prefix-",
+                    "MANIFEST_HASH": "manifest-hash"})
+                values = dict(line.split("=", 1) for line in outputs.read_text().splitlines())
+                self.assertEqual(values["path"], directory or str(root / ".mathlib-ltar-cache"))
+                self.assertEqual(values["key"], "snapshot-prefix-manifest-hash")
+                self.assertIn("MATHLIB_CACHE_DIR=" + values["path"], env_file.read_text())
+        warmer = yaml.safe_load((ROOT / ".github/workflows/warm-dependencies.yml").read_text())
+        steps = warmer["jobs"]["warm"]["steps"]
+        consumer = next(step for step in steps if step.get("id") == "mathlib")
+        self.assertNotIn("if", consumer)
+        self.assertIn("cold", consumer["with"])
+        publisher = next(step for step in steps if step.get("name") == "Save only official compressed downloads")
+        self.assertEqual(publisher["with"], {
+            "path": "${{ steps.mathlib.outputs.cache-dir }}/*.ltar",
+            "key": "${{ steps.mathlib.outputs.cache-primary-key }}"})
+
     def test_only_isolated_main_warmer_saves_toolchain(self):
         warmer = yaml.safe_load((ROOT / ".github/workflows/warm-dependencies.yml").read_text())
         job = warmer["jobs"]["warm"]

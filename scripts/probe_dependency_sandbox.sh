@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Exercise the staging mount boundary with trusted synthetic Lean code only.
+# Test a synthetic replica of the staging mount boundary with trusted Lean code.
+# This invokes its own bwrap policy, not pr-build.yml's actual sandbox command.
 set -euo pipefail
 export PATH="$HOME/.elan/bin:$PATH"
 pin="$(cat warm-input/project/lean-toolchain)"
@@ -33,4 +34,4 @@ env -i /usr/bin/bwrap --tmpfs / \
     "$COMPILER" -o "$FIXTURE/.lake/Canary.olean" "$FIXTURE/Canary.lean"
     test -s "$FIXTURE/.lake/Canary.olean"
   '
-echo 'Sandbox probe passed: compilation works; toolchain writes, host cache, tokens, network and nested user namespaces denied.'
+echo 'Synthetic sandbox probe passed: compilation works; toolchain writes, host cache, tokens, network and nested user namespaces denied in this replica.'
