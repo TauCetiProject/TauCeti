@@ -484,6 +484,7 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K
 
 /-- **Every point of the closed polydisc compares constants by their norms**: its pullback along
 the constant embedding `K → K⟨T⟩` is a point of `Spa (K, K°)`. -/
+@[simp]
 theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
     v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
@@ -504,6 +505,7 @@ theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPo
     ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
 
 /-- A point of the closed polydisc vanishes on a constant only at `0`. -/
+@[simp]
 theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
     v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
       x = 0 := by
