@@ -22,9 +22,6 @@ double-dual functor.
 
 * `CategoryTheory.Functor.opMop`: the functor induced between monoidal opposites;
 * `CategoryTheory.Functor.opMopMonoidal`: its strong monoidal structure.
-
-The names and shape follow the construction proposed in
-[leanprover-community/mathlib4#42145](https://github.com/leanprover-community/mathlib4/pull/42145).
 -/
 
 public section
@@ -40,6 +37,7 @@ universe v₁ v₂ u₁ u₂
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 
+-- Adapted from https://github.com/leanprover-community/mathlib4/pull/42145.
 /-- A functor between monoidal categories, applied to the underlying objects and morphisms of their
 monoidal opposites. -/
 @[expose]
