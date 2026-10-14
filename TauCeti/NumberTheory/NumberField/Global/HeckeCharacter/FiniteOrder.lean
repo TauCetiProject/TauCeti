@@ -57,11 +57,7 @@ variable {𝔪 𝔫 : Modulus K}
 /-- A finite-order Hecke character has open kernel, and is therefore locally constant. -/
 theorem isOpen_ker_of_isFiniteOrder {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) :
     IsOpen ((χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K)) := by
-  have hχ' : IsOfFinOrder (χ : IdeleClassGroup (𝓞 K) K →ₜ* ℂˣ).toMonoidHom := by
-    obtain ⟨n, hn, hpow⟩ := hχ.exists_pow_eq_one
-    refine isOfFinOrder_iff_pow_eq_one.mpr ⟨n, hn, ?_⟩
-    refine MonoidHom.ext fun x ↦ ?_
-    simpa using DFunLike.congr_fun hpow x
+  have hχ' : IsOfFinOrder χ.toMonoidHom := by simpa using hχ
   simpa only [MonoidHom.coe_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using
     (ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder hχ')
 

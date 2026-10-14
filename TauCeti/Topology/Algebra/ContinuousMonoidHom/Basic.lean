@@ -66,12 +66,22 @@ theorem _root_.ContinuousMonoidHom.eq_one_of_isMulTorsionFree
   exact (Set.infinite_range_of_injective
     (injective_pow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree ha))) hfin
 
-/-- A continuous homomorphism into a commutative topological monoid has finite order exactly when
-all its values have a common positive exponent equal to one. -/
-theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
+/-- The underlying homomorphism of a continuous homomorphism into a commutative monoid has
+finite order exactly when all its values have a common positive exponent equal to one. -/
+theorem _root_.ContinuousMonoidHom.isOfFinOrder_toMonoidHom_iff_exists_pow_apply_eq_one
     {A B : Type*} [Monoid A] [TopologicalSpace A] [CommMonoid B] [TopologicalSpace B]
-    [ContinuousMul B] (f : A →ₜ* B) :
-    IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
+    (f : A →ₜ* B) :
+    IsOfFinOrder f.toMonoidHom ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
+  simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, MonoidHom.pow_apply,
+    MonoidHom.one_apply, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass]
+
+/-- Forgetting continuity preserves and reflects finite order when continuous homomorphisms
+carry their pointwise monoid structure. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.isOfFinOrder_coe
+    {A B : Type*} [Monoid A] [TopologicalSpace A] [CommMonoid B] [TopologicalSpace B]
+    [ContinuousMul B] (f : A →ₜ* B) : IsOfFinOrder (f : A →* B) ↔ IsOfFinOrder f := by
+  rw [← f.coe_toMonoidHom, f.isOfFinOrder_toMonoidHom_iff_exists_pow_apply_eq_one]
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, ContinuousMonoidHom.pow_apply,
     ContinuousMonoidHom.coe_one, Pi.one_apply]
 
@@ -81,9 +91,7 @@ theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
     {M K : Type*} [Monoid M] [TopologicalSpace M] [CommRing K] [IsDomain K]
     [TopologicalSpace K] [T1Space K] {χ : M →ₜ* Kˣ}
     (hχ : IsOfFinOrder χ.toMonoidHom) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
-  obtain ⟨n, hn, hpow⟩ := hχ.exists_pow_eq_one
-  have hχn (x : M) : χ x ^ n = 1 := by
-    simpa using DFunLike.congr_fun hpow x
+  obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_toMonoidHom_iff_exists_pow_apply_eq_one.mp hχ
   let _ : NeZero n := ⟨hn.ne'⟩
   have hmem : ∀ x, χ x ∈ rootsOfUnity n K := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
   have hset : ((χ : M → Kˣ) ⁻¹' {1}) =
