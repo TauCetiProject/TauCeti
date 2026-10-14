@@ -31,7 +31,7 @@ condition is automatic (`Topology.CWComplex.mkFinite`).
   (`TauCeti.finite_cwComplexProd`).
 * `TauCeti.cellProdEquiv`: the `n`-cells of `C ×ˢ D` are the pairs of a `p`-cell of `C` and a
   `q`-cell of `D` with `p + q = n`.  The characteristic map, open cell, closed cell and boundary
-  of a product cell are described by `TauCeti.map_cellProdEquiv_symm_appendIsometryOfEq`,
+  of a product cell are described by `TauCeti.map_cellProdEquiv_symm`,
   `TauCeti.openCell_cellProdEquiv_symm`, `TauCeti.closedCell_cellProdEquiv_symm` and
   `TauCeti.cellFrontier_cellProdEquiv_symm`.
 * `TauCeti.nat_card_cell_prod`: `C ×ˢ D` has `∑_{p + q = n} #(p-cells of C) · #(q-cells of D)`
@@ -222,17 +222,18 @@ variable {n : ℕ} (c : Σ pq : Finset.antidiagonal n, cell C pq.1.1 × cell D p
 
 /-- The characteristic maps of `TauCeti.cwComplexProd` are the maps `prodCellMap`, by
 construction (`Topology.CWComplex.mkFinite` takes the supplied family as its `map` field). -/
-private theorem map_cellProdEquiv_symm : map n ((cellProdEquiv n).symm c) = prodCellMap c :=
+private theorem map_cellProdEquiv_symm_eq_prodCellMap :
+    map n ((cellProdEquiv n).symm c) = prodCellMap c :=
   (rfl)
 
 /-- The characteristic map of a product cell is the product of the characteristic maps of its
 factors, after splitting the coordinates of `Fin n → ℝ` into `(Fin p → ℝ) × (Fin q → ℝ)`. -/
-theorem map_cellProdEquiv_symm_appendIsometryOfEq (x : Fin c.1.1.1 → ℝ) (y : Fin c.1.1.2 → ℝ) :
-    map n ((cellProdEquiv n).symm c)
-        (Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2) (x, y)) =
-      (map _ c.2.1 x, map _ c.2.2 y) := by
-  rw [map_cellProdEquiv_symm, prodCellMap_apply,
-    IsometryEquiv.symm_apply_apply, Prod.map_apply]
+@[simp]
+theorem map_cellProdEquiv_symm (x : Fin n → ℝ) :
+    map n ((cellProdEquiv n).symm c) x =
+      (map _ c.2.1 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2)).symm x).1,
+        map _ c.2.2 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2)).symm x).2) := by
+  rw [map_cellProdEquiv_symm_eq_prodCellMap, prodCellMap_apply, Prod.map_apply]
 
 /-- The open product cell is the product of the open cells of its factors. -/
 @[simp]
@@ -246,12 +247,13 @@ theorem closedCell_cellProdEquiv_symm :
     closedCell n ((cellProdEquiv n).symm c) = closedCell _ c.2.1 ×ˢ closedCell _ c.2.2 :=
   image_closedBall_prodCellMap c
 
-/-- The boundary of a product cell `e × e'` is `∂e × e' ∪ e × ∂e'`. -/
+/-- The cell frontier of a product cell is the union of each factor's cell frontier times the
+other factor's closed cell. -/
 @[simp]
 theorem cellFrontier_cellProdEquiv_symm :
     cellFrontier n ((cellProdEquiv n).symm c) =
       cellFrontier _ c.2.1 ×ˢ closedCell _ c.2.2 ∪ closedCell _ c.2.1 ×ˢ cellFrontier _ c.2.2 := by
-  rw [cellFrontier, map_cellProdEquiv_symm,
+  rw [cellFrontier, map_cellProdEquiv_symm_eq_prodCellMap,
     image_prodCellMap, IsometryEquiv.image_sphere, prodCellIsometry_zero, sphere_prod,
     image_union, Prod.fst_zero, Prod.snd_zero, prodMap_image_prod, prodMap_image_prod,
     cellFrontier, cellFrontier, closedCell, closedCell]
