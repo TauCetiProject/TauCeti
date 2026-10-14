@@ -348,6 +348,8 @@ theorem gradedCochainComplexXEquiv_inclusion_f (p : ℤ)
       gradedCochainComplexXEquiv p x := by
   unfold gradedCochainComplexXEquiv
   rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
+  -- Once the term identifications are reflexive, the equivalence is the identity and the
+  -- component is `Submodule.inclusion` by definition, so both sides reduce to `x.val`.
   rfl
 
 /-- Inclusions of complexes of nested families compose to the inclusion. -/

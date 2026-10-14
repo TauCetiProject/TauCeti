@@ -41,6 +41,8 @@ theorem mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff.{v}
     x ∈ LinearMap.range ((Subobject.mapIsoToOrderIso (eqToIso e.symm) S).arrow.f n).hom ↔
       ((eqToHom e).f n).hom x ∈ LinearMap.range (S.arrow.f n).hom := by
   subst e
+  -- By definition, `mapIsoToOrderIso e` is `(Subobject.map e.hom).obj`; for the reflexive
+  -- equality this is therefore the subobject map along the identity.
   rw [eqToIso_refl, show Subobject.mapIsoToOrderIso (Iso.refl C) S = S from Subobject.map_id S,
     eqToHom_refl, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
 
