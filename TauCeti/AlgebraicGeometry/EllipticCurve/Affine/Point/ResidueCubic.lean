@@ -358,8 +358,10 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
 exactly when their values of `x / ϖ` have the same residue.** Here `P = (ϖ X₁, y₁)` and
 `Q = (ϖ X₂, y₂)` have singular reduction, `ϖ` generates the maximal ideal of the valuation ring,
 Tate's algorithm stops at `I₀*` on the integral model, and `a₂ = ϖ A₂`, `a₄ = ϖ² A₄`,
-`a₆ = ϖ³ A₆`. So the cosets of `E₀(F)` other than `E₀(F)` itself are classified by roots of the
-residue cubic `T³ + A₂ T² + A₄ T + A₆`, since `-Q = (ϖ X₂, -y₂ - a₁ x₂ - a₃)`. -/
+`a₆ = ϖ³ A₆`. Since `-Q = (ϖ X₂, -y₂ - a₁ x₂ - a₃)`, this assigns to each coset of `E₀(F)` other
+than `E₀(F)` itself a root of the residue cubic `T³ + A₂ T² + A₄ T + A₆`, distinct cosets getting
+distinct roots. That every root arises needs the Henselian hypothesis of
+`exists_notMem_nonsingularReduction_of_isTateTerminal_IStar_zero`. -/
 theorem add_mem_nonsingularReduction_iff_of_isTateTerminal_IStar_zero {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar 0))
