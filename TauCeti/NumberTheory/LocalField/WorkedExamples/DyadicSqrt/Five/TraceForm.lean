@@ -82,14 +82,14 @@ theorem equivalent_traceTransfer_table (a : DyadicSqrtFive) (i : Fin 4) (negativ
     simp [map_ofNat]
   have ht : Algebra.trace ℚ_[2] DyadicSqrtFive a = 2 * u := by
     rw [ha', Algebra.IsQuadraticExtension.trace_algebraMap_add_algebraMap_mul_of_sq_eq
-      sqrtFive_notMem_range hx2]
+      sqrtFive_not_mem hx2]
   have hn : Algebra.norm ℚ_[2] a = u ^ 2 - 5 * v ^ 2 := by
     rw [ha', norm_add_mul_sqrtFive]
   have ht0 : Algebra.trace ℚ_[2] DyadicSqrtFive a ≠ 0 := by
     rw [ht]
     fin_cases i <;> cases negative <;> norm_num [u]
   convert equivalent_traceTransfer_smul_sq_weightedSumSquares_of_sq finrank_eq_two
-    sqrtFive_notMem_range hx2 ht0 using 2
+    sqrtFive_not_mem hx2 ht0 using 2
   ext j
   rw [ht, hn]
   fin_cases i <;> cases negative <;> fin_cases j <;>

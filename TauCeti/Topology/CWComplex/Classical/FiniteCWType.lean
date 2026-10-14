@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Topology.CWComplex.Classical.CWType
 
 /-!
 # Spaces of finite CW type
@@ -74,6 +75,12 @@ class FiniteCWType (X : Type w) [TopologicalSpace X] : Prop where
   /-- A finite CW complex homotopy equivalent to the space. -/
   exists_homotopyEquiv : ∃ (Y : Type w) (_ : TopologicalSpace Y) (_ : T2Space Y) (C : Set Y)
     (_ : CWComplex C) (_ : RelCWComplex.Finite C), Nonempty (ContinuousMap.HomotopyEquiv X C)
+
+/-- A space of finite CW type has CW type. -/
+instance FiniteCWType.toCWType (X : Type w) [TopologicalSpace X] [h : FiniteCWType X] :
+    CWType X := by
+  obtain ⟨Y, _, _, C, _, _, e⟩ := h.exists_homotopyEquiv
+  exact ⟨⟨Y, _, ‹_›, C, ‹_›, e⟩⟩
 
 /-- A finite CW complex has finite CW type. -/
 instance FiniteCWType.of_cwComplex {Y : Type w} [TopologicalSpace Y] [T2Space Y] (C : Set Y)

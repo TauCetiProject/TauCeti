@@ -116,6 +116,14 @@ theorem sqrtFive_sq : sqrtFive ^ 2 = 5 := by
   rw [map_ofNat (AdjoinRoot.of (X ^ 2 - C 5 : ℚ_[2][X])) 5, sub_eq_zero] at h
   exact h
 
+/-- `√5` does not belong to the embedded base field `ℚ_2`. -/
+theorem sqrtFive_not_mem : sqrtFive ∉ Set.range (algebraMap ℚ_[2] DyadicSqrtFive) := by
+  rintro ⟨c, hc⟩
+  apply Padic.not_isSquare_five
+  refine ⟨c, ?_⟩
+  apply (algebraMap ℚ_[2] DyadicSqrtFive).injective
+  rw [map_mul, hc, ← _root_.sq, sqrtFive_sq, map_ofNat]
+
 /-- `√5` generates `ℚ_2(√5)` over `ℚ_2`. -/
 theorem adjoin_sqrtFive_eq_top : IntermediateField.adjoin ℚ_[2] {sqrtFive} = ⊤ :=
   IntermediateField.adjoin_root_eq_top _
@@ -200,22 +208,13 @@ theorem frobeniusAlgEquiv_sqrtFive :
   refine (sq_eq_sq_iff_eq_or_eq_neg.1 hsq).resolve_left fun h ↦ hσ ?_
   exact AlgEquiv.coe_toAlgHom_injective (AdjoinRoot.algHom_ext h)
 
-/-- `√5` does not lie in the image of the base field `ℚ_2`. -/
-theorem sqrtFive_notMem_range :
-    sqrtFive ∉ Set.range (algebraMap ℚ_[2] DyadicSqrtFive) := by
-  -- `√5` lies outside `ℚ_2`, since Frobenius moves it.
-  rintro ⟨c, hc⟩
-  have h := congrArg (frobeniusAlgEquiv (K := ℚ_[2]) (L := DyadicSqrtFive)) hc
-  rw [AlgEquiv.commutes, hc, frobeniusAlgEquiv_sqrtFive, self_eq_neg] at h
-  simpa [h] using sqrtFive_sq
-
 /-- Every element of `ℚ_2(√5)` is `a + b√5` for some `a b : ℚ_2`. -/
 theorem exists_eq_add_mul_sqrtFive (y : DyadicSqrtFive) :
     ∃ a b : ℚ_[2], y = algebraMap ℚ_[2] DyadicSqrtFive a +
       algebraMap ℚ_[2] DyadicSqrtFive b * sqrtFive := by
   obtain ⟨b, a, rfl⟩ :=
     Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ_[2] DyadicSqrtFive
-      sqrtFive_notMem_range y
+      sqrtFive_not_mem y
   exact ⟨a, b, rfl⟩
 
 /-- **The norm form of `ℚ_2(√5)/ℚ_2`.** The norm of `a + b√5` is `a² − 5b²`. -/
