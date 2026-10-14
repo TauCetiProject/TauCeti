@@ -25,6 +25,8 @@ This file develops that restriction independently of the manifold structure on s
   restricting a linear isometry equivalence.
 * `LinearIsometryEquiv.unitSphereIsometryEquiv`: the isometry equivalence of unit spheres
   obtained by restricting a linear isometry equivalence.
+* `LinearIsometryEquiv.unitSphereIsometryEquiv_apply_eq_smul`: the isometry equivalence of unit
+  spheres is the action of the isometry.
 * `LinearIsometryEquiv.instMulActionUnitSphere`: the action of the linear isometry group of `E`
   on the unit sphere of `E`, which is by isometries.
 * `LinearIsometryEquiv.isPretransitive_unitSphere`: for a real inner product space this action is
@@ -176,6 +178,12 @@ instance instSMulUnitSphere : SMul (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
 theorem coe_smul_unitSphere (e : E ≃ₗᵢ[R] E) (x : sphere (0 : E) 1) :
     ((e • x : sphere (0 : E) 1) : E) = e x :=
   coe_unitSphereEquiv_apply e x
+
+/-- The isometry equivalence of unit spheres induced by a linear isometry equivalence of `E` is
+the action of that isometry on the unit sphere. -/
+theorem unitSphereIsometryEquiv_apply_eq_smul (e : E ≃ₗᵢ[R] E) (x : sphere (0 : E) 1) :
+    unitSphereIsometryEquiv e x = e • x :=
+  Subtype.ext ((coe_unitSphereIsometryEquiv_apply e x).trans (coe_smul_unitSphere e x).symm)
 
 /-- The group of linear isometry equivalences of `E` acts on the unit sphere of `E` by
 restriction. -/
