@@ -395,6 +395,38 @@ theorem congrFullSubcategory_equiv (e : GradedExactEquiv E E')
       e.equiv.congrFullSubcategory h :=
   (rfl)
 
+/-- The restricted equivalence's shift comparison has the ambient underlying component. -/
+@[simp]
+theorem congrFullSubcategory_commShift_hom_app_hom (e : GradedExactEquiv E E')
+    (hP : E.toExactStructure.IsExtensionClosed P)
+    (hQ : E'.toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage E.shift.functor = P)
+    (hQshift : Q.inverseImage E'.shift.functor = Q)
+    (h : Q.inverseImage e.equiv.functor = P) (X : P.FullSubcategory) :
+    HEq ((e.congrFullSubcategory hP hQ hPshift hQshift h).commShift.hom.app X).hom
+      (e.commShift.hom.app X.obj) := by
+  simp [congrFullSubcategory, GradedConflationExact.lift,
+    GradedExactStructure.fullSubcategory, GradedExactStructure.fullSubcategoryShift,
+    Equivalence.congrFullSubcategory]
+  -- The functor identification transports the comparison along a reflexive type equality.
+  rfl
+
+/-- The inverse shift comparison of the restricted equivalence has the ambient inverse component. -/
+@[simp]
+theorem congrFullSubcategory_commShift_inv_app_hom (e : GradedExactEquiv E E')
+    (hP : E.toExactStructure.IsExtensionClosed P)
+    (hQ : E'.toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage E.shift.functor = P)
+    (hQshift : Q.inverseImage E'.shift.functor = Q)
+    (h : Q.inverseImage e.equiv.functor = P) (X : P.FullSubcategory) :
+    HEq ((e.congrFullSubcategory hP hQ hPshift hQshift h).commShift.inv.app X).hom
+      (e.commShift.inv.app X.obj) := by
+  simp [congrFullSubcategory, GradedConflationExact.lift,
+    GradedExactStructure.fullSubcategory, GradedExactStructure.fullSubcategoryShift,
+    Equivalence.congrFullSubcategory]
+  -- The functor identification transports the comparison along a reflexive type equality.
+  rfl
+
 end GradedExactEquiv
 
 end TauCeti
