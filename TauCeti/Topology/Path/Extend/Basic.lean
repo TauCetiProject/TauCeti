@@ -10,8 +10,9 @@ public import Mathlib.Topology.Path
 /-!
 # Properties along extended paths
 
-Universal properties of a path and of its constant endpoint extension are equivalent.
-The proof uses Mathlib's `Path.extend_range`, which also gives membership in the path range.
+Pointwise properties can be transferred between a path on `unitInterval` and its constant
+endpoint extension on all of `ℝ`. This lets statements about the extended curve use properties
+established on the original path. For the corresponding range equality, see `Path.extend_range`.
 -/
 
 public section
