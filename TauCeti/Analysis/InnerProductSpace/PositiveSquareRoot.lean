@@ -179,6 +179,13 @@ theorem range_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.range = A.ker�
   rw [operatorAbs, (isPositive_adjoint_comp_self A).range_sqrt,
     range_adjoint_comp_self, ← orthogonal_ker]
 
+/-- An endomorphism commuting with the source Gram operator of a rectangular map commutes
+with its modulus. -/
+theorem commute_operatorAbs_of_commute_adjoint_comp_self (A : E →ₗ[𝕜] F)
+    {S : E →ₗ[𝕜] E} (hS : Commute S (A.adjoint ∘ₗ A)) : Commute S A.operatorAbs := by
+  simpa only [operatorAbs, IsPositive.sqrt] using
+    (isSymmetric_adjoint_comp_self A).commute_cfc hS Real.sqrt
+
 /-- A normal finite-dimensional endomorphism commutes with its modulus. -/
 theorem commute_operatorAbs (A : E →ₗ[𝕜] E) [IsStarNormal A] :
     Commute A A.operatorAbs := by
