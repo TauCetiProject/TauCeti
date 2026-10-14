@@ -10,9 +10,11 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.WorkedExamples
 import Mathlib.Algebra.Polynomial.Eval.Irreducible
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.Tactic.NormNum.Prime
+import TauCeti.Algebra.Squarefree
 import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.FinitelyGenerated
 import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.TwoTorsion
 import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Invariants
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 
@@ -222,15 +224,9 @@ private theorem discr_f_curveX3SubXAddOne :
 
 private theorem exp_neg_one_le_valuation_neg_twenty_three (v : HeightOneSpectrum (𝓞 ℚ)) :
     WithZero.exp (-1) ≤ v.valuation ℚ (-23) := by
-  have : IsPrincipalIdealRing (𝓞 ℚ) :=
-    IsPrincipalIdealRing.of_surjective Rat.ringOfIntegersEquiv.symm.toRingHom
-      Rat.ringOfIntegersEquiv.symm.surjective
-  have h23 : Squarefree (-23 : ℤ) :=
-    Int.squarefree_natAbs.mp (by norm_num : Nat.Prime 23).squarefree
-  have hsq : Squarefree (-23 : 𝓞 ℚ) := fun x hx ↦ by
-    have := map_dvd Rat.ringOfIntegersEquiv hx
-    rw [map_mul, map_neg, map_ofNat] at this
-    exact (isUnit_map_iff Rat.ringOfIntegersEquiv x).mp (h23 _ this)
+  have hsq : Squarefree (-23 : 𝓞 ℚ) := by
+    rw [← squarefree_map_iff Rat.ringOfIntegersEquiv, map_neg, map_ofNat]
+    exact Int.squarefree_natAbs.mp (by norm_num : Nat.Prime 23).squarefree
   rw [show (-23 : ℚ) = algebraMap (𝓞 ℚ) ℚ (-23) by rw [map_neg, map_ofNat],
     v.valuation_of_algebraMap]
   exact v.exp_neg_one_le_intValuation_of_squarefree hsq
