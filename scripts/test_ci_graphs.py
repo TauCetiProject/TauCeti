@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Regression tests for merge-engine classification and PR arrival dates."""
 import datetime as dt
+from pathlib import Path
 import sqlite3
+import tempfile
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 import ci_daily_graphs as daily
@@ -128,6 +131,42 @@ class MergeQueueChartsTest(unittest.TestCase):
                          ("ns-other", "build"))
         self.assertEqual(fleet.classify(daily.BUILD, "github", "pr"),
                          ("gh-build-pr", "build"))
+
+
+class HistoricalRefreshTest(unittest.TestCase):
+    def test_stale_coverage_refreshes_daily_charts_and_still_reports_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            db_path = root / "ci.sqlite"
+            db = sqlite3.connect(db_path)
+            db.execute("CREATE TABLE coverage (complete_to TEXT)")
+            db.execute("INSERT INTO coverage VALUES ('2000-01-02T12:00:00Z')")
+            db.commit()
+            db.close()
+            fallbacks = {name: "previous " + name for name in (
+                "ci-fleet-72h.svg", "ci-fleet-30d.svg", "ci-stats.json")}
+            for name, contents in fallbacks.items():
+                (root / name).write_text(contents)
+            charts = {"ci-failures.svg": '<svg xmlns="http://www.w3.org/2000/svg"/>'}
+            with patch.object(daily, "charts", return_value=charts) as render_daily, \
+                    patch.object(fleet, "load_jobs") as load_jobs, \
+                    self.assertRaisesRegex(SystemExit, "rebuilt historical daily charts only"):
+                fleet.main(["--db", str(db_path), "--out-dir", str(root)])
+            render_daily.assert_called_once()
+            self.assertEqual(render_daily.call_args.args[1], fleet.ts("2000-01-02T12:00:00Z"))
+            self.assertEqual((root / "ci-failures.svg").read_text(), charts["ci-failures.svg"])
+            for name, contents in fallbacks.items():
+                self.assertEqual((root / name).read_text(), contents)
+            load_jobs.assert_not_called()
+
+    def test_invalid_svg_preserves_every_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "ci-failures.svg").write_text("previous")
+            with self.assertRaises(ET.ParseError):
+                fleet.write_charts(root, {"ci-failures.svg": "<svg/>", "other.svg": "<broken"})
+            self.assertEqual((root / "ci-failures.svg").read_text(), "previous")
+            self.assertFalse((root / "other.svg").exists())
 
 
 if __name__ == "__main__":

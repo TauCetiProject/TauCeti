@@ -350,6 +350,15 @@ def download(dest: Path):
             shutil.copyfileobj(src, dst)
 
 
+def write_charts(out: Path, files: dict[str, str]):
+    for svg in files.values():
+        ET.fromstring(svg)  # refuse to publish a malformed SVG
+    out.mkdir(parents=True, exist_ok=True)
+    # Validate the entire set before replacing any fallback.
+    for name, svg in files.items():
+        (out / name).write_text(svg)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--db", default="ci.sqlite")
@@ -370,16 +379,20 @@ def main(argv=None):
         sys.exit("the CI database records no coverage; not drawing charts that could not say where it ends")
     watermark = min(covered) if covered else now
     until = ts(args.until) if args.until else min(now, watermark)
+    out = Path(args.out_dir)
     if not args.until and now - until > MAX_STALENESS:
+        # Historical daily charts state their date range and can still incorporate
+        # repaired classifications. The relative "last 72 hours/30 days" fleet
+        # charts must keep their fallbacks, and the freshness failure stays visible.
+        write_charts(out, ci_daily_graphs.charts(db, until))
         sys.exit(f"CI data is complete only to {iso(until)}, more than "
-                 f"{MAX_STALENESS // 3600} hours ago; not redrawing the charts from it")
+                 f"{MAX_STALENESS // 3600} hours ago; rebuilt historical daily charts only, "
+                 "leaving fleet charts unchanged")
     annotations = []
     try:
         annotations = [(ts(a), text) for a, text in db.execute("SELECT at, text FROM annotations")]
     except sqlite3.OperationalError:
         pass
-    out = Path(args.out_dir)
-    out.mkdir(parents=True, exist_ok=True)
     stats, svgs = {}, {}
     for name, hours, step_min, title in [("72h", 72, 10, "CI fleet, last 72 hours"),
                                          ("30d", 30 * 24, 120, "CI fleet, last 30 days")]:
@@ -393,11 +406,7 @@ def main(argv=None):
         ET.fromstring(svgs[name])  # refuse to publish a malformed SVG
     files = {f"ci-fleet-{name}.svg": svg for name, svg in svgs.items()}
     files.update(ci_daily_graphs.charts(db, until))
-    for svg in files.values():
-        ET.fromstring(svg)  # refuse to publish a malformed SVG
-    # Written only once every chart has rendered and parsed, so a failure leaves the fallbacks.
-    for name, svg in files.items():
-        (out / name).write_text(svg)
+    write_charts(out, files)
     (out / "ci-stats.json").write_text(json.dumps(stats, separators=(",", ":")))
 
 
