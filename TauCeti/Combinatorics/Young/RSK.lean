@@ -88,16 +88,16 @@ private noncomputable def rskMap {n : ℕ} (σ : Equiv.Perm (Fin n)) :
   let w := List.ofFn σ
   let p := robinsonSchensted w
   have hp : p.1.IsTableauRows := isTableauRows_robinsonSchensted_fst w
-  let ν := tableauShape p.1 hp
+  let ν := List.tableauShape p.1 hp
   have hcard : ν.card = n := by
-    rw [card_tableauShape]
+    rw [List.card_tableauShape]
     exact (flatten_robinsonSchensted_fst_perm w).length_eq.trans (by simp [w])
   let μ := ν.toPartition hcard
   let rows := castRows hcard p.1
   have hrows : rows.IsTableauRows := isTableauRows_castRows hcard hp
   have hshape : rows.map length = ν.rowLens := by
     rw [map_length_castRows]
-    exact (rowLens_tableauShape p.1 hp).symm
+    exact (List.rowLens_tableauShape p.1 hp).symm
   have hw : w.Perm (finRange n) := by
     simpa [w, List.ofFn_eq_map] using σ.map_finRange_perm
   let P : StandardYoungTableau ν := (StandardYoungTableau.rowsEquiv ν).symm
@@ -202,31 +202,37 @@ noncomputable def rsk (n : ℕ) :
         StandardYoungTableau (YoungDiagram.ofPartition μ) :=
   Equiv.ofBijective rskMap ⟨rskMap_injective, rskMap_surjective⟩
 
+end TauCeti
+
+namespace Equiv.Perm
+
+open List TauCeti
+
 /-- The entries in the rows of the insertion tableau are the entries produced by word-level
 Robinson--Schensted insertion. The `Fin` labels are compared through their natural-number values
 because the tableau labels are indexed by the cardinality of its inferred shape. -/
 @[simp]
 theorem map_val_toRows_rsk_apply {n : ℕ} (σ : Equiv.Perm (Fin n)) :
-    ((rsk n σ).2.1.toRows.map (map Fin.val)) =
+    ((TauCeti.rsk n σ).2.1.toRows.map (map Fin.val)) =
       (robinsonSchensted (List.ofFn σ)).1.map (map Fin.val) := by
-  exact congrArg Prod.fst (rskData_rskMap σ)
+  exact congrArg Prod.fst (TauCeti.rskData_rskMap σ)
 
 /-- The recording tableau of a permutation has the recording word produced by word-level
 Robinson--Schensted insertion. -/
 @[simp]
 theorem rowWord_rsk_apply {n : ℕ} (σ : Equiv.Perm (Fin n)) :
-    (rsk n σ).2.2.rowWord = (robinsonSchensted (List.ofFn σ)).2 := by
-  exact congrArg Prod.snd (rskData_rskMap σ)
+    (TauCeti.rsk n σ).2.2.rowWord = (robinsonSchensted (List.ofFn σ)).2 := by
+  exact congrArg Prod.snd (TauCeti.rskData_rskMap σ)
 
 /-- The shape of the tableaux in `rsk n σ` is the row-length shape of the insertion tableau. -/
 theorem rowLens_ofPartition_rsk_apply {n : ℕ} (σ : Equiv.Perm (Fin n)) :
-    (YoungDiagram.ofPartition (rsk n σ).1).rowLens =
+    (YoungDiagram.ofPartition (TauCeti.rsk n σ).1).rowLens =
       (robinsonSchensted (List.ofFn σ)).1.map length := by
   calc
-    _ = (rsk n σ).2.1.toRows.map length :=
-      ((rsk n σ).2.1.map_length_toRows).symm
+    _ = (TauCeti.rsk n σ).2.1.toRows.map length :=
+      ((TauCeti.rsk n σ).2.1.map_length_toRows).symm
     _ = _ := by
       have h := congrArg (map length) (map_val_toRows_rsk_apply σ)
       simpa only [List.map_map, Function.comp_def, List.length_map] using h
 
-end TauCeti
+end Equiv.Perm
