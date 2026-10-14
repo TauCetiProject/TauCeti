@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.GaussLemma
 import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.Algebra.Ring.Divisibility.Lemmas
 import Mathlib.RingTheory.Algebraic.Integral
+import TauCeti.Algebra.Polynomial.Normalize
 
 /-!
 # The primitive minimal polynomial over `ℤ`
@@ -62,9 +63,6 @@ open Polynomial
 namespace TauCeti
 
 variable {F : Type*} [Field F] [CharZero F] {F' : Type*} [Field F'] [CharZero F']
-
-private lemma natDegree_normalize_int (P : ℤ[X]) : (normalize P).natDegree = P.natDegree :=
-  natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (normalize_associated P))
 
 /-- The *primitive minimal polynomial* `F_x ∈ ℤ[X]` of `x` over `ℚ`: the primitive integer
 multiple of `minpoly ℚ x` with positive leading coefficient. It is obtained by clearing the
@@ -135,7 +133,7 @@ theorem map_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
   have hdeg : ((primitiveMinpoly x).map (Int.castRingHom ℚ)).natDegree ≤
       (minpoly ℚ x).natDegree := by
     rw [natDegree_map_eq_of_injective (RingHom.injective_int _), primitiveMinpoly,
-      natDegree_normalize_int, natDegree_primPart,
+      natDegree_normalize', natDegree_primPart,
       ← natDegree_map_eq_of_injective (RingHom.injective_int (Int.castRingHom ℚ)) q, hbq]
     exact natDegree_smul_le _ _
   rw [eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le
