@@ -91,17 +91,19 @@ def characterIntegralAlgHom (κ : G →ₜ* R) : D(G, R) →ₐ[R] R where
   map_add' _ _ := rfl
   commutes' r := by simp [algebraMap_apply]
 
+/-- The character integral `characterIntegralAlgHom κ` evaluates a measure `μ` at `κ`. -/
 @[simp]
 theorem characterIntegralAlgHom_apply (κ : G →ₜ* R) (μ : D(G, R)) :
     characterIntegralAlgHom κ μ = μ κ :=
   (rfl)
 
+/-- The character integral of the Dirac measure at `g` is the value `κ g`. -/
 theorem characterIntegralAlgHom_dirac (κ : G →ₜ* R) (g : G) :
     characterIntegralAlgHom κ (dirac R g) = κ g := by
   simp
 
 /-- The integral of the trivial character is the total mass `μ 1`. -/
-theorem characterIntegralAlgHom_one (μ : D(G, R)) :
+theorem characterIntegralAlgHom_one_character (μ : D(G, R)) :
     characterIntegralAlgHom 1 μ = μ 1 := by
   have h : ((1 : G →ₜ* R) : C(G, R)) = 1 := by
     ext
@@ -116,8 +118,9 @@ theorem characterIntegralAlgHom_comp_diracHom (κ : G →ₜ* R) :
   simp
 
 /-- The total mass of a convolution is the product of the total masses. -/
+@[simp]
 theorem mul_apply_one (μ ν : D(G, R)) : (μ * ν) 1 = μ 1 * ν 1 := by
-  simpa only [characterIntegralAlgHom_one] using map_mul (characterIntegralAlgHom 1) μ ν
+  simpa only [characterIntegralAlgHom_one_character] using map_mul (characterIntegralAlgHom 1) μ ν
 
 end Monoid
 
@@ -146,13 +149,15 @@ def mapAlgHom (φ : G →ₜ* H) : D(G, R) →ₐ[R] D(H, R) where
     ext f
     simp [algebraMap_apply]
 
+/-- The algebra homomorphism `mapAlgHom φ` sends `μ` to its pushforward `map φ μ`. -/
 @[simp]
 theorem mapAlgHom_apply (φ : G →ₜ* H) (μ : D(G, R)) :
     mapAlgHom φ μ = map (φ : C(G, H)) μ :=
   (rfl)
 
+/-- The linear map underlying `mapAlgHom φ` is the pushforward `map φ`. -/
 @[simp]
-theorem toLinearMap_mapAlgHom (φ : G →ₜ* H) :
+theorem mapAlgHom_toLinearMap (φ : G →ₜ* H) :
     (mapAlgHom φ).toLinearMap = (map (φ : C(G, H)) : D(G, R) →ₗ[R] D(H, R)) :=
   (rfl)
 
