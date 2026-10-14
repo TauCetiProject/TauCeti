@@ -108,14 +108,10 @@ theorem spinGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
 /-- On a pure tensor, the action of a scalar-extended Spin element is the extension of the
 original action. -/
 @[simp]
-theorem spinVectorAction_baseChange_tmul (Q : QuadraticForm R M) (x : spinGroup Q)
-    (a : A) (m : M) :
-    letI : Invertible (2 : A) :=
-      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+theorem spinVectorAction_baseChange_tmul [Invertible (2 : A)] (Q : QuadraticForm R M)
+    (x : spinGroup Q) (a : A) (m : M) :
     spinVectorAction (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) (a ⊗ₜ[R] m) =
       a ⊗ₜ[R] spinVectorAction Q x m := by
-  let : Invertible (2 : A) :=
-    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   suffices hOne :
       spinVectorAction (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) (1 ⊗ₜ[R] m) =
         1 ⊗ₜ[R] spinVectorAction Q x m by
@@ -131,14 +127,10 @@ theorem spinVectorAction_baseChange_tmul (Q : QuadraticForm R M) (x : spinGroup 
 /-- Extension of scalars commutes with the Spin homomorphism to the special orthogonal group. -/
 @[simp]
 theorem spinToSpecialOrthogonal_baseChange [Module.Free R M] [Module.Finite R M]
-    (Q : QuadraticForm R M) (x : spinGroup Q) :
-    letI : Invertible (2 : A) :=
-      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    [Invertible (2 : A)] (Q : QuadraticForm R M) (x : spinGroup Q) :
     TauCeti.QuadraticMap.specialOrthogonalGroupBaseChange (A := A) Q
         (spinToSpecialOrthogonal Q x) =
       spinToSpecialOrthogonal (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) := by
-  let : Invertible (2 : A) :=
-    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   apply LinearEquiv.ext
   intro z
@@ -159,17 +151,13 @@ variable {Q : QuadraticForm K V} {u w : V}
 /-- Extension of scalars carries the canonical Spin lift of `E_{u,w}` to the canonical lift of
 `E_{1 ⊗ u,1 ⊗ w}`. -/
 @[simp]
-theorem spinGroupBaseChange_spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 0)
-    (huw : QuadraticMap.polar Q u w = 0) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+theorem spinGroupBaseChange_spinTransvection [Invertible (2 : L)] (hQ : Q.Nondegenerate)
+    (hu : Q u = 0) (huw : QuadraticMap.polar Q u w = 0) :
     spinGroupBaseChange (A := L) Q (spinTransvection hQ hu huw) =
       spinTransvection (QuadraticForm.Nondegenerate.baseChange hQ)
         (u := 1 ⊗ₜ[K] u) (w := 1 ⊗ₜ[K] w)
         (by simp [QuadraticForm.baseChange_tmul, hu])
         (by simp [QuadraticForm.polar_baseChange_tmul, huw]) := by
-  let : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   rw [coe_spinGroupBaseChange_apply, coe_spinTransvection, coe_spinTransvection, map_add,
     map_one, map_mul, ofBaseChangeAux_ι, ofBaseChangeAux_ι]
@@ -284,13 +272,10 @@ variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
 /-- Extension of scalars commutes with the Spin homomorphism to the orthogonal group. -/
 @[simp]
-theorem spinToOrthogonal_baseChange (Q : QuadraticForm R M) (x : spinGroup Q) :
-    letI : Invertible (2 : A) :=
-      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+theorem spinToOrthogonal_baseChange [Invertible (2 : A)] (Q : QuadraticForm R M)
+    (x : spinGroup Q) :
     spinToOrthogonal (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) =
       orthogonalGroupBaseChange (A := A) Q (spinToOrthogonal Q x) := by
-  let : Invertible (2 : A) :=
-    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   rw [coe_orthogonalGroupBaseChange]
   apply LinearEquiv.ext
@@ -310,16 +295,12 @@ variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
 /-- Extending scalars along a field extension carries the canonical Spin root-subgroup
 homomorphism to that of the extended quotient parameters, preserving its additive composition
 law. -/
-theorem spinGroupBaseChange_comp_spinTransvectionHom {Q : QuadraticForm K V} {u : V}
-    (hQ : Q.Nondegenerate) (hu : Q u = 0) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+theorem spinGroupBaseChange_comp_spinTransvectionHom [Invertible (2 : L)]
+    {Q : QuadraticForm K V} {u : V} (hQ : Q.Nondegenerate) (hu : Q u = 0) :
     (spinGroupBaseChange (A := L) Q).toAdditive.comp (spinTransvectionHom hQ hu) =
       (spinTransvectionHom (QuadraticForm.Nondegenerate.baseChange hQ)
         (u := 1 ⊗ₜ[K] u) (by simp [QuadraticForm.baseChange_tmul, hu])).comp
           (transvectionParameterBaseChange (A := L) Q u).toAddMonoidHom := by
-  let : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   apply AddMonoidHom.ext
   intro q
   induction q using Submodule.Quotient.induction_on with | H w =>
