@@ -147,15 +147,6 @@ theorem exists_slope_of_notMem_nonsingularReduction
   obtain ⟨hx₃, -⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ _).1 hPQ
   set ℓ := W.slope x₁ x₂ y₁ y₂
   set x₃ := W.addX x₁ x₂ ℓ with hx₃def
-  -- the coefficients of `W` are those of `Wo`
-  have ha₁ : ((Wo.a₁ : O) : F) = W.a₁ := by
-    simpa using integralModel_a₁_eq O W
-  have ha₂ : ((Wo.a₂ : O) : F) = W.a₂ := by
-    simpa using integralModel_a₂_eq O W
-  have ha₃ : ((Wo.a₃ : O) : F) = W.a₃ := by
-    simpa using integralModel_a₃_eq O W
-  have ha₄ : ((Wo.a₄ : O) : F) = W.a₄ := by
-    simpa using integralModel_a₄_eq O W
   have hO {z : F} (hz : v z < 1) : z ∈ O := (v.mem_valuationSubring_iff z).2 hz.le
   set X₁ : O := ⟨x₁, hO hx₁⟩
   set X₂ : O := ⟨x₂, hO hx₂⟩
@@ -178,7 +169,7 @@ theorem exists_slope_of_notMem_nonsingularReduction
   · have hs : L ^ 2 + Wo.a₁ * L - Wo.a₂ = X₁ + X₂ + X₃ := by
       apply Subtype.ext
       push_cast
-      rw [ha₁, ha₂]
+      rw [coe_integralModel_a₁, coe_integralModel_a₂]
       simp only [L, X₁, X₂, X₃, hx₃def, addX]
       ring
     rw [hs]
@@ -188,7 +179,7 @@ theorem exists_slope_of_notMem_nonsingularReduction
       apply Subtype.ext
       push_cast
       have h2 : ((2 : O) : F) = 2 := by simpa using map_ofNat (algebraMap O F) 2
-      rw [ha₁, ha₃, ha₄, h2]
+      rw [coe_integralModel_a₁, coe_integralModel_a₃, coe_integralModel_a₄, h2]
       simp only [L, X₁, X₂, X₃, Y₁]
       linear_combination hc
     rw [hs, pow_two]
