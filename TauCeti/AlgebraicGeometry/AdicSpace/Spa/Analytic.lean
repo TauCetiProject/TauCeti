@@ -353,7 +353,7 @@ theorem isCompact_val_preimage_spaAnalytic (P : PairOfDefinition A) (Aplus : Sub
   obtain ⟨T, hT⟩ := P.fg_extendedIdealOfDefinition
   have hopen : IsOpen (Ideal.span (T : Set A) : Set A) := by
     rw [hT]
-    exact (P.isOpen_iff_exists_pow_le _).mpr ⟨1, by simp⟩
+    exact P.isOpen_extendedIdealOfDefinition
   rw [spaAnalytic_eq_biUnion_rationalSubset_of_span_eq_extendedIdealOfDefinition P Aplus T hT,
     Set.preimage_iUnion₂]
   exact T.isCompact_biUnion fun t _ ↦
