@@ -121,7 +121,8 @@ private theorem map_universal_eq {X : EllObj B} {g : X ⟶ U}
       P.map (EllObj.isoBaseChange g).hom.op ((D.representableBy U).homEquiv (D.overHom f hf)) := by
   conv_lhs => rw [D.eq_isoBaseChange_hom_comp f hf]
   rw [op_comp, Functor.map_comp_apply]
-  rw [D.representableBy_homEquiv]
+  rw [(D.representableBy U).homEquiv_eq, D.representableBy_homEquiv_id, ModuliProblem.fibre_map]
+  rfl
 
 private theorem tensorMap_injective {X : EllObj B} :
     Function.Injective (D.tensorMap R (X := X)) := by

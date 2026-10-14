@@ -450,14 +450,16 @@ noncomputable def isoBaseChange {X Y : EllObj B} (g : X ⟶ Y) :
     X ≅ Y.baseChangeFunctor.obj (Over.mk g.base) :=
   have : IsIso (Hom.lift (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base)
       (Category.id_comp g.base)) :=
-    (isIso_iff_isIso_base _ _).2 (inferInstanceAs (IsIso (𝟙 X.base)))
+    (isIso_iff_isIso_base _ _).2 <| (congrArg IsIso <| Hom.lift_base
+      (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)).mpr
+        (IsIso.id X.base)
   asIso (Hom.lift (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base)
     (Category.id_comp g.base))
 
 @[simp]
 theorem isoBaseChange_hom_base {X Y : EllObj B} (g : X ⟶ Y) :
     (isoBaseChange g).hom.base = 𝟙 X.base :=
-  (rfl)
+  Hom.lift_base (Y.baseChangeFunctorHom (Over.mk g.base)) g (𝟙 X.base) (Category.id_comp g.base)
 
 @[simp]
 theorem isoBaseChange_inv_base {X Y : EllObj B} (g : X ⟶ Y) :

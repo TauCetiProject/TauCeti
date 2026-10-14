@@ -120,7 +120,8 @@ variable {P Q} (D : P.RelRepData)
 /-- The **universal level structure** of a relatively representable moduli problem `𝒫` over an
 object `X = (E/S)` of `Ell/B`: the `𝒫`-structure on the base change of `E` to the representing
 scheme `𝒫_{E/S}` which corresponds to the identity of `𝒫_{E/S}`. Every level structure on a base
-change of `E` is pulled back from it (`RelRepData.representableBy_homEquiv`). -/
+change of `E` is pulled back from it (`Functor.RepresentableBy.homEquiv_eq` together with
+`RelRepData.representableBy_homEquiv_id`). -/
 noncomputable def universal (X : EllObj B) : P.obj (op (X.baseChangeFunctor.obj (D.rep X))) :=
   (D.representableBy X).homEquiv (𝟙 (D.rep X))
 
@@ -128,13 +129,6 @@ noncomputable def universal (X : EllObj B) : P.obj (op (X.baseChangeFunctor.obj 
 theorem representableBy_homEquiv_id (X : EllObj B) :
     (D.representableBy X).homEquiv (𝟙 (D.rep X)) = D.universal X :=
   (rfl)
-
-/-- The level structure on the base change of `E` along `T ⟶ 𝒫_{E/S}` corresponding to a morphism
-`f` of schemes over `S` is the pull-back of the universal level structure along the base change of
-`f`. -/
-theorem representableBy_homEquiv (X : EllObj B) {T : Over X.base} (f : T ⟶ D.rep X) :
-    (D.representableBy X).homEquiv f = P.map (X.baseChangeFunctor.map f).op (D.universal X) :=
-  (D.representableBy X).homEquiv_eq f
 
 /-- Along an arrow `f : X ⟶ Y` of `Ell/B`, the base change of the representing scheme over `Y`
 along `f.base` represents the fibre of the problem over `X`. -/
