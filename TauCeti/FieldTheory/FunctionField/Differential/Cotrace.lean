@@ -562,7 +562,7 @@ variable {k : Type u} {E F₁ F₂ : Type*} [Field k] [Field E] [Field F₁] [Fi
 variable [Algebra k E] [Algebra k F₁] [Algebra k F₂] [i₁ : Algebra E F₁] [i₂ : Algebra E F₂]
 variable [IsScalarTower k E F₁] [IsScalarTower k E F₂]
 variable [FiniteDimensional E F₁] [FiniteDimensional E F₂]
-variable [Algebra.IsSeparable E F₁] [Algebra.IsSeparable E F₂]
+variable [Algebra.IsSeparable E F₁]
 
 /-- Let `σ : F₁ ≃ F₂` be a `k`-isomorphism compatible with two embeddings of `E`. Then the cotrace
 to `F₁` of a Weil differential `ω` of `E`, evaluated at the repartition of `F₁` obtained by moving
