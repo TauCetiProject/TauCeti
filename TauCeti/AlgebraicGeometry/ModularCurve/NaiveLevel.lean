@@ -181,22 +181,18 @@ noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B 
       inv := naiveLevelMap B σ.unop.symm.toMonoidHom σ.unop.symm.injective
       hom_inv_id := by ext; simp
       inv_hom_id := by ext; simp }
-  -- the unit and the product of `Aut` are `Iso.refl` and `Iso.trans`, so both sides evaluate a
-  -- structure `φ` at the same element
   map_one' := by
     apply Iso.ext
-    refine naiveLevel_hom_ext (B := B) (A := A) ?_
-    intro X α
-    refine MonoidHom.ext ?_
-    intro a
-    rfl
+    refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
+    change _ = (naiveLevelEquiv X α).1 a
+    simp
   map_mul' σ τ := by
     apply Iso.ext
-    refine naiveLevel_hom_ext (B := B) (A := A) ?_
-    intro X α
-    refine MonoidHom.ext ?_
-    intro a
-    rfl
+    refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
+    -- the product `σ * τ` of `Aut` restricts along `τ` first, then along `σ`
+    change _ = (naiveLevelEquiv X ((naiveLevelMap B σ.unop.toMonoidHom σ.unop.injective).app
+      (op X) ((naiveLevelMap B τ.unop.toMonoidHom τ.unop.injective).app (op X) α))).1 a
+    simp
 
 /-- An automorphism `σ` of `A` sends a naive `A`-structure `φ` to `φ ∘ σ`. -/
 @[simp]
@@ -204,7 +200,7 @@ theorem naiveLevelEquiv_naiveLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X :
     (α : (naiveLevel B A).obj (op X)) :
     (naiveLevelEquiv X ((naiveLevelAction B A σ).hom.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp σ.unop.toMonoidHom :=
-  (rfl)
+  naiveLevelEquiv_naiveLevelMap_app _ σ.unop.injective X α
 
 /-- The inverse of the automorphism of the moduli problem given by `σ` sends a naive
 `A`-structure `φ` to `φ ∘ σ⁻¹`. -/
@@ -213,7 +209,7 @@ theorem naiveLevelEquiv_naiveLevelAction_inv_app (σ : (MulAut A)ᵐᵒᵖ) (X :
     (α : (naiveLevel B A).obj (op X)) :
     (naiveLevelEquiv X ((naiveLevelAction B A σ).inv.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp σ.unop.symm.toMonoidHom :=
-  (rfl)
+  naiveLevelEquiv_naiveLevelMap_app _ σ.unop.symm.injective X α
 
 /-- **The action of the automorphisms of `A` on naive `A`-structures is free.** Over a nonempty
 base, an automorphism of `A` fixing a naive `A`-structure is the identity, because a naive
@@ -390,7 +386,7 @@ theorem naiveLevelEquiv_gammaNaiveAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐ�
     (α : (gammaNaive B N).obj (op X)) :
     (naiveLevelEquiv X ((gammaNaiveAction B N g).hom.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).toMonoidHom :=
-  (rfl)
+  naiveLevelEquiv_naiveLevelAction_hom_app _ X α
 
 /-- The inverse of the automorphism of `[Γ(N)]` given by a matrix `g` sends a naive
 `[Γ(N)]`-structure `φ : (ℤ/Nℤ)² →* E(S)` to `φ ∘ g⁻¹`. -/
@@ -399,7 +395,7 @@ theorem naiveLevelEquiv_gammaNaiveAction_inv_app (g : (GL (Fin 2) (ZMod N))ᵐ�
     (α : (gammaNaive B N).obj (op X)) :
     (naiveLevelEquiv X ((gammaNaiveAction B N g).inv.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).symm.toMonoidHom :=
-  (rfl)
+  naiveLevelEquiv_naiveLevelAction_inv_app _ X α
 
 /-- The naive `[Γ(N)]`-structures are acted on freely by `GL₂(ℤ/Nℤ)` over a nonempty base. -/
 theorem eq_one_of_gammaNaiveAction_hom_app_eq_self {X : EllObj B} [Nonempty X.base]
