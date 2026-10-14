@@ -77,7 +77,8 @@ theorem contMDiffOn_continuousAlternatingMapCoordChange :
   · refine (ContinuousLinearMap.compContinuousAlternatingMapCLM
       (ι := ι) 𝕜 F₁ F₂ F₂).contMDiff.comp_contMDiffOn (h₂.mono ?_)
     mfld_set_tac
-  · refine (contDiff_compContinuousLinearMapCLM (𝕜 := 𝕜) (E := F₁) (F := F₁)
+  · refine (ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
+      (𝕜 := 𝕜) (E := F₁) (F := F₁)
       (G := F₂) (ι := ι) n).contMDiff.comp_contMDiffOn (h₁.mono ?_)
     mfld_set_tac
 

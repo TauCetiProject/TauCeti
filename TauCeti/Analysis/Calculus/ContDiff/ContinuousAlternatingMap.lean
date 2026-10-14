@@ -37,13 +37,13 @@ variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Pullback on continuous alternating maps is smooth, as an operator-valued function of
 the continuous linear map on the domain. No completeness or finite dimensionality is needed. -/
-theorem contDiff_compContinuousLinearMapCLM (n : WithTop ℕ∞) :
+theorem _root_.ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM (n : WithTop ℕ∞) :
     ContDiff 𝕜 n
       (ContinuousAlternatingMap.compContinuousLinearMapCLM :
         (E →L[𝕜] F) → (F [⋀^ι]→L[𝕜] G) →L[𝕜] E [⋀^ι]→L[𝕜] G) := by
   classical
   let A : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) G →L[𝕜] E [⋀^ι]→L[𝕜] G :=
-    ((Fintype.card ι).factorial : 𝕜)⁻¹ • alternatizationCLM
+    ((Fintype.card ι).factorial : 𝕜)⁻¹ • ContinuousMultilinearMap.alternatizationCLM
   let J : (F [⋀^ι]→L[𝕜] G) →L[𝕜] ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ F) G :=
     ContinuousAlternatingMap.toContinuousMultilinearMapCLM 𝕜
   let P := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear

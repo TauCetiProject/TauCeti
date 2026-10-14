@@ -8,19 +8,21 @@ module
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 
 /-!
-# Continuous alternating pullback and the underlying multilinear map
+# Underlying multilinear maps and continuous alternatization
 
 The underlying continuous multilinear map of an alternating pullback is the
 multilinear pullback. This identity allows consumers to move between the two APIs
-without unfolding their implementations.
+without unfolding their implementations. Alternatization multiplies an already alternating map
+by the arity factorial, which supplies the retraction used to transfer smoothness from multilinear
+maps when the factorial is invertible.
 -/
 
 public section
 
-namespace TauCeti
+namespace ContinuousAlternatingMap
 
 /-- Taking the underlying multilinear map commutes with continuous linear pullback. -/
-@[simp] theorem _root_.ContinuousAlternatingMap.toContinuousMultilinearMap_compContinuousLinearMap
+@[simp] theorem toContinuousMultilinearMap_compContinuousLinearMap
     {R E F G ι : Type*} [Semiring R]
     [AddCommMonoid E] [Module R E] [TopologicalSpace E]
     [AddCommMonoid F] [Module R F] [TopologicalSpace F]
@@ -29,4 +31,16 @@ namespace TauCeti
     (φ.compContinuousLinearMap f).toContinuousMultilinearMap =
       φ.toContinuousMultilinearMap.compContinuousLinearMap (fun _ ↦ f) := (rfl)
 
-end TauCeti
+/-- Alternatization multiplies an alternating map by the factorial of its arity. -/
+@[simp] theorem alternatization_toContinuousMultilinearMap
+    {R E F ι : Type*} [Semiring R] [AddCommMonoid E] [Module R E] [TopologicalSpace E]
+    [AddCommGroup F] [Module R F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [Fintype ι] [DecidableEq ι] (f : E [⋀^ι]→L[R] F) :
+    ContinuousMultilinearMap.alternatization f.toContinuousMultilinearMap =
+      (Fintype.card ι).factorial • f := by
+  apply ContinuousAlternatingMap.toAlternatingMap_injective
+  simp only [ContinuousMultilinearMap.alternatization_apply_toAlternatingMap,
+    ContinuousAlternatingMap.toAlternatingMap_smul]
+  exact AlternatingMap.coe_alternatization f.toAlternatingMap
+
+end ContinuousAlternatingMap

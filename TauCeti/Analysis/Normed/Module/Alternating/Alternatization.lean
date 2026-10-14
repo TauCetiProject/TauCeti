@@ -25,14 +25,14 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace ContinuousMultilinearMap
 
 variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [Fintype ι] [DecidableEq ι]
 
 /-- The signed permutation sum has operator norm at most the factorial of the arity. -/
-theorem _root_.ContinuousMultilinearMap.norm_alternatization_le
+theorem norm_alternatization_le
     (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     ‖ContinuousMultilinearMap.alternatization f‖ ≤ (Fintype.card ι).factorial * ‖f‖ := by
   rw [← ContinuousAlternatingMap.norm_toContinuousMultilinearMap]
@@ -55,18 +55,9 @@ def alternatizationCLM :
     (Fintype.card ι).factorial ContinuousMultilinearMap.norm_alternatization_le
 
 /-- The continuous linear alternatization evaluates to Mathlib's signed permutation sum. -/
-@[simp] theorem _root_.ContinuousMultilinearMap.alternatizationCLM_apply
+@[simp] theorem alternatizationCLM_apply
     (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     alternatizationCLM f = ContinuousMultilinearMap.alternatization f := (rfl)
 
-/-- Alternatization multiplies an alternating map by the factorial of its arity. -/
-@[simp] theorem _root_.ContinuousAlternatingMap.alternatization_toContinuousMultilinearMap
-    (f : E [⋀^ι]→L[𝕜] F) :
-    ContinuousMultilinearMap.alternatization f.toContinuousMultilinearMap =
-      (Fintype.card ι).factorial • f := by
-  apply ContinuousAlternatingMap.toAlternatingMap_injective
-  simp only [ContinuousMultilinearMap.alternatization_apply_toAlternatingMap,
-    ContinuousAlternatingMap.toAlternatingMap_smul]
-  exact AlternatingMap.coe_alternatization f.toAlternatingMap
 
-end TauCeti
+end ContinuousMultilinearMap
