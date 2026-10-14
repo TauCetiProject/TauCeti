@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.Henselian
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.IndexTwo
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
--- Proof-only: an anisotropic binary quadratic form over a finite field takes every value.
-import TauCeti.FieldTheory.Finite.BinaryQuadratic
+-- Proof-only: the norm of a finite quadratic extension is surjective, and the quadratic algebra.
+import Mathlib.FieldTheory.Finite.GaloisField
+import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 -- Proof-only: solutions and the discriminant under a translation.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
@@ -44,16 +45,16 @@ The point is found in three steps, carried out over the Henselian local ring `O`
 (`WeierstrassCurve.exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots`).
 
 * **Centring.** The singular point of the reduction lifts to a critical point `(r, t) ∈ 𝔪²` of the
-  Weierstrass polynomial, and translating it to the origin makes `a₃ = a₄ = 0`. The two conditions
-  combine to `6 r² + b₂ r + b₄ = 0`, a quadratic with unit linear coefficient `b₂`, which Hensel's
-  lemma solves; then `t` is read off from either condition, as `2` or `a₁` is a unit. On the
-  centred equation `y² + a₁ x y = x³ + a₂ x² + a₆` one has `Δ = −a₆ (b₂³ + 432 a₆)`, so `a₆` and
-  `Δ` differ by a unit.
+  Weierstrass polynomial, and translating it to the origin makes `a₃ = a₄ = 0`
+  (`WeierstrassCurve.exists_translate_a₃_eq_zero_and_a₄_eq_zero`). On the centred equation
+  `y² + a₁ x y = x³ + a₂ x² + a₆` one has `Δ = −a₆ (b₂³ + 432 a₆)`, so `a₆` and `Δ` differ by a
+  unit.
 * **The residue conic.** Write `Δ` as a unit times `z²`, so that `a₆ = z² A` with `A` a unit.
   Along `(x, y) = (z X, z Y)` the centred equation divided by `z²` is
   `Y² + a₁ X Y − a₂ X² − z X³ = A`, whose reduction is the conic `Y² + a₁ X Y − a₂ X² = A`. Its
-  quadratic part is anisotropic, and over a finite field it takes every value
-  (`FiniteField.exists_sq_add_mul_mul_sub_mul_sq_eq`), so the conic has a point.
+  quadratic part is the norm form of the quadratic extension `k[T]/(T² − a₁ T − a₂)` of `k`, and
+  over a finite field the norm is surjective (`FiniteField.norm_surjective`), so the conic has a
+  point.
 * **Lifting.** The residue conic is smooth, since the discriminant `b₂` of its quadratic part is a
   unit, so one of the partial derivatives is a unit at the point, and Hensel's lemma in that
   variable lifts it to a solution `(X, Y)` over `O`. The solution `(z X, z Y)` of the centred
@@ -92,55 +93,6 @@ open IsLocalRing Polynomial
 
 namespace WeierstrassCurve
 
-/-- **Centring at a singular point of the reduction.** Over a Henselian local ring, if `a₃` and
-`a₄` lie in the maximal ideal and `b₂` is a unit, then for some `r, t ∈ 𝔪` the translation
-`x ↦ x + r`, `y ↦ y + t` makes `a₃ = a₄ = 0`: `(r, t)` is a critical point of the Weierstrass
-polynomial. -/
-private theorem exists_translate_a₃_eq_zero_and_a₄_eq_zero {R : Type*} [CommRing R]
-    [HenselianLocalRing R] (W : WeierstrassCurve R) (h₃ : W.a₃ ∈ maximalIdeal R)
-    (h₄ : W.a₄ ∈ maximalIdeal R) (hb₂ : IsUnit W.b₂) :
-    ∃ r t : R, r ∈ maximalIdeal R ∧ t ∈ maximalIdeal R ∧
-      (VariableChange.mk 1 r 0 t • W).a₃ = 0 ∧ (VariableChange.mk 1 r 0 t • W).a₄ = 0 := by
-  simp only [variableChange_a₃, variableChange_a₄, inv_one, Units.val_one, one_pow, one_mul]
-  -- `a₁` times the first condition plus `2` times the second is `6 r² + b₂ r + b₄ = 0`
-  have hb₄ : W.b₄ ∈ maximalIdeal R := by
-    rw [b₄]
-    exact add_mem ((maximalIdeal R).mul_mem_left _ h₄) ((maximalIdeal R).mul_mem_left _ h₃)
-  obtain ⟨r, hr, hr𝔪⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
-    (C 6 * X ^ 2 + C W.b₂ * X + C W.b₄) (a₀ := 0) (by simpa using hb₄) (by simpa using hb₂)
-  have hr' : 6 * r ^ 2 + W.b₂ * r + W.b₄ = 0 := by simpa using hr.eq_zero
-  rw [b₂, b₄] at hr'
-  rw [sub_zero] at hr𝔪
-  by_cases h2 : IsUnit (2 : R)
-  · -- solve the first condition for `t`
-    obtain ⟨i, hi⟩ := h2.exists_right_inv
-    have e₃ : W.a₃ + W.a₁ * r + 2 * (-(W.a₃ + W.a₁ * r) * i) = 0 := by
-      linear_combination (-(W.a₃ + W.a₁ * r)) * hi
-    refine ⟨r, -(W.a₃ + W.a₁ * r) * i, hr𝔪, (maximalIdeal R).mul_mem_right _ (neg_mem
-      (add_mem h₃ ((maximalIdeal R).mul_mem_left _ hr𝔪))), by linear_combination e₃, ?_⟩
-    refine h2.mul_right_eq_zero.1 ?_
-    linear_combination hr' - W.a₁ * e₃
-  · -- `2 ∈ 𝔪`, so `a₁² ≡ b₂` is a unit; solve the second condition for `t`
-    have h2𝔪 : (2 : R) ∈ maximalIdeal R := (mem_maximalIdeal _).2 h2
-    have ha₁ : IsUnit W.a₁ := by
-      have hsq : W.a₁ ^ 2 = W.b₂ - 2 * (2 * W.a₂) := by rw [b₂]; ring
-      rw [← residue_ne_zero_iff_isUnit] at hb₂ ⊢
-      refine fun h0 ↦ hb₂ ?_
-      have := congrArg (residue R) hsq
-      rw [map_pow, h0, map_sub, (residue_eq_zero_iff _).2
-        ((maximalIdeal R).mul_mem_right _ h2𝔪)] at this
-      simpa using this.symm
-    obtain ⟨j, hj⟩ := ha₁.exists_right_inv
-    have e₄ : W.a₄ + 2 * W.a₂ * r - W.a₁ * ((W.a₄ + 2 * W.a₂ * r + 3 * r ^ 2) * j) +
-        3 * r ^ 2 = 0 := by
-      linear_combination (-(W.a₄ + 2 * W.a₂ * r + 3 * r ^ 2)) * hj
-    refine ⟨r, (W.a₄ + 2 * W.a₂ * r + 3 * r ^ 2) * j, hr𝔪, (maximalIdeal R).mul_mem_right _
-      (add_mem (add_mem h₄ ((maximalIdeal R).mul_mem_left _ hr𝔪))
-        ((maximalIdeal R).mul_mem_left _ (Ideal.pow_mem_of_mem _ hr𝔪 2 two_pos))), ?_,
-      by linear_combination e₄⟩
-    refine ha₁.mul_right_eq_zero.1 ?_
-    linear_combination hr' - 2 * e₄
-
 /-- **Lifting a point of the residue conic.** Over a Henselian local ring, let `b₂ = a₁² + 4 a₂`
 and `A` be units and `z ∈ 𝔪`. A solution modulo `𝔪` of `Y² + a₁ X Y − a₂ X² − z X³ = A` lifts to
 a solution: the reduction is a smooth conic, so a partial derivative is a unit at the solution. -/
@@ -158,27 +110,19 @@ private theorem exists_conic_eq {R : Type*} [CommRing R] [HenselianLocalRing R]
   · -- otherwise `∂/∂X` is a unit, since both partials in `𝔪` would force `X₀, Y₀, A ∈ 𝔪`
     have hX : IsUnit (-3 * z * X₀ ^ 2 - 2 * a₂ * X₀ + a₁ * Y₀) := by
       by_contra hX
-      have h𝔪Y := (mem_maximalIdeal _).2 hY
-      have h𝔪X := (mem_maximalIdeal _).2 hX
-      have hzX : z * X₀ ^ 2 ∈ maximalIdeal R := (maximalIdeal R).mul_mem_right _ hz
-      have hX₀ : X₀ ∈ maximalIdeal R := by
-        refine (Ideal.unit_mul_mem_iff_mem _ hb₂).1 ?_
-        rw [show (a₁ ^ 2 + 4 * a₂) * X₀ = a₁ * (2 * Y₀ + a₁ * X₀) -
-            2 * (-3 * z * X₀ ^ 2 - 2 * a₂ * X₀ + a₁ * Y₀) - 6 * (z * X₀ ^ 2) by ring]
-        exact sub_mem (sub_mem ((maximalIdeal R).mul_mem_left _ h𝔪Y)
-          ((maximalIdeal R).mul_mem_left _ h𝔪X)) ((maximalIdeal R).mul_mem_left _ hzX)
-      have hY₀ : Y₀ ∈ maximalIdeal R := by
-        refine (Ideal.unit_mul_mem_iff_mem _ hb₂).1 ?_
-        rw [show (a₁ ^ 2 + 4 * a₂) * Y₀ = 2 * a₂ * (2 * Y₀ + a₁ * X₀) +
-            a₁ * (-3 * z * X₀ ^ 2 - 2 * a₂ * X₀ + a₁ * Y₀) + 3 * a₁ * (z * X₀ ^ 2) by ring]
-        exact add_mem (add_mem ((maximalIdeal R).mul_mem_left _ h𝔪Y)
-          ((maximalIdeal R).mul_mem_left _ h𝔪X)) ((maximalIdeal R).mul_mem_left _ hzX)
-      refine (mem_maximalIdeal _).1 ?_ hA
-      rw [show A = Y₀ * Y₀ + a₁ * X₀ * Y₀ - a₂ * X₀ * X₀ - z * X₀ ^ 3 -
-          (Y₀ ^ 2 + a₁ * X₀ * Y₀ - a₂ * X₀ ^ 2 - z * X₀ ^ 3 - A) by ring]
-      exact sub_mem (sub_mem (sub_mem (add_mem ((maximalIdeal R).mul_mem_left _ hY₀)
-        ((maximalIdeal R).mul_mem_right _ (((maximalIdeal R).mul_mem_left _ hX₀))))
-        ((maximalIdeal R).mul_mem_left _ hX₀)) ((maximalIdeal R).mul_mem_right _ hz)) h₀
+      rw [← residue_ne_zero_iff_isUnit] at hb₂ hA
+      rw [← residue_ne_zero_iff_isUnit, not_not] at hY hX
+      have hz0 := (residue_eq_zero_iff _).2 hz
+      have h00 := (residue_eq_zero_iff _).2 h₀
+      simp only [map_add, map_sub, map_mul, map_pow, map_neg, map_ofNat] at hb₂ hY hX h00
+      have hX₀ : residue R X₀ = 0 := by
+        refine (mul_eq_zero.1 ?_).resolve_left hb₂
+        linear_combination residue R a₁ * hY - 2 * hX - 6 * residue R X₀ ^ 2 * hz0
+      have hY₀ : residue R Y₀ = 0 := by
+        refine (mul_eq_zero.1 ?_).resolve_left hb₂
+        linear_combination 2 * residue R a₂ * hY + residue R a₁ * hX +
+          3 * residue R a₁ * residue R X₀ ^ 2 * hz0
+      exact hA (by rw [hX₀, hY₀, hz0] at h00; linear_combination -h00)
     obtain ⟨X', hX', -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
       (-C z * X ^ 3 - C a₂ * X ^ 2 + C (a₁ * Y₀) * X + C (Y₀ ^ 2 - A)) (a₀ := X₀)
       (by convert h₀ using 1; simp; ring) (by convert hX using 1; simp [derivative_pow]; ring)
@@ -213,15 +157,25 @@ private theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero
       (Ideal.mul_unit_mem_iff_mem _ u.isUnit).1 ?_
     rw [hu, hΔ']
     exact (maximalIdeal R).mul_mem_right _ (neg_mem h₆)
-  -- the residue conic `Y² + a₁ X Y − a₂ X² = A` has a point, which lifts
-  obtain ⟨x, y, hxy⟩ := FiniteField.exists_sq_add_mul_mul_sub_mul_sq_eq hroot (residue R A)
-  obtain ⟨X₀, rfl⟩ := residue_surjective x
-  obtain ⟨Y₀, rfl⟩ := residue_surjective y
+  -- the residue conic `Y² + a₁ X Y − a₂ X² = A` has a point, given by the norm of the quadratic
+  -- extension of the residue field generated by a root of `T² − a₁ T − a₂`, and it lifts
+  have : Fact (∀ r : ResidueField R, r ^ 2 ≠ residue R W.a₂ + residue R W.a₁ * r) :=
+    ⟨fun r hr ↦ hroot (-r) (by linear_combination hr)⟩
+  have : Finite (QuadraticAlgebra (ResidueField R) (residue R W.a₂) (residue R W.a₁)) :=
+    Module.finite_of_finite (ResidueField R)
+  -- The algebra structure is pinned to the quadratic algebra's own: instance search would build one
+  -- through `ResidueField.algebraOfIsIntegral`, which is not reducibly the same.
+  obtain ⟨q, hq⟩ := @FiniteField.norm_surjective (ResidueField R)
+    (QuadraticAlgebra (ResidueField R) (residue R W.a₂) (residue R W.a₁)) _ _
+    QuadraticAlgebra.instAlgebra _ (residue R A)
+  rw [QuadraticAlgebra.algebraNorm_eq_norm, QuadraticAlgebra.norm_def] at hq
+  obtain ⟨X₀, hX₀⟩ := residue_surjective q.im
+  obtain ⟨Y₀, hY₀⟩ := residue_surjective q.re
   obtain ⟨X, Y, hXY⟩ := exists_conic_eq (A := A) (X₀ := X₀) (Y₀ := Y₀) (by rwa [← b₂]) hz
     (u.isUnit.mul hw.unit⁻¹.isUnit).neg (by
       refine (residue_eq_zero_iff _).1 ?_
-      simp only [map_sub, map_add, map_mul, map_pow, (residue_eq_zero_iff _).2 hz]
-      linear_combination hxy)
+      simp only [map_sub, map_add, map_mul, map_pow, (residue_eq_zero_iff _).2 hz, hX₀, hY₀]
+      linear_combination hq)
   refine ⟨z * X, z * Y, (maximalIdeal R).mul_mem_right _ hz, (maximalIdeal R).mul_mem_right _ hz,
     ?_⟩
   rw [Affine.equation_iff]
