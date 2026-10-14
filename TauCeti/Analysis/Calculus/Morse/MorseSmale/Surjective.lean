@@ -63,24 +63,6 @@ private theorem isAdmissiblePerturbation_bump_mul (hfs : ContDiff ℝ 2 f) {z : 
   θ.isAdmissiblePerturbation_mul hθ
     ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
 
-/-- The derivative of a test perturbation `θ (ψ ∘ f) ⟪w, ·⟫` in a direction `v` killed by
-`Df(p)`. -/
-private theorem fderiv_bump_mul_apply (hfs : ContDiff ℝ 2 f) {z : E} (θ : ContDiffBump z) {c : ℝ}
-    (ψ : ContDiffBump c) (w : E) {p v : E} (hv : fderiv ℝ f p v = 0) :
-    fderiv ℝ (fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)) p v =
-      (θ p * ⟪w, v⟫ + ⟪w, p⟫ * fderiv ℝ θ p v) * ψ (f p) := by
-  have hfd : DifferentiableAt ℝ f p := (hfs.differentiable (by norm_num)) p
-  have hgder : HasFDerivAt (fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫))
-      (θ p • ((ψ (f p)) • innerSL ℝ w + ⟪w, p⟫ • (fderiv ℝ ψ (f p)).comp (fderiv ℝ f p)) +
-        (ψ (f p) * ⟪w, p⟫) • fderiv ℝ θ p) p :=
-    ((θ.contDiff (n := 1)).differentiable one_ne_zero p).hasFDerivAt.mul
-      ((((ψ.contDiff (n := 1)).differentiable one_ne_zero (f p)).hasFDerivAt.comp p
-        hfd.hasFDerivAt).mul (innerSL ℝ w).hasFDerivAt)
-  rw [hgder.fderiv]
-  simp only [smul_add, add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul,
-    ContinuousLinearMap.comp_apply, hv, fderiv_eq_smul_deriv, zero_mul, mul_zero, add_zero]
-  ring
-
 /-- The integral `∫₀ᵀ Dφ_{-σ}(φ_σ x) (∇g(φ_σ x)) dσ` that an admissible perturbation `g` contributes
 to the parameter derivative of the flow. -/
 private noncomputable def contribution (f : E → ℝ) (hf : LipschitzWith K (∇ f)) (x : E) (T : ℝ)
@@ -159,7 +141,8 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
     dsimp only
     symm
     rw [real_inner_comm _ y, ← ContinuousLinearMap.adjoint_inner_right, inner_gradient_left,
-      fderiv_bump_mul_apply hfs θ ψ w (hmgrad σ)]
+      θ.fderiv_mul_comp_mul_inner_apply ψ w
+        ((hfs.differentiable (by norm_num)) _) (hmgrad σ)]
   -- Hence `⟪w, m σ₀⟫ = 0` for every `w`.
   have hm0 : m σ₀ = 0 := by
     have hF : Continuous fun σ ↦ f (φ σ x) := hfs.continuous.comp hγ
@@ -167,11 +150,13 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
       (a := fun σ ↦ θ (φ σ x) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ))
       ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
         ((continuous_const.inner hγ).mul
-          ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply hm)))
-      hF (IsIntegralCurve.strictAnti_comp_neg_gradient
+          ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply
+            hm))).continuousOn
+      hF.continuousOn ((IsIntegralCurve.strictAnti_comp_neg_gradient
         ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
         (fun _ ↦ (hfs.differentiable (by norm_num)) _)
-        (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)) hσ₀ (hkey (m σ₀))
+        (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)).strictAntiOn _)
+      hσ₀ (hkey (m σ₀))
     have hθz' : θ (φ σ₀ x) = 1 := hθz
     have hθ'z' : fderiv ℝ θ (φ σ₀ x) = 0 := hθ'z
     simpa [hθz', hθ'z'] using h0

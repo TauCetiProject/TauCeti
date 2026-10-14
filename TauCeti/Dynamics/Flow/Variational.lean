@@ -235,16 +235,10 @@ include hvs
 /-- **The inverse derivative along an orbit is continuous**: for a globally Lipschitz `C¹` field,
 `σ ↦ Dφ_{-σ}(φ_σ x)`, the inverse of `Dφ_σ(x)`, is continuous. -/
 theorem continuous_fderiv_flowOfLipschitz_neg (x : E) :
-    Continuous fun σ ↦ fderiv ℝ (flowOfLipschitz v hv (-σ)) (flowOfLipschitz v hv σ x) := by
-  have hd := differentiable_flowOfLipschitz_apply hv hvs
-  have hinv : ∀ σ, Ring.inverse (fderiv ℝ (flowOfLipschitz v hv σ) x) =
-      fderiv ℝ (flowOfLipschitz v hv (-σ)) (flowOfLipschitz v hv σ x) := fun σ ↦
-    Flow.ringInverse_fderiv (hd _ _) (hd σ x)
-  simp_rw [← hinv]
-  refine continuous_iff_continuousAt.2 fun σ ↦ ?_
-  have hU := NormedRing.inverse_continuousAt (Flow.fderivUnit (hd (-σ) _) (hd σ x))
-  rw [Flow.coe_fderivUnit] at hU
-  exact hU.comp_of_eq (continuous_fderiv_flowOfLipschitz hv hvs x).continuousAt rfl
+    Continuous fun σ ↦ fderiv ℝ (flowOfLipschitz v hv (-σ)) (flowOfLipschitz v hv σ x) :=
+  Continuous.fderiv_one (f := fun σ ↦ flowOfLipschitz v hv (-σ))
+    ((contDiff_uncurry_flowOfLipschitz hv hvs).comp (contDiff_neg.prodMap contDiff_id))
+    ((flowOfLipschitz v hv).continuous continuous_id continuous_const)
 
 end Inverse
 
