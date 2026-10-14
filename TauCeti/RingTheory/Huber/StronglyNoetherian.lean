@@ -12,7 +12,7 @@ public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 public import Mathlib.RingTheory.Polynomial.Basic
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Surjective
 import TauCeti.Topology.Algebra.Ring.Ideal
@@ -50,7 +50,7 @@ discrete case below is proved through it.
 * `TauCeti.Huber.IsStronglyNoetherian.restrictedMvPowerSeriesCompletion`: over a Huber base the
   predicate passes to `A⟨X₁,…,Xₖ⟩`, so a strongly noetherian ring stays strongly noetherian under
   the construction. This is the iteration isomorphism `A⟨X⟩⟨Y⟩ ≅ A⟨X,Y⟩` of
-  `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` read as a statement about the
+  `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic` read as a statement about the
   predicate; `[IsHuberRing A]` is what that isomorphism asks of the base, and the predicate itself
   does not.
 * `TauCeti.Huber.IsStronglyNoetherian.weightedRestrictedSubring_one_weight`: when the ordinary
@@ -226,11 +226,13 @@ power-series algebra over a strongly noetherian ring is again strongly noetheria
 construction can be iterated without leaving the class.
 
 `[IsHuberRing A]` is asked here and not by the predicate: it is what the iteration isomorphism
-of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` requires of the base. -/
+of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic` requires of the base. -/
 instance IsStronglyNoetherian.restrictedMvPowerSeriesCompletion [IsHuberRing A]
     [IsStronglyNoetherian A] (k : ℕ) :
     IsStronglyNoetherian (restrictedMvPowerSeriesCompletion k A) where
-  isNoetherianRing m := isNoetherianRing_of_ringEquiv _ (iterateRingEquiv k m A)
+  isNoetherianRing m := isNoetherianRing_of_ringEquiv _
+    (iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ rfl) fun _ ↦ by simp [UniformSpace.Completion.coe_one])
 
 /-! ### Zero variables -/
 

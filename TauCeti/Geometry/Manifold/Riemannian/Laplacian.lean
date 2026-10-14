@@ -57,7 +57,7 @@ noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [Topologica
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) : ℝ :=
-  inner ℝ (CovariantDerivative.leviCivitaConnection I M (riemannianGradient I f) x v) w
+  inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w
 
 theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M] [IsManifold I 1 M]
@@ -65,7 +65,7 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I f x v w =
-      inner ℝ (CovariantDerivative.leviCivitaConnection I M (riemannianGradient I f) x v) w := by
+      inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
 
 /-- The Laplace–Beltrami operator, with the sign convention `Δ = div ∘ grad`. -/
@@ -74,14 +74,14 @@ noncomputable def laplaceBeltrami (I : ModelWithCorners ℝ E H) {M : Type*} [To
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) : ℝ :=
-  divergence I (riemannianGradient I f) x
+  divergence I (mgradient I f) x
 
 theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M] [IsManifold I 1 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) :
-    laplaceBeltrami I f x = divergence I (riemannianGradient I f) x := by
+    laplaceBeltrami I f x = divergence I (mgradient I f) x := by
   rw [laplaceBeltrami]
 
 /-- In any orthonormal basis, the divergence is the sum of the diagonal inner products of the
