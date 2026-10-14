@@ -58,11 +58,11 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
   fixed parameter over a perfect field.
 * `TauCeti.nontrivial_kaehlerDifferential`, `TauCeti.finrank_kaehlerDifferential_pos`: an
   essentially finite type field extension that is not algebraic has nonzero Kähler differentials.
-* `TauCeti.IsFunctionField.finrank_kaehlerDifferential_eq_one_iff`: `dim_F Ω[F⁄k] = 1` exactly
-  when `F / k` has a separating element.
-* `TauCeti.IsFunctionField.two_le_finrank_kaehlerDifferential_iff`: without a separating element,
-  `dim_F Ω[F⁄k] ≥ 2`; `TauCeti.IsFunctionField.two_le_finrank_kaehlerDifferential_of_pow_mem`
-  produces this from an element outside `k` with a `p`-power in `k`.
+* `TauCeti.finrank_kaehlerDifferential_eq_one_iff`: `dim_F Ω[F⁄k] = 1` exactly
+  when an essentially finite type transcendental extension `F / k` has a separating element.
+* `TauCeti.two_le_finrank_kaehlerDifferential_iff`: without a separating element,
+  `dim_F Ω[F⁄k] ≥ 2`; `TauCeti.two_le_finrank_kaehlerDifferential_of_pow_mem`
+  produces this from an element outside the image of the base field `k` with a `p`-power in it.
 
 ## References
 
@@ -307,57 +307,6 @@ theorem two_le_finrank_kaehlerDifferential_of_pow_mem (q : ℕ) [ExpChar k q] {�
     not_isSeparable_adjoin_of_pow_mem q hα hn hx
 
 end TranscendentalDimension
-
-namespace IsFunctionField
-
-/-! ### Separable generation and the dimension of `Ω[F⁄k]` -/
-
-section Dimension
-
-variable (hF : IsFunctionField k F)
-include hF
-
-/-- The Kähler differentials of an algebraic function field are nonzero. -/
-theorem nontrivial_kaehlerDifferential : Nontrivial Ω[F⁄k] :=
-  have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
-  TauCeti.nontrivial_kaehlerDifferential
-
-/-- The Kähler differentials of an algebraic function field form a nonzero finite-dimensional
-`F`-vector space. -/
-theorem finrank_kaehlerDifferential_pos : 0 < finrank F Ω[F⁄k] :=
-  have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
-  TauCeti.finrank_kaehlerDifferential_pos
-
-/-- The Kähler differentials of an algebraic function field are one-dimensional exactly when
-it has a separating element. -/
-theorem finrank_kaehlerDifferential_eq_one_iff :
-    finrank F Ω[F⁄k] = 1 ↔ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
-  exact TauCeti.finrank_kaehlerDifferential_eq_one_iff
-
-/-- The Kähler differentials of an algebraic function field have dimension at least two exactly
-when the field has no separating element. -/
-theorem two_le_finrank_kaehlerDifferential_iff :
-    2 ≤ finrank F Ω[F⁄k] ↔ ∀ x : F, Transcendental k x → ¬ Algebra.IsSeparable k⟮x⟯ F := by
-  have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
-  exact TauCeti.two_le_finrank_kaehlerDifferential_iff
-
-/-- An element outside the constants with an exponential-characteristic power in the constants
-forces the Kähler differentials of an algebraic function field to have dimension at least two. -/
-theorem two_le_finrank_kaehlerDifferential_of_pow_mem (q : ℕ) [ExpChar k q] {α : F}
-    (hα : α ∉ (algebraMap k F).range) {n : ℕ} (hn : α ^ q ^ n ∈ (algebraMap k F).range) :
-    2 ≤ finrank F Ω[F⁄k] := by
-  have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
-  exact TauCeti.two_le_finrank_kaehlerDifferential_of_pow_mem q hα hn
-
-end Dimension
-
-end IsFunctionField
 
 variable [PerfectField k]
 
