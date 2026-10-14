@@ -1349,9 +1349,8 @@ instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
   isUniformAddGroup_of_addCommGroup
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
-    ContinuousConstSMul A (weightedRestrictedSubring T hT) :=
-  ⟨fun a ↦ (continuous_const_mul (algebraMap A (weightedRestrictedSubring T hT) a)).congr
-    fun f ↦ (Algebra.smul_def a f).symm⟩
+    ContinuousSMul A (weightedRestrictedSubring T hT) :=
+  continuousSMul_of_algebraMap _ _ (continuous_weightedC hT)
 
 instance [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} :
     UniformContinuousConstSMul A (weightedRestrictedSubring T hT) :=

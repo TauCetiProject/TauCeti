@@ -103,7 +103,8 @@ theorem IsOfExactOrder.isCyclicSubgroup_multiplesDivisor
   flat := inferInstance
   locallyOfFinitePresentation := inferInstance
   finrank_eq s := congrFun (finrank_multiplesDivisor P N) s
-  exists_cover := ⟨Scheme.coverOfIsIso (P := @Flat ⊓ @LocallyOfFinitePresentation) (𝟙 S),
+  exists_cover := ⟨Scheme.coverOfIsIso
+      (P := (@Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u})) (𝟙 S),
     fun _ ↦ ⟨E, 𝟙 _, .id_horiz _, (Category.comp_id _).trans (Category.id_comp _).symm, P, h,
       Scheme.IdealSheafData.comap_id _⟩⟩
 
