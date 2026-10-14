@@ -169,18 +169,6 @@ theorem fderiv_comp_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
   rw [add_neg_cancel, Flow.map_zero, fderiv_id, hx] at this
   exact this.symm
 
-@[simp]
-theorem fderiv_neg_apply_fderiv (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
-    (ht : DifferentiableAt ℝ (ϕ t) x) (w : E) :
-    fderiv ℝ (ϕ (-t)) (ϕ t x) (fderiv ℝ (ϕ t) x w) = w :=
-  congrArg (· w) (Flow.fderiv_neg_comp hs ht)
-
-@[simp]
-theorem fderiv_apply_fderiv_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
-    (ht : DifferentiableAt ℝ (ϕ t) x) (w : E) :
-    fderiv ℝ (ϕ t) x (fderiv ℝ (ϕ (-t)) (ϕ t x) w) = w :=
-  congrArg (· w) (Flow.fderiv_comp_neg hs ht)
-
 /-- **The derivative of a flow as a unit.** When the time-`t` map is differentiable at `x` and the
 time-`(-t)` map at `ϕ t x`, the derivative `Dϕ_t(x)` is invertible, with inverse
 `Dϕ_{-t}(ϕ_t x)`. -/
@@ -188,12 +176,15 @@ noncomputable def fderivUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) : (E →L[ℝ] E)ˣ :=
   ⟨_, _, Flow.fderiv_comp_neg hs ht, Flow.fderiv_neg_comp hs ht⟩
 
+/-- The unit `fderivUnit` is the derivative `Dϕ_t(x)`. -/
 @[simp]
 theorem coe_fderivUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     (Flow.fderivUnit hs ht : E →L[ℝ] E) = fderiv ℝ (ϕ t) x :=
   (rfl)
 
+/-- The inverse of the unit `fderivUnit` is the derivative `Dϕ_{-t}(ϕ_t x)` of the reverse time
+map. -/
 @[simp]
 theorem coe_inv_fderivUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :

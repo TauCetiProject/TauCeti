@@ -590,7 +590,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
   have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv (hs t) (hφd t x)
   have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
-    Flow.fderiv_apply_fderiv_neg (hs t) (hφd t x) v
+    congrArg (· v) (Flow.fderiv_comp_neg (hs t) (hφd t x))
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
     hasDerivAt_fderiv_negativeGradientFlow f hf hfs x
   have hu : ∀ t, HasDerivAt u (-(fderiv ℝ (∇ f) (φ t x)) (u t) - b t) t := fun t ↦ by
