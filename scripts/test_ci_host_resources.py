@@ -183,50 +183,54 @@ class HostResourcesTests(unittest.TestCase):
             self.assertEqual(snapshot.call_count, 1)
 
     def publication(self, directory):
-        workflow = (HERE.parent / '.github/workflows/publish-lake-cache.yml').read_text()
-        step = workflow.split('- name: Observe publication volume')[1]
-        code = textwrap.dedent(step.split("python3 - <<'PY'\n", 1)[1].split('          PY', 1)[0])
-        env = dict(STAGING=str(directory), RUNNER_TEMP=str(directory), GITHUB_RUN_ID='1',
-                   GITHUB_RUN_ATTEMPT='1', UPLOADED='true', CONFIRMED='true')
-        with patch.dict(os.environ, env):
-            exec(compile(code, 'publication-observation', 'exec'), {})
-        return json.loads((directory / 'ci-publication.json').read_text())
+        spec = importlib.util.spec_from_file_location('publication', HERE / 'ci_publication_observation.py')
+        publication = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(publication)
+        return publication.measure(directory)
 
-    def test_publication_deduplicates_mapped_artifacts_and_excludes_junk(self):
+    def test_publication_counts_upload_subset_and_full_map_once(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            artifact = '0123456789abcdef.ltar'
-            (root / artifact).write_bytes(b'payload')
-            (root / 'junk.ltar').write_bytes(b'junk' * 1000)
-            (root / '000000000000002a.art').write_bytes(b'number')
-            lines = ['"2026-03-17"', json.dumps(['a'*16, {'key': [artifact, artifact, True, 42]}]),
-                     json.dumps(['b'*16, 'ffffffffffffffff.ltar']),
-                     json.dumps(['b'*16, artifact])]
-            mapping = '\n'.join(lines) + '\n'
-            (root / 'outputs.jsonl').write_text(mapping)
+            # No inherited artifact files exist locally. The trusted planner
+            # verified them and froze the actual upload subset outside staging.
+            (root / 'outputs.jsonl').write_bytes(b'full map')
+            metrics = dict(objects=100, inherited=98, uploaded_objects=2,
+                           upload_bytes=40, full_bytes=9000)
+            (root / 'metrics.json').write_text(json.dumps(metrics))
+            (root / 'junk').write_bytes(b'x' * 1000)
             value = self.publication(root)
             self.assertTrue(value['complete'])
             self.assertEqual(value['staged_objects'], 3)
-            self.assertEqual(value['staged_bytes'], len(mapping) + 7 + 6)
-            self.assertTrue(value['confirmed'])
+            self.assertEqual(value['staged_bytes'], 48)
+            self.assertEqual(value['inherited_objects'], 98)
+            metrics.update(inherited=100, uploaded_objects=0, upload_bytes=0)
+            (root / 'metrics.json').write_text(json.dumps(metrics))
+            self.assertEqual(self.publication(root)['staged_objects'], 1)
+            self.assertEqual(self.publication(root)['staged_bytes'], 8)
 
-    def test_publication_missing_symlink_fifo_and_oversized_maps_are_gaps(self):
+    def test_publication_missing_symlink_fifo_oversized_and_invalid_plans_are_gaps(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.assertFalse(self.publication(root)['complete'])
-            artifact = '0123456789abcdef.ltar'
-            (root / 'outputs.jsonl').write_text('"2026-03-17"\n' + json.dumps(['a'*16, artifact]))
-            (root / artifact).symlink_to('/etc/passwd')
-            self.assertFalse(self.publication(root)['complete'])
-            (root / artifact).unlink()
-            os.mkfifo(root / artifact)
+            metrics = dict(objects=1, inherited=0, uploaded_objects=1,
+                           upload_bytes=40, full_bytes=40)
+            (root / 'metrics.json').write_text(json.dumps(metrics))
+            (root / 'outputs.jsonl').symlink_to('/etc/passwd')
             self.assertFalse(self.publication(root)['complete'])
             (root / 'outputs.jsonl').unlink()
             os.mkfifo(root / 'outputs.jsonl')
             self.assertFalse(self.publication(root)['complete'])
             (root / 'outputs.jsonl').unlink()
-            with (root / 'outputs.jsonl').open('wb') as handle:
-                handle.truncate(8*1024*1024 + 1)
+            (root / 'outputs.jsonl').write_bytes(b'full map')
+            for field, value in (('objects', 2), ('upload_bytes', 41), ('inherited', True)):
+                (root / 'metrics.json').write_text(json.dumps({**metrics, field: value}))
+                self.assertFalse(self.publication(root)['complete'])
+            (root / 'metrics.json').unlink()
+            os.mkfifo(root / 'metrics.json')
+            self.assertFalse(self.publication(root)['complete'])
+            (root / 'metrics.json').unlink()
+            with (root / 'metrics.json').open('wb') as handle:
+                handle.truncate(64*1024 + 1)
             self.assertFalse(self.publication(root)['complete'])
 
     def test_workflow_output_is_outside_candidate_mounts_and_nonfatal(self):
@@ -241,8 +245,9 @@ class HostResourcesTests(unittest.TestCase):
         publication = (HERE.parent / '.github/workflows/publish-lake-cache.yml').read_text()
         observe = publication.split('- name: Observe publication volume')[1]
         self.assertNotIn('LAKE_CACHE_KEY', observe)
-        self.assertIn('follow_symlinks=False', observe)
-        self.assertIn('MAX_ENTRIES = 100000', observe)
+        self.assertIn('publisher-tools/scripts/ci_publication_observation.py', observe)
+        self.assertIn('--plan \"$RUNNER_TEMP/lake-publication-plan\"', observe)
+        self.assertIn('scripts/ci_publication_observation.py', publication.split('- name: Download')[0])
 
 
 if __name__ == '__main__':
