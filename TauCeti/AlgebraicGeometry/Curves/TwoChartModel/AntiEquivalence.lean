@@ -79,6 +79,13 @@ theorem transcendental_modelGenerator (F : FunctionFieldCat k) :
 theorem modelGenerator_ne_zero (F : FunctionFieldCat k) : modelGenerator F ≠ 0 :=
   (transcendental_modelGenerator F).ne_zero
 
+/-! The private abbreviations `modelObj` and `modelHom` below are the object and morphism parts
+of `twoChartModelFunctor`, whose `obj` and `map` fields are the same terms, so the two agree by
+`rfl`. The unit, the counit and their naturality proofs go through these abbreviations because
+they are reducible: instance search sees the `k`-algebra and over-`k` instances of
+`twoChartModel` through them, but does not unfold the fields of the functor. Being private, they
+cannot appear in the exposed body of `twoChartModelFunctor` itself. -/
+
 /-- The two-chart model of `F`, built from the chosen transcendental function, as a regular proper
 curve over `k`. -/
 private noncomputable abbrev modelObj (F : FunctionFieldCat k) : RegularProperCurveCat k where
@@ -148,7 +155,8 @@ lemma functionFieldEquiv_functionFieldMap_twoChartModelFunctor_map
       φ.unop.hom z :=
   twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom ..
 
-/-- `functionFieldEquiv_functionFieldMap_twoChartModelFunctor_map`, stated for `modelHom`. -/
+/-- `functionFieldEquiv_functionFieldMap_twoChartModelFunctor_map`, stated for `modelHom`, the
+reducible form in which instance search finds the instances needed to rewrite with it. -/
 private lemma functionFieldMap_modelHom {F G : FunctionFieldCat k} (φ : F ⟶ G) (z : F) :
     (modelHom φ).hom.functionFieldMap ((modelEquiv F).symm z) = (modelEquiv G).symm (φ.hom z) :=
   (AlgEquiv.eq_symm_apply _).mpr
@@ -195,7 +203,9 @@ lemma twoChartModelFunctorCompFunctionFieldFunctorIso_inv_app (F : (FunctionFiel
           ((𝟭 (FunctionFieldCat k)ᵒᵖ).obj F).unop).op :=
   (rfl)
 
-/-- The function field of a regular proper curve, as an object of `FunctionFieldCat k`. -/
+/-- The function field of a regular proper curve, as an object of `FunctionFieldCat k`. This is
+`((functionFieldFunctor k).obj X).unop` by `rfl`, in the reducible form that instance search needs
+to find the over-`k` instances of the model of `X`. -/
 private noncomputable abbrev functionFieldObj (X : RegularProperCurveCat k) : FunctionFieldCat k :=
   .of X.toScheme.functionField Scheme.IsCurveOver.isFunctionField
 
