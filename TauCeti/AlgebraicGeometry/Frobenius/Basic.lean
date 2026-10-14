@@ -149,6 +149,8 @@ theorem frobenius_naturality (hX : (p : Γ(X, ⊤)) = 0) (hY : (p : Γ(Y, ⊤)) 
     Scheme.Hom.comp_appLE, Scheme.Hom.comp_appLE, Scheme.Hom.app_eq_appLE (f := Y.frobenius p hY)]
   ext s
   rw [CommRingCat.comp_apply, CommRingCat.comp_apply, frobenius_appLE_apply, map_pow]
+  -- `rw` cannot match `frobenius_appLE_apply` on the left, but it applies up to defeq: the opens
+  -- there are the ones in its statement by definition, since `F_X` is the identity on spaces
   refine (frobenius_appLE_apply hX _ _ _ _).trans (congrArg (· ^ p) ?_)
   exact congr(($(f.map_appLE _ _)).hom s).symm
 
