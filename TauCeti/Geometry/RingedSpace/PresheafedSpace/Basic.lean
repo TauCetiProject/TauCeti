@@ -34,8 +34,6 @@ presheafed spaces.
   surjective on points and a monomorphism on sections over every open is an epimorphism.
 * `AlgebraicGeometry.LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono`: the same criterion
   for morphisms of locally ringed spaces.
-* `TopCat.Presheaf.comp_map_comp_map_eq_self`: restricting sections to a smaller open and back
-  again is the identity, since the opens of a space form a thin category.
 -/
 
 public section
@@ -88,20 +86,3 @@ theorem epi_of_base_surjective_of_c_app_mono {X Y : LocallyRingedSpace} (f : X �
   exact PresheafedSpace.epi_of_base_surjective_of_c_app_mono _ h₁ h₂
 
 end AlgebraicGeometry.LocallyRingedSpace
-
-namespace TopCat.Presheaf
-
-universe w v u
-
-variable {C : Type u} [Category.{v} C] {T : TopCat.{w}}
-
-/-- Restricting sections of a presheaf to a smaller open and back again, along any two maps of
-opens, is the identity: the opens of a space form a thin category. The sections are given by a
-morphism `a` into `F.obj (op V)`, so that the lemma applies by `exact` even when the intermediate
-open is only definitionally equal to the one in the composite. -/
-theorem comp_map_comp_map_eq_self {F : T.Presheaf C} {A : C} {V V' : Opens T}
-    (a : A ⟶ F.obj (op V)) (i : op V ⟶ op V') (j : op V' ⟶ op V) :
-    (a ≫ F.map i) ≫ F.map j = a := by
-  rw [Category.assoc, ← F.map_comp, Subsingleton.elim (i ≫ j) (𝟙 _), F.map_id, Category.comp_id]
-
-end TopCat.Presheaf

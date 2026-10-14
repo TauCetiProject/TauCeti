@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
+import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # Descent of morphisms along contractions
@@ -185,14 +186,26 @@ theorem descOfIsQuotientMap_comp_eq {S : LocallyRingedSpace.{u}} {p : Y ⟶ S} {
   have := epi_of_base_surjective_of_c_app_mono c hq.surjective fun U ↦ (hc U).mono_of_iso
   rw [← cancel_epi c, comp_descOfIsQuotientMap_assoc, e]
 
+include hh in
+/-- Given a commutative square `u ≫ c = c' ≫ v`, if `h` is constant on the fibres of `c`, then
+`u ≫ h` is constant on the fibres of `c'`. -/
+theorem factorsThrough_comp_of_commSq {X' Y' : LocallyRingedSpace.{u}} {c' : X' ⟶ Y'}
+    {u : X' ⟶ X} {v : Y' ⟶ Y} (sq : CommSq u c' c v) :
+    Function.FactorsThrough (u ≫ h).base c'.base := fun a b e ↦ by
+  simp only [LocallyRingedSpace.comp_base, ConcreteCategory.comp_apply]
+  refine hh ?_
+  simpa only [← ConcreteCategory.comp_apply, ← LocallyRingedSpace.comp_base, sq.w]
+    using congr(v.base $e)
+
 /-- **Descent commutes with base change.** Given a commutative square `u ≫ c = c' ≫ v` in which
 `c'` is also a topological quotient map that is an isomorphism on sections, the descent of
 `u ≫ h` along `c'` is `v` followed by the descent of `h` along `c`. -/
 theorem descOfIsQuotientMap_of_commSq {X' Y' : LocallyRingedSpace.{u}} {c' : X' ⟶ Y'}
     {u : X' ⟶ X} {v : Y' ⟶ Y} (sq : CommSq u c' c v) (hq' : IsQuotientMap c'.base)
-    (hc' : ∀ U, IsIso (c'.c.app U)) (hh' : Function.FactorsThrough (u ≫ h).base c'.base) :
-    c'.descOfIsQuotientMap hq' hc' (u ≫ h) hh' = v ≫ c.descOfIsQuotientMap hq hc h hh :=
-  (eq_descOfIsQuotientMap c' hq' hc' (u ≫ h) hh' (by
+    (hc' : ∀ U, IsIso (c'.c.app U)) :
+    c'.descOfIsQuotientMap hq' hc' (u ≫ h) (factorsThrough_comp_of_commSq c h hh sq) =
+      v ≫ c.descOfIsQuotientMap hq hc h hh :=
+  (eq_descOfIsQuotientMap c' hq' hc' (u ≫ h) _ (by
     rw [← Category.assoc, ← sq.w, Category.assoc, comp_descOfIsQuotientMap])).symm
 
 end Desc
@@ -262,15 +275,23 @@ theorem descOfIsQuotientMap_comp_eq {S : Scheme.{u}} {p : Y ⟶ S} {q : Z ⟶ S}
   Scheme.Hom.ext' <|
     LocallyRingedSpace.Hom.descOfIsQuotientMap_comp_eq _ _ _ _ _ congr(($e).toLRSHom)
 
+include hh in
+/-- Given a commutative square `u ≫ c = c' ≫ v`, if `h` is constant on the fibres of `c`, then
+`u ≫ h` is constant on the fibres of `c'`. -/
+theorem factorsThrough_comp_of_commSq {X' Y' : Scheme.{u}} {c' : X' ⟶ Y'} {u : X' ⟶ X}
+    {v : Y' ⟶ Y} (sq : CommSq u c' c v) : Function.FactorsThrough (u ≫ h) c' :=
+  LocallyRingedSpace.Hom.factorsThrough_comp_of_commSq c.toLRSHom h.toLRSHom hh
+    ⟨congr(($sq.w).toLRSHom)⟩
+
 /-- **Descent commutes with base change.** Given a commutative square `u ≫ c = c' ≫ v` in which
 `c'` is also a topological quotient map that is an isomorphism on sections, for instance the base
 change of `c` along `v` when these properties hold universally, the descent of `u ≫ h` along `c'`
 is `v` followed by the descent of `h` along `c`. -/
 theorem descOfIsQuotientMap_of_commSq {X' Y' : Scheme.{u}} {c' : X' ⟶ Y'} {u : X' ⟶ X}
-    {v : Y' ⟶ Y} (sq : CommSq u c' c v) (hq' : IsQuotientMap c') (hc' : ∀ U, IsIso (c'.app U))
-    (hh' : Function.FactorsThrough (u ≫ h) c') :
-    c'.descOfIsQuotientMap hq' hc' (u ≫ h) hh' = v ≫ c.descOfIsQuotientMap hq hc h hh :=
-  (eq_descOfIsQuotientMap c' hq' hc' (u ≫ h) hh' (by
+    {v : Y' ⟶ Y} (sq : CommSq u c' c v) (hq' : IsQuotientMap c') (hc' : ∀ U, IsIso (c'.app U)) :
+    c'.descOfIsQuotientMap hq' hc' (u ≫ h) (factorsThrough_comp_of_commSq c h hh sq) =
+      v ≫ c.descOfIsQuotientMap hq hc h hh :=
+  (eq_descOfIsQuotientMap c' hq' hc' (u ≫ h) _ (by
     rw [← Category.assoc, ← sq.w, Category.assoc, comp_descOfIsQuotientMap])).symm
 
 end Desc
