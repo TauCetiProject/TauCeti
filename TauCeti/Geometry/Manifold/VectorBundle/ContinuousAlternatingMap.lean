@@ -18,6 +18,12 @@ changes, without changing Mathlib's topology, trivializations, or atlas. Regular
 maps into the total space is characterized by the base map and the alternating-map
 coefficients in preferred fibre coordinates.
 
+The fibre-coordinate criteria expose `ContinuousAlternatingMap.inCoordinates`, matching
+the regularity criteria in Mathlib's Hom-bundle module and the continuity criteria in
+its alternating-map bundle module. Their proofs specialize `Bundle.contMDiffWithinAt_totalSpace`,
+`Bundle.contMDiffAt_totalSpace`, `Bundle.mdifferentiableWithinAt_totalSpace`, and
+`Bundle.mdifferentiableAt_totalSpace` to these coordinates.
+
 The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle construction
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
 bundle of Yury Kudryashov, Heather Macbeth, and Floris van Doorn. Its domain pullback is
