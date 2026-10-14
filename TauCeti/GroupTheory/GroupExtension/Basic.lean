@@ -18,6 +18,7 @@ This file provides operations on an existing group extension.
   kernel term.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
 * `GroupExtension.relabelQuotient`: relabels the quotient term of a group extension.
+* `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
@@ -100,6 +101,33 @@ projection followed by the quotient equivalence. -/]
 theorem relabelQuotient_rightHom (S : GroupExtension N E G) {G' : Type*} [Group G']
     (e : G ≃* G') :
     (S.relabelQuotient e).rightHom = e.toMonoidHom.comp S.rightHom :=
+  (rfl)
+
+/-- Relabel both the kernel and quotient terms of a group extension along multiplicative
+equivalences. The middle group is unchanged. -/
+@[expose, to_additive
+  /-- Relabel both the kernel and quotient terms of an additive group extension along additive
+  equivalences. The middle group is unchanged. -/]
+def relabel (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') : GroupExtension N' E G' :=
+  (S.relabelKer eN).relabelQuotient eG
+
+/-- The inclusion of a relabelled extension is the original inclusion after the kernel
+equivalence. -/
+@[to_additive (attr := simp) /-- The inclusion of a relabelled additive extension is the original
+inclusion after the kernel equivalence. -/]
+theorem relabel_inl (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).inl = S.inl.comp eN.toMonoidHom :=
+  (rfl)
+
+/-- The projection of a relabelled extension is the quotient equivalence after the original
+projection. -/
+@[to_additive (attr := simp) /-- The projection of a relabelled additive extension is the quotient
+equivalence after the original projection. -/]
+theorem relabel_rightHom (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).rightHom = eG.toMonoidHom.comp S.rightHom :=
   (rfl)
 
 /-- Relabelling the quotient does not change conjugation on the kernel. -/

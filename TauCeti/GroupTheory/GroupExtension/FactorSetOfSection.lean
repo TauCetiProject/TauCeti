@@ -135,6 +135,11 @@ for a central extension it says the ambient action is trivial. -/
 def InducesAction [MulDistribMulAction G M] : Prop :=
   ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
 
+/-- The pointwise characterization of the action induced by an extension. -/
+theorem inducesAction_iff [MulDistribMulAction G M] :
+    InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
+  Iff.rfl
+
 /-- Relabelling the quotient transports the induced action on the kernel along the same
 equivalence. -/
 theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
