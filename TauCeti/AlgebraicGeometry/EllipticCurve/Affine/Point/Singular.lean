@@ -678,18 +678,8 @@ theorem natCard_torsionBy_dvd_of_Δ_eq_zero (hΔ : W.Δ = 0) {n : ℕ} (hn : (n 
     (by rw [degree_quadratic one_ne_zero]; decide)
   have hK := natCard_torsionBy_dvd_of_isSingular h (α := α) (by simpa [sub_eq_add_neg] using hα)
     (n := n) (by rwa [← map_natCast f, _root_.map_ne_zero])
-  have hf : Function.Injective (W.torsionMapAlong f n) := fun P Q hPQ ↦ by
-    apply TauCeti.injective_torsionByMap
-      (f := (AddMonoidHom.mk' (Point.mapAlong f f.injective)
-        (Point.mapAlong_add f f.injective)).toIntLinearMap)
-      (Point.mapAlong_injective f f.injective)
-    apply Subtype.ext
-    rw [TauCeti.coe_torsionByMap_apply, TauCeti.coe_torsionByMap_apply]
-    change Point.mapAlong f f.injective (P : W.toAffine.Point) =
-      Point.mapAlong f f.injective (Q : W.toAffine.Point)
-    simpa only [coe_torsionMapAlong_apply] using congrArg Subtype.val hPQ
   exact (AddSubgroup.card_dvd_of_injective (W.torsionMapAlong f n)
-    hf).trans hK
+    (W.torsionMapAlong_injective f n)).trans hK
 
 end Point
 
