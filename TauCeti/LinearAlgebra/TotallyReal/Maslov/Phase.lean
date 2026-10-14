@@ -180,6 +180,14 @@ theorem maslovPhase_mul_maslovPhase {L₁ L₂ : Submodule ℝ E}
     hL.maslovPhase_map, LinearEquiv.coe_trans, LinearMap.det_comp, map_mul,
     mul_div_mul_comm, mul_comm]
 
+/-- The Maslov phase of two subspaces is the quotient of their phases relative to a common
+reference: `ρ(L, L₂) / ρ(L, L₁) = ρ(L₁, L₂)`. -/
+theorem maslovPhase_div_maslovPhase {L₁ L₂ : Submodule ℝ E}
+    (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁)
+    (hL₂ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₂) :
+    hL.maslovPhase hL₂ / hL.maslovPhase hL₁ = hL₁.maslovPhase hL₂ := by
+  rw [← hL.maslovPhase_mul_maslovPhase hL₁ hL₂, mul_div_cancel_left₀ _ (hL.maslovPhase_ne_zero hL₁)]
+
 /-- Exchanging the two subspaces inverts the Maslov phase. -/
 theorem maslovPhase_symm {L₁ : Submodule ℝ E}
     (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁) :

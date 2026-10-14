@@ -120,15 +120,13 @@ noncomputable def trans (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : TotallyR
     -- `L₀` along `Γ`.
     let C (s : I) : E ≃L[ℂ] E := (A 1).trans ((B 0).symm.trans (B s))
     have hC (s : I) : L₀.map (((C s).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) = Γ s := by
-      have hmap (e : E ≃L[ℂ] E) (L : Submodule ℝ E) :
-          (L.map ((e.toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)).map
-            ((e.symm.toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) = L := by
-        rw [← Submodule.map_comp]
-        convert Submodule.map_id L
-        ext x
-        simp
-      rw [hB s, ← hmap (B 0) L₁, ← hB 0, ← h, hA 1, ← Submodule.map_comp, ← Submodule.map_comp]
-      congr 1
+      -- Apply `(B 0)⁻¹ ∘ B s` to `A 1 L₀ = Λ 1 = Γ 0 = B 0 L₁`.
+      have hs := congrArg (Submodule.map
+        ((((B 0).symm.trans (B s)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
+        ((hA 1).symm.trans (h.trans (hB 0)))
+      rw [← Submodule.map_comp, ← Submodule.map_comp] at hs
+      rw [hB s]
+      convert hs using 2 <;> ext x <;> simp [C]
     let a : Path (A 0 : E →L[ℂ] E) (A 1) := ⟨⟨fun t => A t, hAc⟩, rfl, rfl⟩
     have hCc : (fun s => (C s : E →L[ℂ] E)) =
         fun s => (B s : E →L[ℂ] E).comp ((A 1).trans (B 0).symm : E →L[ℂ] E) := by
@@ -200,15 +198,14 @@ theorem continuous_maslovPhase (Λ : TotallyRealPath E) {L₀ : Submodule ℝ E}
 /-- The Maslov phase between two paths, taken pointwise, is continuous. -/
 theorem continuous_maslovPhase_maslovPhase (Λ Γ : TotallyRealPath E) :
     Continuous fun t => (Γ.isMaximalTotallyReal t).maslovPhase (Λ.isMaximalTotallyReal t) := by
-  -- Pass through the fixed reference `Λ 0`: `ρ(Γ t, Λ t) = ρ(Λ 0, Γ t)⁻¹ ρ(Λ 0, Λ t)`.
+  -- Pass through the fixed reference `Λ 0`: `ρ(Γ t, Λ t) = ρ(Λ 0, Λ t) / ρ(Λ 0, Γ t)`.
   have hL := Λ.isMaximalTotallyReal 0
   have h (t : I) : (Γ.isMaximalTotallyReal t).maslovPhase (Λ.isMaximalTotallyReal t) =
-      (hL.maslovPhase (Γ.isMaximalTotallyReal t))⁻¹ *
-        hL.maslovPhase (Λ.isMaximalTotallyReal t) := by
-    rw [← hL.maslovPhase_symm, (Γ.isMaximalTotallyReal t).maslovPhase_mul_maslovPhase]
+      hL.maslovPhase (Λ.isMaximalTotallyReal t) / hL.maslovPhase (Γ.isMaximalTotallyReal t) :=
+    (hL.maslovPhase_div_maslovPhase _ _).symm
   simp_rw [h]
-  exact ((Γ.continuous_maslovPhase hL).inv₀ fun t => hL.maslovPhase_ne_zero _).mul
-    (Λ.continuous_maslovPhase hL)
+  exact (Λ.continuous_maslovPhase hL).div₀ (Γ.continuous_maslovPhase hL) fun t =>
+    hL.maslovPhase_ne_zero _
 
 /-- The path of Maslov phases of `Λ` relative to a maximal totally real reference, as a continuous
 map to the circle. -/
@@ -339,10 +336,7 @@ theorem relativeMaslovIndex_eq_of_angle_lifts (Λ Γ : TotallyRealPath E)
   have hL := Λ.isMaximalTotallyReal 0
   have hθγ (t : I) : Circle.exp (θΛ t - θΓ t) = Λ.relativeMaslovPhasePath Γ h₀ h₁ t := by
     refine Circle.ext ?_
-    rw [sub_eq_add_neg, Circle.exp_add, Circle.exp_neg, hΛ t, hΓ t, Circle.coe_mul,
-      Circle.coe_inv, maslovPhasePath_apply, maslovPhasePath_apply,
-      relativeMaslovPhasePath_apply, ← hL.maslovPhase_symm, mul_comm,
-      (Γ.isMaximalTotallyReal t).maslovPhase_mul_maslovPhase]
+    simp [hΛ, hΓ, hL.maslovPhase_div_maslovPhase]
   exact Circle.degree_eq_of_sub_eq _ (hθΛ.sub hθΓ) hθγ hangle
 
 end TotallyRealPath
