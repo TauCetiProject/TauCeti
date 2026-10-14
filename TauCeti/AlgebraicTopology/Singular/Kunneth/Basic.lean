@@ -70,6 +70,8 @@ is free whenever the homology modules of `X` and `Y` are, of finite rank
   the singular chain complexes split off, for instance for all coefficient modules over a field.
 * `TopCat.isIso_singularHomologyKunneth_of_projective`: the Künneth theorem when the cycles split
   off and the homology is projective.
+* `TopCat.isSplitMono_singularHomologyKunneth`: the Künneth map is a split monomorphism when the
+  cycles split off, for instance over a principal ideal domain.
 * `TopCat.singularHomologyKunnethUnitIso`: its form `⨁ Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`
   with coefficients in the ring itself.
 * `TopCat.free_singularHomology_tensor` and `TopCat.finrank_singularHomology_tensor`: the
@@ -258,6 +260,21 @@ lemma singularHomologyKunnethIso_hom (n : ℕ) :
   (rfl)
 
 end
+
+/-- **The Künneth map is a split monomorphism** when the cycles of the singular chain complexes
+`C(X; M)` and `C(Y; N)` split off their terms; for instance for projective modules `M` and `N` over
+a principal ideal domain, where these hypotheses are found by instance search
+(`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`).  The retraction depends on
+chosen splittings of the cycles and need not be natural in `X` and `Y`. -/
+theorem isSplitMono_singularHomologyKunneth (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+    [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)]
+    [∀ q, IsSplitMono (((toSSet.obj Y).chainComplex N).iCycles q)] (n : ℕ) :
+    IsSplitMono (singularHomologyKunneth X Y M N n) := by
+  obtain ⟨⟨r, hr⟩⟩ := (isSplitMono_homologyKunneth ((toSSet.obj X).chainComplex M)
+    ((toSSet.obj Y).chainComplex N) n).exists_splitMono
+  -- the Alexander–Whitney map turns the Künneth map into the algebraic one, which splits
+  exact .mk' ⟨homologyMap (alexanderWhitney X Y M N) n ≫ r,
+    (singularHomologyKunneth_comp_homologyMap_alexanderWhitney_assoc X Y M N n r).trans hr⟩
 
 /-- **The Künneth theorem with projective homology**: if the cycles of the singular chain
 complexes `C(X; M)` and `C(Y; N)` split off their terms and the singular homology modules

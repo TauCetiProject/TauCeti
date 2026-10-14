@@ -32,6 +32,8 @@ spaces.
   pseudometric space, using any coupling of their source measures.
 * `TauCeti.hasFiniteMoment_map_iff_memLp_edist` identifies the moment condition on a law
   with radial `MemLp` on its source.
+* `TauCeti.exists_coe_eq_map_of_memLp` shows that the law of a map of `Lᵖ` under a probability
+  measure lies in the finite-moment Wasserstein space.
 * `TauCeti.wassersteinEDist_map_le_mul_eLpNorm` bounds the Wasserstein distance of two
   pushforwards by the Lipschitz constant times the objective of a specified source coupling.
 * `TauCeti.wassersteinEDist_map_le_mul_of_ne_zero` gives the pushforward estimate for arbitrary
@@ -82,20 +84,8 @@ theorem wassersteinEDist_map_le_eLpNorm (hπ : IsCoupling π μ ν)
     hπ.measurePreserving_fst.quasiMeasurePreserving
   have hgπ := hg.aemeasurable.comp_quasiMeasurePreserving
     hπ.measurePreserving_snd.quasiMeasurePreserving
-  have hmap : IsCoupling (π.map fun q ↦ (f q.1, g q.2)) (μ.map f) (ν.map g) := by
-    constructor
-    · calc
-        _ = π.map (f ∘ Prod.fst) := Measure.fst_map_prodMk₀ hfπ hgπ
-        _ = μ.map f := by
-          rw [← AEMeasurable.map_map_of_aemeasurable
-            (hπ.measurePreserving_fst.map_eq.symm ▸ hf.aemeasurable) measurable_fst.aemeasurable]
-          exact congrArg (Measure.map f) hπ.measurePreserving_fst.map_eq
-    · calc
-        _ = π.map (g ∘ Prod.snd) := Measure.snd_map_prodMk₀ hfπ hgπ
-        _ = ν.map g := by
-          rw [← AEMeasurable.map_map_of_aemeasurable
-            (hπ.measurePreserving_snd.map_eq.symm ▸ hg.aemeasurable) measurable_snd.aemeasurable]
-          exact congrArg (Measure.map g) hπ.measurePreserving_snd.map_eq
+  have hmap : IsCoupling (π.map fun q ↦ (f q.1, g q.2)) (μ.map f) (ν.map g) :=
+    hπ.map₀ hf.aemeasurable hg.aemeasurable
   have hd := continuous_edist.comp_aestronglyMeasurable₂
     (hf.aestronglyMeasurable_id_map.comp_quasiMeasurePreserving
       hmap.measurePreserving_fst.quasiMeasurePreserving)
@@ -122,6 +112,28 @@ theorem hasFiniteMoment_map_iff_memLp_edist [IsFiniteMeasure μ] (hf : AEMeasura
   simp only [Function.comp_def, edist_comm]
 
 end Moment
+
+section NormedMoment
+
+variable {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F] [MeasurableSpace F]
+  [BorelSpace F] {p : ℝ≥0∞}
+
+/-- **Pushing a law forward by a map of `Lᵖ`.** The law of a map `T ∈ Lᵖ(ν; F)` under a
+probability measure `ν` is a law of finite `p`-moment, that is, a point of `P_p(F)`. -/
+theorem exists_coe_eq_map_of_memLp {ν : ProbabilityMeasure X} {T : X → F}
+    (hT : MemLp T p (ν : Measure X)) :
+    ∃ ν' : WassersteinSpace p F, ((ν' : ProbabilityMeasure F) : Measure F) =
+      (ν : Measure X).map T := by
+  have hTm : AEMeasurable T (ν : Measure X) := hT.aestronglyMeasurable.aemeasurable
+  have hm : HasFiniteMoment p ((ν : Measure X).map T) := by
+    rw [hasFiniteMoment_map_iff_memLp_edist hTm 0]
+    exact (memLp_congr_enorm hT.aestronglyMeasurable
+      (measurable_edist_left.comp_aemeasurable hTm).aestronglyMeasurable
+      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).1 hT
+  refine ⟨.mk (ν.map T) (by rwa [ProbabilityMeasure.toMeasure_map]), ?_⟩
+  rw [WassersteinSpace.coe_mk, ProbabilityMeasure.toMeasure_map]
+
+end NormedMoment
 
 variable {X : Type u} {Y : Type v} [MeasurableSpace X] [MeasurableSpace Y]
   {p : ℝ≥0∞} {K : ℝ≥0} {f : X → Y} {μ ν : Measure X} {π : Measure (X × X)}

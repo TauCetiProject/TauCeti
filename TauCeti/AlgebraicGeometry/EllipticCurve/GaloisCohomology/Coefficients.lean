@@ -11,6 +11,8 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
+-- Proof-only: finiteness of the torsion of an elliptic curve.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
 
 /-!
 # The Galois coefficient modules of an elliptic curve
@@ -61,6 +63,7 @@ automorphisms of an algebraic closure are the points over the perfect closure of
 
 * `WeierstrassCurve.PointCoeff.instContinuousSMul`,
   `WeierstrassCurve.TorsionCoeff.instContinuousSMul`: the coefficients are discrete modules.
+* `WeierstrassCurve.finite_torsionCoeff`: `E(Kˢ)[m]` is finite for `W` elliptic and `m ≠ 0`.
 * `WeierstrassCurve.pointGaloisAction_apply_eq_smul`: the action is
   `WeierstrassCurve.pointGaloisAction`.
 * `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`.
@@ -211,6 +214,13 @@ theorem coe_smul_torsionCoeff {m : ℕ} (σ : AbsoluteGaloisGroup K) (P : W.Tors
 instance TorsionCoeff.instContinuousSMul (m : ℕ) :
     ContinuousSMul (AbsoluteGaloisGroup K) (W.TorsionCoeff m) :=
   AddSubgroup.restrictDistribMulAction_continuousSMul _ fun σ _ => smul_mem_torsionCoeff σ
+
+open scoped Classical in
+/-- For `W` elliptic and `m ≠ 0`, the `m`-torsion `E(Kˢ)[m]` of `W` over the separable closure is
+finite. -/
+instance finite_torsionCoeff [W.IsElliptic] (m : ℕ) [NeZero m] : Finite (W.TorsionCoeff m) :=
+  have := (W⁄(SeparableClosure K)).finite_torsionBy (Int.natCast_ne_zero.2 (NeZero.ne m))
+  .of_equiv _ (AddEquiv.torsionByCongr W.pointCoeffEquiv m).toEquiv
 
 /-- The inclusion `E(Kˢ)[m] → E(Kˢ)`, as a `G_K`-equivariant homomorphism. -/
 def torsionCoeffIncl (m : ℕ) : W.TorsionCoeff m →+[AbsoluteGaloisGroup K] W.PointCoeff where

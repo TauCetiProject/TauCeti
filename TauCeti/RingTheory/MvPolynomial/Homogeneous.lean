@@ -18,7 +18,8 @@ expanding the polynomial.
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
 notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
-vector.
+vector, and `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
+positive degree.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
@@ -89,6 +90,13 @@ theorem coeff_single_eq_eval {σ R : Type*} [CommSemiring R] [DecidableEq σ]
         (by rw [Pi.single_eq_of_ne hij, zero_pow hi]), mul_zero]
   · intro h
     simp [_root_.MvPolynomial.notMem_support_iff.mp h]
+
+/-- A homogeneous polynomial of positive degree has zero constant coefficient. -/
+theorem constantCoeff_eq_zero {σ R : Type*} [CommSemiring R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (hn : n ≠ 0) :
+    _root_.MvPolynomial.constantCoeff p = 0 := by
+  rw [_root_.MvPolynomial.constantCoeff_eq]
+  exact hp.coeff_eq_zero (by simpa using hn.symm)
 
 end MvPolynomial.IsHomogeneous
 
