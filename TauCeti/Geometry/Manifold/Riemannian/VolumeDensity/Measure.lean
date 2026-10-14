@@ -187,8 +187,7 @@ theorem chartRiemannianVolume_pos_of_isOpen_subset_source [I.Boundaryless]
   let e := extChartAt I α
   let d := chartVolumeDensityData (I := I) α
   have hsub' : s ⊆ e.source := by
-    change s ⊆ (extChartAt I α).source
-    simpa only [extChartAt_source] using hsub
+    simpa only [e, extChartAt_source] using hsub
   have himage_open : IsOpen (e '' s) := by
     rw [e.image_eq_target_inter_inv_preimage hsub']
     exact (continuousOn_extChartAt_symm α).isOpen_inter_preimage
@@ -211,11 +210,12 @@ theorem chartRiemannianVolume_pos_of_isOpen_subset_source [I.Boundaryless]
   rw [heq, setLIntegral_pos_iff d.measurable_toFun]
   have hsupport : e '' s ⊆ Function.support d.toFun := by
     rintro y ⟨z, hz, rfl⟩
-    change d.toFun (e z) ≠ 0
+    apply Function.mem_support.mpr
     rw [d.eq_on_target (e.map_source (hsub' hz))]
+    have hinv : (extChartAt I α).symm (e z) = z := e.left_inv (hsub' hz)
     exact (ENNReal.ofReal_pos.mpr (chartVolumeDensity_pos α (by
       rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I α]
-      rw [show (extChartAt I α).symm (e z) = z by exact e.left_inv (hsub' hz)]
+      rw [hinv]
       exact hsub' hz))).ne'
   rw [inter_eq_right.mpr hsupport]
   exact hmeasure
