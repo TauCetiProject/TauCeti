@@ -42,9 +42,6 @@ dynamic Levi decomposition.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This advances the dynamic approach to parabolics and Levi decomposition in Layer 7 of the
-ReductiveGroups roadmap.
 -/
 
 public section

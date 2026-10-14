@@ -124,6 +124,17 @@ theorem isHomogeneous (f : AInfinityStrictHom AA BB) :
   intro p a ha
   simpa only [add_zero] using f.map_mem' ha
 
+/-- A bijective strict morphism reflects degrees: an element has degree `p` exactly when its image
+does. -/
+theorem map_mem_iff_of_bijective (f : AInfinityStrictHom AA BB) (hf : Function.Bijective f)
+    {p : ℤ} {a : A} : f a ∈ BB.grading.piece p ↔ a ∈ AA.grading.piece p := by
+  refine ⟨fun ha ↦ ?_, f.map_mem⟩
+  let e := LinearEquiv.ofBijective f.toLinearMap hf
+  have he : LinearMap.IsHomogeneous e.toLinearMap AA.grading.piece BB.grading.piece 0 :=
+    f.isHomogeneous
+  have hea := he.linearEquiv_symm.map_mem (x := e a) ha
+  rwa [add_zero, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] at hea
+
 /-- The underlying linear map of a strict morphism is homogeneous of degree zero for the gradings
 shifted by `c`; the case `c = 1` is the suspended grading of the bar construction. -/
 theorem isHomogeneous_shift (f : AInfinityStrictHom AA BB) (c : ℤ) :

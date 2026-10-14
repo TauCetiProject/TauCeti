@@ -51,6 +51,8 @@ equivalence is needed and equality of places *is* equality of valuations
   (`TauCeti.Place.transcendental_of_ord_ne_zero`). In particular the constant field
   `algebraicClosure k F` is contained in `𝒪_P`
   (`TauCeti.Place.mem_integers_of_mem_algebraicClosure`).
+* `TauCeti.Place.eq_of_valuation_sub_lt_one`: a function agrees with at most one constant to first
+  order at a place.
 * `TauCeti.Place.integers_injective`: a place is determined by its valuation ring
   (Stichtenoth, Theorem 1.1.13), and `TauCeti.Place.eq_of_integers_le`: the valuation ring of a
   place is a maximal proper subring of `F`, so a place whose valuation ring contains that of
@@ -334,6 +336,16 @@ theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosur
   · exact zero_mem _
   · exact P.mem_integers_iff.mpr
       (le_of_eq (P.valuation_eq_one_of_isAlgebraic (mem_algebraicClosure_iff.mp hf) hf0))
+
+/-- **A function agrees with at most one constant to first order**: if `f - a` and `f - b` both
+vanish at `P` for constants `a` and `b`, then `a = b`, the difference `b - a` being a constant
+that vanishes at `P`. -/
+theorem eq_of_valuation_sub_lt_one {f : F} {a b : k} (ha : P.valuation (f - algebraMap k F a) < 1)
+    (hb : P.valuation (f - algebraMap k F b) < 1) : a = b := by
+  by_contra hne
+  have h := Valuation.map_sub_lt P.valuation hb ha
+  rw [sub_sub_sub_cancel_left, ← _root_.map_sub, P.isTrivialOn.eq_one _ (sub_ne_zero.mpr hne)] at h
+  exact lt_irrefl _ h
 
 end Constants
 

@@ -14,9 +14,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin
 This file proves that the matrix-coefficient submodule of a finite projective right comodule
 over a commutative semiring is finite.
 
-This is the first finite-dimensionality step toward the fundamental theorem of comodules in
-the reductive-groups roadmap. The next substantive step is to show that this finite submodule
-is closed under comultiplication, making it a coefficient subcoalgebra.
+This is a finite-dimensionality step toward the fundamental theorem of comodules.
 
 ## Main results
 
@@ -26,8 +24,6 @@ is closed under comultiplication, making it a coefficient subcoalgebra.
 ## References
 
 The coefficient-space construction is standard; see Sweedler, *Hopf Algebras*, Chapter 2.
-It advances `ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1,
-"Finite-dimensional subcoalgebras (the fundamental theorem of comodules)".
 -/
 
 public section

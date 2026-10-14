@@ -120,6 +120,7 @@ theorem eq_zero_of_forall_liftQuotientPoint_apply_eq_zero
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective k (pointKernelIdeal S) x
   intro g
   rw [Ideal.Quotient.mkₐ_eq_mk, quotientEval_mk]
+  rw [Ideal.Quotient.mkₐ_eq_mk] at hx
   exact (CommHopfAlgCat.liftQuotientPoint_mk (_root_.CommHopfAlgCat.of k H)
     (vanishingIdeal S) (CommAlgCat.of k k) g.val
     (fun y hy ↦ (mem_vanishingIdeal S y).mp hy g) x).symm.trans (hx g)

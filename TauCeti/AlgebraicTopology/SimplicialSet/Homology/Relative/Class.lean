@@ -98,14 +98,6 @@ lemma relClass₁_homologyδ :
   simp
 
 variable {Q} in
-/-- The quotient map onto the relative chains is natural in maps of pairs. -/
-@[reassoc]
-lemma chainComplexπ_naturality {Q' : SSetPair.{w}} (f : Q ⟶ Q') :
-    SSet.chainComplexMap f.right R ≫ Q'.chainComplexπ R =
-      Q.chainComplexπ R ≫ SSetPair.chainComplexMap f R :=
-  ((chainComplexFunctorπ C).app R).naturality f
-
-variable {Q} in
 /-- A map of pairs carries a face of a `1`-simplex lying in the subcomplex to a face lying in the
 subcomplex. -/
 lemma δ_map_eq {Q' : SSetPair.{w}} (f : Q ⟶ Q') (i : Fin 2) (v : Q.left _⦋0⦌)

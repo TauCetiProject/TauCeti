@@ -469,6 +469,13 @@ theorem evalCoeffs_eq_eval₂ {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R)
     evalCoeffs f r x = x.toPolynomial.eval₂ f r := by
   rw [evalCoeffs, toPolynomial, TauCeti.Polynomial.eval₂_ofCoeffList]
 
+/-- Mapping a Horner evaluation through a ring homomorphism maps the coefficients and the
+point of evaluation. The semirings need not be commutative. -/
+theorem _root_.RingHom.map_evalCoeffs {R S : Type*} [Semiring R] [Semiring S]
+    (g : R →+* S) (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
+    g (evalCoeffs f r x) = evalCoeffs (g.comp f) (g r) x := by
+  rw [evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
+
 /-- The bundled evaluation at a root of the cyclotomic polynomial is the Horner evaluation
 `TauCeti.Cyclotomic.evalCoeffs`. -/
 theorem evalRingHom_eq_evalCoeffs {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)

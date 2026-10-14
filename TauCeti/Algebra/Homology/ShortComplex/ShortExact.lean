@@ -26,6 +26,9 @@ an abelian category is short exact as soon as it is short exact objectwise.
   sequence.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
   short exact if it is short exact after evaluation at every object.
+* `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
+  of short exact sequences whose third component is a monomorphism is short exact; the source
+  only needs to be exact with an epimorphic second map.
 -/
 
 public section
@@ -106,6 +109,8 @@ end TauCeti
 
 namespace CategoryTheory.ShortComplex
 
+open Limits
+
 variable {C : Type u} [Category.{v} C] [Abelian C]
 
 /-- **Short exactness of functors is checked objectwise.** A short complex of functors with values
@@ -121,5 +126,31 @@ lemma shortExact_of_forall_evaluation {J : Type*} [Category* J] (S : ShortComple
   rw [exact_iff_isZero_homology]
   exact Functor.isZero _ fun j ↦ ((exact_iff_isZero_homology _).1 (h j).exact).of_iso
     (S.mapHomologyIso ((evaluation J C).obj j)).symm
+
+/-- **The cokernel of a morphism into a short exact sequence.** Let `v : L₁ ⟶ L₂` be a morphism
+from an exact sequence `L₁` whose second map is an epimorphism to a short exact sequence `L₂`, and
+suppose that the third component of `v` is a monomorphism. Then the cokernel `L₃` of `v`, computed
+componentwise, is short exact. This is the snake lemma in the case where the kernel of the third
+component, and hence the connecting morphism, vanishes. -/
+lemma ShortExact.of_isColimit_cokernelCofork {L₁ L₂ L₃ : ShortComplex C} (h₂ : L₂.ShortExact)
+    (h₁ : L₁.Exact) [Epi L₁.g] (v : L₁ ⟶ L₂) [Mono v.τ₃] (π : L₂ ⟶ L₃) (w : v ≫ π = 0)
+    (hπ : IsColimit (CokernelCofork.ofπ π w)) : L₃.ShortExact := by
+  have := h₂.epi_g
+  let S : SnakeInput C :=
+    { L₀ := kernel v
+      L₁ := L₁
+      L₂ := L₂
+      L₃ := L₃
+      v₀₁ := kernel.ι v
+      v₁₂ := v
+      v₂₃ := π
+      h₀ := kernelIsKernel v
+      h₃ := hπ
+      L₁_exact := h₁
+      epi_L₁_g := inferInstance
+      L₂_exact := h₂.exact
+      mono_L₂_f := h₂.mono_f }
+  have hδ : S.δ = 0 := (KernelFork.IsLimit.isZero_of_mono S.h₀τ₃).eq_of_src _ _
+  exact ShortExact.mk' S.L₃_exact (S.L₂'_exact.mono_g hδ) S.epi_L₃_g
 
 end CategoryTheory.ShortComplex

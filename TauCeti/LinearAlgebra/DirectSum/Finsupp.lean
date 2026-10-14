@@ -18,6 +18,9 @@ with `ι →₀ N` by taking coefficients against the standard basis.
 * `TensorProduct.finsuppScalarLeft_lTensor_apply`: taking coefficients is natural in `N`.
 * `TensorProduct.sum_single_tmul_finsuppScalarLeft`: an element is the sum of its coefficients
   against the basis vectors.
+* `finsuppTensorFinsupp'_mapDomain`: the identification of the tensor product of two spaces of
+  finitely supported functions with functions on the product of the index types is natural in the
+  index types.
 -/
 
 public section
@@ -45,3 +48,26 @@ lemma sum_single_tmul_finsuppScalarLeft (t : (ι →₀ R) ⊗[R] N) :
   simp [Finsupp.sum, finsuppScalarLeft_symm_apply_single]
 
 end TensorProduct
+
+section FinsuppTensorFinsupp
+
+variable {R : Type*} [CommSemiring R] {α β α' β' : Type*}
+
+/-- The identification `(α →₀ R) ⊗ (β →₀ R) ≃ (α × β →₀ R)` is natural in the index types: the
+tensor product of two pushforwards is the pushforward along the product map. -/
+theorem finsuppTensorFinsupp'_mapDomain (g₁ : α → α') (g₂ : β → β') (c : α →₀ R) (d : β →₀ R) :
+    finsuppTensorFinsupp' R α' β' (Finsupp.mapDomain g₁ c ⊗ₜ[R] Finsupp.mapDomain g₂ d) =
+      Finsupp.mapDomain (Prod.map g₁ g₂) (finsuppTensorFinsupp' R α β (c ⊗ₜ[R] d)) := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c₁ c₂ h₁ h₂ =>
+    simp only [Finsupp.mapDomain_add, TensorProduct.add_tmul, map_add, h₁, h₂]
+  | single a s =>
+    induction d using Finsupp.induction_linear with
+    | zero => simp
+    | add d₁ d₂ h₁ h₂ =>
+      simp only [Finsupp.mapDomain_add, TensorProduct.tmul_add, map_add, h₁, h₂]
+    | single b t =>
+      simp [Finsupp.mapDomain_single, finsuppTensorFinsupp'_single_tmul_single]
+
+end FinsuppTensorFinsupp

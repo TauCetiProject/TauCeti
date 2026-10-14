@@ -143,7 +143,6 @@ private noncomputable def coefficientLinearEquiv (I : HopfIdeal R H) :
     (Bialgebra.CounitAlgebra.algEquivSelf R (H ⧸ I.toIdeal) B).symm.toLinearEquiv
 
 /-- The coefficient identification is the identity after forgetting the indexing Hopf algebra. -/
-@[simp]
 private lemma coefficientLinearEquiv_apply (I : HopfIdeal R H)
     (b : Bialgebra.CounitAlgebra R H B) :
     Bialgebra.CounitAlgebra.algEquivSelf R (H ⧸ I.toIdeal) B
@@ -212,7 +211,6 @@ private noncomputable def descendDerivation (I : HopfIdeal R H)
       rw [coefficientLinearEquiv_smul, coefficientLinearEquiv_smul]
 
 /-- The descended derivation evaluates on a quotient class as the original derivation. -/
-@[simp]
 private lemma descendDerivation_mk (I : HopfIdeal R H)
     (d : Derivation R H (Bialgebra.CounitAlgebra R H B))
     (hd : ∀ x ∈ I.toIdeal, d x = 0) (x : H) :

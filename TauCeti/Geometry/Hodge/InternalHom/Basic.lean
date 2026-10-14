@@ -210,10 +210,14 @@ private theorem iSup_internalHomPiece_eq_top (hs₁ : HodgeStructureOn W₁ ω�
     refine LinearMap.ext fun x ↦ ?_
     simp only [LinearMap.sum_apply, LinearMap.comp_apply]
     calc f x
-        = f (∑ a ∈ S₁, hs₁.proj a x) := by rw [hs₁.sum_proj_eq hS₁ x]
+        = f (∑ a ∈ S₁, hs₁.proj a x) := by
+            rw [hs₁.sum_proj_eq x fun a ha ↦ by
+              simpa only [hS₁ a ha, Submodule.mem_bot] using hs₁.proj_mem a x]
       _ = ∑ a ∈ S₁, f (hs₁.proj a x) := map_sum f _ _
       _ = ∑ a ∈ S₁, ∑ b ∈ S₂, hs₂.proj b (f (hs₁.proj a x)) :=
-          Finset.sum_congr rfl fun a _ ↦ (hs₂.sum_proj_eq hS₂ _).symm
+          Finset.sum_congr rfl fun a _ ↦ (hs₂.sum_proj_eq _ fun b hb ↦ by
+            simpa only [hS₂ b hb, Submodule.mem_bot] using
+              hs₂.proj_mem b (f (hs₁.proj a x))).symm
   rw [hf]
   refine Submodule.sum_mem _ fun a _ ↦ Submodule.sum_mem _ fun b _ ↦ ?_
   refine Submodule.mem_iSup_of_mem (b - a) ?_

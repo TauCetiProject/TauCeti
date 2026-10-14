@@ -39,6 +39,10 @@ residue (`TauCeti.Place.traceResidue_eq_residue`).
 
 ## Main results
 
+* `TauCeti.Place.mem_filtration_iff_le_order_powerSeriesExpansionResidueField`: a regular
+  function vanishes to order `n` exactly when its expansion has order at least `n`.
+* `TauCeti.Place.exists_trunc_powerSeriesExpansionResidueField_eq`: every power series over
+  `F_P` is the expansion of a regular function up to any prescribed order.
 * `TauCeti.Place.valuation_laurentSeriesExpansionResidueField`: Laurent expansion carries the
   valuation of `P` to the `T`-adic valuation.
 * `TauCeti.Place.coeff_zero_laurentSeriesExpansionResidueField`: the constant coefficient of a
@@ -145,6 +149,48 @@ theorem constantCoeff_powerSeriesExpansionResidueField (x : P.integers) :
       IsLocalRing.residue P.integers x :=
   P.constantCoeff_completionIntegersEquivPowerSeriesResidueField_completionIntegersEmbedding
     (by rwa [ord_completionEmbedding]) x
+
+/-- A function regular at `P` vanishes to order at least `n` exactly when its power-series
+expansion has order at least `n`. -/
+theorem mem_filtration_iff_le_order_powerSeriesExpansionResidueField (n : ℕ) (x : P.integers) :
+    (x : F) ∈ P.filtration n ↔ (n : ℕ∞) ≤ (P.powerSeriesExpansionResidueField ht x).order := by
+  rw [powerSeriesExpansionResidueField_apply,
+    ← mem_filtration_iff_le_order_completionIntegersEquivPowerSeriesResidueField,
+    completionIntegersEmbedding_apply, completionEmbedding_mem_filtration_iff]
+
+/-- The chosen uniformizer expands as the power-series variable. -/
+@[simp]
+theorem powerSeriesExpansionResidueField_uniformizer :
+    P.powerSeriesExpansionResidueField ht ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩ =
+      PowerSeries.X := by
+  rw [powerSeriesExpansionResidueField_apply]
+  convert P.completionIntegersEquivPowerSeriesResidueField_uniformizer
+    (t := P.completionEmbedding t) (by rwa [ord_completionEmbedding]) using 2
+  exact Subtype.ext (completionIntegersEmbedding_apply _ _)
+
+/-- **Expansions are onto modulo `Tⁿ`**: every power series over the residue field agrees with
+the expansion of some function regular at `P` up to order `n`. -/
+theorem exists_trunc_powerSeriesExpansionResidueField_eq (g : PowerSeries P.ResidueField)
+    (n : ℕ) : ∃ x : P.integers,
+      PowerSeries.trunc n (P.powerSeriesExpansionResidueField ht x) = PowerSeries.trunc n g := by
+  have ht' : P.completionPlace.ord (P.completionEmbedding t) = 1 := by
+    rwa [ord_completionEmbedding]
+  set e := P.completionIntegersEquivPowerSeriesResidueField ht'
+  -- Approximate the completed function with expansion `g` by a function regular at `P`.
+  obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem (b := n) (Nat.cast_nonneg n)
+    ⟨(e.symm g : P.Completion), P.completionPlace.mem_filtration_zero_iff.mpr (e.symm g).2⟩
+  have hyint : (y : F) ∈ P.integers := P.mem_filtration_zero_iff.mp y.2
+  refine ⟨⟨y, hyint⟩, ?_⟩
+  have hdiff : ((e.symm g - P.completionIntegersEmbedding ⟨y, hyint⟩ :
+      P.completionPlace.integers) : P.Completion) ∈ P.completionPlace.filtration n := by
+    simpa using hy
+  rw [mem_filtration_iff_le_order_completionIntegersEquivPowerSeriesResidueField _ ht' n,
+    map_sub, AlgEquiv.apply_symm_apply, PowerSeries.nat_le_order_iff] at hdiff
+  ext i
+  rw [PowerSeries.coeff_trunc, PowerSeries.coeff_trunc, powerSeriesExpansionResidueField_apply]
+  split_ifs with hi
+  · exact (sub_eq_zero.mp (by simpa using hdiff i hi)).symm
+  · rfl
 
 /-- The Laurent expansion of a function at a place with separable residue field in a chosen
 uniformizer `t`, with coefficients in the residue field: the image of the function under

@@ -30,9 +30,8 @@ The dual coefficients are essential. For the standard one-dimensional representa
 generate `R[T, T⁻¹]`. Thus a criterion using only the original coefficient algebra would fail
 even for the identity representation of `𝔾ₘ`.
 
-This completes the ReductiveGroups roadmap's Layer 1 target "Faithfulness done right": faithful
-means that the representation morphism is a closed immersion, and this geometric condition is
-equivalent to generation of the coordinate ring by matrix coefficients and their duals.
+Faithful means that the representation morphism is a closed immersion, and this geometric condition
+is equivalent to generation of the coordinate ring by matrix coefficients and their duals.
 
 ## Main declarations
 

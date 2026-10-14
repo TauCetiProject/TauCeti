@@ -41,7 +41,8 @@ Both estimates are instances of the general bounds for the Hessian of `x ↦ ‖
 
 ## Main declarations
 
-* `TauCeti.iteratedFDeriv_two_newtonianKernel_apply`: the Hessian formula.
+* `TauCeti.iteratedFDeriv_two_newtonianKernel_apply`: the Hessian formula, and its evenness
+  `TauCeti.iteratedFDeriv_two_newtonianKernel_neg`.
 * `TauCeti.norm_iteratedFDeriv_two_newtonianKernel_le`: the size estimate.
 * `TauCeti.norm_iteratedFDeriv_two_newtonianKernel_sub_le`: the smoothness estimate.
 
@@ -104,6 +105,22 @@ theorem iteratedFDeriv_two_newtonianKernel_apply (hn : n ≠ 2)
   rw [iteratedFDeriv_two_newtonianKernel_eq_smul hx, smul_apply,
     iteratedFDeriv_two_norm_rpow_apply _ hx, smul_eq_mul, he₄, he₂]
   field_simp
+  ring
+
+/-- The Hessian of the Newtonian kernel is even: `D²Gₙ(-x) = D²Gₙ(x)`. -/
+@[simp]
+theorem iteratedFDeriv_two_newtonianKernel_neg (x : EuclideanSpace ℝ (Fin n)) :
+    iteratedFDeriv ℝ 2 (newtonianKernel n) (-x) = iteratedFDeriv ℝ 2 (newtonianKernel n) x := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp [iteratedFDeriv_two_newtonianKernel_two]
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [neg_zero]
+  ext m
+  have hm : m = ![m 0, m 1] := by
+    ext i : 1
+    fin_cases i <;> rfl
+  rw [hm, iteratedFDeriv_two_newtonianKernel_apply hn (neg_ne_zero.mpr hx),
+    iteratedFDeriv_two_newtonianKernel_apply hn hx, norm_neg, inner_neg_left, inner_neg_left]
   ring
 
 /-- **The size estimate for the Hessian of the Newtonian kernel**: away from the pole,

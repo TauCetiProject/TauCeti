@@ -27,9 +27,6 @@ along `f` therefore transfers geometric unipotence from its source affine group 
 
 * The Stacks Project, Tags 00HQ and 00FV, for algebraically closed points of faithfully flat
   finite-type algebras.
-
-This is an algebraically-closed-point bridge for Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap.
 -/
 
 public section

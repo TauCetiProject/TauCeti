@@ -69,6 +69,10 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   not classical.
 * `TauCeti.ValuationSpectrum.hasSum_taylorHom`: `f(T + a)` is the sum of the translated
   monomials of `f`.
+* `TauCeti.ValuationSpectrum.valuation_taylorHom_le`: a continuous valuation that bounds every
+  monomial of `f` by `f`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, bounds `f(T + a)` by `f`.
+* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: if moreover each `Tᵢ - aᵢ` is bounded by
+  `Tᵢ`, the valuation is invariant under translation by `a`.
 * `TauCeti.ValuationSpectrum.taylorHom_comp_taylorHom`: translating by `b` and then by `a`
   is translating by `a + b`.
 * `TauCeti.ValuationSpectrum.taylorHom_mem_powerBoundedSubring`: translation preserves
@@ -77,7 +81,10 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   at `b` is evaluating at `b + a`; `TauCeti.ValuationSpectrum.comap_taylorHom_classicalPoint`
   is the resulting recentring of classical points.
 * `TauCeti.ValuationSpectrum.closedPolydisc_vle_weightedC_iff`: over an ultrametric normed field,
-  points of the closed polydisc compare constants by their norms.
+  points of the closed polydisc compare constants by their norms;
+  `TauCeti.ValuationSpectrum.closedPolydisc_valuation_weightedC_le_iff` is the same statement for
+  the values of a point, and the lemmas following it are its consequences for equal norms, for
+  vanishing and for maxima.
 
 ## References
 
@@ -298,6 +305,36 @@ theorem continuous_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)
   rw [taylorHom]
   exact continuous_weightedEvalHom _ _ _
 
+/-- **A continuous valuation bounded on monomials is bounded on translates.** Let `v` be a
+continuous valuation on `A⟨T₁, …, Tₖ⟩` with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` for every `i`. If every
+monomial `fν Tν` of `f` has `v (fν Tν) ≤ v f`, then `v (f(T + a)) ≤ v f`: each translated monomial
+`fν (T + a)ν` has value at most `v (fν Tν)`, and they sum to `f(T + a)` inside the closed
+subgroup `{g | v g ≤ v f}`. -/
+theorem valuation_taylorHom_le {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+    (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    {v : Valuation (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight) Γ₀} (hv : v.IsContinuous)
+    (hX : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
+    {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight}
+    (hf : ∀ ν : Fin k →₀ ℕ, v (weightedC _ isWeightFamily_one_weight
+        (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
+      ∏ i, weightedX _ isWeightFamily_one_weight i ^ ν i) ≤ v f) :
+    v (taylorHom a ha f) ≤ v f := by
+  -- `{g | v g ≤ v f}` is closed: an open subgroup if `v f ≠ 0`, and the support otherwise
+  have hclosed : IsClosed (SetLike.coe (v.leAddSubgroup (v f))) := by
+    rcases eq_or_ne (v f) 0 with h0 | h0
+    · have hsupp : SetLike.coe (v.leAddSubgroup (v f)) = v.supp :=
+        Set.ext fun g ↦ by simp [h0]
+      exact hsupp ▸ isClosed_supp_of_isContinuous hv
+    · exact AddSubgroup.isClosed_of_isOpen _ (hv.isOpen_le h0)
+  refine hclosed.mem_of_tendsto (hasSum_taylorHom a ha f)
+    (Filter.Eventually.of_forall fun _ ↦ (v.leAddSubgroup (v f)).sum_mem fun ν _ ↦ ?_)
+  rw [Valuation.mem_leAddSubgroup_iff]
+  refine le_trans ?_ (hf ν)
+  simp only [map_mul, map_prod, map_pow]
+  exact mul_le_mul_right (Finset.prod_le_prod fun i _ ↦ pow_le_pow_left' (hX i) _) _
+
 /-- Translation fixes the constants. -/
 @[simp]
 theorem taylorHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (c : A) :
@@ -350,6 +387,28 @@ theorem taylorHom_taylorHom_neg (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
     taylorHom a ha (taylorHom (-a) (fun i ↦ (ha i).neg) f) = f := by
   simp
+
+/-- **A continuous valuation bounded on monomials is invariant under translation.** Let `v` be a
+continuous valuation on `A⟨T₁, …, Tₖ⟩` that bounds every monomial `gν Tν` of every series `g` by
+`v g`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` and `v (Tᵢ - aᵢ) ≤ v (Tᵢ)` for every `i`. Then
+`v (f(T + a)) = v f` for every series `f`. -/
+theorem valuation_taylorHom_eq {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+    (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    {v : Valuation (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight) Γ₀} (hv : v.IsContinuous)
+    (hX : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
+    (hX' : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (-a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
+    (hmono : ∀ (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight) (ν : Fin k →₀ ℕ), v (weightedC _ isWeightFamily_one_weight
+        (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
+      ∏ i, weightedX _ isWeightFamily_one_weight i ^ ν i) ≤ v f)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    v (taylorHom a ha f) = v f := by
+  refine le_antisymm (valuation_taylorHom_le a ha hv hX (hmono f)) ?_
+  simpa only [taylorHom_neg_taylorHom] using
+    valuation_taylorHom_le (-a) (fun i ↦ (ha i).neg) hv hX' (hmono (taylorHom a ha f))
 
 /-- **Translation by `a ∈ (A°)ᵏ` as a ring automorphism** of `A⟨T₁, …, Tₖ⟩`, with inverse the
 translation by `-a`. -/
@@ -429,6 +488,37 @@ theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y
     v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [← vle_iff_norm_le_of_mem_spa (comap_weightedC_mem_spa v), comap_vle]
+
+/-- A point of the closed polydisc compares the values of constants by their norms. -/
+theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
+        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
+
+/-- A point of the closed polydisc gives constants of equal norm equal values. -/
+theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPolydisc k K)
+    {x y : K} (h : ‖x‖ = ‖y‖) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight y) :=
+  le_antisymm ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h.le)
+    ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
+
+/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
+theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
+      x = 0 := by
+  rw [← le_zero_iff, ← map_zero v.1.valuation, ← map_zero (weightedC _ _),
+    closedPolydisc_valuation_weightedC_le_iff, norm_zero, norm_le_zero_iff]
+
+/-- The larger of the values of two constants at a point of the closed polydisc is the value of
+the one of larger norm. -/
+theorem closedPolydisc_max_valuation_weightedC {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    max (v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x))
+        (v.1.valuation (weightedC _ isWeightFamily_one_weight y)) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight (if ‖x‖ ≤ ‖y‖ then y else x)) := by
+  split_ifs with h
+  · exact max_eq_right ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h)
+  · exact max_eq_left ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr (le_of_not_ge h))
 
 end NormedField
 

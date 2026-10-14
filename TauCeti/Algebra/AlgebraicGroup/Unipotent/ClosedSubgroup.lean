@@ -42,8 +42,7 @@ of the smooth unipotent group `𝔾ₐ`.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This is a closure result needed in Layer 5, "Unipotent groups", of the ReductiveGroups roadmap.
-It supplies a basic input for comparing connected normal unipotent closed subgroups in the
+This supplies a basic input for comparing connected normal unipotent closed subgroups in the
 construction of the unipotent radical.
 -/
 

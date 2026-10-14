@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.ForwardDiff
+public import TauCeti.Algebra.Group.ForwardDiff
 public import TauCeti.Analysis.PositiveDefinite.Basic
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Shift
 
@@ -44,10 +44,6 @@ positive-definite function on `ℝ≥0 × V` is positive definite for the trivia
 
 ## Main declarations
 
-* `TauCeti.neg_one_pow_mul_fwdDiff_iter_succ`: one differencing step advances the alternating
-  iterated forward difference by one.
-* `TauCeti.neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum`: the binomial expansion of the
-  alternating iterated forward difference.
 * `TauCeti.IsPositiveDefinite.sub_shift`: the difference of a bounded positive-definite function
   and its translate by a self-adjoint element is positive definite.
 * `TauCeti.IsPositiveDefinite.neg_one_pow_mul_fwdDiff_iter` and
@@ -69,47 +65,6 @@ public section
 open scoped ComplexOrder fwdDiff
 
 namespace TauCeti
-
-/-! ## Forward-difference bookkeeping
-
-Pure identities about Mathlib's forward difference operator; no positive definiteness is involved.
--/
-
-section FwdDiff
-
-variable {M : Type*} [AddCommMonoid M]
-
-/-- Differencing once advances the alternating iterated forward difference by one step. This is the
-bookkeeping behind every induction on the number of differencing steps. -/
-theorem neg_one_pow_mul_fwdDiff_iter_succ (n : ℕ) (F : M → ℂ) (s : M) :
-    (fun x : M => (-1 : ℂ) ^ n * Δ_[s]^[n] (-Δ_[s] F) x)
-      = fun x : M => (-1 : ℂ) ^ (n + 1) * Δ_[s]^[n + 1] F x := by
-  have hiter : Δ_[s]^[n] (-Δ_[s] F) = -Δ_[s]^[n + 1] F := by
-    rw [Function.iterate_succ_apply, ← neg_one_zsmul (Δ_[s] F), fwdDiff_iter_const_smul,
-      neg_one_zsmul]
-  rw [hiter]
-  funext x
-  simp only [Pi.neg_apply, pow_succ]
-  ring
-
-/-- The alternating iterated forward difference as an explicit alternating binomial sum. -/
-theorem neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum (n : ℕ) (F : M → ℂ) (s x : M) :
-    (-1 : ℂ) ^ n * Δ_[s]^[n] F x
-      = ∑ k ∈ Finset.range (n + 1), (-1 : ℂ) ^ k * (n.choose k) * F (x + k • s) := by
-  rw [fwdDiff_iter_eq_sum_shift, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k hk => ?_
-  have hk' : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-  have hexp : n + (n - k) = 2 * (n - k) + k := by omega
-  have hsign : (-1 : ℂ) ^ n * (-1 : ℂ) ^ (n - k) = (-1 : ℂ) ^ k := by
-    rw [← pow_add, hexp, pow_add, pow_mul]
-    simp
-  rw [zsmul_eq_mul]
-  push_cast
-  rw [← mul_assoc, ← mul_assoc, hsign]
-
-end FwdDiff
-
-/-! ## Differences of bounded positive-definite functions -/
 
 namespace IsPositiveDefinite
 

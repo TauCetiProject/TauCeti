@@ -40,8 +40,7 @@ commutative algebra over the ground field is unipotent.
 
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4, for the unipotent-radical application.
 
-This supplies the reduced-source descent input for Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap.
+This supplies the reduced-source descent input for the unipotent radical.
 -/
 
 public section
