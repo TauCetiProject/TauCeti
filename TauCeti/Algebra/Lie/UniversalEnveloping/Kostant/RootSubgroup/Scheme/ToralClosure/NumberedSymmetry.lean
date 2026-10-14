@@ -554,7 +554,7 @@ private theorem kostantToralSchemePointMulEquiv_comp_numberedSymmetryIso (A : Ty
         (kostantToralNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
           basisScale hbasis torusPerm hwt).hom.hom.hom =
       kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (kostantToralCoordinateNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
             basisScale hbasis torusPerm hwt).hom).app (CommAlgCat.of ℤ A) q) := by
   rw [kostantToralNumberedSymmetryIso, Functor.mapIso_hom, Iso.op_hom]
@@ -576,7 +576,7 @@ private theorem kostantToralSchemePointMulEquiv_comp_toralGroupSchemeι (A : Typ
     kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q ≫
         (kostantToralGroupSchemeι e h ρ M hM hnil b wt).hom.hom =
       GeneralLinear.groupSchemePointMulEquiv n A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
             (kostantToralDefiningIdeal e h ρ M hM hnil b wt))).app (CommAlgCat.of ℤ A) q) := by
   rw [kostantToralGroupSchemeι_def, CommHopfAlgCat.quotientSpecι_def]
@@ -600,7 +600,7 @@ private theorem schemePointsMulEquiv_kostantToralSchemePointMulEquiv_comp_toralG
         (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q ≫
           (kostantToralGroupSchemeι e h ρ M hM hnil b wt).hom.hom) =
       GeneralLinear.pointsMulEquiv n
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
             (kostantToralDefiningIdeal e h ρ M hM hnil b wt))).app (CommAlgCat.of ℤ A) q) := by
   rw [kostantToralSchemePointMulEquiv_comp_toralGroupSchemeι]
@@ -635,21 +635,21 @@ theorem schemePointsMulEquiv_kostantToralNumberedSymmetryIso (A : Type) [CommRin
     e h ρ M hM hnil b wt A q
   have hinclSym := schemePointsMulEquiv_kostantToralSchemePointMulEquiv_comp_toralGroupSchemeι
     e h ρ M hM hnil b wt A
-    ((CommHopfAlgCat.mapPointsFunctor
+    ((CommHopfAlgCat.Hom.mapPointsFunctor
       (kostantToralCoordinateNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
         basisScale hbasis torusPerm hwt).hom).app (CommAlgCat.of ℤ A) q)
   rw [← Category.assoc, hsymι, hinclSym, hincl]
   -- The quotient coordinate automorphism is induced by the ambient one, so precomposing a point
   -- with it and then with the quotient map is precomposing with the ambient automorphism.
-  have hpoint : (CommHopfAlgCat.mapPointsFunctor
+  have hpoint : (CommHopfAlgCat.Hom.mapPointsFunctor
         (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt))).app (CommAlgCat.of ℤ A)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (kostantToralCoordinateNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
             basisScale hbasis torusPerm hwt).hom).app (CommAlgCat.of ℤ A) q) =
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom).app (CommAlgCat.of ℤ A)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
             (kostantToralDefiningIdeal e h ρ M hM hnil b wt))).app (CommAlgCat.of ℤ A) q) := by
     apply WithConv.ofConv_injective

@@ -25,18 +25,18 @@ by pre-composition.
 
 ## Main declarations
 
-* `CommHopfAlgCat.mapPointsFunctor`: a coordinate morphism `H ⟶ K` induces a natural
+* `CommHopfAlgCat.Hom.mapPointsFunctor`: a coordinate morphism `H ⟶ K` induces a natural
   transformation from the points functor of `K` to the points functor of `H`.
-* `CommHopfAlgCat.mapPointsFunctor_comp_app_apply`: pointwise contravariance under composition
+* `CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply`: pointwise contravariance under composition
   of coordinate morphisms.
-* `CommHopfAlgCat.pointsFunctor`: the contravariant functor
+* `TauCeti.CommHopfAlgCat.pointsFunctor`: the contravariant functor
   `(CommHopfAlgCat R)ᵒᵖ ⥤ CommAlgCat R ⥤ GrpCat`.
 * `CommHopfAlgCat.grpObj`: the underlying object of the represented group object.
-* `CommHopfAlgCat.grpObjMap`: the contravariant morphism of represented group objects induced by a
-  coordinate Hopf-algebra morphism.
-* `CommHopfAlgCat.whiskerLeft_grpObjMap_unop_hom`: the coordinate description of left whiskering
+* `CommHopfAlgCat.Hom.grpObjMap`: the contravariant morphism of represented group objects
+  induced by a coordinate Hopf-algebra morphism.
+* `CommHopfAlgCat.Hom.whiskerLeft_grpObjMap_unop_hom`: the coordinate description of left whiskering
   a represented group-object map.
-* `CommHopfAlgCat.grpObjMap_injective`: represented group-object maps determine their coordinate
+* `CommHopfAlgCat.Hom.grpObjMap_injective`: represented group-object maps determine their coordinate
   Hopf-algebra morphisms.
 
 ## See also
@@ -52,11 +52,11 @@ public section
 
 open CategoryTheory Opposite WithConv
 
-namespace TauCeti
-
 universe u v w
 
 namespace CommHopfAlgCat
+
+open TauCeti
 
 variable {R : Type u} [CommRing R]
 
@@ -65,6 +65,8 @@ commutative Hopf algebra `H`, carrying the induced `GrpObj` structure. -/
 noncomputable abbrev grpObj (H : _root_.CommHopfAlgCat.{u} R) :
     (CommAlgCat.{u} R)ᵒᵖ :=
   op (CommAlgCat.of R H)
+
+namespace Hom
 
 /-- The morphism of underlying group objects represented contravariantly by a morphism of
 commutative Hopf algebras. -/
@@ -197,6 +199,14 @@ lemma mapPointsFunctor_comp_app_apply {H K L : CommHopfAlgCat.{v} R}
   rw [mapPointsFunctor_comp, NatTrans.comp_app]
   exact GrpCat.comp_apply ((mapPointsFunctor ψ).app A) ((mapPointsFunctor φ).app A) f
 
+end Hom
+
+end CommHopfAlgCat
+
+namespace TauCeti.CommHopfAlgCat
+
+variable {R : Type u} [CommRing R]
+
 /-- The contravariant functor assigning to a commutative Hopf algebra its group-valued
 functor of points.
 
@@ -206,9 +216,9 @@ A coordinate Hopf algebra `H` is sent to the functor `A ↦ WithConv (H →ₐ[R
 @[expose] noncomputable def pointsFunctor :
     (CommHopfAlgCat.{v} R)ᵒᵖ ⥤ CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj H := HopfAlgebra.pointsFunctor (R := R) (H := H.unop)
-  map φ := mapPointsFunctor φ.unop
-  map_id H := mapPointsFunctor_id (R := R) H.unop
-  map_comp φ ψ := mapPointsFunctor_comp (R := R) ψ.unop φ.unop
+  map φ := CommHopfAlgCat.Hom.mapPointsFunctor φ.unop
+  map_id H := CommHopfAlgCat.Hom.mapPointsFunctor_id (R := R) H.unop
+  map_comp φ ψ := CommHopfAlgCat.Hom.mapPointsFunctor_comp (R := R) ψ.unop φ.unop
 
 /-- The object part of `pointsFunctor` is the points functor of the underlying commutative
 Hopf algebra. -/
@@ -221,7 +231,7 @@ lemma pointsFunctor_obj (H : (CommHopfAlgCat.{v} R)ᵒᵖ) :
 Hopf algebra. -/
 lemma pointsFunctor_map {H K : (CommHopfAlgCat.{v} R)ᵒᵖ} (φ : H ⟶ K) :
     (pointsFunctor (R := R)).map φ =
-      mapPointsFunctor φ.unop :=
+      CommHopfAlgCat.Hom.mapPointsFunctor φ.unop :=
   rfl
 
 /-- Pointwise form of the morphism part of `pointsFunctor`. -/
@@ -232,8 +242,6 @@ lemma pointsFunctor_map_app_apply_apply {H K : (CommHopfAlgCat.{v} R)ᵒᵖ}
     ((((pointsFunctor (R := R)).map φ).app A f).ofConv) h =
       f.ofConv (φ.unop.hom h) := by
   rw [pointsFunctor_map]
-  exact mapPointsFunctor_app_apply_apply (R := R) φ.unop A f h
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (R := R) φ.unop A f h
 
-end CommHopfAlgCat
-
-end TauCeti
+end TauCeti.CommHopfAlgCat
