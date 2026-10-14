@@ -46,6 +46,8 @@ The hypothesis `N ≥ 4` is what makes the Tate normal form apply: for `N ≤ 3`
 * `TauCeti.AlgebraicGeometry.EllObj.universalTatePoint B`: its point `(0, 0)`.
 * `TauCeti.AlgebraicGeometry.EllObj.yOne B N hN`: the restriction of the universal Tate normal
   form to the locus `Y₁(N)` where `(0, 0)` has naive exact order `N`.
+* `TauCeti.AlgebraicGeometry.EllObj.yOnePoint`: the point `(0, 0)` of the universal elliptic curve
+  over `Y₁(N)`, which has naive exact order `N` (`EllObj.isOfNaiveExactOrder_yOnePoint`).
 
 ## Main results
 
@@ -213,10 +215,18 @@ theorem natCast_residueField_universalTate_ne_zero (s : (universalTate B).base) 
 on `B`, the restriction of the universal Tate normal form over `B` to the closed subscheme of
 `B × Spec ℤ[A, B][Δ⁻¹]` on which the point `(0, 0)` has naive exact order `N`. For `N ≥ 4` it
 represents the naive moduli problem `[Γ₁(N)]` (`ModuliProblem.gammaOneNaiveRepresentableBy`). -/
+-- Exposed, so that the base of `yOne B N hN` is publicly the locus `naiveExactOrderPreimage`: the
+-- statements of `yOneι_base` and `yOne_curve` compare morphisms and curves over the two schemes.
 @[expose]
 noncomputable def yOne : EllObj B :=
   (universalTate B).baseChangeFunctor.obj (Over.mk (EllipticCurveGeom.naiveExactOrderPreimageι
     (natCast_residueField_universalTate_ne_zero B N hN) (universalTatePoint B)))
+
+/-- The base of `yOne B N hN` is the locus where `(0, 0)` has naive exact order `N`. -/
+@[simp]
+theorem yOne_base : (yOne B N hN).base = EllipticCurveGeom.naiveExactOrderPreimage
+    (natCast_residueField_universalTate_ne_zero B N hN) (universalTatePoint B) :=
+  (rfl)
 
 /-- The arrow of `Ell/B` exhibiting the universal elliptic curve over `Y₁(N)` as the restriction
 of the universal Tate normal form. -/
@@ -227,9 +237,23 @@ noncomputable def yOneι : yOne B N hN ⟶ universalTate B :=
 order `N`. -/
 @[simp]
 theorem yOneι_base : (yOneι B N hN).base = EllipticCurveGeom.naiveExactOrderPreimageι
-    (natCast_residueField_universalTate_ne_zero B N hN) (universalTatePoint B) := by
-  rw [yOneι, baseChangeFunctorHom_base]
-  rfl
+    (natCast_residueField_universalTate_ne_zero B N hN) (universalTatePoint B) :=
+  (baseChangeFunctorHom_base _).trans (Over.mk_hom _)
+
+/-- The structure morphism of `Y₁(N)` is its inclusion in `B × Spec ℤ[A, B][Δ⁻¹]` followed by the
+first projection. -/
+@[simp]
+theorem yOne_structureMap : (yOne B N hN).structureMap = (yOneι B N hN).base ≫ prod.fst := by
+  rw [yOneι_base]
+  exact (baseChangeFunctor_obj_structureMap (universalTate B) _).trans
+    (congrArg (· ≫ prod.fst) (Over.mk_hom _))
+
+/-- The universal elliptic curve over `Y₁(N)` is the base change of the universal Tate normal form
+along the inclusion of `Y₁(N)`. -/
+theorem yOne_curve : (yOne B N hN).curve = (universalTate B).curve.baseChange
+    (EllipticCurveGeom.naiveExactOrderPreimageι (natCast_residueField_universalTate_ne_zero B N hN)
+      (universalTatePoint B)) :=
+  (rfl)
 
 /-- `Y₁(N)` is a closed subscheme of `B × Spec ℤ[A, B][Δ⁻¹]`. -/
 instance isClosedImmersion_yOneι_base : IsClosedImmersion (yOneι B N hN).base := by
@@ -240,10 +264,7 @@ instance isClosedImmersion_yOneι_base : IsClosedImmersion (yOneι B N hN).base 
 instance isAffineHom_yOne_structureMap : IsAffineHom (yOne B N hN).structureMap := by
   have : IsAffineHom (prod.fst : B ⨯ Spec (.of (ULift.{u} UniversalTate.Ring)) ⟶ B) :=
     MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
-  have : (yOne B N hN).structureMap = (yOneι B N hN).base ≫ prod.fst := by
-    rw [yOneι_base]
-    rfl
-  rw [this]
+  rw [yOne_structureMap]
   infer_instance
 
 /-- `Y₁(N)` is affine when `B` is, for example for `B = Spec ℤ[1/N]`. -/
@@ -252,13 +273,15 @@ instance isAffine_yOne_base [IsAffine B] : IsAffine (yOne B N hN).base :=
 
 variable {B N hN}
 
--- The point `(0, 0)` of the universal elliptic curve over `Y₁(N)`.
-private noncomputable def yOnePoint :
+/-- **The point `(0, 0)` of the universal elliptic curve over `Y₁(N)`**: the base change of the
+point `(0, 0)` of the universal Tate normal form along `yOneι`. -/
+noncomputable def yOnePoint :
     𝟙_ (Over (yOne B N hN).base) ⟶ Over.mk (yOne B N hN).curve.structureMap :=
   EllipticCurveGeom.pointsPullback (yOneι B N hN).isPullback (yOneι B N hN).zero_total
     (universalTatePoint B)
 
-private theorem isOfNaiveExactOrder_yOnePoint :
+/-- The point `(0, 0)` of the universal elliptic curve over `Y₁(N)` has naive exact order `N`. -/
+theorem isOfNaiveExactOrder_yOnePoint :
     (yOne B N hN).curve.IsOfNaiveExactOrder yOnePoint N := by
   rw [← EllipticCurveGeom.isOfNaiveExactOrder_pointsBaseChangeEquiv_iff (yOneι B N hN).isPullback
     (yOneι B N hN).zero_total]
@@ -266,7 +289,7 @@ private theorem isOfNaiveExactOrder_yOnePoint :
     ⟨𝟙 _, (Category.id_comp _).trans (yOneι_base B N hN).symm⟩
   rw [EllipticCurveGeom.pointsBaseChangeEquiv_left, yOnePoint,
     EllipticCurveGeom.pointsPullback_left_comp]
-  rfl
+  simp only [Over.mk_hom]
 
 variable [NeZero N]
 
@@ -291,7 +314,6 @@ private theorem naiveLevelEquiv_map_yOneStructure {X : EllObj B} (k : X ⟶ yOne
     Equiv.apply_symm_apply, ← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
   exact (EllipticCurveGeom.pointsPullback_comp _ _ _ _ _).symm
 
-omit [NeZero N] in
 -- For `N ≥ 4`, the point `P` of a naive `[Γ₁(N)]`-structure satisfies the three conditions of the
 -- Tate normal form: `P`, `2P` and `3P` miss the zero section everywhere.
 private theorem tate_conditions (h4 : 4 ≤ N) {X : EllObj B}
@@ -300,17 +322,12 @@ private theorem tate_conditions (h4 : 4 ≤ N) {X : EllObj B}
     (∀ s, (φ (.ofAdd 1)).left s ≠ X.curve.zero s) ∧
       (∀ s, ((φ (.ofAdd 1)).left ≫ (X.curve.mulBy 2).left) s ≠ X.curve.zero s) ∧
         ∀ s, ((φ (.ofAdd 1)).left ≫ (X.curve.mulBy 3).left) s ≠ X.curve.zero s := by
-  have hne (n : ℕ) (hn : 0 < n) (hnN : n < N) (s : X.base) :
-      (φ (.ofAdd (n : ZMod N))).left s ≠ X.curve.zero s := by
-    refine EllipticCurveGeom.isFiberwiseInjective_iff.mp hφ _ ?_ s
-    rw [Ne, ← ofAdd_zero, Multiplicative.ofAdd.injective.eq_iff, ZMod.natCast_eq_zero_iff]
-    exact fun h ↦ absurd (Nat.le_of_dvd hn h) (by omega)
+  have h := EllipticCurveGeom.isFiberwiseInjective_zmod_iff.mp hφ
   have hn (n : ℕ) (hn : 0 < n) (hnN : n < N) (s : X.base) :
       ((φ (.ofAdd 1)).left ≫ (X.curve.mulBy n).left) s ≠ X.curve.zero s := by
-    rw [← Over.comp_left, EllipticCurveGeom.comp_mulBy, zpow_natCast, ← map_pow, ← ofAdd_nsmul,
-      nsmul_one]
-    exact hne n hn hnN s
-  exact ⟨fun s ↦ by simpa using hne 1 one_pos (by omega) s, hn 2 two_pos (by omega),
+    rw [← Over.comp_left, EllipticCurveGeom.comp_mulBy, zpow_natCast]
+    exact h n hn hnN s
+  exact ⟨fun s ↦ by simpa using h 1 one_pos (by omega) s, hn 2 two_pos (by omega),
     hn 3 three_pos (by omega)⟩
 
 -- Pulling back the universal naive `[Γ₁(N)]`-structure is a bijection from arrows into `Y₁(N)`.
@@ -342,10 +359,11 @@ private theorem bijective_map_yOneStructure (h4 : 4 ≤ N) (X : EllObj B) :
       (x := EllipticCurveGeom.pointsBaseChangeEquiv k₀.isPullback k₀.zero_total _) (by
         rw [EllipticCurveGeom.pointsBaseChangeEquiv_left, ← hk₀,
           EllipticCurveGeom.pointsPullback_left_comp]
-        rfl)).mpr ((EllipticCurveGeom.isOfNaiveExactOrder_pointsBaseChangeEquiv_iff _ _).mpr
-          (EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hα))
+        simp only [Over.mk_hom])).mpr
+          ((EllipticCurveGeom.isOfNaiveExactOrder_pointsBaseChangeEquiv_iff _ _).mpr
+            (EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hα))
     obtain ⟨l', hl'⟩ : ∃ l' : X.base ⟶ (yOne B N hN).base, l' ≫ (yOneι B N hN).base = k₀.base :=
-      ⟨l, by rw [yOneι_base]; exact hl⟩
+      ⟨l, by rw [yOneι_base]; exact hl.trans (Over.mk_hom _)⟩
     refine ⟨Hom.lift (yOneι B N hN) k₀ l' hl', ?_⟩
     apply (ModuliProblem.naiveLevelEquiv X).injective
     apply Subtype.ext
@@ -383,6 +401,16 @@ theorem naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv {X : EllObj B}
         (k ≫ EllObj.yOneι B N hN).zero_total (EllObj.universalTatePoint B) :=
   haveI : NeZero N := ⟨by omega⟩
   EllObj.naiveLevelEquiv_map_yOneStructure k
+
+/-- The universal naive `[Γ₁(N)]`-structure on `EllObj.yOne B N hN`, attached to its identity
+arrow, sends `1` to the point `(0, 0)` of the universal elliptic curve over `Y₁(N)`. -/
+theorem naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv_id :
+    (naiveLevelEquiv _ ((gammaOneNaiveRepresentableBy hN h4).homEquiv (𝟙 _))).1 (.ofAdd 1) =
+      EllObj.yOnePoint := by
+  have : NeZero N := ⟨by omega⟩
+  rw [gammaOneNaiveRepresentableBy, Equiv.ofBijective_apply, op_id, CategoryTheory.Functor.map_id,
+    ConcreteCategory.id_apply, EllObj.yOneStructure, Equiv.apply_symm_apply,
+    ← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
 
 end ModuliProblem
 
