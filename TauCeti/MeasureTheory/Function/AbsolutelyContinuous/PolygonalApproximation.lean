@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.MeasureTheory.Function.IntervalStep
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
@@ -28,23 +28,6 @@ open MeasureTheory Set Filter
 open scoped Topology BoundedContinuousFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A raw curve is polygonal on an interval if a finite increasing subdivision expresses it as
-the affine interpolation of its successive vertex values on every closed cell. -/
-@[expose] def TauCeti.IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
-    (f : ℝ → F) (a b : ℝ) : Prop :=
-  ∃ N : ℕ, 0 < N ∧ ∃ s : Fin (N + 1) → ℝ,
-    StrictMono s ∧ s 0 = a ∧ s (Fin.last N) = b ∧
-      ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
-        f t = f (s i.castSucc) +
-          ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
-            (f (s i.succ) - f (s i.castSucc))
-
-/-- A polygonal curve is absolutely continuous: its finitely many affine cells glue together. -/
-theorem TauCeti.IsPolygonalOnInterval.absolutelyContinuousOnInterval {f : ℝ → E} {a b : ℝ}
-    (h : TauCeti.IsPolygonalOnInterval f a b) : AbsolutelyContinuousOnInterval f a b := by
-  obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := h
-  exact AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
 
 namespace AbsolutelyContinuousOnInterval
 

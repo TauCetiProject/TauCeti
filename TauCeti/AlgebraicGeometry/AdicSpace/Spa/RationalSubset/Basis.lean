@@ -64,6 +64,8 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.isTopologicalBasis_spaRationalFamily`: the family is a basis for
   the topology of `spa Aplus`, with `TauCeti.ValuationSpectrum.isBasis_spaRationalOpens` the same
   statement in the `Opens.IsBasis` form.
+* `TauCeti.ValuationSpectrum.isBasis_range_spaBasicOpen`: for a fixed pair of definition, the
+  rational opens of admissible presentations form a basis, indexed by the presentations.
 * `TauCeti.ValuationSpectrum.isCompact_of_mem_spaRationalFamily`: every member of the family is
   quasi-compact. Each result also has an `_of_pairOfDefinition` form for use with a specified
   pair of definition.
@@ -286,6 +288,18 @@ theorem exists_presentation_mem_spaBasicOpen_le (P : PairOfDefinition A) {Aplus 
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalFamily_iff.mp hW
   exact ⟨⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩, hT, mem_spaBasicOpen.mpr hxW,
     fun y hy ↦ hWU (mem_spaBasicOpen.mp hy)⟩
+
+/-- **The rational opens of admissible presentations form a basis of `Spa(A,A⁺)`**: the basic opens
+`R(p.num / p.den)` of the presentations `p` relative to a fixed pair of definition whose numerator
+ideal is open. This is `exists_presentation_mem_spaBasicOpen_le` in the `Opens.IsBasis` form, with
+the basis indexed by presentations, as consumers comparing sections presentation by presentation
+need. -/
+theorem isBasis_range_spaBasicOpen (P : PairOfDefinition A) (Aplus : Subring A) :
+    Opens.IsBasis (Set.range fun p : {p : Presentation P //
+      IsOpen (Ideal.span (p.num : Set A) : Set A)} ↦ spaBasicOpen Aplus p.1.num p.1.den) := by
+  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
+  obtain ⟨p, hp, hxp, hle⟩ := exists_presentation_mem_spaBasicOpen_le P hx
+  exact ⟨_, ⟨⟨p, hp⟩, rfl⟩, hxp, hle⟩
 
 /-- **Rational subsets form a basis of `Spa(A,A⁺)`**, without choosing a pair of definition
 of the Huber ring. -/
