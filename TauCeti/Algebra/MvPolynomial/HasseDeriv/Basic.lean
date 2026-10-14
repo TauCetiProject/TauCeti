@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.HasseDeriv
-public import TauCeti.Algebra.MvPolynomial.Equiv
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Choose
 
 /-!
@@ -196,8 +197,13 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
   have hb : b.support ⊆ a.support ∪ b.support := Finset.subset_union_right
   have hab : (a + b).support ⊆ a.support ∪ b.support := Finsupp.support_add
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, hasseDeriv_monomial, smul_monomial,
-    tsub_tsub, add_comm b a, prod_choose_eq_prod _ ha, prod_choose_eq_prod _ hb,
-    prod_choose_eq_prod _ hab,
+    tsub_tsub, add_comm b a,
+    Finsupp.prod_of_support_subset a ha (fun j k ↦ ((m - b) j).choose k)
+      (fun _ _ ↦ Nat.choose_zero_right _),
+    Finsupp.prod_of_support_subset b hb (fun j k ↦ (m j).choose k)
+      (fun _ _ ↦ Nat.choose_zero_right _),
+    Finsupp.prod_of_support_subset (a + b) hab (fun j k ↦ (m j).choose k)
+      (fun _ _ ↦ Nat.choose_zero_right _),
     Finsupp.prod_of_support_subset _ ha (fun j k ↦ (k + b j).choose k) fun _ _ ↦
       Nat.choose_zero_right _]
   congr 1

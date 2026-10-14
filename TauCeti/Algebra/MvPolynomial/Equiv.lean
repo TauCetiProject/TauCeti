@@ -52,9 +52,6 @@ exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivL
 This is the form used for Lazard evaluation, where the base variables are eliminated first and
 the last variable is kept.
 
-Finally, `Polynomial.toMvPolynomial_monomial` computes Mathlib's embedding
-`Polynomial.toMvPolynomial i`, which places a univariate polynomial in the variable `Xᵢ`, on
-monomials.
 -/
 
 public section
@@ -236,14 +233,3 @@ theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (
 end Last
 
 end MvPolynomial
-
-namespace Polynomial
-
-/-- A univariate monomial placed in the variable `Xᵢ` is the monomial with exponent `n eᵢ`. -/
-@[simp]
-theorem toMvPolynomial_monomial {R σ : Type*} [CommSemiring R] (i : σ) (n : ℕ) (a : R) :
-    (monomial n a).toMvPolynomial i = MvPolynomial.monomial (Finsupp.single i n) a := by
-  simp [toMvPolynomial, MvPolynomial.X_pow_eq_monomial, ← C_mul_X_pow_eq_monomial,
-    MvPolynomial.C_mul_monomial]
-
-end Polynomial
