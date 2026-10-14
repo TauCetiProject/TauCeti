@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
-public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 public import TauCeti.Topology.MappingSpace.Sphere.DoubleLoop
 
 /-!
@@ -63,29 +62,19 @@ def circleLoopPairHom : cubeBoundaryPair.{0} 1 ⟶ circlePair :=
     (TopCat.ofHom (circleLoop.comp ⟨ULift.down, continuous_uliftDown⟩))
     fun t ht => Set.mem_singleton_iff.2 ((circleLoop_eq_east_iff t.down).2 ht)
 
-/-- The inclusion of the circle into the pair `(S¹, {(1, 0)})` induces an isomorphism on first
-homology, since the point is contractible. -/
-instance isIso_circlePair_singularHomologyπ :
-    IsIso (circlePair.singularHomologyπ (𝟙_ (ModuleCat.{0} R)) 1) :=
-  haveI : ContractibleSpace circlePair.snd :=
-    inferInstanceAs (ContractibleSpace ↥({Sphere1.east} : Set Sphere1))
-  TopPair.isIso_singularHomologyπ (P := circlePair) (𝟙_ (ModuleCat.{0} R)) (k := 0)
-    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace _ circlePair.snd 1)
-    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace _ circlePair.snd 0)
-
 /-- **The fundamental class of the circle**: the class of the standard loop
 `t ↦ (cos 2πt, sin 2πt)`. It is the image of the relative class of the standard `1`-simplex of the
-interval `I¹` under the loop, followed by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`. The circle
-is oriented by this parametrization, which is also the one with which double loops are read as
-maps from the circle in `TauCeti.BasedTopologicalSpace.loopSpace2Homeomorph`. -/
+interval `I¹` under the loop, followed by the inverse of `H₁(S¹) ≅ H₁(S¹, {(1, 0)})`
+(`TauCeti.singularHomologyIsoOfSubsetSingleton`). The circle is oriented by this
+parametrization, which is also the one with which double loops are read as maps from the circle in
+`TauCeti.BasedTopologicalSpace.loopSpace2Homeomorph`. -/
 def circleFundamentalClass :
     𝟙_ (ModuleCat.{0} R) ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) 1).obj (𝟙_ _)).obj
         (TopCat.of Sphere1) :=
   cubeRelClass (𝟙_ (ModuleCat.{0} R)) ≫
     TopPair.singularHomologyMap circleLoopPairHom (𝟙_ (ModuleCat.{0} R)) 1 ≫
-      @inv _ _ _ _ (circlePair.singularHomologyπ (𝟙_ (ModuleCat.{0} R)) 1)
-        (isIso_circlePair_singularHomologyπ R)
+      (singularHomologyIsoOfSubsetSingleton (𝟙_ (ModuleCat.{0} R)) 0 Sphere1.east).inv
 
 end Class
 
