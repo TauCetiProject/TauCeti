@@ -26,8 +26,10 @@ complexes:
   (`TauCeti.TopCat.isClosedEmbedding_sigmaMap`);
 * transfinite composition: if every successor map of a well-order-continuous diagram is a closed
   embedding, then so is every transition map
-  (`TauCeti.TopCat.isClosedEmbedding_map_of_isWellOrderContinuous`) and every map to its colimit
-  (`TauCeti.TopCat.isClosedEmbedding_incl_app_of_transfiniteCompositionOfShape`).
+  (`TauCeti.TopCat.isClosedEmbedding_map_of_isWellOrderContinuous`), and a transfinite composition
+  of closed embeddings is a closed embedding (the `IsStableUnderTransfiniteComposition` instance).
+  Mathlib's `MorphismProperty.TransfiniteCompositionOfShape.mem_incl_app` then shows that the map
+  from each stage of such a composition to the composite is a closed embedding.
 
 The last point comes from a statement about directed colimits: if all transition maps of a
 directed diagram are closed embeddings, so are the maps to its colimit
@@ -77,6 +79,10 @@ theorem isClosed_iff_of_isPushout (sq : IsPushout g f f' g') (s : Set B') :
     IsClosed s ↔ IsClosed (f' ⁻¹' s) ∧ IsClosed (g' ⁻¹' s) := by
   refine ⟨fun hs ↦ ⟨hs.preimage f'.hom.continuous, hs.preimage g'.hom.continuous⟩,
     fun ⟨h₁, h₂⟩ ↦ (TopCat.isClosed_iff_of_isColimit _ sq.isColimit s).2 ?_⟩
+  -- The objects of `WalkingSpan` are `Option WalkingPair`, so the three cases are, in order,
+  -- `WalkingSpan.zero` (the source `A`), `WalkingSpan.left` (`B`) and `WalkingSpan.right` (`A'`).
+  -- The cocone maps out of them are, by definition, `g ≫ f'`, `f'` and `g'`, and the preimage of
+  -- `s` under `g ≫ f'` is definitionally `g ⁻¹' (f' ⁻¹' s)`.
   rintro (_ | _ | _)
   · exact h₁.preimage g.hom.continuous
   · exact h₁
@@ -195,9 +201,10 @@ theorem isClosedEmbedding_map_of_isWellOrderContinuous (F : J ⥤ TopCat.{u})
         (F.isColimitOfIsWellOrderContinuous j hj) ⟨i, hij⟩
     · simpa using IsClosedEmbedding.id
 
-/-- A transfinite composition of closed embeddings in `TopCat` is a closed embedding, and so is
-the map from each stage to the composite. -/
-theorem isClosedEmbedding_incl_app_of_transfiniteCompositionOfShape {X Y : TopCat.{u}}
+/-- In a transfinite composition of closed embeddings in `TopCat`, the map from each stage to the
+composite is a closed embedding. Once the `IsStableUnderTransfiniteComposition` instance below is
+available, use Mathlib's `MorphismProperty.TransfiniteCompositionOfShape.mem_incl_app` instead. -/
+private theorem isClosedEmbedding_incl_app_of_transfiniteCompositionOfShape {X Y : TopCat.{u}}
     {f : X ⟶ Y} (h : isClosedEmbedding.TransfiniteCompositionOfShape J f) (j : J) :
     IsClosedEmbedding (h.incl.app j) := by
   have := h.isWellOrderContinuous

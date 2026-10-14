@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Abstract.Basic
+public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 
 /-!
@@ -63,17 +64,15 @@ private def isClosedEmbeddingTransfiniteCompositionOfShape :
 /-- In a relative cell complex in `TopCat` whose basic cells are closed embeddings, the maps
 between the stages are closed embeddings. -/
 theorem isClosedEmbedding_map {i j : J} (hij : i ≤ j) :
-    IsClosedEmbedding (c.F.map (homOfLE hij)) := by
-  have := c.isWellOrderContinuous
-  exact TauCeti.TopCat.isClosedEmbedding_map_of_isWellOrderContinuous c.F
-    (fun j hj ↦ (TauCeti.TopCat.isClosedEmbedding_iff _).1
-      ((c.isClosedEmbeddingTransfiniteCompositionOfShape hc).map_mem j hj)) hij
+    IsClosedEmbedding (c.F.map (homOfLE hij)) :=
+  (TauCeti.TopCat.isClosedEmbedding_iff _).1 <|
+    (c.isClosedEmbeddingTransfiniteCompositionOfShape hc).mem_map (homOfLE hij)
 
 /-- In a relative cell complex in `TopCat` whose basic cells are closed embeddings, the map from
 each stage to the complex is a closed embedding. -/
 theorem isClosedEmbedding_incl_app (j : J) : IsClosedEmbedding (c.incl.app j) :=
-  TauCeti.TopCat.isClosedEmbedding_incl_app_of_transfiniteCompositionOfShape
-    (c.isClosedEmbeddingTransfiniteCompositionOfShape hc) j
+  (TauCeti.TopCat.isClosedEmbedding_iff _).1 <|
+    (c.isClosedEmbeddingTransfiniteCompositionOfShape hc).mem_incl_app j
 
 /-- A relative cell complex in `TopCat` whose basic cells are closed embeddings is a closed
 embedding. -/
@@ -83,14 +82,6 @@ theorem isClosedEmbedding : IsClosedEmbedding f :=
       (c.isClosedEmbeddingTransfiniteCompositionOfShape hc).mem
 
 end HomotopicalAlgebra.RelativeCellComplex
-
-/-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk is a closed embedding. -/
-theorem TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion (n : ℕ) :
-    IsClosedEmbedding (TopCat.diskBoundaryInclusion.{u} n) :=
-  have : T2Space (TopCat.disk.{u} n) :=
-    inferInstanceAs (T2Space (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
-  (TopCat.diskBoundaryInclusion n).hom.continuous.isClosedEmbedding
-    ((TopCat.mono_iff_injective _).1 inferInstance)
 
 namespace TopCat.RelativeCWComplex
 
