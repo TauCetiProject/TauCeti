@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Tower
+public import Mathlib.Algebra.Algebra.RestrictScalars
 
 /-!
 # Algebra towers: restriction of scalars and reversing a tower
@@ -20,12 +20,19 @@ When `algebraMap R S` has a right inverse `algebraMap S R`, for instance when it
 tower `R → S → A` can be reversed to a tower `S → R → A`, so that invariants of `A` relative to
 two isomorphic base rings can be compared through tower formulas in both directions.
 
+An `R`-algebra structure on an `S`-algebra `A` is determined by the scalar tower condition: every
+`R`-algebra structure with `IsScalarTower R S A` is the one obtained by restricting scalars along
+`R → S`. This identifies a restricted-scalars structure, such as the real algebra structure on
+operators over an `RCLike` field, with the structure an instance provides in a concrete case.
+
 ## Main results
 
 * `AlgHom.restrictScalars_comp`: `(f.comp g).restrictScalars R = (f.restrictScalars R).comp
   (g.restrictScalars R)`.
 * `IsScalarTower.of_algebraMap_rightInverse`: a tower `R → S → A` gives a tower `S → R → A` when
   `algebraMap S R` is a right inverse of `algebraMap R S`.
+* `Algebra.restrictScalars_eq`: an `R`-algebra structure on `A` compatible with the `S`-algebra
+  structure is `Algebra.restrictScalars R S A`.
 -/
 
 public section
@@ -46,3 +53,8 @@ theorem AlgHom.restrictScalars_comp (f : B →ₐ[S] C) (g : A →ₐ[S] B) :
 theorem IsScalarTower.of_algebraMap_rightInverse [Algebra S R]
     (h : Function.RightInverse (algebraMap S R) (algebraMap R S)) : IsScalarTower S R A :=
   .of_algebraMap_eq fun x ↦ by rw [IsScalarTower.algebraMap_apply R S A, h x]
+
+/-- An `R`-algebra structure on the `S`-algebra `A` forming a scalar tower `R → S → A` is the one
+obtained by restricting scalars along `R → S`. -/
+theorem Algebra.restrictScalars_eq : Algebra.restrictScalars R S A = ‹Algebra R A› :=
+  Algebra.algebra_ext _ _ fun r ↦ (IsScalarTower.algebraMap_apply R S A r).symm

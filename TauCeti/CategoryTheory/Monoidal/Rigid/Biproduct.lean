@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
-public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Basic
 
 /-!
 # Exact pairings of finite biproducts
@@ -27,8 +27,6 @@ finite biproducts of copies of the unit, are dualizable.
 
 ## Main declarations
 
-* `TauCeti.ExactPairing.unit_evaluation` and `TauCeti.ExactPairing.unit_coevaluation`: the
-  evaluation and coevaluation of Mathlib's self-pairing of the unit;
 * `TauCeti.ExactPairing.biproduct`: the exact pairing between `⨁ X` and `⨁ Y` induced by exact
   pairings between `X i` and `Y i`;
 * `TauCeti.ExactPairing.biproduct_ι_tensorHom_biproduct_ι_evaluation` and
@@ -91,20 +89,6 @@ theorem evaluation_coevaluation_tensorHom {Z X Y W : C} [ExactPairing X Y] (a : 
     rightUnitor_inv_naturality]
 
 end Naturality
-
-namespace ExactPairing
-
-/-- The evaluation of the canonical self-pairing of the unit is the right unitor. -/
-@[simp]
-theorem unit_evaluation : ε_ (𝟙_ C) (𝟙_ C) = (ρ_ (𝟙_ C)).hom :=
-  (rfl)
-
-/-- The coevaluation of the canonical self-pairing of the unit is the inverse right unitor. -/
-@[simp]
-theorem unit_coevaluation : η_ (𝟙_ C) (𝟙_ C) = (ρ_ (𝟙_ C)).inv :=
-  (rfl)
-
-end ExactPairing
 
 variable [Preadditive C] [MonoidalPreadditive C] {ι : Type w} [Finite ι]
   (X Y : ι → C) [HasBiproduct X] [HasBiproduct Y] [∀ i, ExactPairing (X i) (Y i)]

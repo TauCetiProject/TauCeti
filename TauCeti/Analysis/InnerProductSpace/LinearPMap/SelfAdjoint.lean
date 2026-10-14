@@ -37,6 +37,8 @@ linear maps used by the semigroup development.
 
 ## Main results
 
+* `LinearPMap.IsFormalAdjoint.add`: formal adjointness is preserved by sums; in particular a sum
+  of symmetric partial linear maps is symmetric.
 * `IsSelfAdjoint.isFormalAdjoint`: a self-adjoint partial linear map is formally self-adjoint.
 * `LinearPMap.IsFormalAdjoint.im_inner_self_apply`: the quadratic form of a formally self-adjoint
   map is real.
@@ -72,6 +74,16 @@ public section
 noncomputable section
 
 namespace LinearPMap
+
+/-- Formal adjointness is preserved by sums: if `S₁` and `S₂` are formal adjoints of `T₁` and
+`T₂`, then `S₁ + S₂` is a formal adjoint of `T₁ + T₂`. In particular a sum of symmetric partial
+linear maps is symmetric. -/
+theorem IsFormalAdjoint.add {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {T₁ T₂ : E →ₗ.[𝕜] F} {S₁ S₂ : F →ₗ.[𝕜] E} (h₁ : T₁.IsFormalAdjoint S₁)
+    (h₂ : T₂.IsFormalAdjoint S₂) : (T₁ + T₂).IsFormalAdjoint (S₁ + S₂) := fun x y ↦ by
+  rw [add_apply, add_apply, inner_add_left, inner_add_right, h₁ ⟨x, x.2.1⟩ ⟨y, y.2.1⟩,
+    h₂ ⟨x, x.2.2⟩ ⟨y, y.2.2⟩]
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 

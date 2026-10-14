@@ -794,6 +794,23 @@ theorem map_reducedProjection_comp_deconcatenation_comp_reducedInclusion :
   apply LinearMap.ext
   exact map_reducedProjection_deconcatenation_reducedInclusion R M
 
+/-- Deleting the empty word in both output factors recovers reduced deconcatenation
+of the positive-length part. -/
+theorem map_reducedProjection_comp_deconcatenation :
+    TensorProduct.map (reducedProjection R M) (reducedProjection R M) ∘ₗ
+        deconcatenation R M =
+      ReducedTensorWords.deconcatenation R M ∘ₗ reducedProjection R M := by
+  refine linearMap_ext R M fun n x ↦ ?_
+  simp only [LinearMap.comp_apply]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have hone : of R M 0 (PiTensorProduct.tprod R x) = (1 : TensorWords R M) := by
+      rw [one_eq_of_zero]
+      exact of_tprod_congr R M (fun i : Fin 0 ↦ i.elim0)
+    simp [hone]
+  · rw [← reducedInclusion_of R M ⟨n, hn⟩,
+      map_reducedProjection_deconcatenation_reducedInclusion,
+      reducedProjection_reducedInclusion]
+
 /-- The letters of a tensor word are primitive.
 
 This fires ahead of `TauCeti.TensorWords.deconcatenation_of`, whose right-hand side
@@ -825,6 +842,13 @@ noncomputable def map (f : M →ₗ[R] N) : TensorWords R M →ₗ[R] TensorWord
 theorem map_of (f : M →ₗ[R] N) (n : ℕ) (x : TensorPower R n M) :
     map f (of R M n x) = of R N n (PiTensorProduct.map (fun _ ↦ f) x) := by
   simp [map, of_def]
+
+/-- A letterwise map acts separately on each length component. -/
+@[simp]
+theorem component_map (f : M →ₗ[R] N) (n : ℕ) (x : TensorWords R M) :
+    component R N n (map f x) =
+      PiTensorProduct.map (fun _ ↦ f) (component R M n x) := by
+  simp only [component, map, ← DirectSum.apply_eq_component, DirectSum.lmap_apply]
 
 /-- Mapping a pure tensor applies the map to each of its letters. -/
 theorem map_of_tprod (f : M →ₗ[R] N) (n : ℕ) (x : Fin n → M) :
