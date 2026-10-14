@@ -86,31 +86,23 @@ private lemma detects_empty : Detects N n (∅ : Set M) :=
   ⟨fun k _ ↦ isZero_localHomology_empty N k, fun _ _ ↦
     (ModuleCat.subsingleton_of_isZero (isZero_localHomology_empty N n)).elim _ _⟩
 
-/-- A class `α` maps to zero under `r` exactly when the morphism `Λ ⟶ X` sending `1` to `α`
-composes with `r` to zero. This turns uniqueness statements for morphisms into `X` into vanishing
-statements for classes of `X`. -/
-private lemma toSpanSingleton_comp_eq_zero_iff {X Y : ModuleCat.{w} Λ} (α : X) (r : X ⟶ Y) :
-    ModuleCat.ofHom (LinearMap.toSpanSingleton Λ X α) ≫ r = 0 ↔ r α = 0 := by
-  rw [ModuleCat.hom_ext_iff, LinearMap.ext_ring_iff, ModuleCat.hom_zero, LinearMap.zero_apply]
-  -- `(f ≫ r).hom 1` is `r (1 • α)` by the definitions of composition and `toSpanSingleton`.
-  change r ((1 : Λ) • α) = 0 ↔ _
-  rw [one_smul]
-
-/-- A class `α` vanishes once the morphism `Λ ⟶ X` sending `1` to `α` does. -/
-private lemma eq_zero_of_toSpanSingleton_eq_zero {X : ModuleCat.{w} Λ} (α : X)
-    (h : ModuleCat.ofHom (LinearMap.toSpanSingleton Λ X α) = 0) : α = 0 := by
-  simpa using (toSpanSingleton_comp_eq_zero_iff α (𝟙 X)).1 (by rw [h, zero_comp])
-
 /-- In module coefficients, a class restricting to zero on `S` and on `T` vanishes, under the
 hypotheses of `TauCeti.localHomology_hom_ext_of_union`. -/
 private lemma eq_zero_of_union {S T : Set M} (hS : IsClosed S) (hT : IsClosed T) {k : ℕ}
     (h : IsZero (localHomology N (S ∩ T) (k + 1)))
     (α : (localHomology N (S ∪ T) k : ModuleCat.{w} Λ))
     (hαS : localHomologyRestriction N subset_union_left k α = 0)
-    (hαT : localHomologyRestriction N subset_union_right k α = 0) : α = 0 :=
-  eq_zero_of_toSpanSingleton_eq_zero α (localHomology_hom_ext_of_union hS hT h
-    (by rw [zero_comp, toSpanSingleton_comp_eq_zero_iff]; exact hαS)
-    (by rw [zero_comp, toSpanSingleton_comp_eq_zero_iff]; exact hαT))
+    (hαT : localHomologyRestriction N subset_union_right k α = 0) : α = 0 := by
+  have := localHomology_hom_ext_of_union hS hT h
+    (f := ModuleCat.ofHom (LinearMap.toSpanSingleton Λ
+      (localHomology N (S ∪ T) k : ModuleCat.{w} Λ) α)) (g := 0) ?_ ?_
+  · exact (LinearMap.toSpanSingleton_eq_zero_iff Λ _).1 congr(ModuleCat.Hom.hom $this)
+  all_goals
+    ext1
+    rw [zero_comp]
+    refine (LinearMap.comp_toSpanSingleton _ _).trans
+      ((LinearMap.toSpanSingleton_eq_zero_iff Λ _).2 ?_)
+  exacts [hαS, hαT]
 
 /-- **The union step.** The conclusion passes from closed sets `S` and `T` to `S ∪ T`, provided
 local homology along `S ∩ T` vanishes above degree `n`. -/
@@ -154,10 +146,16 @@ private lemma detects_of_subset_source (hn : finrank ℝ E = n) (φ : OpenPartia
     have hcpt (a : t) := isCompact_closedBall (φ a) (r a)
     have hφ (a : t) := ht a a.2
     refine ⟨fun k hk ↦ isZero_localHomology_symm_image_iUnion N φ hn hconv hcpt hφ hk,
-      fun α hα ↦ eq_zero_of_toSpanSingleton_eq_zero α
-        (localHomology_symm_image_iUnion_hom_ext N φ hn hconv hcpt hφ fun x hx ↦ ?_)⟩
-    rw [zero_comp, toSpanSingleton_comp_eq_zero_iff]
-    exact hα x hx
+      fun α hα ↦ ?_⟩
+    have := localHomology_symm_image_iUnion_hom_ext N φ hn hconv hcpt hφ
+      (g₁ := ModuleCat.ofHom (LinearMap.toSpanSingleton Λ
+        (localHomology N (φ.symm '' ⋃ a : t, closedBall (φ a) (r a)) n : ModuleCat.{w} Λ) α))
+      (g₂ := 0) fun x hx ↦ ?_
+    · exact (LinearMap.toSpanSingleton_eq_zero_iff Λ _).1 congr(ModuleCat.Hom.hom $this)
+    ext1
+    rw [zero_comp]
+    exact (LinearMap.comp_toSpanSingleton _ _).trans
+      ((LinearMap.toSpanSingleton_eq_zero_iff Λ _).2 (hα x hx))
   refine ⟨fun k hk ↦ ?_, fun α hα ↦ ?_⟩
   · have h (α : (localHomology N A k : ModuleCat.{w} Λ)) : α = 0 := by
       obtain ⟨t, r, ht, hAK, β, rfl⟩ := key k α
