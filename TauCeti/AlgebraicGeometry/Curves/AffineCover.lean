@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
-public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 
 /-!
 # Two affine opens covering a regular proper curve
