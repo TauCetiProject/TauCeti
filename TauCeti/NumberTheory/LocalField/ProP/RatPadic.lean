@@ -30,17 +30,17 @@ characterize `TauCeti.standardD0Orientation` (`TauCeti.standardD0Orientation_uni
 
 * `TauCeti.localRootOfUnityOrder_two_ratPadic`: `q(ℚ₂) = 2`.
 * `TauCeti.isDyadicOddCase_ratPadic`: `ℚ₂` lies in the odd dyadic case.
-* `TauCeti.absoluteGaloisGroupProP_two_ratPadic`: `G_{ℚ₂}(2) ≃ D₀`.
 * `TauCeti.demushkinRank_absoluteGaloisGroupProP_two_ratPadic`: `G_{ℚ₂}(2)` has rank `3`.
 * `TauCeti.absoluteGaloisGroupProP_two_ratPadic_marked`: **the marked identification
   `G_{ℚ₂}(2) ≃ D₀`**, carrying the standard orientation to the cyclotomic orientation, which is
   surjective.
+* `TauCeti.absoluteGaloisGroupProP_two_ratPadic`: `G_{ℚ₂}(2) ≃ D₀`, its unmarked corollary.
 
 ## References
 
 * J. P. Labute, *Classification of Demushkin groups*, Canad. J. Math. 19 (1967), 106–132.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Chapter VII, §5.
-* D. Roe, D. Turturean, *A Presentation of the Absolute Galois Group of ℚ₂*, preprint (2026),
+* D. Roe, D. Turturean, *A Presentation of the Absolute Galois Group of ℚ₂*, manuscript (2026),
   §3.1, <https://roed314.github.io/gq2/>.
 -/
 
@@ -81,27 +81,6 @@ theorem isDyadicOddCase_ratPadic : IsDyadicOddCase ℚ_[2] :=
     rw [Module.finrank_self]
     decide)
 
-/-- **The maximal pro-`2` quotient of `G_{ℚ₂}` is `D₀`.** -/
-theorem absoluteGaloisGroupProP_two_ratPadic :
-    Nonempty (absoluteGaloisGroupProP 2 ℚ_[2] ≃ₜ* demushkinD0) := by
-  obtain ⟨eWord, _, _, _⟩ :=
-    absoluteGaloisGroupProP_two_marked_of_degree_odd ℚ_[2]
-      ratPadicTwo_hasPrimitiveRoot (by rw [Module.finrank_self]; decide)
-  have hrank : Module.finrank ℚ_[2] ℚ_[2] + 2 = 3 := by rw [Module.finrank_self]
-  let eFin3 :
-      absoluteGaloisGroupProP 2 ℚ_[2] ≃ₜ*
-        presentedProP 2 (Fin 3) {demushkinWordTwoOdd 2 3 (freeProPGen 2 3)} := by
-    rw [← hrank]
-    exact eWord
-  have hclosure :
-      (Subgroup.normalClosure {demushkinWordTwoOdd 2 3 (freeProPGen 2 3)}).topologicalClosure =
-        (Subgroup.normalClosure {d0Relator}).topologicalClosure := by
-    rw [← d0Relator_eq_demushkinWordTwoOdd]
-  let ePresentation :
-      presentedProP 2 (Fin 3) {demushkinWordTwoOdd 2 3 (freeProPGen 2 3)} ≃ₜ* demushkinD0 :=
-    presentedProP.congrOfClosureEq hclosure
-  exact ⟨eFin3.trans ePresentation⟩
-
 /-- **`G_{ℚ₂}(2)` has Demushkin rank `3`**: for any witness `hG` that `G_{ℚ₂}(2)` is a Demushkin
 group, the associated rank `demushkinRank hG` is `3`, the rank `N + 2` at `N = 1`. -/
 @[simp]
@@ -112,11 +91,7 @@ theorem demushkinRank_absoluteGaloisGroupProP_two_ratPadic
 
 /-- **The marked presentation of `G_{ℚ₂}(2)`.** There is an isomorphism
 `e : G_{ℚ₂}(2) ≃ D₀ = ⟨A, S, Y ∣ A²S⁴(S,Y)⟩` along which the standard orientation of `D₀` pulls
-back to the cyclotomic orientation of `G_{ℚ₂}(2)`, and the cyclotomic orientation is surjective.
-
-This is the odd-degree marked theorem `TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_odd`
-at `N = 1`, whose relator is that of `D₀`. Its values `-1`, `1`, `(-3)⁻¹` on the preimages of `A`,
-`S`, `Y` are those that characterize the standard orientation. -/
+back to the cyclotomic orientation of `G_{ℚ₂}(2)`, and the cyclotomic orientation is surjective. -/
 theorem absoluteGaloisGroupProP_two_ratPadic_marked :
     ∃ e : absoluteGaloisGroupProP 2 ℚ_[2] ≃ₜ* demushkinD0,
       standardD0Orientation.comp (e : absoluteGaloisGroupProP 2 ℚ_[2] →ₜ* demushkinD0) =
@@ -149,5 +124,11 @@ theorem absoluteGaloisGroupProP_two_ratPadic_marked :
   refine ⟨e, hcomp, ?_⟩
   rw [← hcomp]
   exact standardD0Orientation_surjective.comp e.surjective
+
+/-- **The maximal pro-`2` quotient of `G_{ℚ₂}` is `D₀`.** -/
+theorem absoluteGaloisGroupProP_two_ratPadic :
+    Nonempty (absoluteGaloisGroupProP 2 ℚ_[2] ≃ₜ* demushkinD0) :=
+  let ⟨e, _⟩ := absoluteGaloisGroupProP_two_ratPadic_marked
+  ⟨e⟩
 
 end TauCeti
