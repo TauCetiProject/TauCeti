@@ -147,47 +147,54 @@ instance baseChangeFunctor_additive (f : S →+* T) :
     apply ObjectProperty.hom_ext
     apply CurvedDuplex.hom_ext
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-      let _ : Algebra S T := f.toAlgebra
-      apply ModuleCat.hom_ext
       simp only [baseChangeFunctor_map_f₀, ObjectProperty.add_hom, CurvedDuplex.add_f₀,
         Functor.map_add]
-      exact LinearMap.baseChange_add _ _
+      rfl
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-      let _ : Algebra S T := f.toAlgebra
-      apply ModuleCat.hom_ext
       simp only [baseChangeFunctor_map_f₁, ObjectProperty.add_hom, CurvedDuplex.add_f₁,
         Functor.map_add]
-      exact LinearMap.baseChange_add _ _
+      rfl
 
 /-- Extension of scalars along a map killing the potential sends a finite-projective matrix
 factorization to a square-zero duplex. The target components are the tensor products of the
 original components with the target ring. -/
 @[expose] noncomputable def baseChangeToCurvedDuplex (f : S →+* T) (hw : f w = 0) :
     MatrixFactorization S w ⥤ CurvedDuplex (ModuleCat.{u} T) (0 : T) :=
-  let F := forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)
-  baseChangeFunctor f ⋙ inclusion ⋙
-    { obj := fun X =>
-        { X₀ := X.X₀.obj
-          X₁ := X.X₁.obj
-          d₀ := F.map X.d₀
-          d₁ := F.map X.d₁
-          d₀_comp_d₁ := by
-            -- Unfold the composite functor to expose the mapped differential composite.
-            change F.map (X.d₀ ≫ X.d₁) = (0 : T) • 𝟙 _
-            simp [X.d₀_comp_d₁, hw]
-          d₁_comp_d₀ := by
-            -- The odd composite has the same definitional reduction.
-            change F.map (X.d₁ ≫ X.d₀) = (0 : T) • 𝟙 _
-            simp [X.d₁_comp_d₀, hw] }
-      map := fun g =>
-        { f₀ := F.map g.f₀
-          f₁ := F.map g.f₁
-          comm₀ := (F.map_comp _ _).symm.trans
-            ((congrArg F.map g.comm₀).trans (F.map_comp _ _))
-          comm₁ := (F.map_comp _ _).symm.trans
-            ((congrArg F.map g.comm₁).trans (F.map_comp _ _)) }
-      map_id := by intro X; apply CurvedDuplex.hom_ext <;> rfl
-      map_comp := by intro X Y Z g h; apply CurvedDuplex.hom_ext <;> rfl }
+  let F := forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f
+  { obj := fun X =>
+      { X₀ := F.obj X.obj.X₀
+        X₁ := F.obj X.obj.X₁
+        d₀ := F.map X.obj.d₀
+        d₁ := F.map X.obj.d₁
+        d₀_comp_d₁ := by
+          rw [← F.map_comp, X.obj.d₀_comp_d₁]
+          -- Expose scalar extension in order to use its curvature-transport formula.
+          change (ModuleCat.extendScalars f).map
+              (w • 𝟙 ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀)) =
+            (0 : T) • 𝟙 _
+          rw [ModuleCat.extendScalars_map_smul_id, hw]
+          simp only [zero_smul]
+        d₁_comp_d₀ := by
+          rw [← F.map_comp, X.obj.d₁_comp_d₀]
+          -- The odd component uses the same scalar-extension representation.
+          change (ModuleCat.extendScalars f).map
+              (w • 𝟙 ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁)) =
+            (0 : T) • 𝟙 _
+          rw [ModuleCat.extendScalars_map_smul_id, hw]
+          simp only [zero_smul] }
+    map := fun g =>
+      { f₀ := F.map g.hom.f₀
+        f₁ := F.map g.hom.f₁
+        comm₀ := (F.map_comp _ _).symm.trans
+          ((congrArg F.map g.hom.comm₀).trans (F.map_comp _ _))
+        comm₁ := (F.map_comp _ _).symm.trans
+          ((congrArg F.map g.hom.comm₁).trans (F.map_comp _ _)) }
+    map_id := by
+      intro X
+      apply CurvedDuplex.hom_ext <;> exact F.map_id _
+    map_comp := by
+      intro X Y Z g h
+      apply CurvedDuplex.hom_ext <;> exact F.map_comp _ _ }
 
 /-- The even object of the square-zero duplex is the scalar extension of the original even
 module. -/
@@ -238,43 +245,12 @@ instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
   map_add := by
     intro X Y g h
     apply CurvedDuplex.hom_ext
-    -- Unfold the composite into its forgetful image of `baseChangeFunctor` on the even map.
-    -- The map formula rewrites individual maps, but not the target hom's addition.
-    · change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map (g + h)).hom.f₀) =
-        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map g).hom.f₀) +
-        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map h).hom.f₀)
-      have h₀ := congrArg
-        (fun k : (baseChangeFunctor f).obj X ⟶ (baseChangeFunctor f).obj Y =>
-          (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map k.hom.f₀)
-        ((baseChangeFunctor f).map_add (f := g) (g := h))
-      refine h₀.trans ?_
-      -- Addition of factorization morphisms is componentwise; expose its even component
-      -- before applying additivity of the forgetful functor.
-      change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map g).hom.f₀ +
-            ((baseChangeFunctor f).map h).hom.f₀) = _
-      rw [Functor.map_add]
-    -- The odd component requires the same unfolding of the composite and forgetful map;
-    -- the individual map formula likewise does not rewrite addition of target homs.
-    · change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map (g + h)).hom.f₁) =
-        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map g).hom.f₁) +
-        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map h).hom.f₁)
-      have h₁ := congrArg
-        (fun k : (baseChangeFunctor f).obj X ⟶ (baseChangeFunctor f).obj Y =>
-          (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map k.hom.f₁)
-        ((baseChangeFunctor f).map_add (f := g) (g := h))
-      refine h₁.trans ?_
-      -- Expose componentwise addition of factorization morphisms on the odd component.
-      change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-          (((baseChangeFunctor f).map g).hom.f₁ +
-            ((baseChangeFunctor f).map h).hom.f₁) = _
-      rw [Functor.map_add]
+    · simp only [baseChangeToCurvedDuplex_map_f₀, ObjectProperty.add_hom,
+        CurvedDuplex.add_f₀, Functor.map_add]
+      rfl
+    · simp only [baseChangeToCurvedDuplex_map_f₁, ObjectProperty.add_hom,
+        CurvedDuplex.add_f₁, Functor.map_add]
+      rfl
 
 /-- The two-periodic complex obtained by reducing a matrix factorization along a ring map
 that kills its potential. -/

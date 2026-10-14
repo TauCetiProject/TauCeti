@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Transfer.Basic
+public import TauCeti.AlgebraicTopology.Singular.Transfer.Degree
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.CategoryTheory.Limits.Shapes.SingleObj
 public import TauCeti.Topology.Category.TopCat.Action
