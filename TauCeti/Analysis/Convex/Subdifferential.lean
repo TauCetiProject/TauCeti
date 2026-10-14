@@ -46,6 +46,8 @@ convex.
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
+* `StrictConvexOn.eq_of_mem_subdifferential` — a strictly convex function has disjoint
+  subdifferentials at distinct points;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
 * `TauCeti.convex_setOf_mem_subdifferential` — for a convex `f`, the points at which a fixed `y`
@@ -180,6 +182,27 @@ theorem apply_le_apply_of_mem_subdifferential {x₁ x₂ : E} {y₁ y₂ : F}
   have e₂ := (mem_subdifferential_iff_forall_toReal_add_le B hbot
     (ne_top_of_mem_subdifferential B h₂)).1 h₂ x₁ (ne_top_of_mem_subdifferential B h₁)
   rw [← neg_sub x₂ x₁, map_neg, LinearMap.neg_apply] at e₂
+  linarith
+
+/-- **Strict convexity separates subdifferentials.** If `f` is strictly convex on `s`, two points
+of `s` at which `f` has a common subgradient coincide: the subdifferentials of `f` at distinct
+points of `s` are disjoint. -/
+theorem _root_.StrictConvexOn.eq_of_mem_subdifferential {s : Set E} {f : E → ℝ}
+    (hf : StrictConvexOn ℝ s f) {x₁ x₂ : E} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s)
+    (h₁ : y ∈ subdifferential B (fun x => (f x : EReal)) x₁)
+    (h₂ : y ∈ subdifferential B (fun x => (f x : EReal)) x₂) : x₁ = x₂ := by
+  -- Two subgradient inequalities force `B (x₂ - x₁) y = f x₂ - f x₁`; then the subgradient
+  -- inequality at the midpoint contradicts strict convexity there.
+  by_contra hne
+  rw [mem_subdifferential_coe_iff] at h₁ h₂
+  have hmid := hf.2 hx₁ hx₂ hne (one_half_pos : (0 : ℝ) < 1 / 2) one_half_pos (add_halves 1)
+  have e₁ := h₁ ((1 / 2 : ℝ) • x₁ + (1 / 2 : ℝ) • x₂)
+  have e₂ := h₂ x₁
+  have hm : (1 / 2 : ℝ) • x₁ + (1 / 2 : ℝ) • x₂ - x₁ = (1 / 2 : ℝ) • (x₂ - x₁) := by
+    module
+  rw [hm, map_smul, LinearMap.smul_apply, smul_eq_mul] at e₁
+  rw [← neg_sub x₂ x₁, map_neg, LinearMap.neg_apply] at e₂
+  simp only [smul_eq_mul] at hmid
   linarith
 
 /-! ### Subgradient images -/
