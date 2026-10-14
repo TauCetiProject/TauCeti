@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Alexander Richard Towell
 -/
 module
 
@@ -21,8 +21,9 @@ selections. Neither construction assumes symmetry of the population law.
 
 For a nonempty population index, sampling with replacement is the mixture over `ρ` of the finite
 product laws of the empirical measures `empiricalMeasureOfFintype x`. The collision bound gives the
-two eventwise comparisons between sampling with and without replacement, with error
-`choose |ι| 2 / |κ|`. These comparisons apply to arbitrary probability population laws and feed
+two eventwise comparisons between sampling with and without replacement, with error equal to
+the probability that the index selections collide, and hence at most `choose |ι| 2 / |κ|`.
+These comparisons apply to arbitrary probability population laws and feed
 quantitative approximation results for finite exchangeable processes.
 
 If no injective selection exists, sampling without replacement is the zero measure. Sampling
@@ -39,6 +40,9 @@ replacement, including when both index types are empty.
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
 * `sampleWithoutReplacement_le_sampleWithReplacement_add`,
   `sampleWithReplacement_le_sampleWithoutReplacement_add`: the eventwise collision bounds.
+* `sampleWithoutReplacement_le_sampleWithReplacement_add_collision`,
+  `sampleWithReplacement_le_sampleWithoutReplacement_add_collision`: the stronger bounds that
+  retain the exact collision event, before applying the union bound.
 
 ## References
 
@@ -171,16 +175,16 @@ section Bounds
 
 variable [Fintype ι] [Fintype κ]
 
-/-- **Finite sampling bound, without replacement to with replacement.** For every measurable
-event, sampling without replacement from a random finite population has mass at most its
-with-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
-theorem sampleWithoutReplacement_le_sampleWithReplacement_add
+omit [Fintype κ] in
+/-- Sampling without replacement from a random finite population increases the mass of a
+measurable event by at most the probability that uniform index selections collide. -/
+theorem sampleWithoutReplacement_le_sampleWithReplacement_add_collision [Finite κ]
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
-      (Fintype.card ι).choose 2 / Fintype.card κ := by
+      uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
   rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
     samplePopulation_apply_population hA, samplePopulation_apply_population hA]
-  let c : ℝ≥0∞ := (Fintype.card ι).choose 2 / Fintype.card κ
+  let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
   let f : (κ → α) → ℝ≥0∞ := fun x =>
     uniformOn (Set.univ : Set (ι → κ)) ((fun k i => x (k i)) ⁻¹' A)
   have hf : Measurable f := by
@@ -188,20 +192,20 @@ theorem sampleWithoutReplacement_le_sampleWithReplacement_add
   calc
     (∫⁻ x, uniformOn {k : ι → κ | Function.Injective k}
         ((fun k i => x (k i)) ⁻¹' A) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
-      lintegral_mono fun x => uniformOn_injective_le_add_choose_two_div _
+      lintegral_mono fun x => uniformOn_injective_le_add _
     _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
     _ = (∫⁻ x, f x ∂ρ) + c := by simp
 
-/-- **Finite sampling bound, with replacement to without replacement.** For every measurable
-event, sampling with replacement from a random finite population has mass at most its
-without-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
-theorem sampleWithReplacement_le_sampleWithoutReplacement_add
+omit [Fintype κ] in
+/-- Sampling with replacement from a random finite population increases the mass of a
+measurable event by at most the probability that uniform index selections collide. -/
+theorem sampleWithReplacement_le_sampleWithoutReplacement_add_collision [Finite κ]
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
-      (Fintype.card ι).choose 2 / Fintype.card κ := by
+      uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
   rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
     samplePopulation_apply_population hA, samplePopulation_apply_population hA]
-  let c : ℝ≥0∞ := (Fintype.card ι).choose 2 / Fintype.card κ
+  let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
   let f : (κ → α) → ℝ≥0∞ := fun x =>
     uniformOn {k : ι → κ | Function.Injective k} ((fun k i => x (k i)) ⁻¹' A)
   have hf : Measurable f := by
@@ -209,9 +213,29 @@ theorem sampleWithReplacement_le_sampleWithoutReplacement_add
   calc
     (∫⁻ x, uniformOn (Set.univ : Set (ι → κ))
         ((fun k i => x (k i)) ⁻¹' A) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
-      lintegral_mono fun x => uniformOn_univ_le_injective_add_choose_two_div _
+      lintegral_mono fun x => uniformOn_univ_le_injective_add _
     _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
     _ = (∫⁻ x, f x ∂ρ) + c := by simp
+
+/-- **Finite sampling bound, without replacement to with replacement.** For every measurable
+event, sampling without replacement from a random finite population has mass at most its
+with-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
+theorem sampleWithoutReplacement_le_sampleWithReplacement_add
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
+      (Fintype.card ι).choose 2 / Fintype.card κ :=
+  (sampleWithoutReplacement_le_sampleWithReplacement_add_collision hA).trans
+    (add_le_add le_rfl uniformOn_not_injective_le)
+
+/-- **Finite sampling bound, with replacement to without replacement.** For every measurable
+event, sampling with replacement from a random finite population has mass at most its
+without-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
+theorem sampleWithReplacement_le_sampleWithoutReplacement_add
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
+      (Fintype.card ι).choose 2 / Fintype.card κ :=
+  (sampleWithReplacement_le_sampleWithoutReplacement_add_collision hA).trans
+    (add_le_add le_rfl uniformOn_not_injective_le)
 
 end Bounds
 
