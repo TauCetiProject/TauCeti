@@ -26,7 +26,8 @@ above the place, including split algebras and real and complex places.
 * `TauCeti.exists_unit_preimages_of_isUnramifiedAt`: a unit has integral unit preimages
   if one completion above the place is unramified.
 * `TauCeti.mem_range_normUnits_adicCompletion_of_finrank_eq_one`: every element is a local norm
-  if one completion above the place has degree one.
+  if one completion above the place has degree one, and
+  `TauCeti.mem_range_normUnits_completion_of_finrank_eq_one` is its infinite counterpart.
 * `TauCeti.pow_mem_range_normUnits_completion`: at an infinite place every `n`-th power is a local
   norm once `n` kills `Gal(L/K)`.
 
@@ -115,6 +116,22 @@ theorem mem_range_normUnits_adicCompletion_of_finrank_eq_one (v : HeightOneSpect
   refine ⟨Pi.mulSingle w b, ?_⟩
   rw [finprod_eq_single _ w fun w' hw' ↦ by simp [Pi.mulSingle_eq_of_ne hw']]
   ext
+  simp [hb, hw]
+
+/-- **Local norms at an infinite place of degree one.** If some completion `L_w` of `L` above the
+infinite place `v` has degree one over `K_v`, then every element of `K_vˣ` is a norm from the local
+étale algebra `K_v ⊗[K] L`. -/
+theorem mem_range_normUnits_completion_of_finrank_eq_one (v : InfinitePlace K)
+    (hv : ∃ w : {w : InfinitePlace L // w.LiesOver v},
+      Module.finrank v.Completion w.1.Completion = 1)
+    (a : v.Completionˣ) :
+    a ∈ (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range := by
+  classical
+  obtain ⟨w, hw⟩ := hv
+  obtain ⟨b, hb⟩ := Algebra.pow_finrank_mem_range_normUnits v.Completion (S := w.1.Completion) a
+  rw [mem_range_normUnits_completion_iff]
+  refine ⟨Pi.mulSingle w b, ?_⟩
+  rw [finprod_eq_single _ w fun w' hw' ↦ by simp [Pi.mulSingle_eq_of_ne hw']]
   simp [hb, hw]
 
 /-- **`n`-th powers are local norms at an infinite place.** If `n` kills `Gal(L/K)`, then every
