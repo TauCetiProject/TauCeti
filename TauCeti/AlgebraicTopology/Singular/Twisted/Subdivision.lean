@@ -134,22 +134,6 @@ def twistedAffineSimplex (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n
       (pathTransport σ z (affineToTop v (toTopInitialVertex ⦋k⦌))))
     (ιTwistedChainComplex L k (affineSimplex σ v))
 
-private lemma pathTransport_comp_eqToHom (σ : (TopCat.toSSet.obj X).obj n)
-    (a c c' : toTop.{v}.obj n.unop) (hc : c = c') :
-    pathTransport σ a c ≫
-        eqToHom (congrArg (fun y ↦ (⟨TopCat.simplexMap σ y⟩ : FundamentalGroupoid X)) hc) =
-      pathTransport σ a c' := by
-  subst hc
-  simp
-
-private lemma pathTransport_comp_pathTransport_comp_eqToHom (σ : (TopCat.toSSet.obj X).obj n)
-    (a b c c' : toTop.{v}.obj n.unop) (hc : c = c') :
-    pathTransport σ a b ≫ pathTransport σ b c ≫
-        eqToHom (congrArg (fun y ↦ (⟨TopCat.simplexMap σ y⟩ : FundamentalGroupoid X)) hc) =
-      pathTransport σ a c' := by
-  subst hc
-  simp
-
 /-- The boundary of the summand of an affine simplex of `σ` is the alternating sum of the summands
 of its facets, all with coefficients transported from the same point of `σ`. -/
 @[simp]
@@ -170,7 +154,8 @@ lemma twistedAffineSimplex_d (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.o
       toTopInitialVertex_down]
     simp [SimplexCategory.δ]
   rw [vertexTransport_eq_pathTransport, pathTransport_affineSimplex]
-  exact (Category.assoc _ _ _).trans (pathTransport_comp_pathTransport_comp_eqToHom σ _ _ _ _ hp)
+  exact (Category.assoc _ _ _).trans
+    ((pathTransport_comp_assoc σ _ _ _ _).trans (pathTransport_eqToHom σ _ hp))
 
 /-- Transporting the coefficients inside `σ` changes the point from which the summand of an affine
 simplex in `σ` is transported. -/
@@ -207,7 +192,7 @@ lemma twistedAffineSimplex_comp_continuousAffineMapMk (σ : (TopCat.toSSet.obj X
   unfold twistedAffineSimplex
   refine map_comp_ιTwistedChainComplex_congr hτ ?_
   rw [pathTransport_affineSimplex]
-  exact pathTransport_comp_eqToHom σ _ _ _ hp
+  exact pathTransport_eqToHom σ _ hp
 
 /-- The summand of an affine simplex in a facet of `σ` is the summand of the affine simplex of `σ`
 with the pushed-forward vertices. -/
@@ -231,7 +216,7 @@ lemma twistedAffineSimplex_δ {m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋m + 1⦌
   refine map_comp_ιTwistedChainComplex_congr
     (TopCat.toSSetObjEquiv_symm_comp_affineMapMk_δ σ v j) ?_
   rw [pathTransport_map]
-  exact pathTransport_comp_eqToHom σ _ _ _ hp
+  exact pathTransport_eqToHom σ _ hp
 
 /-- The twisted singular chain with coefficients transported from the point `σ z` obtained by
 pushing forward along `σ` an affine chain `c` of the simplex of `σ`: a vertex tuple `v` is sent to
@@ -387,7 +372,7 @@ lemma twistedSingularChain_simplex {k : ℕ} (σ : (TopCat.toSSet.obj X) _⦋k�
   rw [simplex_def, twistedSingularChain_single, one_smul, twistedAffineSimplex]
   refine (map_comp_ιTwistedChainComplex_congr hσ ?_).trans
     (by rw [CategoryTheory.Functor.map_id, Category.id_comp])
-  exact (pathTransport_comp_eqToHom σ _ _ _ hp).trans (pathTransport_self σ _)
+  exact (pathTransport_eqToHom σ _ hp).trans (pathTransport_self σ _)
 
 /-- The barycentric subdivision is the identity on twisted singular `0`-chains. -/
 @[simp]
