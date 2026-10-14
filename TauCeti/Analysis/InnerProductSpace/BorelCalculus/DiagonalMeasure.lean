@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # The diagonal measure of a normal operator
@@ -66,15 +67,14 @@ private def diagFunctional (ξ : H) : C_c(spectrum ℂ a, ℝ) →ₚ[ℝ] ℝ :
   PositiveLinearMap.mk₀
     { toFun g := RCLike.re ⟪ξ, cfcHom (a := a) ‹_› (g.toContinuousMap.realToRCLike ℂ) ξ⟫_ℂ
       map_add' g h := by
-        have : (g + h).toContinuousMap.realToRCLike ℂ =
-            g.toContinuousMap.realToRCLike ℂ + h.toContinuousMap.realToRCLike ℂ := by
-          ext; simp
-        rw [this, map_add, _root_.add_apply, inner_add_right, map_add]
+        simp only [← realToRCLikeStarAlgHom_apply]
+        rw [show (g + h).toContinuousMap = g.toContinuousMap + h.toContinuousMap from rfl,
+          map_add, map_add, _root_.add_apply, inner_add_right, map_add]
       map_smul' c g := by
-        have : (c • g).toContinuousMap.realToRCLike ℂ =
-            (c : ℂ) • g.toContinuousMap.realToRCLike ℂ := by
-          ext; simp
-        rw [this, map_smul, _root_.smul_apply, inner_smul_right]
+        simp only [← realToRCLikeStarAlgHom_apply]
+        rw [show (c • g).toContinuousMap = c • g.toContinuousMap from rfl, map_smul,
+          ← algebraMap_smul ℂ c (M := C(spectrum ℂ a, ℂ)), map_smul, _root_.smul_apply,
+          inner_smul_right]
         simp }
     fun g hg => by
       have hT : 0 ≤ cfcHom (a := a) ‹_› (g.toContinuousMap.realToRCLike ℂ) := by
@@ -104,9 +104,7 @@ private lemma ofReal_integral_diagMeasure (ξ : H) (g : C(spectrum ℂ a, ℝ)) 
   have h := RealRMK.integral_rieszMeasure (diagFunctional a ξ) ⟨g, .of_compactSpace _⟩
   rw [CompactlySupportedContinuousMap.coe_mk, diagFunctional_apply] at h
   -- A real symbol gives a self-adjoint operator, whose diagonal matrix elements are real.
-  have hsa : IsSelfAdjoint (cfcHom ‹IsStarNormal a› (g.realToRCLike ℂ)) := by
-    refine IsSelfAdjoint.map (f := cfcHom ‹IsStarNormal a›) ?_
-    rw [IsSelfAdjoint, ← realToRCLike_star, star_trivial]
+  have hsa := (isSelfAdjoint_realToRCLike (𝕜 := ℂ) (f := g)).map (cfcHom ‹IsStarNormal a›)
   rw [diagMeasure, h]
   exact RCLike.conj_eq_iff_re.mp ((inner_conj_symm _ _).trans (hsa.isSymmetric ξ ξ))
 
@@ -114,16 +112,12 @@ private lemma ofReal_integral_diagMeasure (ξ : H) (g : C(spectrum ℂ a, ℝ)) 
 matrix elements of the continuous functional calculus: `∫ f dμ_ξ = ⟪ξ, f(a) ξ⟫`. -/
 theorem integral_diagMeasure_eq_inner_cfcHom (ξ : H) (f : C(spectrum ℂ a, ℂ)) :
     ∫ x, f x ∂(a.diagMeasure ξ) = ⟪ξ, cfcHom ‹_› f ξ⟫_ℂ := by
-  -- Split `f` into its real and imaginary parts, and apply the real case to each.
-  let u : C(spectrum ℂ a, ℝ) := ⟨fun x ↦ (f x).re, by fun_prop⟩
-  let v : C(spectrum ℂ a, ℝ) := ⟨fun x ↦ (f x).im, by fun_prop⟩
-  have hf : f = u.realToRCLike ℂ + Complex.I • v.realToRCLike ℂ := by
-    ext x
-    simp [u, v, mul_comm Complex.I]
-  rw [← integral_re_add_im (f.continuous.integrable_of_hasCompactSupport (.of_compactSpace _))]
-  conv_rhs => rw [hf, map_add, map_smul, _root_.add_apply, _root_.smul_apply, inner_add_right,
-    inner_smul_right, ← ofReal_integral_diagMeasure, ← ofReal_integral_diagMeasure]
-  simp [u, v, mul_comm Complex.I]
+  let φ : C(spectrum ℂ a, ℂ) →ₗ[ℂ] ℂ :=
+    { toFun f := ⟪ξ, cfcHom ‹_› f ξ⟫_ℂ
+      map_add' f g := by simp [inner_add_right]
+      map_smul' c f := by simp [inner_smul_right] }
+  exact (φ.apply_eq_integral_of_forall_realToRCLike
+    (fun g ↦ (ofReal_integral_diagMeasure a ξ g).symm) f).symm
 
 /-- The `cfc` form of `integral_diagMeasure_eq_inner_cfcHom`: for `f` continuous on the spectrum
 of a normal operator `a`, `∫ f dμ_ξ = ⟪ξ, cfc f a ξ⟫`. -/
