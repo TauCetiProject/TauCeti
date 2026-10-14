@@ -40,7 +40,7 @@ Mordell–Weil theorem and the finiteness of the `N`-Selmer group (Silverman VII
   trivially on `E[N]` fixes the `N`-th roots of unity.
 * `WeierstrassCurve.exists_isPrimitiveRoot_of_forall_torsionGaloisAction_eq_one`: if the Galois
   action on `E[N]` is trivial, the base field contains a primitive `N`-th root of unity.
-* `WeierstrassCurve.exists_isPrimitiveRoot_of_card_torsionBy`: if `E(F)` has `N²` points of order
+* `WeierstrassCurve.exists_isPrimitiveRoot_of_natCard_torsionBy`: if `E(F)` has `N²` points of order
   dividing `N`, that is `E[N] ⊆ E(F)`, then `F` contains a primitive `N`-th root of unity.
 
 ## References
@@ -128,7 +128,7 @@ end Galois
 /-- **If `E[N] ⊆ E(F)` then `μ_N ⊆ F`** (Silverman III.8.1.1): if an elliptic curve over `F` has
 `N²` rational `N`-torsion points, with `N` invertible in `F`, then `F` contains a primitive `N`-th
 root of unity. -/
-theorem exists_isPrimitiveRoot_of_card_torsionBy [DecidableEq F] (hN : (N : F) ≠ 0)
+theorem exists_isPrimitiveRoot_of_natCard_torsionBy [DecidableEq F] (hN : (N : F) ≠ 0)
     (h : Nat.card (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) = N ^ 2) :
     ∃ ζ : F, IsPrimitiveRoot ζ N := by
   classical
