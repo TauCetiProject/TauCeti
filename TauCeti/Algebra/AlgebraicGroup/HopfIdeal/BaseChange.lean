@@ -73,6 +73,8 @@ along `h ↦ 1 ⊗ h`.
 * `TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff`: a point of the
   base change lies in the base-changed closed subgroup exactly when its restriction lies in the
   original one.
+* `TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem`: the
+  same criterion for a `K`-valued point of `H` and its base change.
 * `TauCeti.CommHopfAlgCat.isCentral_baseChangeHopfIdeal`: base change preserves central Hopf
   ideals.
 
@@ -803,6 +805,22 @@ theorem mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff (J : HopfIdeal k H)
       have := hg h ((HopfIdeal.mem_toIdeal (I := J)).mp hh)
       rwa [baseChangePointsMulEquiv_apply_apply] at this
     exact RingHom.mem_ker.mp (hle ((HopfIdeal.mem_toIdeal (I := baseChangeHopfIdeal J)).mpr hy))
+
+/-- A `K`-valued point of `H` lies in the closed subgroup cut out by `J` exactly when its base
+change, a `K`-valued point of `K ⊗[k] H`, lies in the closed subgroup cut out by `J_K`. This is
+`mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff` with the original point presented over
+`CommAlgCat.of k K` through `AlgHom.baseChangePointsMulEquiv`, rather than over the restriction
+of scalars of `CommAlgCat.of K K`; the two presentations agree only propositionally. -/
+theorem mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem
+    (J : HopfIdeal k H) (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k K)) :
+    g ∈ quotientPointsSubgroup H J (CommAlgCat.of k K) ↔
+      AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := K) g ∈
+        quotientPointsSubgroup (baseChange (K := K) H) (baseChangeHopfIdeal (K := K) J)
+          (CommAlgCat.of K K) := by
+  rw [mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff, mem_quotientPointsSubgroup_iff,
+    mem_quotientPointsSubgroup_iff]
+  refine forall₂_congr fun h _ ↦ ?_
+  rw [baseChangePointsMulEquiv_apply_apply, AlgHom.baseChangePointsMulEquiv_apply_tmul, one_smul]
 
 end TauCeti.CommHopfAlgCat
 
