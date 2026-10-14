@@ -191,6 +191,33 @@ NOTATION_RECEIVERS = tuple(sorted((
     ("↪", "Embedding"),
     ("≃", "Equiv"),
 ), key=lambda item: len(item[0]), reverse=True))
+NOTATION_RECEIVER_MAP = dict(NOTATION_RECEIVERS)
+
+# These tokens are not reserved by Lean until their scope is active. In particular, with
+# CStarAlgebra closed, ``A→CP`` is the ordinary function type ``A → CP``.
+SCOPED_ARROW_NOTATIONS = {
+    "AddConstMap": ("→+c[",),
+    "CStarAlgebra": ("→CP",),
+    "CompactlySupported": ("→C_c",),
+    "ZeroAtInfty": ("→C₀",),
+    "CompactConvergenceCLM": ("→L_c[", "→SL_c["),
+    "UniformConvergenceCLM": ("→Lᵤ[", "→SLᵤ["),
+    "BoundedContinuousFunction": ("→ᵇ",),
+    "BoxIntegral": ("→ᵇᵃ", "→ᵇᵃ["),
+    "UniformConvergence": ("→ᵤ", "→ᵤ["),
+    "Isocrystal": ("→ᶠˡ[", "→ᶠⁱ["),
+    "ContRepresentation": ("→ⁱL",),
+    "MeasureTheory": ("→₁[", "→₂["),
+    "Quandles": ("→◃",),
+}
+LOCAL_ARROW_TARGETS = {
+    "→co": {"CocompactMap"},
+    "→fg": {"SimpleGraph.FinsubgraphHom"},
+    "→ₛ": {"MeasureTheory.SimpleFunc"},
+}
+CONDITIONAL_ARROW_NOTATIONS = {
+    token for tokens in SCOPED_ARROW_NOTATIONS.values() for token in tokens
+} | LOCAL_ARROW_TARGETS.keys()
 
 SPECIAL_NOTATION_RECEIVERS = (
     (re.compile(r"\[×[^]]*\]$"), "→L[", "ContinuousMultilinearMap"),
@@ -385,6 +412,9 @@ def _skip_balanced(text: str, position: int) -> int:
 def _command_prefix(text: str, line_start: int) -> tuple[int, str] | None:
     """Return the declaration keyword position and keyword for a command at ``line_start``."""
     position = _skip_horizontal(text, line_start)
+    # Lean also permits a declaration on the same line as its one-command open wrapper.
+    while wrapper := re.match(r"open\s+[^\n]*?\bin\b[ \t]+", text[position:]):
+        position += wrapper.end()
     while text.startswith("@[", position):
         position = _skip_balanced(text, position + 1)
         while position < len(text) and text[position].isspace():
@@ -496,7 +526,7 @@ def scopes(text: str) -> list[tuple[int, str, str | None]]:
     """
     code = strip_comments_and_strings(text)
     pattern = re.compile(
-        r"(?m)^(?:(?:public|private|protected|noncomputable)\s+)*"
+        r"(?m)^[ \t]*(?:(?:public|private|protected|noncomputable)\s+)*"
         r"(?P<kind>namespace|section|mutual|end)(?:\s+(?P<name>[\w'.]+))?[ \t]*$"
     )
     return [(m.start(), m.group("kind"), m.group("name")) for m in pattern.finditer(code)]
@@ -621,6 +651,195 @@ def update_scope(stack: list[Scope], kind: str, name: str | None) -> None:
                 break
 
 
+def _notation_literals(header: str) -> list[str]:
+    """Read arrow-token literals from a verified notation header, ignoring its comments.
+
+    The shared conservative source-guard lexer is deliberately unchanged. This separate reader
+    only sees a command whose keyword was found with comments and strings already masked.
+    Escaped literals and quoted identifiers are not interpreted as notation tokens.
+    """
+    tokens = []
+    position = 0
+    while position < len(header):
+        if header.startswith("/-", position):
+            depth = 1
+            position += 2
+            while position < len(header) and depth:
+                if header.startswith("/-", position):
+                    depth += 1
+                    position += 2
+                elif header.startswith("-/", position):
+                    depth -= 1
+                    position += 2
+                else:
+                    position += 1
+        elif header.startswith("--", position):
+            newline = header.find("\n", position)
+            position = len(header) if newline < 0 else newline + 1
+        elif header[position] == "«":
+            end = header.find("»", position)
+            position = len(header) if end < 0 else end + 1
+        elif header[position] == '"':
+            start = position + 1
+            position = start
+            escaped = False
+            while position < len(header) and header[position] != '"':
+                if header[position] == "\\":
+                    escaped = True
+                    position += 1
+                position += 1
+            token = header[start:position].strip()
+            if not escaped and token.startswith("→") and token != "→":
+                tokens.append(token)
+            position += 1
+        else:
+            position += 1
+    return tokens
+
+
+def _notation_contexts(text: str) -> dict[int, dict[str, str | None]]:
+    """Snapshot active arrow tokens at declaration and section-variable commands.
+
+    Model standalone namespace/section commands, ordinary and scoped opens (including selective
+    and one-command opens), and textual notation declarations. Imported custom notation and
+    arbitrary command macros remain outside this command-level parser. An override has unknown
+    ownership, except for an exact qualified constructor target of the three standard local
+    infix notations. It does not elaborate RHS applications, aliases, or custom syntax macros.
+    """
+    if not any(token in text for token in CONDITIONAL_ARROW_NOTATIONS) and not (
+            "→" in text and ("notation" in text or "infix" in text)):
+        return {}
+    code = strip_comments_and_strings(text)
+    queries = {decl.position for decl in declarations(text)}
+    queries.update(position for position, _ in variable_bindings(text))
+    events: list[tuple[int, str, object]] = [
+        (position, "scope", (kind, name)) for position, kind, name in scopes(text)
+    ]
+    events.extend((position, "query", None) for position in queries)
+    command_ranges = []
+    open_pattern = re.compile(r"(?m)^[ \t]*open\s+(?P<body>[^\n]+)")
+    for match in open_pattern.finditer(code):
+        body = match.group("body").strip()
+        end = match.end()
+        # An indented continuation may list more namespaces, but never another command.
+        while end < len(code) and code[end] == "\n":
+            continuation = re.match(r"\n[ \t]+([\w'.]+(?:[ \t]+[\w'.]+)*)[ \t]*(?=\n|$)",
+                                    code[end:])
+            if continuation is None or continuation.group(1).split()[0] in (
+                    DECLARATION_KEYWORDS | MODIFIERS | {"open", "variable", "end"}):
+                break
+            body += " " + continuation.group(1)
+            end += continuation.end()
+        wrapper = re.search(r"\bin\b", body)
+        if (wrapper and body[wrapper.end():].strip()
+                and _command_prefix(code, match.start()) is None):
+            events.append((match.start(), "other", None))
+            command_ranges.append((match.start(), end))
+            continue
+        if wrapper:
+            body = body[:wrapper.start()].rstrip()
+        scoped = body.startswith("scoped ")
+        if scoped:
+            body = body[len("scoped "):].lstrip()
+        # Selective opens expose named constants, not scoped notation. A hiding clause still
+        # opens the namespace itself and therefore activates its scoped notation.
+        selected = "renaming" in body or ("(" in body and "hiding" not in body)
+        names = [] if selected else re.findall(r"(?:_root_\.)?[\w']+(?:\.[\w']+)*",
+                                               body.split("hiding", 1)[0])
+        events.append((match.start(), "open", (names, wrapper is not None)))
+        command_ranges.append((match.start(), end))
+
+    notation_pattern = re.compile(
+        r"(?m)^[ \t]*(?:@\[[^\n]*?\]\s*)?"
+        r"(?:(?P<modifier>local|scoped(?:\[[^]\n]*\])?)\s+)?"
+        r"(?:notation3?|infix[lr]?)(?::[\w]+)?(?=\s)")
+    for match in notation_pattern.finditer(code):
+        arrow = code.find("=>", match.end())
+        if arrow < 0:
+            continue
+        tokens = _notation_literals(text[match.end():arrow])
+        if not tokens:
+            continue
+        rhs = code[arrow + 2:].split("\n", 1)[0].strip()
+        target = IDENTIFIER.fullmatch(rhs) if "." in rhs else None
+        # A continued RHS might apply the constructor or change the result's outer type.
+        following = code.find("\n", arrow + 2)
+        if following >= 0 and re.match(r"\n[ \t]+\S", code[following:]):
+            target = None
+        events.append((match.start(), "notation", (match.group("modifier"), tokens,
+                       target.group().removeprefix("_root_.") if target else None)))
+        command_ranges.append((match.start(), arrow + 2))
+
+    # A one-command open must not leak past an intervening #check, notation, or other command.
+    for match in re.finditer(r"(?m)^[ \t]*(?:#)?[A-Za-z_][\w']*", code):
+        line_end = code.find("\n", match.start())
+        if line_end < 0:
+            line_end = len(code)
+        if (not any(start <= match.start() < end for start, end in command_ranges)
+                and not any(match.start() <= query < line_end for query in queries)
+                and not any(position == match.start() for position, _, _ in events)):
+            events.append((match.start(), "other", None))
+    events.sort(key=lambda event: (event[0], event[1] == "query"))
+    stack: list[Scope] = []
+    states: list[tuple[set[str], dict[str, str | None]]] = [(set(), {})]
+    global_overrides: dict[str, str | None] = {}
+    scoped_overrides: dict[str, dict[str, str | None]] = {}
+    pending_opens: set[str] = set()
+    contexts = {}
+    receivers = NOTATION_RECEIVER_MAP
+
+    def namespaces() -> set[str]:
+        components = [component for scope in stack for component in scope.components]
+        if "_root_" in components:
+            last_root = max(index for index, part in enumerate(components) if part == "_root_")
+            components = components[last_root + 1:]
+        return {".".join(components[:index]) for index in range(1, len(components) + 1)}
+
+    for position, kind, payload in events:
+        opened, local_overrides = states[-1]
+        if kind == "scope":
+            scope_kind, name = payload
+            old_depth = len(stack)
+            update_scope(stack, scope_kind, name)
+            if len(stack) > old_depth:
+                states.extend((set(opened), dict(local_overrides))
+                              for _ in range(len(stack) - old_depth))
+            else:
+                del states[len(stack) + 1:]
+            pending_opens.clear()
+        elif kind == "open":
+            names, one_shot = payload
+            target = pending_opens if one_shot else opened
+            target.update(name.removeprefix("_root_.") for name in names)
+        elif kind == "notation":
+            modifier, tokens, target = payload
+            overrides = {token: (receivers[token] if target in LOCAL_ARROW_TARGETS.get(token, ())
+                                  else None) for token in tokens}
+            if modifier == "local":
+                local_overrides.update(overrides)
+            elif modifier and modifier.startswith("scoped"):
+                explicit = re.search(r"\[([^]]+)\]", modifier)
+                scope_name = (explicit.group(1).removeprefix("_root_.") if explicit else
+                              max(namespaces(), key=len, default=""))
+                scoped_overrides.setdefault(scope_name, {}).update(overrides)
+            else:
+                global_overrides.update(overrides)
+            pending_opens.clear()
+        elif kind == "query":
+            active_scopes = opened | pending_opens | namespaces()
+            context = {token: receivers[token] for scope in active_scopes
+                       for token in SCOPED_ARROW_NOTATIONS.get(scope, ())}
+            for scope in active_scopes:
+                context.update(scoped_overrides.get(scope, {}))
+            context.update(global_overrides)
+            context.update(local_overrides)
+            contexts[position] = context
+            pending_opens.clear()
+        else:
+            pending_opens.clear()
+    return contexts
+
+
 def qualified_declarations(
     text: str, *, extra_declarations: Iterable[tuple[int, str]] = (),
     keep: Callable[[Declaration], bool] | None = None,
@@ -661,7 +880,9 @@ def qualified_declarations(
     return found
 
 
-def _declaration_returns_sort(declaration: Declaration) -> bool:
+def _declaration_returns_sort(
+    declaration: Declaration, context: dict[str, str | None] | None = None,
+) -> bool:
     """Whether a declaration is syntactically certain to create a type or proposition."""
     if declaration.keyword in {"class", "inductive", "structure"}:
         return True
@@ -670,7 +891,7 @@ def _declaration_returns_sort(declaration: Declaration) -> bool:
     colon = _top_level_colon(declaration.header)
     if colon is None:
         return False
-    return _expression_returns_sort(declaration.header[colon + 1:])
+    return _expression_returns_sort(declaration.header[colon + 1:], context)
 
 
 def own_declaration_paths(sources: dict[pathlib.Path, str]) -> set[tuple[str, ...]]:
@@ -681,11 +902,12 @@ def own_declaration_paths(sources: dict[pathlib.Path, str]) -> set[tuple[str, ..
     """
     owned: set[tuple[str, ...]] = set()
     for text in sources.values():
+        contexts = _notation_contexts(text)
         names = qualified_declarations(
             text,
             keep=lambda declaration: (
                 declaration.keyword in OWN_DECLARATION_KEYWORDS
-                and _declaration_returns_sort(declaration)
+                and _declaration_returns_sort(declaration, contexts.get(declaration.position))
             ),
         )
         for name in names:
@@ -707,13 +929,23 @@ def own_declaration_paths_parallel(sources: dict[pathlib.Path, str]) -> set[tupl
     return owned
 
 
-def _notation_at(text: str, position: int) -> tuple[str, str | None] | None:
+def _notation_at(
+    text: str, position: int, context: dict[str, str | None] | None = None,
+) -> tuple[str, str | None] | None:
     """Recognize the longest supported type-notation token at ``position``.
 
     Registered arrow tokens need no trailing boundary: Lean tokenizes ``A→+other`` as
     ``A →+o ther``. Bracketed notation likewise permits a compact scalar argument.
     """
-    for token, receiver in NOTATION_RECEIVERS:
+    context = context or {}
+    extra = [(token, receiver) for token, receiver in context.items()
+             if token not in NOTATION_RECEIVER_MAP]
+    candidates = (sorted((*NOTATION_RECEIVERS, *extra), key=lambda item: len(item[0]), reverse=True)
+                  if extra else NOTATION_RECEIVERS)
+    for token, receiver in candidates:
+        if token in CONDITIONAL_ARROW_NOTATIONS and token not in context:
+            continue
+        receiver = context.get(token, receiver)
         if text.startswith(token, position):
             end = position + len(token)
             if (token.startswith("→") or token.endswith(("[", "⟮", "⁅", "^"))
@@ -723,7 +955,9 @@ def _notation_at(text: str, position: int) -> tuple[str, str | None] | None:
     return None
 
 
-def _top_level_notation_at(binder_type: str) -> tuple[str, str | None] | None:
+def _top_level_notation_at(
+    binder_type: str, context: dict[str, str | None] | None = None,
+) -> tuple[str, str | None] | None:
     """Recognize a top-level type notation, retaining uncertainty about its receiver owner."""
     stripped = binder_type.lstrip()
     continuous_map_prefix = re.match(r"C\s*\(", stripped) is not None
@@ -741,7 +975,7 @@ def _top_level_notation_at(binder_type: str) -> tuple[str, str | None] | None:
             for pattern, token, receiver in SPECIAL_NOTATION_RECEIVERS:
                 if pattern.search(prefix) and binder_type.startswith(token, position):
                     return token, receiver
-            notation = _notation_at(binder_type, position)
+            notation = _notation_at(binder_type, position, context)
             if notation is not None:
                 return notation
             if any(binder_type.startswith(token, position) for token in TOP_LEVEL_CONNECTIVES):
@@ -750,12 +984,14 @@ def _top_level_notation_at(binder_type: str) -> tuple[str, str | None] | None:
     return ("C(", "ContinuousMap") if continuous_map_prefix else None
 
 
-def _binder_has_type(binder: str, namespace: str) -> bool:
+def _binder_has_type(
+    binder: str, namespace: str, context: dict[str, str | None] | None = None,
+) -> bool:
     colon = _top_level_colon(binder)
     if colon is None:
         return False
     binder_type = binder[colon + 1:].lstrip()
-    notation = _top_level_notation_at(binder_type)
+    notation = _top_level_notation_at(binder_type, context)
     if notation is not None and notation[1] == namespace:
         return True
     qualified = rf"(?:_root_\.)?(?:[\w']+\.)*{re.escape(namespace)}\b"
@@ -774,7 +1010,9 @@ def _binder_has_type(binder: str, namespace: str) -> bool:
     return True
 
 
-def _top_level_arrow_parts(text: str) -> list[str]:
+def _top_level_arrow_parts(
+    text: str, context: dict[str, str | None] | None = None,
+) -> list[str]:
     """Split top-level function arrows, keeping recognized bundled-map notation intact."""
     depth = 0
     part_start = 0
@@ -787,7 +1025,7 @@ def _top_level_arrow_parts(text: str) -> list[str]:
         elif char in CLOSERS:
             depth -= 1
         elif depth == 0 and (text.startswith("->", position)
-                            or (char == "→" and _notation_at(text, position) is None)):
+                            or (char == "→" and _notation_at(text, position, context) is None)):
             parts.append(text[part_start:position])
             position += 1 if char == "→" else 2
             part_start = position
@@ -797,7 +1035,9 @@ def _top_level_arrow_parts(text: str) -> list[str]:
     return parts
 
 
-def _expression_returns_sort(text: str) -> bool:
+def _expression_returns_sort(
+    text: str, context: dict[str, str | None] | None = None,
+) -> bool:
     """Whether a result expression ends in ``Prop``, ``Sort``, or ``Type`` syntactically."""
     expression = text.strip()
     while expression.startswith("(") and _skip_balanced(expression, 0) == len(expression):
@@ -811,25 +1051,27 @@ def _expression_returns_sort(text: str) -> bool:
             elif char in CLOSERS:
                 depth -= 1
             elif char == "," and depth == 0:
-                return _expression_returns_sort(expression[position + 1:])
+                return _expression_returns_sort(expression[position + 1:], context)
         return False
 
-    parts = _top_level_arrow_parts(expression)
+    parts = _top_level_arrow_parts(expression, context)
     if len(parts) > 1:
-        return _expression_returns_sort(parts[-1])
+        return _expression_returns_sort(parts[-1], context)
     # A bundled map with a sort as domain is still a value, not a new owned type.
-    if _top_level_notation_at(expression) is not None:
+    if _top_level_notation_at(expression, context) is not None:
         return False
     return re.match(r"(?:Prop|Sort|Type)\b", expression) is not None
 
 
-def _result_has_argument_type(header: str, namespace: str) -> bool:
+def _result_has_argument_type(
+    header: str, namespace: str, context: dict[str, str | None] | None = None,
+) -> bool:
     """Whether a top-level arrow in the result type has a domain named ``namespace``."""
     colon = _top_level_colon(header)
     if colon is None:
         return False
-    domains = _top_level_arrow_parts(header[colon + 1:])[:-1]
-    return any(_binder_has_type(f"_ : {domain}", namespace) for domain in domains)
+    domains = _top_level_arrow_parts(header[colon + 1:], context)[:-1]
+    return any(_binder_has_type(f"_ : {domain}", namespace, context) for domain in domains)
 
 
 def find_violations(
@@ -851,6 +1093,7 @@ def find_violations(
         if only is not None and path not in only:
             continue
         parsed = declarations(text)
+        contexts = _notation_contexts(text)
         events: list[tuple[int, str, object]] = [
             (position, "scope", (kind, name)) for position, kind, name in scopes(text)
         ]
@@ -862,10 +1105,10 @@ def find_violations(
         events.sort(key=lambda event: event[0])
 
         stack: list[Scope] = []
-        active_variables: list[tuple[int, VariableBinding]] = []
+        active_variables: list[tuple[int, VariableBinding, dict[str, str | None]]] = []
         included_by_depth: list[set[str]] = [set()]
         one_shot_includes: list[tuple[str, set[str]]] = []
-        for _, event_kind, payload in events:
+        for position, event_kind, payload in events:
             if event_kind == "scope":
                 kind, name = payload  # type: ignore[misc]
                 old_depth = len(stack)
@@ -875,13 +1118,15 @@ def find_violations(
                         set(included_by_depth[-1]) for _ in range(len(stack) - old_depth))
                 elif len(stack) < old_depth:
                     del included_by_depth[len(stack) + 1:]
-                active_variables = [(depth, binding) for depth, binding in active_variables
+                active_variables = [(depth, binding, context)
+                                    for depth, binding, context in active_variables
                                     if depth <= len(stack)]
                 continue
 
             if event_kind == "variables":
                 assert isinstance(payload, list)
-                active_variables.extend((len(stack), binding) for binding in payload)
+                active_variables.extend((len(stack), binding, contexts.get(position, {}))
+                                        for binding in payload)
                 continue
 
             if event_kind == "include":
@@ -914,19 +1159,20 @@ def find_violations(
                           if namespace in mathlib_namespace_names
                           and namespace not in ORGANISATIONAL
                           and tuple(candidate_path[:index + 1]) not in owned]
-            current_variables: dict[str, str] = {}
-            for _, binding in active_variables:
-                current_variables[binding.name] = binding.binder
+            current_variables: dict[str, tuple[str, dict[str, str | None]]] = {}
+            for _, binding, context in active_variables:
+                current_variables[binding.name] = (binding.binder, context)
+            context = contexts.get(declaration.position, {})
             matching = [
                 namespace
                 for namespace in candidates
-                if any(_binder_has_type(binder, namespace) for binder in declaration.binders)
-                or _result_has_argument_type(declaration.header, namespace)
-                or any(_binder_has_type(binder, namespace)
+                if any(_binder_has_type(binder, namespace, context) for binder in declaration.binders)
+                or _result_has_argument_type(declaration.header, namespace, context)
+                or any(_binder_has_type(binder, namespace, binding_context)
                        and (name in included_names
                             or re.search(rf"(?<![\w']){re.escape(name)}(?![\w'])",
                                          declaration.header))
-                       for name, binder in current_variables.items())
+                       for name, (binder, binding_context) in current_variables.items())
             ]
             if not matching:
                 continue
