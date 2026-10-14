@@ -9,14 +9,14 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # The tangent space of the Wasserstein space
 
-Let `E` be a real Hilbert space and `μ` a measure on `E`. The *tangent space* of the
-quadratic Wasserstein space at `μ` is the closure in `L²(μ; E)` of the gradients `∇φ` of smooth
-compactly supported functions `φ : E → ℝ`,
+Let `E` be a finite-dimensional real inner product space and `μ` a measure on `E`. The *tangent
+space* of the quadratic Wasserstein space at `μ` is the closure in `L²(μ; E)` of the gradients
+`∇φ` of smooth compactly supported functions `φ : E → ℝ`,
 
 `Tan_μ P₂(E) = closure {∇φ | φ ∈ C_c^∞(E)}`.
 
@@ -33,11 +33,11 @@ the minimal-velocity representation of an absolutely continuous curve of measure
 the Wasserstein subdifferential calculus built on it.
 
 Following the convention of the continuity equation, the pairing `⟨∇φ (x), w (x)⟩` is written as
-the Fréchet derivative `fderiv ℝ φ x (w x)`. In an infinite-dimensional space every compactly
-supported continuous function vanishes, so the tangent space defined here is `{0}`; the
-definition is meant for finite-dimensional `E`. No moment condition on `μ` is needed for the
-definition, only finiteness on compact sets for gradients of test functions to be square
-integrable.
+the Fréchet derivative `fderiv ℝ φ x (w x)`. As for the continuity equation, `E` is
+finite-dimensional: in infinite dimensions every compactly supported continuous function
+vanishes, and the tangent space is built from cylindrical functions instead, which is not done
+here. No moment condition on `μ` is needed for the definition, only finiteness on compact sets
+for gradients of test functions to be square integrable.
 
 ## Main definitions
 
@@ -46,6 +46,8 @@ integrable.
 
 ## Main results
 
+* `TauCeti.toLp_gradient_mem_wassersteinTangentSpace`: the gradient of a test function is
+  tangent.
 * `TauCeti.wassersteinTangentSpace_le_iff`: the tangent space is the least closed subspace of
   `L²(μ; E)` containing the gradients of test functions.
 * `TauCeti.mem_orthogonal_wassersteinTangentSpace_iff`: the orthogonal complement of the
@@ -54,13 +56,14 @@ integrable.
   tangent space preserves the divergence.
 * `TauCeti.starProjection_wassersteinTangentSpace_eq_iff`: the projection of `v` is the unique
   tangent field with the divergence of `v`.
+* `TauCeti.starProjection_wassersteinTangentSpace_eq_of_integral_fderiv_eq`: the projection of a
+  field depends only on its divergence.
 * `TauCeti.norm_starProjection_wassersteinTangentSpace_le` and
   `TauCeti.eq_starProjection_wassersteinTangentSpace_of_norm_le`: the projection of `v` is the
   unique field of least norm with the divergence of `v`.
 * `TauCeti.mem_wassersteinTangentSpace_iff_forall_norm_le`: a field is tangent if and only if
   adding a divergence-free field never decreases its norm.
-* `TauCeti.wassersteinTangentSpace_dirac`: in finite dimensions, every field is tangent at a
-  Dirac mass.
+* `TauCeti.wassersteinTangentSpace_dirac`: every field is tangent at a Dirac mass.
 
 ## References
 
@@ -80,9 +83,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 /-- The *tangent space* `Tan_μ P₂(E)` of the quadratic Wasserstein space at `μ`: the closure in
 `L²(μ; E)` of the gradients `∇φ` of smooth compactly supported functions `φ : E → ℝ`. -/
-noncomputable def wassersteinTangentSpace (μ : Measure E) : Submodule ℝ (Lp E 2 μ) :=
+noncomputable def wassersteinTangentSpace [FiniteDimensional ℝ E] (μ : Measure E) :
+    Submodule ℝ (Lp E 2 μ) :=
   (Submodule.span ℝ {f : Lp E 2 μ | ∃ φ : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) φ ∧ HasCompactSupport φ ∧
     f =ᵐ[μ] ∇ φ}).topologicalClosure
+
+variable [FiniteDimensional ℝ E]
 
 /-- The tangent space is a closed subspace of `L²(μ; E)`. -/
 theorem isClosed_wassersteinTangentSpace (μ : Measure E) :
@@ -98,6 +104,13 @@ theorem mem_wassersteinTangentSpace_of_ae_eq_gradient {φ : E → ℝ} (hφ : Co
     (hφc : HasCompactSupport φ) {f : Lp E 2 μ} (hf : f =ᵐ[μ] ∇ φ) :
     f ∈ wassersteinTangentSpace μ :=
   Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨φ, hφ, hφc, hf⟩)
+
+/-- The `L²(μ)` class of the gradient of a test function is tangent. When `μ` is finite on
+compact sets, `HasCompactSupport.memLp_gradient` supplies the square integrability. -/
+theorem toLp_gradient_mem_wassersteinTangentSpace {φ : E → ℝ} (hφ : ContDiff ℝ (⊤ : ℕ∞) φ)
+    (hφc : HasCompactSupport φ) (hm : MemLp (∇ φ) 2 μ) :
+    hm.toLp (∇ φ) ∈ wassersteinTangentSpace μ :=
+  mem_wassersteinTangentSpace_of_ae_eq_gradient hφ hφc hm.coeFn_toLp
 
 /-- The tangent space is the least closed subspace of `L²(μ; E)` containing the gradients of the
 smooth compactly supported functions. -/
@@ -115,8 +128,7 @@ theorem wassersteinTangentSpace_le_iff {K : Submodule ℝ (Lp E 2 μ)}
 `x`, and `c` is the gradient at `x` of the smooth compactly supported function
 `y ↦ b y ⟨c, y - x⟩` for a bump function `b` equal to `1` near `x`. -/
 @[simp]
-theorem wassersteinTangentSpace_dirac [FiniteDimensional ℝ E] [MeasurableSingletonClass E]
-    (x : E) :
+theorem wassersteinTangentSpace_dirac [MeasurableSingletonClass E] (x : E) :
     wassersteinTangentSpace (Measure.dirac x) = ⊤ := by
   refine eq_top_iff.2 fun f _ ↦ ?_
   set c := f x
@@ -141,6 +153,7 @@ theorem wassersteinTangentSpace_dirac [FiniteDimensional ℝ E] [MeasurableSingl
     with y h₁ h₂
   rw [h₁, h₂, Function.const_apply, Function.const_apply, hφ]
 
+omit [FiniteDimensional ℝ E] in
 /-- The `L²(μ)` pairing of the gradient of `φ` with a field `w` is `∫ ⟨∇φ, w⟩ dμ`, written as
 `∫ fderiv ℝ φ x (w x) dμ`. -/
 theorem inner_eq_integral_fderiv_of_ae_eq_gradient {φ : E → ℝ} {f : Lp E 2 μ}
@@ -175,8 +188,7 @@ theorem sub_mem_orthogonal_wassersteinTangentSpace_iff {w v : Lp E 2 μ} :
   simp_rw [mem_orthogonal_wassersteinTangentSpace_iff_inner, inner_sub_right, sub_eq_zero]
   refine ⟨fun h φ hφ hφc ↦ ?_, fun h φ hφ hφc f hf ↦ ?_⟩
   · -- The gradient of a test function is continuous with compact support, hence in `L²(μ)`.
-    have hm : MemLp (∇ φ) 2 μ :=
-      (hφ.gradient_right (m := 0) (by simp)).continuous.memLp_of_hasCompactSupport hφc.gradient
+    have hm : MemLp (∇ φ) 2 μ := hφc.memLp_gradient (hφ.of_le (by simp))
     simpa only [inner_eq_integral_fderiv_of_ae_eq_gradient hm.coeFn_toLp] using
       h φ hφ hφc _ hm.coeFn_toLp
   · simpa only [inner_eq_integral_fderiv_of_ae_eq_gradient hf] using h φ hφ hφc
@@ -197,10 +209,9 @@ theorem mem_orthogonal_wassersteinTangentSpace_iff {w : Lp E 2 μ} :
 theorem integral_fderiv_starProjection_wassersteinTangentSpace (v : Lp E 2 μ) {φ : E → ℝ}
     (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hφc : HasCompactSupport φ) :
     ∫ x, fderiv ℝ φ x ((wassersteinTangentSpace μ).starProjection v x) ∂μ =
-      ∫ x, fderiv ℝ φ x (v x) ∂μ := by
-  have h := (wassersteinTangentSpace μ).sub_starProjection_mem_orthogonal v
-  rw [← neg_mem_iff, neg_sub] at h
-  exact sub_mem_orthogonal_wassersteinTangentSpace_iff.1 h φ hφ hφc
+      ∫ x, fderiv ℝ φ x (v x) ∂μ :=
+  sub_mem_orthogonal_wassersteinTangentSpace_iff.1
+    ((wassersteinTangentSpace μ).starProjection_sub_mem_orthogonal v) φ hφ hφc
 
 /-- The orthogonal projection of a field `v` onto the tangent space is the unique tangent field
 with the divergence of `v`. -/
@@ -211,14 +222,11 @@ theorem starProjection_wassersteinTangentSpace_eq_iff {u v : Lp E 2 μ} :
   rw [← sub_mem_orthogonal_wassersteinTangentSpace_iff]
   refine ⟨?_, fun ⟨hu, huv⟩ ↦ ?_⟩
   · rintro rfl
-    refine ⟨Submodule.starProjection_apply_mem _ _, ?_⟩
-    rw [← neg_mem_iff, neg_sub]
-    exact Submodule.sub_starProjection_mem_orthogonal _
-  · rw [← neg_mem_iff, neg_sub] at huv
-    exact Submodule.eq_starProjection_of_mem_orthogonal' hu huv (add_sub_cancel u v).symm
+    exact ⟨Submodule.starProjection_apply_mem _ _, Submodule.starProjection_sub_mem_orthogonal _ _⟩
+  · exact Submodule.eq_starProjection_of_mem_orthogonal' hu (neg_mem huv) (by abel)
 
 /-- The projection of a field onto the tangent space depends only on its divergence. -/
-private theorem starProjection_wassersteinTangentSpace_eq_of_integral_fderiv_eq
+theorem starProjection_wassersteinTangentSpace_eq_of_integral_fderiv_eq
     {w v : Lp E 2 μ} (hwv : ∀ φ : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) φ → HasCompactSupport φ →
       ∫ x, fderiv ℝ φ x (w x) ∂μ = ∫ x, fderiv ℝ φ x (v x) ∂μ) :
     (wassersteinTangentSpace μ).starProjection w =
@@ -244,14 +252,7 @@ theorem eq_starProjection_wassersteinTangentSpace_of_norm_le {w v : Lp E 2 μ}
     (hw : ‖w‖ ≤ ‖(wassersteinTangentSpace μ).starProjection v‖) :
     w = (wassersteinTangentSpace μ).starProjection v := by
   rw [← starProjection_wassersteinTangentSpace_eq_of_integral_fderiv_eq hwv] at hw ⊢
-  set K := wassersteinTangentSpace μ
-  -- Pythagoras: `‖w‖² = ‖P w‖² + ‖w - P w‖²`, so `‖w‖ ≤ ‖P w‖` forces `w - P w = 0`.
-  have h := norm_add_sq_eq_norm_sq_add_norm_sq_real
-    (Submodule.inner_right_of_mem_orthogonal (K.starProjection_apply_mem w)
-      (K.sub_starProjection_mem_orthogonal w))
-  rw [add_sub_cancel] at h
-  rw [← sub_eq_zero, ← norm_eq_zero]
-  nlinarith [mul_le_mul hw hw (norm_nonneg w) (norm_nonneg _), norm_nonneg (w - K.starProjection w)]
+  exact Submodule.eq_starProjection_of_norm_le _ hw
 
 /-- **The tangent space is the space of minimal fields.** A field `v` is tangent if and only if
 adding any divergence-free field `w` does not decrease its norm: `‖v‖ ≤ ‖v + w‖` whenever
@@ -260,16 +261,6 @@ theorem mem_wassersteinTangentSpace_iff_forall_norm_le {v : Lp E 2 μ} :
     v ∈ wassersteinTangentSpace μ ↔ ∀ w : Lp E 2 μ, (∀ φ : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) φ →
       HasCompactSupport φ → ∫ x, fderiv ℝ φ x (w x) ∂μ = 0) → ‖v‖ ≤ ‖v + w‖ := by
   simp_rw [← mem_orthogonal_wassersteinTangentSpace_iff]
-  set K := wassersteinTangentSpace μ
-  refine ⟨fun hv w hw ↦ ?_, fun h ↦ ?_⟩
-  · have := norm_add_sq_eq_norm_sq_add_norm_sq_real (Submodule.inner_right_of_mem_orthogonal hv hw)
-    nlinarith [norm_nonneg v, norm_nonneg (v + w)]
-  · have hw : K.starProjection v - v ∈ Kᗮ := by
-      rw [← neg_mem_iff, neg_sub]
-      exact K.sub_starProjection_mem_orthogonal v
-    have hle := h _ hw
-    rw [add_sub_cancel] at hle
-    rw [eq_starProjection_wassersteinTangentSpace_of_norm_le (fun _ _ _ ↦ rfl) hle]
-    exact K.starProjection_apply_mem v
+  exact Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add _
 
 end TauCeti

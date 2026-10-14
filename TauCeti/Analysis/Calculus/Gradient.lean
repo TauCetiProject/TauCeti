@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
+public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 -- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
@@ -40,7 +41,9 @@ theorem about `‖Dφ‖`.
   supported.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
-  function is `Cᵐ`; `ContDiffAt.continuousAt_fderiv_gradient` and
+  function is `Cᵐ`; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
+  `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
+  `ContDiffAt.continuousAt_fderiv_gradient` and
   `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
   continuous at `x`, and its gradient is differentiable near `x`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
@@ -107,6 +110,15 @@ theorem _root_.ContDiff.gradient_right {E : Type*} [NormedAddCommGroup E] [Inner
     [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) (hmn : m + 1 ≤ n) :
     ContDiff ℝ m (∇ f) :=
   (toDual ℝ E).symm.contDiff.comp (hf.fderiv_right hmn)
+
+/-- Over `ℝ`, the gradient of a compactly supported `C¹` function is in `Lᵖ(μ)` for every
+measure `μ` finite on compact sets, being continuous with compact support. -/
+theorem _root_.HasCompactSupport.memLp_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {p : ENNReal} {μ : MeasureTheory.Measure E} [MeasureTheory.IsFiniteMeasureOnCompacts μ]
+    {f : E → ℝ} (hfc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) :
+    MeasureTheory.MemLp (∇ f) p μ :=
+  (hf.gradient_right (m := 0) (by simp)).continuous.memLp_of_hasCompactSupport hfc.gradient
 
 /-- The pointwise form of `ContDiff.gradient_right`: over `ℝ`, the gradient of a function that is
 `C^{m+1}` at `x` is `Cᵐ` at `x`. -/

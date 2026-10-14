@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
-# Norms of products of orthogonal projections
+# Norms of orthogonal projections
 
 For submodules `U` and `V` of an inner product space admitting orthogonal projections `P_U` and
 `P_V`, the two products `P_U P_V` and `P_V P_U` have the same operator norm. Since
@@ -18,12 +18,20 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
 
+The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the only one: a vector
+`w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
+`Uᗮ` never decreases the norm of `v`.
+
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
+* `Submodule.eq_starProjection_of_norm_le`: a vector whose norm is at most that of its projection
+  is its projection.
+* `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
+  `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
 -/
 
 public section
@@ -115,5 +123,32 @@ theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional �
   nlinarith [norm_nonneg (U.starProjection v), norm_nonneg (w : E),
     mul_le_mul_of_nonneg_left hw' (sq_nonneg ‖U.starProjection v‖),
     pow_le_pow_left₀ (by positivity) hinner 2]
+
+/-- A vector differs from its orthogonal projection onto `U` by a vector of `Uᗮ`; this is
+`Submodule.sub_starProjection_mem_orthogonal` with the difference taken the other way. -/
+theorem starProjection_sub_mem_orthogonal (v : E) : U.starProjection v - v ∈ Uᗮ := by
+  rw [← neg_mem_iff, neg_sub]
+  exact U.sub_starProjection_mem_orthogonal v
+
+/-- A vector whose norm is at most that of its orthogonal projection onto `U` is that projection,
+since the projection never increases the norm and only fixes the norm of vectors of `U`. -/
+theorem eq_starProjection_of_norm_le {w : E} (hw : ‖w‖ ≤ ‖U.starProjection w‖) :
+    w = U.starProjection w :=
+  (starProjection_eq_self_iff.2 ((U.mem_iff_norm_starProjection w).2
+    ((U.norm_starProjection_apply_le w).antisymm hw))).symm
+
+/-- A vector lies in `U` if and only if adding a vector of `Uᗮ` never decreases its norm. -/
+theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :
+    v ∈ U ↔ ∀ w ∈ Uᗮ, ‖v‖ ≤ ‖v + w‖ := by
+  refine ⟨fun hv w hw ↦ ?_, fun h ↦ ?_⟩
+  · -- Pythagoras: `‖v + w‖² = ‖v‖² + ‖w‖²`.
+    refine (mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _)).2 ?_
+    rw [norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero v w
+      (inner_right_of_mem_orthogonal hv hw)]
+    exact le_add_of_nonneg_right (mul_self_nonneg _)
+  · have hle := h _ (U.starProjection_sub_mem_orthogonal v)
+    rw [add_sub_cancel] at hle
+    rw [U.eq_starProjection_of_norm_le hle]
+    exact U.starProjection_apply_mem v
 
 end Submodule
