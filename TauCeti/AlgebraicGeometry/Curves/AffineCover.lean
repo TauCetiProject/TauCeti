@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
+public import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 
@@ -17,7 +18,7 @@ A regular proper integral curve over a field is covered by two affine opens. Ind
 transcendental rational function identifies the curve with the two-chart model of its function
 field, and the two normalization charts pull back to the required opens.
 
-The result is also stated directly for smooth proper geometrically connected curves of relative
+The result is also stated directly for smooth proper connected curves of relative
 dimension one. It requires neither a rational point nor a perfect base field. The cover is the
 geometric input for computing quasi-coherent cohomology by the two-open Mayer–Vietoris sequence;
 the intersection is affine because a proper curve is separated.
@@ -58,16 +59,17 @@ theorem exists_two_affine_opens (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCu
     (isAffineOpen_opensRange _).preimage_of_isIso e.hom, ?_⟩
   rw [← Hom.preimage_sup, hUV, Hom.preimage_top]
 
-/-- A smooth proper geometrically connected curve over any field admits a cover by two affine
+/-- A smooth proper connected curve over any field admits a cover by two affine
 open subsets, without a rational-point hypothesis. -/
 theorem exists_two_affine_opens_of_smooth (X : Scheme.{u}) [X.Over (Spec (.of k))]
     [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
-    [GeometricallyConnected (X ↘ Spec (.of k))] :
+    [ConnectedSpace X] :
     ∃ U V : X.Opens, IsAffineOpen U ∧ IsAffineOpen V ∧ U ⊔ V = ⊤ := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have : IsIntegral X := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
     isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
+  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
   have : X.IsCurveOver k :=
     { topologicalKrullDim_eq_one :=
         topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)) }
