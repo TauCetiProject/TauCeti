@@ -663,11 +663,9 @@ theorem W1p.value_add_const_ae (u : W1p mu Omega p) (c : ℝ) :
   rw [h1, Pi.add_apply, h2, Function.const_apply]
 
 /-- Adding a constant to a Sobolev function does not change its weak gradient. -/
-@[simp]
 theorem W1p.gradient_add_const (u : W1p mu Omega p) (c : ℝ) :
     W1p.gradient (u + W1p.const c) = W1p.gradient u := by
-  rw [← W1p.gradientL_apply, map_add, W1p.gradientL_apply, W1p.gradientL_apply,
-    W1p.gradient_const, add_zero]
+  rw [W1p.gradient_add, W1p.gradient_const, add_zero]
 
 end Const
 
