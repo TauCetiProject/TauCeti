@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.Coproduct
-public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
 
 /-!
 # The cellular boundary on a cell generator
@@ -78,15 +78,15 @@ lemma characteristicCellPairMap_fst {n : ℕ} (j : cell C n) :
       (coe_cellDiskHom_apply j x).symm
 
 /-- The subspace component of the single-cell pair map is the attaching map
-`TauCeti.cellBoundaryHom` of the cell. -/
+`TauCeti.cellAttachingMap` of the cell. -/
 lemma characteristicCellPairMap_snd {n : ℕ} (j : cell C n) :
-    TopPair.Hom.snd (characteristicCellPairMap C j) = cellBoundaryHom j := by
+    TopPair.Hom.snd (characteristicCellPairMap C j) = cellAttachingMap j := by
   ext x
   exact Subtype.ext <| (congrArg Subtype.val (ConcreteCategory.congr_hom
     (TopPair.Hom.w (characteristicCellPairMap C j)) x)).trans <|
     (congrArg Subtype.val (ConcreteCategory.congr_hom (characteristicCellPairMap_fst C j)
       (TopCat.diskBoundaryInclusion n x))).trans <|
-    (coe_cellDiskHom_apply j _).trans (coe_cellBoundaryHom_apply j x).symm
+    (coe_cellDiskHom_apply j _).trans (coe_cellAttachingMap_apply j x).symm
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
@@ -111,7 +111,7 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularDifferential (n : ℕ)
         (cellularChainGroupIso C R (n + 1)).inv ≫ cellularDifferential C R n =
       (reducedSingularHomologyTopCatSphereIso R n).inv ≫
         (reducedSingularHomologyι R n).app (TopCat.diskBoundary.{w} (n + 1)) ≫
-          SSet.homologyMap (TopCat.toSSet.map (cellBoundaryHom j)) R n ≫
+          SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) R n ≫
             skeletonPairπ C R n := by
   rw [ι_cellularChainGroupIso_inv_assoc,
     cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ, ← characteristicCellPairMap_snd]

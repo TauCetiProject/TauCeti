@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Abstract.Basic
-public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit
 
 /-!
@@ -29,7 +29,9 @@ step `n` are the `n`-cells `cell C n`.  The two ingredients are the following.
   `n`-cells, the characteristic maps and the inclusion of skeleta is a pushout in `TopCat`
   (`TauCeti.isPushout_skeletonObj`).  The disk `𝔻 n` of `TopCat` is the Euclidean unit ball, which
   is carried onto the closed unit ball of the sup norm on `Fin n → ℝ`, the domain of the
-  characteristic maps, by the radial homeomorphism `TauCeti.diskHomeomorphClosedBall`.
+  characteristic maps, by the radial homeomorphism `TauCeti.diskHomeomorphClosedBall`.  The
+  characteristic and attaching maps on `𝔻 n` and `∂𝔻 n` are `TauCeti.cellDiskHom` and
+  `TauCeti.cellAttachingMap`, from `TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap`.
 * `C` is the colimit in `TopCat` of its skeleta (`TauCeti.isColimitSkeletonCocone`, proved in
   `TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit`).
 
@@ -43,8 +45,6 @@ attaching two `0`-cells to the empty space gives the discrete two-point space.
 
 ## Main definitions and results
 
-* `TauCeti.cellDiskHom`, `TauCeti.cellBoundaryHom`: the characteristic and attaching maps of a
-  cell, on the disk `𝔻 n` and its boundary `∂𝔻 n`.
 * `TauCeti.isPushout_skeletonObj`, `TauCeti.skeletonAttachCells`: `skeletonLT C (n + 1)` is
   obtained from `skeletonLT C n` by attaching the `n`-cells.
 * `TauCeti.toRelativeCWComplex`: the categorical relative CW complex structure on `D ⟶ C`.  Its
@@ -76,48 +76,14 @@ section AttachCells
 
 variable {C} {n : ℕ}
 
-/-- The characteristic map of an `n`-cell, read on the Euclidean disk `𝔻 n` through
-`TauCeti.diskHomeomorphClosedBall`, as a morphism to the `n`-skeleton `skeletonLT C (n + 1)`. -/
-def cellDiskHom (j : cell C n) : TopCat.disk.{w} n ⟶ skeletonObj C (n + 1) :=
-  TopCat.ofHom
-    { toFun z := ⟨map n j (diskHomeomorphClosedBall n z),
-        map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).2)⟩
-      continuous_toFun := ((continuous_map_closedBall j).comp
-        (diskHomeomorphClosedBall n).continuous).subtype_mk _ }
-
-lemma coe_cellDiskHom_apply (j : cell C n) (z : TopCat.disk.{w} n) :
-    (cellDiskHom j z : X) = map n j (diskHomeomorphClosedBall n z) :=
-  (rfl)
-
-/-- A point of the boundary of the disk is sent to the unit sphere of the sup norm. -/
-private lemma diskHomeomorphClosedBall_diskBoundaryInclusion_mem_sphere
-    (z : TopCat.diskBoundary.{w} n) :
-    (diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n z) : Fin n → ℝ) ∈
-      sphere (0 : Fin n → ℝ) 1 :=
-  mem_sphere_zero_iff_norm.2 <| (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨z, rfl⟩
-
-/-- The attaching map of an `n`-cell: its characteristic map restricted to the boundary sphere
-`∂𝔻 n`, as a morphism to `skeletonLT C n`. -/
-def cellBoundaryHom (j : cell C n) : TopCat.diskBoundary.{w} n ⟶ skeletonObj C n :=
-  TopCat.ofHom
-    { toFun z := ⟨map n j (diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n z)),
-        cellFrontier_subset_skeletonLT n j
-          ⟨_, diskHomeomorphClosedBall_diskBoundaryInclusion_mem_sphere z, rfl⟩⟩
-      continuous_toFun := ((continuous_map_closedBall j).comp
-        ((diskHomeomorphClosedBall n).continuous.comp
-          (TopCat.diskBoundaryInclusion n).hom.continuous)).subtype_mk _ }
-
-lemma coe_cellBoundaryHom_apply (j : cell C n) (z : TopCat.diskBoundary.{w} n) :
-    (cellBoundaryHom j z : X) =
-      map n j (diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n z)) :=
-  (rfl)
-
 /-- The attaching map of a cell is the characteristic map on the boundary of the disk. -/
 @[reassoc]
-lemma cellBoundaryHom_comp_skeletonFunctor_map (j : cell C n) :
-    cellBoundaryHom j ≫ (skeletonFunctor C).map (homOfLE n.le_succ) =
-      TopCat.diskBoundaryInclusion n ≫ cellDiskHom j :=
-  (rfl)
+lemma cellAttachingMap_comp_skeletonFunctor_map (j : cell C n) :
+    cellAttachingMap j ≫ (skeletonFunctor C).map (homOfLE n.le_succ) =
+      TopCat.diskBoundaryInclusion n ≫ cellDiskHom j := by
+  ext z
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+  exact (coe_cellAttachingMap_apply j z).trans (coe_cellDiskHom_apply j _).symm
 
 /-- Two maps out of `skeletonLT C (n + 1)` agree when they agree on `skeletonLT C n` and through
 the characteristic map of every `n`-cell. -/
@@ -139,7 +105,7 @@ private lemma skeletonObj_succ_hom_ext {Y : TopCat.{w}} {φ φ' : skeletonObj C 
 attaching maps glue to a map on `skeletonLT C (n + 1)`. -/
 private lemma exists_desc_skeletonObj_succ {Y : TopCat.{w}} (φ : skeletonObj C n ⟶ Y)
     (ψ : cell C n → (TopCat.disk.{w} n ⟶ Y))
-    (h : ∀ j, cellBoundaryHom j ≫ φ = TopCat.diskBoundaryInclusion n ≫ ψ j) :
+    (h : ∀ j, cellAttachingMap j ≫ φ = TopCat.diskBoundaryInclusion n ≫ ψ j) :
     ∃ χ : skeletonObj C (n + 1) ⟶ Y,
       (skeletonFunctor C).map (homOfLE n.le_succ) ≫ χ = φ ∧ ∀ j, cellDiskHom j ≫ χ = ψ j := by
   obtain ⟨F, hF₀, hF⟩ := exists_continuousMap_prod_skeletonLT_succ (Z := Unit)
@@ -150,9 +116,9 @@ private lemma exists_desc_skeletonObj_succ {Y : TopCat.{w}} (φ : skeletonObj C 
       obtain ⟨z, hz⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff
         ((diskHomeomorphClosedBall n).symm y)).1
           (by rwa [Homeomorph.apply_symm_apply, ← mem_sphere_zero_iff_norm])
-      have hb : cellBoundaryHom j z =
+      have hb : cellAttachingMap j z =
           ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩ :=
-        Subtype.ext (by rw [coe_cellBoundaryHom_apply, hz, Homeomorph.apply_symm_apply])
+        Subtype.ext (by rw [coe_cellAttachingMap_apply, hz, Homeomorph.apply_symm_apply])
       have := ConcreteCategory.congr_hom (h j) z
       rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hb, hz] at this
       exact this.symm
@@ -161,7 +127,9 @@ private lemma exists_desc_skeletonObj_succ {Y : TopCat.{w}} (φ : skeletonObj C 
   · ext x
     exact hF₀ () x.1 x.2
   · ext z
-    refine (hF j () (diskHomeomorphClosedBall n z)).trans ?_
+    rw [ConcreteCategory.comp_apply]
+    refine (congrArg (fun x ↦ F ((), x)) (Subtype.ext (coe_cellDiskHom_apply j z))).trans
+      ((hF j () (diskHomeomorphClosedBall n z)).trans ?_)
     exact congrArg (ψ j) ((diskHomeomorphClosedBall n).symm_apply_apply z)
 
 variable (C n) in
@@ -170,20 +138,20 @@ formed by the inclusion of the boundary spheres into the disks over the `n`-cell
 maps, the characteristic maps and the inclusion `skeletonLT C n ⊆ skeletonLT C (n + 1)` is a
 pushout in `TopCat`. -/
 theorem isPushout_skeletonObj :
-    IsPushout (Sigma.desc (cellBoundaryHom (C := C) (n := n)))
+    IsPushout (Sigma.desc (cellAttachingMap (C := C) (n := n)))
       (Limits.Sigma.map fun _ : cell C n ↦ TopCat.diskBoundaryInclusion.{w} n)
       ((skeletonFunctor C).map (homOfLE n.le_succ)) (Sigma.desc cellDiskHom) := by
-  have w : Sigma.desc (cellBoundaryHom (C := C) (n := n)) ≫
+  have w : Sigma.desc (cellAttachingMap (C := C) (n := n)) ≫
       (skeletonFunctor C).map (homOfLE n.le_succ) =
         (Limits.Sigma.map fun _ : cell C n ↦ TopCat.diskBoundaryInclusion.{w} n) ≫
           Sigma.desc cellDiskHom := by
     refine Sigma.hom_ext _ _ fun j ↦ ?_
     rw [Sigma.ι_comp_desc_assoc, Sigma.ι_map_assoc, Sigma.ι_comp_desc,
-      cellBoundaryHom_comp_skeletonFunctor_map]
+      cellAttachingMap_comp_skeletonFunctor_map]
   -- A pushout cocone restricts to compatible maps on `skeletonLT C n` and on the disks.
-  have hs (s : PushoutCocone (Sigma.desc (cellBoundaryHom (C := C) (n := n)))
+  have hs (s : PushoutCocone (Sigma.desc (cellAttachingMap (C := C) (n := n)))
       (Limits.Sigma.map fun _ : cell C n ↦ TopCat.diskBoundaryInclusion.{w} n)) (j : cell C n) :
-      cellBoundaryHom j ≫ s.inl = TopCat.diskBoundaryInclusion n ≫
+      cellAttachingMap j ≫ s.inl = TopCat.diskBoundaryInclusion n ≫
         Sigma.ι (fun _ : cell C n ↦ TopCat.disk.{w} n) j ≫ s.inr := by
     have := Sigma.ι (fun _ : cell C n ↦ TopCat.diskBoundary.{w} n) j ≫= s.condition
     rwa [Sigma.ι_comp_desc_assoc, Sigma.ι_map_assoc] at this
@@ -201,7 +169,7 @@ theorem isPushout_skeletonObj :
 variable (C n) in
 /-- The `n`-skeleton `skeletonLT C (n + 1)` is obtained from `skeletonLT C n` by attaching one
 `n`-disk along its boundary sphere for each `n`-cell, through the attaching maps
-`TauCeti.cellBoundaryHom`.  The body is exposed so that the cells are `cell C n` by definition. -/
+`TauCeti.cellAttachingMap`.  The body is exposed so that the cells are `cell C n` by definition. -/
 @[expose] def skeletonAttachCells :
     AttachCells.{w} (TopCat.RelativeCWComplex.basicCell n)
       ((skeletonFunctor C).map (homOfLE n.le_succ)) where
@@ -213,7 +181,7 @@ variable (C n) in
   isColimit₂ := coproductIsCoproduct _
   m := Limits.Sigma.map fun _ ↦ TopCat.diskBoundaryInclusion n
   hm j := Sigma.ι_map _ j
-  g₁ := Sigma.desc cellBoundaryHom
+  g₁ := Sigma.desc cellAttachingMap
   g₂ := Sigma.desc cellDiskHom
   isPushout := isPushout_skeletonObj C n
 
@@ -282,7 +250,8 @@ lemma coe_toRelativeCWComplex_cells_ι_apply (γ : (toRelativeCWComplex C).Cells
     (z : TopCat.disk.{w} γ.j) :
     (γ.ι z : X) = map γ.j γ.k (diskHomeomorphClosedBall γ.j z) := by
   rw [RelativeCellComplex.Cells.ι, ConcreteCategory.comp_apply]
-  exact congrArg Subtype.val (ConcreteCategory.congr_hom (skeletonAttachCells_cell γ.k) z)
+  exact (congrArg Subtype.val (ConcreteCategory.congr_hom (skeletonAttachCells_cell γ.k) z)).trans
+    (coe_cellDiskHom_apply γ.k z)
 
 end RelativeCWComplex
 

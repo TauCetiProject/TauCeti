@@ -59,7 +59,7 @@ local homology is constant along convex sets in a chart
 * `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton` and
   `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton_of_ne`:
   the local homology at `x` reads off the coefficient of `i` in the cellular chain group.
-* `TauCeti.singularHomologyπ_cellBoundaryHom_eq_cellularIncidence_smul` and
+* `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
 
@@ -590,14 +590,14 @@ of the boundary sphere of an `(n + 1)`-cell `j` through its attaching map into `
 into the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at a point `x` of the open `n`-cell `i`. The result is
 the incidence coefficient of `i` in the cellular boundary of `j` times the local class of `i`
 at `x`. -/
-theorem singularHomologyπ_cellBoundaryHom_eq_cellularIncidence_smul {i : cell C n}
+theorem singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul {i : cell C n}
     (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i) (j : cell C (n + 1)) :
     (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C (n + 1)))).singularHomologyπ (ModuleCat.of R R) n
-        (SSet.homologyMap (TopCat.toSSet.map (cellBoundaryHom j)) (ModuleCat.of R R) n
+        (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n
           ((reducedSingularHomologyι (ModuleCat.of R R) n).app (TopCat.diskBoundary.{w} (n + 1))
             ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) n).inv 1))) =
       cellularIncidence C R n i j • cellLocalClass C (ModuleCat.of R R) x hx 1 := by
-  set a := SSet.homologyMap (TopCat.toSSet.map (cellBoundaryHom j)) (ModuleCat.of R R) n
+  set a := SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n
     ((reducedSingularHomologyι (ModuleCat.of R R) n).app (TopCat.diskBoundary.{w} (n + 1))
       ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) n).inv 1))
   have hπ := congrArg (fun f ↦ f a)
@@ -629,10 +629,10 @@ theorem cellularIncidence_eq_inv_cellLocalClass {i : cell C n} (x : skeletonObj 
       inv (cellLocalClass C (ModuleCat.of R R) x hx)
         ((TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C (n + 1)))).singularHomologyπ
           (ModuleCat.of R R) n
-          (SSet.homologyMap (TopCat.toSSet.map (cellBoundaryHom j)) (ModuleCat.of R R) n
+          (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n
             ((reducedSingularHomologyι (ModuleCat.of R R) n).app (TopCat.diskBoundary.{w} (n + 1))
               ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) n).inv 1)))) := by
-  rw [singularHomologyπ_cellBoundaryHom_eq_cellularIncidence_smul C R x hx j, map_smul,
+  rw [singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul C R x hx j, map_smul,
     ← ModuleCat.comp_apply,
     IsIso.hom_inv_id, ModuleCat.id_apply, smul_eq_mul, mul_one]
 
