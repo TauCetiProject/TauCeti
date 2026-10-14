@@ -48,6 +48,9 @@ one of its holes swallows the whole of `D(a, |c|)`, that is when `max ‖c‖ �
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.holedDisc_insert` and
+  `TauCeti.ValuationSpectrum.exists_holedDisc_inter_closedSubdisc_eq`: adding a hole, or cutting
+  by a disc, gives again a holed disc.
 * `TauCeti.ValuationSpectrum.isOpen_holedDisc`: a holed disc whose holes have unit radius
   parameters is open.
 * `TauCeti.ValuationSpectrum.holedDisc_mem_spaRationalFamily` and
@@ -113,6 +116,17 @@ theorem holedDisc_of_isEmpty [IsEmpty ι] (a c : K) (b d : ι → K) :
     holedDisc a c b d = closedSubdisc a c := by
   ext v
   simp
+
+/-- **Adding a hole to a holed disc** intersects it with the hole's defining inequality: for holes
+indexed by a finset `s`, adding the index `i` cuts out `{v : v(dᵢ) ≤ v(T - bᵢ)}`. -/
+theorem holedDisc_insert [DecidableEq ι] (a c : K) (b d : ι → K) (i : ι) (s : Finset ι) :
+    holedDisc a c (fun j : ↥(insert i s) ↦ b j) (fun j ↦ d j) =
+      holedDisc a c (fun j : ↥s ↦ b j) (fun j ↦ d j) ∩
+        {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))} := by
+  ext v
+  simp only [mem_holedDisc, Subtype.forall, Finset.mem_insert, forall_eq_or_imp, Set.mem_inter_iff,
+    Set.mem_ofPred_eq]
+  tauto
 
 /-- A hole whose radius parameter is a unit `d` is the basic open `{v : v(d) ≤ v(T - b) ≠ 0}`: the
 inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
@@ -182,6 +196,13 @@ end TopologicalRing
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+
+/-- **A holed disc cut by a disc is a holed disc with the same holes**: the intersection of the
+outer disc `D(a, |c|)` with `D(a', |c'|)` is a disc, possibly the empty disc. -/
+theorem exists_holedDisc_inter_closedSubdisc_eq (a c a' c' : K) (b d : ι → K) :
+    ∃ e r : K, holedDisc a c b d ∩ closedSubdisc a' c' = holedDisc e r b d := by
+  obtain ⟨e, r, h⟩ := exists_closedSubdisc_inter_closedSubdisc_eq a a' c c'
+  exact ⟨e, r, by rw [holedDisc, holedDisc, ← h, Set.inter_right_comm]⟩
 
 /-- **A hole that swallows the outer disc empties the holed disc**: if
 `max ‖c‖ ‖a - bᵢ‖ < ‖dᵢ‖`, then on `D(a, |c|)` the value of `T - bᵢ = (T - a) + (a - bᵢ)` stays
