@@ -11,12 +11,13 @@ public import Mathlib.Probability.Moments.Basic
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 
 /-!
-# Moment-generating functions of Gaussian linear functionals
+# Moment- and cumulant-generating functions of Gaussian linear functionals
 
 This file proves that every almost everywhere measurable continuous linear functional of a
 Gaussian measure has finite exponential moments of every real order and computes its
 moment-generating function. It then specializes the general result to inner products against a
-multivariate Gaussian vector, expressing the variance as the covariance-matrix quadratic form.
+multivariate Gaussian vector, expressing the variance as the covariance-matrix quadratic form,
+and computes the corresponding cumulant-generating function.
 
 The general results require no norm on the source space. Almost everywhere measurability of
 the functional suffices; the default proof handles continuous functionals when open sets are
@@ -34,6 +35,8 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
   directional
   functional of a multivariate Gaussian.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
+* `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
+  polynomial determined by the directional mean and variance.
 
 ## References
 
@@ -122,5 +125,16 @@ theorem mgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
       covarianceBilin_multivariateGaussian hS]
     exact (Matrix.inner_toEuclideanCLM S θ θ).symm
   rw [hL, IsGaussian.mgf_dual, hmean, hvar]
+
+/-- The cumulant-generating function of an inner product against a multivariate Gaussian vector
+is the quadratic polynomial determined by its directional mean and variance.
+
+The formula holds for every real order, including for singular positive-semidefinite covariance
+matrices. -/
+theorem cgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (t : ℝ) :
+    cgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussian m S) t =
+      t * ⟪θ, m⟫ + t ^ 2 / 2 * ⟪θ, S.toEuclideanLin θ⟫ := by
+  rw [cgf, mgf_inner_multivariateGaussian m θ hS t, Real.log_exp]
 
 end TauCeti.Probability
