@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.GroupTheory.DoubleCoset.Map
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
+public import TauCeti.RingTheory.Ideal.Pointwise
 
 /-!
 # The double-coset splitting law over invariant rings
@@ -204,9 +205,6 @@ decomposition group. -/
 theorem ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex (sigma : G) :
     ((sigma • Q).under C).ramificationIdx A * ((sigma • Q).under C).inertiaDeg A =
       H.relIndex (MulAut.conj sigma • stabilizer G Q) := by
-  let _ : (sigma • Q).IsMaximal := by
-    rw [Q.pointwise_smul_eq_comap]
-    infer_instance
   rw [ramificationIdx_mul_inertiaDeg_under_eq_relIndex (Q := sigma • Q) (H := H) (C := C),
     stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
     TauCeti.map_conj_eq_conj_smul]

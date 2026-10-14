@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.FixedField
@@ -40,11 +39,8 @@ bijection is the dictionary that supplies one.
 
 ## Main results
 
-* `NumberField.isGaloisGroup_ringOfIntegers_fixedField`: `H` is a Galois group of `𝓞 M` over
-  `𝓞 E`, so the invariant-ring theory applies to `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 M`.
 * `Ideal.doubleCosetQuotientEquivPrimesOver_eq_doubleCosetQuotientEquivPrimesOverOfIsInvariant`:
   the bijection is the invariant-ring double coset law for these rings of integers.
-
 * `Ideal.under_fixedField_eq_iff_mem_orbit`: two primes of `𝓞 M` contract to the same prime of
   `𝓞 E` exactly when one is an `H`-translate of the other.
 * `Ideal.primesOver_under_fixedField_eq_singleton_of_le_stabilizer`: for `H ≤ D`, `Q` is the only
@@ -68,20 +64,6 @@ public section
 open IntermediateField MulAction NumberField
 
 open scoped NumberField Pointwise
-
-namespace NumberField
-
-/-- **A subgroup is the Galois group of the rings of integers over its fixed field.** This is
-Mathlib's ring-of-integers instance applied to `IsGaloisGroup.fixedField`. Instance search does
-not find it unaided: the action of `H` on `𝓞 M` restricted from `Gal(M/K)` and the one Mathlib's
-instance builds from the action of `H` on `M` agree only after unfolding past instance
-transparency. -/
-instance isGaloisGroup_ringOfIntegers_fixedField {K M : Type*} [Field K] [Field M] [NumberField K]
-    [NumberField M] [Algebra K M] (H : Subgroup (M ≃ₐ[K] M)) :
-    IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
-  instIsGaloisGroupRingOfIntegersOfNumberField ↥(fixedField H) M H
-
-end NumberField
 
 namespace Ideal
 

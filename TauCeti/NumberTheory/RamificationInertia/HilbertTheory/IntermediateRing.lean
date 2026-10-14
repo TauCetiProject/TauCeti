@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.NumberTheory.RamificationInertia.ResidueSeparable
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
+public import TauCeti.RingTheory.Ideal.Pointwise
 
 /-!
 # Ramification indices below an intermediate invariant ring
@@ -115,9 +116,6 @@ theorem ramificationIdx_under_smul_eq_relIndex_inertia (Q : Ideal B) [Q.IsMaxima
       H.relIndex (MulAut.conj σ • Q.inertia G) := by
   let : Algebra.IsSeparable (A ⧸ (σ • Q).under A) (B ⧸ σ • Q) :=
     Quotient.isSeparable_smul Q σ
-  let _ : (σ • Q).IsMaximal := by
-    rw [pointwise_smul_eq_comap]
-    infer_instance
   rw [ramificationIdx_under_eq_relIndex_inertia (σ • Q) H C, inertia_smul,
     TauCeti.map_conj_eq_conj_smul]
 
