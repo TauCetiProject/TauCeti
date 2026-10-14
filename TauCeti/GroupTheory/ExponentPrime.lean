@@ -168,6 +168,7 @@ theorem exists_index_eq_two_notMem_of_exponent_dvd_two (hexp : Monoid.exponent G
     exists_le_index_eq_two_notMem_of_exponent_dvd_two hexp (N := ⊥) (Subgroup.mem_bot.not.mpr hσ)
   exact ⟨H, hH⟩
 
+open scoped IsMulCommutative in
 /-- **A generating set of a finite elementary abelian `p`-group contains a basis.** In a finite
 commutative group all of whose elements satisfy `g ^ p = 1`, for `p` prime, every set `X` contains
 a finite subset `B` generating the same subgroup, and that subgroup has exactly `p ^ #B` elements.
@@ -180,7 +181,6 @@ theorem exists_finset_subset_closure_eq_natCard_eq_pow [IsMulCommutative G] [Fin
       Nat.card (Subgroup.closure X) = p ^ B.card := by
   classical
   have : Fact p.Prime := ⟨hp⟩
-  let _ : CommGroup G := { mul_comm := IsMulCommutative.is_comm.comm }
   let _ : Module (ZMod p) (Additive G) := AddCommGroup.zmodModule fun x ↦ by
     rw [← ofMul_toMul x, ← ofMul_pow, Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp,
       ofMul_one]
@@ -200,6 +200,6 @@ theorem exists_finset_subset_closure_eq_natCard_eq_pow [IsMulCommutative G] [Fin
     -- Membership in `Subgroup.toAddSubgroup H` is membership in `H`, read through `ofMul`.
     exact Nat.card_congr (Equiv.subtypeEquiv Additive.ofMul fun g ↦ by
       rw [← Subgroup.toAddSubgroup_closure]
-      rfl)
+      exact (Additive.mem_toAddSubgroup _ _).symm)
 
 end TauCeti

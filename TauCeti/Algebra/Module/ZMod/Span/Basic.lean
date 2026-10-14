@@ -9,8 +9,7 @@ public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.FieldTheory.Finiteness
-import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 
 /-!
 # Spans in modules over `ℤ/nℤ`
@@ -52,16 +51,12 @@ theorem exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow {p : ℕ} [Fac
     {M : Type*} [AddCommGroup M] [Module (ZMod p) M] [Finite M] (s : Set M) :
     ∃ b : Finset M, (b : Set M) ⊆ s ∧ AddSubgroup.closure (b : Set M) = AddSubgroup.closure s ∧
       Nat.card (AddSubgroup.closure s) = p ^ b.card := by
-  classical
-  obtain ⟨b, hbs, hbspan, hbli⟩ := exists_linearIndependent (ZMod p) s
-  have : Fintype b := Fintype.ofFinite b
-  refine ⟨b.toFinset, by simpa using hbs, ?_, ?_⟩
-  · rw [coe_toFinset, ← span_zmod_eq_addSubgroupClosure (n := p),
-      ← span_zmod_eq_addSubgroupClosure (n := p), hbspan]
-  · rw [← finrank_span_set_eq_card hbli, hbspan, ← span_zmod_eq_addSubgroupClosure (n := p)]
-    -- The additive subgroup underlying a submodule has the same elements, hence the same
-    -- cardinality, as the submodule; the count is then that of a finite `𝔽_p`-vector space.
-    change Nat.card (Submodule.span (ZMod p) s) = _
-    rw [Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod]
+  obtain ⟨b, hbs, hcard, hbspan, -⟩ := Submodule.exists_finset_span_eq_linearIndepOn (ZMod p) s
+  refine ⟨b, hbs, ?_, ?_⟩
+  · rw [← span_zmod_eq_addSubgroupClosure (n := p), ← span_zmod_eq_addSubgroupClosure (n := p),
+      hbspan]
+  · rw [hcard, ← span_zmod_eq_addSubgroupClosure (n := p),
+      Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ Submodule.mem_toAddSubgroup _),
+      Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod]
 
 end Set
