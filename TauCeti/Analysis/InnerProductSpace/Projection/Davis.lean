@@ -62,8 +62,7 @@ theorem projectionFamilyOverlap_injective (hP : CompleteOrthogonalIdempotents P)
   intro x y hxy
   have hcomponents (i : ι) : P i x = P i y := by
     apply hPQ i (LinearMap.mem_range_self _ _) (LinearMap.mem_range_self _ _)
-    change (Q i * P i) x = (Q i * P i) y
-    rw [← hQ.mul_projectionFamilyOverlap P i]
+    rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← hQ.mul_projectionFamilyOverlap P i]
     simpa only [Module.End.mul_apply] using congrArg (Q i) hxy
   rw [← hP.sum_apply_eq_self x, ← hP.sum_apply_eq_self y]
   exact Finset.sum_congr rfl fun i _ ↦ hcomponents i
