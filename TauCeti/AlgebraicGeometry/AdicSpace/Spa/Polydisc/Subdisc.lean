@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.DiscPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 import Mathlib.Topology.Order.IsLUB
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
 /-!
 # Closed discs inside the closed unit disc

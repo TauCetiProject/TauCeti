@@ -20,16 +20,16 @@ integral closure of the image of the source plus ring.
 More generally, it suffices that the target coefficient plus ring be integral over the image
 of the source coefficient plus ring, without requiring the coefficient morphism to be open.
 
-This separates the plus-ring calculation from the lifting of restricted coefficient families.
-It applies to the coefficient quotient occurring between two finite-type presentations, with
-arbitrary weights and without assuming that the base ring is Tate. Constants in the target
-plus ring are integral over the images of source constants; weighted variables lift to source
-weighted variables. The generator criterion
+The induced ring map is assumed to be an open quotient map; the theorems prove the
+integral-closure condition on plus rings. They apply to coefficient quotients between finite-type
+presentations, with arbitrary weights and without assuming that the base ring is Tate. Constants
+in the target plus ring are integral over the images of source constants; weighted variables lift to
+source weighted variables. The generator criterion
 `TauCeti.Huber.Pair.Hom.isQuotientMapping_of_isIntegral_weighted` then controls the entire
 completed plus ring.
 
-The generator calculation generalizes the unweighted coefficient quotient in
-`TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.comp`.
+The unweighted pair-composition theorem `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.comp`
+uses `TauCeti.Huber.Pair.Hom.IsQuotientMapping.weightedMapCompletion`.
 
 ## References
 
@@ -81,63 +81,6 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   {S : Pair A} {U : Pair B} {k : ℕ} {T : Fin k → Set A} {T' : Fin k → Set B}
 
-/-- The morphism of completed weighted Huber pairs induced by a coefficient morphism carrying
-each source weight into the corresponding target weight. -/
-noncomputable def weightedMapCompletion (f : Hom S U) (hT : IsWeightFamily T)
-    (hT' : IsWeightFamily T') (hTT' : ∀ i, f.toRingHom '' T i ⊆ T' i) :
-    Hom (S.weighted hT).completion (U.weighted hT').completion where
-  toRingHom := Huber.weightedMapCompletion f.continuous_toRingHom hT hT' hTT'
-  continuous_toRingHom := continuous_weightedMapCompletion ..
-  map_mem_plus := weighted_completion_plus_le_comap_weightedMapCompletion hT f hT' hTT'
-
-/-- The underlying ring map is the coefficientwise map on completions. -/
-@[simp]
-theorem toRingHom_weightedMapCompletion (f : Hom S U) (hT : IsWeightFamily T)
-    (hT' : IsWeightFamily T') (hTT' : ∀ i, f.toRingHom '' T i ⊆ T' i) :
-    (f.weightedMapCompletion hT hT' hTT').toRingHom =
-      Huber.weightedMapCompletion f.continuous_toRingHom hT hT' hTT' :=
-  (rfl)
-
-/-- The coefficientwise morphism induced by the identity is the identity. -/
-@[simp]
-theorem weightedMapCompletion_id (hT : IsWeightFamily T) :
-    (Hom.id S).weightedMapCompletion hT hT (fun _ ↦ by simp) =
-      Hom.id (S.weighted hT).completion := by
-  apply Hom.ext
-  simpa only [toRingHom_weightedMapCompletion, toRingHom_id] using
-    Huber.weightedMapCompletion_id hT
-
-/-- Composing coefficientwise morphisms gives the morphism induced by the composite. -/
-@[simp]
-theorem weightedMapCompletion_comp {C : Type*} [CommRing C] [TopologicalSpace C]
-    [IsTopologicalRing C] [IsHuberRing C] {V : Pair C} {T'' : Fin k → Set C}
-    (f : Hom S U) (g : Hom U V) (hT : IsWeightFamily T) (hT' : IsWeightFamily T')
-    (hT'' : IsWeightFamily T'') (hTT' : ∀ i, f.toRingHom '' T i ⊆ T' i)
-    (hT'T'' : ∀ i, g.toRingHom '' T' i ⊆ T'' i) :
-    (g.weightedMapCompletion hT' hT'' hT'T'').comp (f.weightedMapCompletion hT hT' hTT') =
-      (g.comp f).weightedMapCompletion hT hT''
-        (fun i ↦ by
-          rw [toRingHom_comp]
-          exact Set.image_subset_iff.mpr fun _ ha ↦
-            hT'T'' i ⟨_, hTT' i ⟨_, ha, rfl⟩, rfl⟩) := by
-  apply Hom.ext
-  simpa only [toRingHom_comp, toRingHom_weightedMapCompletion] using
-    Huber.weightedMapCompletion_comp f.continuous_toRingHom g.continuous_toRingHom
-      hT hT' hT'' (fun i ↦ Set.image_subset_iff.mp (hTT' i))
-      (fun i ↦ Set.image_subset_iff.mp (hT'T'' i))
-
-/-- The coefficientwise morphism commutes with the structure morphisms of the weighted pairs.
--/
-@[simp]
-theorem weightedMapCompletion_comp_weightedCompletionHom (f : Hom S U)
-    (hT : IsWeightFamily T) (hT' : IsWeightFamily T')
-    (hTT' : ∀ i, f.toRingHom '' T i ⊆ T' i) :
-    (f.weightedMapCompletion hT hT' hTT').comp (S.weightedCompletionHom hT) =
-      (U.weightedCompletionHom hT').comp f := by
-  apply Hom.ext
-  ext a
-  simp [algebraMap_completion_weightedRestrictedSubring_apply]
-
 /-- A coefficient morphism whose target plus ring is integral over the image of its source plus
 ring induces a quotient mapping of completed weighted pairs provided that the target weights
 are exactly its images and the induced ring map is an open quotient map. In particular, the
@@ -152,6 +95,8 @@ theorem isQuotientMapping_weightedMapCompletion_of_isIntegral (f : Hom S U)
       (Huber.weightedMapCompletion f.continuous_toRingHom hT hT' (fun i ↦ (hTT' i).le))) :
     (f.weightedMapCompletion hT hT' (fun i ↦ (hTT' i).le)).IsQuotientMapping := by
   let F := f.weightedMapCompletion hT hT' (fun i ↦ (hTT' i).le)
+  have hF : IsOpenQuotientMap F.toRingHom := by
+    simpa only [F, toRingHom_weightedMapCompletion] using hF
   have hFC (a : A) :
       F.toRingHom (weightedC T hT a : weightedRestrictedSubring T hT) =
         (weightedC T' hT' (f.toRingHom a) : weightedRestrictedSubring T' hT') := by

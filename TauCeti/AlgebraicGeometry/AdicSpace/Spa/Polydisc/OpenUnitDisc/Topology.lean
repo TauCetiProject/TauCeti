@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 

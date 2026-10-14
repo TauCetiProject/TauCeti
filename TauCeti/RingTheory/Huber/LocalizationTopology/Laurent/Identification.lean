@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Presentation
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
 /-!
 # Remark 7.55: the Laurent quotient *is* `A⟨T'/s⟩`

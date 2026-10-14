@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Quotient
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
 /-!
 # The Laurent quotient of a numerator enlargement, and the maps between it and `A⟨T'/s⟩`
