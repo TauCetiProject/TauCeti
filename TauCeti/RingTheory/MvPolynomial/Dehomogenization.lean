@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.Nullstellensatz
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 
 /-!
@@ -20,6 +21,18 @@ any standard affine chart of a projective hypersurface; for a plane curve, take 
 
 Euler's identity recovers the omitted partial derivative. No invertibility of the
 degree is needed, so the criterion also applies when the characteristic divides the degree.
+
+Conversely, a homogeneous polynomial is recovered from its degree and its equation in one chart
+(`TauCeti.dehomogenize_injOn`), and every polynomial of total degree at most `N` is the equation of
+some homogeneous polynomial of degree `N` (`TauCeti.exists_isHomogeneous_dehomogenize_eq`).
+Together they lift a factorization in an affine chart to a factorization of the homogeneous
+equation, up to a power of the omitted coordinate.
+
+Combined with the weak Nullstellensatz, the pointwise criterion gives an identity of ideals:
+if every point of a projective hypersurface over an algebraically closed extension `K` of `k`
+lying in a standard affine chart is nonsingular, then in that chart the equation and its partial
+derivatives generate the unit ideal of the polynomial ring over `k`
+(`TauCeti.span_insert_range_pderiv_dehomogenize_eq_top`).
 
 ## References
 
@@ -68,16 +81,108 @@ theorem dehomogenize_rename_succAbove (i : Fin (n + 1)) (p : MvPolynomial (Fin n
     dehomogenize i (rename i.succAbove p) = p := by
   rw [dehomogenize, aeval_rename, Fin.insertNth_comp_succAbove, aeval_X_left_apply]
 
+/-- Evaluation in an affine chart at a point of an `R`-algebra is evaluation of the homogeneous
+coordinates with the chosen coordinate equal to one. -/
+@[simp]
+theorem aeval_dehomogenize {S : Type*} [CommSemiring S] [Algebra R S] (i : Fin (n + 1))
+    (p : MvPolynomial (Fin (n + 1)) R) (a : Fin n → S) :
+    aeval a (dehomogenize i p) = aeval (i.insertNth 1 a) p := by
+  have h : (aeval a).comp (dehomogenize (R := R) i) = aeval (i.insertNth 1 a) := by
+    ext j
+    refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j <;> simp
+  exact AlgHom.congr_fun h p
+
 /-- Evaluation in an affine chart is evaluation of the homogeneous coordinates with
 the chosen coordinate equal to one. -/
 @[simp]
 theorem eval_dehomogenize (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R)
     (a : Fin n → R) :
-    eval a (dehomogenize i p) = eval (i.insertNth 1 a) p := by
-  have h : (aeval a).comp (dehomogenize (R := R) i) = aeval (i.insertNth 1 a) := by
-    ext j
-    refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j <;> simp
-  exact AlgHom.congr_fun h p
+    eval a (dehomogenize i p) = eval (i.insertNth 1 a) p :=
+  aeval_dehomogenize i p a
+
+/-- Dehomogenization does not increase the total degree. -/
+theorem totalDegree_dehomogenize_le (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R) :
+    (dehomogenize i p).totalDegree ≤ p.totalDegree := by
+  conv_lhs => rw [p.as_sum]
+  rw [map_sum]
+  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
+  rw [dehomogenize_monomial]
+  refine (totalDegree_monomial_le _ _).trans (le_trans ?_ (le_totalDegree hs))
+  simp [Finsupp.sum_fintype, Fin.sum_univ_succAbove _ i]
+
+/-- For a homogeneous `p` of degree `d` and an exponent `s` of total degree `d`, the coefficient
+of `p` at `s` is the coefficient of the affine equation at the restriction of `s` to the retained
+coordinates. The `i`-th entry of `s` is determined by the others, so no information is lost. -/
+theorem coeff_dehomogenize_of_isHomogeneous {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ}
+    (hp : p.IsHomogeneous d) (i : Fin (n + 1)) {s : Fin (n + 1) →₀ ℕ} (hs : s.degree = d) :
+    (dehomogenize i p).coeff (Finsupp.equivFunOnFinite.symm (s ∘ i.succAbove)) = p.coeff s := by
+  classical
+  -- The total degree of an exponent splits into its `i`-th entry and the retained entries.
+  have hdeg (t : Fin (n + 1) →₀ ℕ) : t.degree = t i + ∑ m, t (i.succAbove m) := by
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_succAbove _ i]
+  conv_lhs => rw [p.as_sum]
+  rw [map_sum, coeff_sum]
+  simp_rw [dehomogenize_monomial, coeff_monomial]
+  rw [Finset.sum_eq_single s]
+  · simp
+  · intro t ht hne
+    refine ite_eq_right fun h ↦ hne ?_
+    have hts : ∀ m, t (i.succAbove m) = s (i.succAbove m) := fun m ↦ by
+      simpa using DFunLike.congr_fun h m
+    -- By homogeneity `t` has total degree `d`, which fixes its `i`-th entry.
+    have ht' : t.degree = d := by
+      rw [Finsupp.degree_eq_weight_one]
+      exact hp (mem_support_iff.mp ht)
+    have hti : t i = s i := by
+      have h1 := hdeg t
+      have h2 := hdeg s
+      simp only [hts] at h1
+      omega
+    ext l
+    exact Fin.succAboveCases i hti hts l
+  · intro h
+    simp [notMem_support_iff.mp h]
+
+/-- For a homogeneous `p` of degree `d`, the coefficient of `X_j ^ d` in the affine equation is
+the coefficient of the corresponding power `X_{i.succAbove j} ^ d` in `p`. -/
+theorem coeff_dehomogenize_single {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ}
+    (hp : p.IsHomogeneous d) (i : Fin (n + 1)) (j : Fin n) :
+    (dehomogenize i p).coeff (Finsupp.single j d) =
+      p.coeff (Finsupp.single (i.succAbove j) d) := by
+  rw [← coeff_dehomogenize_of_isHomogeneous hp i (by simp)]
+  congr 1
+  ext l
+  simp [Finsupp.single_apply, Fin.succAbove_right_injective.eq_iff]
+
+/-- **Dehomogenization is injective on homogeneous polynomials of a fixed degree**: a homogeneous
+polynomial is determined by its degree and its equation in any standard affine chart. -/
+theorem dehomogenize_injOn (i : Fin (n + 1)) (d : ℕ) :
+    Set.InjOn (dehomogenize (R := R) i) {p | p.IsHomogeneous d} := by
+  intro p hp q hq h
+  ext s
+  by_cases hs : s.degree = d
+  · rw [← coeff_dehomogenize_of_isHomogeneous hp i hs,
+      ← coeff_dehomogenize_of_isHomogeneous hq i hs, h]
+  · rw [hp.coeff_eq_zero hs, hq.coeff_eq_zero hs]
+
+/-- **Homogenization**: every polynomial `p` in `n` variables of total degree at most `N` is the
+equation in the `i`-th standard affine chart of a homogeneous polynomial of degree `N` in `n + 1`
+variables, obtained by padding each homogeneous component of `p` with a power of `X_i`. -/
+theorem exists_isHomogeneous_dehomogenize_eq (i : Fin (n + 1)) {p : MvPolynomial (Fin n) R}
+    {N : ℕ} (hp : p.totalDegree ≤ N) :
+    ∃ q : MvPolynomial (Fin (n + 1)) R, q.IsHomogeneous N ∧ dehomogenize i q = p := by
+  set p' := rename i.succAbove p
+  have hp' : p'.totalDegree ≤ N := (totalDegree_rename_le _ _).trans hp
+  refine ⟨∑ j ∈ Finset.range (N + 1), homogeneousComponent j p' * X i ^ (N - j),
+    IsHomogeneous.sum _ _ _ fun j hj ↦ ?_, ?_⟩
+  · have := (homogeneousComponent_isHomogeneous j p').mul (isHomogeneous_X_pow i (N - j))
+    rwa [Nat.add_sub_cancel' (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))] at this
+  · simp only [map_sum, map_mul, map_pow, dehomogenize_X, Fin.insertNth_apply_same, one_pow,
+      mul_one]
+    rw [← map_sum, ← Finset.sum_subset (Finset.range_subset_range.mpr (Nat.succ_le_succ hp')),
+      sum_homogeneousComponent, dehomogenize_rename_succAbove]
+    intro j _ hj
+    exact homogeneousComponent_eq_zero _ _ (by simpa [Nat.lt_succ_iff] using hj)
 
 /-- Changing coefficients commutes with dehomogenization. -/
 @[simp]
@@ -211,5 +316,37 @@ theorem exists_eval_pderiv_ne_zero_iff_dehomogenize_div (i : Fin (n + 1))
     (forall_eval_pderiv_eq_zero_iff_dehomogenize_div i hp b hi hb)
 
 end Semifield
+
+section Field
+
+variable {k K : Type*} [Field k] [Field K] [Algebra k K] [IsAlgClosed K]
+
+/-- **Nonsingularity of a projective hypersurface, chart by chart**: let `p` be homogeneous over
+`k`, and suppose that at every zero of `p` in `K^(n + 1)` with `i`-th coordinate `1`, for an
+algebraically closed extension `K` of `k`, some partial derivative of `p` is nonzero. Then in the
+`i`-th standard affine chart the equation and its partial derivatives generate the unit ideal of
+`k[X₁, …, Xₙ]`. -/
+theorem span_insert_range_pderiv_dehomogenize_eq_top {p : MvPolynomial (Fin (n + 1)) k} {d : ℕ}
+    (hp : p.IsHomogeneous d) (i : Fin (n + 1))
+    (hsm : ∀ a : Fin n → K, aeval (i.insertNth 1 a) p = 0 →
+      ∃ l, aeval (i.insertNth 1 a) (pderiv l p) ≠ 0) :
+    Ideal.span (insert (dehomogenize i p) (Set.range fun j ↦ pderiv j (dehomogenize i p))) =
+      ⊤ := by
+  refine (span_eq_top_iff_forall_exists_aeval_ne_zero (K := K)).mpr fun a ↦ ?_
+  by_cases ha : aeval a (dehomogenize i p) = 0
+  · obtain ⟨l, hl⟩ := hsm a (by rwa [← aeval_dehomogenize])
+    -- Transport the affine gradient criterion to the coefficients `K`.
+    have hK : ∀ q : MvPolynomial (Fin (n + 1)) k, ∀ b : Fin (n + 1) → K,
+        eval b (map (algebraMap k K) q) = aeval b q := fun q b ↦ by
+      rw [eval_map, aeval_def]
+    have hK' : ∀ q : MvPolynomial (Fin n) k, eval a (map (algebraMap k K) q) = aeval a q :=
+      fun q ↦ by rw [eval_map, aeval_def]
+    obtain ⟨j, hj⟩ := (exists_eval_pderiv_ne_zero_iff_dehomogenize i (hp.map (algebraMap k K)) a
+      (by rwa [← map_dehomogenize, hK'])).mp ⟨l, by rwa [pderiv_map, hK]⟩
+    refine ⟨_, Set.mem_insert_of_mem _ ⟨j, rfl⟩, ?_⟩
+    rwa [← map_dehomogenize, pderiv_map, hK'] at hj
+  · exact ⟨_, Set.mem_insert _ _, ha⟩
+
+end Field
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.MulBy
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 

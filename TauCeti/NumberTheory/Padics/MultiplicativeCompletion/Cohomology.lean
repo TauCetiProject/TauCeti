@@ -75,22 +75,6 @@ private theorem classModuleAddEquiv_apply (ι : L →ₐ[K] SeparableClosure K)
       Additive.ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L ι).symm m.toMul) :=
   (rfl)
 
-/-- `G_K ⧸ V ≃ Gal(L/K)`, for `V` the subgroup of `G_K` fixing `ι(L)`. -/
-private noncomputable def quotientGaloisSubgroupEquiv (ι : L →ₐ[K] SeparableClosure K) :
-    AbsoluteGaloisGroup K ⧸ (galoisSubgroup K L ι).toSubgroup ≃* (L ≃ₐ[K] L) :=
-  (QuotientGroup.quotientMulEquivOfEq (galoisSubgroup_toSubgroup K L ι)).trans
-    (quotientFixingSubgroupFieldRangeEquiv K L ι)
-
-omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [CharZero L] [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
-  [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] in
-/-- `quotientGaloisSubgroupEquiv` sends the class of `g` to the restriction of `g` to `L`. -/
-private theorem quotientGaloisSubgroupEquiv_mk (ι : L →ₐ[K] SeparableClosure K)
-    (g : AbsoluteGaloisGroup K) :
-    quotientGaloisSubgroupEquiv K L ι g = ι.restrictNormalHom g := by
-  rw [quotientGaloisSubgroupEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
-    quotientFixingSubgroupFieldRangeEquiv_mk]
-
 /-- `classModuleAddEquiv` intertwines the action of `G_K ⧸ V` on `V^ab(p)` with the action of
 `Gal(L/K)` on `A(L)`, along `G_K ⧸ V ≃ Gal(L/K)`. -/
 private theorem classModuleAddEquiv_smul (ι : L →ₐ[K] SeparableClosure K)
@@ -187,7 +171,8 @@ private theorem groupCohomology_res_padicCompletionUnits (S : Subgroup (L ≃ₐ
             p ^ padicValNat p (Nat.card S) := by
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let V := (galoisSubgroup K L ι).toSubgroup
-  let e : AbsoluteGaloisGroup K ⧸ V ≃* (L ≃ₐ[K] L) := quotientGaloisSubgroupEquiv K L ι
+  let e : AbsoluteGaloisGroup K ⧸ V ≃* (L ≃ₐ[K] L) :=
+    (quotientGaloisSubgroupEquiv K L ι).toMulEquiv
   -- `S` is the image of `T ≤ G_K ⧸ V`, which is the image of its preimage `W ≤ G_K`.
   let T : Subgroup (AbsoluteGaloisGroup K ⧸ V) := S.comap e.toMonoidHom
   let W : Subgroup (AbsoluteGaloisGroup K) := T.comap (QuotientGroup.mk' V)
@@ -233,7 +218,7 @@ theorem exists_zmultiples_eq_top_restriction_groupCohomology_two_padicCompletion
             2 u) = ⊤ := by
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   exact exists_restriction_generator p K (galoisSubgroup K L ι).isOpen
-    (quotientGaloisSubgroupEquiv K L ι) (classModuleAddEquiv p K L ι)
+    (quotientGaloisSubgroupEquiv K L ι).toMulEquiv (classModuleAddEquiv p K L ι)
     (classModuleAddEquiv_smul p K L ι)
 
 /-- **`H²` of `A(L)` on a `p`-subgroup has the order of the subgroup** (NSW (3.6.4), read through
@@ -263,7 +248,7 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_padicCompletionUnits :
     Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective V)
   exact (groupCohomology_of_le p K (galoisSubgroup K L ι).isOpen le_top
     (((MulEquiv.subgroupCongr hmap).trans Subgroup.topEquiv).trans
-      (quotientGaloisSubgroupEquiv K L ι))
+      (quotientGaloisSubgroupEquiv K L ι).toMulEquiv)
     (classModuleAddEquiv p K L ι) fun t m ↦ classModuleAddEquiv_smul p K L ι t m).2
 
 end TauCeti

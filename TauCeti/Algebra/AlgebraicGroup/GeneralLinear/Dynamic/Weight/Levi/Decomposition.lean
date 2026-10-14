@@ -44,11 +44,6 @@ decomposition of `P(w)`.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This advances the dynamic route to parabolic subgroups and Levi decomposition in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap. The remaining step is to combine this
-represented retraction with the represented unipotent and Levi inclusions to identify `P(w)` with
-their semidirect product.
 -/
 
 public section
