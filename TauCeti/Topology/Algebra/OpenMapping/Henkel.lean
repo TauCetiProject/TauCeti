@@ -23,8 +23,10 @@ Each hypothesis pays for one step and no other.
 * Nonarchimedean plus countable generation of `𝓝 0` turn that into a sequence of subgroups
   (`TauCeti.NonarchimedeanAddGroup.exists_antitone_basis_openAddSubgroup`) along which the
   approximation can run.
-* Completeness removes the closure, in `TauCeti.mem_image_of_mem_closure_image`, and
-  `TauCeti.isOpenMap_of_closure_image_mem_nhds` turns the result into openness.
+* Completeness removes the closure, in `TauCeti.mem_image_of_mem_closure_image`.
+
+The last two steps do not depend on how the closure step was obtained, and are packaged as
+`TauCeti.isOpenMap_of_closure_image_mem_nhds`; this file feeds the Baire step into it.
 
 ## Main results
 
@@ -68,8 +70,8 @@ theorem HasZeroSequenceOfUnits.isOpenMap {F : Type*} [FunLike F M N] [MulActionH
     [AddMonoidHomClass F M N] (f : F) (hf : Function.Surjective f)
     (hfc : ContinuousAt (f : M → N) 0) (hc : ∀ x : M, ContinuousAt (fun a : A ↦ a • x) 0) :
     IsOpenMap (f : M → N) :=
-  isOpenMap_of_closure_image_mem_nhds f hfc fun _ hV ↦
-    HasZeroSequenceOfUnits.closure_image_mem_nhds_zero f hf hc hV
+  isOpenMap_of_closure_image_mem_nhds f hfc fun _ hU ↦
+    HasZeroSequenceOfUnits.closure_image_mem_nhds_zero f hf hc hU
 
 /-- **Henkel's theorem in quotient form.** Under exactly the hypotheses of
 `TauCeti.HasZeroSequenceOfUnits.isOpenMap`, the map does not merely carry open sets to open sets:

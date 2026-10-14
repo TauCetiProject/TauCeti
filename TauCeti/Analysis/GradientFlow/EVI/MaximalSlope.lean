@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Monotone
 public import TauCeti.Analysis.GradientFlow.EVI.Basic
-public import TauCeti.Analysis.GradientFlow.MaximalSlope
+public import TauCeti.Analysis.GradientFlow.MaximalSlope.Basic
 import TauCeti.Analysis.ODE.Gronwall
 
 /-!

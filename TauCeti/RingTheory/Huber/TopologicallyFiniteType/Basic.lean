@@ -14,7 +14,6 @@ import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 import TauCeti.Topology.Algebra.GroupCompletion
 
 /-!
@@ -623,8 +622,8 @@ private theorem coe_mem_closure_image_weightSubst
 of zero. -/
 private theorem closure_image_weightSubst_mem_nhds
     (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a)
-    {V : AddSubgroup (restrictedMvPowerSeriesCompletion m A)}
-    (hV : (V : Set (restrictedMvPowerSeriesCompletion m A)) ∈ 𝓝 0) :
+    {V : Set (restrictedMvPowerSeriesCompletion m A)}
+    (hV : V ∈ 𝓝 0) :
     closure (weightSubst hT htT '' V) ∈ 𝓝 (0 : Completion (weightedRestrictedSubring T hT)) := by
   obtain ⟨U, -, hU⟩ := (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_iff.mp
     ((Completion.continuous_coe _).continuousAt.preimage_mem_nhds (by simpa using hV))
@@ -779,10 +778,8 @@ private theorem isOpenMap_appendSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j =
     IsOpenMap (appendSubst htT hV hVX) := by
   refine TauCeti.isOpenMap_of_closure_image_mem_nhds (appendSubst htT hV hVX)
     (continuous_weightedEvalHomCompletion ..).continuousAt fun N hN ↦ ?_
-  have hN' : ((N.comap (appendIncl hV).toAddMonoidHom : AddSubgroup _) :
-      Set (restrictedMvPowerSeriesCompletion m A)) ∈ 𝓝 0 := by
-    rw [AddSubgroup.coe_comap]
-    exact (continuous_weightedEvalHomCompletion ..).continuousAt.preimage_mem_nhds
+  have hN' : (appendIncl hV) ⁻¹' N ∈ 𝓝 (0 : restrictedMvPowerSeriesCompletion m A) :=
+    (continuous_weightedEvalHomCompletion ..).continuousAt.preimage_mem_nhds
       (by rwa [map_zero])
   refine Filter.mem_of_superset (closure_image_weightSubst_mem_nhds htT ht hN')
     (closure_mono ?_)
