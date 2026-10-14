@@ -21,9 +21,6 @@ the multiplier preserves the smaller ray class and removes the additional prime 
 The multiplier lies in `Kˣ`; neither it nor the resulting fractional ideal is required to be
 integral. This differs from choosing an integral representative of one fixed ray class.
 
-The proof uses `Valuation.exists_forall_sub_lt` and the principal-ideal multiplicity formula
-`FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation`. At the original primes the target
-is one; at each additional prime its valuation cancels the multiplicity of the given ideal.
 No finiteness of residue fields or of the class group is needed.
 
 ## References
@@ -52,6 +49,9 @@ theorem exists_mul_toPrincipalIdeal_mem_idealsAway {S : Finset (HeightOneSpectru
       (∀ v ∈ S, v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(n v : ℤ))) ∧
       (I : (FractionalIdeal R⁰ K)ˣ) * toPrincipalIdeal R K x ∈ idealsAway K T := by
   classical
+  /- The proof uses `Valuation.exists_forall_sub_lt` and the principal-ideal multiplicity formula
+  `FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation`. At the original primes the target
+  is one; at each additional prime its valuation cancels the multiplicity of the given ideal. -/
   by_cases hST : S ∪ T = ∅
   · have hS : S = ∅ := Finset.union_eq_empty.mp hST |>.1
     have hT : T = ∅ := Finset.union_eq_empty.mp hST |>.2
