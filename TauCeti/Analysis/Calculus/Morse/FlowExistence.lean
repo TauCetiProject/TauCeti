@@ -206,14 +206,6 @@ theorem negativeGradientFlow_congr (f : E → ℝ) {K' : ℝ≥0} (hf : Lipschit
     (hf' : LipschitzWith K' (∇ f)) : negativeGradientFlow f hf = negativeGradientFlow f hf' :=
   flowOfLipschitz_congr hf.neg hf'.neg
 
-/-- **Equal functions have equal negative gradient flows**, whatever Lipschitz witnesses define
-them. -/
-theorem negativeGradientFlow_eq_of_eq {g : E → ℝ} (hgf : g = f) {K' : ℝ≥0}
-    (hg : LipschitzWith K' (∇ g)) (hf : LipschitzWith K (∇ f)) :
-    negativeGradientFlow g hg = negativeGradientFlow f hf := by
-  subst hgf
-  exact negativeGradientFlow_congr g hg hf
-
 /-- **The rest points of the negative gradient flow are the zeros of `∇ f`**, that is, the
 critical points of a differentiable `f`. -/
 theorem forall_negativeGradientFlow_eq_self_iff (f : E → ℝ) (hf : LipschitzWith K (∇ f)) (x : E) :

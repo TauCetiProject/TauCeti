@@ -34,7 +34,7 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
-  map is `exp (K |t|)`-Lipschitz, and its derivative has norm at most `exp (K |t|)`.
+  map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
 * `TauCeti.continuous_flowOfLipschitz_orbit`, `TauCeti.flowOfLipschitz_eq_add_integral`: orbits are
   continuous and satisfy the integral equation.
 
@@ -174,8 +174,10 @@ theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :
       Real.coe_toNNReal _ (Real.exp_pos _).le, mul_comm]
     exact ODE.dist_globalSolution_le v hv a b t
 
-/-- **A bound on the derivative of the flow.** The derivative of the time-`t` map of the flow of a
-`K`-Lipschitz vector field has norm at most `exp (K |t|)`. -/
+/-- **A bound on the derivative of the flow.** For a `K`-Lipschitz vector field, `fderiv` of the
+time-`t` map of the flow has norm at most `exp (K |t|)`. The field need not be differentiable, so
+this is a bound on Lean's `fderiv`, which is `0` where the time-`t` map is not differentiable; where
+it is differentiable (e.g. for a `C¹` field), it bounds the genuine derivative. -/
 theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ) :
     ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
   simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
