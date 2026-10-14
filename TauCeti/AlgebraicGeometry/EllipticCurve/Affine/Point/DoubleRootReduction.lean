@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Henselian
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 -- Proof-only: the chord through two points with singular reduction.
