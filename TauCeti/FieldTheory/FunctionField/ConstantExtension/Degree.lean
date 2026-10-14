@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntermediateField
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Degrees over subfields after extending constants
@@ -58,7 +59,7 @@ theorem finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
     Module.finrank k'⟮algebraMap F F' x⟯ F' = Module.finrank k⟮x⟯ F := by
   let b := Module.Basis.ofVectorSpace k⟮x⟯ F
   have hdegree := Module.finrank_eq_nat_card_basis (constantExtensionBasis hex h k⟮x⟯ b)
-  rwa [range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right,
+  rwa [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right,
     ← Module.finrank_eq_nat_card_basis b] at hdegree
 
 /-- **An algebraic extension of constants can only lower the degree over `k(x)`**: if
@@ -74,8 +75,8 @@ theorem finrank_over_adjoin_simple_le_of_constantCompositum_eq_top [Algebra.IsAl
   have hle := finrank_range_le_card
     (R := IntermediateField.adjoin k' (Set.range (algebraMap k⟮x⟯ F'))) (algebraMap F F' ∘ b)
   rwa [Set.finrank, span_range_basis_of_constantCompositum_eq_top h k⟮x⟯ b, finrank_top,
-    Fintype.card_fin, range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
-    at hle
+    Fintype.card_fin, IntermediateField.range_algebraMap_adjoin_simple,
+    IntermediateField.adjoin_adjoin_right] at hle
 
 /-- **A separable algebraic extension of an exact constant field preserves the degree over any
 subfield** (Stichtenoth, Proposition 3.6.1(c), for an arbitrary intermediate field): if `E` is a
