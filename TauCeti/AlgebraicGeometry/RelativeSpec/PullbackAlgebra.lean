@@ -147,6 +147,10 @@ theorem pullback_obj_one {Y : Scheme.{u}} (f : Y ⟶ X) (A : QuasicoherentAlgebr
       (Scheme.Modules.pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map η[A.obj.X] ≫
         eqToHom (pullback_obj_X f A).symm := by
   unfold pullback ofCommMon toCommMon
+  -- Definitional unfolding through the conversions: `ofCommMon` takes the unit to the
+  -- underlying sheaf morphism `.hom` of the `CommMon` unit, `mapCommMon` defines that unit as
+  -- `ε ≫ F.map η` (compare Mathlib's `rfl` lemma `comp_mapCommMon_one`), `toCommMon` wraps `η`
+  -- by `ObjectProperty.homMk`, and composition in the full subcategory is that of sheaves.
   change (Functor.LaxMonoidal.ε (QuasicoherentSheaf.pullback f)).hom ≫
     ((QuasicoherentSheaf.pullback f).map _).hom = _
   rw [QuasicoherentSheaf.pullback_ε_hom, QuasicoherentSheaf.pullback_map_hom]
@@ -165,6 +169,9 @@ theorem pullback_obj_mul {Y : Scheme.{u}} (f : Y ⟶ X) (A : QuasicoherentAlgebr
         inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) A.obj.X A.obj.X) ≫
           (Scheme.Modules.pullback f).map μ[A.obj.X] ≫ eqToHom (pullback_obj_X f A).symm := by
   unfold pullback ofCommMon toCommMon
+  -- As in `pullback_obj_one`: `ofCommMon` takes `.hom` of the `CommMon` multiplication, which
+  -- `mapCommMon` defines as `μ ≫ F.map μ` (compare Mathlib's `rfl` lemma `comp_mapCommMon_mul`),
+  -- and `toCommMon` wraps `μ` by `ObjectProperty.homMk`.
   change (Functor.LaxMonoidal.μ (QuasicoherentSheaf.pullback f) _ _).hom ≫
     ((QuasicoherentSheaf.pullback f).map _).hom = _
   rw [QuasicoherentSheaf.pullback_μ_hom, QuasicoherentSheaf.pullback_map_hom]
