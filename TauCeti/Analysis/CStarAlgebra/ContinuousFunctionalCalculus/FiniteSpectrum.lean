@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
-public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The continuous functional calculus of an element with finite spectrum
@@ -25,9 +22,9 @@ Consequently `cfc f a` acts as multiplication by `f μ` on every eigenvector of 
 eigenvalue `μ`, in any module over the algebra. This is the description of the functional
 calculus through eigenvectors, which is exact in finite dimension: the main examples of elements
 with finite spectrum are the bounded operators on a finite-dimensional normed space, whose
-spectrum is finite over every field of scalars acting compatibly. There the eigenvector action
-identifies the continuous functional calculus with any spectral construction acting by `f μ` on
-the eigenvectors for `μ`.
+spectrum is finite over every field of scalars acting compatibly
+(`ContinuousLinearMap.finite_spectrum`). There the eigenvector action identifies the continuous
+functional calculus with any spectral construction acting by `f μ` on the eigenvectors for `μ`.
 
 ## Main results
 
@@ -35,8 +32,6 @@ the eigenvectors for `μ`.
   quotient `g` of `f` at `μ`.
 * `TauCeti.cfc_smul_of_smul_eq_algebraMap_smul`: if `a • m = μ • m`, then
   `cfc f a • m = f(μ) • m`.
-* `ContinuousLinearMap.finite_spectrum`: a bounded operator on a finite-dimensional normed space
-  has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
 -/
 
 public section
@@ -75,18 +70,3 @@ theorem cfc_smul_of_smul_eq_algebraMap_smul {M : Type*} [AddCommGroup M] [Module
     sub_self, smul_zero]
 
 end TauCeti
-
-namespace ContinuousLinearMap
-
-variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-
-/-- A bounded operator on a finite-dimensional normed space has finite spectrum over any field
-`S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex space. -/
-theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →L[𝕜] V)]
-    [IsScalarTower S 𝕜 (V →L[𝕜] V)] (T : V →L[𝕜] V) : (spectrum S T).Finite := by
-  have := FiniteDimensional.complete 𝕜 V
-  rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
-  exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
-
-end ContinuousLinearMap

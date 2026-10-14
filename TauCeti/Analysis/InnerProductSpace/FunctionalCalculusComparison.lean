@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
 public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
+public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
 # The finite symmetric calculus and modulus agree with the continuous functional calculus
@@ -66,10 +67,10 @@ function `f`. -/
 theorem cfc_apply_of_apply_eq_smul (f : ℝ → ℝ) {T : E →L[𝕜] E} {x : E} {μ : ℝ}
     (hx : T x = (μ : 𝕜) • x) (hT : IsSelfAdjoint T := by cfc_tac) :
     cfc f T x = (f μ : 𝕜) • x := by
-  have halg (r : ℝ) : algebraMap ℝ (E →L[𝕜] E) r x = (r : 𝕜) • x := by
-    rw [IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E), algebraMap_apply,
-      RCLike.algebraMap_eq_ofReal]
-  rw [← halg] at hx ⊢
+  have halg (r : ℝ) : algebraMap ℝ (E →L[𝕜] E) r • x = (r : 𝕜) • x := by
+    rw [ContinuousLinearMap.smul_def, IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E),
+      algebraMap_apply, RCLike.algebraMap_eq_ofReal]
+  rw [← ContinuousLinearMap.smul_def, ← halg] at hx ⊢
   exact TauCeti.cfc_smul_of_smul_eq_algebraMap_smul f (T.finite_spectrum ℝ) hx hT
 
 end ContinuousLinearMap
@@ -87,7 +88,8 @@ theorem IsSymmetric.toContinuousLinearMap_cfc {T : E →ₗ[𝕜] E} (hT : T.IsS
   have hT' : IsSelfAdjoint (toContinuousLinearMap T) :=
     ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mpr hT
   have h : hT.cfc f = (_root_.cfc f (toContinuousLinearMap T) : E →L[𝕜] E).toLinearMap :=
-    ((hT.eq_cfc_iff f).mpr fun _ _ hx ↦ ContinuousLinearMap.cfc_apply_of_apply_eq_smul f hx).symm
+    ((hT.eq_cfc_iff f).mpr fun _ _ hx ↦
+      ContinuousLinearMap.cfc_apply_of_apply_eq_smul f (by rwa [coe_toContinuousLinearMap'])).symm
   ext x
   simp [h]
 
@@ -99,7 +101,7 @@ theorem IsPositive.toContinuousLinearMap_sqrt {T : E →ₗ[𝕜] E} (hT : T.IsP
     toContinuousLinearMap hT.sqrt = CFC.sqrt (toContinuousLinearMap T) := by
   refine (CFC.sqrt_unique ?_ ?_).symm
   · rw [← ContinuousLinearMap.coe_inj, ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp]
-    exact hT.sqrt_sq
+    simp
   · exact ContinuousLinearMap.nonneg_iff_isPositive.mpr hT.sqrt_isPositive
 
 /-- The finite modulus `|A|` of a rectangular linear map `A` is the continuous-functional-calculus
@@ -107,10 +109,9 @@ square root of the source Gram operator `A† A`. -/
 theorem toContinuousLinearMap_operatorAbs (A : E →ₗ[𝕜] F) :
     toContinuousLinearMap A.operatorAbs =
       CFC.sqrt (toContinuousLinearMap A.adjoint ∘L toContinuousLinearMap A) := by
-  refine (CFC.sqrt_unique ?_ ?_).symm
-  · rw [← ContinuousLinearMap.coe_inj, ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp]
-    simp
-  · exact ContinuousLinearMap.nonneg_iff_isPositive.mpr A.isPositive_operatorAbs
+  rw [(isPositive_adjoint_comp_self A).sqrt_unique A.isPositive_operatorAbs A.operatorAbs_sq]
+  exact (isPositive_adjoint_comp_self A).toContinuousLinearMap_sqrt.trans
+    (congrArg CFC.sqrt (by ext; simp))
 
 /-- **The finite modulus is the absolute value.** For an endomorphism `A` of a finite-dimensional
 space, the finite modulus `|A| = √(A† A)` is the absolute value `CFC.abs A` of `A` in the
