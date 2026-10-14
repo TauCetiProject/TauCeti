@@ -88,7 +88,8 @@ valuations need not differ from `η_r`.
   is at most `T` exactly when `‖c‖ < r`. The complementary comparisons are
   `TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_weightedC_le_iff` (`c ≤ T` exactly when
   `‖c‖ ≤ r`) and `TauCeti.ValuationSpectrum.closedDiscGaussValuationBelow_weightedX_le_iff`
-  (`T ≤ c` exactly when `r ≤ ‖c‖`).
+  (`T ≤ c` exactly when `r ≤ ‖c‖`). Just above `r`, constants compare by their norms
+  (`TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_weightedC_le_weightedC_iff`).
 * `TauCeti.ValuationSpectrum.gaussPointAbove_ne_gaussPoint`,
   `TauCeti.ValuationSpectrum.gaussPointBelow_ne_gaussPoint` and
   `TauCeti.ValuationSpectrum.gaussPointBelow_ne_gaussPointAbove`: for `r` the norm of an element
@@ -96,6 +97,8 @@ valuations need not differ from `η_r`.
 * `TauCeti.ValuationSpectrum.gaussPointAbove_inj` and
   `TauCeti.ValuationSpectrum.gaussPointBelow_inj`: distinct radii give distinct points `η_{r⁺}`,
   respectively `η_{r⁻}`.
+* `TauCeti.ValuationSpectrum.gaussPoint_specializes_of_lt`: a point of `Spv K⟨T⟩` whose valuation
+  refines the Gauss norm of radius `r` lies in the closure of `η_r`.
 * `TauCeti.ValuationSpectrum.gaussPoint_specializes_gaussPointAbove` and
   `TauCeti.ValuationSpectrum.gaussPoint_specializes_gaussPointBelow`: `η_{r⁺}` and `η_{r⁻}` lie in
   the closure of `η_r`.
@@ -863,6 +866,32 @@ theorem closedDiscGaussValuationBelow_weightedX_le_iff (hr₀ : 0 < r) (hr₁ : 
   · exact iff_of_true (not_le.mp
       ((closedDiscGaussValuationBelow_weightedC_le_iff hr₀ hr₁ c).not.mpr h.not_gt)).le h
 
+/-- **Just above `r`, constants are compared by their norms**: a nonzero constant attains its
+Gauss norm only in degree `0`. -/
+@[simp]
+theorem closedDiscGaussValuationAbove_weightedC_le_weightedC_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    (a b : K) :
+    closedDiscGaussValuationAbove hr₀ hr₁
+        (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight a) ≤
+      closedDiscGaussValuationAbove hr₀ hr₁ (weightedC _ isWeightFamily_one_weight b) ↔
+      ‖a‖ ≤ ‖b‖ := by
+  have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp [ha]
+  have hdist {c : K} (hc : c ≠ 0) : TauCeti.PowerSeries.IsDistinguished r 0 (toRestrictedSubring hr
+      (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c) : PowerSeries K) := by
+    rw [coe_toRestrictedSubring_weightedC]
+    exact TauCeti.PowerSeries.isDistinguished_monomial hr₀ hc 0
+  rw [closedDiscGaussValuationAbove, Valuation.comap_apply, Valuation.comap_apply,
+    TauCeti.PowerSeries.gaussValuationAbove_le_iff hr₀ (hdist ha) (hdist hb)]
+  have hG (c : K) : TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
+      (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c)) = ‖c‖₊ :=
+    closedDiscGaussValuation_weightedC hr₀ hr₁ c
+  rw [hG, hG]
+  simp [← le_iff_lt_or_eq, ← NNReal.coe_le_coe]
+
 /-- **`η_{r⁺}` is not the Gauss point `η_r`** when `r` is the norm of an element of `K`: the two
 points compare `T` with a constant of norm `r` differently. -/
 theorem gaussPointAbove_ne_gaussPoint (hr₀ : 0 < r) (hr₁ : r < 1) (hr : ∃ c : K, ‖c‖ = r) :
@@ -937,42 +966,40 @@ theorem gaussPointBelow_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ :
   simpa only [← NNReal.coe_lt_coe, map_pow, NNReal.coe_pow, closedDiscGaussValuation_weightedC,
     coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
 
-/-- A point refining the Gauss point `η_r`, in the sense that a strictly smaller Gauss norm gives
-a strictly smaller value and only zero vanishes, lies in the closure of `η_r`. -/
-private theorem gaussPoint_specializes_of_lt {hr₀ : 0 < r} {hr₁ : r ≤ 1}
-    {x : closedPolydisc 1 K}
+/-- **A point refining the Gauss point `η_r` is a specialization of it.** If a strictly smaller
+Gauss norm of radius `r` gives a strictly smaller value at `x ∈ Spv K⟨T⟩`, then `x` lies in the
+closure of `η_r`. The point `x` need not lie in the closed unit disc. -/
+theorem gaussPoint_specializes_of_lt {hr₀ : 0 < r} {hr₁ : r ≤ 1}
+    {x : Spv (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
+      isWeightFamily_one_weight)}
     (hlt : ∀ f g, closedDiscGaussValuation hr₀ hr₁ f < closedDiscGaussValuation hr₀ hr₁ g →
-      ¬ x.1.toValuativeRel.vle g f)
-    (h0 : ∀ g, ¬ x.1.toValuativeRel.vle g 0 → g ≠ 0) :
-    gaussPoint hr₀ hr₁ ⤳ x := by
-  rw [← Topology.IsInducing.subtypeVal.specializes_iff]
+      ¬ x.toValuativeRel.vle g f) :
+    (gaussPoint hr₀ hr₁).1 ⤳ x := by
   refine specializes_of_forall_mem_basicOpen fun f g hx ↦ ?_
   obtain ⟨hfg, hg⟩ := (mem_basicOpen_iff _ _ _).mp hx
   refine (mem_basicOpen_iff _ _ _).mpr ⟨?_, ?_⟩
   · rw [gaussPoint_vle_iff]
     exact not_lt.mp fun h ↦ hlt g f h hfg
   · rw [gaussPoint_vle_zero_iff]
-    exact h0 g hg
+    exact fun h ↦ hg (h ▸ x.toValuativeRel.vle_refl 0)
 
 /-- **`η_{r⁺}` is a specialization of the Gauss point `η_r`**: it lies in the closure of `η_r`,
 since its valuation refines the Gauss norm of radius `r`. -/
 theorem gaussPoint_specializes_gaussPointAbove (hr₀ : 0 < r) (hr₁ : r < 1) :
     gaussPoint (K := K) hr₀ hr₁.le ⤳ gaussPointAbove hr₀ hr₁ :=
-  gaussPoint_specializes_of_lt
+  Topology.IsInducing.subtypeVal.specializes_iff.mp <| gaussPoint_specializes_of_lt
     (fun _ _ h ↦ by
       rw [gaussPointAbove_vle_iff, not_le]
       exact closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le h)
-    fun g hg h ↦ hg (by rw [h]; exact (gaussPointAbove hr₀ hr₁).1.toValuativeRel.vle_refl 0)
 
 /-- **`η_{r⁻}` is a specialization of the Gauss point `η_r`**: it lies in the closure of `η_r`,
 since its valuation refines the Gauss norm of radius `r`. -/
 theorem gaussPoint_specializes_gaussPointBelow (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     gaussPoint (K := K) hr₀ hr₁ ⤳ gaussPointBelow hr₀ hr₁ :=
-  gaussPoint_specializes_of_lt
+  Topology.IsInducing.subtypeVal.specializes_iff.mp <| gaussPoint_specializes_of_lt
     (fun _ _ h ↦ by
       rw [gaussPointBelow_vle_iff, not_le]
       exact closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ h)
-    fun g hg h ↦ hg (by rw [h]; exact (gaussPointBelow hr₀ hr₁).1.toValuativeRel.vle_refl 0)
 
 end NontriviallyNormedField
 

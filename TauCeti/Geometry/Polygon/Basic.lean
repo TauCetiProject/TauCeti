@@ -98,17 +98,17 @@ theorem mem_boundary_iff :
     x ∈ poly.boundary R ↔ ∃ i, ∃ t ∈ Icc (0 : R) 1, poly.edgePath R i t = x := by
   simp only [boundary, mem_iUnion, edgeSet_eq_image_edgePath, mem_image]
 
-variable [IsOrderedRing R] (poly : Polygon P n) (i : Fin n)
+variable [ZeroLEOneClass R] (poly : Polygon P n) (i : Fin n)
 
 variable (R) in
 /-- Vertex `i` is the starting point of edge `i`. -/
 theorem apply_mem_edgeSet_self : poly i ∈ poly.edgeSet R i :=
-  left_mem_affineSegment R _ _
+  ⟨0, left_mem_Icc.2 zero_le_one, AffineMap.lineMap_apply_zero _ _⟩
 
 variable (R) in
 /-- The vertex after vertex `i` is the end point of edge `i`. -/
 theorem apply_finRotate_mem_edgeSet : poly (finRotate n i) ∈ poly.edgeSet R i :=
-  right_mem_affineSegment R _ _
+  ⟨1, right_mem_Icc.2 zero_le_one, AffineMap.lineMap_apply_one _ _⟩
 
 variable (R) in
 /-- Every vertex of a polygon lies on its boundary. -/

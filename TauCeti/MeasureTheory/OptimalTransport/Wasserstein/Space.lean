@@ -65,7 +65,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -410,6 +410,17 @@ theorem wassersteinEDist_ne_top
   (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd
     (hasFiniteMoment μ)).1 (hasFiniteMoment ν)
 
+/-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
+point of `P_p(X)`. -/
+theorem sum_mul_wassersteinEDist_rpow_ne_top [BorelSpace X] [SecondCountableTopology X]
+    {J : Type*} [Fintype J] {w : J → ℝ≥0} (μ : J → WassersteinSpace p X)
+    (z : WassersteinSpace p X) :
+    ∑ j, (w j : ℝ≥0∞) * wassersteinEDist p ((z : ProbabilityMeasure X) : Measure X)
+      ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal ≠ ∞ :=
+  ENNReal.sum_ne_top.2 fun _ _ ↦ ENNReal.mul_ne_top ENNReal.coe_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
+      (wassersteinEDist_ne_top measurable_edist _ _))
+
 variable [StandardBorelSpace X]
 
 /-- The Wasserstein extended distance equips finite-moment laws with a pseudoemetric space
@@ -593,6 +604,26 @@ theorem WassersteinSpace.dist_sq_le_integral {ν₀ ν₁ : WassersteinSpace 2 E
   rw [lintegral_edist_sq_eq_ofReal_integral hi, ← WassersteinSpace.edist_def, edist_dist,
     ← ENNReal.ofReal_pow dist_nonneg] at hW
   exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun _ ↦ by positivity)).1 hW
+
+/-- An optimal coupling `π` of two laws of `P₂(E)` for the quadratic cost realizes their squared
+quadratic Wasserstein distance as its quadratic cost: `dist ν₀ ν₁ ^ 2 = ∫ ‖x - y‖² dπ`. -/
+theorem WassersteinSpace.dist_sq_eq_integral {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E)) :
+    dist ν₀ ν₁ ^ 2 = ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π := by
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hπ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hπ.snd_eq ▸ ν₁.hasFiniteMoment)
+  have hW := hπ.lintegral_eq
+  have hc := wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
+    ENNReal.ofNat_ne_top ((ν₀ : ProbabilityMeasure E) : Measure E)
+    ((ν₁ : ProbabilityMeasure E) : Measure E)
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at hW hc
+  rw [← hc, lintegral_edist_sq_eq_ofReal_integral hi, ← WassersteinSpace.edist_def, edist_dist,
+    ← ENNReal.ofReal_pow dist_nonneg] at hW
+  exact ((ENNReal.ofReal_eq_ofReal_iff (integral_nonneg fun _ ↦ by positivity)
+    (sq_nonneg _)).1 hW).symm
 
 end SecondMoment
 
