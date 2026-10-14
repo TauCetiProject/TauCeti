@@ -37,18 +37,13 @@ identities between faces and the cyclic rotation
 * `TauCeti.hochschildCoface`: the cofaces `φ ↦ φ ∘ dᵢ` on multilinear cochains.
 * `TauCeti.hochschildCoboundary`: the Hochschild coboundary `b`.
 * `TauCeti.cyclicCochains`: the submodule of cyclic cochains.
+* `TauCeti.cyclicHochschildCoboundary`: the restriction of `b` to cyclic cochains.
 
 ## Main results
 
 * `TauCeti.hochschildCoboundary_hochschildCoboundary`: `b (b φ) = 0`.
 * `TauCeti.hochschildCoboundary_mem_cyclicCochains`: `b` maps cyclic cochains to cyclic cochains.
 * `TauCeti.hochschildCoboundary_zero_eq_zero_iff`: the degree-zero cocycles are the traces.
-
-## Implementation notes
-
-Identities between faces are proved by writing a tuple `a : Fin (m + 1) → A` as the restriction
-of a sequence `ℕ → A`; on sequences the faces are explicit case distinctions on indices, and each
-identity becomes a finite case analysis.
 
 ## References
 
@@ -387,6 +382,7 @@ def cyclicCochains (n : ℕ) : Submodule R (MultilinearMap R (fun _ : Fin (n + 1
   smul_mem' c φ hφ a := by simp [hφ a, smul_comm c]
 
 variable {R A M} in
+@[simp]
 theorem mem_cyclicCochains_iff {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} :
     φ ∈ cyclicCochains R A M n ↔
       ∀ a : Fin (n + 1) → A, φ (a ∘ (finRotate (n + 1)).symm) = (-1 : ℤ) ^ n • φ a :=
@@ -511,6 +507,19 @@ theorem hochschildCoboundary_mem_cyclicCochains
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [add_right_comm, add_comm _ n, add_right_comm]
   · rw [← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+
+/-- The Hochschild coboundary `b` restricted to the cyclic subcomplex, as a linear map
+`C_λⁿ → C_λⁿ⁺¹`. -/
+def cyclicHochschildCoboundary (n : ℕ) :
+    cyclicCochains R A M n →ₗ[R] cyclicCochains R A M (n + 1) :=
+  (hochschildCoboundary R A M n).restrict fun _ ↦ hochschildCoboundary_mem_cyclicCochains R A M
+
+/-- The restricted coboundary agrees with `b` on underlying cochains. -/
+@[simp]
+theorem coe_cyclicHochschildCoboundary_apply (φ : cyclicCochains R A M n) :
+    (cyclicHochschildCoboundary R A M n φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) =
+      hochschildCoboundary R A M n φ := by
+  simp [cyclicHochschildCoboundary]
 
 end NonAssoc
 
