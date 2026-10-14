@@ -15,7 +15,10 @@ are the ambient `HasRightDual` choices. Several right duals are not of that form
 product pairing `ExactPairing (X ⊗ Y) (Yᘁ ⊗ Xᘁ)`, the self-pairing of the unit, or a pairing
 transported along an isomorphism. This file takes the exact pairings as explicit arguments
 instead: for `pX : ExactPairing X X'` and `pY : ExactPairing Y Y'`, the mate of `f : X ⟶ Y` is
-`ExactPairing.rightMate pX pY f : Y' ⟶ X'`.
+`ExactPairing.rightMate pX pY f : Y' ⟶ X'`. This is Mathlib's `rightAdjointMate` with the given
+pairings made ambient, and its basic properties are Mathlib's; what the definition adds is the
+type `Y' ⟶ X'`, so that rewriting sees `X'` and `Y'` rather than projections out of `HasRightDual`
+records.
 
 A morphism into a right dual is determined by its composite with the evaluation
 (`CategoryTheory.ExactPairing.rightHom_ext`), and the mate is characterized by
@@ -69,11 +72,14 @@ theorem rightHom_ext {X Y A : C} [ExactPairing X Y] {f g : A ⟶ Y}
   exact (this f).symm.trans ((congrArg _ h).trans (this g))
 
 /-- The right adjoint mate `Y' ⟶ X'` of `f : X ⟶ Y`, with respect to explicitly given exact
-pairings `(X, X')` and `(Y, Y')`. For the ambient right duals this is
-`CategoryTheory.rightAdjointMate` (`TauCeti.rightAdjointMate_eq_rightMate`). -/
+pairings `(X, X')` and `(Y, Y')`: Mathlib's `CategoryTheory.rightAdjointMate` with the given
+pairings made ambient. Stating it with the type `Y' ⟶ X'` keeps the duals `X'` and `Y'` visible
+to rewriting: as a term `@rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f`, its source and target are the
+projections `HasRightDual.rightDual ⟨Y'⟩` and `HasRightDual.rightDual ⟨X'⟩`, and Mathlib's lemmas
+about it do not rewrite against the evaluation `ε_ X X'` of the given pairing. -/
 def rightMate {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y') (f : X ⟶ Y) :
     Y' ⟶ X' :=
-  (ρ_ Y').inv ≫ Y' ◁ η_ X X' ≫ Y' ◁ f ▷ X' ≫ (α_ Y' Y X').inv ≫ ε_ Y Y' ▷ X' ≫ (λ_ X').hom
+  @rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
 
 /-- The characteristic property of the right adjoint mate: evaluating it against `X` is the
 same as evaluating against `Y` after applying `f`. -/
@@ -81,42 +87,26 @@ same as evaluating against `Y` after applying `f`. -/
 theorem rightMate_comp_evaluation {X X' Y Y' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (f : X ⟶ Y) :
     rightMate pX pY f ▷ X ≫ ε_ X X' = Y' ◁ f ≫ ε_ Y Y' :=
-  calc
-    _ = 𝟙 _ ⊗≫ Y' ◁ η_ X X' ▷ X ⊗≫ Y' ◁ f ▷ (X' ⊗ X) ⊗≫
-        ((Y' ⊗ Y) ◁ ε_ X X' ≫ ε_ Y Y' ▷ 𝟙_ C) ⊗≫ 𝟙 _ := by
-      dsimp [rightMate]; rw [whisker_exchange]; monoidal
-    _ = 𝟙 _ ⊗≫ Y' ◁ η_ X X' ▷ X ⊗≫ Y' ◁ (f ▷ (X' ⊗ X) ≫ Y ◁ ε_ X X') ⊗≫ ε_ Y Y' := by
-      monoidal
-    _ = 𝟙 _ ⊗≫ Y' ◁ (η_ X X' ▷ X ⊗≫ X ◁ ε_ X X') ⊗≫ Y' ◁ f ⊗≫ ε_ Y Y' := by
-      rw [← whisker_exchange]; monoidal
-    _ = _ := by
-      rw [evaluation_coevaluation'']; monoidal
+  @rightAdjointMate_comp_evaluation C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
 
 /-- The dual characterization of the right adjoint mate: applying it after the coevaluation of
 `(Y, Y')` is the same as applying `f` after the coevaluation of `(X, X')`. -/
 @[reassoc]
 theorem coevaluation_comp_rightMate {X X' Y Y' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (f : X ⟶ Y) :
-    η_ Y Y' ≫ Y ◁ rightMate pX pY f = η_ X X' ≫ f ▷ X' := by
-  -- `⟨X'⟩` and `⟨Y'⟩` make the given pairings ambient, so that Mathlib's formula for
-  -- `rightAdjointMate` applies; the two mates agree by `rightHom_ext`.
-  have h : rightMate pX pY f = @rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f :=
-    rightHom_ext (X := X) (by
-      rw [rightMate_comp_evaluation]
-      exact (@rightAdjointMate_comp_evaluation C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f).symm)
-  rw [h]
-  exact @coevaluation_comp_rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
+    η_ Y Y' ≫ Y ◁ rightMate pX pY f = η_ X X' ≫ f ▷ X' :=
+  @coevaluation_comp_rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
 
 /-- The mate of an identity is an identity. -/
 @[simp]
 theorem rightMate_id {X X' : C} (p : ExactPairing X X') : rightMate p p (𝟙 X) = 𝟙 X' :=
-  rightHom_ext (X := X) (by simp [rightMate_comp_evaluation])
+  @rightAdjointMate_id C _ _ X ⟨X'⟩
 
 /-- Taking mates reverses composition. -/
 theorem comp_rightMate {X X' Y Y' Z Z' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y')
     (pZ : ExactPairing Z Z') (f : X ⟶ Y) (g : Y ⟶ Z) :
     rightMate pX pZ (f ≫ g) = rightMate pY pZ g ≫ rightMate pX pY f :=
-  rightHom_ext (X := X) (by simp [rightMate_comp_evaluation, ← whisker_exchange_assoc])
+  @comp_rightAdjointMate C _ _ X Y Z ⟨X'⟩ ⟨Y'⟩ ⟨Z'⟩ f g
 
 /-- The mate of `f ▷ Z` with respect to the tensor product pairings is `Z' ◁ fᘁ`. -/
 theorem rightMate_whiskerRight {X X' Y Y' Z Z' : C} (pX : ExactPairing X X')
