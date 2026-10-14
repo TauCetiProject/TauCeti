@@ -54,19 +54,7 @@ abbrev relabel (X : ProfiniteGroupExtension G M)
   continuous_rightHom := by
     rw [GroupExtension.relabel_rightHom]
     exact eG.continuous.comp X.continuous_rightHom
-  inducesAction := GroupExtension.inducesAction_iff.mpr <| by
-    intro (x : X.E) (m : M')
-    apply (_root_.GroupExtension.relabel X.toGroupExtension
-      eM.toMulEquiv eG.toMulEquiv).inl_injective
-    rw [GroupExtension.inl_conjAct_comm]
-    simp only [GroupExtension.relabel_inl, GroupExtension.relabel_rightHom,
-      MonoidHom.comp_apply]
-    -- Expose the coercions of the two equivalences so the action-compatibility equation matches.
-    change x * X.toGroupExtension.inl (eM m) * x⁻¹ =
-      X.toGroupExtension.inl (eM (eG (X.toGroupExtension.rightHom x) • m))
-    rw [hsmul]
-    rw [← (GroupExtension.inducesAction_iff.mp X.inducesAction) x (eM m),
-      GroupExtension.inl_conjAct_comm]
+  inducesAction := X.inducesAction.relabel eM.toMulEquiv eG.toMulEquiv hsmul
 
 /-- The underlying exact sequence is obtained by relabelling both terms of the original one. -/
 @[simp]
