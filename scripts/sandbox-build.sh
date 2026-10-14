@@ -52,13 +52,19 @@ phase() { printf '%s\t%s\n' "$1" "$(date +%s.%N)" >> "$TELEMETRY/phases.tsv" 2>/
 # #check/#eval, a `simp?`/`ring_nf?`-style "Try this: …" suggestion, a linter note. A clean elaboration
 # logs nothing above trace, so this is exit-code enforcement, not output scraping.
 #
-# --fail-fast stops Lake scheduling new jobs after the first failed one (an `info:` failing under
-# --iofail counts), so a doomed build stops sooner. Jobs already running finish normally, and Lake
-# still exits nonzero; a passing build is unchanged.
+# Staging builds (IS_BATCH=true: merge-group or bors staging, set by the trusted workflow) add
+# --fail-fast, which stops Lake scheduling new jobs after the first failed one (an `info:` failing
+# under --iofail counts), so a doomed batch frees the queue sooner. Jobs already running finish
+# normally, and Lake still exits nonzero; a passing build is unchanged. Ordinary PR builds keep going
+# after a failure, so their log reports every broken module for the repair.
+LAKE_BUILD_FLAGS=(--iofail)
+if [ "${IS_BATCH:-}" = "true" ]; then
+  LAKE_BUILD_FLAGS+=(--fail-fast)
+fi
 phase build
 # `--output-error=warn` keeps tee passing the build's output through even if writing the copy fails,
 # and `|| true` drops tee's own status, so `pipefail` reports exactly Lake's.
-lake build --iofail --fail-fast 2>&1 | { tee --output-error=warn "$TELEMETRY/lake-build.log" 2>/dev/null || true; }
+lake build "${LAKE_BUILD_FLAGS[@]}" 2>&1 | { tee --output-error=warn "$TELEMETRY/lake-build.log" 2>/dev/null || true; }
 
 # Reject duplicate declaration ownership before merging imported environments can hide it.
 # This also checks orphan modules and runs on the exact merge-group candidate before landing.
