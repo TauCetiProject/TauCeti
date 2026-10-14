@@ -171,7 +171,7 @@ of characteristic zero, the Laurent series with derivative zero are exactly the 
 theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R] {f : R⸨X⸩} :
     derivative R f = 0 ↔ ∃ c : R, C c = f := by
   rw [derivative_eq_zero_iff_eq_single]
-  refine ⟨fun h ↦ ⟨_, h.symm⟩, ?_⟩
+  refine ⟨fun h ↦ ⟨_, by simpa only [C_apply] using h.symm⟩, ?_⟩
   rintro ⟨c, rfl⟩
   simp
 
