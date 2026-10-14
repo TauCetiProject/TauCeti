@@ -66,8 +66,7 @@ variable {S : Set (HeightOneSpectrum R)} {n : ℕ}
 
 /-- **A radical unramified outside `S` gives a Selmer class.** If `a ∈ Kˣ` has an `n`-th root in
 `L` and every prime `v ∉ S` has a prime of `B` above it with ramification index one, then the
-class of `a` in `Kˣ ⧸ (Kˣ)ⁿ` lies in the Selmer group `K⟮S, n⟯`: its `v`-adic order is `n` times
-the `w`-adic order of the root. -/
+class of `a` in `Kˣ ⧸ (Kˣ)ⁿ` lies in the Selmer group `K⟮S, n⟯`. -/
 theorem mk_mem_of_pow_eq {α : L} {a : Kˣ} (h : α ^ n = algebraMap K L a)
     (hS : ∀ v ∉ S, ∃ w : HeightOneSpectrum B,
       w.asIdeal.LiesOver v.asIdeal ∧ w.asIdeal.ramificationIdx R = 1) :

@@ -107,9 +107,7 @@ theorem le_kummerField_sUnits_of_isCyclic {S : Set (HeightOneSpectrum (𝓞 K))}
   obtain ⟨k, hk⟩ := hFn
   -- `F` is generated over `K` by `β`, read in `E`.
   have hF_eq : F = K⟮(β : E)⟯ := by
-    have h := congrArg (IntermediateField.map F.val) hβ
-    rwa [IntermediateField.adjoin_map, Set.image_singleton, IntermediateField.coe_val,
-      ← AlgHom.fieldRange_eq_map, IntermediateField.fieldRange_val, eq_comm] at h
+    rw [← IntermediateField.lift_adjoin_simple, hβ, IntermediateField.lift_top]
   rw [hF_eq, adjoin_simple_le_iff]
   refine mem_kummerField_sUnits_of_pow_eq hS hF β.2 (a := b ^ k) ?_
   rw [hk, pow_mul, map_pow]

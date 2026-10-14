@@ -314,9 +314,8 @@ theorem range_toClassGroup [NeZero n] : (toClassGroup K S n).range =
       Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr (NeZero.ne n))]
 
 /-- **Every Selmer class comes from an `S`-unit when `S` generates the class group.** If the
-classes of the primes in `S` generate the class group of `R`, the `S`-integers have trivial class
-group (`subsingleton_integer_classGroup_iff`), so `toClassGroup` is trivial and its kernel, the
-image of `fromSUnit`, is everything. -/
+classes of the primes in `S` generate the class group of `R`, `fromSUnit` is surjective: every
+Selmer class is represented by an `S`-unit. -/
 theorem fromSUnit_surjective
     (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤) :
     Function.Surjective (fromSUnit K S n) := by
