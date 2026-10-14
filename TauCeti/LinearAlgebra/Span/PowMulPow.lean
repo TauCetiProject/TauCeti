@@ -60,8 +60,10 @@ theorem add_smul_pow_mul_pow_mem_span (u y : A) (c : R) (i j : ℕ) :
       simp only [LinearMap.mulLeft_apply]
       ring
     have h₁ := hmul _ (ih j)
-    have h₂ := smul_mem _ c (ih (j + 1))
-    rw [show i + (j + 1) + 1 = i + 1 + j + 1 by omega] at h₂
+    have h₂ : c • ((u + c • y) ^ i * y ^ (j + 1)) ∈ span R
+        ((fun p : ℕ × ℕ ↦ u ^ p.1 * y ^ p.2) '' {p | p.1 + p.2 < i + 1 + j + 1}) := by
+      simpa only [Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using
+        (smul_mem _ c (ih (j + 1)))
     have e : (u + c • y) ^ (i + 1) * y ^ j =
         u * ((u + c • y) ^ i * y ^ j) + c • ((u + c • y) ^ i * y ^ (j + 1)) := by
       simp only [Algebra.smul_def]

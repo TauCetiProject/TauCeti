@@ -11,8 +11,6 @@ public import TauCeti.FieldTheory.FunctionField.PlaneCurve.Genus
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
 -- Proof-only: the number of monomials of degree at most `n - 3`.
 import TauCeti.Data.Finset.NatAntidiagonal
--- Proof-only: the products `x ^ i y ^ j` are linearly independent.
-import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # The canonical divisor and the regular differentials of a smooth plane curve
@@ -28,7 +26,8 @@ such that the projective closure of `g = 0` is smooth in both affine charts `g =
 
 has divisor `(n - 3) (x)_∞`. Since the projective closure does not pass through `(0 : 1 : 0)`,
 the pole divisor `(x)_∞` is the divisor cut out on the curve by the line at infinity, and this says
-that **the canonical divisors of a smooth plane curve of degree `n` are cut out by the curves of
+that **the effective canonical divisors of a smooth plane curve of degree `n` are cut out by the
+curves of
 degree `n - 3`**.
 
 The monomials `x ^ i y ^ j` with `i + j ≤ n - 3` lie in `L((n - 3) (x)_∞)`: `y` is integral over
@@ -182,24 +181,6 @@ theorem pow_mul_pow_mem_riemannRochSpace_zsmul_poles_of_aeval_eq_zero (hF : IsFu
 
 variable [IsScalarTower k (RatFunc k) F]
 
-/-- **The monomials of degree less than `n` in the coordinates of a plane curve are
-independent**: let `g ∈ k[X, Y]` be irreducible of total degree `n`, with the coefficient of `Yⁿ`
-equal to `1`, and let `g(x, y) = 0`. Then the products `x ^ i y ^ j` with `i + j < n` are linearly
-independent over `k`, since `y` has degree `n` over `k(x)`. -/
-theorem linearIndepOn_pow_mul_pow_of_aeval_eq_zero {g : MvPolynomial (Fin 2) k}
-    (hirr : Irreducible g) (hlead : g.coeff (Finsupp.single 1 g.totalDegree) = 1) {y : F}
-    (hy : MvPolynomial.aeval ![algebraMap (RatFunc k) F RatFunc.X, y] g = 0) :
-    LinearIndepOn k (fun p : ℕ × ℕ ↦ algebraMap (RatFunc k) F RatFunc.X ^ p.1 * y ^ p.2)
-      {p | p.1 + p.2 < g.totalDegree} := by
-  have hdeg : (minpoly (RatFunc k) y).natDegree = g.totalDegree := by
-    rw [minpoly_ratFunc_eq_map_of_aeval_eq_zero hirr
-        (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hy,
-      (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead).natDegree_map,
-      Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
-  refine (RatFunc.transcendental_X.linearIndepOn_pow_mul_pow y).mono fun p hp ↦ ?_
-  simp only [Set.mem_ofPred_eq, hdeg] at hp ⊢
-  omega
-
 variable [Algebra.IsSeparable (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
 
 /-- **The divisor of `dx / (∂g/∂Y (x, y))`**: let `g ∈ k[X, Y]` be irreducible of total degree
@@ -236,7 +217,8 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
     Divisor.principal_inv]
   module
 
-/-- **The canonical divisors of a smooth plane curve of degree `n` are cut out by curves of degree
+/-- **The effective canonical divisors of a smooth plane curve of degree `n` are cut out by
+curves of degree
 `n - 3`**: under the hypotheses of
 `TauCeti.weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero`,
 the divisor `(n - 3) (x)_∞` represents the canonical class. -/
