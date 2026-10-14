@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.SInteger
-public import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
+public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
+public import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
+public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 /-!
 # `S`-integers of an algebraic function field
@@ -26,14 +27,11 @@ zeros or poles at those places (`Set.mem_unit_iff_forall_ord_eq_zero`). Converse
 ring of any set of places finite on `R` is a ring of `S`-integers of `R`
 (`TauCeti.holomorphyRing_eq_restrictScalars_integer`).
 
-Rings of `T`-integers exist intrinsically, without a model: for every finite nonempty set `T` of
-places there is a function whose poles are exactly the places of `T`
-(`TauCeti.exists_setOf_mem_integers_eq_compl`), so `𝒪_{Tᶜ}` is the affine model `R_x` of that
-function. It is therefore a Dedekind domain (`TauCeti.isDedekindDomain_holomorphyRing_compl`) and a
-finitely generated `k`-algebra (`TauCeti.finiteType_holomorphyRing_compl`), with fraction field
-`F` by `TauCeti.isFractionRing_holomorphyRing` and height one primes the places outside `T` by
-`TauCeti.holomorphyRingHeightOneSpectrumEquiv`. No exactness hypothesis on the constant field is
-needed anywhere.
+Rings of `T`-integers also exist intrinsically, without a model: for `T` finite and nonempty,
+`𝒪_{Tᶜ}` is itself an affine model, a finitely generated Dedekind domain
+(`TauCeti.isDedekindDomain_holomorphyRing_compl` and `TauCeti.finiteType_holomorphyRing_compl`,
+in `TauCeti/FieldTheory/FunctionField/AffineModel/IntegralClosure.lean`), so the results here
+apply to it. No exactness hypothesis on the constant field is needed anywhere.
 
 ## Main results
 
@@ -43,11 +41,6 @@ needed anywhere.
   order zero at every place of `R` outside `S`.
 * `TauCeti.holomorphyRing_eq_restrictScalars_integer`: a holomorphy ring of places finite on an
   affine model is a ring of `S`-integers of the model.
-* `TauCeti.exists_setOf_mem_integers_eq_compl`: a finite set of places is the pole set of some
-  function.
-* `TauCeti.isDedekindDomain_holomorphyRing_compl` and `TauCeti.finiteType_holomorphyRing_compl`:
-  the ring of functions regular outside a finite nonempty set of places is a finitely generated
-  Dedekind domain.
 
 ## References
 
@@ -80,10 +73,8 @@ variable (k) in
 of every height one prime of `R` outside `S`.** -/
 theorem mem_integer_iff_forall_mem_integers (S : Set (HeightOneSpectrum R)) {x : F} :
     x ∈ S.integer F ↔ ∀ p ∉ S, x ∈ (Place.ofPrime k F p).integers :=
-  -- Mathlib states no membership lemma for `Set.integer`: its carrier is by definition the set of
-  -- `x` with `p.valuation F x ≤ 1` for every `p ∉ S`, as in `Set.integer_valuation_le_one`.
-  (Iff.rfl : x ∈ S.integer F ↔ ∀ p ∉ S, p.valuation F x ≤ 1).trans <|
-    forall₂_congr fun p _ ↦ by rw [Place.mem_integers_iff, Place.valuation_ofPrime]
+  (Set.mem_integer_iff F S).trans <| forall₂_congr fun p _ ↦ by
+    rw [Place.mem_integers_iff, Place.valuation_ofPrime]
 
 /-- **The `S`-integers of an affine model are a holomorphy ring**: for a Dedekind `k`-algebra `R`
 with fraction field `F` and a set `S` of height one primes of `R`, `S.integer F` is the ring of
@@ -98,10 +89,10 @@ variable (k) in
 /-- **The `S`-units of an affine model are the functions without zeros or poles at the place of
 any height one prime outside `S`.** -/
 theorem mem_unit_iff_forall_ord_eq_zero (S : Set (HeightOneSpectrum R)) {u : Fˣ} :
-    u ∈ S.unit F ↔ ∀ p ∉ S, (Place.ofPrime k F p).ord (u : F) = 0 := by
-  refine forall₂_congr fun p _ ↦ ?_
-  rw [Place.ord_eq_iff_valuation_eq_exp_neg _ u.ne_zero, Place.valuation_ofPrime, neg_zero,
-    WithZero.exp_zero]
+    u ∈ S.unit F ↔ ∀ p ∉ S, (Place.ofPrime k F p).ord (u : F) = 0 :=
+  (Set.mem_unit_iff S F).trans <| forall₂_congr fun p _ ↦ by
+    rw [Place.ord_eq_iff_valuation_eq_exp_neg _ u.ne_zero, Place.valuation_ofPrime, neg_zero,
+      WithZero.exp_zero]
 
 end Set
 
@@ -119,56 +110,3 @@ theorem holomorphyRing_eq_restrictScalars_integer {T : Set (Place k F)}
 end TauCeti
 
 end AffineModel
-
-/-! ### Rings of `T`-integers for a finite set `T` of places -/
-
-namespace TauCeti
-
-/-- **Every finite set of places is the pole set of a function**: for a finite set `T` of places
-of an algebraic function field there is a function regular exactly at the places outside `T`. -/
-theorem exists_setOf_mem_integers_eq_compl (hF : IsFunctionField k F) {T : Set (Place k F)}
-    (hT : T.Finite) : ∃ x : F, {P : Place k F | x ∈ P.integers} = Tᶜ := by
-  -- Each place `Q` is the only pole of some `z Q`; the sum of the `z Q` over `Q ∈ T` has a pole
-  -- at each `Q ∈ T`, where `z Q` alone has one, and no pole elsewhere.
-  choose z hzneg hzpos using fun Q : Place k F ↦ Q.exists_ord_neg_and_forall_ne_ord_nonneg hF
-  refine ⟨∑ Q ∈ hT.toFinset, z Q, Set.ext fun P ↦ ?_⟩
-  simp only [Set.mem_ofPred_eq, Set.mem_compl_iff]
-  by_cases hP : P ∈ T
-  · -- `z P` is the only summand with a pole at `P`, so it dictates the order of the sum.
-    have hz0 : z P ≠ 0 := fun h ↦ by simpa [h] using hzneg P
-    rw [P.mem_integers_iff_ord_nonneg,
-      P.ord_sum_eq_of_forall_lt (hT.mem_toFinset.mpr hP) hz0
-        fun Q _ hQP ↦ (hzneg P).trans_le (hzpos Q P (Ne.symm hQP))]
-    simpa [hP] using hzneg P
-  · refine iff_of_true (sum_mem fun Q hQ ↦ ?_) hP
-    exact P.mem_integers_iff_ord_nonneg.mpr
-      (hzpos Q P fun h ↦ hP (h ▸ hT.mem_toFinset.mp hQ))
-
-/-- A function whose pole set is a nonempty set of places is transcendental over `k`. -/
-private theorem transcendental_of_setOf_mem_integers_eq_compl {T : Set (Place k F)}
-    (hne : T.Nonempty) {x : F} (hx : {P : Place k F | x ∈ P.integers} = Tᶜ) :
-    Transcendental k x := by
-  obtain ⟨P, hP⟩ := hne
-  have hxP : x ∉ P.integers := fun h ↦ (Set.ext_iff.mp hx P).mp h hP
-  exact P.transcendental_of_ord_ne_zero fun h ↦
-    hxP (P.mem_integers_iff_ord_nonneg.mpr h.ge)
-
-/-- **The ring of functions regular outside a finite nonempty set `T` of places is a Dedekind
-domain**: it is the affine model `R_x` of a function `x` whose pole set is `T`. -/
-theorem isDedekindDomain_holomorphyRing_compl (hF : IsFunctionField k F) {T : Set (Place k F)}
-    (hT : T.Finite) (hne : T.Nonempty) : IsDedekindDomain (holomorphyRing Tᶜ) := by
-  obtain ⟨x, hx⟩ := exists_setOf_mem_integers_eq_compl hF hT
-  rw [← hx]
-  exact isDedekindDomain_holomorphyRing_setOf_mem hF
-    (transcendental_of_setOf_mem_integers_eq_compl hne hx)
-
-/-- **The ring of functions regular outside a finite nonempty set `T` of places is a finitely
-generated `k`-algebra**: it is the affine model `R_x` of a function `x` whose pole set is `T`. -/
-theorem finiteType_holomorphyRing_compl (hF : IsFunctionField k F) {T : Set (Place k F)}
-    (hT : T.Finite) (hne : T.Nonempty) : Algebra.FiniteType k (holomorphyRing Tᶜ) := by
-  obtain ⟨x, hx⟩ := exists_setOf_mem_integers_eq_compl hF hT
-  rw [← hx]
-  exact finiteType_holomorphyRing_setOf_mem hF
-    (transcendental_of_setOf_mem_integers_eq_compl hne hx)
-
-end TauCeti
