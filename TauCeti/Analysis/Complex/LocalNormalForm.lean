@@ -15,8 +15,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 A holomorphic function whose difference from its value at a point has finite positive order `m`
 is, after subtracting that value, the `m`th power of a biholomorphic coordinate centered at
 the point. The coordinate and its inverse are analytic on their domains, and the power identity
-holds throughout the coordinate domain. This is the planar
-local model for ramification of holomorphic maps between Riemann surfaces.
+holds throughout the coordinate domain, which can be chosen inside any prescribed neighbourhood.
+This is the planar local model for ramification of holomorphic maps between Riemann surfaces.
 
 ## References
 
@@ -32,11 +32,12 @@ namespace AnalyticAt
 
 /-- A holomorphic germ of finite positive order after subtracting its value admits a centered
 biholomorphic coordinate in which that difference is exactly a power. Both directions of the
-coordinate are analytic. -/
+coordinate are analytic, and its source lies inside any prescribed neighbourhood of the point. -/
 theorem exists_openPartialHomeomorph_sub_eq_pow {f : ℂ → ℂ} {z₀ : ℂ} {m : ℕ}
     (hf : AnalyticAt ℂ f z₀) (hm : 0 < m)
-    (horder : analyticOrderAt (fun z ↦ f z - f z₀) z₀ = m) :
-    ∃ e : OpenPartialHomeomorph ℂ ℂ, z₀ ∈ e.source ∧ e z₀ = 0 ∧
+    (horder : analyticOrderAt (fun z ↦ f z - f z₀) z₀ = m)
+    {W : Set ℂ} (hW : W ∈ 𝓝 z₀) :
+    ∃ e : OpenPartialHomeomorph ℂ ℂ, z₀ ∈ e.source ∧ e z₀ = 0 ∧ e.source ⊆ W ∧
       AnalyticOnNhd ℂ e e.source ∧ AnalyticOnNhd ℂ e.symm e.target ∧
       ∀ z ∈ e.source, f z - f z₀ = e z ^ m := by
   -- Absorb the nonvanishing factor into a root; the resulting coordinate has nonzero derivative.
@@ -72,7 +73,7 @@ theorem exists_openPartialHomeomorph_sub_eq_pow {f : ℂ → ℂ} {z₀ : ℂ} {
       AnalyticAt ℂ ψ z ∧ AnalyticAt ℂ e₀.symm (ψ z) ∧ f z - f z₀ = ψ z ^ m :=
     hψ.eventually_analyticAt.and
       ((hψ.continuousAt.eventually hinv.eventually_analyticAt).and hpow)
-  obtain ⟨U, hUsub, hUopen, hzU⟩ := mem_nhds_iff.mp hnhds
+  obtain ⟨U, hUsub, hUopen, hzU⟩ := mem_nhds_iff.mp (inter_mem hnhds hW)
   let e := e₀.restr U
   have hes : e.source = e₀.source ∩ U := e₀.restr_source' U hUopen
   have he : (e : ℂ → ℂ) = ψ := by
@@ -80,19 +81,21 @@ theorem exists_openPartialHomeomorph_sub_eq_pow {f : ℂ → ℂ} {z₀ : ℂ} {
     rw [OpenPartialHomeomorph.restr_apply]
     exact congrFun he₀ z
   have hei : (e.symm : ℂ → ℂ) = e₀.symm := by simp [e]
-  refine ⟨e, by rw [hes]; exact ⟨hz₀, hzU⟩, ?_, ?_, ?_, ?_⟩
+  refine ⟨e, by rw [hes]; exact ⟨hz₀, hzU⟩, ?_, ?_, ?_, ?_, ?_⟩
   · rw [he, hψ0]
   · intro z hz
+    exact (hUsub ((hes ▸ hz).2)).2
+  · intro z hz
     rw [he]
-    exact (hUsub ((hes ▸ hz).2)).1
+    exact (hUsub ((hes ▸ hz).2)).1.1
   · intro w hw
     have hz := e.map_target hw
-    have hza := (hUsub ((hes ▸ hz).2)).2.1
+    have hza := (hUsub ((hes ▸ hz).2)).1.2.1
     rw [← he, e.right_inv hw] at hza
     rw [hei]
     exact hza
   · intro z hz
     rw [he]
-    exact (hUsub ((hes ▸ hz).2)).2.2
+    exact (hUsub ((hes ▸ hz).2)).1.2.2
 
 end AnalyticAt
