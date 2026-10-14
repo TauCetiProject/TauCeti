@@ -119,30 +119,14 @@ theorem measureContraction_iff : M.MeasureContraction K N ↔
             (M.reference A)⁻¹ • M.reference :=
   Iff.rfl
 
-/-- Almost every path of a dynamic plan with law `m[|A]` at time `0` and law `δ_o` at time `1`
-starts in `A` and ends at `o`. -/
-private theorem ae_mem_and_eq_of_timeMarginal {m : Measure X} {η : Measure C(I, X)} {A : Set X}
-    {o : X} (hA : MeasurableSet A) (h₀ : η.timeMarginal 0 = m[|A])
-    (h₁ : η.timeMarginal 1 = Measure.dirac o) : ∀ᵐ γ ∂η, γ 0 ∈ A ∧ γ 1 = o := by
-  have h0 := ae_cond_mem (μ := m) hA
-  rw [← h₀, Measure.timeMarginal_def,
-    ae_map_iff (p := (· ∈ A)) (ContinuousMap.measurable_eval 0).aemeasurable hA] at h0
-  have h1 : ∀ᵐ y ∂Measure.dirac o, y = o := (ae_dirac_iff (measurableSet_singleton o)).2 rfl
-  rw [← h₁, Measure.timeMarginal_def,
-    ae_map_iff (p := (· = o)) (ContinuousMap.measurable_eval 1).aemeasurable
-      (measurableSet_singleton o)] at h1
-  filter_upwards [h0, h1] with γ h0 h1 using ⟨h0, h1⟩
-
 /-- `MCP(K, N)` implies `MCP(K', N)` for every `K' ≤ K`, when `N ≥ 0`: the distortion coefficient
 increases with the curvature bound. -/
 theorem MeasureContraction.mono (h : M.MeasureContraction K N) (hK : K' ≤ K) (hN : 0 ≤ N) :
     M.MeasureContraction K' N := by
   intro o ho A hA hpos hfin
   obtain ⟨η, hgeo, h₀, h₁, hle⟩ := h o ho A hA hpos hfin
-  refine ⟨η, hgeo, h₀, h₁, fun t ↦ le_trans ?_ (hle t)⟩
-  rw [Measure.timeMarginal_def, Measure.timeMarginal_def]
-  refine Measure.map_mono (withDensity_mono (ae_of_all _ fun γ ↦ ?_))
-    (ContinuousMap.measurable_eval t)
+  refine ⟨η, hgeo, h₀, h₁, fun t ↦
+    (Measure.timeMarginal_mono (withDensity_mono (ae_of_all _ fun γ ↦ ?_)) t).trans (hle t)⟩
   exact ENNReal.rpow_le_rpow (distortionTau_left_monotone (sub_nonneg.2 (unitInterval.le_one t))
     (sub_le_self _ (unitInterval.nonneg t)) hK) hN
 
@@ -159,11 +143,10 @@ theorem MeasureContraction.dist_le (h : M.MeasureContraction K N) (hK : 0 < K) (
   have hpos : 0 < M.reference (ball y r) := (M.mem_support_iff y).1 hy _ (ball_mem_nhds y hr)
   have hfin : M.reference (ball y r) < ∞ := M.finite_bounded _ isBounded_ball
   obtain ⟨η, -, h₀, h₁, hle⟩ := h x hx _ hA hpos hfin
-  have hS : MeasurableSet {γ : C(I, X) | γ 0 ∈ ball y r} := ContinuousMap.measurable_eval 0 hA
   -- The distortion weight is infinite on almost every path starting in the ball.
-  have hτ : ∀ᵐ γ ∂η, γ ∈ {γ : C(I, X) | γ 0 ∈ ball y r} →
+  have hτ : ∀ᵐ γ ∂η, γ 0 ∈ ball y r →
       distortionTau K N (1 - ((0 : I) : ℝ)) (dist (γ 0) (γ 1)) ^ N = ⊤ := by
-    filter_upwards [ae_mem_and_eq_of_timeMarginal hA h₀ h₁] with γ ⟨_, hγ₁⟩ hγ₀
+    filter_upwards [Measure.ae_eq_of_timeMarginal_eq_dirac h₁] with γ hγ₁ hγ₀
     rw [mem_ball] at hγ₀
     rw [hγ₁, distortionTau_eq_top_of_lt hK, ENNReal.top_rpow_of_pos hN]
     linarith [dist_triangle x (γ 0) y, dist_comm x (γ 0)]
@@ -171,9 +154,8 @@ theorem MeasureContraction.dist_le (h : M.MeasureContraction K N) (hK : 0 < K) (
     rw [← Measure.timeMarginal_apply η 0 hA, h₀, cond_apply_self hpos.ne' hfin.ne]
   -- At time `0`, the weighted law gives infinite mass to the ball, which has mass `1` on the right.
   have hball := Measure.le_iff'.1 (hle 0) (ball y r)
-  rw [Measure.timeMarginal_apply _ 0 hA, withDensity_apply _ hS, setLIntegral_congr_fun_ae hS hτ,
-    setLIntegral_const, hηS, mul_one, Measure.smul_apply, smul_eq_mul,
-    ENNReal.inv_mul_cancel hpos.ne' hfin.ne] at hball
+  rw [Measure.timeMarginal_withDensity_apply_of_ae_eq hA hτ, hηS, mul_one, Measure.smul_apply,
+    smul_eq_mul, ENNReal.inv_mul_cancel hpos.ne' hfin.ne] at hball
   exact ENNReal.one_ne_top (top_le_iff.1 hball)
 
 /-- **The Bonnet–Myers diameter bound under `MCP(K, N)`**, for `K > 0` and `N > 0`: the support of
@@ -190,20 +172,6 @@ theorem MeasureContraction.isBounded_support (h : M.MeasureContraction K N) (hK 
 section Euclidean
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The straight segments to `o`, as a continuous map from the starting point to path space. -/
-private def segmentTo (o : E) : C(E, C(I, E)) :=
-  ContinuousMap.curry ⟨fun p : E × I ↦ AffineMap.lineMap p.1 o (p.2 : ℝ), by fun_prop⟩
-
-private theorem segmentTo_apply (o y : E) (s : I) :
-    segmentTo o y s = AffineMap.lineMap y o (s : ℝ) :=
-  (rfl)
-
-private theorem segmentTo_mem_geodesicPaths (o y : E) : segmentTo o y ∈ geodesicPaths E := by
-  rw [mem_geodesicPaths_iff]
-  intro s t
-  simp only [segmentTo_apply, dist_lineMap_lineMap, Real.dist_eq, Icc.coe_zero, Icc.coe_one,
-    AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {M : MetricMeasureSpace E}
   [M.reference.IsAddHaarMeasure]
@@ -248,35 +216,33 @@ theorem measureContraction_of_nonpos_of_finrank_le [Nontrivial E] (hK : K ≤ 0)
     (hN : (finrank ℝ E : ℝ) ≤ N) : M.MeasureContraction K N := by
   have hN₀ : 0 < N := (Nat.cast_pos.2 finrank_pos).trans_le hN
   intro o _ A hA hpos hfin
-  have hseg : Measurable (segmentTo o) := (segmentTo o).continuous.measurable
+  have hseg : Measurable fun y : E ↦ segmentPath (y, o) :=
+    (segmentPath.continuous.comp (continuous_id.prodMk continuous_const)).measurable
   have hprob : IsProbabilityMeasure M.reference[|A] :=
     cond_isProbabilityMeasure_of_finite hpos.ne' hfin.ne
   -- The law at time `t` of the segment plan is the image of `m[|A]` under the homothety.
-  have hmarg (t : I) : (M.reference[|A].map (segmentTo o)).timeMarginal t =
+  have hmarg (t : I) : (M.reference[|A].map fun y ↦ segmentPath (y, o)).timeMarginal t =
       M.reference[|A].map (AffineMap.homothety o (1 - (t : ℝ))) := by
-    rw [Measure.timeMarginal_def, Measure.map_map (ContinuousMap.measurable_eval t) hseg]
+    rw [Measure.timeMarginal_map _ hseg]
     congr 1
     ext y
-    rw [Function.comp_apply, segmentTo_apply, AffineMap.homothety_eq_lineMap,
-      AffineMap.lineMap_apply_one_sub]
-  refine ⟨M.reference[|A].map (segmentTo o), ?_, ?_, ?_, fun t ↦ ?_⟩
+    rw [segmentPath_apply, AffineMap.homothety_eq_lineMap, AffineMap.lineMap_apply_one_sub]
+  refine ⟨M.reference[|A].map fun y ↦ segmentPath (y, o), ?_, ?_, ?_, fun t ↦ ?_⟩
   · exact (ae_map_iff hseg.aemeasurable isClosed_geodesicPaths.measurableSet).2
-      (ae_of_all _ (segmentTo_mem_geodesicPaths o))
+      (ae_of_all _ fun y ↦ segmentPath_mem_geodesicPaths (y, o))
   · simp [hmarg]
   · rw [hmarg]
     simp only [Icc.coe_one, sub_self, AffineMap.homothety_zero, AffineMap.coe_const]
     exact (Measure.map_const _ o).trans (by simp)
   -- The weight is at most its flat value `(1 - t)^N`.
-  have hweight : (M.reference[|A].map (segmentTo o)).withDensity
+  have hweight : (M.reference[|A].map fun y ↦ segmentPath (y, o)).withDensity
       (fun γ ↦ distortionTau K N (1 - t) (dist (γ 0) (γ 1)) ^ N) ≤
-      ENNReal.ofReal (1 - t) ^ N • M.reference[|A].map (segmentTo o) := by
+      ENNReal.ofReal (1 - t) ^ N • M.reference[|A].map fun y ↦ segmentPath (y, o) := by
     rw [← withDensity_const]
     exact withDensity_mono (ae_of_all _ fun γ ↦ ENNReal.rpow_le_rpow (distortionTau_le_ofReal
       (sub_nonneg.2 (unitInterval.le_one t)) (sub_le_self _ (unitInterval.nonneg t)) hK) hN₀.le)
-  rw [Measure.timeMarginal_def]
-  refine (Measure.map_mono hweight (ContinuousMap.measurable_eval t)).trans ?_
-  rw [Measure.map_smul _ (ContinuousMap.measurable_eval t).aemeasurable,
-    ← Measure.timeMarginal_def, hmarg]
+  refine (Measure.timeMarginal_mono hweight t).trans ?_
+  rw [Measure.timeMarginal_smul, hmarg]
   rcases (unitInterval.le_one t).lt_or_eq with ht | ht
   · exact rpow_smul_map_cond_homothety_le (sub_pos.2 ht) (sub_le_self _ (unitInterval.nonneg t))
       hN o A
@@ -310,15 +276,18 @@ theorem finrank_le_of_measureContraction_zero (h : M.MeasureContraction 0 N) :
   -- Almost every path is in the ball of radius `1 / 2` at time `1 / 2`.
   have hηS : η {γ : C(I, E) | γ t ∈ closedBall (0 : E) (1 / 2)} = 1 := by
     rw [← hη, ← ae_iff_measure_eq hS.nullMeasurableSet]
-    filter_upwards [hgeo, ae_mem_and_eq_of_timeMarginal hA h₀ h₁] with γ hγ ⟨hγ₀, hγ₁⟩
+    have h0 : ∀ᵐ γ ∂η, γ 0 ∈ closedBall (0 : E) 1 :=
+      (Measure.ae_timeMarginal_iff (p := (· ∈ closedBall (0 : E) 1)) hA).1
+        (h₀ ▸ ae_cond_mem hA)
+    filter_upwards [hgeo, h0, Measure.ae_eq_of_timeMarginal_eq_dirac h₁] with γ hγ hγ₀ hγ₁
     have ht : |(t : ℝ) - ((1 : I) : ℝ)| = 1 / 2 := by norm_num [t]
     rw [mem_closedBall, ← hγ₁, mem_geodesicPaths_iff.1 hγ t 1, hγ₁, ht]
     rw [mem_closedBall] at hγ₀
     linarith
   have hball := Measure.le_iff'.1 (hle t) (closedBall 0 (1 / 2))
   simp only [distortionTau_zero_left] at hball
-  rw [Measure.timeMarginal_apply _ t measurableSet_closedBall, withDensity_apply _ hS,
-    setLIntegral_const, hηS, mul_one, Measure.smul_apply, smul_eq_mul,
+  rw [Measure.timeMarginal_withDensity_apply_of_ae_eq measurableSet_closedBall
+      (ae_of_all _ fun _ _ ↦ rfl), hηS, mul_one, Measure.smul_apply, smul_eq_mul,
     Measure.addHaar_closedBall' _ _ (r := 1 / 2) (by norm_num), mul_left_comm,
     ENNReal.inv_mul_cancel hpos.ne' hfin.ne, mul_one] at hball
   rw [show 1 - ((t : ℝ)) = 1 / 2 by norm_num [t], ENNReal.ofReal_rpow_of_pos (by norm_num),

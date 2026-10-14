@@ -283,29 +283,25 @@ theorem WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul {μ ν : Was
       ((γ t : ProbabilityMeasure E) : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   -- The plan, lifted to the affine segments joining its pairs of points.
-  let seg : E × E → C(I, E) := fun z ↦ ⟨fun t ↦ AffineMap.lineMap z.1 z.2 (t : ℝ), by fun_prop⟩
-  have hseg : Measurable seg :=
-    (ContinuousMap.continuous_of_continuous_uncurry _ <| by
-      simp only [seg, ContinuousMap.coe_mk, AffineMap.lineMap_apply_module]
-      fun_prop).measurable
-  have hη : ∀ᵐ γ ∂π.map seg, γ ∈ geodesicPaths E :=
-    (ae_map_iff hseg.aemeasurable isClosed_geodesicPaths.measurableSet).2 <| .of_forall fun z ↦
-      mem_geodesicPaths_iff.2 fun s t ↦ by simp [seg, dist_lineMap_lineMap, Real.dist_eq]
-  have hmarg (t : I) : (π.map seg).timeMarginal t =
+  have hseg : Measurable (segmentPath : E × E → C(I, E)) := segmentPath.continuous.measurable
+  have hη : ∀ᵐ γ ∂π.map segmentPath, γ ∈ geodesicPaths E :=
+    (ae_map_iff hseg.aemeasurable isClosed_geodesicPaths.measurableSet).2 <|
+      .of_forall segmentPath_mem_geodesicPaths
+  have hmarg (t : I) : (π.map segmentPath).timeMarginal t =
       π.map fun z ↦ (1 - (t : ℝ)) • z.1 + (t : ℝ) • z.2 := by
-    rw [Measure.timeMarginal_def, Measure.map_map (ContinuousMap.measurable_eval t) hseg]
+    rw [Measure.timeMarginal_map _ hseg]
     congr 1
     ext z
-    simp [seg, AffineMap.lineMap_apply_module]
-  have hend : (π.map seg).endpointLaw = π := by
+    simp [AffineMap.lineMap_apply_module]
+  have hend : (π.map segmentPath).endpointLaw = π := by
     rw [Measure.endpointLaw_def, Measure.map_map
       ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)) hseg]
     convert Measure.map_id
-    ext z <;> simp [seg]
-  have h0 : (π.map seg).timeMarginal 0 = ((μ : ProbabilityMeasure E) : Measure E) := by
+    ext z <;> simp
+  have h0 : (π.map segmentPath).timeMarginal 0 = ((μ : ProbabilityMeasure E) : Measure E) := by
     rw [hmarg, ← hπ.fst_eq]
     simp [Measure.fst]
-  have h1 : (π.map seg).timeMarginal 1 = ((ν : ProbabilityMeasure E) : Measure E) := by
+  have h1 : (π.map segmentPath).timeMarginal 1 = ((ν : ProbabilityMeasure E) : Measure E) := by
     rw [hmarg, ← hπ.snd_eq]
     simp [Measure.snd]
   obtain ⟨γ, hγ, hγt⟩ := WassersteinSpace.exists_isGeodesicSegment_timeMarginal hη h0 h1
