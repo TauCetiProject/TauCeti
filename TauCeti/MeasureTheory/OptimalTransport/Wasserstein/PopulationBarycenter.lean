@@ -262,7 +262,7 @@ theorem isCompact_closure_range_of_isFrechetBarycenter [Fact (1 ≤ p)] (hp_top 
   refine ⟨4 * R, ?_⟩
   rintro _ ⟨n, rfl⟩
   obtain ⟨s, hs⟩ := hfin n
-  obtain ⟨w, hw, hPn⟩ := Measure.exists_eq_sum_smul_dirac_of_ae_mem_finset hs
+  obtain ⟨w, hw, hPn⟩ := exists_eq_sum_smul_dirac_of_ae_mem_finset hs
   have hbn := hb n
   have hRn := hR n
   rw [hPn] at hbn hRn
@@ -319,7 +319,7 @@ theorem exists_isFrechetBarycenter [Fact (1 ≤ p)] (hp_top : p ≠ ∞)
   -- Each approximating law has a barycenter, and these cluster at a barycenter of `P`.
   have hb (n : ℕ) : ∃ ν : WassersteinSpace p X, IsFrechetBarycenter p (P' n) ν := by
     obtain ⟨s, hs⟩ := hfin n
-    obtain ⟨w, hw, hPn⟩ := Measure.exists_eq_sum_smul_dirac_of_ae_mem_finset hs
+    obtain ⟨w, hw, hPn⟩ := exists_eq_sum_smul_dirac_of_ae_mem_finset hs
     rw [hPn]
     exact exists_isFrechetBarycenter_sum_smul_dirac hp_top hw _
   choose b hb using hb

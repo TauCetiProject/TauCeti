@@ -78,9 +78,6 @@ completeness.
   barycenters under an optimal multi-coupling is a barycenter.
 * `TauCeti.exists_isMultiCoupling_isMinOn_lintegral_iInf` — on a Polish space, the multi-marginal
   problem is attained.
-* `TauCeti.WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter` — on a
-  Polish space, a barycenter in `P_p(X)` of `∑ j, w j • δ_{μ j}` minimizes the weighted cost over
-  all laws.
 * `TauCeti.iInf_sum_mul_wassersteinEDist_rpow_eq` — on a proper space, the multi-marginal problem
   has the same value as the barycenter problem.
 * `TauCeti.WassersteinSpace.exists_isFrechetBarycenter_sum_smul_dirac` — on a proper space, every
@@ -208,33 +205,6 @@ private theorem exists_glue_wassersteinEDist_rpow_eq [Finite J] (hp0 : p ≠ 0) 
   rw [← hπW j, eLpNorm_rpow_eq_lintegral hp0 hp measurable_edist.aemeasurable, ← hΓ j,
     lintegral_map (measurable_edist.pow_const _) (he j)]
   rfl
-
-/-- **A barycenter in `P_p(X)` minimizes over all probability laws.** On a Polish metric space and
-for `1 ≤ p < ∞`, a `p`-Fréchet barycenter `ν` in `P_p(X)` of the finitely supported law
-`∑ j, w j • δ_{μ j}`, with weights summing to `1`, minimizes the weighted `p`-Wasserstein cost
-`ν' ↦ ∑ j, w j * W_p(ν', μ j) ^ p` over all probability laws `ν'` on `X`, not only over `P_p(X)`.
--/
-theorem WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter
-    [Fact (1 ≤ p)] (hp_top : p ≠ ∞) (hw : ∑ j, w j = 1) {μ : J → WassersteinSpace p X}
-    {ν : WassersteinSpace p X} (hν : IsFrechetBarycenter p (∑ j, w j • Measure.dirac (μ j)) ν) :
-    IsMinOn (fun ν' ↦ ∑ j, (w j : ℝ≥0∞) *
-        wassersteinEDist p ν' ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal)
-      {ν' | IsProbabilityMeasure ν'} ((ν : ProbabilityMeasure X) : Measure X) := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  have hmin := (WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn hp_top μ ν).1 hν
-  obtain ⟨j₀, -, hj₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
-  refine isMinOn_iff.2 fun ν' (hν' : IsProbabilityMeasure ν') ↦ ?_
-  by_cases htop : ∑ j, (w j : ℝ≥0∞) *
-      wassersteinEDist p ν' ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal = ∞
-  · exact htop ▸ le_top
-  -- A law of finite barycentric cost has finite `p`-th moment, so it is a point of `P_p(X)`.
-  have hmom := hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top measurable_edist
-    (Finset.mem_univ j₀) (ENNReal.coe_ne_zero.2 hj₀) (μ j₀).hasFiniteMoment
-    (ENNReal.toReal_pos hp0 hp_top) htop
-  have hcoe : ((WassersteinSpace.mk ⟨ν', hν'⟩ hmom : ProbabilityMeasure X) : Measure X) = ν' :=
-    congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
-  have hz := isMinOn_iff.1 hmin (WassersteinSpace.mk ⟨ν', hν'⟩ hmom) (mem_univ _)
-  rwa [hcoe] at hz
 
 end Polish
 

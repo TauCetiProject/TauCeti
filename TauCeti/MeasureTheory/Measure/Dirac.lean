@@ -35,9 +35,9 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   space onto a point `b` is measure preserving onto `Measure.dirac b`.
 * `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
   avoiding a point is a multiple of its Dirac measure.
-* `MeasureTheory.Measure.exists_eq_sum_smul_dirac_of_ae_mem_finset` — a probability measure carried
-  by a finite set is a convex combination of the Dirac measures at its points.
-* `MeasureTheory.isProbabilityMeasure_sum_smul_dirac` — conversely, a convex combination of Dirac
+* `TauCeti.exists_eq_sum_smul_dirac_of_ae_mem_finset` — a probability measure carried by a
+  finite set is a convex combination of the Dirac measures at its points.
+* `TauCeti.isProbabilityMeasure_sum_smul_dirac` — conversely, a convex combination of Dirac
   measures is a probability measure.
 * `TauCeti.eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are
   supported at the same point.
@@ -91,6 +91,10 @@ theorem eq_smul_dirac_of_forall_notMem {X : Type*} [MeasurableSpace X]
       Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
     exact hk s hs hx
 
+end MeasureTheory.Measure
+
+namespace TauCeti
+
 /-- A probability measure carried by a finite set `s` is a convex combination of the Dirac
 measures at the points of `s`: indexed by `s` itself, its weights are the masses of the points,
 as `ℝ≥0` values summing to `1`. -/
@@ -109,10 +113,6 @@ theorem exists_eq_sum_smul_dirac_of_ae_mem_finset {X : Type*} [MeasurableSpace X
     rw [← Finset.sum_coe_sort s]
     simp only [ENNReal.smul_def, ENNReal.coe_toNNReal (measure_ne_top _ _)]
 
-end MeasureTheory.Measure
-
-namespace MeasureTheory
-
 /-- For weights summing to `1`, the weighted law `∑ j, w j • δ_{y j}` of finitely many points is a
 probability measure. -/
 theorem isProbabilityMeasure_sum_smul_dirac {J X : Type*} [Fintype J] [MeasurableSpace X]
@@ -120,10 +120,6 @@ theorem isProbabilityMeasure_sum_smul_dirac {J X : Type*} [Fintype J] [Measurabl
     IsProbabilityMeasure (∑ j, w j • Measure.dirac (y j)) :=
   Measure.sum_fintype (fun j ↦ w j • Measure.dirac (y j)) ▸
     (hw ▸ hasSum_fintype w).isProbabilityMeasure_sum_dirac_nnreal
-
-end MeasureTheory
-
-namespace TauCeti
 
 /-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
 theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
