@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Generator
+public import TauCeti.Algebra.AlgebraicGroup.Generator.Basic
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.AdjoinRoot
 import TauCeti.Algebra.Polynomial.XPowSubC
 import TauCeti.RingTheory.AdjoinRoot.Basic

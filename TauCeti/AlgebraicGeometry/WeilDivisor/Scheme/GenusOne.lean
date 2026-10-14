@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.LineBundle.HighDegree
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.WeilDivisor.AbelJacobi.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
@@ -12,12 +13,20 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Basic
 
 /-!
-# `Pic⁰` of a curve of genus one
+# Divisors and `Pic⁰` of a curve of genus one
 
 Let `X` be a proper integral curve over a field `k` whose codimension-one local rings are discrete
 valuation rings, with `k` integrally closed in the function field `k(X)`, and suppose that `X` has
-genus one, `dim_k H¹(X, 𝒪_X) = 1`. Fix a codimension-one point `x₀` of residue degree one, for
-instance the image of a `k`-rational point. This file proves that the Abel–Jacobi map
+genus one, `dim_k H¹(X, 𝒪_X) = 1`.
+
+By Riemann–Roch, every divisor `D` of positive degree has `dim_k H⁰(X, 𝒪_X(D)) = deg D`. In
+particular, for a codimension-one point `x` and `n ≥ 1`, `dim_k H⁰(X, 𝒪_X(n x)) = n deg x`, which
+is `n` at a point of residue degree one. This is the cohomological form of the function-field
+ladder `TauCeti.Divisor.dim_natCast_zsmul_ofPoint_of_genus_eq_one`; it is deduced from the
+cohomology of line bundles of high degree.
+
+Fix a codimension-one point `x₀` of residue degree one, for instance the image of a `k`-rational
+point. This file also proves that the Abel–Jacobi map
 
 `x ↦ [𝒪_X(x - x₀)]`
 
@@ -35,6 +44,10 @@ preserves degrees and linear equivalence; the genus of `X` is the genus of `k(X)
 
 ## Main declarations
 
+* `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one`: in genus
+  one, `dim_k H⁰(X, 𝒪_X(D)) = deg D` for every divisor `D` of positive degree;
+* `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one`: the
+  ladder `dim_k H⁰(X, 𝒪_X(n x)) = n deg x` for `n ≥ 1`;
 * `SchemeWeilDivisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one` and
   `SchemeWeilDivisor.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
   degree one is linearly equivalent to exactly one point of residue degree one;
@@ -71,6 +84,58 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   [hX : Fact (∀ y : X, coheight y ≤ 1)] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+
+/-! ### Global sections of divisors of positive degree in genus one -/
+
+section GlobalSections
+
+/-- **Riemann–Roch on a curve of genus one.** Let `X` be a proper integral curve of genus one over
+`k` whose codimension-one local rings are discrete valuation rings, with `k` integrally closed in
+`k(X)`. Every divisor `D` of positive degree has `dim_k H⁰(X, 𝒪_X(D)) = deg D`. -/
+theorem finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one
+    (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1) {D : SchemeWeilDivisor X}
+    (hD : 0 < relativeDegree (X ↘ Spec (.of k)) D) :
+    (Module.finrank k (Scheme.Modules.Cohomology (sheaf D) 0) : ℤ) =
+      relativeDegree (X ↘ Spec (.of k)) D := by
+  -- A divisor of nonzero degree has a point in its support, so `X` has dimension one.
+  obtain ⟨y, -⟩ : (Finsupp.support D).Nonempty :=
+    Finsupp.support_nonempty_iff.mpr fun h ↦ by simp [h] at hD
+  have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
+    k hX.out y.2
+  have hdeg := InvertibleSheaf.eulerDegree_eq_relativeDegree k hX.out
+    (eqToIso (toInvertibleSheaf_obj hX.out D))
+  rw [Scheme.genus_def] at hg
+  have h := InvertibleSheaf.finrank_cohomology_zero_eq_eulerDegree_add_one_sub_genus hX.out hF hk
+    (toInvertibleSheaf hX.out D) (by rw [hg, hdeg]; omega)
+  rw [toInvertibleSheaf_obj, hdeg, hg] at h
+  omega
+
+/-- **The section-dimension ladder on a curve of genus one.** Let `X` be a proper integral curve
+of genus one over `k` whose codimension-one local rings are discrete valuation rings, with `k`
+integrally closed in `k(X)`. For every codimension-one point `x` and every `n ≥ 1`,
+`dim_k H⁰(X, 𝒪_X(n x)) = n deg x`; at a point of residue degree one, such as a `k`-rational
+point, this reads `dim_k H⁰(X, 𝒪_X(n x)) = n`. -/
+theorem finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one
+    (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1)
+    (x : CodimensionOnePoint X) {n : ℕ} (hn : 1 ≤ n) :
+    Module.finrank k (Scheme.Modules.Cohomology (sheaf ((n : ℤ) • WeilDivisor.ofPoint x)) 0) =
+      n * (X ↘ Spec (.of k)).residueDegree x := by
+  have hdeg : relativeDegree (X ↘ Spec (.of k)) ((n : ℤ) • WeilDivisor.ofPoint x) =
+      (n * (X ↘ Spec (.of k)).residueDegree x : ℕ) := by
+    rw [map_zsmul, relativeDegree_ofPoint, smul_eq_mul]
+    push_cast
+    ring
+  -- A codimension-one point of a curve is closed, hence of finite degree over `k`.
+  have hx : (X ↘ Spec (.of k)).residueDegree x ≠ 0 :=
+    Scheme.Hom.residueDegree_ne_zero_of_isClosed _
+      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out x.2)
+  have h := finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one k hk hg
+    (D := (n : ℤ) • WeilDivisor.ofPoint x)
+    (by rw [hdeg]; exact_mod_cast Nat.mul_pos hn (Nat.pos_of_ne_zero hx))
+  rw [hdeg] at h
+  exact_mod_cast h
+
+end GlobalSections
 
 /-! ### Divisors of degree one in genus one -/
 
