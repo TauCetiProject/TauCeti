@@ -39,6 +39,11 @@ bijection is the dictionary that supplies one.
 
 ## Main results
 
+* `NumberField.isGaloisGroup_ringOfIntegers_fixedField`: `H` is a Galois group of `𝓞 M` over
+  `𝓞 E`, so the invariant-ring theory applies to `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 M`.
+* `Ideal.doubleCosetQuotientEquivPrimesOver_eq_doubleCosetQuotientEquivPrimesOverOfIsInvariant`:
+  the bijection is the invariant-ring double coset law for these rings of integers.
+
 * `Ideal.under_fixedField_eq_iff_mem_orbit`: two primes of `𝓞 M` contract to the same prime of
   `𝓞 E` exactly when one is an `H`-translate of the other.
 * `Ideal.primesOver_under_fixedField_eq_singleton_of_le_stabilizer`: for `H ≤ D`, `Q` is the only
@@ -62,6 +67,22 @@ public section
 open IntermediateField MulAction NumberField
 
 open scoped NumberField Pointwise
+
+namespace NumberField
+
+variable {K M : Type*} [Field K] [NumberField K] [Field M] [NumberField M] [Algebra K M]
+
+/-- **A subgroup is the Galois group of `𝓞 M` over the integers of its fixed field.** For a
+subgroup `H` of `Gal(M/K)`, the action of `H` on `𝓞 M` makes it a Galois group of
+`𝓞 M / 𝓞 (M ^ H)`. -/
+instance isGaloisGroup_ringOfIntegers_fixedField (H : Subgroup (M ≃ₐ[K] M)) :
+    IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
+  have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
+  IsGaloisGroup.of_mulEquiv (subgroupEquivAlgEquiv H) fun h x ↦
+    RingOfIntegers.ext (by
+      simp [Subgroup.smul_def, NumberField.algebraMap_smul_eq_apply])
+
+end NumberField
 
 namespace Ideal
 
@@ -131,16 +152,17 @@ The class of `σ` corresponds to the contraction `σ Q ∩ 𝓞 E`, by
 noncomputable def doubleCosetQuotientEquivPrimesOver [IsGalois K M] (p : Ideal (𝓞 K))
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p] (H : Subgroup (M ≃ₐ[K] M)) :
     DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M)) (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)) ≃
-      p.primesOver (𝓞 ↥(fixedField H)) := by
-  have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
-  have : IsGaloisGroup (M ≃ₐ[↥(fixedField H)] M) ↥(fixedField H) M :=
-    IsGaloisGroup.of_isGalois _ M
-  have : IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
-    IsGaloisGroup.of_mulEquiv (subgroupEquivAlgEquiv H) fun h x ↦
-      NumberField.RingOfIntegers.ext (by
-        simp [Subgroup.smul_def, NumberField.algebraMap_smul_eq_apply])
-  have : IsGaloisGroup (M ≃ₐ[K] M) K M := IsGaloisGroup.of_isGalois _ M
-  exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
+      p.primesOver (𝓞 ↥(fixedField H)) :=
+  Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
+
+/-- The number-field double coset law is the invariant-ring double coset law for the rings of
+integers `𝓞 K ⊆ 𝓞 (M ^ H) ⊆ 𝓞 M`, so the invariant-ring API applies to it directly. -/
+theorem doubleCosetQuotientEquivPrimesOver_eq_doubleCosetQuotientEquivPrimesOverOfIsInvariant
+    [IsGalois K M] (p : Ideal (𝓞 K)) (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p]
+    (H : Subgroup (M ≃ₐ[K] M)) :
+    doubleCosetQuotientEquivPrimesOver p Q H =
+      Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H)) := by
+  rw [doubleCosetQuotientEquivPrimesOver]
 
 /-- The double coset law sends the class of `σ` to the contraction `σ Q ∩ 𝓞 (M ^ H)`. -/
 @[simp]

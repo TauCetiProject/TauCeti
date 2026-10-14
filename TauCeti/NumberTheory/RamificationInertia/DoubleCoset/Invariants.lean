@@ -15,7 +15,7 @@ Let `M / K` be a finite Galois extension of number fields with group `G`, let `H
 `G` with fixed field `E = M ^ H`, and let `Q` be a prime of `𝓞 M` above a prime `p` of `𝓞 K`, with
 decomposition group `D` and inertia group `I`. The double coset law
 (`Ideal.doubleCosetQuotientEquivPrimesOver`) indexes the primes of `𝓞 E` above `p` by
-`H \\ G / D`, the class of `σ` corresponding to `𝔮_σ = σ Q ∩ 𝓞 E`. This file reads the
+`H \ G / D`, the class of `σ` corresponding to `𝔮_σ = σ Q ∩ 𝓞 E`. This file reads the
 ramification index of `𝔮_σ` over `p` off the conjugate inertia group:
 
 `e(𝔮_σ / p) = [σIσ⁻¹ : H ∩ σIσ⁻¹]`.
@@ -24,10 +24,18 @@ The conjugate `σIσ⁻¹` is written `MulAut.conj σ • I`. The residue degree
 same recipe with `D/I` in place of `D`: the image of `H ∩ σDσ⁻¹` in `D/I` need not be the
 intersection of the image of `H` with `σ(D/I)σ⁻¹`.
 
+The local degrees `e(𝔮_σ / p) f(𝔮_σ / p) = |HσD| / |H|` are read off the double coset by the
+invariant-ring results in `TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic`,
+which apply to `doubleCosetQuotientEquivPrimesOver` through
+`Ideal.doubleCosetQuotientEquivPrimesOver_eq_doubleCosetQuotientEquivPrimesOverOfIsInvariant`.
+Summed over `H \ G / D` they give the field degree `[E : K]`.
+
 ## Main results
 
 * `Ideal.ramificationIdx_under_fixedField_smul_eq_relIndex`: `e(𝔮_σ) =
   [σIσ⁻¹ : H ∩ σIσ⁻¹]`.
+* `Ideal.sum_ramificationIdx_mul_inertiaDeg_doubleCoset_eq_finrank`: the fundamental identity
+  `Σ_{H \ G / D} e(𝔮_σ) f(𝔮_σ) = [E : K]` in double-coset coordinates.
 
 ## References
 
@@ -54,5 +62,21 @@ theorem ramificationIdx_under_fixedField_smul_eq_relIndex (Q : Ideal (𝓞 M)) [
     ((σ • Q).under (𝓞 ↥(fixedField H))).ramificationIdx (𝓞 K) =
       H.relIndex (MulAut.conj σ • Q.inertia (M ≃ₐ[K] M)) := by
   rw [ramificationIdx_under_fixedField_eq_relIndex, inertia_smul, TauCeti.map_conj_eq_conj_smul]
+
+/-- **The fundamental identity in double-coset coordinates.** The primes of the fixed field
+`M ^ H` above `p` are indexed by `H \ Gal(M/K) / D(Q)`; their ramification indices times their
+residue degrees sum to the degree of `M ^ H` over `K`. -/
+theorem sum_ramificationIdx_mul_inertiaDeg_doubleCoset_eq_finrank
+    (p : Ideal (𝓞 K)) (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p]
+    (H : Subgroup (M ≃ₐ[K] M)) :
+    (∑ᶠ q : DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
+        (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)),
+      (doubleCosetQuotientEquivPrimesOver p Q H q : Ideal (𝓞 ↥(fixedField H))).ramificationIdx
+          (𝓞 K) *
+        (doubleCosetQuotientEquivPrimesOver p Q H q : Ideal (𝓞 ↥(fixedField H))).inertiaDeg
+          (𝓞 K)) = Module.finrank K ↥(fixedField H) := by
+  rw [doubleCosetQuotientEquivPrimesOver_eq_doubleCosetQuotientEquivPrimesOverOfIsInvariant,
+    IsFractionRing.finrank_eq (𝓞 K) K (𝓞 ↥(fixedField H)) ↥(fixedField H)]
+  exact sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_finrank p Q H _
 
 end Ideal
