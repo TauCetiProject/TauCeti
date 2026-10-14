@@ -10,10 +10,12 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 /-!
 # Differential forms under an involution
 
-This file splits a fixed-coefficient rough differential form into the parts invariant and
-anti-invariant under pullback by a self-map.  When the self-map is a differentiable involution,
-the two averaging operators are complementary projectors onto the `+1` and `-1` eigenspaces of
-pullback.  Proper self-maps preserve compact topological support under both projectors.
+This file defines, for an arbitrary self-map `τ`, the two averaging operators
+`φ ↦ (φ + τ⁎φ) / 2` and `φ ↦ (φ - τ⁎φ) / 2` on fixed-coefficient rough differential forms.
+These are linear for every `τ`, and their sum is the identity.  When `τ` is a differentiable
+involution, they are complementary projectors onto the `+1` and `-1` eigenspaces of pullback:
+the first lands in the forms fixed by pullback, the second in the forms negated by it.  Proper
+self-maps preserve compact topological support under both operators.
 
 These projectors give the descent decomposition used for differential forms on a two-sheeted
 cover.  The construction is the usual averaging by a finite group action; see Bott and Tu,
@@ -34,13 +36,66 @@ variable {E H X F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
   [ContinuousConstSMul ℝ F] {k : ℕ}
 
-/-- The part of a rough form fixed by pullback: `(φ + τ⁎φ) / 2`. -/
+/-- The average `(φ + τ⁎φ) / 2` of a rough form with its pullback by a self-map `τ`.  When `τ`
+is a differentiable involution, this is the part of `φ` fixed by pullback
+(`mpullback_invariantPart`). -/
 def invariantPart (τ : X → X) (φ : RoughForm I X F k) : RoughForm I X F k :=
   (2 : ℝ)⁻¹ • (φ + mpullback I I τ φ)
 
-/-- The part of a rough form negated by pullback: `(φ - τ⁎φ) / 2`. -/
+/-- The half-difference `(φ - τ⁎φ) / 2` of a rough form and its pullback by a self-map `τ`.
+When `τ` is a differentiable involution, this is the part of `φ` negated by pullback
+(`mpullback_antiInvariantPart`). -/
 def antiInvariantPart (τ : X → X) (φ : RoughForm I X F k) : RoughForm I X F k :=
   (2 : ℝ)⁻¹ • (φ - mpullback I I τ φ)
+
+/-- The defining formula of the invariant part. -/
+theorem invariantPart_def (τ : X → X) (φ : RoughForm I X F k) :
+    invariantPart τ φ = (2 : ℝ)⁻¹ • (φ + mpullback I I τ φ) := by
+  rw [invariantPart]
+
+/-- The defining formula of the anti-invariant part. -/
+theorem antiInvariantPart_def (τ : X → X) (φ : RoughForm I X F k) :
+    antiInvariantPart τ φ = (2 : ℝ)⁻¹ • (φ - mpullback I I τ φ) := by
+  rw [antiInvariantPart]
+
+/-- The invariant part of the zero form is zero. -/
+@[simp]
+theorem invariantPart_zero (τ : X → X) : invariantPart τ (0 : RoughForm I X F k) = 0 := by
+  rw [invariantPart, mpullback_zero, add_zero, smul_zero]
+
+/-- The anti-invariant part of the zero form is zero. -/
+@[simp]
+theorem antiInvariantPart_zero (τ : X → X) :
+    antiInvariantPart τ (0 : RoughForm I X F k) = 0 := by
+  rw [antiInvariantPart, mpullback_zero, sub_zero, smul_zero]
+
+/-- The invariant part is additive. -/
+@[simp]
+theorem invariantPart_add (τ : X → X) (φ ψ : RoughForm I X F k) :
+    invariantPart τ (φ + ψ) = invariantPart τ φ + invariantPart τ ψ := by
+  rw [invariantPart, invariantPart, invariantPart, mpullback_add]
+  module
+
+/-- The anti-invariant part is additive. -/
+@[simp]
+theorem antiInvariantPart_add (τ : X → X) (φ ψ : RoughForm I X F k) :
+    antiInvariantPart τ (φ + ψ) = antiInvariantPart τ φ + antiInvariantPart τ ψ := by
+  rw [antiInvariantPart, antiInvariantPart, antiInvariantPart, mpullback_add]
+  module
+
+/-- The invariant part commutes with real scalar multiplication. -/
+@[simp]
+theorem invariantPart_smul (τ : X → X) (c : ℝ) (φ : RoughForm I X F k) :
+    invariantPart τ (c • φ) = c • invariantPart τ φ := by
+  rw [invariantPart, invariantPart, mpullback_smul]
+  module
+
+/-- The anti-invariant part commutes with real scalar multiplication. -/
+@[simp]
+theorem antiInvariantPart_smul (τ : X → X) (c : ℝ) (φ : RoughForm I X F k) :
+    antiInvariantPart τ (c • φ) = c • antiInvariantPart τ φ := by
+  rw [antiInvariantPart, antiInvariantPart, mpullback_smul]
+  module
 
 /-- Evaluation of the invariant part at a point. -/
 @[simp]
