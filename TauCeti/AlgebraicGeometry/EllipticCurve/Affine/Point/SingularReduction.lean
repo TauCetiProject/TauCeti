@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Points reducing to the singular point
