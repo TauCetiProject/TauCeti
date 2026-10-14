@@ -126,6 +126,7 @@ theorem invariantPart_add_antiInvariantPart (τ : X → X) (φ : RoughForm I X F
   module
 
 /-- The invariant part is the original form exactly when the form is fixed by pullback. -/
+@[simp]
 theorem invariantPart_eq_self_iff (τ : X → X) (φ : RoughForm I X F k) :
     invariantPart τ φ = φ ↔ mpullback I I τ φ = φ := by
   rw [invariantPart]
@@ -135,6 +136,7 @@ theorem invariantPart_eq_self_iff (τ : X → X) (φ : RoughForm I X F k) :
     module
 
 /-- The anti-invariant part is the original form exactly when pullback negates the form. -/
+@[simp]
 theorem antiInvariantPart_eq_self_iff (τ : X → X) (φ : RoughForm I X F k) :
     antiInvariantPart τ φ = φ ↔ mpullback I I τ φ = -φ := by
   rw [antiInvariantPart]
@@ -144,6 +146,7 @@ theorem antiInvariantPart_eq_self_iff (τ : X → X) (φ : RoughForm I X F k) :
     module
 
 /-- The invariant part vanishes exactly when pullback negates the form. -/
+@[simp]
 theorem invariantPart_eq_zero_iff (τ : X → X) (φ : RoughForm I X F k) :
     invariantPart τ φ = 0 ↔ mpullback I I τ φ = -φ := by
   rw [invariantPart]
@@ -153,6 +156,7 @@ theorem invariantPart_eq_zero_iff (τ : X → X) (φ : RoughForm I X F k) :
     module
 
 /-- The anti-invariant part vanishes exactly when the form is fixed by pullback. -/
+@[simp]
 theorem antiInvariantPart_eq_zero_iff (τ : X → X) (φ : RoughForm I X F k) :
     antiInvariantPart τ φ = 0 ↔ mpullback I I τ φ = φ := by
   rw [antiInvariantPart]
