@@ -44,6 +44,12 @@ namespace InvertibleSheaf
 
 variable {X Y Z : Scheme.{u}}
 
+/-- The underlying sheaf of a line bundle is quasicoherent. -/
+instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  inferInstanceAs F.IsQuasicoherent
+
 /-- Pullback of a line bundle along the identity morphism is naturally isomorphic to the
 original line bundle. -/
 def pullbackId (X : Scheme.{u}) : pullback (𝟙 X) ≅ 𝟭 (InvertibleSheaf X) :=
@@ -143,13 +149,9 @@ lemma pullback_mul (f : X ⟶ Y) (a b : LineBundleClass Y) :
   obtain ⟨K, rfl⟩ := mk_surjective b
   simp only [← mk_tensorProduct, pullback_mk, mk_eq_mk_iff, InvertibleSheaf.tensorProduct_obj,
     InvertibleSheaf.pullback_obj_obj]
-  -- A line bundle is locally free, hence quasicoherent, so the tensor comparison of pullback is
-  -- invertible; the tensor product of line bundles is identified with the monoidal tensor
-  -- product through `tensorUnderlyingIso`.
-  have : L.obj.IsQuasicoherent :=
-    have : TauCeti.SheafOfModules.IsInvertible (R := Y.ringCatSheaf) L.obj := L.property
-    let F : _root_.SheafOfModules Y.ringCatSheaf := L.obj
-    inferInstanceAs F.IsQuasicoherent
+  -- A line bundle is quasicoherent, so the tensor comparison of pullback is invertible; the
+  -- tensor product of line bundles is identified with the monoidal tensor product through
+  -- `tensorUnderlyingIso`.
   exact ⟨(Scheme.Modules.pullback f).mapIso (SheafOfModules.tensorProductIso Y.sheaf L.obj K.obj ≪≫
       (L.obj.tensorUnderlyingIso K.obj).symm) ≪≫
     asIso (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj) ≪≫
