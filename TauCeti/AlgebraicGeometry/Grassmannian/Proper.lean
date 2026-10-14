@@ -18,11 +18,10 @@ Grassmannian scheme `Module.Grassmannian.scheme R M k` is separated over `Spec R
 (`Module.Grassmannian.isSeparated_toSpec`), and that it is proper over `Spec R` when `M` is a
 finite module (`Module.Grassmannian.isProper_toSpec`).
 
-Separatedness and properness are obtained from the valuative criterion: for a valuation ring `V`
-with field of fractions `K`, lifts of `Spec K ⟶ scheme R M k` along `Spec K ⟶ Spec V` correspond
-to points of `G(k, V ⊗[R] M; V)` whose base change to `K` is a given point of
-`G(k, K ⊗[R] M; K)`. For finite `M`, the Grassmannian is moreover covered by the finitely many
-charts at subfamilies of a finite generating family of `M`.
+The file also records that the structure morphism satisfies the uniqueness part of the valuative
+criterion for every `M` and the full valuative criterion for finite `M`, and that the charts at
+subfamilies of a generating family of `M` cover the Grassmannian. For finite `M`, this makes the
+Grassmannian available as a proper parameter scheme over `Spec R`.
 
 ## Main results
 

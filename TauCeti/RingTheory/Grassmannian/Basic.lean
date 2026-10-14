@@ -21,7 +21,7 @@ finite projective module of constant rank `k` is a point of `G(k, M; R)`, and th
 on vectors coming from `A ⊗[R] M`. In particular a vector of a point maps into each of its base
 changes, and, when `B` is an `A`-algebra, the base change of `N` along the structure map is the
 kernel of `baseChangeMkQ B N` for the given algebra structure on `B`. Base change along an
-injective map is injective on points, because the quotient by a point is flat.
+injective map is injective on points.
 
 ## Main definitions
 
@@ -130,7 +130,7 @@ theorem rTensor_mem_map (f : A →ₐ[R] B) {N : G(k, A ⊗[R] M; A)} {x : A ⊗
 
 /-- **A point is recovered from its base change along an injective map.** For an injective
 `f : A →ₐ[R] B`, a vector of `A ⊗[R] M` lies in `N` exactly when its image lies in the base change
-of `N` to `B`, since the quotient by `N` is projective, hence flat, over `A`. -/
+of `N` to `B`. -/
 theorem rTensor_mem_map_iff_of_injective {f : A →ₐ[R] B} (hf : Function.Injective f)
     {N : G(k, A ⊗[R] M; A)} {x : A ⊗[R] M} :
     f.toLinearMap.rTensor M x ∈ (map f N).toSubmodule ↔ x ∈ N.toSubmodule := by
