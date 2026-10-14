@@ -17,7 +17,9 @@ derivatives of a test function commute, `∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v}
 derivative of a smooth function is symmetric. Moving derivatives between the two sides of an
 integration-by-parts identity uses exactly this, for instance to show that weak derivatives
 commute. Summing over an orthonormal basis, the Laplacian of a test function commutes with every
-directional derivative.
+directional derivative. Finally, a test function on `Ω` times a function smooth on `Ω` is again a
+test function, with the classical product rule for its directional derivatives; this is what lets
+a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 
 ## Main declarations
 
@@ -26,6 +28,10 @@ directional derivative.
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
   directional derivatives.
+* `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a test function on `Ω` with a
+  function smooth on `Ω` is a test function on `Ω`.
+* `TestFunction.lineDeriv_smul_of_differentiableOn`: its directional derivatives obey the product
+  rule.
 -/
 
 public section
@@ -33,7 +39,7 @@ public section
 namespace TestFunction
 
 open LineDeriv TopologicalSpace
-open scoped Distributions
+open scoped ContDiff Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E}
@@ -65,6 +71,48 @@ in the direction `v`. -/
 theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
     lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, F)) x w = lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, F)) x v := by
   rw [← lineDerivOp_apply, ← lineDerivOp_apply, lineDerivOp_comm]
+
+/-! ### Multiplication by a function smooth on `Ω` -/
+
+/-- **A test function times a function smooth on `Ω` is a test function.** If `g` is smooth on
+`Ω`, with no condition off `Ω`, and `φ ∈ 𝓓(Ω, F)`, then `x ↦ g x • φ x` is again a test function
+on `Ω`: it is smooth on `Ω` and vanishes on the open complement of `tsupport φ`, and these two
+open sets cover `E`. -/
+theorem exists_coe_eq_smul_of_contDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) :
+    ∃ ψ : 𝓓(Ω, F), ⇑ψ = fun x => g x • φ x := by
+  have hsmooth : ContDiff ℝ ∞ fun x => g x • φ x := by
+    refine contDiff_of_contDiffOn_union_of_isOpen (hg.smul φ.contDiff.contDiffOn)
+      ((contDiffOn_const (c := (0 : F))).congr fun x hx => ?_) ?_ Ω.isOpen
+      (isClosed_tsupport (φ : E → F)).isOpen_compl
+    · simp [image_eq_zero_of_notMem_tsupport (f := (φ : E → F)) hx]
+    · exact Set.eq_univ_of_forall fun x => (em (x ∈ tsupport φ)).imp (φ.tsupport_subset ·) id
+  exact ⟨⟨fun x => g x • φ x, hsmooth, φ.hasCompactSupport.smul_left,
+    (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩, rfl⟩
+
+/-- **The product rule for a test function times a function differentiable on `Ω`**:
+`∂_v (g φ) = g ∂_v φ + (∂_v g) φ` at every point of `E`. Off `tsupport φ` both sides vanish, so
+nothing is needed of `g` outside `Ω`. -/
+theorem lineDeriv_smul_of_differentiableOn {g : E → ℝ} (hg : DifferentiableOn ℝ g Ω)
+    (φ : 𝓓(Ω, F)) (x v : E) :
+    lineDeriv ℝ (fun y => g y • φ y) x v = g x • lineDeriv ℝ φ x v + fderiv ℝ g x v • φ x := by
+  have hφx : DifferentiableAt ℝ φ x := φ.contDiff.differentiable (by simp) x
+  by_cases hx : x ∈ tsupport φ
+  · have hgx : DifferentiableAt ℝ g x :=
+      hg.differentiableAt (Ω.isOpen.mem_nhds (φ.tsupport_subset hx))
+    rw [(hgx.fun_smul hφx).lineDeriv_eq_fderiv, hφx.lineDeriv_eq_fderiv, fderiv_fun_smul hgx hφx]
+    simp
+  · -- Near `x` both `φ` and `g φ` vanish identically.
+    have hnhds : (tsupport φ)ᶜ ∈ nhds x := (isClosed_tsupport φ).isOpen_compl.mem_nhds hx
+    have h0 : (fun y => g y • φ y) =ᶠ[nhds x] fun _ => 0 := by
+      filter_upwards [hnhds] with y hy
+      simp [image_eq_zero_of_notMem_tsupport hy]
+    have hφ0 : (φ : E → F) =ᶠ[nhds x] fun _ => 0 := by
+      filter_upwards [hnhds] with y hy
+      exact image_eq_zero_of_notMem_tsupport hy
+    rw [(((hasFDerivAt_const (0 : F) x).congr_of_eventuallyEq h0).hasLineDerivAt v).lineDeriv,
+      (((hasFDerivAt_const (0 : F) x).congr_of_eventuallyEq hφ0).hasLineDerivAt v).lineDeriv,
+      image_eq_zero_of_notMem_tsupport hx]
+    simp
 
 end TestFunction
 

@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 public import TauCeti.Analysis.PDE.Regularity.Interior
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
 /-!
 # Interior `Hᵏ` regularity for a constant principal coefficient
@@ -31,11 +31,11 @@ smooth data give a solution in every `H^m_loc(Ω)`.
 The induction on `k` rests on one observation: because `A` is constant, a weak derivative of a
 weak solution is again a weak solution, with the derivative of the data as right-hand side. If
 `u` solves `-div(A ∇u) = f`, `∂ₑu ∈ H¹(Ω)` and `∂ₑf ∈ L²(Ω)`, then `∂ₑu` solves
-`-div(A ∇(∂ₑu)) = ∂ₑf` (`TauCeti.PDE.energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn`). Against
-a test function `φ`, the energy form is a sum of integrals `∫ (∂_{cⱼ} φ) ∂ⱼw`, where `cⱼ` is the
-`j`-th column of `A`. Since weak derivatives commute (`TauCeti.HasWeakLineDerivOn.comm`), the
-derivative `∂ₑ` moves from `∂ⱼ(∂ₑu)` onto the test function, where it commutes with `∂_{cⱼ}`
-(`TestFunction.lineDerivOp_comm`), so `a(∂ₑu, φ) = -a(u, ∂ₑφ) = -∫ f ∂ₑφ = ∫ (∂ₑf) φ`.
+`-div(A ∇(∂ₑu)) = ∂ₑf` (`TauCeti.PDE.energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn`). Since
+weak derivatives commute (`TauCeti.HasWeakLineDerivOn.comm`), the derivative `∂ₑ` moves from
+`∂ⱼ(∂ₑu)` onto the test function, so `a(∂ₑu, φ) = -a(u, ∂ₑφ) = -∫ f ∂ₑφ = ∫ (∂ₑf) φ`. This is the
+constant case of the computation in `TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation`, where
+for variable coefficients `∂ₑ` also falls on `A`.
 
 ## The induction
 
@@ -80,73 +80,27 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
 
-/-! ### The energy form against a test function -/
-
-/-- The constant-coefficient energy form of `w ∈ H¹(Ω)` against a test function `ψ` is
-`∑ⱼ ∫ (∂_{cⱼ} ψ) ∂ⱼw`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
-private theorem energyFormH1_ofTestFunctionₗ_eq_sum (w : W1p mu Omega 2) (ψ : 𝓓(Omega, ℝ)) :
-    energyFormH1 (fun _ => A) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 ψ) =
-      ∑ j, ∫ x, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-        innerSL ℝ (W1p.gradient w x) (EuclideanSpace.basisFun ι ℝ j) ∂mu := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  have hloc : ∀ j, LocallyIntegrableOn (fun x => innerSL ℝ (W1p.gradient w x) (b j)) Omega mu :=
-    fun j => ((W1p.hasWeakFDerivOn w).hasWeakLineDerivOn (b j)).locallyIntegrableOn_deriv
-  -- Pointwise, `⟨η, A ξ⟩ = ∑ⱼ ⟨η, cⱼ⟩ ξⱼ`.
-  have hB : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ =
-      ∑ j, ⟪η, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * innerSL ℝ ξ (b j) := fun η ξ => by
-    simp only [b, innerSL_apply_apply, EuclideanSpace.inner_basisFun_real]
-    simp only [matrixBilinearForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
-      Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  rw [energyFormH1_const_eq_setIntegral]
-  calc ∫ x in Omega, matrixBilinearForm A
-        (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
-      = ∫ x in Omega, ∑ j, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-          innerSL ℝ (W1p.gradient w x) (b j) ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 ψ] with x hx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, hB]
-        refine Finset.sum_congr rfl fun j _ => ?_
-        rw [smul_eq_mul, (ψ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
-          inner_gradient_left]
-    _ = ∑ j, ∫ x in Omega, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-          innerSL ℝ (W1p.gradient w x) (b j) ∂mu :=
-        integral_finsetSum _ fun j _ =>
-          (integrable_lineDeriv_smul_of_locallyIntegrableOn (hloc j) ψ
-            (WithLp.toLp 2 (Aᵀ j))).restrict
-    _ = _ := Finset.sum_congr rfl fun j _ =>
-        setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul ψ (WithLp.toLp 2 (Aᵀ j))
-
 /-! ### Differentiating the equation -/
 
 /-- **A derivative moves across the constant-coefficient energy form.** Let `A` be a constant
 matrix and `a(u, v) = ∫_Ω ⟨∇v, A ∇u⟩`. If `u, d ∈ H¹(Ω)` and `d` is the weak derivative of `u`
 in a direction `e`, then `a(d, φ) = -a(u, ∂ₑφ)` for every test function `φ` on `Ω`.
 
-No ellipticity is needed. -/
+No ellipticity is needed. This is the case `∂ₑA = 0` of
+`TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn`. -/
 theorem energyFormH1_ofTestFunctionₗ_eq_neg_of_hasWeakLineDerivOn {u d : W1p mu Omega 2}
     {e : EuclideanSpace ℝ ι} (hd : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value d) e)
     (φ : 𝓓(Omega, ℝ)) :
     energyFormH1 (fun _ => A) 0 0 d (W1p.ofTestFunctionₗ mu Omega 2 φ) =
       -energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 (∂_{e} φ)) := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  -- The components `∂ⱼu` of the weak gradient of `u` have the weak derivatives `∂ⱼ(∂ₑu)`.
-  have hcomm : ∀ j, HasWeakLineDerivOn mu Omega (fun x => innerSL ℝ (W1p.gradient u x) (b j))
-      (fun x => innerSL ℝ (W1p.gradient d x) (b j)) e := fun j =>
-    hd.comm ((W1p.hasWeakFDerivOn d).hasWeakLineDerivOn (b j))
-      ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (b j))
-  -- Each term `∫ (∂_{cⱼ} φ) ∂ⱼ(∂ₑu)` moves `∂ₑ` onto the test function.
-  have hterm : ∀ j, ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-        innerSL ℝ (W1p.gradient d x) (b j) ∂mu =
-      -∫ x, lineDeriv ℝ (∂_{e} φ : 𝓓(Omega, ℝ)) x (WithLp.toLp 2 (Aᵀ j)) •
-        innerSL ℝ (W1p.gradient u x) (b j) ∂mu := fun j => by
-    have h := (hcomm j).integral_lineDeriv_smul_eq_neg_integral_smul (∂_{WithLp.toLp 2 (Aᵀ j)} φ)
-    simp only [TestFunction.lineDerivOp_apply,
-      TestFunction.lineDeriv_lineDerivOp_comm φ (WithLp.toLp 2 (Aᵀ j)) e] at h
-    rw [h, neg_neg]
-  rw [energyFormH1_ofTestFunctionₗ_eq_sum, Finset.sum_congr rfl fun j _ => hterm j,
-    Finset.sum_neg_distrib, ← energyFormH1_ofTestFunctionₗ_eq_sum]
+  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn (a := fun _ => A)
+    (fun i j => contDiffOn_const) hd, sub_eq_self]
+  -- The derivative of the constant field vanishes, and so does its energy form.
+  have h0 : (fun x => Matrix.of fun i j => fderiv ℝ (fun _ => A i j) x e) = fun _ => 0 := by
+    ext x i j
+    simp
+  rw [h0]
+  simp [energyFormH1_zero_zero_eq_setIntegral, matrixBilinearForm_apply]
 
 /-- **A weak derivative of a weak solution is a weak solution.** Let `A` be a constant matrix and
 let `u ∈ H¹(Ω)` satisfy `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, where
