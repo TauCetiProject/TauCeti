@@ -40,6 +40,8 @@ that makes barycenters of probability measures unique in CAT(0) spaces.
   `y` in a CAT(0) space, `t ↦ d(z, γ t)²` is `2 d(x, y)²`-strongly convex on `[0, 1]`.
 * `TauCeti.IsGeodesicSegment.dist_sq_le` — the resulting comparison inequality
   `d(z, γ t)² ≤ (1 - t) d(z, x)² + t d(z, y)² - t (1 - t) d(x, y)²`.
+* `TauCeti.IsCATZeroSpace.of_isometry` — a geodesic space embedding isometrically in a CAT(0)
+  space is CAT(0).
 * `TauCeti.IsCATZeroSpace.of_normedAddTorsor` and `TauCeti.instIsCATZeroSpace` — real inner
   product spaces, and Euclidean affine spaces over them, are CAT(0).
 
@@ -102,6 +104,17 @@ theorem IsGeodesicSegment.dist_sq_le (hγ : IsGeodesicSegment γ x y) (z : X) {t
   simp only [smul_eq_mul, mul_zero, mul_one, zero_add, zero_sub, norm_neg, norm_one, one_pow,
     hγ.source, hγ.target] at h
   linarith
+
+/-- A geodesic space that embeds isometrically in a CAT(0) space is CAT(0): the CN inequality only
+involves distances, and an isometry sends midpoints to midpoints. The embedding need not be onto,
+and its image need not be a geodesically convex subset of `X`; the geodesics of `Y` are assumed. -/
+theorem IsCATZeroSpace.of_isometry {Y : Type*} [PseudoMetricSpace Y] [IsGeodesicSpace Y]
+    {f : Y → X} (hf : Isometry f) : IsCATZeroSpace Y where
+  toIsGeodesicSpace := ‹_›
+  dist_sq_le_of_dist_eq_half {x y m} hx hy z := by
+    simpa only [hf.dist_eq] using IsCATZeroSpace.dist_sq_le_of_dist_eq_half (x := f x)
+      (y := f y) (m := f m) (by simpa only [hf.dist_eq] using hx)
+      (by simpa only [hf.dist_eq] using hy) (f z)
 
 /-- A Euclidean affine space, a metric torsor over a real inner product space, is CAT(0): the CN
 inequality is Apollonius's theorem. This is a theorem rather than an instance because the acting

@@ -8,17 +8,19 @@ module
 public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Polynomial.Degree.Support
-public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 
 /-!
 # Graded modules over a polynomial ring
 
 This file records the basic behavior of the action of `k[X]` on an internally `ℤ`-graded module on
 which `X` lowers degree by a fixed `d`, and equips `k[X]` itself with the internal grading that
-places `X ^ n` in degree `-n`.
+places `X ^ n` in degree `-n`. It also constructs polynomial-linear homogeneous parts of maps
+when `X` shifts both gradings by the same integer, without a sign condition on that shift.
 
 ## Main definitions
 
+* `TauCeti.InternalGrading.homogeneousPartPolynomial`: polynomial-linear components of maps.
 * `TauCeti.Polynomial.negDegreeGrading`: the grading of `k[X]` placing `X ^ n` in degree `-n`.
 
 ## Main results
@@ -191,6 +193,105 @@ theorem coe_decompose_smul_of_support_le (hd : d ≠ 0)
       omega
   · intro ha
     simp [notMem_support_iff.mp ha]
+
+section HomogeneousParts
+
+variable {k M N : Type*} [CommSemiring k] [AddCommMonoid M] [AddCommMonoid N]
+  [Module k M] [Module k N] [Module k[X] M] [Module k[X] N]
+  [IsScalarTower k k[X] M] [IsScalarTower k k[X] N]
+  (G : InternalGrading k M) (H : InternalGrading k N) {δ : ℤ}
+  (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p + δ))
+  (hY : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → (X : k[X]) • y ∈ H.piece (p + δ))
+
+include hX hY in
+private theorem homogeneousPart_map_polynomial_smul (f : M →ₗ[k[X]] N) (r : ℤ)
+    (a : k[X]) (x : M) :
+    G.homogeneousPart H (f.restrictScalars k) r (a • x) =
+      a • G.homogeneousPart H (f.restrictScalars k) r x := by
+  have hXsmul (y : M) : G.homogeneousPart H (f.restrictScalars k) r (X • y) =
+      X • G.homogeneousPart H (f.restrictScalars k) r y :=
+    G.homogeneousPart_apply_smul H (f.restrictScalars k) r δ X (f.map_smul X) hX hY y
+  have hpow (n : ℕ) (y : M) :
+      G.homogeneousPart H (f.restrictScalars k) r ((X ^ n : k[X]) • y) =
+        (X ^ n : k[X]) • G.homogeneousPart H (f.restrictScalars k) r y := by
+    induction n generalizing y with
+    | zero => simp
+    | succ n ih => rw [pow_succ, mul_smul, ih, hXsmul, mul_smul]
+  induction a using Polynomial.induction_on' with
+  | add a b ha hb => simp only [add_smul, map_add, ha, hb]
+  | monomial n c =>
+    rw [← C_mul_X_pow_eq_monomial, mul_smul, ← algebraMap_eq, algebraMap_smul,
+      map_smul, hpow, mul_smul, algebraMap_smul]
+
+/-- The homogeneous part remains polynomial-linear when `X` shifts both gradings by the same
+integer. No injectivity or sign condition on that shift is required. -/
+noncomputable def homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ) : M →ₗ[k[X]] N where
+  toFun := G.homogeneousPart H (f.restrictScalars k) r
+  map_add' := map_add _
+  map_smul' := homogeneousPart_map_polynomial_smul G H hX hY f r
+
+/-- Restricting polynomial scalars gives the coefficient-linear homogeneous part. -/
+@[simp]
+theorem homogeneousPartPolynomial_restrictScalars (f : M →ₗ[k[X]] N) (r : ℤ) :
+    (G.homogeneousPartPolynomial H hX hY f r).restrictScalars k =
+      G.homogeneousPart H (f.restrictScalars k) r := (rfl)
+
+/-- The value of the polynomial-linear homogeneous part on a homogeneous input. -/
+theorem homogeneousPartPolynomial_apply_of_mem (f : M →ₗ[k[X]] N) (r : ℤ)
+    {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
+    G.homogeneousPartPolynomial H hX hY f r x =
+      (DirectSum.decompose H.piece (f x) (p + r) : N) :=
+  G.homogeneousPart_apply_of_mem H (f.restrictScalars k) r hx
+
+/-- The polynomial-linear homogeneous part has the selected degree. -/
+@[simp]
+theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ) :
+    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPartPolynomial H hX hY f r)
+      G.piece H.piece r := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  rw [G.homogeneousPartPolynomial_apply_of_mem H hX hY f r hx]
+  exact (DirectSum.decompose H.piece (f x) (p + r)).property
+
+/-- Taking the component at the degree of a homogeneous polynomial-linear map recovers the map. -/
+@[simp]
+theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
+    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    G.homogeneousPartPolynomial H hX hY f r = f := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  rw [G.homogeneousPartPolynomial_restrictScalars H hX hY f r]
+  apply G.homogeneousPart_eq_self H (f.restrictScalars k) r
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  simpa only [_root_.LinearMap.restrictScalars_apply] using hf.map_mem hx
+
+/-- A polynomial-linear map is fixed by its degree-`r` component exactly when it has degree `r`. -/
+@[simp]
+theorem homogeneousPartPolynomial_eq_self_iff (f : M →ₗ[k[X]] N) (r : ℤ) :
+    G.homogeneousPartPolynomial H hX hY f r = f ↔
+      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+  constructor
+  · intro hf
+    rw [← hf]
+    exact G.isHomogeneous_homogeneousPartPolynomial H hX hY f r
+  · exact G.homogeneousPartPolynomial_eq_self H hX hY f r
+
+/-- Every homogeneous part of the zero polynomial-linear map is zero. This also simplifies
+using `homogeneousPartPolynomial_eq_self`, since zero is homogeneous in every degree. -/
+theorem homogeneousPartPolynomial_zero (r : ℤ) :
+    G.homogeneousPartPolynomial H hX hY 0 r = 0 := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  simp
+
+/-- Taking a homogeneous part preserves addition of polynomial-linear maps. -/
+@[simp]
+theorem homogeneousPartPolynomial_add (f g : M →ₗ[k[X]] N) (r : ℤ) :
+    G.homogeneousPartPolynomial H hX hY (f + g) r =
+      G.homogeneousPartPolynomial H hX hY f r + G.homogeneousPartPolynomial H hX hY g r := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  simp
+
+end HomogeneousParts
 
 end InternalGrading
 

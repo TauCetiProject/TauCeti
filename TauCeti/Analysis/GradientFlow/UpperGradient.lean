@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 public import TauCeti.Analysis.GradientFlow.Slope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 
 /-!
 # Strong upper gradients
@@ -202,10 +203,8 @@ theorem _root_.LocallyLipschitz.isStrongUpperGradient_descendingSlope {f : X →
   intro γ a b hγ
   set I := ∫⁻ r in Ι a b, descendingSlope (fun x ↦ (f x : EReal)) (γ r) * metricDerivative γ r
   -- `f ∘ γ` is absolutely continuous, since `f` is Lipschitz on the compact image of `[a, b]`.
-  obtain ⟨K, hK⟩ := hf.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
-    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn')
   have hfγ : AbsolutelyContinuousOnInterval (fun r ↦ f (γ r)) a b :=
-    hK.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
+    hf.locallyLipschitzOn.comp_absolutelyContinuousOnInterval (mapsTo_image _ _) hγ
   -- Almost everywhere the derivative of `f ∘ γ` is bounded by the chain rule inequality.
   have hderiv : ∀ᵐ r ∂volume.restrict (Ι a b), ‖deriv (fun r ↦ f (γ r)) r‖ₑ ≤
       descendingSlope (fun x ↦ (f x : EReal)) (γ r) * metricDerivative γ r := by
