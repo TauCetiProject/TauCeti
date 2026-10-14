@@ -359,6 +359,11 @@ theorem orderAt_eq_zero_iff : p.orderAt a = 0 ↔ eval a p ≠ 0 := by
 theorem orderAt_pos_iff : 0 < p.orderAt a ↔ eval a p = 0 := by
   rw [pos_iff_ne_zero, Ne, orderAt_eq_zero_iff, not_not]
 
+/-- Equal orders of vanishing give the same zero pattern at the two points. -/
+theorem _root_.TauCeti.eval_eq_zero_iff_of_orderAt_eq {x y : σ → R}
+    (h : p.orderAt x = p.orderAt y) : eval x p = 0 ↔ eval y p = 0 := by
+  rw [← orderAt_pos_iff, h, orderAt_pos_iff]
+
 theorem orderAt_C_of_ne_zero {r : R} (hr : r ≠ 0) (a : σ → R) : (C r).orderAt a = 0 :=
   orderAt_eq_zero_iff.mpr (by simpa using hr)
 
