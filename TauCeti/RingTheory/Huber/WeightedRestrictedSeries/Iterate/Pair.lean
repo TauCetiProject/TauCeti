@@ -140,8 +140,11 @@ theorem iterateSplitHom_comp_iterateJoinHom :
 /-- Weighted iteration maps the joint plus ring onto the iterated plus ring. -/
 @[simp]
 theorem map_iterateSplitHom_plus :
-    (S.weighted hU).completion.plus.map (Huber.iterateSplitHom hT hW hU hTU hUW) =
+    (completionPlus (integralClosure (weightedSubring U hU S.plus)
+      (weightedRestrictedSubring U hU)).toSubring).map
+        (Huber.iterateSplitHom hT hW hU hTU hUW) =
       (((S.weighted hT).completion).weighted hW).completion.plus := by
+  rw [← S.weighted_plus hU, ← completion_plus (S.weighted hU)]
   apply le_antisymm
   · exact Subring.map_le_iff_le_comap.mpr (S.iterateSplitHom hT hW hU hTU hUW).map_mem_plus
   · intro a ha
@@ -162,7 +165,7 @@ theorem isQuotientMapping_iterateSplitHom :
     exact (Homeomorph.mk (iterateRingEquiv hT hW hU hTU hUW).toEquiv
       (continuous_iterateRingEquiv hT hW hU hTU hUW)
       (continuous_iterateRingEquiv_symm hT hW hU hTU hUW)).isOpenQuotientMap
-  · rw [Hom.toRingHom_iterateSplitHom, map_iterateSplitHom_plus]
+  · rw [Hom.toRingHom_iterateSplitHom, completion_plus, weighted_plus, map_iterateSplitHom_plus]
     exact isIntegral_algebraMap
       (R := (((S.weighted hT).completion).weighted hW).completion.plus) (x := ⟨a, ha⟩)
 
