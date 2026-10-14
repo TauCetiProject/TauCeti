@@ -27,8 +27,8 @@ Each test function `φ` on `V` is localized near its compact support intersected
 A smooth cutoff `χ` equal to `1` on a neighbourhood of this intersection and compactly supported
 inside `Ω` (`IsCompact.exists_contDiff_cutoff`) turns `χ φ` into a test function on `Ω`.
 The cutoff leaves both test pairings unchanged where the value and derivative can be nonzero.
-This generalizes the original compact-support proof of
-`TauCeti.HasWeakLineDerivOn.indicator_of_isCompact`.
+The compact-support statements `indicator_of_isCompact` are corollaries of
+`indicator_of_isClosed`.
 
 ## Main declarations
 
