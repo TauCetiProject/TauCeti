@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Finprod
-public import TauCeti.RingTheory.MvPolynomial.OrderAt
+public import Mathlib.Algebra.MvPolynomial.Equiv
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.HasseDeriv
 
 /-!
 # Hasse derivatives of multivariate polynomials
@@ -17,9 +18,10 @@ zero unless `d ≤ m`. It is defined over any commutative semiring, so it preser
 coefficients, and in a single variable `k! • ∂^(k eᵢ)` is the `k`-th partial derivative in `Xᵢ`
 (`MvPolynomial.factorial_smul_hasseDeriv_single`).
 
-Hasse derivatives are the Taylor coefficients of a polynomial: `P(X + Y) = ∑_d (∂^d P)(X) Y^d`.
-They are the jets used to measure the vanishing of auxiliary polynomials at a point, as in the
-index of a polynomial in the proof of Roth's theorem.
+Hasse derivatives are the Taylor coefficients of a polynomial: `P(X + Y) = ∑_d (∂^d P)(X) Y^d`
+(see `TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor`). They are the jets used to measure the
+vanishing of auxiliary polynomials at a point, as in the index of a polynomial in the proof of
+Roth's theorem.
 
 ## Main definitions
 
@@ -41,9 +43,8 @@ index of a polynomial in the proof of Roth's theorem.
   `∂^(k eᵢ)` is the univariate `k`-th Hasse derivative, and `∂^d` vanishes whenever `d`
   differentiates in another variable `Xⱼ`.
 * `MvPolynomial.hasseDeriv_comp`: `∂^a ∘ ∂^b = (∏ⱼ (aⱼ + bⱼ choose aⱼ)) • ∂^(a + b)`.
-* `MvPolynomial.coeff_taylor`, `MvPolynomial.eval_add_eq_finsum_hasseDeriv`: the Taylor
-  coefficients of `P` at `a` are the values `(∂^d P)(a)`, so `P(a + y) = ∑_d (∂^d P)(a) y^d`.
-* `MvPolynomial.hasseDeriv_mul`: the Leibniz rule `∂^d (P Q) = ∑_{a + b = d} ∂^a P · ∂^b Q`.
+* `MvPolynomial.hasseDeriv_mul_X`: the Leibniz rule for multiplication by a variable,
+  `∂^d (P Xᵢ) = ∂^(d - eᵢ) P + (∂^d P) Xᵢ` (the first term only when `dᵢ ≠ 0`).
 
 ## References
 
@@ -253,8 +254,9 @@ private theorem prod_choose_add_single [DecidableEq σ] (n d : σ →₀ ℕ) (i
     have hij : i ≠ j := fun h ↦ hi (h ▸ hj)
     simp [hij]
 
-/-- The Leibniz rule for multiplication by a variable. -/
-private theorem hasseDeriv_mul_X [DecidableEq σ] (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
+/-- The Leibniz rule for multiplication by a variable:
+`∂^d (P Xᵢ) = ∂^(d - eᵢ) P + (∂^d P) Xᵢ`, where the first term is present only when `dᵢ ≠ 0`. -/
+theorem hasseDeriv_mul_X [DecidableEq σ] (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
     hasseDeriv d (P * X i) =
       (if i ∈ d.support then hasseDeriv (d - single i 1) P else 0) + hasseDeriv d P * X i := by
   induction P using MvPolynomial.induction_on' with
@@ -286,45 +288,6 @@ private theorem hasseDeriv_mul_X [DecidableEq σ] (d : σ →₀ ℕ) (P : MvPol
   | add p q hp hq =>
     simp only [add_mul, map_add, hp, hq]
     split_ifs <;> abel
-
-/-- The Taylor coefficients of `P` at the generic point are its Hasse derivatives:
-`P(X + Y) = ∑_d (∂^d P)(X) Y^d`. -/
-theorem coeff_taylor_X_map_C (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
-    (taylor (X : σ → MvPolynomial σ R) (map C P)).coeff d = hasseDeriv d P := by
-  classical
-  induction P using MvPolynomial.induction_on generalizing d with
-  | C a =>
-    rw [map_C, taylor_C, coeff_C]
-    by_cases hd : d = 0
-    · subst hd; simp
-    · rw [ite_eq_right (Ne.symm hd), hasseDeriv_C hd]
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp =>
-    rw [hasseDeriv_mul_X, mul_comm (hasseDeriv d p)]
-    simp [mul_add, mul_comm _ (C _), coeff_C_mul, coeff_mul_X', hp]
-
-/-- The Taylor coefficients of `P` at the point `a` are the values of its Hasse derivatives:
-`[Y^d] P(a + Y) = (∂^d P)(a)`. -/
-@[simp]
-theorem coeff_taylor (a : σ → R) (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
-    (taylor a P).coeff d = eval a (hasseDeriv d P) := by
-  rw [← eval_coeff_taylor_map_C, coeff_taylor_X_map_C]
-
-/-- The Leibniz rule for Hasse derivatives: `∂^d (P Q) = ∑_{a + b = d} ∂^a P · ∂^b Q`. -/
-theorem hasseDeriv_mul [DecidableEq σ] (d : σ →₀ ℕ) (P Q : MvPolynomial σ R) :
-    hasseDeriv d (P * Q) =
-      ∑ x ∈ Finset.antidiagonal d, hasseDeriv x.1 P * hasseDeriv x.2 Q := by
-  simp only [← coeff_taylor_X_map_C, map_mul, coeff_mul]
-
-/-- The finite Taylor expansion with Hasse derivatives: `P(a + y) = ∑_d (∂^d P)(a) y^d`. -/
-theorem eval_add_eq_finsum_hasseDeriv (P : MvPolynomial σ R) (a y : σ → R) :
-    eval (a + y) P = ∑ᶠ d : σ →₀ ℕ, eval a (hasseDeriv d P) * d.prod fun j k ↦ y j ^ k := by
-  rw [add_comm, ← eval_taylor, eval_eq,
-    finsum_eq_sum_of_support_subset (s := (taylor a P).support) _ fun d hd ↦ ?_]
-  · simp [coeff_taylor, Finsupp.prod]
-  · rw [Function.mem_support] at hd
-    rw [Finset.mem_coe, mem_support_iff, coeff_taylor]
-    exact left_ne_zero_of_mul hd
 
 /-- `∂^(2, 0) (X₀³ X₁) = 3 X₀ X₁` over `ℤ`. -/
 example : hasseDeriv (single 0 2) (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) ℤ) = 3 * (X 0 * X 1) := by
