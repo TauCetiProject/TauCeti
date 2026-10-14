@@ -16,8 +16,8 @@ identified finite-dimensional subspace directly usable in operator constructions
 direction, Bessel's inequality makes the analysis map of an orthonormal family a contraction.
 
 The orthogonal projection onto the span of a finite orthonormal family is `x ↦ ∑ᵢ ⟪vᵢ, x⟫ vᵢ`,
-synthesis after analysis, so Bessel's inequality becomes an equality on the span:
-`‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
+synthesis after analysis, that is, the frame operator of the family. So Bessel's inequality
+becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
 -/
 
 public section
@@ -87,6 +87,14 @@ theorem starProjection_apply_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule �
     fun w hw ↦ ?_
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hw
   simp [inner_sum, inner_smul_right, inner_sub_left, hv.inner_left_fintype]
+
+/-- The orthogonal projection onto the span `U` of a finite orthonormal family is its frame
+operator, synthesis after analysis. -/
+theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] (hU : Submodule.span 𝕜 (Set.range v) = U) :
+    (U.starProjection : E →ₗ[𝕜] E) = TauCeti.frameOperator 𝕜 v := by
+  ext x
+  simp [hv.starProjection_apply_eq_sum hU]
 
 /-- **Parseval's identity** on the span `U` of a finite orthonormal family: the orthogonal
 projection of `x` onto `U` has squared norm `∑ᵢ ‖⟪vᵢ, x⟫‖²`. -/
