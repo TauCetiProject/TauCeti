@@ -1,13 +1,20 @@
 import Lean
 
 /-!
-# Shared governance audit checks
+# Shared declaration-ownership and axiom audits
 
-Human-owned tooling. `lake exe axioms` and the workflow-pinned native `audit-driver`
-run these same checks. `--duplicates-only` runs the ownership fixtures in isolation.
-Ownership is inspected in per-module `constNames`, before using merged constants for
-axiom reachability. All imported names and messages are consumed or rendered
-inside the import callback; only the numeric exit status escapes the mmap lifetime.
+`lake exe axioms` and the workflow-pinned native `audit-driver` reject declarations owned
+by two modules when at least one owner is in TauCeti, including compatible duplicate
+user theorems. Ownership comes from each module's `constNames`, before the axiom scan
+uses merged constants. Reserved auxiliaries with no explicit source declaration are exempt.
+
+Every TauCeti declaration must depend only on `propext`, `Classical.choice`, and `Quot.sound`.
+This catches `sorry`/`admit`, native-decision axioms, and custom axioms, including private
+ones and dependencies reached through imports. Enumerating sources includes the empty
+root and orphan modules. `--duplicates-only` isolates the ownership fixtures.
+
+The separate canonical module-system audit is `scripts/ModuleSystem.lean`; workflows run
+it after this driver to check each compiled artifact's `isModule` flag.
 -/
 
 open Lean
@@ -160,6 +167,7 @@ def scope : IO (Option (Std.HashSet Name)) := do
     return some (Std.HashSet.ofList (((text.splitOn "\n").map (·.trimAscii.toString)).filter (· ≠ "")
       |>.map String.toName))
 
+/-- Render the axiom result and return 1 for violations or an empty unscoped candidate set. -/
 def report (only : Option (Std.HashSet Name)) (audited : Nat) (messages : Array String) : IO UInt32 := do
   if let some s := only then
     IO.println s!"axioms: auditing the {s.size} changed module(s) and everything importing them \
@@ -230,20 +238,19 @@ def check (env : Environment) (localModules : NameSet) : IO UInt32 := do
 end DuplicateDeclarations
 
 /-!
-# One private-level import for the governance audits
+## Import and teardown discipline
 
-Built from workflow-pinned sources on the host before candidate execution, then mounted
-read-only. No candidate initializers execute (`loadExts := false`). This is an axiom/ownership
-audit after a kernel-checked build, not proof validation of arbitrary compiled artifacts.
-`trustLevel := 1024` accepts imported constants as already type-correct, just as the
-former separate audits did. Compiled byte integrity alone does not prove correctness.
+One private-level import loads the full artifact parts without executing candidate
+initializers (`loadExts := false`). `trustLevel := 1024` accepts constants as type-correct:
+these checks follow a kernel-checked build and do not validate arbitrary compiled proofs.
+Byte integrity alone does not establish proof correctness.
 
-The duplicate pass reads each module's ownership table before the axiom pass uses merged
-constants. `withImportModules` keeps mmap-backed names alive through every check and tears
-the environment down before returning an ordinary exit code. All messages are rendered in
-the callback. A failed check stops later phases, as in the former shell pipeline.
+`withImportModules` keeps mmap-backed names alive through both checks and frees the
+regions before returning an exit code. Render every imported name inside the callback.
+A failed ownership check stops the axiom scan.
 -/
 
+/-- Print a phase and write best-effort epoch timestamps to `AUDIT_PHASES_FILE`, if set. -/
 def phase (name : String) : IO Unit := do
   IO.println s!"audit-driver: phase {name}"
   (← IO.getStdout).flush
@@ -256,21 +263,10 @@ def phase (name : String) : IO Unit := do
         file.putStr s!"{name}\t{timestamp.stdout.trimAscii}\n"
     catch _ => pure ()
 
-def checkModuleSystem (env : Environment) (modules : Array Name) : IO UInt32 := do
-  let mut bad : Array Name := #[]
-  for m in modules do
-    let some idx := env.getModuleIdx? m
-      | IO.eprintln s!"module-system: no imported artifact for {m}"; return 1
-    unless env.header.moduleData[idx.toNat]!.isModule do bad := bad.push m
-  if !bad.isEmpty then
-    IO.eprintln s!"module-system: {bad.size} of {modules.size} TauCeti module(s) do not opt \
-      into the module system (their compiled `.olean` has isModule = false):"
-    for m in bad do IO.eprintln s!"  {m}"
-    IO.eprintln "Add `module` as the first line of each (after the copyright header)."
-    return 1
-  IO.println s!"module-system: all {modules.size} TauCeti module(s) opt into the module system."
-  return 0
-
+/-- Run ownership then axioms, or ownership alone with `--duplicates-only`.
+Return 0 on success, 1 on an audit/import failure, and 2 on unsupported arguments.
+The environment callback/CoreM adapter is inlined from importGraph's `Core.withImportModules`
+(Kim Morrison, Paul Lezeau; Apache 2.0). -/
 def main (args : List String) : IO UInt32 := do
   if !args.isEmpty && args != ["--duplicates-only"] then
     IO.eprintln "usage: audit-driver [--duplicates-only]"
@@ -291,10 +287,7 @@ def main (args : List String) : IO UInt32 := do
         phase "audit-axioms"
         let (audited, messages) ← Prod.fst <$> Core.CoreM.toIO (AxiomAudit.audit only)
           { fileName := "<axioms>", fileMap := default } { env }
-        let status ← AxiomAudit.report only audited messages
-        if status != 0 then return status
-        phase "audit-module-system"
-        checkModuleSystem env modules) (trustLevel := 1024)
+        AxiomAudit.report only audited messages) (trustLevel := 1024)
   catch e =>
     IO.eprintln s!"audit-driver: {e}"
     return 1

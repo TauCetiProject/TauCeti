@@ -304,10 +304,16 @@ jobs:
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
 
       # The same shared checks as trusted PR builds, compiled from merged main's sources.
-      - name: Governance audits (ownership, axioms, module system)
+      - name: Shared ownership and axiom audits
         run: |
           bash scripts/build-audit-driver.sh . scripts "$RUNNER_TEMP/audit-driver"
           lake env "$RUNNER_TEMP/audit-driver/audit-driver"
+
+      # Read compiled module flags with the canonical direct-artifact checker.
+      - name: Module-system audit (every TauCeti file opts into module)
+        env:
+          LAKE_NO_CACHE: "true"
+        run: lake exe module-system
 
       # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports the TauCeti/
       # modules in scope and runs Mathlib's default `#lint` set minus docBlame (simpNF,

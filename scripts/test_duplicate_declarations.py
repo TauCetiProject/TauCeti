@@ -66,14 +66,24 @@ class DuplicateDeclarationsTest(unittest.TestCase):
                 (root / "scope.txt").write_text(scope)
                 env["AXIOMS_ONLY_MODULES"] = str(root / "scope.txt")
             args = [] if full else ["--duplicates-only"]
-            result = subprocess.run(
-                [LEAN, "--run", str(DRIVER), *args],
-                cwd=root, env=env, text=True, capture_output=True,
-            )
+            def run_checks(command, flags, with_module_system):
+                result = subprocess.run([*command, *flags], cwd=root, env=env,
+                                        text=True, capture_output=True)
+                if with_module_system and result.returncode == 0:
+                    module_result = subprocess.run(
+                        [LEAN, "--run", str(ROOT / "scripts/ModuleSystem.lean")],
+                        cwd=root, env=env, text=True, capture_output=True,
+                    )
+                    result = subprocess.CompletedProcess(
+                        result.args, module_result.returncode,
+                        result.stdout + module_result.stdout,
+                        result.stderr + module_result.stderr,
+                    )
+                return result
+            result = run_checks([LEAN, "--run", str(DRIVER)], args, full)
 
             for _ in range(repeat):
-                shared = subprocess.run([self.native, *args], cwd=root, env=env,
-                                        text=True, capture_output=True)
+                shared = run_checks([self.native], args, full)
                 self.assertEqual(shared.returncode, result.returncode,
                                  "native/interpreted mismatch:\n" + shared.stdout + shared.stderr)
                 self.assertEqual(shared.stdout, result.stdout)
@@ -94,8 +104,7 @@ class DuplicateDeclarationsTest(unittest.TestCase):
                 self.assertEqual((repeated.stdout + repeated.stderr).count("use disallowed axioms:"),
                                  0 if result.returncode == 0 else 3)
             if not full:
-                complete = subprocess.run([self.native], cwd=root, env=env,
-                                          text=True, capture_output=True)
+                complete = run_checks([self.native], [], True)
                 self.assertEqual(complete.returncode, result.returncode,
                                  "combined audit mismatch:\n" + complete.stdout + complete.stderr)
             return result

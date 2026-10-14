@@ -84,6 +84,7 @@ class BuildLintDriverTest(unittest.TestCase):
         self.assertEqual(audit_budget, lint_budget)
         self.assertEqual(audit_budget, "3000")
         self.assertNotIn('--run "$TRUSTED_SCRIPTS/Axioms.lean"', SANDBOX)
+        self.assertIn('--run "$TRUSTED_SCRIPTS/ModuleSystem.lean"', SANDBOX)
         self.assertIn('bash "$TRUSTED_SCRIPTS/lint-env.sh"', SANDBOX)
         self.assertIn('bash "$TRUSTED_SCRIPTS/lint-style.sh"', SANDBOX)
 

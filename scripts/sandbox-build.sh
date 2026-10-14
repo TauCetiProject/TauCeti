@@ -58,7 +58,7 @@ lake build --iofail 2>&1 | { tee --output-error=warn "$TELEMETRY/lake-build.log"
 
 # One workflow-pinned native driver imports all artifact parts once. Its first check reads
 # per-module ownership (compatible duplicates must not disappear in merged constants), then
-# it checks axiom reachability and module-system flags. No imported initializer executes.
+# it checks axiom reachability. No imported initializer executes.
 # Built beside the lint driver on the host and mounted in the same read-only directory.
 AUDIT_DRIVER_EXE="$(dirname "$LINT_DRIVER_EXE")/audit-driver"
 test -x "$AUDIT_DRIVER_EXE"
@@ -70,6 +70,11 @@ phase audit-setup
 AUDIT_TIMEOUT="$(command -v timeout)"
 AUDIT_PHASES_FILE="$TELEMETRY/phases.tsv" lake env "$AUDIT_TIMEOUT" --signal=TERM --kill-after=30 \
   3000s "$AUDIT_DRIVER_EXE"
+
+# The canonical module-system check reads only the main artifact flag, without importing
+# the Mathlib environment. Keep one implementation and its existing standalone executable.
+phase audit-module-system
+lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lean"
 
 # Environment lint (the compiled driver in LINT_DRIVER_EXE): Mathlib's default `#lint` set minus
 # docBlame, plus a

@@ -49,6 +49,9 @@ class DuplicateAuditWorkflowTest(unittest.TestCase):
                      if "lake env \"$RUNNER_TEMP/audit-driver/audit-driver\"" in step.get("run", ""))
         self.assertNotIn("if", audit)
         self.assertNotIn("continue-on-error", audit)
+        flags = next(step for step in steps if step.get("run") == "lake exe module-system")
+        self.assertNotIn("if", flags)
+        self.assertNotIn("continue-on-error", flags)
         self.assertFalse(any("test_duplicate_declarations.py" in step.get("run", "")
                              for step in steps))
 
