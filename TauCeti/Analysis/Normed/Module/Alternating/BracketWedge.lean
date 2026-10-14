@@ -31,6 +31,8 @@ public section
 
 namespace TauCeti
 
+open ContinuousAlternatingMap
+
 variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
   [SeminormedAddCommGroup F] [NormedSpace ℝ F]
   {k l : ℕ}
@@ -40,19 +42,20 @@ bracket `β` through the paired wedge. -/
 noncomputable def bracketWedge (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F) :
     E [⋀^Fin (k + l)]→L[ℝ] F :=
-  wedgeWith β φ ψ
+  pairedWedge β β.continuous₂ φ ψ
 
 -- Certify the definitional equality locally: the exported theorem cannot unfold the definition.
 private theorem bracketWedge_def_aux (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F) :
-    bracketWedge β φ ψ = wedgeWith β φ ψ := rfl
+    bracketWedge β φ ψ = pairedWedge β β.continuous₂ φ ψ := rfl
 
 /-- The bracket wedge is the paired wedge along the bracket. -/
 theorem bracketWedge_def (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F) :
-    bracketWedge β φ ψ = wedgeWith β φ ψ := bracketWedge_def_aux β φ ψ
+    bracketWedge β φ ψ = pairedWedge β β.continuous₂ φ ψ := bracketWedge_def_aux β φ ψ
 
-/-- The bracket wedge is given by the signed permutation formula for `wedgeWith`. -/
+/-- The bracket wedge is given by the signed permutation formula for
+`ContinuousAlternatingMap.pairedWedge`. -/
 theorem bracketWedge_apply (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F)
     (v : Fin (k + l) → E) :
@@ -61,49 +64,49 @@ theorem bracketWedge_apply (β : F →L[ℝ] F →L[ℝ] F)
         ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
           β (φ (fun i => v (sigma (Fin.castAdd l i))))
             (ψ (fun j => v (sigma (Fin.natAdd k j)))) := by
-  rw [bracketWedge_def, wedgeWith_apply]
+  rw [bracketWedge_def, pairedWedge_apply]
 
 /-- The bracket wedge is additive in its first form. -/
 @[simp]
 theorem bracketWedge_add_left (β : F →L[ℝ] F →L[ℝ] F)
     (φ φ' : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F) :
     bracketWedge β (φ + φ') ψ = bracketWedge β φ ψ + bracketWedge β φ' ψ := by
-  simpa only [bracketWedge_def] using wedgeWith_add_left β φ φ' ψ
+  simpa only [bracketWedge_def] using pairedWedge_add_left β β.continuous₂ φ φ' ψ
 
 /-- The bracket wedge is additive in its second form. -/
 @[simp]
 theorem bracketWedge_add_right (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ ψ' : E [⋀^Fin l]→L[ℝ] F) :
     bracketWedge β φ (ψ + ψ') = bracketWedge β φ ψ + bracketWedge β φ ψ' := by
-  simpa only [bracketWedge_def] using wedgeWith_add_right β φ ψ ψ'
+  simpa only [bracketWedge_def] using pairedWedge_add_right β β.continuous₂ φ ψ ψ'
 
 /-- The bracket wedge respects scalar multiplication in its first form. -/
 @[simp]
 theorem bracketWedge_smul_left (β : F →L[ℝ] F →L[ℝ] F) (c : ℝ)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F) :
     bracketWedge β (c • φ) ψ = c • bracketWedge β φ ψ := by
-  simpa only [bracketWedge_def] using wedgeWith_smul_left β c φ ψ
+  simpa only [bracketWedge_def] using pairedWedge_smul_left β β.continuous₂ c φ ψ
 
 /-- The bracket wedge respects scalar multiplication in its second form. -/
 @[simp]
 theorem bracketWedge_smul_right (β : F →L[ℝ] F →L[ℝ] F) (c : ℝ)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F) :
     bracketWedge β φ (c • ψ) = c • bracketWedge β φ ψ := by
-  simpa only [bracketWedge_def] using wedgeWith_smul_right β c φ ψ
+  simpa only [bracketWedge_def] using pairedWedge_smul_right β β.continuous₂ c φ ψ
 
 /-- The bracket wedge vanishes when its first form is zero. -/
 @[simp]
 theorem bracketWedge_zero_left (β : F →L[ℝ] F →L[ℝ] F)
     (ψ : E [⋀^Fin l]→L[ℝ] F) :
     bracketWedge β (0 : E [⋀^Fin k]→L[ℝ] F) ψ = 0 := by
-  simpa only [bracketWedge_def] using (wedgeWith_zero_left β ψ : _)
+  simpa only [bracketWedge_def] using (pairedWedge_zero_left β ψ : _)
 
 /-- The bracket wedge vanishes when its second form is zero. -/
 @[simp]
 theorem bracketWedge_zero_right (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) :
     bracketWedge β φ (0 : E [⋀^Fin l]→L[ℝ] F) = 0 := by
-  simpa only [bracketWedge_def] using (wedgeWith_zero_right β φ : _)
+  simpa only [bracketWedge_def] using (pairedWedge_zero_right β φ : _)
 
 /-- A skew-symmetric bracket induces graded skew-symmetry on the bracket wedge. -/
 theorem bracketWedge_skew {β : F →L[ℝ] F →L[ℝ] F} (hβ : ∀ a b, β a b = -β b a)
@@ -111,7 +114,7 @@ theorem bracketWedge_skew {β : F →L[ℝ] F →L[ℝ] F} (hβ : ∀ a b, β a 
     (v : Fin (k + l) → E) :
     bracketWedge β φ ψ v =
       -((-1 : ℝ) ^ (k * l) • bracketWedge β ψ φ (v ∘ Fin.cast (Nat.add_comm l k))) := by
-  simpa only [bracketWedge_def] using wedgeWith_anticomm hβ φ ψ v
+  simpa only [bracketWedge_def] using pairedWedge_anticomm hβ φ ψ v
 
 /-- The graded Jacobi identity of the bracket wedge of a `k`-form `φ`, an `l`-form `ψ` and an
 `m`-form `χ`: `(-1)^{km} [[φ ∧ ψ] ∧ χ] + (-1)^{kl} [[ψ ∧ χ] ∧ φ] + (-1)^{lm} [[χ ∧ φ] ∧ ψ] = 0`,
@@ -128,7 +131,7 @@ theorem bracketWedge_jacobi {m : ℕ} {β : F →L[ℝ] F →L[ℝ] F}
       (-1 : ℝ) ^ (l * m) • bracketWedge β (bracketWedge β χ φ) ψ
         (v ∘ Fin.cast (show m + k + l = k + l + m by omega)) = 0 := by
   -- Expand the three iterated wedges as signed sums over permutations of their own index sets.
-  simp only [bracketWedge_def, wedgeWith_wedgeWith_left_apply, Function.comp_apply]
+  simp only [bracketWedge_def, pairedWedge_pairedWedge_left_apply, Function.comp_apply]
   -- Rotate the index blocks of the second sum once, and of the third twice, into the order
   -- `k, l, m` of the first.
   have h₂ := sum_sign_smul_rotate_blocks (fun x y z => β (β (ψ y) (χ z)) (φ x)) v
