@@ -71,16 +71,14 @@ theorem seminorm_le_mul_projectiveSeminormOf (p : ∀ i, Seminorm 𝕜 (E i))
     q x ≤ C * projectiveSeminormOf p x := by
   rw [projectiveSeminormOf_apply, Real.mul_iInf_of_nonneg hC]
   refine le_ciInf fun ⟨l, hl⟩ => ?_
-  conv_lhs => rw [← (mem_lifts_iff x l).mp hl, ← Multiset.sum_coe]
-  let := q.toAddGroupSeminorm.toSeminormedAddCommGroup
-  have qnorm (z : ⨂[𝕜] i, E i) : ‖z‖ = q z := (rfl)
-  refine (norm_multiset_sum_le (E := ⨂[𝕜] i, E i) _).trans ?_
-  simp only [Multiset.map_coe, Multiset.sum_coe, List.map_map, Function.comp_def]
+  conv_lhs => rw [← (mem_lifts_iff x l).mp hl]
+  refine (List.le_sum_of_subadditive q (map_zero q).le (map_add_le_add q) _).trans ?_
+  simp only [List.map_map, Function.comp_def]
   rw [← List.sum_map_mul_left]
   refine List.Forall₂.sum_le_sum ?_
   simp only [List.forall₂_map_left_iff, List.forall₂_map_right_iff, List.forall₂_same]
   intro a ha
-  simpa [qnorm, map_smul_eq_mul, mul_assoc, mul_left_comm] using
+  simpa [map_smul_eq_mul, mul_assoc, mul_left_comm] using
     mul_le_mul_of_nonneg_left (h a.2) (norm_nonneg a.1)
 
 /-- The projective seminorm is the largest seminorm bounded by the prescribed product
