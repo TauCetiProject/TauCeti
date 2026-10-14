@@ -1,36 +1,24 @@
 """Exercise the workflow's actual trusted identity resolver without network I/O."""
-import contextlib
 import copy
-import io
 import json
-import os
 from pathlib import Path
 from unittest import mock
 import unittest
 
 import yaml
+import bors_observation as authority
+from bors_train_identity import candidate_ref
 
 WORKFLOW = yaml.safe_load((Path(__file__).resolve().parents[1] /
                           '.github/workflows/pr-build.yml').read_text())
 STEP = next(s for s in WORKFLOW['jobs']['sandboxed-build']['steps'] if s.get('id') == 'pr')
-RESOLVER = STEP['run'].split("<<'PY_IDENTITY'\n", 1)[1].split('\nPY_IDENTITY', 1)[0]
 BATCH = dict(id=7, base='main', state='running', head_sha='a' * 40, base_sha='b' * 40)
-OBSERVATION = dict(schema='tauceti-bors.observation/v1', repo='TauCetiProject/TauCeti',
+OBSERVATION = dict(schema='tauceti-bors.observation/v1', repo='TauCetiProject/TauCeti', base='main',
                    requested_batch=BATCH)
 
 
-def resolve(observation):
-    output = io.StringIO()
-    env = dict(BORS_BATCH_ID='7', BORS_BASE_REF='main', BORS_HEAD_SHA='a' * 40, BORS_BASE_SHA='b' * 40)
-    with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(output):
-        with mock.patch('urllib.request.urlopen') as request:
-            request.return_value.__enter__.return_value.read.return_value = json.dumps(observation).encode()
-            exec(compile(RESOLVER, '<workflow resolver>', 'exec'), {})
-            assert request.call_args.args[0].full_url == ('https://bors.taucetiproject.org/repositories/1/'
-                                                 'active-batches?base=main&batch_id=7')
-            assert request.call_args.args[0].get_header('User-agent') == 'TauCetiTrainIdentity/1.0'
-            assert request.call_args.args[0].get_header('Cache-control') == 'no-cache'
-    return output.getvalue().strip()
+def resolve(data):
+    return candidate_ref(data, 'a' * 40, 'b' * 40, batch_id=7)
 
 
 class TrainIdentityTests(unittest.TestCase):
@@ -50,12 +38,12 @@ class TrainIdentityTests(unittest.TestCase):
             with self.subTest(field=field, value=value):
                 data = copy.deepcopy(OBSERVATION)
                 data['requested_batch'][field] = value
-                with self.assertRaises(SystemExit):
+                with self.assertRaises(ValueError):
                     resolve(data)
         for field, value in [('schema', 'other'), ('repo', 'other/repo'), ('requested_batch', None)]:
             data = copy.deepcopy(OBSERVATION)
             data[field] = value
-            with self.assertRaises(SystemExit):
+            with self.assertRaises(ValueError):
                 resolve(data)
 
     def test_refs_are_derived_from_positive_integer_generations(self):
@@ -64,8 +52,32 @@ class TrainIdentityTests(unittest.TestCase):
                 ('1', 1, 'staging-candidate-1-1'), (1, -1, 'staging-candidate-1--1')]:
             data = copy.deepcopy(OBSERVATION)
             data['requested_batch']['train'] = dict(candidate_id=cid, generation=generation, staging_ref=ref)
-            with self.assertRaises(SystemExit):
+            with self.assertRaises(ValueError):
                 resolve(data)
+
+    def test_shared_fetch_is_bounded_scoped_and_named(self):
+        with mock.patch('bors_observation.urllib.request.urlopen') as request:
+            response = request.return_value.__enter__.return_value
+            response.read.return_value = json.dumps(OBSERVATION).encode()
+            self.assertEqual(authority.observation(7), OBSERVATION)
+            argument = request.call_args.args[0]
+            self.assertEqual(argument.full_url, authority.OBSERVATION_ROOT + '?base=main&batch_id=7')
+            self.assertEqual(argument.get_header('User-agent'), 'TauCetiBorsObservation/1.0')
+            self.assertEqual(argument.get_header('Cache-control'), 'no-cache')
+            response.read.assert_called_with(authority.MAX_BYTES + 1)
+            response.read.return_value = b'x' * (authority.MAX_BYTES + 1)
+            with self.assertRaises(ValueError):
+                authority.observation(7)
+
+    def test_trusted_checkout_precedes_resolution_and_shared_validation_is_reused(self):
+        steps = WORKFLOW['jobs']['sandboxed-build']['steps']
+        checkout = next(i for i, s in enumerate(steps) if s.get('with', {}).get('path') == 'gate')
+        resolver = next(i for i, s in enumerate(steps) if s.get('id') == 'pr')
+        self.assertLess(checkout, resolver)
+        self.assertEqual(steps[checkout]['with']['ref'], '${{ github.workflow_sha }}')
+        self.assertIs(steps[checkout]['with']['persist-credentials'], False)
+        self.assertIn('python3 gate/scripts/bors_train_identity.py', STEP['run'])
+        self.assertNotIn('PY_IDENTITY', STEP['run'])
 
     def test_producer_and_concurrency_gates_remain(self):
         self.assertIn('bors-staging-{0}-{1}-{2}-{3}-{4}', WORKFLOW['concurrency']['group'])
