@@ -60,6 +60,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   finite-dimensional spectral splitting.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
+* `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
+  positive determinant.
 * `LinearMap.IsPositive.exists_pos_mul_norm_sq_le_re_inner`: an injective positive operator on a
   finite-dimensional space is coercive.
 
@@ -405,6 +407,11 @@ the determinant is the product of the eigenvalues, which are nonnegative. -/
 theorem det_nonneg (hT : T.IsPositive) : 0 ≤ T.det := by
   rw [hT.isSymmetric.det_eq_prod_eigenvalues rfl, ← RCLike.ofReal_prod]
   exact RCLike.ofReal_nonneg.2 (Finset.prod_nonneg fun i _ => hT.nonneg_eigenvalues rfl i)
+
+/-- An injective positive operator on a finite-dimensional inner product space has positive
+determinant. -/
+theorem det_pos (hT : T.IsPositive) (hker : LinearMap.ker T = ⊥) : 0 < T.det :=
+  lt_of_le_of_ne hT.det_nonneg fun h => LinearMap.det_eq_zero_iff_ker_ne_bot.1 h.symm hker
 
 /-- An injective positive operator on a finite-dimensional inner product space is coercive:
 `c ‖v‖ ^ 2 ≤ re ⟪T v, v⟫` for some `c > 0`, namely its smallest eigenvalue. -/
