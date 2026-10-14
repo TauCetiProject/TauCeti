@@ -42,6 +42,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   `TauCeti.loopChainToGroupAlgebra_eq_zero_of_mem`: it kills boundaries and elements of nonzero
   cohomological degree.
 * `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
+* `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
+  sees the component of dimension zero, and it is surjective.
 
 ## References
 
@@ -203,6 +205,26 @@ theorem loopChainToGroupAlgebra_lof_succ (k : ℕ)
     loopChainToGroupAlgebra B b R (cubicalChainLof (MooreLoopSpace B b) R (k + 1) y) = 0 :=
   (loopChainToGroupAlgebra_lof_component (k + 1) y).trans
     (loopChainToGroupAlgebraComponent_eq_zero k.succ_ne_zero y)
+
+/-- The degree-zero ring map only sees the component of dimension zero. -/
+theorem loopChainToGroupAlgebra_apply (a : loopChainAlgebra B b R) :
+    loopChainToGroupAlgebra B b R a = loopZeroChainToGroupAlgebra B b R (a 0) := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    cases n with
+    | zero => rw [← DirectSum.lof_eq_of R, loopChainToGroupAlgebra_lof_zero, DirectSum.lof_eq_of,
+        DirectSum.of_eq_same]
+    | succ k => rw [← DirectSum.lof_eq_of R, loopChainToGroupAlgebra_lof_succ, DirectSum.lof_eq_of,
+        DirectSum.of_eq_of_ne _ _ _ (k.succ_ne_zero).symm, map_zero]
+  | add x y hx hy => rw [map_add, hx, hy, DirectSum.add_apply, map_add]
+
+/-- The degree-zero ring map is surjective: every element of the group ring is the class of a
+`0`-chain. -/
+theorem loopChainToGroupAlgebra_surjective :
+    Function.Surjective (loopChainToGroupAlgebra B b R) := fun y ↦ by
+  obtain ⟨c, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (X := B) (x := b) (R := R) y
+  exact ⟨_, loopChainToGroupAlgebra_lof_zero c⟩
 
 /-- The degree-zero ring map kills boundaries. -/
 @[simp]

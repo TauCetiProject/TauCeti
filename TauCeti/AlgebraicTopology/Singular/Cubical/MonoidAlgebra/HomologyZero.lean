@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.ModuleCat
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
@@ -30,7 +31,9 @@ The Pontryagin product still concatenates loops in traversal order.
 The unital Pontryagin algebra structure on `loopHomologyZero` preserves its original module
 structure. `loopHomologyZeroAlgEquiv` identifies it with the group algebra, and
 `loopHomologyZeroπ_mul` and `loopHomologyZeroπ_one` identify the actual chain product and unit
-with the homology operations. This supplies the algebraic bridge from loop chains to classical
+with the homology operations. The projection `loopZeroChainToGroupAlgebra` of zero chains is
+surjective, and its kernel is exactly the boundaries (`loopZeroChainToGroupAlgebra_eq_zero_iff`).
+This supplies the algebraic bridge from loop chains to classical
 local coefficients. References: W. S. Massey, *Singular Homology Theory*,
 Chapter VII; Barraud--Damian--Humilière--Oancea, *Floer homology with DG coefficients*, §2.2,
 https://arxiv.org/html/2404.07953v3#S2.SS2.
@@ -226,6 +229,37 @@ theorem loopZeroChainToGroupAlgebra_boundary
     loopZeroChainToGroupAlgebra X x R
       (NormalizedCubicalChain.boundary (MooreLoopSpace X x) R 0 a) = 0 := by
   simp [loopZeroChainToGroupAlgebra, loopHomologyZeroπ_boundary]
+
+/-- **A zero chain of Moore loops has zero homology class exactly when it is a boundary.** -/
+theorem loopHomologyZeroπ_eq_zero_iff (a : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
+    loopHomologyZeroπ X x R a = 0 ↔
+      a ∈ LinearMap.range (NormalizedCubicalChain.boundary (MooreLoopSpace X x) R 0) := by
+  let K := (normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace X x))
+  refine ⟨fun ha ↦ ?_, fun ⟨b, hb⟩ ↦ hb ▸ loopHomologyZeroπ_boundary b⟩
+  -- The zero chains are the degree-zero objects of the cubical chain complex.
+  let a' : K.X 0 := a
+  obtain ⟨b, hb⟩ :=
+    (K.moduleCat_homologyπ_eq_zero_iff (m := 1) (by simp) (K.cycles₀Iso.inv a')).1 ha
+  refine ⟨b, ?_⟩
+  have h : (K.toCycles 1 0 ≫ K.iCycles 0) b = (K.cycles₀Iso.inv ≫ K.iCycles 0) a' := by
+    rw [ModuleCat.comp_apply, ModuleCat.comp_apply]
+    exact congrArg (K.iCycles 0) hb
+  rw [HomologicalComplex.toCycles_i, HomologicalComplex.iCyclesIso_inv_hom_id] at h
+  exact h
+
+/-- **A zero chain of Moore loops lies in the kernel of the projection to the group algebra exactly
+when it is a boundary.** -/
+theorem loopZeroChainToGroupAlgebra_eq_zero_iff
+    (a : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
+    loopZeroChainToGroupAlgebra X x R a = 0 ↔
+      a ∈ LinearMap.range (NormalizedCubicalChain.boundary (MooreLoopSpace X x) R 0) := by
+  rw [← loopHomologyZeroπ_eq_zero_iff, ← loopHomologyZeroIso_hom_π]
+  exact (loopHomologyZeroIso X x R).toLinearEquiv.map_eq_zero_iff
+
+/-- The projection of zero chains of Moore loops to the group algebra is surjective. -/
+theorem loopZeroChainToGroupAlgebra_surjective :
+    Function.Surjective (loopZeroChainToGroupAlgebra X x R) :=
+  (loopHomologyZeroIso X x R).toLinearEquiv.surjective.comp loopHomologyZeroπ_surjective
 
 /-- Projection to the group algebra preserves the Pontryagin product of arbitrary zero chains.
 Thus the linear identification on actual homology identifies its induced product with the

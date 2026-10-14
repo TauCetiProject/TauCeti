@@ -18,6 +18,9 @@ with differentials, equivalently the closed degree-zero elements of the Hom comp
 The category is linear over the ground ring, and `DGRightModuleCat.isoMk` builds an isomorphism
 from a linear equivalence preserving the grading and the differential. Forgetting the grading,
 differential, and algebra action gives a faithful linear functor to modules over the ground ring.
+A DG module is concentrated in degree zero (`DGRightModuleCat.IsConcentratedInDegreeZero`) when
+its pieces of nonzero degree vanish; then its differential is zero, and homogeneous algebra
+elements of nonzero degree and boundaries of the algebra act on it by zero.
 
 This is the ordinary category of DG modules, before taking chain-homotopy classes or
 inverting quasi-isomorphisms.
@@ -238,6 +241,86 @@ instance : (forgetToModuleCat.{uR, uA, uM} (h := h)).Linear R where
     apply LinearMap.ext
     intro x
     exact smul_apply r f x
+
+section DegreeZero
+
+open MulOpposite
+
+/-- A DG right module is **concentrated in degree zero** when its homogeneous pieces of nonzero
+degree vanish. -/
+def IsConcentratedInDegreeZero (M : DGRightModuleCat.{uR, uA, uM} h) : Prop :=
+  ∀ ⦃q : ℤ⦄, q ≠ 0 → M.grading q = ⊥
+
+/-- Unfolding lemma for `DGRightModuleCat.IsConcentratedInDegreeZero`. -/
+theorem isConcentratedInDegreeZero_iff {M : DGRightModuleCat.{uR, uA, uM} h} :
+    M.IsConcentratedInDegreeZero ↔ ∀ ⦃q : ℤ⦄, q ≠ 0 → M.grading q = ⊥ :=
+  Iff.rfl
+
+namespace IsConcentratedInDegreeZero
+
+/-- Every element of a DG module concentrated in degree zero has degree zero. -/
+theorem mem_grading_zero (hM : M.IsConcentratedInDegreeZero) (x : M) : x ∈ M.grading 0 := by
+  induction x using DirectSum.Decomposition.inductionOn M.grading with
+  | zero => exact zero_mem _
+  | @homogeneous q y =>
+    obtain ⟨y, hy⟩ := y
+    by_cases hq : q = 0
+    · exact hq ▸ hy
+    · rw [hM hq, Submodule.mem_bot] at hy
+      exact hy ▸ zero_mem _
+  | add y z hy hz => exact add_mem hy hz
+
+/-- In a DG module concentrated in degree zero, an element has degree `q` exactly when `q = 0` or
+the element is zero. -/
+theorem mem_grading_iff (hM : M.IsConcentratedInDegreeZero) {q : ℤ} {x : M} :
+    x ∈ M.grading q ↔ q = 0 ∨ x = 0 := by
+  by_cases hq : q = 0
+  · subst hq
+    simp [hM.mem_grading_zero x]
+  · rw [hM hq, Submodule.mem_bot]
+    simp [hq]
+
+/-- The differential of a DG module concentrated in degree zero vanishes, as it raises the degree
+by one. -/
+theorem differential_eq_zero (hM : M.IsConcentratedInDegreeZero) : M.differential = 0 := by
+  ext x
+  have hx := M.isDGRightModule.isHomogeneous.map_mem (hM.mem_grading_zero x)
+  rw [zero_add, hM one_ne_zero, Submodule.mem_bot] at hx
+  exact hx
+
+/-- On a DG module concentrated in degree zero, homogeneous elements of nonzero degree act by
+zero. -/
+theorem op_smul_eq_zero (hM : M.IsConcentratedInDegreeZero) {i : ℤ} (hi : i ≠ 0) {a : A}
+    (ha : a ∈ 𝒜 i) (x : M) : op a • x = 0 := by
+  have hax := SetLike.GradedSMul.smul_mem (A := (InternalGrading.ofDecomposition 𝒜).opposite.piece)
+    ((InternalGrading.op_mem_opposite_piece_iff _ _ _).2
+      (by rwa [InternalGrading.ofDecomposition_piece])) (hM.mem_grading_zero x)
+  rw [vadd_eq_add, add_zero, hM hi, Submodule.mem_bot] at hax
+  exact hax
+
+/-- On a DG module concentrated in degree zero, boundaries of the algebra act by zero: this is
+the Leibniz rule with the zero differential. -/
+theorem op_smul_d_eq_zero (hM : M.IsConcentratedInDegreeZero) (a : A) (x : M) :
+    op (d a) • x = 0 := by
+  have hl := M.isDGRightModule.leibniz (hM.mem_grading_zero x) a
+  rw [hM.differential_eq_zero] at hl
+  simpa using hl.symm
+
+/-- Being concentrated in degree zero is invariant under isomorphism. -/
+theorem of_iso (e : M ≅ N) (hM : M.IsConcentratedInDegreeZero) : N.IsConcentratedInDegreeZero :=
+  fun _ hq ↦ (Submodule.eq_bot_iff _).2 fun x hx ↦ by
+    have hex := GradedFunLike.map_mem e.inv hx
+    rw [hM hq, Submodule.mem_bot] at hex
+    rw [← id_apply N x, ← e.inv_hom_id, comp_apply, hex, map_zero]
+
+end IsConcentratedInDegreeZero
+
+/-- Being concentrated in degree zero is a property of DG modules closed under isomorphisms. -/
+instance : ObjectProperty.IsClosedUnderIsomorphisms
+    (IsConcentratedInDegreeZero (h := h)) :=
+  ⟨fun e hM ↦ hM.of_iso e⟩
+
+end DegreeZero
 
 end DGRightModuleCat
 

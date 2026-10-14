@@ -22,7 +22,8 @@ is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly r
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
 Consequently, when `K` is the union of subcomplexes `L i`, every homology class of `K` comes from
-some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).
+some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).  A cycle has zero homology
+class exactly when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`).
 
 For a cochain complex `K`, `K.cyclesShortComplex n` is the sequence
 `Zⁿ(K) ⟶ Kⁿ ⟶ Zⁿ⁺¹(K)`. It is short exact whenever `K` is exact in degree `n + 1`.
@@ -61,6 +62,18 @@ lemma moduleCat_iCycles_injective : Function.Injective (K.iCycles n) :=
 degree-`n` homology is surjective. -/
 lemma moduleCat_homologyπ_surjective : Function.Surjective (K.homologyπ n) :=
   (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+variable {n} in
+/-- A degree-`n` cycle of a homological complex of modules has zero homology class exactly when it
+is a boundary, the image of an element of the term of degree `c.prev n`. -/
+lemma moduleCat_homologyπ_eq_zero_iff {m : ι} (hm : c.prev n = m) (z : K.cycles n) :
+    K.homologyπ n z = 0 ↔ ∃ y : K.X m, K.toCycles m n y = z := by
+  refine ⟨(ShortComplex.moduleCat_exact_iff _).1 (ShortComplex.exact_of_g_is_cokernel
+    (ShortComplex.mk (K.toCycles m n) (K.homologyπ n) (K.toCycles_comp_homologyπ m n))
+    (K.homologyIsCokernel m n hm)) z, ?_⟩
+  rintro ⟨y, rfl⟩
+  rw [← ModuleCat.comp_apply, toCycles_comp_homologyπ]
+  rfl
 
 variable {n} in
 /-- An element `x` of `K.X n` killed by the differential `K.d n m` out of degree `n`, as a cycle
