@@ -36,6 +36,10 @@ computed by splitting `n + 1 = i + j` between the two sequences:
 
 In particular the supremum defining the merge is attained for antitone sequences.
 
+The merge is symmetric (`TauCeti.decreasingMerge_comm`) and antitone for bounded sequences
+(`TauCeti.antitone_decreasingMerge`), and for antitone sequences its zeroth term is
+`max (a 0) (b 0)` (`TauCeti.decreasingMerge_zero`).
+
 ## References
 
 * I. C. Gohberg, M. G. Krein, *Introduction to the Theory of Linear Nonselfadjoint Operators*,
@@ -91,6 +95,23 @@ theorem decreasingMerge_le {c : ℝ≥0}
     fun _ ↦ zero_le⟩ ?_
   rintro r ⟨q, hq, hr⟩
   exact h r q hq hr
+
+/-- The merge is symmetric in its two arguments. -/
+theorem decreasingMerge_comm (a b : ℕ → ℝ≥0) : decreasingMerge a b = decreasingMerge b a := by
+  have key {a b : ℕ → ℝ≥0} {n : ℕ} {r : ℝ≥0} :
+      (∃ q : Fin (n + 1) → ℕ ⊕ ℕ, Function.Injective q ∧ ∀ i, r ≤ Sum.elim a b (q i)) →
+        ∃ q : Fin (n + 1) → ℕ ⊕ ℕ, Function.Injective q ∧ ∀ i, r ≤ Sum.elim b a (q i) :=
+    fun ⟨q, hq, hr⟩ ↦ ⟨Sum.swap ∘ q, Sum.swap_leftInverse.injective.comp hq, fun i ↦
+      (hr i).trans_eq (congrFun Sum.elim_swap (q i)).symm⟩
+  ext1 n
+  rw [decreasingMerge_def, decreasingMerge_def]
+  exact congrArg sSup (Set.ext fun r ↦ ⟨key, key⟩)
+
+/-- The merge of two bounded sequences is antitone. -/
+theorem antitone_decreasingMerge (ha : BddAbove (Set.range a)) (hb : BddAbove (Set.range b)) :
+    Antitone (decreasingMerge a b) :=
+  antitone_nat_of_succ_le fun _ ↦ decreasingMerge_le fun _ _ hq hr ↦
+    le_decreasingMerge ha hb (hq.comp (Fin.castSucc_injective _)) fun i ↦ hr i.castSucc
 
 /-- For antitone sequences, a threshold is attained by `n + 1` distinct entries exactly when it
 bounds the first `i` terms of `a` and the first `j` terms of `b` for some `i + j = n + 1`. -/
@@ -165,6 +186,20 @@ theorem le_decreasingMerge_iff (ha : Antitone a) (hb : Antitone b) :
     exact ⟨i, j, hij, fun k hk ↦ h.trans (hi k hk), fun k hk ↦ h.trans (hj k hk)⟩
   · obtain ⟨q, hq, hr⟩ := (exists_injective_iff ha hb).mpr ⟨i, j, hij, hi, hj⟩
     exact le_decreasingMerge (hbdd ha) (hbdd hb) hq hr
+
+/-- For antitone sequences, the zeroth term of the merge is the larger of the zeroth terms. -/
+@[simp]
+theorem decreasingMerge_zero (ha : Antitone a) (hb : Antitone b) :
+    decreasingMerge a b 0 = max (a 0) (b 0) := by
+  refine le_antisymm ?_ (max_le ?_ ?_)
+  · obtain ⟨i, j, hij, hi, hj⟩ := (le_decreasingMerge_iff ha hb).mp le_rfl
+    rcases i with _ | i
+    · exact (hj 0 (by omega)).trans (le_max_right _ _)
+    · exact (hi 0 (by omega)).trans (le_max_left _ _)
+  · exact (le_decreasingMerge_iff ha hb).mpr ⟨1, 0, rfl, fun k hk ↦ by rw [Nat.lt_one_iff.mp hk],
+      fun _ h ↦ absurd h (Nat.not_lt_zero _)⟩
+  · exact (le_decreasingMerge_iff ha hb).mpr ⟨0, 1, rfl, fun _ h ↦ absurd h (Nat.not_lt_zero _),
+      fun k hk ↦ by rw [Nat.lt_one_iff.mp hk]⟩
 
 /-- For antitone sequences, `(a ⊔↓ b)ₙ < s` exactly when `aᵢ < s` and `bⱼ < s` for some
 `i + j ≤ n`. -/

@@ -17,6 +17,7 @@ Mathlib bounds each factor of `WithLp p (α × β)` by the whole (`WithLp.norm_f
 `WithLp.norm_snd_le`) and computes the norm exactly for `p = 1` and `p = 2`.  This file records
 the opposite bound, valid for every exponent `1 ≤ p ≤ ∞`: the `ℓ^p` norm of a pair is at most the
 sum of the norms of its two components.  For `p = 1` the bound is an identity for every pair.
+It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
 Mathlib's `norm_indicator_eq_indicator_norm` does for the norm.
@@ -24,19 +25,21 @@ Mathlib's `norm_indicator_eq_indicator_norm` does for the norm.
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
-orthogonal block sum `f ⊕ g`. Its rank is the sum of the ranks of `f` and `g`, and for `p = 2` its
-operator norm is the larger of the two operator norms.
+orthogonal block sum `f ⊕ g`. Its rank is the sum of the ranks of `f` and `g`, and its operator
+norm is the larger of the two operator norms.
 
 ## Main statements
 
 * `WithLp.prod_norm_le_norm_fst_add_norm_snd` — the bound `‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖`.
+* `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
+  `c * ‖x‖ ≤ d * ‖y‖`.
 * `TauCeti.snd_lt_one` — a unit vector in `E × ℝ` other than `(0, 1)` has last coordinate
   strictly less than `1`.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
   of the component.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
-* `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖` for `p = 2`.
+* `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
 -/
 
 public section
@@ -60,6 +63,29 @@ theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd (x : WithLp p (α × β
     _ = ‖x.fst‖ + ‖x.snd‖ := by
         rw [WithLp.idemFst_apply, WithLp.idemSnd_apply, WithLp.norm_toLp_fst,
           WithLp.norm_toLp_snd]
+
+/-- The `ℓ^p` norm of a pair is monotone and positively homogeneous in the norms of its
+components: a componentwise bound `c * ‖x.i‖ ≤ d * ‖y.i‖` with `0 ≤ c, d` gives
+`c * ‖x‖ ≤ d * ‖y‖`. -/
+theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddCommGroup γ]
+    [SeminormedAddCommGroup δ] {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) {x : WithLp p (α × β)}
+    {y : WithLp p (γ × δ)} (h₁ : c * ‖x.fst‖ ≤ d * ‖y.fst‖) (h₂ : c * ‖x.snd‖ ≤ d * ‖y.snd‖) :
+    c * ‖x‖ ≤ d * ‖y‖ := by
+  rcases p.dichotomy with rfl | hp
+  · rw [WithLp.prod_norm_eq_sup, WithLp.prod_norm_eq_sup, mul_max_of_nonneg _ _ hc,
+      mul_max_of_nonneg _ _ hd]
+    exact max_le_max h₁ h₂
+  -- For finite `p`, move the constant inside the `p`-th root and compare termwise.
+  have hp₀ : 0 < p.toReal := zero_lt_one.trans_le hp
+  have key {e a b : ℝ} (he : 0 ≤ e) (ha : 0 ≤ a) (hb : 0 ≤ b) :
+      e * (a ^ p.toReal + b ^ p.toReal) ^ (1 / p.toReal) =
+        ((e * a) ^ p.toReal + (e * b) ^ p.toReal) ^ (1 / p.toReal) := by
+    rw [Real.mul_rpow he ha, Real.mul_rpow he hb, ← mul_add,
+      Real.mul_rpow (Real.rpow_nonneg he _) (by positivity), ← Real.rpow_mul he,
+      mul_one_div_cancel hp₀.ne', Real.rpow_one]
+  rw [WithLp.prod_norm_eq_add hp₀, WithLp.prod_norm_eq_add hp₀, key hc (norm_nonneg _)
+    (norm_nonneg _), key hd (norm_nonneg _) (norm_nonneg _)]
+  gcongr
 
 section Real
 
@@ -152,39 +178,34 @@ theorem withLpProdMap_sub (f f' : α →L[𝕜] α') (g g' : β →L[𝕜] β') 
 
 end Seminormed
 
-section L2
+section Normed
 
-variable {𝕜 α β α' β' : Type*} [NontriviallyNormedField 𝕜]
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 α β α' β' : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup α] [NormedSpace 𝕜 α] [SeminormedAddCommGroup β] [NormedSpace 𝕜 β]
   [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α'] [SeminormedAddCommGroup β'] [NormedSpace 𝕜 β']
 
-/-- The operator norm of an `L²` block sum is the larger of the operator norms of the blocks. -/
+/-- The operator norm of an `L^p` block sum is the larger of the operator norms of the blocks. -/
+@[simp]
 theorem norm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
-    ‖f.withLpProdMap 2 g‖ = max ‖f‖ ‖g‖ := by
+    ‖f.withLpProdMap p g‖ = max ‖f‖ ‖g‖ := by
   refine le_antisymm (opNorm_le_bound _ (by positivity) fun x ↦ ?_) (max_le ?_ ?_)
-  · have h₁ : ‖f x.fst‖ ^ 2 ≤ max ‖f‖ ‖g‖ ^ 2 * ‖x.fst‖ ^ 2 := by
-      rw [← mul_pow]
-      exact pow_le_pow_left₀ (norm_nonneg _) ((f.le_opNorm _).trans
-        (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))) 2
-    have h₂ : ‖g x.snd‖ ^ 2 ≤ max ‖f‖ ‖g‖ ^ 2 * ‖x.snd‖ ^ 2 := by
-      rw [← mul_pow]
-      exact pow_le_pow_left₀ (norm_nonneg _) ((g.le_opNorm _).trans
-        (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))) 2
-    refine le_of_sq_le_sq ?_ (by positivity)
-    rw [withLpProdMap_apply, WithLp.prod_norm_sq_eq_of_L2, mul_pow, WithLp.prod_norm_sq_eq_of_L2]
-    simp only [WithLp.toLp_fst, WithLp.toLp_snd]
-    linarith
+  · rw [← one_mul ‖_‖]
+    refine WithLp.prod_mul_norm_le_mul_norm zero_le_one (by positivity) ?_ ?_ <;>
+      rw [withLpProdMap_apply, one_mul]
+    · exact (f.le_opNorm _).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+    · exact (g.le_opNorm _).trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))
   · refine opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
-    simpa using (f.withLpProdMap 2 g).le_opNorm (WithLp.toLp 2 (x, 0))
+    simpa using (f.withLpProdMap p g).le_opNorm (WithLp.toLp p (x, 0))
   · refine opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
-    simpa using (f.withLpProdMap 2 g).le_opNorm (WithLp.toLp 2 (0, x))
+    simpa using (f.withLpProdMap p g).le_opNorm (WithLp.toLp p (0, x))
 
-/-- The operator norm of an `L²` block sum is the larger of the operator norms of the blocks,
+/-- The operator norm of an `L^p` block sum is the larger of the operator norms of the blocks,
 stated for `‖·‖₊`. -/
+@[simp]
 theorem nnnorm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
-    ‖f.withLpProdMap 2 g‖₊ = max ‖f‖₊ ‖g‖₊ :=
-  NNReal.eq <| by simpa using norm_withLpProdMap f g
+    ‖f.withLpProdMap p g‖₊ = max ‖f‖₊ ‖g‖₊ :=
+  NNReal.eq <| by simp
 
-end L2
+end Normed
 
 end ContinuousLinearMap
