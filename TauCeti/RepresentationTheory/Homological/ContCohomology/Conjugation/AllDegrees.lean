@@ -135,10 +135,15 @@ theorem conjMap_def (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom) (n : �
       _root_.ContinuousCohomology.map (conjHom U V g hVU) (conjPair U V M g hVU) n :=
   (rfl)
 
+-- The subgroup equation is proved in the statement, not a hypothesis: `simpNF` adds hypotheses to
+-- the simp set, and `U = U.map _` then loops while discharging `U.Normal` for the simp lemma
+-- `conjMap_eq_conjNormalMap`.
 /-- Conjugation by `1` is the identity of `Hⁿ(U, M)`. -/
 @[simp]
-theorem conjMap_one (hU : U = U.map (MulAut.conj (1 : G)).toMonoidHom) (n : ℕ) :
-    conjMap U U M 1 hU n = 𝟙 _ := by
+theorem conjMap_one (n : ℕ) :
+    conjMap U U M 1 (by rw [map_one]; exact (Subgroup.map_id U).symm) n = 𝟙 _ := by
+  have hU : U = U.map (MulAut.conj (1 : G)).toMonoidHom := by
+    rw [map_one]; exact (Subgroup.map_id U).symm
   rw [conjMap_def, ← _root_.ContinuousCohomology.map_id (ofDiscreteModule ℤ U M) n]
   have hφ : conjHom U U 1 hU = ContinuousMonoidHom.id U :=
     ContinuousMonoidHom.ext fun u => Subtype.ext (by simp)
@@ -157,8 +162,9 @@ theorem conjMap_comp (g h : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom)
   have hφ : (conjHom U V g hVU).comp (conjHom V W h hWV) = conjHom U W (h * g) hWU :=
     ContinuousMonoidHom.ext fun w => Subtype.ext (by simp [mul_assoc])
   refine map_congr_of_hom_apply hφ _ _ (fun (m : M) => ?_) n
-  -- Both coefficient maps are the action of `h * g` on `M`; the composite of `TopRep` morphisms
-  -- evaluates as the composite of the underlying maps.
+  -- Both coefficient maps are the action of `h * g` on `M`. `map_comp` types the composite
+  -- `(resFunctor _).map _ ≫ _` at `TopRep.res (φ.comp ψ) _`, so this goal is not type-correct at
+  -- instance transparency and `TopRep.comp_apply` cannot rewrite it; `change` evaluates it.
   change (conjPair V W M h hWV).hom ((conjPair U V M g hVU).hom m) = (conjPair U W M _ hWU).hom m
   rw [conjPair_hom_apply, conjPair_hom_apply, conjPair_hom_apply, smul_smul]
 
@@ -170,7 +176,7 @@ instance isIso_conjMap (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom) (n 
   have hid (W : Subgroup G) (k : G) (hk : k = 1) (hW : W = W.map (MulAut.conj k).toMonoidHom) :
       conjMap W W M k hW n = 𝟙 _ := by
     subst hk
-    exact conjMap_one W M hW n
+    exact conjMap_one W M n
   have hUV : U = V.map (MulAut.conj g⁻¹).toMonoidHom := by
     rw [hVU, Subgroup.map_conj_map_conj, inv_mul_cancel, map_one]
     exact (Subgroup.map_id U).symm
@@ -184,6 +190,7 @@ instance isIso_conjMap (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom) (n 
 
 /-- **Conjugation on a normal subgroup** is `conjNormalMap`: for a normal subgroup `V`,
 conjugation from `V` to `gVg⁻¹ = V` is the endomorphism `(g)_*` of `Hⁿ(V, M)`. -/
+@[simp]
 theorem conjMap_eq_conjNormalMap [V.Normal] (g : G)
     (hV : V = V.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
     conjMap V V M g hV n = conjNormalMap V M g n := by
@@ -210,8 +217,8 @@ theorem conjMap_naturality (N : Type u) [AddCommGroup N] [TopologicalSpace N]
         conjMap U V N g hVU n := by
   refine map_comp_coeffMap _ _ _ _ _ ?_ n
   refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : M) => ?_)
-  -- Both composites of `TopRep` morphisms evaluate as the composites of their underlying maps
-  -- (`TopRep.comp_apply`, by `rfl`), and the coefficient map of `f` evaluates as `f`.
+  -- Both composites of `TopRep` morphisms evaluate as the composites of their underlying maps,
+  -- by `change` as in `conjMap_comp`, and the coefficient map of `f` evaluates as `f`.
   change (conjPair U V N g hVU).hom (f m) =
     (ofDiscreteModuleMap (G := V) f.toAddMonoidHom.toIntLinearMap
       fun v m => _root_.map_smul f (v : G) m).hom ((conjPair U V M g hVU).hom m)
@@ -238,23 +245,23 @@ theorem conjMap_comp_resLE {U' V' : Subgroup G} (hU'U : U' ≤ U) (hV'V : V' ≤
       (_root_.ContinuousCohomology.map_comp (X := ofDiscreteModule ℤ U M)
         (ContinuousMonoidHom.subgroupInclusion hU'U) _ (𝟙 _) (conjPair U' V' M g hV'U') n))
   -- Both coefficient maps are the action of `g` on `M`; the composites of `TopRep` morphisms
-  -- evaluate as the composites of the underlying maps.
+  -- evaluate as the composites of the underlying maps, by `change` as in `conjMap_comp`.
   change (conjPair U V M g hVU).hom m = (conjPair U' V' M g hV'U').hom m
   rw [conjPair_hom_apply, conjPair_hom_apply]
-
-section ContinuousAction
-
-variable [ContinuousSMul G M]
 
 /-- **Conjugation by an element of the subgroup is trivial**: for `g ∈ U`, conjugation
 `(g)_* : Hⁿ(U, M) ⟶ Hⁿ(gUg⁻¹, M) = Hⁿ(U, M)` is the identity. This is the triviality of inner
 automorphisms on continuous cohomology, `map_eq_id_of_inner`, for the group `U`. -/
-theorem conjMap_eq_id_of_mem [LocallyCompactSpace U] {g : G} (hg : g ∈ U)
+theorem conjMap_eq_id_of_mem [ContinuousSMul U M] [LocallyCompactSpace U] {g : G} (hg : g ∈ U)
     (hU : U = U.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
     conjMap U U M g hU n = 𝟙 _ :=
   map_eq_id_of_inner (⟨g, hg⟩ : U) (conjHom U U g hU) (fun u => Subtype.ext (by simp))
     (conjPair U U M g hU) (conjPair_hom_apply U U M g hU)
     (ofDiscreteModule_isSmoothDiscrete ℤ U M) n
+
+section ContinuousAction
+
+variable [ContinuousSMul G M]
 
 /-- **Restriction from `G` followed by conjugation is restriction**: for `V = gUg⁻¹`, restricting a
 class of `Hⁿ(G, M)` to `U` and conjugating by `g` gives its restriction to `V`, because conjugation
@@ -291,7 +298,7 @@ theorem res_comp_conjMap [LocallyCompactSpace G] (g : G)
       (_root_.ContinuousCohomology.map_comp (X := ofDiscreteModule ℤ G M) c
         (ContinuousMonoidHom.subgroupSubtype V) B (𝟙 _) n))
   -- Both coefficient maps are the action of `g` on `M`; the composites of `TopRep` morphisms
-  -- evaluate as the composites of the underlying maps.
+  -- evaluate as the composites of the underlying maps, by `change` as in `conjMap_comp`.
   change (conjPair U V M g hVU).hom m = B.hom m
   exact (conjPair_hom_apply U V M g hVU m).trans (hBm m).symm
 
