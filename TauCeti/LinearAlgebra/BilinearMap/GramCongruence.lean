@@ -33,6 +33,8 @@ argument. This gives the involution-transpose formula for a sesquilinear form.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrix`: the change-of-basis law, oriented as Mathlib's
   is, with the change-of-basis matrices pushed into the codomain. The codomain need only be a
   possibly noncommutative semiring.
+* `LinearMap.toMatrix₂Aux_compl₁₂`: the matrix of such a map composed with linear maps on both
+  sides, with the matrices of the linear maps pushed into the codomain.
 * `LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux`: for a map on a single `ℤ`-module, the signed
   determinant of the matrix is independent of the basis, and of its index type. An integral
   change-of-basis matrix has determinant `±1`, so the congruence above multiplies the determinant
@@ -141,6 +143,31 @@ theorem toMatrix₂Aux_mul_map_basis_toMatrix [Fintype ι₁] [Fintype ι₂] (B
   rw [Finsupp.sum_fintype _ _ fun _ ↦ by simp]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
   -- The second coordinate's scalar has to cross `B (b₁ k) (b₂ l)`, which `Algebra.commutes` does.
+  simp only [Algebra.smul_def]
+  rw [mul_assoc, ← Algebra.commutes]
+
+variable {M₁' M₂' : Type*} [AddCommMonoid M₁'] [Module R M₁'] [AddCommMonoid M₂'] [Module R M₂']
+
+/-- **The matrix of a bilinear map valued outside the scalars, composed with linear maps on both
+sides.** The matrices of the linear maps enter through `algebraMap R S`. Compare
+`LinearMap.toMatrix₂_compl₁₂`, which is the case `S = R`. -/
+theorem toMatrix₂Aux_compl₁₂ [Fintype ι₁] [Fintype ι₂] [Fintype ι₁'] [DecidableEq ι₁']
+    [Fintype ι₂'] [DecidableEq ι₂'] (B : M₁ →ₗ[R] M₂ →ₗ[R] S) (b₁ : Module.Basis ι₁ R M₁)
+    (b₂ : Module.Basis ι₂ R M₂) (b₁' : Module.Basis ι₁' R M₁') (b₂' : Module.Basis ι₂' R M₂')
+    (l : M₁' →ₗ[R] M₁) (r : M₂' →ₗ[R] M₂) :
+    toMatrix₂Aux R (b₁' : ι₁' → M₁') (b₂' : ι₂' → M₂') (B.compl₁₂ l r) =
+      ((toMatrix b₁' b₁ l).map (algebraMap R S))ᵀ * toMatrix₂Aux R (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
+        (toMatrix b₂' b₂ r).map (algebraMap R S) := by
+  ext i j
+  simp only [toMatrix₂Aux_apply, compl₁₂_apply, Matrix.mul_apply, Matrix.transpose_apply,
+    Matrix.map_apply, LinearMap.toMatrix_apply, Finset.sum_mul]
+  -- As for `toMatrix₂Aux_mul_map_basis_toMatrix`, expand over `b₁` and `b₂` and align the sums.
+  rw [← LinearMap.sum_repr_mul_repr_mul b₁ b₂ (l (b₁' i)) (r (b₂' j)),
+    Finsupp.sum_fintype _ _ fun _ ↦ by simp]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [Finsupp.sum_fintype _ _ fun _ ↦ by simp]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
   simp only [Algebra.smul_def]
   rw [mul_assoc, ← Algebra.commutes]
 

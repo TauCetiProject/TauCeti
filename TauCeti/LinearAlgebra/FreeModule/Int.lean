@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 
 /-!
@@ -16,11 +17,16 @@ Dividing by `f` gives a map `g : N → M` such that `f ∘ g` and `g ∘ f` are 
 `c`: an inverse of `f` up to a nonzero scalar. Over `ℚ` the map `f` becomes invertible with
 inverse `c⁻¹ • g`; over `ℤ` an inverse up to a scalar is the best available.
 
+The index of the image is the absolute value of the determinant of `f` in any bases of `M` and
+`N` indexed by the same type.
+
 ## Main results
 
 * `LinearMap.exists_comp_eq_nsmul_id_of_injective`: an injective map between finitely generated
   free abelian groups of equal rank has an inverse up to multiplication by a nonzero natural
   number.
+* `LinearMap.index_range_eq_natAbs_det_toMatrix`: the index of the image of such a map is the
+  absolute value of the determinant of its matrix.
 -/
 
 public section
@@ -48,5 +54,27 @@ theorem exists_comp_eq_nsmul_id_of_injective {f : M →ₗ[ℤ] N} (hf : Functio
   ext x
   apply hf
   simpa using congr($hfg (f x))
+
+omit [Module.Free ℤ N] [Module.Finite ℤ N] in
+/-- **The index of the image of an injective map is the absolute value of its determinant**: for
+bases `b` of `M` and `c` of `N` indexed by the same finite type, the image of an injective
+`ℤ`-linear map `f : M → N` has index `|det (toMatrix b c f)|`. -/
+theorem index_range_eq_natAbs_det_toMatrix {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℤ M) (c : Module.Basis ι ℤ N) {f : M →ₗ[ℤ] N}
+    (hf : Function.Injective f) :
+    (range f).toAddSubgroup.index = (toMatrix b c f).det.natAbs := by
+  have : Module.Free ℤ N := .of_basis c
+  have : Module.Finite ℤ N := .of_basis c
+  have h := Submodule.natAbs_det_basis_change c (range f) (b.map (LinearEquiv.ofInjective f hf))
+  have hv : ((↑) ∘ b.map (LinearEquiv.ofInjective f hf) : ι → N) = f ∘ b := by
+    ext i
+    simp
+  have hmat : toMatrix b c f = c.toMatrix (f ∘ b) := by
+    ext i j
+    simp [toMatrix_apply, Module.Basis.toMatrix_apply]
+  rw [hv, Module.Basis.det_apply] at h
+  -- `AddSubgroup.index` is the cardinality of the same quotient, read as an additive group
+  rw [hmat]
+  exact h.symm
 
 end LinearMap
