@@ -51,6 +51,8 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 * `TauCeti.eq_centeredNegativeGradientFlow_of_isIntegralCurveOn`: uniqueness in displacement
   coordinates on a time set containing the interval from zero to the chosen time.
 * `TauCeti.negativeGradientFlow_congr`: it does not depend on the chosen Lipschitz bound.
+* `TauCeti.negativeGradientFlow_apply_eq_of_gradient_eq`: negative-gradient flows agree at time `t`
+  on `y` when the gradients agree along the orbit segment from `0` to `t`.
 * `TauCeti.forall_negativeGradientFlow_eq_self_iff`: its rest points are the zeros of `∇ f`.
 * `TauCeti.gradient_negativeGradientFlow_eq_zero_iff`: an orbit meets a zero of `∇ f` only if it
   starts at one.
