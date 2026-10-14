@@ -24,13 +24,6 @@ formula, in which every double coset is a single coset and every Mackey subgroup
 In degree one on the explicit model it is
 `TauCeti.ContCohomology.explicitRes1_explicitCor1_of_normal`.
 
-It is proved on coinduced modules. Shapiro's isomorphism turns corestriction into the coefficient
-map of the trace `Coind_U^G M → M`, restriction into that of the unit `M → Coind_U^G M`
-(`TauCeti.ContinuousCohomology.coeffMap_unit_comp_shapiroMap`), and each `(g)_*` into that of the
-conjugation `f ↦ (x ↦ g • f (g⁻¹ x))` of `Coind_U^G M`
-(`TauCeti.ContinuousCohomology.shapiroMap_comp_conjNormalMap`). The trace followed by the unit is
-the sum of these conjugations, by computing the trace along a translate of the transversal.
-
 ## Main results
 
 * `TauCeti.ContinuousCohomology.corestriction_comp_res_eq_sum_conjNormalMap`: for an open normal
@@ -62,22 +55,26 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
   (hU : IsOpen (U : Set G)) [U.FiniteIndex]
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+  [U.FiniteIndex] in
+/-- A normal subgroup `U` lies in its conjugate `gUg⁻¹`, stated with `MulEquiv.toMonoidHom` as
+`DiscreteCoind.conj` takes it; Mathlib's `Subgroup.Normal.map_conj_eq` uses the `MonoidHomClass`
+coercion instead, which is the same map up to definitional unfolding. -/
+private theorem le_map_conj_toMonoidHom (g : G) : U ≤ U.map (MulAut.conj g).toMonoidHom :=
+  (Subgroup.Normal.map_conj_eq U g).ge
+
 /-- The conjugation `f ↦ (x ↦ g • f (g⁻¹ x))` of `Coind_U^G M`, for normal `U`, as an endomorphism
 of its coefficient object. Shapiro's map carries its coefficient map to `(g)_*`
 (`shapiroMap_comp_conjNormalMap`). -/
 private noncomputable abbrev conjCoind (g : G) :
     ofDiscreteModule ℤ G (DiscreteCoind G U M) ⟶ ofDiscreteModule ℤ G (DiscreteCoind G U M) :=
   ofDiscreteModuleMap
-    (DiscreteCoind.conj U U M g (show U.map (MulAut.conj g).toMonoidHom = U from
-      Subgroup.Normal.map_conj_eq U g).ge).toAddMonoidHom.toIntLinearMap
-    fun h F => _root_.map_smul (DiscreteCoind.conj U U M g
-      (show U.map (MulAut.conj g).toMonoidHom = U from Subgroup.Normal.map_conj_eq U g).ge) h F
+    (DiscreteCoind.conj U U M g (le_map_conj_toMonoidHom U g)).toAddMonoidHom.toIntLinearMap
+    fun h F => _root_.map_smul (DiscreteCoind.conj U U M g (le_map_conj_toMonoidHom U g)) h F
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- **The trace followed by the unit is the norm of conjugation** on `Coind_U^G M`, for normal `U`
-and any transversal `t` of `G ⧸ U`. At `y : G`, the unit of the trace of `Φ` is
-`y • ∑ t' x • Φ (t' x)⁻¹`; along the transversal `t' x = y⁻¹ t (y x)` this is
-`∑ t (y x) • Φ (t (y x)⁻¹ y)`, which is `∑ t x • Φ (t x⁻¹ y)` after reindexing by `y`. -/
+and any transversal `t` of `G ⧸ U`. -/
 private theorem trace_comp_unit_eq_sum_conjCoind (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (t x : G ⧸ U) = x) :
     ofDiscreteModuleMap (DiscreteCoind.trace G U M).toAddMonoidHom.toIntLinearMap

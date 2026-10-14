@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.IndexTwo.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Normal
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.TrivialF2
 
 /-!
 # The conjugate class at index two, in every degree
@@ -45,6 +44,8 @@ conjugations over a transversal (`TauCeti.trivialF2CorMap_comp_trivialF2ResMap_e
   the explicit conjugation `TauCeti.ContCohomology.evensConj1`.
 * `OpenSubgroup.evensConj_eq_trivialF2Map`: `evensConj` is pullback along conjugation by any
   element outside `U`, in every degree.
+* `OpenSubgroup.evensConj_eq_trivialF2Map_conjNormal`: the same, through the canonical
+  conjugation `ContinuousAut.conjNormal s⁻¹` of `U`.
 
 ## References
 
@@ -231,14 +232,24 @@ theorem evensConj_eq_trivialF2Map (s : G) (hs : s ∉ U) (κ : U.toSubgroup →�
     · simp [t, hx]
     · rw [hcoset x hx]
       simp [t, hs]
+  -- The values of the transversal `t` (an `if` on the coset) and the conjugation by `1⁻¹`, which
+  -- is the identity of `U` as a continuous homomorphism (the form `trivialF2Map_id` rewrites).
+  have ht1 : t ((1 : G) : G ⧸ U.toSubgroup) = 1 := by simp [t]
+  have hts : t (s : G ⧸ U.toSubgroup) = s := by simp [t, hs]
+  have hid : ContinuousMonoidHom.toContinuousMonoidHom
+      (ContinuousAut.conjNormal (1 : G)⁻¹ : ContinuousAut U.toSubgroup) =
+        ContinuousMonoidHom.id _ :=
+    ContinuousMonoidHom.ext fun u => Subtype.ext (by simp)
   -- `res ∘ cor` is the sum of the pullbacks along conjugation by `1` and by `s`.
   rw [evensConj_def, trivialF2CorMap_comp_trivialF2ResMap_eq_sum U.toSubgroup U.isOpen t ht n,
-    Fintype.sum_eq_add _ _ hne fun x hx => absurd (hcoset x hx.1) hx.2,
-    show t ((1 : G) : G ⧸ U.toSubgroup) = 1 by simp [t],
-    show t (s : G ⧸ U.toSubgroup) = s by simp [t, hs],
-    show ContinuousMonoidHom.toContinuousMonoidHom
-        (ContinuousAut.conjNormal (1 : G)⁻¹ : ContinuousAut U.toSubgroup) =
-      ContinuousMonoidHom.id _ from ContinuousMonoidHom.ext fun u => Subtype.ext (by simp),
+    Fintype.sum_eq_add _ _ hne fun x hx => absurd (hcoset x hx.1) hx.2, ht1, hts, hid,
     trivialF2Map_id, add_sub_cancel_left]
+
+/-- **`evensConj` is the conjugation `(s)_*` by any `s ∉ U`**, in every degree, stated with the
+canonical conjugation `ContinuousAut.conjNormal s⁻¹ : u ↦ s⁻¹ u s` of the normal subgroup `U`. -/
+theorem evensConj_eq_trivialF2Map_conjNormal [U.toSubgroup.Normal] (s : G) (hs : s ∉ U) (n : ℕ) :
+    U.evensConj hU n = trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom
+      (ContinuousAut.conjNormal s⁻¹ : ContinuousAut U.toSubgroup)) n :=
+  evensConj_eq_trivialF2Map U hU s hs _ (fun u => by simp) n
 
 end OpenSubgroup
