@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.EdgeFactor
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Basic
+import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
 import Mathlib.Tactic.LinearCombination
 
 /-!

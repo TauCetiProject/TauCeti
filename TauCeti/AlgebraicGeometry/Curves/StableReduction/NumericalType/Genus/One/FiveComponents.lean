@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.EdgeFactor
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Basic
+import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -121,7 +122,7 @@ theorem isGenusOneFivePathShape_iff {a b c d e : T.Component} :
 /-- The factor patterns when the first edge has factors `(1, 1)`. -/
 private lemma fivePath_factor_cases_one_one
     {m₀ m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
-    (hm₀ : 0 < m₀) (_hm₁ : 0 < m₁) (_hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
+    (hm₀ : 0 < m₀) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
     (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
     (h₃ : IsGenusOneEdgeFactor p₃ q₃) (e₀ : m₁ = 2 * m₀)
     (e₁ : m₀ + m₂ * p₁ = 2 * m₁)
@@ -140,7 +141,7 @@ private lemma fivePath_factor_cases_one_one
 /-- The factor patterns when the first edge has factors `(2, 1)`. -/
 private lemma fivePath_factor_cases_two_one
     {m₀ m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
-    (_hm₀ : 0 < m₀) (_hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
+    (hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
     (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
     (h₃ : IsGenusOneEdgeFactor p₃ q₃) (e₀ : 2 * m₁ = 2 * m₀)
     (e₁ : m₀ + m₂ * p₁ = 2 * m₁) (e₂ : m₁ * q₁ + m₃ * p₂ = 2 * m₂)
@@ -156,7 +157,7 @@ private lemma fivePath_factor_cases_two_one
 /-- Triple factors at the first edge are incompatible with a positive kernel vector. -/
 private lemma fivePath_factor_cases_triple_false
     {m₀ m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q₃ r s : ℤ}
-    (hm₀ : 0 < m₀) (_hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
+    (hm₀ : 0 < m₀) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
     (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
     (h₃ : IsGenusOneEdgeFactor p₃ q₃) (e₀ : s * m₁ = 2 * m₀)
     (e₁ : r * m₀ + m₂ * p₁ = 2 * m₁) (e₂ : m₁ * q₁ + m₃ * p₂ = 2 * m₂)
@@ -173,7 +174,7 @@ private lemma fivePath_factor_cases_triple_false
 five-component path. Reversal identifies them with the five unoriented shapes. -/
 private lemma fivePath_factor_cases
     {m₀ m₁ m₂ m₃ m₄ p₀ q₀ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
-    (hm₀ : 0 < m₀) (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
+    (hm₀ : 0 < m₀) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
     (h₀ : IsGenusOneEdgeFactor p₀ q₀) (h₁ : IsGenusOneEdgeFactor p₁ q₁)
     (h₂ : IsGenusOneEdgeFactor p₂ q₂) (h₃ : IsGenusOneEdgeFactor p₃ q₃)
     (e₀ : m₁ * p₀ = 2 * m₀) (e₁ : m₀ * q₀ + m₂ * p₁ = 2 * m₁)
@@ -190,22 +191,22 @@ private lemma fivePath_factor_cases
   rw [isGenusOneEdgeFactor_iff] at h₀
   rcases h₀ with h₀ | h₀ | h₀ | h₀ | h₀
   · rcases h₀ with ⟨rfl, rfl⟩
-    obtain h | h | h | h := fivePath_factor_cases_one_one hm₀ hm₁ hm₂ hm₃ hm₄
+    obtain h | h | h | h := fivePath_factor_cases_one_one hm₀ hm₃ hm₄
       h₁ h₂ h₃ (by omega) (by omega) e₂ e₃ e₄ <;>
       rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ <;> omega
   · rcases h₀ with ⟨rfl, rfl⟩
-    obtain h | h := fivePath_factor_cases_two_one hm₀ hm₁ hm₂ hm₃ hm₄
+    obtain h | h := fivePath_factor_cases_two_one (m₀ := m₀) hm₂ hm₃ hm₄
       h₁ h₂ h₃ (by omega) (by omega) e₂ e₃ e₄ <;>
       rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ <;> omega
   · rcases h₀ with ⟨rfl, rfl⟩
-    obtain h | h := fivePath_factor_cases_two_one (m₀ := m₁) hm₁ hm₁ hm₂ hm₃ hm₄
+    obtain h | h := fivePath_factor_cases_two_one (m₀ := m₁) hm₂ hm₃ hm₄
       h₁ h₂ h₃ rfl (by omega) e₂ e₃ e₄ <;>
       rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ <;> omega
   · rcases h₀ with ⟨rfl, rfl⟩
-    exact (fivePath_factor_cases_triple_false hm₀ hm₁ hm₂ hm₃ hm₄ h₁ h₂ h₃
+    exact (fivePath_factor_cases_triple_false hm₀ hm₂ hm₃ hm₄ h₁ h₂ h₃
       (by omega) (by omega) e₂ e₃ e₄ (Or.inl ⟨rfl, rfl⟩)).elim
   · rcases h₀ with ⟨rfl, rfl⟩
-    exact (fivePath_factor_cases_triple_false hm₀ hm₁ hm₂ hm₃ hm₄ h₁ h₂ h₃
+    exact (fivePath_factor_cases_triple_false hm₀ hm₂ hm₃ hm₄ h₁ h₂ h₃
       (by omega) (by omega) e₂ e₃ e₄ (Or.inr ⟨rfl, rfl⟩)).elim
 
 /-- The fibre relations at the five components of a path, after substituting the
@@ -319,7 +320,7 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
   have hed := T.intersection_comm d e
   -- Each of the eight oriented factor patterns is one of the five shapes, read along the path
   -- (the first five) or along its reversal (the last three).
-  rcases fivePath_factor_cases (by simp) (by simp) (by simp) (by simp) (by simp)
+  rcases fivePath_factor_cases (by simp) (by simp) (by simp) (by simp)
     hpq₀ hpq₁ hpq₂ hpq₃ e₀ e₁ e₂ e₃ e₄ with
     h | h | h | h | h | h | h | h <;>
       rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ <;>
