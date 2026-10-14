@@ -56,6 +56,8 @@ nonzero (`EllipticCurveGeom.isFinite_exactOrderLocus`). This is the relative rep
   locus over which the finite locally free closed subscheme `V(D)` of `E` is a subgroup scheme.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exactOrderLocus E N`: the ideal sheaf on `E` of the
   exact-order locus, the closed subscheme of `E` representing points of exact order `N`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exactOrderLocusToTorsion`: the closed immersion of
+  the exact-order locus into `E[N]`.
 
 ## Main results
 
@@ -249,26 +251,49 @@ theorem subschemeι_exactOrderLocus_comp_mulBy (N : ℕ) :
   simp only [hom_one_left, Category.assoc, h0, reassoc_of% hP]
   simp
 
+/-- The canonical morphism from the exact-order locus to `E[N]`, induced by the fact that the
+exact-order locus is killed by `N`. -/
+noncomputable def exactOrderLocusToTorsion (N : ℕ) :
+    (E.exactOrderLocus N).subscheme ⟶ (E.torsion N).X.left :=
+  (E.isPullback_torsion N).lift _ _ (E.subschemeι_exactOrderLocus_comp_mulBy N)
+
+/-- The morphism from the exact-order locus to `E[N]`, followed by the inclusion into `E`, is the
+inclusion of the exact-order locus into `E`. -/
+@[reassoc (attr := simp)]
+theorem exactOrderLocusToTorsion_comp_torsionι (N : ℕ) :
+    E.exactOrderLocusToTorsion N ≫ (E.torsionι N).left =
+      (E.exactOrderLocus N).subschemeι :=
+  (E.isPullback_torsion N).lift_fst _ _ _
+
+/-- The morphism from the exact-order locus to `E[N]` lies over `S`. -/
+@[reassoc (attr := simp)]
+theorem exactOrderLocusToTorsion_comp_structureMap (N : ℕ) :
+    E.exactOrderLocusToTorsion N ≫ (E.torsion N).X.hom =
+      (E.exactOrderLocus N).subschemeι ≫ E.structureMap :=
+  (E.isPullback_torsion N).lift_snd _ _ _
+
+/-- The canonical morphism from the exact-order locus to `E[N]` is a closed immersion. -/
+instance isClosedImmersion_exactOrderLocusToTorsion (N : ℕ) :
+    IsClosedImmersion (E.exactOrderLocusToTorsion N) := by
+  have : IsClosedImmersion
+      (E.exactOrderLocusToTorsion N ≫ (E.torsionι N).left) := by
+    rw [exactOrderLocusToTorsion_comp_torsionι]
+    infer_instance
+  exact .of_comp_isClosedImmersion _ (E.torsionι N).left
+
 /-- **The exact-order locus lies in `E[N]`**: the ideal sheaf of `E[N]` is contained in that of the
 exact-order locus. The order on ideal sheaves reverses containment of their closed subschemes. -/
 theorem ker_torsionι_le_exactOrderLocus (N : ℕ) :
     (E.torsionι N).left.ker ≤ E.exactOrderLocus N := by
-  have h := ((E.isPullback_torsion N).lift _ _
-    (E.subschemeι_exactOrderLocus_comp_mulBy N)).le_ker_comp (E.torsionι N).left
-  rwa [IsPullback.lift_fst, ker_subschemeι] at h
+  have h := (E.exactOrderLocusToTorsion N).le_ker_comp (E.torsionι N).left
+  rwa [exactOrderLocusToTorsion_comp_torsionι, ker_subschemeι] at h
 
 /-- For `N ≠ 0`, the exact-order locus is **finite over `S`**: it is a closed subscheme of `E[N]`,
 which is finite over `S`. -/
 instance isFinite_exactOrderLocus (N : ℕ) [NeZero N] :
     IsFinite ((E.exactOrderLocus N).subschemeι ≫ E.structureMap) := by
-  let j := (E.isPullback_torsion N).lift _ _ (E.subschemeι_exactOrderLocus_comp_mulBy N)
-  have : IsClosedImmersion j := by
-    have : IsClosedImmersion (j ≫ (E.torsionι N).left) := by
-      rw [IsPullback.lift_fst]
-      infer_instance
-    exact .of_comp_isClosedImmersion j (E.torsionι N).left
   have := E.isFinite_torsion_hom (n := N) (by exact_mod_cast NeZero.ne N)
-  rw [← (E.isPullback_torsion N).lift_snd _ _ (E.subschemeι_exactOrderLocus_comp_mulBy N)]
+  rw [← exactOrderLocusToTorsion_comp_structureMap]
   infer_instance
 
 /-! ### Points of the exact-order locus -/

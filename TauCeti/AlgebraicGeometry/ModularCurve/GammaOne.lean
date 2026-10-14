@@ -147,12 +147,25 @@ noncomputable def gammaOneBaseChangeEquiv (X : EllObj B) (T : Over X.base) :
 /-- The morphism to the exact-order locus of a `[Γ₁(N)]`-structure `α` on `E_T`, followed by the
 inclusion of the exact-order locus into `E`, is the point of `α` followed by the projection
 `E_T ⟶ E`. -/
+@[reassoc (attr := simp)]
 theorem gammaOneBaseChangeEquiv_apply_left_comp (X : EllObj B) (T : Over X.base)
     (α : (gammaOne B N).obj (op (X.baseChangeFunctor.obj T))) :
     (gammaOneBaseChangeEquiv X T α).left ≫ (X.curve.exactOrderLocus N).subschemeι =
       (gammaOneEquiv _ α).1.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
   EllipticCurveGeom.exactOrderLocusHomEquiv_symm_apply_left_comp N
     (X.curve.isPullback_baseChange T.hom) (by simp) _
+
+/-- The point of the `[Γ₁(N)]`-structure corresponding to a morphism `a` from `T` to the
+exact-order locus, followed by the projection `E_T ⟶ E`, is `a` followed by the inclusion of the
+exact-order locus into `E`. -/
+@[reassoc (attr := simp)]
+theorem gammaOneBaseChangeEquiv_symm_apply_left_comp (X : EllObj B) (T : Over X.base)
+    (a : T ⟶ Over.mk ((X.curve.exactOrderLocus N).subschemeι ≫ X.curve.structureMap)) :
+    (gammaOneEquiv _ ((gammaOneBaseChangeEquiv X T).symm a)).1.left ≫
+        (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ =
+      a.left ≫ (X.curve.exactOrderLocus N).subschemeι :=
+  EllipticCurveGeom.exactOrderLocusHomEquiv_apply_left_comp N
+    (X.curve.isPullback_baseChange T.hom) (by simp) a
 
 /-- **Naturality of `gammaOneBaseChangeEquiv`.** Along a morphism `k : T' ⟶ T` of schemes over the
 base of `X`, the morphism to the exact-order locus of the pull-back to `E_{T'}` of a
