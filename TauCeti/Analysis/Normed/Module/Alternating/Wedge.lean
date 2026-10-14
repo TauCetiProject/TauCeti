@@ -13,7 +13,6 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Wedge
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.GroupTheory.Perm.Inversion
 
 /-!
 # Wedge products of continuous alternating maps
@@ -356,9 +355,9 @@ theorem wedgeWith_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     convert mu.continuous₂ using 1
     ext p
     rfl
-  have hflip : ContinuousAlternatingMap.pairingFlip mu hmu = mu.flip := by
+  have hflip : ContinuousLinearMap.pairingFlip mu hmu = mu.flip := by
     ext a b
-    rw [ContinuousAlternatingMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
+    rw [ContinuousLinearMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
   simpa only [wedgeWith_eq_topological, hflip, Function.uncurry_apply_pair] using
     ContinuousAlternatingMap.pairedWedge_flip mu hmu phi psi v
 

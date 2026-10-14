@@ -85,12 +85,8 @@ theorem bundleWedgeWith_flip
     bundleWedgeWith μ hμ φ ψ x v =
       (-1 : ℝ) ^ (k * l) •
         bundleWedgeWith
-          (fun y ↦ ContinuousAlternatingMap.pairingFlip (μ y) (hμ y))
-          (fun y ↦ by
-            convert (hμ y).comp
-              (continuous_swap : Continuous (Prod.swap : V₂ y × V₁ y → V₁ y × V₂ y)) using 1
-            ext p
-            simp [ContinuousAlternatingMap.pairingFlip_apply])
+          (fun y ↦ ContinuousLinearMap.pairingFlip (μ y) (hμ y))
+          (fun y ↦ ContinuousLinearMap.pairingFlip_continuous (μ y) (hμ y))
           ψ φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [bundleWedgeWith] using
     ContinuousAlternatingMap.pairedWedge_flip (μ x) (hμ x) (φ x) (ψ x) v
@@ -298,9 +294,9 @@ theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     convert μ.continuous₂ using 1
     ext p
     rfl
-  have hpair : ContinuousAlternatingMap.pairingFlip μ hμ = μ.flip := by
+  have hpair : ContinuousLinearMap.pairingFlip μ hμ = μ.flip := by
     ext a b
-    rw [ContinuousAlternatingMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
+    rw [ContinuousLinearMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
   simpa only [wedgeWith, bundleWedgeWith, hpair, Function.uncurry_apply_pair] using
     bundleWedgeWith_flip (μ := fun _ ↦ μ) (hμ := fun _ ↦ hμ) φ ψ x v
 
