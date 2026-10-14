@@ -27,14 +27,20 @@ REPOSITORY = re.compile(r"\A[0-9A-Za-z_.-]+/[0-9A-Za-z_.-]+\Z")
 DEFAULT_REPOSITORY = "TauCetiProject/TauCeti"
 
 
+def plain_https_endpoint(value: str) -> str:
+    """Validate a cache endpoint, including its use in inert curl configuration."""
+    parsed = urllib.parse.urlsplit(value)
+    if (parsed.scheme != "https" or not parsed.netloc or parsed.username is not None
+            or parsed.password is not None or parsed.query or parsed.fragment
+            or any(ord(c) < 33 or c in '\\"' for c in value)):
+        raise ValueError("expected a plain HTTPS cache endpoint")
+    return value.rstrip("/")
+
+
 def exact_map_url(endpoint: str, toolchain: str, revision: str,
                   repository: str = DEFAULT_REPOSITORY) -> str:
     """Return the public revision-map URL written by ``lake cache put-staged``."""
-    endpoint = endpoint.strip().rstrip("/")
-    parsed = urllib.parse.urlsplit(endpoint)
-    if (parsed.scheme != "https" or not parsed.netloc or parsed.username is not None
-            or parsed.password is not None or parsed.query or parsed.fragment):
-        raise ValueError("the public revision endpoint is not a plain HTTPS URL")
+    endpoint = plain_https_endpoint(endpoint)
     if not REVISION.fullmatch(revision):
         raise ValueError("the revision is not a lowercase 40-character Git object ID")
     if not TOOLCHAIN.fullmatch(toolchain):

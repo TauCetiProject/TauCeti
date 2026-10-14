@@ -11,7 +11,6 @@ rerun the producer with LAKE_CACHE_FULL_PUBLICATION=1 to repair from built bytes
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -19,29 +18,21 @@ import shutil
 import subprocess
 import tempfile
 import time
-import urllib.parse
 
-from lake_cache_probe import DEFAULT_REPOSITORY as REPOSITORY, exact_map_url, parse_map, TOOLCHAIN
-from lake_cache_reuse import ARCHIVE, SHA256, directory, read_toolchain, regular_file
+from lake_cache_probe import (
+    DEFAULT_REPOSITORY as REPOSITORY, exact_map_url, parse_map, plain_https_endpoint, TOOLCHAIN,
+)
+from lake_cache_reuse import ARCHIVE, SHA256, directory, hashes, read_toolchain, regular_file
 
 WORKERS = 64
 BATCH_SIZE = 128
 MAX_MAP = 16 * 1024 * 1024
 
 
-def endpoint(value: str) -> str:
-    parsed = urllib.parse.urlsplit(value)
-    if (parsed.scheme != "https" or not parsed.netloc or parsed.username is not None
-            or parsed.password is not None or parsed.query or parsed.fragment
-            or any(ord(c) < 33 or c in '\\"' for c in value)):
-        raise ValueError("expected a plain HTTPS cache endpoint")
-    return value.rstrip("/")
-
-
 def artifact_url(base: str, name: str) -> str:
     if not ARCHIVE.fullmatch(name):
         raise ValueError("invalid archive name")
-    return f"{endpoint(base)}/{REPOSITORY}/{name[:-5]}.art"
+    return f"{plain_https_endpoint(base)}/{REPOSITORY}/{name[:-5]}.art"
 
 
 def mapping(raw: bytes) -> set[str]:
@@ -53,15 +44,6 @@ def mapping(raw: bytes) -> set[str]:
     if len({input_hash for input_hash, _ in entries}) != len(entries):
         raise ValueError("duplicate Lake mapping input")
     return {archive for _, archive in entries}
-
-
-def hashes(handle) -> dict:
-    sha, md5, size = hashlib.sha256(), hashlib.md5(usedforsecurity=False), 0
-    while block := handle.read(1024 * 1024):
-        sha.update(block)
-        md5.update(block)
-        size += len(block)
-    return {"sha256": sha.hexdigest(), "md5": md5.hexdigest(), "size": size}
 
 
 def transfer(public: str, records: dict, target: Path, head: bool = False) -> None:
@@ -122,7 +104,7 @@ def stage(project: Path, index: Path, destination: Path, public: str,
     inherited = {}
     if (not full and public and isinstance(saved, dict) and saved.get("version") == 1
             and saved.get("toolchain") == toolchain and isinstance(saved.get("entries"), dict)):
-        endpoint(public)
+        plain_https_endpoint(public)
         for entry in saved["entries"].values():
             if (isinstance(entry, list) and len(entry) == 2 and isinstance(entry[0], str)
                     and ARCHIVE.fullmatch(entry[0]) and isinstance(entry[1], str)
@@ -194,9 +176,9 @@ def prepare(staging: Path, plan: Path, toolchain: str, revision: str,
             public: str, upload_artifacts: str, upload_revisions: str) -> dict:
     """Validate hostile data and write curl configuration outside the staged tree."""
     started = time.monotonic()
-    endpoint(public)
-    endpoint(upload_artifacts)
-    endpoint(upload_revisions)
+    plain_https_endpoint(public)
+    plain_https_endpoint(upload_artifacts)
+    plain_https_endpoint(upload_revisions)
     map_url = exact_map_url(upload_revisions, toolchain, revision)
     with directory(staging, Path()) as parent:
         entries = set(os.listdir(parent))

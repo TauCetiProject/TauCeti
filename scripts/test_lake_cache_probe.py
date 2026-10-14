@@ -91,6 +91,14 @@ class ExactMapProbe(unittest.TestCase):
         self.assertFalse(found)
         self.assertEqual(url, "")
 
+    def test_shared_endpoint_rejects_curl_config_injection(self):
+        for value in ('https://cache.example/"x', 'https://cache.example/\n',
+                      'https://cache.example/\\escape', 'https://user:pass@cache.example'):
+            with self.subTest(endpoint=value):
+                found, url, _reason = cache_probe.probe(value, TOOLCHAIN, SHA, response(""))
+                self.assertFalse(found)
+                self.assertEqual(url, "")
+
     def test_expected_map_must_match_the_public_bytes(self):
         body = '"2026-03-17"\n["44b76000326a96d8","40b5fb725e1abfb8.ltar"]\n'
         with tempfile.TemporaryDirectory() as directory:

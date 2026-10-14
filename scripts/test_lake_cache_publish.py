@@ -272,7 +272,7 @@ class PublicationTests(unittest.TestCase):
         for value in ("http://cache.example", "https://user:pass@cache.example", "https://cache.example?q=x",
                       'https://cache.example/"x', "https://cache.example/\n"):
             with self.assertRaises(ValueError):
-                publish.endpoint(value)
+                publish.plain_https_endpoint(value)
 
     def test_planner_refuses_upload_credentials(self):
         env = dict(os.environ, LAKE_CACHE_KEY="test-only")

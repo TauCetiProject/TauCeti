@@ -8,12 +8,13 @@ generate the complete map with --no-build --rehash -o, packing cache misses.
 --rehash is essential: hash archive bytes rather than trusting potentially stale
 or candidate-written .ltar.hash sidecars beside the new links.
 
-Temporary workaround: remove this script and its snapshot/reconnect workflow calls
-once the pinned Lean includes https://github.com/leanprover/lean4/pull/15231, which
-supersedes https://github.com/leanprover/lean4/pull/15189 and lets Lake reuse restored
-archives for later output mapping while preserving platform independence.
-Unknown formats and failed hard links simply forgo the optimization; archive
-payloads are never copied.
+Reconnect is a temporary workaround until the pinned Lean includes
+https://github.com/leanprover/lean4/pull/15231, which supersedes
+https://github.com/leanprover/lean4/pull/15189 and lets Lake reuse restored archives
+for later output mapping while preserving platform independence. Then remove
+reconnect and its workflow calls; retain the pre-build snapshot and shared file
+helpers for incremental publication. Unknown formats and failed hard links forgo
+the reconnect optimization; reconnect never copies archive payloads.
 """
 
 from __future__ import annotations
@@ -74,12 +75,18 @@ def read_json(root: Path, relative: Path):
         return json.load(handle)
 
 
+def hashes(handle) -> dict:
+    sha, md5, size = hashlib.sha256(), hashlib.md5(usedforsecurity=False), 0
+    while block := handle.read(1024 * 1024):
+        sha.update(block)
+        md5.update(block)
+        size += len(block)
+    return {"sha256": sha.hexdigest(), "md5": md5.hexdigest(), "size": size}
+
+
 def digest(parent: int, name: str) -> str:
     with regular_file(parent, name) as handle:
-        result = hashlib.sha256()
-        while block := handle.read(1024 * 1024):
-            result.update(block)
-        return result.hexdigest()
+        return hashes(handle)["sha256"]
 
 
 def snapshot(root: Path, package: str = "TauCeti") -> dict:
