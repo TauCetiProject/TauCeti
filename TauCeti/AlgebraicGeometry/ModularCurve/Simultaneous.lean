@@ -122,6 +122,9 @@ private theorem map_universal_eq {X : EllObj B} {g : X ⟶ U}
   conv_lhs => rw [D.eq_isoBaseChange_hom_comp f hf]
   rw [op_comp, Functor.map_comp_apply]
   rw [(D.representableBy U).homEquiv_eq, D.representableBy_homEquiv_id, ModuliProblem.fibre_map]
+  -- The two sides differ only by definitional unfolding: the right side still writes
+  -- `(D.overHom f hf).op.unop` for `D.overHom f hf`, and types its coercion to a function through
+  -- `(P.fibre U).obj`, which is `P.obj ∘ U.baseChangeFunctor.op` by definition of `fibre`.
   rfl
 
 private theorem tensorMap_injective {X : EllObj B} :
