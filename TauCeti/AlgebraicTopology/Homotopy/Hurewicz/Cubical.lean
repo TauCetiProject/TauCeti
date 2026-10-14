@@ -92,7 +92,6 @@ theorem face_eq_const (p : Ω^ (Fin (n + 1)) X x) (i : Fin (n + 1)) {t : I} (ht 
 variable (R : Type*) [Ring R]
 
 /-- A generalized loop is a cycle of the normalized cubical chains. -/
-@[simp]
 theorem boundary_ofCube_eq_zero (p : Ω^ (Fin (n + 1)) X x) :
     NormalizedCubicalChain.boundary X R n
       (NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1))) = 0 := by
