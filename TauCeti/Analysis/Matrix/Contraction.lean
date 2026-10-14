@@ -19,6 +19,8 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 ## Main declarations
 
 * `TauCeti.matrixContraction`: the contraction with `A`, as a continuous linear functional.
+* `TauCeti.matrixContraction_add`, `TauCeti.matrixContraction_sub`,
+  `TauCeti.matrixContraction_smul`: the contraction is linear in the matrix.
 * `TauCeti.matrixContraction_one`: contraction with the identity matrix is the trace.
 * `TauCeti.abs_matrixContraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
@@ -48,6 +50,27 @@ theorem matrixContraction_apply (A : Matrix (Fin n) (Fin n) ℝ)
     matrixContraction A H = ∑ i, ∑ j, A i j *
       ⟪H (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ := by
   simp [matrixContraction, real_inner_comm]
+
+/-- The contraction is additive in the matrix. -/
+@[simp]
+theorem matrixContraction_add (A B : Matrix (Fin n) (Fin n) ℝ) :
+    matrixContraction (A + B) = matrixContraction A + matrixContraction B := by
+  ext H
+  simp [add_mul, Finset.sum_add_distrib]
+
+/-- The contraction commutes with subtraction of matrices. -/
+@[simp]
+theorem matrixContraction_sub (A B : Matrix (Fin n) (Fin n) ℝ) :
+    matrixContraction (A - B) = matrixContraction A - matrixContraction B := by
+  ext H
+  simp [sub_mul, Finset.sum_sub_distrib]
+
+/-- The contraction is homogeneous in the matrix. -/
+@[simp]
+theorem matrixContraction_smul (c : ℝ) (A : Matrix (Fin n) (Fin n) ℝ) :
+    matrixContraction (c • A) = c • matrixContraction A := by
+  ext H
+  simp [mul_assoc, Finset.mul_sum]
 
 /-- Contraction with the identity matrix is the trace. -/
 theorem matrixContraction_one :

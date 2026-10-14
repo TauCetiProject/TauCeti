@@ -110,8 +110,8 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
     by_cases hxs : x ∈ s
     · -- On `s`, the difference is the contraction of the weak Hessian with `A - a(x)`.
       have hdiff : g x - f x = matrixContraction (A - a x) (H x) := by
-        simp only [hgx, ← hfx, hT, matrixContraction_apply, Matrix.sub_apply, sub_mul,
-          Finset.sum_sub_distrib]
+        rw [hgx, ← hfx, hT, matrixContraction_sub, sub_apply,
+          matrixContraction_apply (a x)]
       rw [hsub, Pi.sub_apply, hdiff, Real.norm_eq_abs]
       exact abs_matrixContraction_le (fun i j => by
         rw [Matrix.sub_apply, abs_sub_comm]
