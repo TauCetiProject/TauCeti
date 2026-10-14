@@ -167,6 +167,51 @@ theorem genLoopLoopHomeomorph_symm_apply (k : ℕ) (q : Ω^ (Fin (k + 1)) X x)
 
 end Loop
 
+/-! ### Concatenation under reindexing and currying -/
+
+section Transport
+
+variable [DecidableEq M] [DecidableEq N]
+
+/-- Reindexing carries a concatenation in the cube direction `i` to a concatenation in the
+direction `e i`. -/
+@[simp]
+theorem congr_transAt (e : M ≃ N) (i : M) (p q : Ω^ M X x) :
+    _root_.GenLoop.congr x e (_root_.GenLoop.transAt i p q) =
+      _root_.GenLoop.transAt (e i) (_root_.GenLoop.congr x e p)
+        (_root_.GenLoop.congr x e q) := by
+  refine _root_.GenLoop.ext _ _ fun t => ?_
+  simp only [congr_apply, _root_.GenLoop.transAt, _root_.GenLoop.coe_copy]
+  have hupd : ∀ s : I, (fun m => Function.update t (e i) s (e m)) =
+      Function.update (fun m => t (e m)) i s := by
+    intro s
+    funext m
+    simp [Function.update_apply]
+  split_ifs <;> rw [hupd]
+
+/-- Currying carries a concatenation in the cube direction `i` of the outer cube to a
+concatenation in the direction `Sum.inl i`. -/
+@[simp]
+theorem genLoopGenLoopEquiv_transAt (i : M) (p q : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
+    _root_.GenLoop.genLoopGenLoopEquiv x (_root_.GenLoop.transAt i p q) =
+      _root_.GenLoop.transAt (Sum.inl i) (_root_.GenLoop.genLoopGenLoopEquiv x p)
+        (_root_.GenLoop.genLoopGenLoopEquiv x q) := by
+  refine _root_.GenLoop.ext _ _ fun y => ?_
+  simp only [genLoopGenLoopEquiv_apply, _root_.GenLoop.transAt, _root_.GenLoop.coe_copy]
+  have hinl : ∀ s : I, (fun m => Function.update y (Sum.inl i) s (Sum.inl m)) =
+      Function.update (fun m => y (Sum.inl m)) i s := by
+    intro s
+    funext m
+    simp [Function.update_apply]
+  have hinr : ∀ s : I, (fun n => Function.update y (Sum.inl i) s (Sum.inr n)) =
+      fun n => y (Sum.inr n) := by
+    intro s
+    funext n
+    simp
+  split_ifs <;> rw [hinl, hinr]
+
+end Transport
+
 /-- **Naturality of the currying homeomorphism** for `k` cube directions: the specialization of
 `genLoopLoopSumHomeomorph_map` to `Fin k`. -/
 theorem genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
