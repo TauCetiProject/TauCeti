@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.AlgebraicTopology.Cellular.Homology
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
-public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit
 
 /-!
 # Cellular and singular homology of CW pairs

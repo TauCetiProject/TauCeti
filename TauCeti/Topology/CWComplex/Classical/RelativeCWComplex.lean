@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Abstract.Basic
 public import TauCeti.AlgebraicTopology.Disk
-public import TauCeti.Topology.CWComplex.Classical.Skeleton.Induction
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit
 
 /-!
 # Classical relative CW complexes are categorical relative CW complexes
@@ -29,7 +29,8 @@ step `n` are the `n`-cells `cell C n`.  The two ingredients are the following.
   (`TauCeti.isPushout_skeletonObj`).  The disk `𝔻 n` of `TopCat` is the Euclidean unit ball, which
   is carried onto the closed unit ball of the sup norm on `Fin n → ℝ`, the domain of the
   characteristic maps, by the radial homeomorphism `TauCeti.diskHomeomorphClosedBall`.
-* `C` is the colimit in `TopCat` of its skeleta (`TauCeti.isColimitSkeletonCocone`).
+* `C` is the colimit in `TopCat` of its skeleta (`TauCeti.isColimitSkeletonCocone`, proved in
+  `TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit`).
 
 In both cases the universal property comes from the weak topology of the complex: maps out of
 the next skeleton, or out of the whole complex, are built cell by cell and skeleton by skeleton
@@ -41,9 +42,6 @@ attaching two `0`-cells to the empty space gives the discrete two-point space.
 
 ## Main definitions and results
 
-* `TauCeti.skeletonFunctor`, `TauCeti.skeletonCocone`: the skeleta of `C` with their inclusions
-  into each other and into `C`.
-* `TauCeti.isColimitSkeletonCocone`: `C` is the colimit of its skeleta.
 * `TauCeti.cellDiskHom`, `TauCeti.cellBoundaryHom`: the characteristic and attaching maps of a
   cell, on the disk `𝔻 n` and its boundary `∂𝔻 n`.
 * `TauCeti.isPushout_skeletonObj`, `TauCeti.skeletonAttachCells`: `skeletonLT C (n + 1)` is
@@ -72,54 +70,6 @@ universe w
 namespace TauCeti
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
-
-section Colimit
-
-/-- The skeleta `skeletonLT C j` of a relative CW complex and their inclusions, as a sequential
-diagram of spaces. -/
-abbrev skeletonFunctor : ℕ ⥤ TopCat.{w} where
-  obj j := skeletonObj C j
-  map f := TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (mod_cast f.le)))
-
-/-- The inclusions of the skeleta into the whole complex. -/
-@[expose] def skeletonCocone : Cocone (skeletonFunctor C) where
-  pt := TopCat.of C
-  ι := { app j := TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C (j : ℕ∞)).subset_complex) }
-
-lemma coe_skeletonCocone_ι_app_apply (j : ℕ) (x : skeletonObj C j) :
-    ((skeletonCocone C).ι.app j x).1 = x.1 :=
-  (rfl)
-
-/-- A map out of a relative CW complex defined on each skeleton, compatibly with the inclusions
-of skeleta, is continuous: it is the value of the cocone `s` on any skeleton containing the
-point. -/
-private lemma exists_desc_skeletonCocone (s : Cocone (skeletonFunctor C)) :
-    ∃ G : C(C, s.pt), ∀ (j : ℕ) (x : X) (hx : x ∈ (skeletonLT C (j : ℕ∞) : Set X)),
-      G ⟨x, (skeletonLT C _).subset_complex hx⟩ = s.ι.app j ⟨x, hx⟩ := by
-  have hle (j : ℕ) : (skeletonLT C ((0 + j : ℕ) : ℕ∞) : Set X) ⊆ skeletonLT C (j : ℕ∞) :=
-    skeletonLT_mono (by simp)
-  let F (j : ℕ) : C(Unit × (skeletonLT C ((0 + j : ℕ) : ℕ∞) : Set X), s.pt) :=
-    (s.ι.app j).hom.comp ((ContinuousMap.inclusion (hle j)).comp ContinuousMap.snd)
-  obtain ⟨G, hG⟩ := exists_continuousMap_prod_complex_of_skeletonLT (k := 0) F
-    fun j _ x hx ↦ ConcreteCategory.congr_hom (s.w (homOfLE j.le_succ)) ⟨x, hle j hx⟩
-  refine ⟨G.comp ((ContinuousMap.const C ()).prodMk (ContinuousMap.id C)), fun j x hx ↦ ?_⟩
-  exact hG j () x (skeletonLT_mono (by simp) hx)
-
-/-- **A relative CW complex is the colimit of its skeleta** in `TopCat`.  This is the weak
-topology of the complex. -/
-def isColimitSkeletonCocone : IsColimit (skeletonCocone C) where
-  desc s := TopCat.ofHom (exists_desc_skeletonCocone C s).choose
-  fac s j := by
-    ext x
-    exact (exists_desc_skeletonCocone C s).choose_spec j x.1 x.2
-  uniq s m hm := by
-    ext x
-    obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 x.2
-    rw [zero_add] at hj
-    exact (ConcreteCategory.congr_hom (hm j) ⟨x.1, hj⟩).trans
-      ((exists_desc_skeletonCocone C s).choose_spec j x.1 hj).symm
-
-end Colimit
 
 section AttachCells
 
