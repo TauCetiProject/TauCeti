@@ -12,19 +12,23 @@ import TauCeti.Algebra.BigOperators.AlternatingSum
 /-!
 # The Hochschild coboundary and cyclic cochains
 
-For an associative, possibly nonunital, `R`-algebra `A` and an `R`-module `M`, an `n`-cochain is
-an `R`-multilinear map `φ : Aⁿ⁺¹ → M`. This file constructs the Hochschild coboundary
+For a possibly nonunital and nonassociative `R`-algebra `A` and an `R`-module `M`, an
+`n`-cochain is an `R`-multilinear map `φ : Aⁿ⁺¹ → M`. This file constructs the Hochschild
+coboundary
 `b : Cⁿ → Cⁿ⁺¹`,
 `(bφ)(a₀, …, aₙ₊₁) = ∑_{j ≤ n} (-1)ʲ φ(a₀, …, aⱼaⱼ₊₁, …, aₙ₊₁) + (-1)ⁿ⁺¹ φ(aₙ₊₁a₀, a₁, …, aₙ)`,
-proves `b ∘ b = 0`, and shows that `b` preserves the cyclic cochains, those with
+proves `b ∘ b = 0` when the multiplication is associative, and shows that `b` preserves the cyclic
+cochains, those with
 `φ(aₙ, a₀, …, aₙ₋₁) = (-1)ⁿ φ(a₀, …, aₙ)`. For unital `A` and `M = R` these are the Hochschild
 cochain complex of `A` with coefficients in its dual `A*` and Connes' cyclic subcomplex, whose
 cohomology is the cyclic cohomology of `A`. The formulas make sense for nonunital `A`, so they also
 apply to unitizations and their relative complexes.
 
-The coboundary is the alternating sum of the cofaces `φ ↦ φ ∘ dᵢ`, where `dᵢ` are the faces of the
-Hochschild cyclic module on tuples. The two facts above are consequences of identities between faces
-and the cyclic rotation `t(a₀, …, aₙ₊₁) = (aₙ₊₁, a₀, …, aₙ)`: the simplicial identity
+The coboundary is the alternating sum of the cofaces `φ ↦ φ ∘ dᵢ`, where `dᵢ` are face maps
+on tuples. For unital `A`, these faces and the rotation are part of the Hochschild cyclic module;
+in the nonunital setting no degeneracies are provided. The two facts above are consequences of
+identities between faces and the cyclic rotation
+`t(a₀, …, aₙ₊₁) = (aₙ₊₁, a₀, …, aₙ)`: the simplicial identity
 `dᵢ ∘ d_{j+1} = d_j ∘ dᵢ` for `i ≤ j`, and `d₀ ∘ t = d_{n+1}`, `d_{i+1} ∘ t = t ∘ dᵢ`.
 
 ## Main definitions
@@ -285,7 +289,7 @@ end Face
 
 section Cochain
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+variable (R A M : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommMonoid M] [Module R M] {n : ℕ}
 
 /-- Updating one entry of a tuple only changes one entry of a contraction of it. -/
@@ -388,11 +392,22 @@ theorem mem_cyclicCochains_iff {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A
       ∀ a : Fin (n + 1) → A, φ (a ∘ (finRotate (n + 1)).symm) = (-1 : ℤ) ^ n • φ a :=
   Iff.rfl
 
+/-- A bundled cyclic cochain satisfies the characteristic cyclic rotation identity. -/
+@[simp]
+theorem cyclicCochains_apply_finRotate_symm (φ : cyclicCochains R A M n)
+    (a : Fin (n + 1) → A) :
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+        (a ∘ (finRotate (n + 1)).symm) =
+      (-1 : ℤ) ^ n • (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) a :=
+  (mem_cyclicCochains_iff.1 φ.property) a
+
 end Cyclic
 
 section Coboundary
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+section NonAssoc
+
+variable (R A M : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- The Hochschild coboundary `b` on `M`-valued cochains of `A`, the alternating sum
@@ -423,6 +438,14 @@ theorem hochschildCoboundary_apply_eq_sum_contractNth_add
   rw [hochschildCoboundary_apply, Fin.sum_univ_castSucc]
   simp
 
+end NonAssoc
+
+section Assoc
+
+variable (R A M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  {n : ℕ}
+
 /-- The Hochschild coboundary squares to zero. -/
 @[simp]
 theorem hochschildCoboundary_hochschildCoboundary
@@ -437,7 +460,15 @@ theorem hochschildCoboundary_hochschildCoboundary
 /-- The Hochschild coboundary squares to zero, as a composite of linear maps. -/
 theorem hochschildCoboundary_comp_hochschildCoboundary :
     hochschildCoboundary R A M (n + 1) ∘ₗ hochschildCoboundary R A M n = 0 :=
-  LinearMap.ext hochschildCoboundary_hochschildCoboundary
+  LinearMap.ext fun φ ↦ hochschildCoboundary_hochschildCoboundary (R := R) (A := A) (M := M) φ
+
+end Assoc
+
+section NonAssoc
+
+variable (R A M : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  {n : ℕ}
 
 /-- In degree zero, `(bφ)(a₀, a₁) = φ(a₀a₁) - φ(a₁a₀)`. -/
 theorem hochschildCoboundary_zero_apply (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M)
@@ -480,6 +511,8 @@ theorem hochschildCoboundary_mem_cyclicCochains
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [add_right_comm, add_comm _ n, add_right_comm]
   · rw [← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+
+end NonAssoc
 
 end Coboundary
 
