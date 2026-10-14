@@ -27,6 +27,8 @@ bounds.
   norm of an `L²` function is its squared `L²` norm.
 * `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy--Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖ ‖g‖` for
   `L²` functions, integrated against a measure dominated by theirs.
+* `MeasureTheory.integrable_of_norm_le_mul_norm_mul_norm`: a function bounded almost everywhere
+  by a constant times the product of the norms of two `L²` functions is integrable.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
@@ -123,6 +125,15 @@ theorem Lp.integral_norm_mul_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
         exact mul_le_mul (ENNReal.toReal_mono (Lp.eLpNorm_ne_top f) (eLpNorm_mono_measure _ h₁))
           (ENNReal.toReal_mono (Lp.eLpNorm_ne_top g) (eLpNorm_mono_measure _ h₂))
           ENNReal.toReal_nonneg ENNReal.toReal_nonneg
+
+/-- A function bounded almost everywhere by a constant times the product of the norms of two `L²`
+functions is integrable. -/
+theorem integrable_of_norm_le_mul_norm_mul_norm {alpha F G : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] [NormedAddCommGroup G] {m : Measure alpha} {h : alpha → ℝ}
+    {P : alpha → F} {R : alpha → G} {C : ℝ} (hP : MemLp P 2 m) (hR : MemLp R 2 m)
+    (hh : AEStronglyMeasurable h m) (hle : ∀ᵐ x ∂m, ‖h x‖ ≤ C * (‖P x‖ * ‖R x‖)) :
+    Integrable h m :=
+  ((hP.norm.integrable_mul hR.norm).const_mul C).mono' hh hle
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/

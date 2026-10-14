@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Module.Lipschitz
 import TauCeti.Analysis.Sobolev.W1p.DifferenceQuotient
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
@@ -205,23 +206,6 @@ theorem exists_uniformlyEllipticOn_univ_lipschitzWith_eqOn
 
 variable {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2} {ψ : EuclideanSpace ℝ ι → ℝ}
 
-/-- Evaluating an a.e. strongly measurable field of bilinear forms on two a.e. strongly measurable
-vector fields gives an a.e. strongly measurable function. -/
-private theorem aestronglyMeasurable_apply_apply {X E : Type*} [MeasurableSpace X]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {ν : Measure X} {B : X → E →L[ℝ] E →L[ℝ] ℝ}
-    {p q : X → E} (hB : AEStronglyMeasurable B ν) (hp : AEStronglyMeasurable p ν)
-    (hq : AEStronglyMeasurable q ν) : AEStronglyMeasurable (fun x => B x (p x) (q x)) ν :=
-  ((continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
-    (continuous_snd.comp continuous_snd)).comp_aestronglyMeasurable (hB.prodMk (hp.prodMk hq))
-
-/-- A function bounded almost everywhere by a constant times the product of the norms of two `L²`
-functions is integrable. -/
-private theorem integrable_of_norm_le_mul_norm_mul_norm {X F G : Type*} [MeasurableSpace X]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] {ν : Measure X} {h : X → ℝ} {P : X → F}
-    {R : X → G} {C : ℝ} (hP : MemLp P 2 ν) (hR : MemLp R 2 ν) (hh : AEStronglyMeasurable h ν)
-    (hle : ∀ᵐ x ∂ν, ‖h x‖ ≤ C * (‖P x‖ * ‖R x‖)) : Integrable h ν :=
-  ((hP.norm.integrable_mul hR.norm).const_mul C).mono' hh hle
-
 omit [DecidableEq ι] in
 /-- **The weak equation tested against `ψ v`.** For a weak solution `u` of `-div(a ∇u) = f` in
 `Ω`, a smooth `ψ` compactly supported in `Ω`, and `v ∈ H¹(ℝⁿ)`, the product `ψ v` is an
@@ -274,7 +258,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
   have hI1 : Integrable (fun x => ψ x * matrixBilinearForm (a x) (W1p.gradient v x)
       (W1p.gradient u x)) (mu.restrict Omega) :=
     integrable_of_norm_le_mul_norm_mul_norm (C := M * Lam) hgv hgu
-      (hψm.mul (aestronglyMeasurable_apply_apply hB hgv.aestronglyMeasurable
+      (hψm.mul ((hB.clm_apply hgv.aestronglyMeasurable).clm_apply
         hgu.aestronglyMeasurable))
       (hmem.mono fun x hx => by
         rw [norm_mul, Real.norm_eq_abs, mul_assoc]
@@ -284,7 +268,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
       (W1p.gradient u x)) (mu.restrict Omega) :=
     integrable_of_norm_le_mul_norm_mul_norm (C := Lam * M) hvv hgu
       (hvv.aestronglyMeasurable.mul
-        (aestronglyMeasurable_apply_apply hB hgψm hgu.aestronglyMeasurable))
+        ((hB.clm_apply hgψm).clm_apply hgu.aestronglyMeasurable))
       (hmem.mono fun x hx => by
         rw [norm_mul, mul_left_comm]
         exact mul_le_mul_of_nonneg_left (hBψ x hx _).2 (norm_nonneg _))
@@ -298,7 +282,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
       (∇ ψ x)) (mu.restrict Omega) :=
     integrable_of_norm_le_mul_norm_mul_norm (C := Lam * M) huv hgv
       (huv.aestronglyMeasurable.mul
-        (aestronglyMeasurable_apply_apply hB hgv.aestronglyMeasurable hgψm))
+        ((hB.clm_apply hgv.aestronglyMeasurable).clm_apply hgψm))
       (hmem.mono fun x hx => by
         rw [norm_mul, mul_left_comm]
         exact mul_le_mul_of_nonneg_left (hBψ x hx _).1 (norm_nonneg _))
@@ -459,7 +443,7 @@ private theorem exists_abs_energyFormH1_differenceQuotient_le
     have hmem := ae_restrict_mem (μ := mu) hΩ
     have hBm : AEStronglyMeasurable (fun x => matrixBilinearForm (a x) (∇ ψ x)
         (W1p.gradient u x)) (mu.restrict Omega) :=
-      aestronglyMeasurable_apply_apply hB (ContDiff.continuous_gradient hψ).aestronglyMeasurable
+      (hB.clm_apply (ContDiff.continuous_gradient hψ).aestronglyMeasurable).clm_apply
         (Lp.aestronglyMeasurable (W1p.gradient u))
     refine MemLp.sub ((Lp.memLp f).of_le_mul (c := M)
       (hψ.continuous.aestronglyMeasurable.mul (Lp.aestronglyMeasurable f))

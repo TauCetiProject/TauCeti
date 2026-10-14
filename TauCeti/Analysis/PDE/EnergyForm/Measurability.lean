@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Continuity
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
 
 /-!
 # Measurability of pointwise PDE energy integrands
@@ -104,15 +105,8 @@ lemma aestronglyMeasurable_energyIntegrand_apply₂ {a : α → Matrix n n ℝ}
     (ha : MeasureTheory.AEStronglyMeasurable a μ) (hb : MeasureTheory.AEStronglyMeasurable b μ)
     (hc : MeasureTheory.AEStronglyMeasurable c μ) (hU : MeasureTheory.AEStronglyMeasurable U μ)
     (hV : MeasureTheory.AEStronglyMeasurable V μ) :
-    AEStronglyMeasurable (fun x => PDE.energyIntegrand (a x) (b x) (c x) (U x) (V x)) μ := by
-  let Jet := ℝ × EuclideanSpace ℝ n
-  have hform : AEStronglyMeasurable (fun x => PDE.energyIntegrand (a x) (b x) (c x)) μ :=
-    aestronglyMeasurable_energyIntegrand ha hb hc
-  have hcont : Continuous (fun p : (Jet →L[ℝ] Jet →L[ℝ] ℝ) × Jet × Jet =>
-      p.1 p.2.1 p.2.2) := by
-    exact (continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
-      (continuous_snd.comp continuous_snd)
-  exact hcont.comp_aestronglyMeasurable (hform.prodMk (hU.prodMk hV))
+    AEStronglyMeasurable (fun x => PDE.energyIntegrand (a x) (b x) (c x) (U x) (V x)) μ :=
+  ((aestronglyMeasurable_energyIntegrand ha hb hc).clm_apply hU).clm_apply hV
 
 end PDE
 

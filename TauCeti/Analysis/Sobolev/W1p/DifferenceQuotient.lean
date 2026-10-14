@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Translation
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
 
 /-!
 # Difference quotients of `W^{1,p}(Ω)` functions
@@ -475,11 +476,6 @@ theorem W1p.abs_integral_value_mul_gradient_differenceQuotient_le
   have hG : MemLp G 2 mu := (Lp.memLp (W1p.gradient v)).mono_measure hle
   have hDz : MemLp (Dz : E → ℝ) 2 mu := (Lp.memLp Dz).mono_measure hle
   have hΦm : AEStronglyMeasurable Φ mu := hL.continuous.aestronglyMeasurable
-  have happ : ∀ {p : E → E} {q : E →
-      StrongDual ℝ E}, AEStronglyMeasurable q mu →
-      AEStronglyMeasurable p mu → AEStronglyMeasurable (fun x ↦ q x (p x)) mu :=
-    fun hq hp ↦ (continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable
-      (hq.prodMk hp)
   -- Translates of `Z`, `G` and `Φ`.
   have hZs : MemLp (fun x ↦ Z (x - t • e)) 2 mu := by
     have := hZ.comp_measurePreserving (measurePreserving_add_right mu (-(t • e)))
@@ -492,10 +488,10 @@ theorem W1p.abs_integral_value_mul_gradient_differenceQuotient_le
       StrongDual ℝ E} {p : E → E},
       MemLp P 2 mu → AEStronglyMeasurable q mu → (∀ x, ‖q x‖ ≤ C) → MemLp p 2 mu →
       Integrable (fun x ↦ P x * q x (p x)) mu := fun {P q p} hP hq hqC hp ↦
-    ((hP.norm.integrable_mul hp.norm).const_mul C).mono'
-      (hP.aestronglyMeasurable.mul (happ hq hp.aestronglyMeasurable))
+    integrable_of_norm_le_mul_norm_mul_norm (C := C) hP hp
+      (hP.aestronglyMeasurable.mul (hq.clm_apply hp.aestronglyMeasurable))
       (Filter.Eventually.of_forall fun x ↦ by
-        rw [Pi.mul_apply, norm_mul, mul_left_comm]
+        rw [norm_mul, mul_left_comm]
         exact mul_le_mul_of_nonneg_left (((q x).le_opNorm _).trans
           (mul_le_mul_of_nonneg_right (hqC x) (norm_nonneg _))) (norm_nonneg _))
   have hI1 := hint hZ hΦm hC hGs

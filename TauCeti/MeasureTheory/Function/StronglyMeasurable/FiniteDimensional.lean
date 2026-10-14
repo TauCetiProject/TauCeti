@@ -23,6 +23,10 @@ the norm topology then give different notions of measurability. Measurability of
 what is checkable for time-dependent operators, for instance `t ↦ A t v w` for the energy forms of
 a parabolic equation; this file upgrades it to the operator norm once the operators are restricted
 to a finite-dimensional subspace.
+
+The file also records that evaluating an almost everywhere strongly measurable operator-valued
+function on an almost everywhere strongly measurable vector field gives an almost everywhere
+strongly measurable function (`MeasureTheory.AEStronglyMeasurable.clm_apply`), in any dimension.
 -/
 
 public section
@@ -52,3 +56,18 @@ theorem aestronglyMeasurable_clm_apply_iff {T : α → E →L[𝕜] F} :
       (b.coord i).toContinuousLinearMap).continuous.comp_aestronglyMeasurable (h (b i))
 
 end TauCeti
+
+namespace MeasureTheory
+
+variable {α 𝕜 E F : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Evaluating an almost everywhere strongly measurable operator-valued function on an almost
+everywhere strongly measurable vector field gives an almost everywhere strongly measurable
+function. Applied twice, it covers fields of bilinear forms `x ↦ B x (p x) (q x)`. -/
+theorem AEStronglyMeasurable.clm_apply {T : α → E →L[𝕜] F} {p : α → E}
+    (hT : AEStronglyMeasurable T μ) (hp : AEStronglyMeasurable p μ) :
+    AEStronglyMeasurable (fun a ↦ T a (p a)) μ :=
+  (continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable (hT.prodMk hp)
+
+end MeasureTheory
