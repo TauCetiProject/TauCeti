@@ -184,28 +184,6 @@ variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.car
   {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
   (h0 : E'.zero ≫ g = f ≫ E.zero)
 
-/-- **Points of naive exact order `N` are stable under base change**: if an `S`-point `P` of `E`
-has naive exact order `N`, then so does its base change, the `S'`-point `P'` of `E'`. -/
-theorem IsOfNaiveExactOrder.pointsPullback {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
-    (h : E.IsOfNaiveExactOrder P N) : E'.IsOfNaiveExactOrder (pointsPullback hg h0 P) N := by
-  refine ⟨by rw [← map_pow, h.pow_eq_one, map_one], fun d hd hdN ↦ ?_⟩
-  have := h.isEmpty_equalizer hd hdN
-  rw [isEmpty_equalizer_congr (map_pow _ P d).symm rfl]
-  -- the equalizer of `P' ^ d` and `1`, viewed over `S`, maps to the equalizer of `P ^ d` and `1`
-  let ι' := equalizer.ι (EllipticCurveGeom.pointsPullback hg h0 (P ^ d)) 1
-  let V : Over S := Over.mk (ι'.left ≫ f)
-  have hV : (toUnit V).left = ι'.left ≫ f := by simp [V]
-  have hι : (equalizer (EllipticCurveGeom.pointsPullback hg h0 (P ^ d)) 1).hom = ι'.left := by
-    simpa using (Over.w ι').symm
-  have hc := congrArg CommaMorphism.left
-    (equalizer.condition (EllipticCurveGeom.pointsPullback hg h0 (P ^ d)) 1)
-  have hv : toUnit V ≫ P ^ d = toUnit V ≫ 1 := by
-    ext1
-    simp only [Over.comp_left, comp_one, hom_one_left, hV, Category.assoc] at hc ⊢
-    rw [← pointsPullback_left_comp hg h0, reassoc_of% hc, hι, h0]
-    simp [V]
-  exact Function.isEmpty (equalizer.lift (toUnit V) hv).left
-
 /-- Under the group equivalence identifying points of a base change with points valued in
 the new base, naive exact order is preserved and reflected. -/
 theorem isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
@@ -218,6 +196,18 @@ theorem isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
   exact (isEmpty_equalizer_iff_of_isPullback hg (Category.id_comp f) (P ^ d) 1 _ _
     (pointsBaseChangeEquiv_left hg h0 _).symm
     (pointsBaseChangeEquiv_left hg h0 _).symm).symm
+
+/-- **Points of naive exact order `N` are stable under base change**: if an `S`-point `P` of `E`
+has naive exact order `N`, then so does its base change, the `S'`-point `P'` of `E'`. -/
+theorem IsOfNaiveExactOrder.pointsPullback {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
+    (h : E.IsOfNaiveExactOrder P N) : E'.IsOfNaiveExactOrder (pointsPullback hg h0 P) N := by
+  apply (isOfNaiveExactOrder_pointsBaseChangeEquiv_iff hg h0).mp
+  have hP : pointsBaseChangeEquiv hg h0 (EllipticCurveGeom.pointsPullback hg h0 P) =
+      toUnit (Over.mk f) ≫ P := by
+    ext1
+    simp
+  rw [hP]
+  exact h.comp (toUnit (Over.mk f))
 
 end BaseChange
 
