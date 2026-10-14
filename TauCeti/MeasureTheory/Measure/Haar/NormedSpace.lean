@@ -17,7 +17,8 @@ centre. It agrees with the measure of the closed ball, which therefore differs f
 by a null set. Consequently the ratio of the measures of two closed balls is controlled by the
 ratio of their radii raised to the dimension, and the part of a ball outside a translate of
 itself is controlled by the distance between the centres. The measure of an affine image
-`y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball.
+`y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
+homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`.
 
 ## Main results
 
@@ -34,6 +35,8 @@ itself is controlled by the distance between the centres. The measure of an affi
 * `MeasureTheory.Measure.addHaar_image_add_smul_div_addHaar_closedBall`: the measure of
   `y + r • S` relative to a closed ball of radius `r > 0` is the measure of `S` relative to the
   unit ball.
+* `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
+  additive Haar measure to its multiple by `|r ^ n|⁻¹`.
 -/
 
 public section
@@ -123,6 +126,21 @@ theorem _root_.MeasureTheory.Measure.addHaar_image_add_smul_div_addHaar_closedBa
   rw [himage, measure_vadd, addHaar_smul, addHaar_closedBall' mu x hr.le,
     abs_of_pos (pow_pos hr _)]
   exact ENNReal.mul_div_mul_left _ _ (by simpa using pow_pos hr _) ENNReal.ofReal_ne_top
+
+/-- A homothety of nonzero ratio `r` pushes an additive Haar measure to its multiple by
+`|r ^ n|⁻¹`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.map_addHaar_homothety
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : r ≠ 0) :
+    mu.map (AffineMap.homothety x r) = ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| • mu := by
+  have hfun : ⇑(AffineMap.homothety x r) = (x - r • x + ·) ∘ (r • ·) := by
+    ext y
+    rw [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, Function.comp_apply, smul_sub]
+    abel
+  rw [hfun, ← Measure.map_map (measurable_const_add _) (measurable_const_smul _),
+    map_addHaar_smul mu hr, Measure.map_smul _ (measurable_const_add _).aemeasurable,
+    map_add_left_eq_self]
 
 end TauCeti
 
