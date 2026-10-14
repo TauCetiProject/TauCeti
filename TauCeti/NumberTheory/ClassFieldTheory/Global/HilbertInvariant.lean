@@ -226,7 +226,7 @@ theorem toRatAddCircle_infiniteHilbertInvariantAt (w : InfinitePlace K) (a b : K
 open scoped Classical in
 /-- The Hilbert invariant at an infinite place, expressed directly in terms of the cup product of
 the localized Kummer classes: it is `0` when that cup product vanishes and `1` otherwise. -/
-theorem infiniteHilbertInvariantAt_def (w : InfinitePlace K) (a b : Kˣ)
+theorem infiniteHilbertInvariantAt_eq_ite (w : InfinitePlace K) (a b : Kˣ)
     (hζ : IsPrimitiveRoot (-1 : w.Completion) 2) (h2 : IsUnit (2 : w.Completion)) :
     infiniteHilbertInvariantAt K w a b =
       if (kummerCupPairing (-1) hζ).cup 1 1
@@ -260,7 +260,7 @@ theorem infiniteHilbertInvariantAt_eq_zero_iff (w : InfinitePlace K) (a b : Kˣ)
       (kummerCupPairing (-1) hζ).cup 1 1
         (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) a))
         (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) b)) = 0 := by
-  rw [infiniteHilbertInvariantAt_def K w a b hζ h2]
+  rw [infiniteHilbertInvariantAt_eq_ite K w a b hζ h2]
   split_ifs with h
   · exact iff_of_true rfl h
   · exact iff_of_false one_ne_zero h
@@ -300,11 +300,8 @@ theorem infiniteHilbertInvariantAt_mul_left (w : InfinitePlace K) (a a' b : Kˣ)
     infiniteHilbertInvariantAt K w (a * a') b =
       infiniteHilbertInvariantAt K w a b + infiniteHilbertInvariantAt K w a' b := by
   rcases w.isReal_or_isComplex with hw | hw
-  · have ha := (map_ne_zero (embedding_of_isReal hw)).2 a.ne_zero
-    have ha' := (map_ne_zero (embedding_of_isReal hw)).2 a'.ne_zero
-    simp only [infiniteHilbertInvariantAt_eq_ite_of_isReal K hw, Units.val_mul, map_mul,
-      mul_neg_iff]
-    split_ifs <;> first | rfl | grind
+  · simp only [infiniteHilbertInvariantAt_of_isReal K hw, map_mul, kummerBrauerClass_mul_left,
+      map_add]
   · simp [infiniteHilbertInvariantAt_eq_zero_of_isComplex K hw]
 
 /-- The Hilbert invariant at an infinite place is additive in its second argument. -/
