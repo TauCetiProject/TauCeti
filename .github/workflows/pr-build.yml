@@ -1079,6 +1079,7 @@ jobs:
             --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
             --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
+            --setenv IS_BATCH "${IS_BATCH:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \
             --chdir "$PWD/pr" \
