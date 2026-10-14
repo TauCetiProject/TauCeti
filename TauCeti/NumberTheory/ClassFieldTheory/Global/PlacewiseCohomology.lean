@@ -36,7 +36,8 @@ H^n(G, I_L) ≃ ⨁_v H^n(G, (K_v ⊗[K] L)ˣ)
 * its first cohomology vanishes (`isZero_tateCohomology_one_idelesRep`), by field Hilbert 90
   and Shapiro at every finite and infinite place, without a cyclicity hypothesis.
 
-By positive-degree Shapiro (`HeightOneSpectrum.semilocalUnitsTateCohomologyIsoPos`) the group
+By positive-degree Shapiro (`HeightOneSpectrum.semilocalUnitsTateCohomologyIsoPos` at the finite
+places, `InfinitePlace.infiniteSemilocalUnitsTateCohomologyIsoPos` at the infinite places) the group
 `H^n(G, (K_v ⊗[K] L)ˣ)` is the cohomology `H^n(G_w, L_wˣ)` of the completion at a place `w ∣ v`,
 so the images of a degree-`2` cohomology class with coefficients in the ideles are its local Brauer
 classes in `Br(L_w/K_v)`, and `H²(G, I_L)` is the direct sum of the local Brauer groups
@@ -332,51 +333,6 @@ end Cohomology
 
 section Prescribe
 
-/-- The finite part of the idele `(1, a)` of a finite `S`-idele `a` is `a`. -/
-private theorem finiteSIdelesToSIdeles_comp_sIdelesToFiniteSIdeles
-    (S : Finset (HeightOneSpectrum (𝓞 K))) :
-    finiteSIdelesToSIdeles (K := K) L S ≫ sIdelesToFiniteSIdeles L S = 𝟙 _ := by
-  ext a
-  exact (congrArg (sIdelesToFiniteSIdeles L S).hom (finiteSIdelesToSIdeles_hom_apply L S a)).trans
-    ((sIdelesToFiniteSIdeles_hom_apply L S _).trans
-      (congrArg Additive.ofMul (Subtype.ext (IdeleGroup.toFiniteIdele_ofFiniteIdele _ _ _))))
-
-/-- The infinite part of the idele `(1, a)` of a finite `S`-idele `a` is trivial. -/
-private theorem finiteSIdelesToSIdeles_comp_idelesToInfiniteIdeles
-    (S : Finset (HeightOneSpectrum (𝓞 K))) :
-    (finiteSIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S) ≫ idelesToInfiniteIdeles K L =
-      0 := by
-  ext a
-  refine (congrArg (idelesToInfiniteIdeles K L).hom ((congrArg (sIdelesToIdeles (K := K) L S).hom
-    (finiteSIdelesToSIdeles_hom_apply L S a)).trans (sIdelesToIdeles_hom_apply L _ _))).trans
-    ((idelesToInfiniteIdeles_hom_apply L _).trans ?_)
-  -- `Units.map (MonoidHom.fst _ _)` takes the infinite component of the underlying adele
-  exact congrArg Additive.ofMul (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofFiniteIdele (𝓞 L) L
-    ((Additive.toMul a : finiteSIdeles L S) : (FiniteAdeleRing (𝓞 L) L)ˣ))))
-
-/-- The infinite part of the idele `(x, 1)` of an infinite idele `x` is `x`. -/
-private theorem infiniteIdelesToSIdeles_comp_idelesToInfiniteIdeles
-    (S : Finset (HeightOneSpectrum (𝓞 K))) :
-    (infiniteIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S) ≫ idelesToInfiniteIdeles K L =
-      𝟙 _ := by
-  ext a
-  refine (congrArg (idelesToInfiniteIdeles K L).hom ((congrArg (sIdelesToIdeles (K := K) L S).hom
-    (infiniteIdelesToSIdeles_hom_apply L S a)).trans (sIdelesToIdeles_hom_apply L _ _))).trans
-    ((idelesToInfiniteIdeles_hom_apply L _).trans ?_)
-  -- `Units.map (MonoidHom.fst _ _)` takes the infinite component of the underlying adele
-  exact congrArg Additive.ofMul (Units.ext (congrArg Prod.fst
-    (IdeleGroup.coe_ofInfiniteIdele (𝓞 L) L (Additive.toMul a))))
-
-/-- The finite part of the idele `(x, 1)` of an infinite idele `x` is trivial. -/
-private theorem infiniteIdelesToSIdeles_comp_sIdelesToFiniteSIdeles
-    (S : Finset (HeightOneSpectrum (𝓞 K))) :
-    infiniteIdelesToSIdeles (K := K) L S ≫ sIdelesToFiniteSIdeles L S = 0 := by
-  ext a
-  exact (congrArg (sIdelesToFiniteSIdeles L S).hom (infiniteIdelesToSIdeles_hom_apply L S a)).trans
-    ((sIdelesToFiniteSIdeles_hom_apply L S _).trans
-      (congrArg Additive.ofMul (Subtype.ext (Units.ext ((IdeleGroup.coe_toFiniteIdele _ _ _).trans
-        (congrArg Prod.snd (IdeleGroup.coe_ofInfiniteIdele (𝓞 L) L (Additive.toMul a))))))))
-
 variable [IsGalois K L] (n : ℕ) [NeZero n]
 
 /-- Every family of semi-local classes at the finite places, vanishing outside a finite set `S`,
@@ -411,16 +367,11 @@ private theorem exists_map_semilocal_eq (S : Finset (HeightOneSpectrum (𝓞 K))
   -- the class of the `T`-ideles with finite part `a` and infinite part `b`
   set c := (F.map (finiteSIdelesToSIdeles L T)).hom a + (F.map (infiniteIdelesToSIdeles L T)).hom b
   have hcf : (F.map (sIdelesToFiniteSIdeles L T)).hom c = a := by
-    rw [map_add, hF, hF, finiteSIdelesToSIdeles_comp_sIdelesToFiniteSIdeles,
-      infiniteIdelesToSIdeles_comp_sIdelesToFiniteSIdeles, CategoryTheory.Functor.map_id,
-      Functor.map_zero, ModuleCat.hom_id, ModuleCat.hom_zero, LinearMap.id_apply,
-      LinearMap.zero_apply, add_zero]
+    rw [map_add, hF, hF]
+    simp
   have hci : (F.map (sIdelesToIdeles (K := K) L T ≫ idelesToInfiniteIdeles K L)).hom c = b := by
-    rw [map_add, hF, hF, ← Category.assoc, ← Category.assoc,
-      finiteSIdelesToSIdeles_comp_idelesToInfiniteIdeles,
-      infiniteIdelesToSIdeles_comp_idelesToInfiniteIdeles, CategoryTheory.Functor.map_id,
-      Functor.map_zero, ModuleCat.hom_id, ModuleCat.hom_zero, LinearMap.id_apply,
-      LinearMap.zero_apply, zero_add]
+    rw [map_add, hF, hF]
+    simp
   refine ⟨(F.map (sIdelesToIdeles (K := K) L T)).hom c, fun v ↦ ?_, fun w ↦ ?_⟩
   · rw [hF]
     by_cases hv : v ∈ T
@@ -435,8 +386,8 @@ private theorem exists_map_semilocal_eq (S : Finset (HeightOneSpectrum (𝓞 K))
       rw [hy v fun h ↦ hv (Finset.mem_union_right _ h),
         ← sIdelesToSemilocalIntegralUnits_comp_incl L T v hv, ← hF,
         Subsingleton.elim ((F.map (sIdelesToSemilocalIntegralUnits L T v hv)).hom c) 0, map_zero]
-  · rw [hF, idelesToInfiniteSemilocalUnits, ← Category.assoc, ← Category.assoc, Category.assoc,
-      ← hF, hci, hb]
+  · rw [← hb, ← hci, hF, hF]
+    simp only [idelesToInfiniteSemilocalUnits, Category.assoc]
 
 variable (K) in
 /-- **The semi-local components of the cohomology of the ideles.** For a finite Galois extension
