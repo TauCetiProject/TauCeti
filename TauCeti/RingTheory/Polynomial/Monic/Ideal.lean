@@ -39,6 +39,9 @@ namespace Ideal
 variable {R : Type*} [CommRing R]
 
 /-- The quotient `R[X] ⧸ I` is generated as an `R`-algebra by the class of `X`. -/
+-- This statement also appears as an inline step in the proof of Mathlib's
+-- `Polynomial.Monic.quotient_isIntegral` (`Mathlib/RingTheory/IntegralClosure/IsIntegralClosure/
+-- Basic`); the proof here is different, transporting `Polynomial.adjoin_X` along the quotient map.
 lemma adjoin_quotient_mk_X_eq_top (I : Ideal R[X]) :
     Algebra.adjoin R {Ideal.Quotient.mk I X} = ⊤ := by
   rw [← Ideal.Quotient.mkₐ_eq_mk R, ← Set.image_singleton, ← AlgHom.map_adjoin, adjoin_X,
@@ -47,12 +50,18 @@ lemma adjoin_quotient_mk_X_eq_top (I : Ideal R[X]) :
 
 variable [Nontrivial R]
 
-/-- A finite free polynomial quotient has a unique monic defining equation, of degree equal
-to its rank. No domain or Noetherian assumption on the coefficient ring is needed. -/
-theorem existsUnique_monic_span_of_free_quotient (I : Ideal R[X])
-    [Module.Finite R (R[X] ⧸ I)] [Module.Free R (R[X] ⧸ I)] :
-    ∃! p : R[X], p.Monic ∧ p.natDegree = Module.finrank R (R[X] ⧸ I) ∧
-      Ideal.span {p} = I := by
+/-- A finite flat polynomial quotient of constant rank `n`, that is, a finite locally free
+quotient of rank `n`, has a unique monic defining equation, of degree `n`. It suffices that the
+rank is `n` at every maximal ideal. No domain or Noetherian assumption on the coefficient ring is
+needed; in particular this applies to finite free quotients of rank `n`. -/
+theorem existsUnique_monic_span_of_flat_quotient (I : Ideal R[X]) [Module.Finite R (R[X] ⧸ I)]
+    [Module.Flat R (R[X] ⧸ I)] {n : ℕ}
+    (hn : ∀ p : PrimeSpectrum R, p.asIdeal.IsMaximal → Module.rankAtStalk (R[X] ⧸ I) p = n) :
+    ∃! p : R[X], p.Monic ∧ p.natDegree = n ∧ Ideal.span {p} = I := by
+  have := TauCeti.Module.free_of_adjoin_eq_top I.adjoin_quotient_mk_X_eq_top hn
+  obtain ⟨P, hP⟩ := Ideal.exists_maximal R
+  have hrank : Module.finrank R (R[X] ⧸ I) = n := by
+    simpa using hn ⟨P, hP.isPrime⟩ hP
   let x := Ideal.Quotient.mk I (X : R[X])
   have he : aeval x = Ideal.Quotient.mkₐ R I := by
     ext
@@ -65,24 +74,12 @@ theorem existsUnique_monic_span_of_free_quotient (I : Ideal R[X])
     rw [RingHom.mem_ker]
     simp only [h, IsAdjoinRootMonic.mkOfAdjoinEqTop'_map, he,
       Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
-  refine ⟨minpoly R x, ⟨h.monic, h.finrank.symm, hspan⟩, ?_⟩
+  refine ⟨minpoly R x, ⟨h.monic, h.finrank.symm.trans hrank, hspan⟩, ?_⟩
   rintro q ⟨hq, hdeg, hqI⟩
   apply eq_of_monic_of_dvd_of_natDegree_le h.monic hq
   · rw [← Ideal.mem_span_singleton, hspan, ← hqI]
     exact Ideal.subset_span (Set.mem_singleton q)
-  · rw [hdeg, h.finrank]
-
-/-- A finite flat polynomial quotient of constant rank `n`, that is, a finite locally free
-quotient of rank `n`, has a unique monic defining equation, of degree `n`. -/
-theorem existsUnique_monic_span_of_flat_quotient (I : Ideal R[X]) [Module.Finite R (R[X] ⧸ I)]
-    [Module.Flat R (R[X] ⧸ I)] {n : ℕ}
-    (hn : ∀ p : PrimeSpectrum R, Module.rankAtStalk (R[X] ⧸ I) p = n) :
-    ∃! p : R[X], p.Monic ∧ p.natDegree = n ∧ Ideal.span {p} = I := by
-  have := TauCeti.Module.free_of_adjoin_eq_top I.adjoin_quotient_mk_X_eq_top hn
-  obtain ⟨P, hP⟩ := Ideal.exists_maximal R
-  have hrank : Module.finrank R (R[X] ⧸ I) = n := by
-    simpa using hn ⟨P, hP.isPrime⟩
-  simpa only [hrank] using I.existsUnique_monic_span_of_free_quotient
+  · rw [hdeg, ← hrank, h.finrank]
 
 end Ideal
 
@@ -118,7 +115,7 @@ noncomputable def coeffEquivFiniteFlatIdeal :
   · rintro ⟨I, hfinite, hflat, hrank⟩
     let := hfinite
     let := hflat
-    obtain ⟨p, ⟨hp, hdeg, hI⟩, -⟩ := I.existsUnique_monic_span_of_flat_quotient hrank
+    obtain ⟨p, ⟨hp, hdeg, hI⟩, -⟩ := I.existsUnique_monic_span_of_flat_quotient fun p _ ↦ hrank p
     refine ⟨fun i ↦ p.coeff i, Subtype.ext ?_⟩
     simpa only [monicOfCoeff_coeff hp hdeg] using hI
 
