@@ -62,10 +62,8 @@ theorem kummerIdeleSubgroup_le_range_ideleNormMap {n : ℕ}
   refine mem_range_ideleNormMap_of_exponent_dvd K L hn (S := (S : Set _)) (T := ∅)
     (by simp) ?_ ?_ ?_ ?_
   · intro v hvS _
-    obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
-    have hw' : w.asIdeal.LiesOver v.asIdeal := ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩
-    let _ : w.asIdeal.LiesOver v.asIdeal := hw'
-    exact ⟨⟨w, hw'⟩, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v
+    obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+    exact ⟨⟨w, inferInstance⟩, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport _
       (fun hv ↦ hvS (hram hv)) w.asIdeal⟩
   · intro v hvS
     rw [powerSubgroup_eq_range_powMonoidHom]
@@ -89,10 +87,8 @@ theorem kummerIdeleClassSubgroup_le_range_ideleClassNormMap {n : ℕ}
   obtain ⟨x, hx, rfl⟩ := (mem_kummerIdeleClassSubgroup_iff S n c).mp hc
   obtain ⟨y, hy⟩ := kummerIdeleSubgroup_le_range_ideleNormMap K L hn S hram hx
   refine ⟨(y : IdeleClassGroup (𝓞 L) L), ?_⟩
-  change GlobalNumberFields.ideleClassNormMap K L (y : IdeleClassGroup (𝓞 L) L) =
-    (x : IdeleClassGroup (𝓞 K) K)
-  rw [GlobalNumberFields.ideleClassNormMap_mk]
-  exact congrArg (fun z : IdeleGroup (𝓞 K) K ↦ (z : IdeleClassGroup (𝓞 K) K)) hy
+  exact (GlobalNumberFields.ideleClassNormMap_mk y).trans
+    (congrArg (fun z : IdeleGroup (𝓞 K) K ↦ (z : IdeleClassGroup (𝓞 K) K)) hy)
 
 /-- **The idele-class norm index divides the Kummer subgroup index.** If `S` contains the
 ramified places and `n` is divisible by the exponent of `Gal(L/K)`, then
