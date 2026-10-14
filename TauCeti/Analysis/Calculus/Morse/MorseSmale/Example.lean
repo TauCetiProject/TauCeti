@@ -22,10 +22,11 @@ negative-gradient flow is Morse–Smale. Along an orbit the second coordinate is
 unstable set lies on the `x`-axis; the first coordinate solves `x' = sin x`, for which the saddle
 values `2πm` are repelling, so the stable set of a saddle is a vertical line. Hence the unstable
 and stable sets of two saddles meet only at a saddle itself, where they are the two axes, and the
-stable set of a minimum is open-dimensional.
+stable set of a minimum has full-dimensional tangent spaces at each point.
 
-For the saddle `(0, 0)` and the minimum `(π, 0)`, the set of points on trajectories between them
-is a manifold of dimension `1` and its level slices are manifolds of dimension `0`.
+For a saddle `p` and a minimum `q` (for instance `(0, 0)` and `(π, 0)`), the set of points on
+trajectories from `p` to `q` is a manifold of dimension `1`, and its level slices are manifolds of
+dimension `0`.
 
 ## Main results
 
@@ -37,8 +38,8 @@ is a manifold of dimension `1` and its level slices are manifolds of dimension `
 * `TauCeti.isMorseSmale_cosAddHalfSq`: the negative-gradient flow of `cosAddHalfSq` is
   Morse–Smale.
 * `TauCeti.exists_isManifold_cosAddHalfSq_saddle_min` and
-  `TauCeti.exists_isManifold_cosAddHalfSq_saddle_min_level`: the dimension formulas for the pair
-  `(0, 0)`, `(π, 0)`.
+  `TauCeti.exists_isManifold_cosAddHalfSq_saddle_min_level`: the dimension formulas for a saddle
+  and a minimum.
 
 ## References
 
@@ -383,10 +384,7 @@ private theorem span_sup_span_eq_top_of_saddle {q : EuclideanSpace ℝ (Fin 2)}
   set U := Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet Φ q) q)
   set K := LinearMap.ker (EuclideanSpace.proj (1 : Fin 2) :
     EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).toLinearMap
-  have hqu : q ∈ Flow.unstableSet Φ q := by
-    rw [Flow.mem_unstableSet]
-    simp only [orbit_eq_self hq]
-    exact tendsto_const_nhds
+  have hqu : q ∈ Flow.unstableSet Φ q := Flow.self_mem_unstableSet_iff.2 (orbit_eq_self hq)
   -- The unstable set lies on the `x`-axis `K`, so `U ≤ K`, and `U` is a line.
   have hUK : U ≤ K := by
     refine Submodule.span_le.2 ?_
@@ -425,11 +423,10 @@ private theorem span_sup_span_eq_top_of_saddle {q : EuclideanSpace ℝ (Fin 2)}
     have := hUK hvU
     simp [K] at this
     simp [this]
-  have hsup : U ⊔ ℝ ∙ e₁ = ⊤ := by
-    refine Submodule.eq_top_of_finrank_eq ?_
-    have h := Submodule.finrank_sup_add_finrank_inf_eq U (ℝ ∙ e₁)
-    rw [hinf, finrank_bot, add_zero, hUdim, finrank_span_singleton (by simp)] at h
-    rw [h, finrank_euclideanSpace_fin]
+  have hsup : U ⊔ ℝ ∙ e₁ = ⊤ :=
+    Submodule.eq_top_of_disjoint U (ℝ ∙ e₁)
+      (by rw [hUdim, finrank_span_singleton (by simp), finrank_euclideanSpace_fin])
+      (disjoint_iff.2 hinf)
   exact top_unique (hsup ▸ sup_le_sup_left (Submodule.span_le.2 (by simpa using he₁)) U)
 
 /-- **`cos x + y² / 2` is Morse–Smale.** For all critical points `p` and `q`, the unstable set of
@@ -468,48 +465,45 @@ theorem isMorseSmale_cosAddHalfSq :
     rw [morseIndex_cosAddHalfSq_of_cos_eq_neg_one hq hc, add_zero] at h
     rw [Submodule.eq_top_of_finrank_eq h, sup_top_eq]
 
-private theorem fderiv_cosAddHalfSq_zero : fderiv ℝ cosAddHalfSq 0 = 0 :=
-  fderiv_cosAddHalfSq_eq_zero_iff.2 ⟨by simp, by simp⟩
+variable {p q : EuclideanSpace ℝ (Fin 2)}
 
-private theorem fderiv_cosAddHalfSq_single_pi :
-    fderiv ℝ cosAddHalfSq (EuclideanSpace.single 0 Real.pi) = 0 :=
-  fderiv_cosAddHalfSq_eq_zero_iff.2 ⟨by simp, by simp⟩
-
-/-- **The trajectories from the saddle `(0, 0)` to the minimum `(π, 0)` form a manifold of
-dimension `1`**: the Morse indices are `1` and `0`. -/
-theorem exists_isManifold_cosAddHalfSq_saddle_min
-    {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))}
-    (hL : Module.finrank ℝ L = 1) :
-    ∃ C : ChartedSpace L ↥(Flow.unstableSet Φ 0 ∩
-        Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi)), letI := C
-      IsManifold 𝓘(ℝ, L) 1 ↥(Flow.unstableSet Φ 0 ∩
-        Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi)) ∧
+/-- **The connecting locus from a saddle to a minimum is a manifold of dimension `1`.** For a
+saddle `p` (`cos (p 0) = 1`) and a minimum `q` (`cos (q 0) = -1`), the set
+`W^u(p) ∩ W^s(q)` of points on trajectories from `p` to `q` is a manifold of dimension
+`1 = morseIndex p - morseIndex q`; for example `p = (0, 0)` and `q = (π, 0)`. -/
+theorem exists_isManifold_cosAddHalfSq_saddle_min (hp : fderiv ℝ cosAddHalfSq p = 0)
+    (hpc : Real.cos (p 0) = 1) (hq : fderiv ℝ cosAddHalfSq q = 0) (hqc : Real.cos (q 0) = -1)
+    {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} (hL : Module.finrank ℝ L = 1) :
+    ∃ C : ChartedSpace L ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q), letI := C
+      IsManifold 𝓘(ℝ, L) 1 ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q) ∧
       ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) 1
-        (Subtype.val : ↥(Flow.unstableSet Φ 0 ∩
-          Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi)) → EuclideanSpace ℝ (Fin 2)) := by
+        (Subtype.val : ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q) →
+          EuclideanSpace ℝ (Fin 2)) := by
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet
-    contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_zero)
-    (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_single_pi) ?_
-  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one fderiv_cosAddHalfSq_zero (by simp),
-    morseIndex_cosAddHalfSq_of_cos_eq_neg_one fderiv_cosAddHalfSq_single_pi (by simp)]
+    contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
+    (isNondegenerateCriticalPoint_cosAddHalfSq hq) ?_
+  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hp hpc,
+    morseIndex_cosAddHalfSq_of_cos_eq_neg_one hq hqc]
 
-/-- **The unparametrized trajectories from the saddle `(0, 0)` to the minimum `(π, 0)`, on each
-level, form a manifold of dimension `0`.** -/
-theorem exists_isManifold_cosAddHalfSq_saddle_min_level
-    {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))}
-    (hL : Module.finrank ℝ L = 0) (c : ℝ) :
-    ∃ C : ChartedSpace L ↥(Flow.unstableSet Φ 0 ∩
-        Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi) ∩ {x | cosAddHalfSq x = c}), letI := C
-      IsManifold 𝓘(ℝ, L) 1 ↥(Flow.unstableSet Φ 0 ∩
-        Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi) ∩ {x | cosAddHalfSq x = c}) ∧
+/-- **Level slices of the connecting locus from a saddle to a minimum are manifolds of dimension
+`0`.** For a saddle `p` and a minimum `q`, each level slice `W^u(p) ∩ W^s(q) ∩ {f = c}` is a
+manifold of dimension `0`. For `f q < c < f p` (for `p = (0, 0)`, `q = (π, 0)`: `-1 < c < 1`) it
+meets each trajectory from `p` to `q` exactly once, so it models the unparametrized trajectories;
+for other levels it is empty. -/
+theorem exists_isManifold_cosAddHalfSq_saddle_min_level (hp : fderiv ℝ cosAddHalfSq p = 0)
+    (hpc : Real.cos (p 0) = 1) (hq : fderiv ℝ cosAddHalfSq q = 0) (hqc : Real.cos (q 0) = -1)
+    {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} (hL : Module.finrank ℝ L = 0) (c : ℝ) :
+    ∃ C : ChartedSpace L ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q ∩
+        {x | cosAddHalfSq x = c}), letI := C
+      IsManifold 𝓘(ℝ, L) 1 ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q ∩
+        {x | cosAddHalfSq x = c}) ∧
       ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) 1
-        (Subtype.val : ↥(Flow.unstableSet Φ 0 ∩
-          Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi) ∩ {x | cosAddHalfSq x = c}) →
-            EuclideanSpace ℝ (Fin 2)) := by
+        (Subtype.val : ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q ∩
+          {x | cosAddHalfSq x = c}) → EuclideanSpace ℝ (Fin 2)) := by
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet_level
-    contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_zero)
-    (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_single_pi) ?_
-  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one fderiv_cosAddHalfSq_zero (by simp),
-    morseIndex_cosAddHalfSq_of_cos_eq_neg_one fderiv_cosAddHalfSq_single_pi (by simp)]
+    contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
+    (isNondegenerateCriticalPoint_cosAddHalfSq hq) ?_
+  rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hp hpc,
+    morseIndex_cosAddHalfSq_of_cos_eq_neg_one hq hqc]
 
 end TauCeti
