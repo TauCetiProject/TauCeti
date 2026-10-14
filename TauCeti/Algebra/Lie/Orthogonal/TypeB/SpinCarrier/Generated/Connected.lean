@@ -13,9 +13,9 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 /-!
 # Connectedness of the generated type-Bₙ₊₁ spin subgroup
 
-The numbered simple-root subgroups and the weight torus of the full-weight type-`Bₙ₊₁` spin
-carrier have connected prime spectra over a field, the affine line and a split torus. Over an
-algebraically closed field the subgroup they generate is therefore geometrically connected.
+Each numbered simple-root subgroup and the weight torus of the full-weight type-`Bₙ₊₁` spin
+carrier is geometrically connected over every field. The subgroup they generate is therefore
+geometrically connected over every field.
 
 Connectedness is one of the two geometric inputs, smoothness being the other, to recognizing this
 explicit carrier as a split reductive group of type `Bₙ₊₁`. The result concerns the generated
