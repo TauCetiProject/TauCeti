@@ -14,17 +14,12 @@ public import Mathlib.RingTheory.Ideal.Span
 # Injective modules over principal ideal rings
 
 If multiplication by each nonzero scalar is surjective on a module over a principal ideal ring,
-the module satisfies Baer's criterion: a functional on a principal ideal extends after dividing
-the image of a generator. Mathlib's `Module.Baer.injective` then gives injectivity.
+the module satisfies Baer's criterion and is injective.
 
 A division algebra faithfully containing the scalar ring has this divisibility property, as does
 its quotient by any submodule. In particular, `ℚ_p / ℤ_p` is injective over `ℤ_p`. Thus a
 `ℚ_p / ℤ_p`-valued character of a torsion submodule extends to the whole module, without a splitting
 or finite-generation assumption. This is the extension property used in torsion duality.
-
-The proof of `Module.Baer.of_surjective_smul` adapts Jujian Zhang's
-`Module.Baer.of_divisible` from `Mathlib/Algebra/Category/Grp/Injective.lean`, replacing integer
-division with scalar surjectivity.
 
 ## Main results
 
@@ -35,6 +30,9 @@ division with scalar surjectivity.
 
 public section
 
+/- Adapted from Jujian Zhang's Module.Baer.of_divisible in
+Mathlib/Algebra/Category/Grp/Injective.lean, with scalar surjectivity in place of integer
+division. -/
 /-- A module over a principal ideal ring satisfies Baer's criterion if multiplication by each
 nonzero scalar is surjective. -/
 theorem Module.Baer.of_surjective_smul {R M : Type*} [Ring R] [IsPrincipalIdealRing R]
