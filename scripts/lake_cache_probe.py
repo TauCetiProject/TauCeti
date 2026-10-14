@@ -27,14 +27,20 @@ REPOSITORY = re.compile(r"\A[0-9A-Za-z_.-]+/[0-9A-Za-z_.-]+\Z")
 DEFAULT_REPOSITORY = "TauCetiProject/TauCeti"
 
 
+def plain_https_endpoint(value: str) -> str:
+    """Validate a cache endpoint, including its use in inert curl configuration."""
+    parsed = urllib.parse.urlsplit(value)
+    if (parsed.scheme != "https" or not parsed.netloc or parsed.username is not None
+            or parsed.password is not None or parsed.query or parsed.fragment
+            or any(ord(c) < 33 or c in '\\"' for c in value)):
+        raise ValueError("expected a plain HTTPS cache endpoint")
+    return value.rstrip("/")
+
+
 def exact_map_url(endpoint: str, toolchain: str, revision: str,
                   repository: str = DEFAULT_REPOSITORY) -> str:
-    """Return the public revision-map URL written by ``lake cache put-staged``."""
-    endpoint = endpoint.strip().rstrip("/")
-    parsed = urllib.parse.urlsplit(endpoint)
-    if (parsed.scheme != "https" or not parsed.netloc or parsed.username is not None
-            or parsed.password is not None or parsed.query or parsed.fragment):
-        raise ValueError("the public revision endpoint is not a plain HTTPS URL")
+    """Return Lake's revision-map URL for the given endpoint, toolchain and revision."""
+    endpoint = plain_https_endpoint(endpoint)
     if not REVISION.fullmatch(revision):
         raise ValueError("the revision is not a lowercase 40-character Git object ID")
     if not TOOLCHAIN.fullmatch(toolchain):
@@ -50,24 +56,35 @@ def exact_map_url(endpoint: str, toolchain: str, revision: str,
     return f"{endpoint}/{repository}/tc/{scope}/{revision}.jsonl"
 
 
+def parse_map(raw: bytes) -> tuple[str, list[tuple[str, str]]]:
+    """Parse Lake's version header and flat input/archive mappings.
+
+    Callers decide which schema versions they support; the public availability
+    probe accepts any nonempty version, while publication requires a known schema.
+    """
+    lines = raw.decode("utf-8").splitlines()
+    if len(lines) < 2:
+        raise ValueError("the response contains no root-package output mappings")
+    version = json.loads(lines[0])
+    if not isinstance(version, str) or not version:
+        raise ValueError("the response has no Lake map-version header")
+    entries = []
+    for lineno, line in enumerate(lines[1:], start=2):
+        value = json.loads(line)
+        if (not isinstance(value, list) or len(value) != 2
+                or not isinstance(value[0], str) or not INPUT_HASH.fullmatch(value[0])
+                or not isinstance(value[1], str) or not ARTIFACT.fullmatch(value[1])):
+            raise ValueError(f"the response line {lineno} is not a Lake output mapping")
+        entries.append((value[0], value[1]))
+    return version, entries
+
+
 def valid_map(path: pathlib.Path) -> tuple[bool, str]:
     """Check enough of Lake's JSONL map shape to reject empty/error responses."""
     try:
-        lines = 0
-        with path.open(encoding="utf-8") as handle:
-            for lines, line in enumerate(handle, start=1):
-                value = json.loads(line)
-                if lines == 1:
-                    if not isinstance(value, str) or not value:
-                        return False, "the public response has no Lake map-version header"
-                elif (not isinstance(value, list) or len(value) != 2
-                      or not isinstance(value[0], str) or not INPUT_HASH.fullmatch(value[0])
-                      or not isinstance(value[1], str) or not ARTIFACT.fullmatch(value[1])):
-                    return False, f"the public response line {lines} is not a Lake output mapping"
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        return False, f"the public response is not valid JSONL: {exc}"
-    if lines < 2:
-        return False, "the public response contains no root-package output mappings"
+        parse_map(path.read_bytes())
+    except (OSError, UnicodeError, ValueError) as exc:
+        return False, f"the public response is not a valid Lake map: {exc}"
     return True, ""
 
 

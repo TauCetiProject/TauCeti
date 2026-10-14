@@ -7,11 +7,11 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbelianLayer
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
-import TauCeti.NumberTheory.ClassFieldTheory.Formation.GaloisMaps
 
 /-!
 # Norm subgroups of abelian local layers
@@ -26,13 +26,14 @@ reads as an isomorphism onto the Galois group of the layer itself,
 with no abelianization left in the target (`localAbelianGaloisEquiv`). In particular the norm
 subgroup has index `[L : K]` (`index_localNormSubgroup`).
 
-Comparing Artin symbols along the quotient maps `G_K ⧸ (V ⊓ W) → G_K ⧸ V` turns statements about
-the norm subgroups of `V` and `W` into statements about subgroups of the finite group
-`G_K ⧸ (V ⊓ W)`. This gives the lattice laws of local norm subgroups: the compositum of two finite
-abelian extensions has the intersection of their norm subgroups as its norm subgroup
-(`localNormSubgroup_inf_of_isAbelian`), and the intersection of two finite Galois extensions has
-the product of their norm subgroups (`localNormSubgroup_sup`; by norm limitation this needs no
-abelianity).
+This is reciprocity for the abelian layers of a class formation
+(`ClassFormation.abelianArtinMap`), applied to the local class formation and read on `Kˣ`. The
+lattice laws of local norm subgroups are likewise those of the norm subgroups of a class formation
+(`ClassFormation.normSubgroup_inf_of_isAbelian`, `ClassFormation.normSubgroup_sup`), read on `Kˣ`
+through `localGroundOrderIso`: the compositum of two finite abelian extensions has the intersection
+of their norm subgroups as its norm subgroup (`localNormSubgroup_inf_of_isAbelian`), and the
+intersection of two finite Galois extensions has the product of their norm subgroups
+(`localNormSubgroup_sup`; by norm limitation this needs no abelianity).
 
 ## Main definitions
 
@@ -72,15 +73,26 @@ section Reciprocity
 variable {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
 
 /-- The Artin map of the local class formation on the layer `V ◁ G_K`, as a homomorphism from
-`Kˣ`; for an abelian layer it is read in the Galois group itself rather than in its
-abelianization. -/
+`Kˣ`: the Artin map `ClassFormation.abelianArtinMap` of the abelian layer, read on `Kˣ` through the
+identification of `Kˣ` with the ground level. For an abelian layer it is read in the Galois group
+itself rather than in its abelianization. -/
 def localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) :
     Kˣ →* (ofOpenNormal V).Gal :=
-  (abelianizationGalEquiv hV).toMonoidHom.comp <| MonoidHom.toAdditive.symm <|
-    ((localClassFormation K).artinMap (ofOpenNormal V)).comp
-      (localGroundEquiv K V).toAddMonoidHom
+  (AddMonoidHom.toMultiplicativeLeft ((localClassFormation K).abelianArtinMap hV)).comp <|
+    AddMonoidHom.toMultiplicativeRight
+      (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+        (fixedField_toSubgroup_top_eq_fieldRange K)).toAddMonoidHom
 
 variable {K}
+
+/-- `localAbelianArtinHom` is the Artin map of the abelian layer evaluated on `x ∈ Kˣ`, read in
+the ground level `((Kˢ)ˣ)^{G_K}`. -/
+theorem localAbelianArtinHom_apply (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
+    localAbelianArtinHom K hV x =
+      ((localClassFormation K).abelianArtinMap hV
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+          (fixedField_toSubgroup_top_eq_fieldRange K) (Additive.ofMul x))).toMul :=
+  (rfl)
 
 /-- The abelianization class of `localAbelianArtinHom` is the Artin map of the local class
 formation. -/
@@ -89,22 +101,26 @@ theorem of_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
     Additive.ofMul (Abelianization.of (localAbelianArtinHom K hV x)) =
       (localClassFormation K).artinMap (ofOpenNormal V)
         (localGroundEquiv K V (Additive.ofMul x)) := by
-  rw [← abelianizationGalEquiv_symm_apply hV]
-  simp [localAbelianArtinHom]
+  rw [localAbelianArtinHom_apply, ClassFormation.ofMul_of_abelianArtinMap,
+    groundEquivOfOpenNormal_unitsLevelEquiv]
 
 /-- The kernel of `localAbelianArtinHom` is the local norm subgroup. -/
 theorem ker_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) :
     (localAbelianArtinHom K hV).ker = localNormSubgroup K V := by
   ext x
-  rw [MonoidHom.mem_ker, ← (abelianizationGalEquiv hV).symm.map_eq_one_iff,
-    abelianizationGalEquiv_symm_apply, ← ofMul_eq_zero, of_localAbelianArtinHom,
-    ClassFormation.artinMap_eq_zero_iff, localGroundEquiv_mem_normSubgroup_iff]
+  rw [MonoidHom.mem_ker, localAbelianArtinHom_apply, toMul_eq_one,
+    ClassFormation.abelianArtinMap_eq_zero_iff, Formation.mem_normSubgroup,
+    groundEquivOfOpenNormal_unitsLevelEquiv, localGroundEquiv_mem_normSubgroup_iff]
 
 /-- `localAbelianArtinHom` is surjective. -/
 theorem surjective_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) :
-    Function.Surjective (localAbelianArtinHom K hV) :=
-  (abelianizationGalEquiv hV).surjective.comp <|
-    ((localClassFormation K).surjective_artinMap _).comp (localGroundEquiv K V).surjective
+    Function.Surjective (localAbelianArtinHom K hV) := by
+  intro γ
+  obtain ⟨a, ha⟩ := (localClassFormation K).surjective_abelianArtinMap hV (Additive.ofMul γ)
+  obtain ⟨x, rfl⟩ := (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+    (fixedField_toSubgroup_top_eq_fieldRange K)).surjective a
+  refine ⟨x.toMul, ?_⟩
+  rw [localAbelianArtinHom_apply, ofMul_toMul, ha, toMul_ofMul]
 
 variable (K) in
 /-- **Local reciprocity for an abelian layer**, `Kˣ / N_{L/K}(Lˣ) ≃* Gal(L/K)`. Its target is the
@@ -142,38 +158,6 @@ theorem index_localNormSubgroup (hV : V.IsAbelianClassFieldLayer) :
 
 end Reciprocity
 
-/-! ### Norm subgroups through a common abelian refinement -/
-
-section Refinement
-
-variable {K} {U V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
-
-/-- **The norm subgroup of a quotient layer, read in a refinement.** If `U ≤ V` and `U` is
-abelian, then `x ∈ Kˣ` is a norm from the field of `V` exactly when its Artin symbol in
-`G_K ⧸ U` lies in the kernel of the quotient map `G_K ⧸ U → G_K ⧸ V`. -/
-theorem localNormSubgroup_eq_comap_ker (hU : U.IsAbelianClassFieldLayer) (h : U ≤ V) :
-    localNormSubgroup K V =
-      (LayerRefinement.ofOpenNormal h).galHom.ker.comap (localAbelianArtinHom K hU) := by
-  have hV : V.IsAbelianClassFieldLayer := hU.mono h
-  ext x
-  rw [Subgroup.mem_comap, MonoidHom.mem_ker, ← (abelianizationGalEquiv hV).symm.map_eq_one_iff,
-    abelianizationGalEquiv_symm_apply, ← ofMul_eq_zero,
-    ← LayerRefinement.quotientHom_of, of_localAbelianArtinHom,
-    ← groundEquiv_localGroundEquiv K h, ← ClassFormation.artinMap_quotient,
-    ClassFormation.artinMap_eq_zero_iff, localGroundEquiv_mem_normSubgroup_iff]
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The class of `w ∈ G_K` in the Galois group of the layer of `U` dies in that of `V` exactly when
-`w ∈ V`. -/
-private theorem mk_mem_ker_galHom_iff (h : U ≤ V) (w : (ofOpenNormal U).ground) :
-    (QuotientGroup.mk w : (ofOpenNormal U).Gal) ∈ (LayerRefinement.ofOpenNormal h).galHom.ker ↔
-      (w : AbsoluteGaloisGroup K) ∈ V := by
-  rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, top_ofOpenNormal]
-  -- Membership in an open normal subgroup is membership in its underlying open subgroup.
-  exact Iff.rfl
-
-end Refinement
-
 /-! ### Composita and intersections -/
 
 section Lattice
@@ -187,58 +171,10 @@ compositum, which can be larger than the compositum of the maximal abelian subex
 theorem localNormSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
     (hW : W.IsAbelianClassFieldLayer) :
     localNormSubgroup K (V ⊓ W) = localNormSubgroup K V ⊓ localNormSubgroup K W := by
-  have hU : (V ⊓ W).IsAbelianClassFieldLayer := hV.inf hW
-  have hUV : V ⊓ W ≤ V := inf_le_left
-  have hUW : V ⊓ W ≤ W := inf_le_right
-  rw [localNormSubgroup_eq_comap_ker hU le_rfl, localNormSubgroup_eq_comap_ker hU hUV,
-    localNormSubgroup_eq_comap_ker hU hUW, ← Subgroup.comap_inf]
-  congr 1
-  ext g
-  induction g using QuotientGroup.induction_on with
-  | H w =>
-    rw [Subgroup.mem_inf, mk_mem_ker_galHom_iff le_rfl, mk_mem_ker_galHom_iff hUV,
-      mk_mem_ker_galHom_iff hUW]
-    -- Membership in an open normal subgroup is membership in its underlying subgroup.
-    exact (SetLike.ext_iff.1 (OpenNormalSubgroup.toSubgroup_inf V W) _).trans Subgroup.mem_inf
-
-/-- **Intersections, for abelian layers.** -/
-private theorem localNormSubgroup_sup_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
-    (hW : W.IsAbelianClassFieldLayer) :
-    localNormSubgroup K (V ⊔ W) = localNormSubgroup K V ⊔ localNormSubgroup K W := by
-  have hU : (V ⊓ W).IsAbelianClassFieldLayer := hV.inf hW
-  have hUV : V ⊓ W ≤ V := inf_le_left
-  have hUW : V ⊓ W ≤ W := inf_le_right
-  have hUVW : V ⊓ W ≤ V ⊔ W := hUV.trans le_sup_left
-  rw [localNormSubgroup_eq_comap_ker hU hUVW, localNormSubgroup_eq_comap_ker hU hUV,
-    localNormSubgroup_eq_comap_ker hU hUW,
-    Subgroup.comap_sup_eq _ _ _ (surjective_localAbelianArtinHom hU)]
-  congr 1
-  refine le_antisymm (fun g hg ↦ ?_) (sup_le (fun g hg ↦ ?_) fun g hg ↦ ?_)
-  · induction g using QuotientGroup.induction_on with
-    | H w =>
-      rw [mk_mem_ker_galHom_iff hUVW] at hg
-      have hg' : (w : AbsoluteGaloisGroup K) ∈ V.toSubgroup ⊔ W.toSubgroup := by
-        -- Membership in an open normal subgroup is membership in its underlying subgroup.
-        rw [← OpenNormalSubgroup.toSubgroup_sup]
-        exact hg
-      obtain ⟨v, hv, v', hv', hvv'⟩ := Subgroup.mem_sup_of_normal_right.1 hg'
-      have hmk : (QuotientGroup.mk w : (ofOpenNormal (V ⊓ W)).Gal) =
-          QuotientGroup.mk ⟨v, by simp⟩ * QuotientGroup.mk ⟨v', by simp⟩ := by
-        rw [← QuotientGroup.mk_mul]
-        exact congrArg QuotientGroup.mk (Subtype.ext hvv'.symm)
-      rw [hmk]
-      exact Subgroup.mul_mem_sup ((mk_mem_ker_galHom_iff hUV _).2 hv)
-        ((mk_mem_ker_galHom_iff hUW _).2 hv')
-  · induction g using QuotientGroup.induction_on with
-    | H w =>
-      rw [mk_mem_ker_galHom_iff hUV] at hg
-      rw [mk_mem_ker_galHom_iff hUVW]
-      exact Subgroup.mem_sup_left hg
-  · induction g using QuotientGroup.induction_on with
-    | H w =>
-      rw [mk_mem_ker_galHom_iff hUW] at hg
-      rw [mk_mem_ker_galHom_iff hUVW]
-      exact Subgroup.mem_sup_right hg
+  apply (localGroundOrderIso K).injective
+  rw [map_inf, localGroundOrderIso_localNormSubgroup, localGroundOrderIso_localNormSubgroup,
+    localGroundOrderIso_localNormSubgroup,
+    (localClassFormation K).normSubgroup_inf_of_isAbelian hV hW]
 
 /-- **Intersections.** The norm subgroup of the intersection of the finite Galois extensions cut
 out by `V` and `W`, which is cut out by `V ⊔ W`, is the product of the two norm subgroups. No
@@ -247,10 +183,9 @@ sublayer, and the maximal abelian sublayer of `V ⊔ W` is the join of those of 
 @[simp]
 theorem localNormSubgroup_sup (V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     localNormSubgroup K (V ⊔ W) = localNormSubgroup K V ⊔ localNormSubgroup K W := by
-  rw [← localNormSubgroup_maximalAbelianLayer, OpenNormalSubgroup.maximalAbelianLayer_sup,
-    localNormSubgroup_sup_of_isAbelian V.isAbelianClassFieldLayer_maximalAbelianLayer
-      W.isAbelianClassFieldLayer_maximalAbelianLayer,
-    localNormSubgroup_maximalAbelianLayer, localNormSubgroup_maximalAbelianLayer]
+  apply (localGroundOrderIso K).injective
+  rw [map_sup, localGroundOrderIso_localNormSubgroup, localGroundOrderIso_localNormSubgroup,
+    localGroundOrderIso_localNormSubgroup, (localClassFormation K).normSubgroup_sup]
 
 end Lattice
 
