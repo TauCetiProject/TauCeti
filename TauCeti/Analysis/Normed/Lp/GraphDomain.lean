@@ -50,6 +50,7 @@ theorem coe_normalHalfSpace (a : ℝ) :
 def normalEpigraph (φ : C(E, ℝ)) : Opens (WithLp 2 (ℝ × E)) :=
   ⟨{x | φ x.snd < x.fst}, isOpen_lt (by fun_prop) (by fun_prop)⟩
 
+/-- Membership in the region above the graph is a strict inequality. -/
 @[simp]
 theorem mem_normalEpigraph (φ : C(E, ℝ)) (x : WithLp 2 (ℝ × E)) :
     x ∈ normalEpigraph φ ↔ φ x.snd < x.fst :=

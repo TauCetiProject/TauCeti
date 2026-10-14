@@ -34,9 +34,6 @@ is an inner product space. The topology, derivative and norm estimates do not re
 finite dimension or an inner product. The determinant results require finite dimension;
 volume preservation additionally requires an inner product.
 
-The open sets `TauCeti.normalHalfSpace` and `TauCeti.normalEpigraph` record the flat and graph
-domains related by this homeomorphism.
-
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §§5.4–5.5
@@ -49,11 +46,9 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set
+open MeasureTheory
 
 variable {E : Type*} [NormedAddCommGroup E]
-
-/-! ### Graph flattening -/
 
 /-- The ambient homeomorphism subtracting the height of a continuous graph from the normal
 coordinate. -/

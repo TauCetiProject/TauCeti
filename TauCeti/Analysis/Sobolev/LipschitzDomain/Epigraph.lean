@@ -16,9 +16,7 @@ translation to the origin turns the defining function `φ` into
 `y ↦ φ (y + x.snd) - x.fst`, with the same Lipschitz constant. In particular, every normal
 half-space is a Lipschitz domain with constant zero.
 
-This supplies the basic non-flat models for `Set.IsLipschitzDomainWith` and connects the geometric
-predicate to the graph domains on which Sobolev trace and extension operators are already
-available.
+This supplies the basic non-flat models for `Set.IsLipschitzDomainWith`.
 
 ## Main declarations
 
