@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
@@ -20,7 +21,8 @@ bialgebra of `𝔾ₐ` over `K`. This file bundles that equivalence as an isomor
 Hopf algebra, and not merely as a bialgebra.
 
 The bundled base-change isomorphism transports the connectedness of the prime spectrum of the
-coordinate algebra over a domain to every scalar extension whose target is a domain.
+coordinate algebra over a domain to every scalar extension whose target is a domain. In
+particular `𝔾ₐ` is geometrically connected over every field.
 
 The antipode needs no separate argument: a bialgebra map between Hopf algebras automatically
 commutes with the antipodes, which is what `CommHopfAlgCat.isoMk` uses.
@@ -40,6 +42,8 @@ equivalence has no such restriction.
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebraBaseChangeIso`: the bundled isomorphism.
 * `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra`:
   the base-changed coordinate algebra has connected prime spectrum over a domain.
+* `TauCeti.AdditiveGroup.geometricallyConnected_coordinateHopfAlgebra`: `𝔾ₐ` is geometrically
+  connected over every field.
 
 ## References
 
@@ -74,5 +78,15 @@ theorem connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra
   let e := coordinateHopfAlgebraBaseChangeIso k K
   exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
     (ConcreteCategory.bijective_of_isIso e.hom).1
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` is geometrically connected over every field. -/
+theorem geometricallyConnected_coordinateHopfAlgebra (k : Type u) [Field k] :
+    geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
+  rw [geometricallyConnectedCommHopfAlgProperty_iff]
+  intro L _ _
+  have := connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k L
+  exact connectedSpace_primeSpectrum_of_injective
+    (Algebra.TensorProduct.comm k (coordinateHopfAlgebra k) L).toRingHom
+    (Algebra.TensorProduct.comm k (coordinateHopfAlgebra k) L).injective
 
 end TauCeti.AdditiveGroup

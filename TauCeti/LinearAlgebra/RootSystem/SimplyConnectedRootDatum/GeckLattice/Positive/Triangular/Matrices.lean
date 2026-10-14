@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Order.Fin.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
@@ -88,30 +88,16 @@ theorem coe_geckWeightOrderingMatrix :
 
 variable {A : Type*} [CommRing A]
 
-/-- Scalar extension preserves the same coordinate permutation over every value ring. -/
-theorem coe_map_geckWeightOrderingMatrix :
-    (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) (t.geckWeightOrderingMatrix ht) :
-      Matrix (Fin (t.geckDim ht)) (Fin (t.geckDim ht)) A) =
-        Equiv.Perm.permMatrix A (t.geckWeightOrderingEquiv ht).symm := by
-  -- `GeneralLinearGroup.map_apply` is entrywise; expose the underlying matrix map
-  -- so that `PEquiv.map_toMatrix` applies directly to this matrix equality.
-  change ((t.geckWeightOrderingMatrix ht :
-    Matrix (Fin (t.geckDim ht)) (Fin (t.geckDim ht)) ℤ).map (algebraMap ℤ A)) = _
-  rw [coe_geckWeightOrderingMatrix]
-  exact PEquiv.map_toMatrix _ _
-
-/-- Conjugation by the weight-ordering matrix reindexes both matrix coordinates. -/
-theorem conj_geckWeightOrderingMatrix_eq_reindexGL
-    (g : Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) :
-    Matrix.GeneralLinearGroup.map (algebraMap ℤ A) (t.geckWeightOrderingMatrix ht) * g *
-        (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) (t.geckWeightOrderingMatrix ht))⁻¹ =
-      (t.geckWeightOrderingEquiv ht).reindexGL A g := by
-  apply (mul_inv_eq_iff_eq_mul).2
-  apply Units.ext
-  simp only [Units.val_mul, coe_map_geckWeightOrderingMatrix, Equiv.coe_reindexGL,
-    Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv]
-  ext r s
-  simp
+/-- Over every value ring, the weight-ordering matrix is the permutation matrix of
+`geckWeightOrderingEquiv`, so conjugation by it is `TauCeti.permutationGL_mul_mul_inv`. -/
+theorem map_geckWeightOrderingMatrix :
+    Matrix.GeneralLinearGroup.map (algebraMap ℤ A) (t.geckWeightOrderingMatrix ht) =
+      permutationGL (k := A) (t.geckWeightOrderingEquiv ht) := by
+  rw [← map_permutationGL (algebraMap ℤ A)]
+  congr 1
+  ext : 1
+  rw [coe_geckWeightOrderingMatrix, permutationGL_coe]
+  rfl
 
 private theorem geckOrderedWeightBasis_baseChange :
     (t.geckOrderedWeightBasis ht).baseChange A =
@@ -131,7 +117,7 @@ theorem conj_geckRootSubgroupMatrix_eq_ordered (i : Fin t.rank ⊕ Fin t.rank)
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) i
         (t.isNilpotent_geckRepresentation_rootGenerator ht i) (t.geckOrderedWeightBasis ht) q := by
-  rw [conj_geckWeightOrderingMatrix_eq_reindexGL]
+  rw [map_geckWeightOrderingMatrix, permutationGL_mul_mul_inv]
   ext r s
   simp [Equiv.coe_reindexGL, geckRootSubgroupMatrix, kostantRootSubgroupMatrix_apply,
     geckOrderedWeightBasis_baseChange, Module.Basis.reindex_apply]
@@ -195,7 +181,7 @@ theorem conj_geckTorusMatrix_eq_ordered (s : Fin t.rank → Aˣ) :
         (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) (t.geckWeightOrderingMatrix ht))⁻¹ =
       kostantTorusMatrix (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckOrderedWeightBasis ht) (t.geckOrderedWeight ht) s := by
-  rw [conj_geckWeightOrderingMatrix_eq_reindexGL]
+  rw [map_geckWeightOrderingMatrix, permutationGL_mul_mul_inv]
   ext r c
   simp [Equiv.coe_reindexGL, geckTorusMatrix, kostantTorusMatrix_apply, diagGL_apply,
     geckOrderedWeight, Matrix.submatrix_apply, Matrix.diagonal_apply]

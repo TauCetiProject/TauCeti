@@ -266,13 +266,7 @@ theorem geometricallyConnected_coordinateHopfAlgebra :
   apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
     generator
   rintro (i | ⟨⟩)
-  · rw [geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed]
-    intro K _ _ _
-    have := AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra
-      (ZMod 2) K
-    let e := Algebra.TensorProduct.comm (ZMod 2)
-      (AdditiveGroup.coordinateHopfAlgebra (ZMod 2)) K
-    exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
+  · exact AdditiveGroup.geometricallyConnected_coordinateHopfAlgebra (ZMod 2)
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing (ZMod 2)
       (SplitTorus.characterGroup (Fin 4))
 

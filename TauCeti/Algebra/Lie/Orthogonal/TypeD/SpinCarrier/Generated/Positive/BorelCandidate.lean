@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
@@ -25,8 +25,9 @@ The exterior basis of the spin module is numbered independently of its weights. 
 decreasing simple-root height of the spin weights, `weightOrderEquiv`, makes every positive
 numbered root subgroup upper unitriangular, since a raising operator adds a simple root to the
 weight. The weight torus stays diagonal. Conjugation by the corresponding permutation matrix,
-`weightOrderMatrix`, therefore carries the positive subgroup scheme-theoretically into the
-upper-triangular subgroup of `GL_(2^n)`, and its geometric points form solvable groups.
+`TauCeti.permutationGL` of `weightOrderEquiv`, therefore carries the positive subgroup
+scheme-theoretically into the upper-triangular subgroup of `GL_(2^n)`, and its geometric points
+form solvable groups.
 
 `isBorelCandidate_carrierDefiningIdeal` expresses this inside the generated spin group.
 Maximality among smooth connected solvable subgroups is not asserted, and neither the generated
@@ -35,9 +36,8 @@ spin group nor this subgroup is identified with the pinned simply connected grou
 
 ## Main declarations
 
-* `TauCeti.TypeDSpinCarrier.Generated.Positive.weightOrderEquiv` and
-  `TauCeti.TypeDSpinCarrier.Generated.Positive.weightOrderMatrix`: the renumbering of the spin
-  basis by decreasing weight height, and its permutation matrix.
+* `TauCeti.TypeDSpinCarrier.Generated.Positive.weightOrderEquiv`: the renumbering of the spin
+  basis by decreasing weight height.
 * `TauCeti.TypeDSpinCarrier.Generated.Positive.upperTriangular_comap_le_definingIdeal`: after
   that conjugation, the positive subgroup lies in the upper-triangular subgroup.
 * `TauCeti.TypeDSpinCarrier.Generated.Positive.isBorelCandidate_carrierDefiningIdeal`: the
@@ -102,34 +102,6 @@ theorem latticeBasis_reindex_weightOrderEquiv :
     TauCeti.ExteriorAlgebra.coe_integralLatticeBasis]
   simp [weightOrderEquiv, signSet]
 
-/-- The permutation matrix renumbering the spin basis by decreasing weight height. -/
-def weightOrderMatrix (R : Type*) [CommRing R] :
-    Matrix.GeneralLinearGroup (Fin (dimension n)) R :=
-  Matrix.permMatrixHom.toHomUnits (weightOrderEquiv n hn)
-
-/-- Over every algebra, the weight-ordering matrix is the permutation matrix of
-`weightOrderEquiv`. -/
-theorem coe_map_weightOrderMatrix (R : Type*) [CommRing R] {A : Type*} [CommRing A]
-    [Algebra R A] :
-    (Matrix.GeneralLinearGroup.map (algebraMap R A) (weightOrderMatrix n hn R) :
-      Matrix (Fin (dimension n)) (Fin (dimension n)) A) =
-      (weightOrderEquiv n hn).symm.toPEquiv.toMatrix := by
-  ext r s
-  simp [weightOrderMatrix, Matrix.GeneralLinearGroup.map, PEquiv.toMatrix_apply]
-
-/-- Conjugation by the weight-ordering matrix renumbers the rows and columns of a matrix. -/
-theorem conj_weightOrderMatrix (R : Type*) [CommRing R] {A : Type*} [CommRing A] [Algebra R A]
-    (g : Matrix.GeneralLinearGroup (Fin (dimension n)) A) :
-    Matrix.GeneralLinearGroup.map (algebraMap R A) (weightOrderMatrix n hn R) * g *
-        (Matrix.GeneralLinearGroup.map (algebraMap R A) (weightOrderMatrix n hn R))⁻¹ =
-      (weightOrderEquiv n hn).reindexGL A g := by
-  apply (mul_inv_eq_iff_eq_mul).2
-  apply Units.ext
-  simp only [Units.val_mul, coe_map_weightOrderMatrix, Equiv.coe_reindexGL,
-    PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv]
-  ext r s
-  simp
-
 /-- After renumbering by decreasing weight height, every positive numbered root-subgroup matrix
 of the spin carrier is upper unitriangular, over every commutative ring. -/
 theorem isUpperUnitriangular_reindexGL_rootSubgroupPoints_inl (i : Fin n) (A : Type*)
@@ -149,22 +121,20 @@ theorem isUpperUnitriangular_reindexGL_rootSubgroupPoints_inl (i : Fin n) (A : T
     (by rw [weightDegree_rootGeneratorWeight_inl]; norm_num)
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
   rw [← latticeBasis_reindex_weightOrderEquiv] at h
-  rw [Matrix.isUpperUnitriangular_def] at h ⊢
-  refine ⟨fun r s hsr ↦ ?_, fun r ↦ ?_⟩
-  · simpa [Equiv.coe_reindexGL, coe_rootSubgroupPoints, kostantRootSubgroupMatrix_reindex_apply]
-      using h.1 hsr
-  · simpa [Equiv.coe_reindexGL, coe_rootSubgroupPoints, kostantRootSubgroupMatrix_reindex_apply]
-      using h.2 r
+  convert h using 1
+  ext r s
+  rw [Equiv.coe_reindexGL, Matrix.submatrix_apply, coe_rootSubgroupPoints,
+    kostantRootSubgroupMatrix_reindex_apply]
 
 variable (A : Type u) [CommRing A]
 
-/-- After conjugation by the weight-ordering matrix, the generated positive subgroup lies
-scheme-theoretically in the upper-triangular subgroup of `GL_(2^n)`. -/
+/-- After conjugation by the permutation matrix of `weightOrderEquiv`, the generated positive
+subgroup lies scheme-theoretically in the upper-triangular subgroup of `GL_(2^n)`. -/
 theorem upperTriangular_comap_le_definingIdeal :
     (GeneralLinear.UpperTriangular.definingHopfIdeal A (dimension n)).comapOfSurjective
-      (GeneralLinear.conjCoordinateIso (weightOrderMatrix n hn A)).inv.hom
+      (GeneralLinear.conjCoordinateIso (permutationGL (k := A) (weightOrderEquiv n hn))).inv.hom
       (ConcreteCategory.bijective_of_isIso
-        (GeneralLinear.conjCoordinateIso (weightOrderMatrix n hn A)).inv).2 ≤
+        (GeneralLinear.conjCoordinateIso (permutationGL (k := A) (weightOrderEquiv n hn))).inv).2 ≤
       definingIdeal n hn A := by
   rw [le_definingIdeal_iff]
   constructor
@@ -183,27 +153,25 @@ theorem upperTriangular_comap_le_definingIdeal :
         ← generatedCoordinateMap_comp_generatedCoordinateLift]
       simpa only [AlgHom.mapDomain_apply, q, B, ofConv_toConv, AlgHom.id_comp,
         _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom] using h
-    rw [hpoint, conj_weightOrderMatrix]
+    rw [hpoint, map_permutationGL, permutationGL_mul_mul_inv]
     exact (isUpperUnitriangular_reindexGL_rootSubgroupPoints_inl n hn i B
       (AdditiveGroup.gaPointsMulEquiv q)).isUpperTriangular
   · apply GeneralLinear.UpperTriangular.comap_le_ker_of_conjugate
-    rw [conj_weightOrderMatrix]
-    intro r s hsr
-    rw [Equiv.coe_reindexGL, Matrix.submatrix_apply, GeneralLinear.pointsMulEquiv_apply,
-      GeneralLinear.pointToGeneralLinear_apply, ofConv_toConv, generatorCoordinateMap_inr,
-      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap, BialgHom.coe_toAlgHom,
-      GeneralLinear.weightTorusCoordinateBialgHom_X]
-    exact ite_eq_right_iff.mpr fun h ↦ absurd ((weightOrderEquiv n hn).symm.injective h) hsr.ne'
+    rw [map_permutationGL, permutationGL_mul_mul_inv]
+    rintro r s (hsr : s < r)
+    simp [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply,
+      generatorCoordinateMap_inr, GeneralLinear.hom_weightTorusBaseChangeCoordinateMap,
+      DiagonalizableGroup.diagonalCoordinateMap_X, hsr.ne']
 
 variable (k : Type u) [Field k]
 
 /-- The surjective coordinate map from the upper-triangular subgroup of `GL_(2^n)` onto the
-positive subgroup, induced by conjugation by the weight-ordering matrix. -/
+positive subgroup, induced by conjugation by the permutation matrix of `weightOrderEquiv`. -/
 def upperTriangularCoordinateMap :
     GeneralLinear.UpperTriangular.coordinateHopfAlgebra A (dimension n) ⟶
       coordinateHopfAlgebra n hn A :=
   (CommHopfAlgCat.quotientIsoOfIso
-      (GeneralLinear.conjCoordinateIso (weightOrderMatrix n hn A)).symm
+      (GeneralLinear.conjCoordinateIso (permutationGL (k := A) (weightOrderEquiv n hn))).symm
       (GeneralLinear.UpperTriangular.definingHopfIdeal A (dimension n))).inv ≫
     CommHopfAlgCat.quotientMapOfLe (GeneralLinear.coordinateHopfAlgebra A (dimension n))
       (upperTriangular_comap_le_definingIdeal n hn A)
@@ -215,7 +183,7 @@ theorem upperTriangularCoordinateMap_surjective :
   (CommHopfAlgCat.quotientMapOfLe_surjective _ _).comp
     (ConcreteCategory.bijective_of_isIso
       (CommHopfAlgCat.quotientIsoOfIso
-        (GeneralLinear.conjCoordinateIso (weightOrderMatrix n hn A)).symm
+        (GeneralLinear.conjCoordinateIso (permutationGL (k := A) (weightOrderEquiv n hn))).symm
         (GeneralLinear.UpperTriangular.definingHopfIdeal A (dimension n))).inv).2
 
 /-- The positive subgroup has solvable geometric points over any field. -/
