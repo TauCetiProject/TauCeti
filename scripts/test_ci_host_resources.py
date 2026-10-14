@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -51,6 +52,55 @@ class HostResourcesTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()) as output:
                 self.assertEqual(self.invoke([sys.executable, '-c', 'raise SystemExit(1)'], out / 'absent.json'), 1)
             self.assertIn('telemetry unavailable', output.getvalue())
+
+    def test_adopted_descendants_are_counted_and_primary_status_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            # The command exits before its worker, like bubblewrap's eventfd
+            # monitor. The adopted worker reaps CPU/memory-intensive work.
+            command = [sys.executable, '-c', textwrap.dedent('''
+                import os, time
+                if os.fork() == 0:
+                    time.sleep(.1)
+                    if os.fork() == 0:
+                        data = bytearray(32 * 1024 * 1024)
+                        sum(i*i for i in range(4000000))
+                        os._exit(0)
+                    os.wait()
+                    os._exit(0)
+                os._exit(7)
+            ''')]
+            self.assertEqual(self.invoke(command, out), 7)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['command_accounting_scope'], 'reaped-descendants')
+            self.assertEqual(value['reaped_processes'], 2)
+            self.assertGreater(value['command_cpu_user_s'], .05)
+            self.assertGreater(value['command_max_process_rss_bytes'], 32*1024*1024)
+
+    def test_subreaper_failure_is_visible_and_nonfatal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            with patch.object(host, 'descendant_accounting', return_value=None):
+                self.assertEqual(self.invoke([sys.executable, '-c', 'raise SystemExit(7)'], out), 7)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['command_accounting_scope'], 'direct-child-only')
+            self.assertIn('descendant-accounting-unavailable', value['missing'])
+
+    @unittest.skipUnless(shutil.which('bwrap'), 'bubblewrap not installed')
+    def test_real_pid_namespace_reports_sandbox_cpu_and_rss(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            command = ['bwrap', '--ro-bind', '/', '/', '--unshare-user', '--unshare-pid',
+                       '--proc', '/proc', '--die-with-parent', '--', sys.executable, '-c',
+                       'data=bytearray(32*1024*1024); sum(i*i for i in range(4000000))']
+            probe = subprocess.run(command[:command.index(sys.executable)] + ['true'], capture_output=True)
+            if probe.returncode:
+                self.skipTest('bubblewrap namespaces unavailable: ' + probe.stderr.decode()[:100])
+            self.assertEqual(self.invoke(command, out), 0)
+            value = json.loads(out.read_text())
+            self.assertGreaterEqual(value['reaped_processes'], 2)
+            self.assertGreater(value['command_cpu_user_s'], .05)
+            self.assertGreater(value['command_max_process_rss_bytes'], 32*1024*1024)
 
     def test_cancellation_flushes_partial_resources(self):
         with tempfile.TemporaryDirectory() as directory:

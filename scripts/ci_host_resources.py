@@ -8,6 +8,7 @@ Sampling is bounded to six small proc reads every five seconds, 2880 samples.
 Telemetry errors never change the command's exit status. No merge consumer.
 """
 import argparse
+import ctypes
 import datetime as dt
 import json
 import os
@@ -155,6 +156,25 @@ class Sampler:
                 'host_device_io_bytes': devices}
 
 
+def descendant_accounting():
+    """Adopt orphaned sandbox init processes so wait4 sees their reaped work.
+
+    With --unshare-pid, bubblewrap reports through an eventfd and exits before
+    reaping its PID-namespace init. A direct wait4 therefore misses the sandbox.
+    Subreaping affects only this wrapper's descendants, never sandbox arguments.
+    """
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        previous = ctypes.c_int()
+        if libc.prctl(37, ctypes.byref(previous), 0, 0, 0) != 0:
+            raise OSError(ctypes.get_errno(), 'get subreaper')
+        if libc.prctl(36, 1, 0, 0, 0) != 0:
+            raise OSError(ctypes.get_errno(), 'set subreaper')
+        return lambda: libc.prctl(36, previous.value, 0, 0, 0)
+    except (AttributeError, OSError):
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', required=True)
@@ -170,6 +190,9 @@ def main():
     except Exception:
         sampler.missing.add('sampler-error')
     thread = threading.Thread(target=sampler.watch, args=(done,), daemon=True)
+    restore_subreaper = descendant_accounting()
+    if restore_subreaper is None:
+        sampler.missing.add('descendant-accounting-unavailable')
     child = subprocess.Popen(command)
     try:
         thread.start()
@@ -184,13 +207,35 @@ def main():
             pass
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, forward)
-    while True:
-        try:
-            _, status, usage = os.wait4(child.pid, 0)
-            break
-        except InterruptedError:
-            continue
-    code = os.waitstatus_to_exitcode(status)
+    totals = {'command_cpu_user_s': 0, 'command_cpu_system_s': 0,
+              'command_max_process_rss_bytes': 0, 'command_block_input_ops': 0,
+              'command_block_output_ops': 0}
+    reaped = 0
+    code = None
+    try:
+        while True:
+            try:
+                pid, status, usage = os.wait4(-1 if restore_subreaper else child.pid, 0)
+            except InterruptedError:
+                continue
+            except ChildProcessError:
+                break
+            reaped += 1
+            if pid == child.pid:
+                code = os.waitstatus_to_exitcode(status)
+                child.returncode = code
+            totals['command_cpu_user_s'] += usage.ru_utime
+            totals['command_cpu_system_s'] += usage.ru_stime
+            totals['command_max_process_rss_bytes'] = max(
+                totals['command_max_process_rss_bytes'], usage.ru_maxrss * 1024)
+            totals['command_block_input_ops'] += usage.ru_inblock
+            totals['command_block_output_ops'] += usage.ru_oublock
+            if not restore_subreaper:
+                break
+    finally:
+        if restore_subreaper:
+            restore_subreaper()
+    assert code is not None
     child.returncode = code
     done.set()
     if thread.ident is not None:
@@ -208,9 +253,8 @@ def main():
                   'dependency_bump': os.environ.get('CI_RESOURCE_DEPENDENCY_BUMP', 'unknown'),
                   'started_at': started, 'completed_at': now(), 'elapsed_s': time.monotonic() - start,
                   'exit_code': code, 'cancel_signals': cancelled,
-                  'command_cpu_user_s': usage.ru_utime, 'command_cpu_system_s': usage.ru_stime,
-                  'command_max_process_rss_bytes': usage.ru_maxrss * 1024,
-                  'command_block_input_ops': usage.ru_inblock, 'command_block_output_ops': usage.ru_oublock,
+                  'command_accounting_scope': 'reaped-descendants' if restore_subreaper else 'direct-child-only',
+                  'reaped_processes': reaped, **totals,
                   **sampler.summary()}
         out = Path(args.out)
         temporary = out.with_suffix('.tmp')
