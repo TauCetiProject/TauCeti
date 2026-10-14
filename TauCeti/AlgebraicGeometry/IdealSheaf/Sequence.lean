@@ -77,6 +77,8 @@ lemma sheafι_toPushforwardSubscheme : I.sheafι ≫ I.toPushforwardSubscheme = 
 
 /-- The sequence `I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)}` of `𝒪_X`-modules attached to the closed subscheme cut
 out by `I`. It is short exact (`shortComplex_shortExact`). -/
+-- Exposure is required for the public arrow lemmas below: the source and target of each arrow
+-- are identified with the intended sheaves by unfolding this definition.
 @[expose] def shortComplex : ShortComplex X.Modules :=
   ShortComplex.mk I.sheafι I.toPushforwardSubscheme I.sheafι_toPushforwardSubscheme
 
