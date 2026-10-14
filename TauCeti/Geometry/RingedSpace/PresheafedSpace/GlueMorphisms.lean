@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.RingedSpace.OpenImmersion
+public import TauCeti.Geometry.RingedSpace.PresheafedSpace.Restrict
 
 /-!
 # Gluing morphisms out of a presheafed space with a sheaf structure presheaf
@@ -56,43 +57,6 @@ namespace AlgebraicGeometry.PresheafedSpace
 universe w v u
 
 variable {C : Type u} [Category.{v} C] {X Y : PresheafedSpace C}
-
-section HomOfLE
-
-private theorem functor_map_le {V W : Opens X} (h : V ≤ W) (Q : Opens W) :
-    V.isOpenEmbedding.functor.obj ((Opens.map ((Opens.toTopCat X).map (homOfLE h))).obj Q) ≤
-      W.isOpenEmbedding.functor.obj Q := by
-  rintro _ ⟨x, hx, rfl⟩
-  exact ⟨_, hx, rfl⟩
-
-variable (X) in
-/-- For opens `V ≤ W` of `X`, the inclusion of the restriction of `X` to `V` into its restriction
-to `W`. Its components are restriction maps of the presheaf of `X`. -/
-@[simps]
-private def restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
-    X.restrict V.isOpenEmbedding ⟶ X.restrict W.isOpenEmbedding where
-  base := (Opens.toTopCat X).map (homOfLE h)
-  c :=
-    { app Q := X.presheaf.map (homOfLE (functor_map_le h Q.unop)).op
-      -- `erw`: see the implementation notes
-      naturality _ _ _ := by
-        erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
-        rfl }
-
-private theorem restrictHomOfLE_ofRestrict {V W : Opens X} (h : V ≤ W) :
-    restrictHomOfLE X h ≫ X.ofRestrict W.isOpenEmbedding = X.ofRestrict V.isOpenEmbedding := by
-  have hbase : (restrictHomOfLE X h ≫ X.ofRestrict W.isOpenEmbedding).base =
-      (X.ofRestrict V.isOpenEmbedding).base := by
-    rw [comp_base, ofRestrict_base, ofRestrict_base, restrictHomOfLE_base]
-    rfl
-  refine PresheafedSpace.ext _ _ hbase ?_
-  ext Q
-  rw [NatTrans.comp_app, comp_c_app, Functor.whiskerRight_app, eqToHom_app,
-    ofRestrict_c_app, ofRestrict_c_app, restrictHomOfLE_c_app]
-  erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
-  rfl
-
-end HomOfLE
 
 variable (hX : X.presheaf.IsSheaf) {ι : Type w} (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
   (f : ∀ i, X.restrict (U i).isOpenEmbedding ⟶ Y)
@@ -176,8 +140,9 @@ private theorem c_app_map_eq (W : Opens Y) ⦃V : Opens X⦄ ⦃i j : ι⦄ (a :
     intro x hx
     obtain ⟨y, hy, rfl⟩ := a.le hx
     exact ⟨⟨y.1, hx⟩, hy, rfl⟩
-  have e : X.presheaf.map a.op = X.presheaf.map (homOfLE (functor_map_le hi _)).op ≫
-      X.presheaf.map (homOfLE hV).op := by
+  have e : X.presheaf.map a.op =
+      X.presheaf.map (homOfLE (Opens.functor_obj_map_homOfLE_obj_le hi _)).op ≫
+        X.presheaf.map (homOfLE hV).op := by
     rw [← X.presheaf.map_comp]
     rfl
   have key' := congrArg (· ≫ X.presheaf.map (homOfLE hV).op) key
