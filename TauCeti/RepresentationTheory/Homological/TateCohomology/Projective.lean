@@ -65,6 +65,8 @@ the degrees `0` and `-1` on one Sylow subgroup for each of them, are used
   `n : ℤ`.
 * `Rep.isZero_res_of_projective`: if `A.ρ.asModule` is a projective
   `k[G]`-module, then `H-hat^n(S, A) = 0` for every finite subgroup `S` of `G` and every `n : ℤ`.
+* `Rep.isZero_res_ofModuleMonoidAlgebra_obj`: the same for the representation attached to a
+  projective `k[G]`-module.
 * `Rep.ker_norm_baseChange_le_coinvariantsKer`: if `H_Tate⁰(G, A) = H_Tate⁻¹(G, A) = 0` and `p`
   is regular on `A`, then `H_Tate⁻¹(G, (k/pk) ⊗ A) = 0`, in the form `ker N ≤ I_G ((k/pk) ⊗ A)`.
 * `Rep.projective_of_isZero_res_sylow`: a representation of a finite group on a projective
@@ -123,6 +125,15 @@ theorem isZero_res_of_projective (A : Rep k G)
     IsZero (tateCohomology (res S.subtype A) n) :=
   (isZero_res_tensor_of_projective (𝟙_ (Rep k G)) A S n).of_iso
     ((tateCohomologyFunctor n).mapIso ((resFunctor S.subtype).mapIso (λ_ A).symm))
+
+/-- The representation attached to a projective `k[G]`-module is cohomologically trivial: its
+Tate cohomology on every finite subgroup `S` of `G` vanishes in every degree. -/
+theorem isZero_res_ofModuleMonoidAlgebra_obj (M : ModuleCat.{u} (MonoidAlgebra k G))
+    [Module.Projective (MonoidAlgebra k G) M] (S : Subgroup G) [Fintype S] (n : ℤ) :
+    IsZero (tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj M)) n) :=
+  have : Module.Projective (MonoidAlgebra k G) (ofModuleMonoidAlgebra.obj M).ρ.asModule :=
+    .of_equiv (equivalenceModuleMonoidAlgebra.counitIso.app M).toLinearEquiv.symm
+  isZero_res_of_projective _ S n
 
 /-- **`H_Tate⁻¹` modulo `p`.** If `H_Tate⁰(G, A)` and `H_Tate⁻¹(G, A)` vanish and multiplication
 by `p` is injective on `A`, then every vector of `(k/pk) ⊗ A` of norm zero lies in the augmentation
@@ -248,16 +259,11 @@ theorem isZero_res_of_exact (A : Rep k G) {P₀ P₁ : Type u}
   have hT := ((ModuleCat.shortComplex_shortExact
     (ModuleCat.shortComplexOfCompEqZero d q hdq.linearMap_comp_eq_zero) hdq hd hq).map_of_exact
       ofModuleMonoidAlgebra).map_of_exact (resFunctor S.subtype)
-  -- The representation attached to a projective `k[G]`-module is cohomologically trivial.
-  have hP (M : ModuleCat (MonoidAlgebra k G)) [Module.Projective (MonoidAlgebra k G) M] (m : ℤ) :
-      IsZero (tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj M)) m) :=
-    have : Module.Projective (MonoidAlgebra k G) (ofModuleMonoidAlgebra.obj M).ρ.asModule :=
-      .of_equiv (equivalenceModuleMonoidAlgebra.counitIso.app M).toLinearEquiv.symm
-    isZero_res_of_projective _ S m
   -- The terms of `hT` are, by definition of `ShortComplex.map`, the restrictions of the
   -- representations attached to `P₁`, `P₀` and `A.ρ.asModule`; the last is isomorphic to `A`.
   exact (TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁ hT n (n + 1) rfl
-    (hP (.of _ P₀) n) (hP (.of _ P₁) (n + 1))).of_iso
+    (isZero_res_ofModuleMonoidAlgebra_obj (.of _ P₀) S n)
+    (isZero_res_ofModuleMonoidAlgebra_obj (.of _ P₁) S (n + 1))).of_iso
       ((tateCohomologyFunctor n).mapIso ((resFunctor S.subtype).mapIso
         (equivalenceModuleMonoidAlgebra.unitIso.app A)))
 
