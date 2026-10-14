@@ -44,7 +44,7 @@ variable {K E : Type*} [Field K] [NumberField K] [Field E] [Algebra K E]
   [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ]
 
 /-- A finite Kummer extension of a number field is a number field, even when its ambient field
-is infinite over the base. -/
+is infinite over the base. The base need not contain the `n`-th roots of unity. -/
 instance : NumberField (kummerField E n Δ) :=
   NumberField.of_module_finite K _
 
