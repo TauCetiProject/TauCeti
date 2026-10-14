@@ -49,7 +49,7 @@ With the Hilbert symbol this reads `(Δ, b)_K = (-1)^{v_K(b)}`.
 * `TauCeti.exists_eq_sq_sub_one_add_four_mul_mul_sq_iff_even`: for `c` as above, `b` is a norm
   from `K(√(1 + 4c))` exactly when `v_K(b)` is even.
 * `TauCeti.exists_unramified_class`: there is a nonsquare `Δ` of valuation zero whose norms are
-  exactly the elements of even valuation.
+  exactly the elements of even valuation, with `valuation K (Δ - 1) ≤ valuation K 4`.
 * `TauCeti.not_isSquare_of_unramified_class`: every class with this norm criterion is nonsquare.
 * `TauCeti.unramified_class_of_isSquare_mul`: the criterion is invariant under square classes.
 * `TauCeti.hilbertSymbol_unramified`: for such a `Δ`, `(Δ, b)_K = (-1)^{v_K(b)}`.
@@ -199,9 +199,11 @@ end NormForm
 
 /-- **The unramified quadratic class.** There is a nonsquare `Δ ∈ Kˣ` of valuation
 zero such that `b ∈ Kˣ` is a norm from `K(√Δ)`, that is `b = x² - Δ y²` for some `x y : K`,
-exactly when `v_K(b)` is even. -/
+exactly when `v_K(b)` is even. The representative satisfies
+`valuation K ((Δ : K) - 1) ≤ valuation K 4`, that is, `Δ ≡ 1 mod 4`. -/
 theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
     ∃ Δ : Kˣ, ¬IsSquare Δ ∧ (normalizedValuation K Δ).toAdd = 0 ∧
+      valuation K ((Δ : K) - 1) ≤ valuation K 4 ∧
       ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
         Even (normalizedValuation K b).toAdd := by
   obtain ⟨a, ha_range⟩ := exists_not_mem_range_sq_add_self (𝓀[K])
@@ -217,7 +219,11 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
   have h4 : ((4 : 𝒪[K]) : K) = 4 := map_ofNat 𝒪[K].subtype 4
   have hΔK : (Δ : K) = 1 + 4 * (c : K) := by simp [Δ, h4]
   simp only [← hΔK] at hcrit
-  refine ⟨Δ, fun hsq ↦ ?_, by simp [Δ, normalizedValuation_integerUnits], hcrit⟩
+  have hΔ1 : valuation K ((Δ : K) - 1) ≤ valuation K 4 := by
+    rw [hΔK, add_sub_cancel_left, map_mul]
+    simpa using mul_le_mul' (le_refl (valuation K (4 : K)))
+      ((Valuation.mem_integer_iff _ _).mp c.2)
+  refine ⟨Δ, fun hsq ↦ ?_, by simp [Δ, normalizedValuation_integerUnits], hΔ1, hcrit⟩
   -- A square `Δ` would make a uniformizer, of odd valuation, a norm.
   have : Invertible (2 : K) := invertibleOfNonzero h2
   obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K

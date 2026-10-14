@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Filtration
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
 
 import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
-import TauCeti.RingTheory.Finite.ArtinSchreier
 
 /-!
 # The sharp depth of quadratic unit norms
@@ -61,17 +60,14 @@ private theorem sharpnessCandidate_not_mem (h2 : (2 : K) ≠ 0) (a Δ s y z : K�
   have hnorm : hilbertSymbol (a / D) (z / D) = 1 := by
     apply (hilbertSymbol_eq_one_iff _ _).mpr
     refine ⟨1, 1, ?_⟩
-    simp only [Units.val_div_eq_div_val, hz, one_pow, mul_one]
+    simp only [Units.val_div_eq_div_val, one_pow, mul_one]
+    have hzD : (z : K) = (D : K) - a := hz
+    rw [hzD]
     field_simp
-    rfl
   have haz : hilbertSymbol a z = -1 := by
-    have hinv (u v : Kˣ) : hilbertSymbol u⁻¹ v = hilbertSymbol u v := by
-      simpa only [zpow_neg_one, Int.units_inv_eq_self] using
-        hilbertSymbol_zpow_left h2 u v (-1)
-    have hinv' (u v : Kˣ) : hilbertSymbol u v⁻¹ = hilbertSymbol u v := by
-      rw [hilbertSymbol_comm, hinv, hilbertSymbol_comm]
     simp only [div_eq_mul_inv, hilbertSymbol_mul_left h2, hilbertSymbol_mul_right h2,
-      hinv, hinv', hDz, hDa, hDD, hilbertSymbol_comm a D, mul_one] at hnorm
+      hilbertSymbol_inv_left, hilbertSymbol_inv_right, hDz, hDa, hDD,
+      hilbertSymbol_comm a D, mul_one] at hnorm
     simpa only [mul_neg_one, neg_eq_iff_eq_neg] using hnorm
   have hay : hilbertSymbol a y = 1 :=
     (hilbertSymbol_eq_one_iff _ _).mpr ⟨s, 1, by simpa using hy⟩
@@ -166,34 +162,21 @@ private theorem exists_sharpnessCandidate (h2 : (2 : K) ≠ 0) {a : Kˣ}
   exact ⟨z / y, sharpnessCandidate_mem h2 a Δ s y z hπ hdle hξv hy rfl hyv hzv hη,
     sharpnessCandidate_not_mem h2 a Δ s y z ha hDv hy rfl hzodd hΔ⟩
 
-/-- The depth immediately preceding the quadratic norm filtration contains a non-norm when
-the defining unit has odd defect exponent. -/
+/-- If `a` is a unit of odd defect exponent `d`, then `U(K, 2 v_K(2) - d)` is not contained
+in the quadratic norm subgroup `N(K(√a)ˣ)`: it contains a non-norm. This is sharp against the
+containment at depth `2 v_K(2) - d + 1`. -/
 theorem not_unitFiltration_le_quadraticNormSubgroup_of_odd_defectExponent
     (h2 : (2 : K) ≠ 0) {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℕ}
     (hd : defectExponent a = (d : ℤ)) (hodd : Odd d) :
     ¬unitFiltration K (2 * dyadicLevel K h2 - d) ≤ quadraticNormSubgroup (a : K) := by
-  classical
-  have he : 0 < natCastValuation K 2 h2 := by
-    have h := defectExponent_le_two_mul_natCastValuation h2 ha
-      (not_isSquare_of_defectExponent_eq hd)
-    rw [hd, WithTop.coe_le_coe] at h
-    have hdpos := hodd.pos
-    omega
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-  -- Retain the principal-unit representative from the explicit unramified norm criterion.
-  obtain ⟨r, hr⟩ := exists_not_mem_range_sq_add_self (𝓀[K])
-  obtain ⟨c, rfl⟩ := residue_surjective r
-  have hc : ∀ t : 𝓀[K], t ^ 2 + t ≠ residue 𝒪[K] c := fun t ht => hr ⟨t, ht⟩
-  have hΔv := valuation_one_add_four_mul h2 he c
-  have hΔ0 : (1 + 4 * (c : K)) ≠ 0 := by intro h; simp [h] at hΔv
-  let Δ : Kˣ := Units.mk0 _ hΔ0
+  obtain ⟨Δ, -, hΔ0, hΔ1, hΔ⟩ := exists_unramified_class h2
+  have hΔv : valuation K (Δ : K) = 1 :=
+    (normalizedValuation_eq_one_iff Δ).mp (toAdd_eq_zero.mp hΔ0)
   have hη : valuation K ((Δ : K) - 1) ≤
       valuation K (π : K) ^ (2 * natCastValuation K 2 h2) := by
-    simp only [Δ, Units.val_mk0, add_sub_cancel_left, map_mul, valuation_four_eq_pow h2 hπ]
-    simpa using mul_le_mul' (le_refl (valuation K (π : K) ^
-      (2 * natCastValuation K 2 h2))) ((Valuation.mem_integer_iff _ _).mp c.2)
-  obtain ⟨b, hb, hbnorm⟩ := exists_sharpnessCandidate h2 ha hd hodd hπ Δ hΔv hη
-    (exists_eq_sq_sub_one_add_four_mul_mul_sq_iff_even h2 hc)
+    simpa only [valuation_four_eq_pow h2 hπ] using hΔ1
+  obtain ⟨b, hb, hbnorm⟩ := exists_sharpnessCandidate h2 ha hd hodd hπ Δ hΔv hη hΔ
   exact fun h => hbnorm (h hb)
 
 /-- For a unit of odd defect exponent `d`, all principal units of depth `n` are quadratic
