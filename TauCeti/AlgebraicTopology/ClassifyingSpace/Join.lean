@@ -14,6 +14,7 @@ For a group `G`, `universalGSpace G` is the weak realization of the countable jo
 `G`, with chosen vertex `(0, 1)`. This is the total-space construction used in Milnor's model of
 a classifying space; contractibility and the group action are not asserted here. Homomorphisms
 induce continuous maps preserving the base point and respecting identities and composition.
+After opening `TauCeti.ClassifyingSpace`, use `universalGSpaceMap φ` for the map induced by `φ`.
 
 The construction follows J. Milnor, *Construction of universal bundles, II*, Ann. of Math.
 63 (1956). It uses the indexed join in
