@@ -39,6 +39,8 @@ localization is.
   `awayMap` from `A_{(f)}` to `A_{(fg)}`.
 * `HomogeneousLocalization.Away.lift_comp_map`: `lift` is compatible with the map induced by a
   graded ring homomorphism.
+* `HomogeneousLocalization.Away.map_surjective`: a surjective graded ring homomorphism induces
+  surjections of homogeneous localizations at homogeneous elements.
 * `HomogeneousLocalization.Away.lift_eq_of_forall_mem`: rescaling the homogeneous coordinates,
   so that `ψ a = cⁿ φ a` on the degree-`n` part, does not change `lift`.
 * `HomogeneousLocalization.awayMap_injective`: the restriction `awayMap` from `A_{(f)}` to
@@ -129,6 +131,19 @@ theorem Away.lift_comp_map (φ : B →+* R) (F : 𝒜 →+*ᵍ ℬ) {s : A} (hs 
   congr 1
   refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
   simp [IsLocalization.Away.lift_eq, IsLocalization.Away.map]
+
+/-- A surjective graded ring homomorphism `F` induces a surjection `A_{(s)} →+* B_{(F s)}` for
+every homogeneous `s`: a fraction `b / F(s)ⁿ` with `b` of degree `n • d` is the image of
+`a / sⁿ`, where `a` is the degree-`n • d` component of any preimage of `b`. -/
+theorem Away.map_surjective {F : 𝒜 →+*ᵍ ℬ} (hF : Function.Surjective F) {s : A} {d : ι}
+    (hs : s ∈ 𝒜 d) : Function.Surjective (Away.map F s) := by
+  intro z
+  obtain ⟨n, b, hb, rfl⟩ := Away.mk_surjective ℬ (Graded.map_mem F hs) z
+  obtain ⟨a, rfl⟩ := hF b
+  refine ⟨Away.mk 𝒜 hs n (DirectSum.decompose 𝒜 a (n • d)) (SetLike.coe_mem _), ?_⟩
+  rw [Away.map_mk]
+  congr 1
+  rw [GradedRingHom.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ hb]
 
 /-- Rescaling homogeneous coordinates does not change `Away.lift`: if `ψ a = cⁿ φ a` for every
 `a` of degree `n`, then `φ` and `ψ` induce the same homomorphism `A_{(f)} →+* R`. -/
