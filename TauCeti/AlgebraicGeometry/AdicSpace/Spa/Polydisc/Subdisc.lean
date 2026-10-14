@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.DiscPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+import Mathlib.Topology.Order.IsLUB
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
@@ -69,6 +70,8 @@ equal exactly when their radii agree and each centre lies in the other disc. If
   `TauCeti.ValuationSpectrum.closedSubdisc_eq_closedSubdisc_iff` and
   `TauCeti.ValuationSpectrum.disjoint_closedSubdisc`: inclusion, equality and disjointness of
   discs.
+* `TauCeti.ValuationSpectrum.valuation_weightedX_sub_weightedC_of_mem_closedSubdisc`: a point
+  of `D(a, |c|)` takes the value of the constant `a - b` on `T - b` for every `b` outside the disc.
 
 ## References
 
@@ -209,6 +212,19 @@ theorem disjoint_closedSubdisc {a b c d : K} (h : max ‖c‖ ‖d‖ < ‖a - b
   · rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff] at hd
     exact (h.trans_le hd).not_ge (le_max_right _ _)
 
+/-- **A point of `D(a, |c|)` takes the value of the constant `a - b` on `T - b`** for every `b`
+outside the disc: there `T - b = (T - a) + (a - b)` with `x(T - a) ≤ x(c) < x(a - b)`. -/
+theorem valuation_weightedX_sub_weightedC_of_mem_closedSubdisc {x : closedPolydisc 1 K}
+    {a c : K} (hx : x ∈ closedSubdisc a c) {b : K} (hb : ‖c‖ < ‖b - a‖) :
+    x.1.valuation (T - C b) = x.1.valuation (C (a - b)) := by
+  have hsplit : T - C b = (T - C a) + C (a - b) := by
+    rw [map_sub]
+    ring
+  rw [hsplit, Valuation.map_add_eq_of_lt_right]
+  refine ((valuation_le_iff _ _ _).mpr ((mem_closedSubdisc a c x).mp hx).1).trans_lt ?_
+  rw [← not_le, closedPolydisc_valuation_weightedC_le_iff, norm_sub_rev]
+  exact hb.not_ge
+
 /-- **A classical point `x_b` lies in `D(a, |c|)` exactly when `‖b - a‖ ≤ ‖c‖` and `c ≠ 0`**,
 whichever point `x` of `Spa (K, K°)` it is built from. -/
 theorem classicalPoint_mem_closedSubdisc_iff [CompleteSpace K] (x : spa (powerBoundedSubring K))
@@ -343,5 +359,104 @@ theorem discPointBelow_mem_closedSubdisc_iff (b : K) (hb : ‖b‖ ≤ 1) (hr₀
     grind [norm_eq_zero]
 
 end NontriviallyNormedField
+
+section NoMinimum
+
+open Filter Topology
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+
+omit [IsUltrametricDist K] in
+/-- If `b ↦ x(T - b)` attains no minimum, then every value `x(T - b)` is the value of a nonzero
+constant. -/
+private theorem exists_valuation_weightedX_sub_weightedC_eq {x : closedPolydisc 1 K}
+    (hmin : ¬ ∃ a₀ : K, ∀ b : K, x.1.toValuativeRel.vle (T - C a₀) (T - C b)) (b : K) :
+    ∃ e : K, e ≠ 0 ∧ x.1.valuation (T - C b) = x.1.valuation (C e) := by
+  push Not at hmin
+  obtain ⟨b', hb'⟩ := hmin b
+  rw [← valuation_le_iff, not_le] at hb'
+  have he := valuation_weightedX_sub_weightedC_eq_of_lt hb'
+  refine ⟨b' - b, fun h0 ↦ ?_, he⟩
+  rw [h0, map_zero, map_zero] at he
+  exact (zero_le.trans_lt hb').ne' he
+
+/-- For `b` in the unit disc and `b'` off it, `x(T - b) ≤ x(1) < x(b') = x(T - b')`. -/
+theorem valuation_weightedX_sub_weightedC_lt_of_one_lt (x : closedPolydisc 1 K)
+    {b b' : K} (hb : ‖b‖ ≤ 1) (hb' : 1 < ‖b'‖) :
+    x.1.valuation (T - C b) < x.1.valuation (T - C b') := by
+  have hmem₀ : x ∈ closedSubdisc 0 1 := by
+    rw [closedSubdisc_zero_one]
+    exact Set.mem_univ x
+  have hmem : x ∈ closedSubdisc b 1 := by
+    rw [closedSubdisc_eq_univ hb (by simp)]
+    exact Set.mem_univ x
+  rw [valuation_weightedX_sub_weightedC_of_mem_closedSubdisc (b := b') hmem₀ (by simpa using hb')]
+  refine ((valuation_le_iff _ _ _).mpr ((mem_closedSubdisc _ _ _).mp hmem).1).trans_lt ?_
+  rw [← not_le, closedPolydisc_valuation_weightedC_le_iff]
+  simpa using hb'
+
+/-- **A point on which `b ↦ x(T - b)` attains no minimum lies in a decreasing sequence of discs
+with no common point.** Every value `x(T - b)` is the value `x(e)` of a constant, and the norms
+`‖e‖` for `‖b‖ ≤ 1` have an infimum which is not attained, since an `e` attaining it would make `b`
+a minimum. The discs `D(b, |e|)` along a sequence of norms decreasing to this infimum work. -/
+theorem exists_forall_mem_closedSubdisc {x : closedPolydisc 1 K}
+    (hmin : ¬ ∃ a₀ : K, ∀ b : K, x.1.toValuativeRel.vle (T - C a₀) (T - C b)) :
+    ∃ a c : ℕ → K, (∀ n, ‖a n‖ ≤ 1) ∧ (∀ n, c n ≠ 0) ∧ (∀ n, ‖c n‖ ≤ 1) ∧
+      (∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖) ∧ (∀ n, ‖c (n + 1)‖ ≤ ‖c n‖) ∧
+      (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ ∀ n, x ∈ closedSubdisc (a n) (c n) := by
+  have hval := exists_valuation_weightedX_sub_weightedC_eq hmin
+  have hCle := closedPolydisc_valuation_weightedC_le_iff x
+  have hClt (u w : K) : x.1.valuation (C u) < x.1.valuation (C w) ↔ ‖u‖ < ‖w‖ := by
+    rw [← not_le, ← not_le, hCle]
+  -- the norms `‖e‖` with `x(T - b) = x(e)` for some `b` in the unit disc
+  set S : Set ℝ :=
+    {t | ∃ b e : K, ‖b‖ ≤ 1 ∧ x.1.valuation (T - C b) = x.1.valuation (C e) ∧ ‖e‖ = t}
+  have hS : S.Nonempty :=
+    let ⟨e, _, he⟩ := hval 0
+    ⟨‖e‖, 0, e, by simp, he, rfl⟩
+  have hbdd : BddBelow S := ⟨0, by rintro _ ⟨-, e, -, -, rfl⟩; exact norm_nonneg e⟩
+  -- the infimum of `S` is not attained: if `‖e‖ ≤ sInf S` then `b` is a minimum
+  have hlt {b e : K} (hb : ‖b‖ ≤ 1) (he : x.1.valuation (T - C b) = x.1.valuation (C e)) :
+      sInf S < ‖e‖ := by
+    refine lt_of_not_ge fun hinf ↦ hmin ⟨b, fun b' ↦ ?_⟩
+    rw [← valuation_le_iff]
+    rcases le_or_gt ‖b'‖ 1 with hb' | hb'
+    · obtain ⟨e', -, he'⟩ := hval b'
+      rw [he, he', hCle]
+      exact hinf.trans (csInf_le hbdd ⟨b', e', hb', he', rfl⟩)
+    · exact (valuation_weightedX_sub_weightedC_lt_of_one_lt x hb hb').le
+  obtain ⟨u, hu, hlim, huS⟩ := exists_seq_tendsto_sInf hS hbdd
+  choose a c ha hac hcu using huS
+  have hc₀ (n : ℕ) : c n ≠ 0 := by
+    obtain ⟨e, he, hxe⟩ := hval (a n)
+    refine (closedPolydisc_valuation_weightedC_eq_zero_iff x _).not.mp ?_
+    rw [← hac n, hxe]
+    exact (closedPolydisc_valuation_weightedC_eq_zero_iff x e).not.mpr he
+  have hc₁ (n : ℕ) : ‖c n‖ ≤ 1 := by
+    have hmem : x ∈ closedSubdisc (a n) 1 := by
+      rw [closedSubdisc_eq_univ (ha n) (by simp)]
+      exact Set.mem_univ x
+    have := ((mem_closedSubdisc _ _ _).mp hmem).1
+    rwa [← valuation_le_iff, hac n, hCle, norm_one] at this
+  have hcc (n : ℕ) : ‖c (n + 1)‖ ≤ ‖c n‖ := by
+    rw [hcu, hcu]
+    exact hu n.le_succ
+  refine ⟨a, c, ha, hc₀, hc₁, fun n ↦ norm_sub_le_of_valuation_eq (hac n) (hac (n + 1)) (hcc n),
+    hcc, fun b ↦ ?_, fun n ↦ ?_⟩
+  · -- some `x(T - aₙ)` is below `x(T - b)`; then `x(T - b) = x(aₙ - b)`, so `‖cₙ‖ < ‖aₙ - b‖`
+    obtain ⟨n, hn⟩ : ∃ n, x.1.valuation (T - C (a n)) < x.1.valuation (T - C b) := by
+      rcases le_or_gt ‖b‖ 1 with hb | hb
+      · obtain ⟨e, -, he⟩ := hval b
+        obtain ⟨n, hn⟩ := (hlim.eventually (gt_mem_nhds (hlt hb he))).exists
+        rw [← hcu, ← hClt, ← hac n, ← he] at hn
+        exact ⟨n, hn⟩
+      · exact ⟨0, valuation_weightedX_sub_weightedC_lt_of_one_lt x (ha 0) hb⟩
+    refine ⟨n, ?_⟩
+    rw [norm_sub_rev, ← hClt, ← hac n, ← valuation_weightedX_sub_weightedC_eq_of_lt hn]
+    exact hn
+  · rw [mem_closedSubdisc, ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
+    exact ⟨(hac n).le, fun h ↦ hc₀ n ((closedPolydisc_valuation_weightedC_eq_zero_iff x _).mp h)⟩
+
+end NoMinimum
 
 end TauCeti.ValuationSpectrum
