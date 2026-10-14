@@ -184,14 +184,13 @@ noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B 
   map_one' := by
     apply Iso.ext
     refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
+    -- Mathlib has no lemma for the unit of `Aut`; it is `Iso.refl` by definition
     change _ = (naiveLevelEquiv X α).1 a
     simp
   map_mul' σ τ := by
+    refine Eq.trans ?_ (Aut.Aut_mul_def _ _ _).symm
     apply Iso.ext
     refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
-    -- the product `σ * τ` of `Aut` restricts along `τ` first, then along `σ`
-    change _ = (naiveLevelEquiv X ((naiveLevelMap B σ.unop.toMonoidHom σ.unop.injective).app
-      (op X) ((naiveLevelMap B τ.unop.toMonoidHom τ.unop.injective).app (op X) α))).1 a
     simp
 
 /-- An automorphism `σ` of `A` sends a naive `A`-structure `φ` to `φ ∘ σ`. -/
