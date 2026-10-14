@@ -74,6 +74,23 @@ theorem bundleWedgeWith_apply_one_one
   simpa only [bundleWedgeWith] using
     (ContinuousAlternatingMap.pairedWedge_apply_one_one (μ := μ x) (hμ x) (φ x) (ψ x) v w)
 
+/-- Swapping the factors of a fibrewise paired wedge flips the pairing and contributes the graded
+sign. This applies to arbitrary value bundles, with no norm on the tangent fibres or values. -/
+theorem bundleWedgeWith_flip
+    [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
+    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
+    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l)
+    (x : M) (v : Fin (k + l) → TangentSpace I x) :
+    bundleWedgeWith μ hμ φ ψ x v =
+      (-1 : ℝ) ^ (k * l) •
+        bundleWedgeWith
+          (fun y ↦ ContinuousLinearMap.pairingFlip (μ y) (hμ y))
+          (fun y ↦ ContinuousLinearMap.pairingFlip_continuous (μ y) (hμ y))
+          ψ φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  simpa only [bundleWedgeWith] using
+    ContinuousAlternatingMap.pairedWedge_flip (μ x) (hμ x) (φ x) (ψ x) v
+
 section Bilinear
 
 variable [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
@@ -265,6 +282,35 @@ theorem wedgeWith_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
   simpa only [wedgeWith] using
     (bundleWedgeWith_zero_right (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ)
 
+/-- Swapping the factors of a paired rough-form wedge flips the pairing and contributes the
+graded sign. The argument reindexing is the canonical cast between the two degree sums. -/
+theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) (x : M)
+    (v : Fin (k + l) → TangentSpace I x) :
+    φ.wedgeWith μ ψ x v =
+      (-1 : ℝ) ^ (k * l) •
+        ψ.wedgeWith μ.flip φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  have hμ : Continuous (fun p : F₁ × F₂ ↦ μ p.1 p.2) := by
+    convert μ.continuous₂ using 1
+    ext p
+    rfl
+  have hpair : ContinuousLinearMap.pairingFlip μ hμ = μ.flip := by
+    ext a b
+    rw [ContinuousLinearMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
+  simpa only [wedgeWith, bundleWedgeWith, hpair, Function.uncurry_apply_pair] using
+    bundleWedgeWith_flip (μ := fun _ ↦ μ) (hμ := fun _ ↦ hμ) φ ψ x v
+
+/-- A symmetric fibrewise pairing gives the graded-commutativity identity for rough forms. -/
+theorem wedgeWith_comm (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃)
+    (hμ : ∀ a b, μ a b = μ b a) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₁ l) (x : M)
+    (v : Fin (k + l) → TangentSpace I x) :
+    φ.wedgeWith μ ψ x v =
+      (-1 : ℝ) ^ (k * l) • ψ.wedgeWith μ φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  have hflip : μ.flip = μ := by
+    ext a b
+    exact hμ b a
+  rw [wedgeWith_flip, hflip]
+
 /-- The real wedge of rough forms uses multiplication as its fibrewise pairing. -/
 def wedge (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
     RoughForm I M ℝ (k + l) :=
@@ -326,6 +372,13 @@ theorem wedge_zero_left (ψ : RoughForm I M ℝ l) :
 theorem wedge_zero_right (φ : RoughForm I M ℝ k) :
     φ.wedge (0 : RoughForm I M ℝ l) = 0 :=
   wedgeWith_zero_right (ContinuousLinearMap.mul ℝ ℝ) φ
+
+/-- Real-valued rough forms commute with the usual graded sign. -/
+theorem wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) (x : M)
+    (v : Fin (k + l) → TangentSpace I x) :
+    φ.wedge ψ x v = (-1 : ℝ) ^ (k * l) • ψ.wedge φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  simpa only [wedge] using wedgeWith_comm (ContinuousLinearMap.mul ℝ ℝ)
+    (fun a b ↦ mul_comm a b) φ ψ x v
 
 end RoughForm
 

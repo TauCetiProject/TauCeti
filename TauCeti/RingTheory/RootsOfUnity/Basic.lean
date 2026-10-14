@@ -15,9 +15,10 @@ public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 # Basic results on roots of unity
 
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
-and counts the square roots of unity in a domain in which `2 ≠ 0`. It transfers
-`HasEnoughRootsOfUnity` along an injective homomorphism into a domain. For a prime `p` it relates
-the triviality of the `p`th roots of unity to the absence of a primitive one. It also records that
+and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
+`n`-th roots of unity divides `n`. It transfers `HasEnoughRootsOfUnity` along an injective
+homomorphism into a domain. For a prime `p` it relates the triviality of the `p`th roots of
+unity to the absence of a primitive one. It also records that
 roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
 Finally, it identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots
 of unity.
@@ -37,6 +38,7 @@ of unity.
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
+* `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
@@ -88,6 +90,15 @@ elements. -/
 theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
   (IsPrimitiveRoot.neg_one_of_two_ne_zero h2).card_rootsOfUnity
+
+/-- In a domain, the number of `n`-th roots of unity divides `n`: they form a cyclic group, and its
+exponent divides `n`. -/
+theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n R) ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact dvd_zero _
+  have : NeZero n := ⟨hn⟩
+  rw [← IsCyclic.exponent_eq_card]
+  exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
 
 /-- In a commutative ring in which `2 ≠ 0`, the negative of a primitive `n`-th root of unity of
 odd order `n` is a primitive `2n`-th root of unity. -/

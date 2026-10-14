@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
+public import TauCeti.Topology.Instances.AddCircle.Torus
 
 /-!
 # The fundamental group of a torus
@@ -29,6 +30,8 @@ This realises the universal-covers roadmap Stage 4 "applications" target `π_n(T
   `π₁(Π i, AddCircle (p i), x) ≃* Π i, Multiplicative ℤ`, the fundamental group of a torus.
 * `AddCircle.prodFundamentalGroupMulEquivZero`,
   `AddCircle.piFundamentalGroupMulEquivZero`: the basepoint-`0` specialisations.
+* `AddCircle.piFundamentalGroupMulEquivZero_torusLoop`: the straight loop `TauCeti.torusLoop p n`
+  winding `n i` times around the `i`-th circle is sent to `n`.
 -/
 
 public section
@@ -154,6 +157,34 @@ theorem piFundamentalGroupMulEquivZero_symm_apply {ι : Type*} {p : ι → ℝ}
     (piFundamentalGroupMulEquivZero hp).symm n =
       pi fun i => (fundamentalGroupMulEquivZero (p i) (hp i)).symm (n i) := by
   simp [piFundamentalGroupMulEquivZero]
+
+/-- The straight loop `TauCeti.torusLoop p n` winds `n i` times around the `i`-th circle: the
+fundamental group of the torus based at `0` sends its class to `n`. -/
+@[simp]
+theorem piFundamentalGroupMulEquivZero_torusLoop {ι : Type*} {p : ι → ℝ} (hp : ∀ i, p i ≠ 0)
+    (n : ι → ℤ) :
+    piFundamentalGroupMulEquivZero hp
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (TauCeti.torusLoop p n))) =
+      fun i => Multiplicative.ofAdd (n i) := by
+  funext i
+  rw [piFundamentalGroupMulEquivZero, piFundamentalGroupMulEquiv_apply]
+  refine (fundamentalGroupMulEquiv_apply_eq_iff (p i) (hp i) ⟨0, by simp⟩ _ _).2 ?_
+  rw [toAdd_ofAdd, zero_add]
+  -- The `i`-th coordinate of the loop lifts to the segment from `0` to `n i • p i` in `ℝ`.
+  let θ : Path (0 : ℝ) (n i • p i) :=
+    { toFun t := t * (n i • p i)
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by simp }
+  refine congrArg Subtype.val ((AddCircle.isCoveringMap_coe (p i)).monodromy_eq_of_map_eq
+    (ey := ⟨n i • p i, by simp [AddCircle.coe_period]⟩) (Path.Homotopic.Quotient.mk θ) ?_)
+  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map]
+  -- Casting a path class casts its representative, and `Path.cast` and `Path.map` do not change
+  -- the underlying function. They are unfolded definitionally rather than by `mk_cast` and
+  -- `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are fibre
+  -- memberships, which `rw` and `simp` cannot see as the endpoint equations `cast` expects.
+  exact congrArg Path.Homotopic.Quotient.mk
+    (Path.ext (funext fun t => (TauCeti.torusLoop_apply p n t i).symm))
 
 end AddCircle
 
