@@ -69,11 +69,10 @@ theorem standardCoordinateMap_def :
 /-- The positive subgroup's standard coordinate morphism is surjective. -/
 theorem standardCoordinateMap_surjective :
     Function.Surjective (standardCoordinateMap k).hom := by
-  rw [standardCoordinateMap_def, CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-  exact (CommHopfAlgCat.baseChangeMap_surjective _
-    (CommHopfAlgCat.mkQuotient_surjective _ _)).comp
-      (ConcreteCategory.bijective_of_isIso
-        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).inv).2
+  simpa only [standardCoordinateMap_def, Iso.symm_hom, Iso.refl_hom, Category.comp_id] using
+    _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso
+      (CommHopfAlgCat.mkQuotient _ definingIdeal) (CommHopfAlgCat.mkQuotient_surjective _ _)
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).symm (Iso.refl _)
 
 /-- Restriction of positive-subgroup coordinates to its weight torus after scalar extension. -/
 def weightTorusCoordinateMap : CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra ⟶

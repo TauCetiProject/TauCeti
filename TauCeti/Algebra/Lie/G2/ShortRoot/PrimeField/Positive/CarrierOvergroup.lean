@@ -74,11 +74,10 @@ theorem generatedCoordinateMap_comp_generatedPositiveRestriction :
 /-- Restriction from the generated carrier to its positive subgroup is surjective. -/
 theorem generatedPositiveRestriction_surjective :
     Function.Surjective (generatedPositiveRestriction k).hom := by
-  rw [generatedPositiveRestriction, CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-  exact (CommHopfAlgCat.baseChangeMap_surjective PrimeField.positiveRestriction
-    (CommHopfAlgCat.quotientMapOfLe_surjective _ _)).comp
-      (ConcreteCategory.bijective_of_isIso
-        (coordinateHopfAlgebraGeneratedIso k).inv).2
+  simpa only [generatedPositiveRestriction, Iso.symm_hom, Iso.refl_hom, Category.comp_id] using
+    _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso PrimeField.positiveRestriction
+      (CommHopfAlgCat.quotientMapOfLe_surjective _ _)
+      (coordinateHopfAlgebraGeneratedIso k).symm (Iso.refl _)
 
 /-- The defining ideal of the positive subgroup inside the generated scalar extension of the
 carrier. -/
