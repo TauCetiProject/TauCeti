@@ -59,8 +59,7 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
   swap
   · rw [BoundedVariationOn, not_ne_iff] at hf
     exact hf ▸ le_top
-  refine Metric.ediam_le ?_
-  rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+  refine Metric.ediam_image_le_iff.2 fun x hx y hy ↦ ?_
   rw [edist_dist, Real.dist_eq, variationOnFromTo.sub_right hf.locallyBoundedVariationOn ha hx hy,
     ← ENNReal.ofReal_toReal hf]
   exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)

@@ -25,7 +25,6 @@ namespace MeasureTheory.Measure
 
 /-- The one-dimensional Euclidean Hausdorff measure is the raw one-dimensional Hausdorff measure,
 on every extended metric space. -/
-@[simp]
 theorem euclideanHausdorffMeasure_one {X : Type*} [EMetricSpace X] [MeasurableSpace X]
     [BorelSpace X] : (μHE[1] : Measure X) = μH[1] := by
   have hℝ : (μHE[1] : Measure ℝ) = μH[1] := by
