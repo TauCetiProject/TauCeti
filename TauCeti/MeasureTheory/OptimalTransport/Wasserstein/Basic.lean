@@ -572,33 +572,8 @@ theorem wassersteinEDist_triangle (hd : Measurable fun z : X × X ↦ edist z.1 
   have hcoup : IsCoupling (γ.map (Prod.map id Prod.snd)) μ ρ :=
     ⟨(Measure.fst_map_prodMap_id_snd hγπ).trans hπ.fst_eq,
       (Measure.snd_map_prodMap_id_snd hγσ).trans hσ.snd_eq⟩
-  refine (wassersteinEDist_le hcoup p).trans ?_
-  have houter : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (γ.map (Prod.map id Prod.snd))
-      = eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.2) p γ := by
-    rw [eLpNorm_map_measure hd.aestronglyMeasurable
-      (measurable_id.prodMap measurable_snd).aemeasurable]
-    rfl
-  have hfirst : eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.1) p γ
-      = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π := by
-    rw [← hγπ, eLpNorm_map_measure hd.aestronglyMeasurable
-      (measurable_id.prodMap measurable_fst).aemeasurable]
-    rfl
-  have hsecond : eLpNorm (fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ
-      = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p σ := by
-    rw [← hγσ, Measure.snd, eLpNorm_map_measure hd.aestronglyMeasurable
-      measurable_snd.aemeasurable]
-    rfl
-  have houtm : AEStronglyMeasurable (fun w : X × X × X ↦ edist w.1 w.2.2) γ :=
-    (hd.comp (measurable_fst.prodMk (measurable_snd.comp measurable_snd))).aestronglyMeasurable
-  rw [houter, ← hfirst, ← hsecond]
-  calc eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.2) p γ
-      ≤ eLpNorm ((fun w : X × X × X ↦ edist w.1 w.2.1)
-          + fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ :=
-        eLpNorm_mono_enorm houtm fun w ↦ by
-          simpa using edist_triangle w.1 w.2.1 w.2.2
-    _ ≤ eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.1) p γ
-          + eLpNorm (fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ :=
-        eLpNorm_add_le hp
+  exact (wassersteinEDist_le hcoup p).trans
+    (Measure.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦ edist_triangle x y z)
 
 end Triangle
 

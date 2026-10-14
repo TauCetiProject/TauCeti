@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.Probability.Kernel.Disintegration.StandardBorel
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
@@ -59,7 +60,8 @@ needs, since its two carriers are arbitrary probability spaces.
 * `TauCeti.Measure.lintegral_map_prodMap_id_snd_le` — the composition estimate: a cost on `X × Z`
   dominated by the sum of a cost on `X × Y` and a cost on `Y × Z` integrates against the composed
   plan to at most the sum of the two integrals. This is the mechanism behind the triangle
-  inequality for transport costs.
+  inequality for transport costs, and `TauCeti.Measure.eLpNorm_map_prodMap_id_snd_le` is its
+  `L^p` form for `1 ≤ p`.
 
 ## Implementation notes
 
@@ -379,6 +381,28 @@ theorem lintegral_map_prodMap_id_snd_le (hγπ : γ.map (Prod.map id Prod.fst) =
     _ = (∫⁻ w, c₁ w ∂π) + ∫⁻ v, c₂ v ∂σ := by
         rw [← hγπ, ← hγσ, lintegral_map hc₁ (measurable_id.prodMap measurable_fst),
           MeasureTheory.Measure.snd, lintegral_map hc₂ measurable_snd]
+
+/-- The `L^p` composition estimate. For `1 ≤ p`, if a cost on `X × Z` is dominated pointwise by the
+sum of a cost on `X × Y` and a cost on `Y × Z`, then its `L^p` seminorm against the composition of
+two glued plans is at most the sum of the `L^p` seminorms of the two costs against the plans.
+
+This is the `L^p` form of `TauCeti.Measure.lintegral_map_prodMap_id_snd_le`, and the mechanism
+behind the triangle inequality for `L^p` transport distances. -/
+theorem eLpNorm_map_prodMap_id_snd_le {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hγπ : γ.map (Prod.map id Prod.fst) = π) (hγσ : γ.snd = σ) {c : X × Z → ℝ≥0∞}
+    {c₁ : X × Y → ℝ≥0∞} {c₂ : Y × Z → ℝ≥0∞} (hc : Measurable c) (hc₁ : Measurable c₁)
+    (hc₂ : Measurable c₂) (hle : ∀ x y z, c (x, z) ≤ c₁ (x, y) + c₂ (y, z)) :
+    eLpNorm c p (γ.map (Prod.map id Prod.snd)) ≤ eLpNorm c₁ p π + eLpNorm c₂ p σ := by
+  rw [eLpNorm_map_measure hc.aestronglyMeasurable
+      (measurable_id.prodMap measurable_snd).aemeasurable, ← hγπ,
+    eLpNorm_map_measure hc₁.aestronglyMeasurable
+      (measurable_id.prodMap measurable_fst).aemeasurable, ← hγσ, MeasureTheory.Measure.snd,
+    eLpNorm_map_measure hc₂.aestronglyMeasurable measurable_snd.aemeasurable]
+  exact (eLpNorm_mono_enorm (hc.comp (measurable_id.prodMap measurable_snd)).aestronglyMeasurable
+    (g := c₁ ∘ Prod.map id Prod.fst + c₂ ∘ Prod.snd)
+    fun ⟨x, y, z⟩ ↦ by
+      simpa only [enorm_eq_self, Pi.add_apply, Function.comp_apply, Prod.map_apply, id_eq] using
+        hle x y z).trans (eLpNorm_add_le hp)
 
 /-- The composition of two plans, read off a glued measure: the `(X, Z)`-marginal of a gluing of
 `π` and `σ` has the outer marginals of `π` and `σ`. -/

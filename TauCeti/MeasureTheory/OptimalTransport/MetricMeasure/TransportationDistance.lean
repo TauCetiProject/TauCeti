@@ -39,12 +39,13 @@ measures on varying spaces, invariant under measure-preserving isometries.
   (`TauCeti.sturmEDist_le_wassersteinEDist`), and in particular it vanishes on the diagonal
   (`TauCeti.sturmEDist_self`).
 * A measure and its image under an isometry are at distance `0`
-  (`TauCeti.sturmEDist_map_eq_zero`), and replacing a measure by such an image does not change any
-  distance (`TauCeti.sturmEDist_map_left`). Hence `D_p` only depends on the isomorphism classes of
-  metric-measure spaces of finite mass (`TauCeti.MeasurePreservingIsometry.sturmEDist_left`), and
-  such a space may be replaced by its support
-  (`TauCeti.MetricMeasureSpace.sturmEDist_supportSpace`).
-* Probability measures of finite `p`-th moment are at finite distance
+  (`TauCeti.sturmEDist_map_eq_zero`), and for `1 ≤ p`, replacing a finite measure by such an image
+  does not change its distance to any measure on a standard Borel space
+  (`TauCeti.sturmEDist_map_left`). Hence, for `1 ≤ p` and measures on standard Borel spaces, `D_p`
+  only depends on the isomorphism classes of metric-measure spaces of finite mass
+  (`TauCeti.MeasurePreservingIsometry.sturmEDist_left`), and such a space may be replaced by its
+  support (`TauCeti.MetricMeasureSpace.sturmEDist_supportSpace`).
+* Probability measures of finite `p`-th moment are at finite distance, for every exponent
   (`TauCeti.sturmEDist_ne_top`), by gluing the two spaces at a point. This is why Sturm restricts
   `𝔻` to normalized metric-measure spaces of finite variance.
 
@@ -90,8 +91,8 @@ variable {X X' Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace X'] [Pseu
 
 /-- **Sturm's transportation distance** of `μ` and `ν`: the infimum, over the metric couplings `f`
 of `X` and `Y` and the couplings `π` of `μ` and `ν`, of the `L^p (π)` seminorm of the cross
-distance `fun z ↦ f z.1 z.2`. For `p = 2` and probability measures this is Sturm's distance `𝔻`
-between the metric-measure spaces `(X, μ)` and `(Y, ν)`.
+distance `fun z ↦ f z.1 z.2`. For `p = 2` and probability measures of finite variance this is
+Sturm's distance `𝔻` between the metric-measure spaces `(X, μ)` and `(Y, ν)`.
 
 It is `∞` when `μ` and `ν` have no coupling at all. -/
 def sturmEDist (p : ℝ≥0∞) (μ : Measure X) (ν : Measure Y) : ℝ≥0∞ :=
@@ -185,13 +186,26 @@ theorem sturmEDist_le_eLpNorm_add_eLpNorm (hp : 1 ≤ p) (x₀ : X) (y₀ : Y) (
     (eLpNorm_add_le (f := fun z : X × Y ↦ edist x₀ z.1) (g := fun z ↦ edist y₀ z.2) hp)
 
 /-- **Finiteness.** Probability measures of finite `p`-th moment are at finite transportation
-distance. -/
-theorem sturmEDist_ne_top (hp : 1 ≤ p) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+distance, for every exponent `p`. -/
+theorem sturmEDist_ne_top [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : HasFiniteMoment p μ) (hν : HasFiniteMoment p ν) : sturmEDist p μ ν ≠ ∞ := by
   obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.1 hμ
   obtain ⟨y₀, hy₀⟩ := hasFiniteMoment_def.1 hν
-  exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hx₀.eLpNorm_ne_top, hy₀.eLpNorm_ne_top⟩)
-    (sturmEDist_le_eLpNorm_add_eLpNorm hp x₀ y₀ μ ν)
+  have hπ := isCoupling_prod μ ν
+  refine (lt_of_le_of_lt ?_ (ENNReal.mul_lt_top (ENNReal.LpAddConst_lt_top p)
+    (ENNReal.add_lt_top.2 ⟨hx₀.eLpNorm_lt_top, hy₀.eLpNorm_lt_top⟩))).ne
+  calc sturmEDist p μ ν
+      ≤ ENNReal.LpAddConst p * (eLpNorm (fun z : X × Y ↦ edist x₀ z.1) p (μ.prod ν)
+          + eLpNorm (fun z : X × Y ↦ edist y₀ z.2) p (μ.prod ν)) :=
+        (sturmEDist_le (isMetricCoupling_edist_add_edist x₀ y₀) hπ p).trans
+          (eLpNorm_add_le' (f := fun z : X × Y ↦ edist x₀ z.1) (g := fun z ↦ edist y₀ z.2) p)
+    _ = ENNReal.LpAddConst p *
+          (eLpNorm (fun x ↦ edist x₀ x) p μ + eLpNorm (fun y ↦ edist y₀ y) p ν) := by
+        congr 2
+        · exact eLpNorm_comp_measurePreserving
+            (continuous_const.edist continuous_id).aestronglyMeasurable hπ.measurePreserving_fst
+        · exact eLpNorm_comp_measurePreserving
+            (continuous_const.edist continuous_id).aestronglyMeasurable hπ.measurePreserving_snd
 
 end Finite
 
@@ -214,42 +228,16 @@ theorem sturmEDist_triangle (hp : 1 ≤ p) (μ : Measure X) (ν : Measure Y) [Is
     ⟨(Measure.fst_map_prodMap_id_snd hγπ).trans hπ.fst_eq,
       (Measure.snd_map_prodMap_id_snd hγσ).trans hσ.snd_eq⟩
   have hfg := hf.comp hg
-  have hfm : Measurable fun w : X × Y × Z ↦ f w.1 w.2.1 :=
-    hf.continuous.measurable.comp (measurable_id.prodMap measurable_fst)
-  have hgm : Measurable fun w : X × Y × Z ↦ g w.2.1 w.2.2 :=
-    hg.continuous.measurable.comp measurable_snd
-  have houter : eLpNorm (fun z : X × Z ↦ ⨅ y, f z.1 y + g y z.2) p
-      (γ.map (Prod.map id Prod.snd)) =
-        eLpNorm (fun w : X × Y × Z ↦ ⨅ y, f w.1 y + g y w.2.2) p γ := by
-    rw [eLpNorm_map_measure hfg.continuous.aestronglyMeasurable
-      (measurable_id.prodMap measurable_snd).aemeasurable]
-    rfl
-  have hfirst : eLpNorm (fun w : X × Y × Z ↦ f w.1 w.2.1) p γ =
-      eLpNorm (fun z : X × Y ↦ f z.1 z.2) p π := by
-    rw [← hγπ, eLpNorm_map_measure hf.continuous.aestronglyMeasurable
-      (measurable_id.prodMap measurable_fst).aemeasurable]
-    rfl
-  have hsecond : eLpNorm (fun w : X × Y × Z ↦ g w.2.1 w.2.2) p γ =
-      eLpNorm (fun z : Y × Z ↦ g z.1 z.2) p σ := by
-    rw [← hγσ, Measure.snd, eLpNorm_map_measure hg.continuous.aestronglyMeasurable
-      measurable_snd.aemeasurable]
-    rfl
-  refine (sturmEDist_le hfg hcoup p).trans ?_
-  rw [houter, ← hfirst, ← hsecond]
-  calc eLpNorm (fun w : X × Y × Z ↦ ⨅ y, f w.1 y + g y w.2.2) p γ
-      ≤ eLpNorm ((fun w : X × Y × Z ↦ f w.1 w.2.1) + fun w ↦ g w.2.1 w.2.2) p γ :=
-        eLpNorm_mono_enorm (hfg.continuous.measurable.comp
-          (measurable_id.prodMap measurable_snd)).aestronglyMeasurable fun w ↦ by
-          simpa only [enorm_eq_self, Pi.add_apply] using
-            iInf_le (fun y ↦ f w.1 y + g y w.2.2) w.2.1
-    _ ≤ eLpNorm (fun w : X × Y × Z ↦ f w.1 w.2.1) p γ
-          + eLpNorm (fun w : X × Y × Z ↦ g w.2.1 w.2.2) p γ :=
-        eLpNorm_add_le hp
+  exact (sturmEDist_le hfg hcoup p).trans
+    (Measure.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hfg.continuous.measurable
+      hf.continuous.measurable hg.continuous.measurable fun x y z ↦
+        iInf_le (fun y ↦ f x y + g y z) y)
 
 end Triangle
 
-/-- **Invariance under isometries.** Replacing a finite measure by its pushforward along an
-isometry does not change its transportation distance to any measure on a standard Borel space. -/
+/-- **Invariance under isometries.** For `1 ≤ p`, replacing a finite measure by its pushforward
+along an isometry does not change its transportation distance to any measure on a standard Borel
+space. -/
 theorem sturmEDist_map_left [OpensMeasurableSpace (X × X')] [OpensMeasurableSpace (X × Y)]
     [OpensMeasurableSpace (X' × Y)] [StandardBorelSpace Y] (hp : 1 ≤ p) {T : X → X'}
     (hT : Isometry T) (hTm : AEMeasurable T μ) [IsFiniteMeasure μ] (ν : Measure Y) :
@@ -267,6 +255,7 @@ theorem sturmEDist_map_left [OpensMeasurableSpace (X × X')] [OpensMeasurableSpa
       rw [Measure.fst_map_prodMk₀ hTfst measurable_snd.aemeasurable, ← hfst.map_eq,
         AEMeasurable.map_map_of_aemeasurable (by rw [hfst.map_eq]; exact hTm)
           measurable_fst.aemeasurable]
+      -- `fun z ↦ T z.1` is `T ∘ Prod.fst` by unfolding `Function.comp`.
       rfl
     refine (sturmEDist_le hg hcoup p).trans ?_
     rw [eLpNorm_map_measure hg.continuous.aestronglyMeasurable hTπ]
@@ -292,23 +281,21 @@ theorem sturmEDist_eq_zero (e : MeasurePreservingIsometry M N) (p : ℝ≥0∞) 
   rw [← e.measurePreserving.map_eq]
   exact sturmEDist_map_eq_zero e.isometry e.measurePreserving.measurable.aemeasurable p
 
-/-- **The transportation distance is an isomorphism invariant.** Metric-measure spaces of finite
-mass related by a measure-preserving isometry are at the same transportation distance from every
-measure on a standard Borel space. -/
+/-- **The transportation distance is an isomorphism invariant.** For `1 ≤ p`, metric-measure spaces
+of finite mass related by a measure-preserving isometry are at the same transportation distance
+from every measure on a standard Borel space. -/
 theorem sturmEDist_left (e : MeasurePreservingIsometry M N) [IsFiniteMeasure N.reference]
     (hp : 1 ≤ p) (ρ : Measure Z) :
     sturmEDist p N.reference ρ = sturmEDist p M.reference ρ := by
-  have : IsFiniteMeasure M.reference := ⟨by
-    have h := e.measurePreserving.measure_preimage MeasurableSet.univ.nullMeasurableSet
-    rw [Set.preimage_univ] at h
-    exact h ▸ measure_lt_top _ _⟩
-  rw [← e.measurePreserving.map_eq]
+  rw [← e.measurePreserving.map_eq] at ‹IsFiniteMeasure N.reference› ⊢
+  have := Measure.isFiniteMeasure_of_map (μ := M.reference)
+    e.measurePreserving.measurable.aemeasurable
   exact sturmEDist_map_left hp e.isometry e.measurePreserving.measurable.aemeasurable ρ
 
 end MeasurePreservingIsometry
 
-/-- A metric-measure space of finite mass is at the same transportation distance as its support
-from every measure on a standard Borel space. -/
+/-- For `1 ≤ p`, a metric-measure space of finite mass is at the same transportation distance as its
+support from every measure on a standard Borel space. -/
 theorem MetricMeasureSpace.sturmEDist_supportSpace {X Z : Type*} [MetricSpace X]
     [MeasurableSpace X] [CompleteSpace X] [SecondCountableTopology X] [BorelSpace X]
     [PseudoEMetricSpace Z] [MeasurableSpace Z] [SecondCountableTopology Z]
