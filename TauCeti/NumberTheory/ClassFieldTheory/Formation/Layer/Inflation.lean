@@ -13,7 +13,7 @@ import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 import TauCeti.GroupTheory.GroupAction.FixedPoints
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
-import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex

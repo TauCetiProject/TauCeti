@@ -63,6 +63,10 @@ unbundled form `X →₀ R` with the `DistribMulAction` that pushes the support 
 its scalar extension is a permutation representation too. Over `R = ℤ` this says that the reduction
 of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalization is `ℚ[X]`.
 
+Scalar extension is also an additive functor on finitely generated representations over commutative
+rings, with comparison isomorphisms for tensor units and tensor products. These constructions apply
+to torsion modules and do not require the coefficient algebra to be flat.
+
 ## Main declarations
 
 * `Representation.baseChange`: scalar extension of a representation.
@@ -736,7 +740,8 @@ open CategoryTheory MonoidalCategory TensorProduct
 
 universe u v
 
-variable {k : Type u} (k' : Type u) [Field k] [Field k'] [Algebra k k'] {G : Type v} [Monoid G]
+variable {k : Type u} (k' : Type u) [CommRing k] [CommRing k'] [Algebra k k']
+  {G : Type v} [Monoid G]
 
 /-- **Base change of an equivariant map.** An equivariant map `V → W` extends to the equivariant
 map `k' ⊗[k] V → k' ⊗[k] W` that acts on the second factor. -/
@@ -774,11 +779,11 @@ theorem baseChangeFDRepHom_add {V W : FDRep k G} (φ ψ : V ⟶ W) :
 
 -- The body is exposed because the type of `(baseChangeFDRep k').map φ` mentions
 -- `(baseChangeFDRep k').obj`, so `TauCeti.baseChangeFDRep_map` does not even typecheck against an
--- opaque `obj`. It is the only definition here whose body is exposed:
--- `TauCeti.baseChangeFDRepHom` and the two comparison isomorphisms below are read only through
--- the lemmas stated beside them.
-/-- **Scalar extension as a functor on finite-dimensional representations.** It sends a
-representation `V` of `G` over `k` to `k' ⊗[k] V` with `g` acting by `1 ⊗ V.ρ g`, and an
+-- opaque `obj`. The body of `TauCeti.baseChangeFDRepHom` remains unexposed, with its underlying
+-- linear map described by `TauCeti.baseChangeFDRepHom_hom_hom_hom`.
+/-- **Scalar extension as a functor on finitely generated representations.** Over commutative
+rings, it sends a representation `V` of `G` over `k` to `k' ⊗[k] V` with `g` acting by
+`1 ⊗ V.ρ g`, and an
 equivariant map to its base change. -/
 @[expose]
 noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
@@ -802,8 +807,7 @@ theorem baseChangeFDRep_map {V W : FDRep k G} (φ : V ⟶ W) :
 instance : (baseChangeFDRep (k := k) k' (G := G)).Additive where
   map_add {_ _ φ ψ} := baseChangeFDRepHom_add k' φ ψ
 
-/-- **The tensor unit is preserved**: `k' ⊗[k] k` is the trivial one-dimensional representation
-over `k'`. -/
+/-- **The tensor unit is preserved**: `k' ⊗[k] k` is the trivial representation on `k'`. -/
 noncomputable def baseChangeFDRepUnitIso :
     (FDRep.of (_root_.Representation.baseChange k' (𝟙_ (FDRep k G)).ρ) : FDRep k' G) ≅
       𝟙_ (FDRep k' G) :=
