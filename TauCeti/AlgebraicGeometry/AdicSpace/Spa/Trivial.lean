@@ -158,30 +158,6 @@ end Huber
 
 /-! ### The retraction of `Spa(A, A)` onto its trivial points -/
 
-omit [TopologicalSpace A] in
-/-- A point of `Spv(A, A)` whose values are all at most `1` is trivial. Its characteristic group
-is everything, so each nonzero value lies between `g⁻¹` and `g` for an attained value `1 ≤ g`;
-since `g ≤ 1` as well, `g = 1` and the value is `1`. -/
-private theorem mem_range_trivialSection_of_mem_spvOfIdeal_top {v : Spv A}
-    {hfg : ∃ J : Ideal A, J.FG ∧ (⊤ : Ideal A).radical = J.radical} (hv : v ∈ spvOfIdeal ⊤ hfg)
-    (h1 : ∀ a : A, v.toValuativeRel.vle a 1) : v ∈ Set.range trivialSection := by
-  have hfull := Valuation.hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top.mpr
-    (mem_spvOfIdeal_top_iff.mp hv)
-  refine (mem_range_trivialSection_iff v).mpr fun a ↦ ?_
-  simp only [← valuation_le_iff, map_zero, map_one] at h1 ⊢
-  rcases eq_or_ne (v.valuation a) 0 with h0 | h0
-  · exact Or.inl h0.le
-  refine Or.inr ⟨?_, h1 a⟩
-  have hpos : 0 < v.valuation.restrict a := zero_lt_iff.mpr fun h ↦
-    h0 (v.valuation.restrict_eq_zero_iff.mp h)
-  obtain ⟨b, hinv, hle⟩ := Valuation.hasFullCharacteristicGroup_iff.mp hfull _ hpos
-  have hb : v.valuation.restrict b ≤ 1 := by
-    simpa using v.valuation.restrict_le_iff.mpr ((h1 b).trans_eq (map_one v.valuation).symm)
-  have ha : v.valuation.restrict 1 ≤ v.valuation.restrict a := by
-    rw [map_one]
-    exact ((one_le_inv₀ (hpos.trans_le hle)).mpr hb).trans hinv
-  simpa using v.valuation.restrict_le_iff.mp ha
-
 /-- The restriction `x|cΓ_x` of a point of `Spa(A, A)` to its characteristic subgroup is a trivial
 valuation. -/
 private theorem restrictToIdeal_top_mem_range_trivialSection {x : Spv A}
