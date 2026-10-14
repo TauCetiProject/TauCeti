@@ -16,13 +16,14 @@ derivative vanishes. The relative theorem applies to subsets with unique derivat
 contained in the closure of their interior. The unrestricted theorem therefore includes manifolds
 with boundary and corners and needs neither finite dimensionality nor completeness.
 
-The proof reads the two derivatives in one fixed chart, using chart independence, and applies
-Mathlib's `extDerivWithin_extDerivWithin_apply`. Smooth-section regularity supplies the coordinate
-regularity; differentiability of the exterior derivative is not a separate hypothesis.
+The unbundled results assume `C²` section regularity; differentiability of the exterior derivative
+is not a separate hypothesis. A simp theorem gives the square-zero identity for bundled smooth
+forms.
 
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 14.
+* Mathlib's flat square-zero theorem (`extDerivWithin_extDerivWithin_apply`).
 -/
 
 public section

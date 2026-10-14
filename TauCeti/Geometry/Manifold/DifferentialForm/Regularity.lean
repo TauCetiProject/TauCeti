@@ -15,13 +15,11 @@ The fibre coordinate of a fixed-coefficient form in the alternating-map bundle i
 along the inverse extended chart. This transfers smooth-section regularity to the flat
 regularity needed for exterior differentiation, including within subsets at boundary points.
 
-The comparison uses Mathlib's alternating-bundle trivialization and
-`TangentBundle.symmL_trivializationAt`, which identifies the inverse tangent trivialization with
-the derivative of the inverse extended chart.
-
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 14.
+* Mathlib's alternating-bundle coordinates (`ContinuousAlternatingMap.inCoordinates`) and
+  inverse tangent coordinates (`TangentBundle.symmL_trivializationAt`).
 -/
 
 public section
