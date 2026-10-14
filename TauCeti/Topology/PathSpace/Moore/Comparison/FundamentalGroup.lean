@@ -19,6 +19,7 @@ Mathlib multiplies endomorphisms by reversed categorical composition
 The component identification uses the Moore/fixed-interval homotopy equivalence and
 `HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup`. This convention gives the
 multiplicative comparison needed for the degree-zero Pontryagin algebra.
+In particular, Moore loops are path connected exactly when the fundamental group is trivial.
 
 See W. S. Massey, *Singular Homology Theory*, Chapter VII, and
 Barraud--Damian--Humilière--Oancea, *Floer homology with DG coefficients*, §2.2,
@@ -38,10 +39,7 @@ that the product of fundamental-group elements traverses the right factor first.
 def fundamentalGroupHom (x : X) : MooreLoopSpace X x →* FundamentalGroup X x where
   toFun γ := Inv.inv (α := FundamentalGroup X x) (Path.Homotopic.Quotient.mk γ.toPath)
   map_one' := by
-    have h : (1 : MooreLoopSpace X x).toPath = Path.refl x := by
-      ext t
-      simp [toPath_apply]
-    rw [h]
+    rw [toPath_one]
     exact inv_one
   map_mul' γ δ := by
     let a : FundamentalGroup X x := Path.Homotopic.Quotient.mk γ.toPath
@@ -89,6 +87,15 @@ theorem fundamentalGroupHom_surjective (x : X) : Function.Surjective (fundamenta
     obtain ⟨q, rfl⟩ := (zerothHomotopyEquivFundamentalGroup x).surjective g
     induction q using Quotient.inductionOn with
     | h γ => exact ⟨γ, (zerothHomotopyEquivFundamentalGroup_mk γ).symm⟩
+
+/-- Moore loops are path connected exactly when the fundamental group at their
+basepoint is trivial. -/
+theorem pathConnectedSpace_iff (x : X) :
+    PathConnectedSpace (MooreLoopSpace X x) ↔ Subsingleton (FundamentalGroup X x) := by
+  rw [pathConnectedSpace_iff_zerothHomotopy]
+  have hne : Nonempty (ZerothHomotopy (MooreLoopSpace X x)) := ⟨ZerothHomotopy.mk 1⟩
+  simp only [hne, true_and]
+  exact (zerothHomotopyEquivFundamentalGroup x).subsingleton_congr
 
 /-- The multiplicative loop class is natural under based continuous maps. -/
 @[simp↓]
