@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Ideal.Extended
+import TauCeti.Algebra.Module.Submodule.Finite
 public import TauCeti.RingTheory.Ideal.Operations
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.RingTheory.TensorProduct.Finite
@@ -199,36 +200,13 @@ theorem finite_quotient_mul {A R : Type*} [CommSemiring A] [CommRing R] [Algebra
     Module.Finite.base_change R (R ⧸ J) I
   have : Module.Finite A ((R ⧸ J) ⊗[R] I) :=
     Module.Finite.trans (R ⧸ J) ((R ⧸ J) ⊗[R] I)
-  have : Module.Finite A (N.restrictScalars A) :=
-    Module.Finite.equiv ((eN.restrictScalars A).trans
-      ((N.restrictScalarsEquiv A).restrictScalars A).symm)
+  have : Module.Finite A N := Module.Finite.equiv (eN.restrictScalars A)
   -- The other filtration quotient is R / I.
   have eQ : ((R ⧸ I * J) ⧸ N) ≃ₗ[R] R ⧸ I := by
     rw [hN]
     exact Submodule.quotientQuotientEquivQuotient (I * J) I Ideal.mul_le_left
   have : Module.Finite A ((R ⧸ I * J) ⧸ N) :=
     Module.Finite.equiv (eQ.restrictScalars A).symm
-  classical
-  -- Lift a finite set of quotient generators; together with the finite kernel they span.
-  obtain ⟨s, hs⟩ := Module.finite_def.mp
-    (inferInstance : Module.Finite A ((R ⧸ I * J) ⧸ N))
-  choose lift hlift using N.mkQ_surjective
-  let P := Submodule.span A (lift '' (s : Set ((R ⧸ I * J) ⧸ N)))
-  have hP : P.map (N.mkQ.restrictScalars A) = ⊤ := by
-    rw [Submodule.map_span, ← Set.image_comp]
-    simpa only [Function.comp_def, LinearMap.restrictScalars_apply, hlift,
-      Set.image_id'] using hs
-  have htop : P ⊔ N.restrictScalars A = ⊤ := by
-    refine top_unique fun x _ ↦ ?_
-    have hx : N.mkQ x ∈ P.map (N.mkQ.restrictScalars A) := by rw [hP]; trivial
-    obtain ⟨y, hy, hyx⟩ := hx
-    simp only [LinearMap.restrictScalars_apply] at hyx
-    -- The restricted kernel has the same carrier; quotient equality detects its differences.
-    exact Submodule.mem_sup.mpr
-      ⟨y, hy, x - y, (Submodule.Quotient.eq N).mp hyx.symm, add_sub_cancel _ _⟩
-  refine ⟨?_⟩
-  rw [← htop]
-  exact (Submodule.fg_span (s.finite_toSet.image lift)).sup
-    (Module.Finite.iff_fg.mp inferInstance)
+  exact Module.Finite.of_restrictScalars_submodule_quotient N
 
 end Ideal
