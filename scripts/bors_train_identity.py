@@ -1,4 +1,7 @@
-"""Derive an immutable staging ref from the trusted live bors batch identity."""
+"""Resolve a live bors batch to its staging ref.
+
+Train batches use immutable candidate refs; serial batches use mutable staging.
+"""
 import argparse
 import sys
 

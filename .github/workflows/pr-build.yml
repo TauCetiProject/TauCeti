@@ -187,8 +187,9 @@ jobs:
             [[ "$SHA" =~ ^[0-9a-f]{40}$ && "$BASE_REF" =~ ^[0-9a-f]{40}$ ]] || {
               echo "::error::bors dispatch did not contain two commit SHAs"; exit 1;
             }
-            # The bors authority supplies immutable generation/ref metadata. A
-            # queued predecessor must survive publication of its successor.
+            # Train batches use immutable generation refs so a queued predecessor
+            # survives publication of its successor. Legacy serial batches still
+            # use the mutable staging ref. The bors authority selects the ref.
             # Payload fields never choose a ref, URL, executable or authority.
             STAGING_REF=$(python3 gate/scripts/bors_train_identity.py \
               --head "$SHA" --base "$BASE_REF" --batch-id "$BORS_BATCH_ID" --branch "$BORS_BASE_REF")
