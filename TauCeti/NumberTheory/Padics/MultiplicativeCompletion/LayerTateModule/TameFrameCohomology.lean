@@ -12,7 +12,11 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Projectiv
 # Cohomology of the tame-frame relation module
 
 This file packages the degree-two cohomological compatibility of the tame-frame relation-module
-surjection on a finite Galois layer.
+surjection on a finite Galois layer. Since the surjection has free rank-one, hence projective,
+kernel, it induces an isomorphism on second group cohomology. This isomorphism compares the
+extension class of the group presentation, read on the relation module, with the arithmetic
+extension class on the completed multiplicative module, which is how one passes from the tame
+layer to finite quotients of the absolute Galois group.
 
 ## Main result
 
