@@ -120,7 +120,7 @@ theorem integral_verticalRegion
 
 omit [NormedSpace ℝ E] in
 /-- Coordinate swap transports integrability from a horizontal cell to its vertical cell. -/
-theorem integrableOn_comp_coordinateSwap
+theorem integrableOn_comp_coordinateSwapCLE
     (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
     IntegrableOn (R ∘ Complex.coordinateSwapCLE) (verticalRegion a b lower upper) := by
   rw [← preimage_coordinateSwapCLE_horizontalRegion]
@@ -128,7 +128,7 @@ theorem integrableOn_comp_coordinateSwap
     Complex.coordinateSwapCLE.toHomeomorph.toMeasurableEquiv.measurableEmbedding).2 hR
 
 /-- Coordinate swap transports the set integral from a vertical cell to its horizontal cell. -/
-theorem integral_comp_coordinateSwap_verticalRegion :
+theorem integral_comp_coordinateSwapCLE_verticalRegion :
     (∫ z in verticalRegion a b lower upper, (R ∘ Complex.coordinateSwapCLE) z) =
       ∫ z in horizontalRegion a b lower upper, R z := by
   simpa only [preimage_coordinateSwapCLE_horizontalRegion, Function.comp_apply] using
@@ -142,10 +142,10 @@ theorem integral_horizontalRegion
     (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
     (∫ z in horizontalRegion a b lower upper, R z) =
       ∫ y in Icc a b, ∫ x in Icc (lower y) (upper y), R ⟨x, y⟩ := by
-  have hi := integrableOn_comp_coordinateSwap hR
+  have hi := integrableOn_comp_coordinateSwapCLE hR
   calc
     _ = ∫ z in verticalRegion a b lower upper, (R ∘ Complex.coordinateSwapCLE) z :=
-      integral_comp_coordinateSwap_verticalRegion.symm
+      integral_comp_coordinateSwapCLE_verticalRegion.symm
     _ = _ := by
       simpa only [Function.comp_apply, Complex.coordinateSwapCLE_apply] using
         integral_verticalRegion hl hu hi
@@ -197,7 +197,7 @@ theorem integral_graphs_sub_eq_integral_horizontalRegion {Q : ℂ → E} (hab : 
     hQ.comp Complex.coordinateSwapCLE.continuous.continuousOn (fun z hz ↦ by
       simpa only [mem_horizontalRegion, Complex.coordinateSwapCLE_apply] using
         mem_verticalRegion.mp hz)
-  have hR' := integrableOn_comp_coordinateSwap hR
+  have hR' := integrableOn_comp_coordinateSwapCLE hR
   have hdQ' : ∀ x ∈ Icc a b, ∀ y ∈ Ioo (lower x) (upper x),
       HasDerivAt (fun y ↦ (Q ∘ Complex.coordinateSwapCLE) ⟨x, y⟩)
         ((R ∘ Complex.coordinateSwapCLE) ⟨x, y⟩) y := by
@@ -215,7 +215,7 @@ theorem integral_graphs_sub_eq_integral_horizontalRegion {Q : ℂ → E} (hab : 
     _ = ∫ z in horizontalRegion a b lower upper, R z := by
       rw [hv, neg_neg]
       simpa only [Function.comp_apply, Complex.coordinateSwapCLE_apply] using
-        integral_comp_coordinateSwap_verticalRegion (a := a) (b := b)
+        integral_comp_coordinateSwapCLE_verticalRegion (a := a) (b := b)
         (lower := lower) (upper := upper) (R := R)
 
 end TauCeti.Green
