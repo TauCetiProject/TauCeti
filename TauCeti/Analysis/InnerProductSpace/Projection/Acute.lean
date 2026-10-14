@@ -20,12 +20,13 @@ hypothesis. In finite dimension, `P_V` is injective on `U` exactly when every pr
 `U` to `V` is strictly below `π/2`, exactly when the directed gap `‖P_{Vᗮ} P_U‖` is less than `1`;
 so for subspaces of equal dimension, acuteness is the condition `‖P_U - P_V‖ < 1`.
 
-On this pole-free locus the *principal tangents* (`Submodule.principalTangents`), the tangents of
-the principal angles, are finite; they are the quantities in which `tan Θ` perturbation bounds
-for spectral subspaces are stated. A pair *avoids the quarter turn*
-(`Submodule.AvoidsQuarterTurn`) when no principal angle equals `π/4`; this holds in particular
-when all principal angles are below `π/4`, which happens exactly when the directed gap is less
-than `√2/2`.
+On this pole-free locus the *principal tangents* (`Submodule.principalTangents`) are the tangents
+of the principal angles; a right angle records the junk value `Real.tan (π / 2) = 0`. They are the
+quantities in which `tan Θ` perturbation bounds for spectral subspaces are stated.
+
+A pair *avoids the quarter turn* (`Submodule.AvoidsQuarterTurn`) when no principal angle equals
+`π/4`; this holds in particular when all principal angles are below `π/4`, which happens exactly
+when the directed gap is less than `√2/2`.
 
 ## Main definitions
 
@@ -37,8 +38,6 @@ than `√2/2`.
 
 * `Submodule.isAcute_iff_disjoint`: acuteness in terms of the subspaces `U ⊓ Vᗮ` and `V ⊓ Uᗮ`.
 * `Submodule.IsAcute.of_projectionGap_lt_one`: a pair with gap less than `1` is acute.
-* `Submodule.directedProjectionGap_lt_one_iff`: in finite dimension, the directed gap from `U` to
-  `V` is less than `1` exactly when `P_V` is injective on `U`.
 * `Submodule.isAcute_iff_principalAngles_lt_pi_div_two`: in finite dimension, a pair is acute
   exactly when all principal angles in both directions are strictly below `π/2`;
   `Submodule.isAcute_iff_projectionGap_lt_one_of_finrank_eq` for subspaces of equal dimension.
@@ -46,9 +45,9 @@ than `√2/2`.
   sines `sᵢ`.
 * `Submodule.arctan_principalTangents`, `Submodule.principalTangents_antitone`: on the pole-free
   locus the principal tangents recover the principal angles and are nonincreasing.
-* `Submodule.principalAngles_lt_pi_div_four_iff`: all principal angles are below `π/4` exactly when
-  the directed gap is less than `√2/2`; consequently
-  `Submodule.AvoidsQuarterTurn.of_projectionGap_lt`.
+* `Submodule.AvoidsQuarterTurn.of_projectionGap_lt`: a pair with gap less than `√2/2` avoids the
+  quarter turn, since then all principal angles are below `π/4`
+  (`Submodule.principalAngles_lt_pi_div_four_iff`).
 
 ## References
 
@@ -81,12 +80,7 @@ structure IsAcute : Prop where
 variable {U V} in
 /-- A pair is acute exactly when `U ⊓ Vᗮ = ⊥` and `V ⊓ Uᗮ = ⊥`. -/
 theorem isAcute_iff_disjoint : U.IsAcute V ↔ Disjoint U Vᗮ ∧ Disjoint V Uᗮ := by
-  -- The kernel of `P_V` is `Vᗮ`.
-  have hinj (U V : Submodule 𝕜 E) [V.HasOrthogonalProjection] :
-      Set.InjOn V.starProjection U ↔ Disjoint U Vᗮ := by
-    simpa using (LinearMap.disjoint_ker_iff_injOn (f := (V.starProjection : E →ₗ[𝕜] E))
-      (p := U)).symm
-  rw [← hinj, ← hinj]
+  rw [← injOn_starProjection_iff_disjoint, ← injOn_starProjection_iff_disjoint]
   exact ⟨fun h ↦ ⟨h.injOn_left, h.injOn_right⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 variable {U V} in
@@ -100,16 +94,6 @@ theorem isAcute_comm : U.IsAcute V ↔ V.IsAcute U :=
 theorem isAcute_self : U.IsAcute U :=
   isAcute_iff_disjoint.2 ⟨U.orthogonal_disjoint, U.orthogonal_disjoint⟩
 
-/-- If the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1`, then no nonzero vector of
-`U` is orthogonal to `V`. -/
-theorem disjoint_orthogonal_of_directedProjectionGap_lt_one (h : U.directedProjectionGap V < 1) :
-    Disjoint U Vᗮ := by
-  refine disjoint_def.2 fun x hxU hxV ↦ ?_
-  -- `x = P_{Vᗮ} x`, so `‖x‖ ≤ s ‖x‖` with `s < 1`.
-  have hx := (directedProjectionGap_le_iff U V (directedProjectionGap_nonneg U V)).1 le_rfl x hxU
-  rw [starProjection_eq_self_iff.2 hxV] at hx
-  exact norm_eq_zero.1 <| le_antisymm (by nlinarith [norm_nonneg x]) (norm_nonneg x)
-
 /-- **Acuteness from the projection gap.** A pair of subspaces with `‖P_U - P_V‖ < 1` is acute. -/
 theorem IsAcute.of_projectionGap_lt_one (h : U.projectionGap V < 1) : U.IsAcute V :=
   isAcute_iff_disjoint.2
@@ -121,19 +105,6 @@ theorem IsAcute.of_projectionGap_lt_one (h : U.projectionGap V < 1) : U.IsAcute 
 section FiniteDimensional
 
 variable [FiniteDimensional 𝕜 E]
-
-/-- All principal angles from `U` to `V` are strictly below `π/2` exactly when the directed gap
-`‖P_{Vᗮ} P_U‖`, the largest principal sine, is less than `1`. -/
-theorem principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one :
-    (∀ i, U.principalAngles V i < Real.pi / 2) ↔ U.directedProjectionGap V < 1 := by
-  simp only [principalAngles_apply, Real.arcsin_lt_pi_div_two, ← principalSines_zero]
-  exact ⟨fun h ↦ h 0, fun h i ↦ (principalSines_antitone U V (Nat.zero_le i)).trans_lt h⟩
-
-/-- In finite dimension, the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1` exactly
-when no nonzero vector of `U` is orthogonal to `V`. -/
-theorem directedProjectionGap_lt_one_iff : U.directedProjectionGap V < 1 ↔ Disjoint U Vᗮ := by
-  rw [← principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one,
-    principalAngles_lt_pi_div_two_iff]
 
 /-- In finite dimension, a pair of subspaces is acute exactly when all principal angles from `U`
 to `V` and from `V` to `U` are strictly below `π/2`. -/
@@ -228,34 +199,30 @@ theorem principalTangents_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
 def AvoidsQuarterTurn : Prop :=
   ∀ i, U.principalAngles V i ≠ Real.pi / 4
 
+/-- The pair avoids the quarter turn exactly when no principal angle equals `π/4`. -/
+theorem avoidsQuarterTurn_iff_principalAngles :
+    U.AvoidsQuarterTurn V ↔ ∀ i, U.principalAngles V i ≠ Real.pi / 4 :=
+  Iff.rfl
+
 /-- The pair avoids the quarter turn exactly when no principal sine equals `√2/2`. -/
 theorem avoidsQuarterTurn_iff : U.AvoidsQuarterTurn V ↔ ∀ i, U.principalSines V i ≠ √2 / 2 := by
+  rw [avoidsQuarterTurn_iff_principalAngles]
   refine forall_congr' fun i ↦ not_congr ?_
   rw [principalAngles_apply, Real.arcsin_eq_iff_eq_sin
       ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩, Real.sin_pi_div_four]
 
 /-- **Quarter-turn avoidance on the diagonal.** Every subspace avoids the quarter turn with
 itself. -/
-theorem avoidsQuarterTurn_self : U.AvoidsQuarterTurn U := fun i ↦ by
+theorem avoidsQuarterTurn_self : U.AvoidsQuarterTurn U := by
+  refine (avoidsQuarterTurn_iff_principalAngles U U).2 fun i ↦ ?_
   rw [principalAngles_self, Finsupp.coe_zero, Pi.zero_apply]
   exact (div_pos Real.pi_pos four_pos).ne
 
-/-- All principal angles from `U` to `V` are strictly below `π/4` exactly when the directed gap
-`‖P_{Vᗮ} P_U‖` is less than `√2/2`. -/
-theorem principalAngles_lt_pi_div_four_iff :
-    (∀ i, U.principalAngles V i < Real.pi / 4) ↔ U.directedProjectionGap V < √2 / 2 := by
-  have hπ : Real.pi / 4 ∈ Set.Icc (-(Real.pi / 2)) (Real.pi / 2) :=
-    ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩
-  have hs (i : ℕ) : U.principalSines V i ∈ Set.Icc (-1 : ℝ) 1 :=
-    ⟨by linarith [principalSines_nonneg U V i], principalSines_le_one U V i⟩
-  simp only [principalAngles_apply, Real.arcsin_lt_iff_lt_sin (hs _) hπ, Real.sin_pi_div_four,
-    ← principalSines_zero]
-  exact ⟨fun h ↦ h 0, fun h i ↦ (principalSines_antitone U V (Nat.zero_le i)).trans_lt h⟩
-
 /-- A pair whose directed gap is less than `√2/2` avoids the quarter turn. -/
 theorem AvoidsQuarterTurn.of_directedProjectionGap_lt (h : U.directedProjectionGap V < √2 / 2) :
-    U.AvoidsQuarterTurn V := fun i ↦
-  ((principalAngles_lt_pi_div_four_iff U V).2 h i).ne
+    U.AvoidsQuarterTurn V :=
+  (avoidsQuarterTurn_iff_principalAngles U V).2 fun i ↦
+    ((principalAngles_lt_pi_div_four_iff U V).2 h i).ne
 
 /-- A pair whose gap `‖P_U - P_V‖` is less than `√2/2` avoids the quarter turn. -/
 theorem AvoidsQuarterTurn.of_projectionGap_lt (h : U.projectionGap V < √2 / 2) :
@@ -265,7 +232,8 @@ theorem AvoidsQuarterTurn.of_projectionGap_lt (h : U.projectionGap V < √2 / 2)
 /-- For subspaces of the same dimension, quarter-turn avoidance is symmetric in `U` and `V`. -/
 theorem avoidsQuarterTurn_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
     U.AvoidsQuarterTurn V ↔ V.AvoidsQuarterTurn U := by
-  rw [AvoidsQuarterTurn, AvoidsQuarterTurn, principalAngles_comm U V h]
+  rw [avoidsQuarterTurn_iff_principalAngles, avoidsQuarterTurn_iff_principalAngles,
+    principalAngles_comm U V h]
 
 end FiniteDimensional
 

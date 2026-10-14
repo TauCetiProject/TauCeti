@@ -23,12 +23,12 @@ the relative position of `U` and `V` is recorded by the two cross-projections
 together with the *double-angle operator* `2 P_{Uᗮ} P_V P_U`, the off-diagonal `U → Uᗮ` block of
 `2 P_V`, in which `sin 2Θ` bounds are stated.
 
-In finite dimension their singular values are the *principal cosines* and the *principal sines*
-of `U` and `V`, each listed in nonincreasing order and padded with zeros, and the *principal
-angles* are the arcsines of the principal sines, so they lie in `[0, π/2]`. These are the
-quantities in which perturbation bounds for spectral subspaces (the Davis–Kahan `sin Θ`
-theorems) are stated; the operator norm of the directed sine map is the directed gap
-`Submodule.directedProjectionGap U V`.
+In finite dimension the singular values of the cosine map and of the directed sine map are the
+*principal cosines* and the *principal sines* of `U` and `V`, each listed in nonincreasing order
+and padded with zeros, and the *principal angles* are the arcsines of the principal sines, so they
+lie in `[0, π/2]`. These are the quantities in which perturbation bounds for spectral subspaces
+(the Davis–Kahan `sin Θ` theorems) are stated; the operator norm of the directed sine map is the
+directed gap `Submodule.directedProjectionGap U V`.
 
 The principal cosines are symmetric in `U` and `V`. The principal sines are symmetric only when
 `U` and `V` have the same finite dimension (`Submodule.principalSines_comm`), the main result of
@@ -55,10 +55,16 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
 * `Submodule.principalCosines_eq_zero_iff`: all principal cosines vanish exactly when `U ⟂ V`.
 * `Submodule.sin_principalAngles`: the sine of the `i`-th principal angle is the `i`-th principal
   sine.
-* `Submodule.principalSines_zero`: the largest principal sine is the directed gap `‖P_{Vᗮ} P_U‖`.
-* `Submodule.ncard_principalAngles_eq_pi_div_two`: the number of principal angles from `U` to `V`
-  equal to `π/2` is `dim (U ⊓ Vᗮ)`; hence `Submodule.principalAngles_lt_pi_div_two_iff`: all of
-  them are strictly below `π/2` exactly when no nonzero vector of `U` is orthogonal to `V`.
+* `Submodule.principalSines_zero`: the largest principal sine is the directed gap `‖P_{Vᗮ} P_U‖`;
+  hence `Submodule.forall_principalSines_lt_iff`: all principal sines are below `c` exactly when
+  the directed gap is.
+* `Submodule.ncard_ofPred_principalAngles_eq_pi_div_two`: the number of principal angles from `U`
+  to `V` equal to `π/2` is `dim (U ⊓ Vᗮ)`; hence `Submodule.principalAngles_lt_pi_div_two_iff`:
+  all of them are strictly below `π/2` exactly when no nonzero vector of `U` is orthogonal to `V`.
+* `Submodule.directedProjectionGap_lt_one_iff`: the directed gap from `U` to `V` is less than `1`
+  exactly when no nonzero vector of `U` is orthogonal to `V`.
+* `Submodule.principalAngles_lt_pi_div_four_iff`: all principal angles are below `π/4` exactly
+  when the directed gap is less than `√2/2`.
 * `Submodule.norm_sinTwoAngleOperator_le_one`: the double-angle operator is a contraction, and
   `Submodule.sinTwoAngleOperator_eq_zero_iff`: it vanishes exactly when `P_U` and `P_V` commute.
 
@@ -213,6 +219,7 @@ theorem sinTwoAngleOperator_self : U.sinTwoAngleOperator U = 0 :=
 
 /-- The double-angle operator vanishes exactly when the orthogonal projections onto `U` and `V`
 commute. -/
+@[simp]
 theorem sinTwoAngleOperator_eq_zero_iff :
     U.sinTwoAngleOperator V = 0 ↔ Commute U.starProjection V.starProjection := by
   rw [commute_iff_eq, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def]
@@ -317,6 +324,13 @@ theorem sin_principalAngles (i : ℕ) : Real.sin (U.principalAngles V i) = U.pri
 theorem principalSines_zero : U.principalSines V 0 = U.directedProjectionGap V := by
   rw [principalSines_def, ← ContinuousLinearMap.singularValue_eq_linearMap_singularValues,
     ContinuousLinearMap.singularValue_zero, coe_nnnorm, norm_sinThetaMap]
+
+/-- All principal sines from `U` to `V` are below `c` exactly when the largest one, the directed
+gap `‖P_{Vᗮ} P_U‖`, is. -/
+theorem forall_principalSines_lt_iff {c : ℝ} :
+    (∀ i, U.principalSines V i < c) ↔ U.directedProjectionGap V < c := by
+  rw [← principalSines_zero]
+  exact ⟨fun h ↦ h 0, fun h i ↦ (principalSines_antitone U V (Nat.zero_le i)).trans_lt h⟩
 
 /-- There are at most `dim U` nonzero principal cosines. -/
 theorem principalCosines_of_finrank_le {i : ℕ} (hi : finrank 𝕜 U ≤ i) :
@@ -473,7 +487,7 @@ theorem principalAngles_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
 
 /-- **Counting right principal angles.** The number of principal angles from `U` to `V` equal to
 `π/2` is the dimension of `U ⊓ Vᗮ`, the subspace of vectors of `U` orthogonal to `V`. -/
-theorem ncard_principalAngles_eq_pi_div_two :
+theorem ncard_ofPred_principalAngles_eq_pi_div_two :
     {i | U.principalAngles V i = Real.pi / 2}.ncard = finrank 𝕜 ↥(U ⊓ Vᗮ) := by
   have hset : {i | U.principalAngles V i = Real.pi / 2} = {i | U.principalSines V i = 1} := by
     ext i
@@ -490,9 +504,33 @@ theorem principalAngles_lt_pi_div_two_iff :
     (U.principalAngles V).hasFiniteSupport.subset fun i (hi : _ = _) ↦ by
       rw [Function.mem_support, hi]
       positivity
-  rw [disjoint_iff, ← Submodule.finrank_eq_zero, ← ncard_principalAngles_eq_pi_div_two,
+  rw [disjoint_iff, ← Submodule.finrank_eq_zero, ← ncard_ofPred_principalAngles_eq_pi_div_two,
     Set.ncard_eq_zero hfin, Set.eq_empty_iff_forall_notMem]
   exact forall_congr' fun i ↦ (principalAngles_le_pi_div_two U V i).lt_iff_ne
+
+/-- All principal angles from `U` to `V` are strictly below `π/2` exactly when the directed gap
+`‖P_{Vᗮ} P_U‖`, the largest principal sine, is less than `1`. -/
+theorem principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one :
+    (∀ i, U.principalAngles V i < Real.pi / 2) ↔ U.directedProjectionGap V < 1 := by
+  simp only [principalAngles_apply, Real.arcsin_lt_pi_div_two]
+  exact forall_principalSines_lt_iff U V
+
+/-- In finite dimension, the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1` exactly
+when no nonzero vector of `U` is orthogonal to `V`. -/
+theorem directedProjectionGap_lt_one_iff : U.directedProjectionGap V < 1 ↔ Disjoint U Vᗮ := by
+  rw [← principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one,
+    principalAngles_lt_pi_div_two_iff]
+
+/-- All principal angles from `U` to `V` are strictly below `π/4` exactly when the directed gap
+`‖P_{Vᗮ} P_U‖` is less than `√2/2`. -/
+theorem principalAngles_lt_pi_div_four_iff :
+    (∀ i, U.principalAngles V i < Real.pi / 4) ↔ U.directedProjectionGap V < √2 / 2 := by
+  have hπ : Real.pi / 4 ∈ Set.Icc (-(Real.pi / 2)) (Real.pi / 2) :=
+    ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩
+  have hs (i : ℕ) : U.principalSines V i ∈ Set.Icc (-1 : ℝ) 1 :=
+    ⟨by linarith [principalSines_nonneg U V i], principalSines_le_one U V i⟩
+  simp only [principalAngles_apply, Real.arcsin_lt_iff_lt_sin (hs _) hπ, Real.sin_pi_div_four]
+  exact forall_principalSines_lt_iff U V
 
 end FiniteDimensional
 
