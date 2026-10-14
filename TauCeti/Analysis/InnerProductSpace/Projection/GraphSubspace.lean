@@ -146,6 +146,7 @@ theorem norm_le_norm_add_apply {u : E} (hu : u ∈ U) : ‖u‖ ≤ ‖u + X u�
 
 /-- A vector lies in the graph subspace exactly when its component in `Uᗮ` is the image under `X`
 of its component in `U`. -/
+@[grind =]
 theorem mem_graphSubspace_iff {y : E} : y ∈ U.graphSubspace X ↔ Uᗮ.starProjection y = X y := by
   constructor
   · intro h
