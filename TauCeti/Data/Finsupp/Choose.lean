@@ -44,13 +44,19 @@ theorem prod_choose_eq_prod {d : σ →₀ ℕ} (m : σ →₀ ℕ) {s : Finset 
 
 /-- Pascal's rule for the multi-index binomial coefficient, in the coordinate `i`:
 raising `nᵢ` by one adds the coefficient with `dᵢ` lowered by one, when `dᵢ ≠ 0`. -/
-theorem prod_choose_add_single [DecidableEq σ] (n d : σ →₀ ℕ) (i : σ) :
+theorem prod_choose_add_single (n d : σ →₀ ℕ) (i : σ) :
     (d.prod fun j k ↦ ((n + single i 1 : σ →₀ ℕ) j).choose k) =
       (d.prod fun j k ↦ (n j).choose k) +
-        if i ∈ d.support then (d - single i 1).prod fun j k ↦ (n j).choose k else 0 := by
+        if d i = 0 then 0 else (d - single i 1).prod fun j k ↦ (n j).choose k := by
+  classical
   rw [prod_choose_eq_prod _ subset_rfl, prod_choose_eq_prod _ subset_rfl]
   split_ifs with hi
-  · rw [prod_choose_eq_prod _ support_tsub, ← Finset.mul_prod_erase _ _ hi,
+  · rw [add_zero]
+    refine Finset.prod_congr rfl fun j hj ↦ ?_
+    have hij : i ≠ j := fun h ↦ Finsupp.mem_support_iff.1 (h ▸ hj) hi
+    simp [hij]
+  · replace hi := Finsupp.mem_support_iff.2 hi
+    rw [prod_choose_eq_prod _ support_tsub, ← Finset.mul_prod_erase _ _ hi,
       ← Finset.mul_prod_erase _ _ hi, ← Finset.mul_prod_erase _ _ hi]
     have h1 : ∏ j ∈ d.support.erase i, ((n + single i 1 : σ →₀ ℕ) j).choose (d j) =
         ∏ j ∈ d.support.erase i, (n j).choose (d j) :=
@@ -63,9 +69,5 @@ theorem prod_choose_add_single [DecidableEq σ] (n d : σ →₀ ℕ) (i : σ) :
     congr 1
     rw [Finsupp.add_apply, tsub_apply, single_eq_same, hk, Nat.add_sub_cancel,
       Nat.choose_succ_succ', add_comm]
-  · rw [add_zero]
-    refine Finset.prod_congr rfl fun j hj ↦ ?_
-    have hij : i ≠ j := fun h ↦ hi (h ▸ hj)
-    simp [hij]
 
 end Finsupp

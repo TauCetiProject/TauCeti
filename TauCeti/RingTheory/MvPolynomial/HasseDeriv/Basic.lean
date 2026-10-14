@@ -218,14 +218,6 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
 theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
     hasseDeriv d (P * X i) =
       (if d i = 0 then 0 else hasseDeriv (d - single i 1) P) + hasseDeriv d P * X i := by
-  classical
-  -- Restate the condition `dᵢ ≠ 0` as `i ∈ d.support`, the form in which Pascal's rule
-  -- `prod_choose_add_single` splits off the extra term.
-  have hcond : (if d i = 0 then 0 else hasseDeriv (d - single i 1) P) =
-      if i ∈ d.support then hasseDeriv (d - single i 1) P else 0 := by
-    simp [Finsupp.mem_support_iff]
-  rw [hcond]
-  clear hcond
   induction P using MvPolynomial.induction_on' with
   | monomial n a =>
     -- A monomial whose coefficient carries the binomial factor of `d'` only depends on its
@@ -239,19 +231,18 @@ theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
     rw [← pow_one (X i), ← monomial_add_single, hasseDeriv_monomial, hasseDeriv_monomial,
       hasseDeriv_monomial, ← monomial_add_single, prod_choose_add_single]
     split_ifs with hi
+    · rw [add_zero, zero_add]
+      exact key fun h ↦ (tsub_add_eq_add_tsub h).symm
     · rw [Nat.cast_add, add_mul, map_add, add_comm]
       congr 1
       · refine key fun h ↦ ?_
         ext j
         have hj := Finsupp.le_def.1 h j
         rcases eq_or_ne i j with rfl | hij
-        · have hi' := Finsupp.mem_support_iff.1 hi
-          simp only [tsub_apply, Finsupp.add_apply, single_eq_same] at hj ⊢
+        · simp only [tsub_apply, Finsupp.add_apply, single_eq_same] at hj ⊢
           omega
         · simp [hij] at hj ⊢
       · exact key fun h ↦ (tsub_add_eq_add_tsub h).symm
-    · rw [add_zero, zero_add]
-      exact key fun h ↦ (tsub_add_eq_add_tsub h).symm
   | add p q hp hq =>
     simp only [add_mul, map_add, hp, hq]
     split_ifs <;> abel
