@@ -363,9 +363,9 @@ private theorem exists_mem_farPoints_odd [HenselianLocalRing v.valuationSubring]
   have hns : Wo.toAffine.Nonsingular 0 (ϖ ^ (k + 2) * Y) := by
     rw [nonsingular_iff']
     refine ⟨by rw [equation_iff, h₃, h₆]; linear_combination ϖ ^ (2 * k + 4) * hY', .inr ?_⟩
-    rw [h₃, mul_zero, add_zero,
-      show 2 * (ϖ ^ (k + 2) * Y) + ϖ ^ (k + 2) * A₃ = ϖ ^ (k + 2) * (2 * Y + A₃) by ring]
-    exact mul_ne_zero (pow_ne_zero _ hp.ne_zero) hu.ne_zero
+    rw [h₃]
+    exact fun h0 ↦ mul_ne_zero (pow_ne_zero (k + 2) hp.ne_zero) hu.ne_zero
+      (by linear_combination h0)
   have hF : W.Nonsingular ((0 : v.valuationSubring) : F)
       ((ϖ ^ (k + 2) * Y : v.valuationSubring) : F) :=
     (nonsingular_integralModel_iff v).1 hns
@@ -420,9 +420,8 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
     rw [isUnit_iff_not_dvd hϖ]
     intro hd
     refine hD (hp.dvd_of_dvd_pow (n := 1) ?_)
-    rw [pow_one, show A₄ ^ 2 - 4 * A₂ * A₆ =
-      (2 * A₂ * z + A₄) ^ 2 - 4 * A₂ * (A₂ * z ^ 2 + A₄ * z + A₆) by ring]
-    exact dvd_sub (dvd_pow hd two_ne_zero) (hz.mul_left _)
+    rw [pow_one]
+    exact (dvd_sub (dvd_pow hd two_ne_zero) (hz.mul_left (4 * A₂))).trans (dvd_of_eq (by ring))
   -- the cubic `ϖ^(k+1) T³ + A₂ T² + A₄ T + A₆` and its derivative
   set f : v.valuationSubring[X] := C (ϖ ^ (k + 1)) * X ^ 3 + C A₂ * X ^ 2 + C A₄ * X + C A₆ with hf
   have heval (z : v.valuationSubring) :
@@ -452,9 +451,9 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
     rw [nonsingular_iff']
     refine ⟨by rw [equation_iff, h₂, h₄, h₆]; linear_combination (-ϖ ^ (2 * k + 5)) * hroot,
       .inl ?_⟩
-    rw [h₂, h₄, show Wo.a₁ * 0 - (3 * (ϖ ^ (k + 2) * X) ^ 2 + 2 * (ϖ * A₂) * (ϖ ^ (k + 2) * X) +
-      ϖ ^ (k + 3) * A₄) = -ϖ ^ (k + 3) * (2 * A₂ * X + A₄ + ϖ * (3 * ϖ ^ k * X ^ 2)) by ring]
-    exact mul_ne_zero (neg_ne_zero.2 (pow_ne_zero _ hp.ne_zero)) hu.ne_zero
+    rw [h₂, h₄]
+    exact fun h0 ↦ mul_ne_zero (neg_ne_zero.2 (pow_ne_zero (k + 3) hp.ne_zero)) hu.ne_zero
+      (by linear_combination h0)
   have hF : W.Nonsingular ((ϖ ^ (k + 2) * X : v.valuationSubring) : F)
       ((0 : v.valuationSubring) : F) :=
     (nonsingular_integralModel_iff v).1 hns
@@ -622,11 +621,9 @@ private def nearSubgroup {ϖ : v.valuationSubring}
     by_cases hP0 : P ∈ W.nonsingularReduction v <;> by_cases hQ0 : Q ∈ W.nonsingularReduction v
     · exact notMem_of_mem_farPoints v hϖ hm₃ hm₄ hm₆ hF (add_mem hP0 hQ0)
     · refine add_notMem_of_mem_farPoints v hϖ hst hQ0 hQ (neg_mem_farPoints v h₃ hF) ?_
-      rw [show Q + -(P + Q) = -P by abel]
-      exact neg_mem hP0
+      simpa using hP0
     · refine add_notMem_of_mem_farPoints v hϖ hst hP0 hP (neg_mem_farPoints v h₃ hF) ?_
-      rw [show P + -(P + Q) = -Q by abel]
-      exact neg_mem hQ0
+      simpa [add_neg_cancel_comm] using hQ0
     · exact notMem_of_mem_farPoints v hϖ hm₃ hm₄ hm₆ hF
         (add_mem_of_notMem_farPoints v hϖ hst hP0 hQ0 hP hQ)
   neg_mem' {P} hP hF :=
@@ -712,9 +709,10 @@ private theorem exists_notMem_notMem_farPoints [HenselianLocalRing v.valuationSu
   have hunit (z : v.valuationSubring) (hz : ϖ ∣ z + A₂) :
       IsUnit (3 * z ^ 2 + 2 * A₂ * z + ϖ * α₄) := by
     obtain ⟨m, hm⟩ := hz
-    rw [show 3 * z ^ 2 + 2 * A₂ * z + ϖ * α₄ = A₂ ^ 2 + ϖ * (3 * ϖ * m ^ 2 - 4 * A₂ * m + α₄) by
-      rw [show z = ϖ * m - A₂ by linear_combination hm]
-      ring]
+    have hz' : 3 * z ^ 2 + 2 * A₂ * z + ϖ * α₄ =
+        A₂ ^ 2 + ϖ * (3 * ϖ * m ^ 2 - 4 * A₂ * m + α₄) := by
+      linear_combination (3 * z - A₂ + 3 * ϖ * m) * hm
+    rw [hz']
     exact isUnit_add_of_dvd hϖ (((isUnit_iff_not_dvd hϖ).2 hA₂').pow 2) (dvd_mul_right ϖ _)
   have hf₀ : f.eval (-A₂) ∈ maximalIdeal v.valuationSubring := by
     rw [mem_maximalIdeal_iff_dvd hϖ]
@@ -728,9 +726,9 @@ private theorem exists_notMem_notMem_farPoints [HenselianLocalRing v.valuationSu
   have hns : Wo.toAffine.Nonsingular (ϖ * X₀) 0 := by
     rw [nonsingular_iff']
     refine ⟨by rw [equation_iff, hA₂, hα₄, hα₆]; linear_combination (-ϖ ^ 3) * hroot, .inl ?_⟩
-    rw [hA₂, hα₄, show Wo.a₁ * 0 - (3 * (ϖ * X₀) ^ 2 + 2 * (ϖ * A₂) * (ϖ * X₀) +
-      ϖ ^ (0 + 3) * α₄) = -ϖ ^ 2 * (3 * X₀ ^ 2 + 2 * A₂ * X₀ + ϖ * α₄) by ring]
-    exact mul_ne_zero (neg_ne_zero.2 (pow_ne_zero 2 hp.ne_zero)) (hunit X₀ hX₀A).ne_zero
+    rw [hA₂, hα₄]
+    exact fun h0 ↦ mul_ne_zero (neg_ne_zero.2 (pow_ne_zero 2 hp.ne_zero)) (hunit X₀ hX₀A).ne_zero
+      (by linear_combination h0)
   have hF : W.Nonsingular ((ϖ * X₀ : v.valuationSubring) : F) ((0 : v.valuationSubring) : F) :=
     (nonsingular_integralModel_iff v).1 hns
   refine ⟨Point.some _ _ hF, (some_coe_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆ hF).2
