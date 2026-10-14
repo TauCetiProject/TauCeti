@@ -115,7 +115,7 @@ private theorem injOn_smul_add_smul_gradient {H : E → E →L[ℝ] E} {s : Set 
 
 /-- The Jacobian `x ↦ det ((1 - t) • 1 + t • H x)` of the interpolating map is measurable when
 `H` is. -/
-private theorem measurable_ofReal_det_one_sub_smul_id_add_smul [MeasurableSpace E] [BorelSpace E]
+private theorem measurable_ofReal_det_one_sub_smul_id_add_smul [MeasurableSpace E]
     {H : E → E →L[ℝ] E} (hH : Measurable H) (t : ℝ) :
     Measurable fun x => ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det :=
   ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp
