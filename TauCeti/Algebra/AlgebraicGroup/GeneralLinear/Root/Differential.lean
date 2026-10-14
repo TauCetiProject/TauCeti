@@ -23,6 +23,11 @@ only the derivative of an informal matrix formula.
 
 The calculation supplies the root vector attached to the standard pinning of `GLₙ`.
 
+More generally, `tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix` shows that a
+coordinate morphism `O(GLₙ) → O(𝔾ₐ)` sending the generic matrix to `1 + tX`, for the coordinate
+`t` of `𝔾ₐ` and an integral matrix `X`, has differential `c ↦ cX`. This is the shared entrywise
+calculation for one-parameter subgroups of explicit matrix carriers.
+
 ## Reference
 
 J. S. Milne, *Algebraic Groups* (2017), §21.
