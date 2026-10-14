@@ -321,62 +321,33 @@ theorem extendScalarsEquiv_differential (f : DGAlgHom hA hB)
       M.isDGRightModule.extendScalarsDifferential f (extendScalarsEquiv f M x) :=
   extendScalarsEquiv_differential_def f M x
 
-/-- The bundled extended object is canonically isomorphic to the object obtained by bundling
-the unbundled balanced tensor product. -/
+/-- The bundled extended object is the object obtained by bundling the unbundled balanced tensor
+product. This is the identity isomorphism; it is named because `extendScalars` is not exposed, so
+the identification is only visible inside this module. -/
 noncomputable def extendScalarsObjIso (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) :
-    (extendScalars f).obj M ≅ of (M.isDGRightModule.extendScalars f) where
-  hom :=
-    { toLinearMap :=
-        { toFun := extendScalarsEquiv f M
-          map_add' := map_add _
-          map_smul' := extendScalarsEquiv_smul f M }
-      map_mem' {q x} hx := (mem_extendScalars_obj_grading f M q x).1 hx
-      map_d' x := (extendScalarsEquiv_differential f M x).symm }
-  inv :=
-    { toLinearMap :=
-        { toFun := (extendScalarsEquiv f M).symm
-          map_add' := map_add _
-          map_smul' := fun b x ↦ by
-            apply (extendScalarsEquiv f M).injective
-            simp }
-      map_mem' {q x} hx := (mem_extendScalars_obj_grading f M q _).2 <| by simp_all
-      map_d' x := by
-        apply (extendScalarsEquiv f M).injective
-        rw [extendScalarsEquiv_differential]
-        simp }
-  hom_inv_id := by
-    ext x
-    rw [comp_apply, id_apply]
-    exact (extendScalarsEquiv f M).symm_apply_apply x
-  inv_hom_id := by
-    ext x
-    rw [comp_apply, id_apply]
-    exact (extendScalarsEquiv f M).apply_symm_apply x
-
-private theorem extendScalarsObjIso_hom_apply_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (x : (extendScalars f).obj M) :
-    (extendScalarsObjIso f M).hom x = extendScalarsEquiv f M x := rfl
+    (extendScalars f).obj M ≅ of (M.isDGRightModule.extendScalars f) :=
+  Iso.refl _
 
 /-- The canonical extended-object isomorphism acts by the carrier equivalence. -/
 @[simp]
 theorem extendScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (x : (extendScalars f).obj M) :
-    (extendScalarsObjIso f M).hom x = extendScalarsEquiv f M x :=
-  extendScalarsObjIso_hom_apply_def f M x
-
-private theorem extendScalarsObjIso_inv_apply_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uA, max uB uM} hA)
-    (x : DGRightModule.ExtendScalars f M) :
-    (extendScalarsObjIso f M).inv x = (extendScalarsEquiv f M).symm x := rfl
+    (extendScalarsObjIso f M).hom x = extendScalarsEquiv f M x := by
+  -- Retype the identity morphism at its own endpoints.
+  change ((𝟙 ((extendScalars f).obj M) : (extendScalars f).obj M ⟶ _) x) = _
+  rw [id_apply]
+  rfl
 
 /-- The inverse canonical extended-object isomorphism inverts the carrier equivalence. -/
 @[simp]
 theorem extendScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA)
     (x : DGRightModule.ExtendScalars f M) :
-    (extendScalarsObjIso f M).inv x = (extendScalarsEquiv f M).symm x :=
-  extendScalarsObjIso_inv_apply_def f M x
+    (extendScalarsObjIso f M).inv x = (extendScalarsEquiv f M).symm x := by
+  apply (extendScalarsEquiv f M).injective
+  rw [LinearEquiv.apply_symm_apply, ← extendScalarsObjIso_hom_apply, ← comp_apply,
+    Iso.inv_hom_id, id_apply]
 
 /-- The canonical extended-object isomorphisms are natural in the module. -/
 theorem extendScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
@@ -502,11 +473,13 @@ theorem extendRestrictScalarsAdj_homEquiv_symm_apply_tmul (f : DGAlgHom hA hB)
     restrictScalarsObjIso_hom_apply]
 
 /-- The unit of the extension–restriction adjunction sends `m` to `m ⊗ 1`. -/
+@[simp]
 theorem extendRestrictScalarsAdj_unit_app_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uA, max uB uM} hA) (m : M) :
     extendScalarsEquiv f M
         (restrictScalarsEquiv f ((extendScalars f).obj M)
-          ((extendRestrictScalarsAdj f).unit.app M m)) =
+          (DFunLike.coe (F := M ⟶ (restrictScalars f).obj ((extendScalars f).obj M))
+            ((extendRestrictScalarsAdj f).unit.app M) m)) =
       BalancedTensorProduct.tmul R A m (DGAlgHom.CodomainBimodule.mk 1) := by
   have h := extendRestrictScalarsAdj_homEquiv_apply_apply f
     (g := 𝟙 ((extendScalars f).obj M)) m
@@ -517,10 +490,12 @@ theorem extendRestrictScalarsAdj_unit_app_apply (f : DGAlgHom hA hB)
   simp only [h, LinearEquiv.apply_symm_apply]
 
 /-- The counit of the extension–restriction adjunction sends `m ⊗ b` to `mb`. -/
+@[simp]
 theorem extendRestrictScalarsAdj_counit_app_apply_tmul (f : DGAlgHom hA hB)
     (P : DGRightModuleCat.{uR, uB, max uB uM} hB)
     (m : (restrictScalars f).obj P) (x : DGAlgHom.CodomainBimodule f) :
-    (extendRestrictScalarsAdj f).counit.app P
+    DFunLike.coe (F := (extendScalars f).obj ((restrictScalars f).obj P) ⟶ P)
+        ((extendRestrictScalarsAdj f).counit.app P)
         ((extendScalarsEquiv f ((restrictScalars f).obj P)).symm
           (BalancedTensorProduct.tmul R A m x)) =
       op x.val • restrictScalarsEquiv f P m := by

@@ -107,99 +107,47 @@ theorem restrictScalarsEquiv_differential (f : DGAlgHom hA hB)
     ((IsDGRightModule.val_restrictScalarsDifferential f x).trans
       (congrArg M.differential (DGRightModule.RestrictScalars.linearEquiv_apply f M x).symm))
 
-/-- The bundled restricted object is canonically isomorphic to the object obtained by bundling
-the unbundled restriction. -/
+/-- The bundled restricted object is the object obtained by bundling the unbundled restriction.
+This is the identity isomorphism; it is named because `restrictScalars` is not exposed, so the
+identification is only visible inside this module. -/
 noncomputable def restrictScalarsObjIso (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uB, uM} hB) :
-    (restrictScalars f).obj M ≅ of (M.isDGRightModule.restrictScalars f) where
-  hom :=
-    { toLinearMap :=
-        { toFun := fun x ↦ DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x)
-          map_add' := fun x y ↦ by
-            apply DGRightModule.RestrictScalars.ext
-            simp
-          map_smul' := fun a x ↦ by
-            apply DGRightModule.RestrictScalars.ext
-            simp only [DGRightModule.RestrictScalars.val_smul_eq,
-              restrictScalarsEquiv_smul, RingHom.id_apply, AlgHom.op_apply_apply,
-              GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom] }
-      map_mem' {q x} hx := by
-        rw [IsDGRightModule.mem_restrictScalarsGrading_iff,
-          DGRightModule.RestrictScalars.linearEquiv_apply]
-        exact (mem_restrictScalars_obj_grading f M q x).1 hx
-      map_d' x := by
-        apply DGRightModule.RestrictScalars.ext
-        simp only [IsDGRightModule.val_restrictScalarsDifferential]
-        exact (restrictScalarsEquiv_differential f M x).symm }
-  inv :=
-    { toLinearMap :=
-        { toFun := fun x ↦ (restrictScalarsEquiv f M).symm x.val
-          map_add' := fun x y ↦ by simp
-          map_smul' := fun a x ↦ by
-            apply (restrictScalarsEquiv f M).injective
-            simp only [restrictScalarsEquiv_smul, LinearEquiv.apply_symm_apply,
-              DGRightModule.RestrictScalars.val_smul_eq, RingHom.id_apply,
-              AlgHom.op_apply_apply, GradedAlgHom.coe_toAlgHom,
-              DGAlgHom.coe_toGradedAlgHom] }
-      map_mem' {q x} hx := by
-        change (restrictScalarsEquiv f M).symm x.val ∈
-          ((restrictScalars f).obj M).grading q
-        apply (mem_restrictScalars_obj_grading f M q _).2
-        have hx' := (IsDGRightModule.mem_restrictScalarsGrading_iff f).1 hx
-        rw [DGRightModule.RestrictScalars.linearEquiv_apply] at hx'
-        simpa only [LinearEquiv.apply_symm_apply] using hx'
-      map_d' x := by
-        simp only [LinearMap.coe_mk, AddHom.coe_mk]
-        rw [IsDGRightModule.val_restrictScalarsDifferential]
-        apply (restrictScalarsEquiv f M).injective
-        rw [restrictScalarsEquiv_differential]
-        simp only [LinearEquiv.apply_symm_apply] }
-  hom_inv_id := by
-    ext x
-    rw [comp_apply, id_apply]
-    exact (restrictScalarsEquiv f M).symm_apply_apply x
-  inv_hom_id := by
-    ext x
-    rw [comp_apply, id_apply]
-    exact (restrictScalarsEquiv f M).apply_symm_apply x.val
-
-private theorem restrictScalarsObjIso_hom_apply_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uB, uM} hB) (x : (restrictScalars f).obj M) :
-    (restrictScalarsObjIso f M).hom x =
-      DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x) := rfl
+    (restrictScalars f).obj M ≅ of (M.isDGRightModule.restrictScalars f) :=
+  Iso.refl _
 
 /-- The canonical restricted-object isomorphism acts by the carrier equivalence. -/
 @[simp]
 theorem restrictScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uB, uM} hB) (x : (restrictScalars f).obj M) :
     (restrictScalarsObjIso f M).hom x =
-      DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x) :=
-  restrictScalarsObjIso_hom_apply_def f M x
-
-private theorem restrictScalarsObjIso_inv_apply_def (f : DGAlgHom hA hB)
-    (M : DGRightModuleCat.{uR, uB, uM} hB)
-    (x : of (M.isDGRightModule.restrictScalars f)) :
-    (restrictScalarsObjIso f M).inv x = (restrictScalarsEquiv f M).symm x.val := rfl
+      DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x) := by
+  apply DGRightModule.RestrictScalars.ext
+  -- Retype the identity morphism at its own endpoints.
+  change ((𝟙 ((restrictScalars f).obj M) : (restrictScalars f).obj M ⟶ _) x).val = _
+  rw [id_apply]
+  exact (DGRightModule.RestrictScalars.linearEquiv_apply f M x).symm
 
 /-- The inverse canonical restricted-object isomorphism inverts the carrier equivalence. -/
 @[simp]
 theorem restrictScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
     (M : DGRightModuleCat.{uR, uB, uM} hB)
     (x : of (M.isDGRightModule.restrictScalars f)) :
-    (restrictScalarsObjIso f M).inv x = (restrictScalarsEquiv f M).symm x.val :=
-  restrictScalarsObjIso_inv_apply_def f M x
+    (restrictScalarsObjIso f M).inv x = (restrictScalarsEquiv f M).symm x.val := by
+  apply (restrictScalarsEquiv f M).injective
+  rw [LinearEquiv.apply_symm_apply]
+  have h := restrictScalarsObjIso_hom_apply f M ((restrictScalarsObjIso f M).inv x)
+  rw [← comp_apply, Iso.inv_hom_id, id_apply] at h
+  exact congrArg DGRightModule.RestrictScalars.val h.symm
 
 /-- The canonical restricted-object isomorphisms are natural in the module. -/
 theorem restrictScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
     {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
     (restrictScalars f).map g ≫ (restrictScalarsObjIso f N).hom =
       (restrictScalarsObjIso f M).hom ≫ g.restrictScalars f := by
-  ext x
-  rw [comp_apply, comp_apply]
-  dsimp only [restrictScalarsObjIso, LinearMap.coe_mk, AddHom.coe_mk]
-  change restrictScalarsEquiv f N ((restrictScalars f).map g x) =
-    (g.restrictScalars f (DGRightModule.RestrictScalars.mk
-      (restrictScalarsEquiv f M x))).val
+  apply hom_ext
+  intro x
+  rw [comp_apply, comp_apply, restrictScalarsObjIso_hom_apply, restrictScalarsObjIso_hom_apply]
+  apply DGRightModule.RestrictScalars.ext
   rw [DGRightModuleHom.val_restrictScalars]
   exact restrictScalars_map_apply f g x
 
