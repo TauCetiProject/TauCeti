@@ -296,12 +296,12 @@ def lift (D : BimoduleDerivation k (Unitization k A) M) :
       rw [tensorLift_rightAction, (mem_universalOneForms k A).1 ω.2, zero_smul, add_zero,
         op_unop])
 
-@[simp]
 private theorem lift_apply (D : BimoduleDerivation k (Unitization k A) M)
     (ω : UniversalOneForms k A) : lift k A D ω = tensorLift k A D ω.1 := by
   simp [lift, liftLinear, TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply]
 
 /-- The induced bimodule map factors the derivation through the universal derivation. -/
+@[simp]
 theorem lift_derivation (D : BimoduleDerivation k (Unitization k A) M)
     (a : Unitization k A) : lift k A D ((derivation k A) a) = D a := by
   simp only [lift_apply, coe_derivation, map_sub, tensorLift_tmul, one_smul]
