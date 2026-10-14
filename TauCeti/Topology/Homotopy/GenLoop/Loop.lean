@@ -173,8 +173,9 @@ theorem genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω
     (hFf : ∀ γ t, F γ t = f (γ t)) (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x)) :
     genLoopLoopHomeomorph y k (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
       map f hf (genLoopLoopHomeomorph x k p) := by
-  refine GenLoop.ext _ _ fun t => ?_
-  rw [genLoopLoopHomeomorph_apply]
-  exact (hFf _ _).trans (congrArg f (genLoopLoopHomeomorph_apply x k p t).symm)
+  exact (genLoopLoopHomeomorph_apply_eq y k _).trans
+    ((congrArg (GenLoop.congr y finSumFinEquiv) (genLoopLoopSumHomeomorph_map f hf F hFf _ p)).trans
+      ((GenLoop.ext _ _ fun _ => rfl).trans
+        (congrArg (map f hf) (genLoopLoopHomeomorph_apply_eq x k p).symm)))
 
 end GenLoop
