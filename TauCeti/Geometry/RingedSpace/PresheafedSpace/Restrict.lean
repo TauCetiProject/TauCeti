@@ -25,13 +25,6 @@ of Mathlib's `AlgebraicGeometry.Scheme.homOfLE`.
   `X|_W ⟶ X` gives the inclusion `X|_V ⟶ X`.
 * `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE_refl`,
   `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE_comp`: the inclusions are functorial.
-
-## Implementation notes
-
-The presheaf of the restriction `X.restrict h` is `h.functor.op ⋙ X.presheaf` only after unfolding
-Mathlib's `AlgebraicGeometry.PresheafedSpace.restrict`, which `rw` does not do. Restriction maps of
-`X.restrict h` are therefore merged with those of `X` by `erw [← X.presheaf.map_comp]`, after which
-the remaining equalities of morphisms of `Opens X` hold by `rfl`, `Opens X` being a preorder.
 -/
 
 public section
