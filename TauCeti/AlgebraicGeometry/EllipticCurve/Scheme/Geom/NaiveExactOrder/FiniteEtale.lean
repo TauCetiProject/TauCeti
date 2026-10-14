@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
-import TauCeti.AlgebraicGeometry.EqualizerCarrier
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 
 /-!
@@ -68,77 +67,6 @@ instance etale_naiveExactOrderOpens :
     intro s
     exact_mod_cast hN s)
   infer_instance
-
-section SepClosed
-
-variable {K : Type u} [Field K] [IsSepClosed K]
-  (E : EllipticCurveGeom (Spec (.of K)))
-
-/-- Over a separably closed field where `N` is invertible, an elliptic curve has a point of
-naive exact order `N`. -/
-theorem exists_isOfNaiveExactOrder (hN : (N : K) ≠ 0) :
-    ∃ P : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap, E.IsOfNaiveExactOrder P N := by
-  obtain ⟨φ, hφ⟩ := E.exists_isFiberwiseInjective hN
-  let i : Multiplicative (ZMod N) →* Multiplicative (ZMod N × ZMod N) :=
-    (AddMonoidHom.inl (ZMod N) (ZMod N)).toMultiplicative
-  have hi : Function.Injective i := fun a b h ↦
-    Multiplicative.toAdd.injective (congrArg Prod.fst (congrArg Multiplicative.toAdd h))
-  exact ⟨_, E.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp (hφ.comp hi)⟩
-
-end SepClosed
-
-/-- For a geometric point of the base in a characteristic prime to `N`, there is a point
-of naive exact order `N` above it, valued in the same separably closed field. -/
-theorem exists_isOfNaiveExactOrder_over {K : Type u} [Field K] [IsSepClosed K]
-    (t : Spec (.of K) ⟶ S) (hN : (N : K) ≠ 0) :
-    ∃ P : Over.mk t ⟶ Over.mk E.structureMap, E.IsOfNaiveExactOrder P N := by
-  let E' := E.baseChange t
-  let g := (E.baseChangeIso t).hom ≫ pullback.fst E.structureMap t
-  have hg : IsPullback g E'.structureMap E.structureMap t := E.isPullback_baseChange t
-  have h0 : E'.zero ≫ g = t ≫ E.zero := by simp [E', g]
-  obtain ⟨P, hP⟩ := E'.exists_isOfNaiveExactOrder hN
-  -- View a point of the geometric fibre as a `K`-valued point of `E` over `S`.
-  let φ : (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E'.structureMap) →*
-      (Over.mk t ⟶ Over.mk E.structureMap) :=
-    { toFun P := Over.homMk (P.left ≫ g) (by simp [Category.assoc, hg.w])
-      map_one' := by ext1; simp [hom_one_left, h0]
-      map_mul' P Q := by
-        ext1
-        simp only [Over.homMk_left]
-        rw [mul_left_comp_of_isPullback hg h0, hom_mul_left]
-        simp only [Over.homMk_left]
-        rfl }
-  have hφ : Function.Injective φ := by
-    intro P Q h
-    ext1
-    apply hg.hom_ext
-    · exact congrArg CommaMorphism.left h
-    · simp
-  have hQ : E.IsOfNaiveExactOrder (φ P) N := by
-    apply isOfNaiveExactOrder_iff.mpr
-    refine ⟨by rw [← map_pow, hP.pow_eq_one, map_one], fun d hd hdN ↦ ?_⟩
-    -- A nonempty closed subscheme of `Spec K` is all of `Spec K`.
-    by_contra! h
-    have : Nonempty (equalizer (φ P ^ d) 1).left := h
-    have : Subsingleton (Over.mk t).left :=
-      inferInstanceAs (Subsingleton (Spec (.of K)))
-    have : IsReduced (Over.mk t).left :=
-      inferInstanceAs (IsReduced (Spec (.of K)))
-    have : IsSeparated (Over.mk E.structureMap).hom :=
-      inferInstanceAs (IsSeparated E.structureMap)
-    have : Surjective (equalizer.ι (φ P ^ d) 1).left :=
-      ⟨Function.surjective_to_subsingleton _⟩
-    have : IsIso (equalizer.ι (φ P ^ d) 1).left :=
-      isIso_of_isClosedImmersion_of_surjective _
-    have : IsIso ((Over.forget S).map (equalizer.ι (φ P ^ d) 1)) :=
-      inferInstanceAs (IsIso (equalizer.ι (φ P ^ d) 1).left)
-    have : IsIso (equalizer.ι (φ P ^ d) 1) :=
-      isIso_of_reflects_iso _ (Over.forget S)
-    have heq : φ P ^ d = 1 :=
-      (cancel_epi (equalizer.ι (φ P ^ d) 1)).mp (equalizer.condition _ _)
-    have hPd : P ^ d = 1 := hφ (by simpa using heq)
-    exact (isEmpty_equalizer_iff_ne _ _).mp (hP.isEmpty_equalizer hd hdN) hPd
-  exact ⟨φ P, hQ⟩
 
 /-- Every geometric fibre of the finite étale exact-order scheme has a point, so its
 structural morphism is surjective. -/

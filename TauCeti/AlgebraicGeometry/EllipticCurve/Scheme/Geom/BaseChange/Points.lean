@@ -31,6 +31,8 @@ through divisors of points, such as points of exact order `N`, pull back along b
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback hg h0`: base change of `S`-points of
   `E` to `S'`-points of `E'`, as a group homomorphism.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsBaseChangeEquiv hg h0`: the group
+  equivalence between points of `E'` and points of `E` valued in `S'`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.universalPoint E`: the diagonal section of
   `E ×_S E`, as a point of the base change of `E` to `E`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.toBaseChangeSelf hg P'`: the morphism from `E'` to
@@ -137,6 +139,26 @@ noncomputable def pointsPullback :
     rw [mul_left_comp_of_isPullback hg h0, pointPullback_left_comp, hom_mul_left, ← Category.assoc]
     congr 1
     apply pullback.hom_ext <;> simp [pointPullback_left_comp]
+
+/-- Points of a base change are the points of the original elliptic curve valued in the
+new base. Composition with the pullback projection gives an equivalence of groups. -/
+noncomputable def pointsBaseChangeEquiv :
+    (𝟙_ (Over S') ⟶ Over.mk E'.structureMap) ≃*
+      (Over.mk f ⟶ Over.mk E.structureMap) where
+  toFun P := Over.homMk (P.left ≫ g) (by simp [Category.assoc, hg.w])
+  invFun Q := Over.homMk (hg.lift Q.left (𝟙 S') (by simpa using Over.w Q)) (by simp)
+  left_inv P := point_ext hg (by simp)
+  right_inv Q := by ext1; simp
+  map_mul' P Q := by
+    ext1
+    exact mul_left_comp_eq_of_isPullback hg h0 rfl rfl
+
+/-- The underlying morphism of the point corresponding to a base-changed point is its
+composite with the pullback projection. -/
+@[simp]
+theorem pointsBaseChangeEquiv_left (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    (pointsBaseChangeEquiv hg h0 P).left = P.left ≫ g := by
+  rfl
 
 /-- The base change `P'` of a point `P` satisfies `P' ≫ g = f ≫ P`. -/
 @[reassoc (attr := simp)]
