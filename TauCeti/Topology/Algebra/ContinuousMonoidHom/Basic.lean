@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.Topology.Algebra.Group.Units
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
 import Mathlib.RingTheory.RootsOfUnity.Basic
 
@@ -82,8 +82,6 @@ theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
     {M K : Type*} [Monoid M] [TopologicalSpace M] [CommRing K] [IsDomain K]
     [TopologicalSpace K] [ContinuousMul K] [T1Space K] {χ : M →ₜ* Kˣ}
     (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
-  let _ : T1Space Kˣ :=
-    t1Space_of_injective_of_continuous Units.val_injective Units.continuous_val
   obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
   let _ : NeZero n := ⟨hn.ne'⟩
   have hmem : ∀ x, χ x ∈ rootsOfUnity n K := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
@@ -291,8 +289,10 @@ def _root_.Subgroup.inverseConjugationHom [SeparatelyContinuousMul G] (N : Subgr
     (g : G) : N →ₜ* N where
   toMonoidHom := (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
   continuous_toFun :=
-    ((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
-      continuous_subtype_val).subtype_mk _
+    (((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
+      continuous_subtype_val).subtype_mk
+        (fun n => (inferInstance : N.Normal).conj_mem n n.property g⁻¹)).congr
+          (fun n => Subtype.ext (MulAut.conjNormal_apply g⁻¹ n).symm)
 
 /-- Evaluation of inverse conjugation on a subgroup element. -/
 @[simp]
