@@ -31,6 +31,10 @@ to `X`, and shows that it preserves coefficients, so in particular it is injecti
 * `TauCeti.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
 
 Finite truncation uses Mathlib's `HahnSeries.truncLT` and `Finsupp.ofSupportFinite`.
+
+The algebra-homomorphism, support, image, and truncation results below are in `TauCeti`.
+Use their qualified names, for example `TauCeti.mem_range_toLaurentSeries_iff f` and
+`TauCeti.tendsto_laurentPolynomialTrunc f`.
 -/
 
 public section
