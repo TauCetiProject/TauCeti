@@ -13,7 +13,6 @@ public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.Algebra.MvPolynomial.Units
-import TauCeti.Data.Finset.NatAntidiagonal
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 import TauCeti.FieldTheory.FunctionField.PlaneCurve.Basic
@@ -22,7 +21,6 @@ import TauCeti.FieldTheory.FunctionField.PlaneCurve.RegularDifferential
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.LinearAlgebra.Span.PowMulPow
-import TauCeti.RingTheory.Algebraic.LinearIndependent
 import TauCeti.RingTheory.MvPolynomial.CommonZero
 
 /-!
