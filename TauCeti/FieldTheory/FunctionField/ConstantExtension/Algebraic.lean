@@ -10,9 +10,10 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 /-!
 # Algebraic extensions of the constant field
 
-Adjoining an arbitrary algebraic extension of constants to a function field produces a
-function field over the enlarged constants, even when the extension is infinite.  An element of
-`F` transcendental over `k` stays transcendental over `k'` in `F'`.
+Adjoining an arbitrary algebraic extension of constants to a function field produces an
+algebraic extension of it, and a function field over the enlarged constants, even when the
+extension is infinite.  An element of `F` transcendental over `k` stays transcendental over `k'`
+in `F'`.
 
 ## Reference
 

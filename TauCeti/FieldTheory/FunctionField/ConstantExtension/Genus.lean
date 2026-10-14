@@ -26,8 +26,9 @@ When `k' / k` is finite the conorm `Con : Div(F) → Div(F')` is defined; it pre
 the dimensions of Riemann–Roch spaces, so it carries the canonical class to the canonical class
 and is injective on divisor classes.
 
-Exactness of `k'` in `F'` is not needed for the degree and genus identities; it is assumed only
-where the canonical class of `F' / k'` is spoken of.
+Exactness of `k'` in `F'` is not needed for the degree and genus identities; where the canonical
+class of `F' / k'` is spoken of, it follows from exactness of `k` in `F`
+(`IsIntegrallyClosedIn.of_constantCompositum_eq_top`).
 
 Without separability the genus can drop (`TauCeti.GenusDrop.genus_lt_genus`), but it never
 increases: for any finite `k' / k`, comparing `ℓ(Con D)` with `ℓ(D)` gives
@@ -330,15 +331,16 @@ theorem Divisor.degree_conorm_of_constantCompositum_eq_top
 
 /-- **The conorm of the canonical class is the canonical class** (Stichtenoth,
 Theorem 3.6.3(e)): for a finite separable constant field extension `F · k' / k'` of `F / k` with
-exact constant fields `k` and `k'`, the conorm on divisor classes sends the canonical class of
-`F / k` to the canonical class of `F · k' / k'`. -/
+exact constant field `k`, the conorm on divisor classes sends the canonical class of `F / k` to the
+canonical class of `F · k' / k'`, whose constant field `k'` is exact as well. -/
 @[simp]
 theorem conormClassGroup_canonicalClass_of_constantCompositum_eq_top (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hex' : IsIntegrallyClosedIn k' F')
-    (h : constantCompositum F k' F' = ⊤) :
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
     Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h) (canonicalClass hF hex) =
-      canonicalClass (hF.of_constantCompositum_eq_top h) hex' := by
+      canonicalClass (hF.of_constantCompositum_eq_top h)
+        (hex.of_constantCompositum_eq_top h) := by
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have hex' := hex.of_constantCompositum_eq_top h
   obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
   have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
   rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',
