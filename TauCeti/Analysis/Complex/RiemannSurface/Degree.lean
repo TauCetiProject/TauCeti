@@ -7,6 +7,7 @@ module
 
 import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
+import TauCeti.Topology.Maps.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalDegree
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Order.Lattice.Nat
@@ -198,18 +199,15 @@ theorem eventually_fiberMultiplicitySum_eq [CompactSpace X] [T2Space X] [T2Space
       (.of_forall fun z ↦ hf z) (hne x) ((hO x).2.mem_nhds (hO x).1)
     exact ⟨U, hU, hUO, V, hfx ▸ hV, fun y' hy' ↦ ⟨(hcount y' hy').2.1, (hcount y' hy').2.2⟩⟩
   choose! U hU hUO V hV hcount using hloc
-  -- Since `f` is closed, the preimage of some neighbourhood `t` of `y` lies in the union of the
-  -- `U x`.
-  obtain ⟨t, ht, htU⟩ := mem_comap.1 (hf.continuous.isClosedMap.comap_nhds_le
-    (mem_nhdsSet_iff_forall.2 fun x hx ↦ mem_of_superset (hU x hx) (subset_biUnion_of_mem hx)))
-  filter_upwards [ht, (biInter_mem hS).2 hV] with y' hy't hy'V
+  -- Since `f` is closed, the fibres near `y` lie in the union of the `U x`.
+  filter_upwards [hf.continuous.isClosedMap.eventually_preimage_singleton_subset_biUnion hU,
+    (biInter_mem hS).2 hV] with y' hy'U hy'V
   have hy'V' : ∀ x ∈ f ⁻¹' {y}, y' ∈ V x := mem_iInter₂.1 hy'V
   -- The fibre of `y'` is the disjoint union of its pieces inside the `U x`.
   have hfib : f ⁻¹' {y'} = ⋃ x ∈ f ⁻¹' {y}, (f ⁻¹' {y'} ∩ U x) := by
     ext x'
     refine ⟨fun hx' ↦ ?_, fun hx' ↦ ?_⟩
-    · obtain ⟨x, hx, hx'U⟩ :=
-        mem_iUnion₂.1 (htU (mem_preimage.2 ((mem_singleton_iff.1 hx') ▸ hy't)))
+    · obtain ⟨x, hx, hx'U⟩ := mem_iUnion₂.1 (hy'U hx')
       exact mem_iUnion₂.2 ⟨x, hx, hx', hx'U⟩
     · obtain ⟨x, -, hx'⟩ := mem_iUnion₂.1 hx'
       exact hx'.1

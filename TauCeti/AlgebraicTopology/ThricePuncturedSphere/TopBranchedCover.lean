@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic
+import TauCeti.Topology.Maps.Basic
 
 /-!
 # Topological branched covers of the sphere with branch values in `{0, 1, ∞}`
@@ -185,11 +186,10 @@ theorem finsum_mem_preimage_singleton_localDegree (y : OnePoint ℂ) :
   choose V hVU hVo hzV hV using fun z =>
     (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq
       ((hU z).2.mem_nhds (hU z).1)
-  -- Since `π` is closed, the preimage of some neighbourhood `t` of `y` lies in the union of the
-  -- `V z`.
-  obtain ⟨t, ht, htV⟩ := mem_comap.1 (X.isProperMap.isClosedMap.comap_nhds_le
-    ((isOpen_biUnion fun z _ => hVo z).mem_nhdsSet.2 fun z hz => mem_biUnion hz (hzV z)))
-  have hnear : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked ∧ y' ∈ t ∧
+  -- Since `π` is closed, the fibres near `y` lie in the union of the `V z`.
+  have ht := X.isProperMap.isClosedMap.eventually_preimage_singleton_subset_biUnion (y := y)
+    fun z _ => (hVo z).mem_nhds (hzV z)
+  have hnear : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked ∧ X.π ⁻¹' {y'} ⊆ ⋃ z ∈ F, V z ∧
       ∀ z ∈ F, (V z ∩ X.π ⁻¹' {y'}).ncard = X.localDegree z := by
     have hmarked : (marked \ {y})ᶜ ∈ 𝓝 y :=
       (finite_marked.sdiff).isClosed.isOpen_compl.mem_nhds fun h => h.2 rfl
@@ -200,8 +200,7 @@ theorem finsum_mem_preimage_singleton_localDegree (y : OnePoint ℂ) :
   obtain ⟨y', hy'm, hy't, hy'V⟩ := hnear.exists
   have hcover : X.π ⁻¹' {y'} = ⋃ z ∈ F, V z ∩ X.π ⁻¹' {y'} := by
     refine Subset.antisymm (fun z' hz' => ?_) (iUnion₂_subset fun _ _ => inter_subset_right)
-    obtain ⟨z, hz, hz'z⟩ :=
-      mem_iUnion₂.1 (htV (mem_preimage.2 ((mem_singleton_iff.1 hz') ▸ hy't)))
+    obtain ⟨z, hz, hz'z⟩ := mem_iUnion₂.1 (hy't hz')
     exact mem_biUnion hz ⟨hz'z, hz'⟩
   refine Eq.trans ?_ (X.natCard_preimage_singleton y' hy'm)
   rw [Nat.card_coe_set_eq, hcover,
