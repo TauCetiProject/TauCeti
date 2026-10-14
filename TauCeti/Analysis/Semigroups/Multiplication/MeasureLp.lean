@@ -221,46 +221,6 @@ private theorem measureLpResolventOperator_ae {m : α → ℝ≥0} (hm : AEMeasu
   simpa only [measureLpResolventOperator, ContinuousLinearMap.holderL_apply_apply,
     ContinuousLinearMap.lsmul_apply, hw] using ha
 
-private theorem tendsto_measureLpResolventGeneratorScalar (c : ℝ≥0) (lambda : ℝ) :
-    Tendsto
-      (fun t : ℝ => (1 / t) * (Real.exp (-(t * c)) - 1) * (lambda + c)⁻¹)
-      (nhdsWithin 0 (Set.Ioi 0)) (nhds (-(c : ℝ) * (lambda + c)⁻¹)) := by
-  have h := (TauCeti.tendsto_exp_mul_sub_one_div (-(c : ℝ))).mul_const
-    (lambda + c)⁻¹
-  convert h using 1
-  funext t
-  have harg : -(t * (c : ℝ)) = -(c : ℝ) * t := by ring
-  rw [harg]
-  ring
-
-private theorem abs_measureLpResolventGeneratorScalar_le_one (c : ℝ≥0) {lambda t : ℝ}
-    (hlambda : 0 < lambda) (ht : 0 < t) :
-    |(1 / t) * (Real.exp (-(t * c)) - 1) * (lambda + c)⁻¹| ≤ 1 := by
-  have htc : 0 ≤ t * (c : ℝ) := mul_nonneg ht.le c.coe_nonneg
-  have hexp : Real.exp (-(t * c)) ≤ 1 := Real.exp_le_one_iff.mpr (neg_nonpos.mpr htc)
-  have hsub : 1 - Real.exp (-(t * c)) ≤ t * c := by
-    linarith [Real.one_sub_le_exp_neg (t * (c : ℝ))]
-  have hslope : |(1 / t) * (Real.exp (-(t * c)) - 1)| ≤ c := by
-    rw [abs_of_nonpos]
-    · calc
-        -(1 / t * (Real.exp (-(t * c)) - 1)) =
-            (1 - Real.exp (-(t * c))) / t := by ring
-        _ ≤ c := (div_le_iff₀ ht).2 (by simpa only [mul_comm] using hsub)
-    · exact mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.mpr hexp)
-  have hden : 0 < lambda + (c : ℝ) := by positivity
-  rw [abs_mul, abs_of_pos (inv_pos.mpr hden)]
-  calc
-    |(1 / t) * (Real.exp (-(t * c)) - 1)| * (lambda + c)⁻¹
-        ≤ c * (lambda + c)⁻¹ :=
-      mul_le_mul_of_nonneg_right hslope (inv_nonneg.mpr (by positivity))
-    _ ≤ 1 := (mul_inv_le_iff₀ (by positivity)).2 (by linarith)
-
-private theorem abs_neg_mul_add_inv_le_one (c : ℝ≥0) {lambda : ℝ}
-    (hlambda : 0 < lambda) : |-(c : ℝ) * (lambda + c)⁻¹| ≤ 1 := by
-  rw [abs_mul, abs_neg, abs_of_nonneg c.coe_nonneg,
-    abs_of_pos (inv_pos.mpr (by positivity))]
-  exact (mul_inv_le_iff₀ (by positivity)).2 (by linarith)
-
 private theorem measureLpResolventOperator_mem_domain_generator_ae
     {m : α → ℝ≥0} (hm : AEMeasurable m μ) (hp : p ≠ ∞) {lambda : ℝ}
     (hlambda : 0 < lambda) (f : Lp E p μ) :
@@ -273,13 +233,32 @@ private theorem measureLpResolventOperator_mem_domain_generator_ae
   let S := ContractionSemigroup.ofMeasureLpMultiplication (E := E) hm hp
   let g := measureLpResolventOperator hm lambda hlambda f
   let v : α → E := fun a => (-(m a : ℝ) * (lambda + (m a : ℝ))⁻¹) • f a
+  -- Scalar facts: the target multiplier and its difference quotients have absolute value at most
+  -- one, and the difference quotients converge to the target multiplier.
+  have htarget (c : ℝ≥0) : |-(c : ℝ) * (lambda + c)⁻¹| ≤ 1 := by
+    rw [abs_mul, abs_neg, abs_of_nonneg c.coe_nonneg,
+      abs_of_pos (inv_pos.mpr (by positivity))]
+    exact (mul_inv_le_iff₀ (by positivity)).2 (by linarith)
+  have hquot (c : ℝ≥0) (t : ℝ) :
+      (1 / t) * (Real.exp (-(t * c)) - 1) * (lambda + c)⁻¹ =
+        (Real.exp (-(c : ℝ) * t) - 1) / t * (lambda + c)⁻¹ := by
+    rw [show -(t * (c : ℝ)) = -(c : ℝ) * t by ring, one_div_mul_eq_div]
+  have hcoeff (c : ℝ≥0) {t : ℝ} (ht : 0 < t) :
+      |(1 / t) * (Real.exp (-(t * c)) - 1) * (lambda + c)⁻¹| ≤ 1 := by
+    have hslope := TauCeti.abs_exp_mul_sub_one_div_le (neg_nonpos.mpr c.coe_nonneg) ht
+    rw [neg_neg] at hslope
+    have hden : 0 < lambda + (c : ℝ) := by positivity
+    rw [hquot, abs_mul, abs_of_pos (inv_pos.mpr hden)]
+    calc
+      |(Real.exp (-(c : ℝ) * t) - 1) / t| * (lambda + c)⁻¹ ≤ c * (lambda + c)⁻¹ :=
+        mul_le_mul_of_nonneg_right hslope (inv_nonneg.mpr (by positivity))
+      _ ≤ 1 := (mul_inv_le_iff₀ (by positivity)).2 (by linarith)
   -- The proposed generator value is in `Lᵖ` because its scalar multiplier has norm at most one.
   have hv : MemLp v p μ := by
     apply (Lp.memLp f).mono (by fun_prop)
     filter_upwards with a
     rw [norm_smul]
-    exact mul_le_of_le_one_left (norm_nonneg _)
-      (abs_neg_mul_add_inv_le_one (m a) hlambda)
+    exact mul_le_of_le_one_left (norm_nonneg _) (htarget (m a))
   let vLp : Lp E p μ := hv.toLp v
   have hvLp : vLp =ᵐ[μ] v := MemLp.coeFn_toLp _
   -- Dominated convergence computes the strong derivative of the candidate resolvent vector.
@@ -293,8 +272,6 @@ private theorem measureLpResolventOperator_mem_domain_generator_ae
       (.of_forall fun t => by fun_prop) (by fun_prop) (Lp.memLp f) (C := 2) ?_ ?_).congr' ?_
     · filter_upwards [self_mem_nhdsWithin] with t ht
       filter_upwards with a
-      have hcoeff := abs_measureLpResolventGeneratorScalar_le_one (m a) hlambda ht
-      have htarget := abs_neg_mul_add_inv_le_one (m a) hlambda
       have hnorm :
           ‖((1 / t) * (Real.exp (-(t * m a)) - 1) *
                 (lambda + (m a : ℝ))⁻¹) • f a - v a‖ ≤ 2 * ‖f a‖ := by
@@ -306,8 +283,8 @@ private theorem measureLpResolventOperator_mem_domain_generator_ae
               |-(m a : ℝ) * (lambda + (m a : ℝ))⁻¹|) * ‖f a‖ := by
             gcongr
             exact abs_sub _ _
-          _ ≤ (1 + 1) * ‖f a‖ :=
-            mul_le_mul_of_nonneg_right (add_le_add hcoeff htarget) (norm_nonneg _)
+          _ ≤ (1 + 1) * ‖f a‖ := mul_le_mul_of_nonneg_right
+            (add_le_add (hcoeff (m a) ht) (htarget (m a))) (norm_nonneg _)
           _ = 2 * ‖f a‖ := by ring
       rw [← ofReal_norm, ← ofReal_norm]
       calc
@@ -316,7 +293,9 @@ private theorem measureLpResolventOperator_mem_domain_generator_ae
           rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
           norm_num
     · filter_upwards with a
-      exact (tendsto_measureLpResolventGeneratorScalar (m a) lambda).smul_const (f a)
+      simp only [hquot]
+      exact ((TauCeti.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).mul_const
+        (lambda + (m a : ℝ))⁻¹).smul_const (f a)
     · filter_upwards [self_mem_nhdsWithin] with t ht
       apply eLpNorm_congr_ae
       filter_upwards [Lp.coeFn_smul (1 / t) (S.realOperator t g - g),
