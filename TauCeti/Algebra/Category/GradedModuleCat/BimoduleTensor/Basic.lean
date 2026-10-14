@@ -131,6 +131,28 @@ theorem bimoduleModuleTensorMk_apply (m : M) (n : N) :
     bimoduleModuleTensorMk Γ Δ M N m n = bimoduleModuleTensorTmul Γ Δ M N m n :=
   BalancedTensorProduct.mk_apply k B m n
 
+/-- Forgetting the output grading identifies the left-module tensor carrier with the
+balanced quotient. -/
+noncomputable def bimoduleModuleTensorUnderlyingEquiv :
+    bimoduleModuleTensorObj Γ Δ M N ≃ₗ[k] BalancedTensorProduct k B M N :=
+  LinearEquiv.refl k T
+
+@[simp]
+theorem bimoduleModuleTensorUnderlyingEquiv_tmul (m : M) (n : N) :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      BalancedTensorProduct.tmul k B m n := (rfl)
+
+@[simp]
+theorem bimoduleModuleTensorUnderlyingEquiv_symm_tmul (m : M) (n : N) :
+    (bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).symm (BalancedTensorProduct.tmul k B m n) =
+      bimoduleModuleTensorTmul Γ Δ M N m n := (rfl)
+
+/-- The carrier identification preserves the output left action. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_smul (a : A)
+    (z : bimoduleModuleTensorObj Γ Δ M N) :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N (a • z) =
+      a • bimoduleModuleTensorUnderlyingEquiv Γ Δ M N z := (rfl)
+
 /-- Balancing transfers the right action on the bimodule to the left module. -/
 theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
     bimoduleModuleTensorTmul Γ Δ M N (((1 : A) ⊗ₜ[k] op b) • m) n =
@@ -150,6 +172,21 @@ theorem bimoduleModuleTensorTmul_mem {p q : ℤ} {m : M} {n : N}
     bimoduleModuleTensorTmul Γ Δ M N m n ∈
       (bimoduleModuleTensorObj Γ Δ M N).grading.piece (p + q) :=
   BalancedTensorProduct.tmul_mem_grading (𝒜 := Δ.piece) M.grading N.grading hm hn
+
+/-- Every left-module tensor is a sum of pure tensors. -/
+@[elab_as_elim]
+theorem bimoduleModuleTensor_induction_on {P : bimoduleModuleTensorObj Γ Δ M N → Prop}
+    (z : bimoduleModuleTensorObj Γ Δ M N)
+    (ht : ∀ m n, P (bimoduleModuleTensorTmul Γ Δ M N m n))
+    (ha : ∀ x y, P x → P y → P (x + y)) : P z :=
+  BalancedTensorProduct.induction_on k B z ht ha
+
+/-- Internal degree pieces are spanned by homogeneous pure left-module tensors. -/
+theorem bimoduleModuleTensorObj_grading_piece_eq_iSup (p : ℤ) :
+    (bimoduleModuleTensorObj Γ Δ M N).grading.piece p =
+      ⨆ q : ℤ, Submodule.map₂ (bimoduleModuleTensorMk Γ Δ M N)
+        (M.grading.piece q) (N.grading.piece (p - q)) :=
+  BalancedTensorProduct.grading_piece_eq_iSup (𝒜 := Δ.piece) M.grading N.grading p
 
 /-- The quotient map from the ground-ring tensor product to the left-module tensor product. -/
 noncomputable def bimoduleModuleTensorMkQ : M ⊗[k] N →ₗ[k] bimoduleModuleTensorObj Γ Δ M N :=
