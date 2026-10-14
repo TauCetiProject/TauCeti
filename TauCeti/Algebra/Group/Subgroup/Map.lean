@@ -225,7 +225,7 @@ theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Su
 /-- A surjective homomorphism carries the derived subgroup onto the derived subgroup.
 
 Without surjectivity only `≤` survives (Mathlib's `map_derivedSeries_le_derivedSeries`); Mathlib's
-`Subgroup.map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
+`map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
 image as `⁅f.range, f.range⁆`. Reach for this lemma rather than `map_derivedSeries_eq` whenever the
 derived subgroup is spelled `commutator`; `MulEquiv.commutatorCongr` below is the isomorphism it
 unlocks. -/
