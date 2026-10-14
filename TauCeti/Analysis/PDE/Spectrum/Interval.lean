@@ -73,6 +73,13 @@ theorem mem_intervalDomain {a b : ℝ} {x : EuclideanSpace ℝ (Fin 1)} :
     x ∈ intervalDomain a b ↔ x 0 ∈ Ioo a b :=
   Iff.rfl
 
+/-- As a set, the interval domain consists of the points of the line whose coordinate lies in
+`(a, b)`. -/
+theorem coe_intervalDomain (a b : ℝ) :
+    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = {x | x 0 ∈ Ioo a b} := by
+  ext x
+  exact mem_intervalDomain
+
 variable {a b : ℝ}
 
 /-- The Euclidean line is isometric to `ℝ`, with inverse `x ↦ x 0`. -/
@@ -95,14 +102,14 @@ private theorem measurePreserving_lineEquiv_symm :
 private theorem lineEquiv_apply_zero (t : ℝ) : lineEquiv t 0 = t := by
   rw [← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
 
-private theorem coe_intervalDomain :
+private theorem coe_intervalDomain_eq_preimage :
     (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = lineEquiv.symm ⁻¹' Ioo a b := by
   ext x
   simp [lineEquiv_symm_apply]
 
 private theorem preimage_lineEquiv_intervalDomain :
     lineEquiv ⁻¹' (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = Ioo a b := by
-  rw [coe_intervalDomain, ← preimage_comp]
+  rw [coe_intervalDomain_eq_preimage, ← preimage_comp]
   simp
 
 /-- The `k`-th Dirichlet mode `t ↦ sin (k π (t - a) / (b - a))` of the interval `(a, b)`. -/
@@ -136,14 +143,15 @@ private theorem sineMode_right (hab : a < b) (k : ℕ) : sineMode a b k b = 0 :=
   rw [sineMode, mul_div_assoc, div_self (sub_pos.2 hab).ne', mul_one]
   exact Real.sin_nat_mul_pi k
 
-private theorem isBounded_intervalDomain :
+/-- The interval domain `(a, b)` is bounded. -/
+theorem isBounded_intervalDomain :
     IsBounded (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) := by
-  rw [coe_intervalDomain]
+  rw [coe_intervalDomain_eq_preimage]
   exact lineEquiv.symm.antilipschitzWith.isBounded_preimage (Metric.isBounded_Ioo a b)
 
 private theorem frontier_intervalDomain_subset (hab : a < b) :
     frontier (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) ⊆ lineEquiv.symm ⁻¹' {a, b} := by
-  rw [coe_intervalDomain]
+  rw [coe_intervalDomain_eq_preimage]
   exact (lineEquiv.symm.continuous.frontier_preimage_subset _).trans
     (preimage_mono (frontier_Ioo hab).subset)
 
@@ -232,7 +240,7 @@ private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
       (volume.restrict (Ioo a b)) := by
     have := measurePreserving_lineEquiv_symm.restrict_preimage
       (measurableSet_Ioo (a := a) (b := b))
-    rwa [← coe_intervalDomain] at this
+    rwa [← coe_intervalDomain_eq_preimage] at this
   -- Read `f` on the real line, where the sine system is complete.
   have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioc a b)) := by
     rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
@@ -299,7 +307,7 @@ theorem isLeast_isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) :
 
 /-- The energy form of `-Δ` on `(a, b)` is bounded and coercive on `H¹₀(a, b)`, by the Poincaré
 inequality on a ball containing the interval. -/
-private theorem exists_isCoercive_laplacian_intervalDomain (hab : a < b) :
+theorem exists_isCoercive_laplacian_intervalDomain (hab : a < b) :
     ∃ hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ => (1 : Matrix (Fin 1) (Fin 1) ℝ)) x)
         ((0 : EuclideanSpace ℝ (Fin 1) → EuclideanSpace ℝ (Fin 1)) x)
         ((0 : EuclideanSpace ℝ (Fin 1) → ℝ) x)) ⊤
@@ -324,12 +332,14 @@ private theorem exists_isCoercive_laplacian_intervalDomain (hab : a < b) :
       aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
       (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp) (fun _ _ ↦ le_rfl) hball w.2⟩
 
-private theorem nonempty_intervalDomain (hab : a < b) :
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))).Nonempty :=
-  ⟨lineEquiv ((a + b) / 2), by
-    rw [SetLike.mem_coe, mem_intervalDomain, ← lineEquiv_symm_apply,
-      LinearIsometryEquiv.symm_apply_apply]
-    constructor <;> linarith⟩
+/-- The interval domain `(a, b)` is nonempty exactly when `a < b`. -/
+theorem nonempty_intervalDomain_iff :
+    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))).Nonempty ↔ a < b := by
+  refine ⟨fun ⟨x, hx⟩ => (mem_intervalDomain.1 hx).1.trans (mem_intervalDomain.1 hx).2,
+    fun hab => ⟨lineEquiv ((a + b) / 2), ?_⟩⟩
+  rw [SetLike.mem_coe, mem_intervalDomain, ← lineEquiv_symm_apply,
+    LinearIsometryEquiv.symm_apply_apply]
+  constructor <;> linarith
 
 /-- The energy form of `-Δ` is symmetric. -/
 private theorem energyFormH1_laplacian_comm (u v : W1p0 volume (intervalDomain a b) 2) :
@@ -353,7 +363,7 @@ theorem firstDirichletEigenvalue_laplacian_intervalDomain (hab : a < b)
       (isLeast_isDirichletEigenvalue_laplacian_intervalDomain hab).1)
     ((isLeast_isDirichletEigenvalue_laplacian_intervalDomain hab).2
       (isDirichletEigenvalue_first hcoeff hcoercive isBounded_intervalDomain
-        energyFormH1_laplacian_comm (nonempty_intervalDomain hab)))
+        energyFormH1_laplacian_comm (nonempty_intervalDomain_iff.2 hab)))
 
 /-- **The sharp Poincaré inequality on an interval.** For every `u ∈ H¹₀(a, b)`,
 
@@ -370,7 +380,7 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
   obtain ⟨hcoeff, hcoercive⟩ := exists_isCoercive_laplacian_intervalDomain hab
   rw [← firstDirichletEigenvalue_laplacian_intervalDomain hab hcoeff hcoercive]
   exact isGreatest_firstDirichletEigenvalue hcoeff hcoercive energyFormH1_laplacian_comm
-    (nonempty_intervalDomain hab)
+    (nonempty_intervalDomain_iff.2 hab)
 
 end PDE
 
