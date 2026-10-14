@@ -27,8 +27,6 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
-* `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
-  constant does not change the form.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
@@ -135,17 +133,6 @@ theorem energyFormH1_restrictL_nonneg {a : EuclideanSpace ℝ ι → Matrix ι �
     (fun v hv => by rw [energyFormH1_smul_left]; linarith [hu v hv]) v hv
   rw [map_smul, energyFormH1_smul_left] at hneg
   linarith
-
-/-- **Shifting by a constant.** On a domain of finite measure, an energy form with no mass term
-does not see constants: `a(u + δ, v) = a(u, v)` for every constant `δ`, since adding a constant
-does not change the gradient, and the gradient is the only part of the left argument that the
-principal and drift terms involve. -/
-@[simp]
-theorem energyFormH1_add_const_left [IsFiniteMeasure (mu.restrict Omega)]
-    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
-    (u v : W1p mu Omega 2) (δ : ℝ) :
-    energyFormH1 a b 0 (u + W1p.const δ) v = energyFormH1 a b 0 u v := by
-  simp [energyFormH1_def, driftForm_apply, massForm_apply]
 
 /-- **Shifted weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`, for an energy form with no mass term, then for every open `U ⊆ Ω` of finite measure

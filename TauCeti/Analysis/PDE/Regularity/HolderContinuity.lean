@@ -140,9 +140,6 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
     rw [mem_closedBall, Real.dist_eq, abs_le]
     constructor <;> linarith [hy.1, hy.2]
   · -- Boundedness: `|u| ≤ D N` on `B(x, R/2)`, by local boundedness, since `(βR/λ)² ≤ σ²`.
-    have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x (hKΩ hx))
-    have hy : (beta * R / lam) ^ 2 ≤ σ ^ 2 :=
-      pow_le_pow_left₀ (by have := h.pos; positivity) ((div_le_iff₀ h.pos).2 hβR) 2
     rw [hρ]
     filter_upwards [hbound (gamma := 0) h ha hb aestronglyMeasurable_const hb_bound
       (fun _ _ => by simp) (fun _ _ => le_rfl) hu hR (hball x hx)] with y hy'
@@ -150,8 +147,10 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
     refine hy'.trans ?_
     rw [mul_assoc]
     simp only [D]
-    gcongr
-    exact hN x hx
+    gcongr _ * (1 + ?_) ^ _ * ?_
+    · exact mul_div_sq_le_sq_of_mul_le_mul ((norm_nonneg _).trans (hb_bound x (hKΩ hx))) hR.le
+        h.pos hβR
+    · exact hN x hx
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
     have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
       simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1

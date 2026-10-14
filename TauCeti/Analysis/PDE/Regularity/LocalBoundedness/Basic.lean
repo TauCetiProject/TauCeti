@@ -952,19 +952,18 @@ theorem ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le {Omega : Opens (Eucl
     {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R K : ℝ} (hR : 0 < R) (hK : 0 ≤ K)
     (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
     (hpos : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤
-      0 + K * √(∫ x in Metric.ball x₀ R, max (W1p.value u x - 0) 0 ^ 2 ∂mu))
+      K * √(∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu))
     (hneg : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value (-u) x ≤
-      0 + K * √(∫ x in Metric.ball x₀ R, max (W1p.value (-u) x - 0) 0 ^ 2 ∂mu)) :
+      K * √(∫ x in Metric.ball x₀ R, max (W1p.value (-u) x) 0 ^ 2 ∂mu)) :
     ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
       |W1p.value u x| ≤ K * √(∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu) := by
   -- The square of the positive part of a square-integrable function is dominated by its square.
   have hsq : ∀ w : W1p mu Omega 2,
-      ∫ x in Metric.ball x₀ R, max (W1p.value w x - 0) 0 ^ 2 ∂mu ≤
+      ∫ x in Metric.ball x₀ R, max (W1p.value w x) 0 ^ 2 ∂mu ≤
         ∫ x in Metric.ball x₀ R, W1p.value w x ^ 2 ∂mu := fun w => by
     refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity)
       ((Lp.memLp (W1p.value w)).mono_measure (Measure.restrict_mono hball le_rfl)).integrable_sq
       (ae_of_all _ fun x => ?_)
-    simp only [sub_zero]
     calc max (W1p.value w x) 0 ^ 2 ≤ |W1p.value w x| ^ 2 :=
           pow_le_pow_left₀ (le_max_right _ _) (max_le (le_abs_self _) (abs_nonneg _)) 2
       _ = W1p.value w x ^ 2 := sq_abs _
@@ -1013,8 +1012,10 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
   have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) = 0 := fun v => by
     rw [energyFormH1_neg_left, hu v, neg_zero]
   exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le hR (by positivity) hball
-    (hbound (k := 0) h ha (fun v _ => (hu v).le) hR hball)
-    (hbound (k := 0) h ha (fun v _ => (hu' v).le) hR hball)
+    (by simpa only [zero_add, sub_zero] using
+      hbound (k := 0) h ha (fun v _ => (hu v).le) hR hball)
+    (by simpa only [zero_add, sub_zero] using
+      hbound (k := 0) h ha (fun v _ => (hu' v).le) hR hball)
 
 
 /-! ### Local boundedness in terms of `Lᵖ` norms -/
