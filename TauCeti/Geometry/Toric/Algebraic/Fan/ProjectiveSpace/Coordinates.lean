@@ -69,6 +69,7 @@ theorem projectiveSpaceRatioCharacter_add (j k l : Option ι) :
 
 /-- Pairing a character with the generators of a projective-space cone tests exactly the
 inequalities defining its dual semigroup. -/
+@[simp high]
 theorem mem_dualSemigroup_projectiveSpaceCone (hi : IsIntegralLattice i)
     (S : Set (Option ι)) (m : N →+ ℤ) :
     m ∈ dualSemigroup hi (projectiveSpaceCone b i S) ↔

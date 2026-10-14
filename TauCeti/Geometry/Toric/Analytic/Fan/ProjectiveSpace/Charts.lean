@@ -76,7 +76,8 @@ theorem projectiveSpacePointHomeomorph_apply (k : Option ι) {r : ℕ}
   have hinv := (projectiveSpaceMixedSemigroupEquiv b hi k).symm_apply_apply
     (projectiveSpaceChartCharacter b hi k j)
   rw [hj] at hinv
-  simp [projectiveSpacePointHomeomorph, hinv]
+  simp only [projectiveSpacePointHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodUnique,
+    coe_regularAffinePointHomeomorph, regularAffinePointEquiv_fst_apply, hinv]
 
 open Classical in
 /-- The point with prescribed homogeneous ratios evaluates every character by the associated
@@ -91,13 +92,17 @@ theorem projectiveSpacePointHomeomorph_symm_apply_single (k : Option ι) {r : �
       ∏ j : {j : Option ι // j ≠ k}, z j ^ ((m : N →+ ℤ) (projectiveSpaceGenerator b j)).toNat := by
   classical
   let _ := affinePointTopology g
-  simp [projectiveSpacePointHomeomorph, projectiveSpaceMixedSemigroupEquiv,
-    Finsupp.prod_fintype, Homeomorph.prodUnique]
+  simp only [projectiveSpacePointHomeomorph, Homeomorph.symm_trans_apply,
+    coe_regularAffinePointHomeomorph_symm, regularAffinePointEquiv_symm_apply_single]
+  have hz := (Homeomorph.prodUnique ({j : Option ι // j ≠ k} → ℂ)
+    (PEmpty.{1} → ℂˣ)).symm_apply_apply (z, default)
+  rw [Homeomorph.coe_prodUnique] at hz
+  rw [hz]
+  simp [projectiveSpaceMixedSemigroupEquiv, Finsupp.prod_fintype]
 
 section Manifold
 
 variable (k : Option ι) {p q r : ℕ}
-  (hσ : IsToricCone i (projectiveSpaceCone b i {k}ᶜ))
   {B : Module.Basis (ToricRay (projectiveSpaceCone b i {k}ᶜ) ⊕ Fin q) ℤ N}
   (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
   (κ : ToricRay (projectiveSpaceCone b i {k}ᶜ) ≃ Fin p)
@@ -108,12 +113,14 @@ open Classical in
 space, for the regular-cone complex structure of any extending integral basis. -/
 noncomputable def projectiveSpacePointDiffeomorph (n : ℕ∞ω) :
     let _ := affinePointTopology g
-    let _ := coneChartedSpace hi hσ hB κ g
+    let _ := coneChartedSpace hi
+      (isRegularCone_projectiveSpaceCone b hi (by simp)).toIsToricCone hB κ g
     Diffeomorph 𝓘(ℂ, (Fin p → ℂ) × (Fin q → ℂ))
       𝓘(ℂ, {j : Option ι // j ≠ k} → ℂ)
       (AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)))
       ({j : Option ι // j ≠ k} → ℂ) n := by
   let _ := affinePointTopology g
+  let hσ := (isRegularCone_projectiveSpaceCone b hi (by simp : {k}ᶜ ≠ univ)).toIsToricCone
   let _ := coneChartedSpace hi hσ hB κ g
   refine ⟨(projectiveSpacePointHomeomorph b hi k g).toEquiv, ?_, ?_⟩
   · rw [contMDiff_pi_space]
@@ -131,11 +138,13 @@ open Classical in
 @[simp]
 theorem projectiveSpacePointDiffeomorph_toHomeomorph (n : ℕ∞ω) :
     let _ := affinePointTopology g
-    let _ := coneChartedSpace hi hσ hB κ g
-    (projectiveSpacePointDiffeomorph b hi k hσ hB κ g n).toHomeomorph =
+    let _ := coneChartedSpace hi
+      (isRegularCone_projectiveSpaceCone b hi (by simp)).toIsToricCone hB κ g
+    (projectiveSpacePointDiffeomorph b hi k hB κ g n).toHomeomorph =
       projectiveSpacePointHomeomorph b hi k g := by
   let _ := affinePointTopology g
-  let _ := coneChartedSpace hi hσ hB κ g
+  let _ := coneChartedSpace hi
+    (isRegularCone_projectiveSpaceCone b hi (by simp)).toIsToricCone hB κ g
   rfl
 
 end Manifold
