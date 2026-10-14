@@ -64,8 +64,8 @@ of `H¹(ℝⁿ)` whose difference quotients are controlled on the whole space.
 ## Main declarations
 
 * `TauCeti.PDE.exists_uniformlyEllipticOn_univ_lipschitzWith_eqOn`: a uniformly elliptic,
-  locally Lipschitz coefficient field on `Ω` agrees near a compact subset of `Ω` with one that is
-  uniformly elliptic and Lipschitz on the whole space.
+  locally Lipschitz coefficient field on `Ω` agrees on a given compact subset of `Ω` with one
+  that is uniformly elliptic and Lipschitz on the whole space.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`:
   interior `H²` regularity for locally Lipschitz principal coefficients.
 

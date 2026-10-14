@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Basic
-public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
-public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.PDE.Regularity.LipschitzCoefficient
 
 /-!
