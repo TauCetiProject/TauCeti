@@ -13,12 +13,13 @@ public import TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit
 # Classical relative CW complexes are categorical relative CW complexes
 
 Mathlib has two notions of CW complex.  The classical `Topology.RelCWComplex C D` describes a
-subset `C` of a Hausdorff space through explicit cells and characteristic maps, while the
+subset `C` of a topological space through explicit cells and characteristic maps, while the
 categorical `TopCat.RelativeCWComplex f` presents the target of a morphism `f : X ⟶ Y` of `TopCat`
 as the colimit of a sequence of spaces, each obtained from the previous one by attaching disks
 along their boundary spheres in a pushout square.  This file goes from the first to the second:
-a classical relative CW complex `C` with base `D` in a Hausdorff space gives a categorical relative
-CW complex structure on the inclusion of `D` into `C` (`TauCeti.toRelativeCWComplex`).
+when the ambient space is Hausdorff (a `T2Space`, which this file assumes throughout), a classical
+relative CW complex `C` with base `D` gives a categorical relative CW complex structure on the
+inclusion of `D` into `C` (`TauCeti.toRelativeCWComplex`).
 
 The `n`-th space of the sequence is the skeleton `skeletonLT C n` itself, and the cells attached at
 step `n` are the `n`-cells `cell C n`.  The two ingredients are the following.

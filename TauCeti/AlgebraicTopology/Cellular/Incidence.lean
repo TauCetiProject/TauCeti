@@ -118,7 +118,7 @@ lemma cellularBoundaryColumn_eq_attaching (n : ℕ) (j : cell C (n + 1)) :
     cellularBoundaryColumn C R n j =
       (cellularChainBasis C R n).repr
         (skeletonPairπ C (ModuleCat.of R R) n
-          (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap C j)) (ModuleCat.of R R) n
+          (SSet.homologyMap (TopCat.toSSet.map (cellBoundaryHom j)) (ModuleCat.of R R) n
             ((reducedSingularHomologyι (ModuleCat.of R R) n).app
               (TopCat.diskBoundary.{w} (n + 1))
                 ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) n).inv 1)))) := by
