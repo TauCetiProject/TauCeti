@@ -26,7 +26,7 @@ open ContinuousMap
 namespace AbstractMeasure
 
 variable {X A B R : Type*} [TopologicalSpace X] [TopologicalSpace A] [TopologicalSpace B]
-  [NormedCommRing R]
+  [CommRing R] [TopologicalSpace R]
 
 /-- The continuous characteristic function of a fibre of a map to a finite discrete space. -/
 def fiberIndicator [DiscreteTopology A] (q : C(X, A)) (a : A) : C(X, R) :=
@@ -40,6 +40,8 @@ theorem fiberIndicator_apply [DiscreteTopology A] [DecidableEq A]
     fiberIndicator (R := R) q a x = if q x = a then 1 else 0 := by
   classical
   simp [fiberIndicator, Pi.single_apply]
+
+variable [IsTopologicalRing R]
 
 /-- The finite projection of a measure records its values on all fibres of `q`. -/
 def finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
