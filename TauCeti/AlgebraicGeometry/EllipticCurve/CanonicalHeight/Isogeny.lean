@@ -115,8 +115,7 @@ theorem canonicalHeight_pointMap (f : Hom W₁ W₂) (P : W₁.Point) :
     (f.pointMap P).canonicalHeight = f.degree * P.canonicalHeight := by
   have h₁ := canonicalHeight_pointMap_le f P
   have h₂ := canonicalHeight_pointMap_le f.dual (f.pointMap P)
-  rw [degree_dual, ← comp_pointMap, dual_comp_self, nsmul_pointMap, id_pointMap,
-    Point.canonicalHeight_nsmul] at h₂
+  rw [degree_dual, dual_pointMap_pointMap, Point.canonicalHeight_nsmul] at h₂
   rcases Nat.eq_zero_or_pos f.degree with hd | hd
   · rw [degree_eq_zero_iff] at hd
     subst hd

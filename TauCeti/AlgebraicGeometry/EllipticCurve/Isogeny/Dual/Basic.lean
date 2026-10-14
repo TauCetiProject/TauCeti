@@ -271,6 +271,18 @@ theorem dual_comp_self (f : Hom W₁ W₂) : f.dual.comp f = f.degree • id W�
 theorem comp_dual_self (f : Hom W₁ W₂) : f.comp f.dual = f.degree • id W₂ := by
   simpa only [dual_dual, degree_dual] using f.dual.dual_comp_self
 
+/-- On points, the dual composed with the morphism is multiplication by its degree. -/
+@[simp]
+theorem dual_pointMap_pointMap [DecidableEq F] (f : Hom W₁ W₂) (P : W₁.Point) :
+    f.dual.pointMap (f.pointMap P) = f.degree • P := by
+  rw [← comp_pointMap, dual_comp_self, nsmul_pointMap, id_pointMap]
+
+/-- On points, the morphism composed with its dual is multiplication by its degree. -/
+@[simp]
+theorem pointMap_dual_pointMap [DecidableEq F] (f : Hom W₁ W₂) (Q : W₂.Point) :
+    f.pointMap (f.dual.pointMap Q) = f.degree • Q := by
+  rw [← comp_pointMap, comp_dual_self, nsmul_pointMap, id_pointMap]
+
 /-- **The dual of a composite is the composite of the duals in the opposite order**:
 `(g ∘ f)^ = f̂ ∘ ĝ`. -/
 @[simp]

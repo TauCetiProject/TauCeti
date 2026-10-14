@@ -24,9 +24,10 @@ Here the cokernel modulo torsion is expressed as the index of the image in
 `E₂(F)/E₂(F)tors`; the map from `E₁(F)` has the same image as the induced map from its quotient
 by torsion. This avoids choosing bases or splittings of the Mordell–Weil groups.
 
-When the source is finitely generated, its torsion and the kernel are finite and nonempty,
-so division gives the rational kernel/cokernel ratio. When the target is finitely generated,
-the cokernel is finite too: its image contains `deg(f) · E₂(F)`.
+The kernel is finite for every nonzero morphism. When the source is finitely generated, its
+torsion is finite too, so division gives the rational cokernel/kernel ratio
+`#coker(f) / #ker(f)`. When the target is finitely generated, the cokernel is finite too:
+its image contains `deg(f) · E₂(F)`.
 
 This is the torsion factor in the kernel/cokernel proof of Cassels' isogeny invariance of the
 BSD quotient. The regulator, period, local, and Tate–Shafarevich factors are not treated here.
@@ -35,10 +36,14 @@ No characteristic-zero or separability hypothesis is needed.
 ## Main results
 
 * `TauCeti.Isogeny.Hom.comap_torsion_pointMapHom`: a nonzero morphism reflects torsion.
+* `TauCeti.Isogeny.Hom.ker_pointMapHom_le_torsion` and
+  `TauCeti.Isogeny.Hom.finite_ker_pointMapHom`: the kernel is torsion and finite, without
+  a finite-generation assumption.
 * `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom`: finiteness of the rational cokernel
   when the target group is finitely generated.
 * `TauCeti.Isogeny.Hom.index_range_mul_card_torsion`: the cross-multiplied correction formula.
-* `TauCeti.Isogeny.Hom.index_range_div_card_ker`: the kernel/cokernel ratio, in `ℚ`.
+* `TauCeti.Isogeny.Hom.index_range_div_card_ker`: the cokernel/kernel ratio
+  `#coker(f) / #ker(f)`, in `ℚ`.
 
 ## References
 
@@ -65,9 +70,22 @@ theorem comap_torsion_pointMapHom (hf : f ≠ 0) :
   refine le_antisymm ?_ (AddCommGroup.le_comap_torsion f.pointMapHom)
   intro P hP
   have h := f.dual.pointMapHom.isOfFinAddOrder hP
-  rw [pointMapHom_apply, pointMapHom_apply, ← comp_pointMap, dual_comp_self,
-    nsmul_pointMap, id_pointMap] at h
+  rw [pointMapHom_apply, pointMapHom_apply, dual_pointMap_pointMap] at h
   exact h.of_nsmul ((f.degree_eq_zero_iff).not.mpr hf)
+
+/-- Every point in the kernel of a nonzero morphism is torsion. -/
+theorem ker_pointMapHom_le_torsion (hf : f ≠ 0) :
+    f.pointMapHom.ker ≤ AddCommGroup.torsion W₁.Point := by
+  rw [← f.comap_torsion_pointMapHom hf]
+  exact AddMonoidHom.ker_le_comap _ _
+
+/-- The kernel on points of a nonzero morphism is finite, as its fibre over zero. -/
+theorem finite_ker_pointMapHom (hf : f ≠ 0) : Finite f.pointMapHom.ker := by
+  apply Set.finite_coe_iff.mpr
+  refine (finite_setOf_pointMap_eq hf 0).subset ?_
+  intro P hP
+  simpa only [SetLike.mem_coe, AddMonoidHom.mem_ker, pointMapHom_apply,
+    Set.mem_ofPred_eq] using hP
 
 /-- The cokernel on rational points is finite if the target group is finitely generated:
 the image contains all `deg(f)`-multiples, by the dual identity. -/
@@ -78,8 +96,7 @@ theorem finiteIndex_range_pointMapHom [AddGroup.FG W₂.Point] (hf : f ≠ 0) :
   refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom f.degree).range) ?_
   rintro P ⟨Q, rfl⟩
   refine ⟨f.dual.pointMap Q, ?_⟩
-  rw [pointMapHom_apply, ← comp_pointMap, comp_dual_self, nsmul_pointMap, id_pointMap]
-  rfl
+  simp only [pointMapHom_apply, pointMap_dual_pointMap, nsmulAddMonoidHom_apply]
 
 /-- The correction between the full cokernel index and the image index modulo torsion.
 The cross-multiplied identity needs no finite-generation or finiteness hypothesis. -/
@@ -91,23 +108,17 @@ theorem index_range_mul_card_torsion (hf : f ≠ 0) :
     (TauCeti.index_range_mul_card_comap (f := f.pointMapHom)
       (S := AddCommGroup.torsion W₂.Point))
 
-/-- The rational kernel/cokernel ratio equals the image index modulo torsion times the ratio
-of target to source torsion orders. Finite generation is needed only for the source here;
-if the target is also finitely generated, `finiteIndex_range_pointMapHom` makes the cokernel
-index a positive integer. -/
+/-- The rational cokernel/kernel ratio `#coker(f) / #ker(f)` equals the image index modulo torsion
+times the ratio of target to source torsion orders. Finite generation is needed only for the
+source here; if the target is also finitely generated, `finiteIndex_range_pointMapHom` makes
+the cokernel index a positive integer. -/
 theorem index_range_div_card_ker [AddGroup.FG W₁.Point] (hf : f ≠ 0) :
     (f.pointMapHom.range.index : ℚ) / Nat.card f.pointMapHom.ker =
       (f.pointMapHom.range.map (QuotientAddGroup.mk' (AddCommGroup.torsion W₂.Point))).index *
         (Nat.card (AddCommGroup.torsion W₂.Point) : ℚ) /
           Nat.card (AddCommGroup.torsion W₁.Point) := by
-  have : Finite (AddCommGroup.torsion W₁.Point) :=
-    AddCommGroup.finite_of_fg_isAddTorsion _ fun P ↦
-      (AddCommGroup.torsion W₁.Point).subtype_injective.isOfFinAddOrder_iff.mp P.property
-  have hker : f.pointMapHom.ker ≤ AddCommGroup.torsion W₁.Point := by
-    rw [← f.comap_torsion_pointMapHom hf]
-    exact AddMonoidHom.ker_le_comap _ _
-  have : Finite f.pointMapHom.ker := Finite.of_injective
-    (Set.inclusion hker) (Set.inclusion_injective hker)
+  have := TauCeti.AddCommGroup.finite_torsion_of_fg W₁.Point
+  have := f.finite_ker_pointMapHom hf
   have hT : (Nat.card (AddCommGroup.torsion W₁.Point) : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hK : (Nat.card f.pointMapHom.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
