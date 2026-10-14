@@ -80,9 +80,9 @@ theorem commute_operatorAbs_projectionFamilyOverlap (hP : IsCompleteOrthogonalPr
     (hQ : IsCompleteOrthogonalProjectionFamily Q) (i : ι) :
     Commute (P i) (projectionFamilyOverlap P Q).operatorAbs := by
   let D := projectionFamilyOverlap P Q
-  have hD : D * P i = Q i * D := by
-    simp [D, hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul,
-      hQ.toOrthogonalIdempotents.mul_projectionFamilyOverlap]
+  have hD : D * P i = Q i * D :=
+    hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul_eq_mul_projectionFamilyOverlap
+      hQ.toOrthogonalIdempotents i
   have hD' : P i * star D = star D * Q i := by
     simpa only [star_mul, (hP.isSelfAdjoint i).star_eq,
       (hQ.isSelfAdjoint i).star_eq] using congrArg star hD
@@ -117,8 +117,9 @@ theorem exists_intertwining_linearIsometryEquiv (hP : IsCompleteOrthogonalProjec
   have hcomm := LinearMap.congr_fun (hP.commute_operatorAbs_projectionFamilyOverlap hQ i).eq y
   have hD : D (P i y) = Q i (D y) := by
     simpa only [Module.End.mul_apply] using
-      LinearMap.congr_fun ((hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul Q i).trans
-        (hQ.toOrthogonalIdempotents.mul_projectionFamilyOverlap P i).symm) y
+      LinearMap.congr_fun
+        (hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul_eq_mul_projectionFamilyOverlap
+          hQ.toOrthogonalIdempotents i) y
   simp only [Module.End.mul_apply] at hcomm hD
   exact (congrArg U hcomm).trans ((hU (P i y)).trans
     (hD.trans (congrArg (Q i) (hU y).symm)))
