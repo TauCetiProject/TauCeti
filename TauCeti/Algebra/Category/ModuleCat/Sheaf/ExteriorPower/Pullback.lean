@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
 /-!
 # The exterior-power pullback comparison for sheaves of modules
 
-Let `F : C ⥤ D` be a continuous functor between small sites, `S` and `R` sheaves of commutative
+Let `F : C ⥤ D` be a continuous functor between sites, `S` and `R` sheaves of commutative
 rings on `C` and `D`, and `φ : S ⟶ F_* R` a morphism of the underlying sheaves of rings. This file
 constructs the canonical natural map `⋀ⁿ (φ_* M) ⟶ φ_* (⋀ⁿ M)` for sheaves of `R`-modules `M`.
 It is the sheafification of the sectionwise comparison
@@ -54,14 +54,14 @@ open CategoryTheory
 
 namespace TauCeti.SheafOfModules
 
-universe u
+universe u v₁ v₂ u₁ u₂
 
 noncomputable section
 
-variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
+variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
   [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-  {D : Type u} [SmallCategory D] {K : GrothendieckTopology D}
+  {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D}
   [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
   [HasWeakSheafify K AddCommGrpCat.{u}] [K.WEqualsLocallyBijective AddCommGrpCat.{u}]
   {F : C ⥤ D} [F.IsContinuous J K] {S : Sheaf J CommRingCat.{u}} {R : Sheaf K CommRingCat.{u}}

@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
 /-!
 # Pushforward of sheaves of modules on underlying presheaves
 
-Let `F : C ⥤ D` be a continuous functor between small sites, `R` and `S` sheaves of commutative
+Let `F : C ⥤ D` be a continuous functor between sites, `R` and `S` sheaves of commutative
 rings on `D` and `C`, and `φ : S ⟶ F_* R` a morphism of the underlying sheaves of rings. This file
 records the data underlying the pushforward `SheafOfModules.pushforward φ` of sheaves of modules
 that sectionwise constructions transfer along: the morphism of presheaves of commutative rings
@@ -33,16 +33,16 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u
+universe u v₁ v₂ u₁ u₂
 
 noncomputable section
 
 namespace SheafOfModules
 
-variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
+variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
 
-variable {D : Type u} [SmallCategory D] {K : GrothendieckTopology D}
+variable {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D}
   [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
   {F : C ⥤ D} [F.IsContinuous J K] {S : Sheaf J CommRingCat.{u}} {R : Sheaf K CommRingCat.{u}}
   (φ : ringCatSheaf S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj (ringCatSheaf R))
