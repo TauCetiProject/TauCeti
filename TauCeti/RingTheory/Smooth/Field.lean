@@ -144,8 +144,9 @@ private theorem exists_le_of_pow_mem (p : ℕ) [Fact p.Prime] [CharP L p] (φ : 
     rw [adjoin.powerBasis_gen, minpoly_gen, hmin, map_sub, map_pow, aeval_X, aeval_C]
     simp [RingHom.algebraMap_toAlgebra, ← hb]
   let σ : carrier →ₐ[M] B := (adjoin.powerBasis hint).lift b hb'
-  refine ⟨⟨carrier, (@algHomEquivSigma K M carrier B _ _ _ _ _ _ _ _
-    (IsScalarTower.of_algebraMap_eq fun _ ↦ rfl)).symm ⟨φ.emb, σ⟩⟩,
+  have : IsScalarTower K M carrier := IsScalarTower.of_algebraMap_eq fun c ↦
+    Subtype.ext (IsScalarTower.algebraMap_apply K M L c)
+  refine ⟨⟨carrier, (algHomEquivSigma (A := K) (B := M) (C := carrier) (D := B)).symm ⟨φ.emb, σ⟩⟩,
     ⟨fun z hz ↦ IntermediateField.algebraMap_mem M⟮a⟯ ⟨z, hz⟩, σ.commutes⟩, rfl,
     mem_adjoin_simple_self M a, ?_⟩
   exact (adjoin.powerBasis hint).lift_gen b hb'
@@ -195,9 +196,10 @@ private noncomputable def powFieldLift (f : L →ₐ[K] B ⧸ I) : frobeniusPowe
       obtain ⟨d, rfl⟩ := (iterateFrobeniusEquiv K p 1).surjective c
       -- the underlying function of `powFieldLift` is `powFieldRingHom`
       change powFieldRingHom p hpB hI f _ = _
-      rw [← iterateFrobeniusEquivPowers_algebraMap, powFieldRingHom_apply, AlgHom.commutes,
-        ← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.powLift_mk, coe_iterateFrobeniusEquiv,
-        iterateFrobenius_def, pow_one, map_pow] }
+      -- write the constant as a `p`-th power of a constant of `L`, then compute
+      rw [← iterateFrobeniusEquivPowers_algebraMap]
+      simp [-iterateFrobeniusEquivPowers_algebraMap, powFieldRingHom_apply,
+        ← Ideal.Quotient.mk_algebraMap, frobenius_def] }
 
 private theorem powFieldLift_apply (f : L →ₐ[K] B ⧸ I) (x : L) :
     powFieldLift p hpB hI f (iterateFrobeniusEquivPowers K L p 1 x) =
@@ -208,8 +210,7 @@ private theorem powFieldLift_apply (f : L →ₐ[K] B ⧸ I) (x : L) :
 private theorem mk_powFieldLift (f : L →ₐ[K] B ⧸ I) (y : frobeniusPowers K L p 1) :
     Ideal.Quotient.mk I (powFieldLift p hpB hI f y) = f y := by
   obtain ⟨x, rfl⟩ := (iterateFrobeniusEquivPowers K L p 1).surjective y
-  rw [powFieldLift_apply, Ideal.Quotient.mk_powLift, coe_iterateFrobeniusEquivPowers, pow_one,
-    map_pow]
+  simp [powFieldLift_apply]
 
 open PartialLift in
 include hpB hI in
