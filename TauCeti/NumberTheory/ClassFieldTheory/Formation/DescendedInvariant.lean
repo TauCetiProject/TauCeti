@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ClassFormation
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.CoefficientMap
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.InflationRestriction
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Lifting
 
 /-!
 # Invariants descended along lifts to refinements
@@ -242,24 +241,8 @@ theorem range_descendedInv (L : NormalLayer G) :
     refine AddSubgroup.torsionBy.nsmul_iff.2 ?_
     rw [← map_nsmul, L.degree_eq_natCard_gal, groupCohomology.natCard_nsmul_eq_zero, map_zero]
   obtain ⟨L', T, y, hy⟩ := hgen L
-  set R := L'.subgroupRestriction T.galHom.ker
-  -- Restricted to the layer `L'/L`, the class `y` has `σ = n • (1/n) = 0`, `n` the degree of `L`.
-  have hRy : groupCohomology.map (MonoidHom.id (L'.subgroupLayer T.galHom.ker).Gal)
-      ((L'.subgroupLayer T.galHom.ker).repMap φ) 2 (R.cohomologyRes F 2 y) = 0 := by
-    refine hσ₀ _ _ ?_
-    rw [hres, hy, L'.relativeDegree_subgroupRestriction, Subgroup.index_ker,
-      MonoidHom.range_eq_top.2 T.galHom_surjective, Subgroup.card_top,
-      ← NormalLayer.degree_eq_natCard_gal]
-    exact AddSubgroup.torsionBy.nsmul_iff.1 (AddCircle.coe_period_div_mem_torsionBy (1 : ℚ))
-  -- So the image of `y` restricts to zero on `L'/L` and is inflated from a class `x₀` of `L`.
-  have hres' : R.cohomologyRes F' 2
-      (groupCohomology.map (MonoidHom.id L'.Gal) (L'.repMap φ) 2 y) = 0 := by
-    rwa [← LayerRestriction.cohomologyRes_comp_map_repMap_apply]
-  obtain ⟨x₀, hx₀⟩ : groupCohomology.map (MonoidHom.id L'.Gal) (L'.repMap φ) 2 y ∈
-      LinearMap.range (T.cohomologyInfl F' 2).hom :=
-    (T.range_cohomologyInfl_eq_ker_cohomologyRes F' 1 fun i hi ↦ by
-      obtain rfl : i = 0 := Nat.lt_one_iff.1 hi
-      exact h1 _).ge hres'
+  -- The image of `y` is inflated from a class `x₀` of `L`, whose invariant is `σ(y) = 1/n`.
+  obtain ⟨x₀, hx₀⟩ := NormalLayer.exists_cohomologyInfl_eq_map φ σ hres hσ₀ h1 T hy
   have hinv : descendedInv φ σ hσ hlift hker L x₀ = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) :=
     (descendedInv_eq φ σ hσ hlift hker T hx₀.symm).trans hy
   obtain ⟨k, rfl⟩ := AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ)
