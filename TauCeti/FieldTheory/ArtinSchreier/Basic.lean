@@ -9,6 +9,9 @@ public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
+-- Non-public: `Polynomial.natDegree_X_pow_sub_X_sub_C` is the degree of an Artin–Schreier
+-- polynomial, in the proof of the criterion only.
+import TauCeti.Algebra.Polynomial.XPowSubXSubC
 
 /-!
 # Artin–Schreier extensions
@@ -19,12 +22,11 @@ form `w ^ p - w` in the base field, the extension has degree `p` and its Galois 
 is the additive group of `ZMod p`. This supplies the field-theoretic input for the
 ramification theory of Artin–Schreier covers.
 
-That degree computation also settles irreducibility of the polynomial itself: in its splitting
-field a root generates, so the polynomial is that root's minimal polynomial as soon as the class of
-`u` is nontrivial, and conversely a root in the base field is a linear factor. So
+The degree computation also settles irreducibility of the polynomial itself:
 `X ^ p - X - u` is irreducible exactly when `u` is not of the form `w ^ p - w`
-(`TauCeti.ArtinSchreier.irreducible_polynomial_iff`), which is what constructs an Artin–Schreier
-extension of a given field from a given `u`.
+(`TauCeti.ArtinSchreier.irreducible_polynomial_iff`). That is what constructs an Artin–Schreier
+extension of a given field from a given class, the theory above describing only extensions already
+carrying a root.
 
 ## References
 
@@ -74,6 +76,18 @@ theorem splits : ((X ^ p - X - C u).map (algebraMap K L)).Splits := by
   rw [← he]
   exact h0.comp_X_sub_C y
 
+omit hy in
+/-- Two solutions of the same Artin–Schreier equation differ by a prime-field element: their
+difference is fixed by the Frobenius. -/
+private theorem exists_zmod_cast_eq_sub {z w : L} (hz : z ^ p - z = algebraMap K L u)
+    (hw : w ^ p - w = algebraMap K L u) : ∃ c : ZMod p, (ZMod.cast c : L) = z - w := by
+  have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
+  have hpow : (z - w) ^ p = z - w := by
+    rw [sub_pow_char]
+    linear_combination hz - hw
+  rw [← Subfield.mem_bot_iff_pow_eq_self L p, ← ZMod.fieldRange_castHom_eq_bot p] at hpow
+  exact hpow
+
 private theorem exists_translation (σ : Gal(L/K)) : ∃ c : ZMod p, (ZMod.cast c : L) = σ y - y := by
   have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
   have hp : (σ y - y) ^ p = σ y - y := by
@@ -116,12 +130,7 @@ theorem aut_apply_eq_add_translationHom (σ : Gal(L/K)) :
 theorem translationHom_eq_of_same_u {z : L} (hz : z ^ p - z = algebraMap K L u) :
     translationHom hy = translationHom hz := by
   have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
-  have hpow : (y - z) ^ p = y - z := by
-    rw [sub_pow_char]
-    linear_combination hy - hz
-  rw [← Subfield.mem_bot_iff_pow_eq_self L p, ← ZMod.fieldRange_castHom_eq_bot p] at hpow
-  obtain ⟨c, hc⟩ := hpow
-  rw [ZMod.castHom_apply] at hc
+  obtain ⟨c, hc⟩ := exists_zmod_cast_eq_sub hy hz
   ext σ
   have h := map_natCast σ c.val
   rw [← ZMod.cast_eq_val, hc, map_sub, aut_apply_eq_add_translationHom hy σ,
@@ -205,26 +214,18 @@ theorem autEquivZmod_symm_apply (c : Multiplicative (ZMod p)) :
   rw [aut_apply_eq_add_translationHom hy, ← autEquivZmod_apply hy hgen hu,
     MulEquiv.apply_symm_apply]
 
-private theorem exists_translation_of_isRoot (hy : y ^ p - y = algebraMap K L u) {r : L}
-    (hr : r ^ p - r = algebraMap K L u) : ∃ c : ZMod p, (ZMod.cast c : L) = r - y := by
-  have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
-  have hp : (r - y) ^ p = r - y := by
-    rw [sub_pow_char]
-    linear_combination hr - hy
-  have hm := (Subfield.mem_bot_iff_pow_eq_self L p).mpr hp
-  rw [← ZMod.fieldRange_castHom_eq_bot p] at hm
-  exact hm
-
+omit hy hgen hu in
 /-- **The Artin–Schreier criterion**: over a field of characteristic `p`, the polynomial
-`X ^ p - X - u` is irreducible exactly when `u` is not of the form `w ^ p - w`.  One direction is
-the linear factor a root provides; the other is that a root generates an extension of degree `p`,
-so the polynomial is the minimal polynomial of that root. -/
+`X ^ p - X - u` is irreducible exactly when `u` is not of the form `w ^ p - w`.  This is what builds
+an Artin–Schreier extension of degree `p` out of a class of `u`: the quotient by an irreducible
+polynomial is a field, and the theory above then applies to the image of `X` in it. -/
 theorem irreducible_polynomial_iff (u : K) :
     Irreducible (X ^ p - X - C u : K[X]) ↔ ∀ w : K, w ^ p - w ≠ u := by
   classical
   have hp1 : 1 < p := (Fact.out : p.Prime).one_lt
   have hmonic : (X ^ p - X - C u : K[X]).Monic := monic_polynomial u
-  have hdeg : (X ^ p - X - C u : K[X]).natDegree = p := natDegree_polynomial u
+  have hdeg : (X ^ p - X - C u : K[X]).natDegree = p :=
+    natDegree_X_pow_sub_X_sub_C hp1 u
   constructor
   · -- A root of an irreducible polynomial of degree `p > 1` is impossible.
     intro hirr w hw
@@ -264,7 +265,7 @@ theorem irreducible_polynomial_iff (u : K) :
           have h := (mem_rootSet.mp hr).2
           simp only [aeval_def, eval₂_sub, eval₂_pow, eval₂_X, eval₂_C] at h
           linear_combination h
-        obtain ⟨c, hc⟩ := exists_translation_of_isRoot hy hrroot
+        obtain ⟨c, hc⟩ := exists_zmod_cast_eq_sub hrroot hy
         have hr' : r = y + ((c.val : ℕ) : L) := by
           rw [← ZMod.natCast_val] at hc
           linear_combination -hc
