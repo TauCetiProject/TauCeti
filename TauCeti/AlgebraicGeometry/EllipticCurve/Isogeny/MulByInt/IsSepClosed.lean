@@ -26,6 +26,8 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
   rather than on the trivial base change `W⁄K`.
 * `WeierstrassCurve.torsionMapAlong_bijective`: the `N`-torsion does not grow from one separably
   closed field to another.
+* `WeierstrassCurve.torsionMapAlong_bijective_of_natCard`: nor from any field already having all
+  `N²` points of `E[N]` to a separably closed one.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`,
   `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
   `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: `E[ℓ] ≅ (ZMod ℓ) ²` at a prime.
@@ -177,12 +179,14 @@ theorem natCard_torsionBy {n : ℤ} (hn : (n : K) ≠ 0) :
 
 section MapAlong
 
-variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F] [DecidableEq K]
-  (W : WeierstrassCurve F) [W.IsElliptic] (f : F →+* K)
+variable {F : Type*} [Field F] [DecidableEq F] [DecidableEq K] (W : WeierstrassCurve F)
+  [W.IsElliptic] (f : F →+* K)
 
-/-- **The `N`-torsion does not grow from one separably closed field to another**: for `N`
-invertible, `E[N](F) → E[N](K)` is bijective, both groups having `N²` elements. -/
-theorem torsionMapAlong_bijective {N : ℤ} (hN : (N : F) ≠ 0) :
+/-- **`E[N](F) → E[N](K)` is bijective once `E(F)` has `N²` points of order dividing `N`**: for
+`N` invertible and `K` separably closed, the map is injective and `E[N](K)` also has `N²`
+elements. -/
+theorem torsionMapAlong_bijective_of_natCard {N : ℤ} (hN : (N : F) ≠ 0)
+    (hF : Nat.card (AddSubgroup.torsionBy W.toAffine.Point N) = N.natAbs ^ 2) :
     Function.Bijective (W.torsionMapAlong f N) := by
   have hinj : Function.Injective (W.torsionMapAlong f N) := fun S T h ↦ by
     have h' := congrArg Subtype.val h
@@ -193,15 +197,18 @@ theorem torsionMapAlong_bijective {N : ℤ} (hN : (N : F) ≠ 0) :
     convert (W.map f).natCard_torsionBy (by rwa [← map_intCast f, map_ne_zero] : (N : K) ≠ 0) with P
     simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
     convert Iff.rfl
-  have hF : Nat.card (Submodule.torsionBy ℤ W.toAffine.Point N) = N.natAbs ^ 2 := by
-    convert W.natCard_torsionBy hN with P
-    simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
-    convert Iff.rfl
   have : Finite (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) :=
     Nat.finite_of_card_ne_zero (by
       rw [hK]
       exact pow_ne_zero 2 (Int.natAbs_ne_zero.mpr (by rintro rfl; exact hN Int.cast_zero)))
   exact hinj.bijective_of_nat_card_le (hK.trans hF.symm).le
+
+/-- **The `N`-torsion does not grow from one separably closed field to another**: for `N`
+invertible, `E[N](F) → E[N](K)` is bijective, both groups having `N²` elements. -/
+theorem torsionMapAlong_bijective [IsSepClosed F] {N : ℤ} (hN : (N : F) ≠ 0) :
+    Function.Bijective (W.torsionMapAlong f N) :=
+  W.torsionMapAlong_bijective_of_natCard f hN <| by
+    convert W.natCard_torsionBy hN
 
 end MapAlong
 
