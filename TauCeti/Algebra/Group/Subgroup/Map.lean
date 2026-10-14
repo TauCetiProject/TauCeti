@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Ker
-public import Mathlib.GroupTheory.Solvable
+public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
 
 /-!
@@ -225,14 +225,13 @@ theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Su
 /-- A surjective homomorphism carries the derived subgroup onto the derived subgroup.
 
 Without surjectivity only `≤` survives (Mathlib's `map_derivedSeries_le_derivedSeries`); Mathlib's
-`Subgroup.map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
+`map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
 image as `⁅f.range, f.range⁆`. Reach for this lemma rather than `map_derivedSeries_eq` whenever the
 derived subgroup is spelled `commutator`; `MulEquiv.commutatorCongr` below is the isomorphism it
 unlocks. -/
 theorem Subgroup.map_commutator_eq_commutator {f : G →* H} (hf : Function.Surjective f) :
-    (commutator G).map f = commutator H :=
-  -- `commutator G` is by definition `derivedSeries G 1`, so no rewriting is needed here.
-  map_derivedSeries_eq hf 1
+    (commutator G).map f = commutator H := by
+  rw [_root_.map_commutator_eq, MonoidHom.range_eq_top_of_surjective _ hf, _root_.commutator_def]
 
 /-- The isomorphism of derived subgroups restricted from an isomorphism of groups.
 
@@ -320,11 +319,8 @@ theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
 /-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
 theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
     (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
-    (H ⊓ K.comap f).map f = H.map f ⊓ K := by
-  ext y
-  simp only [Subgroup.mem_map, Subgroup.mem_inf, Subgroup.mem_comap]
-  exact ⟨fun ⟨x, ⟨hx, hxK⟩, hxy⟩ ↦ ⟨⟨x, hx, hxy⟩, hxy ▸ hxK⟩,
-    fun ⟨⟨x, hx, hxy⟩, hy⟩ ↦ ⟨x, ⟨hx, hxy ▸ hy⟩, hxy⟩⟩
+    (H ⊓ K.comap f).map f = H.map f ⊓ K :=
+  SetLike.coe_injective (Set.image_inter_preimage f H K)
 
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
