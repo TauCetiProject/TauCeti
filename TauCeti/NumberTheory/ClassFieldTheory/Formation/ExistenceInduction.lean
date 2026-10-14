@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Reciprocity
 import TauCeti.GroupTheory.Index.Comap
+import TauCeti.Algebra.Group.PowMonoidHom
 
 /-!
 # The induction on the index in the proof of the existence theorem
@@ -123,26 +124,18 @@ theorem exists_range_levelNorm_le_of_forall_prime
   let Q := F.level W' ⧸ N'
   let N₁ : AddSubgroup (F.level W') :=
     (nsmulAddMonoidHom p : Q →+ Q).range.comap (QuotientAddGroup.mk' N')
-  have hN'N₁ : N' ≤ N₁ := fun a ha ↦ ⟨0, by
-    rw [map_zero, QuotientAddGroup.mk'_apply, eq_comm, QuotientAddGroup.eq_zero_iff]
-    exact ha⟩
-  have hpN₁ (a : F.level W') : p • a ∈ N₁ := ⟨QuotientAddGroup.mk' N' a, by simp⟩
+  have hN'N₁ : N' ≤ N₁ := (QuotientAddGroup.ker_mk' N').ge.trans (AddMonoidHom.ker_le_comap _ _)
+  have hpN₁ (a : F.level W') : p • a ∈ N₁ := AddSubgroup.mem_comap.2 <|
+    AddMonoidHom.mem_range.2 ⟨QuotientAddGroup.mk' N' a, by rw [nsmulAddMonoidHom_apply, map_nsmul]⟩
   -- `N₁` is proper: multiplication by `p` is not surjective on `A^{W'}/N'`, of order `n`.
   have hN₁ : N₁ ≠ ⊤ := by
-    intro htop
     have : Finite Q := AddSubgroup.finite_quotient_of_finiteIndex
-    have : Fact p.Prime := ⟨hp⟩
-    -- by Cauchy's theorem `A^{W'}/N'` has an element `x` of order `p`
-    obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card' (G := Q) p <| by
-      rw [← AddSubgroup.index_eq_card, heq]; exact hpn
-    -- but multiplication by `p` on it is surjective, since `N₁ = ⊤`, hence injective
-    have hsurj : Function.Surjective (fun y : Q ↦ p • y) := fun y ↦ by
-      induction y using QuotientAddGroup.induction_on with
-      | H a => exact (show a ∈ N₁ from htop ▸ AddSubgroup.mem_top a)
-    have hx0 : x = 0 := Finite.injective_iff_surjective.2 hsurj <| by
-      simp only [smul_zero, ← hx, addOrderOf_nsmul_eq_zero]
-    rw [hx0, addOrderOf_zero] at hx
-    exact hp.one_lt.ne hx
+    -- `N₁ = ⊤` would force `p · Q = Q`, as `N₁` is a preimage under the surjection `mk'`
+    refine fun htop ↦ nsmulAddMonoidHom_range_ne_top_of_not_coprime (G := Q) ?_ <|
+      AddSubgroup.comap_injective (QuotientAddGroup.mk'_surjective N') <|
+        htop.trans (AddSubgroup.comap_top _).symm
+    rw [← AddSubgroup.index_eq_card, heq]
+    exact fun h ↦ hp.coprime_iff_not_dvd.1 h.symm hpn
   have : N₁.FiniteIndex := AddSubgroup.finiteIndex_of_le hN'N₁
   -- By the Kummer case `N₁` contains the norm group of some `W₁ ≤ W'`, and the preimage of `N'`
   -- in `A^{W₁}` has smaller index, so it contains a norm group by induction.
