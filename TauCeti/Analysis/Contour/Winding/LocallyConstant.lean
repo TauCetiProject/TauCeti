@@ -10,7 +10,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.Contour.Winding.Continuity
-import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
 # The winding number is locally constant off a closed curve
@@ -62,16 +62,18 @@ trace has locally constant winding number on the trace complement. -/
 theorem _root_.ContinuousOn.isLocallyConstant_windingNumber_of_integer {γ : ℝ → ℂ} {a b : ℝ}
     (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (deriv γ) volume a b)
-    (hint : ∀ z, (∀ t ∈ uIcc a b, γ t ≠ z) → ∃ n : ℤ, windingNumber γ a b z = n) :
+    (hint : ∀ z, z ∉ γ '' uIcc a b → ∃ n : ℤ, windingNumber γ a b z = n) :
     IsLocallyConstant
-      (fun z : {z : ℂ // ∀ t ∈ uIcc a b, γ t ≠ z} ↦ windingNumber γ a b z.1) := by
+      (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.1) := by
   classical
-  choose n hn using fun z : {z : ℂ // ∀ t ∈ uIcc a b, γ t ≠ z} ↦ hint z.1 z.2
+  choose n hn using fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ hint z.1 z.2
   have hc : Continuous
-      (fun z : {z : ℂ // ∀ t ∈ uIcc a b, γ t ≠ z} ↦ windingNumber γ a b z.1) := by
+      (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.1) := by
     refine continuous_iff_continuousAt.mpr fun z ↦ ?_
-    exact (continuousAt_windingNumber_of_avoidance hγ_cont z.2
-      (intervalIntegrable_inv_sub_mul_deriv hγ_cont z.2 hderiv_int)).comp
+    have havoid : ∀ t ∈ uIcc a b, γ t ≠ z.1 := by
+      simpa only [mem_image, not_exists, not_and] using z.2
+    exact (continuousAt_windingNumber_of_avoidance hγ_cont havoid
+      (intervalIntegrable_inv_sub_mul_deriv hγ_cont havoid hderiv_int)).comp
         continuous_subtype_val.continuousAt
   have hncont : Continuous n := Complex.isClosedEmbedding_intCast.isEmbedding.continuous_iff.mpr
     (by simpa only [Function.comp_def, ← hn] using hc)
@@ -87,30 +89,27 @@ theorem isLocallyConstant_windingNumber_of_closed {γ : ℝ → ℂ} {a b : ℝ}
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     IsLocallyConstant
-      (fun w : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} ↦ windingNumber γ a b w.1) :=
-  ContinuousOn.isLocallyConstant_windingNumber_of_integer hγ_cont hderiv_int fun _ hz ↦
-    exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hz
-      (intervalIntegrable_inv_sub_mul_deriv hγ_cont hz hderiv_int)
-
-/-- The points avoided by `γ` on `[[a, b]]` are exactly the complement of its image there. -/
-private theorem setOf_forall_ne_eq_compl_image {γ : ℝ → ℂ} {a b : ℝ} :
-    {w : ℂ | ∀ t ∈ uIcc a b, γ t ≠ w} = (γ '' uIcc a b)ᶜ := by
-  ext w
-  simp only [mem_ofPred_eq, mem_compl_iff, mem_image, not_exists, not_and]
+      (fun w : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} ↦ windingNumber γ a b w.1) := by
+  have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
+  have h := hγ_cont.isLocallyConstant_windingNumber_of_integer hderiv_int
+    (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz)
+  -- Reindex by the same point with its equivalent trace-avoidance predicate.
+  exact h.comp_continuous (continuous_subtype_val.subtype_mk
+    (fun z ↦ by simpa only [mem_image, not_exists, not_and] using z.2))
 
 /-- A continuous curve with integrable derivative and integer indices has constant winding
 number on every connected component of its trace complement. -/
 theorem _root_.ContinuousOn.windingNumber_eq_of_mem_connectedComponentIn_of_integer
     {γ : ℝ → ℂ} {a b : ℝ} (hγ : ContinuousOn γ (uIcc a b))
     (hderiv : IntervalIntegrable (deriv γ) volume a b)
-    (hint : ∀ z, (∀ t ∈ uIcc a b, γ t ≠ z) → ∃ n : ℤ, windingNumber γ a b z = n)
+    (hint : ∀ z, z ∉ γ '' uIcc a b → ∃ n : ℤ, windingNumber γ a b z = n)
     {z w : ℂ} (hw : w ∈ connectedComponentIn ((γ '' uIcc a b)ᶜ) z) :
     windingNumber γ a b w = windingNumber γ a b z := by
   have hz : z ∈ (γ '' uIcc a b)ᶜ := by
     by_contra hz
     rw [connectedComponentIn_eq_empty hz] at hw
     exact hw
-  rw [← setOf_forall_ne_eq_compl_image] at hz hw
   rw [connectedComponentIn_eq_image hz] at hw
   obtain ⟨w, hw, rfl⟩ := hw
   exact (hγ.isLocallyConstant_windingNumber_of_integer hderiv hint).apply_eq_of_isPreconnected
@@ -129,9 +128,10 @@ theorem windingNumber_eq_of_mem_connectedComponentIn {γ : ℝ → ℂ} {a b : �
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
     {w₀ w₁ : ℂ} (hw₁ : w₁ ∈ connectedComponentIn ((γ '' uIcc a b)ᶜ) w₀) :
     windingNumber γ a b w₁ = windingNumber γ a b w₀ := by
+  have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
   exact hγ_cont.windingNumber_eq_of_mem_connectedComponentIn_of_integer hderiv_int
-    (fun _ hz ↦ exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hz
-      (intervalIntegrable_inv_sub_mul_deriv hγ_cont hz hderiv_int)) hw₁
+    (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz) hw₁
 
 /-- **Piecewise-`C¹` form of componentwise constancy.** For a closed piecewise-`C¹` curve, two
 points in the same connected component of the curve complement have the same winding number. -/

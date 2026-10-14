@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
-import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.Curve.IntegralBound
 
 /-!
@@ -90,9 +90,9 @@ theorem _root_.ContinuousOn.windingNumber_eventually_zero_cocompact_of_integer
     {γ : ℝ → ℂ} {a b : ℝ}
     (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
-    (hint : ∀ w, (∀ t ∈ uIcc a b, γ t ≠ w) → ∃ n : ℤ, windingNumber γ a b w = n) :
+    (hint : ∀ w, w ∉ γ '' uIcc a b → ∃ n : ℤ, windingNumber γ a b w = n) :
     ∀ᶠ w in Filter.cocompact ℂ,
-      (∀ t ∈ uIcc a b, γ t ≠ w) ∧ windingNumber γ a b w = 0 := by
+      w ∉ γ '' uIcc a b ∧ windingNumber γ a b w = 0 := by
   obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ_cont
   have hD_nonneg : 0 ≤ ∫ t in Ι a b, ‖deriv γ t‖ := integral_nonneg fun _ => norm_nonneg _
   set RR : ℝ := R + (∫ t in Ι a b, ‖deriv γ t‖) / (2 * Real.pi) with hRR_def
@@ -107,7 +107,10 @@ theorem _root_.ContinuousOn.windingNumber_eventually_zero_cocompact_of_integer
     have h := hR t ht
     rw [heq] at h
     linarith [lt_of_le_of_lt hR_le_RR hw]
-  exact ⟨hoff, windingNumber_eq_zero_of_far hγ_cont hderiv_int (hint w hoff) hR (hRR_def ▸ hw)⟩
+  have hwtrace : w ∉ γ '' uIcc a b := by
+    simpa only [mem_image, not_exists, not_and] using hoff
+  exact ⟨hwtrace, windingNumber_eq_zero_of_far hγ_cont hderiv_int
+    (hint w hwtrace) hR (hRR_def ▸ hw)⟩
 
 /-- **The winding number is eventually zero far from a bounded closed curve.** For a closed curve
 `γ` (`γ a = γ b`) continuous on `Set.uIcc a b`, differentiable off a countable set `P`, with
@@ -121,9 +124,11 @@ theorem windingNumber_eventually_zero_cocompact {γ : ℝ → ℂ} {a b : ℝ} {
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     ∀ᶠ w in Filter.cocompact ℂ,
-      (∀ t ∈ uIcc a b, γ t ≠ w) ∧ windingNumber γ a b w = 0 :=
-  ContinuousOn.windingNumber_eventually_zero_cocompact_of_integer hγ_cont hderiv_int fun _ hoff ↦
-    exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hoff
-      (intervalIntegrable_inv_sub_mul_deriv hγ_cont hoff hderiv_int)
+      (∀ t ∈ uIcc a b, γ t ≠ w) ∧ windingNumber γ a b w = 0 := by
+  have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
+  simpa only [mem_image, not_exists, not_and] using
+    (hγ_cont.windingNumber_eventually_zero_cocompact_of_integer hderiv_int
+      (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz))
 
 end TauCeti.Contour

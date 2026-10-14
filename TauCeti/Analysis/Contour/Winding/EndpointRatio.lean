@@ -92,7 +92,7 @@ theorem exp_two_pi_I_mul_windingNumber_of_avoidance
       = (γ b - w) / (γ a - w) := by
   exact (hγ_cont.absolutelyContinuousOnInterval_of_intervalIntegrable_inv_sub_mul_deriv hP
     hγ_diff h_avoid h_int).exp_two_pi_I_mul_windingNumber
-      (by rintro ⟨t, ht, heq⟩; exact h_avoid t ht heq)
+      (by simpa only [mem_image, not_exists, not_and] using h_avoid)
 
 /-- **Piecewise-`C¹` form of the endpoint-ratio identity.** Piecewise-`C¹` regularity supplies the
 continuity, differentiability and integrability hypotheses of

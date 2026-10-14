@@ -9,7 +9,7 @@ public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Analysis.Contour.Winding.LocallyConstant
 public import TauCeti.Analysis.Contour.Winding.Vanishing
 public import TauCeti.Topology.FilledHull
-import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
 # The winding number on the unbounded component
@@ -52,7 +52,7 @@ number on every unbounded component of its trace complement. -/
 theorem _root_.ContinuousOn.windingNumber_eq_zero_of_unbounded_component_of_integer
     {γ : ℝ → ℂ} {a b : ℝ} (hγ : ContinuousOn γ (uIcc a b))
     (hderiv : IntervalIntegrable (deriv γ) volume a b)
-    (hint : ∀ z, (∀ t ∈ uIcc a b, γ t ≠ z) → ∃ n : ℤ, windingNumber γ a b z = n)
+    (hint : ∀ z, z ∉ γ '' uIcc a b → ∃ n : ℤ, windingNumber γ a b z = n)
     {z : ℂ} (hz : ¬IsBounded (connectedComponentIn ((γ '' uIcc a b)ᶜ) z)) :
     windingNumber γ a b z = 0 := by
   obtain ⟨K, hK, hKgood⟩ := Filter.mem_cocompact.mp
@@ -77,9 +77,10 @@ theorem windingNumber_eq_zero_of_unbounded_component {γ : ℝ → ℂ} {a b : �
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
     {w : ℂ} (hcomp : ¬IsBounded (connectedComponentIn ((γ '' uIcc a b)ᶜ) w)) :
     windingNumber γ a b w = 0 := by
+  have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
   exact hγ_cont.windingNumber_eq_zero_of_unbounded_component_of_integer hderiv_int
-    (fun _ hz ↦ exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hz
-      (intervalIntegrable_inv_sub_mul_deriv hγ_cont hz hderiv_int)) hcomp
+    (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz) hcomp
 
 /-- **Piecewise-`C¹` form of vanishing on the unbounded component.** If the component of `w` in the
 complement of a closed piecewise-`C¹` curve is unbounded, its winding number about `w` is zero. The

@@ -61,7 +61,7 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
     ∃ n : ℤ, windingNumber γ a b w = n := by
   exact (hγ_cont.absolutelyContinuousOnInterval_of_intervalIntegrable_inv_sub_mul_deriv hP
     hγ_diff h_avoid h_int).exists_int_windingNumber hclosed
-      (by rintro ⟨t, ht, heq⟩; exact h_avoid t ht heq)
+      (by simpa only [mem_image, not_exists, not_and] using h_avoid)
 
 /-- **Piecewise-`C¹` form of winding-number integrality.** For a closed piecewise-`C¹` curve that
 avoids `w`, the winding number about `w` is an integer. Piecewise-`C¹` regularity supplies the

@@ -7,7 +7,6 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Formula
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Complex.WindingNormalization
-import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -101,10 +100,8 @@ theorem windingNumber_segment_interval {p q z : ℂ} {a b : ℝ} (hab : a < b)
     windingNumber (fun t : ℝ ↦ p + ((t - a) / (b - a)) • (q - p)) a b z =
       windingNumber (fun t : ℝ ↦ p + t • (q - p)) 0 1 z := by
   let θ := fun t : ℝ ↦ (t - a) / (b - a)
-  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 := by
-    apply (lipschitzWith_lineMap (𝕜 := ℝ) p q).lipschitzOnWith.absolutelyContinuousOnInterval.congr
-    intro t _
-    rw [AffineMap.lineMap_apply_module', add_comm]
+  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 :=
+    (contDiff_const.add (contDiff_id.smul_const (q - p))).contDiffOn.absolutelyContinuousOnInterval
   have hθ : AbsolutelyContinuousOnInterval θ a b := by
     have h : ContDiffOn ℝ 1 θ (uIcc a b) := by dsimp [θ]; fun_prop
     exact h.absolutelyContinuousOnInterval
@@ -120,10 +117,8 @@ theorem windingNumber_segment_interval {p q z : ℂ} {a b : ℝ} (hab : a < b)
 theorem windingNumber_segment_swap {p q z : ℂ} (hz : z ∉ segment ℝ p q) :
     windingNumber (fun t : ℝ ↦ q + t • (p - q)) 0 1 z =
       -windingNumber (fun t : ℝ ↦ p + t • (q - p)) 0 1 z := by
-  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 := by
-    apply (lipschitzWith_lineMap (𝕜 := ℝ) p q).lipschitzOnWith.absolutelyContinuousOnInterval.congr
-    intro t _
-    rw [AffineMap.lineMap_apply_module', add_comm]
+  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 :=
+    (contDiff_const.add (contDiff_id.smul_const (q - p))).contDiffOn.absolutelyContinuousOnInterval
   have hθ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ 1 - t) 0 1 := by
     have h : ContDiffOn ℝ 1 (fun t : ℝ ↦ 1 - t) (uIcc 0 1) := by fun_prop
     exact h.absolutelyContinuousOnInterval

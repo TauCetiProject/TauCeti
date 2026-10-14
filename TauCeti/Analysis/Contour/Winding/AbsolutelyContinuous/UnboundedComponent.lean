@@ -29,12 +29,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_coco
     (hclosed : γ a = γ b) :
     ∀ᶠ z in Filter.cocompact ℂ,
       z ∉ γ '' uIcc a b ∧ windingNumber γ a b z = 0 := by
-  have h := ContinuousOn.windingNumber_eventually_zero_cocompact_of_integer hγ.continuousOn
-    hγ.intervalIntegrable_deriv_of_finiteDimensional fun z hz ↦
-      hγ.exists_int_windingNumber hclosed
-        (by rintro ⟨t, ht, heq⟩; exact hz t ht heq)
-  filter_upwards [h] with z hz
-  exact ⟨by rintro ⟨t, ht, heq⟩; exact hz.1 t ht heq, hz.2⟩
+  exact hγ.continuousOn.windingNumber_eventually_zero_cocompact_of_integer
+    hγ.intervalIntegrable_deriv_of_finiteDimensional
+    (fun _ hz ↦ hγ.exists_int_windingNumber hclosed hz)
 
 /-- The winding number of a closed absolutely continuous curve vanishes on every unbounded
 component of the complement of its trace. -/
@@ -45,7 +42,6 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_unbounded
     windingNumber γ a b z = 0 := by
   exact hγ.continuousOn.windingNumber_eq_zero_of_unbounded_component_of_integer
     hγ.intervalIntegrable_deriv_of_finiteDimensional
-    (fun _ hw ↦ hγ.exists_int_windingNumber hclosed
-      (by rintro ⟨t, ht, heq⟩; exact hw t ht heq)) hz
+    (fun _ hw ↦ hγ.exists_int_windingNumber hclosed hw) hz
 
 end TauCeti.Contour
