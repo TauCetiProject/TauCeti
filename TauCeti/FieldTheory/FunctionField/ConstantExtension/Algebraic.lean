@@ -10,8 +10,9 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 /-!
 # Algebraic extensions of the constant field
 
-Adjoining an arbitrary algebraic extension of constants to a function field produces a
-function field over the enlarged constants, even when the extension is infinite.
+Adjoining an arbitrary algebraic extension of constants to a function field produces an
+algebraic extension of it, and a function field over the enlarged constants, even when the
+extension is infinite.
 
 ## Reference
 
@@ -43,6 +44,16 @@ theorem isAlgebraic_constantCompositum
   rintro x ⟨c, rfl⟩
   exact (IsIntegral.algebraMap
     ((Algebra.IsAlgebraic.isAlgebraic (R := k) c).isIntegral)).tower_top
+
+/-- If `F'` is the compositum of `F` with an algebraic algebra of constants, then `F'` is
+algebraic over `F`. -/
+theorem isAlgebraic_of_constantCompositum_eq_top
+    {k' : Type u'} [CommRing k'] [Algebra k k'] [Algebra k' F']
+    [IsScalarTower k k' F'] [Algebra.IsAlgebraic k k'] (h : constantCompositum F k' F' = ⊤) :
+    Algebra.IsAlgebraic F F' := by
+  have halg := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
+  rw [h] at halg
+  exact IntermediateField.topEquiv.isAlgebraic_iff.mp halg
 
 /-- The compositum is finitely generated over the new constants. A finite field-generating
 set for `F / k` also generates `F' / k'`, since the two fields generate the compositum. -/
@@ -87,9 +98,7 @@ theorem IsFunctionField.of_constantCompositum_eq_top
   let : Algebra.EssFiniteType k F := hF.essFiniteType
   let : Algebra.EssFiniteType k' F' := essFiniteType_of_constantCompositum_eq_top (k := k) h
   rw [isFunctionField_iff_trdeg_eq_one]
-  have halg := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
-  rw [h] at halg
-  let : Algebra.IsAlgebraic F F' := IntermediateField.topEquiv.isAlgebraic_iff.mp halg
+  have := isAlgebraic_of_constantCompositum_eq_top (k := k) h
   rw [trdeg_eq_of_isAlgebraic_base (R := k)]
   exact hF.trdeg_eq_one_of_isAlgebraic
 

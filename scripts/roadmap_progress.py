@@ -187,7 +187,8 @@ def layer_headings_with_lines(readme: str) -> list[tuple[str, int]]:
     Worded headings win outright: a roadmap that has `## Part A` also tends to have `### A1`
     sub-headings beneath it, and those are its milestones, not further layers. Short labels
     count only in a roadmap that names its layers that way throughout, and bold bullets only
-    when there are no layer headings at all.
+    when there are no layer headings at all. A heading whose id has already appeared, such as a
+    bare `### Part A` under the worked examples, is a later mention of that layer, not another one.
     """
     def scan(rx):
         return [(m.group(1), readme.count("\n", 0, m.start()) + 1) for m in rx.finditer(readme)]
@@ -195,8 +196,8 @@ def layer_headings_with_lines(readme: str) -> list[tuple[str, int]]:
     out, seen = [], set()
     for h, line in found:
         h = re.sub(r"\s*\([^()]*\)\s*$", "", h).strip().rstrip(".")
-        if h and h not in seen:
-            seen.add(h)
+        if h and layer_id(h) not in seen:
+            seen.add(layer_id(h))
             out.append((h, line))
     return out
 
