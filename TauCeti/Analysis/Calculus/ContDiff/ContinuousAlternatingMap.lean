@@ -22,8 +22,7 @@ normalized alternatization recovers the alternating output when the arity factor
 The result is operator-valued, so it controls smooth coordinate changes of alternating-map bundles.
 
 The regularity parameter includes the analytic order `ω`, as well as finite orders and
-`∞`. The polynomial construction proves the analytic case under the factorial hypothesis;
-comparison of first derivatives alone does not establish that case.
+`∞`. The polynomial construction proves the analytic case under the factorial hypothesis.
 
 The underlying polynomial is Mathlib's
 `ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear`.
@@ -70,7 +69,7 @@ private theorem contDiff_compContinuousLinearMapCLM_coe (n : ℕ∞) :
     J.isClosed_range_postcomp
       (ContinuousAlternatingMap.isClosed_range_toContinuousMultilinearMap
         (𝕜 := 𝕜) (E := E) (F := G) (ι := ι))
-  apply (LinearIsometry.contDiff_comp_iff I hI (n := n)
+  apply (LinearIsometry.comp_contDiff_iff I hI (n := n)
     (f := ContinuousAlternatingMap.compContinuousLinearMapCLM)).mp
   let K := ContinuousAlternatingMap.toContinuousMultilinearMapCLM
     (𝕜 := 𝕜) (E := F) (F := G) (ι := ι) 𝕜

@@ -86,7 +86,7 @@ private theorem exists_hasFTaylorSeriesUpTo_of_comp (i : E →ₗᵢ[𝕜] F)
 
 /-- For finite orders and `∞`, a closed linear isometric inclusion reflects smoothness.
 No completeness assumption is needed. -/
-theorem LinearIsometry.contDiff_comp_iff (i : E →ₗᵢ[𝕜] F)
+theorem LinearIsometry.comp_contDiff_iff (i : E →ₗᵢ[𝕜] F)
     (hi : IsClosed (range i)) {f : D → E} {n : ℕ∞} :
     ContDiff 𝕜 n (i ∘ f) ↔ ContDiff 𝕜 n f := by
   constructor
