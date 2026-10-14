@@ -81,7 +81,11 @@ variable (R : Type u) (M : Type v) [Semiring R] [AddCommMonoid M] [Module R M]
 /-- An internal grading of an `R`-module `M` indexed by `ι`, with integer degrees by default.
 
 The `isInternal` field says that the canonical map from the external direct sum of the `piece p`
-to `M` is bijective.  Thus elements of `M` have unique finite homogeneous decompositions. -/
+to `M` is bijective.  Thus elements of `M` have unique finite homogeneous decompositions.
+
+The index equality instance is required by Mathlib's `DirectSum.IsInternal` and
+`DirectSum.Decomposition`. For an index type without a computable equality instance, use
+`classical` locally to supply it; no computability assumption on the index type is needed. -/
 structure InternalGrading (ι : Type := ℤ) [DecidableEq ι] where
   /-- The submodule of elements of degree `p`. -/
   piece : ι → Submodule R M
