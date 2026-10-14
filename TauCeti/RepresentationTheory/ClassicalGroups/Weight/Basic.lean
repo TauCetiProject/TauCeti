@@ -68,6 +68,10 @@ The definitions themselves need only a commutative ring, and are stated there.
   subrepresentation are the traces of the ambient ones**, with
   `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` giving the criterion for a weight
   not to occur in the subrepresentation.
+* `Representation.IntertwiningMap.map_weightSpace_le` and `Representation.Equiv.map_weightSpace`:
+  **intertwining maps preserve weights**, and an equivalence of representations matches their
+  weight spaces, so that the weights of a representation are an isomorphism invariant
+  (`Representation.Equiv.weightSpace_eq_bot_iff`).
 
 ## Implementation notes
 
@@ -190,26 +194,57 @@ namespace Representation.IntertwiningMap
 
 open TauCeti
 
+variable {k : Type u} [CommRing k] {n : ℕ}
+variable {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+variable {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
+
+/-- **An intertwining map carries vectors of weight `l` to vectors of weight `l`**: it commutes
+with every torus element, so it maps each joint eigenvector to a joint eigenvector with the same
+eigenvalues. -/
+theorem map_weightSpace_le (f : IntertwiningMap ρ σ) (l : Fin n → ℤ) :
+    (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
+  rintro _ ⟨v, hv, rfl⟩
+  rw [mem_weightSpace_iff]
+  intro t
+  rw [f.toLinearMap_apply, ← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
+
 /-- Integer weight spaces spanning a representation also span any equivariant quotient. -/
-theorem iSup_weightSpace_eq_top_of_surjective {k : Type u} [CommRing k] {n : ℕ}
-    {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
-    {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
-    (f : IntertwiningMap ρ σ) (hf : Function.Surjective f)
-    (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) :
+theorem iSup_weightSpace_eq_top_of_surjective (f : IntertwiningMap ρ σ)
+    (hf : Function.Surjective f) (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) :
     ⨆ l : Fin n → ℤ, weightSpace σ l = ⊤ := by
-  have hmap (l : Fin n → ℤ) : (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
-    rintro _ ⟨v, hv, rfl⟩
-    rw [mem_weightSpace_iff]
-    intro t
-    rw [f.toLinearMap_apply, ← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
   apply top_le_iff.mp
   calc
     ⊤ = (⨆ l : Fin n → ℤ, weightSpace ρ l).map f.toLinearMap := by
       rw [hρ, Submodule.map_top, LinearMap.range_eq_top.mpr hf]
     _ = ⨆ l : Fin n → ℤ, (weightSpace ρ l).map f.toLinearMap := Submodule.map_iSup _ _
-    _ ≤ ⨆ l : Fin n → ℤ, weightSpace σ l := iSup_mono hmap
+    _ ≤ ⨆ l : Fin n → ℤ, weightSpace σ l := iSup_mono f.map_weightSpace_le
 
 end Representation.IntertwiningMap
+
+namespace Representation.Equiv
+
+open TauCeti
+
+variable {k : Type u} [CommRing k] {n : ℕ}
+variable {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+variable {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
+
+/-- **An equivalence of representations of `GL n k` carries each weight space onto the weight
+space of the same weight**, so isomorphic representations have the same weights, with the same
+multiplicities. -/
+theorem map_weightSpace (e : ρ.Equiv σ) (l : Fin n → ℤ) :
+    (weightSpace ρ l).map (e.toLinearEquiv : V →ₗ[k] W) = weightSpace σ l := by
+  refine le_antisymm (e.toIntertwiningMap.map_weightSpace_le l) fun w hw => ?_
+  refine ⟨e.symm w, e.symm.toIntertwiningMap.map_weightSpace_le l ⟨w, hw, rfl⟩, ?_⟩
+  exact e.apply_symm_apply w
+
+/-- **Isomorphic representations of `GL n k` have the same weights**: a weight space of one
+vanishes exactly when the corresponding weight space of the other does. -/
+theorem weightSpace_eq_bot_iff (e : ρ.Equiv σ) (l : Fin n → ℤ) :
+    weightSpace ρ l = ⊥ ↔ weightSpace σ l = ⊥ := by
+  rw [← e.map_weightSpace l, Submodule.map_eq_bot_iff]
+
+end Representation.Equiv
 
 namespace TauCeti
 
