@@ -144,10 +144,9 @@ theorem upperTriangular_le_comapOfSurjective_of_geometricallySolvable_of_le
     HopfIdeal.comapOfSurjective_mono (generatedCoordinateMap k).hom
       (generatedCoordinateMap_surjective k) hcontain
   rw [comapOfSurjective_generatedPositiveDefiningIdeal_eq_ker_standardCoordinateMap] at hcomap
-  change J.toIdeal ≤ RingHom.ker (standardCoordinateMap k).hom.toAlgHom
-  rw [← HopfIdeal.kerOfSurjective_toIdeal (standardCoordinateMap k).hom
-    (standardCoordinateMap_surjective k)]
-  exact HopfIdeal.toIdeal_le_toIdeal.mpr hcomap
+  intro x hx
+  rw [RingHom.mem_ker]
+  exact (HopfIdeal.mem_kerOfSurjective _ _).mp (hcomap hx)
 
 /-- A Borel candidate in the scalar-extended carrier which contains the positive subgroup
 pulls back to an upper-triangular subgroup of `GL₇`.
