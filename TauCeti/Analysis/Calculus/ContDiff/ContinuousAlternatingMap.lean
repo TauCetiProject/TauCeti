@@ -19,6 +19,10 @@ domain. When the arity factorial is nonzero, this follows from Mathlib's continu
 pullback: normalized alternatization recovers the alternating output. The result is
 operator-valued, so it controls smooth coordinate changes of alternating-map bundles.
 
+The regularity parameter includes the analytic order `ω`, as well as finite orders and
+`∞`. The polynomial construction establishes all of these orders; comparison of first
+derivatives alone does not establish the analytic case.
+
 The underlying polynomial is Mathlib's
 `ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear`.
 -/
@@ -36,7 +40,8 @@ variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
   [NeZero ((Fintype.card ι).factorial : 𝕜)]
 
 /-- Pullback on continuous alternating maps is smooth, as an operator-valued function of
-the continuous linear map on the domain. No completeness or finite dimensionality is needed. -/
+the continuous linear map on the domain, including at the analytic order `ω`. The arity
+factorial is assumed nonzero. No completeness or finite dimensionality is needed. -/
 theorem _root_.ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM (n : WithTop ℕ∞) :
     ContDiff 𝕜 n
       (ContinuousAlternatingMap.compContinuousLinearMapCLM :
