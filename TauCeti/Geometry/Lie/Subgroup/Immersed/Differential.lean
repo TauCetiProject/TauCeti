@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Basic
-public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
+public import TauCeti.Geometry.Lie.Subgroup.Differential
 
 /-!
 # The differential of an immersed Lie subgroup presentation
@@ -19,9 +18,8 @@ its range lies in the ambient Lie algebra associated to `K`: every one-parameter
 image comes from a one-parameter subgroup of `X`, hence remains in `K`.
 
 The source has its intrinsic manifold topology, which need not be the subspace topology inherited
-from `G`. None of the arguments below identify those topologies. Hausdorffness of the source,
-needed by the exponential API, follows instead from the injective continuous map to the Hausdorff
-ambient group.
+from `G`. None of the arguments below identify those topologies. The source Lie-group structure
+supplies the Hausdorff instance needed by the exponential API.
 
 ## Main results
 
@@ -180,16 +178,8 @@ theorem injective_lieMapToHom (d : ImmersedLieSubgroupData I K) :
   let _ : IsManifold d.I' ∞ d.X := d.isManifold
   let _ : LieGroup d.I' ∞ d.X := d.lieGroup
   dsimp only
-  intro X Y hXY
-  let sourceEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (ContMDiffMul.isInteriorPoint (I := d.I') (n := ∞) (by simp) (1 : d.X))
-  let targetEquiv := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  have h := congrArg targetEquiv hXY
-  rw [lieMapToHom_apply, lieMapToHom_apply,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap] at h
-  exact sourceEquiv.injective (d.injective_mfderiv_toHom 1 h)
+  apply lieMap_injective_of_mfderiv_injective
+  exact d.injective_mfderiv_toHom 1
 
 /-- The differential of an immersed presentation takes every source derivation into the ambient
 Lie subalgebra associated to its image subgroup. -/
@@ -214,17 +204,11 @@ theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K
   let _ : ChartedSpace d.H' d.X := d.chartedSpace
   let _ : IsManifold d.I' ∞ d.X := d.isManifold
   let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  let _ : T2Space d.X :=
-    T2Space.of_injective_continuous d.injective d.contMDiff_toHom.continuous
   dsimp only
   intro X
-  apply mem_lieSubalgebraOfSubgroup_of_forall
-  intro t
-  rw [lieMapToHom_apply, ← map_smul, ← map_lieExp d.toContMDiffMonoidMorphism]
-  change d.toHom (lieExp (t • X)) ∈ K
-  have hmem : d.toHom (lieExp (t • X)) ∈ MonoidHom.range d.toHom :=
-    ⟨lieExp (t • X), rfl⟩
-  simpa only [d.range_eq] using hmem
+  apply range_lieMap_le_lieSubalgebraOfSubgroup d.toContMDiffMonoidMorphism
+  · simpa only [toContMDiffMonoidMorphism] using le_of_eq d.range_eq
+  · exact ⟨X, rfl⟩
 
 /-- The range of the differential of an immersed presentation lies in the ambient Lie subalgebra
 associated to its image subgroup. -/
@@ -249,7 +233,7 @@ theorem range_lieMapToHom_le (d : ImmersedLieSubgroupData I K) :
   let _ : IsManifold d.I' ∞ d.X := d.isManifold
   let _ : LieGroup d.I' ∞ d.X := d.lieGroup
   dsimp only
-  rintro _ ⟨X, rfl⟩
-  exact d.lieMapToHom_mem_lieSubalgebraOfSubgroup X
+  apply range_lieMap_le_lieSubalgebraOfSubgroup d.toContMDiffMonoidMorphism
+  simpa only [toContMDiffMonoidMorphism] using le_of_eq d.range_eq
 
 end TauCeti.Lie.ImmersedLieSubgroupData
