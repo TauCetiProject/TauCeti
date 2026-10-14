@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Order.PartialSups
+import Mathlib.Data.Nat.SuccPred
 
 /-!
-# Path-connected pairwise intersections
+# Path-connected unions and intersections
 
 If every member of a family of path-connected sets contains a path-connected set `C`, and two
 distinct members meet inside `C`, then every pairwise intersection of the family is path
@@ -16,10 +18,14 @@ connected: it is a member of the family or `C` itself. This is the hypothesis on
 intersections in the generation half of the Seifert--van Kampen theorem, and the form in which it
 holds for the summands of a wedge sum.
 
+Finite partial unions are path connected when each member is path connected and each new
+member meets the preceding union. The partial unions use Mathlib's `partialSups`.
+
 ## Main declarations
 
 * `TauCeti.isPathConnected_inter_of_pairwise`: pairwise intersections of such a family are path
   connected.
+* `TauCeti.isPathConnected_partialSups`: path connectedness of successive finite unions.
 -/
 
 public section
@@ -39,5 +45,21 @@ theorem isPathConnected_inter_of_pairwise (hUp : ∀ i, IsPathConnected (U i))
   · rw [inter_self]
     exact hUp i
   · rwa [(hUC hij).antisymm (subset_inter (hCU i) (hCU j))]
+
+/-- Finite partial unions are path connected if each member is path connected and each
+new member meets the preceding union. Only the first `n + 1` members are constrained. -/
+theorem isPathConnected_partialSups (U : ℕ → Set X) (n : ℕ)
+    (hU : ∀ i ≤ n, IsPathConnected (U i))
+    (hOverlap : ∀ i < n, (partialSups U i ∩ U (i + 1)).Nonempty) :
+    IsPathConnected (partialSups U n) := by
+  induction n with
+  | zero => exact hU 0 le_rfl
+  | succ n ih =>
+    have hStep : partialSups U (n + 1) = partialSups U n ∪ U (n + 1) :=
+      partialSups_succ U n
+    rw [hStep]
+    exact (ih (fun i hi => hU i (by omega))
+      (fun i hi => hOverlap i (by omega))).union (hU (n + 1) le_rfl)
+        (hOverlap n (by omega))
 
 end TauCeti
