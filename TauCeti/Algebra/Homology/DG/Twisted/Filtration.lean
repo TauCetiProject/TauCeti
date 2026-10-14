@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
+import TauCeti.Algebra.Homology.ModuleCat.Subobject
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 
@@ -179,17 +180,6 @@ theorem indexFiltration_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) : m.indexFiltra
   rw [indexFiltration_eq,
     gradedCochainComplexSubobject_eq_bot _ (indexFiltrationSubmodule_eq_bot hp), OrderIso.map_bot]
 
-/-- Transporting a subcomplex along `eqToIso` does not change its degreewise range, up to the
-transport of elements. -/
-private theorem mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff.{v}
-    {C D : CochainComplex (ModuleCat.{v} R) ℤ} (e : C = D) (S : Subobject D) (n : ℤ)
-    (x : C.X n) :
-    x ∈ LinearMap.range ((Subobject.mapIsoToOrderIso (eqToIso e.symm) S).arrow.f n).hom ↔
-      ((eqToHom e).f n).hom x ∈ LinearMap.range (S.arrow.f n).hom := by
-  subst e
-  rw [eqToIso_refl, show Subobject.mapIsoToOrderIso (Iso.refl C) S = S from Subobject.map_id S,
-    eqToHom_refl, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
-
 /-- In degree `n`, the `p`-th piece of the index filtration consists of the families of total
 degree `n` vanishing on every generator of index greater than `p`. -/
 theorem mem_range_indexFiltration_arrow_f_iff (p n : ℤ)
@@ -197,7 +187,7 @@ theorem mem_range_indexFiltration_arrow_f_iff (p n : ℤ)
     f ∈ LinearMap.range ((m.indexFiltration dM hM p).arrow.f n).hom ↔
       ∀ x, p < ind x →
         (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
-  rw [indexFiltration_eq, mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff,
+  rw [indexFiltration_eq, HomologicalComplex.mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff,
     mem_range_gradedCochainComplexSubobject_arrow_f_iff, twistedCochainComplexXEquiv_apply,
     mem_indexFiltrationSubmodule_iff]
 
