@@ -50,6 +50,9 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.contDiff_smul`: its case of a factor smooth on all of `E`.
 * `TauCeti.HasWeakFDerivOn.contDiffOn_smul`, `TauCeti.HasWeakFDerivOn.contDiff_smul`: its
   Fréchet form, with the rank-one correction `(fderiv ℝ ψ x).smulRight (u x)`.
+* `TauCeti.HasWeakLineDerivOn.smul_contDiff` and `TauCeti.HasWeakFDerivOn.smul_contDiff`: the
+  rule with the roles exchanged, for a weakly differentiable scalar `a` and a smooth
+  vector-valued `g`: `D(a g) = a Dg + Da ⊗ g`.
 * `TauCeti.HasWeakFDerivOn.contDiffOn_smul_gradient`,
   `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
   weak derivative of a scalar function is recorded by its Riesz representative and the rule reads
@@ -153,6 +156,44 @@ theorem HasWeakFDerivOn.contDiff_smul {U : E → E →L[ℝ] F} (h : HasWeakFDer
     HasWeakFDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) :=
   h.contDiffOn_smul hψ.contDiffOn
+
+/-- **The Leibniz rule with a smooth vector-valued factor.** If `a'` is a weak derivative of a
+scalar function `a` in the direction `v` on `Ω` and `g` is smooth with values in a
+finite-dimensional space, then `a g` is weakly differentiable in the direction `v` on `Ω`, with
+derivative `a ∂_v g + a' g`. -/
+theorem HasWeakLineDerivOn.smul_contDiff [FiniteDimensional ℝ F] {a a' : E → ℝ} {g : E → F}
+    (h : HasWeakLineDerivOn μ Ω a a' v) (hg : ContDiff ℝ ∞ g) :
+    HasWeakLineDerivOn μ Ω (fun x => a x • g x) (fun x => a x • fderiv ℝ g x v + a' x • g x) v := by
+  -- Expand `g` in a basis `(bᵢ)` of `F`: `a g = ∑ᵢ (gᵢ a) bᵢ` with smooth scalar coordinates `gᵢ`,
+  -- to each of which the scalar Leibniz rule applies.
+  set b := Module.finBasis ℝ F
+  let c : Fin (Module.finrank ℝ F) → F →L[ℝ] ℝ := fun i => LinearMap.toContinuousLinearMap
+    (b.coord i)
+  have hc : ∀ i, ContDiff ℝ ∞ fun x => c i (g x) := fun i => (c i).contDiff.comp hg
+  have hfd : ∀ i x, fderiv ℝ (fun y => c i (g y)) x v = c i (fderiv ℝ g x v) := fun i x => by
+    rw [fderiv_fun_comp x (c i).differentiableAt ((hg.differentiable (by simp)) x),
+      ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply]
+  have hsum := HasWeakLineDerivOn.sum (F := F) Finset.univ fun i _ =>
+    ((h.contDiff_smul (hc i)).clm_comp (ContinuousLinearMap.toSpanSingleton ℝ (b i)))
+  have hrepr : ∀ y : F, ∑ i, c i y • b i = y := fun y => by
+    simp [c, Module.Basis.coord_apply]
+  refine (hsum.congr_ae (Filter.Eventually.of_forall fun x => ?_)).congr_ae_deriv
+    (Filter.Eventually.of_forall fun x => ?_)
+  · simp only [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_comm, mul_smul,
+      ← Finset.smul_sum, hrepr]
+  · simp only [ContinuousLinearMap.toSpanSingleton_apply, hfd, add_smul, Finset.sum_add_distrib,
+      smul_eq_mul, mul_comm (c _ _), mul_smul, ← Finset.smul_sum, hrepr, add_comm]
+
+/-- **The Leibniz rule with a smooth vector-valued factor, Fréchet form**:
+`D(a g) = a Dg + Da ⊗ g`, the correction being the rank-one map `v ↦ (Da v) g`. -/
+theorem HasWeakFDerivOn.smul_contDiff [FiniteDimensional ℝ F] {a : E → ℝ} {A : E → E →L[ℝ] ℝ}
+    {g : E → F} (h : HasWeakFDerivOn μ Ω a A) (hg : ContDiff ℝ ∞ g) :
+    HasWeakFDerivOn μ Ω (fun x => a x • g x)
+      (fun x => a x • fderiv ℝ g x + (A x).smulRight (g x)) := by
+  rw [hasWeakFDerivOn_iff] at h ⊢
+  intro v
+  convert (h v).smul_contDiff hg using 2 with x
+  simp
 
 end General
 
