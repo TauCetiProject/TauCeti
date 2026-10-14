@@ -192,7 +192,6 @@ theorem commute_operatorAbs (A : E →ₗ[𝕜] E) [IsStarNormal A] :
   have hA : Commute A (A.adjoint ∘ₗ A) := by
     simpa only [Module.End.mul_eq_comp, star_eq_adjoint] using
       star_comm_self.symm.mul_right (Commute.refl A)
-  simpa only [operatorAbs, IsPositive.sqrt] using
-    (isSymmetric_adjoint_comp_self A).commute_cfc hA Real.sqrt
+  exact A.commute_operatorAbs_of_commute_adjoint_comp_self hA
 
 end LinearMap
