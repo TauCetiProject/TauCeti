@@ -81,7 +81,6 @@ theorem starProjection_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalPr
 
 omit [CompleteSpace F] [CompleteSpace V] in
 /-- The orthogonal projection onto the complement of the range of `B` kills every value of `B`. -/
-@[simp]
 theorem starProjection_orthogonal_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection]
     (x : F) : B.rangeᗮ.starProjection (B x) = 0 :=
   Submodule.starProjection_orthogonal_apply_eq_zero (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
