@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Unitization
 public import Mathlib.Algebra.Module.Bimodule
 
 /-!
@@ -17,6 +18,10 @@ derivations are the maps represented by noncommutative universal one-forms.
 Unlike `Derivation`, which currently treats commutative algebras and symmetric modules,
 `BimoduleDerivation` uses the associative Leibniz rule
 `D (a * b) = a • D b + op b • D a`.
+
+A derivation of a possibly nonunital algebra `A` into a bimodule over its forced unitization
+extends by zero on the scalar summand to a derivation of `Unitization k A`; see
+`BimoduleDerivation.ofUnitization`.
 -/
 
 public section
@@ -88,6 +93,56 @@ theorem map_smul (D : BimoduleDerivation k A M) (r : k) (a : A) :
     D (r • a) = r • D a :=
   D.toLinearMap.map_smul r a
 
+/-- A bimodule derivation vanishes on scalars. -/
+@[simp]
+theorem map_algebraMap (D : BimoduleDerivation k A M) (r : k) : D (algebraMap k A r) = 0 := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero, smul_zero]
+
 end BimoduleDerivation
+
+section Unitization
+
+variable {k : Type u} {A : Type v} {M : Type w} [CommSemiring k] [NonUnitalSemiring A]
+  [Module k A] [IsScalarTower k A A] [SMulCommClass k A A] [AddCommMonoid M] [Module k M]
+  [Module (Unitization k A) M] [Module (Unitization k A)ᵐᵒᵖ M]
+  [IsScalarTower k (Unitization k A) M] [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
+
+namespace BimoduleDerivation
+
+/-- Extend a derivation on a nonunital algebra by zero on the scalar summand of its forced
+unitization. -/
+def ofUnitization (D : A →ₗ[k] M)
+    (hD : ∀ a b, D (a * b) = (a : Unitization k A) • D b +
+      op (b : Unitization k A) • D a) :
+    BimoduleDerivation k (Unitization k A) M where
+  toLinearMap := D.comp (Unitization.sndHom k k A)
+  map_one_eq_zero' := by simp
+  leibniz' := fun x y ↦ by
+    simp only [LinearMap.comp_apply, Unitization.sndHom_apply]
+    have left_decomp (z : Unitization k A) (m : M) :
+        z • m = z.fst • m + (z.snd : Unitization k A) • m := by
+      conv_lhs => rw [← Unitization.inl_fst_add_inr_snd_eq z]
+      rw [add_smul, ← Unitization.algebraMap_eq_inl, IsScalarTower.algebraMap_smul]
+    have right_decomp (z : Unitization k A) (m : M) :
+        op z • m = z.fst • m + op (z.snd : Unitization k A) • m := by
+      conv_lhs => rw [← Unitization.inl_fst_add_inr_snd_eq z]
+      rw [op_add, add_smul, ← Unitization.algebraMap_eq_inl, ← MulOpposite.algebraMap_apply,
+        IsScalarTower.algebraMap_smul]
+    rw [Unitization.snd_mul, map_add, map_add, LinearMap.map_smul, LinearMap.map_smul, hD,
+      left_decomp x, right_decomp y]
+    abel
+
+/-- Extending by zero and then evaluating on the original algebra recovers the derivation. -/
+@[simp]
+theorem ofUnitization_inr (D : A →ₗ[k] M)
+    (hD : ∀ a b, D (a * b) = (a : Unitization k A) • D b +
+      op (b : Unitization k A) • D a) (a : A) :
+    ofUnitization D hD (a : Unitization k A) = D a := by
+  unfold ofUnitization
+  rfl
+
+end BimoduleDerivation
+
+end Unitization
 
 end TauCeti
