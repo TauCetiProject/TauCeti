@@ -369,6 +369,22 @@ theorem hasWeakFDerivOn_iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 2)) 
   exact WeakDerivStep.hasWeakFDerivOn_base_prev
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
+/-- **A Sobolev function vanishing on an open subset has vanishing highest weak derivative
+there.** This is `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero` at first order, and each
+further derivative is the weak derivative of a field that vanishes on the subset. -/
+theorem iteratedGradient_ae_eq_zero_of_value_ae_eq_zero (k : ℕ) (u : Wkp mu Omega p (k + 1))
+    {V : Opens E} (hV : V ≤ Omega) (hu : ∀ᵐ x ∂mu.restrict (V : Set E), value (k + 1) u x = 0) :
+    ∀ᵐ x ∂mu.restrict (V : Set E), iteratedGradient k u x = 0 := by
+  induction k with
+  | zero =>
+      rw [iteratedGradient_zero]
+      exact W1p.gradient_ae_eq_zero_of_value_ae_eq_zero hV (by rw [← value_one]; exact hu)
+  | succ k ih =>
+      have hprev := ih (lowerOrder (k + 1) u) (by simpa only [value_succ] using hu)
+      have hzero : HasWeakFDerivOn mu V (iteratedGradient k (lowerOrder (k + 1) u)) 0 :=
+        hasWeakFDerivOn_zero.congr_ae (by filter_upwards [hprev] with x hx; exact hx.symm)
+      exact ((hasWeakFDerivOn_iteratedGradient k u).mono hV).ae_eq hzero
+
 /-- Two positive-order Sobolev functions are equal when their lower-order components are equal;
 uniqueness of weak derivatives determines the highest components. -/
 theorem ext_lowerOrder (k : ℕ) {u v : Wkp mu Omega p (k + 1)}
