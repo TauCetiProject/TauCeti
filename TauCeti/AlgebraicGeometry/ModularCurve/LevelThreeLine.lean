@@ -54,7 +54,8 @@ localization: modulo `3` the relation becomes `(T - 1)⁹ (T³ - u)`, and the qu
 
 * `TauCeti.levelThreeRelation`: the monic polynomial `T³ (T³ + 8)³ - u (T³ - 1)³` of degree twelve
   over `R[u]`.
-* `TauCeti.LevelThreeRing`: the coordinate ring of the level-three line, as an `R[u]`-algebra.
+* `TauCeti.LevelThreeRing`: the quotient `R[u][μ] / (μ³ (μ³ + 8)³ - u (μ³ - 1)³)`, which is the
+  coordinate ring of the level-three line when `3` is invertible in `R`.
 * `TauCeti.finrank_levelThreeRing`: it is free of rank twelve over `R[u]`.
 * `TauCeti.LevelThreeRing.isUnit_mu_pow_three_sub_one`: `μ³ - 1`, hence the discriminant, is a unit
   when `3` is invertible.
@@ -78,8 +79,8 @@ namespace TauCeti
 variable (R : Type*) [CommRing R]
 
 /-- The **level-three relation** `T³ (T³ + 8)³ - u (T³ - 1)³` over the polynomial ring `R[u]`. Its
-root `T = μ` and the coordinate `u = μ³ (μ³ + 8)³ / (μ³ - 1)³ = j / 27` present the coordinate ring
-of the level-three line over the `u`-line. -/
+root `T = μ` and the coordinate `u = μ³ (μ³ + 8)³ / (μ³ - 1)³ = j / 27` present, when `3` is
+invertible in `R`, the coordinate ring of the level-three line over the `u`-line. -/
 noncomputable def levelThreeRelation : R[X][X] :=
   X ^ 3 * (X ^ 3 + 8) ^ 3 - C X * (X ^ 3 - 1) ^ 3
 
@@ -93,9 +94,9 @@ theorem natDegree_levelThreeRelation [Nontrivial R] : (levelThreeRelation R).nat
   unfold levelThreeRelation
   compute_degree!
 
-/-- The coordinate ring `R[μ, (μ³ - 1)⁻¹]` of the **level-three line** over `R`, presented as the
-`R[u]`-algebra `R[u][μ] / (μ³ (μ³ + 8)³ - u (μ³ - 1)³)`, where `u = j / 27`. When `3` is invertible
-in `R`, it is the localization of `R[μ]` away from `μ³ - 1`
+/-- The **level-three ring** over `R`: the `R[u]`-algebra `R[u][μ] / (μ³ (μ³ + 8)³ - u (μ³ - 1)³)`,
+where `u = j / 27`. When `3` is invertible in `R`, it is the coordinate ring `R[μ, (μ³ - 1)⁻¹]` of
+the level-three line, that is, the localization of `R[μ]` away from `μ³ - 1`
 (`TauCeti.LevelThreeRing.equivLocalization`). -/
 def LevelThreeRing : Type _ :=
   AdjoinRoot (levelThreeRelation R)
@@ -119,7 +120,8 @@ instance : Module.Free R[X] (LevelThreeRing R) :=
 instance : Module.Finite R[X] (LevelThreeRing R) :=
   (monic_levelThreeRelation R).finite_adjoinRoot
 
-/-- The level-three line is a cover of degree twelve of the `u`-line. -/
+/-- The level-three ring is free of rank twelve over `R[u]`; when `3` is invertible in `R`, the
+level-three line is a cover of degree twelve of the `u`-line. -/
 theorem finrank_levelThreeRing [Nontrivial R] : Module.finrank R[X] (LevelThreeRing R) = 12 := by
   rw [← natDegree_levelThreeRelation R]
   exact (AdjoinRoot.isAdjoinRootMonic _ (monic_levelThreeRelation R)).finrank
@@ -167,7 +169,7 @@ theorem map_algebraMap_X_mul (φ : LevelThreeRing R →ₐ[R] S) :
   simp only [map_pow, map_add, map_sub, map_mul, map_one, map_ofNat] at h
   exact h.symm
 
-/-- The **universal property** of the level-three line: an element `x` of an `R`-algebra `S` such
+/-- The **universal property** of the level-three ring: an element `x` of an `R`-algebra `S` such
 that `x³ - 1` is a unit determines an `R`-algebra map sending `μ` to `x`. It is unique when `3` is
 invertible in `R` (`TauCeti.LevelThreeRing.algHom_ext`). -/
 noncomputable def lift (x : S) (hx : IsUnit (x ^ 3 - 1)) : LevelThreeRing R →ₐ[R] S :=
