@@ -26,11 +26,11 @@ point every rational function is regular.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.functionFieldMap_germToFunctionField_mem_toPlace_integers`: the
+* `AlgebraicGeometry.Scheme.Hom.functionFieldMap_germToFunctionField_mem_toPlace_integers`: the
   pullback of the germ of a section over an open neighbourhood of `f x` is regular at `x`.
-* `TauCeti.AlgebraicGeometry.functionFieldMap_algebraMap_mem_toPlace_integers`: the pullback of
+* `AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap_mem_toPlace_integers`: the pullback of
   a rational function regular at `f x` is regular at `x`.
-* `TauCeti.AlgebraicGeometry.ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers`: if
+* `AlgebraicGeometry.Scheme.Hom.ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers`: if
   some rational function pulls back to one with a pole at `x`, then `f x` is not the generic
   point.
 
@@ -43,9 +43,7 @@ point every rational function is regular.
 
 public section
 
-open _root_.AlgebraicGeometry
-
-namespace TauCeti.AlgebraicGeometry
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -88,4 +86,4 @@ theorem ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers (f : X ⟶ Y
   have : Nonempty U := ⟨⟨_, hU⟩⟩
   exact hz (functionFieldMap_germToFunctionField_mem_toPlace_integers f x (hfx ▸ hU) s)
 
-end TauCeti.AlgebraicGeometry
+end AlgebraicGeometry.Scheme.Hom

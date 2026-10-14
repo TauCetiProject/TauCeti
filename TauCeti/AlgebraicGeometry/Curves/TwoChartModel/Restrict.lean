@@ -88,7 +88,7 @@ theorem homOfAlgHom_equivPlace_symm (P' : Place k F') :
       (eq_top_iff.mpr fun g _ ↦ (Place.mem_integers_restrict_iff k F P' g).mpr (h g))
   have hcoh : Order.coheight (f p') = 1 :=
     (Scheme.coheight_eq_one_iff_ne_genericPoint (topologicalKrullDim_eq_one hxt).le).mpr <|
-      ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers (k := k) f p'
+      f.ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers (k := k) p'
         (z := (functionFieldEquiv hxt).symm g) (by rwa [hmem, hpull])
   -- The valuation ring of the place of `f p'` is carried into the valuation ring of `P'`.
   let q : CodimensionOnePoint (twoChartModel hF hx) := ⟨f p', hcoh⟩
@@ -96,7 +96,7 @@ theorem homOfAlgHom_equivPlace_symm (P' : Place k F') :
     refine ((Place.restrict_eq_iff_integers_le k F P' _).mpr fun g hg ↦ ?_).symm
     obtain ⟨a, rfl⟩ := (mem_integers_equivPlace_iff hxt q g).mp hg
     rw [← hpull, AlgEquiv.symm_apply_apply, ← hmem]
-    exact functionFieldMap_algebraMap_mem_toPlace_integers f p' a
+    exact f.functionFieldMap_algebraMap_mem_toPlace_integers p' a
   rw [← hq, Equiv.symm_apply_apply]
 
 /-- **The point of `P'` is sent to the point of `P` exactly when `P'` lies over `P`**, for the
