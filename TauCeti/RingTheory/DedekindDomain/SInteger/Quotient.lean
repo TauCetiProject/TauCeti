@@ -43,7 +43,7 @@ variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- An element integral at the primes dividing `I` has a denominator congruent to one
 modulo `I`. The numerator and denominator need not be globally invertible. -/
-theorem exists_algebraMap_eq_mul_of_valuation_le_one (I : Ideal R) {x : K}
+theorem exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one (I : Ideal R) {x : K}
     (hx : ∀ v : HeightOneSpectrum R, v.asIdeal ∣ I → v.valuation K x ≤ 1) :
     ∃ a b : R, b - 1 ∈ I ∧ algebraMap R K a = algebraMap R K b * x := by
   have hcop : IsCoprime (Algebra.denIdeal K x) I := by
@@ -61,14 +61,14 @@ theorem exists_algebraMap_eq_mul_of_valuation_le_one (I : Ideal R) {x : K}
 
 private def sIntegerResidue (I : Ideal R)
     (x : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K) : R ⧸ I :=
-  Ideal.Quotient.mk I (I.exists_algebraMap_eq_mul_of_valuation_le_one
+  Ideal.Quotient.mk I (I.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
     (fun v hv ↦ x.2 v (by simpa using hv))).choose
 
 private theorem exists_sIntegerResidue_eq (I : Ideal R)
     (x : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K) :
     ∃ a b : R, b - 1 ∈ I ∧ algebraMap R K a = algebraMap R K b * (x : K) ∧
       sIntegerResidue I x = Ideal.Quotient.mk I a := by
-  obtain ⟨b, hb, hab⟩ := (I.exists_algebraMap_eq_mul_of_valuation_le_one
+  obtain ⟨b, hb, hab⟩ := (I.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
     (fun v hv ↦ x.2 v (by simpa using hv))).choose_spec
   exact ⟨_, b, hb, hab, rfl⟩
 

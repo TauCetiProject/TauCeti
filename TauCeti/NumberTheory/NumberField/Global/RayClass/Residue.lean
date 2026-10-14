@@ -35,8 +35,8 @@ class.
 
 ## Main results
 
-* `Ideal.exists_algebraMap_eq_mul_of_valuation_le_one`: a locally integral element has a
-  denominator congruent to one modulo an ideal, over an arbitrary Dedekind domain.
+* `Ideal.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one`: a locally integral element
+  has a denominator congruent to one modulo an ideal, over an arbitrary Dedekind domain.
 * `TauCeti.GlobalNumberFields.residue_eq_one_iff`: reduction to one is equivalent to the
   finite-place conditions in `IsCongrOne`.
 * `TauCeti.GlobalNumberFields.residueHom_eq_one_of_mem_congruenceSubgroup`: an element congruent to
@@ -88,8 +88,9 @@ private theorem exists_residue_eq (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) 
     ∃ a b : 𝓞 K, b - 1 ∈ 𝔪.finitePart ∧
       algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b * ((x : Kˣ) : K) ∧
       residue 𝔪 x = Ideal.Quotient.mk 𝔪.finitePart a := by
-  obtain ⟨a, b, hb, hab⟩ := 𝔪.finitePart.exists_algebraMap_eq_mul_of_valuation_le_one
-    (fun v hv ↦ (mem_primeToSubgroup.mp x.2 v hv).le)
+  obtain ⟨a, b, hb, hab⟩ :=
+    𝔪.finitePart.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
+      (fun v hv ↦ (mem_primeToSubgroup.mp x.2 v hv).le)
   exact ⟨a, b, hb, hab, 𝔪.finitePart.sIntegerToQuotient_eq _ hb hab⟩
 
 /-- **The reduction is computed by any presentation with denominator congruent to one.** -/
@@ -198,8 +199,9 @@ theorem IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul {𝔪 : Modulus K} {
       algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b * (x : K) := by
   have hxp : x ∈ primeToSubgroup 𝔪 :=
     congruenceSubgroup_le_primeToSubgroup _ (mem_congruenceSubgroup.mpr hx)
-  obtain ⟨a, b, hb, hab⟩ := 𝔪.finitePart.exists_algebraMap_eq_mul_of_valuation_le_one
-    (fun v hv ↦ (mem_primeToSubgroup.mp hxp v hv).le)
+  obtain ⟨a, b, hb, hab⟩ :=
+    𝔪.finitePart.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
+      (fun v hv ↦ (mem_primeToSubgroup.mp hxp v hv).le)
   -- the reduction of `x` modulo the finite part is that of `a`, and is one
   refine ⟨a, b, Ideal.Quotient.eq.mp ?_, hb, hab⟩
   rw [map_one, ← residue_eq ⟨x, hxp⟩ hb hab, ← coe_residueHom,
@@ -226,9 +228,9 @@ theorem residueHom_surjective (𝔪 : Modulus K) : Function.Surjective (residueH
   refine ⟨⟨y, hy⟩, Units.ext ?_⟩
   rw [coe_residueHom]
   calc
-    residue 𝔪 ⟨y, hy⟩ = 𝔪.finitePart.sIntegerToQuotient (e y).val :=
-      -- Both inputs are the locally integral element underlying the same field unit.
-      (rfl)
+    residue 𝔪 ⟨y, hy⟩ = 𝔪.finitePart.sIntegerToQuotient (e y).val := by
+      apply congrArg (𝔪.finitePart.sIntegerToQuotient (K := K))
+      exact Subtype.ext (Set.val_unitEquivUnitsInteger_apply_coe _ K y).symm
     _ = 𝔪.finitePart.sIntegerToQuotient z.val :=
       congrArg (fun t ↦ 𝔪.finitePart.sIntegerToQuotient t.val) (e.apply_symm_apply z)
     _ = u.val := congrArg Units.val hz
@@ -280,8 +282,9 @@ theorem finiteUnitsMap_residueHom {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart �
     (x : primeToSubgroup 𝔫) :
     finiteUnitsMap h (residueHom 𝔫 x) =
       residueHom 𝔪 (Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x) := by
-  obtain ⟨a, b, hb, hab⟩ := 𝔫.finitePart.exists_algebraMap_eq_mul_of_valuation_le_one
-    (fun v hv ↦ (mem_primeToSubgroup.mp x.2 v hv).le)
+  obtain ⟨a, b, hb, hab⟩ :=
+    𝔫.finitePart.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
+      (fun v hv ↦ (mem_primeToSubgroup.mp x.2 v hv).le)
   have hbm : b - 1 ∈ 𝔪.finitePart :=
     (Ideal.le_of_dvd h) hb
   have habm : algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b *
