@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.WittVector.IntervalRing.Radius
+public import TauCeti.RingTheory.WittVector.IntervalRing.Presentation
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.RadiusRing
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
@@ -17,8 +17,21 @@ import TauCeti.Topology.Algebra.OpenMapping.Complete
 Let `O` be the ring of integers of a valuation `v : Valuation K ℝ≥0` on a field `K`, perfect of
 characteristic `p`, and let `ϖ ∈ O` be a pseudouniformiser. For radii `0 < ρ₁ ≤ ρ₂ < 1`, the
 radius ring `A = A^{ρ₂}` (`TauCeti.WittVector.RadiusRing`) maps isometrically to the interval ring
-`B = B^{[ρ₁, ρ₂]}` (`TauCeti.WittVector.IntervalRing`). When `ρ₁ ^ a = v(ϖ) ^ b` with `a ≠ 0`,
-the element `[ϖ] ^ b / p ^ a` of `B` has norm one at the radius `ρ₁`, and the continuous map
+`B = B^{[ρ₁, ρ₂]}` (`TauCeti.WittVector.IntervalRing`).
+
+For every finite family of positive real radii `c`, the ring `B{T/c}` of restricted power series
+is a quotient of `A{T/c, U/ρ₁⁻¹}` by evaluation at `U = p⁻¹`
+(`TauCeti.WittVector.RadiusRing.restrictedEvalIntervalRing_surjective`), and the latter is
+noetherian by Kedlaya's Theorem 3.2
+(`TauCeti.WittVector.RadiusRing.isNoetherianRing_isRestricted_subring`). So every `B{T/c}` is
+noetherian, which is Kedlaya's Theorem 4.10. At unit radii these rings are the completed Huber
+algebras `B⟨X₁, …, Xₙ⟩` (`TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv`), so `B` is
+strongly noetherian in Huber's sense (Kedlaya, Remark 4.11), for every closed interval
+`[ρ₁, ρ₂]`.
+
+The file also presents `B` as an open quotient of a Huber algebra over `A` in one variable at unit
+radius, when `ρ₁ ^ a = v(ϖ) ^ b` with `a ≠ 0`. Then the element `[ϖ] ^ b / p ^ a` of `B` has norm
+one at the radius `ρ₁`, and the continuous map
 
 ```text
 ψ : A⟨X⟩ → B,   X ↦ [ϖ] ^ b / p ^ a,
@@ -35,20 +48,15 @@ monomials `e ([ϖ] ^ b / p ^ a) ^ j` whose coefficients `e ∈ 𝕎 O[1/[ϖ]]` h
 a neighbourhood of zero, and completeness of `A⟨X⟩` removes the closure
 (`TauCeti.isOpenMap_of_closure_image_mem_nhds`).
 
-The radius ring is strongly noetherian by Kedlaya's Theorem 3.2
-(`TauCeti.WittVector.RadiusRing.isStronglyNoetherian`), hence so is `A⟨X⟩`, and strong
-noetherianness descends along open quotient maps. This proves that `B` is strongly noetherian in
-Huber's sense (Kedlaya, Theorem 4.10 at unit radii, Remark 4.11) for the intervals whose lower
-radius is a rational power of `v(ϖ)`, which include the radii of every window of the
-Fargues–Fontaine curve.
-
 ## Main results
 
+* `TauCeti.WittVector.isNoetherianRing_isRestricted_subring_intervalRing` : the rings
+  `B^{[ρ₁, ρ₂]}{T/c}` in finitely many variables are noetherian for all positive radii.
+* `TauCeti.WittVector.isStronglyNoetherian_intervalRing` : `B^{[ρ₁, ρ₂]}` is strongly noetherian
+  for all `ρ₁ ≤ ρ₂`.
 * `TauCeti.WittVector.RadiusRing.isOpenQuotientMap_restrictedSeries_toIntervalRing` : the
   evaluation `A⟨X⟩ → B`, `X ↦ [ϖ] ^ b / p ^ a`, is an open quotient map when
   `ρ₁ ^ a = v(ϖ) ^ b`.
-* `TauCeti.WittVector.isStronglyNoetherian_intervalRing` : `B^{[ρ₁, ρ₂]}` is strongly noetherian
-  when `ρ₁ ^ a = v(ϖ) ^ b` for some `a ≠ 0`.
 
 ## References
 
@@ -339,17 +347,40 @@ theorem isOpenQuotientMap_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂
 
 end RadiusRing
 
+/-- **Kedlaya's Theorem 4.10.** For `ρ₁ ≤ ρ₂`, the ring `B^{[ρ₁, ρ₂]}{T/c}` of restricted power
+series over the interval ring in finitely many variables is noetherian, for all positive radii `c`.
+After numbering the variables, it is a quotient of `A^{ρ₂}{T/c, U/ρ₁⁻¹}`
+(`TauCeti.WittVector.RadiusRing.restrictedEvalIntervalRing_surjective`), which is noetherian by
+Kedlaya's Theorem 3.2. -/
+theorem isNoetherianRing_isRestricted_subring_intervalRing (hρ : ρ₁ ≤ ρ₂) {σ : Type*} [Finite σ]
+    (c : σ → ℝ) [∀ i, Fact (0 < c i)] :
+    IsNoetherianRing (MvPowerSeries.IsRestricted.subring (R := B) c) := by
+  obtain ⟨k, ⟨e⟩⟩ := Finite.exists_equiv_fin σ
+  -- the case of the variables `Fin k`
+  have : ∀ i, Fact (0 < (c ∘ e.symm) i) := fun i ↦ ‹∀ i, Fact (0 < c i)› (e.symm i)
+  have : ∀ j, Fact (0 < (Fin.cons (ρ₁ : ℝ)⁻¹ (c ∘ e.symm) : Fin (k + 1) → ℝ) j) :=
+    Fin.cases ⟨inv_pos.mpr (by exact_mod_cast hρ₁.1)⟩ fun i ↦ ⟨(Fact.out : 0 < c (e.symm i))⟩
+  have := isNoetherianRing_of_surjective _ _ _
+    (RadiusRing.restrictedEvalIntervalRing_surjective p hv hϖ hϖ' hρ₁ hρ₂ (c := c ∘ e.symm) hρ)
+  -- renaming the variables along `e` identifies the two rings
+  refine isNoetherianRing_of_ringEquiv _ (RingEquiv.restrict
+    (MvPowerSeries.renameEquiv B e).toRingEquiv (MvPowerSeries.IsRestricted.subring (R := B) c)
+      (MvPowerSeries.IsRestricted.subring (R := B) (c ∘ e.symm)) fun f ↦ ?_).symm
+  -- membership in `IsRestricted.subring` is `IsRestricted` by definition
+  change _ ↔ MvPowerSeries.IsRestricted _ (MvPowerSeries.renameEquiv B e f)
+  rw [MvPowerSeries.isRestricted_renameEquiv_iff, Function.comp_assoc, e.symm_comp_self,
+    Function.comp_id]
+  rfl
+
 open TauCeti.Huber in
 /-- **The interval ring `B^I` is strongly noetherian** (Kedlaya, Theorem 4.10 and Remark 4.11),
-for radii `ρ₁ ≤ ρ₂` with `ρ₁ ^ a = v(ϖ) ^ b` for some `a ≠ 0`. It is an open quotient of the
-restricted series ring `A^{ρ₂}⟨X⟩` over the radius ring, which is strongly noetherian by
-Kedlaya's Theorem 3.2. -/
-theorem isStronglyNoetherian_intervalRing (hρ : ρ₁ ≤ ρ₂) {a b : ℕ} (ha : a ≠ 0)
-    (hab : ρ₁ ^ a = v (algebraMap O K ϖ) ^ b) : IsStronglyNoetherian B := by
-  obtain ⟨ψ, hψ, -, hC, hX, -⟩ :=
-    RadiusRing.existsUnique_continuous_denseRange_restrictedSeries_toIntervalRing p hv hϖ hϖ' hρ₁
-      hρ₂ hρ ha hab.ge
-  exact (RadiusRing.isOpenQuotientMap_restrictedSeries_toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ ha
-    hab hψ hC hX).isStronglyNoetherian
+for all radii `ρ₁ ≤ ρ₂`: each completed Huber algebra `B^I⟨X₁, …, Xₙ⟩` is the Gauss-normed ring
+`B^I{X₁, …, Xₙ}` of unit-radius restricted series, which is noetherian by
+`TauCeti.WittVector.isNoetherianRing_isRestricted_subring_intervalRing`. -/
+theorem isStronglyNoetherian_intervalRing (hρ : ρ₁ ≤ ρ₂) : IsStronglyNoetherian B :=
+  ⟨fun n ↦
+    have := isNoetherianRing_isRestricted_subring_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ
+      (fun _ : Fin n ↦ (1 : ℝ))
+    isNoetherianRing_of_ringEquiv _ restrictedMvPowerSeriesCompletionGaussEquiv.symm⟩
 
 end TauCeti.WittVector

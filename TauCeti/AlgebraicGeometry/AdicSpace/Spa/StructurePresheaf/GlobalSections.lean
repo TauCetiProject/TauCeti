@@ -118,8 +118,10 @@ theorem toPresentationLimit_comp_presentationLimitMap {V W : Opens ↥(spa Aplus
 /-- The structure map of the trivial presentation `({1}, 1)` is an isomorphism, for complete
 Hausdorff `A`. -/
 private theorem isIso_toCompletionLocObjHom_one :
-    IsIso (Presentation.toCompletionLocObjHom (P := P)
-      ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩) := by
+    IsIso (Presentation.trivial P).toCompletionLocObjHom := by
+  -- The projection equations identify the presentation for the denominator-one API.
+  rw [show Presentation.trivial P =
+    ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩ from by ext <;> simp]
   have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := fun t ht ↦ by
     rw [Finset.mem_singleton.mp ht]
     exact isPowerBounded_one
@@ -159,7 +161,7 @@ private theorem isIso_toCompletionLocObjHom_one :
 subset `R({1}/1)` is the whole adic spectrum. -/
 private noncomputable def trivialIndex :
     PresentationIndex (P := P) Aplus ⊤ where
-  pres := ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩
+  pres := Presentation.trivial P
   isOpen_span := by simp
   le_open := le_top
 

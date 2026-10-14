@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.AdjoinRoot.Factors
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero
 
 /-!
