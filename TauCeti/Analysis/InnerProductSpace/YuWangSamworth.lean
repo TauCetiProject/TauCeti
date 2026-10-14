@@ -81,9 +81,8 @@ theorem norm_smul_sub_apply_sq_eq_sum (hT : T.IsSymmetric) (hn : finrank 𝕜 E 
       ∑ k, (c - hT.eigenvalues hn k) ^ 2 * ‖⟪hT.eigenvectorBasis hn k, x⟫_𝕜‖ ^ 2 := by
   rw [← (hT.eigenvectorBasis hn).sum_sq_norm_inner_right]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [inner_sub_right, inner_smul_right, ← hT, hT.apply_eigenvectorBasis, inner_smul_left,
-    RCLike.conj_ofReal, ← sub_mul, norm_mul, mul_pow, ← RCLike.ofReal_sub, RCLike.norm_ofReal,
-    sq_abs]
+  rw [inner_sub_right, inner_smul_right, ← hT, hT.apply_eigenvectorBasis]
+  simp [inner_smul_left, ← sub_mul, norm_mul, mul_pow, ← RCLike.ofReal_sub, -map_sub]
 
 /-- **Gap bound for one shifted residual.** If `c` is at distance at least `Δ ≥ 0` from every
 eigenvalue `λₖ` of `T` with `k ∈ t`, then `Δ² ∑_{k ∈ t} |⟪vₖ, x⟫|² ≤ ‖c x - T x‖²`. -/
