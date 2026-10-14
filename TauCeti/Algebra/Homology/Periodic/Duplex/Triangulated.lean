@@ -142,6 +142,25 @@ theorem periodicComplexEquivalenceFunctor_commShiftIso_one :
 
 variable {C R}
 
+omit [HasZeroObject C] in
+/-- After transport to two-periodic complexes, the third morphism of a duplex cone triangle is
+the third morphism of Mathlib's mapping-cone triangle, read through the cone comparison. -/
+theorem periodicComplexEquivalenceFunctor_mapTriangle_coneTriangle_mor₃
+    {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+    ((periodicComplexEquivalence C R).functor.mapTriangle.obj (coneTriangle f)).mor₃ =
+      eqToHom (by simp) ≫
+        (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
+          (CurvedDuplex.homotopyCofiberIsoToPeriodicComplexCone f).inv ≫
+        (PeriodicComplex.mappingConeTriangle ((CurvedDuplex.toPeriodicComplex C R).map f)).mor₃ ≫
+        eqToHom (by simp) := by
+  -- The complex-level comparison of cone projections, passed to the quotient.
+  have h := (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).congr_map
+    ((Iso.eq_inv_comp _).2
+      (CurvedDuplex.homotopyCofiberIsoToPeriodicComplexCone_hom_comp_coneProjection f))
+  rw [Functor.map_comp, Functor.map_comp] at h
+  simp [coneTriangle, periodicComplexEquivalenceFunctor_commShiftIso_one,
+    Functor.congr_hom periodicComplexEquivalence_functor, eqToHom_map, reassoc_of% h]
+
 /-- The image of a duplex cone triangle under the periodic-complex equivalence is canonically
 isomorphic to the corresponding mapping-cone triangle of two-periodic complexes. -/
 noncomputable def mapConeTriangleIso {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
@@ -166,43 +185,8 @@ noncomputable def mapConeTriangleIso {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y
   · simp [e₁, e₂, F, G, Functor.congr_hom hF]
   · simp [e₂, e₃, F, G, Functor.congr_hom hF, ← Functor.map_comp,
       ← CurvedDuplex.homotopyCofiber_inr_comp_homotopyCofiberIsoToPeriodicComplexCone_hom]
-  · dsimp only [coneTriangle, Triangle.mk_obj₁, Triangle.mk_mor₃]
-    -- The shift comparison was generated from parity shift, so its degree-one component
-    -- cancels the inverse comparison occurring in the duplex cone projection.
-    simp only [e₁, e₃, F, G, Functor.congr_hom hF,
-      periodicComplexEquivalenceFunctor_commShiftIso_one,
-      Functor.comp_obj, Functor.mapTriangle_obj, Triangle.mk_obj₁, Triangle.mk_obj₂,
-      Triangle.mk_obj₃, Triangle.mk_mor₁, Triangle.mk_mor₂, Triangle.mk_mor₃,
-      PeriodicComplex.mappingConeTriangle_obj₁, parityShiftCompQuotientFunctorIso_hom_app,
-      Functor.map_neg, Preadditive.neg_comp, Category.assoc, NatTrans.comp_app,
-      Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, eqToIso.hom,
-      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, eqToHom_map,
-      PeriodicComplex.mappingConeTriangle_obj₃, Functor.mapIso_symm, Iso.trans_hom, Iso.symm_hom,
-      Functor.mapIso_inv, PeriodicComplex.mappingConeTriangle_mor₃, Preadditive.comp_neg, neg_inj]
-    rw [← G.map_comp_assoc]
-    simp only [Category.assoc, Iso.inv_hom_id_app, Category.comp_id]
-    simp only [G, eqToHom_map, toPeriodicComplex_obj_quotientFunctor_obj,
-      toPeriodicComplex_map_quotientFunctor_map, Functor.map_comp,
-      parityShiftToPeriodicComplexIso_hom_app_quotient_obj, Functor.comp_obj, Category.assoc,
-      eqToHom_trans, eqToHom_refl, Category.comp_id, eqToHom_trans_assoc]
-    simp only [Category.id_comp]
-    rw [cancel_epi]
-    -- It remains to transport the complex-level projection identity through the quotient.
-    have h :
-        (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
-              ((CurvedDuplex.toPeriodicComplex C R).map (coneProjection f)) ≫
-            (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
-              ((CurvedDuplex.parityShiftToPeriodicComplexIso C R).hom.app X) =
-          (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
-                (CurvedDuplex.homotopyCofiberIsoToPeriodicComplexCone f).inv ≫
-            (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
-              (PeriodicComplex.coneProjection ((CurvedDuplex.toPeriodicComplex C R).map f)) := by
-      simp only [← Functor.map_comp]
-      apply congrArg
-      rw [← cancel_epi (CurvedDuplex.homotopyCofiberIsoToPeriodicComplexCone f).hom]
-      simp [CurvedDuplex.homotopyCofiberIsoToPeriodicComplexCone_hom_comp_coneProjection]
-    rw [← Category.assoc, h]
-    simp only [Category.assoc]
+  · rw [periodicComplexEquivalenceFunctor_mapTriangle_coneTriangle_mor₃]
+    simp [e₁, e₃, eqToHom_map]
 
 /-- The equivalence from curvature-zero duplexes to two-periodic complexes preserves
 distinguished triangles. -/
