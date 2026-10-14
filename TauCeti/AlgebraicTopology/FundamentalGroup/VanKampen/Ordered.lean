@@ -26,6 +26,11 @@ overlap. Path connectedness of the preceding union can be obtained from
 `TauCeti.isPathConnected_partialSups`, using `map_partialSups Opens.frameHom` to pass
 between partial unions of subsets and of opens.
 
+When `partialSups U (n + 1) = ⊤`, apply `TauCeti.isPushout_fundamentalGroup` directly
+to `partialSups U n` and `U (n + 1)` to identify the ambient fundamental group as the
+last pushout vertex. Obtain its interior-cover hypothesis from `partialSups_succ`,
+`Opens.coe_sup`, `Opens.coe_top`, and `IsOpen.interior_eq`.
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 1.2, Theorem 1.20.
@@ -71,37 +76,5 @@ theorem isPushout_fundamentalGroup_partialSups (U : ℕ → Opens X) (n : ℕ) (
     exact congrArg (fun V : Opens X => (V : Set X)) h
   exact isPushout_fundamentalGroup_union hStep (partialSups U n).isOpen (U (n + 1)).isOpen
     hP hN hAB x hxP hxN
-
-/-- For a finite ordered cover, the last successive amalgamation has the ambient
-fundamental group as its pushout vertex. Together with
-`isPushout_fundamentalGroup_partialSups`, applied at each step whose preceding union, new
-member, and overlap are path connected and whose overlap contains the basepoint, this computes
-`π₁(X, x)` by iterated pushouts along successive overlaps. -/
-theorem isPushout_fundamentalGroup_partialSups_of_eq_top (U : ℕ → Opens X) (n : ℕ) (x : X)
-    (hxP : x ∈ partialSups U n) (hxN : x ∈ U (n + 1))
-    (hP : IsPathConnected (partialSups U n : Set X))
-    (hN : IsPathConnected (U (n + 1) : Set X))
-    (hAB : IsPathConnected ((partialSups U n : Set X) ∩ (U (n + 1) : Set X)))
-    (hCover : partialSups U (n + 1) = ⊤) :
-    IsPushout
-      (GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left)
-        (⟨x, hxP, hxN⟩ :
-          ↥((partialSups U n : Set X) ∩ (U (n + 1) : Set X)))))
-      (GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
-        (⟨x, hxP, hxN⟩ :
-          ↥((partialSups U n : Set X) ∩ (U (n + 1) : Set X)))))
-      (GrpCat.ofHom (_root_.FundamentalGroup.map
-        (ContinuousMap.subtypeVal (partialSups U n : Set X))
-        (⟨x, hxP⟩ : partialSups U n)))
-      (GrpCat.ofHom (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal (U (n + 1) : Set X))
-        (⟨x, hxN⟩ : U (n + 1)))) := by
-  have hUnion : (partialSups U n : Set X) ∪ (U (n + 1) : Set X) = univ := by
-    have hStep : partialSups U (n + 1) = partialSups U n ⊔ U (n + 1) := partialSups_succ U n
-    simpa only [hStep, Opens.coe_sup, Opens.coe_top] using
-      congrArg (fun V : Opens X => (V : Set X)) hCover
-  have hInterior : interior (partialSups U n : Set X) ∪
-      interior (U (n + 1) : Set X) = univ := by
-    rwa [(partialSups U n).isOpen.interior_eq, (U (n + 1)).isOpen.interior_eq]
-  exact isPushout_fundamentalGroup hInterior hP hN hAB hxP hxN
 
 end TauCeti
