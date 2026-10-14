@@ -62,6 +62,12 @@ def conjJMulAut : MulAut (SL(2, R)) where
 @[simp] theorem conjJMulAut_symm_apply (γ : SL(2, R)) :
     conjJMulAut.symm γ = conjJ γ := by rfl
 
+/-- The coordinate reflection has square equal to the identity automorphism. -/
+@[simp] theorem conjJMulAut_mul_self :
+    (conjJMulAut : MulAut (SL(2, R))) * conjJMulAut = 1 := by
+  ext γ
+  simp
+
 /-- Coordinate conjugation preserves inverses. -/
 @[simp] theorem conjJ_inv (γ : SL(2, R)) : conjJ γ⁻¹ = (conjJ γ)⁻¹ :=
   map_inv (conjJMulAut : MulAut (SL(2, R))) γ
