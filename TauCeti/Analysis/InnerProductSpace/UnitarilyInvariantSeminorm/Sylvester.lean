@@ -206,13 +206,6 @@ private theorem ball_eq_Ioo_sub_add :
   rw [Real.Ioo_eq_ball]
   congr 1 <;> ring
 
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
-/-- A symmetric operator stays symmetric after subtracting a real multiple of the identity. -/
-private theorem isSymmetric_sub_smul_one (hB : (B : F →ₗ[𝕜] F).IsSymmetric) (c : ℝ) :
-    ((B - (c : 𝕜) • 1 : F →L[𝕜] F) : F →ₗ[𝕜] F).IsSymmetric := by
-  intro x y
-  simpa [inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right] using hB x y
-
 /-- **The interval/exterior Sylvester bound on invariant subspaces.** Let `A` and `B` be
 symmetric operators on finite-dimensional inner product spaces, let `S` be invariant under `A`
 and `T` invariant under `B`, and let `X` take values in `S` and vanish on `Tᗮ`. If the
@@ -234,8 +227,9 @@ theorem mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap_of_mem
   exact N.mul_map_le_map_sylvester_apply_of_map_comp_le_of_le_map_comp
     (c := (((a + b) / 2 : ℝ) : 𝕜))
     (N.map_le_mul_of_norm_apply_le fun y ↦ by simpa using hA' (hXS y))
-    (N.mul_map_le_map_comp_right_of_isSymmetric (isSymmetric_sub_smul_one hB _) hXT
-      fun y hy ↦ by simpa using hB' hy)
+    (N.mul_map_le_map_comp_right_of_isSymmetric
+      (by simpa using hB.sub (LinearMap.IsSymmetric.one.smul (RCLike.conj_ofReal ((a + b) / 2))))
+      hXT fun y hy ↦ by simpa using hB' hy)
 
 /-- **The interval/exterior Sylvester bound on invariant subspaces, reversed orientation.** Let
 `A` and `B` be symmetric operators on finite-dimensional inner product spaces, let `S` be
@@ -258,8 +252,9 @@ theorem mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap_swap_of_mem
   exact N.mul_map_le_map_sylvester_apply_of_le_map_comp_of_map_comp_le
     (c := (((a + b) / 2 : ℝ) : 𝕜))
     (N.mul_map_le_of_mul_norm_apply_le fun y ↦ by simpa using hA' (hXS y))
-    (N.map_comp_le_right_of_isSymmetric (isSymmetric_sub_smul_one hB _) hXT
-      fun y hy ↦ by simpa using hB' hy)
+    (N.map_comp_le_right_of_isSymmetric
+      (by simpa using hB.sub (LinearMap.IsSymmetric.one.smul (RCLike.conj_ofReal ((a + b) / 2))))
+      hXT fun y hy ↦ by simpa using hB' hy)
 
 /-- **The interval/exterior Sylvester bound.** Let `A` and `B` be symmetric operators on
 finite-dimensional inner product spaces. If the eigenvalues of `A` lie in `[a, b]` and those of `B`

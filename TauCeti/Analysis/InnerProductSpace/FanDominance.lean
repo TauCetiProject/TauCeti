@@ -239,11 +239,12 @@ theorem map_comp_starProjection_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U 
 
 /-! ### Ideal inequalities for a symmetric right factor bounded on a subspace -/
 
-/-- If `A` vanishes on `Tᗮ`, then the adjoint of `A` takes values in `T`. -/
-private theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : Submodule 𝕜 E}
-    (hA : ∀ x ∈ Tᗮ, A x = 0) (y : F) : LinearMap.adjoint A y ∈ T :=
-  T.orthogonal_orthogonal ▸ Submodule.orthogonal_le (fun x hx ↦ hA x hx)
-    (A.adjoint_apply_mem_orthogonal_ker y)
+/-- For symmetric `C`, the adjoint seminorm of `C A†` is the seminorm of `A C`, since
+`(A C)† = C A†`. -/
+private theorem compAdjoint_comp_adjoint_of_isSymmetric (N : UnitarilyInvariantSeminorm 𝕜 E F)
+    (A : E →ₗ[𝕜] F) {C : E →ₗ[𝕜] E} (hC : C.IsSymmetric) :
+    N.compAdjoint (C ∘ₗ LinearMap.adjoint A) = N (A ∘ₗ C) := by
+  rw [compAdjoint_apply, LinearMap.adjoint_comp, LinearMap.adjoint_adjoint, hC.adjoint_eq]
 
 /-- **Ideal inequality, symmetric right factor bounded on a subspace.** If `A` vanishes on `Tᗮ`,
 `C` is symmetric, and `‖C x‖ ≤ c * ‖x‖` for every `x ∈ T`, then `N (A C) ≤ c * N A` for every
@@ -253,9 +254,10 @@ theorem map_comp_le_right_of_isSymmetric (N : UnitarilyInvariantSeminorm 𝕜 E 
     (hCT : ∀ x ∈ T, ‖C x‖ ≤ c * ‖x‖) : N (A ∘ₗ C) ≤ c * N A := by
   -- Pass to adjoints: `(A C)† = C A†`, and `A†` takes values in `T`.
   have h := N.compAdjoint.map_le_mul_of_norm_apply_le (A := LinearMap.adjoint A)
-    (B := C ∘ₗ LinearMap.adjoint A) fun y ↦ hCT _ (adjoint_apply_mem_of_forall_mem_orthogonal hA y)
-  rwa [compAdjoint_apply, compAdjoint_apply, LinearMap.adjoint_adjoint, ← hC.adjoint_eq,
-    ← LinearMap.adjoint_comp, LinearMap.adjoint_adjoint] at h
+    (B := C ∘ₗ LinearMap.adjoint A) fun y ↦
+      hCT _ (LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal hA y)
+  rwa [compAdjoint_comp_adjoint_of_isSymmetric N A hC, compAdjoint_apply,
+    LinearMap.adjoint_adjoint] at h
 
 /-- **Reverse ideal inequality, symmetric right factor bounded below on a subspace.** If `A`
 vanishes on `Tᗮ`, `C` is symmetric, and `c * ‖x‖ ≤ ‖C x‖` for every `x ∈ T`, then
@@ -266,8 +268,9 @@ theorem mul_map_le_map_comp_right_of_isSymmetric (N : UnitarilyInvariantSeminorm
     c * N A ≤ N (A ∘ₗ C) := by
   -- Pass to adjoints: `(A C)† = C A†`, and `A†` takes values in `T`.
   have h := N.compAdjoint.mul_map_le_of_mul_norm_apply_le (A := LinearMap.adjoint A)
-    (B := C ∘ₗ LinearMap.adjoint A) fun y ↦ hCT _ (adjoint_apply_mem_of_forall_mem_orthogonal hA y)
-  rwa [compAdjoint_apply, compAdjoint_apply, LinearMap.adjoint_adjoint, ← hC.adjoint_eq,
-    ← LinearMap.adjoint_comp, LinearMap.adjoint_adjoint] at h
+    (B := C ∘ₗ LinearMap.adjoint A) fun y ↦
+      hCT _ (LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal hA y)
+  rwa [compAdjoint_comp_adjoint_of_isSymmetric N A hC, compAdjoint_apply,
+    LinearMap.adjoint_adjoint] at h
 
 end TauCeti.UnitarilyInvariantSeminorm
