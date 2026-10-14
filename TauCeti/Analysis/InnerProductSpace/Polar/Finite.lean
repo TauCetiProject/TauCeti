@@ -241,8 +241,7 @@ polar factor agrees on its initial space `(ker A)ᗮ` with a linear isometric eq
 theorem exists_linearIsometryEquiv_eqOn_polarFactor (A : E →ₗ[𝕜] F)
     (h : Module.finrank 𝕜 E = Module.finrank 𝕜 F) :
     ∃ U : E ≃ₗᵢ[𝕜] F, Set.EqOn U A.polarFactor A.kerᗮ := by
-  let e : F ≃ₗᵢ[𝕜] E := ((stdOrthonormalBasis 𝕜 F).reindex (finCongr h.symm)).repr.trans
-    (stdOrthonormalBasis 𝕜 E).repr.symm
+  let e : F ≃ₗᵢ[𝕜] E := (stdOrthonormalBasis 𝕜 F).equiv (stdOrthonormalBasis 𝕜 E) (finCongr h.symm)
   let L : A.kerᗮ →ₗᵢ[𝕜] E :=
     { toLinearMap := e.toLinearMap ∘ₗ A.polarFactor ∘ₗ A.kerᗮ.subtype
       norm_map' := fun x ↦ by simp [A.norm_polarFactor_apply x.2] }
