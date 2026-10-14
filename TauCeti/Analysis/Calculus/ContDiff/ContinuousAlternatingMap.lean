@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Alternatization
 public import TauCeti.Data.Nat.Factorial.Basic
-public import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
+public import TauCeti.Analysis.Calculus.ContDiff.ContinuousMultilinearMap
 public import TauCeti.Analysis.Calculus.ContDiff.LinearIsometry
 public import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
@@ -39,14 +39,6 @@ variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι]
 
-private theorem contDiff_multilinearPullback (n : WithTop ℕ∞) :
-    ContDiff 𝕜 n (fun f : E →L[𝕜] F ↦
-      ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
-        𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G (fun _ ↦ f)) :=
-  (ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
-    𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G).contDiff.comp
-      (contDiff_pi.mpr fun _ ↦ contDiff_id)
-
 private theorem contDiff_compContinuousLinearMapCLM_coe (n : ℕ∞) :
     ContDiff 𝕜 n
       (ContinuousAlternatingMap.compContinuousLinearMapCLM :
@@ -75,7 +67,7 @@ private theorem contDiff_compContinuousLinearMapCLM_coe (n : ℕ∞) :
   let P := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
     𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G
   have hP : ContDiff 𝕜 n (fun f : E →L[𝕜] F ↦ P (fun _ ↦ f)) :=
-    contDiff_multilinearPullback n
+    ContinuousMultilinearMap.contDiff_compContinuousLinearMapContinuousMultilinear_diagonal n
   convert hP.clm_comp (contDiff_const (c := K)) using 1
   ext f a v
   simp only [Function.comp_apply, I, LinearIsometry.postcomp_apply, J, P, K,
@@ -108,7 +100,7 @@ theorem ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM (n : WithTo
     let P := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
       𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G
     have hP : ContDiff 𝕜 ω (fun f : E →L[𝕜] F ↦ P (fun _ ↦ f)) :=
-      contDiff_multilinearPullback ω
+      ContinuousMultilinearMap.contDiff_compContinuousLinearMapContinuousMultilinear_diagonal ω
     have h : ContDiff 𝕜 ω (fun f : E →L[𝕜] F ↦ (A.comp (P (fun _ ↦ f))).comp J) :=
       (contDiff_const.clm_comp hP).clm_comp contDiff_const
     convert h using 1
