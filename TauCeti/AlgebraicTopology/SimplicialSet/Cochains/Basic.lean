@@ -7,8 +7,6 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.Products
-public import Mathlib.LinearAlgebra.Finsupp.LSum
 
 /-!
 # Simplicial cochains as functions on simplices
@@ -18,9 +16,9 @@ For a ring `k` and a `k`-module `M`, evaluation on the unit chain of each simple
 is integral-linear, including for noncommutative rings. The cochain differential becomes the
 alternating sum of values on faces, and pullback becomes precomposition on simplices.
 
-The construction uses Mathlib's coproduct-to-direct-sum isomorphism and `Finsupp.llift`, the
-linear free-module universal property. These coordinates allow comparison of coefficient
-rings without changing the underlying cochain values.
+The construction uses Mathlib's `SSet.isColimitChainComplexXCofan` and
+`Cofan.IsColimit.desc`, the coproduct universal property also used by `TauCeti.chainsDesc`.
+These coordinates allow comparison of coefficient rings without changing cochain values.
 
 ## References
 
@@ -44,30 +42,40 @@ variable (k : Type w) [Ring k] (M : ModuleCat.{w} k) (K : SSet.{w})
 simplices, as modules over the integers. -/
 def cochainValuesEquiv (n : ℕ) :
     ((K.chainComplex (ModuleCat.of k k)).X n ⟶ M) ≃ₗ[ℤ] (K _⦋n⦌ → M) := by
-  classical
-  let e := (ModuleCat.coprodIsoDirectSum fun _ : K _⦋n⦌ ↦ ModuleCat.of k k).toLinearEquiv.trans
-    (finsuppLequivDFinsupp k).symm
-  exact (ModuleCat.homLinearEquiv.trans (LinearEquiv.congrLeft M ℤ e)).trans
-    (Finsupp.llift M k ℤ (K _⦋n⦌)).symm
+  let desc (v : K _⦋n⦌ → M) : (K.chainComplex (ModuleCat.of k k)).X n ⟶ M :=
+    Cofan.IsColimit.desc (K.isColimitChainComplexXCofan (ModuleCat.of k k) n)
+      (fun σ ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton k M (v σ)))
+  have desc_apply (v : K _⦋n⦌ → M) (σ : K _⦋n⦌) :
+      desc v (K.ιChainComplex (R := ModuleCat.of k k) σ 1) = v σ := by
+    have h : K.ιChainComplex σ ≫ desc v =
+        ModuleCat.ofHom (LinearMap.toSpanSingleton k M (v σ)) :=
+      Cofan.IsColimit.fac (K.isColimitChainComplexXCofan (ModuleCat.of k k) n)
+        (fun σ ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton k M (v σ))) σ
+    rw [← ModuleCat.comp_apply, h]
+    exact LinearMap.toSpanSingleton_apply_one k M (v σ)
+  exact
+    { toFun := fun φ σ ↦ φ (K.ιChainComplex (R := ModuleCat.of k k) σ 1)
+      invFun := desc
+      left_inv := fun φ ↦ by
+        apply SSet.chainComplex_hom_ext
+        intro σ
+        apply ModuleCat.hom_ext
+        apply LinearMap.ext_ring
+        exact desc_apply _ σ
+      right_inv := fun v ↦ funext (desc_apply v)
+      map_add' := fun φ ψ ↦ by
+        funext σ
+        rfl
+      map_smul' := fun a φ ↦ by
+        funext σ
+        rfl }
 
 /-- The value coordinate of a cochain is its value on the unit chain of the simplex. -/
 @[simp]
 lemma cochainValuesEquiv_apply (n : ℕ)
     (φ : (K.chainComplex (ModuleCat.of k k)).X n ⟶ M) (σ : K _⦋n⦌) :
-    cochainValuesEquiv k M K n φ σ = φ (K.ιChainComplex (R := ModuleCat.of k k) σ 1) := by
-  classical
-  dsimp [cochainValuesEquiv, Finsupp.llift_symm_apply, LinearEquiv.congrLeft,
-    LinearEquiv.arrowCongrAddEquiv, ModuleCat.homLinearEquiv, ModuleCat.homAddEquiv,
-    ModuleCat.homEquiv]
-  apply congrArg φ.hom
-  apply (ModuleCat.coprodIsoDirectSum fun _ : K _⦋n⦌ ↦ ModuleCat.of k k).toLinearEquiv.injective
-  have h := ConcreteCategory.congr_hom
-    (ModuleCat.ι_coprodIsoDirectSum_hom (fun _ : K _⦋n⦌ ↦ ModuleCat.of k k) σ) (1 : k)
-  convert h.symm using 1
-  · simp only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
-      ConcreteCategory.hom_ofHom]
-    exact Finsupp.toDFinsupp_single σ (1 : k)
-  · rfl
+    cochainValuesEquiv k M K n φ σ = φ (K.ιChainComplex (R := ModuleCat.of k k) σ 1) :=
+  (rfl)
 
 /-- The cochain with prescribed values evaluates a simplex with coefficient `a` to `a` times
 its prescribed value. -/
@@ -89,12 +97,12 @@ lemma cochainValuesEquiv_d (n : ℕ)
     cochainValuesEquiv k M K (n + 1)
         ((K.chainComplex (ModuleCat.of k k)).d (n + 1) n ≫ φ) σ =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ i.val • cochainValuesEquiv k M K n φ (K.δ i σ) := by
-  simp only [cochainValuesEquiv_apply]
-  have h := ConcreteCategory.congr_hom
-    (K.ιChainComplex_d (R := ModuleCat.of k k) σ) (1 : k)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_sum,
-    ModuleCat.hom_zsmul, LinearMap.sum_apply, LinearMap.smul_apply] at h
-  simpa using congrArg φ.hom h
+  rw [cochainValuesEquiv_apply]
+  change (K.ιChainComplex σ ≫ (K.chainComplex (ModuleCat.of k k)).d (n + 1) n ≫ φ) 1 = _
+  rw [K.ιChainComplex_d_assoc]
+  simp only [Preadditive.sum_comp, Preadditive.zsmul_comp, ModuleCat.hom_sum,
+    ModuleCat.hom_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, ModuleCat.hom_comp,
+    LinearMap.comp_apply, cochainValuesEquiv_apply]
 
 /-- Pullback of cochains is precomposition of their value functions with the simplicial map. -/
 lemma cochainValuesEquiv_chainComplexMap {L : SSet.{w}} (f : K ⟶ L) (n : ℕ)

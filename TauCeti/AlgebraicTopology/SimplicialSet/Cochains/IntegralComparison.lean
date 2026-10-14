@@ -57,6 +57,9 @@ def simplicialCochainComplexIntegralIso :
       funext σ
       simp only [cochainValuesEquiv_d, LinearEquiv.apply_symm_apply]
     ext φ
+    rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
+      TauCeti.ChainComplex.linearYonedaObj_d_apply,
+      TauCeti.ChainComplex.linearYonedaObj_d_apply]
     exact comm φ
 
 /-- The degreewise integral comparison extends the simplex values integrally. -/
@@ -80,9 +83,7 @@ lemma cochainValuesEquiv_simplicialCochainComplexIntegralIso_hom (n : ℕ)
     cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K n
         ((simplicialCochainComplexIntegralIso k M K).hom.f n φ) σ =
       cochainValuesEquiv k M K n φ σ := by
-  dsimp [simplicialCochainComplexIntegralIso, LinearEquiv.toModuleIso]
-  exact congrFun ((cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K n).apply_symm_apply
-    (cochainValuesEquiv k M K n φ)) σ
+  rw [simplicialCochainComplexIntegralIso_hom_f_apply, LinearEquiv.apply_symm_apply]
 
 /-- The inverse integral comparison also preserves simplex values. -/
 lemma cochainValuesEquiv_simplicialCochainComplexIntegralIso_inv (n : ℕ)
@@ -90,9 +91,37 @@ lemma cochainValuesEquiv_simplicialCochainComplexIntegralIso_inv (n : ℕ)
     (σ : K _⦋n⦌) :
     cochainValuesEquiv k M K n ((simplicialCochainComplexIntegralIso k M K).inv.f n φ) σ =
       cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K n φ σ := by
-  dsimp [simplicialCochainComplexIntegralIso, LinearEquiv.toModuleIso]
-  exact congrFun ((cochainValuesEquiv k M K n).apply_symm_apply
-    (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K n φ)) σ
+  rw [simplicialCochainComplexIntegralIso_inv_f_apply, LinearEquiv.apply_symm_apply]
+
+/-- The integral comparison evaluates a simplex chain by integral scalar multiplication of
+its original value on the unit simplex chain. -/
+-- Simplify before descending into the Yoneda component, whose cochain carrier is opaque.
+@[simp↓]
+lemma simplicialCochainComplexIntegralIso_hom_f_apply_ιChainComplex (n : ℕ)
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj ℤ M).X n)
+    (σ : K _⦋n⦌) (a : ℤ) :
+    ConcreteCategory.hom (X := (K.chainComplex (ModuleCat.of ℤ ℤ)).X n)
+        (Y := ModuleCat.of ℤ M) ((simplicialCochainComplexIntegralIso k M K).hom.f n φ)
+        (K.ιChainComplex (R := ModuleCat.of ℤ ℤ) σ a) =
+      a • ConcreteCategory.hom (X := (K.chainComplex (ModuleCat.of k k)).X n) (Y := M) φ
+        (K.ιChainComplex (R := ModuleCat.of k k) σ 1) := by
+  rw [simplicialCochainComplexIntegralIso_hom_f_apply, cochainValuesEquiv_symm_apply]
+  exact congrArg (a • ·) (cochainValuesEquiv_apply k M K n φ σ)
+
+/-- The inverse comparison evaluates a simplex chain by scalar multiplication over `k` of
+its integral value on the unit simplex chain. -/
+-- Simplify before descending into the Yoneda component, whose cochain carrier is opaque.
+@[simp↓]
+lemma simplicialCochainComplexIntegralIso_inv_f_apply_ιChainComplex (n : ℕ)
+    (φ : ((K.chainComplex (ModuleCat.of ℤ ℤ)).linearYonedaObj ℤ (ModuleCat.of ℤ M)).X n)
+    (σ : K _⦋n⦌) (a : k) :
+    ConcreteCategory.hom (X := (K.chainComplex (ModuleCat.of k k)).X n) (Y := M)
+        ((simplicialCochainComplexIntegralIso k M K).inv.f n φ)
+        (K.ιChainComplex (R := ModuleCat.of k k) σ a) =
+      a • ConcreteCategory.hom (X := (K.chainComplex (ModuleCat.of ℤ ℤ)).X n)
+        (Y := ModuleCat.of ℤ M) φ (K.ιChainComplex (R := ModuleCat.of ℤ ℤ) σ 1) := by
+  rw [simplicialCochainComplexIntegralIso_inv_f_apply, cochainValuesEquiv_symm_apply]
+  exact congrArg (a • ·) (cochainValuesEquiv_apply ℤ (ModuleCat.of ℤ M) K n φ σ)
 
 /-- The integral cochain comparison is natural in maps of simplicial sets. -/
 @[reassoc]
@@ -101,7 +130,7 @@ lemma simplicialCochainComplexIntegralIso_hom_naturality {L : SSet.{0}} (f : K �
         (simplicialCochainComplexIntegralIso k M K).hom =
       (simplicialCochainComplexIntegralIso k M L).hom ≫
         cochainComplexMap (R := ModuleCat.of ℤ ℤ) (k := ℤ) (M := ModuleCat.of ℤ M) f := by
-  -- State the equality on raw cochains so rewriting does not unfold the Yoneda wrappers.
+  -- Prove the square on raw cochains, then use the component computation rules.
   have comm (n : ℕ) (φ : (L.chainComplex (ModuleCat.of k k)).X n ⟶ M) :
       (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K n).symm
           (cochainValuesEquiv k M K n ((chainComplexMap f (ModuleCat.of k k)).f n ≫ φ)) =
@@ -112,6 +141,15 @@ lemma simplicialCochainComplexIntegralIso_hom_naturality {L : SSet.{0}} (f : K �
     funext σ
     simp only [LinearEquiv.apply_symm_apply, cochainValuesEquiv_chainComplexMap]
   ext n φ
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f]
+  change ((cochainComplexMap f).f n ≫
+      (simplicialCochainComplexIntegralIso k M K).hom.f n) φ =
+    ((simplicialCochainComplexIntegralIso k M L).hom.f n ≫
+      (cochainComplexMap f).f n) φ
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
+    simplicialCochainComplexIntegralIso_hom_f_apply,
+    SSet.cochainComplexMap_f_apply, SSet.cochainComplexMap_f_apply,
+    simplicialCochainComplexIntegralIso_hom_f_apply]
   exact comm n φ
 
 end TauCeti
