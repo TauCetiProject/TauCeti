@@ -824,4 +824,49 @@ theorem exists_eq_classicalPoint_or_discPoint_or_discPointAbove_or_discPointBelo
   · exact Or.inr (exists_eq_discPoint_or_discPointAbove_or_discPointBelow_or_nestedDiscPoint x hx)
   · exact Or.inl ((supp_ne_bot_iff_exists_eq_classicalPoint x).mp hx)
 
+/-! ### Recognising points of type (4) -/
+
+section NestedDiscRecognition
+
+variable {a c : ℕ → K} (ha : ∀ n, ‖a n‖ ≤ 1) (hc₀ : ∀ n, c n ≠ 0)
+  (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
+  (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖)
+
+/-- **With no common point of the discs in `K`, the point is the only point lying in all of them**,
+over an algebraically closed field: a point `x` of the closed unit disc is `η` if and only if
+`x ∈ D(aₙ, |cₙ|)` for every `n`. These are the points of type (4) in Wedhorn's Example 7.57. -/
+theorem eq_nestedDiscPoint_iff [IsAlgClosed K] (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖)
+    (x : closedPolydisc 1 K) :
+    x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc ↔ ∀ n, x ∈ closedSubdisc (a n) (c n) := by
+  refine ⟨fun h n ↦ h ▸ nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n,
+    fun hx ↦ eq_of_forall_valuation_weightedX_sub_weightedC_eq fun b ↦ ?_⟩
+  -- a disc `D(aₙ, |cₙ|)` avoiding `b` makes both points take the value of `aₙ - b` on `T - b`
+  obtain ⟨n, hn⟩ := hempty b
+  refine ⟨a n - b, sub_ne_zero.mpr fun h ↦ ?_,
+    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc (hx n) hn,
+    valuation_weightedX_sub_weightedC_of_mem_closedSubdisc
+      (nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n) hn⟩
+  rw [h, sub_self, norm_zero] at hn
+  exact (norm_nonneg _).not_gt hn
+
+/-! ### Points without a minimum on linear polynomials -/
+
+/-- **The points of type (4) of the closed unit disc**, over an algebraically closed complete
+nonarchimedean field: a point `x` is the point attached to a decreasing sequence of discs with no
+common point in `K` if and only if `b ↦ x(T - b)` attains no minimum. -/
+theorem exists_eq_nestedDiscPoint_iff [IsAlgClosed K] (x : closedPolydisc 1 K) :
+    (∃ (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1) (c : ℕ → K) (hc₀ : ∀ n, c n ≠ 0)
+      (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
+      (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
+      (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc) ↔
+    ¬ ∃ a₀ : K, ∀ b : K, x.1.toValuativeRel.vle (T - C a₀) (T - C b) := by
+  refine ⟨fun ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty, hx⟩ ↦ ?_, fun hmin ↦ ?_⟩
+  · subst hx
+    exact not_exists_forall_nestedDiscPoint_vle ha hc₀ hc₁ hac hcc hempty
+  obtain ⟨a, c, ha, hc₀, hc₁, hac, hcc, hempty, hx⟩ := exists_forall_mem_closedSubdisc hmin
+  exact ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty,
+    (eq_nestedDiscPoint_iff ha hc₀ hc₁ hac hcc hempty x).mpr hx⟩
+
+end NestedDiscRecognition
+
 end TauCeti.ValuationSpectrum
