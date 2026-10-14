@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Factorization
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PreservesTensors
+import TauCeti.Data.ZMod.Units
 
 /-!
 # Positive root elements and unitriangular factorization in the short-root G₂ carrier
@@ -266,7 +267,7 @@ theorem isUpperUnitriangular_iff_exists_positiveRootSubgroupPoints_product (g : 
           positiveRootSubgroupPoints A 5 (.ofAdd f) := by
   constructor
   · intro hu
-    have h2 := (isUnit_two A).isRegular
+    have h2 := (ZMod.isUnit_two_of_algebra A).isRegular
     have hg := eq_crossUnipotentMatrix_of_preservesG2Cross h2 hu
       (preservesG2Cross_of_mem_points g.property)
     let m : Matrix (Fin 7) (Fin 7) A := g.val

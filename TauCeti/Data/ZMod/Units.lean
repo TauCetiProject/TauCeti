@@ -5,6 +5,7 @@ Authors: Chris Birkbeck, Claude, Wentao Li
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
@@ -16,6 +17,9 @@ public import TauCeti.Data.Nat.GCD
 
 Results connecting unit and coprimality data over `ZMod d`, independent of one another:
 
+* `ZMod.isUnit_two_of_algebra` — two is a unit in every commutative `ZMod 3`-algebra.
+  Its consumers are the short-root G₂ carrier's torus centralizer, positive-root factorization,
+  and standard-comodule flag arguments.
 * `Int.isUnit_intCast_iff_gcd_eq_one` — an integer is a *unit* mod `d` exactly when it is
   coprime to `d`. Its consumers are the Atkin-Lehner and bad-prime double-coset arguments in
   `TauCeti/NumberTheory/HeckeRing/GL2/Gamma0/`, which need the `Int.gcd` form of the unit
@@ -57,6 +61,12 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 public section
 
 variable {d : ℕ}
+
+/-- Two is a unit in every commutative `ZMod 3`-algebra. -/
+theorem ZMod.isUnit_two_of_algebra (A : Type*) [CommRing A] [Algebra (ZMod 3) A] :
+    IsUnit (2 : A) := by
+  have h : IsUnit (2 : ZMod 3) := by decide
+  simpa only [map_ofNat] using h.map (algebraMap (ZMod 3) A)
 
 /-- **An integer is a unit mod `d` exactly when it is coprime to `d`.** The `Int.gcd` form is
 what consumers of `Nat.Coprime` want; `ZMod.coe_int_isUnit_iff_isCoprime` states the same

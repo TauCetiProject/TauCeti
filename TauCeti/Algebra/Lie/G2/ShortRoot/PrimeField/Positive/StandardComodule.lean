@@ -11,6 +11,7 @@ import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Data.ZMod.Units
 
 /-!
 # Invariant subspaces of the positive short-root G₂ subgroup
@@ -187,11 +188,7 @@ private theorem single_mem_of_apply_ne_zero
 private theorem single_predecessor_mem
     (N : Subcomodule k (CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra) (Fin 7 → k))
     (a : Fin 6) (ha : Pi.single a.succ (1 : k) ∈ N) : Pi.single a.castSucc (1 : k) ∈ N := by
-  have htwo : (2 : k) ≠ 0 := by
-    have h : IsUnit ((algebraMap (ZMod 3) k) 2) :=
-      ((ZMod.isUnit_iff_coprime 2 3).mpr (by decide)).map
-        (algebraMap (ZMod 3) k).toMonoidHom
-    simpa only [map_ofNat] using h.ne_zero
+  have htwo : (2 : k) ≠ 0 := (ZMod.isUnit_two_of_algebra k).ne_zero
   refine single_mem_of_apply_ne_zero k N
     (rootSubgroupPoints_mulVec_mem k N (if a.val = 1 ∨ a.val = 4 then 1 else 0)
       (Multiplicative.ofAdd 1) ha) ?_

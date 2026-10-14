@@ -89,11 +89,6 @@ local notation "rootWeight" => DynkinType.G2.rootGeneratorWeight DynkinType.vali
 
 namespace PrimeField
 
-/-- Two is a unit in every value algebra of the characteristic-three carrier. -/
-theorem isUnit_two (A : Type v) [CommRing A] [Algebra (ZMod 3) A] : IsUnit (2 : A) := by
-  have h : IsUnit (2 : ZMod 3) := by decide
-  simpa only [map_ofNat] using h.map (algebraMap (ZMod 3) A)
-
 /-! ## Matrix-valued points -/
 
 /-- The matrix-valued points of the short-root type-`G₂` carrier over `𝔽₃`. -/
