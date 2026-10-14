@@ -91,13 +91,20 @@ theorem face_eq_const (p : Ω^ (Fin (n + 1)) X x) (i : Fin (n + 1)) {t : I} (ht 
 
 variable (R : Type*) [Ring R]
 
+/-- The `i`-th term of the boundary of a cube vanishes when the cube's two `i`-faces coincide. -/
+private lemma boundaryTerm_eq_zero_of_face_eq (c : SingularCube X (n + 1)) (i : Fin (n + 1))
+    (h : SingularCube.face i 0 c = SingularCube.face i 1 c) :
+    (-1 : R) ^ (i : ℕ) • (NormalizedCubicalChain.ofCube X R (SingularCube.face i 0 c) -
+      NormalizedCubicalChain.ofCube X R (SingularCube.face i 1 c)) = 0 := by
+  rw [h, sub_self, smul_zero]
+
 /-- A generalized loop is a cycle of the normalized cubical chains. -/
 theorem boundary_ofCube_eq_zero (p : Ω^ (Fin (n + 1)) X x) :
     NormalizedCubicalChain.boundary X R n
       (NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1))) = 0 := by
   rw [NormalizedCubicalChain.boundary_ofCube]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  rw [face_eq_const p i (.inl rfl), face_eq_const p i (.inr rfl), sub_self, smul_zero]
+  exact Finset.sum_eq_zero fun i _ ↦ boundaryTerm_eq_zero_of_face_eq R _ i <|
+    (face_eq_const p i (.inl rfl)).trans (face_eq_const p i (.inr rfl)).symm
 
 /-! ### The cube swept out by a homotopy -/
 
@@ -124,9 +131,10 @@ private lemma boundary_ofCube_prism {p q : Ω^ (Fin (n + 1)) X x}
       NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1)) -
         NormalizedCubicalChain.ofCube X R (q : SingularCube X (n + 1)) := by
   rw [NormalizedCubicalChain.boundary_ofCube, Fin.sum_univ_succ, SingularCube.face_zero_prism,
-    SingularCube.face_one_prism, Finset.sum_eq_zero fun j _ ↦ by
-      rw [face_succ_prism_eq_const H j (.inl rfl), face_succ_prism_eq_const H j (.inr rfl),
-        sub_self, smul_zero]]
+    SingularCube.face_one_prism,
+    Finset.sum_eq_zero fun j _ ↦ boundaryTerm_eq_zero_of_face_eq R _ _ <|
+      (face_succ_prism_eq_const H j (.inl rfl)).trans
+        (face_succ_prism_eq_const H j (.inr rfl)).symm]
   simp
 
 /-! ### The cube relating a concatenation to its two halves -/
@@ -233,9 +241,9 @@ private lemma boundary_ofCube_addCube (p q : Ω^ (Fin (n + 1)) X x) :
         (NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1)) +
           NormalizedCubicalChain.ofCube X R (q : SingularCube X (n + 1))) := by
   rw [NormalizedCubicalChain.boundary_ofCube, Fin.sum_univ_succ, Fin.sum_univ_succ,
-    Finset.sum_eq_zero fun j _ ↦ by
-      rw [face_succ_succ_addCube p q j (.inl rfl), face_succ_succ_addCube p q j (.inr rfl),
-        sub_self, smul_zero]]
+    Finset.sum_eq_zero fun j _ ↦ boundaryTerm_eq_zero_of_face_eq R _ _ <|
+      (face_succ_succ_addCube p q j (.inl rfl)).trans
+        (face_succ_succ_addCube p q j (.inr rfl)).symm]
   simp only [Fin.succ_zero_eq_one, face_zero_zero_addCube, face_zero_one_addCube,
     face_one_zero_addCube, face_one_one_addCube, NormalizedCubicalChain.ofCube_eq_zero,
     SingularCube.isDegenerate_const]
@@ -323,6 +331,7 @@ theorem cubicalHurewicz_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin (n + 1)) 
   rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply,
     iCycles_cubicalCycle, normalizedCubicalChainComplex_map_f_apply,
     NormalizedCubicalChain.map_ofCube]
+  -- The cube `GenLoop.map f hf p` is `f.comp p` by definition, and `(TopCat.ofHom f).hom` is `f`.
   rfl
 
 end Class

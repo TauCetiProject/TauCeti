@@ -80,7 +80,7 @@ lemma moduleCat_homologyπ_eq_of_iCycles_sub_eq_d {z w : K.cycles n} {m : ι} (b
   have hb : z - w = K.toCycles m n b := K.moduleCat_iCycles_injective n <| by
     rw [map_sub, h, ← ModuleCat.comp_apply, toCycles_i]
   rw [← sub_eq_zero, ← map_sub, hb, ← ModuleCat.comp_apply, toCycles_comp_homologyπ]
-  rfl
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
 
 variable {K} in
 /-- **Homology classes of a union of subcomplexes.** Let `φ i : L i ⟶ K` be chain maps of
