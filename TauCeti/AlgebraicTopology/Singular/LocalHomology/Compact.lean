@@ -341,36 +341,25 @@ theorem exists_localHomologyRestriction_eq_of_isCompact (hn : finrank ℝ E = n)
     ∃ γ : (localHomology N A n : ModuleCat.{w} Λ),
       ∀ x (hx : x ∈ A), localHomologyRestriction N (singleton_subset_iff.2 hx) n γ = α x := by
   have := ChartedSpace.locallyCompactSpace E M
-  -- Each point has a compact neighbourhood `K` such that the family glues along `A ∩ K`.
-  have hloc (x : M) : ∃ K ∈ 𝓝 x, IsCompact K ∧ (x ∈ A → Glues N α (A ∩ K)) := by
-    by_cases hx : x ∈ A
-    · obtain ⟨U, hU, β, hβ⟩ := hα x hx
-      obtain ⟨V, hV, hVU⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hU
-      obtain ⟨K, hK, hKV, hKc⟩ := local_compact_nhds hV
-      have hAK : A ∩ K ⊆ U := fun y hy ↦ hVU ⟨hKV hy.2, hy.1⟩
-      refine ⟨K, hK, hKc, fun _ ↦ ⟨localHomologyRestriction N hAK n β, fun y hy ↦ ?_⟩⟩
-      rw [localHomologyRestriction_comp_apply]
-      exact hβ y (hAK hy) hy.1
-    · obtain ⟨K, hK, -, hKc⟩ := local_compact_nhds (Filter.univ_mem (f := 𝓝 x))
-      exact ⟨K, hK, hKc, fun h ↦ (hx h).elim⟩
-  choose K hK hKc hglue using hloc
-  obtain ⟨t, htA, hAt⟩ := hA.elim_nhds_subcover K fun x _ ↦ hK x
-  have hAeq : A = ⋃ x ∈ t, A ∩ K x := by
-    refine subset_antisymm (fun y hy ↦ ?_) (iUnion₂_subset fun _ _ ↦ inter_subset_left)
-    obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 (hAt hy)
-    exact mem_iUnion₂.2 ⟨x, hx, hy, hyx⟩
-  rw [hAeq]
-  -- Glue the pieces `A ∩ K x` one at a time.
-  clear hAeq hAt
-  classical
-  induction t using Finset.induction_on with
-  | empty => exact ⟨0, fun x hx ↦ by simp at hx⟩
-  | insert b t hb ih =>
-    rw [Finset.set_biUnion_insert]
-    exact (hglue b (htA b (t.mem_insert_self b))).union N hn
-      (hA.inter_right (hKc b).isClosed)
-      (t.finite_toSet.isCompact_biUnion fun x _ ↦ hA.inter_right (hKc x).isClosed)
-      (ih fun x hx ↦ htA x (Finset.mem_insert_of_mem hx))
+  -- Induct over `A`: the part of `A` in `t` lies in a compact `K ⊆ A` along which the family glues.
+  obtain ⟨K, hKc, hAK, hKA, hglue⟩ : ∃ K, IsCompact K ∧ A ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K := by
+    refine hA.induction_on (p := fun t ↦ ∃ K, IsCompact K ∧ t ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K)
+      ⟨∅, isCompact_empty, by simp, empty_subset _, 0, fun x hx ↦ hx.elim⟩
+      (fun s t hst ⟨K, hKc, htK, hKA, hK⟩ ↦
+        ⟨K, hKc, (inter_subset_inter_left _ hst).trans htK, hKA, hK⟩)
+      (fun s t ⟨K, hKc, hsK, hKA, hK⟩ ⟨L, hLc, htL, hLA, hL⟩ ↦
+        ⟨K ∪ L, hKc.union hLc, union_inter_distrib_right s t A ▸ union_subset_union hsK htL,
+          union_subset hKA hLA, hK.union N hn hKc hLc hL⟩) fun x hx ↦ ?_
+    obtain ⟨U, hU, β, hβ⟩ := hα x hx
+    obtain ⟨V, hV, hVU⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hU
+    obtain ⟨K, hK, hKV, hKc⟩ := local_compact_nhds hV
+    have hAK : A ∩ K ⊆ U := fun y hy ↦ hVU ⟨hKV hy.2, hy.1⟩
+    refine ⟨K, mem_nhdsWithin_of_mem_nhds hK, A ∩ K, hA.inter_right hKc.isClosed,
+      fun y hy ↦ ⟨hy.2, hy.1⟩, inter_subset_left, localHomologyRestriction N hAK n β,
+      fun y hy ↦ ?_⟩
+    rw [localHomologyRestriction_comp_apply]
+    exact hβ y (hAK hy) hy.1
+  rwa [subset_antisymm hKA (inter_self A ▸ hAK)] at hglue
 
 /-- **Local homology classes of a compact set are glued from local data.** Let `A` be a compact
 subset of a Hausdorff space modelled on a real normed space of dimension `n`, and let
