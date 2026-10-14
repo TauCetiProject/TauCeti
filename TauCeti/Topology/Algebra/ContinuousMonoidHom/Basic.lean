@@ -373,6 +373,16 @@ theorem _root_.Subgroup.fixedPoints_subtype_quotientMk_smul (N : Subgroup G) [N.
       g • (FixedPoints.addSubgroup N M).subtype m := by
   simpa only [quotientMk_apply, QuotientGroup.mk'_apply] using N.fixedPoints_subtype_mk'_smul g m
 
+end ContinuousMonoidHom
+
+end TauCeti
+
+namespace ContinuousMonoidHom
+
+open TauCeti.ContinuousMonoidHom
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
 /-- The continuous homomorphism induced on a quotient by a continuous homomorphism that kills
 the normal subgroup. -/
 def quotientLift {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
@@ -441,5 +451,3 @@ theorem quotientHomEquiv_symm_apply {H : Type*} [Monoid H] [TopologicalSpace H]
     (quotientHomEquiv N).symm f = quotientLift N f.val f.property := (rfl)
 
 end ContinuousMonoidHom
-
-end TauCeti
