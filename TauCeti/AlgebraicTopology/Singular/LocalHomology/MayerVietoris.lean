@@ -18,6 +18,8 @@ groups (`TauCeti.localHomology`).
 
 ## Main results
 
+* `TauCeti.isZero_localHomology_union`: for closed `S` and `T`, if `Hₖ(M, M ∖ S)`, `Hₖ(M, M ∖ T)`
+  and `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish, then so does `Hₖ(M, M ∖ (S ∪ T))`.
 * `TauCeti.localHomology_hom_ext_of_union`: for closed `S` and `T` with
   `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, maps into `Hₖ(M, M ∖ (S ∪ T))` are determined by their
   restrictions to `S` and to `T`.
@@ -36,6 +38,20 @@ namespace TauCeti
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] {R : A}
   {M : Type w} [TopologicalSpace M]
 
+/-- **Vanishing of local homology along a union.** For closed sets `S` and `T`, if `Hₖ(M, M ∖ S)`,
+`Hₖ(M, M ∖ T)` and `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish, then so does `Hₖ(M, M ∖ (S ∪ T))`, by the
+relative Mayer–Vietoris sequence of the open sets `M ∖ S` and `M ∖ T`. -/
+theorem isZero_localHomology_union {S T : Set M} (hS : IsClosed S) (hT : IsClosed T) {k : ℕ}
+    (hSk : IsZero (localHomology R S k)) (hTk : IsZero (localHomology R T k))
+    (h : IsZero (localHomology R (S ∩ T) (k + 1))) :
+    IsZero (localHomology R (S ∪ T) k) := by
+  dsimp only [localHomology] at hSk hTk h ⊢
+  rw [compl_union]
+  rw [compl_inter] at h
+  have := TopCat.mono_relativeMayerVietorisToBiprod R hS.isOpen_compl hT.isOpen_compl h
+  exact IsZero.of_mono (TopCat.relativeMayerVietorisToBiprod R _ _ k)
+    ((biprod_isZero_iff _ _).2 ⟨hSk, hTk⟩)
+
 /-- **Maps into local homology of a union are detected on the pieces.** Let `S` and `T` be closed
 and let `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Two maps into `Hₖ(M, M ∖ (S ∪ T))` that agree after
 restriction to `S` and to `T` are equal. -/
@@ -47,13 +63,9 @@ theorem localHomology_hom_ext_of_union {S T : Set M} (hS : IsClosed S) (hT : IsC
     (hfT : f ≫ localHomologyRestriction R subset_union_right k =
       g ≫ localHomologyRestriction R subset_union_right k) :
     f = g := by
-  have h' : IsZero ((TopPair.ofSubset (Sᶜ ∪ Tᶜ : Set (TopCat.of M))).singularHomology R
-      (k + 1)) := by
-    rw [← compl_inter]
-    exact h
-  have : Mono (TopCat.relativeMayerVietorisToBiprod R (X := TopCat.of M) Sᶜ Tᶜ k) :=
-    (TopCat.relativeMayerVietoris_exact₁ R hS.isOpen_compl hT.isOpen_compl (k + 1) k).mono_g
-      (h'.eq_of_src _ _)
+  dsimp only [localHomology] at h
+  rw [compl_inter] at h
+  have := TopCat.mono_relativeMayerVietorisToBiprod R hS.isOpen_compl hT.isOpen_compl h
   rw [localHomologyRestriction_def] at hfS hfT
   -- The sequence is stated for `(M ∖ S) ∩ (M ∖ T)`, which is `M ∖ (S ∪ T)` only propositionally,
   -- so generalize the subspace before comparing with the first map of the sequence.
