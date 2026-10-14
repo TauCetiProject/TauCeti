@@ -118,12 +118,14 @@ def importersClosure (env : Environment) (seed : Std.HashSet Name) : Std.HashSet
   return seen
 
 /-- Audit every declaration defined in `TauCeti` (in the scope, if one is given). Returns the number audited and a list of
-violation messages, **already rendered to `String`**.
+violation messages, **already rendered to `String`**, and optional counts/messages per owner
+for the shadow prototype. The authoritative entry point leaves `groupResults` disabled.
 
 The strings must be materialized here, inside the environment callback: declaration and
 axiom `Name`s loaded from `.olean`s live in a memory-mapped region that is unmapped once
 `withImportModules` returns, so formatting them afterwards is a use-after-free. -/
-def audit (only : Option (Std.HashSet Name)) : CoreM (Nat × Array String) := do
+def auditResults (only : Option (Std.HashSet Name)) (groupResults := false) :
+    CoreM (Nat × Array String × NameMap (Nat × Array String)) := do
   let env ← getEnv
   let modNames := env.allImportedModuleNames
   let only := only.map (importersClosure env)
@@ -143,11 +145,29 @@ def audit (only : Option (Std.HashSet Name)) : CoreM (Nat × Array String) := do
   -- Attribution only for the (normally empty) offenders: re-collect their exact axioms with the
   -- stock API, so the violation message still names the specific disallowed axioms.
   let mut messages : Array String := #[]
+  let mut results : NameMap (Nat × Array String) := {}
+  if groupResults then
+    for declName in candidates do
+      if let some idx := env.getModuleIdxFor? declName then
+        let mod := modNames[idx.toNat]!
+        let (count, msgs) := (results.find? mod).getD (0, #[])
+        results := results.insert mod (count + 1, msgs)
   for declName in offenders do
     let axs ← collectAxioms declName
     let bad := axs.filter fun a => !allowedAxioms.contains a
-    messages := messages.push s!"  {declName} → {bad.toList}"
-  return (candidates.size, messages)
+    let message := s!"  {declName} → {bad.toList}"
+    messages := messages.push message
+    if groupResults then
+      if let some idx := env.getModuleIdxFor? declName then
+        let mod := modNames[idx.toNat]!
+        let (count, msgs) := (results.find? mod).getD (0, #[])
+        results := results.insert mod (count, msgs.push message)
+  return (candidates.size, messages, results)
+
+/-- The authoritative audit's existing count and diagnostics. -/
+def audit (only : Option (Std.HashSet Name)) : CoreM (Nat × Array String) := do
+  let (count, messages, _) ← auditResults only
+  return (count, messages)
 
 -- Return the exit code (rather than `IO.Process.exit`) so the Lean runtime tears the
 -- imported environment down in order; an abrupt `exit()` can segfault during teardown.
@@ -237,6 +257,51 @@ def check (env : Environment) (localModules : NameSet) : IO UInt32 := do
 
 end DuplicateDeclarations
 
+namespace ShadowAudit
+
+/-- Data-only module inventory for the isolated shadow harness. Paths and imported names are
+rendered while their mmap regions are alive. No result records are read by this driver. -/
+def inventory (env : Environment) (locals : NameSet) : IO (Array Json) := do
+  let mut entries := #[]
+  for i in [:env.header.moduleNames.size] do
+    let mod := env.header.moduleNames[i]!
+    let data := env.header.moduleData[i]!
+    let path ← findOLean mod
+    entries := entries.push <| Json.mkObj [
+      ("module", toJson mod.toString), ("local", toJson (locals.contains mod)),
+      ("path", toJson path.toString),
+      ("relative", toJson (modToFilePath "." mod "olean").toString),
+      ("imports", toJson (data.imports.map (·.module.toString)))]
+  return entries
+
+/-- Results grouped by owner for comparison only, unscoped unless the shadow harness supplies
+an incremental scope. Ownership is always recomputed globally, even on collisions. The normal
+production entry point and exit status are unchanged. -/
+def snapshot (env : Environment) (locals : NameSet) (inventoryOnly : Bool)
+    (only : Option (Std.HashSet Name) := none) : IO UInt32 := do
+  let entries ← inventory env locals
+  if inventoryOnly then
+    IO.println s!"shadow-audit-snapshot: {(Json.mkObj [("inventory", toJson entries)]).compress}"
+    return 0
+  let ownership ← DuplicateDeclarations.check env locals
+  let (count, messages, results) ← Prod.fst <$> Core.CoreM.toIO (AxiomAudit.auditResults only true)
+    { fileName := "<shadow-full-axioms>", fileMap := default } { env }
+  let axioms ← AxiomAudit.report only count messages
+  let mut rows := #[]
+  let wanted := only.map (AxiomAudit.importersClosure env)
+  for mod in locals do
+    if !(wanted.map (·.contains mod)).getD true then continue
+    let (n, msgs) := (results.find? mod).getD (0, #[])
+    rows := rows.push <| Json.mkObj [("module", toJson mod.toString),
+      ("count", toJson n), ("messages", toJson msgs)]
+  IO.println s!"shadow-audit-snapshot: {(Json.mkObj [
+    ("inventory", toJson entries), ("results", toJson rows),
+    ("ownership_status", toJson ownership.toNat), ("axioms_status", toJson axioms.toNat)
+  ]).compress}"
+  return max ownership axioms
+
+end ShadowAudit
+
 /-!
 ## Import and teardown discipline
 
@@ -268,8 +333,10 @@ Return 0 on success, 1 on an audit/import failure, and 2 on unsupported argument
 The environment callback/CoreM adapter is inlined from importGraph's `Core.withImportModules`
 (Kim Morrison, Paul Lezeau; Apache 2.0). -/
 def main (args : List String) : IO UInt32 := do
-  if !args.isEmpty && args != ["--duplicates-only"] then
-    IO.eprintln "usage: audit-driver [--duplicates-only]"
+  if !args.isEmpty && args != ["--duplicates-only"] &&
+      args != ["--shadow-inventory"] && args != ["--shadow-snapshot"] &&
+      args != ["--shadow-incremental"] then
+    IO.eprintln "usage: audit-driver [--duplicates-only|--shadow-inventory|--shadow-snapshot|--shadow-incremental]"
     return 2
   try
     phase "audit-import"
@@ -281,6 +348,10 @@ def main (args : List String) : IO UInt32 := do
     let only ← AxiomAudit.scope
     unsafe withImportModules (modules.map fun m => { module := m }) {}
       (fun env => do
+        if args == ["--shadow-inventory"] || args == ["--shadow-snapshot"] then
+          return ← ShadowAudit.snapshot env localModules (args == ["--shadow-inventory"])
+        if args == ["--shadow-incremental"] then
+          return ← ShadowAudit.snapshot env localModules false only
         phase "audit-duplicates"
         let status ← DuplicateDeclarations.check env localModules
         if status != 0 || args == ["--duplicates-only"] then return status
