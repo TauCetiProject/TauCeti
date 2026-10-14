@@ -11,8 +11,8 @@ public import TauCeti.Analysis.Calculus.FDeriv.Submodule
 /-!
 # Taylor derivatives in a closed subspace
 
-A Taylor derivative series of a function valued in a closed subspace remains
-in that subspace at every order at which the series is defined. The proof uses
+For `HasFTaylorSeriesUpTo n f q`, if `f` takes values in a closed subspace,
+then the Taylor coefficients `q x m` take values there at every order `m ≤ n`. The proof uses
 the closed-subspace derivative criterion at each successive order. In particular,
 Taylor derivatives can be lifted through a closed linear isometric inclusion.
 -/
@@ -28,7 +28,8 @@ variable {𝕜 D F : Type*} [NontriviallyNormedField 𝕜]
   {n : WithTop ℕ∞} {f : D → F} {q : D → FormalMultilinearSeries 𝕜 D F}
   {S : Submodule 𝕜 F}
 
-/-- Taylor derivatives of a function valued in a closed subspace take values there too. -/
+/-- For a Taylor derivative series up to order `n` of a function valued in a closed subspace,
+the coefficients of every order `m ≤ n` take values in that subspace. -/
 theorem HasFTaylorSeriesUpTo.apply_mem_of_range_subset
     (hq : HasFTaylorSeriesUpTo n f q) (hS : IsClosed (S : Set F))
     (hf : range f ⊆ S) (m : ℕ) (hm : m ≤ n) (x : D) (v : Fin m → D) : q x m v ∈ S := by
