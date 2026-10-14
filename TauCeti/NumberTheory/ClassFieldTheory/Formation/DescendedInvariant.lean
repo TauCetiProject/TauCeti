@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ClassFormation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.CoefficientMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.InflationRestriction
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 
 /-!
 # Invariants descended along lifts to refinements
