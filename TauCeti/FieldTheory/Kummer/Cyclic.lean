@@ -75,8 +75,7 @@ theorem isSplittingField_X_pow_sub_C_of_adjoin_eq_top (hs : s ^ n = algebraMap K
     exact X_pow_sub_C_splits_of_isPrimitiveRoot (hζ.map_of_injective (algebraMap K L).injective) hs
   · rw [eq_top_iff, ← IntermediateField.top_toSubalgebra, ← hgen,
       IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-        (isAlgebraic_iff_isIntegral.2 ⟨_, monic_X_pow_sub_C b (NeZero.ne n), by
-          rw [eval₂_sub, eval₂_X_pow, eval₂_C, hs, sub_self]⟩)]
+        (IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)).isAlgebraic]
     exact Algebra.adjoin_mono (Set.singleton_subset_iff.2
       ((Polynomial.mem_rootSet_X_pow_sub_C (NeZero.ne n)).2 hs))
 
@@ -173,6 +172,15 @@ theorem isCyclic_of_pow_eq_of_adjoin_eq_top [FiniteDimensional K L] (hb : b ≠ 
   ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
 
 omit [NeZero n] in
+/-- If `sⁿ = b` and `b` is not a `p`-th power in `K` for any prime `p` dividing `n`, then
+`n ≠ 0`: for `n = 0` the radicand `b = s ^ 0 = 1` would be a square. -/
+theorem neZero_of_forall_prime_pow_ne (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b)
+    (hs : s ^ n = algebraMap K L b) : NeZero n := ⟨by
+  rintro rfl
+  rw [pow_zero, eq_comm, map_eq_one_iff _ (algebraMap K L).injective] at hs
+  exact hb 2 Nat.prime_two (dvd_zero 2) 1 (by rw [one_pow, hs])⟩
+
+omit [NeZero n] in
 include hζ in
 /-- **A nondegenerate radical extension has full degree.** Let `L = K(s)` with `sⁿ = b`, where `K`
 contains a primitive `n`-th root of unity. If `b` is not a `p`-th power in `K` for any prime `p`
@@ -180,11 +188,7 @@ dividing `n`, then `[L : K] = n`. -/
 theorem finrank_eq_of_pow_eq_of_adjoin_eq_top
     (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b) (hs : s ^ n = algebraMap K L b)
     (hgen : K⟮s⟯ = ⊤) : finrank K L = n := by
-  -- `n = 0` would make `b = s ^ 0 = 1` a square
-  have : NeZero n := ⟨by
-    rintro rfl
-    rw [pow_zero, eq_comm, map_eq_one_iff _ (algebraMap K L).injective] at hs
-    exact hb 2 Nat.prime_two (dvd_zero 2) 1 (by rw [one_pow, hs])⟩
+  have := neZero_of_forall_prime_pow_ne hb hs
   rcases eq_or_ne b 0 with rfl | hb0
   · -- `b = 0` forces `n = 1`, and then `s = 0` generates `K`
     obtain rfl : n = 1 := by
@@ -193,16 +197,15 @@ theorem finrank_eq_of_pow_eq_of_adjoin_eq_top
       exact hb p hp hpn 0 (zero_pow hp.ne_zero)
     rw [pow_one, map_zero] at hs
     rw [← IntermediateField.finrank_top', ← hgen, hs, adjoin_zero, IntermediateField.finrank_bot]
-  have hint : IsIntegral K s := ⟨X ^ n - C b, monic_X_pow_sub_C b (NeZero.ne n), by
-    rw [eval₂_sub, eval₂_X_pow, eval₂_C, hs, sub_self]⟩
+  have hint : IsIntegral K s := IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)
   have := (PowerBasis.ofAdjoinSimpleEqTop hint hgen).finite
   have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hb0 hs hgen
   obtain ⟨g, hg, hdvd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hb0 hs hgen
   set m := finrank K L
   -- `s ^ m` is fixed by the generator `g` of `Gal(L/K)`, hence lies in `K`
+  have hζm : (ζ ^ (n / m)) ^ m = 1 := by rw [← pow_mul, Nat.div_mul_cancel hdvd, hζ.pow_eq_one]
   have hfix : g ∈ MulAction.stabilizer (L ≃ₐ[K] L) (s ^ m) := by
-    rw [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, map_pow, hgs, mul_pow, ← map_pow,
-      ← pow_mul, Nat.div_mul_cancel hdvd, hζ.pow_eq_one, map_one, one_mul]
+    simp [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, hgs, mul_pow, ← map_pow, hζm]
   obtain ⟨c, hc⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (s ^ m)).2 fun σ ↦
     Subgroup.zpowers_le.2 hfix (hg σ)
   -- so `b = c ^ (n / m)`, and nondegeneracy forces `n / m = 1`

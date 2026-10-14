@@ -216,11 +216,7 @@ theorem genus_formula_of_pow_eq_of_isPrimitiveRoot [Algebra.IsSeparable k k']
     (hS : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) :
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       n * (2 * genus k F - 2) + ∑ P ∈ S, ((n : ℤ) - Int.gcd n (P.ord u)) * P.degree := by
-  -- `n = 0` would make `u = y ^ 0 = 1` a square
-  have : NeZero n := ⟨by
-    rintro rfl
-    rw [pow_zero, eq_comm, map_eq_one_iff _ (algebraMap F F').injective] at hy
-    exact hnd 2 Nat.prime_two (dvd_zero 2) 1 (by rw [one_pow, hy])⟩
+  have := neZero_of_forall_prime_pow_ne hnd hy
   have hζF := hζ.map_of_injective (algebraMap k F).injective
   have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζF hnd hy hgen
   have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hfin.symm ▸ NeZero.pos n)
