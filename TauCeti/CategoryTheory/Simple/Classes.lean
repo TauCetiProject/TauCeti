@@ -49,29 +49,29 @@ namespace SimpleClasses
 variable {C}
 
 /-- The chosen representative in `C` of a simple isomorphism class. -/
-noncomputable abbrev rep (S : SimpleClasses C) : C := S.1.out
+noncomputable abbrev repr (S : SimpleClasses C) : C := S.1.out
 
 /-- The chosen representative of a simple class is simple. -/
-instance (S : SimpleClasses C) : Simple S.rep := S.2
+instance (S : SimpleClasses C) : Simple S.repr := S.2
 
 /-- The isomorphism class of a simple object. -/
 noncomputable def classOf (X : C) [Simple X] : SimpleClasses C :=
   ⟨toSkeleton X, Simple.of_iso (fromSkeletonToSkeletonIso X)⟩
 
 /-- The chosen representative of the class of a simple object is isomorphic to that object. -/
-noncomputable def classOfRepIso (X : C) [Simple X] : (classOf X).rep ≅ X :=
+noncomputable def classOfReprIso (X : C) [Simple X] : (classOf X).repr ≅ X :=
   fromSkeletonToSkeletonIso X
 
 /-- Taking the class of a chosen representative recovers the original simple class. -/
 @[simp]
-theorem classOf_rep (S : SimpleClasses C) : classOf S.rep = S := by
+theorem classOf_repr (S : SimpleClasses C) : classOf S.repr = S := by
   apply Subtype.ext
   exact toSkeleton_fromSkeleton_obj S.1
 
 /-- Two simple classes are equal exactly when their chosen representatives are isomorphic. -/
 @[simp]
 theorem eq_iff_nonempty_iso (S T : SimpleClasses C) :
-    S = T ↔ Nonempty (S.rep ≅ T.rep) := by
+    S = T ↔ Nonempty (S.repr ≅ T.repr) := by
   rw [Subtype.ext_iff, ← toSkeleton_fromSkeleton_obj S.1,
     ← toSkeleton_fromSkeleton_obj T.1, toSkeleton_eq_toSkeleton_iff]
   rfl
@@ -83,12 +83,12 @@ theorem classOf_eq_iff_nonempty_iso (X Y : C) [Simple X] [Simple Y] :
   exact toSkeleton_eq_toSkeleton_iff
 
 /-- Every simple object is isomorphic to the representative of a unique simple class. -/
-theorem existsUnique_nonempty_iso_rep (X : C) [Simple X] :
-    ∃! S : SimpleClasses C, Nonempty (X ≅ S.rep) := by
-  refine ⟨classOf X, ⟨(classOfRepIso X).symm⟩, ?_⟩
+theorem existsUnique_nonempty_iso_repr (X : C) [Simple X] :
+    ∃! S : SimpleClasses C, Nonempty (X ≅ S.repr) := by
+  refine ⟨classOf X, ⟨(classOfReprIso X).symm⟩, ?_⟩
   rintro T ⟨i⟩
   apply (eq_iff_nonempty_iso T (classOf X)).2
-  exact ⟨i.symm.trans (classOfRepIso X).symm⟩
+  exact ⟨i.symm.trans (classOfReprIso X).symm⟩
 
 section Equivalence
 
@@ -98,35 +98,35 @@ variable {D : Type u₂} [_root_.CategoryTheory.Category.{v₂} D]
 /-- An equivalence of categories induces an equivalence between their simple isomorphism classes. -/
 noncomputable def equiv (e : C ≌ D) : SimpleClasses C ≃ SimpleClasses D where
   toFun S := by
-    let _ := _root_.CategoryTheory.simple_obj e.functor S.rep
-    exact classOf (e.functor.obj S.rep)
+    let _ := _root_.CategoryTheory.simple_obj e.functor S.repr
+    exact classOf (e.functor.obj S.repr)
   invFun T := by
-    let _ := _root_.CategoryTheory.simple_obj e.inverse T.rep
-    exact classOf (e.inverse.obj T.rep)
+    let _ := _root_.CategoryTheory.simple_obj e.inverse T.repr
+    exact classOf (e.inverse.obj T.repr)
   left_inv S := by
-    let _ : Simple (e.functor.obj S.rep) :=
-      _root_.CategoryTheory.simple_obj e.functor S.rep
-    let _ : Simple (e.inverse.obj (classOf (e.functor.obj S.rep)).rep) :=
+    let _ : Simple (e.functor.obj S.repr) :=
+      _root_.CategoryTheory.simple_obj e.functor S.repr
+    let _ : Simple (e.inverse.obj (classOf (e.functor.obj S.repr)).repr) :=
       _root_.CategoryTheory.simple_obj e.inverse _
     apply (eq_iff_nonempty_iso _ _).2
-    exact ⟨classOfRepIso _ ≪≫ e.inverse.mapIso (classOfRepIso _) ≪≫
-      (e.unitIso.app S.rep).symm⟩
+    exact ⟨classOfReprIso _ ≪≫ e.inverse.mapIso (classOfReprIso _) ≪≫
+      (e.unitIso.app S.repr).symm⟩
   right_inv T := by
-    let _ : Simple (e.inverse.obj T.rep) :=
-      _root_.CategoryTheory.simple_obj e.inverse T.rep
-    let _ : Simple (e.functor.obj (classOf (e.inverse.obj T.rep)).rep) :=
+    let _ : Simple (e.inverse.obj T.repr) :=
+      _root_.CategoryTheory.simple_obj e.inverse T.repr
+    let _ : Simple (e.functor.obj (classOf (e.inverse.obj T.repr)).repr) :=
       _root_.CategoryTheory.simple_obj e.functor _
     apply (eq_iff_nonempty_iso _ _).2
-    exact ⟨classOfRepIso _ ≪≫ e.functor.mapIso (classOfRepIso _) ≪≫
-      e.counitIso.app T.rep⟩
+    exact ⟨classOfReprIso _ ≪≫ e.functor.mapIso (classOfReprIso _) ≪≫
+      e.counitIso.app T.repr⟩
 
 /-- The representative of the image of a simple class under an equivalence is isomorphic to the
 image of its representative. -/
-noncomputable def equivApplyRepIso (e : C ≌ D) (S : SimpleClasses C) :
-    (equiv e S).rep ≅ e.functor.obj S.rep :=
+noncomputable def equivApplyReprIso (e : C ≌ D) (S : SimpleClasses C) :
+    (equiv e S).repr ≅ e.functor.obj S.repr :=
   by
-    let _ := _root_.CategoryTheory.simple_obj e.functor S.rep
-    exact classOfRepIso _
+    let _ := _root_.CategoryTheory.simple_obj e.functor S.repr
+    exact classOfReprIso _
 
 /-- The equivalence on simple classes maps the class of an object to the class of its image. -/
 @[simp]
@@ -135,8 +135,8 @@ theorem equiv_apply_classOf (e : C ≌ D) (X : C) [Simple X] :
       @classOf D _ _ (e.functor.obj X) (_root_.CategoryTheory.simple_obj e.functor X) := by
   let _ : Simple (e.functor.obj X) := _root_.CategoryTheory.simple_obj e.functor X
   apply (eq_iff_nonempty_iso _ _).2
-  exact ⟨equivApplyRepIso e (classOf X) ≪≫ e.functor.mapIso (classOfRepIso X) ≪≫
-    (classOfRepIso _).symm⟩
+  exact ⟨equivApplyReprIso e (classOf X) ≪≫ e.functor.mapIso (classOfReprIso X) ≪≫
+    (classOfReprIso _).symm⟩
 
 end Equivalence
 
