@@ -185,7 +185,10 @@ theorem unitLocalPowerClassMap_surjective {n : ℕ} (hn : n ≠ 0) [Finite S] [F
       (powMonoidHom n : unitFiltration (v.1.adicCompletion K) 0 →* _).range) = n := by
     have hunit : IsUnit (n : 𝒪[v.1.adicCompletion K]) :=
       (v.1.isUnit_natCast_integer_adicCompletion_iff n).mpr (havoid v)
-    rw [TauCeti.card_unitFiltration_zero_powerClasses_of_isUnit hunit]
+    rw [← Subgroup.index_eq_card,
+      ← Subgroup.index_map_equiv _ unitFiltrationZeroEquivIntegerUnits,
+      MulEquiv.map_range_powMonoidHom, Subgroup.index_eq_card,
+      card_integerUnitPowerClasses_of_isUnit hunit]
     exact (hζK.map_of_injective (algebraMap K (v.1.adicCompletion K)).injective).card_rootsOfUnity
   have := Fintype.ofFinite T
   have htarget : Nat.card (UnitLocalPowerClasses T n) = n ^ Nat.card T := by
