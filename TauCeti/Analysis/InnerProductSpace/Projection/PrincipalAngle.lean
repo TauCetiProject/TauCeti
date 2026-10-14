@@ -63,8 +63,10 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
   all of them are strictly below `π/2` exactly when no nonzero vector of `U` is orthogonal to `V`.
 * `Submodule.directedProjectionGap_lt_one_iff`: the directed gap from `U` to `V` is less than `1`
   exactly when no nonzero vector of `U` is orthogonal to `V`.
-* `Submodule.principalAngles_lt_pi_div_four_iff`: all principal angles are below `π/4` exactly
-  when the directed gap is less than `√2/2`.
+* `Submodule.forall_principalAngles_lt_iff`: all principal angles are below a threshold
+  `θ ∈ [-π/2, π/2]` exactly when the directed gap is less than `sin θ`; in particular
+  (`Submodule.principalAngles_lt_pi_div_four_iff`) they are below `π/4` exactly when the directed
+  gap is less than `√2/2`.
 * `Submodule.norm_sinTwoAngleOperator_le_one`: the double-angle operator is a contraction, and
   `Submodule.sinTwoAngleOperator_eq_zero_iff`: it vanishes exactly when `P_U` and `P_V` commute.
 
@@ -508,12 +510,21 @@ theorem principalAngles_lt_pi_div_two_iff :
     Set.ncard_eq_zero hfin, Set.eq_empty_iff_forall_notMem]
   exact forall_congr' fun i ↦ (principalAngles_le_pi_div_two U V i).lt_iff_ne
 
+/-- For a threshold `θ ∈ [-π/2, π/2]`, all principal angles from `U` to `V` are strictly below
+`θ` exactly when the directed gap `‖P_{Vᗮ} P_U‖`, the largest principal sine, is less than
+`sin θ`. -/
+theorem forall_principalAngles_lt_iff {θ : ℝ} (hθ : θ ∈ Set.Icc (-(Real.pi / 2)) (Real.pi / 2)) :
+    (∀ i, U.principalAngles V i < θ) ↔ U.directedProjectionGap V < Real.sin θ := by
+  have hs (i : ℕ) : U.principalSines V i ∈ Set.Icc (-1 : ℝ) 1 :=
+    ⟨by linarith [principalSines_nonneg U V i], principalSines_le_one U V i⟩
+  simp only [principalAngles_apply, Real.arcsin_lt_iff_lt_sin (hs _) hθ]
+  exact forall_principalSines_lt_iff U V
+
 /-- All principal angles from `U` to `V` are strictly below `π/2` exactly when the directed gap
 `‖P_{Vᗮ} P_U‖`, the largest principal sine, is less than `1`. -/
 theorem principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one :
     (∀ i, U.principalAngles V i < Real.pi / 2) ↔ U.directedProjectionGap V < 1 := by
-  simp only [principalAngles_apply, Real.arcsin_lt_pi_div_two]
-  exact forall_principalSines_lt_iff U V
+  rw [forall_principalAngles_lt_iff U V ⟨by linarith [Real.pi_pos], le_rfl⟩, Real.sin_pi_div_two]
 
 /-- In finite dimension, the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1` exactly
 when no nonzero vector of `U` is orthogonal to `V`. -/
@@ -525,12 +536,8 @@ theorem directedProjectionGap_lt_one_iff : U.directedProjectionGap V < 1 ↔ Dis
 `‖P_{Vᗮ} P_U‖` is less than `√2/2`. -/
 theorem principalAngles_lt_pi_div_four_iff :
     (∀ i, U.principalAngles V i < Real.pi / 4) ↔ U.directedProjectionGap V < √2 / 2 := by
-  have hπ : Real.pi / 4 ∈ Set.Icc (-(Real.pi / 2)) (Real.pi / 2) :=
-    ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩
-  have hs (i : ℕ) : U.principalSines V i ∈ Set.Icc (-1 : ℝ) 1 :=
-    ⟨by linarith [principalSines_nonneg U V i], principalSines_le_one U V i⟩
-  simp only [principalAngles_apply, Real.arcsin_lt_iff_lt_sin (hs _) hπ, Real.sin_pi_div_four]
-  exact forall_principalSines_lt_iff U V
+  rw [forall_principalAngles_lt_iff U V ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩,
+    Real.sin_pi_div_four]
 
 end FiniteDimensional
 

@@ -43,8 +43,9 @@ when the directed gap is less than `√2/2`.
   `Submodule.isAcute_iff_projectionGap_lt_one_of_finrank_eq` for subspaces of equal dimension.
 * `Submodule.principalTangents_apply_eq_div`: `tan θᵢ = sᵢ / √(1 - sᵢ²)` for the principal
   sines `sᵢ`.
-* `Submodule.arctan_principalTangents`, `Submodule.principalTangents_antitone`: on the pole-free
-  locus the principal tangents recover the principal angles and are nonincreasing.
+* `Submodule.arctan_principalTangents`, `Submodule.principalTangents_antitone`: the principal
+  tangents recover the principal angles below `π/2`, and are nonincreasing on the pole-free
+  locus.
 * `Submodule.AvoidsQuarterTurn.of_projectionGap_lt`: a pair with gap less than `√2/2` avoids the
   quarter turn, since then all principal angles are below `π/4`
   (`Submodule.principalAngles_lt_pi_div_four_iff`).
@@ -155,17 +156,18 @@ theorem principalTangents_nonneg (i : ℕ) : 0 ≤ U.principalTangents V i := by
   exact Real.tan_nonneg_of_nonneg_of_le_pi_div_two (principalAngles_nonneg U V i)
     (principalAngles_le_pi_div_two U V i)
 
-/-- On the pole-free locus, the arctangents of the principal tangents are the principal angles. -/
-theorem arctan_principalTangents (h : ∀ i, U.principalAngles V i < Real.pi / 2) (i : ℕ) :
+/-- Where the principal angle is strictly below `π/2`, the arctangent of the principal tangent
+is the principal angle. -/
+theorem arctan_principalTangents {i : ℕ} (hi : U.principalAngles V i < Real.pi / 2) :
     Real.arctan (U.principalTangents V i) = U.principalAngles V i := by
   rw [principalTangents_apply, Real.arctan_tan
-    (by linarith [principalAngles_nonneg U V i, Real.pi_pos]) (h i)]
+    (by linarith [principalAngles_nonneg U V i, Real.pi_pos]) hi]
 
 /-- On the pole-free locus, the principal tangents are nonincreasing. -/
 theorem principalTangents_antitone (h : ∀ i, U.principalAngles V i < Real.pi / 2) :
     Antitone (U.principalTangents V) := fun i j hij ↦ by
-  rw [← Real.arctan_strictMono.le_iff_le, arctan_principalTangents U V h,
-    arctan_principalTangents U V h]
+  rw [← Real.arctan_strictMono.le_iff_le, arctan_principalTangents U V (h i),
+    arctan_principalTangents U V (h j)]
   exact principalAngles_antitone U V hij
 
 /-- On the pole-free locus, the principal tangents all vanish exactly when `U ≤ V`. -/
@@ -173,7 +175,7 @@ theorem principalTangents_eq_zero_iff (h : ∀ i, U.principalAngles V i < Real.p
     U.principalTangents V = 0 ↔ U ≤ V := by
   rw [← principalAngles_eq_zero_iff, Finsupp.ext_iff, Finsupp.ext_iff]
   refine forall_congr' fun i ↦ ⟨fun hi ↦ ?_, fun hi ↦ ?_⟩
-  · rw [← arctan_principalTangents U V h, hi, Finsupp.coe_zero, Pi.zero_apply, Real.arctan_zero]
+  · rw [← arctan_principalTangents U V (h i), hi, Finsupp.coe_zero, Pi.zero_apply, Real.arctan_zero]
   · rw [principalTangents_apply, hi, Finsupp.coe_zero, Pi.zero_apply, Real.tan_zero]
 
 @[simp]
