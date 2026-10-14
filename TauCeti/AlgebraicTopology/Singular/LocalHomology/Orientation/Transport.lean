@@ -15,9 +15,9 @@ transport to equivalences between the sets of local orientations, compatible wit
 composition, path reversal and orientation reversal. They act on the generator fibres of the
 existing integral local homology system.
 
-The comparison through a compact convex set in a chart computes this transport without choosing
-an orientation at either endpoint. Such comparisons express the compatibility of local generators
-needed to glue them to a fundamental class. No global manifold orientation is chosen here.
+The underlying local homology transport is described through compact convex sets in charts by
+`TauCeti.localHomologyRestriction_comp_localHomologyTransport` in
+`TauCeti.AlgebraicTopology.Singular.LocalHomology.System`.
 
 The transport is defined in every degree; in the dimension of a manifold its fibres have two
 orientations, as described by `TauCeti.isLocalOrientation_iff_eq_or_eq_neg_inv_one` and the chart
@@ -26,7 +26,7 @@ computation of local homology.
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.3: transport of local orientations through local
-  homology over balls and the orientation covering.
+  homology over balls.
 -/
 
 public section
@@ -93,7 +93,7 @@ lemma localOrientationTransport_comp {x y z : FundamentalGroupoid M} (f : x ⟶ 
 lemma localOrientationTransport_inv {x y : FundamentalGroupoid M} (f : x ⟶ y) :
     localOrientationTransport M E d (inv f) = (localOrientationTransport M E d f).symm := by
   ext z
-  rfl
+  simp
 
 /-- Transport commutes with reversal of local orientations. -/
 @[simp]

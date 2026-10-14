@@ -145,11 +145,7 @@ theorem nat_card_localOrientation {M : Type w} [TopologicalSpace M] {x : M} {d :
   refine Nat.card_eq_two_iff.mpr ⟨z, -z, ?_, ?_⟩
   · intro h
     have h' := congrArg (fun a : LocalOrientation M x d ↦ (e.hom a.val).down) h
-    have hone : (e.hom z.val).down = 1 := congrArg ULift.down (e.inv_hom_id_apply 1)
-    have hneg : (e.hom (-z).val).down = -1 := by
-      rw [LocalOrientation.coe_neg]
-      exact (congrArg ULift.down (e.hom.hom.map_neg z.val)).trans (congrArg Neg.neg hone)
-    omega
+    simp [z] at h'
   · apply Set.eq_univ_of_forall
     intro a
     rcases (isLocalOrientation_iff_eq_or_eq_neg_inv_one e a.val).mp a.property with h | h
