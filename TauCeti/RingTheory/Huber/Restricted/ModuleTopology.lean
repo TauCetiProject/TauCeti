@@ -19,11 +19,13 @@ coefficient module, and finite-support series are dense. Continuous linear maps 
 continuously coefficientwise.
 
 `restrictedMvPowerSeriesSubmoduleUniformSpace` supplies this uniform structure on the existing
-carrier `restrictedMvPowerSeriesSubmodule`. Use this named definition through `letI` or a
-local instance. It stays non-global to avoid clashing with the product/subtype topology available
-under `open scoped MvPowerSeries.WithPiTopology`. The algebraic restricted-series API stays
-available under either choice. Public statements select the uniform coefficient structure
-explicitly with `letI`.
+carrier `restrictedMvPowerSeriesSubmodule`. Use `open scoped TauCeti.Huber.RestrictedUniform`
+to install it together with completeness, Hausdorffness, additive compatibility and fixed-scalar
+uniform continuity under their respective hypotheses. The instances stay non-global to avoid
+clashing with the product/subtype topology available under
+`open scoped MvPowerSeries.WithPiTopology`. The algebraic restricted-series API stays available
+under either choice. Public statements select the uniform coefficient structure explicitly
+with `letI`.
 
 ## References
 
@@ -40,17 +42,23 @@ variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommMonoid M] [UniformSpace M]
   [ContinuousAdd M] [Module A M] [ContinuousConstSMul A M]
 
 /-- The uniform structure of uniform convergence of coefficients on restricted series with
-module coefficients. Use it locally to distinguish it from the product subtype uniformity. -/
+module coefficients. Activate it with `open scoped TauCeti.Huber.RestrictedUniform` to
+distinguish it from the product subtype uniformity. -/
 @[instance_reducible]
 def restrictedMvPowerSeriesSubmoduleUniformSpace (k : ℕ) (A M : Type*) [Semiring A]
     [AddCommMonoid M] [UniformSpace M] [ContinuousAdd M] [Module A M]
     [ContinuousConstSMul A M] : UniformSpace (restrictedMvPowerSeriesSubmodule k A M) :=
   UniformSpace.comap (fun f ↦ UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) inferInstance
 
-section Uniform
+namespace RestrictedUniform
 
--- Use the named definition directly when elaborating proofs, without anonymous instances.
-attribute [local instance] restrictedMvPowerSeriesSubmoduleUniformSpace
+attribute [scoped instance] restrictedMvPowerSeriesSubmoduleUniformSpace
+
+end RestrictedUniform
+
+open scoped RestrictedUniform
+
+section Uniform
 
 /-- The coefficient map into the space of uniformly convergent functions induces the
 restricted-module uniformity. -/
@@ -160,8 +168,6 @@ section Group
 variable {k : ℕ} {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
   [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
 
-attribute [local instance] restrictedMvPowerSeriesSubmoduleUniformSpace
-
 /-- The uniform coefficient structure is compatible with addition. -/
 theorem isUniformAddGroup_restrictedMvPowerSeriesSubmodule :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
@@ -218,5 +224,14 @@ theorem uniformContinuous_restrictedMvPowerSeriesSubmoduleMap {φ : M →ₗ[A] 
 end Map
 
 end Group
+
+namespace RestrictedUniform
+
+attribute [scoped instance] t2Space_restrictedMvPowerSeriesSubmodule
+  completeSpace_restrictedMvPowerSeriesSubmodule
+  isUniformAddGroup_restrictedMvPowerSeriesSubmodule
+  uniformContinuousConstSMul_restrictedMvPowerSeriesSubmodule
+
+end RestrictedUniform
 
 end TauCeti.Huber
