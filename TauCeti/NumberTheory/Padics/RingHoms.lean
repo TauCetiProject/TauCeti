@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
@@ -64,7 +65,10 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
   `ℤ_[p]`.
 * `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
-  homomorphism to the units of `ZMod (p ^ n)`.
+  homomorphism to the units of `ZMod (p ^ n)`; it is surjective
+  (`PadicInt.surjective_unitsToZModPow`), compatible with the reductions `ZMod.unitsMap` between
+  levels (`PadicInt.unitsMap_unitsToZModPow`), and trivial at level `0`
+  (`PadicInt.unitsToZModPow_zero_apply`).
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
   finite of cardinality `p`.
 -/
@@ -318,6 +322,27 @@ noncomputable def unitsToZModPow (n : ℕ) : ℤ_[p]ˣ →ₜ* (ZMod (p ^ n))ˣ 
 theorem coe_unitsToZModPow_apply (n : ℕ) (u : ℤ_[p]ˣ) :
     ((unitsToZModPow n u : (ZMod (p ^ n))ˣ) : ZMod (p ^ n)) = toZModPow n (u : ℤ_[p]) :=
   (rfl)
+
+/-- Truncation modulo `p ^ n` on the units of `ℤ_[p]` is surjective. -/
+theorem surjective_unitsToZModPow (n : ℕ) :
+    Function.Surjective (unitsToZModPow (p := p) n) :=
+  -- `unitsToZModPow n` is `Units.map (toZModPow n)`, bundled with its continuity.
+  surjective_units_map_toZModPow n
+
+/-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
+truncation modulo `p ^ m`. -/
+@[simp]
+theorem unitsMap_unitsToZModPow {m n : ℕ} (h : p ^ m ∣ p ^ n) (u : ℤ_[p]ˣ) :
+    ZMod.unitsMap h (unitsToZModPow n u) = unitsToZModPow m u := by
+  ext
+  rw [ZMod.unitsMap_val, coe_unitsToZModPow_apply, coe_unitsToZModPow_apply,
+    cast_toZModPow _ _ ((Nat.pow_dvd_pow_iff_le_right hp.out.one_lt).mp h)]
+
+/-- Truncation modulo `p ^ 0 = 1` sends every unit to `1`. This is not a `simp` lemma, since `simp`
+first rewrites `p ^ 0` to `1` in the type of `unitsToZModPow 0`. -/
+theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
+  have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+  exact Subsingleton.elim _ _
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

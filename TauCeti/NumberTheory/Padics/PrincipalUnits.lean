@@ -58,7 +58,10 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
 * `TauCeti.unitsPrincipalMk`: the element of `U^(f)` with a prescribed value `v ≡ 1 mod p ^ f`.
 * `TauCeti.isOpen_unitsPrincipal`, `TauCeti.isClosed_unitsPrincipal`,
   `TauCeti.unitsPrincipal_antitone`, `TauCeti.iInf_unitsPrincipal_eq_bot`,
-  `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration.
+  `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration;
+  `TauCeti.exists_unitsPrincipal_le_of_isOpen`: every open subgroup contains some `U^(f)`.
+* `TauCeti.ker_unitsToZModPow`, `TauCeti.unitsToZModPow_eq_one_iff`: `U^(f)` is the kernel of
+  the truncation `PadicInt.unitsToZModPow f`.
 * `TauCeti.index_unitsPrincipal`: `[ℤ_pˣ : U^(f)] = φ(p ^ f)`, so `p ^ (f - 1) * (p - 1)`
   for `f ≥ 1`, and `2 ^ (f - 1)` for `p = 2`; `TauCeti.relIndex_unitsPrincipal`:
   `[U^(f) : U^(f+k)] = p ^ k` for `f ≥ 1`.
@@ -248,6 +251,25 @@ theorem hasBasis_nhds_one_unitsPrincipal :
   refine ⟨f, trivial, fun u hu ↦ hst <| hεs ?_⟩
   rw [Metric.mem_ball, dist_eq_norm]
   exact (mem_unitsPrincipal_iff_norm.mp hu).trans_lt hf
+
+/-- Every open subgroup of `ℤ_pˣ` contains some principal unit group `U^(f)`. -/
+theorem exists_unitsPrincipal_le_of_isOpen {H : Subgroup ℤ_[p]ˣ}
+    (hH : IsOpen (H : Set ℤ_[p]ˣ)) : ∃ f, unitsPrincipal p f ≤ H := by
+  obtain ⟨f, -, hf⟩ := (hasBasis_nhds_one_unitsPrincipal p).mem_iff.mp (hH.mem_nhds H.one_mem)
+  exact ⟨f, hf⟩
+
+variable (p) in
+/-- `U^(f)` is the kernel of truncation modulo `p ^ f` on units. -/
+theorem ker_unitsToZModPow (f : ℕ) :
+    (PadicInt.unitsToZModPow (p := p) f).toMonoidHom.ker = unitsPrincipal p f := by
+  ext u
+  simp [mem_unitsPrincipal_iff_toZModPow, Units.ext_iff]
+
+/-- A unit truncates to `1` modulo `p ^ f` exactly when it lies in `U^(f)`. -/
+@[simp]
+theorem unitsToZModPow_eq_one_iff {f : ℕ} {u : ℤ_[p]ˣ} :
+    PadicInt.unitsToZModPow f u = 1 ↔ u ∈ unitsPrincipal p f := by
+  simp [← ker_unitsToZModPow]
 
 /-! ### Indices -/
 
