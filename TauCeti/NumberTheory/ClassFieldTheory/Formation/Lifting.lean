@@ -90,17 +90,13 @@ theorem exists_cohomologyInfl_eq_map (T : LayerRefinement L L') {y : L'.H F 2}
   have hRy : groupCohomology.map (MonoidHom.id (L'.subgroupLayer T.galHom.ker).Gal)
       ((L'.subgroupLayer T.galHom.ker).repMap φ) 2 (R.cohomologyRes F 2 y) = 0 := by
     refine hσ₀ _ _ ?_
-    rw [hres, hy, L'.relativeDegree_subgroupRestriction, Subgroup.index_ker,
-      MonoidHom.range_eq_top.2 T.galHom_surjective, Subgroup.card_top,
-      ← NormalLayer.degree_eq_natCard_gal]
+    rw [hres, hy, T.relativeDegree_subgroupRestriction_ker]
     exact AddSubgroup.torsionBy.nsmul_iff.1 (AddCircle.coe_period_div_mem_torsionBy (1 : ℚ))
   -- So `φ(y)` restricts to zero on `L'/L` and is inflated from `L`.
   have hres' : R.cohomologyRes F' 2
       (groupCohomology.map (MonoidHom.id L'.Gal) (L'.repMap φ) 2 y) = 0 := by
     rwa [← LayerRestriction.cohomologyRes_comp_map_repMap_apply]
-  exact LinearMap.mem_range.1 ((T.range_cohomologyInfl_eq_ker_cohomologyRes F' 1 fun i hi ↦ by
-    obtain rfl : i = 0 := Nat.lt_one_iff.1 hi
-    exact h1 _).ge hres')
+  exact T.exists_cohomologyInfl_eq_of_cohomologyRes_eq_zero F' (h1 _) hres'
 
 include hker in
 /-- If the inflation of `x` to a refinement is the image of a class with `σ = 1/n`, `n` the degree
