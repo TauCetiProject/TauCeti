@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.PreAdicSpace
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Adic
 public import TauCeti.RingTheory.WittVector.AdicTopology
+public import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Independence of the pseudouniformiser
@@ -29,6 +30,11 @@ Then the ideals `(p, [ϖ])` and `(p, [ϖ'])` define the same adic topology on `�
   space, this descends through the universal property of the quotient
   (`TauCeti.FarguesFontaine.isColimitQuotientPreAdicCofork`) to an isomorphism in `𝒱^pre` of the
   two pre-adic spaces `𝒳`, which on points is the homeomorphism of orbit spaces.
+* Both isomorphisms lift to the category `(Adic)` of adic spaces, where they identify the adic
+  spaces `𝒴` compatibly with Frobenius and the adic spaces `𝒳` compatibly with the projections
+  `𝒴 → 𝒳`. When `R` is the ring of integers of a valuation on a field, `𝒪_𝒴` is a sheaf
+  (`TauCeti.FarguesFontaine.isSheaf_spaYPresheaf`), so the adic Fargues–Fontaine curve
+  `𝒳 = 𝒴 / φ^ℤ` does not depend on the pseudouniformiser.
 
 ## Main results
 
@@ -45,24 +51,32 @@ Then the ideals `(p, [ϖ])` and `(p, [ϖ'])` define the same adic topology on `�
 * `TauCeti.FarguesFontaine.spaXPreAdicSpaceCongr` : the isomorphism in `𝒱^pre` of the pre-adic
   spaces `𝒳`, with `quotientPreAdicHom_comp_spaXPreAdicSpaceCongr_hom` and
   `spaXPreAdicSpaceCongr_hom_base` describing it.
+* `TauCeti.FarguesFontaine.spaYAdicSpaceCongr` and
+  `TauCeti.FarguesFontaine.spaYAdicSpaceCongr_hom_comp_spaYAdicFrobenius` : the isomorphism of the
+  adic spaces `𝒴`, which intertwines Frobenius.
+* `TauCeti.FarguesFontaine.spaXAdicSpaceCongr` : the isomorphism of the adic spaces `𝒳`, with
+  `quotientAdicHom_comp_spaXAdicSpaceCongr_hom` describing it.
 
 ## References
 
 * L. Fargues and J.-M. Fontaine, *Courbes et fibrés vectoriels en théorie de Hodge p-adique*,
   Astérisque 406 (2018).
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017, §3.1.
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §8.1, for the category `𝒱^pre`.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §8.1 and Definition 8.22, for the categories
+  `𝒱^pre` and `(Adic)`.
 -/
 
 public section
 
 noncomputable section
 
+universe v
+
 namespace TauCeti.FarguesFontaine
 
 open TauCeti.Huber TauCeti.ValuationSpectrum _root_.WittVector
 
-variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] {ϖ ϖ' : R}
+variable {p : ℕ} [Fact p.Prime] {R : Type v} [CommRing R] {ϖ ϖ' : R}
 
 /-- If `ϖ` lies in the radical of `(ϖ')`, then every prime ideal of `𝕎 R` containing `[ϖ']`
 contains `[ϖ]`. -/
@@ -89,7 +103,7 @@ theorem spaY_eq_of_radical_eq (h : (Ideal.span {ϖ}).radical = (Ideal.span {ϖ'}
 
 section SpaYPreAdic
 
-open AlgebraicGeometry CategoryTheory
+open AlgebraicGeometry _root_.CategoryTheory
 
 /-- The range of the inclusion of `𝒴` into `Spa(𝕎 R, 𝕎 R)` consists of the points of `𝒴`. -/
 private theorem range_spaYInclusion (ϖ : R) :
@@ -156,6 +170,42 @@ theorem isSheaf_spaYPresheaf_of_spaY_eq (h : spaY p ϖ = spaY p ϖ')
     (X.ofRestrict (isOpenEmbedding_spaYInclusion p ϖ')) (range_spaYInclusion_eq h)).mp hY
 
 end SpaYPreAdic
+
+/-! ### The adic spaces `𝒴` -/
+
+section SpaYAdic
+
+open _root_.CategoryTheory
+
+variable [IsTopologicalRing (WittVector p R)] (P : PairOfDefinition (WittVector p R))
+  (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+  (hI' : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ'}))
+
+/-- **The adic spaces `𝒴` for two pseudouniformisers are isomorphic.** If `ϖ` and `ϖ'` define the
+same subset `𝒴` of `Spa(𝕎 R, 𝕎 R)` and `𝒪_𝒴` is a sheaf, the isomorphism `spaYPreAdicSpaceCongr` of
+pre-adic spaces is an isomorphism in the full subcategory `(Adic)`. For perfect `R` it
+intertwines Frobenius (`spaYAdicSpaceCongr_hom_comp_spaYAdicFrobenius`). -/
+def spaYAdicSpaceCongr (h : spaY p ϖ = spaY p ϖ') (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    spaYAdicSpace P hI hY ≅
+      spaYAdicSpace P hI' (isSheaf_spaYPresheaf_of_spaY_eq P h hY) :=
+  ObjectProperty.isoMk _ (spaYPreAdicSpaceCongr P hI hI' h)
+
+/-- The morphism of pre-adic spaces underlying `spaYAdicSpaceCongr` is `spaYPreAdicSpaceCongr`. -/
+@[simp]
+theorem spaYAdicSpaceCongr_hom_hom (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    (spaYAdicSpaceCongr P hI hI' h hY).hom.hom = (spaYPreAdicSpaceCongr P hI hI' h).hom :=
+  (rfl)
+
+/-- The morphism of pre-adic spaces underlying the inverse of `spaYAdicSpaceCongr` is the inverse
+of `spaYPreAdicSpaceCongr`. -/
+@[simp]
+theorem spaYAdicSpaceCongr_inv_hom (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    (spaYAdicSpaceCongr P hI hI' h hY).inv.hom = (spaYPreAdicSpaceCongr P hI hI' h).inv :=
+  (rfl)
+
+end SpaYAdic
 
 variable [CharP R p] [PerfectRing R p]
 
@@ -247,7 +297,7 @@ theorem spaXCongr_symm
 
 section SpaXPreAdic
 
-open CategoryTheory
+open _root_.CategoryTheory
 
 variable [IsTopologicalRing (WittVector p R)] (P : PairOfDefinition (WittVector p R))
   (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
@@ -332,5 +382,91 @@ theorem spaXPreAdicSpaceCongr_hom_base (h : spaY p ϖ = spaY p ϖ')
       (congrArg (quotientMap hI') (Subtype.ext (spaYPreAdicSpaceCongr_hom_base_val P hI hI' h v)))))
 
 end SpaXPreAdic
+
+/-! ### Frobenius on the adic spaces `𝒴`, and the adic spaces `𝒳` -/
+
+section Adic
+
+open _root_.CategoryTheory
+
+variable [IsTopologicalRing (WittVector p R)] (P : PairOfDefinition (WittVector p R))
+  (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+  (hI' : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ'}))
+
+/-- **The identification of the two adic spaces `𝒴` intertwines Frobenius.** -/
+@[reassoc]
+theorem spaYAdicSpaceCongr_hom_comp_spaYAdicFrobenius (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    (spaYAdicSpaceCongr P hI hI' h hY).hom ≫ spaYAdicFrobenius P hI' _ =
+      spaYAdicFrobenius P hI hY ≫ (spaYAdicSpaceCongr P hI hI' h hY).hom :=
+  ObjectProperty.hom_ext _ (by
+    simp only [ObjectProperty.FullSubcategory.comp_hom, spaYAdicFrobenius_hom,
+      spaYAdicSpaceCongr_hom_hom]
+    exact spaYPreAdicSpaceCongr_hom_comp_spaYFrobenius P hI hI' h)
+
+/-- The inverse of `spaYAdicSpaceCongr` also intertwines Frobenius. -/
+@[reassoc]
+theorem spaYAdicSpaceCongr_inv_comp_spaYAdicFrobenius (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    (spaYAdicSpaceCongr P hI hI' h hY).inv ≫ spaYAdicFrobenius P hI hY =
+      spaYAdicFrobenius P hI' _ ≫ (spaYAdicSpaceCongr P hI hI' h hY).inv := by
+  rw [Iso.inv_comp_eq, spaYAdicSpaceCongr_hom_comp_spaYAdicFrobenius_assoc, Iso.hom_inv_id,
+    Category.comp_id]
+
+/-- **The adic Fargues–Fontaine curves `𝒳 = 𝒴 / φ^ℤ` for two pseudouniformisers are isomorphic.**
+If `ϖ` and `ϖ'` define the same subset `𝒴` of `Spa(𝕎 R, 𝕎 R)`, as they do when they generate ideals
+with the same radical (`spaY_eq_of_radical_eq`), and `𝒪_𝒴` is a sheaf, then the isomorphism
+`spaXPreAdicSpaceCongr` of pre-adic spaces is an isomorphism in the full subcategory `(Adic)`. It is
+the isomorphism induced by `spaYAdicSpaceCongr` on the quotients by Frobenius
+(`quotientAdicHom_comp_spaXAdicSpaceCongr_hom`), and on points it is the homeomorphism
+`spaXCongr` of orbit spaces (`spaXPreAdicSpaceCongr_hom_base`). When `R` is the ring of integers of
+a valuation on a field and `ϖ` is a pseudouniformiser, `𝒪_𝒴` is a sheaf by
+`isSheaf_spaYPresheaf`. -/
+def spaXAdicSpaceCongr (h : spaY p ϖ = spaY p ϖ') (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    spaXAdicSpace P hI hY ≅
+      spaXAdicSpace P hI' (isSheaf_spaYPresheaf_of_spaY_eq P h hY) :=
+  ObjectProperty.isoMk _ (spaXPreAdicSpaceCongr P hI hI' h hY)
+
+/-- The morphism of pre-adic spaces underlying `spaXAdicSpaceCongr` is `spaXPreAdicSpaceCongr`. -/
+@[simp]
+theorem spaXAdicSpaceCongr_hom_hom (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    (spaXAdicSpaceCongr P hI hI' h hY).hom.hom = (spaXPreAdicSpaceCongr P hI hI' h hY).hom :=
+  (rfl)
+
+/-- The morphism of pre-adic spaces underlying the inverse of `spaXAdicSpaceCongr` is the inverse
+of `spaXPreAdicSpaceCongr`. -/
+@[simp]
+theorem spaXAdicSpaceCongr_inv_hom (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    (spaXAdicSpaceCongr P hI hI' h hY).inv.hom = (spaXPreAdicSpaceCongr P hI hI' h hY).inv :=
+  (rfl)
+
+/-- **The isomorphism of the adic spaces `𝒳` is induced by the identification of the adic spaces
+`𝒴`**: it commutes with the projections `𝒴 → 𝒳`. Together with the universal property of `𝒳`
+(`isColimitQuotientAdicCofork`) this determines it. -/
+@[reassoc (attr := simp)]
+theorem quotientAdicHom_comp_spaXAdicSpaceCongr_hom (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    quotientAdicHom P hI hY ≫ (spaXAdicSpaceCongr P hI hI' h hY).hom =
+      (spaYAdicSpaceCongr P hI hI' h hY).hom ≫ quotientAdicHom P hI' _ :=
+  ObjectProperty.hom_ext _ (by
+    simp only [ObjectProperty.FullSubcategory.comp_hom, quotientAdicHom_hom,
+      spaXAdicSpaceCongr_hom_hom, spaYAdicSpaceCongr_hom_hom]
+    exact quotientPreAdicHom_comp_spaXPreAdicSpaceCongr_hom P hI hI' h hY)
+
+/-- Over the ring of integers `𝒪_F` of a nonarchimedean normed field `F`, perfect of characteristic
+`p`, any two pseudouniformisers `ϖ` and `ϖ'` give isomorphic adic spaces `𝒳`, with no sheaf
+hypothesis: `𝒪_𝒴` is a sheaf by `isSheaf_spaYPresheaf`, and `ϖ` and `ϖ'` define the same `𝒴`. -/
+example {F : Type*} [NormedField F] [IsUltrametricDist F] [Algebra R F]
+    (hv : (NormedField.valuation (K := F)).Integers R) (hϖ₀ : ϖ ≠ 0)
+    (hϖ : ‖algebraMap R F ϖ‖ < 1) (hϖ'₀ : ϖ' ≠ 0) (hϖ' : ‖algebraMap R F ϖ'‖ < 1) :
+    spaXAdicSpace P hI (isSheaf_spaYPresheaf hI hv hϖ₀ (by simpa [← NNReal.coe_lt_coe] using hϖ)) ≅
+      spaXAdicSpace P hI' (isSheaf_spaYPresheaf hI' hv hϖ'₀
+        (by simpa [← NNReal.coe_lt_coe] using hϖ')) :=
+  spaXAdicSpaceCongr P hI hI'
+    (spaY_eq_of_radical_eq (hv.radical_span_singleton_eq_of_norm_lt_one hϖ₀ hϖ hϖ'₀ hϖ')) _
+
+end Adic
 
 end TauCeti.FarguesFontaine
