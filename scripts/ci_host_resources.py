@@ -70,12 +70,14 @@ class Sampler:
         self.first = self.last = None
         self.peak = None
         self.samples = 0
+        self.attempts = 0
         self.missing = set()
         self.cpu_s = 0
         self.started = self.ended = None
 
     def sample(self):
         start = time.thread_time()
+        self.attempts += 1
         try:
             value = snapshot()
             self.started = self.started or time.monotonic()
@@ -86,11 +88,13 @@ class Sampler:
             self.missing.update(value['missing'])
             if 'host_used_bytes' in value:
                 self.peak = max(self.peak or 0, value['host_used_bytes'])
+        except Exception:
+            self.missing.add('sampler-error')
         finally:
             self.cpu_s += time.thread_time() - start
 
     def watch(self, done):
-        while self.samples < MAX_SAMPLES and not done.wait(INTERVAL):
+        while self.attempts < MAX_SAMPLES and not done.wait(INTERVAL):
             try:
                 self.sample()
             except Exception:
@@ -113,9 +117,9 @@ class Sampler:
                           for kind, value in counters.items()}
                    for name, counters in last.get('host_devices', {}).items()
                    if name in first.get('host_devices', {})}
-        return {'samples': self.samples, 'interval_s': INTERVAL, 'sample_limit': MAX_SAMPLES,
+        return {'samples': self.samples, 'sample_attempts': self.attempts, 'interval_s': INTERVAL, 'sample_limit': MAX_SAMPLES,
                 'sampler_cpu_s': self.cpu_s,
-                'sample_limit_reached': self.samples >= MAX_SAMPLES,
+                'sample_limit_reached': self.attempts >= MAX_SAMPLES,
                 'sampled_elapsed_s': self.ended - self.started if self.started is not None else None,
                 'missing': sorted(self.missing),
                 'host_cpu_busy_fraction': busy / total if total else None,
@@ -164,7 +168,7 @@ def main():
     if thread.ident is not None:
         thread.join(timeout=1)
     try:
-        if sampler.samples < MAX_SAMPLES:
+        if sampler.attempts < MAX_SAMPLES:
             sampler.sample()
         record = {'schema': 'tauceti-ci.host-resources/v1', 'trust': 'host',
                   'scope': 'sandbox-command-tree-and-host', 'host_cpu_count': os.cpu_count(),
