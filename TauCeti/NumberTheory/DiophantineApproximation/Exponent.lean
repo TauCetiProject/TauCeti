@@ -20,7 +20,7 @@ The definition follows Sondow, *Irrationality measures, irrationality bases, and
 Jarnik*, Definition 2.
 -/
 
-@[expose] public section
+public section
 
 open scoped ENNReal
 
@@ -30,6 +30,12 @@ namespace TauCeti
 `LiouvilleWith p ξ` holds. -/
 noncomputable def irrationalityExponent (ξ : ℝ) : ℝ≥0∞ :=
   ⨆ (p : ℝ) (_ : LiouvilleWith p ξ), ENNReal.ofReal p
+
+/-- The irrationality exponent is the supremum of `ENNReal.ofReal p` over the exponents `p` for
+which `LiouvilleWith p ξ` holds. -/
+theorem irrationalityExponent_def (ξ : ℝ) :
+    irrationalityExponent ξ = ⨆ (p : ℝ) (_ : LiouvilleWith p ξ), ENNReal.ofReal p :=
+  (rfl)
 
 /-- An exponent satisfying `LiouvilleWith` is at most the irrationality exponent. -/
 theorem le_irrationalityExponent_of_liouvilleWith {p ξ : ℝ} (h : LiouvilleWith p ξ) :
