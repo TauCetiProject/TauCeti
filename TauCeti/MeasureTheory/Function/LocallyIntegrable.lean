@@ -41,6 +41,8 @@ it lies in every `Lᵖ` on each measurable subset of that compact set.
   preserves local integrability.
 * `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
   compact open subdomains.
+* `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
+  zero extension when the support avoids the added boundary.
 * `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
@@ -143,6 +145,36 @@ theorem integrable_indicator_of_isCompact (hloc : LocallyIntegrableOn f s μ)
   exact ((hloc.integrableOn_compact_subset hKs hK).integrable_indicator₀ hKmeas).congr hae.symm
 
 end ExtendByZero
+
+section RelativeExtension
+
+variable [OpensMeasurableSpace X] [LocallyCompactSpace X] [T2Space X]
+  {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] [PseudoMetrizableSpace F]
+  {f : X → F} {s t K : Set X}
+
+/-- Extension by zero preserves local integrability on `t` when the function vanishes off a
+closed set `K` and `t ∩ K` lies in its original measurable domain `s`. The support may meet the
+boundary of `t`; it need not be compact. -/
+theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : MeasurableSet s)
+    (ht : IsLocallyClosed t) (hK : IsClosed K) (hKs : t ∩ K ⊆ s)
+    (hzero : ∀ᵐ x ∂μ.restrict s, x ∉ K → f x = 0) :
+    LocallyIntegrableOn (s.indicator f) t μ := by
+  apply (locallyIntegrableOn_iff ht).2
+  intro C hCt hC
+  have hCK : C ∩ K ⊆ s := fun x hx => hKs ⟨hCt hx.1, hx.2⟩
+  have hi := (hf.integrableOn_compact_subset hCK (hC.inter_right hK)).integrable_indicator
+    (hC.isClosed.measurableSet.inter hK.measurableSet)
+  refine (hi.mono_measure Measure.restrict_le_self).congr ?_
+  filter_upwards [ae_restrict_mem hC.isClosed.measurableSet,
+    ((ae_restrict_iff' hs).1 hzero).filter_mono
+      (ae_mono Measure.restrict_le_self)] with x hxC hx
+  by_cases hxK : x ∈ K
+  · simp [hxC, hxK, hCK ⟨hxC, hxK⟩]
+  · by_cases hxs : x ∈ s
+    · simp [hxC, hxK, hxs, hx hxs hxK]
+    · simp [hxC, hxK, hxs]
+
+end RelativeExtension
 
 end MeasureTheory.LocallyIntegrableOn
 

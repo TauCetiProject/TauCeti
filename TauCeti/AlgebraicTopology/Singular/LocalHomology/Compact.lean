@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Neighborhood
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Union
 public import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
 
 /-!
@@ -59,13 +59,12 @@ Mayer–Vietoris sequence `Hₖ₊₁(M, M ∖ (A ∩ B)) ⟶ Hₖ(M, M ∖ (A �
 of two closed sets.
 
 * **Unions.** If the first term vanishes, the second map is a monomorphism
-  (`TauCeti.localHomology_hom_ext_of_union`), so both statements pass from `A` and `B` to
-  `A ∪ B` once `Hₖ(M, M ∖ (A ∩ B))` vanishes above the dimension.
-* **Convex sets in a chart.** For a compact convex set `K` in the target of a chart `φ`,
-  restriction from `φ.symm '' K` to any of its points is an isomorphism
-  (`TauCeti.isIso_localHomologyRestriction_symm_image`), and local homology at a point vanishes
-  outside the dimension. Finite unions of such sets follow by induction, since the intersection
-  of a finite union of convex sets with a convex set is again such a union.
+  (`TauCeti.isZero_localHomology_union`, `TauCeti.localHomology_hom_ext_of_union`), so both
+  statements pass from `A` and `B` to `A ∪ B` once `Hₖ(M, M ∖ (A ∩ B))` vanishes above the
+  dimension.
+* **Finite unions of convex sets in a chart.** These are the finite-union case of the lemma
+  (`TauCeti.isZero_localHomology_symm_image_iUnion`,
+  `TauCeti.localHomology_symm_image_iUnion_hom_ext`).
 * **Compact sets in a chart.** A class of `Hₖ(M, M ∖ A)` is the restriction of a class of
   `Hₖ(M, M ∖ U)` for a neighbourhood `U` of `A`
   (`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq`), and between `A` and `U` lies a
@@ -94,27 +93,24 @@ private lemma eq_zero_of_union {S T : Set M} (hS : IsClosed S) (hT : IsClosed T)
     (α : (localHomology N (S ∪ T) k : ModuleCat.{w} Λ))
     (hαS : localHomologyRestriction N subset_union_left k α = 0)
     (hαT : localHomologyRestriction N subset_union_right k α = 0) : α = 0 := by
-  let f : ModuleCat.of Λ Λ ⟶ localHomology N (S ∪ T) k :=
-    ModuleCat.ofHom (LinearMap.toSpanSingleton Λ _ α)
-  have hf {Y : ModuleCat.{w} Λ} (r : localHomology N (S ∪ T) k ⟶ Y) : f ≫ r = 0 ↔ r α = 0 := by
-    rw [ModuleCat.hom_ext_iff, LinearMap.ext_ring_iff, ModuleCat.hom_zero, LinearMap.zero_apply]
-    -- `(f ≫ r).hom 1` is `r (1 • α)` by the definitions of composition and `toSpanSingleton`.
-    change r ((1 : Λ) • α) = 0 ↔ _
-    rw [one_smul]
-  have key := localHomology_hom_ext_of_union hS hT h (f := f) (g := 0)
-    (by rw [zero_comp, hf]; exact hαS) (by rw [zero_comp, hf]; exact hαT)
-  simpa using (hf (𝟙 _)).1 (by simpa using key)
+  have := localHomology_hom_ext_of_union hS hT h
+    (f := ModuleCat.ofHom (LinearMap.toSpanSingleton Λ
+      (localHomology N (S ∪ T) k : ModuleCat.{w} Λ) α)) (g := 0) ?_ ?_
+  · exact (LinearMap.toSpanSingleton_eq_zero_iff Λ _).1 congr(ModuleCat.Hom.hom $this)
+  all_goals
+    ext1
+    rw [zero_comp]
+    refine (LinearMap.comp_toSpanSingleton _ _).trans
+      ((LinearMap.toSpanSingleton_eq_zero_iff Λ _).2 ?_)
+  exacts [hαS, hαT]
 
 /-- **The union step.** The conclusion passes from closed sets `S` and `T` to `S ∪ T`, provided
 local homology along `S ∩ T` vanishes above degree `n`. -/
 private lemma Detects.union {S T : Set M} (hS' : Detects N n S) (hT' : Detects N n T)
     (hS : IsClosed S) (hT : IsClosed T) (hST : ∀ k, n < k → IsZero (localHomology N (S ∩ T) k)) :
     Detects N n (S ∪ T) := by
-  refine ⟨fun k hk ↦ ?_, fun α hα ↦ eq_zero_of_union N hS hT (hST _ (by lia)) α ?_ ?_⟩
-  · rw [ModuleCat.isZero_iff_subsingleton]
-    refine ⟨fun α β ↦ sub_eq_zero.1 (eq_zero_of_union N hS hT (hST _ (by lia)) _ ?_ ?_)⟩
-    · exact (ModuleCat.subsingleton_of_isZero (hS'.isZero k hk)).elim _ _
-    · exact (ModuleCat.subsingleton_of_isZero (hT'.isZero k hk)).elim _ _
+  refine ⟨fun k hk ↦ isZero_localHomology_union hS hT (hS'.isZero k hk) (hT'.isZero k hk)
+    (hST _ (by lia)), fun α hα ↦ eq_zero_of_union N hS hT (hST _ (by lia)) α ?_ ?_⟩
   · refine hS'.eq_zero _ fun x hx ↦ ?_
     rw [localHomologyRestriction_comp_apply]
     exact hα x (Or.inl hx)
@@ -124,58 +120,6 @@ private lemma Detects.union {S T : Set M} (hS' : Detects N n S) (hT' : Detects N
 
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [T2Space M] {n}
-
-/-- **The convex step.** The conclusion holds for the image under a chart of a compact convex
-subset of its target. -/
-private lemma detects_symm_image_of_convex (hn : finrank ℝ E = n)
-    (φ : OpenPartialHomeomorph M E) {L : Set E} (hL : Convex ℝ L) (hLc : IsCompact L)
-    (hLφ : L ⊆ φ.target) : Detects N n (φ.symm '' L) := by
-  rcases L.eq_empty_or_nonempty with rfl | ⟨y, hy⟩
-  · rw [image_empty]
-    exact detects_empty N n
-  have hx : φ.symm y ∈ φ.source := φ.map_target (hLφ hy)
-  have hxL : φ (φ.symm y) ∈ L := by rwa [φ.right_inv (hLφ hy)]
-  have hK : StarConvex ℝ (φ (φ.symm y)) L := hL.starConvex hxL
-  refine ⟨fun k hk ↦ isZero_singularHomology_compl_symm_image_of_ne N φ hx hK hxL
-    hLc.isBounded hLc.isClosed (hLc.image_of_continuousOn (φ.continuousOn_symm.mono hLφ)).isClosed
-    hLφ hn hk.ne', fun α hα ↦ ?_⟩
-  have := isIso_localHomologyRestriction_symm_image N φ hK hLc hLφ hx hxL n
-  exact (ModuleCat.mono_iff_injective _).1 inferInstance
-    ((hα _ ⟨_, hxL, φ.left_inv hx⟩).trans (map_zero _).symm)
-
-/-- The conclusion holds for the image under a chart of a finite union of compact convex subsets
-of its target. -/
-private lemma detects_symm_image_biUnion (hn : finrank ℝ E = n) (φ : OpenPartialHomeomorph M E)
-    {ι : Type*} (s : Finset ι) (L : ι → Set E) (hL : ∀ i ∈ s, Convex ℝ (L i))
-    (hLc : ∀ i ∈ s, IsCompact (L i)) (hLφ : ∀ i ∈ s, L i ⊆ φ.target) :
-    Detects N n (φ.symm '' ⋃ i ∈ s, L i) := by
-  classical
-  induction s using Finset.induction_on generalizing L with
-  | empty => simpa using detects_empty N n
-  | insert j s hj ih =>
-    have hc (t : Set E) (ht : IsCompact t) (htφ : t ⊆ φ.target) : IsClosed (φ.symm '' t) :=
-      (ht.image_of_continuousOn (φ.continuousOn_symm.mono htφ)).isClosed
-    have hsφ : (⋃ i ∈ s, L i) ⊆ φ.target :=
-      iUnion₂_subset fun i hi ↦ hLφ i (Finset.mem_insert_of_mem hi)
-    rw [Finset.set_biUnion_insert, image_union]
-    refine (detects_symm_image_of_convex N hn φ (hL j (s.mem_insert_self j))
-      (hLc j (s.mem_insert_self j)) (hLφ j (s.mem_insert_self j))).union N n
-      (ih L (fun i hi ↦ hL i (Finset.mem_insert_of_mem hi))
-        (fun i hi ↦ hLc i (Finset.mem_insert_of_mem hi))
-        fun i hi ↦ hLφ i (Finset.mem_insert_of_mem hi))
-      (hc _ (hLc j (s.mem_insert_self j)) (hLφ j (s.mem_insert_self j)))
-      (hc _ (s.finite_toSet.isCompact_biUnion fun i hi ↦ hLc i (Finset.mem_insert_of_mem hi))
-        hsφ) ?_
-    -- The intersection is the image of `⋃ i ∈ s, L i ∩ L j`, a finite union of compact convex
-    -- sets in the target.
-    have hinj : InjOn φ.symm φ.target := φ.symm.injOn
-    rw [← hinj.image_inter (hLφ j (s.mem_insert_self j)) hsφ, inter_iUnion₂]
-    simp_rw [inter_comm (L j)]
-    exact (ih (fun i ↦ L i ∩ L j)
-      (fun i hi ↦ (hL i (Finset.mem_insert_of_mem hi)).inter (hL j (s.mem_insert_self j)))
-      (fun i hi ↦ (hLc i (Finset.mem_insert_of_mem hi)).inter_right
-        (hLc j (s.mem_insert_self j)).isClosed)
-      fun i hi ↦ inter_subset_left.trans (hLφ i (Finset.mem_insert_of_mem hi))).isZero
 
 /-- **The compactness step.** The conclusion holds for a compact subset of the source of a chart.
 A class along `A` is restricted from a finite union `K` of closed balls of the chart centred at
@@ -196,9 +140,22 @@ private lemma detects_of_subset_source (hn : finrank ℝ E = n) (φ : OpenPartia
     exact ⟨t, r, fun a ha ↦ ⟨(ht a ha).1, (ht a ha).2.1, (ht a ha).2.2.1⟩, hAt,
       localHomologyRestriction N hKU k β, localHomologyRestriction_comp_apply N _ _ k β⟩
   have hK (t : Finset M) (r : M → ℝ) (ht : ∀ a ∈ t, closedBall (φ a) (r a) ⊆ φ.target) :
-      Detects N n (φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a)) :=
-    detects_symm_image_biUnion N hn φ t _ (fun _ _ ↦ convex_closedBall _ _)
-      (fun _ _ ↦ isCompact_closedBall _ _) ht
+      Detects N n (φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a)) := by
+    rw [← iUnion_subtype (· ∈ t) fun a ↦ closedBall (φ a) (r a)]
+    have hconv (a : t) := convex_closedBall (φ a) (r a)
+    have hcpt (a : t) := isCompact_closedBall (φ a) (r a)
+    have hφ (a : t) := ht a a.2
+    refine ⟨fun k hk ↦ isZero_localHomology_symm_image_iUnion N φ hn hconv hcpt hφ hk,
+      fun α hα ↦ ?_⟩
+    have := localHomology_symm_image_iUnion_hom_ext N φ hn hconv hcpt hφ
+      (g₁ := ModuleCat.ofHom (LinearMap.toSpanSingleton Λ
+        (localHomology N (φ.symm '' ⋃ a : t, closedBall (φ a) (r a)) n : ModuleCat.{w} Λ) α))
+      (g₂ := 0) fun x hx ↦ ?_
+    · exact (LinearMap.toSpanSingleton_eq_zero_iff Λ _).1 congr(ModuleCat.Hom.hom $this)
+    ext1
+    rw [zero_comp]
+    exact (LinearMap.comp_toSpanSingleton _ _).trans
+      ((LinearMap.toSpanSingleton_eq_zero_iff Λ _).2 (hα x hx))
   refine ⟨fun k hk ↦ ?_, fun α hα ↦ ?_⟩
   · have h (α : (localHomology N A k : ModuleCat.{w} Λ)) : α = 0 := by
       obtain ⟨t, r, ht, hAK, β, rfl⟩ := key k α
