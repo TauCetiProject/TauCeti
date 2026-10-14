@@ -328,39 +328,55 @@ end Gap
 
 section Projection
 
-variable {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {X : E →L[𝕜] E} [CompleteSpace E]
+variable [CompleteSpace E]
+
+/-- On a complete space, `1 + X†X` is invertible for every bounded operator `X`, since
+`⟪(1 + X†X) x, x⟫ = ‖x‖² + ‖X x‖² ≥ ‖x‖²`. -/
+theorem _root_.ContinuousLinearMap.isUnit_one_add_adjoint_comp_self (X : E →L[𝕜] E) :
+    IsUnit (1 + X† ∘L X) := by
+  refine isUnit_of_forall_le_norm_inner_map _ one_pos fun x => ?_
+  have h : ⟪(1 + X† ∘L X) x, x⟫_𝕜 = ((‖x‖ ^ 2 + ‖X x‖ ^ 2 : ℝ) : 𝕜) := by
+    simp [inner_add_left, adjoint_inner_left, inner_self_eq_norm_sq_to_K]
+  rw [h, RCLike.norm_ofReal, NNReal.coe_one, mul_one, abs_of_nonneg (by positivity)]
+  exact le_add_of_nonneg_right (sq_nonneg _)
+
+variable {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {X : E →L[𝕜] E}
+
+namespace IsAngularOperator
+
+variable (hX : U.IsAngularOperator X)
+include hX
+
+/-- The adjoint of `X P_U = X`: an angular operator's adjoint takes values in `U`. -/
+theorem starProjection_comp_adjoint : U.starProjection ∘L X† = X† := by
+  rw [← (isSelfAdjoint_starProjection U).adjoint_eq, ← adjoint_comp, hX.comp_starProjection]
+
+/-- The adjoint of `P_U X = 0`: an angular operator's adjoint vanishes on `U`. -/
+theorem adjoint_comp_starProjection : X† ∘L U.starProjection = 0 := by
+  rw [← (isSelfAdjoint_starProjection U).adjoint_eq, ← adjoint_comp, hX.starProjection_comp,
+    map_zero]
+
 
 /-- **The graph projection formula**: on a complete space, the orthogonal projection onto the graph
-subspace is `A (1 + X†X)⁻¹ A†` with `A = P_U + X`. The operator `1 + X†X` is invertible, as
-`⟪(1 + X†X) x, x⟫ = ‖x‖² + ‖X x‖²`. -/
-theorem IsAngularOperator.starProjection_graphSubspace (hX : U.IsAngularOperator X)
-    [(U.graphSubspace X).HasOrthogonalProjection] :
+subspace is `A (1 + X†X)⁻¹ A†` with `A = P_U + X`. The operator `1 + X†X` is invertible by
+`ContinuousLinearMap.isUnit_one_add_adjoint_comp_self`. -/
+theorem starProjection_graphSubspace [(U.graphSubspace X).HasOrthogonalProjection] :
     (U.graphSubspace X).starProjection =
       (U.starProjection + X) ∘L Ring.inverse (1 + X† ∘L X) ∘L (U.starProjection + X)† := by
-  have hT : IsUnit (1 + X† ∘L X) := by
-    refine isUnit_of_forall_le_norm_inner_map _ one_pos fun x => ?_
-    have h : ⟪(1 + X† ∘L X) x, x⟫_𝕜 = ((‖x‖ ^ 2 + ‖X x‖ ^ 2 : ℝ) : 𝕜) := by
-      simp [inner_add_left, adjoint_inner_left, inner_self_eq_norm_sq_to_K]
-    rw [h, RCLike.norm_ofReal, NNReal.coe_one, mul_one, abs_of_nonneg (by positivity)]
-    exact le_add_of_nonneg_right (sq_nonneg _)
   have hP : (U.starProjection)† = U.starProjection := (isSelfAdjoint_starProjection U).adjoint_eq
   have hPP : U.starProjection ∘L U.starProjection = U.starProjection :=
     (isIdempotentElem_starProjection U).eq
-  -- `X† = P_U X†` and `X† P_U = 0` are the adjoints of the two angular relations.
-  have h₁ : U.starProjection ∘L X† = X† := by
-    rw [← hP, ← adjoint_comp, hX.comp_starProjection]
-  have h₂ : X† ∘L U.starProjection = 0 := by
-    rw [← hP, ← adjoint_comp, hX.starProjection_comp, map_zero]
   -- `A† A = P_U (1 + X† X)` for `A = P_U + X`.
   have hAA : ∀ y, adjoint (U.starProjection + X) ((U.starProjection + X) y) =
       U.starProjection ((1 + X† ∘L X) y) := fun y => by
     have h : (U.starProjection + X)† ∘L (U.starProjection + X) =
         U.starProjection ∘L (1 + X† ∘L X) := by
-      simp only [map_add, hP, comp_add, add_comp, hPP, h₂, hX.starProjection_comp, one_def,
-        comp_id, ← comp_assoc, h₁, zero_add, add_zero]
+      simp only [map_add, hP, comp_add, add_comp, hPP, hX.adjoint_comp_starProjection,
+        hX.starProjection_comp, one_def, comp_id, ← comp_assoc, hX.starProjection_comp_adjoint,
+        zero_add, add_zero]
     exact DFunLike.congr_fun h y
   have hTT : ∀ y, (1 + X† ∘L X) (Ring.inverse (1 + X† ∘L X) y) = y := fun y =>
-    DFunLike.congr_fun (Ring.mul_inverse_cancel _ hT) y
+    DFunLike.congr_fun (Ring.mul_inverse_cancel _ X.isUnit_one_add_adjoint_comp_self) y
   set A := U.starProjection + X
   set T := 1 + X† ∘L X
   ext x
@@ -380,6 +396,8 @@ theorem IsAngularOperator.starProjection_graphSubspace (hX : U.IsAngularOperator
           rw [inner_starProjection_left_eq_right, starProjection_eq_self_iff.mpr hu]
         _ = ⟪x, A u⟫_𝕜 := adjoint_inner_left A u x
     rw [← hAu, inner_sub_left, key, sub_self]
+
+end IsAngularOperator
 
 end Projection
 
