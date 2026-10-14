@@ -363,6 +363,12 @@ lemma valuation_lt_iff (v : Spv A) (x y : A) :
   let := v.toValuativeRel
   ((ValuativeRel.valuation A).vlt_iff_lt (x := x) (y := y)).symm
 
+/-- Membership in a basic open subset, read through the canonical valuation of the point:
+`v ∈ Spv(A)(f/s)` iff `v(f) ≤ v(s)` and `v(s) ≠ 0`. -/
+lemma mem_basicOpen_iff_valuation (f s : A) (v : Spv A) :
+    v ∈ basicOpen f s ↔ v.valuation f ≤ v.valuation s ∧ v.valuation s ≠ 0 := by
+  rw [mem_basicOpen_iff, ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
+
 /-- The support of `v : Spv A` equals the support of its canonical valuation. -/
 lemma supp_eq_valuation_supp (v : Spv A) : v.supp = v.valuation.supp :=
   @ValuativeRel.supp_eq_valuation_supp A _ v.toValuativeRel
