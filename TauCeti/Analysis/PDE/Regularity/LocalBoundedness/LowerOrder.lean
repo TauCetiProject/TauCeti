@@ -24,7 +24,8 @@ such `u`: on every ball `B(x₀, R) ⊆ Ω` and above every level `k ≥ 0`,
 `u ≤ k + D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖(u - k)⁺‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`,
 
 with `D` depending only on `λ`, `Λ`, the dimension `n ≥ 1` and the normalization of the additive
-Haar measure.
+Haar measure. For weak solutions, `u` and `-u` are both subsolutions, which gives the two-sided
+bound `|u| ≤ D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` on `B(x₀, R/2)`.
 
 Under the sign condition `c ≥ 0` and at levels `k ≥ 0`, the truncations `(u - k)⁺` satisfy the
 Caccioppoli inequality
@@ -46,6 +47,8 @@ serves to make the energy form integrable. The condition `k ≥ 0` is what makes
   subsolutions belong to De Giorgi's class above every level `k ≥ 0`.
 * `TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: local
   boundedness of weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`.
+* `TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: the
+  two-sided bound `|u| ≤ D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak solutions.
 
 ## References
 
@@ -153,6 +156,48 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
   filter_upwards [hbound] with x hx
   refine hx.trans ?_
   gcongr k + ?_ * _ * _
+
+/-- **Local boundedness of weak solutions with lower-order terms (De Giorgi).** In every dimension
+`n ≥ 1` there is `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization of the
+additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
+elliptic on `Ω` with constants `λ, Λ`, and let `b` and `c` be measurable with `‖b‖ ≤ β`,
+`‖c‖ ≤ γ` and `c ≥ 0` on `Ω`. Let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`. Then for every
+ball `B(x₀, R) ⊆ Ω`,
+
+`|u| ≤ D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`.
+
+This is the two-sided form of
+`TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`, applied at
+the level `0` to the weak subsolutions `u` and `-u`. -/
+theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder [Nonempty ι] :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {c : EuclideanSpace ℝ ι → ℝ} {beta gamma : ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      AEStronglyMeasurable c (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = 0) →
+      0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
+        |W1p.value u x| ≤ D * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι *
+          R ^ (-(Fintype.card ι : ℝ) / 2) *
+          √(∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu) := by
+  obtain ⟨D, hD, hbound⟩ :=
+    exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+      (lam := lam) (Lam := Lam)
+  refine ⟨D, hD, ?_⟩
+  intro Omega a b c beta gamma u x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hR hball
+  have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (-u) (v : W1p mu Omega 2) = 0 := fun v => by
+    rw [energyFormH1_neg_left, hu v, neg_zero]
+  exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le hR (by positivity) hball
+    (hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu v).le) le_rfl hR hball)
+    (hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu' v).le) le_rfl hR hball)
 
 end PDE
 
