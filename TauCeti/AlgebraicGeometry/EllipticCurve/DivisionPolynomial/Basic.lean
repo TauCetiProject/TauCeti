@@ -42,6 +42,8 @@ a curve in characteristic-≠-2 normal form.
   `W` after the change of variables `(1, x, s, y)`.
 * `WeierstrassCurve.eval_variableChange_Ψ₂Sq`: after a change of variables `C`, the polynomial
   `Ψ₂Sq` becomes `u⁻⁶ Ψ₂Sq(u²x + r)`.
+* `WeierstrassCurve.eval_variableChange_Ψ₃`: after a change of variables `C`, the polynomial
+  `Ψ₃` becomes `u⁻⁸ Ψ₃(u²x + r)`.
 
 Everything here holds over an arbitrary commutative ring, with no ellipticity and no division. Of
 the first three, the first has no hypothesis at all; the second's is an equation between ring
@@ -57,7 +59,9 @@ moved to `(0, 0)` with horizontal tangent, `b₈ = a₂a₃²`, so the normalisa
 
 The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
 an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
-(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`).
+(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`). The one for `Ψ₃` transports the
+condition that a point has order `3` along a change of variables
+(`TauCeti/AlgebraicGeometry/EllipticCurve/LevelThreeNormalForm.lean`).
 
 Declarations here are stated in the root
 `WeierstrassCurve` namespace, not under `TauCeti`, because they extend Mathlib's own
@@ -182,6 +186,17 @@ theorem eval_variableChange_Ψ₂Sq (C : VariableChange R) (x : R) :
   conv_lhs => rw [hx]
   simp only [Ψ₂Sq, eval_add, eval_mul, eval_pow, eval_C, eval_X, variableChange_b₂,
     variableChange_b₄, variableChange_b₆]
+  ring
+
+/-- After a change of variables `C`, the `3`-division polynomial transforms as
+`Ψ₃'(x) = u⁻⁸ Ψ₃(u²x + r)`. -/
+theorem eval_variableChange_Ψ₃ (C : VariableChange R) (x : R) :
+    (C • W).Ψ₃.eval x = C.u⁻¹ ^ 8 * W.Ψ₃.eval (C.u ^ 2 * x + C.r) := by
+  -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
+  have hx : x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
+    linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
+  conv_lhs => rw [hx]
+  simp only [eval_Ψ₃, variableChange_b₂, variableChange_b₄, variableChange_b₆, variableChange_b₈]
   ring
 
 end WeierstrassCurve
