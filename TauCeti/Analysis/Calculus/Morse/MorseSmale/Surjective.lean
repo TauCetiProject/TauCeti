@@ -56,7 +56,7 @@ private theorem isAdmissiblePerturbation_bump_mul (hfs : ContDiff ℝ 2 f) {z : 
     (θ : ContDiffBump z) (hθ : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0) {c : ℝ}
     (ψ : ContDiffBump c) (w : E) :
     IsAdmissiblePerturbation f fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫) :=
-  isAdmissiblePerturbation_contDiffBump_mul θ hθ
+  θ.isAdmissiblePerturbation_mul hθ
     ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
 
 /-- The derivative of a test perturbation `θ (ψ ∘ f) ⟪w, ·⟫` in a direction `v` killed by
