@@ -81,17 +81,22 @@ theorem IsPrimitive.ne_zero {f : BinaryQuadraticForm ℤ} (hf : f.IsPrimitive) :
   rintro rfl
   exact not_isPrimitive_zero hf
 
-/-- The coefficients of a primitive form have an integral Bézout relation. -/
-theorem IsPrimitive.exists_linearCombination_eq_one {f : BinaryQuadraticForm ℤ}
-    (hf : f.IsPrimitive) : ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = 1 := by
+/-- The coefficients of an integral form have a Bézout relation for its content. -/
+theorem exists_linearCombination_eq_content (f : BinaryQuadraticForm ℤ) :
+    ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = (f.content : ℤ) := by
   have h₁ := Int.gcd_eq_gcd_ab f.a (Int.gcd f.b f.c)
   have h₂ := Int.gcd_eq_gcd_ab f.b f.c
   rw [← content_def] at h₁
-  rw [(isPrimitive_iff f).mp hf, Nat.cast_one] at h₁
   refine ⟨Int.gcdA f.a (Int.gcd f.b f.c),
     Int.gcdB f.a (Int.gcd f.b f.c) * Int.gcdA f.b f.c,
     Int.gcdB f.a (Int.gcd f.b f.c) * Int.gcdB f.b f.c, ?_⟩
   linear_combination -h₁ - Int.gcdB f.a (Int.gcd f.b f.c) * h₂
+
+/-- The coefficients of a primitive form have an integral Bézout relation. -/
+theorem IsPrimitive.exists_linearCombination_eq_one {f : BinaryQuadraticForm ℤ}
+    (hf : f.IsPrimitive) : ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = 1 := by
+  simpa only [(isPrimitive_iff f).mp hf, Nat.cast_one] using
+    exists_linearCombination_eq_content f
 
 /-- A natural number divides the content exactly when it divides all three coefficients. -/
 theorem dvd_content_iff (f : BinaryQuadraticForm ℤ) (n : ℕ) :
