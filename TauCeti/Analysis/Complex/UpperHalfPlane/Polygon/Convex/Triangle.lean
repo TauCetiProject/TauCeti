@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.Triangle
+import TauCeti.Topology.Circle.Metric
 
 /-!
 # Hyperbolic triangles with prescribed angles
@@ -17,11 +17,7 @@ For real numbers `α, β, γ ≥ 0` with `α + β + γ < π` there is a convex h
 vertices in `ℍ ∪ ∂ℍ`, whose interior angles are `α`, `β` and `γ`; by
 `ConvexPolygon.interiorAngle_eq_zero_iff`, a vertex is ideal exactly when its angle is `0`.
 Conversely, by Gauss–Bonnet, the angles of every convex hyperbolic triangle are of this form
-(`ConvexPolygon.exists_interiorAngle_eq_iff`). In particular a triple of elliptic orders and cusps
-is hyperbolic exactly when it is realised by a triangle with angle `π / m` at each elliptic vertex
-of order `m` and an ideal vertex at each cusp
-(`TauCeti.TriangleOrder.isHyperbolic_iff_exists_interiorAngle_eq`). The reflections in the sides
-of such a triangle generate the corresponding extended triangle group.
+(`ConvexPolygon.exists_interiorAngle_eq_iff`).
 
 The triangle is written down explicitly in one of two normal forms.
 
@@ -42,9 +38,6 @@ The triangle is written down explicitly in one of two normal forms.
 
 * `ConvexPolygon.exists_interiorAngle_eq_iff`: the angle triples of convex hyperbolic triangles
   are exactly the nonnegative triples with sum less than `π`.
-* `TauCeti.TriangleOrder.isHyperbolic_iff_exists_interiorAngle_eq`: a triple of elliptic orders
-  and cusps is hyperbolic exactly when some convex hyperbolic triangle has the corresponding
-  angles.
 
 ## References
 
@@ -113,13 +106,15 @@ private theorem exists_convexPolygon_three_vertex_two_eq_infty {α β : ℝ} (h�
   · fin_cases i
     exacts [hpq, hq, hp.symm]
   · fin_cases i <;> fin_cases j <;> simp [h₀, h₁, h₂] at hji hji' ⊢
-  · rw [ConvexPolygon.interiorAngle_def, show (0 : Fin 3) - 1 = 2 from rfl, zero_add]
+  · have hsub : (0 : Fin 3) - 1 = 2 := by decide
+    rw [ConvexPolygon.interiorAngle_def, hsub, zero_add]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
       Matrix.head_cons]
     rw [vertexAngle_infty_of_re_lt one_pos hp hq hpm hqm hlt, hpre, sub_zero, div_one,
       Real.cos_pi_sub, Real.arccos_neg, Real.arccos_cos hα (by linarith)]
     ring
-  · rw [ConvexPolygon.interiorAngle_def, sub_self, show (1 : Fin 3) + 1 = 2 from rfl]
+  · have hadd : (1 : Fin 3) + 1 = 2 := by decide
+    rw [ConvexPolygon.interiorAngle_def, sub_self, hadd]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
       Matrix.head_cons]
     rw [vertexAngle_infty_of_lt_re one_pos hp hq hpm hqm hlt, hqre, sub_zero, div_one,
@@ -127,64 +122,6 @@ private theorem exists_convexPolygon_three_vertex_two_eq_infty {α β : ℝ} (h�
   · exact ConvexPolygon.interiorAngle_eq_zero_of_vertex_eq_inr _ (ξ := ∞) rfl
 
 /-! ### A triangle with three finite vertices -/
-
-/-- Two circles with centres `c₂ < c₁` on the real axis and radii `ρ₁`, `ρ₂`, whose distance of
-centres satisfies the law of cosines for the angle `γ ∈ (0, π)`, meet at a point `x + i y` of the
-upper half-plane where their radius vectors make the angle `γ`. -/
-private theorem exists_arccos_sub_arccos_eq {c₁ c₂ ρ₁ ρ₂ γ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₂ : 0 < ρ₂)
-    (hγ : 0 < γ) (hγπ : γ < π) (hD : 0 < c₁ - c₂)
-    (hkey : (c₁ - c₂) ^ 2 = ρ₁ ^ 2 + ρ₂ ^ 2 - 2 * ρ₁ * ρ₂ * Real.cos γ) :
-    ∃ x y : ℝ, 0 < y ∧ (x - c₁) ^ 2 + y ^ 2 = ρ₁ ^ 2 ∧ (x - c₂) ^ 2 + y ^ 2 = ρ₂ ^ 2 ∧
-      Real.arccos ((x - c₁) / ρ₁) - Real.arccos ((x - c₂) / ρ₂) = γ := by
-  set D := c₁ - c₂
-  set c := Real.cos γ
-  set s := Real.sin γ
-  have hs : 0 < s := Real.sin_pos_of_pos_of_lt_pi hγ hγπ
-  have hcs : s ^ 2 + c ^ 2 = 1 := Real.sin_sq_add_cos_sq γ
-  have hc : c < 1 := by
-    rw [← Real.cos_zero]
-    exact Real.cos_lt_cos_of_nonneg_of_le_pi le_rfl hγπ.le hγ
-  -- the cosines `u₁`, `u₂` and sines `ρ₂ s / D`, `ρ₁ s / D` of the arguments of the radius vectors
-  set u₁ := -(ρ₁ - ρ₂ * c) / D with hu₁
-  set u₂ := (ρ₂ - ρ₁ * c) / D with hu₂
-  have hx : c₁ + ρ₁ * u₁ - c₂ = ρ₂ * u₂ := by
-    rw [hu₁, hu₂]
-    field_simp
-    linear_combination hkey
-  have hu₁' : 1 - u₁ ^ 2 = (ρ₂ * s / D) ^ 2 := by
-    rw [hu₁]
-    field_simp
-    linear_combination hkey - ρ₂ ^ 2 * hcs
-  have hu₂' : 1 - u₂ ^ 2 = (ρ₁ * s / D) ^ 2 := by
-    rw [hu₂]
-    field_simp
-    linear_combination hkey - ρ₁ ^ 2 * hcs
-  have hsin₁ : Real.sin (Real.arccos u₁) = ρ₂ * s / D := by
-    rw [Real.sin_arccos, hu₁', Real.sqrt_sq (by positivity)]
-  have hsin₂ : Real.sin (Real.arccos u₂) = ρ₁ * s / D := by
-    rw [Real.sin_arccos, hu₂', Real.sqrt_sq (by positivity)]
-  have hb₁ : -1 ≤ u₁ ∧ u₁ ≤ 1 := by
-    constructor <;> nlinarith [sq_nonneg (ρ₂ * s / D)]
-  have hb₂ : -1 ≤ u₂ ∧ u₂ ≤ 1 := by
-    constructor <;> nlinarith [sq_nonneg (ρ₁ * s / D)]
-  -- the angle between the radius vectors has cosine `c`, and lies in `[0, π]` as `u₁ ≤ u₂`
-  have hcos : Real.cos (Real.arccos u₁ - Real.arccos u₂) = c := by
-    rw [Real.cos_sub, Real.cos_arccos hb₁.1 hb₁.2, Real.cos_arccos hb₂.1 hb₂.2, hsin₁, hsin₂,
-      hu₁, hu₂]
-    field_simp
-    linear_combination (-c) * hkey + ρ₁ * ρ₂ * hcs
-  have hle : u₁ ≤ u₂ := by
-    rw [hu₁, hu₂, div_le_div_iff_of_pos_right hD]
-    nlinarith
-  clear_value u₁ u₂
-  refine ⟨c₁ + ρ₁ * u₁, ρ₁ * (ρ₂ * s / D), by positivity, ?_, ?_, ?_⟩
-  · linear_combination (-ρ₁ ^ 2) * hu₁'
-  · rw [hx]
-    linear_combination (-ρ₂ ^ 2) * hu₂'
-  · rw [add_sub_cancel_left, mul_div_cancel_left₀ _ hρ₁.ne', hx, mul_div_cancel_left₀ _ hρ₂.ne',
-      ← Real.arccos_cos (sub_nonneg.2 (Real.arccos_le_arccos hle))
-        ((sub_le_self _ (Real.arccos_nonneg _)).trans (Real.arccos_le_pi _)), hcos,
-      Real.arccos_cos hγ.le hγπ.le]
 
 /-- For `α, β ∈ (0, π / 2]` and `γ > 0` with `α + β + γ < π` there is a compact convex triangle
 with angles `α`, `γ` and `β` at its three vertices. -/
@@ -314,23 +251,32 @@ private theorem exists_compactConvexPolygon_three {α β γ : ℝ} (hα : 0 < α
     fin_cases i <;> fin_cases j
     exacts [absurd rfl hji, absurd rfl hji', hv₀, hv₁, absurd rfl hji, absurd rfl hji',
       absurd rfl hji', hv₂, absurd rfl hji]
-  · rw [CompactConvexPolygon.interiorAngle_def, show (0 : Fin 3) - 1 = 2 from rfl, zero_add]
+  · have hsub : (0 : Fin 3) - 1 = 2 := by decide
+    have hratio : c₁ / ρ₁ = Real.cos α := by
+      rw [hc₁, hρ₁]
+      field_simp
+    rw [CompactConvexPolygon.interiorAngle_def, hsub, zero_add]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
       Matrix.head_cons]
     rw [interiorAngle_I_geodesicLine_one hd hCre, hcc₁, hIc₁, Real.sqrt_sq hρ₁0.le,
-      show c₁ / ρ₁ = Real.cos α by rw [hc₁, hρ₁]; field_simp, Real.arccos_cos hα.le (by linarith)]
-  · rw [CompactConvexPolygon.interiorAngle_def, sub_self, show (1 : Fin 3) + 1 = 2 from rfl]
+      hratio, Real.arccos_cos hα.le (by linarith)]
+  · have hadd : (1 : Fin 3) + 1 = 2 := by decide
+    rw [CompactConvexPolygon.interiorAngle_def, sub_self, hadd]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
       Matrix.head_cons]
     rw [interiorAngle_of_normal_form hd hCre, hcc₁, hcc₂, hIc₁, hBc₂, Real.sqrt_sq hρ₁0.le,
       Real.sqrt_sq hρ₂0.le, ← UpperHalfPlane.coe_re, hCc]
     exact hγ'
-  · rw [CompactConvexPolygon.interiorAngle_def, show (2 : Fin 3) - 1 = 1 from rfl,
-      show (2 : Fin 3) + 1 = 0 from rfl]
+  · have hsub : (2 : Fin 3) - 1 = 1 := by decide
+    have hadd : (2 : Fin 3) + 1 = 0 := by decide
+    have hratio : c₂ / ρ₂ = -Real.cos β := by
+      rw [hc₂, hρ₂]
+      field_simp
+    rw [CompactConvexPolygon.interiorAngle_def, hsub, hadd]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
       Matrix.head_cons]
     rw [interiorAngle_geodesicLine_one_I hd hCre, hcc₂, hBc₂, Real.sqrt_sq hρ₂0.le,
-      show c₂ / ρ₂ = -Real.cos β by rw [hc₂, hρ₂]; field_simp, Real.arccos_neg,
+      hratio, Real.arccos_neg,
       Real.arccos_cos hβ.le (by linarith)]
     ring
 
@@ -345,9 +291,11 @@ private theorem exists_interiorAngle_eq_rotate {α β γ : ℝ}
     ∃ P : ConvexPolygon 3,
       P.interiorAngle 0 = β ∧ P.interiorAngle 1 = γ ∧ P.interiorAngle 2 = α := by
   obtain ⟨P, hα, hβ, hγ⟩ := h
+  have h₁₂ : (1 : Fin 3) + 1 = 2 := by decide
+  have h₂₀ : (2 : Fin 3) + 1 = 0 := by decide
   exact ⟨P.rotate 1, by rw [interiorAngle_rotate, zero_add, hβ],
-    by rw [interiorAngle_rotate, show (1 : Fin 3) + 1 = 2 from rfl, hγ],
-    by rw [interiorAngle_rotate, show (2 : Fin 3) + 1 = 0 from rfl, hα]⟩
+    by rw [interiorAngle_rotate, h₁₂, hγ],
+    by rw [interiorAngle_rotate, h₂₀, hα]⟩
 
 /-- **Hyperbolic triangles with prescribed angles.** Three real numbers are the interior angles of
 a convex hyperbolic triangle, with vertices in `ℍ ∪ ∂ℍ`, exactly when they are nonnegative with
@@ -391,18 +339,3 @@ theorem exists_interiorAngle_eq_iff {α β γ : ℝ} :
 end ConvexPolygon
 
 end TauCeti.UpperHalfPlane
-
-namespace TauCeti.TriangleOrder
-
-/-- **Hyperbolic triangles with elliptic and cusp vertices.** A triple of elliptic orders and
-cusps is hyperbolic exactly when some convex hyperbolic triangle has the corresponding angles:
-`π / m` at a vertex of elliptic order `m`, and `0` at a cusp, which is then an ideal vertex by
-`UpperHalfPlane.ConvexPolygon.interiorAngle_eq_zero_iff`. -/
-theorem isHyperbolic_iff_exists_interiorAngle_eq {p q r : TriangleOrder} :
-    IsHyperbolic p q r ↔ ∃ P : UpperHalfPlane.ConvexPolygon 3,
-      P.interiorAngle 0 = p.angle ∧ P.interiorAngle 1 = q.angle ∧
-        P.interiorAngle 2 = r.angle := by
-  rw [UpperHalfPlane.ConvexPolygon.exists_interiorAngle_eq_iff, isHyperbolic_iff_angle_sum_lt_pi]
-  exact ⟨fun h ↦ ⟨p.angle_nonneg, q.angle_nonneg, r.angle_nonneg, h⟩, fun h ↦ h.2.2.2⟩
-
-end TauCeti.TriangleOrder

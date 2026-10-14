@@ -322,6 +322,7 @@ theorem interiorAngle_pos_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft
   exact vertexAngle_pos_of_mem_extLeftHalfPlane hleft
 
 /-- The interior angle of a convex polygon vanishes exactly at its ideal vertices. -/
+@[simp]
 theorem interiorAngle_eq_zero_iff (i : Fin n) :
     P.interiorAngle i = 0 ↔ (P.vertex i).isRight := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
