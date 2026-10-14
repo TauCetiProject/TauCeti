@@ -131,19 +131,9 @@ private theorem map_genericMatrix_generatedCoordinateLift (k : Fin 6 ⊕ Fin 6) 
     AlgHom.mapDomain_apply] at h
   simp only [q, AlgHom.id_comp] at h
   rw [h, hu]
-  -- The carrier states its root points through the weight table's matrices, whose identification
-  -- with the named matrices is entrywise.
   rcases k with i | i
-  · have hX : weightTable.raisingMatrix i = raisingMatrix i := by
-      ext a b
-      rw [raisingMatrix_apply, MinusculeWeightTable.raisingMatrix_apply, weightTable_weight,
-        weightTable_reflection]
-    rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, hX, Sum.elim_inl]
-  · have hX : weightTable.loweringMatrix i = loweringMatrix i := by
-      ext a b
-      rw [loweringMatrix_apply, MinusculeWeightTable.loweringMatrix_apply, weightTable_weight,
-        weightTable_reflection]
-    rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, hX, Sum.elim_inr]
+  · rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix, Sum.elim_inl]
+  · rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix, Sum.elim_inr]
 
 variable {B : Type v} [CommRing B] [Algebra R B]
 
@@ -218,23 +208,6 @@ section Weights
 -- The closed-subgroup weight criterion takes the base ring in the universe of the torus index.
 variable (R : Type) [CommRing R]
 
-/-- A raising or lowering matrix vanishes off the entries whose weight difference is its signed
-simple root. -/
-private theorem rootMatrix_apply_eq_zero (k : Fin 6 ⊕ Fin 6) (a b : Fin 27)
-    (h : e6MinusculeWeight a - e6MinusculeWeight b ≠ E6.rootGeneratorWeight k) :
-    Sum.elim raisingMatrix loweringMatrix k a b = 0 := by
-  rcases k with i | i
-  · rw [Sum.elim_inl, raisingMatrix_apply, ite_eq_right_iff]
-    rintro ⟨hb, rfl⟩
-    refine absurd ?_ h
-    rw [e6MinusculeWeight_reflection, hb, E6.rootGeneratorWeight_inl_eq_e6Root_e6SimpleIndex]
-    abel
-  · rw [Sum.elim_inr, loweringMatrix_apply, ite_eq_right_iff]
-    rintro ⟨hb, rfl⟩
-    refine absurd ?_ h
-    rw [e6MinusculeWeight_reflection, hb, E6.rootGeneratorWeight_inr_eq_neg_e6Root_e6SimpleIndex]
-    abel
-
 /-- The entrywise weight-space criterion
 `TauCeti.HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus` for the quotient by
 `generatedDefiningIdeal R`, stated for any Hopf algebra `G` equal to that quotient. The generated
@@ -295,22 +268,13 @@ theorem generatedRootVector_mem_adjointWeightSpace (k : Fin 6 ⊕ Fin 6) :
         (SplitTorus.weightCharacter (E6.rootGeneratorWeight k)) := by
   rw [mem_adjointWeightSpace_generatedWeightTorusCoordinateMap_iff]
   intro a b hab
-  rw [LinearEquiv.apply_symm_apply, tangentMatrix_generatedRootVector, Matrix.map_apply,
-    rootMatrix_apply_eq_zero k a b (fun h => hab (congrArg SplitTorus.weightCharacter h)),
-    Int.cast_zero]
-
-/-- A signed simple-root character of type `E₆` is nontrivial: its value at its own node is
-`±2`. -/
-private theorem weightCharacter_rootGeneratorWeight_ne_one (k : Fin 6 ⊕ Fin 6) :
-    SplitTorus.weightCharacter (E6.rootGeneratorWeight k) ≠ 1 := by
-  intro h
+  have h := fun h => hab (congrArg SplitTorus.weightCharacter h)
+  rw [LinearEquiv.apply_symm_apply, tangentMatrix_generatedRootVector, Matrix.map_apply]
   rcases k with i | i
-  · have hi := SplitTorus.toAdd_weightCharacter (E6.rootGeneratorWeight (.inl i)) i
-    rw [h, toAdd_one, Finsupp.zero_apply, E6.rootGeneratorWeight_inl, CartanMatrix.E_diag] at hi
-    exact two_ne_zero hi.symm
-  · have hi := SplitTorus.toAdd_weightCharacter (E6.rootGeneratorWeight (.inr i)) i
-    rw [h, toAdd_one, Finsupp.zero_apply, E6.rootGeneratorWeight_inr, CartanMatrix.E_diag] at hi
-    exact two_ne_zero (neg_eq_zero.mp hi.symm)
+  · rw [E6.rootGeneratorWeight_inl_eq_e6Root_e6SimpleIndex] at h
+    rw [Sum.elim_inl, raisingMatrix_apply_eq_zero_of_weight_sub_ne i a b h, Int.cast_zero]
+  · rw [E6.rootGeneratorWeight_inr_eq_neg_e6Root_e6SimpleIndex] at h
+    rw [Sum.elim_inr, loweringMatrix_apply_eq_zero_of_weight_sub_ne i a b h, Int.cast_zero]
 
 /-- **The twelve signed simple roots are nontrivial adjoint weights of the generated subgroup.**
 Over every nontrivial ring with projective augmentation cotangent module, in particular over
@@ -321,7 +285,8 @@ theorem weightCharacter_rootGeneratorWeight_mem_nontrivialAdjointWeights [Nontri
     SplitTorus.weightCharacter (E6.rootGeneratorWeight k) ∈
       Derivation.nontrivialAdjointWeights (generatedWeightTorusCoordinateMap R).hom := by
   refine Derivation.mem_nontrivialAdjointWeights.2
-    ⟨weightCharacter_rootGeneratorWeight_ne_one k, fun hbot => ?_⟩
+    ⟨SplitTorus.weightCharacter_eq_one_iff.not.2 (E6.rootGeneratorWeight_ne_zero k),
+      fun hbot => ?_⟩
   have hz := generatedRootVector_mem_adjointWeightSpace R k
   rw [hbot, Submodule.mem_bot, LinearEquiv.map_eq_zero_iff] at hz
   exact generatedRootVector_ne_zero R k hz

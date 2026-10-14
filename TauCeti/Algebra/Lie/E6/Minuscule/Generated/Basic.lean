@@ -157,6 +157,9 @@ theorem generatedCoordinateMap_def :
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27)
           (generatedDefiningIdeal A) ≫
         eqToHom (generatedCoordinateHopfAlgebra_def A).symm :=
+  -- Unfolding `generatedCoordinateHopfAlgebra` makes both sides of
+  -- `generatedCoordinateHopfAlgebra_def` the same quotient, so the `eqToHom` is the identity by
+  -- definition and the statement is `Category.comp_id`.
   (Category.comp_id _).symm
 
 /-- The generated subgroup coordinate morphism is surjective. -/
