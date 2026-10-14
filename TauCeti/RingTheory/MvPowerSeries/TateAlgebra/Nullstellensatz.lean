@@ -98,11 +98,11 @@ private theorem finite_quotient_option {σ : Type*} [Finite σ]
   -- The contraction `p` of `m'` to `R` is maximal, since `S ⧸ m'` is a field integral over
   -- `R ⧸ p`, and `R ⧸ p` is finite over `K` by induction.
   let p := m'.under R
-  have : IsScalarTower R (R ⧸ p) (S ⧸ m') := ⟨fun r a b ↦ by
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-    rw [Algebra.smul_def, Algebra.smul_def, map_mul, mul_assoc, Algebra.smul_def]
-    -- both algebra maps `R → S ⧸ m'` are `Ideal.Quotient.mk m' ∘ algebraMap R S` by definition
-    rfl⟩
+  -- Mathlib's `Ideal.Quotient.isScalarTower_of_liesOver` concerns the `R ⧸ p`-algebra structure
+  -- `Ideal.Quotient.algebraOfLiesOver`, but the one found here is `Ideal.quotientAlgebra`, so
+  -- instance search fails; both maps `R → S ⧸ m'` reduce to the quotient of `algebraMap R S`.
+  have : IsScalarTower R (R ⧸ p) (S ⧸ m') :=
+    IsScalarTower.of_algebraMap_eq (R := R) (S := R ⧸ p) (A := S ⧸ m') fun _ ↦ rfl
   have : Module.Finite (R ⧸ p) (S ⧸ m') := Module.Finite.of_restrictScalars_finite R _ _
   have : Algebra.IsIntegral (R ⧸ p) (S ⧸ m') := Algebra.IsIntegral.of_finite _ _
   have : p.IsMaximal := Ideal.Quotient.maximal_of_isField _ <|
@@ -122,19 +122,15 @@ theorem finite_quotient_of_isMaximal {σ : Type*} [Finite σ] (m : Ideal (Tate �
     (P := fun σ ↦ ∀ m : Ideal (Tate σ), m.IsMaximal → Module.Finite K (Tate σ ⧸ m))
     (fun {α β} e h m hm ↦ ?_) (fun m _ ↦ ?_) (fun ih m _ ↦ finite_quotient_option ih m) σ
   · -- Renaming the variables along `e : α ≃ β` is a `K`-algebra isomorphism of Tate algebras.
-    let r : Tate α ≃ₐ[K] Tate β := AlgEquiv.ofRingEquiv
-      (f := (renameEquiv K e).toRingEquiv.restrict _ _ fun _ ↦
-        (MvPowerSeries.isRestricted_renameEquiv_iff (c := fun _ : β ↦ (1 : ℝ)) e).symm)
-      fun x ↦ Subtype.ext (rename_C _ x)
+    let r : Tate α ≃ₐ[K] Tate β := IsRestricted.renameAlgEquiv e fun _ ↦ 1
     have : (m.comap r).IsMaximal := Ideal.comap_isMaximal_of_surjective _ r.surjective
     have := h (m.comap r) this
     have hm : m = (m.comap r).map r := (Ideal.map_comap_of_surjective _ r.surjective m).symm
     exact Module.Finite.equiv (Ideal.quotientEquivAlg (m.comap r) m r hm).toLinearEquiv
   · -- Without variables every series is a constant, so the Tate algebra is `K`.
     have hsurj : Function.Surjective (Algebra.linearMap K (Tate PEmpty)) := fun g ↦
-      ⟨constantCoeff (g : MvPowerSeries PEmpty K), Subtype.ext <| MvPowerSeries.ext fun t ↦ by
-        rw [Subsingleton.elim t 0]
-        simp⟩
+      let ⟨r, hr⟩ := C_surjective (σ := PEmpty) (g : MvPowerSeries PEmpty K)
+      ⟨r, Subtype.ext hr⟩
     have := Module.Finite.of_surjective _ hsurj
     exact Module.Finite.of_surjective (Ideal.Quotient.mkₐ K m).toLinearMap
       (Ideal.Quotient.mkₐ_surjective K m)

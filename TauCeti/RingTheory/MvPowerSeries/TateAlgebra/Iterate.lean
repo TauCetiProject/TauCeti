@@ -172,9 +172,8 @@ theorem restrictedOptionEquiv_algebraMap (r : R) :
   apply Subtype.ext
   ext n : 1
   apply Subtype.ext
-  rw [coeff_restrictedOptionEquiv, coe_algebraMap_isRestrictedSubring, optionEquivLeft_C,
-    PowerSeries.coe_algebraMap_isRestrictedSubring, PowerSeries.coeff_C, PowerSeries.coeff_C]
-  split_ifs <;> simp
+  simp [coeff_restrictedOptionEquiv, optionEquivLeft_C, PowerSeries.coeff_C]
+  split_ifs <;> simp_all
 
 /-- The Fubini comparison preserves the Gauss norm. -/
 @[simp]
