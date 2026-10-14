@@ -149,6 +149,11 @@ theorem stabilizer_eq_bot_of_disjoint_smul
 
 variable {G α : Type*} [Group G] [MulAction G α]
 
+/-- Two group elements carrying the same point to `y` differ by an element stabilizing `y`. -/
+theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
+    (hg : g • x = y) (hh : h • x = y) : g * h⁻¹ ∈ MulAction.stabilizer G y := by
+  rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hh.symm, hg]
+
 /-- **The order of a stabiliser is constant along an orbit**: points related by the orbit
 relation have conjugate stabilisers, hence stabilisers of equal cardinality.
 

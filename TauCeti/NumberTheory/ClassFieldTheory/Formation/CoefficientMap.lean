@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 
 /-!
 # Maps of coefficient modules on finite normal layers
@@ -34,9 +35,10 @@ multiplicative, idele and idele-class formations of a layer.
 * `TauCeti.ClassFieldTheory.Formation.map_mem_level`: an equivariant map preserves levels.
 * `TauCeti.ClassFieldTheory.NormalLayer.shortExact_repMap`: a short exact sequence of
   coefficient modules stays short exact on a layer once invariants of the top subgroup lift.
-* `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_comp_map_repMap`: inflation along a
-  refinement of layers commutes with the maps of cohomology induced by a map of coefficient
-  modules.
+* `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_comp_map_repMap` and
+  `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyRes_comp_map_repMap`: inflation and
+  restriction of layer cohomology commute with the maps of cohomology induced by a map of
+  coefficient modules.
 -/
 
 public noncomputable section
@@ -137,5 +139,24 @@ theorem LayerRefinement.cohomologyInfl_comp_map_repMap {old new : NormalLayer G}
     Function.comp_apply, LayerRefinement.repHom_hom_apply_coe]
   exact (new.repMap_hom_apply_coe φ _).trans
     ((congrArg φ.hom (T.repHom_hom_apply_coe F x)).trans (old.repMap_hom_apply_coe φ x).symm)
+
+/-- **Restriction commutes with maps of coefficient modules**: for a restriction `K/E` of a layer
+`K/F` and an equivariant map `φ : A → A'` of coefficient modules, restricting a class of
+`H^n(Gal(K/F), A^V)` and then applying `φ` is applying `φ` and then restricting. -/
+@[reassoc, elementwise]
+theorem LayerRestriction.cohomologyRes_comp_map_repMap {small big : NormalLayer G}
+    (R : LayerRestriction small big) (φ : F.toRep ⟶ F'.toRep) (n : ℕ) :
+    R.cohomologyRes F n ≫ groupCohomology.map (MonoidHom.id small.Gal) (small.repMap φ) n =
+      groupCohomology.map (MonoidHom.id big.Gal) (big.repMap φ) n ≫ R.cohomologyRes F' n := by
+  rw [LayerRestriction.cohomologyRes_def, LayerRestriction.cohomologyRes_def,
+    ← groupCohomology.map_comp, ← groupCohomology.map_comp]
+  -- Both composites apply `φ` to an element of the common top level `A^V`.
+  refine groupCohomology.map_congr rfl (LinearMap.ext fun x ↦ Subtype.ext ?_) n
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+    Rep.resMap_hom_toLinearMap, LinearMap.coe_comp, Representation.IntertwiningMap.coe_toLinearMap,
+    Function.comp_apply]
+  exact ((small.repMap_hom_apply_coe φ _).trans
+    (congrArg φ.hom (R.repIso_inv_apply_coe F x))).trans
+    ((R.repIso_inv_apply_coe F' _).trans (big.repMap_hom_apply_coe φ x)).symm
 
 end TauCeti.ClassFieldTheory

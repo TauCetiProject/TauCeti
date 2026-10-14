@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Data.Matrix.BirkhoffContraction
-public import TauCeti.Data.Matrix.Scaling
+public import TauCeti.Data.Matrix.Scaling.Basic
 
 /-!
 # Linear convergence of the Sinkhorn iteration
