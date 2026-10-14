@@ -10,6 +10,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularRe
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
 import TauCeti.RingTheory.Henselian.Basic
+-- Proof-only: the values of `v` in `(v ϖ ^ n, 1]` when `ϖ` generates the maximal ideal.
+import TauCeti.RingTheory.Valuation.PrincipalMaximalIdeal
+-- Proof-only: a root of a monic quadratic with integral coefficients is integral.
+import TauCeti.RingTheory.Valuation.RootMonic
 
 /-!
 # Points with singular reduction at a split node
@@ -269,8 +273,10 @@ private theorem valuation_eq_of_one_lt {A B ν x₁ x₂ x₃ : F} (hAB : v (A -
     have h' : v A * s < 1 * s := mul_lt_mul_of_pos_right (not_le.1 h) hs0.pos
     rw [hvAD, one_mul] at h'
     exact lt_asymm h' hsx
-  · have h : v A ^ 3 * s ^ 3 = s * s ^ 3 := by
-      rw [← mul_pow, hvAD, ← pow_mul, mul_comm 2 3, pow_mul, ← hs, ← pow_mul, ← pow_succ']
+  · have h : v A ^ 3 * s ^ 3 = s * s ^ 3 :=
+      calc v A ^ 3 * s ^ 3 = (v x₂ ^ 2) ^ 3 := by rw [← mul_pow, hvAD]
+        _ = (v x₂ ^ 3) ^ 2 := pow_right_comm _ _ _
+        _ = s * s ^ 3 := by rw [← hs, ← pow_mul, ← pow_succ']
     exact (mul_left_inj' (pow_ne_zero 3 hs0)).1 h
 
 /-- **The slope at a point with nonsingular reduction.** In the setting of
@@ -492,6 +498,9 @@ private theorem SplitNodal.symm (hW : SplitNodal v W α β) : SplitNodal v W β 
 private theorem SplitNodal.a₆_ne (hW : SplitNodal v W α β) : W.a₆ ≠ 0 := fun h ↦ hW.Δ_ne <| by
   rw [Δ, b₂, b₄, b₆, b₈, hW.a₃, hW.a₄, h]; ring
 
+private theorem SplitNodal.valuation_a₆_ne_zero (hW : SplitNodal v W α β) : v W.a₆ ≠ 0 :=
+  (map_ne_zero v).2 hW.a₆_ne
+
 private theorem SplitNodal.equation_iff (hW : SplitNodal v W α β) {x y : F} :
     W.Equation x y ↔ (y - α * x) * (y - β * x) = x ^ 3 + W.a₆ :=
   equation_iff_mul hW.a₁ hW.a₂ hW.a₃ hW.a₄
@@ -513,9 +522,15 @@ private theorem SplitNodal.valuation_lt_of_le (hW : SplitNodal v W α β) {x y :
     · exact (valuation_lt_sq_of_lt v hW.sub (sub_mul_eq α β x y) hc hu hlt).le
     · exact (valuation_sq_eq_of_eq v hW.sub (sub_mul_eq α β x y) hc hW.a₆_ne hu heq).ge
   refine ⟨lt_of_le_of_lt hsq ?_, hsq⟩
-  have h0 : v (y - α * x) ≠ 0 := fun h0 ↦ (v.zero_iff.not.2 hW.a₆_ne) (le_antisymm
+  have h0 : v (y - α * x) ≠ 0 := fun h0 ↦ hW.valuation_a₆_ne_zero (le_antisymm
     (by simpa [h0] using hsq) zero_le)
   exact pow_lt_self_of_lt_one₀ (zero_lt_iff.2 h0) hu one_lt_two
+
+/-- On a branch at least as large as the other one, `v (y - α x) < 1` forces `y - α x ≠ 0`. -/
+private theorem SplitNodal.sub_ne_zero_of_le (hW : SplitNodal v W α β) {x y : F}
+    (h : W.Equation x y) (hu : v (y - α * x) < 1) (hwu : v (y - β * x) ≤ v (y - α * x)) :
+    y - α * x ≠ 0 :=
+  (map_ne_zero v).1 (zero_le.trans_lt (hW.valuation_lt_of_le h hu hwu).1).ne'
 
 variable [DecidableEq F] [IsIntegral v.valuationSubring W]
 
@@ -623,8 +638,8 @@ private theorem componentValue_some_of_ge (hW : SplitNodal v W α β) {x y : F}
     have heq := le_antisymm huw hwu
     have hsq := valuation_sq_eq_of_eq v hW.sub (sub_mul_eq α β x y) (hW.equation_iff.1 h.left)
       hW.a₆_ne (huw.trans_lt hw) heq.symm
-    have h0 : v (y - β * x) ≠ 0 := heq ▸ fun h0 ↦ hW.a₆_ne (v.zero_iff.1 (by
-      rw [← hsq, h0, zero_pow two_ne_zero]))
+    have h0 : v (y - β * x) ≠ 0 := heq ▸ fun h0 ↦ hW.valuation_a₆_ne_zero (by
+      rw [← hsq, h0, zero_pow two_ne_zero])
     rw [← hsq, heq, sq, mul_div_cancel_right₀ _ h0]
   · rfl
 
@@ -648,12 +663,11 @@ private theorem SplitNodal.sq_componentValue (hW : SplitNodal v W α β) {x y : 
   · rw [componentValue_some_of_ge hW h hw huw.le]
     have hsym := hW.symm.valuation_lt_of_le h.left hw huw.le
     have hw0 : v (y - β * x) ≠ 0 := (zero_le.trans_lt hsym.1).ne'
-    have h60 : v W.a₆ ≠ 0 := v.zero_iff.not.2 hW.a₆_ne
     rw [div_pow, div_lt_iff₀ (pow_pos (zero_lt_iff.2 hw0) 2), sq (v W.a₆)]
     -- the strict inequality `v a₆ < (v w)²` of the second branch
     have hlt := valuation_lt_sq_of_lt v (δ := α - β) (x := x) (by rw [← v.map_neg, neg_sub,
       hW.sub]) (by ring) (by rw [mul_comm]; exact hW.equation_iff.1 h.left) hw huw
-    exact mul_lt_mul_of_pos_left hlt (zero_lt_iff.2 h60)
+    exact mul_lt_mul_of_pos_left hlt (zero_lt_iff.2 hW.valuation_a₆_ne_zero)
 
 /-- **The values of the component** on the points outside `E₀(F)` lie in `(v a₆, 1)`, and are
 values of `v`. -/
@@ -671,7 +685,7 @@ private theorem SplitNodal.componentValue_mem (hW : SplitNodal v W α β) {P : W
     have hw0 : 0 < v (y - β * x) := zero_le.trans_lt hsym
     refine ⟨⟨W.a₆ / (y - β * x), map_div₀ v _ _⟩, ?_, ?_⟩
     · rw [lt_div_iff₀ hw0]
-      exact mul_lt_of_lt_one_right (zero_lt_iff.2 (v.zero_iff.not.2 hW.a₆_ne)) hw
+      exact mul_lt_of_lt_one_right (zero_lt_iff.2 hW.valuation_a₆_ne_zero) hw
     · rwa [div_lt_one₀ hw0]
 
 /-- **Adding a point of `E₀(F)` to a point on the first branch.** If `(x₁, y₁)` has singular
@@ -687,8 +701,7 @@ private theorem SplitNodal.valuation_add_of_le (hW : SplitNodal v W α β) {x₁
       v (W.addY x₁ x₂ y₁ (W.slope x₁ x₂ y₁ y₂) - β * W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂)) ≤
         v (y₁ - α * x₁) := by
   obtain ⟨hu, -⟩ := (hW.some_notMem_iff h₁).1 hP
-  have hu0 : y₁ - α * x₁ ≠ 0 := fun h0 ↦ by
-    simpa [h0] using (zero_le.trans_lt (hW.valuation_lt_of_le h₁.left hu hwu).1)
+  have hu0 := hW.sub_ne_zero_of_le h₁.left hu hwu
   have hc₂ := hW.equation_iff.1 h₂.left
   have hmem := hW.valuation_of_mem h₂ hT
   obtain ⟨A, B, ν, hAB, hu₁, hw₁, hu₂, hw₂, hu₃, hw₃, he₁, he₂⟩ :=
@@ -737,8 +750,7 @@ private theorem SplitNodal.add_mem_of_valuation_eq (hW : SplitNodal v W α β) {
     exact zero_mem _
   rw [Point.add_some hxy]
   obtain ⟨hu, -⟩ := (hW.some_notMem_iff h₁).1 hP
-  have hu0 : y₁ - α * x₁ ≠ 0 := fun h0 ↦ by
-    simpa [h0] using (zero_le.trans_lt (hW.valuation_lt_of_le h₁.left hu hwu).1)
+  have hu0 := hW.sub_ne_zero_of_le h₁.left hu hwu
   obtain ⟨A, B, ν, hAB, hu₁, hw₁, hu₂, hw₂, -, hw₃, he₁, he₂⟩ :=
     exists_line hW.a₁ hW.a₂ hW.a₃ hW.a₄ h₁.left h₂.left hxy
   rw [hu₁, hw₁] at hwu
@@ -782,10 +794,9 @@ private theorem SplitNodal.neg_add_mem_of_componentValue_eq (hW : SplitNodal v W
   · -- both on the second branch: `v (y₁ - β x₁) = v (y₂ - β x₂)`
     rw [componentValue_some_of_ge hW h₁ hw₁ huw₁.le,
       componentValue_some_of_ge hW h₂ hw₂ huw₂.le] at h
-    have h60 : v W.a₆ ≠ 0 := v.zero_iff.not.2 hW.a₆_ne
     have heq : v (y₁ - β * x₁) = v (y₂ - β * x₂) := by
       have := congrArg (·⁻¹) h
-      simpa [div_eq_mul_inv, mul_inv, h60] using this
+      simpa [div_eq_mul_inv, mul_inv, hW.valuation_a₆_ne_zero] using this
     exact hW.symm.add_mem_of_valuation_eq h₁ _ hP huw₁.le
       (by rw [hn₁, hn₂, v.map_neg, v.map_neg]; exact huw₂.le)
       (by rw [hn₁, v.map_neg, ← heq])
@@ -807,7 +818,7 @@ simple root `a₆ / z²`. -/
 private theorem SplitNodal.exists_point [HenselianLocalRing v.valuationSubring]
     (hW : SplitNodal v W α β) {z : F} (hz : v z < 1) (hz₆ : v W.a₆ ≤ v z ^ 2) :
     ∃ x y : F, W.Nonsingular x y ∧ y - α * x = z ∧ v (y - β * x) ≤ v z := by
-  have hz0 : z ≠ 0 := fun h0 ↦ hW.a₆_ne <| v.zero_iff.1 <| le_antisymm
+  have hz0 : z ≠ 0 := fun h0 ↦ hW.valuation_a₆_ne_zero <| le_antisymm
     (by simpa [h0] using hz₆) zero_le
   have hδ0 : β - α ≠ 0 := fun h0 ↦ by simpa [h0] using hW.sub
   set O := v.valuationSubring
@@ -866,14 +877,14 @@ private theorem SplitNodal.exists_componentValue_eq [HenselianLocalRing v.valuat
     exact ⟨.some x y h, by rw [componentValue_some_of_le h (hu ▸ h₂) (hu ▸ hw), hu]⟩
   · -- on the second branch, take a point with `y - β x = a₆ / z`
     have hz0 : 0 < v z := zero_le.trans_lt h₁
-    have h60 : v W.a₆ ≠ 0 := v.zero_iff.not.2 hW.a₆_ne
     have hz' : v (W.a₆ / z) < 1 := by rwa [map_div₀, div_lt_one₀ hz0]
     have hz'₆ : v W.a₆ ≤ v (W.a₆ / z) ^ 2 := by
       rw [map_div₀, div_pow, le_div_iff₀ (pow_pos hz0 2), sq (v W.a₆)]
       exact mul_le_mul' le_rfl hz.le
     obtain ⟨x, y, h, hw, hu⟩ := hW.symm.exists_point hz' hz'₆
     refine ⟨.some x y h, ?_⟩
-    rw [componentValue_some_of_ge hW h (hw ▸ hz') (hw ▸ hu), hw, map_div₀, div_div_cancel₀ h60]
+    rw [componentValue_some_of_ge hW h (hw ▸ hz') (hw ▸ hu), hw, map_div₀,
+      div_div_cancel₀ hW.valuation_a₆_ne_zero]
 
 end Component
 
@@ -885,16 +896,26 @@ variable {F Γ₀ : Type*} [Field F] [DecidableEq F] [LinearOrderedCommGroupWith
   {v : Valuation F Γ₀} {W : Affine F} [IsIntegral v.valuationSubring W]
 
 omit [DecidableEq F] in
+/-- A root `α` of the monic quadratic `T² + a₁ T - a₂` is integral, as `a₁` and `a₂` are. -/
+private theorem valuation_le_one_of_isRoot {α : F} (hαr : α ^ 2 + W.a₁ * α - W.a₂ = 0) :
+    v α ≤ 1 := not_lt.1 fun h ↦ by
+  have := v.map_quadratic_eq_of_one_lt (valuation_a₁_le_one (W := W) v)
+    ((v.map_neg _).trans_le (valuation_a₂_le_one (W := W) v)) h
+  rw [← sub_eq_add_neg, hαr, map_zero] at this
+  exact pow_ne_zero 2 (zero_lt_one.trans h).ne' this.symm
+
+omit [DecidableEq F] in
 /-- The hypotheses of the main theorem put `W` in split nodal normal form, with `β = -a₁ - α`. -/
 private theorem splitNodal_of_isRoot [W.IsElliptic] (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0)
-    (h₆ : v W.a₆ < 1) (hb₂ : v W.b₂ = 1) {α : F} (hα : v α ≤ 1)
+    (h₆ : v W.a₆ < 1) (hb₂ : v W.b₂ = 1) {α : F}
     (hαr : α ^ 2 + W.a₁ * α - W.a₂ = 0) : SplitNodal v W α (-W.a₁ - α) where
   a₁ := by ring
   a₂ := by linear_combination -hαr
   a₃ := h₃
   a₄ := h₄
-  α_le := hα
-  β_le := v.map_sub_le ((v.map_neg _).trans_le (valuation_a₁_le_one v)) hα
+  α_le := valuation_le_one_of_isRoot hαr
+  β_le := v.map_sub_le ((v.map_neg _).trans_le (valuation_a₁_le_one v))
+    (valuation_le_one_of_isRoot hαr)
   sub := by
     have hsq : (-W.a₁ - α - α) ^ 2 = W.b₂ := by rw [b₂]; linear_combination 4 * hαr
     have h := congrArg v hsq
@@ -907,15 +928,15 @@ private theorem splitNodal_of_isRoot [W.IsElliptic] (h₃ : W.a₃ = 0) (h₄ : 
 `v` be a valuation on `F` whose valuation ring is Henselian, and `W` an elliptic curve over `F`
 with an integral model whose reduction is a split node at the origin, centred so that
 `a₃ = a₄ = 0`: `a₆` lies in the maximal ideal, `b₂` is a unit, and the tangent quadratic
-`T² + a₁ T - a₂` has a root `α` in the valuation ring. Then the index of the subgroup `E₀(F)` of
-points with nonsingular reduction is the number of values `γ` of `v` with `v a₆ < γ ≤ 1`, both
-sides being `0` when infinite. -/
+`T² + a₁ T - a₂` has a root `α` in `F` (necessarily in the valuation ring). Then the index of the
+subgroup `E₀(F)` of points with nonsingular reduction is the number of values `γ` of `v` with
+`v a₆ < γ ≤ 1`, both sides being `0` when infinite. -/
 theorem index_nonsingularReduction_eq_natCard_of_tangentQuadratic_root
     [HenselianLocalRing v.valuationSubring]
     [W.IsElliptic] (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0) (h₆ : v W.a₆ < 1) (hb₂ : v W.b₂ = 1) {α : F}
-    (hα : v α ≤ 1) (hαr : α ^ 2 + W.a₁ * α - W.a₂ = 0) :
+    (hαr : α ^ 2 + W.a₁ * α - W.a₂ = 0) :
     (W.nonsingularReduction v).index = Nat.card ↥(Set.range v ∩ Set.Ioc (v W.a₆) 1) := by
-  have hW := splitNodal_of_isRoot h₃ h₄ h₆ hb₂ hα hαr
+  have hW := splitNodal_of_isRoot h₃ h₄ h₆ hb₂ hαr
   set S := Set.range v ∩ Set.Ioc (v W.a₆) 1
   -- the component of a point, as an element of `S`
   let g : W.Point → S := fun P ↦ ⟨componentValue v W α (-W.a₁ - α) P, by
@@ -942,75 +963,25 @@ theorem index_nonsingularReduction_eq_natCard_of_tangentQuadratic_root
     · exact ⟨(0 : W.Point ⧸ W.nonsingularReduction v),
         Subtype.ext (componentValue_zero (v := v) (W := W) (α := α) (β := -W.a₁ - α))⟩
 
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
-/-- When the maximal ideal of the valuation ring is generated by `ϖ`, the values of `v` in
-`(v ϖ ^ n, 1]` are the powers `v ϖ ^ j` with `j < n`. -/
-private theorem exists_pow_eq_of_lt {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) :
-    ∀ (n : ℕ) {z : F}, v (ϖ : F) ^ n < v z → v z ≤ 1 → ∃ j < n, v (ϖ : F) ^ j = v z
-  | 0, z, hlt, hle => absurd hle (not_le.2 (by rwa [pow_zero] at hlt))
-  | n + 1, z, hlt, hle => by
-    rcases hle.lt_or_eq with hz | hz
-    · have hm : (⟨z, (v.mem_valuationSubring_iff z).2 hle⟩ : v.valuationSubring) ∈
-          maximalIdeal v.valuationSubring := (Valuation.mem_maximalIdeal_iff (v := v)).2 hz
-      rw [hϖ, Ideal.mem_span_singleton'] at hm
-      obtain ⟨r, hr⟩ := hm
-      have hrz : (r : F) * ϖ = z := congrArg Subtype.val hr
-      have hϖ0 : 0 < v (ϖ : F) := by
-        refine zero_lt_iff.2 fun h0 ↦ ?_
-        rw [← hrz, map_mul, h0, mul_zero, ← not_le] at hlt
-        exact hlt zero_le
-      obtain ⟨j, hj, hjr⟩ := exists_pow_eq_of_lt hϖ n (z := r)
-        (by
-          rw [← hrz, map_mul, pow_succ] at hlt
-          exact lt_of_mul_lt_mul_right' hlt)
-        r.2
-      exact ⟨j + 1, by lia, by rw [pow_succ, hjr, ← map_mul, hrz]⟩
-    · exact ⟨0, by lia, by rw [pow_zero, hz]⟩
-
-omit [DecidableEq F] [IsIntegral v.valuationSubring W] in
-/-- When the maximal ideal of the valuation ring is generated by `ϖ ≠ 0`, there are exactly `n`
-values of `v` in `(v ϖ ^ n, 1]`. -/
-private theorem natCard_range_inter_Ioc_pow {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) (hϖ0 : (ϖ : F) ≠ 0) (n : ℕ) :
-    Nat.card ↥(Set.range v ∩ Set.Ioc (v (ϖ : F) ^ n) 1) = n := by
-  have h0 : 0 < v (ϖ : F) := zero_lt_iff.2 ((map_ne_zero v).2 hϖ0)
-  have h1 : v (ϖ : F) < 1 :=
-    (Valuation.mem_maximalIdeal_iff (v := v)).1 (hϖ ▸ Ideal.mem_span_singleton_self ϖ)
-  have hS : Set.range v ∩ Set.Ioc (v (ϖ : F) ^ n) 1 =
-      (v (ϖ : F) ^ ·) '' (Finset.range n : Set ℕ) := by
-    ext γ
-    simp only [Set.mem_inter_iff, Set.mem_range, Set.mem_Ioc, Set.mem_image, Finset.coe_range,
-      Set.mem_Iio]
-    constructor
-    · rintro ⟨⟨z, rfl⟩, hlt, hle⟩
-      exact exists_pow_eq_of_lt hϖ n hlt hle
-    · rintro ⟨j, hj, rfl⟩
-      exact ⟨⟨_, map_pow v _ j⟩, pow_lt_pow_right_of_lt_one₀ h0 h1 hj, pow_le_one₀ zero_le h1.le⟩
-  rw [Nat.card_coe_set_eq, hS, Set.ncard_image_of_injective _
-    (pow_right_strictAnti₀ h0 h1).injective, Set.ncard_coe_finset, Finset.card_range]
-
 /-- **The local index at split multiplicative reduction `Iₙ` is `n`.** Let `v` be a valuation on
 `F` whose valuation ring is Henselian with maximal ideal generated by `ϖ`, and `W` an elliptic curve
 over `F` with an integral model, centred at the singular point of its reduction so that
 `a₃ = a₄ = 0`, with `b₂` a unit, `v a₆ = v ϖ ^ n` for some `n > 0`, and tangent quadratic
-`T² + a₁ T - a₂` with a root `α` in the valuation ring. Then the points with nonsingular reduction
-have index `[E(F) : E₀(F)] = n`. -/
+`T² + a₁ T - a₂` with a root `α` in `F` (necessarily in the valuation ring). Then the points with
+nonsingular reduction have index `[E(F) : E₀(F)] = n`. -/
 theorem index_nonsingularReduction_eq_of_tangentQuadratic_root
     [HenselianLocalRing v.valuationSubring] [W.IsElliptic] (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0)
-    (hb₂ : v W.b₂ = 1) {α : F} (hα : v α ≤ 1) (hαr : α ^ 2 + W.a₁ * α - W.a₂ = 0)
+    (hb₂ : v W.b₂ = 1) {α : F} (hαr : α ^ 2 + W.a₁ * α - W.a₂ = 0)
     {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {n : ℕ}
     (hn : 0 < n) (h₆ : v W.a₆ = v (ϖ : F) ^ n) : (W.nonsingularReduction v).index = n := by
   have hϖ0 : (ϖ : F) ≠ 0 := by
     rintro h0
     rw [h0, map_zero, zero_pow hn.ne'] at h₆
-    exact (splitNodal_of_isRoot (v := v) h₃ h₄ (by rw [h₆]; exact zero_lt_one) hb₂ hα
-      hαr).a₆_ne (v.zero_iff.1 h₆)
-  have h1 : v (ϖ : F) < 1 :=
-    (Valuation.mem_maximalIdeal_iff (v := v)).1 (hϖ ▸ Ideal.mem_span_singleton_self ϖ)
+    exact (splitNodal_of_isRoot (v := v) h₃ h₄ (by rw [h₆]; exact zero_lt_one) hb₂
+      hαr).valuation_a₆_ne_zero h₆
   rw [index_nonsingularReduction_eq_natCard_of_tangentQuadratic_root h₃ h₄
-      (h₆ ▸ pow_lt_one₀ zero_le h1 hn.ne') hb₂ hα hαr, h₆,
-    natCard_range_inter_Ioc_pow hϖ hϖ0]
+      (h₆ ▸ pow_lt_one₀ zero_le (v.map_lt_one_of_maximalIdeal_eq_span hϖ) hn.ne') hb₂ hαr, h₆,
+    v.natCard_range_inter_Ioc_pow hϖ hϖ0]
 
 end Index
 
