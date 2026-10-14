@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester
 
@@ -24,15 +23,14 @@ For an isometric trial map this file shows that the Ritz residual is `P_{Zᗮ} A
 projection onto `Zᗮ` of every residual, and that the residuals split orthogonally as
 `A X - X M = (A X - X X† A X) + X (X† A X - M)`. Consequently the compression is the best model:
 the Ritz residual is smallest among all residuals in every unitarily invariant seminorm, and in
-the Frobenius seminorm the excess is exactly `‖X† A X - M‖_F`.
+the Frobenius seminorm the squared residual exceeds the squared Ritz residual by exactly
+`‖X† A X - M‖_F²`.
 
-The angle between the trial subspace `Z` and a second subspace `V` is read off the trial map
-directly: the *sine embedding* `P_{Vᗮ} X` and the *cosine embedding* `P_V X` have as singular
-values the principal sines and cosines of `Z` and `V`, and the operator norm of the sine
-embedding is the directed gap from `Z` to `V`. These are the quantities in the residual form of
-the Davis–Kahan `sin Θ` theorem,
-`TauCeti.UnitarilyInvariantSeminorm.mul_map_starProjection_comp_le_map_sylvester_apply`, whose
-residual is the Ritz residual when `M` is the compression.
+The residual form of the Davis–Kahan `sin Θ` theorem,
+`TauCeti.UnitarilyInvariantSeminorm.mul_map_starProjection_comp_le_map_sylvester_apply`, has the
+Ritz residual as its residual when `M` is the compression; the angles between the trial subspace
+and a second subspace are read off the trial map by
+`Submodule.principalSines_range_eq_singularValues` and its companions.
 
 ## Main definitions
 
@@ -48,13 +46,9 @@ residual is the Ritz residual when `M` is the compression.
   projection onto `Zᗮ` of every residual `A X - X M`.
 * `TauCeti.UnitarilyInvariantSeminorm.map_sylvester_compression_le_map_sylvester`: the Ritz
   residual minimizes every unitarily invariant seminorm of the residual.
-* `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_sylvester_apply`: the Pythagoras identity
+* `sq_frobenius_sylvester_eq_sq_frobenius_sylvester_compression_add`, in the namespace
+  `TauCeti.UnitarilyInvariantSeminorm`: the Pythagoras identity
   `‖A X - X M‖_F² = ‖A X - X X† A X‖_F² + ‖X† A X - M‖_F²`.
-* `Submodule.principalSines_range_eq_singularValues`,
-  `Submodule.principalCosines_range_eq_singularValues`: the singular values of the sine and cosine
-  embeddings are the principal sines and cosines.
-* `Submodule.norm_starProjection_orthogonal_comp`: the operator norm of the sine embedding is the
-  directed gap.
 
 ## References
 
@@ -161,12 +155,9 @@ residual `A X - X M`. -/
 theorem starProjection_orthogonal_range_comp_sylvester (hX : Isometry X)
     [X.range.HasOrthogonalProjection] (M : F →L[𝕜] F) :
     X.rangeᗮ.starProjection ∘L A.sylvester M X = A.sylvester (A.compression X) X := by
-  have h := X.starProjection_orthogonal_range_comp
   rw [sylvester_compression A hX]
   ext x
-  have hx := congr($h (M x))
-  simp only [comp_apply, zero_apply] at hx
-  simp [hx]
+  simp
 
 end Residual
 
@@ -183,7 +174,8 @@ variable {A : E →L[𝕜] E} {X : F →L[𝕜] E}
 /-- **Pythagoras for residuals.** For an isometric trial map `X` and every model `M`, the
 residuals split orthogonally in the Frobenius seminorm:
 `‖A X - X M‖_F² = ‖A X - X X† A X‖_F² + ‖X† A X - M‖_F²`. -/
-theorem sq_frobenius_sylvester_apply [FiniteDimensional 𝕜 F] (hX : Isometry X) (M : F →L[𝕜] F) :
+theorem sq_frobenius_sylvester_eq_sq_frobenius_sylvester_compression_add [FiniteDimensional 𝕜 F]
+    (hX : Isometry X) (M : F →L[𝕜] F) :
     frobenius 𝕜 F E (A.sylvester M X) ^ 2 =
       frobenius 𝕜 F E (A.sylvester (A.compression X) X) ^ 2 +
         frobenius 𝕜 F F (A.compression X - M) ^ 2 := by
@@ -211,55 +203,3 @@ theorem map_sylvester_compression_le_map_sylvester (N : UnitarilyInvariantSemino
   exact N.map_starProjection_comp_le _ _
 
 end TauCeti.UnitarilyInvariantSeminorm
-
-/-! ### Angles of the trial subspace -/
-
-namespace Submodule
-
-open ContinuousLinearMap
-
-variable {X : F →L[𝕜] E} (V : Submodule 𝕜 E) [V.HasOrthogonalProjection]
-
-/-- The operator norm of the sine embedding `P_{Vᗮ} X` of an isometric trial map is the directed
-gap from the trial subspace `range X` to `V`. -/
-theorem norm_starProjection_orthogonal_comp (hX : Isometry X) [X.range.HasOrthogonalProjection] :
-    ‖Vᗮ.starProjection ∘L X‖ = X.range.directedProjectionGap V := by
-  have hXn : ‖X‖ ≤ 1 := X.opNorm_le_bound zero_le_one fun x ↦ by
-    rw [AddMonoidHomClass.isometry_iff_norm _ |>.1 hX, one_mul]
-  rw [← norm_sinThetaMap]
-  refine le_antisymm ?_ ?_
-  · -- `P_{Vᗮ} X = (P_{Vᗮ} P_Z) X` and `X` is a contraction.
-    calc ‖Vᗮ.starProjection ∘L X‖ = ‖X.range.sinThetaMap V ∘L X‖ := by
-          rw [sinThetaMap_def, comp_assoc, starProjection_range_comp]
-      _ ≤ ‖X.range.sinThetaMap V‖ :=
-          (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hXn)
-  · -- `P_{Vᗮ} P_Z = (P_{Vᗮ} X) X†` and `X†` is a contraction.
-    calc ‖X.range.sinThetaMap V‖ = ‖(Vᗮ.starProjection ∘L X) ∘L adjoint X‖ := by
-          rw [sinThetaMap_def, ← comp_adjoint_eq_starProjection_range hX, comp_assoc]
-      _ ≤ ‖Vᗮ.starProjection ∘L X‖ :=
-          (opNorm_comp_le _ _).trans <| mul_le_of_le_one_right (norm_nonneg _) <| by
-            rwa [LinearIsometryEquiv.norm_map]
-
-variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-
-/-- The principal cosines of the trial subspace `range X` of an isometry and of `V` are the
-singular values of the cosine embedding `P_V X`. -/
-theorem principalCosines_range_eq_singularValues (hX : Isometry X) :
-    X.range.principalCosines V =
-      ((V.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
-  let W : F →ₗᵢ[𝕜] E := ⟨X, AddMonoidHomClass.isometry_iff_norm _ |>.1 hX⟩
-  rw [principalCosines_def, cosThetaMap_def, ← comp_adjoint_eq_starProjection_range hX,
-    ← comp_assoc, toLinearMap_comp, ← adjoint_toLinearMap]
-  exact LinearMap.singularValues_comp_adjoint_linearIsometry _ W
-
-/-- The principal sines of the trial subspace `range X` of an isometry and of `V` are the
-singular values of the sine embedding `P_{Vᗮ} X`. -/
-theorem principalSines_range_eq_singularValues (hX : Isometry X) :
-    X.range.principalSines V =
-      ((Vᗮ.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
-  let W : F →ₗᵢ[𝕜] E := ⟨X, AddMonoidHomClass.isometry_iff_norm _ |>.1 hX⟩
-  rw [principalSines_def, sinThetaMap_def, ← comp_adjoint_eq_starProjection_range hX,
-    ← comp_assoc, toLinearMap_comp, ← adjoint_toLinearMap]
-  exact LinearMap.singularValues_comp_adjoint_linearIsometry _ W
-
-end Submodule

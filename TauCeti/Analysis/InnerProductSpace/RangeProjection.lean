@@ -73,12 +73,26 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProje
   simp only [← adjoint_inner_left, h, sub_self]
 
 omit [CompleteSpace F] [CompleteSpace V] in
+/-- The orthogonal projection onto the range of `B` fixes every value of `B`. -/
+@[simp]
+theorem starProjection_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] (x : F) :
+    B.range.starProjection (B x) = B x :=
+  Submodule.starProjection_eq_self_iff.2 (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
+
+omit [CompleteSpace F] [CompleteSpace V] in
+/-- The orthogonal projection onto the complement of the range of `B` kills every value of `B`. -/
+@[simp]
+theorem starProjection_orthogonal_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection]
+    (x : F) : B.rangeᗮ.starProjection (B x) = 0 :=
+  Submodule.starProjection_orthogonal_apply_eq_zero (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
+
+omit [CompleteSpace F] [CompleteSpace V] in
 /-- An operator followed by the orthogonal projection onto its range is unchanged. -/
 @[simp]
 theorem starProjection_range_comp (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] :
     B.range.starProjection ∘L B = B := by
   ext x
-  exact Submodule.starProjection_eq_self_iff.2 (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
+  simp
 
 omit [CompleteSpace F] [CompleteSpace V] in
 /-- An operator followed by the orthogonal projection onto the complement of its range is zero. -/
@@ -86,8 +100,7 @@ omit [CompleteSpace F] [CompleteSpace V] in
 theorem starProjection_orthogonal_range_comp (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] :
     B.rangeᗮ.starProjection ∘L B = 0 := by
   ext x
-  exact Submodule.starProjection_orthogonal_apply_eq_zero
-    (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
+  simp
 
 /-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
 theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
