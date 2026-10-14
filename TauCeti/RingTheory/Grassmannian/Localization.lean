@@ -138,8 +138,9 @@ private theorem mem_glueSubmodule_iff {x : A ⊗[R] M} :
 /-- The image of `a • x` in `B r ⊗[R] M` is `a •` the image of `x`. -/
 private theorem rTensor_smul (r : s) (a : A) (x : A ⊗[R] M) :
     (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M (a • x) =
-      a • (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x :=
-  (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r))).map_smul a x
+      a • (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x := by
+  rw [← AlgebraTensorModule.rTensor_linearMap_apply, ← AlgebraTensorModule.rTensor_linearMap_apply]
+  exact (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r))).map_smul a x
 
 variable [∀ r : s, IsLocalization.Away r.1 (B r)]
 
