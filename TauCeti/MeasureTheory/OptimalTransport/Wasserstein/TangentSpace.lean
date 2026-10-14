@@ -78,8 +78,8 @@ open scoped Gradient RealInnerProductSpace
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  [MeasurableSpace E] {μ : Measure E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+  {μ : Measure E}
 
 /-- The *tangent space* `Tan_μ P₂(E)` of the quadratic Wasserstein space at `μ`: the closure in
 `L²(μ; E)` of the gradients `∇φ` of smooth compactly supported functions `φ : E → ℝ`. -/
@@ -156,7 +156,7 @@ theorem wassersteinTangentSpace_dirac [MeasurableSingletonClass E] (x : E) :
 omit [FiniteDimensional ℝ E] in
 /-- The `L²(μ)` pairing of the gradient of `φ` with a field `w` is `∫ ⟨∇φ, w⟩ dμ`, written as
 `∫ fderiv ℝ φ x (w x) dμ`. -/
-theorem inner_eq_integral_fderiv_of_ae_eq_gradient {φ : E → ℝ} {f : Lp E 2 μ}
+theorem inner_eq_integral_fderiv_of_ae_eq_gradient [CompleteSpace E] {φ : E → ℝ} {f : Lp E 2 μ}
     (hf : f =ᵐ[μ] ∇ φ) (w : Lp E 2 μ) : ⟪f, w⟫ = ∫ x, fderiv ℝ φ x (w x) ∂μ := by
   rw [L2.inner_def]
   refine integral_congr_ae ?_
