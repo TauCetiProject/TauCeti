@@ -8,10 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PotentialEnergy
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 
 /-!
@@ -26,15 +23,16 @@ is a law `ν` minimizing
 that is, a point of the resolvent `TauCeti.moreauYosidaResolvent φ τ μ`. This file derives the
 first-order condition satisfied by such a minimizer, by perturbing `ν` along vector fields.
 
-For a vector field `ξ ∈ L²(ν; E)` and `h : ℝ`, the law `ν_h` of `x + h • ξ x` under `ν` lies in
-`P₂(E)` (`TauCeti.exists_coe_eq_map_add_smul`). If `γ` is a coupling of `ν` and `μ`, then
-`(x, y) ↦ (x + h • ξ x, y)` carries it to a coupling of `ν_h` and `μ`, whence
+For a vector field `ξ ∈ L²(ν; E)` and `h : ℝ`, the map `x ↦ x + h • ξ x` lies in `L²(ν; E)`, so
+its law `ν_h` under `ν` lies in `P₂(E)` (`TauCeti.exists_coe_eq_map_of_memLp`). If `γ` is a
+coupling of `ν` and `μ`, then `(x, y) ↦ (x + h • ξ x, y)` carries it to a coupling of `ν_h` and
+`μ`, whence
 
 `W₂ (ν_h, μ) ^ 2 ≤ ∫ ‖x - y‖² dγ + 2h ∫ ⟪x - y, ξ x⟫ dγ + h² ∫ ‖ξ‖² dν`
 
 (`TauCeti.wassersteinEDist_map_add_smul_sq_le`). When `γ` is an optimal coupling, the first
-integral is `W₂ (ν, μ) ^ 2`, and comparing the minimizer `ν` with `ν_h` gives the variational
-inequality
+integral is `W₂ (ν, μ) ^ 2` (`TauCeti.WassersteinSpace.dist_sq_eq_integral`), and comparing the
+minimizer `ν` with `ν_h` gives the variational inequality
 
 `φ ν ≤ φ ν_h + (h ∫ ⟪x - y, ξ x⟫ dγ + (h² / 2) ∫ ‖ξ‖² dν) / τ`
 
@@ -64,16 +62,12 @@ Fokker–Planck equation.
 
 ## Main results
 
-* `TauCeti.exists_coe_eq_map_add_smul`: the perturbation of a law of `P₂(E)` along a vector field
-  of `L²` lies in `P₂(E)`.
 * `TauCeti.wassersteinEDist_map_add_smul_sq_le`: the expansion of the squared Wasserstein distance
-  along such a perturbation, against an arbitrary coupling.
+  along the perturbation of a law by a vector field of `L²`, against an arbitrary coupling.
 * `TauCeti.apply_le_apply_add_of_mem_moreauYosidaResolvent`: the variational inequality of the
   JKO step.
 * `TauCeti.integral_inner_eq_neg_mul_of_mem_moreauYosidaResolvent`: the Euler–Lagrange equation
   of the JKO step for an energy differentiable along the perturbation.
-* `TauCeti.hasDerivAt_integral_comp_add_smul`: the first variation of the potential energy along
-  a perturbation.
 * `TauCeti.integral_inner_eq_neg_mul_integral_inner_gradient_of_mem_moreauYosidaResolvent`: the
   Euler–Lagrange equation of the JKO step for the potential energy.
 
@@ -99,26 +93,6 @@ variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] {ξ : E → E}
 
 section Perturbation
-
-/-- **Perturbing a law of `P₂(E)` along a vector field of `L²`.** For `ξ ∈ L²(ν; E)` and `h : ℝ`,
-the law of `x + h • ξ x` under `ν` is again a law of `P₂(E)`. -/
-theorem exists_coe_eq_map_add_smul [NormedSpace ℝ E] {ν : WassersteinSpace 2 E}
-    (hξ : MemLp ξ 2 ((ν : ProbabilityMeasure E) : Measure E)) (h : ℝ) :
-    ∃ ν' : WassersteinSpace 2 E, ((ν' : ProbabilityMeasure E) : Measure E) =
-      ((ν : ProbabilityMeasure E) : Measure E).map (fun x ↦ x + h • ξ x) := by
-  set ρ := ((ν : ProbabilityMeasure E) : Measure E)
-  have hT : AEMeasurable (fun x ↦ x + h • ξ x) ρ :=
-    aemeasurable_id.add (hξ.aestronglyMeasurable.aemeasurable.const_smul h)
-  have hm : HasFiniteMoment 2 (ρ.map fun x ↦ x + h • ξ x) := by
-    rw [hasFiniteMoment_map_iff_memLp_edist hT 0]
-    have hL := ν.hasFiniteMoment.memLp_id.add (hξ.const_smul h)
-    exact (memLp_congr_enorm hL.aestronglyMeasurable
-      ((by fun_prop : Measurable fun y : E ↦ edist y 0).comp_aemeasurable hT).aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).1 hL
-  let P : ProbabilityMeasure E :=
-    ⟨ρ.map fun x ↦ x + h • ξ x, (Measure.isProbabilityMeasure_map_iff hT).2 inferInstance⟩
-  have hP : (P : Measure E) = ρ.map fun x ↦ x + h • ξ x := ProbabilityMeasure.coe_mk _ _
-  exact ⟨WassersteinSpace.mk P (hP ▸ hm), by rw [WassersteinSpace.coe_mk, hP]⟩
 
 variable [InnerProductSpace ℝ E] {ν μ : Measure E} {γ : Measure (E × E)}
 
@@ -168,42 +142,30 @@ theorem wassersteinEDist_map_add_smul_sq_le (hγ : IsCoupling γ ν μ)
     wassersteinEDist 2 (ν.map fun x ↦ x + h • ξ x) μ ^ 2 ≤
       ENNReal.ofReal (∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ + 2 * h * ∫ z, ⟪z.1 - z.2, ξ z.1⟫ ∂γ +
         h ^ 2 * ∫ x, ‖ξ x‖ ^ 2 ∂ν) := by
-  have hfst := hγ.measurePreserving_fst
-  have hξγ := hξ.comp_measurePreserving hfst
-  have hξ₂ : Integrable (fun z : E × E ↦ ‖ξ z.1‖ ^ 2) γ :=
-    (memLp_two_iff_integrable_sq_norm hξγ.aestronglyMeasurable).1 hξγ
-  have hT : AEMeasurable (fun x ↦ x + h • ξ x) ν :=
-    aemeasurable_id.add (hξ.aestronglyMeasurable.aemeasurable.const_smul h)
+  have hξγ := hξ.comp_measurePreserving hγ.measurePreserving_fst
   have hTγ : AEMeasurable (fun z : E × E ↦ z.1 + h • ξ z.1) γ :=
     measurable_fst.aemeasurable.add (hξγ.aestronglyMeasurable.aemeasurable.const_smul h)
-  have hF : AEMeasurable (fun z : E × E ↦ (z.1 + h • ξ z.1, z.2)) γ :=
-    hTγ.prodMk measurable_snd.aemeasurable
-  -- The perturbation of `γ` couples the perturbed law with `μ`.
-  have hcoup : IsCoupling (γ.map fun z ↦ (z.1 + h • ξ z.1, z.2)) (ν.map fun x ↦ x + h • ξ x) μ := by
-    refine ⟨?_, ?_⟩
-    · rw [Measure.fst, AEMeasurable.map_map_of_aemeasurable measurable_fst.aemeasurable hF,
-        ← hfst.map_eq, AEMeasurable.map_map_of_aemeasurable (hfst.map_eq ▸ hT)
-          measurable_fst.aemeasurable]
-      rfl
-    · rw [Measure.snd, AEMeasurable.map_map_of_aemeasurable measurable_snd.aemeasurable hF]
-      exact hγ.snd_eq
-  -- Its quadratic cost is the integral of `‖(x - y) + h • ξ x‖²`.
   have hd : MemLp (fun z : E × E ↦ z.1 - z.2) 2 γ :=
     (memLp_two_iff_integrable_sq_norm (by fun_prop)).2 hγ₂
   have hm₂ : MemLp (fun z : E × E ↦ z.1 - z.2 + h • ξ z.1) 2 γ := hd.add (hξγ.const_smul h)
   have hint : Integrable (fun z : E × E ↦ ‖z.1 - z.2 + h • ξ z.1‖ ^ 2) γ :=
     (memLp_two_iff_integrable_sq_norm hm₂.aestronglyMeasurable).1 hm₂
-  have hcost : ∫⁻ z, edist z.1 z.2 ^ 2 ∂(γ.map fun z ↦ (z.1 + h • ξ z.1, z.2)) =
-      ENNReal.ofReal (∫ z, ‖z.1 - z.2 + h • ξ z.1‖ ^ 2 ∂γ) := by
-    rw [lintegral_map' (by fun_prop) hF, ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ by positivity)]
-    refine lintegral_congr fun z ↦ ?_
-    rw [edist_dist, dist_eq_norm, ENNReal.ofReal_pow (norm_nonneg _), add_sub_right_comm]
+  -- The coupling `(x, y) ↦ (x + h • ξ x, y)` of `ν_h` and `μ` carried by `γ` bounds `W₂ (ν_h, μ)`.
+  have hW := wassersteinEDist_map_le_eLpNorm (p := 2) hγ
+    (aestronglyMeasurable_id.add (hξ.aestronglyMeasurable.const_smul h))
+    (aestronglyMeasurable_id (μ := μ))
+  rw [Measure.map_id] at hW
   calc wassersteinEDist 2 (ν.map fun x ↦ x + h • ξ x) μ ^ 2
-      ≤ ∫⁻ z, edist z.1 z.2 ^ 2 ∂(γ.map fun z ↦ (z.1 + h • ξ z.1, z.2)) := by
-        simpa using wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero
-          ENNReal.ofNat_ne_top hcoup
-    _ = _ := by rw [hcost, hγ.integral_norm_sub_add_smul_sq hγ₂ hξ h]
+      ≤ eLpNorm (fun z : E × E ↦ edist (z.1 + h • ξ z.1) z.2) 2 γ ^ 2 := by gcongr; exact hW
+    _ = ∫⁻ z, edist (z.1 + h • ξ z.1) z.2 ^ 2 ∂γ := by
+      simpa using eLpNorm_rpow_eq_lintegral two_ne_zero ENNReal.ofNat_ne_top
+        (f := fun z : E × E ↦ edist (z.1 + h • ξ z.1) z.2) (measurable_edist.comp_aemeasurable
+          (hTγ.prodMk measurable_snd.aemeasurable))
+    _ = ENNReal.ofReal (∫ z, ‖z.1 - z.2 + h • ξ z.1‖ ^ 2 ∂γ) := by
+      rw [ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ by positivity)]
+      refine lintegral_congr fun z ↦ ?_
+      rw [edist_dist, dist_eq_norm, ENNReal.ofReal_pow (norm_nonneg _), add_sub_right_comm]
+    _ = _ := by rw [hγ.integral_norm_sub_add_smul_sq hγ₂ hξ h]
 
 end Perturbation
 
@@ -211,27 +173,6 @@ section Resolvent
 
 variable [CompleteSpace E] {φ : WassersteinSpace 2 E → EReal} {τ : ℝ≥0}
   {μ ν : WassersteinSpace 2 E} {γ : Measure (E × E)}
-
-/-- An optimal coupling of two laws of `P₂(E)` realizes the squared Wasserstein distance as its
-quadratic cost. -/
-private theorem dist_sq_eq_integral (hγ : IsCoupling γ ((ν : ProbabilityMeasure E) : Measure E)
-      ((μ : ProbabilityMeasure E) : Measure E))
-    (hγW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 γ =
-      wassersteinEDist 2 ((ν : ProbabilityMeasure E) : Measure E)
-        ((μ : ProbabilityMeasure E) : Measure E)) :
-    Integrable (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) γ ∧
-      dist ν μ ^ 2 = ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ := by
-  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
-  have hγ₂ := integrable_norm_sub_sq_of_hasFiniteMoment (hγ.fst_eq ▸ ν.hasFiniteMoment)
-    (hγ.snd_eq ▸ μ.hasFiniteMoment)
-  refine ⟨hγ₂, ?_⟩
-  have hL : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 γ ^ 2 = ∫⁻ z, edist z.1 z.2 ^ 2 ∂γ := by
-    simpa using eLpNorm_rpow_eq_lintegral two_ne_zero ENNReal.ofNat_ne_top
-      (measurable_edist (α := E)).aemeasurable (μ := γ)
-  rw [hγW, lintegral_edist_sq_eq_ofReal_integral hγ₂, ← WassersteinSpace.edist_def,
-    edist_dist, ← ENNReal.ofReal_pow dist_nonneg,
-    ENNReal.ofReal_eq_ofReal_iff (sq_nonneg _) (integral_nonneg fun _ ↦ by positivity)] at hL
-  exact hL
 
 variable [InnerProductSpace ℝ E]
 
@@ -241,27 +182,38 @@ from `μ` for the energy `φ`, let `γ` be an optimal coupling of `ν` and `μ`,
 `φ ν ≤ φ ν' + (h ∫ ⟪x - y, ξ x⟫ dγ + (h² / 2) ∫ ‖ξ‖² dν) / τ`. -/
 theorem apply_le_apply_add_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
     (hν : ν ∈ moreauYosidaResolvent φ τ μ)
-    (hγ : IsCoupling γ ((ν : ProbabilityMeasure E) : Measure E)
-      ((μ : ProbabilityMeasure E) : Measure E))
-    (hγW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 γ =
-      wassersteinEDist 2 ((ν : ProbabilityMeasure E) : Measure E)
-        ((μ : ProbabilityMeasure E) : Measure E))
+    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
+      ((ν : ProbabilityMeasure E) : Measure E) ((μ : ProbabilityMeasure E) : Measure E))
     (hξ : MemLp ξ 2 ((ν : ProbabilityMeasure E) : Measure E)) (h : ℝ) {ν' : WassersteinSpace 2 E}
     (hν' : ((ν' : ProbabilityMeasure E) : Measure E) =
       ((ν : ProbabilityMeasure E) : Measure E).map fun x ↦ x + h • ξ x) :
     φ ν ≤ φ ν' + (((h * ∫ z, ⟪z.1 - z.2, ξ z.1⟫ ∂γ +
       h ^ 2 / 2 * ∫ x, ‖ξ x‖ ^ 2 ∂((ν : ProbabilityMeasure E) : Measure E)) / τ : ℝ) : EReal) := by
-  obtain ⟨hγ₂, hd⟩ := dist_sq_eq_integral hγ hγW
+  set ρ := ((ν : ProbabilityMeasure E) : Measure E)
+  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
+  have hγ₂ := integrable_norm_sub_sq_of_hasFiniteMoment (hγ.fst_eq ▸ ν.hasFiniteMoment)
+    (hγ.snd_eq ▸ μ.hasFiniteMoment)
   set A := ∫ z, ⟪z.1 - z.2, ξ z.1⟫ ∂γ
-  set B := ∫ x, ‖ξ x‖ ^ 2 ∂((ν : ProbabilityMeasure E) : Measure E)
-  -- The perturbed law is at squared distance at most `W₂ (ν, μ) ^ 2 + 2hA + h²B` from `μ`.
-  have hdist : dist μ ν' ^ 2 ≤ dist μ ν ^ 2 + 2 * h * A + h ^ 2 * B := by
-    have hW := wassersteinEDist_map_add_smul_sq_le hγ hγ₂ hξ h
-    rw [← hν', ← WassersteinSpace.edist_def, edist_dist, ← ENNReal.ofReal_pow dist_nonneg,
-      ← hd, ENNReal.ofReal_le_ofReal_iff (by
-        rw [hd, ← hγ.integral_norm_sub_add_smul_sq hγ₂ hξ h]
-        exact integral_nonneg fun _ ↦ by positivity)] at hW
-    rwa [dist_comm μ ν', dist_comm μ ν]
+  set B := ∫ x, ‖ξ x‖ ^ 2 ∂ρ
+  -- The perturbed law is at squared distance at most `W₂ (ν, μ) ^ 2 + 2hA + h²B` from `μ`, through
+  -- the coupling `(x, y) ↦ (x + h • ξ x, y)` carried by `γ`.
+  have hdist : dist ν' μ ^ 2 ≤ dist ν μ ^ 2 + 2 * h * A + h ^ 2 * B := by
+    have hT : AEMeasurable (fun x ↦ x + h • ξ x) ρ :=
+      aemeasurable_id.add (hξ.aestronglyMeasurable.aemeasurable.const_smul h)
+    have hcoup := hγ.toIsCoupling.map₀ hT aemeasurable_id
+    rw [Measure.map_id, ← hν'] at hcoup
+    have hF : AEMeasurable (Prod.map (fun x ↦ x + h • ξ x) id) γ :=
+      (hT.comp_quasiMeasurePreserving hγ.measurePreserving_fst.quasiMeasurePreserving).prodMk
+        measurable_snd.aemeasurable
+    calc dist ν' μ ^ 2 ≤ ∫ z, ‖z.1 - z.2‖ ^ 2 ∂(γ.map (Prod.map (fun x ↦ x + h • ξ x) id)) :=
+          WassersteinSpace.dist_sq_le_integral hcoup
+      _ = ∫ z, ‖z.1 - z.2 + h • ξ z.1‖ ^ 2 ∂γ := by
+        rw [integral_map hF (by fun_prop)]
+        simp only [Prod.map_fst, Prod.map_snd, id, add_sub_right_comm]
+      _ = _ := by
+        rw [hγ.toIsCoupling.integral_norm_sub_add_smul_sq hγ₂ hξ h,
+          WassersteinSpace.dist_sq_eq_integral hγ]
+  rw [dist_comm ν' μ, dist_comm ν μ] at hdist
   -- Minimality of `ν` against `ν'`.
   have hmin := (mem_moreauYosidaResolvent_iff_isMinOn.1 hν) (mem_univ ν')
   simp only [coe_edist_sq_div_eq_coe_dist_sq_div hτ] at hmin
@@ -289,11 +241,8 @@ for `h` near `0`, the law of `x + h • ξ x` under `ν` has energy `f h`, where
 `D` at `0`. Then `∫ ⟪x - y, ξ x⟫ dγ(x, y) = -τ D`. -/
 theorem integral_inner_eq_neg_mul_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
     (hν : ν ∈ moreauYosidaResolvent φ τ μ)
-    (hγ : IsCoupling γ ((ν : ProbabilityMeasure E) : Measure E)
-      ((μ : ProbabilityMeasure E) : Measure E))
-    (hγW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 γ =
-      wassersteinEDist 2 ((ν : ProbabilityMeasure E) : Measure E)
-        ((μ : ProbabilityMeasure E) : Measure E))
+    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
+      ((ν : ProbabilityMeasure E) : Measure E) ((μ : ProbabilityMeasure E) : Measure E))
     (hξ : MemLp ξ 2 ((ν : ProbabilityMeasure E) : Measure E)) {f : ℝ → ℝ} {D : ℝ}
     (hf : ∀ᶠ h in 𝓝 0, ∀ ν' : WassersteinSpace 2 E, ((ν' : ProbabilityMeasure E) : Measure E) =
       ((ν : ProbabilityMeasure E) : Measure E).map (fun x ↦ x + h • ξ x) → φ ν' = f h)
@@ -308,8 +257,9 @@ theorem integral_inner_eq_neg_mul_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
   set g : ℝ → ℝ := fun h ↦ f h + (h * A + h ^ 2 / 2 * B) / τ
   have hmin : IsLocalMin g 0 := by
     filter_upwards [hf] with h hfh
-    obtain ⟨ν', hν'⟩ := exists_coe_eq_map_add_smul hξ h
-    have hle := apply_le_apply_add_of_mem_moreauYosidaResolvent hτ hν hγ hγW hξ h hν'
+    obtain ⟨ν', hν'⟩ := exists_coe_eq_map_of_memLp (T := fun x ↦ x + h • ξ x)
+      (ν.hasFiniteMoment.memLp_id.add (hξ.const_smul h))
+    have hle := apply_le_apply_add_of_mem_moreauYosidaResolvent hτ hν hγ hξ h hν'
     rw [hfh ν' hν', h₀, ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
     simpa [g] using hle
   have hg : HasDerivAt g (D + A / τ) 0 := by
@@ -328,87 +278,6 @@ section PotentialEnergy
 
 variable [InnerProductSpace ℝ E] [CompleteSpace E] {V : E → ℝ} {C : ℝ}
 
-omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] in
-/-- A differentiable potential whose gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, is
-integrable against the law of every square-integrable random vector: for a finite measure `ρ` and
-`T ∈ L²(ρ; E)`, the function `V ∘ T` is integrable. -/
-theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {ρ : Measure α}
-    [IsFiniteMeasure ρ] {T : α → E} (hV : Differentiable ℝ V)
-    (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖)) (hT : MemLp T 2 ρ) :
-    Integrable (fun a ↦ V (T a)) ρ := by
-  -- By the mean value inequality, `V` grows at most quadratically.
-  have hgrowth (x : E) : |V x - V 0| ≤ C * (1 + ‖x‖) * ‖x‖ := by
-    have hb : ∀ y ∈ Metric.closedBall (0 : E) ‖x‖, ‖fderiv ℝ V y‖ ≤ C * (1 + ‖x‖) := by
-      intro y hy
-      rw [← toDual_gradient, LinearIsometryEquiv.norm_map]
-      exact (hV' y).trans (mul_le_mul_of_nonneg_left (by simpa using hy)
-        (by simpa using (norm_nonneg _).trans (hV' 0)))
-    have := (convex_closedBall (0 : E) ‖x‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
-      (fun y _ ↦ hV y) hb (Metric.mem_closedBall_self (norm_nonneg x) : (0 : E) ∈ _)
-      (by simp : x ∈ Metric.closedBall (0 : E) ‖x‖)
-    simpa [← Real.norm_eq_abs] using this
-  have hT₂ : Integrable (fun a ↦ ‖T a‖ ^ 2) ρ :=
-    (memLp_two_iff_integrable_sq_norm hT.aestronglyMeasurable).1 hT
-  have hT₁ : Integrable (fun a ↦ ‖T a‖) ρ := (hT.integrable one_le_two).norm
-  refine ((integrable_const |V 0|).add ((hT₁.add hT₂).const_mul C)).mono'
-    (hV.continuous.comp_aestronglyMeasurable hT.aestronglyMeasurable) (.of_forall fun a ↦ ?_)
-  have := hgrowth (T a)
-  simp only [Real.norm_eq_abs, Pi.add_apply]
-  rw [abs_le] at this ⊢
-  constructor <;> nlinarith [neg_abs_le (V 0), le_abs_self (V 0)]
-
-/-- **The first variation of the potential energy.** Let `V` be a differentiable potential whose
-gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, and let `ρ` be a finite measure with
-finite second moment. For every vector field `ξ ∈ L²(ρ; E)`, the potential energy
-`h ↦ ∫ V (x + h • ξ x) dρ` of the perturbation of `ρ` along `ξ` has derivative
-`∫ ⟪∇V x, ξ x⟫ dρ` at `h = 0`. -/
-theorem hasDerivAt_integral_comp_add_smul {ρ : Measure E} [IsFiniteMeasure ρ]
-    (hV : Differentiable ℝ V) (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖)) (hρ : MemLp id 2 ρ)
-    (hξ : MemLp ξ 2 ρ) :
-    HasDerivAt (fun h : ℝ ↦ ∫ x, V (x + h • ξ x) ∂ρ) (∫ x, ⟪gradient V x, ξ x⟫ ∂ρ) 0 := by
-  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hV' 0)
-  have hξm := hξ.aestronglyMeasurable
-  have hVint (h : ℝ) : Integrable (fun x ↦ V (x + h • ξ x)) ρ :=
-    integrable_comp_of_norm_gradient_le hV hV' (hρ.add (hξ.const_smul h))
-  have hpt (x : E) (h : ℝ) : HasDerivAt (fun h ↦ V (x + h • ξ x))
-      ⟪gradient V (x + h • ξ x), ξ x⟫ h := by
-    have hl : HasDerivAt (fun h : ℝ ↦ x + h • ξ x) (ξ x) h := by
-      simpa using ((hasDerivAt_id h).smul_const (ξ x)).const_add x
-    have := (hV (x + h • ξ x)).hasFDerivAt.comp_hasDerivAt h hl
-    rwa [← toDual_gradient, InnerProductSpace.toDual_apply_apply] at this
-  have hgm : AEStronglyMeasurable (fun x ↦ ⟪gradient V x, ξ x⟫) ρ := by
-    have : Measurable (gradient V) :=
-      (InnerProductSpace.toDual ℝ E).symm.continuous.measurable.comp (measurable_fderiv ℝ V)
-    exact this.aestronglyMeasurable.inner hξm
-  -- For `|h| < 1` the derivative is dominated by `C (1 + ‖x‖ + ‖ξ x‖) ‖ξ x‖`, which is
-  -- integrable because `x` and `ξ x` are square integrable.
-  have hx₂ : Integrable (fun x : E ↦ ‖x‖ ^ 2) ρ :=
-    (memLp_two_iff_integrable_sq_norm aestronglyMeasurable_id).1 hρ
-  have hξ₂ : Integrable (fun x ↦ ‖ξ x‖ ^ 2) ρ := (memLp_two_iff_integrable_sq_norm hξm).1 hξ
-  have hbd : Integrable (fun x ↦ C * (‖ξ x‖ + (‖x‖ ^ 2 + ‖ξ x‖ ^ 2) / 2 + ‖ξ x‖ ^ 2)) ρ :=
-    (((hξ.integrable one_le_two).norm.add ((hx₂.add hξ₂).div_const 2)).add hξ₂).const_mul C
-  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (F' := fun h x ↦ ⟪gradient V (x + h • ξ x), ξ x⟫) (Metric.ball_mem_nhds 0 one_pos)
-    (.of_forall fun h ↦ (hVint h).aestronglyMeasurable)
-    (by simpa only [zero_smul, add_zero] using hVint 0)
-    (by simpa only [zero_smul, add_zero] using hgm) ?_ hbd
-    (.of_forall fun x h _ ↦ hpt x h)).2.congr_deriv (by simp only [zero_smul, add_zero])
-  refine .of_forall fun x h hh ↦ ?_
-  rw [Metric.mem_ball, dist_zero_right, Real.norm_eq_abs] at hh
-  have hs : ‖x + h • ξ x‖ ≤ ‖x‖ + ‖ξ x‖ := by
-    refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) hh.le
-  calc ‖⟪gradient V (x + h • ξ x), ξ x⟫‖
-      ≤ ‖gradient V (x + h • ξ x)‖ * ‖ξ x‖ := norm_inner_le_norm _ _
-    _ ≤ C * (1 + (‖x‖ + ‖ξ x‖)) * ‖ξ x‖ :=
-      mul_le_mul_of_nonneg_right ((hV' _).trans
-        (mul_le_mul_of_nonneg_left (by linarith) hC)) (norm_nonneg _)
-    _ ≤ C * (‖ξ x‖ + (‖x‖ ^ 2 + ‖ξ x‖ ^ 2) / 2 + ‖ξ x‖ ^ 2) := by
-      rw [mul_assoc]
-      refine mul_le_mul_of_nonneg_left ?_ hC
-      nlinarith [sq_nonneg (‖x‖ - ‖ξ x‖)]
-
 variable {τ : ℝ≥0} {μ ν : WassersteinSpace 2 E} {γ : Measure (E × E)}
 
 /-- **The Euler–Lagrange equation of the JKO step for the potential energy.** Let `V` be a
@@ -421,11 +290,8 @@ theorem integral_inner_eq_neg_mul_integral_inner_gradient_of_mem_moreauYosidaRes
     (hν : ν ∈ moreauYosidaResolvent
       (fun ρ : WassersteinSpace 2 E ↦ potentialEnergy V ((ρ : ProbabilityMeasure E) : Measure E))
       τ μ)
-    (hγ : IsCoupling γ ((ν : ProbabilityMeasure E) : Measure E)
-      ((μ : ProbabilityMeasure E) : Measure E))
-    (hγW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 γ =
-      wassersteinEDist 2 ((ν : ProbabilityMeasure E) : Measure E)
-        ((μ : ProbabilityMeasure E) : Measure E))
+    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
+      ((ν : ProbabilityMeasure E) : Measure E) ((μ : ProbabilityMeasure E) : Measure E))
     (hξ : MemLp ξ 2 ((ν : ProbabilityMeasure E) : Measure E)) :
     ∫ z, ⟪z.1 - z.2, ξ z.1⟫ ∂γ =
       -(τ * ∫ x, ⟪gradient V x, ξ x⟫ ∂((ν : ProbabilityMeasure E) : Measure E)) := by
@@ -443,7 +309,7 @@ theorem integral_inner_eq_neg_mul_integral_inner_gradient_of_mem_moreauYosidaRes
       hV.continuous.aestronglyMeasurable hT).2
         (integrable_comp_of_norm_gradient_le (V := V) hV hV' (hρ.add (hξ.const_smul h)))),
       integral_map hT hV.continuous.aestronglyMeasurable]
-  exact integral_inner_eq_neg_mul_of_mem_moreauYosidaResolvent hτ hν hγ hγW hξ hf
+  exact integral_inner_eq_neg_mul_of_mem_moreauYosidaResolvent hτ hν hγ hξ hf
     (hasDerivAt_integral_comp_add_smul hV hV' hρ hξ)
 
 end PotentialEnergy
