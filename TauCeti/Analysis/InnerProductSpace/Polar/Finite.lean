@@ -190,7 +190,7 @@ theorem operatorAbs_comp_adjoint_polarFactor (A : E →ₗ[𝕜] F) :
 
 /-- The adjoint of the polar decomposition, applied to a vector: `|A| (U† y) = A† y`. -/
 @[simp]
-theorem operatorAbs_adjoint_polarFactor_apply (A : E →ₗ[𝕜] F) (y : F) :
+theorem operatorAbs_apply_adjoint_polarFactor_apply (A : E →ₗ[𝕜] F) (y : F) :
     A.operatorAbs (A.polarFactor.adjoint y) = A.adjoint y :=
   LinearMap.congr_fun A.operatorAbs_comp_adjoint_polarFactor y
 
