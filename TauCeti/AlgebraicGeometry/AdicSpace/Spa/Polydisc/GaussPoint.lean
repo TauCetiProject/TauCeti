@@ -333,6 +333,24 @@ theorem coe_closedDiscGaussValuation_weightedX (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     TauCeti.PowerSeries.gaussValuation_X]
   rfl
 
+/-- The variable `T` and a constant `c` of norm `r` have the same Gauss norm at radius `r`. -/
+theorem closedDiscGaussValuation_weightedX_eq_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    {c : R} (hc : ‖c‖ = r) :
+    closedDiscGaussValuation hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) =
+      closedDiscGaussValuation hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) :=
+  NNReal.eq <| by rw [coe_closedDiscGaussValuation_weightedX, closedDiscGaussValuation_weightedC,
+    coe_nnnorm, hc]
+
+/-- The powers of `T` and of a constant `c` of norm `r` have the same Gauss norm `rⁿ` at
+radius `r`. -/
+theorem closedDiscGaussValuation_weightedX_pow (hr₀ : 0 < r) (hr₁ : r ≤ 1) {c : R}
+    (hc : ‖c‖ = r) (n : ℕ) :
+    closedDiscGaussValuation hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0 ^ n) =
+      closedDiscGaussValuation hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c ^ n) := by
+  rw [map_pow, map_pow, closedDiscGaussValuation_weightedX_eq_weightedC hr₀ hr₁ hc]
+
 /-- The Gauss valuation of radius `r` takes the value `max r ‖a‖` on `T - a`: the coefficients
 `-a` and `1` of `T - a` give the lower bounds `‖a‖` and `r`, and the ultrametric inequality the
 upper bound. -/
@@ -754,24 +772,6 @@ theorem supp_gaussPointBelow (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
   Ideal.ext fun _ ↦ by
     rw [mem_supp_iff, gaussPointBelow_vle_iff, map_zero, le_zero_iff,
       closedDiscGaussValuationBelow_eq_zero_iff, Ideal.mem_bot]
-
-/-- The variable `T` and a constant `c` of norm `r` have the same Gauss norm at radius `r`. -/
-theorem closedDiscGaussValuation_weightedX_eq_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
-    {c : K} (hc : ‖c‖ = r) :
-    closedDiscGaussValuation hr₀ hr₁
-        (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) =
-      closedDiscGaussValuation hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) :=
-  NNReal.eq <| by rw [coe_closedDiscGaussValuation_weightedX, closedDiscGaussValuation_weightedC,
-    coe_nnnorm, hc]
-
-/-- The powers of `T` and of a constant `c` of norm `r` have the same Gauss norm `rⁿ` at
-radius `r`. -/
-theorem closedDiscGaussValuation_weightedX_pow (hr₀ : 0 < r) (hr₁ : r ≤ 1) {c : K}
-    (hc : ‖c‖ = r) (n : ℕ) :
-    closedDiscGaussValuation hr₀ hr₁
-        (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ n) =
-      closedDiscGaussValuation hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c ^ n) := by
-  rw [map_pow, map_pow, closedDiscGaussValuation_weightedX_eq_weightedC hr₀ hr₁ hc]
 
 /-- Just above `r`, the variable `T` is strictly larger than a constant `c` of norm `r`: the
 Gauss norms agree and `T` attains its norm in the later degree. -/
