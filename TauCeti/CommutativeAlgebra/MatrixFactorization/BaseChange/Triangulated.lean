@@ -73,12 +73,6 @@ private noncomputable abbrev scalarExtension (f : S →+* T) :
     FGModuleCat.{u} S ⥤ ModuleCat.{u} T :=
   forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f
 
-/-- Extension of scalars along a map killing `w` kills multiplication by `w`. -/
-private theorem scalarExtension_map_smul_id (f : S →+* T) (hw : f w = 0)
-    (A : FGModuleCat.{u} S) : (scalarExtension f).map (w • 𝟙 A) = (0 : T) • 𝟙 _ := by
-  rw [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.map_smul,
-    CategoryTheory.Functor.map_id, ModuleCat.extendScalars_map_smul_id, hw, zero_smul, zero_smul]
-
 /-- Base change commutes with the parity shifts: both sides have the same components, and the
 negated differentials agree because extension of scalars is additive. -/
 noncomputable def parityShiftCompBaseChangeToCurvedDuplexIso (f : S →+* T) (hw : f w = 0) :
@@ -147,13 +141,15 @@ private noncomputable def diskSumComparison (f : S →+* T) (hw : f w = 0)
       have h := (Functor.biprodComparison_natural (scalarExtension f) (𝟙 X.obj.X₁)
         (-(w • 𝟙 X.obj.X₀))).symm
       rw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_neg,
-        scalarExtension_map_smul_id f hw] at h
+        CategoryTheory.Functor.comp_map _ _ (w • 𝟙 X.obj.X₀), CategoryTheory.Functor.map_smul,
+        CategoryTheory.Functor.map_id, ModuleCat.extendScalars_map_smul_id, hw] at h
       exact h)
     (by
       have h := (Functor.biprodComparison_natural (scalarExtension f) (w • 𝟙 X.obj.X₁)
         (-𝟙 X.obj.X₀)).symm
       rw [CategoryTheory.Functor.map_neg, CategoryTheory.Functor.map_id,
-        scalarExtension_map_smul_id f hw] at h
+        CategoryTheory.Functor.comp_map _ _ (w • 𝟙 X.obj.X₁), CategoryTheory.Functor.map_smul,
+        CategoryTheory.Functor.map_id, ModuleCat.extendScalars_map_smul_id, hw] at h
       exact h)
 
 /-- The disk-sum comparison carries the base change of the inclusion of `X` into its disk sum to
