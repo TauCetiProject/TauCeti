@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
+import TauCeti.GroupTheory.Perm.FinThree.Basic
 
 /-!
 # The anharmonic self-homeomorphisms of the thrice-punctured sphere
@@ -51,6 +52,8 @@ transformation of the Riemann sphere `OnePoint ℂ`, that is, with the action of
 * `TauCeti.ThricePuncturedSphere.mob01GL`, `TauCeti.ThricePuncturedSphere.mob1InfGL`: the
   matrices of the two generators.
 
+* `Equiv.Perm.anharmonic`: the six maps indexed by their puncture permutations.
+
 ## Main results
 
 * `coe_mob1Inf`, `coe_mob0Inf`, `coe_mobRot`, `coe_mobRotInv`: the formulas.
@@ -60,6 +63,8 @@ transformation of the Riemann sphere `OnePoint ℂ`, that is, with the action of
 * `toOnePoint_mob01`, `toOnePoint_mob1Inf`, `toOnePoint_mob0Inf`, `toOnePoint_mobRot`,
   `toOnePoint_mobRotInv`: each map is the restriction of the Möbius action of a product of
   `mob01GL` and `mob1InfGL`.
+
+* `Equiv.Perm.anharmonic_mul`: composition agrees with multiplication of puncture permutations.
 
 ## References
 
@@ -331,3 +336,56 @@ theorem toOnePoint_mob0Inf (z : ThricePuncturedSphere) :
 end ThricePuncturedSphere
 
 end TauCeti
+
+/-! ### Indexing by puncture permutations -/
+
+namespace Equiv.Perm
+
+open TauCeti TauCeti.ThricePuncturedSphere
+
+/-- The anharmonic self-homeomorphism whose puncture permutation is `ρ`, with `0, 1, ∞`
+numbered by `0, 1, 2 : Fin 3`. In particular the cycle `0 ↦ 1 ↦ 2 ↦ 0` gives `mobRot`. -/
+noncomputable def anharmonic (ρ : Equiv.Perm (Fin 3)) :
+    ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
+  match ρ 0, ρ 1 with
+  | 1, 0 => mob01
+  | 0, 2 => mob1Inf
+  | 2, 1 => mob0Inf
+  | 1, 2 => mobRot
+  | 2, 0 => mobRotInv
+  | _, _ => Homeomorph.refl _
+
+@[simp] theorem anharmonic_one : anharmonic 1 = Homeomorph.refl _ := (rfl)
+
+@[simp] theorem anharmonic_swap_zero_one : anharmonic (Equiv.swap 0 1) = mob01 := (rfl)
+
+@[simp] theorem anharmonic_swap_one_two : anharmonic (Equiv.swap 1 2) = mob1Inf := (rfl)
+
+@[simp] theorem anharmonic_swap_zero_two : anharmonic (Equiv.swap 0 2) = mob0Inf := (rfl)
+
+@[simp] theorem anharmonic_finRotate : anharmonic (finRotate 3) = mobRot := (rfl)
+
+@[simp] theorem anharmonic_finRotate_inv : anharmonic (finRotate 3)⁻¹ = mobRotInv := (rfl)
+
+/-- Composition of anharmonic maps agrees with composition of puncture permutations. -/
+theorem anharmonic_mul (ρ τ : Equiv.Perm (Fin 3)) :
+    anharmonic (ρ * τ) = (anharmonic τ).trans (anharmonic ρ) := by
+  rcases Equiv.Perm.fin_three_cases (ρ * τ) with hp | hp | hp | hp | hp | hp <;>
+    rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rcases Equiv.Perm.fin_three_cases τ with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    first
+    | exact absurd hp (by decide)
+    | rw [hp]
+      simp only [anharmonic_one, anharmonic_swap_zero_one, anharmonic_swap_one_two,
+        anharmonic_swap_zero_two, anharmonic_finRotate, anharmonic_finRotate_inv]
+      apply Homeomorph.ext
+      intro z
+      apply Subtype.ext
+      have h0 := z.ne_zero
+      have h1 := sub_ne_zero.mpr z.ne_one
+      have h1' := sub_ne_zero.mpr z.ne_one.symm
+      simp only [Homeomorph.trans_apply, Homeomorph.refl_apply, id_eq, coe_mob01, coe_mob1Inf,
+        coe_mob0Inf, coe_mobRot, coe_mobRotInv]
+      <;> first | ring1 | (field_simp <;> ring1)
+
+end Equiv.Perm
