@@ -32,6 +32,8 @@ Without reducedness the criterion fails: rational points do not see infinitesima
   points gives normality.
 * `TauCeti.HopfIdeal.isNormal_iff_forall_le_conjugate`: the resulting characterization of
   normal reduced closed subgroups.
+* `TauCeti.HopfIdeal.IsNormal.comapOfSurjective_of_forall_iso`: a reduced characteristic
+  closed subgroup of a normal closed subgroup is normal in the ambient group.
 
 ## References
 
@@ -42,6 +44,8 @@ Without reducedness the criterion fails: rational points do not see infinitesima
 public section
 
 open scoped TensorProduct
+
+open CategoryTheory
 
 namespace TauCeti.HopfIdeal
 
@@ -88,5 +92,46 @@ group is normal exactly when conjugation by every rational point maps it into it
 theorem isNormal_iff_forall_le_conjugate (I : HopfIdeal k H) [IsReduced (H ⧸ I.toIdeal)] :
     I.IsNormal ↔ ∀ g : WithConv (H →ₐ[k] k), I ≤ I.conjugate g :=
   ⟨IsNormal.le_conjugate, isNormal_of_forall_le_conjugate I⟩
+
+/-- A reduced characteristic closed subgroup of a normal closed subgroup is normal in the
+ambient reduced finite-type affine group over an algebraically closed field. Here characteristic
+means that every automorphism of the quotient coordinate Hopf algebra preserves its ideal. -/
+theorem IsNormal.comapOfSurjective_of_forall_iso {I : HopfIdeal k H} (hI : I.IsNormal)
+    (J : HopfIdeal k (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I))
+    [IsReduced (H ⧸ (J.comapOfSurjective
+      (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) I).hom
+      (CommHopfAlgCat.mkQuotient_surjective _ _)).toIdeal)]
+    (hJ : ∀ e : CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I ≅
+        CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I,
+      J.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J) :
+    (J.comapOfSurjective (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) I).hom
+      (CommHopfAlgCat.mkQuotient_surjective _ _)).IsNormal := by
+  apply isNormal_of_forall_le_conjugate
+  intro g x hx
+  let A := _root_.CommHopfAlgCat.of k H
+  let c : A ≅ A := _root_.CommHopfAlgCat.isoMk
+    (HopfAlgebra.pointConjugationBialgEquiv g)
+  have hstable : I.comapOfSurjective c.hom.hom
+      (ConcreteCategory.bijective_of_isIso c.hom).2 = I := by
+    have hconj : I.conjugate g = I := by
+      apply le_antisymm
+      · simpa using conjugate_mono g (hI.le_conjugate g⁻¹)
+      · exact hI.le_conjugate g
+    simpa only [conjugate_eq_comapOfSurjective, c, _root_.CommHopfAlgCat.isoMk_hom,
+      _root_.CommHopfAlgCat.hom_ofHom, BialgEquiv.toBialgHom_eq_coe] using hconj
+  let e := CommHopfAlgCat.quotientIsoOfComapEq c I hstable
+  have hcomm := CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom c I hstable
+  have heval := congrArg (fun f : A ⟶ CommHopfAlgCat.quotient A I ↦ f.hom x) hcomm
+  have hxJ : (CommHopfAlgCat.mkQuotient A I).hom x ∈ J :=
+    mem_comapOfSurjective.mp hx
+  have hpreserved : e.hom.hom ((CommHopfAlgCat.mkQuotient A I).hom x) ∈ J :=
+    mem_comapOfSurjective.mp ((hJ e).symm ▸ hxJ)
+  rw [mem_conjugate, mem_comapOfSurjective]
+  -- The quotient comparison identifies restricted conjugation with ambient conjugation.
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at heval
+  rw [heval] at hpreserved
+  simpa only [c, _root_.CommHopfAlgCat.isoMk_hom, _root_.CommHopfAlgCat.hom_ofHom,
+    BialgHom.coe_coe, BialgHom.coe_toAlgHom, BialgEquiv.coe_coe,
+    ← HopfAlgebra.pointConjugationBialgEquiv_toAlgHom] using hpreserved
 
 end TauCeti.HopfIdeal

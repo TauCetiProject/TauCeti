@@ -12,10 +12,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 # The integral equation `y² = x³ - x + 1`
 
 This file defines the integral Weierstrass equation, computes its discriminant `-368`, and
-establishes ellipticity over `ℚ`. Over `ℚ` the equation is in the normal form
-`y² = x³ + a₂x² + a₄x + a₆` of explicit `2`-descent, and every rational solution is a nonsingular
-point. It is the common starting point for calculations of its rational torsion and
-Mordell–Weil rank.
+establishes ellipticity over `ℚ` and the normal form `a₁ = a₃ = 0` there. It is the common
+starting point for calculations of its rational torsion and Mordell–Weil rank.
 -/
 
 public section
@@ -36,13 +34,9 @@ instance : (curveX3SubXAddOne.baseChange ℚ).IsElliptic := by
   rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curveX3SubXAddOne]
   norm_num
 
-/-- Over `ℚ`, `y² = x³ - x + 1` is in the normal form `y² = x³ + a₂x² + a₄x + a₆`. -/
+/-- Over `ℚ`, `y² = x³ - x + 1` is in the normal form `a₁ = a₃ = 0` of characteristic `≠ 2`, the
+form in which explicit `2`-descent is set up. -/
 instance : (curveX3SubXAddOne.baseChange ℚ).IsCharNeTwoNF :=
-  ⟨by simp, by simp⟩
-
-/-- Every rational solution of `y² = x³ - x + 1` is a nonsingular point. -/
-theorem nonsingular_curveX3SubXAddOne {x y : ℚ} (h : y ^ 2 = x ^ 3 - x + 1) :
-    (curveX3SubXAddOne.baseChange ℚ).toAffine.Nonsingular x y :=
-  Affine.equation_iff_nonsingular.mp (by rw [Affine.equation_iff]; simpa [sub_eq_add_neg] using h)
+  ⟨by simp [curveX3SubXAddOne], by simp [curveX3SubXAddOne]⟩
 
 end TauCeti.WorkedExamples

@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -52,6 +53,183 @@ class HostResourcesTests(unittest.TestCase):
                 self.assertEqual(self.invoke([sys.executable, '-c', 'raise SystemExit(1)'], out / 'absent.json'), 1)
             self.assertIn('telemetry unavailable', output.getvalue())
 
+    def test_adopted_descendants_are_counted_and_primary_status_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            # The command exits before its worker, like bubblewrap's eventfd
+            # monitor. The adopted worker reaps CPU/memory-intensive work.
+            command = [sys.executable, '-c', textwrap.dedent('''
+                import os, time
+                if os.fork() == 0:
+                    time.sleep(.1)
+                    if os.fork() == 0:
+                        data = bytearray(32 * 1024 * 1024)
+                        sum(i*i for i in range(4000000))
+                        os._exit(0)
+                    os.wait()
+                    os._exit(0)
+                os._exit(7)
+            ''')]
+            self.assertEqual(self.invoke(command, out), 7)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['command_accounting_scope'], 'reaped-descendants')
+            self.assertEqual(value['reaped_processes'], 2)
+            self.assertGreater(value['command_cpu_user_s'], .05)
+            self.assertGreater(value['command_max_process_rss_bytes'], 32*1024*1024)
+
+    def test_subreaper_failure_is_visible_and_nonfatal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            with patch.object(host, 'descendant_accounting', return_value=None):
+                self.assertEqual(self.invoke([sys.executable, '-c', 'raise SystemExit(7)'], out), 7)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['command_accounting_scope'], 'direct-child-only')
+            self.assertIn('descendant-accounting-unavailable', value['missing'])
+
+    def test_signal_killed_adopted_worker_marks_accounting_partial(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            command = [sys.executable, '-c', textwrap.dedent('''
+                import os, signal, time
+                if os.fork() == 0:
+                    time.sleep(.05)
+                    sum(i*i for i in range(1000000))
+                    os.kill(os.getpid(), signal.SIGKILL)
+                os._exit(0)
+            ''')]
+            self.assertEqual(self.invoke(command, out), 0)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['exit_code'], 0)
+            self.assertEqual(value['cancel_signals'], [])
+            self.assertEqual(value['reaped_termination_signals'], [signal.SIGKILL])
+            self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+            self.assertIn('descendant-accounting-interrupted', value['missing'])
+
+    def test_unfinished_adopted_worker_cannot_delay_completion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out, ready = Path(directory) / 'resources.json', Path(directory) / 'worker'
+            command = [sys.executable, '-c', textwrap.dedent(f'''
+                import os, time
+                from pathlib import Path
+                if os.fork() == 0:
+                    Path({str(ready)!r}).write_text(str(os.getpid()))
+                    time.sleep(30)
+                    os._exit(0)
+                os._exit(7)
+            ''')]
+            try:
+                with patch.object(host, 'DESCENDANT_GRACE', .1):
+                    start = time.monotonic()
+                    self.assertEqual(self.invoke(command, out), 7)
+                    self.assertLess(time.monotonic() - start, 2)
+                value = json.loads(out.read_text())
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-unfinished', value['missing'])
+            finally:
+                if ready.exists():
+                    worker = int(ready.read_text())
+                    os.kill(worker, signal.SIGKILL)
+                    os.waitpid(worker, 0)
+
+    def test_ready_descendant_stream_cannot_bypass_deadline_or_cancellation(self):
+        for cancel in (False, True):
+            with tempfile.TemporaryDirectory() as directory:
+                out = Path(directory) / 'resources.json'
+                handlers, primary, calls = {}, [], []
+                wait4 = host.os.wait4
+                def continuous_reaps(pid, options):
+                    if not primary:
+                        value = wait4(pid, options)
+                        if value[0]:
+                            primary.append(value)
+                        return value
+                    calls.append(1)
+                    if len(calls) > 200:
+                        raise ChildProcessError()
+                    time.sleep(.01)
+                    if cancel and len(calls) == 1:
+                        handlers[signal.SIGTERM](signal.SIGTERM, None)
+                    return primary[0][0] + 1, signal.SIGKILL, primary[0][2]
+                with patch.object(host, 'DESCENDANT_GRACE', .05), \
+                        patch.object(host.os, 'wait4', side_effect=continuous_reaps), \
+                        patch.object(host.signal, 'signal', side_effect=lambda sig, fn: handlers.update({sig: fn})):
+                    self.assertEqual(self.invoke([sys.executable, '-c', 'raise SystemExit(7)'], out), 7)
+                value = json.loads(out.read_text())
+                self.assertLess(value['elapsed_s'], 1)
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-unfinished', value['missing'])
+                self.assertEqual(value['reaped_termination_signals'], [signal.SIGKILL])
+
+    def test_cancellation_after_monitor_exit_flushes_without_waiting_for_worker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out, ready = Path(directory) / 'resources.json', Path(directory) / 'worker'
+            command = textwrap.dedent(f'''
+                import os, time
+                from pathlib import Path
+                if os.fork() == 0:
+                    Path({str(ready)!r}).write_text(str(os.getpid()))
+                    time.sleep(30)
+                    os._exit(0)
+                os._exit(0)
+            ''')
+            child = subprocess.Popen([sys.executable, str(HERE / 'ci_host_resources.py'),
+                '--out', str(out), '--', sys.executable, '-c', command])
+            try:
+                deadline = time.monotonic() + 10
+                while not ready.exists() and time.monotonic() < deadline:
+                    time.sleep(.01)
+                self.assertTrue(ready.exists())
+                time.sleep(.05)
+                child.send_signal(signal.SIGTERM)
+                self.assertEqual(child.wait(timeout=3), 0)
+                value = json.loads(out.read_text())
+                self.assertEqual(value['cancel_signals'], [signal.SIGTERM])
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-unfinished', value['missing'])
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if ready.exists():
+                    try:
+                        os.kill(int(ready.read_text()), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    def test_signal_completion_race_preserves_status_when_popen_reaps_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            handlers = {}
+            wait4 = host.os.wait4
+            def late_signal(pid, options):
+                time.sleep(.1)
+                handlers[signal.SIGTERM](signal.SIGTERM, None)
+                return wait4(pid, options)
+            with patch.object(host.signal, 'signal', side_effect=lambda sig, fn: handlers.update({sig: fn})), \
+                    patch.object(host.os, 'wait4', side_effect=late_signal):
+                self.assertEqual(self.invoke([sys.executable, '-c', 'pass'], out), 0)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['exit_code'], 0)
+            self.assertEqual(value['cancel_signals'], [signal.SIGTERM])
+            self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+            self.assertIn('primary-resource-accounting-unavailable', value['missing'])
+
+    @unittest.skipUnless(shutil.which('bwrap'), 'bubblewrap not installed')
+    def test_real_pid_namespace_reports_sandbox_cpu_and_rss(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            command = ['bwrap', '--ro-bind', '/', '/', '--dev', '/dev', '--unshare-user', '--unshare-pid',
+                       '--proc', '/proc', '--die-with-parent', '--', sys.executable, '-c',
+                       'data=bytearray(32*1024*1024); sum(i*i for i in range(4000000))']
+            probe = subprocess.run(command[:command.index(sys.executable)] + ['true'], capture_output=True)
+            if probe.returncode:
+                self.skipTest('bubblewrap namespaces unavailable: ' + probe.stderr.decode()[:100])
+            self.assertEqual(self.invoke(command, out), 0)
+            value = json.loads(out.read_text())
+            self.assertGreaterEqual(value['reaped_processes'], 2)
+            self.assertGreater(value['command_cpu_user_s'], .05)
+            self.assertGreater(value['command_max_process_rss_bytes'], 32*1024*1024)
+
     def test_cancellation_flushes_partial_resources(self):
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory) / 'cancel.json'
@@ -69,6 +247,8 @@ class HostResourcesTests(unittest.TestCase):
                 value = json.loads(out.read_text())
                 self.assertEqual(value['cancel_signals'], [signal.SIGTERM])
                 self.assertEqual(value['exit_code'], -signal.SIGTERM)
+                self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+                self.assertIn('descendant-accounting-interrupted', value['missing'])
             finally:
                 if child.poll() is None:
                     child.kill()
@@ -133,50 +313,54 @@ class HostResourcesTests(unittest.TestCase):
             self.assertEqual(snapshot.call_count, 1)
 
     def publication(self, directory):
-        workflow = (HERE.parent / '.github/workflows/publish-lake-cache.yml').read_text()
-        step = workflow.split('- name: Observe publication volume')[1]
-        code = textwrap.dedent(step.split("python3 - <<'PY'\n", 1)[1].split('          PY', 1)[0])
-        env = dict(STAGING=str(directory), RUNNER_TEMP=str(directory), GITHUB_RUN_ID='1',
-                   GITHUB_RUN_ATTEMPT='1', UPLOADED='true', CONFIRMED='true')
-        with patch.dict(os.environ, env):
-            exec(compile(code, 'publication-observation', 'exec'), {})
-        return json.loads((directory / 'ci-publication.json').read_text())
+        spec = importlib.util.spec_from_file_location('publication', HERE / 'ci_publication_observation.py')
+        publication = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(publication)
+        return publication.measure(directory)
 
-    def test_publication_deduplicates_mapped_artifacts_and_excludes_junk(self):
+    def test_publication_counts_upload_subset_and_full_map_once(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            artifact = '0123456789abcdef.ltar'
-            (root / artifact).write_bytes(b'payload')
-            (root / 'junk.ltar').write_bytes(b'junk' * 1000)
-            (root / '000000000000002a.art').write_bytes(b'number')
-            lines = ['"2026-03-17"', json.dumps(['a'*16, {'key': [artifact, artifact, True, 42]}]),
-                     json.dumps(['b'*16, 'ffffffffffffffff.ltar']),
-                     json.dumps(['b'*16, artifact])]
-            mapping = '\n'.join(lines) + '\n'
-            (root / 'outputs.jsonl').write_text(mapping)
+            # No inherited artifact files exist locally. The trusted planner
+            # verified them and froze the actual upload subset outside staging.
+            (root / 'outputs.jsonl').write_bytes(b'full map')
+            metrics = dict(objects=100, inherited=98, uploaded_objects=2,
+                           upload_bytes=40, full_bytes=9000)
+            (root / 'metrics.json').write_text(json.dumps(metrics))
+            (root / 'junk').write_bytes(b'x' * 1000)
             value = self.publication(root)
             self.assertTrue(value['complete'])
             self.assertEqual(value['staged_objects'], 3)
-            self.assertEqual(value['staged_bytes'], len(mapping) + 7 + 6)
-            self.assertTrue(value['confirmed'])
+            self.assertEqual(value['staged_bytes'], 48)
+            self.assertEqual(value['inherited_objects'], 98)
+            metrics.update(inherited=100, uploaded_objects=0, upload_bytes=0)
+            (root / 'metrics.json').write_text(json.dumps(metrics))
+            self.assertEqual(self.publication(root)['staged_objects'], 1)
+            self.assertEqual(self.publication(root)['staged_bytes'], 8)
 
-    def test_publication_missing_symlink_fifo_and_oversized_maps_are_gaps(self):
+    def test_publication_missing_symlink_fifo_oversized_and_invalid_plans_are_gaps(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.assertFalse(self.publication(root)['complete'])
-            artifact = '0123456789abcdef.ltar'
-            (root / 'outputs.jsonl').write_text('"2026-03-17"\n' + json.dumps(['a'*16, artifact]))
-            (root / artifact).symlink_to('/etc/passwd')
-            self.assertFalse(self.publication(root)['complete'])
-            (root / artifact).unlink()
-            os.mkfifo(root / artifact)
+            metrics = dict(objects=1, inherited=0, uploaded_objects=1,
+                           upload_bytes=40, full_bytes=40)
+            (root / 'metrics.json').write_text(json.dumps(metrics))
+            (root / 'outputs.jsonl').symlink_to('/etc/passwd')
             self.assertFalse(self.publication(root)['complete'])
             (root / 'outputs.jsonl').unlink()
             os.mkfifo(root / 'outputs.jsonl')
             self.assertFalse(self.publication(root)['complete'])
             (root / 'outputs.jsonl').unlink()
-            with (root / 'outputs.jsonl').open('wb') as handle:
-                handle.truncate(8*1024*1024 + 1)
+            (root / 'outputs.jsonl').write_bytes(b'full map')
+            for field, value in (('objects', 2), ('upload_bytes', 41), ('inherited', True)):
+                (root / 'metrics.json').write_text(json.dumps({**metrics, field: value}))
+                self.assertFalse(self.publication(root)['complete'])
+            (root / 'metrics.json').unlink()
+            os.mkfifo(root / 'metrics.json')
+            self.assertFalse(self.publication(root)['complete'])
+            (root / 'metrics.json').unlink()
+            with (root / 'metrics.json').open('wb') as handle:
+                handle.truncate(64*1024 + 1)
             self.assertFalse(self.publication(root)['complete'])
 
     def test_workflow_output_is_outside_candidate_mounts_and_nonfatal(self):
@@ -191,8 +375,9 @@ class HostResourcesTests(unittest.TestCase):
         publication = (HERE.parent / '.github/workflows/publish-lake-cache.yml').read_text()
         observe = publication.split('- name: Observe publication volume')[1]
         self.assertNotIn('LAKE_CACHE_KEY', observe)
-        self.assertIn('follow_symlinks=False', observe)
-        self.assertIn('MAX_ENTRIES = 100000', observe)
+        self.assertIn('publisher-tools/scripts/ci_publication_observation.py', observe)
+        self.assertIn('--plan \"$RUNNER_TEMP/lake-publication-plan\"', observe)
+        self.assertIn('scripts/ci_publication_observation.py', publication.split('- name: Download')[0])
 
 
 if __name__ == '__main__':

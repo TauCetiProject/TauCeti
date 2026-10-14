@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
-import Mathlib.FieldTheory.RatFunc.IntermediateField
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # The constant field of an algebraic function field
@@ -249,16 +249,8 @@ end Extension
 /-- The field of constants of the rational function field `k(x)` is `k`
 (Stichtenoth, Proposition 1.2.1(d)). -/
 theorem algebraicClosure_ratFunc (K : Type*) [Field K] :
-    algebraicClosure K (RatFunc K) = ⊥ := by
-  refine eq_bot_iff.2 fun f hf ↦ ?_
-  obtain ⟨c, rfl⟩ := not_not.1 fun h ↦
-    RatFunc.transcendental_of_ne_C f h (mem_algebraicClosure_iff.1 hf)
-  rw [← RatFunc.algebraMap_eq_C]
-  exact IntermediateField.algebraMap_mem _ _
-
-/-- `k` is integrally closed in the rational function field `k(x)`. -/
-instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
-  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure_ratFunc k)
+    algebraicClosure K (RatFunc K) = ⊥ :=
+  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 isIntegrallyClosedIn_ratFunc
 
 
 end TauCeti
