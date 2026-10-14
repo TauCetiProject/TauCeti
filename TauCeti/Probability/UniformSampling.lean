@@ -36,8 +36,9 @@ estimate is the classical union bound over unordered coordinate pairs, using
 
 ## Main results
 
-* `uniformOn_not_injective_le` bounds the probability of a collision;
-* `uniformOn_injective_eq` and `uniformOn_not_injective_eq` compute the exact probabilities;
+* `uniformOn_not_injective_le` bounds the uniform-measure mass of collisions;
+* `uniformOn_injective_eq` and `uniformOn_not_injective_eq` compute the exact
+  uniform-measure masses;
 * `uniformOn_le_univ_add_compl` and `uniformOn_univ_le_add_compl` give the general conditioning
   comparison;
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
@@ -61,9 +62,10 @@ namespace Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-/-- The probability that a uniform random map is injective is the number of ordered
-injections divided by the number of maps. This includes empty index types, with the usual
-totalization of `uniformOn` when the function space is empty. -/
+/-- The uniform-measure mass of injective maps is the number of ordered injections divided by
+the number of maps. This is an injectivity probability when the function space is nonempty;
+when the function space is empty, `uniformOn` is the zero measure and both sides are zero. -/
+@[simp]
 theorem uniformOn_injective_eq [MeasurableSpace κ] [MeasurableSingletonClass κ] :
     uniformOn (Set.univ : Set (ι → κ)) {f | Function.Injective f} =
       (Fintype.card κ).descFactorial (Fintype.card ι) /
@@ -80,6 +82,7 @@ theorem uniformOn_injective_eq [MeasurableSpace κ] [MeasurableSingletonClass κ
 /-- The exact collision probability for a uniform random map on a nonempty finite function
 space. The descending factorial counts ordered samples without replacement, so this retains
 the overlap between pairwise collision events discarded by the union bound. -/
+@[simp]
 theorem uniformOn_not_injective_eq [MeasurableSpace κ] [MeasurableSingletonClass κ]
     [Nonempty (ι → κ)] :
     uniformOn (Set.univ : Set (ι → κ)) {f | ¬ Function.Injective f} =
@@ -90,8 +93,9 @@ theorem uniformOn_not_injective_eq [MeasurableSpace κ] [MeasurableSingletonClas
   rw [← Set.compl_ofPred, prob_compl_eq_one_sub (Set.toFinite _).measurableSet,
     uniformOn_injective_eq]
 
-/-- The real-valued probability of an event under a finite uniform sample is the ratio of its
-cardinality to the cardinality of the sampling set. -/
+/-- The real-valued mass of an event under a finite uniform measure is the ratio of its
+cardinality to the cardinality of the sampling set. This also covers the zero measure when
+the sampling set is empty. -/
 theorem uniformOn_toReal {Ω : Type*} [Finite Ω] [MeasurableSpace Ω]
     [MeasurableSingletonClass Ω] (S T : Set Ω) :
     (uniformOn S T).toReal =

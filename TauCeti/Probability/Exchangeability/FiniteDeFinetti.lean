@@ -53,8 +53,9 @@ since distinct indices can hold the same value.
   the finite de Finetti bound;
 * `TauCeti.Probability.ExchangeableAt.totalVariation_prefixLaw_sub_sampleWithReplacement_le`: the
   same bound in total variation, with the signed-measure normalization.
-* `TauCeti.Probability.ExchangeableAt.finiteDeFinetti_descFactorial`: the sharper eventwise
+* `TauCeti.Probability.ExchangeableAt.finiteDeFinetti_exact_collision`: the sharper eventwise
   bound using the exact collision probability, with a corresponding total-variation theorem.
+  The two named one-sided corollaries have the suffix `add_exact_collision`.
 
 ## References
 
@@ -108,7 +109,7 @@ event between an exchangeable prefix and its with-replacement sample (the empiri
 mixture when `n > 0`) is bounded by `1 - (n)_m / n^m`, where `(n)_m` counts ordered injections.
 This retains the overlap between pairwise collisions lost in the union bound.
 The empty-sample case `m = n = 0` has error zero. -/
-theorem ExchangeableAt.finiteDeFinetti_descFactorial
+theorem ExchangeableAt.finiteDeFinetti_exact_collision
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
@@ -123,12 +124,36 @@ theorem ExchangeableAt.finiteDeFinetti_descFactorial
     infer_instance
   rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
   constructor
-  · simpa [uniformOn_not_injective_eq] using
+  · simpa using
       sampleWithoutReplacement_le_sampleWithReplacement_add_collision
         (ρ := prefixLaw μ X n) hA
-  · simpa [uniformOn_not_injective_eq] using
+  · simpa using
       sampleWithReplacement_le_sampleWithoutReplacement_add_collision
         (ρ := prefixLaw μ X n) hA
+
+/-- **Exact finite de Finetti bound, exchangeable law to empirical mixture.** Under finite
+exchangeability and `m ≤ n`, the prefix law exceeds its with-replacement sample on a measurable
+event by at most the exact index-collision error. -/
+theorem ExchangeableAt.prefixLaw_le_sampleWithReplacement_add_exact_collision
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
+    (hA : MeasurableSet A) :
+    prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
+      (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) :=
+  (h.finiteDeFinetti_exact_collision hmn hX hA).1
+
+/-- **Exact finite de Finetti bound, empirical mixture to exchangeable law.** Under finite
+exchangeability and `m ≤ n`, the with-replacement sample exceeds the prefix law on a measurable
+event by at most the exact index-collision error. -/
+theorem ExchangeableAt.sampleWithReplacement_le_prefixLaw_add_exact_collision
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
+    (hA : MeasurableSet A) :
+    sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
+      (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) :=
+  (h.finiteDeFinetti_exact_collision hmn hX hA).2
 
 /-- **Quantitative finite de Finetti bound, exchangeable law to empirical mixture.** If the first
 `n` coordinates of a process are exchangeable and `m ≤ n`, then every measurable event under the
@@ -180,7 +205,7 @@ theorem ExchangeableAt.totalVariation_prefixLaw_sub_sampleWithReplacement_le
 /-- The finite de Finetti approximation with exact collision error, in the signed-measure
 normalization of total variation. This is twice the probability-distance convention
 `sup_A |P(A) - Q(A)|`; no optimality for each individual population law is asserted. -/
-theorem ExchangeableAt.totalVariation_prefixLaw_sub_sampleWithReplacement_le_descFactorial
+theorem ExchangeableAt.totalVariation_prefixLaw_sub_sampleWithReplacement_le_exact_collision
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
@@ -189,8 +214,8 @@ theorem ExchangeableAt.totalVariation_prefixLaw_sub_sampleWithReplacement_le_des
       Set.univ ≤ 2 * (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) := by
   rw [two_mul]
   exact Measure.totalVariation_toSignedMeasure_sub_univ_le
-    (fun _ hA => (h.finiteDeFinetti_descFactorial hmn hX hA).1)
-    (fun _ hA => (h.finiteDeFinetti_descFactorial hmn hX hA).2)
+    (fun _ hA => h.prefixLaw_le_sampleWithReplacement_add_exact_collision hmn hX hA)
+    (fun _ hA => h.sampleWithReplacement_le_prefixLaw_add_exact_collision hmn hX hA)
 
 end FiniteExchangeability
 

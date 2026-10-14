@@ -22,7 +22,8 @@ selections. Neither construction assumes symmetry of the population law.
 For a nonempty population index, sampling with replacement is the mixture over `ρ` of the finite
 product laws of the empirical measures `empiricalMeasureOfFintype x`. The collision bound gives the
 two eventwise comparisons between sampling with and without replacement, with error equal to
-the probability that the index selections collide, and hence at most `choose |ι| 2 / |κ|`.
+the uniform-measure mass of colliding index selections, and hence at most `choose |ι| 2 / |κ|`.
+This mass is a collision probability when the selection space is nonempty.
 These comparisons apply to arbitrary probability population laws and feed
 quantitative approximation results for finite exchangeable processes.
 
@@ -177,7 +178,8 @@ variable [Fintype ι] [Fintype κ]
 
 omit [Fintype κ] in
 /-- Sampling without replacement from a random finite population increases the mass of a
-measurable event by at most the probability that uniform index selections collide. -/
+measurable event by at most the uniform-measure mass of colliding index selections.
+This mass is a collision probability when the selection space is nonempty. -/
 theorem sampleWithoutReplacement_le_sampleWithReplacement_add_collision [Finite κ]
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
@@ -198,7 +200,8 @@ theorem sampleWithoutReplacement_le_sampleWithReplacement_add_collision [Finite 
 
 omit [Fintype κ] in
 /-- Sampling with replacement from a random finite population increases the mass of a
-measurable event by at most the probability that uniform index selections collide. -/
+measurable event by at most the uniform-measure mass of colliding index selections.
+This mass is a collision probability when the selection space is nonempty. -/
 theorem sampleWithReplacement_le_sampleWithoutReplacement_add_collision [Finite κ]
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
