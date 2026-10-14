@@ -296,7 +296,6 @@ variable {C}
 
 /-- The `n`-th space of `TauCeti.toRelativeCWComplex C` is the skeleton `skeletonLT C n`, included
 in `C`. -/
-@[simp]
 lemma coe_toRelativeCWComplex_incl_app_apply (n : ℕ) (x : (toRelativeCWComplex C).F.obj n) :
     ((toRelativeCWComplex C).incl.app n x).1 = x.1 :=
   (rfl)
