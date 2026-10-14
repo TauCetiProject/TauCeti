@@ -8,9 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.Morse.Linearization
-import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!
 # A Morse–Smale function on the plane
@@ -32,6 +29,7 @@ dimension `0`.
 
 * `TauCeti.lipschitzWith_gradient_cosAddHalfSq`: the gradient is `1`-Lipschitz.
 * `TauCeti.fderiv_cosAddHalfSq_eq_zero_iff`, `TauCeti.isNondegenerateCriticalPoint_cosAddHalfSq`,
+  `TauCeti.hasNondegenerateCriticalPointsOn_cosAddHalfSq`,
   `TauCeti.morseIndex_cosAddHalfSq_of_cos_eq_one`,
   `TauCeti.morseIndex_cosAddHalfSq_of_cos_eq_neg_one`: the critical points, their nondegeneracy
   and their Morse indices.
@@ -213,6 +211,11 @@ theorem isNondegenerateCriticalPoint_cosAddHalfSq {z : EuclideanSpace ℝ (Fin 2
   fin_cases i
   · simpa [hc] using h0
   · simpa using h1
+
+/-- **`cos x + y² / 2` is a Morse function**: every critical point is nondegenerate. -/
+theorem hasNondegenerateCriticalPointsOn_cosAddHalfSq :
+    HasNondegenerateCriticalPointsOn cosAddHalfSq univ :=
+  hasNondegenerateCriticalPointsOn_iff.2 fun _ _ hz ↦ isNondegenerateCriticalPoint_cosAddHalfSq hz
 
 /-- At a critical point with `cos x = -1`, a minimum, the Morse index is `0`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2)}
