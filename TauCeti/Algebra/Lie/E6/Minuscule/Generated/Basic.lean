@@ -150,6 +150,15 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 27 ⟶ generatedCoordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27) (generatedDefiningIdeal A)
 
+/-- The generated subgroup coordinate morphism is the quotient by its defining ideal, read in the
+generated coordinate Hopf algebra through `generatedCoordinateHopfAlgebra_def`. -/
+theorem generatedCoordinateMap_def :
+    generatedCoordinateMap A =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27)
+          (generatedDefiningIdeal A) ≫
+        eqToHom (generatedCoordinateHopfAlgebra_def A).symm :=
+  (Category.comp_id _).symm
+
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
   CommHopfAlgCat.mkQuotient_surjective
