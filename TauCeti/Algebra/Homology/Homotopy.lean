@@ -139,7 +139,7 @@ def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m)
       rw [← Preadditive.comp_add, hsum, Preadditive.comp_sub, Category.comp_id,
         HomologicalComplex.pow_f_succ]
     rw [hdn, hpv, ← Finset.sum_add_distrib, Finset.sum_congr rfl hstep,
-      Finset.sum_range_sub' (fun k ↦ (End.of s ^ k).f i) m, pow_zero, End.one_def,
+      Finset.sum_range_sub' (fun k ↦ (End.of s ^ k).f i) m, pow_zero, End.one_asHom,
       HomologicalComplex.id_f]
     abel
 

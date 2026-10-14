@@ -388,7 +388,7 @@ private theorem homMk_loop :
 private def loopHom : FundamentalGroup (sphere (0 : ℂ) 1) 1 →* Multiplicative ℤ :=
   MonoidHom.mk' (fun g ↦ (lift 1 (Multiplicative.ofAdd (-1))).map
     (InducedCategory.homMk g : one ⟶ one)) fun g h ↦ by
-    rw [End.mul_def, ← SingleObj.comp_as_mul, ← Functor.map_comp]
+    rw [End.mul_asHom, ← SingleObj.comp_as_mul, ← Functor.map_comp]
     -- Composition in `FundamentalGroupoidOn` is composition of the underlying morphisms.
     rfl
 

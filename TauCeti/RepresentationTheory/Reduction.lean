@@ -153,7 +153,7 @@ private theorem coe_forgetModuleCat_map_reductionMap (f : V →+[G] W) :
   -- `Action.forget` and `forget₂` keep the underlying linear map
   change ⇑(reductionMap k f).hom.hom.hom = _
   exact (congrArg DFunLike.coe (reductionMap_hom_hom_hom f)).trans
-    (LinearMap.baseChange_eq_ltensor _)
+    (LinearMap.baseChange_eq_lTensor _)
 
 variable (k) in
 /-- **Reduction preserves epimorphisms**: a surjective equivariant map reduces to an epimorphism,

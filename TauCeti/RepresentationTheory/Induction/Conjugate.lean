@@ -799,7 +799,7 @@ def _root_.FDRep.conjNormalIso (A : FDRep k N) (n : N) : conjNormalFDRep (n : G)
     -- `End A.V`.  There composition is multiplication in the other order, so each side
     -- collapses to a single value of `Action.ρ A`.
     change Action.ρ A _ ≫ Action.ρ A _ = Action.ρ A _ ≫ Action.ρ A _
-    rw [← End.mul_def, ← End.mul_def, ← map_mul, ← map_mul]
+    rw [← End.mul_asHom, ← End.mul_asHom, ← map_mul, ← map_mul]
     exact congrArg (Action.ρ A) (Subtype.ext (by simp [mul_assoc]))
 
 /-- The isomorphism `{}^n A ≅ A` for `n : N` is the action of `n`. -/

@@ -853,7 +853,6 @@ theorem finrank_reducedSingularHomology_sphere [StrongRankCondition k] (d q : â„
     exact (reducedSingularHomologyTopCatSphereIso M q).toLinearEquiv.finrank_eq
   Â· have := ModuleCat.isZero_iff_subsingleton.mp
       (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := d) h)
-    have := nontrivial_of_invariantBasisNumber k
     exact Module.finrank_zero_of_subsingleton
 
 /-- The singular homology of a sphere with coefficients in a free module is free. -/

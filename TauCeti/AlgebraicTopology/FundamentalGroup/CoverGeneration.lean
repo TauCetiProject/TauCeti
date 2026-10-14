@@ -146,7 +146,7 @@ theorem iSup_range_map_subtypeVal_eq_top (hU : ∀ y, ∃ i, U i ∈ 𝓝 y) (hx
         simpa [Groupoid.inv_eq_inv] using h
       mul := fun {c d e f} hf {g} hg ↦ by
         have h := H.mul_mem hg hf
-        rw [End.mul_def] at h
+        rw [End.mul_asHom] at h
         simpa using h }
   -- Every morphism coming from a single member `U i` lies in `S`, so `S` is everything.
   have hS : S = ⊤ := by
@@ -166,7 +166,7 @@ theorem iSup_range_map_subtypeVal_eq_top (hU : ∀ y, ∃ i, U i ∈ 𝓝 y) (hx
   have hτx : (τ (mk x) : _root_.FundamentalGroup X x) ∈ H :=
     fromPath_mem_iSup_range hx _ (hτ' x)
   have h := H.mul_mem hτx (H.mul_mem hγ (H.inv_mem hτx))
-  rw [hinv, End.mul_def, End.mul_def] at h
+  rw [hinv, End.mul_asHom, End.mul_asHom] at h
   simpa using h
 
 /-- **Generation half of the Seifert--van Kampen theorem, for two sets.** If the interiors of

@@ -314,7 +314,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
     rw [hdivPS]; ring
   have hmulr : ((Qp : PowerSeries R)
       * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R))).IsRestricted c :=
-    PowerSeries.isRestricted.mul c hQr htailr
+    PowerSeries.IsRestricted.mul c hQr htailr
   have hmulbound : ((Qp : PowerSeries R)
       * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R))).gaussNorm norm c
       ≤ θ * g.gaussNorm norm c := by
@@ -393,7 +393,7 @@ theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguishe
     | succ n ih =>
       rw [hGsucc n, sub_eq_add_neg]
       exact PowerSeries.isRestricted.add c ih (PowerSeries.isRestricted.neg c
-        (PowerSeries.isRestricted.add c (PowerSeries.isRestricted.mul c (hF (G n) ih).1 hfr)
+        (PowerSeries.isRestricted.add c (PowerSeries.IsRestricted.mul c (hF (G n) ih).1 hfr)
           (isRestricted_of_forall_coeff_eq_zero (hF (G n) ih).2.1)))
   have hGn : ∀ n, (G n).gaussNorm norm c ≤ θ ^ n * g.gaussNorm norm c := by
     intro n

@@ -101,7 +101,7 @@ theorem range_localCyclotomicCharacter_le_unitsPrincipal_iff [NeZero (p : K)] (n
   refine ⟨fun h ↦ ?_, range_localCyclotomicCharacter_le_unitsPrincipal⟩
   -- Every automorphism acts on a primitive `p ^ n`-th root of unity `ξ` of the algebraic closure
   -- by the exponent `1`, so it fixes `ξ`.
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n)
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n)
   have hfix (σ : Field.absoluteGaloisGroup K) : σ.toRingEquiv ξ = ξ := by
     have hσ := h ⟨σ, rfl⟩
     rw [mem_unitsPrincipal_iff_toZModPow, localCyclotomicCharacter_apply] at hσ
@@ -136,7 +136,7 @@ theorem toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three [NeZero (2 :
     exact (_root_.map_ne_zero _).2 (NeZero.ne 2)
   have : NeZero ((2 ^ 3 : ℕ) : AlgebraicClosure K) :=
     ⟨by rw [Nat.cast_pow, Nat.cast_ofNat]; exact pow_ne_zero 3 h2⟩
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (2 ^ 3)
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (2 ^ 3)
   have h4 : ξ ^ 4 = -1 :=
     (hξ.pow_of_dvd (by norm_num) (by norm_num : 4 ∣ 2 ^ 3)).eq_neg_one_of_two_right
   -- `ξ + ξ ^ 3` is a square root of `-2`, so it is `±s` and every automorphism fixes it.
@@ -218,7 +218,7 @@ theorem infinite_range_localCyclotomicCharacter [Algebra ℚ_[p] K] [FiniteDimen
   have hAfin : A.Finite := Set.finite_coe_iff.mp hfin
   set N := Module.finrank ℚ_[p] K
   set n := N * A.ncard + 1
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n)
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n)
   have hint : IsIntegral K ξ := Algebra.IsIntegral.isIntegral ξ
   have hK : (minpoly K ξ).natDegree ≤ A.ncard :=
     natDegree_minpoly_le_ncard_range hAfin hξ.pow_eq_one

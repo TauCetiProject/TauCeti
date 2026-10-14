@@ -237,7 +237,7 @@ theorem subst_toPowerSeries_log :
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.zero_X
-  have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
+  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
   rw [← sub_eq_zero]
   apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero (i := 0)
   -- the derivative in `X` is `P(F(X, Y)) · F_X(X, Y) - P(X) = 0`
@@ -275,7 +275,7 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   refine ⟨fun h ↦ ⟨PowerSeries.coeff 1 g, ?_⟩, ?_⟩
-  · have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
+  · have : HasUniqueDiv R := .of_isTorsionFree ℚ R
     -- `g(0) = g(0) + g(0)`
     have hg₀ : PowerSeries.constantCoeff g = 0 := by
       have := congrArg constantCoeff h

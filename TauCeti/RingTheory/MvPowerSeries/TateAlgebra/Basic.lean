@@ -348,7 +348,7 @@ theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
     rw [← norm_eq_gaussNorm (⟨g, hg⟩ : IsRestricted.subring c)]
     exact norm_pos_iff.mpr fun h ↦ hg0 (congrArg Subtype.val h)
   refine gaussNorm_mul_eq_mul norm c f g hf.hasGaussNorm hg.hasGaussNorm
-    (isRestricted.mul c hf hg).hasGaussNorm norm_nonneg norm_zero
+    (hf.mul hg).hasGaussNorm norm_nonneg norm_zero
     IsUltrametricDist.isNonarchimedean_norm norm_mul norm_neg
     (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) ⟨i, j, hi, hj, ?_⟩
   intro p hp hne

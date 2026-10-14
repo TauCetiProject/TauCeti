@@ -95,7 +95,7 @@ lemma IsRegular.fundamentalGroupEquiv_apply_eq_iff [SimplyConnectedSpace E]
     (γ : FundamentalGroup X x) (g : (deck p)ᵐᵒᵖ) :
     hreg.fundamentalGroupEquiv hp e γ = g ↔
       g.unop • (e : E) = hp.monodromy γ e :=
-  (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_apply_eq_Iff
+  (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_apply_eq_iff
 
 /-- The fundamental group element corresponding to an opposite deck transformation is the
 unique loop class whose monodromy moves the chosen lift `e` by that deck transformation. -/

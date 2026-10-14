@@ -128,7 +128,7 @@ def globalSectionsAction
   map_one' := globalSectionsSmul_one M
   map_mul' := fun r s ↦ by
     rw [globalSectionsSmul_mul]
-    exact (End.mul_def _ _).symm
+    exact (End.mul_asHom _ _).symm
   map_zero' := globalSectionsSmul_zero M
   map_add' := globalSectionsSmul_add M
 

@@ -307,7 +307,7 @@ private theorem toZMod_eq_zero_of_zpowHat_eq_one {τ : inertiaSubgroup K}
   have : NeZero ((n : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
     (IsLocalRing.isUnit_natCast_iff_not_dvd.2
       ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 m.2.2.symm))⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (n : ℕ)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (n : ℕ)
   obtain ⟨σ, hσ⟩ := proj_inertiaTameCharacter_surjective K m hζ.toRootsOfUnity
   -- The level-`n` projection is a continuous homomorphism to the finite discrete group `μ_n`.
   let _ : TopologicalSpace (rootsOfUnity (n : ℕ) (AlgebraicClosure K)) := ⊥

@@ -237,7 +237,7 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
   have hself : e * q * f + r' = 1 * f + 0 := by
     rw [mul_assoc, ← hωq, her', one_mul, add_zero]
   obtain ⟨heq, hr0⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc
-    (PowerSeries.isRestricted.mul c he hq) (PowerSeries.isRestricted_one c) hr'
+    (PowerSeries.IsRestricted.mul c he hq) (PowerSeries.isRestricted_one c) hr'
     (fun m _ ↦ by simp) hself
   rw [hr0, add_zero] at her'
   exact ⟨⟨e, he⟩, ω, IsUnit.of_mul_eq_one ⟨q, hq⟩ (Subtype.ext heq), hωm, her'⟩

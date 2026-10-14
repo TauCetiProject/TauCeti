@@ -85,7 +85,7 @@ lemma fundamentalGroupMulEquivOfPath_symm_apply
   rw [MulEquiv.symm_apply_eq]
   have hconj : Path.Homotopic.Quotient.trans γq
       (Path.Homotopic.Quotient.trans g γq.symm) = α.symm.conj g := by
-    rw [CategoryTheory.Iso.conj_apply, CategoryTheory.Iso.symm_inv,
+    rw [CategoryTheory.Iso.conj_apply_asHom, CategoryTheory.Iso.symm_inv,
       CategoryTheory.Iso.symm_hom, hα_hom, hα_inv]
     simp only [FundamentalGroupoid.comp_eq]
   rw [hconj]
@@ -127,7 +127,7 @@ lemma fundamentalGroupMulEquivOfPath_apply
   -- Mathlib defines the transport as `α.conj`; the groupoid arrow and path quotient are
   -- definitionally the same type (`FundamentalGroupoid.Hom` is a path quotient).
   change α.conj g = γq.symm.trans (g.trans γq)
-  rw [CategoryTheory.Iso.conj_apply]
+  rw [CategoryTheory.Iso.conj_apply_asHom]
   rfl
 
 open CategoryTheory in

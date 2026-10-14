@@ -333,7 +333,7 @@ private theorem res_ρ_comm_ρAut_hom {L M N : Type u} [Group L] [Monoid M] [Mon
   -- by unfolding `Action.res`, so the rewritten goal is rejected as not type-correct.  Stating the
   -- step once, here, is what keeps that reading out of the two isomorphisms built below.
   change Action.ρ A (σ (φ y)) ≫ Action.ρ A g = Action.ρ A g ≫ Action.ρ A (σ' y)
-  rw [← End.mul_def, ← End.mul_def, ← map_mul, ← map_mul, hg]
+  rw [← End.mul_asHom, ← End.mul_asHom, ← map_mul, ← map_mul, hg]
 
 open CategoryTheory in
 /-- **The Mackey term depends only on the double coset**, as a dimension: the intertwining space

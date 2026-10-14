@@ -83,7 +83,7 @@ variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ} [NeZero n] [HasEnoughRo
 of `K` with the same `n`-th power differ by a factor from `K`. -/
 theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (h : x ^ n = y ^ n) :
     ∃ z : K, x = algebraMap K F z * y := by
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have hK : (primitiveRoots n K).Nonempty := ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩
   obtain ⟨ξ, rfl⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).1 h.symm
   refine ⟨(((rootsOfUnityEquivOfPrimitiveRoots (FaithfulSMul.algebraMap_injective K F) hK).symm
@@ -222,7 +222,7 @@ Each generator is a root of a separable binomial `Xⁿ - a` that splits in `K(Δ
 automorphism multiplies each generator by a constant, so any two automorphisms commute. -/
 instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) := by
   set M := kummerField E n Δ
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have : NeZero (n : K) := hζ.neZero'
   have hdvd {x : E} {a : Kˣ} (hx : x ^ n = algebraMap K E a) :
       minpoly K x ∣ (X : K[X]) ^ n - C (a : K) :=

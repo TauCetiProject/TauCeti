@@ -70,15 +70,15 @@ that set-valued partition is discarded, as required by `Finpartition`. -/
 noncomputable def countablePartition (Ω : Type*) [MeasurableSpace Ω]
     [MeasurableSpace.CountablyGenerated Ω]
     (n : ℕ) : Finpartition (Set.univ : Set Ω) :=
-  (Finpartition.ofPairwiseDisjoint
-    (MeasurableSpace.finite_countablePartition Ω n).toFinset (by
+  Finpartition.ofErase (MeasurableSpace.finite_countablePartition Ω n).toFinset
+    (Set.PairwiseDisjoint.supIndep (by
       intro s hs t ht hst
       exact MeasurableSpace.disjoint_countablePartition
         ((MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mp hs)
-        ((MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mp ht) hst)).copy (by
-          rw [Finset.sup_id_set_eq_sUnion,
-            MeasurableSpace.finite_countablePartition Ω n |>.coe_toFinset,
-            MeasurableSpace.sUnion_countablePartition])
+        ((MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mp ht) hst)) (by
+      rw [Finset.sup_id_set_eq_sUnion,
+        MeasurableSpace.finite_countablePartition Ω n |>.coe_toFinset,
+        MeasurableSpace.sUnion_countablePartition])
 
 /-- The parts of the canonical `Finpartition` are the nonempty members of Mathlib's canonical
 finite set-valued partition. -/

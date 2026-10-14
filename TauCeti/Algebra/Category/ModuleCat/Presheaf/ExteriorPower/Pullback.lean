@@ -115,7 +115,7 @@ def pullbackExteriorPowerComparison (n : ℕ) :
       PresheafOfModulesOfCommRing.pullback α ⋙ PresheafOfModulesOfCommRing.exteriorPower n :=
   let A := PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α
   ((mateEquiv A A).symm (TwoSquare.mk _ _ _ _
-    (pushforwardExteriorPowerComparison α n))).natTrans
+    (pushforwardExteriorPowerComparison α n)))
 
 /-- The adjunction equation characterizes the canonical pullback comparison. -/
 @[reassoc (attr := simp)]

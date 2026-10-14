@@ -41,7 +41,7 @@ private theorem discreteTopology_of_span_eq_top_of_finrank_eq
     (hs : Submodule.span ℝ (L : Set E) = ⊤)
     (hr : Module.finrank ℤ L = Module.finrank ℝ E) : DiscreteTopology L := by
   classical
-  have : IsAddTorsionFree E := .of_isTorsionFree ℝ E
+  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
   let b := Module.Free.chooseBasis ℤ L
   let v := fun i ↦ (b i : E)
   have hz : Submodule.span ℤ (Set.range v) = L := by

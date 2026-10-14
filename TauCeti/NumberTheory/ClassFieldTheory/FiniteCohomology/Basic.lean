@@ -82,7 +82,7 @@ theorem exists_classField_trivializing (hn : (n : F) ≠ 0) (A : GalRep n F)
   have : NeZero (n : F) := ⟨hn⟩
   have : NeZero n := ⟨by rintro rfl; exact hn Nat.cast_zero⟩
   set e := absoluteGaloisGroupRestrictEquiv F
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure F) n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure F) n
   have hopen : IsOpen ({g : AbsoluteGaloisGroup F | ∀ a : A.V, e.symm g • a = a} ∩
       (MulAction.stabilizer (AbsoluteGaloisGroup F) ζ : Set (AbsoluteGaloisGroup F))) := by
     refine IsOpen.inter ?_ (stabilizer_isOpen_of_isIntegral ζ)

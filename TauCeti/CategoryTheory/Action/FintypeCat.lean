@@ -100,10 +100,10 @@ def toActionFintypeCat : FiniteAction.{u} G ⥤ Action FintypeCat.{u} G where
         { toFun := fun g => ObjectProperty.homMk (A.obj.ρ g)
           map_one' := by
             apply ObjectProperty.hom_ext
-            simp [End.one_def]
+            simp [End.one_asHom]
           map_mul' := fun g h => by
             apply ObjectProperty.hom_ext
-            simp [End.mul_def] } }
+            simp [End.mul_asHom] } }
   map f :=
     { hom := ObjectProperty.homMk f.hom.hom
       comm := fun g => by

@@ -47,7 +47,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
 /-- Degreewise recursion for the powers of a chain endomorphism. -/
 lemma pow_f_succ (m : ℕ) (i : ι) :
     (End.of s ^ (m + 1)).f i = (End.of s ^ m).f i ≫ s.f i := by
-  rw [pow_succ', End.mul_def, comp_f]
+  rw [pow_succ', End.mul_asHom, comp_f]
 
 /-- Homological complexes have the coproducts that the underlying category has. They are
 computed degreewise. -/

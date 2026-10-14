@@ -119,8 +119,8 @@ The membership condition is stated with the *categorical* composition `f ≫ g` 
 opposite order. The two agree — `f ≫ g` is `g * f` in `End X` — but the ring spelling would make
 the left-right asymmetry of the definition into an artefact of a convention rather than a genuine
 symmetry to be proved. Where a proof does pass through the ring — to use the local-ring API of
-`End X` — it crosses between the two spellings by rewriting with `CategoryTheory.End.one_def` and
-`CategoryTheory.End.mul_def` rather than by definitional unfolding.
+`End X` — it crosses between the two spellings by rewriting with `CategoryTheory.End.one_asHom` and
+`CategoryTheory.End.mul_asHom` rather than by definitional unfolding.
 
 The identification of `jacobsonRadical X X` with Mathlib's `Ring.jacobson (End X)` goes through
 `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left`: `Ring.jacobson` is defined as the infimum
@@ -251,12 +251,12 @@ membership form: `f : X ⟶ X` is radical exactly when it lies in `Ring.jacobson
 
 The bridge is the elementwise description of the Jacobson radical of a possibly noncommutative
 ring, `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left`: the defining condition below is
-that description read through `CategoryTheory.End.mul_def`, the arbitrary `g : X ⟶ X` running over
+that description read through `CategoryTheory.End.mul_asHom`, the arbitrary `g : X ⟶ X` running over
 the negatives of the arbitrary ring element. -/
 theorem mem_jacobsonRadical_self_iff_mem_jacobson {X : C} {f : End X} :
     f ∈ jacobsonRadical X X ↔ f ∈ Ring.jacobson (End X) := by
   have key : ∀ y : End X, (1 : End X) + y * f = 𝟙 X - f ≫ (-y) := fun y => by
-    rw [End.mul_def, Preadditive.comp_neg, sub_neg_eq_add, End.one_def]
+    rw [End.mul_asHom, Preadditive.comp_neg, sub_neg_eq_add, End.one_asHom]
   rw [Ring.mem_jacobson_iff_isUnit_one_add_mul_left,
     mem_jacobsonRadical_iff_isIso_id_sub_comp_right]
   refine ⟨fun h y => ?_, fun h g => ?_⟩
@@ -316,11 +316,11 @@ theorem not_isIso_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y} (hX : 𝟙 X �
 ring, and `IsLocalRing` carries `Nontrivial`.
 
 The two spellings `(1 : End X)` and `𝟙 X` are definitionally equal, but only
-`CategoryTheory.End.one_def` says so; this lemma performs that rewrite once, so that the proofs
+`CategoryTheory.End.one_asHom` says so; this lemma performs that rewrite once, so that the proofs
 below can pass between the ring `End X` and the category without relying on the implementation of
 `CategoryTheory.End`. -/
 private theorem id_ne_zero (X : C) [IsLocalRing (End X)] : 𝟙 X ≠ 0 := by
-  simpa only [End.one_def] using one_ne_zero (α := End X)
+  simpa only [End.one_asHom] using one_ne_zero (α := End X)
 
 section Local
 
@@ -344,7 +344,7 @@ theorem mem_jacobsonRadical_iff_not_isSplitMono {f : X ⟶ Y} :
         ⟨g ≫ inv (f ≫ g), by rw [← Category.assoc, IsIso.hom_inv_id]⟩)
     have hiso : IsIso ((1 : End X) - e) :=
       (isUnit_iff_isIso _).1 (IsLocalRing.isUnit_one_sub_self_of_mem_nonunits e hnu)
-    rwa [End.one_def, he] at hiso
+    rwa [End.one_asHom, he] at hiso
 
 omit [IsLocalRing (End X)] in
 /-- **Into an object with a local endomorphism ring the radical is the set of morphisms that are
@@ -363,7 +363,7 @@ theorem mem_jacobsonRadical_iff_not_isSplitEpi {f : X ⟶ Y} :
         ⟨inv (g ≫ f) ≫ g, by rw [Category.assoc, IsIso.inv_hom_id]⟩)
     have hiso : IsIso ((1 : End Y) - e) :=
       (isUnit_iff_isIso _).1 (IsLocalRing.isUnit_one_sub_self_of_mem_nonunits e hnu)
-    rwa [End.one_def, he] at hiso
+    rwa [End.one_asHom, he] at hiso
 
 /-- **Between objects with local endomorphism rings the radical is the set of
 non-isomorphisms.** This is the description of `rad(X, Y)` for indecomposable `X` and `Y` under
@@ -380,11 +380,11 @@ theorem mem_jacobsonRadical_iff_not_isIso {f : X ⟶ Y} :
     refine fun hf => mem_jacobsonRadical_iff_not_isSplitMono.2 fun hsm => hf ?_
     have := hsm
     -- Locality of `End Y` gives the trivial-idempotent hypothesis: an idempotent for the
-    -- multiplication of `End Y` is one for composition, `CategoryTheory.End.mul_def`, and the
-    -- ring `1` it is compared to is the identity, `CategoryTheory.End.one_def`.
+    -- multiplication of `End Y` is one for composition, `CategoryTheory.End.mul_asHom`, and the
+    -- ring `1` it is compared to is the identity, `CategoryTheory.End.one_asHom`.
     have hY : ∀ e : Y ⟶ Y, e ≫ e = e → e = 0 ∨ e = 𝟙 Y := fun e he => by
-      simpa only [End.one_def] using IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem (R := End Y)
-        ((End.mul_def e e).trans he)
+      simpa only [End.one_asHom] using
+        IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem (R := End Y) ((End.mul_asHom e e).trans he)
     exact isIso_of_isIso_comp (id_ne_zero X) hY f (retraction f)
       (by rw [IsSplitMono.id]; infer_instance)
 

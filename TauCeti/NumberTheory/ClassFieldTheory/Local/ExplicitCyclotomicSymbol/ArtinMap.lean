@@ -165,7 +165,7 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
   -- the `p`-th power.
   obtain ⟨ρ, hρχ, hρN⟩ := exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one p u⁻¹ hf
   -- The cyclotomic field `E = ℚ_p(μ_m)`.
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure ℚ_[p]) m
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure ℚ_[p]) m
   let E := IntermediateField.adjoin ℚ_[p] {ζ}
   have : IsCyclotomicExtension {m} ℚ_[p] E := hζ.intermediateField_adjoin_isCyclotomicExtension _
   have : FiniteDimensional ℚ_[p] E := IsCyclotomicExtension.finiteDimensional {m} ℚ_[p] E

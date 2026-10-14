@@ -328,7 +328,7 @@ private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_
   have hm : 2 ^ 2 ≤ m :=
     (Nat.pow_le_pow_left hp.two_le 2).trans (Nat.pow_le_pow_right hp.pos (by omega))
   have : NeZero m := ⟨pow_ne_zero _ hp.ne_zero⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure ℚ_[p]) m
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure ℚ_[p]) m
   let E := IntermediateField.adjoin ℚ_[p] {ζ}
   have := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ_[p]
   have := IsCyclotomicExtension.finiteDimensional {m} ℚ_[p] E

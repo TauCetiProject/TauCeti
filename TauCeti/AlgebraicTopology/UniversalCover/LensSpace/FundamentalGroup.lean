@@ -95,7 +95,7 @@ theorem fundamentalGroupMulEquiv_apply_eq_iff (hk : 1 ≤ k) {x : LensSpace m �
       (isQuotientCoveringMap_mk m ℓ).fundamentalGroupToMulOpposite e γ :=
     rfl
   rw [← MulOpposite.op_inj, MulOpposite.op_unop, hF,
-    IsQuotientCoveringMap.fundamentalGroupToMulOpposite_apply_eq_Iff, MulOpposite.unop_op,
+    IsQuotientCoveringMap.fundamentalGroupToMulOpposite_apply_eq_iff, MulOpposite.unop_op,
     Subtype.ext_iff, Subgroup.smul_def, LinearIsometryEquiv.coe_smul_unitSphere,
     coe_lensGroupEquiv_apply]
 

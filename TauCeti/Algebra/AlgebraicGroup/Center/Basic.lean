@@ -61,7 +61,7 @@ variable {k : Type u} [Field k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- The index type of the vector-space basis used to extract center equations. -/
-private abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
+private noncomputable abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
 
 private noncomputable instance :
     DecidableEq (centerBasisIndex (k := k) (H := H)) :=

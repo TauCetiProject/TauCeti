@@ -412,7 +412,7 @@ theorem monodromyFunctor_map_hom (x : X) {L K : LocalCoefficientSystem.{u, v, w}
     -- and ordinary rewriting finish it.
     change L.map α.hom (L.map g a) = L.map (α.conj g) (L.map α.hom a)
     rw [L.map_conj]
-    simp only [Iso.conj_apply, ModuleCat.comp_apply, Functor.mapIso_hom, Functor.mapIso_inv]
+    simp only [Iso.conj_apply_asHom, ModuleCat.comp_apply, Functor.mapIso_hom, Functor.mapIso_inv]
     have h : L.map α.inv (L.map α.hom a) = a := by
       rw [← L.map_comp_apply, α.hom_inv_id]
       exact L.map_id_apply _ a

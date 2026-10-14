@@ -130,11 +130,11 @@ noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Mono
   obj _ := SingleObj.star G
   map {y z} g := f (τ y ≫ g ≫ inv (τ z))
   map_id y := by
-    rw [Category.id_comp, IsIso.hom_inv_id, ← End.one_def, map_one, SingleObj.id_as_one]
+    rw [Category.id_comp, IsIso.hom_inv_id, ← End.one_asHom, map_one, SingleObj.id_as_one]
   map_comp {y z w} g h := by
     rw [SingleObj.comp_as_mul, ← map_mul]
     congr 1
-    simp [End.mul_def, Category.assoc]
+    simp [End.mul_asHom, Category.assoc]
 
 @[simp]
 theorem functorOfEndHom_obj (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] (f : End x₀ →* G)

@@ -174,7 +174,7 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
   obtain ⟨ψ, hψ⟩ := CharacterModule.exists_apply_unitOfCoprime_pow_sub_one _ n hq hn
   have : NeZero (Nat.card 𝓀[v.adicCompletion K] ^ n - 1) :=
     ⟨by have := Nat.one_lt_pow hn hq; omega⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K)
     (Nat.card 𝓀[v.adicCompletion K] ^ n - 1)
   -- The global character: `ψ` of the action of `G_K` on `ζ`. It kills the fixing subgroup of
   -- `K(ζ)`, which is open.
