@@ -827,15 +827,35 @@ theorem degree_sup_poles_of_isHomogeneous (hF : IsFunctionField k F) (hG : G.IsH
   (pos_and_linearIndepOn_and_degree_sup_poles hF hG hsm hx hgen h).2.2 x y rfl rfl
 
 /-- **The monomials of degree less than `d` on a smooth projective plane curve are linearly
-independent**: under the hypotheses of `TauCeti.genus_eq_of_isHomogeneous`, the products
-`x ^ i y ^ j` with `i + j < d` are linearly independent over `k`. -/
+independent**: under the hypotheses of `TauCeti.genus_eq_of_isHomogeneous`, except that `x` and
+`y` need not generate `F`, the products `x ^ i y ^ j` with `i + j < d` are linearly independent
+over `k`. -/
 theorem linearIndepOn_pow_mul_pow_of_isHomogeneous (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
-    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
-    LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 < d} :=
-  (pos_and_linearIndepOn_and_degree_sup_poles
-    (isFunctionField_of_aeval_eq_zero (irreducible_map_dehomogenize_two hG hsm h).of_map.ne_zero hx
-      hgen (by rwa [aeval_dehomogenize, insertNth_two])) hG hsm hx hgen h).2.1
+    {x y : F} (hx : Transcendental k x) (h : aeval ![x, y, 1] G = 0) :
+    LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 < d} := by
+  -- Prove independence in the subfield `E = k(x, y)`, which `x` and `y` generate, and map it
+  -- into `F` along the inclusion.
+  set E := k⟮x, y⟯
+  set x' : E := ⟨x, IntermediateField.subset_adjoin k _ (by simp)⟩
+  set y' : E := ⟨y, IntermediateField.subset_adjoin k _ (by simp)⟩
+  have hgen : k⟮x', y'⟯ = ⊤ := IntermediateField.lift_injective E <| by
+    rw [IntermediateField.lift_adjoin, IntermediateField.lift_top, Set.image_pair]
+  have hx' : Transcendental k x' := (transcendental_algebraMap_iff (algebraMap E F).injective).mp hx
+  have h' : aeval ![x', y', 1] G = 0 := (algebraMap E F).injective <| by
+    rw [map_zero, ← h, ← IsScalarTower.coe_toAlgHom' k E F, MvPolynomial.comp_aeval_apply]
+    congr 1
+    ext i
+    fin_cases i <;> simp [x', y']
+  have hli := (pos_and_linearIndepOn_and_degree_sup_poles
+    (isFunctionField_of_aeval_eq_zero (irreducible_map_dehomogenize_two hG hsm h').of_map.ne_zero
+      hx' hgen (by rwa [aeval_dehomogenize, insertNth_two])) hG hsm hx' hgen h').2.1
+  have := hli.map' (IsScalarTower.toAlgHom k E F).toLinearMap
+    (LinearMap.ker_eq_bot.mpr (algebraMap E F).injective)
+  rw [LinearIndepOn]
+  convert this using 1
+  ext p
+  simp [x', y']
 
 /-- The monomials `x ^ i y ^ j` with `i + j ≤ d - 3` lie in `L((d - 3) ((x)_∞ ⊔ (y)_∞))`. -/
 private theorem span_pow_mul_pow_add_three_le_le_riemannRochSpace (hF : IsFunctionField k F)
@@ -849,9 +869,9 @@ private theorem span_pow_mul_pow_add_three_le_le_riemannRochSpace (hF : IsFuncti
 /-- The monomials `x ^ i y ^ j` with `i + j ≤ d - 3` are linearly independent. -/
 private theorem linearIndepOn_pow_mul_pow_add_three_le (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
-    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
+    {x y : F} (hx : Transcendental k x) (h : aeval ![x, y, 1] G = 0) :
     LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 + 3 ≤ d} :=
-  (linearIndepOn_pow_mul_pow_of_isHomogeneous hG hsm hx hgen h).mono fun p hp ↦ by
+  (linearIndepOn_pow_mul_pow_of_isHomogeneous hG hsm hx h).mono fun p hp ↦ by
     simp only [Set.mem_ofPred_eq] at hp ⊢
     omega
 
@@ -881,7 +901,7 @@ theorem divisorClass_sub_three_zsmul_sup_poles_eq_canonicalClass_of_isHomogeneou
   rw [divisorClass_eq_canonicalClass_iff hF hex, Divisor.degree_zsmul, hdeg]
   refine ⟨by linear_combination -hg, ?_⟩
   rw [Divisor.dim_def, ← finrank_span_pow_mul_pow_eq_genus
-    (linearIndepOn_pow_mul_pow_add_three_le hG hsm hx hgen h) hd hg]
+    (linearIndepOn_pow_mul_pow_add_three_le hG hsm hx h) hd hg]
   exact Submodule.finrank_mono (span_pow_mul_pow_add_three_le_le_riemannRochSpace hF x y)
 
 /-- **The Riemann–Roch space of the canonical divisor of a smooth projective plane curve**: under
@@ -903,7 +923,7 @@ theorem riemannRochSpace_sub_three_zsmul_sup_poles_eq_span_of_isHomogeneous
   exact riemannRochSpace_eq_span_pow_mul_pow_of_divisorClass_eq_canonicalClass hF hex
     (divisorClass_sub_three_zsmul_sup_poles_eq_canonicalClass_of_isHomogeneous hF hex hG hsm hx
       hgen h)
-    (linearIndepOn_pow_mul_pow_add_three_le hG hsm hx hgen h) hd
+    (linearIndepOn_pow_mul_pow_add_three_le hG hsm hx h) hd
     (two_mul_genus_eq_of_isHomogeneous hG hsm hx hgen h hd)
     (span_pow_mul_pow_add_three_le_le_riemannRochSpace hF x y)
 
