@@ -77,13 +77,15 @@ jobs:
         # Flatpak needed for CVE-2024-42472. That is an enabling change for Flatpak rather
         # than a bubblewrap vulnerability fix, and nothing here uses Flatpak.
         #
-        # Every mounted source/artifact tree in this harness is a freshly created private
-        # directory. Search roots are resolved before binding; no candidate-controlled .lake
-        # mount point is created. The existing release pin and fail-closed probe are retained.
+        # Discovery mounts the original artifact search roots read-only. Full, incremental
+        # and module-system passes instead mount private copies of non-sysroot artifacts.
+        # The pinned sysroot, native driver and policy scripts are trusted read-only inputs
+        # in every pass. The harness resolves bind paths before building its sandbox.
+        # This workflow's inline probe mounts only system paths; it has no .lake overlay.
         deb="bubblewrap_${BWRAP_VER}_amd64.deb"
         if ! curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb \
            && ! curl -sSL --fail "https://security.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
-          echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The sandbox cannot be installed, so no PR can build until the pin is moved."
+          echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The research sandbox cannot be installed; this optional run will fail without affecting production checks."
           printf '%s\n' \
             '' \
             "WHAT HAPPENED: BWRAP_VER is pinned to ${BWRAP_VER} from noble's release pocket," \
@@ -93,7 +95,7 @@ jobs:
             '' \
             'HOW TO FIX IT. Take the version from a RELEASE pocket, never from -updates,' \
             '-security or a development suite: those are superseded and deleted, so a pin' \
-            'to one expires and brings every required build down with it.' \
+            'to one can expire unexpectedly.' \
             '' \
             '  suite=noble        # or the release pocket of whatever image CI runs on' \
             '  curl -s "https://archive.ubuntu.com/ubuntu/dists/$suite/main/binary-amd64/Packages.gz" \' \
@@ -106,16 +108,13 @@ jobs:
             '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
             '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
             '' \
-            'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all three of' \
-            '.github/workflows/{pr-build,pr-profile,nightly-verify}.yml. They must agree;' \
+            'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all four of' \
+            '.github/workflows/{pr-build,pr-profile,nightly-verify,shadow-audits}.yml. They must agree;' \
             'scripts/test_bwrap_pin.py fails if they do not.' \
             '' \
-            'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \
-            '"Normalise ... .lake" step is what keeps it safe, because earlier bubblewrap' \
-            'follows a symlink in a candidate checkout while creating the sandbox mount point' \
-            '(GHSA-pxhw-h44j-8pfx). If you pin below 0.12.0, check that step still runs before' \
-            'anything else touches .lake. Keep the step either way: the trusted-phase callers' \
-            'follow the symlink themselves and no bubblewrap version fixes that.' \
+            'ON VERSIONS: review the symlink protections of every sandbox before moving' \
+            'the shared pin. This research harness resolves read-only bind paths and uses' \
+            'private copies for comparison passes; its inline probe mounts system paths only.' \
             '' >&2
           exit 1
         fi
