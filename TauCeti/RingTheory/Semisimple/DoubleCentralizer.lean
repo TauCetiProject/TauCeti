@@ -313,7 +313,7 @@ theorem _root_.Subalgebra.exists_mem_centralizer_apply_eq_iff_of_isSemisimpleMod
   · rintro ⟨f, hf, rfl⟩ a ha haw
     rw [← Module.End.mul_apply, (Subalgebra.mem_centralizer_iff K).1 hf a ha,
       Module.End.mul_apply, haw, map_zero]
-  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_end_apply_eq_iff (R := A)).mpr
+  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := A)).mpr
     fun a ha => h a a.2 ha
   exact ⟨f.restrictScalars K, A.restrictScalars_mem_centralizer f, hf⟩
 
