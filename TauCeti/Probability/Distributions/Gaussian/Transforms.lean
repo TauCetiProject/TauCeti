@@ -131,6 +131,7 @@ is the quadratic polynomial determined by its directional mean and variance.
 
 The formula holds for every real order, including for singular positive-semidefinite covariance
 matrices. -/
+@[simp]
 theorem cgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
     {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (t : ℝ) :
     cgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussian m S) t =
