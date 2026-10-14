@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
+import TauCeti.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.MetricSpace.UniformConvergence
@@ -103,18 +104,11 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
         gcongr
         exact (ha _ (huK (hinner hz))).trans (le_max_left _ _))
     refine ContinuousLinearMap.opNorm_le_bound _ C.coe_nonneg fun w ↦ ?_
-    have hw : w = w.re • (1 : ℂ) + w.im • I := by simp [Complex.real_smul, Complex.re_add_im]
     calc
-      ‖fderiv ℝ u z w‖ = ‖w.re • fderiv ℝ u z 1 + w.im • fderiv ℝ u z I‖ := by
-        conv_lhs => rw [hw]
-        rw [map_add, map_smul, map_smul]
-      _ ≤ |w.re| * ‖fderiv ℝ u z 1‖ + |w.im| * ‖fderiv ℝ u z I‖ := by
-        simpa only [norm_smul, Real.norm_eq_abs] using norm_add_le
-          (w.re • fderiv ℝ u z 1) (w.im • fderiv ℝ u z I)
-      _ ≤ ‖w‖ * B + ‖w‖ * (max a 0 * B) := by
+      ‖fderiv ℝ u z w‖ ≤ (‖fderiv ℝ u z 1‖ + ‖fderiv ℝ u z I‖) * ‖w‖ :=
+        (fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w
+      _ ≤ (B + max a 0 * B) * ‖w‖ := by
         gcongr
-        · exact Complex.abs_re_le_norm w
-        · exact Complex.abs_im_le_norm w
       _ = (C : ℝ) * ‖w‖ := by rw [hCcoe]; ring
   exact (convex_closedBall z₀ (r / 2)).lipschitzOnWith_of_nnnorm_fderiv_le
     (fun z hz ↦ (hu.contDiffAt (isOpen_ball.mem_nhds (hinner hz))).differentiableAt

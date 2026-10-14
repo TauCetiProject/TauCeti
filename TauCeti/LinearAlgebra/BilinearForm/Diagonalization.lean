@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.BilinearForm.Ideals
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import Mathlib.LinearAlgebra.Basis.SMul
@@ -66,8 +67,7 @@ exactly when their associated quadratic forms are equivalent.
   of Gram determinants in any finite bases with the same index type.
 * `LinearMap.BilinForm.IsSymm.equivalent_iff_toQuadraticMap_equivalent`: when `2` is invertible,
   equivalence of symmetric bilinear forms is equivalent to equivalence of their quadratic forms.
-* `LinearMap.BilinForm.dvd_apply_of_forall_dvd_basis`,
-  `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from Gram entries or diagonal values.
+* `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from diagonal values.
 * `LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic`: an orthogonal basis of the
   hyperbolic plane forces `2` to be a unit.
 * `LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`: over a local ring with
@@ -189,15 +189,6 @@ theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
     exact ⟨{ toLinearEquiv := f.toLinearEquiv
              map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
 
-/-- A common divisor of the Gram entries of a bilinear form in a basis divides every value of the
-form. -/
-theorem dvd_apply_of_forall_dvd_basis {ι : Type*} (b : Basis ι R M) {d : R}
-    (hd : ∀ i j, d ∣ B (b i) (b j)) (x y : M) : d ∣ B x y := by
-  rw [← B.sum_repr_mul_repr_mul b x y]
-  refine Finset.dvd_sum fun i _ ↦ Finset.dvd_sum fun j _ ↦ ?_
-  simp only [smul_eq_mul]
-  exact dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (hd i j) _) _
-
 /-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
 every value of the form. -/
 theorem iIsOrtho.dvd_apply {ι : Type*} {b : Basis ι R M} (hb : B.iIsOrtho b) {d : R}
@@ -318,7 +309,7 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
         exact ((b.isUnit_det c₁).pow 2).mul hdet
       exact isUnit_of_mul_isUnit_right (hsplit ▸ hu)
     obtain ⟨v', hv', _⟩ := ih (B := B.restrict N) (hB.restrict N) v hvdet
-    obtain ⟨c, hc⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+    obtain ⟨c, hc, -, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
       hxx.mem_nonZeroDivisors (fun _ ↦ hxx.dvd) hv'
     have hunit : IsUnit (∏ i, B (c i) (c i)) := by
       rw [← Matrix.det_diagonal, ← hc.toMatrix_eq_diagonal,
@@ -413,12 +404,12 @@ theorem IsSymm.exists_orthogonal_basis_of_isAlt_imp_eq_zero (hB : B.IsSymm)
       hB.exists_apply_self_ne_zero_and_restrict_orthogonal_isAlt_imp_eq_zero
         fun halt => hB₀ (h halt)
     have hd' : finrank K (B.orthogonal (K ∙ x)) = d := by
-      rw [← Submodule.finrank_add_eq_of_isCompl (isCompl_span_singleton_orthogonal hx).symm,
-        finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx)] at hd
+      have hdim := B.finrank_orthogonal_span_singleton_add_one hx
       omega
     obtain ⟨v, hv⟩ := ih (hB.restrict _) hW hd'
-    exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+    obtain ⟨b, hb, -, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
       (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ (Ne.isUnit hx).dvd) hv
+    exact ⟨b, hb⟩
 
 /-- **A symmetric bilinear form has an orthogonal basis if and only if it is zero or not
 alternating.** The forward direction is the observation that an orthogonal basis of an alternating

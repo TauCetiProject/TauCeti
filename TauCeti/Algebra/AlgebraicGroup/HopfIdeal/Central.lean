@@ -86,6 +86,13 @@ def IsCentral (I : HopfIdeal R H) : Prop :=
   ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
       Algebra.TensorProduct.includeRight x ∈ leftTensorIdeal (R := R) (H := H) I.toIdeal
 
+/-- Centrality means that conjugation agrees with the second projection modulo the ideal
+of the subgroup in the first tensor factor. -/
+theorem isCentral_iff_conjugation_sub_mem (I : HopfIdeal R H) :
+    I.IsCentral ↔ ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
+      Algebra.TensorProduct.includeRight x ∈ leftTensorIdeal (R := R) (H := H) I.toIdeal :=
+  Iff.rfl
+
 /-- Centrality passes to larger Hopf ideals, which cut out smaller closed subgroups. -/
 theorem IsCentral.mono {I J : HopfIdeal R H} (hI : I.IsCentral) (hIJ : I ≤ J) : J.IsCentral :=
   fun x ↦ leftTensorIdeal_mono R H (toIdeal_le_toIdeal.mpr hIJ) (hI x)

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Quiver.Star
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Augmentation
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.PathsInto
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
@@ -20,7 +21,7 @@ coefficient, so the cokernel of this map is one copy of the coefficient ring, no
 quotient. These statements complete the augmentation endpoint of the signless Koszul complex.
 They work over every commutative ring, also for non-bipartite doubled graphs and in
 characteristic two. The positive path-degree characterization below identifies the same
-arrow image in a finite quiver with involutive reversal. Injectivity at the left endpoint still
+arrow image in a finite quiver with reversal. Injectivity at the left endpoint still
 requires the non-backtracking hypothesis from the signless Koszul complex.
 
 For a connected simple graph with at least three vertices, the signless algebra is the
@@ -42,6 +43,11 @@ namespace TauCeti
 open _root_.Quiver PathAlgebra
 
 universe u v w
+
+/-- Choose enumerations of the finite arrow types for the augmentation sums. -/
+noncomputable local instance fintypeHomOfFiniteStar {R : Type u} [Quiver.{v} R]
+    [∀ x : R, Fintype (Quiver.Star x)] (i j : R) : Fintype (i ⟶ j) :=
+  Fintype.ofFinite _
 
 section VertexAugmentation
 
@@ -115,7 +121,7 @@ theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x :
 `x ∈ e_v Π` has vertex coefficient zero exactly when `x = ∑ b z_b` with `z_b ∈ e_i Π`.
 This holds without a non-backtracking choice or a bipartiteness hypothesis. -/
 theorem signlessPreprojectiveAugmentation_apply_eq_zero_iff_exists_eq_sum
-    [Fintype R] (v : R) [∀ i : R, Fintype (i ⟶ v)] {x : Π}
+    [Fintype R] (v : R) {x : Π}
     (hx : π (vertexIdempotent k v) * x = x) :
     signlessPreprojectiveAugmentation k x v = 0 ↔
       ∃ z : (i : R) → (i ⟶ v) → Π,
@@ -138,8 +144,8 @@ end VertexAugmentation
 
 section PositiveDegree
 
-variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasInvolutiveReverse R]
-  [Fintype R] [∀ i j : R, Fintype (i ⟶ j)] [∀ x : R, Fintype (Quiver.Star x)]
+variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasReverse R]
+  [Fintype R] [∀ x : R, Fintype (Quiver.Star x)]
 
 /-- An element of the vertex corner has positive path degree exactly when it is a sum of
 incoming arrows times elements of their source corners. This is exactness at the augmentation

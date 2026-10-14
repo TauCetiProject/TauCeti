@@ -16,8 +16,6 @@ already proves that `T R n` has degree `n`, records its leading coefficient, and
 family as `Polynomial.Chebyshev.chebyshevTsequence`.  Its generic polynomial-sequence API then
 gives a basis whenever all leading coefficients are units.
 
-The resulting basis is an algebraic prerequisite for Part C of the `OrthogonalL2Bases` roadmap.
-
 ## Main declarations
 
 * `Polynomial.Chebyshev.chebyshevTBasis`: the basis `n ↦ T R n` of `R[X]`;

@@ -14,8 +14,7 @@ public import TauCeti.LinearAlgebra.Complex.LinearPart
 /-!
 # Almost complex structures and compatible symplectic forms
 
-This file starts the pointwise linear-algebra API for the analytic Heegaard Floer roadmap.
-It records almost complex structures on real modules, symplectic bilinear forms, and the
+This file records almost complex structures on real modules, symplectic bilinear forms, and the
 standard tameness and compatibility predicates between them.
 
 These are the fiberwise definitions used before introducing smooth bundles, almost complex
@@ -51,8 +50,8 @@ variable {V W X : Type*}
 /-- A pointwise almost complex structure is a real-linear endomorphism whose square is `-1`.
 
 This is the fiberwise object underlying an almost complex structure on a real vector bundle or
-manifold. Smoothness is deliberately not bundled here; the analytic roadmap needs the linear
-algebra separately on each tangent space. -/
+manifold. Smoothness is deliberately not bundled here: the linear algebra applies separately on each
+tangent space. -/
 structure AlmostComplexStructure (V : Type*) [AddCommGroup V] [Module ℝ V] where
   /-- The real-linear endomorphism usually denoted `J`. -/
   toLinearMap : V →ₗ[ℝ] V
@@ -186,8 +185,8 @@ lemma isComplexLinearMap_iff_apply (J : AlmostComplexStructure V)
     IsComplexLinearMap J J' F ↔ ∀ v, F (J v) = J' (F v) :=
   LinearMap.ext_iff
 
-/-- Complex-linearity for almost complex structures is membership in the existing submodule of
-raw-linear complex-linear maps. -/
+/-- Complex-linearity for almost complex structures is membership in the submodule of raw-linear
+complex-linear maps. -/
 lemma isComplexLinearMap_iff_mem_complexLinearMaps (J : AlmostComplexStructure V)
     (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
     IsComplexLinearMap J J' F ↔ F ∈ complexLinearMaps J.toLinearMap J'.toLinearMap := by

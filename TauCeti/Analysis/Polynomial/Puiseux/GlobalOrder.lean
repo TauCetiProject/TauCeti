@@ -47,7 +47,8 @@ theorem orderAt_root_eq_of_orderAt_discr_eq
   have hroot' : ∀ᶠ z in 𝓝 a, (p.map (MvPolynomial.eval (φ z))).IsRoot (θ z) := by
     filter_upwards [hU.mem_nhds ha] with z hz
     exact hroot z hz
-  exact (Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_discr_eq hp (hφ a ha) hdiscr
-    (hθ.continuousAt (hU.mem_nhds ha)) hroot').filter_mono nhdsWithin_le_nhds
+  exact (Polynomial.eventually_orderAt_root_eq_of_orderAt_discr_eq (hφ a ha)
+    (hp.map _).ne_zero hdiscr (hθ.continuousAt (hU.mem_nhds ha)) hroot').filter_mono
+      nhdsWithin_le_nhds
 
 end Polynomial.Monic
