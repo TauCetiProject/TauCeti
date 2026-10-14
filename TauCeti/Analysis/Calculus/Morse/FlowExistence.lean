@@ -39,6 +39,8 @@ Lyapunov descent along any orbit on which `f` is differentiable.
   (`TauCeti.differentiable_negativeGradientFlow_apply`: each time map is differentiable).
 * `TauCeti.hasDerivAt_fderiv_negativeGradientFlow`: the variational equation
   `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`.
+* `TauCeti.fderiv_negativeGradientFlow_apply_gradient`: `Dφₜ(x)(∇f x) = ∇f(φₜ x)`.
+* `TauCeti.continuous_fderiv_negativeGradientFlow_neg`: `σ ↦ Dφ_{-σ}(φ_σ x)` is continuous.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
   orbits.
@@ -50,6 +52,8 @@ Lyapunov descent along any orbit on which `f` is differentiable.
   coordinates on a time set containing the interval from zero to the chosen time.
 * `TauCeti.negativeGradientFlow_congr`: it does not depend on the chosen Lipschitz bound.
 * `TauCeti.forall_negativeGradientFlow_eq_self_iff`: its rest points are the zeros of `∇ f`.
+* `TauCeti.gradient_negativeGradientFlow_eq_zero_iff`: an orbit meets a zero of `∇ f` only if it
+  starts at one.
 * `TauCeti.negativeGradientFlow_orbit_antitone`: `f` decreases along an orbit on which it is
   differentiable.
 
