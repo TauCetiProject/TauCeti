@@ -120,8 +120,8 @@ theorem congr_apply (x : v.Completion) :
 /-- `Valuation.Completion.congr` extends `σ`. -/
 @[simp]
 theorem congr_coe (x : K) : congr σ hσ (x : v.Completion) = (σ x : w.Completion) := by
-  rw [congr_apply, UniformSpace.Completion.map_coe (WithVal.uniformContinuous_congr σ hσ)]
-  rfl
+  rw [congr_apply, UniformSpace.Completion.map_coe (WithVal.uniformContinuous_congr σ hσ),
+    WithVal.congr_apply, WithVal.ofVal_toVal]
 
 /-- `Valuation.Completion.congr` is continuous. -/
 theorem continuous_congr : Continuous (congr σ hσ) :=
@@ -131,8 +131,9 @@ theorem continuous_congr : Continuous (congr σ hσ) :=
 theorem eq_congr_of_continuous {f : v.Completion →+* w.Completion} (hf : Continuous f)
     (hfK : ∀ x : K, f (x : v.Completion) = (σ x : w.Completion)) :
     f = (congr σ hσ).toRingHom :=
-  DFunLike.coe_injective <| UniformSpace.Completion.ext hf (continuous_congr hσ) fun x ↦
-    (hfK (WithVal.ofVal x)).trans (congr_coe hσ (WithVal.ofVal x)).symm
+  DFunLike.coe_injective <| UniformSpace.Completion.ext hf (continuous_congr hσ) fun x ↦ by
+    rw [← WithVal.toVal_ofVal _ x]
+    exact (hfK x.ofVal).trans (congr_coe hσ x.ofVal).symm
 
 /-- `Valuation.Completion.congr` preserves the completed valuations. -/
 @[simp]
@@ -142,9 +143,8 @@ theorem valued_congr {L L' : Type*} [Field L] [Field L'] {q : Valuation L Γ₀}
   refine congrFun (UniformSpace.Completion.ext
     ((continuous_valued (.of_comp (g := τ) (by simpa [Function.comp_def, hτ]))).comp
       (continuous_congr hτ)) (continuous_valued hq) fun y ↦ ?_) x
-  refine (congrArg Valued.v (congr_coe hτ (WithVal.ofVal y))).trans ?_
-  rw [Valued.valuedCompletion_apply, Valued.valuedCompletion_apply, WithVal.valued_toVal, hτ,
-    WithVal.apply_ofVal]
+  rw [← WithVal.toVal_ofVal _ y, Function.comp_apply, congr_coe, Valued.valuedCompletion_apply,
+    Valued.valuedCompletion_apply, WithVal.valued_toVal, hτ, WithVal.apply_ofVal]
 
 /-- `Valuation.Completion.congr` of the identity is the identity. -/
 @[simp]
