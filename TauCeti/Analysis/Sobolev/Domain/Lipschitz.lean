@@ -60,7 +60,6 @@ theorem boundaryNormalCoordinate_apply (ν x y : F) :
   rw [boundaryNormalCoordinate]
 
 omit [FiniteDimensional ℝ F] in
-@[simp]
 theorem boundaryNormalCoordinate_self (ν x : F) : boundaryNormalCoordinate ν x x = 0 := by
   simp
 
