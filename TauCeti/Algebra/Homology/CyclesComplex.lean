@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # The short exact sequence of cycles of a complex
