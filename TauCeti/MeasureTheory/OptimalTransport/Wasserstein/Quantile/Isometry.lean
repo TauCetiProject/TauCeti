@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.Measure.FrechetMean.CATZero
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Rearrangement
 public import TauCeti.Topology.MetricSpace.CBBZero
-import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
-import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PopulationBarycenter
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 
 /-!
@@ -36,10 +33,7 @@ both a CAT(0) space and a space of nonnegative curvature in the sense of Alexand
 geodesic segment `t ↦ μ_t` of `P₂(ℝ)` the squared distance from any law `σ` is exactly the Euclidean
 expression
 `W₂(σ, μ_t)² = (1 - t) W₂(σ, μ₀)² + t W₂(σ, μ₁)² - t (1 - t) W₂(μ₀, μ₁)²`
-(`TauCeti.IsGeodesicSegment.dist_sq_eq`). The CAT(0) inequality makes quadratic Fréchet
-barycenters unique, so every law on `P₂(ℝ)` with finite second moment has exactly one quadratic
-Wasserstein barycenter. Unlike the barycenter theory on `ℝⁿ`, this needs no absolute continuity of
-any of the averaged laws.
+(`TauCeti.IsGeodesicSegment.dist_sq_eq`).
 
 ## Main definitions
 
@@ -56,8 +50,6 @@ any of the averaged laws.
   nondecreasing functions on `(0, 1)`.
 * `TauCeti.WassersteinSpace.instIsCATZeroSpace` and `TauCeti.WassersteinSpace.instIsCBBZeroSpace`
   — `P₂(ℝ)` is CAT(0) and CBB(0).
-* `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_real` — a law on `P₂(ℝ)` with finite
-  second moment has exactly one quadratic Wasserstein barycenter.
 
 ## References
 
@@ -66,9 +58,6 @@ any of the averaged laws.
 * B. Kloeckner, *A geometric study of Wasserstein spaces: Euclidean spaces*, Ann. Sc. Norm.
   Super. Pisa Cl. Sci. (5) 9 (2010), 297--323, where `P₂(ℝ)` is identified with a convex subset of
   `L²(0, 1)`.
-* K.-T. Sturm, *Probability measures on metric spaces of nonpositive curvature*, in *Heat
-  Kernels and Analysis on Manifolds, Graphs, and Metric Spaces*, Contemp. Math. 338 (2003),
-  357--390, for barycenters in CAT(0) spaces.
 -/
 
 public section
@@ -160,18 +149,6 @@ With `TauCeti.WassersteinSpace.instIsCATZeroSpace` this makes its geodesic trian
 (`TauCeti.IsGeodesicSegment.dist_sq_eq`). -/
 instance instIsCBBZeroSpace : IsCBBZeroSpace (WassersteinSpace 2 ℝ) :=
   IsCBBZeroSpace.of_isometry isometry_quantileLp
-
-/-- **Population Wasserstein barycenters on the line exist and are unique.** A probability law
-`P` on `P₂(ℝ)` with finite second moment has exactly one quadratic Fréchet barycenter, a
-minimizer of `ν ↦ ∫ W₂(ν, μ)² dP(μ)`. Existence is the Le Gouic--Loubes theorem
-`TauCeti.WassersteinSpace.exists_isFrechetBarycenter`; uniqueness holds because `P₂(ℝ)` is
-CAT(0). No absolute continuity is assumed. -/
-theorem existsUnique_isFrechetBarycenter_real (P : Measure (WassersteinSpace 2 ℝ))
-    [IsProbabilityMeasure P] (hP : HasFiniteMoment 2 P) :
-    ∃! ν : WassersteinSpace 2 ℝ, IsFrechetBarycenter 2 P ν := by
-  have := borelSpace (X := ℝ) (p := 2) ENNReal.ofNat_ne_top
-  obtain ⟨ν, hν⟩ := exists_isFrechetBarycenter ENNReal.ofNat_ne_top P hP
-  exact ⟨ν, hν, fun ν' hν' ↦ dist_eq_zero.1 (hν'.dist_eq_zero hν)⟩
 
 end WassersteinSpace
 
