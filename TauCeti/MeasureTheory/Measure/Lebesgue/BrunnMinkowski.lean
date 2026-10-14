@@ -37,7 +37,7 @@ public section
 open Set MeasureTheory
 open scoped Pointwise ENNReal
 
-namespace Real
+namespace TauCeti.Real
 
 /-- One-dimensional **Brunn–Minkowski theorem** for compact sets. -/
 theorem volume_add_volume_le_of_isCompact {A B : Set ℝ} (hAn : A.Nonempty) (hAc : IsCompact A)
@@ -154,4 +154,4 @@ theorem mul_volume_real_add_mul_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty
   simpa [measureReal_def, ENNReal.toReal_add hA hB, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal hc, ENNReal.toReal_ofReal hd] using ENNReal.toReal_mono hfin h
 
-end Real
+end TauCeti.Real
