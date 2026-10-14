@@ -72,7 +72,7 @@ def globalSectionsSmul
 @[simp]
 lemma globalSectionsSmul_app
     (M : X.Modules) (r : Γ(X, ⊤)) (U : X.Opens) :
-    (globalSectionsSmul M r).app U = M.smul (X.presheaf.map U.leTop.op r) := by
+    (globalSectionsSmul M r).app U = (M.smul (X.presheaf.map U.leTop.op r)).asHom := by
   rfl
 
 -- In the next four proofs, sheaf-morphism extensionality leaves pointwise bundled-module goals.
@@ -124,18 +124,18 @@ instance isIso_globalSectionsSmul_units
 the endomorphism ring of the sheaf. -/
 def globalSectionsAction
     (M : X.Modules) : Γ(X, ⊤) →+* End M where
-  toFun := globalSectionsSmul M
-  map_one' := globalSectionsSmul_one M
+  toFun r := .of (globalSectionsSmul M r)
+  map_one' := End.ext (globalSectionsSmul_one M)
   map_mul' := fun r s ↦ by
-    rw [globalSectionsSmul_mul]
-    exact (End.mul_asHom _ _).symm
-  map_zero' := globalSectionsSmul_zero M
-  map_add' := globalSectionsSmul_add M
+    apply End.ext
+    exact globalSectionsSmul_mul M r s
+  map_zero' := End.ext (globalSectionsSmul_zero M)
+  map_add' := fun r s ↦ End.ext (globalSectionsSmul_add M r s)
 
 @[simp]
 lemma globalSectionsAction_apply
     (M : X.Modules) (r : Γ(X, ⊤)) :
-    globalSectionsAction M r = globalSectionsSmul M r :=
+    globalSectionsAction M r = End.of (globalSectionsSmul M r) :=
   by rfl
 
 /-- Multiplication by a global function is natural in the sheaf of modules. -/
@@ -164,8 +164,9 @@ lemma pushforward_map_globalSectionsSmul
   rw [pushforward_map_app, globalSectionsSmul_app, globalSectionsSmul_app]
   -- The sections of the pushforward over `U` are the sections of `N` over `f ⁻¹ᵁ U`, with scalars
   -- restricted along `f.app U`; no lemma exposes this, so record it explicitly.
-  change N.smul (X.presheaf.map (f ⁻¹ᵁ U).leTop.op (f.appTop r)) =
-    N.smul (f.app U (Y.presheaf.map U.leTop.op r))
+  ext x
+  change X.presheaf.map (f ⁻¹ᵁ U).leTop.op (f.appTop r) • x =
+    f.app U (Y.presheaf.map U.leTop.op r) • x
   congr 1
   exact (ConcreteCategory.comp_apply _ _ r).symm.trans
     (congrArg (· r) (f.naturality U.leTop.op)).symm

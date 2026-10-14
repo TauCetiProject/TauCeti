@@ -171,7 +171,6 @@ theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
   rw [← vcomp₁, ← vcomp₂]
   unfold TwoSquare.whiskerLeft TwoSquare.whiskerRight
   congr 1
-  apply congr_arg
   ext B
   simp only [Functor.comp_obj, curriedTensor_obj_obj, NatTrans.comp_app,
     Functor.whiskerLeft_app, curriedTensor_map_app, Functor.whiskerRight_app,

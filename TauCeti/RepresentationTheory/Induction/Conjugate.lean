@@ -450,7 +450,7 @@ theorem conjFDRep_ρ (s : G) {H : Subgroup G} (A : FDRep k H)
   change HEq (FDRep.ρ ((Action.res (FGModuleCat k) (conjSubgroupEquiv s H).toMonoidHom).obj A) x) _
   refine heq_of_eq ?_
   rw [← FDRep.hom_hom_action_ρ, ← FDRep.hom_hom_action_ρ, Action.res_obj_ρ]
-  exact congrArg (fun f : A.V ⟶ A.V => f.hom.hom)
+  exact congrArg (fun f : End A.V => f.asHom.hom.hom)
     (MonoidHom.comp_apply (Action.ρ A) (conjSubgroupEquiv s H).toMonoidHom x)
 
 /-- The conjugate action, transported along `conjFDRep_V`. -/
@@ -792,26 +792,27 @@ does not change its isomorphism class: the action of `n` is an isomorphism `{}^n
 
 The intertwining property is the computation `n · (n⁻¹xn) = xn` in `N`. -/
 def _root_.FDRep.conjNormalIso (A : FDRep k N) (n : N) : conjNormalFDRep (n : G) A ≅ A :=
-  Action.mkIso (A.ρAut n) fun x => by
+  Action.mkIso (A.ρAut n).asIso fun x => by
     -- `{}^n A` has the same underlying object as `A`, and its action is by definition
     -- `Action.ρ A` at the conjugated element, but there is no restatement of that at the level
     -- of `Action.ρ` to rewrite with, so `change` is what puts the commutation square into
     -- `End A.V`.  There composition is multiplication in the other order, so each side
     -- collapses to a single value of `Action.ρ A`.
-    change Action.ρ A _ ≫ Action.ρ A _ = Action.ρ A _ ≫ Action.ρ A _
+    change (Action.ρ A _).asHom ≫ (Action.ρ A _).asHom =
+      (Action.ρ A _).asHom ≫ (Action.ρ A _).asHom
     rw [← End.mul_asHom, ← End.mul_asHom, ← map_mul, ← map_mul]
-    exact congrArg (Action.ρ A) (Subtype.ext (by simp [mul_assoc]))
+    exact congrArg (fun x ↦ (Action.ρ A x).asHom) (Subtype.ext (by simp [mul_assoc]))
 
 /-- The isomorphism `{}^n A ≅ A` for `n : N` is the action of `n`. -/
 @[simp]
 theorem _root_.FDRep.conjNormalIso_hom_hom (A : FDRep k N) (n : N) :
-    (A.conjNormalIso n).hom.hom = Action.ρ A n :=
+    (A.conjNormalIso n).hom.hom = (Action.ρ A n).asHom :=
   (rfl)
 
 /-- The inverse of `{}^n A ≅ A` for `n : N` is the action of `n⁻¹`. -/
 @[simp]
 theorem _root_.FDRep.conjNormalIso_inv_hom (A : FDRep k N) (n : N) :
-    (A.conjNormalIso n).inv.hom = Action.ρ A n⁻¹ :=
+    (A.conjNormalIso n).inv.hom = (Action.ρ A n⁻¹).asHom :=
   (rfl)
 
 /-- Conjugation acts on the isomorphism classes of finite-dimensional representations of `N`: the

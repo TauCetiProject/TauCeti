@@ -25,7 +25,7 @@ definiteness over `ℚ`, and the rational form is the one downstream arguments u
 vector produced by a diagram computation need not have integer entries. The symmetrizer `d` is
 likewise rational: it is the vector of inverse root lengths, which is integral only after clearing
 denominators. The symmetrization itself is not redone here: Mathlib packages it over `ℤ` as
-`RootPairing.Base.exists_cartanMatrix_diagaonal_mul_posDef`, resting on
+`RootPairing.Base.exists_cartanMatrix_diagonal_mul_posDef`, resting on
 `RootPairing.posRootForm_rootFormIn_posDef`.
 
 ## Main definitions
@@ -751,7 +751,7 @@ theorem isFiniteType_cartanMatrix [Finite ι] [CharZero R] [IsDomain R]
   classical
   -- Mathlib packages the positive definite symmetrization over `ℤ`, and
   -- `TauCeti.Matrix.posDef_map_intCast` carries it over `ℚ`.
-  obtain ⟨d, hd, hpd⟩ := b.exists_cartanMatrix_diagaonal_mul_posDef
+  obtain ⟨d, hd, hpd⟩ := b.exists_cartanMatrix_diagonal_mul_posDef
   refine isFiniteType_of (fun i ↦ b.cartanMatrix_apply_same i)
     (fun i j hij ↦ b.cartanMatrix_le_zero_of_ne i j hij)
     (d := fun i ↦ (d i : ℚ)) (fun i ↦ by exact_mod_cast hd i) ?_

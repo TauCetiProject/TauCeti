@@ -211,8 +211,7 @@ variable {φ} {G : _root_.SheafOfModules.{u} (ringCatSheaf S) ⥤
 `pushforwardExteriorPowerComparison φ n` under `adj`. -/
 def pullbackExteriorPowerComparison (n : ℕ) :
     _root_.SheafOfModules.exteriorPower S n ⋙ G ⟶ G ⋙ _root_.SheafOfModules.exteriorPower R n :=
-  ((mateEquiv adj adj).symm (TwoSquare.mk _ _ _ _
-    (pushforwardExteriorPowerComparison φ n))).natTrans
+  (mateEquiv adj adj).symm (pushforwardExteriorPowerComparison φ n)
 
 /-- The adjunction equation characterizing the pullback comparison. -/
 @[reassoc (attr := simp)]
