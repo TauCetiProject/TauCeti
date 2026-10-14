@@ -32,9 +32,12 @@ The paths of free loops are taken on the fixed interval `I`.
   loop; `TauCeti.constLoopPath_mem_contractibleLoops` says each such path lies in the contractible
   free loops `TauCeti.contractibleLoops Q`, the space `𝓛₀Q`, in which the constant loops embed
   (`TauCeti.isEmbedding_constContractibleLoop`).
-* `TauCeti.sphere2HomeomorphConstLoopPath`: `Map(S², Q) ≃ₜ ConstLoopPath Q`.
+* `TauCeti.sphere2HomeomorphConstLoopPath`: `Map(S², Q) ≃ₜ ConstLoopPath Q`, and
+  `TauCeti.sphere2HomeomorphContractibleConstLoopPath`: `Map(S², Q) ≃ₜ` the paths in `𝓛₀Q` from a
+  constant loop to a constant loop.
 * `TauCeti.basedMapSphere2HomeomorphBasedConstLoopPath`: `Map_*(S², Q) ≃ₜ` the subspace of
-  `ConstLoopPath Q` of paths starting at the constant loop at `⋆`.
+  `ConstLoopPath Q` of paths starting at the constant loop at `⋆`, and
+  `TauCeti.basedMapSphere2HomeomorphBasedContractibleConstLoopPath` the same in `𝓛₀Q`.
 
 ## References
 
@@ -197,5 +200,74 @@ theorem basedMapSphere2HomeomorphBasedConstLoopPath_symm_apply (x : Q)
     ((basedMapSphere2HomeomorphBasedConstLoopPath x).symm p) t z
   rw [Homeomorph.apply_symm_apply] at h
   exact h.symm
+
+section Contractible
+
+variable (Q) in
+/-- The paths in the contractible free loops `𝓛₀Q` from a constant loop to a constant loop. -/
+abbrev ContractibleConstLoopPath : Type _ :=
+  {p : C(I, contractibleLoops Q) //
+    (∃ q, p 0 = constContractibleLoop q) ∧ ∃ q, p 1 = constContractibleLoop q}
+
+/-- A path of free loops from a constant loop to a constant loop is a path in the contractible free
+loops `𝓛₀Q`. -/
+def constLoopPathHomeomorph : ConstLoopPath Q ≃ₜ ContractibleConstLoopPath Q where
+  toFun p := ⟨⟨fun t => ⟨p.1 t, constLoopPath_mem_contractibleLoops p t⟩,
+      p.1.continuous.subtype_mk _⟩,
+    ⟨p.2.1.choose, Subtype.ext p.2.1.choose_spec⟩, ⟨p.2.2.choose, Subtype.ext p.2.2.choose_spec⟩⟩
+  invFun r := ⟨(ContinuousMap.mk Subtype.val continuous_subtype_val).comp r.1,
+    ⟨r.2.1.choose, congrArg Subtype.val r.2.1.choose_spec⟩,
+    ⟨r.2.2.choose, congrArg Subtype.val r.2.2.choose_spec⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by
+    refine continuous_induced_rng.2 ?_
+    refine ((ContinuousMap.isInducing_postcomp (ContinuousMap.mk Subtype.val
+      continuous_subtype_val) Topology.IsInducing.subtypeVal).continuous_iff).2 ?_
+    exact continuous_subtype_val
+  continuous_invFun :=
+    continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp _).comp continuous_subtype_val)
+
+/-- The path of contractible loops, read in the free loop space, is the original path. -/
+@[simp]
+theorem coe_constLoopPathHomeomorph (p : ConstLoopPath Q) (t : I) :
+    ((constLoopPathHomeomorph p).1 t : C(Circle, Q)) = p.1 t := by
+  rw [constLoopPathHomeomorph]
+  rfl
+
+variable (Q) in
+/-- The paths in the contractible free loops from the constant loop at `x` to a constant loop. -/
+abbrev BasedContractibleConstLoopPath (x : Q) : Type _ :=
+  {p : ContractibleConstLoopPath Q // p.1 0 = constContractibleLoop x}
+
+/-- **`Map(S², Q)` is the space of paths in the contractible free loops `𝓛₀Q` from a constant loop
+to a constant loop.** -/
+def sphere2HomeomorphContractibleConstLoopPath : C(Sphere2, Q) ≃ₜ ContractibleConstLoopPath Q :=
+  sphere2HomeomorphConstLoopPath.trans constLoopPathHomeomorph
+
+/-- The loop of the path of contractible loops at `(t, z)` is the value of the sphere map at the
+image of `(t, z)` under the suspension map. -/
+@[simp]
+theorem sphere2HomeomorphContractibleConstLoopPath_apply (f : C(Sphere2, Q)) (t : I)
+    (z : Circle) :
+    ((sphere2HomeomorphContractibleConstLoopPath f).1 t : C(Circle, Q)) z =
+      f (suspensionToSphere (t, z)) := by
+  rw [sphere2HomeomorphContractibleConstLoopPath, Homeomorph.trans_apply,
+    coe_constLoopPathHomeomorph]
+  exact sphere2HomeomorphConstLoopPath_apply f t z
+
+/-- **`Map_*(S², Q)` is the space of paths in the contractible free loops from the constant loop at
+`x` to a constant loop.** -/
+def basedMapSphere2HomeomorphBasedContractibleConstLoopPath (x : Q) :
+    BasedMap Sphere2 Q Sphere2.north x ≃ₜ BasedContractibleConstLoopPath Q x :=
+  (basedMapSphere2HomeomorphBasedConstLoopPath x).trans
+    (Homeomorph.subtype constLoopPathHomeomorph fun p => by
+      constructor
+      · intro h
+        exact Subtype.ext ((coe_constLoopPathHomeomorph p 0).trans h)
+      · intro h
+        exact (coe_constLoopPathHomeomorph p 0).symm.trans (congrArg Subtype.val h))
+
+end Contractible
 
 end TauCeti
