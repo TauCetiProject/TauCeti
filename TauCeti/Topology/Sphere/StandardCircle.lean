@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-public import TauCeti.Topology.Homotopy.Cube.Sphere
+public import Mathlib.Topology.Homotopy.HomotopyGroup
+public import TauCeti.Geometry.Sphere.Circle
 
 /-!
 # The standard parametrization of the circle
