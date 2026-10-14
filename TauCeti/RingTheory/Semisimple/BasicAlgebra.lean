@@ -268,8 +268,9 @@ theorem IsBasic.exists_completeOrthogonalIdempotents {k : Type w} {A : Type v} [
     (fun i => Ideal.Quotient.mk_surjective _)
   have hπe' (i : Fin n) : Ideal.Quotient.mk (Ring.jacobson A) (e i) = ē i := congrFun hπe i
   refine ⟨n, e, he, fun i h => ?_, eq_top_iff.mpr fun y _ => ?_⟩
-  · have h' : (Pi.single i 1 : Π i, Matrix (Fin (d i)) (Fin (d i)) k) = 0 :=
-      σ.symm.injective ((show ē i = 0 by rw [← hπe' i, h, map_zero]).trans (map_zero _).symm)
+  · have hēzero : ē i = 0 := by rw [← hπe' i, h, map_zero]
+    have h' : (Pi.single i 1 : Π i, Matrix (Fin (d i)) (Fin (d i)) k) = 0 :=
+      σ.symm.injective (hēzero.trans (map_zero _).symm)
     simpa using congrFun h' i
   · have hy : y = ∑ i, σ y i 0 0 • ē i := by
       apply σ.injective

@@ -94,14 +94,17 @@ theorem liftAlgHomOfArrows_surjective (hJ : IsNilpotent J)
     refine ⟨∑ i, c i • vertexIdempotent k i, ?_⟩
     simp [F, ← hc, Ideal.Quotient.mkₐ_eq_mk]
   · intro x hx
-    rw [show x = ∑ j, ∑ i, e j * x * e i by
-      simp only [← Finset.mul_sum, ← Finset.sum_mul, he.complete, one_mul, mul_one]]
+    have hxcut : x = ∑ j, ∑ i, e j * x * e i := by
+      simp only [← Finset.mul_sum, ← Finset.sum_mul, he.complete, one_mul, mul_one]
+    rw [hxcut]
     refine Submodule.sum_mem _ fun j _ => Submodule.sum_mem _ fun i _ => ?_
     -- Lift the class of the cut to a combination of arrows; the error lies in `J ^ 2`.
     have hmem := hlayer i j x hx
-    rw [show (Set.range fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) =
-        (Ideal.Quotient.mkₐ k (J ^ 2)).toLinearMap '' Set.range (fun a : i ⟶ j => f a) by
-      ext; simp [Ideal.Quotient.mkₐ_eq_mk], ← Submodule.map_span] at hmem
+    have hrange : (Set.range fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) =
+        (Ideal.Quotient.mkₐ k (J ^ 2)).toLinearMap '' Set.range (fun a : i ⟶ j => f a) := by
+      ext
+      simp [Ideal.Quotient.mkₐ_eq_mk]
+    rw [hrange, ← Submodule.map_span] at hmem
     obtain ⟨z, hz, hzx⟩ := Submodule.mem_map.mp hmem
     have hzF : z ∈ F.range.toSubmodule := by
       refine Submodule.span_le.mpr ?_ hz
@@ -116,52 +119,6 @@ end Generation
 section Admissible
 
 variable {k : Type w} [Field k] [Algebra k A]
-
-include he hl hr in
-/-- Cutting an arrow value down by two vertex idempotents keeps it when they are its target and
-source, and kills it otherwise. -/
-private theorem mul_mul_eq_ite {i j i' j' : Q} (a : i ⟶ j) [Decidable (j' = j ∧ i' = i)] :
-    e j' * f a * e i' = if j' = j ∧ i' = i then f a else 0 := by
-  split_ifs with h
-  · obtain ⟨rfl, rfl⟩ := h
-    rw [hl, hr]
-  · rcases not_and_or.mp h with hj | hi
-    · rw [← hl a]
-      simp only [← mul_assoc, he.ortho hj, zero_mul]
-    · rw [← hr a]
-      simp only [mul_assoc, he.ortho (Ne.symm hi), mul_zero]
-
-include he hl hr in
-/-- The arrow classes in `A ⧸ J ^ 2` are linearly independent as one family over all arrows,
-once they are independent within each corner. -/
-private theorem linearIndependent_sigma_mk_sq
-    (hind : ∀ i j : Q, LinearIndependent k fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) :
-    LinearIndependent k fun a : (Σ i j : Q, i ⟶ j) => Ideal.Quotient.mk (J ^ 2) (f a.2.2) := by
-  classical
-  rw [linearIndependent_iff']
-  rintro s g hg ⟨i₀, j₀, a₀⟩ ha₀
-  let ι : (i₀ ⟶ j₀) → Σ i j : Q, i ⟶ j := fun a => ⟨i₀, j₀, a⟩
-  have hι : Function.Injective ι := fun a b h => by simpa [ι] using h
-  -- Cutting the relation down to the `(j₀, i₀)`-corner keeps only the arrows `i₀ ⟶ j₀`.
-  have hcut :
-      ∑ a ∈ s.preimage ι hι.injOn, g (ι a) • Ideal.Quotient.mk (J ^ 2) (f a) = 0 := by
-    have h := congrArg (fun y => Ideal.Quotient.mk (J ^ 2) (e j₀) * y *
-      Ideal.Quotient.mk (J ^ 2) (e i₀)) hg
-    simp only [Finset.mul_sum, Finset.sum_mul, mul_smul_comm, smul_mul_assoc, mul_zero,
-      zero_mul, ← map_mul] at h
-    rw [Finset.sum_preimage' ι s hι.injOn (fun x => g x • Ideal.Quotient.mk (J ^ 2) (f x.2.2)),
-      Finset.sum_filter]
-    refine (Finset.sum_congr rfl fun x _ => ?_).trans h
-    obtain ⟨i, j, a⟩ := x
-    rw [mul_mul_eq_ite e he f hl hr a]
-    by_cases hij : j₀ = j ∧ i₀ = i
-    · obtain ⟨rfl, rfl⟩ := hij
-      simp [ι]
-    · have hx : (⟨i, j, a⟩ : Σ i j : Q, i ⟶ j) ∉ Set.range ι := by
-        rintro ⟨b, hb⟩
-        exact hij (by cases hb; simp)
-      simp [hij, hx]
-  exact linearIndependent_iff'.mp (hind i₀ j₀) _ _ hcut a₀ (by simpa [ι] using ha₀)
 
 /-- **Admissibility criterion for a bound-quiver presentation.** Let `J` be a nilpotent two-sided
 ideal containing the arrow values, and let the vertex idempotents be nonzero. If for all vertices
@@ -192,7 +149,17 @@ theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀
       LinearIndependent k fun i => Ideal.Quotient.mk I (e i) :=
     (he.toOrthogonalIdempotents.map (Ideal.Quotient.mk I)).linearIndependent fun i h =>
       hnotMem i (hI (Ideal.Quotient.eq_zero_iff_mem.mp h))
-  refine (hvert _ hJ2).sum_type (linearIndependent_sigma_mk_sq e he f hl hr J hind) ?_
+  have harrowIndependent : LinearIndependent k fun a : (Σ i j : Q, i ⟶ j) =>
+      Ideal.Quotient.mk (J ^ 2) (f a.2.2) :=
+    (he.toOrthogonalIdempotents.map (Ideal.Quotient.mk (J ^ 2))).linearIndependent_sigma
+      (fun i j a => Ideal.Quotient.mk (J ^ 2) (f a))
+      (fun i j a => by
+        change Ideal.Quotient.mk (J ^ 2) (e j) * Ideal.Quotient.mk (J ^ 2) (f a) = _
+        rw [← map_mul, hl a])
+      (fun i j a => by
+        change Ideal.Quotient.mk (J ^ 2) (f a) * Ideal.Quotient.mk (J ^ 2) (e i) = _
+        rw [← map_mul, hr a]) hind
+  refine (hvert _ hJ2).sum_type harrowIndependent ?_
   rw [Submodule.disjoint_def]
   intro y hy hy'
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp hy
