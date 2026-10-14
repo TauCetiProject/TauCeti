@@ -60,8 +60,8 @@ namespace AlgebraicGeometry.Scheme
 variable {X Y : Scheme.{u}} {p : ℕ} [hp : Fact p.Prime]
 
 omit hp in
--- The prime `p` vanishes on every open of a scheme on which it vanishes globally.
-private theorem natCast_app_eq_zero (hX : (p : Γ(X, ⊤)) = 0) (U : X.Opens) :
+/-- The prime `p` vanishes on every open of a scheme on which it vanishes globally. -/
+theorem natCast_app_eq_zero (hX : (p : Γ(X, ⊤)) = 0) (U : X.Opens) :
     (p : Γ(X, U)) = 0 := by
   simpa using congr(X.presheaf.map (homOfLE le_top).op $hX)
 
@@ -115,6 +115,13 @@ private theorem frobenius_app_apply (hX : (p : Γ(X, ⊤)) = 0) (U : X.Opens) (s
     (X.frobenius p hX).app U s = (s ^ p : Γ(X, U)) :=
   TauCeti.powRingHom_apply _ s
 
+-- `Γ(X, F_X ⁻¹ᵁ ⊤)` is `Γ(X, ⊤)` by definition.
+/-- The absolute Frobenius is the `p`-th power map on global sections. -/
+@[simp]
+theorem frobenius_appTop_apply (hX : (p : Γ(X, ⊤)) = 0) (s : Γ(X, ⊤)) :
+    (X.frobenius p hX).appTop s = (s ^ p : Γ(X, ⊤)) :=
+  frobenius_app_apply hX ⊤ s
+
 /-- The absolute Frobenius is the `p`-th power map on sections: the section of `X` over `V`
 induced by a section `s` over `U ⊇ V` is the `p`-th power of the restriction of `s`. -/
 @[simp]
@@ -155,6 +162,6 @@ theorem Spec_map_powRingHom (R : CommRingCat.{u}) (hR : (p : R) = 0) :
   simp only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom,
     TauCeti.powRingHom_apply, ← map_pow] at h
   exact (ΓSpecIso R).commRingCatIsoToRingEquiv.injective
-    (h.trans (congrArg _ (frobenius_app_apply _ ⊤ s).symm))
+    (h.trans (congrArg _ (frobenius_appTop_apply _ s).symm))
 
 end AlgebraicGeometry.Scheme

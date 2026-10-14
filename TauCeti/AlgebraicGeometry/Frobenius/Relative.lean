@@ -27,10 +27,11 @@ Unlike `F_X`, the relative Frobenius is a morphism over `S`, natural in `X` over
 (`AlgebraicGeometry.Scheme.Hom.relativeFrobenius_naturality`), and both the Frobenius twist and
 the relative Frobenius commute with base change along any `T ⟶ S`
 (`AlgebraicGeometry.Scheme.Hom.isPullback_frobeniusTwistMap` and
-`AlgebraicGeometry.Scheme.Hom.isPullback_relativeFrobenius`). As a natural transformation from
-the identity of `Over S` to the base change functor `Over.pullback F_S`, it preserves finite
-products, so it carries every group scheme `G` over `S` to a homomorphism of group schemes
-`G ⟶ G^{(p)}` (`AlgebraicGeometry.Scheme.relativeFrobeniusGrpHom`).
+`AlgebraicGeometry.Scheme.Hom.isPullback_relativeFrobenius`). It is a natural transformation from
+the identity of `Over S` to the base change functor `Over.pullback F_S`. Since both of these
+functors preserve finite products, it lifts to group objects, so it carries every group scheme `G`
+over `S` to a homomorphism of group schemes `G ⟶ G^{(p)}`
+(`AlgebraicGeometry.Scheme.relativeFrobeniusGrpHom`).
 
 ## Main definitions
 
@@ -94,11 +95,24 @@ theorem relativeFrobenius_snd : π.relativeFrobenius p hS ≫ pullback.snd _ _ =
 /-- The projection from the Frobenius twist `(X ×_S T)^{(p)}` of the base change of `X` along
 `f : T ⟶ S` to the Frobenius twist `X^{(p)}` of `X`, induced by the projection `X ×_S T ⟶ X`
 and by `f`. -/
-noncomputable abbrev frobeniusTwistMap (f : T ⟶ S) :
+noncomputable def frobeniusTwistMap (f : T ⟶ S) :
     pullback (pullback.snd π f) (T.frobenius p (natCast_eq_zero_of_hom f hS)) ⟶
       pullback π (S.frobenius p hS) :=
   pullback.map _ _ _ _ (pullback.fst π f) f f pullback.condition.symm
     (frobenius_naturality _ hS f)
+
+/-- The projection between Frobenius twists, followed by the projection `X^{(p)} ⟶ X`, is the
+projection `(X ×_S T)^{(p)} ⟶ X ×_S T` followed by the projection `X ×_S T ⟶ X`. -/
+@[reassoc (attr := simp)]
+theorem frobeniusTwistMap_fst (f : T ⟶ S) :
+    π.frobeniusTwistMap p hS f ≫ pullback.fst _ _ = pullback.fst _ _ ≫ pullback.fst π f :=
+  pullback.lift_fst _ _ _
+
+/-- The projection between Frobenius twists lies over `f : T ⟶ S`. -/
+@[reassoc (attr := simp)]
+theorem frobeniusTwistMap_snd (f : T ⟶ S) :
+    π.frobeniusTwistMap p hS f ≫ pullback.snd _ _ = pullback.snd _ _ ≫ f :=
+  pullback.lift_snd _ _ _
 
 variable {π p}
 
@@ -170,6 +184,8 @@ noncomputable def relativeFrobeniusGrpHom (G : Grp (Over S)) :
     G ⟶ (Over.pullback (S.frobenius p hS)).mapGrp.obj G :=
   Functor.mapGrpIdIso.inv.app G ≫ (Functor.mapGrpNatTrans (relativeFrobeniusNatTrans S p hS)).app G
 
+-- `rfl`: the component of `Functor.mapGrpIdIso.inv` at `G` has underlying morphism `𝟙 G.X`, and
+-- `(𝟙 _ ≫ g).left` reduces definitionally to `g.left` for morphisms `g` in `Over S`.
 @[simp]
 theorem relativeFrobeniusGrpHom_hom_hom_left (G : Grp (Over S)) :
     (relativeFrobeniusGrpHom S p hS G).hom.hom.left = G.X.hom.relativeFrobenius p hS :=
@@ -182,6 +198,8 @@ noncomputable def relativeFrobeniusCommGrpHom (G : CommGrp (Over S)) :
   Functor.mapCommGrpIdIso.inv.app G ≫
     (Functor.mapCommGrpNatTrans (relativeFrobeniusNatTrans S p hS)).app G
 
+-- `rfl`: the component of `Functor.mapCommGrpIdIso.inv` at `G` has underlying morphism `𝟙 G.X`,
+-- and `(𝟙 _ ≫ g).left` reduces definitionally to `g.left` for morphisms `g` in `Over S`.
 @[simp]
 theorem relativeFrobeniusCommGrpHom_hom_hom_hom_left (G : CommGrp (Over S)) :
     (relativeFrobeniusCommGrpHom S p hS G).hom.hom.hom.left = G.X.hom.relativeFrobenius p hS :=
