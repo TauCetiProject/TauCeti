@@ -331,3 +331,20 @@ theorem spinGroupBaseChange_comp_spinTransvectionHom {Q : QuadraticForm K V} {u 
       toMul_spinTransvectionHom_mk]
 
 end TauCeti.CliffordAlgebra
+
+namespace QuadraticMap.IsometryEquiv
+
+variable {R A M N : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Invertible (2 : R)]
+  {Q : QuadraticForm R M} {Q' : QuadraticForm R N}
+
+/-- Scalar extension commutes with the Spin equivalence induced by a quadratic isometry. -/
+theorem spinGroupBaseChange_spinGroupEquiv (e : Q.IsometryEquiv Q') (s : spinGroup Q) :
+    CliffordAlgebra.spinGroupBaseChange (A := A) Q' (e.spinGroupEquiv s) =
+      (e.baseChange A).spinGroupEquiv (CliffordAlgebra.spinGroupBaseChange (A := A) Q s) := by
+  apply Subtype.ext
+  simp only [CliffordAlgebra.coe_spinGroupBaseChange_apply, spinGroupEquiv_apply,
+    Isometry.coe_spinGroupMap_apply, Isometry.ofBaseChangeAux_map,
+    baseChange_toIsometry]
+
+end QuadraticMap.IsometryEquiv

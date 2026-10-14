@@ -5,59 +5,124 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.ExponentNorms
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Ideles
+public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
+
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Surjective
 public import TauCeti.NumberTheory.NumberField.Kummer.LocalDegree
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Units
 
 /-!
-# Idele classes are norms from the Kummer field of local powers
+# Kummer idele subgroups contained in norm groups
 
-Let `K` be a number field containing the `n`-th roots of unity and let `S` be a finite set of
-finite places of `K` containing the places above `n`, whose classes generate the ideal class
-group. Let `Δ` be a subgroup of `S`-units that are `n`-th powers in `K_v` at every place `v ∈ S`
-and at every infinite place: in idelic terms, the principal ideles of `Δ` lie in the Kummer idele
-subgroup `kummerIdeleSubgroup S n`. Then every idele class of `K` is a norm from the Kummer field
-`M = K(Δ^{1/n})` (`TauCeti.ClassFieldTheory.ideleClassNormMap_kummerField_surjective`).
+Let `L/K` be a finite Galois extension of number fields whose Galois group has exponent dividing
+`n`. If a finite set `S` contains every prime ramified in `L`, then the Kummer idele subgroup
+`E_S` of ideles that are local `n`-th powers at `S` and at infinity, and units outside `S`, is
+contained in the idele norm group of `L/K`. Consequently its image in the idele class group is
+contained in the idele-class norm group.
 
-Indeed, the places of `S` and the infinite places split completely in `M`
-(`TauCeti.NumberField.finrank_adicCompletion_kummerField_eq_one` and
-`TauCeti.NumberField.finrank_completion_kummerField_eq_one`), so every element of `K_v` is a local
-norm there, and `M` is unramified outside `S`
-(`TauCeti.NumberField.isUnramifiedIn_kummerField_of_valuation_eq_one`). These are the local
-hypotheses of Milne's Proposition 6.10,
-`TauCeti.GlobalNumberFields.ideleClassNormMap_surjective_of_forall_exists_mem_unit`. More generally
-the radicands may be units only outside `S ∪ T` for a second finite set `T`, provided the
-`S`-units surject onto `∏_{v ∈ T} U_v / U_v ^ m` for a multiple `m` of `[M : K]`
-(`TauCeti.ClassFieldTheory.ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit`).
+The proof is placewise. At the places of `S` and at infinity, exponent divisibility makes every
+`n`-th power a local norm. Outside `S`, the extension is unramified and local units are norms.
+The resulting inclusion is the norm half of the Kummer computation of the second fundamental
+inequality. It converts the index of the idele-class norm group into a divisor of the index of the
+Kummer idele-class subgroup.
 
-Combined with the first fundamental inequality, which forbids a nontrivial cyclic extension from
-which every idele class is a norm, this shows that such a `Δ` consists of `n`-th powers: an
-`S`-unit that is an `n`-th power at the places of `S` and at the infinite places is an `n`-th
-power. That is the intersection `U_S ∩ E_S = U_S ^ n` of the `S`-units with the Kummer idele
-subgroup, which turns the index of the idelic subgroup into the index of its image in the idele
-class group. With `T`, the same argument applies to the subgroup `E_{S,T}` of the Kummer proof of
-the second fundamental inequality.
+If the extension is the Kummer field of radicands that are local powers at `S` and at infinity,
+and units outside `S`, then every idele class is a norm, provided `S` contains the places above
+`n` and generates the class group. The places of `S` and infinity split completely, and the
+extension is unramified elsewhere. An auxiliary set `T` is also allowed when the `S`-units
+control the local power classes at `T`, as in Milne's Proposition 6.10.
 
-## Main results
+## Main statements
 
+* `TauCeti.ClassFieldTheory.kummerIdeleSubgroup_le_range_ideleNormMap`: the Kummer idele subgroup
+  is contained in the idele norm group.
+* `TauCeti.ClassFieldTheory.kummerIdeleClassSubgroup_le_range_ideleClassNormMap`: the corresponding
+  inclusion after passage to idele classes.
+* `TauCeti.ClassFieldTheory.index_range_ideleClassNormMap_dvd_index_kummerIdeleClassSubgroup`:
+  the resulting divisibility of indices.
+
+* `TauCeti.ClassFieldTheory.ideleClassNormMap_kummerField_surjective`: surjectivity for radicands
+  represented by the Kummer idele subgroup.
 * `TauCeti.ClassFieldTheory.ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit`:
-  the norm map `C_M → C_K` is onto when the radicands are `S ∪ T`-units, local `n`-th powers at
-  `S` and at the infinite places, and the `S`-units control the local power classes at `T`.
-* `TauCeti.ClassFieldTheory.ideleClassNormMap_kummerField_surjective`: the case `T = ∅`, stated
-  through the Kummer idele subgroup.
+  surjectivity with an auxiliary set of places.
 
 ## References
 
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Proposition 6.10 and §9.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, §§5--6, Proposition 6.10 and §9.
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter VII, §6.
 -/
 
-public noncomputable section
+public section
 
-open IsDedekindDomain NumberField TauCeti.NumberField TauCeti.GlobalNumberFields
+noncomputable section
+
+open IsDedekindDomain NumberField
 
 namespace TauCeti.ClassFieldTheory
+
+variable (K : Type) [Field K] [NumberField K]
+variable (L : Type*) [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
+
+/-- **The Kummer idele subgroup consists of norms.** If the exponent of `Gal(L/K)` divides `n`
+and `S` contains every finite place ramified in `L`, then every idele in the Kummer subgroup
+`E_S` is the norm of an idele of `L`. -/
+theorem kummerIdeleSubgroup_le_range_ideleNormMap {n : ℕ}
+    (hn : Monoid.exponent Gal(L/K) ∣ n) (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
+    kummerIdeleSubgroup S n ≤
+      (GlobalNumberFields.ideleNormMap K L).toMonoidHom.range := by
+  intro x hx
+  rw [mem_kummerIdeleSubgroup_iff] at hx
+  refine mem_range_ideleNormMap_of_exponent_dvd K L hn (S := (S : Set _)) (T := ∅)
+    (by simp) ?_ ?_ ?_ ?_
+  · intro v hvS _
+    obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+    exact ⟨⟨w, inferInstance⟩, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport _
+      (fun hv ↦ hvS (hram hv)) w.asIdeal⟩
+  · intro v hvS
+    rw [powerSubgroup_eq_range_powMonoidHom]
+    exact hx.1 v hvS
+  · intro v hvS _
+    exact hx.2.2 v hvS
+  · intro v
+    rw [powerSubgroup_eq_range_powMonoidHom]
+    exact hx.2.1 v
+
+/-- **The Kummer idele-class subgroup consists of norms.** Under the same hypotheses as
+`kummerIdeleSubgroup_le_range_ideleNormMap`, every class represented by a Kummer idele is in
+`N_{L/K}(C_L)`. -/
+theorem kummerIdeleClassSubgroup_le_range_ideleClassNormMap {n : ℕ}
+    (hn : Monoid.exponent Gal(L/K) ∣ n) (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
+    kummerIdeleClassSubgroup S n ≤
+      (GlobalNumberFields.ideleClassNormMap K L :
+        IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  intro c hc
+  obtain ⟨x, hx, rfl⟩ := (mem_kummerIdeleClassSubgroup_iff S n c).mp hc
+  obtain ⟨y, hy⟩ := kummerIdeleSubgroup_le_range_ideleNormMap K L hn S hram hx
+  refine ⟨(y : IdeleClassGroup (𝓞 L) L), ?_⟩
+  exact (GlobalNumberFields.ideleClassNormMap_mk y).trans
+    (congrArg (fun z : IdeleGroup (𝓞 K) K ↦ (z : IdeleClassGroup (𝓞 K) K)) hy)
+
+/-- **The idele-class norm index divides the Kummer subgroup index.** If `S` contains the
+ramified places and `n` is divisible by the exponent of `Gal(L/K)`, then
+`[C_K : N_{L/K}(C_L)]` divides `[C_K : E_S]`. -/
+theorem index_range_ideleClassNormMap_dvd_index_kummerIdeleClassSubgroup {n : ℕ}
+    (hn : Monoid.exponent Gal(L/K) ∣ n) (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
+    (GlobalNumberFields.ideleClassNormMap K L :
+        IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.index ∣
+      (kummerIdeleClassSubgroup S n).index :=
+  Subgroup.index_dvd_of_le
+    (kummerIdeleClassSubgroup_le_range_ideleClassNormMap K L hn S hram)
+
+end TauCeti.ClassFieldTheory
+
+namespace TauCeti.ClassFieldTheory
+
+open TauCeti.NumberField TauCeti.GlobalNumberFields
 
 variable {K E : Type*} [Field K] [NumberField K] [Field E] [Algebra K E]
   {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n] {Δ : Subgroup Kˣ}
