@@ -37,7 +37,9 @@ def concurrency_group(repository, payload):
     # Repository names are case-insensitive on GitHub; branch names are not.
     identity = json.dumps([repository.lower(), branch, batch, head, base],
                           separators=(",", ":"), ensure_ascii=True)
-    return "pr-build-bors-staging-" + hashlib.sha256(identity.encode()).hexdigest()
+    # Ordinary/manual groups always start with pr-build-. Use a disjoint prefix
+    # so even a malformed manual PR input cannot select a staging candidate.
+    return "bors-staging-candidate-" + hashlib.sha256(identity.encode()).hexdigest()
 
 
 def main():

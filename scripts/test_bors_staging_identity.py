@@ -69,7 +69,7 @@ class IdentityTests(unittest.TestCase):
                 self.assertNotEqual(group.lower(), concurrency_group(REPO, dict(first, **change)).lower())
         self.assertNotEqual(group, concurrency_group("Other/Repo", first))
         self.assertEqual(group, concurrency_group(REPO.lower(), first))
-        self.assertRegex(group, r"^pr-build-bors-staging-[0-9a-f]{64}$")
+        self.assertRegex(group, r"^bors-staging-candidate-[0-9a-f]{64}$")
 
     def test_every_missing_field_fails_before_a_shared_group_exists(self):
         for field in payload():
@@ -135,6 +135,8 @@ class WorkflowTests(unittest.TestCase):
         ]:
             with self.subTest(fields=fields):
                 self.assertEqual(expression(group, **fields), expected)
+        candidate = concurrency_group(REPO, payload())
+        self.assertNotEqual(expression(group, event="workflow_dispatch", manual=candidate), candidate)
 
     def test_validation_precedes_concurrency_for_the_whole_reusable_build(self):
         job = ENTRY["jobs"]["build-candidate"]
