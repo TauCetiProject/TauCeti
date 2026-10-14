@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
 -- Proof-only: regularity of local rings of spectra of regular rings, and codimension bounds.
 import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
-import TauCeti.Topology.KrullDimension
+import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # The two-chart model of a function field is a regular curve
