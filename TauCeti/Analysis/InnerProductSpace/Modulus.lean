@@ -89,6 +89,11 @@ theorem modulus_nonneg (T : E →L[𝕜] F) : 0 ≤ T.modulus :=
 theorem modulus_comp_modulus (T : E →L[𝕜] F) : T.modulus ∘L T.modulus = T† ∘L T :=
   CFC.sqrt_mul_sqrt_self _ (nonneg_iff_isPositive.2 (isPositive_adjoint_comp_self T))
 
+/-- Applying the modulus twice is applying the source Gram operator: `|T| (|T| x) = T† (T x)`. -/
+@[simp]
+theorem modulus_modulus_apply (T : E →L[𝕜] F) (x : E) : T.modulus (T.modulus x) = (T†) (T x) :=
+  congr($(T.modulus_comp_modulus) x)
+
 /-- **Uniqueness of the modulus.** The modulus is the unique positive operator whose square is
 the source Gram operator `T† T`. -/
 theorem eq_modulus_iff {T : E →L[𝕜] F} {S : E →L[𝕜] E} :
