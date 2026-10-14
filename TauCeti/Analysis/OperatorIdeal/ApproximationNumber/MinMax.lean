@@ -43,6 +43,8 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   bound checked on unit vectors.
 * `ContinuousLinearMap.le_singularValue_of_linearIndependent`: the same, for the span of `n + 1`
   linearly independent vectors.
+* `ContinuousLinearMap.singularValue_id`: the approximation numbers of the identity are `1`
+  below the rank of the space and `0` from it on.
 * `ContinuousLinearMap.singularValue_le_nnnorm_comp_orthogonal`: `aₙ(T) ≤ ‖T|_{Vᗮ}‖` for every
   subspace `V` of rank at most `n`.
 * `ContinuousLinearMap.singularValue_eq_iInf_nnnorm_comp_orthogonal`: on a complete inner product
@@ -108,6 +110,26 @@ theorem le_singularValue_of_linearIndependent (T : E →L[𝕜] F) {n : ℕ} {v 
   have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
   exact_mod_cast n.lt_succ_self
+
+/-- **Approximation numbers of the identity.** On a normed space of rank `r`, a possibly infinite
+cardinal, `aₙ(id) = 1` for `n < r` and `aₙ(id) = 0` for `r ≤ n`. -/
+@[simp]
+theorem singularValue_id (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if (n : Cardinal) < Module.rank 𝕜 E then 1 else 0 := by
+  split_ifs with hn
+  · refine le_antisymm (((ContinuousLinearMap.id 𝕜 E).singularValue_le_nnnorm n).trans ?_) ?_
+    · exact_mod_cast norm_id_le
+    · exact_mod_cast (ContinuousLinearMap.id 𝕜 E).le_singularValue_of_lt_rank
+        (V := ⊤) (by rwa [rank_top]) (c := 1) (by simp)
+  · exact singularValue_eq_zero_of_rank_domain_le _ (le_of_not_gt hn)
+
+/-- **Approximation numbers of a finite-dimensional identity.** `aₙ(id) = 1` below the dimension
+and `aₙ(id) = 0` at and above it. -/
+theorem singularValue_id_of_finiteDimensional [FiniteDimensional 𝕜 E] (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if n < Module.finrank 𝕜 E then 1 else 0 := by
+  simp [← Module.finrank_eq_rank]
 
 end Coercive
 

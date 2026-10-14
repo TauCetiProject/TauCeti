@@ -12,7 +12,9 @@ public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 
 The spans of pairwise orthogonal vectors form an `OrthogonalFamily`. This construction allows
 orthogonal-series results for subspaces to apply directly to a vector family, including one with
-zero terms: the span of a zero vector is the zero subspace.
+zero terms: the span of a zero vector is the zero subspace. In particular, the Pythagorean
+identity `OrthogonalFamily.norm_sum` gives `‖∑ i ∈ s, v i‖² = ∑ i ∈ s, ‖v i‖²` for pairwise
+orthogonal vectors.
 -/
 
 public section
@@ -32,5 +34,13 @@ theorem orthogonalFamily_span_singleton {v : ι → E}
   intro i j hij
   simpa only [Function.onFun, Submodule.isOrtho_span, Set.mem_singleton_iff, forall_eq]
     using hv hij
+
+/-- **Pythagoras for pairwise orthogonal vectors.** The squared norm of a finite sum of pairwise
+orthogonal vectors is the sum of their squared norms. -/
+theorem norm_sum_sq_of_pairwise_inner_eq_zero {v : ι → E}
+    (hv : Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0) (s : Finset ι) :
+    ‖∑ i ∈ s, v i‖ ^ 2 = ∑ i ∈ s, ‖v i‖ ^ 2 :=
+  (orthogonalFamily_span_singleton hv).norm_sum
+    (fun i ↦ ⟨v i, Submodule.mem_span_singleton_self (v i)⟩) s
 
 end TauCeti
