@@ -20,9 +20,10 @@ is the unreduced suspension of `S¹`, so, by currying `I × S¹ → Q` to a path
 * `Map_*(S², Q)`, the maps sending the north pole to `⋆`, is homeomorphic to the space of such
   paths starting at the constant loop at `⋆`.
 
-A path in `𝓛Q` that starts at a constant loop stays in the component `𝓛₀Q` of contractible loops,
-which is why these are the spaces of paths in `𝓛₀Q` from a constant loop to a constant loop; the
-statements here are about paths in `𝓛Q`.
+A path in `𝓛Q` that starts at a constant loop stays in the subspace `𝓛₀Q` of contractible loops,
+the loops joined by a path in `𝓛Q` to a constant loop (a union of path components of `𝓛Q`, one for
+each path component of `Q`), which is why these are the spaces of paths in `𝓛₀Q` from a constant
+loop to a constant loop; the statements here are about paths in `𝓛Q`.
 
 The paths of free loops are taken on the fixed interval `I`.
 
