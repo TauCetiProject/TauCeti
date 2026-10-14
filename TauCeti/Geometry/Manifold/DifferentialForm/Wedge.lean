@@ -74,6 +74,27 @@ theorem bundleWedgeWith_apply_one_one
   simpa only [bundleWedgeWith] using
     (ContinuousAlternatingMap.pairedWedge_apply_one_one (μ := μ x) (hμ x) (φ x) (ψ x) v w)
 
+/-- Swapping the factors of a fibrewise paired wedge flips the pairing and contributes the graded
+sign. This applies to arbitrary value bundles, with no norm on the tangent fibres or values. -/
+theorem bundleWedgeWith_flip
+    [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
+    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
+    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l)
+    (x : M) (v : Fin (k + l) → TangentSpace I x) :
+    bundleWedgeWith μ hμ φ ψ x v =
+      (-1 : ℝ) ^ (k * l) •
+        bundleWedgeWith
+          (fun y ↦ ContinuousAlternatingMap.pairingFlip (μ y) (hμ y))
+          (fun y ↦ by
+            convert (hμ y).comp
+              (continuous_swap : Continuous (Prod.swap : V₂ y × V₁ y → V₁ y × V₂ y)) using 1
+            ext p
+            simp [ContinuousAlternatingMap.pairingFlip_apply])
+          ψ φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  simpa only [bundleWedgeWith] using
+    ContinuousAlternatingMap.pairedWedge_flip (μ x) (hμ x) (φ x) (ψ x) v
+
 section Bilinear
 
 variable [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
@@ -273,13 +294,15 @@ theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     φ.wedgeWith μ ψ x v =
       (-1 : ℝ) ^ (k * l) •
         ψ.wedgeWith μ.flip φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
-  simpa only [wedgeWith, bundleWedgeWith, Function.uncurry_apply_pair] using
-    ContinuousAlternatingMap.pairedWedge_flip μ
-      (by
-        convert μ.continuous₂ using 1
-        ext p
-        rfl)
-      (φ x) (ψ x) v
+  have hμ : Continuous (fun p : F₁ × F₂ ↦ μ p.1 p.2) := by
+    convert μ.continuous₂ using 1
+    ext p
+    rfl
+  have hpair : ContinuousAlternatingMap.pairingFlip μ hμ = μ.flip := by
+    ext a b
+    rw [ContinuousAlternatingMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
+  simpa only [wedgeWith, bundleWedgeWith, hpair, Function.uncurry_apply_pair] using
+    bundleWedgeWith_flip (μ := fun _ ↦ μ) (hμ := fun _ ↦ hμ) φ ψ x v
 
 /-- A symmetric fibrewise pairing gives the graded-commutativity identity for rough forms. -/
 theorem wedgeWith_comm (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃)

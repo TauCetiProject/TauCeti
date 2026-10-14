@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Alternating.DomCoprod
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Topology.UniformSpace.Real
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
-public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Inversion
@@ -220,10 +219,46 @@ section TopologicalFlip
 
 variable {X G₁ G₂ G₃ : Type*}
   [AddCommGroup X] [Module ℝ X] [TopologicalSpace X]
-  [SeminormedAddCommGroup G₁] [NormedSpace ℝ G₁]
-  [SeminormedAddCommGroup G₂] [NormedSpace ℝ G₂]
-  [SeminormedAddCommGroup G₃] [NormedSpace ℝ G₃]
+  [AddCommGroup G₁] [Module ℝ G₁] [TopologicalSpace G₁]
+  [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁]
+  [AddCommGroup G₂] [Module ℝ G₂] [TopologicalSpace G₂]
+  [IsTopologicalAddGroup G₂] [ContinuousSMul ℝ G₂]
+  [AddCommGroup G₃] [Module ℝ G₃] [TopologicalSpace G₃]
+  [IsTopologicalAddGroup G₃] [ContinuousSMul ℝ G₃]
 
+/-- The flipped continuous pairing obtained from a jointly continuous pairing.
+
+The continuity hypothesis is needed because, outside the normed setting, joint continuity gives
+the required continuity of the curried map through the topology of bounded convergence. -/
+noncomputable def pairingFlip (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
+    (hμ : Continuous (fun p : G₁ × G₂ ↦ μ p.1 p.2)) : G₂ →L[ℝ] G₁ →L[ℝ] G₃ :=
+  let μ' : G₂ →ₗ[ℝ] G₁ →L[ℝ] G₃ :=
+    { toFun := fun y =>
+        ContinuousLinearMap.mk
+          { toFun := fun x => μ x y
+            map_add' := fun x z => by simp
+            map_smul' := fun c x => by simp } <|
+          hμ.comp (continuous_id.prodMk continuous_const)
+      map_add' := fun y z => by
+        ext x
+        simp
+      map_smul' := fun c y => by
+        ext x
+        simp }
+  ContinuousLinearMap.mk μ'
+    (ContinuousLinearMap.continuous_of_continuous_uncurry μ' <| by
+      convert hμ.comp (continuous_swap : Continuous (Prod.swap : G₂ × G₁ → G₁ × G₂)) using 1
+      ext p
+      simp [μ', Function.comp_apply])
+
+omit [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁] in
+@[simp]
+theorem pairingFlip_apply (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
+    (hμ : Continuous (fun p : G₁ × G₂ ↦ μ p.1 p.2)) (x : G₂) (y : G₁) :
+    pairingFlip μ hμ x y = μ y x := by
+  simp [pairingFlip]
+
+omit [IsTopologicalAddGroup G₁] [ContinuousSMul ℝ G₁] in
 /-- Swapping the two factors of a paired wedge flips the pairing and contributes the graded sign.
 This identity is valid for every continuous bilinear pairing and requires no norm on the domain. -/
 theorem pairedWedge_flip {k l : ℕ}
@@ -232,18 +267,18 @@ theorem pairedWedge_flip {k l : ℕ}
     (φ : X [⋀^Fin k]→L[ℝ] G₁) (ψ : X [⋀^Fin l]→L[ℝ] G₂) (v : Fin (k + l) → X) :
     pairedWedge μ hμ φ ψ v =
       (-1 : ℝ) ^ (k * l) •
-        pairedWedge (μ := μ.flip)
-          (hμ := show Continuous (fun p : G₂ × G₁ ↦ μ.flip p.1 p.2) from by
+        pairedWedge (μ := pairingFlip μ hμ)
+          (hμ := show Continuous (fun p : G₂ × G₁ ↦ pairingFlip μ hμ p.1 p.2) from by
           convert hμ.comp (continuous_swap : Continuous (Prod.swap : G₂ × G₁ → G₁ × G₂)) using 1
           ext p
-          rfl) ψ φ
+          simp [pairingFlip_apply, Function.comp_apply]) ψ φ
           (v ∘ Fin.cast (Nat.add_comm l k)) := by
   classical
   -- Reindex the permutation sum by the block swap, whose sign is `(-1) ^ (k * l)`.
   set c : Fin (l + k) ≃ Fin (k + l) := finCongr (Nat.add_comm l k)
   set B : Equiv.Perm (Fin (k + l)) := finAddFlip.trans c
   have hsum : ∑ tau : Equiv.Perm (Fin (l + k)), Equiv.Perm.sign tau •
-        μ.flip (ψ (fun i => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.castAdd k i))))
+        pairingFlip μ hμ (ψ (fun i => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.castAdd k i))))
           (φ (fun j => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.natAdd l j)))) =
       Equiv.Perm.sign B • ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
         μ (φ (fun i => v (sigma (Fin.castAdd l i))))
@@ -264,15 +299,15 @@ theorem pairedWedge_flip {k l : ℕ}
             fun i => v (Fin.cast (Nat.add_comm l k) (tau (Fin.castAdd k i))) := by
           funext j
           simp [B, c, finAddFlip_apply_natAdd]
-        simp only [f, Function.comp_apply, ContinuousLinearMap.flip_apply]
+        simp only [f, Function.comp_apply, pairingFlip_apply]
         rw [← hright, ← hleft]
       _ = _ := TauCeti.sum_sign_smul_permCongr_mul c B f
   rw [pairedWedge_apply μ hμ φ ψ v,
-    pairedWedge_apply (μ := μ.flip)
-      (hμ := show Continuous (fun p : G₂ × G₁ ↦ μ.flip p.1 p.2) from by
+    pairedWedge_apply (μ := pairingFlip μ hμ)
+      (hμ := show Continuous (fun p : G₂ × G₁ ↦ pairingFlip μ hμ p.1 p.2) from by
         convert hμ.comp (continuous_swap : Continuous (Prod.swap : G₂ × G₁ → G₁ × G₂)) using 1
         ext p
-        rfl) ψ φ
+        simp [pairingFlip_apply, Function.comp_apply]) ψ φ
       (v ∘ Fin.cast (Nat.add_comm l k))]
   rw [hsum, TauCeti.sign_finAddFlip_trans_finCongr]
   generalize (∑ sigma : Equiv.Perm (Fin (k + l)), (_ : G₃)) = S

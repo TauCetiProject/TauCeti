@@ -352,13 +352,15 @@ theorem wedgeWith_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
     wedgeWith mu phi psi v =
       (-1 : ℝ) ^ (k * l) • wedgeWith mu.flip psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
-  simpa only [wedgeWith_eq_topological, Function.uncurry_apply_pair] using
-    ContinuousAlternatingMap.pairedWedge_flip mu
-      (by
-        convert mu.continuous₂ using 1
-        ext p
-        rfl)
-      phi psi v
+  have hmu : Continuous (fun p : F₁ × F₂ ↦ mu p.1 p.2) := by
+    convert mu.continuous₂ using 1
+    ext p
+    rfl
+  have hflip : ContinuousAlternatingMap.pairingFlip mu hmu = mu.flip := by
+    ext a b
+    rw [ContinuousAlternatingMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
+  simpa only [wedgeWith_eq_topological, hflip, Function.uncurry_apply_pair] using
+    ContinuousAlternatingMap.pairedWedge_flip mu hmu phi psi v
 
 /-- A skew-symmetric continuous bilinear map is negated by flipping its arguments. -/
 theorem flip_eq_neg_of_skew {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
