@@ -36,9 +36,8 @@ the same multiplication law on algebra-valued points as the dynamic semidirect p
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic route to parabolic subgroups and Levi decomposition in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap. It supplies the action comparison needed
-to identify the represented categorical semidirect product with the pointwise dynamic one.
+This supplies the action comparison needed to identify the represented categorical semidirect
+product with the pointwise dynamic one.
 -/
 
 public section

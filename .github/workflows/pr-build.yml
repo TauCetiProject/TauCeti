@@ -617,6 +617,19 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
+      # Workflow-pinned driver, candidate data only: run before package/cache setup and
+      # compilation. The complete exact source inventory is essential even on a one-file PR:
+      # deletions can break unchanged importers; a batch can add its own new dependencies.
+      # The same parsed headers enforce the no-meta-import rule over the whole inventory.
+      # No Lake environment is needed and no candidate code is imported or elaborated.
+      - name: Preflight exact-candidate import headers
+        id: import_headers
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          elan toolchain install "$(cat pr/lean-toolchain)"
+          python3 gate/scripts/check-imports.py --root pr \
+            --lean "$(cd pr && elan which lean)"
+
       - name: Install bubblewrap (pinned + checksum) and self-test (fail closed)
         if: ${{ env.INFRA != '1' }}
         run: |
@@ -895,34 +908,6 @@ jobs:
             --source-root pr/TauCeti \
             ${DOT_ONLY_MODULES:+--only-modules "$DOT_ONLY_MODULES" --base-source-root mergebase/TauCeti}
 
-      # Meta-import guard. `meta import` makes a module available to compile-time code, and
-      # TauCeti holds no metaprogramming: the repository's only Lean meta code is the
-      # human-owned governance machinery in scripts/. So a `meta import` under TauCeti/ is
-      # either an accident or the start of code that belongs elsewhere.
-      #
-      # The verdict comes from Lean's own header parser: gate/scripts/MetaImports.lean runs
-      # `Lean.Parser.parseHeader` and reads the written imports out of the resulting syntax,
-      # so the `meta` modifier is seen exactly as the frontend sees it, through comments,
-      # nested block comments, strings and quoted module names. Asking the syntax rather than
-      # the computed import list is what makes `meta import Init` visible at all; see that
-      # driver's module doc. Trusted like the guards above, and `lean --run` on a
-      # workflow-pinned driver needs no Lake environment: it reads candidate headers as data,
-      # elaborates nothing, and never imports a candidate module.
-      #
-      # Scoped to the change's files exactly when the environment lint is. A file it skips was
-      # audited by the PR that last touched it, main is clean, and every route onto main runs
-      # this workflow, so the invariant holds without rescanning the library. When that scope is
-      # withheld the whole library is audited, which is the answer those cases want rather than a
-      # concession: a `full-lint` label or a `lint-repair/...` branch is a request to check
-      # everything, and a scope that could not be determined should widen the audit, not narrow
-      # it. Headers alone, one process: about 5 seconds at 13k files against 0.6 for a PR's files.
-      - name: Meta-import guard (TauCeti/ and TauCeti.lean use no `meta import`)
-        if: ${{ env.INFRA != '1' }}
-        run: |
-          python3 gate/scripts/check-meta-imports.py --root pr \
-            --lean "$(cd pr && elan which lean)" \
-            ${LINT_ONLY_MODULES:+--changed "$LINT_SCOPE_DIR/files.nul"}
-
       # Enable Lake's built-in artifact cache for the build below ONLY when the public read
       # endpoints are configured (repo variables). Until then this is a no-op: LAKE_*
       # stay empty and the sandboxed build recompiles TauCeti/ from scratch exactly as before.
@@ -1079,6 +1064,7 @@ jobs:
             --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
             --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
+            --setenv IS_BATCH "${IS_BATCH:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \
             --chdir "$PWD/pr" \
@@ -1231,6 +1217,8 @@ jobs:
           elif [ "${{ env.BUMP_BAD }}" = "1" ] || [ "${{ env.INFRA }}" = "1" ] \
              || [ "${{ env.TOO_LARGE }}" = "1" ] || [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             state=failure; desc="build not run — see the scope check"
+          elif [ "${{ steps.import_headers.outcome }}" = "failure" ]; then
+            state=failure; desc="import header preflight failed — see importing-file/header diagnostics"
           elif [ "${{ steps.build.outcome }}" = "failure" ]; then
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           elif { [ -n "${{ env.SHIM_COVERAGE_RC }}" ] \

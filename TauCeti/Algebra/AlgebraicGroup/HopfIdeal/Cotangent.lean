@@ -24,8 +24,7 @@ there is a short exact sequence over any commutative base ring
 
 Dualizing recovers the injective differential constructed in
 `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent`. In finite dimension, rank-nullity gives
-`dim Lie(V(I)) + dim N* = dim Lie(G)`. This is the closed-subgroup conormal and dimension tool
-needed in Layer 2 of the ReductiveGroups roadmap.
+`dim Lie(V(I)) + dim N* = dim Lie(G)`.
 
 ## Main declarations
 
