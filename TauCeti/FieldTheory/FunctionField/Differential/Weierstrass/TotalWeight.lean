@@ -104,14 +104,13 @@ theorem wronskian_derivativeOfSeparating_basis_ne_zero_of_perfectField [PerfectF
 
 include hP in
 /-- **The order of the Wronskian of a canonical basis, with respect to a global separating
-element.** Over a perfect field with infinitely many rational places, let `W` satisfy the
-Riemann--Roch identity for a function field with exact constants and genus `g`, let `x` be a
-separating element, and let `P` be a rational place whose gaps are pairwise distinct in `k`. Then
-the Wronskian with respect to `x` of any `k`-basis of `L(W)` has order
-`w(P) - g · W(P) - (g choose 2) · v_P(dx)` at `P`, where `w(P)` is the Weierstrass weight. -/
+element.** Over a perfect field, let `W` satisfy the Riemann--Roch identity for a function
+field with exact constants and genus `g`, let `x` be a separating element, and let `P` be a
+rational place whose gaps are pairwise distinct in `k`. Then the Wronskian with respect to `x`
+of any `k`-basis of `L(W)` has order `w(P) - g · W(P) - (g choose 2) · v_P(dx)` at `P`, where
+`w(P)` is the Weierstrass weight. -/
 theorem ord_wronskian_derivativeOfSeparating_basis_eq [PerfectField k]
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-    (hinf : {Q : Place k F | Q.degree = 1}.Infinite) (hW : W.IsRiemannRochDivisor g₀)
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hW : W.IsRiemannRochDivisor g₀)
     (hgaps : Set.InjOn (Nat.cast : ℕ → k) P.weierstrassGaps) (hx : Transcendental k x)
     [Algebra.IsSeparable k⟮x⟯ F] {n : ℕ} (b : Module.Basis (Fin n) k (riemannRochSpace W)) :
     P.ord ((derivativeOfSeparating hx).wronskian (fun i ↦ (b i : F))) =
@@ -127,7 +126,7 @@ theorem ord_wronskian_derivativeOfSeparating_basis_eq [PerfectField k]
   -- By the chain rule `dt = (dt/dx) · dx`, the order of `dt/dx` at `P` is `-v_P(dx)`.
   have hchain : (weilDifferentialOfSeparating hF htr : Module.Dual k ↥(repartitionSpace k F)) =
       repartitionDualMul hF (Units.mk0 _ hd0 : F) (weilDifferentialOfSeparating hF hx) := by
-    rw [weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hex hinf hx htr,
+    rw [weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hex hx htr,
       coe_weilDifferentialSpaceModule_smul, Units.val_mk0]
   have hdx := weilDifferentialDivisor_repartitionDualMul hF hex
     (weilDifferentialOfSeparating hF hx).2
@@ -170,7 +169,6 @@ private theorem exists_divisor_coeff_eq_weierstrassWeight (hF : IsFunctionField 
   set W := weilDifferentialDivisor hF hex hmem hne
   have hW := isRiemannRochDivisor_weilDifferentialDivisor hF hex hmem hne
   have hdeg (P : Place k F) : P.degree = 1 := P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF
-  have hinf := Place.infinite_setOf_degree_eq_one hF
   obtain ⟨P₀⟩ := Place.nonempty hF
   have := finiteDimensional_riemannRochSpace hF W
   let b := Module.finBasis k (riemannRochSpace W)
@@ -181,7 +179,7 @@ private theorem exists_divisor_coeff_eq_weierstrassWeight (hF : IsFunctionField 
   · rw [AlgebraicGeometry.WeilDivisor.coeff_add, AlgebraicGeometry.WeilDivisor.coeff_add,
       AlgebraicGeometry.WeilDivisor.coeff_zsmul, AlgebraicGeometry.WeilDivisor.coeff_zsmul,
       Divisor.coeff_principal, Units.val_mk0,
-      P.ord_wronskian_derivativeOfSeparating_basis_eq (hdeg P) hF hex hinf hW (hgaps P) hx b,
+      P.ord_wronskian_derivativeOfSeparating_basis_eq (hdeg P) hF hex hW (hgaps P) hx b,
       coeff_weilDifferentialDivisor]
     ring
   · rw [Divisor.degree_add, Divisor.degree_add, Divisor.degree_zsmul, Divisor.degree_zsmul,

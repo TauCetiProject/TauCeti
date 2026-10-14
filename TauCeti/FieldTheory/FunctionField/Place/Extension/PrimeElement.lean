@@ -15,9 +15,13 @@ Let `F' / F` be an integral extension, with `F` a field over `k` and `F'` a fiel
 let `P'` be a rational place of `F' / k'` lying over the place `P` of `F / k` with
 `e(P' ∣ P) = 1`.  A prime element of `P` of the form `q(z)`, with `q` separable over `k` and `z`
 regular at `P`, yields the prime element `z - a` of `P'`, where `a` is the value of `z` at `P'`.
+The separability of `q` is automatic when the residue field of `P` is separable over `k`: the
+value of `z` at `P` is a root of the irreducible `q`.
 
 ## Main results
 
+* `TauCeti.Place.separable_of_ord_aeval_pos`: if the residue field of `P` is separable over `k`,
+  an irreducible `q` with `q(z)` vanishing at `P`, for `z` regular at `P`, is separable.
 * `TauCeti.Place.exists_ord_sub_algebraMap_eq_one_of_ord_aeval_eq_one`: at a rational place `P'`
   unramified over `P`, a prime element `q(z)` of `P` with `q` separable yields a prime element
   `z - a` of `P'`.
@@ -32,6 +36,35 @@ namespace Place
 universe u u' v v'
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
+
+section Separable
+
+variable [Field k] [Field F] [Algebra k F]
+
+open _root_.Polynomial in
+/-- **A polynomial vanishing at a separable value is separable**: if the residue field of `P` is
+separable over `k`, `z` is regular at `P`, and `q(z)` vanishes at `P` for an irreducible
+`q ∈ k[X]`, then `q` is separable. Up to a unit, `q` is the minimal polynomial over `k` of the
+value of `z` at `P`. -/
+theorem separable_of_ord_aeval_pos {P : Place k F} [Algebra.IsSeparable k P.ResidueField]
+    {z : F} (hz : 0 ≤ P.ord z) {q : k[X]} (hq : Irreducible q) (hqz : 0 < P.ord (aeval z q)) :
+    q.Separable := by
+  set z' : P.integers := ⟨z, P.mem_integers_iff_ord_nonneg.mpr hz⟩
+  have hcoe : (aeval z' q : F) = aeval z q := (aeval_algebraMap_apply F z' q).symm
+  have hne : (aeval z' q : F) ≠ 0 := fun h ↦ by
+    rw [← hcoe, h, ord_zero] at hqz
+    exact hqz.false
+  -- The value of `z` at `P` is a root of `q`.
+  have hroot : aeval (algebraMap P.integers P.ResidueField z') q = 0 := by
+    rw [aeval_algebraMap_apply, IsLocalRing.ResidueField.algebraMap_eq,
+      P.residue_eq_zero_iff_ord_pos hne, hcoe]
+    exact hqz
+  have hsep := Algebra.IsSeparable.isSeparable k (algebraMap P.integers P.ResidueField z')
+  rw [IsSeparable, ← minpoly.eq_of_irreducible hq hroot] at hsep
+  exact hsep.of_mul_left
+
+end Separable
+
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
