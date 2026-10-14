@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.AlgebraicTopology.SerreClass.PowerTorsion
 
 /-!
