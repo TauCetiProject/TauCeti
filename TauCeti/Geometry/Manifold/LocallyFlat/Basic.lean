@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Prod
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Geometry.Manifold.ChartedSpace
-public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import Mathlib.Topology.LocallyClosed
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
@@ -92,8 +91,6 @@ locally flat embedded discs are the objects used to define topological sliceness
 * `TauCeti.isLocallyFlat_prodMkLeft`: over a domain charted on `F`, the standard model
   `x ↦ (x, 0)` is locally flat.
 * `TauCeti.isLocallyFlat_graph`: the graph of a continuous map is locally flat.
-* `ContinuousAffineMap.isLocallyFlat_affineGraph`: the graph of a continuous affine map is
-  locally flat over any scalar ring.
 * `TauCeti.exists_isSliceChart_of_inter_eq_inter_range`: a set which, near a point, is the graph of
   a continuous map over the first coordinate of a homeomorphism `M ≃ₜ F × F'` is flattened by a
   chart around that point.
@@ -824,15 +821,6 @@ theorem isLocallyFlat_graph
   · rfl
   · dsimp [Function.comp_apply, shear]
     simp only [zero_add]
-
-/-- The graph of a continuous affine map from an affine space to a topological additive group
-is locally flat, with complementary model `F`. -/
-theorem _root_.ContinuousAffineMap.isLocallyFlat_affineGraph
-    {R V P F : Type*} [Ring R] [AddCommGroup V] [Module R V]
-    [TopologicalSpace P] [AddTorsor V P] [AddCommGroup F] [Module R F]
-    [TopologicalSpace F] [IsTopologicalAddGroup F] (A : P →ᴬ[R] F) :
-    IsLocallyFlat P F (fun x : P => (x, A x)) :=
-  TauCeti.isLocallyFlat_graph A A.continuous
 
 /-- A continuous map is locally flat when an ambient homeomorphism presents its image as a graph.
 The section equation `(Φ (f x)).1 = x` identifies `f` with the graph of the second coordinate of
