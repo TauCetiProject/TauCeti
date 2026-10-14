@@ -19,7 +19,7 @@ standard loop `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`) both in this i
 double loops with maps from the circle and in the fundamental class below, which is the class of
 that same loop. So `β_*` is oriented by the standard parametrization of the interval and the
 circle. On singular homology with
-coefficients in the unit `𝟙` of a monoidal category such as `ModuleCat R`, composing the cross
+coefficients in the unit `𝟙` of `ModuleCat R`, for a commutative ring `R`, composing the cross
 product with the fundamental class of the circle with the map induced by this evaluation gives the
 degree-raising map
 
