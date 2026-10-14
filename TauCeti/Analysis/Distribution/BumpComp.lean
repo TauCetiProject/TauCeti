@@ -22,14 +22,11 @@ orbit.
 
 * `TauCeti.nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp`: the one-sided version.
 * `TauCeti.eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp`.
-* `ContDiffBump.fderiv_mul_comp_mul_inner_apply`: the derivative of the test function
-  `θ (ψ ∘ f) ⟪w, ·⟫` built from such bumps, in a direction killed by `Df`.
 -/
 
 public section
 
 open Set Filter Topology
-open scoped RealInnerProductSpace
 
 namespace TauCeti
 
@@ -99,24 +96,3 @@ theorem eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp {a F : ℝ → 
   linarith
 
 end TauCeti
-
-/-- **The derivative of a bump test function.** For a bump `θ` on an inner product space `E`, a
-bump `ψ` on `ℝ`, a vector `w` and a function `f` differentiable at `p`, the derivative at `p` of
-`x ↦ θ x * (ψ (f x) * ⟪w, x⟫)` in a direction `v` with `Df(p) v = 0` is
-`(θ p ⟪w, v⟫ + ⟪w, p⟫ Dθ(p) v) ψ (f p)`. -/
-theorem ContDiffBump.fderiv_mul_comp_mul_inner_apply {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [HasContDiffBump E] {z : E} (θ : ContDiffBump z) {c : ℝ}
-    (ψ : ContDiffBump c) (w : E) {f : E → ℝ} {p v : E} (hf : DifferentiableAt ℝ f p)
-    (hv : fderiv ℝ f p v = 0) :
-    fderiv ℝ (fun x ↦ θ x * (ψ (f x) * ⟪w, x⟫)) p v =
-      (θ p * ⟪w, v⟫ + ⟪w, p⟫ * fderiv ℝ θ p v) * ψ (f p) := by
-  have hgder : HasFDerivAt (fun x ↦ θ x * (ψ (f x) * ⟪w, x⟫))
-      (θ p • ((ψ (f p)) • innerSL ℝ w + ⟪w, p⟫ • (fderiv ℝ ψ (f p)).comp (fderiv ℝ f p)) +
-        (ψ (f p) * ⟪w, p⟫) • fderiv ℝ θ p) p :=
-    ((θ.contDiff (n := 1)).differentiable one_ne_zero p).hasFDerivAt.mul
-      ((((ψ.contDiff (n := 1)).differentiable one_ne_zero (f p)).hasFDerivAt.comp p
-        hf.hasFDerivAt).mul (innerSL ℝ w).hasFDerivAt)
-  rw [hgder.fderiv]
-  simp only [smul_add, add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul,
-    ContinuousLinearMap.comp_apply, hv, fderiv_eq_smul_deriv, zero_mul, mul_zero, add_zero]
-  ring
