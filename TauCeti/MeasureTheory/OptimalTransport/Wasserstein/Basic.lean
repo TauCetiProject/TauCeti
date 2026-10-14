@@ -904,6 +904,16 @@ theorem integrable_norm_sub_sq_of_hasFiniteMoment {π : Measure (E × E)} [IsFin
     (memLp_of_hasFiniteMoment_map measurable_fst h₁).sub
       (memLp_of_hasFiniteMoment_map measurable_snd h₂)
 
+/-- The displacement `(x, y) ↦ y - x` is square integrable against a finite measure on `E × E`
+whose two marginals have finite second moment. -/
+theorem memLp_sub_of_hasFiniteMoment {π : Measure (E × E)} [IsFiniteMeasure π]
+    (h₁ : HasFiniteMoment 2 π.fst) (h₂ : HasFiniteMoment 2 π.snd) :
+    MemLp (fun z : E × E ↦ z.2 - z.1) 2 π := by
+  rw [Measure.fst] at h₁
+  rw [Measure.snd] at h₂
+  exact (memLp_of_hasFiniteMoment_map measurable_snd h₂).sub
+    (memLp_of_hasFiniteMoment_map measurable_fst h₁)
+
 end NormedMoment
 
 section Bridge

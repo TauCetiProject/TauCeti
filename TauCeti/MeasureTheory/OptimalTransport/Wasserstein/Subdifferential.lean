@@ -44,7 +44,7 @@ Hilbert space `L²(μ; E)`, so it has a unique element of minimal norm when it i
 bound the descending slope: `|∂φ|(μ) ≤ ‖ξ‖` for every subgradient `ξ`.
 
 For an energy that is `m`-convex along geodesics, the defining inequality improves from a local
-one with an error `o(W₂)` to a global one with the convexity term:
+one with an error `o(W₂)` to a global one with the convexity term: at a law `μ` of finite energy,
 `ξ ∈ ∂φ(μ)` exactly when `φ ν ≥ φ μ + ∫ ⟪ξ x, y - x⟫ dγ + (m / 2) W₂(μ, ν)²` for every law `ν`
 and every optimal coupling `γ` of `μ` and `ν`. The proof applies the subgradient inequality at the
 laws `μ_t` along the interpolation of `γ`, joined to `μ` by the optimal couplings
@@ -71,8 +71,8 @@ integrated against an optimal coupling.
 * `TauCeti.mem_wassersteinSubdifferential_of_forall_le`: a global subgradient inequality with a
   quadratic error term gives a subgradient.
 * `TauCeti.ConvexAlongGeodesics.mem_wassersteinSubdifferential_iff`: for an energy that is
-  `m`-convex along geodesics, the subgradients are exactly the fields satisfying the global
-  subgradient inequality with the term `(m / 2) W₂(μ, ν)²`.
+  `m`-convex along geodesics, at a law of finite energy, the subgradients are exactly the fields
+  satisfying the global subgradient inequality with the term `(m / 2) W₂(μ, ν)²`.
 * `StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy` and
   `StrongConvexOn.nonempty_wassersteinSubdifferential_potentialEnergy`: the gradient of an
   `m`-strongly convex potential is a subgradient of its potential energy.
@@ -94,88 +94,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
-
-section Pairing
-
-variable {μ ν : Measure E} {γ : Measure (E × E)}
-
-omit [CompleteSpace E] [BorelSpace E] [SecondCountableTopology E] in
-/-- The pairing `∫ ⟪ξ x, y - x⟫ dγ` of a field `ξ ∈ L²(μ; E)` with the displacement of a coupling
-`γ` out of `μ` is the `L²(γ)` inner product of `ξ ∘ Prod.fst` with the displacement. -/
-private theorem IsCoupling.integral_inner_eq_inner (hγ : IsCoupling γ μ ν)
-    (hd : MemLp (fun z : E × E ↦ z.2 - z.1) 2 γ) (ξ : Lp E 2 μ) :
-    ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ =
-      ⟪Lp.compMeasurePreservingₗᵢ ℝ Prod.fst hγ.measurePreserving_fst ξ, hd.toLp _⟫ := by
-  rw [L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [AEEqFun.coeFn_compMeasurePreserving (ξ : E →ₘ[μ] E) hγ.measurePreserving_fst,
-    hd.coeFn_toLp] with z h₁ h₂
-  rw [Lp.compMeasurePreservingₗᵢ_apply_coe, h₁, h₂, Function.comp_apply]
-
-end Pairing
-
-section Wasserstein
-
-variable {μ ν : WassersteinSpace 2 E} {γ : Measure (E × E)}
-
-omit [InnerProductSpace ℝ E] [CompleteSpace E] in
-/-- The displacement of a coupling of two laws of `P₂(E)` is square integrable. -/
-private theorem memLp_sub_of_isCoupling
-    (hγ : IsCoupling γ ((μ : ProbabilityMeasure E) : Measure E)
-      ((ν : ProbabilityMeasure E) : Measure E)) :
-    MemLp (fun z : E × E ↦ z.2 - z.1) 2 γ := by
-  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
-  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hγ.fst_eq ▸ μ.hasFiniteMoment)
-    (hγ.snd_eq ▸ ν.hasFiniteMoment)
-  refine (memLp_two_iff_integrable_sq_norm (by fun_prop)).2 ?_
-  simpa only [norm_sub_rev] using hi
-
-/-- The `L²(γ)` norm of the displacement of an optimal coupling of two laws of `P₂(E)` is their
-quadratic Wasserstein distance. -/
-private theorem norm_toLp_sub_eq_dist
-    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
-      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E)) :
-    ‖(memLp_sub_of_isCoupling hγ.toIsCoupling).toLp _‖ = dist μ ν := by
-  refine (sq_eq_sq₀ (norm_nonneg _) dist_nonneg).1 ?_
-  rw [WassersteinSpace.dist_sq_eq_integral hγ, ← real_inner_self_eq_norm_sq, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [(memLp_sub_of_isCoupling hγ.toIsCoupling).coeFn_toLp] with z hz
-  rw [hz, real_inner_self_eq_norm_sq, norm_sub_rev]
-
-/-- **Cauchy–Schwarz for the pairing.** For an optimal coupling `γ` of two laws of `P₂(E)` and
-`ξ ∈ L²(μ; E)`, `|∫ ⟪ξ x, y - x⟫ dγ| ≤ ‖ξ‖ W₂(μ, ν)`. -/
-private theorem abs_integral_inner_le
-    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
-      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E))
-    (ξ : Lp E 2 ((μ : ProbabilityMeasure E) : Measure E)) :
-    |∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ| ≤ ‖ξ‖ * dist μ ν := by
-  rw [hγ.toIsCoupling.integral_inner_eq_inner (memLp_sub_of_isCoupling hγ.toIsCoupling),
-    ← norm_toLp_sub_eq_dist hγ]
-  refine (abs_real_inner_le_norm _ _).trans_eq ?_
-  rw [LinearIsometry.norm_map]
-
-omit [CompleteSpace E] in
-/-- The pairing with the displacement of a coupling is additive in the field. -/
-private theorem integral_inner_sub
-    (hγ : IsCoupling γ ((μ : ProbabilityMeasure E) : Measure E)
-      ((ν : ProbabilityMeasure E) : Measure E))
-    (ξ ζ : Lp E 2 ((μ : ProbabilityMeasure E) : Measure E)) :
-    ∫ z, ⟪(ξ - ζ) z.1, z.2 - z.1⟫ ∂γ =
-      ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ - ∫ z, ⟪ζ z.1, z.2 - z.1⟫ ∂γ := by
-  simp only [hγ.integral_inner_eq_inner (memLp_sub_of_isCoupling hγ), map_sub, inner_sub_left]
-
-omit [CompleteSpace E] in
-/-- The pairing with the displacement of a coupling is linear in the field. -/
-private theorem integral_inner_smul_add_smul
-    (hγ : IsCoupling γ ((μ : ProbabilityMeasure E) : Measure E)
-      ((ν : ProbabilityMeasure E) : Measure E))
-    (ξ ζ : Lp E 2 ((μ : ProbabilityMeasure E) : Measure E)) (a b : ℝ) :
-    ∫ z, ⟪(a • ξ + b • ζ) z.1, z.2 - z.1⟫ ∂γ =
-      a * ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ + b * ∫ z, ⟪ζ z.1, z.2 - z.1⟫ ∂γ := by
-  simp only [hγ.integral_inner_eq_inner (memLp_sub_of_isCoupling hγ), map_add, map_smul,
-    inner_add_left, real_inner_smul_left]
-
-end Wasserstein
 
 variable {φ : WassersteinSpace 2 E → EReal} {μ : WassersteinSpace 2 E}
   {ξ : Lp E 2 ((μ : ProbabilityMeasure E) : Measure E)}
@@ -217,7 +135,9 @@ theorem convex_wassersteinSubdifferential (φ : WassersteinSpace 2 E → EReal)
   intro ξ hξ ζ hζ a b ha hb hab
   refine ⟨hξ.1, hξ.2.1, fun ε hε ↦ ?_⟩
   filter_upwards [hξ.2.2 ε hε, hζ.2.2 ε hε] with ν h₁ h₂ γ hγ
-  rw [integral_inner_smul_add_smul hγ.toIsCoupling]
+  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
+  rw [hγ.toIsCoupling.integral_inner_smul_add_smul (memLp_sub_of_hasFiniteMoment
+    (hγ.toIsCoupling.fst_eq ▸ μ.hasFiniteMoment) (hγ.toIsCoupling.snd_eq ▸ ν.hasFiniteMoment))]
   -- The pairing of `a • ξ + b • ζ` is a convex combination of the two pairings, so it is
   -- dominated by the larger one.
   have h₁ := h₁ γ hγ
@@ -241,8 +161,10 @@ theorem isClosed_wassersteinSubdifferential (φ : WassersteinSpace 2 E → EReal
   filter_upwards [hζ.2.2 (ε / 2) (half_pos hε)] with ν hν γ hγ
   refine le_trans (add_le_add le_rfl (EReal.coe_le_coe_iff.2 ?_)) (hν γ hγ)
   -- The pairings of `ξ` and `ζ` differ by at most `‖ξ - ζ‖ W₂(μ, ν) ≤ (ε / 2) W₂(μ, ν)`.
-  have h₁ := integral_inner_sub hγ.toIsCoupling ξ ζ
-  have h₂ := abs_le.1 (abs_integral_inner_le hγ (ξ - ζ))
+  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
+  have h₁ := hγ.toIsCoupling.integral_inner_sub (memLp_sub_of_hasFiniteMoment
+    (hγ.toIsCoupling.fst_eq ▸ μ.hasFiniteMoment) (hγ.toIsCoupling.snd_eq ▸ ν.hasFiniteMoment)) ξ ζ
+  have h₂ := abs_le.1 (hγ.abs_integral_inner_le (ξ - ζ))
   have h₃ : ‖ξ - ζ‖ ≤ ε / 2 := by
     rw [← dist_eq_norm]
     exact hdist.le
@@ -281,7 +203,7 @@ theorem descendingSlope_le_of_mem_wassersteinSubdifferential
   obtain ⟨γ, hγ⟩ := exists_isOptimalCoupling_edist_rpow ((μ : ProbabilityMeasure E) : Measure E)
     ((ν : ProbabilityMeasure E) : Measure E) 2
   have h := hν γ hγ
-  have hA := abs_le.1 (abs_integral_inner_le hγ ξ)
+  have hA := abs_le.1 (hγ.abs_integral_inner_le ξ)
   set A := ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ
   obtain ⟨r, hr⟩ : ∃ r : ℝ, φ μ = r := ⟨(φ μ).toReal, (EReal.coe_toReal hξ.2.1 hξ.1).symm⟩
   rw [hr, ← EReal.coe_add] at h
@@ -314,46 +236,56 @@ theorem mem_wassersteinSubdifferential_of_forall_le {m : ℝ} (hbot : φ μ ≠ 
   have hm : |m| * dist μ ν ≤ 2 * ε := by nlinarith
   nlinarith [neg_abs_le m, mul_le_mul_of_nonneg_right hm hd]
 
-/-- The interpolation of an optimal coupling `γ` of `μ` and `ν` is a geodesic segment `μ_t` from
-`μ` to `ν`, and `(x, (1 - t) • x + t • y)₊ γ` is an optimal coupling of `μ` and `μ_t`. -/
-private theorem exists_isGeodesicSegment_isOptimalCoupling {ν : WassersteinSpace 2 E}
-    {γ : Measure (E × E)}
-    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
-      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E)) :
-    ∃ c : ℝ → WassersteinSpace 2 E, IsGeodesicSegment c μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
-      IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ))
-        (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2))
-        ((μ : ProbabilityMeasure E) : Measure E) ((c t : ProbabilityMeasure E) : Measure E) := by
-  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
-  have hopt := ((isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero
-    ENNReal.ofNat_ne_top).1 (by simpa using hγ)).2
-  obtain ⟨c, hc, hct⟩ :=
-    WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hγ.toIsCoupling hopt
-  refine ⟨c, hc, fun t ht ↦ WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq ?_ ?_⟩
-  · refine ⟨?_, ?_⟩
-    · rw [Measure.fst_map_prodMk (by fun_prop) (by fun_prop), ← hγ.fst_eq, Measure.fst]
-    · rw [Measure.snd_map_prodMk (by fun_prop) (by fun_prop), hct t ht]
-  · -- The displacement of the new coupling is `t` times that of `γ`.
-    have hpt (z : E × E) : ‖z.1 - ((1 - t) • z.1 + t • z.2)‖ ^ 2 = t ^ 2 * ‖z.1 - z.2‖ ^ 2 := by
-      have : z.1 - ((1 - t) • z.1 + t • z.2) = t • (z.1 - z.2) := by module
-      rw [this, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-    rw [integral_map (by fun_prop) (by fun_prop)]
-    simp only [hpt, integral_const_mul, ← WassersteinSpace.dist_sq_eq_integral hγ,
-      hc.dist_source_apply ht, mul_pow, le_refl]
+/-- The real inequality behind the subgradient inequality along geodesics: if for every `ε > 0`
+some `t ∈ (0, min 1 ε]` satisfies `r + t A - ε t d ≤ (1 - t) r + t s - (m / 2) t (1 - t) d²`, then
+`r + A + (m / 2) d² ≤ s`. -/
+private theorem add_add_le_of_forall_exists_le {r s A d m : ℝ} (hd : 0 ≤ d)
+    (h : ∀ ε > 0, ∃ t ∈ Ioc (0 : ℝ) 1, t ≤ ε ∧
+      r + (t * A - ε * (t * d)) ≤ (1 - t) * r + t * s - m / 2 * t * (1 - t) * d ^ 2) :
+    r + (A + m / 2 * d ^ 2) ≤ s := by
+  have hK : 0 < d + |m| * d ^ 2 + 1 := by positivity
+  refine le_of_forall_pos_le_add fun η hη ↦ ?_
+  obtain ⟨t, ht, htε, hts⟩ := h (η / (d + |m| * d ^ 2 + 1)) (by positivity)
+  set ε := η / (d + |m| * d ^ 2 + 1)
+  have hεK : ε * (d + |m| * d ^ 2 + 1) = η := div_mul_cancel₀ η hK.ne'
+  -- After division by `t > 0`: `A - ε d ≤ s - r - (m / 2) (1 - t) d²`.
+  have hdiv : A - ε * d ≤ s - r - m / 2 * (1 - t) * d ^ 2 := by
+    have : t * (A - ε * d) ≤ t * (s - r - m / 2 * (1 - t) * d ^ 2) := by nlinarith
+    exact le_of_mul_le_mul_left this ht.1
+  have hmt : m / 2 * t * d ^ 2 ≤ |m| * ε * d ^ 2 := by
+    have h₁ : m ≤ |m| := le_abs_self m
+    have h₂ : 0 ≤ t * d ^ 2 := mul_nonneg ht.1.le (sq_nonneg d)
+    have h₃ : t * d ^ 2 ≤ ε * d ^ 2 := mul_le_mul_of_nonneg_right htε (sq_nonneg d)
+    nlinarith [abs_nonneg m]
+  nlinarith [abs_nonneg m, sq_nonneg d]
 
-omit [CompleteSpace E] in
-/-- Along the coupling `(x, (1 - t) • x + t • y)₊ γ` of `μ` with an interpolated law, the pairing
-of `ξ` with the displacement is `t` times its pairing with the displacement of `γ`. -/
-private theorem integral_inner_map_smul_add_smul {ν : Measure E} {γ : Measure (E × E)} {t : ℝ}
-    (hγt : IsCoupling (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2))
-      ((μ : ProbabilityMeasure E) : Measure E) ν) :
-    ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂(γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2)) =
-      t * ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ := by
-  have hm := (Lp.aestronglyMeasurable ξ).comp_measurePreserving hγt.measurePreserving_fst
-  rw [integral_map (by fun_prop) (hm.inner (by fun_prop)), ← integral_const_mul]
-  refine integral_congr_ae (.of_forall fun z ↦ ?_)
-  have : (1 - t) • z.1 + t • z.2 - z.1 = t • (z.2 - z.1) := by module
-  simp only [this, real_inner_smul_right]
+/-- Let `c` be the interpolation of an optimal coupling `γ` of `μ` and `ν`, joined to `μ` by the
+optimal couplings `(x, (1 - t) • x + t • y)₊ γ`. If `ξ ∈ ∂φ(μ)`, then for every `ε > 0` the
+subgradient inequality with error `ε W₂` holds at some `c t` with `0 < t ≤ min 1 ε`. -/
+private theorem exists_le_apply_of_mem_wassersteinSubdifferential {ν : WassersteinSpace 2 E}
+    {γ : Measure (E × E)} {c : ℝ → WassersteinSpace 2 E}
+    (hξ : ξ ∈ wassersteinSubdifferential φ μ) (hc : IsGeodesicSegment c μ ν)
+    (hopt : ∀ t ∈ Icc (0 : ℝ) 1, IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ))
+      (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2))
+      ((μ : ProbabilityMeasure E) : Measure E) ((c t : ProbabilityMeasure E) : Measure E))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ t ∈ Ioc (0 : ℝ) 1, t ≤ ε ∧
+      φ μ + ((t * ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ - ε * (t * dist μ ν) : ℝ) : EReal) ≤ φ (c t) := by
+  obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 (hξ.2.2 ε hε)
+  set d := dist μ ν
+  set t := min (min 1 ε) (δ / (d + 1)) / 2
+  have hd : 0 ≤ d := dist_nonneg
+  have ht₀ : 0 < t := by positivity
+  have ht₁ : t ≤ min (min 1 ε) (δ / (d + 1)) := half_le_self (by positivity)
+  have htd : t * d < δ := by
+    have h₁ : t ≤ δ / (d + 1) := ht₁.trans (min_le_right _ _)
+    rw [le_div_iff₀ (by positivity)] at h₁
+    nlinarith
+  have ht : t ∈ Icc (0 : ℝ) 1 := ⟨ht₀.le, ht₁.trans ((min_le_left _ _).trans (min_le_left _ _))⟩
+  refine ⟨t, ⟨ht₀, ht.2⟩, ht₁.trans ((min_le_left _ _).trans (min_le_right _ _)), ?_⟩
+  have hdist : dist μ (c t) = t * d := hc.dist_source_apply ht
+  have := hball (by rwa [dist_comm, hdist]) _ (hopt t ht)
+  rwa [(hopt t ht).toIsCoupling.integral_inner_map_smul_add_smul, hdist] at this
 
 /-- **Subgradients of energies convex along geodesics.** If `φ` is `m`-convex along geodesics of
 `P₂(E)` and `φ μ` is finite, then `ξ ∈ ∂φ(μ)` exactly when
@@ -369,65 +301,26 @@ theorem ConvexAlongGeodesics.mem_wassersteinSubdifferential_iff {m : ℝ}
   by_cases hν : φ ν = ⊤
   · rw [hν]
     exact le_top
-  obtain ⟨c, hc, hopt⟩ := exists_isGeodesicSegment_isOptimalCoupling hγ
+  obtain ⟨c, hc, hopt⟩ := WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling hγ
   have hconv := hc.convexAlong_iff.1 (convexAlongGeodesics_def.1 hφ htop hν hc)
-  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
-  set A := ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ
-  set d := dist μ ν
   obtain ⟨r, hr⟩ : ∃ r : ℝ, φ μ = r := ⟨(φ μ).toReal, (EReal.coe_toReal htop hbot).symm⟩
-  have hpair (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂(γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2)) = t * A :=
-    integral_inner_map_smul_add_smul (hopt t ht).toIsCoupling
-  -- For every `ε > 0`, the subgradient inequality holds at some interpolated law `μ_t` with
-  -- `0 < t ≤ min 1 ε`.
-  have key (ε : ℝ) (hε : 0 < ε) : ∃ t ∈ Ioc (0 : ℝ) 1, t ≤ ε ∧
-      φ μ + ((t * A - ε * (t * d) : ℝ) : EReal) ≤ φ (c t) := by
-    obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 (hξ.2.2 ε hε)
-    set t := min (min 1 ε) (δ / (d + 1)) / 2
-    have hd : 0 ≤ d := dist_nonneg
-    have ht₀ : 0 < t := by positivity
-    have ht₁ : t ≤ min (min 1 ε) (δ / (d + 1)) := half_le_self (by positivity)
-    have htd : t * d < δ := by
-      have h₁ : t ≤ δ / (d + 1) := ht₁.trans (min_le_right _ _)
-      rw [le_div_iff₀ (by positivity)] at h₁
-      nlinarith
-    have ht : t ∈ Icc (0 : ℝ) 1 := ⟨ht₀.le, ht₁.trans ((min_le_left _ _).trans (min_le_left _ _))⟩
-    refine ⟨t, ⟨ht₀, ht.2⟩, ht₁.trans ((min_le_left _ _).trans (min_le_right _ _)), ?_⟩
-    have hdist : dist μ (c t) = t * d := hc.dist_source_apply ht
-    have := hball (by rwa [dist_comm, hdist]) _ (hopt t ht)
-    rwa [hpair t ht, hdist] at this
   -- The convexity inequality along `μ_t` rules out `φ ν = ⊥`.
   obtain ⟨s, hs⟩ : ∃ s : ℝ, φ ν = s := by
     refine ⟨(φ ν).toReal, (EReal.coe_toReal hν fun hbot' ↦ ?_).symm⟩
-    obtain ⟨t, ht, -, hlow⟩ := key 1 one_pos
+    obtain ⟨t, ht, -, hlow⟩ := exists_le_apply_of_mem_wassersteinSubdifferential hξ hc hopt one_pos
     have hup := hconv t ⟨ht.1.le, ht.2⟩
     rw [hbot', EReal.coe_mul_bot_of_pos ht.1, EReal.add_bot, EReal.bot_sub] at hup
     rw [hr, ← EReal.coe_add] at hlow
     exact EReal.coe_ne_bot _ (le_bot_iff.1 (hlow.trans hup))
-  -- Dividing the two inequalities by `t` and letting `ε → 0` gives the global inequality.
-  have hK : 0 < d + |m| * d ^ 2 + 1 := by positivity
-  have hmain : r + (A + m / 2 * d ^ 2) ≤ s := by
-    refine le_of_forall_pos_le_add fun η hη ↦ ?_
-    obtain ⟨t, ht, htε, hlow⟩ := key (η / (d + |m| * d ^ 2 + 1)) (by positivity)
-    have hup := hconv t ⟨ht.1.le, ht.2⟩
-    rw [hr, ← EReal.coe_add] at hlow
-    rw [hr, hs, ← EReal.coe_mul, ← EReal.coe_mul, ← EReal.coe_add, ← EReal.coe_sub] at hup
-    have hts := EReal.coe_le_coe_iff.1 (hlow.trans hup)
-    set ε := η / (d + |m| * d ^ 2 + 1)
-    have hεK : ε * (d + |m| * d ^ 2 + 1) = η := div_mul_cancel₀ η hK.ne'
-    have hd : 0 ≤ d := dist_nonneg
-    -- After division by `t > 0`: `A - ε d ≤ s - r - (m / 2) (1 - t) d²`.
-    have hdiv : A - ε * d ≤ s - r - m / 2 * (1 - t) * d ^ 2 := by
-      have : t * (A - ε * d) ≤ t * (s - r - m / 2 * (1 - t) * d ^ 2) := by nlinarith
-      exact le_of_mul_le_mul_left this ht.1
-    have hmt : m / 2 * t * d ^ 2 ≤ |m| * ε * d ^ 2 := by
-      have h₁ : m ≤ |m| := le_abs_self m
-      have h₂ : 0 ≤ t * d ^ 2 := mul_nonneg ht.1.le (sq_nonneg d)
-      have h₃ : t * d ^ 2 ≤ ε * d ^ 2 := mul_le_mul_of_nonneg_right htε (sq_nonneg d)
-      nlinarith [abs_nonneg m]
-    nlinarith [abs_nonneg m, sq_nonneg d]
+  -- Comparing the subgradient and convexity inequalities at `μ_t` and letting `ε → 0` gives the
+  -- global inequality.
   rw [hr, hs, ← EReal.coe_add]
-  exact EReal.coe_le_coe_iff.2 hmain
+  refine EReal.coe_le_coe_iff.2 (add_add_le_of_forall_exists_le dist_nonneg fun ε hε ↦ ?_)
+  obtain ⟨t, ht, htε, hlow⟩ := exists_le_apply_of_mem_wassersteinSubdifferential hξ hc hopt hε
+  have hup := hconv t ⟨ht.1.le, ht.2⟩
+  rw [hr, ← EReal.coe_add] at hlow
+  rw [hr, hs, ← EReal.coe_mul, ← EReal.coe_mul, ← EReal.coe_add, ← EReal.coe_sub] at hup
+  exact ⟨t, ht, htε, EReal.coe_le_coe_iff.1 (hlow.trans hup)⟩
 
 section PotentialEnergy
 
@@ -481,7 +374,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
   refine integral_mono (h₁.add h₂)
     (hγc.integrable_comp_snd (hint ν)) fun z ↦ ?_
   -- The first-order condition of strong convexity, at `z.1` towards `z.2`.
-  have := hV.add_add_le_of_hasFDerivAt (mem_univ z.1) (mem_univ z.2) (hVd z.1).hasFDerivAt
+  have := hV.add_add_le_of_hasFDerivWithinAt (mem_univ z.1) (mem_univ z.2)
+    (hVd z.1).hasFDerivAt.hasFDerivWithinAt
   rw [← toDual_gradient, InnerProductSpace.toDual_apply_apply,
     norm_sub_rev] at this
   simpa only [Pi.add_apply, add_assoc] using this

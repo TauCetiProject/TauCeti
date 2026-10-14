@@ -662,6 +662,20 @@ theorem WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq {ν₀ ν₁ :
   rw [lintegral_edist_sq_eq_ofReal_integral hi, lintegral_edist_sq_eq_ofReal_integral hiσ]
   exact ENNReal.ofReal_le_ofReal (h.trans (WassersteinSpace.dist_sq_le_integral hσ))
 
+/-- The `L²(π)` norm of the displacement `(x, y) ↦ y - x` of an optimal coupling `π` of two laws of
+`P₂(E)` for the quadratic cost is their quadratic Wasserstein distance. -/
+theorem WassersteinSpace.norm_toLp_sub_eq_dist {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E))
+    (hd : MemLp (fun z : E × E ↦ z.2 - z.1) 2 π) :
+    ‖hd.toLp _‖ = dist ν₀ ν₁ := by
+  rw [Lp.norm_toLp, hd.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity)]
+  simp only [ENNReal.toReal_ofNat, Real.rpow_two, norm_sub_rev _ (Prod.fst _),
+    ← WassersteinSpace.dist_sq_eq_integral hπ]
+  exact Real.pow_rpow_inv_natCast dist_nonneg two_ne_zero
+
 end SecondMoment
 
 end TauCeti
