@@ -104,30 +104,27 @@ lemma initialVertex_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
 the unique path class between two points of its simplex. -/
 def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
     (⟨TopCat.simplexMap σ z⟩ : FundamentalGroupoid X) ⟶ ⟨TopCat.simplexMap σ w⟩ :=
-  (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
-    (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+  (TopCat.simplexMap σ).pathClass z w
 
 /-- Transport inside a simplex is the image of the unique path class of the topological simplex
 under the map of fundamental groupoids induced by the simplex. -/
 lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
     pathTransport σ z w = (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
-      (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) := (rfl)
+      (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) :=
+  ContinuousMap.pathClass_def _ z w
 
 /-- Transport inside a simplex is represented by the image of any path joining its endpoints. -/
 lemma pathTransport_eq_mk (σ : (TopCat.toSSet.obj X).obj n)
     {z w : toTop.{v}.obj n.unop} (q : Path z w) :
     pathTransport σ z w = Path.Homotopic.Quotient.mk
-      (q.map (TopCat.simplexMap σ).continuous) := by
-  unfold pathTransport
-  rw [Subsingleton.elim (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
-    (Path.Homotopic.Quotient.mk q)]
-  exact (Path.Homotopic.Quotient.mk_map q (TopCat.simplexMap σ)).symm
+      (q.map (TopCat.simplexMap σ).continuous) :=
+  (TopCat.simplexMap σ).pathClass_eq_mk q
 
 /-- Transport inside a simplex from a point to itself is the identity. -/
 @[simp]
 lemma pathTransport_self (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) :
     pathTransport σ z z = 𝟙 _ :=
-  Functor.map_default_self _ _
+  (TopCat.simplexMap σ).pathClass_self z
 
 /-- Transports inside a simplex compose: running from `z` to `w` and then from `w` to `y` is
 running from `z` to `y`. -/
@@ -135,7 +132,7 @@ running from `z` to `y`. -/
 lemma pathTransport_comp (σ : (TopCat.toSSet.obj X).obj n)
     (z w y : toTop.{v}.obj n.unop) :
     pathTransport σ z w ≫ pathTransport σ w y = pathTransport σ z y :=
-  Functor.map_default_comp _ _ _ _
+  (TopCat.simplexMap σ).pathClass_comp_pathClass z w y
 
 /-- Transport inside a simplex may be moved along an equality of its target point. -/
 @[reassoc]
@@ -152,12 +149,10 @@ images of the two points under the reindexing. -/
 lemma pathTransport_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     (z w : toTop.{v}.obj n.unop) :
     pathTransport ((TopCat.toSSet.obj X).map α σ) z w =
-      pathTransport σ (toTop.map α.unop z) (toTop.map α.unop w) := by
-  have h : ((FundamentalGroupoid.map (toTop.map α.unop).hom).map
-        (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) :
-      (⟨toTop.map α.unop z⟩ : FundamentalGroupoid (toTop.{v}.obj m.unop)) ⟶
-        ⟨toTop.map α.unop w⟩) = default := Subsingleton.elim _ _
-  exact (FundamentalGroupoid.map_comp_map _ _ _).trans (congrArg _ h)
+      pathTransport σ (toTop.map α.unop z) (toTop.map α.unop w) :=
+  -- The simplex `(TopCat.toSSet.obj X).map α σ` is definitionally `σ` precomposed with the
+  -- reindexing map of topological simplices.
+  (TopCat.simplexMap σ).pathClass_comp (toTop.map α.unop).hom z w
 
 /-- Pushing a singular simplex forward along a continuous map carries transport inside it to
 transport inside the image simplex. -/
@@ -165,7 +160,7 @@ lemma map_pathTransport (f : X ⟶ Y) (σ : (TopCat.toSSet.obj X).obj n)
     (z w : toTop.{v}.obj n.unop) :
     (FundamentalGroupoid.map f.hom).map (pathTransport σ z w) =
       pathTransport ((TopCat.toSSet.map f).app n σ) z w :=
-  (FundamentalGroupoid.map_comp_map _ _ _).symm
+  ContinuousMap.map_pathClass f.hom (TopCat.simplexMap σ) z w
 
 /-- Transport inside equal simplices between equal points agrees up to the identification of the
 endpoints. -/
