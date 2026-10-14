@@ -171,6 +171,27 @@ theorem _root_.LinearEquiv.finrank_linearMap_eq_natCard_mul_finrank_end {M : Typ
 
 end ArbitraryField
 
+section SimpleTarget
+
+variable {k A S : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [FiniteDimensional k S]
+variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)]
+  [∀ i, Module A (N i)] [∀ i, IsScalarTower k A (N i)] [∀ i, IsSimpleModule A (N i)]
+
+/-- A module with a finite decomposition into simple modules has a finite-dimensional space of
+maps from any finite-dimensional module into it. -/
+theorem finiteDimensional_linearMap_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module k M]
+    [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
+    FiniteDimensional k (S →ₗ[A] M) := by
+  have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
+    finiteDimensional_linearMap_of_isSimpleModule
+  have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
+    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k)
+  exact Module.Finite.equiv (homCongrRight k (S := S) e).symm
+
+end SimpleTarget
+
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
 variable [FiniteDimensional k S]
@@ -197,18 +218,6 @@ theorem finrank_linearMap_eq_natCard_of_linearEquiv_pi {M : Type*} [AddCommGroup
     Module.finrank k (S →ₗ[A] M) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
     finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
-
-omit [IsAlgClosed k] in
-/-- A module with a finite decomposition into simple modules has a finite-dimensional space of
-maps from a finite-dimensional simple module into it. -/
-theorem finiteDimensional_linearMap_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module k M]
-    [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
-    FiniteDimensional k (S →ₗ[A] M) := by
-  have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
-    finiteDimensional_linearMap_of_isSimpleModule
-  have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
-    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k)
-  exact Module.Finite.equiv (homCongrRight k (S := S) e).symm
 
 omit [IsAlgClosed k] in
 /-- **A hom space detects a constituent.**  There is a nonzero `A`-linear map from the simple
