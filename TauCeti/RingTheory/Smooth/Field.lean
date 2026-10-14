@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.KummerPolynomial
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Smooth.Field
+public import TauCeti.FieldTheory.Frobenius.Range
+public import TauCeti.RingTheory.Ideal.Quotient.SquareZero
 
 /-!
 # Extensions of perfect fields are formally smooth
@@ -25,7 +27,7 @@ lift of `z ∈ B ⧸ I` does not depend on the lift. This gives a ring homomorph
 composed with the given map, the only possible lift `ψ` on the subfield `L ^ p`. Zorn's lemma
 gives a maximal lift extending it. It is defined on all of `L`: if `a ∉ M`, then `a ^ p ∈ M` and
 `X ^ p - a ^ p` is the minimal polynomial of `a` over `M`. Any lift `b` of the image of `a` has
-`b ^ p = ψ(a)`, so `a ↦ b` extends the lift to `M(a)`.
+`b ^ p = ψ(a ^ p)`, so `a ↦ b` extends the lift to `M(a)`.
 
 This is the input of Cohen's structure theorem for complete local rings in equal characteristic,
 which constructs coefficient fields by lifting the identity of the residue field.
@@ -140,7 +142,7 @@ private theorem exists_le_of_pow_mem (p : ℕ) [Fact p.Prime] [CharP L p] (φ : 
   let : Algebra M carrier := M⟮a⟯.toSubalgebra.algebra
   have hb' : aeval b (minpoly M (adjoin.powerBasis hint).gen) = 0 := by
     rw [adjoin.powerBasis_gen, minpoly_gen, hmin, map_sub, map_pow, aeval_X, aeval_C]
-    rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← hb, sub_self]
+    simp [RingHom.algebraMap_toAlgebra, ← hb]
   let σ : carrier →ₐ[M] B := (adjoin.powerBasis hint).lift b hb'
   refine ⟨⟨carrier, (@algHomEquivSigma K M carrier B _ _ _ _ _ _ _ _
     (IsScalarTower.of_algebraMap_eq fun _ ↦ rfl)).symm ⟨φ.emb, σ⟩⟩,
@@ -170,105 +172,53 @@ end PartialLift
 
 section CharP
 
-variable (p : ℕ) [hp : Fact p.Prime]
-
-/-- Modulo a square-zero ideal of a ring in which `p = 0`, the `p`-th power of a lift does not
-depend on the lift: the `p`-th power map factors through `B ⧸ I`. -/
-private noncomputable def powQuotient {B : Type*} [CommRing B] (hpB : (p : B) = 0) {I : Ideal B}
-    (hI : I ^ 2 = ⊥) : B ⧸ I →+* B :=
-  Ideal.Quotient.lift I
-    { toFun := (· ^ p)
-      map_one' := one_pow p
-      map_mul' := fun x y ↦ mul_pow x y p
-      map_zero' := zero_pow hp.out.ne_zero
-      map_add' := fun x y ↦ by
-        simp only [add_pow_prime_eq' hp.out, hpB, zero_mul, add_zero] }
-    fun i hi ↦ by
-      have hi2 : i ^ 2 = 0 := by
-        simpa [hI] using (Ideal.pow_mem_pow hi 2 : i ^ 2 ∈ I ^ 2)
-      rw [RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, ← Nat.add_sub_cancel' hp.out.two_le,
-        pow_add, hi2, zero_mul]
-
-private theorem powQuotient_mk {B : Type*} [CommRing B] (hpB : (p : B) = 0) {I : Ideal B}
-    (hI : I ^ 2 = ⊥) (b : B) : powQuotient p hpB hI (Ideal.Quotient.mk I b) = b ^ p :=
-  rfl
-
-private theorem mk_powQuotient {B : Type*} [CommRing B] (hpB : (p : B) = 0) {I : Ideal B}
-    (hI : I ^ 2 = ⊥) (z : B ⧸ I) : Ideal.Quotient.mk I (powQuotient p hpB hI z) = z ^ p := by
-  obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective z
-  rw [powQuotient_mk, map_pow]
-
-variable {K L : Type*} [Field K] [Field L] [Algebra K L] [CharP K p] [PerfectField K] [CharP L p]
-
-/-- The `p`-th powers of `L` form an intermediate field of `L / K`, since `K` is perfect. -/
-private noncomputable def powField : IntermediateField K L :=
-  (frobenius L p).fieldRange.toIntermediateField fun c ↦
-    ⟨algebraMap K L ((frobeniusEquiv K p).symm c), by
-      rw [frobenius_def (R := L) p, ← map_pow, ← frobenius_def (R := K) p,
-        frobenius_apply_frobeniusEquiv_symm]⟩
-
-private theorem pow_mem_powField (x : L) : x ^ p ∈ powField (K := K) p :=
-  ⟨x, frobenius_def p x⟩
-
-/-- The Frobenius map of `L`, onto the field `L ^ p` of `p`-th powers. -/
-private noncomputable def frobeniusEquivPowField : L ≃+* powField (K := K) (L := L) p :=
-  RingEquiv.ofBijective ((frobenius L p).codRestrict _ (pow_mem_powField (K := K) p))
-    ⟨fun _ _ h ↦ frobenius_inj L p (congrArg Subtype.val h), fun y ↦
-      have ⟨x, hx⟩ := y.2
-      ⟨x, Subtype.ext hx⟩⟩
-
-private theorem frobeniusEquivPowField_symm_pow (x : L) :
-    (frobeniusEquivPowField (K := K) (L := L) p).symm ⟨x ^ p, pow_mem_powField (K := K) p x⟩ =
-      x :=
-  (RingEquiv.symm_apply_eq _).mpr rfl
-
+variable (p : ℕ) [Fact p.Prime]
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [CharP K p] [PerfectField K]
 variable {B : Type*} [CommRing B] [Algebra K B] (hpB : (p : B) = 0) {I : Ideal B}
   (hI : I ^ 2 = ⊥)
 
 /-- The only possible lift of `f` on the field `L ^ p`, as a ring homomorphism: it sends `x ^ p`
 to the `p`-th power of a lift of `f x`. -/
-private noncomputable def powFieldRingHom (f : L →ₐ[K] B ⧸ I) :
-    powField (K := K) (L := L) p →+* B :=
-  ((powQuotient p hpB hI).comp f.toRingHom).comp
-    (frobeniusEquivPowField (K := K) p).symm.toRingHom
+private noncomputable def powFieldRingHom (f : L →ₐ[K] B ⧸ I) : frobeniusPowers K L p 1 →+* B :=
+  ((Ideal.Quotient.powLift p hpB hI).comp f.toRingHom).comp
+    (iterateFrobeniusEquivPowers K L p 1).symm.toRingHom
 
-private theorem powFieldRingHom_pow (f : L →ₐ[K] B ⧸ I) (x : L) :
-    powFieldRingHom p hpB hI f ⟨x ^ p, pow_mem_powField p x⟩ = powQuotient p hpB hI (f x) := by
-  simp [powFieldRingHom, frobeniusEquivPowField_symm_pow]
+private theorem powFieldRingHom_apply (f : L →ₐ[K] B ⧸ I) (x : L) :
+    powFieldRingHom p hpB hI f (iterateFrobeniusEquivPowers K L p 1 x) =
+      Ideal.Quotient.powLift p hpB hI (f x) := by
+  simp [powFieldRingHom]
 
 /-- The only possible lift of `f` on the field `L ^ p`. -/
-private noncomputable def powFieldLift (f : L →ₐ[K] B ⧸ I) :
-    powField (K := K) (L := L) p →ₐ[K] B where
-  __ := powFieldRingHom p hpB hI f
-  commutes' c := by
-    obtain ⟨d, rfl⟩ := (frobeniusEquiv K p).surjective c
-    have h : algebraMap K (powField (K := K) (L := L) p) (frobeniusEquiv K p d) =
-        ⟨algebraMap K L d ^ p, pow_mem_powField p _⟩ :=
-      Subtype.ext (by simp [frobeniusEquiv_apply, frobenius_def, map_pow])
-    simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-      MonoidHom.coe_ofClass]
-    rw [h, powFieldRingHom_pow, AlgHom.commutes, ← Ideal.Quotient.mk_algebraMap, powQuotient_mk,
-      frobeniusEquiv_apply, frobenius_def, map_pow]
+private noncomputable def powFieldLift (f : L →ₐ[K] B ⧸ I) : frobeniusPowers K L p 1 →ₐ[K] B :=
+  { powFieldRingHom p hpB hI f with
+    commutes' c := by
+      obtain ⟨d, rfl⟩ := (iterateFrobeniusEquiv K p 1).surjective c
+      -- the underlying function of `powFieldLift` is `powFieldRingHom`
+      change powFieldRingHom p hpB hI f _ = _
+      rw [← iterateFrobeniusEquivPowers_algebraMap, powFieldRingHom_apply, AlgHom.commutes,
+        ← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.powLift_mk, coe_iterateFrobeniusEquiv,
+        iterateFrobenius_def, pow_one, map_pow] }
 
-private theorem powFieldLift_pow (f : L →ₐ[K] B ⧸ I) (x : L) :
-    powFieldLift p hpB hI f ⟨x ^ p, pow_mem_powField p x⟩ = powQuotient p hpB hI (f x) :=
-  powFieldRingHom_pow p hpB hI f x
+private theorem powFieldLift_apply (f : L →ₐ[K] B ⧸ I) (x : L) :
+    powFieldLift p hpB hI f (iterateFrobeniusEquivPowers K L p 1 x) =
+      Ideal.Quotient.powLift p hpB hI (f x) :=
+  powFieldRingHom_apply p hpB hI f x
 
 /-- The lift of `f` on `L ^ p` lifts `f`. -/
-private theorem mk_powFieldLift (f : L →ₐ[K] B ⧸ I) (y : powField (K := K) (L := L) p) :
+private theorem mk_powFieldLift (f : L →ₐ[K] B ⧸ I) (y : frobeniusPowers K L p 1) :
     Ideal.Quotient.mk I (powFieldLift p hpB hI f y) = f y := by
-  obtain ⟨x, hx⟩ := y.2
-  obtain rfl : y = ⟨x ^ p, pow_mem_powField p x⟩ := Subtype.ext hx.symm
-  rw [powFieldLift_pow, mk_powQuotient, map_pow]
+  obtain ⟨x, rfl⟩ := (iterateFrobeniusEquivPowers K L p 1).surjective y
+  rw [powFieldLift_apply, Ideal.Quotient.mk_powLift, coe_iterateFrobeniusEquivPowers, pow_one,
+    map_pow]
 
 open PartialLift in
 include hpB hI in
 /-- **In characteristic `p`, a map of a field `L` over a perfect field `K` into `B ⧸ I` lifts to
 `B` along a square-zero ideal `I`.** -/
-private theorem exists_comp_eq_of_charP (f : L →ₐ[K] B ⧸ I) :
+private theorem exists_comp_eq_of_charP [CharP L p] (f : L →ₐ[K] B ⧸ I) :
     ∃ g : L →ₐ[K] B, (Ideal.Quotient.mkₐ K I).comp g = f := by
   -- the partial lifts of `f` which extend its lift on `L ^ p`
-  let base : PartialLift K L B := ⟨powField p, powFieldLift p hpB hI f⟩
+  let base : PartialLift K L B := ⟨frobeniusPowers K L p 1, powFieldLift p hpB hI f⟩
   let S : Set (PartialLift K L B) :=
     {φ | base ≤ φ ∧ ∀ x, Ideal.Quotient.mk I (φ.emb x) = f x}
   obtain ⟨φ, -, hφ⟩ := zorn_le_nonempty₀ S (fun c hcS hc y hy ↦ by
@@ -281,11 +231,12 @@ private theorem exists_comp_eq_of_charP (f : L →ₐ[K] B ⧸ I) :
   -- a maximal partial lift is defined everywhere
   have htop : φ.carrier = ⊤ := by
     refine eq_top_iff.mpr fun a _ ↦ by_contra fun ha ↦ ?_
-    have hap : a ^ p ∈ φ.carrier := hφ.prop.1.1 (pow_mem_powField p a)
+    let ap := iterateFrobeniusEquivPowers K L p 1 a
+    have hap : a ^ p ∈ φ.carrier := by simpa [ap] using hφ.prop.1.1 ap.2
     obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (f a)
-    have hbp : φ.emb ⟨a ^ p, hap⟩ = b ^ p :=
-      (hφ.prop.1.2 ⟨a ^ p, pow_mem_powField p a⟩).trans <| by
-        rw [powFieldLift_pow, ← hb, powQuotient_mk]
+    have hbp : φ.emb ⟨a ^ p, hap⟩ = b ^ p := by
+      have h : (⟨a ^ p, hap⟩ : φ.carrier) = inclusion hφ.prop.1.1 ap := Subtype.ext (by simp [ap])
+      rw [h, hφ.prop.1.2, powFieldLift_apply, ← hb, Ideal.Quotient.powLift_mk]
     obtain ⟨φ', hφφ', hcarrier, ha', hφ'a⟩ := PartialLift.exists_le_of_pow_mem p φ ha hap hbp
     have hφ' : φ' ∈ S := ⟨hφ.prop.1.trans hφφ',
       mk_emb_of_le hφφ' hcarrier ha' (by rw [hφ'a, hb]) hφ.prop.2⟩
