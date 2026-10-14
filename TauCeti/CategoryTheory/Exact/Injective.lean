@@ -46,7 +46,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C]
@@ -414,6 +414,32 @@ theorem enoughProjectives_iff_op_enoughInjectives :
     exact ⟨fun X ↦ ⟨(h.projectivePresentation X.unop).op⟩⟩
   · intro h
     exact ⟨fun X ↦ ⟨(h.injectivePresentation (Opposite.op X)).unop⟩⟩
+
+section Equivalence
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D]
+
+/-- A conflation-exact equivalence preserves and reflects relative injectivity. This is the
+statement `isProjective_map_equivalence_iff` for the opposite equivalence. -/
+theorem isInjective_map_equivalence_iff (E : ExactStructure C) (E' : ExactStructure D)
+    (e : C ≌ D) [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) (I : C) :
+    E'.isInjective (e.functor.obj I) ↔ E.isInjective I := by
+  let _ : e.op.functor.Additive := inferInstanceAs e.functor.op.Additive
+  rw [isInjective_iff_isProjective_op, isInjective_iff_isProjective_op]
+  exact E.op.isProjective_map_equivalence_iff E'.op e.op hF.op hG.op (Opposite.op I)
+
+/-- An equivalence which is conflation-exact in both directions transports enough relative
+injectives. This is `EnoughProjectives.of_equivalence` for the opposite equivalence. -/
+theorem EnoughInjectives.of_equivalence {E' : ExactStructure D} (h : E.EnoughInjectives)
+    (e : C ≌ D) [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) : E'.EnoughInjectives := by
+  let _ : e.op.functor.Additive := inferInstanceAs e.functor.op.Additive
+  rw [enoughInjectives_iff_op_enoughProjectives] at h ⊢
+  exact h.of_equivalence e.op hF.op hG.op
+
+end Equivalence
 
 end ExactStructure
 

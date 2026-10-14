@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.Linear
+public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.DifferentialObject
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.Data.ZMod.Defs
@@ -19,8 +21,9 @@ endomorphism `d : X ⟶ X` such that `d ≫ d = 0`. For `C = ModuleCat Rᵐᵒ�
 Iyengar. A differential module is a *one-periodic* object: there is a single object and a single
 differential, with no grading.
 
-This file builds the category of differential modules, with its preadditive and linear structures
-and its forgetful functor, and relates it to the neighbouring notions without identifying them:
+This file builds the category of differential modules, with its preadditive and linear structures,
+its zero object and binary biproducts, and its forgetful functor, and relates it to the
+neighbouring notions without identifying them:
 
 * `DifferentialModule.onePeriodicComplexEquivalence`: differential modules are equivalent to
   homological complexes of shape `ComplexShape.up (ZMod 1)`, the one-periodic complexes, so that
@@ -312,6 +315,9 @@ def onePeriodicComplexEquivalence :
     (onePeriodicComplexEquivalence C).inverse = ofOnePeriodicComplex C := by
   simp [onePeriodicComplexEquivalence]
 
+instance : (toOnePeriodicComplex C).IsEquivalence :=
+  (onePeriodicComplexEquivalence C).isEquivalence_functor
+
 end OnePeriodic
 
 section OnePeriodicPreadditive
@@ -325,6 +331,18 @@ variable {R : Type w'} [Semiring R] [Linear R C]
 
 instance : (toOnePeriodicComplex C).Linear R where
 instance : (ofOnePeriodicComplex C).Linear R where
+
+/-- Differential modules in a preadditive category with a zero object have a zero object. -/
+instance [HasZeroObject C] : HasZeroObject (DifferentialModule C) :=
+  (ofOnePeriodicComplex C).hasZeroObject_of_additive
+
+/-- Differential modules in a preadditive category with binary biproducts have binary
+biproducts. They are computed through the equivalence with one-periodic complexes, where
+biproducts are formed degreewise. -/
+instance [HasBinaryBiproducts C] : HasBinaryBiproducts (DifferentialModule C) :=
+  have : HasBinaryProducts (DifferentialModule C) :=
+    Adjunction.hasLimitsOfShape_of_equivalence (toOnePeriodicComplex C)
+  .of_hasBinaryProducts
 
 end OnePeriodicPreadditive
 

@@ -23,6 +23,10 @@ The split exact structure is the basic example, while the abelian comparison lem
 ordinary enough-projective and enough-injective hypotheses into presentations for the canonical
 abelian exact structure.
 
+An equivalence which is conflation-exact in both directions transports the Frobenius property
+(`TauCeti.ExactStructure.IsFrobenius.of_equivalence`), so a Frobenius structure known on one model
+of a category, such as complexes, passes to equivalent models.
+
 This is the input for the stable-category construction: choosing the presentations supplies the
 projective-injective middle terms used to define suspension and loop objects.
 
@@ -40,7 +44,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C]
@@ -81,6 +85,22 @@ theorem op (hE : E.IsFrobenius) : E.op.IsFrobenius where
     rw [← E.isInjective_iff_isProjective_op X.unop,
       ← E.isProjective_iff_isInjective_op X.unop]
     exact hE.injective_iff_projective X.unop
+
+/-- An equivalence which is conflation-exact in both directions transports the Frobenius
+property. In particular a Frobenius exact structure transported along an additive equivalence
+is again Frobenius. -/
+theorem of_equivalence {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+    [HasBinaryBiproducts D] {E' : ExactStructure D} (hE : E.IsFrobenius) (e : C ≌ D)
+    [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) : E'.IsFrobenius where
+  enoughProjectives := hE.enoughProjectives.of_equivalence e hF hG
+  enoughInjectives := hE.enoughInjectives.of_equivalence e hF hG
+  projective_iff_injective Y := by
+    have i : e.functor.obj (e.inverse.obj Y) ≅ Y := e.counitIso.app Y
+    rw [← E'.isProjective.prop_iff_of_iso i, ← E'.isInjective.prop_iff_of_iso i,
+      E.isProjective_map_equivalence_iff E' e hF hG,
+      E.isInjective_map_equivalence_iff E' e hF hG]
+    exact hE.projective_iff_injective _
 
 end IsFrobenius
 

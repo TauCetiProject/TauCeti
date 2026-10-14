@@ -69,6 +69,8 @@ by the projectives themselves.
   projectives when its right adjoint is conflation-exact.
 * `TauCeti.ExactStructure.isProjective_map_equivalence_iff`: conflation-exact equivalences
   preserve and reflect projectivity.
+* `TauCeti.ExactStructure.EnoughProjectives.of_equivalence`: equivalences which are
+  conflation-exact in both directions transport enough projectives.
 * `TauCeti.ExactStructure.nonempty_iso_biprod_of_projective`: **Schanuel's lemma**, that two
   conflations over the same object with projective middle terms have stably isomorphic kernels.
 * `TauCeti.ExactStructure.exists_conflation_biprod_of_conflation_of_projective`: **the horseshoe
@@ -433,6 +435,24 @@ namespace EnoughProjectives
 noncomputable def projectivePresentation (h : E.EnoughProjectives) (X : C) :
     E.ProjectivePresentation X :=
   (h.presentation X).some
+
+/-- An equivalence which is conflation-exact in both directions transports enough relative
+projectives: the image of a presentation of `e.inverse.obj Y`, followed by the counit, is a
+presentation of `Y`. -/
+theorem of_equivalence {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+    [HasBinaryBiproducts D] {E' : ExactStructure D} (h : E.EnoughProjectives) (e : C ≌ D)
+    [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) : E'.EnoughProjectives := by
+  refine ⟨fun Y ↦ ?_⟩
+  let P := (h.projectivePresentation (e.inverse.obj Y)).map hF
+    (fun Q hQ ↦ (E.isProjective_map_equivalence_iff E' e hF hG Q).2 hQ)
+  have zero : P.i ≫ P.p ≫ e.counit.app Y = 0 := by
+    rw [← Category.assoc, P.zero, zero_comp]
+  exact ⟨{ K := P.K, P := P.P, i := P.i, p := P.p ≫ e.counit.app Y, zero := zero
+           conflation := E'.conflation_of_iso (S := ShortComplex.mk P.i P.p P.zero)
+             (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (e.counitIso.app Y) (by simp)
+               (by simp)) P.conflation
+           isProjective := P.isProjective }⟩
 
 end EnoughProjectives
 
