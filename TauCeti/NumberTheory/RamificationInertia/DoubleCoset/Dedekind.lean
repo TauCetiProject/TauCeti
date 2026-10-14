@@ -31,6 +31,8 @@ separability; the separate ramification-index formula assumes it explicitly.
 
 * `Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk`: the class of `σ` maps to the
   contraction of `σ • Q`.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural`: enlarging the subgroup
+  agrees with contraction between the corresponding integral closures.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_smul_of_isIntegralClosure_eq_relIndex`: the
   residue-separability-free `e * f` formula.
 * `Ideal.ramificationIdx_under_smul_of_isIntegralClosure_eq_relIndex_inertia`: the
@@ -107,11 +109,11 @@ private theorem faithfulSMul_integralClosure_fixedField : FaithfulSMul C B := by
     ← IsScalarTower.algebraMap_apply C B M] at h'
   exact h'
 
-variable (p : Ideal A) (Q : Ideal B) [Q.IsMaximal] [Q.LiesOver p]
+variable (p : Ideal A) (Q : Ideal B) [Q.LiesOver p]
 
 section Equivalence
 
-variable [IsScalarTower A C B]
+variable [Q.IsPrime] [IsScalarTower A C B]
 
 /-- **The double-coset splitting law over a Dedekind base.** For integral closures `B/A` and
 `C/A` in `M/K` and `M^H/K`, respectively, the primes of `C` above `p` are indexed by the double
@@ -163,11 +165,41 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_i
   let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
   exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff p H C q σ
 
+/-- Enlarging the subgroup and contracting to the corresponding integral closure give the same
+prime under the Dedekind double-coset splitting bijection. -/
+theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural
+    {H' : Subgroup (M ≃ₐ[K] M)} (h : H ≤ H')
+    (C' : Type*) [CommRing C']
+    [Algebra A C'] [Algebra C' ↥(fixedField H')] [Algebra C' M]
+    [IsScalarTower A C' ↥(fixedField H')] [IsScalarTower C' ↥(fixedField H') M]
+    [IsScalarTower A C' M]
+    [IsFractionRing C' ↥(fixedField H')] [IsIntegralClosure C' A ↥(fixedField H')]
+    [Algebra C' B] [IsScalarTower A C' B] [IsScalarTower C' B M]
+    [Algebra C' C] [IsScalarTower C' C B] :
+    letI := IsIntegralClosure.MulSemiringAction A K M B
+    ∀ q : DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
+        (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)),
+      (Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure
+          (A := A) (B := B) (C := C') (K := K) (M := M) H' p Q
+          (DoubleCoset.quotientMapOfLELeft h (stabilizer (M ≃ₐ[K] M) Q) q)).1 =
+        (Ideal.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure
+          (A := A) (B := B) (C := C) (K := K) (M := M) H p Q q).1.under C' := by
+  let _ := IsIntegralClosure.MulSemiringAction A K M B
+  let _ : FaithfulSMul C B := faithfulSMul_integralClosure_fixedField H
+  let _ : FaithfulSMul C' B := faithfulSMul_integralClosure_fixedField H'
+  let _ : Algebra.IsIntegral A B := IsIntegralClosure.isIntegral_algebra A M
+  let _ : IsGaloisGroup (M ≃ₐ[K] M) A B :=
+    IsGaloisGroup.of_isFractionRing (M ≃ₐ[K] M) A B K M
+  let _ : IsGaloisGroup H C B := isGaloisGroup_integralClosure_fixedField H
+  let _ : IsGaloisGroup H' C' B := isGaloisGroup_integralClosure_fixedField H'
+  intro q
+  exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural p H C h C' q
+
 end Equivalence
 
 section Invariants
 
-variable [IsScalarTower A C B]
+variable [Q.IsMaximal] [IsScalarTower A C B]
 
 /-- The local degree of the contraction of `σ • Q` is the relative index of the
 corresponding conjugate decomposition group. -/
