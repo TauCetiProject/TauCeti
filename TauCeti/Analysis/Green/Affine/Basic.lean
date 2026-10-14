@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Green.Basic
 public import TauCeti.Analysis.Complex.Coordinates
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import Mathlib.Topology.Algebra.ContinuousAffineEquiv
+public import TauCeti.Topology.Algebra.ContinuousAffineEquiv
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Function.ContinuousAffineEquiv
 import TauCeti.LinearAlgebra.Complex.Module
@@ -145,8 +145,8 @@ theorem integrableOn_curl_affinePullback_iff (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set 
   rw [A.integrableOn_image_iff volume hs,
     integrableOn_congr_fun
       (fun z hz ↦ curl_affinePullback A.toContinuousAffineMap (hP z hz) (hQ z hz)) hs]
-  simp only [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
-    AffineEquiv.linear_toAffineMap, ContinuousAffineEquiv.coe_toContinuousAffineMap]
+  simp only [ContinuousAffineEquiv.toContinuousAffineMap_linear,
+    ContinuousAffineEquiv.coe_toContinuousAffineMap]
   simpa only [IntegrableOn, Pi.smul_def, smul_eq_mul, Function.comp_def] using
     (integrable_smul_iff (μ := volume.restrict s) A.linear.isUnit_det'.ne_zero
       (curl P Q ∘ A))
@@ -166,8 +166,8 @@ theorem integral_curl_affinePullback (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
         curl P Q (A z) := by
       apply setIntegral_congr_fun hs
       intro z hz
-      simpa only [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
-        AffineEquiv.linear_toAffineMap, ContinuousAffineEquiv.coe_toContinuousAffineMap] using
+      simpa only [ContinuousAffineEquiv.toContinuousAffineMap_linear,
+        ContinuousAffineEquiv.coe_toContinuousAffineMap] using
         curl_affinePullback A.toContinuousAffineMap (hP z hz) (hQ z hz)
     _ = _ := by
       rw [integral_const_mul, A.integral_image volume hs, smul_eq_mul]
