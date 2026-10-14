@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Formula
-import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.Complex.WindingNormalization
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -18,20 +18,14 @@ public import Mathlib.Analysis.Convex.Segment
 
 The winding real part of an oriented segment at a point strictly to its left lies between zero
 and one half. Positivity follows from the imaginary part of the reciprocal kernel; the logarithm
-formula bounds the argument increment by `π`.
+formula bounds the argument increment by `π`. Affine reparametrization preserves the index
+and reversal negates it away from the segment.
 -/
 
 public section
 
 open Complex MeasureTheory Set
 namespace TauCeti.Contour
-private theorem re_index_normalize (w : ℂ) :
-    ((2 * (Real.pi : ℂ) * I)⁻¹ * w).re = w.im / (2 * Real.pi) := by
-  have he : 2 * (Real.pi : ℂ) * I = ((2 * Real.pi : ℝ) : ℂ) * I := by norm_cast
-  rw [he, mul_inv_rev, inv_I]
-  simp [Complex.mul_re, Complex.mul_im, div_eq_mul_inv]
-  ring
-
 private theorem windingNumber_unitSegment_re_bounds {q : ℂ} (hq : 0 < q.im) :
     0 < (windingNumber (fun t : ℝ ↦ (t : ℂ)) 0 1 q).re ∧
     (windingNumber (fun t : ℝ ↦ (t : ℂ)) 0 1 q).re < 1 / 2 := by
@@ -39,7 +33,7 @@ private theorem windingNumber_unitSegment_re_bounds {q : ℂ} (hq : 0 < q.im) :
     (v := 1) (z₀ := 0) one_ne_zero hq.ne'
   simp only [one_mul, add_zero, Complex.ofReal_zero, Complex.ofReal_one] at hn
   have hupper : (windingNumber (fun t : ℝ ↦ (t : ℂ)) 0 1 q).re < 1 / 2 := by
-    rw [hn, re_index_normalize, Complex.sub_im, Complex.log_im, Complex.log_im]
+    rw [hn, Complex.re_inv_two_pi_I_mul, Complex.sub_im, Complex.log_im, Complex.log_im]
     have h1 : arg (1 - q) < 0 := arg_neg_iff.mpr (by simp; linarith)
     have h0 := neg_pi_lt_arg (0 - q)
     apply (div_lt_iff₀ (mul_pos (by norm_num) Real.pi_pos)).mpr
@@ -72,7 +66,7 @@ private theorem windingNumber_unitSegment_re_bounds {q : ℂ} (hq : 0 < q.im) :
     intervalIntegral.integral_pos zero_lt_one (Complex.continuous_im.comp hf).continuousOn
       (fun t _ ↦ (hpos t).le) ⟨0, ⟨le_rfl, zero_le_one⟩, hpos 0⟩
   refine ⟨?_, hupper⟩
-  rw [hh, re_index_normalize]
+  rw [hh, Complex.re_inv_two_pi_I_mul]
   have hIm : (∫ t in (0 : ℝ)..1, ((t : ℂ) - q)⁻¹).im =
       ∫ t in (0 : ℝ)..1, (((t : ℂ) - q)⁻¹).im :=
     (intervalIntegral.intervalIntegral_im hfi).symm
@@ -100,23 +94,29 @@ theorem windingNumber_segment_re_mem_Ioo {p q z : ℂ} (hleft : 0 < ((z - p) / (
   rw [he]
   exact windingNumber_unitSegment_re_bounds hleft
 
+private theorem absolutelyContinuous_segment (p q : ℂ) :
+    AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 :=
+  (show ContDiffOn ℝ 1 (fun t : ℝ ↦ p + t • (q - p)) (uIcc 0 1) from
+    by fun_prop).absolutelyContinuousOnInterval
+
+private theorem notMem_segment_trace {p q z : ℂ} (hz : z ∉ segment ℝ p q) :
+    z ∉ (fun t : ℝ ↦ p + t • (q - p)) '' uIcc 0 1 := by
+  simpa only [uIcc_of_le zero_le_one, ← segment_eq_image'] using hz
+
 /-- An increasing affine parametrization preserves the winding number of a straight segment. -/
 theorem windingNumber_segment_interval {p q z : ℂ} {a b : ℝ} (hab : a < b)
     (hz : z ∉ segment ℝ p q) :
     windingNumber (fun t : ℝ ↦ p + ((t - a) / (b - a)) • (q - p)) a b z =
       windingNumber (fun t : ℝ ↦ p + t • (q - p)) 0 1 z := by
   let θ := fun t : ℝ ↦ (t - a) / (b - a)
-  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 := by
-    have h : ContDiffOn ℝ 1 (fun t : ℝ ↦ p + t • (q - p)) (uIcc 0 1) := by fun_prop
-    exact h.absolutelyContinuousOnInterval
+  have hγ := absolutelyContinuous_segment p q
   have hθ : AbsolutelyContinuousOnInterval θ a b := by
     have h : ContDiffOn ℝ 1 θ (uIcc a b) := by dsimp [θ]; fun_prop
     exact h.absolutelyContinuousOnInterval
   have hmono : MonotoneOn θ (Icc a b) := by
     intro x _ y _ hxy
     exact div_le_div_of_nonneg_right (sub_le_sub_right hxy a) (sub_pos.mpr hab).le
-  have havoid : z ∉ (fun t : ℝ ↦ p + t • (q - p)) '' uIcc 0 1 := by
-    simpa only [uIcc_of_le zero_le_one, ← segment_eq_image'] using hz
+  have havoid := notMem_segment_trace hz
   exact AbsolutelyContinuousOnInterval.windingNumber_comp_of_monotoneOn
     hγ hθ hab.le hmono (by simp) (by simp [(sub_pos.mpr hab).ne']) havoid
 
@@ -124,15 +124,13 @@ theorem windingNumber_segment_interval {p q z : ℂ} {a b : ℝ} (hab : a < b)
 theorem windingNumber_segment_swap {p q z : ℂ} (hz : z ∉ segment ℝ p q) :
     windingNumber (fun t : ℝ ↦ q + t • (p - q)) 0 1 z =
       -windingNumber (fun t : ℝ ↦ p + t • (q - p)) 0 1 z := by
-  have hγ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ p + t • (q - p)) 0 1 := by
-    have h : ContDiffOn ℝ 1 (fun t : ℝ ↦ p + t • (q - p)) (uIcc 0 1) := by fun_prop
-    exact h.absolutelyContinuousOnInterval
+  have hγ := absolutelyContinuous_segment p q
   have hθ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ 1 - t) 0 1 := by
     have h : ContDiffOn ℝ 1 (fun t : ℝ ↦ 1 - t) (uIcc 0 1) := by fun_prop
     exact h.absolutelyContinuousOnInterval
   have h := hγ.windingNumber_comp_of_antitoneOn hθ
     zero_le_one (fun x _ y _ hxy ↦ sub_le_sub_left hxy 1) (by norm_num) (by norm_num)
-    (by simpa only [uIcc_of_le zero_le_one, ← segment_eq_image'] using hz)
+    (notMem_segment_trace hz)
   apply Eq.trans _ h
   apply windingNumber_congr_curve
   intro t _

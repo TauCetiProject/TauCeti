@@ -53,13 +53,6 @@ theorem tendsto_integral_abs_windingWeight_sub {γn : ℕ → ℝ → ℂ} (hab 
       norm_le_norm_add_const_of_dist_le (by simpa only [dist_comm] using hdist.le)
     dsimp [R]
     linarith [hS (γ t) ⟨t, ht, rfl⟩]
-  have hμγ {ρ : ℝ → ℂ} (hρ : AbsolutelyContinuousOnInterval ρ a b) :
-      AEMeasurable ρ (volume.restrict (Ioc a b)) :=
-    (hρ.continuousOn.mono
-      (fun _ ht ↦ (uIcc_of_le hab).symm ▸ Ioc_subset_Icc_self ht)).aemeasurable measurableSet_Ioc
-  have hμv {ρ : ℝ → ℂ} (hρ : AbsolutelyContinuousOnInterval ρ a b) :
-      IntegrableOn (deriv ρ) (Ioc a b) := by
-    simpa only [uIoc_of_le hab] using hρ.intervalIntegrable_deriv_of_finiteDimensional.def'
   have hμconv : ∀ᵐ t ∂volume.restrict (Ioc a b),
       Tendsto (fun n ↦ γn n t) atTop (𝓝 (γ t)) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
@@ -69,7 +62,8 @@ theorem tendsto_integral_abs_windingWeight_sub {γn : ℕ → ℝ → ℂ} (hab 
     simpa only [intervalIntegral.integral_of_le hab] using hderiv
   have hpot := (integrable_truncatedCauchyKernel (2 * R)).tendsto_integral_norm_kernel_potential_sub
     (measurable_truncatedCauchyKernel (2 * R))
-    (fun n ↦ hμγ (hγn n)) (hμγ hγ) (fun n ↦ hμv (hγn n)) (hμv hγ) hμconv hderiv'
+    (fun n ↦ (hγn n).aemeasurable_restrict_Ioc hab) (hγ.aemeasurable_restrict_Ioc hab)
+    (fun n ↦ (hγn n).integrableOn_deriv_Ioc hab) (hγ.integrableOn_deriv_Ioc hab) hμconv hderiv'
   have hbound := hpot.const_mul ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹‖
   apply squeeze_zero' (Eventually.of_forall fun n ↦ integral_nonneg fun _ ↦ abs_nonneg _) ?_
     (by simpa only [mul_zero] using hbound)

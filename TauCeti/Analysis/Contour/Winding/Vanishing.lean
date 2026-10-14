@@ -17,7 +17,7 @@ differentiable off a countable set, with interval-integrable derivative, the gen
 number `fun w ↦ windingNumber γ a b w` vanishes for every `w` sufficiently far from the origin:
 `windingNumber_eventually_zero_cocompact` states this as an eventual property along the cocompact
 filter, together with the fact that such `w` lie off the curve. This is the input to the Liouville
-step of Dixon's proof of the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`):
+step of Dixon's proof of the homology form of Cauchy's theorem:
 the Dixon function agrees with `dixonH2` wherever the winding number is zero.
 
 ## Main results

@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import Mathlib.Analysis.Convex.Segment
 import TauCeti.Analysis.Complex.Proximity
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
+import TauCeti.Analysis.Contour.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -28,7 +30,7 @@ winding number about `0` therefore vanishes, because the closed left half-plane 
 connected subset of the complement of its image. Since the index integrands satisfy
 `σ' / σ = γ₁' / (γ₁ - w) - γ₀' / (γ₀ - w)` pointwise, that vanishing is the asserted equality.
 
-The Layer 0 item this serves is homotopy invariance of the winding number off the curve.
+The application is homotopy invariance of the winding number off the curve.
 `Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance
 along the straight-line homotopy `s ↦ (1 - s) • γ₀ + s • γ₁` from the purely geometric hypothesis
 that the segment `[γ₀ t, γ₁ t]` misses `w` for every parameter `t`: the intermediate curves are
@@ -50,8 +52,8 @@ estimate lets finitely many of them be chained together by the leash lemma.
 ## Provenance
 
 The comparison-quotient argument is the standard proof of the "dog on a leash" lemma (equivalently,
-the homotopy form of Rouché's theorem); see the references in the Contour Integration roadmap,
-e.g. L. Ahlfors, *Complex Analysis*, Ch. 4. No formal source is vendored.
+the homotopy form of Rouché's theorem); see L. Ahlfors, *Complex Analysis*, Ch. 4.
+No formal source is vendored.
 -/
 
 public section
@@ -228,13 +230,8 @@ theorem IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist (h₀ : IsPiecewiseC1On
     (h₁ : IsPiecewiseC1On γ₁ a b) (h₀closed : γ₀ a = γ₀ b) (h₁closed : γ₁ a = γ₁ b)
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
-  obtain ⟨P₀, hP₀, hdiff₀⟩ := h₀.exists_countable_differentiableAt
-  obtain ⟨P₁, hP₁, hdiff₁⟩ := h₁.exists_countable_differentiableAt
-  exact TauCeti.Contour.windingNumber_eq_of_dist_lt_dist (hP₀.union hP₁) h₀closed h₁closed
-    h₀.continuousOn h₁.continuousOn
-    (fun t ht => hdiff₀ t ⟨ht.1, fun hmem => ht.2 (Or.inl hmem)⟩)
-    (fun t ht => hdiff₁ t ⟨ht.1, fun hmem => ht.2 (Or.inr hmem)⟩)
-    h₀.intervalIntegrable_deriv h₁.intervalIntegrable_deriv hlt
+  exact h₀.absolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
+    h₁.absolutelyContinuousOnInterval h₀closed h₁closed hlt
 
 /-- **Proximity invariance for paths with common endpoints.** If two piecewise-`C¹` paths agree at
 both endpoints and stay closer to each other than the first stays to `w`, then they have the same
@@ -245,15 +242,8 @@ theorem IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
     (ha : γ₀ a = γ₁ a) (hb : γ₀ b = γ₁ b)
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
-  obtain ⟨P₀, hP₀, hdiff₀⟩ := h₀.exists_countable_differentiableAt
-  obtain ⟨P₁, hP₁, hdiff₁⟩ := h₁.exists_countable_differentiableAt
-  apply windingNumber_eq_of_dist_lt_dist_aux (hP₀.union hP₁) ?_ h₀.continuousOn h₁.continuousOn
-    (fun t ht => hdiff₀ t ⟨ht.1, fun hmem => ht.2 (Or.inl hmem)⟩)
-    (fun t ht => hdiff₁ t ⟨ht.1, fun hmem => ht.2 (Or.inr hmem)⟩)
-    h₀.intervalIntegrable_deriv h₁.intervalIntegrable_deriv hlt
-  have h₀a : γ₀ a - w ≠ 0 := sub_ne_zero.mpr (ne_of_dist_lt_dist (hlt a left_mem_uIcc))
-  have h₀b : γ₀ b - w ≠ 0 := sub_ne_zero.mpr (ne_of_dist_lt_dist (hlt b right_mem_uIcc))
-  rw [compRatio_apply, compRatio_apply, ← ha, ← hb, div_self h₀a, div_self h₀b]
+  exact h₀.absolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
+    h₁.absolutelyContinuousOnInterval ha hb hlt
 
 /-- The stage at time `s` of the straight-line homotopy `(1 - s) • γ₀ + s • γ₁`. -/
 private def lineHomotopy (γ₀ γ₁ : ℝ → ℂ) (s : ℝ) : ℝ → ℂ := fun t => (1 - s) • γ₀ t + s • γ₁ t

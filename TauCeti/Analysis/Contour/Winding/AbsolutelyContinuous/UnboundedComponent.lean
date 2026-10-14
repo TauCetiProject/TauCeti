@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 public import Mathlib.Topology.MetricSpace.Bounded
-import TauCeti.Analysis.Contour.Winding.Vanishing
+import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 
 /-!
 # Winding numbers of absolutely continuous curves on unbounded components
@@ -43,12 +43,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_unbounded
     (hclosed : γ a = γ b) {z : ℂ}
     (hz : ¬IsBounded (connectedComponentIn ((γ '' uIcc a b)ᶜ) z)) :
     windingNumber γ a b z = 0 := by
-  obtain ⟨K, hK, hKgood⟩ := Filter.mem_cocompact.mp
-    (hγ.windingNumber_eventually_zero_cocompact hclosed)
-  have hnotSubset : ¬connectedComponentIn ((γ '' uIcc a b)ᶜ) z ⊆ K :=
-    fun hsubset ↦ hz (hK.isBounded.subset hsubset)
-  obtain ⟨w, hw, hwK⟩ := Set.not_subset.mp hnotSubset
-  exact (AbsolutelyContinuousOnInterval.windingNumber_eq_of_mem_connectedComponentIn
-    hγ hclosed hw).symm.trans (hKgood hwK).2
+  exact hγ.continuousOn.windingNumber_eq_zero_of_unbounded_component_of_integer
+    hγ.intervalIntegrable_deriv_of_finiteDimensional
+    (fun _ hw ↦ hγ.exists_int_windingNumber hclosed
+      (by rintro ⟨t, ht, heq⟩; exact hw t ht heq)) hz
 
 end TauCeti.Contour

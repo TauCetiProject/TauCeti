@@ -23,17 +23,20 @@ open MeasureTheory Set
 
 namespace TauCeti.Contour
 
+private theorem notMem_extend_image_uIcc_of_forall_ne {x y w : ℂ} {p : Path x y}
+    (h : ∀ t : Icc (0 : ℝ) 1, p t ≠ w) : w ∉ p.extend '' uIcc (0 : ℝ) 1 := by
+  rintro ⟨t, ht, heq⟩
+  rw [uIcc_of_le zero_le_one] at ht
+  rw [Path.extend_apply p ht] at heq
+  exact h ⟨t, ht⟩ heq
+
 /-- The ordinary Cauchy-kernel 1-form is curve integrable along an absolutely continuous path
 that avoids its pole. -/
 theorem _root_.AbsolutelyContinuousOnInterval.curveIntegrable_inv_sub_smul_id
     {x y w : ℂ} {p : Path x y} (hp : AbsolutelyContinuousOnInterval p.extend 0 1)
     (havoid : ∀ t : Icc (0 : ℝ) 1, p t ≠ w) :
     CurveIntegrable (fun z ↦ (z - w)⁻¹ • ContinuousLinearMap.id ℂ ℂ) p := by
-  have hw : w ∉ p.extend '' uIcc (0 : ℝ) 1 := by
-    rintro ⟨t, ht, heq⟩
-    rw [uIcc_of_le zero_le_one] at ht
-    rw [Path.extend_apply p ht] at heq
-    exact havoid ⟨t, ht⟩ heq
+  have hw := notMem_extend_image_uIcc_of_forall_ne havoid
   rw [curveIntegrable_iff_intervalIntegrable_deriv]
   simpa only [smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul] using
     hp.intervalIntegrable_inv_sub_mul_deriv hw
@@ -47,11 +50,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_two_pi_I_inv_mul_
     windingNumber p.extend 0 1 w =
       (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
         ∫ᶜ z in p, (z - w)⁻¹ • ContinuousLinearMap.id ℂ ℂ := by
-  have hw : w ∉ p.extend '' uIcc (0 : ℝ) 1 := by
-    rintro ⟨t, ht, heq⟩
-    rw [uIcc_of_le zero_le_one] at ht
-    rw [Path.extend_apply p ht] at heq
-    exact havoid ⟨t, ht⟩ heq
+  have hw := notMem_extend_image_uIcc_of_forall_ne havoid
   rw [hp.windingNumber_eq_integral hw,
     curveIntegral_eq_intervalIntegral_deriv]
   simp only [smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]

@@ -38,14 +38,20 @@ open scoped Classical in
 def windingWeight (γ : ℝ → ℂ) (a b : ℝ) (z : ℂ) : ℝ :=
   if z ∈ γ '' uIcc a b then 0 else (Contour.windingNumber γ a b z).re
 
+open scoped Classical in
+/-- The winding weight is the existing real index off the trace, and zero on the trace. -/
+theorem windingWeight_def (γ : ℝ → ℂ) (a b : ℝ) (z : ℂ) :
+    windingWeight γ a b z = if z ∈ γ '' uIcc a b then 0 else
+      (Contour.windingNumber γ a b z).re := by rfl
+
 variable {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
 
 /-- On the trace the area weight is zero. -/
-theorem windingWeight_eq_zero_of_mem (hz : z ∈ γ '' uIcc a b) :
+@[simp] theorem windingWeight_eq_zero_of_mem (hz : z ∈ γ '' uIcc a b) :
     windingWeight γ a b z = 0 := by simp [windingWeight, hz]
 
 /-- Off the trace the area weight is the real part of the existing winding number. -/
-theorem windingWeight_eq_of_notMem (hz : z ∉ γ '' uIcc a b) :
+@[simp] theorem windingWeight_eq_of_notMem (hz : z ∉ γ '' uIcc a b) :
     windingWeight γ a b z = (Contour.windingNumber γ a b z).re := by simp [windingWeight, hz]
 
 /-- A constant curve has zero winding weight everywhere. -/
@@ -162,35 +168,21 @@ theorem _root_.AbsolutelyContinuousOnInterval.hasCompactSupport_windingWeight
   exact HasCompactSupport.of_support_subset_isCompact hH
     ((hγ.support_windingWeight_subset hclosed).trans sdiff_subset)
 
-/-- Integrating translated integrable kernels against the speed gives an integrable potential. -/
-private theorem integrable_speedPotential (hγ : AbsolutelyContinuousOnInterval γ a b)
-    {k : ℂ → ℝ} (hk : Integrable k) (hkm : Measurable k) :
-    Integrable (fun z : ℂ ↦ ∫ t in uIoc a b, k (z - γ t) * ‖deriv γ t‖) :=
-  (hk.integrable_prod_comp_sub_mul hkm
-    ((hγ.continuousOn.mono uIoc_subset_uIcc).aemeasurable measurableSet_uIoc)
-    hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.norm).integral_prod_right
-
-/-- The winding weight of a closed absolutely continuous planar curve is area-integrable.
-The proof dominates it by an integrable inverse-distance potential of the curve's speed. -/
+/-- The winding weight of a closed absolutely continuous planar curve is area-integrable. -/
 theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) : Integrable (windingWeight γ a b) := by
   have hK : IsCompact (γ '' uIcc a b) := isCompact_uIcc.image_of_continuousOn hγ.continuousOn
   obtain ⟨R, -, hR⟩ :=
     (isBounded_filledHull.mpr hK.isBounded).exists_pos_norm_lt
-  let k : ℂ → ℝ := (Metric.closedBall 0 (2 * R)).indicator (fun z ↦ ‖z‖⁻¹)
-  have hkm : Measurable k := measurable_id.norm.inv.indicator isClosed_closedBall.measurableSet
-  have hk : Integrable k :=
-    (integrable_indicator_iff isClosed_closedBall.measurableSet).mpr
-      (by simpa only [Real.rpow_neg_one, zero_sub, norm_neg] using
-        (TauCeti.locallyIntegrable_norm_sub_rpow (mu := volume)
-          (s := -1) (by simp [Complex.finrank_real_complex]) (0 : ℂ)).integrableOn_isCompact
-            (isCompact_closedBall (0 : ℂ) (2 * R)))
+  let k : ℂ → ℝ := fun z ↦ ‖truncatedCauchyKernel (2 * R) z‖
+  have hkm : Measurable k := (measurable_truncatedCauchyKernel _).norm
+  have hk : Integrable k := (integrable_truncatedCauchyKernel _).norm
   let F : ℂ → ℝ := fun z ↦ ∫ t in uIoc a b, k (z - γ t) * ‖deriv γ t‖
-  have hF : Integrable F := integrable_speedPotential hγ hk hkm
-  have hkpos : ∀ z, 0 ≤ k z := by
-    intro z
-    exact Set.indicator_nonneg (fun _ _ ↦ inv_nonneg.mpr (norm_nonneg _)) z
+  have hF : Integrable F := hk.integral_comp_sub_mul hkm
+    ((hγ.continuousOn.mono uIoc_subset_uIcc).aemeasurable measurableSet_uIoc)
+    hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.norm
+  have hkpos (z : ℂ) : 0 ≤ k z := norm_nonneg _
   have hFpos : ∀ z, 0 ≤ F z := fun z ↦
     integral_nonneg fun t ↦ mul_nonneg (hkpos _) (norm_nonneg _)
   let C := ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹‖
@@ -209,7 +201,8 @@ theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight
       have hball : z - γ t ∈ Metric.closedBall 0 (2 * R) :=
         mem_closedBall_zero_iff.mpr
           ((norm_sub_le z (γ t)).trans (by linarith))
-      simp only [k, Set.indicator_of_mem hball, norm_mul, norm_inv, norm_sub_rev]
+      simp only [k, truncatedCauchyKernel_def, Set.indicator_of_mem hball,
+        norm_mul, norm_inv, norm_sub_rev]
     calc
       ‖windingWeight γ a b z‖ = |(Contour.windingNumber γ a b z).re| := by
         rw [windingWeight_eq_of_notMem hzK, Real.norm_eq_abs]

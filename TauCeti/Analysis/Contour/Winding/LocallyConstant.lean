@@ -19,7 +19,7 @@ For a closed curve `γ` (so `γ a = γ b`) that is continuous on `Set.uIcc a b`,
 countable set, with interval-integrable derivative, the generalized winding number
 `fun w ↦ windingNumber γ a b w`, viewed as a function on the points off the curve, is locally
 constant (`isLocallyConstant_windingNumber_of_closed`). It is the ingredient Dixon's argument uses
-for the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`). As a corollary,
+for the homology form of Cauchy's theorem. As a corollary,
 the winding number is constant on every connected component of the curve complement. Also,
 `exists_ball_windingNumber_zero` packages the local matching data Dixon needs: around an off-curve
 point where the winding number vanishes, it vanishes on a whole ball that stays off the curve.
@@ -98,6 +98,24 @@ private theorem setOf_forall_ne_eq_compl_image {γ : ℝ → ℂ} {a b : ℝ} :
   ext w
   simp only [mem_ofPred_eq, mem_compl_iff, mem_image, not_exists, not_and]
 
+/-- A continuous curve with integrable derivative and integer indices has constant winding
+number on every connected component of its trace complement. -/
+theorem _root_.ContinuousOn.windingNumber_eq_of_mem_connectedComponentIn_of_integer
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : ContinuousOn γ (uIcc a b))
+    (hderiv : IntervalIntegrable (deriv γ) volume a b)
+    (hint : ∀ z, (∀ t ∈ uIcc a b, γ t ≠ z) → ∃ n : ℤ, windingNumber γ a b z = n)
+    {z w : ℂ} (hw : w ∈ connectedComponentIn ((γ '' uIcc a b)ᶜ) z) :
+    windingNumber γ a b w = windingNumber γ a b z := by
+  have hz : z ∈ (γ '' uIcc a b)ᶜ := by
+    by_contra hz
+    rw [connectedComponentIn_eq_empty hz] at hw
+    exact hw
+  rw [← setOf_forall_ne_eq_compl_image] at hz hw
+  rw [connectedComponentIn_eq_image hz] at hw
+  obtain ⟨w, hw, rfl⟩ := hw
+  exact (hγ.isLocallyConstant_windingNumber_of_integer hderiv hint).apply_eq_of_isPreconnected
+    isPreconnected_connectedComponent hw mem_connectedComponent
+
 /-- **The winding number is constant on a connected component of the curve complement.**
 For a closed curve that is continuous on `[[a, b]]`, differentiable away from a countable set,
 and has interval-integrable derivative, two points in the same connected component of
@@ -111,17 +129,9 @@ theorem windingNumber_eq_of_mem_connectedComponentIn {γ : ℝ → ℂ} {a b : �
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
     {w₀ w₁ : ℂ} (hw₁ : w₁ ∈ connectedComponentIn ((γ '' uIcc a b)ᶜ) w₀) :
     windingNumber γ a b w₁ = windingNumber γ a b w₀ := by
-  have hw₀ : w₀ ∈ (γ '' uIcc a b)ᶜ := by
-    by_contra hw₀
-    rw [connectedComponentIn_eq_empty hw₀] at hw₁
-    exact hw₁
-  rw [← setOf_forall_ne_eq_compl_image] at hw₀ hw₁
-  rw [connectedComponentIn_eq_image hw₀] at hw₁
-  obtain ⟨w₁, hw₁, rfl⟩ := hw₁
-  exact
-    (isLocallyConstant_windingNumber_of_closed hclosed hP hγ_cont hγ_diff
-      hderiv_int).apply_eq_of_isPreconnected isPreconnected_connectedComponent hw₁
-        mem_connectedComponent
+  exact hγ_cont.windingNumber_eq_of_mem_connectedComponentIn_of_integer hderiv_int
+    (fun _ hz ↦ exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hz
+      (intervalIntegrable_inv_sub_mul_deriv hγ_cont hz hderiv_int)) hw₁
 
 /-- **Piecewise-`C¹` form of componentwise constancy.** For a closed piecewise-`C¹` curve, two
 points in the same connected component of the curve complement have the same winding number. -/

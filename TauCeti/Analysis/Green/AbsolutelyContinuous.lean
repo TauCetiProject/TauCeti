@@ -38,8 +38,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.intervalIntegrable_circulationFun
     ⟨Complex.imCLM.integrable_comp hd.1, Complex.imCLM.integrable_comp hd.2⟩
   have hPc := hP.comp hγ.continuousOn (mapsTo_image _ _)
   have hQc := hQ.comp hγ.continuousOn (mapsTo_image _ _)
-  change IntervalIntegrable
-    (fun t ↦ P (γ t) * (deriv γ t).re + Q (γ t) * (deriv γ t).im) volume a b
+  unfold circulationFun
   simpa only [Function.comp_apply] using
     (hr.continuousOn_mul hPc).add (hi.continuousOn_mul hQc)
 

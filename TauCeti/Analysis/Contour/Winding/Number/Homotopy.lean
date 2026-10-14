@@ -26,7 +26,7 @@ the resulting smooth paths with proximity invariance of the winding number.
 
 ## Main results
 
-* `windingNumber_eq_of_pathHomotopy` proves the Layer 0 homotopy invariance result without any
+* `windingNumber_eq_of_pathHomotopy` proves homotopy invariance without any
   regularity hypothesis on the homotopy.
 * `curveIntegral_inv_sub_smul_id_eq_of_pathHomotopy` is its curve-integral form: such a homotopy
   preserves the integral of the Cauchy-kernel `1`-form.
@@ -37,8 +37,7 @@ the resulting smooth paths with proximity invariance of the winding number.
 
 The regularization step is `exists_contDiff_eq_endpoints_dist_lt`, which reuses Mathlib's
 `bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of the
-classical winding number is standard complex analysis; see the references in the Contour
-Integration roadmap.
+classical winding number is standard complex analysis; see L. Ahlfors, *Complex Analysis*, Ch. 4.
 -/
 
 public section

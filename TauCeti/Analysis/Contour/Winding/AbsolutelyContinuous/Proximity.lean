@@ -14,11 +14,10 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 /-!
 # Proximity invariance for absolutely continuous curves
 
-Two closed absolutely continuous curves have equal winding numbers about a point when their
+Two absolutely continuous curves with equal endpoint ratios have equal winding numbers when their
 pointwise separation is smaller than the first curve's distance to that point. Their comparison
 quotient lies in the right half-plane, where the principal logarithm is smooth. The fundamental
-theorem for
-    its absolutely continuous logarithm evaluates the difference of their index integrals.
+theorem for its absolutely continuous logarithm evaluates the difference of their index integrals.
 -/
 
 public section
@@ -27,15 +26,16 @@ open Complex MeasureTheory Set
 
 namespace TauCeti.Contour
 
-/-- Proximity invariance for closed absolutely continuous curves: a pointwise leash shorter than
-the base curve's distance to `z` preserves its winding number about `z`. -/
-theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
+/-- A pointwise leash preserves the winding number when the comparison quotient has equal
+endpoint values. The curves themselves need not be closed. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_of_eq_endpoint_ratios
     {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
     (h₀ : AbsolutelyContinuousOnInterval γ₀ a b)
     (h₁ : AbsolutelyContinuousOnInterval γ₁ a b)
-    (h₀closed : γ₀ a = γ₀ b) (h₁closed : γ₁ a = γ₁ b)
+    (hends : (γ₁ a - z) / (γ₀ a - z) = (γ₁ b - z) / (γ₀ b - z))
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) z) :
     windingNumber γ₁ a b z = windingNumber γ₀ a b z := by
+  -- The leash excludes the pole from both traces.
   have h₀ne : ∀ t ∈ uIcc a b, γ₀ t - z ≠ 0 := by
     intro t ht
     exact sub_ne_zero.mpr
@@ -53,6 +53,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
   have h₁off : z ∉ γ₁ '' uIcc a b := by
     rintro ⟨t, ht, heq⟩
     exact h₁ne t ht (sub_eq_zero.mpr heq)
+  -- The comparison quotient and its principal logarithm are absolutely continuous.
   let σ : ℝ → ℂ := fun t ↦ (γ₁ t - z) / (γ₀ t - z)
   have hσslit : ∀ t ∈ uIcc a b, σ t ∈ slitPlane := by
     intro t ht
@@ -85,7 +86,8 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
     · rfl
     dsimp [σ]
     field_simp [h₀ne t ht', h₁ne t ht']
-  have hσclosed : σ a = σ b := by dsimp [σ]; rw [h₀closed, h₁closed]
+  -- FTC evaluates the logarithmic derivative at the equal endpoint ratios.
+  have hσclosed : σ a = σ b := hends
   have hint := hlog.integral_eq_sub_of_ae_hasDerivAt hlogderiv
   simp only [Function.comp_apply, hσclosed, sub_self] at hint
   have hint₀ := h₀.intervalIntegrable_inv_sub_mul_deriv h₀off
@@ -94,5 +96,27 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
   rw [h₁.windingNumber_eq_integral h₁off,
     h₀.windingNumber_eq_integral h₀off]
   exact congrArg ((2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ·) (sub_eq_zero.mp hint)
+
+/-- A pointwise leash preserves winding numbers of closed absolutely continuous curves. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
+    {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
+    (h₀ : AbsolutelyContinuousOnInterval γ₀ a b) (h₁ : AbsolutelyContinuousOnInterval γ₁ a b)
+    (h₀closed : γ₀ a = γ₀ b) (h₁closed : γ₁ a = γ₁ b)
+    (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) z) :
+    windingNumber γ₁ a b z = windingNumber γ₀ a b z :=
+  h₀.windingNumber_eq_of_dist_lt_dist_of_eq_endpoint_ratios h₁
+    (by rw [h₀closed, h₁closed]) hlt
+
+/-- A pointwise leash preserves winding numbers of AC paths with common endpoints. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
+    {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
+    (h₀ : AbsolutelyContinuousOnInterval γ₀ a b) (h₁ : AbsolutelyContinuousOnInterval γ₁ a b)
+    (ha : γ₀ a = γ₁ a) (hb : γ₀ b = γ₁ b)
+    (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) z) :
+    windingNumber γ₁ a b z = windingNumber γ₀ a b z := by
+  have hne (t : ℝ) (ht : t ∈ uIcc a b) : γ₀ t - z ≠ 0 :=
+    sub_ne_zero.mpr (dist_pos.mp (lt_of_le_of_lt dist_nonneg (hlt t ht)))
+  exact h₀.windingNumber_eq_of_dist_lt_dist_of_eq_endpoint_ratios h₁
+    (by rw [← ha, ← hb, div_self (hne a left_mem_uIcc), div_self (hne b right_mem_uIcc)]) hlt
 
 end TauCeti.Contour

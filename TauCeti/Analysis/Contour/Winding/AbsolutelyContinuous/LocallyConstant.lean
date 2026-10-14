@@ -45,13 +45,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_mem_connectedC
     (hclosed : γ a = γ b) {z w : ℂ}
     (hw : w ∈ connectedComponentIn ((γ '' uIcc a b)ᶜ) z) :
     windingNumber γ a b w = windingNumber γ a b z := by
-  have hz : z ∈ (γ '' uIcc a b)ᶜ := by
-    by_contra hz
-    rw [connectedComponentIn_eq_empty hz] at hw
-    exact hw
-  rw [connectedComponentIn_eq_image hz] at hw
-  obtain ⟨w, hw, rfl⟩ := hw
-  have hlc := hγ.isLocallyConstant_windingNumber hclosed
-  exact hlc.apply_eq_of_isPreconnected isPreconnected_connectedComponent hw mem_connectedComponent
+  exact hγ.continuousOn.windingNumber_eq_of_mem_connectedComponentIn_of_integer
+    hγ.intervalIntegrable_deriv_of_finiteDimensional
+    (fun _ hz ↦ hγ.exists_int_windingNumber hclosed
+      (by rintro ⟨t, ht, heq⟩; exact hz t ht heq)) hw
 
 end TauCeti.Contour
