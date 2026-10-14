@@ -27,7 +27,7 @@ for parameters in the closed unit ball.
 ## Main declarations
 
 * `TauCeti.IsAdmissiblePerturbation f h`: `h` is `C²`, compactly supported, and its support avoids
-  the critical points of `f`; `TauCeti.isAdmissiblePerturbation_contDiffBump_mul`: a bump times a
+  the critical points of `f`; `ContDiffBump.isAdmissiblePerturbation_mul`: a bump times a
   `C²` function is admissible when the bump's support avoids the critical points.
 * `TauCeti.perturb f h s`: the perturbed function, with `TauCeti.fderiv_perturb`,
   `TauCeti.gradient_perturb` and `TauCeti.contDiff_perturb`.
@@ -137,15 +137,14 @@ theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturba
   perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦
     Set.disjoint_left.1 (hh i).disjoint hmem hx
 
-/-- **Small perturbations keep the critical points.** For all sufficiently small parameters, the
-critical points of `perturb f h s` are those of `f`. -/
+/-- **Small perturbations keep the critical points.** For a family of compactly supported `C¹`
+functions whose supports avoid the critical points of `f` (for instance an admissible family), for
+all sufficiently small parameters the critical points of `perturb f h s` are those of `f`. -/
 theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
-    (hadm : ∀ i, IsAdmissiblePerturbation f (h i)) :
+    (hh : ∀ i, ContDiff ℝ 1 (h i)) (hc : ∀ i, HasCompactSupport (h i))
+    (hdisj : ∀ i, Disjoint (tsupport (h i)) {x | fderiv ℝ f x = 0}) :
     ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ x,
       (fderiv ℝ (perturb f h s) x = 0 ↔ fderiv ℝ f x = 0) := by
-  have hh : ∀ i, ContDiff ℝ 1 (h i) := fun i ↦ (hadm i).contDiff.of_le (by norm_num)
-  have hc : ∀ i, HasCompactSupport (h i) := fun i ↦ (hadm i).hasCompactSupport
-  have hdisj : ∀ i, Disjoint (tsupport (h i)) {x | fderiv ℝ f x = 0} := fun i ↦ (hadm i).disjoint
   have hfd : Differentiable ℝ f := hfs.differentiable (by norm_num)
   have hhd : ∀ i, Differentiable ℝ (h i) := fun i ↦ (hh i).differentiable (by norm_num)
   -- A bound on the differentials of the perturbing functions.
@@ -205,7 +204,7 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [H
 /-- **Bumps away from the critical points give admissible perturbations.** If the closed support of
 a smooth bump `θ` contains no critical point of `f`, then `θ g` is an admissible perturbation of
 `f` for every `C²` function `g`; for instance `x ↦ θ x * ⟪v, x - z⟫`. -/
-theorem isAdmissiblePerturbation_contDiffBump_mul {z : E} (θ : ContDiffBump z)
+theorem _root_.ContDiffBump.isAdmissiblePerturbation_mul {z : E} (θ : ContDiffBump z)
     (hθ : ∀ x ∈ Metric.closedBall z θ.rOut, fderiv ℝ f x ≠ 0) {g : E → ℝ} (hg : ContDiff ℝ 2 g) :
     IsAdmissiblePerturbation f fun x ↦ θ x * g x where
   contDiff := θ.contDiff.mul hg
@@ -574,9 +573,9 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) (0, e)).1
   set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
   have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
-  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ ringInverse_fderiv_flow (hs t) (hφd t x)
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv_flow (hs t) (hφd t x)
   have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
-    fderiv_flow_apply_fderiv_flow_neg (hs t) (hφd t x) v
+    Flow.fderiv_flow_apply_fderiv_flow_neg (hs t) (hφd t x) v
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
     hasDerivAt_fderiv_negativeGradientFlow f hf hfs x
   have hu : ∀ t, HasDerivAt u (-(fderiv ℝ (∇ f) (φ t x)) (u t) - b t) t := fun t ↦ by
@@ -584,8 +583,8 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   -- The inverse of `Dφₜ(x)` moves with derivative `Dφ_{-t}(φₜ x) ∘ D(∇f)(φₜ x)`.
   have hN : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ))
       (N t * (fderiv ℝ (∇ f) (φ t x)).comp (M t) * N t) t := fun t ↦ by
-    have hU := hasFDerivAt_ringInverse (𝕜 := ℝ) (fderivFlowUnit (hs t) (hφd t x))
-    rw [coe_fderivFlowUnit] at hU
+    have hU := hasFDerivAt_ringInverse (𝕜 := ℝ) (Flow.fderivFlowUnit (hs t) (hφd t x))
+    rw [Flow.coe_fderivFlowUnit] at hU
     refine (hU.comp_hasDerivAt t (hM t)).congr_deriv ?_
     simp [N]
   have hW : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ) (u τ)) (-(N t (b t))) t := fun t ↦ by

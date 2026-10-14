@@ -135,7 +135,7 @@ theorem fderiv_negativeGradientFlow_apply_gradient (f : E → ℝ) (hf : Lipschi
     have := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
     beta_reduce at this
     rwa [Flow.map_zero_apply] at this
-  have := fderiv_flow_apply_of_hasDerivAt (hv x) (hv _)
+  have := Flow.fderiv_flow_apply_of_hasDerivAt (hv x) (hv _)
     (differentiable_negativeGradientFlow_apply f hf hfs t x)
   rwa [map_neg, neg_inj] at this
 
