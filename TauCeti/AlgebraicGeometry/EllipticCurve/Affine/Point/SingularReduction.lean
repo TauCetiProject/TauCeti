@@ -80,6 +80,8 @@ are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of
   has `ϖ² ∣ x` and `ϖ³ ∣ y`.
 * `WeierstrassCurve.Affine.exists_chord_of_add_notMem_nonsingularReduction`: the identities
   satisfied by the chord through two points whose sum has singular reduction.
+* `WeierstrassCurve.Affine.two_nsmul_notMem_of_slope_mem`: twice a point with singular reduction
+  whose tangent slope lies in the maximal ideal has singular reduction.
 
 ## References
 
@@ -487,6 +489,54 @@ theorem exists_chord_of_add_notMem_nonsingularReduction
   · exact hL
   · rw [coe_integralModel_a₁, coe_integralModel_a₃, coe_integralModel_a₄, h2]
     linear_combination hc
+
+/-- **Twice a point whose tangent slope lies in `𝔪` has singular reduction.** Here the reduction is
+singular at the origin and `a₂ ∈ 𝔪` as well. If `(x, y)` has integral coordinates in `𝔪` and the
+tangent there has slope `ℓ ∈ 𝔪`, that is `ℓ (2 y + a₁ x + a₃) = 3 x² + 2 a₂ x + a₄ − a₁ y` with
+`2 y + a₁ x + a₃ ≠ 0`, then both coordinates of twice the point lie in `𝔪`. -/
+theorem two_nsmul_notMem_of_slope_mem
+    (h₂ : (integralModel v.valuationSubring W).a₂ ∈ maximalIdeal v.valuationSubring)
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x y ℓ : v.valuationSubring} {hxy : W.Nonsingular x y}
+    (hx : x ∈ maximalIdeal v.valuationSubring) (hy : y ∈ maximalIdeal v.valuationSubring)
+    (hℓ : ℓ ∈ maximalIdeal v.valuationSubring)
+    (hne : 2 * y + (integralModel v.valuationSubring W).a₁ * x +
+      (integralModel v.valuationSubring W).a₃ ≠ 0)
+    (hslope : ℓ * (2 * y + (integralModel v.valuationSubring W).a₁ * x +
+      (integralModel v.valuationSubring W).a₃) = 3 * x ^ 2 +
+        2 * (integralModel v.valuationSubring W).a₂ * x + (integralModel v.valuationSubring W).a₄ -
+          (integralModel v.valuationSubring W).a₁ * y) :
+    2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
+  set Wo := integralModel v.valuationSubring W
+  have hy' : (y : F) ≠ W.negY x y := by
+    rw [← coe_negY_integralModel, Ne, Subtype.coe_inj]
+    intro h
+    exact hne (by rw [negY] at h; linear_combination h)
+  have h2 : ((2 : v.valuationSubring) : F) = 2 := by
+    simpa using map_ofNat (algebraMap v.valuationSubring F) 2
+  have h3 : ((3 : v.valuationSubring) : F) = 3 := by
+    simpa using map_ofNat (algebraMap v.valuationSubring F) 3
+  have hslopeF : W.slope (x : F) x y y = ℓ := by
+    rw [slope_of_Y_ne rfl hy', div_eq_iff (sub_ne_zero.2 hy')]
+    have := congrArg ((↑) : v.valuationSubring → F) hslope
+    push_cast at this
+    rw [coe_integralModel_a₁, coe_integralModel_a₂, coe_integralModel_a₃, coe_integralModel_a₄, h2,
+      h3] at this
+    rw [negY]
+    linear_combination -this
+  have hx₃ : Wo.toAffine.addX x x ℓ ∈ maximalIdeal v.valuationSubring :=
+    sub_mem (sub_mem (sub_mem (add_mem (Ideal.pow_mem_of_mem _ hℓ 2 two_pos)
+      (Ideal.mul_mem_left _ _ hℓ)) h₂) hx) hx
+  have hy₃ : Wo.toAffine.addY x x y ℓ ∈ maximalIdeal v.valuationSubring :=
+    sub_mem (sub_mem (neg_mem (add_mem (Ideal.mul_mem_right _ _ hℓ) hy))
+      (Ideal.mul_mem_left _ _ hx₃)) h₃
+  -- the coordinates of `2 P` are the images of those computed in the integral model
+  rw [two_nsmul, Point.add_self_of_Y_ne hy', some_notMem_nonsingularReduction_iff v h₃ h₄ h₆,
+    hslopeF, ← coe_addX_integralModel, ← coe_addY_integralModel]
+  exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 hx₃,
+    (Valuation.mem_maximalIdeal_iff (v := v)).1 hy₃⟩
 
 end Affine
 

@@ -311,6 +311,7 @@ theorem coe_addX_integralModel (x₁ x₂ ℓ : v.valuationSubring) :
   exact (map_addX (algebraMap v.valuationSubring F) x₁ x₂ ℓ).symm
 
 /-- The `y`-coordinate of a sum computed in the integral model is that computed in `W`. -/
+@[simp]
 theorem coe_addY_integralModel (x₁ x₂ y₁ ℓ : v.valuationSubring) :
     (((integralModel v.valuationSubring W).toAffine.addY x₁ x₂ y₁ ℓ : v.valuationSubring) : F) =
       W.addY x₁ x₂ y₁ ℓ := by

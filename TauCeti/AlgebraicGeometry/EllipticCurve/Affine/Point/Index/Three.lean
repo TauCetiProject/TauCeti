@@ -73,24 +73,9 @@ discreteness, minimality or hypothesis on the residue field is needed except whe
 
 public section
 
-open IsLocalRing Polynomial
+open IsLocalRing Polynomial TauCeti
 
 namespace WeierstrassCurve
-
-section CommRing
-
-variable {R : Type*} [CommRing R] {ϖ : R}
-
-/-- A root modulo `ϖ` of the residue quadratic `T² + A₃ T − A₆` is simple when
-`ϖ ∤ A₃² + 4 A₆`: the derivative `2 Y + A₃` is not divisible by `ϖ`. This is
-`not_dvd_two_mul_mul_add_of_not_dvd_discrim` for the monic quadratic, whose discriminant is
-`A₃² + 4 A₆`. -/
-private theorem not_dvd_two_mul_add {A₃ A₆ Y : R} (hb : ¬ ϖ ∣ A₃ ^ 2 + 4 * A₆)
-    (hY : ϖ ∣ Y ^ 2 + A₃ * Y - A₆) : ¬ ϖ ∣ 2 * Y + A₃ := by
-  simpa using not_dvd_two_mul_mul_add_of_not_dvd_discrim (a := 1) (c := -A₆)
-    (by rwa [discrim, mul_neg, sub_neg_eq_add, mul_one]) (by rwa [one_mul, ← sq, ← sub_eq_add_neg])
-
-end CommRing
 
 namespace Affine
 
@@ -180,54 +165,6 @@ private theorem pow_three_dvd_sub_of_isTateTerminal_IVStar {ϖ : v.valuationSubr
   rw [hL, show ϖ ^ 2 * X₁ - ϖ ^ 2 * X₂ = ϖ ^ 2 * (X₁ - X₂) by ring, pow_succ']
   exact mul_dvd_mul hℓ (dvd_mul_right _ _)
 
-/-- **Twice a point whose tangent slope lies in `𝔪` has singular reduction.** Here the reduction is
-singular at the origin and `a₂ ∈ 𝔪` as well. If `(x, y)` has integral coordinates in `𝔪` and the
-tangent there has slope `ℓ ∈ 𝔪`, that is `ℓ (2 y + a₁ x + a₃) = 3 x² + 2 a₂ x + a₄ − a₁ y` with
-`2 y + a₁ x + a₃ ≠ 0`, then both coordinates of twice the point lie in `𝔪`. -/
-private theorem two_nsmul_notMem_of_slope_mem
-    (h₂ : (integralModel v.valuationSubring W).a₂ ∈ maximalIdeal v.valuationSubring)
-    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
-    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
-    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
-    {x y ℓ : v.valuationSubring} {hxy : W.Nonsingular x y}
-    (hx : x ∈ maximalIdeal v.valuationSubring) (hy : y ∈ maximalIdeal v.valuationSubring)
-    (hℓ : ℓ ∈ maximalIdeal v.valuationSubring)
-    (hne : 2 * y + (integralModel v.valuationSubring W).a₁ * x +
-      (integralModel v.valuationSubring W).a₃ ≠ 0)
-    (hslope : ℓ * (2 * y + (integralModel v.valuationSubring W).a₁ * x +
-      (integralModel v.valuationSubring W).a₃) = 3 * x ^ 2 +
-        2 * (integralModel v.valuationSubring W).a₂ * x + (integralModel v.valuationSubring W).a₄ -
-          (integralModel v.valuationSubring W).a₁ * y) :
-    2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
-  set Wo := integralModel v.valuationSubring W
-  have hy' : (y : F) ≠ W.negY x y := by
-    rw [← coe_negY_integralModel, Ne, Subtype.coe_inj]
-    intro h
-    exact hne (by rw [negY] at h; linear_combination h)
-  have h2 : ((2 : v.valuationSubring) : F) = 2 := by
-    simpa using map_ofNat (algebraMap v.valuationSubring F) 2
-  have h3 : ((3 : v.valuationSubring) : F) = 3 := by
-    simpa using map_ofNat (algebraMap v.valuationSubring F) 3
-  have hslopeF : W.slope (x : F) x y y = ℓ := by
-    rw [slope_of_Y_ne rfl hy', div_eq_iff (sub_ne_zero.2 hy')]
-    have := congrArg ((↑) : v.valuationSubring → F) hslope
-    push_cast at this
-    rw [coe_integralModel_a₁, coe_integralModel_a₂, coe_integralModel_a₃, coe_integralModel_a₄, h2,
-      h3] at this
-    rw [negY]
-    linear_combination -this
-  have hx₃ : Wo.toAffine.addX x x ℓ ∈ maximalIdeal v.valuationSubring :=
-    sub_mem (sub_mem (sub_mem (add_mem (Ideal.pow_mem_of_mem _ hℓ 2 two_pos)
-      (Ideal.mul_mem_left _ _ hℓ)) h₂) hx) hx
-  have hy₃ : Wo.toAffine.addY x x y ℓ ∈ maximalIdeal v.valuationSubring :=
-    sub_mem (sub_mem (neg_mem (add_mem (Ideal.mul_mem_right _ _ hℓ) hy))
-      (Ideal.mul_mem_left _ _ hx₃)) h₃
-  -- the coordinates of `2 P` are the images of those computed in the integral model
-  rw [two_nsmul, Point.add_self_of_Y_ne hy', some_notMem_nonsingularReduction_iff v h₃ h₄ h₆,
-    hslopeF, ← coe_addX_integralModel, ← coe_addY_integralModel]
-  exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 hx₃,
-    (Valuation.mem_maximalIdeal_iff (v := v)).1 hy₃⟩
-
 /-- **At the symbol `IV*`, twice a point with singular reduction has singular reduction.** At
 `(ϖ² X, ϖ² Y)` the tangent has slope `(3 x² + 2 a₂ x + a₄ − a₁ y) / (2 y + a₁ x + a₃)`, whose
 numerator is `ϖ³` times an integer and whose denominator is `ϖ²` times a unit, since the derivative
@@ -248,7 +185,7 @@ private theorem two_nsmul_notMem_of_isTateTerminal_IVStar {ϖ : v.valuationSubri
   -- the denominator `2 y + a₁ x + a₃` of the tangent slope is `ϖ² D` with `D` a unit
   have hDu : IsUnit (2 * Y + A₃ + ϖ * A₁ * X) := by
     by_contra hn
-    refine not_dvd_two_mul_add (ϖ := ϖ) hb hY ?_
+    refine not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul (p := ϖ) hb hY ?_
     rw [show 2 * Y + A₃ = (2 * Y + A₃ + ϖ * A₁ * X) - ϖ * (A₁ * X) by ring]
     exact dvd_sub ((key _).1 ((mem_maximalIdeal _).2 hn)) (dvd_mul_right _ _)
   have hden : 2 * (ϖ ^ 2 * Y) + (integralModel v.valuationSubring W).a₁ * (ϖ ^ 2 * X) +
@@ -285,7 +222,7 @@ theorem index_nonsingularReduction_eq_three_of_isTateTerminal_IVStar_of_notMem
   obtain ⟨X₀, Y₀, hx₀, hy₀, hY₀⟩ :=
     exists_eq_sq_mul_of_notMem_of_isTateTerminal_IVStar v hϖ h h₃ h₆ hP
   -- the derivative `2 Y₀ + A₃` of the residue quadratic at `Y₀` is a unit
-  have hY₀' : ¬ ϖ ∣ 2 * Y₀ + A₃ := not_dvd_two_mul_add hb hY₀
+  have hY₀' : ¬ ϖ ∣ 2 * Y₀ + A₃ := not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul hb hY₀
   refine AddSubgroup.index_eq_three_of_two_nsmul_notMem
     (two_nsmul_notMem_of_isTateTerminal_IVStar v hϖ h hP) fun Q ↦ ?_
   by_cases hQ : Q ∈ W.nonsingularReduction v
@@ -367,9 +304,10 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IVStar
   obtain ⟨Y, hY, -⟩ := HenselianLocalRing.is_henselian f hmon t₀
     ((key _).2 (heval t₀ ▸ hq₀)) (by
       rw [hder, ← residue_ne_zero_iff_isUnit, Ne, residue_eq_zero_iff, key]
-      exact not_dvd_two_mul_add hb hq₀)
+      exact not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul hb hq₀)
   have hY : Y ^ 2 + A₃ * Y - A₆ = 0 := heval Y ▸ hY.eq_zero
-  have hY' : ¬ ϖ ∣ 2 * Y + A₃ := not_dvd_two_mul_add hb (hY ▸ dvd_zero ϖ)
+  have hY' : ¬ ϖ ∣ 2 * Y + A₃ :=
+    not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul hb (hY ▸ dvd_zero ϖ)
   have hns : (integralModel v.valuationSubring W).toAffine.Nonsingular 0 (ϖ ^ 2 * Y) := by
     rw [nonsingular_iff']
     refine ⟨by
