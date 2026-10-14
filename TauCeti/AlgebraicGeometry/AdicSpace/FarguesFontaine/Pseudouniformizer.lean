@@ -32,7 +32,8 @@ Then the ideals `(p, [ϖ])` and `(p, [ϖ'])` define the same adic topology on `�
   two pre-adic spaces `𝒳`, which on points is the homeomorphism of orbit spaces.
 * Both isomorphisms lift to the category `(Adic)` of adic spaces, where they identify the adic
   spaces `𝒴` compatibly with Frobenius and the adic spaces `𝒳` compatibly with the projections
-  `𝒴 → 𝒳`. When `R` is the ring of integers of a valuation on a field, `𝒪_𝒴` is a sheaf
+  `𝒴 → 𝒳`. When `R` is perfect of characteristic `p` and is the ring of integers of a valuation
+  `v` on a field, and `0 < v(ϖ) < 1`, `𝒪_𝒴` is a sheaf
   (`TauCeti.FarguesFontaine.isSheaf_spaYPresheaf`), so the adic Fargues–Fontaine curve
   `𝒳 = 𝒴 / φ^ℤ` does not depend on the pseudouniformiser.
 
@@ -419,9 +420,9 @@ with the same radical (`spaY_eq_of_radical_eq`), and `𝒪_𝒴` is a sheaf, the
 `spaXPreAdicSpaceCongr` of pre-adic spaces is an isomorphism in the full subcategory `(Adic)`. It is
 the isomorphism induced by `spaYAdicSpaceCongr` on the quotients by Frobenius
 (`quotientAdicHom_comp_spaXAdicSpaceCongr_hom`), and on points it is the homeomorphism
-`spaXCongr` of orbit spaces (`spaXPreAdicSpaceCongr_hom_base`). When `R` is the ring of integers of
-a valuation on a field and `ϖ` is a pseudouniformiser, `𝒪_𝒴` is a sheaf by
-`isSheaf_spaYPresheaf`. -/
+`spaXCongr` of orbit spaces (`spaXPreAdicSpaceCongr_hom_base`). When `R` is perfect of
+characteristic `p` and is the ring of integers of a valuation `v` on a field, and `0 < v(ϖ) < 1`,
+`𝒪_𝒴` is a sheaf by `isSheaf_spaYPresheaf`. -/
 def spaXAdicSpaceCongr (h : spaY p ϖ = spaY p ϖ') (hY : (spaYPresheaf P ϖ).IsSheaf) :
     spaXAdicSpace P hI hY ≅
       spaXAdicSpace P hI' (isSheaf_spaYPresheaf_of_spaY_eq P h hY) :=
