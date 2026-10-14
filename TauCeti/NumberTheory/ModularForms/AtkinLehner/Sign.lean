@@ -27,11 +27,12 @@ The argument is the one that gives the Fricke sign, run on the `Γ₀(N)` carrie
 operators live on.
 
 * `𝒲_Q` preserves the new subspace at trivial nebentypus. It preserves the old subspace
-  (`TauCeti.Nat.IsExactDivisor.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld`) and is
+  (`TauCeti.Nat.IsExactDivisor.restrict_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld`) and is
   Petersson self-adjoint on `S_k(Γ₀(N))`. Newness of a form of trivial nebentypus is tested
   against the old forms of trivial nebentypus alone, and the Petersson product of two such forms
   at level `Γ₁(N)` is a fixed positive multiple of their product at level `Γ₀(N)`
-  (`CuspForm.peterssonInnerCosets_ofLe_ofLe`), so the two pairings detect the same orthogonality.
+  (`CuspForm.peterssonInnerCosets_restrict_restrict`), so the two pairings detect the same
+  orthogonality.
 * On `S_k(N, 1)` the operator `𝒲_Q` commutes with the Hecke operators `Tₙ` for `n` prime to `Q`:
   it commutes with the action of every double coset of determinant prime to `Q`
   (`TauCeti.commute_atkinLehnerOperatorCusp_heckeSlashGamma0CuspFormEnd`), and those `Tₙ` lie in
@@ -56,7 +57,7 @@ so it need not preserve `S_k(N, χ)`. The sign statement proved here treats triv
 
 ## Main results
 
-* `TauCeti.Nat.IsExactDivisor.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsNew`: `𝒲_Q`
+* `TauCeti.Nat.IsExactDivisor.restrict_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsNew`: `𝒲_Q`
   preserves the new subspace at trivial nebentypus.
 * `commute_normalizedAtkinLehnerCharCuspOneEnd_heckeRingHomCuspCharSpace` (in the namespace
   `TauCeti.Nat.IsExactDivisor`): on `S_k(N, 1)`, `𝒲_Q` commutes with `Tₙ` for every `n` prime
@@ -97,28 +98,28 @@ namespace Nat.IsExactDivisor
 /-- **The normalized Atkin–Lehner operator preserves the new subspace at trivial nebentypus.**
 For a cusp form `f` on `Γ₀(N)` whose restriction to `Γ₁(N)` is new, the restriction of `𝒲_Q f`
 is again new, for every exact divisor `Q ∥ N`. -/
-theorem ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsNew (h : Q ∥ N)
+theorem restrict_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsNew (h : Q ∥ N)
     {f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k}
-    (hf : CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormsNew N k) :
-    CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) (h.normalizedAtkinLehnerOperatorCusp k f) ∈
+    (hf : CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormsNew N k) :
+    CuspForm.restrict (Gamma1_map_le_Gamma0_map N) (h.normalizedAtkinLehnerOperatorCusp k f) ∈
       cuspFormsNew N k := by
   -- newness of a form of trivial nebentypus is orthogonality to the old forms of trivial
   -- nebentypus
-  rw [mem_cuspFormsNew_iff_of_mem_cuspFormCharSpace (ofLe_mem_cuspFormCharSpace_one _),
+  rw [mem_cuspFormsNew_iff_of_mem_cuspFormCharSpace (restrict_mem_cuspFormCharSpace_one _),
     CuspForm.mem_peterssonOrthogonal_iff]
   rintro G ⟨hGold, hG⟩
   -- an old form of trivial nebentypus is the restriction of a cusp form `g` on `Γ₀(N)`
   rw [cuspFormCharSpace_one_eq_range] at hG
   obtain ⟨g, rfl⟩ := LinearMap.mem_range.mp hG
-  rw [CuspForm.ofLeₗ_apply] at hGold ⊢
+  rw [CuspForm.restrictₗ_apply] at hGold ⊢
   -- the `Γ₁(N)`-Petersson product of two such restrictions is a multiple of the `Γ₀(N)`-one, for
   -- which `𝒲_Q` is self-adjoint and preserves oldness
-  rw [CuspForm.peterssonInnerCosets_ofLe_ofLe,
+  rw [CuspForm.peterssonInnerCosets_restrict_restrict,
     ← h.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp_left,
-    ← CuspForm.peterssonInnerCosets_ofLe_ofLe (Gamma1_map_le_Gamma0_map N)]
+    ← CuspForm.peterssonInnerCosets_restrict_restrict (Gamma1_map_le_Gamma0_map N)]
   rw [cuspFormsNew_def] at hf
   exact CuspForm.mem_peterssonOrthogonal_iff.mp hf _
-    (h.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld hGold)
+    (h.restrict_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld hGold)
 
 /-! ### `𝒲_Q` on `S_k(N, 1)` and its commutation with the good Hecke operators -/
 
@@ -160,7 +161,7 @@ theorem coe_normalizedAtkinLehnerCharCuspOneEnd_apply (h : Q ∥ N) (k : ℤ)
     (f : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
     ((h.normalizedAtkinLehnerCharCuspOneEnd k f : cuspFormCharSpace k 1) :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      CuspForm.ofLe (Gamma1_map_le_Gamma0_map N)
+      CuspForm.restrict (Gamma1_map_le_Gamma0_map N)
         (h.normalizedAtkinLehnerOperatorCusp k (cuspFormCharSpaceOneEquiv N k f)) := by
   rw [normalizedAtkinLehnerCharCuspOneEnd_apply, coe_cuspFormCharSpaceOneEquiv_symm_apply]
 
@@ -181,7 +182,7 @@ private lemma commute_normalizedAtkinLehnerCharCuspOneEnd_single (h : Q ∥ N)
   have key : h.normalizedAtkinLehnerCharCuspOneEnd k (twistedHeckeSlashCuspFormCharEnd k 1 D f) =
       twistedHeckeSlashCuspFormCharEnd k 1 D (h.normalizedAtkinLehnerCharCuspOneEnd k f) := by
     refine Subtype.ext (DFunLike.coe_injective ?_)
-    simp only [coe_normalizedAtkinLehnerCharCuspOneEnd_apply, CuspForm.coe_ofLe,
+    simp only [coe_normalizedAtkinLehnerCharCuspOneEnd_apply, CuspForm.coe_restrict,
       coe_normalizedAtkinLehnerOperatorCusp, coe_cuspFormCharSpaceOneEquiv_apply,
       coe_twistedHeckeSlashCuspFormCharEnd, twistedHeckeSlashSum_eq_heckeSlashSum]
     exact hΓ₀
@@ -226,7 +227,7 @@ theorem exists_normalizedAtkinLehnerOperatorCusp_eq_smul_of_mem_cuspFormsNew (h 
       ((h.normalizedAtkinLehnerCharCuspOneEnd k g : cuspFormCharSpace k 1) :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k := by
     rw [coe_normalizedAtkinLehnerCharCuspOneEnd_apply]
-    refine h.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsNew ?_
+    refine h.restrict_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsNew ?_
     rwa [← coe_cuspFormCharSpaceOneEquiv_symm_apply, LinearEquiv.symm_apply_apply]
   -- so the multiplicity-one step for a commuting involution applies to `𝒲_Q` on `S_k(N, 1)`
   obtain ⟨ε, hε, hWf⟩ := exists_eq_smul_of_commute_heckeRingHomCusp_of_mem_cuspFormsNew
@@ -265,9 +266,9 @@ theorem coe_toCuspFormGamma0 (f : Newform N k) (hχ : f.χ = 1) :
 
 /-- Restricting `toCuspFormGamma0` back to `Γ₁(N)` recovers the newform. -/
 @[simp]
-theorem ofLe_toCuspFormGamma0 (f : Newform N k) (hχ : f.χ = 1) :
-    CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) (f.toCuspFormGamma0 hχ) = f.toCuspForm :=
-  CuspForm.ext fun τ ↦ by simp [CuspForm.coe_ofLe]
+theorem restrict_toCuspFormGamma0 (f : Newform N k) (hχ : f.χ = 1) :
+    CuspForm.restrict (Gamma1_map_le_Gamma0_map N) (f.toCuspFormGamma0 hχ) = f.toCuspForm :=
+  CuspForm.ext fun τ ↦ by simp [CuspForm.coe_restrict]
 
 /-- A newform of trivial nebentypus is nonzero on `Γ₀(N)`. -/
 theorem toCuspFormGamma0_ne_zero (f : Newform N k) (hχ : f.χ = 1) :

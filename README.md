@@ -44,6 +44,14 @@ Humans can raise issues against the code, and leave implementation (and review) 
 - **[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview)** — the review rubrics and
   the machinery that runs review.
 
+## Mathlib updates
+
+The hourly dependency updater selects the newest successfully built Mathlib master commit
+whose full cache it can verify. It opens one bot bump PR and keeps that target fixed while
+workers repair TauCeti, saving partial source repairs between sessions. Full CI, axiom audits,
+review, and Bors integration must pass before it lands. The next hourly run selects another
+recent target. Downstream-reports remains external reporting and does not control these updates.
+
 ## Relationship to Lean Pool
 
 Tau Ceti and [Lean Pool](https://github.com/Vilin97/lean-pool) are complementary. Lean Pool is
@@ -77,11 +85,14 @@ The rubrics are **adversarial**, including instructions to find mis-formalizatio
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
 Human-owned infrastructure changes still require human review. After reviewing a PR,
-kim-em can issue `bors r+` or `bors merge`: bors records approval for the accepted
-head and merge base, requests trusted CI, and owns testing and landing the change.
+repository admins can issue `bors r+` or `bors merge`: bors records approval
+for the accepted head and merge base, requests trusted CI, and owns testing and
+landing the change.
 This approval waives only the restricted-path rule; builds, audits, Lake configuration
 attestation and pin/size guards still apply. A push, changed merge base or `bors r-`
-requires fresh approval. Other users follow the existing review policy. See the
+requires fresh approval. Both bors and CI check the approving account's current GitHub
+repository admin role; removing that role invalidates its scope authority.
+Other users follow the existing review policy. See the
 [bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
 
 ## Mathlib dependency

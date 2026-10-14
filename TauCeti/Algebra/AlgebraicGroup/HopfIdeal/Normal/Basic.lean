@@ -44,9 +44,8 @@ cut out by `J`, namely its normal closure.
 
 ## References
 
-The coordinate criterion is the usual adjoint-coaction characterization of a normal closed
-subgroup; see J. S. Milne, *Algebraic Groups* (2017), §3.5 and §10.20. This is the normality
-prerequisite in Layer 3, “Normality and quotients”, of the ReductiveGroups roadmap.
+The coordinate criterion is the usual adjoint-coaction characterization of a normal closed subgroup;
+see J. S. Milne, *Algebraic Groups* (2017), §3.5 and §10.20.
 -/
 
 public section

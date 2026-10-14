@@ -21,6 +21,11 @@ by a bounded simple function and bound the two remainders by their marginal inte
 The resulting quantitative completion estimate proves equality of the two primal values.
 This does not assert equality for arbitrary extended-valued Borel costs.
 
+The same envelope makes the cost uniformly integrable over all plans whose marginals are dominated
+by `μ` and `ν`, couplings included (`TauCeti.exists_forall_setLIntegral_le_of_le_split`): by
+Markov's inequality the region where the cost exceeds a level `R` has small mass for every such
+plan once `R` is large.
+
 ## References
 
 * M. Beiglböck, C. Léonard and W. Schachermayer, *A general duality theorem for the
@@ -31,8 +36,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
-open scoped ENNReal NNReal
+open MeasureTheory Set Filter
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -72,6 +77,59 @@ theorem exists_lintegral_le_mul_mass_add_of_le_split
       ac_rfl
     _ = (A + B : ℝ≥0) * ρ univ + η := by
       rw [ENNReal.coe_add, add_mul, ENNReal.add_halves]
+
+/-- **Envelope-dominated costs are uniformly integrable over plans with dominated marginals.** If
+the cost is bounded by a split envelope with finite marginal integrals, then for every `η > 0`
+there is a level `R` such that every plan whose marginals are dominated by `μ` and `ν`, in
+particular every coupling of `μ` and `ν`, spends at most `η` of its cost where the cost is at
+least `R`. -/
+theorem exists_forall_setLIntegral_le_of_le_split
+    (ha : AEMeasurable a μ) (hb : AEMeasurable b ν)
+    (haint : ∫⁻ x, a x ∂μ ≠ ∞) (hbint : ∫⁻ y, b y ∂ν ≠ ∞)
+    (hc : ∀ z, c z ≤ a z.1 + b z.2) {η : ℝ≥0∞} (hη : 0 < η) :
+    ∃ R : ℝ≥0, ∀ π : Measure (X × Y), π.fst ≤ μ → π.snd ≤ ν →
+      ∫⁻ z in {z | (R : ℝ≥0∞) ≤ c z}, c z ∂π ≤ η := by
+  obtain ⟨C, hC⟩ := exists_lintegral_le_mul_mass_add_of_le_split
+    ha hb haint hbint hc (ENNReal.half_pos hη.ne')
+  set M := (∫⁻ x, a x ∂μ) + ∫⁻ y, b y ∂ν
+  have hMtop : M ≠ ∞ := ENNReal.add_ne_top.2 ⟨haint, hbint⟩
+  -- By Markov's inequality the region `{z | n ≤ c z}` has mass at most `M / n` for every
+  -- plan with dominated marginals, so a large `n` makes its cost small.
+  have hlim : Tendsto (fun n : ℕ ↦ (C : ℝ≥0∞) * (M * (n : ℝ≥0∞)⁻¹)) atTop (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul
+      (ENNReal.Tendsto.const_mul ENNReal.tendsto_inv_nat_nhds_zero (Or.inr hMtop))
+      (Or.inr ENNReal.coe_ne_top)
+  obtain ⟨n, hnC, hn⟩ := ((hlim.eventually (gt_mem_nhds (ENNReal.half_pos hη.ne'))).and
+    (eventually_gt_atTop 0)).exists
+  refine ⟨n, fun π hfst hsnd ↦ ?_⟩
+  simp only [ENNReal.coe_natCast]
+  have haπ := ha.mono_measure hfst
+  have hbπ' := hb.mono_measure hsnd
+  have hπ : IsCoupling π π.fst π.snd := ⟨rfl, rfl⟩
+  have hbπ : AEMeasurable (fun z : X × Y ↦ b z.2) π :=
+    hbπ'.comp_quasiMeasurePreserving hπ.measurePreserving_snd.quasiMeasurePreserving
+  have hmass : π {z | (n : ℝ≥0∞) ≤ c z} ≤ M * (n : ℝ≥0∞)⁻¹ := by
+    calc π {z | (n : ℝ≥0∞) ≤ c z} ≤ π {z | (n : ℝ≥0∞) ≤ a z.1 + b z.2} :=
+          measure_mono fun z hz ↦ le_trans hz (hc z)
+      _ ≤ (∫⁻ z, a z.1 + b z.2 ∂π) / n :=
+          meas_ge_le_lintegral_div
+            ((haπ.comp_quasiMeasurePreserving
+              hπ.measurePreserving_fst.quasiMeasurePreserving).add hbπ)
+            (by exact_mod_cast hn.ne') (ENNReal.natCast_ne_top n)
+      _ ≤ M * (n : ℝ≥0∞)⁻¹ := by
+          rw [div_eq_mul_inv, lintegral_add_right' _ hbπ, hπ.lintegral_comp_fst haπ,
+            hπ.lintegral_comp_snd hbπ']
+          exact mul_le_mul_left
+            (add_le_add (lintegral_mono' hfst le_rfl) (lintegral_mono' hsnd le_rfl)) _
+  calc ∫⁻ z in {z | (n : ℝ≥0∞) ≤ c z}, c z ∂π
+      ≤ C * π.restrict {z | (n : ℝ≥0∞) ≤ c z} univ + η / 2 :=
+        hC _ ((Measure.fst_mono Measure.restrict_le_self).trans hfst)
+          ((Measure.snd_mono Measure.restrict_le_self).trans hsnd)
+    _ ≤ η / 2 + η / 2 := by
+        rw [Measure.restrict_apply_univ]
+        gcongr
+        exact le_trans (by gcongr) hnC.le
+    _ = η := ENNReal.add_halves η
 
 /-- For an integrable split upper envelope, completion of a partial plan costs at most
 `C * ε + η`, with `C` depending only on the envelope and the positive error `η`.

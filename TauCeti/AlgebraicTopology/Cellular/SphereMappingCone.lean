@@ -42,10 +42,10 @@ identification `TauCeti.sphereMappingConeSkeletonHomeomorph` of the `n`-skeleton
 theorem cellAttachingMap_sphereMappingConeTopCell_apply (x : TopCat.diskBoundary.{u} (n + 1)) :
     letI := sphereMappingConeCWComplex h f
     ConcreteCategory.hom (Y := TopCat.of (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞)))
-        (cellAttachingMap (sphereMappingCone f) (sphereMappingConeTopCell h f)) x =
+        (cellAttachingMap (sphereMappingConeTopCell h f)) x =
       sphereMappingConeSkeletonHomeomorph h f (f x.down) := by
   let _ := sphereMappingConeCWComplex h f
-  exact Subtype.ext ((coe_cellAttachingMap_apply _ _ x).trans
+  exact Subtype.ext ((coe_cellAttachingMap_apply _ x).trans
     ((map_sphereMappingConeTopCell_unitBallHomeomorph_coe_sphere h f x.down).trans
       (coe_sphereMappingConeSkeletonHomeomorph_apply h f _).symm))
 

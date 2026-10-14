@@ -75,19 +75,14 @@ the greatest proper submodule, and the results asserting that carry the hypothes
 intrinsically, rather than as the sum of the submodules missing a chosen generator, is what makes
 it manifestly independent of the choice of generator.
 
-Nothing here needs the module to be finite-dimensional: the Verma module of Layer 3 of the roadmap,
-whose irreducible quotient is `L(lam)`, is infinite-dimensional, and it is the module this file
-exists to be applied to. In particular the weight spaces are the *generalized* ones throughout, and
-the one place where an honest eigenvector is needed is the generator itself, which is one by the
+Nothing here needs the module to be finite-dimensional: the Verma module
+`TauCeti.VermaModule b lam`, whose quotient by `TauCeti.maximalSubmodule` is `L(lam)`
+(`TauCeti.irreducibleQuotient b lam`), is in general infinite-dimensional, and it is the module this
+file is applied to. In particular the weight spaces are the *generalized* ones throughout, and the
+one place where an honest eigenvector is needed is the generator itself, which is one by the
 definition of `TauCeti.IsHighestWeightVector`.
 
 ## References
-
-This is the "irreducible quotient `L(λ)`" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: "`M(λ)` has a **unique maximal
-submodule** (the sum of all submodules meeting the `λ`-weight space trivially), hence a unique
-irreducible quotient `L(λ)`". Since the Verma module `M(λ)` itself is not yet built, the statements
-are proved for an arbitrary highest weight module, which is how `L(λ)` will consume them.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.3.
 -/
