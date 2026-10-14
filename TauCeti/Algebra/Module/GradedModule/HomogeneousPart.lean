@@ -5,163 +5,272 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.GradedMulAction
 public import TauCeti.Algebra.Module.GradedModule.Internal
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
-# Homogeneous parts of polynomial-linear maps
+# Homogeneous parts of linear maps
 
-For internally integer-graded coefficient modules on which `X` has the same degree `δ`,
-each degree component of a polynomial-linear map is again polynomial-linear. The component
-of degree `r` sends a homogeneous input of degree `p` to the degree-`(p + r)` projection of
-its image. Neither injectivity of `X` nor a sign condition on `δ` is required.
+The degree-`r` part of a map sends a homogeneous input of degree `p` to the
+degree-`(p + r)` projection of its image. Summing over the finite homogeneous decomposition
+of the input defines this operation even when the map is not a finite sum of homogeneous maps.
 
-The construction uses Mathlib's `DirectSum.decomposeLinearEquiv`, `DirectSum.component`, and
-`DirectSum.toModule` to sum the selected projections over the finite input decomposition.
-Its degree-zero part can turn an ungraded retraction onto a homogeneous submodule into a
-homogeneous retraction.
+`InternalGrading.homogeneousPart` is linear over the coefficient semiring of the grading.
+`InternalGrading.homogeneousPartOfGradedSMul` instead preserves linearity over a graded scalar
+semiring acting compatibly on both modules. Its action need not be related to the coefficient
+action by a scalar tower.
 
-## Main definitions and results
+The construction is shared by homogeneous splittings, polynomial-linear retractions, and the
+degree-zero lift that makes projective underlying modules projective in the graded category.
 
-* `InternalGrading.homogeneousPart`: the polynomial-linear component of degree `r`.
-* `InternalGrading.homogeneousPart_apply_of_mem`: its value on homogeneous inputs.
-* `InternalGrading.homogeneousPart_zero` and `InternalGrading.homogeneousPart_add`: components
-  preserve zero and addition of maps.
-* `InternalGrading.homogeneousPart_eq_self`: taking the component of a homogeneous map at its
-  degree recovers the map.
-* `InternalGrading.isHomogeneous_homogeneousPart`: the component has degree `r`.
+## References
+
+* C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, for graded
+  projective modules and the homogeneous-component argument.
 -/
 
 public section
 
 noncomputable section
 
-open Polynomial
-
 namespace TauCeti.InternalGrading
 
-variable {k M N : Type*} [CommSemiring k] [AddCommMonoid M] [AddCommMonoid N]
-  [Module k M] [Module k N] [Module k[X] M] [Module k[X] N]
-  [IsScalarTower k k[X] M] [IsScalarTower k k[X] N]
+universe uk uA uM uN uP
+
+variable {k : Type uk} [Semiring k]
+  {M : Type uM} [AddCommMonoid M] [Module k M]
+  {N : Type uN} [AddCommMonoid N] [Module k N]
   (G : InternalGrading k M) (H : InternalGrading k N)
 
--- This coefficient-linear assembly is private: the public construction bundles the additional
--- polynomial linearity, and its characteristic lemma avoids exposing this implementation.
-private def componentMap (f : M →ₗ[k[X]] N) (r : ℤ) : M →ₗ[k] N :=
-  DirectSum.toModule k ℤ N
-    (fun p ↦ (H.piece (p + r)).subtype ∘ₗ
-      DirectSum.component k ℤ (fun q ↦ H.piece q) (p + r) ∘ₗ
-      (DirectSum.decomposeLinearEquiv H.piece).toLinearMap ∘ₗ
-      f.restrictScalars k ∘ₗ (G.piece p).subtype) ∘ₗ
-    (DirectSum.decomposeLinearEquiv G.piece).toLinearMap
+-- Assemble additively so the scalar action on a map need not agree with the coefficient action.
+private def homogeneousPartAddHom (f : M →+ N) (r : ℤ) : M →+ N :=
+  (DirectSum.toAddMonoid fun p ↦
+    (AddSubmonoidClass.subtype (H.piece (p + r))).comp <|
+      (DFinsupp.evalAddMonoidHom (p + r)).comp <|
+        (DirectSum.decomposeAddEquiv H.piece).toAddMonoidHom.comp <|
+          f.comp (AddSubmonoidClass.subtype (G.piece p))).comp
+    (DirectSum.decomposeAddEquiv G.piece).toAddMonoidHom
 
-private theorem componentMap_apply_of_mem (f : M →ₗ[k[X]] N) (r : ℤ)
+private theorem homogeneousPartAddHom_apply_of_mem (f : M →+ N) (r : ℤ)
     {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
-    componentMap G H f r x = (DirectSum.decompose H.piece (f x) (p + r) : N) := by
-  have heq := DirectSum.decomposeLinearEquiv_apply_coe G.piece p ⟨x, hx⟩
-  simp only [componentMap, _root_.LinearMap.comp_apply, LinearEquiv.coe_coe]
-  rw [heq, DirectSum.toModule_lof]
-  simp only [_root_.LinearMap.comp_apply, Submodule.subtype_apply,
-    _root_.LinearMap.restrictScalars_apply,
-    ← DirectSum.apply_eq_component]
-  exact congrArg (fun z ↦ (z (p + r) : N))
-    (DirectSum.decomposeLinearEquiv_apply H.piece (f x))
+    homogeneousPartAddHom G H f r x = (DirectSum.decompose H.piece (f x) (p + r) : N) := by
+  simp [homogeneousPartAddHom, DirectSum.decompose_of_mem G.piece hx, DFinsupp.evalAddMonoidHom]
 
-variable {δ : ℤ}
-  (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p + δ))
-  (hY : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → (X : k[X]) • y ∈ H.piece (p + δ))
-
-include hX hY in
-private theorem componentMap_X_smul (f : M →ₗ[k[X]] N) (r : ℤ) (x : M) :
-    componentMap G H f r ((X : k[X]) • x) = (X : k[X]) • componentMap G H f r x := by
-  have hhom : TauCeti.LinearMap.IsHomogeneous (_root_.LinearMap.lsmul k[X] N X)
-      H.piece H.piece δ := TauCeti.LinearMap.isHomogeneous_def.mpr hY
-  have heq : componentMap G H f r ∘ₗ
-      (_root_.LinearMap.lsmul k[X] M X).restrictScalars k =
-      (_root_.LinearMap.lsmul k[X] N X).restrictScalars k ∘ₗ componentMap G H f r := by
-    apply G.linearMap_ext
-    intro p y hy
-    simp only [_root_.LinearMap.comp_apply, _root_.LinearMap.restrictScalars_apply,
-      _root_.LinearMap.lsmul_apply]
-    rw [componentMap_apply_of_mem G H f r (hX hy), map_smul,
-      componentMap_apply_of_mem G H f r hy]
-    have hindex : (p + δ) + r = (p + r) + δ := by omega
+private theorem homogeneousPartAddHom_map_smul {A : Type uA}
+    [DistribSMul A M] [DistribSMul A N] (f : M →+ N) (r s : ℤ) (a : A)
+    (hf : ∀ x, f (a • x) = a • f x)
+    (hG : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → a • x ∈ G.piece (p + s))
+    (hH : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → a • y ∈ H.piece (p + s)) (x : M) :
+    homogeneousPartAddHom G H f r (a • x) = a • homogeneousPartAddHom G H f r x := by
+  induction x using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous p x =>
+    rw [homogeneousPartAddHom_apply_of_mem G H f r (hG x.2), hf,
+      homogeneousPartAddHom_apply_of_mem G H f r x.2]
+    have hindex : (p + s) + r = (p + r) + s := by omega
     rw [hindex]
-    exact (hhom.map_decompose (p + r) (f y)).symm
-  exact _root_.LinearMap.congr_fun heq x
+    exact (DirectSum.map_decompose_shift H.piece H.piece (DistribSMul.toAddMonoidHom N a)
+      (· + s) (add_left_injective s) (fun _ _ hy ↦ hH hy) (p + r) (f x)).symm
+  | add x y hx hy => simp [smul_add, hx, hy]
 
-include hX hY in
-private theorem componentMap_smul (f : M →ₗ[k[X]] N) (r : ℤ) (a : k[X]) (x : M) :
-    componentMap G H f r (a • x) = a • componentMap G H f r x := by
-  have hpow (n : ℕ) (y : M) : componentMap G H f r ((X ^ n : k[X]) • y) =
-      (X ^ n : k[X]) • componentMap G H f r y := by
-    induction n generalizing y with
-    | zero => simp
-    | succ n ih =>
-      rw [pow_succ, mul_smul, ih, componentMap_X_smul G H hX hY, mul_smul]
-  induction a using Polynomial.induction_on' with
-  | add a b ha hb => simp only [add_smul, map_add, ha, hb]
-  | monomial n c =>
-    rw [← C_mul_X_pow_eq_monomial, mul_smul, ← algebraMap_eq, algebraMap_smul,
-      map_smul, hpow, mul_smul, algebraMap_smul]
+/-- The degree-`r` part of a coefficient-linear map. On each degree-`p` input component it
+retains the degree-`(p + r)` component of the image. -/
+def homogeneousPart (f : M →ₗ[k] N) (r : ℤ) : M →ₗ[k] N where
+  toFun := homogeneousPartAddHom G H f.toAddMonoidHom r
+  map_add' := map_add _
+  map_smul' a x := homogeneousPartAddHom_map_smul G H f.toAddMonoidHom r 0 a
+    (f.map_smul a) (fun _ _ hx ↦ by simpa using (G.piece _).smul_mem a hx)
+    (fun _ _ hy ↦ by simpa using (H.piece _).smul_mem a hy) x
 
-/-- The degree-`r` part of a polynomial-linear map between internally graded modules on which
-`X` shifts degree by the same integer `δ`. It selects the degree-`(p + r)` component of the
-image of each degree-`p` input component and sums these finitely many values. -/
-def homogeneousPart (f : M →ₗ[k[X]] N) (r : ℤ) : M →ₗ[k[X]] N where
-  toFun := componentMap G H f r
-  map_add' := (componentMap G H f r).map_add
-  map_smul' a x := componentMap_smul G H hX hY f r a x
-
-/-- On a degree-`p` input, the degree-`r` part of a map is the degree-`(p + r)` projection
-of its image. -/
-theorem homogeneousPart_apply_of_mem (f : M →ₗ[k[X]] N) (r : ℤ)
+/-- The value of a homogeneous part on a homogeneous input. -/
+theorem homogeneousPart_apply_of_mem (f : M →ₗ[k] N) (r : ℤ)
     {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
-    G.homogeneousPart H hX hY f r x =
-      (DirectSum.decompose H.piece (f x) (p + r) : N) :=
-  componentMap_apply_of_mem G H f r hx
+    G.homogeneousPart H f r x = (DirectSum.decompose H.piece (f x) (p + r) : N) :=
+  homogeneousPartAddHom_apply_of_mem G H f.toAddMonoidHom r hx
 
-/-- Every homogeneous part of the zero map is zero. This case is also simplified by
-`homogeneousPart_eq_self`. -/
-theorem homogeneousPart_zero (r : ℤ) :
-    G.homogeneousPart H hX hY 0 r = 0 := by
-  apply _root_.LinearMap.restrictScalars_injective k
-  apply G.linearMap_ext
-  intro p x hx
-  simp [G.homogeneousPart_apply_of_mem H hX hY 0 r hx]
+/-- A homogeneous part commutes with any scalar whose action shifts both gradings by the same
+degree and commutes with the original map. -/
+theorem homogeneousPart_apply_smul {A : Type uA} [DistribSMul A M] [DistribSMul A N]
+    (f : M →ₗ[k] N) (r s : ℤ) (a : A) (hf : ∀ x, f (a • x) = a • f x)
+    (hG : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → a • x ∈ G.piece (p + s))
+    (hH : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → a • y ∈ H.piece (p + s)) (x : M) :
+    G.homogeneousPart H f r (a • x) = a • G.homogeneousPart H f r x :=
+  homogeneousPartAddHom_map_smul G H f.toAddMonoidHom r s a hf hG hH x
 
-/-- Taking a homogeneous part preserves addition of polynomial-linear maps. -/
+/-- The degree-`r` part is homogeneous of degree `r`. -/
 @[simp]
-theorem homogeneousPart_add (f g : M →ₗ[k[X]] N) (r : ℤ) :
-    G.homogeneousPart H hX hY (f + g) r =
-      G.homogeneousPart H hX hY f r + G.homogeneousPart H hX hY g r := by
-  apply _root_.LinearMap.restrictScalars_injective k
-  apply G.linearMap_ext
+theorem isHomogeneous_homogeneousPart (f : M →ₗ[k] N) (r : ℤ) :
+    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPart H f r) G.piece H.piece r := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
   intro p x hx
-  simp only [_root_.LinearMap.restrictScalars_apply, _root_.LinearMap.add_apply,
-    G.homogeneousPart_apply_of_mem H hX hY (f + g) r hx,
-    G.homogeneousPart_apply_of_mem H hX hY f r hx,
-    G.homogeneousPart_apply_of_mem H hX hY g r hx, DirectSum.decompose_add,
-    DirectSum.add_apply, Submodule.coe_add]
+  rw [G.homogeneousPart_apply_of_mem H f r hx]
+  exact (DirectSum.decompose H.piece (f x) (p + r)).property
 
-/-- Taking the degree-`r` part of a map already homogeneous of degree `r` recovers the map. -/
+/-- Taking the component at the degree of a homogeneous map recovers the map. -/
 @[simp]
-theorem homogeneousPart_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
+theorem homogeneousPart_eq_self (f : M →ₗ[k] N) (r : ℤ)
     (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
-    G.homogeneousPart H hX hY f r = f := by
-  apply _root_.LinearMap.restrictScalars_injective k
-  apply G.linearMap_ext
-  intro p x hx
-  rw [_root_.LinearMap.restrictScalars_apply, _root_.LinearMap.restrictScalars_apply,
-    G.homogeneousPart_apply_of_mem H hX hY f r hx]
+    G.homogeneousPart H f r = f := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  rw [G.homogeneousPart_apply_of_mem H f r hx]
   exact DirectSum.decompose_of_mem_same H.piece (hf.map_mem hx)
 
-/-- The degree-`r` component of a polynomial-linear map is homogeneous of degree `r`. -/
-theorem isHomogeneous_homogeneousPart (f : M →ₗ[k[X]] N) (r : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPart H hX hY f r) G.piece H.piece r := by
-  apply TauCeti.LinearMap.isHomogeneous_def.mpr
+/-- A map is fixed by its degree-`r` component exactly when it is homogeneous of degree `r`. -/
+@[simp]
+theorem homogeneousPart_eq_self_iff (f : M →ₗ[k] N) (r : ℤ) :
+    G.homogeneousPart H f r = f ↔ TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+  constructor
+  · intro hf
+    rw [← hf]
+    exact G.isHomogeneous_homogeneousPart H f r
+  · exact G.homogeneousPart_eq_self H f r
+
+/-- Taking a homogeneous part preserves addition of maps. -/
+@[simp]
+theorem homogeneousPart_add (f g : M →ₗ[k] N) (r : ℤ) :
+    G.homogeneousPart H (f + g) r = G.homogeneousPart H f r + G.homogeneousPart H g r := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  simp [G.homogeneousPart_apply_of_mem H (f + g) r hx,
+    G.homogeneousPart_apply_of_mem H f r hx, G.homogeneousPart_apply_of_mem H g r hx]
+
+section Composition
+
+variable {P : Type uP} [AddCommMonoid P] [Module k P] (I : InternalGrading k P)
+
+-- Work with the shared additive construction: a graded-scalar map need not be coefficient-linear.
+private theorem comp_homogeneousPartAddHom_apply_of_mem {A : Type uA} [Semiring A]
+    [Module A N] [Module A P] (f : M →+ N) (r : ℤ) {g : N →ₗ[A] P} {s : ℤ}
+    (hg : TauCeti.LinearMap.IsHomogeneous g H.piece I.piece s)
+    {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
+    g (homogeneousPartAddHom G H f r x) =
+      homogeneousPartAddHom G I (g.toAddMonoidHom.comp f) (r + s) x := by
+  rw [homogeneousPartAddHom_apply_of_mem G H f r hx,
+    homogeneousPartAddHom_apply_of_mem G I (g.toAddMonoidHom.comp f) (r + s) hx,
+    hg.map_decompose, add_assoc]
+  rfl
+
+private theorem homogeneousPartAddHom_comp_apply_of_mem {A : Type uA} [Semiring A]
+    [Module A M] [Module A N] (f : N →+ P) (r : ℤ) {g : M →ₗ[A] N} {s : ℤ}
+    (hg : TauCeti.LinearMap.IsHomogeneous g G.piece H.piece s)
+    {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
+    homogeneousPartAddHom G I (f.comp g.toAddMonoidHom) (s + r) x =
+      homogeneousPartAddHom H I f r (g x) := by
+  rw [homogeneousPartAddHom_apply_of_mem G I (f.comp g.toAddMonoidHom) (s + r) hx,
+    homogeneousPartAddHom_apply_of_mem H I f r (hg.map_mem hx), add_assoc]
+  rfl
+
+/-- Postcomposition by a degree-`s` homogeneous coefficient-linear map shifts the selected
+component by `s`. -/
+theorem comp_homogeneousPart (f : M →ₗ[k] N) (r : ℤ) {g : N →ₗ[k] P} {s : ℤ}
+    (hg : TauCeti.LinearMap.IsHomogeneous g H.piece I.piece s) :
+    g.comp (G.homogeneousPart H f r) = G.homogeneousPart I (g.comp f) (r + s) := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  exact comp_homogeneousPartAddHom_apply_of_mem G H I f.toAddMonoidHom r hg hx
+
+/-- Precomposition by a degree-`s` homogeneous coefficient-linear map shifts the selected
+component by `s`. -/
+theorem homogeneousPart_comp (f : N →ₗ[k] P) (r : ℤ) {g : M →ₗ[k] N} {s : ℤ}
+    (hg : TauCeti.LinearMap.IsHomogeneous g G.piece H.piece s) :
+    G.homogeneousPart I (f.comp g) (s + r) = (H.homogeneousPart I f r).comp g := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  exact homogeneousPartAddHom_comp_apply_of_mem G H I f.toAddMonoidHom r hg hx
+
+end Composition
+
+section GradedSMul
+
+variable {A : Type uA} [Semiring A] [Module A M] [Module A N]
+  {S : Type*} [SetLike S A] [AddSubmonoidClass S A] (𝒜 : ℤ → S)
+  [DirectSum.Decomposition 𝒜] [SetLike.GradedSMul 𝒜 G.piece] [SetLike.GradedSMul 𝒜 H.piece]
+
+include 𝒜 in
+private theorem homogeneousPartAddHom_map_smul_of_graded (f : M →ₗ[A] N) (r : ℤ)
+    (a : A) (x : M) :
+    homogeneousPartAddHom G H f.toAddMonoidHom r (a • x) =
+      a • homogeneousPartAddHom G H f.toAddMonoidHom r x := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous i a =>
+    exact homogeneousPartAddHom_map_smul G H f.toAddMonoidHom r i (a : A)
+      (f.map_smul a) (fun _ _ hx ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.2 hx)
+      (fun _ _ hy ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.2 hy) x
+  | add a b ha hb => simp [add_smul, ha, hb]
+
+/-- The degree-`r` part of an `A`-linear map for a common graded scalar action. The coefficient
+and scalar semirings may act independently, and the scalar pieces may be any additive subobjects.
+-/
+def homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) : M →ₗ[A] N where
+  toFun := homogeneousPartAddHom G H f.toAddMonoidHom r
+  map_add' := map_add _
+  map_smul' := homogeneousPartAddHom_map_smul_of_graded G H 𝒜 f r
+
+/-- On a homogeneous input, the graded-scalar homogeneous part selects the output component. -/
+theorem homogeneousPartOfGradedSMul_apply_of_mem (f : M →ₗ[A] N) (r : ℤ)
+    {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
+    G.homogeneousPartOfGradedSMul H 𝒜 f r x =
+      (DirectSum.decompose H.piece (f x) (p + r) : N) :=
+  homogeneousPartAddHom_apply_of_mem G H f.toAddMonoidHom r hx
+
+/-- The graded-scalar homogeneous part has the selected degree. -/
+@[simp]
+theorem isHomogeneous_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) :
+    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPartOfGradedSMul H 𝒜 f r)
+      G.piece H.piece r := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
   intro p x hx
-  rw [G.homogeneousPart_apply_of_mem H hX hY f r hx]
+  rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx]
   exact (DirectSum.decompose H.piece (f x) (p + r)).property
+
+/-- Taking the component at the degree of a homogeneous graded-scalar map recovers the map. -/
+@[simp]
+theorem homogeneousPartOfGradedSMul_eq_self (f : M →ₗ[A] N) (r : ℤ)
+    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    G.homogeneousPartOfGradedSMul H 𝒜 f r = f := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx]
+  exact DirectSum.decompose_of_mem_same H.piece (hf.map_mem hx)
+
+/-- A graded-scalar map is fixed by its degree-`r` component exactly when it has degree `r`. -/
+@[simp]
+theorem homogeneousPartOfGradedSMul_eq_self_iff (f : M →ₗ[A] N) (r : ℤ) :
+    G.homogeneousPartOfGradedSMul H 𝒜 f r = f ↔
+      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+  constructor
+  · intro hf
+    rw [← hf]
+    exact G.isHomogeneous_homogeneousPartOfGradedSMul H 𝒜 f r
+  · exact G.homogeneousPartOfGradedSMul_eq_self H 𝒜 f r
+
+/-- Taking a graded-scalar homogeneous part preserves addition. -/
+@[simp]
+theorem homogeneousPartOfGradedSMul_add (f g : M →ₗ[A] N) (r : ℤ) :
+    G.homogeneousPartOfGradedSMul H 𝒜 (f + g) r =
+      G.homogeneousPartOfGradedSMul H 𝒜 f r + G.homogeneousPartOfGradedSMul H 𝒜 g r := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  simp [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 (f + g) r hx,
+    G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx,
+    G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 g r hx]
+
+variable {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P]
+  (I : InternalGrading k P) [SetLike.GradedSMul 𝒜 I.piece]
+
+/-- Postcomposition by a degree-`s` homogeneous map shifts the selected component by `s`. -/
+theorem comp_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) {g : N →ₗ[A] P} {s : ℤ}
+    (hg : TauCeti.LinearMap.IsHomogeneous g H.piece I.piece s) :
+    g.comp (G.homogeneousPartOfGradedSMul H 𝒜 f r) =
+      G.homogeneousPartOfGradedSMul I 𝒜 (g.comp f) (r + s) := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  exact comp_homogeneousPartAddHom_apply_of_mem G H I f.toAddMonoidHom r hg hx
+
+/-- Precomposition by a degree-`s` homogeneous map shifts the selected component by `s`. -/
+theorem homogeneousPartOfGradedSMul_comp (f : N →ₗ[A] P) (r : ℤ) {g : M →ₗ[A] N} {s : ℤ}
+    (hg : TauCeti.LinearMap.IsHomogeneous g G.piece H.piece s) :
+    G.homogeneousPartOfGradedSMul I 𝒜 (f.comp g) (s + r) =
+      (H.homogeneousPartOfGradedSMul I 𝒜 f r).comp g := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  exact homogeneousPartAddHom_comp_apply_of_mem G H I f.toAddMonoidHom r hg hx
+
+end GradedSMul
 
 end TauCeti.InternalGrading
