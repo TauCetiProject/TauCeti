@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
-public import TauCeti.Topology.Sphere.Suspension
 
 /-!
 # The double loop space inside the free loop space of the loop space
@@ -25,6 +24,7 @@ All maps are natural in the based space `X`.
 * `TauCeti.BasedTopologicalSpace.loopSpace2Homeomorph`: `Ω²X ≃ₜ Map_*(S¹, ΩX)`, natural in `X`
   by `TauCeti.BasedTopologicalSpace.loopSpace2Homeomorph_map`.
 * `TauCeti.BasedTopologicalSpace.loopSpace2ToMapCircle`: the embedding `Ω²X → Map(S¹, ΩX)`, with
+  `TauCeti.BasedTopologicalSpace.isEmbedding_loopSpace2ToMapCircle` its embedding property and
   `TauCeti.BasedTopologicalSpace.loopSpace2ToMapCircle_map` its naturality.
 * `TauCeti.BasedTopologicalSpace.evalCircle`: the evaluation `S¹ × Ω²X → ΩX`, with
   `TauCeti.BasedTopologicalSpace.evalCircle_map` its naturality.
@@ -74,6 +74,8 @@ theorem loopSpace2ToMapCircle_apply (γ : (X.iteratedLoopSpace 2).carrier) :
   rw [loopSpace2ToMapCircle]
   rfl
 
+/-- The embedding of the double loop space in the space of maps from the circle to the loop space
+is a topological embedding. -/
 theorem isEmbedding_loopSpace2ToMapCircle : IsEmbedding (loopSpace2ToMapCircle X s₀) :=
   IsEmbedding.subtypeVal.comp (loopSpace2Homeomorph X s₀).isEmbedding
 
