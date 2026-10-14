@@ -33,7 +33,7 @@ compute the first-order dependence of the flow on parameters of the vector field
   `Flow.fderivUnit`, `Flow.ringInverse_fderiv`: for a flow whose time maps are
   differentiable at the relevant points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
   invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
-* `Flow.fderiv_flow_apply_of_hasDerivAt`: the derivative of a flow carries its velocity field
+* `Flow.fderiv_apply_of_hasDerivAt`: the derivative of a flow carries its velocity field
   along.
 * `TauCeti.continuous_fderiv_flowOfLipschitz`, `TauCeti.continuous_fderiv_flowOfLipschitz_neg`:
   for a `C¹` field, `τ ↦ Dφ_τ(x)` and its inverse `σ ↦ Dφ_{-σ}(φ_σ x)` are continuous.
@@ -209,7 +209,7 @@ theorem ringInverse_fderiv (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
 
 /-- **The derivative of a flow carries its velocity field along**: if the orbits of `x` and of
 `ϕ t x` have velocities `a` and `b` at time `0`, then `Dϕ_t(x) a = b`. -/
-theorem fderiv_flow_apply_of_hasDerivAt {a b : E} (hx : HasDerivAt (fun s ↦ ϕ s x) a 0)
+theorem fderiv_apply_of_hasDerivAt {a b : E} (hx : HasDerivAt (fun s ↦ ϕ s x) a 0)
     (hy : HasDerivAt (fun s ↦ ϕ s (ϕ t x)) b 0) (ht : DifferentiableAt ℝ (ϕ t) x) :
     fderiv ℝ (ϕ t) x a = b := by
   have h1 : HasDerivAt (fun s ↦ ϕ t (ϕ s x)) (fderiv ℝ (ϕ t) x a) 0 :=
@@ -239,11 +239,11 @@ theorem continuous_fderiv_flowOfLipschitz_neg (x : E) :
   have hd := differentiable_flowOfLipschitz_apply hv hvs
   have hinv : ∀ σ, Ring.inverse (fderiv ℝ (flowOfLipschitz v hv σ) x) =
       fderiv ℝ (flowOfLipschitz v hv (-σ)) (flowOfLipschitz v hv σ x) := fun σ ↦
-    Flow.ringInverse_fderiv_flow (hd _ _) (hd σ x)
+    Flow.ringInverse_fderiv (hd _ _) (hd σ x)
   simp_rw [← hinv]
   refine continuous_iff_continuousAt.2 fun σ ↦ ?_
-  have hU := NormedRing.inverse_continuousAt (Flow.fderivFlowUnit (hd (-σ) _) (hd σ x))
-  rw [Flow.coe_fderivFlowUnit] at hU
+  have hU := NormedRing.inverse_continuousAt (Flow.fderivUnit (hd (-σ) _) (hd σ x))
+  rw [Flow.coe_fderivUnit] at hU
   exact hU.comp_of_eq (continuous_fderiv_flowOfLipschitz hv hvs x).continuousAt rfl
 
 end Inverse
