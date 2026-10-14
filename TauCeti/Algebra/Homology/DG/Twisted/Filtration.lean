@@ -8,9 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
-import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # The index filtration of a twisted complex
@@ -127,38 +125,6 @@ theorem twistedIndexFiltration_eq_twistedTotalGrading {p : ℤ} (hp : ∀ x, ind
 
 end Submodule
 
-section Differential
-
-variable {R : Type uR} {A : Type uA} {M : Type uM} [CommRing R] [Semiring A]
-  [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
-  {P : Type uP} [Fintype P] {ind : P → ℤ} (m : P → P → A) {ℳ : ℤ → Submodule R M}
-  [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
-
-/-- The twisted differential of a one-sided matrix vanishes, at a generator `y`, on the
-functions supported on the generators of index at most `ind y`, apart from the term `dM (f y)`. -/
-theorem twistedDifferential_apply_of_one_sided (hm : ∀ x y, ind x ≤ ind y → m x y = 0)
-    {f : P → M} {y : P} (hf : ∀ x, ind y < ind x → f x = 0) :
-    twistedDifferential m ℳ dM f y = dM (f y) := by
-  rw [twistedDifferential_apply, Finset.sum_eq_zero fun x _ ↦ ?_, add_zero]
-  rcases le_or_gt (ind x) (ind y) with hx | hx
-  · rw [hm x y hx, MulOpposite.op_zero, zero_smul]
-  · rw [hf x hx, map_zero, smul_zero]
-
-/-- The restriction to the generators of index `p` of a function supported on the generators of
-index at most `p` intertwines the twisted differential of a one-sided matrix with that of the zero
-matrix, which is `dM` on each generator. -/
-theorem twistedDifferential_funLeft_val (hm : ∀ x y, ind x ≤ ind y → m x y = 0) {p : ℤ}
-    {f : P → M} (hf : ∀ x, p < ind x → f x = 0) :
-    twistedDifferential (0 : {x // ind x = p} → {x // ind x = p} → A) ℳ dM
-        (LinearMap.funLeft R M Subtype.val f) =
-      LinearMap.funLeft R M Subtype.val (twistedDifferential m ℳ dM f) := by
-  funext y
-  rw [LinearMap.funLeft_apply, twistedDifferential_apply_of_one_sided m dM hm
-    fun x hx ↦ hf x (y.2.symm.trans_lt hx)]
-  simp
-
-end Differential
-
 section Complex
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
@@ -237,11 +203,15 @@ theorem indexFiltrationι_f_apply (p n : ℤ) (f : (m.indexFiltrationComplex dM 
 /-- The inclusion of `F_p` into the twisted complex is injective in each degree. -/
 theorem injective_indexFiltrationι_f (p n : ℤ) :
     Function.Injective ((m.indexFiltrationι dM hM p).f n) := by
-  intro f g hfg
-  have := congrArg (fun x ↦ (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n x : P → M))
-    hfg
-  simp only [indexFiltrationι_f_apply] at this
-  exact (m.indexFiltrationComplexXEquiv dM hM p n).injective (Subtype.ext this)
+  unfold indexFiltrationι
+  change Function.Injective
+    ((twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm.toLinearMap ∘ₗ
+      Submodule.inclusion (twistedIndexFiltration_le_twistedTotalGrading p n) ∘ₗ
+        (m.indexFiltrationComplexXEquiv dM hM p n).toLinearMap)
+  exact (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm.injective.comp
+    ((Submodule.inclusion_injective
+      (twistedIndexFiltration_le_twistedTotalGrading p n)).comp
+      (m.indexFiltrationComplexXEquiv dM hM p n).injective)
 
 instance (p : ℤ) : Mono (m.indexFiltrationι dM hM p) :=
   HomologicalComplex.mono_of_mono_f _ fun n ↦
@@ -362,27 +332,69 @@ theorem indexFiltrationProj_f_apply (p n : ℤ) (f : (m.indexFiltrationComplex d
       LinearMap.funLeft R M Subtype.val (m.indexFiltrationComplexXEquiv dM hM p n f) := by
   simp [indexFiltrationProj]
 
+@[reassoc (attr := simp)]
+theorem indexFiltrationComplexMap_comp_indexFiltrationProj (p : ℤ) :
+    m.indexFiltrationComplexMap dM hM (Int.le_add_one le_rfl) ≫
+      m.indexFiltrationProj dM hM (p + 1) = 0 := by
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦
+    (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded 0) (TwistingCocycle.twisting 0)
+      hM n).injective (Subtype.ext ?_))
+  funext x
+  simpa using (mem_twistedIndexFiltration_iff.mp
+    (m.indexFiltrationComplexXEquiv dM hM p n f).2).2 x (x.2.symm ▸ lt_add_one p)
+
 /-- The short complex `F_p ⟶ F_{p+1} ⟶ ℳ ⊗ ⟨P_{p+1}⟩` of the index filtration, whose second map
 restricts to the generators of index `p + 1`. -/
-@[expose, simps]
 noncomputable def indexFiltrationShortComplex (p : ℤ) :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   ShortComplex.mk (m.indexFiltrationComplexMap dM hM (Int.le_add_one le_rfl))
-    (m.indexFiltrationProj dM hM (p + 1)) <| by
-      refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦
-        (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded 0) (TwistingCocycle.twisting 0)
-          hM n).injective (Subtype.ext ?_))
-      funext x
-      simpa using (mem_twistedIndexFiltration_iff.mp
-        (m.indexFiltrationComplexXEquiv dM hM p n f).2).2 x (x.2.symm ▸ lt_add_one p)
+    (m.indexFiltrationProj dM hM (p + 1))
+    (m.indexFiltrationComplexMap_comp_indexFiltrationProj dM hM p)
+
+@[simp]
+theorem indexFiltrationShortComplex_X₁ (p : ℤ) :
+    (m.indexFiltrationShortComplex dM hM p).X₁ = m.indexFiltrationComplex dM hM p := by
+  rw [indexFiltrationShortComplex]
+
+@[simp]
+theorem indexFiltrationShortComplex_X₂ (p : ℤ) :
+    (m.indexFiltrationShortComplex dM hM p).X₂ = m.indexFiltrationComplex dM hM (p + 1) := by
+  rw [indexFiltrationShortComplex]
+
+@[simp]
+theorem indexFiltrationShortComplex_X₃ (p : ℤ) :
+    (m.indexFiltrationShortComplex dM hM p).X₃ =
+      (0 : TwistingCocycle 𝒜 d {x // ind x = p + 1} fun x ↦ ind x).twistedCochainComplex dM hM := by
+  rw [indexFiltrationShortComplex]
+
+/-- The first map in `indexFiltrationShortComplex` is the inclusion `F_p ⟶ F_{p+1}`. -/
+@[simp]
+theorem indexFiltrationShortComplex_f (p : ℤ) :
+    HEq (m.indexFiltrationShortComplex dM hM p).f
+      (m.indexFiltrationComplexMap dM hM (p := p) (q := p + 1)
+        (Int.le_add_one le_rfl)) := by
+  unfold indexFiltrationShortComplex
+  rfl
+
+/-- The second map in `indexFiltrationShortComplex` is restriction to the generators of index
+`p + 1`. -/
+@[simp]
+theorem indexFiltrationShortComplex_g (p : ℤ) :
+    HEq (m.indexFiltrationShortComplex dM hM p).g (m.indexFiltrationProj dM hM (p + 1)) := by
+  unfold indexFiltrationShortComplex
+  rfl
 
 /-- The inclusion `F_p ⟶ F_q` is injective in each degree. -/
 theorem injective_indexFiltrationComplexMap_f {p q : ℤ} (hpq : p ≤ q) (n : ℤ) :
     Function.Injective ((m.indexFiltrationComplexMap dM hM hpq).f n) := by
-  intro f g hfg
-  have := congrArg (fun x ↦ (m.indexFiltrationComplexXEquiv dM hM q n x : P → M)) hfg
-  simp only [indexFiltrationComplexMap_f_apply] at this
-  exact (m.indexFiltrationComplexXEquiv dM hM p n).injective (Subtype.ext this)
+  unfold indexFiltrationComplexMap
+  change Function.Injective
+    ((m.indexFiltrationComplexXEquiv dM hM q n).symm.toLinearMap ∘ₗ
+      Submodule.inclusion (twistedIndexFiltration_mono hpq n) ∘ₗ
+        (m.indexFiltrationComplexXEquiv dM hM p n).toLinearMap)
+  exact (m.indexFiltrationComplexXEquiv dM hM q n).symm.injective.comp
+    ((Submodule.inclusion_injective (twistedIndexFiltration_mono hpq n)).comp
+      (m.indexFiltrationComplexXEquiv dM hM p n).injective)
 
 /-- The restriction `F_p ⟶ ℳ ⊗ ⟨P_p⟩` is surjective in each degree: a function on the generators
 of index `p` extends by zero to a function supported on the generators of index at most `p`. -/
@@ -427,17 +439,31 @@ theorem exists_indexFiltrationComplexMap_f_eq (p n : ℤ)
     (m.indexFiltrationComplexXEquiv dM hM (p + 1) n).injective (Subtype.ext ?_)⟩
   simp
 
-/-- **The graded pieces of the index filtration.** The sequence
-`F_p ⟶ F_{p+1} ⟶ ℳ ⊗ ⟨P_{p+1}⟩` is short exact: the quotient `F_{p+1} / F_p` is the twisted complex
-of the zero cocycle on the generators of index `p + 1`. -/
-theorem indexFiltrationShortComplex_shortExact (p : ℤ) :
-    (m.indexFiltrationShortComplex dM hM p).ShortExact :=
+private theorem indexFiltrationShortComplexMk_shortExact (p : ℤ) :
+    (ShortComplex.mk (m.indexFiltrationComplexMap dM hM (Int.le_add_one le_rfl))
+      (m.indexFiltrationProj dM hM (p + 1))
+      (m.indexFiltrationComplexMap_comp_indexFiltrationProj dM hM p)).ShortExact :=
   HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
     ShortComplex.ShortExact.mk'
       ((ShortComplex.moduleCat_exact_iff _).mpr (m.exists_indexFiltrationComplexMap_f_eq dM hM p n))
       ((ModuleCat.mono_iff_injective _).mpr
         (m.injective_indexFiltrationComplexMap_f dM hM (Int.le_add_one le_rfl) n))
       ((ModuleCat.epi_iff_surjective _).mpr (m.surjective_indexFiltrationProj_f dM hM (p + 1) n))
+
+/-- **The graded pieces of the index filtration.** The sequence
+`F_p ⟶ F_{p+1} ⟶ ℳ ⊗ ⟨P_{p+1}⟩` is short exact: the quotient `F_{p+1} / F_p` is the twisted complex
+of the zero cocycle on the generators of index `p + 1`. -/
+theorem indexFiltrationShortComplex_shortExact (p : ℤ) :
+    (m.indexFiltrationShortComplex dM hM p).ShortExact := by
+  unfold indexFiltrationShortComplex
+  exact m.indexFiltrationShortComplexMk_shortExact dM hM p
+
+/-- Restriction to the generators of index `p + 1` is a cokernel of the inclusion
+`F_p ⟶ F_{p+1}`. -/
+noncomputable def indexFiltrationProjIsCokernel (p : ℤ) :
+    IsColimit (CokernelCofork.ofπ (m.indexFiltrationProj dM hM (p + 1))
+      (m.indexFiltrationComplexMap_comp_indexFiltrationProj dM hM p)) := by
+  exact (m.indexFiltrationShortComplexMk_shortExact dM hM p).gIsCokernel
 
 /-! ### The first page of the index spectral sequence -/
 
@@ -471,11 +497,11 @@ theorem indexFiltrationFunctor_map_comp_indexFiltrationFunctorObjIso_hom (p : �
       (m.indexFiltrationFunctorObjIso dM hM (p + 1)).hom =
     (m.indexFiltrationFunctorObjIso dM hM p).hom ≫
       m.indexFiltrationComplexMap dM hM (Int.le_add_one le_rfl) := by
-  rw [← cancel_mono (m.indexFiltrationι dM hM (p + 1)), Category.assoc, Category.assoc,
-    indexFiltrationFunctorObjIso_hom_comp_indexFiltrationι,
-    indexFiltrationComplexMap_comp_indexFiltrationι,
-    indexFiltrationFunctorObjIso_hom_comp_indexFiltrationι, ← Category.assoc,
-    CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc, Subobject.ofLE_arrow]
+  rw [← cancel_mono (m.indexFiltrationι dM hM (p + 1))]
+  simp only [Category.assoc, indexFiltrationFunctorObjIso_hom_comp_indexFiltrationι,
+    indexFiltrationComplexMap_comp_indexFiltrationι]
+  rw [← Category.assoc, CochainComplex.filtrationFunctor_map_comp_objIso_hom]
+  simp
 
 /-- The graded piece `F_{p+1} / F_p` of the index filtration, the cokernel of the transition map of
 `indexFiltrationFunctor`, is the twisted complex of the zero cocycle on the generators of index
@@ -484,11 +510,26 @@ noncomputable def indexFiltrationCokernelIso (p : ℤ) :
     cokernel ((m.indexFiltrationFunctor dM hM).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≅
       (0 : TwistingCocycle 𝒜 d {x // ind x = p + 1} fun x ↦ ind x).twistedCochainComplex dM hM :=
-  cokernel.mapIso _ (m.indexFiltrationShortComplex dM hM p).f
+  cokernel.mapIso _ (m.indexFiltrationComplexMap dM hM (Int.le_add_one le_rfl))
       (m.indexFiltrationFunctorObjIso dM hM p) (m.indexFiltrationFunctorObjIso dM hM (p + 1))
       (m.indexFiltrationFunctor_map_comp_indexFiltrationFunctorObjIso_hom dM hM p) ≪≫
     (colimit.isColimit _).coconePointUniqueUpToIso
-      (m.indexFiltrationShortComplex_shortExact dM hM p).gIsCokernel
+      (m.indexFiltrationProjIsCokernel dM hM p)
+
+/-- The graded-piece isomorphism identifies the cokernel projection with restriction to the
+generators of index `p + 1`. -/
+@[reassoc (attr := simp)]
+theorem cokernel_π_comp_indexFiltrationCokernelIso_hom (p : ℤ) :
+    cokernel.π ((m.indexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≫
+      (m.indexFiltrationCokernelIso dM hM p).hom =
+    (m.indexFiltrationFunctorObjIso dM hM (p + 1)).hom ≫
+      m.indexFiltrationProj dM hM (p + 1) := by
+  rw [indexFiltrationCokernelIso, Iso.trans_hom, ← Category.assoc, cokernel.mapIso_hom,
+    cokernel.π_desc, Category.assoc]
+  congr 1
+  exact IsColimit.comp_coconePointUniqueUpToIso_hom (colimit.isColimit _)
+    (m.indexFiltrationProjIsCokernel dM hM p) WalkingParallelPair.one
 
 /-- **The first page of the index spectral sequence.** Its object at `(p, q)`, on page `2` in
 Mathlib's numbering, is the cohomology `H^{p+q}` of the twisted complex `ℳ ⊗ ⟨P_{q+1}⟩` of the zero
@@ -499,6 +540,16 @@ noncomputable def indexSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) :
         hM).homology (pq.1 + pq.2) :=
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
     (HomologicalComplex.homologyFunctor _ _ _).mapIso (m.indexFiltrationCokernelIso dM hM pq.2)
+
+/-- The first-page isomorphism is the generic identification with the cokernel, followed by the
+isomorphism on cohomology induced by `indexFiltrationCokernelIso`. -/
+theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) :
+    m.indexSpectralSequenceFirstPageXIso dM hM pq =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
+        (HomologicalComplex.homologyFunctor _ _ _).mapIso
+          (m.indexFiltrationCokernelIso dM hM pq.2) := by
+  apply Iso.ext
+  rfl
 
 end TwistingCocycle
 
