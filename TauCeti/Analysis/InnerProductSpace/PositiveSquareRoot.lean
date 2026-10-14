@@ -27,6 +27,7 @@ polar decomposition.
 * `LinearMap.IsPositive.sqrt_sq`: its square is the original endomorphism.
 * `LinearMap.IsPositive.sqrt_unique`: uniqueness among positive square roots.
 * `LinearMap.operatorAbs`: the modulus `sqrt (A† A)` of a rectangular linear map.
+* `LinearMap.IsPositive.eq_operatorAbs`: uniqueness among positive square roots of `A† A`.
 * `LinearMap.norm_operatorAbs_apply`: `‖|A|x‖ = ‖Ax‖`.
 * `LinearMap.ker_operatorAbs`, `LinearMap.range_operatorAbs`: the kernel and range of the modulus.
 * `LinearMap.commute_operatorAbs`: a normal endomorphism commutes with its modulus.
@@ -158,6 +159,12 @@ theorem isSymmetric_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.IsSymmetr
 theorem operatorAbs_sq (A : E →ₗ[𝕜] F) :
     A.operatorAbs ∘ₗ A.operatorAbs = A.adjoint ∘ₗ A :=
   (isPositive_adjoint_comp_self A).sqrt_sq
+
+/-- The modulus is the unique positive endomorphism whose square is the source Gram operator
+`A† A`. -/
+theorem IsPositive.eq_operatorAbs {A : E →ₗ[𝕜] F} {S : E →ₗ[𝕜] E} (hS : S.IsPositive)
+    (h : S ∘ₗ S = A.adjoint ∘ₗ A) : S = A.operatorAbs :=
+  (isPositive_adjoint_comp_self A).sqrt_unique hS h
 
 /-- The modulus and the original map have the same pointwise norms. -/
 @[simp]
