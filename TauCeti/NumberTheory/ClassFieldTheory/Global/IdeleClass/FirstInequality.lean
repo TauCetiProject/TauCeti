@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.GaloisModule
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
+import TauCeti.GroupTheory.Solvable
 import TauCeti.NumberTheory.ClassFieldTheory.ClassField
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.PrimeDegree
 import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.HerbrandQuotient
@@ -18,7 +19,9 @@ import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 Let `L/K` be a cyclic extension of number fields. The **first fundamental inequality** says that
 the idele-class norm group `N_{L/K}(C_L)` has index at least `[L : K]` in `C_K`
 (`finrank_le_index_range_ideleClassNormMap`). In particular, if every idele class of `K` is a norm
-from `L`, then `L = K` (`finrank_eq_one_of_surjective_ideleClassNormMap`). This is the form in
+from `L`, then `L = K` (`finrank_eq_one_of_surjective_ideleClassNormMap`). This also holds for a
+solvable Galois extension: every nontrivial finite solvable group has a quotient of prime order, and
+surjectivity of norms descends to the corresponding cyclic subextension. This is the form in
 which the inequality is used to show that the Frobenius elements of an abelian extension generate
 its Galois group, and that an `S`-unit which is a local `n`-th power at the right places is a
 global `n`-th power, both steps of the proof of the second fundamental inequality.
@@ -42,8 +45,8 @@ of `L/K` has norm quotient `C_K / N_{L/K}(C_L)` (`globalLayerNormQuotientEquiv`)
   inequality on a cyclic layer `V ◁ G_K` of the idele-class formation.
 * `TauCeti.ClassFieldTheory.finrank_le_index_range_ideleClassNormMap`: for cyclic `L/K`,
   `[L : K] ≤ [C_K : N_{L/K}(C_L)]`.
-* `TauCeti.ClassFieldTheory.finrank_eq_one_of_surjective_ideleClassNormMap`: a cyclic extension
-  from which every idele class is a norm is trivial.
+* `TauCeti.ClassFieldTheory.finrank_eq_one_of_surjective_ideleClassNormMap`: a solvable Galois
+  extension from which every idele class is a norm is trivial.
 
 ## References
 
@@ -112,13 +115,31 @@ theorem finrank_le_index_range_ideleClassNormMap :
         exact (Nat.card_congr (globalLayerNormQuotientEquiv K L).toEquiv).symm.trans
           (Nat.card_congr Additive.ofMul.symm)
 
-/-- **A cyclic extension from which every idele class is a norm is trivial**: if the norm map
-`N_{L/K} : C_L → C_K` of a cyclic extension of number fields is surjective, then `[L : K] = 1`. -/
+omit [IsCyclic Gal(L/K)] in
+/-- **A solvable Galois extension from which every idele class is a norm is trivial**: if the norm
+map `N_{L/K} : C_L → C_K` is surjective, then `[L : K] = 1`. -/
 theorem finrank_eq_one_of_surjective_ideleClassNormMap
+    [Group.IsSolvable Gal(L/K)]
     (h : Function.Surjective (GlobalNumberFields.ideleClassNormMap K L)) :
     Module.finrank K L = 1 := by
-  have := finrank_le_index_range_ideleClassNormMap K L
-  rw [MonoidHom.range_eq_top_of_surjective _ h, Subgroup.index_top] at this
-  exact le_antisymm this Module.finrank_pos
+  by_contra hdim
+  have : Nontrivial Gal(L/K) := Finite.one_lt_card_iff_nontrivial.mp
+    (by rw [IsGalois.card_aut_eq_finrank]; exact lt_of_le_of_ne Module.finrank_pos (Ne.symm hdim))
+  obtain ⟨B, hB, hp⟩ := Group.IsSolvable.exists_normal_index_prime Gal(L/K)
+  let E := IntermediateField.fixedField B
+  have : IsGalois K E := inferInstance
+  have hE : (Module.finrank K E).Prime := by
+    simpa only [E, IntermediateField.finrank_eq_fixingSubgroup_index,
+      IntermediateField.fixingSubgroup_fixedField] using hp
+  have : Fact (Module.finrank K E).Prime := ⟨hE⟩
+  have : IsCyclic Gal(E/K) := isCyclic_of_prime_card (IsGalois.card_aut_eq_finrank K E)
+  have hnorm : Function.Surjective (GlobalNumberFields.ideleClassNormMap K E) := by
+    intro c
+    obtain ⟨x, rfl⟩ := h c
+    exact ⟨GlobalNumberFields.ideleClassNormMap E L x,
+      DFunLike.congr_fun (GlobalNumberFields.ideleClassNormMap_comp K E L) x⟩
+  have hle := finrank_le_index_range_ideleClassNormMap K E
+  rw [MonoidHom.range_eq_top_of_surjective _ hnorm, Subgroup.index_top] at hle
+  exact (not_lt_of_ge hle) hE.one_lt
 
 end TauCeti.ClassFieldTheory
