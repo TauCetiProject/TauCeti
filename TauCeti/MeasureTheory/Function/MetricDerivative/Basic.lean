@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
+public import TauCeti.Analysis.Calculus.Deriv.Slope
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
@@ -88,8 +89,8 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
   measurable family of continuous curves.
 * `TauCeti.measurable_metricDerivative_IccExtend` and
   `TauCeti.measurableSet_absolutelyContinuousOnInterval_IccExtend`: the same statements on the
-  path space `C([a, b], X)`, with `TauCeti.measurable_metricDerivative_IccExtend_apply` and
-  `TauCeti.measurable_IccExtend_apply` for the speed and the position at a fixed time.
+  path space `C([a, b], X)`, with `TauCeti.measurable_metricDerivative_IccExtend_apply` for the
+  speed at a fixed time.
 
 ## References
 
@@ -191,17 +192,9 @@ converge to the norm of its derivative. -/
 theorem _root_.HasDerivAt.tendsto_edist_div {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {γ : ℝ → E} {v : E} {t : ℝ} (h : HasDerivAt γ v t) :
     Tendsto (fun s ↦ edist (γ s) (γ t) / edist s t) (𝓝[≠] t) (𝓝 ‖v‖ₑ) := by
-  -- Use the topological derivative criterion, which does not require the seminorm to separate
-  -- points, to obtain convergence of the slopes.
-  have hlim := h.hasFDerivAt.isLittleOTVS.tendsto_inv_smul
-  have hslope : Tendsto (fun s ↦ (s - t)⁻¹ • (γ s - γ t)) (𝓝[≠] t) (𝓝 v) := by
-    have hlim' := (hlim.mono_left (nhdsWithin_le_nhds (s := {t}ᶜ))).add_const v
-    simp only [zero_add] at hlim'
-    refine hlim'.congr' <| eventually_nhdsWithin_of_forall fun s hs ↦ ?_
-    simp [smul_sub, inv_smul_smul₀ (sub_ne_zero.2 hs)]
-  refine ((continuous_enorm.tendsto v).comp hslope).congr' <|
+  refine ((continuous_enorm.tendsto v).comp (HasDerivAtFilter.tendsto_slope h)).congr' <|
     eventually_nhdsWithin_of_forall fun s hs ↦ ?_
-  simp only [Function.comp_apply, enorm_smul, enorm_inv (sub_ne_zero.2 hs),
+  simp only [Function.comp_apply, slope_def_module, enorm_smul, enorm_inv (sub_ne_zero.2 hs),
     edist_eq_enorm_sub, ENNReal.div_eq_inv_mul]
 
 /-- On a seminormed space the metric derivative of a curve is the norm of its derivative. -/
