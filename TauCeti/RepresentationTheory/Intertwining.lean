@@ -135,8 +135,8 @@ namespace Representation.Equiv
 
 section Basis
 
-variable {A G V W ι : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [Fintype ι]
+variable {A G V W ι : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [Finite ι]
 
 /-- A linear identification with a based module is an equivalence of representations when the
 two actions have the same coordinates in that basis. -/
