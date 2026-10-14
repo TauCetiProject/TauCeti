@@ -227,6 +227,8 @@ induction in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, b
 the forgetful functor. -/
 instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
     (forget₂ (FDRep R G) (Rep R G)).Additive where
+  -- The composite of `mapAction` and `Rep.ActionToRep` keeps the underlying linear maps, so
+  -- preservation of addition is definitional.
   map_add := by intros; rfl
 
 open MonoidalCategory in
