@@ -32,6 +32,9 @@ proves that insertion adds the degrees of the outer and inner operations.
 
 * `MultilinearMap.evalNat`: evaluate a finite-arity map on a natural-indexed input family.
 * `TauCeti.replaceBlock`: collapse a consecutive block in a natural-indexed family.
+* `TauCeti.IsComposableString`: natural-indexed arrows `aᵢ ⟶ bᵢ` forming a composable string;
+  blocks of a composable string, and replacements of blocks, are composable
+  (`TauCeti.IsComposableString.block`, `TauCeti.IsComposableString.replaceBlock`).
 * `Fin.blockEquiv` and `Fin.oneSlotEquiv`: canonical reindexings for one-slot substitution.
 * `MultilinearMap.oneSlot`: substitute one multilinear map into a specified block of another.
 * `MultilinearMap.koszulSign`: the sign acquired by crossing the prefix inputs.
@@ -208,6 +211,72 @@ theorem apply_replaceBlock {α β : Type*} (g : α → β) (x : ℕ → α) (p s
     g (replaceBlock x p s v i) = replaceBlock (fun j ↦ g (x j)) p s (g v) i := by
   simp only [replaceBlock]
   split_ifs <;> rfl
+
+section IsComposableString
+
+variable {α : Type*}
+
+/-- The arrows `aᵢ ⟶ bᵢ`, for `i < n`, of a natural-indexed family form a **composable string**
+in the input order of `A∞` operations: the source of each arrow is the target of the next one. -/
+structure IsComposableString (a b : ℕ → α) (n : ℕ) : Prop where
+  /-- The target of the arrow after the `i`-th is the source of the `i`-th. -/
+  eq : ∀ i, i + 1 < n → b (i + 1) = a i
+
+/-- A block of a composable string is composable. -/
+theorem IsComposableString.block {a b : ℕ → α} {n p s : ℕ} (h : IsComposableString a b n)
+    (hps : p + s ≤ n) : IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s :=
+  ⟨fun j hj ↦ by simpa [Nat.add_assoc] using h.eq (p + j) (by omega)⟩
+
+/-- Replacing a nonempty block of a composable string by an arrow from the source of its last arrow
+to the target of its first leaves a composable string. -/
+theorem IsComposableString.replaceBlock {a b : ℕ → α} {n p s : ℕ} (h : IsComposableString a b n)
+    (hs : 1 ≤ s) (hps : p + s ≤ n) :
+    IsComposableString (TauCeti.replaceBlock a p s (a (p + s - 1)))
+      (TauCeti.replaceBlock b p s (b p)) (p + 1 + (n - p - s)) := by
+  refine ⟨fun i hi ↦ ?_⟩
+  rcases lt_trichotomy (i + 1) p with hlt | heq | hgt
+  · rw [replaceBlock_of_lt _ _ _ _ hlt, replaceBlock_of_lt _ _ _ _ (by omega)]
+    exact h.eq i (by omega)
+  · rw [← heq, replaceBlock_self, replaceBlock_of_lt _ _ _ _ (by omega)]
+    exact h.eq i (by omega)
+  · rw [replaceBlock_of_gt _ _ _ _ hgt]
+    rcases Nat.eq_or_lt_of_le (Nat.le_of_lt_succ hgt) with rfl | hip
+    · rw [replaceBlock_self]
+      convert h.eq (p + s - 1) (by omega) using 2
+      omega
+    · rw [replaceBlock_of_gt _ _ _ _ hip]
+      convert h.eq (i + s - 1) (by omega) using 2
+      omega
+
+/-- If a string is not composable, then for every decomposition `n = p + s + t` either the block
+of length `s` at `p` is not composable, or replacing it by a single arrow leaves a string which is
+not composable. -/
+theorem not_isComposableString_block_or_replaceBlock {a b : ℕ → α} {n p s : ℕ}
+    (h : ¬ IsComposableString a b n) (hps : p + s ≤ n) :
+    ¬ IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s ∨
+      ¬ IsComposableString (replaceBlock a p s (a (p + s - 1))) (replaceBlock b p s (b p))
+        (p + 1 + (n - p - s)) := by
+  obtain ⟨j, hj, hne⟩ : ∃ j, ∃ (_ : j + 1 < n), b (j + 1) ≠ a j := by
+    by_contra! hc
+    exact h ⟨hc⟩
+  by_cases hblock : p ≤ j ∧ j + 1 < p + s
+  · refine .inl fun hc ↦ hne ?_
+    simpa [show p + (j - p) = j by omega, show p + (j - p + 1) = j + 1 by omega] using
+      hc.eq (j - p) (by omega)
+  · refine .inr fun hc ↦ hne ?_
+    rcases Nat.lt_or_ge j p with hjp | hjp
+    · have e := hc.eq j (by omega)
+      rw [replaceBlock_of_lt _ _ _ _ hjp] at e
+      rcases Nat.lt_or_ge (j + 1) p with hj1 | hj1
+      · rwa [replaceBlock_of_lt _ _ _ _ hj1] at e
+      · rwa [show j + 1 = p by omega, replaceBlock_self, ← show j + 1 = p by omega] at e
+    · have e := hc.eq (j + 1 - s) (by omega)
+      rw [replaceBlock_of_gt _ _ _ _ (by omega), show j + 1 - s + 1 + s - 1 = j + 1 by omega] at e
+      rcases Nat.eq_or_lt_of_le (show p ≤ j + 1 - s by omega) with hp | hp
+      · rwa [← hp, replaceBlock_self, show p + s - 1 = j by omega] at e
+      · rwa [replaceBlock_of_gt _ _ _ _ hp, show j + 1 - s + s - 1 = j by omega] at e
+
+end IsComposableString
 
 end TauCeti
 

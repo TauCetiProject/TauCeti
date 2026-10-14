@@ -13,11 +13,11 @@ public import TauCeti.CategoryTheory.Graded.TotalHom
 For a graded linear quiver `C` and a map `F : D → C`, the **induced quiver** `InducedQuiver C F`
 has an object `X` for each object `X.obj` of `D`, and as morphisms `X ⟶ Y` the graded hom module
 of `C` from `F X.obj` to `F Y.obj`.  It is the graded-quiver analogue of Mathlib's
-`CategoryTheory.InducedCategory`, with the objects wrapped as for the full subquivers
-`TauCeti.GradedLinearQuiver.FullSubquiver`.  Structure carried
-by `C` whose operations send composable strings to morphisms between their endpoints, such as an
-`A∞` structure, pulls back to it: this is how a functor with object map `F` is compared with the
-structure of its target.
+`CategoryTheory.InducedCategory`, with the objects of `D` wrapped in a structure.  The full
+subquiver `TauCeti.GradedLinearQuiver.FullSubquiver P` on the objects satisfying a predicate `P`
+is the induced quiver along `Subtype.val`.  An `A∞` structure on `C` induces one on the induced
+quiver (`TauCeti.AInfinityCategory.induced`), operating on a composable string as `C` does on its
+image.
 
 The total module of morphisms of the induced quiver maps to that of `C`
 (`TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap`), sending a morphism `X ⟶ Y` to the same

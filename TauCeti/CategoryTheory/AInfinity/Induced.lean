@@ -71,72 +71,6 @@ namespace AInfinityCategory
 variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C] {D : Type u'}
   (𝒞 : AInfinityCategory R C) (F : D → C)
 
-/-! ### Strings of morphisms indexed by the naturals -/
-
-section Strings
-
-variable {α : Type*}
-
-/-- The morphisms `aᵢ ⟶ bᵢ`, for `i < n`, form a composable string in the input order of the
-operations: the source of each morphism is the target of the next one. -/
-private def IsChain (a b : ℕ → α) (n : ℕ) : Prop :=
-  ∀ i, i + 1 < n → b (i + 1) = a i
-
-/-- A block of a composable string is composable. -/
-private theorem IsChain.block {a b : ℕ → α} {n p s : ℕ} (h : IsChain a b n) (hps : p + s ≤ n) :
-    IsChain (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s := fun j hj ↦ by
-  simpa [Nat.add_assoc] using h (p + j) (by omega)
-
-/-- Replacing a block of a composable string by a morphism from the source of its last morphism to
-the target of its first leaves a composable string. -/
-private theorem IsChain.replaceBlock {a b : ℕ → α} {n p s : ℕ} (h : IsChain a b n) (hs : 1 ≤ s)
-    (hps : p + s ≤ n) :
-    IsChain (replaceBlock a p s (a (p + s - 1))) (replaceBlock b p s (b p))
-      (p + 1 + (n - p - s)) := by
-  intro i hi
-  rcases lt_trichotomy (i + 1) p with hlt | heq | hgt
-  · rw [replaceBlock_of_lt _ _ _ _ hlt, replaceBlock_of_lt _ _ _ _ (by omega)]
-    exact h i (by omega)
-  · rw [← heq, replaceBlock_self, replaceBlock_of_lt _ _ _ _ (by omega)]
-    exact h i (by omega)
-  · rw [replaceBlock_of_gt _ _ _ _ hgt]
-    rcases Nat.eq_or_lt_of_le (Nat.le_of_lt_succ hgt) with rfl | hip
-    · rw [replaceBlock_self]
-      convert h (p + s - 1) (by omega) using 2
-      omega
-    · rw [replaceBlock_of_gt _ _ _ _ hip]
-      convert h (i + s - 1) (by omega) using 2
-      omega
-
-/-- If a string is not composable, then for every decomposition `n = p + s + t` either the block
-of length `s` at `p` is not composable, or replacing it by a single morphism leaves a string which
-is not composable. -/
-private theorem not_isChain_block_or_replaceBlock {a b : ℕ → α} {n p s : ℕ}
-    (h : ¬ IsChain a b n) (hps : p + s ≤ n) :
-    ¬ IsChain (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s ∨
-      ¬ IsChain (replaceBlock a p s (a (p + s - 1))) (replaceBlock b p s (b p))
-        (p + 1 + (n - p - s)) := by
-  simp only [IsChain, not_forall] at h
-  obtain ⟨j, hj, hne⟩ := h
-  by_cases hblock : p ≤ j ∧ j + 1 < p + s
-  · refine .inl fun hc ↦ hne ?_
-    simpa [show p + (j - p) = j by omega, show p + (j - p + 1) = j + 1 by omega] using
-      hc (j - p) (by omega)
-  · refine .inr fun hc ↦ hne ?_
-    rcases Nat.lt_or_ge j p with hjp | hjp
-    · have e := hc j (by omega)
-      rw [replaceBlock_of_lt _ _ _ _ hjp] at e
-      rcases Nat.lt_or_ge (j + 1) p with hj1 | hj1
-      · rwa [replaceBlock_of_lt _ _ _ _ hj1] at e
-      · rwa [show j + 1 = p by omega, replaceBlock_self, ← show j + 1 = p by omega] at e
-    · have e := hc (j + 1 - s) (by omega)
-      rw [replaceBlock_of_gt _ _ _ _ (by omega), show j + 1 - s + 1 + s - 1 = j + 1 by omega] at e
-      rcases Nat.eq_or_lt_of_le (show p ≤ j + 1 - s by omega) with hp | hp
-      · rwa [← hp, replaceBlock_self, show p + s - 1 = j by omega] at e
-      · rwa [replaceBlock_of_gt _ _ _ _ hp, show j + 1 - s + s - 1 = j by omega] at e
-
-end Strings
-
 /-- Elements of single hom modules, indexed by the naturals, are the inclusions of a family of
 morphisms. -/
 private theorem exists_eq_homInclusion {E : Type u'} [GradedLinearQuiver.{u', v, w} R E] {n : ℕ}
@@ -146,6 +80,21 @@ private theorem exists_eq_homInclusion {E : Type u'} [GradedLinearQuiver.{u', v,
       ∀ i : Fin n, z i = homInclusion (a i) (b i) (g i) := by
   choose g hg using fun i : Fin n ↦ hz i i.isLt
   exact ⟨g, fun i ↦ (hg i).symm⟩
+
+/-- A nonempty string of elements `xᵢ` of single hom modules `sᵢ ⟶ tᵢ`, indexed by `Fin n`, extends
+to a string of elements of single hom modules indexed by the naturals. -/
+private theorem exists_natString {E : Type u'} [GradedLinearQuiver.{u', v, w} R E] {n : ℕ}
+    (hn : 0 < n) (s t : Fin n → E) {x : Fin n → TotalHom R E}
+    (hx : ∀ i, x i ∈ LinearMap.range (homInclusion (R := R) (s i) (t i))) :
+    ∃ (a b : ℕ → E) (z : ℕ → TotalHom R E),
+      (∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) ∧
+        (∀ i : Fin n, a i = s i) ∧ (∀ i : Fin n, b i = t i) ∧ ∀ i : Fin n, z i = x i := by
+  -- Clamp the indices to `Fin n`, so that the objects are those of the string itself.
+  let j : ℕ → Fin n := fun i ↦ ⟨min i (n - 1), by omega⟩
+  have hj (i : Fin n) : j i = i := Fin.ext (min_eq_left (by have := i.isLt; omega))
+  refine ⟨fun i ↦ s (j i), fun i ↦ t (j i), fun i ↦ if i < n then x (j i) else 0,
+    fun i hi ↦ ?_, fun i ↦ congrArg s (hj i), fun i ↦ congrArg t (hj i), fun i ↦ by simp [hj]⟩
+  simpa only [hi, ↓reduceIte] using hx (j i)
 
 /-! ### The operations of the induced category -/
 
@@ -220,7 +169,7 @@ operation of the induced category with the operation of `𝒞`. -/
 private theorem totalHomMap_evalNat_inducedOperation {k : ℕ} (hk : 0 < k)
     {z : ℕ → TotalHom R (InducedQuiver C F)} {a b : ℕ → InducedQuiver C F}
     (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : IsChain a b k) :
+    (hab : IsComposableString a b k) :
     totalHomMap R F (evalNat (𝒞.inducedOperation F k) z) =
       evalNat (𝒞.m k) fun i ↦ totalHomMap R F (z i) := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
@@ -229,26 +178,26 @@ private theorem totalHomMap_evalNat_inducedOperation {k : ℕ} (hk : 0 < k)
       fun i : Fin (n + 1) ↦ homInclusion (R := R) (F (a i).obj) (F (b i).obj) (g i) :=
     funext fun i ↦ by rw [hg i, totalHomMap_homInclusion]
   rw [evalNat_def, evalNat_def, funext hg, hg',
-    𝒞.inducedOperation_succ_of_isChainFin F (fun i ↦ a i) (fun i ↦ b i) g hab,
+    𝒞.inducedOperation_succ_of_isChainFin F (fun i ↦ a i) (fun i ↦ b i) g hab.eq,
     totalHomMap_homInclusion]
   refine homInclusion_homProjection_of_mem_range ?_
   exact (𝒞.isPathCompatible_m (n + 1)).mem_range_homInclusion_of_chain
     (fun i ↦ F (a i).obj) (fun i ↦ F (b i).obj) g
-    (fun j ↦ congrArg (fun Y ↦ F Y.obj) (hab j (by simp))) rfl (by simp)
+    (fun j ↦ congrArg (fun Y ↦ F Y.obj) (hab.eq j (by simp))) rfl (by simp)
 
 /-- On a string of morphisms `aᵢ ⟶ bᵢ` which is not composable, an operation of the induced
 category vanishes. -/
 private theorem evalNat_inducedOperation_eq_zero {k : ℕ}
     {z : ℕ → TotalHom R (InducedQuiver C F)} {a b : ℕ → InducedQuiver C F}
     (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : ¬ IsChain a b k) :
+    (hab : ¬ IsComposableString a b k) :
     evalNat (𝒞.inducedOperation F k) z = 0 := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · exact absurd (fun i hi ↦ absurd hi (by omega)) hab
+  · exact absurd ⟨fun i hi ↦ absurd hi (by omega)⟩ hab
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
   obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
   rw [evalNat_def, funext hg,
-    𝒞.inducedOperation_succ_of_not_isChainFin F (fun i ↦ a i) (fun i ↦ b i) g hab]
+    𝒞.inducedOperation_succ_of_not_isChainFin F (fun i ↦ a i) (fun i ↦ b i) g fun h ↦ hab ⟨h⟩]
 
 /-! ### The Stasheff identities -/
 
@@ -309,7 +258,7 @@ private theorem stasheffTerm_mem
 category to the corresponding Stasheff term of `𝒞`. -/
 private theorem totalHomMap_stasheffTerm
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : IsChain a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
+    (hab : IsComposableString a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
     totalHomMap R F (stasheffTerm (𝒞.inducedOperation F) d x p s (n - p - s)) =
       stasheffTerm 𝒞.m d (fun i ↦ totalHomMap R F (x i)) p s (n - p - s) := by
   rw [stasheffTerm_def, stasheffTerm_def, map_smul,
@@ -322,9 +271,9 @@ private theorem totalHomMap_stasheffTerm
 /-- On a string which is not composable, every Stasheff term of the induced category vanishes. -/
 private theorem stasheffTerm_eq_zero
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : ¬ IsChain a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
+    (hab : ¬ IsComposableString a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
     stasheffTerm (𝒞.inducedOperation F) d x p s (n - p - s) = 0 := by
-  rcases not_isChain_block_or_replaceBlock hab hps with h | h
+  rcases not_isComposableString_block_or_replaceBlock hab hps with h | h
   · rw [stasheffTerm_def,
       evalNat_inducedOperation_eq_zero (fun i hi ↦ hx (p + i) (by omega)) h, evalNat_def,
       (MultilinearMap.map_coord_zero _ (⟨p, by omega⟩ : Fin (p + 1 + (n - p - s))) (by simp)),
@@ -345,7 +294,7 @@ private theorem stasheffSum_inducedOperation_of_mem (hn : 0 < n)
     rw [Finset.mem_range] at hp
     rw [Finset.mem_Icc] at hs
     omega
-  by_cases hab : IsChain a b n
+  by_cases hab : IsComposableString a b n
   · have hmem : stasheffSum (𝒞.inducedOperation F) d x n ∈
         LinearMap.range (homInclusion (R := R) (a (n - 1)) (b 0)) := by
       rw [stasheffSum_def]
@@ -401,27 +350,15 @@ private theorem stasheffSum_inducedOperation (n : ℕ) (hn : 0 < n) (d : ℕ →
       (PiTensorProduct.tprod R) (fun i : Fin n ↦ x i) ∈ (⊥ : Submodule R _) := by
     refine multilinearMap_apply_mem_of_mem_totalGrading_piece (d := fun i ↦ d i)
       (fun s t g hg ↦ ?_) fun i ↦ hx i i.isLt
-    -- Extend the string `g` of homogeneous morphisms `sᵢ ⟶ tᵢ` to inputs indexed by `ℕ`.
-    let q : ℕ → InducedQuiver C F × InducedQuiver C F := fun i ↦
-      if h : i < n then (s ⟨i, h⟩, t ⟨i, h⟩) else (s ⟨0, hn⟩, t ⟨0, hn⟩)
-    let y : ℕ → TotalHom R (InducedQuiver C F) := fun i ↦
-      if h : i < n then homInclusion (s ⟨i, h⟩) (t ⟨i, h⟩) (g ⟨i, h⟩) else 0
-    have hy (i : ℕ) (hi : i < n) : y i = homInclusion (s ⟨i, hi⟩) (t ⟨i, hi⟩) (g ⟨i, hi⟩) := by
-      simp only [y, hi, ↓reduceDIte]
-    have hq (i : ℕ) (hi : i < n) : q i = (s ⟨i, hi⟩, t ⟨i, hi⟩) := by
-      simp only [q, hi, ↓reduceDIte]
-    have hyq (i : ℕ) (hi : i < n) :
-        y i ∈ LinearMap.range (homInclusion (R := R) (q i).1 (q i).2) := by
-      rw [hq i hi, hy i hi]
-      exact LinearMap.mem_range_self _ _
+    obtain ⟨a, b, y, hyab, -, -, hy⟩ :=
+      exists_natString hn s t fun i ↦ LinearMap.mem_range_self (homInclusion (s i) (t i)) (g i)
     have hyd (i : ℕ) (hi : i < n) : y i ∈ G.piece (d i) := by
-      rw [hy i hi, homInclusion_mem_totalGrading_piece_iff]
+      rw [hy ⟨i, hi⟩, homInclusion_mem_totalGrading_piece_iff]
       exact hg ⟨i, hi⟩
-    have hyg : (fun i : Fin n ↦ y i) = fun i ↦ homInclusion (s i) (t i) (g i) :=
-      funext fun i ↦ hy i i.isLt
+    have hyg : (fun i : Fin n ↦ y i) = fun i ↦ homInclusion (s i) (t i) (g i) := funext hy
     rw [LinearMap.compMultilinearMap_apply, ← hyg,
       hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d y hyd,
-      stasheffSum_inducedOperation_of_mem hn hyq hyd, smul_zero]
+      stasheffSum_inducedOperation_of_mem hn hyab hyd, smul_zero]
     exact zero_mem _
   rwa [Submodule.mem_bot, LinearMap.compMultilinearMap_apply,
     hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d x hx,
@@ -467,37 +404,20 @@ private theorem induced_m : (𝒞.induced F).m = 𝒞.inducedOperation F :=
 /-- **The induced category has the operations of `𝒞` on composable strings.** On a string of
 morphisms `sᵢ ⟶ tᵢ` of the induced quiver in which the source of each morphism is the target of the
 next one, the map of total modules sends the operation of the induced category to the operation of
-`𝒞` on the same morphisms. -/
+`𝒞` on the images of the morphisms. -/
 theorem totalHomMap_induced_m_of_chain {n : ℕ} (s t : Fin n → InducedQuiver C F)
-    (x : ∀ i, homModule (R := R) (s i) (t i))
+    {x : Fin n → TotalHom R (InducedQuiver C F)}
+    (hx : ∀ i, x i ∈ LinearMap.range (homInclusion (R := R) (s i) (t i)))
     (h : ∀ i j : Fin n, (j : ℕ) = i + 1 → t j = s i) :
-    totalHomMap R F ((𝒞.induced F).m n fun i ↦ homInclusion (s i) (t i) (x i)) =
-      𝒞.m n fun i ↦ homInclusion (R := R) (F (s i).obj) (F (t i).obj) (x i) := by
+    totalHomMap R F ((𝒞.induced F).m n x) = 𝒞.m n fun i ↦ totalHomMap R F (x i) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp [AInfinityAlgebra.m_zero]
-  -- Index the string by the naturals, with an arbitrary extension beyond its length.
-  let a : ℕ → InducedQuiver C F := fun i ↦ if h : i < n then s ⟨i, h⟩ else s ⟨0, hn⟩
-  let b : ℕ → InducedQuiver C F := fun i ↦ if h : i < n then t ⟨i, h⟩ else t ⟨0, hn⟩
-  let z : ℕ → TotalHom R (InducedQuiver C F) := fun i ↦
-    if h : i < n then homInclusion (s ⟨i, h⟩) (t ⟨i, h⟩) (x ⟨i, h⟩) else 0
-  have hz (i : ℕ) (hi : i < n) : z i = homInclusion (s ⟨i, hi⟩) (t ⟨i, hi⟩) (x ⟨i, hi⟩) := by
-    simp only [z, hi, ↓reduceDIte]
-  have hzab (i : ℕ) (hi : i < n) :
-      z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)) := by
-    have ha : a i = s ⟨i, hi⟩ := by simp only [a, hi, ↓reduceDIte]
-    have hb : b i = t ⟨i, hi⟩ := by simp only [b, hi, ↓reduceDIte]
-    rw [ha, hb, hz i hi]
-    exact LinearMap.mem_range_self _ _
-  have hab : IsChain a b n := fun i hi ↦ by
-    simp only [a, b, hi, show i < n by omega, ↓reduceDIte]
-    exact h ⟨i, by omega⟩ ⟨i + 1, hi⟩ rfl
+  obtain ⟨a, b, z, hzab, ha, hb, hz⟩ := exists_natString hn s t hx
+  have hab : IsComposableString a b n := ⟨fun i hi ↦
+    (hb ⟨i + 1, hi⟩).trans ((h ⟨i, by omega⟩ ⟨i + 1, hi⟩ rfl).trans (ha ⟨i, by omega⟩).symm)⟩
   have e := totalHomMap_evalNat_inducedOperation (𝒞 := 𝒞) hn hzab hab
-  have hzx : (fun i : Fin n ↦ z i) = fun i ↦ homInclusion (s i) (t i) (x i) :=
-    funext fun i ↦ hz i i.isLt
-  have hzF : (fun i : Fin n ↦ totalHomMap R F (z i)) =
-      fun i ↦ homInclusion (R := R) (F (s i).obj) (F (t i).obj) (x i) :=
-    funext fun i ↦ by rw [hz i i.isLt, totalHomMap_homInclusion]
-  rwa [evalNat_def, evalNat_def, ← induced_m, hzx, hzF] at e
+  rw [evalNat_def, evalNat_def, ← induced_m] at e
+  simpa only [hz] using e
 
 /-- The operation of the induced category on a composable string `X₀, …, Xₙ` is the operation of
 `𝒞` on the string `F X₀, …, F Xₙ`. -/
@@ -509,8 +429,10 @@ theorem coe_pathOperation_induced_apply {n : ℕ} (X : Fin (n + 1) → InducedQu
       𝒞.pathOperation (fun k ↦ F (X k).obj) d x := by
   apply homInclusion_injective (F (X 0).obj) (F (X (Fin.last n)).obj)
   rw [← totalHomMap_homInclusion, homInclusion_pathOperation,
-    totalHomMap_induced_m_of_chain _ _ _ _ _ fun i j hij ↦ ?_]
-  · exact (𝒞.homInclusion_pathOperation (fun k ↦ F (X k).obj) d x).symm
+    totalHomMap_induced_m_of_chain 𝒞 F (fun i ↦ X i.rev.castSucc) (fun i ↦ X i.rev.succ)
+      (fun i ↦ LinearMap.mem_range_self _ _) fun i j hij ↦ ?_]
+  · simpa only [totalHomMap_homInclusion] using
+      (𝒞.homInclusion_pathOperation (fun k ↦ F (X k).obj) d x).symm
   · refine congrArg X (Fin.ext ?_)
     simp only [Fin.val_succ, Fin.val_castSucc, Fin.val_rev]
     omega
@@ -528,12 +450,14 @@ theorem eq_induced {𝒟 : AInfinityCategory R (InducedQuiver C F)}
     (𝒟.isPathCompatible_m n).ext ((𝒞.induced F).isPathCompatible_m n) fun X x ↦ ?_
   obtain ⟨f, hf⟩ := (𝒟.isPathCompatible_m n).mem_range_homInclusion X x
   obtain ⟨g, hg⟩ := ((𝒞.induced F).isPathCompatible_m n).mem_range_homInclusion X x
-  have e := (h n X x).trans (totalHomMap_induced_m_of_chain 𝒞 F _ _ x fun i j hij ↦ by
-    congr 1
-    ext
-    simp [Fin.val_rev]
-    omega).symm
-  rw [← hf, ← hg, totalHomMap_homInclusion, totalHomMap_homInclusion] at e
+  have e := totalHomMap_induced_m_of_chain 𝒞 F (fun i ↦ X i.rev.castSucc) (fun i ↦ X i.rev.succ)
+    (fun i ↦ LinearMap.mem_range_self _ (x i)) fun i j hij ↦ by
+      congr 1
+      ext
+      simp [Fin.val_rev]
+      omega
+  simp only [totalHomMap_homInclusion] at e
+  rw [← h n X x, ← hf, ← hg, totalHomMap_homInclusion, totalHomMap_homInclusion] at e
   rw [← hf, ← hg, homInclusion_injective _ _ e]
 
 /-- The differential of the induced category is the differential of `𝒞`. -/
@@ -541,23 +465,12 @@ theorem eq_induced {𝒟 : AInfinityCategory R (InducedQuiver C F)}
 theorem homDifferential_induced (X Y : InducedQuiver C F) (f : homModule (R := R) X Y) :
     (𝒞.induced F).homDifferential X Y f = 𝒞.homDifferential (F X.obj) (F Y.obj) f := by
   apply homInclusion_injective (F X.obj) (F Y.obj)
-  have e := 𝒞.totalHomMap_induced_m_of_chain F ![X] ![Y] (Fin.cases f finZeroElim)
-    fun i j hij ↦ absurd j.isLt (by omega)
-  have h₁ : (fun i : Fin 1 ↦ homInclusion (R := R) (![X] i) (![Y] i)
-      ((Fin.cases f finZeroElim : ∀ i : Fin 1, homModule (R := R) (![X] i) (![Y] i)) i)) =
-      ![homInclusion X Y f] := by
-    funext i
-    fin_cases i
-    rfl
-  have h₂ : (fun i : Fin 1 ↦ homInclusion (R := R) (F (![X] i).obj) (F (![Y] i).obj)
-      ((Fin.cases f finZeroElim : ∀ i : Fin 1, homModule (R := R) (![X] i) (![Y] i)) i)) =
-      ![homInclusion (R := R) (F X.obj) (F Y.obj) f] := by
-    funext i
-    fin_cases i
-    rfl
-  rw [h₁, h₂] at e
   rw [← totalHomMap_homInclusion, homInclusion_homDifferential, homInclusion_homDifferential,
-    AInfinityAlgebra.differential_apply, AInfinityAlgebra.differential_apply, e]
+    AInfinityAlgebra.differential_apply, AInfinityAlgebra.differential_apply,
+    Matrix.vec_single_eq_const, Matrix.vec_single_eq_const,
+    𝒞.totalHomMap_induced_m_of_chain F (fun _ ↦ X) (fun _ ↦ Y)
+      (fun _ ↦ LinearMap.mem_range_self _ f) fun i j hij ↦ absurd j.isLt (by omega),
+    totalHomMap_homInclusion]
 
 /-- The composition of the induced category is the composition of `𝒞`. -/
 @[simp]
@@ -565,24 +478,14 @@ theorem comp_induced (X Y Z : InducedQuiver C F) (g : homModule (R := R) Y Z)
     (f : homModule (R := R) X Y) :
     (𝒞.induced F).comp X Y Z g f = 𝒞.comp (F X.obj) (F Y.obj) (F Z.obj) g f := by
   apply homInclusion_injective (F X.obj) (F Z.obj)
-  have e := 𝒞.totalHomMap_induced_m_of_chain F ![Y, X] ![Z, Y]
-    (Fin.cases g (Fin.cases f finZeroElim)) fun i j hij ↦ by
-      fin_cases i <;> fin_cases j <;> simp_all
-  have h₁ : (fun i : Fin 2 ↦ homInclusion (R := R) (![Y, X] i) (![Z, Y] i)
-      ((Fin.cases g (Fin.cases f finZeroElim) :
-        ∀ i : Fin 2, homModule (R := R) (![Y, X] i) (![Z, Y] i)) i)) =
-      ![homInclusion Y Z g, homInclusion X Y f] := by
-    funext i
-    fin_cases i <;> rfl
-  have h₂ : (fun i : Fin 2 ↦ homInclusion (R := R) (F (![Y, X] i).obj) (F (![Z, Y] i).obj)
-      ((Fin.cases g (Fin.cases f finZeroElim) :
-        ∀ i : Fin 2, homModule (R := R) (![Y, X] i) (![Z, Y] i)) i)) =
-      ![homInclusion (R := R) (F Y.obj) (F Z.obj) g,
-        homInclusion (R := R) (F X.obj) (F Y.obj) f] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [h₁, h₂] at e
-  rw [← totalHomMap_homInclusion, homInclusion_comp, homInclusion_comp, e]
+  rw [← totalHomMap_homInclusion, homInclusion_comp, homInclusion_comp,
+    𝒞.totalHomMap_induced_m_of_chain F ![Y, X] ![Z, Y]
+      (x := ![homInclusion Y Z g, homInclusion X Y f])
+      (fun i ↦ by fin_cases i <;> exact LinearMap.mem_range_self _ _)
+      fun i j hij ↦ by fin_cases i <;> fin_cases j <;> simp_all]
+  congr 1
+  funext i
+  fin_cases i <;> simp
 
 end AInfinityCategory
 

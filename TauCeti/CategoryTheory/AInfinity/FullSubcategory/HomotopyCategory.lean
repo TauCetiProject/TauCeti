@@ -32,7 +32,7 @@ namespace TauCeti
 
 universe u v w
 
-open GradedLinearQuiver GradedLinearQuiver.FullSubquiver
+open GradedLinearQuiver GradedLinearQuiver.InducedQuiver
 
 namespace AInfinityCategory
 
@@ -44,7 +44,7 @@ variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R 
 theorem homCyclesZero_fullSubcategory (X Y : FullSubquiver P) :
     (𝒞.fullSubcategory P).homCyclesZero X Y = 𝒞.homCyclesZero X.obj Y.obj := by
   ext f
-  simp [FullSubquiver.grading_eq]
+  simp [InducedQuiver.grading_eq]
 
 /-- The boundaries of the full subcategory are those of `𝒞`. -/
 @[simp]
@@ -52,7 +52,7 @@ theorem range_homDifferential_fullSubcategory (X Y : FullSubquiver P) :
     LinearMap.range ((𝒞.fullSubcategory P).homDifferential X Y) =
       LinearMap.range (𝒞.homDifferential X.obj Y.obj) := by
   congr 1
-  exact LinearMap.ext (𝒞.homDifferential_fullSubcategory P X Y)
+  exact LinearMap.ext (𝒞.homDifferential_induced Subtype.val X Y)
 
 variable {𝒞} {e : ∀ X : C, homModule (R := R) X X}
 
