@@ -56,8 +56,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 /-- **The Morse–Smale condition.** For a function `f` with `K`-Lipschitz gradient, the unstable set
 of each nondegenerate critical point `p` and the stable set of each nondegenerate critical point `q`
 of the negative-gradient flow are transverse at each common point `y`: the spans of their tangent
-cones at `y` together span the whole space. (When `f` is `C²`, these sets are manifolds near `y`
-and these spans are their tangent spaces.) -/
+cones at `y` together span the whole space. (When `E` is finite-dimensional and `f` is `C²`, these
+sets are `C¹` manifolds near `y`, by the slice charts
+`IsNondegenerateCriticalPoint.exists_unstableSet_chart` and `…exists_stableSet_chart`, and these
+spans are their tangent spaces.) -/
 def IsMorseSmale (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) : Prop :=
   ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p → IsNondegenerateCriticalPoint f q →
     y ∈ Flow.unstableSet (negativeGradientFlow f hf) p →
