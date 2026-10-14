@@ -145,8 +145,9 @@ projection `E_T ⟶ E`. -/
 theorem gammaOneBaseChangeEquiv_apply_comp_left (X : EllObj B) (T : Over X.base)
     (α : (gammaOne B N).obj (op (X.baseChangeFunctor.obj T))) :
     (gammaOneBaseChangeEquiv X T α ≫ X.curve.exactOrderSchemeι N).left =
-      (gammaOneEquiv _ α).1.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
-  EllipticCurveGeom.exactOrderPointsEquivOfIsPullback_apply_comp_left _ _ _
+      (gammaOneEquiv _ α).1.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ := by
+  rw [Over.comp_left, EllipticCurveGeom.exactOrderSchemeι_left]
+  exact EllipticCurveGeom.exactOrderPointsEquivOfIsPullback_apply_left_comp _ _ _
 
 /-- **Naturality of `gammaOneBaseChangeEquiv`.** Along a morphism `k : T' ⟶ T` of schemes over the
 base of `X`, the morphism `T' ⟶ E.exactOrderScheme N` of the pull-back to `E_{T'}` of a

@@ -102,7 +102,7 @@ be a scheme over `S` and `g : E' ⟶ E` a morphism of elliptic curves lying over
 pullback square with the structure morphisms and carrying the zero section of `E'` to that of `E`;
 for instance `E'` is the base change `E_T`. Then the `T`-points of `E'` of exact order `N` are the
 morphisms `T ⟶ E.exactOrderScheme N` over `S`: a point `P` corresponds to the morphism whose image
-in `E` is `P ≫ g` (`exactOrderPointsEquivOfIsPullback_apply_comp_left`). -/
+in `E` is `P ≫ g` (`exactOrderPointsEquivOfIsPullback_apply_left_comp`). -/
 noncomputable def exactOrderPointsEquivOfIsPullback :
     {P : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap // E'.IsOfExactOrder P N} ≃
       (T ⟶ E.exactOrderScheme N) where
@@ -128,10 +128,10 @@ noncomputable def exactOrderPointsEquivOfIsPullback :
 
 /-- The morphism to the exact-order scheme of a point `P` of exact order `N` of `E'`, followed by
 the inclusion in `E`, is `P ≫ g`. -/
-@[simp]
-theorem exactOrderPointsEquivOfIsPullback_apply_comp_left
+@[reassoc (attr := simp)]
+theorem exactOrderPointsEquivOfIsPullback_apply_left_comp
     (P : {P : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap // E'.IsOfExactOrder P N}) :
-    (exactOrderPointsEquivOfIsPullback N hg h0 P ≫ E.exactOrderSchemeι N).left =
+    (exactOrderPointsEquivOfIsPullback N hg h0 P).left ≫ (E.exactOrderLocus N).subschemeι =
       P.1.left ≫ g := by
   simp [exactOrderPointsEquivOfIsPullback]
 
