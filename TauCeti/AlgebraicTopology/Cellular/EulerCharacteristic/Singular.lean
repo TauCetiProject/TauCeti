@@ -24,9 +24,7 @@ question, and no dimension bound: sequential colimits of modules are exact, so t
 holds for every CW pair. Vanishing in a degree with no cells works, for a finite-dimensional CW
 pair, for any coefficient object in an abelian category with coproducts exact for the cell
 sets. The ordinary singular homology statements are obtained from the quotient map for the empty
-subspace, not from a separate comparison; composing it with the relative comparison identifies
-cellular homology of a finite-dimensional CW complex with its ordinary singular homology
-(`TauCeti.cellularSingularHomologyIsoOfCWComplex`, `TauCeti.cellularSingularHomologyIsoUniv`).
+subspace, not from a separate comparison.
 
 The source is A. Hatcher, *Algebraic Topology*, Section 2.2, Theorems 2.35 and 2.44.
 -/
@@ -117,32 +115,6 @@ end Relative
 section Absolute
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
-
-section Comparison
-
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-
-/-- **Cellular homology is ordinary singular homology**: for a finite-dimensional CW complex,
-cellular homology is the singular homology of the complex, through the quotient map for the empty
-subspace. -/
-def cellularSingularHomologyIsoOfCWComplex [FiniteDimensional C]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (n : ℕ) :
-    (cellularChainComplex C R).homology n ≅
-      ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C) :=
-  cellularSingularHomologyIso C R n ≪≫ (asIso ((complexBasePair C).singularHomologyπ R n)).symm
-
-/-- **Cellular homology is ordinary singular homology** for a finite-dimensional CW structure on
-the whole space `X`. -/
-def cellularSingularHomologyIsoUniv [CWComplex (Set.univ : Set X)]
-    [FiniteDimensional (Set.univ : Set X)]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ) :
-    (cellularChainComplex (Set.univ : Set X) R).homology n ≅
-      ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of X) :=
-  cellularSingularHomologyIsoOfCWComplex Set.univ R n ≪≫
-    ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).mapIso
-      (TopCat.isoOfHomeo (Homeomorph.Set.univ X))
-
-end Comparison
 
 section Ring
 
