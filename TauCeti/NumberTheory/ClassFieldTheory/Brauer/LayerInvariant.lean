@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.OpenSubgroup
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Inflation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.InflationRestriction
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
 # The local invariant of a finite normal layer of the units formation
@@ -51,8 +49,9 @@ and from the restriction and corestriction squares of the local invariant:
   (`LayerRefinement.range_cohomologyInfl_eq_ker_cohomologyRes`) together with Hilbert 90, a class
   of `V' ◁ U` whose restriction to `V' ◁ V` vanishes comes from `V ◁ U`;
 * conjugation by `g : G_K` preserves it (`layerInv_conjugateCohomologyIso`), because inflation
-  carries the conjugation of layers to the conjugation `H²(U, (Kˢ)ˣ) → H²(gUg⁻¹, (Kˢ)ˣ)`, which
-  preserves the local invariant (`subgroupInvMap_explicitMap2_of_conj`).
+  carries the conjugation of layers to the conjugation `H²(U, (Kˢ)ˣ) → H²(gUg⁻¹, (Kˢ)ˣ)`
+  (`NormalLayer.explicitInfl2_conjugateCohomologyIso`), which preserves the local invariant
+  (`subgroupInvMap_explicitMap2_of_conj`).
 
 ## Main definitions
 
@@ -79,8 +78,8 @@ group of the layer is read as the quotient of that subgroup by
 `L.top.toSubgroup.subgroupOf L.ground.toSubgroup`; this quotient is definitionally the Galois
 group `L.Gal` of the layer. Inflation from a layer is the generic construction of
 `TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Inflation` at the coefficient dictionary
-`unitsCoeffEquivUnitsFormation K`; only Hilbert 90 and the conjugation of layers are specific to
-the formation of units here.
+`unitsCoeffEquivUnitsFormation K`, and so is its compatibility with the conjugation of layers;
+only Hilbert 90 is specific to the formation of units here.
 
 ## References
 
@@ -116,102 +115,6 @@ private theorem subsingleton_H1_top :
       continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
   exact (explicitMap1Equiv _ _ _ _ φ (AddEquiv.refl (UnitsCoeff K)) continuous_id continuous_id
     fun _ _ => rfl).symm.injective.subsingleton
-
-/-! ### Inflation and conjugation -/
-
-section Conjugation
-
-variable (g : AbsoluteGaloisGroup K)
-
-/-- Inverse conjugation `v ↦ g⁻¹ v g`, from the ground subgroup `gUg⁻¹` of the conjugate layer to
-the ground subgroup `U` of the layer. -/
-private def conjugateGroundHom :
-    (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
-  toFun v := ⟨g⁻¹ * v * g, (L.mem_ground_conjugate g).1 v.2⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' v w := Subtype.ext (by simp only [Subgroup.coe_mul]; group)
-  continuous_toFun := ((continuous_mul_const g).comp
-    ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).subtype_mk _
-
-/-- Inverse conjugation on underlying elements of `G_K`. -/
-private theorem conjugateGroundHom_apply_coe (v : (L.conjugate g).ground.toSubgroup) :
-    (conjugateGroundHom L g v : AbsoluteGaloisGroup K) = g⁻¹ * v * g :=
-  (rfl)
-
-/-- The action of `g` on `(Kˢ)ˣ` and inverse conjugation form a compatible pair. -/
-private theorem conjugateGroundHom_smul (v : (L.conjugate g).ground.toSubgroup)
-    (m : UnitsCoeff K) :
-    DistribSMul.toAddMonoidHom (UnitsCoeff K) g (conjugateGroundHom L g v • m) =
-      v • DistribSMul.toAddMonoidHom (UnitsCoeff K) g m := by
-  rw [DistribSMul.toAddMonoidHom_apply, DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
-    Subgroup.smul_def, conjugateGroundHom_apply_coe, smul_smul, smul_smul]
-  congr 1
-  group
-
-/-- The ground subgroup of the conjugate layer is the conjugate `gUg⁻¹`. -/
-private theorem toSubgroup_ground_conjugate :
-    (L.conjugate g).ground.toSubgroup = L.ground.toSubgroup.map (MulAut.conj g).toMonoidHom := by
-  ext x
-  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, OpenSubgroup.mem_toSubgroup,
-    OpenSubgroup.mem_toSubgroup]
-  exact L.mem_ground_conjugate g
-
-/-- The coefficient dictionary carries the action of `g` on the formation to its action on
-`(Kˢ)ˣ`. -/
-private theorem unitsCoeffEquivUnitsFormation_symm_ρ (y : (unitsFormation K).toRep.V) :
-    (unitsCoeffEquivUnitsFormation K).symm ((unitsFormation K).toRep.ρ g y) =
-      DistribSMul.toAddMonoidHom (UnitsCoeff K) g ((unitsCoeffEquivUnitsFormation K).symm y) := by
-  rw [AddEquiv.symm_apply_eq, DistribSMul.toAddMonoidHom_apply, unitsCoeffEquivUnitsFormation_smul,
-    AddEquiv.apply_symm_apply]
-
-/-- The inflated cocycle of a layer cocycle pulled back along a pair `(f, φ)` that acts on Galois
-groups by inverse conjugation and on coefficients by `g` is the inflated cocycle, pulled back along
-inverse conjugation and pushed forward by `g`. -/
-private theorem inflCocycle2_mapCocycles₂ (f : (L.conjugate g).Gal →* L.Gal)
-    (φ : Rep.res f (L.rep (unitsFormation K)) ⟶ (L.conjugate g).rep (unitsFormation K))
-    (hf : ∀ w : (L.conjugate g).ground.toSubgroup,
-      f (w : (L.conjugate g).Gal) = (conjugateGroundHom L g w : L.Gal))
-    (hφ : ∀ x : (L.rep (unitsFormation K)).V, (φ.hom x : (unitsFormation K).toRep.V) =
-      (unitsFormation K).toRep.ρ g (x : (unitsFormation K).toRep.V))
-    (c : cocycles₂ (L.rep (unitsFormation K))) (p : (L.conjugate g).ground.toSubgroup ×
-      (L.conjugate g).ground.toSubgroup) :
-    ((L.conjugate g).inflCocycle2 (unitsCoeffEquivUnitsFormation K)
-        (unitsCoeffEquivUnitsFormation_smul K) (mapCocycles₂ f φ c) :
-        (L.conjugate g).ground.toSubgroup × (L.conjugate g).ground.toSubgroup → UnitsCoeff K) p =
-      DistribSMul.toAddMonoidHom (UnitsCoeff K) g
-        ((L.inflCocycle2 (unitsCoeffEquivUnitsFormation K) (unitsCoeffEquivUnitsFormation_smul K)
-          c : L.ground.toSubgroup × L.ground.toSubgroup → UnitsCoeff K)
-          (conjugateGroundHom L g p.1, conjugateGroundHom L g p.2)) := by
-  rw [NormalLayer.inflCocycle2_apply, NormalLayer.inflCocycle2_apply,
-    TauCeti.groupCohomology.mapCocycles₂_apply, hφ,
-    unitsCoeffEquivUnitsFormation_symm_ρ, hf, hf]
-
-/-- **Inflation commutes with conjugation**: inflating the conjugate of a class to the ground
-subgroup `gUg⁻¹` of the conjugate layer is conjugating the inflated class from `U` to `gUg⁻¹`. -/
-private theorem explicitInfl2_conjugateCohomologyIso (x : L.H (unitsFormation K) 2) :
-    (L.conjugate g).explicitInfl2 (unitsCoeffEquivUnitsFormation K)
-        (unitsCoeffEquivUnitsFormation_smul K)
-        ((L.conjugateCohomologyIso (unitsFormation K) g 2).hom x) =
-      explicitMap2 L.ground.toSubgroup (UnitsCoeff K) (L.conjugate g).ground.toSubgroup
-        (UnitsCoeff K) (conjugateGroundHom L g) (DistribSMul.toAddMonoidHom (UnitsCoeff K) g)
-        continuous_of_discreteTopology (conjugateGroundHom_smul L g)
-        (L.explicitInfl2 (unitsCoeffEquivUnitsFormation K) (unitsCoeffEquivUnitsFormation_smul K)
-          x) := by
-  refine L.explicitInfl2_eq_explicitMap2_explicitInfl2 _ _ _ _ _ _ _
-    (fun y => (L.conjugateCohomologyIso (unitsFormation K) g 2).hom y) (fun c => ?_) x
-  refine ⟨?_, ?hcls, ?hcocycle⟩
-  case hcls =>
-    rw [NormalLayer.conjugateCohomologyIso_def, groupCohomology.mapIso_hom]
-    -- Rewriting with `H2π_comp_map_apply` times out here; the term is given explicitly.
-    exact groupCohomology.H2π_comp_map_apply (L.conjugateGalEquiv g).symm.toMonoidHom _ c
-  case hcocycle =>
-    exact Subtype.ext (funext fun p => (inflCocycle2_mapCocycles₂ L g _ _
-      (fun w => (L.conjugateGalEquiv_symm_mk g w).trans (congrArg QuotientGroup.mk
-        (Subtype.ext (L.conjugateGroundEquiv_symm_apply_coe g w))))
-      (fun x => L.conjugateCoefficientEquiv_apply_coe (unitsFormation K) g x) c p).trans
-      (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).symm)
-
-end Conjugation
 
 end Inflation
 
@@ -315,11 +218,11 @@ theorem layerInv_conjugateCohomologyIso (g : AbsoluteGaloisGroup K)
     (x : L.H (unitsFormation K) 2) :
     layerInv K (L.conjugate g) ((L.conjugateCohomologyIso (unitsFormation K) g 2).hom x) =
       layerInv K L x := by
-  rw [layerInv_apply, explicitInfl2_conjugateCohomologyIso,
+  rw [layerInv_apply, NormalLayer.explicitInfl2_conjugateCohomologyIso,
     subgroupInvMap_explicitMap2_of_conj K L.ground.toSubgroup (L.conjugate g).ground.toSubgroup
-      L.ground.isOpen (L.conjugate g).ground.isOpen g _ (conjugateGroundHom_apply_coe L g)
+      L.ground.isOpen (L.conjugate g).ground.isOpen g _ (L.conjugateGroundHom_apply_coe g)
       (DistribSMul.toAddMonoidHom (UnitsCoeff K) g) (DistribSMul.toAddMonoidHom_apply _ g)
-      (toSubgroup_ground_conjugate L g),
+      (L.toSubgroup_ground_conjugate g),
     layerInv_apply]
 
 end Invariant

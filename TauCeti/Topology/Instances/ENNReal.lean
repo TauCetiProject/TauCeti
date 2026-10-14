@@ -18,6 +18,8 @@ subtraction-based estimates are unavailable.
 
 * `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated by `‖h‖ₑ` times a finite
   constant vanishes as `h → 0`.
+* `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
+  to `b` when `wᵢ → 0`.
 -/
 
 public section
@@ -37,5 +39,15 @@ theorem tendsto_nhds_zero_of_le_enorm_mul {G : E → ℝ≥0∞} {C : ℝ≥0∞
     continuous_enorm.tendsto' 0 0 (by simp)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa using ENNReal.Tendsto.mul_const h0 (Or.inr hC)) (fun _ => zero_le) hG
+
+/-- In `ℝ≥0∞`, a family that is within `wᵢ` of a fixed value `b` from both sides converges to `b`
+when `wᵢ → 0`. -/
+theorem tendsto_of_le_add_of_le_add {ι : Type*} {l : Filter ι} {a w : ι → ℝ≥0∞}
+    {b : ℝ≥0∞} (hw : Filter.Tendsto w l (nhds 0)) (hle : ∀ᶠ i in l, a i ≤ b + w i)
+    (hge : ∀ᶠ i in l, b ≤ a i + w i) : Filter.Tendsto a l (nhds b) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (g := fun i ↦ b - w i)
+    (h := fun i ↦ b + w i) ?_ ?_ (hge.mono fun i hi ↦ tsub_le_iff_right.2 hi) hle
+  · simpa using ENNReal.Tendsto.sub tendsto_const_nhds hw (Or.inr ENNReal.zero_ne_top)
+  · simpa using tendsto_const_nhds.add hw
 
 end TauCeti
