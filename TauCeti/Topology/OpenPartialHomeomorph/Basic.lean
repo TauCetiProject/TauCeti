@@ -24,7 +24,7 @@ open) be applied to compact convex pieces of a chart.
 ## Main statements
 
 * `OpenPartialHomeomorph.isClosed_image_symm_of_isCompact`: the inverse of an open partial
-  homeomorphism into a Hausdorff space maps compact subsets of its target to closed sets.
+  homeomorphism from a Hausdorff space maps compact subsets of its target to closed sets.
 -/
 
 public section
