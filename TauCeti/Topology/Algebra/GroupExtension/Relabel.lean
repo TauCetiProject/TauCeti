@@ -35,8 +35,11 @@ variable {G : Type u} {M : Type v} [Group G] [TopologicalSpace G]
   [CommGroup M] [TopologicalSpace M] [MulDistribMulAction G M]
 
 /-- Relabel the kernel and quotient of a profinite extension along continuous multiplicative
-equivalences which identify the prescribed actions. The total group is unchanged. -/
-@[expose] def relabel (X : ProfiniteGroupExtension G M)
+equivalences which identify the prescribed actions. The total group is unchanged. Like
+`relabelQuotient`, this is an abbreviation so that the relabelled total group and its instances are
+reducibly those of `X.E`: `relabel_toGroupExtension` needs this to typecheck, and `simp` needs it
+to identify the relabelled inclusion and projection with their original-group forms. -/
+abbrev relabel (X : ProfiniteGroupExtension G M)
     {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
     [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
     (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
@@ -75,25 +78,5 @@ theorem relabel_toGroupExtension (X : ProfiniteGroupExtension G M)
     (X.relabel eG eM hsmul).toGroupExtension =
       X.toGroupExtension.relabel eM.toMulEquiv eG.toMulEquiv :=
   (rfl)
-
-/-- Relabelling composes the old inclusion with the kernel equivalence. -/
-theorem relabel_inl (X : ProfiniteGroupExtension G M)
-    {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
-    [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
-    (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
-    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
-    (X.relabel eG eM hsmul).toGroupExtension.inl =
-      X.toGroupExtension.inl.comp eM.toMulEquiv.toMonoidHom :=
-  GroupExtension.relabel_inl _ _ _
-
-/-- Relabelling composes the old projection with the quotient equivalence. -/
-theorem relabel_rightHom (X : ProfiniteGroupExtension G M)
-    {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
-    [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
-    (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
-    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
-    (X.relabel eG eM hsmul).toGroupExtension.rightHom =
-      eG.toMulEquiv.toMonoidHom.comp X.toGroupExtension.rightHom :=
-  GroupExtension.relabel_rightHom _ _ _
 
 end TauCeti.ProfiniteGroupExtension
