@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 
 `Matrix.UnitaryGroup.toLinearEquiv_apply` describes the linear equivalence associated to a unitary
 matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitaryGroup` records that
-permutation matrices are unitary.
+permutation matrices are unitary. Accordingly `Matrix.permutationUnitary` is
+`Matrix.permMatrixHom` with values in the unitary group.
 -/
 
 public section
@@ -44,5 +45,18 @@ theorem permMatrix_mem_unitaryGroup (σ : Equiv.Perm n) :
     σ.permMatrix R ∈ unitaryGroup n R := by
   rw [mem_unitaryGroup_iff, star_eq_conjTranspose, conjTranspose_permMatrix, ← permMatrix_mul,
     inv_mul_cancel, permMatrix_one]
+
+/-- A permutation as a unitary matrix: `permutationUnitary σ` is the permutation matrix of `σ⁻¹`,
+which makes this a homomorphism with Mathlib's convention for multiplication in `Equiv.Perm`. -/
+def permutationUnitary : Equiv.Perm n →* unitaryGroup n R :=
+  (permMatrixHom (R := R)).codRestrict _ fun σ => by
+    rw [permMatrixHom_apply]
+    exact permMatrix_mem_unitaryGroup σ⁻¹
+
+/-- The matrix underlying `permutationUnitary σ` is the permutation matrix of `σ⁻¹`. -/
+@[simp]
+theorem coe_permutationUnitary (σ : Equiv.Perm n) :
+    (permutationUnitary (R := R) σ : Matrix n n R) = σ⁻¹.permMatrix R :=
+  (rfl)
 
 end Matrix
