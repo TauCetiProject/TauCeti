@@ -72,6 +72,7 @@ theorem apply_comp_eq_sum_finiteProjection [Fintype A] [DiscreteTopology A]
   rw [hfun, map_sum]
   simp [finiteProjection_apply]
 
+/-- The finite projection of a Dirac measure is the point mass at the image of its support. -/
 @[simp]
 theorem finiteProjection_dirac [Finite A] [DiscreteTopology A]
     (q : C(X, A)) (x : X) :
@@ -128,30 +129,27 @@ theorem ofFiniteCoefficients_single (a : A) (r : R) :
     ofFiniteCoefficients (Finsupp.single a r) = r • dirac R a := by
   simp [ofFiniteCoefficients]
 
+/-- Evaluating the measure associated to finite coefficients pairs the coefficients with the
+values of the test function. -/
 @[simp]
 theorem ofFiniteCoefficients_apply (c : A →₀ R) (f : C(A, R)) :
     ofFiniteCoefficients c f = c.sum fun a r ↦ r * f a := by
   classical
-  induction c using Finsupp.induction with
-  | zero =>
-      rw [map_zero, Finsupp.sum_zero_index]
-      rfl
-  | @single_add a r c ha _ ih =>
-      rw [map_add, _root_.add_apply, ofFiniteCoefficients_single, _root_.smul_apply,
-        dirac_apply, ih, Finsupp.sum_add_index (fun a _ ↦ zero_mul (f a))
-          (fun a _ r s ↦ add_mul r s (f a)),
-        Finsupp.sum_single_index (zero_mul (f a)), smul_eq_mul]
+  rw [ofFiniteCoefficients, Finsupp.linearCombination_apply,
+    Finsupp.sum_apply'' _ _ _ (by rfl) (by intros; rfl)]
+  simp only [_root_.smul_apply, dirac_apply, smul_eq_mul]
 
+/-- Finite projection along the identity recovers the coefficients used to build a measure. -/
 @[simp]
 theorem finiteProjection_id_ofFiniteCoefficients [Finite A] [DiscreteTopology A] (c : A →₀ R) :
     finiteProjection (.id A) (ofFiniteCoefficients c) = c := by
   classical
   induction c using Finsupp.induction with
   | zero => simp
-  | @single_add a r c ha _ ih =>
-      rw [map_add, map_add, ofFiniteCoefficients_single, map_smul, finiteProjection_dirac, ih]
-      simp
+  | @single_add a r c _ _ ih => simp [ih]
 
+/-- Reconstructing a measure on a finite discrete space from its identity projection returns the
+original measure. -/
 @[simp]
 theorem ofFiniteCoefficients_finiteProjection_id [Finite A] [DiscreteTopology A] (μ : D(A, R)) :
     ofFiniteCoefficients (finiteProjection (.id A) μ) = μ := by
