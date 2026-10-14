@@ -51,7 +51,7 @@ theorem splitProperClassMk_eq_iff (s : ℕ) [NeZero s] (c d : ℤ)
   rw [← Quotient.eq, properClass_splitTriangularForm_eq_iff _ _ _
     (Nat.cast_ne_zero.mpr (NeZero.ne s)), ZMod.intCast_eq_intCast_iff_dvd_sub, dvd_sub_comm]
 
-private theorem isCoprime_unit_val (s : ℕ) [NeZero s] (u : (ZMod s)ˣ) :
+private theorem isCoprime_unit_val (s : ℕ) (u : (ZMod s)ˣ) :
     IsCoprime (s : ℤ) ((u : ZMod s).val : ℤ) :=
   (ZMod.val_coe_unit_coprime u).isCoprime.symm
 

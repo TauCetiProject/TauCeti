@@ -56,11 +56,11 @@ def splitModule (s c : ℤ) : Submodule (QuadraticOrder.productSubalgebra s) (�
   rfl
 
 /-- The first lattice generator belongs to the module. -/
-@[simp] theorem first_mem_splitModule (s c : ℤ) : (s, 0) ∈ splitModule s c := by
+theorem first_mem_splitModule (s c : ℤ) : (s, 0) ∈ splitModule s c := by
   simp
 
 /-- The second lattice generator belongs to the module. -/
-@[simp] theorem second_mem_splitModule (s c : ℤ) : (c, 1) ∈ splitModule s c := by
+theorem second_mem_splitModule (s c : ℤ) : (c, 1) ∈ splitModule s c := by
   simp
 
 /-- Every module element has integral coordinates in the two displayed generators. -/
