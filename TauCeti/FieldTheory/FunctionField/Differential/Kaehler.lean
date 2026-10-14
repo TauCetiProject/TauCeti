@@ -258,7 +258,8 @@ section TranscendentalDimension
 variable [Algebra.EssFiniteType k F] [Algebra.Transcendental k F]
 
 /-- **The Kähler differentials of an essentially finite type transcendental field extension
-are one-dimensional exactly when it is separably generated**: `dim_F Ω[F⁄k] = 1` if and only if
+are one-dimensional exactly when it admits a single separating element**:
+`dim_F Ω[F⁄k] = 1` if and only if
 some `x` transcendental over `k` makes `F / k(x)` separable. -/
 theorem finrank_kaehlerDifferential_eq_one_iff :
     finrank F Ω[F⁄k] = 1 ↔ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
