@@ -15,6 +15,8 @@ For a jointly exchangeable array, the entries at `(i,j)` and `(j,i)` must be gen
 the two entries can be dependent, and the Aldous--Hoover coding gives their unordered pair a
 single cell-noise variable. Fix a hidden sequence of vertices. The context of an ordered pair of
 visible, distinct vertices records the hidden block and both vertices' strips against it.
+The context observations and their deterministic transport and swap identities live in
+`TauCeti.Probability.Process.Array.Context`.
 
 Every such ordered pair has the same joint law with its context. Hence Mathlib's canonical
 conditional distribution gives one kernel for all off-diagonal pairs, and a single measurable
@@ -47,47 +49,6 @@ open MeasureTheory ProbabilityTheory unitInterval
 namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α]
-
-/-- The hidden block and the two adjacent vertex contexts of an ordered pair of visible
-vertices. Both orientations are retained because a jointly exchangeable array need not be
-symmetric. -/
-def offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :=
-  (cellContext e e i j x, cellContext e e j i x)
-
-omit [MeasurableSpace α] in
-/-- The first component is the context of the forward directed cell. -/
-@[simp]
-theorem offDiagonalPairContext_fst (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairContext e i j x).1 = cellContext e e i j x := by
-  simp only [offDiagonalPairContext]
-
-omit [MeasurableSpace α] in
-/-- The second component is the context of the reverse directed cell. -/
-@[simp]
-theorem offDiagonalPairContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairContext e i j x).2 = cellContext e e j i x := by
-  simp only [offDiagonalPairContext]
-
-omit [MeasurableSpace α] in
-/-- Reversing the visible vertices swaps their two directed contexts. -/
-theorem offDiagonalPairContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    offDiagonalPairContext e j i x = (offDiagonalPairContext e i j x).swap := by
-  simp only [offDiagonalPairContext, Prod.swap]
-
-/-- Reading the context of an off-diagonal pair is measurable. -/
-theorem measurable_offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) :
-    Measurable (offDiagonalPairContext (α := α) e i j) :=
-  (measurable_cellContext e e i j).prodMk (measurable_cellContext e e j i)
-
-omit [MeasurableSpace α] in
-/-- A common relabelling fixing the hidden vertices transports the context of a visible pair. -/
-theorem offDiagonalPairContext_pairReindex (e : ℕ → ℕ) (i j : ℕ)
-    (perm : Equiv.Perm ℕ) (he : ∀ a, perm (e a) = e a) (x : ℕ × ℕ → α) :
-    offDiagonalPairContext e i j (pairReindex perm perm x) =
-      offDiagonalPairContext e (perm i) (perm j) x := by
-  simp only [offDiagonalPairContext]
-  exact Prod.ext (cellContext_pairReindex e e i j perm perm he he x)
-    (cellContext_pairReindex e e j i perm perm he he x)
 
 /-- Joint exchangeability transports the law of a pair and its hidden context along any
 permutation that fixes the hidden vertices. -/
@@ -169,55 +130,7 @@ theorem JointlyExchangeable.exists_common_offDiagonalPair_coding
   rw [hρ.condDistrib_offDiagonalPairContext_eq e h₀ hij hi₀ hj₀ hi hj]
   exact hmap z
 
-/-! ## The square context of an off-diagonal pair -/
-
-/-- The square context of the ordered pair `(i, j)` of visible vertices: the contexts of both
-directed cells, that is the hidden block and the strips of `i` and of `j` against the hidden
-vertices, together with the two diagonal entries `x (i, i)` and `x (j, j)`. Its entries are exactly
-those of the square spanned by the hidden vertices and `i`, `j`, other than `(i, j)` and
-`(j, i)`. -/
-def offDiagonalPairSquareContext (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :=
-  (offDiagonalPairContext e i j x, (x (i, i), x (j, j)))
-
-omit [MeasurableSpace α] in
-/-- The first component of the square context is the context of the two directed cells. -/
-@[simp]
-theorem offDiagonalPairSquareContext_fst (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairSquareContext e i j x).1 = offDiagonalPairContext e i j x :=
-  (rfl)
-
-omit [MeasurableSpace α] in
-/-- The second component of the square context is the pair of diagonal entries. -/
-@[simp]
-theorem offDiagonalPairSquareContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairSquareContext e i j x).2 = (x (i, i), x (j, j)) :=
-  (rfl)
-
-omit [MeasurableSpace α] in
-/-- Reversing the visible vertices swaps both the two directed contexts and the two diagonal
-entries of the square context. -/
-theorem offDiagonalPairSquareContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    offDiagonalPairSquareContext e j i x =
-      Prod.map Prod.swap Prod.swap (offDiagonalPairSquareContext e i j x) := by
-  simp only [offDiagonalPairSquareContext, offDiagonalPairContext_swap e i j, Prod.map, Prod.swap]
-
-/-- Reading the square context of an off-diagonal pair is measurable. -/
-theorem measurable_offDiagonalPairSquareContext (e : ℕ → ℕ) (i j : ℕ) :
-    Measurable (offDiagonalPairSquareContext (α := α) e i j) :=
-  (measurable_offDiagonalPairContext e i j).prodMk
-    ((measurable_pi_apply (i, i)).prodMk (measurable_pi_apply (j, j)))
-
-omit [MeasurableSpace α] in
-/-- A common relabelling fixing the hidden vertices transports the square context of a visible
-pair. -/
-theorem offDiagonalPairSquareContext_pairReindex (e : ℕ → ℕ) (i j : ℕ)
-    (perm : Equiv.Perm ℕ) (he : ∀ a, perm (e a) = e a) (x : ℕ × ℕ → α) :
-    offDiagonalPairSquareContext e i j (pairReindex perm perm x) =
-      offDiagonalPairSquareContext e (perm i) (perm j) x := by
-  simp only [offDiagonalPairSquareContext, offDiagonalPairContext_pairReindex e i j perm he,
-    pairReindex_apply]
-
-/-! ## A common conditional law -/
+/-! ## A common conditional law given the square context -/
 
 /-- Joint exchangeability transports the law of a pair and its square context along any permutation
 that fixes the hidden vertices. -/
