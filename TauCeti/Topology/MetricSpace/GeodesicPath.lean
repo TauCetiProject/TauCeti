@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Topology.MetricSpace.Length
 
 /-!
@@ -137,17 +138,24 @@ section Normed
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The affine segments of a real normed space, as a continuous map from pairs of endpoints to path
-space: `segmentPath z` is the path `t ↦ AffineMap.lineMap z.1 z.2 t` from `z.1` to `z.2`. -/
+space: `segmentPath z` is Mathlib's `Path.segment z.1 z.2`, the path
+`t ↦ AffineMap.lineMap z.1 z.2 t` from `z.1` to `z.2`, depending continuously on both endpoints. -/
 def segmentPath : C(E × E, C(I, E)) :=
   ContinuousMap.curry
-    ⟨fun p : (E × E) × I ↦ AffineMap.lineMap p.1.1 p.1.2 (p.2 : ℝ), by
-      simp only [AffineMap.lineMap_apply_module]
+    ⟨fun p : (E × E) × I ↦ Path.segment p.1.1 p.1.2 p.2, by
+      simp only [Path.segment_apply, AffineMap.lineMap_apply_module]
       fun_prop⟩
+
+/-- `segmentPath z` is Mathlib's straight-line path `Path.segment z.1 z.2`, so the `Path.segment`
+API applies to it. -/
+theorem segmentPath_eq_segment (z : E × E) :
+    segmentPath z = (Path.segment z.1 z.2 : C(I, E)) :=
+  (rfl)
 
 @[simp]
 theorem segmentPath_apply (z : E × E) (t : I) :
     segmentPath z t = AffineMap.lineMap z.1 z.2 (t : ℝ) :=
-  (rfl)
+  Path.segment_apply z.1 z.2 t
 
 /-- The affine segments of a real normed space are geodesic paths. -/
 theorem segmentPath_mem_geodesicPaths (z : E × E) : segmentPath z ∈ geodesicPaths E :=
