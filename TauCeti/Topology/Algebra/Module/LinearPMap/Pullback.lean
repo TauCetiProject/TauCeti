@@ -10,8 +10,8 @@ public import Mathlib.Topology.Algebra.Module.LinearPMap
 /-!
 # Coordinate changes for partial operators
 
-`TauCeti.LinearPMap.pullback A e` transports a partial endomorphism `A` along a continuous linear
-equivalence `e : E ≃L[R] F`. Its domain is `e ⁻¹' A.domain` and its action is `e⁻¹ A e`.
+`TauCeti.pullbackLinearPMap A e` transports a partial endomorphism `A` along a continuous
+linear equivalence `e : E ≃L[R] F`. Its domain is `e ⁻¹' A.domain` and its action is `e⁻¹ A e`.
 The graph is the inverse image of the graph of `A` under the product equivalence `e × e`.
 Consequently density of the domain and closedness of the operator are invariant under
 coordinate changes. No inner product, completeness, or continuity of the partial operator
@@ -29,7 +29,7 @@ graphs.
 
 public section
 
-namespace TauCeti.LinearPMap
+namespace TauCeti
 
 section Ring
 
@@ -40,87 +40,89 @@ variable {R E F G : Type*} [Ring R]
 
 /-- Pull a partial operator back along a continuous linear equivalence, transporting both
 its domain and its action. -/
-def pullback (A : F →ₗ.[R] F) (e : E ≃L[R] F) : E →ₗ.[R] E where
+def pullbackLinearPMap (A : F →ₗ.[R] F) (e : E ≃L[R] F) : E →ₗ.[R] E where
   domain := A.domain.comap e.toLinearMap
   toFun := e.symm.toLinearMap.comp (A.toFun.comp
     ((e.toLinearMap.domRestrict (A.domain.comap e.toLinearMap)).codRestrict A.domain
       fun x ↦ x.property))
 
 /-- The domain of a pulled-back partial operator is the inverse image of its domain. -/
-theorem pullback_domain (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
-    (pullback A e).domain = A.domain.comap e.toLinearMap := (rfl)
+theorem pullbackLinearPMap_domain (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
+    (pullbackLinearPMap A e).domain = A.domain.comap e.toLinearMap := (rfl)
 
 /-- Domain membership under a coordinate change. -/
-@[simp] theorem mem_pullback_domain (A : F →ₗ.[R] F) (e : E ≃L[R] F)
-    {x : E} : x ∈ (pullback A e).domain ↔ e x ∈ A.domain := Iff.rfl
+@[simp] theorem mem_pullbackLinearPMap_domain (A : F →ₗ.[R] F) (e : E ≃L[R] F)
+    {x : E} : x ∈ (pullbackLinearPMap A e).domain ↔ e x ∈ A.domain := Iff.rfl
 
 /-- The pulled-back action is `e⁻¹ A e` on its pulled-back domain. -/
-@[simp] theorem pullback_apply (A : F →ₗ.[R] F) (e : E ≃L[R] F)
-    (x : (pullback A e).domain) :
-    pullback A e x = e.symm (A ⟨e x, (mem_pullback_domain A e).mp x.property⟩) := (rfl)
+@[simp] theorem pullbackLinearPMap_apply (A : F →ₗ.[R] F) (e : E ≃L[R] F)
+    (x : (pullbackLinearPMap A e).domain) :
+    pullbackLinearPMap A e x =
+      e.symm (A ⟨e x, (mem_pullbackLinearPMap_domain A e).mp x.property⟩) := (rfl)
 
 /-- A coordinate change transports both coordinates of the graph. -/
-theorem mem_graph_pullback (A : F →ₗ.[R] F) (e : E ≃L[R] F)
-    {p : E × E} : p ∈ (pullback A e).graph ↔ (e p.1, e p.2) ∈ A.graph := by
-  rw [_root_.LinearPMap.mem_graph_iff, _root_.LinearPMap.mem_graph_iff]
+theorem mem_graph_pullbackLinearPMap (A : F →ₗ.[R] F) (e : E ≃L[R] F)
+    {p : E × E} : p ∈ (pullbackLinearPMap A e).graph ↔ (e p.1, e p.2) ∈ A.graph := by
+  rw [LinearPMap.mem_graph_iff, LinearPMap.mem_graph_iff]
   constructor
   · rintro ⟨x, hx, hAx⟩
-    refine ⟨⟨e x, (mem_pullback_domain A e).mp x.property⟩, congrArg e hx, ?_⟩
-    simpa only [pullback_apply, e.apply_symm_apply] using congrArg e hAx
+    refine ⟨⟨e x, (mem_pullbackLinearPMap_domain A e).mp x.property⟩, congrArg e hx, ?_⟩
+    simpa only [pullbackLinearPMap_apply, e.apply_symm_apply] using congrArg e hAx
   · rintro ⟨x, hx, hAx⟩
     simp only at hx hAx
     have hxmem : e p.1 ∈ A.domain := by
       rw [← hx]
       exact x.property
-    refine ⟨⟨p.1, (mem_pullback_domain A e).mpr hxmem⟩, rfl, ?_⟩
+    refine ⟨⟨p.1, (mem_pullbackLinearPMap_domain A e).mpr hxmem⟩, rfl, ?_⟩
     apply e.injective
-    simp only [pullback_apply, e.apply_symm_apply]
+    simp only [pullbackLinearPMap_apply, e.apply_symm_apply]
     exact (congrArg A (Subtype.ext hx)).symm.trans hAx
 
 /-- The graph of a pullback is the inverse image under the product coordinate change. -/
-theorem graph_pullback (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
-    (pullback A e).graph = A.graph.comap (e.prodCongr e).toLinearMap := by
+theorem graph_pullbackLinearPMap (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
+    (pullbackLinearPMap A e).graph = A.graph.comap (e.prodCongr e).toLinearMap := by
   ext p
-  simp only [mem_graph_pullback, Submodule.mem_comap,
+  simp only [mem_graph_pullbackLinearPMap, Submodule.mem_comap,
     LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
     ContinuousLinearEquiv.prodCongr_apply]
 
 /-- Pullback along the identity leaves a partial operator unchanged. -/
-@[simp] theorem pullback_refl (A : E →ₗ.[R] E) :
-    pullback A (ContinuousLinearEquiv.refl R E) = A := by
-  apply _root_.LinearPMap.eq_of_eq_graph
+@[simp] theorem pullbackLinearPMap_refl (A : E →ₗ.[R] E) :
+    pullbackLinearPMap A (ContinuousLinearEquiv.refl R E) = A := by
+  apply LinearPMap.eq_of_eq_graph
   ext p
-  simp only [mem_graph_pullback, ContinuousLinearEquiv.refl_apply]
+  simp only [mem_graph_pullbackLinearPMap, ContinuousLinearEquiv.refl_apply]
 
 /-- Successive pullbacks compose their coordinate changes in the same order. -/
-@[simp] theorem pullback_pullback (A : G →ₗ.[R] G)
-    (f : F ≃L[R] G) (e : E ≃L[R] F) : pullback (pullback A f) e = pullback A (e.trans f) := by
-  apply _root_.LinearPMap.eq_of_eq_graph
+@[simp] theorem pullbackLinearPMap_pullbackLinearPMap (A : G →ₗ.[R] G)
+    (f : F ≃L[R] G) (e : E ≃L[R] F) :
+    pullbackLinearPMap (pullbackLinearPMap A f) e = pullbackLinearPMap A (e.trans f) := by
+  apply LinearPMap.eq_of_eq_graph
   ext p
-  simp only [mem_graph_pullback, ContinuousLinearEquiv.trans_apply]
+  simp only [mem_graph_pullbackLinearPMap, ContinuousLinearEquiv.trans_apply]
 
 /-- Pulling back by an equivalence and its inverse recovers the original operator. -/
-theorem pullback_pullback_symm (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
-    pullback (pullback A e) e.symm = A := by
-  rw [pullback_pullback]
+theorem pullbackLinearPMap_pullbackLinearPMap_symm (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
+    pullbackLinearPMap (pullbackLinearPMap A e) e.symm = A := by
+  rw [pullbackLinearPMap_pullbackLinearPMap]
   simp
 
 /-- Density of the domain is invariant under continuous linear coordinate changes. -/
-@[simp] theorem dense_pullback_domain_iff
+@[simp] theorem dense_pullbackLinearPMap_domain_iff
     (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
-    Dense ((pullback A e).domain : Set E) ↔ Dense (A.domain : Set F) := by
-  rw [pullback_domain, Submodule.comap_coe]
+    Dense ((pullbackLinearPMap A e).domain : Set E) ↔ Dense (A.domain : Set F) := by
+  rw [pullbackLinearPMap_domain, Submodule.comap_coe]
   exact e.toHomeomorph.isOpenQuotientMap.dense_preimage_iff
 
 /-- Pullback of an everywhere-defined linear operator is ordinary conjugation. -/
-@[simp] theorem pullback_toPMap_top
+@[simp] theorem pullbackLinearPMap_toPMap_top
     (T : F →ₗ[R] F) (e : E ≃L[R] F) :
-    pullback (T.toPMap ⊤) e =
+    pullbackLinearPMap (T.toPMap ⊤) e =
       (e.symm.toLinearMap ∘ₗ T ∘ₗ e.toLinearMap).toPMap ⊤ := by
-  apply _root_.LinearPMap.ext
-  · simp [pullback_domain]
+  apply LinearPMap.ext
+  · simp [pullbackLinearPMap_domain]
   · intros
-    simp [pullback_apply, LinearMap.toPMap_apply]
+    simp [pullbackLinearPMap_apply, LinearMap.toPMap_apply]
 
 end Ring
 
@@ -131,11 +133,11 @@ variable {R E F : Type*} [CommRing R]
   [AddCommGroup F] [Module R F] [TopologicalSpace F]
 
 /-- Closedness of a partial operator is invariant under continuous linear coordinate changes. -/
-@[simp] theorem isClosed_pullback_iff
-    (A : F →ₗ.[R] F) (e : E ≃L[R] F) : (pullback A e).IsClosed ↔ A.IsClosed := by
-  rw [_root_.LinearPMap.IsClosed, _root_.LinearPMap.IsClosed, graph_pullback, Submodule.comap_coe]
+@[simp] theorem isClosed_pullbackLinearPMap_iff
+    (A : F →ₗ.[R] F) (e : E ≃L[R] F) : (pullbackLinearPMap A e).IsClosed ↔ A.IsClosed := by
+  rw [LinearPMap.IsClosed, LinearPMap.IsClosed, graph_pullbackLinearPMap, Submodule.comap_coe]
   exact (e.prodCongr e).toHomeomorph.isClosed_preimage
 
 end Closed
 
-end TauCeti.LinearPMap
+end TauCeti
