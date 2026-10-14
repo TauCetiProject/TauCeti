@@ -397,8 +397,11 @@ theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
     Completion.denseRange_coe.dense_of_mapsTo (Completion.continuous_coe _)
       (dense_weightedPolynomials hT) (by
         intro f hf
-        obtain ⟨p, rfl⟩ := RingHom.mem_range.mp hf
-        exact hpoly p)
+        obtain ⟨p, hp⟩ := (weightedPolynomialsEquiv hT).surjective ⟨f, hf⟩
+        have hp' := congrArg
+          (fun z : weightedPolynomials T hT ↦ (z : weightedRestrictedSubring T hT)) hp
+        rw [coe_weightedPolynomialsEquiv] at hp'
+        simpa only [hp'] using hpoly p)
   exact closure_minimal (fun _ hx ↦ hx)
     (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR)) (hdense y)
 
