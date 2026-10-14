@@ -10,10 +10,11 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Distribution.BumpComp
 import TauCeti.Dynamics.Flow.Variational
 
 /-!
-# Admissible perturbations move the end of an orbit in every direction
+# Admissible perturbations move the end of an orbit in every direction transverse to it
 
 Let `f` be a `C²` function with globally Lipschitz gradient on a finite-dimensional real inner
 product space `E`, `φ` its negative-gradient flow, `x` a point that is not a critical point of `f`,
@@ -45,68 +46,40 @@ open scoped Gradient NNReal RealInnerProductSpace
 
 namespace TauCeti
 
-section Bump
-
-/-- If `∫₀ᵀ b(σ) ψ(F σ) dσ = 0` for every smooth bump `ψ` centred at `F σ₀`, with `F` continuous
-and strictly antitone and `b` continuous, then `b σ₀ ≤ 0` for `σ₀ ∈ (0, T)`. -/
-private theorem nonpos_of_forall_integral_bump {b F : ℝ → ℝ} (hb : Continuous b)
-    (hF : Continuous F) (hFa : StrictAnti F) {T σ₀ : ℝ} (hσ : σ₀ ∈ Ioo 0 T)
-    (h : ∀ ψ : ContDiffBump (F σ₀), ∫ σ in (0 : ℝ)..T, b σ * ψ (F σ) = 0) : b σ₀ ≤ 0 := by
-  by_contra hpos
-  rw [not_le] at hpos
-  -- `b` is positive on a neighbourhood of `σ₀` inside `(0, T)`.
-  obtain ⟨ε, hε, hεb⟩ :=
-    Metric.eventually_nhds_iff.1 (hb.continuousAt.eventually (lt_mem_nhds hpos))
-  set δ := min ε (min σ₀ (T - σ₀)) with hδ
-  have hδpos : 0 < δ := lt_min hε (lt_min hσ.1 (by linarith [hσ.2]))
-  have hbpos : ∀ σ, |σ - σ₀| < δ → 0 < b σ := fun σ hσ' ↦
-    hεb (by rw [Real.dist_eq]; exact hσ'.trans_le (min_le_left _ _))
-  -- A bump around `F σ₀` small enough that `ψ ∘ F` lives in `(σ₀ - δ / 2, σ₀ + δ / 2)`.
-  set c := F σ₀
-  have h1 : c < F (σ₀ - δ / 2) := hFa (by linarith)
-  have h2 : F (σ₀ + δ / 2) < c := hFa (by linarith)
-  set r := min (F (σ₀ - δ / 2) - c) (c - F (σ₀ + δ / 2)) with hr
-  have hrpos : 0 < r := lt_min (by linarith) (by linarith)
-  let ψ : ContDiffBump c := ⟨r / 2, r, by positivity, by linarith⟩
-  have hψ0 : ∀ σ, δ / 2 ≤ |σ - σ₀| → ψ (F σ) = 0 := fun σ hσ' ↦ by
-    refine ψ.zero_of_le_dist ?_
-    rw [Real.dist_eq]
-    rcases le_abs'.1 hσ' with h' | h'
-    · have : F (σ₀ - δ / 2) ≤ F σ := hFa.antitone (by linarith)
-      rw [abs_of_nonneg (by linarith)]
-      exact ((min_le_left _ _).trans (by linarith) : r ≤ F σ - c)
-    · have : F σ ≤ F (σ₀ + δ / 2) := hFa.antitone (by linarith)
-      rw [abs_of_nonpos (by linarith)]
-      exact ((min_le_right _ _).trans (by linarith) : r ≤ -(F σ - c))
-  have hg : Continuous fun σ ↦ b σ * ψ (F σ) := hb.mul (ψ.continuous.comp hF)
-  have hnonneg : ∀ σ, 0 ≤ b σ * ψ (F σ) := fun σ ↦ by
-    by_cases hσ' : |σ - σ₀| < δ / 2
-    · exact mul_nonneg (hbpos σ (by linarith)).le ψ.nonneg
-    · rw [hψ0 σ (not_lt.1 hσ'), mul_zero]
-  -- The integrand is nonnegative and positive at `σ₀`, so its integral is positive.
-  have hψc : 0 < ψ (F σ₀) := ψ.pos_of_mem_ball (by rw [Metric.mem_ball, dist_self]; exact hrpos)
-  have hT : (0 : ℝ) < T := hσ.1.trans hσ.2
-  have hlt := intervalIntegral.integral_lt_integral_of_continuousOn_of_le_of_exists_lt hT
-    continuousOn_const hg.continuousOn (fun σ _ ↦ hnonneg σ)
-    ⟨σ₀, Ioo_subset_Icc_self hσ, mul_pos hpos hψc⟩
-  rw [intervalIntegral.integral_zero, h ψ] at hlt
-  exact lt_irrefl _ hlt
-
-/-- If `∫₀ᵀ a(σ) ψ(F σ) dσ = 0` for every smooth bump `ψ` centred at `F σ₀`, with `F` continuous
-and strictly antitone and `a` continuous, then `a σ₀ = 0` for `σ₀ ∈ (0, T)`. -/
-private theorem eq_zero_of_forall_integral_bump {a F : ℝ → ℝ} (ha : Continuous a)
-    (hF : Continuous F) (hFa : StrictAnti F) {T σ₀ : ℝ} (hσ : σ₀ ∈ Ioo 0 T)
-    (h : ∀ ψ : ContDiffBump (F σ₀), ∫ σ in (0 : ℝ)..T, a σ * ψ (F σ) = 0) : a σ₀ = 0 := by
-  refine le_antisymm (nonpos_of_forall_integral_bump ha hF hFa hσ h) ?_
-  have := nonpos_of_forall_integral_bump (b := fun σ ↦ -a σ) ha.neg hF hFa hσ fun ψ ↦ by
-    simp only [neg_mul, intervalIntegral.integral_neg, h ψ, neg_zero]
-  linarith
-
-end Bump
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {K : ℝ≥0}
 
+
+/-- A test perturbation `θ (ψ ∘ f) ⟪w, ·⟫`, with `θ` a bump whose closed support avoids the critical
+points of `f`, is admissible. -/
+private theorem isAdmissiblePerturbation_bump_mul (hfs : ContDiff ℝ 2 f) {z : E}
+    (θ : ContDiffBump z) (hθ : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0) {c : ℝ}
+    (ψ : ContDiffBump c) (w : E) :
+    IsAdmissiblePerturbation f fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫) where
+  contDiff := θ.contDiff.mul ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
+  hasCompactSupport := θ.hasCompactSupport.mul_right
+  disjoint := Set.disjoint_left.2 fun p hp hp0 ↦ by
+    have hpθ : p ∈ tsupport (θ : E → ℝ) := tsupport_mul_subset_left hp
+    rw [θ.tsupport_eq] at hpθ
+    exact hθ p hpθ hp0
+
+/-- The derivative of a test perturbation `θ (ψ ∘ f) ⟪w, ·⟫` in a direction `v` killed by
+`Df(p)`. -/
+private theorem fderiv_bump_mul_apply (hfs : ContDiff ℝ 2 f) {z : E} (θ : ContDiffBump z) {c : ℝ}
+    (ψ : ContDiffBump c) (w : E) {p v : E} (hv : fderiv ℝ f p v = 0) :
+    fderiv ℝ (fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)) p v =
+      (θ p * ⟪w, v⟫ + ⟪w, p⟫ * fderiv ℝ θ p v) * ψ (f p) := by
+  have hfd : DifferentiableAt ℝ f p := (hfs.differentiable (by norm_num)) p
+  have hgder : HasFDerivAt (fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫))
+      (θ p • ((ψ (f p)) • innerSL ℝ w + ⟪w, p⟫ • (fderiv ℝ ψ (f p)).comp (fderiv ℝ f p)) +
+        (ψ (f p) * ⟪w, p⟫) • fderiv ℝ θ p) p :=
+    ((θ.contDiff (n := 1)).differentiable one_ne_zero p).hasFDerivAt.mul
+      ((((ψ.contDiff (n := 1)).differentiable one_ne_zero (f p)).hasFDerivAt.comp p
+        hfd.hasFDerivAt).mul (innerSL ℝ w).hasFDerivAt)
+  rw [hgder.fderiv]
+  simp only [smul_add, add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul,
+    ContinuousLinearMap.comp_apply, hv, fderiv_eq_smul_deriv, zero_mul, mul_zero, add_zero]
+  ring
 
 /-- The integral `∫₀ᵀ Dφ_{-σ}(φ_σ x) (∇g(φ_σ x)) dσ` that an admissible perturbation `g` contributes
 to the parameter derivative of the flow. -/
@@ -124,8 +97,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
         contribution f hf x T g.1)) = ⊤ := by
   set φ := negativeGradientFlow f hf
   set N : ℝ → E →L[ℝ] E := fun σ ↦ fderiv ℝ (φ (-σ)) (φ σ x)
-  have hφd : ∀ t, Differentiable ℝ (φ t) := fun t ↦
-    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+  have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
   have hγ : Continuous fun σ ↦ φ σ x :=
     (contDiff_negativeGradientFlow f hf hfs).continuous.comp
       (continuous_id.prodMk continuous_const)
@@ -155,10 +127,13 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   set z := φ σ₀ x
   have hgradc : Continuous (∇ f) := (hfs.gradient_right (m := 1) (by norm_num)).continuous
   obtain ⟨ρ, hρ, hρz⟩ := Metric.eventually_nhds_iff.1
-    (hgradc.continuousAt.eventually_ne (gradient_negativeGradientFlow_ne_zero f hf hx σ₀))
+    (hgradc.continuousAt.eventually_ne
+      ((gradient_negativeGradientFlow_eq_zero_iff f hf x σ₀).not.2 hx))
   let θ : ContDiffBump z := ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
   have hθr : θ.rOut = ρ / 2 := rfl
   have hθz : θ z = 1 := θ.one_of_mem_closedBall (Metric.mem_closedBall_self θ.rIn_pos.le)
+  have hθcrit : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0 := fun p hp hp0 ↦
+    hρz (Metric.mem_closedBall.1 hp |>.trans_lt (by rw [hθr]; linarith)) (by simp [gradient, hp0])
   have hθ'z : fderiv ℝ θ z = 0 := by
     rw [θ.eventuallyEq_one.fderiv_eq]
     exact fderiv_const_apply _
@@ -168,18 +143,10 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
         ψ (f (φ σ x)) = 0 := by
     intro w ψ
     set g : E → ℝ := fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)
-    have hgC : ContDiff ℝ 2 g :=
-      θ.contDiff.mul ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
-    have hgs : HasCompactSupport g := θ.hasCompactSupport.mul_right
-    have hgd : Disjoint (tsupport g) {p | fderiv ℝ f p = 0} := by
-      refine Set.disjoint_left.2 fun p hp hp0 ↦ ?_
-      have hpθ : p ∈ tsupport (θ : E → ℝ) := tsupport_mul_subset_left hp
-      rw [θ.tsupport_eq] at hpθ
-      refine hρz (Metric.mem_closedBall.1 hpθ |>.trans_lt (by rw [hθr]; linarith)) ?_
-      simp [gradient, show fderiv ℝ f p = 0 from hp0]
-    have hk := hyk ⟨g, ⟨hgC, hgs, hgd⟩⟩
+    have hg : IsAdmissiblePerturbation f g := isAdmissiblePerturbation_bump_mul hfs θ hθcrit ψ w
+    have hk := hyk ⟨g, hg⟩
     have hint : IntervalIntegrable (fun σ ↦ N σ (∇ g (φ σ x))) MeasureTheory.volume 0 T :=
-      (hN.clm_apply (((hgC.gradient_right (m := 1) (by norm_num)).continuous).comp
+      (hN.clm_apply (((hg.contDiff.gradient_right (m := 1) (by norm_num)).continuous).comp
         hγ)).intervalIntegrable 0 T
     have hcomm : ∫ σ in (0 : ℝ)..T, ⟪y, N σ (∇ g (φ σ x))⟫ =
         ⟪y, ∫ σ in (0 : ℝ)..T, N σ (∇ g (φ σ x))⟫ := by
@@ -190,25 +157,13 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
     refine Eq.trans (intervalIntegral.integral_congr (μ := MeasureTheory.volume)
       (g := fun σ ↦ ⟪y, N σ (∇ g (φ σ x))⟫) fun σ _ ↦ ?_) (hcomm.trans hk')
     dsimp only
-    set p := φ σ x
-    have hfd : DifferentiableAt ℝ f p := (hfs.differentiable (by norm_num)) p
-    have hgder : HasFDerivAt g
-        (θ p • ((ψ (f p)) • innerSL ℝ w +
-          ⟪w, p⟫ • (fderiv ℝ ψ (f p)).comp (fderiv ℝ f p)) +
-          (ψ (f p) * ⟪w, p⟫) • fderiv ℝ θ p) p :=
-      ((θ.contDiff (n := 1)).differentiable one_ne_zero p).hasFDerivAt.mul
-        ((((ψ.contDiff (n := 1)).differentiable one_ne_zero (f p)).hasFDerivAt.comp p
-          hfd.hasFDerivAt).mul (innerSL ℝ w).hasFDerivAt)
-    have hR : ⟪y, N σ (∇ g p)⟫ = fderiv ℝ g p (m σ) := by
-      rw [real_inner_comm, ← ContinuousLinearMap.adjoint_inner_right, inner_gradient_left]
-    have hp0 : fderiv ℝ f p (m σ) = 0 := hmgrad σ
-    rw [hR, hgder.fderiv]
-    simp [hp0]
-    ring
+    symm
+    rw [real_inner_comm _ y, ← ContinuousLinearMap.adjoint_inner_right, inner_gradient_left,
+      fderiv_bump_mul_apply hfs θ ψ w (hmgrad σ)]
   -- Hence `⟪w, m σ₀⟫ = 0` for every `w`.
   have hm0 : m σ₀ = 0 := by
     have hF : Continuous fun σ ↦ f (φ σ x) := hfs.continuous.comp hγ
-    have h0 := eq_zero_of_forall_integral_bump
+    have h0 := eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
       (a := fun σ ↦ θ (φ σ x) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ))
       ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
         ((continuous_const.inner hγ).mul
@@ -216,7 +171,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
       hF (IsIntegralCurve.strictAnti_comp_neg_gradient
         ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
         (fun _ ↦ (hfs.differentiable (by norm_num)) _)
-        (gradient_negativeGradientFlow_ne_zero f hf hx)) hσ₀ (hkey (m σ₀))
+        (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)) hσ₀ (hkey (m σ₀))
     have hθz' : θ (φ σ₀ x) = 1 := hθz
     have hθ'z' : fderiv ℝ θ (φ σ₀ x) = 0 := hθ'z
     simpa [hθz', hθ'z'] using h0
@@ -255,8 +210,7 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
       ((fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf hgc hgs T) (x, 0)).comp
         (ContinuousLinearMap.inr ℝ E _))) :
       EuclideanSpace ℝ (Fin (Module.finrank ℝ (Submodule.span ℝ S))) →L[ℝ] E)
-  have hφd : ∀ t, Differentiable ℝ (φ t) := fun t ↦
-    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+  have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
   -- `Dφ_T(x)` maps the contributions of the family into the range of the parameter derivative.
   have hv : ∀ i, MT (v i) ∈ LinearMap.range L := fun i ↦ by
     refine ⟨-EuclideanSpace.single i 1, ?_⟩
