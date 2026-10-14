@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.HahnSeries.EventualCoeff
 
 /-!
 # Convergence of formal Laurent series
@@ -18,9 +19,10 @@ order of the difference eventually exceeds every prescribed integer.
 The common lower bound is essential. The monomials `X⁻¹, X⁻², ...` have every fixed coefficient
 eventually equal to zero, but they do not converge to zero in the valuation topology.
 
-The proofs use Mathlib's completeness infrastructure for Laurent series: convergence makes the
-image filter Cauchy, and `LaurentSeries.Cauchy.exists_lb_eventual_support` supplies the common lower
-bound. The converse reduces agreement below a fixed order to finitely many coefficients.
+The order formulation is the form used to prove continuity of operations on Laurent series: a
+map is continuous once every prescribed order of the output difference is reached from some order of
+the input difference. The coefficient formulation instead identifies limits concretely, coefficient
+by coefficient, once a common lower bound on the supports is known.
 
 ## Main results
 
@@ -39,22 +41,6 @@ open scoped LaurentSeries Topology
 namespace TauCeti
 
 variable {K : Type*} [Field K]
-
-private theorem eventually_coeff_eq_below_of_lb
-    {ι : Type*} {l : Filter ι} {f : ι → LaurentSeries K} {g : LaurentSeries K}
-    {b : ℤ} (hlb : ∀ᶠ i in l, ∀ z < b, (f i).coeff z = 0)
-    (hcoeff : ∀ z : ℤ, ∀ᶠ i in l, (f i).coeff z = g.coeff z) (D : ℤ) :
-    ∀ᶠ i in l, ∀ z < D, (f i).coeff z = g.coeff z := by
-  let a := min b g.order
-  let c := max a D
-  have hfinite : ∀ᶠ i in l, ∀ z ∈ Set.Icc a c, (f i).coeff z = g.coeff z :=
-    (Filter.eventually_all_finite (Set.finite_Icc a c)).2 fun z _ ↦ hcoeff z
-  filter_upwards [hlb, hfinite] with i hi hifinite
-  intro z hz
-  by_cases hza : z < a
-  · rw [hi z (hza.trans_le (min_le_left _ _)),
-      HahnSeries.coeff_eq_zero_of_lt_order (hza.trans_le (min_le_right _ _))]
-  · exact hifinite z ⟨le_of_not_gt hza, hz.le.trans (le_max_right _ _)⟩
 
 /-- A family of Laurent series converges exactly when its supports have an eventual common lower
 bound and each coefficient eventually agrees with the corresponding coefficient of the limit.
@@ -83,16 +69,14 @@ theorem tendsto_laurentSeries_iff_coeff {ι : Type*} {l : Filter ι}
     · rintro ⟨⟨b, hlb⟩, hcoeff⟩
       intro U hU
       obtain ⟨γ, hγ⟩ := Valued.mem_nhds.mp hU
-      let D := -(log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1) - 1)
+      let D := 1 - log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1)
       have hD : exp (-D) < MonoidWithZeroHom.ValueGroup₀.embedding γ.1 := by
-        rw [← lt_log_iff_exp_lt (by simp), show -D = log
-          (MonoidWithZeroHom.ValueGroup₀.embedding γ.1) - 1 by simp [D]]
+        rw [← lt_log_iff_exp_lt (by simp), neg_sub]
         omega
       rw [Filter.mem_map]
-      filter_upwards [eventually_coeff_eq_below_of_lb hlb hcoeff D] with i hi
+      filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb hcoeff D] with i hi
       apply hγ
-      change Valued.v.restrict (f i - g) < γ.1
-      rw [Valued.v.restrict_lt_iff_lt_embedding]
+      rw [Set.mem_ofPred_eq, Valued.v.restrict_lt_iff_lt_embedding]
       exact lt_of_le_of_lt ((LaurentSeries.valuation_le_iff_coeff_lt_eq_zero K).2
         fun z hz ↦ by rw [HahnSeries.coeff_sub, hi z hz, sub_self]) hD
   · rw [Filter.not_neBot.mp hl]
@@ -107,7 +91,7 @@ theorem tendsto_laurentSeries_iff_orderTop_sub {ι : Type*} {l : Filter ι}
   rw [tendsto_laurentSeries_iff_coeff]
   constructor
   · rintro ⟨⟨b, hlb⟩, hcoeff⟩ D
-    filter_upwards [eventually_coeff_eq_below_of_lb hlb hcoeff D] with i hi
+    filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb hcoeff D] with i hi
     rw [HahnSeries.le_orderTop_iff_forall]
     intro z hz
     rw [HahnSeries.coeff_sub, hi z (WithTop.coe_lt_coe.mp hz), sub_self]
