@@ -120,12 +120,23 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 
 /-- For the real inner product `re ⟪x, y⟫`, the adjoint of the realification of a bounded
 operator is the realification of its adjoint. -/
+@[simp]
 theorem adjoint_restrictScalars (T : E →L[𝕜] E) :
     letI := InnerProductSpace.rclikeToReal 𝕜 E
     adjoint (T.restrictScalars ℝ) = (adjoint T).restrictScalars ℝ := by
   let := InnerProductSpace.rclikeToReal 𝕜 E
   refine ((eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
   simp only [real_inner_eq_re_inner 𝕜, coe_restrictScalars', adjoint_inner_left]
+
+/-- A bounded operator on a Hilbert space over `RCLike 𝕜` is self-adjoint exactly when its
+realification is, for the real inner product `re ⟪x, y⟫`. -/
+@[simp]
+theorem isSelfAdjoint_restrictScalars_iff {T : E →L[𝕜] E} :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    IsSelfAdjoint (T.restrictScalars ℝ) ↔ IsSelfAdjoint T := by
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  simp only [isSelfAdjoint_iff', adjoint_restrictScalars, ContinuousLinearMap.ext_iff,
+    coe_restrictScalars']
 
 variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
 
@@ -168,15 +179,6 @@ theorem isClosedEmbedding_restrictScalarsStarAlgHom :
     Topology.IsClosedEmbedding (restrictScalarsStarAlgHom 𝕜 E) :=
   letI := InnerProductSpace.rclikeToReal 𝕜 E
   (isometry_restrictScalarsStarAlgHom 𝕜 E).isClosedEmbedding
-
-/-- A bounded operator on a Hilbert space over `RCLike 𝕜` is self-adjoint exactly when its
-realification is, for the real inner product `re ⟪x, y⟫`. -/
-theorem isSelfAdjoint_restrictScalars_iff {T : E →L[𝕜] E} :
-    letI := InnerProductSpace.rclikeToReal 𝕜 E
-    IsSelfAdjoint (T.restrictScalars ℝ) ↔ IsSelfAdjoint T := by
-  let := InnerProductSpace.rclikeToReal 𝕜 E
-  simpa using (isometry_restrictScalarsStarAlgHom 𝕜 E).injective.isSelfAdjoint_apply_iff
-    (restrictScalarsStarAlgHom 𝕜 E) (x := T)
 
 /-- **The continuous functional calculus for bounded self-adjoint operators on a Hilbert space
 over `RCLike 𝕜`**, for any real algebra structure on the operators compatible with the `𝕜`-action,
