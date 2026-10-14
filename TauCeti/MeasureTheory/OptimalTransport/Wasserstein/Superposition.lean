@@ -9,21 +9,24 @@ public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import Mathlib.Topology.ContinuousMap.SecondCountableSpace
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.Measure.Tight.Basic
 import TauCeti.MeasureTheory.Measure.Tight.CurveAction
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.AbsolutelyContinuous
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PolygonalPlan
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
 import TauCeti.Topology.Instances.Real.DyadicGrid
+import TauCeti.Topology.MetricSpace.Kuratowski
 
 /-!
-# Lisini's superposition principle in a separable Banach space
+# Lisini's superposition principle
 
-Let `E` be a separable Banach space and `1 < p < ∞`. A curve `μ` in the finite-moment Wasserstein
-space `P_p(E)` that is absolutely continuous on `[a, b]` with finite `p`-action `A_p(μ)` is the
-curve of time marginals of a law on paths: there is a probability measure `η` on the path space
-`C([a, b], E)`, concentrated on absolutely continuous paths, such that
+Let `X` be a complete separable metric space and `1 < p < ∞`. A curve `μ` in the finite-moment
+Wasserstein space `P_p(X)` that is absolutely continuous on `[a, b]` with finite `p`-action
+`A_p(μ)` is the curve of time marginals of a law on paths: there is a probability measure `η` on
+the path space `C([a, b], X)`, concentrated on absolutely continuous paths, such that
 
 * the law of `γ t` under `η` is `μ t` for every `t ∈ [a, b]`;
 * the expected `p`-action of the paths is the `p`-action of the curve, `∫ A_p(γ) dη = A_p(μ)`;
@@ -34,7 +37,8 @@ Every law on absolutely continuous paths with time marginals `μ` has expected a
 `A_p(μ)` (`TauCeti.curveAction_le_lintegral_of_coe_eq_map_IccExtend`), so `η` is a representation
 of minimal action.
 
-The law `η` is a narrow limit of the polygonal laws on the dyadic grids of `[a, b]`
+The theorem is first proved in a separable Banach space `E`. There `η` is a narrow limit of the
+polygonal laws on the dyadic grids of `[a, b]`
 (`TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_le`), whose expected actions are at most
 `A_p(μ)` and whose time marginals at each dyadic time are eventually the value of `μ` there. For
 `1 < p` this family is tight
@@ -45,10 +49,17 @@ form a weakly closed set
 provides a limit law with the same properties. Its time marginals agree with
 `μ` at the dyadic times, hence everywhere on `[a, b]` by continuity.
 
+A complete separable metric space `X` embeds isometrically, as a closed subset, into a separable
+Banach space `E` (`TauCeti.exists_isometry_separableSpace_completeSpace`). Pushforward along the
+embedding is an isometry of Wasserstein spaces, so it carries `μ` to a curve in `P_p(E)` with the
+same metric derivative and action. The law on paths in `E` that represents this curve is
+concentrated on paths with values in the closed image of `X`, because its time marginals are, and
+so it is the image of a law on `C([a, b], X)`, which represents `μ`.
+
 ## Main results
 
 * `TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_eq`: **Lisini's superposition
-  principle** in a separable Banach space.
+  principle** in a complete separable metric space.
 
 ## References
 
@@ -70,22 +81,18 @@ section Superposition
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **Lisini's superposition principle** in a separable Banach space. Let `1 < p < ∞` and let `μ`
-be a curve in `P_p(E)`, absolutely continuous on `[a, b]` with finite `p`-action, where `a < b`.
-There is a probability measure `η` on `C([a, b], E)`, concentrated on absolutely continuous paths,
-whose law at each time `t ∈ [a, b]` is `μ t`, whose expected `p`-action is the `p`-action of `μ`,
-and whose averaged speed is the metric speed of `μ`: `|μ'|(t) ^ p = ∫ |γ'|(t) ^ p dη` at almost
-every `t ∈ [a, b]`. -/
-theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p ≠ ∞)
+/-- Lisini's superposition principle in a separable Banach space `E`, from which the metric
+version `TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_eq` follows by an isometric
+embedding. -/
+private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace (hp1 : 1 < p)
+    (hp : p ≠ ∞)
     {μ : ℝ → WassersteinSpace p E} {a b : ℝ} (hab : a < b)
     (hμ : AbsolutelyContinuousOnInterval μ a b) (hA : curveAction p.toReal μ a b ≠ ∞) :
     ∃ η : Measure C(Icc a b, E), IsProbabilityMeasure η ∧
       (∀ᵐ γ : C(Icc a b, E) ∂η, AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b) ∧
       (∀ t ∈ Icc a b, η.map (fun γ : C(Icc a b, E) ↦ IccExtend hab.le γ t) =
         ((μ t : ProbabilityMeasure E) : Measure E)) ∧
-      ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂η = curveAction p.toReal μ a b ∧
-      ∀ᵐ t, t ∈ Icc a b → metricDerivative μ t ^ p.toReal =
-        ∫⁻ γ, metricDerivative (IccExtend hab.le γ) t ^ p.toReal ∂η := by
+      ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂η = curveAction p.toReal μ a b := by
   have hr : 1 < p.toReal := by simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp).2 hp1
   -- The polygonal laws on the dyadic grids of `[a, b]`.
   choose η hηP hηAC hηgrid hηA using fun n : ℕ ↦
@@ -163,16 +170,111 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
     have := congrArg (fun ν : ProbabilityMeasure E ↦ (ν : Measure E))
       (congrFun (hcont_η.ext_on hDd hcont_μ hmargD) ⟨t, ht⟩)
     simpa [IccExtend_of_mem hab.le _ ht] using this
-  have hmarg' (t : ℝ) (ht : t ∈ uIcc a b) := (hmarg t (uIcc_of_le hab.le ▸ ht)).symm
   -- By minimality of the action of `μ`, the expected action of `ηlim` is exactly `A_p(μ)`.
-  have heq : ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂(ηlim : Measure C(Icc a b, E)) =
-      curveAction p.toReal μ a b :=
-    le_antisymm hlelim (curveAction_le_lintegral_of_coe_eq_map_IccExtend hab.le hAClim hp hmarg')
-  refine ⟨ηlim, inferInstance, hAClim, hmarg, heq, ?_⟩
-  filter_upwards [ae_metricDerivative_rpow_eq_lintegral_of_coe_eq_map_IccExtend hab.le hAClim hp
+  refine ⟨ηlim, inferInstance, hAClim, hmarg, le_antisymm hlelim
+    (curveAction_le_lintegral_of_coe_eq_map_IccExtend hab.le hAClim hp fun t ht ↦
+      (hmarg t (uIcc_of_le hab.le ▸ ht)).symm)⟩
+
+end Superposition
+
+section MetricSpace
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [SecondCountableTopology X] [CompleteSpace X] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Lisini's superposition principle** in a complete separable metric space. Let `1 < p < ∞`
+and let `μ` be a curve in `P_p(X)`, absolutely continuous on `[a, b]` with finite `p`-action,
+where `a < b`. There is a probability measure `η` on `C([a, b], X)`, concentrated on absolutely
+continuous paths, whose law at each time `t ∈ [a, b]` is `μ t`, whose expected `p`-action is the
+`p`-action of `μ`, and whose averaged speed is the metric speed of `μ`:
+`|μ'|(t) ^ p = ∫ |γ'|(t) ^ p dη` at almost every `t ∈ [a, b]`. -/
+theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p ≠ ∞)
+    {μ : ℝ → WassersteinSpace p X} {a b : ℝ} (hab : a < b)
+    (hμ : AbsolutelyContinuousOnInterval μ a b) (hA : curveAction p.toReal μ a b ≠ ∞) :
+    ∃ η : Measure C(Icc a b, X), IsProbabilityMeasure η ∧
+      (∀ᵐ γ : C(Icc a b, X) ∂η, AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b) ∧
+      (∀ t ∈ Icc a b, η.map (fun γ : C(Icc a b, X) ↦ IccExtend hab.le γ t) =
+        ((μ t : ProbabilityMeasure X) : Measure X)) ∧
+      ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂η = curveAction p.toReal μ a b ∧
+      ∀ᵐ t, t ∈ Icc a b → metricDerivative μ t ^ p.toReal =
+        ∫⁻ γ, metricDerivative (IccExtend hab.le γ) t ^ p.toReal ∂η := by
+  -- Embed `X` isometrically into a separable Banach space `E`.
+  obtain ⟨E, _, _, _, _, ι, hι⟩ := exists_isometry_separableSpace_completeSpace X
+  borelize E
+  have hιm : MeasurableEmbedding ι := hι.isClosedEmbedding.measurableEmbedding
+  -- Pushforward along `ι` is an isometry `P_p(X) → P_p(E)`, so `ι_# μ` is a curve in `P_p(E)`
+  -- with the same regularity and action as `μ`; it has a representing law `η` on paths in `E`.
+  set ιW := WassersteinSpace.map (p := p) ι (fun _ ↦ measurable_edist_right) hιm.measurable
+    hι.lipschitzWith
+  have hιW : Isometry ιW := WassersteinSpace.isometry_map hιm hι
+  have hιWμ (t : ℝ) : (((ιW ∘ μ) t : ProbabilityMeasure E) : Measure E) =
+      ((μ t : ProbabilityMeasure X) : Measure X).map ι := by
+    simp [ιW, ProbabilityMeasure.toMeasure_map]
+  obtain ⟨η, hηP, hηAC, hηmarg, hηA⟩ :=
+    exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace hp1 hp hab
+      (hιW.absolutelyContinuousOnInterval_comp_iff.2 hμ) (by rwa [hιW.curveAction_comp])
+  -- Postcomposition with `ι` embeds the paths in `X` into the paths in `E`.
+  set Φ : C(Icc a b, X) → C(Icc a b, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
+  have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
+    fun γ δ h ↦ ContinuousMap.ext fun t ↦ hι.injective (DFunLike.congr_fun h t)
+  have hΦIcc (γ : C(Icc a b, X)) : IccExtend hab.le (Φ γ) = ι ∘ IccExtend hab.le γ := by
+    ext t
+    simp [Φ, IccExtend_apply]
+  -- `η` is concentrated on the paths with values in the closed set `range ι`: it is so at the
+  -- times of a countable dense subset of `[a, b]`, because the time marginals of `η` are images
+  -- of laws on `X`, hence at all times by continuity of the paths.
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Icc a b)
+  have : Countable D := hDc.to_subtype
+  have hD : ∀ᵐ γ ∂η, ∀ t : D, γ t ∈ range ι := by
+    refine ae_all_iff.2 fun t ↦ ?_
+    have := ae_map_mem_range hιm.measurableSet_range hιm.measurable.aemeasurable
+      (μ := ((μ t : ProbabilityMeasure X) : Measure X))
+    rw [← hιWμ, ← hηmarg t t.1.2] at this
+    filter_upwards [ae_of_ae_map (measurable_IccExtend_apply hab.le _).aemeasurable this]
+      with γ hγ
+    rwa [IccExtend_val] at hγ
+  have hrange : ∀ᵐ γ ∂η, γ ∈ range Φ := by
+    filter_upwards [hD] with γ hγ
+    have hall : ∀ t, γ t ∈ range ι := by
+      have hcl : IsClosed {t | γ t ∈ range ι} :=
+        hι.isClosedEmbedding.isClosed_range.preimage γ.continuous
+      have hsub := hcl.closure_subset_iff.2 fun t ht ↦ hγ ⟨t, ht⟩
+      rw [hDd.closure_eq] at hsub
+      exact fun t ↦ hsub (mem_univ t)
+    choose g hg using hall
+    have hgc : Continuous g := hι.isEmbedding.continuous_iff.2 (by simpa [Function.comp_def, hg]
+      using γ.continuous)
+    exact ⟨⟨g, hgc⟩, ContinuousMap.ext hg⟩
+  -- The pullback of `η` to the paths in `X` represents `μ`.
+  set ηX := η.comap Φ
+  have hηX : ηX.map Φ = η := by
+    rw [hΦ.map_comap, Measure.restrict_eq_self_of_ae_mem hrange]
+  have hAC : ∀ᵐ γ : C(Icc a b, X) ∂ηX,
+      AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b := by
+    rw [← hηX, hΦ.ae_map_iff] at hηAC
+    simpa only [hΦIcc, hι.absolutelyContinuousOnInterval_comp_iff] using hηAC
+  have hmarg (t : ℝ) (ht : t ∈ Icc a b) :
+      ηX.map (fun γ : C(Icc a b, X) ↦ IccExtend hab.le γ t) =
+        ((μ t : ProbabilityMeasure X) : Measure X) := by
+    have h := hηmarg t ht
+    rw [← hηX, Measure.map_map (measurable_IccExtend_apply hab.le t) hΦ.measurable, hιWμ] at h
+    simp only [Function.comp_def, hΦIcc] at h
+    have h' : (ηX.map fun γ : C(Icc a b, X) ↦ IccExtend hab.le γ t).map ι =
+        ((μ t : ProbabilityMeasure X) : Measure X).map ι := by
+      rwa [Measure.map_map hιm.measurable (measurable_IccExtend_apply hab.le t)]
+    simpa only [hιm.comap_map] using congrArg (Measure.comap ι) h'
+  have hprob : IsProbabilityMeasure ηX :=
+    ⟨by rw [← preimage_univ (f := Φ), ← hΦ.map_apply, hηX, measure_univ]⟩
+  have heq : ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂ηX =
+      curveAction p.toReal μ a b := by
+    rw [← hιW.curveAction_comp, ← hηA, ← hηX, hΦ.lintegral_map]
+    simp only [hΦIcc, hι.curveAction_comp]
+  have hmarg' (t : ℝ) (ht : t ∈ uIcc a b) := (hmarg t (uIcc_of_le hab.le ▸ ht)).symm
+  refine ⟨ηX, hprob, hAC, hmarg, heq, ?_⟩
+  filter_upwards [ae_metricDerivative_rpow_eq_lintegral_of_coe_eq_map_IccExtend hab.le hAC hp
     (heq ▸ hA) hmarg' heq] with t ht htab
   exact ht (uIcc_of_le hab.le ▸ htab)
 
-end Superposition
+end MetricSpace
 
 end TauCeti
