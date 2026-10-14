@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Hausdorff
+public import TauCeti.Topology.Connected.EMetricSpace
+public import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Hausdorff length of preconnected sets
@@ -34,40 +36,6 @@ open MeasureTheory Set
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- Distance from a fixed point, converted to a real number, is `1`-Lipschitz. -/
-theorem lipschitzWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X) :
-    LipschitzWith 1 (fun x ↦ (edist a x).toReal) := by
-  intro x y
-  by_cases hxy : edist x y = ∞
-  · simp [hxy]
-  have hxy' : edist y x ≠ ∞ := by simpa only [edist_comm] using hxy
-  by_cases hax : edist a x = ∞
-  · have hay : edist a y = ∞ := by
-      by_contra hay
-      exact ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hay, hxy'⟩) (edist_triangle a y x) hax
-    simp [hax, hay]
-  have hay : edist a y ≠ ∞ :=
-    ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hax, hxy⟩) (edist_triangle a x y)
-  suffices ENNReal.ofReal (dist (edist a x).toReal (edist a y).toReal) ≤ edist x y by
-    simpa only [edist_dist, ENNReal.coe_one, one_mul] using this
-  rw [ENNReal.ofReal_le_iff_le_toReal hxy, Real.dist_eq, abs_le]
-  have hforward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hax, hxy⟩)
-    (edist_triangle a x y)
-  have hbackward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hay, hxy'⟩)
-    (edist_triangle a y x)
-  rw [ENNReal.toReal_add hax hxy] at hforward
-  rw [ENNReal.toReal_add hay hxy', edist_comm y x] at hbackward
-  constructor <;> linarith
-
-/-- Two points in a preconnected subset of an extended metric space are at finite distance. -/
-theorem _root_.IsPreconnected.edist_ne_top {X : Type*} [PseudoEMetricSpace X] {s : Set X}
-    (hs : IsPreconnected s) {x y : X} (hx : x ∈ s) (hy : y ∈ s) : edist x y ≠ ∞ := by
-  have hsub : s ⊆ Metric.eball x ∞ := hs.subset_isClopen
-    ⟨Metric.isClosed_eball_top, Metric.isOpen_eball⟩ ⟨x, hx, by simp⟩
-  have hy' := hsub hy
-  rw [Metric.mem_eball] at hy'
-  simpa only [edist_comm] using hy'.ne
 
 /-- The distance between two points of a preconnected set is at most the set's
 one-dimensional Hausdorff measure. -/
