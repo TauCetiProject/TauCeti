@@ -136,6 +136,7 @@ def InducesAction [MulDistribMulAction G M] : Prop :=
   ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
 
 /-- The pointwise characterization of the action induced by an extension. -/
+@[simp]
 theorem inducesAction_iff [MulDistribMulAction G M] :
     InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
   Iff.rfl

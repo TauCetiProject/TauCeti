@@ -17,6 +17,12 @@ groups, provided the two prescribed actions correspond. This file packages that 
 The construction is useful when a quotient presented by a free profinite group and a Galois group
 are canonically isomorphic but not definitionally the same type.
 
+## References
+
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
+  §VII.4, (7.4.1): the relabelling of extensions used to compare a presentation extension with an
+  arithmetic one.
+
 -/
 
 public section
@@ -59,8 +65,18 @@ equivalences which identify the prescribed actions. The total group is unchanged
     rw [← (GroupExtension.inducesAction_iff.mp X.inducesAction) x (eM m),
       GroupExtension.inl_conjAct_comm]
 
-/-- Relabelling composes the old inclusion with the kernel equivalence. -/
+/-- The underlying exact sequence is obtained by relabelling both terms of the original one. -/
 @[simp]
+theorem relabel_toGroupExtension (X : ProfiniteGroupExtension G M)
+    {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
+    [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
+    (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
+    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    (X.relabel eG eM hsmul).toGroupExtension =
+      X.toGroupExtension.relabel eM.toMulEquiv eG.toMulEquiv :=
+  (rfl)
+
+/-- Relabelling composes the old inclusion with the kernel equivalence. -/
 theorem relabel_inl (X : ProfiniteGroupExtension G M)
     {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
     [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
@@ -71,7 +87,6 @@ theorem relabel_inl (X : ProfiniteGroupExtension G M)
   GroupExtension.relabel_inl _ _ _
 
 /-- Relabelling composes the old projection with the quotient equivalence. -/
-@[simp]
 theorem relabel_rightHom (X : ProfiniteGroupExtension G M)
     {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
     [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']

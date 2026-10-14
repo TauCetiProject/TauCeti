@@ -105,7 +105,7 @@ theorem relabelQuotient_rightHom (S : GroupExtension N E G) {G' : Type*} [Group 
 
 /-- Relabel both the kernel and quotient terms of a group extension along multiplicative
 equivalences. The middle group is unchanged. -/
-@[expose, to_additive
+@[to_additive
   /-- Relabel both the kernel and quotient terms of an additive group extension along additive
   equivalences. The middle group is unchanged. -/]
 def relabel (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
