@@ -67,6 +67,8 @@ The openness results are stated in `PowerSubgroup.Open`, including the general c
   unity is a principal unit.
 * `TauCeti.powMonoidHom_unitFiltration_succ_bijective_of_isUnit`: the `n`-th power map is a
   bijection of `U(K,i+1)`.
+* `TauCeti.pow_mem_unitFiltration_succ_iff_of_isUnit`: on principal units the `n`-th power map
+  detects depth, `x ^ n ∈ U(K,i+1) ↔ x ∈ U(K,i+1)`.
 * `TauCeti.card_powerClasses_eq_of_index_unitFiltration_one`: the power-class count reduces to
   the index/kernel ratio of the power map on the principal units.
 * `TauCeti.card_powerClasses_of_isUnit`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K)`.
@@ -210,6 +212,23 @@ theorem powMonoidHom_unitFiltration_succ_bijective_of_isUnit {n : ℕ} (hn : IsU
     simpa using congrArg Subtype.val (MonoidHom.mem_ker.mp hx)
   · rw [← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
       map_powMonoidHom_unitFiltration_succ_of_isUnit hn i, Subgroup.subgroupOf_self]
+
+/-- For `n` invertible in `𝒪[K]`, the `n`-th power map detects depth on principal units: for
+`x ∈ U(K,1)`, `x ^ n ∈ U(K,i+1)` exactly when `x ∈ U(K,i+1)`. -/
+theorem pow_mem_unitFiltration_succ_iff_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) {x : Kˣ}
+    (hx : x ∈ unitFiltration K 1) (i : ℕ) :
+    x ^ n ∈ unitFiltration K (i + 1) ↔ x ∈ unitFiltration K (i + 1) := by
+  refine ⟨fun hxn ↦ ?_, fun h ↦ pow_mem h n⟩
+  -- `x ^ n = y ^ n` for some `y ∈ U(K,i+1)`, and `x y⁻¹ ∈ U(K,1)` is an `n`-th root of unity.
+  obtain ⟨y, hy⟩ := (powMonoidHom_unitFiltration_succ_bijective_of_isUnit hn i).2 ⟨_, hxn⟩
+  have hyn : (y : Kˣ) ^ n = x ^ n := by
+    simpa using congrArg Subtype.val hy
+  have hxy : x * (y : Kˣ)⁻¹ = 1 := Subgroup.disjoint_def.mp
+    (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hn)
+    ((mem_rootsOfUnity n _).mpr (by rw [mul_pow, inv_pow, hyn, mul_inv_cancel]))
+    (mul_mem hx (inv_mem (unitFiltration_antitone (Nat.le_add_left 1 i) y.2)))
+  rw [mul_inv_eq_one.mp hxy]
+  exact y.2
 
 /-- **Reduction of the power-class count to the principal units.** Suppose the `n`-th power map
 on `U(K,1)` has index `#U(K,1)[n] · c`. Then
