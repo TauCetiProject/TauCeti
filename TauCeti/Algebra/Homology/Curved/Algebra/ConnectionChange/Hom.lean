@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import TauCeti.Algebra.Homology.Curved.Algebra.ConnectionChange.Basic
+public import TauCeti.Algebra.Homology.Curved.Algebra.Hom.Basic
 
 /-!
 # Change-of-connection morphisms of curved DG algebras
@@ -69,6 +70,8 @@ namespace CurvedDGConnectionHom
 variable {hA : IsCurvedDGAlgebra 𝒜 dA wA} {hB : IsCurvedDGAlgebra ℬ dB wB}
   {hC : IsCurvedDGAlgebra 𝒞 dC wC}
 
+attribute [simp] map_curvature
+
 /-- Connection morphisms are determined by their graded algebra map and connection form. -/
 @[ext]
 theorem ext {f g : CurvedDGConnectionHom hA hB} (hh : f.hom = g.hom)
@@ -81,6 +84,7 @@ theorem ext {f g : CurvedDGConnectionHom hA hB} (hh : f.hom = g.hom)
 
 /-- A connection morphism intertwines the source differential with the changed target
 differential on all elements, not just homogeneous elements. -/
+@[simp]
 theorem map_d_eq_connectionChange (f : CurvedDGConnectionHom hA hB) (x : A) :
     f.hom (dA x) = connectionChange ℬ dB f.form (f.hom x) := by
   induction x using DirectSum.Decomposition.inductionOn 𝒜 with
@@ -90,12 +94,23 @@ theorem map_d_eq_connectionChange (f : CurvedDGConnectionHom hA hB) (x : A) :
       (connectionChange_apply_of_mem ℬ (f.hom.map_mem x.property) dB f.form).symm
   | add x y hx hy => simp only [map_add, hx, hy]
 
-/-- The identity connection morphism has zero connection form. -/
-protected def id (hA : IsCurvedDGAlgebra 𝒜 dA wA) : CurvedDGConnectionHom hA hA where
-  hom := GradedAlgHom.id R 𝒜
+/-- Regard a strict curved DG algebra morphism as a connection morphism with zero form. -/
+def ofStrict (f : CurvedDGAlgHom hA hB) : CurvedDGConnectionHom hA hB where
+  hom := f.toGradedAlgHom
   form := 0
   map_d _ := by simp
   map_curvature := by simp
+
+@[simp]
+theorem ofStrict_hom (f : CurvedDGAlgHom hA hB) : (ofStrict f).hom = f.toGradedAlgHom :=
+  (rfl)
+
+@[simp]
+theorem ofStrict_form (f : CurvedDGAlgHom hA hB) : (ofStrict f).form = 0 := (rfl)
+
+/-- The identity connection morphism has zero connection form. -/
+protected def id (hA : IsCurvedDGAlgebra 𝒜 dA wA) : CurvedDGConnectionHom hA hA :=
+  ofStrict (CurvedDGAlgHom.id hA)
 
 @[simp]
 theorem id_hom (hA : IsCurvedDGAlgebra 𝒜 dA wA) :
@@ -153,6 +168,7 @@ theorem id_comp (f : CurvedDGConnectionHom hA hB) :
     simp
 
 /-- Composition of connection morphisms is associative, including its connection forms. -/
+@[simp]
 theorem comp_assoc {D : Type*} [Ring D] [Algebra R D]
     {𝒟 : ℤ → Submodule R D} [GradedAlgebra 𝒟] {dD : D →ₗ[R] D} {wD : D}
     {hD : IsCurvedDGAlgebra 𝒟 dD wD} (k : CurvedDGConnectionHom hC hD)
@@ -172,7 +188,7 @@ def fromConnectionChange (hA : IsCurvedDGAlgebra 𝒜 dA wA) (a : 𝒜 1) :
   hom := GradedAlgHom.id R 𝒜
   form := a
   map_d hx := connectionChange_apply_of_mem 𝒜 hx dA a
-  map_curvature := rfl
+  map_curvature := by simp only [GradedAlgHom.id_apply]
 
 @[simp]
 theorem fromConnectionChange_hom (hA : IsCurvedDGAlgebra 𝒜 dA wA) (a : 𝒜 1) :
