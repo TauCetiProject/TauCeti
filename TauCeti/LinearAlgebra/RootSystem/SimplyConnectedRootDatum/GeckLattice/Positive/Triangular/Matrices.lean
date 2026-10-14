@@ -99,12 +99,6 @@ theorem map_geckWeightOrderingMatrix :
   rw [coe_geckWeightOrderingMatrix, permutationGL_coe]
   rfl
 
-private theorem geckOrderedWeightBasis_baseChange :
-    (t.geckOrderedWeightBasis ht).baseChange A =
-      ((t.geckCoordinateBasisFin ht).baseChange A).reindex (t.geckWeightOrderingEquiv ht) := by
-  ext r
-  simp [geckOrderedWeightBasis, Module.Basis.reindex_apply]
-
 /-- Conjugation writes each original numbered root-subgroup matrix in the ordered basis.
 The equality holds for both raising and lowering generators. -/
 theorem conj_geckRootSubgroupMatrix_eq_ordered (i : Fin t.rank ⊕ Fin t.rank)
@@ -119,8 +113,8 @@ theorem conj_geckRootSubgroupMatrix_eq_ordered (i : Fin t.rank ⊕ Fin t.rank)
         (t.isNilpotent_geckRepresentation_rootGenerator ht i) (t.geckOrderedWeightBasis ht) q := by
   rw [map_geckWeightOrderingMatrix, permutationGL_mul_mul_inv]
   ext r s
-  simp [Equiv.coe_reindexGL, geckRootSubgroupMatrix, kostantRootSubgroupMatrix_apply,
-    geckOrderedWeightBasis_baseChange, Module.Basis.reindex_apply]
+  rw [geckOrderedWeightBasis, kostantRootSubgroupMatrix_reindex_apply, Equiv.coe_reindexGL,
+    Matrix.submatrix_apply]
 
 /-- Every numbered raising root subgroup becomes upper unitriangular after the fixed integral
 weight-basis permutation, over every commutative value ring. -/
@@ -147,21 +141,14 @@ theorem isUpperUnitriangular_conj_geckRootSubgroupMatrix_inl (i : Fin t.rank)
     (t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i))
     (t.lie_lieBasis_h_rootGenerator ht (.inl i)) hpos q
   let e := Fin.castOrderIso (Fintype.card_fin (t.geckDim ht))
-  have hbase :
-      ((orderedWeightBasis (t.weightDegree ht) (t.geckWeightFin ht)
-        (t.geckCoordinateBasisFin ht)).reindex e.toEquiv).baseChange A =
-      ((orderedWeightBasis (t.weightDegree ht) (t.geckWeightFin ht)
-        (t.geckCoordinateBasisFin ht)).baseChange A).reindex e.toEquiv := by
-    ext r
-    simp [Module.Basis.reindex_apply]
   rw [Matrix.isUpperUnitriangular_def]
   constructor
   · intro r s hsr
-    simpa [kostantRootSubgroupMatrix_apply, hbase, Module.Basis.reindex_apply, e] using
-      hordered.isUpperTriangular (e.symm.lt_iff_lt.mpr hsr)
+    rw [kostantRootSubgroupMatrix_reindex_apply]
+    exact hordered.isUpperTriangular (e.symm.lt_iff_lt.mpr hsr)
   · intro r
-    simpa [kostantRootSubgroupMatrix_apply, hbase, Module.Basis.reindex_apply, e] using
-      hordered.apply_diag (e.symm r)
+    rw [kostantRootSubgroupMatrix_reindex_apply]
+    exact hordered.apply_diag (e.symm r)
 
 /-- Each original raising matrix is upper triangular after conjugation by the integral
 weight-ordering matrix. -/
