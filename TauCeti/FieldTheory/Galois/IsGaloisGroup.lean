@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 
 /-!
-# The index of a subgroup of a Galois group
+# Subgroups of Galois groups
 
 For a tower of fields `E ⊆ F ⊆ K` in which `K` is Galois over `E` with Galois group `G` and
 Galois over `F` with Galois group a subgroup `H` of `G`, the index of `H` in `G` is the degree
@@ -16,13 +16,20 @@ Galois over `F` with Galois group a subgroup `H` of `G`, the index of `H` in `G`
 Mathlib's `IsGaloisGroup.card_eq_finrank` gives `Nat.card H = [K : F]` and
 `Nat.card G = [K : E]`, and the tower law cancels `[K : F]`.
 
+For a finite extension `M / K`, every subgroup `H` of `Gal(M/K)` is a Galois group of `M` over
+its fixed field `M ^ H`. Mathlib's `IsGaloisGroup.subgroup` records this for the fixed points of a
+subgroup of an abstract Galois group; the instance here is the `IntermediateField.fixedField`
+form, which Mathlib's ring-of-integers instance then lifts to `𝓞 (M ^ H) ⊆ 𝓞 M`.
+
 ## Main results
 
 * `IsGaloisGroup.index_eq_finrank`: `H.index = Module.finrank E F`.
+* `IsGaloisGroup.fixedField`: `H` is a Galois group of `M` over `IntermediateField.fixedField H`.
 
 ## Provenance
 
-Built directly on Mathlib's `IsGaloisGroup.card_eq_finrank` and `Module.finrank_mul_finrank`.
+Built directly on Mathlib's `IsGaloisGroup.card_eq_finrank` and `Module.finrank_mul_finrank`,
+and on `IsGalois.of_fixed_field` and `IntermediateField.subgroupEquivAlgEquiv`.
 -/
 
 public section
@@ -40,5 +47,12 @@ theorem index_eq_finrank {G : Type*} [Group G] (H : Subgroup G) (E F K : Type*) 
   have h : H.index * Nat.card H = Nat.card G := Subgroup.index_mul_card H
   rw [card_eq_finrank H F K, card_eq_finrank G E K, ← Module.finrank_mul_finrank E F K] at h
   exact Nat.eq_of_mul_eq_mul_right Module.finrank_pos h
+
+/-- **A subgroup is the Galois group over its fixed field.** For a finite extension `M / K` and a
+subgroup `H` of `Gal(M/K)`, the action of `H` on `M` makes it a Galois group of `M / M ^ H`. -/
+instance fixedField {K M : Type*} [Field K] [Field M] [Algebra K M] [FiniteDimensional K M]
+    (H : Subgroup (M ≃ₐ[K] M)) : IsGaloisGroup H ↥(IntermediateField.fixedField H) M :=
+  have : IsGalois ↥(IntermediateField.fixedField H) M := IsGalois.of_fixed_field M H
+  of_mulEquiv_algEquiv (IntermediateField.subgroupEquivAlgEquiv H) fun _ _ ↦ rfl
 
 end IsGaloisGroup

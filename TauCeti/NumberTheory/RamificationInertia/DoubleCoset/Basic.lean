@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.FixedField
@@ -39,9 +40,8 @@ bijection is the dictionary that supplies one.
 
 ## Main results
 
-* `NumberField.isGaloisGroup_fixedField`: `H` is a Galois group of `M` over `E`; Mathlib's
-  ring-of-integers instance then lets the invariant-ring theory apply to
-  `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 M`.
+* `NumberField.isGaloisGroup_ringOfIntegers_fixedField`: `H` is a Galois group of `𝓞 M` over
+  `𝓞 E`, so the invariant-ring theory applies to `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 M`.
 * `Ideal.doubleCosetQuotientEquivPrimesOver_eq_doubleCosetQuotientEquivPrimesOverOfIsInvariant`:
   the bijection is the invariant-ring double coset law for these rings of integers.
 
@@ -71,18 +71,14 @@ open scoped NumberField Pointwise
 
 namespace NumberField
 
-variable {K M : Type*} [Field K] [Field M] [Algebra K M] [FiniteDimensional K M]
-
-/-- **A subgroup is the Galois group over its fixed field.** For a subgroup `H` of `Gal(M/K)`,
-the action of `H` on `M` makes it a Galois group of `M / M ^ H`. -/
-instance isGaloisGroup_fixedField (H : Subgroup (M ≃ₐ[K] M)) :
-    IsGaloisGroup H ↥(fixedField H) M :=
-  have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
-  IsGaloisGroup.of_mulEquiv_algEquiv (subgroupEquivAlgEquiv H) fun _ _ ↦ rfl
-
-/-- The ring-of-integers instance induced by `NumberField.isGaloisGroup_fixedField`. -/
-instance isGaloisGroup_ringOfIntegers_fixedField [NumberField K] [NumberField M]
-    (H : Subgroup (M ≃ₐ[K] M)) : IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
+/-- **A subgroup is the Galois group of the rings of integers over its fixed field.** This is
+Mathlib's ring-of-integers instance applied to `IsGaloisGroup.fixedField`. Instance search does
+not find it unaided: the action of `H` on `𝓞 M` restricted from `Gal(M/K)` and the one Mathlib's
+instance builds from the action of `H` on `M` agree only after unfolding past instance
+transparency. -/
+instance isGaloisGroup_ringOfIntegers_fixedField {K M : Type*} [Field K] [Field M] [NumberField K]
+    [NumberField M] [Algebra K M] (H : Subgroup (M ≃ₐ[K] M)) :
+    IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
   instIsGaloisGroupRingOfIntegersOfNumberField ↥(fixedField H) M H
 
 end NumberField
