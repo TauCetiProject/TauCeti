@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.PlaneCurve.Genus
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
+import TauCeti.Algebra.Polynomial.Bivariate
 import Mathlib.Algebra.MvPolynomial.Funext
 import TauCeti.Algebra.MvPolynomial.Units
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
@@ -578,16 +579,21 @@ theorem genus_eq_of_isHomogeneous (hG : G.IsHomogeneous d)
     genus k F = (d - 1) * (d - 2) / 2 := by
   have hirr := irreducible_map_dehomogenize_two hG hsm h
   have h₂ : aeval ![x, y] (dehomogenize 2 G) = 0 := by rwa [aeval_dehomogenize, insertNth_two]
-  have hex := isIntegrallyClosedIn_of_irreducible_map K hirr hx hgen h₂
+  let eK := Polynomial.Bivariate.equivMvPolynomial K
+  have hirr' : Irreducible (eK.symm ((dehomogenize 2 G).map (algebraMap k K))) :=
+    (MulEquiv.irreducible_iff eK.symm.toMulEquiv).mpr hirr
+  rw [Polynomial.Bivariate.equivMvPolynomial_symm_map] at hirr'
+  have hex := isIntegrallyClosedIn_of_irreducible_map (L := K) hx hgen hirr'
+    ((AlgHom.congr_fun
+      (Polynomial.Bivariate.aevalAeval_comp_equivMvPolynomial_symm (R := k) x y) _).trans h₂)
   rcases finite_or_infinite k with hk | hk
   · -- Pass to a finite constant field extension `k'` with more than `d + 1` elements.
     obtain ⟨F', k', hk', hcard, hc⟩ :=
       exists_finiteDimensional_lt_card_constantCompositum_eq_top k F (d + 1)
     have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) hc
     have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
-    have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
     have hF : IsFunctionField k F := isFunctionField_of_aeval_eq_zero hirr.of_map.ne_zero hx hgen h₂
-    have hex' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex hc
+    have hex' := hex.of_constantCompositum_eq_top hc
     -- Embed `k'` in `K` over `k`.
     let _ : Algebra k' K := (IsAlgClosed.lift : k' →ₐ[k] K).toRingHom.toAlgebra
     have : IsScalarTower k k' K :=
