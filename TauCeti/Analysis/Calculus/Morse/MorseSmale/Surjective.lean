@@ -33,9 +33,11 @@ these sets for a generic perturbation needs.
 ## Main results
 
 * `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top`.
-* `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top`: the
-  parametrized flow is transverse to any flow-invariant set that the orbit reaches, such as a
-  stable set.
+* `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top`: the range
+  of the parameter derivative and the linear span of the tangent cone of any flow-invariant set
+  containing `φ_T x` together span `E`. Where that set is a `C¹` submanifold near `φ_T x` (as the
+  stable set of a nondegenerate critical point is) and the span is its tangent space, this is
+  transversality of the parametrized flow to it.
 
 ## References
 
@@ -227,13 +229,14 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
   rw [hwab]
   exact Submodule.add_mem_sup (hS hb) (Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _))
 
-/-- **Transversality at one orbit point.** For a point `x` that is not critical, a time `T > 0`
-and a set `S` invariant under the negative-gradient flow and containing `φ_T x` (for instance the
-stable or unstable set of a point), there is a finite family `h` of admissible perturbations of
-`f`, depending on `x` and `T`, such that the derivative at the parameter `0` of
-`s ↦ φ^{f + ∑ sᵢ hᵢ}_T x`, together with the span of the tangent cone of `S` at `φ_T x`, spans
-`E`: the parametrized flow is transverse to `S` at `(0, x)`, through the parameter directions
-alone. -/
+/-- **Spanning with the tangent cone of an invariant set.** For a point `x` that is not critical,
+a time `T > 0` and a set `S` invariant under the negative-gradient flow and containing `φ_T x` (for
+instance the stable or unstable set of a point), there is a finite family `h` of admissible
+perturbations of `f`, depending on `x` and `T`, such that the range of the derivative at the
+parameter `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x` and the linear span of the tangent cone of `S` at
+`φ_T x` together span `E`. The flow direction lies in that tangent cone. When `S` is a `C¹`
+submanifold near `φ_T x` and this span is its tangent space, this says the parametrized flow is
+transverse to `S` at `(0, x)` through the parameter directions alone. -/
 theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T : ℝ}
     (hT : 0 < T) {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S)
