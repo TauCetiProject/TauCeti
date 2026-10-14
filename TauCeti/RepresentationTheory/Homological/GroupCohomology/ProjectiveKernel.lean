@@ -25,6 +25,8 @@ itself, which is essential when comparing the classes of group extensions.
   groups have vanishing positive-degree cohomology.
 * `TauCeti.groupCohomology.isIso_map_of_surjective_of_projective_ker`: a surjective coefficient
   map with projective kernel induces an isomorphism in every positive degree.
+* `TauCeti.groupCohomology.isIso_map_of_surjective_of_ker_equiv`: the same conclusion when the
+  kernel is free of rank one over `k[G]`.
 
 ## References
 
@@ -78,5 +80,17 @@ theorem isIso_map_of_surjective_of_projective_ker {M N : Type u}
   exact isIso_map_of_shortExact_of_isZero hS (n + 1)
     (@isZero_succ_of_projective k G _ _ _ _ hP n)
     (@isZero_succ_of_projective k G _ _ _ _ hP (n + 1))
+
+/-- A surjective `k[G]`-linear map whose kernel is free of rank one over `k[G]` induces an
+isomorphism in every positive degree of group cohomology. -/
+theorem isIso_map_of_surjective_of_ker_equiv {M N : Type u}
+    [AddCommGroup M] [Module (MonoidAlgebra k G) M]
+    [AddCommGroup N] [Module (MonoidAlgebra k G) N]
+    (f : M →ₗ[MonoidAlgebra k G] N) (hf : Function.Surjective f)
+    (e : LinearMap.ker f ≃ₗ[MonoidAlgebra k G] MonoidAlgebra k G) (n : ℕ) :
+    IsIso ((_root_.groupCohomology.functor k G (n + 1)).map
+      (ofModuleMonoidAlgebra.map (ModuleCat.ofHom f))) :=
+  have := Module.Projective.of_equiv e.symm
+  isIso_map_of_surjective_of_projective_ker f hf n
 
 end TauCeti.groupCohomology

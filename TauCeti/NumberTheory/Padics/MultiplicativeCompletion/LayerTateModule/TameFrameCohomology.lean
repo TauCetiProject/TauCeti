@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.LayerTateModule.Decomposition
-public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.TameFrameCohomology
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.ProjectiveKernel
 
 /-!
 # Cohomology of the tame-frame relation module
@@ -50,12 +50,8 @@ theorem exists_relationModule_surjective_of_tameFrame_h2Iso
           MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) ∧
         IsIso ((_root_.groupCohomology.functor ℤ_[p] (L ≃ₐ[K] L) 2).map
           (ofModuleMonoidAlgebra.map (ModuleCat.ofHom β))) := by
-  obtain ⟨β, hβ, hker⟩ := exists_relationModule_surjective_of_tameFrame σ τ hgen hτ hg
-  obtain ⟨e⟩ := hker
-  let Λ := MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)
-  let _ : Module.Projective Λ (LinearMap.ker β) := Module.Projective.of_equiv e.symm
+  obtain ⟨β, hβ, ⟨e⟩⟩ := exists_relationModule_surjective_of_tameFrame σ τ hgen hτ hg
   have := Module.Finite.right ℚ_[p] K L
-  have hmap := groupCohomology.isIso_map_of_surjective_of_projective_ker β hβ 1
-  exact ⟨β, hβ, ⟨e⟩, hmap⟩
+  exact ⟨β, hβ, ⟨e⟩, groupCohomology.isIso_map_of_surjective_of_ker_equiv β hβ e 1⟩
 
 end TauCeti
