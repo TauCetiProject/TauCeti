@@ -52,49 +52,51 @@ public section
 
 open CategoryTheory Opposite WithConv
 
+namespace TauCeti
+
 universe u v w
 
 namespace CommHopfAlgCat
 
-open TauCeti
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 variable {R : Type u} [CommRing R]
 
 /-- The underlying object `op (CommAlgCat.of R H)` of the group object represented by the
 commutative Hopf algebra `H`, carrying the induced `GrpObj` structure. -/
-noncomputable abbrev grpObj (H : _root_.CommHopfAlgCat.{u} R) :
+noncomputable abbrev _root_.CommHopfAlgCat.grpObj (H : _root_.CommHopfAlgCat.{u} R) :
     (CommAlgCat.{u} R)ᵒᵖ :=
   op (CommAlgCat.of R H)
 
-namespace Hom
-
 /-- The morphism of underlying group objects represented contravariantly by a morphism of
 commutative Hopf algebras. -/
-noncomputable def grpObjMap {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
+noncomputable def _root_.CommHopfAlgCat.Hom.grpObjMap
+    {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
     grpObj K ⟶ grpObj H :=
   (CommAlgCat.ofHom f.hom).op
 
 /-- Unopping `grpObjMap f` gives the underlying commutative-algebra morphism of `f`. -/
 @[simp]
-theorem grpObjMap_unop {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
+theorem _root_.CommHopfAlgCat.Hom.grpObjMap_unop {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
     (grpObjMap f).unop = CommAlgCat.ofHom f.hom := (rfl)
 
 /-- The underlying algebra homomorphism obtained by unopping `grpObjMap f` is the underlying
 algebra homomorphism of `f`. -/
-theorem grpObjMap_unop_hom {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
+theorem _root_.CommHopfAlgCat.Hom.grpObjMap_unop_hom
+    {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
     (grpObjMap f).unop.hom = f.hom.toAlgHom :=
   congrArg CommAlgCat.Hom.hom (grpObjMap_unop f)
 
 /-- Unopping the left whiskering of a represented group-object map gives the tensor product of
 the identity with its underlying coordinate algebra map. -/
-theorem whiskerLeft_grpObjMap_unop_hom
+theorem _root_.CommHopfAlgCat.Hom.whiskerLeft_grpObjMap_unop_hom
     {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
     (MonoidalCategoryStruct.whiskerLeft (grpObj H) (grpObjMap f)).unop.hom =
       Algebra.TensorProduct.map (AlgHom.id R H) f.hom.toAlgHom := by
   simp only [unop_whiskerLeft, CommAlgCat.whiskerLeft_hom, grpObjMap_unop_hom]
 
 /-- Represented group-object maps determine their coordinate Hopf-algebra morphisms. -/
-theorem grpObjMap_injective {H K : _root_.CommHopfAlgCat.{u} R} :
+theorem _root_.CommHopfAlgCat.Hom.grpObjMap_injective {H K : _root_.CommHopfAlgCat.{u} R} :
     Function.Injective (grpObjMap : (H ⟶ K) → (grpObj K ⟶ grpObj H)) := by
   intro f g h
   apply _root_.CommHopfAlgCat.hom_ext
@@ -105,19 +107,21 @@ theorem grpObjMap_injective {H K : _root_.CommHopfAlgCat.{u} R} :
 
 /-- The identity coordinate morphism represents the identity group-object morphism. -/
 @[simp]
-theorem grpObjMap_id (H : _root_.CommHopfAlgCat.{u} R) :
+theorem _root_.CommHopfAlgCat.Hom.grpObjMap_id (H : _root_.CommHopfAlgCat.{u} R) :
     grpObjMap (𝟙 H) = 𝟙 (grpObj H) := by
   rfl
 
 /-- Composition of coordinate morphisms is represented contravariantly. -/
 @[simp]
-theorem grpObjMap_comp {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) (g : K ⟶ L) :
+theorem _root_.CommHopfAlgCat.Hom.grpObjMap_comp
+    {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) (g : K ⟶ L) :
     grpObjMap (f ≫ g) = grpObjMap g ≫ grpObjMap f := by
   rfl
 
 /-- A morphism represented by a commutative Hopf-algebra morphism preserves the group-object
 multiplication. -/
-noncomputable instance grpObjMap_isMonHom {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
+noncomputable instance _root_.CommHopfAlgCat.Hom.grpObjMap_isMonHom
+    {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
     IsMonHom (grpObjMap f) := by
   -- `grpObjMap` uses the concrete opposite-algebra spelling, whereas Mathlib registers the
   -- `IsMonHom` instance on the definitionally equal morphism transported by the equivalence.
@@ -129,7 +133,8 @@ between their group-valued points functors, contravariantly in the coordinate al
 
 At a commutative `R`-algebra `A`, this sends an `A`-valued point `f : K →ₐ[R] A` to
 `f ∘ φ : H →ₐ[R] A`. -/
-@[expose] noncomputable def mapPointsFunctor {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K) :
+@[expose] noncomputable def _root_.CommHopfAlgCat.Hom.mapPointsFunctor
+    {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K) :
     HopfAlgebra.pointsFunctor (R := R) (H := K) ⟶
       HopfAlgebra.pointsFunctor (R := R) (H := H) where
   app A := GrpCat.ofHom
@@ -140,20 +145,22 @@ At a commutative `R`-algebra `A`, this sends an `A`-valued point `f : K →ₐ[R
 
 /-- On points, `mapPointsFunctor φ` is pre-composition with `φ`. -/
 @[simp]
-lemma mapPointsFunctor_app_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
+lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := K) A) :
     (mapPointsFunctor φ).app A f =
       toConv (f.ofConv.comp (φ.hom : H →ₐ[R] K)) := by
   exact AlgHom.mapDomain_apply (A := A) φ.hom f
 
 /-- Pointwise form of `mapPointsFunctor_app_apply`. -/
-lemma mapPointsFunctor_app_apply_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
+lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply
+    {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := K) A) (h : H) :
     (((mapPointsFunctor φ).app A f).ofConv) h = f.ofConv (φ.hom h) := by
   exact AlgHom.mapDomain_apply_apply (A := A) φ.hom f h
 
 /-- Naturality of the point map induced by a coordinate morphism, applied to a point. -/
-lemma mapPointsFunctor_naturality_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
+lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_naturality_apply
+    {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
     {A B : CommAlgCat.{w} R} (χ : A ⟶ B)
     (f : HopfAlgebra.points (R := R) (H := K) A) :
     HopfAlgebra.mapPoints (H := H) χ ((mapPointsFunctor φ).app A f) =
@@ -161,7 +168,8 @@ lemma mapPointsFunctor_naturality_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶
   exact DFunLike.congr_fun (AlgHom.mapValue_mapDomain φ.hom χ.hom).symm f
 
 /-- Pre-composition with a surjective coordinate morphism is injective on points. -/
-lemma mapPointsFunctor_app_injective_of_surjective {H K : CommHopfAlgCat.{v} R}
+lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
+    {H K : CommHopfAlgCat.{v} R}
     (φ : H ⟶ K) (hφ : Function.Surjective φ.hom) (A : CommAlgCat.{w} R) :
     Function.Injective ((mapPointsFunctor φ).app A) :=
   AlgHom.mapDomain_injective_of_surjective (A := A) φ.hom hφ
@@ -169,7 +177,7 @@ lemma mapPointsFunctor_app_injective_of_surjective {H K : CommHopfAlgCat.{v} R}
 /-- `mapPointsFunctor` sends the identity coordinate morphism to the identity natural
 transformation. -/
 @[simp]
-lemma mapPointsFunctor_id (H : CommHopfAlgCat.{v} R) :
+lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_id (H : CommHopfAlgCat.{v} R) :
     mapPointsFunctor (𝟙 H) =
       𝟙 (HopfAlgebra.pointsFunctor (R := R) (H := H) :
         CommAlgCat.{w} R ⥤ GrpCat.{max v w}) := by
@@ -181,7 +189,8 @@ lemma mapPointsFunctor_id (H : CommHopfAlgCat.{v} R) :
 
 /-- `mapPointsFunctor` sends coordinate-algebra composition to reverse composition of natural
 transformations. -/
-lemma mapPointsFunctor_comp {H K L : CommHopfAlgCat.{v} R} (φ : H ⟶ K) (ψ : K ⟶ L) :
+lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_comp
+    {H K L : CommHopfAlgCat.{v} R} (φ : H ⟶ K) (ψ : K ⟶ L) :
     mapPointsFunctor (φ ≫ ψ) =
       mapPointsFunctor ψ ≫ mapPointsFunctor φ := by
   ext A f
@@ -191,21 +200,13 @@ lemma mapPointsFunctor_comp {H K L : CommHopfAlgCat.{v} R} (φ : H ⟶ K) (ψ : 
   rfl
 
 /-- Pointwise form of contravariance of `mapPointsFunctor` under composition. -/
-lemma mapPointsFunctor_comp_app_apply {H K L : CommHopfAlgCat.{v} R}
+lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply {H K L : CommHopfAlgCat.{v} R}
     (φ : H ⟶ K) (ψ : K ⟶ L) (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := L) A) :
     (mapPointsFunctor (φ ≫ ψ)).app A f =
       (mapPointsFunctor φ).app A ((mapPointsFunctor ψ).app A f) := by
   rw [mapPointsFunctor_comp, NatTrans.comp_app]
   exact GrpCat.comp_apply ((mapPointsFunctor ψ).app A) ((mapPointsFunctor φ).app A) f
-
-end Hom
-
-end CommHopfAlgCat
-
-namespace TauCeti.CommHopfAlgCat
-
-variable {R : Type u} [CommRing R]
 
 /-- The contravariant functor assigning to a commutative Hopf algebra its group-valued
 functor of points.
@@ -244,4 +245,6 @@ lemma pointsFunctor_map_app_apply_apply {H K : (CommHopfAlgCat.{v} R)ᵒᵖ}
   rw [pointsFunctor_map]
   exact CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (R := R) φ.unop A f h
 
-end TauCeti.CommHopfAlgCat
+end CommHopfAlgCat
+
+end TauCeti
