@@ -180,10 +180,14 @@ theorem eq_adicCompletionCongr_of_continuous {f : v.adicCompletion K →+* w.adi
     Valuation.Completion.eq_congr_of_continuous hσ
       ((adicCompletion.continuous_toCompletion K' w).comp
         (hf.comp (adicCompletion.continuous_ofCompletion K v))) fun x ↦ by
-          change (f (adicCompletion.ofCompletion (x : (v.valuation K).Completion))).toCompletion =
-            (σ x : (w.valuation K').Completion)
-          simpa only [algebraMap_adicCompletion, Function.comp_apply,
-            Algebra.algebraMap_self_apply] using congrArg adicCompletion.toCompletion (hfK x)
+          have h := congrArg adicCompletion.toCompletion (hfK x)
+          simp only [algebraMap_adicCompletion, Function.comp_apply,
+            Algebra.algebraMap_self_apply] at h
+          rwa [RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+            RingEquiv.coe_toRingHom, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+            adicCompletion.equiv_apply,
+            ← adicCompletion.toCompletion_ofCompletion K v (x : (v.valuation K).Completion),
+            ← adicCompletion.equiv_apply K v, RingEquiv.symm_apply_apply]
   ext x
   exact DFunLike.congr_fun htransport x.toCompletion
 
@@ -218,8 +222,10 @@ theorem adicCompletionCongr_symm :
 @[simp]
 theorem valued_adicCompletionCongr (x : v.adicCompletion K) :
     Valued.v (adicCompletionCongr v w σ hσ x) = Valued.v x := by
-  change Valued.v (Valuation.Completion.congr σ hσ x.toCompletion) = Valued.v x.toCompletion
-  exact Valuation.Completion.valued_congr (v.valuation_surjective K) hσ x.toCompletion
+  rw [← adicCompletion.valued_toCompletion, toCompletion_adicCompletionCongr,
+    ← Valuation.Completion.congr_apply hσ]
+  exact (Valuation.Completion.valued_congr (v.valuation_surjective K) hσ x.toCompletion).trans
+    (adicCompletion.valued_toCompletion K v x)
 
 end Completion
 

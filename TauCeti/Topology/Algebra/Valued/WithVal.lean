@@ -67,21 +67,19 @@ theorem uniformContinuous_congr (σ : K ≃+* K')
   intro x hx
   rw [Set.mem_ofPred_eq] at hx ⊢
   apply (WithVal.strictMono_valueGroupOrderIso₀ w).lt_iff_lt.mp
+  -- `Valued.v` on `WithVal w` is `WithVal.valuation w` by definition of the instance, and
+  -- `rw` does not see through the instance, so restate the goal before rewriting.
   change (WithVal.valueGroupOrderIso₀ w) ((WithVal.valuation w).restrict _) < _
-  rw [WithVal.valueGroupOrderIso₀_restrict, hab,
-    Valuation.restrict_lt_iff_lt_embedding]
-  change w ((WithVal.congr v w σ x).ofVal) < (w a)⁻¹ * w b
+  rw [WithVal.valueGroupOrderIso₀_restrict, hab, Valuation.restrict_lt_iff_lt_embedding]
   have hx' := (WithVal.strictMono_valueGroupOrderIso₀ v).lt_iff_lt.mpr hx
+  -- As above, for `Valued.v` on `WithVal v`.
   change (WithVal.valueGroupOrderIso₀ v) ((WithVal.valuation v).restrict x) < _ at hx'
-  rw [WithVal.valueGroupOrderIso₀_restrict] at hx'
-  have hγ' : (WithVal.valueGroupOrderIso₀ v) γ'.1 = δ := by
-    change (WithVal.valueGroupOrderIso₀ v) ((WithVal.valueGroupOrderIso₀ v).symm δ) = δ
-    exact (WithVal.valueGroupOrderIso₀ v).apply_symm_apply δ
-  rw [hγ', Valuation.restrict_lt_iff_lt_embedding] at hx'
-  change v x.ofVal < (v (σ.symm a))⁻¹ * v (σ.symm b) at hx'
+  rw [WithVal.valueGroupOrderIso₀_restrict, Units.val_mk0, OrderMonoidIso.apply_symm_apply,
+    Valuation.restrict_lt_iff_lt_embedding] at hx'
   have haeq : w a = v (σ.symm a) := by rw [← hσ, RingEquiv.apply_symm_apply]
   have hbeq : w b = v (σ.symm b) := by rw [← hσ, RingEquiv.apply_symm_apply]
-  simpa [WithVal.congr_apply, hσ, haeq, hbeq] using hx'
+  simpa [δ, valueGroup.mk, ValueGroup₀.embedding_apply, WithVal.congr_apply, hσ, haeq, hbeq]
+    using hx'
 
 end WithVal
 
@@ -95,9 +93,8 @@ variable {K K' K'' : Type*} [Ring K] [Ring K'] [Ring K''] {Γ₀ : Type*}
 `v` to the completion `v.Completion` is continuous. -/
 theorem continuous_valued {L : Type*} [Field L] {q : Valuation L Γ₀}
     (hq : Function.Surjective q) : Continuous (Valued.v : Valuation q.Completion Γ₀) :=
-  Valued.continuous_valuation_of_surjective fun γ ↦
-    let ⟨x, hx⟩ := hq γ
-    ⟨(x : q.Completion), (Valued.valuedCompletion_apply (WithVal.toVal q x)).trans hx⟩
+  Valued.continuous_valuation_of_surjective <|
+    Valued.valuedCompletion_surjective_iff.mpr (.of_comp hq)
 
 /-- The inverse of an isomorphism carrying `v` to `w` carries `w` to `v`. -/
 private theorem symm_apply_eq {σ : K ≃+* K'} (hσ : ∀ x, w (σ x) = v x) (y : K') :
@@ -143,7 +140,7 @@ theorem valued_congr {L L' : Type*} [Field L] [Field L'] {q : Valuation L Γ₀}
     {q' : Valuation L' Γ₀} (hq : Function.Surjective q) {τ : L ≃+* L'}
     (hτ : ∀ x, q' (τ x) = q x) (x : q.Completion) : Valued.v (congr τ hτ x) = Valued.v x := by
   refine congrFun (UniformSpace.Completion.ext
-    ((continuous_valued (fun γ ↦ (hq γ).elim fun z hz ↦ ⟨τ z, (hτ z).trans hz⟩)).comp
+    ((continuous_valued (.of_comp (g := τ) (by simpa [Function.comp_def, hτ]))).comp
       (continuous_congr hτ)) (continuous_valued hq) fun y ↦ ?_) x
   refine (congrArg Valued.v (congr_coe hτ (WithVal.ofVal y))).trans ?_
   rw [Valued.valuedCompletion_apply, Valued.valuedCompletion_apply, WithVal.valued_toVal, hτ,
