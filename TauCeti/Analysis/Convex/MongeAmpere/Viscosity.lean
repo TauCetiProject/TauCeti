@@ -51,9 +51,13 @@ equation with `φ = u`; the other goes through the Aleksandrov measure `MA_u = d
 
 ## Main statements
 
+* `TauCeti.IsMongeAmpereViscositySubsolution.mono`, `.mono_rhs` and their supersolution and
+  solution counterparts: the predicates restrict to subsets of `Ω`, and sub- (super-) solutions
+  stay so for smaller (larger) right-hand sides;
 * `TauCeti.isMongeAmpereViscositySubsolution_of_withDensity_le_mongeAmpereMeasure` and
   `TauCeti.isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity`: Aleksandrov
-  sub- and supersolutions with continuous right-hand side are viscosity sub- and supersolutions;
+  sub- and supersolutions with continuous right-hand side (and `f ≥ 0` for supersolutions) are
+  viscosity sub- and supersolutions;
 * `TauCeti.isMongeAmpereViscositySolution_of_mongeAmpereMeasure_eq`: **an Aleksandrov solution of
   `MA_u = f dx` with `f ≥ 0` continuous is a viscosity solution**;
 * `TauCeti.isMongeAmpereViscositySolution_iff_forall_det_eq`: a convex `C²` function is a
@@ -105,21 +109,60 @@ viscosity subsolution and a viscosity supersolution. -/
 structure IsMongeAmpereViscositySolution (Ω : Set E) (u f : E → ℝ) : Prop
     extends IsMongeAmpereViscositySubsolution Ω u f, IsMongeAmpereViscositySupersolution Ω u f
 
+namespace IsMongeAmpereViscositySubsolution
+
+variable {Ω Ω' : Set E} {u f f' : E → ℝ}
+
+/-- A viscosity subsolution on `Ω` is a viscosity subsolution on every subset of `Ω`. -/
+theorem mono (h : IsMongeAmpereViscositySubsolution Ω u f) (hΩ' : Ω' ⊆ Ω) :
+    IsMongeAmpereViscositySubsolution Ω' u f :=
+  ⟨fun _ hx₀ _ hφ hφc hmax => h.le_det (hΩ' hx₀) hφ hφc hmax⟩
+
+/-- A viscosity subsolution of `det D²u = f` is a viscosity subsolution of `det D²u = f'` for every
+`f' ≤ f` on `Ω`. -/
+theorem mono_rhs (h : IsMongeAmpereViscositySubsolution Ω u f) (hf : ∀ x ∈ Ω, f' x ≤ f x) :
+    IsMongeAmpereViscositySubsolution Ω u f' :=
+  ⟨fun _ hx₀ _ hφ hφc hmax => (hf _ hx₀).trans (h.le_det hx₀ hφ hφc hmax)⟩
+
+end IsMongeAmpereViscositySubsolution
+
+namespace IsMongeAmpereViscositySupersolution
+
+variable {Ω Ω' : Set E} {u f f' : E → ℝ}
+
+/-- A viscosity supersolution on `Ω` is a viscosity supersolution on every subset of `Ω`. -/
+theorem mono (h : IsMongeAmpereViscositySupersolution Ω u f) (hΩ' : Ω' ⊆ Ω) :
+    IsMongeAmpereViscositySupersolution Ω' u f :=
+  ⟨fun _ hx₀ _ hφ hφc hmin => h.det_le (hΩ' hx₀) hφ hφc hmin⟩
+
+/-- A viscosity supersolution of `det D²u = f` is a viscosity supersolution of `det D²u = f'` for
+every `f' ≥ f` on `Ω`. -/
+theorem mono_rhs (h : IsMongeAmpereViscositySupersolution Ω u f) (hf : ∀ x ∈ Ω, f x ≤ f' x) :
+    IsMongeAmpereViscositySupersolution Ω u f' :=
+  ⟨fun _ hx₀ _ hφ hφc hmin => (h.det_le hx₀ hφ hφc hmin).trans (hf _ hx₀)⟩
+
+end IsMongeAmpereViscositySupersolution
+
+/-- A viscosity solution on `Ω` is a viscosity solution on every subset of `Ω`. -/
+theorem IsMongeAmpereViscositySolution.mono {Ω Ω' : Set E} {u f : E → ℝ}
+    (h : IsMongeAmpereViscositySolution Ω u f) (hΩ' : Ω' ⊆ Ω) :
+    IsMongeAmpereViscositySolution Ω' u f :=
+  { toIsMongeAmpereViscositySubsolution := h.toIsMongeAmpereViscositySubsolution.mono hΩ'
+    toIsMongeAmpereViscositySupersolution := h.toIsMongeAmpereViscositySupersolution.mono hΩ' }
+
 end Defs
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Set E} {u f : E → ℝ}
 
-/-- A function of class `C²` at `x₀` has a Hessian continuous at `x₀`, and near `x₀` it and its
-gradient are differentiable. -/
-private theorem continuousAt_fderiv_gradient_and_eventually_differentiableAt {φ : E → ℝ}
-    {x₀ : E} (hφ : ContDiffAt ℝ 2 φ x₀) :
-    ContinuousAt (fderiv ℝ (∇ φ)) x₀ ∧
-      ∀ᶠ x in 𝓝 x₀, DifferentiableAt ℝ φ x ∧ DifferentiableAt ℝ (∇ φ) x := by
-  have h1 : ContDiffAt ℝ 1 (∇ φ) x₀ := hφ.gradient_right (by norm_num)
-  refine ⟨h1.continuousAt_fderiv one_ne_zero, ?_⟩
-  filter_upwards [hφ.eventually (by simp), h1.eventually (by simp)] with x hx hx'
-  exact ⟨hx.differentiableAt two_ne_zero, hx'.differentiableAt one_ne_zero⟩
+omit [FiniteDimensional ℝ E] in
+/-- `det (A + t • id) → det A` as `t → 0`. -/
+private theorem tendsto_det_add_smul_id (A : E →L[ℝ] E) :
+    Tendsto (fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det) (𝓝 0) (𝓝 A.det) := by
+  have : Continuous fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det :=
+    ContinuousLinearMap.continuous_det.comp
+      (continuous_const.add (continuous_id.smul continuous_const))
+  simpa using this.tendsto 0
 
 section Measure
 
@@ -131,8 +174,8 @@ differentiable gradient on `ball x₀ R`, and suppose that `D²φ + t` is a posi
 For `r < R`, the function `ψ = φ + (t / 2) ‖· - x₀‖² + c` is convex on `ball x₀ r`, continuous
 on its closure, and its Monge–Ampère measure there is `det (D²φ + t) dx`. -/
 private theorem convexOn_mongeAmpereMeasure_add_mul_norm_sq {φ : E → ℝ} {x₀ : E} {t R r : ℝ}
-    (c : ℝ) (hrR : r < R)
-    (hd : ∀ x ∈ ball x₀ R, DifferentiableAt ℝ φ x ∧ DifferentiableAt ℝ (∇ φ) x)
+    (c : ℝ) (hrR : r < R) (hd : ∀ x ∈ ball x₀ R, DifferentiableAt ℝ φ x)
+    (hd' : ∀ x ∈ ball x₀ R, DifferentiableAt ℝ (∇ φ) x)
     (hpos : ∀ x ∈ ball x₀ R, ∀ v,
       0 ≤ inner ℝ ((fderiv ℝ (∇ φ) x + t • ContinuousLinearMap.id ℝ E) v) v)
     [DecidablePred (· ∈ ball x₀ r)] :
@@ -147,7 +190,7 @@ private theorem convexOn_mongeAmpereMeasure_add_mul_norm_sq {φ : E → ℝ} {x�
   -- On `ball x₀ R`, `ψ` has gradient `∇ φ + t (· - x₀)` and Hessian `D²φ + t`.
   have hgrad : ∀ x ∈ ball x₀ R, HasGradientAt ψ (∇ φ x + t • (x - x₀)) x := fun x hx => by
     rw [hasGradientAt_iff_hasFDerivAt]
-    refine (((hd x hx).1.hasFDerivAt.add
+    refine (((hd x hx).hasFDerivAt.add
       ((HasFDerivAt.norm_sq ((hasFDerivAt_id x).sub_const x₀)).const_mul (t / 2))).add_const
       c).congr_fderiv ?_
     ext v
@@ -162,7 +205,7 @@ private theorem convexOn_mongeAmpereMeasure_add_mul_norm_sq {φ : E → ℝ} {x�
     have hloc : ∇ ψ =ᶠ[𝓝 x] fun y => ∇ φ y + t • (y - x₀) :=
       eventually_of_mem (isOpen_ball.mem_nhds hx) fun y hy => (hgrad y hy).gradient
     refine HasFDerivAt.congr_of_eventuallyEq ?_ hloc
-    exact (hd x hx).2.hasFDerivAt.add (((hasFDerivAt_id x).sub_const x₀).const_smul t)
+    exact (hd' x hx).hasFDerivAt.add (((hasFDerivAt_id x).sub_const x₀).const_smul t)
   have hconv : ConvexOn ℝ (ball x₀ r) ψ :=
     convexOn_of_hasFDerivAt_gradient (convex_ball x₀ r) isOpen_ball
       (fun x hx => hψd x (hrB hx)) (fun x hx => hH x (hrB hx)) fun x hx => hpos x (hrB hx)
@@ -173,6 +216,21 @@ private theorem convexOn_mongeAmpereMeasure_add_mul_norm_sq {φ : E → ℝ} {x�
     (fun x hx => (hH x (hrB hx)).differentiableAt.differentiableWithinAt)]
   exact withDensity_congr_ae (ae_restrict_of_forall_mem measurableSet_ball fun x hx => by
     simp only [(hH x (hrB hx)).fderiv])
+
+/-- **The comparison principle on a ball, in contradiction form.** Two convex functions `v` and
+`w` on `ball x₀ r`, continuous on its closure, with `MA_v ≤ MA_w` and `w ≤ v` on the sphere cannot
+satisfy `v x₀ < w x₀`. -/
+private theorem false_of_mongeAmpereMeasure_le_of_le_sphere [Nontrivial E] {v w : E → ℝ}
+    {x₀ : E} {r : ℝ} (hr : 0 < r) [DecidablePred (· ∈ ball x₀ r)]
+    (hv : ConvexOn ℝ (ball x₀ r) v) (hw : ConvexOn ℝ (ball x₀ r) w)
+    (hvc : ContinuousOn v (closedBall x₀ r)) (hwc : ContinuousOn w (closedBall x₀ r))
+    (hMA : mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (v x : EReal) else ⊤) ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (w x : EReal) else ⊤))
+    (hsph : ∀ x ∈ sphere x₀ r, w x ≤ v x) (hx₀ : v x₀ < w x₀) : False := by
+  rw [← closure_ball x₀ hr.ne'] at hvc hwc
+  rw [← frontier_ball x₀ hr.ne'] at hsph
+  exact hx₀.not_ge (le_of_mongeAmpereMeasure_le_of_le_frontier μ isOpen_ball isBounded_ball hv hw
+    hvc hwc hMA hsph (mem_ball_self hr))
 
 /-- **Aleksandrov subsolutions are viscosity subsolutions.** Let `u` be convex on an open set `Ω`
 of a real inner product space of finite dimension `n ≥ 1`, and let `f` be continuous on `Ω`. If
@@ -187,77 +245,68 @@ theorem isMongeAmpereViscositySubsolution_of_withDensity_le_mongeAmpereMeasure [
   classical
   refine ⟨fun x₀ hx₀ φ hφ hφc hmax => ?_⟩
   by_contra! hlt
-  obtain ⟨hcont, hreg⟩ := continuousAt_fderiv_gradient_and_eventually_differentiableAt hφ
   obtain ⟨s, hs, hφs⟩ := hφc
   set A := fderiv ℝ (∇ φ) x₀
   set I := ContinuousLinearMap.id ℝ E
   -- Choose `t > 0` with `det (A + t) < f x₀`.
-  obtain ⟨t, htA, ht⟩ : ∃ t : ℝ, (A + t • I).det < f x₀ ∧ 0 < t := by
-    have h0 : ∀ᶠ t in 𝓝 (0 : ℝ), (A + t • I).det < f x₀ :=
-      (ContinuousLinearMap.continuous_det.comp (continuous_const.add
-        (continuous_id.smul continuous_const))).continuousAt.eventually_lt continuousAt_const
-        (by simpa using hlt)
-    have h1 : ∀ᶠ t in 𝓝[>] (0 : ℝ), (A + t • I).det < f x₀ ∧ 0 < t :=
-      (h0.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin
-    exact h1.exists
+  obtain ⟨t, htA, ht⟩ : ∃ t : ℝ, (A + t • I).det < f x₀ ∧ 0 < t :=
+    ((((tendsto_det_add_smul_id A).eventually (gt_mem_nhds hlt)).filter_mono
+      nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `φ` is convex near `x`,
   -- `u - φ ≤ u x₀ - φ x₀`, `φ` and `∇ φ` are differentiable, and `det (D²φ + t) < f`.
   have hev : ∀ᶠ x in 𝓝 x₀, x ∈ Ω ∧ x ∈ interior s ∧ u x - φ x ≤ u x₀ - φ x₀ ∧
-      (DifferentiableAt ℝ φ x ∧ DifferentiableAt ℝ (∇ φ) x) ∧
+      DifferentiableAt ℝ φ x ∧ DifferentiableAt ℝ (∇ φ) x ∧
       (fderiv ℝ (∇ φ) x + t • I).det < f x := by
-    refine (hΩ.eventually_mem hx₀).and ((isOpen_interior.eventually_mem
-      (mem_interior_iff_mem_nhds.2 hs)).and (hmax.and (hreg.and ?_)))
-    exact (ContinuousLinearMap.continuous_det.continuousAt.comp
-      (hcont.add continuousAt_const)).eventually_lt (hf.continuousAt (hΩ.mem_nhds hx₀)) htA
+    filter_upwards [hΩ.eventually_mem hx₀,
+      isOpen_interior.eventually_mem (mem_interior_iff_mem_nhds.2 hs), hmax,
+      hφ.eventually (by simp), hφ.eventually_differentiableAt_gradient le_rfl,
+      (ContinuousLinearMap.continuous_det.continuousAt.comp
+        ((hφ.continuousAt_fderiv_gradient le_rfl).add continuousAt_const)).eventually_lt
+        (hf.continuousAt (hΩ.mem_nhds hx₀)) htA] with x hxΩ hxs hxmax hxφ hxd hxdet
+    exact ⟨hxΩ, hxs, hxmax, hxφ.differentiableAt two_ne_zero, hxd, hxdet⟩
   obtain ⟨R, hR, hRsub⟩ := Metric.eventually_nhds_iff_ball.1 hev
+  simp only [imp_and, forall_and] at hRsub
+  obtain ⟨hRΩ, hRs, hRmax, hRφ, hRd, hRdet⟩ := hRsub
   set r := R / 2
   have hr : 0 < r := half_pos hR
   have hrR : r < R := half_lt_self hR
-  have hBΩ : closedBall x₀ r ⊆ Ω := fun x hx => (hRsub x (closedBall_subset_ball hrR hx)).1
+  have hBΩ : closedBall x₀ r ⊆ Ω := fun x hx => hRΩ x (closedBall_subset_ball hrR hx)
+  have hbΩ : ball x₀ r ⊆ Ω := ball_subset_closedBall.trans hBΩ
   -- The barrier `ψ = φ + (t / 2) ‖· - x₀‖² + c` is convex on `ball x₀ r`, since `D²φ` is positive.
   set c := u x₀ - φ x₀ - t * r ^ 2 / 4 with hc
-  obtain ⟨hψc, hψcont, hψMA⟩ := convexOn_mongeAmpereMeasure_add_mul_norm_sq μ c hrR
-    (fun x hx => (hRsub x hx).2.2.2.1)
+  obtain ⟨hψc, hψcont, hψMA⟩ := convexOn_mongeAmpereMeasure_add_mul_norm_sq μ c hrR hRφ hRd
     fun x hx v => by
-      obtain ⟨-, hxs, -, ⟨-, hx₂⟩, -⟩ := hRsub x hx
-      have hpos := hφs.isPositive_of_hasFDerivAt_gradient (mem_interior_iff_mem_nhds.1 hxs)
-        (eventually_of_mem (isOpen_ball.mem_nhds hx) fun y hy => (hRsub y hy).2.2.2.1.1)
-        hx₂.hasFDerivAt
+      have hpos := hφs.isPositive_of_hasFDerivAt_gradient
+        (mem_interior_iff_mem_nhds.1 (hRs x hx)) (eventually_of_mem (isOpen_ball.mem_nhds hx) hRφ)
+        (hRd x hx).hasFDerivAt
       have := hpos.re_inner_nonneg_left v
       simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real] at this
       simp only [_root_.add_apply, _root_.smul_apply,
         ContinuousLinearMap.id_apply, inner_add_left, real_inner_smul_left,
         real_inner_self_eq_norm_sq]
       exact add_nonneg this (mul_nonneg ht.le (sq_nonneg _))
-  -- `MA_ψ = det (D²φ + t) dx ≤ f dx ≤ MA_u` on `ball x₀ r`, and `u < ψ` on the sphere.
+  -- `MA_ψ = det (D²φ + t) dx ≤ f dx ≤ MA_u` on `ball x₀ r`.
   have hMAB : mongeAmpereMeasure μ
         (fun x => if x ∈ ball x₀ r then ((φ x + t / 2 * ‖x - x₀‖ ^ 2 + c : ℝ) : EReal) else ⊤) ≤
       mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (u x : EReal) else ⊤) := by
-    rw [hψMA, mongeAmpereMeasure_ite_eq_restrict μ hΩ isOpen_ball (convex_ball x₀ r)
-      (ball_subset_closedBall.trans hBΩ) hu AbsolutelyContinuous.rfl]
+    rw [hψMA, mongeAmpereMeasure_ite_eq_restrict μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
+      AbsolutelyContinuous.rfl]
     calc (μ.restrict (ball x₀ r)).withDensity
           (fun x => ENNReal.ofReal (fderiv ℝ (∇ φ) x + t • I).det)
         ≤ (μ.restrict (ball x₀ r)).withDensity fun x => ENNReal.ofReal (f x) :=
           withDensity_mono (ae_restrict_of_forall_mem measurableSet_ball fun x hx =>
-            ENNReal.ofReal_le_ofReal (hRsub x (ball_subset_ball hrR.le hx)).2.2.2.2.le)
+            ENNReal.ofReal_le_ofReal (hRdet x (ball_subset_ball hrR.le hx)).le)
       _ = ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict (ball x₀ r) := by
-          rw [restrict_withDensity measurableSet_ball, restrict_restrict measurableSet_ball,
-            inter_eq_left.2 (ball_subset_closedBall.trans hBΩ)]
+          rw [restrict_withDensity measurableSet_ball, restrict_restrict_of_subset hbΩ]
       _ ≤ _ := Measure.restrict_mono subset_rfl hMA
-  have hfr : ∀ x ∈ frontier (ball x₀ r), u x ≤ φ x + t / 2 * ‖x - x₀‖ ^ 2 + c := fun x hx => by
-    rw [frontier_ball x₀ hr.ne', mem_sphere_iff_norm] at hx
-    have := (hRsub x (sphere_subset_ball hrR (mem_sphere_iff_norm.2 hx))).2.2.1
-    rw [hx, hc]
+  -- `u < ψ` on the sphere and `ψ < u` at the centre, contradicting the comparison principle.
+  refine false_of_mongeAmpereMeasure_le_of_le_sphere μ hr hψc (hu.subset hbΩ (convex_ball x₀ r))
+    hψcont ((hu.continuousOn hΩ).mono hBΩ) hMAB (fun x hx => ?_) ?_
+  · have := hRmax x (sphere_subset_ball hrR hx)
+    rw [mem_sphere_iff_norm.1 hx, hc]
     nlinarith [mul_pos ht (pow_pos hr 2)]
-  have := le_of_mongeAmpereMeasure_le_of_le_frontier μ isOpen_ball isBounded_ball hψc
-    (hu.subset (ball_subset_closedBall.trans hBΩ) (convex_ball x₀ r))
-    (by rwa [closure_ball x₀ hr.ne'])
-    (by rw [closure_ball x₀ hr.ne']; exact (hu.continuousOn hΩ).mono hBΩ) hMAB hfr
-    (mem_ball_self hr)
-  have hψx₀ : φ x₀ + t / 2 * ‖x₀ - x₀‖ ^ 2 + c = u x₀ - t * r ^ 2 / 4 := by
-    simp only [sub_self, norm_zero, hc]
-    ring
-  linarith [mul_pos ht (pow_pos hr 2)]
+  · simp only [sub_self, norm_zero, hc]
+    nlinarith [mul_pos ht (pow_pos hr 2)]
 
 /-- **Aleksandrov supersolutions are viscosity supersolutions.** Let `u` be convex on an open set
 `Ω` of a real inner product space of finite dimension `n ≥ 1`, and let `f ≥ 0` be continuous on
@@ -272,14 +321,16 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
   classical
   refine ⟨fun x₀ hx₀ φ hφ hφc hmin => ?_⟩
   by_contra! hlt
-  obtain ⟨hcont, hreg⟩ := continuousAt_fderiv_gradient_and_eventually_differentiableAt hφ
   obtain ⟨s, hs, hφs⟩ := hφc
+  have hcont := hφ.continuousAt_fderiv_gradient le_rfl
+  have hφd : ∀ᶠ x in 𝓝 x₀, DifferentiableAt ℝ φ x :=
+    (hφ.eventually (by simp)).mono fun x hx => hx.differentiableAt two_ne_zero
+  have hφd' := hφ.eventually_differentiableAt_gradient le_rfl
   set A := fderiv ℝ (∇ φ) x₀
   set I := ContinuousLinearMap.id ℝ E
   -- `A` is positive with `det A > f x₀ ≥ 0`, so it is coercive: `κ ‖v‖² ≤ ⟪A v, v⟫`.
   have hApos : (A : E →ₗ[ℝ] E).IsPositive :=
-    hφs.isPositive_of_hasFDerivAt_gradient hs (hreg.mono fun x hx => hx.1)
-      hreg.self_of_nhds.2.hasFDerivAt
+    hφs.isPositive_of_hasFDerivAt_gradient hs hφd hφd'.self_of_nhds.hasFDerivAt
   have hker : LinearMap.ker (A : E →ₗ[ℝ] E) = ⊥ := by
     by_contra h
     have : A.det = 0 := LinearMap.det_eq_zero_iff_ker_ne_bot.2 h
@@ -287,37 +338,36 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
   obtain ⟨κ, hκ, hA⟩ := hApos.exists_pos_mul_norm_sq_le_re_inner hker
   simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real] at hA
   -- Choose `-κ / 2 < t < 0` with `f x₀ < det (A + t)`.
-  obtain ⟨t, htA, ht, htκ⟩ : ∃ t : ℝ, f x₀ < (A + t • I).det ∧ t < 0 ∧ -(κ / 2) < t := by
-    have h0 : ∀ᶠ t in 𝓝 (0 : ℝ), f x₀ < (A + t • I).det ∧ -(κ / 2) < t :=
-      (continuousAt_const.eventually_lt (ContinuousLinearMap.continuous_det.comp
-        (continuous_const.add (continuous_id.smul continuous_const))).continuousAt
-        (by simpa using hlt)).and (lt_mem_nhds (by linarith))
-    have h1 : ∀ᶠ t in 𝓝[<] (0 : ℝ), (f x₀ < (A + t • I).det ∧ -(κ / 2) < t) ∧ t < 0 :=
-      (h0.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin
-    obtain ⟨t, ⟨h₂, h₃⟩, h₄⟩ := h1.exists
-    exact ⟨t, h₂, h₄, h₃⟩
+  obtain ⟨t, ⟨htA, htκ⟩, ht⟩ : ∃ t : ℝ, (f x₀ < (A + t • I).det ∧ -(κ / 2) < t) ∧ t < 0 :=
+    (((((tendsto_det_add_smul_id A).eventually (lt_mem_nhds hlt)).and
+      (lt_mem_nhds (by linarith))).filter_mono nhdsWithin_le_nhds).and
+      (self_mem_nhdsWithin (s := Iio (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `u - φ ≥ u x₀ - φ x₀`, `φ` and `∇ φ` are
   -- differentiable, `‖D²φ - A‖ < κ / 2`, and `f < det (D²φ + t)`.
   have hev : ∀ᶠ x in 𝓝 x₀, x ∈ Ω ∧ u x₀ - φ x₀ ≤ u x - φ x ∧
-      (DifferentiableAt ℝ φ x ∧ DifferentiableAt ℝ (∇ φ) x) ∧
+      DifferentiableAt ℝ φ x ∧ DifferentiableAt ℝ (∇ φ) x ∧
       fderiv ℝ (∇ φ) x ∈ ball A (κ / 2) ∧ f x < (fderiv ℝ (∇ φ) x + t • I).det := by
-    refine (hΩ.eventually_mem hx₀).and (hmin.and (hreg.and
-      ((hcont.eventually (ball_mem_nhds A (half_pos hκ))).and ?_)))
-    exact (hf.continuousAt (hΩ.mem_nhds hx₀)).eventually_lt
-      (ContinuousLinearMap.continuous_det.continuousAt.comp (hcont.add continuousAt_const)) htA
+    filter_upwards [hΩ.eventually_mem hx₀, hmin, hφd, hφd',
+      hcont.eventually (ball_mem_nhds A (half_pos hκ)),
+      (hf.continuousAt (hΩ.mem_nhds hx₀)).eventually_lt
+        (ContinuousLinearMap.continuous_det.continuousAt.comp (hcont.add continuousAt_const)) htA]
+      with x hxΩ hxmin hxφ hxd hxA hxdet
+    exact ⟨hxΩ, hxmin, hxφ, hxd, hxA, hxdet⟩
   obtain ⟨R, hR, hRsub⟩ := Metric.eventually_nhds_iff_ball.1 hev
+  simp only [imp_and, forall_and] at hRsub
+  obtain ⟨hRΩ, hRmin, hRφ, hRd, hRA, hRdet⟩ := hRsub
   set r := R / 2
   have hr : 0 < r := half_pos hR
   have hrR : r < R := half_lt_self hR
-  have hBΩ : closedBall x₀ r ⊆ Ω := fun x hx => (hRsub x (closedBall_subset_ball hrR hx)).1
+  have hBΩ : closedBall x₀ r ⊆ Ω := fun x hx => hRΩ x (closedBall_subset_ball hrR hx)
+  have hbΩ : ball x₀ r ⊆ Ω := ball_subset_closedBall.trans hBΩ
   -- The barrier `ψ = φ + (t / 2) ‖· - x₀‖² + c` is convex on `ball x₀ r`, by coercivity of `A`.
   set c := u x₀ - φ x₀ - t * r ^ 2 / 4 with hc
-  obtain ⟨hψc, hψcont, hψMA⟩ := convexOn_mongeAmpereMeasure_add_mul_norm_sq μ c hrR
-    (fun x hx => (hRsub x hx).2.2.1)
+  obtain ⟨hψc, hψcont, hψMA⟩ := convexOn_mongeAmpereMeasure_add_mul_norm_sq μ c hrR hRφ hRd
     fun x hx v => by
       -- `⟪(D²φ x + t) v, v⟫ ≥ (κ - ‖D²φ x - A‖ + t) ‖v‖² ≥ 0`.
       set B := fderiv ℝ (∇ φ) x - A
-      have hB : ‖B‖ < κ / 2 := by simpa [B, dist_eq_norm] using (hRsub x hx).2.2.2.1
+      have hB : ‖B‖ < κ / 2 := by simpa [B, dist_eq_norm] using hRA x hx
       have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := by
         nlinarith [abs_le.1 (abs_real_inner_le_norm (B v) v), B.le_opNorm v, norm_nonneg v]
       have h₂ : inner ℝ ((fderiv ℝ (∇ φ) x + t • I) v) v =
@@ -328,34 +378,28 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
         ring
       rw [h₂]
       nlinarith [hA v, sq_nonneg ‖v‖]
-  -- `MA_u ≤ f dx ≤ det (D²φ + t) dx = MA_ψ` on `ball x₀ r`, and `ψ < u` on the sphere.
+  -- `MA_u ≤ f dx ≤ det (D²φ + t) dx = MA_ψ` on `ball x₀ r`.
   have hMAB : mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (u x : EReal) else ⊤) ≤
       mongeAmpereMeasure μ
         (fun x => if x ∈ ball x₀ r then ((φ x + t / 2 * ‖x - x₀‖ ^ 2 + c : ℝ) : EReal) else ⊤) := by
-    rw [hψMA, mongeAmpereMeasure_ite_eq_restrict μ hΩ isOpen_ball (convex_ball x₀ r)
-      (ball_subset_closedBall.trans hBΩ) hu AbsolutelyContinuous.rfl]
+    rw [hψMA, mongeAmpereMeasure_ite_eq_restrict μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
+      AbsolutelyContinuous.rfl]
     calc (mongeAmpereMeasure μ fun x => if x ∈ Ω then (u x : EReal) else ⊤).restrict (ball x₀ r)
         ≤ ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict (ball x₀ r) :=
           Measure.restrict_mono subset_rfl hMA
       _ = (μ.restrict (ball x₀ r)).withDensity fun x => ENNReal.ofReal (f x) := by
-          rw [restrict_withDensity measurableSet_ball, restrict_restrict measurableSet_ball,
-            inter_eq_left.2 (ball_subset_closedBall.trans hBΩ)]
+          rw [restrict_withDensity measurableSet_ball, restrict_restrict_of_subset hbΩ]
       _ ≤ _ :=
           withDensity_mono (ae_restrict_of_forall_mem measurableSet_ball fun x hx =>
-            ENNReal.ofReal_le_ofReal (hRsub x (ball_subset_ball hrR.le hx)).2.2.2.2.le)
-  have hfr : ∀ x ∈ frontier (ball x₀ r), φ x + t / 2 * ‖x - x₀‖ ^ 2 + c ≤ u x := fun x hx => by
-    rw [frontier_ball x₀ hr.ne', mem_sphere_iff_norm] at hx
-    have := (hRsub x (sphere_subset_ball hrR (mem_sphere_iff_norm.2 hx))).2.1
-    rw [hx, hc]
+            ENNReal.ofReal_le_ofReal (hRdet x (ball_subset_ball hrR.le hx)).le)
+  -- `ψ < u` on the sphere and `u < ψ` at the centre, contradicting the comparison principle.
+  refine false_of_mongeAmpereMeasure_le_of_le_sphere μ hr (hu.subset hbΩ (convex_ball x₀ r)) hψc
+    ((hu.continuousOn hΩ).mono hBΩ) hψcont hMAB (fun x hx => ?_) ?_
+  · have := hRmin x (sphere_subset_ball hrR hx)
+    rw [mem_sphere_iff_norm.1 hx, hc]
     nlinarith [mul_neg_of_neg_of_pos ht (pow_pos hr 2)]
-  have := le_of_mongeAmpereMeasure_le_of_le_frontier μ isOpen_ball isBounded_ball
-    (hu.subset (ball_subset_closedBall.trans hBΩ) (convex_ball x₀ r)) hψc
-    (by rw [closure_ball x₀ hr.ne']; exact (hu.continuousOn hΩ).mono hBΩ)
-    (by rwa [closure_ball x₀ hr.ne']) hMAB hfr (mem_ball_self hr)
-  have hψx₀ : φ x₀ + t / 2 * ‖x₀ - x₀‖ ^ 2 + c = u x₀ - t * r ^ 2 / 4 := by
-    simp only [sub_self, norm_zero, hc]
-    ring
-  linarith [mul_neg_of_neg_of_pos ht (pow_pos hr 2)]
+  · simp only [sub_self, norm_zero, hc]
+    nlinarith [mul_neg_of_neg_of_pos ht (pow_pos hr 2)]
 
 /-- **Aleksandrov solutions are viscosity solutions.** Let `u` be convex on an open set `Ω` of a
 real inner product space of finite dimension `n ≥ 1`, and let `f ≥ 0` be continuous on `Ω`. If
@@ -393,7 +437,8 @@ theorem isMongeAmpereViscositySolution_iff_forall_det_eq [Nontrivial E] (hΩ : I
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
   have hd : ∀ x ∈ Ω, DifferentiableAt ℝ u x ∧ DifferentiableAt ℝ (∇ u) x := fun x hx =>
-    (continuousAt_fderiv_gradient_and_eventually_differentiableAt (hreg x hx)).2.self_of_nhds
+    ⟨(hreg x hx).differentiableAt two_ne_zero,
+      ((hreg x hx).eventually_differentiableAt_gradient le_rfl).self_of_nhds⟩
   have hMA := mongeAmpereMeasure_ite_eq_withDensity_det addHaar hΩ hu
     (fun x hx => (hd x hx).1.differentiableWithinAt)
     (fun x hx => (hd x hx).2.differentiableWithinAt)
@@ -402,8 +447,7 @@ theorem isMongeAmpereViscositySolution_iff_forall_det_eq [Nontrivial E] (hΩ : I
       fun x hx => by simp only [hdet x hx])))
   · refine ContinuousOn.congr (fun x hx => ?_) fun x hx => (hdet x hx).symm
     exact (ContinuousLinearMap.continuous_det.continuousAt.comp
-      (continuousAt_fderiv_gradient_and_eventually_differentiableAt
-        (hreg x hx)).1).continuousWithinAt
+      ((hreg x hx).continuousAt_fderiv_gradient le_rfl)).continuousWithinAt
   · intro x hx
     rw [← hdet x hx]
     exact (hu.isPositive_of_hasFDerivAt_gradient (hΩ.mem_nhds hx)

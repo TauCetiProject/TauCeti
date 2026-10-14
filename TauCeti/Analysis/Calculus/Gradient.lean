@@ -38,7 +38,9 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
-  function is `Cᵐ`.
+  function is `Cᵐ`; `ContDiffAt.continuousAt_fderiv_gradient` and
+  `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
+  continuous at `x`, and its gradient is differentiable near `x`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -105,6 +107,19 @@ theorem _root_.ContDiffAt.gradient_right {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} {x : E}
     (hf : ContDiffAt ℝ n f x) (hmn : m + 1 ≤ n) : ContDiffAt ℝ m (∇ f) x :=
   (toDual ℝ E).symm.contDiff.contDiffAt.comp x (hf.fderiv_right hmn)
+
+/-- Over `ℝ`, a function that is `C²` at `x` has a Hessian `fderiv ℝ (∇ f)` continuous at `x`. -/
+theorem _root_.ContDiffAt.continuousAt_fderiv_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hn : 2 ≤ n) : ContinuousAt (fderiv ℝ (∇ f)) x :=
+  (hf.gradient_right (m := 1) hn).continuousAt_fderiv one_ne_zero
+
+/-- Over `ℝ`, the gradient of a function that is `C²` at `x` is differentiable near `x`. -/
+theorem _root_.ContDiffAt.eventually_differentiableAt_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hn : 2 ≤ n) : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (∇ f) y :=
+  ((hf.gradient_right (m := 1) hn).eventually (by simp)).mono fun _ hy =>
+    hy.differentiableAt one_ne_zero
 
 /-- **The Hessian is symmetric.** If a real function `f` is differentiable near `x` and its
 gradient has derivative `H` at `x`, then `H` is a symmetric operator:

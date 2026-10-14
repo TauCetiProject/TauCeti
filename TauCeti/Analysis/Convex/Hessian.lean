@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Convex.Deriv
 
 /-!
-# Second derivatives of extended-real convex functions
+# Hessians and convexity
 
 Let `f : E → EReal` be convex (convex real epigraph, never `⊥`) on a real inner product space,
 with real representative `F x = (f x).toReal` and `D` the interior of the effective domain
