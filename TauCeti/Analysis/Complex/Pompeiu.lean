@@ -13,7 +13,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Complex.SmulI
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.Analysis.Complex.CauchyKernel
 
 /-!
 # The Cauchy–Pompeiu formula

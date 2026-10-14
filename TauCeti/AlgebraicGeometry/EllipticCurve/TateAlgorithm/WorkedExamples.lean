@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.LocalIndex
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
+public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
 -- Proof-only: `v (Δ) < 12` implies minimal.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 -- Proof-only: divisibility of integers by powers of `p` is read in `ℤ`.
@@ -158,9 +159,6 @@ theorem isMinimal_and_exists_isTateTerminal_curve11a1_2 (h : Irreducible (2 : R)
       ∃ C : VariableChange R, (C • curve11a1.map (Int.castRingHom R)).IsTateTerminal 2 (.I 0) :=
   isMinimal_and_exists_isTateTerminal K (p := 2) (by norm_num) (by norm_num) h curve11a1
     (by simp [Δ, b₂, b₄, b₆, b₈]) 1 (by simp [Δ, b₂, b₄, b₆, b₈])
-
-/-- The curve 11.a2, `y² + y = x³ - x² - 10 x - 20`, of discriminant `-11⁵`. -/
-abbrev curve11a2 : WeierstrassCurve ℤ := ⟨0, -1, 1, -10, -20⟩
 
 /-- **Tate's algorithm stops at `I₅` on 11.a2 at `11`**, and the equation is
 minimal there. -/

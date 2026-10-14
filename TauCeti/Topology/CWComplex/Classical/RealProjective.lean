@@ -40,7 +40,8 @@ homeomorphism `ContinuousLinearEquiv.unitBallHomeomorph`.
 * `TauCeti.RealProjectiveSpace.cwComplex`: the CW structure on `RPⁿ`, with characteristic maps
   `cellMap` (`TauCeti.RealProjectiveSpace.map_cwComplex`); it is finite
   (`TauCeti.RealProjectiveSpace.finite_cwComplex`) with one cell in each dimension `m ≤ n`
-  (`TauCeti.RealProjectiveSpace.nat_card_cell_cwComplex`).
+  (`TauCeti.RealProjectiveSpace.nat_card_cell_cwComplex`) and none above
+  (`TauCeti.RealProjectiveSpace.le_of_cell_cwComplex`).
 * `TauCeti.RealProjectiveSpace.finiteCWType`: `RPⁿ` has finite CW type.
 
 ## References
@@ -106,6 +107,48 @@ theorem norm_hemispherePoint {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hk : k 
     simp only [hc, ← EuclideanSpace.real_norm_sq_eq v]
     ring
   nlinarith [norm_nonneg (hemispherePoint n v)]
+
+/-- On unit vectors `hemispherePoint n` is odd: since `√(1 - ‖v‖²) = 0` there, every coordinate of
+`hemispherePoint n v` is either a coordinate of `v` or zero. -/
+@[simp]
+theorem hemispherePoint_neg {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hv : ‖v‖ = 1) :
+    hemispherePoint n (-v) = -hemispherePoint n v := by
+  ext j
+  rcases lt_trichotomy (j : ℕ) k with h | h | h
+  · simp [hemispherePoint_apply_of_lt _ h]
+  · simp [hemispherePoint_apply_of_eq _ h, hv]
+  · simp [hemispherePoint_apply_of_gt _ h]
+
+/-- For `k ≤ n + 1`, `hemispherePoint n` is injective on `ℝᵏ`, since the first `k` coordinates of
+`hemispherePoint n v` are those of `v`. -/
+theorem hemispherePoint_injective {k : ℕ} (hk : k ≤ n + 1) :
+    Function.Injective (hemispherePoint n : EuclideanSpace ℝ (Fin k) → _) := by
+  intro v w h
+  ext j
+  have hj := congrArg (fun y : EuclideanSpace ℝ (Fin (n + 1)) ↦ y ⟨j, by omega⟩) h
+  rwa [hemispherePoint_apply_of_lt v (j := ⟨j, by omega⟩) j.is_lt,
+    hemispherePoint_apply_of_lt w (j := ⟨j, by omega⟩) j.is_lt] at hj
+
+/-- For `‖v‖ ≤ 1`, embedding `v ∈ ℝᵏ` via `hemispherePoint k` into `ℝᵏ⁺¹` and then via
+`hemispherePoint n` into `ℝⁿ⁺¹` agrees with embedding it directly via `hemispherePoint n`. For
+`k + 1 ≤ n` this says the point of the upper hemisphere of `Sᵏ⁺¹ ⊆ Sⁿ` over the point
+`hemispherePoint k v` of `Sᵏ` is the point of the upper hemisphere of `Sᵏ ⊆ Sⁿ` over `v`. -/
+@[simp]
+theorem hemispherePoint_hemispherePoint {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hv : ‖v‖ ≤ 1) :
+    hemispherePoint n (hemispherePoint k v) = hemispherePoint n v := by
+  ext j
+  rcases lt_trichotomy (j : ℕ) k with h | h | h
+  · rw [hemispherePoint_apply_of_lt _ (by omega : (j : ℕ) < k + 1),
+      hemispherePoint_apply_of_lt _ h]
+    exact hemispherePoint_apply_of_lt v (j := ⟨j, by omega⟩) h
+  · rw [hemispherePoint_apply_of_lt _ (by omega : (j : ℕ) < k + 1),
+      hemispherePoint_apply_of_eq _ h]
+    exact hemispherePoint_apply_of_eq v (j := ⟨j, by omega⟩) h
+  · rw [hemispherePoint_apply_of_gt _ h]
+    rcases (Nat.succ_le_of_lt h).lt_or_eq with h' | h'
+    · rw [hemispherePoint_apply_of_gt _ h']
+    · rw [hemispherePoint_apply_of_eq _ h'.symm, norm_hemispherePoint le_rfl hv]
+      simp
 
 /-- The first `i` coordinates of a vector of `ℝⁿ⁺¹`. -/
 private def truncate (i : Fin (n + 1)) (y : EuclideanSpace ℝ (Fin (n + 1))) :
@@ -413,6 +456,13 @@ theorem nat_card_cell_cwComplex (m : ℕ) :
     exact Nat.card_unique
   · have : IsEmpty (Cell n m) := ⟨fun c => h (by have := c.down; omega)⟩
     exact Nat.card_of_isEmpty
+
+/-- A cell of dimension `m` of the CW structure on `RPⁿ` exists only for `m ≤ n`. -/
+theorem le_of_cell_cwComplex {m : ℕ}
+    (c : letI := cwComplex n; cell (univ : Set (RealProjectiveSpace n)) m) : m ≤ n :=
+  -- Unfolding the definition of `CWComplex.mkFinite`, the cells of `cwComplex n` in dimension `m`
+  -- are `Cell n m`, which stores the bound.
+  Nat.le_of_lt_succ (c : Cell n m).down
 
 /-- Real projective space has finite CW type. -/
 instance finiteCWType : FiniteCWType (RealProjectiveSpace n) :=

@@ -16,13 +16,12 @@ coordinate Hopf algebra the group algebra `R[G]`. By `TauCeti.not_isReduced_mono
 `R[G]` fails to be reduced whenever `R` has prime characteristic `p` and `G` has a nontrivial
 element killed by `p`.
 
-The headline application is the **non-smooth example `μ_p` in characteristic `p`** from the
-reductive-groups roadmap: `μ_p = D(ℤ/p)` has coordinate Hopf algebra
-`R[Multiplicative (ZMod p)]`, whose `A`-points are the `p`-th roots of unity in `A`
-(`TauCeti.RootsOfUnityGroup.pointsMulEquiv`), yet which is non-reduced over a base of
-characteristic `p`. Geometric reducedness of the coordinate ring is exactly smoothness for a
-group scheme of finite type over a field, so this exhibits `μ_p` as a non-smooth (non-reduced)
-affine group scheme, the canonical example the roadmap flags for admitting non-smooth groups.
+The headline application is the **non-smooth example `μ_p` in characteristic `p`**: `μ_p = D(ℤ/p)`
+has coordinate Hopf algebra `R[Multiplicative (ZMod p)]`, whose `A`-points are the `p`-th roots of
+unity in `A` (`TauCeti.RootsOfUnityGroup.pointsMulEquiv`), yet which is non-reduced over a base of
+characteristic `p`. Geometric reducedness of the coordinate ring is exactly smoothness for a group
+scheme of finite type over a field, so this exhibits `μ_p` as a non-smooth (non-reduced) affine
+group scheme.
 
 ## Main declarations
 
@@ -30,12 +29,6 @@ affine group scheme, the canonical example the roadmap flags for admitting non-s
   `μ_p = D(ℤ/p)` is not reduced over a nontrivial base of characteristic `p`.
 * `TauCeti.RootsOfUnityGroup.isNilpotent_single_generator_sub_one`: the explicit nonzero
   nilpotent `single (ofAdd 1) 1 - 1`.
-
-This is a worked-example check for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap): the standing hypotheses note that an affine
-group scheme of finite type "admits `μ_p`, `αₚ`, and other non-smooth / non-reduced groups", and
-Layer 4 names "the non-smooth example `μ_p` in characteristic `p`" in the diagonalizable-groups
-lane.
 
 ## References
 
