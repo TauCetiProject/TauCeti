@@ -12,7 +12,6 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Wedge
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.GroupTheory.Perm.Inversion
 
 /-!
 # Norm estimates and interior products of paired wedges

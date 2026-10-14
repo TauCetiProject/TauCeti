@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.LinearAlgebra.Alternating.DomCoprod
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Topology.UniformSpace.Real
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Bilinear
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 public import TauCeti.Data.Fin.Basic
 import Mathlib.Tactic.Module
 import TauCeti.GroupTheory.Perm.Basic
@@ -369,14 +369,14 @@ theorem pairedWedge_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
     pairedWedge mu hmu phi psi v =
-      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.flipOfContinuous hmu)
-        (mu.continuous_uncurry_flipOfContinuous hmu) psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
+      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.pairingFlip hmu)
+        (mu.pairingFlip_continuous hmu) psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
   -- Reindex the permutation sum on the right by composing with the block swap `B`, which
   -- exchanges the first `k` and the last `l` indices and has sign `(-1) ^ (k * l)`.
   set c : Fin (l + k) ≃ Fin (k + l) := finCongr (Nat.add_comm l k)
   set B : Equiv.Perm (Fin (k + l)) := finAddFlip.trans c
   have hsum : ∑ tau : Equiv.Perm (Fin (l + k)), Equiv.Perm.sign tau •
-        mu.flipOfContinuous hmu
+        mu.pairingFlip hmu
           (psi (fun i => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.castAdd k i))))
           (phi (fun j => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.natAdd l j)))) =
       Equiv.Perm.sign B • ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
@@ -398,7 +398,7 @@ theorem pairedWedge_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
             fun i => v (Fin.cast (Nat.add_comm l k) (tau (Fin.castAdd k i))) := by
           funext j
           simp [B, c, finAddFlip_apply_natAdd]
-        simp only [f, Function.comp_apply, ContinuousLinearMap.flipOfContinuous_apply]
+        simp only [f, Function.comp_apply, ContinuousLinearMap.pairingFlip_apply]
         rw [← hright, ← hleft]
       _ = _ := sum_sign_smul_permCongr_mul c B f
   rw [pairedWedge_apply, pairedWedge_apply, hsum, sign_finAddFlip_trans_finCongr]
@@ -417,9 +417,9 @@ theorem pairedWedge_anticomm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F�
     pairedWedge mu hmu phi psi v =
       -((-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l
     k))) := by
-  have hflip : (mu.flipOfContinuous hmu) = -mu := by
+  have hflip : (mu.pairingFlip hmu) = -mu := by
     ext a b
-    simpa only [ContinuousLinearMap.flipOfContinuous_apply, _root_.neg_apply] using hskew b a
+    simpa only [ContinuousLinearMap.pairingFlip_apply, _root_.neg_apply] using hskew b a
   rw [pairedWedge_flip]
   simp only [hflip, pairedWedge_neg_pairing mu hmu, ContinuousAlternatingMap.neg_apply,
     smul_neg]
@@ -432,9 +432,9 @@ theorem pairedWedge_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     pairedWedge mu hmu phi psi v =
       (-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k))
     := by
-  have hflip : (mu.flipOfContinuous hmu) = mu := by
+  have hflip : (mu.pairingFlip hmu) = mu := by
     ext a b
-    simpa only [ContinuousLinearMap.flipOfContinuous_apply] using hsymm b a
+    simpa only [ContinuousLinearMap.pairingFlip_apply] using hsymm b a
   rw [pairedWedge_flip]
   simp only [hflip]
 
