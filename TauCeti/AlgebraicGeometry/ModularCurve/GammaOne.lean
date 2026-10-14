@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Locus
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
 
 /-!
@@ -24,12 +24,26 @@ of exact order `N` pull back to points of exact order `N`
 the only point of exact order one is the zero section, so `[Γ₁(1)]` is the trivial moduli problem
 `[Γ(1)]` (`ModuliProblem.gammaOneOneIso`).
 
+The moduli problem `[Γ₁(N)]` is relatively representable by the exact-order locus
+(`ModuliProblem.gammaOneRelRepData`; Katz–Mazur 3.6.0 for `[Γ₁(N)]`). For an object `X = (E/S)`, the
+`[Γ₁(N)]`-structures on the base change `E_T` of `E` along a scheme `T` over `S` are the morphisms
+from `T` to the exact-order locus of `E`, a closed subscheme of `E`
+(`ModuliProblem.gammaOneBaseChangeEquiv`, from `EllipticCurveGeom.exactOrderLocusHomEquiv`). The
+exact-order locus lies in `E[N]`, so for `N ≠ 0` the problem `[Γ₁(N)]` is finite over `Ell/B`
+(`ModuliProblem.hasProperty_isFinite_gammaOneRelRepData`). As for every relatively representable
+problem, the representing schemes commute with base change along arrows of `Ell/B`
+(`ModuliProblem.RelRepData.isPullback`).
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOne B N`: the moduli problem `[Γ₁(N)]` over
   `Ell/B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneEquiv`: the `[Γ₁(N)]`-structures on an object
   `(E/S)` of `Ell/B` are the `S`-points of `E` of exact order `N`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneBaseChangeEquiv`: the `[Γ₁(N)]`-structures on
+  the base change `E_T` are the morphisms from `T` to the exact-order locus of `E`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneRelRepData`: `[Γ₁(N)]` is relatively
+  representable, by the exact-order locus.
 
 ## Main results
 
@@ -37,11 +51,16 @@ the only point of exact order one is the zero section, so `[Γ₁(1)]` is the tr
   `[Γ₁(N)]`-structure along an arrow of `Ell/B` is the base change of its point.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneOneIso`: `[Γ₁(1)]` is the trivial moduli
   problem.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneBaseChangeEquiv_map`: the correspondence with
+  morphisms to the exact-order locus is natural in `T`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaOneRelRepData`: for `N ≠ 0`,
+  `[Γ₁(N)]` is finite over `Ell/B`.
 
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, §1.4 (points of exact order
-  `N`), §3.2 (the moduli problem `[Γ₁(N)]`) and Chapter 4.
+  `N`), §3.2 (the moduli problem `[Γ₁(N)]`), 3.6.0 (its relative representability) and
+  Chapter 4.
 -/
 
 public section
@@ -107,6 +126,101 @@ variable (B) in
 elliptic curve is its zero section. -/
 noncomputable def gammaOneOneIso : gammaOne B 1 ≅ 𝟙_ (ModuliProblem B) :=
   isoTensorUnitOfUnique _
+
+/-! ### Relative representability of `[Γ₁(N)]` -/
+
+section RelRep
+
+/-- **`[Γ₁(N)]`-structures on base changes are points of the exact-order locus.** For an object
+`X = (E/S)` of `Ell/B` and a scheme `T` over `S`, the `[Γ₁(N)]`-structures on the base change `E_T`
+of `E` correspond to the morphisms from `T` to the exact-order locus of `E` over `S`: a structure
+`α` corresponds to the morphism whose composite with the inclusion of the exact-order locus into
+`E` is the point of `α` followed by the projection `E_T ⟶ E`
+(`gammaOneBaseChangeEquiv_apply_left_comp`). -/
+noncomputable def gammaOneBaseChangeEquiv (X : EllObj B) (T : Over X.base) :
+    (gammaOne B N).obj (op (X.baseChangeFunctor.obj T)) ≃
+      (T ⟶ Over.mk ((X.curve.exactOrderLocus N).subschemeι ≫ X.curve.structureMap)) :=
+  (gammaOneEquiv _).trans
+    (EllipticCurveGeom.exactOrderLocusHomEquiv N (X.curve.isPullback_baseChange T.hom)
+      (by simp)).symm
+
+/-- The morphism to the exact-order locus of a `[Γ₁(N)]`-structure `α` on `E_T`, followed by the
+inclusion of the exact-order locus into `E`, is the point of `α` followed by the projection
+`E_T ⟶ E`. -/
+theorem gammaOneBaseChangeEquiv_apply_left_comp (X : EllObj B) (T : Over X.base)
+    (α : (gammaOne B N).obj (op (X.baseChangeFunctor.obj T))) :
+    (gammaOneBaseChangeEquiv X T α).left ≫ (X.curve.exactOrderLocus N).subschemeι =
+      (gammaOneEquiv _ α).1.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
+  EllipticCurveGeom.exactOrderLocusHomEquiv_symm_apply_left_comp N
+    (X.curve.isPullback_baseChange T.hom) (by simp) _
+
+/-- **Naturality of `gammaOneBaseChangeEquiv`.** Along a morphism `k : T' ⟶ T` of schemes over the
+base of `X`, the morphism to the exact-order locus of the pull-back to `E_{T'}` of a
+`[Γ₁(N)]`-structure on `E_T` is the composite of `k` with the morphism of the structure. -/
+theorem gammaOneBaseChangeEquiv_map (X : EllObj B) {T' T : Over X.base} (k : T' ⟶ T)
+    (α : (gammaOne B N).obj (op (X.baseChangeFunctor.obj T))) :
+    gammaOneBaseChangeEquiv X T' ((gammaOne B N).map (X.baseChangeFunctor.map k).op α) =
+      k ≫ gammaOneBaseChangeEquiv X T α := by
+  -- both sides are compared after composing with the inclusion of the exact-order locus into `E`
+  refine Over.OverMorphism.ext ((cancel_mono (X.curve.exactOrderLocus N).subschemeι).mp ?_)
+  rw [Over.comp_left, Category.assoc, gammaOneBaseChangeEquiv_apply_left_comp,
+    gammaOneBaseChangeEquiv_apply_left_comp, gammaOneEquiv_map]
+  -- the morphism `E_{T'} ⟶ E_T` lies over `k` and composes with `E_T ⟶ E` to `E_{T'} ⟶ E`
+  have hk := congrArg EllObj.Hom.total (X.baseChangeFunctor_map_baseChangeFunctorHom k)
+  simp only [EllObj.comp_total, EllObj.baseChangeFunctorHom_total] at hk
+  -- the composites are formed by terms, since the base change `E_{T'}` appears both as
+  -- `(X.baseChangeFunctor.obj T').curve` and as `X.curve.baseChange T'.hom`
+  exact (congrArg (fun m ↦ (EllipticCurveGeom.pointsPullback (X.baseChangeFunctor.map k).isPullback
+    (X.baseChangeFunctor.map k).zero_total (gammaOneEquiv _ α).1).left ≫ m)
+      hk.symm).trans (EllipticCurveGeom.pointsPullback_left_comp_assoc _ _ _ _)
+
+/-- Naturality of `gammaOneBaseChangeEquiv`, read backwards: the `[Γ₁(N)]`-structure on `E_{T'}` of
+the composite of `k : T' ⟶ T` with a morphism from `T` to the exact-order locus is the pull-back of
+the structure on `E_T` of that morphism. -/
+theorem gammaOneBaseChangeEquiv_symm_comp (X : EllObj B) {T' T : Over X.base} (k : T' ⟶ T)
+    (a : T ⟶ Over.mk ((X.curve.exactOrderLocus N).subschemeι ≫ X.curve.structureMap)) :
+    (gammaOneBaseChangeEquiv X T').symm (k ≫ a) =
+      (gammaOne B N).map (X.baseChangeFunctor.map k).op ((gammaOneBaseChangeEquiv X T).symm a) := by
+  rw [Equiv.symm_apply_eq, gammaOneBaseChangeEquiv_map, Equiv.apply_symm_apply]
+
+variable (B N) in
+/-- **The moduli problem `[Γ₁(N)]` is relatively representable** (Katz–Mazur 3.6.0). For an object
+`X = (E/S)` of `Ell/B`, the functor `T ↦ [Γ₁(N)](E_T/T)` on schemes over `S` is represented by the
+exact-order locus of `E`, a closed subscheme of `E`, through `gammaOneBaseChangeEquiv`
+(`gammaOneRelRepData_rep`, `gammaOneRelRepData_homEquiv`). -/
+noncomputable def gammaOneRelRepData : (gammaOne B N).RelRepData where
+  rep X := Over.mk ((X.curve.exactOrderLocus N).subschemeι ≫ X.curve.structureMap)
+  representableBy X :=
+    { homEquiv := (gammaOneBaseChangeEquiv X _).symm
+      homEquiv_comp k a := gammaOneBaseChangeEquiv_symm_comp X k a }
+
+/-- The scheme representing `[Γ₁(N)]`-structures on base changes of `X = (E/S)` is the exact-order
+locus of `E`. -/
+@[simp]
+theorem gammaOneRelRepData_rep (X : EllObj B) :
+    (gammaOneRelRepData B N).rep X =
+      Over.mk ((X.curve.exactOrderLocus N).subschemeι ≫ X.curve.structureMap) :=
+  (rfl)
+
+/-- The `[Γ₁(N)]`-structure on `E_T` of a morphism from `T` to the representing scheme is the one
+given by `gammaOneBaseChangeEquiv`, after identifying the representing scheme with the exact-order
+locus through `gammaOneRelRepData_rep`. -/
+@[simp]
+theorem gammaOneRelRepData_homEquiv (X : EllObj B) {T : Over X.base}
+    (a : T ⟶ (gammaOneRelRepData B N).rep X) :
+    ((gammaOneRelRepData B N).representableBy X).homEquiv a =
+      (gammaOneBaseChangeEquiv X T).symm (a ≫ eqToHom (gammaOneRelRepData_rep X)) :=
+  congrArg (gammaOneBaseChangeEquiv X T).symm (Category.comp_id a).symm
+
+/-- **The moduli problem `[Γ₁(N)]` is finite over `Ell/B`** for `N ≠ 0`: every representing scheme,
+the exact-order locus, is finite over its base. -/
+theorem hasProperty_isFinite_gammaOneRelRepData [NeZero N] :
+    (gammaOneRelRepData B N).HasProperty @IsFinite :=
+  (RelRepData.hasProperty_iff _).mpr fun X ↦ by
+    rw [gammaOneRelRepData_rep]
+    exact X.curve.isFinite_exactOrderLocus N
+
+end RelRep
 
 end ModuliProblem
 

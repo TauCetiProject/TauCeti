@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Bas
 public import TauCeti.AlgebraicGeometry.IdealSheaf.WeilRestriction
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 
@@ -40,6 +41,15 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 (`EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`). No hypothesis is placed on
 `S`, which may be nonreduced, and `N` need not be invertible on it.
 
+Equivalently, the points of exact order `N` of base changes of `E` are the points of the
+exact-order locus: for a base change `E'` of `E` along a scheme `T` over `S`, the `T`-points of `E'`
+of exact order `N` are the morphisms from `T` to the exact-order locus over `S`
+(`EllipticCurveGeom.exactOrderLocusHomEquiv`). Since a point of exact order `N` is killed by `N`,
+the exact-order locus lies in the `N`-torsion `E[N]`
+(`EllipticCurveGeom.ker_torsionι_le_exactOrderLocus`), and so it is finite over `S` when `N` is
+nonzero (`EllipticCurveGeom.isFinite_exactOrderLocus`). This is the relative representability of
+`[Γ₁(N)]`-structures by a finite scheme.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.subgroupLocus E D`: the ideal sheaf on `S` of the
@@ -56,6 +66,12 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`:
   the universal property of the exact-order locus; `isOfExactOrder_iff_exactOrderLocus_le_ker` is
   its special case for `S`-points of `E`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exactOrderLocusHomEquiv`: the points of exact order
+  `N` of a base change of `E` along `T ⟶ S` are the morphisms from `T` to the exact-order locus.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_torsionι_le_exactOrderLocus`: the exact-order
+  locus is a closed subscheme of `E[N]`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_exactOrderLocus`: for `N ≠ 0`, the
+  exact-order locus is finite over `S`.
 
 ## References
 
@@ -204,5 +220,104 @@ theorem isOfExactOrder_iff_exactOrderLocus_le_ker (P : 𝟙_ (Over S) ⟶ Over.m
     (N : ℕ) : E.IsOfExactOrder P N ↔ E.exactOrderLocus N ≤ P.left.ker := by
   simpa using
     isOfExactOrder_iff_exactOrderLocus_le_ker_comp (.id_horiz E.structureMap) (by simp) P N
+
+/-! ### The exact-order locus lies in `E[N]` -/
+
+variable (E)
+
+/-- **The exact-order locus is killed by `N`**: on the exact-order locus, multiplication by `N`
+agrees with the zero section, since the universal point there has exact order `N`. -/
+theorem subschemeι_exactOrderLocus_comp_mulBy (N : ℕ) :
+    (E.exactOrderLocus N).subschemeι ≫ (E.mulBy N).left =
+      ((E.exactOrderLocus N).subschemeι ≫ E.structureMap) ≫ E.zero := by
+  set i := (E.exactOrderLocus N).subschemeι
+  have hg := E.isPullback_baseChange (i ≫ E.structureMap)
+  have h0 := (E.zero_baseChangeIso_hom_assoc (i ≫ E.structureMap) _).trans
+    (pullbackSection_fst _ _ _ _)
+  -- the tautological point of the base change of `E` to the exact-order locus
+  let P : 𝟙_ (Over (E.exactOrderLocus N).subscheme) ⟶
+      Over.mk (E.baseChange (i ≫ E.structureMap)).structureMap :=
+    Over.homMk (hg.lift i (𝟙 _) (by simp)) (by simp)
+  have hP : P.left ≫ (E.baseChangeIso (i ≫ E.structureMap)).hom ≫ pullback.fst _ _ = i :=
+    hg.lift_fst _ _ _
+  have hord : (E.baseChange (i ≫ E.structureMap)).IsOfExactOrder P N :=
+    (isOfExactOrder_iff_exactOrderLocus_le_ker_comp hg h0 P N).mpr <| by
+      rw [hP, ker_subschemeι]
+  have h := congrArg Over.Hom.left hord.comp_mulBy_eq_one
+  rw [← hP, Category.assoc, ← mulBy_left_comp_of_isPullback hg h0, ← Category.assoc,
+    ← Over.comp_left, h]
+  simp only [hom_one_left, Category.assoc, h0, reassoc_of% hP]
+  simp
+
+/-- **The exact-order locus lies in `E[N]`**: the ideal sheaf of `E[N]` is contained in that of the
+exact-order locus. The order on ideal sheaves reverses containment of their closed subschemes. -/
+theorem ker_torsionι_le_exactOrderLocus (N : ℕ) :
+    (E.torsionι N).left.ker ≤ E.exactOrderLocus N := by
+  have h := ((E.isPullback_torsion N).lift _ _
+    (E.subschemeι_exactOrderLocus_comp_mulBy N)).le_ker_comp (E.torsionι N).left
+  rwa [IsPullback.lift_fst, ker_subschemeι] at h
+
+/-- For `N ≠ 0`, the exact-order locus is **finite over `S`**: it is a closed subscheme of `E[N]`,
+which is finite over `S`. -/
+instance isFinite_exactOrderLocus (N : ℕ) [NeZero N] :
+    IsFinite ((E.exactOrderLocus N).subschemeι ≫ E.structureMap) := by
+  let j := (E.isPullback_torsion N).lift _ _ (E.subschemeι_exactOrderLocus_comp_mulBy N)
+  have : IsClosedImmersion j := by
+    have : IsClosedImmersion (j ≫ (E.torsionι N).left) := by
+      rw [IsPullback.lift_fst]
+      infer_instance
+    exact .of_comp_isClosedImmersion j (E.torsionι N).left
+  have := E.isFinite_torsion_hom (n := N) (by exact_mod_cast NeZero.ne N)
+  rw [← (E.isPullback_torsion N).lift_snd _ _ (E.subschemeι_exactOrderLocus_comp_mulBy N)]
+  infer_instance
+
+/-! ### Points of the exact-order locus -/
+
+section Points
+
+variable {E} (N : ℕ) {T : Over S} {E' : EllipticCurveGeom T.left} {g : E'.carrier ⟶ E.carrier}
+  (hg : IsPullback g E'.structureMap E.structureMap T.hom) (h0 : E'.zero ≫ g = T.hom ≫ E.zero)
+
+/-- **Points of exact order `N` are points of the exact-order locus.** Let `g : E' ⟶ E` exhibit `E'`
+as the base change of `E` along a scheme `T` over `S`, carrying the zero section of `E'` to that of
+`E`. Then the `T`-points of `E'` of exact order `N` correspond to the morphisms from `T` to the
+exact-order locus over `S`: a morphism `x` corresponds to the point of `E'` lying over `x`
+(`exactOrderLocusHomEquiv_apply_left_comp`). -/
+noncomputable def exactOrderLocusHomEquiv :
+    (T ⟶ Over.mk ((E.exactOrderLocus N).subschemeι ≫ E.structureMap)) ≃
+      {P' : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap // E'.IsOfExactOrder P' N} where
+  toFun x := ⟨Over.homMk (hg.lift (x.left ≫ (E.exactOrderLocus N).subschemeι) (𝟙 _)
+      (by simpa using Over.w x)) (by simp),
+    (isOfExactOrder_iff_exactOrderLocus_le_ker_comp hg h0 _ N).mpr <| by
+      simp only [Over.homMk_left, hg.lift_fst]
+      exact (ker_subschemeι _).symm.le.trans (Scheme.Hom.le_ker_comp _ _)⟩
+  invFun P' := Over.homMk ((P'.1.left ≫ g).toImage ≫
+      inclusion ((isOfExactOrder_iff_exactOrderLocus_le_ker_comp hg h0 _ N).mp P'.2))
+    (by simp [hg.w])
+  left_inv x := by
+    ext1
+    rw [← cancel_mono (E.exactOrderLocus N).subschemeι]
+    simp
+  right_inv P' := Subtype.ext <| Over.OverMorphism.ext <| hg.hom_ext (by simp) (by simp)
+
+/-- The point of `E'` of exact order `N` corresponding to a morphism `x` from `T` to the
+exact-order locus lies over `x`. -/
+@[reassoc (attr := simp)]
+theorem exactOrderLocusHomEquiv_apply_left_comp
+    (x : T ⟶ Over.mk ((E.exactOrderLocus N).subschemeι ≫ E.structureMap)) :
+    (exactOrderLocusHomEquiv N hg h0 x : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap).left ≫ g =
+      x.left ≫ (E.exactOrderLocus N).subschemeι :=
+  hg.lift_fst _ _ _
+
+/-- The morphism to the exact-order locus corresponding to a point `P'` of `E'` of exact order `N`
+is the image of `P'` in `E`. -/
+@[reassoc (attr := simp)]
+theorem exactOrderLocusHomEquiv_symm_apply_left_comp
+    (P' : {P' : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap // E'.IsOfExactOrder P' N}) :
+    ((exactOrderLocusHomEquiv N hg h0).symm P').left ≫ (E.exactOrderLocus N).subschemeι =
+      P'.1.left ≫ g := by
+  simp [exactOrderLocusHomEquiv]
+
+end Points
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom
