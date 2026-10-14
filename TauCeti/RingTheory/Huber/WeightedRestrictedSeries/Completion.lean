@@ -401,7 +401,7 @@ theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
         have hp' := congrArg
           (fun z : weightedPolynomials T hT ↦ (z : weightedRestrictedSubring T hT)) hp
         rw [coe_weightedPolynomialsEquiv] at hp'
-        simpa only [hp'] using hpoly p)
+        simpa only [hp', SetLike.mem_coe] using hpoly p)
   exact closure_minimal (fun _ hx ↦ hx)
     (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR)) (hdense y)
 

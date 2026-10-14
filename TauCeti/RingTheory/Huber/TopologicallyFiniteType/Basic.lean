@@ -718,13 +718,15 @@ private theorem appendIncl_algebraMap (a : A) :
     weightedEvalHomCompletion_coe, weightedEvalHom_weightedC]
 
 private theorem appendIncl_weightedX (j : Fin m) :
-    appendIncl hV (weightedX _ isWeightFamily_one_weight j : weightedRestrictedSubring _ _) =
-      ((weightedX _ (hV.append isWeightFamily_one_weight) (Fin.natAdd k j) :
-        weightedRestrictedSubring _ _) : Completion (weightedRestrictedSubring _ _)) := by
+    appendIncl hV (weightedX _ (isWeightFamily_one_weight (A := A)) j :
+        weightedRestrictedSubring _ _) =
+      Completion.coe' (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.natAdd k j) :
+        weightedRestrictedSubring _ _) := by
   rw [appendIncl, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
 
 private theorem weightSubst_weightedX (j : Fin m) :
-    weightSubst hT htT (weightedX _ isWeightFamily_one_weight j : weightedRestrictedSubring _ _) =
+    weightSubst hT htT (weightedX _ (isWeightFamily_one_weight (A := A)) j :
+        weightedRestrictedSubring _ _) =
       ((weightedC T hT (t j) * weightedX T hT (idx j) : weightedRestrictedSubring T hT) :
         Completion (weightedRestrictedSubring T hT)) := by
   rw [weightSubst, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
