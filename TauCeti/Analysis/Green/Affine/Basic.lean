@@ -174,7 +174,7 @@ theorem integral_curl_affinePullback (A : ℂ ≃ᴬ[ℝ] ℂ) {s : Set ℂ}
       field_simp [abs_ne_zero.mpr A.linear.isUnit_det'.ne_zero]
 
 /-- Coordinate interchange exchanges the two coefficients of a pulled-back 1-form. -/
-theorem oneForm_coordinateSwap (P Q : ℂ → ℝ) (z : ℂ) :
+theorem oneForm_comp_coordinateSwapCLE (P Q : ℂ → ℝ) (z : ℂ) :
     (oneForm P Q (Complex.coordinateSwapCLE z)).comp
       Complex.coordinateSwapCLE.toContinuousLinearMap =
       oneForm (Q ∘ Complex.coordinateSwapCLE) (P ∘ Complex.coordinateSwapCLE) z := by
@@ -184,7 +184,7 @@ theorem oneForm_coordinateSwap (P Q : ℂ → ℝ) (z : ℂ) :
   ring
 
 /-- Interchanging real and imaginary coordinates negates the curl. -/
-theorem curl_coordinateSwap {P Q : ℂ → ℝ} {z : ℂ}
+theorem curl_comp_coordinateSwapCLE {P Q : ℂ → ℝ} {z : ℂ}
     (hP : DifferentiableAt ℝ P (Complex.coordinateSwapCLE z))
     (hQ : DifferentiableAt ℝ Q (Complex.coordinateSwapCLE z)) :
     curl (Q ∘ Complex.coordinateSwapCLE) (P ∘ Complex.coordinateSwapCLE) z =
