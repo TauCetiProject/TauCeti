@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
+public import TauCeti.Topology.Homotopy.GenLoop.Homeomorph
 
 /-!
 # Currying a loop direction of generalized loops
