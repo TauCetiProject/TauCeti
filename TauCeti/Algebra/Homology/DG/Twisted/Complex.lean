@@ -360,6 +360,13 @@ noncomputable def twistedCochainComplexXEquiv (n : ℤ) :
     (twistedCochainComplex hm htw hM).X n ≃ₗ[R] twistedTotalGrading ℳ ind n :=
   gradedCochainComplexXEquiv (ℳ := twistedTotalGrading ℳ ind) (dM := twistedDifferential m ℳ dM) n
 
+/-- `twistedCochainComplexXEquiv` is `gradedCochainComplexXEquiv` after transport along
+`twistedCochainComplex_eq_gradedCochainComplex`. -/
+theorem twistedCochainComplexXEquiv_apply (n : ℤ) (f : (twistedCochainComplex hm htw hM).X n) :
+    twistedCochainComplexXEquiv hm htw hM n f = gradedCochainComplexXEquiv n
+      (((eqToHom (twistedCochainComplex_eq_gradedCochainComplex hm htw hM)).f n).hom f) :=
+  (rfl)
+
 /-- Under `twistedCochainComplexXEquiv`, the differential of the twisted complex is the twisted
 differential. -/
 theorem twistedCochainComplexXEquiv_d (n : ℤ) (f : (twistedCochainComplex hm htw hM).X n) :

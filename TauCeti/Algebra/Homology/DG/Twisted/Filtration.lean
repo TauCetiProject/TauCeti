@@ -47,6 +47,8 @@ of `TauCeti.Algebra.Homology.SpectralSequence.Filtered`.
   one-sided matrix preserves the index filtration.
 * `TauCeti.TwistingCocycle.monotone_indexFiltration`, `indexFiltration_eq_bot`,
   `indexFiltration_eq_top`: the index filtration is increasing and finite.
+* `TauCeti.TwistingCocycle.mem_range_indexFiltration_arrow_f_iff`: in each degree, the `p`-th
+  piece consists of the families vanishing on every generator of index greater than `p`.
 * `TauCeti.TwistingCocycle.indexSpectralSequencePageXIsoGraded`: strong convergence of the index
   spectral sequence to the cohomology of the twisted complex.
 
@@ -176,6 +178,28 @@ theorem indexFiltration_eq_top {p : ℤ} (hp : ∀ x, ind x ≤ p) : m.indexFilt
 theorem indexFiltration_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) : m.indexFiltration dM hM p = ⊥ := by
   rw [indexFiltration_eq,
     gradedCochainComplexSubobject_eq_bot _ (indexFiltrationSubmodule_eq_bot hp), OrderIso.map_bot]
+
+/-- Transporting a subcomplex along `eqToIso` does not change its degreewise range, up to the
+transport of elements. -/
+private theorem mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff.{v}
+    {C D : CochainComplex (ModuleCat.{v} R) ℤ} (e : C = D) (S : Subobject D) (n : ℤ)
+    (x : C.X n) :
+    x ∈ LinearMap.range ((Subobject.mapIsoToOrderIso (eqToIso e.symm) S).arrow.f n).hom ↔
+      ((eqToHom e).f n).hom x ∈ LinearMap.range (S.arrow.f n).hom := by
+  subst e
+  rw [eqToIso_refl, show Subobject.mapIsoToOrderIso (Iso.refl C) S = S from Subobject.map_id S,
+    eqToHom_refl, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
+
+/-- In degree `n`, the `p`-th piece of the index filtration consists of the families of total
+degree `n` vanishing on every generator of index greater than `p`. -/
+theorem mem_range_indexFiltration_arrow_f_iff (p n : ℤ)
+    (f : (m.twistedCochainComplex dM hM).X n) :
+    f ∈ LinearMap.range ((m.indexFiltration dM hM p).arrow.f n).hom ↔
+      ∀ x, p < ind x →
+        (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
+  rw [indexFiltration_eq, mem_range_mapIsoToOrderIso_eqToIso_arrow_f_iff,
+    mem_range_gradedCochainComplexSubobject_arrow_f_iff, twistedCochainComplexXEquiv_apply,
+    mem_indexFiltrationSubmodule_iff]
 
 /-- The **index spectral sequence** of the twisted complex of a twisting cocycle: the spectral
 sequence of its index filtration.  On its first page, numbered `2`, the object at `(p, q)` is the

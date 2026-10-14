@@ -385,6 +385,26 @@ theorem gradedCochainComplexSubobject_eq_mk (N : Submodule R M) (hN : ∀ x ∈ 
         (fun _ ↦ inf_le_left) (hdeg.inf hN)) :=
   (rfl)
 
+/-- In degree `p`, the subcomplex cut out by `N` consists of the elements of `ℳ p` lying in `N`:
+an element of the degree-`p` term is in the range of the subcomplex inclusion if and only if its
+image under `gradedCochainComplexXEquiv` lies in `N`. -/
+theorem mem_range_gradedCochainComplexSubobject_arrow_f_iff (N : Submodule R M)
+    (hN : ∀ x ∈ N, dM x ∈ N) (p : ℤ) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    x ∈ LinearMap.range ((gradedCochainComplexSubobject ℳ dM hdeg hsq N hN).arrow.f p).hom ↔
+      (gradedCochainComplexXEquiv p x : M) ∈ N := by
+  rw [gradedCochainComplexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
+    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
+  constructor
+  · rintro ⟨y, rfl⟩
+    rw [gradedCochainComplexXEquiv_inclusion_f]
+    exact (gradedCochainComplexXEquiv p y).2.2
+  · intro hx
+    refine
+      ⟨(gradedCochainComplexXEquiv p).symm ⟨_, (gradedCochainComplexXEquiv p x).2, hx⟩, ?_⟩
+    refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
+    rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
+
 /-- The subcomplex cut out by a submodule is monotone in the submodule. -/
 theorem gradedCochainComplexSubobject_mono {N N' : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
     (hN' : ∀ x ∈ N', dM x ∈ N') (h : N ≤ N') :
