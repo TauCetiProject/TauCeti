@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.HigherOrder
+public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
 /-!
@@ -18,9 +18,14 @@ problem
 `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` in `Ω`, `u = 0` on `∂Ω`, with `f ∈ L²(Ω)`.
 
 This file proves that `u ∈ H²(Ω)`: every second weak derivative of `u` exists and lies in
-`L²(Ω)`, globally on `Ω` and not only on compactly contained subsets. This is the flat model of
-global `H²` regularity: after the boundary of a `C²` domain is flattened, the equation in each
-chart is posed on a half-space.
+`L²(Ω)`, globally on `Ω` and not only on compactly contained subsets. The proof uses only that
+every translation parallel to the hyperplane `⟪x, ν⟫ = 0` maps `Ω` into itself, so it also covers
+slabs and the whole space.
+
+This is the constant-coefficient model of global `H²` regularity. Flattening the boundary of a
+`C²` domain turns the equation in each chart into one on a half-space, but with variable
+coefficients. The tangential step below allows variable Lipschitz coefficients; the
+normal-direction step for them is not proved here.
 
 ## The argument
 
@@ -41,10 +46,13 @@ The proof is the classical one (Evans, §6.3.2, Theorem 4).
 
 ## Main declarations
 
-* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace`: every first
-  derivative of the solution has an `L²(Ω)` weak derivative in every direction.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`: the solution lies in
-  `W^{2,2}(Ω)`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo`: on a domain
+  mapped into itself by the translations parallel to a hyperplane, every first derivative of the
+  solution has an `L²(Ω)` weak derivative in every direction.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`: on such a domain the solution
+  lies in `W^{2,2}(Ω)`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace` and
+  `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`: the case of a half-space.
 
 ## References
 
@@ -164,13 +172,14 @@ private theorem inner_sum_smul_basisFun_mul_norm_sq (hν : ν ≠ 0) :
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
-/-- **Second derivatives up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
-`ν ≠ 0`, let `A` be a constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let
-`u ∈ H¹₀(Ω)` be a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w`
-the derivative `∂_y u = ⟪∇u, y⟫` has a weak derivative in the direction `w` that lies in
-`L²(Ω)`. -/
-theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace (hν : ν ≠ 0)
-    (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ) (hlam : 0 < lam)
+/-- **Second derivatives up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by
+every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `A` be a
+constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let `u ∈ H¹₀(Ω)` be a weak solution
+of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w` the derivative
+`∂_y u = ⟪∇u, y⟫` has a weak derivative in the direction `w` that lies in `L²(Ω)`. No regularity
+of `∂Ω` is assumed. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : ν ≠ 0)
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega) (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) (y w : EuclideanSpace ℝ ι) :
@@ -214,11 +223,8 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace (hν
       div_mul_cancel₀ _ hN.ne', sub_self]
   have htan : ∀ y {τ}, ⟪τ, ν⟫_ℝ = 0 → D y τ := by
     intro y τ hτ
-    have hw : ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega := fun t x hx => by
-      have hx' := (hΩ x).1 hx
-      exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
     obtain ⟨G, -, hG⟩ := (uniformlyEllipticOn_const (Omega : Set (EuclideanSpace ℝ ι)) hlam hA)
-      |>.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith_of_mapsTo (K := 0) hw
+      |>.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith_of_mapsTo (K := 0) (hΩ τ hτ)
         (Bornology.isBounded_singleton.subset Set.range_const_subset) (LipschitzWith.const _) hu y
     exact ⟨G, hG⟩
   -- The normal direction, from the equation.
@@ -253,19 +259,58 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace (hν
     rwa [add_sub_cancel] at h
   exact h
 
+/-- **`H²` regularity up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by every
+translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `A` be a
+constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let `u ∈ H¹₀(Ω)` be a weak solution
+of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`, that is, of the Dirichlet problem with zero boundary
+values. Then `u` is the first-order part of an element of `W^{2,2}(Ω)`: its second weak
+derivatives lie in `L²(Ω)` up to the boundary. -/
+theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo (hν : ν ≠ 0)
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega) (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) :
+    ∃ U : Wkp mu Omega 2 2, Wkp.lowerOrder 1 U = (u : W1p mu Omega 2) :=
+  W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
+    fun _ _ => exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hΩ hlam hA hu _ _
+
+/-- Every translation parallel to the boundary of the half-space `{x | c < ⟪x, ν⟫}` maps it into
+itself. -/
+private theorem mapsTo_add_smul_of_halfSpace (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
+    {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0) (t : ℝ) :
+    MapsTo (· + t • τ) Omega Omega := fun x hx => by
+  have hx' := (hΩ x).1 hx
+  exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
+
+/-- **Second derivatives up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
+`ν ≠ 0`, let `A` be a constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let
+`u ∈ H¹₀(Ω)` be a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w`
+the derivative `∂_y u = ⟪∇u, y⟫` has a weak derivative in the direction `w` that lies in
+`L²(Ω)`. This is the half-space case of
+`TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo`. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace (hν : ν ≠ 0)
+    (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ) (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) (y w : EuclideanSpace ℝ ι) :
+    ∃ G : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient (u : W1p mu Omega 2) x, y⟫_ℝ) G w :=
+  exists_hasWeakLineDerivOn_gradient_of_mapsTo hν
+    (fun _ hτ => mapsTo_add_smul_of_halfSpace hΩ hτ) hlam hA hu y w
+
 /-- **`H²` regularity up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
 `ν ≠ 0`, let `A` be a constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let
 `u ∈ H¹₀(Ω)` be a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`, that is, of the Dirichlet
 problem with zero boundary values. Then `u` is the first-order part of an element of
-`W^{2,2}(Ω)`: its second weak derivatives lie in `L²(Ω)` up to the boundary. -/
+`W^{2,2}(Ω)`: its second weak derivatives lie in `L²(Ω)` up to the boundary. This is the
+half-space case of `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`. -/
 theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace (hν : ν ≠ 0)
     (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ) (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) :
     ∃ U : Wkp mu Omega 2 2, Wkp.lowerOrder 1 U = (u : W1p mu Omega 2) :=
-  W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun _ _ => exists_hasWeakLineDerivOn_gradient_of_halfSpace hν hΩ hlam hA hu _ _
+  exists_lowerOrder_eq_of_mapsTo hν (fun _ hτ => mapsTo_add_smul_of_halfSpace hΩ hτ) hlam hA hu
 
 end PDE
 

@@ -66,12 +66,12 @@ they are the whole-space difference quotients of the zero-extension of `u`
 whole space applies. This bounds `∂_w ∇u` in `L²(Ω)` up to the boundary, the tangential half of
 boundary `H²` regularity; the whole-space statements are the case `Ω = ℝⁿ`.
 
-Working on the whole space is what keeps the argument free of cut-offs: no boundary regularity
-is involved, `H¹₀(ℝⁿ) = H¹(ℝⁿ)` (`TauCeti.w1p0Submodule_top_eq_top`), so the solution concept
-`TauCeti.PDE.IsWeakSolutionDirichlet` imposes no boundary condition here, and every difference
-quotient is a legitimate test function. For a constant principal coefficient and bounded
-measurable lower-order coefficients, interior `H²` regularity on a general domain follows by
-absorbing the lower-order terms into the forcing and localizing with a cutoff
+In the whole-space case `Ω = ℝⁿ` the argument needs neither cut-offs nor the extension by zero:
+no boundary regularity is involved, `H¹₀(ℝⁿ) = H¹(ℝⁿ)` (`TauCeti.w1p0Submodule_top_eq_top`), so
+the solution concept `TauCeti.PDE.IsWeakSolutionDirichlet` imposes no boundary condition there,
+and every difference quotient is a legitimate test function. For a constant principal
+coefficient and bounded measurable lower-order coefficients, interior `H²` regularity on a general
+domain follows by absorbing the lower-order terms into the forcing and localizing with a cutoff
 (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`).
 
 ## Main declarations
@@ -310,9 +310,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
       (u : W1p mu ⊤ 2))‖ ≤ ‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu ⊤ 2)‖) / lam :=
   ha.norm_gradient_differenceQuotient_le_of_lipschitzWith_of_mapsTo
     (fun s => Set.mapsTo_univ (· + s • w) _)
-    (isBounded_iff_forall_norm_le.2 ⟨Lam, by
-      rintro _ ⟨x, rfl⟩
-      exact ha.opNorm_matrixBilinearForm_le (mem_univ x)⟩) hK hu t
+    (by simpa using ha.isBounded_image_matrixBilinearForm) hK hu t
 
 omit [DecidableEq ι] in
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** For a
@@ -427,9 +425,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipsch
           (fun x => ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ) G w :=
   ha.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith_of_mapsTo
     (fun s => Set.mapsTo_univ (· + s • w) _)
-    (isBounded_iff_forall_norm_le.2 ⟨Lam, by
-      rintro _ ⟨x, rfl⟩
-      exact ha.opNorm_matrixBilinearForm_le (mem_univ x)⟩) hK hu y
+    (by simpa using ha.isBounded_image_matrixBilinearForm) hK hu y
 
 omit [DecidableEq ι] in
 /-- **The second-order weak directional derivatives of a whole-space weak solution.** For a
