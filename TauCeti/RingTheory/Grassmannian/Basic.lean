@@ -20,7 +20,8 @@ finite projective module of constant rank `k` is a point of `G(k, M; R)`, and th
 `Module.Grassmannian.baseChangeMkQ`, the map underlying base change of points, on pure tensors and
 on vectors coming from `A ⊗[R] M`. In particular a vector of a point maps into each of its base
 changes, and, when `B` is an `A`-algebra, the base change of `N` along the structure map is the
-kernel of `baseChangeMkQ B N` for the given algebra structure on `B`.
+kernel of `baseChangeMkQ B N` for the given algebra structure on `B`. Base change along an
+injective map is injective on points, because the quotient by a point is flat.
 
 ## Main definitions
 
@@ -36,6 +37,9 @@ kernel of `baseChangeMkQ B N` for the given algebra structure on `B`.
 * `Module.Grassmannian.map_toAlgHom_toSubmodule`: the base change of a point along the structure
   map of an `A`-algebra `B` is the kernel of `baseChangeMkQ B N`.
 * `Module.Grassmannian.rTensor_mem_map`: a vector of a point maps into every base change of it.
+* `Module.Grassmannian.rTensor_mem_map_iff_of_injective` and
+  `Module.Grassmannian.map_injective`: along an injective map, a point is recovered from its base
+  change.
 
 ## References
 
@@ -123,6 +127,38 @@ theorem rTensor_mem_map (f : A →ₐ[R] B) {N : G(k, A ⊗[R] M; A)} {x : A ⊗
   have := baseChangeMkQ_rTensor (B := B) N.toSubmodule x
   rw [hf] at this
   rw [this, Submodule.mkQ_apply, (Submodule.Quotient.mk_eq_zero _).mpr hx, tmul_zero]
+
+/-- **A point is recovered from its base change along an injective map.** For an injective
+`f : A →ₐ[R] B`, a vector of `A ⊗[R] M` lies in `N` exactly when its image lies in the base change
+of `N` to `B`, since the quotient by `N` is projective, hence flat, over `A`. -/
+theorem rTensor_mem_map_iff_of_injective {f : A →ₐ[R] B} (hf : Function.Injective f)
+    {N : G(k, A ⊗[R] M; A)} {x : A ⊗[R] M} :
+    f.toLinearMap.rTensor M x ∈ (map f N).toSubmodule ↔ x ∈ N.toSubmodule := by
+  refine ⟨fun hx ↦ ?_, rTensor_mem_map f⟩
+  algebraize [f.toRingHom]
+  have hf' : IsScalarTower.toAlgHom R A B = f := AlgHom.ext fun _ ↦ rfl
+  have hmk := baseChangeMkQ_rTensor (B := B) N.toSubmodule x
+  rw [hf'] at hmk
+  rw [map_toSubmodule, LinearMap.mem_ker, hmk] at hx
+  -- `q ↦ 1 ⊗ₜ q` is injective on the flat quotient `Q`, so the class of `x` vanishes
+  let Q := (A ⊗[R] M) ⧸ N.toSubmodule
+  have hinj := Module.Flat.rTensor_preserves_injective_linearMap (M := Q) (Algebra.linearMap A B) hf
+  have h1 : (1 : A) ⊗ₜ[A] N.toSubmodule.mkQ x = 0 :=
+    hinj (by simpa using hx)
+  have h2 := congrArg (TensorProduct.lid A Q) h1
+  simp only [lid_tmul, one_smul, map_zero, Submodule.mkQ_apply] at h2
+  exact (Submodule.Quotient.mk_eq_zero _).mp h2
+
+/-- **Base change along an injective map is injective on points.** -/
+theorem map_injective {f : A →ₐ[R] B} (hf : Function.Injective f) :
+    Function.Injective (map (k := k) (M := M) f) := by
+  intro N N' h
+  ext x
+  constructor <;> intro hx
+  · rw [← rTensor_mem_map_iff_of_injective hf, ← h]
+    exact rTensor_mem_map f hx
+  · rw [← rTensor_mem_map_iff_of_injective hf, h]
+    exact rTensor_mem_map f hx
 
 end BaseChange
 

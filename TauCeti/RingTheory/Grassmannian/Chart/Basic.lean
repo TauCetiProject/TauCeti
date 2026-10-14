@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Subfunctor.Basic
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 public import TauCeti.RingTheory.Grassmannian.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
@@ -299,6 +300,11 @@ abbrev ChartAlgebra (x : Fin k → M) : Type (max u v) :=
 namespace ChartAlgebra
 
 variable (x : Fin k → M)
+
+/-- The coordinate ring of a chart of the Grassmannian of a finite module is of finite type. -/
+instance [Module.Finite R M] : Algebra.FiniteType R (ChartAlgebra R x) :=
+  Algebra.FiniteType.of_surjective (Ideal.Quotient.mkₐ R (chartIdeal R x))
+    (Ideal.Quotient.mkₐ_surjective R _)
 
 /-- The universal point of the chart at `x`: the linear map `M → (ChartAlgebra R x)^k` whose `j`-th
 component sends `m` to the class of the generator `Pi.single j m` of the symmetric algebra. -/
