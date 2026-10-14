@@ -18,10 +18,10 @@ same-side and mixed-side orientations. The same-side terms consist of two recut-
 and the sources of the terminal self-pairing. The mixed-side terms consist of the other two
 recut-partner families, the turn cuts, and the other members of those self-pairs.
 
-This file assembles those two partitions. It first identifies the two residual self-pair pieces
-with the complete terminal self-pair family. Their total weight vanishes in characteristic two,
-so the full off-diagonal terminal-side contribution is exactly the four recut-partner sums and
-the turn-cut sum. This is the right-hand counterpart of the rectangle--pentagon assembly in
+This file assembles those two partitions. Using the terminal self-pair partition, their total
+weight vanishes in characteristic two, so the full off-diagonal terminal-side contribution is
+exactly the four recut-partner sums and the turn-cut sum. This is the right-hand counterpart of
+the rectangle--pentagon assembly in
 `GridDiagram.sum_rectanglePentagonWeight_overlap_eq_sum_partners`.
 
 ## References
@@ -36,60 +36,6 @@ public section
 namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
-
-open scoped Classical in
-/-- The terminal self-pairs are their same-side source terms together with their mixed-side
-partners. -/
-theorem pentagonTerminalSelfPairSources_union_filter_hasMixedSideOverlap_eq_selfPairs :
-    G.pentagonTerminalSelfPairSources C x z ∪
-        (G.pentagonTerminalSelfPairs C x z).filter
-          (fun D => D.toRectangleDecomposition.HasMixedSideOverlap) =
-      G.pentagonTerminalSelfPairs C x z := by
-  ext D
-  simp only [Finset.mem_union, Finset.mem_filter]
-  constructor
-  · rintro (hsource | ⟨hpair, -⟩)
-    · exact (G.mem_pentagonTerminalSelfPairs C D).2 (Or.inl hsource)
-    · exact hpair
-  · intro hpair
-    obtain ⟨hcounted, hsource | ⟨hcommon, hother, -⟩⟩ :=
-      (G.mem_pentagonTerminalSelfPairs_iff_sides C D).1 hpair
-    · exact Or.inl ((G.mem_pentagonTerminalSelfPairSources C D).2 ⟨hcounted, hsource⟩)
-    · right
-      refine ⟨hpair, ?_⟩
-      rw [GridRectangleDecomposition.hasMixedSideOverlap_iff]
-      refine ⟨D.toRectangleDecomposition.hasOneCommonSide_of_left_eq_right
-        (by simpa using hcommon.symm) (by simpa using hother.symm), Or.inl ?_⟩
-      simpa using hcommon.symm
-
-open scoped Classical in
-private theorem disjoint_pentagonTerminalSelfPairSources_filter_hasMixedSideOverlap :
-    Disjoint (G.pentagonTerminalSelfPairSources C x z)
-      ((G.pentagonTerminalSelfPairs C x z).filter
-        (fun D => D.toRectangleDecomposition.HasMixedSideOverlap)) := by
-  refine Finset.disjoint_left.2 fun D hsource hmixed => ?_
-  obtain ⟨-, hcommon, hcol⟩ := (G.mem_pentagonTerminalSelfPairSources C D).1 hsource
-  have hone := D.toRectangleDecomposition.hasOneCommonSide_of_right_eq_right
-    (by simpa using hcommon.symm) (by simpa using (Grid.ne_left_of_mem_cIoo hcol).symm)
-  have hsame : D.toRectangleDecomposition.HasSameSideOverlap := by
-    rw [GridRectangleDecomposition.hasSameSideOverlap_iff]
-    exact ⟨hone, Or.inr (by simpa using hcommon.symm)⟩
-  exact D.toRectangleDecomposition.not_hasMixedSideOverlap_of_hasSameSideOverlap hsame
-    (Finset.mem_filter.1 hmixed).2
-
-open scoped Classical in
-/-- An additive weight on the complete terminal self-pair family is the sum of its same-side
-source contribution and its mixed-side partner contribution. -/
-theorem sum_pentagonTerminalSelfPairs_eq_sum_sources_add_sum_mixed
-    {M : Type*} [AddCommMonoid M]
-    (w : GridPentagonRectangleDecomposition C.column C.turnRow x z → M) :
-    ∑ D ∈ G.pentagonTerminalSelfPairs C x z, w D =
-      (∑ D ∈ G.pentagonTerminalSelfPairSources C x z, w D) +
-        ∑ D ∈ (G.pentagonTerminalSelfPairs C x z).filter
-          (fun D => D.toRectangleDecomposition.HasMixedSideOverlap), w D := by
-  rw [← Finset.sum_union
-    (G.disjoint_pentagonTerminalSelfPairSources_filter_hasMixedSideOverlap C),
-    G.pentagonTerminalSelfPairSources_union_filter_hasMixedSideOverlap_eq_selfPairs C]
 
 variable (R : Type*) [CommSemiring R] [CharP R 2]
 
@@ -153,18 +99,12 @@ theorem commutationMap_comp_unblockedDifferential_eq_iff_initialPentagon_overlap
             ∑ D ∈ G.pentagonRectangleTurnCuts C x z,
               G.pentagonRectangleWeight C R D := by
   rw [G.commutationMap_comp_unblockedDifferential_eq_iff_oriented_overlap C R]
+  refine forall_congr' fun x ↦ forall_congr' fun z ↦ imp_congr_right fun hzx ↦ ?_
   have hcancel : ∀ p u b v d : MvPolynomial (Fin n) R,
       (p + u) + b = (p + v) + d ↔ b + u = d + v := fun p u b v d => by
     rw [add_assoc, add_assoc, add_left_cancel_iff]
     constructor <;> intro h <;> simpa only [add_comm] using h
-  constructor
-  · intro h x z hzx
-    let p : MvPolynomial (Fin n) R :=
-      (∑ D ∈ G.initialOverlapPartners C x z, G.pentagonRectangleWeight C R D) +
-        (∑ D ∈ G.terminalCrossOverlapPartners C x z, G.pentagonRectangleWeight C R D) +
-          (∑ D ∈ G.leftRightOverlapPartners C x z, G.pentagonRectangleWeight C R D) +
-            ∑ D ∈ G.rightLeftOverlapPartners C x z, G.pentagonRectangleWeight C R D
-    have hx := h x z hzx
+  conv_lhs =>
     rw [← G.sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C
         (G.rectanglePentagonDecompositions C x z) (G.rectanglePentagonWeight C R) hzx,
       ← G.sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C
@@ -176,27 +116,7 @@ theorem commutationMap_comp_unblockedDifferential_eq_iff_initialPentagon_overlap
         (G.initialPentagonRectangleDecompositions C x z)
           (G.initialPentagonRectangleWeight C R) hzx,
       G.sum_rectanglePentagonWeight_overlap_eq_sum_partners C R hzx,
-      G.sum_pentagonRectangleWeight_overlap_eq_sum_partners C R hzx] at hx
-    exact (hcancel p _ _ _ _).1 hx
-  · intro h x z hzx
-    let p : MvPolynomial (Fin n) R :=
-      (∑ D ∈ G.initialOverlapPartners C x z, G.pentagonRectangleWeight C R D) +
-        (∑ D ∈ G.terminalCrossOverlapPartners C x z, G.pentagonRectangleWeight C R D) +
-          (∑ D ∈ G.leftRightOverlapPartners C x z, G.pentagonRectangleWeight C R D) +
-            ∑ D ∈ G.rightLeftOverlapPartners C x z, G.pentagonRectangleWeight C R D
-    have hx := (hcancel p _ _ _ _).2 (h x z hzx)
-    rw [← G.sum_rectanglePentagonWeight_overlap_eq_sum_partners C R hzx,
-      ← G.sum_pentagonRectangleWeight_overlap_eq_sum_partners C R hzx,
-      G.sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C
-        (G.rectanglePentagonDecompositions C x z) (G.rectanglePentagonWeight C R) hzx,
-      G.sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C
-        (G.rectangleInitialPentagonDecompositions C x z)
-          (G.rectangleInitialPentagonWeight C R) hzx,
-      G.sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C
-        (G.pentagonRectangleDecompositions C x z) (G.pentagonRectangleWeight C R) hzx,
-      G.sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C
-        (G.initialPentagonRectangleDecompositions C x z)
-          (G.initialPentagonRectangleWeight C R) hzx] at hx
-    exact hx
+      G.sum_pentagonRectangleWeight_overlap_eq_sum_partners C R hzx]
+  exact hcancel _ _ _ _ _
 
 end TauCeti.GridDiagram
