@@ -116,6 +116,69 @@ theorem isLocalNormEverywhere_def (x : Kˣ) :
 
 end Def
 
+section Group
+
+/-! ### Closure under the group operations of `Kˣ` -/
+
+variable {K L} [FiniteDimensional K L]
+
+omit [NumberField K] in
+/-- `1` is a local norm at every infinite place. -/
+@[simp]
+theorem isInfiniteLocalNorm_one (w : InfinitePlace K) : IsInfiniteLocalNorm K L w 1 := by
+  simp [isInfiniteLocalNorm_def]
+
+omit [NumberField K] in
+/-- Local norms at an infinite place are closed under multiplication. -/
+theorem IsInfiniteLocalNorm.mul {w : InfinitePlace K} {x y : Kˣ}
+    (hx : IsInfiniteLocalNorm K L w x) (hy : IsInfiniteLocalNorm K L w y) :
+    IsInfiniteLocalNorm K L w (x * y) := by
+  rw [isInfiniteLocalNorm_def] at *
+  simpa only [map_mul] using mul_mem hx hy
+
+omit [NumberField K] in
+/-- `x⁻¹` is a local norm at an infinite place exactly when `x` is. -/
+@[simp]
+theorem isInfiniteLocalNorm_inv {w : InfinitePlace K} {x : Kˣ} :
+    IsInfiniteLocalNorm K L w x⁻¹ ↔ IsInfiniteLocalNorm K L w x := by
+  simp only [isInfiniteLocalNorm_def, map_inv, inv_mem_iff]
+
+/-- `1` is a local norm at every finite place. -/
+@[simp]
+theorem isFiniteLocalNorm_one (v : HeightOneSpectrum (𝓞 K)) : IsFiniteLocalNorm K L v 1 := by
+  simp [isFiniteLocalNorm_def]
+
+/-- Local norms at a finite place are closed under multiplication. -/
+theorem IsFiniteLocalNorm.mul {v : HeightOneSpectrum (𝓞 K)} {x y : Kˣ}
+    (hx : IsFiniteLocalNorm K L v x) (hy : IsFiniteLocalNorm K L v y) :
+    IsFiniteLocalNorm K L v (x * y) := by
+  rw [isFiniteLocalNorm_def] at *
+  simpa only [map_mul] using mul_mem hx hy
+
+/-- `x⁻¹` is a local norm at a finite place exactly when `x` is. -/
+@[simp]
+theorem isFiniteLocalNorm_inv {v : HeightOneSpectrum (𝓞 K)} {x : Kˣ} :
+    IsFiniteLocalNorm K L v x⁻¹ ↔ IsFiniteLocalNorm K L v x := by
+  simp only [isFiniteLocalNorm_def, map_inv, inv_mem_iff]
+
+/-- `1` is a local norm everywhere. -/
+@[simp]
+theorem isLocalNormEverywhere_one : IsLocalNormEverywhere K L 1 := by
+  simp [isLocalNormEverywhere_def]
+
+/-- Local norms everywhere are closed under multiplication. -/
+theorem IsLocalNormEverywhere.mul {x y : Kˣ} (hx : IsLocalNormEverywhere K L x)
+    (hy : IsLocalNormEverywhere K L y) : IsLocalNormEverywhere K L (x * y) :=
+  ⟨fun v ↦ (hx.1 v).mul (hy.1 v), fun w ↦ (hx.2 w).mul (hy.2 w)⟩
+
+/-- `x⁻¹` is a local norm everywhere exactly when `x` is. -/
+@[simp]
+theorem isLocalNormEverywhere_inv {x : Kˣ} :
+    IsLocalNormEverywhere K L x⁻¹ ↔ IsLocalNormEverywhere K L x := by
+  simp only [isLocalNormEverywhere_def, isFiniteLocalNorm_inv, isInfiniteLocalNorm_inv]
+
+end Group
+
 section Complex
 
 variable {K L} [FiniteDimensional K L]
