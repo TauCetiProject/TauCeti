@@ -60,6 +60,7 @@ jobs:
           path: publisher-tools
           sparse-checkout: |
             scripts/lake_cache_publish.py
+            scripts/ci_publication_observation.py
             scripts/lake_cache_probe.py
             scripts/lake_cache_reuse.py
           sparse-checkout-cone-mode: false
@@ -211,115 +212,18 @@ jobs:
             echo 'published=false' >> "$GITHUB_OUTPUT"
           fi
 
-      # Runs after the secret-bearing step; measures deduplicated mapped payload.
-      # Payload size is attempted publication volume, not network transfer bytes.
+      # Use the trusted planner's upload subset after the secret-bearing step.
+      # Payload size includes the full map; it is not measured network traffic.
       - name: Observe publication volume (statistics only)
         if: always()
         continue-on-error: true
         timeout-minutes: 1
         env:
-          STAGING: ${{ runner.temp }}/lake-cache-staging
           UPLOADED: ${{ steps.upload.outputs.uploaded }}
           CONFIRMED: ${{ steps.confirm.outputs.published }}
         run: |
-          python3 - <<'PY'
-          import json, os, re, stat
-          from pathlib import Path
-
-          # Mirrors Lake CacheMap.collectOutputDescrs for structured output values:
-          # values (not object keys), numeric hashes -> .art, strings -> hash.extension.
-          # Last mapping per input hash wins. Deduplicate artifacts and include the
-          # revision map exactly once, as putCore also uploads that separate object.
-          MAX_MAP_BYTES = 8 * 1024 * 1024
-          MAX_ENTRIES = 100000
-          HASH = re.compile(r'[0-9a-fA-F]{16}')
-          ARTIFACT = re.compile(r'([0-9a-fA-F]{16})(\.[0-9A-Za-z]+)*')
-
-          def hash_value(value):
-              if type(value) is int and 0 <= value < 2**64:
-                  return format(value, '016x')
-              if isinstance(value, str) and HASH.fullmatch(value):
-                  return value.lower()
-              raise ValueError('unsupported hash')
-
-          def measure(staging):
-              objects = total = 0
-              complete = True
-              directory = file = None
-              try:
-                  directory = os.open(staging, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-                  file = os.open('outputs.jsonl', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
-                  info = os.fstat(file)
-                  if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_MAP_BYTES:
-                      raise ValueError('invalid or oversized map')
-                  with os.fdopen(file, 'rb') as handle:
-                      file = None
-                      data = handle.read(MAX_MAP_BYTES + 1)
-                  if len(data) > MAX_MAP_BYTES:
-                      raise ValueError('oversized map')
-                  lines = data.splitlines()
-                  if not lines or len(lines) > MAX_ENTRIES:
-                      raise ValueError('map entry limit')
-                  if not isinstance(json.loads(lines[0]), str):
-                      raise ValueError('unsupported map header')
-                  mappings = {}
-                  for line in lines[1:]:
-                      pair = json.loads(line)
-                      if not isinstance(pair, list) or len(pair) < 2:
-                          raise ValueError('unsupported map entry')
-                      mappings[hash_value(pair[0])] = pair[1]
-                  names = set()
-                  nodes = 0
-                  def collect(value, depth=0):
-                      nonlocal nodes
-                      nodes += 1
-                      if depth > 32 or nodes > MAX_ENTRIES:
-                          raise ValueError('output traversal limit')
-                      if value is None or type(value) is bool:
-                          return
-                      if type(value) is int:
-                          names.add(hash_value(value) + '.art')
-                      elif isinstance(value, str):
-                          match = ARTIFACT.fullmatch(value)
-                          if not match:
-                              raise ValueError('unsupported artifact name')
-                          names.add(value[:16].lower() + value[16:])
-                      elif isinstance(value, list):
-                          for item in value:
-                              collect(item, depth + 1)
-                      elif isinstance(value, dict):
-                          for item in value.values():
-                              collect(item, depth + 1)
-                      else:
-                          raise ValueError('unsupported output value')
-                  for value in mappings.values():
-                      collect(value)
-                  names.add('outputs.jsonl')
-                  for name in names:
-                      info = os.stat(name, dir_fd=directory, follow_symlinks=False)
-                      if not stat.S_ISREG(info.st_mode):
-                          raise ValueError('artifact is not regular')
-                      objects += 1
-                      total += info.st_size
-              except (OSError, ValueError, TypeError, RecursionError):
-                  complete = False
-              finally:
-                  if file is not None:
-                      os.close(file)
-                  if directory is not None:
-                      os.close(directory)
-              return objects, total, complete
-
-          objects, total, complete = measure(os.environ['STAGING'])
-          value = {'schema': 'tauceti-ci.publication/v1', 'trust': 'publisher-host',
-                   'run_id': os.environ['GITHUB_RUN_ID'],
-                   'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
-                   'staged_objects': objects, 'staged_bytes': total, 'complete': complete,
-                   'volume_scope': 'deduplicated-mapped-artifacts-plus-revision-map',
-                   'uploaded': os.environ['UPLOADED'] == 'true',
-                   'confirmed': os.environ['CONFIRMED'] == 'true'}
-          Path(os.environ['RUNNER_TEMP'], 'ci-publication.json').write_text(json.dumps(value) + '\n')
-          PY
+          python3 publisher-tools/scripts/ci_publication_observation.py \
+            --plan "$RUNNER_TEMP/lake-publication-plan" --out "$RUNNER_TEMP/ci-publication.json"
 
       - name: Upload publication observations
         if: always()
