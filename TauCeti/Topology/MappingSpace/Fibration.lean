@@ -26,12 +26,15 @@ particular this applies to every closed cofibration of compact Hausdorff spaces.
 * `TauCeti.HasHomotopyExtensionProperty.isHurewiczFibration_restrict`: restriction along a closed
   subspace with the homotopy extension property is a Hurewicz fibration when the ambient source
   is locally compact.
-* `TauCeti.HasHomotopyExtensionProperty.isHurewiczFibration_restrict_of_compact`: the compact
+* `TauCeti.HasHomotopyExtensionProperty.isHurewiczFibration_restrict_of_compact_t2`: the compact
   Hausdorff specialization, where closedness follows from the homotopy extension property.
 
 ## References
 
 * G. W. Whitehead, *Elements of Homotopy Theory*, Chapter I.
+* The currying step uses Mathlib's compact-open exponential law and restriction API in
+  `Mathlib.Topology.CompactOpen`: `ContinuousMap.curry`, `ContinuousMap.uncurry`, and
+  `ContinuousMap.continuous_restrict`.
 -/
 
 public section
@@ -63,22 +66,29 @@ theorem HasHomotopyExtensionProperty.isHurewiczFibration_restrict
   let H₀ : C(I × B, X) :=
     ⟨fun q ↦ H (q.1, q.2.1.1) ⟨q.2.1.2, q.2.2⟩, by fun_prop⟩
   have hH₀ : ∀ b : B, H₀ (0, b) = f₀ b := by
-    intro b
-    have heq := congrArg (fun g : C(A, X) ↦ g ⟨b.1.2, b.2⟩) (hH b.1.1)
-    exact heq
+    rintro ⟨⟨p, k⟩, hk⟩
+    -- Both sides are evaluations of `H (0, p)` and `f p` at the point `k ∈ A`.
+    simpa only [H₀, f₀, ContinuousMap.coe_mk, ContinuousMap.uncurry_apply,
+      Function.uncurry_apply_pair, ContinuousMap.restrict_apply] using
+      congrArg (fun g : C(A, X) ↦ g ⟨k, hk⟩) (hH p)
   obtain ⟨G₀, hG₀, hG₀B⟩ := hBhep.exists_extension_of_isClosed hB f₀ H₀ hH₀
   let α : C((I × P) × K, I × (P × K)) :=
     ⟨fun q ↦ (q.1.1, q.1.2, q.2), by fun_prop⟩
   let G : C(I × P, C(K, X)) :=
     ContinuousMap.curry (G₀.comp α)
   refine ⟨G, funext fun q ↦ ContinuousMap.ext fun a ↦ ?_, fun p ↦ ContinuousMap.ext fun k ↦ ?_⟩
-  · simpa [G, α, H₀] using hG₀B q.1 ⟨(q.2, a), a.2⟩
-  · simpa [G, α, f₀] using hG₀ (p, k)
+  -- Unfold the curried lift pointwise: `G q a = G₀ (q.1, q.2, a)`, compared with `H` on `A`
+  -- and with `f` at time `0`.
+  · simpa only [G, α, H₀, Function.comp_apply, ContinuousMap.curry_apply, ContinuousMap.comp_apply,
+      ContinuousMap.coe_mk, ContinuousMap.restrict_apply] using hG₀B q.1 ⟨(q.2, a), a.2⟩
+  · simpa only [G, α, f₀, Function.comp_apply, ContinuousMap.curry_apply, ContinuousMap.comp_apply,
+      ContinuousMap.coe_mk, ContinuousMap.uncurry_apply, Function.uncurry_apply_pair] using
+      hG₀ (p, k)
 
 /-- **Restriction along a cofibration of compact Hausdorff spaces is a Hurewicz fibration.**
 Here closedness is automatic: a subspace with the homotopy extension property in a Hausdorff
 space is closed. -/
-theorem HasHomotopyExtensionProperty.isHurewiczFibration_restrict_of_compact
+theorem HasHomotopyExtensionProperty.isHurewiczFibration_restrict_of_compact_t2
     [CompactSpace K] [T2Space K] (h : HasHomotopyExtensionProperty A) :
     IsHurewiczFibration.{w} (ContinuousMap.restrict A : C(K, X) → C(A, X)) :=
   h.isHurewiczFibration_restrict h.isClosed
