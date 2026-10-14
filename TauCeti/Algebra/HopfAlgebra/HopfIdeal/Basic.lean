@@ -18,10 +18,9 @@ This file defines Hopf ideals in a Hopf algebra over a commutative semiring. A H
 an ideal `I` whose comultiplication lands in `I ⊗ H + H ⊗ I`, whose counit vanishes on `I`,
 and which is stable under the antipode.
 
-This is a small Layer 3 prerequisite for the reductive-groups roadmap target
-"Hopf ideals ↔ closed subgroup schemes": closed subgroup schemes of an affine group scheme
-are represented on coordinate rings by quotient Hopf algebras, and the ideal being quotiented
-must satisfy exactly these Hopf-ideal closure conditions.
+Closed subgroup schemes of an affine group scheme are represented on coordinate rings by
+quotient Hopf algebras, and the ideal being quotiented must satisfy exactly these Hopf-ideal
+closure conditions.
 
 ## Main definitions
 
@@ -219,35 +218,27 @@ end TensorIdeals
 section TensorIdealQuotient
 
 variable {R : Type u} {H : Type v}
-variable [CommRing R] [CommRing H] [Algebra R H]
+variable [CommRing R] [Ring H] [Algebra R H]
 
 namespace HopfIdeal
 
 /-- The kernel of tensoring the quotient map on the right is the right tensor ideal. -/
-theorem ker_tensorProduct_map_id_quotient (I : Ideal H) :
+theorem ker_tensorProduct_map_id_quotient (I : Ideal H) [I.IsTwoSided] :
     RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I)) =
       rightTensorIdeal (R := R) (H := H) I := by
-  rw [Algebra.TensorProduct.lTensor_ker (A := H) (Ideal.Quotient.mkₐ R I)
-    (Ideal.Quotient.mkₐ_surjective R I)]
-  rw [← RingHom.ker_coe_toRingHom (Ideal.Quotient.mkₐ R I),
-    Ideal.Quotient.mkₐ_ker R I]
-  -- `lTensor_ker` uses the algebra-hom coercion for `includeRight`, while
-  -- `rightTensorIdeal` uses its `toRingHom`; after unfolding they are definitionally equal.
-  rw [rightTensorIdeal_def]
-  rfl
+  simpa only [rightTensorIdeal_def, AlgHom.coe_ideal_map, AlgHom.toRingHom_eq_coe,
+    AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] using
+    Algebra.TensorProduct.lTensor_ker (A := H) (Ideal.Quotient.mkₐ R I)
+      (Ideal.Quotient.mkₐ_surjective R I)
 
 /-- The kernel of tensoring the quotient map on the left is the left tensor ideal. -/
-theorem ker_tensorProduct_map_quotient_id (I : Ideal H) :
+theorem ker_tensorProduct_map_quotient_id (I : Ideal H) [I.IsTwoSided] :
     RingHom.ker (Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I) (AlgHom.id R H)) =
       leftTensorIdeal (R := R) (H := H) I := by
-  rw [Algebra.TensorProduct.rTensor_ker (C := H) (Ideal.Quotient.mkₐ R I)
-    (Ideal.Quotient.mkₐ_surjective R I)]
-  rw [← RingHom.ker_coe_toRingHom (Ideal.Quotient.mkₐ R I),
-    Ideal.Quotient.mkₐ_ker R I]
-  -- `rTensor_ker` uses the algebra-hom coercion for `includeLeft`, while
-  -- `leftTensorIdeal` uses its `toRingHom`; after unfolding they are definitionally equal.
-  rw [leftTensorIdeal_def]
-  rfl
+  simpa only [leftTensorIdeal_def, AlgHom.coe_ideal_map, AlgHom.toRingHom_eq_coe,
+    AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] using
+    Algebra.TensorProduct.rTensor_ker (C := H) (Ideal.Quotient.mkₐ R I)
+      (Ideal.Quotient.mkₐ_surjective R I)
 
 end HopfIdeal
 
@@ -647,19 +638,8 @@ theorem ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal [Algebra R
     RingHom.ker (Algebra.TensorProduct.map f g) =
       leftTensorIdeal (R := R) (H := H) (RingHom.ker f) ⊔
         rightTensorIdeal (R := R) (H := H) (RingHom.ker g) := by
-  have hleft :
-      (RingHom.ker f).map
-          (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) =
-        leftTensorIdeal (R := R) (H := H) (RingHom.ker f) := by
-    rw [leftTensorIdeal_def, AlgHom.toRingHom_eq_coe]
-    exact AlgHom.coe_ideal_map _ _
-  have hright :
-      (RingHom.ker g).map
-          (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)) =
-        rightTensorIdeal (R := R) (H := H) (RingHom.ker g) := by
-    rw [rightTensorIdeal_def, AlgHom.toRingHom_eq_coe]
-    exact AlgHom.coe_ideal_map _ _
-  rw [Algebra.TensorProduct.map_ker (f := f) (g := g) hf hg, hleft, hright]
+  simpa only [leftTensorIdeal_def, rightTensorIdeal_def, AlgHom.coe_ideal_map,
+    AlgHom.toRingHom_eq_coe] using Algebra.TensorProduct.map_ker f g hf hg
 
 end HopfIdeal
 
