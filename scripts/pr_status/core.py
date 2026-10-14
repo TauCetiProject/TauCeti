@@ -19,6 +19,23 @@ import time
 
 REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
 
+
+def automatic_bump(pr, *, repo=None):
+    """Canonical bot dependency PRs remain open until repaired or superseded."""
+    author = pr.get("user") or pr.get("author") or {}
+    head = pr.get("head") or {}
+    head_repo = head.get("repo") or {}
+    if not head:
+        head_repo = pr.get("headRepository") or {}
+        owner = pr.get("headRepositoryOwner") or {}
+        full_name = f"{owner.get('login', '')}/{head_repo.get('name', '')}"
+    else:
+        full_name = head_repo.get("full_name", "")
+    bot = author.get("type") == "Bot" or author.get("is_bot") is True
+    return ((repo or REPO) == "TauCetiProject/TauCeti" and bot
+            and full_name == "TauCetiProject/TauCeti"
+            and (head.get("ref") or pr.get("headRefName", "")).startswith("bump-mathlib/"))
+
 SCOREBOARD_MARKER = "<!--tauceti-scoreboard-->"
 # Greedy `\{.*\}` (with re.S) so a meta object with a nested `"states": {...}` is captured whole: a
 # lazy `\{.*?\}` would stop at the first inner `}` and mis-parse it. `\s+`/`\s*` tolerate any spacing.

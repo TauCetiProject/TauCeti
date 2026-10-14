@@ -1,8 +1,7 @@
 name: Stuck-automation alerts
 
 # Post EMERGENCY alerts to Zulip (Tau Ceti > "Stuck PRs") when a piece of Tau
-# Ceti's own automation wedged and cannot unstick itself: a bump that will not
-# cross a breaking change, a green PR the merge machinery never merged, a
+# Ceti's own automation wedged and cannot unstick itself: a stale Mathlib pin, a green PR the merge machinery never merged, a
 # scheduled job that stopped firing, main gone red, an unresolved mathlib
 # incompatibility. Diagnose the failed operation: queue builds can expose PR
 # integration defects as well as infrastructure failures. See
@@ -27,7 +26,7 @@ on:
 
 permissions:
   contents: read          # checkout the script
-  issues: read            # review-stuck / first-known-bad issues
+  issues: read            # review-stuck tracking issues
   pull-requests: read     # stuck-bump / stranded-PR detection
   actions: read           # dead-scheduler / main-red (workflow runs)
   statuses: read          # build / bump-guard commit statuses
