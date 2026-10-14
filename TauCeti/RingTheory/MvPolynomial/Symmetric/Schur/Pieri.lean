@@ -253,8 +253,8 @@ occurring once and with coefficient `+1`. -/
 theorem esymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.colLen 0 ≤ N) (r : ℕ) :
     esymm (Fin N) R r * alternant (Fin N) R (fun j => ν.betaNumber N j) =
       ∑ μ : (ν.card + r).Partition with
-          (diagramOf μ).IsVerticalStrip ν ∧ (diagramOf μ).colLen 0 ≤ N,
-        alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N j) := by
+          (ofPartition μ).IsVerticalStrip ν ∧ (ofPartition μ).colLen 0 ≤ N,
+        alternant (Fin N) R (fun j => (ofPartition μ).betaNumber N j) := by
   rw [esymm_mul_alternant]
   -- Discard the sets of rows whose shifted beta-numbers repeat: those alternants vanish.
   rw [← sum_filter_of_ne (p := fun T : Finset (Fin N) =>
@@ -266,17 +266,17 @@ theorem esymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
   have hex : ∀ T : Finset (Fin N), T.card = r →
       (Function.Injective fun j : Fin N => ν.betaNumber N j + if j ∈ T then 1 else 0) →
       ∃ μ : (ν.card + r).Partition,
-        ((diagramOf μ).IsVerticalStrip ν ∧ (diagramOf μ).colLen 0 ≤ N) ∧
-          ∀ j : Fin N, (diagramOf μ).rowLen j = ν.rowLen j + if j ∈ T then 1 else 0 := by
+        ((ofPartition μ).IsVerticalStrip ν ∧ (ofPartition μ).colLen 0 ≤ N) ∧
+          ∀ j : Fin N, (ofPartition μ).rowLen j = ν.rowLen j + if j ∈ T then 1 else 0 := by
     intro T hcard hinj
     have hanti := YoungDiagram.antitone_rowLen_add_ite_of_injective hinj
-    refine ⟨toPartition (YoungDiagram.ofRowLensFin _ hanti)
+    refine ⟨(YoungDiagram.ofRowLensFin _ hanti).toPartition
       (by rw [YoungDiagram.card_ofRowLensFin_add_ite hanti hν, hcard]), ?_, ?_⟩
-    · rw [diagramOf_toPartition]
+    · rw [YoungDiagram.ofPartition_toPartition]
       exact ⟨YoungDiagram.isVerticalStrip_ofRowLensFin hanti hν,
         YoungDiagram.colLen_zero_ofRowLensFin_le _ hanti⟩
     · intro j
-      rw [diagramOf_toPartition, YoungDiagram.rowLen_ofRowLensFin]
+      rw [YoungDiagram.ofPartition_toPartition, YoungDiagram.rowLen_ofRowLensFin]
   choose! f hfS hfrow using hex
   refine sum_bij (fun T _ => f T) (fun T hT => mem_filter.mpr ⟨mem_univ _,
       hfS T (mem_powersetCard_univ.mp (mem_filter.mp hT).1) (mem_filter.mp hT).2⟩) ?_ ?_ ?_
@@ -291,29 +291,29 @@ theorem esymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
   · -- Every vertical strip inside `N` rows lengthens the rows on which it is longer.
     intro μ hμ
     obtain ⟨hstrip, hμN⟩ := (mem_filter.mp hμ).2
-    set T := YoungDiagram.lengthenedRows N (diagramOf μ) ν with hT
-    have hrow : ∀ j : Fin N, (diagramOf μ).rowLen j = ν.rowLen j + if j ∈ T then 1 else 0 := by
+    set T := YoungDiagram.lengthenedRows N (ofPartition μ) ν with hT
+    have hrow : ∀ j : Fin N, (ofPartition μ).rowLen j = ν.rowLen j + if j ∈ T then 1 else 0 := by
       intro j
       rw [hT]
       simp only [YoungDiagram.mem_lengthenedRows]
       exact hstrip.rowLen_eq_add_ite _
     have hcard : T.card = r := by
       have h2 := hstrip.card_lengthenedRows (N := N) hμN
-      rw [card_diagramOf, ← hT] at h2
+      rw [card_ofPartition, ← hT] at h2
       omega
     have hinj : Function.Injective
         fun j : Fin N => ν.betaNumber N j + if j ∈ T then 1 else 0 := by
       intro a b hab
       have hab' : ν.betaNumber N a + (if a ∈ T then 1 else 0) =
           ν.betaNumber N b + (if b ∈ T then 1 else 0) := hab
-      refine Fin.ext (YoungDiagram.injOn_betaNumber (diagramOf μ) N a.isLt b.isLt ?_)
+      refine Fin.ext (YoungDiagram.injOn_betaNumber (ofPartition μ) N a.isLt b.isLt ?_)
       rw [YoungDiagram.betaNumber_def, YoungDiagram.betaNumber_def, hrow a, hrow b]
       rw [YoungDiagram.betaNumber_def, YoungDiagram.betaNumber_def] at hab'
       split_ifs at hab' ⊢ <;> omega
     refine ⟨T, mem_filter.mpr ⟨mem_powersetCard_univ.mpr hcard, hinj⟩, ?_⟩
-    refine diagramOf_injective (YoungDiagram.eq_of_betaNumber_eq (hfS T hcard hinj).2 hμN
-      fun i hi => ?_)
-    have hrw : (diagramOf (f T)).rowLen i = (diagramOf μ).rowLen i := by
+    refine YoungDiagram.ofPartition_injective
+      (YoungDiagram.eq_of_betaNumber_eq (hfS T hcard hinj).2 hμN fun i hi => ?_)
+    have hrw : (ofPartition (f T)).rowLen i = (ofPartition μ).rowLen i := by
       simpa using (hfrow T hcard hinj ⟨i, hi⟩).trans (hrow ⟨i, hi⟩).symm
     rw [YoungDiagram.betaNumber_def, YoungDiagram.betaNumber_def, hrw]
   · intro T hT
@@ -405,15 +405,15 @@ the Schur polynomials of the diagrams `μ` for which `μ / ν` is a vertical str
 diagrams with more than `N` rows vanish on both sides. -/
 theorem esymm_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) (r : ℕ) :
     esymm (Fin N) R r * diagramSchurPoly N R ν =
-      ∑ μ : (ν.card + r).Partition with (diagramOf μ).IsVerticalStrip ν,
-        diagramSchurPoly N R (diagramOf μ) := by
+      ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsVerticalStrip ν,
+        diagramSchurPoly N R (ofPartition μ) := by
   -- Every coefficient on either side is a natural number, so it is enough to prove the identity
   -- over `ℕ` and map those coefficients to the target commutative semiring.  Over `ℕ` the identity
   -- follows in turn from the one over `ℤ` — where the nonzero Vandermonde alternant `a_δ` can be
   -- cancelled in `ℤ[x]` — because `ℕ → ℤ` is injective.
   have hℤ : esymm (Fin N) ℤ r * diagramSchurPoly N ℤ ν =
-      ∑ μ : (ν.card + r).Partition with (diagramOf μ).IsVerticalStrip ν,
-        diagramSchurPoly N ℤ (diagramOf μ) := by
+      ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsVerticalStrip ν,
+        diagramSchurPoly N ℤ (ofPartition μ) := by
     by_cases hν : ν.colLen 0 ≤ N
     · -- Cancel the staircase alternant, whose exponents are pairwise distinct.
       have hδ : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) := fun i j h => by
@@ -437,14 +437,14 @@ theorem esymm_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) (r : ℕ) :
         have : (N, 0) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr hν'
         rw [YoungDiagram.mem_iff_lt_rowLen, h0] at this
         omega
-      have hμN : N < (diagramOf μ).colLen 0 := by
+      have hμN : N < (ofPartition μ).colLen 0 := by
         by_contra h
         exact hN (Nat.eq_zero_of_le_zero ((YoungDiagram.rowLen_le_of_le hle N).trans
           (YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp h)).le))
       rw [diagramSchurPoly_eq_zero_of_lt_colLen hμN]
   have hℕ : esymm (Fin N) ℕ r * diagramSchurPoly N ℕ ν =
-      ∑ μ : (ν.card + r).Partition with (diagramOf μ).IsVerticalStrip ν,
-        diagramSchurPoly N ℕ (diagramOf μ) :=
+      ∑ μ : (ν.card + r).Partition with (ofPartition μ).IsVerticalStrip ν,
+        diagramSchurPoly N ℕ (ofPartition μ) :=
     MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective
       (by simpa [map_esymm, map_diagramSchurPoly, map_sum] using hℤ)
   simpa [map_esymm, map_diagramSchurPoly, map_sum] using
@@ -458,10 +458,10 @@ the sum running over the partitions `μ` of `n + r` whose Young diagram contains
 vertical strip as complement. -/
 theorem esymm_mul_schurPoly {σ : Type*} [Fintype σ] {n : ℕ} (ν : n.Partition) (r : ℕ) :
     esymm σ R r * schurPoly σ R ν =
-      ∑ μ : (n + r).Partition with (diagramOf μ).IsVerticalStrip (diagramOf ν),
+      ∑ μ : (n + r).Partition with (ofPartition μ).IsVerticalStrip (ofPartition ν),
         schurPoly σ R μ := by
-  have h := esymm_mul_diagramSchurPoly (R := R) (N := Fintype.card σ) (diagramOf ν) r
-  rw [card_diagramOf] at h
+  have h := esymm_mul_diagramSchurPoly (R := R) (N := Fintype.card σ) (ofPartition ν) r
+  rw [card_ofPartition] at h
   have h' := congrArg (rename (Fintype.equivFin σ).symm) h
   rw [map_mul, rename_esymm, ← schurPoly_eq_rename] at h'
   rw [h', map_sum]
