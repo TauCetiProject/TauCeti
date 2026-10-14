@@ -425,7 +425,7 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
   set f : v.valuationSubring[X] := C (ϖ ^ (k + 1)) * X ^ 3 + C A₂ * X ^ 2 + C A₄ * X + C A₆ with hf
   have heval (z : v.valuationSubring) :
       f.eval z = ϖ * (ϖ ^ k * z ^ 3) + (A₂ * z ^ 2 + A₄ * z + A₆) := by
-    simp [hf]
+    simp only [hf, eval_add, eval_mul, eval_pow, eval_C, eval_X]
     ring
   have hder (z : v.valuationSubring) :
       f.derivative.eval z = 2 * A₂ * z + A₄ + ϖ * (3 * ϖ ^ k * z ^ 2) := by
@@ -652,15 +652,23 @@ private theorem le_nearSubgroup {ϖ : v.valuationSubring}
   obtain ⟨-, hm₃, hm₄, hm₆, -⟩ := stage_data v hϖ hst
   exact (mem_nearSubgroup v hϖ hst).2 fun hF ↦ notMem_of_mem_farPoints v hϖ hm₃ hm₄ hm₆ hF hP
 
+/-- Two points not of the form `(ϖ² X, ϖ² Y)` and outside `E₀(F)` add into `E₀(F)`. -/
+private theorem add_mem_addSubgroupOf_nearSubgroup {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) {P Q : nearSubgroup v hϖ hst}
+    (hP : P ∉ (W.nonsingularReduction v).addSubgroupOf (nearSubgroup v hϖ hst))
+    (hQ : Q ∉ (W.nonsingularReduction v).addSubgroupOf (nearSubgroup v hϖ hst)) :
+    P + Q ∈ (W.nonsingularReduction v).addSubgroupOf (nearSubgroup v hϖ hst) := by
+  rw [AddSubgroup.mem_addSubgroupOf] at hP hQ ⊢
+  exact add_mem_of_notMem_farPoints v hϖ hst hP hQ ((mem_nearSubgroup v hϖ hst).1 P.2)
+    ((mem_nearSubgroup v hϖ hst).1 Q.2)
+
 /-- `E₀(F)` has index dividing `2` in the subgroup of points not of the form `(ϖ² X, ϖ² Y)`. -/
 private theorem relIndex_nearSubgroup_dvd_two {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) :
     (W.nonsingularReduction v).relIndex (nearSubgroup v hϖ hst) ∣ 2 :=
-  AddSubgroup.index_dvd_two_of_add_mem fun P Q hP hQ ↦ by
-    rw [AddSubgroup.mem_addSubgroupOf] at hP hQ ⊢
-    exact add_mem_of_notMem_farPoints v hϖ hst hP hQ ((mem_nearSubgroup v hϖ hst).1 P.2)
-      ((mem_nearSubgroup v hϖ hst).1 Q.2)
+  AddSubgroup.index_dvd_two_of_add_mem fun _ _ ↦ add_mem_addSubgroupOf_nearSubgroup v hϖ hst
 
 /-- The subgroup of points not of the form `(ϖ² X, ϖ² Y)` has index dividing `2`. -/
 private theorem index_nearSubgroup_dvd_two {ϖ : v.valuationSubring}
@@ -703,7 +711,9 @@ private theorem exists_notMem_notMem_farPoints [HenselianLocalRing v.valuationSu
   -- the derivative `3 z² + 2 A₂ z + ϖ α₄` is a unit at every `z ≡ −A₂`
   have hder (z : v.valuationSubring) :
       f.derivative.eval z = 3 * z ^ 2 + 2 * A₂ * z + ϖ * α₄ := by
-    simp [hf]
+    simp only [hf, derivative_add, derivative_X_pow, derivative_C_mul_X_pow, derivative_C_mul_X,
+      derivative_C, eval_add, eval_mul, eval_C, eval_pow, eval_X, eval_zero]
+    push_cast
     ring
   have hunit (z : v.valuationSubring) (hz : ϖ ∣ z + A₂) :
       IsUnit (3 * z ^ 2 + 2 * A₂ * z + ϖ * α₄) := by
@@ -715,7 +725,9 @@ private theorem exists_notMem_notMem_farPoints [HenselianLocalRing v.valuationSu
     exact isUnit_add_of_dvd hϖ (((isUnit_iff_not_dvd hϖ).2 hA₂').pow 2) (dvd_mul_right ϖ _)
   have hf₀ : f.eval (-A₂) ∈ maximalIdeal v.valuationSubring := by
     rw [mem_maximalIdeal_iff_dvd hϖ]
-    exact ⟨α₆ - α₄ * A₂, by simp [hf]; ring⟩
+    exact ⟨α₆ - α₄ * A₂, by
+      simp only [hf, eval_add, eval_mul, eval_pow, eval_C, eval_X]
+      ring⟩
   obtain ⟨X₀, hX₀, hX₀A⟩ :=
     HenselianLocalRing.is_henselian f hmon (-A₂) hf₀ (hder _ ▸ hunit _ (by simp))
   rw [sub_neg_eq_add, mem_maximalIdeal_iff_dvd hϖ] at hX₀A
@@ -744,11 +756,9 @@ private theorem relIndex_nearSubgroup_eq_two [HenselianLocalRing v.valuationSubr
     (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) :
     (W.nonsingularReduction v).relIndex (nearSubgroup v hϖ hst) = 2 := by
   obtain ⟨P, hP, hPF⟩ := exists_notMem_notMem_farPoints v hϖ hst
-  refine AddSubgroup.index_eq_two_of_add_mem (fun P Q hP hQ ↦ ?_)
+  exact AddSubgroup.index_eq_two_of_add_mem
+    (fun _ _ ↦ add_mem_addSubgroupOf_nearSubgroup v hϖ hst)
     (a := ⟨P, (mem_nearSubgroup v hϖ hst).2 hPF⟩) (by rwa [AddSubgroup.mem_addSubgroupOf])
-  rw [AddSubgroup.mem_addSubgroupOf] at hP hQ ⊢
-  exact add_mem_of_notMem_farPoints v hϖ hst hP hQ ((mem_nearSubgroup v hϖ hst).1 P.2)
-    ((mem_nearSubgroup v hϖ hst).1 Q.2)
 
 /-! ### The index at the symbol `Iₙ*` -/
 

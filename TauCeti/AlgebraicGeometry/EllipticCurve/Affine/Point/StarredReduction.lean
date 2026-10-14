@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
+-- Proof-only: the maximal ideal of a local ring with principal maximal ideal.
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
 /-!
 # Points with singular reduction at the symbols `I₀*`, `IV*` and `II*`
@@ -69,6 +71,7 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
 public section
 
 open IsLocalRing
+open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
 
 namespace WeierstrassCurve
 
@@ -200,12 +203,12 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal {ϖ : v.valuationSubring}
       ¬ (integralModel v.valuationSubring W).toAffine.Equation x y) :
     W.nonsingularReduction v = ⊤ := by
   obtain ⟨-, h₃, h₄, h₆⟩ := hs.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ hsI
-  have hmem {z : v.valuationSubring} : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   have hp : Prime ϖ := (Ideal.span_singleton_prime (hs.ne_zero (hsI 0))).mp
     (hϖ ▸ (maximalIdeal.isMaximal _).isPrime)
-  exact nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation v (hmem.mpr h₃)
-    (hmem.mpr h₄) (hmem.mpr h₆) fun x y hx hy ↦ h hp x y (hmem.mp hx) (hmem.mp hy)
+  exact nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation v
+    ((mem_maximalIdeal_iff_dvd hϖ).2 h₃) ((mem_maximalIdeal_iff_dvd hϖ).2 h₄)
+    ((mem_maximalIdeal_iff_dvd hϖ).2 h₆) fun x y hx hy ↦
+      h hp x y ((mem_maximalIdeal_iff_dvd hϖ).1 hx) ((mem_maximalIdeal_iff_dvd hϖ).1 hy)
 
 /-- **At the symbol `I₀*` with no rational root of the residue cubic, every point has nonsingular
 reduction**: `E₀(F) = W(F)`. Here `ϖ` generates the maximal ideal, Tate's algorithm stops at `I₀*`
