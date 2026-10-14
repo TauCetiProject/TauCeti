@@ -9,10 +9,12 @@ public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.Kummer.Cyclic
 import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
@@ -47,6 +49,14 @@ separable, and the places above `P` are totally ramified, so `k` stays the exact
 
 `2g' - 2 = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`.
 
+When instead `k` contains a primitive `n`-th root of unity and `u` is not a `p`-th power in `F`
+for any prime `p ∣ n` (Stichtenoth's hypotheses for a Kummer extension, Proposition 3.7.3), the
+degree `[F' : F] = n` and separability are consequences
+(`TauCeti.finrank_eq_of_pow_eq_of_adjoin_eq_top`), and `F' / F` is cyclic Galois
+(`TauCeti.isGalois_of_pow_eq_of_adjoin_eq_top`, `TauCeti.isCyclic_of_pow_eq_of_adjoin_eq_top`).
+No place need be totally ramified, so the constant field of `F'` can grow, and the genus formula
+keeps the factor `[k' : k]`.
+
 ## Main results
 
 * `TauCeti.Divisor.nsmul_different_eq_conorm_of_pow_eq`: `n • Diff(F'/F) = Con (∑ (n - r_P) P)`.
@@ -56,6 +66,9 @@ separable, and the places above `P` are totally ramified, so `k` stays the exact
   `[k' : k] (2g' - 2) = n (2g - 2) + ∑ (n - r_P) deg P`.
 * `TauCeti.isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one`: a place with `gcd(n, ord_P u) = 1`
   keeps the constant field exact.
+* `TauCeti.genus_formula_of_pow_eq_of_isPrimitiveRoot`: the genus formula of a Kummer extension,
+  with `[F' : F] = n` derived from a primitive `n`-th root of unity in `k` and the nondegeneracy
+  of `u`.
 * `TauCeti.two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one`: the genus formula
   `2g' - 2 = n (2g - 2) + ∑ (n - r_P) deg P` in that case, and
   `TauCeti.two_mul_genus_eq_of_pow_eq_of_gcd_ord_eq_one_ratFunc` its form over `k(x)`.
@@ -175,6 +188,47 @@ theorem genus_formula_of_pow_eq [Algebra.IsSeparable k k'] (hF' : IsFunctionFiel
   rw [hurwitz_genus_formula hF hF' hex hex', hfin, mul_left_cancel₀ hn0 h]
 
 end Radical
+
+/-! ### Kummer extensions -/
+
+section Kummer
+
+variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
+variable [Field k] [Field k'] [Field F] [Field F']
+variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+/-- **The genus formula for Kummer extensions** (Stichtenoth, Proposition 3.7.3): let
+`F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, where the exact constant field `k` of `F`
+contains a primitive `n`-th root of unity and `u` is not a `p`-th power in `F` for any prime
+`p ∣ n`. If `k'` is the exact constant field of `F'` and `k' / k` is separable, then
+
+`[k' : k] (2g' - 2) = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`,
+
+where `r_P = gcd(n, ord_P u)` and `S` is any finite set of places outside which `n` divides
+`ord_P u`. The degree `[F' : F] = n` and the separability of `F' / F` are consequences of the
+hypotheses. -/
+theorem genus_formula_of_pow_eq_of_isPrimitiveRoot [Algebra.IsSeparable k k']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
+    (hex' : IsIntegrallyClosedIn k' F') {y : F'} {n : ℕ} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ n = algebraMap F F' u) {ζ : k} (hζ : IsPrimitiveRoot ζ n) (hu : u ≠ 0)
+    (hnd : ∀ p : ℕ, p.Prime → p ∣ n → ∀ w : F, w ^ p ≠ u) (S : Finset (Place k F))
+    (hS : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) :
+    (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
+      n * (2 * genus k F - 2) + ∑ P ∈ S, ((n : ℤ) - Int.gcd n (P.ord u)) * P.degree := by
+  -- `n = 0` would make `u = y ^ 0 = 1` a square
+  have : NeZero n := ⟨by
+    rintro rfl
+    rw [pow_zero, eq_comm, map_eq_one_iff _ (algebraMap F F').injective] at hy
+    exact hnd 2 Nat.prime_two (dvd_zero 2) 1 (by rw [one_pow, hy])⟩
+  have hζF := hζ.map_of_injective (algebraMap k F).injective
+  have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζF hnd hy hgen
+  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hfin.symm ▸ NeZero.pos n)
+  have : Algebra.IsSeparable F F' :=
+    isSeparable_of_pow_eq_of_adjoin_eq_top hζF.neZero'.out hu hy hgen
+  exact genus_formula_of_pow_eq hF hgen hy hζ.neZero'.out hu S hS hF' hex hex' hfin
+
+end Kummer
 
 /-! ### Kummer extensions with a place of coprime order -/
 
