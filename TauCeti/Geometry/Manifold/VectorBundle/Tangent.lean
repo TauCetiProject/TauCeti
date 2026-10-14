@@ -105,9 +105,14 @@ theorem mfderiv_atlas_eq_continuousLinearMapAt (e : atlas H M) {x : M}
       ((tangentBundleCore I M).localTriv e).continuousLinearMapAt 𝕜 x := by
   rw [(tangentBundleCore I M).localTriv_continuousLinearMapAt hx,
     (mdifferentiableAt_atlas e.property hx).mfderiv]
-  -- The core transition is precisely the chart's within-range derivative in the preferred
-  -- source chart. The model chart and both tangent casts are identities.
+  simp only [writtenInExtChartAt, extChartAt_self_eq]
+  rw [tangentBundleCore_coordChange, tangentBundleCore_indexAt, achart_val]
+  simp only [extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_assoc]
+  -- At this foundational bridge, both implementation casts identify the tangent fibre with E.
+  ext v
+  simp only [ContinuousLinearMap.comp_apply, tangentSpaceCastModel]
   rfl
+
 
 /-- Read in the canonical trivialization at `x`, a tangent vector at `x` itself is its own
 coordinate vector: the trivialization is built from the chart at `x`, whose transition function
