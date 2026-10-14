@@ -98,6 +98,67 @@ end TauCeti
         self.assertEqual([finding.declaration for finding in findings(source)],
                          ["TauCeti.Foo.takesFoo"])
 
+    def test_returned_bundled_tensor_map_is_not_a_receiver(self):
+        source = """\
+namespace TauCeti.Algebra.TensorProduct
+variable (K L A B : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
+  [Semiring A] [Algebra K A] [Semiring B] [Algebra K B]
+noncomputable def mulBaseChange :
+    (L ⊗[K] A) ⊗[K] (L ⊗[K] B) →ₐ[L] L ⊗[K] (A ⊗[K] B) :=
+  (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
+    (Algebra.TensorProduct.mapOfCompatibleSMul L K L _ _)
+def tensorReceiver (x : L ⊗[K] A) := x
+def functionReceiver : L ⊗[K] A → M := f
+def asciiFunctionReceiver : L ⊗[K] A -> M := f
+end TauCeti.Algebra.TensorProduct
+"""
+        self.assertEqual([finding.declaration for finding in findings(source, {"TensorProduct"})],
+                         ["TauCeti.Algebra.TensorProduct." + name for name in
+                          ("tensorReceiver", "functionReceiver", "asciiFunctionReceiver")])
+
+    def test_returned_bundled_map_arrows_are_not_function_arrows(self):
+        for arrow in ("→ₐ[R]", "→ₐc[R]", "→ₗ[R]", "→ₗc[R]", "→ₛₗ[σ]", "→L[𝕜]",
+                      "→SL[σ]", "→L⋆[𝕜]", "→ₗ⋆[R]", "→ₛₗᵢ[σ]", "→ₗ.[R]",
+                      "→ₗ⁅R⁆", "→+*", "→*", "→+", "→o", "→ₐc", "→ₗc"):
+            source = f"""\
+namespace TauCeti.Foo
+def returnedMap : Foo {arrow} B := f
+def compactReturnedMap : Foo{arrow}B := f
+def outerFunction : Foo → A {arrow} B := f
+def outerAsciiFunction : Foo -> A {arrow} B := f
+end TauCeti.Foo
+"""
+            with self.subTest(arrow=arrow):
+                self.assertEqual([finding.declaration for finding in findings(source)],
+                                 ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction"])
+
+    def test_plain_arrows_next_to_identifier_prefixes_remain_function_arrows(self):
+        source = """\
+namespace TauCeti.Foo
+def noSpaces : Foo→Foo := f
+def asciiNoSpaces : Foo->Foo := f
+def linearPrefix : Foo →LinearMap := f
+def scalarPrefix : Foo →Scalar := f
+def orderTypePrefix : Foo →OrderHom := f
+end TauCeti.Foo
+"""
+        self.assertEqual([finding.declaration for finding in findings(source)],
+                         ["TauCeti.Foo." + name for name in
+                          ("noSpaces", "asciiNoSpaces", "linearPrefix", "scalarPrefix",
+                           "orderTypePrefix")])
+
+    def test_returned_bundled_map_does_not_claim_sort_ownership(self):
+        source = """\
+namespace TauCeti
+def Foo : Type u →ₐ[R] A := f
+namespace Foo
+def stillMisplaced (x : _root_.Foo) := x
+end Foo
+end TauCeti
+"""
+        self.assertEqual([finding.declaration for finding in findings(source)],
+                         ["TauCeti.Foo.stillMisplaced"])
+
     def test_notation_receivers_and_dotted_subtypes(self):
         source = """\
 namespace TauCeti

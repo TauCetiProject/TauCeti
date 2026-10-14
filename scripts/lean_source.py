@@ -630,6 +630,18 @@ def own_declaration_paths_parallel(sources: dict[pathlib.Path, str]) -> set[tupl
     return owned
 
 
+def _notation_receiver_at(text: str, position: int) -> str | None:
+    """Recognize a type-notation token at ``position``, including compact map notation."""
+    for token, receiver in NOTATION_RECEIVERS:
+        if text.startswith(token, position):
+            end = position + len(token)
+            if (token.startswith("→") or token.endswith(("[", "⟮", "⁅", "^"))
+                    or end == len(text)
+                    or text[end].isspace()):
+                return receiver
+    return None
+
+
 def _top_level_notation_receiver(binder_type: str) -> str | None:
     """Return the receiver namespace encoded by a common top-level type notation, if any."""
     stripped = binder_type.lstrip()
@@ -648,12 +660,9 @@ def _top_level_notation_receiver(binder_type: str) -> str | None:
             for pattern, token, receiver in SPECIAL_NOTATION_RECEIVERS:
                 if pattern.search(prefix) and binder_type.startswith(token, position):
                     return receiver
-            for token, receiver in NOTATION_RECEIVERS:
-                if binder_type.startswith(token, position):
-                    end = position + len(token)
-                    if (token.endswith(("[", "⟮", "⁅", "^")) or end == len(binder_type)
-                            or binder_type[end].isspace()):
-                        return receiver
+            receiver = _notation_receiver_at(binder_type, position)
+            if receiver is not None:
+                return receiver
             if any(binder_type.startswith(token, position) for token in TOP_LEVEL_CONNECTIVES):
                 return None
         position += 1
@@ -684,7 +693,7 @@ def _binder_has_type(binder: str, namespace: str) -> bool:
 
 
 def _top_level_arrow_parts(text: str) -> list[str]:
-    """Split ``text`` at top-level ASCII or Unicode function arrows."""
+    """Split top-level function arrows, keeping recognized bundled-map notation intact."""
     depth = 0
     part_start = 0
     parts: list[str] = []
@@ -695,7 +704,8 @@ def _top_level_arrow_parts(text: str) -> list[str]:
             depth += 1
         elif char in CLOSERS:
             depth -= 1
-        elif depth == 0 and (char == "→" or text.startswith("->", position)):
+        elif depth == 0 and (text.startswith("->", position)
+                            or (char == "→" and _notation_receiver_at(text, position) is None)):
             parts.append(text[part_start:position])
             position += 1 if char == "→" else 2
             part_start = position
@@ -725,6 +735,9 @@ def _expression_returns_sort(text: str) -> bool:
     parts = _top_level_arrow_parts(expression)
     if len(parts) > 1:
         return _expression_returns_sort(parts[-1])
+    # A bundled map with a sort as domain is still a value, not a new owned type.
+    if _top_level_notation_receiver(expression) is not None:
+        return False
     return re.match(r"(?:Prop|Sort|Type)\b", expression) is not None
 
 
