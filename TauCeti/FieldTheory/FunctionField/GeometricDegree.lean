@@ -44,6 +44,8 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
 
 * `TauCeti.constantCompositum_eq_top_iff`: an intermediate field into which `k'` maps is generated
   over `F` by the image of `k'` exactly when it is the compositum `F · k'`.
+* `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
+  intermediate field `E` of `F' / F`.
 * `TauCeti.finrank_constantCompositum_mul_geometricDegree`: the tower law
   `[F·k' : F] · n(F'/F) = [F' : F]`.
 * `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`:
@@ -144,6 +146,16 @@ theorem constantCompositum_eq_top_iff (E : IntermediateField F F') [Algebra k' E
     constantCompositum F k' E = ⊤ ↔ constantCompositum F k' F' = E := by
   rw [← map_val_constantCompositum F k' F' E, ← (IntermediateField.map_injective E.val).eq_iff,
     ← AlgHom.fieldRange_eq_map, IntermediateField.fieldRange_val]
+
+/-- **Enlarging the lower field keeps the compositum everything**: if `F' = F · k'`, then
+`F' = E · k'` for every intermediate field `E` of `F' / F`, because `E · k'` contains both `F` and
+the image of `k'`. -/
+theorem constantCompositum_eq_top_of_eq_top (E : IntermediateField F F')
+    (h : constantCompositum F k' F' = ⊤) : constantCompositum E k' F' = ⊤ := by
+  have hle : constantCompositum F k' F' ≤ (constantCompositum E k' F').restrictScalars F :=
+    (constantCompositum_le_iff F k' F').2 fun c ↦ algebraMap_mem_constantCompositum E k' F' c
+  rw [h] at hle
+  exact eq_top_iff.2 fun z _ ↦ hle IntermediateField.mem_top
 
 /-- The `k'`-algebra structure on the compositum `F · k'` formed inside `F'`, through which `k'`
 maps into `F · k'`. It is not an instance: `F · k'` may carry another `k'`-algebra structure, for
