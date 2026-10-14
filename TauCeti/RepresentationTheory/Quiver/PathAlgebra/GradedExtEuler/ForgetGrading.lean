@@ -78,6 +78,7 @@ private theorem finrank_vertexComponent_congr [Finite Q] {M : Type*} [AddCommGro
 
 /-- **At `q = 1` the graded dimension at a vertex is the dimension vector** of the underlying
 `kQ`-module: `gdim(eᵢ • X)` evaluated at `q = 1` is `dim_k(eᵢ X)`. -/
+@[simp]
 theorem laurentEval_one_smulGradedDimension_vertexIdempotent [Finite Q]
     (X : GradedModuleCat.{max u v w} (integerGrade k Q)) [Module.Finite k X] (i : Q) :
     laurentEval (1 : ℤˣ) (X.smulGradedDimension (vertexIdempotent k i)) =

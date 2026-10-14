@@ -208,6 +208,7 @@ variable {e} in
 /-- **At `q = 1` the graded dimension of `e • M` is the dimension of `e • M`**, for `e` of degree
 zero: the subspaces `e • Mₚ` form an internal direct sum decomposition of `e • M`. No idempotence
 is needed. -/
+@[simp]
 theorem laurentEval_one_smulGradedDimension (he₀ : e ∈ 𝒜 0) [Module.Finite k M] :
     laurentEval (1 : ℤˣ) (M.smulGradedDimension e) =
       Module.finrank k ↥(e • (⊤ : Submodule k M)) := by
