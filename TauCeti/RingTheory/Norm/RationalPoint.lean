@@ -37,7 +37,7 @@ variable {K A : Type*} [Field K] [CommRing A] [Algebra K A]
 
 /-- The norm on units of a finite reduced algebra with a rational point is surjective.
 Reducedness is essential: the norm of a dual number is the square of its constant term. -/
-theorem surjective_normUnits [Module.Finite K A] [IsReduced A] (f : A →ₐ[K] K) :
+theorem normUnits_surjective [Module.Finite K A] [IsReduced A] (f : A →ₐ[K] K) :
     Function.Surjective (TauCeti.Algebra.normUnits K (S := A)) := by
   classical
   have : IsArtinianRing A := .of_finite K A
@@ -55,7 +55,7 @@ theorem surjective_normUnits [Module.Finite K A] [IsReduced A] (f : A →ₐ[K] 
 
 /-- If a finite separable field extension admits an embedding into `F`, its scalar extension
 has a surjective norm on units over `F`. -/
-theorem surjective_normUnits_baseChange
+theorem normUnits_tensorProduct_surjective
     {L F : Type*} [Field L] [Field F] [Algebra K L] [Algebra K F]
     [Module.Finite K L] [Algebra.IsSeparable K L] (f : L →ₐ[K] F) :
     Function.Surjective (TauCeti.Algebra.normUnits F (S := F ⊗[K] L)) := by
@@ -63,6 +63,6 @@ theorem surjective_normUnits_baseChange
   have : Algebra.FormallyEtale F (F ⊗[K] L) := inferInstance
   have := Algebra.FormallyUnramified.isReduced_of_field F (F ⊗[K] L)
   exact (Algebra.TensorProduct.lift (Algebra.ofId F F) f
-    (fun x y ↦ Commute.all x (f y))).surjective_normUnits
+    (fun x y ↦ Commute.all x (f y))).normUnits_surjective
 
 end AlgHom
