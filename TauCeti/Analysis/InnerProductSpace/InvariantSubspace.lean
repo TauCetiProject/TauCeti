@@ -29,7 +29,6 @@ def IsReducing (U : Submodule 𝕜 E) (A : Module.End 𝕜 E) : Prop :=
   U ∈ A.invtSubmodule ∧ Uᗮ ∈ A.invtSubmodule
 
 /-- A subspace is reducing exactly when it and its orthogonal complement are invariant. -/
-@[simp]
 theorem isReducing_iff (U : Submodule 𝕜 E) (A : Module.End 𝕜 E) :
     U.IsReducing A ↔ U ∈ A.invtSubmodule ∧ Uᗮ ∈ A.invtSubmodule :=
   Iff.rfl
@@ -43,6 +42,12 @@ theorem IsReducing.mem_invtSubmodule {U : Submodule 𝕜 E} {A : Module.End 𝕜
 theorem IsReducing.orthogonal_mem_invtSubmodule {U : Submodule 𝕜 E} {A : Module.End 𝕜 E}
     (hU : U.IsReducing A) : Uᗮ ∈ A.invtSubmodule :=
   hU.2
+
+/-- The orthogonal complement reduces an endomorphism exactly when the original subspace does. -/
+theorem isReducing_orthogonal_iff (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
+    (A : Module.End 𝕜 E) : Uᗮ.IsReducing A ↔ U.IsReducing A := by
+  rw [isReducing_iff, isReducing_iff, orthogonal_orthogonal]
+  exact and_comm
 
 /-- A subspace reduces a symmetric endomorphism exactly when it is invariant. -/
 theorem _root_.LinearMap.IsSymmetric.isReducing_iff_mem_invtSubmodule {A : Module.End 𝕜 E}
