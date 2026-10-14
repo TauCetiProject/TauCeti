@@ -118,6 +118,16 @@ noncomputable def generatedCoordinateMap :
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
     (generatedDefiningIdeal n A)
 
+/-- After exposing the generated coordinate algebra as its quotient presentation, the generated
+coordinate map is the quotient morphism. -/
+theorem generatedCoordinateMap_comp_eqToIso_hom :
+    generatedCoordinateMap n A ≫ (eqToIso (generatedCoordinateHopfAlgebra_def n A)).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
+        (generatedDefiningIdeal n A) := by
+  change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
+      (generatedDefiningIdeal n A) ≫ 𝟙 _ = _
+  simp
+
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective :
     Function.Surjective (generatedCoordinateMap n A).hom :=
