@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Adjoints of isometric isomorphisms, of `L²` coordinate projections, norm bounds, and `1 + T`
+# Adjoints of isometric isomorphisms, of `L²` coordinate projections, and norm bounds
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -24,15 +23,9 @@ Two families of adjoints of linear maps between finite-dimensional inner product
 Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 (`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
-
-For a positive operator `T` on a possibly infinite-dimensional Hilbert space, `1 + T` is
-invertible (`ContinuousLinearMap.IsPositive.isUnit_one_add`), because
-`re ⟪(1 + T) x, x⟫ ≥ ‖x‖²` bounds it below. This applies in particular to `T = X†X`.
 -/
 
 public section
-
-section FiniteDimensional
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
@@ -87,25 +80,3 @@ theorem norm_adjoint_apply_le {C : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
         exact C.toContinuousLinearMap.opNorm_le_bound hc hC) y
 
 end LinearMap
-
-end FiniteDimensional
-
-namespace ContinuousLinearMap
-
-open scoped InnerProductSpace InnerProduct
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [CompleteSpace E]
-
-/-- On a complete space, `1 + T` is invertible for every positive operator `T`, since
-`re ⟪(1 + T) x, x⟫ = ‖x‖² + re ⟪T x, x⟫ ≥ ‖x‖²`. For instance `1 + X†X` is invertible, by
-`ContinuousLinearMap.isPositive_adjoint_comp_self`. -/
-theorem IsPositive.isUnit_one_add {T : E →L[𝕜] E} (hT : T.IsPositive) : IsUnit (1 + T) := by
-  refine isUnit_of_forall_le_norm_inner_map _ one_pos fun x => ?_
-  rw [NNReal.coe_one, mul_one]
-  calc ‖x‖ ^ 2 ≤ RCLike.re ⟪(1 + T) x, x⟫_𝕜 := by
-        rw [add_apply, one_apply_eq_self, inner_add_left, map_add, inner_self_eq_norm_sq]
-        exact le_add_of_nonneg_right (hT.re_inner_nonneg_left x)
-    _ ≤ ‖⟪(1 + T) x, x⟫_𝕜‖ := RCLike.re_le_norm _
-
-end ContinuousLinearMap
