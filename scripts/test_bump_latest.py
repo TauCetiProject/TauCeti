@@ -99,13 +99,19 @@ class BumpTests(unittest.TestCase):
             checkout = Path(tmp) / "mathlib"
             checkout.mkdir()
             (checkout / "lean-toolchain").write_text("leanprover/lean4:v4.35.0\n")
-            with patch.object(
-                bl, "command", side_effect=["", "", "some files were not found in the cache"]
-            ) as cmd:
-                self.assertFalse(bl.verify_cache(checkout, NEW))
-                environment = cmd.call_args.kwargs["env"]
-                self.assertNotIn("GH_TOKEN", environment)
-                self.assertNotIn("GITHUB_TOKEN", environment)
+            for warning in (
+                "Warning: some files were not found in the cache.",
+                "Warning: 17 file(s) were not found in the cache.",
+            ):
+                with (
+                    self.subTest(warning=warning),
+                    patch.object(bl, "command", side_effect=["", "", warning]) as cmd,
+                ):
+                    self.assertFalse(bl.verify_cache(checkout, NEW))
+                    self.assertTrue(cmd.call_args.kwargs["combined"])
+                    environment = cmd.call_args.kwargs["env"]
+                    self.assertNotIn("GH_TOKEN", environment)
+                    self.assertNotIn("GITHUB_TOKEN", environment)
             with patch.object(bl, "command", side_effect=RuntimeError("network down")):
                 with self.assertRaisesRegex(RuntimeError, "network down"):
                     bl.verify_cache(checkout, NEW)

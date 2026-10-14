@@ -125,7 +125,7 @@ def verify_cache(checkout, target):
         env=env,
         combined=True,
     )
-    if "some files were not found in the cache" in output:
+    if "were not found in the cache" in output:
         print(f"Cache incomplete at {target}; trying the next built master commit.")
         return False
     command([*lake, "build", "--no-build", "--rehash", "Mathlib"], cwd=checkout, env=env)
