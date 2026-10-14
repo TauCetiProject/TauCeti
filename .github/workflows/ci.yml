@@ -76,6 +76,9 @@ jobs:
           export LEAN LEAN_SYSROOT
           python3 scripts/test_duplicate_declarations.py
 
+      - name: Project import preflight regression tests
+        run: python3 scripts/test_check_project_imports.py
+
   build:
     runs-on: ubuntu-latest
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
@@ -273,6 +276,9 @@ jobs:
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
       # re-exports the library.
+      - name: Preflight project imports against the complete source inventory
+        run: python3 scripts/check-project-imports.py
+
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the step above filled;

@@ -617,6 +617,17 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
+      # Workflow-pinned driver, candidate data only: run before package/cache setup and
+      # compilation. The complete exact source inventory is essential even on a one-file PR:
+      # deletions can break unchanged importers; a batch can add its own new dependencies.
+      # No Lake environment is needed and no candidate code is imported or elaborated.
+      - name: Preflight exact-candidate project imports
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          elan toolchain install "$(cat pr/lean-toolchain)"
+          python3 gate/scripts/check-project-imports.py --root pr \
+            --lean "$(cd pr && elan which lean)"
+
       - name: Install bubblewrap (pinned + checksum) and self-test (fail closed)
         if: ${{ env.INFRA != '1' }}
         run: |
