@@ -82,13 +82,8 @@ theorem tendsto_integral_abs_prod_blockAverage_indicator_sub_prod_directingMeasu
     fun _ _ _ => Set.indicator_apply_nonneg fun _ => zero_le_one
   have hind1 : ∀ i c ω, (B i).indicator (fun _ => (1 : ℝ)) (X c ω) ≤ 1 :=
     fun _ _ _ => Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
-  have hF_meas : ∀ i n, Measurable (F i n) := by
-    intro i n
-    have hrw : F i n = fun ω => ((n + 1 : ℕ) : ℝ)⁻¹ * ∑ j : Fin (n + 1),
-        (B i).indicator (fun _ => (1 : ℝ)) (X (k i n j) ω) :=
-      funext fun ω => blockAverage_apply _ ω
-    rw [hrw]
-    exact measurable_const.mul (Finset.measurable_sum _ fun j _ => hind i _)
+  have hF_meas : ∀ i n, Measurable (F i n) :=
+    fun i n => measurable_blockAverage (k i n) fun _ => hind i _
   have hF_le : ∀ i n ω, ‖F i n ω‖ ≤ 1 := fun i n ω => by
     rw [hF, Real.norm_of_nonneg (blockAverage_nonneg fun j => hind0 i (k i n j) ω)]
     exact blockAverage_le_one fun j => hind1 i (k i n j) ω
