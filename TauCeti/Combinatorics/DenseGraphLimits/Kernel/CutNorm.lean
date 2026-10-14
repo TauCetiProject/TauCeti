@@ -45,6 +45,8 @@ pointwise algebra happens before integration; a later layer proves invariance un
 * `abs_testIntegral_le_cutNorm` bounds every `[0,1]`-test integral by the cut norm itself, with no
   loss of constant — the form the counting lemma consumes, where the weights read off the other
   edges of a graph are `[0,1]`-valued.
+* `cutNorm_eq_iSup_testIntegral` is the set/test-function equivalence: the cut norm is the
+  supremum of the `[0,1]`-test integrals.
 * `abs_testIntegral_le_cutNormSigned` and `cutNormSigned_le` are the corresponding introduction and
   elimination rules for the signed cut norm.
 * `cutNorm_le_cutNormSigned` and `cutNormSigned_le_four_mul_cutNorm` are the two sides of the
@@ -419,6 +421,37 @@ theorem abs_testIntegral_le_cutNorm (K : SymmKernel Ω μ) {u v : Ω → ℝ}
     _ ≤ |K.testIntegral μ (T.indicator 1) (S.indicator 1)| := hTle
     _ = |K.rectIntegral μ T S| := by rw [K.testIntegral_indicator_one μ hT hS]
     _ ≤ cutNorm μ K := abs_rectIntegral_le_cutNorm μ K hT hS
+
+/-- **The cut norm is the `[0,1]`-test-function supremum.**  The cut norm of `K` is the supremum,
+over measurable `[0,1]`-valued test functions `u` and `v`, of `|∫∫ u(x) v(y) K(x,y)|`.
+
+This is the set/test-function equivalence of the cut norm: indicators of measurable sets are
+`[0,1]`-valued test functions, and conversely `abs_testIntegral_le_cutNorm` bounds every
+`[0,1]`-test integral by the cut norm.  Unlike `cutNormSigned`, the supremum is an equality with
+`cutNorm`, not a comparison up to a factor of `4`. -/
+theorem cutNorm_eq_iSup_testIntegral (K : SymmKernel Ω μ) :
+    cutNorm μ K =
+      ⨆ (u : Ω → ℝ) (_ : Measurable u) (_ : ∀ x, u x ∈ Icc (0 : ℝ) 1)
+        (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1),
+        |K.testIntegral μ u v| := by
+  have h0 : 0 ≤ cutNorm μ K := cutNorm_nonneg μ K
+  have hind : ∀ (A : Set Ω) (x : Ω), A.indicator (1 : Ω → ℝ) x ∈ Icc (0 : ℝ) 1 := fun A x => by
+    by_cases hx : x ∈ A <;> simp [hx]
+  refine le_antisymm (cutNorm_le μ fun S hS T hT => ?_) ?_
+  · rw [← K.testIntegral_indicator_one μ hS hT]
+    have hSm : Measurable (S.indicator (1 : Ω → ℝ)) := measurable_one.indicator hS
+    have hTm : Measurable (T.indicator (1 : Ω → ℝ)) := measurable_one.indicator hT
+    have hS1 := hind S
+    have hT1 := hind T
+    refine le_ciSup_of_le ?_ (S.indicator 1) <| le_ciSup_of_le ?_ hSm <| le_ciSup_of_le ?_ hS1 <|
+      le_ciSup_of_le ?_ (T.indicator 1) <| le_ciSup_of_le ?_ hTm <| le_ciSup_of_le ?_ hT1 le_rfl
+    -- Every partial supremum is bounded by the cut norm, which bounds each test integral.
+    all_goals
+      refine ⟨cutNorm μ K, forall_mem_range.2 fun _ => ?_⟩
+      repeat refine Real.iSup_le (fun _ => ?_) h0
+      exact abs_testIntegral_le_cutNorm μ K ‹_› ‹_› ‹_› ‹_›
+  · repeat refine Real.iSup_le (fun _ => ?_) h0
+    exact abs_testIntegral_le_cutNorm μ K ‹_› ‹_› ‹_› ‹_›
 
 /-- The signed cut norm is the iterated supremum over measurable `[-1,1]`-valued test functions. -/
 theorem cutNormSigned_def (K : SymmKernel Ω μ) :
