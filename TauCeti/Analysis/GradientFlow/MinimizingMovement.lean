@@ -287,7 +287,7 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
     linarith
   -- `(n - m) τ ≤ t - s + τ`, `φ (u m) ≤ E`, and the a priori lower bound on `φ (u n)`.
   have hkτ : ((n - m : ℕ) : ℝ) * τ ≤ t - s + τ := by
-    have h := natCast_ceil_div_sub_ceil_div_le hτr hs hst
+    have h := natCast_ceil_div_sub_ceil_div_le hτr hst
     rwa [div_add_one hτr.ne', le_div_iff₀ hτr] at h
   have hem' : em ≤ E := by
     have := antitone_comp_of_forall_mem_moreauYosidaResolvent hu (Nat.zero_le m)

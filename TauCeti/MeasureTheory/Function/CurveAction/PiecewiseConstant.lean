@@ -69,11 +69,10 @@ section PseudoEMetricSpace
 
 variable {X : Type*} [PseudoEMetricSpace X] {p : ℝ} {τ : ℝ≥0} {U : ℕ → X}
 
-/-- **Discrete Hölder estimate** on one interval: for `0 ≤ s ≤ t`, the `p`-th power of the distance
+/-- **Discrete Hölder estimate** on one interval: for `s ≤ t`, the `p`-th power of the distance
 between the piecewise constant interpolant at times `s` and `t` is at most
 `((t - s) / τ + 1) ^ (p - 1)` times the sum of the `p`-th powers of the steps taken in between. -/
-private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {s t : ℝ} (hs : 0 ≤ s)
-    (hst : s ≤ t) :
+private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {s t : ℝ} (hst : s ≤ t) :
     edist (U ⌈s / τ⌉₊) (U ⌈t / τ⌉₊) ^ p ≤ ENNReal.ofReal ((t - s) / τ + 1) ^ (p - 1) *
       ∑ n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊, edist (U n) (U (n + 1)) ^ p := by
   have hle : ⌈s / τ⌉₊ ≤ ⌈t / τ⌉₊ :=
@@ -88,7 +87,7 @@ private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {s t : ℝ} (
         gcongr
         rw [Nat.card_Ico, ← ENNReal.ofReal_natCast]
         exact ENNReal.ofReal_le_ofReal
-          (natCast_ceil_div_sub_ceil_div_le (NNReal.coe_pos.2 hτ) hs hst)
+          (natCast_ceil_div_sub_ceil_div_le (NNReal.coe_pos.2 hτ) hst)
 
 /-- **Discrete Hölder estimate** for a disjoint family of intervals `(sᵢ, tᵢ]` in `[0, T]`: the
 `p`-th power of the sum of the distances between the piecewise constant interpolant at times `sᵢ`
@@ -106,14 +105,14 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
   set s : ℕ → ℝ := fun i ↦ min (I i).1 (I i).2
   set t : ℕ → ℝ := fun i ↦ max (I i).1 (I i).2
   set J : ℕ → Finset ℕ := fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊
-  have hst i (hi : i ∈ Finset.range k) : 0 ≤ s i ∧ s i ≤ t i ∧ t i ≤ T := by
+  have hst i (hi : i ∈ Finset.range k) : s i ≤ t i ∧ t i ≤ T := by
     obtain ⟨h₁, h₂⟩ := hE.1 i hi
     rw [uIcc_of_le hT] at h₁ h₂
-    exact ⟨le_min h₁.1 h₂.1, min_le_max, max_le h₁.2 h₂.2⟩
+    exact ⟨min_le_max, max_le h₁.2 h₂.2⟩
   have hedist i (hi : i ∈ Finset.range k) :
       edist (U ⌈(I i).1 / τ⌉₊) (U ⌈(I i).2 / τ⌉₊) ≤ ∑ n ∈ J i, edist (U n) (U (n + 1)) := by
     have h := edist_le_Ico_sum_edist U
-      (Nat.ceil_mono (div_le_div_of_nonneg_right (hst i hi).2.1 hτr.le))
+      (Nat.ceil_mono (div_le_div_of_nonneg_right (hst i hi).1 hτr.le))
     rcases le_total (I i).1 (I i).2 with hle | hle
     · simpa [J, s, t, min_eq_left hle, max_eq_right hle] using h
     · rw [edist_comm]
@@ -130,7 +129,7 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
   have hvol : volume (⋃ i ∈ Finset.range k, Ι (I i).1 (I i).2) =
       ENNReal.ofReal (∑ i ∈ Finset.range k, (t i - s i)) := by
     rw [measure_biUnion_finset hE.2 fun _ _ ↦ measurableSet_uIoc,
-      ENNReal.ofReal_sum_of_nonneg fun i hi ↦ sub_nonneg.2 (hst i hi).2.1]
+      ENNReal.ofReal_sum_of_nonneg fun i hi ↦ sub_nonneg.2 (hst i hi).1]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Real.volume_uIoc, ← max_sub_min_eq_abs']
     simp only [t, s, max_comm (I i).1, min_comm (I i).1]
@@ -140,18 +139,18 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
     refine ENNReal.ofReal_le_ofReal ?_
     rw [Finset.card_biUnion hdisj, Nat.cast_sum, Finset.sum_div]
     have := Finset.sum_le_sum fun i hi ↦
-      natCast_ceil_div_sub_ceil_div_le hτr (hst i hi).1 (hst i hi).2.1
+      natCast_ceil_div_sub_ceil_div_le hτr (hst i hi).1
     simpa [J, Finset.sum_add_distrib] using this
   have hsub : (Finset.range k).biUnion J ⊆ Finset.range ⌈T / τ⌉₊ := by
     intro n hn
     obtain ⟨i, hi, hn⟩ := Finset.mem_biUnion.1 hn
     exact Finset.mem_range.2 ((Finset.mem_Ico.1 hn).2.trans_le
-      (Nat.ceil_mono (div_le_div_of_nonneg_right (hst i hi).2.2 hτr.le)))
+      (Nat.ceil_mono (div_le_div_of_nonneg_right (hst i hi).2 hτr.le)))
   -- The factor `(|⋃ (sᵢ, tᵢ]| / τ + k) ^ (p - 1)`, rewritten.
   have hfac : ENNReal.ofReal ((∑ i ∈ Finset.range k, (t i - s i)) / τ + k) =
       (volume (⋃ i ∈ Finset.range k, Ι (I i).1 (I i).2) + k * τ) / τ := by
     rw [hvol, ENNReal.ofReal_add (div_nonneg (Finset.sum_nonneg fun i hi ↦
-      sub_nonneg.2 (hst i hi).2.1) hτr.le) k.cast_nonneg, ENNReal.ofReal_div_of_pos hτr,
+      sub_nonneg.2 (hst i hi).1) hτr.le) k.cast_nonneg, ENNReal.ofReal_div_of_pos hτr,
       ENNReal.ofReal_natCast, ENNReal.add_div, ENNReal.ofReal_coe_nnreal,
       ENNReal.mul_div_cancel_right (by simpa using hτ.ne') ENNReal.coe_ne_top]
   calc (∑ i ∈ Finset.range k, edist (U ⌈(I i).1 / τ⌉₊) (U ⌈(I i).2 / τ⌉₊)) ^ p
@@ -170,13 +169,13 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
         simp only [div_eq_mul_inv]
         ring
 
-/-- **Discrete difference-quotient estimate.** For `t ∈ (0, T - h]`, the `p`-th power of the
+/-- **Discrete difference-quotient estimate.** For `t ≤ T - h`, the `p`-th power of the
 difference quotient over `[t, t + h]` of the piecewise constant interpolant is at most
 `((h + τ) / h) ^ (p - 1) / h` times the sum of `d(U n, U (n + 1)) ^ p / τ ^ (p - 1)` over the steps
 `n < ⌈T / τ⌉₊` whose window `(n τ - h, n τ]` contains `t`. Integrated over `t`, each step counts
 once with weight `h`. -/
 private lemma edist_ceil_div_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T h t : ℝ} (hh : 0 < h)
-    (ht : t ∈ Ioc 0 (T - h)) :
+    (ht : t ≤ T - h) :
     (edist (U ⌈t / τ⌉₊) (U ⌈(t + h) / τ⌉₊) / ENNReal.ofReal h) ^ p ≤
       ((ENNReal.ofReal h + τ) / ENNReal.ofReal h) ^ (p - 1) * (ENNReal.ofReal h)⁻¹ *
         ∑ n ∈ Finset.range ⌈T / τ⌉₊, (Ioc (n * τ - h) (n * τ)).indicator
@@ -187,7 +186,7 @@ private lemma edist_ceil_div_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T h t : 
   have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have hτ' : (τ : ℝ≥0∞) ≠ 0 := by simpa using hτ.ne'
   have hq : 0 ≤ p - 1 := by linarith
-  have hHölder := edist_ceil_div_rpow_le (U := U) hp hτ ht.1.le (le_add_of_nonneg_right hh.le)
+  have hHölder := edist_ceil_div_rpow_le (U := U) hp hτ (le_add_of_nonneg_right (a := t) hh.le)
   rw [add_sub_cancel_left] at hHölder
   -- The steps taken during `(t, t + h]` are those whose window contains `t`.
   have hsum : ∑ n ∈ Finset.Ico ⌈t / τ⌉₊ ⌈(t + h) / τ⌉₊, edist (U n) (U (n + 1)) ^ p =
@@ -200,7 +199,7 @@ private lemma edist_ceil_div_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T h t : 
     · rintro ⟨h₁, h₂⟩
       refine ⟨?_, by linarith, h₁⟩
       rw [← Nat.cast_lt (α := ℝ), ← mul_lt_mul_iff_of_pos_right hτr]
-      exact h₂.trans_le (by linarith [ht.2, (div_le_iff₀ hτr).1 (Nat.le_ceil (T / τ))])
+      exact h₂.trans_le (by linarith [ht, (div_le_iff₀ hτr).1 (Nat.le_ceil (T / τ))])
     · rintro ⟨-, h₁, h₂⟩
       exact ⟨h₂, by linarith⟩
   -- The factor `(h / τ + 1) ^ (p - 1) / h ^ p` is `((h + τ) / h) ^ (p - 1) / (h τ ^ (p - 1))`.
@@ -344,7 +343,7 @@ private lemma lintegral_edist_div_rpow_le_liminf [l.IsCountablyGenerated] (hp : 
                 (ENNReal.continuous_div_const H hH)).continuousAt)
           _ ≤ liminf (fun i ↦ F i t) l :=
               liminf_le_liminf (Eventually.of_forall fun i ↦
-                edist_ceil_div_div_rpow_le hp (hτ i) hh ht)
+                edist_ceil_div_div_rpow_le hp (hτ i) hh ht.2)
     _ ≤ liminf (fun i ↦ ∫⁻ t in Ioc 0 (T - h), F i t) l :=
         lintegral_liminf_le fun i ↦ hF_meas i
     _ ≤ liminf (fun i ↦ c i * S i) l := liminf_le_liminf (Eventually.of_forall hF_int)
