@@ -8,7 +8,11 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.PreAdicSpace
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 public import TauCeti.RingTheory.WittVector.Window.Localization
+
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
+import TauCeti.RingTheory.WittVector.IntervalRing.StronglyNoetherian
 
 /-!
 # Windows of `𝒴` are the affinoid spectra `Spa(B^I, B^{I,+})`
@@ -47,10 +51,12 @@ The Frobenius windows `U_n` and `V_n` are the windows `q = p ^ n`, `q' = c p ^ n
 The pair of definition of `B^I` used to form its pre-adic space is arbitrary; any one of them gives
 the same space up to this isomorphism.
 
-Sheafiness transfers along the isomorphism. If the pair `(B^I, B^{I,+})` is sheafy, as it is when
-`B^I` is strongly noetherian, then the window is an adic space, and the structure presheaf `𝒪_𝒴`
-of `𝒴` is a sheaf on every open of `𝒴` contained in the window. The sheaf property of `𝒴`, and so
-of the Fargues–Fontaine curve `𝒳 = 𝒴 / φ^ℤ`, is assembled from these charts.
+Sheafiness transfers along the isomorphism. The pair `(B^I, B^{I,+})` is sheafy, since `B^I` is a
+complete Hausdorff strongly noetherian Tate ring when `ρ₁` is a rational power of `v(ϖ)`
+(Kedlaya, Theorem 4.10), and such rings are sheafy (Wedhorn, Theorem 8.28(b)). So the window is
+an adic space, and the structure presheaf `𝒪_𝒴` of `𝒴` is a sheaf on every open of `𝒴` contained
+in the window. The sheaf property of `𝒴`, and so of the Fargues–Fontaine curve `𝒳 = 𝒴 / φ^ℤ`, is
+assembled from these charts.
 
 ## Main results
 
@@ -61,22 +67,27 @@ of the Fargues–Fontaine curve `𝒳 = 𝒴 / φ^ℤ`, is assembled from these 
 * `TauCeti.FarguesFontaine.windowPreAdicSpaceIso` : the restriction of `Spa(𝕎 O, 𝕎 O)` along `j`
   is isomorphic in `𝒱^pre` to `Spa(B^I, B^{I,+})`; on points it is pullback along
   `B^I ≃+* 𝕎 O⟨T/s⟩` (`windowPreAdicSpaceIso_hom_base_apply`).
-* `TauCeti.FarguesFontaine.isAdic_spaPreAdicSpace_restrict_windowNumerators` : if
-  `(B^I, B^{I,+})` is sheafy, the restriction of `Spa(𝕎 O, 𝕎 O)` along `j` is an adic space.
-* `TauCeti.FarguesFontaine.isSheafy_spaYPreAdicSpace_restrict` : if `(B^I, B^{I,+})` is sheafy,
-  the restriction of `𝒴` to any open inside the window is sheafy.
+* `TauCeti.FarguesFontaine.isSheafyForEveryPresentation_intervalRing` and
+  `TauCeti.FarguesFontaine.isStablySheafyRing_intervalRing` : the pair `(B^I, B^{I,+})` is sheafy,
+  and `B^I` is stably sheafy, when `ρ₁` is a rational power of `v(ϖ)`.
+* `TauCeti.FarguesFontaine.isAdic_spaPreAdicSpace_restrict_windowNumerators` : the restriction of
+  `Spa(𝕎 O, 𝕎 O)` along `j` is an adic space.
+* `TauCeti.FarguesFontaine.isSheafy_spaYPreAdicSpace_restrict` : the restriction of `𝒴` to any
+  open inside the window is sheafy.
 
 ## References
 
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
   §3.1, for the interval rings `B^I` and the windows.
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Remark 8.8 and
-  Definition 8.22.
+* K. S. Kedlaya, *Noetherian properties of Fargues–Fontaine curves*, IMRN 2016, no. 8,
+  2544–2567; arXiv:1410.5160v3, Theorem 4.10.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Remark 8.8, Definition 8.22,
+  Theorem 8.28 and Corollary 8.35.
 -/
 
 public noncomputable section
 
-universe u
+universe u w
 
 namespace TauCeti.FarguesFontaine
 
@@ -149,6 +160,41 @@ theorem range_spaComapLoc_windowNumerators [IsTopologicalRing (WittVector p R)]
   exact Set.ext fun _ ↦ mem_spaBasicOpen
 
 end Rational
+
+/-! ### Sheafiness of the interval rings -/
+
+section IntervalRing
+
+variable {O : Type u} [CommRing O] {ϖ : O} {K : Type*} [Field K] [Algebra O K]
+  {v : Valuation K ℝ≥0} [CharP O p] [PerfectRing O p]
+  (hv : v.Integers O) (hϖ : ϖ ≠ 0) (hϖ' : v (algebraMap O K ϖ) < 1) {ρ₁ ρ₂ : ℝ≥0}
+  (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1)
+
+/-- **The pair `(B^I, B^{I,+})` is sheafy** for radii `ρ₁ ≤ ρ₂` with `ρ₁ ^ a = v(ϖ) ^ b` for some
+`a ≠ 0`: the structure presheaf of `Spa(B^I, B^{I,+})` is a sheaf of complete separated topological
+rings for every pair of definition of `B^I`, where `B^{I,+} = (B^I)°`. The interval ring `B^I` is
+a complete Hausdorff Tate ring, strongly noetherian by Kedlaya's Theorem 4.10
+(`TauCeti.WittVector.isStronglyNoetherian_intervalRing`), so this is Wedhorn's Theorem 8.28(b)
+(`TauCeti.Huber.isSheafyForEveryPresentation_of_isStronglyNoetherian`). -/
+theorem isSheafyForEveryPresentation_intervalRing (h₁₂ : ρ₁ ≤ ρ₂) {a b : ℕ} (ha : a ≠ 0)
+    (hab : ρ₁ ^ a = v (algebraMap O K ϖ) ^ b) :
+    IsSheafyForEveryPresentation (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) :=
+  have := WittVector.isStronglyNoetherian_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ h₁₂ ha hab
+  isSheafyForEveryPresentation_of_isStronglyNoetherian
+    (Pair.powerBounded_plus (A := IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) ▸
+      (Pair.powerBounded _).isRingOfIntegralElements)
+
+/-- **The interval ring `B^I` is stably sheafy** for radii `ρ₁ ≤ ρ₂` with `ρ₁ ^ a = v(ϖ) ^ b` for
+some `a ≠ 0`: every topologically finite-type algebra `B^I⟨X₁, …, Xₙ⟩ / J` is sheafy. This is
+Wedhorn's Corollary 8.35 (`TauCeti.Huber.isStablySheafyRing_of_isStronglyNoetherian`) for the
+strongly noetherian Tate ring `B^I` (`TauCeti.WittVector.isStronglyNoetherian_intervalRing`). -/
+theorem isStablySheafyRing_intervalRing (h₁₂ : ρ₁ ≤ ρ₂) {a b : ℕ} (ha : a ≠ 0)
+    (hab : ρ₁ ^ a = v (algebraMap O K ϖ) ^ b) :
+    IsStablySheafyRing.{_, w} (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :=
+  have := WittVector.isStronglyNoetherian_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ h₁₂ ha hab
+  isStablySheafyRing_of_isStronglyNoetherian
+
+end IntervalRing
 
 /-! ### The window as an affinoid pre-adic space -/
 
@@ -243,15 +289,12 @@ theorem windowPreAdicSpaceIso_hom_base_apply (h₁ : ρ₁ ^ q.num = v (algebraM
   erw [presentationLimitPreAdicSpaceComapIso_hom_base, _root_.CategoryTheory.Category.id_comp]
   exact spaComap_val ..
 
-/-- **A window of `𝒴` is an adic space once `(B^I, B^{I,+})` is sheafy**: if the structure
-presheaf of `Spa(B^I, B^{I,+})` is a sheaf, for the interval ring `B^I` with its plus ring
-`B^{I,+} = (B^I)°`, then so is the structure presheaf of the window `{q ≤ κ ≤ q'}` of
-`Spa(𝕎 O, 𝕎 O)`, the restriction along the open embedding `j : Spa(𝕎 O⟨T/s⟩, A_U⁺) → Spa(𝕎 O, 𝕎 O)`,
-which is therefore an adic space: it is isomorphic to `Spa(B^I, B^{I,+})`
-(`windowPreAdicSpaceIso`). The pair `(B^I, B^{I,+})` is sheafy when `B^I` is strongly noetherian
-(`TauCeti.Huber.isSheafyForEveryPresentation_of_isStronglyNoetherian`). -/
+/-- **A window of `𝒴` is an adic space**: the restriction of `Spa(𝕎 O, 𝕎 O)` along the open
+embedding `j : Spa(𝕎 O⟨T/s⟩, A_U⁺) → Spa(𝕎 O, 𝕎 O)`, whose image is the window `{q ≤ κ ≤ q'}`, is
+isomorphic to `Spa(B^I, B^{I,+})` (`windowPreAdicSpaceIso`), for the interval ring `B^I` with its
+plus ring `B^{I,+} = (B^I)°`. That pair is sheafy (`isSheafyForEveryPresentation_intervalRing`), so
+the structure presheaf of the window is a sheaf. -/
 theorem isAdic_spaPreAdicSpace_restrict_windowNumerators
-    (hB : IsSheafyForEveryPresentation (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)))
     (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
     (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂) :
     letI := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
@@ -262,9 +305,14 @@ theorem isAdic_spaPreAdicSpace_restrict_windowNumerators
         (windowDenominator p ϖ q q') L hden)) :=
   let P' : PairOfDefinition (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :=
     IsHuberRing.nonempty_pairOfDefinition.some
+  -- `q.num ≠ 0`, as otherwise `h₁` reads `1 = v(ϖ) ^ q.den < 1`
+  have hq : q.num ≠ 0 := fun h ↦
+    (pow_lt_one₀ zero_le hϖ' q.den_ne_zero).ne (by rw [← h₁, h, pow_zero])
   ObjectProperty.prop_of_iso PreAdicSpace.isAdic
     (windowPreAdicSpaceIso hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ P').symm
-    (isAdic_presentationLimitPreAdicSpace P' _ _ _ (hB.isSheaf P' P'.le_powerBoundedSubring))
+    (isAdic_presentationLimitPreAdicSpace P' _ _ _
+      ((isSheafyForEveryPresentation_intervalRing hv hϖ hϖ' hρ₁ hρ₂ h₁₂ hq h₁).isSheaf P'
+        P'.le_powerBoundedSubring))
 
 end Chart
 
@@ -275,21 +323,19 @@ section Sheafy
 variable {O : Type u} [CommRing O] {ϖ : O} {q q' : ℚ≥0} {K : Type*} [Field K] [Algebra O K]
   {v : Valuation K ℝ≥0} [CharP O p] [PerfectRing O p]
   (hv : v.Integers O) (hϖ : ϖ ≠ 0) (hϖ' : v (algebraMap O K ϖ) < 1) {ρ₁ ρ₂ : ℝ≥0}
-  (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1)
   [TopologicalSpace (WittVector p O)] [IsTopologicalRing (WittVector p O)]
   {hI : IsAdic (Ideal.span {(p : WittVector p O), teichmuller p ϖ})}
   {P : PairOfDefinition (WittVector p O)}
 
-/-- **`𝒪_𝒴` is a sheaf over every open contained in a window, once `(B^I, B^{I,+})` is
-sheafy**: let `q = a / b` and `q' = a' / b'` in lowest terms, with radii `ρ₁ ^ a = v(ϖ) ^ b`,
-`ρ₂ ^ a' = v(ϖ) ^ b'` and `ρ₁ ≤ ρ₂`. If the structure presheaf of `Spa(B^I, B^{I,+})` is a sheaf,
-then the restriction of the pre-adic space `𝒴` along any open embedding whose image lies in the
+include hv hϖ hϖ' in
+/-- **`𝒪_𝒴` is a sheaf over every open contained in a window**: let `q = a / b` and `q' = a' / b'`
+in lowest terms, with radii `ρ₁ ^ a = v(ϖ) ^ b`, `ρ₂ ^ a' = v(ϖ) ^ b'` and `ρ₁ ≤ ρ₂`. Then the
+restriction of the pre-adic space `𝒴` along any open embedding whose image lies in the
 window `{q ≤ κ ≤ q'}` is sheafy. The window is an adic space
 (`isAdic_spaPreAdicSpace_restrict_windowNumerators`), and sheafiness passes to its open
 subspaces. -/
 theorem isSheafy_spaYPreAdicSpace_restrict {U : TopCat.{u}}
     {f : U ⟶ (spaYPreAdicSpace P hI).toTopCat} (hf : IsOpenEmbedding f)
-    (hB : IsSheafyForEveryPresentation (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)))
     (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
     (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂)
     (hfW : ∀ x, IsRadiusLowerBound p ϖ q (f x).val ∧ IsRadiusUpperBound p ϖ q' (f x).val) :
@@ -299,6 +345,17 @@ theorem isSheafy_spaYPreAdicSpace_restrict {U : TopCat.{u}}
     rintro rfl
     simp only [NNRat.num_zero, pow_zero, NNRat.den_zero, pow_one] at h₁
     exact hϖ'.ne h₁.symm
+  -- the radii lie in `(0, 1)`, as `ρ ^ a = v(ϖ) ^ b` with `a, b ≠ 0` and `0 < v(ϖ) < 1`
+  have hϖ₀ : 0 < v (algebraMap O K ϖ) :=
+    pos_iff_ne_zero.mpr ((map_ne_zero v).mpr ((map_ne_zero_iff _ hv.hom_inj).mpr hϖ))
+  have hρ {ρ : ℝ≥0} {r : ℚ≥0} (h : ρ ^ r.num = v (algebraMap O K ϖ) ^ r.den) :
+      ρ ∈ Set.Ioo 0 1 := by
+    have hlt := pow_lt_one₀ zero_le hϖ' r.den_ne_zero
+    have hr : r.num ≠ 0 := fun h0 ↦ hlt.ne (by rw [← h, h0, pow_zero])
+    exact ⟨pos_iff_ne_zero.mpr fun h0 ↦ (pow_pos hϖ₀ r.den).ne' (by rw [← h, h0, zero_pow hr]),
+      (pow_lt_one_iff_of_nonneg zero_le hr).mp (h ▸ hlt)⟩
+  have hρ₁ := hρ h₁
+  have hρ₂ := hρ h₂
   have := isLocalization_away_windowDenominator (p := p) (ϖ := ϖ) (q' := q')
     (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) hq
   have hden := hasDenominatorPower_windowNumerators (q := q) (q' := q')
@@ -310,7 +367,7 @@ theorem isSheafy_spaYPreAdicSpace_restrict {U : TopCat.{u}}
     (windowDenominator p ϖ q q') _ hden
   have hj := isOpenEmbedding_spaComapLocHom P ⊤ le_top (windowNumerators p ϖ q q')
     (windowDenominator p ϖ q q') _ hden
-  have hW := (isAdic_spaPreAdicSpace_restrict_windowNumerators hv hϖ hϖ' hρ₁ hρ₂ hI P hden hB h₁ h₂
+  have hW := (isAdic_spaPreAdicSpace_restrict_windowNumerators hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂
     h₁₂).isSheafy
   -- the window, as an open of `𝒴`, is the preimage of the image of `j`
   let W : Opens (spaYPreAdicSpace P hI) :=
