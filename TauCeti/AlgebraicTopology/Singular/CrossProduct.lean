@@ -39,7 +39,7 @@ In a braided coefficient category the cross product is graded commutative: the s
 `(-1)^(p * q) b × a` for `a ∈ Hₚ(X; R)` and `b ∈ H_q(Y; S)`
 (`TopCat.singularHomologyCross_comp_map_braiding`).  At chain level, the shuffle map commutes
 with the interchange of factors up to homotopy, with the Koszul sign
-(`TopCat.shuffleKoszulBraidingHomotopy`); on homology this sign is that of the algebraic cross
+(`TopCat.koszulBraidingShuffleHomotopy`); on homology this sign is that of the algebraic cross
 product (`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`).  With
 coefficients in the monoidal unit, such as `k` in `ModuleCat k`, and `𝟙_ C ⊗ 𝟙_ C` identified
 with `𝟙_ C` through the left unitor, the statement needs no coefficient braiding
@@ -54,8 +54,6 @@ with `𝟙_ C` through the left unitor, the statement needs no coefficient braid
   coefficients.
 * `TopCat.singularHomologyCross_comp_homologyMap_alexanderWhitney`: under the Eilenberg–Zilber
   isomorphism, the homology cross product is the cross product of the singular chain complexes.
-* `TopCat.shuffleKoszulBraidingHomotopy`: the shuffle map commutes with the interchange of factors
-  up to homotopy.
 * `TopCat.singularHomologyCross_comp_map_braiding` and
   `TopCat.singularHomologyCross_comp_map_leftUnitor_comp_map_braiding`: graded commutativity of
   the homology cross product.
@@ -220,25 +218,6 @@ section Braided
 
 variable [BraidedCategory C]
 
-/-- **The shuffle map commutes with the interchange of factors up to homotopy**: the Koszul
-braiding `C(X; R) ⊗ C(Y; S) ⟶ C(Y; S) ⊗ C(X; R)`, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree
-`(p, q)`, followed by the shuffle map of `Y × X`, is chain homotopic to the shuffle map of `X × Y`
-followed by the maps induced by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap
-`X × Y ⟶ Y × X`. -/
-def shuffleKoszulBraidingHomotopy (X Y : TopCat.{w}) (R S : C) :
-    Homotopy (TauCeti.NatChainComplex.koszulBraidingHom ((toSSet.obj X).chainComplex R)
-        ((toSSet.obj Y).chainComplex S) ≫ shuffle Y X S R)
-      (shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
-        SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R)) := by
-  -- the shuffle map is a homotopy inverse of the Alexander–Whitney map on both sides, and the
-  -- Alexander–Whitney map commutes with the interchange up to homotopy
-  refine ((shuffleAlexanderWhitneyHomotopy X Y R S).compRightId _).symm.trans ?_
-  refine (Homotopy.ofEq ?_).trans ((((alexanderWhitneyKoszulBraidingHomotopy X Y R S).compLeft
-    (shuffle X Y R S)).compRight (shuffle Y X S R)).trans ?_)
-  · simp only [Category.assoc]
-  refine (Homotopy.ofEq ?_).trans ((alexanderWhitneyShuffleHomotopy Y X S R).compLeftId _)
-  simp only [Category.assoc]
-
 variable (X Y : TopCat.{w}) (R S : C) (p q n : ℕ) (h : p + q = n)
   [PreservesColimitsOfShape WalkingParallelPair
     (tensorLeft (((toSSet.obj X).chainComplex R).homology p))]
@@ -256,7 +235,7 @@ variable (X Y : TopCat.{w}) (R S : C) (p q n : ℕ) (h : p + q = n)
 /-- **Graded commutativity of the homology cross product**: the map induced by the swap
 `X × Y ⟶ Y × X` and the coefficient braiding `R ⊗ S ⟶ S ⊗ R` sends the cross product `a × b` of
 `a ∈ Hₚ(X; R)` and `b ∈ H_q(Y; S)` to `(-1)^(p * q) b × a`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma singularHomologyCross_comp_map_braiding :
     singularHomologyCross X Y R S p q n h ≫
         ((singularHomologyFunctor C n).map (β_ R S).hom).app (X ⊗ Y) ≫
@@ -265,7 +244,7 @@ lemma singularHomologyCross_comp_map_braiding :
   -- the singular homology maps are by definition those of the induced chain maps
   have key := (homologyCross _ _ p q n h ≫= (homologyMap_comp _ _ n).symm).trans <|
     (homologyCross _ _ p q n h ≫=
-      (shuffleKoszulBraidingHomotopy X Y R S).homologyMap_eq n).symm.trans <|
+      (koszulBraidingShuffleHomotopy X Y R S).homologyMap_eq n).symm.trans <|
       (homologyCross _ _ p q n h ≫= homologyMap_comp _ _ n).trans <|
         TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom_assoc _ _ p q n h _
   simp only [homologyMap_comp, Preadditive.zsmul_comp, Category.assoc] at key
@@ -275,7 +254,7 @@ lemma singularHomologyCross_comp_map_braiding :
 coefficients in the monoidal unit `𝟙_ C`, for instance `k` in `ModuleCat k`, and the product of
 coefficients identified with `𝟙_ C` through the left unitor, the map induced by the swap
 `X × Y ⟶ Y × X` sends `a × b` to `(-1)^(p * q) b × a`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma singularHomologyCross_comp_map_leftUnitor_comp_map_braiding
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorLeft (((toSSet.obj X).chainComplex (𝟙_ C)).homology p))]
