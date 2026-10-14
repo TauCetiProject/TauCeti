@@ -118,6 +118,15 @@ private theorem comapWeylGroupHom_mk (n : T.subgroupN.comap f) :
     comapWeylGroupHom T (QuotientGroup.mk n) = QuotientGroup.mk (f.subgroupComap T.subgroupN n) :=
   QuotientGroup.map_mk _ _ _ _ _
 
+/-- If `f x * t = n ∈ N` with `t ∈ B`, the class of `x` maps to the class of `n`. -/
+private theorem comapWeylGroupHom_mk_of_mul_eq {x : H} (hx : f x ∈ T.subgroupN)
+    {n : T.subgroupN} {t : G} (ht : t ∈ T.subgroupB) (hxt : f x * t = n) :
+    comapWeylGroupHom T (QuotientGroup.mk ⟨x, hx⟩) = QuotientGroup.mk n := by
+  rw [comapWeylGroupHom_mk, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
+    Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN (⟨x, hx⟩ : T.subgroupN.comap f),
+    ← hxt, inv_mul_cancel_left]
+  exact ht
+
 private theorem comapWeylGroupHom_injective :
     Function.Injective (comapWeylGroupHom T (f := f)) :=
   TauCeti.QuotientGroup.map_injective_of_eq_comap _ _ (comap_subgroupOf_eq T)
@@ -129,12 +138,7 @@ private theorem comapWeylGroupHom_surjective
   induction q using QuotientGroup.induction_on with
   | H n =>
     obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf n.2
-    refine ⟨QuotientGroup.mk ⟨x, hx⟩, ?_⟩
-    rw [comapWeylGroupHom_mk, QuotientGroup.eq, mem_intersection]
-    rw [Subgroup.coe_mul, Subgroup.coe_inv,
-      f.subgroupComap_apply_coe T.subgroupN (⟨x, hx⟩ : T.subgroupN.comap f), ← hxt,
-      inv_mul_cancel_left]
-    exact ht.1
+    exact ⟨QuotientGroup.mk ⟨x, hx⟩, comapWeylGroupHom_mk_of_mul_eq T hx ht.1 hxt⟩
 
 private theorem closure_preimage_comapWeylGroupHom
     (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
@@ -208,11 +212,8 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
     obtain ⟨r₀, hr₀, b, hb⟩ := T.exists_conj_not_mem _ hs
     obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf r₀.2
     let r : T.subgroupN.comap f := ⟨x, hx⟩
-    have hr : (QuotientGroup.mk r : _ ⧸ _) = s := by
-      apply comapWeylGroupHom_injective T
-      rw [comapWeylGroupHom_mk, ← hr₀, QuotientGroup.eq, mem_intersection]
-      rw [Subgroup.coe_mul, Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r, ← hxt]
-      simpa [r] using ht.1
+    have hr : (QuotientGroup.mk r : _ ⧸ _) = s :=
+      comapWeylGroupHom_injective T ((comapWeylGroupHom_mk_of_mul_eq T hx ht.1 hxt).trans hr₀)
     -- Write `t b t⁻¹ = f x * t₁` with `f x ∈ B` and `t₁ ∈ B ∩ N`.
     obtain ⟨x, t₁, ht₁, hxt₁⟩ := hf (t * b * t⁻¹)
     have hx : f x ∈ T.subgroupB := by
