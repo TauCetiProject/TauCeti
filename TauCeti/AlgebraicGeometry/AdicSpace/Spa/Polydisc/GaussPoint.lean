@@ -82,6 +82,14 @@ valuations need not differ from `η_r`.
 * `TauCeti.ValuationSpectrum.isContinuous_closedDiscGaussValuationAbove`,
   `TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_le_one_of_isPowerBounded` and their
   `Below` analogues: the conditions for membership in the closed unit disc.
+* `TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_weightedX_le_iff` and
+  `TauCeti.ValuationSpectrum.closedDiscGaussValuationBelow_weightedC_le_iff`: just above `r` the
+  variable `T` is at most a constant `c` exactly when `r < ‖c‖`, and just below `r` a constant `c`
+  is at most `T` exactly when `‖c‖ < r`. The complementary comparisons are
+  `TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_weightedC_le_iff` (`c ≤ T` exactly when
+  `‖c‖ ≤ r`) and `TauCeti.ValuationSpectrum.closedDiscGaussValuationBelow_weightedX_le_iff`
+  (`T ≤ c` exactly when `r ≤ ‖c‖`). Just above `r`, constants compare by their norms
+  (`TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_weightedC_le_weightedC_iff`).
 * `TauCeti.ValuationSpectrum.gaussPointAbove_ne_gaussPoint`,
   `TauCeti.ValuationSpectrum.gaussPointBelow_ne_gaussPoint` and
   `TauCeti.ValuationSpectrum.gaussPointBelow_ne_gaussPointAbove`: for `r` the norm of an element
@@ -786,6 +794,101 @@ theorem not_closedDiscGaussValuationBelow_weightedC_le (hr₀ : 0 < r) (hr₁ : 
   rintro (h | ⟨-, h⟩)
   · exact h.ne heq.symm
   · exact absurd h (by norm_num)
+
+/-- **Just above `r`, the variable `T` is at most a constant `c` exactly when `r < ‖c‖`**: the
+Gauss norms decide unless `‖c‖ = r`, and then `T` is strictly larger. -/
+@[simp]
+theorem closedDiscGaussValuationAbove_weightedX_le_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1) (c : K) :
+    closedDiscGaussValuationAbove hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) ≤
+      closedDiscGaussValuationAbove hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) ↔
+      r < ‖c‖ := by
+  rcases lt_trichotomy ‖c‖ r with h | h | h
+  · refine iff_of_false (not_le.mpr (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁ ?_))
+      (lt_asymm h)
+    rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
+      closedDiscGaussValuation_weightedC, coe_nnnorm]
+  · exact iff_of_false (not_closedDiscGaussValuationAbove_weightedX_le hr₀ hr₁ h)
+      fun h' ↦ h'.ne' h
+  · refine iff_of_true (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁ ?_).le h
+    rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
+      closedDiscGaussValuation_weightedC, coe_nnnorm]
+
+/-- **Just below `r`, a constant `c` is at most the variable `T` exactly when `‖c‖ < r`**: the
+Gauss norms decide unless `‖c‖ = r`, and then `c` is strictly larger. -/
+@[simp]
+theorem closedDiscGaussValuationBelow_weightedC_le_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1) (c : K) :
+    closedDiscGaussValuationBelow hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) ≤
+      closedDiscGaussValuationBelow hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) ↔
+      ‖c‖ < r := by
+  rcases lt_trichotomy ‖c‖ r with h | h | h
+  · refine iff_of_true (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).le h
+    rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
+      closedDiscGaussValuation_weightedC, coe_nnnorm]
+  · exact iff_of_false (not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁ h) fun h' ↦ h'.ne h
+  · refine iff_of_false (not_le.mpr (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_))
+      (lt_asymm h)
+    rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
+      closedDiscGaussValuation_weightedC, coe_nnnorm]
+
+/-- **Just above `r`, a constant `c` is at most the variable `T` exactly when `‖c‖ ≤ r`**: this
+is the complement of `closedDiscGaussValuationAbove_weightedX_le_iff`. -/
+@[simp]
+theorem closedDiscGaussValuationAbove_weightedC_le_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1) (c : K) :
+    closedDiscGaussValuationAbove hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) ≤
+      closedDiscGaussValuationAbove hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) ↔
+      ‖c‖ ≤ r := by
+  rcases lt_or_ge r ‖c‖ with h | h
+  · refine iff_of_false (not_le.mpr (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁ ?_))
+      h.not_ge
+    rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
+      closedDiscGaussValuation_weightedC, coe_nnnorm]
+  · exact iff_of_true (not_le.mp
+      ((closedDiscGaussValuationAbove_weightedX_le_iff hr₀ hr₁ c).not.mpr h.not_gt)).le h
+
+/-- **Just below `r`, the variable `T` is at most a constant `c` exactly when `r ≤ ‖c‖`**: this
+is the complement of `closedDiscGaussValuationBelow_weightedC_le_iff`. -/
+@[simp]
+theorem closedDiscGaussValuationBelow_weightedX_le_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1) (c : K) :
+    closedDiscGaussValuationBelow hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) ≤
+      closedDiscGaussValuationBelow hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) ↔
+      r ≤ ‖c‖ := by
+  rcases lt_or_ge ‖c‖ r with h | h
+  · refine iff_of_false (not_le.mpr (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_))
+      h.not_ge
+    rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
+      closedDiscGaussValuation_weightedC, coe_nnnorm]
+  · exact iff_of_true (not_le.mp
+      ((closedDiscGaussValuationBelow_weightedC_le_iff hr₀ hr₁ c).not.mpr h.not_gt)).le h
+
+/-- **Just above `r`, constants are compared by their norms**: a nonzero constant attains its
+Gauss norm only in degree `0`. -/
+@[simp]
+theorem closedDiscGaussValuationAbove_weightedC_le_weightedC_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    (a b : K) :
+    closedDiscGaussValuationAbove hr₀ hr₁
+        (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight a) ≤
+      closedDiscGaussValuationAbove hr₀ hr₁ (weightedC _ isWeightFamily_one_weight b) ↔
+      ‖a‖ ≤ ‖b‖ := by
+  have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp [ha]
+  have hdist {c : K} (hc : c ≠ 0) : TauCeti.PowerSeries.IsDistinguished r 0 (toRestrictedSubring hr
+      (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c) : PowerSeries K) := by
+    rw [coe_toRestrictedSubring_weightedC]
+    exact TauCeti.PowerSeries.isDistinguished_monomial hr₀ hc 0
+  rw [closedDiscGaussValuationAbove, Valuation.comap_apply, Valuation.comap_apply,
+    TauCeti.PowerSeries.gaussValuationAbove_le_iff hr₀ (hdist ha) (hdist hb)]
+  have hG (c : K) : TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
+      (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c)) = ‖c‖₊ :=
+    closedDiscGaussValuation_weightedC hr₀ hr₁ c
+  rw [hG, hG]
+  simp [← le_iff_lt_or_eq, ← NNReal.coe_le_coe]
 
 /-- **`η_{r⁺}` is not the Gauss point `η_r`** when `r` is the norm of an element of `K`: the two
 points compare `T` with a constant of norm `r` differently. -/

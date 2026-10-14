@@ -39,11 +39,11 @@ fundamental-groupoid actions and assemble the categorical equivalence.
 
 ## References
 
-This is the reconstruction step in the alternative transitive-action formulation of Stage 2,
-item 8 of `TauCetiRoadmap/UniversalCovers/README.md`. It is the standard stabilizer construction
-for the equivalence between connected covering spaces and transitive fundamental-group sets; see
-Hatcher, *Algebraic Topology*, Section 1.3. The proof uses Mathlib's orbit-stabilizer equivalence
-and Tau Ceti's universal-cover quotient associated to a subgroup.
+This is the reconstruction step in the transitive-action formulation of the classification of
+covering spaces. It is the standard stabilizer construction for the equivalence between connected
+covering spaces and transitive fundamental-group sets; see Hatcher, *Algebraic Topology*,
+Section 1.3. The proof uses Mathlib's orbit-stabilizer equivalence and Tau Ceti's universal-cover
+quotient associated to a subgroup.
 -/
 
 public section

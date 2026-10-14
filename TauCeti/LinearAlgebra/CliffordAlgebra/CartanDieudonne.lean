@@ -33,9 +33,7 @@ element lies in the range of `pinToOrthogonal`.
 
 ## References
 
-This advances Layer 2's "The double cover" target in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section

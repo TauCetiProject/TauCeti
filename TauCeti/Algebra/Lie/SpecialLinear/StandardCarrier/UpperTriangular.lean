@@ -174,7 +174,7 @@ theorem upperTriangularAmbientInclusion_comp_inclusion :
       upperTriangularInclusion r ≫ carrierι r := by
   rw [upperTriangularInclusion_comp_carrierι, upperTriangularAmbientInclusion,
     GeneralLinear.UpperTriangular.inclusion, GeneralLinear.weightParabolicInclusion_def,
-    ← Category.assoc, CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι, eqToIso.hom]
+    ← Category.assoc, CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
 
 /-! ## Matrix points -/
 

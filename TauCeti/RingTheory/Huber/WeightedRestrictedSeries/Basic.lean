@@ -76,12 +76,13 @@ The subring, `weightedNhd`, topology and maps into them take this hypothesis; `w
   (`hasBasis_nhds_zero_weightedTopology`, `isTopologicalRing_weightedTopology`,
   `nonarchimedeanRing_weightedTopology`, `continuous_weightedC`).
   `TauCeti.Huber.weightedC_mem_weightedNhd` records that a constant series meets the `U` bound
-  exactly when its value does, and `TauCeti.Huber.isOpen_weightedNhd` that `U⟨X⟩` is open whenever
-  `U` is.
-* `TauCeti.Huber.weightedRestrictedSubring_one_weight`: the trivial weight gives ordinary
-  restricted series (Wedhorn Example 5.54). `subringCongr_one_weight_weightedX` and
-  `subringCongr_one_weight_weightedC` identify the images of the generators as `restrictedX`
-  and the algebra map.
+  exactly when its value does, `weightedC_mul_weightedX_pow_mem_weightedNhd` bounds monomials,
+  and `TauCeti.Huber.isOpen_weightedNhd` that `U⟨X⟩` is open whenever `U` is.
+* `TauCeti.Huber.weightedRestrictedSubring_one_weight`: for the trivial weight this is the ordinary
+  ring of restricted power series (Wedhorn Example 5.54), with
+  `TauCeti.Huber.subringCongr_one_weight_weightedX` and
+  `TauCeti.Huber.subringCongr_one_weight_weightedC` saying where that identification sends the
+  generators — to `restrictedX` and to the algebra map.
 * `TauCeti.Huber.weightedPolynomials`, the polynomials as a subring of `A⟨X⟩_T`, with
   `mem_weightedPolynomials_iff` identifying it with finite support and the generators
   `weightedC`/`weightedX` in it; `TauCeti.Huber.dense_weightedPolynomials` is Wedhorn 5.49(1),
@@ -857,6 +858,16 @@ theorem weightedC_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
     · rw [h, weightMul_zero]
       exact ha
     · exact (weightMul T ν U).zero_mem
+
+/-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` when `c` meets the bound `T(j eᵢ) · U` of its degree. -/
+theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ}
+    (hc : c ∈ weightMul T (Finsupp.single i j) U) :
+    weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U := fun ν ↦ by
+  classical
+  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, coe_weightedC, coe_weightedX,
+    MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow]
+  split_ifs with h <;> simp [h, hc]
 
 /-- `R⟨X⟩_T` for a subring `R` of `A`: the series all of whose coefficients meet the `R` bound,
 `aν ∈ Tν · R` for every `ν`. Its carrier is the subgroup `TauCeti.Huber.weightedNhd` of `R`; that

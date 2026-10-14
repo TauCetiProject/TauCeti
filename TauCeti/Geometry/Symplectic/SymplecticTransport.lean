@@ -18,11 +18,9 @@ is the symplectic companion of `TauCeti.AlmostComplexStructure.transport`
 symplectomorphism and a complex-linear isomorphism, so every compatibility relation between `ω`
 and an almost complex structure `J` is preserved when both are transported along `e`.
 
-This is the pointwise linear algebra that the smooth layer of the analytic Heegaard Floer roadmap
-needs before stating bundle-level naturality: a symplectic form on a vector bundle is given
-fiberwise, and a change of trivialization acts on each fiber by exactly this transport. Stating
-the compatibility transport now keeps the invariance statements naturality-ready, as the roadmap
-asks. The underlying form transport reuses Mathlib's `LinearMap.BilinForm.congr` and
+This is the pointwise linear algebra behind bundle-level naturality: a symplectic form on a vector
+bundle is given fiberwise, and a change of trivialization acts on each fiber by exactly this
+transport. The underlying form transport reuses Mathlib's `LinearMap.BilinForm.congr` and
 `LinearMap.BilinForm.Nondegenerate.congr`.
 
 ## Main declarations

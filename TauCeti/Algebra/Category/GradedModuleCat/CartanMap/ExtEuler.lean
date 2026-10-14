@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis
+public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
 public import TauCeti.Algebra.Category.GradedModuleCat.HomLaurentSupport
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Sesquilinear
@@ -69,10 +70,34 @@ namespace TauCeti
 
 open CategoryTheory LaurentPolynomial
 
-universe w uk uA uI
+universe w uk uA uI v uJ
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+
+omit [GradedAlgebra 𝒜] in
+/-- The q-Euler characteristic of a finite direct sum of projective graded modules is the sum
+of the characteristics of the summands, for any grading-shift autoequivalence and admissible
+pairs. -/
+theorem gradedExtEuler_directSumObj [HasExt.{w} (GradedModuleCat.{max uJ v} 𝒜)]
+    {J : Type uJ} [Fintype J] (e : GradedModuleCat.{max uJ v} 𝒜 ≌ GradedModuleCat.{max uJ v} 𝒜)
+    (M : J → GradedModuleCat.{max uJ v} 𝒜) [∀ j, Projective (M j)]
+    (Y : GradedModuleCat.{max uJ v} 𝒜)
+    (h : IsGradedEulerAdmissible.{w} k e (GradedModuleCat.directSumObj M) Y)
+    (hj : ∀ j, IsGradedEulerAdmissible.{w} k e (M j) Y) :
+    gradedExtEuler k e h = ∑ j, gradedExtEuler k e (hj j) := by
+  classical
+  rw [gradedExtEuler_projective]
+  ext p
+  rw [coeff_targetShiftGradedDimension]
+  let _ (j : J) : Module.Finite k (M j ⟶ (e ^ (-p)).functor.obj Y) :=
+    (((hj j).internallyFinite.finiteLaurentSupport 0).of_equiv
+      fun _ ↦ CategoryTheory.Abelian.Ext.linearEquiv₀ (R := k)).finiteDimensional (-p)
+  rw [GradedModuleCat.finrank_hom_directSumObj, Nat.cast_sum,
+    AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
+  apply Finset.sum_congr rfl
+  intro j _
+  rw [gradedExtEuler_projective, coeff_targetShiftGradedDimension]
 
 /-! ### Evaluation against `Af` -/
 

@@ -230,7 +230,9 @@ of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` requires of the b
 instance IsStronglyNoetherian.restrictedMvPowerSeriesCompletion [IsHuberRing A]
     [IsStronglyNoetherian A] (k : ℕ) :
     IsStronglyNoetherian (restrictedMvPowerSeriesCompletion k A) where
-  isNoetherianRing m := isNoetherianRing_of_ringEquiv _ (iterateRingEquiv k m A)
+  isNoetherianRing m := isNoetherianRing_of_ringEquiv _
+    (iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ rfl) fun _ ↦ by simp [UniformSpace.Completion.coe_one])
 
 /-! ### Zero variables -/
 
