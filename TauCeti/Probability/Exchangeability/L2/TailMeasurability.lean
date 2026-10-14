@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.L2.Cesaro.Convergence
-public import TauCeti.Probability.Process.Tail.Basic
+public import TauCeti.Probability.Process.BlockAverage.Tail
 import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.MeasureTheory.Function.BoundedMemLp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -58,25 +58,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-
-omit [MeasurableSpace Ω] in
-/-- **A block average over tail indices is tail-measurable.** If every index of the family `k` is at
-least `r`, each coordinate `f ∘ X (k j)` is `tailFamily X r`-measurable, hence so is their average.
-Only measurability of `f` is needed: no measure, and no contractability of `X`.
-
-The indices need not be consecutive — `blockAverage` averages over an arbitrary `k : Fin n → ℕ`,
-and only `r ≤ k j` is used. -/
-private theorem measurable_tailFamily_blockAverage {X : ℕ → Ω → α} {f : α → ℝ}
-    (hf : Measurable f) {r n : ℕ} {k : Fin n → ℕ} (hk : ∀ j, r ≤ k j) :
-    Measurable[tailFamily X r] (blockAverage (fun i ω => f (X i ω)) k) := by
-  have hterm : ∀ j : Fin n,
-      Measurable[tailFamily X r] fun ω => f (X (k j) ω) := fun j =>
-    hf.comp (measurable_tailFamily_of_le (hk j))
-  have happly : (blockAverage (fun i ω => f (X i ω)) k)
-      = fun ω => (n : ℝ)⁻¹ * ∑ j : Fin n, f (X (k j) ω) :=
-    funext fun ω => blockAverage_apply _ _
-  rw [happly]
-  exact (Finset.measurable_fun_sum Finset.univ fun j _ => hterm j).const_mul _
 
 /-- **The Cesàro limit lives on the tail.** For a measurable observable `f` whose composite with a
 single coordinate is square-integrable, the common `L¹` limit of the moving injective block

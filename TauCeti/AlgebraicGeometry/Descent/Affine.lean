@@ -34,19 +34,25 @@ effective descent for affine schemes.
 * `TauCeti.Algebra.DescentDatum.specBaseChangeHom`: for an `R`-algebra `A`, the canonical
   descent datum on `Spec A ×_{Spec R} Spec S` is isomorphic to the descent datum on
   `Spec (S ⊗[R] A)` given by `Spec` of the canonical coaction.
-* `TauCeti.Algebra.DescentDatum.specDescendedHom` and
-  `TauCeti.DescentDatum.exists_isAffine_baseChange_hom_isIso`: **effective descent for affine
-  schemes.** If `S` is flat over `R` (for instance if `p` is faithfully flat), every descent
-  datum on `Spec B` relative to `p` is isomorphic to the canonical descent datum on the base
-  change of the affine scheme `Spec D.descended` over `Spec R`; transporting along
-  `X ≅ Spec Γ(X, ⊤)`, the same holds for every affine scheme `X` over `Spec S`.
+* `TauCeti.Algebra.DescentDatum.specDescendedHom`: if `S` is flat over `R` (for instance if `p`
+  is faithfully flat), every descent datum on `Spec B` relative to `p` is isomorphic to the
+  canonical descent datum on the base change of the affine scheme `Spec D.descended` over
+  `Spec R`.
+* `TauCeti.DescentDatum.exists_isAffine_baseChange_hom_isIso`: **effective descent for affine
+  schemes.** For a flat morphism `p : S' ⟶ S` of affine schemes, every descent datum on an affine
+  scheme over `S'` relative to `p` is isomorphic to the canonical descent datum on the base change
+  of an affine scheme over `S`.
+* `TauCeti.DescentDatum.exists_isAffine_baseChange_hom_isIso_pullbackAlong`: for an affine flat
+  morphism `p : S' ⟶ S` over an arbitrary base and a descent datum on an affine morphism
+  `X ⟶ S'`, the base change of the datum to any affine scheme over `S`, for instance an affine
+  open of `S`, is effective. This is the local input for effectivity over a non-affine base.
 * `TauCeti.effectiveEpi_pullback_fst_specAlgebraMap`: if `S` is faithfully flat
   over `R`, every base change of `Spec S ⟶ Spec R` is an effective epimorphism. Hence descent of
   morphisms applies to `Spec S ⟶ Spec R`, and in particular the **uniqueness** half of effective
   descent: base change is fully faithful into descent data
-  (`TauCeti.DescentDatum.baseChangeHomEquiv`), so the scheme `X₀` over `Spec R` produced by
-  `exists_isAffine_baseChange_hom_isIso` is unique up to a unique isomorphism compatible with
-  the descent data (`TauCeti.DescentDatum.Hom.descendIso`,
+  (`TauCeti.DescentDatum.baseChangeHomEquiv`), so for `p = Spec S ⟶ Spec R` the scheme `X₀`
+  over `Spec R` produced by `exists_isAffine_baseChange_hom_isIso` is unique up to a unique
+  isomorphism compatible with the descent data (`TauCeti.DescentDatum.Hom.descendIso`,
   `TauCeti.DescentDatum.Hom.eq_descendIso`).
 
 ## References
@@ -489,14 +495,15 @@ namespace DescentDatum
 
 open Algebra.DescentDatum
 
+section Spec
+
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- **Effective descent for affine schemes.** Let `S` be flat over `R` (for instance faithfully
-flat). Every descent datum on an affine scheme `X ⟶ Spec S` relative to `Spec S ⟶ Spec R` is
-effective: it is isomorphic to the canonical descent datum on the base change of an affine
-scheme over `Spec R`. -/
-theorem exists_isAffine_baseChange_hom_isIso [Module.Flat R S] {X : Over (Spec (.of S))}
-    [IsAffine X.left] (D : DescentDatum (Spec.algebraMap R S) X) :
+/-- Effective descent for affine schemes over `Spec R` along `Spec S ⟶ Spec R`, for `S` flat
+over `R`: the special case of `exists_isAffine_baseChange_hom_isIso` from which the general case
+is obtained by transport along `S ≅ Spec Γ(S, ⊤)`. -/
+private theorem exists_isAffine_baseChange_hom_isIso_spec [Module.Flat R S]
+    {X : Over (Spec (.of S))} [IsAffine X.left] (D : DescentDatum (Spec.algebraMap R S) X) :
     ∃ X₀ : Over (Spec (.of R)), IsAffine X₀.left ∧
       ∃ f : Hom (baseChange (Spec.algebraMap R S) X₀) D, IsIso f.hom := by
   -- Present `X` as `Spec B ⟶ Spec S` for `B = Γ(X, ⊤)`, an `S`-algebra through `X.hom`.
@@ -515,6 +522,44 @@ theorem exists_isAffine_baseChange_hom_isIso [Module.Flat R S] {X : Over (Spec (
   refine ⟨_, inferInstanceAs (IsAffine (Spec _)), g.comp E.specDescendedHom, ?_⟩
   rw [Hom.comp_hom]
   infer_instance
+
+end Spec
+
+/-- **Effective descent for affine schemes.** Let `p : S' ⟶ S` be a flat morphism of affine
+schemes (for instance a faithfully flat one). Every descent datum on an affine scheme `X ⟶ S'`
+relative to `p` is effective: it is isomorphic to the canonical descent datum on the base change
+of an affine scheme over `S`. -/
+theorem exists_isAffine_baseChange_hom_isIso {S S' : Scheme.{u}} {p : S' ⟶ S} [IsAffine S]
+    [IsAffine S'] [Flat p] {X : Over S'} [IsAffine X.left] (D : DescentDatum p X) :
+    ∃ X₀ : Over S, IsAffine X₀.left ∧ ∃ f : Hom (baseChange p X₀) D, IsIso f.hom := by
+  -- Present `p` as `Spec Γ(S', ⊤) ⟶ Spec Γ(S, ⊤)`, with `Γ(S', ⊤)` an algebra through `p`.
+  let _ : Algebra Γ(S, ⊤) Γ(S', ⊤) := p.appTop.hom.toAlgebra
+  have : Module.Flat Γ(S, ⊤) Γ(S', ⊤) := by
+    rw [← RingHom.flat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
+    exact HasRingHomProperty.iff_of_isAffine.mp ‹Flat p›
+  have hp : Spec.algebraMap Γ(S, ⊤) Γ(S', ⊤) = Spec.map p.appTop := by
+    rw [Spec.algebraMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+  let e : Arrow.mk p ≅ Arrow.mk (Spec.algebraMap Γ(S, ⊤) Γ(S', ⊤)) :=
+    arrowIsoSpecΓOfIsAffine p ≪≫ Arrow.isoMk (Iso.refl _) (Iso.refl _) (by simp [hp])
+  have : IsAffine ((Over.map e.hom.left).obj X).left := by
+    rw [Over.map_obj_left]
+    infer_instance
+  obtain ⟨Y₀, hY₀, f, _⟩ := exists_isAffine_baseChange_hom_isIso_spec (D.transportArrow e)
+  exact ⟨_, hY₀, exists_baseChange_hom_isIso_of_transportArrow e D f⟩
+
+/-- **Effective descent for affine morphisms, after base change to an affine scheme.** Let
+`p : S' ⟶ S` be an affine flat morphism, and `D` a descent datum relative to `p` on `X ⟶ S'`
+affine. For every morphism `q : T ⟶ S` from an affine scheme, for instance the inclusion of an
+affine open of `S`, the base change `D.pullbackAlong q` of `D` to `T` is effective. -/
+theorem exists_isAffine_baseChange_hom_isIso_pullbackAlong {S S' T : Scheme.{u}} {p : S' ⟶ S}
+    [IsAffineHom p] [Flat p] {X : Over S'} [IsAffineHom X.hom] (D : DescentDatum p X)
+    (q : T ⟶ S) [IsAffine T] :
+    ∃ X₀ : Over T, IsAffine X₀.left ∧
+      ∃ f : Hom (baseChange (pullback.fst q p) X₀) (D.pullbackAlong q), IsIso f.hom := by
+  have : IsAffine (pullbackAlongObj (p := p) q X).left := by
+    simp only [pullbackAlongObj, Over.pullback_obj_left]
+    infer_instance
+  exact exists_isAffine_baseChange_hom_isIso (D.pullbackAlong q)
 
 end DescentDatum
 

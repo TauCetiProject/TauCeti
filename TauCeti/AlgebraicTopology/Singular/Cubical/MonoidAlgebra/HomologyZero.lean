@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologicalComplex
-public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced

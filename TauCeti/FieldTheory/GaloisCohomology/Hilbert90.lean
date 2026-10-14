@@ -244,14 +244,7 @@ the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K,
 `n` positive and invertible in `K`. -/
 theorem hilbert90 :
     Limits.IsZero (continuousCohomology 1
-      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
-  let h : Subsingleton (DiscreteH1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
-    (discreteH1Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)).toEquiv.subsingleton_congr.mpr
-      inferInstance
-  rw [← (explicitH1IsoContinuousCohomology
-    (AbsoluteGaloisGroup K) (UnitsCoeff K)).isZero_iff]
-  rw [Limits.IsZero.iff_id_eq_zero]
-  ext x
-  exact h.elim _ _
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :=
+  isZero_continuousCohomology_one_of_subsingleton _ _
 
 end TauCeti
