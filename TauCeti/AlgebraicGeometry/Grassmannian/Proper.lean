@@ -67,6 +67,8 @@ private lemma range_chartι_inter_range_chartι (x y : Fin k → M) :
     ← (isPullback_chartι x y).isoPullback_hom_fst, Category.assoc]
   exact ((Scheme.Hom.surjective _).range_comp _).symm
 
+/-- The Grassmannian is quasi-separated: it is covered by the affine charts, and any two charts
+meet in the image of an affine scheme, which is quasi-compact. -/
 instance : QuasiSeparatedSpace (scheme R M k) := by
   refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun x : Fin k → M ↦ (chartι R x).opensRange)
     ?_ (fun x ↦ isAffineOpen_opensRange _) fun x y ↦ ?_
@@ -180,6 +182,8 @@ theorem exists_mem_range_chartι_comp {ι : Type*} (m : ι → M)
     exact hap
   exact ⟨y, _, congrArg (fun f : Spec (CommRingCat.of B) ⟶ scheme R M k ↦ f q) hg.symm⟩
 
+/-- For `M` finitely generated, the Grassmannian is quasi-compact: the charts at `k`-tuples of a
+finite generating family form a finite affine open cover. -/
 instance [Module.Finite R M] : CompactSpace (scheme R M k) := by
   obtain ⟨n, m, hm⟩ := Module.Finite.exists_fin (R := R) (M := M)
   let 𝒰 : (scheme R M k).OpenCover := Scheme.Cover.mkOfCovers (Fin k → Fin n) _

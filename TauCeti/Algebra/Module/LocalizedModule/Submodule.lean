@@ -25,6 +25,7 @@ public section
 
 /-- Let `A` be the localization of `R` at `S`, and `f : M → M'` a localization map at `S` into an
 `A`-module. Then `f x / s` lies in an `A`-submodule `L` of `M'` exactly when `f x` does. -/
+@[simp]
 theorem IsLocalizedModule.mk'_mem_iff {R : Type*} [CommSemiring R] {S : Submonoid R}
     {A : Type*} [CommSemiring A] [Algebra R A] [IsLocalization S A]
     {M M' : Type*} [AddCommMonoid M] [AddCommMonoid M'] [Module R M] [Module R M'] [Module A M']

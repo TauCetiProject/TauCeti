@@ -28,6 +28,7 @@ open TensorProduct
 
 /-- The `A`-linear base change of the structure map `A → B` is, as a function, the base change
 of the `R`-algebra map `A →ₐ[R] B`. -/
+@[simp]
 theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Type*}
     [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
     [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (x : A ⊗[R] M) :
