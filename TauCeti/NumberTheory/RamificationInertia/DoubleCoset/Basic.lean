@@ -39,8 +39,9 @@ bijection is the dictionary that supplies one.
 
 ## Main results
 
-* `NumberField.isGaloisGroup_ringOfIntegers_fixedField`: `H` is a Galois group of `𝓞 M` over
-  `𝓞 E`, so the invariant-ring theory applies to `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 M`.
+* `NumberField.isGaloisGroup_fixedField`: `H` is a Galois group of `M` over `E`; Mathlib's
+  ring-of-integers instance then lets the invariant-ring theory apply to
+  `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 M`.
 * `Ideal.doubleCosetQuotientEquivPrimesOver_eq_doubleCosetQuotientEquivPrimesOverOfIsInvariant`:
   the bijection is the invariant-ring double coset law for these rings of integers.
 
@@ -70,17 +71,19 @@ open scoped NumberField Pointwise
 
 namespace NumberField
 
-variable {K M : Type*} [Field K] [NumberField K] [Field M] [NumberField M] [Algebra K M]
+variable {K M : Type*} [Field K] [Field M] [Algebra K M] [FiniteDimensional K M]
 
-/-- **A subgroup is the Galois group of `𝓞 M` over the integers of its fixed field.** For a
-subgroup `H` of `Gal(M/K)`, the action of `H` on `𝓞 M` makes it a Galois group of
-`𝓞 M / 𝓞 (M ^ H)`. -/
-instance isGaloisGroup_ringOfIntegers_fixedField (H : Subgroup (M ≃ₐ[K] M)) :
-    IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
+/-- **A subgroup is the Galois group over its fixed field.** For a subgroup `H` of `Gal(M/K)`,
+the action of `H` on `M` makes it a Galois group of `M / M ^ H`. -/
+instance isGaloisGroup_fixedField (H : Subgroup (M ≃ₐ[K] M)) :
+    IsGaloisGroup H ↥(fixedField H) M :=
   have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
-  IsGaloisGroup.of_mulEquiv (subgroupEquivAlgEquiv H) fun h x ↦
-    RingOfIntegers.ext (by
-      simp [Subgroup.smul_def, NumberField.algebraMap_smul_eq_apply])
+  IsGaloisGroup.of_mulEquiv_algEquiv (subgroupEquivAlgEquiv H) fun _ _ ↦ rfl
+
+/-- The ring-of-integers instance induced by `NumberField.isGaloisGroup_fixedField`. -/
+instance isGaloisGroup_ringOfIntegers_fixedField [NumberField K] [NumberField M]
+    (H : Subgroup (M ≃ₐ[K] M)) : IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 M) :=
+  instIsGaloisGroupRingOfIntegersOfNumberField ↥(fixedField H) M H
 
 end NumberField
 
@@ -98,8 +101,6 @@ theorem under_fixedField_eq_iff_mem_orbit (R R' : Ideal (𝓞 M)) [R.IsPrime] [R
     R.under (𝓞 ↥(fixedField H)) = R'.under (𝓞 ↥(fixedField H)) ↔ R ∈ MulAction.orbit H R' := by
   -- The extension over the fixed field is Galois without assuming that `M / K` is Galois.
   have : IsGalois ↥(fixedField H) M := IsGalois.of_fixed_field M H
-  have : IsGaloisGroup (M ≃ₐ[↥(fixedField H)] M) ↥(fixedField H) M :=
-    IsGaloisGroup.of_isGalois _ M
   rw [MulAction.mem_orbit_iff]
   constructor
   · intro h

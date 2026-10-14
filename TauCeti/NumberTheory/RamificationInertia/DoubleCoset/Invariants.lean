@@ -9,14 +9,15 @@ public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Basic
 
 /-!
-# The ramification indices of the primes in the double coset law
+# Ramification indices and the fundamental identity in the double coset law
 
 Let `M / K` be a finite Galois extension of number fields with group `G`, let `H` be a subgroup of
 `G` with fixed field `E = M ^ H`, and let `Q` be a prime of `𝓞 M` above a prime `p` of `𝓞 K`, with
 decomposition group `D` and inertia group `I`. The double coset law
 (`Ideal.doubleCosetQuotientEquivPrimesOver`) indexes the primes of `𝓞 E` above `p` by
 `H \ G / D`, the class of `σ` corresponding to `𝔮_σ = σ Q ∩ 𝓞 E`. This file reads the
-ramification index of `𝔮_σ` over `p` off the conjugate inertia group:
+ramification index of `𝔮_σ` over `p` off the conjugate inertia group and expresses the fundamental
+identity `Σ e(𝔮_σ / p) f(𝔮_σ / p) = [E : K]` in these double-coset coordinates:
 
 `e(𝔮_σ / p) = [σIσ⁻¹ : H ∩ σIσ⁻¹]`.
 
