@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
+public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Continuous linear alternatization
@@ -31,7 +32,7 @@ variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Fintype ι] [DecidableEq ι]
 
-/-- The signed permutation sum has operator norm at most the factorial of the arity. -/
+/-- The norm of the signed permutation sum is at most the arity factorial times `‖f‖`. -/
 theorem norm_alternatization_le
     (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     ‖ContinuousMultilinearMap.alternatization f‖ ≤ (Fintype.card ι).factorial * ‖f‖ := by
@@ -71,5 +72,15 @@ def alternatizationCLM :
     (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     alternatizationCLM f = ContinuousMultilinearMap.alternatization f := (rfl)
 
+
+
+/-- Normalized alternatization recovers an alternating map when the arity factorial
+is nonzero in the scalar field. -/
+theorem _root_.ContinuousAlternatingMap.inv_factorial_smul_alternatizationCLM
+    [NeZero ((Fintype.card ι).factorial : 𝕜)] (φ : E [⋀^ι]→L[𝕜] F) :
+    ((Fintype.card ι).factorial : 𝕜)⁻¹ • alternatizationCLM φ.toContinuousMultilinearMap = φ := by
+  rw [alternatizationCLM_apply,
+    ContinuousAlternatingMap.alternatization_toContinuousMultilinearMap,
+    ← Nat.cast_smul_eq_nsmul 𝕜, inv_smul_smul₀ (NeZero.ne ((Fintype.card ι).factorial : 𝕜))]
 
 end ContinuousMultilinearMap

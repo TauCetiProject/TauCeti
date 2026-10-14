@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.Data.Nat.Factorial.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 public import TauCeti.Analysis.Calculus.ContDiff.LinearIsometry
+public import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
 # Smooth pullback of continuous alternating maps
@@ -40,6 +41,14 @@ variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι]
 
+private theorem contDiff_multilinearPullback (n : WithTop ℕ∞) :
+    ContDiff 𝕜 n (fun f : E →L[𝕜] F ↦
+      ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
+        𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G (fun _ ↦ f)) :=
+  (ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
+    𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G).contDiff.comp
+      (contDiff_pi.mpr fun _ ↦ contDiff_id)
+
 private theorem contDiff_compContinuousLinearMapCLM_coe (n : ℕ∞) :
     ContDiff 𝕜 n
       (ContinuousAlternatingMap.compContinuousLinearMapCLM :
@@ -57,25 +66,10 @@ private theorem contDiff_compContinuousLinearMapCLM_coe (n : ℕ∞) :
   let I : ((F [⋀^ι]→L[𝕜] G) →L[𝕜] E [⋀^ι]→L[𝕜] G) →ₗᵢ[𝕜]
       ((F [⋀^ι]→L[𝕜] G) →L[𝕜] ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) G) :=
     LinearIsometry.postcomp J
-  have hI : IsClosed (range I) := by
-    have hr : range I = {T | ∀ a, T a ∈ range J} := by
-      ext T
-      constructor
-      · rintro ⟨A, rfl⟩ a
-        exact ⟨A a, rfl⟩
-      · intro hT
-        let A := ContinuousAlternatingMap.liftCLM T (by
-          intro a v i j hv hij
-          obtain ⟨a', ha'⟩ := hT a
-          rw [← ha']
-          exact a'.map_eq_zero_of_eq v hv hij)
-        exact ⟨A, by ext a v; rfl⟩
-    rw [hr]
-    simp only [ofPred_forall]
-    have hJ : IsClosed (range J) :=
-      ContinuousAlternatingMap.isClosed_range_toContinuousMultilinearMap
-        (𝕜 := 𝕜) (E := E) (F := G) (ι := ι)
-    exact isClosed_iInter fun a ↦ hJ.preimage (continuous_eval_const a)
+  have hI : IsClosed (range I) :=
+    J.isClosed_range_postcomp
+      (ContinuousAlternatingMap.isClosed_range_toContinuousMultilinearMap
+        (𝕜 := 𝕜) (E := E) (F := G) (ι := ι))
   apply (LinearIsometry.contDiff_comp_iff I hI (n := n)
     (f := ContinuousAlternatingMap.compContinuousLinearMapCLM)).mp
   let K := ContinuousAlternatingMap.toContinuousMultilinearMapCLM
@@ -83,10 +77,16 @@ private theorem contDiff_compContinuousLinearMapCLM_coe (n : ℕ∞) :
   let P := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
     𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G
   have hP : ContDiff 𝕜 n (fun f : E →L[𝕜] F ↦ P (fun _ ↦ f)) :=
-    P.contDiff.comp (contDiff_pi.mpr fun _ ↦ contDiff_id)
+    contDiff_multilinearPullback n
   convert hP.clm_comp (contDiff_const (c := K)) using 1
   ext f a v
-  rfl
+  simp only [Function.comp_apply, I, LinearIsometry.postcomp_apply, J, P, K,
+    ContinuousAlternatingMap.toContinuousMultilinearMapLI_apply,
+    ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
+    ContinuousAlternatingMap.toContinuousMultilinearMapCLM_apply,
+    ContinuousAlternatingMap.toContinuousMultilinearMap_compContinuousLinearMap,
+    ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear_apply_apply,
+    ContinuousLinearMap.comp_apply]
 
 /-- Pullback on continuous alternating maps is smooth, as an operator-valued function of
 the continuous linear map on the domain. Only the analytic order `ω` carries a factorial
@@ -110,21 +110,16 @@ theorem ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM (n : WithTo
     let P := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
       𝕜 (fun _ : ι ↦ E) (fun _ : ι ↦ F) G
     have hP : ContDiff 𝕜 ω (fun f : E →L[𝕜] F ↦ P (fun _ ↦ f)) :=
-      P.contDiff.comp (contDiff_pi.mpr fun _ ↦ contDiff_id)
+      contDiff_multilinearPullback ω
     have h : ContDiff 𝕜 ω (fun f : E →L[𝕜] F ↦ (A.comp (P (fun _ ↦ f))).comp J) :=
       (contDiff_const.clm_comp hP).clm_comp contDiff_const
     convert h using 1
-    ext f φ v
-    -- Both inclusions use the underlying multilinear map; normalized alternatization
-    -- returns the alternating pullback itself.
+    funext f
+    ext φ : 1
     simp only [A, J, P, ContinuousLinearMap.comp_apply, _root_.smul_apply,
-      ContinuousAlternatingMap.smul_apply,
       ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
       ContinuousAlternatingMap.toContinuousMultilinearMapCLM_apply,
-      ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear_apply_apply]
-    rw [← ContinuousAlternatingMap.toContinuousMultilinearMap_compContinuousLinearMap,
-      ContinuousMultilinearMap.alternatizationCLM_apply,
-      ContinuousAlternatingMap.alternatization_toContinuousMultilinearMap,
-      ← Nat.cast_smul_eq_nsmul 𝕜, ContinuousAlternatingMap.smul_apply,
-      inv_smul_smul₀ (NeZero.ne ((Fintype.card ι).factorial : 𝕜))]
+      ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear_apply_apply,
+      ← ContinuousAlternatingMap.toContinuousMultilinearMap_compContinuousLinearMap,
+      ContinuousAlternatingMap.inv_factorial_smul_alternatizationCLM]
   | (n : ℕ∞) => exact contDiff_compContinuousLinearMapCLM_coe n
