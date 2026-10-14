@@ -24,9 +24,11 @@ public noncomputable section
 open ContinuousMap
 
 variable {X A B R : Type*} [TopologicalSpace X] [TopologicalSpace A] [TopologicalSpace B]
-  [CommRing R] [TopologicalSpace R]
+  [TopologicalSpace R]
 
 namespace ContinuousMap
+
+variable [Zero R] [One R]
 
 /-- The continuous characteristic function of a fibre of a map to a finite discrete space. -/
 def fiberIndicator [DiscreteTopology A] (q : C(X, A)) (a : A) : C(X, R) :=
@@ -45,7 +47,7 @@ end ContinuousMap
 
 namespace AbstractMeasure
 
-variable [IsTopologicalRing R]
+variable [CommRing R] [IsTopologicalRing R]
 
 /-- The finite projection of a measure records its values on all fibres of `q`. -/
 def finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
