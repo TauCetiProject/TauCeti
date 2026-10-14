@@ -168,6 +168,7 @@ theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ
 
 /-- On a polynomial in the single variable `Xᵢ`, the Hasse derivative `∂^(k eᵢ)` is the
 univariate `k`-th Hasse derivative. -/
+@[simp]
 theorem hasseDeriv_single_toMvPolynomial (i : σ) (k : ℕ) (p : Polynomial R) :
     hasseDeriv (single i k) (p.toMvPolynomial i) =
       (Polynomial.hasseDeriv k p).toMvPolynomial i := by
