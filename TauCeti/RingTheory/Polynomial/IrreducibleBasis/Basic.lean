@@ -383,9 +383,7 @@ theorem exists_isIrreducibleBasis (F : Finset D[X]) : ∃ B, F.IsIrreducibleBasi
     set m := factors f
     -- replace each factor by its representative, and collect equal representatives
     have hprod : (m.map rep).prod = ∏ b ∈ S.image rep, b ^ (m.map rep).count b := by
-      rw [Finset.prod_multiset_count]
-      refine Finset.prod_subset (fun b hb ↦ ?_) fun b _ hb ↦ by
-        rw [Multiset.count_eq_zero_of_notMem (by simpa using hb), pow_zero]
+      refine Finset.prod_multiset_count_of_subset (m.map rep) (S.image rep) fun b hb ↦ ?_
       obtain ⟨q, hq, rfl⟩ := Multiset.mem_map.1 (Multiset.mem_toFinset.1 hb)
       exact mem_image_of_mem rep (mem_S.2 ⟨f, hf, hf0, hq⟩)
     obtain ⟨u, hu⟩ : Associated (m.map rep).prod m.prod := by
