@@ -21,9 +21,9 @@ defines a strongly continuous contraction semigroup on `Lᵖ(μ; E)` for `1 ≤ 
 is a real normed space. The measure is arbitrary and the multiplier may be unbounded. The action is
 specified almost everywhere, as required for equivalence classes of measurable functions.
 
-For `lambda > 0`, the Laplace resolvent is multiplication by the bounded measurable function
-`a ↦ (lambda + m a)⁻¹`. Thus the abstract contraction estimate is realized by the pointwise
-bound `(lambda + m a)⁻¹ ≤ lambda⁻¹`.
+For `lambda > 0`, the Laplace resolvent is multiplication by the bounded almost everywhere
+measurable function `a ↦ (lambda + m a)⁻¹`. Thus the abstract contraction estimate is realized by
+the pointwise bound `(lambda + m a)⁻¹ ≤ lambda⁻¹`.
 
 Strong continuity comes from dominated convergence in Lᵖ; the multiplier itself need not
 belong to any Lᵖ space. This provides multiplication examples with continuous spatial variables,
@@ -336,6 +336,7 @@ private theorem measureLpResolventOperator_mem_domain_generator_ae
 
 /-- The Laplace resolvent of the measure-space multiplication semigroup acts by pointwise
 multiplication with `(lambda + m)⁻¹`, almost everywhere. -/
+@[simp]
 theorem ContractionSemigroup.ofMeasureLpMultiplication_resolvent_apply_ae
     [CompleteSpace (Lp E p μ)] {m : α → ℝ≥0} (hm : AEMeasurable m μ) (hp : p ≠ ∞)
     {lambda : ℝ} (hlambda : 0 < lambda) (f : Lp E p μ) :
