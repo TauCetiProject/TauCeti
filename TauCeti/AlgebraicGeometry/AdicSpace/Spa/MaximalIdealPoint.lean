@@ -217,8 +217,7 @@ theorem eq_maximalIdealPoint_iff (h𝔪 : IsClosed (𝔪 : Set A)) (x : spa (pow
     rw [← Valuation.comap_apply, Valuation.onQuot_comap_eq]
   have hequiv : w.IsEquiv (spectralValuation K (A ⧸ 𝔪)) :=
     (w.isEquiv_spectralValuation_iff).mpr fun c d ↦ by
-      simpa [← Ideal.Quotient.mk_algebraMap, hw, NormedField.valuation_apply,
-        ← NNReal.coe_le_coe] using vle_iff_norm_le_of_mem_spa hK c d
+      simpa [← Ideal.Quotient.mk_algebraMap, hw] using vle_iff_norm_le_of_mem_spa hK c d
   refine Subtype.ext (ext' fun a b ↦ ?_)
   rw [maximalIdealPoint_val, vle_ofValuation, ← valuation_le_iff, ← hw, ← hw]
   exact hequiv a b
