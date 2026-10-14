@@ -8,13 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.LinearAlgebra.Prod
-import TauCeti.Topology.Algebra.Module.ProjectionGraph
-import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Flattening a graph boundary
 
-For a continuous real function `γ` on a topological additive commutative group `E`, the shear
+For a continuous real function `γ` on a topological space `E`, the shear
 `(t, y) ↦ (t - γ(y), y)` is an ambient homeomorphism of the product `WithLp 2 (ℝ × E)`.
 It carries the region `γ(y) < t` to the positive normal half-space and its graph to
 height zero. Its inverse adds `γ(y)` to the normal coordinate.
@@ -25,9 +23,8 @@ most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. These are 
 estimates used to transfer Sobolev trace and extension operators from a half-space to a
 domain with a graph boundary.
 The shear also preserves Lebesgue measure, requiring only continuity of `γ`.
-The homeomorphism is the whole-space instance of
-`ContinuousLinearMap.projectionGraphChart`; the differential reuses Mathlib's
-`ContinuousLinearEquiv.skewProd`.
+The homeomorphism uses Mathlib's `Equiv.prodShear` to translate each real fiber;
+the differential reuses `ContinuousLinearEquiv.skewProd`.
 
 The ambient product is `WithLp 2 (ℝ × E)`, so it has the Euclidean norm when `E`
 is an inner product space. The linear shear and its determinant require only a real module
@@ -52,42 +49,28 @@ open MeasureTheory
 
 section Topology
 
-variable {E : Type*} [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+variable {E : Type*} [TopologicalSpace E]
 
 /-- The ambient homeomorphism subtracting the height of a continuous graph from the normal
 coordinate. -/
 def graphFlattening (γ : E → ℝ) (hγ : Continuous γ) :
     WithLp 2 (ℝ × E) ≃ₜ WithLp 2 (ℝ × E) :=
-  -- The integer-linear projection does not require a real scalar action.
-  let e := WithLp.prodContinuousLinearEquiv 2 ℤ ℝ E
-  letI : IsTopologicalAddGroup (WithLp 2 (ℝ × E)) :=
-    Topology.IsInducing.isTopologicalAddGroup e.toLinearEquiv.toAddEquiv
-      e.toHomeomorph.isInducing
-  let P := e.symm.toContinuousLinearMap.comp
-    ((ContinuousLinearMap.prod (0 : WithLp 2 (ℝ × E) →L[ℤ] ℝ)
-      (WithLp.sndL 2 ℤ ℝ E)))
-  let g := fun z : WithLp 2 (ℝ × E) => WithLp.toLp 2 (γ z.snd, (0 : E))
-  let hg : Continuous g := (WithLp.prod_continuous_toLp 2 ℝ E).comp
-    ((hγ.comp (WithLp.prod_continuous_ofLp 2 ℝ E).snd).prodMk continuous_const)
-  let hPg : ∀ v ∈ (P.range : Set _) ∩ Set.univ, P (g v) = 0 := by
-    intros
-    simp [P, g]
-  (P.projectionGraphChart g isOpen_univ hg.continuousOn hPg)
-    |>.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp) (by simp)
+  let c := (WithLp.homeomorphProd 2 ℝ E).trans (Homeomorph.prodComm ℝ E)
+  let shear : E × ℝ ≃ₜ E × ℝ :=
+    { Equiv.prodShear (Equiv.refl E) (fun y => Equiv.subRight (γ y)) with
+      continuous_toFun := continuous_fst.prodMk (continuous_snd.sub (hγ.comp continuous_fst))
+      continuous_invFun := continuous_fst.prodMk (continuous_snd.add (hγ.comp continuous_fst)) }
+  (c.trans shear).trans c.symm
 
 /-- The graph-flattening map subtracts the graph height. -/
 @[simp] theorem graphFlattening_apply (γ : E → ℝ) (hγ : Continuous γ)
     (x : WithLp 2 (ℝ × E)) :
-    graphFlattening γ hγ x = WithLp.toLp 2 (x.fst - γ x.snd, x.snd) := by
-  apply (WithLp.ext_iff 2).2
-  apply Prod.ext <;> simp [graphFlattening]
+    graphFlattening γ hγ x = WithLp.toLp 2 (x.fst - γ x.snd, x.snd) := (rfl)
 
 /-- The inverse graph-flattening map adds the graph height. -/
 @[simp] theorem graphFlattening_symm_apply (γ : E → ℝ) (hγ : Continuous γ)
     (x : WithLp 2 (ℝ × E)) :
-    (graphFlattening γ hγ).symm x = WithLp.toLp 2 (x.fst + γ x.snd, x.snd) := by
-  apply (WithLp.ext_iff 2).2
-  apply Prod.ext <;> simp [graphFlattening]
+    (graphFlattening γ hγ).symm x = WithLp.toLp 2 (x.fst + γ x.snd, x.snd) := (rfl)
 
 /-- Inverting graph flattening negates the graph height. -/
 theorem graphFlattening_symm (γ : E → ℝ) (hγ : Continuous γ) :
@@ -111,7 +94,7 @@ theorem graphFlattening_image_eq (γ : E → ℝ) (hγ : Continuous γ) :
   rw [(graphFlattening γ hγ).image_eq_preimage_symm]
   simp
 
-variable [Module ℝ E] in
+variable [AddCommGroup E] [Module ℝ E] in
 private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous γ) :
     ⇑(graphFlattening γ hγ) = (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm ∘
       (fun x : WithLp 2 (ℝ × E) => (x.fst - γ x.snd, x.snd)) := by
