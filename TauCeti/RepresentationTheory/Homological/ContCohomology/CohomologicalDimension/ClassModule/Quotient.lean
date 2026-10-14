@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Extension
-import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.MaximalProP
 
 /-!
 # Quotients of a pro-`p` class-module extension
@@ -47,16 +47,11 @@ theorem abelianizationProPExtensionKernel_le_ker (p : ℕ) (V : Subgroup G) {E :
   let f : V →ₜ* A :=
     ⟨((φ : G →* E).comp V.subtype).codRestrict A fun v ↦ hVA v.2,
       ((map_continuous φ).comp continuous_subtype_val).subtype_mk _⟩
-  let a := TopologicalAbelianization.lift f
-  let b := maximalProPQuotient.lift hpro a.toMonoidHom a.continuous
   intro x hx
   obtain ⟨hv, hzero⟩ := (mem_abelianizationProPExtensionKernel_iff p G V x).mp hx
-  have hb : b (abelianizationProPMk p G V ⟨x, hv⟩) = f ⟨x, hv⟩ := by
-    rw [abelianizationProPMk_apply, maximalProPQuotient.mk_apply]
-    simp only [b, maximalProPQuotient.lift_mk]
-    exact TopologicalAbelianization.lift_mk f _
-  rw [hzero, map_one] at hb
-  exact congrArg Subtype.val hb.symm
+  rw [abelianizationProPMk_apply] at hzero
+  exact congrArg Subtype.val (eq_one_of_maximalProPQuotient_mk_eq_one hpro f hzero)
+
 
 /-- A finite quotient in which the image of `V` is an abelian `p`-group kills the kernel
 of `V → Vᵃᵇ(p)`. For normal `V`, this is the inclusion needed by `QuotientGroup.mapOfLE`
