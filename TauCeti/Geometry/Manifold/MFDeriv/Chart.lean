@@ -78,19 +78,24 @@ theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.c
     (f : M → M') (x : M) :
     (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
   have hd := mdifferentiableAt_iff_of_chartAt_eq (I := I) (I' := I') h f x
+  -- Select c as the local atlas for the source-side derivative formula.
   let sourceAtlas : ChartedSpace H M := c
-  by_cases hf : MDifferentiableAt I I' f x
-  · have hleft := hf.mfderiv
+  by_cases hf : (letI := c; MDifferentiableAt I I' f x)
+  · have hleft : (letI := c; mfderiv I I' f x) = _ := hf.mfderiv
+    -- Select c' for the target-side formula; both displayed statements fix their atlas.
     let targetAtlas : ChartedSpace H M := c'
-    have hright := (hd.mp hf).mfderiv
+    have hright : (letI := c'; mfderiv I I' f x) = _ := (hd.mp hf).mfderiv
     apply hleft.trans
     apply Eq.trans ?_ hright.symm
-    simp only [sourceAtlas, writtenInExtChartAt, extChartAt, chartAt, h]
+    simp only [writtenInExtChartAt, extChartAt, chartAt, h]
     -- The tangent-space implementation casts are independent of the chosen atlas.
     rfl
-  · have hleft := mfderiv_zero_of_not_mdifferentiableAt hf
+  · have hleft : (letI := c; mfderiv I I' f x) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt hf
+    -- Select c' to apply its non-differentiability law.
     let targetAtlas : ChartedSpace H M := c'
-    have hright := mfderiv_zero_of_not_mdifferentiableAt (hd.not.mp hf)
+    have hright : (letI := c'; mfderiv I I' f x) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt (hd.not.mp hf)
     exact hleft.trans hright.symm
 
 end TauCeti.Manifold
