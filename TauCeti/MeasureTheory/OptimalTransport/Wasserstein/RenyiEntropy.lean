@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 
 /-!
 # The Rényi entropy functional
@@ -21,8 +22,9 @@ where `μ = ρ m + μˢ` is the Lebesgue decomposition of `μ` with respect to `
 integral is over the absolutely continuous part `μᵃᶜ = ρ m` (`TauCeti.renyiEntropy`). It is the
 entropy functional of the finite-dimensional curvature-dimension conditions `CD(K, N)` and
 `CD*(K, N)` and of the measure-contraction property `MCP(K, N)` of Sturm and Lott–Villani: those
-conditions compare `S_N` along a Wasserstein geodesic with the distortion coefficients
-`TauCeti.distortionTau`, as `CD(K, ∞)` does with the Boltzmann entropy.
+conditions compare `S_N` along a Wasserstein geodesic with distortion coefficients (`CD(K, N)`
+with `TauCeti.distortionTau`, `CD*(K, N)` with `TauCeti.distortionSigma`), as `CD(K, ∞)` does with
+the Boltzmann entropy.
 
 It is the internal energy (`TauCeti.internalEnergy`) for `U(r) = -r · r^{-1/N}`, which is
 `-r^{1-1/N}` for `r > 0` and `0` at `r = 0`. For `N > 0` the recession constant of `U` is `0`, so
@@ -39,9 +41,10 @@ if `μ(Aᶜ) = 0`, then
 
 `S_N(μ | m) ≥ -m(A)^{1/N} μ(X)^{1-1/N}`
 
-(`TauCeti.neg_rpow_mul_rpow_le_renyiEntropy`), so against a finite reference the entropy of a
-finite measure is finite. The bound is sharp: the uniform law `m(A)⁻¹ m|_A` on a set of finite
-positive measure has `S_N = -m(A)^{1/N}` (`TauCeti.renyiEntropy_smul_restrict`).
+(`TauCeti.neg_rpow_mul_rpow_le_renyiEntropy`), so the entropy of a finite measure carried by a set
+of finite `m`-measure is finite (`TauCeti.renyiEntropy_ne_bot_of_measure_compl_eq_zero`). The
+bound is sharp: the uniform law `m(A)⁻¹ m|_A` on a set of finite positive measure has
+`S_N = -m(A)^{1/N}` (`TauCeti.renyiEntropy_smul_restrict`).
 
 As `N → ∞` the Rényi entropies recover the Boltzmann entropy `Ent_m(μ)`
 (`TauCeti.boltzmannEntropy`) of `CD(K, ∞)`: for `μ` finite and carried by a set of finite
@@ -49,9 +52,10 @@ As `N → ∞` the Rényi entropies recover the Boltzmann entropy `Ent_m(μ)`
 
 `N (S_N(μ | m) + μ(X)) → Ent_m(μ)`
 
-(`TauCeti.tendsto_mul_renyiEntropy_add_boltzmannEntropy`). The left side is `∫ U_N(ρ) dm` plus
-`N μˢ(X)`, where `U_N(r) = N (r - r^{1-1/N})` increases with `N` to `r log r`; a nonzero singular
-part makes both sides `⊤`.
+(`TauCeti.tendsto_mul_renyiEntropy_add_measureReal_univ_nhds_boltzmannEntropy`). The left side is
+`∫ U_N(ρ) dm` plus `N μˢ(X)`, where `U_N(r) = N (r - r^{1-1/N})` increases with `N` to `r log r`; a
+nonzero singular part makes `Ent_m(μ) = ⊤`, and the left side tends to `⊤` through the term
+`N μˢ(X)`.
 
 ## Main definitions
 
@@ -62,13 +66,15 @@ part makes both sides `⊤`.
 * `TauCeti.renyiEntropy_eq_neg_lintegral`, `TauCeti.renyiEntropy_eq_neg_lintegral_rpow`: the
   integral formulas for `S_N`.
 * `TauCeti.renyiEntropy_nonpos`, `TauCeti.renyiEntropy_ne_top`, `TauCeti.renyiEntropy_eq_bot_iff`:
-  the entropy lies in `[-∞, 0]`, and is `-∞` exactly when `∫ ρ^{1-1/N} dm` diverges.
+  the entropy lies in `[-∞, 0]`, and is `-∞` exactly when `∫ ρ · ρ^{-1/N} dm` diverges.
 * `TauCeti.renyiEntropy_of_mutuallySingular`: singular measures have Rényi entropy `0`.
 * `TauCeti.neg_rpow_mul_rpow_le_renyiEntropy`: the Hölder lower bound, and
-  `TauCeti.renyiEntropy_ne_bot` for finite measures against a finite reference.
+  `TauCeti.renyiEntropy_ne_bot_of_measure_compl_eq_zero`, `TauCeti.renyiEntropy_ne_bot`: the entropy
+  of a finite measure carried by a set of finite `m`-measure, or against a finite reference, is
+  finite.
 * `TauCeti.renyiEntropy_smul_restrict`: the entropy of a uniform law.
-* `TauCeti.tendsto_mul_renyiEntropy_add_boltzmannEntropy`: the Boltzmann entropy as the limit of
-  the Rényi entropies.
+* `TauCeti.tendsto_mul_renyiEntropy_add_measureReal_univ_nhds_boltzmannEntropy`: the Boltzmann
+  entropy as the limit of the Rényi entropies.
 
 ## References
 
@@ -203,17 +209,6 @@ private theorem mul_rpow_neg_le_rpow_one_sub (hN : 1 < N) (x : ℝ≥0∞) :
   · simp [ENNReal.zero_rpow_of_pos hq]
   rw [sub_eq_add_neg, ENNReal.rpow_add _ _ hx₀ hx, ENNReal.rpow_one]
 
-/-- If `μ` is carried by `A`, its density with respect to `m` vanishes `m`-almost everywhere off
-the measurable hull of `A`. -/
-private theorem ae_rnDeriv_eq_zero_of_notMem_toMeasurable {A : Set X} (hA : μ Aᶜ = 0) :
-    ∀ᵐ x ∂m, x ∉ toMeasurable m A → μ.rnDeriv m x = 0 := by
-  have hμB : μ (toMeasurable m A)ᶜ = 0 :=
-    measure_mono_null (compl_subset_compl.2 (subset_toMeasurable m A)) hA
-  have h : ∫⁻ x in (toMeasurable m A)ᶜ, μ.rnDeriv m x ∂m = 0 :=
-    le_antisymm ((Measure.setLIntegral_rnDeriv_le _).trans hμB.le) zero_le
-  rw [lintegral_eq_zero_iff (Measure.measurable_rnDeriv μ m)] at h
-  exact (ae_restrict_iff' (measurableSet_toMeasurable m A).compl).1 h
-
 /-- For `N ≥ 1`, Hölder's inequality bounds the Rényi entropy below by the measure of any set
 carrying `μ`: if `μ(Aᶜ) = 0`, then `S_N(μ | m) ≥ -m(A)^{1/N} μ(X)^{1-1/N}`. The uniform laws attain
 the bound (`TauCeti.renyiEntropy_smul_restrict`). -/
@@ -225,7 +220,8 @@ theorem neg_rpow_mul_rpow_le_renyiEntropy (hN : 1 ≤ N) {A : Set X} (hA : μ A�
   -- Pass to a measurable hull `B` of `A`, off which the density vanishes.
   set B := toMeasurable m A
   have hB : MeasurableSet B := measurableSet_toMeasurable m A
-  have hρB := ae_rnDeriv_eq_zero_of_notMem_toMeasurable (m := m) hA
+  have hρB := Measure.ae_rnDeriv_eq_zero_of_measure_eq_zero (ν := m)
+    (measure_mono_null (compl_subset_compl.2 (subset_toMeasurable m A)) hA)
   rcases hN.eq_or_lt with rfl | hN₁
   · -- For `N = 1` the integrand is at most the indicator of `B`.
     calc ∫⁻ x, μ.rnDeriv m x * μ.rnDeriv m x ^ (-(1 : ℝ)⁻¹) ∂m
@@ -264,16 +260,21 @@ theorem neg_rpow_mul_rpow_le_renyiEntropy (hN : 1 ≤ N) {A : Set X} (hA : μ A�
         · exact (sub_pos.2 (inv_lt_one_of_one_lt₀ hN₁)).le
         · exact Measure.lintegral_rnDeriv_le
 
+/-- For `N ≥ 1`, the Rényi entropy of a finite measure carried by a set of finite `m`-measure is
+never `⊥`. -/
+theorem renyiEntropy_ne_bot_of_measure_compl_eq_zero [IsFiniteMeasure μ] (hN : 1 ≤ N) {A : Set X}
+    (hA : μ Aᶜ = 0) (hmA : m A ≠ ∞) : renyiEntropy N m μ ≠ ⊥ := by
+  refine ne_bot_of_le_ne_bot ?_ (neg_rpow_mul_rpow_le_renyiEntropy hN hA)
+  rw [Ne, EReal.neg_eq_bot_iff, EReal.coe_ennreal_eq_top_iff]
+  exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 (zero_le_one.trans hN)) hmA)
+    (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 (inv_le_one_of_one_le₀ hN))
+      (measure_ne_top μ univ))
+
 /-- For `N ≥ 1`, the Rényi entropy of a finite measure relative to a finite reference measure is
 never `⊥`. -/
 theorem renyiEntropy_ne_bot [IsFiniteMeasure m] [IsFiniteMeasure μ] (hN : 1 ≤ N) :
-    renyiEntropy N m μ ≠ ⊥ := by
-  refine ne_bot_of_le_ne_bot ?_ (neg_rpow_mul_rpow_le_renyiEntropy hN (A := univ) (by simp))
-  rw [Ne, EReal.neg_eq_bot_iff, EReal.coe_ennreal_eq_top_iff]
-  exact ENNReal.mul_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 (zero_le_one.trans hN)) (measure_ne_top m univ))
-    (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 (inv_le_one_of_one_le₀ hN))
-      (measure_ne_top μ univ))
+    renyiEntropy N m μ ≠ ⊥ :=
+  renyiEntropy_ne_bot_of_measure_compl_eq_zero hN (A := univ) (by simp) (measure_ne_top m univ)
 
 /-- The uniform law `m(A)⁻¹ m|_A` on a measurable set of finite positive measure has Rényi entropy
 `-m(A)^{1/N}`, so the bound `TauCeti.neg_rpow_mul_rpow_le_renyiEntropy` is attained. -/
@@ -329,7 +330,8 @@ private theorem tendsto_renyiGap {r : ℝ} (hr : 0 ≤ r) :
 hull of `A`, is nonnegative `m`-almost everywhere. -/
 private theorem ae_renyiGap_add_indicator_nonneg {A : Set X} (hA : μ Aᶜ = 0) (hN : 1 ≤ N) :
     ∀ᵐ x ∂m, 0 ≤ renyiGap N (μ.rnDeriv m x).toReal + (toMeasurable m A).indicator 1 x := by
-  filter_upwards [ae_rnDeriv_eq_zero_of_notMem_toMeasurable (m := m) hA] with x hx
+  filter_upwards [Measure.ae_rnDeriv_eq_zero_of_measure_eq_zero (ν := m)
+    (measure_mono_null (compl_subset_compl.2 (subset_toMeasurable m A)) hA)] with x hx
   by_cases hxB : x ∈ toMeasurable m A
   · -- `U_N(r) ≥ U_1(r) = r - r · r⁻¹ ≥ -1`.
     set r := (μ.rnDeriv m x).toReal
@@ -344,6 +346,12 @@ private theorem ae_renyiGap_add_indicator_nonneg {A : Set X} (hA : μ Aᶜ = 0) 
     rw [indicator_of_mem hxB, Pi.one_apply, renyiGap]
     linarith
   · simp [renyiGap, hxB, hx hxB]
+
+/-- The indicator of the measurable hull of a set of finite `m`-measure is integrable. -/
+private theorem integrable_indicator_toMeasurable {A : Set X} (hmA : m A ≠ ∞) :
+    Integrable ((toMeasurable m A).indicator (1 : X → ℝ)) m :=
+  (integrableOn_const (C := (1 : ℝ)) (by rwa [measure_toMeasurable])).integrable_indicator
+    (measurableSet_toMeasurable m A)
 
 /-- Monotone convergence for `∫⁻ (U_N(ρ) + g)⁺ dm` as `N → ∞`. -/
 private theorem tendsto_lintegral_renyiGap {g : X → ℝ} (hg : Measurable g) :
@@ -391,19 +399,14 @@ private theorem mul_renyiEntropy_add_eq [IsFiniteMeasure μ] [μ.HaveLebesgueDec
   have hB : MeasurableSet B := measurableSet_toMeasurable m A
   set ρ : X → ℝ := fun x ↦ (μ.rnDeriv m x).toReal
   -- The three integrands `ρ`, `ρ · ρ^{-1/N}` and `1_B` are integrable.
-  have hg : Integrable (B.indicator (1 : X → ℝ)) m :=
-    (integrableOn_const (C := (1 : ℝ)) (by rwa [measure_toMeasurable])).integrable_indicator hB
-  have hρi : Integrable ρ m := integrable_toReal_of_lintegral_ne_top
-    (Measure.measurable_rnDeriv μ m).aemeasurable
+  have hg : Integrable (B.indicator (1 : X → ℝ)) m := integrable_indicator_toMeasurable hmA
+  have hρl : ∫⁻ x, μ.rnDeriv m x ∂m ≠ ∞ :=
     (Measure.lintegral_rnDeriv_le.trans_lt (measure_lt_top μ univ)).ne
+  have hρi : Integrable ρ m :=
+    integrable_toReal_of_lintegral_ne_top (Measure.measurable_rnDeriv μ m).aemeasurable hρl
   set I := ∫⁻ x, μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹) ∂m
-  have hI : I ≠ ∞ := by
-    refine fun hI ↦ ne_bot_of_le_ne_bot ?_ (neg_rpow_mul_rpow_le_renyiEntropy hN hA)
-      ((renyiEntropy_eq_bot_iff hN₀).2 hI)
-    rw [Ne, EReal.neg_eq_bot_iff, EReal.coe_ennreal_eq_top_iff]
-    exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN₀.le) hmA)
-      (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 (inv_le_one_of_one_le₀ hN))
-        (measure_ne_top μ univ))
+  have hI : I ≠ ∞ := fun h ↦
+    renyiEntropy_ne_bot_of_measure_compl_eq_zero hN hA hmA ((renyiEntropy_eq_bot_iff hN₀).2 h)
   have hpow (x : X) : ρ x * ρ x ^ (-N⁻¹) = (μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹)).toReal := by
     rw [← ofReal_toReal_mul_rpow_neg hN₀, ENNReal.toReal_ofReal
       (mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg ENNReal.toReal_nonneg _))]
@@ -419,8 +422,7 @@ private theorem mul_renyiEntropy_add_eq [IsFiniteMeasure μ] [μ.HaveLebesgueDec
       conv_lhs => rw [μ.haveLebesgueDecomposition_add m]
       rw [Measure.add_apply, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     rw [integral_toReal (Measure.measurable_rnDeriv μ m).aemeasurable (μ.rnDeriv_lt_top m),
-      measureReal_def, measureReal_def, h, ENNReal.toReal_add (measure_ne_top _ _)
-        (Measure.lintegral_rnDeriv_le.trans_lt (measure_lt_top μ univ)).ne]
+      measureReal_def, measureReal_def, h, ENNReal.toReal_add (measure_ne_top _ _) hρl]
     ring
   have hpint : ∫ x, ρ x * ρ x ^ (-N⁻¹) ∂m = I.toReal := by
     simp_rw [hpow]
@@ -448,7 +450,7 @@ measure `μ` carried by a set `A` of finite `m`-measure.
 This is the integrated form of the pointwise limit `N (r - r^{1-1/N}) → r log r`, which is
 monotone in `N`. The limit may be `⊤`; in particular it is `⊤` when `μ` is not absolutely
 continuous with respect to `m`, since its singular mass contributes `N μˢ(X)`. -/
-theorem tendsto_mul_renyiEntropy_add_boltzmannEntropy [IsFiniteMeasure μ]
+theorem tendsto_mul_renyiEntropy_add_measureReal_univ_nhds_boltzmannEntropy [IsFiniteMeasure μ]
     [μ.HaveLebesgueDecomposition m] {A : Set X} (hA : μ Aᶜ = 0) (hmA : m A ≠ ∞) :
     Tendsto (fun N : ℝ ↦ (N : EReal) * (renyiEntropy N m μ + μ.real univ)) atTop
       (𝓝 (boltzmannEntropy m μ)) := by
@@ -471,8 +473,7 @@ theorem tendsto_mul_renyiEntropy_add_boltzmannEntropy [IsFiniteMeasure μ]
       rw [boltzmannEntropy_of_absolutelyContinuous hμm,
         ← potentialEnergy_of_nonneg_ae hent_nonneg,
         potentialEnergy_add_of_integrable (W := B.indicator 1) (by fun_prop)
-          ((integrableOn_const (C := (1 : ℝ)) (by rwa [measure_toMeasurable])).integrable_indicator
-            hB),
+          (integrable_indicator_toMeasurable hmA),
         integral_indicator_one hB, EReal.add_sub_cancel_right]
     simp only [hs, measureReal_zero_apply, mul_zero, EReal.coe_zero, add_zero] at heq
     rw [hent]
