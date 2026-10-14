@@ -39,6 +39,8 @@ with unit-level factorization of invertible fractional ideals.
   principal fractional ideal of a nonzero rational function `u : Kˣ` is
   `-WithZero.log (v.valuation K u)`. This is the passage between the two ways this library measures
   a principal ideal at a height one prime — Mathlib's `count` and the adic valuation.
+* `FractionalIdeal.valuation_le_one_of_mem_of_count_nonneg`: nonnegative multiplicity makes
+  every element of a fractional ideal integral at that prime.
 * `Ideal.hasFiniteMulSupport_asIdeal_pow_of_le_count`: a family of prime powers whose exponents
   are bounded by the multiplicities of a fixed nonzero ideal has finite multiplicative support.
   Mathlib's `Ideal.hasFiniteMulSupport` is the case of the multiplicities themselves; a consumer
@@ -265,6 +267,21 @@ theorem count_toPrincipalIdeal_eq_neg_log_valuation (v : HeightOneSpectrum A) (u
   ring
 
 end PrincipalIdeal
+
+/-- Nonnegative multiplicity at a prime makes every element of a fractional ideal integral
+at that prime. -/
+theorem valuation_le_one_of_mem_of_count_nonneg {R K : Type*} [CommRing R]
+    [IsDedekindDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
+    (I : FractionalIdeal R⁰ K) (v : HeightOneSpectrum R) (hI : 0 ≤ count K v I)
+    {x : K} (hx : x ∈ I) : v.valuation K x ≤ 1 := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  have hcount := count_mono K v (spanSingleton_ne_zero_iff.mpr hx0)
+    (spanSingleton_le_iff_mem.mpr hx)
+  have hprincipal := count_toPrincipalIdeal_eq_neg_log_valuation K v (Units.mk0 x hx0)
+  rw [coe_toPrincipalIdeal, Units.val_mk0] at hprincipal
+  rw [hprincipal] at hcount
+  exact WithZero.le_exp_of_log_le (neg_nonneg.mp (hI.trans hcount))
 
 end FractionalIdeal
 
