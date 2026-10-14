@@ -107,22 +107,11 @@ theorem exists_localHomologyRestriction_union_eq {S T : Set M} (hS : IsClosed S)
   let HS := (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomology N k
   let HT := (TopPair.ofSubset (Tᶜ : Set (TopCat.of M))).singularHomology N k
   obtain ⟨γ, hγ⟩ := hex ((biprod.inl : HS ⟶ HS ⊞ HT) α - (biprod.inr : HT ⟶ HS ⊞ HT) β) (by
-    rw [map_sub, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply]
-    dsimp only
-    rw [TopCat.inl_relativeMayerVietorisFromBiprod, TopCat.inr_relativeMayerVietorisFromBiprod]
-    exact sub_eq_zero.2 h)
-  dsimp only at hγ
+    simp [HS, HT, ← ConcreteCategory.comp_apply, TopCat.inl_relativeMayerVietorisFromBiprod,
+      TopCat.inr_relativeMayerVietorisFromBiprod, h])
   refine ⟨γ, ?_, ?_⟩
-  · have := congrArg (biprod.fst : HS ⊞ HT ⟶ HS) hγ
-    rw [← ConcreteCategory.comp_apply, TopCat.relativeMayerVietorisToBiprod_fst, map_sub,
-      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, biprod.inl_fst,
-      biprod.inr_fst] at this
-    simpa using this
-  · have := congrArg (biprod.snd : HS ⊞ HT ⟶ HT) hγ
-    rw [← ConcreteCategory.comp_apply, TopCat.relativeMayerVietorisToBiprod_snd, map_sub,
-      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, biprod.inl_snd,
-      biprod.inr_snd] at this
-    simpa using this
+  · simpa [HS, HT, ← ConcreteCategory.comp_apply] using congrArg (biprod.fst : HS ⊞ HT ⟶ HS) hγ
+  · simpa [HS, HT, ← ConcreteCategory.comp_apply] using congrArg (biprod.snd : HS ⊞ HT ⟶ HT) hγ
 
 end Module
 
