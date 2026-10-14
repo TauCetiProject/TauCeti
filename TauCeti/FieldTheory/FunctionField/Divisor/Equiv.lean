@@ -7,15 +7,15 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Congr
 public import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
-public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 
 /-!
 # Divisor class groups under semilinear field isomorphisms
 
 Let `τ : F ≃+* F'` be an isomorphism of function fields carrying the constants `k` onto `k'` along
-`σ : k ≃+* k'`. It transports places (`Place.equivOfRingEquiv`) and hence divisors, by reindexing,
-preserving degrees (`Divisor.degree_domCongr_equivOfRingEquiv`). This file shows that it carries
-the divisor of a function `z` to the divisor of `τ z`. Consequently it carries principal divisors
+`σ : k ≃+* k'`. It transports places (`Place.equivOfRingEquiv`) and hence divisors, by reindexing.
+This file shows that this transport preserves degrees and carries the divisor of a function `z`
+to the divisor of `τ z`. Consequently it carries principal divisors
 onto principal divisors, and induces isomorphisms of the divisor class groups and of the
 degree-zero divisor class groups `Cl⁰(F) ≃+ Cl⁰(F')`.
 
@@ -24,6 +24,7 @@ how a class group computed for one model of a curve is transported to another mo
 
 ## Main declarations
 
+* `Divisor.degree_domCongr_equivOfRingEquiv`: `τ` preserves divisor degrees;
 * `Divisor.domCongr_equivOfRingEquiv_principal`: `τ` carries `div z` to `div (τ z)`;
 * `Divisor.classGroupEquivOfRingEquiv`: the induced isomorphism `Cl(F) ≃+ Cl(F')`;
 * `Divisor.degreeZeroClassGroupEquivOfRingEquiv`: its restriction `Cl⁰(F) ≃+ Cl⁰(F')`.
@@ -49,6 +50,14 @@ variable (σ : k ≃+* k') (τ : F ≃+* F')
   (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
 
 -- Transport rules run before `Finsupp.domCongr_apply` expands the divisor reindexing.
+/-- Transporting a divisor along a semilinear field isomorphism preserves its weighted degree. -/
+@[simp↓]
+theorem degree_domCongr_equivOfRingEquiv (D : Divisor k F) :
+    degree (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D) = degree D := by
+  rw [degree_apply, degree_apply, Finsupp.domCongr_apply, Finsupp.sum_equivMapDomain]
+  simp only [Place.degree_equivOfRingEquiv]
+
+-- Transport rules run before `Finsupp.domCongr_apply` expands the divisor reindexing.
 /-- **A semilinear field isomorphism transports principal divisors**: reindexing `div z` along the
 induced bijection of places gives `div (τ z)`. -/
 @[simp↓]
@@ -69,7 +78,8 @@ private theorem domCongr_equivOfRingEquiv_principalDivisor (z : Additive Fˣ) :
       (Place.orderSystem hF').principalDivisor
         ((Units.mapEquiv (τ : F ≃* F')).toAdditive z) := by
   rw [principalDivisor_eq, principalDivisor_eq, domCongr_equivOfRingEquiv_principal σ τ h hF hF']
-  rfl
+  -- The two mapped units agree on their underlying elements of `F'`.
+  exact congrArg _ (Units.ext (by simp))
 
 /-- **The divisor class groups of isomorphic function fields are isomorphic**: a semilinear field
 isomorphism `τ` sends the class of `D` to the class of its transport along the induced bijection
