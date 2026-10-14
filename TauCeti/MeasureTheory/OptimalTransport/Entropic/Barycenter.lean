@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.ZeroTemperature
 public import TauCeti.Topology.Semicontinuity.GammaConvergence
 import Mathlib.MeasureTheory.Measure.Prokhorov
+import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.Stability
 
 /-!
@@ -87,8 +88,10 @@ variable {ι X : Type*} [Fintype ι] [MeasurableSpace X] [PseudoEMetricSpace X]
 /-- The *entropic barycenter cost* `∑ i, w i * OT_ε(ν, μ i)` of a law `ν`, where `OT_ε(ν, μ i)` is
 the infimum over the couplings `π` of `ν` and `μ i` of
 `∫⁻ z, edist z.1 z.2 ^ p ∂π + ε * klDiv π (ν ⊗ μ i)`. Each relative entropy is taken against the
-product of the two marginals of its own transport problem. At `ε = 0` this is the weighted
-Wasserstein cost `∑ i, w i * W_p(ν, μ i) ^ p` (`TauCeti.entropicBarycenterCost_zero`). -/
+product of the two marginals of its own transport problem. The definition is meant for
+`0 < p < ∞`: it uses `p.toReal`, so at `p = ∞` the integrand is the trivial cost `d ^ 0`. For
+`0 < p < ∞` and a measurable extended distance, at `ε = 0` this is the weighted Wasserstein cost
+`∑ i, w i * W_p(ν, μ i) ^ p` (`TauCeti.entropicBarycenterCost_zero`). -/
 def entropicBarycenterCost (p : ℝ≥0∞) (ε : ℝ≥0) (w : ι → ℝ≥0) (μ : ι → Measure X)
     (ν : Measure X) : ℝ≥0∞ :=
   ∑ i, (w i : ℝ≥0∞) * entropicTransportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ε ν (μ i)
@@ -141,7 +144,7 @@ theorem tendsto_entropicBarycenterCost (hp0 : p ≠ 0) (hp : p ≠ ∞)
     Tendsto (fun ε ↦ entropicBarycenterCost p ε w μ ν) (𝓝[>] 0)
       (𝓝 (∑ i, (w i : ℝ≥0∞) * wassersteinEDist p ν (μ i) ^ p.toReal)) :=
   tendsto_finsetSum _ fun i _ ↦ ENNReal.Tendsto.const_mul
-    (tendsto_entropicTransportCost_edist_rpow hp0 hp ν (μ i) (hμ i))
+    (tendsto_entropicTransportCost_wassersteinEDist_rpow hp0 hp ν (μ i) (hμ i))
     (Or.inr ENNReal.coe_ne_top)
 
 /-! ### Γ-convergence and entropic barycenters -/
@@ -223,19 +226,21 @@ variable [CompactSpace X]
 
 /-- **Convergence of the minimal entropic barycenter costs.** On a compact metric space, for
 `0 < p < ∞`, the minimal entropic barycenter costs at temperatures `ε n → 0⁺` converge to the
-minimal weighted Wasserstein cost. -/
+minimal weighted Wasserstein cost. No moment hypothesis is needed: on a compact space every law
+has finite `p`-moment. -/
 theorem tendsto_iInf_entropicBarycenterCost (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (hμ : ∀ i, HasFiniteMoment p (μ i)) {ε : ℕ → ℝ≥0} (hε : Tendsto ε atTop (𝓝[>] 0)) :
+    {ε : ℕ → ℝ≥0} (hε : Tendsto ε atTop (𝓝[>] 0)) :
     Tendsto (fun n ↦ ⨅ ν : ProbabilityMeasure X, entropicBarycenterCost p (ε n) w μ ν) atTop
       (𝓝 (⨅ ν : ProbabilityMeasure X,
         ∑ i, (w i : ℝ≥0∞) * wassersteinEDist p ν.toMeasure (μ i) ^ p.toReal)) := by
+  -- On a compact space every law has finite `p`-moment.
+  have hμ (i : ι) : HasFiniteMoment p (μ i) :=
+    have := nonempty_of_isProbabilityMeasure (μ i)
+    hasFiniteMoment_of_boundedSpace (μ i)
   -- In a compact space every sequence of functionals is equicoercive.
   have h := (tendstoGamma_entropicBarycenterCost (w := w) hp0 hp hμ hε).tendsto_iInf
     (equicoercive_def.2 fun _ ↦ ⟨univ, isCompact_univ, fun _ _ _ ↦ mem_univ _⟩)
-  have hinf (f : ProbabilityMeasure X → ℝ≥0∞) : ((⨅ ν, f ν : ℝ≥0∞) : EReal) = ⨅ ν, (f ν : EReal) :=
-    Monotone.map_iInf_of_continuousAt continuous_coe_ennreal_ereal.continuousAt
-      (fun _ _ h ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 h) EReal.coe_ennreal_top
-  simp_rw [← hinf] at h
+  simp_rw [← EReal.coe_ennreal_iInf] at h
   exact EReal.tendsto_coe_ennreal.1 h
 
 /-- **Convergence of entropic barycenters.** On a compact metric space, for `0 < p < ∞`, if the
@@ -243,7 +248,7 @@ weighted Wasserstein cost `ν ↦ ∑ i, w i * W_p(ν, μ i) ^ p` has a unique m
 minimizers `ν n` of the entropic barycenter costs at temperatures `ε n → 0⁺` converge weakly to
 `ν₀`. -/
 theorem tendsto_of_isMinOn_entropicBarycenterCost (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (hμ : ∀ i, HasFiniteMoment p (μ i)) {ε : ℕ → ℝ≥0} (hε : Tendsto ε atTop (𝓝[>] 0))
+    {ε : ℕ → ℝ≥0} (hε : Tendsto ε atTop (𝓝[>] 0))
     {ν : ℕ → ProbabilityMeasure X}
     (hν : ∀ n, IsMinOn (fun ν : ProbabilityMeasure X ↦ entropicBarycenterCost p (ε n) w μ ν)
       univ (ν n))
@@ -251,6 +256,10 @@ theorem tendsto_of_isMinOn_entropicBarycenterCost (hp0 : p ≠ 0) (hp : p ≠ �
     (huniq : ∀ ν' : ProbabilityMeasure X, IsMinOn (fun ν : ProbabilityMeasure X ↦
       ∑ i, (w i : ℝ≥0∞) * wassersteinEDist p ν.toMeasure (μ i) ^ p.toReal) univ ν' → ν' = ν₀) :
     Tendsto ν atTop (𝓝 ν₀) := by
+  -- On a compact space every law has finite `p`-moment.
+  have hμ (i : ι) : HasFiniteMoment p (μ i) :=
+    have := nonempty_of_isProbabilityMeasure (μ i)
+    hasFiniteMoment_of_boundedSpace (μ i)
   -- Every subsequence has a further convergent subsequence, whose limit is a minimizer.
   refine tendsto_of_subseq_tendsto fun ns hns ↦ ?_
   obtain ⟨ν', -, ψ, hψ, hν'⟩ := isCompact_univ.tendsto_subseq fun n ↦ mem_univ (ν (ns n))

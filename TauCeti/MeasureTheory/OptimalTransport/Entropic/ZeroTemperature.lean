@@ -73,9 +73,9 @@ is replaced by `M` on every resulting product cell outside `K ×ˢ L`.
 * `TauCeti.isOptimalCoupling_of_tendsto_of_entropicTransportCost`: when the values converge to the
   transport cost and the cost is lower semicontinuous, every weak limit of entropic optimizers at
   temperatures `ε → 0⁺` is an optimal transport plan.
-* `TauCeti.tendsto_entropicTransportCost_edist_rpow`: on a Polish metric space, for the cost
-  `d ^ p` with `0 < p < ∞`, the regularised cost converges to `W_p ^ p` as soon as one of the two
-  laws has finite `p`-moment.
+* `TauCeti.tendsto_entropicTransportCost_wassersteinEDist_rpow`: on a Polish metric space, for
+  the cost `d ^ p` with `0 < p < ∞`, the regularised cost converges to `W_p ^ p` provided the
+  second law `μ` has finite `p`-moment (no moment is needed on `ν`).
 
 ## References
 
@@ -536,8 +536,8 @@ variable {X : Type*} [MeasurableSpace X] [MetricSpace X] [PolishSpace X] [BorelS
 `0 < p < ∞`, as `ε → 0⁺` the entropically regularised transport cost for the cost `d ^ p`
 converges to `W_p(ν, μ) ^ p`, provided `μ` has finite `p`-moment. No moment hypothesis is needed
 on `ν`: without one both sides are `∞`. -/
-theorem tendsto_entropicTransportCost_edist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (ν μ : Measure X)
-    [IsProbabilityMeasure ν] [IsProbabilityMeasure μ] (hμ : HasFiniteMoment p μ) :
+theorem tendsto_entropicTransportCost_wassersteinEDist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (ν μ : Measure X) [IsProbabilityMeasure ν] [IsProbabilityMeasure μ] (hμ : HasFiniteMoment p μ) :
     Tendsto (fun ε ↦ entropicTransportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ε ν μ)
       (𝓝[>] 0) (𝓝 (wassersteinEDist p ν μ ^ p.toReal)) := by
   have hd : Measurable fun z : X × X ↦ edist z.1 z.2 := measurable_edist
@@ -545,13 +545,10 @@ theorem tendsto_entropicTransportCost_edist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞
   by_cases hν : HasFiniteMoment p ν
   swap
   · -- Without a moment on `ν` the transport cost is infinite, and so are all regularised costs.
-    have hW : wassersteinEDist p ν μ = ∞ := by
-      by_contra h
-      exact hν ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2
-        (by rwa [wassersteinEDist_comm hd]))
     have htop : transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ν μ = ∞ := by
-      rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, hW,
-        ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp)]
+      rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, wassersteinEDist_comm hd,
+        wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+      exact transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment hd hp0 hp hμ hν
     have hconst (ε : ℝ≥0) :
         entropicTransportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ε ν μ = ∞ :=
       top_le_iff.1 (htop ▸ transportCost_le_entropicTransportCost)
@@ -579,12 +576,8 @@ theorem tendsto_entropicTransportCost_edist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞
     (μ := ν) (ν := μ) fun x y ↦ by
       calc ((nndist x y ^ p.toReal : ℝ≥0) : ℝ≥0∞) = edist x y ^ p.toReal :=
             congrFun hcoe (x, y)
-        _ ≤ (edist x₀ x + edist x₀ y) ^ p.toReal := by
-          gcongr
-          exact edist_triangle_left _ _ _
-        _ ≤ K * (edist x₀ x ^ p.toReal + edist x₀ y ^ p.toReal) :=
-          ENNReal.rpow_add_le_mul_rpow_add_rpow' _ _ ENNReal.toReal_nonneg
-        _ = K * edist x₀ x ^ p.toReal + K * edist x₀ y ^ p.toReal := mul_add _ _ _
+        _ ≤ K * edist x₀ x ^ p.toReal + K * edist x₀ y ^ p.toReal :=
+          edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow ENNReal.toReal_nonneg x₀ x y
   rwa [hcoe] at h
 
 end Wasserstein

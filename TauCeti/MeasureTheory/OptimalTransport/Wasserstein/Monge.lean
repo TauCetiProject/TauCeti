@@ -47,12 +47,7 @@ theorem wassersteinEDist_rpow_eq_mongeCost {p : ℝ≥0∞} {ν : Measure X} [Is
   rw [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
   by_cases hν : HasFiniteMoment p ν
   swap
-  · have hW : wassersteinEDist p μ ν = ∞ := by
-      by_contra h
-      exact hν ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2 h)
-    have htop : transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν = ∞ := by
-      rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, hW,
-        ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp)]
+  · have htop := transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment hd hp0 hp hμ hν
     rw [htop, eq_comm, ← top_le_iff, ← htop]
     exact transportCost_le_mongeCost _ _ _
   obtain ⟨x₀, -⟩ := hasFiniteMoment_def.1 hμ
@@ -67,13 +62,8 @@ theorem wassersteinEDist_rpow_eq_mongeCost {p : ℝ≥0∞} {ν : Measure X} [Is
     (measurable_edist_right.pow_const _).const_mul _
   have hc : Continuous fun z : X × X ↦ edist z.1 z.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.comp continuous_edist
-  refine (mongeCost_eq_transportCost_of_le_split (c := fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
-    hc hm.aemeasurable hm.aemeasurable (hint hμ) (hint hν) fun z ↦ ?_).symm
-  calc edist z.1 z.2 ^ p.toReal ≤ (edist x₀ z.1 + edist x₀ z.2) ^ p.toReal := by
-        gcongr
-        exact edist_triangle_left _ _ _
-    _ ≤ K * (edist x₀ z.1 ^ p.toReal + edist x₀ z.2 ^ p.toReal) :=
-        ENNReal.rpow_add_le_mul_rpow_add_rpow' _ _ ENNReal.toReal_nonneg
-    _ = K * edist x₀ z.1 ^ p.toReal + K * edist x₀ z.2 ^ p.toReal := mul_add _ _ _
+  exact (mongeCost_eq_transportCost_of_le_split (c := fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
+    hc hm.aemeasurable hm.aemeasurable (hint hμ) (hint hν) fun z ↦
+      edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow ENNReal.toReal_nonneg x₀ z.1 z.2).symm
 
 end TauCeti
