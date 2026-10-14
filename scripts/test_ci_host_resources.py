@@ -90,7 +90,7 @@ class HostResourcesTests(unittest.TestCase):
     def test_real_pid_namespace_reports_sandbox_cpu_and_rss(self):
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory) / 'resources.json'
-            command = ['bwrap', '--ro-bind', '/', '/', '--unshare-user', '--unshare-pid',
+            command = ['bwrap', '--ro-bind', '/', '/', '--dev', '/dev', '--unshare-user', '--unshare-pid',
                        '--proc', '/proc', '--die-with-parent', '--', sys.executable, '-c',
                        'data=bytearray(32*1024*1024); sum(i*i for i in range(4000000))']
             probe = subprocess.run(command[:command.index(sys.executable)] + ['true'], capture_output=True)
