@@ -139,7 +139,7 @@ theorem map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal 
         (weightTorusPoints k).range := by
   rw [← map_quotientPointsSubgroup_weightTorusDefiningIdeal k]
   ext g
-  simp only [Subgroup.mem_map_equiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
+  rw [Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, baseChangePointsEquiv_symm_apply]
   exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem _ _).symm
 
 end Extension

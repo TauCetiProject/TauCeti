@@ -338,7 +338,7 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
 
 /-- Points of the scalar-extended carrier coordinate algebra are the named matrix-valued
 prime-field carrier points over the extension ring. -/
-noncomputable abbrev baseChangePointsEquiv (k : Type v) [CommRing k] [Algebra 𝔽₂ k] :
+noncomputable def baseChangePointsEquiv (k : Type v) [CommRing k] [Algebra 𝔽₂ k] :
     HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) Q)
       (CommAlgCat.of k k) ≃* points k :=
   (AlgHom.baseChangePointsMulEquiv (k := 𝔽₂) (K := k) (A := Q) (R := k)).symm.trans
@@ -353,6 +353,26 @@ noncomputable abbrev baseChangePointsEquiv (k : Type v) [CommRing k] [Algebra �
   simp only [coordinatePointsEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply]
   rw [GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply,
     CommHopfAlgCat.quotientPointsHom_apply]
+
+/-- The base-change point equivalence evaluates the ambient matrix coordinates of the point's
+restriction along `q ↦ 1 ⊗ q`. -/
+@[simp] theorem coe_baseChangePointsEquiv (k : Type v) [CommRing k] [Algebra 𝔽₂ k]
+    (q : HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) Q)
+      (CommAlgCat.of k k)) :
+    (baseChangePointsEquiv k q : GL (Fin 26) k) =
+      GeneralLinear.pointsMulEquiv 26 (WithConv.toConv
+        (((AlgHom.baseChangePointsMulEquiv (k := 𝔽₂) (K := k) (A := Q) (R := k)).symm q).ofConv.comp
+          (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) := by
+  rw [baseChangePointsEquiv, MulEquiv.trans_apply, coe_coordinatePointsEquiv]
+
+/-- The inverse base-change point equivalence is the base change of the inverse
+coordinate-point equivalence. -/
+@[simp] theorem baseChangePointsEquiv_symm_apply (k : Type v) [CommRing k] [Algebra 𝔽₂ k]
+    (g : points k) :
+    (baseChangePointsEquiv k).symm g =
+      AlgHom.baseChangePointsMulEquiv (k := 𝔽₂) (K := k) (A := Q) (R := k)
+        ((coordinatePointsEquiv k).symm g) := by
+  rw [baseChangePointsEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
 
 /-- A generator's quotient-coordinate point evaluates to its ambient matrix point. -/
 theorem coe_coordinatePointsEquiv_commonKernelLift

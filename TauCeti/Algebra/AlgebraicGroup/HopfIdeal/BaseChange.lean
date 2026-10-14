@@ -74,7 +74,7 @@ along `h ↦ 1 ⊗ h`.
   base change lies in the base-changed closed subgroup exactly when its restriction lies in the
   original one.
 * `TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem`: the
-  same criterion for a `K`-valued point of `H` and its base change.
+  same criterion for a point of `H` valued in a `K`-algebra and its base change.
 * `TauCeti.CommHopfAlgCat.isCentral_baseChangeHopfIdeal`: base change preserves central Hopf
   ideals.
 
@@ -806,17 +806,19 @@ theorem mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff (J : HopfIdeal k H)
       rwa [baseChangePointsMulEquiv_apply_apply] at this
     exact RingHom.mem_ker.mp (hle ((HopfIdeal.mem_toIdeal (I := baseChangeHopfIdeal J)).mpr hy))
 
-/-- A `K`-valued point of `H` lies in the closed subgroup cut out by `J` exactly when its base
-change, a `K`-valued point of `K ⊗[k] H`, lies in the closed subgroup cut out by `J_K`. This is
-`mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff` with the original point presented over
-`CommAlgCat.of k K` through `AlgHom.baseChangePointsMulEquiv`, rather than over the restriction
-of scalars of `CommAlgCat.of K K`; the two presentations agree only propositionally. -/
+/-- For a `K`-algebra `R`, an `R`-valued point of `H` lies in the closed subgroup cut out by `J`
+exactly when its base change, an `R`-valued point of `K ⊗[k] H`, lies in the closed subgroup cut
+out by `J_K`. This is `mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff` with the original
+point presented over `CommAlgCat.of k R` through `AlgHom.baseChangePointsMulEquiv`, rather than
+over the restriction of scalars of `CommAlgCat.of K R`; the two presentations agree only
+propositionally. -/
 theorem mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem
-    (J : HopfIdeal k H) (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k K)) :
-    g ∈ quotientPointsSubgroup H J (CommAlgCat.of k K) ↔
-      AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := K) g ∈
+    {R : Type*} [CommRing R] [Algebra K R] [Algebra k R] [IsScalarTower k K R]
+    (J : HopfIdeal k H) (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R)) :
+    g ∈ quotientPointsSubgroup H J (CommAlgCat.of k R) ↔
+      AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := R) g ∈
         quotientPointsSubgroup (baseChange (K := K) H) (baseChangeHopfIdeal (K := K) J)
-          (CommAlgCat.of K K) := by
+          (CommAlgCat.of K R) := by
   rw [mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff, mem_quotientPointsSubgroup_iff,
     mem_quotientPointsSubgroup_iff]
   refine forall₂_congr fun h _ ↦ ?_
