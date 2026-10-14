@@ -37,7 +37,7 @@ Transporting a homotopy-group computation across a homeomorphism is the dimensio
   `π_N(X, x) ≃* π_N(Y, y)`.
 * `HomotopyGroup.homeomorphMulEquiv`: `π_N(X, x) ≃* π_N(Y, e x)`.
 * `GenLoop.homeomorphOfUnique`: `Ω^ N X x ≃ₜ Ω X x` for `N` a singleton.
-* `GenLoop.mapHomeomorph`: `Ω^ N X x ≃ₜ Ω^ N Y y` from `e : X ≃ₜ Y` with `e x = y`.
+* `Homeomorph.genLoopHomeomorph`: `Ω^ N X x ≃ₜ Ω^ N Y y` from `e : X ≃ₜ Y` with `e x = y`.
 -/
 
 public section
@@ -82,7 +82,7 @@ variable {Y : Type*} [TopologicalSpace Y] {y : Y}
 
 /-- A homeomorphism `e : X ≃ₜ Y` with `e x = y` induces, by postcomposition, a homeomorphism of
 the spaces of generalized loops `Ω^ N X x ≃ₜ Ω^ N Y y`. -/
-def mapHomeomorph (e : X ≃ₜ Y) (h : e x = y) : Ω^ N X x ≃ₜ Ω^ N Y y where
+def _root_.Homeomorph.genLoopHomeomorph (e : X ≃ₜ Y) (h : e x = y) : Ω^ N X x ≃ₜ Ω^ N Y y where
   toFun := map ⟨e, e.continuous⟩ h
   invFun := map ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_eq.mpr h.symm)
   left_inv p := _root_.GenLoop.ext _ _ fun t => by
@@ -95,20 +95,22 @@ def mapHomeomorph (e : X ≃ₜ Y) (h : e x = y) : Ω^ N X x ≃ₜ Ω^ N Y y wh
     ((ContinuousMap.continuous_postcomp ⟨e.symm, e.symm.continuous⟩).comp
       continuous_subtype_val).subtype_mk _
 
-/-- The inverse of `mapHomeomorph e` is `mapHomeomorph e.symm`. -/
-theorem mapHomeomorph_symm (e : X ≃ₜ Y) (h : e x = y) :
-    (mapHomeomorph e h : Ω^ N X x ≃ₜ Ω^ N Y y).symm =
-      mapHomeomorph e.symm (e.symm_apply_eq.mpr h.symm) := by
-  rw [mapHomeomorph, mapHomeomorph]; rfl
+/-- The inverse of `Homeomorph.genLoopHomeomorph e` is `Homeomorph.genLoopHomeomorph e.symm`. -/
+theorem _root_.Homeomorph.genLoopHomeomorph_symm (e : X ≃ₜ Y) (h : e x = y) :
+    (Homeomorph.genLoopHomeomorph e h : Ω^ N X x ≃ₜ Ω^ N Y y).symm =
+      Homeomorph.genLoopHomeomorph e.symm (e.symm_apply_eq.mpr h.symm) := by
+  rw [Homeomorph.genLoopHomeomorph, Homeomorph.genLoopHomeomorph]; rfl
 
 @[simp]
-theorem mapHomeomorph_apply (e : X ≃ₜ Y) (h : e x = y) (p : Ω^ N X x) (t : I^N) :
-    mapHomeomorph e h p t = e (p t) :=
+theorem _root_.Homeomorph.genLoopHomeomorph_apply (e : X ≃ₜ Y) (h : e x = y) (p : Ω^ N X x)
+    (t : I^N) :
+    Homeomorph.genLoopHomeomorph e h p t = e (p t) :=
   map_apply ⟨e, e.continuous⟩ h p t
 
 @[simp]
-theorem mapHomeomorph_symm_apply (e : X ≃ₜ Y) (h : e x = y) (p : Ω^ N Y y) (t : I^N) :
-    (mapHomeomorph e h).symm p t = e.symm (p t) :=
+theorem _root_.Homeomorph.genLoopHomeomorph_symm_apply (e : X ≃ₜ Y) (h : e x = y)
+    (p : Ω^ N Y y) (t : I^N) :
+    (Homeomorph.genLoopHomeomorph e h).symm p t = e.symm (p t) :=
   map_apply ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_eq.mpr h.symm) p t
 
 end Map
