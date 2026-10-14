@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Algebra.OpenSubgroup
-public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 public import TauCeti.Topology.Discrete
@@ -17,8 +16,9 @@ public import TauCeti.Topology.Discrete
 # Quotients of topological groups by subgroups
 
 Generic facts about quotients of groups equipped with a topology. The image of an open subgroup,
-its restricted quotient map, the open normal subgroup correspondence, and the isomorphism for an
-open normal subgroup restricted to a subgroup need only `[SeparatelyContinuousMul G]`.
+its restricted quotient map, and the isomorphism for an open normal subgroup restricted to a
+subgroup need only `[SeparatelyContinuousMul G]`. The open normal subgroup correspondence
+holds for an arbitrary topology on `G`.
 Multiplication on a normal quotient needs `[ContinuousMul G]`. The third isomorphism theorem
 holds for arbitrary quotient topologies, without continuity assumptions on the group operations.
 The inverse-translation results additionally require `[DiscreteTopology (G ⧸ U)]`.
@@ -49,8 +49,8 @@ Neither compactness nor total disconnectedness is needed.
   subgroups `V ≤ U` is continuous.
 * `OpenSubgroup.isClopen_image_mk`: the image of an open subgroup of `G` under the
   quotient map `G → G ⧸ N` is clopen.
-* `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond,
-  as lattices, to the open normal subgroups of `G` containing `N`.
+* `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
+  to the open normal subgroups of `G` containing `N`.
 -/
 
 public section
@@ -161,11 +161,11 @@ end OpenSubgroup
 
 namespace Subgroup
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {N : Subgroup G}
+variable {G : Type*} [Group G] [TopologicalSpace G] {N : Subgroup G}
   [N.Normal]
 
 /-- The correspondence theorem for open normal subgroups: the open normal subgroups of
-`G ⧸ N` correspond, as lattices, to the open normal subgroups of `G` containing `N`. -/
+`G ⧸ N` correspond to the open normal subgroups of `G` containing `N`, for any topology on `G`. -/
 def comapMk'OpenNormalOrderIso (N : Subgroup G) [N.Normal] :
     OpenNormalSubgroup (G ⧸ N) ≃o
       { U : OpenNormalSubgroup G // (N : Subgroup G) ≤ U.toSubgroup } :=
@@ -179,7 +179,13 @@ def comapMk'OpenNormalOrderIso (N : Subgroup G) [N.Normal] :
     invFun U :=
       { toOpenSubgroup :=
           ⟨Subgroup.map (QuotientGroup.mk' N) U.1.toSubgroup,
-            QuotientGroup.isOpenMap_coe _ U.1.toOpenSubgroup.isOpen'⟩
+            (QuotientGroup.isQuotientMap_mk N).isOpen_preimage.mp <| by
+              have hopen : IsOpen ((U.1.toSubgroup.map (QuotientGroup.mk' N)).comap
+                  (QuotientGroup.mk' N) : Set G) := by
+                rw [QuotientGroup.comap_map_mk', sup_eq_right.mpr U.2]
+                exact U.1.toOpenSubgroup.isOpen'
+              simpa only [Subgroup.coe_comap, QuotientGroup.coe_mk', Set.preimage,
+                Subgroup.mem_carrier, SetLike.mem_coe] using hopen⟩
         isNormal' :=
           Subgroup.Normal.map inferInstance (QuotientGroup.mk' N)
             (QuotientGroup.mk'_surjective N) }
@@ -201,7 +207,7 @@ end Subgroup
 
 namespace OpenNormalSubgroup
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {N : Subgroup G}
+variable {G : Type*} [Group G] [TopologicalSpace G] {N : Subgroup G}
   [N.Normal]
 
 /-- The open normal subgroup correspondence takes the preimage under the quotient map. -/

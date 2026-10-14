@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
 # Inflation of the index-two Evens graph cocycle
