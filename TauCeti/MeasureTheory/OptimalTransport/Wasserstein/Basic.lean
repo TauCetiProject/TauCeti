@@ -573,7 +573,8 @@ theorem wassersteinEDist_triangle (hd : Measurable fun z : X × X ↦ edist z.1 
     ⟨(Measure.fst_map_prodMap_id_snd hγπ).trans hπ.fst_eq,
       (Measure.snd_map_prodMap_id_snd hγσ).trans hσ.snd_eq⟩
   exact (wassersteinEDist_le hcoup p).trans
-    (Measure.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦ edist_triangle x y z)
+    (MeasureTheory.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦
+      edist_triangle x y z)
 
 end Triangle
 

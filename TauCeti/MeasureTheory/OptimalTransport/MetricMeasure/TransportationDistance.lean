@@ -229,7 +229,7 @@ theorem sturmEDist_triangle (hp : 1 ≤ p) (μ : Measure X) (ν : Measure Y) [Is
       (Measure.snd_map_prodMap_id_snd hγσ).trans hσ.snd_eq⟩
   have hfg := hf.comp hg
   exact (sturmEDist_le hfg hcoup p).trans
-    (Measure.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hfg.continuous.measurable
+    (MeasureTheory.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hfg.continuous.measurable
       hf.continuous.measurable hg.continuous.measurable fun x y z ↦
         iInf_le (fun y ↦ f x y + g y z) y)
 
