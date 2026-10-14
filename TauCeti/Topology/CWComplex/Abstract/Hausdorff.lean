@@ -63,7 +63,9 @@ open subset `U` of the sphere is the trace of the open cone `{x | 1 / 2 < ‖x�
 and the cones over disjoint sets are disjoint. -/
 theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
     extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) := by
-  -- The points of the disk and of its boundary as vectors of `E`.
+  -- The points of the disk and of its boundary as vectors of `E`. The carriers of `TopCat.disk n`
+  -- and `TopCat.diskBoundary n` are, by definition, the lifts of the closed unit ball and of the
+  -- unit sphere; the ascriptions expose these carriers, which the `TopCat` wrappers hide.
   let ν (z : TopCat.disk.{u} n) : EuclideanSpace ℝ (Fin n) :=
     ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
       EuclideanSpace ℝ (Fin n))
@@ -71,7 +73,8 @@ theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
     ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
       EuclideanSpace ℝ (Fin n))
   have hμ : IsEmbedding μ := IsEmbedding.subtypeVal.comp IsEmbedding.uliftDown
-  have hνμ (s : TopCat.diskBoundary.{u} n) : ν (TopCat.diskBoundaryInclusion n s) = μ s := rfl
+  have hνμ (s : TopCat.diskBoundary.{u} n) : ν (TopCat.diskBoundaryInclusion n s) = μ s :=
+    coe_diskBoundaryInclusion_apply_down n s
   have hμ₁ (s : TopCat.diskBoundary.{u} n) : ‖μ s‖ = 1 := mem_sphere_zero_iff_norm.1
     (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
   -- The radial projection, continuous away from the centre.

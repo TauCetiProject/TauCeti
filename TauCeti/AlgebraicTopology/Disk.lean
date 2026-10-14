@@ -87,6 +87,16 @@ theorem isClosedEmbedding_diskBoundaryInclusion (n : ℕ) :
   (TopCat.diskBoundaryInclusion n).hom.continuous.isClosedEmbedding
     ((TopCat.mono_iff_injective _).1 inferInstance)
 
+/-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk keeps the underlying vector of
+`EuclideanSpace ℝ (Fin n)`. -/
+lemma coe_diskBoundaryInclusion_apply_down (n : ℕ) (s : TopCat.diskBoundary.{u} n) :
+    ((TopCat.diskBoundaryInclusion n s :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) =
+      ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) :=
+  rfl
+
 end TauCeti.TopCat
 
 namespace TauCeti

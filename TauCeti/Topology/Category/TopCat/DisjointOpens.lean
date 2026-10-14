@@ -68,6 +68,12 @@ def extendsDisjointOpens : MorphismProperty TopCat.{u} :=
   (MorphismProperty.ofHoms fun _ : Unit ↦
     TopCat.isTerminalPUnit.from disjointOpensClassifier.{u}).llp
 
+instance : extendsDisjointOpens.{u}.IsMultiplicative :=
+  inferInstanceAs (MorphismProperty.llp _).IsMultiplicative
+
+instance : extendsDisjointOpens.{u}.IsStableUnderRetracts :=
+  inferInstanceAs (MorphismProperty.llp _).IsStableUnderRetracts
+
 instance : extendsDisjointOpens.{u}.IsStableUnderCobaseChange :=
   inferInstanceAs (MorphismProperty.llp _).IsStableUnderCobaseChange
 
