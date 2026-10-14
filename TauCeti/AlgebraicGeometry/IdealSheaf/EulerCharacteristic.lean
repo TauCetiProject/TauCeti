@@ -76,12 +76,13 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
     eulerCharBelow k X I.sheaf 2 =
       eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 -
         (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
-  have hS := I.shortComplex_shortExact
+  let S := ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme
+  have hS : S.ShortExact := I.shortExact_toPushforwardSubscheme
   let e : SheafOfModules.free (R := X.ringCatSheaf) PUnit ≅ SheafOfModules.unit X.ringCatSheaf :=
     TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf
   -- `H⁰` and `H¹` of `𝒪_X` are finite-dimensional.
-  have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology I.shortComplex.X₂ i) := by
-    rw [shortComplex_X₂]
+  have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology S.X₂ i) := by
+    dsimp only [S]
     refine (finiteDimensional_cohomology_congr k e i).mp ?_
     rw [← InvertibleSheaf.trivial_obj]
     interval_cases i <;> infer_instance
@@ -91,23 +92,23 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
   let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
     inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
   let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
-  have : FiniteDimensional k (Cohomology I.shortComplex.X₃ 0) := by
+  have : FiniteDimensional k (Cohomology S.X₃ 0) := by
     let _ : Algebra k Γ(I.subscheme, ⊤) := (baseRingToGlobalSections k I.subscheme).toAlgebra
     have : Module.Finite k Γ(M, ⊤) :=
       -- The base-ring module structure on the global sections of `𝒪_{V(I)}` is the one given by
       -- the algebra structure, both being restriction of scalars along
       -- `baseRingToGlobalSections`.
       (I.subschemeι ≫ X ↘ Spec (.of k)).moduleFinite_appTop (algebraMap_eq k I)
-    rw [shortComplex_X₃]
+    dsimp only [S]
     refine (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k M 0).mpr ?_
     exact Module.Finite.equiv (cohomologyZeroBaseLinearEquiv k I.subscheme M).symm
-  have hvan : Subsingleton (Cohomology I.shortComplex.X₃ 1) := by
+  have hvan : Subsingleton (Cohomology S.X₃ 1) := by
     have := subsingleton_cohomology_succ_of_isFinite k M 0
-    rw [shortComplex_X₃]
+    dsimp only [S]
     exact (cohomologyPushforwardIso I.subschemeι M 1).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
   -- `H¹(X, I)` sits between `H⁰(ι_* 𝒪_{V(I)})` and `H¹(X, 𝒪_X)`, so it is finite-dimensional.
   have h₁ (i : ℕ) (hi : i < 2) (hi' : 0 < i) :
-      FiniteDimensional k (Cohomology I.shortComplex.X₁ i) := by
+      FiniteDimensional k (Cohomology S.X₁ i) := by
     obtain rfl : i = 1 := by omega
     have := h₂ 1 (by omega)
     exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
@@ -115,7 +116,7 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
     LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply]
   have h := eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1 h₁ h₂ hδ
   -- The terms of the sequence are `I`, `𝒪_X` and `ι_* 𝒪_{V(I)}`.
-  simp only [shortComplex_X₁, shortComplex_X₂, shortComplex_X₃] at h
+  dsimp only [S] at h
   have h₀ : eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 =
       eulerCharBelow k X (SheafOfModules.unit X.ringCatSheaf) 2 := by
     rw [InvertibleSheaf.trivial_obj]
