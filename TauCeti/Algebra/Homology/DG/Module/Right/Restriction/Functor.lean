@@ -163,6 +163,32 @@ noncomputable def restrictScalarsObjIso (f : DGAlgHom hA hB)
     rw [comp_apply, id_apply]
     exact (restrictScalarsEquiv f M).apply_symm_apply x.val
 
+private theorem restrictScalarsObjIso_hom_apply_def (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) (x : (restrictScalars f).obj M) :
+    (restrictScalarsObjIso f M).hom x =
+      DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x) := rfl
+
+/-- The canonical restricted-object isomorphism acts by the carrier equivalence. -/
+@[simp]
+theorem restrictScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) (x : (restrictScalars f).obj M) :
+    (restrictScalarsObjIso f M).hom x =
+      DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x) :=
+  restrictScalarsObjIso_hom_apply_def f M x
+
+private theorem restrictScalarsObjIso_inv_apply_def (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB)
+    (x : of (M.isDGRightModule.restrictScalars f)) :
+    (restrictScalarsObjIso f M).inv x = (restrictScalarsEquiv f M).symm x.val := rfl
+
+/-- The inverse canonical restricted-object isomorphism inverts the carrier equivalence. -/
+@[simp]
+theorem restrictScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB)
+    (x : of (M.isDGRightModule.restrictScalars f)) :
+    (restrictScalarsObjIso f M).inv x = (restrictScalarsEquiv f M).symm x.val :=
+  restrictScalarsObjIso_inv_apply_def f M x
+
 /-- The canonical restricted-object isomorphisms are natural in the module. -/
 theorem restrictScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
     {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
