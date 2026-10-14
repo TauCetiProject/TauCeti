@@ -26,6 +26,9 @@ public section
 open Bundle
 open scoped Manifold
 
+local instance circleFinrankFact : Fact (Module.finrank ℝ ℂ = 1 + 1) :=
+  ⟨by norm_num [Complex.finrank_real_complex]⟩
+
 namespace TauCeti
 
 /-- The sphere chart structure made available through Circle's opaque type abbreviation. -/
@@ -33,34 +36,26 @@ noncomputable local instance circleChartedSpace :
     ChartedSpace (EuclideanSpace ℝ (Fin 1)) (Submonoid.unitSphere ℂ) :=
   instChartedSpaceEuclideanSpaceRealFinOfNatNatCircle
 
-local instance circleFinrankFact : Fact (Module.finrank ℝ ℂ = 1 + 1) :=
-  ⟨by norm_num [Complex.finrank_real_complex]⟩
-
 /-- The Riemannian bundle carrying the induced round metric on the complex unit circle. -/
 @[instance_reducible]
 noncomputable def roundMetricCircle :
     RiemannianBundle (fun x : Circle ↦ TangentSpace (𝓡 1) x) :=
   ⟨(sphereRoundMetric (E := ℂ) (n := 1)).toRiemannianMetric⟩
 
-private theorem mvfderiv_circle_apply (x : Circle) (v : TangentSpace (𝓡 1) x) :
-    mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) x v =
-      mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) x v := by
-  -- `Circle` is an opaque name for the metric sphere; expose that carrier for the derivative API.
-  change mvfderiv (𝓡 1) ((↑) : Metric.sphere (0 : ℂ) 1 → ℂ)
-      (x : Metric.sphere (0 : ℂ) 1) v =
-    mfderiv (𝓡 1) 𝓘(ℝ, ℂ) ((↑) : Metric.sphere (0 : ℂ) 1 → ℂ)
-      (x : Metric.sphere (0 : ℂ) 1) v
-  exact mvfderiv_apply_eq_mfderiv_apply _ _ _
+end TauCeti
+
+namespace Circle
 
 /-- The round metric pairs circle tangent vectors by the ambient complex inner product of their
 manifold derivatives under the inclusion into `ℂ`. -/
+@[simp]
 theorem roundMetricCircle_inner (x : Circle) (v w : TangentSpace (𝓡 1) x) :
-    let _ := roundMetricCircle
+    let _ := TauCeti.roundMetricCircle
     inner ℝ v w =
       inner ℝ (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) x v)
         (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) x w) := by
-  let _ : RiemannianBundle (fun x : Circle ↦ TangentSpace (𝓡 1) x) := roundMetricCircle
-  rw [← mvfderiv_circle_apply x v, ← mvfderiv_circle_apply x w]
-  exact inner_tangentSpace_sphere (E := ℂ) (n := 1) x v w
+  let _ : RiemannianBundle (fun x : Circle ↦ TangentSpace (𝓡 1) x) := TauCeti.roundMetricCircle
+  rw [← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply]
+  exact TauCeti.inner_tangentSpace_sphere (E := ℂ) (n := 1) x v w
 
-end TauCeti
+end Circle
