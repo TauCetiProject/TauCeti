@@ -27,6 +27,11 @@ Smoothness of relative dimension one, properness and the local-model condition
   structure morphisms (`baseChangeIso_hom_snd`) and the zero sections (`zero_baseChangeIso_hom`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap E k hk`: the canonical morphism
   between base changes induced by a morphism `k` of bases over `S`.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.carrierMap hg hh` and
+  `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelMap hg hh`: for a base change square
+  `hg` of a morphism with a section, and charts `k` and `c` of its two sides whose bases are related
+  by a morphism over the base change, the induced morphism between the restrictions to the chart
+  bases, and the same morphism between the projective models of their equations.
 
 ## Main results
 
@@ -37,6 +42,14 @@ Smoothness of relative dimension one, properness and the local-model condition
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_id` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_comp`: the canonical morphisms between
   base changes preserve identities and composition.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.isPullback_modelMap` and
+  `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.projModelZero_modelMap`: the morphism
+  `modelMap hg hh` is a base change square of projective models carrying the zero section to the
+  zero section. Statements about the projective models of Weierstrass equations which are
+  compatible with such squares therefore pass to elliptic curves along base change squares.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_chart_comp_baseMap`: for elliptic curves over
+  `S` and `S'` and a morphism `f : S' ⟶ S`, the charts of the curve over `S'` whose bases map over
+  `f` into bases of charts of the curve over `S` cover `S'`.
 
 ## Provenance
 
@@ -206,6 +219,118 @@ theorem baseChangeMap_comp (k : T' ⟶ T) (hk : k ≫ f = f') (l : T'' ⟶ T')
     E.baseChangeMap l hl ≫ E.baseChangeMap k hk =
       E.baseChangeMap (l ≫ k) (by rw [Category.assoc, hk, hl]) := by
   simp [baseChangeMap]
+
+end EllipticCurveGeom
+
+/-! ### Charts over a base change square -/
+
+namespace PointedWeierstrassChart
+
+variable {S X S' X' : Scheme.{u}} {π : X ⟶ S} {zero : S ⟶ X} {π' : X' ⟶ S'} {zero' : S' ⟶ X'}
+  {g : X' ⟶ X} {f : S' ⟶ S} (hg : IsPullback g π' π f)
+  {k : PointedWeierstrassChart π' zero'} {c : PointedWeierstrassChart π zero} {h : k.base ⟶ c.base}
+  (hh : h ≫ c.baseMap = k.baseMap ≫ f)
+
+/-- Let `g : X' ⟶ X` be the base change of `π : X ⟶ S` along `f : S' ⟶ S`, and let `k` and `c` be
+pointed Weierstrass charts of `π'` and `π` whose bases are related by `h : k.base ⟶ c.base` over
+`f`. This is the morphism from the restriction of `X'` to the base of `k` to the restriction of `X`
+to the base of `c` induced by `g`, lying over `h`. It generalizes `pullbackCarrierMap`, the case
+`f = 𝟙 S` and `g = 𝟙 X`. -/
+noncomputable def carrierMap : k.pullbackCarrier ⟶ c.pullbackCarrier :=
+  c.isPullback.lift (k.toTotal ≫ g) (k.toBase ≫ h) (by
+    rw [Category.assoc, hg.w, reassoc_of% k.isPullback.w, Category.assoc, hh])
+
+/-- The morphism `carrierMap hg hh` lies over `g`. -/
+@[reassoc (attr := simp)]
+theorem carrierMap_toTotal : carrierMap hg hh ≫ c.toTotal = k.toTotal ≫ g :=
+  IsPullback.lift_fst _ _ _ _
+
+/-- The morphism `carrierMap hg hh` lies over the morphism `h` of bases. -/
+@[reassoc (attr := simp)]
+theorem carrierMap_toBase : carrierMap hg hh ≫ c.toBase = k.toBase ≫ h :=
+  IsPullback.lift_snd _ _ _ _
+
+/-- The restriction of `X'` to the base of `k` is the base change along `h` of the restriction of
+`X` to the base of `c`, through `carrierMap hg hh`. -/
+theorem isPullback_carrierMap : IsPullback (carrierMap hg hh) k.toBase c.toBase h :=
+  .of_right (by rw [carrierMap_toTotal, hh]; exact k.isPullback.paste_horiz hg)
+    (carrierMap_toBase hg hh) c.isPullback
+
+/-- If `g` carries the section `zero'` to `zero`, then `carrierMap hg hh` carries the section of
+`k` induced by `zero'` to the section of `c` induced by `zero`. -/
+@[reassoc]
+theorem pulledZero_carrierMap (h0 : zero' ≫ g = f ≫ zero) :
+    k.pulledZero ≫ carrierMap hg hh = h ≫ c.pulledZero :=
+  c.isPullback.hom_ext (by simp [h0, reassoc_of% hh]) (by simp)
+
+/-- The morphism `carrierMap hg hh` between the restrictions of `X'` and `X` to the bases of `k`
+and `c`, read through the isomorphisms of these restrictions with the projective models of the
+equations of `k` and `c` (`modelIso_hom_modelMap`). It is a base change square of projective models
+(`isPullback_modelMap`) and, when `g` preserves the sections, carries the zero section to the zero
+section (`projModelZero_modelMap`). -/
+noncomputable def modelMap : k.equation.projModel ⟶ c.equation.projModel :=
+  k.modelIso.inv ≫ carrierMap hg hh ≫ c.modelIso.hom
+
+/-- Through the isomorphisms with the projective models, `modelMap hg hh` is
+`carrierMap hg hh`. -/
+@[reassoc]
+theorem modelIso_hom_modelMap :
+    k.modelIso.hom ≫ modelMap hg hh = carrierMap hg hh ≫ c.modelIso.hom := by
+  simp [modelMap]
+
+/-- The projective model of the equation of `k` is the base change of that of `c` along
+`Spec k.ring ≅ k.base ⟶ c.base ≅ Spec c.ring`, through `modelMap hg hh`. -/
+theorem isPullback_modelMap : IsPullback (modelMap hg hh) k.equation.projModelOver
+    c.equation.projModelOver (k.baseIso.inv ≫ h ≫ c.baseIso.hom) :=
+  (isPullback_carrierMap hg hh).of_iso k.modelIso c.modelIso k.baseIso c.baseIso
+    (by simp [modelMap]) k.modelIso_over.symm c.modelIso_over.symm (by simp)
+
+/-- If `g` carries the section `zero'` to `zero`, then `modelMap hg hh` carries the zero section of
+the projective model of the equation of `k` to that of `c`. -/
+theorem projModelZero_modelMap (h0 : zero' ≫ g = f ≫ zero) :
+    k.equation.projModelZero ≫ modelMap hg hh =
+      (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ c.equation.projModelZero := by
+  rw [← cancel_epi k.baseIso.hom, ← k.modelIso_zero_assoc]
+  simp [modelMap, pulledZero_carrierMap_assoc hg hh h0]
+
+end PointedWeierstrassChart
+
+/-! ### Charts compatible with a morphism of bases -/
+
+namespace EllipticCurveGeom
+
+open PointedWeierstrassChart
+
+variable {S S' : Scheme.{u}}
+
+/-- **Charts compatible with a morphism of bases.** For elliptic curves `E` over `S` and `E'` over
+`S'` and a morphism `f : S' ⟶ S`, every point of `S'` lies in the base of a pointed Weierstrass
+chart `k` of `E'` whose base maps over `f` into the base of a pointed Weierstrass chart `c` of `E`.
+The chart `k` can be taken to be the restriction of any chart of `E'` around the point to an affine
+open. -/
+theorem exists_chart_comp_baseMap (E : EllipticCurveGeom S) (E' : EllipticCurveGeom S')
+    (f : S' ⟶ S) (s : S') :
+    ∃ (k : PointedWeierstrassChart E'.structureMap E'.zero)
+      (c : PointedWeierstrassChart E.structureMap E.zero) (h : k.base ⟶ c.base),
+      h ≫ c.baseMap = k.baseMap ≫ f ∧ s ∈ Set.range k.baseMap := by
+  obtain ⟨A⟩ := E'.localModel
+  obtain ⟨B⟩ := E.localModel
+  obtain ⟨i, a, ha⟩ := A.covers s
+  obtain ⟨j, b, hb⟩ := B.covers (f s)
+  let d := A.chart i
+  let c := B.chart j
+  -- an affine open `V` of the base of `d`, around `a`, mapping into the base of `c` under `f`
+  have hmem : a ∈ d.baseMap ⁻¹ᵁ f ⁻¹ᵁ c.baseMap.opensRange := ⟨b, by rw [hb, ha]⟩
+  obtain ⟨V, hV, haV, hVU⟩ := exists_isAffineOpen_mem_and_subset hmem
+  have hk : Set.range ((d.restrict ⟨V, hV⟩).baseMap ≫ f) ⊆ Set.range c.baseMap := by
+    rintro _ ⟨y, rfl⟩
+    have hy : d.restrictι ⟨V, hV⟩ y ∈ V := (d.range_restrictι ⟨V, hV⟩).subset ⟨y, rfl⟩
+    rw [← restrictι_baseMap, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply]
+    exact hVU hy
+  obtain ⟨y, hy⟩ : a ∈ Set.range (d.restrictι ⟨V, hV⟩) := by
+    rwa [range_restrictι]
+  exact ⟨d.restrict ⟨V, hV⟩, c, IsOpenImmersion.lift c.baseMap _ hk, IsOpenImmersion.lift_fac _ _ _,
+    y, by rw [← restrictι_baseMap, Scheme.Hom.comp_apply, hy, ha]⟩
 
 end EllipticCurveGeom
 

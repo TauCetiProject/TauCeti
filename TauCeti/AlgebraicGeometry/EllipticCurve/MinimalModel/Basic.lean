@@ -37,6 +37,8 @@ have the same `c₄` valuation too.
   discriminant is not divisible by `ϖ ^ 12` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
+* `WeierstrassCurve.exists_smul_minimal_eq_of_smul_eq`: Mathlib's chosen minimal equation reaches
+  every equation in its orbit by a change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
   equations are related by a change of variables.
 * `WeierstrassCurve.valuation_Δ_le_of_isMinimal_smul`: no integral model in the orbit of a minimal
@@ -230,6 +232,13 @@ theorem isMinimal_baseChange_of_not_pow_twelve_dvd_Δ (W : WeierstrassCurve R) {
 theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, C • W = W.minimal R :=
   ⟨_, rfl⟩
+
+/-- **Mathlib's chosen minimal equation reaches every equation in its orbit.** If a change of
+variables carries `W` to `W'`, then some change of variables carries `W.minimal R` to `W'`. -/
+theorem exists_smul_minimal_eq_of_smul_eq {W W' : WeierstrassCurve K} (D : VariableChange K)
+    (hD : D • W = W') : ∃ C : VariableChange K, C • W.minimal R = W' := by
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  exact ⟨D * C⁻¹, by rw [mul_smul, ← hC, inv_smul_smul, hD]⟩
 
 /-- The chosen minimal equations of two equations related by a change of variables are themselves
 related by a change of variables. -/

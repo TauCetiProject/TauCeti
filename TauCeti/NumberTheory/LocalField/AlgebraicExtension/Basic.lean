@@ -417,24 +417,6 @@ theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪
 
 end IntegerRingEquiv
 
-/-- The algebra map of a compatible algebraic extension is continuous for the given valuative
-topologies. -/
-theorem continuous_algebraMap_of_valuativeExtension [ValuativeRel M] [ValuativeExtension K M]
-    [TopologicalSpace M] [IsValuativeTopology M] : Continuous (algebraMap K M) := by
-  have h : @Continuous K M (normalizedNormedFieldTopology K)
-      (algebraicExtensionNormedFieldTopology K M) (algebraMap K M) := by
-    let nM := algebraicExtensionNormedField K M
-    let nK := normalizedNontriviallyNormedField K
-    let _ := nM
-    let _ := nK
-    apply Isometry.continuous
-    apply (isometry_iff_dist_eq).mpr
-    intro x y
-    rw [dist_eq_norm, dist_eq_norm, ← map_sub, algebraicExtensionNormedField_norm_algebraMap,
-      normalizedNormedField_norm_def]
-  rw [normalizedNormedField_topology_eq K, algebraicExtensionNormedFieldTopology_eq K M] at h
-  exact h
-
 variable {K M} in
 /-- **Galois automorphisms are continuous.** Every `K`-algebra automorphism of an algebraic
 extension `M` of a nonarchimedean local field `K` is continuous for its valuative topology, since
@@ -493,7 +475,13 @@ valued field restricts to a local homomorphism of their rings of integers. -/
 instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerRingHom := by
   let _ := ι.toAlgebra
   have := ι.valuativeExtension
-  exact ⟨(inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M])).map_nonunit⟩
+  have hmap : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) = algebraMap 𝒪[L] 𝒪[M] := by
+    ext x
+    rw [TauCeti.coe_algebraMap_integerRing]
+    rfl
+  have hlocal : IsLocalHom (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) :=
+    hmap.symm ▸ (inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M]))
+  exact ⟨hlocal.map_nonunit⟩
 
 /-- The embedding of residue fields induced by a `K`-embedding from an algebraic extension of a
 nonarchimedean local field `K` to a compatible valued field. It is linear over the residue field
