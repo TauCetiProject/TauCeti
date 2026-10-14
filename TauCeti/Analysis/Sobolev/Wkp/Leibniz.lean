@@ -89,9 +89,7 @@ theorem iteratedGradient_one_ae_eq_of_value_ae_eq_mul (hzeta : ContDiff ℝ ∞ 
   have h₂ := (hasWeakFDerivOn_value (lowerOrder 1 u)).smul_contDiff
     (hzeta.gradient_right (m := ∞) (by simp))
   have h := (h₁.add h₂).congr_ae hgrad.symm
-  have hfd : ∀ x, fderiv ℝ zeta x = innerSL ℝ (∇ zeta x) := fun x => by
-    ext y
-    simp [inner_gradient_left (𝕜 := ℝ) (f := zeta) (x := x) (y := y)]
+  have hfd : ∀ x, fderiv ℝ zeta x = innerSL ℝ (∇ zeta x) := fun _ => toDual_gradient.symm
   filter_upwards [(hasWeakFDerivOn_iteratedGradient 0 w).ae_eq h] with x hx
   simp only [hx, Pi.add_apply, value_succ, hfd]
   abel
