@@ -326,11 +326,13 @@ theorem map_center (f : E → E') (σ : ι → ι') (i : ι) :
     PunctureFilling.map (φ' := φ') f σ (center φ i) = center φ' (σ i) :=
   (rfl)
 
+/-- The map of puncture fillings induced by identity maps is the identity. -/
 @[simp]
 protected theorem map_id : PunctureFilling.map (φ := φ) (φ' := φ) id id = id := by
   ext y
   induction y using PunctureFilling.induction <;> rfl
 
+/-- The map of puncture fillings induced by composites is the composite of the induced maps. -/
 @[simp]
 protected theorem map_map (f : E → E') (σ : ι → ι') (f' : E' → E'') (σ' : ι' → ι'')
     (y : PunctureFilling φ) :
