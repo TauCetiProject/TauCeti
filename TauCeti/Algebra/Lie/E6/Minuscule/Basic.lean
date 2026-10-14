@@ -164,23 +164,19 @@ theorem cartanGeneratorMatrix_apply (i : Fin 6) (a b : Fin 27) :
 /-- A raising matrix vanishes off the entries whose weight difference is its simple root. -/
 theorem raisingMatrix_apply_eq_zero_of_weight_sub_ne (i : Fin 6) (a b : Fin 27)
     (h : e6MinusculeWeight a - e6MinusculeWeight b ≠ e6Root (e6SimpleIndex i)) :
-    raisingMatrix i a b = 0 := by
-  rw [raisingMatrix_apply, ite_eq_right_iff]
-  rintro ⟨hb, rfl⟩
-  refine absurd ?_ h
-  rw [e6MinusculeWeight_reflection, hb]
-  abel
+    raisingMatrix i a b = 0 :=
+  weightTable.raisingMatrix_apply_eq_zero_of_weight_sub_ne i a b <| by
+    rw [root_e6SimpleIndex] at h
+    simpa only [weightTable_weight, weightTable_cartanMatrix, Matrix.transpose_apply] using h
 
 /-- A lowering matrix vanishes off the entries whose weight difference is its negative simple
 root. -/
 theorem loweringMatrix_apply_eq_zero_of_weight_sub_ne (i : Fin 6) (a b : Fin 27)
     (h : e6MinusculeWeight a - e6MinusculeWeight b ≠ -e6Root (e6SimpleIndex i)) :
-    loweringMatrix i a b = 0 := by
-  rw [loweringMatrix_apply, ite_eq_right_iff]
-  rintro ⟨hb, rfl⟩
-  refine absurd ?_ h
-  rw [e6MinusculeWeight_reflection, hb]
-  abel
+    loweringMatrix i a b = 0 :=
+  weightTable.loweringMatrix_apply_eq_zero_of_weight_sub_ne i a b <| by
+    rw [root_e6SimpleIndex] at h
+    simpa only [weightTable_weight, weightTable_cartanMatrix, Matrix.transpose_apply] using h
 
 /-- Every raising matrix of the minuscule weight table squares to zero. -/
 @[simp]
