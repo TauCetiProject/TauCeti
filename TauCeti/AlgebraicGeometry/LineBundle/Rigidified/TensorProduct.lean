@@ -29,8 +29,9 @@ rigidified Picard functor.
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.RigidifiedLineBundle.tensorProduct`: the tensor product of two
-  rigidified line bundles;
-* `TauCeti.AlgebraicGeometry.RigidifiedLineBundle.dual`: the dual of a rigidified line bundle;
+  rigidified line bundles, with `RigidifiedLineBundle.tensorProduct_rigidification`;
+* `TauCeti.AlgebraicGeometry.RigidifiedLineBundle.dual`: the dual of a rigidified line bundle,
+  with `RigidifiedLineBundle.dual_rigidification`;
 * `RigidifiedLineBundleClass.mk_tensorProduct_comm`,
   `RigidifiedLineBundleClass.mk_tensorProduct_assoc`,
   `RigidifiedLineBundleClass.mk_tensorProduct_trivial_left` and
@@ -86,6 +87,16 @@ lemma tensorProduct_lineBundle (P Q : RigidifiedLineBundle s) :
     (tensorProduct P Q).lineBundle = InvertibleSheaf.tensorProduct P.lineBundle Q.lineBundle :=
   (rfl)
 
+/-- The rigidification of a tensor product of rigidified line bundles is
+`s^* (L ⊗ K) ≅ s^* L ⊗ s^* K ≅ 𝒪_T ⊗ 𝒪_T ≅ 𝒪_T`. -/
+@[simp]
+lemma tensorProduct_rigidification (P Q : RigidifiedLineBundle s) :
+    (tensorProduct P Q).rigidification =
+      (Scheme.Modules.pullback s).mapIso (InvertibleSheaf.tensorProductObjIso _ _) ≪≫
+        asIso (δ (Scheme.Modules.pullback s) P.lineBundle.obj Q.lineBundle.obj) ≪≫
+        (P.rigidification ⊗ᵢ Q.rigidification) ≪≫ λ_ (𝟙_ T.Modules) :=
+  (rfl)
+
 /-- The dual of a line bundle rigidified along `s`, rigidified so that the canonical isomorphism
 `L ⊗ L^∨ ≅ 𝒪_Y` respects the rigidifications: `s^* L^∨` is identified with
 `𝒪_T ⊗ s^* L^∨ ≅ s^* L ⊗ s^* L^∨ ≅ s^* (L ⊗ L^∨) ≅ s^* 𝒪_Y ≅ 𝒪_T`. -/
@@ -104,6 +115,19 @@ abbrev dual (P : RigidifiedLineBundle s) : RigidifiedLineBundle s where
 @[simp]
 lemma dual_lineBundle (P : RigidifiedLineBundle s) :
     (dual P).lineBundle = InvertibleSheaf.dual P.lineBundle :=
+  (rfl)
+
+/-- The rigidification of the dual of a rigidified line bundle is
+`s^* L^∨ ≅ 𝒪_T ⊗ s^* L^∨ ≅ s^* L ⊗ s^* L^∨ ≅ s^* (L ⊗ L^∨) ≅ s^* 𝒪_Y ≅ 𝒪_T`. -/
+-- Not `@[simp]`: `simp` already unfolds the reducible `dual` and reaches the same normal form.
+lemma dual_rigidification (P : RigidifiedLineBundle s) :
+    (dual P).rigidification = (λ_ _).symm ≪≫ whiskerRightIso P.rigidification.symm _ ≪≫
+      (asIso (δ (Scheme.Modules.pullback s) P.lineBundle.obj
+        (InvertibleSheaf.dual P.lineBundle).obj)).symm ≪≫
+      (Scheme.Modules.pullback s).mapIso
+        ((InvertibleSheaf.tensorProductObjIso _ _).symm ≪≫
+          InvertibleSheaf.tensorDualIsoSheaf P.lineBundle ≪≫ InvertibleSheaf.trivialObjIsoUnit Y) ≪≫
+      Scheme.Modules.pullbackObjUnitIso s :=
   (rfl)
 
 end RigidifiedLineBundle
@@ -258,6 +282,12 @@ lemma toLineBundleClassHom_apply (a : RigidifiedLineBundleClass s) :
     toLineBundleClassHom a = toLineBundleClass a :=
   (rfl)
 
+/-- Forgetting the rigidification carries the inverse class to the inverse line-bundle class. -/
+@[simp]
+lemma toLineBundleClass_inv (a : RigidifiedLineBundleClass s) :
+    toLineBundleClass a⁻¹ = (toLineBundleClass a)⁻¹ := by
+  simpa only [toLineBundleClassHom_apply] using map_inv toLineBundleClassHom a
+
 variable {T' Y' : Scheme.{u}} {s' : T' ⟶ Y'} {h : Y' ⟶ Y} {g : T' ⟶ T}
 
 /-- Pulling back the rigidification of a tensor product along a commutative square agrees with
@@ -347,6 +377,19 @@ def pullbackHom (w : s' ≫ h = g ≫ s) :
 lemma pullbackHom_apply (w : s' ≫ h = g ≫ s) (a : RigidifiedLineBundleClass s) :
     pullbackHom w a = pullback w a :=
   (rfl)
+
+/-- Pullback of classes of rigidified line bundles along a commutative square preserves the
+identity class. -/
+@[simp]
+lemma pullback_one (w : s' ≫ h = g ≫ s) : pullback w (1 : RigidifiedLineBundleClass s) = 1 := by
+  simpa only [pullbackHom_apply] using map_one (pullbackHom w)
+
+/-- Pullback of classes of rigidified line bundles along a commutative square is compatible with
+inverses. -/
+@[simp]
+lemma pullback_inv (w : s' ≫ h = g ≫ s) (a : RigidifiedLineBundleClass s) :
+    pullback w a⁻¹ = (pullback w a)⁻¹ := by
+  simpa only [pullbackHom_apply] using map_inv (pullbackHom w) a
 
 end RigidifiedLineBundleClass
 
