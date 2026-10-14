@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.HoledDisc
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Lemniscate
 
 /-!
@@ -17,10 +18,11 @@ closed unit disc. For coprime polynomials `f` and `g` this file shows that
 X(f/g) = {x : x(f) ≤ x(g)}
 ```
 
-is a finite union of *holed discs*, closed discs with finitely many open discs removed:
+is a finite union of *holed discs* `TauCeti.ValuationSpectrum.holedDisc`, closed discs with
+finitely many open discs removed:
 
 ```text
-X(f/g) = ⋃_{(a, c, H) ∈ P} D(a, |c|) ∩ ⋂_{(b, d) ∈ H} {x : x(d) ≤ x(T - b)}
+X(f/g) = ⋃_{(a, c, H) ∈ P} D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)
 ```
 
 for a finite set `P` of triples. A rational subset `R(f₁, …, fₙ / g)` of `X` is the intersection
@@ -35,7 +37,7 @@ not vanish.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter`: for
+* `TauCeti.ValuationSpectrum.exists_finset_setOf_vle_eq_iUnion_holedDisc`: for
   coprime `f` and `g`, the domain `X(f/g)` is a finite union of holed discs.
 
 ## Implementation notes
@@ -72,10 +74,10 @@ local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily
 /-! ### Finite unions of holed discs -/
 
 /-- A subset of the closed unit disc is a finite union of holed discs
-`D(a, |c|) ∩ ⋂_{(b, d) ∈ H} {x : x(d) ≤ x(T - b)}`. -/
+`D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)`. -/
 private def IsHoledDiscUnion (S : Set (closedPolydisc 1 K)) : Prop :=
-  ∃ P : Finset (K × K × Finset (K × K)), S = ⋃ p ∈ P, closedSubdisc p.1 p.2.1 ∩
-    ⋂ q ∈ p.2.2, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C q.2) (T - C q.1)}
+  ∃ P : Finset (K × K × Finset (K × K)),
+    S = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2)
 
 private theorem isHoledDiscUnion_empty : IsHoledDiscUnion (∅ : Set (closedPolydisc 1 K)) :=
   ⟨∅, by simp⟩
@@ -97,8 +99,7 @@ private theorem IsHoledDiscUnion.inter_hole {S : Set (closedPolydisc 1 K)}
   obtain ⟨P, rfl⟩ := hS
   refine ⟨P.image fun p ↦ (p.1, p.2.1, insert (b, d) p.2.2), ?_⟩
   rw [Finset.set_biUnion_finset_image, Set.iUnion₂_inter]
-  refine Set.iUnion₂_congr fun p _ ↦ ?_
-  rw [Finset.set_biInter_insert, Set.inter_left_comm, Set.inter_comm]
+  exact Set.iUnion₂_congr fun p _ ↦ (holedDisc_insert p.1 p.2.1 Prod.fst Prod.snd (b, d) p.2.2).symm
 
 private theorem IsHoledDiscUnion.inter_biInter_hole {ι : Type*} {S : Set (closedPolydisc 1 K)}
     (hS : IsHoledDiscUnion S) (s : Finset ι) (b d : ι → K) :
@@ -117,10 +118,10 @@ private theorem IsHoledDiscUnion.inter_closedSubdisc {S : Set (closedPolydisc 1 
   classical
   obtain ⟨P, rfl⟩ := hS
   choose e r h using fun p : K × K × Finset (K × K) ↦
-    exists_closedSubdisc_inter_closedSubdisc_eq p.1 a p.2.1 c
+    exists_holedDisc_inter_closedSubdisc_eq p.1 p.2.1 a c (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2)
   refine ⟨P.image fun p ↦ (e p, r p, p.2.2), ?_⟩
   rw [Finset.set_biUnion_finset_image, Set.iUnion₂_inter]
-  exact Set.iUnion₂_congr fun p _ ↦ by rw [← h p, Set.inter_right_comm]
+  exact Set.iUnion₂_congr fun p _ ↦ h p
 
 private theorem IsHoledDiscUnion.inter_biInter_closedSubdisc {ι : Type*}
     {S : Set (closedPolydisc 1 K)} (hS : IsHoledDiscUnion S) (s : Finset ι) (a c : ι → K) :
@@ -356,15 +357,13 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
 discs.** Let `K` be algebraically closed and `f`, `g` coprime polynomials over `K`. Then there is
 a finite set `P` of triples `(a, c, H)`, with `H` a finite set of pairs `(b, d)`, such that a point
 of the closed unit disc satisfies `x(f) ≤ x(g)` exactly when, for some `(a, c, H) ∈ P`, it lies in
-the closed disc `D(a, |c|)` and satisfies `x(d) ≤ x(T - b)` for every `(b, d) ∈ H`, that is, lies
-outside the open disc of radius `‖d‖` about `b`. -/
-theorem exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter [IsAlgClosed K]
+the holed disc `D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)`. -/
+theorem exists_finset_setOf_vle_eq_iUnion_holedDisc [IsAlgClosed K]
     {f g : Polynomial K} (hfg : IsCoprime f g) :
     ∃ P : Finset (K × K × Finset (K × K)),
       {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T f)
         (Polynomial.eval₂RingHom C T g)} =
-        ⋃ p ∈ P, closedSubdisc p.1 p.2.1 ∩
-          ⋂ q ∈ p.2.2, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C q.2) (T - C q.1)} := by
+        ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2) := by
   classical
   suffices h : IsHoledDiscUnion {x : closedPolydisc 1 K | x.1.toValuativeRel.vle
       (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)} from h
