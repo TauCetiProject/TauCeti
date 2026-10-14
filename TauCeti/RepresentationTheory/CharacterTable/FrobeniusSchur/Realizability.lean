@@ -35,8 +35,7 @@ form.  All that is left here is to assemble the three steps, and to record the c
 
 ## References
 
-This is the milestone `frobeniusSchurIndicatorRep_eq_one_realizable` of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`, whose other direction is in
+The converse, that an irreducible representation realizable over `ℝ` has indicator `1`, is in
 `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/RealForm.lean`.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2, Theorem 31.

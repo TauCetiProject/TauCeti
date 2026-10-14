@@ -739,7 +739,6 @@ theorem deconcatenation_comp_reducedInclusion :
   rw [reducedInclusion_of, of_tprod_eq_subword R x,
     ReducedTensorWords.of_tprod_eq_subword R n.2 x, deconcatenation_subword R x,
     ReducedTensorWords.deconcatenation_subword R x, map_sum]
-  have hn := n.2
   have hsplit : Finset.range (n.1 + 1) = insert 0 (insert n.1 (Finset.Ioo 0 n.1)) := by
     ext c
     simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Ioo]
@@ -794,6 +793,23 @@ theorem map_reducedProjection_comp_deconcatenation_comp_reducedInclusion :
       ReducedTensorWords.deconcatenation R M := by
   apply LinearMap.ext
   exact map_reducedProjection_deconcatenation_reducedInclusion R M
+
+/-- Deleting the empty word in both output factors recovers reduced deconcatenation
+of the positive-length part. -/
+theorem map_reducedProjection_comp_deconcatenation :
+    TensorProduct.map (reducedProjection R M) (reducedProjection R M) ∘ₗ
+        deconcatenation R M =
+      ReducedTensorWords.deconcatenation R M ∘ₗ reducedProjection R M := by
+  refine linearMap_ext R M fun n x ↦ ?_
+  simp only [LinearMap.comp_apply]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have hone : of R M 0 (PiTensorProduct.tprod R x) = (1 : TensorWords R M) := by
+      rw [one_eq_of_zero]
+      exact of_tprod_congr R M (fun i : Fin 0 ↦ i.elim0)
+    simp [hone]
+  · rw [← reducedInclusion_of R M ⟨n, hn⟩,
+      map_reducedProjection_deconcatenation_reducedInclusion,
+      reducedProjection_reducedInclusion]
 
 /-- The letters of a tensor word are primitive.
 

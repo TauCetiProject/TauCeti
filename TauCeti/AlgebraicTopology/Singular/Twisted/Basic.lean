@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
@@ -37,6 +39,7 @@ twisted by the system pulled back along `f`.
 
 * `TauCeti.LocalCoefficientSystem.twistedChains`: the simplicial module of twisted chains, and
   `twistedChainComplex`, `twistedHomology` for its alternating face map complex and homology.
+  Maps out of twisted chains are built summand by summand with `twistedChainsDesc`.
 * `TauCeti.LocalCoefficientSystem.twistedChainsFunctor`: twisted chains as a functor of the
   coefficient system, with `twistedChainComplexCoefficientMap` and
   `twistedHomologyCoefficientMap` for the induced maps of complexes and of homology, together
@@ -47,6 +50,13 @@ twisted by the system pulled back along `f`.
 * `TauCeti.LocalCoefficientSystem.twistedChainComplexMap`: the chain map induced by a continuous
   map, and `twistedHomologyMap` the resulting map on twisted homology, together with their
   identity and composition laws and their naturality in the coefficient system.
+* `CategoryTheory.SimplicialObject.Homotopy.toTwistedChainComplexHomotopy`: a simplicial homotopy
+  between maps of twisted chains induced by continuous maps gives a chain homotopy.
+
+Families of maps that partition the singular simplices also decompose twisted chains
+in each degree (`isColimitCofanTwistedChainComplexXOfBijective`). This criterion applies to
+disjoint unions and uses Mathlib's `sigmaSigmaIso` and `Sigma.whiskerEquiv` to reindex the
+coefficient fibres.
 
 ## References
 
@@ -58,7 +68,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Convexity SimplexCategory
+open CategoryTheory Limits SimplexCategory
 
 open scoped Simplicial
 
@@ -76,12 +86,42 @@ variable {R : Type u} [Ring R] {X Y : TopCat.{v}} {m n p : SimplexCategoryᵒᵖ
 abbrev initialVertex (σ : (TopCat.toSSet.obj X).obj n) : FundamentalGroupoid X :=
   ⟨TopCat.simplexMap σ (toTopInitialVertex n.unop)⟩
 
+/-- The initial vertex is evaluation at the first vertex of the standard simplex. -/
+lemma initialVertex_eq (σ : (TopCat.toSSet.obj X).obj n) :
+    initialVertex σ = FundamentalGroupoid.mk
+      (X.toSSetObjEquiv n σ (Convexity.StdSimplex.single 0)) := by
+  apply congrArg FundamentalGroupoid.mk
+  exact congrArg (X.toSSetObjEquiv n σ) (toTopInitialVertex_down n.unop)
+
+/-- The initial vertex of a singular zero-simplex is its underlying point. -/
+@[simp]
+lemma initialVertex_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
+    initialVertex σ = FundamentalGroupoid.mk (TopCat.toSSetObj₀Equiv σ) := by
+  apply congrArg FundamentalGroupoid.mk
+  exact congrArg (TopCat.simplexMap σ) (Subsingleton.elim _ _)
+
 /-- The morphism of the fundamental groupoid of `X` obtained by running a singular simplex along
 the unique path class between two points of its simplex. -/
 def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
     (⟨TopCat.simplexMap σ z⟩ : FundamentalGroupoid X) ⟶ ⟨TopCat.simplexMap σ w⟩ :=
   (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
     (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+
+/-- Transport inside a simplex is the image of the unique path class of the topological simplex
+under the map of fundamental groupoids induced by the simplex. -/
+lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
+    pathTransport σ z w = (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
+      (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) := (rfl)
+
+/-- Transport inside a simplex is represented by the image of any path joining its endpoints. -/
+lemma pathTransport_eq_mk (σ : (TopCat.toSSet.obj X).obj n)
+    {z w : toTop.{v}.obj n.unop} (q : Path z w) :
+    pathTransport σ z w = Path.Homotopic.Quotient.mk
+      (q.map (TopCat.simplexMap σ).continuous) := by
+  unfold pathTransport
+  rw [Subsingleton.elim (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+    (Path.Homotopic.Quotient.mk q)]
+  exact (Path.Homotopic.Quotient.mk_map q (TopCat.simplexMap σ)).symm
 
 /-- Transport inside a simplex from a point to itself is the identity. -/
 @[simp]
@@ -127,6 +167,14 @@ lemma map_pathTransport (f : X ⟶ Y) (σ : (TopCat.toSSet.obj X).obj n)
       pathTransport ((TopCat.toSSet.map f).app n σ) z w :=
   (FundamentalGroupoid.map_comp_map _ _ _).symm
 
+/-- Transport inside equal simplices between equal points agrees up to the identification of the
+endpoints. -/
+lemma pathTransport_heq {σ σ' : (TopCat.toSSet.obj X).obj n} {z z' w w' : toTop.{v}.obj n.unop}
+    (hσ : σ = σ') (hz : z = z') (hw : w = w') :
+    pathTransport σ z w ≍ pathTransport σ' z' w' := by
+  subst hσ hz hw
+  rfl
+
 section Chains
 
 variable (L : LocalCoefficientSystem.{u, v, max v w} R X)
@@ -137,8 +185,16 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
+/-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
+lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
+    (q : Path (toTopInitialVertex m.unop)
+      (toTop.map α.unop (toTopInitialVertex n.unop))) :
+    vertexTransport α σ = Path.Homotopic.Quotient.mk
+      (q.map (TopCat.simplexMap σ).continuous) := by
+  rw [vertexTransport, pathTransport_eq_mk σ q]
+
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
-the canonical identification of the two coefficient modules. -/
+the `eqToHom` between the two (equal) initial vertices. -/
 lemma vertexTransport_id (σ : (TopCat.toSSet.obj X).obj n) :
     vertexTransport (𝟙 n) σ = eqToHom (by simp) := by
   have hz : toTopInitialVertex n.unop =
@@ -163,6 +219,31 @@ lemma vertexTransport_comp (α : m ⟶ n) (β : n ⟶ p)
   simp only [vertexTransport, pathTransport_map]
   exact (pathTransport_comp σ _ _ _).trans
     (pathTransport_eqToHom σ (toTopInitialVertex m.unop) hz).symm
+
+/-- Reindexing along a morphism which fixes `0` does not move the initial vertex. -/
+lemma initialVertex_eq_initialVertex_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
+    (hα : α.unop.toOrderHom 0 = 0) :
+    initialVertex σ = initialVertex ((TopCat.toSSet.obj X).map α σ) :=
+  congrArg (fun z ↦ (⟨TopCat.simplexMap σ z⟩ : FundamentalGroupoid X))
+    (toTop_map_toTopInitialVertex _ hα).symm
+
+/-- Transport between initial vertices along a reindexing which fixes `0` is an identity. -/
+lemma vertexTransport_eq_eqToHom (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
+    (hα : α.unop.toOrderHom 0 = 0) :
+    vertexTransport α σ = eqToHom (initialVertex_eq_initialVertex_map α σ hα) := by
+  refine eq_of_heq ((pathTransport_heq rfl rfl (toTop_map_toTopInitialVertex _ hα)).trans ?_)
+  rw [pathTransport_self]
+  exact (eqToHom_heq_id_dom _ _ _).symm
+
+/-- Transport between initial vertices along the zeroth face is transport along the first edge of
+the simplex. -/
+lemma vertexTransport_δ_zero_heq {k : ℕ} (τ : (TopCat.toSSet.obj X) _⦋k + 1⦌) :
+    vertexTransport (δ 0).op τ ≍
+      pathTransport ((TopCat.toSSet.obj X).map (mkOfLe 0 1 (by simp)).op τ)
+        (toTopInitialVertex ⦋1⦌) (toTop.map (δ 0) (toTopInitialVertex ⦋0⦌)) := by
+  rw [vertexTransport, pathTransport_map]
+  exact pathTransport_heq rfl (toTop_map_mkOfLe_toTopInitialVertex k).symm
+    (toTop_map_mkOfLe_toTop_map_δ_zero k).symm
 
 /-- The simplicial object of singular chains of `X` twisted by the local coefficient system `L`.
 In degree `n` it is the coproduct, over the singular `n`-simplices `σ` of `X`, of the fibre of
@@ -200,6 +281,40 @@ lemma twistedChains_hom_ext {A : ModuleCat.{max v w} R} {f g : (twistedChains L)
     (h : ∀ σ, ιTwistedChains L σ ≫ f = ιTwistedChains L σ ≫ g) : f = g :=
   Sigma.hom_ext _ _ h
 
+/-- Two maps into twisted chains through the summands of equal simplices agree when the maps into
+the coefficient modules agree up to the identification of these modules. -/
+lemma comp_ιTwistedChains_eq_of_heq {M : ModuleCat.{max v w} R}
+    {τ τ' : (TopCat.toSSet.obj X).obj n} (h : τ = τ') {f : M ⟶ L.obj (initialVertex τ)}
+    {f' : M ⟶ L.obj (initialVertex τ')} (hf : f ≍ f') :
+    f ≫ ιTwistedChains L τ = f' ≫ ιTwistedChains L τ' := by
+  subst h
+  rw [eq_of_heq hf]
+
+/-- Two identifications of a module with the coefficient modules of equal simplices, followed by
+the inclusions of the corresponding summands of twisted chains, agree. -/
+lemma eqToHom_comp_ιTwistedChains_eq {M : ModuleCat.{max v w} R}
+    {τ τ' : (TopCat.toSSet.obj X).obj n} (h : τ = τ') (e : M = L.obj (initialVertex τ))
+    (e' : M = L.obj (initialVertex τ')) :
+    eqToHom e ≫ ιTwistedChains L τ = eqToHom e' ≫ ιTwistedChains L τ' := by
+  subst h
+  rfl
+
+/-- The map out of a module of twisted chains given by a map out of the coefficient module of each
+singular simplex. -/
+def twistedChainsDesc {A : ModuleCat.{max v w} R}
+    (φ : ∀ σ : (TopCat.toSSet.obj X).obj n, L.obj (initialVertex σ) ⟶ A) :
+    (twistedChains L).obj n ⟶ A :=
+  Sigma.desc φ
+
+/-- The map out of twisted chains given by a family of maps restricts to each member of the
+family on the summand of the corresponding simplex. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChains_twistedChainsDesc {A : ModuleCat.{max v w} R}
+    (φ : ∀ σ : (TopCat.toSSet.obj X).obj n, L.obj (initialVertex σ) ⟶ A)
+    (σ : (TopCat.toSSet.obj X).obj n) :
+    ιTwistedChains L σ ≫ twistedChainsDesc L φ = φ σ :=
+  Sigma.ι_comp_desc _ _
+
 /-- A structure map of twisted chains sends the summand of a simplex `σ` into the summand of the
 reindexed simplex, after transporting the coefficients along the initial vertices. -/
 @[reassoc (attr := simp)]
@@ -207,6 +322,37 @@ lemma ιTwistedChains_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     ιTwistedChains L σ ≫ (twistedChains L).map α =
       L.map (vertexTransport α σ) ≫ ιTwistedChains L ((TopCat.toSSet.obj X).map α σ) :=
   Sigma.ι_comp_map' _ _ _
+
+/-- A structure map of twisted chains along a reindexing which fixes `0` sends the summand of a
+simplex `σ` identically onto the summand of the reindexed simplex. -/
+@[reassoc]
+lemma ιTwistedChains_map_of_toOrderHom_zero (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
+    (hα : α.unop.toOrderHom 0 = 0) :
+    ιTwistedChains L σ ≫ (twistedChains L).map α =
+      eqToHom (congrArg L.obj (initialVertex_eq_initialVertex_map α σ hα)) ≫
+        ιTwistedChains L ((TopCat.toSSet.obj X).map α σ) := by
+  rw [ιTwistedChains_map, vertexTransport_eq_eqToHom α σ hα, eqToHom_map]
+
+/-- A coface map other than the zeroth one sends the summand of a simplex `τ` of twisted chains
+identically onto the summand of its face. -/
+@[reassoc]
+lemma ιTwistedChains_map_δ_of_ne_zero {k : ℕ} {i : Fin (k + 2)} (hi : i ≠ 0)
+    (τ : (TopCat.toSSet.obj X) _⦋k + 1⦌) :
+    ιTwistedChains L τ ≫ (twistedChains L).map (δ i).op =
+      eqToHom (congrArg L.obj
+          (initialVertex_eq_initialVertex_map (δ i).op τ (δ_toOrderHom_zero hi))) ≫
+        ιTwistedChains L ((TopCat.toSSet.obj X).map (δ i).op τ) :=
+  ιTwistedChains_map_of_toOrderHom_zero L (δ i).op τ (δ_toOrderHom_zero hi)
+
+/-- A codegeneracy map sends the summand of a simplex `τ` of twisted chains identically onto the
+summand of its degeneracy. -/
+@[reassoc]
+lemma ιTwistedChains_map_σ {k : ℕ} (i : Fin (k + 1)) (τ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChains L τ ≫ (twistedChains L).map (σ i).op =
+      eqToHom (congrArg L.obj
+          (initialVertex_eq_initialVertex_map (σ i).op τ (σ_toOrderHom_zero i))) ≫
+        ιTwistedChains L ((TopCat.toSSet.obj X).map (σ i).op τ) :=
+  ιTwistedChains_map_of_toOrderHom_zero L (σ i).op τ (σ_toOrderHom_zero i)
 
 /-- The chain complex of singular chains of `X` twisted by the local coefficient system `L`. -/
 def twistedChainComplex : ChainComplex (ModuleCat.{max v w} R) ℕ :=
@@ -217,6 +363,30 @@ attached to a singular `k`-simplex. -/
 def ιTwistedChainComplex (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     L.obj (initialVertex σ) ⟶ (twistedChainComplex L).X k :=
   ιTwistedChains L σ
+
+/-- The cofan exhibiting the degree-`k` term of the twisted chain complex as a family indexed by the
+singular `k`-simplices. -/
+abbrev twistedChainComplexXCofan (k : ℕ) :
+    Cofan fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ) :=
+  Cofan.mk _ (ιTwistedChainComplex L k)
+
+/-- The degree-`k` term of the twisted chain complex is the coproduct, over the singular
+`k`-simplices `σ`, of the fibres of `L` at the initial vertices of `σ`. -/
+def isColimitTwistedChainComplexXCofan (k : ℕ) : IsColimit (twistedChainComplexXCofan L k) :=
+  coproductIsCoproduct _
+
+/-- Each degree of the twisted chain complex is the coproduct of the simplex fibres. -/
+lemma twistedChainComplex_X (k : ℕ) :
+    (twistedChainComplex L).X k =
+      ∐ fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ) := (rfl)
+
+/-- Under the coproduct identification, a simplex inclusion is the coproduct inclusion. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_eqToHom (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫ eqToHom (twistedChainComplex_X L k) =
+      Sigma.ι (fun τ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex τ)) σ :=
+  Category.comp_id _
 
 /-- Two maps out of a degree of the twisted chain complex agree as soon as they agree on every
 summand. -/
@@ -273,7 +443,7 @@ def twistedChainsCoefficientMap (η : L ⟶ K) : twistedChains L ⟶ twistedChai
 /-- A morphism of local coefficient systems acts on the summand of a simplex `σ` through its
 component at the initial vertex of `σ`. -/
 @[reassoc (attr := simp)]
-lemma ιTwistedChains_twistedChainsCoefficientMap (η : L ⟶ K) (n : SimplexCategoryᵒᵖ)
+lemma ιTwistedChains_twistedChainsCoefficientMap_app (η : L ⟶ K) (n : SimplexCategoryᵒᵖ)
     (σ : (TopCat.toSSet.obj X).obj n) :
     ιTwistedChains L σ ≫ (twistedChainsCoefficientMap η).app n =
       η.app (initialVertex σ) ≫ ιTwistedChains K σ :=
@@ -314,11 +484,11 @@ def twistedChainComplexCoefficientMap (η : L ⟶ K) :
 /-- In each degree, a morphism of local coefficient systems acts on the summand of a simplex `σ`
 through its component at the initial vertex of `σ`. -/
 @[reassoc (attr := simp)]
-lemma ιTwistedChainComplex_twistedChainComplexCoefficientMap (η : L ⟶ K) (k : ℕ)
+lemma ιTwistedChainComplex_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (k : ℕ)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     ιTwistedChainComplex L k σ ≫ (twistedChainComplexCoefficientMap η).f k =
       η.app (initialVertex σ) ≫ ιTwistedChainComplex K k σ :=
-  ιTwistedChains_twistedChainsCoefficientMap η _ σ
+  ιTwistedChains_twistedChainsCoefficientMap_app η _ σ
 
 /-- The identity morphism of a coefficient system induces the identity of twisted chain
 complexes. -/
@@ -341,11 +511,15 @@ def twistedChainComplexCoefficientIso (e : L ≅ K) :
     twistedChainComplex L ≅ twistedChainComplex K :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
 
+/-- The forward map of the induced isomorphism of twisted chain complexes is the map induced by
+`e.hom`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom :=
   (rfl)
 
+/-- The inverse of the induced isomorphism of twisted chain complexes is the map induced by
+`e.inv`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
@@ -388,8 +562,10 @@ def twistedChainsConstantIso (M : ModuleCat.{max v w} R) :
 variable (X) in
 /-- In each degree, the comparison of twisted chains with ordinary singular chains carries the
 summand of a simplex `σ` onto the summand of `σ`. -/
-@[reassoc (attr := simp)]
-lemma ιTwistedChains_twistedChainsConstantIso_hom (M : ModuleCat.{max v w} R)
+-- Not `@[simp]`: `simp` first rewrites the composite's source object to `M`, after which this
+-- left-hand side never matches; use `rw` or apply it as a term.
+@[reassoc]
+lemma ιTwistedChains_twistedChainsConstantIso_hom_app (M : ModuleCat.{max v w} R)
     (n : SimplexCategoryᵒᵖ) (σ : (TopCat.toSSet.obj X).obj n) :
     ιTwistedChains ((constantFunctor X).obj M) σ ≫ (twistedChainsConstantIso X M).hom.app n =
       Sigma.ι (fun _ : (TopCat.toSSet.obj X).obj n ↦ M) σ :=
@@ -401,7 +577,7 @@ variable (X) in
 /-- In each degree, the inverse of the comparison of twisted chains with ordinary singular chains
 carries the summand of a simplex `σ` onto the twisted summand of `σ`. -/
 @[reassoc (attr := simp)]
-lemma ι_twistedChainsConstantIso_inv (M : ModuleCat.{max v w} R)
+lemma ι_twistedChainsConstantIso_inv_app (M : ModuleCat.{max v w} R)
     (n : SimplexCategoryᵒᵖ) (σ : (TopCat.toSSet.obj X).obj n) :
     Sigma.ι (fun _ : (TopCat.toSSet.obj X).obj n ↦ M) σ ≫
         (twistedChainsConstantIso X M).inv.app n =
@@ -421,7 +597,7 @@ lemma twistedChainsConstantIso_hom_naturality {M N : ModuleCat.{max v w} R} (φ 
   -- In each degree the comparison is the identity, so both sides act on the summand of a simplex
   -- through the component of `φ` at that summand.
   NatTrans.ext (funext fun n ↦ twistedChains_hom_ext _ fun σ ↦
-    Eq.trans (ιTwistedChains_twistedChainsCoefficientMap ((constantFunctor X).map φ) n σ)
+    Eq.trans (ιTwistedChains_twistedChainsCoefficientMap_app ((constantFunctor X).map φ) n σ)
       (Sigma.ι_map (f := fun _ : (TopCat.toSSet.obj X).obj n ↦ N)
         (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ M) (fun _ ↦ φ) σ).symm)
 
@@ -436,8 +612,10 @@ def twistedChainComplexConstantIso (M : ModuleCat.{max v w} R) :
 variable (X) in
 /-- In each degree, the comparison of the twisted chain complex with the ordinary singular chain
 complex carries the summand of a simplex `σ` onto the summand of `σ`. -/
-@[reassoc (attr := simp)]
-lemma ιTwistedChainComplex_twistedChainComplexConstantIso_hom (M : ModuleCat.{max v w} R) (k : ℕ)
+-- Not `@[simp]`: `simp` first rewrites the composite's source object to `M`, after which this
+-- left-hand side never matches; use `rw` or apply it as a term.
+@[reassoc]
+lemma ιTwistedChainComplex_twistedChainComplexConstantIso_hom_f (M : ModuleCat.{max v w} R) (k : ℕ)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     ιTwistedChainComplex ((constantFunctor X).obj M) k σ ≫
         (twistedChainComplexConstantIso X M).hom.f k =
@@ -453,7 +631,7 @@ singular chain complex carries the summand of a simplex `σ` onto the twisted su
 -- degree-`k` term of the singular chain complex, so `Category.assoc` cannot see through the left
 -- hand side and the reassociated lemma would come out unassociated, hence redundant.
 @[simp]
-lemma ι_twistedChainComplexConstantIso_inv (M : ModuleCat.{max v w} R) (k : ℕ)
+lemma ι_twistedChainComplexConstantIso_inv_f (M : ModuleCat.{max v w} R) (k : ℕ)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     Sigma.ι (fun _ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ M) σ ≫
         (twistedChainComplexConstantIso X M).inv.f k =
@@ -516,7 +694,7 @@ end Constant
 
 section Map
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) (L : LocalCoefficientSystem.{u, v, max v w} R Y)
+variable (f : X ⟶ Y) (L : LocalCoefficientSystem.{u, v, max v w} R Y)
 
 -- The degreewise map is kept as a separate definition so that the coefficient modules of the
 -- two sides, which agree only definitionally, stay hidden from the naturality proof below.
@@ -548,7 +726,7 @@ def twistedChainsMap : twistedChains ((pullback f.hom).obj L) ⟶ twistedChains 
 /-- A continuous map sends the summand of a simplex `σ` of `X` identically onto the summand of its
 image simplex in `Y`. -/
 @[reassoc (attr := simp)]
-lemma ιTwistedChains_twistedChainsMap (n : SimplexCategoryᵒᵖ)
+lemma ιTwistedChains_twistedChainsMap_app (n : SimplexCategoryᵒᵖ)
     (σ : (TopCat.toSSet.obj X).obj n) :
     ιTwistedChains ((pullback f.hom).obj L) σ ≫ (twistedChainsMap f L).app n =
       ιTwistedChains L ((TopCat.toSSet.map f).app n σ) :=
@@ -572,11 +750,11 @@ lemma twistedChainComplexMap_congr {g : X ⟶ Y} (h : f = g) :
 /-- In each degree, a continuous map sends the summand of a simplex `σ` of `X` identically onto
 the summand of its image simplex in `Y`. -/
 @[reassoc (attr := simp)]
-lemma ιTwistedChainComplex_twistedChainComplexMap (k : ℕ)
+lemma ιTwistedChainComplex_twistedChainComplexMap_f (k : ℕ)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     ιTwistedChainComplex ((pullback f.hom).obj L) k σ ≫ (twistedChainComplexMap f L).f k =
       ιTwistedChainComplex L k ((TopCat.toSSet.map f).app _ σ) :=
-  ιTwistedChains_twistedChainsMap f L _ σ
+  ιTwistedChains_twistedChainsMap_app f L _ σ
 
 /-- The map on twisted homology induced by a continuous map, from the homology of `X` twisted by
 the pullback system to the homology of `Y` twisted by `L`. -/
@@ -606,11 +784,22 @@ instance isSplitMono_twistedChainComplexMap_f [Mono f] (k : ℕ) :
 instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
   HomologicalComplex.mono_of_mono_f _ fun _ ↦ inferInstance
 
+/-- A simplicial homotopy from the morphism of twisted chains induced by `f` to the composite of a
+change of coefficients with the morphism induced by another map `g` gives a chain homotopy between
+the corresponding morphisms of twisted chain complexes. -/
+def _root_.CategoryTheory.SimplicialObject.Homotopy.toTwistedChainComplexHomotopy {g : X ⟶ Y}
+    {η : (pullback f.hom).obj L ⟶ (pullback g.hom).obj L}
+    (h : SimplicialObject.Homotopy (twistedChainsMap f L)
+      (twistedChainsCoefficientMap η ≫ twistedChainsMap g L)) :
+    Homotopy (twistedChainComplexMap f L)
+      (twistedChainComplexCoefficientMap η ≫ twistedChainComplexMap g L) :=
+  h.toChainHomotopy.trans (.ofEq ((AlgebraicTopology.alternatingFaceMapComplex _).map_comp _ _))
+
 end Map
 
 section MapComp
 
-variable {Y Z : TopCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
+variable {Z : TopCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
 
 /-- The identity map induces on twisted chains the map coming from the identification of a
 coefficient system with its pullback along the identity. -/
@@ -618,9 +807,9 @@ coefficient system with its pullback along the identity. -/
 lemma twistedChainsMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
     twistedChainsMap (𝟙 X) L = twistedChainsCoefficientMap ((pullbackIdIso X).hom.app L) := by
   refine NatTrans.ext (funext fun n ↦ twistedChains_hom_ext _ fun σ ↦ ?_)
-  refine (ιTwistedChains_twistedChainsMap (𝟙 X) L n σ).trans ?_
+  refine (ιTwistedChains_twistedChainsMap_app (𝟙 X) L n σ).trans ?_
   refine Eq.trans ?_
-    (ιTwistedChains_twistedChainsCoefficientMap ((pullbackIdIso X).hom.app L) n σ).symm
+    (ιTwistedChains_twistedChainsCoefficientMap_app ((pullbackIdIso X).hom.app L) n σ).symm
   rw [pullbackIdIso_hom_app_app]
   exact (Category.id_comp (ιTwistedChains L σ)).symm
 
@@ -632,14 +821,14 @@ lemma twistedChainsMap_comp (L : LocalCoefficientSystem.{u, v, max v w} R Z) :
       twistedChainsCoefficientMap ((pullbackCompIso f.hom g.hom).hom.app L) ≫
         twistedChainsMap f ((pullback g.hom).obj L) ≫ twistedChainsMap g L := by
   refine NatTrans.ext (funext fun n ↦ twistedChains_hom_ext _ fun σ ↦ ?_)
-  refine (ιTwistedChains_twistedChainsMap (f ≫ g) L n σ).trans ?_
-  refine Eq.trans ?_ (ιTwistedChains_twistedChainsCoefficientMap_assoc
+  refine (ιTwistedChains_twistedChainsMap_app (f ≫ g) L n σ).trans ?_
+  refine Eq.trans ?_ (ιTwistedChains_twistedChainsCoefficientMap_app_assoc
     ((pullbackCompIso f.hom g.hom).hom.app L) n σ _).symm
   rw [pullbackCompIso_hom_app_app]
   refine Eq.trans ?_ (Category.id_comp _).symm
-  exact ((ιTwistedChains_twistedChainsMap_assoc f ((pullback g.hom).obj L) n σ
+  exact ((ιTwistedChains_twistedChainsMap_app_assoc f ((pullback g.hom).obj L) n σ
     ((twistedChainsMap g L).app n)).trans
-    (ιTwistedChains_twistedChainsMap g L n ((TopCat.toSSet.map f).app n σ))).symm
+    (ιTwistedChains_twistedChainsMap_app g L n ((TopCat.toSSet.map f).app n σ))).symm
 
 /-- The chain-complex form of `twistedChainsMap_id`. -/
 @[simp]
@@ -676,7 +865,7 @@ end MapComp
 
 section MapCoefficient
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) {L K : LocalCoefficientSystem.{u, v, max v w} R Y}
+variable (f : X ⟶ Y) {L K : LocalCoefficientSystem.{u, v, max v w} R Y}
 
 /-- The morphism of twisted chains induced by a continuous map is natural in the coefficient
 system: pushing simplices forward along `f` and then applying a morphism of systems on `Y` is the
@@ -685,10 +874,10 @@ lemma twistedChainsMap_naturality (η : L ⟶ K) :
     twistedChainsMap f L ≫ twistedChainsCoefficientMap η =
       twistedChainsCoefficientMap ((pullback f.hom).map η) ≫ twistedChainsMap f K := by
   refine NatTrans.ext (funext fun n ↦ twistedChains_hom_ext _ fun σ ↦ ?_)
-  simp only [NatTrans.comp_app, ιTwistedChains_twistedChainsMap_assoc,
-    ιTwistedChains_twistedChainsCoefficientMap_assoc, ιTwistedChains_twistedChainsMap,
+  simp only [NatTrans.comp_app, ιTwistedChains_twistedChainsMap_app_assoc,
+    ιTwistedChains_twistedChainsCoefficientMap_app_assoc, ιTwistedChains_twistedChainsMap_app,
     pullback_map_app]
-  exact ιTwistedChains_twistedChainsCoefficientMap η n _
+  exact ιTwistedChains_twistedChainsCoefficientMap_app η n _
 
 /-- The chain-complex form of `twistedChainsMap_naturality`. -/
 @[reassoc]
@@ -731,7 +920,7 @@ end MapSquare
 
 section ConstantMap
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) (M : ModuleCat.{max v w} R)
+variable (f : X ⟶ Y) (M : ModuleCat.{max v w} R)
 
 /-- The comparison of twisted chains with ordinary singular chains is natural in the space: a
 continuous map acts on both sides by pushing singular simplices forward, once the pullback of a
@@ -749,15 +938,15 @@ lemma twistedChainsConstantIso_hom_space_naturality :
         (twistedChainsConstantIso X M).hom.app n ≫
           (Functor.whiskerRight (TopCat.toSSet.map f) ((sigmaConst.{v}).obj M)).app n =
       Sigma.ι (fun _ : (TopCat.toSSet.obj Y).obj n ↦ M) ((TopCat.toSSet.map f).app n σ) :=
-    (ιTwistedChains_twistedChainsConstantIso_hom_assoc X M n σ _).trans
+    (ιTwistedChains_twistedChainsConstantIso_hom_app_assoc X M n σ _).trans
       ((Sigma.ι_comp_map' (f := fun _ : (TopCat.toSSet.obj Y).obj n ↦ M)
           (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ M)
           (fun τ ↦ (TopCat.toSSet.map f).app n τ) (fun _ ↦ 𝟙 M) σ).trans
         (Category.id_comp _))
-  refine ((ιTwistedChains_twistedChainsMap_assoc f ((constantFunctor Y).obj M) n σ
+  refine ((ιTwistedChains_twistedChainsMap_app_assoc f ((constantFunctor Y).obj M) n σ
       ((twistedChainsConstantIso Y M).hom.app n)).trans
-    (ιTwistedChains_twistedChainsConstantIso_hom Y M n _)).trans ?_
-  refine Eq.trans ?_ (ιTwistedChains_twistedChainsCoefficientMap_assoc
+    (ιTwistedChains_twistedChainsConstantIso_hom_app Y M n _)).trans ?_
+  refine Eq.trans ?_ (ιTwistedChains_twistedChainsCoefficientMap_app_assoc
     (pullbackConstantIso f.hom M).hom n σ _).symm
   rw [pullbackConstantIso_hom_app]
   exact key.symm.trans (Category.id_comp _).symm
@@ -787,6 +976,54 @@ lemma twistedHomologyConstantIso_hom_space_naturality (k : ℕ) :
       (by rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_comp]; rfl))
 
 end ConstantMap
+
+section Coproduct
+
+variable {ι : Type v} (X : ι → TopCat.{v})
+  {Y : TopCat.{v}} (f : ∀ i, X i ⟶ Y)
+  (L : LocalCoefficientSystem.{u, v, max v w} R Y)
+
+variable (n : ℕ) (h : Function.Bijective
+  (fun p : Σ i, (TopCat.toSSet.obj (X i)) _⦋n⦌ ↦ (TopCat.toSSet.map (f p.1)).app _ p.2))
+
+/-- Reindex the coefficient fibres by the unique source simplex in the family. -/
+private def coproductTwistedChainsIso :
+    (∐ fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n) ≅
+      L.twistedChainComplex.X n :=
+  (sigmaSigmaIso (fun i ↦ (TopCat.toSSet.obj (X i)) _⦋n⦌)
+    (fun i σ ↦ ((pullback (f i).hom).obj L).obj (initialVertex σ))).trans
+    (Sigma.whiskerEquiv (g := fun σ ↦ L.obj (initialVertex σ))
+      (Equiv.ofBijective _ h)
+      (fun _ ↦ Iso.refl _))
+
+private lemma ι_coproductTwistedChainsIso_hom (i : ι) :
+    Sigma.ι (fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n) i ≫
+        (coproductTwistedChainsIso X f L n h).hom =
+      (twistedChainComplexMap (f i) L).f n := by
+  apply twistedChainComplex_hom_ext
+  intro σ
+  rw [ιTwistedChainComplex_twistedChainComplexMap_f]
+  -- The pulled-back fibre and the fibre of the included simplex coincide at default
+  -- transparency; this is the coefficient identification used to construct the reindexing.
+  erw [coproductTwistedChainsIso, Iso.trans_hom, sigmaSigmaIso_hom,
+    Sigma.whiskerEquiv_hom, Sigma.ι_comp_desc_assoc, Sigma.ι_comp_desc_assoc,
+    Sigma.ι_comp_map', Category.id_comp]
+  rfl
+
+/-- If every singular `n`-simplex of `Y` comes from exactly one member of a family of maps,
+then twisted `n`-chains of `Y` are the coproduct of the twisted `n`-chains of that family,
+with coefficient systems pulled back along those maps. -/
+def isColimitCofanTwistedChainComplexXOfBijective :
+    IsColimit (Cofan.mk (L.twistedChainComplex.X n)
+      (fun i ↦ (twistedChainComplexMap (f i) L).f n) :
+      Cofan fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n) :=
+  IsColimit.ofIsoColimit
+    (coproductIsCoproduct
+      (fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n))
+    (Cocone.ext (coproductTwistedChainsIso X f L n h) (fun ⟨i⟩ ↦
+      ι_coproductTwistedChainsIso_hom X f L n h i))
+
+end Coproduct
 
 end LocalCoefficientSystem
 

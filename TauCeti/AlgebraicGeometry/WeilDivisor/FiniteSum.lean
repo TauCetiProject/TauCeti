@@ -12,19 +12,14 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 # Finite sums of point divisors
 
 This file adds an API for the effective Weil divisors represented by finitely supported
-natural-number multiplicities and by named finite-set constructors. These are the formal
-Layer A divisor objects that later receive geometric restrictions from symmetric powers and
-relative effective divisors: before any scheme-level construction exists, a finite collection
-of points gives the divisor `Σ nₓ[x]`.
+natural-number multiplicities and by named finite-set constructors. A finite collection of points
+gives the divisor `Σ nₓ[x]`.
 
 The API records the coefficient, support, degree, weighted degree, pushforward, and degree-zero
-normal forms needed by the existing Abel-Jacobi and linear-system files.
+normal forms.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve:
-Weil divisors `⊕_x ℤ`" and "Degree", and supplies a clean formal prerequisite for the Layer C/D
-Abel-map lane `D ↦ 𝒪_X(D - d·x₀)` from symmetric powers. No external mathematics is vendored;
-the proofs use Tau Ceti's `WeilDivisor.ofPoint`, `degree`, `weightedDegree`, and `pushforward`
-API together with Mathlib's finite-sum lemmas.
+No external mathematics is vendored; the proofs use Tau Ceti's `WeilDivisor.ofPoint`, `degree`,
+`weightedDegree`, and `pushforward` API together with Mathlib's finite-sum lemmas.
 -/
 
 public section
@@ -103,7 +98,7 @@ lemma pushforward_ofFinsupp (f : X → Y) (m : X →₀ ℕ) :
       ∑ x ∈ m.support, (m x : ℤ) • ofPoint (f x) := by
   classical
   rw [ofFinsupp_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
+  refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_zsmul, pushforward_ofPoint]
 
 /-- With positive weights on the support, a divisor from finitely supported multiplicities has
@@ -225,7 +220,7 @@ lemma pushforward_ofFinsetWithMultiplicity (f : X → Y) (s : Finset X) (m : X �
       ∑ x ∈ s, (m x : ℤ) • ofPoint (f x) := by
   classical
   rw [ofFinsetWithMultiplicity_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
+  refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_zsmul, pushforward_ofPoint]
 
 /-- With positive weights at selected points with nonzero multiplicity, a named finite-set

@@ -63,6 +63,10 @@ on `kˣ`: the twisted algebra wants `α` curried, and wants the normalization, w
 identity alone gives only up to the constant `α 1 1`. Carrying the hypotheses in a class keeps the
 type `twistedMonoidAlgebra k G α` free of proof arguments.
 
+`α g h` is the value of the factor set at the ordered pair `(g, h)`. The multiplication
+`e g * e h = (α g h : k) • e (g * h)` follows the left-action convention used for projective
+representations.
+
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
 the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
 is assumed only where an inverse appears, in `TauCeti.IsFactorSet.apply_inv_eq_inv_apply` and
@@ -76,10 +80,6 @@ carrying a hand-built ring structure on `G →₀ k`. The two are the same algeb
 expected universal property.
 
 ## References
-
-This implements the twisted group algebra of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-whose `twistedMul` is the multiplication realized here.
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 3.
 -/

@@ -121,7 +121,6 @@ theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpa
       _ ≤ cutDist W A₀ + (cutDist A₀ A₁ + cutDist A₁ A₂) :=
           add_le_add le_rfl (cutDist_triangle _ _ _)
       _ < ε := by
-          have hW := h1.trans_eq hδdef
           linarith [h2.trans hgrid, h3.trans hweight]
   refine Set.mem_iUnion₂.2 ⟨netPoint hN ⟨⟨fun i => ⟨w i, hwlt i⟩, hw⟩, ⟨c, hc⟩⟩,
     Set.mem_range_self _, ?_⟩

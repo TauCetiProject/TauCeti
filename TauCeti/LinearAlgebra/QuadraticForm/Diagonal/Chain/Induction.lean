@@ -26,9 +26,10 @@ invariance once, for an abstract pairing:
   takes equal values on the coefficients of isometric binary forms.
 
 The second hypothesis already forces symmetry, because `⟨a, b⟩ ≅ ⟨b, a⟩`. It also forces
-`F (a * b) = F (c * d)` whenever `⟨a, b⟩ ≅ ⟨c, d⟩`, because the two discriminants differ by a
-square and `F (t * t) x = F 1 x` for every unit `t`, since `⟨1, x⟩ ≅ ⟨t², x⟩`. That is what makes
-the cross terms between the changed pair and the unchanged coefficients agree.
+`F (a * b) x = F (c * d) x` whenever `⟨a, b⟩ ≅ ⟨c, d⟩`, because their discriminants differ by a
+square, so rescaling the first coordinate gives `⟨a * b, x⟩ ≅ ⟨c * d, x⟩`. Together with
+multiplicativity, this makes the cross terms between the changed pair and the unchanged
+coefficients agree.
 
 ## Main results
 
@@ -111,7 +112,7 @@ theorem BinaryStep.prod_prod_Ioi_eq (hmul : ∀ a b c, F (a * b) c = F a c * F b
       (fun k l => hsymm (w' k) (w' l)), prod_prod_Ioi_eq_of_two,
     prod_prod_Ioi_eq_of_two]
   simp only [hσ0, hσ1, hfix, ← prod_mul_distrib, ← hmul,
-    apply_mul_eq_of_equivalent_binary hmul hF hpair, hF _ _ _ _ hpair]
+    apply_mul_eq_of_equivalent_binary hF hpair, hF _ _ _ _ hpair]
 
 end Binary
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Integers
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 import Mathlib.LinearAlgebra.Countable
@@ -47,6 +48,8 @@ groups, as for the infinite-adele comparison in
   the semilocal map after evaluation at `v`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_injective`,
   `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_surjective`: the map is bijective.
+* `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_tower`: in a tower `K ⊆ L ⊆ M`, base
+  change from `K` to `M` factors through base change from `K` to `L`.
 
 ## References
 
@@ -99,20 +102,17 @@ scalar extension of evaluation at `v`. -/
 theorem finiteAdeleBaseChangeHom_apply (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
     (v : HeightOneSpectrum (𝓞 K))
     (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    let f : FiniteAdeleRing (𝓞 K) K →ₗ[K] v.adicCompletion K :=
-      { toFun := fun a ↦ a v
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun c a ↦ by
-          simp only [Algebra.smul_def, RingHom.id_apply]
-          rfl }
     finiteAdeleBaseChangeHom K L s w.1 =
-      semilocalHom L v (TensorProduct.map f (LinearMap.id : L →ₗ[K] L) s) w := by
-  intro f
+      semilocalHom L v
+        (TensorProduct.map
+          (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K).toLinearMap
+          (LinearMap.id : L →ₗ[K] L) s) w := by
   induction s using TensorProduct.inductionOn with
   | tmul a x =>
     simp only [TensorProduct.map_tmul, LinearMap.id_apply, semilocalHom_tmul,
       finiteAdeleBaseChangeHom_tmul, FiniteAdeleRing.mul_apply,
-      finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply]
+      finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply, AlgHom.toLinearMap_apply,
+      ContinuousAlgHom.coe_coe, FiniteAdeleRing.proj_apply]
     rcases w with ⟨w, hw⟩
     have hv : v = w.under (𝓞 K) := HeightOneSpectrum.asIdeal_injective hw.over
     subst v
@@ -135,12 +135,7 @@ theorem finiteAdeleBaseChangeHom_injective :
   intro i
   apply FiniteAdeleRing.ext
   intro v
-  let f : FiniteAdeleRing (𝓞 K) K →ₗ[K] v.adicCompletion K :=
-    { toFun := fun a ↦ a v
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun c a ↦ by
-        simp only [Algebra.smul_def, RingHom.id_apply]
-        rfl }
+  let f := (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K).toLinearMap
   let T := TensorProduct.map f (LinearMap.id : L →ₗ[K] L)
   -- A zero adelic image gives a zero tensor at `v` by semilocal injectivity.
   have hT : T t = 0 := by
@@ -155,7 +150,7 @@ theorem finiteAdeleBaseChangeHom_injective :
     | tmul a x =>
       simp only [T, TensorProduct.map_tmul, LinearMap.id_apply, B,
         Module.Basis.baseChange_repr_tmul]
-      exact (f.map_smul ((b.repr x) i) a).symm
+      exact (f.map_smul ((b.repr x) i) a).symm.trans (FiniteAdeleRing.proj_apply v _)
     | add t u ht hu =>
       simp only [map_add, Finsupp.add_apply, ht, hu]
       rfl
@@ -233,7 +228,8 @@ theorem finiteAdeleBaseChangeHom_surjective :
   refine ⟨∑ i, a i ⊗ₜ[K] (RingOfIntegers.basis L i : L), FiniteAdeleRing.ext L fun w ↦ ?_⟩
   rw [finiteAdeleBaseChangeHom_apply K L _ (w.under (𝓞 K)) ⟨w, inferInstance⟩]
   convert congrFun (hc (w.under (𝓞 K))) ⟨w, inferInstance⟩ using 2
-  simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_apply]
+  simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_apply, AlgHom.toLinearMap_apply,
+    ContinuousAlgHom.coe_coe, FiniteAdeleRing.proj_apply]
   -- The component of `a i` at `v` is `c v i` by construction.
   rfl
 
@@ -316,5 +312,18 @@ theorem finiteAdeleBaseChangeEquiv_symm_algebraMap (x : L) :
     (finiteAdeleBaseChangeEquiv K L).symm
       (algebraMap L (FiniteAdeleRing (𝓞 L) L) x) = 1 ⊗ₜ[K] x :=
   finiteAdeleBaseChangeAlgEquiv_symm_algebraMap K L x
+
+/-- **Base change of finite adeles in a tower** `K ⊆ L ⊆ M`: the comparison for `M/K` factors
+through the comparison for `L/K`, followed by the comparison for `M/L`. -/
+theorem finiteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [Algebra K M]
+    [Algebra L M] [IsScalarTower K L M] [TopologicalSpace (FiniteAdeleRing (𝓞 K) K ⊗[K] M)]
+    [IsModuleTopology (FiniteAdeleRing (𝓞 K) K) (FiniteAdeleRing (𝓞 K) K ⊗[K] M)]
+    [TopologicalSpace (FiniteAdeleRing (𝓞 L) L ⊗[L] M)]
+    [IsModuleTopology (FiniteAdeleRing (𝓞 L) L) (FiniteAdeleRing (𝓞 L) L ⊗[L] M)]
+    (a : FiniteAdeleRing (𝓞 K) K) (z : M) :
+    finiteAdeleBaseChangeEquiv K M (a ⊗ₜ z) =
+      finiteAdeleBaseChangeEquiv L M (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
+  simp only [finiteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
+  rw [← finiteAdeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M, RingHom.comp_apply]
 
 end TauCeti.GlobalNumberFields

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.GuitartExact.KanExtension
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
+public import Mathlib.Topology.Sheaves.Functors
 public import TauCeti.CategoryTheory.Sites.DenseSubsite
+public import TauCeti.CategoryTheory.Sites.IsSheafFor
 public import TauCeti.CategoryTheory.Sites.TopologicalBasis
 public import TauCeti.CategoryTheory.Thin
 public import TauCeti.Topology.Category.TopCat.Opens
@@ -42,6 +44,8 @@ and a sheaf on the basis.
   sheaf for the restricted topology.
 * `TopCat.Presheaf.isSheaf_iff_of_isAdapted`: for a presheaf adapted to a basis, the two sheaf
   conditions are equivalent.
+* `TopCat.Presheaf.isSheaf_of_isAdapted_of_forall_exists_le`: a presheaf adapted to a basis is a
+  sheaf if every basic open lies in an open on which it restricts to a sheaf.
 * `TopCat.Presheaf.IsSheaf.isAdapted`: a sheaf with values in a category with limits is adapted
   to every basis.
 * `TopCat.Presheaf.isSheaf_iff_isAdapted_and_isSheaf_restrictedTopology`: for a basis, a presheaf
@@ -52,6 +56,8 @@ and a sheaf on the basis.
 * `TopCat.Presheaf.IsAdapted.of_iso`, `TopCat.Presheaf.IsAdapted.pushforward_of_iso`:
   adaptedness is invariant under isomorphism of presheaves and under homeomorphism, for the family
   of opens whose preimages lie in `B`.
+* `TopCat.Presheaf.IsAdapted.restrict`: adaptedness passes to an open subspace, for the family of
+  its opens whose images lie in `B`.
 
 ## References
 
@@ -243,6 +249,88 @@ theorem IsAdapted.pushforward_of_iso (hF : F.IsAdapted B) :
 
 end Pushforward
 
+section Restrict
+
+variable {F} {U : TopCat.{w}} {f : U ⟶ X} (hf : Topology.IsOpenEmbedding f)
+
+/-- For an open embedding `f : U ⟶ X`, the functor from the opens of `U` whose images lie in `B`
+to the members of `B`, taking images. -/
+private def inducedFunctorObj :
+    InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U) ⥤
+      InducedCategory (Opens X) (Subtype.val : B → Opens X) where
+  obj b := ⟨hf.functor.obj b.1, b.2⟩
+  map φ := InducedCategory.homMk (hf.functor.map φ.hom)
+
+/-- The commutative square of the inclusions of the opens of `U` with image in `B` and of `B` into
+the opens, and of the image functors; its two-square is the identity. -/
+private def restrictSquare :
+    TwoSquare (inducedFunctor (Subtype.val : hf.functor.obj ⁻¹' B → Opens U)).op
+      (inducedFunctorObj B hf).op hf.functor.op (inducedFunctor (Subtype.val : B → Opens X)).op :=
+  TwoSquare.mk _ _ _ _ (𝟙 _)
+
+/-- The members of `B` below the image of an open `W` of `U` are the images of the opens of `U`
+below `W` with image in `B`: the comparison of the two index categories is an equivalence. -/
+private instance (W : Opens U) :
+    ((restrictSquare B hf).structuredArrowDownwards (op W)).IsEquivalence where
+  faithful.map_injective _ := StructuredArrow.hom_ext _ _ (Subsingleton.elim _ _)
+  full.map_surjective {a b} φ := by
+    -- the image functor of an open embedding reflects inclusions
+    have hle : b.right.unop.1 ≤ a.right.unop.1 := by
+      rw [← Opens.map_functor_eq' f hf b.right.unop.1, ← Opens.map_functor_eq' f hf a.right.unop.1]
+      exact (Opens.map f).monotone φ.right.unop.hom.le
+    exact ⟨StructuredArrow.homMk (InducedCategory.homMk (homOfLE hle)).op
+      (Subsingleton.elim _ _), StructuredArrow.hom_ext _ _ (Subsingleton.elim _ _)⟩
+  essSurj.mem_essImage c := by
+    -- a member of `B` below the image of `W` is the image of its preimage
+    have hcW : c.right.unop.1 ≤ hf.functor.obj W := c.hom.unop.le
+    have hc : hf.functor.obj ((Opens.map f).obj c.right.unop.1) = c.right.unop.1 := by
+      rw [Opens.functor_obj_map_obj, inf_eq_right]
+      exact hcW.trans (hf.functor.monotone le_top)
+    have hmem : (Opens.map f).obj c.right.unop.1 ∈ hf.functor.obj ⁻¹' B := by
+      rw [Set.mem_preimage, hc]
+      exact c.right.unop.2
+    have hW : (Opens.map f).obj c.right.unop.1 ≤ W :=
+      ((Opens.map f).monotone hcW).trans_eq (Opens.map_functor_eq' f hf W)
+    let b : InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U) :=
+      ⟨(Opens.map f).obj c.right.unop.1, hmem⟩
+    let a : StructuredArrow (op W)
+        (inducedFunctor (Subtype.val : hf.functor.obj ⁻¹' B → Opens U)).op :=
+      StructuredArrow.mk (Y := op b) (homOfLE hW).op
+    refine ⟨a, ⟨?_⟩⟩
+    exact StructuredArrow.isoMk (Iso.op (eqToIso (Subtype.ext hc).symm)) (Subsingleton.elim _ _)
+
+/-- The components of the identity two-square `restrictSquare` are identities, which `F` maps to
+identities. -/
+private theorem map_restrictSquare_natTrans_app
+    (b : (InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U))ᵒᵖ) :
+    F.map ((restrictSquare B hf).natTrans.app b) =
+      𝟙 (F.obj (hf.functor.op.obj ((inducedFunctor _).op.obj b))) :=
+  F.map_id _
+
+variable {B} in
+/-- **Adaptedness passes to open subspaces.** If `F` is adapted to `B` and `f : U ⟶ X` is an open
+embedding, the restriction of `F` to `U` is adapted to the opens of `U` whose images lie in `B`:
+the members of `B` below the image of an open of `U` are themselves images of opens of `U`. -/
+theorem IsAdapted.restrict (hF : F.IsAdapted B) :
+    IsAdapted (X := U) (hf.functor.op ⋙ F) (hf.functor.obj ⁻¹' B) := by
+  obtain ⟨h⟩ := hF
+  refine ⟨fun ⟨W⟩ ↦ ?_⟩
+  have := ((Functor.RightExtension.mk F (𝟙 _)).isPointwiseRightKanExtensionAtCompTwoSquareEquiv
+    (restrictSquare B hf) (op W)).symm (h _)
+  -- the legs agree: both are restriction maps of `F` from the image of `W`
+  refine IsLimit.ofIsoLimit this (Cone.ext (Iso.refl _) fun g ↦ ?_)
+  simp only [Functor.RightExtension.coneAt_π_app, Functor.RightExtension.coneAt_pt,
+    Functor.RightExtension.mk_left, Functor.RightExtension.mk_hom, Functor.comp_map,
+    Functor.comp_obj, NatTrans.comp_app, Functor.associator_inv_app, Functor.whiskerRight_app,
+    Functor.associator_hom_app, Functor.whiskerLeft_app, NatTrans.id_app, Category.comp_id,
+    Iso.refl_hom, Functor.op_map, map_restrictSquare_natTrans_app (F := F) B hf]
+  -- the identities are those of `F` at the image of `g.right`, composed along the definitional
+  -- equality of its two spellings, which `simp` does not see through
+  exact (congrArg (F.map _ ≫ ·) ((Category.id_comp _).trans (Category.id_comp _))).trans
+    ((Category.comp_id _).trans (Category.id_comp _).symm)
+
+end Restrict
+
 /-! ### The sheaf condition on a basis -/
 
 /-- **The sheaf condition on a basis `B` suffices for an adapted presheaf.** If `F` is adapted to
@@ -284,6 +372,35 @@ theorem isSheaf_iff_of_isAdapted (hB : Opens.IsBasis B) (hF : F.IsAdapted B) :
       ((inducedFunctor (Subtype.val : B → Opens X)).op ⋙ F) :=
   ⟨fun h ↦ h.isSheaf_restrictedTopology hB,
     isSheaf_of_isAdapted_of_isSheaf_restrictedTopology F B hB hF⟩
+
+/-! ### Locality of the sheaf condition -/
+
+/-- **An adapted presheaf is a sheaf if it is one around every basic open.** If `F` is adapted to
+the basis `B` and every member of `B` lies in an open `U` on which `F` restricts to a sheaf, then
+`F` is a sheaf. Adaptedness cannot be dropped: a sheaf condition on the members of an open cover
+does not determine the sections over their union. Here it reduces the claim to covers of a member
+`V ∈ B` by members of `B`, all of which lie in `U`, where `F` agrees with the pushforward of its
+restriction to `U`, a sheaf. -/
+theorem isSheaf_of_isAdapted_of_forall_exists_le (hB : Opens.IsBasis B) (hF : F.IsAdapted B)
+    (h : ∀ V ∈ B, ∃ U : Opens X, V ≤ U ∧
+      IsSheaf (X := (Opens.toTopCat X).obj U) (U.isOpenEmbedding.functor.op ⋙ F)) :
+    F.IsSheaf := by
+  refine isSheaf_of_isAdapted_of_isSheaf_restrictedTopology F B hB hF fun E b S hS ↦ ?_
+  obtain ⟨U, hbU, hU⟩ := h b.1 b.2
+  -- the pushforward `G` of the restriction of `F` to `U` is a sheaf, with `G(W) = F(W ⊓ U)`
+  have hG := (TopCat.Sheaf.pushforward_sheaf_of_sheaf U.inclusion' hU).isSheaf_restrictedTopology hB
+  -- restriction `F(W) ⟶ F(W ⊓ U) = G(W)`, along the counit of the adjunction for `U`
+  let α : F ⟶ U.inclusion' _* (U.isOpenEmbedding.functor.op ⋙ F) :=
+    Functor.whiskerRight (NatTrans.op U.isOpenEmbedding.isOpenMap.adjunction.counit) F
+  refine Presieve.isSheafFor_of_bijective_app
+    (Functor.whiskerLeft (inducedFunctor (Subtype.val : B → Opens X)).op
+      (Functor.whiskerRight α (coyoneda.obj (op E)))) (fun b' f ↦ ?_) (hG E S hS)
+  -- below `U` the restriction is along an isomorphism, as `W ⊓ U = W`
+  have : IsIso (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1) :=
+    ⟨homOfLE fun x hx ↦ ⟨⟨x, hbU (f.hom.le hx)⟩, hx, rfl⟩, Subsingleton.elim _ _,
+      Subsingleton.elim _ _⟩
+  exact (isIso_iff_bijective _).mp ((coyoneda.obj (op E)).map_isIso
+    (F.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1).op))
 
 /-! ### Sheaves are adapted to every basis -/
 

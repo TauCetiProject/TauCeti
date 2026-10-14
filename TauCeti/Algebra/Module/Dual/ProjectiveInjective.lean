@@ -18,6 +18,9 @@ left modules. Over a finite-dimensional algebra it also sends finite-dimensional
 modules to projective left modules. These are the projective and injective terms used when
 dualizing finite module presentations.
 
+For finite-dimensional right modules the converse also holds: the left dual is injective exactly
+when the original module is projective.
+
 The left action on a dual is specified by a linear equivalence and the identity
 `e (a • q) x = e q (op a • x)`. This follows the convention of
 `TauCeti.LinearAlgebra.Dual.RightAction`, avoiding a second global action on every linear dual.
@@ -172,5 +175,45 @@ theorem moduleProjective_of_dual_injective [FiniteDimensional k A] [FiniteDimens
     _ = e q (r (∑ i, Pi.single i (j x i))) := by simp [hs₀]
     _ = e q x := by rw [Finset.univ_sum_single, hrj]
     _ = e (LinearMap.id q) x := rfl
+
+/-- Over a finite-dimensional algebra, a finite-dimensional right module is projective
+exactly when its left scalar dual is injective. The dual action is specified by the pairing. -/
+theorem moduleInjective_iff_projective_of_dual [FiniteDimensional k A]
+    [FiniteDimensional k N] [Small.{z} A]
+    (e : Q ≃ₗ[k] Module.Dual k N)
+    (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x)) :
+    Module.Injective A Q ↔ Module.Projective Aᵐᵒᵖ N := by
+  constructor
+  · intro hQ
+    let : RingHomInvPair (RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)
+        ((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A) :=
+      RingHomInvPair.of_ringEquiv (RingEquiv.opOp A)
+    let : RingHomInvPair ((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)
+        (RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ) :=
+      RingHomInvPair.of_ringEquiv (RingEquiv.opOp A).symm
+    let : Module Aᵐᵒᵖᵐᵒᵖ Q := Module.compHom Q ((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)
+    let i : Q ≃ₛₗ[(RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)] Q :=
+      { Equiv.refl Q with
+        map_add' := fun _ _ ↦ rfl
+        map_smul' := fun _ _ ↦ rfl }
+    let := hQ
+    let : Module.Injective Aᵐᵒᵖᵐᵒᵖ Q := Module.Injective.of_ringEquiv (RingEquiv.opOp A) i
+    -- Record the transported action explicitly before reversing the evaluation pairing.
+    have hsmul (a : Aᵐᵒᵖ) (q : Q) : MulOpposite.op a • q = a.unop • q := (rfl)
+    let : Small.{z} Aᵐᵒᵖᵐᵒᵖ := small_of_injective (RingEquiv.opOp A).symm.injective
+    let : IsScalarTower k Aᵐᵒᵖᵐᵒᵖ Q := IsScalarTower.of_algebraMap_smul fun c q ↦ by
+      rw [MulOpposite.algebraMap_apply, hsmul, MulOpposite.algebraMap_apply,
+        MulOpposite.unop_op]
+      apply e.injective
+      ext x
+      simp [he, ← MulOpposite.algebraMap_apply]
+    have : FiniteDimensional k Q := e.symm.finiteDimensional
+    let d : N ≃ₗ[k] Module.Dual k Q := (Module.evalEquiv k N).trans e.dualMap
+    have hd (x : N) (q : Q) : d x q = e q x := by simp [d]
+    exact d.moduleProjective_of_dual_injective (A := Aᵐᵒᵖ) fun a x q ↦ by
+      simpa only [hd, hsmul, MulOpposite.op_unop] using (he a.unop q x).symm
+  · intro hN
+    let := hN
+    exact e.moduleInjective_of_dual_projective he
 
 end LinearEquiv

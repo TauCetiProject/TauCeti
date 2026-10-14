@@ -88,6 +88,8 @@ open MvPolynomial Finset
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
+
 section Alternant
 
 variable {R : Type*} [CommRing R]
@@ -101,8 +103,8 @@ strip of `r` cells. -/
 theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.colLen 0 ≤ N) (r : ℕ) :
     hsymm (Fin N) R r * alternant (Fin N) R (fun j => ν.betaNumber N j) =
       ∑ μ : (ν.card + r).Partition with
-          ((diagramOf μ).InterlacedBy ν ∧ (diagramOf μ).colLen 0 ≤ N),
-        alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N j) := by
+          ((ofPartition μ).InterlacedBy ν ∧ (ofPartition μ).colLen 0 ≤ N),
+        alternant (Fin N) R (fun j => (ofPartition μ).betaNumber N j) := by
   -- The proof runs in four steps.  The complete-homogeneous rule for alternants expands the
   -- left-hand side as a sum over the shifts `γ` of total degree `r`.  The shifts that repeat an
   -- exponent are discarded, their alternants vanishing.  The remaining ones are then put in
@@ -122,73 +124,73 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
       exact hγ (alternant_eq_zero_of_not_injective hninj)]
   -- Sorting the surviving shifts pairs them with a shape and a dominating permutation.
   set P : Finset (ν.card + r).Partition :=
-    {μ | (diagramOf μ).colLen 0 ≤ N} with hP
+    {μ | (ofPartition μ).colLen 0 ≤ N} with hP
   set T : (ν.card + r).Partition → Finset (Equiv.Perm (Fin N)) :=
-    fun μ => {τ | ∀ j, β j ≤ (diagramOf μ).betaNumber N (τ j)} with hT
+    fun μ => {τ | ∀ j, β j ≤ (ofPartition μ).betaNumber N (τ j)} with hT
   have hval : ∀ x ∈ P.sigma T, ∀ i,
-      β i + ((diagramOf x.1).betaNumber N (x.2 i) - β i) =
-        (diagramOf x.1).betaNumber N (x.2 i) := by
+      β i + ((ofPartition x.1).betaNumber N (x.2 i) - β i) =
+        (ofPartition x.1).betaNumber N (x.2 i) := by
     intro x hx i
     have hdom := (Finset.mem_filter.mp (Finset.mem_sigma.mp hx).2).2
     have := hdom i
     omega
   have hfun : ∀ x ∈ P.sigma T,
-      (fun i => β i + ((diagramOf x.1).betaNumber N (x.2 i) - β i)) =
-        (fun j : Fin N => (diagramOf x.1).betaNumber N j) ∘ ⇑x.2 :=
+      (fun i => β i + ((ofPartition x.1).betaNumber N (x.2 i) - β i)) =
+        (fun j : Fin N => (ofPartition x.1).betaNumber N j) ∘ ⇑x.2 :=
     fun x hx => funext fun i => hval x hx i
   have hbij : ∑ x ∈ P.sigma T,
-        alternant (Fin N) R (fun j => (diagramOf x.1).betaNumber N (x.2 j)) =
+        alternant (Fin N) R (fun j => (ofPartition x.1).betaNumber N (x.2 j)) =
       ∑ γ ∈ {γ ∈ Finset.piAntidiag (univ : Finset (Fin N)) r |
           Function.Injective fun i => β i + γ i},
         alternant (Fin N) R (fun i => β i + γ i) := by
     refine Finset.sum_bij
-      (fun x _ => fun i => (diagramOf x.1).betaNumber N (x.2 i) - β i) ?_ ?_ ?_ ?_
+      (fun x _ => fun i => (ofPartition x.1).betaNumber N (x.2 i) - β i) ?_ ?_ ?_ ?_
     · -- The shift has total degree `r` and no repeated exponent.
       intro x hx
-      have hcol : (diagramOf x.1).colLen 0 ≤ N :=
+      have hcol : (ofPartition x.1).colLen 0 ≤ N :=
         (Finset.mem_filter.mp (Finset.mem_sigma.mp hx).1).2
       refine Finset.mem_filter.mpr
         ⟨Finset.mem_piAntidiag.mpr ⟨?_, fun i _ => Finset.mem_univ i⟩, ?_⟩
-      · have hsum1 : ∑ i : Fin N, (β i + ((diagramOf x.1).betaNumber N (x.2 i) - β i)) =
-            ∑ j : Fin N, (diagramOf x.1).betaNumber N j := by
+      · have hsum1 : ∑ i : Fin N, (β i + ((ofPartition x.1).betaNumber N (x.2 i) - β i)) =
+            ∑ j : Fin N, (ofPartition x.1).betaNumber N j := by
           rw [Finset.sum_congr rfl fun i _ => hval x hx i]
-          exact Equiv.sum_comp x.2 fun j : Fin N => (diagramOf x.1).betaNumber N j
-        rw [Finset.sum_add_distrib, hβsum, (diagramOf x.1).sum_betaNumber hcol,
-          card_diagramOf] at hsum1
+          exact Equiv.sum_comp x.2 fun j : Fin N => (ofPartition x.1).betaNumber N j
+        rw [Finset.sum_add_distrib, hβsum, (ofPartition x.1).sum_betaNumber hcol,
+          card_ofPartition] at hsum1
         omega
       · rw [hfun x hx]
-        exact ((diagramOf x.1).strictAnti_betaNumber N).injective.comp x.2.injective
+        exact ((ofPartition x.1).strictAnti_betaNumber N).injective.comp x.2.injective
     · -- Distinct pairs give distinct shifts: the shape and the permutation are the sorting data.
       intro x hx y hy hxy
-      have hxy' : (fun i => β i + ((diagramOf x.1).betaNumber N (x.2 i) - β i)) =
-          (fun i => β i + ((diagramOf y.1).betaNumber N (y.2 i) - β i)) :=
+      have hxy' : (fun i => β i + ((ofPartition x.1).betaNumber N (x.2 i) - β i)) =
+          (fun i => β i + ((ofPartition y.1).betaNumber N (y.2 i) - β i)) :=
         funext fun i => by rw [congrFun hxy i]
-      have hsx : StrictAnti ((fun i => β i + ((diagramOf y.1).betaNumber N (y.2 i) - β i)) ∘
+      have hsx : StrictAnti ((fun i => β i + ((ofPartition y.1).betaNumber N (y.2 i) - β i)) ∘
           ⇑(x.2).symm) := by
         rw [← hxy', hfun x hx]
-        simpa [Function.comp_def] using (diagramOf x.1).strictAnti_betaNumber N
-      have hsy : StrictAnti ((fun i => β i + ((diagramOf y.1).betaNumber N (y.2 i) - β i)) ∘
+        simpa [Function.comp_def] using (ofPartition x.1).strictAnti_betaNumber N
+      have hsy : StrictAnti ((fun i => β i + ((ofPartition y.1).betaNumber N (y.2 i) - β i)) ∘
           ⇑(y.2).symm) := by
         rw [hfun y hy]
-        simpa [Function.comp_def] using (diagramOf y.1).strictAnti_betaNumber N
+        simpa [Function.comp_def] using (ofPartition y.1).strictAnti_betaNumber N
       have hp : x.2 = y.2 := by
         simpa using congrArg Equiv.symm (hsx.perm_eq hsy)
-      have hbx : ∀ i, (diagramOf x.1).betaNumber N (x.2 i) =
-          (diagramOf y.1).betaNumber N (y.2 i) := fun i => by
+      have hbx : ∀ i, (ofPartition x.1).betaNumber N (x.2 i) =
+          (ofPartition y.1).betaNumber N (y.2 i) := fun i => by
         have h1 := hval x hx i
         have h2 := hval y hy i
         have h3 := congrFun hxy i
         omega
       have hbeta : ∀ j : Fin N,
-          (diagramOf x.1).betaNumber N j = (diagramOf y.1).betaNumber N j := fun j => by
+          (ofPartition x.1).betaNumber N j = (ofPartition y.1).betaNumber N j := fun j => by
         have h := hbx ((x.2).symm j)
         rw [← hp] at h
         simpa using h
-      have hshape : diagramOf x.1 = diagramOf y.1 :=
+      have hshape : ofPartition x.1 = ofPartition y.1 :=
         YoungDiagram.eq_of_betaNumber_eq (Finset.mem_filter.mp (Finset.mem_sigma.mp hx).1).2
           (Finset.mem_filter.mp (Finset.mem_sigma.mp hy).1).2
           fun i hi => hbeta ⟨i, hi⟩
-      exact Sigma.ext (diagramOf_injective hshape) (by rw [hp])
+      exact Sigma.ext (YoungDiagram.ofPartition_injective hshape) (by rw [hp])
     · -- Every shift of total degree `r` with distinct exponents sorts to such a pair.
       intro γ hγ
       obtain ⟨hγmem, hγinj⟩ := Finset.mem_filter.mp hγ
@@ -201,14 +203,15 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
           exact Equiv.sum_comp τ₀ fun i : Fin N => β i + γ i
         rw [μ₀.sum_betaNumber hμ₀col, Finset.sum_add_distrib, hβsum, hsumγ] at h1
         omega
-      refine ⟨⟨toPartition μ₀ hcard, τ₀.symm⟩, Finset.mem_sigma.mpr ⟨?_, ?_⟩, ?_⟩
-      · exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, by rwa [diagramOf_toPartition]⟩
+      refine ⟨⟨μ₀.toPartition hcard, τ₀.symm⟩, Finset.mem_sigma.mpr ⟨?_, ?_⟩, ?_⟩
+      · exact Finset.mem_filter.mpr
+          ⟨Finset.mem_univ _, by rwa [YoungDiagram.ofPartition_toPartition]⟩
       · refine Finset.mem_filter.mpr ⟨Finset.mem_univ _, fun j => ?_⟩
-        rw [diagramOf_toPartition, hμ₀beta]
+        rw [YoungDiagram.ofPartition_toPartition, hμ₀beta]
         simp only [Function.comp_apply, Equiv.apply_symm_apply]
         exact Nat.le_add_right _ _
       · refine funext fun i => ?_
-        rw [diagramOf_toPartition, hμ₀beta]
+        rw [YoungDiagram.ofPartition_toPartition, hμ₀beta]
         simp only [Function.comp_apply, Equiv.apply_symm_apply]
         omega
     · intro x hx
@@ -216,24 +219,24 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
   rw [← hbij, Finset.sum_sigma]
   -- The permutations dominating a given shape contribute their signed count.
   have hterm : ∀ μ ∈ P,
-      ∑ τ ∈ T μ, alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N (τ j)) =
-        if (diagramOf μ).InterlacedBy ν then
-          alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N j) else 0 := by
+      ∑ τ ∈ T μ, alternant (Fin N) R (fun j => (ofPartition μ).betaNumber N (τ j)) =
+        if (ofPartition μ).InterlacedBy ν then
+          alternant (Fin N) R (fun j => (ofPartition μ).betaNumber N j) else 0 := by
     intro μ hμ
-    have hcol : (diagramOf μ).colLen 0 ≤ N := (Finset.mem_filter.mp hμ).2
+    have hcol : (ofPartition μ).colLen 0 ≤ N := (Finset.mem_filter.mp hμ).2
     have hstep : ∀ τ : Equiv.Perm (Fin N),
-        alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N (τ j)) =
+        alternant (Fin N) R (fun j => (ofPartition μ).betaNumber N (τ j)) =
           (Equiv.Perm.sign τ : ℤ) •
-            alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N j) := by
+            alternant (Fin N) R (fun j => (ofPartition μ).betaNumber N j) := by
       intro τ
       -- The two sides differ only by folding the composition that `alternant_comp_perm` matches.
-      have hcomp : (fun j : Fin N => (diagramOf μ).betaNumber N (τ j)) =
-          (fun j : Fin N => (diagramOf μ).betaNumber N j) ∘ ⇑τ := rfl
+      have hcomp : (fun j : Fin N => (ofPartition μ).betaNumber N (τ j)) =
+          (fun j : Fin N => (ofPartition μ).betaNumber N j) ∘ ⇑τ := rfl
       rw [hcomp, alternant_comp_perm]
       simp [Units.smul_def]
     rw [hT, Finset.sum_congr rfl fun τ _ => hstep τ, ← Finset.sum_smul,
       sum_sign_filter_forall_le_of_antitone hβanti.antitone
-        ((diagramOf μ).strictAnti_betaNumber N).antitone]
+        ((ofPartition μ).strictAnti_betaNumber N).antitone]
     -- `hβ` unfolds the abbreviation so that the beta-number criterion applies to the condition.
     simp only [hβ, forall_betaNumber_le_iff_interlacedBy hcol hν]
     split_ifs <;> simp
@@ -334,18 +337,18 @@ the Schur polynomials of the diagrams with more than `N` rows vanish on both sid
 required to be positive: at `r = 0` the only strip is empty and the sum is the single term `s_ν`. -/
 theorem hsymm_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) (r : ℕ) :
     hsymm (Fin N) R r * diagramSchurPoly N R ν =
-      ∑ μ : (ν.card + r).Partition with (diagramOf μ).InterlacedBy ν,
-        diagramSchurPoly N R (diagramOf μ) := by
+      ∑ μ : (ν.card + r).Partition with (ofPartition μ).InterlacedBy ν,
+        diagramSchurPoly N R (ofPartition μ) := by
   -- Prove the identity over `ℤ`, where the nonzero Vandermonde alternant `a_δ` can be
   -- cancelled in `ℤ[x]`.  Both sides have natural-number coefficients, so the identity descends
   -- along the injection `ℕ → ℤ`, and the resulting identity over `ℕ` maps to any commutative
   -- semiring.
   suffices hℤ : hsymm (Fin N) ℤ r * diagramSchurPoly N ℤ ν =
-      ∑ μ : (ν.card + r).Partition with (diagramOf μ).InterlacedBy ν,
-        diagramSchurPoly N ℤ (diagramOf μ) by
+      ∑ μ : (ν.card + r).Partition with (ofPartition μ).InterlacedBy ν,
+        diagramSchurPoly N ℤ (ofPartition μ) by
     have hℕ : hsymm (Fin N) ℕ r * diagramSchurPoly N ℕ ν =
-        ∑ μ : (ν.card + r).Partition with (diagramOf μ).InterlacedBy ν,
-          diagramSchurPoly N ℕ (diagramOf μ) :=
+        ∑ μ : (ν.card + r).Partition with (ofPartition μ).InterlacedBy ν,
+          diagramSchurPoly N ℕ (ofPartition μ) :=
       MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective <| by
         simpa [map_diagramSchurPoly, map_hsymm, map_sum] using hℤ
     have h := congrArg (MvPolynomial.map (Nat.castRingHom R)) hℕ
@@ -373,7 +376,7 @@ theorem hsymm_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) (r : ℕ) :
       have : (N, 0) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr hν'
       rw [YoungDiagram.mem_iff_lt_rowLen, h0] at this
       omega
-    have hμN : N < (diagramOf μ).colLen 0 := by
+    have hμN : N < (ofPartition μ).colLen 0 := by
       by_contra h
       exact hN (Nat.eq_zero_of_le_zero ((YoungDiagram.rowLen_le_of_le hle N).trans
         (YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp h)).le))
@@ -385,10 +388,10 @@ partition `ν` of `n`, `h_r · s_ν = ∑_μ s_μ`, the sum running over the par
 whose Young diagram contains that of `ν` with a horizontal strip as complement. -/
 theorem hsymm_mul_schurPoly {σ : Type*} [Fintype σ] {n : ℕ} (ν : n.Partition) (r : ℕ) :
     hsymm σ R r * schurPoly σ R ν =
-      ∑ μ : (n + r).Partition with (diagramOf μ).InterlacedBy (diagramOf ν),
+      ∑ μ : (n + r).Partition with (ofPartition μ).InterlacedBy (ofPartition ν),
         schurPoly σ R μ := by
-  have h := hsymm_mul_diagramSchurPoly (R := R) (N := Fintype.card σ) (diagramOf ν) r
-  rw [card_diagramOf] at h
+  have h := hsymm_mul_diagramSchurPoly (R := R) (N := Fintype.card σ) (ofPartition ν) r
+  rw [card_ofPartition] at h
   have h' := congrArg (rename (Fintype.equivFin σ).symm) h
   rw [map_mul, rename_hsymm, ← schurPoly_eq_rename] at h'
   rw [h', map_sum]

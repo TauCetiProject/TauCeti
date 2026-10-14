@@ -59,7 +59,7 @@ SERIES = [
     ("gh-build-other", "main and scheduled builds on GitHub", PALETTE[10]),
     ("gh-other", "other GitHub jobs", PALETTE[0]),
     ("ns-pr", "PR builds on Namespace", PALETTE[1]),
-    ("ns-mq", "merge queue on Namespace", PALETTE[3]),
+    ("ns-mq", "merge validation on Namespace", PALETTE[3]),
     ("ns-other", "other Namespace jobs", PALETTE[4]),
 ]
 WAIT_SERIES = [("build", "builds", PALETTE[1]), ("other", "other jobs", PALETTE[0])]
@@ -77,7 +77,8 @@ def iso(t: float) -> str:
 def classify(name: str, kind: str, trigger: str) -> tuple[str, str]:
     build = name in BUILD_JOBS
     if kind == "namespace":
-        key = {"merge_queue": "ns-mq", "pr": "ns-pr"}.get(trigger, "ns-other")
+        key = ("ns-mq" if trigger in ci_daily_graphs.MERGE_TRIGGERS
+               else "ns-pr" if trigger == "pr" else "ns-other")
     elif build:
         key = "gh-build-pr" if trigger in ("pr", "workflow_dispatch") else "gh-build-other"
     else:

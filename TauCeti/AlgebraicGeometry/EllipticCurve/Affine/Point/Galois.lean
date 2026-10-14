@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 public import TauCeti.Algebra.Module.Torsion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapEquiv
+
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # Galois actions on elliptic-curve points
@@ -27,6 +30,11 @@ used in the Hasse-bound argument.
 
 * `WeierstrassCurve.pointGaloisAction`: the Galois action on points.
 * `WeierstrassCurve.torsionGaloisAction`: its restriction to `N`-torsion.
+
+## Main results
+
+* `WeierstrassCurve.Affine.Point.algEquiv_eq_one_of_adjoin_coords_eq_top`: an automorphism fixing
+  every point of a set whose coordinates generate `K` over `F` is the identity.
 
 ## References
 
@@ -88,6 +96,19 @@ theorem torsionGaloisAction_apply_coe (N : ℤ) (e : K ≃ₐ[F] K)
       AddSubgroup.torsionBy (W⁄K).toAffine.Point N) : (W⁄K).toAffine.Point) =
       Multiplicative.toAdd (W.pointGaloisAction e) P := by
   simp [torsionGaloisAction]
+
+omit [W.IsElliptic] in
+variable {W} in
+/-- **Points whose coordinates generate the field detect automorphisms.** If the coordinates of
+the points in a set `S` of points of `W(K)` generate `K` over `F`, an `F`-automorphism of `K` that
+fixes every point of `S` is the identity. -/
+theorem Affine.Point.algEquiv_eq_one_of_adjoin_coords_eq_top {S : Set (W⁄K).toAffine.Point}
+    (hS : IntermediateField.adjoin F (Affine.Point.xCoord '' S ∪ Affine.Point.yCoord '' S) = ⊤)
+    {σ : K ≃ₐ[F] K} (hσ : ∀ Q ∈ S, Affine.Point.map σ.toAlgHom Q = Q) : σ = 1 := by
+  refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hS ?_
+  rintro _ (⟨Q, hQ, rfl⟩ | ⟨Q, hQ, rfl⟩)
+  · simpa using congrArg Affine.Point.xCoord (hσ Q hQ)
+  · simpa using congrArg Affine.Point.yCoord (hσ Q hQ)
 
 end WeierstrassCurve
 

@@ -14,6 +14,7 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+public import TauCeti.RingTheory.RootsOfUnity.ZMod
 -- Non-public: the roots of unity of a separably closed field are used only inside a proof.
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
@@ -33,9 +34,9 @@ UnitsCoeff K = Additive (Kˢ)ˣ,      KummerCoeff K n = Additive μₙ,
 
 with `μₙ = rootsOfUnity n Kˢ`. Both are **discrete** `G_K`-modules: their point stabilizers are
 open because every element of `Kˢ` is separable over `K`, hence lies in a finite subextension
-(`TauCeti.stabilizer_isOpen_units`). The action on `μₙ` is in general nontrivial, and the Kummer
-isomorphism is false for the trivial action, so it is the module and not the abstract group that
-is named here.
+(`Units.stabilizer_isOpen_of_isIntegral`). The action on `μₙ` is in general nontrivial, and the
+Kummer isomorphism is false for the trivial action, so it is the module and not the abstract group
+that is named here.
 
 The two maps between them assemble the **Kummer sequence**
 
@@ -79,6 +80,7 @@ are strictly larger than `Kˣ`.
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
 * `TauCeti.natCard_kummerCoeff`: `μₙ` has `n` elements, for `n` invertible in `K`.
+* `TauCeti.finrank_kummerCoeff`: `μ_ℓ` is a line over `𝔽_ℓ` for a prime `ℓ` invertible in `K`.
 * `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
   `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
@@ -115,7 +117,8 @@ instance : DiscreteTopology (UnitsCoeff K) := ⟨rfl⟩
 /-- **`(Kˢ)ˣ` is a discrete `G_K`-module**: every unit of `Kˢ` is separable over `K`, so it lies
 in a finite subextension and its stabilizer is open. -/
 instance unitsCoeff_continuousSMul : ContinuousSMul (AbsoluteGaloisGroup K) (UnitsCoeff K) :=
-  continuousSMul_iff_stabilizer_isOpen.2 fun x => stabilizer_isOpen_units (K := K) x.toMul
+  continuousSMul_iff_stabilizer_isOpen.2 fun x =>
+    x.toMul.stabilizer_isOpen_of_isIntegral (Algebra.IsIntegral.isIntegral _)
 
 /-! ### The roots of unity -/
 
@@ -136,7 +139,8 @@ the underlying unit of `Kˢ`, which is open. -/
 instance kummerCoeff_continuousSMul :
     ContinuousSMul (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
   continuousSMul_iff_stabilizer_isOpen.2 fun x => by
-    convert stabilizer_isOpen_units (K := K) (x.toMul : (SeparableClosure K)ˣ) using 2
+    convert Units.stabilizer_isOpen_of_isIntegral (x.toMul : (SeparableClosure K)ˣ)
+      (Algebra.IsIntegral.isIntegral (R := K) _) using 2
     ext σ
     refine ⟨fun h => ?_, fun h => Additive.toMul.injective (Subtype.ext (by simpa using h))⟩
     simpa using
@@ -166,6 +170,16 @@ theorem natCard_kummerCoeff (hn : IsUnit (n : K)) : Nat.card (KummerCoeff K n) =
   exact (Nat.card_congr Additive.toMul).trans
     (HasEnoughRootsOfUnity.natCard_rootsOfUnity (SeparableClosure K) n)
 
+variable {K} in
+/-- **`μ_ℓ` is a line over `𝔽_ℓ`** for a prime `ℓ` invertible in `K`. -/
+theorem finrank_kummerCoeff {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : IsUnit (ℓ : K)) :
+    Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
+  have hp : ℓ.Prime := Fact.out
+  apply Nat.pow_right_injective hp.two_le
+  dsimp only
+  conv_rhs => rw [pow_one, ← natCard_kummerCoeff hℓ]
+  rw [Module.natCard_eq_pow_finrank (K := ZMod ℓ), Nat.card_zmod]
+
 variable {K n} in
 /-- **`μₙ` is cyclic of order `n`** for `n` invertible in `K`: the `n`th roots of unity of `Kˢ`
 are additively isomorphic to `ℤ/nℤ`. The isomorphism is not canonical; it amounts to a choice of
@@ -190,6 +204,22 @@ theorem toMul_kummerCoeffIncl (x : KummerCoeff K n) :
 theorem kummerCoeffIncl_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n) :
     kummerCoeffIncl K n (g • x) = g • kummerCoeffIncl K n x :=
   Additive.toMul.injective (by simp)
+
+/-- The inclusion `μₙ ↪ (Kˢ)ˣ` as an equivariant additive homomorphism over `G_K`. -/
+def kummerCoeffInclHom : KummerCoeff K n →+[AbsoluteGaloisGroup K] UnitsCoeff K :=
+  { kummerCoeffIncl K n with map_smul' := kummerCoeffIncl_equivariant K n }
+
+/-- The additive homomorphism underlying `kummerCoeffInclHom` is `kummerCoeffIncl`. -/
+@[simp]
+theorem kummerCoeffInclHom_toAddMonoidHom :
+    (kummerCoeffInclHom K n).toAddMonoidHom = kummerCoeffIncl K n :=
+  (rfl)
+
+/-- The equivariant Kummer inclusion acts by the roots-of-unity inclusion. -/
+@[simp]
+theorem kummerCoeffInclHom_apply (x : KummerCoeff K n) :
+    kummerCoeffInclHom K n x = kummerCoeffIncl K n x :=
+  (rfl)
 
 theorem kummerCoeffIncl_injective : Function.Injective (kummerCoeffIncl K n) := fun x y h =>
   Additive.toMul.injective <| Subtype.ext <| by
@@ -259,6 +289,14 @@ def kummerShortExact (hn : IsUnit (n : K)) :
 theorem kummerShortExact_incl (hn : IsUnit (n : K)) :
     (kummerShortExact K n hn).incl = kummerCoeffIncl K n :=
   (rfl)
+
+/-- The equivariant inclusion of the Kummer sequence is the canonical Kummer inclusion. -/
+@[simp]
+theorem kummerShortExact_inclDistribMulActionHom (hn : IsUnit (n : K)) :
+    (kummerShortExact K n hn).inclDistribMulActionHom = kummerCoeffInclHom K n := by
+  ext x
+  rw [DiscreteShortExact.inclDistribMulActionHom_apply, kummerShortExact_incl,
+    kummerCoeffInclHom_apply]
 
 @[simp]
 theorem kummerShortExact_proj (hn : IsUnit (n : K)) :

@@ -59,8 +59,6 @@ arbitrary commutative ring, would remove it, and is a separate construction.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 2.
 -/
 
 public section
@@ -97,8 +95,8 @@ noncomputable def columnAntisymmetrizer (t : YoungTableau μ) :
     ((Equiv.Perm.sign (q : Equiv.Perm (Fin μ.card)) : ℤ) : ℚ) •
       MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) q
 
-/-- The **Young symmetrizer** of `t`, with the convention `c_t = a_t b_t`: first
-row-symmetrize, then column-antisymmetrize. -/
+/-- The **Young symmetrizer** of `t`, with the convention `c_t = a_t b_t`. On a left module it
+acts by column-antisymmetrization followed by row-symmetrization. -/
 noncomputable def youngSymmetrizer (t : YoungTableau μ) :
     MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)) :=
   rowSymmetrizer t * columnAntisymmetrizer t
@@ -118,7 +116,7 @@ theorem columnAntisymmetrizer_def (t : YoungTableau μ) :
           MonoidAlgebra.of ℚ (Equiv.Perm (Fin μ.card)) q :=
   (rfl)
 
-/-- The Young symmetrizer uses the row-then-column convention `c_t = a_t b_t`. -/
+/-- The Young symmetrizer is the product `c_t = a_t b_t`. -/
 theorem youngSymmetrizer_def (t : YoungTableau μ) :
     youngSymmetrizer t = rowSymmetrizer t * columnAntisymmetrizer t :=
   (rfl)
@@ -324,10 +322,10 @@ theorem asAlgebraHom_columnAntisymmetrizer_apply {V : Type*} [AddCommGroup V] [M
 
 section Transport
 
-variable (k : Type*) [CommSemiring k] [Algebra ℚ k]
+variable (k : Type*) [Semiring k] [Algebra ℚ k]
 
 /-- The Young symmetrizer `c_t` with the coefficients of its rational form transported into a
-`ℚ`-algebra `k`, so that it can act on a `k`-module.
+`ℚ`-algebra `k`, so that it can act on a `k`-module. The algebra `k` need not be commutative.
 
 The `ℚ`-algebra hypothesis comes from `youngSymmetrizer` being defined over `ℚ` here, not from
 `c_t`, whose coefficients are integral. -/
@@ -350,9 +348,7 @@ theorem youngSymmetrizerOver_coeff (t : YoungTableau μ) (σ : Equiv.Perm (Fin �
   rw [youngSymmetrizerOver_def, MonoidAlgebra.coeff_mapAlgHom, Algebra.ofId_apply]
 
 /-- **The column group acts on the transported Young symmetrizer through its sign character.**
-This is `TauCeti.mul_youngSymmetrizer_right` carried into `k`. The sign keeps acting as a rational
-scalar, which is available because `k` is a `ℚ`-algebra; it cannot be phrased as a `ℤ`-action,
-since a `CommSemiring` `k` need not have negation. -/
+The sign acts as a rational scalar, using the `ℚ`-algebra structure of `k`. -/
 @[simp]
 theorem mul_youngSymmetrizerOver_right (t : YoungTableau μ) (q : colSubgroup t) :
     youngSymmetrizerOver k t * MonoidAlgebra.single (q : Equiv.Perm (Fin μ.card)) 1 =
@@ -379,9 +375,8 @@ end Transport
 
 section TransportRing
 
--- The signed sum below is a `ℤ`-linear combination, so it asks the target ring for negation; that
--- is the only difference from the `CommSemiring` hypothesis of the section above.
-variable (k : Type*) [CommRing k] [Algebra ℚ k]
+-- The signed sum below uses the target ring's `ℤ`-action.
+variable (k : Type*) [Ring k] [Algebra ℚ k]
 
 /-- **The Young symmetrizer of a shape with at most one column is the full antisymmetrization**
 `∑_σ sgn(σ) σ`: the column group is everything and the row group is trivial. -/

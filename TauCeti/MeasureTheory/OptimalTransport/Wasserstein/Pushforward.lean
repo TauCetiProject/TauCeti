@@ -10,6 +10,10 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 /-!
 # Wasserstein distance under pushforward
 
+The laws of two a.e. strongly measurable maps can be compared by pushing forward a coupling
+of their source measures, with no topology on the sources or separability of the target.
+The radial moment condition transfers exactly between the map and its law.
+
 A Lipschitz map sends every coupling to a coupling of the pushforward measures, while increasing
 the displacement of each coupled pair by at most its Lipschitz constant. Consequently pushforward
 is Lipschitz for every Wasserstein exponent, including the essential-supremum endpoint.
@@ -23,6 +27,13 @@ spaces.
 
 ## Main statements
 
+* `TauCeti.wassersteinEDist_map_le_eLpNorm` bounds the distance between the laws of two
+  a.e. strongly measurable maps from arbitrary measurable spaces into a Borel extended
+  pseudometric space, using any coupling of their source measures.
+* `TauCeti.hasFiniteMoment_map_iff_memLp_edist` identifies the moment condition on a law
+  with radial `MemLp` on its source.
+* `TauCeti.exists_coe_eq_map_of_memLp` shows that the law of a map of `Lᵖ` under a probability
+  measure lies in the finite-moment Wasserstein space.
 * `TauCeti.wassersteinEDist_map_le_mul_eLpNorm` bounds the Wasserstein distance of two
   pushforwards by the Lipschitz constant times the objective of a specified source coupling.
 * `TauCeti.wassersteinEDist_map_le_mul_of_ne_zero` gives the pushforward estimate for arbitrary
@@ -55,6 +66,74 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 universe u v w
+
+section MeasurableSource
+
+variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
+  [PseudoEMetricSpace Z] [BorelSpace Z] {μ : Measure X} {ν : Measure Y}
+  {π : Measure (X × Y)} {f : X → Z} {g : Y → Z} {p : ℝ≥0∞}
+
+/-- Two a.e. strongly measurable maps send a coupling to a transport plan whose cost bounds
+the Wasserstein distance of their laws. The source spaces need no topology, and the target
+need not be separable. This holds for every exponent, including `∞`, without moment assumptions. -/
+theorem wassersteinEDist_map_le_eLpNorm (hπ : IsCoupling π μ ν)
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) :
+    wassersteinEDist p (μ.map f) (ν.map g) ≤
+      eLpNorm (fun q : X × Y ↦ edist (f q.1) (g q.2)) p π := by
+  have hfπ := hf.aemeasurable.comp_quasiMeasurePreserving
+    hπ.measurePreserving_fst.quasiMeasurePreserving
+  have hgπ := hg.aemeasurable.comp_quasiMeasurePreserving
+    hπ.measurePreserving_snd.quasiMeasurePreserving
+  have hmap : IsCoupling (π.map fun q ↦ (f q.1, g q.2)) (μ.map f) (ν.map g) :=
+    hπ.map₀ hf.aemeasurable hg.aemeasurable
+  have hd := continuous_edist.comp_aestronglyMeasurable₂
+    (hf.aestronglyMeasurable_id_map.comp_quasiMeasurePreserving
+      hmap.measurePreserving_fst.quasiMeasurePreserving)
+    (hg.aestronglyMeasurable_id_map.comp_quasiMeasurePreserving
+      hmap.measurePreserving_snd.quasiMeasurePreserving)
+  exact (wassersteinEDist_le hmap p).trans_eq
+    (eLpNorm_map_measure hd (hfπ.prodMk hgπ))
+
+end MeasurableSource
+
+section Moment
+
+variable {X Z : Type*} [MeasurableSpace X] [MeasurableSpace Z]
+  [PseudoMetricSpace Z] [OpensMeasurableSpace Z] {μ : Measure X} {f : X → Z} {p : ℝ≥0∞}
+
+/-- The law of an a.e. measurable map has finite `p`-moment exactly when its distance from
+a specified basepoint belongs to `Lᵖ` on the source. This also covers the essential-boundedness
+condition at `p = ∞`. -/
+theorem hasFiniteMoment_map_iff_memLp_edist [IsFiniteMeasure μ] (hf : AEMeasurable f μ)
+    (z : Z) : HasFiniteMoment p (μ.map f) ↔ MemLp (fun x ↦ edist (f x) z) p μ := by
+  rw [hasFiniteMoment_iff_memLp_edist (x := z)
+    measurable_edist_right.aestronglyMeasurable,
+    memLp_map_measure_iff measurable_edist_right.aestronglyMeasurable hf]
+  simp only [Function.comp_def, edist_comm]
+
+end Moment
+
+section NormedMoment
+
+variable {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F] [MeasurableSpace F]
+  [BorelSpace F] {p : ℝ≥0∞}
+
+/-- **Pushing a law forward by a map of `Lᵖ`.** The law of a map `T ∈ Lᵖ(ν; F)` under a
+probability measure `ν` is a law of finite `p`-moment, that is, a point of `P_p(F)`. -/
+theorem exists_coe_eq_map_of_memLp {ν : ProbabilityMeasure X} {T : X → F}
+    (hT : MemLp T p (ν : Measure X)) :
+    ∃ ν' : WassersteinSpace p F, ((ν' : ProbabilityMeasure F) : Measure F) =
+      (ν : Measure X).map T := by
+  have hTm : AEMeasurable T (ν : Measure X) := hT.aestronglyMeasurable.aemeasurable
+  have hm : HasFiniteMoment p ((ν : Measure X).map T) := by
+    rw [hasFiniteMoment_map_iff_memLp_edist hTm 0]
+    exact (memLp_congr_enorm hT.aestronglyMeasurable
+      (measurable_edist_left.comp_aemeasurable hTm).aestronglyMeasurable
+      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).1 hT
+  refine ⟨.mk (ν.map T) (by rwa [ProbabilityMeasure.toMeasure_map]), ?_⟩
+  rw [WassersteinSpace.coe_mk, ProbabilityMeasure.toMeasure_map]
+
+end NormedMoment
 
 variable {X : Type u} {Y : Type v} [MeasurableSpace X] [MeasurableSpace Y]
   {p : ℝ≥0∞} {K : ℝ≥0} {f : X → Y} {μ ν : Measure X} {π : Measure (X × X)}

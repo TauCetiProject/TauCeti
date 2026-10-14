@@ -17,7 +17,8 @@ public import TauCeti.Topology.Discrete
 # Quotients of topological groups by subgroups
 
 Generic facts about quotients by subgroups of topological groups. Most results use
-`[IsTopologicalGroup G]`; forward translation of a fixed coset needs only
+`[IsTopologicalGroup G]`; multiplication on a normal quotient needs only `[ContinuousMul G]`,
+and forward translation of a fixed coset needs only
 `[SeparatelyContinuousMul G]`. The inverse-translation results additionally require
 `[DiscreteTopology (G ⧸ U)]`. Neither compactness nor total disconnectedness is needed.
 
@@ -28,9 +29,13 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 * `TauCeti.quotientOpenSubgroupMap`: the quotient homomorphism restricted to an open subgroup.
 * `TauCeti.quotientSubgroupOfEquivMap`: for an open normal subgroup `V`, the quotient
   `W ⧸ V.subgroupOf W` is isomorphic, as a topological group, to the image of `W` in `G ⧸ V`.
+* `TauCeti.quotientQuotientContinuousMulEquiv`: for an open normal subgroup `V` contained in a
+  normal subgroup `W`, the third isomorphism theorem `(G ⧸ V) ⧸ W.map (mk' V) ≃ₜ* G ⧸ W`.
 
 ## Main results
 
+* `QuotientGroup.instContinuousMul`: jointly continuous multiplication descends to a normal
+  quotient without requiring continuous inversion, with an additive counterpart.
 * `Subgroup.continuous_smul_const`: translation of a fixed coset is continuous.
 * `Subgroup.continuous_inv_smul_const`: inverse translation of a fixed coset is
   continuous when the quotient is discrete.
@@ -49,6 +54,22 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 -/
 
 public section
+
+namespace QuotientGroup
+
+/-- A normal quotient inherits jointly continuous multiplication without requiring continuous
+inversion. The proof is adapted from the multiplication component of Mathlib's
+`QuotientGroup.instIsTopologicalGroup`. -/
+@[to_additive /-- An additive quotient inherits jointly continuous addition without requiring
+continuous negation. The proof is adapted from the addition component of Mathlib's
+`QuotientAddGroup.instIsTopologicalAddGroup`. -/]
+instance instContinuousMul {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
+    (N : Subgroup G) [N.Normal] : ContinuousMul (G ⧸ N) where
+  continuous_mul := by
+    rw [← (isOpenQuotientMap_mk.prodMap isOpenQuotientMap_mk).continuous_comp_iff]
+    exact continuous_mk.comp continuous_mul
+
+end QuotientGroup
 
 namespace Subgroup
 
@@ -265,6 +286,28 @@ theorem coe_quotientSubgroupOfEquivMap_mk (V W : Subgroup G) [V.Normal]
     ((quotientSubgroupOfEquivMap V W hV (w : W ⧸ V.subgroupOf W) : W.map (QuotientGroup.mk' V)) :
       G ⧸ V) = ((w : G) : G ⧸ V) :=
   (rfl)
+
+/-- For an open normal subgroup `V` contained in a normal subgroup `W`, the third isomorphism
+theorem `(G ⧸ V) ⧸ W.map (mk' V) ≃* G ⧸ W` is an isomorphism of topological groups, both groups
+being discrete. -/
+noncomputable def quotientQuotientContinuousMulEquiv (V W : Subgroup G) [V.Normal] [W.Normal]
+    (hVW : V ≤ W) (hV : IsOpen (V : Set G)) :
+    (G ⧸ V) ⧸ W.map (QuotientGroup.mk' V) ≃ₜ* G ⧸ W :=
+  haveI : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
+  haveI : DiscreteTopology (G ⧸ W) :=
+    QuotientGroup.discreteTopology (Subgroup.isOpen_mono hVW hV)
+  { QuotientGroup.quotientQuotientEquivQuotient V W hVW with
+    continuous_toFun := continuous_of_discreteTopology
+    continuous_invFun := continuous_of_discreteTopology }
+
+/-- `quotientQuotientContinuousMulEquiv` sends the class of the class of `g` to the class of
+`g`. -/
+@[simp]
+theorem quotientQuotientContinuousMulEquiv_mk (V W : Subgroup G) [V.Normal] [W.Normal]
+    (hVW : V ≤ W) (hV : IsOpen (V : Set G)) (g : G) :
+    quotientQuotientContinuousMulEquiv V W hVW hV
+        ((g : G ⧸ V) : (G ⧸ V) ⧸ W.map (QuotientGroup.mk' V)) = (g : G ⧸ W) :=
+  QuotientGroup.quotientQuotientEquivQuotient_apply_mk V W hVW g
 
 end SubgroupOf
 

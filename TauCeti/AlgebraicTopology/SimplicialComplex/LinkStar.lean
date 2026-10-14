@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
-public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Finset.Powerset
+import Mathlib.Basic.Finite.Prod
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 
 /-!
@@ -110,6 +111,14 @@ theorem mem_link_nonempty {ρ : Finset ι} :
     ρ ∈ link K σ ↔ ρ.Nonempty ∧ Disjoint ρ σ ∧ ρ ∪ σ ∈ K :=
   Iff.rfl
 
+/-- A fresh vertex of a complex is absent from every vertex link. -/
+theorem notMem_link_of_notMem (hv : ({v} : Finset ι) ∉ K) {w : ι} :
+    ({v} : Finset ι) ∉ link K {w} := by
+  intro h
+  obtain ⟨-, -, hface⟩ := mem_link_nonempty.mp h
+  apply hv
+  exact (K.isRelLowerSet_faces hface).2 (by simp) (by simp)
+
 omit [DecidableEq ι] in
 @[simp]
 theorem mem_deletion {ρ : Finset ι} : ρ ∈ deletion K σ ↔ ρ ∈ K ∧ ¬ σ ⊆ ρ := Iff.rfl
@@ -133,6 +142,35 @@ theorem mem_link {ρ : Finset ι} :
   refine ⟨fun hρ => ⟨?_, hρ.2.1, hρ.2.2⟩, fun hρ => ⟨?_, hρ.2⟩⟩
   · exact (K.isRelLowerSet_faces hρ.2.2).2 subset_union_left hρ.1
   · exact (K.isRelLowerSet_faces hρ.1).1
+
+/-- Taking the link of `τ` inside the link of a disjoint face `σ` is the link of their union. -/
+@[simp]
+theorem link_link {σ τ : Finset ι} (hστ : Disjoint σ τ) :
+    link (link K σ) τ = link K (σ ∪ τ) := by
+  ext ρ
+  constructor
+  · intro hρ
+    obtain ⟨hρσ, hρτ, hρτσ⟩ := mem_link.mp hρ
+    obtain ⟨hρK, hρσdis, _⟩ := mem_link.mp hρσ
+    obtain ⟨_, _, hρτσK⟩ := mem_link.mp hρτσ
+    refine mem_link.mpr ⟨hρK, disjoint_union_right.mpr ⟨hρσdis, hρτ⟩, ?_⟩
+    simpa [union_assoc, union_left_comm, union_comm] using hρτσK
+  · intro hρ
+    obtain ⟨hρK, hρστdis, hρστK⟩ := mem_link.mp hρ
+    have hρσdis : Disjoint ρ σ := (disjoint_union_right.mp hρστdis).1
+    have hρτdis : Disjoint ρ τ := (disjoint_union_right.mp hρστdis).2
+    have hρne : ρ.Nonempty := (K.isRelLowerSet_faces hρK).1
+    have hρσK : ρ ∪ σ ∈ K :=
+      (K.isRelLowerSet_faces hρστK).2
+        (union_subset_union Subset.rfl subset_union_left) (hρne.mono subset_union_left)
+    have hρτσK : ρ ∪ τ ∈ K :=
+      (K.isRelLowerSet_faces hρστK).2
+        (union_subset_union Subset.rfl subset_union_right) (hρne.mono subset_union_left)
+    have hρσ : ρ ∈ link K σ := mem_link.mpr ⟨hρK, hρσdis, hρσK⟩
+    have hρτσ : ρ ∪ τ ∈ link K σ := by
+      refine mem_link.mpr ⟨hρτσK, disjoint_union_left.mpr ⟨hρσdis, hστ.symm⟩, ?_⟩
+      simpa [union_assoc, union_left_comm, union_comm] using hρστK
+    exact mem_link.mpr ⟨hρσ, hρτdis, hρτσ⟩
 
 /-- The closed star of `σ` is a subcomplex of `K`. -/
 theorem closedStar_le : closedStar K σ ≤ K := by
@@ -211,22 +249,27 @@ theorem deletion_mono (h : K ≤ L) : deletion K σ ≤ deletion L σ :=
 
 variable {ρ : Finset ι}
 
+private theorem sdiff_eq_empty_or_mem_link_of_mem_closedStar (hρ : ρ ∈ closedStar K σ) :
+    ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ := by
+  by_cases h : ρ \ σ = ∅
+  · exact Or.inl h
+  · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
+      sdiff_disjoint, by simpa only [sdiff_union_self_eq_union] using
+        (mem_closedStar_nonempty.mp hρ).2⟩)
+
 /-- A closed-star face is characterized by its nonempty part outside the starred face being
 a link face. An empty outside part is allowed. -/
 theorem mem_closedStar_iff_sdiff (hσ : σ ∈ K) :
     ρ ∈ closedStar K σ ↔ ρ.Nonempty ∧ (ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ) := by
-  rw [mem_closedStar_nonempty]
   constructor
-  · rintro ⟨hne, hface⟩
-    refine ⟨hne, ?_⟩
-    by_cases h : ρ \ σ = ∅
-    · exact Or.inl h
-    · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
-        sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
+  · intro hρ
+    exact ⟨(mem_closedStar_nonempty.mp hρ).1,
+      sdiff_eq_empty_or_mem_link_of_mem_closedStar hρ⟩
   · rintro ⟨hne, h | h⟩
-    · exact ⟨hne, by rwa [union_eq_right.mpr (sdiff_eq_empty_iff_subset.mp h)]⟩
-    · exact ⟨hne, by simpa only [sdiff_union_self_eq_union] using
-        (mem_link_nonempty.mp h).2.2⟩
+    · exact mem_closedStar_nonempty.mpr ⟨hne, by
+        rwa [union_eq_right.mpr (sdiff_eq_empty_iff_subset.mp h)]⟩
+    · exact mem_closedStar_nonempty.mpr ⟨hne, by
+        simpa only [sdiff_union_self_eq_union] using (mem_link_nonempty.mp h).2.2⟩
 
 /-- The intersection of the closed star with the deletion consists of faces whose part in `σ`
 is proper and whose nonempty part outside `σ` is in the link. -/
@@ -243,6 +286,22 @@ theorem mem_closedStar_inf_deletion_iff_sdiff (hσ : σ ∈ K) :
   · rintro ⟨hne, hnot, hlink⟩
     have hstar := (mem_closedStar_iff_sdiff hσ).mpr ⟨hne, hlink⟩
     exact ⟨⟨hne, hlink⟩, closedStar_le hstar, hnot⟩
+
+/-- A closed star has finitely many faces exactly when its link does, for any finset `σ`. -/
+theorem finite_faces_closedStar_iff :
+    (closedStar K σ).faces.Finite ↔ (link K σ).faces.Finite := by
+  constructor
+  · intro hstar
+    exact hstar.subset link_le_closedStar
+  · intro hlink
+    have hfin := (σ.powerset.finite_toSet.prod (hlink.insert ∅)).image
+      (fun p : Finset ι × Finset ι => p.1 ∪ p.2)
+    apply hfin.subset
+    intro ρ hρ
+    refine ⟨(ρ ∩ σ, ρ \ σ), ⟨?_, ?_⟩, ?_⟩
+    · exact mem_powerset.mpr inter_subset_right
+    · exact sdiff_eq_empty_or_mem_link_of_mem_closedStar hρ
+    · exact sup_inf_sdiff ρ σ
 
 section IsCone
 

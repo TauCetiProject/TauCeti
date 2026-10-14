@@ -214,6 +214,14 @@ theorem injective_weilToAbsolute : Function.Injective (weilToAbsolute K) :=
 theorem range_weilToAbsolute : (weilToAbsolute K).range = localWeilGroup K :=
   Subgroup.range_subtype _
 
+variable {K} in
+/-- An element of the Weil group lies in the local Weil group of `G_K`. -/
+@[simp]
+theorem weilToAbsolute_mem_localWeilGroup (w : WeilGroup K) :
+    weilToAbsolute K w ∈ localWeilGroup K := by
+  rw [← range_weilToAbsolute]
+  exact ⟨w, rfl⟩
+
 /-- `n ↦ Frob ^ n` is injective, since arithmetic Frobenius has infinite order. -/
 private theorem injective_zpowersHom_maximalUnramifiedFrobenius :
     Function.Injective

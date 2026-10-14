@@ -44,6 +44,14 @@ Humans can raise issues against the code, and leave implementation (and review) 
 - **[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview)** — the review rubrics and
   the machinery that runs review.
 
+## Mathlib updates
+
+The hourly dependency updater selects the newest successfully built Mathlib master commit
+whose full cache it can verify. It opens one bot bump PR and keeps that target fixed while
+workers repair TauCeti, saving partial source repairs between sessions. Full CI, axiom audits,
+review, and Bors integration must pass before it lands. The next hourly run selects another
+recent target. Downstream-reports remains external reporting and does not control these updates.
+
 ## Relationship to Lean Pool
 
 Tau Ceti and [Lean Pool](https://github.com/Vilin97/lean-pool) are complementary. Lean Pool is
@@ -75,6 +83,17 @@ It runs the identical engine and rubrics CI uses, in a clean room that ignores y
 The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/TauCetiProject/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
+
+Human-owned infrastructure changes still require human review. After reviewing a PR,
+repository admins can issue `bors r+` or `bors merge`: bors records approval
+for the accepted head and merge base, requests trusted CI, and owns testing and
+landing the change.
+This approval waives only the restricted-path rule; builds, audits, Lake configuration
+attestation and pin/size guards still apply. A push, changed merge base or `bors r-`
+requires fresh approval. Both bors and CI check the approving account's current GitHub
+repository admin role; removing that role invalidates its scope authority.
+Other users follow the existing review policy. See the
+[bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
 
 ## Mathlib dependency
 
@@ -142,10 +161,10 @@ Finally, we understand that participating in AI-assisted mathematics research re
 
 Generated API documentation for every declaration in Tau Ceti, hyperlinked into its Mathlib
 dependencies, is published at
-[taucetiproject.github.io/TauCeti/docs](https://taucetiproject.github.io/TauCeti/docs/). It is
+[taucetiproject.org/docs](https://taucetiproject.org/docs/). It is
 scheduled for regeneration every three hours from `main` with
 [`doc-gen4`](https://github.com/leanprover/doc-gen4), alongside the
-[project website](https://taucetiproject.github.io/TauCeti/).
+[project website](https://taucetiproject.org/).
 
 The moving `docgen` branch points at the mainline commit whose generated API documentation is
 currently published — not necessarily the newest, since a deployment that serves older
@@ -157,7 +176,7 @@ atomically, so between the two the branch names documentation that has already b
 if the update fails, or the deployment came from a manually dispatched run on another branch, the
 branch stays wrong — in either direction — until the next deployment from `main`. Anything that
 needs certainty should instead read
-[`/docs/SOURCE_SHA`](https://taucetiproject.github.io/TauCeti/docs/SOURCE_SHA), which is published
+[`/docs/SOURCE_SHA`](https://taucetiproject.org/docs/SOURCE_SHA), which is published
 inside the documentation itself and therefore states, at the moment it is read, exactly which commit
 the live documentation describes.
 

@@ -11,9 +11,8 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 /-!
 # The harmonic-oscillator eigen-equation for the Hermite functions
 
-This file adds the **A2 oscillator milestone** of the `OrthogonalL2Bases` roadmap: the Hermite
-functions `ψₙ` (`TauCeti.hermiteFunction`, `ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)`) are the
-eigenfunctions of the quantum harmonic oscillator,
+This file proves the **oscillator identity**: the Hermite functions `ψₙ` (`TauCeti.hermiteFunction`,
+`ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)`) are the eigenfunctions of the quantum harmonic oscillator,
 
 `-ψₙ'' + x²·ψₙ = (2n+1)·ψₙ`.
 
@@ -30,9 +29,9 @@ mode, using only `c² = 2(n+1)`:
 
 `ψₙ'' = ψₙ + x·ψₙ' - c·ψ_{n+1}' = x²·ψₙ - (2n+1)·ψₙ`.
 
-The main results are the closed form of the second derivative,
-`TauCeti.deriv_deriv_hermiteFunction` (`ψₙ'' = (x² - (2n+1))·ψₙ`), and the eigen-equation
-`TauCeti.hermiteFunction_oscillator` in the roadmap's `-ψₙ'' + x²·ψₙ = (2n+1)·ψₙ` form.
+The main results are the closed form of the second derivative, `TauCeti.deriv_deriv_hermiteFunction`
+(`ψₙ'' = (x² - (2n+1))·ψₙ`), and the eigen-equation `TauCeti.hermiteFunction_oscillator` in the form
+`-ψₙ'' + x²·ψₙ = (2n+1)·ψₙ`.
 
 No case split on `n` is needed: the neighbour that would require the Nat-clamped index `n-1` never
 enters, because the derivation uses the creation identity at `n` and the annihilation identity at

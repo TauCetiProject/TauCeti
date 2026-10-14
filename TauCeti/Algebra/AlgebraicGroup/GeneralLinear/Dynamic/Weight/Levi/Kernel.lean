@@ -38,10 +38,8 @@ holds at the level of defining Hopf ideals, not only after choosing a value alge
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic Levi-decomposition milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap. The kernel identification is the normal-factor input for identifying
-the represented weight parabolic with the semidirect product of its weight-unipotent and
-weight-Levi subgroups.
+The kernel identification is the normal-factor input for identifying the represented weight
+parabolic with the semidirect product of its weight-unipotent and weight-Levi subgroups.
 -/
 
 public section
@@ -58,7 +56,8 @@ variable (R : Type u) [CommRing R] {N : ℕ}
 
 /-- A represented weight-parabolic point lies in the relative weight-unipotent subgroup exactly
 when its represented dynamic limit is the identity of the weight-Levi point group. -/
-@[simp]
+-- Not `@[simp]`: the simp normal form of this membership is the ambient one given by
+-- `mem_weightUnipotentInParabolicPointsSubgroup_iff`.
 theorem mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one
     (w : Fin N → ℤ) (A : CommAlgCat.{v} R)
     (g : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w) A) :

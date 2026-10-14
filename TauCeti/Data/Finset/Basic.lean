@@ -272,7 +272,7 @@ theorem exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : �
     ∃ ρ : Equiv.Perm ℕ, (∀ i ∈ I, ρ i = i) ∧ ∀ j ∈ J, n ≤ ρ j := by
   classical
   -- shift `J` by `N`, large enough to clear both `n` and everything in `I`
-  set N : ℕ := n + (I ∪ J).sup id + 1 with hN
+  set N : ℕ := n + (I ∪ J).sup id + 1
   let g : ↥(I ∪ J) → ℕ := fun x => if (x : ℕ) ∈ I then x else x + N
   -- every element of `J` is sent past `N`, hence past everything in `I ∪ J`
   have hbig : ∀ x : ↥(I ∪ J), (x : ℕ) < N := fun x => by

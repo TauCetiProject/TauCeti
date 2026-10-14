@@ -38,11 +38,6 @@ diagonal torus is maximal or construct the general root datum of a reductive pai
 
 * J. S. Milne, *Algebraic Groups* (2017), Example 19.7 and Section 21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
-
-This supplies the root-set computation for the standard split `GL_n` worked example in Layer 7,
-"Root datum of `(G, T)`", of the ReductiveGroups roadmap. Proving maximality of the diagonal torus,
-constructing root data for arbitrary split reductive pairs, and identifying their Weyl groups
-remain separate milestones.
 -/
 
 public section

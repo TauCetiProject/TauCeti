@@ -20,9 +20,8 @@ the sense of SGA1, with fibre functor the fibre over `x₀`:
 
   `TauCeti.FiniteCoveringSpace.fiberFunctor x₀ : FiniteCoveringSpace X ⥤ FintypeCat`.
 
-This is the Galois-category lens on the classification of covering spaces, the third of the three
-routes the roadmap asks for; the fundamental-groupoid lens is
-`TauCeti.CoveringSpace.monodromyEquivalence` and the `π₁(X, x₀)`-set lens is
+This is the Galois-category lens on the classification of covering spaces; the fundamental-groupoid
+lens is `TauCeti.CoveringSpace.monodromyEquivalence` and the `π₁(X, x₀)`-set lens is
 `TauCeti.CoveringSpace.fiberActionEquivalence`.
 
 Nothing here re-proves the axioms for covering spaces. The classification already identifies
@@ -57,11 +56,9 @@ path-connected base and transports along the equivalence attached to it.
 
 ## References
 
-This is the Galois-category lens named in Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks for the classification of covers to be
-phrased through `Mathlib/CategoryTheory/Galois`; see also SGA1, Exposé V, and Lenstra, *Galois
-theory for schemes*, Section 3. It consumes the `π₁(X, x₀)`-set classification of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction`.
+This file phrases the classification through Mathlib's `Mathlib/CategoryTheory/Galois`; see also
+SGA1, Exposé V, and Lenstra, *Galois theory for schemes*, Section 3. It consumes the `π₁(X, x₀)`-set
+classification of `TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction`.
 -/
 
 public section

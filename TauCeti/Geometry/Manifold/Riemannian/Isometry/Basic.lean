@@ -247,7 +247,7 @@ theorem pathELength_comp (Φ : RiemannianIsometry I J M N)
   rw [Manifold.pathELength_eq_lintegral_mfderiv_Ioo,
     Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
   apply MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo
-  intro t ht
+  intro t _
   dsimp only
   -- The length expression coerces `Φ` directly, while the chain rule uses its diffeomorphism.
   change ‖mfderiv 𝓘(ℝ, ℝ) J ((Φ : M → N) ∘ γ) t (1 : ℝ)‖ₑ =

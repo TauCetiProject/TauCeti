@@ -209,6 +209,7 @@ variable (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
   (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(2 : ℤ)})]
 include hr htop hd
 
+omit hd in
 omit [Q.IsPrime] in
 /-- An inertia element above `2` that fixes the roots of all radicands `3` modulo `4` and of all
 even radicands is the identity, since it fixes the roots of the radicands `1` modulo `4` anyway. -/
@@ -216,7 +217,6 @@ private theorem eq_one_of_mem_inertia {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.ine
     (hB : ∀ i, d i % 4 = 3 → τ (r i) = r i) (hC : ∀ i, 2 ∣ d i → τ (r i) = r i) : τ = 1 := by
   refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
   rintro _ ⟨i, rfl⟩
-  have h4 := hd i
   rcases (by omega : d i % 4 = 1 ∨ d i % 4 = 3 ∨ 2 ∣ d i) with h | h | h
   · exact apply_eq_self_of_mem_inertia_of_mod_four_eq_one (hr i) h Q hτ
   · exact hB i h
@@ -232,7 +232,7 @@ private theorem card_inertia_le_four_of_mod_four_eq_three {b c : ι} (hb : d b %
     (fun k => by fin_cases k <;> simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
   have hτb : τ (r b) = r b := hfix 0
   have hτc : τ (r c) = r c := hfix 1
-  refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => ?_) fun i hi => ?_
+  refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => ?_) fun i hi => ?_
   · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
       (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb
       (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi)
@@ -257,7 +257,7 @@ private theorem card_inertia_le_four_of_mod_eight {c₂ c₆ : ι} (h₂ : d c�
   have hτ₆ : τ (r c₆) = r c₆ := hfix 1
   have hd₂ : 2 ∣ d c₂ := by omega
   have hd₆ : 2 ∣ d c₆ := by omega
-  refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => ?_) fun i hi => ?_
+  refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => ?_) fun i hi => ?_
   · have h := apply_mul_mul_eq_mul_mul hr hd Q hτ hi hd₂ hd₆ (by omega)
     rw [show r i * r c₂ * r c₆ = r c₂ * r c₆ * r i by ring] at h
     exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
@@ -283,7 +283,7 @@ private theorem card_inertia_le_two
     refine (Subgroup.card_le_two_pow_of_forall_apply_eq_self _ (y := ![r b]) (c := ![d b])
       (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτb : τ (r b) = r b := hfix 0
-    exact eq_one_of_mem_inertia hr htop hd Q hτ
+    exact eq_one_of_mem_inertia hr htop Q hτ
       (fun i hi => AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
         (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb
         (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi))
@@ -293,7 +293,7 @@ private theorem card_inertia_le_two
     refine (Subgroup.card_le_two_pow_of_forall_apply_eq_self _ (y := ![r c]) (c := ![d c])
       (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτc : τ (r c) = r c := hfix 0
-    refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => absurd ⟨i, hi⟩ hB) fun i hi => ?_
+    refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => absurd ⟨i, hi⟩ hB) fun i hi => ?_
     refine AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
       (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc
       (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hc hi ?_)

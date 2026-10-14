@@ -181,8 +181,8 @@ vanishes, the units of `L` being written additively and carrying the discrete to
 `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints`.
 
 The continuity of the action is automatic for the discrete topology
-(`TauCeti.stabilizer_isOpen_units`) and is an instance argument only because `H¹` is formed under
-it. -/
+(`Units.stabilizer_isOpen_of_isIntegral`) and is an instance argument only because `H¹` is formed
+under it. -/
 theorem subsingleton_H1_additive_units {K L : Type*} [Field K] [Field L] [Algebra K L]
     [IsGalois K L] [TopologicalSpace (Additive Lˣ)] [DiscreteTopology (Additive Lˣ)]
     [ContinuousSMul Gal(L/K) (Additive Lˣ)] :
@@ -244,14 +244,7 @@ the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K,
 `n` positive and invertible in `K`. -/
 theorem hilbert90 :
     Limits.IsZero (continuousCohomology 1
-      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
-  let h : Subsingleton (DiscreteH1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
-    (discreteH1Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)).toEquiv.subsingleton_congr.mpr
-      inferInstance
-  rw [← (explicitH1IsoContinuousCohomology
-    (AbsoluteGaloisGroup K) (UnitsCoeff K)).isZero_iff]
-  rw [Limits.IsZero.iff_id_eq_zero]
-  ext x
-  exact h.elim _ _
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :=
+  isZero_continuousCohomology_one_of_subsingleton _ _
 
 end TauCeti

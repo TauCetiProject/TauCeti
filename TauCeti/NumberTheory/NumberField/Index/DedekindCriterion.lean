@@ -246,9 +246,9 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
   have hp0 : (p : 𝓞 K) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   have hirr : Irreducible ((Φ i).map (Int.castRingHom (ZMod p))) := hΦ i ▸ hφ i
   have hprod := θ.natCast_mul_aeval_eq_neg_prod hH
-  set ai := aeval θ.1 (Φ i) with hai
-  set Hθ := aeval θ.1 H with hHθ
-  set t := ∏ j ∈ Finset.univ.erase i, aeval θ.1 (Φ j) ^ e j with ht
+  set ai := aeval θ.1 (Φ i)
+  set Hθ := aeval θ.1 H
+  set t := ∏ j ∈ Finset.univ.erase i, aeval θ.1 (Φ j) ^ e j
   have hsplit : ∏ j, aeval θ.1 (Φ j) ^ e j = ai ^ e i * t :=
     (Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i)).symm
   have htA : t ∈ θ.adjoin :=
@@ -317,7 +317,7 @@ theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible 
     exact P.mul_mem_right _ hp
   obtain ⟨i, -, hi⟩ := Ideal.IsPrime.prod_mem_iff.mp hprodmem
   have hi : aeval θ.1 (Φ i) ∈ P := Ideal.IsPrime.mem_of_pow_mem inferInstance _ hi
-  obtain ⟨σ, hσA, hσP, hσ⟩ :=
+  obtain ⟨σ, _, hσP, hσ⟩ :=
     θ.exists_notMem_mul_mem_adjoin hφ hφm hinj hΦ hH hp (he i) hi (hcrit i)
   have hiter : ∀ k (z : 𝓞 K), (p : 𝓞 K) ^ k * z ∈ θ.adjoin → σ ^ k * z ∈ θ.adjoin := by
     intro k
@@ -381,7 +381,7 @@ theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
     simp only [Polynomial.map_pow, hΦ]
   set ai := aeval θ.1 (Φ i) with hai
   set g₁ := aeval θ.1 G₁ with hg₁
-  set Hθ := aeval θ.1 H with hHθ
+  set Hθ := aeval θ.1 H
   have hag : ai * (ai * g₁) = -((p : 𝓞 K) * Hθ) := by
     rw [hprod, hai, hg₁, ← map_mul, ← map_mul, hΦG, map_prod]
     simp only [map_pow, neg_neg]
@@ -405,7 +405,7 @@ theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
   have hβint : IsIntegral ℤ β := θ.isIntegral_of_natCast_mul_eq_of_mul_eq_neg
     (Fact.out : p.Prime).ne_zero (θ.aeval_mem_adjoin G₁) (θ.aeval_mem_adjoin Q)
     (θ.aeval_mem_adjoin D) hβp hβai hHQ'
-  set βₒ : 𝓞 K := ⟨β, hβint⟩ with hβₒ
+  set βₒ : 𝓞 K := ⟨β, hβint⟩
   have hpβ : (p : 𝓞 K) * βₒ = ai * g₁ := by
     apply NumberField.RingOfIntegers.ext
     simp only [map_mul, map_natCast]

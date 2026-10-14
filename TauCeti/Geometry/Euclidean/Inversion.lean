@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
@@ -32,6 +33,7 @@ of one orientation class give an oriented atlas.
 ## Main results
 
 * `EuclideanGeometry.contDiffAt_inversion`: inversion is analytic away from its centre.
+* `TauCeti.snd_inversion`: the last coordinate of inversion about a centre in `E × {0}`.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
@@ -96,3 +98,15 @@ theorem det_fderiv_inversion_neg {c x : F} {R : ℝ} (hR : R ≠ 0) (hx : x ≠ 
   exact pow_pos hpos _
 
 end EuclideanGeometry
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The last coordinate of the inversion in a sphere centred on the boundary hyperplane. -/
+theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
+    (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
+      (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
+  simp [EuclideanGeometry.inversion]
+
+end TauCeti

@@ -19,12 +19,6 @@ records smoothness of the coordinate ring separately.
 
 * `TauCeti.smoothCommHopfAlgProperty`: the object property on `CommHopfAlgCat R` selecting
   objects whose underlying `R`-algebra is smooth.
-
-## References
-
-This is the explicit smoothness predicate requested by `ReductiveGroups/README.md` in
-TauCetiRoadmap. Smoothness remains separate from the commutative Hopf algebra category, as
-required by the roadmap.
 -/
 
 public section

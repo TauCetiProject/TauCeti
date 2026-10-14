@@ -54,6 +54,7 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
   the inducing function is invariant under conjugation in the subgroup.
 * `Subgroup.indClassFun_conj` and `Subgroup.indClassFun_mem_classFunction`: induction preserves
   conjugation invariance over additive coefficients and sends class functions to class functions.
+* `Subgroup.indClassFun_bot`: induction from the trivial subgroup is supported at the identity.
 * `Subgroup.indClassFun_top` and `Subgroup.indClassFun_indClassFun_subgroupOf`: for
   conjugation-invariant inducing functions, induction from `⊤` is the identity, and induction is
   transitive along `L ≤ T ≤ G`.
@@ -299,6 +300,22 @@ theorem _root_.Subgroup.indClassFun_top {f : (⊤ : Subgroup G) → k}
   rw [Subgroup.indClassFun, Fintype.sum_subsingleton _ (QuotientGroup.mk 1),
     Function.indTerm_eq_of_mk_eq_of_conj f hf g _ 1 (Subsingleton.elim _ _), Function.indTerm_one,
     dite_eq_left (Subgroup.mem_top g)]
+
+open scoped Classical in
+/-- Induction from the trivial subgroup is supported at the identity, where its value is
+`|G|` times the value of the inducing function. -/
+@[simp]
+theorem _root_.Subgroup.indClassFun_bot [Finite G] (f : (⊥ : Subgroup G) → k) (g : G) :
+    Subgroup.indClassFun ⊥ f g = if g = 1 then Nat.card G • f 1 else 0 := by
+  let := Fintype.ofFinite (G ⧸ (⊥ : Subgroup G))
+  have hcard : Fintype.card (G ⧸ (⊥ : Subgroup G)) = Nat.card G := by
+    rw [← Nat.card_eq_fintype_card]
+    exact Nat.card_congr QuotientGroup.quotientBot.toEquiv
+  have hf (x : (⊥ : Subgroup G)) : f x = f 1 :=
+    congrArg f (Subsingleton.elim _ _)
+  have hconj (x : G) : x⁻¹ * g * x = 1 ↔ g = 1 := by
+    simpa only [inv_inv] using (conj_eq_one_iff (a := x⁻¹) (b := g))
+  by_cases hg : g = 1 <;> simp [Subgroup.indClassFun_apply, hconj, hg, hf, hcard]
 
 open scoped Classical in
 /-- **Transitivity of induction.**  For subgroups `L ≤ T` with `L` of finite index, inducing a

@@ -68,11 +68,9 @@ theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ} (hd : 0 < d)
       (∀ i, w i p ≠ 0) ∧ (p.2 ≠ 0 → ∀ i, r i p = p.2 ^ e i * w i p) := by
     simpa only [sub_zero] using hform
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hT : ContinuousAt T (x₀, 0) := (hτ.comp continuousAt_fst).prodMk
-    (Complex.continuous_conj.continuousAt.comp continuousAt_snd)
-  have hT0 : T (x₀, 0) = (x₀, 0) := by simp [T, hτ0]
   have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
-    simpa only [hT0] using hT.tendsto
+    simpa only [T, Prod.map_def, hτ0, map_zero] using hτ.tendsto.prodMap_nhds
+      (Complex.continuous_conj.tendsto (0 : ℂ))
   have hconj (i : Fin d) : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
       p.2 ^ e (σ i) * w (σ i) p =
         conj ((conj p.2) ^ e i * w i (τ p.1, conj p.2)) := by

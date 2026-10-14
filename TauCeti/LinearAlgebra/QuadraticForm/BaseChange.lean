@@ -422,6 +422,26 @@ theorem orthogonalGroupBaseChange_apply_tmul (Q : _root_.QuadraticForm R M)
   rw [coe_orthogonalGroupBaseChange]
   exact LinearEquiv.baseChange_tmul R A M M a m
 
+/-- Scalar extension commutes with transport of orthogonal automorphisms along an isometry. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupBaseChange_congr
+    {Q : _root_.QuadraticForm R M}
+    {N : Type*} [AddCommGroup N] [Module R N] {Q' : _root_.QuadraticForm R N}
+    (e : Q.IsometryEquiv Q') (g : orthogonalGroup Q) :
+    orthogonalGroupBaseChange (A := A) Q' (e.orthogonalGroupCongr g) =
+      (e.baseChange A).orthogonalGroupCongr (orthogonalGroupBaseChange (A := A) Q g) := by
+  apply Subtype.ext
+  apply LinearEquiv.toLinearMap_injective
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a m
+  simp only [LinearEquiv.coe_coe, orthogonalGroupBaseChange_apply_tmul,
+    _root_.QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    _root_.QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
+    _root_.QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply]
+  rw [← e.baseChange_symm (A := A)]
+  simp only [_root_.QuadraticMap.IsometryEquiv.baseChange_tmul,
+    orthogonalGroupBaseChange_apply_tmul]
+
 /-- The determinant of a base-changed orthogonal automorphism is the image of its original
 determinant. -/
 @[simp]
@@ -454,8 +474,7 @@ noncomputable def specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Fin
     apply mem_specialOrthogonalGroup_iff.mpr
     refine ⟨(orthogonalGroupBaseChange (A := A) Q
       ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩).2, ?_⟩
-    have hg := (mem_specialOrthogonalGroup_iff.mp g.2).2
-    rw [det_orthogonalGroupBaseChange, hg, map_one]⟩
+    rw [det_orthogonalGroupBaseChange, det_coe_specialOrthogonalGroup, map_one]⟩
   map_one' := Subtype.ext (by simp [orthogonalGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [orthogonalGroupBaseChange, LinearEquiv.baseChange_mul])
 
@@ -497,6 +516,26 @@ theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Fi
       a ⊗ₜ (g : M ≃ₗ[R] M) m := by
   rw [coe_specialOrthogonalGroupBaseChange]
   exact LinearEquiv.baseChange_tmul R A M M a m
+
+/-- Scalar extension commutes with isometric transport on the special orthogonal group. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupBaseChange_congr
+    [Module.Free R M] [Module.Finite R M]
+    {Q : _root_.QuadraticForm R M} {N : Type*} [AddCommGroup N] [Module R N]
+    [Module.Free R N] [Module.Finite R N]
+    {Q' : _root_.QuadraticForm R N} (e : Q.IsometryEquiv Q') (g : specialOrthogonalGroup Q) :
+    specialOrthogonalGroupBaseChange (A := A) Q' (e.specialOrthogonalGroupCongr g) =
+      (e.baseChange A).specialOrthogonalGroupCongr
+        (specialOrthogonalGroupBaseChange (A := A) Q g) := by
+  apply Subtype.ext
+  apply LinearEquiv.toLinearMap_injective
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a m
+  simp only [LinearEquiv.coe_coe, specialOrthogonalGroupBaseChange_apply_tmul,
+    _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_apply]
+  rw [← e.baseChange_symm (A := A)]
+  simp only [_root_.QuadraticMap.IsometryEquiv.baseChange_tmul,
+    specialOrthogonalGroupBaseChange_apply_tmul]
 
 /-- Scalar extension of special orthogonal automorphisms is injective whenever the extension is
 faithful and the original module is flat. -/
@@ -666,6 +705,18 @@ variable {K : Type uR} {L : Type uA} [Field K] [Field L] [Algebra K L]
 variable {V : Type uM} [AddCommGroup V] [Module K V]
 
 namespace QuadraticForm
+
+/-- Nondegeneracy of a finite-dimensional quadratic form descends from a field extension. -/
+theorem Nondegenerate.of_baseChange [Invertible (2 : K)]
+    [FiniteDimensional K V] {Q : _root_.QuadraticForm K V}
+    (hQ : (Q.baseChange L).Nondegenerate) : Q.Nondegenerate := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  apply QuadraticMap.nondegenerate_associated_iff.mp
+  have h := QuadraticMap.nondegenerate_associated_iff.mpr hQ
+  rw [_root_.QuadraticForm.associated_baseChange] at h
+  exact TauCeti.nondegenerate_of_nondegenerate_baseChange L
+    (QuadraticMap.associated Q) (Module.Free.chooseBasis K V) h
 
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
 base field. -/

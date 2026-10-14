@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Restriction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CarryCocycle
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ComparisonDegreeTwo
 
 /-!
@@ -53,6 +54,9 @@ On central simple algebras, base change is `A ↦ A ⊗_K L`; that comparison is
 * `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`: base change of a class inflated from a finite
   normal layer `L/K` is inflated from any finite normal layer `M/F` receiving `L`, along restriction
   `Gal(M/F) → Gal(L/K)` and the inclusion `Lˣ → Mˣ`.
+* `TauCeti.ClassFieldTheory.brBaseChange_characterCarryCocycle`: base change of the carry class
+  `a ∪ δχ` of a character `χ` of `G_K` and `a ∈ Kˣ` is the carry class of `χ` read on `G_L` and
+  the image of `a` in `Lˣ`.
 
 ## References
 
@@ -255,6 +259,31 @@ theorem brBaseChange_eq_brRes (σ : L →ₐ[K] SeparableClosure K) :
     (ContinuousMonoidHom.ext fun g ↦ (absoluteGaloisGroupMap_eq_iff ψ).2 fun y ↦ by simp [ψ])
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp [ψ])))
   rw [brBaseChange_apply K L ψ, brRes_eq_explicitMap2, hpair]
+
+/-! ### Base change of carry classes -/
+
+/-- **Base change of a carry class.** For a character `χ : G_K → ℚ/ℤ` with open kernel and
+`a ∈ Kˣ`, base change to `L` of the Brauer class `a ∪ δχ` of the carry cocycle of `χ` and `a` is
+the carry class of the character `χ` read on `G_L` through the decomposition map of any
+`K`-embedding `τ : Kˢ → Lˢ` and of the image of `a` in `Lˣ`. -/
+theorem brBaseChange_characterCarryCocycle (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K)))) (a : Kˣ) :
+    brBaseChange K L (unitsRepH2Equiv K (characterCarryCocycle χ hχ
+        (baseUnitsEquivInvariants K (.ofMul a)) : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K))) =
+      unitsRepH2Equiv L (characterCarryCocycle
+        (χ.comp (absoluteGaloisGroupMap τ :
+          AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K).toAdditive)
+        (by
+          rw [← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
+          exact hχ.preimage (continuous_ofMul.comp
+            ((absoluteGaloisGroupMap τ).continuous.comp continuous_toMul)))
+        (baseUnitsEquivInvariants L (.ofMul (Units.map (algebraMap K L) a))) :
+          H2 (AbsoluteGaloisGroup L) (UnitsCoeff L)) := by
+  rw [brBaseChange_apply K L τ, AddEquiv.symm_apply_apply, explicitMap2_characterCarryCocycle]
+  congr 3
+  refine Subtype.ext (Additive.toMul.injective (Units.ext ?_))
+  simp [IsScalarTower.algebraMap_apply K L (SeparableClosure L)]
 
 /-! ### Base change of inflated classes -/
 

@@ -7,8 +7,9 @@ Mathlib tags every Lean release, so a project on Lean v4.34.0 can check out math
 ## What the tool does
 
 `vX` is the first commit on `main` whose `lean-toolchain` is `leanprover/lean4:X`.
-`--create` tags that commit once its post-merge CI has passed and its oleans are in the
-Lake cache. The tool reads both from what is already recorded, without rebuilding.
+`--create` tags that commit only when it is at or behind the protected security-audit
+cursor, its post-merge CI has passed, and its oleans are in the Lake cache. Creation
+requires repository-admin permission. The tool reads recorded results without rebuilding.
 
 Mathlib puts its `vX` tag on the commit that bumps its own `lean-toolchain` to X, and
 `scripts/check-bump.sh` requires Tau Ceti's toolchain to match mathlib's at whatever it
@@ -22,22 +23,10 @@ The tool tags only commits on `main`, and reports a release `main` never ran on 
 mathlib master, which for a stable release has been fifteen hours, or mathlib cut the
 release on its `stable` branch, which `check-bump.sh` will not let this repository pin.
 
-Tagging one anyway takes four steps. `v4.33.0` was done this way:
-
-  1. Branch `releases/vX` from the last `main` commit before the bump jumped. Change
-     `lean-toolchain` and `lake-manifest.json` to pin mathlib at its `vX` tag, and nothing
-     else, so no source differs from that `main` commit.
-  2. Build from source and run the audits and lints that commit defines. The pin moves
-     forward by at least a bump's worth, so this is where it can fail.
-  3. To publish the oleans, which does not happen automatically off `main`:
-     `lake build --no-build -o .lake/outputs.jsonl`, `lake cache stage`, then
-     `lake cache put-staged --rev <sha> --toolchain leanprover/lean4:vX`. Run that from a
-     Lake at v4.34.0-rc1 or later; earlier ones lack both flags. Then fetch the published
-     mapping and diff it against the staged one.
-  4. Create the annotated tag, recording that the commit was constructed.
-
-The report then shows the release as `tagged`, notes the commit was constructed, and says
-whether it found a cache. `--create` does not do any of this; step 2 is a build.
+Historically, some releases (including `v4.33.0`) were constructed on side branches.
+Those published tags remain unchanged, but future tags must use audited main history.
+The report labels existing tags' historical security coverage; it never certifies or
+rewrites a legacy tag. A release main skipped cannot be constructed as an exception.
 
 Releases older than `EARLIEST_RELEASE` are out of scope, because the Lake cache does not
 reach back that far.
@@ -278,11 +267,12 @@ A tag is created once that commit's post-merge CI has passed and its oleans are 
 artifact cache, so a checkout builds without recompiling the library. The tool reads both
 from what is already recorded, without rebuilding.
 
-The tool tags only commits on main, and reports a release main never ran on as
+The tool tags only commits on main at or behind the protected security-audit cursor,
+and reports a release main never ran on as
 `unreachable`: either the daily bump stepped over its window on mathlib master, or mathlib
 cut it on its `stable` branch, which check-bump.sh will not let this repository pin. Tagging
-one anyway takes four manual steps, including a build. v4.33.0 was done that way; the steps
-are in this script's module docstring.
+one on a side branch is no longer an exception. Historical constructed tags remain
+unchanged and report their historical coverage. Admins create new tags with this tool.
 
 Releases older than %s are out of scope, because the Lake cache has no
 older entries.
@@ -290,8 +280,43 @@ older entries.
 If a tag does not match the rule, the tool reports it and changes nothing.
 """ % EARLIEST_RELEASE
 
-STATUSES = ("tagged", "ready", "pending", "ahead", "blocked", "unreachable",
+STATUSES = ("tagged", "ready", "pending", "pending-security-audit", "ahead", "blocked", "unreachable",
             "out-of-scope")
+
+
+def security_snapshot():
+    """Return (cursor SHA, covered commit SHAs) from fresh remote refs.
+
+    The covered set is main's first-parent prefix, including the cursor. Missing
+    or invalid refs, shallow history, or a cursor outside that history raise
+    RuntimeError; other remote or Git failures also propagate. No local
+    fallback can authorize a tag.
+    """
+    cursor = gh_optional(f"repos/{REPO}/git/ref/heads/security-audit", jq=".object.sha")
+    if not cursor or not re.fullmatch(r"[0-9a-f]{40}", cursor):
+        raise RuntimeError("security-audit cursor is missing or invalid")
+    main = gh(f"repos/{REPO}/git/ref/heads/main", jq=".object.sha")
+    if not re.fullmatch(r"[0-9a-f]{40}", main):
+        raise RuntimeError("main reference is invalid")
+    git("fetch", "--quiet", "--no-tags", "origin", main, cursor)
+    if git("rev-parse", "--is-shallow-repository") != "false":
+        raise RuntimeError("security audit ancestry requires complete history")
+    order = git("rev-list", "--first-parent", "--reverse", main).split()
+    if cursor not in order:
+        raise RuntimeError("security-audit cursor is outside main's first-parent history")
+    return cursor, set(order[:order.index(cursor) + 1])
+
+
+def require_security_coverage(sha):
+    """Validate fresh remote coverage of sha and return the security-audit cursor SHA.
+
+    Raises RuntimeError if the cursor/ancestry cannot be checked or sha is outside
+    main's first-parent prefix ending at the cursor. Never trusts a saved report.
+    """
+    cursor, covered = security_snapshot()
+    if sha not in covered:
+        raise RuntimeError(f"commit {sha} is not at or behind security-audit {cursor}")
+    return cursor
 
 
 def audit(ref=None):
@@ -306,17 +331,26 @@ def audit(ref=None):
     oldest = min(by_release, key=release_key)
     newest_era = max(by_release, key=release_key)   # the toolchain main is on now
     rows = []
+    try:
+        cursor, covered = security_snapshot()
+        security_error = None
+    except RuntimeError as exc:
+        cursor, covered, security_error = None, set(), str(exc)
 
     for release in sorted(set(mathlib_releases()) | set(by_release), key=release_key):
         if release_key(release) < release_key(oldest):
             continue          # predates this repository entirely; not our business
         era = by_release.get(release)
         if era is None:
-            rows.append(_unreachable_row(release, tags, newest_era))
+            row = _unreachable_row(release, tags, newest_era)
+            if row["tagged_at"]:
+                row["security_audit"] = "covered" if row["commit"] in covered else "historical-unverified"
+                row["reason"] += "; security coverage: " + row["security_audit"]
+            rows.append(row)
             continue
         sha = era["commit"]
         row = dict(era, status=None, reason=None, mathlib_rev=mathlib_pin(sha),
-                   tagged_at=tags.get(release))
+                   tagged_at=tags.get(release), security_audit_cursor=cursor)
         if release_key(release) < release_key(EARLIEST_RELEASE):
             row["status"] = "out-of-scope"
             row["reason"] = f"predates {EARLIEST_RELEASE}, before the Lake cache existed"
@@ -325,10 +359,22 @@ def audit(ref=None):
         if row["tagged_at"]:
             if row["tagged_at"] == sha:
                 row["status"] = "tagged"
+                row["security_audit"] = "covered" if sha in covered else "historical-unverified"
+                row["reason"] = "security coverage: " + row["security_audit"]
             else:
                 row["status"] = "blocked"
                 row["reason"] = (f"tagged at {row['tagged_at'][:8]}, but the rule names "
                                  f"{sha[:8]}; a published tag is never moved")
+            rows.append(row)
+            continue
+        if security_error:
+            row["status"] = "blocked"
+            row["reason"] = "security-audit unavailable: " + security_error
+            rows.append(row)
+            continue
+        if sha not in covered:
+            row["status"] = "pending-security-audit"
+            row["reason"] = f"commit {sha[:8]} is ahead of security-audit {cursor[:8]}"
             rows.append(row)
             continue
         conclusion = ci_passed(sha)
@@ -444,6 +490,10 @@ def render(rows, include_policy=True, collapse_old=False):
         lines += [f"    python3 scripts/toolchain_tags.py --create {r['release']}" for r in ready]
     else:
         lines.append("Nothing is ready to tag.")
+    waiting_security = [r for r in rows if r["status"] == "pending-security-audit"]
+    if waiting_security:
+        lines += ["", "Waiting for the security-audit cursor:", ""]
+        lines += [f"    {r['release']}: {r['reason']}" for r in waiting_security]
     pending = [r for r in rows if r["status"] == "pending"]
     if pending:
         lines += ["", "Waiting on CI, nothing to do yet:", ""]
@@ -475,6 +525,7 @@ def tag_message(row):
     return (f"TauCeti {row['release']}\n\n"
             f"Lean toolchain: {row['toolchain']}\n"
             f"Mathlib:        {pin}\n"
+            f"Security audit: {row.get('security_audit_cursor') or 'unverified'}\n"
             f"Commit:         {row['commit']} (first commit on main with this toolchain)\n\n"
             f"Its post-merge CI passed and its oleans are published to the Lake artifact\n"
             f"cache, so a checkout of this tag builds without recompiling the library.\n"
@@ -487,9 +538,13 @@ def create_tag(row, dry_run=False):
     release, sha = row["release"], row["commit"]
     if row["status"] != "ready":
         raise RuntimeError(f"{release} is {row['status']}, not ready: {row['reason'] or ''}")
+    # Repeat at publication: a persisted report is never authority to create a tag.
+    row = dict(row, security_audit_cursor=require_security_coverage(sha))
     if dry_run:
         print(f"would tag {release} at {sha}\n" + tag_message(row))
         return False
+    if gh(f"repos/{REPO}", jq=".permissions.admin") != "true":
+        raise RuntimeError("toolchain tag creation requires repository-admin permission")
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     tagger = git("config", "user.name", check=False) or "tauceti"
     email = git("config", "user.email", check=False) or "tauceti@localhost"
@@ -503,6 +558,7 @@ def create_tag(row, dry_run=False):
     if out.returncode != 0:
         raise RuntimeError(f"could not create the tag object: {out.stderr.strip()}")
     obj = out.stdout.strip()
+    require_security_coverage(sha)  # Revalidate immediately before publishing the ref too.
     gh_ref = subprocess.run(
         ["gh", "api", "-X", "POST", f"repos/{REPO}/git/refs",
          "-f", f"ref=refs/tags/{release}", "-f", f"sha={obj}", "--jq", ".ref"],

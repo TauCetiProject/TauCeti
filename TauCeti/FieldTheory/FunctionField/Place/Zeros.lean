@@ -310,7 +310,7 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
       exact ⟨j, h⟩)
     exact absurd (Fin.le_def.mp hle) (by omega)
   have hAlt : ((A : ℕ) : ℤ) < (P₀ : Place k F).ord x := by
-    have h1 := A.isLt
+    have _ := A.isLt
     have h2 := hS (P₀ : Place k F) P₀.2
     omega
   have hkey : (P₀ : Place k F).valuation

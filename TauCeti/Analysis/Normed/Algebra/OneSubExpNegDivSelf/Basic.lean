@@ -26,8 +26,6 @@ map.
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 * Mathlib's `spectrum.exp_mem_exp`, whose proof supplies the shifted-exponential series argument
   adapted here.
 -/

@@ -19,8 +19,8 @@ set on which the far-field vanishing theorem gives no information. At that point
 number is zero, and componentwise constancy transports the value back to every point of the
 component.
 
-This proves the final part of the classical off-curve winding package in Layer 0 of the contour
-integration roadmap: the winding number is zero on the unbounded component.
+This proves the last part of the classical off-curve winding package: the winding number is zero on
+the unbounded component.
 
 ## Main results
 

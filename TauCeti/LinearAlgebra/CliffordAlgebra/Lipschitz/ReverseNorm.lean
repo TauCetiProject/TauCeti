@@ -81,12 +81,12 @@ private theorem exists_reverse_mul_self_eq_algebraMap (x : (CliffordAlgebra Q)ˣ
       let _ : Invertible (Q v) := invertibleOfInvertibleι Q v
       refine ⟨unitOfInvertible (Q v), ?_⟩
       rw [← hv, reverse_ι, ι_sq_scalar, val_unitOfInvertible]
-  | inv x hx ih =>
+  | inv x _ ih =>
       obtain ⟨r, hr⟩ := ih
       exact ⟨r⁻¹, reverse_inv_mul_inv hr⟩
   | one =>
       exact ⟨1, by simp⟩
-  | mul x y hx hy ihx ihy =>
+  | mul x y _ _ ihx ihy =>
       obtain ⟨r, hr⟩ := ihx
       obtain ⟨s, hs⟩ := ihy
       refine ⟨r * s, ?_⟩

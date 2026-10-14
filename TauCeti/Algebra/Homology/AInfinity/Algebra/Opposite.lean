@@ -228,7 +228,7 @@ private theorem evalNat_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) (d :
 /-- The opposite operation of arity zero vanishes, since the original one does. -/
 private theorem opOperation_zero (𝒜 : AInfinityAlgebra R A) : opOperation 𝒜 0 = 0 := by
   apply InternalGrading.multilinearMap_ext (fun _ : Fin 0 ↦ 𝒜.grading)
-  intro d x hx
+  intro d x _
   rw [opOperation_apply 𝒜 (fun _ ↦ 0) x fun i ↦ i.elim0, m_zero]
   simp
 
@@ -265,7 +265,7 @@ private theorem stasheffTerm_opOperation (𝒜 : AInfinityAlgebra R A) (d : ℕ 
       ← Fin.sum_univ_eq_sum_range (fun j ↦ d (p + (s - 1 - j))) s]
     exact h
   rw [AInfinity.stasheffTerm_def, AInfinity.stasheffTerm_def, hin,
-    evalNat_replaceBlock_smul _ _ _ (by omega : p < p + 1 + t),
+    MultilinearMap.evalNat_replaceBlock_smul _ _ _ (by omega : p < p + 1 + t),
     evalNat_opOperation 𝒜 (p + 1 + t) (AInfinity.replaceDeg d p s) _ fun i hi ↦
       AInfinity.replaceBlock_mem_replaceDeg_of_mem_blockDeg 𝒜.grading.piece
         (n := p + s + t) hx hv (by omega) (by omega)]
@@ -435,7 +435,7 @@ theorem StrictUnit.op {𝒜 : AInfinityAlgebra R A} {e : A} (h : 𝒜.StrictUnit
       · subst hj
         simpa [deg] using h.degree_zero
       · simpa [deg, hj] using hy ⟨j, hj⟩
-    have hx : x = fun j ↦ if hj : j ≠ i then x j else e := by
+    have hx : x = fun j ↦ if _ : j ≠ i then x j else e := by
       funext j
       by_cases hj : j = i
       · simp [hj, hi]

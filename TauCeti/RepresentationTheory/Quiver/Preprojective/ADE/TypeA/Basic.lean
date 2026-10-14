@@ -209,8 +209,9 @@ end PathGraph
 
 /-! ### The `Aₙ` diagram -/
 
-/-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. -/
-private def aColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
+/-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. Its colour
+classes compare the signless algebra of `Aₙ` with the preprojective algebra of each orientation. -/
+def diagramGraphAColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
   simpa only [DynkinType.rank_A, DynkinType.cartanMatrix_A] using
     (SimpleGraph.pathGraph.bicoloring n).comp
       (SimpleGraph.Hom.ofLE (DynkinType.diagramGraph_cartanMatrix_A n).le)
@@ -267,7 +268,8 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
     · exact .inr ⟨h.symm, by rw [← h]⟩
 
 /-- **Every path of length at least `n` vanishes in the signless algebra of `Aₙ`.** -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.A n).cartanMatrix)))
     (hx : n ≤ x.2.2.length) :
@@ -284,7 +286,8 @@ variable (o : Orientation (diagramGraph (DynkinType.A n).cartanMatrix))
 
 /-- **Every path of length at least `n` vanishes in the preprojective algebra of `Aₙ`**, for every
 orientation of the `Aₙ` graph. -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem preprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath
       (Symmetrify (OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o)))
@@ -293,9 +296,9 @@ theorem preprojectiveMk_A_ofPath_eq_zero_of_le
       (ofPath x) = 0 := by
   -- Every orientation of the bipartite `Aₙ` graph is compared with the signless algebra.
   have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o⦄, (i ⟶ j) →
-      aColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        aColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => (aColoring n).valid a.1
+      diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
+        diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
+    fun _ _ a => (diagramGraphAColoring n).valid a.1
   apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
   exact signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k _
     (by rwa [Prefunctor.length_mapTotalPath])
@@ -332,7 +335,8 @@ instance instFiniteDimensionalSignlessPreprojectiveAlgebraA :
     FiniteDimensional k
       (signlessPreprojectiveAlgebra k
         (DoubledQuiver (diagramGraph (DynkinType.A n).cartanMatrix))) :=
-  ((aColoring n).sourceSinkSignlessPreprojectiveAlgebraEquiv k).symm.toLinearEquiv.finiteDimensional
+  ((diagramGraphAColoring n).sourceSinkSignlessPreprojectiveAlgebraEquiv k).symm.toLinearEquiv
+    |>.finiteDimensional
 
 end Field
 

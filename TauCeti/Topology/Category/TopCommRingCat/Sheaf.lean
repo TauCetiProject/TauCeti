@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Sites.Sheaf
 public import Mathlib.Topology.Category.TopCommRingCat
 
+import Mathlib.Algebra.MvPolynomial.Eval
 import Mathlib.CategoryTheory.Sites.Sieves.Basic
 
 /-!
@@ -17,7 +18,8 @@ A presheaf `F` of topological commutative rings on a site is a sheaf as soon as 
 presheaf of sets is a sheaf and, for every covering sieve `S` on `X`, the map sending `x ∈ F(X)`
 to its family of restrictions along the arrows of `S` is inducing for the product topology. The
 topological half of the sheaf condition is thereby reduced to one statement about the topology of
-each `F(X)`.
+each `F(X)`. Conversely, the sections of a sheaf of topological rings carry the topology induced by
+their restrictions along any covering sieve.
 
 For a presheaf with values in a full subcategory of `TopCommRingCat`, such as the complete
 separated rings in which the adic structure presheaf takes its values, the sheaf property descends
@@ -32,13 +34,19 @@ functor reflects limits.
   sieve, tested against every topological commutative ring.
 * `TauCeti.TopCommRingCat.isSheaf_of_isSheaf_forget`: the sheaf property for a Grothendieck
   topology.
+* `TauCeti.TopCommRingCat.isSeparatedFor_forget_of_isSheafFor`: the sheaf condition for a sieve,
+  tested against every topological commutative ring, makes the underlying presheaf of sets
+  separated for that sieve.
+* `TauCeti.TopCommRingCat.isInducing_restrictionMap_of_isSheafFor`: conversely, the topology of the
+  sections of a sheaf is induced by the restriction maps along a covering sieve.
 
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Remark 8.20, which
   characterises sheaves of topological rings on a topological space by the sheaf condition on
   rings together with topological embeddings into products. `isSheaf_of_isSheaf_forget` is the
-  sufficient direction, for presheaves on an arbitrary site.
+  sufficient direction and `isInducing_restrictionMap_of_isSheafFor` the topological half of the
+  necessary one, for presheaves on an arbitrary site.
 -/
 
 public section
@@ -145,6 +153,75 @@ theorem isSheafFor_of_isSheafFor_forget {X : C} (S : Sieve X)
     hS.isSeparatedFor.ext fun _ f hf ↦
       ConcreteCategory.congr_hom ((h₁ f hf).trans (h₂ f hf).symm) e)
     (exists_isAmalgamation_of_isSheafFor_forget F hS hind)
+
+/-- A presheaf of topological rings satisfying the sheaf condition for `S` against every
+topological commutative ring has a separated underlying presheaf of sets: elements of `F(X)` are
+tested against the discrete polynomial ring in one variable. -/
+theorem isSeparatedFor_forget_of_isSheafFor {X : C} {S : Sieve X}
+    (h : ∀ E : _root_.TopCommRingCat.{v}, Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) S.arrows) :
+    Presieve.IsSeparatedFor (F ⋙ forget _root_.TopCommRingCat) S.arrows := by
+  let _ : TopologicalSpace (MvPolynomial PUnit.{v + 1} ℤ) := ⊥
+  have : DiscreteTopology (MvPolynomial PUnit.{v + 1} ℤ) := ⟨rfl⟩
+  -- `ev x` sends the variable to `x`
+  let ev {Y : C} (x : F.obj (op Y)) :
+      _root_.TopCommRingCat.of (MvPolynomial PUnit.{v + 1} ℤ) ⟶ F.obj (op Y) :=
+    ⟨MvPolynomial.eval₂Hom (Int.castRingHom _) fun _ ↦ x, continuous_of_discreteTopology⟩
+  have hev₁ {Y : C} (x : F.obj (op Y)) :
+      (ev x).1 = MvPolynomial.eval₂Hom (Int.castRingHom _) fun _ ↦ x := rfl
+  -- the underlying ring hom of a composite in `TopCommRingCat` is the composite of ring homs
+  have hev {Y Z : C} (g : Z ⟶ Y) (x : F.obj (op Y)) : ev x ≫ F.map g.op = ev ((F.map g.op).1 x) :=
+    Subtype.ext <| MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun _ ↦ by
+      rw [show (ev x ≫ F.map g.op).1 = (F.map g.op).1.comp (ev x).1 from rfl, RingHom.comp_apply,
+        hev₁, hev₁, MvPolynomial.eval₂Hom_X', MvPolynomial.eval₂Hom_X']
+  intro z x y hx hy
+  have hxy : ev x = ev y := (h _).isSeparatedFor (fun _ f hf ↦ ev (z f hf)) (ev x) (ev y)
+    (fun _ f hf ↦ (hev f x).trans (congrArg ev (hx f hf)))
+    (fun _ f hf ↦ (hev f y).trans (congrArg ev (hy f hf)))
+  have hX (x : F.obj (op X)) : (ev x).1 (MvPolynomial.X PUnit.unit) = x := by
+    rw [hev₁, MvPolynomial.eval₂Hom_X']
+  rw [← hX x, ← hX y, hxy]
+
+/-- **Sheaves of topological rings carry the product topology.** Let `S` be a sieve on `X` such
+that every `F ⋙ coyoneda.obj (op E)` satisfies the sheaf condition for `S`. Then the map sending
+`x ∈ F(X)` to its restrictions along the arrows `Y ⟶ X` of `S` is inducing for the product
+topology. This is the converse of
+`isSheafFor_of_isSheafFor_forget`, for the topological half of the sheaf condition. -/
+theorem isInducing_restrictionMap_of_isSheafFor {X : C} (S : Sieve X)
+    (h : ∀ E : _root_.TopCommRingCat.{v}, Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) S.arrows) :
+    Topology.IsInducing
+      fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // S f }) ↦ (F.map g.2.1.op).1 x := by
+  let r := fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // S f }) ↦ (F.map g.2.1.op).1 x
+  have hr : Continuous r := continuous_pi fun g ↦ (F.map g.2.1.op).2
+  refine ⟨le_antisymm (continuous_iff_le_induced.mp hr) ?_⟩
+  -- `r` is a ring hom, so the topology it induces on `F(X)` is a ring topology; call the
+  -- resulting topological ring `E`.
+  let rR : F.obj (op X) →+* ((g : (Y : C) × { f : Y ⟶ X // S f }) → F.obj (op g.1)) :=
+    RingHom.pi fun g ↦ (F.map g.2.1.op).1
+  let τ : TopologicalSpace (F.obj (op X)) := TopologicalSpace.induced rR inferInstance
+  let _ : @IsTopologicalRing (F.obj (op X)) τ _ :=
+    { toContinuousAdd := continuousAdd_induced rR
+      toContinuousMul := continuousMul_induced rR
+      toContinuousNeg := (isTopologicalAddGroup_induced rR).toContinuousNeg }
+  let E : _root_.TopCommRingCat.{v} := @_root_.TopCommRingCat.of (F.obj (op X)) _ τ _
+  -- The restrictions are continuous for `τ`, and form a compatible family out of `E`.
+  let φ : Presieve.FamilyOfElements (F ⋙ coyoneda.obj (op E)) S.arrows := fun _ f hf ↦
+    ⟨(F.map f.op).1, by
+      exact (continuous_apply (⟨_, f, hf⟩ : (Y : C) × { f : Y ⟶ X // S f })).comp
+        (continuous_induced_dom (f := rR))⟩
+  have hφ : φ.Compatible := fun _ _ _ g₁ g₂ f₁ f₂ _ _ w ↦ ConcreteCategory.ext_apply fun x ↦ by
+    have := congrArg (fun m ↦ (F.map m.op).1 x) w
+    rw [op_comp, op_comp, F.map_comp, F.map_comp] at this
+    exact this
+  -- Their amalgamation is the identity of `F(X)` by separatedness, so the identity is continuous
+  -- from `τ` to the topology of `F(X)`.
+  obtain ⟨t, ht, -⟩ := h E φ hφ
+  have htx (x : F.obj (op X)) : t.1 x = x :=
+    (isSeparatedFor_forget_of_isSheafFor F h).ext fun _ f hf ↦
+    (ConcreteCategory.comp_apply t (F.map f.op) x).symm.trans
+      (ConcreteCategory.congr_hom (ht f hf) x)
+  refine continuous_id_iff_le.mp ?_
+  have h₂ : @Continuous _ _ τ (F.obj (op X)).isTopologicalSpace t.1 := t.2
+  rwa [show (t.1 : F.obj (op X) → F.obj (op X)) = id from funext htx] at h₂
 
 /-- **Sheaves from sheaves of sets.** A presheaf `F` of topological commutative rings on a site
 `(C, J)` is a sheaf once its underlying presheaf of sets is a sheaf and, for every covering sieve

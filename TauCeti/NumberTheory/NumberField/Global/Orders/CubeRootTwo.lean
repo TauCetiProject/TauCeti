@@ -212,7 +212,7 @@ theorem isProperFractionalIdeal_cubeRootTwoIdeal :
   obtain ⟨q₀, q₁, q₂, rfl⟩ := exists_coords_of_pow_three_eq_two hα hK x
   -- Multiplying by `2α` forces `q₀, q₁ ∈ ℤ` and `q₂ ∈ 2ℤ`.
   obtain ⟨a, b, c, h⟩ := hx (2 * α) ((mem_cubeRootTwoIdeal hα hK).mpr ⟨0, 1, 0, by simp⟩)
-  obtain ⟨ha, hb, hc⟩ := coords_eq_of_pow_three_eq_two hα
+  obtain ⟨ha, hb, _⟩ := coords_eq_of_pow_three_eq_two hα
     (a := 4 * q₂) (b := 2 * q₀) (c := 2 * q₁) (a' := 8 * a) (b' := 2 * b) (c' := 2 * c)
     (by push_cast; linear_combination h - 2 * q₂ * hα)
   -- Multiplying by `2α²` forces `q₁ ∈ 2ℤ`.

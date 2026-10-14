@@ -29,7 +29,9 @@ commuting squares `d * a' = a * d₁` and `d₁ * b' = b * d₂`: three instance
 express `d • f (a', b')` through the values of `f` at the sides and diagonals of the squares.
 It also records that a `2`-cocycle of a group `G` vanishing on `G × N` and on `N × G`, for a normal
 subgroup `N`, is constant on the cosets of `N` in both variables and takes `N`-fixed values: the
-input for descending such a cocycle to `G ⧸ N`.
+input for descending such a cocycle to `G ⧸ N`. Summing the identity along the squares over a finite
+normal subgroup `N` shows that the norm of `N` multiplies a `2`-cocycle by the order of `N` up to an
+explicit coboundary.
 
 ## Main statements
 
@@ -46,6 +48,8 @@ input for descending such a cocycle to `G ⧸ N`.
   `apply_mul_fst_of_isCocycle₂_of_vanishing` and `smul_apply_of_isCocycle₂_of_vanishing`: a
   `2`-cocycle vanishing on `G × N` and on `N × G` is constant on the cosets of `N` in both
   variables and takes `N`-fixed values.
+* `TauCeti.groupCohomology.sum_smul_apply_of_isCocycle₂`: the norm of a finite normal subgroup `N`
+  multiplies a `2`-cocycle by `#N` up to a coboundary.
 -/
 
 public noncomputable section
@@ -184,6 +188,37 @@ theorem smul_apply_of_isCocycle₂_of_vanishing [N.Normal] {f : G × G → A} (h
   exact h₁.symm
 
 end Vanishing
+
+section Norm
+
+variable {G A : Type*} [Group G] [AddCommGroup A] [DistribMulAction G A] (N : Subgroup G)
+  [N.Normal] [Fintype N]
+
+/-- The norm of a finite normal subgroup `N` multiplies a `2`-cocycle `f` by the order of `N` up
+to a coboundary: `∑ n : N, n • f (g, h) = #N • f (g, h) + (g • b h - b (g * h) + b g)` for
+`b k = ∑ n : N, (f (n, k) - f (k, n))`. -/
+theorem sum_smul_apply_of_isCocycle₂ {f : G × G → A} (hf : IsCocycle₂ f) (g h : G) :
+    ∑ n : N, (n : G) • f (g, h) = Nat.card N • f (g, h) +
+      (g • ∑ n : N, (f (n, h) - f (h, n)) - ∑ n : N, (f (n, g * h) - f (g * h, n)) +
+        ∑ n : N, (f (n, g) - f (g, n))) := by
+  -- Conjugation by `g⁻¹` and by `(g * h)⁻¹` permute `N`.
+  have e₁ (F : G → A) : ∑ n : N, F (MulAut.conjNormal g⁻¹ n) = ∑ n : N, F n :=
+    Fintype.sum_equiv (MulAut.conjNormal g⁻¹).toEquiv _ _ fun _ ↦ rfl
+  have e₂ (F : G → A) : ∑ n : N, F (MulAut.conjNormal (g * h)⁻¹ n) = ∑ n : N, F n :=
+    Fintype.sum_equiv (MulAut.conjNormal (g * h)⁻¹).toEquiv _ _ fun _ ↦ rfl
+  -- The cocycle law along the squares `n * g = g * n₁` and `n₁ * h = h * n₂`, for the conjugates
+  -- `n₁ = g⁻¹ * n * g` and `n₂ = (g * h)⁻¹ * n * (g * h)` of `n`.
+  have key (n : N) := smul_map_eq_of_isCocycle₂_of_mul_eq_mul hf
+    (d := n) (a' := g) (b' := h) (a := g) (b := h)
+    (d₁ := MulAut.conjNormal g⁻¹ n) (d₂ := MulAut.conjNormal (g * h)⁻¹ n)
+    (by simp [mul_assoc]) (by simp [mul_assoc])
+  rw [Finset.sum_congr rfl fun n _ ↦ key n]
+  simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+    ← Nat.card_eq_fintype_card, ← Finset.smul_sum, smul_sub]
+  rw [e₁ fun x ↦ f (x, h), e₂ fun x ↦ f (h, x), e₂ fun x ↦ f (g * h, x), e₁ fun x ↦ f (g, x)]
+  abel
+
+end Norm
 
 end IsCocycle₂
 

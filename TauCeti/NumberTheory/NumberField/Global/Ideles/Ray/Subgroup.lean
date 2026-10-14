@@ -64,6 +64,11 @@ def raySubgroup (𝔪 : Modulus K) : Subgroup (IdeleClassGroup (𝓞 K) K) :=
   Subgroup.map (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K))
     (ideleCongruenceSubgroup 𝔪)
 
+/-- Every ray subgroup is normal: it is the image of a subgroup of the commutative idele group
+under the quotient map. -/
+instance normal_raySubgroup (𝔪 : Modulus K) : (raySubgroup 𝔪).Normal :=
+  (Subgroup.normal_of_isMulCommutative _).map _ (QuotientGroup.mk'_surjective _)
+
 /-- **Membership in a ray subgroup is represented by a congruence idele.** -/
 theorem mem_raySubgroup_iff {𝔪 : Modulus K} {c : IdeleClassGroup (𝓞 K) K} :
     c ∈ raySubgroup 𝔪 ↔

@@ -180,7 +180,7 @@ private theorem continuousOn_iUnion_finset_of_isClosed {α β κ : Type*}
     ContinuousOn f (⋃ i ∈ s, u i) := by
   induction s using Finset.induction_on with
   | empty => simp
-  | @insert i s hi ih =>
+  | @insert i s _ ih =>
       rw [Finset.set_biUnion_insert]
       exact (hf i (Finset.mem_insert_self i s)).union_of_isClosed
         (ih (fun j hj => hu j (Finset.mem_insert_of_mem hj))

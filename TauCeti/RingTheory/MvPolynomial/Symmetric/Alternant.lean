@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-public import TauCeti.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
 
 /-!

@@ -83,9 +83,9 @@ private theorem measure_eq_of_forall_univ_pi {ι : Type*} [Finite ι] {α : ι �
     (C := Set.pi Set.univ '' Set.pi Set.univ fun i => {s : Set (α i) | MeasurableSet s})
     (B := fun _ : ℕ => Set.univ) generateFrom_pi.symm isPiSystem_pi ?_ ?_ ?_ ?_
   · simpa using (iUnion_const (Set.univ : Set (∀ i, α i)))
-  · intro n
+  · intro _
     exact ⟨fun _ => Set.univ, fun i _ => MeasurableSet.univ, by simp⟩
-  · intro n
+  · intro _
     exact measure_ne_top μ Set.univ
   · rintro _ ⟨B, hB, rfl⟩
     exact h B fun i => hB i (mem_univ i)

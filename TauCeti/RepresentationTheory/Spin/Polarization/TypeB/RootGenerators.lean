@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators
 public import TauCeti.RepresentationTheory.Spin.IntegralLattice
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Basic
 
@@ -15,7 +15,7 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Basic
 `TauCeti.SpinPolarizationData.typeBQuadraticEquiv` identifies the split type-`B` matrix algebra
 `LieAlgebra.Orthogonal.typeB ι K` with the quadratic elements of the Clifford algebra of an odd
 polarization. This file evaluates that identification on the Bourbaki-numbered root and coroot
-matrices of `TauCeti/Algebra/Lie/Orthogonal/TypeB/RootGenerators.lean`, and reads off what the
+matrices of `TauCeti/Algebra/Lie/Orthogonal/TypeB/Root/Generators.lean`, and reads off what the
 resulting Clifford elements do to the coordinate integral lattice of the spinor module.
 
 Each of the three numbered root vectors is a single Clifford bivector of two vectors of the odd
@@ -157,7 +157,8 @@ theorem typeBQuadraticEquiv_typeBDifferenceRootGenerator (i j : ι) (hij : i ≠
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   -- Each matrix unit picks out one basis index, and so does each polar coordinate.
-  rw [coe_typeBDifferenceRootGenerator, toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis]
+  rw [coe_typeBDifferenceRootGenerator,
+    Module.Basis.toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-- **The short root vector `e_{εᵢ}` is the Clifford bivector of the `i`-th basis vector and the
@@ -170,7 +171,7 @@ theorem typeBQuadraticEquiv_typeBShortRootGenerator (i : ι) :
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   -- The polar self-pairing `2` of the remainder vector matches the matrix coefficient `2`.
-  rw [coe_typeBShortRootGenerator, toLinAlgEquiv_typeBShortRootMatrix_apply_basis]
+  rw [coe_typeBShortRootGenerator, Module.Basis.toLinAlgEquiv_typeBShortRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-- **The negative short root vector `f_{εᵢ}` is the Clifford bivector of the remainder vector and
@@ -182,7 +183,7 @@ theorem typeBQuadraticEquiv_typeBShortNegativeRootGenerator (i : ι) :
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   rw [coe_typeBShortNegativeRootGenerator,
-    toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis]
+    Module.Basis.toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-! ### The Cartan generators -/

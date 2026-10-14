@@ -63,9 +63,8 @@ the letterwise tuple operation that applies it on a half-open index interval.
 * `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
   twisting a block of a tuple.
 
-This is the first graded-module target in Layer 0 of the `DGAInfinity` roadmap.  Later files use
-Mathlib's decomposition API to define maps of nonzero degree, shifts, tensor-product gradings, and
-signed multilinear operations.
+Later files use Mathlib's decomposition API to define maps of nonzero degree, shifts,
+tensor-product gradings, and signed multilinear operations.
 -/
 
 public section
@@ -126,17 +125,6 @@ theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ℤ → Submodule R M)
   Iff.of_eq (congrArg (fun d ↦ @DirectSum.SetLike.IsHomogeneous _ _ _ _ _ _ _ ℳ d _ _ U)
     (Subsingleton.elim _ _))
 
-/-- Two linear maps on an internally graded module agree if they agree on homogeneous elements. -/
-theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
-    (G : InternalGrading R M) {f g : M →ₗ[R] N}
-    (h : ∀ (p : ℤ) (x : M), x ∈ G.piece p → f x = g x) : f = g := by
-  apply (Submodule.linearMap_eq_iff_of_span_eq_top f g ?_).2
-  · rintro ⟨x, hx⟩
-    obtain ⟨p, hp⟩ := Set.mem_iUnion.mp hx
-    exact h p x hp
-  · rw [← Submodule.iSup_eq_span]
-    exact G.isInternal.submodule_iSup_eq_top
-
 /-- The homogeneous elements of an internally graded module span it over any scalar semiring
 acting on the total module. No compatibility between that action and the grading is needed. -/
 theorem span_setOf_exists_mem_piece_eq_top (S : Type*) [Semiring S] [Module S M]
@@ -147,6 +135,17 @@ theorem span_setOf_exists_mem_piece_eq_top (S : Type*) [Semiring S] [Module S M]
   rw [← DirectSum.sum_support_decompose G.piece y]
   exact Submodule.sum_mem _ fun p _ => Submodule.subset_span
     ⟨p, (DirectSum.decompose G.piece y p).property⟩
+
+/-- Two linear maps over any scalar semiring on an internally graded module agree if they agree
+on homogeneous elements. No compatibility between the scalar action and the grading is needed. -/
+theorem linearMap_ext {S : Type*} [Semiring S] [Module S M]
+    {N : Type w} [AddCommMonoid N] [Module S N]
+    (G : InternalGrading R M) {f g : M →ₗ[S] N}
+    (h : ∀ (p : ℤ) (x : M), x ∈ G.piece p → f x = g x) : f = g := by
+  apply (Submodule.linearMap_eq_iff_of_span_eq_top f g
+    (G.span_setOf_exists_mem_piece_eq_top S)).2
+  rintro ⟨x, p, hx⟩
+  exact h p x hx
 
 section Map
 
@@ -330,9 +329,9 @@ theorem linearEquiv_symm {G : InternalGrading R M} {H : InternalGrading R N} {e 
 
 section Decompose
 
-variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S] [SMul R S]
-  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
-  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
+  [AddCommMonoid M] [Module R M] [Module S M]
+  [AddCommMonoid N] [Module R N] [Module S N]
   {f : M →ₗ[S] N} {r : ℤ}
 
 /-- A homogeneous linear map of degree `r` carries the degree-`p` component of an element to the
@@ -343,7 +342,7 @@ theorem map_decompose {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ
     {𝓝 : ℤ → Submodule R N} [DirectSum.Decomposition 𝓝] (hf : LinearMap.IsHomogeneous f ℳ 𝓝 r)
     (p : ℤ) (x : M) :
     f (DirectSum.decompose ℳ x p : M) = (DirectSum.decompose 𝓝 (f x) (p + r) : N) :=
-  DirectSum.map_decompose_shift ℳ 𝓝 (f.restrictScalars R) (· + r)
+  DirectSum.map_decompose_shift ℳ 𝓝 f.toAddMonoidHom (· + r)
     (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
 
 variable {G : InternalGrading R M} {H : InternalGrading R N}
@@ -438,6 +437,17 @@ theorem InternalGrading.koszulTwist_apply_of_mem (G : InternalGrading R M) {x : 
   rw [DirectSum.decompose_of_mem (ℳ := G.piece) hx,
     ← DirectSum.lof_eq_of R ℤ (fun i : ℤ => G.piece i)]
   simp [DirectSum.toModule_lof]
+
+/-- The Koszul twist fixes the elements of degree zero. -/
+theorem InternalGrading.koszulTwist_apply_of_mem_zero (G : InternalGrading R M) {x : M}
+    (hx : x ∈ G.piece 0) (q : ℤ) : koszulTwist G q x = x := by
+  rw [InternalGrading.koszulTwist_apply_of_mem G hx q, mul_zero, Int.negOnePow_zero,
+    Units.val_one, Int.cast_one, one_smul]
+
+/-- The Koszul twist of parameter one acts on an element of degree `e` as the sign `(-1)^e`. -/
+theorem InternalGrading.koszulTwist_one_apply_of_mem (G : InternalGrading R M) {x : M} {e : ℤ}
+    (hx : x ∈ G.piece e) : koszulTwist G 1 x = ((e.negOnePow : ℤ) : R) • x := by
+  rw [InternalGrading.koszulTwist_apply_of_mem G hx 1, one_mul]
 
 /-- The Koszul twist preserves each homogeneous piece. -/
 theorem InternalGrading.koszulTwist_mem_piece (G : InternalGrading R M) {x : M} {e : ℤ}

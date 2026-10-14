@@ -190,7 +190,6 @@ theorem sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum {s : ℝ} (hs : 
     {F : Finset (HeightOneSpectrum (𝓞 K))} (hF : ∀ 𝔭 ∈ F, 𝔭 ∈ higherDegreePrimes K) :
     ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤
       Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-(2 * s)) := by
-  have hs0 : 0 < s := by linarith
   have hsummable : Summable fun m : ℕ ↦ (m : ℝ) ^ (-(2 * s)) :=
     Real.summable_nat_rpow.mpr (by linarith)
   -- Compare each term with the corresponding term for the rational prime below it.

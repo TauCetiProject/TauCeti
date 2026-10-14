@@ -72,16 +72,12 @@ theorem exists_analyticOnNhd_monicOfCoeff_eq_prod_X_sub_C_conj
     c r hU hs hc hr hfac
   refine ⟨g, hg, hgf, ?_⟩
   let κ : V × ℂ → V × ℂ := fun p => (τ p.1, conj p.2)
-  have hκ : ContinuousOn κ (U ×ˢ s) :=
-    (hτ.comp continuousOn_fst fun _ hp => hp.1).prodMk
-      (Complex.continuous_conj.comp_continuousOn continuousOn_snd)
-  have hκT : MapsTo κ (U ×ˢ s) (U ×ˢ s) :=
-    fun _ hp => ⟨hτU hp.1, hconj hp.2⟩
-  have hκS : MapsTo κ (U ×ˢ (s \ {0})) (U ×ˢ (s \ {0})) := by
-    intro p hp
-    exact ⟨hτU hp.1, hconj hp.2.1, by simpa [κ] using hp.2.2⟩
-  have hκκ : ∀ p ∈ U ×ˢ (s \ {0}), κ (κ p) = p := fun p hp =>
-    Prod.ext (hττ p.1 hp.1) (Complex.conj_conj p.2)
+  have hκ : ContinuousOn κ (U ×ˢ s) := hτ.prodMap Complex.continuous_conj.continuousOn
+  have hκT : MapsTo κ (U ×ˢ s) (U ×ˢ s) := hτU.prodMap hconj
+  have hκS : MapsTo κ (U ×ˢ (s \ {0})) (U ×ˢ (s \ {0})) :=
+    hτU.prodMap (fun z hz ↦ ⟨hconj hz.1, by simpa using hz.2⟩)
+  have hκκ : ∀ p ∈ U ×ˢ (s \ {0}), κ (κ p) = p :=
+    fun p hp ↦ Prod.ext (hττ p.1 hp.1) (Complex.conj_conj p.2)
   have hdense : U ×ˢ s ⊆ closure (U ×ˢ (s \ {(0 : ℂ)})) := by
     rw [closure_prod_eq, Set.sdiff_eq]
     exact prod_mono subset_closure

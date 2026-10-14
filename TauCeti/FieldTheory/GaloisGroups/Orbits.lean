@@ -62,6 +62,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   polynomial has a transitive root action.
 * `Polynomial.Gal.galActionAux_isPretransitive_of_dvd_pow`: the same for every divisor of a
   power of an irreducible polynomial, separable or not.
+* `TauCeti.rootSetEquivOrbit`: identify the intrinsic root action of an irreducible polynomial
+  with the orbit of a chosen root in its splitting field.
 * `Polynomial.Gal.smul_eq_apply`: the action on the splitting field is evaluation.
 * `TauCeti.galIsGaloisGroup`: `Polynomial.Gal p` is a Galois group for its splitting field.
 * `TauCeti.orbitQuotientEquivFactors`: the orbit quotient is in bijection with the
@@ -155,10 +157,8 @@ private theorem orbit_eq_preimage_rootSet_minpoly_aux {L : Type w} [Field L] [Al
     MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : L)).rootSet L := by
   have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
   ext y
-  rw [Set.mem_preimage, mem_rootSet, horbit y x]
-  refine ⟨fun h => ⟨minpoly.ne_zero hint, h ▸ minpoly.aeval F (y : L)⟩, fun h => ?_⟩
-  exact (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint) h.2
-    (minpoly.monic hint)).symm
+  rw [Set.mem_preimage, (minpoly.monic hint).mem_rootSet, horbit y x, eq_comm,
+    minpoly.eq_iff_aeval_minpoly_eq_zero hint]
 
 -- The image description, from the preimage one and `minpoly F x ∣ p`.
 private theorem image_val_orbit_eq_rootSet_minpoly_aux {L : Type w} [Field L] [Algebra F L]
@@ -318,10 +318,8 @@ distinct type with its own action, so the instance is restated here; it is what 
 `IsGaloisGroup` form of the Galois correspondence, and the fixed-field lemmas that come with it,
 apply to the polynomial Galois group. -/
 instance galIsGaloisGroup [IsGalois F p.SplittingField] :
-    IsGaloisGroup p.Gal F p.SplittingField where
-  faithful := ⟨fun {σ τ} h ↦ @Gal.ext F _ p σ τ fun y _ ↦ h y⟩
-  commutes := inferInstance
-  isInvariant := ⟨fun y hy ↦ (IsGalois.mem_range_algebraMap_iff_fixed y).2 fun σ ↦ hy σ⟩
+    IsGaloisGroup p.Gal F p.SplittingField :=
+  inferInstanceAs (IsGaloisGroup (p.SplittingField ≃ₐ[F] p.SplittingField) F p.SplittingField)
 
 /-- The Galois action on the roots in the splitting field is the action by evaluation. -/
 @[simp]
@@ -399,6 +397,59 @@ carries. -/
 theorem _root_.Polynomial.Gal.galActionAux_isPretransitive (hp : Irreducible p) :
     MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
   Gal.galActionAux_isPretransitive_of_dvd_pow hp (n := 1) (by rw [pow_one])
+
+/-- The roots of an irreducible polynomial in its splitting field are identified with the orbit
+of a chosen root, preserving the underlying field element. -/
+def rootSetEquivOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) : p.rootSet p.SplittingField ≃ MulAction.orbit p.Gal α :=
+  Set.equivOfEq (by
+    ext β
+    constructor
+    · intro hβ
+      obtain ⟨g, hg⟩ := (Gal.galActionAux_isPretransitive hp).exists_smul_eq
+        (⟨α, hα⟩ : p.rootSet p.SplittingField) ⟨β, hβ⟩
+      exact ⟨g, congrArg Subtype.val hg⟩
+    · rintro ⟨g, rfl⟩
+      exact smul_mem_rootSet g hα)
+
+/-- The root-to-orbit identification preserves the underlying field element. -/
+@[simp]
+theorem coe_rootSetEquivOrbit_apply (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (y : p.rootSet p.SplittingField) :
+    (rootSetEquivOrbit hp hα y : p.SplittingField) = y := by
+  unfold rootSetEquivOrbit
+  rfl
+
+/-- The inverse orbit-to-root identification preserves the underlying field element. -/
+@[simp]
+theorem coe_rootSetEquivOrbit_symm_apply (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (y : MulAction.orbit p.Gal α) :
+    ((rootSetEquivOrbit hp hα).symm y : p.SplittingField) = y := by
+  unfold rootSetEquivOrbit
+  rfl
+
+/-- The identification of the roots with the orbit of a chosen root is equivariant. -/
+@[simp]
+theorem rootSetEquivOrbit_smul (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (g : p.Gal) (y : p.rootSet p.SplittingField) :
+    rootSetEquivOrbit hp hα (g • y) = g • rootSetEquivOrbit hp hα y := by
+  apply Subtype.ext
+  simp only [coe_rootSetEquivOrbit_apply, Gal.coe_smul, MulAction.orbit.coe_smul]
+  rfl
+
+/-- The root-to-orbit identification as an equivariant map. -/
+def rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) :
+    p.rootSet p.SplittingField →[p.Gal] MulAction.orbit p.Gal α :=
+  { toFun := rootSetEquivOrbit hp hα
+    map_smul' := rootSetEquivOrbit_smul hp hα }
+
+/-- The equivariant root-to-orbit map has the root-to-orbit equivalence as its underlying map. -/
+@[simp]
+theorem coe_rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) :
+    (rootSetToOrbit hp hα : p.rootSet p.SplittingField → MulAction.orbit p.Gal α) =
+      rootSetEquivOrbit hp hα := (rfl)
 
 /-! ## Orbits and monic irreducible factors -/
 

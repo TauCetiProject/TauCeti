@@ -38,6 +38,9 @@ over `S`. No ellipticity is needed.
 * `WeierstrassCurve.equation_chartPairLaw_comp_inl` and
   `WeierstrassCurve.equation_chartPairLaw_comp_inr`: the two laws at the universal points of a
   product of two charts are solutions of the Weierstrass equation.
+* `WeierstrassCurve.exists_SpecMap_additionOnPiece`: for a homomorphism `φ` out of the ring of a
+  piece of the cover, the composite of `Spec φ` with the addition morphism on that piece is the
+  point whose homogeneous coordinates are the image under `φ` of the law.
 * `WeierstrassCurve.additionOnPiece_projModelOver`: the addition morphisms lie over `Spec R`.
 
 ## References
@@ -125,6 +128,30 @@ theorem additionOnPiece_inr (i j k : Fin 3) : W.additionOnPiece i j (.inr k) =
       ((W.equation_chartPairLaw_comp_inr i j).baseChange (IsScalarTower.toAlgHom R _ _))
       (IsLocalization.Away.algebraMap_isUnit (W.chartPairLaw i j (.inr k))) :=
   (rfl)
+
+/-- Let `φ` be a homomorphism to `A` from `Localization.Away (chartPairLaw W i j k)`, the ring of
+the piece of the chart cover indexed by `(i, j, k)`. The image under `φ` of the law selected by `k`
+at the universal points, `addXYZ` for `k = inl m` and `dblAddXYZ` for `k = inr m`, is a solution
+of the Weierstrass equation over `A` whose coordinate of index `m` is a unit, and the composite of
+`Spec φ` with the addition morphism on the piece is the point of `projModel W` with these
+homogeneous coordinates, read on the chart `D₊(Xₘ)`. -/
+theorem exists_SpecMap_additionOnPiece {A : CommRingCat.{u}} {i j : Fin 3}
+    (k : Fin 3 ⊕ Fin 3) (φ : CommRingCat.of (Localization.Away (W.chartPairLaw i j k)) ⟶ A) :
+    ∃ hP hm, Spec.map φ ≫ W.additionOnPiece i j k =
+      W.projModelPoint (CommRingCat.ofHom (algebraMap R _) ≫ φ).hom (i := k.elim id id)
+        (P := fun m ↦ (CommRingCat.ofHom (algebraMap
+          (W.toProjective.ChartRing i ⊗[R] W.toProjective.ChartRing j) _) ≫ φ).hom
+            (W.chartPairLaw i j (k.map (fun _ ↦ m) (fun _ ↦ m)))) hP hm := by
+  -- along `φ`, a point of `projModel W` over the localization is the point of the images
+  have key {P : Fin 3 → Localization.Away (W.chartPairLaw i j k)} {hP} {m : Fin 3}
+      (hm : IsUnit (P m)) : ∃ hP' hm', Spec.map φ ≫ W.projModelPoint (algebraMap R _) hP hm =
+        W.projModelPoint (CommRingCat.ofHom (algebraMap R _) ≫ φ).hom (P := φ.hom ∘ P) hP' hm' :=
+    ⟨_, _, SpecMap_projModelPoint φ.hom hm⟩
+  cases k
+  · rw [additionOnPiece_inl]
+    exact key _
+  · rw [additionOnPiece_inr]
+    exact key _
 
 /-- The addition morphism on each piece of `additionCover W` lies over `Spec R`: its composite
 with the structure morphism of `projModel W` is `Spec` of the structure map

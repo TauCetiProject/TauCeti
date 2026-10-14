@@ -67,10 +67,9 @@ sides: the cap is preserved by every `A` with `Aᵀ * J * A = J`, and the cup by
 (`SymplecticGroup.mem_iff'` and `SymplecticGroup.mem_iff`), but which side a proof uses is the
 visible difference between contracting a pair of inputs and expanding a pair of outputs.
 
-The flip is given a name of its own, unlike in the orthogonal file, for two reasons: it differs
-from the Brauer crossing by the sign above, and the Layer 8 action
-`TauCeti.permTensorAction` is set up for the coordinate space `Fin n → k`, so it does not apply to
-the symplectic `(Fin n ⊕ Fin n) → k`.
+The flip is given a name of its own, unlike in the orthogonal file, for two reasons: it differs from
+the Brauer crossing by the sign above, and the action `TauCeti.permTensorAction` is set up for the
+coordinate space `Fin n → k`, so it does not apply to the symplectic `(Fin n ⊕ Fin n) → k`.
 
 The index set is `Fin n ⊕ Fin n` rather than a general `l ⊕ l`, even though `Matrix.J` and
 `Matrix.symplecticGroup` are defined for a general `l`, because the invariant form
@@ -111,8 +110,6 @@ orthogonal file consumes the pointwise `Matrix.piTensorProductMap_tprod_single` 
   Annals of Mathematics 38 (1937), 857-872.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 9.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "The invariant form and the action on `V^{⊗k}`", the symplectic case.
 -/
 
 public section

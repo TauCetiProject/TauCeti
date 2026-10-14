@@ -19,9 +19,9 @@ import TauCeti.RepresentationTheory.CharacterTable.Determined
 -- `TauCeti.character_eq_sum_nsmul_irreducibleCharacter` of a character over them, are used only
 -- inside the proof.
 import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
--- Non-public: `TauCeti.finrank_hom_indFDRep`, Frobenius reciprocity as an identity of intertwining
+-- Non-public: `FDRep.finrank_hom_indFDRep`, Frobenius reciprocity as an identity of intertwining
 -- dimensions, is the engine of the proof and occurs in no statement.
-import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
+import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction
 
 /-!
 # Surjectivity in the Clifford correspondence
@@ -124,7 +124,7 @@ private theorem nonempty_iso_indFDRep_of_finrank_hom_ne_zero (V : FDRep k N) [Si
   have := simple_indFDRep_of_inertia V U hU
   -- Frobenius reciprocity moves the nonzero multiplicity to `Hom_G(Ind U, W)`, and Schur's lemma
   -- makes a nonzero intertwiner between the irreducibles `Ind U` and `W` an isomorphism.
-  rw [← finrank_hom_indFDRep] at hne
+  rw [← FDRep.finrank_hom_indFDRep] at hne
   by_contra hiso
   exact hne <| finrank_hom_simple_simple_eq_zero_of_not_iso k fun e => hiso ⟨e⟩
 

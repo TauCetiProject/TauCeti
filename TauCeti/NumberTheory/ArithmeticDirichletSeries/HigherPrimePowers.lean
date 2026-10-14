@@ -258,7 +258,6 @@ theorem higherPrimePowerTheta_le_card_primesLE_mul_log
     higherPrimePowerTheta K x ≤ (primesLE K (Real.sqrt x)).card * Real.log x := by
   classical
   have hx0 : (0 : ℝ) < x := lt_of_lt_of_le zero_lt_one hx
-  have hlogx : 0 ≤ Real.log x := Real.log_nonneg hx
   set T := (primePowersLE K x).filter (fun A ↦ 2 ≤ primePowerExponent A) with hTdef
   have hmemT : ∀ A ∈ T, ((Ideal.absNorm (primePowerBase A).asIdeal : ℝ)) ^ primePowerExponent A
       ≤ x ∧ 2 ≤ primePowerExponent A := by

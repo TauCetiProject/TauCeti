@@ -90,8 +90,7 @@ theorem topologicalClosure_closure_gradedBracket_eq_top (n : ℕ) {S : Set G}
       commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 b) ha
     refine ⟨⟨⁅b, a⁆, hba⟩, ?_, rfl⟩
     have hb := hbracket b (gradedMk 0 G n ⟨a, ha⟩)
-    rw [← gradedMk_zero (p := 0) (G := G) ⟨b, mem_pLowerCentralSeries_zero 0 b⟩] at hb
-    rw [gradedBracket_gradedMk] at hb
+    rw [gradedBracket_gradedMkZero_gradedMk] at hb
     simpa [U] using hb
   have hseries : H ≤ U.map H.subtype := by
     have heq : H = ⁅(⊤ : Subgroup G), K⁆.topologicalClosure := by
