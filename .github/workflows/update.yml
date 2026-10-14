@@ -14,17 +14,54 @@ on:
   schedule:
   - cron: "17 * * * *"   # consume refreshed reports without waiting a day
   workflow_dispatch:
-
-# Serialize branch and issue reconciliation; keep an active bump build running.
-concurrency:
-  group: mathlib-bump-reconciliation
-  cancel-in-progress: false
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 env:
   LKG_BRANCH: hopscotch/lkg-bump
 
 jobs:
+  trigger:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      reconcile: ${{ steps.trigger.outputs.reconcile }}
+    steps:
+      # Read trusted current main, never workflow_run artifacts or candidate code.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts/bump_update_trigger.py
+            scripts/bump_report.py
+            lake-manifest.json
+            lean-toolchain
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Reconcile only a newly validated pin
+        id: trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bump_update_trigger.py
+
   bump:
+    needs: trigger
+    if: needs.trigger.outputs.reconcile == 'true'
+    # Only actionable reconciliation joins this group; skipped CI completions
+    # must not displace its pending work. Both mutation jobs share the lock.
+    concurrency:
+      group: mathlib-bump-reconciliation
+      queue: max
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -79,6 +116,9 @@ jobs:
   open-issue:
     runs-on: ubuntu-latest
     needs: bump
+    concurrency:
+      group: mathlib-bump-reconciliation
+      queue: max
     permissions:
       issues: write
       contents: write

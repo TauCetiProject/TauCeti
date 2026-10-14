@@ -33,7 +33,9 @@ nonarchimedean field `K`:
 * about the origin, `η_{r⁻}` lies in `D(0, |c|)` exactly when `r ≤ ‖c‖`, while `η_{r⁺}` does
   exactly when `r < ‖c‖`. At `‖c‖ = r` the disc contains `η_r` and `η_{r⁻}` but not `η_{r⁺}`,
   although `η_{r⁺}` is a specialization of `η_r`: the rank-two point `η_{r⁺}` lies outside the
-  closed disc of radius `r`.
+  closed disc of radius `r`. The same holds about every centre: `η_{b,r⁻}` lies in `D(a, |c|)`
+  exactly when `‖b - a‖ ≤ ‖c‖` and `r ≤ ‖c‖`, and `η_{b,r⁺}` exactly when `‖b - a‖ ≤ ‖c‖` and
+  `r < ‖c‖`.
 
 The points `η_{b,r}` also determine the discs themselves. For `‖a‖ ≤ 1` and `0 < ‖c‖ ≤ 1`,
 `D(a, |c|) ⊆ D(b, |d|)` exactly when `‖a - b‖ ≤ ‖d‖` and `‖c‖ ≤ ‖d‖`, and two such discs are
@@ -48,17 +50,21 @@ equal exactly when their radii agree and each centre lies in the other disc. If
 ## Main results
 
 * `TauCeti.ValuationSpectrum.closedSubdisc_eq_rationalSubset`,
-  `TauCeti.ValuationSpectrum.isOpen_closedSubdisc` and
+  `TauCeti.ValuationSpectrum.isOpen_closedSubdisc`,
+  `TauCeti.ValuationSpectrum.closedSubdisc_mem_spaRationalFamily` and
   `TauCeti.ValuationSpectrum.isCompact_closedSubdisc`: `D(a, |c|)` is the rational subset
-  `R({T - a, c} / c)`, hence open and, for `c` a unit, quasi-compact.
+  `R({T - a, c} / c)`, hence open and, when `T - a` and `c` generate an open ideal (for instance
+  when `c` is a unit), a member of the rational family and quasi-compact.
 * `TauCeti.ValuationSpectrum.closedSubdisc_zero_one`: `D(0, 1)` is the whole closed unit disc,
   and `TauCeti.ValuationSpectrum.closedSubdisc_zero_right`: `D(a, |0|)` is empty.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.gaussPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.discPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.gaussPointBelow_mem_closedSubdisc_zero_iff` and
-  `TauCeti.ValuationSpectrum.gaussPointAbove_mem_closedSubdisc_zero_iff`: which points of the
-  closed unit disc lie in `D(a, |c|)`.
+  `TauCeti.ValuationSpectrum.gaussPointAbove_mem_closedSubdisc_zero_iff`,
+  `TauCeti.ValuationSpectrum.discPointBelow_mem_closedSubdisc_iff` and
+  `TauCeti.ValuationSpectrum.discPointAbove_mem_closedSubdisc_iff`: which points of the closed
+  unit disc lie in `D(a, |c|)`.
 * `TauCeti.ValuationSpectrum.closedSubdisc_subset_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.closedSubdisc_eq_closedSubdisc_iff` and
   `TauCeti.ValuationSpectrum.disjoint_closedSubdisc`: inclusion, equality and disjointness of
@@ -118,17 +124,24 @@ theorem closedSubdisc_eq_rationalSubset (a c : K) :
   have hv : v.1 ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ v.2
   simp [hv]
 
-/-- `D(a, |c|)` is quasi-compact over a Huber ring when `c` is a unit. -/
-theorem isCompact_closedSubdisc [IsHuberRing K] (a : K) {c : K} (hc : IsUnit c) :
-    IsCompact (closedSubdisc a c) := by
+/-- **`D(a, |c|)` belongs to the rational family** of `Spa (K⟨T⟩, K⟨T⟩°)` when the numerators
+`T - a` and `c` of `R({T - a, c} / c)` generate an open ideal, for instance when `c` is a unit. -/
+theorem closedSubdisc_mem_spaRationalFamily (a c : K)
+    (hT : IsOpen (Ideal.span ({T - C a, C c} : Set (𝒯 K)) : Set (𝒯 K))) :
+    (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹' closedSubdisc a c ∈
+      spaRationalFamily (powerBoundedSubring (𝒯 K)) := by
   classical
-  have hspan : Ideal.span (({T - C a, C c} : Finset (𝒯 K)) : Set (𝒯 K)) = ⊤ :=
-    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) (hc.map C)
-  have hcompact := isCompact_of_mem_spaRationalFamily (Aplus := powerBoundedSubring (𝒯 K))
-    (mem_spaRationalFamily_iff.mpr ⟨{T - C a, C c}, C c, by rw [hspan]; simp, rfl⟩)
   rw [closedSubdisc_eq_rationalSubset]
-  exact (Homeomorph.setCongr (closedPolydisc_def 1 K)).isClosedEmbedding.isCompact_preimage
-    hcompact
+  exact mem_spaRationalFamily_iff.mpr
+    ⟨_, _, by rwa [Finset.coe_insert, Finset.coe_singleton], rfl⟩
+
+/-- `D(a, |c|)` is quasi-compact over a Huber ring when `T - a` and `c` generate an open ideal,
+for instance when `c` is a unit. -/
+theorem isCompact_closedSubdisc [IsHuberRing K] (a c : K)
+    (hT : IsOpen (Ideal.span ({T - C a, C c} : Set (𝒯 K)) : Set (𝒯 K))) :
+    IsCompact (closedSubdisc a c) := by
+  have h := isCompact_of_mem_spaRationalFamily (closedSubdisc_mem_spaRationalFamily a c hT)
+  rwa [Homeomorph.isCompact_preimage] at h
 
 /-- **`D(0, 1)` is the whole closed unit disc**: the variable is power-bounded, so every point
 of the disc has `v(T) ≤ 1`. -/
@@ -300,6 +313,34 @@ theorem closedSubdisc_eq_closedSubdisc_iff {a b c d : K} (ha : ‖a‖ ≤ 1) (h
     exact ⟨le_antisymm hcd hdc, hba⟩
   · rintro ⟨hcd, hab⟩
     exact ⟨⟨hcd ▸ hab, hcd.le⟩, hab, hcd.ge⟩
+
+/-- **The point `η_{b,r⁺}` lies in `D(a, |c|)` exactly when `‖b - a‖ ≤ ‖c‖` and `r < ‖c‖`.**
+On `T - a` it takes the value of the constant `a - b` when `r < ‖a - b‖`, and otherwise a value
+just above the constants of norm `r`. -/
+theorem discPointAbove_mem_closedSubdisc_iff (b : K) (hb : ‖b‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1)
+    (a c : K) : discPointAbove b hb hr₀ hr₁ ∈ closedSubdisc a c ↔ ‖b - a‖ ≤ ‖c‖ ∧ r < ‖c‖ := by
+  rw [mem_closedSubdisc, ← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero,
+    norm_le_zero_iff, ← valuation_le_iff, valuation_weightedX_sub_weightedC_discPointAbove,
+    norm_sub_rev b a]
+  split_ifs with h
+  · rw [valuation_le_iff, discPointAbove_vle_weightedC_iff]
+    grind [norm_eq_zero]
+  · rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
+    grind [norm_eq_zero]
+
+/-- **The point `η_{b,r⁻}` lies in `D(a, |c|)` exactly when `‖b - a‖ ≤ ‖c‖` and `r ≤ ‖c‖`**, as
+for `η_{b,r}`. On `T - a` it takes the value of the constant `a - b` when `r ≤ ‖a - b‖`, and
+otherwise a value just below the constants of norm `r`. -/
+theorem discPointBelow_mem_closedSubdisc_iff (b : K) (hb : ‖b‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    (a c : K) : discPointBelow b hb hr₀ hr₁ ∈ closedSubdisc a c ↔ ‖b - a‖ ≤ ‖c‖ ∧ r ≤ ‖c‖ := by
+  rw [mem_closedSubdisc, ← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero,
+    norm_le_zero_iff, ← valuation_le_iff, valuation_weightedX_sub_weightedC_discPointBelow,
+    norm_sub_rev b a]
+  split_ifs with h
+  · rw [valuation_le_iff, discPointBelow_vle_weightedC_iff]
+    grind [norm_eq_zero]
+  · rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
+    grind [norm_eq_zero]
 
 end NontriviallyNormedField
 

@@ -85,6 +85,12 @@ def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
 theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
   (rfl)
 
+/-- Every `0`-cube is the constant cube at its value. -/
+theorem eq_point (c : SingularCube X 0) : c = point (c fun i ↦ i.elim0) :=
+  ContinuousMap.ext fun t ↦ by
+    simp only [point_apply]
+    exact congrArg c (Subsingleton.elim _ _)
+
 @[simp]
 theorem cast_rfl {n : ℕ} (c : SingularCube X n) : cast rfl c = c := by
   ext x
@@ -189,13 +195,18 @@ theorem face_eq_of_isDegenerateAt {n : ℕ} {c : SingularCube X (n + 1)} {i : Fi
   have := h (i.insertNth t' x) t
   rwa [Fin.update_insertNth, ← face_apply, ← face_apply] at this
 
+/-- If a cube does not depend on its coordinate `j.succAbove k`, then its faces in the coordinate
+`j` do not depend on their coordinate `k`. -/
+theorem IsDegenerateAt.face_succAbove {n : ℕ} {c : SingularCube X (n + 1)} {j : Fin (n + 1)}
+    {k : Fin n} (h : IsDegenerateAt c (j.succAbove k)) (t : I) : IsDegenerateAt (face j t c) k :=
+  fun x s ↦ by rw [face_apply, face_apply, Fin.insertNth_update, h]
+
 /-- If a cube does not depend on its `i`-th coordinate, then its faces in any other coordinate
 `j ≠ i` are degenerate. -/
 theorem isDegenerate_face_of_ne {n : ℕ} {c : SingularCube X (n + 1)} {i j : Fin (n + 1)}
     (h : IsDegenerateAt c i) (hij : i ≠ j) (t : I) : IsDegenerate (face j t c) := by
-  obtain ⟨k, hk⟩ := Fin.exists_succAbove_eq hij
-  refine ⟨k, fun x s ↦ ?_⟩
-  rw [face_apply, face_apply, Fin.insertNth_update, hk, h]
+  obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hij
+  exact (h.face_succAbove t).isDegenerate
 
 end SingularCube
 

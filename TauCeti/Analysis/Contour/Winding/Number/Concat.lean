@@ -11,10 +11,9 @@ public import TauCeti.Analysis.Contour.NullHomologous
 # Concatenation API for the generalized winding number
 
 This file records the additivity of `Contour.windingNumber` over adjacent parameter intervals.
-The contour-integration roadmap uses finite decompositions of a curve into an avoiding part and
-model sectors in Hungerbühler--Wasem Proposition 2.2; those decompositions need to add the
-corresponding generalized winding numbers after the principal values on the pieces have been
-constructed.
+Finite decompositions of a curve into an avoiding part and model sectors (Hungerbühler--Wasem
+Proposition 2.2) need to add the corresponding generalized winding numbers after the principal
+values on the pieces have been constructed.
 
 The results here are deliberately conditional on the relevant pointwise principal-value
 existence statements. The generalized winding number is a `limUnder`-based value, so without those
@@ -36,8 +35,8 @@ honest principal values.
 
 ## Provenance
 
-This is routine API around the Hungerbühler--Wasem generalized winding number from the contour
-integration roadmap; no formal source is vendored.
+This is routine API around the Hungerbühler--Wasem generalized winding number; no formal source is
+vendored.
 -/
 
 public section

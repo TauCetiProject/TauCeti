@@ -22,11 +22,6 @@ The formula is valid over every commutative ring in which `2` is invertible. The
 forced: the commutator of the unnormalized expression acts by twice the desired infinitesimal
 rotation.
 
-This is a shared generic prerequisite for the roadmap's Layer 3 standard-form normalization and
-the later Layer 9 arbitrary-form realization. It constructs neither `bivectorEquivSo` nor
-`soEquivQuadratic`, and it does not construct a transported Lie bracket, a Spin action, or the
-Layer 9 CAR worked instance.
-
 ## Main definitions
 
 * `CliffordAlgebra.bivector`: the half-normalized commutator of two Clifford
@@ -57,11 +52,6 @@ Layer 9 CAR worked instance.
   degree at most two.
 * `CliffordAlgebra.bivectorExterior_range_le_of_bivector_mem`: the
   exterior-square map lands in any submodule containing the Clifford bivectors.
-
-## References
-
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 3, "the Lie algebra `𝔰𝔬(V) ≅ ⋀²V` inside the Clifford algebra".
 -/
 
 public section
