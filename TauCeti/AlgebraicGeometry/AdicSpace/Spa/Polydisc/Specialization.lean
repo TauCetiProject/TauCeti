@@ -34,7 +34,8 @@ the classical points of type (1) are closed is
 
 The proof transfers comparisons along specializations. If `x ⤳ z`, every basic open
 `{v : v(f) ≤ v(g) ≠ 0}` containing `z` contains `x`. So a strict inequality `x(g) < x(f)` gives
-`z(g) < z(f)` as soon as one side is nonzero at `z`. Applied to `f` or `g` the linear polynomial
+`z(g) < z(f)` as soon as one side is nonzero at `z`
+(`TauCeti.ValuationSpectrum.vlt_of_specializes`). Applied to `f` or `g` the linear polynomial
 `T - a` and the other a constant, this says that `z(T - a)` keeps every strict comparison of
 `x(T - a)` with the constants. Only the comparisons with the constants of norm `r` can change, and
 the characterisations `TauCeti.ValuationSpectrum.eq_discPoint_iff`,
@@ -79,27 +80,15 @@ local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily
 /-! ### Transferring comparisons along a specialization -/
 
 omit [IsUltrametricDist K] in
-/-- **Comparisons at a specialization hold at the generization.** If `x ⤳ z`, then
-`z(f) ≤ z(g) ≠ 0` implies `x(f) ≤ x(g)`: the basic open `{v : v(f) ≤ v(g) ≠ 0}` contains `z`,
-hence `x`. -/
-private theorem valuation_le_of_specializes {x z : closedPolydisc 1 K} (h : x ⤳ z) {f g : 𝒯}
-    (hfg : z.1.valuation f ≤ z.1.valuation g) (hg : z.1.valuation g ≠ 0) :
-    x.1.valuation f ≤ x.1.valuation g := by
-  have hz : z.1 ∈ basicOpen f g := (mem_basicOpen_iff _ _ _).mpr
-    ⟨(valuation_le_iff _ _ _).mp hfg, fun h0 ↦ hg (by simpa using (valuation_le_iff _ _ _).mpr h0)⟩
-  exact (valuation_le_iff _ _ _).mpr ((mem_basicOpen_iff _ _ _).mp
-    (((subtype_specializes_iff x z).mp h).mem_open (isOpen_basicOpen f g) hz)).1
-
-omit [IsUltrametricDist K] in
-/-- **Strict comparisons at a generization hold at a specialization**, provided one side is
-nonzero there: if `x ⤳ z` and `x(g) < x(f)`, then `z(g) < z(f)` unless `z(f) = z(g) = 0`. -/
+/-- `TauCeti.ValuationSpectrum.vlt_of_specializes` for points of the closed unit disc, stated with
+valuations: if `x ⤳ z` and `x(g) < x(f)`, then `z(g) < z(f)` unless `z(f) = z(g) = 0`. -/
 private theorem valuation_lt_of_specializes {x z : closedPolydisc 1 K} (h : x ⤳ z) {f g : 𝒯}
     (hx : x.1.valuation g < x.1.valuation f)
     (hz : z.1.valuation g ≠ 0 ∨ z.1.valuation f ≠ 0) : z.1.valuation g < z.1.valuation f := by
-  refine lt_of_not_ge fun hle ↦ hx.not_ge (valuation_le_of_specializes h hle ?_)
-  rcases hz with hz | hz
-  · exact hz
-  · exact fun h0 ↦ hz (le_zero_iff.mp (h0 ▸ hle))
+  have hne {u : 𝒯} (hu : z.1.valuation u ≠ 0) : ¬ z.1.toValuativeRel.vle u 0 :=
+    fun h0 ↦ hu (by simpa using (valuation_le_iff _ _ _).mpr h0)
+  rw [valuation_lt_iff] at hx ⊢
+  exact vlt_of_specializes ((subtype_specializes_iff x z).mp h) hx (hz.imp hne hne)
 
 /-- If `x(T - a)` lies strictly above the constants `c` with `P c`, among them a nonzero one, and
 strictly below the constants with `Q c`, then so does `z(T - a)` at every specialization `z` of
