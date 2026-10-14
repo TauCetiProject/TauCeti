@@ -32,7 +32,7 @@ for parameters in the closed unit ball.
   perturbation agrees with `f`.
 * `TauCeti.exists_pos_forall_fderiv_perturb_eq_zero_iff`: for small parameters the critical
   points of `perturb f h s` are those of `f`.
-* `TauCeti.perturbedFlow f h hf hh`: the flow of the field
+* `TauCeti.perturbedFlow f h hf hh hc`: the flow of the field
   `(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)` on `E × EuclideanSpace ℝ ι`, where `a` is the cutoff of
   the parameter. `TauCeti.contDiff_perturbedFlow` says it is `C¹` jointly in time, space and
   parameter, and `TauCeti.perturbedFlow_apply_of_norm_le` that, for `‖s‖ ≤ 1`, it is the
@@ -128,23 +128,23 @@ theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturba
 /-- **Small perturbations keep the critical points.** For all sufficiently small parameters, the
 critical points of `perturb f h s` are those of `f`. -/
 theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
+    (hh : ∀ i, ContDiff ℝ 1 (h i)) (hc : ∀ i, HasCompactSupport (h i))
+    (hdisj : ∀ i, Disjoint (tsupport (h i)) {x | fderiv ℝ f x = 0}) :
     ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ x,
       (fderiv ℝ (perturb f h s) x = 0 ↔ fderiv ℝ f x = 0) := by
   have hfd : Differentiable ℝ f := hfs.differentiable (by norm_num)
-  have hhd : ∀ i, Differentiable ℝ (h i) := fun i ↦ (hh i).contDiff.differentiable (by norm_num)
+  have hhd : ∀ i, Differentiable ℝ (h i) := fun i ↦ (hh i).differentiable (by norm_num)
   -- A bound on the differentials of the perturbing functions.
   have hB : ∀ i, ∃ C : ℝ, ∀ x, ‖fderiv ℝ (h i) x‖ ≤ C := fun i ↦
-    ((hh i).hasCompactSupport.fderiv ℝ).exists_bound_of_continuous
-      ((hh i).contDiff.continuous_fderiv (by norm_num))
+    ((hc i).fderiv ℝ).exists_bound_of_continuous ((hh i).continuous_fderiv (by norm_num))
   choose B hB using hB
   obtain ⟨C, hC⟩ := Finite.exists_le B
   -- A lower bound for the differential of `f` on the supports.
   set A : Set E := ⋃ i, tsupport (h i)
-  have hA : IsCompact A := isCompact_iUnion fun i ↦ (hh i).hasCompactSupport
+  have hA : IsCompact A := isCompact_iUnion hc
   have hAcrit : ∀ x ∈ A, fderiv ℝ f x ≠ 0 := fun x hx hx0 ↦ by
     obtain ⟨i, hi⟩ := mem_iUnion.1 hx
-    exact Set.disjoint_left.1 (hh i).disjoint hi hx0
+    exact Set.disjoint_left.1 (hdisj i) hi hx0
   obtain ⟨m, hm, hmA⟩ : ∃ m > 0, ∀ x ∈ A, m ≤ ‖fderiv ℝ f x‖ := by
     rcases A.eq_empty_or_nonempty with h0 | hne
     · exact ⟨1, one_pos, by simp [h0]⟩
@@ -231,20 +231,19 @@ private theorem perturbationCutoff_eq_self_of_norm_le {s : EuclideanSpace ℝ ι
 private noncomputable def coupling (h : ι → E → ℝ) (p : E × EuclideanSpace ℝ ι) : E :=
   ∑ i, perturbationCutoff p.2 i • ∇ (h i) p.1
 
-private theorem contDiff_coupling (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
+private theorem contDiff_coupling (hh : ∀ i, ContDiff ℝ 2 (h i)) :
     ContDiff ℝ 1 (coupling h) := by
   refine ContDiff.sum fun i _ ↦ ?_
   have h1 : ContDiff ℝ 1 fun p : E × EuclideanSpace ℝ ι ↦ perturbationCutoff p.2 i :=
     ((EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).contDiff.comp
       contDiff_perturbationCutoff).comp contDiff_snd
   have h2 : ContDiff ℝ 1 fun p : E × EuclideanSpace ℝ ι ↦ ∇ (h i) p.1 :=
-    ((hh i).contDiff.gradient_right (m := 1) (by norm_num)).comp contDiff_fst
+    ((hh i).gradient_right (m := 1) (by norm_num)).comp contDiff_fst
   exact h1.smul h2
 
-private theorem hasCompactSupport_coupling (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
+private theorem hasCompactSupport_coupling (hc : ∀ i, HasCompactSupport (h i)) :
     HasCompactSupport (coupling h) := by
-  have hA : IsCompact (⋃ i, tsupport (h i)) :=
-    isCompact_iUnion fun i ↦ (hh i).hasCompactSupport
+  have hA : IsCompact (⋃ i, tsupport (h i)) := isCompact_iUnion hc
   refine HasCompactSupport.intro (hA.prod perturbationBump.hasCompactSupport) fun p hp ↦ ?_
   rw [mem_prod, not_and_or] at hp
   rcases hp with hp | hp
@@ -293,15 +292,15 @@ theorem exists_lipschitzWith_gradient_perturb (hf : Differentiable ℝ f)
   exact ⟨_, e ▸ hK.add hC⟩
 
 private theorem exists_lipschitzWith_perturbedField (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
     ∃ K' : ℝ≥0, LipschitzWith K' (perturbedField f h) := by
   obtain ⟨C, hC⟩ := (contDiff_coupling hh).lipschitzWith_of_hasCompactSupport
-    (hasCompactSupport_coupling hh) one_ne_zero
+    (hasCompactSupport_coupling hc) one_ne_zero
   unfold perturbedField
   exact ⟨_, ((hf.comp LipschitzWith.prod_fst).neg.sub hC).prodMk (LipschitzWith.const 0)⟩
 
-private theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f)
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : ContDiff ℝ 1 (perturbedField f h) := by
+private theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f) (hh : ∀ i, ContDiff ℝ 2 (h i)) :
+    ContDiff ℝ 1 (perturbedField f h) := by
   unfold perturbedField
   exact (((hfs.gradient_right (m := 1) (by norm_num)).comp contDiff_fst).neg.sub
     (contDiff_coupling hh)).prodMk contDiff_const
@@ -313,27 +312,29 @@ first component is the negative-gradient flow of `perturb f h s`
 (`perturbedFlow_apply_of_norm_le`); outside the unit ball it is the flow of the cut-off field,
 not of `perturb f h s`. -/
 noncomputable def perturbedFlow (f : E → ℝ) (h : ι → E → ℝ) (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : Flow ℝ (E × EuclideanSpace ℝ ι) :=
-  flowOfLipschitz (perturbedField f h) (exists_lipschitzWith_perturbedField hf hh).choose_spec
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
+    Flow ℝ (E × EuclideanSpace ℝ ι) :=
+  flowOfLipschitz (perturbedField f h) (exists_lipschitzWith_perturbedField hf hh hc).choose_spec
 
 /-- **The perturbed flow is `C¹`**, jointly in time, the initial condition and the parameter. -/
 theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
-    ContDiff ℝ 1 (Function.uncurry (perturbedFlow f h hf hh)) := by
-  have hc : ContDiff ℝ ((0 : ℕ) + 1) (perturbedField f h) := by
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) :
+    ContDiff ℝ 1 (Function.uncurry (perturbedFlow f h hf hh hc)) := by
+  have hF : ContDiff ℝ ((0 : ℕ) + 1) (perturbedField f h) := by
     simpa using contDiff_perturbedField hfs hh
   unfold perturbedFlow
   simpa using contDiff_flowOfLipschitz 0 (perturbedField f h)
-    (exists_lipschitzWith_perturbedField hf hh).choose_spec hc
+    (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hF
 
 /-- **The parameter is constant along the perturbed flow.** -/
 @[simp]
 theorem snd_perturbedFlow_apply (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) (t : ℝ) (p : E × EuclideanSpace ℝ ι) :
-    (perturbedFlow f h hf hh t p).2 = p.2 := by
-  have hd : ∀ u, HasDerivAt (fun u ↦ (perturbedFlow f h hf hh u p).2) 0 u := fun u ↦ by
-    have h0 := hasDerivAt_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh).choose_spec
-      p u
+    (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (t : ℝ) (p : E × EuclideanSpace ℝ ι) :
+    (perturbedFlow f h hf hh hc t p).2 = p.2 := by
+  have hd : ∀ u, HasDerivAt (fun u ↦ (perturbedFlow f h hf hh hc u p).2) 0 u := fun u ↦ by
+    have h0 :=
+      hasDerivAt_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh hc).choose_spec p u
     exact (hasFDerivAt_snd.comp_hasDerivAt u h0).congr_deriv (by simp [perturbedField])
   have := is_const_of_deriv_eq_zero (fun u ↦ (hd u).differentiableAt) (fun u ↦ (hd u).deriv) t 0
   simpa using this
@@ -342,18 +343,19 @@ theorem snd_perturbedFlow_apply (hf : LipschitzWith K (∇ f))
 of norm at most `1`, the perturbed flow sends `(x, s)` at time `t` to the pair of the time-`t`
 image of `x` under the negative-gradient flow of `perturb f h s`, and `s`. -/
 theorem perturbedFlow_apply_of_norm_le (hd : Differentiable ℝ f) (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1)
+    (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1)
     {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) (t : ℝ) (x : E) :
-    perturbedFlow f h hf hh t (x, s) = (negativeGradientFlow (perturb f h s) hf' t x, s) := by
+    perturbedFlow f h hf hh hc t (x, s) = (negativeGradientFlow (perturb f h s) hf' t x, s) := by
   set φ := negativeGradientFlow (perturb f h s) hf'
   have hγ : ∀ t, HasDerivAt (fun t ↦ (φ t x, s)) (perturbedField f h (φ t x, s)) t := by
     intro t
     have h1 : HasDerivAt (fun t ↦ φ t x) (-∇ (perturb f h s) (φ t x)) t :=
       (isNegativeGradient_negativeGradientFlow (perturb f h s) hf').isIntegralCurve x t
     rw [perturbedField_apply_of_norm_le hd
-      (fun i ↦ (hh i).contDiff.differentiable (by norm_num)) hs]
+      (fun i ↦ (hh i).differentiable (by norm_num)) hs]
     exact h1.prodMk (hasDerivAt_const t s)
-  have := eq_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh).choose_spec hγ t
+  have := eq_flowOfLipschitz (exists_lipschitzWith_perturbedField hf hh hc).choose_spec hγ t
   simpa [perturbedFlow] using this.symm
 
 end Flow
