@@ -31,7 +31,7 @@ noncomputable def _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
   ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
 
-/-- The transform evaluated at a group element is the integral of character evaluations. -/
+/-- The transform evaluated at a monoid element is the integral of character evaluations. -/
 theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_apply
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) :
     μ.pontryaginMeasureTransform g =
