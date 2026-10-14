@@ -221,19 +221,13 @@ private theorem coordinateRingDerivation_mul_mem_eq_zero {x y : F}
     (hmul : ∀ p q : F[X][Y], d (p * q) = p.evalEval x y * d q + q.evalEval x y * d p)
     (hd : d W.polynomial = 0) (a b : CoordinateRing.XYIdeal W x (C y)) :
     coordinateRingDerivation heval d hmul hd (a * b : W.CoordinateRing) = 0 := by
-  have heq : (W⁄F).toAffine.Equation x y := by
-    simpa only [WeierstrassCurve.baseChange, Algebra.algebraMap_self,
-      WeierstrassCurve.map_id, Equation] using heval
+  have heq : W.Equation x y := by simpa only [Equation] using heval
   obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (a : W.CoordinateRing)
   obtain ⟨q, hq⟩ := AdjoinRoot.mk_surjective (b : W.CoordinateRing)
   have hpa : p.evalEval x y = 0 := by
-    simpa only [← hp, CoordinateRing.evalAlgHom_mk, Algebra.algebraMap_self,
-      Polynomial.mapRingHom_id, Polynomial.map_id] using
-      (CoordinateRing.mem_XYIdeal_iff_evalAlgHom_eq_zero heq).mp a.2
+    exact (CoordinateRing.mk_mem_XYIdeal_iff heq p).mp (hp.symm ▸ a.2)
   have hqb : q.evalEval x y = 0 := by
-    simpa only [← hq, CoordinateRing.evalAlgHom_mk, Algebra.algebraMap_self,
-      Polynomial.mapRingHom_id, Polynomial.map_id] using
-      (CoordinateRing.mem_XYIdeal_iff_evalAlgHom_eq_zero heq).mp b.2
+    exact (CoordinateRing.mk_mem_XYIdeal_iff heq q).mp (hq.symm ▸ b.2)
   rw [← hp, ← hq, ← map_mul, coordinateRingDerivation_mk, hmul, hpa, hqb,
     zero_mul, zero_mul, add_zero]
 
@@ -371,19 +365,17 @@ private theorem natDegree_norm_basisComb_le {p q : F[X]} {da db : ℕ}
   have hmax : ((max (2 * (da - 1)) (2 * db + 1) : ℕ) : WithBot ℕ) =
       max ((2 * (da - 1) : ℕ) : WithBot ℕ) ((2 * db + 1 : ℕ) : WithBot ℕ) := rfl
   rw [hmax]
+  have hbound {r : F[X]} {n c d : ℕ} (hr : r.degree < (n : ℕ))
+      (hle : ∀ k < n, 2 * k + c ≤ d) : 2 • r.degree + c ≤ (d : ℕ) := by
+    by_cases h0 : r = 0
+    · simp [h0]
+    · have hdeg := (Polynomial.natDegree_lt_iff_degree_lt h0).mpr hr
+      rw [Polynomial.degree_eq_natDegree h0, nsmul_eq_mul]
+      norm_cast
+      exact hle _ hdeg
   apply max_le_max
-  · by_cases h0 : p = 0
-    · simp [h0]
-    · have hdeg := (Polynomial.natDegree_lt_iff_degree_lt h0).mpr hp
-      rw [Polynomial.degree_eq_natDegree h0, nsmul_eq_mul]
-      norm_cast
-      omega
-  · by_cases h0 : q = 0
-    · simp [h0]
-    · have hdeg := (Polynomial.natDegree_lt_iff_degree_lt h0).mpr hq
-      rw [Polynomial.degree_eq_natDegree h0, nsmul_eq_mul]
-      norm_cast
-      omega
+  · simpa only [Nat.cast_zero, add_zero] using hbound (c := 0) hp (by omega)
+  · exact hbound (c := 3) hq (by omega)
 
 private theorem basisCombMap_ne_zero {a b : ℕ}
     (pq : Polynomial.degreeLT F a × Polynomial.degreeLT F b) (h : pq ≠ 0) :
@@ -491,7 +483,7 @@ private theorem exists_codimLEOne_inv
           (ClassGroup.mk W.FunctionField U)⁻¹ := by
   let hIunit : IsUnit (U.1.num :
       FractionalIdeal W.CoordinateRing⁰ W.FunctionField) :=
-    FractionalIdeal.isUnit_num.mpr U.isUnit
+    FractionalIdeal.isUnit_num_iff.mpr U.isUnit
   obtain ⟨J, hJunit, hfin, hclass⟩ :=
     exists_codimLEOne_inv_integral (F := F) U.1.num hIunit
   refine ⟨J, hJunit, hfin, ?_⟩

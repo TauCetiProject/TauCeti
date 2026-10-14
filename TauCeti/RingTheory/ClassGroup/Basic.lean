@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # Complements on the ideal class group
@@ -29,7 +29,7 @@ trivial class, and the class `[v]` of a height one prime.
   `simp` form of `ClassGroup.mk_eq_one_iff` for the one witness that arises in practice, and it
   holds over any domain.
 * `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
-  same class, over any domain.
+  same class, over any domain and any choice of fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk0`: the defining formula for `[v]`, as
   `ClassGroup.mk0` of `v.asIdeal`. This needs no fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk`: `[v]` is the class of `v.asIdeal` seen
@@ -77,22 +77,19 @@ lemma ClassGroup.mk_toPrincipalIdeal {R : Type*} [CommRing R] [IsDomain R] {K : 
 /-- Replacing an invertible fractional ideal by its integral numerator does not change its ideal
 class. -/
 @[simp]
-theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R]
-    (I : (FractionalIdeal R⁰ (FractionRing R))ˣ) :
-    let hnum : IsUnit (I.1.num : FractionalIdeal R⁰ (FractionRing R)) :=
-      FractionalIdeal.isUnit_num.mpr I.isUnit
-    ClassGroup.mk (FractionRing R) hnum.unit = ClassGroup.mk (FractionRing R) I := by
+theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Field K]
+    [Algebra R K] [IsFractionRing R K] (I : (FractionalIdeal R⁰ K)ˣ) :
+    let hnum : IsUnit (I.1.num : FractionalIdeal R⁰ K) :=
+      FractionalIdeal.isUnit_num_iff.mpr I.isUnit
+    ClassGroup.mk K hnum.unit = ClassGroup.mk K I := by
   dsimp only
-  let K := FractionRing R
-  let hnum : IsUnit (I.1.num : FractionalIdeal R⁰ K) :=
-    FractionalIdeal.isUnit_num.mpr I.isUnit
-  have hden0 : algebraMap R K I.1.den ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors I.1.den.prop
-  rw [eq_comm, ClassGroup.mk_eq_mk]
-  refine ⟨Units.mk0 (algebraMap R K I.1.den) hden0, ?_⟩
-  apply Units.ext
-  rw [Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0, hnum.unit_spec]
-  simpa [mul_comm] using FractionalIdeal.den_mul_self_eq_num' R⁰ K I.1
+  let u : Kˣ := (IsLocalization.map_units K I.1.den).unit
+  have hnum : (FractionalIdeal.isUnit_num_iff.mpr I.isUnit).unit =
+      toPrincipalIdeal R K u * I := by
+    apply Units.ext
+    simp only [IsUnit.unit_spec, Units.val_mul, coe_toPrincipalIdeal, u]
+    exact (FractionalIdeal.den_mul_self_eq_num' R⁰ K I.1).symm
+  rw [hnum, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul]
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
