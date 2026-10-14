@@ -253,6 +253,13 @@ def IsLipschitzDomain (Ω : Opens F) : Prop :=
   ∀ x ∈ frontier (Ω : Set F), Nonempty (LipschitzBoundaryChart Ω x)
 
 omit [FiniteDimensional ℝ F] in
+/-- An open set is a Lipschitz domain exactly when each frontier point has a boundary chart. -/
+theorem isLipschitzDomain_iff {Ω : Opens F} :
+    IsLipschitzDomain Ω ↔
+      ∀ x ∈ frontier (Ω : Set F), Nonempty (LipschitzBoundaryChart Ω x) :=
+  Iff.rfl
+
+omit [FiniteDimensional ℝ F] in
 /-- The open half-space based at `a` with inward unit normal `ν`. -/
 def innerHalfSpace (a ν : F) : Opens F :=
   ⟨{y | 0 < inner ℝ ν (y - a)}, isOpen_lt continuous_const
@@ -281,6 +288,7 @@ omit [FiniteDimensional ℝ F] in
 /-- **The open half-space with unit inward normal `ν` is a Lipschitz domain.** -/
 theorem isLipschitzDomain_innerHalfSpace (a ν : F) (hν : ‖ν‖ = 1) :
     IsLipschitzDomain (innerHalfSpace a ν) := by
+  rw [isLipschitzDomain_iff]
   intro x hx
   have hx0 := inner_eq_zero_of_mem_frontier_innerHalfSpace hx
   refine ⟨{
