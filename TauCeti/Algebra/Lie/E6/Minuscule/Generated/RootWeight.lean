@@ -53,6 +53,8 @@ simply connected group scheme of type `E₆`.
 * `TauCeti.E6Minuscule.tangentMatrix_derivationComp_generatedCoordinateLift` and
   `TauCeti.E6Minuscule.tangentMatrix_generatedRootVector`: the root-subgroup differential is the
   tangent parameter times the integral raising or lowering matrix.
+* `TauCeti.E6Minuscule.range_derivationCompLieHom_generatedCoordinateLift_eq_span`: the image of
+  each root-subgroup differential is the line spanned by the normalized root vector.
 * `TauCeti.E6Minuscule.generatedRootVector_ne_zero`: the normalized root vectors are nonzero.
 * `TauCeti.E6Minuscule.mem_adjointWeightSpace_generatedWeightTorusCoordinateMap_iff`: the
   entrywise criterion for membership in an adjoint weight space of the generated subgroup.
@@ -183,6 +185,13 @@ theorem derivationComp_generatedCoordinateLift_eq_smul_generatedRootVector
     derivationComp (B := R) (generatedCoordinateLift R (.inl k)).hom d =
       AdditiveGroup.gaTangentLinearEquiv d • generatedRootVector R k :=
   AdditiveGroup.derivationComp_eq_smul _ d
+
+/-- Each numbered root-subgroup differential of the generated subgroup has precisely the
+normalized root line as its image. -/
+theorem range_derivationCompLieHom_generatedCoordinateLift_eq_span (k : Fin 6 ⊕ Fin 6) :
+    (derivationCompLieHom (B := R) (generatedCoordinateLift R (.inl k)).hom).range.toSubmodule =
+      R ∙ generatedRootVector R k :=
+  AdditiveGroup.range_derivationCompLieHom_eq_span R _
 
 /-- The matrix of a normalized root vector is its integral raising or lowering matrix. -/
 @[simp]
