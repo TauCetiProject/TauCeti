@@ -23,8 +23,9 @@ The conclusion is that for every `f ∈ L²` and every `t`,
 `t · |{‖T f‖ > t}| ≤ (2ⁿ (4 ‖T‖² + 1) + 4 B) ‖f‖₁`
 (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`). The theorem
 is stated more generally with `closedBall y (c r)` in place of the doubled ball, for any dilation
-factor `c`, and then gives the constant `4 · 2ⁿ ‖T‖² + cⁿ + 4 B`. Kernels estimated in the
-Euclidean distance satisfy the cancellation condition in the sup distance only for `c = 2 √n`.
+factor `c`, and then gives the constant `4 · 2ⁿ ‖T‖² + cⁿ + 4 B`. Kernels satisfying only
+Hörmander's condition in the Euclidean distance give the cancellation condition in the sup distance
+with `c = 2 √n`.
 
 The cancellation condition holds for an operator given off the support of `b` by a kernel,
 `T b x = ∫ K x y (b y) dy`, satisfying **Hörmander's kernel condition**

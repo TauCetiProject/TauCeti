@@ -56,7 +56,7 @@ Points of `ℝⁿ` are functions `ι → ℝ`, so distances and balls are taken 
   `2 < p < ∞`.
 * `ContinuousLinearMap.eLpNorm_le_of_hormander_adjoint`: the same when the adjoint is given by a
   kernel satisfying Hörmander's condition.
-* `ContinuousLinearMap.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`: if an operator and
+* `TauCeti.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`: if an operator and
   its adjoint both satisfy the cancellation condition, the operator is of strong type `(p, p)` for
   every `1 < p < ∞`, uniformly over operators with the same bounds.
 
@@ -209,6 +209,18 @@ theorem eLpNorm_le_of_hormander_adjoint
     (setLIntegral_compl_closedBall_enorm_apply_le_of_hormander (adjoint T) hk hB hrep) hp hp_top
       f).trans_eq (by rw [ENNReal.ofReal_ofNat, mul_add_one])
 
+end ContinuousLinearMap
+
+namespace TauCeti
+
+open MeasureTheory Metric Set
+open ContinuousLinearMap (adjoint)
+open scoped ENNReal NNReal
+
+variable {ι : Type*} [Fintype ι] [Nonempty ι] {H K : Type*} [NormedAddCommGroup H]
+  [InnerProductSpace ℝ H] [CompleteSpace H] [NormedAddCommGroup K] [InnerProductSpace ℝ K]
+  [CompleteSpace K] {p : ℝ≥0∞}
+
 /-- **The Calderón–Zygmund theorem** on `Lᵖ`, `1 < p < ∞`, with a constant depending only on the
 data. Let `c` be a dilation factor, `M` a bound on operator norms and `B`, `B'` cancellation
 constants, all finite. Then for every `1 < p < ∞` there is a constant `C` with the following
@@ -251,7 +263,7 @@ theorem exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le (c : ℝ) {M B B' 
           (2 * (2 ^ Fintype.card ι * (4 * M ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B)) +
         ENNReal.ofReal (p.toReal / (2 - p.toReal)) * (4 * M ^ 2)) ^ (1 / p.toReal),
       ENNReal.rpow_ne_top_of_nonneg (by positivity) (by finiteness),
-      fun T hTM hT _ f => (eLpNorm_le_of_setLIntegral_compl_closedBall_le T hT hp hp2 f).trans ?_⟩
+      fun T hTM hT _ f => (T.eLpNorm_le_of_setLIntegral_compl_closedBall_le hT hp hp2 f).trans ?_⟩
     gcongr
   · refine ⟨M, hM, fun T hTM _ _ f => ?_⟩
     rw [← Lp.enorm_def, ← Lp.enorm_def]
@@ -265,7 +277,7 @@ theorem exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le (c : ℝ) {M B B' 
           (2 * (2 ^ Fintype.card ι * (4 * M ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B')) +
         ENNReal.ofReal (p.toReal / (p.toReal - 2)) * (4 * M ^ 2)) ^ (1 - 1 / p.toReal),
       ENNReal.rpow_ne_top_of_nonneg this (by finiteness), fun T hTM _ hT' f =>
-      (eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le T hT' hp2 hp_top f).trans ?_⟩
+      (T.eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le hT' hp2 hp_top f).trans ?_⟩
     gcongr
 
-end ContinuousLinearMap
+end TauCeti

@@ -15,7 +15,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StrongType
 
 The Calderón–Zygmund theorems
 (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`,
-`ContinuousLinearMap.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`) are stated on
+`TauCeti.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`) are stated on
 `ℝⁿ = ι → ℝ` with the sup distance, because the Calderón–Zygmund decomposition runs on dyadic
 cubes. The singular integral kernels of analysis, such as the second derivatives `D²Gₙ (x - y)` of
 the Newtonian kernel, are instead estimated in the Euclidean distance. This file states the
@@ -53,8 +53,8 @@ Without a size estimate, the region `‖x - y'‖ > 2 ‖y - y'‖` cannot be en
 with the cancellation condition in coordinates for the dilation factor `2 √n`: the complement of
 the sup-distance ball of radius `2 √n r` around the centre of a cube of `V` lies in the region of
 Hörmander's condition for every point of the cube. The resulting weak type `(1, 1)` and strong
-type `(p, p)` bounds (`ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_hormander`,
-`ContinuousLinearMap.exists_eLpNorm_le_of_hormander`) have constants depending only on `n`, `p`,
+type `(p, p)` bounds (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`,
+`TauCeti.exists_eLpNorm_le_of_hormander`) have constants depending only on `n`, `p`,
 `B` and a bound for `‖T‖`, so they hold uniformly over families of operators.
 
 ## Main declarations
@@ -63,9 +63,9 @@ type `(p, p)` bounds (`ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_horm
   `L²(V)` with a standard kernel is of weak type `(1, 1)`.
 * `ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow`: an operator on `L²(V)` such that
   both it and its adjoint have standard kernels is bounded in the `Lᵖ` norm for `1 < p < ∞`.
-* `ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_hormander`: operators on `L²(V)` with
+* `TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`: operators on `L²(V)` with
   kernels satisfying Hörmander's condition are of weak type `(1, 1)`, uniformly.
-* `ContinuousLinearMap.exists_eLpNorm_le_of_hormander`: operators on `L²(V)` such that both they
+* `TauCeti.exists_eLpNorm_le_of_hormander`: operators on `L²(V)` such that both they
   and their adjoints have kernels satisfying Hörmander's condition are bounded in the `Lᵖ` norm
   for `1 < p < ∞`, uniformly.
 
@@ -410,8 +410,8 @@ where the kernel `k` satisfies **Hörmander's condition**
 
 Then `t · |{‖T f‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. One can take
 `A = 4 · 2ⁿ M² + (2 √n)ⁿ + 4 B`. -/
-theorem exists_mul_volume_lt_enorm_le_of_hormander [Nontrivial V] {M B : ℝ≥0∞} (hM : M ≠ ∞)
-    (hB : B ≠ ∞) :
+theorem _root_.TauCeti.exists_mul_volume_lt_enorm_le_of_hormander [Nontrivial V] {M B : ℝ≥0∞}
+    (hM : M ≠ ∞) (hB : B ≠ ∞) :
     ∃ A : ℝ≥0, ∀ (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V))
       (k : V → V → E →L[ℝ] F), ‖T‖ₑ ≤ M → StronglyMeasurable (Function.uncurry k) →
       (∀ y y', ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ ≤ B) →
@@ -496,8 +496,8 @@ compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (r
 
 Then `‖T f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`. Since `C` does not depend on `T`, the theorem applies
 uniformly to families of operators, such as the truncations of a Fourier multiplier. -/
-theorem exists_eLpNorm_le_of_hormander [Nontrivial V] {M B B' : ℝ≥0∞} (hM : M ≠ ∞) (hB : B ≠ ∞)
-    (hB' : B' ≠ ∞) (hp : 1 < p) (hp_top : p ≠ ∞) :
+theorem _root_.TauCeti.exists_eLpNorm_le_of_hormander [Nontrivial V] {M B B' : ℝ≥0∞}
+    (hM : M ≠ ∞) (hB : B ≠ ∞) (hB' : B' ≠ ∞) (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ (T : Lp H 2 (volume : Measure V) →L[ℝ] Lp K 2 (volume : Measure V))
       (k : V → V → H →L[ℝ] K) (k' : V → V → K →L[ℝ] H), ‖T‖ₑ ≤ M →
       StronglyMeasurable (Function.uncurry k) → StronglyMeasurable (Function.uncurry k') →
