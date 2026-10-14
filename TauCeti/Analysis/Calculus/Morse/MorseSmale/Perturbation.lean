@@ -25,7 +25,7 @@ for parameters in the closed unit ball.
 ## Main declarations
 
 * `TauCeti.IsAdmissiblePerturbation f h`: `h` is `C²`, compactly supported, and its support avoids
-  the critical points of `f`; `TauCeti.isAdmissiblePerturbation_contDiffBump_mul`: a bump times a
+  the critical points of `f`; `ContDiffBump.isAdmissiblePerturbation_mul`: a bump times a
   `C²` function is admissible when the bump's support avoids the critical points.
 * `TauCeti.perturb f h s`: the perturbed function, with `TauCeti.fderiv_perturb`,
   `TauCeti.gradient_perturb` and `TauCeti.contDiff_perturb`.
@@ -193,7 +193,7 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [H
 /-- **Bumps away from the critical points give admissible perturbations.** If the closed support of
 a smooth bump `θ` contains no critical point of `f`, then `θ g` is an admissible perturbation of
 `f` for every `C²` function `g`; for instance `x ↦ θ x * ⟪v, x - z⟫`. -/
-theorem isAdmissiblePerturbation_contDiffBump_mul {z : E} (θ : ContDiffBump z)
+theorem _root_.ContDiffBump.isAdmissiblePerturbation_mul {z : E} (θ : ContDiffBump z)
     (hθ : ∀ x ∈ Metric.closedBall z θ.rOut, fderiv ℝ f x ≠ 0) {g : E → ℝ} (hg : ContDiff ℝ 2 g) :
     IsAdmissiblePerturbation f fun x ↦ θ x * g x where
   contDiff := θ.contDiff.mul hg
