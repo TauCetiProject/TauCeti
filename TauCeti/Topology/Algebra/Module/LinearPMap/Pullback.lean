@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Module.LinearPMap
 /-!
 # Coordinate changes for partial operators
 
-`TauCeti.pullback A e` transports a partial endomorphism `A` along a continuous linear
+`TauCeti.LinearPMap.pullback A e` transports a partial endomorphism `A` along a continuous linear
 equivalence `e : E ≃L[R] F`. Its domain is `e ⁻¹' A.domain` and its action is `e⁻¹ A e`.
 The graph is the inverse image of the graph of `A` under the product equivalence `e × e`.
 Consequently density of the domain and closedness of the operator are invariant under
@@ -18,17 +18,18 @@ coordinate changes. No inner product, completeness, or continuity of the partial
 is required.
 
 The identity, composition, and inverse laws allow successive coordinate changes without
-unfolding the construction. For a total continuous operator, pullback agrees with ordinary
-conjugation of continuous linear maps.
+unfolding the construction. For a total linear operator, pullback agrees with ordinary
+conjugation of linear maps.
 
 ## References
 
-J. Weidmann, *Linear Operators in Hilbert Spaces*, Chapter 1, closed operators and their graphs.
+J. Weidmann, *Linear Operators in Hilbert Spaces*, Chapter 5 (§5.1), closed operators and their
+graphs.
 -/
 
 public section
 
-namespace TauCeti
+namespace TauCeti.LinearPMap
 
 section Ring
 
@@ -61,7 +62,7 @@ theorem pullback_domain (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
 /-- A coordinate change transports both coordinates of the graph. -/
 theorem mem_graph_pullback (A : F →ₗ.[R] F) (e : E ≃L[R] F)
     {p : E × E} : p ∈ (pullback A e).graph ↔ (e p.1, e p.2) ∈ A.graph := by
-  rw [LinearPMap.mem_graph_iff, LinearPMap.mem_graph_iff]
+  rw [_root_.LinearPMap.mem_graph_iff, _root_.LinearPMap.mem_graph_iff]
   constructor
   · rintro ⟨x, hx, hAx⟩
     refine ⟨⟨e x, (mem_pullback_domain A e).mp x.property⟩, congrArg e hx, ?_⟩
@@ -87,19 +88,19 @@ theorem graph_pullback (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
 /-- Pullback along the identity leaves a partial operator unchanged. -/
 @[simp] theorem pullback_refl (A : E →ₗ.[R] E) :
     pullback A (ContinuousLinearEquiv.refl R E) = A := by
-  apply LinearPMap.eq_of_eq_graph
+  apply _root_.LinearPMap.eq_of_eq_graph
   ext p
   simp only [mem_graph_pullback, ContinuousLinearEquiv.refl_apply]
 
 /-- Successive pullbacks compose their coordinate changes in the same order. -/
-theorem pullback_pullback (A : G →ₗ.[R] G)
+@[simp] theorem pullback_pullback (A : G →ₗ.[R] G)
     (f : F ≃L[R] G) (e : E ≃L[R] F) : pullback (pullback A f) e = pullback A (e.trans f) := by
-  apply LinearPMap.eq_of_eq_graph
+  apply _root_.LinearPMap.eq_of_eq_graph
   ext p
   simp only [mem_graph_pullback, ContinuousLinearEquiv.trans_apply]
 
 /-- Pulling back by an equivalence and its inverse recovers the original operator. -/
-@[simp] theorem pullback_symm (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
+theorem pullback_pullback_symm (A : F →ₗ.[R] F) (e : E ≃L[R] F) :
     pullback (pullback A e) e.symm = A := by
   rw [pullback_pullback]
   simp
@@ -111,13 +112,12 @@ theorem pullback_pullback (A : G →ₗ.[R] G)
   rw [pullback_domain, Submodule.comap_coe]
   exact e.toHomeomorph.isOpenQuotientMap.dense_preimage_iff
 
-/-- Pullback of an everywhere-defined continuous operator is ordinary conjugation. -/
+/-- Pullback of an everywhere-defined linear operator is ordinary conjugation. -/
 @[simp] theorem pullback_toPMap_top
-    (T : F →L[R] F) (e : E ≃L[R] F) :
-    pullback ((T : F →ₗ[R] F).toPMap ⊤) e =
-      ((e.symm.toContinuousLinearMap ∘L T ∘L e.toContinuousLinearMap : E →L[R] E) :
-        E →ₗ[R] E).toPMap ⊤ := by
-  apply LinearPMap.ext
+    (T : F →ₗ[R] F) (e : E ≃L[R] F) :
+    pullback (T.toPMap ⊤) e =
+      (e.symm.toLinearMap ∘ₗ T ∘ₗ e.toLinearMap).toPMap ⊤ := by
+  apply _root_.LinearPMap.ext
   · simp [pullback_domain]
   · intros
     simp [pullback_apply, LinearMap.toPMap_apply]
@@ -133,9 +133,9 @@ variable {R E F : Type*} [CommRing R]
 /-- Closedness of a partial operator is invariant under continuous linear coordinate changes. -/
 @[simp] theorem isClosed_pullback_iff
     (A : F →ₗ.[R] F) (e : E ≃L[R] F) : (pullback A e).IsClosed ↔ A.IsClosed := by
-  rw [LinearPMap.IsClosed, LinearPMap.IsClosed, graph_pullback, Submodule.comap_coe]
+  rw [_root_.LinearPMap.IsClosed, _root_.LinearPMap.IsClosed, graph_pullback, Submodule.comap_coe]
   exact (e.prodCongr e).toHomeomorph.isClosed_preimage
 
 end Closed
 
-end TauCeti
+end TauCeti.LinearPMap
