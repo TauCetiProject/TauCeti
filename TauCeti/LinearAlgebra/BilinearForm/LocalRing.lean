@@ -71,8 +71,10 @@ theorem IsSymm.isUnit_pairGramDet_of_dvd_apply_self (hB : B.IsSymm) {x y : M}
     have hneg : -(B x x * B y y - B x y * B y x) ∈ nonunits R := by
       simpa only [mem_nonunits_iff, IsUnit.neg_iff] using hdet
     have hnonunit := IsLocalRing.nonunits_add hdiag hneg
-    rw [show B x x * B y y + -(B x x * B y y - B x y * B y x) =
-      B x y * B y x by ring] at hnonunit
+    have hcancel : B x x * B y y + -(B x x * B y y - B x y * B y x) =
+        B x y * B y x := by
+      ring
+    rw [hcancel] at hnonunit
     exact hnonunit hoff
   simpa [Matrix.det_fin_two] using hunit
 
