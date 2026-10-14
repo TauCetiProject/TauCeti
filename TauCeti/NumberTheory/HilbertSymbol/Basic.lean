@@ -204,6 +204,12 @@ theorem hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix (a b : Kˣ) :
   rw [hilbertSymbol_eq_one_iff,
     QuaternionAlgebra.nonempty_algEquiv_matrix_iff_exists_eq_sq_sub_mul_sq]
 
+/-- The negative sign is equivalent to `ℍ[K,a,b]` being a division algebra. -/
+theorem hilbertSymbol_eq_neg_one_iff_forall_isUnit (a b : Kˣ) :
+    hilbertSymbol a b = -1 ↔ ∀ x : ℍ[K,(a : K),(b : K)], x ≠ 0 → IsUnit x := by
+  rw [← Int.units_ne_iff_eq_neg, Ne, hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix,
+    QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_forall_isUnit, not_not]
+
 /-- The positive sign is equivalent to isotropy of the ternary form `⟨1,-a,-b⟩`. -/
 theorem hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares (a b : Kˣ) :
     hilbertSymbol a b = 1 ↔

@@ -42,6 +42,10 @@ variables between globally minimal equations: they are exactly those defined ove
 * `WeierstrassCurve.IsGlobalMinimal.isIntegral` and
   `WeierstrassCurve.IsSemiGlobalMinimal.isIntegral`: both predicates imply integrality over `O`,
   through Mathlib's `[IsMinimal R W] : IsIntegral R W` at each prime and the descent.
+* `WeierstrassCurve.isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem`: an equation over `O` is
+  minimal at every height-one prime not containing both its discriminant and its `c₄`.
+* `WeierstrassCurve.isMinimal_baseChange_of_not_pow_twelve_dvd_span_Δ`: an equation over `O` is
+  minimal at every height-one prime `v` with `v¹² ∤ (Δ)`.
 * `WeierstrassCurve.isGlobalMinimal_baseChange_of_isCoprime`: an equation over `O` whose
   discriminant and `c₄` are coprime is globally minimal.
 * `WeierstrassCurve.IsGlobalMinimal.baseChange_smul`: a change of variables defined over `O`
@@ -206,19 +210,41 @@ theorem IsSemiGlobalMinimal.isIntegral {W : WeierstrassCurve K} [W.IsElliptic]
     · have := hmin v hv
       infer_instance
 
+/-- **An equation over `O` is minimal at every height-one prime not containing both its
+discriminant and its `c₄`.** Read over the localisation at such a prime, one of the two is a unit,
+and an integral equation with a unit discriminant or a unit `c₄` is minimal there
+(`isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄`). -/
+theorem isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem (W : WeierstrassCurve O)
+    {v : HeightOneSpectrum O} (hv : W.Δ ∉ v.asIdeal ∨ W.c₄ ∉ v.asIdeal) :
+    IsMinimal (Localization.AtPrime v.asIdeal) (W.baseChange K) := by
+  have hW : (W.map (algebraMap O (Localization.AtPrime v.asIdeal))).baseChange K =
+      W.baseChange K := by
+    rw [baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]
+  rw [← hW]
+  refine isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄ _ _ ?_
+  simpa only [map_Δ, map_c₄, IsLocalization.AtPrime.isUnit_to_map_iff _ v.asIdeal,
+    Ideal.mem_primeCompl_iff] using hv
+
+/-- **An equation over `O` is minimal at every height-one prime `v` with `v¹² ∤ (Δ)`.** Its
+discriminant then has `v`-adic valuation less than `12`
+(`isMinimal_of_exp_neg_twelve_lt_valuation_Δ`). -/
+theorem isMinimal_baseChange_of_not_pow_twelve_dvd_span_Δ (W : WeierstrassCurve O)
+    {v : HeightOneSpectrum O} (h : ¬ v.asIdeal ^ 12 ∣ Ideal.span {W.Δ}) :
+    IsMinimal (Localization.AtPrime v.asIdeal) (W.baseChange K) := by
+  refine isMinimal_of_exp_neg_twelve_lt_valuation_Δ _ _ ?_
+  rwa [HeightOneSpectrum.valuation_maximalIdeal_localizationAtPrime, baseChange, map_Δ,
+    HeightOneSpectrum.valuation_of_algebraMap, ← not_le,
+    show (-12 : ℤ) = -((12 : ℕ) : ℤ) by norm_num, HeightOneSpectrum.intValuation_le_pow_iff_dvd]
+
 /-- **An equation over `O` whose discriminant and `c₄` are coprime is globally minimal.** At each
-height-one prime one of the two is a unit of the local ring, and an integral equation with a unit
-discriminant or a unit `c₄` is minimal there (`isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄`). -/
+height-one prime one of the two is a unit of the local ring
+(`isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem`). -/
 theorem isGlobalMinimal_baseChange_of_isCoprime (W : WeierstrassCurve O)
     [(W.baseChange K).IsElliptic] (h : IsCoprime W.Δ W.c₄) : IsGlobalMinimal O (W.baseChange K) :=
-  IsGlobalMinimal.of_forall_isMinimal fun v => by
-    have hW : (W.map (algebraMap O (Localization.AtPrime v.asIdeal))).baseChange K =
-        W.baseChange K := by
-      rw [baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]
-    rw [← hW]
-    refine isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄ _ _ ?_
-    rw [map_Δ, map_c₄]
-    exact (h.map _).isUnit_or_isUnit
+  IsGlobalMinimal.of_forall_isMinimal fun v => isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem W <| by
+    simpa only [IsLocalization.AtPrime.isUnit_to_map_iff (Localization.AtPrime v.asIdeal)
+      v.asIdeal, Ideal.mem_primeCompl_iff] using
+        (h.map (algebraMap O (Localization.AtPrime v.asIdeal))).isUnit_or_isUnit
 
 /-! ### Changes of variables between globally minimal equations -/
 
