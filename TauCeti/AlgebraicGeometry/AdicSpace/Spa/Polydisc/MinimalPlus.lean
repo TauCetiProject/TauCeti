@@ -37,6 +37,12 @@ where `aₛ` is the last coefficient of `f` of maximal norm. These values compar
 `v(T) ≤ 1` are at most `1` on all of `A°`, again by polynomial approximation, so they lie in the
 closed disc.
 
+Topologically, `x_{>1}` is a specialization of the Gauss point `η_1`, because its valuation
+refines the Gauss norm. The closed unit disc is the open subset `{v : v(T) ≤ 1}` of
+`Spa(A, A⁺)`, so it is an open dense subspace and `x_{>1}` is a closed point. This is the
+closed-disc case of the last assertion of Wedhorn's Example 7.58: `Spa(A, A⁺)` contains
+`Spa(A, A°)` as an open dense subset.
+
 Neither completeness nor algebraic closedness of `K` is needed, although Wedhorn assumes both.
 
 ## Main definitions
@@ -57,10 +63,18 @@ Neither completeness nor algebraic closedness of `K` is needed, although Wedhorn
   `TauCeti.ValuationSpectrum.gaussPointAboveOne_notMem_closedPolydisc`.
 * `TauCeti.ValuationSpectrum.spa_closedDiscMinimalPlus`:
   `Spa(K⟨T⟩, K⟨T⟩⁺) = Spa(K⟨T⟩, K⟨T⟩°) ∪ {x_{>1}}`.
+* `TauCeti.ValuationSpectrum.gaussPoint_specializes_gaussPointAboveOne`: `x_{>1}` lies in the
+  closure of the Gauss point `η_1`.
+* `TauCeti.ValuationSpectrum.isOpenEmbedding_inclusion_closedPolydisc_spa_closedDiscMinimalPlus`
+  and `TauCeti.ValuationSpectrum.denseRange_inclusion_closedPolydisc_spa_closedDiscMinimalPlus`:
+  the closed unit disc is an open dense subspace of `Spa(K⟨T⟩, K⟨T⟩⁺)`.
+* `TauCeti.ValuationSpectrum.isClosed_singleton_gaussPointAboveOne`: `x_{>1}` is a closed point of
+  `Spa(K⟨T⟩, K⟨T⟩⁺)`.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Remark 7.15 and Example 7.57.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Remark 7.15 and Examples 7.57
+  and 7.58.
 -/
 
 public section
@@ -432,5 +446,56 @@ theorem spa_closedDiscMinimalPlus :
       gaussPointAboveOne_mem_spa_closedDiscMinimalPlus (hone hv h)
       (hone gaussPointAboveOne_mem_spa_closedDiscMinimalPlus
         gaussPointAboveOne_notMem_closedPolydisc))
+
+/-! ### The closed disc as an open dense subspace -/
+
+/-- **`x_{>1}` is a specialization of the Gauss point `η_1`**: it lies in the closure of `η_1` in
+`Spv K⟨T⟩`, since its valuation refines the Gauss norm. -/
+theorem gaussPoint_specializes_gaussPointAboveOne :
+    (gaussPoint (K := K) one_pos le_rfl).1 ⤳ gaussPointAboveOne K :=
+  gaussPoint_specializes_of_lt
+    (fun _ _ h ↦ by
+      rw [gaussPointAboveOne_vle_iff, not_le]
+      exact closedDiscGaussValuationAbove_lt_of_lt one_pos le_rfl h)
+    fun g hg h ↦ hg (by rw [h]; exact (gaussPointAboveOne K).toValuativeRel.vle_refl 0)
+
+/-- Inside `Spa(K⟨T⟩, K⟨T⟩⁺)`, the closed unit disc is the open subset `{v : v(T) ≤ 1}`. -/
+theorem isOpen_closedPolydisc_spa_closedDiscMinimalPlus :
+    IsOpen (((↑) : spa (closedDiscMinimalPlus K) → Spv 𝒯) ⁻¹' closedPolydisc 1 K) := by
+  have h : ((↑) : spa (closedDiscMinimalPlus K) → Spv 𝒯) ⁻¹' closedPolydisc 1 K =
+      ((↑) : spa (closedDiscMinimalPlus K) → Spv 𝒯) ⁻¹' basicOpen T 1 := by
+    ext v
+    simp [basicOpen_one_right, mem_closedPolydisc_iff_weightedX_vle_one v.2]
+  rw [h]
+  exact (isOpen_basicOpen T 1).preimage continuous_subtype_val
+
+/-- **Wedhorn's Example 7.58 for the closed unit disc**: `Spa(K⟨T⟩, K⟨T⟩°)` is an open subspace of
+`Spa(K⟨T⟩, K⟨T⟩⁺)`. -/
+theorem isOpenEmbedding_inclusion_closedPolydisc_spa_closedDiscMinimalPlus :
+    Topology.IsOpenEmbedding (Set.inclusion (closedPolydisc_subset_spa_closedDiscMinimalPlus
+      (K := K))) :=
+  .inclusion _ isOpen_closedPolydisc_spa_closedDiscMinimalPlus
+
+/-- **Wedhorn's Example 7.58 for the closed unit disc**: `Spa(K⟨T⟩, K⟨T⟩°)` is dense in
+`Spa(K⟨T⟩, K⟨T⟩⁺)`. The only further point `x_{>1}` lies in the closure of the Gauss point. -/
+theorem denseRange_inclusion_closedPolydisc_spa_closedDiscMinimalPlus :
+    DenseRange (Set.inclusion (closedPolydisc_subset_spa_closedDiscMinimalPlus (K := K))) := by
+  rw [denseRange_inclusion_iff, spa_closedDiscMinimalPlus]
+  refine Set.insert_subset ?_ subset_closure
+  exact closure_mono (Set.singleton_subset_iff.mpr (gaussPoint one_pos le_rfl).2)
+    (specializes_iff_mem_closure.mp gaussPoint_specializes_gaussPointAboveOne)
+
+/-- **`x_{>1}` is a closed point of `Spa(K⟨T⟩, K⟨T⟩⁺)`**: its complement is the closed unit
+disc, which is open. -/
+theorem isClosed_singleton_gaussPointAboveOne :
+    IsClosed ({⟨gaussPointAboveOne K, gaussPointAboveOne_mem_spa_closedDiscMinimalPlus⟩} :
+      Set (spa (closedDiscMinimalPlus K))) := by
+  refine isOpen_compl_iff.mp ?_
+  convert isOpen_closedPolydisc_spa_closedDiscMinimalPlus (K := K) using 1
+  ext v
+  have hv : (v : Spv 𝒯) ∈ insert (gaussPointAboveOne K) (closedPolydisc 1 K) :=
+    spa_closedDiscMinimalPlus (K := K) ▸ v.2
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff, Set.mem_preimage, Subtype.ext_iff]
+  exact ⟨hv.resolve_left, fun h h' ↦ gaussPointAboveOne_notMem_closedPolydisc (h' ▸ h)⟩
 
 end TauCeti.ValuationSpectrum
