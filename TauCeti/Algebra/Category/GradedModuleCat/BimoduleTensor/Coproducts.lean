@@ -95,9 +95,8 @@ private theorem tensorLeftBilinear_right (c : Cᵐᵒᵖ) (m : (coproductCofan M
       rw [tmul_smul_bimoduleTensorTmul] at h
       simpa only [one_smul, LinearMap.id_apply, Algebra.lsmul_apply,
         tensorLeftSummand_apply, ← Algebra.TensorProduct.one_def] using h) m n
-  change tensorLeftBilinear Γ Δ Θ M N s ((1 : A ⊗[k] Bᵐᵒᵖ) • m)
-    (((1 : B) ⊗ₜ[k] c) • n) =
-      ((1 : A) ⊗ₜ[k] c) • tensorLeftBilinear Γ Δ Θ M N s m n at h
+  rw [Algebra.lsmul_apply k k N ((1 : B) ⊗ₜ[k] c) n,
+    Algebra.lsmul_apply k k s.pt ((1 : A) ⊗ₜ[k] c), LinearMap.id_apply] at h
   rw [one_smul (A ⊗[k] Bᵐᵒᵖ) m] at h
   exact h
 
@@ -132,13 +131,16 @@ private abbrev tensorLeftCofan : Cofan fun j ↦ bimoduleTensorObj Γ Δ Θ (M j
   Cofan.mk (bimoduleTensorObj Γ Δ Θ (coproductCofan M).pt N)
     (fun j ↦ bimoduleTensorMap Γ Δ Θ ((coproductCofan M).inj j) (𝟙 N))
 
+private theorem tensorLeftCofan_inj (j : J) :
+    (tensorLeftCofan Γ Δ Θ M N).inj j =
+      bimoduleTensorMap Γ Δ Θ ((coproductCofan M).inj j) (𝟙 N) := rfl
+
 private def tensorLeftCofanIsColimit : IsColimit (tensorLeftCofan Γ Δ Θ M N) :=
-  bilinearCofanIsColimit.{w, v} M (tensorLeftCofan Γ Δ Θ M N)
+  (tensorLeftCofan Γ Δ Θ M N).bilinearIsColimit.{w, v} M
     (fun j ↦ tensorBilinear Γ Δ Θ (M j) N)
     (tensorBilinear Γ Δ Θ (coproductCofan M).pt N)
     (fun j m n ↦ by
-      change (bimoduleTensorMap Γ Δ Θ ((coproductCofan M).inj j) (𝟙 N)).hom _ = _
-      rw [tensorBilinear_apply, tensorBilinear_apply, bimoduleTensorMap_tmul,
+      rw [tensorLeftCofan_inj, tensorBilinear_apply, tensorBilinear_apply, bimoduleTensorMap_tmul,
         hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleTensor_hom_ext Γ Δ Θ
       (fun m n ↦ by simpa only [tensorBilinear_apply] using h m n))
@@ -199,9 +201,8 @@ private theorem tensorRightBilinear_left (a : A) (m : M) (n : (coproductCofan N)
       rw [tmul_smul_bimoduleTensorTmul] at h
       simpa only [one_smul, LinearMap.id_apply, Algebra.lsmul_apply,
         tensorRightSummand_apply, ← Algebra.TensorProduct.one_def] using h) n m
-  change tensorRightBilinear Γ Δ Θ M N s ((a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) • m)
-    ((1 : B ⊗[k] Cᵐᵒᵖ) • n) =
-      (a ⊗ₜ[k] (1 : Cᵐᵒᵖ)) • tensorRightBilinear Γ Δ Θ M N s m n at h
+  rw [Algebra.lsmul_apply k k M (a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) m,
+    Algebra.lsmul_apply k k s.pt (a ⊗ₜ[k] (1 : Cᵐᵒᵖ)), LinearMap.id_apply] at h
   rw [one_smul (B ⊗[k] Cᵐᵒᵖ) n] at h
   exact h
 
@@ -252,13 +253,16 @@ private abbrev tensorRightCofan : Cofan fun j ↦ bimoduleTensorObj Γ Δ Θ M (
   Cofan.mk (bimoduleTensorObj Γ Δ Θ M (coproductCofan N).pt)
     (fun j ↦ bimoduleTensorMap Γ Δ Θ (𝟙 M) ((coproductCofan N).inj j))
 
+private theorem tensorRightCofan_inj (j : J) :
+    (tensorRightCofan Γ Δ Θ M N).inj j =
+      bimoduleTensorMap Γ Δ Θ (𝟙 M) ((coproductCofan N).inj j) := rfl
+
 private def tensorRightCofanIsColimit : IsColimit (tensorRightCofan Γ Δ Θ M N) :=
-  bilinearCofanIsColimit.{w, v} N (tensorRightCofan Γ Δ Θ M N)
+  (tensorRightCofan Γ Δ Θ M N).bilinearIsColimit.{w, v} N
     (fun j ↦ (tensorBilinear Γ Δ Θ M (N j)).flip)
     (tensorBilinear Γ Δ Θ M (coproductCofan N).pt).flip
     (fun j n m ↦ by
-      change (bimoduleTensorMap Γ Δ Θ (𝟙 M) ((coproductCofan N).inj j)).hom _ = _
-      rw [LinearMap.flip_apply, LinearMap.flip_apply, tensorBilinear_apply,
+      rw [tensorRightCofan_inj, LinearMap.flip_apply, LinearMap.flip_apply, tensorBilinear_apply,
         tensorBilinear_apply, bimoduleTensorMap_tmul, hom_id, LinearMap.id_apply])
     (fun j {P} {f g} h ↦ bimoduleTensor_hom_ext Γ Δ Θ
       (fun m n ↦ by simpa only [LinearMap.flip_apply, tensorBilinear_apply] using h n m))
