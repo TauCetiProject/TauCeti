@@ -161,14 +161,6 @@ theorem zero_baseChangeIso_hom : (E.baseChange f).zero ≫ (E.baseChangeIso f).h
     pullbackSection E.structureMap f (f ≫ E.zero) (by simp) := by
   simp [baseChangeIso, baseChange]
 
-/-- The first projection of the base-changed zero section is the original zero section
-composed with the base morphism. -/
-@[reassoc (attr := simp)]
-theorem zero_baseChangeIso_hom_fst :
-    (E.baseChange f).zero ≫ (E.baseChangeIso f).hom ≫ pullback.fst E.structureMap f =
-      f ≫ E.zero := by
-  simp
-
 /-- The base change `E.baseChange f` is a pullback of the structure morphism of `E` along `f`: the
 square formed by the projection `(E.baseChangeIso f).hom ≫ pullback.fst _ _` to `E`, the two
 structure morphisms and `f` is a pullback square. -/

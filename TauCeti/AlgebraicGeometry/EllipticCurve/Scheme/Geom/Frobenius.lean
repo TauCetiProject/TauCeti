@@ -73,8 +73,8 @@ theorem exists_iso_baseChange_iterateFrobenius
   refine ⟨E₀, e, h''.isoIsPullback_hom_snd _ _ h', ?_⟩
   apply h'.hom_ext
   · rw [Category.assoc, h''.isoIsPullback_hom_fst _ _ h']
-    simp only [g'', g', g₀, E₀, F, b, Category.assoc, zero_baseChangeIso_hom_fst,
-      zero_baseChangeIso_hom_fst_assoc, ← hF]
+    simp only [g'', g', g₀, E₀, F, b, Category.assoc, zero_baseChangeIso_hom_assoc,
+      pullbackSection_fst, pullbackSection_fst_assoc, ← hF]
   · rw [Category.assoc, h''.isoIsPullback_hom_snd _ _ h']
     exact E''.zero_comp.trans E'.zero_comp.symm
 
