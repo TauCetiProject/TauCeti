@@ -47,6 +47,7 @@ def restrictedMvPowerSeriesModuleUniformSpace (k : ℕ) (A M : Type*) [Semiring 
 
 section Uniform
 
+/-- Use uniform convergence of coefficients for the completeness and density results. -/
 local instance : UniformSpace (restrictedMvPowerSeriesSubmodule k A M) :=
   restrictedMvPowerSeriesModuleUniformSpace k A M
 
@@ -130,6 +131,7 @@ section Group
 variable {k : ℕ} {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
   [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
 
+/-- Use uniform convergence of coefficients for the additive-group compatibility results. -/
 local instance : UniformSpace (restrictedMvPowerSeriesSubmodule k A M) :=
   restrictedMvPowerSeriesModuleUniformSpace k A M
 
@@ -167,6 +169,7 @@ section Map
 variable {N : Type*} [AddCommGroup N] [UniformSpace N] [IsUniformAddGroup N]
   [Module A N] [ContinuousConstSMul A N]
 
+/-- Give the target restricted module the uniform coefficient structure for linear maps. -/
 local instance : UniformSpace (restrictedMvPowerSeriesSubmodule k A N) :=
   restrictedMvPowerSeriesModuleUniformSpace k A N
 
