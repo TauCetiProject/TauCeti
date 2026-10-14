@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ClassModule
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.ArtinMap
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.ProfiniteCompletion
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import Mathlib.RepresentationTheory.Rep.Iso
 
 /-!
 # Local reciprocity for the multiplicative p-adic completion
@@ -26,6 +27,10 @@ equivariant. This is what lets statements about the class module `V^ab(p)` of th
 be read as statements about the `Gal(L/K)`-module `A(L)`. Equivariance reduces, by density of
 `Lˣ` in `A(L)`, to the naturality of the Artin map under the field automorphisms of `L`
 (`ClassFieldTheory.artinMap_congr`).
+
+Second cohomology with this conjugation action is identified with second cohomology of the
+completed-units representation by `explicitH2EquivPadicCompletionUnits`; its cocycle formula
+retains the reciprocity coordinates when comparing coefficient maps.
 
 ## Main declarations
 
@@ -235,5 +240,83 @@ theorem padicCompletionUnitsEquivAbelianizationProP_smul
   have heq := (denseRange_padicCompletionUnitsOf p L).equalizer hleft hright
     (funext fun x ↦ padicCompletionUnitsEquivAbelianizationProP_of_smul p K L ι g x)
   exact congrFun heq z
+
+/-- Reciprocity intertwines the finite Galois group's action on the completed units with
+its transported conjugation action on the arithmetic pro-`p` class module. -/
+theorem padicCompletionUnitsEquivAbelianizationProP_galois_smul
+    (j : L →ₐ[K] SeparableClosure K) (t : L ≃ₐ[K] L) (z : ↑(padicCompletionUnits p L))
+    [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+    [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] :
+    let := galoisClassModuleAction p K L j
+    padicCompletionUnitsEquivAbelianizationProP p K L j
+        (padicCompletionUnitsAut p L K t z) =
+      t • padicCompletionUnitsEquivAbelianizationProP p K L j z := by
+  dsimp only
+  let := galoisClassModuleAction p K L j
+  obtain ⟨q, rfl⟩ := (quotientGaloisSubgroupEquiv K L j).surjective t
+  obtain ⟨s, rfl⟩ := QuotientGroup.mk_surjective q
+  rw [quotientGaloisSubgroupEquiv_mk, galoisClassModuleAction_restrict_smul]
+  exact padicCompletionUnitsEquivAbelianizationProP_smul p K L j s z
+
+open CategoryTheory ContCohomology _root_.Rep in
+/-- Explicit second cohomology of the arithmetic pro-`p` class module, with the finite
+Galois group's conjugation action, is second cohomology of the completed-units representation.
+The comparison reads coefficient values through the inverse of local reciprocity. -/
+def explicitH2EquivPadicCompletionUnits
+    (j : L →ₐ[K] SeparableClosure K)
+    [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+    [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] :
+    letI := galoisClassModuleAction p K L j
+    letI := continuousSMul_galoisClassModuleAction p K L j
+    H2 (L ≃ₐ[K] L)
+        (Additive (abelianizationProP p (AbsoluteGaloisGroup K)
+          (galoisSubgroup K L j).toSubgroup)) ≃+
+      _root_.groupCohomology
+        (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+          (Additive ↑(padicCompletionUnits p L)))) 2 := by
+  letI := galoisClassModuleAction p K L j
+  letI := continuousSMul_galoisClassModuleAction p K L j
+  let e := padicCompletionUnitsEquivAbelianizationProP p K L j
+  exact explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L))
+    (e.symm.toMulEquiv.toAdditive.trans
+      (RestrictScalars.addEquiv ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+        (Additive ↑(padicCompletionUnits p L))).symm)
+    (fun t x ↦ by
+      -- The group-algebra representation acts by `single t 1`; the scalar-restriction
+      -- equivalence leaves the additive carrier unchanged.
+      change Additive.ofMul (e.symm (t • x.toMul)) =
+        MonoidAlgebra.single t (1 : ℤ_[p]) • Additive.ofMul (e.symm x.toMul)
+      rw [padicCompletionUnits_single_smul, one_smul]
+      have h := padicCompletionUnitsEquivAbelianizationProP_galois_smul p K L j t
+        (e.symm x.toMul)
+      rw [e.apply_symm_apply] at h
+      exact congrArg Additive.ofMul (e.injective ((e.apply_symm_apply _).trans h.symm)))
+
+open CategoryTheory ContCohomology _root_.Rep in
+/-- The arithmetic second-cohomology comparison sends a cocycle class to the cocycle
+obtained by reading its values through inverse local reciprocity. -/
+theorem explicitH2EquivPadicCompletionUnits_mk
+    (j : L →ₐ[K] SeparableClosure K)
+    [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+    [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] :
+    letI := galoisClassModuleAction p K L j
+    letI := continuousSMul_galoisClassModuleAction p K L j
+    ∀ (z : Z2 (L ≃ₐ[K] L)
+        (Additive (abelianizationProP p (AbsoluteGaloisGroup K)
+          (galoisSubgroup K L j).toSubgroup)))
+      (c : _root_.groupCohomology.cocycles₂
+        (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+          (Additive ↑(padicCompletionUnits p L))))),
+      (∀ t, c t = Additive.ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm
+        ((z : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) →
+          Additive (abelianizationProP p (AbsoluteGaloisGroup K)
+            (galoisSubgroup K L j).toSubgroup)) t).toMul)) →
+      explicitH2EquivPadicCompletionUnits p K L j (z : H2 (L ≃ₐ[K] L) _) =
+        _root_.groupCohomology.H2π _ c := by
+  let := galoisClassModuleAction p K L j
+  let := continuousSMul_galoisClassModuleAction p K L j
+  intros z c hc
+  apply explicitH2AddEquivGroupCohomology_mk
+  exact hc
 
 end TauCeti
