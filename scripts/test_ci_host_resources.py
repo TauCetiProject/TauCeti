@@ -86,6 +86,24 @@ class HostResourcesTests(unittest.TestCase):
             self.assertEqual(value['command_accounting_scope'], 'direct-child-only')
             self.assertIn('descendant-accounting-unavailable', value['missing'])
 
+    def test_signal_completion_race_preserves_status_when_popen_reaps_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / 'resources.json'
+            handlers = {}
+            wait4 = host.os.wait4
+            def late_signal(pid, options):
+                time.sleep(.1)
+                handlers[signal.SIGTERM](signal.SIGTERM, None)
+                return wait4(pid, options)
+            with patch.object(host.signal, 'signal', side_effect=lambda sig, fn: handlers.update({sig: fn})), \
+                    patch.object(host.os, 'wait4', side_effect=late_signal):
+                self.assertEqual(self.invoke([sys.executable, '-c', 'pass'], out), 0)
+            value = json.loads(out.read_text())
+            self.assertEqual(value['exit_code'], 0)
+            self.assertEqual(value['cancel_signals'], [signal.SIGTERM])
+            self.assertEqual(value['command_accounting_scope'], 'partial-reaped-descendants')
+            self.assertIn('primary-resource-accounting-unavailable', value['missing'])
+
     @unittest.skipUnless(shutil.which('bwrap'), 'bubblewrap not installed')
     def test_real_pid_namespace_reports_sandbox_cpu_and_rss(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -235,6 +235,12 @@ def main():
     finally:
         if restore_subreaper:
             restore_subreaper()
+    if code is None and child.returncode is not None:
+        # Popen.send_signal polls first: a completion/signal race can reap the
+        # primary child before wait4. Preserve its saved status and expose the
+        # unavailable primary usage instead of changing the command outcome.
+        code = child.returncode
+        sampler.missing.add('primary-resource-accounting-unavailable')
     assert code is not None
     interrupted = bool(cancelled) or code < 0
     if restore_subreaper and interrupted:
