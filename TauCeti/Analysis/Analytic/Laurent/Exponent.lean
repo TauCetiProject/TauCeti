@@ -19,10 +19,13 @@ two such expressions at nearby points overlap, and uniqueness of the order of an
 germ identifies their exponents. Consequently the exponent is constant on a preconnected
 set of parameters.
 
-The result is stated simultaneously for an arbitrary family of functions. It is used for
-global root labels in parameterized Puiseux factorizations: the labels having finite limits
-are precisely those with nonnegative exponent, so their set cannot change over a connected
-base.
+The pointwise uniqueness statement `laurentExponent_eq` is also exported, so that exponents
+obtained from independent constructions can be compared.
+
+The globalization result is stated simultaneously for an arbitrary family of functions. It is
+used for global root labels in parameterized Puiseux factorizations: the labels having finite
+limits are precisely those with nonnegative exponent, so their set cannot change over a
+connected base.
 
 ## References
 
@@ -40,7 +43,11 @@ variable {I E 𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 omit [CompleteSpace 𝕜] in
-private theorem laurentExponent_eq {r u v : E × 𝕜 → 𝕜} {x : E} {m n : ℤ}
+/-- **Uniqueness of the Laurent exponent at a point of the hyperplane.** If, near `(x, 0)`,
+the function `r` is both `b.2 ^ m * u b` and `b.2 ^ n * v b` off the hyperplane `b.2 = 0`,
+with `u` and `v` analytic and nonvanishing at `(x, 0)`, then `m = n`. No connectedness is
+needed: the two expressions are compared on the transverse line through `(x, 0)`. -/
+theorem laurentExponent_eq {r u v : E × 𝕜 → 𝕜} {x : E} {m n : ℤ}
     (hu : AnalyticAt 𝕜 u (x, 0)) (hu0 : u (x, 0) ≠ 0)
     (hv : AnalyticAt 𝕜 v (x, 0)) (hv0 : v (x, 0) ≠ 0)
     (hm : ∀ᶠ b in 𝓝 (x, (0 : 𝕜)), b.2 ≠ 0 → r b = b.2 ^ m * u b)
