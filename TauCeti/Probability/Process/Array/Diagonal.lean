@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Probability.Process.Array.Tail
 public import TauCeti.Probability.Process.Tail.Basic
-public import TauCeti.Probability.Exchangeability.Arrays.Basic
+public import TauCeti.Probability.Process.Array
 
 /-!
 # Diagonal process and array tail
 
 A diagonal coordinate is visible in the corresponding square block. Consequently, the tail
-σ-algebra of the diagonal process is contained in the corner tail of the array.
+σ-algebra of the diagonal process is contained in the corner tail of the array. These inclusions
+apply to arbitrary array processes and let diagonal observables use tail information from the
+whole array; no symmetry or probability measure is required.
 -/
 
 public section
@@ -27,7 +29,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace α]
-  {X : ℕ × ℕ → Ω → α}
 
 /-- **The diagonal entries indexed by `S` are read by the square block over `S`.** The entry
 `arrayDiag X i` is `X (i, i)`, and `(i, i)` lies in `S ×ˢ S` for every `i ∈ S`. -/
