@@ -108,12 +108,16 @@ theorem algHom_derivativeOfSeparating {k F A : Type*} [Field k] [Field F] [Algeb
     change e (c • z) * f = c • (e z * f)
     rw [hek, ← laurentSeries_algebraMap_mul_eq_smul, ← laurentSeries_algebraMap_mul_eq_smul,
       mul_assoc]⟩
-  -- Restriction of scalars uses the coefficientwise `k`-action, which factors through `A`.
-  have hcoeff (c : k) (f : LaurentSeries A) : c • f = (algebraMap k A c) • f := by
+  -- The source of the Laurent derivation uses algebra scalars, while its target uses
+  -- coefficientwise scalars. Both actions factor through `A`, giving scalar compatibility.
+  have _ : @IsScalarTower k A (LaurentSeries A)
+      Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
+    .of_algebraMap_eq fun c ↦ by
+      simp only [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply,
+        Algebra.algebraMap_self]
+  have _ : IsScalarTower k A (LaurentSeries A) := ⟨fun c a f ↦ by
     ext n
-    simp only [HahnSeries.coeff_smul, Algebra.smul_def, smul_eq_mul]
-  have _ : LinearMap.CompatibleSMul (LaurentSeries A) (LaurentSeries A) k A :=
-    ⟨fun f c x ↦ by rw [hcoeff, f.map_smul, hcoeff]⟩
+    simp only [HahnSeries.coeff_smul, Algebra.smul_def, Algebra.algebraMap_self, mul_assoc]⟩
   let D : Derivation k F (LaurentSeries A) :=
     ((laurentSeriesDerivation A).restrictScalars k).compAlgebraMap F
   -- By the chain rule `D z = (dz/dt) • D t`, and `D t = (X)' = 1`. Unfolding `D` and the
