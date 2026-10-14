@@ -8,11 +8,13 @@ module
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
 
 /-!
-# Extended ideals as tensor images
+# Extended ideals and annihilators under scalar extension
 
 The scalar multiplication equivalence `S ⊗[R] R ≃ₗ[S] S` identifies the base change of
 an ideal with its extension along `algebraMap R S`. This permits kernel computations
 on tensor products to be read as membership statements in extended ideals.
+The extension of a module annihilator is contained in its annihilator after arbitrary
+scalar extension, without a flatness hypothesis.
 -/
 
 public section
@@ -47,3 +49,25 @@ theorem mem_map_ker_iff_of_flat [Module.Flat R S] (f : R →ₗ[R] M) (s : S) :
     Submodule.mem_map_equiv, AlgebraTensorModule.rid_symm_apply, mem_ker]
 
 end LinearMap
+
+namespace TauCeti
+
+section Semiring
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M]
+
+/-- Extension of the annihilator is contained in the annihilator after arbitrary base change. -/
+theorem annihilator_map_le_baseChange :
+    (Module.annihilator R M).map (algebraMap R S) ≤
+      Module.annihilator S (S ⊗[R] M) := by
+  refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ Module.mem_annihilator.mpr fun x ↦ ?_
+  induction x using TensorProduct.inductionOn with
+  | tmul s m =>
+    simp [← TensorProduct.tmul_smul,
+      Module.mem_annihilator.mp hr m]
+  | add x y hx hy => simp [smul_add, hx, hy]
+
+end Semiring
+
+end TauCeti
