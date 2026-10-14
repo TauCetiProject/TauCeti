@@ -75,10 +75,6 @@ Nor is the *converse* route through `Conformal/Crosscut/BoundarySplit.lean` take
 route used here asks only that the near side fall inside a small set, whereas that route asks
 which arc of the image boundary the near side clings to.
 
-Mathlib has no boundary correspondence for conformal maps; the in-progress human-curated Riemann
-mapping theorem effort [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505)
-does not treat boundary behaviour either.
-
 ## Main results
 
 * `TauCeti.exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier` — the crosscut
@@ -118,17 +114,17 @@ variable {f : ℂ → ℂ} {c ζ : ℂ} {r : ℝ}
 and injective on `ball c r`, with bounded image whose boundary is locally connected, and let `ζ`
 lie on the bounding circle. For every `ε > 0` there is a crosscut radius `ρ > 0` with
 
-> `Metric.diam (f '' (ball c r ∩ ball ζ ρ)) ≤ ε`.
-
-The preconnectedness hypothesis on the enclosing set minus a point, needed by the enclosure theorem
-`TauCeti.image_inter_ball_subset_filledHull_of_diam_lt_of_isPreconnected_sdiff_singleton`, is
-supplied by `TauCeti.exists_isCompact_superset_image_ball_inter_sphere_diam_le`. Connectedness of
-both cut sides and a far side wider than the enclosing set are discharged here. -/
+> `Metric.diam (f '' (ball c r ∩ ball ζ ρ)) ≤ ε`. -/
 theorem exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier
     (hr : 0 < r) (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) [LocallyConnectedSpace (frontier (f '' ball c r))]
     (hζ : dist ζ c = r) {ε : ℝ} (hε : 0 < ε) :
     ∃ ρ > 0, diam (f '' (ball c r ∩ ball ζ ρ)) ≤ ε := by
+  -- The enclosure theorem
+  -- `image_inter_ball_subset_filledHull_of_diam_lt_of_isPreconnected_sdiff_singleton` needs a
+  -- compact enclosing set that stays preconnected minus a point, which
+  -- `exists_isCompact_superset_image_ball_inter_sphere_diam_le` supplies; connectedness of both
+  -- cut sides and a far side wider than the enclosing set are discharged here.
   -- the image of the disc has two distinct points, so the far side does not degenerate
   have hhalf : (0 : ℝ) < r / 2 := by linarith
   have hc : c ∈ ball c r := mem_ball_self hr
@@ -171,16 +167,17 @@ theorem exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier
 
 /-! ## The boundary limit -/
 
-/-- **Such a map has at most one cluster value at each point of the bounding circle.** The Cauchy
-criterion `TauCeti.subsingleton_clusterSetOn_of_forall_exists` applied to the width bound of
-`TauCeti.exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier`: two points of a
-crosscut neighbourhood have images within its diameter of each other by
-`Metric.dist_le_diam_of_mem`. -/
+/-- **Such a map has at most one cluster value at each point of the bounding circle.** Let `f` be
+holomorphic and injective on `ball c r`, with bounded image whose boundary is locally connected.
+Then the cluster set of `f` from inside the disc at any point `ζ` of the bounding circle is a
+subsingleton. -/
 theorem subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier
     (hr : 0 < r) (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) [LocallyConnectedSpace (frontier (f '' ball c r))]
     (hζ : dist ζ c = r) :
     (clusterSetOn f (ball c r) ζ).Subsingleton := by
+  -- Cauchy criterion: two points of a crosscut neighbourhood have images within its diameter of
+  -- each other.
   refine subsingleton_clusterSetOn_of_forall_exists fun ε hε => ?_
   obtain ⟨ρ, hρ, hdiam⟩ :=
     exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier hr hf hinj hb hζ hε
@@ -189,20 +186,14 @@ theorem subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier
     (mem_image_of_mem f hx) (mem_image_of_mem f hy)).trans hdiam⟩
 
 /-- **Such a map has a boundary limit at each point of the bounding circle.** The values of `f`
-converge as the argument approaches `ζ` from inside the disc.
-
-The cluster set at `ζ` is a subsingleton by
-`TauCeti.subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier`, and it is nonempty because
-`f` maps the disc into the compact closure of its bounded image, which is what
-`TauCeti.exists_tendsto_of_clusterSetOn_subsingleton` needs; `Metric.closure_ball` puts `ζ` in the
-closure of the disc. This is the pointwise form of
-`TauCeti.exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier`, and names the
-limit. -/
+converge as the argument approaches `ζ` from inside the disc. This is the pointwise form of
+`TauCeti.exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier`. -/
 theorem exists_tendsto_nhdsWithin_of_locallyConnectedSpace_frontier
     (hr : 0 < r) (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) [LocallyConnectedSpace (frontier (f '' ball c r))]
     (hζ : dist ζ c = r) :
     ∃ v, Tendsto f (𝓝[ball c r] ζ) (𝓝 v) :=
+  -- the cluster set is a subsingleton, and nonempty since `f` maps into a compact closure
   exists_tendsto_of_clusterSetOn_subsingleton hb.isCompact_closure
     (fun w hw => subset_closure ⟨w, hw, rfl⟩)
     (by rw [closure_ball c hr.ne']; exact mem_closedBall.mpr hζ.le)
@@ -211,17 +202,12 @@ theorem exists_tendsto_nhdsWithin_of_locallyConnectedSpace_frontier
 /-- **Carathéodory's continuity theorem.** A holomorphic injection of a disc onto a bounded region
 whose boundary is locally connected extends continuously to the closed disc.
 
-Every boundary cluster set is a subsingleton by
-`TauCeti.subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier`, which is exactly what the
-extension theorem `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` asks of a map into a
-proper space with bounded image; `Metric.frontier_ball` and `Metric.closure_ball` turn its
-`frontier` and `closure` into the circle and the closed disc.
-
 No injectivity is claimed for the extension on the circle, and none is needed for continuity. -/
 theorem exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier
     (hr : 0 < r) (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) [LocallyConnectedSpace (frontier (f '' ball c r))] :
     ∃ F : ℂ → ℂ, ContinuousOn F (closedBall c r) ∧ EqOn F f (ball c r) := by
+  -- every boundary cluster set is a subsingleton, as the extension theorem asks
   have h := exists_continuousOn_closure_eqOn_of_isBounded isOpen_ball hf.continuousOn hb
     fun w hw => subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier hr hf hinj hb
       (mem_sphere.mp (by rwa [frontier_ball c hr.ne'] at hw))
@@ -229,16 +215,13 @@ theorem exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier
 
 /-- **Carathéodory's continuity theorem, as a characterization.** A holomorphic injection of a disc
 onto a bounded region extends continuously to the closed disc if and only if the boundary of the
-region is locally connected.
-
-Sufficiency is `TauCeti.exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier`;
-necessity is `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier_image`, the continuous extension
-carrying the locally connected bounding circle onto the boundary of the image. -/
+region is locally connected. -/
 theorem exists_continuousOn_closedBall_eqOn_iff_locallyConnectedSpace_frontier
     (hr : 0 < r) (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) :
     (∃ F : ℂ → ℂ, ContinuousOn F (closedBall c r) ∧ EqOn F f (ball c r)) ↔
       LocallyConnectedSpace (frontier (f '' ball c r)) := by
+  -- necessity: the continuous extension carries the locally connected circle onto the boundary
   refine ⟨fun ⟨F, hFc, hFf⟩ => ?_, fun _ =>
     exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier hr hf hinj hb⟩
   exact (isJordanDomain_ball c hr).locallyConnectedSpace_frontier_image hf hinj
@@ -247,19 +230,15 @@ theorem exists_continuousOn_closedBall_eqOn_iff_locallyConnectedSpace_frontier
 /-! ## The Riemann-map form -/
 
 /-- **A bounded simply connected domain with locally connected boundary is the image of the disc
-under a holomorphic bijection continuous up to the closed disc.**
-
-The Riemann mapping theorem, in the shape `TauCeti.exists_bijOn_ball_differentiableOn_invFunOn`,
-supplies a holomorphic bijection of `Ω` onto the disc with holomorphic inverse; the inverse is the
-map extended. That `Ω` is a proper subset of `ℂ` needs no separate hypothesis, `ℂ` being unbounded.
-
-The extension is named as the map itself rather than beside it: replacing the inverse Riemann map by
-its extension changes neither its holomorphy on the open disc nor its bijectivity onto `Ω`. -/
+under a holomorphic bijection continuous up to the closed disc.** No hypothesis that `Ω ≠ ℂ` is
+needed, `ℂ` being unbounded. -/
 theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier {Ω : Set ℂ}
     (hΩo : IsOpen Ω) (hΩs : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
     [LocallyConnectedSpace (frontier Ω)] :
     ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
       BijOn g (ball 0 1) Ω := by
+  -- Extend the inverse of a Riemann map `Ω → ball 0 1`; the extension agrees with it on the open
+  -- disc, so it keeps the holomorphy and the bijectivity onto `Ω`.
   have hΩne : Ω ≠ univ := by
     rintro rfl
     exact NormedSpace.unbounded_univ ℝ ℂ hΩb
@@ -278,11 +257,7 @@ theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_front
 
 /-- **A bounded Jordan domain is the image of the disc under a holomorphic bijection continuous up
 to the closed disc.** This is the form the Carathéodory boundary correspondence for Jordan domains
-is stated in, minus the injectivity of the boundary values.
-
-A Jordan domain is simply connected (`TauCeti.IsJordanDomain.isSimplyConnected`) and a Jordan curve
-is locally connected (`TauCeti.IsJordanCurve.locallyConnectedSpace`), so this is the case of
-`TauCeti.exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier`. -/
+is stated in, minus the injectivity of the boundary values. -/
 theorem exists_continuousOn_closedBall_bijOn_ball_of_isJordanCurve_frontier {Ω : Set ℂ}
     (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
     (hΩJ : IsJordanCurve (frontier Ω)) :
