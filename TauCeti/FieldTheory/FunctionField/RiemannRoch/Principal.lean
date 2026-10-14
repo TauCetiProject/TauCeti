@@ -37,6 +37,8 @@ so that `ℓ` depends only on the linear equivalence class of a divisor.  It is 
   divisor of `z` is at most `D`.
 * `TauCeti.poles_eq_sup_poles_of_mem_riemannRochSpace`: if `u = x - c y` and `y ∈ L((u)_∞)`, then
   `(u)_∞ = (x)_∞ ⊔ (y)_∞`.
+* `TauCeti.span_pow_mul_pow_le_riemannRochSpace_zsmul_sup_poles`: the monomials `x ^ i y ^ j` with
+  `i + j ≤ n` lie in `L(n ((x)_∞ ⊔ (y)_∞))`.
 
 None of this needs the product formula `deg (div z) = 0` (Stichtenoth, Theorem 1.4.11), which is
 separate work; every statement here is independent of it.
@@ -258,5 +260,25 @@ theorem pow_mem_riemannRochSpace_zsmul_poles_of_le (hF : IsFunctionField k F) (z
     {m : ℤ} (h : (i : ℤ) ≤ m) : (z : F) ^ i ∈ riemannRochSpace (m • Divisor.poles hF z) :=
   riemannRochSpace_mono ((Divisor.isEffective_poles hF z).zsmul_le_zsmul h)
     (pow_mem_riemannRochSpace_zsmul_poles hF z i)
+
+/-- **The monomials of degree at most `n` in `x` and `y` lie in `L(n ((x)_∞ ⊔ (y)_∞))`**: for
+nonzero `x` and `y`, the span of the products `x ^ i y ^ j` with `i + j ≤ n` is contained in
+`L(n ((x)_∞ ⊔ (y)_∞))`. -/
+theorem span_pow_mul_pow_le_riemannRochSpace_zsmul_sup_poles (hF : IsFunctionField k F)
+    (x y : Fˣ) (n : ℤ) :
+    Submodule.span k
+        ((fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) '' {p | ((p.1 + p.2 : ℕ) : ℤ) ≤ n}) ≤
+      riemannRochSpace (n • (Divisor.poles hF x ⊔ Divisor.poles hF y)) := by
+  rw [Submodule.span_le]
+  rintro _ ⟨p, hp, rfl⟩
+  have hH := (Divisor.isEffective_poles hF x).sup (E := Divisor.poles hF y)
+  have hmem := mul_mem_riemannRochSpace_add
+    (pow_mem_riemannRochSpace_zsmul (riemannRochSpace_mono (le_sup_left (b := Divisor.poles hF y))
+      (mem_riemannRochSpace_poles hF x)) p.1)
+    (pow_mem_riemannRochSpace_zsmul (riemannRochSpace_mono (le_sup_right (a := Divisor.poles hF x))
+      (mem_riemannRochSpace_poles hF y)) p.2)
+  rw [← add_zsmul] at hmem
+  exact riemannRochSpace_mono (hH.zsmul_le_zsmul (by simp only [Set.mem_ofPred_eq] at hp; omega))
+    hmem
 
 end TauCeti
