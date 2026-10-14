@@ -626,6 +626,15 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
+      # Restore-only and after config/bump validation. The isolated main-defined warmer
+      # writes official release snapshots; candidate code sees .elan only read-only below.
+      - name: Restore or install the exact official Lean toolchain
+        if: ${{ env.INFRA != '1' }}
+        uses: ./gate/.github/actions/restore-lean-toolchain
+        with:
+          project-dir: pr
+          tooling-dir: gate
+
       # Workflow-pinned driver, candidate data only: run before package/cache setup and
       # compilation. The complete exact source inventory is essential even on a one-file PR:
       # deletions can break unchanged importers; a batch can add its own new dependencies.
@@ -635,7 +644,6 @@ jobs:
         id: import_headers
         if: ${{ env.INFRA != '1' }}
         run: |
-          elan toolchain install "$(cat pr/lean-toolchain)"
           python3 gate/scripts/check-imports.py --root pr \
             --lean "$(cd pr && elan which lean)"
 
@@ -698,8 +706,8 @@ jobs:
               '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
               '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
               '' \
-              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all three of' \
-              '.github/workflows/{pr-build,pr-profile,nightly-verify}.yml. They must agree;' \
+              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all four of' \
+              '.github/workflows/{pr-build,pr-profile,nightly-verify,warm-dependencies}.yml. They must agree;' \
               'scripts/test_bwrap_pin.py fails if they do not.' \
               '' \
               'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \
