@@ -26,6 +26,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 ## Main results
 
+* `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred charts preserves
+  manifold derivatives when the source atlas changes.
+
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
 * `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
@@ -56,6 +59,33 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+
+namespace TauCeti.Manifold
+
+omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Changing the source atlas while retaining its preferred charts preserves manifold derivatives
+for maps to any charted target. -/
+theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
+    (f : M → M') (x : M) :
+    (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
+  -- Manifold differentiation uses preferred charts, not the rest of the atlas.
+  have hd : (letI := c; MDifferentiableAt I I' f x) ↔
+      (letI := c'; MDifferentiableAt I I' f x) := by
+    constructor
+    · intro hf
+      let := c'
+      cases hf with
+      | mk hc hp => exact ⟨hc, by simpa only [chartAt, h] using hp⟩
+    · intro hf
+      let := c
+      cases hf with
+      | mk hc hp => exact ⟨hc, by simpa only [chartAt, h] using hp⟩
+  let := c'
+  simp only [mfderiv, writtenInExtChartAt, extChartAt, chartAt, h]
+  congr 1
+  exact propext hd
+
+end TauCeti.Manifold
 
 /-- Read in the extended charts at `x` and `y`, a map with manifold derivative `f'` at `x'` has
 Fréchet derivative within `range I` equal to `f'` pre- and post-composed with the derivatives of
