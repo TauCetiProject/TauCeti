@@ -13,6 +13,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 
+-- Non-public: the nonvanishing of `m` in `Kˢ` is used only inside proofs.
+import TauCeti.Algebra.Algebra.NatCast
+
 /-!
 # The Galois coefficient modules of an elliptic curve
 
@@ -232,7 +235,7 @@ theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
     Nat.card (W.TorsionCoeff m) = m ^ 2 := by
   have hm' : (((m : ℕ) : ℤ) : SeparableClosure K) ≠ 0 := by
     rw [Int.cast_natCast]
-    exact hm.natCast_separableClosure_ne_zero
+    exact hm.natCast_ne_zero_of_algebra
   rw [Nat.card_congr (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _).toEquiv]
   -- `W.PointCoeff` carries the group law for one choice of decidable equality on `Kˢ`, and
   -- `natCard_torsionBy` is stated for another; the two choices agree.
@@ -255,7 +258,7 @@ def kummerShortExact [W.IsElliptic] (m : ℕ) (hm : IsUnit (m : K)) :
   proj_surjective P := by
     classical
     obtain ⟨Q, hQ⟩ := Affine.nsmul_surjective (W⁄(SeparableClosure K)).toAffine
-      hm.natCast_separableClosure_ne_zero
+      hm.natCast_ne_zero_of_algebra
       (W.pointCoeffEquiv.symm P)
     refine ⟨W.pointCoeffEquiv Q, ?_⟩
     rw [nsmulAddMonoidHom_apply, ← map_nsmul]

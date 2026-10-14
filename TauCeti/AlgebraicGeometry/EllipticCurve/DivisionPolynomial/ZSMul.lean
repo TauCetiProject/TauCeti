@@ -123,8 +123,8 @@ is the statement the Nagell–Lutz layer consumes.
   rather than a torsion one: at `n = 0` both sides hold of every point.
 * `WeierstrassCurve.addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero`: the characterisation of
   two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`, read off from the doubling formula through
-  `Affine.some_add_self_eq_zero_iff`. Its contrapositive is what discharges the `addOrderOf ≠ 2`
-  guard the Nagell–Lutz theorems carry.
+  `Affine.Point.some_add_self_eq_zero_iff`. Its contrapositive is what discharges the
+  `addOrderOf ≠ 2` guard the Nagell–Lutz theorems carry.
 
 ## Provenance
 
@@ -1144,9 +1144,9 @@ lemma zsmul_fromAffine_eq_zero_iff [DecidableEq F] {E : WeierstrassCurve F}
   rw [zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero, natCast_zsmul]
 
 /-- **Two-torsion is exactly the vanishing of `ψ₂`.** For a nonsingular affine point, having order
-two and `ψ₂` vanishing there are the same condition. This is `Affine.some_add_self_eq_zero_iff`
-(`P + P = 0 ↔ ψ₂(x, y) = 0`, from the doubling formula) read through `addOrderOf`: a `.some`
-point is never `0`, so `2 • P = 0` means order exactly `2`.
+two and `ψ₂` vanishing there are the same condition. This is
+`Affine.Point.some_add_self_eq_zero_iff` (`P + P = 0 ↔ ψ₂(x, y) = 0`, from the doubling formula)
+read through `addOrderOf`: a `.some` point is never `0`, so `2 • P = 0` means order exactly `2`.
 
 Stated over the point's own field, with no arithmetic on the coefficients: consumers working over
 a fraction field transport their hypothesis across `algebraMap` at the call site.
@@ -1157,7 +1157,7 @@ directions are wanted — the `≠`-form below is what discharges Nagell–Lutz'
 theorem addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
     (hns : W.toAffine.Nonsingular x y) :
     addOrderOf (Affine.Point.some _ _ hns) = 2 ↔ W.ψ₂.evalEval x y = 0 := by
-  rw [ψ₂, ← Affine.some_add_self_eq_zero_iff hns, ← two_nsmul]
+  rw [ψ₂, ← Affine.Point.some_add_self_eq_zero_iff hns, ← two_nsmul]
   exact ⟨fun h ↦ h ▸ addOrderOf_nsmul_eq_zero _,
     fun h ↦ addOrderOf_eq_prime h (Affine.Point.some_ne_zero hns)⟩
 

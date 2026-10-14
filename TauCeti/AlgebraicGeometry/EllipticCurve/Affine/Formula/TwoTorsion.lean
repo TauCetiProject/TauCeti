@@ -39,22 +39,22 @@ of multiplication by `2` (Silverman X.1.4).
 
 ## Main results
 
-* `WeierstrassCurve.Affine.some_add_self_eq_zero_iff`: `(x, y)` has order two exactly when
+* `WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff`: `(x, y)` has order two exactly when
   `ψ₂(x, y) = 0`.
-* `WeierstrassCurve.Affine.eq_zero_or_eq_or_exists_of_add_self_eq_zero`: a point `S` with
+* `WeierstrassCurve.Affine.Point.eq_zero_or_eq_or_exists_of_add_self_eq_zero`: a point `S` with
   `2S = O` is `O`, `T`, or a point of order two over another root.
 * `WeierstrassCurve.Affine.evalEval_polynomialX_add_evalEval_polynomialX`: for two distinct points
   of order two, `c_T + c_{T₀} = (e - e₀)²`.
-* `WeierstrassCurve.Affine.xCoord_add_sub_mul_sub`: `(x(P + T) - e)(x - e) = c_T`.
-* `WeierstrassCurve.Affine.evalEval_polynomialY_add_mul_sub`:
+* `WeierstrassCurve.Affine.Point.xCoord_add_sub_mul_sub`: `(x(P + T) - e)(x - e) = c_T`.
+* `WeierstrassCurve.Affine.Point.evalEval_polynomialY_add_mul_sub`:
   `ψ₂(P + T)(x - e) = -ψ₂(P)(x(P + T) - e)`.
-* `WeierstrassCurve.Affine.xCoord_add_self_sub_mul_sq`:
+* `WeierstrassCurve.Affine.Point.xCoord_add_self_sub_mul_sq`:
   `(x(2P) - e) ψ₂(P)² = ((x - e)² - c_T)²`.
-* `WeierstrassCurve.Affine.sq_xCoord_add_sub_add_evalEval_polynomialX_div`: the square root
+* `WeierstrassCurve.Affine.Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div`: the square root
   `((x - e)² - c_T) / ψ₂` of `x(2P) - e` is fixed by translation by `O` and `T`, and changes sign
   under translation by the other two points of order two.
-* `WeierstrassCurve.Affine.xCoord_add_sub`: when `(x - e)² = c_T`, translation by a point of order
-  two sends `x - e` to `±(x - e)`, with the same signs.
+* `WeierstrassCurve.Affine.Point.xCoord_add_sub`: when `(x - e)² = c_T`, translation by a point
+  of order two sends `x - e` to `±(x - e)`, with the same signs.
 
 ## References
 
@@ -76,7 +76,7 @@ theorem evalEval_polynomialY_eq_zero_iff : W.polynomialY.evalEval x y = 0 ↔ y 
   rw [← W.sub_negY, sub_eq_zero]
 
 /-- **An affine point has order two exactly when `ψ₂` vanishes there.** -/
-theorem some_add_self_eq_zero_iff (h : W.Nonsingular x y) :
+theorem Point.some_add_self_eq_zero_iff (h : W.Nonsingular x y) :
     some x y h + some x y h = 0 ↔ W.polynomialY.evalEval x y = 0 := by
   refine ⟨fun hS ↦ by_contra fun hy ↦ ?_, fun hy ↦
     add_self_of_Y_eq (evalEval_polynomialY_eq_zero_iff.1 hy)⟩
@@ -104,7 +104,7 @@ theorem X_ne_of_evalEval_polynomialY_ne_zero (hT : W.Equation e t)
 
 /-- **The points of order two, seen from one of them**: if `T = (e, t)` has `ψ₂(e, t) = 0`, a point
 `S` with `2S = O` is `O`, `T`, or a point `(e₀, t₀)` with `ψ₂(e₀, t₀) = 0` and `e₀ ≠ e`. -/
-theorem eq_zero_or_eq_or_exists_of_add_self_eq_zero (hT : W.Nonsingular e t)
+theorem Point.eq_zero_or_eq_or_exists_of_add_self_eq_zero (hT : W.Nonsingular e t)
     (hψ : W.polynomialY.evalEval e t = 0) {S : W.Point} (hS : S + S = 0) :
     S = 0 ∨ S = some e t hT ∨ ∃ (e₀ t₀ : F) (hT₀ : W.Nonsingular e₀ t₀),
       W.polynomialY.evalEval e₀ t₀ = 0 ∧ e₀ ≠ e ∧ S = some e₀ t₀ hT₀ := by
@@ -134,7 +134,7 @@ theorem evalEval_polynomialX_add_evalEval_polynomialX {e₀ t₀ : F} (hT : W.Eq
 
 /-- **Translating by a point of order two inverts `x - e` up to `c_T`**: if `T = (e, t)` has
 `ψ₂(e, t) = 0` and `P = (x, y)` has `x ≠ e`, then `(x(P + T) - e)(x - e) = -W_X(e, t)`. -/
-theorem xCoord_add_sub_mul_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
+theorem Point.xCoord_add_sub_mul_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
     (h : W.Nonsingular x y) (hx : x ≠ e) :
     ((some x y h + some e t hT).xCoord - e) * (x - e) = -W.polynomialX.evalEval e t := by
   have key : (y - t) / (x - e) * (x - e) = y - t := div_mul_cancel₀ _ (sub_ne_zero.2 hx)
@@ -149,7 +149,7 @@ theorem xCoord_add_sub_mul_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.eva
 
 /-- **`ψ₂` under translation by a point of order two**: if `T = (e, t)` has `ψ₂(e, t) = 0` and
 `P = (x, y)` has `x ≠ e`, then `ψ₂(P + T)(x - e) = -ψ₂(P)(x(P + T) - e)`. -/
-theorem evalEval_polynomialY_add_mul_sub (hT : W.Nonsingular e t)
+theorem Point.evalEval_polynomialY_add_mul_sub (hT : W.Nonsingular e t)
     (hψ : W.polynomialY.evalEval e t = 0) (h : W.Nonsingular x y) (hx : x ≠ e) :
     W.polynomialY.evalEval (some x y h + some e t hT).xCoord (some x y h + some e t hT).yCoord *
         (x - e) =
@@ -165,7 +165,7 @@ theorem evalEval_polynomialY_add_mul_sub (hT : W.Nonsingular e t)
 
 /-- **The `x`-coordinate of a double is `e` plus a square**: if `T = (e, t)` has `ψ₂(e, t) = 0` and
 `P = (x, y)` has `ψ₂(x, y) ≠ 0`, then `(x(2P) - e) ψ₂(x, y)² = ((x - e)² + W_X(e, t))²`. -/
-theorem xCoord_add_self_sub_mul_sq (hT : W.Equation e t) (hψ : W.polynomialY.evalEval e t = 0)
+theorem Point.xCoord_add_self_sub_mul_sq (hT : W.Equation e t) (hψ : W.polynomialY.evalEval e t = 0)
     (h : W.Nonsingular x y) (hy : W.polynomialY.evalEval x y ≠ 0) :
     ((some x y h + some x y h).xCoord - e) * W.polynomialY.evalEval x y ^ 2 =
       ((x - e) ^ 2 + W.polynomialX.evalEval e t) ^ 2 := by
@@ -188,7 +188,7 @@ theorem xCoord_add_self_sub_mul_sq (hT : W.Equation e t) (hψ : W.polynomialY.ev
       W.a₁ * ((x - e) ^ 2 - (3 * e ^ 2 + 2 * W.a₂ * e + W.a₄ - W.a₁ * t))) * hψ
 
 /-- **Translating a point with `ψ₂ ≠ 0` by a point of order two keeps `ψ₂ ≠ 0`.** -/
-theorem evalEval_polynomialY_add_ne_zero (h : W.Nonsingular x y)
+theorem Point.evalEval_polynomialY_add_ne_zero (h : W.Nonsingular x y)
     (hy : W.polynomialY.evalEval x y ≠ 0) {S : W.Point} (hS : S + S = 0) :
     W.polynomialY.evalEval (some x y h + S).xCoord (some x y h + S).yCoord ≠ 0 := by
   rcases S with _ | ⟨e₀, t₀, hT₀⟩
@@ -207,7 +207,7 @@ theorem evalEval_polynomialY_add_ne_zero (h : W.Nonsingular x y)
 /-- **The square root of `x(2P) - e` under translation by `E[2]`**: if `T = (e, t)` has
 `ψ₂(e, t) = 0`, `P = (x, y)` has `ψ₂(x, y) ≠ 0` and `2S = O`, then `r(P + S) = ±r(P)` for
 `r = ((x - e)² + W_X(e, t)) / ψ₂`, with the sign `+` exactly when `S ∈ {O, T}`. -/
-theorem sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular e t)
+theorem Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular e t)
     (hψ : W.polynomialY.evalEval e t = 0) (h : W.Nonsingular x y)
     (hy : W.polynomialY.evalEval x y ≠ 0) {S : W.Point} (hS : S + S = 0) :
     (((some x y h + S).xCoord - e) ^ 2 + W.polynomialX.evalEval e t) /
@@ -242,7 +242,7 @@ theorem sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular e t)
 /-- **The square root of `c_T` under translation by `E[2]`**: if `T = (e, t)` has `ψ₂(e, t) = 0`,
 `P = (x, y)` has `ψ₂(x, y) ≠ 0` and `(x - e)² = c_T`, as when `2P = T`, and `2S = O`, then
 `x(P + S) - e = ±(x - e)`, with the sign `+` exactly when `S ∈ {O, T}`. -/
-theorem xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
+theorem Point.xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
     (h : W.Nonsingular x y) (hy : W.polynomialY.evalEval x y ≠ 0)
     (hx2 : (x - e) ^ 2 + W.polynomialX.evalEval e t = 0) {S : W.Point} (hS : S + S = 0) :
     (some x y h + S).xCoord - e = (if S = 0 ∨ S = some e t hT then 1 else -1) * (x - e) := by
