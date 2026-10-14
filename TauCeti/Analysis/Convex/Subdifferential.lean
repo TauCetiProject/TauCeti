@@ -45,6 +45,9 @@ convex.
   `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
+* `TauCeti.mem_subdifferential_add_affine_iff` and `TauCeti.subgradientImage_add_affine` —
+  adding the affine function `z ↦ B z q + c` translates subdifferentials and subgradient images
+  by `q`;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
 * `StrictConvexOn.eq_of_mem_subdifferential` — a strictly convex function has disjoint
   subdifferentials at distinct points;
@@ -377,12 +380,44 @@ theorem isClosed_subdifferential [TopologicalSpace F] (hB : ∀ x, Continuous (B
 
 end
 
-/-! ### Conjugate-subgradient reciprocity -/
-
 section
 
 variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [AddCommGroup F] [Module ℝ F]
   (B : E →ₗ[ℝ] F →ₗ[ℝ] ℝ) {f : E → EReal} {x : E} {y : F}
+
+/-! ### Adding an affine function -/
+
+/-- Adding the affine function `z ↦ B z q + c` to `f` translates its subdifferential by `q`. -/
+-- Not `@[simp]`: `mem_subdifferential_iff` already rewrites the left-hand side.
+theorem mem_subdifferential_add_affine_iff (q : F) (c : ℝ) :
+    y ∈ subdifferential B (fun z => f z + ((B z q + c : ℝ) : EReal)) x ↔
+      y - q ∈ subdifferential B f x := by
+  rcases eq_or_ne (f x) ⊥ with hbot | hbot
+  · simp [hbot]
+  rcases eq_or_ne (f x) ⊤ with htop | htop
+  · simp [htop]
+  obtain ⟨r, hr⟩ : ∃ r : ℝ, f x = r := ⟨(f x).toReal, (EReal.coe_toReal htop hbot).symm⟩
+  simp only [mem_subdifferential_iff, hr, ← EReal.coe_add, ne_eq, EReal.coe_ne_bot,
+    EReal.coe_ne_top, not_false_eq_true, true_and]
+  refine forall_congr' fun x' => ?_
+  generalize f x' = z
+  induction z with
+  | bot => simp only [EReal.bot_add, le_bot_iff, EReal.coe_ne_bot]
+  | top => simp only [EReal.top_add_coe, le_top]
+  | coe s =>
+    rw [← EReal.coe_add, EReal.coe_le_coe_iff, EReal.coe_le_coe_iff]
+    simp only [map_sub, LinearMap.sub_apply]
+    constructor <;> intro h <;> linarith
+
+/-- Adding the affine function `z ↦ B z q + c` to `f` translates its subgradient images by `q`;
+the right-hand side is written as a preimage under `y ↦ y - q`. -/
+theorem subgradientImage_add_affine (q : F) (c : ℝ) (s : Set E) :
+    subgradientImage B (fun z => f z + ((B z q + c : ℝ) : EReal)) s =
+      (· - q) ⁻¹' subgradientImage B f s := by
+  ext y
+  simp only [mem_subgradientImage_iff, Set.mem_preimage, mem_subdifferential_add_affine_iff]
+
+/-! ### Conjugate-subgradient reciprocity -/
 
 /-- **Conjugate-subgradient reciprocity.** If `y` is a subgradient of `f` at `x`, then `x` is a
 subgradient of the conjugate `f⋆` at `y`, for the transposed pairing. -/

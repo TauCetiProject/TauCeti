@@ -10,20 +10,19 @@ public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 /-!
 # Affine renormalization of the Monge–Ampère measure
 
-Adding the affine function `x ↦ ⟪x, q⟫ + c` to a convex function translates every
-subdifferential by `q`. Consequently, it translates subgradient images without changing their
-additive Haar measure, so the Aleksandrov Monge–Ampère measure is unchanged.
+Adding the affine function `x ↦ ⟪x, q⟫ + c` to a function `f : E → EReal` translates every
+subdifferential, and hence every subgradient image, by `q`
+(`TauCeti.subgradientImage_add_affine`). It also preserves convexity of the real epigraph and
+the effective domain, so the Aleksandrov Monge–Ampère measure with respect to an additive Haar
+measure is unchanged.
 
 This invariance permits the standard normalization of a convex function by subtracting a
 supporting plane before studying its sections.
 
 ## Main statements
 
-* `TauCeti.mem_subdifferential_ite_add_inner_add_iff` identifies the translated
-  subdifferential;
-* `TauCeti.subgradientImage_ite_add_inner_add` identifies the translated subgradient image;
-* `TauCeti.mongeAmpereMeasure_ite_add_inner_add` proves invariance of the Aleksandrov
-  Monge–Ampère measure under addition of an affine function.
+* `TauCeti.mongeAmpereMeasure_add_affine` proves invariance of the Aleksandrov Monge–Ampère
+  measure under addition of an affine function.
 
 ## References
 
@@ -40,70 +39,62 @@ namespace TauCeti
 open MeasureTheory Measure Set
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  {Ω s : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ} {q x y : E} {c : ℝ}
-
-/-- Adding `x ↦ ⟪x, q⟫ + c` to a function on `Ω` translates its relative subdifferential
-by `q`. -/
-theorem mem_subdifferential_ite_add_inner_add_iff (hx : x ∈ Ω) :
-    y ∈ subdifferential (innerₗ E)
-        (fun z ↦ if z ∈ Ω then ((u z + inner ℝ z q + c : ℝ) : EReal) else ⊤) x ↔
-      y - q ∈ subdifferential (innerₗ E)
-        (fun z ↦ if z ∈ Ω then (u z : EReal) else ⊤) x := by
-  rw [mem_subdifferential_ite_iff (innerₗ E) hx,
-    mem_subdifferential_ite_iff (innerₗ E) hx]
-  constructor
-  · intro hy z hz
-    have h := hy z hz
-    simp only [innerₗ_apply_apply, inner_sub_left, inner_sub_right] at h ⊢
-    linarith
-  · intro hy z hz
-    have h := hy z hz
-    simp only [innerₗ_apply_apply, inner_sub_left, inner_sub_right] at h ⊢
-    linarith
-
-/-- On a subset of `Ω`, adding `x ↦ ⟪x, q⟫ + c` translates the subgradient image by `q`.
-The right-hand side is written as a preimage so Haar invariance applies directly. -/
-theorem subgradientImage_ite_add_inner_add (hs : s ⊆ Ω) :
-    subgradientImage (innerₗ E)
-        (fun z ↦ if z ∈ Ω then ((u z + inner ℝ z q + c : ℝ) : EReal) else ⊤) s =
-      (fun y ↦ y - q) ⁻¹' subgradientImage (innerₗ E)
-        (fun z ↦ if z ∈ Ω then (u z : EReal) else ⊤) s := by
-  ext y
-  simp only [mem_subgradientImage_iff, mem_preimage]
-  constructor
-  · rintro ⟨x, hx, hy⟩
-    exact ⟨x, hx, (mem_subdifferential_ite_add_inner_add_iff (hs hx)).1 hy⟩
-  · rintro ⟨x, hx, hy⟩
-    exact ⟨x, hx, (mem_subdifferential_ite_add_inner_add_iff (hs hx)).2 hy⟩
-
-section Measure
-
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   (μ : Measure E) [μ.IsAddHaarMeasure]
 
 /-- **Affine invariance of the Aleksandrov Monge–Ampère measure.** Adding an affine function
-`x ↦ ⟪x, q⟫ + c` to a convex function on an open convex domain does not change its
-Monge–Ampère measure. -/
-theorem mongeAmpereMeasure_ite_add_inner_add (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) :
-    mongeAmpereMeasure μ
-        (fun x ↦ if x ∈ Ω then ((u x + inner ℝ x q + c : ℝ) : EReal) else ⊤) =
-      mongeAmpereMeasure μ (fun x ↦ if x ∈ Ω then (u x : EReal) else ⊤) := by
-  have hconv : ConvexOn ℝ Ω (fun x ↦ u x + inner ℝ x q + c) := by
-    convert (hu.add ((innerₗ E).flip q |>.convexOn hu.1)).add_const c using 1
-    ext z
-    simp [Pi.add_apply, innerₗ_apply_apply, real_inner_comm]
+`x ↦ ⟪x, q⟫ + c` to `f : E → EReal` does not change its Monge–Ampère measure with respect to an
+additive Haar measure. -/
+theorem mongeAmpereMeasure_add_affine (f : E → EReal) (q : E) (c : ℝ) :
+    mongeAmpereMeasure μ (fun x ↦ f x + ((inner ℝ x q + c : ℝ) : EReal)) =
+      mongeAmpereMeasure μ f := by
+  -- Adding a real affine function preserves convexity of the real epigraph.
+  have hconv (g : E → EReal) (q : E) (c : ℝ) (hg : Convex ℝ {p : E × ℝ | g p.1 ≤ p.2}) :
+      Convex ℝ {p : E × ℝ | g p.1 + ((inner ℝ p.1 q + c : ℝ) : EReal) ≤ p.2} := by
+    let L : E × ℝ →ₗ[ℝ] E × ℝ :=
+      (LinearMap.fst ℝ E ℝ).prod (LinearMap.snd ℝ E ℝ - (innerₗ E).flip q ∘ₗ LinearMap.fst ℝ E ℝ)
+    convert (hg.translate_preimage_right ((0 : E), -c)).linear_preimage L using 1
+    ext ⟨z, t⟩
+    simp only [mem_ofPred_eq, flip_innerₗ, preimage_ofPred_eq, Prod.fst_add, zero_add,
+      Prod.snd_add, LinearMap.prod_apply, LinearMap.coe_fst, Function.prod_apply,
+      LinearMap.sub_apply, LinearMap.snd_apply, LinearMap.coe_comp, Function.comp_apply,
+      innerₗ_apply_apply, real_inner_comm z q, L]
+    rw [← EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _)),
+      ← EReal.coe_sub]
+    congr! 2
+    ring
+  set g : E → EReal := fun x ↦ f x + ((inner ℝ x q + c : ℝ) : EReal)
+  -- `f` is recovered from `g` by adding the affine function `x ↦ ⟪x, -q⟫ - c`.
+  have hfg : f = fun x ↦ g x + ((inner ℝ x (-q) + -c : ℝ) : EReal) := by
+    ext x
+    simp only [g]
+    induction f x with
+    | bot => simp
+    | top => simp
+    | coe r =>
+      simp only [← EReal.coe_add, inner_neg_right, EReal.coe_eq_coe_iff]
+      ring
+  by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
+  swap
+  · have hg : ¬Convex ℝ {p : E × ℝ | g p.1 ≤ p.2} := fun hg ↦ hf (hfg ▸ hconv g (-q) (-c) hg)
+    rw [mongeAmpereMeasure_eq_zero_of_not_convex μ hf,
+      mongeAmpereMeasure_eq_zero_of_not_convex μ hg]
+  by_cases hbot : ∀ x, f x ≠ ⊥
+  swap
+  · obtain ⟨x, hx⟩ := not_forall_not.1 hbot
+    rw [mongeAmpereMeasure_eq_zero_of_eq_bot μ hx,
+      mongeAmpereMeasure_eq_zero_of_eq_bot μ (x := x) (by simp [g, hx])]
+  have hgbot (x : E) : g x ≠ ⊥ := by simp [g, hbot x]
+  have hdom : {x | g x ≠ ⊤} = {x | f x ≠ ⊤} := by
+    ext x
+    exact EReal.add_ne_top_iff_ne_top_left (EReal.coe_ne_bot _) (EReal.coe_ne_top _)
   ext s hs
-  rw [mongeAmpereMeasure_apply μ (convex_epigraph_ite hconv) ite_ne_bot
-      AbsolutelyContinuous.rfl hs,
-    mongeAmpereMeasure_apply μ (convex_epigraph_ite hu) ite_ne_bot
-      AbsolutelyContinuous.rfl hs,
-    setOf_ite_ne_top, hΩ.interior_eq, setOf_ite_ne_top, hΩ.interior_eq,
-    subgradientImage_ite_add_inner_add inter_subset_right]
+  rw [mongeAmpereMeasure_apply μ (hconv f q c hf) hgbot AbsolutelyContinuous.rfl hs,
+    mongeAmpereMeasure_apply μ hf hbot AbsolutelyContinuous.rfl hs, hdom]
+  have h := subgradientImage_add_affine (innerₗ E) (f := f) q c (s ∩ interior {x | f x ≠ ⊤})
+  simp only [innerₗ_apply_apply] at h
+  rw [h]
   simpa only [sub_eq_add_neg, add_comm] using
-    measure_preimage_add μ (-q)
-      (subgradientImage (innerₗ E)
-        (fun x ↦ if x ∈ Ω then (u x : EReal) else ⊤) (s ∩ Ω))
-
-end Measure
+    measure_preimage_add μ (-q) (subgradientImage (innerₗ E) f (s ∩ interior {x | f x ≠ ⊤}))
 
 end TauCeti
