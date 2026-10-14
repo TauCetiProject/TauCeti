@@ -50,7 +50,7 @@ theorem adjugate_mul_self_eq_one_iff_det_eq_one {n : Type*} [Fintype n] [Decidab
 /-- **The determinant trick.** If a family `v` of elements of a module satisfies the linear
 relations `∑ⱼ A i j • v j = 0` for every `i`, then `det A` kills every member of the family. -/
 theorem det_smul_eq_zero_of_sum_smul_eq_zero {ι M : Type*} [Fintype ι] [DecidableEq ι]
-    [AddCommGroup M] [Module K M] (A : Matrix ι ι K) {v : ι → M}
+    [AddCommMonoid M] [Module K M] (A : Matrix ι ι K) {v : ι → M}
     (hv : ∀ i, ∑ j, A i j • v j = 0) (k : ι) : A.det • v k = 0 := by
   calc A.det • v k = ∑ j, (A.adjugate * A) k j • v j := by
         simp [adjugate_mul, smul_apply, one_apply, ite_smul]

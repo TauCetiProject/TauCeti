@@ -9,7 +9,9 @@ public import Mathlib.GroupTheory.Finiteness
 public import TauCeti.GroupTheory.Transfer.Basic
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.GroupTheory.Abelianization.Conjugation
+import TauCeti.RepresentationTheory.Homological.AugmentationNorm
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.SplittingModule
 
 /-!
@@ -23,7 +25,8 @@ the transfer into `G'` of every homomorphism from `G'` to a commutative group is
 
 Artin reduced the principal ideal theorem to this statement: if `H` is the Hilbert class field of
 a number field `K` and `H'` that of `H`, then `G = Gal(H'/K)` has `G' = Gal(H'/H)`, and the
-transfer `G^{ab} → G'` corresponds under the Artin map to the extension of ideals from `K` to `H`.
+transfer `G^{ab} → G' ⧸ G''` corresponds under the Artin map to the extension of ideals from `K`
+to `H`.
 
 ## Proof
 
@@ -76,12 +79,9 @@ private noncomputable abbrev out (q : Abelianization G) : G := (q : G ⧸ commut
 
 private theorem of_out (q : Abelianization G) : of (out q) = q := QuotientGroup.out_eq' q
 
-private theorem mem_commutator_of_of_eq_one {g : G} (h : of g = 1) : g ∈ commutator G :=
-  ker_of (G := G) ▸ MonoidHom.mem_ker.2 h
-
 private theorem out_mul_out_mul_inv_mem (σ τ : Abelianization G) :
     out σ * out τ * (out (σ * τ))⁻¹ ∈ commutator G :=
-  mem_commutator_of_of_eq_one (by simp [of_out])
+  of_eq_one_iff.1 (by simp [of_out])
 
 private theorem smul_of (q : Abelianization G) (n : commutator G) :
     q • of n = of (MulAut.conjNormal (out q) n) := by
@@ -118,8 +118,8 @@ private theorem eq_top_of_forall_mem (S : Subgroup (Abelianization (commutator G
       (Subgroup.mem_top y)⟩ : commutator G) ∈ S := by
     set s := out (of x)
     set t := out (of y)
-    have ha : s⁻¹ * x ∈ commutator G := mem_commutator_of_of_eq_one (by simp [s, of_out])
-    have hb : t⁻¹ * y ∈ commutator G := mem_commutator_of_of_eq_one (by simp [t, of_out])
+    have ha : s⁻¹ * x ∈ commutator G := of_eq_one_iff.1 (by simp [s, of_out])
+    have hb : t⁻¹ * y ∈ commutator G := of_eq_one_iff.1 (by simp [t, of_out])
     let a : commutator G := ⟨s⁻¹ * x, ha⟩
     let b : commutator G := ⟨t⁻¹ * y, hb⟩
     let F₁ : commutator G := ⟨_, out_mul_out_mul_inv_mem (of x) (of y)⟩
@@ -164,16 +164,18 @@ private noncomputable abbrev coefficients : Rep ℤ (Abelianization G) :=
 private abbrev toCoeff (α : Abelianization (commutator G)) : coefficients G :=
   Additive.ofMul (α := Abelianization (commutator G)) α
 
+-- `ofMul_mul`, `ofMul_one`, `ofMul_inv` and `ofMul_div`, stated in the carrier of the
+-- coefficient module so that they rewrite inside maps out of it.
 private theorem toCoeff_mul (α β : Abelianization (commutator G)) :
-    toCoeff (α * β) = toCoeff α + toCoeff β := (rfl)
+    toCoeff (α * β) = toCoeff α + toCoeff β := ofMul_mul α β
 
-private theorem toCoeff_one : toCoeff (1 : Abelianization (commutator G)) = 0 := (rfl)
+private theorem toCoeff_one : toCoeff (1 : Abelianization (commutator G)) = 0 := ofMul_one
 
 private theorem toCoeff_inv (α : Abelianization (commutator G)) :
-    toCoeff α⁻¹ = -toCoeff α := (rfl)
+    toCoeff α⁻¹ = -toCoeff α := ofMul_inv α
 
 private theorem toCoeff_div (α β : Abelianization (commutator G)) :
-    toCoeff (α / β) = toCoeff α - toCoeff β := (rfl)
+    toCoeff (α / β) = toCoeff α - toCoeff β := ofMul_div α β
 
 private theorem ρ_toCoeff (q : Abelianization G) (α : Abelianization (commutator G)) :
     (coefficients G).ρ q (toCoeff α) = toCoeff (q • α) := (rfl)
@@ -251,19 +253,7 @@ private theorem transfer_of_eq_one (g : G) :
   set u := groupCohomology.H2π (coefficients G) cocycle
   obtain ⟨ψ, hψ⟩ := exists_coboundary_eq_factorSet (G := G)
   set j := (Rep.splittingModuleIncl (coefficients G) u).hom
-  have hj : Function.Injective j := fun a a' h ↦ by
-    simpa [j] using congrArg (fun y ↦ (Rep.splittingModuleEquiv _ u y).2) h
   -- The norm of the splitting module vanishes.
-  have hker_eq : LinearMap.ker (Rep.splittingModuleProj (coefficients G) u).hom.toLinearMap =
-      LinearMap.range j.toLinearMap := by
-    ext y
-    simp only [LinearMap.mem_ker, LinearMap.mem_range,
-      Representation.IntertwiningMap.toLinearMap_apply, Rep.splittingModuleProj_apply]
-    refine ⟨fun hy ↦ ⟨(Rep.splittingModuleEquiv _ u y).2,
-      (Rep.splittingModuleEquiv _ u).injective ?_⟩, ?_⟩
-    · ext <;> simp [j, hy]
-    · rintro ⟨a, rfl⟩
-      simp [j]
   have : Group.FG (Abelianization (commutator G)) :=
     Group.fg_of_surjective (f := Abelianization.of) QuotientGroup.mk_surjective
   have : Module.Finite ℤ (Additive (Abelianization (commutator G))) :=
@@ -272,9 +262,9 @@ private theorem transfer_of_eq_one (g : G) :
     refine Rep.norm_eq_zero_of_ker_le_coinvariantsKer (splitting G)
       (Rep.splittingModuleProj (coefficients G) u)
       (fun y ↦ ⟨Rep.splittingModuleMk _ u y 0, by simp⟩) ?_ ?_
-    · rw [hker_eq, LinearMap.range_eq_map]
+    · rw [Rep.ker_splittingModuleProj_eq_range, LinearMap.range_eq_map]
       exact (Module.Finite.fg_top (R := ℤ) (M := Additive (Abelianization (commutator G)))).map _
-    · rw [hker_eq]
+    · rw [Rep.ker_splittingModuleProj_eq_range]
       rintro _ ⟨a, rfl⟩
       exact incl_mem_coinvariantsKer a
   -- The transfer of a representative `out p` is the column sum `∑_q f(q, p) = N ψ(p) = 0`.
@@ -288,22 +278,19 @@ private theorem transfer_of_eq_one (g : G) :
       ext
       exact congrArg (fun x : G ⧸ commutator G ↦ q.out * out p * (q * x).out⁻¹)
         (QuotientGroup.out_eq' p)
-    have hsum (s : Finset (Abelianization G)) :
-        toCoeff (∏ q ∈ s, factorSet (q, p)) = ∑ q ∈ s, toCoeff (factorSet (q, p)) := by
-      induction s using Finset.induction_on with
-      | empty => exact toCoeff_one
-      | insert a s ha ih => rw [Finset.prod_insert ha, Finset.sum_insert ha, toCoeff_mul, ih]
     apply Additive.ofMul.injective
-    apply hj
+    apply Rep.splittingModuleIncl_injective (coefficients G) u
     -- Read the product in the coefficient module, whose underlying group is `Additive A`.
     change j (toCoeff (∏ q : Abelianization G, factorSet (q, p))) = j (toCoeff 1)
-    rw [hsum, map_sum, toCoeff_one, map_zero]
+    rw [show toCoeff (∏ q : Abelianization G, factorSet (q, p)) =
+      ∑ q : Abelianization G, toCoeff (factorSet (q, p)) from ofMul_prod _ _, map_sum, toCoeff_one,
+      map_zero]
     simp only [← hψ, Finset.sum_add_distrib, Finset.sum_sub_distrib]
     rw [Fintype.sum_equiv (Equiv.mulRight p) (fun q ↦ ψ (q * p)) ψ fun _ ↦ rfl, sub_add_cancel]
     have h := congrArg (fun f : Module.End ℤ (splitting G) ↦ f (ψ p)) hnorm
     simpa [Representation.norm, LinearMap.sum_apply] using h
   -- Every element is a representative times an element of `G'`, which the transfer kills.
-  have hmem : (out (of g))⁻¹ * g ∈ commutator G := mem_commutator_of_of_eq_one (by simp [of_out])
+  have hmem : (out (of g))⁻¹ * g ∈ commutator G := of_eq_one_iff.1 (by simp [of_out])
   rw [← mul_inv_cancel_left (out (of g)) g, map_mul, hrep, one_mul]
   exact Abelianization.commutator_subset_ker _ hmem
 

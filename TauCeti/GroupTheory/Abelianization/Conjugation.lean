@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GroupWithZero.Action.End
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # Conjugation on the abelianization of a normal subgroup
@@ -42,11 +43,6 @@ namespace Abelianization
 
 variable {G : Type*} [Group G]
 
-/-- Two isomorphisms out of an abelianization agree if they agree on the classes of elements. -/
-theorem mulEquiv_ext {H M : Type*} [Group H] [Monoid M] {e e' : Abelianization H ≃* M}
-    (h : ∀ x : H, e (of x) = e' (of x)) : e = e' :=
-  MulEquiv.toMonoidHom_injective (hom_ext _ _ (MonoidHom.ext h))
-
 variable (N : Subgroup G) [N.Normal]
 
 /-- **Conjugation by `G ⧸ N` on `N^{ab}`**: conjugation by `g ∈ G` on `N`, carried to `N^{ab}`,
@@ -71,6 +67,7 @@ noncomputable instance instMulDistribMulActionQuotient :
   MulDistribMulAction.compHom _ (conjAut N)
 
 /-- Applying the automorphism `conjAut N q` is the action of `q`. -/
+@[simp]
 theorem conjAut_apply (q : G ⧸ N) (x : Abelianization N) : conjAut N q x = q • x := (rfl)
 
 /-- **The defining equation of the action of `G ⧸ N` on `N^{ab}`**: the class of `g` sends the
