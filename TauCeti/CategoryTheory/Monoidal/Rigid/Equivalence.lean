@@ -15,16 +15,11 @@ the monoidal opposite of its opposite. Full faithfulness follows because taking 
 undoes taking a right adjoint mate, while essential surjectivity follows because every object is the
 right dual of its left dual.
 
-Together with the strong monoidal structure on `CategoryTheory.rightDualFunctor`, this packages
-right duality as a monoidal equivalence. The mixed double-mate identities are also useful directly:
-they express the inverse relationship between left and right duality without choosing a pivotal
-structure.
+Thus the right dual functor is an equivalence of categories. Together with its existing strong
+monoidal instance, it is a monoidal equivalence.
 
 ## Main declarations
 
-* `CategoryTheory.leftAdjointMate_rightAdjointMate` and
-  `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
-  original morphism;
 * `TauCeti.rightDualFunctorFullyFaithful`: the explicit full-faithfulness structure whose preimage
   operation takes left adjoint mates;
 * `TauCeti.rightDualFunctorIsEquivalence`: right duality is an equivalence; together with its
@@ -40,34 +35,6 @@ public section
 open CategoryTheory MonoidalCategory MonoidalOpposite Opposite
 
 universe v u
-
-namespace CategoryTheory
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-
-/-- Taking the left adjoint mate of a right adjoint mate recovers the original morphism. -/
-@[simp]
-theorem leftAdjointMate_rightAdjointMate {X Y : C} [HasRightDual X] [HasRightDual Y]
-    (f : X ⟶ Y) : leftAdjointMate (fᘁ) = f := by
-  apply @ExactPairing.leftHom_ext C _ _ X (Xᘁ) Y HasRightDual.exact
-  calc
-    _ = η_ Y Yᘁ ≫ Y ◁ fᘁ :=
-      @coevaluation_comp_leftAdjointMate C _ _ (Yᘁ) (Xᘁ)
-        hasLeftDualRightDual hasLeftDualRightDual (fᘁ)
-    _ = _ := coevaluation_comp_rightAdjointMate f
-
-/-- Taking the right adjoint mate of a left adjoint mate recovers the original morphism. -/
-@[simp]
-theorem rightAdjointMate_leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual Y]
-    (f : X ⟶ Y) : rightAdjointMate (leftAdjointMate f) = f := by
-  apply @ExactPairing.rightHom_ext C _ _ (ᘁY) Y X HasLeftDual.exact
-  calc
-    _ = X ◁ leftAdjointMate f ≫ ε_ (ᘁX) X :=
-      @rightAdjointMate_comp_evaluation C _ _ (ᘁY) (ᘁX)
-        hasRightDualLeftDual hasRightDualLeftDual (leftAdjointMate f)
-    _ = _ := leftAdjointMate_comp_evaluation f
-
-end CategoryTheory
 
 namespace TauCeti
 
@@ -93,6 +60,14 @@ def rightDualFunctorFullyFaithful : (rightDualFunctor C).FullyFaithful where
     apply Quiver.Hom.unop_inj
     exact rightAdjointMate_leftAdjointMate f.unmop.unop
   preimage_map f := leftAdjointMate_rightAdjointMate f
+
+/-- The preimage operation for the full faithfulness of the right dual functor takes left adjoint
+mates. -/
+@[simp]
+theorem rightDualFunctorFullyFaithful_preimage {X Y : C}
+    (f : mop (op Xᘁ) ⟶ mop (op Yᘁ)) :
+    (rightDualFunctorFullyFaithful C).preimage f = leftAdjointMate f.unmop.unop := by
+  rfl
 
 /-- The right dual functor of a right rigid monoidal category is faithful. -/
 instance rightDualFunctorFaithful : (rightDualFunctor C).Faithful :=
