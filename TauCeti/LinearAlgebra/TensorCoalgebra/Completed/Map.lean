@@ -45,6 +45,12 @@ length filtration by at most `c`. -/
 def HasLengthBound (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N) : Prop :=
   ∀ k (x : TensorWords R M), f (truncate R M (k + 1 + c) x) k = f x k
 
+/-- A length bound means that each coordinate is determined by its finite prefix. -/
+theorem hasLengthBound_iff (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N) :
+    HasLengthBound c f ↔
+      ∀ k (x : TensorWords R M), f (truncate R M (k + 1 + c) x) k = f x k :=
+  Iff.rfl
+
 /-- Enlarging a length bound preserves coordinate locality. -/
 theorem HasLengthBound.mono {c d : ℕ} {f : TensorWords R M →ₗ[R] TensorWords R N}
     (hf : HasLengthBound c f) (hcd : c ≤ d) : HasLengthBound d f := by
@@ -113,6 +119,15 @@ theorem hasLengthBound_id (c : ℕ) : HasLengthBound c (LinearMap.id : TensorWor
   intro k x
   have hk : k < k + 1 + c := by omega
   simp [truncate_apply, hk]
+
+/-- Letterwise maps preserve length and hence have length bound zero. -/
+@[simp]
+theorem hasLengthBound_map (f : M →ₗ[R] N) : HasLengthBound 0 (TensorWords.map f) := by
+  intro k x
+  have hk : k < k + 1 + 0 := by omega
+  rw [← TensorWords.component_apply, ← TensorWords.component_apply,
+    TensorWords.component_map, TensorWords.component_map]
+  simp only [TensorWords.component_apply, truncate_apply, ite_eq_left hk]
 
 /-- Zero has every length bound. -/
 @[simp]
