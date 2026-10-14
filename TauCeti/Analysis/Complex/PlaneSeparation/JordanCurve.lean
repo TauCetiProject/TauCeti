@@ -25,14 +25,14 @@ logarithm of the Borsuk map on a simple arc
 point or an arc, no such subcontinuum separates the plane either.
 
 This is what shows that a Jordan curve `C ⊆ ℂ` is **adherent to every component of its
-complement**, as soon as the complement has two components at all: given a point `q ∈ C` and
+complement**, as soon as the complement has more than one component: given a point `q ∈ C` and
 `r > 0`, cut out of `C` a closed arc `S` whose complement in the curve lies in `ball q r`. Two
 points `x`, `y` in different components of `Cᶜ` lie in one component `D` of `Sᶜ`, so `D` must meet
 `C \ S ⊆ ball q r`; walking inside `D` from the component `E` of `Cᶜ` containing `x`, one meets
 the frontier of `E` in `C \ S`. Hence `E` comes within `r` of `q`. Thus the frontier of every
 complementary component is the whole curve.
 
-That the complement has two components at all is the **Jordan separation theorem**: two points
+That the complement has more than one component is the **Jordan separation theorem**: two points
 `p ≠ q` cut the curve into two closed arcs meeting exactly in `{p, q}`, a disconnected set, so by
 Janiszewski's second theorem `TauCeti.not_isPreconnected_compl_union_of_not_isPreconnected_inter`
 their union separates the plane. In particular the curve has an inside, a nonempty bounded
