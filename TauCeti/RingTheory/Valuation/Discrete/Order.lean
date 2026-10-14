@@ -11,9 +11,13 @@ public import Mathlib.RingTheory.Valuation.Discrete.Basic
 # Additive orders of discrete valuations
 
 This file packages the additive order attached to a `ℤᵐ⁰`-valued valuation and develops the
-facts that do not depend on a choice of constant field.  The convention is
-`ord_v f = -log (v f)`, so a uniformizer has order one.  As `WithZero.log 0 = 0`, the order
-has the junk value `ord_v 0 = 0`; hypotheses excluding zero are included where necessary.
+facts that do not depend on a choice of constant field. The convention is
+`ord_v f = -log (v f)`, so a uniformizer of a surjective valuation has order one.
+The definition and its power, negation, and restriction laws apply to valuations on rings;
+multiplication and addition laws with element-nonzero hypotheses are stated on division rings.
+As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
+On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
+included where necessary.
 
 -/
 
@@ -25,10 +29,13 @@ open MonoidWithZeroHom
 
 namespace Valuation
 
-variable {F : Type*} [Field F]
+section Ring
 
-/-- The additive order attached to a `ℤᵐ⁰`-valued valuation, with the convention that a
-uniformizer has order one.  It has the junk value `ord_v 0 = 0`. -/
+variable {F : Type*} [Ring F]
+
+/-- The additive order attached to a `ℤᵐ⁰`-valued valuation, given by its negative logarithm.
+A uniformizer of a surjective valuation has order one. The order has the junk value zero
+whenever the valuation vanishes, in particular at zero. -/
 noncomputable def ord (v : _root_.Valuation F ℤᵐ⁰) (f : F) : ℤ :=
   -WithZero.log (v f)
 
@@ -37,18 +44,9 @@ theorem ord_def (v : _root_.Valuation F ℤᵐ⁰) (f : F) : ord v f = -WithZero
 
 /-- The order function commutes with restriction along a ring homomorphism. -/
 @[simp]
-theorem ord_comap {K : Type*} [Field K] (v : _root_.Valuation F ℤᵐ⁰) (f : K →+* F)
+theorem ord_comap {K : Type*} [Ring K] (v : _root_.Valuation F ℤᵐ⁰) (f : K →+* F)
     (x : K) : ord (v.comap f) x = ord v (f x) := by
   rw [ord_def, ord_def, _root_.Valuation.comap_apply]
-
-/-- Translation between the multiplicative valuation and its additive order. -/
-theorem valuation_eq_exp_neg_ord (v : _root_.Valuation F ℤᵐ⁰) {f : F} (hf : f ≠ 0) :
-    v f = WithZero.exp (-ord v f) := by
-  rw [ord_def, neg_neg, WithZero.exp_log (v.ne_zero_iff.mpr hf)]
-
-theorem ord_eq_iff_valuation_eq_exp_neg (v : _root_.Valuation F ℤᵐ⁰) {f : F}
-    (hf : f ≠ 0) {n : ℤ} : ord v f = n ↔ v f = WithZero.exp (-n) := by
-  rw [valuation_eq_exp_neg_ord v hf, WithZero.exp_inj, neg_inj]
 
 @[simp]
 theorem ord_zero (v : _root_.Valuation F ℤᵐ⁰) : ord v 0 = 0 := by
@@ -58,49 +56,14 @@ theorem ord_zero (v : _root_.Valuation F ℤᵐ⁰) : ord v 0 = 0 := by
 theorem ord_one (v : _root_.Valuation F ℤᵐ⁰) : ord v 1 = 0 := by
   simp [ord_def]
 
-theorem ord_mul (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : f ≠ 0) (hg : g ≠ 0) :
-    ord v (f * g) = ord v f + ord v g := by
-  rw [ord_def, ord_def, ord_def, map_mul,
-    WithZero.log_mul (v.ne_zero_iff.mpr hf) (v.ne_zero_iff.mpr hg)]
-  ring
-
-theorem ord_prod (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*} (s : Finset ι) {f : ι → F}
-    (hf : ∀ i ∈ s, f i ≠ 0) : ord v (∏ i ∈ s, f i) = ∑ i ∈ s, ord v (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.prod_insert ha, Finset.sum_insert ha,
-      ord_mul v (hf a (Finset.mem_insert_self a s))
-        (Finset.prod_ne_zero_iff.mpr fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)),
-      ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
-
-@[simp]
-theorem ord_inv (v : _root_.Valuation F ℤᵐ⁰) (f : F) : ord v f⁻¹ = -ord v f := by
-  simp [ord_def, map_inv₀, WithZero.log_inv]
-
-@[simp]
-theorem ord_zpow (v : _root_.Valuation F ℤᵐ⁰) (f : F) (n : ℤ) :
-    ord v (f ^ n) = n * ord v f := by
-  simp [ord_def, map_zpow₀, WithZero.log_zpow, mul_neg]
-
 @[simp]
 theorem ord_pow (v : _root_.Valuation F ℤᵐ⁰) (f : F) (n : ℕ) :
     ord v (f ^ n) = n * ord v f := by
-  simpa using ord_zpow v f n
-
-theorem ord_div (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : f ≠ 0) (hg : g ≠ 0) :
-    ord v (f / g) = ord v f - ord v g := by
-  rw [div_eq_mul_inv, ord_mul v hf (inv_ne_zero hg), ord_inv, sub_eq_add_neg]
+  simp [ord_def, map_pow, WithZero.log_pow, mul_neg]
 
 @[simp]
 theorem ord_neg (v : _root_.Valuation F ℤᵐ⁰) (f : F) : ord v (-f) = ord v f := by
   simp [ord_def, _root_.Valuation.map_neg]
-
-/-- The order of a quotient by an integral power. -/
-theorem ord_div_zpow (v : _root_.Valuation F ℤᵐ⁰) {f t : F} (hf : f ≠ 0) (ht : t ≠ 0)
-    (n : ℤ) : ord v (f / t ^ n) = ord v f - n * ord v t := by
-  rw [ord_div v hf (zpow_ne_zero _ ht), ord_zpow]
 
 /-- **A surjective valuation onto `ℤᵐ⁰` is nontrivial.** Surjectivity is the form the hypothesis
 usually arrives in — a `Place` carries it by definition — while the results about order and
@@ -114,8 +77,77 @@ theorem isNontrivial_of_surjective {R : Type*} [Ring R] {v : _root_.Valuation R 
 theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
     Function.Surjective (ord v) := fun n => by
   obtain ⟨f, hf⟩ := hv (WithZero.exp (-n))
-  have hf0 : f ≠ 0 := v.ne_zero_iff.mp (by simp [hf])
-  exact ⟨f, (ord_eq_iff_valuation_eq_exp_neg v hf0).mpr hf⟩
+  exact ⟨f, by simp [ord_def, hf]⟩
+
+/-- Surjectivity of `v` makes its value group the whole of `ℤᵐ⁰`. -/
+theorem valueGroup_eq_top_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
+    (hv : Function.Surjective v) : v.valueGroup = ⊤ :=
+  (Subgroup.eq_top_iff' _).mpr fun γ => mem_valueGroup _ (hv γ)
+
+/-- A surjective `ℤᵐ⁰`-valued valuation has nontrivial value group. -/
+theorem nontrivial_valueGroup_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
+    (hv : Function.Surjective v) : Nontrivial v.valueGroup := by
+  rw [valueGroup_eq_top_of_surjective v hv]
+  exact (Subgroup.topEquiv (G := ℤᵐ⁰ˣ)).toEquiv.nontrivial
+
+/-- Uniformizers of a surjective `ℤᵐ⁰`-valuation are exactly the elements of order one. -/
+theorem isUniformizer_iff_ord_eq_one_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
+    [Nontrivial v.valueGroup] (hv : Function.Surjective v) {t : F} :
+    v.IsUniformizer t ↔ ord v t = 1 := by
+  rw [_root_.Valuation.IsUniformizer,
+    _root_.Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective hv, Units.val_mk0]
+  constructor
+  · intro ht
+    simp [ord_def, ht]
+  · intro ht
+    have ht0 : v t ≠ 0 := fun h => by simp [ord_def, h] at ht
+    rw [ord_def, neg_eq_iff_eq_neg] at ht
+    rw [← WithZero.exp_log ht0, ht]
+
+theorem exists_isUniformizer_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
+    [Nontrivial v.valueGroup] (hv : Function.Surjective v) :
+    ∃ t : F, v.IsUniformizer t := by
+  obtain ⟨t, ht⟩ := ord_surjective v hv 1
+  exact ⟨t, (isUniformizer_iff_ord_eq_one_of_surjective v hv).mpr ht⟩
+
+end Ring
+
+section DivisionRing
+
+variable {F : Type*} [DivisionRing F]
+
+/-- Translation between the multiplicative valuation and its additive order. -/
+theorem valuation_eq_exp_neg_ord (v : _root_.Valuation F ℤᵐ⁰) {f : F} (hf : f ≠ 0) :
+    v f = WithZero.exp (-ord v f) := by
+  rw [ord_def, neg_neg, WithZero.exp_log (v.ne_zero_iff.mpr hf)]
+
+theorem ord_eq_iff_valuation_eq_exp_neg (v : _root_.Valuation F ℤᵐ⁰) {f : F}
+    (hf : f ≠ 0) {n : ℤ} : ord v f = n ↔ v f = WithZero.exp (-n) := by
+  rw [valuation_eq_exp_neg_ord v hf, WithZero.exp_inj, neg_inj]
+
+theorem ord_mul (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : f ≠ 0) (hg : g ≠ 0) :
+    ord v (f * g) = ord v f + ord v g := by
+  rw [ord_def, ord_def, ord_def, map_mul,
+    WithZero.log_mul (v.ne_zero_iff.mpr hf) (v.ne_zero_iff.mpr hg)]
+  ring
+
+@[simp]
+theorem ord_inv (v : _root_.Valuation F ℤᵐ⁰) (f : F) : ord v f⁻¹ = -ord v f := by
+  simp [ord_def, map_inv₀, WithZero.log_inv]
+
+@[simp]
+theorem ord_zpow (v : _root_.Valuation F ℤᵐ⁰) (f : F) (n : ℤ) :
+    ord v (f ^ n) = n * ord v f := by
+  simp [ord_def, map_zpow₀, WithZero.log_zpow, mul_neg]
+
+theorem ord_div (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : f ≠ 0) (hg : g ≠ 0) :
+    ord v (f / g) = ord v f - ord v g := by
+  rw [div_eq_mul_inv, ord_mul v hf (inv_ne_zero hg), ord_inv, sub_eq_add_neg]
+
+/-- The order of a quotient by an integral power. -/
+theorem ord_div_zpow (v : _root_.Valuation F ℤᵐ⁰) {f t : F} (hf : f ≠ 0) (ht : t ≠ 0)
+    (n : ℤ) : ord v (f / t ^ n) = ord v f - n * ord v t := by
+  rw [ord_div v hf (zpow_ne_zero _ ht), ord_zpow]
 
 /-- **A valuation that takes the value `exp (-1)` is surjective onto `ℤᵐ⁰`**: the integer powers
 of an element of value `exp (-1)` take every nonzero value. -/
@@ -126,14 +158,6 @@ theorem surjective_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰) {t :
   | zero => exact ⟨0, map_zero v⟩
   | exp n => exact ⟨t ^ (-n), by rw [map_zpow₀, ht, ← WithZero.exp_zsmul, smul_eq_mul, neg_mul_neg,
       mul_one]⟩
-
-theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {f : F} :
-    f ∈ v.valuationSubring ↔ 0 ≤ ord v f := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  · rw [_root_.Valuation.mem_valuationSubring_iff,
-      valuation_eq_exp_neg_ord v hf, ← WithZero.exp_zero, WithZero.exp_le_exp]
-    omega
 
 private theorem exp_max (a b : ℤ) :
     max (WithZero.exp a) (WithZero.exp b) = WithZero.exp (max a b) := by
@@ -179,8 +203,8 @@ theorem ord_lt_ord_iff_valuation_gt (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
 
 /-- The valuation of a finite sum with a strict minimum of orders: the summand of least order
 dominates.  It is stated on the valuation because both
-`TauCeti.Valuation.sum_ne_zero_of_forall_ord_lt` and
-`TauCeti.Valuation.ord_sum_eq_of_forall_lt` read off from it. -/
+`Valuation.sum_ne_zero_of_forall_ord_lt` and
+`Valuation.ord_sum_eq_of_forall_lt` read off from it. -/
 private theorem valuation_sum_eq_of_forall_ord_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*}
     {s : Finset ι} {f : ι → F} {j : ι} (hj : j ∈ s) (hfj : f j ≠ 0)
     (hlt : ∀ i ∈ s, i ≠ j → ord v (f j) < ord v (f i)) :
@@ -205,7 +229,7 @@ theorem sum_ne_zero_of_forall_ord_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Ty
 
 /-- **The order of a finite sum with a strict minimum**: if one summand has strictly smaller
 order than each of the others, the sum has that order.  This is the `Finset.sum` form of
-`TauCeti.Valuation.ord_add_eq_min_of_ord_ne`; only the distinguished summand is asked to be
+`Valuation.ord_add_eq_min_of_ord_ne`; only the distinguished summand is asked to be
 nonzero, which keeps the junk value `ord_v 0 = 0` out of the conclusion. -/
 theorem ord_sum_eq_of_forall_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*} {s : Finset ι}
     {f : ι → F} {j : ι} (hj : j ∈ s) (hfj : f j ≠ 0)
@@ -213,24 +237,30 @@ theorem ord_sum_eq_of_forall_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*} 
     ord v (∑ i ∈ s, f i) = ord v (f j) := by
   rw [ord_def, ord_def, valuation_sum_eq_of_forall_ord_lt v hj hfj hlt]
 
-section ValueGroup
+end DivisionRing
 
-variable {F : Type*} [Ring F]
-
-/-- Surjectivity of `v` makes its value group the whole of `ℤᵐ⁰`. -/
-theorem valueGroup_eq_top_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    (hv : Function.Surjective v) : v.valueGroup = ⊤ :=
-  (Subgroup.eq_top_iff' _).mpr fun γ => mem_valueGroup _ (hv γ)
-
-/-- A surjective `ℤᵐ⁰`-valued valuation has nontrivial value group. -/
-theorem nontrivial_valueGroup_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    (hv : Function.Surjective v) : Nontrivial v.valueGroup := by
-  rw [valueGroup_eq_top_of_surjective v hv]
-  exact (Subgroup.topEquiv (G := ℤᵐ⁰ˣ)).toEquiv.nontrivial
-
-end ValueGroup
+section Field
 
 variable {F : Type*} [Field F]
+
+theorem ord_prod (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*} (s : Finset ι) {f : ι → F}
+    (hf : ∀ i ∈ s, f i ≠ 0) : ord v (∏ i ∈ s, f i) = ∑ i ∈ s, ord v (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.sum_insert ha,
+      ord_mul v (hf a (Finset.mem_insert_self a s))
+        (Finset.prod_ne_zero_iff.mpr fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)),
+      ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
+
+theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {f : F} :
+    f ∈ v.valuationSubring ↔ 0 ≤ ord v f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · rw [_root_.Valuation.mem_valuationSubring_iff,
+      valuation_eq_exp_neg_ord v hf, ← WithZero.exp_zero, WithZero.exp_le_exp]
+    omega
 
 /-- The valuation ring of a surjective `ℤᵐ⁰`-valued valuation is a DVR. -/
 theorem valuationSubring_isDiscreteValuationRing_of_surjective
@@ -238,26 +268,6 @@ theorem valuationSubring_isDiscreteValuationRing_of_surjective
     IsDiscreteValuationRing v.valuationSubring := by
   let _ := nontrivial_valueGroup_of_surjective v hv
   exact _root_.Valuation.valuationSubring_isDiscreteValuationRing v
-
-/-- Uniformizers of a surjective `ℤᵐ⁰`-valuation are exactly the elements of order one. -/
-theorem isUniformizer_iff_ord_eq_one_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    [Nontrivial v.valueGroup] (hv : Function.Surjective v) {t : F} :
-    v.IsUniformizer t ↔ ord v t = 1 := by
-  rcases eq_or_ne t 0 with rfl | ht
-  · refine iff_of_false ?_ (by simp)
-    simp only [_root_.Valuation.IsUniformizer,
-      _root_.Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective hv,
-      map_zero, Units.val_mk0]
-    exact fun h => WithZero.exp_ne_zero h.symm
-  · rw [_root_.Valuation.IsUniformizer,
-      _root_.Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective hv,
-      Units.val_mk0, ord_eq_iff_valuation_eq_exp_neg v ht]
-
-theorem exists_isUniformizer_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    [Nontrivial v.valueGroup] (hv : Function.Surjective v) :
-    ∃ t : F, v.IsUniformizer t := by
-  obtain ⟨t, ht⟩ := ord_surjective v hv 1
-  exact ⟨t, (isUniformizer_iff_ord_eq_one_of_surjective v hv).mpr ht⟩
 
 theorem isUnit_iff_ord_eq_zero (v : _root_.Valuation F ℤᵐ⁰) {x : v.valuationSubring}
     (hx : (x : F) ≠ 0) : IsUnit x ↔ ord v (x : F) = 0 := by
@@ -368,5 +378,7 @@ theorem eq_of_isEquiv_of_surjective {v w : _root_.Valuation F ℤᵐ⁰}
     rw [ord_div_zpow w hf ht0, hone] at hW
     omega
   rw [valuation_eq_exp_neg_ord v hf, valuation_eq_exp_neg_ord w hf, key]
+
+end Field
 
 end Valuation
