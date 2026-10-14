@@ -206,10 +206,7 @@ indexed by `ℕ` whose terms and homology objects are all projective, the Kronec
 theorem kronecker_bijective_of_projective_homology (n : ℕ) :
     Function.Bijective (kronecker k X Y n) := by
   cases n with
-  | zero =>
-    -- no differential leaves degree `0`, so all of `X₀` is cycles
-    have := X.isIso_iCycles 0 _ rfl (X.shape _ _ (by simp))
-    exact kronecker_bijective_of_isIso 0
+  | zero => exact kronecker_bijective_of_isIso 0
   | succ n =>
     -- the cycles are projective and split off, so the universal coefficient sequence is exact,
     -- and its `Ext¹` term vanishes since the homology is projective

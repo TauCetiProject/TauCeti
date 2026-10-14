@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.Boundaries
 public import TauCeti.LinearAlgebra.FreeModule.PID
-import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.Algebra.Homology.Split
 
 /-!

@@ -333,8 +333,7 @@ theorem projective_cycles_of_projective_homology (n : ℕ) : Projective (K.cycle
   induction n with
   | zero =>
     -- no differential leaves degree `0`, so all of `K₀` is cycles
-    have := K.isIso_iCycles 0 _ rfl (K.shape _ _ (by simp))
-    exact Projective.of_iso (asIso (K.iCycles 0)).symm inferInstance
+    exact Projective.of_iso K.cycles₀Iso.symm inferInstance
   | succ n ih =>
     -- by the induction hypothesis `ih`, the boundaries `Bₙ` are a retract of the projective `Zₙ`,
     -- so `0 ⟶ Zₙ₊₁ ⟶ Kₙ₊₁ ⟶ Bₙ ⟶ 0` splits and `Zₙ₊₁` is a retract of `Kₙ₊₁`
@@ -348,9 +347,7 @@ cycles split off the terms in every degree.  Since the homology then also splits
 to its homology with zero differentials (`HomologicalComplex.exists_homotopyEquiv_d_eq_zero`). -/
 theorem isSplitMono_iCycles_of_projective_homology (n : ℕ) : IsSplitMono (K.iCycles n) := by
   cases n with
-  | zero =>
-    have := K.isIso_iCycles 0 _ rfl (K.shape _ _ (by simp))
-    exact IsSplitMono.of_iso _
+  | zero => exact IsSplitMono.of_iso _
   | succ n =>
     have := K.projective_cycles_of_projective_homology n
     have := K.projective_kernel_homologyπ n
