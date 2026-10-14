@@ -91,6 +91,22 @@ theorem add {x : M} {v w : TangentSpace (𝓡∂ (n + 1)) x}
   rw [ContinuousLinearMap.map_add, map_add]
   simpa using add_neg hv hw
 
+/-- The outward-pointing vectors at a fixed point form a convex set.  This is the pointwise
+interface used when smooth local outward fields are glued by a partition of unity. -/
+theorem convex (x : M) :
+    Convex ℝ {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} := by
+  intro v hv w hw a b ha hb hab
+  by_cases ha0 : a = 0
+  · have hb1 : b = 1 := by linarith
+    subst a
+    simpa [hb1] using hw
+  by_cases hb0 : b = 0
+  · have ha1 : a = 1 := by linarith
+    subst b
+    simpa [ha1] using hv
+  exact (hv.smul_pos (lt_of_le_of_ne ha (Ne.symm ha0))).add
+    (hw.smul_pos (lt_of_le_of_ne hb (Ne.symm hb0)))
+
 /-- An outward vector is nonzero. -/
 theorem ne_zero {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
     (hv : IsOutwardPointing x v) : v ≠ 0 := by
@@ -176,6 +192,21 @@ theorem smul {f : M → ℝ} (hV : IsOutwardPointingField V)
     (hpos : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 < f x) :
     IsOutwardPointingField (fun x ↦ f x • V x) := by
   refine ⟨hf.smul_section hV.1, fun x hx ↦ (hV.2 x hx).smul_pos (hpos x hx)⟩
+
+/-- Smooth convex combinations of outward-pointing fields remain outward-pointing.
+The coefficients are smooth globally, nonnegative on the boundary, and sum to one there. -/
+theorem smul_add_smul {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
+    (hV : IsOutwardPointingField V) (hW : IsOutwardPointingField W)
+    {f g : M → ℝ} (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f)
+    (hg : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ g)
+    (hf_nonneg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 ≤ f x)
+    (hg_nonneg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 ≤ g x)
+    (hfg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, f x + g x = 1) :
+    IsOutwardPointingField (fun x ↦ f x • V x + g x • W x) := by
+  refine ⟨(hf.smul_section hV.contMDiff).add_section (hg.smul_section hW.contMDiff), ?_⟩
+  intro x hx
+  exact (IsOutwardPointing.convex x) (hV.isOutwardPointing hx) (hW.isOutwardPointing hx)
+    (hf_nonneg x hx) (hg_nonneg x hx) (hfg x hx)
 
 end IsOutwardPointingField
 
