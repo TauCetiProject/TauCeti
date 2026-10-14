@@ -119,9 +119,10 @@ private theorem mem_zmultiples_twoTorsionCoeff_iff {S : W.TorsionCoeff 2} :
   · rintro ⟨n, rfl⟩
     dsimp only
     rw [← mod_addOrderOf_zsmul, addOrderOf_twoTorsionCoeff]
+    simp only [Nat.cast_ofNat]
     rcases Int.emod_two_eq_zero_or_one n with h | h
-    · exact Or.inl (by rw [show n % ((2 : ℕ) : ℤ) = 0 from h, zero_zsmul])
-    · exact Or.inr (by rw [show n % ((2 : ℕ) : ℤ) = 1 from h, one_zsmul])
+    · exact Or.inl (by rw [h, zero_zsmul])
+    · exact Or.inr (by rw [h, one_zsmul])
   · rintro (rfl | rfl)
     · exact zero_mem _
     · exact AddSubgroup.mem_zmultiples _
