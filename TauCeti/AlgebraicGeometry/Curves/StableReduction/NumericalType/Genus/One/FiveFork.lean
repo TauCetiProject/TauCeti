@@ -103,7 +103,7 @@ private lemma fiveFork_multiplicity_relations (e : Fin 5 ≃ T.Component)
 the fork `0 - 1 - 2` with leaves `3, 4` at `2` has exactly the numerical data of cases
 (23) or (24) of Stacks, Tag 0C8T. All component genera vanish. The equivalence `e`
 preserves the displayed component labels. -/
-theorem IsMinimal.exists_weight_multiplicity_intersection_fiveFork
+theorem IsMinimal.exists_weight_multiplicity_intersection_eq_fiveFork
     (hT : T.IsMinimal) (hg : T.arithmeticGenus = 1) (e : Fin 5 ≃ T.Component)
     (h01 : 0 < T.intersection (e 0) (e 1))
     (h12 : 0 < T.intersection (e 1) (e 2))
