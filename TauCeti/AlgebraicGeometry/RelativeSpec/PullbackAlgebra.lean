@@ -17,8 +17,13 @@ algebras functorial: the strong symmetric monoidal pullback of quasicoherent she
 commutative monoid objects to commutative monoid objects.
 
 This is the algebraic side of base change for relative spectra. The characteristic equations in
-this file identify the carrier and morphisms of an algebra pullback with the already established
-pullback of the underlying quasicoherent sheaves.
+this file identify the carrier, unit, multiplication, and morphisms of an algebra pullback with
+the already established pullback of the underlying quasicoherent sheaves and its monoidal
+comparisons.
+
+The construction is Mathlib's `CategoryTheory.Functor.mapCommMon`, which carries commutative
+monoid objects along a lax braided functor, applied to the strong symmetric monoidal structure
+on `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pullback`.
 
 The main declaration is `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullback`, pullback of
 quasicoherent algebras along a morphism of schemes.
@@ -133,6 +138,45 @@ theorem pullback_obj_X {Y : Scheme.{u}} (f : Y ⟶ X) (A : QuasicoherentAlgebra 
   by
     unfold pullback ofCommMon toCommMon
     exact QuasicoherentSheaf.pullback_obj_obj f _
+
+/-- The unit of a pulled-back algebra is the pullback of its unit, preceded by the
+identification of the pulled-back structure sheaf. -/
+@[simp]
+theorem pullback_obj_one {Y : Scheme.{u}} (f : Y ⟶ X) (A : QuasicoherentAlgebra X) :
+    η[((pullback f).obj A).obj.X] =
+      (Scheme.Modules.pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map η[A.obj.X] ≫
+        eqToHom (pullback_obj_X f A).symm := by
+  unfold pullback ofCommMon toCommMon
+  change (Functor.LaxMonoidal.ε (QuasicoherentSheaf.pullback f)).hom ≫
+    ((QuasicoherentSheaf.pullback f).map _).hom = _
+  rw [QuasicoherentSheaf.pullback_ε_hom, QuasicoherentSheaf.pullback_map_hom]
+  -- `simp` cannot normalize the mixture of `X.Modules` and underlying sheaf instances.
+  refine (Category.assoc (obj := Y.Modules) _ _ _).trans ?_
+  refine congrArg ((Scheme.Modules.pullbackObjUnitIso f).inv ≫ ·) ?_
+  refine (eqToHom_trans_assoc (C := Y.Modules) _ _ _).trans ?_
+  exact Category.id_comp (obj := Y.Modules) _
+
+/-- The multiplication of a pulled-back algebra is the pullback of its multiplication,
+preceded by the inverse tensor comparison of module pullback. -/
+@[simp]
+theorem pullback_obj_mul {Y : Scheme.{u}} (f : Y ⟶ X) (A : QuasicoherentAlgebra X) :
+    μ[((pullback f).obj A).obj.X] =
+      (eqToHom (pullback_obj_X f A) ⊗ₘ eqToHom (pullback_obj_X f A)) ≫
+        inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) A.obj.X A.obj.X) ≫
+          (Scheme.Modules.pullback f).map μ[A.obj.X] ≫ eqToHom (pullback_obj_X f A).symm := by
+  unfold pullback ofCommMon toCommMon
+  change (Functor.LaxMonoidal.μ (QuasicoherentSheaf.pullback f) _ _).hom ≫
+    ((QuasicoherentSheaf.pullback f).map _).hom = _
+  rw [QuasicoherentSheaf.pullback_μ_hom, QuasicoherentSheaf.pullback_map_hom]
+  simp only [Scheme.Modules.pullbackToModules_δ]
+  -- `simp` cannot normalize the mixture of `X.Modules` and underlying sheaf instances.
+  refine (Category.assoc (obj := Y.Modules) _ _ _).trans ?_
+  refine congrArg ((eqToHom (pullback_obj_X f A) ⊗ₘ eqToHom (pullback_obj_X f A)) ≫ ·) ?_
+  refine (Category.assoc (obj := Y.Modules) _ _ _).trans ?_
+  refine congrArg
+    (inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) A.obj.X A.obj.X) ≫ ·) ?_
+  refine (eqToHom_trans_assoc (C := Y.Modules) _ _ _).trans ?_
+  exact Category.id_comp (obj := Y.Modules) _
 
 /-- Pullback of algebra morphisms has the underlying map given by pullback of module
 morphisms, transported along the canonical carrier identifications. -/
