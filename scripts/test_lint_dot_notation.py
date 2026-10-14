@@ -6,6 +6,7 @@ from __future__ import annotations
 import contextlib
 import io
 import pathlib
+import re
 import tempfile
 import unittest
 
@@ -36,6 +37,56 @@ STANDARD_HOM_NOTATIONS = (
     ("→⋆ₙₐ", "NonUnitalStarAlgHom", ("NonUnitalAlgHom", "StarAlgHom")),
     ("→⋆ₙₐ[R]", "NonUnitalStarAlgHom", ("NonUnitalAlgHom", "StarAlgHom")),
     ("→ₐᵍ[R]", "GradedAlgHom", ("AlgHom", "GradedRingHom")),
+)
+
+
+# Complete remaining unambiguous arrow notation in the pinned Mathlib source inventory.
+OTHER_ARROW_NOTATIONS = (
+    ("→+c[a,b]", "AddConstMap", "AddMonoidHom"),
+    ("→.", "PFun", "Foo"),
+    ("→CO", "ContinuousOpenMap", "Foo"),
+    ("→CP", "CompletelyPositiveMap", "ContinuousMap"),
+    ("→C_c", "CompactlySupportedContinuousMap", "Foo"),
+    ("→Co", "ContinuousOrderHom", "Foo"),
+    ("→C₀", "ZeroAtInftyContinuousMap", "Foo"),
+    ("→L_c[R]", "CompactConvergenceCLM", "ContinuousLinearMap"),
+    ("→Lᵤ[R,S]", "UniformConvergenceCLM", "ContinuousLinearMap"),
+    ("→Lₚₜ[R]", "PointwiseConvergenceCLM", "ContinuousLinearMap"),
+    ("→P[R]", "PositiveContinuousLinearMap", "PositiveLinearMap"),
+    ("→SL_c[σ]", "CompactConvergenceCLM", "ContinuousLinearMap"),
+    ("→SLᵤ[σ,S]", "UniformConvergenceCLM", "ContinuousLinearMap"),
+    ("→SLₚₜ[σ]", "PointwiseConvergenceCLM", "ContinuousLinearMap"),
+    ("→SWOT[σ]", "ContinuousLinearMapWOT", "ContinuousLinearMap"),
+    ("→WOT[R]", "ContinuousLinearMapWOT", "ContinuousLinearMap"),
+    ("→bᵢ", "Isometry", "LinearIsometry"),
+    ("→co", "CocompactMap", "Foo"),
+    ("→fg", "FinsubgraphHom", "Foo"),
+    ("→g", "Hom", "Foo"),
+    ("→qᵢ", "Isometry", "LinearIsometry"),
+    ("→r", "RelHom", "Foo"),
+    ("→ᴬ[R]", "ContinuousAffineMap", "Foo"),
+    ("→ᴸ", "LHom", "Foo"),
+    ("→ᵃ[R]", "AffineMap", "Foo"),
+    ("→ᵃⁱ[R]", "AffineIsometry", "Foo"),
+    ("→ᵇ", "BoundedContinuousFunction", "Foo"),
+    ("→ᵇᵃ", "BoxAdditiveMap", "BoundedContinuousFunction"),
+    ("→ᵇᵃ[I]", "BoxAdditiveMap", "BoundedContinuousFunction"),
+    ("→ᵈ", "Dilation", "Foo"),
+    ("→ᵤ", "UniformFun", "Foo"),
+    ("→ᵤ[S]", "UniformOnFun", "UniformFun"),
+    ("→ᶠˡ[p,k]", "LinearMap", "Foo"),
+    ("→ᶠⁱ[p,k]", "IsocrystalHom", "Foo"),
+    ("→ⁱL", "ContIntertwiningMap", "Foo"),
+    ("→₀", "Finsupp", "Foo"),
+    ("→₁[μ]", "Lp", "Foo"),
+    ("→₁ₛ[μ]", "simpleFunc", "Lp"),
+    ("→₂[μ]", "Lp", "Foo"),
+    ("→ₘ[μ]", "AEEqFun", "Foo"),
+    ("→ₚ[R]", "PositiveLinearMap", "Foo"),
+    ("→ₚₗ[R]", "PolynomialLaw", "PositiveLinearMap"),
+    ("→ₛ", "SimpleFunc", "Foo"),
+    ("→◃", "ShelfHom", "Foo"),
+    ("→𝒄", "ContinuousHom", "Foo"),
 )
 
 
@@ -187,6 +238,74 @@ end TauCeti.{other}
                          f"TauCeti.{owner}.actualReceiver"],
                     )
 
+    def test_other_arrow_types_are_bundled_with_their_canonical_receiver(self):
+        for arrow, owner, other_owner in OTHER_ARROW_NOTATIONS:
+            for separator in (" ", ""):
+                source = f"""\
+namespace TauCeti.Foo
+def returnedValue : Foo{separator}{arrow}{separator}B := f
+def outerFunction : Foo → A{separator}{arrow}{separator}B := f
+def outerAsciiFunction : Foo -> A{separator}{arrow}{separator}B := f
+end TauCeti.Foo
+namespace TauCeti.{owner}
+def actualReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{owner}
+namespace TauCeti.{other_owner}
+def differentReceiver (f : A{separator}{arrow}{separator}B) := f
+end TauCeti.{other_owner}
+"""
+                with self.subTest(arrow=arrow, separator=separator):
+                    self.assertEqual(
+                        [finding.declaration for finding in
+                         findings(source, {"Foo", owner, other_owner})],
+                        ["TauCeti.Foo.outerFunction", "TauCeti.Foo.outerAsciiFunction",
+                         f"TauCeti.{owner}.actualReceiver"],
+                    )
+
+    def test_pinned_mathlib_arrow_notation_inventory_is_covered(self):
+        root = pathlib.Path(".lake/packages/mathlib/Mathlib")
+        if not root.is_dir():
+            self.skipTest("Mathlib source is not available")
+        # Include inline attributes, named scopes, indentation, and multiline notation bodies.
+        command = re.compile(
+            r'(?m)^[ \t]*(?:@\[[^\n]*\]\s*)?'
+            r'(?:(?:scoped(?:\[[^]\n]*\])?|local)\s+)?'
+            r'(?:notation3?|infix[lr]?)(?::[\w]+)?\s+(.*?)=>',
+            re.S,
+        )
+        supported = {token for token, _ in lint.NOTATION_RECEIVERS}
+        for path in root.rglob("*.lean"):
+            text = lint.strip_comments_and_strings(path.read_text(errors="ignore"),
+                                                   mask_strings=False)
+            for match in command.finditer(text):
+                for token in re.findall(r'"([^"\n]*)"', match.group(1)):
+                    token = token.strip()
+                    if token.startswith("→"):
+                        self.assertIn(token, supported, f"{path}: {token}")
+
+    def test_ambiguous_arrows_are_bundled_without_inventing_receiver_ownership(self):
+        for arrow in ("→[M]", "→ₑ[φ]", "→ₗ⁅R⁆", "→ₗ⁅R,L⁆"):
+            source = f"""\
+namespace TauCeti
+def Foo : Type u {arrow} A := f
+namespace Foo
+def namedReceiver (x : _root_.Foo) := x
+def returnedValue : Foo{arrow}B := f
+def outerFunction : Foo → A{arrow}B := f
+end Foo
+end TauCeti
+"""
+            owners = {"Foo", "AddActionHom", "MulActionHom", "Hom", "LieHom", "LieModuleHom"}
+            for owner in owners - {"Foo"}:
+                source += f"""\
+namespace TauCeti.{owner}
+def ambiguousReceiver (f : A {arrow} B) := f
+end TauCeti.{owner}
+"""
+            with self.subTest(arrow=arrow):
+                self.assertEqual([finding.declaration for finding in findings(source, owners)],
+                                 ["TauCeti.Foo.namedReceiver", "TauCeti.Foo.outerFunction"])
+
     def test_longer_bundled_arrows_use_their_own_receiver_namespace(self):
         cases = (
             ("→+o", "OrderAddMonoidHom", ("AddMonoidHom",)),
@@ -223,7 +342,8 @@ end TauCeti.{shorter}
 
     def test_longer_bundled_maps_do_not_claim_sort_ownership(self):
         arrows = ("→+o", "→*o", "→*₀", "→*₀o", "→+*o", "→+*ᵍ")
-        for arrow in (*arrows, *(case[0] for case in STANDARD_HOM_NOTATIONS)):
+        for arrow in (*arrows, *(case[0] for case in STANDARD_HOM_NOTATIONS),
+                      *(case[0] for case in OTHER_ARROW_NOTATIONS)):
             source = f"""\
 namespace TauCeti
 def Foo : Type u {arrow} A := f
@@ -246,7 +366,7 @@ def scalarPrefix : Foo →Scalar := f
 def orderTypePrefix : Foo →OrderHom := f
 def nonUnitalTypePrefix : Foo →NonUnitalAlgHom := f
 def starTypePrefix : Foo →StarAlgHom := f
-def continuousTypePrefix : Foo →ContinuousMonoidHom := f
+def continuousTypePrefix : Foo → ContinuousMonoidHom := f
 end TauCeti.Foo
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
@@ -325,7 +445,7 @@ namespace TensorProduct
 def tensorProductReceiver (x : M ⊗[R] N) := x
 end TensorProduct
 namespace LieHom
-def lieHomReceiver (f : L →ₗ⁅R⁆ L') := f
+def lieHomReceiver (f : LieHom R L L') := f
 end LieHom
 end TauCeti
 """

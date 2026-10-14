@@ -54,8 +54,9 @@ NAMESPACE = re.compile(
 )
 TOP_LEVEL_CONNECTIVES = ("->", "→", "⟶", "⥤", "≃", "≅", "×", "⊕", "⊗", "↪", "↠")
 
-# Common type notations whose underlying receiver type is not visible as an identifier in the
-# source. Sort by length so the lexer's longest registered token wins over any shorter prefix.
+# Type-notation tokens and their receiver namespace when it is statically determined.
+# None records a genuinely overloaded notation; it is still a bundled type, not a function arrow.
+# Sort by length so the lexer's longest registered token wins over any shorter prefix.
 NOTATION_RECEIVERS = tuple(sorted((
     ("→ₛₗᵢ[", "LinearIsometry"),
     ("≃ₛₗᵢ[", "LinearIsometryEquiv"),
@@ -63,6 +64,53 @@ NOTATION_RECEIVERS = tuple(sorted((
     ("≃ₗᵢ⋆[", "LinearIsometryEquiv"),
     ("→ₗᵢ[", "LinearIsometry"),
     ("≃ₗᵢ[", "LinearIsometryEquiv"),
+    ("→+c[", "AddConstMap"),
+    ("→.", "PFun"),
+    ("→CO", "ContinuousOpenMap"),
+    ("→CP", "CompletelyPositiveMap"),
+    ("→C_c", "CompactlySupportedContinuousMap"),
+    ("→Co", "ContinuousOrderHom"),
+    ("→C₀", "ZeroAtInftyContinuousMap"),
+    ("→L_c[", "CompactConvergenceCLM"),
+    ("→Lᵤ[", "UniformConvergenceCLM"),
+    ("→Lₚₜ[", "PointwiseConvergenceCLM"),
+    ("→P[", "PositiveContinuousLinearMap"),
+    ("→SL_c[", "CompactConvergenceCLM"),
+    ("→SLᵤ[", "UniformConvergenceCLM"),
+    ("→SLₚₜ[", "PointwiseConvergenceCLM"),
+    ("→SWOT[", "ContinuousLinearMapWOT"),
+    ("→WOT[", "ContinuousLinearMapWOT"),
+    ("→[", None),
+    ("→bᵢ", "Isometry"),
+    ("→co", "CocompactMap"),
+    ("→fg", "FinsubgraphHom"),
+    ("→g", "Hom"),
+    ("→qᵢ", "Isometry"),
+    ("→r", "RelHom"),
+    ("→ᴬ[", "ContinuousAffineMap"),
+    ("→ᴸ", "LHom"),
+    ("→ᵃ[", "AffineMap"),
+    ("→ᵃⁱ[", "AffineIsometry"),
+    ("→ᵇ", "BoundedContinuousFunction"),
+    ("→ᵇᵃ", "BoxAdditiveMap"),
+    ("→ᵇᵃ[", "BoxAdditiveMap"),
+    ("→ᵈ", "Dilation"),
+    ("→ᵤ", "UniformFun"),
+    ("→ᵤ[", "UniformOnFun"),
+    ("→ᶠˡ[", "LinearMap"),
+    ("→ᶠⁱ[", "IsocrystalHom"),
+    ("→ⁱL", "ContIntertwiningMap"),
+    ("→₀", "Finsupp"),
+    ("→₁[", "Lp"),
+    ("→₁ₛ[", "simpleFunc"),
+    ("→₂[", "Lp"),
+    ("→ₑ[", None),
+    ("→ₘ[", "AEEqFun"),
+    ("→ₚ[", "PositiveLinearMap"),
+    ("→ₚₗ[", "PolynomialLaw"),
+    ("→ₛ", "SimpleFunc"),
+    ("→◃", "ShelfHom"),
+    ("→𝒄", "ContinuousHom"),
     ("→ₙ+", "AddHom"),
     ("→ₙ*", "MulHom"),
     ("→ₙ+*", "NonUnitalRingHom"),
@@ -111,7 +159,8 @@ NOTATION_RECEIVERS = tuple(sorted((
     ("≃ₗc[", "CoalgEquiv"),
     ("→ₛₗ.[", "LinearPMap"),
     ("→ₗ.[", "LinearPMap"),
-    ("→ₗ⁅", "LieHom"),
+    # Lie hom, Lie-module hom, or scoped Lie-Rinehart hom; the token alone cannot decide.
+    ("→ₗ⁅", None),
     ("≃ₗ⁅", "LieEquiv"),
     ("→ₐc", "BialgHom"),
     ("→ₗc", "CoalgHom"),
@@ -658,7 +707,7 @@ def own_declaration_paths_parallel(sources: dict[pathlib.Path, str]) -> set[tupl
     return owned
 
 
-def _notation_receiver_at(text: str, position: int) -> str | None:
+def _notation_at(text: str, position: int) -> tuple[str, str | None] | None:
     """Recognize the longest supported type-notation token at ``position``.
 
     Registered arrow tokens need no trailing boundary: Lean tokenizes ``A→+other`` as
@@ -670,12 +719,12 @@ def _notation_receiver_at(text: str, position: int) -> str | None:
             if (token.startswith("→") or token.endswith(("[", "⟮", "⁅", "^"))
                     or end == len(text)
                     or text[end].isspace()):
-                return receiver
+                return token, receiver
     return None
 
 
-def _top_level_notation_receiver(binder_type: str) -> str | None:
-    """Return the receiver namespace encoded by a common top-level type notation, if any."""
+def _top_level_notation_at(binder_type: str) -> tuple[str, str | None] | None:
+    """Recognize a top-level type notation, retaining uncertainty about its receiver owner."""
     stripped = binder_type.lstrip()
     continuous_map_prefix = re.match(r"C\s*\(", stripped) is not None
 
@@ -691,14 +740,14 @@ def _top_level_notation_receiver(binder_type: str) -> str | None:
             prefix = binder_type[:position].rstrip()
             for pattern, token, receiver in SPECIAL_NOTATION_RECEIVERS:
                 if pattern.search(prefix) and binder_type.startswith(token, position):
-                    return receiver
-            receiver = _notation_receiver_at(binder_type, position)
-            if receiver is not None:
-                return receiver
+                    return token, receiver
+            notation = _notation_at(binder_type, position)
+            if notation is not None:
+                return notation
             if any(binder_type.startswith(token, position) for token in TOP_LEVEL_CONNECTIVES):
                 return None
         position += 1
-    return "ContinuousMap" if continuous_map_prefix else None
+    return ("C(", "ContinuousMap") if continuous_map_prefix else None
 
 
 def _binder_has_type(binder: str, namespace: str) -> bool:
@@ -706,7 +755,8 @@ def _binder_has_type(binder: str, namespace: str) -> bool:
     if colon is None:
         return False
     binder_type = binder[colon + 1:].lstrip()
-    if _top_level_notation_receiver(binder_type) == namespace:
+    notation = _top_level_notation_at(binder_type)
+    if notation is not None and notation[1] == namespace:
         return True
     qualified = rf"(?:_root_\.)?(?:[\w']+\.)*{re.escape(namespace)}\b"
     match = re.match(rf"@?{qualified}", binder_type)
@@ -737,7 +787,7 @@ def _top_level_arrow_parts(text: str) -> list[str]:
         elif char in CLOSERS:
             depth -= 1
         elif depth == 0 and (text.startswith("->", position)
-                            or (char == "→" and _notation_receiver_at(text, position) is None)):
+                            or (char == "→" and _notation_at(text, position) is None)):
             parts.append(text[part_start:position])
             position += 1 if char == "→" else 2
             part_start = position
@@ -768,7 +818,7 @@ def _expression_returns_sort(text: str) -> bool:
     if len(parts) > 1:
         return _expression_returns_sort(parts[-1])
     # A bundled map with a sort as domain is still a value, not a new owned type.
-    if _top_level_notation_receiver(expression) is not None:
+    if _top_level_notation_at(expression) is not None:
         return False
     return re.match(r"(?:Prop|Sort|Type)\b", expression) is not None
 
