@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
-public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
+public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
@@ -17,7 +17,7 @@ homomorphism `φ : A →* E(S)` to the group of `S`-points of `E` which is injec
 of `E` over `S` (`EllipticCurveGeom.IsFiberwiseInjective`): for `a ≠ 1` the section `φ a` misses
 the zero section everywhere. The condition is pointwise, so it is stable under base change
 (`EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`), and the naive `A`-structures form a
-moduli problem over `Ell/B` (`ModuliProblem.naiveLevel`).
+moduli problem over `Ell/B` (`ModuliProblem.naiveLevel`), an instance of `ModuliProblem.homLevel`.
 
 For `A = ℤ/Nℤ` this is the naive moduli problem `[Γ₁(N)]` (`ModuliProblem.gammaOneNaive`): for
 `N ≠ 0`, a naive `[Γ₁(N)]`-structure is an `S`-point `P` of `E[N]` none of whose multiples
@@ -41,7 +41,8 @@ column `(1, 0)`.
 
 The definitions make sense over every base `B`, but they are the naive level structures of Katz and
 Mazur only over a base on which `N` is invertible, where `E[N]` is finite étale. Over a general base
-the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`).
+the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`, `ModuliProblem.gamma`
+for `[Γ(N)]`).
 
 ## Main definitions
 
@@ -65,6 +66,8 @@ the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`).
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.EllObj.Hom.isFiberwiseInjective_pointsPullback`: naive structures
+  pull back along arrows of `Ell/B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevelEquiv_map`: the pull-back of a naive
   structure along an arrow of `Ell/B` is its composite with base change of points.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevelEquiv_gammaNaiveToGammaOneNaive_app_apply`:
@@ -97,6 +100,16 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {B : Scheme.{u}}
 
+/-- **Naive `A`-structures pull back along arrows of `Ell/B`**: an arrow `f : X ⟶ Y` exhibits `X`
+as a base change of `Y`, and a homomorphism `A →* E(S)` injective on every fibre stays so after
+composing with base change of points along `f`. -/
+theorem EllObj.Hom.isFiberwiseInjective_pointsPullback {X Y : EllObj B} {A : Type} [Group A]
+    {φ : A →* (𝟙_ (Over Y.base) ⟶ Over.mk Y.curve.structureMap)} (f : X ⟶ Y)
+    (h : Y.curve.IsFiberwiseInjective φ) :
+    X.curve.IsFiberwiseInjective
+      ((EllipticCurveGeom.pointsPullback f.isPullback f.zero_total).comp φ) :=
+  h.pointsPullback f.isPullback f.zero_total
+
 namespace ModuliProblem
 
 variable (B) (A : Type) [Group A]
@@ -106,21 +119,9 @@ object `(E/S)` of `Ell/B` is a homomorphism `A →* E(S)` injective on every fib
 (`naiveLevelEquiv`), and it pulls back along an arrow of `Ell/B` by base change of points
 (`naiveLevelEquiv_map`). The group `A` lies in `Type`, as the groups `(ℤ/Nℤ)ʳ` of level structures
 do, so that the naive structures lie in the universe `Type (u + 1)` of moduli problems. -/
-noncomputable def naiveLevel : ModuliProblem B where
-  obj X := ULift.{u + 1}
-    {φ : A →* (𝟙_ (Over X.unop.base) ⟶ Over.mk X.unop.curve.structureMap) //
-      X.unop.curve.IsFiberwiseInjective φ}
-  map φ := TypeCat.ofHom fun α ↦
-    ⟨⟨(EllipticCurveGeom.pointsPullback φ.unop.isPullback φ.unop.zero_total).comp α.down.1,
-      α.down.2.pointsPullback φ.unop.isPullback φ.unop.zero_total⟩⟩
-  map_id X := by
-    ext α a
-    exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
-      (by simp)).symm
-  map_comp φ ψ := by
-    ext α a
-    exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
-      (by simp)).symm
+noncomputable def naiveLevel : ModuliProblem B :=
+  homLevel B A (fun X φ ↦ X.curve.IsFiberwiseInjective φ)
+    EllObj.Hom.isFiberwiseInjective_pointsPullback
 
 variable {B A}
 
@@ -130,7 +131,7 @@ noncomputable def naiveLevelEquiv (X : EllObj B) :
     (naiveLevel B A).obj (op X) ≃
       {φ : A →* (𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap) //
         X.curve.IsFiberwiseInjective φ} :=
-  Equiv.ulift
+  homLevelEquiv (hp := EllObj.Hom.isFiberwiseInjective_pointsPullback) X
 
 /-- The pull-back of a naive `A`-structure along an arrow `φ` of `Ell/B` is its composite with
 base change of points along `φ`. -/
@@ -138,21 +139,23 @@ base change of points along `φ`. -/
 theorem naiveLevelEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (naiveLevel B A).obj (op Y)) :
     (naiveLevelEquiv X ((naiveLevel B A).map φ.op α)).1 =
       (EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total).comp (naiveLevelEquiv Y α).1 :=
-  (rfl)
+  homLevelEquiv_map φ α
 
 variable (B) in
 /-- **Restriction of naive structures.** An injective homomorphism `ψ : A' →* A` restricts naive
 `A`-structures to naive `A'`-structures, `φ ↦ φ ∘ ψ`. -/
 noncomputable def naiveLevelMap {A' : Type} [Group A'] (ψ : A' →* A)
-    (hψ : Function.Injective ψ) : naiveLevel B A ⟶ naiveLevel B A' where
-  app X := TypeCat.ofHom fun α ↦ ⟨⟨α.down.1.comp ψ, α.down.2.comp hψ⟩⟩
+    (hψ : Function.Injective ψ) : naiveLevel B A ⟶ naiveLevel B A' :=
+  homLevelMap (hp := EllObj.Hom.isFiberwiseInjective_pointsPullback)
+    (hp' := EllObj.Hom.isFiberwiseInjective_pointsPullback) B ψ fun _ _ h ↦ h.comp hψ
 
 /-- Restriction along `ψ` composes a naive structure with `ψ`. -/
 @[simp]
 theorem naiveLevelEquiv_naiveLevelMap_app {A' : Type} [Group A'] (ψ : A' →* A)
     (hψ : Function.Injective ψ) (X : EllObj B) (α : (naiveLevel B A).obj (op X)) :
     (naiveLevelEquiv X ((naiveLevelMap B ψ hψ).app (op X) α)).1 = (naiveLevelEquiv X α).1.comp ψ :=
-  (rfl)
+  homLevelEquiv_homLevelMap_app (hp := EllObj.Hom.isFiberwiseInjective_pointsPullback)
+    (hp' := EllObj.Hom.isFiberwiseInjective_pointsPullback) ψ (fun _ _ h ↦ h.comp hψ) X α
 
 /-- Two morphisms of moduli problems into the naive `A`-structures agree once they assign the same
 homomorphism `A →* E(S)` to every structure. -/
@@ -180,8 +183,20 @@ noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B 
       inv_hom_id := by ext; simp }
   -- the unit and the product of `Aut` are `Iso.refl` and `Iso.trans`, so both sides evaluate a
   -- structure `φ` at the same element
-  map_one' := Iso.ext <| naiveLevel_hom_ext fun _ _ ↦ MonoidHom.ext fun _ ↦ rfl
-  map_mul' _ _ := Iso.ext <| naiveLevel_hom_ext fun _ _ ↦ MonoidHom.ext fun _ ↦ rfl
+  map_one' := by
+    apply Iso.ext
+    refine naiveLevel_hom_ext (B := B) (A := A) ?_
+    intro X α
+    refine MonoidHom.ext ?_
+    intro a
+    rfl
+  map_mul' σ τ := by
+    apply Iso.ext
+    refine naiveLevel_hom_ext (B := B) (A := A) ?_
+    intro X α
+    refine MonoidHom.ext ?_
+    intro a
+    rfl
 
 /-- An automorphism `σ` of `A` sends a naive `A`-structure `φ` to `φ ∘ σ`. -/
 @[simp]
@@ -241,7 +256,7 @@ theorem naiveLevelEquiv_gammaNaiveToGammaOneNaive_app_apply (X : EllObj B)
     (α : (gammaNaive B N).obj (op X)) (z : Multiplicative (ZMod N)) :
     (naiveLevelEquiv X ((gammaNaiveToGammaOneNaive B N).app (op X) α)).1 z =
       (naiveLevelEquiv X α).1 (.ofAdd (z.toAdd, 0)) :=
-  (rfl)
+  DFunLike.congr_fun (naiveLevelEquiv_naiveLevelMap_app _ _ X α) z
 
 /-! ### Naive level structures as points of `E[N]` -/
 

@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
+import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 
 /-!
 # The decomposition group acts on the completion
@@ -72,6 +73,10 @@ available in the `AdicCompletionExtension` scope.
   extension `L_w/K_v` is Galois; and
   `IsDedekindDomain.HeightOneSpectrum.card_algEquiv_adicCompletion`: a locally Galois completion
   has `e(w ∣ v) · f(w ∣ v)` automorphisms.
+* `IsDedekindDomain.HeightOneSpectrum.finrank_adicCompletion_fixedField`: for a subgroup `H` of
+  `Gal(L/K)`, the local degree of `L ^ H` at the place below `w` is `[D(w) : D(w) ∩ H]`; and
+  `IsDedekindDomain.HeightOneSpectrum.finrank_adicCompletion_fixedField_eq_one_iff`: it is one
+  exactly when `D(w) ≤ H`.
 * `IsDedekindDomain.HeightOneSpectrum.isCyclic_algEquiv_adicCompletion_of_isUnramifiedAt`: at an
   unramified place the local Galois group is cyclic of order `f(w ∣ v)`.
 
@@ -306,6 +311,34 @@ theorem card_stabilizer_eq_finrank_adicCompletion :
   rw [finrank_adicCompletion v w,
     Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg
       (R := 𝒪 K) (G := L ≃ₐ[K] L) w.asIdeal]
+
+omit [w.asIdeal.LiesOver v.asIdeal] in
+/-- **The local degree of a fixed field.** Let `L/K` be Galois, `H` a subgroup of `Gal(L/K)` and
+`E = L ^ H`. For a place `u` of `E` between `v` and `w`, the local degree `[E_u : K_v]` is the
+index `[D(w) : D(w) ∩ H]` of `D(w) ∩ H` in the decomposition group of `w`. In particular `u` has
+local degree one over `v` exactly when `D(w) ≤ H` (`finrank_adicCompletion_fixedField_eq_one_iff`).
+-/
+theorem finrank_adicCompletion_fixedField (H : Subgroup (L ≃ₐ[K] L))
+    (u : HeightOneSpectrum (𝒪 (IntermediateField.fixedField H))) [u.asIdeal.LiesOver v.asIdeal]
+    [w.asIdeal.LiesOver u.asIdeal] :
+    finrank (v.adicCompletion K) (u.adicCompletion (IntermediateField.fixedField H)) =
+      H.relIndex (MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) := by
+  have : Finite (𝒪 (IntermediateField.fixedField H) ⧸ u.asIdeal) :=
+    Ring.HasFiniteQuotients.finiteQuotient u.ne_bot
+  rw [finrank_adicCompletion v u, Ideal.LiesOver.over (P := w.asIdeal) (p := u.asIdeal),
+    Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex]
+
+omit [w.asIdeal.LiesOver v.asIdeal] in
+/-- **A fixed field has local degree one exactly when its defining subgroup contains the
+decomposition group.** Let `L/K` be Galois, `H` a subgroup of `Gal(L/K)` and `E = L ^ H`. For a
+place `u` of `E` between `v` and `w`, the local degree `[E_u : K_v]` is one if and only if
+`D(w) ≤ H`. -/
+theorem finrank_adicCompletion_fixedField_eq_one_iff (H : Subgroup (L ≃ₐ[K] L))
+    (u : HeightOneSpectrum (𝒪 (IntermediateField.fixedField H))) [u.asIdeal.LiesOver v.asIdeal]
+    [w.asIdeal.LiesOver u.asIdeal] :
+    finrank (v.adicCompletion K) (u.adicCompletion (IntermediateField.fixedField H)) = 1 ↔
+      MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal ≤ H := by
+  rw [finrank_adicCompletion_fixedField v w H u, Subgroup.relIndex_eq_one]
 
 /-- **The decomposition group of `w` exhausts `Aut(L_w/K_v)`.** For `L/K` Galois every
 `K_v`-algebra automorphism of `L_w` is the continuous extension of an automorphism of `L/K`
