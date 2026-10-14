@@ -277,8 +277,4 @@ theorem l1Norm_hasseDeriv_le [NormOneClass R] (P : R[X]) (k : ℕ) :
     _ = 2 ^ P.natDegree * P.l1Norm := by
       rw [sum_def, l1Norm_eq_sum_support, Finset.mul_sum]
 
-/-- The Mahler measure of a complex polynomial is bounded by its coefficient l¹-norm. -/
-theorem mahlerMeasure_le_l1Norm (P : ℂ[X]) : P.mahlerMeasure ≤ P.l1Norm := by
-  simpa only [l1Norm] using P.mahlerMeasure_le_sum_norm_coeff
-
 end Polynomial
