@@ -176,7 +176,8 @@ noncomputable def evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤
       (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
       (fun _ _ => by simp)
     (evensGraphCocycle (quotientOpenSubgroup N U) (s : G ⧸ N) α
-      (by simpa [hNU] using hU)
+      (by simpa only [Subgroup.toSubgroup_quotientOpenSubgroup,
+        Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU] using hU)
       (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα)
 
 /-- The fixed-point-valued graph cocycle is obtained by applying the coefficient equivalence
@@ -237,7 +238,8 @@ noncomputable def explicitGraphClassFixedPoints (U : OpenSubgroup G) (hNU : N �
       (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
       (fun _ _ => by simp)
     (explicitGraphClass (quotientOpenSubgroup N U)
-      (by simpa [hNU] using hU) α hα)
+      (by simpa only [Subgroup.toSubgroup_quotientOpenSubgroup,
+        Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU] using hU) α hα)
 
 /-- The choice-free fixed-point-valued quotient graph class is represented by the quotient graph
 cocycle formed using every element outside `U`. -/
@@ -249,7 +251,8 @@ theorem explicitGraphClassFixedPoints_eq_evensGraphCocycleFixedPoints (U : OpenS
       (evensGraphCocycleFixedPoints U hNU hU s hs α hα :
         H2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V)) := by
   rw [explicitGraphClassFixedPoints, explicitGraphClass_eq_evensGraphCocycle
-    (quotientOpenSubgroup N U) (by simpa [hNU] using hU) (s : G ⧸ N)
+    (quotientOpenSubgroup N U) (by simpa only [Subgroup.toSubgroup_quotientOpenSubgroup,
+      Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU] using hU) (s : G ⧸ N)
     (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) α hα, explicitMap2_mk,
     evensGraphCocycleFixedPoints]
 
