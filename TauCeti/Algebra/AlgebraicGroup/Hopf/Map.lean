@@ -226,7 +226,7 @@ lemma mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ
     mapDomain (H₁ := H₁) (H₂ := H₂) φ (f⁻¹ : WithConv (H₂ →ₐ[R] A)) h =
       f.ofConv (HopfAlgebra.antipode R (φ h)) := by
   rw [mapDomain_apply_apply]
-  exact convInv_apply f (φ h)
+  exact algHom_inv_apply f (φ h)
 
 end Hopf
 

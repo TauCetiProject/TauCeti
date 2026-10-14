@@ -292,7 +292,7 @@ theorem kernelPairTensorEquiv_symm_tmul_mk (f : H ⟶ K) (x y : K) :
         (Algebra.TensorProduct.map (_root_.HopfAlgebra.antipodeAlgHom R K) (AlgHom.id R K)) := by
     apply Algebra.TensorProduct.ext'
     intro a b
-    simp [l, r, WithConv.convInv_apply, Algebra.TensorProduct.tmul_mul_tmul]
+    simp [l, r, WithConv.algHom_inv_apply, Algebra.TensorProduct.tmul_mul_tmul]
   simp only [kernelPairTensorEquiv, AlgEquiv.ofAlgHom_symm, AlgEquiv.ofAlgHom_apply,
     kernelPairBackward_tmul, kernelPairRatio_mk]
   congr 1

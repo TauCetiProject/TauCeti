@@ -85,7 +85,7 @@ bialgebras `H₁ ⊗[R] H₂` is the product of the convolution monoids out of `
 For commutative bialgebras, this computes the functor of points of the direct product of
 `Spec H₁` and `Spec H₂`: Mathlib's product map sends `x ⊗ₜ y` to `f₁ x * f₂ y`, and
 convolution is computed componentwise. When `H₁` and `H₂` are Hopf algebras these convolution
-monoids are groups (`AlgHom.instGroup`), so this is automatically a group isomorphism. -/
+monoids are groups (`AlgHom.convGroupOfSemiring`), so this is automatically a group isomorphism. -/
 noncomputable def pointsMulEquiv :
     WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A) ≃* WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A) where
   toFun := restrictHom

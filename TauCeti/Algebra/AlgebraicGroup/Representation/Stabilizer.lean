@@ -275,7 +275,7 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
     (W.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv ↔
       (W.baseChange A).map (Comodule.endOfPoint M g.ofConv) = W.baseChange A := by
   have hinv (x : H) : (g⁻¹).ofConv x = g.ofConv (HopfAlgebra.antipode k x) := by
-    rw [WithConv.convInv_def, WithConv.ofConv_toConv, AlgHom.antipodeComp_apply]
+    rw [WithConv.algHom_inv_def, WithConv.ofConv_toConv, AlgHom.antipodeComp_apply]
   rw [stabilizerHopfIdeal_toIdeal, Ideal.span_le]
   constructor
   · intro h
