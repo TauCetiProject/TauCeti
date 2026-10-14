@@ -103,7 +103,7 @@ noncomputable def aInfinityDGHomEquiv (X Y : C) (n : ℤ) :
 theorem coe_dgHomEquiv_aInfinityDGHomEquiv {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     (AInfinityCategory.dgHomEquiv _ _ _ _ ⟨X⟩ ⟨Y⟩ n (aInfinityDGHomEquiv X Y n f) :
       homModule (R := R) X Y) = homLof X Y n f := by
-  rw [aInfinityDGHomEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, coe_grHomEquiv]
+  simp [aInfinityDGHomEquiv]
 
 /-- `TauCeti.DGCategory.aInfinityDGHomEquiv` commutes with the differentials. -/
 @[simp]
@@ -112,8 +112,7 @@ theorem aInfinityDGHomEquiv_dgDifferential {X Y : C} (n : ℤ) (f : DGHom R n X 
       dgDifferential R n (aInfinityDGHomEquiv X Y n f) := by
   apply (AInfinityCategory.dgHomEquiv _ _ _ _ ⟨X⟩ ⟨Y⟩ (n + 1)).injective
   apply Subtype.ext
-  rw [coe_dgHomEquiv_aInfinityDGHomEquiv, AInfinityCategory.dgHomEquiv_dgDifferential,
-    coe_dgHomEquiv_aInfinityDGHomEquiv, homDifferential_toAInfinityCategory_homLof]
+  simp [aInfinityDGHomEquiv]
 
 /-- `TauCeti.DGCategory.aInfinityDGHomEquiv` preserves identities. -/
 @[simp]
@@ -121,7 +120,7 @@ theorem aInfinityDGHomEquiv_dgId (X : C) :
     aInfinityDGHomEquiv X X 0 (dgId R X) = dgId R (C := AInfinityDG R C) ⟨X⟩ := by
   apply (AInfinityCategory.dgHomEquiv _ _ _ _ ⟨X⟩ ⟨X⟩ 0).injective
   apply Subtype.ext
-  rw [coe_dgHomEquiv_aInfinityDGHomEquiv, AInfinityCategory.dgHomEquiv_dgId]
+  simp [aInfinityDGHomEquiv]
 
 /-- `TauCeti.DGCategory.aInfinityDGHomEquiv` preserves composition: the two Koszul signs between
 the enriched and Keller orders of composition cancel. -/
@@ -133,9 +132,7 @@ theorem aInfinityDGHomEquiv_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y)
   subst h
   apply (AInfinityCategory.dgHomEquiv _ _ _ _ ⟨X⟩ ⟨Z⟩ (p + q)).injective
   apply Subtype.ext
-  rw [coe_dgHomEquiv_aInfinityDGHomEquiv, AInfinityCategory.dgHomEquiv_dgComp,
-    coe_dgHomEquiv_aInfinityDGHomEquiv, coe_dgHomEquiv_aInfinityDGHomEquiv,
-    comp_toAInfinityCategory_homLof, negOnePow_smul_negOnePow_smul]
+  simp [aInfinityDGHomEquiv]
 
 variable (R C)
 
@@ -195,6 +192,7 @@ variable (R C)
 
 /-- **A differential graded category is recovered from its `A∞` category**: `ofAInfinityDGFunctor`
 is a left inverse of `toAInfinityDGFunctor`. -/
+@[simp]
 theorem toAInfinityDGFunctor_comp_ofAInfinityDGFunctor :
     (toAInfinityDGFunctor R C).comp _ (ofAInfinityDGFunctor R C) =
       EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C := by
@@ -206,6 +204,7 @@ theorem toAInfinityDGFunctor_comp_ofAInfinityDGFunctor :
   exact (aInfinityDGHomEquiv X Y n).symm_apply_apply f
 
 /-- `ofAInfinityDGFunctor` is a right inverse of `toAInfinityDGFunctor`. -/
+@[simp]
 theorem ofAInfinityDGFunctor_comp_toAInfinityDGFunctor :
     (ofAInfinityDGFunctor R C).comp _ (toAInfinityDGFunctor R C) =
       EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) (AInfinityDG R C) := by
@@ -249,10 +248,8 @@ theorem asDGCategoryHomEquiv_coe {X Y : C} {n : ℤ} (g : grHom R X Y n) :
     asDGCategoryHomEquiv h₃ he₀ hel her X Y g =
       DGCategory.homLof (⟨X⟩ : 𝒞.AsDGCategory h₃ he₀ hel her) ⟨Y⟩ n
         ((dgHomEquiv h₃ he₀ hel her ⟨X⟩ ⟨Y⟩ n).symm g) := by
-  rw [asDGCategoryHomEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof,
-    DirectSum.decomposeLinearEquiv_symm_lof, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-    DGCategory.coe_grHomEquiv]
+  simp [asDGCategoryHomEquiv, DirectSum.coe_congrLinearEquiv,
+    DirectSum.decomposeLinearEquiv_symm_lof]
 
 /-- The inverse of `TauCeti.AInfinityCategory.asDGCategoryHomEquiv` sends a morphism `f` of
 degree `n` of the differential graded category to the morphism `f` of degree `n` of `𝒞`. -/
@@ -272,8 +269,9 @@ private theorem asDGCategoryHomEquiv_symm_homDifferential
   | zero => simp only [map_zero]
   | add f f' hf hf' => simp only [map_add, hf, hf']
   | homLof n f =>
-    rw [DGCategory.homDifferential_toAInfinityCategory_homLof, asDGCategoryHomEquiv_symm_homLof,
-      asDGCategoryHomEquiv_symm_homLof, dgHomEquiv_dgDifferential]
+    -- The generic `DGCategoryData.dgDifferential_toDGCategory` would unfold the differential
+    -- before `dgHomEquiv_dgDifferential` can fire.
+    simp [-DGCategoryData.dgDifferential_toDGCategory]
 
 private theorem asDGCategoryHomEquiv_symm_comp (X Y Z : 𝒞.AsDGCategory h₃ he₀ hel her)
     (g : homModule (R := R) Y Z) (f : homModule (R := R) X Y) :
@@ -289,9 +287,8 @@ private theorem asDGCategoryHomEquiv_symm_comp (X Y Z : 𝒞.AsDGCategory h₃ h
   | zero => simp only [map_zero]
   | add f f' hf hf' => simp only [map_add, hf, hf']
   | homLof p f =>
-    rw [DGCategory.comp_toAInfinityCategory_homLof, map_zsmul_unit,
-      asDGCategoryHomEquiv_symm_homLof, dgHomEquiv_dgComp, asDGCategoryHomEquiv_symm_homLof,
-      asDGCategoryHomEquiv_symm_homLof, negOnePow_smul_negOnePow_smul]
+    -- As in `asDGCategoryHomEquiv_symm_homDifferential`, for the composition.
+    simp [map_zsmul_unit, -DGCategoryData.dgComp_toDGCategory]
 
 /-- `TauCeti.AInfinityCategory.asDGCategoryHomEquiv` preserves degrees. -/
 theorem asDGCategoryHomEquiv_mem_piece {X Y : C} {p : ℤ} {f : homModule (R := R) X Y}
@@ -319,8 +316,8 @@ theorem asDGCategoryHomEquiv_homDifferential (X Y : C) (f : homModule (R := R) X
       (DGCategory.toAInfinityCategory R (𝒞.AsDGCategory h₃ he₀ hel her)).homDifferential ⟨X⟩ ⟨Y⟩
         (asDGCategoryHomEquiv h₃ he₀ hel her X Y f) := by
   apply (asDGCategoryHomEquiv h₃ he₀ hel her X Y).symm.injective
-  rw [LinearEquiv.symm_apply_apply,
-    asDGCategoryHomEquiv_symm_homDifferential (X := ⟨X⟩) (Y := ⟨Y⟩), LinearEquiv.symm_apply_apply]
+  simpa using (asDGCategoryHomEquiv_symm_homDifferential h₃ he₀ hel her ⟨X⟩ ⟨Y⟩
+    (asDGCategoryHomEquiv h₃ he₀ hel her X Y f)).symm
 
 /-- `TauCeti.AInfinityCategory.asDGCategoryHomEquiv` preserves the compositions `m₂`. -/
 @[simp]
@@ -331,8 +328,8 @@ theorem asDGCategoryHomEquiv_comp (X Y Z : C) (g : homModule (R := R) Y Z)
         (asDGCategoryHomEquiv h₃ he₀ hel her Y Z g)
         (asDGCategoryHomEquiv h₃ he₀ hel her X Y f) := by
   apply (asDGCategoryHomEquiv h₃ he₀ hel her X Z).symm.injective
-  rw [LinearEquiv.symm_apply_apply, asDGCategoryHomEquiv_symm_comp (X := ⟨X⟩) (Y := ⟨Y⟩) (Z := ⟨Z⟩),
-    LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply]
+  simpa using (asDGCategoryHomEquiv_symm_comp h₃ he₀ hel her ⟨X⟩ ⟨Y⟩ ⟨Z⟩
+    (asDGCategoryHomEquiv h₃ he₀ hel her Y Z g) (asDGCategoryHomEquiv h₃ he₀ hel her X Y f)).symm
 
 end HomEquiv
 
@@ -368,13 +365,9 @@ noncomputable def ofAsDGCategoryStrictFunctor :
     (fun X Y ↦ (asDGCategoryHomEquiv (hm 3 le_rfl) he₀ hel her X.as Y.as).symm.toLinearMap)
     (fun _ _ _ _ hf ↦ asDGCategoryHomEquiv_symm_mem_piece (hm 3 le_rfl) he₀ hel her hf)
     (fun X Y f ↦ (asDGCategoryHomEquiv (hm 3 le_rfl) he₀ hel her X.as Y.as).injective <| by
-      simp only [LinearEquiv.coe_coe]
-      rw [LinearEquiv.apply_symm_apply, asDGCategoryHomEquiv_homDifferential,
-        LinearEquiv.apply_symm_apply])
+      simp)
     (fun X Y Z g f ↦ (asDGCategoryHomEquiv (hm 3 le_rfl) he₀ hel her X.as Z.as).injective <| by
-      simp only [LinearEquiv.coe_coe]
-      rw [LinearEquiv.apply_symm_apply, asDGCategoryHomEquiv_comp, LinearEquiv.apply_symm_apply,
-        LinearEquiv.apply_symm_apply])
+      simp)
 
 @[simp]
 theorem toAsDGCategoryStrictFunctor_obj (X : C) :
@@ -401,6 +394,7 @@ theorem ofAsDGCategoryStrictFunctor_map (X Y : 𝒞.AsDGCategory (hm 3 le_rfl) h
 
 /-- **An `A∞` category with vanishing higher operations is recovered from its differential graded
 category**: `ofAsDGCategoryStrictFunctor` is a left inverse of `toAsDGCategoryStrictFunctor`. -/
+@[simp]
 theorem ofAsDGCategoryStrictFunctor_comp_toAsDGCategoryStrictFunctor :
     (ofAsDGCategoryStrictFunctor hm he₀ hel her).comp (toAsDGCategoryStrictFunctor hm he₀ hel her) =
       AInfinityStrictFunctor.id 𝒞 :=
@@ -408,6 +402,7 @@ theorem ofAsDGCategoryStrictFunctor_comp_toAsDGCategoryStrictFunctor :
     (asDGCategoryHomEquiv (hm 3 le_rfl) he₀ hel her X Y).symm_apply_apply f
 
 /-- `ofAsDGCategoryStrictFunctor` is a right inverse of `toAsDGCategoryStrictFunctor`. -/
+@[simp]
 theorem toAsDGCategoryStrictFunctor_comp_ofAsDGCategoryStrictFunctor :
     (toAsDGCategoryStrictFunctor hm he₀ hel her).comp (ofAsDGCategoryStrictFunctor hm he₀ hel her) =
       AInfinityStrictFunctor.id _ :=
