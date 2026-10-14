@@ -198,21 +198,12 @@ theorem apply_le_apply_add_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
   -- The perturbed law is at squared distance at most `W₂ (ν, μ) ^ 2 + 2hA + h²B` from `μ`, through
   -- the coupling `(x, y) ↦ (x + h • ξ x, y)` carried by `γ`.
   have hdist : dist ν' μ ^ 2 ≤ dist ν μ ^ 2 + 2 * h * A + h ^ 2 * B := by
-    have hT : AEMeasurable (fun x ↦ x + h • ξ x) ρ :=
-      aemeasurable_id.add (hξ.aestronglyMeasurable.aemeasurable.const_smul h)
-    have hcoup := hγ.toIsCoupling.map₀ hT aemeasurable_id
-    rw [Measure.map_id, ← hν'] at hcoup
-    have hF : AEMeasurable (Prod.map (fun x ↦ x + h • ξ x) id) γ :=
-      (hT.comp_quasiMeasurePreserving hγ.measurePreserving_fst.quasiMeasurePreserving).prodMk
-        measurable_snd.aemeasurable
-    calc dist ν' μ ^ 2 ≤ ∫ z, ‖z.1 - z.2‖ ^ 2 ∂(γ.map (Prod.map (fun x ↦ x + h • ξ x) id)) :=
-          WassersteinSpace.dist_sq_le_integral hcoup
-      _ = ∫ z, ‖z.1 - z.2 + h • ξ z.1‖ ^ 2 ∂γ := by
-        rw [integral_map hF (by fun_prop)]
-        simp only [Prod.map_fst, Prod.map_snd, id, add_sub_right_comm]
-      _ = _ := by
-        rw [hγ.toIsCoupling.integral_norm_sub_add_smul_sq hγ₂ hξ h,
-          WassersteinSpace.dist_sq_eq_integral hγ]
+    have hW := wassersteinEDist_map_add_smul_sq_le hγ.toIsCoupling hγ₂ hξ h
+    have h₀ : 0 ≤ ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ + 2 * h * A + h ^ 2 * B := by
+      rw [← hγ.toIsCoupling.integral_norm_sub_add_smul_sq hγ₂ hξ h]
+      positivity
+    rwa [← hν', ← WassersteinSpace.edist_def, edist_dist, ← ENNReal.ofReal_pow dist_nonneg,
+      ENNReal.ofReal_le_ofReal_iff h₀, ← WassersteinSpace.dist_sq_eq_integral hγ] at hW
   rw [dist_comm ν' μ, dist_comm ν μ] at hdist
   -- Minimality of `ν` against `ν'`.
   have hmin := (mem_moreauYosidaResolvent_iff_isMinOn.1 hν) (mem_univ ν')
