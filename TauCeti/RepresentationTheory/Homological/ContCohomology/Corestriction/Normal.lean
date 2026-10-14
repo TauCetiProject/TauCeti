@@ -117,30 +117,9 @@ res^G_U ∘ cor^G_U = ∑_{x ∈ G ⧸ U} (t x)_*.
 theorem corestriction_comp_res_eq_sum_conjNormalMap (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (t x : G ⧸ U) = x) (n : ℕ) :
     corestriction U M hU n ≫ res U (ofDiscreteModule ℤ G M) n =
-      ∑ x, conjNormalMap U M (t x) n := by
-  have := isIso_shapiroMap U (U.isClosed_of_isOpen hU) M n
-  -- After the Shapiro isomorphism of `U`, both sides are coefficient maps followed by the Shapiro
-  -- map of `U`, and the two coefficient maps agree by `trace_comp_unit_eq_sum_conjCoind`.
-  -- The two sides are compared in term mode: their codomains `Hⁿ(U, res_U M)` and `Hⁿ(U, M)`
-  -- agree only up to `res_ofDiscreteModule`, which stops `rw` from abstracting them.
-  have hleft : shapiroMap U M n ≫ corestriction U M hU n ≫ res U (ofDiscreteModule ℤ G M) n =
-      coeffMap (ofDiscreteModuleMap (DiscreteCoind.trace G U M).toAddMonoidHom.toIntLinearMap
-          (fun g f => _root_.map_smul (DiscreteCoind.trace G U M) g f) ≫
-        ofDiscreteModuleMap (DiscreteCoind.unit G U M).toAddMonoidHom.toIntLinearMap
-          (fun g m => _root_.map_smul (DiscreteCoind.unit G U M) g m)) n ≫ shapiroMap U M n :=
-    (shapiroMap_comp_corestriction_assoc U M hU n _).trans <| by
-      rw [coeffMap_comp, Category.assoc]
-      exact congrArg _ (coeffMap_unit_comp_shapiroMap U M n).symm
-  have hright : shapiroMap U M n ≫ ∑ x, conjNormalMap U M (t x) n =
-      coeffMap (∑ x, conjCoind U M (t x)) n ≫ shapiroMap U M n := by
-    have hsum := (continuousCohomologyFunctor ℤ G n).map_sum
-      (fun x => conjCoind U M (t x)) Finset.univ
-    simp only [continuousCohomologyFunctor_map] at hsum
-    rw [Preadditive.comp_sum, hsum]
-    exact (Finset.sum_congr rfl fun x _ =>
-      shapiroMap_comp_conjNormalMap U M (t x) n).trans (Preadditive.sum_comp _ _ _).symm
-  exact (cancel_epi (shapiroMap U M n)).1 (hleft.trans ((congrArg (coeffMap · n ≫ _)
-    (trace_comp_unit_eq_sum_conjCoind U M t ht)).trans hright.symm))
+      ∑ x, conjNormalMap U M (t x) n :=
+  corestriction_comp_res_eq_sum_of_trace_comp_unit U M hU U n _ _
+    (trace_comp_unit_eq_sum_conjCoind U M t ht) fun x => shapiroMap_comp_conjNormalMap U M (t x) n
 
 end TauCeti.ContinuousCohomology
 
