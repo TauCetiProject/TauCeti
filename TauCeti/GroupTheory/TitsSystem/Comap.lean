@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
+import TauCeti.GroupTheory.QuotientGroup.Map
 import Mathlib.Tactic.Group
 
 /-!
@@ -117,25 +118,9 @@ private theorem comapWeylGroupHom_mk (n : T.subgroupN.comap f) :
     comapWeylGroupHom T (QuotientGroup.mk n) = QuotientGroup.mk (f.subgroupComap T.subgroupN n) :=
   QuotientGroup.map_mk _ _ _ _ _
 
-/-- A representative `r₀ ∈ N` of the image of the class of `r ∈ f⁻¹(N)` is `f r` times an
-element of `B ∩ N`. -/
-private theorem exists_eq_mul_of_mk_eq_comapWeylGroupHom_mk {r₀ : T.subgroupN}
-    {r : T.subgroupN.comap f}
-    (h : (QuotientGroup.mk r₀ : T.WeylGroup) = comapWeylGroupHom T (QuotientGroup.mk r)) :
-    ∃ t ∈ T.subgroupB ⊓ T.subgroupN, (r₀ : G) = f r * t := by
-  rw [comapWeylGroupHom_mk, eq_comm, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
-    Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r] at h
-  exact ⟨(f r)⁻¹ * r₀, Subgroup.mem_inf.mpr ⟨h, mul_mem (inv_mem r.2) r₀.2⟩,
-    (mul_inv_cancel_left _ _).symm⟩
-
 private theorem comapWeylGroupHom_injective :
-    Function.Injective (comapWeylGroupHom T (f := f)) := by
-  rw [injective_iff_map_eq_one]
-  intro q hq
-  induction q using QuotientGroup.induction_on with
-  | H n =>
-    rw [comapWeylGroupHom_mk, QuotientGroup.eq_one_iff] at hq
-    exact (QuotientGroup.eq_one_iff n).mpr hq
+    Function.Injective (comapWeylGroupHom T (f := f)) :=
+  TauCeti.QuotientGroup.map_injective_of_eq_comap _ _ (comap_subgroupOf_eq T)
 
 private theorem comapWeylGroupHom_surjective
     (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
@@ -221,24 +206,28 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
       f.subgroupComap_apply_coe T.subgroupN w] using hmem
   exists_conj_not_mem s hs := by
     obtain ⟨r₀, hr₀, b, hb⟩ := T.exists_conj_not_mem _ hs
-    obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
-    have hr : f r ∈ T.subgroupN := r.2
-    obtain ⟨t, ht, hr₀t⟩ := T.exists_eq_mul_of_mk_eq_comapWeylGroupHom_mk hr₀
+    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf r₀.2
+    let r : T.subgroupN.comap f := ⟨x, hx⟩
+    have hr : (QuotientGroup.mk r : _ ⧸ _) = s := by
+      apply comapWeylGroupHom_injective T
+      rw [comapWeylGroupHom_mk, ← hr₀, QuotientGroup.eq, mem_intersection]
+      rw [Subgroup.coe_mul, Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r, ← hxt]
+      simpa [r] using ht.1
     -- Write `t b t⁻¹ = f x * t₁` with `f x ∈ B` and `t₁ ∈ B ∩ N`.
     obtain ⟨x, t₁, ht₁, hxt₁⟩ := hf (t * b * t⁻¹)
     have hx : f x ∈ T.subgroupB := by
       rw [eq_mul_inv_of_mul_eq hxt₁]
       exact mul_mem (mul_mem (mul_mem ht.1 b.2) (inv_mem ht.1)) (inv_mem ht₁.1)
-    refine ⟨r, rfl, ⟨x, hx⟩, fun hmem ↦ hb ?_⟩
+    refine ⟨r, hr, ⟨x, hx⟩, fun hmem ↦ hb ?_⟩
     -- Then `r₀ b r₀⁻¹ = f (r x r⁻¹) * (f r) t₁ (f r)⁻¹`, and both factors lie in `B`.
     have hconj : (r₀ : G) * b * (r₀ : G)⁻¹ =
         f ((r : H) * x * (r : H)⁻¹) * (f r * t₁ * (f r)⁻¹) := by
-      rw [hr₀t, map_mul, map_mul, map_inv]
+      rw [← hxt, map_mul, map_mul, map_inv]
       calc f r * t * b * (f r * t)⁻¹ = f r * (t * b * t⁻¹) * (f r)⁻¹ := by group
         _ = f r * (f x * t₁) * (f r)⁻¹ := by rw [hxt₁]
         _ = _ := by group
     rw [hconj]
-    exact mul_mem hmem (T.conj_mem_subgroupB hr ht₁)
+    exact mul_mem hmem (T.conj_mem_subgroupB r.2 ht₁)
 
 variable (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g)
 
