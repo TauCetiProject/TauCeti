@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.StronglyNoetheria
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Restricted.Noetherian
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
 # Closed polydiscs as adic spaces

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!

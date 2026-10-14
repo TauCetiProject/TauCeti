@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.Polynomial.Basic
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Surjective
 import TauCeti.Topology.Algebra.Ring.Ideal
 

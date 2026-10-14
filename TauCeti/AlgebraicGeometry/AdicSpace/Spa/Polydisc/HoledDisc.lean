@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
 # Holed discs in the closed unit disc

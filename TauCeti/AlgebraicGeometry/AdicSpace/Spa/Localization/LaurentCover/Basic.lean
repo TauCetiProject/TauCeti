@@ -15,7 +15,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.FaithfullyFlat
 import TauCeti.RingTheory.Huber.LocalizationTopology.Quotient
 import TauCeti.RingTheory.Huber.LocalizationTopology.StronglyNoetherian
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Laurent.Cover
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!

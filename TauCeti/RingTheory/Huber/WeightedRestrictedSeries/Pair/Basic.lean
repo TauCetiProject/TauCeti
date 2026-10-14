@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
 # The Huber pair `A⟨X⟩_T`

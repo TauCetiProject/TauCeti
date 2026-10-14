@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedEval.Finite
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenIdeal
 

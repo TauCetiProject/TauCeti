@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Uniform
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 

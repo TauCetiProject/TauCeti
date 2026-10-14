@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
 # Polynomial presentations of rational subsets of the closed unit disc

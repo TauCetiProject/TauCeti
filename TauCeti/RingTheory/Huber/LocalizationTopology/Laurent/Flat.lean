@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.Huber.StronglyNoetherian
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.LocalizationTopology.Iterated
 import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.StronglyNoetherian
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
 # Flatness of the Laurent quotient, and of rational restriction maps

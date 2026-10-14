@@ -127,14 +127,12 @@ provided that the target weights are exactly its images and the induced ring map
 quotient map. No finiteness, completeness, separation or Tate hypothesis is imposed on the
 coefficient rings. -/
 theorem IsQuotientMapping.weightedMapCompletion {f : Hom S U} (hf : f.IsQuotientMapping)
-    (hT : IsWeightFamily T) (hTT' : ∀ i, f.toRingHom '' T i = T' i) :
-    let hT' : IsWeightFamily T' := by
-      simpa only [hTT'] using hT.image f.continuous_toRingHom hf.isOpenQuotientMap.isOpenMap
-    IsOpenQuotientMap
-      (Huber.weightedMapCompletion f.continuous_toRingHom hT hT' (fun i ↦ (hTT' i).le)) →
+    (hT : IsWeightFamily T) (hT' : IsWeightFamily T')
+    (hTT' : ∀ i, f.toRingHom '' T i = T' i)
+    (hF : IsOpenQuotientMap
+      (Huber.weightedMapCompletion f.continuous_toRingHom hT hT' (fun i ↦ (hTT' i).le))) :
     (f.weightedMapCompletion hT hT' (fun i ↦ (hTT' i).le)).IsQuotientMapping := by
-  dsimp only
   exact isQuotientMapping_weightedMapCompletion_of_isIntegral f
-    (fun _ hb ↦ hf.mem_plus_iff.mp hb) hT _ hTT'
+    (fun _ hb ↦ hf.mem_plus_iff.mp hb) hT hT' hTT' hF
 
 end TauCeti.Huber.Pair.Hom

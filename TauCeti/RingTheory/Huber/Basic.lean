@@ -126,7 +126,7 @@ than a `Finsupp` on the subtype `↥G`. It is what bounds, uniformly in `k`, the
 needed to write an element of `Iⁿ⁺ᵏ = Iⁿ * Iᵏ` over generators of `Iⁿ`, both in Wedhorn Remark 6.8
 (`TauCeti.RingTheory.Huber.Completion.Basic`) and in the identification of the neighbourhood
 subgroups of `A⟨X⟩_T` with the powers of one finitely generated ideal
-(`TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition`). -/
+(`TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition`). -/
 theorem exists_sum_eq_of_mem_span_mul (G : Finset R) (K : Ideal R) {b : R}
     (hb : b ∈ Ideal.span (G : Set R) * K) :
     ∃ c : R → R, (∀ z, c z ∈ K) ∧ ∑ z ∈ G, z * c z = b := by
