@@ -95,13 +95,19 @@ discrete case below is proved through it.
   `A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is strongly noetherian over a complete Hausdorff strongly noetherian
   Tate ring (`TauCeti.Huber.isStronglyNoetherian_quotient_span_weightedX_sq`).
 
-* `TauCeti.Huber.isStronglyNoetherian_congr`: strong noetherianness is invariant under a
-  bicontinuous ring isomorphism. Layer 4.1 takes `IsStronglyNoetherian A` as a hypothesis while
-  the ring in question is presented in more than one way, so the hypothesis has to survive the
-  comparison isomorphisms; this is what makes that legitimate. Continuity is needed in *both*
-  directions and is not automatic — `weightedMapCompletion` is built from
-  `UniformSpace.Completion.mapRingHom`, which induces nothing on completions from a
-  discontinuous map.
+* `IsDenseInducing.isStronglyNoetherian_iff`: strong noetherianness is invariant under a dense
+  inducing ring map `A → B`, because `A` and `B` then have isomorphic completed restricted
+  power-series algebras (`IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv`).
+* `TauCeti.Huber.isStronglyNoetherian_completion_iff`: in particular a nonarchimedean ring is
+  strongly noetherian exactly when its separated completion `Â` is, and
+  `TauCeti.Huber.IsStronglyNoetherian.completion` records the forward direction as an instance.
+  This is the step that lets results proved for complete Hausdorff strongly noetherian rings be
+  applied to an arbitrary strongly noetherian ring through its completion.
+* `TauCeti.Huber.isStronglyNoetherian_congr`: the special case of a bicontinuous ring
+  isomorphism. A ring presented in more than one way has to keep the hypothesis
+  `IsStronglyNoetherian` across the comparison isomorphisms, and this is what makes that
+  legitimate. Continuity is needed in *both* directions: a `RingEquiv` is not assumed to be a
+  homeomorphism.
 
 What is not here is the assembly that turns the result above into Wedhorn's statement: that a
 ring topologically of finite type over a strongly noetherian `A` is again strongly noetherian.
@@ -124,11 +130,9 @@ Nothing was copied.
 That same contrast is why AINTLIB's `isStronglyNoetherian_congr`
 (`projects/AdicSpaces/Adic spaces/StronglyNoetherianTransport.lean`) does not transfer either:
 it transports along `restrictedMvPowerSeriesEquiv`, built by hand on the uncompleted subring.
-The proof *shape* — coefficientwise transport in both directions, mutually inverse by the
-functor laws, then noetherianness along the resulting surjection — is the same, but here it
-runs one level up, on `TauCeti.Huber.weightedMapCompletion`, and the bridge is definitional:
-`restrictedMvPowerSeriesCompletion k A` is by definition the completion of the weighted
-subring at the trivial weight family, which is exactly that map's shape.
+Here the transport runs one level up, on the completions: a dense inducing map, of which a
+bicontinuous isomorphism is the simplest case, identifies the completed restricted power-series
+algebras because the completion of `B⟨X₁,…,Xₖ⟩` is also a completion of `A⟨X₁,…,Xₖ⟩`.
 -/
 
 open scoped Uniformity
@@ -282,28 +286,46 @@ section Transport
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B]
 
-/-- **The isomorphism `A⟨X₁,…,Xₖ⟩ ≃+* B⟨X₁,…,Xₖ⟩` induced by a bicontinuous ring isomorphism
-`e : A ≃+* B`**, acting coefficientwise. Continuity of `e` and of `e.symm` are both hypotheses;
-neither follows from the other for a bare `RingEquiv`. -/
--- The equiv is `TauCeti.Huber.weightedMapCompletionEquiv` at the constant weight family; both
--- continuity hypotheses are load-bearing there.
-private noncomputable def restrictedMvPowerSeriesCompletionCongr (e : A ≃+* B) (he : Continuous e)
-    (he' : Continuous e.symm) (k : ℕ) :
-    restrictedMvPowerSeriesCompletion k A ≃+* restrictedMvPowerSeriesCompletion k B :=
-  weightedMapCompletionEquiv e he he' isWeightFamily_one_weight isWeightFamily_one_weight
-    (fun _ ↦ by simp) (fun _ ↦ by simp)
+/-- **Strong noetherianness is invariant under a dense inducing ring map**: if `φ : A → B` is
+dense inducing, then `A` is strongly noetherian exactly when `B` is. -/
+-- The completed restricted power-series algebras over `A` and over `B` are isomorphic, by
+-- `IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv`.
+theorem _root_.IsDenseInducing.isStronglyNoetherian_iff {φ : A →+* B}
+    (hφ : IsDenseInducing φ) : IsStronglyNoetherian A ↔ IsStronglyNoetherian B := by
+  constructor <;> intro h <;> refine ⟨fun k ↦ ?_⟩
+  · exact isNoetherianRing_of_ringEquiv _ (hφ.restrictedMvPowerSeriesCompletionEquiv k)
+  · exact isNoetherianRing_of_ringEquiv _ (hφ.restrictedMvPowerSeriesCompletionEquiv k).symm
 
 /-- **Strong noetherianness is invariant under a bicontinuous ring isomorphism.** Continuity of
 `e` and of `e.symm` are both hypotheses; neither follows from the other for a bare `RingEquiv`. -/
--- Each `A⟨X₁,…,Xₖ⟩` is carried to `B⟨X₁,…,Xₖ⟩` by `restrictedMvPowerSeriesCompletionCongr`, and
--- noetherianness transports along the resulting surjection.
 theorem isStronglyNoetherian_congr (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm) :
-    IsStronglyNoetherian A ↔ IsStronglyNoetherian B := by
-  constructor <;> intro h <;> refine ⟨fun k ↦ ?_⟩
-  · exact isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionCongr e he he' k)
-  · exact isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionCongr e he he' k).symm
+    IsStronglyNoetherian A ↔ IsStronglyNoetherian B :=
+  IsDenseInducing.isStronglyNoetherian_iff (φ := (e : A →+* B))
+    (Homeomorph.mk e.toEquiv he he').isDenseEmbedding.isDenseInducing
 
 end Transport
+
+/-! ### The separated completion -/
+
+section Completion
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [NonarchimedeanRing A]
+
+/-- **Completion preserves and reflects strong noetherianness**: a nonarchimedean ring is strongly
+noetherian exactly when its separated completion `Â` is. -/
+-- The completion map `A → Â` is dense inducing.
+@[simp]
+theorem isStronglyNoetherian_completion_iff :
+    IsStronglyNoetherian (UniformSpace.Completion A) ↔ IsStronglyNoetherian A :=
+  (UniformSpace.Completion.isDenseInducing_coe.isStronglyNoetherian_iff
+    (φ := UniformSpace.Completion.coeRingHom)).symm
+
+/-- **The separated completion of a strongly noetherian ring is strongly noetherian.** -/
+instance IsStronglyNoetherian.completion [IsStronglyNoetherian A] :
+    IsStronglyNoetherian (UniformSpace.Completion A) :=
+  isStronglyNoetherian_completion_iff.mpr inferInstance
+
+end Completion
 
 /-! ### The uncompleted restricted-series algebra -/
 
