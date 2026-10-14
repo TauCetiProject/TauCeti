@@ -18,10 +18,14 @@ the single monomial `dim Extⁿ(M,N{n}) q⁻ⁿ`.
 
 For an Euler-admissible pair and any uniform cohomological vanishing bound `b`, this gives
 `χ_q(M,N) = ∑ n < b, (-1)ⁿ dim Extⁿ(M,N{n}) q⁻ⁿ`. Equivalently, applying
-`LaurentPolynomial.invert` to `χ_q` evaluates the diagonal Ext Poincaré polynomial at `-q`.
+`LaurentPolynomial.invert` to `χ_q` evaluates the diagonal Ext Poincaré polynomial
+`TauCeti.diagonalExtPoincarePolynomial`, `∑ n < b, dim Extⁿ(M,N{n}) tⁿ`, at `t = -q`.
 This identifies the polynomial substitution and involution used to compare graded Cartan and
 Poincaré matrices. Finiteness and eventual vanishing are explicit hypotheses; a linear resolution
-alone does not imply them.
+alone does not imply them. The diagonal Poincaré polynomial itself, and the matrix
+`TauCeti.diagonalExtPoincareMatrix` of these polynomials for a family of graded modules, are
+defined for arbitrary graded modules, and do not depend on `b` once `b` bounds the cohomological
+support (`TauCeti.diagonalExtPoincarePolynomial_eq_of_le`).
 
 The statements include cohomological degree zero and do not require a nonnegative algebra
 grading, semisimplicity, or finite-dimensionality of the algebra.
@@ -43,8 +47,58 @@ open CategoryTheory CategoryTheory.Abelian LaurentPolynomial
 universe w v uk uA
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [DirectSum.Decomposition 𝒜]
-  {M N : GradedModuleCat.{v} 𝒜} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+  {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+  {I : Type*}
+
+variable (k) in
+/-- The **diagonal Ext Poincaré polynomial** `∑ n < b, dim_k Extⁿ(M,N{n}) tⁿ` of two graded
+modules, truncated below the cohomological degree `b`. It records only the diagonal bigraded
+pieces `Ext^{n,n}(M,N)`; when `M` has a linear resolution and `N` is concentrated in degree zero,
+these are the only nonzero pieces. -/
+noncomputable def diagonalExtPoincarePolynomial (M N : GradedModuleCat.{v} 𝒜) (b : ℕ) :
+    Polynomial ℤ :=
+  ∑ n ∈ Finset.range b, Polynomial.monomial n (Module.finrank k (Ext.{w} M (N.shiftObj n) n) : ℤ)
+
+/-- The diagonal Ext Poincaré polynomial is unchanged by raising its truncation degree past a
+cohomological vanishing bound. -/
+theorem diagonalExtPoincarePolynomial_eq_of_le {b b' : ℕ}
+    (hb : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) M N b) (hbb' : b ≤ b') :
+    diagonalExtPoincarePolynomial.{w} k M N b' = diagonalExtPoincarePolynomial.{w} k M N b := by
+  refine (Finset.sum_subset (Finset.range_subset_range.2 hbb') fun n _ hn ↦ ?_).symm
+  have : Subsingleton (Ext.{w} M (N.shiftObj n) n) := by
+    have := hb.subsingleton (by simpa using hn) n
+    rw [← GradedModuleCat.shiftFunctor_obj]
+    exact (extLinearEquivOfIso k (Iso.refl M)
+      ((GradedModuleCat.shiftPowIso 𝒜 n).app N) n).symm.injective.subsingleton
+  simp [Module.finrank_zero_of_subsingleton]
+
+variable (k) in
+/-- The **diagonal Ext Poincaré matrix** of a family `S` of graded modules, truncated below the
+cohomological degree `b`: its `(i, j)` entry is the diagonal Ext Poincaré polynomial
+`∑ n < b, dim_k Extⁿ(Sᵢ, Sⱼ{n}) tⁿ`. -/
+noncomputable def diagonalExtPoincareMatrix (S : I → GradedModuleCat.{v} 𝒜) (b : ℕ) :
+    Matrix I I (Polynomial ℤ) :=
+  Matrix.of fun i j ↦ diagonalExtPoincarePolynomial.{w} k (S i) (S j) b
+
+variable (k) in
+/-- An entry of the diagonal Ext Poincaré matrix is the diagonal Ext Poincaré polynomial of the
+corresponding pair. -/
+@[simp]
+theorem diagonalExtPoincareMatrix_apply (S : I → GradedModuleCat.{v} 𝒜) (b : ℕ)
+    (i j : I) :
+    diagonalExtPoincareMatrix.{w} k S b i j =
+      diagonalExtPoincarePolynomial.{w} k (S i) (S j) b := by
+  rw [diagonalExtPoincareMatrix, Matrix.of_apply]
+
+/-- The diagonal Ext Poincaré matrix is unchanged by raising its truncation degree past a common
+cohomological vanishing bound of all pairs in the family. -/
+theorem diagonalExtPoincareMatrix_eq_of_le {S : I → GradedModuleCat.{v} 𝒜}
+    {b b' : ℕ} (hb : ∀ i j, IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) (S i) (S j) b)
+    (hbb' : b ≤ b') :
+    diagonalExtPoincareMatrix.{w} k S b' = diagonalExtPoincareMatrix.{w} k S b :=
+  Matrix.ext fun i j ↦ diagonalExtPoincarePolynomial_eq_of_le (hb i j) hbb'
+
+variable [DirectSum.Decomposition 𝒜]
 
 namespace GradedProjectiveResolution
 
@@ -116,10 +170,9 @@ theorem IsLinear.invert_gradedExtEuler_eq_eval₂
     (h : IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) M N) {b : ℕ}
     (hb : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) M N b) :
     invert (gradedExtEuler k (GradedModuleCat.shift 𝒜) h) =
-      (∑ n ∈ Finset.range b,
-        Polynomial.monomial n (Module.finrank k (Ext.{w} M (N.shiftObj n) n) : ℤ)).eval₂
-          C (-T 1) := by
-  rw [hr.gradedExtEuler_eq_sum hN h hb, map_sum, Polynomial.eval₂_finsetSum]
+      (diagonalExtPoincarePolynomial.{w} k M N b).eval₂ C (-T 1) := by
+  rw [hr.gradedExtEuler_eq_sum hN h hb, map_sum, diagonalExtPoincarePolynomial,
+    Polynomial.eval₂_finsetSum]
   apply Finset.sum_congr rfl
   intro n _
   simp only [map_zsmul, map_mul, invert_C, invert_T, neg_neg,
