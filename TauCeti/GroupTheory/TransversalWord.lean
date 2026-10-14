@@ -38,6 +38,8 @@ two-element transversal `{1, s}` (`Subgroup.indexTwoTransversal`): on an element
 subgroup it is `γ` at the trivial coset and `s⁻¹ * γ * s` at the other, and on an element outside
 it is `γ * s` and `s⁻¹ * γ` respectively. For a normal subgroup, the word of an element of the
 subgroup at any coset is its conjugate by the representative (`TauCeti.lWord_of_mem_of_normal`).
+A homomorphism inducing a map of coset spaces carries the word of a transversal to the word of
+any transversal extending its image (`TauCeti.lWord_map`).
 Continuity of `γ ↦ ℓᵗ_u(γ)` for
 an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
@@ -124,6 +126,20 @@ theorem lWord_of_mem_of_normal [U.Normal] {γ : G} (hγ : γ ∈ U) (u : G ⧸ U
       rw [MulAction.Quotient.smul_mk, QuotientGroup.eq, smul_eq_mul, mul_inv_rev, inv_inv]
       exact ‹U.Normal›.conj_mem' γ hγ g
   rw [lWord_def, h]
+
+/-- **Naturality of the transversal word.** Let `φ : G →* G'`, let `e : G ⧸ U → G' ⧸ U'` be a
+map of coset spaces induced by `φ`, so that `e ⟦g⟧ = ⟦φ g⟧`, and let `t'` extend the image of
+`t`, so that `t' (e u) = φ (t u)`. Then `φ` carries the transversal word of `t` at `u` to the
+transversal word of `t'` at `e u`. Neither map needs to be a transversal. -/
+theorem lWord_map {G' : Type*} [Group G'] (U' : Subgroup G') (t' : G' ⧸ U' → G')
+    (φ : G →* G') (e : G ⧸ U → G' ⧸ U') (he : ∀ g : G, e g = (φ g : G' ⧸ U'))
+    (ht : ∀ u, t' (e u) = φ (t u)) (u : G ⧸ U) (γ : G) :
+    lWord U' t' (e u) (φ γ) = φ (lWord U t u γ) := by
+  have hsmul : (φ γ)⁻¹ • e u = e (γ⁻¹ • u) := by
+    induction u using QuotientGroup.induction_on with
+    | H g => rw [he, MulAction.Quotient.smul_mk, MulAction.Quotient.smul_mk, he, smul_eq_mul,
+        smul_eq_mul, map_mul, map_inv]
+  rw [lWord_def, lWord_def, hsmul, ht, ht, map_mul, map_mul, map_inv]
 
 section IsTransversal
 
