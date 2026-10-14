@@ -12,74 +12,86 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 # Testing a continuous function against bumps composed with a reparametrization
 
 A variant of the fundamental lemma of the calculus of variations on an interval, in which the test
-functions are smooth bumps `ψ` on the real line composed with a fixed continuous, strictly
-antitone map `F`: if `∫₀ᵀ a(σ) ψ(F σ) dσ = 0` for every bump `ψ` centred at `F σ₀`, then
-`a σ₀ = 0`. Such test functions arise when a bump is pulled back along a function that decreases
-strictly along a curve, for instance a Morse function along a negative-gradient orbit.
+functions are smooth bumps `ψ` on the real line composed with a fixed map `F` that is continuous
+and strictly antitone on the interval: if `∫₀ᵀ a(σ) ψ(F σ) dσ = 0` for every bump `ψ` centred at
+`F σ₀`, then `a σ₀ = 0`. Such test functions arise when a bump is pulled back along a function
+that decreases strictly along a curve, for instance a Morse function along a negative-gradient
+orbit.
 
 ## Main results
 
 * `TauCeti.nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp`: the one-sided version.
 * `TauCeti.eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp`.
+* `ContDiffBump.fderiv_mul_comp_mul_inner_apply`: the derivative of the test function
+  `θ (ψ ∘ f) ⟪w, ·⟫` built from such bumps, in a direction killed by `Df`.
 -/
 
 public section
 
 open Set Filter Topology
+open scoped RealInnerProductSpace
 
 namespace TauCeti
 
 /-- **A one-sided test against bumps composed with a monotone reparametrization.** If
-`∫₀ᵀ b(σ) ψ(F σ) dσ = 0` for every smooth bump `ψ` centred at `F σ₀`, with `F` continuous
-and strictly antitone and `b` continuous, then `b σ₀ ≤ 0` for `σ₀ ∈ (0, T)`. -/
-theorem nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp {b F : ℝ → ℝ} (hb : Continuous b)
-    (hF : Continuous F) (hFa : StrictAnti F) {T σ₀ : ℝ} (hσ : σ₀ ∈ Ioo 0 T)
+`∫₀ᵀ b(σ) ψ(F σ) dσ = 0` for every smooth bump `ψ` centred at `F σ₀`, with `b` and `F` continuous
+on `[0, T]` and `F` strictly antitone there, then `b σ₀ ≤ 0` for `σ₀ ∈ (0, T)`. -/
+theorem nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp {b F : ℝ → ℝ} {T σ₀ : ℝ}
+    (hb : ContinuousOn b (Icc 0 T)) (hF : ContinuousOn F (Icc 0 T))
+    (hFa : StrictAntiOn F (Icc 0 T)) (hσ : σ₀ ∈ Ioo 0 T)
     (h : ∀ ψ : ContDiffBump (F σ₀), ∫ σ in (0 : ℝ)..T, b σ * ψ (F σ) = 0) : b σ₀ ≤ 0 := by
   by_contra hpos
   rw [not_le] at hpos
   -- `b` is positive on a neighbourhood of `σ₀` inside `(0, T)`.
-  obtain ⟨ε, hε, hεb⟩ :=
-    Metric.eventually_nhds_iff.1 (hb.continuousAt.eventually (lt_mem_nhds hpos))
+  obtain ⟨ε, hε, hεb⟩ := Metric.eventually_nhds_iff.1
+    ((hb.continuousAt (Icc_mem_nhds hσ.1 hσ.2)).eventually (lt_mem_nhds hpos))
   set δ := min ε (min σ₀ (T - σ₀)) with hδ
   have hδpos : 0 < δ := lt_min hε (lt_min hσ.1 (by linarith [hσ.2]))
+  have hδσ : δ ≤ σ₀ := (min_le_right _ _).trans (min_le_left _ _)
+  have hδT : δ ≤ T - σ₀ := (min_le_right _ _).trans (min_le_right _ _)
   have hbpos : ∀ σ, |σ - σ₀| < δ → 0 < b σ := fun σ hσ' ↦
     hεb (by rw [Real.dist_eq]; exact hσ'.trans_le (min_le_left _ _))
   -- A bump around `F σ₀` small enough that `ψ ∘ F` lives in `(σ₀ - δ / 2, σ₀ + δ / 2)`.
+  have hm : σ₀ - δ / 2 ∈ Icc 0 T := ⟨by linarith, by linarith [hσ.2]⟩
+  have hp : σ₀ + δ / 2 ∈ Icc 0 T := ⟨by linarith [hσ.1], by linarith⟩
+  have h0 : σ₀ ∈ Icc 0 T := Ioo_subset_Icc_self hσ
   set c := F σ₀
-  have h1 : c < F (σ₀ - δ / 2) := hFa (by linarith)
-  have h2 : F (σ₀ + δ / 2) < c := hFa (by linarith)
+  have h1 : c < F (σ₀ - δ / 2) := hFa hm h0 (by linarith)
+  have h2 : F (σ₀ + δ / 2) < c := hFa h0 hp (by linarith)
   set r := min (F (σ₀ - δ / 2) - c) (c - F (σ₀ + δ / 2)) with hr
   have hrpos : 0 < r := lt_min (by linarith) (by linarith)
   let ψ : ContDiffBump c := ⟨r / 2, r, by positivity, by linarith⟩
-  have hψ0 : ∀ σ, δ / 2 ≤ |σ - σ₀| → ψ (F σ) = 0 := fun σ hσ' ↦ by
+  have hψ0 : ∀ σ ∈ Icc 0 T, δ / 2 ≤ |σ - σ₀| → ψ (F σ) = 0 := fun σ hσI hσ' ↦ by
     refine ψ.zero_of_le_dist ?_
     rw [Real.dist_eq]
     rcases le_abs'.1 hσ' with h' | h'
-    · have : F (σ₀ - δ / 2) ≤ F σ := hFa.antitone (by linarith)
+    · have : F (σ₀ - δ / 2) ≤ F σ := hFa.antitoneOn hσI hm (by linarith)
       rw [abs_of_nonneg (by linarith)]
       exact ((min_le_left _ _).trans (by linarith) : r ≤ F σ - c)
-    · have : F σ ≤ F (σ₀ + δ / 2) := hFa.antitone (by linarith)
+    · have : F σ ≤ F (σ₀ + δ / 2) := hFa.antitoneOn hp hσI (by linarith)
       rw [abs_of_nonpos (by linarith)]
       exact ((min_le_right _ _).trans (by linarith) : r ≤ -(F σ - c))
-  have hg : Continuous fun σ ↦ b σ * ψ (F σ) := hb.mul (ψ.continuous.comp hF)
-  have hnonneg : ∀ σ, 0 ≤ b σ * ψ (F σ) := fun σ ↦ by
+  have hg : ContinuousOn (fun σ ↦ b σ * ψ (F σ)) (Icc 0 T) :=
+    hb.mul (ψ.continuous.comp_continuousOn hF)
+  have hnonneg : ∀ σ ∈ Icc 0 T, 0 ≤ b σ * ψ (F σ) := fun σ hσI ↦ by
     by_cases hσ' : |σ - σ₀| < δ / 2
     · exact mul_nonneg (hbpos σ (by linarith)).le ψ.nonneg
-    · rw [hψ0 σ (not_lt.1 hσ'), mul_zero]
+    · rw [hψ0 σ hσI (not_lt.1 hσ'), mul_zero]
   -- The integrand is nonnegative and positive at `σ₀`, so its integral is positive.
   have hψc : 0 < ψ (F σ₀) := ψ.pos_of_mem_ball (by rw [Metric.mem_ball, dist_self]; exact hrpos)
   have hT : (0 : ℝ) < T := hσ.1.trans hσ.2
   have hlt := intervalIntegral.integral_lt_integral_of_continuousOn_of_le_of_exists_lt hT
-    continuousOn_const hg.continuousOn (fun σ _ ↦ hnonneg σ)
-    ⟨σ₀, Ioo_subset_Icc_self hσ, mul_pos hpos hψc⟩
+    continuousOn_const hg (fun σ hσI ↦ hnonneg σ (Ioc_subset_Icc_self hσI))
+    ⟨σ₀, h0, mul_pos hpos hψc⟩
   rw [intervalIntegral.integral_zero, h ψ] at hlt
   exact lt_irrefl _ hlt
 
 /-- **Testing against bumps composed with a monotone reparametrization.** If
-`∫₀ᵀ a(σ) ψ(F σ) dσ = 0` for every smooth bump `ψ` centred at `F σ₀`, with `F` continuous
-and strictly antitone and `a` continuous, then `a σ₀ = 0` for `σ₀ ∈ (0, T)`. -/
-theorem eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp {a F : ℝ → ℝ} (ha : Continuous a)
-    (hF : Continuous F) (hFa : StrictAnti F) {T σ₀ : ℝ} (hσ : σ₀ ∈ Ioo 0 T)
+`∫₀ᵀ a(σ) ψ(F σ) dσ = 0` for every smooth bump `ψ` centred at `F σ₀`, with `a` and `F` continuous
+on `[0, T]` and `F` strictly antitone there, then `a σ₀ = 0` for `σ₀ ∈ (0, T)`. -/
+theorem eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp {a F : ℝ → ℝ} {T σ₀ : ℝ}
+    (ha : ContinuousOn a (Icc 0 T)) (hF : ContinuousOn F (Icc 0 T))
+    (hFa : StrictAntiOn F (Icc 0 T)) (hσ : σ₀ ∈ Ioo 0 T)
     (h : ∀ ψ : ContDiffBump (F σ₀), ∫ σ in (0 : ℝ)..T, a σ * ψ (F σ) = 0) : a σ₀ = 0 := by
   refine le_antisymm (nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp ha hF hFa hσ h) ?_
   have := nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp (b := fun σ ↦ -a σ) ha.neg hF hFa
@@ -87,3 +99,24 @@ theorem eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp {a F : ℝ → 
   linarith
 
 end TauCeti
+
+/-- **The derivative of a bump test function.** For a bump `θ` on an inner product space `E`, a
+bump `ψ` on `ℝ`, a vector `w` and a function `f` differentiable at `p`, the derivative at `p` of
+`x ↦ θ x * (ψ (f x) * ⟪w, x⟫)` in a direction `v` with `Df(p) v = 0` is
+`(θ p ⟪w, v⟫ + ⟪w, p⟫ Dθ(p) v) ψ (f p)`. -/
+theorem ContDiffBump.fderiv_mul_comp_mul_inner_apply {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [HasContDiffBump E] {z : E} (θ : ContDiffBump z) {c : ℝ}
+    (ψ : ContDiffBump c) (w : E) {f : E → ℝ} {p v : E} (hf : DifferentiableAt ℝ f p)
+    (hv : fderiv ℝ f p v = 0) :
+    fderiv ℝ (fun x ↦ θ x * (ψ (f x) * ⟪w, x⟫)) p v =
+      (θ p * ⟪w, v⟫ + ⟪w, p⟫ * fderiv ℝ θ p v) * ψ (f p) := by
+  have hgder : HasFDerivAt (fun x ↦ θ x * (ψ (f x) * ⟪w, x⟫))
+      (θ p • ((ψ (f p)) • innerSL ℝ w + ⟪w, p⟫ • (fderiv ℝ ψ (f p)).comp (fderiv ℝ f p)) +
+        (ψ (f p) * ⟪w, p⟫) • fderiv ℝ θ p) p :=
+    ((θ.contDiff (n := 1)).differentiable one_ne_zero p).hasFDerivAt.mul
+      ((((ψ.contDiff (n := 1)).differentiable one_ne_zero (f p)).hasFDerivAt.comp p
+        hf.hasFDerivAt).mul (innerSL ℝ w).hasFDerivAt)
+  rw [hgder.fderiv]
+  simp only [smul_add, add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul,
+    ContinuousLinearMap.comp_apply, hv, fderiv_eq_smul_deriv, zero_mul, mul_zero, add_zero]
+  ring
