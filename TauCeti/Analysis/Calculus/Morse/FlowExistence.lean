@@ -35,7 +35,10 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 * `TauCeti.negativeGradientFlow`: the negative gradient flow of a function with globally Lipschitz
   gradient.
 * `TauCeti.contDiff_negativeGradientFlow` and `TauCeti.contDiff_negativeGradientFlow_apply`: for a
-  globally `C²` function, this flow is `C¹` jointly and at each fixed time.
+  globally `C²` function, this flow is `C¹` jointly and at each fixed time
+  (`TauCeti.differentiable_negativeGradientFlow_apply`: each time map is differentiable).
+* `TauCeti.hasDerivAt_fderiv_negativeGradientFlow`: the variational equation
+  `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
   orbits.
@@ -92,6 +95,12 @@ theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith 
     ContDiff ℝ 1 (negativeGradientFlow f hf t) := by
   apply contDiff_flowOfLipschitz_apply 0 (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := 1) (by norm_num)).neg
+
+/-- For a globally `C²` function, each time-`t` map of the negative-gradient flow is
+differentiable. -/
+theorem differentiable_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) (t : ℝ) : Differentiable ℝ (negativeGradientFlow f hf t) :=
+  (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
 
 /-- **The variational equation of the negative-gradient flow**: for a globally `C²` function,
 `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`. -/

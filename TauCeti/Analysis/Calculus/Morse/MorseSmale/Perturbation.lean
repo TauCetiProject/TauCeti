@@ -487,14 +487,13 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
           (negativeGradientFlow f hf σ x)
           (∑ i, e i • ∇ (h i) (negativeGradientFlow f hf σ x))) := by
   set φ := negativeGradientFlow f hf
-  have hφd : ∀ t, Differentiable ℝ (φ t) := fun t ↦
-    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+  have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
   set M : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ t) x
   set N : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ (-t)) (φ t x)
   set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) (0, e)).1
   set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
   have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
-  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ ring_inverse_fderiv_flow (hs t) (hφd t x)
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ ringInverse_fderiv_flow (hs t) (hφd t x)
   have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
     fderiv_flow_apply_fderiv_flow_neg (hs t) (hφd t x) v
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
@@ -504,10 +503,10 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   -- The inverse of `Dφₜ(x)` moves with derivative `Dφ_{-t}(φₜ x) ∘ D(∇f)(φₜ x)`.
   have hN : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ))
       (N t * (fderiv ℝ (∇ f) (φ t x)).comp (M t) * N t) t := fun t ↦ by
-    let U : (E →L[ℝ] E)ˣ := ⟨M t, N t, fderiv_flow_comp_neg (hs t) (hφd t x),
-      fderiv_flow_neg_comp (hs t) (hφd t x)⟩
-    refine ((hasFDerivAt_ringInverse (𝕜 := ℝ) U).comp_hasDerivAt t (hM t)).congr_deriv ?_
-    simp [U]
+    have hU := hasFDerivAt_ringInverse (𝕜 := ℝ) (fderivFlowUnit (hs t) (hφd t x))
+    rw [coe_fderivFlowUnit] at hU
+    refine (hU.comp_hasDerivAt t (hM t)).congr_deriv ?_
+    simp [N]
   have hW : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ) (u τ)) (-(N t (b t))) t := fun t ↦ by
     refine ((hN t).clm_apply (hu t)).congr_deriv ?_
     rw [hinv, mul_apply_eq_comp, mul_apply_eq_comp,

@@ -30,9 +30,9 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz`: the differential form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz_apply`: the differential form applied to a vector.
 * `TauCeti.fderiv_flow_add`, `TauCeti.fderiv_flow_neg_comp`, `TauCeti.fderiv_flow_comp_neg`,
-  `TauCeti.ring_inverse_fderiv_flow`: for a flow whose time maps are differentiable at the relevant
-  points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is invertible with inverse
-  `Dϕ_{-t}(ϕ_t x)`.
+  `TauCeti.fderivFlowUnit`, `TauCeti.ringInverse_fderiv_flow`: for a flow whose time maps are
+  differentiable at the relevant points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
+  invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
 -/
 
 public section
@@ -186,13 +186,34 @@ theorem fderiv_flow_apply_fderiv_flow_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (
     fderiv ℝ (ϕ t) x (fderiv ℝ (ϕ (-t)) (ϕ t x) w) = w :=
   congrArg (· w) (fderiv_flow_comp_neg hs ht)
 
+/-- **The derivative of a flow as a unit.** When the time-`t` map is differentiable at `x` and the
+time-`(-t)` map at `ϕ t x`, the derivative `Dϕ_t(x)` is invertible, with inverse
+`Dϕ_{-t}(ϕ_t x)`. -/
+noncomputable def fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+    (ht : DifferentiableAt ℝ (ϕ t) x) : (E →L[ℝ] E)ˣ :=
+  ⟨_, _, fderiv_flow_comp_neg hs ht, fderiv_flow_neg_comp hs ht⟩
+
+omit [CompleteSpace E] in
+@[simp]
+theorem coe_fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+    (ht : DifferentiableAt ℝ (ϕ t) x) :
+    (fderivFlowUnit hs ht : E →L[ℝ] E) = fderiv ℝ (ϕ t) x :=
+  (rfl)
+
+omit [CompleteSpace E] in
+@[simp]
+theorem coe_inv_fderivFlowUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+    (ht : DifferentiableAt ℝ (ϕ t) x) :
+    ((fderivFlowUnit hs ht)⁻¹ : (E →L[ℝ] E)ˣ) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
+  (rfl)
+
 omit [CompleteSpace E] in
 /-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. -/
 @[simp]
-theorem ring_inverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+theorem ringInverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
-  Ring.inverse_unit ⟨_, _, fderiv_flow_comp_neg hs ht, fderiv_flow_neg_comp hs ht⟩
+  Ring.inverse_unit (fderivFlowUnit hs ht)
 
 end Composition
 
