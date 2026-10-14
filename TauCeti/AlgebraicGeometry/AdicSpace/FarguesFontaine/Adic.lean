@@ -179,7 +179,6 @@ theorem isSheaf_spaYPresheaf (hv : v.Integers R) (hϖ : ϖ ≠ 0) (hϖ' : v (alg
       exact_mod_cast (zpow_le_zpow_right₀ h1 (by omega : -(n : ℤ) ≤ n))
   have h₁ := NNReal.rpow_inv_nnratCast_pow_num (v (algebraMap R K ϖ)) hq
   have := WittVector.isStronglyNoetherian_intervalRing p hv hϖ hϖ' (hρ hq) (hρ hq') h₁₂
-    (NNRat.num_ne_zero.mpr hq) h₁
   exact isSheafy_spaYPreAdicSpace_restrict hv hϖ hϖ' (hρ hq) (hρ hq') _
     (isSheafyForEveryPresentation_of_isStronglyNoetherian
       (Pair.powerBounded_plus (A := WittVector.IntervalRing p hv hϖ hϖ' (hρ hq) (hρ hq')) ▸
