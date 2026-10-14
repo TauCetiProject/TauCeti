@@ -77,8 +77,9 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.ord_sum_le_of_ord_eq_mul_add_natCast` that combines them.
 * `TauCeti.Place.ord_smul_of_restrict_eq`: `ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`
   for `c` in the subfield `F₁` and `P` over the place `P₁` of `F₁`.
-* `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: functions of `F` with a pole at
-  one place over `P₁` each, and regular at the others, are linearly independent over `F₁`.
+* `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: arbitrary families of functions
+  of `F` with a pole at one place over `P₁` each, and regular at the others, are linearly
+  independent over `F₁`.
 * `TauCeti.Place.ramificationIdx_mul_relativeDegree_le_finrank`: `e(P' ∣ P) · f(P' ∣ P) ≤
   [F' : F]`, with `TauCeti.Place.ramificationIdx_le_finrank` and
   `TauCeti.Place.relativeDegree_le_finrank` its two halves (Stichtenoth, Corollary 3.1.12).
@@ -285,15 +286,6 @@ section Restrict
 
 variable (k F) (P' : Place k' F')
 
-/-- The valuation of `P'` restricted to `F` is trivial on the constants of `F`. -/
-private theorem isTrivialOn_comap : (P'.valuation.comap (algebraMap F F')).IsTrivialOn k where
-  eq_one c hc := by
-    have hmap : algebraMap F F' (algebraMap k F c) = algebraMap k' F' (algebraMap k k' c) := by
-      rw [← IsScalarTower.algebraMap_apply k F F', IsScalarTower.algebraMap_apply k k' F']
-    have hc' : algebraMap k k' c ≠ 0 := fun h ↦ hc
-      ((algebraMap k k').injective (by rw [h, map_zero]))
-    simpa only [Valuation.comap_apply, hmap] using P'.isTrivialOn.eq_one _ hc'
-
 /-- The order function of `P'` restricted to `F` is the order function of the restricted
 valuation. -/
 private theorem ord_comap (f : F) :
@@ -320,7 +312,11 @@ noncomputable def restrict : Place k F where
   valuation_surjective :=
     Valuation.normalization_surjective _ (ordIndex_comap_ne_zero F P')
   isTrivialOn := by
-    have := isTrivialOn_comap k F P'
+    have : P'.valuation.IsTrivialOn k := ⟨fun c hc ↦ by
+      rw [IsScalarTower.algebraMap_apply k k' F']
+      exact P'.isTrivialOn.eq_one _ ((map_ne_zero (algebraMap k k')).mpr hc)⟩
+    have : (P'.valuation.comap (algebraMap F F')).IsTrivialOn k :=
+      Valuation.IsTrivialOn.comap P'.valuation (IsScalarTower.toAlgHom k F F')
     exact Valuation.IsTrivialOn.normalization _
 
 /-- **The ramification index** `e(P' ∣ P)` of a place `P'` of `F' / k'` over the place `P` of
@@ -507,20 +503,9 @@ theorem coe_algebraMap_integers (x : (P'.restrict k F).integers) :
 instance instIsLocalHomIntegers :
     IsLocalHom (algebraMap (P'.restrict k F).integers P'.integers) where
   map_nonunit a ha := by
-    have ha0 : (a : F) ≠ 0 := by
-      rintro h
-      have ha_eq_zero : a = 0 := Subtype.ext h
-      rw [ha_eq_zero] at ha
-      simp at ha
-    have hmap0 : algebraMap F F' (a : F) ≠ 0 := by simpa using ha0
-    have h1 : P'.ord (algebraMap F F' (a : F)) = 0 :=
-      (P'.isUnit_iff_ord_eq_zero (x := algebraMap _ P'.integers a) (by simpa using hmap0)).mp ha
-    rw [ord_algebraMap_restrict k F P' (a : F)] at h1
-    have he : (ramificationIdx F P' : ℤ) ≠ 0 := by
-      have := ramificationIdx_pos F P'
-      omega
-    exact ((P'.restrict k F).isUnit_iff_ord_eq_zero ha0).mpr
-      ((mul_eq_zero.mp h1).resolve_left he)
+    rw [(P'.restrict k F).isUnit_iff_valuation_eq_one]
+    rw [P'.isUnit_iff_valuation_eq_one, coe_algebraMap_integers] at ha
+    exact (Valuation.HasExtension.val_map_eq_one_iff _ _ _).mp ha
 
 /-- The **relative degree** `f(P' ∣ P) = [F'_{P'} : F_P]` of a place `P'` of `F' / k'` over the
 place `P` of `F / k` it lies over (Stichtenoth, Definition 3.1.5). -/
@@ -561,16 +546,6 @@ section Independence
 
 variable (k F) (P' : Place k' F') [Algebra.IsIntegral F F']
 
-private theorem eq_of_mul_add_natCast_eq {e : ℕ} {j j' : Fin e} {a b : ℤ}
-    (h : (e : ℤ) * a + (j : ℕ) = (e : ℤ) * b + (j' : ℕ)) : j = j' := by
-  have key : ∀ (m : ℤ) (l : Fin e), ((e : ℤ) * m + (l : ℕ)) % (e : ℤ) = (l : ℕ) := by
-    intro m l
-    rw [add_comm, Int.add_mul_emod_self_left]
-    exact Int.emod_eq_of_lt (Int.natCast_nonneg _) (by exact_mod_cast l.2)
-  have h' := congrArg (· % (e : ℤ)) h
-  simp only [key] at h'
-  exact Fin.ext (by exact_mod_cast h')
-
 /-- The valuation of a sum whose nonzero terms have pairwise distinct orders is the valuation of a
 term of least order. -/
 private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
@@ -594,7 +569,12 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
       obtain ⟨m₀, hm₀⟩ := hAord j₀ hj₀A
       have hne : P'.ord (A j) ≠ P'.ord (A j₀) := by
         rw [hm, hm₀]
-        exact fun hcontra ↦ hj.2 (eq_of_mul_add_natCast_eq hcontra)
+        intro hcontra
+        apply hj.2
+        apply Fin.ext
+        have hmod := congrArg (· % (e : ℤ)) hcontra
+        simpa only [Int.mul_add_emod_self_left, ← Int.natCast_mod,
+          Nat.mod_eq_of_lt j.isLt, Nat.mod_eq_of_lt j₀.isLt, Int.natCast_inj] using hmod
       have hge := hj₀ j (by simp [hJdef, hAj])
       apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation
         (P'.valuation.ne_zero_iff.mpr hj₀A) (P'.valuation.ne_zero_iff.mpr hAj)).mp
@@ -806,11 +786,8 @@ theorem ord_smul_of_restrict_eq {P₁ : Place k F₁} {P : Place k F}
   rw [Algebra.smul_def, P.ord_mul ((map_ne_zero _).mpr hc) hz, ord_algebraMap_restrict k F₁ P c,
     hP]
 
-/-- **Poles at the places over a place give independence over the subfield.** Let `P i` be places
-of `F` over one place `P₁` of `F₁`, and let `z i ∈ F` be regular at `P j` for `j ≠ i`. If `z i`
-has a pole at `P i` for every `i ≠ i₀`, and `z i₀` is a nonzero function without zero at `P i₀`,
-then the `z i` are linearly independent over `F₁`. -/
-theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} [Finite ι] {P₁ : Place k F₁}
+private theorem linearIndependent_of_ord_neg_of_restrict_eq_finite {ι : Type*} [Finite ι]
+    {P₁ : Place k F₁}
     {P : ι → Place k F} (hP : ∀ i, (P i).restrict k F₁ = P₁) {z : ι → F} {i₀ : ι}
     (hz₀ : z i₀ ≠ 0) (hord₀ : (P i₀).ord (z i₀) ≤ 0) (hpole : ∀ i, i ≠ i₀ → (P i).ord (z i) < 0)
     (hreg : ∀ i j, i ≠ j → 0 ≤ (P i).ord (z j)) :
@@ -860,6 +837,27 @@ theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} [Finite ι] {P�
     (fun i hi hij ↦ hlt i hij (by simpa using hi)) ?_
   rw [Finset.sum_filter_of_ne fun i _ h ↦ left_ne_zero_of_smul h]
   exact hc
+
+/-- **Poles at the places over a place give independence over the subfield.** Let `P i` be places
+of `F` over one place `P₁` of `F₁`, and let `z i ∈ F` be regular at `P j` for `j ≠ i`. If `z i`
+has a pole at `P i` for every `i ≠ i₀`, and `z i₀` is a nonzero function without zero at `P i₀`,
+then the `z i` are linearly independent over `F₁`. The index type may be infinite. -/
+theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} {P₁ : Place k F₁}
+    {P : ι → Place k F} (hP : ∀ i, (P i).restrict k F₁ = P₁) {z : ι → F} {i₀ : ι}
+    (hz₀ : z i₀ ≠ 0) (hord₀ : (P i₀).ord (z i₀) ≤ 0) (hpole : ∀ i, i ≠ i₀ → (P i).ord (z i) < 0)
+    (hreg : ∀ i j, i ≠ j → 0 ≤ (P i).ord (z j)) :
+    LinearIndependent F₁ z := by
+  classical
+  rw [linearIndependent_iff_finset_linearIndependent]
+  intro S
+  -- Adjoin the distinguished index before applying the finite-family argument.
+  let T := insert i₀ S
+  have hT := linearIndependent_of_ord_neg_of_restrict_eq_finite
+    (P := fun i : T ↦ P i) (fun i ↦ hP i) (i₀ := ⟨i₀, Finset.mem_insert_self _ _⟩) hz₀ hord₀
+    (fun i hi ↦ hpole i fun h ↦ hi (Subtype.ext h))
+    (fun i j hij ↦ hreg i j fun h ↦ hij (Subtype.ext h))
+  exact hT.comp (fun i : S ↦ (⟨i, Finset.mem_insert_of_mem i.2⟩ : T))
+    (fun _ _ h ↦ Subtype.ext (congrArg (fun i : T ↦ (i : ι)) h))
 
 end IndependenceOverPlace
 
