@@ -118,12 +118,14 @@ theorem perturb_eventuallyEq_of_forall_notMem_tsupport {x : E} (s : EuclideanSpa
   filter_upwards [eventually_all.2 hi] with y hy
   simp [perturb_apply, hy]
 
-/-- **Near a critical point of `f`, a perturbation agrees with `f`.** The functions of an admissible
-family vanish on a neighbourhood of each critical point. -/
-theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturbation f (h i))
+/-- **Near a critical point of `f`, a perturbation agrees with `f`** when the supports of the family
+avoid the critical points: the functions of the family then vanish on a neighbourhood of each
+critical point. -/
+theorem perturb_eventuallyEq_of_fderiv_eq_zero
+    (hdisj : ∀ i, Disjoint (tsupport (h i)) {x | fderiv ℝ f x = 0})
     (s : EuclideanSpace ℝ ι) {x : E} (hx : fderiv ℝ f x = 0) : perturb f h s =ᶠ[𝓝 x] f :=
   perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦
-    Set.disjoint_left.1 (hh i).disjoint hmem hx
+    Set.disjoint_left.1 (hdisj i) hmem hx
 
 /-- **Small perturbations keep the critical points.** For all sufficiently small parameters, the
 critical points of `perturb f h s` are those of `f`. -/
