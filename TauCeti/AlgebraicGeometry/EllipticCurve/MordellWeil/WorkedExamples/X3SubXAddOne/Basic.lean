@@ -13,8 +13,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
 This file defines the integral Weierstrass equation, computes its discriminant `-368`, and
 establishes ellipticity over `ℚ`. Over `ℚ` the equation is in the normal form `y² = f(x)` used by
-explicit `2`-descent. It is the common starting point for calculations of its
-rational torsion and Mordell–Weil rank.
+explicit `2`-descent. It also records the rational point `(1, 1)`. It is the common starting
+point for calculations of its rational torsion and Mordell–Weil rank.
 -/
 
 public section
@@ -38,5 +38,10 @@ instance : (curveX3SubXAddOne.baseChange ℚ).IsElliptic := by
 /-- Over `ℚ`, `y² = x³ - x + 1` is in the normal form `y² = f(x)`, with `a₁ = a₃ = 0`. -/
 instance : (curveX3SubXAddOne.baseChange ℚ).IsCharNeTwoNF :=
   ⟨by simp [curveX3SubXAddOne], by simp [curveX3SubXAddOne]⟩
+
+/-- `(1, 1)` is a rational point of `y² = x³ - x + 1`. -/
+theorem nonsingular_one_one_curveX3SubXAddOne :
+    (curveX3SubXAddOne.baseChange ℚ).toAffine.Nonsingular 1 1 :=
+  Affine.equation_iff_nonsingular.1 (by rw [Affine.equation_iff]; norm_num [curveX3SubXAddOne])
 
 end TauCeti.WorkedExamples

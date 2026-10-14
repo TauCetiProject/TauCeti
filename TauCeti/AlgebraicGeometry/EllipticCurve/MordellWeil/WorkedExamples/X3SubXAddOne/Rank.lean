@@ -136,25 +136,12 @@ private theorem adjoin_cubic23Generator :
     rw [h, ← coe_cubic23Generator]
     have hθ := Algebra.self_mem_adjoin_singleton ℚ (cubic23Generator : 𝕃)
     exact sub_mem hθ (pow_mem hθ 2)
-  -- every element of `𝕃` is a polynomial in `t`; this is `AdjoinRoot.adjoinRoot_eq_top`, which is
-  -- stated for the `ℚ`-algebra structure `AdjoinRoot.instAlgebra` rather than
-  -- `DivisionRing.toRatAlgebra`
-  refine Algebra.eq_top_iff.2 fun x ↦ ?_
-  induction x using AdjoinRoot.induction_on with
-  | ih p =>
-    have hC (a : ℚ) : AdjoinRoot.mk _ (C a) ∈ Algebra.adjoin ℚ {(cubic23Generator : 𝕃)} := by
-      rw [AdjoinRoot.mk_C,
-        eq_ratCast (AdjoinRoot.of (curveX3SubXAddOne.baseChange ℚ).toAffine.f) a,
-        ← eq_ratCast (algebraMap ℚ 𝕃) a]
-      exact Subalgebra.algebraMap_mem _ a
-    induction p using Polynomial.induction_on with
-    | C a => exact hC a
-    | add p q hp hq =>
-      rw [map_add]
-      exact add_mem hp hq
-    | monomial n a h =>
-      rw [pow_succ, ← mul_assoc, map_mul, AdjoinRoot.mk_X]
-      exact mul_mem h hroot
+  -- `AdjoinRoot.adjoinRoot_eq_top` is stated for the `ℚ`-algebra structure
+  -- `AdjoinRoot.instAlgebra`, which agrees with `DivisionRing.toRatAlgebra` by `Subsingleton.elim`
+  have htop := AdjoinRoot.adjoinRoot_eq_top (f := (curveX3SubXAddOne.baseChange ℚ).toAffine.f)
+  rw [Subsingleton.elim (α := Algebra ℚ 𝕃) (AdjoinRoot.instAlgebra _)
+    DivisionRing.toRatAlgebra] at htop
+  exact eq_top_iff.2 (htop ▸ Algebra.adjoin_le (Set.singleton_subset_iff.2 hroot))
 
 /-! ### The `2`-descent bound -/
 
@@ -222,11 +209,6 @@ theorem finrank_point_curveX3SubXAddOne_le_one :
 end CubicField
 
 /-! ### The rank and the group -/
-
-/-- `(1, 1)` is a rational point of `y² = x³ - x + 1`. -/
-theorem nonsingular_one_one_curveX3SubXAddOne :
-    (curveX3SubXAddOne.baseChange ℚ).toAffine.Nonsingular 1 1 :=
-  equation_iff_nonsingular.1 (by rw [equation_iff]; norm_num [curveX3SubXAddOne])
 
 /-- **The Mordell–Weil rank of `y² = x³ - x + 1` over `ℚ` is at least `1`**: the rational point
 `(1, 1)` is nonzero, and the point group is torsion-free. -/
