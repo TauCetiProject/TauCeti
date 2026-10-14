@@ -25,7 +25,7 @@ On points this composes with `TauCeti.AffineGroup.Product.pointsMulEquiv`, the t
 points calculation, through the equiv-version `AlgHom.mapDomainMulEquiv` of the contravariant
 functoriality `AlgHom.mapDomain`. When `G` and `H` are commutative groups the group algebras
 are Hopf algebras and these convolution monoids are the convolution groups of points
-(`TauCeti.AlgHom.instGroup`), so the points equivalence is automatically an isomorphism of
+(`AlgHom.instGroup`), so the points equivalence is automatically an isomorphism of
 groups: `D(G × H)(A) ≅ D(G)(A) × D(H)(A)`.
 
 ## Main definitions

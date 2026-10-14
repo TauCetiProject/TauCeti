@@ -36,7 +36,7 @@ the inverse.
 
 ## Main results
 
-* `AlgHom.convInv_apply`: pointwise, the convolution inverse of `f` sends `h` to `f (S h)`.
+* `WithConv.convInv_apply`: pointwise, the convolution inverse of `f` sends `h` to `f (S h)`.
 * `AlgHom.instGroup`, `AlgHom.instCommGroup`: for `H` a Hopf algebra over `R` and `A` a
   commutative `R`-algebra, `WithConv (H →ₐ[R] A)` is a group, commutative when `H` is
   cocommutative.
@@ -55,8 +55,6 @@ Yaël Dillies, Michał Mrugała, and Yunzhou Xie.
 public section
 
 open _root_.Coalgebra HopfAlgebra TensorProduct WithConv
-
-namespace TauCeti
 
 namespace AlgHom
 
@@ -77,14 +75,14 @@ noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
 
 /-- Evaluation of `antipodeComp f` at an element `h : H` is `f (S h)`. -/
 @[simp]
-lemma _root_.AlgHom.antipodeComp_apply (f : H →ₐ[R] A) (h : H) :
+lemma antipodeComp_apply (f : H →ₐ[R] A) (h : H) :
     antipodeComp f h = f (antipode R h) := by
   delta antipodeComp
   rfl
 
 /-- The underlying linear map of `antipodeComp f` is `f.toLinearMap ∘ₗ antipode R`. -/
 @[simp]
-lemma _root_.AlgHom.toLinearMap_antipodeComp (f : H →ₐ[R] A) :
+lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :
     (antipodeComp f).toLinearMap = f.toLinearMap ∘ₗ antipode R := by
   delta antipodeComp
   rfl
@@ -102,7 +100,7 @@ lemma _root_.WithConv.convInv_def (f : WithConv (H →ₐ[R] A)) :
 /-- Pointwise, the convolution inverse of `f` sends `h` to `f (S h)`, where `S` is the
 antipode. -/
 @[simp]
-lemma convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
+lemma _root_.WithConv.convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
     f⁻¹ h = f.ofConv (antipode R h) := by
   -- `convInv_def` exposes `toConv (antipodeComp f.ofConv)`; under the coercion from `WithConv`,
   -- `(toConv g) h` evaluates as `g h`.
@@ -114,25 +112,14 @@ monoid of `R`-algebra homomorphisms `H →ₐ[R] A` is a group, with inverse `f 
 structure on its functor of points evaluated at `A`. -/
 noncomputable instance instGroup : Group (WithConv (H →ₐ[R] A)) where
   inv_mul_cancel f := by
-    -- It suffices to check the equality after passing to the convolution ring of linear
-    -- maps, where Mathlib already has the structure; the algebra-hom convolution monoid is
-    -- transported from the linear one along the underlying-linear-map injection.
+    -- Pass to linear maps to use the Sweedler formula for convolution.
     refine WithConv.ofConv_injective (AlgHom.toLinearMap_injective (WithConv.toConv_injective ?_))
     rw [AlgHom.toLinearMap_convMul, AlgHom.toLinearMap_convOne, convInv_def, toConv_ofConv,
       AlgHom.toLinearMap_antipodeComp]
-    -- Now in `WithConv (H →ₗ[R] A)`: `(f ∘ S) * f = 1`. Pass to underlying linear maps.
-    refine WithConv.ofConv_injective ?_
-    -- Distribute `f` over the convolution product `S * id`.
-    have key := LinearMap.algHom_comp_convMul_distrib f.ofConv
-      (toConv (antipode R)) (toConv LinearMap.id)
-    -- `key : f ∘ (S * id) = ((f ∘ S) * (f ∘ id)).ofConv`.
-    -- Use `S * id = 1` and `f ∘ id = f`.
-    rw [LinearMap.antipode_mul_id, ofConv_toConv, ofConv_toConv, LinearMap.comp_id] at key
-    -- So `((f ∘ S) * f).ofConv = f ∘ 1`, the linear unit `1` being `algebraMap ∘ counit`.
-    rw [← key, LinearMap.convOne_def, ofConv_toConv]
-    -- Finally `f ∘ (algebraMap ∘ counit) = algebraMap ∘ counit`, since `f` is an algebra hom.
     ext h
-    exact f.ofConv.commutes (counit h)
+    rw [(ℛ R h).convMul_apply]
+    simp only [LinearMap.comp_apply, AlgHom.coe_toLinearMap, LinearMap.convOne_apply,
+      ← map_mul, ← map_sum, sum_antipode_mul_eq_algebraMap_counit, AlgHom.commutes]
 
 end Hopf
 
@@ -201,5 +188,3 @@ noncomputable instance instCommGroup : CommGroup (WithConv (H →ₐ[R] A)) wher
 end CommHopf
 
 end AlgHom
-
-end TauCeti

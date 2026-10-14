@@ -158,7 +158,7 @@ the point `s ⊗ a ↦ s * f a` of `K ⊗[k] A` over `K`. It is a monoid homomor
 the composite of `AlgHom.mapValue (Algebra.ofId k K)` with `AlgHom.baseChangePointsMulEquiv`. -/
 noncomputable def pointsBaseChange : WithConv (A →ₐ[k] k) →* WithConv (K ⊗[k] A →ₐ[K] K) :=
   (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)).toMonoidHom.comp
-    (mapValue (Algebra.ofId k K))
+    (AlgHom.mapValue (Algebra.ofId k K))
 
 /-- The base change of a point `f` sends `s ⊗ a` to `s * f a`. -/
 @[simp]

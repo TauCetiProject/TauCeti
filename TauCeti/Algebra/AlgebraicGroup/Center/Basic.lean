@@ -230,7 +230,7 @@ private theorem centerCoefficientIdeal_antipode_mem {x : H}
     (centerCoefficientIdeal_le_ker_iff_isCentralPoint g⁻¹).2 hginv
   have hxzero := RingHom.mem_ker.mp (hle hx)
   have hxzero' : g⁻¹ x = 0 := hxzero
-  rw [AlgHom.convInv_apply] at hxzero'
+  rw [WithConv.convInv_apply] at hxzero'
   exact Ideal.Quotient.eq_zero_iff_mem.mp hxzero'
 
 private theorem centerCoefficientIdeal_comul_mem {x : H}
