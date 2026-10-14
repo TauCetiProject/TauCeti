@@ -150,6 +150,7 @@ def ofSubcube {m n : ℕ} (c : SingularCube X n) (ι : C(Fin m → I, Fin n → 
   ofCube L (c.comp ι) ∘ₗ (L.map (pathClass c 0 (ι 0))).hom
 
 /-- A subcube with a coefficient is the summand of the subcube with the transported coefficient. -/
+@[simp]
 theorem ofSubcube_apply {m n : ℕ} (c : SingularCube X n) (ι : C(Fin m → I, Fin n → I))
     (a : L.obj (FundamentalGroupoid.mk (c 0))) :
     ofSubcube L c ι a = ofCube L (c.comp ι) (L.map (pathClass c 0 (ι 0)) a) := by
@@ -161,6 +162,9 @@ theorem ofSubcube_id {n : ℕ} (c : SingularCube X n) :
     ofSubcube L c (ContinuousMap.id _) = ofCube L c := by
   refine LinearMap.ext fun a ↦ ?_
   rw [ofSubcube_apply]
+  -- `c.comp (.id _)` is definitionally `c`, but rewriting it with `ContinuousMap.comp_id` would
+  -- also change the type of the coefficient, the fibre of `L` at the origin of the cube; `change`
+  -- states the goal for `c` itself.
   change ofCube L c (L.map (pathClass c 0 0) a) = _
   rw [pathClass_self, CategoryTheory.Functor.map_id]
   rfl
@@ -182,7 +186,7 @@ variable (L : LocalCoefficientSystem.{u, v, w} R X)
 /-- The boundary of a single `(n+1)`-cube with a coefficient:
 `∂ (c, a) = Σᵢ (-1) ^ i ((face i 0 c, τ a) - (face i 1 c, τ' a))`, the coefficient being
 transported to the origins of the faces. -/
-def boundaryCube {n : ℕ} (c : SingularCube X (n + 1)) :
+private def boundaryCube {n : ℕ} (c : SingularCube X (n + 1)) :
     L.obj (FundamentalGroupoid.mk (c 0)) →ₗ[R] L.TwistedCubicalChain n :=
   ∑ i : Fin (n + 1), ((-1 : ℤ) ^ (i : ℕ)) •
     (ofSubcube L c (face i 0 (ContinuousMap.id _)) - ofSubcube L c (face i 1 (ContinuousMap.id _)))
@@ -224,13 +228,11 @@ theorem boundary_boundary (n : ℕ) : boundary L n ∘ₗ boundary L (n + 1) = 0
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.zero_apply, ← ofSubcube_id,
     boundary_ofSubcube, map_sum, map_zsmul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
   rw [← Finset.sum_product']
-  refine Finset.sum_involution (fun p _ ↦ (p.1.succAbove p.2, p.2.predAbove p.1)) (fun p _ ↦ ?_)
-    (fun p _ _ h ↦ Fin.succAbove_ne p.1 p.2 (congrArg Prod.fst h))
-    (fun _ _ ↦ Finset.mem_univ _) (fun p _ ↦ ?_)
-  swap
-  · simp [Fin.succAbove_succAbove_predAbove, Fin.predAbove_predAbove_succAbove]
+  refine Finset.sum_involution (fun p _ ↦ CubicalChain.faceSwap p) (fun p _ ↦ ?_)
+    (fun p _ _ ↦ CubicalChain.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
+    (fun p _ ↦ CubicalChain.faceSwap_faceSwap p)
   obtain ⟨i, j⟩ := p
-  simp only [ContinuousMap.id_comp,
+  simp only [CubicalChain.faceSwap_def, ContinuousMap.id_comp,
     ← face_id_comp_face_id, smul_sub, smul_smul, ← pow_add,
     Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
   abel
@@ -265,7 +267,6 @@ theorem coefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) (n : ℕ) :
 
 /-- A morphism of local systems sends a subcube with a coefficient to the same subcube with the
 image coefficient. -/
-@[simp]
 theorem coefficientMap_ofSubcube (η : L ⟶ K) {m n : ℕ} (c : SingularCube X n)
     (ι : C(Fin m → I, Fin n → I)) (a : L.obj (FundamentalGroupoid.mk (c 0))) :
     coefficientMap η m (ofSubcube L c ι a) = ofSubcube K c ι (η.app _ a) := by
@@ -274,7 +275,7 @@ theorem coefficientMap_ofSubcube (η : L ⟶ K) {m n : ℕ} (c : SingularCube X 
 /-- The boundary commutes with the maps induced by a morphism of local systems. -/
 theorem coefficientMap_boundary (η : L ⟶ K) (n : ℕ) :
     coefficientMap η n ∘ₗ boundary L n = boundary K n ∘ₗ coefficientMap η (n + 1) :=
-  hom_ext fun c ↦ LinearMap.ext fun a ↦ by simp
+  hom_ext fun c ↦ LinearMap.ext fun a ↦ by simp [-ofSubcube_apply, coefficientMap_ofSubcube]
 
 end CoefficientMap
 
@@ -355,8 +356,8 @@ variable {L : LocalCoefficientSystem.{u, v, w} R X}
 
 /-- The **augmentation** of the cubical `0`-chains into a cocone `s` over the local system: a
 point `x` with a coefficient `a` goes to the image of `a` under the leg of `s` at `x`.  For the
-colimit cocone it takes values in `colimit L`, the zeroth homology with coefficients in `L`; for a
-constant system with fibre `M` and the cocone of identities it is the sum of the coefficients. -/
+colimit cocone it takes values in `colimit L`; for a constant system with fibre `M` and the cocone
+of identities it is the sum of the coefficients. -/
 def augment (s : Cocone L) : L.TwistedCubicalChain 0 →ₗ[R] s.pt :=
   desc L fun c ↦ (s.ι.app (FundamentalGroupoid.mk (c 0))).hom
 
@@ -368,7 +369,6 @@ theorem augment_ofCube (s : Cocone L) (c : SingularCube X 0)
 
 /-- The augmentation of a point of a subcube, a vertex of the cube, is the image of the
 coefficient at the origin of the cube. -/
-@[simp]
 theorem augment_ofSubcube (s : Cocone L) {n : ℕ} (c : SingularCube X n)
     (ι : C(Fin 0 → I, Fin n → I)) (a : L.obj (FundamentalGroupoid.mk (c 0))) :
     augment s (ofSubcube L c ι a) = s.ι.app _ a := by
@@ -378,7 +378,7 @@ theorem augment_ofSubcube (s : Cocone L) {n : ℕ} (c : SingularCube X n)
 /-- The augmentation vanishes on boundaries: a path with a coefficient contributes the images
 of the coefficient at both of its end points, which agree in the cocone. -/
 theorem augment_boundary (s : Cocone L) : augment s ∘ₗ boundary L 0 = 0 :=
-  hom_ext fun c ↦ LinearMap.ext fun a ↦ by simp
+  hom_ext fun c ↦ LinearMap.ext fun a ↦ by simp [-ofSubcube_apply, augment_ofSubcube]
 
 /-- The augmentation is natural in the coefficient system. -/
 theorem augment_coefficientMap {K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K)
