@@ -55,8 +55,8 @@ degree `2` where discreteness enters the denominator, `B²` being the image of t
   counterparts: the dictionary between the two sets of cocycles and coboundaries.
 * `TauCeti.ContCohomology.explicitH2AddEquivGroupCohomology_explicitCoeff2`: the degree-two
   comparison is natural in equivariant coefficient maps.
-* `TauCeti.ContCohomology.explicitCoeff2_bijective_of_bijective_map`: bijectivity transfers from
-  derived group cohomology to the explicit model.
+* `TauCeti.ContCohomology.explicitCoeff2_bijective_of_bijective_groupCohomology_map`:
+  bijectivity transfers from derived group cohomology to the explicit model.
 
 ## Implementation notes
 
@@ -490,7 +490,7 @@ corresponding morphism of representations induces a bijection on derived group c
 instance an isomorphism (`ConcreteCategory.bijective_of_isIso`). The comparison permits the
 explicit coefficient groups and the representations to have merely additively equivalent
 carriers. -/
-theorem explicitCoeff2_bijective_of_bijective_map
+theorem explicitCoeff2_bijective_of_bijective_groupCohomology_map
     {N : Type x} [AddCommGroup N] [DistribMulAction G N]
     {C : Rep k H} (chi : N ≃+ C)
     (hchi : ∀ (g : G) (n : N), chi (g • n) = C.ρ (φ g) (chi n))

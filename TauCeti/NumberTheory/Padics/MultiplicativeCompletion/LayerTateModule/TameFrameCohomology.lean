@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.LayerTateModule.Decomposition
-public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.TameFrameCohomology
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.ProjectiveKernel
 
 /-!
 # Cohomology of the tame-frame relation module
