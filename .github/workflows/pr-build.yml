@@ -1405,10 +1405,16 @@ jobs:
   # The merge queue's required `build` status is posted only here. In a configured installation,
   # green therefore means both that the combined commit passed every sandboxed audit and that a
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
+  # Priority zero puts terminal reporting ahead of compiler jobs (priority one). Run-specific
+  # assignment prevents other runs from taking its runner. No candidate checkout, privileged
+  # container or persistent cache is needed here. See Namespace's job-ordering documentation.
   finalize-merge-group-build:
     needs: [sandboxed-build, publish-merge-group-cache]
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 5
     permissions:
       statuses: write
     env:
