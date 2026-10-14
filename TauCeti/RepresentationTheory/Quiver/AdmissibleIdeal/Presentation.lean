@@ -153,12 +153,8 @@ theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀
       Ideal.Quotient.mk (J ^ 2) (f a.2.2) :=
     (he.toOrthogonalIdempotents.map (Ideal.Quotient.mk (J ^ 2))).linearIndependent_sigma
       (fun i j a => Ideal.Quotient.mk (J ^ 2) (f a))
-      (fun i j a => by
-        change Ideal.Quotient.mk (J ^ 2) (e j) * Ideal.Quotient.mk (J ^ 2) (f a) = _
-        rw [← map_mul, hl a])
-      (fun i j a => by
-        change Ideal.Quotient.mk (J ^ 2) (f a) * Ideal.Quotient.mk (J ^ 2) (e i) = _
-        rw [← map_mul, hr a]) hind
+      (fun i j a => by rw [Function.comp_apply, ← map_mul, hl a])
+      (fun i j a => by rw [Function.comp_apply, ← map_mul, hr a]) hind
   refine (hvert _ hJ2).sum_type harrowIndependent ?_
   rw [Submodule.disjoint_def]
   intro y hy hy'
