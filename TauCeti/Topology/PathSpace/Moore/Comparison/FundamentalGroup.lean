@@ -83,6 +83,13 @@ theorem zerothHomotopyEquivFundamentalGroup_mk (γ : MooreLoopSpace X x) :
   exact congrArg (Inv.inv (α := FundamentalGroup X x))
     (HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ.toPath)
 
+/-- Every element of the fundamental group is the multiplicative class of a Moore loop. -/
+theorem fundamentalGroupHom_surjective (x : X) : Function.Surjective (fundamentalGroupHom x) :=
+  fun g ↦ by
+    obtain ⟨q, rfl⟩ := (zerothHomotopyEquivFundamentalGroup x).surjective g
+    induction q using Quotient.inductionOn with
+    | h γ => exact ⟨γ, (zerothHomotopyEquivFundamentalGroup_mk γ).symm⟩
+
 /-- The multiplicative loop class is natural under based continuous maps. -/
 @[simp↓]
 theorem fundamentalGroupHom_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
