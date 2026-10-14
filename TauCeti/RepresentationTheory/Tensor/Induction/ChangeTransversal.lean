@@ -165,22 +165,18 @@ theorem tensorInducedChangeTransversal_trans (v : U.LeftTransversal) :
     (tensorInducedChangeTransversal U t v ρ).trans
         (tensorInducedChangeTransversal U s t ρ) =
       tensorInducedChangeTransversal U s v ρ := by
-  apply Representation.Equiv.toLinearEquiv_injective
-  change
-    (tensorInducedChangeTransversalLinearEquiv U t v ρ).trans
-        (tensorInducedChangeTransversalLinearEquiv U s t ρ) =
-      tensorInducedChangeTransversalLinearEquiv U s v ρ
-  exact tensorInducedChangeTransversalLinearEquiv_trans U s t ρ v
+  ext z
+  rw [Representation.Equiv.trans_apply, tensorInducedChangeTransversal_apply,
+    tensorInducedChangeTransversal_apply, tensorInducedChangeTransversal_apply,
+    ← LinearEquiv.trans_apply, tensorInducedChangeTransversalLinearEquiv_trans]
 
 /-- Swapping the transversals gives the inverse representation equivalence. -/
 @[simp] theorem tensorInducedChangeTransversal_symm :
     (tensorInducedChangeTransversal U s t ρ).symm =
       tensorInducedChangeTransversal U t s ρ := by
-  apply Representation.Equiv.toLinearEquiv_injective
-  change
-    (tensorInducedChangeTransversalLinearEquiv U s t ρ).symm =
-      tensorInducedChangeTransversalLinearEquiv U t s ρ
-  exact tensorInducedChangeTransversalLinearEquiv_symm U s t ρ
+  ext z
+  rw [← Representation.Equiv.coe_symm, tensorInducedChangeTransversal_toLinearEquiv,
+    tensorInducedChangeTransversalLinearEquiv_symm, tensorInducedChangeTransversal_apply]
 
 variable {N : Type*} [AddCommMonoid N] [Module R N]
   {τ : Representation R U N}
@@ -195,28 +191,21 @@ theorem tensorInducedChangeTransversal_naturality
   apply Representation.IntertwiningMap.ext
   apply LinearMap.ext
   intro z
-  change
-    f.tensorInduced s (tensorInducedChangeTransversal U s t ρ z) =
-      tensorInducedChangeTransversal U s t τ (f.tensorInduced t z)
-  rw [tensorInducedChangeTransversal_apply,
-    tensorInducedChangeTransversalLinearEquiv_apply,
-    tensorInducedChangeTransversal_apply,
-    tensorInducedChangeTransversalLinearEquiv_apply]
-  change
-    (f.tensorInduced s).toLinearMap
-        (ρ.wreathTensor (G ⧸ U) (monomialChangeTransversal U s t) z) =
-      τ.wreathTensor (G ⧸ U) (monomialChangeTransversal U s t)
-        ((f.tensorInduced t).toLinearMap z)
-  rw [Representation.IntertwiningMap.tensorInduced_toLinearMap,
-    Representation.IntertwiningMap.tensorInduced_toLinearMap]
-  have h := Representation.IntertwiningMap.isIntertwining
+  rw [Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.comp_apply, Representation.IntertwiningMap.comp_apply,
+    Representation.Equiv.coe_toIntertwiningMap, Representation.Equiv.coe_toIntertwiningMap,
+    tensorInducedChangeTransversal_apply, tensorInducedChangeTransversalLinearEquiv_apply,
+    tensorInducedChangeTransversal_apply, tensorInducedChangeTransversalLinearEquiv_apply,
+    ← Representation.IntertwiningMap.toLinearMap_apply,
+    ← Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.tensorInduced_toLinearMap,
+    Representation.IntertwiningMap.tensorInduced_toLinearMap,
+    ← Representation.IntertwiningMap.wreathTensor_toLinearMap,
+    Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.toLinearMap_apply]
+  exact Representation.IntertwiningMap.isIntertwining
     (ρ.wreathTensor (G ⧸ U)) (τ.wreathTensor (G ⧸ U))
     (f.wreathTensor (G ⧸ U)) (monomialChangeTransversal U s t) z
-  change
-    (f.wreathTensor (G ⧸ U)).toLinearMap
-        (ρ.wreathTensor (G ⧸ U) (monomialChangeTransversal U s t) z) =
-      τ.wreathTensor (G ⧸ U) (monomialChangeTransversal U s t)
-        ((f.wreathTensor (G ⧸ U)).toLinearMap z) at h
-  simpa only [Representation.IntertwiningMap.wreathTensor_toLinearMap] using h
 
 end Subgroup
