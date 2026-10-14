@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.PlaneSeparation.Basic
 public import TauCeti.Analysis.Normed.Module.FilledHull
+public import TauCeti.Topology.JordanCurve.Separation
 public import TauCeti.Topology.JordanCurve.SmallArc
 public import TauCeti.Topology.JordanCurve.Subcontinuum
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -15,7 +16,7 @@ import TauCeti.Analysis.Complex.ContinuousLog.Path
 import TauCeti.Topology.ConnectedComponents
 
 /-!
-# Arcs do not separate the plane, and a Jordan curve bounds each of its complementary components
+# Arcs do not separate the plane, and a Jordan curve does, bounding each complementary component
 
 Borsuk's criterion `TauCeti.mem_connectedComponentIn_of_hasContinuousLogOn` turns the continuous
 logarithm of the Borsuk map on a simple arc
@@ -29,12 +30,15 @@ complement**, as soon as the complement has two components at all: given a point
 points `x`, `y` in different components of `Cᶜ` lie in one component `D` of `Sᶜ`, so `D` must meet
 `C \ S ⊆ ball q r`; walking inside `D` from the component `E` of `Cᶜ` containing `x`, one meets
 the frontier of `E` in `C \ S`. Hence `E` comes within `r` of `q`. Thus the frontier of every
-complementary component is the whole curve. This is the half of the Jordan curve theorem that
-needs no construction of an inside. Together with the empty interior of a Jordan curve
-(`TauCeti.IsJordanCurve.interior_eq_empty`) it shows that an open set contained in the filled hull
-of a Jordan curve does not meet the curve: such a set, if it met the curve, would contain a point
-off the curve in a bounded component, so the curve would separate the plane and the open set would
-also meet the unbounded component.
+complementary component is the whole curve.
+
+That the complement has two components at all is the **Jordan separation theorem**: two points
+`p ≠ q` cut the curve into two closed arcs meeting exactly in `{p, q}`, a disconnected set, so by
+Janiszewski's second theorem `TauCeti.not_isPreconnected_compl_union_of_not_isPreconnected_inter`
+their union separates the plane. In particular the curve has an inside, a nonempty bounded
+complementary component. It also follows that an open set contained in the filled hull of a
+Jordan curve does not meet the curve: every point of the curve is adherent to the unbounded
+complementary component, which such an open set misses.
 
 ## Main results
 
@@ -42,10 +46,13 @@ also meet the unbounded component.
   is connected.
 * `TauCeti.IsJordanCurve.isConnected_compl_of_ne` — the complement of a proper subcontinuum of a
   Jordan curve in the plane is connected.
-* `TauCeti.IsJordanCurve.subset_closure_connectedComponentIn` — if a Jordan curve separates two
-  points, it lies in the closure of each of their complementary components.
-* `TauCeti.IsJordanCurve.frontier_connectedComponentIn` — the frontier of such a component is the
-  whole curve.
+* `TauCeti.IsJordanCurve.not_isPreconnected_compl` — **the Jordan separation theorem**: a Jordan
+  curve separates the plane.
+* `TauCeti.IsJordanCurve.nonempty_filledHull_sdiff` — a Jordan curve has a nonempty inside.
+* `TauCeti.IsJordanCurve.subset_closure_connectedComponentIn` — a Jordan curve lies in the closure
+  of each of its complementary components.
+* `TauCeti.IsJordanCurve.frontier_connectedComponentIn` — the frontier of each complementary
+  component is the whole curve.
 * `TauCeti.IsJordanCurve.disjoint_of_isOpen_of_subset_filledHull` — an open set contained in the
   filled hull of a Jordan curve misses the curve.
 
@@ -87,12 +94,51 @@ theorem IsJordanCurve.isConnected_compl_of_ne {C S : Set ℂ} (h : IsJordanCurve
     exact Cardinal.one_lt_two
   · exact γ.isConnected_compl_range_of_injective hγ
 
-/-- **A Jordan curve lies in the closure of each of its complementary components.** If the Jordan
-curve `C ⊆ ℂ` separates `x` from `y`, then every point of `C` is adherent to the component of `Cᶜ`
-containing `x`. -/
+/-- **The Jordan separation theorem.** The complement of a Jordan curve in the plane is not
+preconnected. -/
+theorem IsJordanCurve.not_isPreconnected_compl {C : Set ℂ} (h : IsJordanCurve C) :
+    ¬ IsPreconnected Cᶜ := by
+  obtain ⟨p, hp, q, hq, hpq⟩ := not_subsingleton_iff.mp h.not_subsingleton
+  obtain ⟨A, B, hA, hB, hAc, hBc, hAB, hApB⟩ :=
+    h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq hpq
+  rw [← hAB]
+  refine not_isPreconnected_compl_union_of_not_isPreconnected_inter hA.isClosed hB.isClosed
+    hAc.isPreconnected hBc.isPreconnected (hApB ▸ (toFinite _).isBounded) ?_
+  rw [hApB, isPreconnected_iff_subset_of_disjoint_closed]
+  intro hpre
+  rcases hpre {p} {q} isClosed_singleton isClosed_singleton (by simp [pair_comm])
+    (by simp [hpq.symm]) with hsub | hsub
+  · exact hpq (hsub (mem_insert_of_mem p rfl)).symm
+  · exact hpq (hsub (mem_insert p {q}))
+
+/-- Every component of the complement of a Jordan curve misses some point of the complement. -/
+private theorem IsJordanCurve.exists_notMem_connectedComponentIn {C : Set ℂ} (h : IsJordanCurve C)
+    (x : ℂ) : ∃ y ∉ C, y ∉ connectedComponentIn Cᶜ x := by
+  by_contra! hcon
+  have hE : connectedComponentIn Cᶜ x = Cᶜ :=
+    (connectedComponentIn_subset _ _).antisymm fun y hy => hcon y hy
+  exact h.not_isPreconnected_compl (hE ▸ isPreconnected_connectedComponentIn)
+
+/-- **A Jordan curve has an inside.** The filled hull of a Jordan curve `C ⊆ ℂ` minus `C` — the
+union of the bounded components of the complement of `C` — is nonempty. -/
+theorem IsJordanCurve.nonempty_filledHull_sdiff {C : Set ℂ} (h : IsJordanCurve C) :
+    (filledHull C \ C).Nonempty := by
+  obtain ⟨x, hx⟩ : Cᶜ.Nonempty := nonempty_iff_ne_empty.mpr fun hC =>
+    h.not_isPreconnected_compl (hC ▸ isPreconnected_empty)
+  obtain ⟨y, hy, hxy⟩ := h.exists_notMem_connectedComponentIn x
+  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
+    rw [Complex.rank_real_complex]
+    exact Cardinal.one_lt_two
+  rcases mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn hrank
+    h.isCompact.isBounded hxy with hxH | hyH
+  · exact ⟨x, hxH, hx⟩
+  · exact ⟨y, hyH, hy⟩
+
+/-- **A Jordan curve lies in the closure of each of its complementary components.** Every point of
+a Jordan curve `C ⊆ ℂ` is adherent to the component of `Cᶜ` containing any given `x ∉ C`. -/
 theorem IsJordanCurve.subset_closure_connectedComponentIn {C : Set ℂ} (h : IsJordanCurve C)
-    {x y : ℂ} (hx : x ∉ C) (hy : y ∉ C) (hxy : y ∉ connectedComponentIn Cᶜ x) :
-    C ⊆ closure (connectedComponentIn Cᶜ x) := by
+    {x : ℂ} (hx : x ∉ C) : C ⊆ closure (connectedComponentIn Cᶜ x) := by
+  obtain ⟨y, hy, hxy⟩ := h.exists_notMem_connectedComponentIn x
   intro q hq
   rw [Metric.mem_closure_iff]
   intro r hr
@@ -124,16 +170,14 @@ theorem IsJordanCurve.subset_closure_connectedComponentIn {C : Set ℂ} (h : IsJ
   obtain ⟨u, huq, huE⟩ := _root_.mem_closure_iff.mp hwE _ isOpen_ball hwq
   exact ⟨u, huE, by rw [dist_comm]; exact huq⟩
 
-/-- **The frontier of a complementary component of a Jordan curve is the whole curve**, provided
-the curve separates the plane: if `C` separates `x` from `y`, the component of `Cᶜ` containing
-`x` has frontier `C`. -/
-theorem IsJordanCurve.frontier_connectedComponentIn {C : Set ℂ} (h : IsJordanCurve C) {x y : ℂ}
-    (hx : x ∉ C) (hy : y ∉ C) (hxy : y ∉ connectedComponentIn Cᶜ x) :
-    frontier (connectedComponentIn Cᶜ x) = C := by
+/-- **The frontier of a complementary component of a Jordan curve is the whole curve**: for
+`x ∉ C`, the component of `Cᶜ` containing `x` has frontier `C`. -/
+theorem IsJordanCurve.frontier_connectedComponentIn {C : Set ℂ} (h : IsJordanCurve C) {x : ℂ}
+    (hx : x ∉ C) : frontier (connectedComponentIn Cᶜ x) = C := by
   have hEo : IsOpen (connectedComponentIn Cᶜ x) :=
     h.isClosed.isOpen_compl.connectedComponentIn
   refine subset_antisymm (fun w hw => ?_) fun q hq =>
-    ⟨h.subset_closure_connectedComponentIn hx hy hxy hq, ?_⟩
+    ⟨h.subset_closure_connectedComponentIn hx hq, ?_⟩
   · simpa using frontier_connectedComponentIn_subset_compl h.isClosed.isOpen_compl x hw
   · rw [hEo.interior_eq]
     exact fun hqE => connectedComponentIn_subset _ _ hqE hq
@@ -143,26 +187,14 @@ contained in `filledHull C` for a Jordan curve `C ⊆ ℂ`, then `U` does not me
 theorem IsJordanCurve.disjoint_of_isOpen_of_subset_filledHull {C U : Set ℂ} (h : IsJordanCurve C)
     (hU : IsOpen U) (hUC : U ⊆ filledHull C) : Disjoint U C := by
   refine disjoint_left.mpr fun z hzU hzC => ?_
-  -- `C` has empty interior, so `U` has a point `w` off `C`, in a bounded component
-  obtain ⟨w, hwU, hwC⟩ : ∃ w ∈ U, w ∉ C := by
-    by_contra! hcon
-    have hrank : 1 < Module.rank ℝ ℂ := by
-      rw [Complex.rank_real_complex]
-      exact Cardinal.one_lt_two
-    have := interior_maximal hcon hU
-    rw [h.interior_eq_empty hrank] at this
-    exact this hzU
-  -- a point outside the bounded filled hull lies in an unbounded component, other than `w`'s
+  -- a point outside the bounded filled hull lies in an unbounded component
   obtain ⟨x, hx⟩ : ∃ x, x ∉ filledHull C := by
     by_contra! hcon
     exact NormedSpace.unbounded_univ ℝ ℂ
       ((isBounded_filledHull.mpr h.isCompact.isBounded).subset fun z _ => hcon z)
-  have hxw : w ∉ connectedComponentIn Cᶜ x := fun hw => hx <| by
-    rw [mem_filledHull_iff, connectedComponentIn_eq hw]
-    exact mem_filledHull_iff.mp (hUC hwU)
-  -- `z ∈ C` is adherent to the unbounded component, which `U` therefore meets
+  -- `z ∈ C` is adherent to that unbounded component, which `U` therefore meets
   obtain ⟨u, huU, hux⟩ := _root_.mem_closure_iff.mp
-    (h.subset_closure_connectedComponentIn (fun hxC => hx (subset_filledHull hxC)) hwC hxw hzC)
+    (h.subset_closure_connectedComponentIn (fun hxC => hx (subset_filledHull hxC)) hzC)
     _ hU hzU
   refine hx ?_
   rw [mem_filledHull_iff, connectedComponentIn_eq hux]
