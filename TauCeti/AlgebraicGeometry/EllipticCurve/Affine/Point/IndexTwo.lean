@@ -64,6 +64,9 @@ The cases `c_v = 1` are `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_
 
 ## Main results
 
+* `WeierstrassCurve.Affine.exists_slope_of_notMem_nonsingularReduction`: when two points and their
+  sum have singular reduction, the slope of the chord through the two points is integral and its
+  residue is a root of the tangent quadratic.
 * `WeierstrassCurve.Affine.add_mem_nonsingularReduction_of_tangentQuadratic_no_roots` and
   `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_tangentQuadratic_no_roots`: when
   the tangent quadratic at the singular point has no root in the residue field, the sum of two
@@ -113,17 +116,21 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 
 variable [DecidableEq F]
 
-/-- If two points and their sum all have singular reduction, at a reduction singular at the
-origin, then the line through the two points has an integral slope `ℓ` whose residue is a root of
-the tangent quadratic `T² + a₁ T − a₂`, and with `ν = y₁ − ℓ x₁ ∈ 𝔪` the coefficient
-`a₄ − a₃ ℓ − (2 ℓ + a₁) ν` of the Weierstrass cubic restricted to the line lies in `𝔪²`. -/
-private theorem exists_slope_of_notMem_nonsingularReduction
+/-- **The chord through two points with singular reduction whose sum has singular reduction.** At
+a reduction singular at the origin, the slope `ℓ = W.slope x₁ x₂ y₁ y₂` of the line through the two
+points `(x₁, y₁)` and `(x₂, y₂)` is integral and its residue is a root of the tangent quadratic
+`T² + a₁ T − a₂`, and with `ν = y₁ − ℓ x₁ ∈ 𝔪` the coefficient `a₄ − a₃ ℓ − (2 ℓ + a₁) ν` of the
+Weierstrass cubic restricted to the line lies in `𝔪²`. -/
+theorem exists_slope_of_notMem_nonsingularReduction
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
     (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
-    {P Q : W.Point} (hP : P ∉ W.nonsingularReduction v) (hQ : Q ∉ W.nonsingularReduction v)
-    (hPQ : P + Q ∉ W.nonsingularReduction v) :
-    ∃ ℓ ν : v.valuationSubring, ν ∈ maximalIdeal v.valuationSubring ∧
+    {x₁ y₁ x₂ y₂ : F} {h₁ : W.Nonsingular x₁ y₁} {h₂ : W.Nonsingular x₂ y₂}
+    (hP : Point.some _ _ h₁ ∉ W.nonsingularReduction v)
+    (hQ : Point.some _ _ h₂ ∉ W.nonsingularReduction v)
+    (hPQ : Point.some _ _ h₁ + Point.some _ _ h₂ ∉ W.nonsingularReduction v) :
+    ∃ ℓ ν : v.valuationSubring, (ℓ : F) = W.slope x₁ x₂ y₁ y₂ ∧
+      ν ∈ maximalIdeal v.valuationSubring ∧
       ℓ ^ 2 + (integralModel v.valuationSubring W).a₁ * ℓ -
         (integralModel v.valuationSubring W).a₂ ∈ maximalIdeal v.valuationSubring ∧
       (integralModel v.valuationSubring W).a₄ - (integralModel v.valuationSubring W).a₃ * ℓ -
@@ -131,10 +138,6 @@ private theorem exists_slope_of_notMem_nonsingularReduction
           maximalIdeal v.valuationSubring ^ 2 := by
   set O := v.valuationSubring
   set Wo := integralModel O W
-  rcases P with _ | ⟨x₁, y₁, h₁⟩
-  · exact absurd (zero_mem _) hP
-  rcases Q with _ | ⟨x₂, y₂, h₂⟩
-  · exact absurd (zero_mem _) hQ
   obtain ⟨hx₁, hy₁⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ h₁).1 hP
   obtain ⟨hx₂, -⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ h₂).1 hQ
   have hxy : ¬(x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := by
@@ -171,7 +174,7 @@ private theorem exists_slope_of_notMem_nonsingularReduction
     have key := W.addPolynomial_slope h₁.left h₂.left hxy
     rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
     exact congrArg Cubic.c ((Cubic.toPoly_injective _ _).1 key)
-  refine ⟨L, Y₁ - L * X₁, sub_mem hY₁ ((maximalIdeal O).mul_mem_left _ hX₁), ?_, ?_⟩
+  refine ⟨L, Y₁ - L * X₁, rfl, sub_mem hY₁ ((maximalIdeal O).mul_mem_left _ hX₁), ?_, ?_⟩
   · have hs : L ^ 2 + Wo.a₁ * L - Wo.a₂ = X₁ + X₂ + X₃ := by
       apply Subtype.ext
       push_cast
@@ -210,8 +213,12 @@ theorem add_mem_nonsingularReduction_of_tangentQuadratic_no_roots
         residue _ (integralModel v.valuationSubring W).a₂ ≠ 0)
     {P Q : W.Point} (hP : P ∉ W.nonsingularReduction v) (hQ : Q ∉ W.nonsingularReduction v) :
     P + Q ∈ W.nonsingularReduction v := by
+  rcases P with _ | ⟨x₁, y₁, h₁⟩
+  · exact absurd (zero_mem _) hP
+  rcases Q with _ | ⟨x₂, y₂, h₂⟩
+  · exact absurd (zero_mem _) hQ
   by_contra hPQ
-  obtain ⟨ℓ, _, -, hℓ, -⟩ := exists_slope_of_notMem_nonsingularReduction v h₃ h₄ h₆ hP hQ hPQ
+  obtain ⟨ℓ, _, -, -, hℓ, -⟩ := exists_slope_of_notMem_nonsingularReduction v h₃ h₄ h₆ hP hQ hPQ
   exact hroot (residue _ ℓ) (by simpa using (residue_eq_zero_iff _).2 hℓ)
 
 /-- **When the tangent quadratic has no root, `[E(F) : E₀(F)]` divides `2`.** Here the reduction of
@@ -278,8 +285,12 @@ theorem add_mem_nonsingularReduction_of_isTateTerminal_III {ϖ : v.valuationSubr
     rw [hϖ, Ideal.mem_span_singleton]
   have key₂ (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ^ 2 ↔ ϖ ^ 2 ∣ z := by
     rw [hϖ, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
+  rcases P with _ | ⟨x₁, y₁, h₁⟩
+  · exact absurd (zero_mem _) hP
+  rcases Q with _ | ⟨x₂, y₂, h₂⟩
+  · exact absurd (zero_mem _) hQ
   by_contra hPQ
-  obtain ⟨ℓ, ν, hν, hℓ, hc⟩ := exists_slope_of_notMem_nonsingularReduction v ((key _).2 h₃)
+  obtain ⟨ℓ, ν, -, hν, hℓ, hc⟩ := exists_slope_of_notMem_nonsingularReduction v ((key _).2 h₃)
     ((key _).2 h₄) ((key _).2 ((dvd_pow_self ϖ two_ne_zero).trans h₆)) hP hQ hPQ
   -- the residue of `ℓ` is the double root of the tangent quadratic, whose discriminant is `b₂`
   have h2 : ϖ ∣ 2 * ℓ + Wo.a₁ := by
