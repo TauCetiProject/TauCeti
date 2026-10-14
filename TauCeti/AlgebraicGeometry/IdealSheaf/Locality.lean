@@ -17,6 +17,9 @@ Vanishing of the sections of an ideal sheaf under a morphism also passes to smal
 (`AlgebraicGeometry.Scheme.IdealSheafData.ideal_le_ker_appLE_of_le`), so it can be checked
 locally on an affine basis.
 
+An ideal sheaf is also determined by the morphisms factoring through its closed subscheme
+(`AlgebraicGeometry.Scheme.IdealSheafData.ext_of_le_ker_iff`).
+
 -/
 
 public section
@@ -77,5 +80,12 @@ theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_comap_openCover
     (h : ∀ i, I.comap (𝒰.f i) = J.comap (𝒰.f i)) : I = J := by
   rw [← I.iInf_map_comap_openCover 𝒰, ← J.iInf_map_comap_openCover 𝒰]
   simp only [h]
+
+/-- An ideal sheaf on `X` is determined by the morphisms to `X` that factor through its closed
+subscheme: if the same morphisms `t : T ⟶ X` satisfy `I ≤ t.ker` and `J ≤ t.ker`, then `I = J`. -/
+theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_le_ker_iff {I J : X.IdealSheafData}
+    (h : ∀ {T : Scheme.{u}} (t : T ⟶ X), I ≤ t.ker ↔ J ≤ t.ker) : I = J :=
+  le_antisymm (((h J.subschemeι).2 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
+    (((h I.subschemeι).1 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
 
 end TauCeti

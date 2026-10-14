@@ -47,9 +47,7 @@ condition defining points of exact order `N` and Drinfeld level structures.
   this persists along any base change of the family.
 * `AlgebraicGeometry.Scheme.IdealSheafData.le_ker_pullback_snd_subschemeι_weilRestriction`: over
   the closed subscheme of `I.weilRestriction g`, the base change of `Y` lies in `V(I)`.
-* `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_comap`: compatibility with base change,
-  proved with `AlgebraicGeometry.Scheme.IdealSheafData.ext_of_le_ker_iff`, which says that an
-  ideal sheaf is determined by the morphisms factoring through its closed subscheme.
+* `AlgebraicGeometry.Scheme.IdealSheafData.weilRestriction_comap`: compatibility with base change.
 
 ## References
 
@@ -234,14 +232,6 @@ subscheme `V(I)`: the universal family of the Weil restriction. -/
 theorem le_ker_pullback_snd_subschemeι_weilRestriction (I : Y.IdealSheafData) :
     I ≤ (pullback.snd (I.weilRestriction g).subschemeι g).ker :=
   (weilRestriction_le_ker_iff g I _).1 (ker_subschemeι _).ge
-
-/-- An ideal sheaf on `X` is determined by the morphisms to `X` that factor through its closed
-subscheme: if the same morphisms `t : T ⟶ X` satisfy `I ≤ t.ker` and `J ≤ t.ker`, then `I = J`.
-Apply this to the closed immersions `I.subschemeι` and `J.subschemeι`. -/
-theorem ext_of_le_ker_iff {X : Scheme.{u}} {I J : X.IdealSheafData}
-    (h : ∀ {T : Scheme.{u}} (t : T ⟶ X), I ≤ t.ker ↔ J ≤ t.ker) : I = J :=
-  le_antisymm (((h J.subschemeι).2 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
-    (((h I.subschemeι).1 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
 
 /-- **The Weil restriction of a closed subscheme commutes with base change.** For `t : T ⟶ S`,
 the Weil restriction of the inverse image of `V(I)` in `T ×_S Y` along `T ×_S Y ⟶ T` is the
