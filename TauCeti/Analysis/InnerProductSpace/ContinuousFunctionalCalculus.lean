@@ -22,11 +22,11 @@ This file supplies the instance
 for every Hilbert space `E` over `RCLike 𝕜`, in any dimension, for every real algebra structure on
 `E →L[𝕜] E` compatible with the `𝕜`-action (`IsScalarTower ℝ 𝕜 (E →L[𝕜] E)`), and with it
 Mathlib's star order (`ContinuousLinearMap.instStarOrderedRingRCLike`). Hence `cfc f T` and the
-positive square root `CFC.sqrt T` of a positive operator are available on real Hilbert spaces, as
-is the absolute value `CFC.abs T = √(T† T)` of every bounded operator. Over an abstract `RCLike`
-field, the real algebra structure is `ContinuousLinearMap.realAlgebra`, obtained by restricting
-scalars along `ℝ → 𝕜`; at `𝕜 = ℝ` and `𝕜 = ℂ` it is Mathlib's own, and any two compatible real
-algebra structures coincide by `Algebra.restrictScalars_eq`.
+positive square root `CFC.sqrt T` of a positive operator are available on Hilbert spaces over
+every `RCLike 𝕜`, as is the absolute value `CFC.abs T = √(T† T)` of every bounded operator. Over
+an abstract `RCLike` field, the real algebra structure is `ContinuousLinearMap.realAlgebra`,
+obtained by restricting scalars along `ℝ → 𝕜`; at `𝕜 = ℝ` and `𝕜 = ℂ` it is Mathlib's own, and any
+two compatible real algebra structures coincide by `Algebra.restrictScalars_eq`.
 
 The real calculus is pulled back from the complexification. Complexification
 `T ↦ T_ℂ` (`ContinuousLinearMap.complexifyL2StarAlgHom`) is an isometric unital `⋆`-homomorphism
@@ -39,8 +39,12 @@ complexification preserves the spectrum of a self-adjoint operator
 The calculus over `RCLike 𝕜` is in turn pulled back from the real one along realification. A
 Hilbert space `E` over `𝕜` is a real Hilbert space for the inner product `re ⟪x, y⟫`
 (`InnerProductSpace.rclikeToReal`), and restricting scalars `T ↦ T.restrictScalars ℝ` is an
-isometric unital `⋆`-homomorphism from `E →L[𝕜] E` into the real operators on `E`: the adjoint
-for `re ⟪·, ·⟫` of the restriction of `T` is the restriction of `T†`.
+isometric unital `⋆`-homomorphism from `E →L[𝕜] E` into the real operators on `E`
+(`ContinuousLinearMap.restrictScalarsStarAlgHom`): the adjoint for `re ⟪·, ·⟫` of the restriction
+of `T` is the restriction of `T†` (`ContinuousLinearMap.adjoint_restrictScalars`). Consequently
+realification preserves the spectrum of a self-adjoint operator
+(`ContinuousLinearMap.spectrum_restrictScalars`) and intertwines the two calculi
+(`ContinuousLinearMap.restrictScalars_cfc`).
 
 ## Main declarations
 
@@ -54,6 +58,12 @@ for `re ⟪·, ·⟫` of the restriction of `T` is the restriction of `T†`.
   self-adjoint operator.
 * `ContinuousLinearMap.complexifyL2_cfc`: complexification commutes with the continuous
   functional calculus.
+* `ContinuousLinearMap.restrictScalarsStarAlgHom`: realification of the bounded operators on a
+  Hilbert space over `RCLike 𝕜`, as a `⋆`-algebra homomorphism over `ℝ`.
+* `ContinuousLinearMap.spectrum_restrictScalars`: realification preserves the spectrum of a
+  self-adjoint operator.
+* `ContinuousLinearMap.restrictScalars_cfc`: realification commutes with the continuous functional
+  calculus.
 
 ## Acknowledgements
 
@@ -103,32 +113,105 @@ theorem complexifyL2_cfc (f : ℝ → ℝ) (T : X →L[ℝ] X)
 section RCLike
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-  [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+
+-- The declarations below are stated for the real Hilbert space underlying `E`, with inner product
+-- `re ⟪x, y⟫` (`InnerProductSpace.rclikeToReal`). It cannot be a local instance, since `𝕜` does
+-- not appear in `InnerProductSpace ℝ E`.
+
+/-- For the real inner product `re ⟪x, y⟫`, the adjoint of the realification of a bounded
+operator is the realification of its adjoint. -/
+theorem adjoint_restrictScalars (T : E →L[𝕜] E) :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    adjoint (T.restrictScalars ℝ) = (adjoint T).restrictScalars ℝ := by
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  refine ((eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
+  simp only [real_inner_eq_re_inner 𝕜, coe_restrictScalars', adjoint_inner_left]
+
+variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+
+variable (𝕜 E) in
+/-- Realification `T ↦ T.restrictScalars ℝ` of the bounded operators on a Hilbert space over
+`RCLike 𝕜`, as a `⋆`-algebra homomorphism over `ℝ` into the bounded operators on the underlying
+real Hilbert space, for any real algebra structure compatible with the `𝕜`-action. -/
+noncomputable def restrictScalarsStarAlgHom :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    (E →L[𝕜] E) →⋆ₐ[ℝ] (E →L[ℝ] E) :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  { toFun := restrictScalars ℝ
+    map_one' := rfl
+    map_mul' _ _ := rfl
+    map_zero' := rfl
+    map_add' _ _ := rfl
+    commutes' r := by
+      ext x
+      simp [IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E), Algebra.algebraMap_eq_smul_one]
+    map_star' T := (adjoint_restrictScalars T).symm }
+
+@[simp]
+theorem restrictScalarsStarAlgHom_apply (T : E →L[𝕜] E) :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    restrictScalarsStarAlgHom 𝕜 E T = T.restrictScalars ℝ := (rfl)
+
+variable (𝕜 E) in
+/-- Realification of the bounded operators on a Hilbert space over `RCLike 𝕜` is an isometry. -/
+theorem isometry_restrictScalarsStarAlgHom :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    Isometry (restrictScalarsStarAlgHom 𝕜 E) :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  (restrictScalarsIsometry 𝕜 E E ℝ ℝ).isometry
+
+variable (𝕜 E) in
+/-- Realification of the bounded operators on a Hilbert space over `RCLike 𝕜` is a closed
+embedding. -/
+theorem isClosedEmbedding_restrictScalarsStarAlgHom :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    Topology.IsClosedEmbedding (restrictScalarsStarAlgHom 𝕜 E) :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  (isometry_restrictScalarsStarAlgHom 𝕜 E).isClosedEmbedding
+
+/-- A bounded operator on a Hilbert space over `RCLike 𝕜` is self-adjoint exactly when its
+realification is, for the real inner product `re ⟪x, y⟫`. -/
+theorem isSelfAdjoint_restrictScalars_iff {T : E →L[𝕜] E} :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    IsSelfAdjoint (T.restrictScalars ℝ) ↔ IsSelfAdjoint T := by
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  simpa using (isometry_restrictScalarsStarAlgHom 𝕜 E).injective.isSelfAdjoint_apply_iff
+    (restrictScalarsStarAlgHom 𝕜 E) (x := T)
 
 /-- **The continuous functional calculus for bounded self-adjoint operators on a Hilbert space
 over `RCLike 𝕜`**, for any real algebra structure on the operators compatible with the `𝕜`-action,
 pulled back from the real calculus along realification. -/
 instance instContinuousFunctionalCalculusRCLikeIsSelfAdjoint :
-    ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint := by
-  -- The real Hilbert space underlying `E`, with inner product `re ⟪x, y⟫`.
-  let _ : InnerProductSpace ℝ E := InnerProductSpace.rclikeToReal 𝕜 E
-  have hstar (T : E →L[𝕜] E) : (star T).restrictScalars ℝ = star (T.restrictScalars ℝ) := by
-    refine (eq_adjoint_iff _ _).2 fun x y ↦ ?_
-    simp only [real_inner_eq_re_inner 𝕜, coe_restrictScalars', star_eq_adjoint, adjoint_inner_left]
-  let φ : (E →L[𝕜] E) →⋆ₐ[ℝ] (E →L[ℝ] E) :=
-    { toFun := restrictScalars ℝ
-      map_one' := rfl
-      map_mul' _ _ := rfl
-      map_zero' := rfl
-      map_add' _ _ := rfl
-      commutes' r := by
-        ext x
-        simp [IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E), Algebra.algebraMap_eq_smul_one]
-      map_star' := hstar }
-  have hφ : Isometry φ := (restrictScalarsIsometry 𝕜 E E ℝ ℝ).isometry
-  refine φ.continuousFunctionalCalculus_of_isClosedEmbedding hφ.isClosedEmbedding fun T ↦ ?_
-  simp only [IsSelfAdjoint, ← map_star φ]
-  exact hφ.injective.eq_iff.symm
+    ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  (restrictScalarsStarAlgHom 𝕜 E).continuousFunctionalCalculus_of_isClosedEmbedding
+    (isClosedEmbedding_restrictScalarsStarAlgHom 𝕜 E) fun _ ↦
+      isSelfAdjoint_restrictScalars_iff.symm
+
+/-- Realification preserves the spectrum of a self-adjoint operator on a Hilbert space over
+`RCLike 𝕜`. -/
+theorem spectrum_restrictScalars {T : E →L[𝕜] E} (hT : IsSelfAdjoint T) :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    spectrum ℝ (T.restrictScalars ℝ) = spectrum ℝ T := by
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  simpa using (restrictScalarsStarAlgHom 𝕜 E).spectrum_apply_eq_of_isClosedEmbedding
+    (isClosedEmbedding_restrictScalarsStarAlgHom 𝕜 E) (q := IsSelfAdjoint)
+    (isSelfAdjoint_restrictScalars_iff.2 hT)
+
+/-- Realification commutes with the continuous functional calculus: for a self-adjoint operator
+`T` on a Hilbert space over `RCLike 𝕜` and `f` continuous on its spectrum,
+`(f(T)).restrictScalars ℝ = f(T.restrictScalars ℝ)`. -/
+theorem restrictScalars_cfc (f : ℝ → ℝ) (T : E →L[𝕜] E)
+    (hf : ContinuousOn f (spectrum ℝ T) := by cfc_cont_tac) (hT : IsSelfAdjoint T := by cfc_tac) :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    (cfc f T).restrictScalars ℝ = cfc f (T.restrictScalars ℝ) := by
+  -- Synthesized before the real inner product is introduced, since `NormedSpace ℝ E` then gives
+  -- a second action of `ℝ` on `E →L[𝕜] E`, and instance search would pick that one instead.
+  have : IsScalarTower ℝ ℝ (E →L[𝕜] E) := inferInstance
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  simpa using (restrictScalarsStarAlgHom 𝕜 E).map_cfc f T hf
+    (isClosedEmbedding_restrictScalarsStarAlgHom 𝕜 E).continuous hT
+    (isSelfAdjoint_restrictScalars_iff.2 hT)
 
 -- The bounded operators on a Hilbert space over `RCLike 𝕜` form a star-ordered ring for the
 -- Loewner order: the positive operators are exactly the sums of operators `S† S`. Mathlib proves
