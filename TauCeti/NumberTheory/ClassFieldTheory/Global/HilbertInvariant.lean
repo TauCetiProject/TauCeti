@@ -144,6 +144,25 @@ def infiniteHilbertInvariantAt (w : InfinitePlace K) (a b : Kˣ) : ZMod 2 :=
           (Units.map (algebraMap K w.Completion : K →* w.Completion) b)))
     else 0
 
+/-- At a real place `w`, the infinite Hilbert invariant of `a` and `b` is the invariant, in
+`Br ℝ ≃ ZMod 2`, of the Kummer-cup Brauer class of their images in `K_w`, carried to `ℝ` along the
+isomorphism `K_w ≃ ℝ`. -/
+theorem infiniteHilbertInvariantAt_of_isReal {w : InfinitePlace K} (hw : w.IsReal) (a b : Kˣ) :
+    infiniteHilbertInvariantAt K w a b =
+      realInvEquiv (brCongr (NumberField.InfinitePlace.Completion.ringEquivRealOfIsReal hw)
+        (kummerBrauerClass (algebraMap K w.Completion (-1))
+          ((.neg_one 0 (by decide) : IsPrimitiveRoot (-1 : K) 2).map_of_injective
+            (algebraMap K w.Completion).injective)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) a)
+          (Units.map (algebraMap K w.Completion : K →* w.Completion) b))) := by
+  rw [infiniteHilbertInvariantAt, dite_eq_left hw]
+
+/-- The infinite Hilbert invariant vanishes at a complex place. -/
+theorem infiniteHilbertInvariantAt_eq_zero_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
+    (a b : Kˣ) : infiniteHilbertInvariantAt K w a b = 0 := by
+  rw [infiniteHilbertInvariantAt,
+    dite_eq_right (NumberField.InfinitePlace.not_isReal_iff_isComplex.mpr hw)]
+
 /-- **The infinite Hilbert invariant is the invariant of the global Kummer-cup Brauer class**:
 localizing `kummerBrauerClass (-1) hζ a b` at `w` and applying `infiniteInvMap` gives the
 `ℚ/ℤ`-image of `infiniteHilbertInvariantAt`. -/

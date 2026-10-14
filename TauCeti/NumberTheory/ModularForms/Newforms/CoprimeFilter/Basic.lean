@@ -70,7 +70,7 @@ along an equality of levels: the caller substitutes the equation once, at a conc
 
 The `h`-form adds no peeling of its own. Under the filter's own hypothesis on `L` it is just the
 subtraction, performed where the filter already lives, so only `f` is moved, along
-`CuspForm.ofLe`, and the level is unchanged at `∏ L.primeFactors * N`; that is the general
+`CuspForm.restrict`, and the level is unchanged at `∏ L.primeFactors * N`; that is the general
 statement. The arbitrary-`L` form is its instance after one more raise: the filter needs the
 primes of `L` to divide the level it works over, which for an arbitrary `L` they need not, and
 reading `f` at `∏ L.primeFactors * N` first is what supplies that — `∏ L.primeFactors` has
@@ -81,7 +81,7 @@ needed, and when all of them already divide `N` no raise is required at all — 
 filter's own hypothesis.
 Neither statement is made at a level fixed in advance, so no equation of levels is transported.
 Since `∏ L.primeFactors ∣ L`, that level divides `N * L ^ 2`, with equality exactly when `L` is
-squarefree; reading the `h`-form at the classical `N * L ^ 2` is a `CuspForm.ofLe` along that
+squarefree; reading the `h`-form at the classical `N * L ^ 2` is a `CuspForm.restrict` along that
 divisibility, which is the transport the rest of the file uses anyway.
 
 ## Provenance
@@ -96,7 +96,7 @@ through the recursion only to feed itself disappears once the conclusion is stat
 divide `N`, and the `h`-form for an arbitrary nonzero `L`, the source stating only squarefree
 forms at this stage (its `_general` variant generalizes the target level, not `L`). The `h`-form
 in particular is not built by a second recursion: in its general form it is one subtraction at
-the filter's own level, and each wider-`L` form adds a single `CuspForm.ofLe` on top of it.
+the filter's own level, and each wider-`L` form adds a single `CuspForm.restrict` on top of it.
 
 `exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd` and its squarefree specialization state
 AINTLIB's `miyake_g_p_supported`, which lives in
@@ -117,12 +117,12 @@ primes of `L`, carried at a level fixed in advance — the `miyake_4_6_5_single_
 / `miyake_4_6_5_iterated_helper_general` / `miyake_4_6_5_iterated_L_general` chain, with its
 `dvd_conditions_*` side conditions and its `Eq.ndrec` cast along `p * (p * N) = N * p ^ 2`.
 Here there is no second recursion: the `h`-form applies the filter already proved above and
-subtracts at the level that filter lands on, moving only `f` along `CuspForm.ofLe`, so the whole
+subtracts at the level that filter lands on, moving only `f` along `CuspForm.restrict`, so the whole
 prescribed-level apparatus of the source disappears. The source's target level `N * L ^ 2`
 survives as a statement in its own right, but not as a squarefree one: it is
 `exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq`, the arbitrary-`L`
 `h`-form read along `∏ L.primeFactors * (∏ L.primeFactors * N) ∣ N * L ^ 2` by a single
-`CuspForm.ofLe`, where the source casts with `Eq.ndrec`. Squarefreeness is not a hypothesis
+`CuspForm.restrict`, where the source casts with `Eq.ndrec`. Squarefreeness is not a hypothesis
 anywhere in the `h`-form chain; it is only the case in which that divisibility happens to be
 an equality. The final `q`-expansion computation uses
 `ModularForm.qExpansion_sub` directly in place of the source's `sub_eq_add_neg` rewriting
@@ -153,16 +153,16 @@ variable {N : ℕ} [NeZero N] {k : ℤ}
 `T_p f` reproduces exactly the coefficients of `f` at the indices divisible by `p`, so the
 difference is `f` with those indices deleted. Primality of `p` is not needed: what makes
 `T_p` act by `aₘ(T_p f) = a_{p m}(f)` is that `p`'s prime factors already divide `N`. -/
-private theorem qExpansion_coeff_ofLe_sub_levelRaise_heckeTCuspNat {p : ℕ} [NeZero p]
+private theorem qExpansion_coeff_restrict_sub_levelRaise_heckeTCuspNat {p : ℕ} [NeZero p]
     (hpN : p.primeFactors ⊆ N.primeFactors) (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
-    (qExpansion 1 (CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
+    (qExpansion 1 (CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
           CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p)
             (heckeTCuspNat (N := N) k p f))).coeff n =
       if p ∣ n then 0 else (qExpansion 1 f).coeff n := by
   rw [_root_.ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub,
     CuspForm.qExpansion_levelRaise_coeff_Gamma1 N _ n,
     qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k p hpN f (n / p),
-    CuspForm.coe_ofLe]
+    CuspForm.coe_restrict]
   by_cases hpn : p ∣ n <;> simp [hpn, Nat.mul_div_cancel']
 
 /-- **Composing a coprimality filter with a prime one.** Deleting the indices divisible by a
@@ -191,12 +191,12 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd (χ : (
     ∃ g : CuspForm ((Gamma1 (p * N)).map (mapGL ℝ)) k,
       g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N p))) ∧
       ∀ n, (qExpansion 1 g).coeff n = if p ∣ n then 0 else (qExpansion 1 f).coeff n :=
-  ⟨CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
+  ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
       CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p) (heckeTCuspNat (N := N) k p f),
-    Submodule.sub_mem _ (CuspForm.ofLe_mem_cuspFormCharSpace χ _ hf)
+    Submodule.sub_mem _ (CuspForm.restrict_mem_cuspFormCharSpace χ _ hf)
       (CuspForm.levelRaise_mem_cuspFormCharSpace N p χ
         (heckeTCuspNat_mem_cuspFormCharSpace_of_primeFactors_subset k χ p hpN hf)),
-    qExpansion_coeff_ofLe_sub_levelRaise_heckeTCuspNat hpN f⟩
+    qExpansion_coeff_restrict_sub_levelRaise_heckeTCuspNat hpN f⟩
 
 /-- The iterated filter, by induction on the number of primes still to be peeled off. The level
 it lands at is existentially quantified together with the equation naming it, so that no step of
@@ -301,10 +301,10 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero
       ∀ n, (qExpansion 1 h).coeff n = if Nat.Coprime n L then 0 else (qExpansion 1 f).coeff n := by
   have hNM : N ∣ L.primeFactors.prod id * N := Nat.dvd_mul_left N (L.primeFactors.prod id)
   obtain ⟨g, hg, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
-  refine ⟨CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd hNM) f - g,
-    Submodule.sub_mem _ (CuspForm.ofLe_mem_cuspFormCharSpace χ hNM hf) hg, fun n ↦ ?_⟩
+  refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hNM) f - g,
+    Submodule.sub_mem _ (CuspForm.restrict_mem_cuspFormCharSpace χ hNM hf) hg, fun n ↦ ?_⟩
   rw [FunLike.coe_sub, _root_.ModularForm.qExpansion_sub one_pos
-    (one_mem_strictPeriods_Gamma1_map _), map_sub, CuspForm.coe_ofLe, hgq n]
+    (one_mem_strictPeriods_Gamma1_map _), map_sub, CuspForm.coe_restrict, hgq n]
   split_ifs <;> simp
 
 /-- **Miyake's `h`-form.** For `f ∈ S_k(Γ₁(N), χ)` and any nonzero `L`, there is a cusp form
@@ -336,10 +336,10 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_prod_p
     (Nat.prod_primeFactors_dvd_iff hne).mp (by simp)
   obtain ⟨h, hh, hhq⟩ :=
     exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero
-      (χ.comp (ZMod.unitsMap hNM)) (CuspForm.ofLe_mem_cuspFormCharSpace χ hNM hf) hsub
+      (χ.comp (ZMod.unitsMap hNM)) (CuspForm.restrict_mem_cuspFormCharSpace χ hNM hf) hsub
   refine ⟨h, ?_, fun n ↦ ?_⟩
   · rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at hh
-  · rw [hhq n, CuspForm.coe_ofLe]
+  · rw [hhq n, CuspForm.coe_restrict]
 
 /-- **Miyake's `h`-form at the classical level.** For `f ∈ S_k(Γ₁(N), χ)` and any nonzero `L`,
 there is a cusp form `h` of level `N * L ^ 2`, with the nebentypus `χ` read at that level,
@@ -362,10 +362,10 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq
   obtain ⟨h, hh, hhq⟩ :=
     exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_prod_primeFactors_sq
       χ hf (L := L)
-  refine ⟨CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd hdvd) h, ?_, fun n ↦ ?_⟩
-  · have := CuspForm.ofLe_mem_cuspFormCharSpace _ hdvd hh
+  refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdvd) h, ?_, fun n ↦ ?_⟩
+  · have := CuspForm.restrict_mem_cuspFormCharSpace _ hdvd hh
     rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at this
-  · rw [CuspForm.coe_ofLe]
+  · rw [CuspForm.coe_restrict]
     exact hhq n
 
 /-- **The filter of a form vanishing off `p · L` is supported on the multiples of `p`.** If

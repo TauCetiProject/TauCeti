@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
-public import TauCeti.Topology.Homotopy.IteratedLoopSpace
+public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Basic
 
 /-!
 # Homotopy groups of iterated loop spaces
