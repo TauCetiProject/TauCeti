@@ -532,18 +532,15 @@ theorem flatten_map {D' : Type*} [Group D'] (f : D →* D')
 theorem flatten_injective [Nonempty κ] :
     Function.Injective (flatten : WreathProduct (WreathProduct D κ) ι →* _) := by
   intro w z h
-  obtain ⟨k⟩ := ‹Nonempty κ›
-  have hright : w.right = z.right := Equiv.ext fun i ↦ by
-    simpa using congrArg Prod.fst (congrArg (fun v ↦ v.right (i, k)) h)
-  apply SemidirectProduct.ext _ hright
-  funext i
-  apply SemidirectProduct.ext
+  -- The top permutation of a flattened element is the imprimitive image of the element with its
+  -- coordinates replaced by their top permutations, and the imprimitive action is faithful.
+  have hmap : map SemidirectProduct.rightHom w = map SemidirectProduct.rightHom z :=
+    imprimitiveToPerm_injective (Equiv.Perm κ) ι κ (congrArg SemidirectProduct.right h)
+  refine SemidirectProduct.ext (funext fun i ↦ SemidirectProduct.ext ?_ ?_)
+    (by simpa using congrArg SemidirectProduct.right hmap)
   · funext l
     simpa using congrArg (fun v ↦ v.left (i, l)) h
-  · apply Equiv.ext
-    intro l
-    have hz : z.right (w.right.symm i) = i := by rw [← hright, Equiv.apply_symm_apply]
-    simpa [hz] using congrArg Prod.snd (congrArg (fun v ↦ v.right (w.right.symm i, l)) h)
+  · simpa using congrFun (congrArg SemidirectProduct.left hmap) i
 
 end Flatten
 

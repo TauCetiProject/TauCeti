@@ -45,8 +45,9 @@ Continuity of `γ ↦ ℓᵗ_u(γ)` for
 an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
 
-In the word calculus, the transversal is a variable, and only `lWord_mem` and
-`transversalDiff_mem` ask that `t` actually represent each coset.
+In the word calculus, the transversal is a variable. Only `lWord_mem`, `transversalDiff_mem`
+and the tower identities `TauCeti.quotientEquivProdOfLE'_inv_smul_symm` and
+`TauCeti.lWord_compositeTransversal` ask that `t` actually represent each coset.
 
 ## Implementation notes
 
@@ -55,7 +56,8 @@ The map satisfies `↑(t u) = u` when membership in `U` is needed; `Quotient.out
 example. A Mathlib `Subgroup.LeftTransversal` yields the map `Subgroup.leftTransversalRep` via
 `Subgroup.IsComplement.leftQuotientEquiv`; `Subgroup.leftTransversalRep_mk` gives its
 representative property, and `Subgroup.compositeLeftTransversal` bundles the composite transversal
-of a subgroup tower.
+of a subgroup tower, whose elements are the products of the two given transversals
+(`Subgroup.mem_compositeLeftTransversal_iff`).
 
 The transversal word supplies the subgroup-valued arguments in the cochain formulas for
 corestriction; its cocycle and change-of-transversal identities support their algebraic proofs.
@@ -343,6 +345,34 @@ noncomputable def compositeLeftTransversal (s : U.LeftTransversal)
         (leftTransversalRep (V.subgroupOf U) t) :=
   leftTransversalRep_range V _ (compositeTransversal_spec G U V hVU _ (leftTransversalRep_mk U s)
     _ (leftTransversalRep_mk (V.subgroupOf U) t))
+
+/-- The composite left transversal of `V ≤ U ≤ G` is the set of products `a * b` of an element `a`
+of `s` and an element `b` of `t`. -/
+theorem coe_compositeLeftTransversal (s : U.LeftTransversal)
+    (t : (V.subgroupOf U).LeftTransversal) :
+    (compositeLeftTransversal hVU s t : Set G) =
+      Set.image2 (fun (a : G) (b : U) ↦ a * b) (s : Set G) (t : Set U) := by
+  ext g
+  constructor
+  · rintro ⟨q, rfl⟩
+    exact ⟨_, leftTransversalRep_mem U s _, _, leftTransversalRep_mem _ t _,
+      (compositeTransversal_apply G U V hVU _ _ _ q).symm⟩
+  · rintro ⟨a, ha, b, hb, rfl⟩
+    let e := quotientEquivProdOfLE' hVU (leftTransversalRep U s) (leftTransversalRep_mk U s)
+    refine ⟨e.symm (QuotientGroup.mk a, QuotientGroup.mk b), ?_⟩
+    rw [compositeTransversal_apply, e.apply_symm_apply]
+    -- A coset of an element of a transversal is represented by that element.
+    exact congrArg₂ (fun (x : G) (y : U) ↦ x * y)
+      (congrArg Subtype.val (s.2.leftQuotientEquiv.apply_symm_apply ⟨a, ha⟩))
+      (congrArg Subtype.val (t.2.leftQuotientEquiv.apply_symm_apply ⟨b, hb⟩))
+
+/-- An element lies in the composite left transversal of `V ≤ U ≤ G` exactly when it is a product
+`a * b` of an element `a` of `s` and an element `b` of `t`. -/
+@[simp] theorem mem_compositeLeftTransversal_iff {s : U.LeftTransversal}
+    {t : (V.subgroupOf U).LeftTransversal} {g : G} :
+    g ∈ (compositeLeftTransversal hVU s t : Set G) ↔
+      ∃ a ∈ (s : Set G), ∃ b ∈ (t : Set U), a * (b : G) = g := by
+  rw [coe_compositeLeftTransversal, Set.mem_image2]
 
 end LeftTransversalRep
 
