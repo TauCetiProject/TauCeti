@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Twist.Cocycle
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Galois
 import TauCeti.FieldTheory.GaloisCohomology.AdditiveHilbert90
 import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
@@ -31,18 +32,19 @@ with in the same way.
 The consequence is **effective descent** for pointed twists. If `W` is a Weierstrass curve over
 `K` and the cocycle `f` takes values in the automorphisms of `W` over `L`, that is
 `f σ • W = W` over `L`, then writing `f σ = C * (σ C)⁻¹`, the curve `C⁻¹ • W` over `L` is fixed by
-`G`, so it is the base change of a curve `V` over `K`. Thus every such cocycle is the cocycle
-`σ ↦ C * (σ C)⁻¹` of a trivialisation `C • V = W` of a curve `V` over `K` that becomes isomorphic
-to `W` over `L` (`WeierstrassCurve.exists_smul_baseChange_eq_and_eq_mul_map_inv`). This is the
-half of the classification of pointed twists by `H¹(G, Aut W)` that constructs a twist from a
-cohomology class.
+`G`, so it is the base change of a curve `V` over `K`. Thus every continuous cocycle with values
+in `W.AutCoeff L` is the cocycle `σ ↦ C * (σ C)⁻¹` of a trivialisation `C • V = W` of a
+curve `V` over `K` that becomes isomorphic to `W` over `L`. This is the half of the classification
+of pointed twists by `H¹(G, Aut W)` that constructs a twist from a cohomology class.
 
 ## Main results
 
 * `WeierstrassCurve.VariableChange.exists_eq_mul_map_inv`: a locally constant cocycle of changes
   of variables is a coboundary.
-* `WeierstrassCurve.exists_smul_baseChange_eq_and_eq_mul_map_inv`: a locally constant cocycle of
+* `WeierstrassCurve.VariableChange.exists_twistCocycle_eq`: every continuous cocycle of
   automorphisms of `W` over `L` is the cocycle of a curve over `K` isomorphic to `W` over `L`.
+* `WeierstrassCurve.VariableChange.exists_twistCohomologyClass_eq`: the corresponding statement
+  for every class in `H¹(Gal(L/K), W.AutCoeff L)`.
 
 ## References
 
@@ -53,6 +55,8 @@ cohomology class.
 public section
 
 namespace WeierstrassCurve
+
+open TauCeti
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
@@ -156,12 +160,7 @@ end VariableChange
 
 variable [IsGalois K L]
 
-/-- **Effective descent for pointed twists.** Let `W` be a Weierstrass curve over `K` and `L/K`
-a Galois extension. Every locally constant cocycle `f : Gal(L/K) → VariableChange L` of
-automorphisms of `W` over `L`, that is `f σ • W = W` over `L`, is the cocycle of a twist: there
-are a Weierstrass curve `V` over `K` and a change of variables `C` over `L` with `C • V = W` over
-`L` and `f σ = C * (σ C)⁻¹` for every `σ`. -/
-theorem exists_smul_baseChange_eq_and_eq_mul_map_inv (W : WeierstrassCurve K)
+private theorem exists_smul_baseChange_eq_and_eq_mul_map_inv (W : WeierstrassCurve K)
     {f : Gal(L/K) → VariableChange L} (hc : IsLocallyConstant f)
     (hf : ∀ σ τ, f (σ * τ) = f σ * (f τ).map (σ : L →+* L))
     (hW : ∀ σ, f σ • W.baseChange L = W.baseChange L) :
@@ -180,5 +179,45 @@ theorem exists_smul_baseChange_eq_and_eq_mul_map_inv (W : WeierstrassCurve K)
     (mem_range_baseChange_iff_fixed _).2 hfix
   refine ⟨V, C, ?_, hC⟩
   rw [hV, smul_inv_smul]
+
+namespace VariableChange
+
+/-- **Effective descent for pointed twists.** Every continuous Galois cocycle with values in the
+automorphisms of `W` over `L` is the cocycle of a trivialisation of a curve over `K` that becomes
+isomorphic to `W` over `L`. -/
+theorem exists_twistCocycle_eq (W : WeierstrassCurve K)
+    (c : NonabelianH1.Cocycle Gal(L/K) (W.AutCoeff L)) :
+    ∃ (V : WeierstrassCurve K) (C : VariableChange L)
+      (hC : C • V.baseChange L = W.baseChange L), twistCocycle C hC = c := by
+  let f : Gal(L/K) → VariableChange L :=
+    fun σ ↦ ((W.autCoeffEquiv L).symm (c σ)).val
+  have hc : IsLocallyConstant f :=
+    ((IsLocallyConstant.iff_continuous c).2 c.continuous).comp
+      fun a ↦ ((W.autCoeffEquiv L).symm a).val
+  have hf (σ τ : Gal(L/K)) : f (σ * τ) = f σ * (f τ).map (σ : L →+* L) := by
+    have h := congrArg (fun a ↦ ((W.autCoeffEquiv L).symm a).val) (c.map_mul' σ τ)
+    change ((W.autCoeffEquiv L).symm (c.toFun (σ * τ))).val =
+      ((W.autCoeffEquiv L).symm (c.toFun σ)).val *
+        ((W.autCoeffEquiv L).symm (c.toFun τ)).val.map (σ : L →+* L)
+    simpa only [_root_.map_mul, Subgroup.coe_mul, autCoeffEquiv_symm_smul] using h
+  obtain ⟨V, C, hC, h⟩ :=
+    exists_smul_baseChange_eq_and_eq_mul_map_inv W hc hf fun σ ↦
+      ((W.autCoeffEquiv L).symm (c σ)).property
+  refine ⟨V, C, hC, NonabelianH1.Cocycle.ext fun σ ↦ ?_⟩
+  apply AutCoeff.ext
+  simpa only [autCoeffEquiv_symm_twistCocycle] using (h σ).symm
+
+/-- Every nonabelian Galois cohomology class of automorphisms of `W` is represented by the
+cocycle of a trivialisation of a curve over `K` that becomes isomorphic to `W` over `L`. -/
+theorem exists_twistCohomologyClass_eq (W : WeierstrassCurve K)
+    (x : NonabelianH1 Gal(L/K) (W.AutCoeff L)) :
+    ∃ (V : WeierstrassCurve K) (C : VariableChange L)
+      (hC : C • V.baseChange L = W.baseChange L), twistCohomologyClass C hC = x := by
+  induction x using NonabelianH1.induction_on with
+  | mk c =>
+      obtain ⟨V, C, hC, h⟩ := exists_twistCocycle_eq W c
+      exact ⟨V, C, hC, by rw [twistCohomologyClass_def, h]⟩
+
+end VariableChange
 
 end WeierstrassCurve
