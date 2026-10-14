@@ -37,7 +37,7 @@ estimate is the classical union bound over unordered coordinate pairs, using
 ## Main results
 
 * `uniformOn_not_injective_le` bounds the uniform-measure mass of collisions;
-* `uniformOn_injective_eq` and `uniformOn_not_injective_eq` compute the exact
+* `uniformOn_injective_apply_eq` and `uniformOn_not_injective_apply_eq` compute the exact
   uniform-measure masses;
 * `uniformOn_le_univ_add_compl` and `uniformOn_univ_le_add_compl` give the general conditioning
   comparison;
@@ -66,7 +66,7 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 the number of maps. This is an injectivity probability when the function space is nonempty;
 when the function space is empty, `uniformOn` is the zero measure and both sides are zero. -/
 @[simp]
-theorem uniformOn_injective_eq [MeasurableSpace κ] [MeasurableSingletonClass κ] :
+theorem uniformOn_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonClass κ] :
     uniformOn (Set.univ : Set (ι → κ)) {f | Function.Injective f} =
       (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
@@ -83,7 +83,7 @@ theorem uniformOn_injective_eq [MeasurableSpace κ] [MeasurableSingletonClass κ
 space. The descending factorial counts ordered samples without replacement, so this retains
 the overlap between pairwise collision events discarded by the union bound. -/
 @[simp]
-theorem uniformOn_not_injective_eq [MeasurableSpace κ] [MeasurableSingletonClass κ]
+theorem uniformOn_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonClass κ]
     [Nonempty (ι → κ)] :
     uniformOn (Set.univ : Set (ι → κ)) {f | ¬ Function.Injective f} =
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
@@ -91,7 +91,7 @@ theorem uniformOn_not_injective_eq [MeasurableSpace κ] [MeasurableSingletonClas
   let _ : IsProbabilityMeasure (uniformOn (Set.univ : Set (ι → κ))) :=
     isProbabilityMeasure_uniformOn Set.finite_univ Set.univ_nonempty
   rw [← Set.compl_ofPred, prob_compl_eq_one_sub (Set.toFinite _).measurableSet,
-    uniformOn_injective_eq]
+    uniformOn_injective_apply_eq]
 
 /-- The real-valued mass of an event under a finite uniform measure is the ratio of its
 cardinality to the cardinality of the sampling set. This also covers the zero measure when
