@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
+import Mathlib.Topology.Algebra.ClopenNhdofOne
 
 /-!
 # Reciprocity for abelian layers and the lattice of norm subgroups
@@ -33,7 +34,13 @@ subgroups into the lattice of subgroups of a finite abelian group:
   layer (`ClassFormation.normSubgroup_le_iff_of_isAbelian`), so an abelian layer is determined by
   its norm subgroup (`ClassFormation.eq_of_normSubgroup_eq_of_isAbelian`);
 * **upward closure**: a subgroup of `A^G` containing the norm subgroup of a layer is the norm
-  subgroup of an abelian layer (`ClassFormation.exists_abelianLayer_normSubgroup_eq_of_le`).
+  subgroup of an abelian layer (`ClassFormation.exists_abelianLayer_normSubgroup_eq_of_le`), and
+  so is one containing the norm group of any open subgroup, normal or not
+  (`ClassFormation.exists_abelianLayer_normSubgroup_eq_of_range_levelNorm_le`);
+* **descent along a finite extension**: a subgroup of `A^G` whose preimage under the norm from an
+  open subgroup `U` contains the norm subgroup of a layer over `U` is the norm subgroup of an
+  abelian layer of `G`
+  (`ClassFormation.exists_abelianLayer_normSubgroup_eq_of_normSubgroup_le_comap`).
 
 None of these is an existence theorem: the class-formation axioms do not say which subgroups of
 `A^G` contain a norm subgroup. The local and global class-field correspondences combine these
@@ -57,11 +64,15 @@ statements with the arithmetic existence theorems of their own settings.
   against an abelian layer by their norm subgroups.
 * `TauCeti.ClassFieldTheory.ClassFormation.exists_abelianLayer_normSubgroup_eq_of_le`: upward
   closure of norm subgroups.
+* `ClassFormation.exists_abelianLayer_normSubgroup_eq_of_range_levelNorm_le`: upward closure
+  from the norm group of an open subgroup.
+* `ClassFormation.exists_abelianLayer_normSubgroup_eq_of_normSubgroup_le_comap`: descent of norm
+  subgroups along a finite extension.
 
 ## References
 
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §6.
-* J. S. Milne, *Class Field Theory*, Chapter VII, Lemma 9.1.
+* J. S. Milne, *Class Field Theory*, Chapter VII, Lemmas 9.1 and 9.4.
 * J.-P. Serre, *Local Fields*, Chapter XIV, §6.
 -/
 
@@ -342,5 +353,39 @@ theorem exists_abelianLayer_normSubgroup_eq_of_le {V : OpenNormalSubgroup G}
     rw [← cf.abelianArtinMap_eq_zero_iff hU, map_sub, sub_eq_zero]
     exact Additive.toMul.injective ((galOfOpenNormalEquiv U).injective hba).symm
   simpa using N.add_mem (h hab) hb
+
+include cf in
+/-- **Upward closure from an open subgroup.** In a class formation, a subgroup `N` of `A^G`
+containing the image of the norm `N_{G/W} : A^W → A^G` from an open subgroup `W`, normal or not,
+is the norm subgroup of an abelian layer. In field notation: a subgroup containing the norm group
+`N_{E/K}(A_E)` of a finite, not necessarily Galois, extension `E/K` is a norm subgroup. The
+open normal subgroups below `W`, which cut out the Galois extensions containing `E`, have smaller
+norm subgroups (`Formation.normSubgroup_le_range_levelNorm`), so upward closure applies. -/
+theorem exists_abelianLayer_normSubgroup_eq_of_range_levelNorm_le {W : OpenSubgroup G}
+    {N : Submodule ℤ (F.level ⊤)} (h : (F.levelNorm (le_top : W ≤ ⊤)).range ≤ N.toAddSubgroup) :
+    ∃ V : OpenNormalSubgroup G, V.IsAbelianClassFieldLayer ∧ F.normSubgroup V = N := by
+  obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one W.isOpen W.one_mem
+  obtain ⟨V, hV, -, hVN⟩ := cf.exists_abelianLayer_normSubgroup_eq_of_le
+    ((F.normSubgroup_le_range_levelNorm (W := W) hU).trans h)
+  exact ⟨V, hV, hVN⟩
+
+include cf in
+/-- **Descent of norm subgroups along a finite extension.** Let `L` be a layer `W ◁ U`, cutting
+out a Galois extension `M/E` above a finite extension `E/K`. In a class formation, if the preimage
+of a subgroup `N ⊆ A^G` under the norm `N_{G/U} : A^U → A^G` contains the norm subgroup
+`N_{U/W}(A^W)` of `L`, then `N` is the norm subgroup of an abelian layer of `G`. In field
+notation: if `N_{E/K}⁻¹(N)` contains `N_{M/E}(A_M)`, then `N` contains `N_{M/K}(A_M)` by
+transitivity of the norm, so it is a norm subgroup by
+`exists_abelianLayer_normSubgroup_eq_of_range_levelNorm_le`. This is the step of the proof of the
+existence theorem that passes from `K` to `K(ζ_p)` (Milne VII, Lemma 9.4). -/
+theorem exists_abelianLayer_normSubgroup_eq_of_normSubgroup_le_comap (L : NormalLayer G)
+    {N : Submodule ℤ (F.level ⊤)}
+    (h : (L.normSubgroup F).toAddSubgroup ≤
+      N.toAddSubgroup.comap (F.levelNorm (le_top : L.ground ≤ ⊤))) :
+    ∃ V : OpenNormalSubgroup G, V.IsAbelianClassFieldLayer ∧ F.normSubgroup V = N := by
+  refine cf.exists_abelianLayer_normSubgroup_eq_of_range_levelNorm_le (W := L.top) ?_
+  rintro _ ⟨x, rfl⟩
+  rw [F.levelNorm_trans le_top L.top_le_ground, AddMonoidHom.comp_apply]
+  exact h ((L.mem_normSubgroup F).2 ⟨x, DFunLike.congr_fun (L.toAddMonoidHom_norm F) x⟩)
 
 end TauCeti.ClassFieldTheory.ClassFormation

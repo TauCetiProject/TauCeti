@@ -92,6 +92,17 @@ theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (h : x ^ n = y ^ n) :
 
 end RootsOfUnity
 
+/-- If the base field contains the `n`-th roots of unity, an intermediate field contains
+an `n`-th root of `a` exactly when it contains any chosen `n`-th root of `a`. -/
+theorem _root_.IntermediateField.exists_mem_pow_eq_iff_of_pow_eq
+    {K M : Type*} [Field K] [Field M] [Algebra K M] {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] (L : IntermediateField K M) {a α : M} (hα : α ^ n = a) :
+    (∃ β ∈ L, β ^ n = a) ↔ α ∈ L := by
+  refine ⟨fun ⟨β, hβL, hβ⟩ ↦ ?_, fun h ↦ ⟨α, h, hα⟩⟩
+  obtain ⟨c, hc⟩ := exists_eq_algebraMap_mul_of_pow_eq (K := K) (hα.trans hβ.symm)
+  rw [hc]
+  exact L.mul_mem (L.algebraMap_mem c) hβL
+
 variable {K : Type*} [Field K] (E : Type*) [Field E] [Algebra K E] (n : ℕ)
 
 /-- The **Kummer field** `K(Δ^{1/n})`: the subfield of `E` generated over `K` by the `n`-th roots
