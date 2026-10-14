@@ -108,21 +108,14 @@ theorem centerQuotientFppfProjection_comp_centerQuotientFppfIso_hom
       (CommHopfAlgCat.fppfQuotientProjection_comp_coinvariantsFppfQuotientIso_hom
         (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal)
 
-/-- The projection from a semisimple affine group to its represented center quotient is a
-central isogeny. -/
-theorem isCentralIsogeny_centerQuotientι (hH : semisimpleCommHopfAlgProperty k H) :
-    CommHopfAlgCat.IsCentralIsogeny hH.centerQuotientι := by
-  let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
-  exact hH.isCentralIsogeny_coinvariantsι_centerDefiningIdeal
-
 /-- The represented quotient of a semisimple affine group by its scheme-theoretic center is
 semisimple. -/
 theorem semisimple_centerQuotient (hH : semisimpleCommHopfAlgProperty k H) :
     semisimpleCommHopfAlgProperty k hH.centerQuotient := by
   let _ : Algebra.Smooth k H := hH.smooth
   let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
-  exact hH.of_isCentralIsogeny hH.centerQuotientι hH.isCentralIsogeny_centerQuotientι
+  exact hH.of_isCentralIsogeny hH.centerQuotientι
+    hH.isCentralIsogeny_coinvariantsι_centerDefiningIdeal
 
 end semisimpleCommHopfAlgProperty
 
