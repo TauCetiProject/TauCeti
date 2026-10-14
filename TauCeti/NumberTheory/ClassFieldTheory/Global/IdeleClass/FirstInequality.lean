@@ -69,18 +69,11 @@ theorem herbrandQuotient_rep_globalFormation_ofOpenNormal_eq_degree
     [IsCyclic (NormalLayer.ofOpenNormal V).Gal] :
     TateCohomology.herbrandQuotient ((NormalLayer.ofOpenNormal V).rep (globalFormation K)) =
       (NormalLayer.ofOpenNormal V).degree := by
-  have hE : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = classField K V := by
-    rw [NormalLayer.top_ofOpenNormal, ← InfiniteGalois.fixedField_fixingSubgroup (classField K V),
-      fixingSubgroup_classField]
   let e := (galClassFieldEquiv V).symm
-  have he : ∀ (u : (NormalLayer.ofOpenNormal V).ground) (x : classField K V),
-      ((e u x : classField K V) : SeparableClosure K) = (u : AbsoluteGaloisGroup K) x := by
-    intro u x
-    simp only [e, galClassFieldEquiv_symm_mk]
-    exact AlgEquiv.restrictNormal_commutes _ _ x
   have : NumberField (classField K V) := .of_module_finite K _
   have : IsCyclic Gal(classField K V/K) := e.isCyclic.1 ‹_›
-  rw [(NormalLayer.ofOpenNormal V).herbrandQuotient_rep_globalFormation hE he,
+  rw [(NormalLayer.ofOpenNormal V).herbrandQuotient_rep_globalFormation
+      (fixedField_top_ofOpenNormal_eq_classField V) (coe_galClassFieldEquiv_symm_apply V),
     herbrandQuotient_ideleClassRep_eq_finrank, NormalLayer.degree_eq_natCard_gal,
     Nat.card_congr e.toEquiv, IsGalois.card_aut_eq_finrank]
 
@@ -114,9 +107,10 @@ theorem finrank_le_index_range_ideleClassNormMap :
           (globalFormation K)) :=
         degree_le_natCard_normQuotient_ofOpenNormal_of_isCyclic _
     -- The norm quotient of the layer of `L` is `C_K / N_{L/K}(C_L)`, written additively.
-    _ = (GlobalNumberFields.ideleClassNormMap K L).range.index :=
-        ((Nat.card_congr (globalLayerNormQuotientEquiv K L).toEquiv).symm.trans
-          (Nat.card_congr Additive.ofMul.symm))
+    _ = (GlobalNumberFields.ideleClassNormMap K L).range.index := by
+        rw [Subgroup.index_eq_card]
+        exact (Nat.card_congr (globalLayerNormQuotientEquiv K L).toEquiv).symm.trans
+          (Nat.card_congr Additive.ofMul.symm)
 
 /-- **A cyclic extension from which every idele class is a norm is trivial**: if the norm map
 `N_{L/K} : C_L → C_K` of a cyclic extension of number fields is surjective, then `[L : K] = 1`. -/
