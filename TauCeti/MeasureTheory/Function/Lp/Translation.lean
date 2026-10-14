@@ -49,6 +49,8 @@ this continuity for a `C¹` function, and needs no integrability of the function
   domain whose translate stays in the original domain.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`: translation increments of an `Lᵖ` function
   tend to zero.
+* `MeasureTheory.eLpNorm_comp_add_sub_le_two_mul`: a translation increment is at most twice the
+  function.
 * `ContDiff.setLIntegral_enorm_comp_add_sub_rpow_le`,
   `ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply`: the local translation estimate,
   bounding the increment on a set `K` by the directional derivative on a set containing the
@@ -224,6 +226,18 @@ theorem tendsto_eLpNorm_comp_add_sub [TopologicalSpace E] [ContinuousAdd E] [Bor
         hu.coeFn_toLp))).trans (Filter.EventuallyEq.of_eq (funext fun x ↦ by simp))
 
 end MemLp
+
+/-- A translation increment is at most twice the function: `‖u(· + h) - u‖_p ≤ 2 ‖u‖_p` for
+`1 ≤ p` and a right-invariant measure. -/
+theorem eLpNorm_comp_add_sub_le_two_mul {E F : Type*} [AddMonoid E] [MeasurableSpace E]
+    [MeasurableAdd E] {mu : Measure E} [mu.IsAddRightInvariant] [NormedAddCommGroup F]
+    {p : ℝ≥0∞} {u : E → F} (hu : AEStronglyMeasurable u mu) (hp : 1 ≤ p) (h : E) :
+    eLpNorm (fun x => u (x + h) - u x) p mu ≤ 2 * eLpNorm u p mu := by
+  have htr : eLpNorm (fun x => u (x + h)) p mu = eLpNorm u p mu :=
+    eLpNorm_comp_measurePreserving hu (measurePreserving_add_right mu h)
+  calc eLpNorm (fun x => u (x + h) - u x) p mu
+      ≤ eLpNorm (fun x => u (x + h)) p mu + eLpNorm u p mu := eLpNorm_sub_le hp
+    _ = 2 * eLpNorm u p mu := by rw [htr, two_mul]
 
 /-- Translation is continuous in the `L¹` distance from a fixed translate. -/
 theorem Integrable.continuous_integral_norm_translate_sub
