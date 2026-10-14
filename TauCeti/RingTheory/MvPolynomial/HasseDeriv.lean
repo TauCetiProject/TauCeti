@@ -256,9 +256,13 @@ private theorem prod_choose_add_single [DecidableEq σ] (n d : σ →₀ ℕ) (i
 
 /-- The Leibniz rule for multiplication by a variable:
 `∂^d (P Xᵢ) = ∂^(d - eᵢ) P + (∂^d P) Xᵢ`, where the first term is present only when `dᵢ ≠ 0`. -/
-theorem hasseDeriv_mul_X [DecidableEq σ] (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
+theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
     hasseDeriv d (P * X i) =
-      (if i ∈ d.support then hasseDeriv (d - single i 1) P else 0) + hasseDeriv d P * X i := by
+      (if d i = 0 then 0 else hasseDeriv (d - single i 1) P) + hasseDeriv d P * X i := by
+  classical
+  rw [show (if d i = 0 then 0 else hasseDeriv (d - single i 1) P) =
+    (if i ∈ d.support then hasseDeriv (d - single i 1) P else 0) by
+      simp [Finsupp.mem_support_iff]]
   induction P using MvPolynomial.induction_on' with
   | monomial n a =>
     -- A monomial whose coefficient carries the binomial factor of `d'` only depends on its
