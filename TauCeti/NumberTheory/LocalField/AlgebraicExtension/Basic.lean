@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.LocalField.NormedField
