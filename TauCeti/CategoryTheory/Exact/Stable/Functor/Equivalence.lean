@@ -15,16 +15,10 @@ An additive equivalence preserving conflations in both directions preserves
 projective-injectives between Frobenius exact categories. Its induced stable equivalence
 is a triangle equivalence for Happel's triangulations.
 
-The forward shift comparison is transported from
-`StableConflationExact.stableFunctorCommShift`. The inverse comparison is the one determined
-by this forward comparison and the unit and counit of the existing stable equivalence,
-using Mathlib's `Equivalence.commShiftInverse`. In particular both natural isomorphisms
-commute with integral shifts. No new equivalence or choice of stable suspension is introduced.
-
-Install `stableEquivalenceFunctorCommShift`, then the equivalence's `commShiftInverse`,
-and `commShift_of_functor` locally. The theorem `stableEquivalenceIsTriangulated` then
-supplies Mathlib's `Equivalence.IsTriangulated`, including triangle-functor structures
-on both directions. The comparison with the original stable functor also respects shifts.
+Both directions of the induced equivalence commute with integral shifts, as do its unit
+and counit. The identification of its forward functor with the descended exact functor
+respects shifts. The theorem `stableEquivalenceIsTriangulated` expresses the triangle
+equivalence through Mathlib's `Equivalence.IsTriangulated` interface.
 
 ## References
 
@@ -45,20 +39,6 @@ variable [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiprodu
 variable [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
 variable {E : ExactStructure C} {E' : ExactStructure D}
 
-/-- An exact additive equivalence into a Frobenius category preserves projective-injectives.
-Exactness of the inverse is sufficient for preservation of projectives; the target's
-Frobenius property then gives injectivity. The source need not be Frobenius. -/
-theorem ExactStructure.IsConflationExact.stableConflationExact_of_equivalence
-    {e : C ≌ D} [e.functor.Additive]
-    (hF : E.IsConflationExact E' e.functor)
-    (hG : E'.IsConflationExact E e.inverse) (hE' : E'.IsFrobenius) :
-    StableConflationExact E E' e.functor where
-  isConflationExact := hF
-  map_projectiveInjective {X} hX := by
-    rw [ExactStructure.projectiveInjective_iff] at hX ⊢
-    have hP := E.isProjective_map_adjoint E' e.toAdjunction hG hX.1
-    exact ⟨hP, (hE'.projective_iff_injective _).mp hP⟩
-
 namespace StableConflationExact
 
 variable {e : C ≌ D} [e.functor.Additive]
@@ -78,6 +58,34 @@ noncomputable def stableEquivalenceFunctorCommShift :
   letI := hF.stableFunctorCommShift hE hE'
   exact Functor.CommShift.ofIso
     (eqToIso (stableEquivalence_functor e hF hG hE hE').symm) ℤ
+
+/-- The forward stable equivalence's shift comparison is the descended functor's comparison
+transported along their identification. -/
+@[simp]
+theorem stableEquivalenceFunctor_commShiftIso (n : ℤ) :
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI := hF.stableFunctorCommShift hE hE'
+    letI := stableEquivalenceFunctorCommShift hF hG hE hE'
+    (stableEquivalence e hF hG hE hE').functor.commShiftIso n =
+      Functor.isoWhiskerLeft (shiftFunctor E.ProjectiveStableCategory n)
+        (eqToIso (stableEquivalence_functor e hF hG hE hE')) ≪≫
+      (hF.stableFunctor hE).commShiftIso n ≪≫
+      Functor.isoWhiskerRight (eqToIso (stableEquivalence_functor e hF hG hE hE')).symm
+        (shiftFunctor E'.ProjectiveStableCategory n) :=
+  (rfl)
+
+/-- The inverse stable equivalence commutes with integral shifts via the canonical mate
+of its forward comparison. -/
+@[instance_reducible]
+noncomputable def stableEquivalenceInverseCommShift :
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    (stableEquivalence e hF hG hE hE').inverse.CommShift ℤ := by
+  letI := hE.stableHasShift
+  letI := hE'.stableHasShift
+  letI := stableEquivalenceFunctorCommShift hF hG hE hE'
+  exact (stableEquivalence e hF hG hE hE').commShiftInverse ℤ
 
 /-- The identification of the stable equivalence's forward functor with the descended
 exact functor is compatible with every integral shift. -/
@@ -107,7 +115,7 @@ theorem stableEquivalenceIsTriangulated :
     letI := hE.stablePretriangulated
     letI := hE'.stablePretriangulated
     letI := stableEquivalenceFunctorCommShift hF hG hE hE'
-    letI := (stableEquivalence e hF hG hE hE').commShiftInverse ℤ
+    letI := stableEquivalenceInverseCommShift hF hG hE hE'
     letI := (stableEquivalence e hF hG hE hE').commShift_of_functor ℤ
     (stableEquivalence e hF hG hE hE').IsTriangulated := by
   let := hE.stableHasShift
@@ -118,7 +126,7 @@ theorem stableEquivalenceIsTriangulated :
   let := hE'.stablePretriangulated
   let := hF.stableFunctorCommShift hE hE'
   let := stableEquivalenceFunctorCommShift hF hG hE hE'
-  let := (stableEquivalence e hF hG hE hE').commShiftInverse ℤ
+  let := stableEquivalenceInverseCommShift hF hG hE hE'
   let := (stableEquivalence e hF hG hE hE').commShift_of_functor ℤ
   have := hF.stableFunctorIsTriangulated hE hE'
   have := stableEquivalence_functor_commShift hF hG hE hE'
