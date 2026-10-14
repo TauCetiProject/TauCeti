@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Hausdorff
-public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Hausdorff length of preconnected sets
