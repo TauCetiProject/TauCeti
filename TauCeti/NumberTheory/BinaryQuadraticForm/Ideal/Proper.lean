@@ -14,9 +14,9 @@ import Mathlib.Tactic.Ring
 /-!
 # Proper ideals of primitive binary quadratic forms
 
-The fractional ideal of a primitive integral form is proper and invertible over its
-quadratic order. Its multiplier ring is the order itself. These invertible ideals define
-ideal classes in the form-ideal correspondence.
+The fractional ideal of a primitive integral form of nonsquare discriminant is proper and
+invertible over the associated quadratic number-field order. Its multiplier ring is the
+order itself. These invertible ideals define ideal classes in the form-ideal correspondence.
 
 ## References
 
