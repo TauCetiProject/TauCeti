@@ -158,7 +158,7 @@ the coordinates of the finitely many points of `E(Kˢ)[m]`, each algebraic over 
 instance finiteDimensional_divisionField [W.IsElliptic] [NeZero m] :
     FiniteDimensional K (W.divisionField m) := by
   have hfin := Set.finite_coe_iff.1
-    (W.finite_torsionBy_baseChange (SeparableClosure K) (Int.natCast_ne_zero.2 (NeZero.ne m)))
+    ((W⁄(SeparableClosure K)).finite_torsionBy (Int.natCast_ne_zero.2 (NeZero.ne m)))
   have := ((hfin.image Affine.Point.xCoord).union (hfin.image Affine.Point.yCoord)).to_subtype
   exact IntermediateField.finiteDimensional_adjoin fun x _ => Algebra.IsIntegral.isIntegral x
 

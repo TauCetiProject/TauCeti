@@ -219,7 +219,7 @@ open scoped Classical in
 /-- For `W` elliptic and `m ≠ 0`, the `m`-torsion `E(Kˢ)[m]` of `W` over the separable closure is
 finite. -/
 instance finite_torsionCoeff [W.IsElliptic] (m : ℕ) [NeZero m] : Finite (W.TorsionCoeff m) :=
-  have := W.finite_torsionBy_baseChange (SeparableClosure K) (Int.natCast_ne_zero.2 (NeZero.ne m))
+  have := (W⁄(SeparableClosure K)).finite_torsionBy (Int.natCast_ne_zero.2 (NeZero.ne m))
   .of_equiv _ (AddEquiv.torsionByCongr W.pointCoeffEquiv m).toEquiv
 
 /-- The inclusion `E(Kˢ)[m] → E(Kˢ)`, as a `G_K`-equivariant homomorphism. -/

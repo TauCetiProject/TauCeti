@@ -51,8 +51,6 @@ closure of the pulled-back field, so that is where the torsion difference lives.
   rather than `(ℓ : ℤ).natAbs ^ 2`.
 * `WeierstrassCurve.finite_torsionBy`: finiteness of `E[n]` for nonzero `n`, read on
   `W.toAffine.Point` itself rather than on the trivial base change `W⁄K`.
-* `WeierstrassCurve.finite_torsionBy_baseChange`: finiteness of `E[n]` over a field extension,
-  read on the points of the base change.
 
 Of the three steps of the argument sketched above, the torsion difference is public: it holds
 over any extension, with no rationality, and bounds the separable degree of `[n]` by the geometric
@@ -211,20 +209,13 @@ namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 
-open scoped Classical in
 /-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
-`W⁄K`, is finite for nonzero `n`. -/
-theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
+`W⁄K`, is finite for nonzero `n`. The decidable equality of `K` is an argument, so that the
+statement applies to whichever instance the points are built with; over an extension `F`, apply it
+to the base change `W⁄F`. -/
+theorem finite_torsionBy [DecidableEq K] {n : ℤ} (hn : n ≠ 0) :
     Finite (AddSubgroup.torsionBy W.toAffine.Point n) := by
   have h := W.toAffine.finite_torsionBy hn
-  rwa [Affine.baseChange_self] at h
-
-/-- The `n`-torsion of `W` over a field extension `F` of `K`, read on the points of the base change
-`W⁄F`, is finite for nonzero `n`. The decidable equality of `F` is an argument, so that the
-statement applies to whichever instance the points of `W⁄F` are built with. -/
-theorem finite_torsionBy_baseChange (F : Type*) [Field F] [DecidableEq F] [Algebra K F] {n : ℤ}
-    (hn : n ≠ 0) : Finite (AddSubgroup.torsionBy (W⁄F).toAffine.Point n) := by
-  have h := (W⁄F).toAffine.finite_torsionBy hn
   rwa [Affine.baseChange_self] at h
 
 end WeierstrassCurve
