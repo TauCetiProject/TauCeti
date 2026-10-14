@@ -85,7 +85,7 @@ variable {P P' : ι → E →ₗ[𝕜] E}
 
 section Overlap
 
-variable (hP : CompleteOrthogonalIdempotents P) (hP' : CompleteOrthogonalIdempotents P')
+variable (hP : CompleteOrthogonalIdempotents P) (hP' : OrthogonalIdempotents P')
 include hP
 
 /-- The assembled overlap `T = ∑ⱼ P'ⱼ Pⱼ` restricts to the block overlap on `range Pⱼ`. -/
@@ -98,10 +98,12 @@ include hP'
 /-- The assembled overlap intertwines the two families: `T Pⱼ = P'ⱼ T`. -/
 private theorem overlap_comp_eq_comp (j : ι) :
     (∑ k, P' k ∘ₗ P k) ∘ₗ P j = P' j ∘ₗ ∑ k, P' k ∘ₗ P k := by
+  -- The block identities use multiplication in the endomorphism ring; convert their result
+  -- to composition after simplifying both sides to the same matched block.
   simpa only [projectionFamilyOverlap_def, Module.End.mul_eq_comp] using
     (show projectionFamilyOverlap P P' * P j = P' j * projectionFamilyOverlap P P' from by
       simp only [hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul,
-        hP'.toOrthogonalIdempotents.mul_projectionFamilyOverlap])
+        hP'.mul_projectionFamilyOverlap])
 
 variable [FiniteDimensional 𝕜 E] (hPs : ∀ j, (P j).IsSymmetric) (hP's : ∀ j, (P' j).IsSymmetric)
 include hPs hP's
@@ -125,8 +127,8 @@ private theorem operatorAbs_comp (j : ι) :
   exact operatorAbs_comp_of_commute ⟨hP.idem j, hPs j⟩
     (commute_adjoint_overlap_comp_overlap hP hP' hPs hP's j)
 
-/-- A map is a simultaneous polar factor of every block overlap exactly when it is a polar factor
-of the assembled overlap. -/
+/-- With a complete source family and an orthogonal target family, a map is a simultaneous polar
+factor of every block overlap exactly when it is a polar factor of the assembled overlap. -/
 theorem forall_comp_operatorAbs_eq_iff (V : E →ₗ[𝕜] E) :
     (∀ j, V ∘ₗ (P' j ∘ₗ P j).operatorAbs = P' j ∘ₗ P j) ↔
       V ∘ₗ (∑ k, P' k ∘ₗ P k).operatorAbs = ∑ k, P' k ∘ₗ P k := by
@@ -169,7 +171,7 @@ theorem existsUnique_linearIsometryEquiv_comp_operatorAbs_eq :
   have hc' := CompleteOrthogonalIdempotents.of_isSymmetricProjection hP' hP'sum
   have hPs (j : ι) := (hP j).isSymmetric
   have hP's (j : ι) := (hP' j).isSymmetric
-  simp only [forall_comp_operatorAbs_eq_iff hc hc' hPs hP's]
+  simp only [forall_comp_operatorAbs_eq_iff hc hc'.toOrthogonalIdempotents hPs hP's]
   set T := ∑ k, P' k ∘ₗ P k
   obtain ⟨U, hU⟩ := exists_linearIsometryEquiv_of_inner_eq (v := T.operatorAbs) (w := T)
     fun x y ↦ by
@@ -190,12 +192,14 @@ theorem comp_eq_comp_of_forall_comp_operatorAbs_eq {V : E →ₗ[𝕜] E}
   have hc' := CompleteOrthogonalIdempotents.of_isSymmetricProjection hP' hP'sum
   have hPs (k : ι) := (hP k).isSymmetric
   have hP's (k : ι) := (hP' k).isSymmetric
-  rw [forall_comp_operatorAbs_eq_iff hc hc' hPs hP's] at hV
+  rw [forall_comp_operatorAbs_eq_iff hc hc'.toOrthogonalIdempotents hPs hP's] at hV
   set T := ∑ k, P' k ∘ₗ P k
   have hcomm : P j ∘ₗ T.operatorAbs = T.operatorAbs ∘ₗ P j :=
-    (commute_operatorAbs_of_commute (commute_adjoint_overlap_comp_overlap hc hc' hPs hP's j)).eq
+    (commute_operatorAbs_of_commute
+      (commute_adjoint_overlap_comp_overlap hc hc'.toOrthogonalIdempotents hPs hP's j)).eq
   refine (cancel_right (surjective_operatorAbs_overlap hc hc' hnd)).1 ?_
-  rw [comp_assoc, hcomm, ← comp_assoc, hV, overlap_comp_eq_comp hc hc', comp_assoc, hV]
+  rw [comp_assoc, hcomm, ← comp_assoc, hV,
+    overlap_comp_eq_comp hc hc'.toOrthogonalIdempotents, comp_assoc, hV]
 
 /-- Under Davis's non-degeneracy condition, some unitary intertwines the two complete families of
 orthogonal projections: `U Pⱼ = P'ⱼ U` for every `j`. -/
