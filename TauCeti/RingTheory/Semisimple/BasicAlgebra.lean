@@ -9,6 +9,8 @@ module
 -- Artin--Wedderburn supplies the shape of the main equivalence.
 public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.Nilpotent.Defs
+public import Mathlib.RingTheory.Idempotents
+public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 -- Non-public: used only inside proofs.  The matrix units produce the square-zero element that
 -- rules out a block of size at least two, a one-by-one matrix ring collapses to its base ring, and
@@ -65,6 +67,9 @@ finite acyclic quiver is basic (`TauCeti.PathAlgebra.isBasic`).
   basic if and only if that quotient is reduced.
 * `TauCeti.isBasic_of_commRing`: a commutative ring whose quotient by the Jacobson radical is
   semisimple is basic.
+* `TauCeti.IsBasic.exists_completeOrthogonalIdempotents`: a finite-dimensional basic algebra over
+  an algebraically closed field has a complete family of nonzero orthogonal idempotents whose
+  classes span the quotient by the Jacobson radical.
 
 ## Implementation notes
 
@@ -93,7 +98,8 @@ This implements the `IsBasic` target of the "Basic algebras and Morita reduction
 `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, together with the companion
 lemma named there: a semisimple ring is a product of division rings if and only if it is reduced.
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
-Algebras I*, CUP (2006), Ch. I.6.
+Algebras I*, CUP (2006), Ch. I.6. The lifted idempotents of a basic algebra over an
+algebraically closed field are the vertices of its bound-quiver presentation, ibid. Ch. II.3.
 -/
 
 public section
@@ -229,5 +235,52 @@ finite-dimensional commutative algebra over a field. -/
 theorem isBasic_of_commRing (A : Type v) [CommRing A] [IsSemisimpleRing (A ⧸ Ring.jacobson A)] :
     IsBasic A :=
   ⟨‹_›, inferInstance⟩
+
+/-! ### Idempotents of a basic algebra over an algebraically closed field -/
+
+/-- **The block idempotents of a basic algebra.** A finite-dimensional basic algebra over an
+algebraically closed field has a complete family of nonzero orthogonal idempotents whose classes
+span its quotient by the Jacobson radical. -/
+theorem IsBasic.exists_completeOrthogonalIdempotents {k : Type w} {A : Type v} [Field k]
+    [IsAlgClosed k] [Ring A] [Algebra k A] [FiniteDimensional k A] (hA : IsBasic A) :
+    ∃ (n : ℕ) (e : Fin n → A), CompleteOrthogonalIdempotents e ∧ (∀ i, e i ≠ 0) ∧
+      Submodule.span k (Set.range fun i => Ideal.Quotient.mk (Ring.jacobson A) (e i)) = ⊤ := by
+  classical
+  have : IsArtinianRing A := IsArtinianRing.of_finite k A
+  obtain ⟨hss, hred⟩ := (isBasic_def A).mp hA
+  obtain ⟨n, d, hd, ⟨σ⟩⟩ :=
+    IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (A ⧸ Ring.jacobson A)
+  -- Every Wedderburn block of a basic algebra has size one.
+  have : IsReduced (Π i, Matrix (Fin (d i)) (Fin (d i)) k) :=
+    isReduced_of_injective σ.symm σ.symm.injective
+  have hsub (i : Fin n) : Subsingleton (Fin (d i)) :=
+    have := isReduced_of_isReduced_pi (R := fun i => Matrix (Fin (d i)) (Fin (d i)) k) i
+    Matrix.subsingleton_of_isReduced (A := k)
+  -- The block units span `A ⧸ J`; lift them along the nilpotent radical.
+  let ē : Fin n → A ⧸ Ring.jacobson A := fun i => σ.symm (Pi.single i 1)
+  have hē : CompleteOrthogonalIdempotents ē :=
+    (CompleteOrthogonalIdempotents.single fun i => Matrix (Fin (d i)) (Fin (d i)) k).map
+      σ.symm.toRingHom
+  obtain ⟨e, he, hπe⟩ := hē.lift_of_isNilpotent_ker (Ideal.Quotient.mk (Ring.jacobson A))
+    (fun x hx => by
+      obtain ⟨m, hm⟩ := (IsSemiprimaryRing.isNilpotent : IsNilpotent (Ring.jacobson A))
+      exact ⟨m, by simpa [hm] using Ideal.pow_mem_pow (Ideal.mk_ker.le hx) m⟩)
+    (fun i => Ideal.Quotient.mk_surjective _)
+  have hπe' (i : Fin n) : Ideal.Quotient.mk (Ring.jacobson A) (e i) = ē i := congrFun hπe i
+  refine ⟨n, e, he, fun i h => ?_, eq_top_iff.mpr fun y _ => ?_⟩
+  · have h' : (Pi.single i 1 : Π i, Matrix (Fin (d i)) (Fin (d i)) k) = 0 :=
+      σ.symm.injective ((show ē i = 0 by rw [← hπe' i, h, map_zero]).trans (map_zero _).symm)
+    simpa using congrFun h' i
+  · have hy : y = ∑ i, σ y i 0 0 • ē i := by
+      apply σ.injective
+      ext i p q
+      rw [Subsingleton.elim p 0, Subsingleton.elim q 0]
+      simp only [ē, AlgEquiv.apply_symm_apply, map_sum, map_smul, Finset.sum_apply,
+        Matrix.sum_apply, Pi.smul_apply, Matrix.smul_apply]
+      rw [Fintype.sum_eq_single i fun b hb => by simp [Pi.single_eq_of_ne (Ne.symm hb)]]
+      simp
+    rw [hy]
+    exact Submodule.sum_mem _ fun i _ =>
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hπe' i⟩)
 
 end TauCeti
