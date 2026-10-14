@@ -147,6 +147,7 @@ theorem _root_.EReal.coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
 
 /-- The coercion from `ℝ≥0∞` to `EReal` commutes with infima; both sides are `⊤` when the index
 type is empty. -/
+@[norm_cast]
 theorem _root_.EReal.coe_ennreal_iInf {ι : Sort*} (f : ι → ℝ≥0∞) :
     ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
   apply le_antisymm
