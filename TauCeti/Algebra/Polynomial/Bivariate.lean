@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Irreducible.Lemmas
-public import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 public import Mathlib.Algebra.Polynomial.Bivariate
-public import TauCeti.Algebra.Polynomial.Units
 
 /-!
 # Coefficient maps and evaluation of bivariate polynomials
