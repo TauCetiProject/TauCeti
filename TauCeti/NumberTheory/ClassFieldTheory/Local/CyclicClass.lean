@@ -334,7 +334,7 @@ theorem cup_kummerClass_eq_zero_iff_of_ringEquiv_real (a b : Kˣ) (e : K ≃+* �
       exact add_mem (IntermediateField.algebraMap_mem _ _)
         (mul_mem (IntermediateField.algebraMap_mem _ _) (mem_adjoin_simple_self K s))
     rw [cup_kummerClass_eq_zero_iff_mem_normGroup hζ hn a b hs hgen,
-      normGroup_eq_comap_of_equiv_equiv e (RingEquiv.refl ℂ) he, Subgroup.mem_comap,
+      e.normGroup_eq_comap_of_equiv_equiv (RingEquiv.refl ℂ) he, Subgroup.mem_comap,
       normGroup_real_complex, Units.mem_posSubgroup]
     simp [hb]
 

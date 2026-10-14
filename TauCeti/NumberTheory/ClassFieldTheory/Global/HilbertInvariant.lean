@@ -166,6 +166,7 @@ theorem infiniteHilbertInvariantAt_of_isReal {w : InfinitePlace K} (hw : w.IsRea
   rw [infiniteHilbertInvariantAt, dite_eq_left hw]
 
 /-- The infinite Hilbert invariant vanishes at a complex place. -/
+@[simp]
 theorem infiniteHilbertInvariantAt_eq_zero_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
     (a b : Kˣ) : infiniteHilbertInvariantAt K w a b = 0 := by
   rw [infiniteHilbertInvariantAt,
