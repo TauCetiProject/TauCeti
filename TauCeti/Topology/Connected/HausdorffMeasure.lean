@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Hausdorff
-public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
@@ -37,24 +36,29 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- Distance from a fixed point, converted to a real number, is `1`-Lipschitz on any set
-where that distance is finite. -/
-theorem _root_.lipschitzOnWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X)
-    {s : Set X} (ha : ∀ x ∈ s, edist a x ≠ ∞) :
-    LipschitzOnWith 1 (fun x ↦ (edist a x).toReal) s := by
-  intro x hx y hy
+/-- Distance from a fixed point, converted to a real number, is `1`-Lipschitz. -/
+theorem lipschitzWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X) :
+    LipschitzWith 1 (fun x ↦ (edist a x).toReal) := by
+  intro x y
   by_cases hxy : edist x y = ∞
   · simp [hxy]
+  have hxy' : edist y x ≠ ∞ := by simpa only [edist_comm] using hxy
+  by_cases hax : edist a x = ∞
+  · have hay : edist a y = ∞ := by
+      by_contra hay
+      exact ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hay, hxy'⟩) (edist_triangle a y x) hax
+    simp [hax, hay]
+  have hay : edist a y ≠ ∞ :=
+    ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hax, hxy⟩) (edist_triangle a x y)
   suffices ENNReal.ofReal (dist (edist a x).toReal (edist a y).toReal) ≤ edist x y by
     simpa only [edist_dist, ENNReal.coe_one, one_mul] using this
   rw [ENNReal.ofReal_le_iff_le_toReal hxy, Real.dist_eq, abs_le]
-  have hxy' : edist y x ≠ ∞ := by simpa only [edist_comm] using hxy
-  have hforward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨ha x hx, hxy⟩)
+  have hforward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hax, hxy⟩)
     (edist_triangle a x y)
-  have hbackward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨ha y hy, hxy'⟩)
+  have hbackward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hay, hxy'⟩)
     (edist_triangle a y x)
-  rw [ENNReal.toReal_add (ha x hx) hxy] at hforward
-  rw [ENNReal.toReal_add (ha y hy) hxy', edist_comm y x] at hbackward
+  rw [ENNReal.toReal_add hax hxy] at hforward
+  rw [ENNReal.toReal_add hay hxy', edist_comm y x] at hbackward
   constructor <;> linarith
 
 /-- Two points in a preconnected subset of an extended metric space are at finite distance. -/
@@ -73,7 +77,7 @@ theorem _root_.IsPreconnected.edist_le_hausdorffMeasure {X : Type*} [EMetricSpac
     {x y : X} (hx : x ∈ s) (hy : y ∈ s) : edist x y ≤ μH[1] s := by
   let f : X → ℝ := fun z ↦ (edist x z).toReal
   have hfinite (z : X) (hz : z ∈ s) : edist x z ≠ ∞ := hs.edist_ne_top hx hz
-  have hf : LipschitzOnWith 1 f s := lipschitzOnWith_toReal_edist x hfinite
+  have hf : LipschitzOnWith 1 f s := (lipschitzWith_toReal_edist x).lipschitzOnWith
   have hconn : IsPreconnected (f '' s) := hs.image f hf.continuousOn
   have hzero : (0 : ℝ) ∈ f '' s := ⟨x, hx, by simp [f]⟩
   have hdist : (edist x y).toReal ∈ f '' s := ⟨y, hy, rfl⟩
