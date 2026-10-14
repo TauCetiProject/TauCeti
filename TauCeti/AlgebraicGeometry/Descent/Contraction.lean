@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
-public import Mathlib.Topology.ContinuousMap.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Epi
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
@@ -98,16 +97,16 @@ private noncomputable def descPsh : Y.toPresheafedSpace ⟶ Z.toPresheafedSpace 
     { app W := h.appLE W.unop _ (preimage_descBase_le c hq h hh W.unop) ≫
         inv (c.app ((Opens.map (descBase c hq h hh)).obj W.unop))
       naturality W W' i := by
-        rw [map_appLE_assoc, IsIso.comp_inv_eq, Category.assoc, Category.assoc,
-          TopCat.Presheaf.pushforward_obj_map, c.naturality, IsIso.inv_hom_id_assoc, appLE_map] }
+        simp [map_appLE_assoc, appLE_map] }
 
 private theorem comp_descPsh : c.toPshHom ≫ descPsh c hq hc h hh = h.toPshHom := by
   refine PresheafedSpace.ext_of_app (comp_descBase c hq h hh) fun W ↦ ?_
-  simp only [descPsh, TopCat.Presheaf.pushforward_obj_obj, appLE, op_unop, homOfLE_leOfHom,
-    PresheafedSpace.comp_base, Opens.map_comp_obj, PresheafedSpace.comp_c_app, Category.assoc,
-    IsIso.inv_hom_id, Category.comp_id, Functor.op_obj, ← Functor.map_comp]
-  -- The remaining restriction map is along an endomorphism in the poset of opens of `X`.
-  exact (congrArg (h.app W ≫ X.presheaf.map ·) (Subsingleton.elim _ (𝟙 _))).trans (by simp)
+  suffices ∀ i : op (h ⁻¹ᵁ W) ⟶ op (h ⁻¹ᵁ W),
+      h.app W ≫ X.presheaf.map i = h.app W by
+    simpa [descPsh, appLE, ← Functor.map_comp] using this _
+  intro i
+  rw [Subsingleton.elim i (𝟙 _)]
+  simp
 
 private theorem isLocalHom_stalkMap_descPsh (y : Y) :
     IsLocalHom ((descPsh c hq hc h hh).stalkMap y).hom := by
@@ -139,7 +138,8 @@ theorem comp_descOfIsQuotientMap : c ≫ c.descOfIsQuotientMap hq hc h hh = h :=
 /-- The morphism descended along `c` is the only morphism through which `h` factors. -/
 theorem eq_descOfIsQuotientMap {g : Y ⟶ Z} (hg : c ≫ g = h) :
     g = c.descOfIsQuotientMap hq hc h hh := by
-  have := epi_of_isQuotientMap_of_isIso_app c hq hc
+  let _ : Surjective c := ⟨hq.surjective⟩
+  have := epi_of_surjective_of_isIso_app c hc
   rw [← cancel_epi c, hg, comp_descOfIsQuotientMap]
 
 /-- Descending a morphism already expressed as a composite through `c` recovers that morphism. -/
@@ -169,7 +169,8 @@ theorem existsUnique_comp_eq_of_universallyClosed [UniversallyClosed c] [Surject
 @[reassoc]
 theorem descOfIsQuotientMap_comp_eq {S : Scheme.{u}} {p : Y ⟶ S} {q : Z ⟶ S}
     (e : h ≫ q = c ≫ p) : c.descOfIsQuotientMap hq hc h hh ≫ q = p := by
-  have := epi_of_isQuotientMap_of_isIso_app c hq hc
+  let _ : Surjective c := ⟨hq.surjective⟩
+  have := epi_of_surjective_of_isIso_app c hc
   rw [← cancel_epi c, comp_descOfIsQuotientMap_assoc, e]
 
 /-- **Descent commutes with base change.** Given a commutative square `u ≫ c = c' ≫ v` in which

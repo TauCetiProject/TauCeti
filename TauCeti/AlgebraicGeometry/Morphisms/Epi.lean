@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
-public import Mathlib.Topology.ContinuousMap.Basic
 
 /-!
 # Epimorphisms of schemes with injective stalk or section maps
@@ -40,8 +39,8 @@ This gluing step follows the proof of Mathlib's
   with injective stalk maps is an epimorphism.
 * `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_app_injective`: a surjective morphism which
   is injective on sections over every open is an epimorphism.
-* `AlgebraicGeometry.Scheme.Hom.epi_of_isQuotientMap_of_isIso_app`: a topological quotient map
-  which is an isomorphism on sections over every open is an epimorphism.
+* `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_isIso_app`: a surjective morphism which is
+  an isomorphism on sections over every open is an epimorphism.
 * `AlgebraicGeometry.Scheme.Hom.stalkMap_pullback_snd_injective`: the stalk maps of a base change
   along an open immersion are injective when those of `f` are.
 * `AlgebraicGeometry.Scheme.Hom.epi_pullback_snd_of_isOpenImmersion`: the base change of such an
@@ -56,7 +55,7 @@ This gluing step follows the proof of Mathlib's
 
 public section
 
-open CategoryTheory Limits Topology
+open CategoryTheory Limits
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -92,11 +91,10 @@ theorem epi_of_surjective_of_app_injective (f : X ⟶ Y) [Surjective f]
   rw [← cancel_mono (f.app (g' ⁻¹ᵁ U)), Category.assoc, f.app_eq_appLE, map_appLE]
   exact (comp_appLE f g U _ _).symm.trans ((key _ _ e _ _).trans (comp_appLE f g' U _ _))
 
-/-- A topological quotient map of schemes which is an isomorphism on sections over every open is
-an epimorphism. -/
-theorem epi_of_isQuotientMap_of_isIso_app (f : X ⟶ Y) (hf : IsQuotientMap f)
+/-- A surjective morphism of schemes which is an isomorphism on sections over every open is an
+epimorphism. -/
+theorem epi_of_surjective_of_isIso_app (f : X ⟶ Y) [Surjective f]
     (h : ∀ U, IsIso (f.app U)) : Epi f :=
-  have : Surjective f := ⟨hf.surjective⟩
   epi_of_surjective_of_app_injective f fun _ ↦ (ConcreteCategory.bijective_of_isIso _).1
 
 /-- The stalk maps of the base change of `f` along an open immersion are injective when those of
