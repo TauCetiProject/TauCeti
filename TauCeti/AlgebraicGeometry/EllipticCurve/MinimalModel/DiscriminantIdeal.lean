@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Factorization
-public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
@@ -69,8 +68,6 @@ defect ideal they assemble into, and its class in `ClassGroup O` are not defined
   `WeierstrassCurve.isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span`: a globally minimal
   equation computes the ideal as `(Δ W)`, and among integral equations that identity holds only
   for the globally minimal ones.
-* `WeierstrassCurve.absNorm_minimalDiscriminantIdeal_baseChange`: for a globally minimal
-  equation over `ℤ`, `|Δ_min| = |Δ|`.
 * `WeierstrassCurve.IsGlobalMinimal.hasAdditiveReduction_minimal_iff`: a globally minimal equation
   has additive reduction at `v` exactly when `v` contains its discriminant and `c₄`.
 * `WeierstrassCurve.IsGlobalMinimal.dvd_six_of_pow_dvd`: a globally minimal equation admits no
@@ -303,14 +300,6 @@ theorem isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span {W : WeierstrassCur
     valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC,
     valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_inj, neg_inj, Nat.cast_inj, ← h]
   exact count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation O W v
-
-/-- **The minimal discriminant of a globally minimal equation over `ℤ` is its discriminant**, up to
-sign: the norm `|Δ_min|` of the minimal discriminant ideal is `|Δ|`. -/
-theorem absNorm_minimalDiscriminantIdeal_baseChange (W : WeierstrassCurve ℤ)
-    [(W.baseChange ℚ).IsElliptic] (h : IsGlobalMinimal ℤ (W.baseChange ℚ)) :
-    Ideal.absNorm (minimalDiscriminantIdeal ℤ (W.baseChange ℚ)) = W.Δ.natAbs := by
-  rw [minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h (d := W.Δ) (by simp [baseChange]),
-    Ideal.absNorm_span_singleton, Algebra.norm_self, MonoidHom.id_apply]
 
 /-- **A globally minimal equation has additive reduction at `v` exactly when `v` contains the
 discriminant and `c₄`** of its integral model. -/

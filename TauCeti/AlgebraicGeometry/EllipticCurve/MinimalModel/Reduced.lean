@@ -40,8 +40,6 @@ and `3`.
 
 ## Main results
 
-* `WeierstrassCurve.isReducedMinimal_baseChange_iff`: for an equation over `ℤ`, reduced
-  minimality is global minimality together with the coefficient ranges read in `ℤ`.
 * `WeierstrassCurve.exists_isReducedMinimal_smul`: every elliptic curve over `ℚ` has a reduced
   minimal equation.
 * `WeierstrassCurve.IsReducedMinimal.eq_of_smul_eq`: two reduced minimal equations related by a
@@ -91,16 +89,6 @@ theorem isReducedMinimal_iff {W : WeierstrassCurve ℚ} [W.IsElliptic] :
 theorem IsReducedMinimal.isGlobalMinimal {W : WeierstrassCurve ℚ} [W.IsElliptic]
     (h : IsReducedMinimal W) : IsGlobalMinimal ℤ W :=
   h.1
-
-/-- Reduced minimality of an equation over `ℤ`, with the coefficient conditions read in `ℤ`: its
-base change to `ℚ` is reduced minimal exactly when it is globally minimal and `a₁, a₃ ∈ {0, 1}`,
-`a₂ ∈ {-1, 0, 1}`. -/
-theorem isReducedMinimal_baseChange_iff (W : WeierstrassCurve ℤ) [(W.baseChange ℚ).IsElliptic] :
-    IsReducedMinimal (W.baseChange ℚ) ↔ IsGlobalMinimal ℤ (W.baseChange ℚ) ∧
-      (W.a₁ = 0 ∨ W.a₁ = 1) ∧ (W.a₂ = -1 ∨ W.a₂ = 0 ∨ W.a₂ = 1) ∧ (W.a₃ = 0 ∨ W.a₃ = 1) := by
-  simp only [isReducedMinimal_iff, baseChange, map_a₁, map_a₂, map_a₃, algebraMap_int_eq,
-    eq_intCast]
-  norm_cast
 
 /-! ### The normalisation over `ℤ` -/
 

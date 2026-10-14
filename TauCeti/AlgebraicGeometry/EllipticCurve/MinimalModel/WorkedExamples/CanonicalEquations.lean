@@ -31,10 +31,9 @@ minimal at every prime (`WeierstrassCurve.isGlobalMinimal_baseChange_of_isCoprim
 coefficients `a₁, a₃ ∈ {0, 1}`, `a₂ ∈ {-1, 0, 1}` are in reduced form. By uniqueness of the reduced
 minimal equation (`WeierstrassCurve.existsUnique_reducedMinimal`), it is the only reduced minimal
 equation in its `ℚ`-isomorphism class: every curve isomorphic to it has it as its
-`WeierstrassCurve.reducedMinimalModel`. This is what lets a label name an equation. For 11.a2 and
-37.a1 this is proved in
-`TauCeti/AlgebraicGeometry/EllipticCurve/MinimalModel/WorkedExamples/Reduced.lean`; this file adds
-11.a1. The minimal discriminant `|Δ_min|` is then read off it.
+`WeierstrassCurve.reducedMinimalModel`. This is what lets a label name an equation. This, and the
+minimal discriminant `|Δ_min|` read off it, is proved in
+`TauCeti/AlgebraicGeometry/EllipticCurve/MinimalModel/WorkedExamples/Reduced.lean`.
 
 **The minimal-pair equations.** Completing the square and the cube carries an equation with
 invariants `c₄, c₆` to `y² = x³ - 27c₄x - 54c₆`. For 11.a1 and 11.a2 this pair is already a minimal
@@ -58,11 +57,6 @@ with the LMFDB names `curve11a1` of
 
 ## Main results
 
-* `TauCeti.WorkedExamples.isReducedMinimal_curve11a1`: the equation of 11.a1 is reduced minimal.
-* `TauCeti.WorkedExamples.reducedMinimalModel_eq_curve11a1`: it is the reduced minimal model of
-  every curve isomorphic to it.
-* `TauCeti.WorkedExamples.absNorm_minimalDiscriminantIdeal_curve11a1` and its two companions:
-  `|Δ_min|` is `11`, `11⁵` and `37`.
 * `TauCeti.WorkedExamples.minimalPairModel_model_curve11a1` and its two companions: the
   minimal-pair equations.
 * `TauCeti.WorkedExamples.naiveHeight_curve11a1` and its two companions: the naïve heights.
@@ -84,46 +78,6 @@ public section
 open WeierstrassCurve
 
 namespace TauCeti.WorkedExamples
-
-/-! ### The reduced minimal equation of 11.a1 -/
-
-/-- **11.a1 is reduced minimal**: its discriminant `-11` is coprime to its `c₄`, and its
-coefficients are in reduced form. -/
-theorem isReducedMinimal_curve11a1 : IsReducedMinimal (curve11a1.baseChange ℚ) :=
-  (isReducedMinimal_baseChange_iff _).2 ⟨isGlobalMinimal_baseChange_of_isCoprime _ <| by
-    rw [Δ_curve11a1, c₄_curve11a1, Int.isCoprime_iff_gcd_eq_one]
-    norm_num, by norm_num, by norm_num, by norm_num⟩
-
-/-- **The label 11.a1 names an equation**: every elliptic curve over `ℚ` isomorphic to 11.a1 has
-`y² + y = x³ - x² - 7820x - 263580` as its reduced minimal model. -/
-theorem reducedMinimalModel_eq_curve11a1 {E : WeierstrassCurve ℚ} [E.IsElliptic]
-    (C : VariableChange ℚ) (hC : C • E = curve11a1.baseChange ℚ) :
-    reducedMinimalModel E = curve11a1.baseChange ℚ :=
-  (eq_reducedMinimalModel isReducedMinimal_curve11a1 C hC).symm
-
-/-! ### Minimal discriminants -/
-
-/-- **The minimal discriminant of 11.a1 is `-11`**, of absolute value `11`. -/
-@[simp]
-theorem absNorm_minimalDiscriminantIdeal_curve11a1 :
-    Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve11a1.baseChange ℚ)) = 11 := by
-  rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve11a1.isGlobalMinimal,
-    Δ_curve11a1]
-  norm_num
-
-/-- **The minimal discriminant of 11.a2 is `-11⁵`**, of absolute value `161051`. -/
-theorem absNorm_minimalDiscriminantIdeal_curve11a2 :
-    Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve11a2.baseChange ℚ)) = 161051 := by
-  rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve11a2.isGlobalMinimal,
-    Δ_curve11a2]
-  norm_num
-
-/-- **The minimal discriminant of 37.a1 is `37`.** -/
-theorem absNorm_minimalDiscriminantIdeal_curve37a1 :
-    Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve37a1.baseChange ℚ)) = 37 := by
-  rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve37a1.isGlobalMinimal,
-    Δ_curve37a1]
-  norm_num
 
 /-! ### Minimal-pair equations and naïve heights -/
 
@@ -179,71 +133,74 @@ theorem isMinimalPairNF_minimalPairCurve37a1 : IsMinimalPairNF minimalPairCurve3
   .of_forall_le 2 (by norm_num) (by norm_num) fun ℓ hℓ hp ↦ by
     interval_cases ℓ <;> first | exact absurd hp Nat.not_prime_one | norm_num at hp ⊢
 
+/-- The minimal-pair model `y² = x³ - 10135152x - 12419196912` of 11.a1. -/
+private def minimalPairModelCurve11a1 : MinimalPairModel (curve11a1.baseChange ℚ) :=
+  ⟨minimalPairCurve11a1, isMinimalPairNF_minimalPairCurve11a1, _,
+    variableChangeElevenA_smul_minimalPairCurve11a1⟩
+
+/-- The minimal-pair model `y² = x³ - 13392x - 1080432` of 11.a2. -/
+private def minimalPairModelCurve11a2 : MinimalPairModel (curve11a2.baseChange ℚ) :=
+  ⟨minimalPairCurve11a2, isMinimalPairNF_minimalPairCurve11a2, _,
+    variableChangeElevenA_smul_minimalPairCurve11a2⟩
+
+/-- The minimal-pair model `y² = x³ - 16x + 16` of 37.a1. -/
+private def minimalPairModelCurve37a1 : MinimalPairModel (curve37a1.baseChange ℚ) :=
+  ⟨minimalPairCurve37a1, isMinimalPairNF_minimalPairCurve37a1, _,
+    variableChangeThirtySevenA_smul_minimalPairCurve37a1⟩
+
 /-- **The minimal-pair equation of 11.a1** is `y² = x³ - 10135152x - 12419196912`. -/
 @[simp]
 theorem minimalPairModel_model_curve11a1 :
     (minimalPairModel (curve11a1.baseChange ℚ)).model = minimalPairCurve11a1 :=
-  minimalPairModel_unique _ _ ⟨_, isMinimalPairNF_minimalPairCurve11a1, _,
-    variableChangeElevenA_smul_minimalPairCurve11a1⟩
+  minimalPairModel_unique _ _ minimalPairModelCurve11a1
 
 /-- **The minimal-pair equation of 11.a2** is `y² = x³ - 13392x - 1080432`. -/
 @[simp]
 theorem minimalPairModel_model_curve11a2 :
     (minimalPairModel (curve11a2.baseChange ℚ)).model = minimalPairCurve11a2 :=
-  minimalPairModel_unique _ _ ⟨_, isMinimalPairNF_minimalPairCurve11a2, _,
-    variableChangeElevenA_smul_minimalPairCurve11a2⟩
+  minimalPairModel_unique _ _ minimalPairModelCurve11a2
 
 /-- **The minimal-pair equation of 37.a1** is `y² = x³ - 16x + 16`. -/
 @[simp]
 theorem minimalPairModel_model_curve37a1 :
     (minimalPairModel (curve37a1.baseChange ℚ)).model = minimalPairCurve37a1 :=
-  minimalPairModel_unique _ _ ⟨_, isMinimalPairNF_minimalPairCurve37a1, _,
-    variableChangeThirtySevenA_smul_minimalPairCurve37a1⟩
+  minimalPairModel_unique _ _ minimalPairModelCurve37a1
 
 /-- **The naïve height of 11.a1** is `27 ⋅ 12419196912²`. -/
 @[simp]
 theorem naiveHeight_curve11a1 :
     naiveHeight (curve11a1.baseChange ℚ) = 4164384202353819065088 := by
-  rw [naiveHeight_eq ⟨_, isMinimalPairNF_minimalPairCurve11a1, _,
-    variableChangeElevenA_smul_minimalPairCurve11a1⟩, MinimalPairModel.height_def]
-  norm_num
+  rw [naiveHeight_eq minimalPairModelCurve11a1, MinimalPairModel.height_def]
+  norm_num [minimalPairModelCurve11a1]
 
 /-- **The naïve height of 11.a2** is `27 ⋅ 1080432²`. -/
 @[simp]
 theorem naiveHeight_curve11a2 : naiveHeight (curve11a2.baseChange ℚ) = 31517999278848 := by
-  rw [naiveHeight_eq ⟨_, isMinimalPairNF_minimalPairCurve11a2, _,
-    variableChangeElevenA_smul_minimalPairCurve11a2⟩, MinimalPairModel.height_def]
-  norm_num
+  rw [naiveHeight_eq minimalPairModelCurve11a2, MinimalPairModel.height_def]
+  norm_num [minimalPairModelCurve11a2]
 
 /-- **The naïve height of 37.a1** is `4 ⋅ 16³ = 16384`. -/
 @[simp]
 theorem naiveHeight_curve37a1 : naiveHeight (curve37a1.baseChange ℚ) = 16384 := by
-  rw [naiveHeight_eq ⟨_, isMinimalPairNF_minimalPairCurve37a1, _,
-    variableChangeThirtySevenA_smul_minimalPairCurve37a1⟩, MinimalPairModel.height_def]
-  norm_num
+  rw [naiveHeight_eq minimalPairModelCurve37a1, MinimalPairModel.height_def]
+  norm_num [minimalPairModelCurve37a1]
 
 /-! ### The minimal-pair equations are not minimal -/
 
 /-- The base change of the minimal-pair equation of 11.a1 is an elliptic curve, being isomorphic to
 11.a1. -/
-instance : (minimalPairCurve11a1.baseChange ℚ).IsElliptic := by
-  rw [← inv_smul_smul variableChangeElevenA (minimalPairCurve11a1.baseChange ℚ),
-    variableChangeElevenA_smul_minimalPairCurve11a1]
-  infer_instance
+instance : (minimalPairCurve11a1.baseChange ℚ).IsElliptic :=
+  minimalPairModelCurve11a1.isElliptic_baseChange_model
 
 /-- The base change of the minimal-pair equation of 11.a2 is an elliptic curve, being isomorphic to
 11.a2. -/
-instance : (minimalPairCurve11a2.baseChange ℚ).IsElliptic := by
-  rw [← inv_smul_smul variableChangeElevenA (minimalPairCurve11a2.baseChange ℚ),
-    variableChangeElevenA_smul_minimalPairCurve11a2]
-  infer_instance
+instance : (minimalPairCurve11a2.baseChange ℚ).IsElliptic :=
+  minimalPairModelCurve11a2.isElliptic_baseChange_model
 
 /-- The base change of the minimal-pair equation of 37.a1 is an elliptic curve, being isomorphic to
 37.a1. -/
-instance : (minimalPairCurve37a1.baseChange ℚ).IsElliptic := by
-  rw [← inv_smul_smul variableChangeThirtySevenA (minimalPairCurve37a1.baseChange ℚ),
-    variableChangeThirtySevenA_smul_minimalPairCurve37a1]
-  infer_instance
+instance : (minimalPairCurve37a1.baseChange ℚ).IsElliptic :=
+  minimalPairModelCurve37a1.isElliptic_baseChange_model
 
 /-- **The minimal-pair equation of 11.a1 is not globally minimal**: it is carried to the reduced
 minimal equation with `u = 6`. -/
