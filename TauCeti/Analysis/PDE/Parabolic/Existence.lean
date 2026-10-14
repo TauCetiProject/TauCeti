@@ -81,6 +81,9 @@ with simple functions, so no separability of `V` is needed.
 
 * `TauCeti.exists_memLp_forall_setIntegral_eq_add_inner`: the variational formulation of
   `u' + A(t) u = f`, `u(a) = u₀`, has a solution in `L²(a, b; V)`.
+* `TauCeti.exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq`: the same, with the
+  hypotheses and the conclusion stated for bilinear functionals `B(t)` that agree with `A(t)` for
+  almost every `t`.
 
 ## References
 
@@ -460,5 +463,39 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner [CompleteSpace V] {ι : V �
     field_simp [(he_pos t).ne']
   simp only [hlhs, hrhs]
   exact h
+
+/-- `TauCeti.exists_memLp_forall_setIntegral_eq_add_inner` with the operators `A(t)` known only
+through a family of bilinear functionals `B(t)` that they agree with for almost every `t`:
+measurability, boundedness and Gårding's inequality are then hypotheses on `B`, and so is the
+conclusion. This is the form in which a concrete parabolic problem supplies its operators. -/
+theorem exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq [CompleteSpace V]
+    (ι : V →L[ℝ] H) (hab : a ≤ b) {B : ℝ → V → V → ℝ}
+    (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
+    (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
+    (hΛ : 0 ≤ Λ)
+    (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
+    (hα : 0 < α)
+    (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
+    (hf : MemLp f 2 (volume.restrict (Ioo a b))) (u₀ : H) :
+    ∃ u : ℝ → V, MemLp u 2 (volume.restrict (Ioo a b)) ∧
+      ∀ φ : ℝ → V, ContDiff ℝ 1 φ → φ b = 0 →
+        ∫ t in Ioo a b, (B t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ) =
+          (∫ t in Ioo a b, f t (φ t)) + ⟪u₀, ι (φ a)⟫_ℝ := by
+  obtain ⟨u, hu, hueq⟩ := exists_memLp_forall_setIntegral_eq_add_inner (A := A) hab
+    (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
+    (by
+      filter_upwards [hAB, hB_bound] with t hABt hBt
+      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      rw [hABt, mul_assoc]
+      exact hBt u v)
+    hα (by
+      filter_upwards [hAB, hB_garding] with t hABt hBt v
+      rw [hABt]
+      exact hBt v) hf u₀
+  refine ⟨u, hu, fun φ hφ hφb => ?_⟩
+  rw [← hueq φ hφ hφb]
+  refine integral_congr_ae ?_
+  filter_upwards [hAB] with t hABt
+  rw [hABt]
 
 end TauCeti

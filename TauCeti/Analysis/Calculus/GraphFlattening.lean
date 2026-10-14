@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.Algebra.Module.ProjectionGraph
 import Mathlib.Topology.OpenPartialHomeomorph.Basic
@@ -225,6 +226,15 @@ theorem norm_fderiv_graphFlattening_le {γ : E → ℝ} (hγ : Continuous γ)
     ‖fderiv ℝ (graphFlattening γ hγ) x‖ ≤ 1 + ‖fderiv ℝ γ x.snd‖ := by
   rw [fderiv_graphFlattening hγ hx]
   exact norm_graphFlatteningL_le _
+
+/-- Graph flattening has derivative norm at most `1 + L` when the graph function
+has derivative norm bounded by `L`. -/
+theorem norm_fderiv_graphFlattening_le_one_add {γ : E → ℝ} {L : ℝ}
+    (hγ : Differentiable ℝ γ) (hL : ∀ y, ‖fderiv ℝ γ y‖ ≤ L)
+    (x : WithLp 2 (ℝ × E)) :
+    ‖fderiv ℝ (graphFlattening γ hγ.continuous) x‖ ≤ 1 + L :=
+  (norm_fderiv_graphFlattening_le hγ.continuous
+    (hγ x.snd)).trans (add_le_add le_rfl (hL x.snd))
 
 /-- The derivative of inverse graph flattening has norm at most `1 + ‖Dγ(y)‖` at a
 differentiability point of the height. -/
