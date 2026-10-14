@@ -7,13 +7,12 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassField
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 public import TauCeti.NumberTheory.LocalField.Norm.Open
 
-import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
-import TauCeti.NumberTheory.ClassFieldTheory.Formation.TrivialLayer
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
 
 /-!
@@ -25,9 +24,11 @@ the finite Galois extension `classField K V`. This file attaches to `V` the conc
 class formation, and proves its order-theoretic properties.
 
 The topology statement is inherited from the local inverse-function theorem for the field norm;
-finite index follows from the valuation--unit decomposition of `Kˣ`. Transitivity of the abstract
-formation norm makes the construction monotone in `V`, while norm limitation shows that replacing
-`V` by its maximal abelian sublayer does not change the subgroup.
+finite index follows from the valuation--unit decomposition of `Kˣ`. The order-theoretic
+properties are those of the norm subgroups `Formation.normSubgroup` of the units formation, read on
+`Kˣ` through the order isomorphism `localGroundOrderIso`: monotonicity in `V` comes from the
+transitivity of the formation norm, and norm limitation shows that replacing `V` by its maximal
+abelian sublayer does not change the subgroup.
 
 ## Main definitions
 
@@ -35,6 +36,9 @@ formation norm makes the construction monotone in `V`, while norm limitation sho
   open normal subgroup of the absolute Galois group.
 * `TauCeti.ClassFieldTheory.localGroundEquiv`: the identification of `Kˣ`, written additively,
   with the ground level of a finite layer of the units formation.
+* `TauCeti.ClassFieldTheory.localGroundOrderIso`: the identification of the subgroups of `Kˣ`
+  with the subgroups of the ground level of the units formation, carrying `localNormSubgroup` to
+  `Formation.normSubgroup`.
 
 ## Main results
 
@@ -144,33 +148,49 @@ theorem localGroundEquiv_mem_normSubgroup_iff
     fixingOpenNormalSubgroup_classField]
   rfl
 
-/-- The ground-level identification of the refinement `V ≤ W` is compatible with the two
-identifications of `Kˣ` with the ground levels of the layers of `W` and `V`. -/
+/-- **Subgroups of `Kˣ` are the subgroups of the ground level of the units formation.** The level
+of the whole group `G_K` is `Kˣ`, written additively, so taking preimages along that
+identification is an order isomorphism. It carries the concrete local norm subgroups to the norm
+subgroups of the units formation (`localGroundOrderIso_localNormSubgroup`), which transports the
+lattice laws of the norm subgroups of a class formation to `Kˣ`. -/
+def localGroundOrderIso : Subgroup Kˣ ≃o Submodule ℤ ((unitsFormation K).level ⊤) :=
+  Subgroup.toAddSubgroup.trans <|
+    (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+      (fixedField_toSubgroup_top_eq_fieldRange K)).symm.comapAddSubgroup.trans
+        AddSubgroup.toIntSubmodule
+
+/-- An element of the ground level lies in the image of a subgroup `H ≤ Kˣ` under
+`localGroundOrderIso` exactly when the corresponding unit of `K` lies in `H`. -/
 @[simp]
-theorem groundEquiv_localGroundEquiv {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
-    (h : V ≤ W) (x : Additive Kˣ) :
-    (LayerRefinement.ofOpenNormal h).groundEquiv (unitsFormation K) (localGroundEquiv K W x) =
-      localGroundEquiv K V x := by
-  apply Subtype.ext
-  rw [LayerRefinement.groundEquiv_apply_coe, localGroundEquiv_apply_coe,
-    localGroundEquiv_apply_coe]
+theorem mem_localGroundOrderIso {H : Subgroup Kˣ} {a : (unitsFormation K).level ⊤} :
+    a ∈ localGroundOrderIso K H ↔
+      ((unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+        (fixedField_toSubgroup_top_eq_fieldRange K)).symm a).toMul ∈ H :=
+  Iff.rfl
+
+/-- `localGroundOrderIso` carries the local norm subgroup of `V` to the norm subgroup of the layer
+`V ◁ G_K` of the units formation. -/
+@[simp]
+theorem localGroundOrderIso_localNormSubgroup
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    localGroundOrderIso K (localNormSubgroup K V) = (unitsFormation K).normSubgroup V := by
+  let e := unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+    (fixedField_toSubgroup_top_eq_fieldRange K)
+  ext a
+  obtain ⟨x, rfl⟩ : ∃ x : Kˣ, e (Additive.ofMul x) = a := ⟨(e.symm a).toMul, by simp⟩
+  rw [Formation.mem_normSubgroup, groundEquivOfOpenNormal_unitsLevelEquiv,
+    localGroundEquiv_mem_normSubgroup_iff, mem_localGroundOrderIso, AddEquiv.symm_apply_apply,
+    toMul_ofMul]
 
 /-! ### Order properties -/
 
 /-- **Local norm subgroups are monotone in the layer subgroup.** If `V ≤ W`, then the class field
 of `W` is contained in that of `V`, and every norm from the larger field is a norm from the
 smaller field. -/
-theorem localNormSubgroup_mono : Monotone (localNormSubgroup K) := by
-  intro V W h x hx
-  let T := LayerRefinement.ofOpenNormal h
-  have hx' : localGroundEquiv K V (Additive.ofMul x) ∈
-      (NormalLayer.ofOpenNormal V).normSubgroup (unitsFormation K) :=
-    (localGroundEquiv_mem_normSubgroup_iff K V x).2 hx
-  obtain ⟨y, hy, hyx⟩ := T.normSubgroup_le_map (unitsFormation K) hx'
-  have hy' : y = localGroundEquiv K W (Additive.ofMul x) :=
-    (T.groundEquiv (unitsFormation K)).injective <|
-      hyx.trans (groundEquiv_localGroundEquiv K h (Additive.ofMul x)).symm
-  exact (localGroundEquiv_mem_normSubgroup_iff K W x).1 (hy' ▸ hy)
+theorem localNormSubgroup_mono : Monotone (localNormSubgroup K) := fun V W h ↦ by
+  rw [← (localGroundOrderIso K).le_iff_le, localGroundOrderIso_localNormSubgroup,
+    localGroundOrderIso_localNormSubgroup]
+  exact (unitsFormation K).normSubgroup_mono h
 
 /-- **The top layer has the whole unit group as its norm subgroup.** It cuts out the ground field
 itself, whose norm to itself is the identity. This pins the direction of the local class-field
@@ -178,16 +198,8 @@ correspondence. -/
 @[simp]
 theorem localNormSubgroup_top :
     localNormSubgroup K (openNormalSubgroupTop (AbsoluteGaloisGroup K)) = ⊤ := by
-  let V := openNormalSubgroupTop (AbsoluteGaloisGroup K)
-  have hV : (NormalLayer.ofOpenNormal V).top = (NormalLayer.ofOpenNormal V).ground := by
-    rw [NormalLayer.top_ofOpenNormal, NormalLayer.ground_ofOpenNormal]
-    apply OpenSubgroup.toSubgroup_injective
-    exact openNormalSubgroupTop_toSubgroup _
-  apply top_unique
-  intro x _
-  rw [← localGroundEquiv_mem_normSubgroup_iff K V x,
-    (NormalLayer.ofOpenNormal V).normSubgroup_eq_top_of_top_eq_ground (unitsFormation K) hV]
-  exact Submodule.mem_top
+  apply (localGroundOrderIso K).injective
+  rw [localGroundOrderIso_localNormSubgroup, Formation.normSubgroup_top, map_top]
 
 variable [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
@@ -196,22 +208,9 @@ its maximal abelian subextension have the same norm subgroup. -/
 theorem localNormSubgroup_maximalAbelianLayer
     (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     localNormSubgroup K V.maximalAbelianLayer = localNormSubgroup K V := by
-  ext x
-  rw [← localGroundEquiv_mem_normSubgroup_iff K V.maximalAbelianLayer x,
-    ← localGroundEquiv_mem_normSubgroup_iff K V x]
-  let T := LayerRefinement.ofOpenNormal V.le_maximalAbelianLayer
-  have hground := groundEquiv_localGroundEquiv K V.le_maximalAbelianLayer (Additive.ofMul x)
-  have hlim := (localClassFormation K).normSubgroup_maximalAbelianLayer V
-  constructor
-  · intro hx
-    rw [← hlim]
-    exact ⟨_, hx, hground⟩
-  · intro hx
-    rw [← hlim] at hx
-    obtain ⟨y, hy, hyx⟩ := hx
-    have : y = localGroundEquiv K V.maximalAbelianLayer (Additive.ofMul x) :=
-      (T.groundEquiv (unitsFormation K)).injective (hyx.trans hground.symm)
-    exact this ▸ hy
+  apply (localGroundOrderIso K).injective
+  rw [localGroundOrderIso_localNormSubgroup, localGroundOrderIso_localNormSubgroup,
+    (localClassFormation K).normSubgroup_maximalAbelianLayer]
 
 end Formation
 

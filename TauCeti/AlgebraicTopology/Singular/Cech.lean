@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.Opens
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.OrderedCech
 public import TauCeti.Algebra.Homology.TotalComplex
 
