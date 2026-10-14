@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Alternatization
-public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.Data.Nat.Factorial.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 public import TauCeti.Analysis.Calculus.ContDiff.LinearIsometry
