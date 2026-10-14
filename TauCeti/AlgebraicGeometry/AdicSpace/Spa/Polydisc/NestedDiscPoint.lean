@@ -8,9 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.ClassicalPoint
-import TauCeti.Algebra.Polynomial.Splits
-import TauCeti.RingTheory.Huber.Restricted.OneVariable
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Classification
 
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Group.Ultra
@@ -451,68 +449,6 @@ theorem not_exists_forall_nestedDiscPoint_vle (hempty : ∀ b : K, ∃ n, ‖c n
     (h.trans ((valuation_le_iff _ _ _).mpr ((mem_closedSubdisc _ _ _).mp hmem).1))
   rw [norm_sub_rev] at h'
   exact hn.not_ge h'
-
-omit [IsUltrametricDist K] [CompleteSpace K] in
-/-- If on every `T - b` two points take the value of one and the same constant, then on every
-polynomial they take the value of one and the same constant: over an algebraically closed field,
-a polynomial is a constant times a product of linear factors. -/
-private theorem exists_valuation_eval₂RingHom_eq [IsAlgClosed K] {x y : closedPolydisc 1 K}
-    (h : ∀ b : K, ∃ e : K, x.1.valuation (T - C b) = x.1.valuation (C e) ∧
-      y.1.valuation (T - C b) = y.1.valuation (C e)) (p : Polynomial K) :
-    ∃ u : K, x.1.valuation (Polynomial.eval₂RingHom C T p) = x.1.valuation (C u) ∧
-      y.1.valuation (Polynomial.eval₂RingHom C T p) = y.1.valuation (C u) := by
-  -- the claim for a product of linear factors, by induction on the multiset of roots
-  have key (s : Multiset K) : ∃ u : K,
-      x.1.valuation ((s.map fun b ↦ T - C b).prod) = x.1.valuation (C u) ∧
-      y.1.valuation ((s.map fun b ↦ T - C b).prod) = y.1.valuation (C u) := by
-    induction s using Multiset.induction_on with
-    | empty => exact ⟨1, by simp, by simp⟩
-    | cons b s ih =>
-      obtain ⟨u, hxu, hyu⟩ := ih
-      obtain ⟨e, hxe, hye⟩ := h b
-      exact ⟨e * u, by simp only [Multiset.map_cons, Multiset.prod_cons, map_mul, hxu, hxe],
-        by simp only [Multiset.map_cons, Multiset.prod_cons, map_mul, hyu, hye]⟩
-  obtain ⟨u, hxu, hyu⟩ := key p.roots
-  have hP : Polynomial.eval₂RingHom C T p =
-      C p.leadingCoeff * (p.roots.map fun b ↦ T - C b).prod :=
-    (IsAlgClosed.splits p).eval₂_eq_prod_roots C T
-  exact ⟨p.leadingCoeff * u, by rw [hP, map_mul, hxu, map_mul, map_mul],
-    by rw [hP, map_mul, hyu, map_mul, map_mul]⟩
-
-/-- **Two points of the closed unit disc that take the value of one and the same nonzero constant on
-every `T - b` are equal**, over an algebraically closed field. Both then have trivial support and
-compare polynomials as the norm compares constants, and polynomials are dense. -/
-private theorem eq_of_forall_valuation_weightedX_sub_weightedC_eq [IsAlgClosed K]
-    {x y : closedPolydisc 1 K}
-    (h : ∀ b : K, ∃ e : K, e ≠ 0 ∧ x.1.valuation (T - C b) = x.1.valuation (C e) ∧
-      y.1.valuation (T - C b) = y.1.valuation (C e)) : x = y := by
-  have hcont (z : closedPolydisc 1 K) : z.1.valuation.IsContinuous :=
-    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K z.1).mp z.2).1
-  -- a point with nonzero support kills some `T - b`, so both points have trivial support
-  have h0 (z : closedPolydisc 1 K)
-      (hz : ∀ b : K, ∃ e : K, e ≠ 0 ∧ z.1.valuation (T - C b) = z.1.valuation (C e)) (f : 𝒯 K) :
-      z.1.valuation f = 0 ↔ f = 0 := by
-    suffices hsupp : z.1.supp = ⊥ by
-      rw [← Valuation.mem_supp_iff, ← supp_eq_valuation_supp, hsupp, Ideal.mem_bot]
-    by_contra hne
-    obtain ⟨b, -, hb⟩ := exists_weightedX_sub_weightedC_mem_supp z hne
-    obtain ⟨e, he, hze⟩ := hz b
-    rw [supp_eq_valuation_supp, Valuation.mem_supp_iff, hze] at hb
-    exact he ((closedPolydisc_valuation_weightedC_eq_zero_iff z e).mp hb)
-  have hequiv : x.1.valuation.IsEquiv y.1.valuation := by
-    refine (hcont x).isEquiv_of_dense (hcont y)
-      (fun f ↦ (h0 x (fun b ↦ (h b).imp fun _ he ↦ ⟨he.1, he.2.1⟩) f).trans
-        (h0 y (fun b ↦ (h b).imp fun _ he ↦ ⟨he.1, he.2.2⟩) f).symm)
-      (denseRange_eval₂RingHom_weightedX isWeightFamily_one_weight) ?_
-    rintro _ ⟨p, rfl⟩ _ ⟨q, rfl⟩
-    have h' (b : K) := (h b).imp fun _ he ↦ he.2
-    obtain ⟨u, hxu, hyu⟩ := exists_valuation_eval₂RingHom_eq h' p
-    obtain ⟨w, hxw, hyw⟩ := exists_valuation_eval₂RingHom_eq h' q
-    rw [hxu, hxw, hyu, hyw, closedPolydisc_valuation_weightedC_le_iff,
-      closedPolydisc_valuation_weightedC_le_iff]
-  exact Subtype.ext (ext' fun f g ↦ by
-    rw [← valuation_le_iff, ← valuation_le_iff]
-    exact hequiv f g)
 
 /-- **With no common point of the discs in `K`, the point is the only point lying in all of them**,
 over an algebraically closed field: a point `x` of the closed unit disc is `η` if and only if
