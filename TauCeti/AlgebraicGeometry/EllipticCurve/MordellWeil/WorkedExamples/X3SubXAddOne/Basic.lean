@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
 /-!
 # The integral equation `y² = x³ - x + 1`
 
 This file defines the integral Weierstrass equation, computes its discriminant `-368`, and
-establishes ellipticity over `ℚ`. It is the common starting point for calculations of its
+establishes ellipticity over `ℚ`. Over `ℚ` the equation is in the normal form `y² = f(x)` used by
+explicit `2`-descent. It is the common starting point for calculations of its
 rational torsion and Mordell–Weil rank.
 -/
 
@@ -32,5 +34,9 @@ theorem Δ_curveX3SubXAddOne : curveX3SubXAddOne.Δ = -368 := by
 instance : (curveX3SubXAddOne.baseChange ℚ).IsElliptic := by
   rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curveX3SubXAddOne]
   norm_num
+
+/-- Over `ℚ`, `y² = x³ - x + 1` is in the normal form `y² = f(x)`, with `a₁ = a₃ = 0`. -/
+instance : (curveX3SubXAddOne.baseChange ℚ).IsCharNeTwoNF :=
+  ⟨by simp [curveX3SubXAddOne], by simp [curveX3SubXAddOne]⟩
 
 end TauCeti.WorkedExamples

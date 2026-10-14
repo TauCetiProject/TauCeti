@@ -32,6 +32,8 @@ discriminant has three linear factors. When `p` divides the leading coefficient 
 * `Polynomial.irreducible_X_sq_add_X_add_one_zmod_two`,
   `Polynomial.irreducible_X_pow_three_add_X_sq_add_one_zmod_two`: the two irreducibility facts
   over `ZMod 2` that the modulo `2` example rests on.
+* `Polynomial.irreducible_X_pow_three_add_X_add_one_zmod_two`: the other irreducible cubic over
+  `ZMod 2`.
 * `Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five`: the irreducibility fact over
   `ZMod 5` that the modulo `5` example rests on.
 * `Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_two`: the worked example
@@ -86,6 +88,18 @@ theorem _root_.Polynomial.irreducible_X_pow_three_add_X_sq_add_one_zmod_two :
     Irreducible (X ^ 3 + X ^ 2 + 1 : (ZMod 2)[X]) := by
   apply Polynomial.irreducible_of_degree_le_three_of_not_isRoot
   · rw [natDegree_X_pow_three_add_X_sq_add_one]
+    decide
+  · intro x
+    rw [Polynomial.IsRoot.def]
+    simp only [Polynomial.eval_add, Polynomial.eval_pow, Polynomial.eval_X, Polynomial.eval_one]
+    fin_cases x <;> decide
+
+/-- `X ^ 3 + X + 1` is irreducible over `ZMod 2`: it is cubic and has no root there. -/
+theorem _root_.Polynomial.irreducible_X_pow_three_add_X_add_one_zmod_two :
+    Irreducible (X ^ 3 + X + 1 : (ZMod 2)[X]) := by
+  apply Polynomial.irreducible_of_degree_le_three_of_not_isRoot
+  · have hdeg : (X ^ 3 + X + 1 : (ZMod 2)[X]).natDegree = 3 := by compute_degree!
+    rw [hdeg]
     decide
   · intro x
     rw [Polynomial.IsRoot.def]

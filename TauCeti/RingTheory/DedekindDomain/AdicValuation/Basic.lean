@@ -52,6 +52,8 @@ by the class-group interface and the multiplicative value can be read off from o
   finite whenever the quotient of the original domain by the prime is finite.
 * `IsDedekindDomain.HeightOneSpectrum.isTrivialOn_valuation`: adic valuations are trivial on
   semifield constants.
+* `IsDedekindDomain.HeightOneSpectrum.exp_neg_one_le_intValuation_iff`: an element has order of
+  vanishing at most `1` at a height one prime exactly when it lies outside its square.
 * `IsDedekindDomain.HeightOneSpectrum.exists_mem_intValuation_eq_exp_neg_one`: a set generating a
   height one prime contains an element of order of vanishing `1`.
 
@@ -291,6 +293,16 @@ theorem intValuation_eq_exp_neg_one_of_mem_of_notMem_sq {r : R} (hr : r ∈ v.as
   rw [← WithZero.exp_log hne, WithZero.exp_inj]
   push_cast at h1 h2
   omega
+
+/-- **An element has order of vanishing at most `1` at a height one prime exactly when it lies
+outside the square of the prime.** -/
+theorem exp_neg_one_le_intValuation_iff {r : R} :
+    WithZero.exp (-1) ≤ v.intValuation r ↔ r ∉ v.asIdeal ^ 2 := by
+  rw [← v.intValuation_le_pow_iff_mem, not_le]
+  rcases eq_or_ne (v.intValuation r) 0 with h | h
+  · simp [h]
+  · rw [← WithZero.exp_log h, WithZero.exp_le_exp, WithZero.exp_lt_exp]
+    omega
 
 /-- **A set generating a height one prime contains an element of order of vanishing `1`**:
 otherwise the prime would lie in its own square. -/
