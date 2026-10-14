@@ -16,8 +16,9 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 A root of `X ^ p - X - u` in characteristic `p` generates a Galois extension whose
 automorphisms translate the root by elements of the prime field. If `u` is not of the
 form `w ^ p - w` in the base field, the extension has degree `p` and its Galois group
-is the additive group of `ZMod p`. This supplies the field-theoretic input for the
-ramification theory of Artin–Schreier covers.
+is the additive group of `ZMod p`. Moreover `X ^ p - X - u` is irreducible exactly when `u` is
+not of this form. This supplies the field-theoretic input for the ramification theory of
+Artin–Schreier covers.
 
 ## References
 
@@ -43,6 +44,14 @@ private theorem monic_polynomial (u : K) : (X ^ p - X - C u : K[X]).Monic := by
     exact_mod_cast (Fact.out : p.Prime).one_lt
   convert monic_X_pow_sub h using 1
   ring
+
+private theorem natDegree_polynomial (u : K) : (X ^ p - X - C u : K[X]).natDegree = p := by
+  rw [sub_sub, natDegree_sub_eq_left_of_natDegree_lt] <;>
+    rw [natDegree_X_pow]
+  rw [natDegree_X_add_C]
+  exact (Fact.out : p.Prime).one_lt
+
+section Root
 
 -- `y` is a root of `X ^ p - X - u` in `L`, a field extension of `K`.
 variable {y : L} (hy : y ^ p - y = algebraMap K L u)
@@ -197,5 +206,43 @@ theorem autEquivZmod_symm_apply (c : Multiplicative (ZMod p)) :
     (autEquivZmod hy hgen hu).symm c y = y + (ZMod.cast c.toAdd : L) := by
   rw [aut_apply_eq_add_translationHom hy, ← autEquivZmod_apply hy hgen hu,
     MulEquiv.apply_symm_apply]
+
+end Root
+
+section Irreducible
+
+variable (p) [CharP K p]
+
+/-- **Artin–Schreier polynomials are irreducible** as soon as they have no root: if `u` is not of
+the form `w ^ p - w`, then `X ^ p - X - u` is irreducible. -/
+theorem irreducible_X_pow_sub_X_sub_C (hu : ∀ w : K, w ^ p - w ≠ u) :
+    Irreducible (X ^ p - X - C u : K[X]) := by
+  have hne := (monic_polynomial (p := p) u).ne_zero
+  have hdeg := natDegree_polynomial (p := p) u
+  have hnu : ¬ IsUnit (X ^ p - X - C u : K[X]) := by
+    rw [isUnit_iff_degree_eq_zero, degree_eq_natDegree hne, hdeg, Nat.cast_eq_zero]
+    exact (Fact.out : p.Prime).ne_zero
+  obtain ⟨g, hg, hgf⟩ := WfDvdMonoid.exists_irreducible_factor hnu hne
+  suffices hg' : g.natDegree = p from
+    (associated_of_dvd_of_natDegree_le hgf hne (hdeg.trans hg'.symm).le).irreducible hg
+  have : Fact (Irreducible g) := ⟨hg⟩
+  have hroot : AdjoinRoot.root g ^ p - AdjoinRoot.root g =
+      algebraMap K (AdjoinRoot g) u := by
+    have h := eval₂_eq_zero_of_dvd_of_eval₂_eq_zero _ _ hgf (AdjoinRoot.eval₂_root g)
+    rw [eval₂_sub, eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, sub_eq_zero] at h
+    rw [h, AdjoinRoot.algebraMap_eq]
+  rw [← AdjoinRoot.powerBasis_dim hg.ne_zero, ← (AdjoinRoot.powerBasis hg.ne_zero).finrank]
+  exact finrank_eq hroot (IntermediateField.adjoin_root_eq_top g) hu
+
+/-- An Artin–Schreier polynomial `X ^ p - X - u` is irreducible exactly when `u` is not of the
+form `w ^ p - w`. -/
+theorem irreducible_X_pow_sub_X_sub_C_iff :
+    Irreducible (X ^ p - X - C u : K[X]) ↔ ∀ w : K, w ^ p - w ≠ u := by
+  refine ⟨fun h w hw ↦ ?_, irreducible_X_pow_sub_X_sub_C p⟩
+  have hdeg := degree_eq_one_of_irreducible_of_root h (x := w) (by simp [hw])
+  rw [degree_eq_natDegree h.ne_zero, natDegree_polynomial (p := p) u, Nat.cast_eq_one] at hdeg
+  exact (Fact.out : p.Prime).ne_one hdeg
+
+end Irreducible
 
 end TauCeti.ArtinSchreier
