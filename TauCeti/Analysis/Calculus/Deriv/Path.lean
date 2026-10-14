@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Path.Extend.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Calculus.Deriv.CompMul
 import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
