@@ -138,23 +138,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
   (U : Subgroup G) [U.Normal] (hU : IsOpen (U : Set G)) [U.FiniteIndex]
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] [U.FiniteIndex] in
-/-- With trivial coefficients, the conjugation `(g)_*` of `Hⁿ(U, 𝔽₂)`, read through the
-identification of `ofDiscreteModule ℤ U (trivialF2 G).V` with `trivialF2 U`, is pullback along
-`u ↦ g⁻¹ u g`. -/
-private theorem eqToHom_conjNormalMap_eqToHom (g : G) (n : ℕ) :
-    eqToHom (congrArg (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U).symm) ≫
-        conjNormalMap U (trivialF2 G).V g n ≫
-          eqToHom (congrArg (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U)) =
-      trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom
-        (ContinuousAut.conjNormal g⁻¹ : ContinuousAut U)) n := by
-  have hM := ofDiscreteModule_subgroup_trivialF2 G U
-  rw [conjNormalMap_eq_map_of_smul_eq_self _ _
-      (fun g m => (TopRep.distribMulAction_smul _ g m).trans (trivialF2_ρ_apply_apply G g m)),
-    ← cancel_epi (eqToHom (congrArg (continuousCohomology n) hM)), eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp]
-  exact (eqToHom_comp_trivialF2Map _ hM hM (AddMonoidHom.id _) _ (fun _ => rfl) n).symm
-
 /-- **Restriction of corestriction from a normal subgroup, with trivial `𝔽₂` coefficients**: for an
 open normal subgroup `U` of finite index and any transversal `t` of `G ⧸ U`, restriction of the
 corestriction from `U` is the sum over `x ∈ G ⧸ U` of the pullbacks along the conjugations

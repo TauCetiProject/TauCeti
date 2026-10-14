@@ -210,40 +210,25 @@ of the nontrivial coset, read through any of its elements. -/
 theorem evensConj_eq_trivialF2Map (s : G) (hs : s ∉ U) (κ : U.toSubgroup →ₜ* U.toSubgroup)
     (hκ : ∀ u : U.toSubgroup, (κ u : G) = s⁻¹ * u * s) (n : ℕ) :
     U.evensConj hU n = trivialF2Map κ n := by
-  classical
   have : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   have : U.toSubgroup.Normal := Subgroup.normal_of_index_eq_two hU
   -- `κ` is the conjugation `u ↦ s⁻¹ u s` underlying `conjNormalMap`.
   obtain rfl : κ = ContinuousMonoidHom.toContinuousMonoidHom
       (ContinuousAut.conjNormal s⁻¹ : ContinuousAut U.toSubgroup) :=
     ContinuousMonoidHom.ext fun u => Subtype.ext ((hκ u).trans (by simp))
-  -- The cosets of `U` are `U` and `sU`, so `{1, s}` is a transversal.
-  have hne : ((1 : G) : G ⧸ U.toSubgroup) ≠ (s : G ⧸ U.toSubgroup) := by
-    rwa [Ne, QuotientGroup.eq, inv_one, one_mul]
-  have hcoset (x : G ⧸ U.toSubgroup) (hx : x ≠ ((1 : G) : G ⧸ U.toSubgroup)) :
-      x = (s : G ⧸ U.toSubgroup) := by
-    induction x using QuotientGroup.induction_on with | H g => ?_
-    rw [Ne, QuotientGroup.eq, mul_one] at hx
-    rw [QuotientGroup.eq, Subgroup.mul_mem_iff_of_index_two hU]
-    exact iff_of_false hx hs
-  let t (x : G ⧸ U.toSubgroup) : G := if x = ((1 : G) : G ⧸ U.toSubgroup) then 1 else s
-  have ht (x : G ⧸ U.toSubgroup) : (t x : G ⧸ U.toSubgroup) = x := by
-    by_cases hx : x = ((1 : G) : G ⧸ U.toSubgroup)
-    · simp [t, hx]
-    · rw [hcoset x hx]
-      simp [t, hs]
-  -- The values of the transversal `t` (an `if` on the coset) and the conjugation by `1⁻¹`, which
-  -- is the identity of `U` as a continuous homomorphism (the form `trivialF2Map_id` rewrites).
-  have ht1 : t ((1 : G) : G ⧸ U.toSubgroup) = 1 := by simp [t]
-  have hts : t (s : G ⧸ U.toSubgroup) = s := by simp [t, hs]
+  -- Conjugation by `1⁻¹` is the identity of `U` as a continuous homomorphism (the form
+  -- `trivialF2Map_id` rewrites).
   have hid : ContinuousMonoidHom.toContinuousMonoidHom
       (ContinuousAut.conjNormal (1 : G)⁻¹ : ContinuousAut U.toSubgroup) =
         ContinuousMonoidHom.id _ :=
     ContinuousMonoidHom.ext fun u => Subtype.ext (by simp)
-  -- `res ∘ cor` is the sum of the pullbacks along conjugation by `1` and by `s`.
-  rw [evensConj_def, trivialF2CorMap_comp_trivialF2ResMap_eq_sum U.toSubgroup U.isOpen t ht n,
-    Fintype.sum_eq_add _ _ hne fun x hx => absurd (hcoset x hx.1) hx.2, ht1, hts, hid,
-    trivialF2Map_id, add_sub_cancel_left]
+  -- `res ∘ cor` is the sum of the pullbacks along conjugation by `1` and by `s`, computed on the
+  -- transversal `{1, s}`.
+  rw [evensConj_def, trivialF2CorMap_comp_trivialF2ResMap_eq_sum U.toSubgroup U.isOpen
+      (U.toSubgroup.indexTwoTransversal s) (Subgroup.indexTwoTransversal_mk hU hs) n,
+    sum_quotient_eq_add_of_index_two hU hs, Subgroup.indexTwoTransversal_mk_one,
+    Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs), hid, trivialF2Map_id,
+    add_sub_cancel_left]
 
 /-- **`evensConj` is the conjugation `(s)_*` by any `s ∉ U`**, in every degree, stated with the
 canonical conjugation `ContinuousAut.conjNormal s⁻¹ : u ↦ s⁻¹ u s` of the normal subgroup `U`. -/
