@@ -32,6 +32,9 @@ open scoped unitInterval
 
 namespace TauCeti
 
+/-- The unit circle `S¹ ⊆ ℝ²`. -/
+abbrev Sphere1 : Type := sphere (0 : EuclideanSpace ℝ (Fin 2)) 1
+
 variable (k : ℕ)
 
 /-- Mathlib's homeomorphism of the one-point compactification of `ℝ^k` with the unit sphere
