@@ -56,21 +56,17 @@ phase build
 # and `|| true` drops tee's own status, so `pipefail` reports exactly Lake's.
 lake build --iofail 2>&1 | { tee --output-error=warn "$TELEMETRY/lake-build.log" 2>/dev/null || true; }
 
-# Reject duplicate declaration ownership before merging imported environments can hide it.
-# This also checks orphan modules and runs on the exact merge-group candidate before landing.
-phase audit-duplicates
-lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/DuplicateDeclarations.lean"
-
-# Axiom audit: inspect the built environment and reject any axiom outside
-# {propext, Classical.choice, Quot.sound} — catching sorry, native_decide, and
-# home-rolled axioms, including ones reaching in through imports.
-phase audit-axioms
-lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/Axioms.lean"
-
-# Module-system audit: every TauCeti/ module must opt into the Lean module system
-# (read from each compiled module's isModule flag, not a textual grep).
-phase audit-module-system
-lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lean"
+# One workflow-pinned native driver imports all artifact parts once. Its first check reads
+# per-module ownership (compatible duplicates must not disappear in merged constants), then
+# it checks axiom reachability and module-system flags. No imported initializer executes.
+# Built beside the lint driver on the host and mounted in the same read-only directory.
+AUDIT_DRIVER_EXE="$(dirname "$LINT_DRIVER_EXE")/audit-driver"
+test -x "$AUDIT_DRIVER_EXE"
+phase audit-setup
+# Match the former per-process watchdog deadline; each check still returns its own failure.
+AUDIT_TIMEOUT="$(command -v timeout)"
+AUDIT_PHASES_FILE="$TELEMETRY/phases.tsv" lake env "$AUDIT_TIMEOUT" --signal=TERM --kill-after=10s \
+  300s "$AUDIT_DRIVER_EXE"
 
 # Environment lint (the compiled driver in LINT_DRIVER_EXE): Mathlib's default `#lint` set minus
 # docBlame, plus a

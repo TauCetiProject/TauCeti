@@ -13,6 +13,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BUILD = (ROOT / "scripts" / "build-lint-driver.sh").read_text()
+AUDIT_BUILD = (ROOT / "scripts" / "build-audit-driver.sh").read_text()
 LINT_ENV = (ROOT / "scripts" / "lint-env.sh").read_text()
 SANDBOX = (ROOT / "scripts" / "sandbox-build.sh").read_text()
 PR_BUILD_TEXT = (ROOT / ".github" / "workflows" / "pr-build.yml").read_text()
@@ -63,6 +64,25 @@ class BuildLintDriverTest(unittest.TestCase):
         self.assertRegex(
             LINT_ENV,
             re.compile(r'elif \[ -n "\$\{WATCHDOG_TOOLCHAIN:-\}" \]; then\n\s+fail ', re.M))
+
+    def test_audit_driver_has_the_same_host_trust_boundary(self):
+        self.assertIn('bash "$(dirname "$DRIVER_SOURCE")/build-audit-driver.sh"', BUILD)
+        self.assertIn('"$(dirname "$DRIVER_SOURCE")" "$OUT_DIR"', BUILD)
+        self.assertIn('cp "$TRUSTED_SCRIPTS/Axioms.lean"', AUDIT_BUILD)
+        self.assertNotIn('$PROJECT_ROOT/scripts', AUDIT_BUILD)
+        self.assertNotIn('[[require]]', AUDIT_BUILD)  # Lean's pinned sysroot only.
+        for setting in ("LAKE_CACHE_DIR= ", "LAKE_ARTIFACT_CACHE=false",
+                        "LAKE_RESTORE_ARTIFACTS=false", "LAKE_NO_CACHE=true",
+                        "-u ELAN_TOOLCHAIN", "-u LAKE_CONFIG", "-u LEAN_PATH",
+                        "-u LEAN_SRC_PATH", "-u LAKE_PKG_URL_MAP"):
+            self.assertIn(setting, AUDIT_BUILD)
+        self.assertIn('install -m 0555', AUDIT_BUILD)
+        self.assertIn('AUDIT_DRIVER_EXE="$(dirname "$LINT_DRIVER_EXE")/audit-driver"', SANDBOX)
+        self.assertIn('test -x "$AUDIT_DRIVER_EXE"', SANDBOX)
+        self.assertIn('300s "$AUDIT_DRIVER_EXE"', SANDBOX)
+        self.assertNotIn('--run "$TRUSTED_SCRIPTS/Axioms.lean"', SANDBOX)
+        self.assertIn('bash "$TRUSTED_SCRIPTS/lint-env.sh"', SANDBOX)
+        self.assertIn('bash "$TRUSTED_SCRIPTS/lint-style.sh"', SANDBOX)
 
     def test_timeout_is_resolved_before_lake_env(self):
         self.assertIn('TIMEOUT_BIN="$(command -v timeout)"', LINT_ENV)
