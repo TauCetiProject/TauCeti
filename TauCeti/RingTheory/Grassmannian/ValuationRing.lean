@@ -13,24 +13,18 @@ public import TauCeti.RingTheory.Grassmannian.Localization
 /-!
 # Points of the Grassmannian over a valuation ring
 
-Let `M` be a finite module over a commutative ring `R`, let `V` be a valuation ring which is an
-`R`-algebra, and let `K` be its field of fractions. This file proves that every point
-`N ∈ G(k, K ⊗[R] M; K)` is the base change of a unique point of `G(k, V ⊗[R] M; V)`
-(`Module.Grassmannian.exists_map_eq_of_valuationRing`). This is the algebraic content of the
+Let `M` be a module over a commutative ring `R`, let `V` be a valuation ring which is an
+`R`-algebra, and let `K` be its field of fractions. This file proves that, when `V ⊗[R] M` is a
+finite `V`-module (for instance when `M` is a finite `R`-module), every point
+`N ∈ G(k, K ⊗[R] M; K)` is the base change of a point of `G(k, V ⊗[R] M; V)`
+(`Module.Grassmannian.exists_map_eq_of_valuationRing`). Together with uniqueness, which holds over
+every domain (`Module.Grassmannian.map_injective`), this is the algebraic content of the
 valuative criterion of properness for the Grassmannian scheme.
-
-The extension is the saturation `N ∩ (V ⊗[R] M)`: the vectors of `V ⊗[R] M` whose image in
-`K ⊗[R] M` lies in `N`. Its quotient embeds into the `K`-vector space `(K ⊗[R] M) ⧸ N`, so it is
-torsion-free. Over a valuation ring, a finitely generated torsion-free module is flat, hence free
-(`Module.Flat.flat_iff_torsion_eq_bot_of_isBezout` and `Module.free_of_flat_of_isLocalRing`), and
-since `K ⊗[R] M` is the localization of `V ⊗[R] M` at the nonzero elements of `V`, the base change
-of the saturation to `K` is `N`. This also identifies the rank of the quotient with `k`. Uniqueness
-holds over every domain, by `Module.Grassmannian.map_injective`.
 
 ## Main results
 
-* `Module.Grassmannian.exists_map_eq_of_valuationRing`: for `M` finite, every point over the
-  fraction field of a valuation ring is the base change of a point over the valuation ring.
+* `Module.Grassmannian.exists_map_eq_of_valuationRing`: for `V ⊗[R] M` finite, every point over
+  the fraction field of a valuation ring is the base change of a point over the valuation ring.
 
 ## References
 
@@ -103,10 +97,10 @@ end Saturation
 
 variable [IsDomain V] [ValuationRing V] [IsFractionRing V K]
 
-/-- **Points over the fraction field of a valuation ring extend.** Let `M` be a finite `R`-module
-and `V` a valuation ring with field of fractions `K`. Every point `N ∈ G(k, K ⊗[R] M; K)` is the
-base change of a point of `G(k, V ⊗[R] M; V)`. -/
-theorem exists_map_eq_of_valuationRing [Module.Finite R M] (N : G(k, K ⊗[R] M; K)) :
+/-- **Points over the fraction field of a valuation ring extend.** Let `V` be a valuation ring
+with field of fractions `K` such that `V ⊗[R] M` is a finite `V`-module. Every point
+`N ∈ G(k, K ⊗[R] M; K)` is the base change of a point of `G(k, V ⊗[R] M; V)`. -/
+theorem exists_map_eq_of_valuationRing [Module.Finite V (V ⊗[R] M)] (N : G(k, K ⊗[R] M; K)) :
     ∃ N₀ : G(k, V ⊗[R] M; V), map (IsScalarTower.toAlgHom R V K) N₀ = N := by
   let Q := (V ⊗[R] M) ⧸ saturation V N
   have : Module.Flat V Q :=
