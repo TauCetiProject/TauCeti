@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.GenLoop.Loop
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
 
 /-!
