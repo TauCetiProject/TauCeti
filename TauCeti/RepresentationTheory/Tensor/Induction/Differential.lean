@@ -31,7 +31,9 @@ degree; that hypothesis enters only the square-zero law without Koszul signs.
 * `TauCeti.tensorInducedRepresentation_mem_degreePiece U s τ`: preservation of total
   degree by tensor induction.
 
-Open `TauCeti` to use these declarations by their unqualified names.
+Open `TauCeti` and write `wreathTensorDifferential d ι` or `tensorInducedDifferential d s`
+to construct the differentials. The action lemmas likewise take their representation or
+subgroup as an explicit argument.
 
 ## References
 
