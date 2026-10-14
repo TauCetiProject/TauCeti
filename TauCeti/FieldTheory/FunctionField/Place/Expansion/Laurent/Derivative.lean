@@ -114,15 +114,18 @@ theorem algHom_derivativeOfSeparating {k F A : Type*} [Field k] [Field F] [Algeb
       Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
     .of_algebraMap_eq fun c ↦ by
       simp only [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply,
-        Algebra.algebraMap_self]
+        Algebra.algebraMap_self, RingHom.id_apply]
   have _ : IsScalarTower k A (LaurentSeries A) := ⟨fun c a f ↦ by
     ext n
-    simp only [HahnSeries.coeff_smul, Algebra.smul_def, Algebra.algebraMap_self, mul_assoc]⟩
+    simp only [HahnSeries.coeff_smul, Algebra.smul_def, Algebra.algebraMap_self,
+      RingHom.id_apply, mul_assoc]⟩
   let D : Derivation k F (LaurentSeries A) :=
     ((laurentSeriesDerivation A).restrictScalars k).compAlgebraMap F
   -- By the chain rule `D z = (dz/dt) • D t`, and `D t = (X)' = 1`. Unfolding `D` and the
   -- induced algebra's scalar action turns the chain rule into an identity of Laurent series.
   have h := D.apply_eq_derivativeOfSeparating_smul htr z
+  simp only [D, Derivation.compAlgebraMap_apply, Derivation.restrictScalars_apply,
+    laurentSeriesDerivation_apply, Algebra.smul_def] at h
   change LaurentSeries.derivative A (e z) =
     e (derivativeOfSeparating htr z) * LaurentSeries.derivative A (e t) at h
   rw [h, he]
