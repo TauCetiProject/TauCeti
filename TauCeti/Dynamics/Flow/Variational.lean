@@ -82,7 +82,7 @@ private theorem continuous_variational_integrand (x : E) :
     Continuous fun τ : ℝ ↦
       (fderiv ℝ v (flowOfLipschitz v hv τ x)).comp (fderiv ℝ (flowOfLipschitz v hv τ) x) := by
   exact ((hvs.continuous_fderiv one_ne_zero).comp
-    (continuous_flowOfLipschitz_orbit hv x)).clm_comp
+    ((flowOfLipschitz v hv).continuous continuous_id continuous_const)).clm_comp
     (continuous_fderiv_flowOfLipschitz hv hvs x)
 
 /-- **The variational equation, integral form.** For a globally Lipschitz `C¹` vector field, the
@@ -97,7 +97,8 @@ theorem fderiv_flowOfLipschitz_eq_id_add_integral (x : E) (t : ℝ) :
       (∫ τ in (0 : ℝ)..t, (fderiv ℝ v (flowOfLipschitz v hv τ x)).comp
         (fderiv ℝ (flowOfLipschitz v hv τ) x)) x := by
     have hcont : ∀ y : E, Continuous fun τ : ℝ ↦ v (flowOfLipschitz v hv τ y) := fun y ↦
-      hv.continuous.comp (continuous_flowOfLipschitz_orbit hv y)
+      hv.continuous.comp
+        ((flowOfLipschitz v hv).continuous continuous_id continuous_const)
     refine hasFDerivAt_integral_of_dominated_of_fderiv_le''
       (F := fun y τ ↦ v (flowOfLipschitz v hv τ y))
       (F' := fun y τ ↦ (fderiv ℝ v (flowOfLipschitz v hv τ y)).comp
