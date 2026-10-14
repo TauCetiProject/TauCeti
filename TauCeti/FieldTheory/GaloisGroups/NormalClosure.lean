@@ -67,7 +67,8 @@ theorem map_stabilizer_galEquivNormalClosure (x : E)
       F⟮splittingFieldEquivNormalClosure x (y : (minpoly F x).SplittingField)⟯.fixingSubgroup := by
   ext σ
   rw [Subgroup.mem_map_equiv, mem_stabilizer_iff, Subtype.ext_iff,
-    Polynomial.Gal.coe_smul, fixingSubgroup_adjoin_simple, mem_stabilizer_iff]
+    Polynomial.Gal.coe_smul, fixingSubgroup_adjoin_simple,
+    mem_stabilizer_iff]
   have h := galEquivNormalClosure_apply x ((galEquivNormalClosure x).symm σ)
     (y : (minpoly F x).SplittingField)
   rw [MulEquiv.apply_symm_apply] at h

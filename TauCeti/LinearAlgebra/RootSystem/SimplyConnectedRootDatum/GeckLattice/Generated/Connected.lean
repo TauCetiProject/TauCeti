@@ -50,7 +50,7 @@ private theorem connectedSpace_geckGeneratorCoordinateAlgebra :
     ∀ j, ConnectedSpace (PrimeSpectrum (t.geckGeneratorCoordinateAlgebra k j)) := by
   intro j
   cases j with
-  | inl _ => exact AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra k
+  | inl _ => exact inferInstance
   | inr _ =>
     exact DiagonalizableGroup.connectedSpace_primeSpectrum_coordinateRing k
       (SplitTorus.characterGroup (Fin t.rank))

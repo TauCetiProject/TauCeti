@@ -12,18 +12,18 @@ public import TauCeti.RingTheory.Valuation.ExtendOfPowMulMem
 # Extending a valuation from a ring of definition to the whole Huber ring
 
 A ring of definition `A₀` of a Huber ring `A` is open, so a topologically nilpotent `s`
-multiplies every element of `A` into it: `TauCeti.Huber.PairOfDefinition.exists_pow_mul_mem`
-gives an `n` with `sⁿ * a ∈ A₀`. That is exactly the hypothesis under which
+multiplies every element of `A` into it: `exists_mul_pow_mem_of_isTopologicallyNilpotent`
+gives an `n` with `a * sⁿ ∈ A₀`. By commutativity this is exactly the hypothesis under which
 `Valuation.extendOfPowMulMem` extends a valuation of a subring to the whole ring, so a valuation
 `w` of `A₀` that does not vanish at `s` has a unique extension to `A`,
 
 `v a = w (sⁿ * a) * (w s)⁻ⁿ`.
 
 This file is that specialisation. `PairOfDefinition.extendValuation` is
-`Valuation.extendOfPowMulMem` with `exists_pow_mul_mem` fed in as the hypothesis, and each
-interface theorem below restates the corresponding one of the general layer for a pair of
-definition. Topology enters only through `exists_pow_mul_mem`, to produce the exponents; the
-construction itself, its well-definedness and its uniqueness live in
+`Valuation.extendOfPowMulMem` with scalar absorption as its hypothesis, and each interface
+theorem below restates the corresponding one of the general layer for a pair of definition.
+Topology enters only to produce the exponents; the construction itself, its well-definedness
+and its uniqueness live in
 `TauCeti.RingTheory.Valuation.ExtendOfPowMulMem`.
 
 ## Why this is not `Valuation.extendToLocalization`
@@ -76,7 +76,9 @@ is `w (sⁿ * a) * (w s)⁻ⁿ`, and `extendValuation_apply` says so at every su
 noncomputable def extendValuation (P : PairOfDefinition A) (w : Valuation P.ringOfDefinition Γ₀)
     {s : A} (hs : s ∈ P.ringOfDefinition) (hnil : IsTopologicallyNilpotent s)
     (hw : w ⟨s, hs⟩ ≠ 0) : Valuation A Γ₀ :=
-  w.extendOfPowMulMem hs (Commute.all s) (P.exists_pow_mul_mem hnil) hw
+  w.extendOfPowMulMem hs (Commute.all s)
+    (fun a ↦ by simpa only [mul_comm] using
+      exists_mul_pow_mem_of_isTopologicallyNilpotent hnil P.isOpen_ringOfDefinition a) hw
 
 /-- **The defining formula**, at every exponent that carries `a` into the ring of definition. -/
 theorem extendValuation_apply (P : PairOfDefinition A) (w : Valuation P.ringOfDefinition Γ₀)

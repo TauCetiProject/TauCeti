@@ -17,6 +17,11 @@ separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `Mono
 together with the fact that they are mutually inverse; this file packages them as the
 corresponding equivalence.
 
+For a homomorphism `f : M × N →* P` into a group, the triangular map
+`(m, n) ↦ (m, f (m, n))` is surjective exactly when its second component on `{1} × N` is
+surjective. The additive version gives the same criterion for additive homomorphisms, without
+any scalar or topological assumptions.
+
 The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
 multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, and
 recognizes a commutative monoid with projections and inclusions satisfying the biproduct
@@ -36,6 +41,8 @@ identities as the product of the two factors.
 public section
 
 namespace MonoidHom
+
+section CoprodEquiv
 
 variable {M N P : Type*} [MulOneClass M] [MulOneClass N] [CommMonoid P]
 
@@ -62,6 +69,30 @@ theorem coprodEquiv_apply (f : (M →* P) × (N →* P)) (x : M × N) :
 product restricts it along the two inclusions. -/]
 theorem coprodEquiv_symm_apply (f : M × N →* P) :
     coprodEquiv.symm f = (f.comp (inl M N), f.comp (inr M N)) := (rfl)
+
+end CoprodEquiv
+
+variable {M N P : Type*} [MulOneClass M] [MulOneClass N] [Group P]
+
+/-- The triangular map `(m, n) ↦ (m, f (m, n))` is surjective if and only if the restriction
+of `f` to `{1} × N` is surjective. Neither factor of the domain needs inverses. -/
+@[to_additive (attr := simp) surjective_fst_prod_iff
+/-- The triangular map `(m, n) ↦ (m, f (m, n))` is surjective
+if and only if the restriction of `f` to `{0} × N` is surjective. Neither factor of the domain
+needs additive inverses. -/]
+theorem surjective_fst_prod_iff (f : M × N →* P) :
+    Function.Surjective ((fst M N).prod f) ↔ Function.Surjective (f.comp (inr M N)) := by
+  constructor
+  · intro h p
+    obtain ⟨⟨m, n⟩, hmn⟩ := h (1, p)
+    have hm : m = 1 := congrArg Prod.fst hmn
+    exact ⟨n, by simpa [hm] using congrArg Prod.snd hmn⟩
+  · intro h ⟨m, p⟩
+    obtain ⟨n, hn⟩ := h ((f (m, 1))⁻¹ * p)
+    refine ⟨(m, n), Prod.ext rfl ?_⟩
+    have hsplit : f (m, n) = f (m, 1) * f (1, n) := by
+      rw [← map_mul, Prod.mk_mul_mk, mul_one, one_mul]
+    simpa [hsplit] using congrArg (f (m, 1) * ·) hn
 
 end MonoidHom
 

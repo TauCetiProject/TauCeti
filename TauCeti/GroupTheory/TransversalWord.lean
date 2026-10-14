@@ -36,7 +36,9 @@ equivariant for left multiplication by `U` (`TauCeti.factorizationTransversal`),
 reads off the transversal word, and computes the word for a subgroup of index two at the
 two-element transversal `{1, s}` (`Subgroup.indexTwoTransversal`): on an element `γ` of the
 subgroup it is `γ` at the trivial coset and `s⁻¹ * γ * s` at the other, and on an element outside
-it is `γ * s` and `s⁻¹ * γ` respectively. Continuity of `γ ↦ ℓᵗ_u(γ)` for
+it is `γ * s` and `s⁻¹ * γ` respectively. For a normal subgroup, the word of an element of the
+subgroup at any coset is its conjugate by the representative (`TauCeti.lWord_of_mem_of_normal`).
+Continuity of `γ ↦ ℓᵗ_u(γ)` for
 an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
 
@@ -108,6 +110,19 @@ theorem lWord_mk_one_of_mem {γ : G} (hγ : γ ∈ U) :
       (t (QuotientGroup.mk 1))⁻¹ * γ * t (QuotientGroup.mk 1) := by
   have h : (γ⁻¹ • (QuotientGroup.mk 1 : G ⧸ U)) = QuotientGroup.mk 1 := by
     simpa [QuotientGroup.eq] using hγ
+  rw [lWord_def, h]
+
+/-- For a normal subgroup `U`, the transversal word of an element of `U` at any coset is that
+element conjugated by the chosen representative of the coset: an element of `U` fixes every coset,
+so no hypothesis on `t` is needed. This is the reduction that turns the restriction of a
+corestriction sum into a sum of conjugates. -/
+theorem lWord_of_mem_of_normal [U.Normal] {γ : G} (hγ : γ ∈ U) (u : G ⧸ U) :
+    lWord U t u γ = (t u)⁻¹ * γ * t u := by
+  have h : γ⁻¹ • u = u := by
+    induction u using QuotientGroup.induction_on with
+    | H g =>
+      rw [MulAction.Quotient.smul_mk, QuotientGroup.eq, smul_eq_mul, mul_inv_rev, inv_inv]
+      exact ‹U.Normal›.conj_mem' γ hγ g
   rw [lWord_def, h]
 
 section IsTransversal

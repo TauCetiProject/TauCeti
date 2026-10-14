@@ -25,10 +25,9 @@ component at `M` is the usual point action on `A ⊗[R] M`. These automorphisms 
 homomorphism, which restricts by precomposition to the finite-comodule functor.
 
 This is the base change of the neutral underlying-module functor, without a faithfulness claim:
-scalar extension along an arbitrary `R → A` need not be faithful. Equipping this functor and
-these natural automorphisms with their tensor compatibilities is a separate step; together, the
-constructions supply categorical infrastructure for Tannakian reconstruction in Layer 1 of the
-reductive-groups roadmap.
+scalar extension along an arbitrary `R → A` need not be faithful. Equipping this functor and these
+natural automorphisms with their tensor compatibilities is not done here. Together, these
+constructions supply categorical infrastructure for Tannakian reconstruction.
 
 ## Main declarations
 

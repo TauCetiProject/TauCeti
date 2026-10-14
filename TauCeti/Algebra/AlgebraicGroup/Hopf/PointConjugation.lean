@@ -29,6 +29,9 @@ schemes, in particular conjugacy of Borel subgroups and maximal tori.
 * `TauCeti.HopfAlgebra.pointConjugationFiniteTypeIso`: the same automorphism as an isomorphism
   in the category of finite-type commutative Hopf algebras.
 
+* `AlgHom.apply_pointConjugationAlgHom`: evaluation of point conjugation as contraction of the
+  universal conjugation tensor.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Sections 3.5 and 10.20.
@@ -222,3 +225,24 @@ theorem comp_pointConjugationAlgHom_mapDomain_of_isCocomm (π : H →ₐc[R] K)
   simp [mul_comm]
 
 end BialgHom
+
+namespace AlgHom
+
+open scoped TensorProduct
+
+variable {R H A : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
+  [CommSemiring A] [Algebra R A]
+
+/-- Evaluation of rational conjugation is specialization of its universal coordinate morphism
+in the conjugating variable, followed by evaluation in the acted-on variable. -/
+theorem apply_pointConjugationAlgHom (f : H →ₐ[R] A) (g : WithConv (H →ₐ[R] R)) (x : H) :
+    f (TauCeti.HopfAlgebra.pointConjugationAlgHom g x) =
+      TensorProduct.lid R A (TensorProduct.map g.ofConv.toLinearMap f.toLinearMap
+        (TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x)) := by
+  rw [TauCeti.HopfAlgebra.pointConjugationAlgHom, AlgHom.comp_apply]
+  induction TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x
+      using TensorProduct.inductionOn with
+  | add a b ha hb => simp_all
+  | tmul a b => simp [TauCeti.AlgHom.mapValue_apply, Algebra.smul_def]
+
+end AlgHom

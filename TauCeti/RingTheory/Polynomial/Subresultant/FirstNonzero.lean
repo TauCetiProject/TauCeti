@@ -66,8 +66,8 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_of_monic_commonDivisor
       (natDegree_le_of_degree_le (degree_subresultant_le p q m n g.natDegree))
   have hcoeff := congrArg (fun r : R[X] => r.coeff g.natDegree) hs
   have hlc : s.leadingCoeff = psc p q m n g.natDegree := by
-    simpa only [s, subresultant_coeff, hj, le_refl, and_self, ↓reduceIte,
-      subresultantCoeff_index, coeff_C_mul, coeff_natDegree, hg.leadingCoeff, mul_one]
+    simpa only [s, coeff_subresultant, hj, le_refl, and_self, ↓reduceIte,
+      subresultantCoeff_self, coeff_C_mul, coeff_natDegree, hg.leadingCoeff, mul_one]
       using hcoeff.symm
   exact hs.trans (by rw [hlc])
 

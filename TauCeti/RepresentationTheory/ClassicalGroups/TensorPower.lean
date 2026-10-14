@@ -34,10 +34,6 @@ infinite field.
   `GL n k` on the `S_d`-intertwining maps into the tensor power, by composition.
 * `TauCeti.toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const` identifies the
   image of `k[GLₙ]` with the span of all diagonal tensor operators over an infinite field.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md), Layer 1, “The tensor power representation”.
 -/
 
 public section
@@ -68,8 +64,7 @@ noncomputable abbrev tensorPowerFDRep : FDRep k (GL (Fin n) k) :=
 
 /-- The actions of `GL n k` and the symmetric group on the tensor power commute.
 
-This is the commuting-actions half of Schur--Weyl duality, the first Layer 2 target of the
-classical-groups roadmap; it makes no double-centralizer claim. -/
+This is the commuting-actions half of Schur--Weyl duality; it makes no double-centralizer claim. -/
 theorem commute_permTensorAction_tensorPowerRep (σ : Equiv.Perm (Fin d)) (g : GL (Fin n) k) :
     Commute (permTensorAction k n d σ) (tensorPowerRep k n d g) := by
   rw [tensorPowerRep, Representation.tensorPower_apply, permTensorAction_def]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Jimbo.Stabilization
-public import TauCeti.KnotTheory.Markov
+public import TauCeti.KnotTheory.Markov.Basic
 
 /-!
 # Writhe normalization of the Jimbo trace

@@ -26,24 +26,24 @@ complemented.
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.IsUnitary.orthogonalSubrepresentation`: the orthogonal complement of
+* `ContRepresentation.IsUnitary.orthogonalSubrepresentation`: the orthogonal complement of
   a subrepresentation of a unitary representation, as a subrepresentation.
-* `TauCeti.ContRepresentation.IsUnitary.starProjectionIntertwiner`: the orthogonal projection onto
+* `ContRepresentation.IsUnitary.starProjectionIntertwiner`: the orthogonal projection onto
   an invariant subspace, as a continuous intertwining map.
 
 ## Main results
 
-* `TauCeti.ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`: for a unitary representation
+* `ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`: for a unitary representation
   of a group, the orthogonal complement of an invariant submodule is invariant. The element form is
-  `TauCeti.ContRepresentation.IsUnitary.apply_mem_orthogonal`.
-* `TauCeti.ContRepresentation.IsUnitary.isCompl_orthogonalSubrepresentation`: a subrepresentation
+  `ContRepresentation.IsUnitary.apply_mem_orthogonal`.
+* `ContRepresentation.IsUnitary.isCompl_orthogonalSubrepresentation`: a subrepresentation
   admitting an orthogonal projection is complemented by its orthogonal complement.
-* `TauCeti.ContRepresentation.IsUnitary.sup_orthogonalSubrepresentation_inf`: a subrepresentation
+* `ContRepresentation.IsUnitary.sup_orthogonalSubrepresentation_inf`: a subrepresentation
   together with its orthogonal complement inside a larger one recovers the larger one.
-* `TauCeti.ContRepresentation.IsUnitary.starProjection_apply_comm`: the orthogonal projection onto
+* `ContRepresentation.IsUnitary.starProjection_apply_comm`: the orthogonal projection onto
   an invariant subspace commutes with the action.
-* `TauCeti.ContRepresentation.IsUnitary.isSemisimpleRepresentation` and
-  `TauCeti.ContRepresentation.IsUnitary.isSemisimpleModule_asModule`: complete reducibility of a
+* `ContRepresentation.IsUnitary.isSemisimpleRepresentation` and
+  `ContRepresentation.IsUnitary.isSemisimpleModule_asModule`: complete reducibility of a
   finite-dimensional unitary continuous representation, in the subrepresentation-lattice form and
   as semisimplicity of the group-algebra module.
 
@@ -70,17 +70,13 @@ direct sum but not as an algebraic one.
 
 ## References
 
-This file builds the invariant-complement milestone of Layer 2 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose `Suggested.lean` names it `orthogonal_invariant`. The mathematical development follows Daniel
+The mathematical development follows Daniel
 Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -213,5 +209,3 @@ end IsUnitary
 end Unitary
 
 end ContRepresentation
-
-end TauCeti

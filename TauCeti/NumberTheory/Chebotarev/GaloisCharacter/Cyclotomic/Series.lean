@@ -130,16 +130,16 @@ private theorem exists_differentiableOn_eq_LSeries (m : ℕ) [NeZero m]
       exact (w.norm_le_one _).trans_lt (𝔭.one_lt_norm_absNorm_cpow hs)).ne_zero
   -- The continued `L`-function with the Euler factors at the primes dividing `m` deleted has
   -- cancellation; dividing by those factors, which are nonzero on `Re s > 0`, restores them.
-  refine ⟨fun s ↦ continuedLFunctionOfWeight (w.restrict (S : Set _) S.finite_toSet) s /
+  refine ⟨fun s ↦ continuedLFunctionOfWeight (w.restrictAway (S : Set _) S.finite_toSet) s /
       ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s), ?_, fun s hs ↦ ?_⟩
   · refine (differentiableOn_continuedLFunctionOfWeight
-      (MonoidHom.hasCancellation_restrict_galoisCharacterUnitaryWeight χ hχ)).div
+      (MonoidHom.hasCancellation_restrictAway_galoisCharacterUnitaryWeight χ hχ)).div
         hcorr.differentiableOn fun s hs ↦ hne ?_
     -- The half-plane `Re s > 1 - 1 / [K : ℚ]` lies in `Re s > 0`.
     exact (sub_nonneg.mpr <| div_le_one_of_le₀ (Nat.one_le_cast.mpr Module.finrank_pos)
       (Nat.cast_nonneg _)).trans_lt hs
   · dsimp only
-    rw [continuedLFunctionOfWeight_restrict_of_one_lt_re w S hs,
+    rw [continuedLFunctionOfWeight_restrictAway_of_one_lt_re w S hs,
       mul_div_cancel_right₀ _ (hne (by linarith)), continuedLFunctionOfWeight_eq_LSeries _ hs,
       UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
       MonoidHom.val_galoisCharacterUnitaryWeight]

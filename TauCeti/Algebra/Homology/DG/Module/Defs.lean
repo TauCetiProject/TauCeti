@@ -119,7 +119,7 @@ namespace IsDGLeftModule
 of the grading, up to the shift by one that it applies to degrees. -/
 theorem map_decompose (hM : IsDGLeftModule h ℳ dM) (p : ℤ) (x : M) :
     dM (decompose ℳ x p : M) = (decompose ℳ (dM x) (p + 1) : M) :=
-  DirectSum.map_decompose_shift ℳ ℳ dM (· + 1) (add_left_injective 1)
+  DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) p x
 
 /-- Every homogeneous projection of a boundary is again a boundary. -/

@@ -95,6 +95,16 @@ lemma coe_cellAttachingMap_apply {n : ℕ} (j : cell C n)
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
+/-- The inverse of `TauCeti.cellularChainGroupIso` on the summand of the cell `j` is the inverse of
+`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` followed by the map induced by the characteristic map of `j`. -/
+@[reassoc]
+lemma ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap (n : ℕ)
+    [HasExactColimitsOfShape (Discrete (cell C n)) A] (j : cell C n) :
+    Sigma.ι (fun _ : cell C n ↦ R) j ≫ (cellularChainGroupIso C R n).inv =
+      (singularHomologyDiskBoundaryPairIso R n).inv ≫
+        TopPair.singularHomologyMap (characteristicCellPairMap C j) R n :=
+  ι_cellularChainGroupIso_inv C R n j
+
 /-- **The cellular boundary on a cell generator**: take the reduced fundamental class of the
 boundary sphere, include it in ordinary homology, apply the attaching map, and pass to the
 relative homology of consecutive skeleta.  This includes one-cells, whose reduced boundary

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 
 /-!
 # The standard representation of the general linear group
@@ -35,6 +36,8 @@ invertible matrix, and `GL(n, k)` is transitive on nonzero vectors.
   by the invertible matrix it names.
 * `TauCeti.GeneralLinear.mulVec_mem`: a subcomodule of the standard comodule is stable under
   every invertible matrix.
+* `TauCeti.GeneralLinear.pointToGeneralLinear_mul_map_toMatrix`: change of basis conjugates the
+  matrix of a point into the coefficient matrix of the corestricted standard comodule.
 * `TauCeti.GeneralLinear.instIsSimpleOrderSubcomodule`: over a field and in
   positive size, the standard comodule is simple.
 
@@ -209,6 +212,29 @@ theorem corestrictStandardComodule_mulVec_mem {H : Type*} [CommRing H] [HopfAlge
   intro N g w hw
   have h := Comodule.basePointsRepresentation_mem N g hw
   rwa [Comodule.basePointsRepresentation_corestrict f g, basePointsRepresentation_eq_mulVec] at h
+
+/-- **Change of basis for the corestricted standard representation.** Let `P` be the matrix whose
+columns are the vectors of a basis `b` of `Rⁿ`. An `H`-valued point `f` of `GLₙ` satisfies
+`f P = P C`, where `C` is the coefficient matrix of `b` in the standard comodule corestricted
+along `f`. -/
+theorem pointToGeneralLinear_mul_map_toMatrix {H : Type*} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) (b : Basis (Fin n) R (Fin n → R)) :
+    let _ := corestrictStandardComodule R n f
+    (pointToGeneralLinear n (toConv (f : coordinateHopfAlgebra R n →ₐ[R] H)) :
+        Matrix (Fin n) (Fin n) H) * ((Pi.basisFun R (Fin n)).toMatrix b).map (algebraMap R H) =
+      ((Pi.basisFun R (Fin n)).toMatrix b).map (algebraMap R H) *
+        Comodule.coefficientMatrix (C := H) b := by
+  let _ := corestrictStandardComodule R n f
+  dsimp only
+  have hbasisFun : Comodule.coefficientMatrix (C := H) (Pi.basisFun R (Fin n)) =
+      (genericMatrix R n).map f := by
+    let _ := standardComodule R n
+    rw [← coefficientMatrix_basisFun]
+    exact Comodule.coefficientMatrix_corestrict (Pi.basisFun R (Fin n)) f.toCoalgHom
+  have h := Module.Basis.coefficientMatrix_mul_toMatrix (C := H) (Pi.basisFun R (Fin n)) b
+  rw [hbasisFun] at h
+  rw [← map_genericMatrix_eq_coe_pointToGeneralLinear]
+  exact h
 
 section PointAction
 

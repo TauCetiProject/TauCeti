@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Restriction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CarryCocycle
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ComparisonDegreeTwo
 
 /-!
@@ -41,6 +42,9 @@ On central simple algebras, base change is `A ↦ A ⊗_K L`; that comparison is
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.explicitMap2_absoluteGaloisGroupMap_eq`: a pullback on `H²` along
+  the decomposition map of an embedding `τ` of separable closures and a coefficient map that
+  depends on `τ` compatibly with the Galois action does not depend on `τ`.
 * `TauCeti.ClassFieldTheory.brBaseChange_apply`: base change is the pullback along the compatible
   pair of any embedding `τ` of separable closures.
 * `TauCeti.ClassFieldTheory.brBaseChange_self`,
@@ -50,6 +54,9 @@ On central simple algebras, base change is `A ↦ A ⊗_K L`; that comparison is
 * `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`: base change of a class inflated from a finite
   normal layer `L/K` is inflated from any finite normal layer `M/F` receiving `L`, along restriction
   `Gal(M/F) → Gal(L/K)` and the inclusion `Lˣ → Mˣ`.
+* `TauCeti.ClassFieldTheory.brBaseChange_characterCarryCocycle`: base change of the carry class
+  `a ∪ δχ` of a character `χ` of `G_K` and `a ∈ Kˣ` is the carry class of `χ` read on `G_L` and
+  the image of `a` in `Lˣ`.
 
 ## References
 
@@ -109,24 +116,35 @@ end Coefficients
 
 variable (K : Type u) [Field K] (L : Type v) [Field L] [Algebra K L]
 
-/-- The pullback on the explicit `H²` along the compatible pair of an embedding `τ` of separable
-closures does not depend on `τ`: a second embedding is `τ ∘ h` for an automorphism `h` of `Kˢ`,
-and the pair of `τ ∘ h` is that of `τ` after the inner pair of `h`, which acts trivially. -/
-private theorem explicitMap2_baseChange_eq (τ τ' : SeparableClosure K →ₐ[K] SeparableClosure L) :
-    explicitMap2 (AbsoluteGaloisGroup K) (UnitsCoeff K) (AbsoluteGaloisGroup L) (UnitsCoeff L)
-        (absoluteGaloisGroupMap τ) (unitsCoeffBaseChange τ) continuous_of_discreteTopology
-        (unitsCoeffBaseChange_smul τ) =
-      explicitMap2 (AbsoluteGaloisGroup K) (UnitsCoeff K) (AbsoluteGaloisGroup L) (UnitsCoeff L)
-        (absoluteGaloisGroupMap τ') (unitsCoeffBaseChange τ') continuous_of_discreteTopology
-        (unitsCoeffBaseChange_smul τ') := by
+/-- **Pullbacks along embeddings of separable closures do not depend on the embedding.** Let
+`M` be a discrete `G_K`-module, `N` a discrete `G_L`-module, and `F τ : M → N` a coefficient map
+for every `K`-embedding `τ : Kˢ →ₐ[K] Lˢ`, equivariant along `absoluteGaloisGroupMap τ`, such
+that changing `τ` by an automorphism `h` of `Kˢ` precomposes `F τ` with the action of `h`. Then
+the pullback on the explicit `H²` along `(absoluteGaloisGroupMap τ, F τ)` is the same for every
+`τ`: a second embedding is `τ ∘ h`, and the pair of `τ ∘ h` is that of `τ` after the inner pair
+of `h`, which acts trivially on cohomology. -/
+theorem explicitMap2_absoluteGaloisGroupMap_eq
+    {M : Type u} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
+    {N : Type v} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction (AbsoluteGaloisGroup L) N] [ContinuousSMul (AbsoluteGaloisGroup L) N]
+    (F : (SeparableClosure K →ₐ[K] SeparableClosure L) → M →+ N)
+    (hF : ∀ τ (g : AbsoluteGaloisGroup L) (m : M), F τ (absoluteGaloisGroupMap τ g • m) = g • F τ m)
+    (hFcomp : ∀ τ (h : AbsoluteGaloisGroup K) (m : M),
+      F (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) m = F τ (h • m))
+    (τ τ' : SeparableClosure K →ₐ[K] SeparableClosure L) :
+    explicitMap2 (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup L) N (absoluteGaloisGroupMap τ)
+        (F τ) continuous_of_discreteTopology (hF τ) =
+      explicitMap2 (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup L) N
+        (absoluteGaloisGroupMap τ') (F τ') continuous_of_discreteTopology (hF τ') := by
   obtain ⟨h, rfl⟩ := τ.exists_comp_eq_of_normal τ'
-  -- The inner compatible pair of `h` on `H²(G_K, (Kˢ)ˣ)`.
+  -- The inner compatible pair of `h` on `H²(G_K, M)`.
   let c : AbsoluteGaloisGroup K →ₜ* AbsoluteGaloisGroup K :=
     { toMonoidHom := (MulAut.conj h⁻¹).toMonoidHom
       continuous_toFun := (continuous_const.mul continuous_id).mul continuous_const }
   have hc (x : AbsoluteGaloisGroup K) : c x = h⁻¹ * x * h := by simp [c]
-  let f := DistribSMul.toAddMonoidHom (UnitsCoeff K) h
-  have hf (x : AbsoluteGaloisGroup K) (m : UnitsCoeff K) : f (c x • m) = x • f m := by
+  let f := DistribSMul.toAddMonoidHom M h
+  have hf (x : AbsoluteGaloisGroup K) (m : M) : f (c x • m) = x • f m := by
     simp only [f, DistribSMul.toAddMonoidHom_apply, hc, smul_smul]
     congr 1
     group
@@ -134,22 +152,18 @@ private theorem explicitMap2_baseChange_eq (τ τ' : SeparableClosure K →ₐ[K
   have hgrp : absoluteGaloisGroupMap (τ.comp h) = c.comp (absoluteGaloisGroupMap τ) :=
     ContinuousMonoidHom.ext fun g ↦ by
       rw [ContinuousMonoidHom.comp_toFun, hc, absoluteGaloisGroupMap_comp]
-  have hcoeff : unitsCoeffBaseChange (τ.comp h) = (unitsCoeffBaseChange τ).comp f :=
-    AddMonoidHom.ext fun m ↦ unitsCoeffBaseChange_comp τ h m
-  have hψ : ∀ (g : AbsoluteGaloisGroup L) (m : UnitsCoeff K),
-      (unitsCoeffBaseChange τ).comp f (c.comp (absoluteGaloisGroupMap τ) g • m) =
-        g • (unitsCoeffBaseChange τ).comp f m :=
+  have hcoeff : F (τ.comp h) = (F τ).comp f := AddMonoidHom.ext fun m ↦ hFcomp τ h m
+  have hψ : ∀ (g : AbsoluteGaloisGroup L) (m : M),
+      (F τ).comp f (c.comp (absoluteGaloisGroupMap τ) g • m) = g • (F τ).comp f m :=
     fun g m ↦ by
       rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.comp_toFun, hf,
-        unitsCoeffBaseChange_smul]
-  have hpair := explicitMap2_congr_of_eq (AbsoluteGaloisGroup K) (UnitsCoeff K)
-    (AbsoluteGaloisGroup L) (UnitsCoeff L) _ _ _ _ (hf := continuous_of_discreteTopology)
-    (hq := continuous_of_discreteTopology) (hφ := unitsCoeffBaseChange_smul (τ.comp h))
-    (hψ := hψ) hgrp hcoeff
-  rw [hpair, explicitMap2_comp (AbsoluteGaloisGroup K) (UnitsCoeff K) (AbsoluteGaloisGroup K)
-    (UnitsCoeff K) c f continuous_of_discreteTopology hf (AbsoluteGaloisGroup L) (UnitsCoeff L)
-    (absoluteGaloisGroupMap τ) (unitsCoeffBaseChange τ) continuous_of_discreteTopology
-    (unitsCoeffBaseChange_smul τ)]
+        hF]
+  have hpair := explicitMap2_congr_of_eq (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup L) N _ _ _ _
+    (hf := continuous_of_discreteTopology) (hq := continuous_of_discreteTopology)
+    (hφ := hF (τ.comp h)) (hψ := hψ) hgrp hcoeff
+  rw [hpair, explicitMap2_comp (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup K) M c f
+    continuous_of_discreteTopology hf (AbsoluteGaloisGroup L) N (absoluteGaloisGroupMap τ) (F τ)
+    continuous_of_discreteTopology (hF τ)]
   refine AddMonoidHom.ext fun x ↦ ?_
   rw [AddMonoidHom.comp_apply, explicitMap2_eq_self_of_inner _ _ h c hc f (fun _ ↦ rfl)]
 
@@ -174,7 +188,8 @@ theorem brBaseChange_apply (τ : SeparableClosure K →ₐ[K] SeparableClosure L
         (AbsoluteGaloisGroup L) (UnitsCoeff L) (absoluteGaloisGroupMap τ)
         (unitsCoeffBaseChange τ) continuous_of_discreteTopology (unitsCoeffBaseChange_smul τ)
         ((unitsRepH2Equiv K).symm x)) := by
-  rw [brBaseChange, explicitMap2_baseChange_eq K L IsSepClosed.lift τ]
+  rw [brBaseChange, explicitMap2_absoluteGaloisGroupMap_eq K L (fun τ ↦ unitsCoeffBaseChange τ)
+    unitsCoeffBaseChange_smul unitsCoeffBaseChange_comp IsSepClosed.lift τ]
   rfl
 
 /-- Base change along the trivial extension `K/K` is the identity. -/
@@ -187,7 +202,8 @@ theorem brBaseChange_self (x : Br K) : brBaseChange K K x = x := by
     (hφ := unitsCoeffBaseChange_smul (AlgHom.id K _)) (hψ := fun _ _ ↦ rfl)
     (ContinuousMonoidHom.ext fun _ ↦ (absoluteGaloisGroupMap_eq_iff _).2 fun _ ↦ rfl)
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp)))
-  rw [brBaseChange_apply K K (AlgHom.id K _), hpair, explicitMap2_id, AddMonoidHom.id_apply,
+  rw [brBaseChange_apply K K (AlgHom.id K _), hpair,
+    explicitMap2_id (G := AbsoluteGaloisGroup K) (M := UnitsCoeff K), AddMonoidHom.id_apply,
     AddEquiv.apply_symm_apply]
 
 /-- **Base change is transitive**: for a tower `K ⊆ L ⊆ M`, base change from `K` to `L` followed
@@ -209,14 +225,17 @@ theorem brBaseChange_brBaseChange (M : Type w) [Field M] [Algebra K M] [Algebra 
     ((unitsCoeffBaseChange τ').comp (unitsCoeffBaseChange τ))
     (hf := continuous_of_discreteTopology) (hq := continuous_of_discreteTopology)
     (hφ := unitsCoeffBaseChange_smul τ'')
-    (hψ := fun g m ↦ by
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.comp_toFun,
-        unitsCoeffBaseChange_smul, unitsCoeffBaseChange_smul])
+    (hψ := (absoluteGaloisGroupMap τ).comp_map_smul (absoluteGaloisGroupMap τ')
+      (unitsCoeffBaseChange τ) (unitsCoeffBaseChange τ')
+      (unitsCoeffBaseChange_smul τ) (unitsCoeffBaseChange_smul τ'))
     (ContinuousMonoidHom.ext fun g ↦
       (absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' τ'' (fun _ ↦ rfl) g).symm)
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp [τ''])))
   rw [brBaseChange_apply K L τ, brBaseChange_apply L M τ', brBaseChange_apply K M τ'',
-    AddEquiv.symm_apply_apply, hpair, explicitMap2_comp, AddMonoidHom.comp_apply]
+    AddEquiv.symm_apply_apply, hpair,
+    explicitMap2_comp (G := AbsoluteGaloisGroup K) (M := UnitsCoeff K)
+      (H := AbsoluteGaloisGroup L) (N := UnitsCoeff L)
+      (K := AbsoluteGaloisGroup M) (P := UnitsCoeff M), AddMonoidHom.comp_apply]
 
 /-- **Base change along an embedded extension is restriction**: if `L/K` is embedded in `Kˢ` by
 `σ`, then `brBaseChange K L` is the restriction `brRes K L σ`. In particular `brRes K L σ` does
@@ -240,6 +259,31 @@ theorem brBaseChange_eq_brRes (σ : L →ₐ[K] SeparableClosure K) :
     (ContinuousMonoidHom.ext fun g ↦ (absoluteGaloisGroupMap_eq_iff ψ).2 fun y ↦ by simp [ψ])
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp [ψ])))
   rw [brBaseChange_apply K L ψ, brRes_eq_explicitMap2, hpair]
+
+/-! ### Base change of carry classes -/
+
+/-- **Base change of a carry class.** For a character `χ : G_K → ℚ/ℤ` with open kernel and
+`a ∈ Kˣ`, base change to `L` of the Brauer class `a ∪ δχ` of the carry cocycle of `χ` and `a` is
+the carry class of the character `χ` read on `G_L` through the decomposition map of any
+`K`-embedding `τ : Kˢ → Lˢ` and of the image of `a` in `Lˣ`. -/
+theorem brBaseChange_characterCarryCocycle (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K)))) (a : Kˣ) :
+    brBaseChange K L (unitsRepH2Equiv K (characterCarryCocycle χ hχ
+        (baseUnitsEquivInvariants K (.ofMul a)) : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K))) =
+      unitsRepH2Equiv L (characterCarryCocycle
+        (χ.comp (absoluteGaloisGroupMap τ :
+          AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K).toAdditive)
+        (by
+          rw [← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
+          exact hχ.preimage (continuous_ofMul.comp
+            ((absoluteGaloisGroupMap τ).continuous.comp continuous_toMul)))
+        (baseUnitsEquivInvariants L (.ofMul (Units.map (algebraMap K L) a))) :
+          H2 (AbsoluteGaloisGroup L) (UnitsCoeff L)) := by
+  rw [brBaseChange_apply K L τ, AddEquiv.symm_apply_apply, explicitMap2_characterCarryCocycle]
+  congr 3
+  refine Subtype.ext (Additive.toMul.injective (Units.ext ?_))
+  simp [IsScalarTower.algebraMap_apply K L (SeparableClosure L)]
 
 /-! ### Base change of inflated classes -/
 

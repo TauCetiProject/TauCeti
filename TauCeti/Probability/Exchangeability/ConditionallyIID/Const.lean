@@ -50,7 +50,7 @@ theorem conditionallyIIDWith_const_of_mixedIIDWith {μ : Measure Ω}
     ConditionallyIIDWith μ X fun _ => p := by
   by_cases hμ : μ = 0
   · subst μ
-    refine ConditionallyIIDWith.intro h.aemeasurable measurable_const fun m k hk => ?_
+    refine ConditionallyIIDWith.intro h.aemeasurable measurable_const fun m k _ => ?_
     simp
   refine ConditionallyIIDWith.intro h.aemeasurable measurable_const fun m k hk => ?_
   have hblock : AEMeasurable (fun ω (i : Fin m) => X (k i) ω) μ :=

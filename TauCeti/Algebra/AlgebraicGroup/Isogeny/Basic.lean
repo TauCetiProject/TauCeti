@@ -46,9 +46,8 @@ The isogeny and central-kernel interfaces and their proof organization are adapt
 formalizations in `TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Basic` and
 `TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Coordinate`.
 
-This supplies the central-isogeny interface requested in Layer 6, "Reductive and semisimple
-groups", of `TauCetiRoadmap/ReductiveGroups/README.md`. It builds on the existing
-scheme-theoretic kernel and central Hopf-ideal APIs.
+This supplies the central-isogeny interface. It builds on the scheme-theoretic kernel and central
+Hopf-ideal APIs.
 -/
 
 public section

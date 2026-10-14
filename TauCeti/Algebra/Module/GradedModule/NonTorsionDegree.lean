@@ -292,7 +292,7 @@ theorem nonTorsionDegrees_negDegreeGrading :
     · simp [Int.toNat_of_nonneg (neg_nonneg.mpr hp)]
     · obtain ⟨⟨a, ha⟩, h⟩ := (Submodule.mem_torsion_iff _).mp h
       rw [Submonoid.smul_def, smul_eq_mul] at h
-      exact nonZeroDivisors.ne_zero (pow_mem X_mem_nonzeroDivisors _)
+      exact nonZeroDivisors.ne_zero (pow_mem X_mem_nonZeroDivisors _)
         (mem_nonZeroDivisors_iff_left.mp ha _ h)
 
 /-- The top of the tower `k[X]`, graded by `negDegreeGrading`, sits in degree `0`. -/

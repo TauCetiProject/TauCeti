@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialObject.ChainHomotopy
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 
 /-!

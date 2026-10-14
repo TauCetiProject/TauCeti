@@ -58,7 +58,7 @@ private theorem exists_pivot_step (A : TransportMatrix μ ν) (q : ι × κ)
       simpa only [Settled, not_forall, not_imp, not_or] using h
     exact ⟨i, j, hi, hj, lt_of_le_of_ne (A.toRealFun_nonneg _) (Ne.symm hr),
       lt_of_le_of_ne (A.toRealFun_nonneg _) (Ne.symm hc)⟩
-  obtain ⟨B, δ, hδ0, hδ, hB, -, -, hz, -⟩ :=
+  obtain ⟨B, δ, _, hδ, hB, -, -, hz, -⟩ :=
     A.exists_uncross_cost_le (fun _ ↦ 0) hi.ne hj.ne (by simp)
   have hδpos : 0 < δ := hδ ▸ lt_min hrow hcol
   have hstep : A.UncrossStep B := by

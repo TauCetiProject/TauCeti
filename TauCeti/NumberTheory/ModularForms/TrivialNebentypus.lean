@@ -20,14 +20,15 @@ two isomorphic, then use `M_k(Γ₀(N))` as the default spelling and convert to 
 that milestone, for modular forms (`TauCeti.modFormCharSpaceOneEquiv`) and for cusp forms
 (`TauCeti.cuspFormCharSpaceOneEquiv`), both stated for `N ≠ 0`.
 
-Both directions are instances of the generic subgroup-change API of
-`TauCeti.NumberTheory.ModularForms.Basic`. Restricting a `Γ₀(N)`-form to `Γ₁(N)`
-(`ModularForm.ofLe`) is unconditional, and the resulting form has trivial nebentypus because
-the diamond operators are slashes by elements of `Γ₀(N)`. Conversely, a `Γ₁(N)`-form with
-trivial nebentypus is `Γ₀(N)`-slash invariant by the nebentypus criterion
+Both directions are instances of generic subgroup-change constructions. Restricting a
+`Γ₀(N)`-form to `Γ₁(N)` is Mathlib's `ModularForm.restrict` (resp. `CuspForm.restrict`) and is
+unconditional, and the resulting form has trivial nebentypus because the diamond operators
+are slashes by elements of `Γ₀(N)`. Conversely, a `Γ₁(N)`-form with trivial nebentypus is
+`Γ₀(N)`-slash invariant by the nebentypus criterion
 `mem_modFormCharSpace_iff_nebentypus`, and it is bounded (resp. zero) at every cusp of `Γ₀(N)`
 because for `N ≠ 0` the groups `Γ₀(N)` and `Γ₁(N)` are arithmetic, hence share the cusps of
-`SL(2, ℤ)` (`Subgroup.IsArithmetic.isCusp_of_isCusp`); this is `ModularForm.ofSlashInvariant`.
+`SL(2, ℤ)` (`Subgroup.IsArithmetic.isCusp_of_isCusp`); this is `ModularForm.ofSlashInvariant`
+from `TauCeti.NumberTheory.ModularForms.Basic`.
 Both constructions preserve the underlying function `ℍ → ℂ`, so the resulting bijections are
 `ℂ`-linear and conversion in either direction costs nothing: see the `coe_…_apply` lemmas
 below.
@@ -61,7 +62,7 @@ space of forms, not an equality of types.
   the diamond operators `∑ᵤ ⟨u⟩`.
 * `TauCeti.sum_diamondOpCusp_mem_cuspFormCharSpace_one`: a diamond sum along a surjection has
   trivial nebentypus.
-* `TauCeti.cuspFormTraceGamma0_ofLe`: tracing a restricted `Γ₀(N)` form multiplies it by
+* `TauCeti.cuspFormTraceGamma0_restrict`: tracing a restricted `Γ₀(N)` form multiplies it by
   `#(ZMod N)ˣ`.
 * `TauCeti.cuspFormTraceGamma0_levelRaise`: trace commutes with level raising when the lower-level
   diamond sum comes from a `Γ₀` cusp form.
@@ -132,46 +133,46 @@ theorem sum_diamondOpCusp_mem_cuspFormCharSpace_one {M : ℕ} [NeZero N]
 /-! ### Restricting a `Γ₀(N)`-form to `Γ₁(N)` -/
 
 /-- Restricted to `Γ₁(N)`, a modular form for `Γ₀(N)` has trivial nebentypus. -/
-theorem ofLe_mem_modFormCharSpace_one (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
-    ModularForm.ofLe (Gamma1_map_le_Gamma0_map N) f ∈
+theorem restrict_mem_modFormCharSpace_one (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    ModularForm.restrict (Gamma1_map_le_Gamma0_map N) f ∈
       modFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ) :=
   (mem_modFormCharSpace_one_iff _).mpr fun γ hγ ↦ by
     simpa using f.slash_action_eq' γ hγ
 
 /-- Restricted to `Γ₁(N)`, a cusp form for `Γ₀(N)` has trivial nebentypus. -/
-theorem ofLe_mem_cuspFormCharSpace_one (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
-    CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ) :=
+theorem restrict_mem_cuspFormCharSpace_one (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ) :=
   (mem_cuspFormCharSpace_one_iff _).mpr fun γ hγ ↦ by
     simpa using f.slash_action_eq' γ hγ
 
 /-- The diamond operators fix the restriction of a `Γ₀(N)`-form: they are slashes by elements
 of `Γ₀(N)`, under which such a form is already invariant. -/
-theorem diamondOp_ofLe (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : (ZMod N)ˣ) :
-    diamondOp k d (ModularForm.ofLe (Gamma1_map_le_Gamma0_map N) f) =
-      ModularForm.ofLe (Gamma1_map_le_Gamma0_map N) f :=
-  (mem_modFormCharSpace_one_iff_diamondOp _).mp (ofLe_mem_modFormCharSpace_one f) d
+theorem diamondOp_restrict (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : (ZMod N)ˣ) :
+    diamondOp k d (ModularForm.restrict (Gamma1_map_le_Gamma0_map N) f) =
+      ModularForm.restrict (Gamma1_map_le_Gamma0_map N) f :=
+  (mem_modFormCharSpace_one_iff_diamondOp _).mp (restrict_mem_modFormCharSpace_one f) d
 
 /-- The diamond operators fix the restriction of a `Γ₀(N)`-cusp form. -/
-theorem diamondOpCusp_ofLe (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) (d : (ZMod N)ˣ) :
-    diamondOpCusp k d (CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f) =
-      CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f :=
-  (mem_cuspFormCharSpace_one_iff_diamondOpCusp _).mp (ofLe_mem_cuspFormCharSpace_one f) d
+theorem diamondOpCusp_restrict (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) (d : (ZMod N)ˣ) :
+    diamondOpCusp k d (CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f) =
+      CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f :=
+  (mem_cuspFormCharSpace_one_iff_diamondOpCusp _).mp (restrict_mem_cuspFormCharSpace_one f) d
 
 /-- The trivial-nebentypus space is exactly the image of `M_k(Γ₀(N))` under restriction. -/
 theorem modFormCharSpace_one_eq_range [NeZero N] :
     modFormCharSpace (N := N) k (1 : (ZMod N)ˣ →* ℂˣ) =
-      LinearMap.range (ModularForm.ofLeₗ (k := k) (Gamma1_map_le_Gamma0_map N)) :=
+      LinearMap.range (ModularForm.restrictₗ k ℂ (Gamma1_map_le_Gamma0_map N)) :=
   Submodule.ext fun f ↦
     (mem_modFormCharSpace_one_iff f).trans
-      (ModularForm.mem_range_ofLeₗ_iff _ Subgroup.IsArithmetic.isCusp_of_isCusp f).symm
+      (ModularForm.mem_range_restrictₗ_iff _ Subgroup.IsArithmetic.isCusp_of_isCusp f).symm
 
 /-- The trivial-nebentypus space is exactly the image of `S_k(Γ₀(N))` under restriction. -/
 theorem cuspFormCharSpace_one_eq_range [NeZero N] :
     cuspFormCharSpace (N := N) k (1 : (ZMod N)ˣ →* ℂˣ) =
-      LinearMap.range (CuspForm.ofLeₗ (k := k) (Gamma1_map_le_Gamma0_map N)) :=
+      LinearMap.range (CuspForm.restrictₗ k ℂ (Gamma1_map_le_Gamma0_map N)) :=
   Submodule.ext fun f ↦
     (mem_cuspFormCharSpace_one_iff f).trans
-      (CuspForm.mem_range_ofLeₗ_iff _ Subgroup.IsArithmetic.isCusp_of_isCusp f).symm
+      (CuspForm.mem_range_restrictₗ_iff _ Subgroup.IsArithmetic.isCusp_of_isCusp f).symm
 
 /-! ### The isomorphisms
 
@@ -191,8 +192,8 @@ noncomputable def modFormCharSpaceOneEquiv (N : ℕ) [NeZero N] (k : ℤ) :
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ((mem_modFormCharSpace_one_iff _).mp f.2)
   map_add' _ _ := ModularForm.ext fun _ ↦ by simp
   map_smul' _ _ := ModularForm.ext fun _ ↦ by simp
-  invFun f := ⟨ModularForm.ofLe (Gamma1_map_le_Gamma0_map N) f,
-    ofLe_mem_modFormCharSpace_one f⟩
+  invFun f := ⟨ModularForm.restrict (Gamma1_map_le_Gamma0_map N) f,
+    restrict_mem_modFormCharSpace_one f⟩
   left_inv _ := Subtype.ext (ModularForm.ext fun _ ↦ by simp)
   right_inv _ := ModularForm.ext fun _ ↦ by simp
 
@@ -205,14 +206,14 @@ theorem coe_modFormCharSpaceOneEquiv_apply [NeZero N]
     ⇑(modFormCharSpaceOneEquiv N k f) = ⇑(f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :=
   ModularForm.coe_ofSlashInvariant _ _ _
 
-/-- The inverse of `modFormCharSpaceOneEquiv` is the restriction `ModularForm.ofLe` of a
+/-- The inverse of `modFormCharSpaceOneEquiv` is the restriction `ModularForm.restrict` of a
 `Γ₀(N)`-form to `Γ₁(N)`; in particular it too preserves the underlying function on `ℍ`. -/
 @[simp]
 theorem coe_modFormCharSpaceOneEquiv_symm_apply [NeZero N]
     (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
     (((modFormCharSpaceOneEquiv N k).symm f : modFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
       ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      ModularForm.ofLe (Gamma1_map_le_Gamma0_map N) f :=
+      ModularForm.restrict (Gamma1_map_le_Gamma0_map N) f :=
   (rfl)
 
 /-- **The two spellings of `S_k(Γ₀(N))` agree**: the cusp-form analogue of
@@ -224,7 +225,8 @@ noncomputable def cuspFormCharSpaceOneEquiv (N : ℕ) [NeZero N] (k : ℤ) :
     (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ((mem_cuspFormCharSpace_one_iff _).mp f.2)
   map_add' _ _ := CuspForm.ext fun _ ↦ by simp
   map_smul' _ _ := CuspForm.ext fun _ ↦ by simp
-  invFun f := ⟨CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f, ofLe_mem_cuspFormCharSpace_one f⟩
+  invFun f :=
+    ⟨CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f, restrict_mem_cuspFormCharSpace_one f⟩
   left_inv _ := Subtype.ext (CuspForm.ext fun _ ↦ by simp)
   right_inv _ := CuspForm.ext fun _ ↦ by simp
 
@@ -237,26 +239,19 @@ theorem coe_cuspFormCharSpaceOneEquiv_apply [NeZero N]
     ⇑(cuspFormCharSpaceOneEquiv N k f) = ⇑(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
   CuspForm.coe_ofSlashInvariant _ _ _
 
-/-- The inverse of `cuspFormCharSpaceOneEquiv` is the restriction `CuspForm.ofLe` of a
+/-- The inverse of `cuspFormCharSpaceOneEquiv` is the restriction `CuspForm.restrict` of a
 `Γ₀(N)`-cusp form to `Γ₁(N)`; in particular it too preserves the underlying function on `ℍ`. -/
 @[simp]
 theorem coe_cuspFormCharSpaceOneEquiv_symm_apply [NeZero N]
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
     (((cuspFormCharSpaceOneEquiv N k).symm f : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)) :
       CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f :=
+      CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f :=
   (rfl)
 
 /-! ### The trace from `Γ₁(N)` to `Γ₀(N)` is the diamond sum -/
 
 section Trace
-
-/-- For `N ≠ 0`, `Γ₁(N)` has finite index in `Γ₀(N)`, so the trace from `Γ₁(N)` to `Γ₀(N)` is
-defined. -/
-instance instIsFiniteRelIndexGamma1MapGamma0Map (N : ℕ) [NeZero N] :
-    ((Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma0 N).map (mapGL ℝ)) :=
-  Subgroup.IsFiniteRelIndex.map (mapGL ℝ)
-    (Subgroup.isFiniteRelIndex_of_finiteIndex (H := Gamma1 N) (K := Gamma0 N))
 
 /-- A representative in `(Gamma0 N).map (mapGL ℝ)`, pulled back to `Γ₀(N)` and mapped forward
 again, is itself. -/
@@ -362,14 +357,14 @@ theorem cuspFormTraceGamma0_apply [NeZero N] (F : CuspForm ((Gamma1 N).map (mapG
 /-- Tracing the restriction of a `Γ₀(N)` cusp form multiplies it by the index
 `#(ZMod N)ˣ`. -/
 @[simp]
-theorem cuspFormTraceGamma0_ofLe [NeZero N]
+theorem cuspFormTraceGamma0_restrict [NeZero N]
     (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
-    cuspFormTraceGamma0 N k (CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f) =
+    cuspFormTraceGamma0 N k (CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f) =
       (Fintype.card (ZMod N)ˣ : ℂ) • f := by
   apply DFunLike.coe_injective
   ext τ
   rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
-  simp [diamondOpCusp_ofLe]
+  simp [diamondOpCusp_restrict]
 
 /-- Tracing a level-raised cusp form commutes with level raising when the diamond sum at the
 lower level is the restriction of a `Γ₀(M)` cusp form. -/
@@ -377,7 +372,7 @@ theorem cuspFormTraceGamma0_levelRaise {M d : ℕ} [NeZero N] [NeZero d]
     (hMN : M ∣ N) (hdvd : d * M ∣ N)
     (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k)
     (g₀ : CuspForm ((Gamma0 M).map (mapGL ℝ)) k)
-    (hsum : CuspForm.ofLe (Gamma1_map_le_Gamma0_map M) g₀ =
+    (hsum : CuspForm.restrict (Gamma1_map_le_Gamma0_map M) g₀ =
       ∑ u : (ZMod N)ˣ, diamondOpCusp k (ZMod.unitsMap hMN u) g) :
     cuspFormTraceGamma0 N k
         (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g) =

@@ -349,7 +349,6 @@ theorem alternatingGroupFourExactCharacterTable_lift_conjugateResidues
 /-- **The assembled cyclotomic Dixon--Schneider solver succeeds on the certified `A₄` data.** -/
 theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFour :
     (alternatingGroupFourClassData.dixonCyclotomicCharacterTable? 6
-      exponent_alternatingGroup_four.symm
       alternatingGroupFourSolverDixonPrimeData).isSome = true := by
   apply alternatingGroupFourClassData.isSome_dixonCyclotomicCharacterTable_of_spec 6
     exponent_alternatingGroup_four.symm alternatingGroupFourSolverDixonPrimeData

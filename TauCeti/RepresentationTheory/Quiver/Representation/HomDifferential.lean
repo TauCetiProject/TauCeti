@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
@@ -123,6 +124,15 @@ theorem homEquivKerDifferential_apply (f : M ⟶ N) (i : Q) :
 @[simp]
 theorem homEquivKerDifferential_symm_apply (f : (homDifferential M N).ker) (i : Q) :
     ((homEquivKerDifferential M N).symm f).app i = ModuleCat.ofHom (f.val i) := (rfl)
+
+variable {M N} in
+/-- Morphisms between pointwise finite-dimensional representations of a quiver with finitely
+many vertices form a finite-dimensional vector space. No finiteness of the arrows is needed. -/
+theorem finiteDimensional_hom [Finite Q] (hM : IsFinDim k Q M) (hN : IsFinDim k Q N) :
+    FiniteDimensional k (M ⟶ N) := by
+  let : ∀ i : Q, FiniteDimensional k (vertexSpace k Q M i) := fun i ↦ isFinDim_iff.mp hM i
+  let : ∀ i : Q, FiniteDimensional k (vertexSpace k Q N i) := fun i ↦ isFinDim_iff.mp hN i
+  exact (homEquivKerDifferential M N).symm.finiteDimensional
 
 section Dimension
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ApproximateIdentity
-import TauCeti.MeasureTheory.Function.Lp.MollificationBridge
 
 /-!
 # Smooth density in whole-space Sobolev spaces

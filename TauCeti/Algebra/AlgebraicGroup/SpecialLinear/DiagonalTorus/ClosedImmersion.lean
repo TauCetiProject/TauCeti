@@ -63,7 +63,7 @@ noncomputable def diagonalTorusDefiningIdeal : HopfIdeal R (coordinateHopfAlgebr
     (diagonalTorusCoordinateMap_surjective r R)
 
 /-- A function belongs to the diagonal-torus ideal precisely when its restriction vanishes. -/
-@[simp]
+@[simp↓]
 theorem mem_diagonalTorusDefiningIdeal (x : coordinateHopfAlgebra R (r + 1)) :
     x ∈ diagonalTorusDefiningIdeal r R ↔ (diagonalTorusCoordinateMap r R).hom x = 0 := by
   rw [diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]

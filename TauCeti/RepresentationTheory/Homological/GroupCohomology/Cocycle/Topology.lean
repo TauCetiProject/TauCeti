@@ -21,6 +21,8 @@ topological properties:
 * `groupCohomology.eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top`: a continuous
   `1`-cocycle with values in a `T1` space that vanishes on a set whose generated subgroup is
   dense vanishes everywhere.
+* `TauCeti.continuous_groupNormHom`: the norm of a finite normal subgroup is continuous when the
+  ambient group acts by continuous maps.
 -/
 
 public section
@@ -50,3 +52,15 @@ theorem eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top [IsTopological
   exact (mem_zeroLocus hf).1 (hle (hs ▸ Subgroup.mem_top g))
 
 end groupCohomology
+
+namespace TauCeti
+
+/-- The norm of a finite normal subgroup `N` of `G` is continuous on a module on which every
+element of `G` acts continuously. -/
+theorem continuous_groupNormHom {G : Type*} [Group G] (N : Subgroup G) [N.Normal] [Fintype N]
+    (M : Type*) [AddCommMonoid M] [DistribMulAction G M] [TopologicalSpace M] [ContinuousAdd M]
+    [ContinuousConstSMul G M] : Continuous (groupNormHom N M) :=
+  (continuous_finsetSum Finset.univ fun n _ ↦ continuous_const_smul ((n : N) : G)).congr
+    fun m ↦ by simp only [groupNormHom_apply, groupNorm_apply, Subgroup.smul_def]
+
+end TauCeti

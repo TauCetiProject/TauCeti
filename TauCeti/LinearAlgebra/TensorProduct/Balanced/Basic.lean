@@ -43,8 +43,15 @@ def balancedTensorRelations : Submodule k (M ⊗[k] N) :=
   Submodule.span k {z | ∃ (a : A) (m : M) (n : N),
     z = (op a • m) ⊗ₜ[k] n - m ⊗ₜ[k] (a • n)}
 
+/-- The balancing submodule is spanned by the elementary balancing relations. -/
+theorem balancedTensorRelations_def : balancedTensorRelations k A M N =
+    Submodule.span k {z | ∃ (a : A) (m : M) (n : N),
+      z = (op a • m) ⊗ₜ[k] n - m ⊗ₜ[k] (a • n)} := (rfl)
+
 /-- The tensor product of a right `A`-module and a left `A`-module, balanced over `A`
 and linear over `k`. Compatible scalar actions give the usual algebra-relative tensor product. -/
+-- Expose the quotient carrier so inherited gradings can use the canonical quotient instances.
+@[expose]
 def BalancedTensorProduct := (M ⊗[k] N) ⧸ balancedTensorRelations k A M N
 
 namespace BalancedTensorProduct
@@ -61,9 +68,17 @@ variable {M N}
 def mkQ : M ⊗[k] N →ₗ[k] BalancedTensorProduct k A M N :=
   (balancedTensorRelations k A M N).mkQ
 
+/-- The balanced quotient map is the submodule quotient map. -/
+theorem mkQ_def : mkQ k A (M := M) (N := N) =
+    (balancedTensorRelations k A M N).mkQ := (rfl)
+
 /-- The canonical bilinear map to the balanced tensor product. -/
 def mk : M →ₗ[k] N →ₗ[k] BalancedTensorProduct k A M N :=
   (TensorProduct.mk k M N).compr₂ (mkQ k A)
+
+/-- The canonical bilinear map is the ground-ring tensor map followed by the quotient. -/
+theorem mk_def : mk k A (M := M) (N := N) =
+    (TensorProduct.mk k M N).compr₂ (mkQ k A) := (rfl)
 
 /-- A pure tensor in the balanced tensor product. -/
 def tmul (m : M) (n : N) : BalancedTensorProduct k A M N := mk k A m n
@@ -214,6 +229,49 @@ theorem map_comp (f : M →ₗ[k] M') (g : N →ₗ[k] N')
         (fun a m ↦ by simp [hf, hf']) (fun a n ↦ by simp [hg, hg']) =
       (map f' g' hf' hg').comp (map f g hf hg) :=
   hom_ext fun _ _ ↦ rfl
+
+/-- Equivariant linear equivalences of the factors identify their balanced tensor products. -/
+def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) :
+    BalancedTensorProduct k A M N ≃ₗ[k] BalancedTensorProduct k A M' N' :=
+  LinearEquiv.ofLinearMap (map f.toLinearMap g.toLinearMap hf hg)
+    (map f.symm.toLinearMap g.symm.toLinearMap
+      (fun a m ↦ by
+        apply f.injective
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
+          (hf a (f.symm m)).symm)
+      (fun a n ↦ by
+        apply g.injective
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
+          (hg a (g.symm n)).symm))
+    (by
+      apply hom_ext
+      intro m n
+      simp)
+    (by
+      apply hom_ext
+      intro m n
+      simp)
+
+/-- The carrier map of tensor congruence is the balanced tensor of the two factor maps. -/
+theorem congr_apply (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) (z : BalancedTensorProduct k A M N) :
+    congr f g hf hg z = map f.toLinearMap g.toLinearMap hf hg z := by
+  simp only [congr, LinearEquiv.coe_ofLinearMap]
+
+@[simp]
+theorem congr_tmul (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) (m : M) (n : N) :
+    congr f g hf hg (tmul k A m n) = tmul k A (f m) (g n) := (rfl)
+
+@[simp]
+theorem congr_symm_tmul (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) (m : M') (n : N') :
+    (congr f g hf hg).symm (tmul k A m n) = tmul k A (f.symm m) (g.symm n) := (rfl)
 
 end Map
 

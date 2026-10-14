@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.InvariantSubmodule
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
 
 /-!
 # Irreducibility from a connected Dynkin diagram
@@ -86,43 +87,23 @@ private theorem adj_fork_D {n : ℕ} (hn : 4 ≤ n) (i : Fin n)
 confines each family to its canonical rank range, which is nonempty and is what the proof uses. -/
 theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
     (diagramGraph t.cartanMatrix).Connected := by
+  -- The `A`, `B` and `C` diagrams contain every successor edge, hence the path graph.
+  have path {n : ℕ} (hn : 0 < n) {G : _root_.SimpleGraph (Fin n)}
+      (h : ∀ (i : Fin n) (hi : (i : ℕ) + 1 < n), G.Adj i ⟨(i : ℕ) + 1, hi⟩) : G.Connected :=
+    have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+    SimpleGraph.connected_of_pathGraph_le (SimpleGraph.pathGraph_le_of_adj_succ h)
+  -- In `E₆`, `E₇`, `E₈` node `1` hangs off the branch node `3`, so not every node has a smaller
+  -- neighbour; their connectivity is decided by reachability from node `3`.
   cases t with
   | A n =>
-      have hn := valid_A.mp ht
-      let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
-      have hconn : (diagramGraph (CartanMatrix.A n)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        rw [diagramGraph_adj]
-        simp [CartanMatrix.A]
-        simp only [Fin.ext_iff]
-        omega
-      simpa only [rank_A, cartanMatrix_A] using hconn
+      simpa only [rank_A, cartanMatrix_A] using path (valid_A.mp ht) fun i hi ↦ by
+        rw [diagramGraph_adj]; simp [CartanMatrix.A]; simp only [Fin.ext_iff]; omega
   | B n =>
-      have hn : 0 < n := by have := valid_B.mp ht; omega
-      let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
-      have hconn : (diagramGraph (CartanMatrix.B n)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        rw [diagramGraph_adj]
-        simp [CartanMatrix.B]
-        simp only [Fin.ext_iff]
-        omega
-      simpa only [rank_B, cartanMatrix_B] using hconn
+      simpa only [rank_B, cartanMatrix_B] using path (by have := valid_B.mp ht; omega) fun i hi ↦ by
+        rw [diagramGraph_adj]; simp [CartanMatrix.B]; simp only [Fin.ext_iff]; omega
   | C n =>
-      have hn : 0 < n := by have := valid_C.mp ht; omega
-      let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
-      have hconn : (diagramGraph (CartanMatrix.C n)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        rw [diagramGraph_adj]
-        simp [CartanMatrix.C]
-        simp only [Fin.ext_iff]
-        omega
-      simpa only [rank_C, cartanMatrix_C] using hconn
+      simpa only [rank_C, cartanMatrix_C] using path (by have := valid_C.mp ht; omega) fun i hi ↦ by
+        rw [diagramGraph_adj]; simp [CartanMatrix.C]; simp only [Fin.ext_iff]; omega
   | D n =>
       have hn := valid_D.mp ht
       have hconn : (diagramGraph (CartanMatrix.D n)).Connected := by
@@ -140,77 +121,21 @@ theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
             omega
           exact ⟨j, by simp [j]; omega, hji ▸ adj_succ_D hn j (by simp [j]; omega)⟩
       simpa only [rank_D, cartanMatrix_D] using hconn
-  | E6 =>
-      have hconn : (diagramGraph (CartanMatrix.E 6)).Connected := by
-        rw [SimpleGraph.connected_iff_exists_forall_reachable]
-        refine ⟨(3 : Fin 6), fun i ↦ ?_⟩
-        have h32 : (diagramGraph (CartanMatrix.E 6)).Adj 3 2 := by decide
-        have h20 : (diagramGraph (CartanMatrix.E 6)).Adj 2 0 := by decide
-        have h31 : (diagramGraph (CartanMatrix.E 6)).Adj 3 1 := by decide
-        have h34 : (diagramGraph (CartanMatrix.E 6)).Adj 3 4 := by decide
-        have h45 : (diagramGraph (CartanMatrix.E 6)).Adj 4 5 := by decide
-        fin_cases i
-        · exact h32.reachable.trans h20.reachable
-        · exact h31.reachable
-        · exact h32.reachable
-        · exact .rfl
-        · exact h34.reachable
-        · exact h34.reachable.trans h45.reachable
-      simpa only [rank_E6, cartanMatrix_E6] using hconn
-  | E7 =>
-      have hconn : (diagramGraph (CartanMatrix.E 7)).Connected := by
-        rw [SimpleGraph.connected_iff_exists_forall_reachable]
-        refine ⟨(3 : Fin 7), fun i ↦ ?_⟩
-        have h32 : (diagramGraph (CartanMatrix.E 7)).Adj 3 2 := by decide
-        have h20 : (diagramGraph (CartanMatrix.E 7)).Adj 2 0 := by decide
-        have h31 : (diagramGraph (CartanMatrix.E 7)).Adj 3 1 := by decide
-        have h34 : (diagramGraph (CartanMatrix.E 7)).Adj 3 4 := by decide
-        have h45 : (diagramGraph (CartanMatrix.E 7)).Adj 4 5 := by decide
-        have h56 : (diagramGraph (CartanMatrix.E 7)).Adj 5 6 := by decide
-        fin_cases i
-        · exact h32.reachable.trans h20.reachable
-        · exact h31.reachable
-        · exact h32.reachable
-        · exact .rfl
-        · exact h34.reachable
-        · exact h34.reachable.trans h45.reachable
-        · exact (h34.reachable.trans h45.reachable).trans h56.reachable
-      simpa only [rank_E7, cartanMatrix_E7] using hconn
-  | E8 =>
-      have hconn : (diagramGraph (CartanMatrix.E 8)).Connected := by
-        rw [SimpleGraph.connected_iff_exists_forall_reachable]
-        refine ⟨(3 : Fin 8), fun i ↦ ?_⟩
-        have h32 : (diagramGraph (CartanMatrix.E 8)).Adj 3 2 := by decide
-        have h20 : (diagramGraph (CartanMatrix.E 8)).Adj 2 0 := by decide
-        have h31 : (diagramGraph (CartanMatrix.E 8)).Adj 3 1 := by decide
-        have h34 : (diagramGraph (CartanMatrix.E 8)).Adj 3 4 := by decide
-        have h45 : (diagramGraph (CartanMatrix.E 8)).Adj 4 5 := by decide
-        have h56 : (diagramGraph (CartanMatrix.E 8)).Adj 5 6 := by decide
-        have h67 : (diagramGraph (CartanMatrix.E 8)).Adj 6 7 := by decide
-        fin_cases i
-        · exact h32.reachable.trans h20.reachable
-        · exact h31.reachable
-        · exact h32.reachable
-        · exact .rfl
-        · exact h34.reachable
-        · exact h34.reachable.trans h45.reachable
-        · exact (h34.reachable.trans h45.reachable).trans h56.reachable
-        · exact ((h34.reachable.trans h45.reachable).trans h56.reachable).trans h67.reachable
-      simpa only [rank_E8, cartanMatrix_E8] using hconn
-  | F4 =>
-      have hconn : (diagramGraph CartanMatrix.F₄).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        fin_cases i <;> decide +kernel +revert
-      simpa only [rank_F4, cartanMatrix_F4] using hconn
-  | G2 =>
-      have hconn : (diagramGraph (CartanMatrix.G₂.transpose)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        fin_cases i <;> decide +kernel +revert
-      simpa only [rank_G2, cartanMatrix_G2] using hconn
+  | E6 => simpa only [rank_E6, cartanMatrix_E6] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 6))).2 ⟨3, by decide⟩
+  | E7 => simpa only [rank_E7, cartanMatrix_E7] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 7))).2 ⟨3, by decide⟩
+  | E8 => simpa only [rank_E8, cartanMatrix_E8] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 8))).2 ⟨3, by decide⟩
+  | F4 => simpa only [rank_F4, cartanMatrix_F4] using
+      (SimpleGraph.connected_fin_of_exists_adj_lt (by decide) (by decide) :
+        (diagramGraph CartanMatrix.F₄).Connected)
+  | G2 => simpa only [rank_G2, cartanMatrix_G2] using
+      (SimpleGraph.connected_fin_of_exists_adj_lt (by decide) (by decide) :
+        (diagramGraph CartanMatrix.G₂.transpose).Connected)
 
 end DynkinType
 

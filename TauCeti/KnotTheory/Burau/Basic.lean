@@ -50,7 +50,7 @@ vector is fixed (`TauCeti.KnotTheory.burau_mulVec_one`), and the row vector
 latter covector is therefore an invariant submodule, and for `2 ≤ n` over a nontrivial ring it is
 a proper nonzero one, which is the reducibility that the *reduced* Burau representation — the
 restriction to that kernel — is carved out of. The restriction and an explicit basis of its kernel
-are constructed in `TauCeti.KnotTheory.Burau.Reduced`; its comparison with the Seifert-matrix
+are constructed in `TauCeti.KnotTheory.Burau.Reduced.Basic`; its comparison with the Seifert-matrix
 Alexander polynomial of `TauCeti/KnotTheory/Alexander.lean` still needs the closure of a braid to
 a link.
 

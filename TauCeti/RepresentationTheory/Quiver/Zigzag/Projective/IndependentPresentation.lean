@@ -87,7 +87,7 @@ def zigzagIndependentQuadraticRelationBasisIndex (i : V) :
             simpa using congrArg Sigma.fst h
           subst v
           simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
-          exact j.2 (Subtype.ext (eq_of_backtrackPath_eq G h))⟩
+          exact j.2 (Subtype.ext ((backtrackPath_inj G).1 h))⟩
 
 /-- A nonreturning local label selects its two-arrow path in the global relation basis. -/
 @[simp]
@@ -146,7 +146,7 @@ theorem zigzagIndependentQuadraticRelationBasisIndex_injective (i : V) :
   · have ht := congrArg Subtype.val h
     simp only [zigzagIndependentQuadraticRelationBasisIndex] at ht
     simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at ht
-    have hj : j.1.1 = j'.1.1 := eq_of_backtrackPath_eq G ht
+    have hj : j.1.1 = j'.1.1 := (backtrackPath_inj G).1 ht
     exact congrArg Sum.inr (Subtype.ext (Subtype.ext hj))
 
 /-- The chosen local quadratic relations are linearly independent: they are a subfamily of

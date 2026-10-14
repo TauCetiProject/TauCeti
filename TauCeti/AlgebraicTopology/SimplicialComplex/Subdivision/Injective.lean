@@ -78,7 +78,7 @@ private theorem support_barycentricSubdivisionLinearMap_eq_greatest
     apply ne_of_gt
     rw [barycentricSubdivisionLinearMap_apply]
     apply Finset.sum_pos'
-    · intro τ hτ
+    · intro τ _
       exact mul_nonneg (ha τ) (by positivity)
     · exact ⟨σ, hσ, by simp [hvσ, hapos, hcard]⟩
 

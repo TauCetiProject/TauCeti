@@ -11,8 +11,9 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
 # The Rayleigh principle for a coercive variational problem
 
 Let `B` be a bounded coercive symmetric bilinear form on a real Hilbert space `V` and let
-`J : V →L[ℝ] H` be a continuous linear map into a second real Hilbert space.  When `J` is nonzero
-and compact, the **variational eigenvalues** of the pair are the reciprocals of the nonzero
+`J : V →L[ℝ] H` be a continuous linear map into a real inner-product space. When `H` is complete
+and `J` is nonzero and compact, the **variational eigenvalues** of the pair are the reciprocals of
+the nonzero
 eigenvalues of the solution operator `S = IsCoercive.formSolutionOperator`, and the *least*
 variational eigenvalue `‖S‖⁻¹` is the minimum of the **Rayleigh quotient**
 
@@ -20,7 +21,7 @@ variational eigenvalue `‖S‖⁻¹` is the minimum of the **Rayleigh quotient*
 
 taken over the `v : V` with `J v ≠ 0`.  Without compactness, this file proves that `‖S‖⁻¹` is
 still the largest constant `C` for which `C ‖J v‖² ≤ B v v` holds for every `v : V`, provided
-`J ≠ 0`.
+`J ≠ 0`; these bounds do not require completeness of `H`.
 
 For the Dirichlet problem of a divergence-form elliptic operator, with `V = H¹₀(Ω)`,
 `H = L²(Ω)` and `J` the inclusion, this says that the first eigenvalue is the minimum of the
@@ -67,12 +68,12 @@ public section
 noncomputable section
 
 open Module.End
-open scoped InnerProduct InnerProductSpace
+open scoped InnerProductSpace
 
 namespace IsCoercive
 
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
 
 /-! ### The Rayleigh lower bound -/
@@ -122,12 +123,17 @@ theorem inv_norm_formSolutionOperator_mul_norm_apply_sq_le (hB : IsCoercive B) (
   · rw [inv_mul_le_iff₀ hpos]
     linarith [hB.norm_apply_sq_le_norm_formSolutionOperator_mul J hsymm v]
 
+variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+  {B : V →L[ℝ] V →L[ℝ] ℝ}
+
 /-! ### The Rayleigh principle -/
 
 /-- **The Rayleigh principle**: the least variational eigenvalue `‖S‖⁻¹` is the *minimum* of the
 Rayleigh quotient `B v v / ‖J v‖²` over the vectors with `J v ≠ 0`.  The minimum is attained at
 an eigenfunction, which is why compactness of `J` is assumed. -/
-theorem isLeast_rayleighQuotient (hB : IsCoercive B) {J : V →L[ℝ] H} (hJ : IsCompactOperator J)
+theorem isLeast_rayleighQuotient [CompleteSpace H] (hB : IsCoercive B) {J : V →L[ℝ] H}
+    (hJ : IsCompactOperator J)
     (hsymm : ∀ u v : V, B u v = B v u) (hJne : J ≠ 0) :
     IsLeast {r : ℝ | ∃ v : V, J v ≠ 0 ∧ B v v / ‖J v‖ ^ 2 = r}
       ‖hB.formSolutionOperator J‖⁻¹ := by

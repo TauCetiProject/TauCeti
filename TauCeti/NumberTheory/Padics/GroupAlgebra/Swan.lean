@@ -14,7 +14,7 @@ import TauCeti.NumberTheory.Padics.GroupAlgebra.Invariants
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RepresentationTheory.AsModule
-import TauCeti.RepresentationTheory.LinHom
+import TauCeti.RepresentationTheory.LinHom.Basic
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.Semiprimary

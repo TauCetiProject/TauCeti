@@ -44,7 +44,9 @@ linear-equivalence invariants, so the same bound holds for every divisor.
   bounded above.  This is what makes the genus well-defined.
 * `TauCeti.Divisor.degree_add_one_sub_genus_le_dim`: **Riemann's theorem** (Theorem 1.4.17),
   `ℓ(D) ≥ deg D + 1 - g`, over an arbitrary constant field.
-* `TauCeti.exists_degree_add_one_sub_dim_eq_genus`: the genus is attained (Corollary 1.4.16).
+* `TauCeti.exists_degree_add_one_sub_dim_eq_genus`: the genus is attained (Corollary 1.4.16);
+  `TauCeti.exists_degree_add_one_sub_dim_eq_genus_of_pos` attains a positive genus over any
+  constant field.
 * `TauCeti.exists_forall_dim_eq_degree_add_one_sub_genus`: **Theorem 1.4.17**, second half —
   equality holds in Riemann's theorem once `deg D` is large enough.
 * `TauCeti.Place.exists_ord_neg_and_forall_ne_ord_nonneg`: every place is the only pole of some
@@ -189,6 +191,11 @@ because every `ℝ`-degree and every `ℝ`-dimension is twice its `ℂ`-counterp
 noncomputable def genus : ℕ :=
   sSup (Set.range fun D : Divisor k F ↦ (Divisor.degree D + 1 - Divisor.dim D).toNat)
 
+/-- The genus is the supremum of the nonnegative divisor degree-dimension defects. -/
+theorem genus_def :
+    genus k F =
+      sSup (Set.range fun D : Divisor k F ↦ (Divisor.degree D + 1 - Divisor.dim D).toNat) := (rfl)
+
 /-- The set of values whose supremum defines the genus is bounded above. -/
 private theorem bddAbove_range_genusValue (hF : IsFunctionField k F) :
     BddAbove (Set.range fun D : Divisor k F ↦ (Divisor.degree D + 1 - Divisor.dim D).toNat) := by
@@ -222,6 +229,18 @@ theorem Divisor.degree_add_one_sub_genus_le_dim (hF : IsFunctionField k F) (D : 
   have h := Divisor.degree_add_one_sub_dim_le_genus hF D
   linarith
 
+/-- A positive genus is attained: if `g > 0`, some divisor has `deg D + 1 - ℓ(D) = g`.  No
+hypothesis on the constant field is needed, because a positive value of the supremum is not a
+truncation artefact. -/
+theorem exists_degree_add_one_sub_dim_eq_genus_of_pos (hF : IsFunctionField k F)
+    (hg : 0 < genus k F) :
+    ∃ D : Divisor k F, Divisor.degree D + 1 - Divisor.dim D = (genus k F : ℤ) := by
+  obtain ⟨D, hD⟩ : genus k F ∈ Set.range fun D : Divisor k F ↦
+      (Divisor.degree D + 1 - Divisor.dim D).toNat :=
+    Nat.sSup_mem (Set.range_nonempty _) (bddAbove_range_genusValue hF)
+  have hD' : (Divisor.degree D + 1 - (Divisor.dim D : ℤ)).toNat = genus k F := hD
+  exact ⟨D, by omega⟩
+
 /-- **Stichtenoth, Corollary 1.4.16**: over an exact constant field the maximum defining the genus
 is attained, so `g ≥ 0` is the honest bound rather than an artefact of truncation. -/
 theorem exists_degree_add_one_sub_dim_eq_genus (hF : IsFunctionField k F)
@@ -231,12 +250,7 @@ theorem exists_degree_add_one_sub_dim_eq_genus (hF : IsFunctionField k F)
   · refine ⟨0, ?_⟩
     rw [Divisor.degree_zero, Divisor.dim_zero_of_isIntegrallyClosedIn hF hex, hg]
     norm_num
-  · have hmem : genus k F ∈ Set.range fun D : Divisor k F ↦
-        (Divisor.degree D + 1 - Divisor.dim D).toNat :=
-      Nat.sSup_mem (Set.range_nonempty _) (bddAbove_range_genusValue hF)
-    obtain ⟨D, hD⟩ := hmem
-    have hD' : (Divisor.degree D + 1 - (Divisor.dim D : ℤ)).toNat = genus k F := hD
-    exact ⟨D, by omega⟩
+  · exact exists_degree_add_one_sub_dim_eq_genus_of_pos hF hg
 
 /-- **Stichtenoth, Theorem 1.4.17**, second half: equality holds in Riemann's theorem for every
 divisor of sufficiently large degree. -/

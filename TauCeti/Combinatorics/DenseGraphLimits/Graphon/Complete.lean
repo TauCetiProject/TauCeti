@@ -72,9 +72,9 @@ theorem exists_isProbabilityMeasure_cutNorm_comap_sub_lt (W : ℕ → Graphon Ω
   have hmatch : ∀ n, (π n).snd = (π (n + 1)).fst := fun n => by
     rw [(hπ n).snd_eq, (hπ (n + 1)).fst_eq]
   have hpair : ∀ n, MeasurePreserving (fun x : ℕ → Ω => (x n, x (n + 1))) P (π n) := fun n =>
-    ⟨by fun_prop, TauCeti.Measure.map_adjacent_chainMeasure π hmatch n⟩
+    ⟨by fun_prop, TauCeti.Measure.map_adjacent_chainMeasure π n (fun k _ => hmatch k)⟩
   refine ⟨P, inferInstance, fun n => ⟨measurable_pi_apply n, ?_⟩, fun n => ?_⟩
-  · rw [TauCeti.Measure.map_eval_chainMeasure π hmatch n, (hπ n).fst_eq]
+  · rw [TauCeti.Measure.map_eval_chainMeasure π n (fun k _ => hmatch k), (hπ n).fst_eq]
   · rw [← cutNorm_overlayDiff_map_prodMk (W n) (W (n + 1)) _ _ (hpair n)]
     exact hlt n
 

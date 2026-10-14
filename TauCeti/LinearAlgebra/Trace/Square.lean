@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
 
 /-!
@@ -24,32 +25,36 @@ their own basis and their own diagonal computation.
 
 ## Main results
 
-* `TauCeti.trace_eq_trace_comp_self_of_toMatrix_diag`: an endomorphism with diagonal entries
+* `Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`: an endomorphism with diagonal entries
   `aᵢⱼ aⱼᵢ` in a pair-indexed basis has trace `tr (f ∘ f)`.
 -/
 
 public section
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {R M N ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-  [Module R N] [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+  [Module R N] [Finite ι]
 
 /-- **An endomorphism whose diagonal entries are `aᵢⱼ aⱼᵢ` has trace `tr (f ∘ f)`.** Here `a` is
 the matrix of `f` in the basis `b`, and the diagonal is read in a basis `B` whose index type is
 equivalent, through `e`, to pairs of indices of `b`; summing `aᵢⱼ aⱼᵢ` over all pairs is the trace
-of `a * a`, which is the trace of `f ∘ f`. -/
+of `a * a`, which is the trace of `f ∘ f`. Only the index type of `b` is assumed finite; the
+equivalence `e` ensures that the index type of `B` is finite too. -/
 theorem trace_eq_trace_comp_self_of_toMatrix_diag (b : Module.Basis ι R M)
     (B : Module.Basis κ R N) (e : κ ≃ ι × ι) (f : M →ₗ[R] M) (T : N →ₗ[R] N)
-    (hdiag : ∀ p : κ, LinearMap.toMatrix B B T p p
-      = LinearMap.toMatrix b b f (e p).1 (e p).2 * LinearMap.toMatrix b b f (e p).2 (e p).1) :
+    (hdiag : ∀ p : κ, B.toMatrix (T ∘ B) p p
+      = b.toMatrix (f ∘ b) (e p).1 (e p).2 * b.toMatrix (f ∘ b) (e p).2 (e p).1) :
     LinearMap.trace R N T = LinearMap.trace R M (f ∘ₗ f) := by
+  classical
+  let := Fintype.ofFinite ι
+  let := Fintype.ofEquiv (ι × ι) e.symm
   rw [LinearMap.trace_eq_matrix_trace R B, LinearMap.trace_eq_matrix_trace R b,
     LinearMap.toMatrix_comp b b b f f, Matrix.trace, Matrix.trace]
-  simp only [Matrix.diag_apply, hdiag, Matrix.mul_apply]
+  simp only [Matrix.diag_apply, LinearMap.toMatrix_eq_basisToMatrix, hdiag, Matrix.mul_apply]
   refine Eq.trans (Fintype.sum_equiv e _
-    (fun q ↦ LinearMap.toMatrix b b f q.1 q.2 * LinearMap.toMatrix b b f q.2 q.1)
+    (fun q ↦ b.toMatrix (f ∘ b) q.1 q.2 * b.toMatrix (f ∘ b) q.2 q.1)
     fun _ ↦ rfl) ?_
   exact Fintype.sum_prod_type _
 
-end TauCeti
+end Module.Basis

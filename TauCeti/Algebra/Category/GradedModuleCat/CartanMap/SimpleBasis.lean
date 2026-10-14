@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Length
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.IdempotentCoordinate
-public import TauCeti.CategoryTheory.Simple
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Coordinate
+public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
+public import TauCeti.Algebra.Category.GradedModuleCat.FiniteLength
 
 /-!
 # Simple classes in the graded Grothendieck group of finite graded modules
@@ -63,30 +63,6 @@ open CategoryTheory CategoryTheory.Limits LaurentPolynomial
 
 universe uk uA uI
 
-/-! ### Exhaustive families of graded simples -/
-
-section Exhaustive
-
-variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} {I : Type uI}
-
-/-- A family of finite graded modules is an **exhaustive family of graded simples up to shift** if
-every finite graded module which is a simple object of the graded module category is isomorphic to
-an internal shift `(S i){d}` of a member of the family. -/
-def IsExhaustiveGradedSimpleFamily (S : I → (gradedFiniteModules 𝒜).FullSubcategory) : Prop :=
-  ∀ M : (gradedFiniteModules 𝒜).FullSubcategory, Simple M.obj →
-    ∃ i d, Nonempty (M.obj ≅ (S i).obj.shiftObj d)
-
-/-- Characterization of `IsExhaustiveGradedSimpleFamily`, for importing modules, to which the body
-of the definition is not exposed. -/
-theorem isExhaustiveGradedSimpleFamily_iff (S : I → (gradedFiniteModules 𝒜).FullSubcategory) :
-    IsExhaustiveGradedSimpleFamily S ↔
-      ∀ M : (gradedFiniteModules 𝒜).FullSubcategory, Simple M.obj →
-        ∃ i d, Nonempty (M.obj ≅ (S i).obj.shiftObj d) :=
-  Iff.rfl
-
-end Exhaustive
-
 /-! ### Spanning -/
 
 section Span
@@ -109,35 +85,13 @@ private theorem exists_laurentK0_of_eq_add (M : (gradedFiniteModules 𝒜).FullS
     obtain ⟨x, hx⟩ := exists_ne (0 : M.obj)
     have hid : 𝟙 M.obj = 0 := hM.eq_of_src _ _
     exact hx (by simpa using LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom hid) x)
-  obtain ⟨Y, f, hf, hf₀, hfiso⟩ := exists_mono_ne_zero_not_isIso_of_not_simple hM hs
-  have hinj : Function.Injective f.hom := (GradedModuleCat.mono_iff_injective f).1 hf
-  have hnsurj : ¬Function.Surjective f.hom := fun hsurj => hfiso <| by
-    have := (GradedModuleCat.epi_iff_surjective f).2 hsurj
-    exact isIso_of_mono_of_epi f
-  have : Module.Finite k Y := FiniteDimensional.of_injective (f.hom.restrictScalars k) hinj
+  obtain ⟨Y, f, hf, hYfinite, hCfinite, _, hYdim, hCdim⟩ :=
+    M.obj.exists_mono_cokernel_finrank_lt hM hs
+  have : Module.Finite k Y := hYfinite
   have : Module.Finite A Y := Module.Finite.of_restrictScalars_finite k A Y
   let C := GradedModuleCat.cokernelObj f
-  have : Module.Finite k C := Module.Finite.trans A C
-  have : Nontrivial Y := by
-    by_contra hY
-    rw [not_nontrivial_iff_subsingleton] at hY
-    exact hf₀ (GradedModuleCat.hom_ext (LinearMap.ext fun x => by
-      rw [Subsingleton.elim x 0, map_zero, map_zero]))
-  have : Nontrivial C := by
-    by_contra hC
-    rw [not_nontrivial_iff_subsingleton, Submodule.Quotient.subsingleton_iff,
-      LinearMap.range_eq_top] at hC
-    exact hnsurj hC
-  -- Dimension is additive along `0 → Y → M → C → 0`.
-  have hdim : Module.finrank k M.obj = Module.finrank k Y + Module.finrank k C := by
-    let g : Y →ₗ[k] M.obj := f.hom.restrictScalars k
-    let π : M.obj →ₗ[k] C := (GradedModuleCat.cokernelπ f).hom.restrictScalars k
-    have hg : Function.Injective g := hinj
-    have hπ : Function.Surjective π := (LinearMap.range f.hom).mkQ_surjective
-    have hgπ : Function.Exact g π := LinearMap.exact_map_mkQ_range f.hom
-    have h := Module.length_eq_add_of_exact g π hg hπ hgπ
-    rw [Module.length_eq_finrank, Module.length_eq_finrank, Module.length_eq_finrank] at h
-    exact_mod_cast h
+  have : Module.Finite k C := hCfinite
+  have : Module.Finite A C := Module.Finite.of_restrictScalars_finite k A C
   let T : ShortComplex (gradedFiniteModules 𝒜).FullSubcategory :=
     ShortComplex.mk (X₁ := ⟨Y, gradedFiniteModules_iff.2 inferInstance⟩)
       (X₃ := ⟨C, gradedFiniteModules_iff.2 inferInstance⟩)
@@ -148,11 +102,7 @@ private theorem exists_laurentK0_of_eq_add (M : (gradedFiniteModules 𝒜).FullS
       { exact := GradedModuleCat.exact_iff.2 (LinearMap.exact_map_mkQ_range f.hom)
         mono_f := hf
         epi_g := (GradedModuleCat.epi_iff_surjective _).2 (Submodule.mkQ_surjective _) }
-  refine ⟨T.X₁, T.X₃, ?_, ?_, LaurentK0.of_conflation.{uA} _ hT⟩
-  · rw [hdim]
-    exact Nat.lt_add_of_pos_right (Module.finrank_pos (R := k) (M := C))
-  · rw [hdim]
-    exact Nat.lt_add_of_pos_left (Module.finrank_pos (R := k) (M := Y))
+  exact ⟨T.X₁, T.X₃, hYdim, hCdim, LaurentK0.of_conflation.{uA} _ hT⟩
 
 private theorem laurentK0_of_mem_span (hS : IsExhaustiveGradedSimpleFamily S)
     (M : (gradedFiniteModules 𝒜).FullSubcategory) :
@@ -175,7 +125,7 @@ private theorem laurentK0_of_mem_span (hS : IsExhaustiveGradedSimpleFamily S)
   have : Nontrivial M.obj := Module.nontrivial_of_finrank_pos (by rw [hn]; omega)
   -- A simple module is a shift `Sᵢ{d}`, with class `qᵈ [Sᵢ]`.
   by_cases hs : Simple M.obj
-  · obtain ⟨i, d, ⟨e⟩⟩ := hS M hs
+  · obtain ⟨i, d, ⟨e⟩⟩ := (isExhaustiveGradedSimpleFamily_iff S).mp hS M hs
     rw [LaurentK0.of_congr.{uA} _ (ObjectProperty.isoMk _ e :
         M ≅ ⟨(S i).obj.shiftObj d, gradedFiniteModules_shiftObj (S i).property d⟩),
       laurentK0_of_shiftObj]

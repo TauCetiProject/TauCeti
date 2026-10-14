@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Heights along a closed chain with monotone turning
@@ -69,9 +70,9 @@ theorem heights_nonneg_of_monotone_turning {n i : ℕ} (hi : i < n) {H φ : ℕ 
     obtain ⟨d, hd, h'⟩ := hstep l hl
     have := hmono l n hl.le le_rfl
     rw [hlast] at this
-    rw [h', ← Real.sin_sub_two_pi]
+    rw [h']
     exact mul_nonpos_of_nonneg_of_nonpos hd
-      (Real.sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith))
+      (sin_nonpos_of_pi_le_of_le_two_pi (by linarith) (by linarith))
   obtain ⟨r₁, hr₁, hc₁⟩ := hclose₁
   obtain ⟨r₂, hr₂, hc₂⟩ := hclose₂
   -- The closing steps rise when the side points no further back than `-π`, and fall otherwise.
@@ -80,9 +81,8 @@ theorem heights_nonneg_of_monotone_turning {n i : ℕ} (hi : i < n) {H φ : ℕ 
       Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith)
     exact ⟨hc₁ ▸ mul_nonneg hr₁ hsin, hc₂ ▸ mul_nonneg hr₂ hsin⟩
   have hclose_nonpos (h : θ ≤ -Real.pi) : Hinf - H n ≤ 0 ∧ H 0 - Hinf ≤ 0 := by
-    have hsin : Real.sin (-θ) ≤ 0 := by
-      rw [← Real.sin_sub_two_pi]
-      exact Real.sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
+    have hsin : Real.sin (-θ) ≤ 0 :=
+      sin_nonpos_of_pi_le_of_le_two_pi (by linarith) (by linarith)
     exact ⟨hc₁ ▸ mul_nonpos_of_nonneg_of_nonpos hr₁ hsin,
       hc₂ ▸ mul_nonpos_of_nonneg_of_nonpos hr₂ hsin⟩
   have hvertex (k : ℕ) (hk : k ≤ n) : 0 ≤ H k := by

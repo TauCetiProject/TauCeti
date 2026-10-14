@@ -16,8 +16,7 @@ point (`TauCeti.Bialgebra.CounitAlgebra`) — are closed under the commutator of
 convolution product: for derivations `d₁ d₂` the linear map `d₁ ⋆ d₂ - d₂ ⋆ d₁` is
 again a derivation. This equips the tangent space with `LieRing` and `LieAlgebra R`
 structures: the Lie algebra of the corresponding affine monoid scheme — of the affine
-group scheme, when `A` is a Hopf algebra (ReductiveGroups roadmap, Layer 2,
-`Lie(G)`).
+group scheme, when `A` is a Hopf algebra.
 
 The closure proof is composition-level, with no Sweedler-style computation.
 Multiplication of the bialgebra is a coalgebra morphism (`Bialgebra.mulCoalgHom`), so

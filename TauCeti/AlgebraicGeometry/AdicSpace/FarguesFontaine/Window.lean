@@ -46,6 +46,8 @@ on which the adic Fargues–Fontaine curve `𝒴 / φ^ℤ` is built.
   the order-theoretic bounds `q ≤ κ(v)` and `κ(v) ≤ q`.
 * `TauCeti.FarguesFontaine.windowU`, `TauCeti.FarguesFontaine.windowV` : the windows `U_n` and
   `V_n`.
+* `TauCeti.FarguesFontaine.spaYWindow` : the window `W_n = {v ∈ 𝒴 : p ^ (-n) ≤ κ(v) ≤ p ^ n}`, an
+  open of `𝒴`.
 
 ## Main results
 
@@ -59,9 +61,12 @@ on which the adic Fargues–Fontaine curve `𝒴 / φ^ℤ` is built.
 * `TauCeti.FarguesFontaine.val_preimage_windowU_mem_spaRationalFamily` and its `V` analogue : the
   windows are rational subsets.
 * `TauCeti.FarguesFontaine.isOpen_val_preimage_windowU` and its `V` analogue : the windows are
-  open in `𝒴`.
+  open in `𝒴`; more generally, so is every set `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}` with `q ≠ 0`
+  (`TauCeti.FarguesFontaine.isOpen_val_preimage_setOf_isRadiusLowerBound_isRadiusUpperBound`).
 * `TauCeti.FarguesFontaine.isCompact_val_preimage_windowU` and its `V` analogue : the windows
   are quasi-compact in `𝒴`.
+* `TauCeti.FarguesFontaine.monotone_spaYWindow`, `TauCeti.FarguesFontaine.iSup_spaYWindow` : the
+  windows `W_n = {v ∈ 𝒴 : p ^ (-n) ≤ κ(v) ≤ p ^ n}` increase and exhaust `𝒴`.
 * `TauCeti.FarguesFontaine.comap_frobenius_mem_windowU_iff` and its `V` analogue : Frobenius shifts
   the window index by one.
 * `TauCeti.FarguesFontaine.frobeniusHomeomorph_zpow_mem_windowU_iff` and its `V` analogue :
@@ -85,7 +90,7 @@ public section
 
 namespace TauCeti.FarguesFontaine
 
-open TauCeti.ValuationSpectrum _root_.WittVector Topology
+open TauCeti.ValuationSpectrum _root_.WittVector Topology _root_.TopologicalSpace
 
 variable (p : ℕ) [Fact p.Prime] {R : Type*} [CommRing R]
 
@@ -391,6 +396,17 @@ private theorem isOpen_val_preimage_of_mem_spaRationalFamily
   exact ((isTopologicalBasis_spaRationalFamily _).isOpen hSrat).preimage
     (continuous_subtype_val.subtype_mk _ : Continuous j)
 
+/-- **The window `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}` is open in `𝒴`**, for `q ≠ 0`, being a rational subset
+of `Spa(𝕎 R, 𝕎 R)`. -/
+theorem isOpen_val_preimage_setOf_isRadiusLowerBound_isRadiusUpperBound
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) {q q' : ℚ≥0}
+    (hq : q ≠ 0) :
+    IsOpen (Subtype.val ⁻¹'
+      {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v} :
+        Set (spaY p ϖ)) :=
+  isOpen_val_preimage_of_mem_spaRationalFamily hI _
+    (val_preimage_setOf_mem_spaRationalFamily hI hq)
+
 /-- Each `U` window is open in `𝒴`. -/
 theorem isOpen_val_preimage_windowU
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
@@ -434,6 +450,46 @@ theorem isCompact_val_preimage_windowV
     IsCompact (Subtype.val ⁻¹' windowV p ϖ n : Set (spaY p ϖ)) :=
   isCompact_val_preimage_of_mem_spaRationalFamily hI _ (windowV_subset_spaY n)
     (val_preimage_windowV_mem_spaRationalFamily ϖ hI n)
+
+/-! ### The windows exhausting `𝒴` -/
+
+variable (ϖ) in
+/-- **The window `W_n = {v ∈ 𝒴 : p ^ (-n) ≤ κ(v) ≤ p ^ n}`**, an open of `𝒴`, being a rational
+subset of `Spa(𝕎 R, 𝕎 R)`. These windows increase with `n` and exhaust `𝒴`. -/
+def spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℕ) :
+    Opens (spaY p ϖ) :=
+  ⟨Subtype.val ⁻¹' {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ ((p : ℚ≥0) ^ (-(n : ℤ))) v ∧
+      IsRadiusUpperBound p ϖ ((p : ℚ≥0) ^ (n : ℤ)) v},
+    isOpen_val_preimage_setOf_isRadiusLowerBound_isRadiusUpperBound hI
+      (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))⟩
+
+/-- A point of `𝒴` lies in the window `W_n` exactly when `p ^ (-n) ≤ κ(v) ≤ p ^ n`. -/
+@[simp]
+theorem mem_spaYWindow_iff (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+    {n : ℕ} {v : spaY p ϖ} :
+    v ∈ spaYWindow ϖ hI n ↔ IsRadiusLowerBound p ϖ ((p : ℚ≥0) ^ (-(n : ℤ))) v.1 ∧
+      IsRadiusUpperBound p ϖ ((p : ℚ≥0) ^ (n : ℤ)) v.1 :=
+  ⟨fun h ↦ h.2, fun h ↦ ⟨v.2, h⟩⟩
+
+/-- **The windows increase**: `W_m ⊆ W_n` for `m ≤ n`. -/
+theorem monotone_spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) :
+    Monotone (spaYWindow ϖ hI) := fun m n hmn v hv ↦ by
+  have hp : (1 : ℚ≥0) ≤ p := by exact_mod_cast (Fact.out : p.Prime).one_lt.le
+  have hspa := ((mem_spaY_iff p ϖ v.1).mp v.2).1
+  rw [mem_spaYWindow_iff] at hv ⊢
+  exact ⟨hv.1.of_le hspa (zpow_le_zpow_right₀ hp (neg_le_neg (Nat.cast_le.mpr hmn))),
+    hv.2.of_le hspa (zpow_le_zpow_right₀ hp (Nat.cast_le.mpr hmn))⟩
+
+/-- **The windows exhaust `𝒴`**: every point of `𝒴` has radius between two powers of `p`. -/
+theorem iSup_spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) :
+    ⨆ n, spaYWindow ϖ hI n = ⊤ := by
+  refine eq_top_iff.mpr fun v _ ↦ ?_
+  have hp : (1 : ℚ≥0) ≤ p := by exact_mod_cast (Fact.out : p.Prime).one_lt.le
+  have hspa := ((mem_spaY_iff p ϖ v.1).mp v.2).1
+  obtain ⟨m, hm, hm'⟩ := exists_isRadiusLowerBound_zpow hI v.2
+  exact Opens.mem_iSup.mpr ⟨m.natAbs + 1, (mem_spaYWindow_iff hI).mpr
+    ⟨hm.of_le hspa (zpow_le_zpow_right₀ hp (by omega)),
+      hm'.of_le hspa (zpow_le_zpow_right₀ hp (by omega))⟩⟩
 
 end Rational
 

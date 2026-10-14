@@ -130,7 +130,7 @@ end IsIsogeny
 /-- Central isogenies are invariant under pre- and postcomposition with isomorphisms. -/
 instance centralIsogenies_respectsIso : (centralIsogenies k).RespectsIso := by
   rw [centralIsogenies_eq]
-  exact MorphismProperty.RespectsIso.inf (isogenies k)
+  exact MorphismProperty.RespectsIso.inf (isogenies (Spec (CommRingCat.of k)))
     (hasCentralKernel (Spec (CommRingCat.of k)))
 
 end Isogeny

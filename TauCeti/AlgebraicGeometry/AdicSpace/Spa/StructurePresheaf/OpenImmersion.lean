@@ -49,6 +49,9 @@ the stalk valuations, it makes the rational subset `U` an open affinoid subspace
   rational-level identification commutes with restriction.
 * `TauCeti.ValuationSpectrum.presentationLimitLocImageIso_hom` : the rational-level identification
   is `presentationLimitLocIso` at `j(W)`, up to transport along `j⁻¹(j(W)) = W`.
+* `TauCeti.ValuationSpectrum.presentationLimitLocImageIso_hom_comp_πToPresentation` : the
+  rational-level identification, followed by a projection, is a projection followed by any map
+  compatible with the structure maps from `A`.
 * `TauCeti.ValuationSpectrum.presentationLimitPresheafLocIso_hom_app_comp_map` and
   `TauCeti.ValuationSpectrum.presentationLimitPresheafLocIso_hom_app` : the presheaf isomorphism,
   followed by restriction to a rational open, is the rational-level identification; on a rational
@@ -143,6 +146,44 @@ theorem presentationLimitMap_comp_presentationLimitLocImageIso_hom :
     eqToHom_presentationLimit (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W'),
     eqToHom_presentationLimit (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W),
     presentationLimitMap_comp, presentationLimitMap_comp]
+
+/-- **The identification on rational opens, on projections.** For a rational open `W` of
+`Spa(B, A_U⁺)`, an index `i` of `j(W)` and an index `m` of `W`, the isomorphism
+`presentationLimitLocImageIso` followed by the projection to `B⟨m⟩` is the projection to `A⟨i⟩`
+followed by any morphism `f : A⟨i⟩ → B⟨m⟩` compatible with the structure maps from `A`. -/
+theorem presentationLimitLocImageIso_hom_comp_πToPresentation :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ (W : Opens ↥(spa (completedPlusSubring P Aplus T s S hden)))
+      (hW : W ∈ spaRationalOpens (completedPlusSubring P Aplus T s S hden))
+      (i : PresentationIndex (P := P) Aplus
+        ((isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden).functor.obj W))
+      (m : PresentationIndex (P := completionLocalization P T s S hden)
+        (completedPlusSubring P Aplus T s S hden) W)
+      (f : i.pres.completionLocObj ⟶ m.pres.completionLocObj),
+      i.pres.toCompletionLocTopHom ≫ f.hom =
+          (⟨toCompletionLoc P T s S hden, continuous_toCompletionLoc P T s S hden⟩ :
+            TopCommRingCat.of A ⟶ TopCommRingCat.of (UniformSpace.Completion S)) ≫
+            m.pres.toCompletionLocTopHom →
+        (presentationLimitLocImageIso P Aplus T s S hden hAplus hP hT W hW).hom ≫
+            presentationLimitπToPresentation _ W m =
+          presentationLimitπToPresentation Aplus _ i ≫ f := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro W hW i m f hf
+  -- `m` as an index of `j⁻¹(j(W)) = W`, with its presentation unchanged
+  have e := presentationIndexRestrict_obj_pres
+    (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W).ge m
+  rw [presentationLimitLocImageIso_hom, Category.assoc,
+    eqToHom_presentationLimit (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W),
+    presentationLimitMap_comp_πToPresentation,
+    reassoc_of% presentationLimitLocIso_hom_comp_πToPresentation P Aplus T s S hden hAplus hT _ _ i
+      _ (f ≫ eqToHom (congrArg Presentation.completionLocObj e.symm)) (by
+        rw [ObjectProperty.FullSubcategory.comp_hom, reassoc_of% hf,
+          Presentation.toCompletionLocTopHom_comp_eqToHom_hom e.symm]),
+    eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 /-! ### The comparison maps -/
 

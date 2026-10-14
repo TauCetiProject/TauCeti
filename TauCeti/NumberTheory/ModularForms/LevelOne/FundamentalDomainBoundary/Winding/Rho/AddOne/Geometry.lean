@@ -270,7 +270,7 @@ theorem eq_one_of_fdBoundary_eq_rho_add_one (hH : H ≠ Real.sqrt 3 / 2) (ht : t
       have hsin : Real.sin ((t - 1) * (Real.pi / 12)) = 0 :=
         abs_eq_zero.mp (by linarith)
       have habs : |t - 1| ≤ 2 := abs_le.mpr ⟨by linarith, by linarith⟩
-      obtain ⟨hb1, hb2⟩ := abs_le.mp habs
+      obtain ⟨_, _⟩ := abs_le.mp habs
       have harg : (t - 1) * (Real.pi / 12) = 0 :=
         (Real.sin_eq_zero_iff_of_lt_of_lt (by nlinarith [Real.pi_pos])
           (by nlinarith [Real.pi_pos])).mp hsin

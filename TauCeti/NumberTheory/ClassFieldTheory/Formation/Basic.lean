@@ -52,6 +52,8 @@ as `Kˣ` enters through an `Additive` adapter.
   subgroup, with `galOfOpenNormalEquiv` identifying its Galois group with `G ⧸ V`.
 * `TauCeti.ClassFieldTheory.NormalLayer.rep`: the coefficient module `A^V` of the layer, as a
   representation of `U ⧸ V`.
+* `TauCeti.ClassFieldTheory.NormalLayer.coeffFixedPointsEquiv`: the coefficient module `A^V`
+  read as the fixed points `M^V` when `A` is read on a `G`-module `M`.
 * `TauCeti.ClassFieldTheory.NormalLayer.H`, `TateH`, `TrivialTateH`: the ordinary and Tate
   cohomology carriers of the layer, in the coefficient module `A^V` and in trivial integral
   coefficients.
@@ -62,6 +64,9 @@ as `Kˣ` enters through an `Additive` adapter.
   group, normalized so that the Artin map satisfies the character formula.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
+* `TauCeti.ClassFieldTheory.NormalLayer.normQuotientEquivOfGroundEquiv`: the norm quotient read
+  as `A / N` through an identification of a group `A` with the ground level that carries `N` onto
+  the norm subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass`: the zero-dimensional Tate class of an
   element of the ground level.
 
@@ -307,6 +312,19 @@ theorem galOfOpenNormalEquiv_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V)
     galOfOpenNormalEquiv V (QuotientGroup.mk u) = QuotientGroup.mk (u : G) :=
   (rfl)
 
+/-- The ground level of the layer `V ◁ G` of an open normal subgroup `V` is the level `A^G` of the
+whole group. -/
+def groundEquivOfOpenNormal (F : Formation G) (V : OpenNormalSubgroup G) :
+    F.level ⊤ ≃ₗ[ℤ] F.level (ofOpenNormal V).ground :=
+  LinearEquiv.ofEq _ _ (congrArg F.level (ground_ofOpenNormal V).symm)
+
+/-- The identification of `A^G` with the ground level of `V ◁ G` moves no element of the ambient
+module. -/
+@[simp]
+theorem groundEquivOfOpenNormal_apply_coe (F : Formation G) (V : OpenNormalSubgroup G)
+    (a : F.level ⊤) : (dsimp% only (groundEquivOfOpenNormal F V a : F.toRep.V)) = a :=
+  (rfl)
+
 section Finite
 
 /-- The top subgroup is open in the compact ground subgroup, so the Galois group is finite. -/
@@ -420,6 +438,60 @@ theorem groundLevelEquiv_apply_coe (x : (L.rep F).ρ.invariants) :
 theorem groundLevelEquiv_symm_apply_coe (y : F.level L.ground) :
     (dsimp% only ((L.groundLevelEquiv F).symm y : F.toRep.V)) = y :=
   (rfl)
+
+section FixedPoints
+
+variable {F} {M : Type} [AddCommGroup M] [DistribMulAction G M] (e : M ≃+ F.toRep.V)
+  (he : ∀ (g : G) (x : M), e (g • x) = F.toRep.ρ g (e x))
+
+/-- **The coefficient module of a layer read in a `G`-module**: when the coefficient module of the
+formation is read, through an equivariant additive equivalence `e : M ≃+ A`, on a `G`-module `M`,
+the coefficient module `A^V` of a layer `V ◁ U` is the subgroup `M^V` of fixed points of its top
+subgroup, viewed as a subgroup of the ground subgroup `U`. It only changes the coefficient
+dictionary (`coeffFixedPointsEquiv_apply_coe`) and is equivariant for the Galois group of the layer
+(`coeffFixedPointsEquiv_ρ`). -/
+def coeffFixedPointsEquiv :
+    (L.rep F).V ≃+ FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M where
+  toFun x := ⟨e.symm (x : F.level L.top), (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
+    e.injective <| (he _ _).trans <| by
+      rw [e.apply_symm_apply]
+      exact (Formation.mem_level _).1 x.2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
+  invFun m := ⟨e m, (Formation.mem_level _).2 fun v hv =>
+    (he v m).symm.trans <| congrArg e <|
+      (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
+  left_inv _ := Subtype.ext (e.apply_symm_apply _)
+  right_inv _ := Subtype.ext (e.symm_apply_apply _)
+  map_add' _ _ := Subtype.ext (map_add e.symm _ _)
+
+/-- `coeffFixedPointsEquiv` reads an element of the coefficient module in `M` through `e`. -/
+@[simp]
+theorem coeffFixedPointsEquiv_apply_coe (x : (L.rep F).V) :
+    (L.coeffFixedPointsEquiv e he x : M) = e.symm (x : F.level L.top) :=
+  (rfl)
+
+/-- The inverse of `coeffFixedPointsEquiv` reads a fixed point of `M` in the coefficient module
+through `e`. -/
+@[simp]
+theorem coeffFixedPointsEquiv_symm_apply_coe
+    (m : FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M) :
+    ((L.coeffFixedPointsEquiv e he).symm m : F.level L.top) = e m :=
+  (rfl)
+
+/-- `coeffFixedPointsEquiv` is equivariant for the Galois group of the layer. -/
+@[simp]
+theorem coeffFixedPointsEquiv_ρ
+    (g : L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
+    (x : (L.rep F).V) :
+    L.coeffFixedPointsEquiv e he ((L.rep F).ρ g x) = g • L.coeffFixedPointsEquiv e he x := by
+  induction g using QuotientGroup.induction_on with
+  | H u =>
+    refine Subtype.ext ?_
+    rw [coeffFixedPointsEquiv_apply_coe, coe_quotient_smul_fixedPoints_addSubgroup,
+      coe_smul_fixedPoints_addSubgroup, coeffFixedPointsEquiv_apply_coe, AddEquiv.symm_apply_eq,
+      Subgroup.smul_def, he, AddEquiv.apply_symm_apply]
+    exact L.rep_ρ_mk_apply_coe _ u x
+
+end FixedPoints
 
 end Coefficients
 
@@ -643,6 +715,56 @@ theorem zeroTateClass_eq_zero_iff (a : F.level L.ground) :
     (dsimp% only (L.zeroTateClass F a = 0)) ↔ a ∈ L.normSubgroup F := by
   rw [← (L.tateHZeroEquivNormQuotient F).map_eq_zero_iff,
     tateHZeroEquivNormQuotient_zeroTateClass, normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
+
+section GroundEquiv
+
+variable {A : Type*} [Group A] {N : Subgroup A} (e : Additive A ≃+ F.level L.ground)
+
+/-- The map `A → A^U / N_{U/V}(A^V)` through an identification `e` of `A` with the ground level,
+written multiplicatively. -/
+private def groundNormQuotientHom : A →* Multiplicative (L.NormQuotient F) :=
+  AddMonoidHom.toMultiplicativeRight ((L.normQuotientMk F).toAddMonoidHom.comp e.toAddMonoidHom)
+
+private theorem groundNormQuotientHom_apply (a : A) :
+    L.groundNormQuotientHom F e a = Multiplicative.ofAdd (L.normQuotientMk F (e (.ofMul a))) :=
+  (rfl)
+
+private theorem ker_groundNormQuotientHom (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    N = (L.groundNormQuotientHom F e).ker := by
+  ext a
+  rw [MonoidHom.mem_ker, ← hN, groundNormQuotientHom_apply, ofAdd_eq_one, normQuotientMk_apply,
+    Submodule.Quotient.mk_eq_zero]
+
+private theorem surjective_groundNormQuotientHom :
+    Function.Surjective (L.groundNormQuotientHom F e) := fun z ↦ by
+  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ z.toAdd
+  obtain ⟨a, rfl⟩ := e.surjective x
+  refine ⟨a.toMul, ?_⟩
+  rw [groundNormQuotientHom_apply, ofMul_toMul, normQuotientMk_apply, hx, ofAdd_toAdd]
+
+/-- **The norm quotient read through an identification of the ground level**: if `e` identifies a
+group `A` with the ground level `A^U` of the layer and carries the normal subgroup `N` onto the
+norm subgroup `N_{U/V}(A^V)`, then `e` descends to an identification of `A / N` with the norm
+quotient. -/
+def normQuotientEquivOfGroundEquiv [N.Normal] (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    Additive (A ⧸ N) ≃+ L.NormQuotient F :=
+  MulEquiv.toAdditiveLeft
+    ((QuotientGroup.quotientMulEquivOfEq (L.ker_groundNormQuotientHom F e hN)).trans
+      (QuotientGroup.quotientKerEquivOfSurjective _ (L.surjective_groundNormQuotientHom F e)))
+
+/-- `normQuotientEquivOfGroundEquiv` sends the class of `a ∈ A` to the class of `e a` in the norm
+quotient. -/
+@[simp]
+theorem normQuotientEquivOfGroundEquiv_mk [N.Normal]
+    (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) (a : A) :
+    L.normQuotientEquivOfGroundEquiv F e hN (.ofMul (a : A ⧸ N)) =
+      L.normQuotientMk F (e (.ofMul a)) := by
+  rw [normQuotientEquivOfGroundEquiv, QuotientGroup.quotientKerEquivOfSurjective,
+    AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, QuotientGroup.quotientKerEquivOfRightInverse_apply,
+    QuotientGroup.kerLift_mk, groundNormQuotientHom_apply, toAdd_ofAdd]
+
+end GroundEquiv
 
 end Norm
 

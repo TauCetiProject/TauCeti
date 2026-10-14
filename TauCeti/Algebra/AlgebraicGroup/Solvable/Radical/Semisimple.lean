@@ -32,9 +32,6 @@ and triviality of the solvable radical after base change to an algebraic closure
 The equivalence follows the formal pattern of
 `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic`, applied to the existing
 universal definition of semisimplicity.
-
-This completes the connection between the solvable radical and semisimplicity in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section

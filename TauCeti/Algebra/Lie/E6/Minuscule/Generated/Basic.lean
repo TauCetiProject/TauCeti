@@ -15,9 +15,12 @@ type-`E₆` minuscule carrier are morphisms into `GL₂₇` over any commutative
 subgroup they generate is cut out by the largest Hopf ideal killed by all of them, that is by the
 common kernel of their coordinate maps.
 
-This file names that ideal and the resulting coordinate Hopf algebra, and records the two facts a
-consumer needs about them: each generator factors uniquely through the quotient, and the quotient
-lies inside the base change of the integral carrier.
+This file names that ideal and the resulting coordinate Hopf algebra, and records the facts a
+consumer needs about them: each generator factors uniquely through the quotient, the quotient
+lies inside the base change of the integral carrier, and generation commutes with free base
+change. The last point says that for a field extension `K / k`, the subgroup generated over `k`
+becomes, after extension of scalars, the subgroup generated over `K`; it is what lets geometric
+properties of the subgroup generated over `k` be read off over an algebraic closure.
 
 Equality of the generated subgroup with the base change of the integral carrier is not asserted:
 extra equations can appear after specialization to a non-flat base. Nor is the generated subgroup
@@ -35,6 +38,8 @@ identified with a pinned simply connected group scheme of type `E₆`.
   subgroup of any coordinate morphism killing its defining ideal.
 * `TauCeti.E6Minuscule.generatedCoordinateLift`: the named factorization of each generator map
   through the generated subgroup.
+* `TauCeti.E6Minuscule.generatedCoordinateHopfAlgebraBaseChangeIso`: for `K` free over `k`,
+  scalar extension of the subgroup generated over `k` is the subgroup generated over `K`.
 
 ## Main results
 
@@ -46,6 +51,8 @@ identified with a pinned simply connected group scheme of type `E₆`.
   factorization through the generated subgroup.
 * `TauCeti.E6Minuscule.generatedCoordinateLift_unique`: the lift is the unique factorization of
   each generator coordinate map through the generated subgroup.
+* `TauCeti.E6Minuscule.map_baseChangeHopfIdeal_generatedDefiningIdeal`: free base change carries
+  the defining ideal of the subgroup generated over `k` to the one over `K`.
 
 ## References
 
@@ -55,7 +62,9 @@ identified with a pinned simply connected group scheme of type `E₆`.
 
 The quotient presentation of the generated subgroup and its factorization API are adapted from
 the parallel type-`E₇` construction in `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Basic`,
-added in https://github.com/TauCetiProject/TauCeti/pull/9467.
+added in https://github.com/TauCetiProject/TauCeti/pull/9467. The base-change section follows
+the type-`Bₙ₊₁` spin construction in
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic`.
 
 -/
 
@@ -66,7 +75,7 @@ namespace TauCeti.E6Minuscule
 open CategoryTheory
 open TauCeti.UniversalEnvelopingAlgebra
 
-universe v
+universe v w
 
 variable (A : Type v) [CommRing A]
 
@@ -205,5 +214,74 @@ theorem generatedCoordinateLift_unique (j : Sum (Fin 6 ⊕ Fin 6) Unit)
 instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A) := by
   rw [generatedCoordinateHopfAlgebra_def]
   infer_instance
+
+section BaseChange
+
+variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
+
+/-- The coordinate Hopf algebras of the generators over `K` are the scalar extensions of those
+over `k`. -/
+private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
+    ∀ j, CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra k j) ≅
+      generatorCoordinateAlgebra K j
+  | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
+  | .inr _ => _root_.CommHopfAlgCat.isoMk
+      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+        (G := SplitTorus.characterGroup (Fin 6)))
+
+/-- Each generator over `K` is the scalar extension of the corresponding generator over `k`, read
+through the coordinate identifications of `GL₂₇` and of the generator's domain. -/
+private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27).inv ≫
+        CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j)) ≫
+        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
+      generatorCoordinateMap K j := by
+  rcases j with j | _
+  · rw [Category.assoc, generatorCoordinateMap_inl, generatorCoordinateMap_inl]
+    exact
+      UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
+        _ _ _ _ _ _ _ k K j
+  · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
+    exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
+
+/-- **Generation commutes with free base change.** For `K` free over `k`, for instance a field
+extension, the base change of the defining ideal of the subgroup generated over `k`, transported
+into the coordinate Hopf algebra of `GL₂₇` over `K`, is the defining ideal of the subgroup
+generated over `K`. -/
+theorem map_baseChangeHopfIdeal_generatedDefiningIdeal [Module.Free k K] :
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal k)).map
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27).hom.hom =
+      generatedDefiningIdeal K := by
+  rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def,
+    CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
+    CommHopfAlgCat.map_commonKernelHopfIdeal, ← funext (generatorCoordinateMap_baseChange k K),
+    CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
+      (ConcreteCategory.bijective_of_isIso (generatorCoordinateAlgebraBaseChangeIso k K j).hom).1]
+
+-- Within this module `generatedCoordinateHopfAlgebra` and `generatedCoordinateMap` unfold to the
+-- quotient by `generatedDefiningIdeal` and its quotient map, so the generic quotient base-change
+-- isomorphism and its compatibility lemma apply to them directly.
+/-- For `K` free over `k`, scalar extension of the subgroup generated over `k` by the type-`E₆`
+minuscule root subgroups and weight torus is the subgroup generated over `K`. -/
+noncomputable def generatedCoordinateHopfAlgebraBaseChangeIso [Module.Free k K] :
+    CommHopfAlgCat.baseChange (K := K) (generatedCoordinateHopfAlgebra k) ≅
+      generatedCoordinateHopfAlgebra K :=
+  CommHopfAlgCat.quotientBaseChangeIsoOfMapEq (generatedDefiningIdeal k)
+    (generatedDefiningIdeal K) (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27)
+    (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+
+/-- The base-change identification of the generated subgroups is compatible with their closed
+immersions into `GL₂₇`. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom
+    [Module.Free k K] :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k) ≫
+        (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27).hom ≫
+        generatedCoordinateMap K :=
+  CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
+    (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+
+end BaseChange
 
 end TauCeti.E6Minuscule

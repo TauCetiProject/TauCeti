@@ -19,7 +19,7 @@ degrees summing to zero.
 The homogeneous pieces exhaust the dual as soon as the grading has only finitely many nonzero
 pieces, and no projectivity is needed for that. Finite generation of the module is one source of
 the hypothesis, through `InternalGrading.finite_piece_ne_bot`, and the dual grading inherits it
-through `InternalGrading.finite_dualPiece_ne_bot`. Later tensor-duality comparisons may add the
+through `InternalGrading.finite_dualPiece_ne_bot`. Tensor-duality comparisons use the
 finite-projectivity hypotheses needed to identify duals of tensor products.
 
 The construction follows the graded-dual convention used for DG and `A∞` objects in B. Keller,
@@ -55,9 +55,6 @@ The construction follows the graded-dual convention used for DG and `A∞` objec
 The construction lives over a commutative semiring. Although independence and spanning do not in
 general assemble an internal direct sum without additive inverses, injectivity of the canonical map
 for these dual pieces follows directly by evaluating each summand on its matching primal piece.
-
-This supplies the dual grading for Layer 0 of the `DGAInfinity` roadmap; the finite-projective
-identifications of duals of tensor products remain.
 -/
 
 public section
@@ -189,29 +186,36 @@ private theorem iSup_dualPiece_eq_top (G : InternalGrading R M)
   simp only [LinearMap.comp_apply, Submodule.subtype_apply, projection_apply]
   rw [DirectSum.decompose_of_mem_ne G.piece hx (by simpa using hq), map_zero]
 
+/-- The direct sum of dual pieces embeds in the full linear dual without a finiteness hypothesis. -/
+private theorem coeLinearMap_dualPiece_injective (G : InternalGrading R M) :
+    Function.Injective (DirectSum.coeLinearMap G.dualPiece) := by
+  intro a b hab
+  ext p x
+  rw [dualPiece_apply_eq_apply_decompose G (a p).2,
+    dualPiece_apply_eq_apply_decompose G (b p).2]
+  have hcomponent : ∀ c : ⨁ p, G.dualPiece p,
+      DirectSum.coeLinearMap G.dualPiece c
+        (DirectSum.decompose G.piece x (-p) : M) =
+        (c p : Module.Dual R M) (DirectSum.decompose G.piece x (-p) : M) := by
+    intro c
+    induction c using DirectSum.induction_on with
+    | zero => simp
+    | of q φ =>
+      by_cases hqp : q = p
+      · subst q
+        simp
+      · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_of_ne _ _ _ (Ne.symm hqp)]
+        simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply]
+        exact dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero G φ.2
+          (DirectSum.decompose G.piece x (-p)).2 (by omega)
+    | add c d hc hd => simp [hc, hd]
+  rw [← hcomponent a, hab, hcomponent b]
+
 /-- The pieces of the graded dual are independent, even when the original grading has infinitely
 many nonzero pieces. -/
 theorem iSupIndep_dualPiece (G : InternalGrading R M) :
-    iSupIndep G.dualPiece := by
-  intro p
-  rw [Submodule.disjoint_def]
-  intro φ hφ hφother
-  have hφp := (mem_dualPiece_iff G p φ).mp hφ
-  have hother_le : (⨆ q, ⨆ (_ : q ≠ p), G.dualPiece q) ≤
-      (G.piece (-p)).dualAnnihilator := by
-    refine iSup_le fun q ↦ iSup_le fun hqp ψ hψ ↦ ?_
-    rw [Submodule.mem_dualAnnihilator]
-    intro x hx
-    exact (mem_dualPiece_iff G q ψ).mp hψ (-p) x hx (by omega)
-  have hφ_on_p := (Submodule.mem_dualAnnihilator φ).mp (hother_le hφother)
-  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun q ↦ ?_
-  apply LinearMap.ext
-  intro x
-  simp only [LinearMap.comp_apply, LinearMap.zero_comp, LinearMap.zero_apply]
-  by_cases hq : q = -p
-  · subst q
-    exact hφ_on_p x x.property
-  · exact hφp q x x.property hq
+    iSupIndep G.dualPiece :=
+  iSupIndep_of_dfinsupp_lsum_injective _ (coeLinearMap_dualPiece_injective G)
 
 /-- The internal grading on the linear dual of a module whose grading has only finitely many
 nonzero pieces.
@@ -225,29 +229,7 @@ noncomputable def dual (G : InternalGrading R M) (hG : {p | G.piece p ≠ ⊥}.F
     -- Mathlib defines `IsInternal` using the additive canonical map; `coeLinearMap` below has the
     -- same underlying function and lets the module-level range API prove surjectivity.
     constructor
-    · intro a b hab
-      have hab' : DirectSum.coeLinearMap G.dualPiece a =
-          DirectSum.coeLinearMap G.dualPiece b := hab
-      apply DirectSum.ext
-      intro p
-      apply Subtype.ext
-      apply LinearMap.ext
-      intro x
-      rw [dualPiece_apply_eq_apply_decompose G (a p).2,
-        dualPiece_apply_eq_apply_decompose G (b p).2]
-      have hcomponent : ∀ c : ⨁ p, G.dualPiece p,
-          DirectSum.coeLinearMap G.dualPiece c
-            (DirectSum.decompose G.piece x (-p) : M) =
-            (c p : Module.Dual R M) (DirectSum.decompose G.piece x (-p) : M) := by
-        classical
-        intro c
-        rw [DirectSum.coeLinearMap_eq_dfinsuppSum, DFinsupp.sum, LinearMap.sum_apply]
-        refine Finset.sum_eq_single p (fun q _ hpq ↦ ?_) fun hp ↦ ?_
-        · exact dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero G (c q).2
-            (DirectSum.decompose G.piece x (-p)).2 (by omega)
-        · rw [DFinsupp.notMem_support_iff.mp hp]
-          simp
-      rw [← hcomponent a, hab', hcomponent b]
+    · exact coeLinearMap_dualPiece_injective G
     · have hsurj : Function.Surjective (DirectSum.coeLinearMap G.dualPiece) := by
         rw [← LinearMap.range_eq_top, DirectSum.range_coeLinearMap,
           G.iSup_dualPiece_eq_top hG]

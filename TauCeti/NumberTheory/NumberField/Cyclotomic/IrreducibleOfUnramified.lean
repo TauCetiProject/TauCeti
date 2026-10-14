@@ -176,7 +176,7 @@ theorem inf_eq_bot_prime_pow_of_unramified {Ω : Type*} [Field Ω] [Algebra K Ω
     A ⊓ B = ⊥ := by
   have : FiniteDimensional K B := finiteDimensional {p ^ (k + 1)} K B
   have : NumberField B := .of_module_finite K B
-  set E := (A ⊓ B : IntermediateField K Ω) with hE
+  set E := (A ⊓ B : IntermediateField K Ω)
   have hEA : E ≤ A := inf_le_left
   have hEB : E ≤ B := inf_le_right
   have : Module.Finite K E := Module.Finite.of_injective

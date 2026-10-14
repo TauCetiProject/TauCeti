@@ -116,17 +116,11 @@ hypotheses this simply connected datum does not carry.
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate I, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `Aₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The positive-root count is the
-corresponding clause of the `Aₙ` worked example in the "Worked examples (acceptance criteria)"
-section of that README; it agrees with the count in Bourbaki, Plate I.
+4--6*, Plate I, and Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+section 12.1. The positive-root count agrees with the count in Bourbaki, Plate I.
 
-The graph automorphism is the root-datum input to the isomorphism theorem for pinned groups in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is the graph-twisted
-Steinberg map of milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`. The description of the
-type-`A` diagram automorphism as `X ↦ -J Xᵀ J` on `sl_{n+1}`, of which the map below is the
-root-datum shadow, is in R. W. Carter, *Simple Groups of Lie Type*, §12.2.
+The description of the type-`A` diagram automorphism as `X ↦ -J Xᵀ J` on `sl_{n+1}`, of which the
+map below is the root-datum shadow, is in R. W. Carter, *Simple Groups of Lie Type*, §12.2.
 -/
 
 public section
@@ -159,14 +153,14 @@ private lemma typeAWeight_dotProduct_typeACoweight {a c : ℕ} (ha : a ≤ n) (h
     typeAWeight n a ⬝ᵥ typeACoweight n c
       = (if a = c then 1 else 0) - (if a = n then 1 else 0) := by
   have key : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) then (1 : ℤ) else 0) *
-      (if c ≤ (k : ℕ) then 1 else 0) = if h : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 :=
+      (if c ≤ (k : ℕ) then 1 else 0) = if _ : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 :=
     fun b => by
       simp only [ite_mul, one_mul, zero_mul]
       simpa only [Nat.add_zero, Nat.sub_zero, Nat.zero_le, and_true] using
         sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 0
   have key' : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) + 1 then (1 : ℤ) else 0) *
       (if c ≤ (k : ℕ) then 1 else 0)
-        = if h : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 :=
+        = if _ : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 :=
     fun b => by
       simp only [ite_mul, one_mul, zero_mul]
       exact sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 1
@@ -206,7 +200,7 @@ private lemma typeAPairRoot_injective : Injective (typeAPairRoot (n := n)) := by
   intro p q hpq
   have h2 : typeAPairRoot q ⬝ᵥ typeAPairCoroot p = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
-  have hp := p.2
+  have _ := p.2
   have hq := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
@@ -215,7 +209,7 @@ private lemma typeAPairCoroot_injective : Injective (typeAPairCoroot (n := n)) :
   have h2 : typeAPairRoot p ⬝ᵥ typeAPairCoroot q = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
   have hp := p.2
-  have hq := q.2
+  have _ := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
 /-- Reflection in the root indexed by `p`, as the transposition of the two entries of `p` acting on

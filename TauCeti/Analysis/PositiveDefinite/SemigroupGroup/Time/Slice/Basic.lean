@@ -16,14 +16,9 @@ A Berg--Christensen--Ressel positive-definite function on `ℝ≥0 × V` is posi
 spatial variable at every fixed time. Indeed, to test the kernel
 `(v, w) ↦ F (t, v - w)`, apply the BCR kernel to the family of points `(t / 2, v)`.
 
-This file records that fixed-time-slice API in kernel form, together with the predicate form for
-the fixed-time slice. These lemmas are prerequisites for the BCR representation milestone in the
-`OneParameterSemigroups` roadmap: later proofs can apply the spatial Bochner theorem to each time
-slice before handling the remaining Laplace/semigroup structure.
-
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-("BCR semigroup--Bochner"), specifically the reduction of a bounded continuous
-positive-definite function on `[0,∞) × V` to spatial positive-definite functions.
+This file records that fixed-time-slice API in kernel form, together with the predicate form for the
+fixed-time slice. These lemmas let the spatial Bochner theorem be applied to each time slice before
+the remaining Laplace/semigroup structure is handled.
 
 ## Main declarations
 

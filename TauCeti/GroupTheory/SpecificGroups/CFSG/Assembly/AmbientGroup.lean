@@ -63,8 +63,8 @@ Frob_q = Frob_p ^ e,        Frob_p (x_i(u)) = x_i(u ^ p).
 ```
 
 The two agree on an index of prime field order, the Tits index among them. It is the
-prime-field map, and not the `q`-power one, that the exceptional isogeny of the Suzuki and Ree
-`G₂` families squares to.
+prime-field map, and not the `q`-power one, that the exceptional isogeny of each half-Frobenius
+family squares to.
 
 Every carrier used here is an explicit one, and none is identified with the pinned simply connected
 group scheme of its diagram; the constructions transfer to that pinned group only along such an
@@ -173,7 +173,8 @@ It is the Steinberg endomorphism of the nine untwisted families only. On the fou
 families the Steinberg endomorphism composes a graph automorphism with it, and on the four
 half-Frobenius families the Steinberg endomorphism is an odd power of an exceptional isogeny whose
 square is the prime-field Frobenius `primeFrobenius`. The Frobenius defined here is distinct from
-those exceptional isogenies, which belong to the family APIs. -/
+those exceptional isogenies, which are selected for every Suzuki--Ree index by
+`TauCeti.SuzukiReeIndex.halfFrobenius`. -/
 def frobenius : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.A _ _, hv⟩ | ⟨.twistedA _ _, hv⟩ | ⟨.B _ _, hv⟩ | ⟨.C _ _, hv⟩ | ⟨.D _ _, hv⟩
   | ⟨.twistedD _ _, hv⟩ | ⟨.E6 _, hv⟩ | ⟨.E7 _, hv⟩ | ⟨.E8 _, hv⟩ | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩
@@ -191,9 +192,8 @@ its siblings; its action on the simple root subgroups is `primeFrobenius_simpleR
 
 The `q`-power Frobenius is its `e`-th power, for `e` the field exponent the index records, by
 `frobenius_eq_primeFrobenius_pow`, so the two agree on an index of prime field order. On the
-Suzuki and Ree `G₂` constructors it is the map that the family's exceptional isogeny
-(`TauCeti.SuzukiLieIndex.halfFrobenius`, `TauCeti.ReeG2LieIndex.halfFrobenius`) squares to.
-Exceptional isogenies are not part of this uniform API. -/
+four half-Frobenius constructors it is the map that the family's exceptional isogeny
+`TauCeti.SuzukiReeIndex.halfFrobenius` squares to. -/
 def primeFrobenius : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.A _ _, hv⟩ | ⟨.twistedA _ _, hv⟩ | ⟨.B _ _, hv⟩ | ⟨.C _ _, hv⟩ | ⟨.D _ _, hv⟩
   | ⟨.twistedD _ _, hv⟩ | ⟨.E6 _, hv⟩ | ⟨.E7 _, hv⟩ | ⟨.E8 _, hv⟩ | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩

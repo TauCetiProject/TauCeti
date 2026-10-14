@@ -188,7 +188,7 @@ variable {t B}
 
 /-- For a triple with transitive monodromy and a nonempty block `B`, the number of the unique
 translate of `B` containing the sheet `x`. -/
-noncomputable def blockIndex (ht : IsPretransitive t.monodromyGroup (Fin n))
+noncomputable def blockIndex (_ : IsPretransitive t.monodromyGroup (Fin n))
     (hB : IsBlock t.monodromyGroup B) (hBne : B.Nonempty) (e : orbit t.monodromyGroup B ≃ Fin m)
     (x : Fin n) : Fin m :=
   e (hB.imprimitivityEquiv hBne x).1

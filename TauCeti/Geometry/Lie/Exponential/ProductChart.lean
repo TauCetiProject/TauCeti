@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Complementary exponential-product charts

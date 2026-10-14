@@ -9,7 +9,7 @@ public import TauCeti.Probability.Exchangeability.IID
 public import TauCeti.Probability.Exchangeability.MarkovExchangeable
 public import TauCeti.Probability.Exchangeability.Recurrence.Basic
 public import TauCeti.Probability.Exchangeability.RowExchangeable
-public import TauCeti.Probability.Exchangeability.SuccessorArray
+public import TauCeti.Probability.Process.SuccessorArray
 public import Mathlib.Probability.Distributions.Uniform
 public import Mathlib.Probability.Independence.InfinitePi
 

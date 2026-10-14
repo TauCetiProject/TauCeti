@@ -7,18 +7,18 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Topology.Order.LeftRightNhds
-import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Normed.Group.Uniform
-import Mathlib.Topology.Algebra.Group.Basic
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Exit times of a curve from small balls around a crossed point
 
-For a curve `γ : ℝ → E` with `γ t₀ = s`, the **first exit time at radius `ε`** on the right is
-the first parameter `t ≥ t₀` in a window `[t₀, t₀ + δ]` with `‖γ t - s‖ = ε`; symmetrically on
-the left. This file constructs the exit times as `sInf`/`sSup` of the closed set of
-outside-the-ball times and establishes the API the principal-value excision consumes: the exit
-time lies in the window, sits at exact distance `ε` (for small `ε`), tends to `t₀` one-sidedly
+For a continuous curve `γ : ℝ → E` with `γ t₀ = s`, and a nonnegative radius `ε` reached
+at the window endpoint, the **first exit time at radius `ε`** on the right is the first
+parameter `t ≥ t₀` in `[t₀, t₀ + δ]` with `‖γ t - s‖ = ε`; symmetrically on the left. This
+file constructs the exit times as `sInf`/`sSup` of the closed set of outside-the-ball times
+and establishes the API the principal-value excision consumes: the exit time lies in the window,
+sits at exact distance `ε` (for small `ε`), and tends to `t₀` one-sidedly
 as `ε → 0⁺`, and eventually has exact radius — the `t_eps` hypotheses of
 `Contour.antiderivative_diff_across_crossing_tendsto_zero`.
 
@@ -37,9 +37,10 @@ as `ε → 0⁺`, and eventually has exact radius — the `t_eps` hypotheses of
 * `Contour.eventually_norm_at_firstExitTimeRight_eq` / `Left` — eventual exact radius along
   `𝓝[>] 0`.
 
-The exit times and their properties at a fixed radius hold for a curve into any seminormed group.
-The results as `ε → 0⁺` are stated in a normed group: their hypothesis that `γ` leaves `s` must
-give a positive distance from `s`, which a seminorm does not guarantee.
+The exit-time definitions and window bounds require only subtraction and a norm. The fixed-radius
+estimates hold in a seminormed additive commutative group; the exact-radius equalities include zero.
+The results as `ε → 0⁺` are stated in a normed additive commutative group: their hypothesis that
+`γ` leaves `s` must give a positive distance from `s`, which a seminorm does not guarantee.
 
 ## Provenance
 
@@ -57,9 +58,9 @@ namespace TauCeti.Contour
 
 open Filter Set Topology
 
-section Seminormed
+section Norm
 
-variable {E : Type*} [SeminormedAddCommGroup E]
+variable {E : Type*} [Sub E] [Norm E]
 
 /-- **First exit time at radius `ε` (right side)**: the `sInf` of the times
 `t ∈ [t₀, t₀ + δ]` with `ε ≤ ‖γ t - s‖`; the junk value is `sInf ∅` when the curve never
@@ -69,8 +70,7 @@ def firstExitTimeRight (γ : ℝ → E) (t₀ δ : ℝ) (s : E) (ε : ℝ) : ℝ
 
 /-- The set defining `firstExitTimeRight` contains the window endpoint when the curve is far
 enough there. -/
-private theorem right_endpoint_mem {F : Type*} [SeminormedAddGroup F] {γ : ℝ → F}
-    {t₀ δ ε : ℝ} {s : F}
+private theorem right_endpoint_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
     (hδ : 0 ≤ δ) (h_far : ε ≤ ‖γ (t₀ + δ) - s‖) :
     (t₀ + δ) ∈ {t ∈ Icc t₀ (t₀ + δ) | ε ≤ ‖γ t - s‖} :=
   ⟨⟨by linarith, le_rfl⟩, h_far⟩
@@ -83,9 +83,54 @@ private theorem right_set_bddBelow (γ : ℝ → E) (t₀ δ ε : ℝ) (s : E) :
 /-- **The right exit time lies in the window** `[t₀, t₀ + δ]`. -/
 theorem firstExitTimeRight_mem_Icc {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (hδ : 0 ≤ δ)
     (hε_le : ε ≤ ‖γ (t₀ + δ) - s‖) :
-    t₀ ≤ firstExitTimeRight γ t₀ δ s ε ∧ firstExitTimeRight γ t₀ δ s ε ≤ t₀ + δ :=
+    firstExitTimeRight γ t₀ δ s ε ∈ Icc t₀ (t₀ + δ) :=
   ⟨le_csInf ⟨t₀ + δ, right_endpoint_mem hδ hε_le⟩ (right_set_bddBelow γ t₀ δ ε s),
     csInf_le ⟨t₀, right_set_bddBelow γ t₀ δ ε s⟩ (right_endpoint_mem hδ hε_le)⟩
+
+/-- **Upper bound through any witness (right)**: the right exit time is at most any window
+time whose displacement norm is at least `ε`. -/
+theorem firstExitTimeRight_le_of_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
+    {t₁ : ℝ} (ht₁ : t₁ ∈ Icc t₀ (t₀ + δ)) (h_far : ε ≤ ‖γ t₁ - s‖) :
+    firstExitTimeRight γ t₀ δ s ε ≤ t₁ :=
+  csInf_le ⟨t₀, right_set_bddBelow γ t₀ δ ε s⟩ ⟨ht₁, h_far⟩
+
+/-- **First exit time at radius `ε` (left side)**: the `sSup` of the times `t ∈ [t₀ - δ, t₀]`
+with `ε ≤ ‖γ t - s‖` — the latest outside-the-ball time before `t₀`, which is the first exit
+when moving left from `t₀`. The junk value is `sSup ∅` when the defining set is empty. -/
+def firstExitTimeLeft (γ : ℝ → E) (t₀ δ : ℝ) (s : E) (ε : ℝ) : ℝ :=
+  sSup {t ∈ Icc (t₀ - δ) t₀ | ε ≤ ‖γ t - s‖}
+
+/-- The set defining `firstExitTimeLeft` contains the window endpoint when the curve is far
+enough there. -/
+private theorem left_endpoint_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
+    (hδ : 0 ≤ δ) (h_far : ε ≤ ‖γ (t₀ - δ) - s‖) :
+    (t₀ - δ) ∈ {t ∈ Icc (t₀ - δ) t₀ | ε ≤ ‖γ t - s‖} :=
+  ⟨⟨le_rfl, by linarith⟩, h_far⟩
+
+/-- The set defining `firstExitTimeLeft` is bounded above by `t₀`. -/
+private theorem left_set_bddAbove (γ : ℝ → E) (t₀ δ ε : ℝ) (s : E) :
+    ∀ t ∈ {t ∈ Icc (t₀ - δ) t₀ | ε ≤ ‖γ t - s‖}, t ≤ t₀ :=
+  fun _ ⟨hmem, _⟩ => hmem.2
+
+/-- **The left exit time lies in the window** `[t₀ - δ, t₀]`. -/
+theorem firstExitTimeLeft_mem_Icc {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (hδ : 0 ≤ δ)
+    (hε_le : ε ≤ ‖γ (t₀ - δ) - s‖) :
+    firstExitTimeLeft γ t₀ δ s ε ∈ Icc (t₀ - δ) t₀ :=
+  ⟨le_csSup ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩ (left_endpoint_mem hδ hε_le),
+    csSup_le ⟨t₀ - δ, left_endpoint_mem hδ hε_le⟩ (left_set_bddAbove γ t₀ δ ε s)⟩
+
+/-- **Lower bound through any witness (left)**: the left exit time is at least any window
+time whose displacement norm is at least `ε`. -/
+theorem le_firstExitTimeLeft_of_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
+    {t₁ : ℝ} (ht₁ : t₁ ∈ Icc (t₀ - δ) t₀) (h_far : ε ≤ ‖γ t₁ - s‖) :
+    t₁ ≤ firstExitTimeLeft γ t₀ δ s ε :=
+  le_csSup ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩ ⟨ht₁, h_far⟩
+
+end Norm
+
+section Seminormed
+
+variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- **Radius lower bound at the right exit time**: the `sInf` of the closed set of
 outside-the-ball times is itself outside the open ball. -/
@@ -108,56 +153,22 @@ theorem lt_firstExitTimeRight {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (hδ :
   simp [← h, h_s] at this
   linarith
 
-/-- **Exact radius at the right exit time**: for `0 < ε ≤ ‖γ (t₀ + δ) - s‖`, the curve is at
+/-- **Exact radius at the right exit time**: for `0 ≤ ε ≤ ‖γ (t₀ + δ) - s‖`, the curve is at
 distance exactly `ε` at `firstExitTimeRight γ t₀ δ s ε`. -/
 theorem norm_at_firstExitTimeRight_eq {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
     (hδ : 0 ≤ δ) (hγ_cont : ContinuousOn γ (Icc t₀ (t₀ + δ)))
-    (h_s : γ t₀ = s) (hε_pos : 0 < ε) (hε_le : ε ≤ ‖γ (t₀ + δ) - s‖) :
+    (h_s : γ t₀ = s) (hε_nonneg : 0 ≤ ε) (hε_le : ε ≤ ‖γ (t₀ + δ) - s‖) :
     ‖γ (firstExitTimeRight γ t₀ δ s ε) - s‖ = ε := by
   refine le_antisymm ?_ (le_norm_at_firstExitTimeRight hδ hγ_cont hε_le)
-  set τ := firstExitTimeRight γ t₀ δ s ε
-  have h_lt : t₀ < τ := lt_firstExitTimeRight hδ hγ_cont h_s hε_pos hε_le
-  have h_mem : τ ∈ Icc t₀ (t₀ + δ) := firstExitTimeRight_mem_Icc hδ hε_le
   by_contra! h
-  obtain ⟨η, hη_pos, hη⟩ := Metric.nhdsWithin_basis_ball.eventually_iff.mp <|
-    (((hγ_cont τ h_mem).sub continuousWithinAt_const).norm.tendsto).eventually_const_lt h
-  set r := min (η / 2) ((τ - t₀) / 2)
-  have hr_pos : 0 < r := lt_min (by linarith) (by linarith)
-  have h_in_Icc : τ - r ∈ Icc t₀ (t₀ + δ) :=
-    ⟨by linarith [min_le_right (η / 2) ((τ - t₀) / 2)], by linarith [h_mem.2]⟩
-  have h_dist : dist (τ - r) τ < η := by
-    rw [Real.dist_eq, abs_of_neg (by linarith : τ - r - τ < 0)]
-    linarith [min_le_left (η / 2) ((τ - t₀) / 2)]
-  have h_inf_le : τ ≤ τ - r :=
-    csInf_le ⟨t₀, right_set_bddBelow γ t₀ δ ε s⟩
-      ⟨h_in_Icc, (hη ⟨Metric.mem_ball.mpr h_dist, h_in_Icc⟩).le⟩
-  linarith
-
-/-- **First exit time at radius `ε` (left side)**: the `sSup` of the times `t ∈ [t₀ - δ, t₀]`
-with `ε ≤ ‖γ t - s‖` — the latest outside-the-ball time before `t₀`, which is the first exit
-when moving left from `t₀`. -/
-def firstExitTimeLeft (γ : ℝ → E) (t₀ δ : ℝ) (s : E) (ε : ℝ) : ℝ :=
-  sSup {t ∈ Icc (t₀ - δ) t₀ | ε ≤ ‖γ t - s‖}
-
-/-- The set defining `firstExitTimeLeft` contains the window endpoint when the curve is far
-enough there. -/
-private theorem left_endpoint_mem {F : Type*} [SeminormedAddGroup F] {γ : ℝ → F}
-    {t₀ δ ε : ℝ} {s : F}
-    (hδ : 0 ≤ δ) (h_far : ε ≤ ‖γ (t₀ - δ) - s‖) :
-    (t₀ - δ) ∈ {t ∈ Icc (t₀ - δ) t₀ | ε ≤ ‖γ t - s‖} :=
-  ⟨⟨le_rfl, by linarith⟩, h_far⟩
-
-/-- The set defining `firstExitTimeLeft` is bounded above by `t₀`. -/
-private theorem left_set_bddAbove (γ : ℝ → E) (t₀ δ ε : ℝ) (s : E) :
-    ∀ t ∈ {t ∈ Icc (t₀ - δ) t₀ | ε ≤ ‖γ t - s‖}, t ≤ t₀ :=
-  fun _ ⟨hmem, _⟩ => hmem.2
-
-/-- **The left exit time lies in the window** `[t₀ - δ, t₀]`. -/
-theorem firstExitTimeLeft_mem_Icc {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (hδ : 0 ≤ δ)
-    (hε_le : ε ≤ ‖γ (t₀ - δ) - s‖) :
-    t₀ - δ ≤ firstExitTimeLeft γ t₀ δ s ε ∧ firstExitTimeLeft γ t₀ δ s ε ≤ t₀ :=
-  ⟨le_csSup ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩ (left_endpoint_mem hδ hε_le),
-    csSup_le ⟨t₀ - δ, left_endpoint_mem hδ hε_le⟩ (left_set_bddAbove γ t₀ δ ε s)⟩
+  have hτ := firstExitTimeRight_mem_Icc hδ hε_le
+  have hcont : ContinuousOn (fun t => ‖γ t - s‖)
+      (Icc t₀ (firstExitTimeRight γ t₀ δ s ε)) :=
+    ((hγ_cont.mono (Icc_subset_Icc_right hτ.2)).sub continuousOn_const).norm
+  obtain ⟨t, ht, hnorm⟩ := intermediate_value_Ico hτ.1 hcont
+    (by simpa [h_s] using And.intro hε_nonneg h)
+  have hle := firstExitTimeRight_le_of_mem ⟨ht.1, ht.2.le.trans hτ.2⟩ hnorm.ge
+  exact hle.not_gt ht.2
 
 /-- **Radius lower bound at the left exit time**: the `sSup` of the closed set of
 outside-the-ball times is itself outside the open ball. -/
@@ -185,40 +196,18 @@ theorem firstExitTimeLeft_lt {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (hδ : 
 `norm_at_firstExitTimeRight_eq`. -/
 theorem norm_at_firstExitTimeLeft_eq {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
     (hδ : 0 ≤ δ) (hγ_cont : ContinuousOn γ (Icc (t₀ - δ) t₀))
-    (h_s : γ t₀ = s) (hε_pos : 0 < ε) (hε_le : ε ≤ ‖γ (t₀ - δ) - s‖) :
+    (h_s : γ t₀ = s) (hε_nonneg : 0 ≤ ε) (hε_le : ε ≤ ‖γ (t₀ - δ) - s‖) :
     ‖γ (firstExitTimeLeft γ t₀ δ s ε) - s‖ = ε := by
   refine le_antisymm ?_ (le_norm_at_firstExitTimeLeft hδ hγ_cont hε_le)
-  set τ := firstExitTimeLeft γ t₀ δ s ε
-  have h_lt : τ < t₀ := firstExitTimeLeft_lt hδ hγ_cont h_s hε_pos hε_le
-  have h_mem : τ ∈ Icc (t₀ - δ) t₀ := firstExitTimeLeft_mem_Icc hδ hε_le
   by_contra! h
-  obtain ⟨η, hη_pos, hη⟩ := Metric.nhdsWithin_basis_ball.eventually_iff.mp <|
-    (((hγ_cont τ h_mem).sub continuousWithinAt_const).norm.tendsto).eventually_const_lt h
-  set r := min (η / 2) ((t₀ - τ) / 2)
-  have hr_pos : 0 < r := lt_min (by linarith) (by linarith)
-  have h_in_Icc : τ + r ∈ Icc (t₀ - δ) t₀ :=
-    ⟨by linarith [h_mem.1], by linarith [min_le_right (η / 2) ((t₀ - τ) / 2)]⟩
-  have h_dist : dist (τ + r) τ < η := by
-    rw [Real.dist_eq, abs_of_pos (by linarith : 0 < τ + r - τ)]
-    linarith [min_le_left (η / 2) ((t₀ - τ) / 2)]
-  have h_sup_ge : τ + r ≤ τ :=
-    le_csSup ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩
-      ⟨h_in_Icc, (hη ⟨Metric.mem_ball.mpr h_dist, h_in_Icc⟩).le⟩
-  linarith
-
-/-- **Upper bound through any witness (right)**: the right exit time is at most any window
-time already at distance `≥ ε`. -/
-theorem firstExitTimeRight_le_of_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
-    {t₁ : ℝ} (ht₁ : t₁ ∈ Icc t₀ (t₀ + δ)) (h_far : ε ≤ ‖γ t₁ - s‖) :
-    firstExitTimeRight γ t₀ δ s ε ≤ t₁ :=
-  csInf_le ⟨t₀, right_set_bddBelow γ t₀ δ ε s⟩ ⟨ht₁, h_far⟩
-
-/-- **Lower bound through any witness (left)**: the left exit time is at least any window
-time already at distance `≥ ε`. -/
-theorem le_firstExitTimeLeft_of_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
-    {t₁ : ℝ} (ht₁ : t₁ ∈ Icc (t₀ - δ) t₀) (h_far : ε ≤ ‖γ t₁ - s‖) :
-    t₁ ≤ firstExitTimeLeft γ t₀ δ s ε :=
-  le_csSup ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩ ⟨ht₁, h_far⟩
+  have hτ := firstExitTimeLeft_mem_Icc hδ hε_le
+  have hcont : ContinuousOn (fun t => ‖γ t - s‖)
+      (Icc (firstExitTimeLeft γ t₀ δ s ε) t₀) :=
+    ((hγ_cont.mono (Icc_subset_Icc_left hτ.1)).sub continuousOn_const).norm
+  obtain ⟨t, ht, hnorm⟩ := intermediate_value_Ioc' hτ.2 hcont
+    (by simpa [h_s] using And.intro hε_nonneg h)
+  have hle := le_firstExitTimeLeft_of_mem ⟨hτ.1.trans ht.1.le, ht.2⟩ hnorm.ge
+  exact hle.not_gt ht.1
 
 end Seminormed
 
@@ -292,7 +281,7 @@ theorem eventually_norm_at_firstExitTimeRight_eq {γ : ℝ → E} {t₀ δ : ℝ
   have h_far_pos : (0 : ℝ) < ‖γ (t₀ + δ) - s‖ :=
     norm_pos_iff.mpr (sub_ne_zero.mpr h_leave)
   filter_upwards [Ioo_mem_nhdsGT h_far_pos] with ε hε
-  exact norm_at_firstExitTimeRight_eq hδ hγ_cont h_s hε.1 hε.2.le
+  exact norm_at_firstExitTimeRight_eq hδ hγ_cont h_s hε.1.le hε.2.le
 
 /-- **Eventual exact radius (left)**: the counterpart of
 `eventually_norm_at_firstExitTimeRight_eq`, assuming only that the left endpoint
@@ -304,7 +293,7 @@ theorem eventually_norm_at_firstExitTimeLeft_eq {γ : ℝ → E} {t₀ δ : ℝ}
   have h_far_pos : (0 : ℝ) < ‖γ (t₀ - δ) - s‖ :=
     norm_pos_iff.mpr (sub_ne_zero.mpr h_leave)
   filter_upwards [Ioo_mem_nhdsGT h_far_pos] with ε hε
-  exact norm_at_firstExitTimeLeft_eq hδ hγ_cont h_s hε.1 hε.2.le
+  exact norm_at_firstExitTimeLeft_eq hδ hγ_cont h_s hε.1.le hε.2.le
 
 end Normed
 

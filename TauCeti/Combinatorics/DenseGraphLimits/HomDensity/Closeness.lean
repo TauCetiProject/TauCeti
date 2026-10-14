@@ -75,7 +75,7 @@ theorem homDensityFin_sub_injHomDensity_le (F : SimpleGraph V) (G : SimpleGraph 
     · rw [hW0, Nat.descFactorial_eq_zero_iff_lt.mpr (Nat.pos_of_ne_zero hk0), Nat.cast_zero,
         zero_pow hk0]
       simp
-  · have hn : 0 < Fintype.card W := Nat.pos_of_ne_zero hW0
+  · have _ : 0 < Fintype.card W := Nat.pos_of_ne_zero hW0
     let _ : MeasurableSpace W := ⊤
     let A : Set (V → W) := {f | ∀ a b, F.Adj a b → G.Adj (f a) (f b)}
     let E : Set (V → W) := {f | Function.Injective f}
