@@ -91,8 +91,11 @@ variable {D : Type u} [SmallCategory D] {K : GrothendieckTopology D}
   {F : C ⥤ D} [F.IsContinuous J K] {S : Sheaf J CommRingCat.{u}} {R : Sheaf K CommRingCat.{u}}
   (φ : ringCatSheaf S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj (ringCatSheaf R))
 
-/-- The morphism of presheaves of commutative rings underlying `φ`. -/
-private def commRingCatHom : S.obj ⟶ F.op ⋙ R.obj where
+/-- The morphism of presheaves of commutative rings underlying `φ`. Pushing forward along it is
+`presheafPushforward φ` (definitionally), which lets sectionwise constructions for presheaves of
+modules over commutative rings be applied to the pushforward of sheaves of modules. -/
+@[expose]
+def commRingCatHom : S.obj ⟶ F.op ⋙ R.obj where
   app U := CommRingCat.ofHom (φ.hom.app U).hom
   naturality _ _ f := by
     ext x
@@ -110,8 +113,8 @@ def presheafPushforward :
 /-- The pushforward of presheaves of modules is lax monoidal, sectionwise
 (`TauCeti.PresheafOfModules.pushforwardLaxMonoidal`). It is characterized by
 `presheafPushforward_ε_app_apply` and `presheafPushforward_μ_app_tmul`. -/
--- A definition rather than an `instance`, whose body would be exported, so that its body may use
--- the private `commRingCatHom`.
+-- A definition rather than an `instance`, whose body would be exported, so that consumers use the
+-- characteristic lemmas below rather than unfolding it.
 @[instance_reducible]
 def presheafPushforwardLaxMonoidal : (presheafPushforward φ).LaxMonoidal :=
   PresheafOfModules.pushforwardLaxMonoidal F (commRingCatHom φ)
@@ -119,7 +122,7 @@ def presheafPushforwardLaxMonoidal : (presheafPushforward φ).LaxMonoidal :=
 attribute [instance] presheafPushforwardLaxMonoidal
 
 /-- The sectionwise tensor map of pushforward of presheaves of modules respects symmetry. -/
--- As for `presheafPushforwardLaxMonoidal`, keep the body using `commRingCatHom` unexported.
+-- As for `presheafPushforwardLaxMonoidal`, keep the body unexported.
 @[instance_reducible]
 def presheafPushforwardLaxBraided : (presheafPushforward φ).LaxBraided where
   toLaxMonoidal := presheafPushforwardLaxMonoidal φ
