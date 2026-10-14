@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.CompactSupport
+public import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
@@ -112,49 +113,6 @@ theorem integral_norm_partialDeriv_sq_le_of_close_complexStructure
   dsimp [s, t, D] at hle hspos ⊢
   rw [integral_add hsi hti]
   linarith
-
-omit [FiniteDimensional ℝ V] in
-private lemma cutoff_energy_density_le {χ : ℝ × ℝ → ℝ}
-    (hu : ContDiff ℝ 2 u) (hχ : ContDiff ℝ 2 χ) (z : ℝ × ℝ) :
-    χ z ^ 2 * (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) ≤
-      2 * (‖fderiv ℝ (χ • u) z stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ (χ • u) z stdComplexLineImag‖ ^ 2) +
-      2 * (fderiv ℝ χ z stdComplexLineReal ^ 2 +
-        fderiv ℝ χ z stdComplexLineImag ^ 2) * ‖u z‖ ^ 2 := by
-  let v := χ • u
-  let s := fun z => fderiv ℝ u z stdComplexLineReal
-  let t := fun z => fderiv ℝ u z stdComplexLineImag
-  let a := fun z => fderiv ℝ χ z stdComplexLineReal
-  let b := fun z => fderiv ℝ χ z stdComplexLineImag
-  let vs := fun z => fderiv ℝ v z stdComplexLineReal
-  let vt := fun z => fderiv ℝ v z stdComplexLineImag
-  let E := fun z => χ z ^ 2 * (‖s z‖ ^ 2 + ‖t z‖ ^ 2)
-  let G := fun z => (a z ^ 2 + b z ^ 2) * ‖u z‖ ^ 2
-  let Ev := fun z => ‖vs z‖ ^ 2 + ‖vt z‖ ^ 2
-  -- The product rule separates the principal part from the cutoff error.
-  have hderiv (z e : ℝ × ℝ) : fderiv ℝ v z e =
-      χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := by
-    simpa only [add_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, add_comm] using
-      congrArg (fun L : (ℝ × ℝ) →L[ℝ] V => L e)
-        (fderiv_smul (hχ.differentiable (by norm_num) z) (hu.differentiable (by norm_num) z))
-  have henergy (z : ℝ × ℝ) : E z ≤ 2 * Ev z + 2 * G z := by
-    have hdir (e : ℝ × ℝ) :
-        χ z ^ 2 * ‖fderiv ℝ u z e‖ ^ 2 ≤
-          2 * ‖fderiv ℝ v z e‖ ^ 2 + 2 * fderiv ℝ χ z e ^ 2 * ‖u z‖ ^ 2 := by
-      have heq : χ z • fderiv ℝ u z e =
-          fderiv ℝ v z e - fderiv ℝ χ z e • u z := by rw [hderiv]; abel
-      have hnorm := norm_sub_le (fderiv ℝ v z e) (fderiv ℝ χ z e • u z)
-      rw [← heq, norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs] at hnorm
-      have hsq := mul_self_le_mul_self (by positivity) hnorm
-      nlinarith only [hsq, sq_abs (χ z), sq_abs (fderiv ℝ χ z e),
-        add_sq_le (a := ‖fderiv ℝ v z e‖) (b := |fderiv ℝ χ z e| * ‖u z‖)]
-    have hsbound := hdir stdComplexLineReal
-    have htbound := hdir stdComplexLineImag
-    dsimp [E, Ev, G, s, t, a, b, vs, vt] at hsbound htbound ⊢
-    nlinarith only [hsbound, htbound]
-  simpa only [mul_assoc] using henergy z
 
 omit [FiniteDimensional ℝ V] in
 private lemma cutoff_defect_density_le {χ : ℝ × ℝ → ℝ}
@@ -293,8 +251,10 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
       ContinuousLinearMap.smulRight_apply, add_comm] using
       congrArg (fun L : (ℝ × ℝ) →L[ℝ] V => L e)
         (fderiv_smul (hχ.differentiable (by norm_num) z) (hu.differentiable (by norm_num) z))
-  have henergy (z : ℝ × ℝ) : E z ≤ 2 * Ev z + 2 * G z :=
-    by simpa only [mul_assoc] using cutoff_energy_density_le hu hχ z
+  have henergy (z : ℝ × ℝ) : E z ≤ 2 * Ev z + 2 * G z := by
+    simpa only [mul_assoc] using cutoff_sq_mul_norm_fderiv_sq_le
+      (hu.differentiable (by norm_num) z) (hχ.differentiable (by norm_num) z)
+      stdComplexLineReal stdComplexLineImag
   have hdefect (z : ℝ × ℝ) : Dv z ≤ 2 * W z + 16 * G z := by
     by_cases hz : z ∈ tsupport χ
     · have hAnorm : ‖A z (u z)‖ ≤ 2 * ‖u z‖ := by
