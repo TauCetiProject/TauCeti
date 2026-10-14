@@ -142,21 +142,13 @@ noncomputable def cokernelπ :
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, cokernelEquiv_differential,
         LinearEquiv.apply_symm_apply, Submodule.mkQ_apply, cokernelDifferential_mk])
 
-/-- The projection represents the class of a target element under the carrier equivalence. -/
+/-- The underlying cokernel projection is the quotient map followed by its carrier comparison. -/
 @[simp]
-theorem cokernelEquiv_cokernelπ (x : N) :
-    cokernelEquiv f (closedHom (cokernelπ f) x) = Submodule.Quotient.mk x := by
+theorem hom_cokernelπ :
+    closedHom (cokernelπ f) =
+      (cokernelEquiv f).symm.toLinearMap.comp (LinearMap.range (closedHom f)).mkQ := by
   dsimp only [cokernelπ]
-  rw [closedHom_closedHomOf]
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply, Submodule.mkQ_apply]
-
-/-- The inverse carrier equivalence represents a quotient class by the closed projection. -/
-@[simp]
-theorem cokernelEquiv_symm_mk (x : N) :
-    (cokernelEquiv f).symm (Submodule.Quotient.mk x) = closedHom (cokernelπ f) x := by
-  apply (cokernelEquiv f).injective
-  simp only [LinearEquiv.apply_symm_apply, cokernelEquiv_cokernelπ]
+  exact closedHom_closedHomOf _ _ _
 
 /-- The original map followed by its cokernel projection is zero. -/
 @[reassoc (attr := simp)]
@@ -164,8 +156,8 @@ theorem comp_cokernelπ : f ≫ cokernelπ f = 0 := by
   apply closedHom_ext
   intro x
   apply (cokernelEquiv f).injective
-  simp only [closedHom_comp, LinearMap.comp_apply, cokernelEquiv_cokernelπ,
-    closedHom_zero, LinearMap.zero_apply, map_zero]
+  simp only [closedHom_comp, hom_cokernelπ, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply, closedHom_zero, LinearMap.zero_apply, map_zero]
   exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨x, rfl⟩
 
 /-- The cokernel cofork in the closed category of curved right modules. -/
@@ -187,14 +179,6 @@ theorem cokernelCocone_π :
   change cokernelπ f ≫
     (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cokernelObj f))) = cokernelπ f
   exact Category.comp_id _
-
-/-- The transported cofork projection has the characteristic underlying quotient map. -/
-theorem hom_cokernelCocone_π :
-    closedHom ((cokernelCocone f).π ≫ eqToHom (cokernelCocone_pt f)) =
-      (cokernelEquiv f).symm.toLinearMap.comp (LinearMap.range (closedHom f)).mkQ := by
-  rw [cokernelCocone_π]
-  dsimp only [cokernelπ]
-  exact closedHom_closedHomOf _ _ _
 
 /-- The curved cokernel projection satisfies the cokernel universal property. -/
 noncomputable def cokernelIsColimit : IsColimit (cokernelCocone f) :=
@@ -220,8 +204,9 @@ noncomputable def cokernelIsColimit : IsColimit (cokernelCocone f) :=
     (fun g hg ↦ by
       apply closedHom_ext
       intro x
-      simp only [closedHom_comp, LinearMap.comp_apply, closedHom_closedHomOf,
-        LinearEquiv.coe_coe, cokernelEquiv_cokernelπ, Submodule.liftQ_apply])
+      simp only [closedHom_comp, hom_cokernelπ, LinearMap.comp_apply, closedHom_closedHomOf,
+        LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, Submodule.mkQ_apply,
+        Submodule.liftQ_apply])
     (fun g hg m hm ↦ by
       apply closedHom_ext
       intro x
@@ -229,10 +214,10 @@ noncomputable def cokernelIsColimit : IsColimit (cokernelCocone f) :=
       induction z using Submodule.Quotient.induction_on with
       | _ y =>
         have hs := congrArg (fun l ↦ closedHom l y) hm
-        simp only [closedHom_comp, LinearMap.comp_apply] at hs
+        simp only [closedHom_comp, hom_cokernelπ, LinearMap.comp_apply, LinearEquiv.coe_coe,
+          Submodule.mkQ_apply] at hs
         simpa only [closedHom_closedHomOf, LinearMap.comp_apply, LinearEquiv.coe_coe,
-          LinearEquiv.apply_symm_apply, Submodule.liftQ_apply, cokernelEquiv_symm_mk,
-          cokernelEquiv_cokernelπ]
+          LinearEquiv.apply_symm_apply, Submodule.liftQ_apply]
           using hs)
 
 /-- The closed category of curved right modules has cokernels. -/
@@ -272,8 +257,7 @@ noncomputable instance : PreservesColimit (parallelPair f 0) (forgetDifferential
         forgetDifferential_map_hom]
       -- The local carrier view is fixed by the sealed point equation.
       change (cokernelEquiv f).toLinearMap.comp (closedHom (cokernelπ f)) = _
-      rw [← cokernelCocone_π]
-      rw [hom_cokernelCocone_π]
+      rw [hom_cokernelπ]
       apply LinearMap.ext
       intro x
       exact LinearEquiv.apply_symm_apply (cokernelEquiv f) _)
