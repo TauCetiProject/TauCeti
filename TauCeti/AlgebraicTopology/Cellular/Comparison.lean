@@ -34,7 +34,7 @@ Composing the inclusion-induced isomorphism `Hₙ(Xⁿ⁺¹, A) ≅ Hₙ(X, A)` 
 The formula on cellular cycles specifies the comparison using the inclusion of pairs, without
 choosing singular-chain representatives. No finiteness of the set of cells is required.
 Composing with the quotient map for the empty subspace identifies cellular homology of a
-finite-dimensional CW complex with its ordinary singular homology
+CW complex with its ordinary singular homology
 (`TauCeti.cellularSingularHomologyIsoOfCWComplex`, `TauCeti.cellularSingularHomologyIsoUniv`).
 Coefficients lie in any abelian category with coproducts exact for the cell indexing types; for
 an infinite-dimensional complex, sequential colimits must be exact as well.
@@ -274,12 +274,16 @@ section Absolute
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+  [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
 
-/-- **Cellular homology is ordinary singular homology**: for a finite-dimensional CW complex,
-cellular homology is the singular homology of the complex, through the quotient map for the empty
-subspace. -/
-def cellularSingularHomologyIsoOfCWComplex [FiniteDimensional C]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (n : ℕ) :
+/-- **Cellular homology is ordinary singular homology**: cellular homology of a CW complex is the
+singular homology of the complex, through the quotient map for the empty subspace. As for
+`TauCeti.cellularSingularHomologyIso`, the inclusion of the `(n + 1)`-skeleton must induce an
+isomorphism on `Hₙ`, which holds for every finite-dimensional complex and, when sequential
+colimits are exact in the coefficient category, for every complex. -/
+def cellularSingularHomologyIsoOfCWComplex (n : ℕ)
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex C (n + 1)) R n)] :
     (cellularChainComplex C R).homology n ≅
       ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C) :=
   cellularSingularHomologyIso C R n ≪≫ (asIso ((complexBasePair C).singularHomologyπ R n)).symm
@@ -287,8 +291,9 @@ def cellularSingularHomologyIsoOfCWComplex [FiniteDimensional C]
 /-- The absolute cellular–singular comparison followed by the quotient map for the empty
 subspace is the relative comparison `TauCeti.cellularSingularHomologyIso`. -/
 @[simp, reassoc]
-lemma cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ [FiniteDimensional C]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (n : ℕ) :
+lemma cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ (n : ℕ)
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex C (n + 1)) R n)] :
     (cellularSingularHomologyIsoOfCWComplex C R n).hom ≫
         (complexBasePair C).singularHomologyπ R n =
       (cellularSingularHomologyIso C R n).hom := by
@@ -299,11 +304,12 @@ lemma cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ [Finite
     (((cellularSingularHomologyIso C R n).hom ≫=
       (asIso ((complexBasePair C).singularHomologyπ R n)).inv_hom_id).trans (Category.comp_id _))
 
-/-- **Cellular homology is ordinary singular homology** for a finite-dimensional CW structure on
-the whole space `X`. -/
+/-- **Cellular homology is ordinary singular homology** for a CW structure on the whole
+space `X`. -/
 def cellularSingularHomologyIsoUniv [CWComplex (Set.univ : Set X)]
-    [FiniteDimensional (Set.univ : Set X)]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ) :
+    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ)
+    [IsIso ((skeletonBasePair (Set.univ : Set X) (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex (Set.univ : Set X) (n + 1)) R n)] :
     (cellularChainComplex (Set.univ : Set X) R).homology n ≅
       ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of X) :=
   cellularSingularHomologyIsoOfCWComplex Set.univ R n ≪≫
@@ -313,8 +319,9 @@ def cellularSingularHomologyIsoUniv [CWComplex (Set.univ : Set X)]
 /-- The comparison `TauCeti.cellularSingularHomologyIsoUniv` is the absolute comparison for
 `Set.univ`, followed by the map induced by the homeomorphism `Set.univ ≃ₜ X`. -/
 lemma cellularSingularHomologyIsoUniv_hom [CWComplex (Set.univ : Set X)]
-    [FiniteDimensional (Set.univ : Set X)]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ) :
+    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ)
+    [IsIso ((skeletonBasePair (Set.univ : Set X) (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex (Set.univ : Set X) (n + 1)) R n)] :
     (cellularSingularHomologyIsoUniv R n).hom =
       (cellularSingularHomologyIsoOfCWComplex Set.univ R n).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).map
