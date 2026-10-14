@@ -551,6 +551,7 @@ theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc 
 
 /-- The canonical valuation at a point of the closed polydisc strictly compares constants by
 their norms. -/
+@[simp]
 theorem closedPolydisc_valuation_weightedC_lt_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
     v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) <
         v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ < ‖y‖ := by
