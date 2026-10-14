@@ -147,6 +147,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BORS_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
           BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
+          BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
+          BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}
           REQUESTED_PR: ${{ inputs.pr || github.event.client_payload.pr }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
@@ -174,9 +176,47 @@ jobs:
             [[ "$SHA" =~ ^[0-9a-f]{40}$ && "$BASE_REF" =~ ^[0-9a-f]{40}$ ]] || {
               echo "::error::bors dispatch did not contain two commit SHAs"; exit 1;
             }
-            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/staging" --jq .object.sha)
+            # The bors authority supplies immutable generation/ref metadata. A
+            # queued predecessor must survive publication of its successor.
+            # Payload fields never choose a ref, URL, executable or authority.
+            STAGING_REF=$(python3 - <<'PY_IDENTITY'
+          import json, os, re, urllib.parse, urllib.request
+          batch = os.environ["BORS_BATCH_ID"]
+          branch = os.environ["BORS_BASE_REF"]
+          if not re.fullmatch(r"[1-9][0-9]*", batch) or not branch:
+              raise SystemExit("invalid bors batch identity")
+          query = urllib.parse.urlencode({"base": branch, "batch_id": batch})
+          url = "https://bors.taucetiproject.org/repositories/1/active-batches?" + query
+          with urllib.request.urlopen(url, timeout=30) as response:
+              raw = response.read(2 * 1024 * 1024 + 1)
+          if len(raw) > 2 * 1024 * 1024:
+              raise SystemExit("bors observation exceeds bound")
+          data = json.loads(raw)
+          active = data.get("requested_batch") or {}
+          if (data.get("schema") != "tauceti-bors.observation/v1" or
+              data.get("repo") != "TauCetiProject/TauCeti" or
+              active.get("id") != int(batch) or active.get("base") != branch or
+              active.get("state") != "running" or
+              active.get("head_sha") != os.environ["BORS_HEAD_SHA"] or
+              active.get("base_sha") != os.environ["BORS_BASE_SHA"]):
+              raise SystemExit("stale or mismatched bors dispatch")
+          train = active.get("train")
+          if train is None:
+              print("staging")
+          else:
+              cid, generation = train.get("candidate_id"), train.get("generation")
+              if (type(cid) is not int or cid <= 0 or
+                  type(generation) is not int or generation <= 0):
+                  raise SystemExit("invalid bors generation")
+              ref = f"staging-candidate-{cid}-{generation}"
+              if train.get("staging_ref") != ref:
+                  raise SystemExit("invalid bors candidate ref")
+              print(ref)
+          PY_IDENTITY
+            )
+            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/$STAGING_REF" --jq .object.sha)
             [ "$STAGING_SHA" = "$SHA" ] || {
-              echo "::error::bors staging moved since this dispatch"; exit 1;
+              echo "::error::bors candidate ref differs from this dispatch"; exit 1;
             }
             relation=$(gh api "repos/${{ github.repository }}/compare/$BASE_REF...$SHA" --jq .status)
             [ "$relation" = ahead ] || {
