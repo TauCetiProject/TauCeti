@@ -101,16 +101,18 @@ theorem genX_def : genX k p m = algebraMap (RatFunc k) (FunctionField k p m) Rat
 /-- The coordinate `y` satisfies the Artin–Schreier equation over `k(x)`. -/
 theorem genY_pow_sub_genY :
     genY k p m ^ p - genY k p m =
-      algebraMap (RatFunc k) (FunctionField k p m) (RatFunc.X ^ m) := by
-  have h : (X ^ p - X - C (RatFunc.X ^ m) : (RatFunc k)[X]).eval₂
-      (AdjoinRoot.of (equationPolynomial k p m)) (genY k p m) = 0 :=
-    AdjoinRoot.eval₂_root (equationPolynomial k p m)
-  rw [eval₂_sub, eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, sub_eq_zero] at h
-  rw [h, AdjoinRoot.algebraMap_eq]
+      algebraMap (RatFunc k) (FunctionField k p m) (RatFunc.X ^ m) :=
+  ArtinSchreier.root_pow_sub_root_of_dvd (dvd_of_eq (equationPolynomial_def k p m))
 
 /-- **The equation of the curve**: `y ^ p - y = x ^ m`. -/
 theorem genY_pow_sub_genY_eq : genY k p m ^ p - genY k p m = genX k p m ^ m := by
   rw [genY_pow_sub_genY, map_pow, genX_def]
+
+variable {p m} in
+/-- An exponent not divisible by `p` is nonzero. -/
+private theorem ne_zero_of_not_dvd (hm : ¬ p ∣ m) : m ≠ 0 := by
+  rintro rfl
+  exact hm (dvd_zero p)
 
 variable [Fact p.Prime]
 
@@ -137,7 +139,7 @@ private theorem reduced_pole (hm : ¬ p ∣ m) :
         (Place.infty k).ord ((RatFunc.X : RatFunc k) ^ m - ((0 : RatFunc k) ^ p - 0)) := by
   rw [ord_infty_sub k p m]
   refine ⟨?_, fun h ↦ hm (Int.natCast_dvd_natCast.mp (dvd_neg.mp h))⟩
-  have : m ≠ 0 := by rintro rfl; exact hm (dvd_zero p)
+  have := ne_zero_of_not_dvd hm
   omega
 
 variable [CharP k p]
@@ -322,13 +324,12 @@ theorem degree_different :
 `k(x)` with the different `(p - 1) (m + 1) P_∞`. -/
 theorem two_mul_genus :
     2 * genus k (FunctionField k p m) = (p - 1) * (m - 1) := by
-  have hm0 : m ≠ 0 := by rintro rfl; exact hm.out (dvd_zero p)
   have h := two_mul_genus_eq_of_exists_reduced_artinSchreier_pole_ratFunc p
     (adjoin_genY_eq_top k p m) (genY_pow_sub_genY k p m) (Place.infty k) m
     ⟨0, ord_infty_sub k p m⟩ hm.out fun Q hQ ↦ ⟨0, pow_mem_integers k p m hQ⟩
   rw [Place.degree_infty] at h
   have hp := (Fact.out : p.Prime).one_le
-  zify [hp, Nat.one_le_iff_ne_zero.mpr hm0]
+  zify [hp, Nat.one_le_iff_ne_zero.mpr (ne_zero_of_not_dvd hm.out)]
   linear_combination h
 
 /-! ### The two classical instances -/

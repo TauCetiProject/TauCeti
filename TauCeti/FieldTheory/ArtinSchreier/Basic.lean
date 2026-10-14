@@ -25,6 +25,8 @@ Artin–Schreier covers.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Proposition 3.7.8.
 * Mathlib: `Subfield.splits_bot` and `IsGalois.card_aut_eq_finrank`.
+* Mathlib: `X_pow_sub_C_irreducible_of_prime` (`Mathlib/FieldTheory/KummerPolynomial.lean`), whose
+  proof is adapted for `irreducible_X_pow_sub_X_sub_C`.
 -/
 
 public section
@@ -209,6 +211,16 @@ theorem autEquivZmod_symm_apply (c : Multiplicative (ZMod p)) :
 
 end Root
 
+omit [Fact p.Prime] in
+/-- A root of any factor `g` of `X ^ p - X - u` satisfies the Artin–Schreier equation in
+`AdjoinRoot g`. -/
+theorem root_pow_sub_root_of_dvd {R : Type*} [CommRing R] {u : R} {g : R[X]}
+    (hg : g ∣ X ^ p - X - C u) :
+    AdjoinRoot.root g ^ p - AdjoinRoot.root g = algebraMap R (AdjoinRoot g) u := by
+  have h := eval₂_eq_zero_of_dvd_of_eval₂_eq_zero _ _ hg (AdjoinRoot.eval₂_root g)
+  rw [eval₂_sub, eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, sub_eq_zero] at h
+  rw [h, AdjoinRoot.algebraMap_eq]
+
 section Irreducible
 
 variable (p) [CharP K p]
@@ -226,13 +238,8 @@ theorem irreducible_X_pow_sub_X_sub_C (hu : ∀ w : K, w ^ p - w ≠ u) :
   suffices hg' : g.natDegree = p from
     (associated_of_dvd_of_natDegree_le hgf hne (hdeg.trans hg'.symm).le).irreducible hg
   have : Fact (Irreducible g) := ⟨hg⟩
-  have hroot : AdjoinRoot.root g ^ p - AdjoinRoot.root g =
-      algebraMap K (AdjoinRoot g) u := by
-    have h := eval₂_eq_zero_of_dvd_of_eval₂_eq_zero _ _ hgf (AdjoinRoot.eval₂_root g)
-    rw [eval₂_sub, eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, sub_eq_zero] at h
-    rw [h, AdjoinRoot.algebraMap_eq]
   rw [← AdjoinRoot.powerBasis_dim hg.ne_zero, ← (AdjoinRoot.powerBasis hg.ne_zero).finrank]
-  exact finrank_eq hroot (IntermediateField.adjoin_root_eq_top g) hu
+  exact finrank_eq (root_pow_sub_root_of_dvd hgf) (IntermediateField.adjoin_root_eq_top g) hu
 
 /-- An Artin–Schreier polynomial `X ^ p - X - u` is irreducible exactly when `u` is not of the
 form `w ^ p - w`. -/
