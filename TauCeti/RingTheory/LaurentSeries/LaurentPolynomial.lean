@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
-public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
 # Laurent polynomials inside Laurent series
@@ -26,9 +26,10 @@ The algebra map uses Mathlib's `AddMonoidAlgebra.lift`; truncation uses
 
 public section
 
+open scoped LaurentPolynomial LaurentSeries Topology
+
 namespace TauCeti
 
-open scoped LaurentPolynomial LaurentSeries Topology
 open HahnSeries
 
 noncomputable section
@@ -94,7 +95,8 @@ theorem laurentPolynomialToSeries_toLaurent (p : Polynomial R) :
     · have hne : i ≠ (n : ℤ) := by omega
       simp [hi, hne]
     · have habs : (i.natAbs : ℤ) = i := Int.natAbs_of_nonneg (by omega)
-      simp [hi, PowerSeries.coeff_monomial, show i = (n : ℤ) ↔ i.natAbs = n by omega]
+      have hindex : i = (n : ℤ) ↔ i.natAbs = n := by omega
+      simp [hi, PowerSeries.coeff_monomial, hindex]
 
 /-- The inclusion preserves support, viewed as a subset of the integers. -/
 @[simp]
@@ -112,16 +114,8 @@ theorem mem_range_laurentPolynomialToSeries_iff (f : R⸨X⸩) :
   · intro hf
     refine ⟨AddMonoidAlgebra.ofCoeff (Finsupp.ofSupportFinite f.coeff hf), ?_⟩
     ext n
-    rw [coeff_laurentPolynomialToSeries]
+    rw [coeff_laurentPolynomialToSeries, AddMonoidAlgebra.coeff_ofCoeff]
     exact congrFun Finsupp.ofSupportFinite_coe n
-
-/-- Truncating a Laurent series below an integer cutoff gives finite support. -/
-theorem support_truncLT_finite {A : Type*} [Zero A] (a : ℤ) (f : A⸨X⸩) :
-    (truncLT a f).support.Finite := by
-  apply (Set.finite_Ico f.order a).subset
-  intro n hn
-  rw [support_truncLT] at hn
-  exact ⟨order_le_of_coeff_ne_zero hn.1, hn.2⟩
 
 /-- The Laurent polynomial retaining exactly the coefficients strictly below `a`. -/
 def laurentPolynomialTrunc {A : Type*} [Semiring A] (a : ℤ) (f : A⸨X⸩) : A[T;T⁻¹] :=
@@ -132,6 +126,8 @@ def laurentPolynomialTrunc {A : Type*} [Semiring A] (a : ℤ) (f : A⸨X⸩) : A
 @[simp]
 theorem coeff_laurentPolynomialTrunc {A : Type*} [Semiring A] (a n : ℤ) (f : A⸨X⸩) :
     (laurentPolynomialTrunc a f).coeff n = if n < a then f.coeff n else 0 := by
+  rw [laurentPolynomialTrunc, AddMonoidAlgebra.coeff_ofCoeff,
+    ← HahnSeries.coeff_truncLT a f n]
   exact congrFun Finsupp.ofSupportFinite_coe n
 
 /-- Finite Laurent truncation agrees with Hahn-series truncation after inclusion. -/
