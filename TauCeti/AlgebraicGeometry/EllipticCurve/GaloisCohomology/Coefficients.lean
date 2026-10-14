@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
@@ -63,6 +64,7 @@ automorphisms of an algebraic closure are the points over the perfect closure of
   `WeierstrassCurve.TorsionCoeff.instContinuousSMul`: the coefficients are discrete modules.
 * `WeierstrassCurve.pointGaloisAction_apply_eq_smul`: the action is
   `WeierstrassCurve.pointGaloisAction`.
+* `WeierstrassCurve.natCard_torsionCoeff`: `E(Kˢ)[m]` has `m²` points for `m` invertible in `K`.
 * `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`.
 
 ## Implementation notes
@@ -223,6 +225,21 @@ def torsionCoeffIncl (m : ℕ) : W.TorsionCoeff m →+[AbsoluteGaloisGroup K] W.
 theorem torsionCoeffIncl_apply {m : ℕ} (P : W.TorsionCoeff m) :
     W.torsionCoeffIncl m P = (P : W.PointCoeff) :=
   (rfl)
+
+open scoped Classical in
+/-- **`E(Kˢ)[m]` has `m²` points** when `m` is invertible in `K`. -/
+theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
+    Nat.card (W.TorsionCoeff m) = m ^ 2 := by
+  have hm' : (((m : ℕ) : ℤ) : SeparableClosure K) ≠ 0 := by
+    rw [Int.cast_natCast, ← map_natCast (algebraMap K (SeparableClosure K))]
+    exact (map_ne_zero _).2 hm.ne_zero
+  rw [Nat.card_congr (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _).toEquiv]
+  -- `W.PointCoeff` carries the group law for one choice of decidable equality on `Kˢ`, and
+  -- `natCard_torsionBy` is stated for another; the two choices agree.
+  have hI : (fun a b ↦ Subtype.instDecidableEq a b : DecidableEq (SeparableClosure K)) =
+      fun a b ↦ Classical.propDecidable (a = b) := Subsingleton.elim _ _
+  rw [hI, WeierstrassCurve.natCard_torsionBy (W.baseChange (SeparableClosure K)) hm',
+    Int.natAbs_natCast]
 
 /-! ### The Kummer sequence -/
 
