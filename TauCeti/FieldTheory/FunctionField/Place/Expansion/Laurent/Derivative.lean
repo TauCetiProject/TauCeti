@@ -108,6 +108,12 @@ theorem algHom_derivativeOfSeparating {k F A : Type*} [Field k] [Field F] [Algeb
     change e (c • z) * f = c • (e z * f)
     rw [hek, ← laurentSeries_algebraMap_mul_eq_smul, ← laurentSeries_algebraMap_mul_eq_smul,
       mul_assoc]⟩
+  -- Restriction of scalars uses the coefficientwise `k`-action, which factors through `A`.
+  have hcoeff (c : k) (f : LaurentSeries A) : c • f = (algebraMap k A c) • f := by
+    ext n
+    simp only [HahnSeries.coeff_smul, Algebra.smul_def, smul_eq_mul]
+  have _ : LinearMap.CompatibleSMul (LaurentSeries A) (LaurentSeries A) k A :=
+    ⟨fun f c x ↦ by rw [hcoeff, f.map_smul, hcoeff]⟩
   let D : Derivation k F (LaurentSeries A) :=
     ((laurentSeriesDerivation A).restrictScalars k).compAlgebraMap F
   -- By the chain rule `D z = (dz/dt) • D t`, and `D t = (X)' = 1`. Unfolding `D` and the
