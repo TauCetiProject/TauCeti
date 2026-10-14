@@ -54,7 +54,8 @@ natural by `TopCat.singularHomologyKunneth_naturality`, and `TopCat.singularHomo
 intertwines `(f × g)_*` with the maps `Tor₁(f_*, g_*)`
 (`TopCat.singularHomologyToTor_naturality`).  The sequence is natural in the coefficient modules
 as well (`TopCat.singularHomologyKunneth_coefficient_naturality` and
-`TopCat.singularHomologyToTor_coefficient_naturality`).  The naturality of
+`TopCat.singularHomologyToTor_coefficient_naturality`), giving the morphism of Künneth short
+complexes `TopCat.singularHomologyKunnethShortComplexCoefficientMap`.  The naturality of
 `TopCat.singularHomologyToTor` follows from that of the Alexander–Whitney map and of the algebraic
 map (`HomologicalComplex.homologyToTor_naturality`).
 
@@ -73,8 +74,9 @@ map (`HomologicalComplex.homologyToTor_naturality`).
 * `TopCat.singularHomologyToTor_naturality` and
   `TopCat.singularHomologyToTor_coefficient_naturality`: **naturality of the map to `Tor`** in
   the spaces and in the coefficients.
-* `TopCat.singularHomologyKunnethShortComplexMap`: the morphism of Künneth short complexes induced
-  by a pair of continuous maps.
+* `TopCat.singularHomologyKunnethShortComplexMap` and
+  `TopCat.singularHomologyKunnethShortComplexCoefficientMap`: the morphisms of Künneth short
+  complexes induced by a pair of continuous maps and by a pair of maps of coefficient modules.
 
 ## References
 
@@ -315,6 +317,49 @@ theorem singularHomologyToTor_coefficient_naturality (m : ℕ) :
     _ = _ := by
       rw [hAW, homologyMap_comp_assoc, this, singularHomologyToTor_def]
       exact (Category.assoc _ _ _).symm
+
+/-- The morphism of Künneth short complexes induced by linear maps `φ : M ⟶ M'` and `ψ : N ⟶ N'`
+of coefficient modules: the maps `φ_* ⊗ ψ_*` on `⨁ Hₚ(X; M) ⊗ H_q(Y; N)`, the map induced by
+`φ ⊗ ψ` on `Hₘ₊₁(X × Y; M ⊗ N)` and `Tor₁(φ_*, ψ_*)` on `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))`.  Together
+with `TopCat.singularHomologyKunnethShortComplex_shortExact` this makes the Künneth short exact
+sequence natural in both coefficient modules. -/
+def singularHomologyKunnethShortComplexCoefficientMap (m : ℕ) :
+    singularHomologyKunnethShortComplex X Y M N m ⟶
+      singularHomologyKunnethShortComplex X Y M' N' m where
+  τ₁ := GradedObject.Monoidal.tensorHom (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+    (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) (m + 1)
+  τ₂ := ((singularHomologyFunctor _ (m + 1)).map (φ ⊗ₘ ψ)).app (X ⊗ Y)
+  τ₃ := GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+    (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+    (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) m
+  comm₁₂ := singularHomologyKunneth_coefficient_naturality X Y φ ψ (m + 1)
+  comm₂₃ := singularHomologyToTor_coefficient_naturality X Y φ ψ m
+
+/-- On `⨁ Hₚ(X; M) ⊗ H_q(Y; N)`, the morphism of Künneth short complexes is `φ_* ⊗ ψ_*`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexCoefficientMap_τ₁ (m : ℕ) :
+    (singularHomologyKunnethShortComplexCoefficientMap X Y φ ψ m).τ₁ =
+      GradedObject.Monoidal.tensorHom (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+        (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) (m + 1) :=
+  (rfl)
+
+/-- On `Hₘ₊₁(X × Y; M ⊗ N)`, the morphism of Künneth short complexes is the map induced by
+`φ ⊗ ψ`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexCoefficientMap_τ₂ (m : ℕ) :
+    (singularHomologyKunnethShortComplexCoefficientMap X Y φ ψ m).τ₂ =
+      ((singularHomologyFunctor _ (m + 1)).map (φ ⊗ₘ ψ)).app (X ⊗ Y) :=
+  (rfl)
+
+/-- On `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))`, the morphism of Künneth short complexes is
+`Tor₁(φ_*, ψ_*)`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexCoefficientMap_τ₃ (m : ℕ) :
+    (singularHomologyKunnethShortComplexCoefficientMap X Y φ ψ m).τ₃ =
+      GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+        (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) m :=
+  (rfl)
 
 end CoefficientNaturality
 

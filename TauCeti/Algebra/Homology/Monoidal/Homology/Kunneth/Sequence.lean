@@ -38,8 +38,9 @@ monomorphism `HomologicalComplex.homologyTorToHomologyQuotient` into `Hₘ₊₁
 The Künneth sequence is natural in `K` and `L`.  The Künneth map is natural by
 `HomologicalComplex.homologyKunneth_naturality`, and `HomologicalComplex.homologyToTor` intertwines
 the map induced by chain maps `φ ⊗ ψ` with the maps `Tor₁(Hₚ(φ), H_q(ψ))`
-(`HomologicalComplex.homologyToTor_naturality`).  This uses that a chain map `ψ : L ⟶ L'` induces
-a morphism of the cycle sequences `0 ⟶ Z(L) ⟶ L ⟶ L / Z(L) ⟶ 0`
+(`HomologicalComplex.homologyToTor_naturality`); together they give a morphism of Künneth short
+complexes (`HomologicalComplex.homologyKunnethShortComplexMap`).  This uses that a chain map
+`ψ : L ⟶ L'` induces a morphism of the cycle sequences `0 ⟶ Z(L) ⟶ L ⟶ L / Z(L) ⟶ 0`
 (`HomologicalComplex.cyclesComplexShortComplexMap`), hence of the projective presentations, and
 that the identification of `Tor₁` with a kernel is natural in maps of presentations
 (`CategoryTheory.ShortComplex.ShortExact.Tor_obj_map_comp_torOneIsoKernel_hom`).
@@ -66,6 +67,8 @@ built from chosen splittings of the cycles and need not be natural in `K` and `L
 * `HomologicalComplex.homologyTorToHomologyQuotient_naturality` and
   `HomologicalComplex.homologyToTor_naturality`: **naturality of the map to `Tor`** in both
   complexes.
+* `HomologicalComplex.homologyKunnethShortComplexMap`: the morphism of Künneth short complexes
+  induced by a pair of chain maps.
 
 ## References
 
@@ -626,13 +629,10 @@ private def homologyPresentationMap (q : ℕ) :
     L.cyclesComplexShortComplex_shortExact L'.cyclesComplexShortComplex_shortExact
     (q + 1) q (by simp)).symm
   comm₂₃ := by
-    -- `homologyMap` sends the identifications `eqToHom` of complexes to those of homology
-    have h {A B : ChainComplex (ModuleCat.{u} R) ℕ} (e : A = B) :
-        homologyMap (eqToHom e) q = eqToHom (congrArg (·.homology q) e) := by
-      subst e; simp
     dsimp
     rw [← homologyMap_comp_assoc, (cyclesComplexShortComplexMap ψ).comm₁₂, homologyMap_comp_assoc,
-      cyclesComplexShortComplexMap_τ₂, homologyMap_comp, homologyMap_comp, h, h]
+      cyclesComplexShortComplexMap_τ₂, homologyMap_comp, homologyMap_comp, homologyMap_eqToHom,
+      homologyMap_eqToHom]
     simp
 
 variable [∀ q, Projective (cokernel (L.iCycles q))] [∀ q, Projective (L.cycles q)]
@@ -742,7 +742,10 @@ theorem homologyToTor_naturality (m : ℕ) :
   have h {A B M : ChainComplex (ModuleCat.{u} R) ℕ} (e : A = B) :
       eqToHom (congrArg (fun N ↦ (tensorObj M N).homology (m + 1)) e) =
         homologyMap (tensorHom (𝟙 M) (eqToHom e)) (m + 1) := by
-    subst e; simp
+    -- `tensorHom (𝟙 M)` is the whiskering `M ◁ -`
+    have he : tensorHom (𝟙 M) (eqToHom e) = eqToHom (congrArg (fun N ↦ tensorObj M N) e) :=
+      eqToHom_map (MonoidalCategory.tensorLeft M) e
+    rw [he, homologyMap_eqToHom]
   rw [h L'.cyclesComplexShortComplex_X₂.symm, h L.cyclesComplexShortComplex_X₂.symm,
     tensorLeftShortComplex_g, ← homologyMap_comp, ← homologyMap_comp, ← homologyMap_comp,
     ← homologyMap_comp]
@@ -750,6 +753,43 @@ theorem homologyToTor_naturality (m : ℕ) :
   simp only [← mapBifunctorMap_comp, Category.id_comp, Category.comp_id]
   rw [← (cyclesComplexShortComplexMap ψ).comm₂₃, cyclesComplexShortComplexMap_τ₂]
   simp
+
+/-- The morphism of Künneth short complexes induced by chain maps `φ : K ⟶ K'` and `ψ : L ⟶ L'`:
+the maps `Hₚ(φ) ⊗ H_q(ψ)` on `⨁ Hₚ(K) ⊗ H_q(L)`, the map induced by `φ ⊗ ψ` on `Hₘ₊₁(K ⊗ L)` and
+`Tor₁(Hₚ(φ), H_q(ψ))` on `⨁ Tor₁(Hₚ(K), H_q(L))`.  Together with
+`HomologicalComplex.homologyKunnethShortComplex_shortExact` this makes the Künneth short exact
+sequence natural in both complexes. -/
+def homologyKunnethShortComplexMap (m : ℕ) :
+    homologyKunnethShortComplex K L m ⟶ homologyKunnethShortComplex K' L' m where
+  τ₁ := GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) (m + 1)
+  τ₂ := homologyMap (tensorHom φ ψ) (m + 1)
+  τ₃ := GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1) (fun x ↦ x.1 + x.2)
+    (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m
+  comm₁₂ := homologyKunneth_naturality φ ψ (m + 1)
+  comm₂₃ := homologyToTor_naturality φ ψ m
+
+/-- On `⨁ Hₚ(K) ⊗ H_q(L)`, the morphism of Künneth short complexes is `Hₚ(φ) ⊗ H_q(ψ)`. -/
+@[simp]
+lemma homologyKunnethShortComplexMap_τ₁ (m : ℕ) :
+    (homologyKunnethShortComplexMap φ ψ m).τ₁ =
+      GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q)
+        (m + 1) :=
+  (rfl)
+
+/-- On `Hₘ₊₁(K ⊗ L)`, the morphism of Künneth short complexes is the map induced by `φ ⊗ ψ`. -/
+@[simp]
+lemma homologyKunnethShortComplexMap_τ₂ (m : ℕ) :
+    (homologyKunnethShortComplexMap φ ψ m).τ₂ = homologyMap (tensorHom φ ψ) (m + 1) :=
+  (rfl)
+
+/-- On `⨁ Tor₁(Hₚ(K), H_q(L))`, the morphism of Künneth short complexes is
+`Tor₁(Hₚ(φ), H_q(ψ))`. -/
+@[simp]
+lemma homologyKunnethShortComplexMap_τ₃ (m : ℕ) :
+    (homologyKunnethShortComplexMap φ ψ m).τ₃ =
+      GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m :=
+  (rfl)
 
 end Naturality
 
