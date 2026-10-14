@@ -34,7 +34,7 @@ the following reasons.
 
 Both steps work for any continuous `K`-algebra map `φ : A → L` to a finite field extension `L` of
 `K` whose topology makes it a Hausdorff topological `K`-vector space
-(`TauCeti.ValuationSpectrum.ofValuation_comap_spectralValuation_mem_spa`). The classical point
+(`AlgHom.ofValuation_comap_spectralValuation_mem_spa`). The classical point
 `TauCeti.ValuationSpectrum.maximalIdealPoint` is the case of the residue map `A → A ⧸ 𝔪`.
 
 For a complete Huber ring every maximal ideal is closed (`TauCeti.Huber.isClosed_of_isMaximal`).
@@ -47,7 +47,7 @@ For an affinoid `K`-algebra, finiteness of the residue fields is Wedhorn's Propo
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.ofValuation_comap_spectralValuation_mem_spa`: the spectral valuation
+* `AlgHom.ofValuation_comap_spectralValuation_mem_spa`: the spectral valuation
   pulled back along a continuous `K`-algebra map to a finite extension is a point of
   `Spa (A, A°)`.
 * `TauCeti.ValuationSpectrum.maximalIdealPoint_vle_iff`: the classical point compares elements
@@ -83,9 +83,9 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 /-- **The spectral valuation pulled back to `A` is a point of `Spa (A, A°)`**, along every
 continuous `K`-algebra map `φ : A → L` to a finite field extension `L` of `K` carrying a Hausdorff
 topological `K`-vector space structure. -/
-theorem ofValuation_comap_spectralValuation_mem_spa {L : Type*} [Field L] [Algebra K L]
-    [FiniteDimensional K L] [TopologicalSpace L] [IsTopologicalAddGroup L] [ContinuousSMul K L]
-    [T2Space L] (φ : A →ₐ[K] L) (hφ : Continuous φ) :
+theorem _root_.AlgHom.ofValuation_comap_spectralValuation_mem_spa {L : Type*} [Field L]
+    [Algebra K L] [FiniteDimensional K L] [TopologicalSpace L] [IsTopologicalAddGroup L]
+    [ContinuousSMul K L] [T2Space L] (φ : A →ₐ[K] L) (hφ : Continuous φ) :
     ofValuation ((spectralValuation K L).comap (φ : A →+* L)) ∈ spa (powerBoundedSubring A) := by
   set v := (spectralValuation K L).comap (φ : A →+* L)
   have hv : v.IsContinuous := (isContinuous_spectralValuation K L).comap hφ
@@ -120,7 +120,7 @@ def maximalIdealPoint (h𝔪 : IsClosed (𝔪 : Set A)) : spa (powerBoundedSubri
       rw [IsScalarTower.algebraMap_eq K A (A ⧸ 𝔪), RingHom.coe_comp,
         Ideal.Quotient.algebraMap_eq]
       exact continuous_quot_mk.comp (continuous_algebraMap K A)
-    exact ofValuation_comap_spectralValuation_mem_spa (Ideal.Quotient.mkₐ K 𝔪) continuous_quot_mk⟩
+    exact (Ideal.Quotient.mkₐ K 𝔪).ofValuation_comap_spectralValuation_mem_spa continuous_quot_mk⟩
 
 variable {K 𝔪}
 
