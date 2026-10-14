@@ -28,7 +28,7 @@ of left-invariant distributions.
 ## Main definitions and results
 
 * `TauCeti.Lie.ImmersedLieSubgroupData`: a connected Lie group mapping injectively and immersively
-  onto a specified subgroup.
+  onto a specified subgroup, with a finite-dimensional source model.
 * `TauCeti.Lie.IsImmersedLieSubgroup`: existence of immersed-Lie-subgroup data.
 * `TauCeti.Lie.ImmersedLieSubgroupData.contMDiff_toHom`: the presenting homomorphism is smooth.
 * `TauCeti.Lie.ImmersedLieSubgroupData.injective_mfderiv_toHom`: its differential is injective.
@@ -76,6 +76,8 @@ structure ImmersedLieSubgroupData
   [normedAddCommGroup : NormedAddCommGroup E']
   /-- The real normed-space structure on the source model space. -/
   [normedSpace : NormedSpace ℝ E']
+  /-- The source model space is finite-dimensional. -/
+  [finiteDimensional : FiniteDimensional ℝ E']
   /-- The model chart target of the source. -/
   H' : Type v
   /-- The topology on the source model chart target. -/
@@ -172,7 +174,7 @@ theorem ImmersedLieSubgroupData.isImmersedLieSubgroup {K : Subgroup G}
 
 /-- A connected Lie group is an immersed Lie subgroup of itself via the identity homomorphism. -/
 @[simp 1100]
-theorem isImmersedLieSubgroup_top [ConnectedSpace G] :
+theorem isImmersedLieSubgroup_top [FiniteDimensional ℝ E] [ConnectedSpace G] :
     IsImmersedLieSubgroup (I := I) (⊤ : Subgroup G) := by
   exact ⟨{
     ambientIsManifold := IsManifold.mk' I ∞ G
