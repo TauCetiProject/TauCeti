@@ -84,7 +84,8 @@ theorem IsStrictlyTopologicallyFiniteType.comp [IsHuberRing A]
       (continuous_iterateRingEquiv_symm ..)).isOpenQuotientMap
   refine isStrictlyTopologicallyFiniteType_iff.mpr
     ⟨k + m, (ρ.comp β).comp (e : _ →+* _),
-      hρ.comp (hπ.weightedMapCompletion_one_weight.comp he), RingHom.ext fun a ↦ ?_⟩
+      hρ.comp ((hπ.weightedMapCompletion isWeightFamily_one_weight
+        isWeightFamily_one_weight (fun _ ↦ by simp)).comp he), RingHom.ext fun a ↦ ?_⟩
   -- on a constant series each of the three maps acts as the corresponding structure map
   simp [β, e, algebraMap_completion_weightedRestrictedSubring_apply]
 
