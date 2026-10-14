@@ -308,23 +308,14 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: lake build
 
-      - name: Duplicate-declaration audit
-        run: lake env lean --run scripts/DuplicateDeclarations.lean
+      # The same shared checks as trusted PR builds, compiled from merged main's sources.
+      - name: Shared ownership and axiom audits
+        run: |
+          bash scripts/build-audit-driver.sh . scripts "$RUNNER_TEMP/audit-driver"
+          lake env "$RUNNER_TEMP/audit-driver/audit-driver"
 
-      # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
-      # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
-      # Quot.sound}, catching sorry/admit (sorryAx), native_decide (Lean.ofReduceBool),
-      # and home-rolled axioms, including ones reaching in through imports.
-      - name: Axiom audit (TauCeti/ uses only allowlisted axioms)
-        env:
-          LAKE_NO_CACHE: "true"
-        run: lake exe axioms
-
-      # Module-system audit. Inspects the built TauCeti `.olean`s and rejects any module that
-      # did not opt into the Lean module system (a leading `module`). It reads each module's
-      # `ModuleData.isModule` flag from the compiled artifact, so it cannot be fooled by a
-      # `module` appearing in a comment or string the way a textual grep could.
-      - name: Module-system audit (every TauCeti/ file opts into `module`)
+      # Read compiled module flags with the canonical direct-artifact checker.
+      - name: Module-system audit (every TauCeti file opts into module)
         env:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system
