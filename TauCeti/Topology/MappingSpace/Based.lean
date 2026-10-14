@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ContinuousMap.Precomp
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.GenLoop.Map
 
 /-!
 # Based mapping spaces out of a quotient of the cube
