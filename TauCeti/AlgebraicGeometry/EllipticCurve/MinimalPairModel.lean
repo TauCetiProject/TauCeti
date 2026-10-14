@@ -197,7 +197,8 @@ theorem IsMinimalPairNF.of_forall_le [W.IsShortNF] (b : ℕ) (hg : Int.gcd W.a�
     push_cast
     exact Int.dvd_coe_gcd hdvd.1 ((pow_dvd_pow _ (by norm_num)).trans hdvd.2)
   have := Nat.le_of_dvd (Nat.pos_of_ne_zero hg) (Int.natCast_dvd_natCast.1 h₄)
-  have := Nat.pow_le_pow_left (show b + 1 ≤ ℓ by omega) 4
+  have hbound : b + 1 ≤ ℓ := hlt
+  have := Nat.pow_le_pow_left hbound 4
   omega
 
 /-- **The only integers `x` with `x⁴ ∣ a₄` and `x⁶ ∣ a₆` for a minimal pair are `±1`.** This is
