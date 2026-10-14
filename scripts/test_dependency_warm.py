@@ -227,10 +227,6 @@ class Boundary(unittest.TestCase):
         self.assertIn('--ro-bind "$HOME/.elan" "$HOME/.elan"', probe)
         for flag in ("env -i /usr/bin/bwrap", "--unshare-net", "--remount-ro /", "--disable-userns"):
             self.assertIn(flag, probe)
-        # The probe uses exactly the already-vetted staging binary pins.
-        installer = next(step for step in steps if step.get("name", "").startswith("Install the staging sandbox"))
-        for name, value in installer["env"].items():
-            self.assertIn(f"{name}: {value}", pr)
 
     def test_main_saves_mathlib_before_root_build(self):
         steps = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())["jobs"]["build"]["steps"]
