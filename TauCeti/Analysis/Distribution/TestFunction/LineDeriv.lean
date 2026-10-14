@@ -30,8 +30,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   directional derivatives.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a test function on `Ω` with a
   function smooth on `Ω` is a test function on `Ω`.
-* `TestFunction.lineDeriv_smul_of_differentiableOn`: its directional derivatives obey the product
-  rule.
+* `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: its directional derivatives obey the
+  product rule.
 -/
 
 public section
@@ -92,7 +92,7 @@ theorem exists_coe_eq_smul_of_contDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ �
 /-- **The product rule for a test function times a function differentiable on `Ω`**:
 `∂_v (g φ) = g ∂_v φ + (∂_v g) φ` at every point of `E`. Off `tsupport φ` both sides vanish, so
 nothing is needed of `g` outside `Ω`. -/
-theorem lineDeriv_smul_of_differentiableOn {g : E → ℝ} (hg : DifferentiableOn ℝ g Ω)
+theorem lineDeriv_fun_smul_of_differentiableOn {g : E → ℝ} (hg : DifferentiableOn ℝ g Ω)
     (φ : 𝓓(Ω, F)) (x v : E) :
     lineDeriv ℝ (fun y => g y • φ y) x v = g x • lineDeriv ℝ φ x v + fderiv ℝ g x v • φ x := by
   have hφx : DifferentiableAt ℝ φ x := φ.contDiff.differentiable (by simp) x

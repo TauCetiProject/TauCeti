@@ -48,9 +48,10 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_smul`: the Leibniz rule in a direction `v`, for a factor
   smooth on `Ω`.
 * `TauCeti.HasWeakLineDerivOn.contDiff_smul`: its case of a factor smooth on all of `E`.
-* `TauCeti.HasWeakFDerivOn.contDiff_smul`: its Fréchet form, with the rank-one correction
-  `(fderiv ℝ ψ x).smulRight (u x)`.
-* `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
+* `TauCeti.HasWeakFDerivOn.contDiffOn_smul`, `TauCeti.HasWeakFDerivOn.contDiff_smul`: its
+  Fréchet form, with the rank-one correction `(fderiv ℝ ψ x).smulRight (u x)`.
+* `TauCeti.HasWeakFDerivOn.contDiffOn_smul_gradient`,
+  `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
   weak derivative of a scalar function is recorded by its Riesz representative and the rule reads
   `∇(ψ u) = ψ ∇u + u ∇ψ`.
 
@@ -105,7 +106,7 @@ theorem HasWeakLineDerivOn.contDiffOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
   -- The classical product rule for the smooth factors.
   have hlineΦ : ∀ x, lineDeriv ℝ (Φ : E → ℝ) x v
       = ψ x * lineDeriv ℝ (φ : E → ℝ) x v + (Ψ : E → ℝ) x := fun x => by
-    rw [hΦ, hΨ, TestFunction.lineDeriv_smul_of_differentiableOn
+    rw [hΦ, hΨ, TestFunction.lineDeriv_fun_smul_of_differentiableOn
       (hψ.differentiableOn (by simp)) φ x v]
     simp only [smul_eq_mul]
   have hsplit : ∫ x, (φ : E → ℝ) x • (ψ x • u' x + fderiv ℝ ψ x v • u x) ∂μ
@@ -133,17 +134,25 @@ theorem HasWeakLineDerivOn.contDiff_smul (h : HasWeakLineDerivOn μ Ω u u' v)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v :=
   h.contDiffOn_smul hψ.contDiffOn
 
+/-- **The Leibniz rule for weak Fréchet derivatives, local form**: `D(ψ u) = ψ Du + u ⊗ Dψ` on
+`Ω` for `ψ` smooth on `Ω`, the correction being the rank-one map `v ↦ (Dψ v) u`. -/
+theorem HasWeakFDerivOn.contDiffOn_smul {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
+    (hψ : ContDiffOn ℝ ∞ ψ Ω) :
+    HasWeakFDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) := by
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  have hv := (h.hasWeakLineDerivOn v).contDiffOn_smul hψ
+  convert hv using 2 with x
+  simp
+
 /-- **The Leibniz rule for weak Fréchet derivatives**: `D(ψ u) = ψ Du + u ⊗ Dψ`, the correction
 being the rank-one map `v ↦ (Dψ v) u`. -/
 theorem HasWeakFDerivOn.contDiff_smul {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
     (hψ : ContDiff ℝ ∞ ψ) :
     HasWeakFDerivOn μ Ω (fun x => ψ x • u x)
-      (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) := by
-  rw [hasWeakFDerivOn_iff]
-  intro v
-  have hv := (h.hasWeakLineDerivOn v).contDiff_smul hψ
-  convert hv using 2 with x
-  simp
+      (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) :=
+  h.contDiffOn_smul hψ.contDiffOn
 
 end General
 
@@ -155,6 +164,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
 
 open scoped Gradient
 
+/-- **The Leibniz rule in gradient form, local form**: `∇(ψ a) = ψ ∇a + a ∇ψ` on `Ω` for `ψ`
+smooth on `Ω`. -/
+theorem HasWeakFDerivOn.contDiffOn_smul_gradient
+    (h : HasWeakFDerivOn μ Ω a fun x => innerSL ℝ (g x)) (hψ : ContDiffOn ℝ ∞ ψ Ω) :
+    HasWeakFDerivOn μ Ω (fun x => ψ x • a x)
+      (fun x => innerSL ℝ (ψ x • g x + a x • ∇ ψ x)) := by
+  have hv := h.contDiffOn_smul hψ
+  convert hv using 2 with x
+  ext w
+  simp [inner_gradient_left (𝕜 := ℝ) (f := ψ) (x := x), mul_comm]
+
 /-- **The Leibniz rule in gradient form**: `∇(ψ a) = ψ ∇a + a ∇ψ`.
 
 This is the shape `TauCeti.W1p` stores a weak derivative in — a scalar function together with the
@@ -163,11 +183,8 @@ on the Sobolev space consumes. -/
 theorem HasWeakFDerivOn.contDiff_smul_gradient
     (h : HasWeakFDerivOn μ Ω a fun x => innerSL ℝ (g x)) (hψ : ContDiff ℝ ∞ ψ) :
     HasWeakFDerivOn μ Ω (fun x => ψ x • a x)
-      (fun x => innerSL ℝ (ψ x • g x + a x • ∇ ψ x)) := by
-  have hv := h.contDiff_smul hψ
-  convert hv using 2 with x
-  ext w
-  simp [inner_gradient_left (𝕜 := ℝ) (f := ψ) (x := x), mul_comm]
+      (fun x => innerSL ℝ (ψ x • g x + a x • ∇ ψ x)) :=
+  h.contDiffOn_smul_gradient hψ.contDiffOn
 
 end InnerProduct
 
