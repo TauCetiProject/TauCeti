@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.AlgebraicTopology.Cellular.Homology
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
+public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 
 /-!
 # Cellular and singular homology of CW pairs
@@ -105,16 +106,6 @@ lemma isIso_homologyMap_skeletonPair_map {j k : ℕ}
     ((skeletonPair C j).singularHomology_exact_space R k).epi_f
       ((isZero_singularHomology_skeletonPair_of_ne C R hk).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
-
-/-- The skeleta `skeletonLT C j` and their inclusions, as a sequential diagram of spaces. -/
-private def skeletonFunctor : ℕ ⥤ TopCat.{w} where
-  obj j := skeletonObj C j
-  map f := TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (mod_cast f.le)))
-
-/-- The inclusions of the skeleta into the whole complex. -/
-private def skeletonCocone : Cocone (skeletonFunctor C) where
-  pt := TopCat.of C
-  ι := { app j := TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C (j : ℕ∞)).subset_complex) }
 
 section Colimit
 
