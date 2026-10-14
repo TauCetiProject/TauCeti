@@ -59,8 +59,8 @@ theorem IsPreconnected.signInvariant_eval_of_orderAt_eq {σ R : Type*} [CommSemi
     {p : MvPolynomial σ R} {S : Set (σ → R)} (hS : IsPreconnected S)
     (h : ∀ x ∈ S, ∀ y ∈ S, p.orderAt x = p.orderAt y) :
     TauCeti.SignInvariant (fun x ↦ eval x p) S :=
-  hS.signInvariant_of_eq_zero_iff (continuous_eval p).continuousOn fun x hx y hy ↦ by
-    rw [← orderAt_pos_iff, ← orderAt_pos_iff, h x hx y hy]
+  hS.signInvariant_of_eq_zero_iff (continuous_eval p).continuousOn fun x hx y hy ↦
+    TauCeti.eval_eq_zero_iff_of_orderAt_eq (h x hx y hy)
 
 namespace TauCeti
 

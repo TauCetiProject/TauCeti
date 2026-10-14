@@ -49,26 +49,14 @@ theorem exists_isCAD_signInvariant_of_mcCallumProjection (h𝒟 : IsCAD n 𝒟)
       ∀ E ∈ 𝒞, (∃ e, IsAnalyticSubmanifold e E) ∧
         ∀ f ∈ F, SignInvariant
           (fun y ↦ MvPolynomial.eval y ((finSuccEquiv ℝ n).symm f)) E := by
-  classical
-  have hstack (C : Set (Fin n → ℝ)) : ∃ k, ∃ θ : Fin k → C → ℝ, C ∈ 𝒟 →
-      IsSemialgebraicStack C θ ∧
-        ∀ E ∈ stackCells C θ, (∃ e, IsAnalyticSubmanifold e E) ∧
-          ∀ f ∈ F, SignInvariant
-            (fun y ↦ MvPolynomial.eval y ((finSuccEquiv ℝ n).symm f)) E := by
-    by_cases hC : C ∈ 𝒟
-    · obtain ⟨d, hd⟩ := hanalytic C hC
-      obtain ⟨k, θ, hθ, hsign⟩ := hB.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
-        hd (h𝒟.isConnected hC).isPreconnected (h𝒟.isSemialgebraic hC)
-        (fun q hq ↦ hproj q hq C hC)
-      refine ⟨k, θ, fun _ ↦ ⟨hθ, fun E hE ↦ ?_⟩⟩
-      obtain ⟨⟨e, -, he⟩, hE⟩ := hsign E hE
-      exact ⟨⟨e, he⟩, hE⟩
-    · exact ⟨0, Fin.elim0, fun h ↦ (hC h).elim⟩
-  choose k θ hθ using hstack
-  refine ⟨_, .succ k θ h𝒟 (fun C hC ↦ (hθ C hC).1), ?_, ?_⟩
-  · exact image_image_tail_iUnion_stackCells fun C hC ↦ (hθ C hC).1.strictMono
-  · intro E hE
-    obtain ⟨C, hC, hE⟩ := mem_iUnion₂.mp hE
-    exact (hθ C hC).2 E hE
+  apply h𝒟.exists_succ_of_forall_exists_stack
+  intro C hC
+  obtain ⟨d, hd⟩ := hanalytic C hC
+  obtain ⟨k, θ, hθ, hsign⟩ := hB.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
+    hd (h𝒟.isConnected hC).isPreconnected (h𝒟.isSemialgebraic hC)
+    (fun q hq ↦ hproj q hq C hC)
+  refine ⟨k, θ, hθ, fun E hE ↦ ?_⟩
+  obtain ⟨⟨e, -, he⟩, hE⟩ := hsign E hE
+  exact ⟨⟨e, he⟩, hE⟩
 
 end TauCeti.IsCAD

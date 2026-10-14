@@ -9,6 +9,8 @@ public import TauCeti.Geometry.RealAlgebraic.IrreducibleBasis
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Lifting
 public import TauCeti.Geometry.RealAlgebraic.Stack.Semialgebraic
 
+import TauCeti.Algebra.MvPolynomial.Equiv
+
 /-!
 # Sign-invariant McCallum lifting with nullified members
 
@@ -89,8 +91,7 @@ theorem exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
         exact Finset.mem_filter.mpr ⟨hb, fun y hy ↦
           (hnull b hb y hy x hx).not.mpr hne⟩
       refine (TauCeti.signInvariant_const 0).congr fun y hy ↦ ?_
-      simpa only [Fin.cons_self_tail, AlgEquiv.apply_symm_apply,
-        hvanish _ (htail y hy), Polynomial.eval_zero] using
-        (MvPolynomial.eval_eq_eval_mv_eval' (Fin.tail y) (y 0) ((finSuccEquiv ℝ n).symm b)).symm
+      exact (TauCeti.eval_finSuccEquiv_symm_eq_zero_of_map_eval_tail_eq_zero
+        (hvanish _ (htail y hy))).symm
 
 end Finset.IsIrreducibleBasis

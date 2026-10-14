@@ -232,3 +232,19 @@ theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (
 end Last
 
 end MvPolynomial
+
+namespace TauCeti
+
+open MvPolynomial
+
+/-- A polynomial with zero fiber over the tail of a point vanishes at that point after
+identifying its polynomial variable with coordinate `0`. -/
+theorem eval_finSuccEquiv_symm_eq_zero_of_map_eval_tail_eq_zero
+    {R : Type*} [CommSemiring R] {n : ℕ}
+    {p : Polynomial (MvPolynomial (Fin n) R)} {y : Fin (n + 1) → R}
+    (h : p.map (eval (Fin.tail y)) = 0) :
+    eval y ((finSuccEquiv R n).symm p) = 0 := by
+  conv_lhs => rw [← Fin.cons_self_tail y]
+  rw [eval_eq_eval_mv_eval', AlgEquiv.apply_symm_apply, h, Polynomial.eval_zero]
+
+end TauCeti
