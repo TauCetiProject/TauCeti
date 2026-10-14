@@ -126,12 +126,7 @@ private theorem baseChangeTensorAlgEquiv_counit_comp :
         ((K ⊗[k] H) ⊗[K] (K ⊗[k] L))).comp
       (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom =
     Bialgebra.counitAlgHom K (K ⊗[k] (H ⊗[k] L)) := by
-  apply Algebra.TensorProduct.ext'
-  intro s z
-  induction z using TensorProduct.inductionOn with
-  | add x y hx hy =>
-      simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
-  | tmul h l => simp [smul_smul, mul_comm]
+  ext h <;> simp [Algebra.smul_def]
 
 private theorem baseChangeTensorAlgEquiv_map_comp_comul :
     (Algebra.TensorProduct.map
@@ -140,22 +135,19 @@ private theorem baseChangeTensorAlgEquiv_map_comp_comul :
       (Bialgebra.comulAlgHom K (K ⊗[k] (H ⊗[k] L))) =
     (Bialgebra.comulAlgHom K ((K ⊗[k] H) ⊗[K] (K ⊗[k] L))).comp
       (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom := by
-  apply Algebra.TensorProduct.ext'
-  intro s z
-  induction z using TensorProduct.inductionOn with
-  | add x y hx hy =>
-      simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
-  | tmul h l =>
-      simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-        Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul, Bialgebra.comulAlgHom_apply,
-        TauCeti.Coalgebra.baseChange_comul_tmul, TensorProduct.comul_tmul,
-        Algebra.TensorProduct.map_tmul, AlgHom.id_apply, ← AlgEquiv.coe_toLinearEquiv,
-        Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv,
-        Algebra.TensorProduct.tensorTensorTensorComm_toLinearEquiv] using
-        DFunLike.congr_fun
-          (Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_comp_tensorTensorTensorComm
-            k K H H L L)
-          (s ⊗ₜ[k] (Coalgebra.comul (R := k) h ⊗ₜ[k] Coalgebra.comul (R := k) l))
+  apply AlgHom.toLinearMap_injective
+  ext h l
+  simpa only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+    LinearMap.coe_restrictScalars, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul,
+    Bialgebra.comulAlgHom_apply, TauCeti.Coalgebra.baseChange_comul_tmul, TensorProduct.comul_tmul,
+    Algebra.TensorProduct.map_tmul, AlgHom.id_apply, ← AlgEquiv.coe_toLinearEquiv,
+    Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv,
+    Algebra.TensorProduct.tensorTensorTensorComm_toLinearEquiv] using
+    DFunLike.congr_fun
+      (Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_comp_tensorTensorTensorComm
+        k K H H L L)
+      (1 ⊗ₜ[k] (Coalgebra.comul (R := k) h ⊗ₜ[k] Coalgebra.comul (R := k) l))
 
 /-- **Base change commutes with tensor products of bialgebras.**
 
@@ -176,9 +168,8 @@ noncomputable def baseChangeTensorBialgEquiv :
 @[simp]
 theorem baseChangeTensorBialgEquiv_toAlgEquiv :
     (baseChangeTensorBialgEquiv k K H L).toAlgEquiv =
-      Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L := by
-  ext x
-  rfl
+      Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L :=
+  (rfl)
 
 /-- On a pure tensor, the product/base-change equivalence puts the scalar in the first
 base-changed factor. -/
@@ -186,7 +177,7 @@ base-changed factor. -/
 theorem baseChangeTensorBialgEquiv_tmul (s : K) (h : H) (l : L) :
     baseChangeTensorBialgEquiv k K H L (s ⊗ₜ[k] (h ⊗ₜ[k] l)) =
       (s ⊗ₜ[k] h) ⊗ₜ[K] (1 ⊗ₜ[k] l) := by
-  rw [baseChangeTensorBialgEquiv, _root_.BialgEquiv.ofAlgEquiv_apply]
+  rw [← BialgEquiv.coe_toAlgEquiv, baseChangeTensorBialgEquiv_toAlgEquiv]
   exact Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul k K H L s h l
 
 /-- The inverse product/base-change equivalence multiplies the two scalar coefficients. -/
@@ -196,10 +187,11 @@ theorem baseChangeTensorBialgEquiv_symm_tmul
     (baseChangeTensorBialgEquiv k K H L).symm
         ((s ⊗ₜ[k] h) ⊗ₜ[K] (t ⊗ₜ[k] l)) =
       (s * t) ⊗ₜ[k] (h ⊗ₜ[k] l) := by
-  -- `BialgEquiv.ofAlgEquiv` retains the inverse of the supplied algebra equivalence.
-  change (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).symm
-      ((s ⊗ₜ[k] h) ⊗ₜ[K] (t ⊗ₜ[k] l)) = _
-  exact Algebra.TensorProduct.baseChangeTensorAlgEquiv_symm_tmul k K H L s t h l
+  apply EquivLike.injective (baseChangeTensorBialgEquiv k K H L)
+  rw [BialgEquiv.apply_symm_apply]
+  simpa only [← BialgEquiv.coe_toAlgEquiv, baseChangeTensorBialgEquiv_toAlgEquiv] using
+    (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).symm_apply_eq.mp
+      (Algebra.TensorProduct.baseChangeTensorAlgEquiv_symm_tmul k K H L s t h l)
 
 end BaseChange
 
