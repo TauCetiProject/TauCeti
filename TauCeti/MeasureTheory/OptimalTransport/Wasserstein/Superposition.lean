@@ -7,14 +7,15 @@ module
 
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
-import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import Mathlib.Topology.ContinuousMap.SecondCountableSpace
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.Measure.Tight.Basic
 import TauCeti.MeasureTheory.Measure.Tight.CurveAction
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.AbsolutelyContinuous
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PolygonalPlan
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
+import TauCeti.Topology.Instances.Real.DyadicGrid
 
 /-!
 # Lisini's superposition principle in a separable Banach space
@@ -68,43 +69,6 @@ section Superposition
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- The points of the dyadic grids of `[a, b]`, of all levels, are dense in `[a, b]`. -/
-private lemma dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} (hab : a < b) :
-    Dense {t : Icc a b | ∃ n k : ℕ, k ≤ 2 ^ n ∧ (t : ℝ) = a + k * ((b - a) / 2 ^ n)} := by
-  refine Metric.dense_iff.2 fun t r hr ↦ ?_
-  have hba : 0 < b - a := sub_pos.2 hab
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (div_pos hr hba) (one_half_lt_one (α := ℝ))
-  set h := (b - a) / 2 ^ n with h_def
-  have hh : 0 < h := by positivity
-  have hhr : h < r := calc
-    h = (1 / 2) ^ n * (b - a) := by rw [h_def, one_div_pow]; ring
-    _ < r := (lt_div_iff₀ hba).1 hn
-  set k := ⌊((t : ℝ) - a) / h⌋₊
-  have hta : 0 ≤ ((t : ℝ) - a) / h := div_nonneg (sub_nonneg.2 t.2.1) hh.le
-  have hk₁ : (k : ℝ) * h ≤ t - a := (le_div_iff₀ hh).1 (Nat.floor_le hta)
-  have hk₂ : (t : ℝ) - a < (k + 1) * h := (div_lt_iff₀ hh).1 (Nat.lt_floor_add_one _)
-  have hkn : k ≤ 2 ^ n := by
-    have : ((t : ℝ) - a) / h ≤ 2 ^ n := by
-      rw [div_le_iff₀ hh, h_def, mul_div_cancel₀ _ (by positivity)]
-      linarith [t.2.2]
-    simpa using (Nat.floor_le_floor this).trans_eq (by exact_mod_cast Nat.floor_natCast (2 ^ n))
-  refine ⟨⟨a + k * h, by nlinarith [hh.le, (k.cast_nonneg : (0 : ℝ) ≤ k)], by linarith [t.2.2]⟩,
-    ?_, n, k, hkn, rfl⟩
-  rw [Metric.mem_ball, Subtype.dist_eq, Real.dist_eq, abs_lt]
-  constructor <;> simp only <;> nlinarith
-
-/-- A point of the dyadic grid of level `m` of `[a, b]` lies on the dyadic grids of all levels
-`n ≥ m`. -/
-private lemma exists_eq_add_mul_div_two_pow_of_le {a b t : ℝ} {m n k : ℕ} (hk : k ≤ 2 ^ m)
-    (ht : t = a + k * ((b - a) / 2 ^ m)) (hmn : m ≤ n) :
-    ∃ j : ℕ, j ≤ 2 ^ n ∧ t = a + j * ((b - a) / 2 ^ n) := by
-  have h2 : 2 ^ n = 2 ^ m * 2 ^ (n - m) := by rw [← pow_add, Nat.add_sub_cancel' hmn]
-  refine ⟨k * 2 ^ (n - m), h2 ▸ Nat.mul_le_mul_right _ hk, ?_⟩
-  have h2' : (2 : ℝ) ^ n = 2 ^ m * 2 ^ (n - m) := by exact_mod_cast h2
-  rw [ht, h2']
-  push_cast
-  field_simp
 
 /-- **Lisini's superposition principle** in a separable Banach space. Let `1 < p < ∞` and let `μ`
 be a curve in `P_p(E)`, absolutely continuous on `[a, b]` with finite `p`-action, where `a < b`.
@@ -162,7 +126,7 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
     convert htight
     ext ν
     simp only [exists_range_iff]
-    rfl
+    simp only [mem_ofPred_eq, mem_range, ηs, ProbabilityMeasure.coe_mk]
   obtain ⟨ηlim, -, φ, hφ, hconv⟩ := hcpt.tendsto_subseq fun n ↦ subset_closure (mem_range_self n)
   -- The limit is concentrated on absolutely continuous paths, with expected action at most
   -- `A_p(μ)`.
@@ -186,9 +150,8 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
     exact (hm (φ n) (hn.trans (hφ.id_le n))).symm
   -- Both curves of time marginals are continuous, so they agree on `[a, b]`.
   have hcont_η : Continuous fun t : Icc a b ↦ ηlim.map fun γ : C(Icc a b, E) ↦ γ t :=
-    continuous_iff_continuousAt.2 fun t ↦ (tendstoInDistribution_of_ae_tendsto
-      (fun s ↦ (continuous_eval_const s).aemeasurable) (continuous_eval_const t).aemeasurable
-      (ae_of_all _ fun γ ↦ γ.continuous.tendsto t)).tendsto
+    ηlim.continuous_map_of_forall_continuous (fun s ↦ (continuous_eval_const s).aemeasurable)
+      fun γ ↦ γ.continuous
   have hcont_μ : Continuous fun t : Icc a b ↦ (μ t : ProbabilityMeasure E) :=
     WassersteinSpace.continuous_toProbabilityMeasure.comp
       (hμ.continuousOn'.comp_continuous continuous_subtype_val fun t ↦ by
