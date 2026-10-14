@@ -27,7 +27,10 @@ separate assertion.
 
 Install the original stable shift with `letI := hE.stableHasShift`, the source shift with
 `letI := hE.op.stableHasShift`, and open `CategoryTheory.Pretriangulated.Opposite` to obtain
-the target shift. Then install the appropriate shift compatibility locally.
+the target shift. Then install `letI := hE.projectiveStableOpEquivalenceFunctorCommShift`
+for the forward equivalence. For the inverse, install
+`letI := (E.projectiveStableOpEquivalence hE.projective_iff_injective).commShiftInverse ℤ`.
+The same equivalence's `commShift_of_functor ℤ` supplies unit and counit compatibility.
 
 ## References
 
@@ -110,30 +113,5 @@ theorem projectiveStableOpEquivalenceFunctor_commShiftIso (n : ℤ) :
       Functor.isoWhiskerRight
         (eqToIso (E.projectiveStableOpEquivalence_functor hE.projective_iff_injective)).symm
         (shiftFunctor E.ProjectiveStableCategoryᵒᵖ n) := (rfl)
-
-/-- The inverse opposite stable equivalence commutes with shifts via the canonical mate
-of its forward comparison. -/
-@[instance_reducible]
-noncomputable def projectiveStableOpEquivalenceInverseCommShift :
-    letI := hE.stableHasShift
-    letI := hE.op.stableHasShift
-    (E.projectiveStableOpEquivalence hE.projective_iff_injective).inverse.CommShift ℤ := by
-  letI := hE.stableHasShift
-  letI := hE.op.stableHasShift
-  letI := hE.projectiveStableOpEquivalenceFunctorCommShift
-  exact (E.projectiveStableOpEquivalence hE.projective_iff_injective).commShiftInverse ℤ
-
-/-- The unit and counit of the opposite stable equivalence commute with integral shifts
-for the forward quotient comparison and its canonical inverse mate. -/
-theorem projectiveStableOpEquivalenceCommShift :
-    letI := hE.stableHasShift
-    letI := hE.op.stableHasShift
-    letI := hE.projectiveStableOpEquivalenceFunctorCommShift
-    letI := hE.projectiveStableOpEquivalenceInverseCommShift
-    (E.projectiveStableOpEquivalence hE.projective_iff_injective).CommShift ℤ := by
-  let := hE.stableHasShift
-  let := hE.op.stableHasShift
-  let := hE.projectiveStableOpEquivalenceFunctorCommShift
-  exact (E.projectiveStableOpEquivalence hE.projective_iff_injective).commShift_of_functor ℤ
 
 end TauCeti.ExactStructure.IsFrobenius
