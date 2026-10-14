@@ -12,8 +12,8 @@ public import Mathlib.Topology.Homotopy.Contractible
 /-!
 # Contraction of realized cones
 
-If adjoining a vertex to every face of a complex gives another face, its weak realization
-contracts onto that vertex. The contraction is affine in barycentric coordinates and fixes
+If `{v}` is a face and adjoining `v` to every face gives another face, the weak realization
+contracts onto `v`. The contraction is affine in barycentric coordinates and fixes
 the apex throughout. No finiteness or local finiteness is needed: joint continuity follows
 from the closed-simplex cylinder criterion in `Realization.Homotopy`.
 
@@ -69,7 +69,7 @@ def coneContraction (h : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimp
         fun_prop
       exact hh.congr fun p => by simp [g, Finsupp.single_apply]
     exact ((continuous_faceInclusion K ⟨insert v σ.1, h.insert_mem σ.2⟩).comp hg).congr
-      fun p => Subtype.ext (by simp only [Function.comp_apply, faceInclusion_val]; rfl)
+      fun p => Subtype.ext (by simp [g, faceInclusion_val])
   map_zero_left x := by
     apply Subtype.ext
     simp
@@ -105,9 +105,7 @@ theorem contractibleSpace_realization_of_isCone
 
 /-- The realization of the combinatorial cone on any abstract complex is contractible. -/
 theorem contractibleSpace_realization_cone (K : AbstractSimplicialComplex ι) :
-    ContractibleSpace (Realization (cone K)) := by
-  apply contractibleSpace_realization_of_isCone (v := Sum.inr PUnit.unit)
-  rw [cone_toPreAbstractSimplicialComplex]
-  convert PreAbstractSimplicialComplex.isCone_cone K.toPreAbstractSimplicialComplex using 1
+    ContractibleSpace (Realization (cone K)) :=
+  contractibleSpace_realization_of_isCone (isCone_cone (inst := Classical.decEq _) K)
 
 end AbstractSimplicialComplex

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.SimplicialComplex.AffineIndependentUnion
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
+public import Mathlib.Topology.UnitInterval
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
@@ -317,6 +318,21 @@ theorem StandardSimplex.mem_convexHull_support {σ : Finset ι} (x : StandardSim
     simpa [Finsupp.sum] using x.1.sum_single
   rw [heq] at hx
   exact hx
+
+/-- Moving a point of a closed simplex towards a vertex stays in the enlarged simplex. -/
+theorem StandardSimplex.smul_add_single_mem {σ : Finset ι} (x : StandardSimplex σ)
+    (v : ι) (t : unitInterval) :
+    (1 - (t : ℝ)) • x.1 + (t : ℝ) • Finsupp.single v 1 ∈
+      convexHull ℝ ((insert v σ).image (fun w => Finsupp.single w (1 : ℝ)) :
+        Set (ι →₀ ℝ)) := by
+  apply (convex_convexHull ℝ _)
+  · exact convexHull_mono (Finset.coe_subset.mpr
+      (Finset.image_mono _ (Finset.subset_insert v σ))) x.2
+  · exact subset_convexHull ℝ _ (Finset.mem_coe.mpr
+      (Finset.mem_image.mpr ⟨v, Finset.mem_insert_self v σ, rfl⟩))
+  · exact sub_nonneg.mpr t.2.2
+  · exact t.2.1
+  · ring
 
 /-- The support of a realization point is an abstract face. -/
 theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.1.support ∈ K := by
