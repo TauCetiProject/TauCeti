@@ -28,18 +28,18 @@ public section
 
 open AbstractSimplicialComplex
 open PreAbstractSimplicialComplex (SimplicialMap)
-open TauCeti.SimplicialComplex
+open TauCeti.AbstractSimplicialComplex
 
 namespace TauCeti.ClassifyingSpace
 
 variable (G : Type*)
 
 /-- Milnor's total space: the weak realization of the countable join of copies of `G`. -/
-noncomputable abbrev universalGSpace := Realization (joinComplex (fun _ : ℕ => G))
+noncomputable abbrev universalGSpace := Realization (sigmaJoin (fun _ : ℕ => G))
 
 /-- The chosen base point of the countable join of copies of a group. -/
 noncomputable def universalGSpaceBasepoint [One G] : universalGSpace G :=
-  vertex (joinComplex (fun _ : ℕ => G)) ⟨0, 1⟩
+  vertex (sigmaJoin (fun _ : ℕ => G)) ⟨0, 1⟩
 
 @[simp]
 theorem universalGSpaceBasepoint_val [One G] :
@@ -52,7 +52,7 @@ variable {G} {H : Type*} [MulOneClass G] [MulOneClass H]
 vertex labels and leaving indices unchanged. -/
 noncomputable def universalGSpaceMap (φ : G →* H) : C(universalGSpace G, universalGSpace H) := by
   classical
-  exact (joinComplexMap (fun _ : ℕ => φ)).realizationMap
+  exact (sigmaJoinMap (fun _ : ℕ => φ)).realizationMap
 
 /-- The induced map pushes forward barycentric coordinates. -/
 @[simp]
@@ -83,7 +83,7 @@ theorem universalGSpaceMap_comp {K : Type*} [MulOneClass K] (ψ : H →* K) (φ 
     universalGSpaceMap (ψ.comp φ) = (universalGSpaceMap ψ).comp (universalGSpaceMap φ) := by
   classical
   unfold universalGSpaceMap
-  rw [← SimplicialMap.realizationMap_comp, joinComplexMap_comp]
+  rw [← SimplicialMap.realizationMap_comp, sigmaJoinMap_comp]
   simp only [MonoidHom.coe_comp, Function.comp_def]
 
 end TauCeti.ClassifyingSpace

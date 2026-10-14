@@ -29,13 +29,13 @@ public section
 open AbstractSimplicialComplex
 open PreAbstractSimplicialComplex (SimplicialMap)
 
-namespace TauCeti.SimplicialComplex
+namespace TauCeti.AbstractSimplicialComplex
 
 variable {I : Type*} (A : I → Type*)
 
 /-- The join of discrete sets indexed by `I`: a face contains at most one vertex at each index.
 In particular, taking `I = ℕ` gives the countable join. -/
-def joinComplex : AbstractSimplicialComplex (Σ i, A i) where
+def sigmaJoin : AbstractSimplicialComplex (Σ i, A i) where
   faces := {σ | σ.Nonempty ∧ Set.InjOn Sigma.fst (σ : Set (Σ i, A i))}
   isRelLowerSet_faces := by
     rintro σ ⟨hne, hinj⟩
@@ -44,52 +44,52 @@ def joinComplex : AbstractSimplicialComplex (Σ i, A i) where
 
 /-- Faces are precisely the nonempty finite sets meeting every index at most once. -/
 @[simp]
-theorem mem_joinComplex_iff {σ : Finset (Σ i, A i)} :
-    σ ∈ joinComplex A ↔ σ.Nonempty ∧ Set.InjOn Sigma.fst (σ : Set (Σ i, A i)) :=
+theorem mem_sigmaJoin_iff {σ : Finset (Σ i, A i)} :
+    σ ∈ sigmaJoin A ↔ σ.Nonempty ∧ Set.InjOn Sigma.fst (σ : Set (Σ i, A i)) :=
   Iff.rfl
 
 /-- Two vertices of a face at the same index are equal. -/
-theorem eq_of_mem_joinComplex {σ : Finset (Σ i, A i)} (hσ : σ ∈ joinComplex A)
+theorem eq_of_mem_sigmaJoin {σ : Finset (Σ i, A i)} (hσ : σ ∈ sigmaJoin A)
     {v w : Σ i, A i} (hv : v ∈ σ) (hw : w ∈ σ) (h : v.1 = w.1) : v = w :=
-  (mem_joinComplex_iff A).mp hσ |>.2 hv hw h
+  (mem_sigmaJoin_iff A).mp hσ |>.2 hv hw h
 
 variable {A} {B C : I → Type*}
 
 /-- Maps of the discrete families induce a simplicial map, preserving the index of each vertex.
 No injectivity assumption is required on the family maps. -/
-def joinComplexMap [DecidableEq (Σ i, B i)] (f : ∀ i, A i → B i) :
-    SimplicialMap (joinComplex A).toPreAbstractSimplicialComplex
-      (joinComplex B).toPreAbstractSimplicialComplex where
+def sigmaJoinMap [DecidableEq (Σ i, B i)] (f : ∀ i, A i → B i) :
+    SimplicialMap (sigmaJoin A).toPreAbstractSimplicialComplex
+      (sigmaJoin B).toPreAbstractSimplicialComplex where
   toFun := Sigma.map id f
   map_face' := by
     intro σ hσ
-    rw [AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
+    rw [_root_.AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
     refine ⟨Finset.image_nonempty.mpr hσ.1, ?_⟩
     intro v hv w hw heq
     obtain ⟨v', hv', rfl⟩ := Finset.mem_image.mp hv
     obtain ⟨w', hw', rfl⟩ := Finset.mem_image.mp hw
     exact congrArg (fun v : Σ i, A i => (⟨v.1, f v.1 v.2⟩ : Σ i, B i))
-      (eq_of_mem_joinComplex A hσ hv' hw' heq)
+      (eq_of_mem_sigmaJoin A hσ hv' hw' heq)
 
 @[simp]
-theorem joinComplexMap_apply [DecidableEq (Σ i, B i)] (f : ∀ i, A i → B i)
-    (v : Σ i, A i) : joinComplexMap f v = ⟨v.1, f v.1 v.2⟩ :=
+theorem sigmaJoinMap_apply [DecidableEq (Σ i, B i)] (f : ∀ i, A i → B i)
+    (v : Σ i, A i) : sigmaJoinMap f v = ⟨v.1, f v.1 v.2⟩ :=
   (rfl)
 
 /-- The identity family map induces the identity simplicial map. -/
 @[simp]
-theorem joinComplexMap_id [DecidableEq (Σ i, A i)] :
-    joinComplexMap (fun _ x => x) =
-      SimplicialMap.id (joinComplex A).toPreAbstractSimplicialComplex := by
+theorem sigmaJoinMap_id [DecidableEq (Σ i, A i)] :
+    sigmaJoinMap (fun _ x => x) =
+      SimplicialMap.id (sigmaJoin A).toPreAbstractSimplicialComplex := by
   apply DFunLike.ext
   intro v
   simp
 
 /-- The family construction respects composition strictly. -/
 @[simp]
-theorem joinComplexMap_comp [DecidableEq (Σ i, B i)] [DecidableEq (Σ i, C i)]
+theorem sigmaJoinMap_comp [DecidableEq (Σ i, B i)] [DecidableEq (Σ i, C i)]
     (g : ∀ i, B i → C i) (f : ∀ i, A i → B i) :
-    (joinComplexMap g).comp (joinComplexMap f) = joinComplexMap (fun i x => g i (f i x)) := by
+    (sigmaJoinMap g).comp (sigmaJoinMap f) = sigmaJoinMap (fun i x => g i (f i x)) := by
   apply DFunLike.ext
   intro v
   simp
@@ -99,18 +99,18 @@ variable (A)
 /-- The inclusion of the subjoin on a subset of indices. Taking a finite subset gives the
 finite-index subjoins of the countable join. -/
 def subjoinInclusion [DecidableEq (Σ i, A i)] (s : Set I) :
-    SimplicialMap (joinComplex (fun i : s => A i)).toPreAbstractSimplicialComplex
-      (joinComplex A).toPreAbstractSimplicialComplex where
+    SimplicialMap (sigmaJoin (fun i : s => A i)).toPreAbstractSimplicialComplex
+      (sigmaJoin A).toPreAbstractSimplicialComplex where
   toFun := Sigma.map Subtype.val (fun _ => id)
   map_face' := by
     intro σ hσ
-    rw [AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
+    rw [_root_.AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
     refine ⟨Finset.image_nonempty.mpr hσ.1, ?_⟩
     intro v hv w hw heq
     obtain ⟨v', hv', rfl⟩ := Finset.mem_image.mp hv
     obtain ⟨w', hw', rfl⟩ := Finset.mem_image.mp hw
     exact congrArg (fun v : Σ i : s, A i => (⟨v.1.1, v.2⟩ : Σ i, A i))
-      (eq_of_mem_joinComplex _ hσ hv' hw' (Subtype.ext heq))
+      (eq_of_mem_sigmaJoin _ hσ hv' hw' (Subtype.ext heq))
 
 @[simp]
 theorem subjoinInclusion_apply [DecidableEq (Σ i, A i)] (s : Set I)
@@ -125,8 +125,8 @@ theorem subjoinInclusion_injective [DecidableEq (Σ i, A i)] (s : Set I) :
 /-- Barycentric coordinates of the join are nonnegative, sum to one, and have at most one
 nonzero coordinate at each index. -/
 @[simp]
-theorem mem_joinComplex_realization_iff {x : (Σ i, A i) →₀ ℝ} :
-    x ∈ (standardGeometricComplex (joinComplex A)).space ↔
+theorem mem_sigmaJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
+    x ∈ (standardGeometricComplex (sigmaJoin A)).space ↔
       (∀ v, 0 ≤ x v) ∧ x.sum (fun _ r => r) = 1 ∧
         Set.InjOn Sigma.fst (x.support : Set (Σ i, A i)) := by
   classical
@@ -134,17 +134,17 @@ theorem mem_joinComplex_realization_iff {x : (Σ i, A i) →₀ ℝ} :
   let : DecidableEq (Σ i, A i) := Classical.decEq _
   constructor
   · intro hx
-    let y : Realization (joinComplex A) := ⟨x, hx⟩
+    let y : Realization (sigmaJoin A) := ⟨x, hx⟩
     exact ⟨Realization.nonneg _ y, Realization.sum_eq_one _ y,
-      (mem_joinComplex_iff A).mp (support_mem _ y) |>.2⟩
+      (mem_sigmaJoin_iff A).mp (support_mem _ y) |>.2⟩
   · rintro ⟨hnonneg, hsum, hinj⟩
     have hne : x.support.Nonempty := by
       apply Finsupp.support_nonempty_iff.mpr
       intro hzero
       simp [hzero] at hsum
     apply mem_realization_iff.mpr
-    refine ⟨x.support, (mem_joinComplex_iff A).mpr ⟨hne, hinj⟩, ?_⟩
+    refine ⟨x.support, (mem_sigmaJoin_iff A).mpr ⟨hne, hinj⟩, ?_⟩
     rw [Finset.coe_image, mem_standardSimplex_iff]
     exact ⟨hnonneg, hsum, Finset.Subset.rfl⟩
 
-end TauCeti.SimplicialComplex
+end TauCeti.AbstractSimplicialComplex
