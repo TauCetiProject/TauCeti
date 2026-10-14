@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.WittVector.IntervalRing.Radius
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Surjective
 import Mathlib.Analysis.Normed.Group.ControlledClosure
 
 /-!
@@ -32,6 +34,20 @@ where `ρ₁ᵃ = v(ϖ)ᵇ` is used. Mathlib's successive approximation theorem
 `controlled_closure_of_complete` then lifts every element of `B^I`, with the coefficient ring
 `A^{ρ₂}{X}` normed by its Gauss norm through `TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv`.
 
+Every element of `𝕎 O[1/(p [ϖ])]` is a polynomial in `p⁻¹` with coefficients in `𝕎 O[1/[ϖ]]`
+whose weighted norms are bounded by its interval norm (Kedlaya's estimate (4.9.1),
+`IntervalLocalization.exists_sum_eq_mul_inv_pow`). Consequently, for every left endpoint
+`ρ₁ ≤ ρ₂`, evaluation at `p⁻¹` is a surjection
+
+```text
+A^{ρ₂}{T/c, U/ρ₁⁻¹} → B^{[ρ₁, ρ₂]}{T/c},    T ↦ T,  U ↦ p⁻¹,
+```
+
+from restricted series at real radii. This is a form of the presentations of Kedlaya's Lemma 4.9,
+which evaluate at `[z] / p` with `z ∈ K` instead; evaluating at `p⁻¹` at the real radius `ρ₁⁻¹`
+needs no element of `K` of prescribed norm, so `ρ₁` is arbitrary. This is how the rings
+`B^{[ρ₁, ρ₂]}{T/c}` inherit noetherianity from the radius ring.
+
 ## Main results
 
 * `TauCeti.WittVector.RadiusRing.norm_restrictedSeries_toIntervalRing_le` : `ψ f` has norm at most
@@ -41,6 +57,8 @@ where `ρ₁ᵃ = v(ϖ)ᵇ` is used. Mathlib's successive approximation theorem
   `(1 + ε) ‖x‖ / ρ₁^(a - 1)`.
 * `TauCeti.WittVector.RadiusRing.surjective_restrictedSeries_toIntervalRing` : if `ρ₁ᵃ = v(ϖ)ᵇ`,
   then `ψ` is surjective.
+* `TauCeti.WittVector.RadiusRing.restrictedEvalIntervalRing_surjective` : evaluation at `p⁻¹`
+  presents `B^{[ρ₁, ρ₂]}{T/c}` as a quotient of `A^{ρ₂}{T/c, U/ρ₁⁻¹}`.
 
 ## References
 
@@ -65,6 +83,7 @@ variable (p : ℕ) [Fact p.Prime] {K O : Type*} [Field K] [CommRing O] [Algebra 
   {ρ₁ ρ₂ : ℝ≥0} (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1)
 
 local notation "𝕎" => _root_.WittVector p
+local notation "A₀" => RadiusLocalization p hv hϖ hϖ' hρ₂
 local notation "B₀" => IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
 local notation "A" => RadiusRing p hv hϖ hϖ' hρ₂
 local notation "B" => IntervalRing p hv hϖ hϖ' hρ₁ hρ₂
@@ -326,6 +345,129 @@ theorem surjective_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂) {a b 
     Function.Surjective ψ := fun x ↦
   (exists_restrictedSeries_toIntervalRing_eq p hv hϖ hϖ' hρ₁ hρ₂ hρ ha hab hψ hC hX one_pos
     x).imp fun _ h ↦ h.1
+
+section Presentation
+
+open MvPowerSeries
+
+variable {k : ℕ} (c : Fin k → ℝ) [∀ i, Fact (0 < c i)]
+
+/-- **Evaluation at `p⁻¹` out of restricted series over the radius ring.** For `ρ₁ ≤ ρ₂`, the
+ring homomorphism
+
+```text
+A^{ρ₂}{T/c, U/ρ₁⁻¹} → B^{[ρ₁, ρ₂]}{T/c},    T ↦ T,  U ↦ p⁻¹,
+```
+
+with coefficients mapped by `toIntervalRing`. Here `U = X 0` and `T i = X i.succ`, and `U` has
+radius `ρ₁⁻¹`, the norm of `p⁻¹` in `B^{[ρ₁, ρ₂]}`. It is surjective
+(`TauCeti.WittVector.RadiusRing.restrictedEvalIntervalRing_surjective`), for every left endpoint
+`ρ₁`. -/
+def restrictedEvalIntervalRing (hρ : ρ₁ ≤ ρ₂) :
+    IsRestricted.subring (R := A) (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) →+*
+      IsRestricted.subring (R := B) c :=
+  restrictedEval₂ ((algebraMap _ _).comp (toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ))
+    (Fin.cons (algebraMap _ _ (Ring.inverse (p : B)))
+      fun i ↦ ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩)
+    (fun a ↦ by simp)
+    (Fin.cases (by
+      have h : ((ρ₂ : ℝ))⁻¹ ≤ (ρ₁ : ℝ)⁻¹ :=
+        inv_anti₀ (by exact_mod_cast hρ₁.1) (by exact_mod_cast hρ)
+      simpa using h) fun i ↦ by simp)
+
+variable {c}
+
+/-- The presentation maps constants by `toIntervalRing`. -/
+@[simp]
+theorem restrictedEvalIntervalRing_algebraMap (hρ : ρ₁ ≤ ρ₂) (a : A) :
+    restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ c hρ (algebraMap _ _ a) =
+      algebraMap _ _ (toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a) :=
+  restrictedEval₂_algebraMap _ _ _ _ a
+
+/-- The presentation sends the variable `U = X 0` to `p⁻¹`. -/
+@[simp]
+theorem restrictedEvalIntervalRing_X_zero (hρ : ρ₁ ≤ ρ₂) :
+    restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ c hρ
+        ⟨X 0, isRestricted_monomial _ (Finsupp.single 0 1) 1⟩ =
+      algebraMap _ _ (Ring.inverse (p : B)) :=
+  restrictedEval₂_X _ _ _ _ 0
+
+/-- The presentation sends each variable `T i = X i.succ` to `X i`. -/
+@[simp]
+theorem restrictedEvalIntervalRing_X_succ (hρ : ρ₁ ≤ ρ₂) (i : Fin k) :
+    restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ c hρ
+        ⟨X i.succ, isRestricted_monomial _ (Finsupp.single i.succ 1) 1⟩ =
+      ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩ :=
+  restrictedEval₂_X _ _ _ _ i.succ
+
+/-- The presentation does not increase the Gauss norm. -/
+theorem norm_restrictedEvalIntervalRing_le (hρ : ρ₁ ≤ ρ₂)
+    [∀ j, Fact (0 < (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j)]
+    (f : IsRestricted.subring (R := A) (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ)) :
+    ‖restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ c hρ f‖ ≤ ‖f‖ :=
+  norm_restrictedEval₂_le _ _ _ _ f
+
+/-- The presentation is continuous for the Gauss norms. -/
+theorem continuous_restrictedEvalIntervalRing (hρ : ρ₁ ≤ ρ₂)
+    [∀ j, Fact (0 < (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j)] :
+    Continuous (restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ c hρ) :=
+  continuous_restrictedEval₂ _ _ _ _
+
+/-- **Uniqueness of the presentation**: a continuous ring homomorphism
+`A^{ρ₂}{T/c, U/ρ₁⁻¹} → B^{[ρ₁, ρ₂]}{T/c}` that maps constants by `toIntervalRing` and sends `U` to
+`p⁻¹` and each `T i` to `X i` is `restrictedEvalIntervalRing`. -/
+theorem eq_restrictedEvalIntervalRing (hρ : ρ₁ ≤ ρ₂)
+    [∀ j, Fact (0 < (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j)]
+    (ψ : IsRestricted.subring (R := A) (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) →+*
+      IsRestricted.subring (R := B) c) (hψ : Continuous ψ)
+    (hC : ∀ a, ψ (algebraMap _ _ a) = algebraMap _ _ (toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a))
+    (hU : ψ ⟨X 0, isRestricted_monomial _ (Finsupp.single 0 1) 1⟩ =
+      algebraMap _ _ (Ring.inverse (p : B)))
+    (hT : ∀ i : Fin k, ψ ⟨X i.succ, isRestricted_monomial _ (Finsupp.single i.succ 1) 1⟩ =
+      ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩) :
+    ψ = restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ c hρ := by
+  rw [restrictedEvalIntervalRing]
+  exact eq_restrictedEval₂ _ _ _ _ ψ hψ hC (Fin.cases hU hT)
+
+/-- **The interval ring as a quotient of restricted series over the radius ring.** For `ρ₁ ≤ ρ₂`,
+the evaluation
+
+```text
+A^{ρ₂}{T/c, U/ρ₁⁻¹} → B^{[ρ₁, ρ₂]}{T/c},    T ↦ T,  U ↦ p⁻¹,
+```
+
+is surjective, so `B^{[ρ₁, ρ₂]}{T/c}` is a quotient of a ring of restricted power series over the
+radius ring `A^{ρ₂}` with one more variable. The left endpoint `ρ₁` is arbitrary. -/
+theorem restrictedEvalIntervalRing_surjective (hρ : ρ₁ ≤ ρ₂) :
+    Function.Surjective (restrictedEvalIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ c hρ) := by
+  have : ∀ j, Fact (0 < (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j) :=
+    Fin.cases ⟨inv_pos.mpr (by exact_mod_cast hρ₁.1)⟩ fun i ↦ ⟨(Fact.out : 0 < c i)⟩
+  set U : IsRestricted.subring (R := A) (Fin.cons (ρ₁ : ℝ)⁻¹ c : Fin (k + 1) → ℝ) :=
+    ⟨X 0, isRestricted_monomial _ (Finsupp.single 0 1) 1⟩
+  -- the constants from `𝕎 O[1/(p [ϖ])]`, which are dense in `B^{[ρ₁, ρ₂]}`
+  refine surjective_of_exists_lift (norm_restrictedEvalIntervalRing_le p hv hϖ hϖ' hρ₁ hρ₂ hρ)
+    (D := (Completion.coeRingHom : B₀ →+* B).range.toAddSubgroup)
+    Completion.denseRange_coe ?_ fun i ↦ ⟨_, restrictedEvalIntervalRing_X_succ p hv hϖ hϖ' hρ₁
+      hρ₂ hρ i, by simp⟩
+  rintro _ ⟨d, rfl⟩
+  obtain ⟨m, z, hz, hd⟩ := IntervalLocalization.exists_sum_eq_mul_inv_pow p hv hϖ hϖ' hρ₁ hρ₂ d
+  -- `Completion.coeRingHom` is the coercion `𝕎 O[1/(p [ϖ])] → B^{[ρ₁, ρ₂]}`
+  have hcoe (x : B₀) : (Completion.coeRingHom : B₀ →+* B) x = x := rfl
+  refine ⟨∑ i ∈ Finset.range (m + 1), algebraMap A _ (z i : A) * U ^ (m - i), ?_, ?_⟩
+  · rw [hd, map_sum, map_sum, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp only [map_mul, map_pow]
+    simp [U, ringInverse_natCast_intervalRing, hcoe]
+  · rw [hcoe, Completion.norm_coe]
+    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg d) fun i hi ↦ ?_
+    have hU : ‖U‖ = (ρ₁ : ℝ)⁻¹ := norm_X _
+    calc _ ≤ ‖algebraMap A _ (z i : A)‖ * ‖U‖ ^ (m - i) :=
+          (norm_mul_le _ _).trans (by gcongr; exact norm_pow_le _ _)
+      _ ≤ ‖d‖ := by
+        rw [norm_algebraMap_isRestrictedSubring, Completion.norm_coe, hU]
+        exact hz i (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))
+
+end Presentation
 
 end RadiusRing
 

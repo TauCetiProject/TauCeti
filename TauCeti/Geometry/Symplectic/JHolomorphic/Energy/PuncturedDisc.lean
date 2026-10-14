@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Isoperimetric
 public import TauCeti.MeasureTheory.Integral.CircleLIntegral
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -58,18 +57,8 @@ theorem integral_norm_fderiv_one_sq_punctured_disc_le {u : ℂ → V}
       (∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) / (2 * c) := by
   classical
   let D := {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hD : MeasurableSet D := by
-    exact (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
-      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
+  have hD : MeasurableSet D := measurableSet_puncturedClosedDisc z₀ b
   have : CompleteSpace V := FiniteDimensional.complete ℝ V
-  let g : ℂ → ℝ≥0∞ := D.indicator (fun z ↦ ENNReal.ofReal (‖fderiv ℝ u z‖ ^ 2))
-  have hgmeas : Measurable g :=
-    ((ENNReal.measurable_ofReal.comp ((measurable_fderiv ℝ u).norm.pow_const 2)).indicator hD)
-  have hgfin : (∫⁻ z, g z) ≠ ∞ := by
-    rw [lintegral_indicator hD]
-    have h := henergy.hasFiniteIntegral
-    rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun _ ↦ sq_nonneg _)] at h
-    exact h.ne
   have hE : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) D := by
     have hDu : ContinuousOn (fderiv ℝ u) D := fun z hz ↦
       ((hu z hz).continuousAt_fderiv (by norm_num)).continuousWithinAt
@@ -88,16 +77,9 @@ theorem integral_norm_fderiv_one_sq_punctured_disc_le {u : ℂ → V}
       (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
   -- Finite plane energy supplies shrinking circles with small angular square energy.
   have hsmall {R ε : ℝ} (hR : 0 < R) (hRb : R ≤ b) (hε : 0 < ε) :
-      ∃ r ∈ Ioo 0 R, B r < ε := by
-    obtain ⟨r, hr, hlt⟩ := exists_mul_circleLIntegral_lt_of_lintegral_ne_top
-      hgmeas hgfin z₀ (ENNReal.ofReal_pos.mpr hε).ne' hR
-    have hmem (θ : ℝ) : circleMap z₀ r θ ∈ D := by
-      simpa only [D, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_pos hr.1] using And.intro hr.1 (hr.2.le.trans hRb)
-    have hbound := ofReal_integral_norm_deriv_comp_circleMap_sq_le z₀ hr.1
-      (fun θ ↦ (hu _ (hmem θ)).differentiableAt (by norm_num))
-      (g := g) (fun θ ↦ by simp [g, hmem θ])
-    exact ⟨r, hr, (ENNReal.ofReal_lt_ofReal_iff hε).mp (hbound.trans_lt hlt)⟩
+      ∃ r ∈ Ioo 0 R, B r < ε :=
+    exists_integral_norm_deriv_comp_circleMap_sq_lt z₀ hR hRb hε
+      (fun z hz ↦ (hu z hz).differentiableAt (by norm_num)) henergy
   -- Compare each fixed annulus with a larger one whose inner boundary energy is small.
   have hannulus {a : ℝ} (ha : 0 < a) (hab : a ≤ b) :
       (∫ z in A a, ‖fderiv ℝ u z 1‖ ^ 2) ≤ B b / (2 * c) := by

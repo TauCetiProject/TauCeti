@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
+import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # The standard representation of the special orthogonal group
@@ -28,6 +29,10 @@ subcomodule is stable under the action of every base-valued special orthogonal m
 * `TauCeti.SpecialOrthogonal.isFaithful_standardComodule`: the standard comodule is faithful.
 * `TauCeti.SpecialOrthogonal.piScalarRight_comp_endOfPoint`: a point acts after scalar extension
   by its special orthogonal matrix.
+* `TauCeti.SpecialOrthogonal.basePointsRepresentation_eq_mulVec`: a base-valued point acts by
+  its special orthogonal matrix.
+* `TauCeti.SpecialOrthogonal.scalar_sq_eq_one_of_basePointsRepresentation_eq_smul`: a point
+  acting as a scalar has scalar a square root of one.
 * `TauCeti.SpecialOrthogonal.mulVec_mem`: standard subcomodules are stable under special
   orthogonal matrices.
 
@@ -127,24 +132,48 @@ theorem piScalarRight_comp_endOfPoint
 
 end PointAction
 
+-- `@[simp]` would fail `simpNF`: the left-hand side already simplifies via
+-- `basePointsRepresentation_corestrict` and the general-linear action formula.
+/-- A base-valued point acts on the standard special orthogonal comodule by its matrix. -/
+theorem basePointsRepresentation_eq_mulVec
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] R)) (v : Fin n → R) :
+    Comodule.basePointsRepresentation (R := R) (H := coordinateHopfAlgebra R n) (Fin n → R) g v =
+      (pointsMulEquiv (R := R) (A := R) n g : Matrix (Fin n) (Fin n) R) *ᵥ v := by
+  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom g,
+    GeneralLinear.basePointsRepresentation_eq_mulVec]
+  have hpoint :
+      AlgHom.mapDomain (coordinateMap R n).hom g =
+        CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
+          (CommAlgCat.of R R) g := by
+    rw [coordinateMap_def, AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+  rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe]
+
+/-- A scalar point in the standard representation of `SOₙ`, for `n ≠ 0`, has scalar a square
+root of one: the scalar matrix `c • 1` is orthogonal only when `c ^ 2 = 1`. -/
+theorem scalar_sq_eq_one_of_basePointsRepresentation_eq_smul (hn : n ≠ 0)
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] R)) (c : R)
+    (hc : Comodule.basePointsRepresentation (R := R) (H := coordinateHopfAlgebra R n)
+      (Fin n → R) g = c • (1 : Module.End R (Fin n → R))) : c ^ 2 = 1 := by
+  have hmat : (pointsMulEquiv (R := R) (A := R) n g : Matrix (Fin n) (Fin n) R) =
+      c • (1 : Matrix (Fin n) (Fin n) R) := by
+    rw [Matrix.ext_iff_mulVec]
+    intro v
+    have hv := LinearMap.congr_fun hc v
+    rw [basePointsRepresentation_eq_mulVec] at hv
+    simpa [Matrix.smul_mulVec] using hv
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
+  exact sq_eq_one_of_smul_one_mem_orthogonalGroup
+    (hmat ▸ (Matrix.mem_specialOrthogonalGroup_iff.mp
+      (pointsMulEquiv (R := R) (A := R) n g).2).1)
+
 /-- **A subcomodule of the standard special orthogonal comodule is stable under every special
 orthogonal matrix.** -/
 theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R n) (Fin n → R))
     (g : Matrix.specialOrthogonalGroup (Fin n) R) {w : Fin n → R} (hw : w ∈ N) :
     (g : Matrix (Fin n) (Fin n) R) *ᵥ w ∈ N := by
-  let q := (pointsMulEquiv (R := R) (A := R) n).symm g
-  have h := Comodule.basePointsRepresentation_mem N q hw
-  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom q,
-    GeneralLinear.basePointsRepresentation_eq_mulVec] at h
-  have hpoint :
-      AlgHom.mapDomain (coordinateMap R n).hom q =
-        CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
-          (CommAlgCat.of R R) q := by
-    rw [coordinateMap_def, AlgHom.mapDomain_apply,
-      CommHopfAlgCat.quotientPointsHom_apply]
-  rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe,
-    MulEquiv.apply_symm_apply] at h
-  exact h
+  have h := Comodule.basePointsRepresentation_mem N
+    ((pointsMulEquiv (R := R) (A := R) n).symm g) hw
+  rwa [basePointsRepresentation_eq_mulVec, MulEquiv.apply_symm_apply] at h
 
 end TauCeti.SpecialOrthogonal

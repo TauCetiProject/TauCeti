@@ -49,6 +49,16 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n m : ℕ∞ω}
 
+/-- A constant model vector gives a smooth section of the tangent bundle of a model space. -/
+theorem contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
+    (I : ModelWithCorners 𝕜 E H) (v : E) (n : ℕ∞ω) :
+    ContMDiff I I.tangent n
+      (fun x : H ↦ (tangentBundleModelSpaceHomeomorph I).symm (x, v)) := by
+  have hpair : ContMDiff I I.tangent n (fun x : H ↦ (x, v)) :=
+    contMDiff_id.prodMk contMDiff_const
+  rw [chartedSpaceSelf_prod] at hpair
+  exact contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
+
 section TangentBundleInputs
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']

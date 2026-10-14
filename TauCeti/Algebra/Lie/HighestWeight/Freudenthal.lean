@@ -75,12 +75,6 @@ particular it applies to a finite-dimensional `TauCeti.irreducibleQuotient`.
 
 ## References
 
-This is the "Freudenthal's multiplicity formula" item of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`freudenthal_multiplicity_formula` is pinned in the accompanying `Suggested.lean`, with the
-Freudenthal double sum packaged opaquely there "so the recursion is expressible before the
-positive-root sum machinery is in place"; that machinery is in place, so the sum is written out.
-
 * H. Freudenthal, *Zur Berechnung der Charaktere der halbeinfachen Lieschen Gruppen I*,
   Indag. Math. **16** (1954), 369--376.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.3.

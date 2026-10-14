@@ -15,10 +15,8 @@ This file proves the basic functoriality of right comodules in the coalgebra. A 
 morphism `f : C →ₗc[R] D` turns every right `C`-comodule into a right `D`-comodule by
 postcomposing the coaction with `id ⊗ f`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target "Comodules over a
-coalgebra/Hopf algebra": representations of affine group schemes are comodules over their
-coordinate coalgebras, and changing the coordinate coalgebra along a morphism needs this
-corestriction functor.
+Representations of affine group schemes are comodules over their coordinate coalgebras, and changing
+the coordinate coalgebra along a morphism needs this corestriction functor.
 
 A coalgebra morphism also gives a morphism from its corestricted regular source
 comodule to its regular target comodule.

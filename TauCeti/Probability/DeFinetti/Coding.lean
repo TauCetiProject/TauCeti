@@ -130,7 +130,7 @@ i.i.d. uniform sequence by it, produces the de Finetti barycenter of `π`. -/
 theorem map_prod_unitIntervalCoding_eq_deFinettiBarycenter (π : Measure (ProbabilityMeasure α)) :
     (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
         (fun p i => unitIntervalCoding α p.1 (p.2 i))
-      = deFinettiBarycenter π := by
+      = Measure.deFinettiBarycenter π := by
   have hG : Measurable fun p : ProbabilityMeasure α × (ℕ → I) =>
       (p.1, fun i => unitIntervalCoding α p.1 (p.2 i)) :=
     measurable_fst.prodMk measurable_unitIntervalCodingPath
@@ -143,11 +143,11 @@ theorem map_prod_unitIntervalCoding_eq_deFinettiBarycenter (π : Measure (Probab
               rfl
     _ = (iidMixtureLaw π id).map Prod.snd := by
           rw [map_prod_unitIntervalCoding_eq_iidMixtureLaw]
-    _ = deFinettiBarycenter π := by
+    _ = Measure.deFinettiBarycenter π := by
           rw [iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
             (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const
               (id : ProbabilityMeasure α → ProbabilityMeasure α) measurable_id).aemeasurable
-            measurable_snd, deFinettiBarycenter_def]
+            measurable_snd, Measure.deFinettiBarycenter_def]
           simp
 
 /-- **The coding representation of a conditionally i.i.d. process.** The joint law of a directing
