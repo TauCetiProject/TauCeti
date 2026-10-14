@@ -13,21 +13,12 @@ public import TauCeti.Algebra.Polynomial.Units
 /-!
 # Coefficient maps and evaluation of bivariate polynomials
 
-A plane curve over a field `K` is given by a polynomial `φ ∈ K[X][Y]`, and it is *absolutely
-irreducible* when `φ` stays irreducible over an algebraic closure of `K`. This file records two
-facts about such polynomials that do not depend on the curve.
-
-* Mapping coefficients along an injective local homomorphism into a semiring without zero
-  divisors reflects units of the polynomial ring. Applied twice, an embedding of fields `K → L`
-  reflects units of `K[X][Y]`, so a bivariate polynomial whose image over `L` is irreducible is
-  already irreducible over `K`.
-* Evaluating `φ` at a point `(x, y)` of an algebra is `eval₂` of the evaluation at `x` of its
-  coefficients, read at `y`.
+Evaluating a bivariate polynomial at a point `(x, y)` is `eval₂` of the evaluation at `x`
+of its coefficients, read at `y`. The bivariate-to-multivariate equivalence also commutes
+with coefficient maps and evaluation.
 
 ## Main results
 
-* `Polynomial.irreducible_of_irreducible_map_mapRingHom`: irreducibility of a bivariate polynomial
-  descends along an injective local homomorphism, such as a homomorphism of fields.
 * `Polynomial.aevalAeval_eq_eval₂`: `φ(x, y) = eval₂ (aeval x) y φ`.
 -/
 
@@ -36,18 +27,6 @@ public section
 open scoped Polynomial.Bivariate
 
 namespace Polynomial
-
-/-- **Irreducibility of a bivariate polynomial descends along an injective local homomorphism**
-into a semiring without zero divisors, for instance along any homomorphism of fields: if the image
-of `p ∈ R[X][Y]` in `S[X][Y]` is irreducible, then so is `p`. In particular an absolutely
-irreducible polynomial over a field is irreducible over every field between it and an algebraic
-closure. -/
-theorem irreducible_of_irreducible_map_mapRingHom {R S : Type*} [Semiring R] [Semiring S]
-    [NoZeroDivisors S] {f : R →+* S} [IsLocalHom f] (hf : Function.Injective f) {p : R[X][Y]}
-    (h : Irreducible (p.map (mapRingHom f))) : Irreducible p :=
-  have := isLocalHom_mapRingHom hf
-  have := isLocalHom_mapRingHom (f := mapRingHom f) (map_injective f hf)
-  h.of_map (f := mapRingHom (mapRingHom f))
 
 /-- Evaluating a bivariate polynomial at `(x, y)` evaluates its coefficients at `x` and the
 resulting polynomial at `y`. -/
