@@ -1183,7 +1183,7 @@ theorem isOpen_map_algebraMap_locTopology [SeparatelyContinuousMul A] (P : PairO
   obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp (ha.mem_nhds a.zero_mem)
   exact AddSubgroup.isOpen_mono
     (locIdealImage_le_of_image_subset P T s S
-      (Set.image_subset_iff.mpr fun x hx ↦ Ideal.mem_map_of_mem _ (hn hx)))
+      (Set.image_subset_iff.mpr fun x hx ↦ Set.mem_preimage.mpr (Ideal.mem_map_of_mem _ (hn hx))))
     (isOpen_locIdealImage P T s S hden n)
 
 /-- The ring of definition of `localization` is `D`. The body of `localization` is not exposed, so

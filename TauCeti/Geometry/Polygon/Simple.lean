@@ -431,7 +431,7 @@ theorem IsSimple.exists_mem_nhds_inter_boundary_eq [T2Space P] (h : poly.IsSimpl
   obtain ⟨j, hj⟩ := mem_iUnion.1 hy
   by_cases hzj : z ∈ poly.edgeSet ℝ j
   · exact ⟨hyC, hsub j hzj hj⟩
-  · exact absurd (mem_biUnion (x := j) hzj hj) hyC
+  · exact absurd (mem_iUnion₂_of_mem (i := j) hzj hj) hyC
 
 end Topology
 
