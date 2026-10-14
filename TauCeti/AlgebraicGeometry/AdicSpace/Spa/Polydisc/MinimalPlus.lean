@@ -457,7 +457,6 @@ theorem gaussPoint_specializes_gaussPointAboveOne :
     (fun _ _ h ↦ by
       rw [gaussPointAboveOne_vle_iff, not_le]
       exact closedDiscGaussValuationAbove_lt_of_lt one_pos le_rfl h)
-    fun g hg h ↦ hg (by rw [h]; exact (gaussPointAboveOne K).toValuativeRel.vle_refl 0)
 
 /-- Inside `Spa(K⟨T⟩, K⟨T⟩⁺)`, the closed unit disc is the open subset `{v : v(T) ≤ 1}`. -/
 theorem isOpen_closedPolydisc_spa_closedDiscMinimalPlus :
