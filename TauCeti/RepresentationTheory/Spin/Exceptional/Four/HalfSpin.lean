@@ -99,11 +99,8 @@ theorem
       (fun g ↦ spinPlusAction Q P hline (spinGroupToEven Q g)) ?_ ?_⟩
     · intro g s
       apply Subtype.ext
-      have heven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
-        Subtype.ext (coe_spinGroupToEven_apply Q g)
-      rw [heven]
       simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-        (coe_spinPlusAction_spinGroup_apply P hline g (ep.symm s)).symm
+        (coe_spinPlusAction_spinGroupToEven_apply P hline g (ep.symm s)).symm
     · intro g s
       simp only [MonoidHom.comp_apply, MonoidHom.coe_fst, MulEquiv.coe_toMonoidHom,
         stdSLRep_apply_apply]
@@ -118,11 +115,8 @@ theorem
       (fun g ↦ spinMinusAction Q P hline (spinGroupToEven Q g)) ?_ ?_⟩
     · intro g s
       apply Subtype.ext
-      have heven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
-        Subtype.ext (coe_spinGroupToEven_apply Q g)
-      rw [heven]
       simpa only [em, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-        (coe_spinMinusAction_spinGroup_apply P hline g (em.symm s)).symm
+        (coe_spinMinusAction_spinGroupToEven_apply P hline g (em.symm s)).symm
     · intro g s
       simp only [MonoidHom.comp_apply, MonoidHom.coe_snd, MulEquiv.coe_toMonoidHom,
         stdSLRep_apply_apply]

@@ -22,10 +22,6 @@ The comparison is stated over any field of characteristic different from two. It
 canonical split polarization of `splitEvenForm K 3`, so the chosen coordinates agree with the
 existing matrix-product model.
 
-## Main definitions
-
-* `TauCeti.hyperbolicSixSpinToGeneralLinear`: the first half-spin matrix of a Spin element.
-
 ## Main results
 
 * `TauCeti.nonempty_hyperbolicSix_halfSpin_equiv_stdRep_and_dual`: the even half-spin module is the
@@ -61,33 +57,6 @@ variable [NeZero (2 : K)]
 /-- The invertibility witness used by the characteristic-not-two Clifford APIs. -/
 local instance hyperbolicSixStandardInvertibleTwo : Invertible (2 : K) :=
   invertibleOfNonzero (NeZero.ne (2 : K))
-
-/-- The first half-spin matrix of an element of the Spin group of three hyperbolic planes.
-
-This is the restriction to Spin of the existing equivalence between the reverse-unitary group of
-the even Clifford algebra and `GL₄`. -/
-noncomputable def hyperbolicSixSpinToGeneralLinear :
-    spinGroup (splitEvenForm K 3) →* Matrix.GeneralLinearGroup (Fin 4) K :=
-  (hyperbolicSixEvenUnitaryEquivGeneralLinear K).toMonoidHom.comp
-    (spinGroupToEvenUnitary (splitEvenForm K 3))
-
-/-- The underlying matrix of `hyperbolicSixSpinToGeneralLinear` is the first factor of the
-half-spin matrix-product model. -/
-@[simp]
-theorem coe_hyperbolicSixSpinToGeneralLinear_apply
-    (g : spinGroup (splitEvenForm K 3)) :
-    (hyperbolicSixSpinToGeneralLinear K g : Matrix (Fin 4) (Fin 4) K) =
-      (hyperbolicSixEvenEquivMatrixProd K
-        (spinGroupToEven (splitEvenForm K 3) g)).1 := by
-  rw [hyperbolicSixSpinToGeneralLinear, MonoidHom.comp_apply]
-  simp only [MulEquiv.coe_toMonoidHom]
-  rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  have heven : evenUnitaryGroupEvenPart (splitEvenForm K 3)
-      (spinGroupToEvenUnitary (splitEvenForm K 3) g) =
-        spinGroupToEven (splitEvenForm K 3) g := by
-    apply Subtype.ext
-    simp
-  rw [heven]
 
 noncomputable local instance hyperbolicSixSpinPlusFinite :
     FiniteDimensional K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
@@ -132,20 +101,8 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdRep :
       (spinGroupToEven (splitEvenForm K 3) g)) ?_ ?_⟩
   · intro g s
     apply Subtype.ext
-    have hsub :
-        ((ep.symm ((spinPlusSubrep P hline).toRepresentation g s) :
-            spinPlus (splitEvenForm K 3) P) : ExteriorAlgebra K P.W) =
-          ((spinPlusAction (splitEvenForm K 3) P hline
-            ⟨g, spinGroup.mem_even g.2⟩ (ep.symm s) :
-              spinPlus (splitEvenForm K 3) P) : ExteriorAlgebra K P.W) := by
-      simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-        (coe_spinPlusAction_spinGroup_apply P hline g (ep.symm s)).symm
-    have heven : spinGroupToEven (splitEvenForm K 3) g =
-        ⟨g, spinGroup.mem_even g.2⟩ :=
-      Subtype.ext (coe_spinGroupToEven_apply (splitEvenForm K 3) g)
-    exact hsub.trans (congrArg (fun x ↦
-      ((spinPlusAction (splitEvenForm K 3) P hline x (ep.symm s) :
-        spinPlus (splitEvenForm K 3) P) : ExteriorAlgebra K P.W)) heven.symm)
+    simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
+      (coe_spinPlusAction_spinGroupToEven_apply P hline g (ep.symm s)).symm
   · intro g s
     simp only [MonoidHom.comp_apply, stdRep_apply_apply]
     rw [hyperbolicSixSpinToGeneralLinear_eq_endAlgEquivMatrix]
