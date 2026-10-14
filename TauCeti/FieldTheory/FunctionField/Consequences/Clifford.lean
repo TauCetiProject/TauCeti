@@ -300,7 +300,7 @@ theorem dim_add_dim_le_one_add_dim_add (hF : IsFunctionField k F)
     have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
     have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
     have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-    have hex' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+    have hex' := hex.of_constantCompositum_eq_top h
     have hdim := dim_add_dim_le_one_add_dim_add_of_lt_card hF' hex'
       (A := conorm k' F' A) (B := conorm k' F' B)
       (by rwa [dim_conorm hex h hF']) (by rwa [dim_conorm hex h hF'])

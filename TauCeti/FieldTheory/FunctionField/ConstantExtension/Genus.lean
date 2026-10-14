@@ -21,7 +21,7 @@ and is injective on divisor classes.
 
 Exactness of `k'` in `F'` is not needed for the degree and genus identities; where the canonical
 class of `F' / k'` is spoken of, it follows from exactness of `k` in `F`
-(`TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top`).
+(`IsIntegrallyClosedIn.of_constantCompositum_eq_top`).
 
 Without separability the genus can drop (`TauCeti.GenusDrop.genus_lt_genus`), but it never
 increases: for any finite `k' / k`, comparing `ℓ(Con D)` with `ℓ(D)` gives
@@ -174,9 +174,9 @@ theorem conormClassGroup_canonicalClass_of_constantCompositum_eq_top (hF : IsFun
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
     Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h) (canonicalClass hF hex) =
       canonicalClass (hF.of_constantCompositum_eq_top h)
-        (isIntegrallyClosedIn_of_constantCompositum_eq_top hex h) := by
+        (hex.of_constantCompositum_eq_top h) := by
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hex' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+  have hex' := hex.of_constantCompositum_eq_top h
   obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
   have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
   rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',

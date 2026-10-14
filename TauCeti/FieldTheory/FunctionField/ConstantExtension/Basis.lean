@@ -33,7 +33,7 @@ functions of `F' = F · k'` with bounded poles in terms of those of `F`.
 * `TauCeti.constantBasis`: the `F`-basis of `F' = F · k'` given by a `k`-basis of `k'`.
 * `TauCeti.constantBasis_repr_algebraMap`: the coordinates of a constant in a basis of constants
   are the images of its coordinates over `k`.
-* `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top`: `k'` is the exact constant field
+* `IsIntegrallyClosedIn.of_constantCompositum_eq_top`: `k'` is the exact constant field
   of `F · k'` (Stichtenoth, Proposition 3.6.1(a)), with no perfectness hypothesis.
 * `TauCeti.trace_algebraMap_of_constantCompositum_eq_top`: the trace of a constant is the image
   of its trace over `k`.  This is Mathlib's `Subalgebra.LinearDisjoint.trace_algebraMap` for the
@@ -170,7 +170,7 @@ Together with `TauCeti.IsFunctionField.of_constantCompositum_eq_top`, this makes
 function field with exact constant field for a separable algebraic `k' / k`, so that its genus,
 its places and their degrees are the ones the theory of constant field extensions compares with
 those of `F / k`. -/
-theorem isIntegrallyClosedIn_of_constantCompositum_eq_top : IsIntegrallyClosedIn k' F' := by
+theorem _root_.IsIntegrallyClosedIn.of_constantCompositum_eq_top : IsIntegrallyClosedIn k' F' := by
   -- An element `z` algebraic over `k'` has a power `z ^ q ^ n` that is a constant. Raising to the
   -- power `q ^ n` carries a `k`-basis of the separable extension `k'` to another one, so the
   -- coordinates of `z` in a basis of constants have `q ^ n`-th powers in `k`, hence lie in `k`.
@@ -193,8 +193,8 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top : IsIntegrallyClosedIn
     have hi := constantBasis_mapPowExpCharPowOfIsSeparable_repr_pow hex h q n b z i
     rw [← hc, constantBasis_repr_algebraMap] at hi
     let _ := hex
-    exact IsIntegrallyClosedIn.isIntegral_iff.mp <| (IsAlgebraic.of_pow
-      (pow_pos (expChar_pos k q) n) (hi ▸ isAlgebraic_algebraMap _)).isIntegral
+    exact IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow
+      (pow_pos (expChar_pos k q) n) (hi ▸ isIntegral_algebraMap)
   choose a ha using hcoord
   -- So `z` is the image of a constant.
   refine ⟨∑ i ∈ (B.repr z).support, a i • b i, ?_⟩

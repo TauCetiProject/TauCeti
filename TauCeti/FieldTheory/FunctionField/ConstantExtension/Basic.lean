@@ -21,7 +21,7 @@ Under the hypotheses that make constant field extensions well behaved — the or
 field `k` is exact in `F` and `k' / k` is separable — the compositum acquires no new separable
 constants: no element of `F · k'` outside `k'` is separable over `k'`.  Comparing coordinates in
 a basis of constants upgrades this to exactness of `k'` in `F · k'`
-(`TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top` in `ConstantExtension.Basis`).
+(`IsIntegrallyClosedIn.of_constantCompositum_eq_top` in `ConstantExtension.Basis`).
 Separability of `k' / k` cannot simply be dropped: over an imperfect `k` an inseparable constant
 field extension can enlarge the field of constants beyond `k'`.  For instance,
 `k = 𝔽_p(t, u)` is exact in `F = k(x, y)` with `y ^ p = t * x ^ p + u`, but for `k' = k(t ^ (1/p))`
@@ -120,7 +120,7 @@ constant field of `F` and `k' / k` is separable algebraic, then every element of
 separable over `k'` is already a constant of `k'`.
 
 This is the separable half of Stichtenoth, Proposition 3.6.1(a);
-`TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top` upgrades it to exactness of `k'`. -/
+`IsIntegrallyClosedIn.of_constantCompositum_eq_top` upgrades it to exactness of `k'`. -/
 theorem separableClosure_eq_bot_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
     separableClosure k' F' = ⊥ := by

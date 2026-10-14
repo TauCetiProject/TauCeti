@@ -411,7 +411,7 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
   have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
   have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hex' : IsIntegrallyClosedIn k' F' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+  have hex' : IsIntegrallyClosedIn k' F' := hex.of_constantCompositum_eq_top h
   -- The algebra structures making `F₁ ⊆ F₁ · k' ⊆ F'` and `F₂ ⊆ F₂ · k' ⊆ F'` towers over `k`.
   let : Algebra F₁ F' := ((algebraMap F F').comp (algebraMap F₁ F)).toAlgebra
   let : Algebra F₂ F' := ((algebraMap F F').comp (algebraMap F₂ F)).toAlgebra
