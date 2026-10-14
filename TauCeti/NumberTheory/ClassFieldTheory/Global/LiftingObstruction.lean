@@ -252,6 +252,13 @@ theorem ideleToClassH2_def :
       ((groupCohomology.functor ℤ L.Gal 2).map (L.repMap (ideleClassHom K))).hom.toAddMonoidHom :=
   (rfl)
 
+/-- `ideleToClassH2 K L` applies Mathlib's cohomology map of the quotient map onto the idele
+classes of the layer. -/
+theorem ideleToClassH2_apply (y : L.H (ideleFormation K) 2) :
+    ideleToClassH2 K L y =
+      groupCohomology.map (MonoidHom.id L.Gal) (L.repMap (ideleClassHom K)) 2 y :=
+  (rfl)
+
 /-- **The obstruction to lifting**: the connecting homomorphism
 `H²(Gal(L/F), C_L) → H³(Gal(L/F), Lˣ)` of the exact sequence `0 → Lˣ → I_L → C_L → 0`. Its target
 is the third cohomology of the layer in the multiplicative formation `unitsFormation K`. -/
