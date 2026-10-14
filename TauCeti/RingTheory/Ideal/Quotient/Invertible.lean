@@ -7,6 +7,7 @@ module
 
 import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.RingTheory.PicardGroup.Quotient
+public import TauCeti.RingTheory.Ideal.Quotient.ModuleFinite
 
 /-!
 # Quotients by products with invertible ideals
@@ -29,15 +30,12 @@ variable {R : Type*} [CommRing R]
 
 /-- For an invertible ideal `I` and a semilocal quotient `R / J`, the quotient `I / IJ`
 is isomorphic to `R / J` as an `R`-module. -/
-theorem nonempty_quotientMulEquiv (I J : Ideal R) [Module.Invertible R I]
+theorem nonempty_quotient_comap_mul_linearEquiv_quotient (I J : Ideal R)
+    [Module.Invertible R I]
     [Finite (MaximalSpectrum (R ⧸ J))] :
     Nonempty ((I ⧸ Submodule.comap I.subtype (I * J)) ≃ₗ[R] R ⧸ J) := by
-  have hsub : J • (⊤ : Submodule R I) = Submodule.comap I.subtype (I * J) := by
-    ext x
-    simp only [Submodule.mem_smul_top_iff, Submodule.mem_comap, Submodule.coe_subtype,
-      Ideal.smul_eq_mul, mul_comm J I]
   obtain ⟨e⟩ := Module.Invertible.nonempty_quotientEquiv I J
-  exact ⟨(Submodule.quotEquivOfEq _ _ hsub.symm).trans e⟩
+  exact ⟨(Submodule.quotEquivOfEq _ _ (I.smul_top_eq_comap_mul J).symm).trans e⟩
 
 /-- Codimension is additive on a product of finite-codimensional ideals when the first
 ideal is invertible as a module. -/
@@ -46,7 +44,8 @@ theorem finrank_quotient_mul (K : Type*) [Field K] [Algebra K R] (I J : Ideal R)
     Module.finrank K (R ⧸ I * J) =
       Module.finrank K (R ⧸ I) + Module.finrank K (R ⧸ J) := by
   let : IsArtinianRing (R ⧸ J) := IsArtinianRing.of_finite K (R ⧸ J)
-  obtain ⟨eI⟩ := nonempty_quotientMulEquiv I J
+  have : Module.Finite K (R ⧸ I * J) := I.finite_quotient_mul J
+  obtain ⟨eI⟩ := nonempty_quotient_comap_mul_linearEquiv_quotient I J
   let g : I →ₗ[R] R ⧸ I * J := (I * J).mkQ.comp I.subtype
   let N := LinearMap.range g
   have hN : N = Submodule.map (I * J).mkQ I := by
@@ -61,11 +60,6 @@ theorem finrank_quotient_mul (K : Type*) [Field K] [Algebra K R] (I J : Ideal R)
   let eN : N ≃ₗ[R] R ⧸ J := e₂.trans eI
   let eNK := ((N.restrictScalarsEquiv K).restrictScalars K).trans (eN.restrictScalars K)
   let e₁K := (Submodule.Quotient.restrictScalarsEquiv K N).trans (e₁.restrictScalars K)
-  have : Module.Finite K (N.restrictScalars K) := eNK.symm.finiteDimensional
-  have : Module.Finite K ((R ⧸ I * J) ⧸ N.restrictScalars K) :=
-    e₁K.symm.finiteDimensional
-  have : Module.Finite K (R ⧸ I * J) :=
-    Module.Finite.of_submodule_quotient (N.restrictScalars K)
   rw [← (N.restrictScalars K).finrank_quotient_add_finrank,
     e₁K.finrank_eq, eNK.finrank_eq]
 

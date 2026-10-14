@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FractionalIdeal.Operations
-public import Mathlib.RingTheory.ClassGroup.Basic
+public import Mathlib.RingTheory.PicardGroup
 
 /-!
 # Operations on fractional ideals
@@ -32,6 +32,8 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 * `FractionalIdeal.isUnit_spanSingleton`: the principal fractional ideal of a unit is a unit.
 * `FractionalIdeal.spanSingleton_inv_mul_cancel_left`: scaling by a unit and then by its inverse
   returns the fractional ideal.
+* `Ideal.moduleInvertible_of_isUnit_fractionalIdeal`: an ideal invertible in a faithful
+  localization is an invertible module over the base ring.
 -/
 
 public section
@@ -143,3 +145,28 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
   rw [← neg_one_mul x, map_mul, hneg, one_mul]
 
 end FractionalIdeal
+
+namespace Ideal
+
+-- Extracted from the point-to-class argument adapted from Chris Birkbeck's AINTLIB
+-- (`github.com/CBirkbeck/AINTLIB`, `HasseWeil/Pic0/ToClassSurjective.lean`,
+-- revision `dev/hasse-weil @ 513e83879e2f`, Apache-2.0).
+/-- An integral ideal that is invertible as a fractional ideal in a faithful localization
+is an invertible module over the base ring. -/
+theorem moduleInvertible_of_isUnit_fractionalIdeal {R : Type*} [CommRing R]
+    {S : Submonoid R} {P : Type*} [CommRing P] [Algebra R P] [IsLocalization S P]
+    [FaithfulSMul R P] (I : Ideal R) (hI : IsUnit (I : FractionalIdeal S P)) :
+    Module.Invertible R I := by
+  let U : (Submodule R P)ˣ := FractionalIdeal.unitsMulEquivSubmodule hI.unit
+  have hU : (U : Submodule R P) = (I : FractionalIdeal S P).coeToSubmodule :=
+    congrArg FractionalIdeal.coeToSubmodule hI.unit_spec
+  have hmap : Submodule.map (Algebra.linearMap R P) I =
+      (I : FractionalIdeal S P).coeToSubmodule := by
+    rw [FractionalIdeal.coe_coeIdeal, IsLocalization.coeSubmodule]
+  let e : I ≃ₗ[R] U :=
+    (Submodule.equivMapOfInjective (Algebra.linearMap R P)
+      (FaithfulSMul.algebraMap_injective R P) I).trans
+      ((LinearEquiv.ofEq _ _ hmap).trans (LinearEquiv.ofEq _ _ hU.symm))
+  exact Module.Invertible.congr e.symm
+
+end Ideal
