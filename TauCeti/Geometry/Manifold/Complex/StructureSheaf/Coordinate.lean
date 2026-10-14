@@ -62,6 +62,12 @@ def holomorphicCoordinateGerm (hx : x ∈ e.source) :
   (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx
     (holomorphicCoordinateSection e he (e x))
 
+/-- The centered coordinate germ is the germ of the translated coordinate section. -/
+theorem holomorphicCoordinateGerm_def (hx : x ∈ e.source) :
+    holomorphicCoordinateGerm e he x hx =
+      (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx
+        (holomorphicCoordinateSection e he (e x)) := (rfl)
+
 /-- The germ of a centered chart coordinate evaluates to zero at its center. -/
 @[simp]
 theorem eval_holomorphicCoordinateGerm (hx : x ∈ e.source) :
@@ -92,6 +98,25 @@ theorem holomorphicCoordinateGerm_ne_zero (hx : x ∈ e.source) :
   obtain ⟨z, hz, hez⟩ := (hne.and (hconst.filter_mono nhdsWithin_le_nhds)).exists
   exact hz hez
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
+include he in
+/-- A holomorphic section, extended by zero outside its domain and written in
+a local chart, is analytic at every point of its domain in the chart source. -/
+theorem analyticAt_holomorphicSection_extend_comp_symm (hx : x ∈ e.source)
+    (U : Opens X) (hxU : x ∈ U)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op U)) :
+    AnalyticAt ℂ ((Function.extend Subtype.val s (fun _ => 0)) ∘ e.symm) (e x) := by
+  let F : X → ℂ := Function.extend Subtype.val s (fun _ => 0)
+  have hF (y : U) : F y = s y := Subtype.val_injective.extend_apply _ _ y
+  have hFa : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) F y := by
+    filter_upwards [U.isOpen.mem_nhds hxU] with y hy
+    have hdiff : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (fun z : U => F z) ⟨y, hy⟩ :=
+      (contMDiff s).contMDiffAt.congr_of_eventuallyEq (.of_forall hF)
+    exact (contMDiffAt_subtype_iff.mp hdiff).mdifferentiableAt (by simp)
+  simpa only [mfld_simps, Function.comp_def] using
+    analyticAt_chart_comp_comp_symm he (chart_mem_maximalAtlas (F x)) hx
+      (mem_chart_source ℂ (F x)) hFa
+
 /-- A holomorphic germ is divisible by a centered chart coordinate exactly when it vanishes
 at the center. The quotient is holomorphic also at the coordinate's zero. -/
 @[simp]
@@ -111,16 +136,9 @@ theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
     simpa only [eval_germ] using hf
   let F : X → ℂ := Function.extend Subtype.val s (fun _ => 0)
   have hF (y : U) : F y = s y := Subtype.val_injective.extend_apply _ _ y
-  have hFa : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) F y := by
-    filter_upwards [U.isOpen.mem_nhds hxU] with y hy
-    have hdiff : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (fun z : U => F z) ⟨y, hy⟩ :=
-      (contMDiff s).contMDiffAt.congr_of_eventuallyEq (.of_forall hF)
-    exact (contMDiffAt_subtype_iff.mp hdiff).mdifferentiableAt (by simp)
   let A : ℂ → ℂ := F ∘ e.symm
-  have hA : AnalyticAt ℂ A (e x) := by
-    simpa only [A, mfld_simps, Function.comp_def] using
-      analyticAt_chart_comp_comp_symm he (chart_mem_maximalAtlas (F x)) hx
-        (mem_chart_source ℂ (F x)) hFa
+  have hA : AnalyticAt ℂ A (e x) :=
+    analyticAt_holomorphicSection_extend_comp_symm e he x hx U hxU s
   obtain ⟨p, hp⟩ := hA
   -- The difference quotient extends analytically across the center.
   have hD : AnalyticAt ℂ (dslope A (e x)) (e x) :=
