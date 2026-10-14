@@ -56,7 +56,7 @@ private theorem isCoprime_unit_val (s : ℕ) (u : (ZMod s)ˣ) :
   (ZMod.val_coe_unit_coprime u).isCoprime.symm
 
 /-- A unit residue gives the proper class of its triangular form. -/
-def splitUnitToProperClass (s : ℕ) [NeZero s] (u : (ZMod s)ˣ) : SplitProperClass s :=
+def splitUnitToProperClass (s : ℕ) (u : (ZMod s)ˣ) : SplitProperClass s :=
   splitProperClassMk s (u : ZMod s).val (isCoprime_unit_val s u)
 
 /-- Distinct unit residues give distinct proper classes. -/
