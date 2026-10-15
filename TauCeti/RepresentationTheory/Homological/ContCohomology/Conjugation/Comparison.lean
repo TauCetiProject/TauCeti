@@ -56,6 +56,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- **Conjugation in degree zero.** The comparison `H⁰ ≅ continuousCohomology 0` carries the
 explicit map `M^U → M^V`, `m ↦ g • m`, of the conjugation pair to `conjMap`. -/
+@[simp]
 theorem explicitH0Iso_conjMap (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom)
     (x : H0 U M) :
     conjMap U V M g hVU 0 ((explicitH0IsoContinuousCohomology U M).hom x) =
@@ -71,6 +72,7 @@ variable [ContinuousSMul G M] [CompactSpace U] [CompactSpace V]
 /-- **Conjugation in degree one.** The comparison `H¹ ≅ continuousCohomology 1` carries the
 explicit pullback along the conjugation pair, which sends a cocycle `c` to `v ↦ g • c (g⁻¹ v g)`,
 to `conjMap`. -/
+@[simp]
 theorem explicitIso_conjMap (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom)
     (x : DiscreteH1 U M) :
     conjMap U V M g hVU 1 ((explicitH1IsoContinuousCohomology U M).hom x) =
@@ -86,6 +88,7 @@ theorem explicitIso_conjMap (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom
 /-- **Conjugation in degree two.** The comparison `H² ≅ continuousCohomology 2` carries the
 explicit pullback along the conjugation pair, which sends a cocycle `c` to
 `(v, w) ↦ g • c (g⁻¹ v g, g⁻¹ w g)`, to `conjMap`. -/
+@[simp]
 theorem explicitIso_conjMap2 (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom)
     (x : DiscreteH2 U M) :
     conjMap U V M g hVU 2 ((explicitH2IsoContinuousCohomology U M).hom x) =
@@ -101,6 +104,7 @@ theorem explicitIso_conjMap2 (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHo
 /-- **Conjugation on a normal subgroup in degree one.** For a normal subgroup `N`, the comparison
 `H¹ ≅ continuousCohomology 1` carries the explicit conjugation action `x ↦ g • x` on `H¹(N, M)`,
 which is `TauCeti.ContCohomology.explicitConj1`, to `conjNormalMap`. -/
+@[simp]
 theorem explicitIso_conjNormalMap (N : Subgroup G) [N.Normal] [CompactSpace N] (g : G)
     (x : DiscreteH1 N M) :
     conjNormalMap N M g 1 ((explicitH1IsoContinuousCohomology N M).hom x) =
