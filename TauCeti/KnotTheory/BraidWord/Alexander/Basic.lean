@@ -19,6 +19,10 @@ where `burau β` is the unreduced Burau matrix at `t = T` of the braid `β` that
 
 `w.closure.AlexanderModule ≃ (Fin n → ℤ[T;T⁻¹]) ⧸ range (burau β - 1)`.
 
+Here the Alexander module is the unreduced one, `TauCeti.OrientedPDCode.AlexanderModule`, which
+keeps a free `ℤ[T;T⁻¹]` summand (for the trivial braid on one strand both sides are
+`ℤ[T;T⁻¹]`); `TauCeti.OrientedPDCode.ReducedAlexanderModule` removes it.
+
 Hence the elementary ideal `E_k` of the closure is the ideal of `(n - k)`-minors of `burau β - 1`
 (`TauCeti.BraidWord.elementaryIdeal_closure`). This is the presentation-changing step joining the
 diagram algorithm for the Alexander invariants to the Burau algorithm.
@@ -34,8 +38,8 @@ crossing-free circles, whose generators are free; the Burau matrix fixes their b
 
 ## Main definitions
 
-* `TauCeti.BraidWord.closureAlexanderModuleEquiv`: the Alexander module of the closure is the
-  cokernel of the Burau matrix minus the identity.
+* `TauCeti.BraidWord.closureAlexanderModuleEquiv`: the unreduced Alexander module of the closure
+  is the cokernel of the Burau matrix minus the identity.
 
 ## Main results
 
@@ -577,9 +581,9 @@ private theorem toCoker_levelGen_zero (q : Fin n) :
 /-! ### The isomorphism -/
 
 /-- **The Alexander module of a closed braid is the Burau cokernel.** For a braid word `w` on
-`n` strands representing the braid `β`, the Alexander module of the closure of `w` is isomorphic
-to the cokernel of `burau β - 1`, the unreduced Burau matrix at `t = T` minus the identity,
-acting on column vectors. -/
+`n` strands representing the braid `β`, the unreduced Alexander module of the closure of `w` is
+isomorphic to the cokernel of `burau β - 1`, the unreduced Burau matrix at `t = T` minus the
+identity, acting on column vectors. -/
 def closureAlexanderModuleEquiv :
     w.closure.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] (Fin n → ℤ[T;T⁻¹]) ⧸
       LinearMap.range ((burau n (isUnit_T (R := ℤ) 1).unit w.toBraid :

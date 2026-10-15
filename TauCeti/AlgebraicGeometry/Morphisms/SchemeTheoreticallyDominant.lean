@@ -42,6 +42,13 @@ universe u
 
 variable {W X Y S : Scheme.{u}}
 
+/-- If a composite is scheme-theoretically dominant, so is its second factor. -/
+theorem _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_comp
+    (f : W ⟶ X) (g : X ⟶ Y) [IsSchemeTheoreticallyDominant (f ≫ g)] :
+    IsSchemeTheoreticallyDominant g := by
+  constructor
+  exact eq_bot_iff.mpr ((Scheme.Hom.le_ker_comp f g).trans (f ≫ g).ker_eq_bot.le)
+
 /-- Two morphisms into a separated scheme over a base agree if they agree after precomposition
 with a scheme-theoretically dominant morphism. The source need not be reduced. -/
 theorem ext_of_isSchemeTheoreticallyDominant

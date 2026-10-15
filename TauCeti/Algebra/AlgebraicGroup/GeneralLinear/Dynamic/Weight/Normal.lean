@@ -58,9 +58,8 @@ the existing dynamic statement that the weight parabolic normalizes its unipoten
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic Levi-decomposition milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap by supplying both represented factors inside the weight parabolic. The
-relative Levi is the acting factor required by the scheme-level semidirect-product decomposition.
+This supplies both represented factors inside the weight parabolic. The relative Levi is the acting
+factor required by the scheme-level semidirect-product decomposition.
 -/
 
 public section
@@ -310,7 +309,7 @@ dynamic Levi inclusion transported through the representing isomorphisms. -/
 theorem mapPointsFunctor_weightLeviToParabolicCoordinateMap_app (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R)
     (z : HopfAlgebra.points (R := R) (H := weightLeviCoordinateHopfAlgebra R w) A) :
-    (CommHopfAlgCat.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w)).app A z =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w)).app A z =
       (weightParabolicPointsIso R w).inv.app A
         (Cocharacter.leviToParabolic A (weightCocharacter (R := R) w)
           ((weightLeviPointsIso R w).hom.app A z)) := by

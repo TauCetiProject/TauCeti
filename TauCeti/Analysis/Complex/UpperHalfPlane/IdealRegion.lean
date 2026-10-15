@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
@@ -73,13 +73,7 @@ theorem volume_setOf_re_eq (x : ℝ) : volume {z : ℍ | z.re = x} = 0 := by
     ext z
     simp [UpperHalfPlane.coe_re]
   rw [h]
-  refine volume_preimage_coe_null ?_
-  have h' : {w : ℂ | w.re = x} = Complex.measurableEquivRealProd ⁻¹' ({x} ×ˢ univ) := by
-    ext w
-    simp [Complex.measurableEquivRealProd_apply]
-  rw [h', Complex.volume_preserving_equiv_real_prod.measure_preimage
-    ((measurableSet_singleton x).prod MeasurableSet.univ).nullMeasurableSet,
-    Measure.volume_eq_prod, Measure.prod_prod, Real.volume_singleton, zero_mul]
+  exact volume_preimage_coe_null (Complex.volume_setOf_re_eq x)
 
 /-- `volume_idealRegion` for `-1 < a` and `b < 1`, where the integrand `1 / √(1 - x²)` is
 continuous on `[a, b]`; for `b < a` both sides vanish. -/

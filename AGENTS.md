@@ -42,10 +42,27 @@ scope do not coincide.
 ## The rules of the repo
 
 - `main` is always green. CI builds against pinned Mathlib and enforces: no `sorry`, no
-  axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), and the
-  Mathlib linter set (style, file length, no `maxHeartbeats` overrides). Do not try to disable
-  these.
+  axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
+  `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
+  overrides). Do not try to disable these.
+- Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
+  macros should remove substantial repeated proof machinery, rather than just shorten a
+  couple of small proofs. Keep macro hygiene enabled: `set_option`, including
+  `set_option hygiene false`, is forbidden anywhere in library code. Heartbeat-measurement
+  syntax (`guard_min_heartbeats`, `#count_heartbeats`, and `#count_heartbeats!`) belongs in
+  tooling rather than library code; some command forms disable limits internally. The source
+  guard conservatively includes strings, qualified/quoted names, and comments containing
+  double quotes, because interpolation can confuse the approximate lexer. Put explanatory
+  references in comments without double quotes. A local syntax rule needed for elaboration performance
+  should document the concrete need at its declaration.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
+- Stacked PRs are prohibited, including drafts and PRs labelled keep/hold/human.
+  Wait for each prerequisite to land on main before opening its dependent PR;
+  then rebase onto current main and include only the new work. Targeting main
+  while carrying another unmerged PR's commits or content is still stacking.
+  The trusted [no-stacking policy](scripts/stack-policy.md) comments and closes
+  confirmed stacks without deleting their branches. Ordinary independent PRs
+  may touch the same files or share roadmap areas.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every
   in-repository use and remove the obsolete names and module paths in the same PR. Do not add or
@@ -53,14 +70,15 @@ scope do not coincide.
   import modules, deprecated shims (including `deprecated_module`), or duplicate theorem names.
   External users of an older revision must update to the canonical API on current `main`;
   breaking their source compatibility is not a reason to keep an obsolete surface.
-- `TauCeti/` is the only place code goes. `scripts/`, `.github/`, and the lakefile
+- `TauCeti/` is the only place code goes, and what goes there is mathematics, not
+  metaprogramming: Lean meta code is human-owned and lives in `scripts/`, which is why the
+  `meta import` guard above exists. `scripts/`, `.github/`, and the lakefile
   (`lakefile.toml`/`lakefile.lean`) are human-owned. The two Lake *pins* —
   `lake-manifest.json` and `lean-toolchain` — are an exception: a **forward-only** bump of
   them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving
   monotonically forward) is machine-validated by the `bump-guard` check and is welcome, but
   never edit the lakefile or move a pin backward. Mathlib's lakefile `rev` must always remain
-  `master`; `lake-manifest.json` alone records the exact commit used by ordinary bumps and
-  first-known-bad repair PRs.
+  `master`; `lake-manifest.json` alone records the exact commit used by dependency bump repair PRs.
 - **Never delete a PR's human-owned changes to get it past the build gate.** When a PR
   *intentionally* touches `scripts/`, `.github/`, or the lakefile (for example, a PR that adds
   a new CI check), those changes are the deliverable, not an obstacle. The gate routes such a

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.AdjoinRoot.Factors
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero
 
 /-!
@@ -377,8 +377,8 @@ lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
     Valued.v (adicCompletionExtension K L v w x) =
       Valued.v x ^ v.asIdeal.ramificationIdx' w.asIdeal := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  rw [← adicCompletion.valued_toCompletion L w (adicCompletionExtension K L v w x),
-    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion K v x]
+  rw [← adicCompletion.valued_toCompletion_apply L w (adicCompletionExtension K L v w x),
+    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion_apply K v x]
   have hsurjK : Function.Surjective (⇑(Valued.v : Valuation (v.valuation K).Completion ℤᵐ⁰)) :=
     Valued.valuedCompletion_surjective_iff.mpr <| .of_comp (v.valuation_surjective K)
   have hsurjL : Function.Surjective (⇑(Valued.v : Valuation (w.valuation L).Completion ℤᵐ⁰)) :=

@@ -43,6 +43,8 @@ the level divides `2 · det L`, and for a nondegenerate lattice it kills the dis
   exactly when `N` kills the discriminant quadratic form.
 * `TauCeti.IntegralLattice.IsEven.level_eq_addOrderOf`: when the discriminant group is cyclic,
   the level is the additive order of the quadratic value of a generator.
+* `TauCeti.IntegralLattice.IsEven.level_eq_den`: when that quadratic value is the class of a
+  rational number, the level is its denominator.
 * `TauCeti.IntegralLattice.level_nsmul_mem_carrier` and
   `TauCeti.IntegralLattice.exponent_discriminantGroup_dvd_level`: the level of a nondegenerate
   lattice kills `A_L`.
@@ -295,6 +297,15 @@ theorem IsEven.level_eq_addOrderOf {L : IntegralLattice V} (hL : L.IsEven)
   · exact Int.natCast_dvd_natCast.mp ((h _).mpr (by simp))
   · exact Int.natCast_dvd_natCast.mp
       (addOrderOf_dvd_iff_zsmul_eq_zero.mpr ((h _).mp dvd_rfl))
+
+/-- If a class generates the discriminant group of an even lattice and its quadratic value is the
+class of the rational number `r`, the level is the denominator of `r`. -/
+theorem IsEven.level_eq_den {L : IntegralLattice V} (hL : L.IsEven)
+    (a : L.DiscriminantGroup) (ha : AddSubgroup.zmultiples a = ⊤) {r : ℚ}
+    (hr : L.discriminantQuadraticMap hL a = (r : AddCircle (1 : ℚ))) :
+    L.level = r.den := by
+  rw [hL.level_eq_addOrderOf a ha, hr]
+  simpa only [Rat.cast_id, mul_one] using AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := r)
 
 /-! ## Unimodular lattices -/
 

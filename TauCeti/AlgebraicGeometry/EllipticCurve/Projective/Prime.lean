@@ -110,7 +110,7 @@ private theorem map_cubic {S : Type*} [CommRing S] (f : R →+* S) :
 private theorem irreducible_cubic [IsDomain R] : Irreducible W'.cubic := by
   -- the cubic is Eisenstein at the prime `Z`
   have hP : (Ideal.span {(X 1 : MvPolynomial (Fin 2) R)}).IsPrime :=
-    Ideal.isPrime_span_singleton_of_prime X_prime
+    Ideal.isPrime_span_singleton_of_prime prime_X
   have hdeg : W'.cubic.natDegree = 3 := Cubic.natDegree_of_a_ne_zero' one_ne_zero
   refine (W'.monic_cubic.isEisensteinAt_of_mem_of_notMem hP.ne_top (fun {n} hn ↦ ?_) ?_).irreducible
     hP W'.monic_cubic.isPrimitive (by lia)

@@ -151,8 +151,8 @@ even when the ambient vertex type is infinite. -/
 theorem isCompact_geometricLink_of_finite
     (hfin : (PreAbstractSimplicialComplex.link K.toPreAbstractSimplicialComplex {v}).faces.Finite) :
     IsCompact (geometricLink K v) := by
-  rw [Set.ext (mem_geometricLink_iff K v)]
-  exact K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.link_le hfin
+  convert K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.link_le hfin using 1
+  exact Set.ext (mem_geometricLink_iff K v)
 
 /-- The apex, regarded as a point of its geometric closed star. -/
 def starApex : closedStarRealization K {v} :=
@@ -376,6 +376,27 @@ theorem continuous_starLinkProjection
   apply continuous_pi
   intro w
   simp only [Function.comp_apply, normalizedLinkCoordinates_apply]
+  have hc := continuous_puncturedStar_coordinate K v
+  have hinv := (continuous_const.sub (hc v)).inv₀
+    (fun x => (sub_pos.mpr x.2.2).ne')
+  by_cases h : w = v
+  · simp only [h, ↓reduceIte]
+    exact continuous_const
+  · simp only [h, ↓reduceIte]
+    exact hinv.mul (hc w)
+
+/-- Radial projection onto the link is continuous when the chosen closed star is compact.
+No hypothesis on the topology outside that star is needed. -/
+theorem continuous_starLinkProjection_of_isCompact
+    (hcompact : IsCompact (closedStarRealization K {v})) :
+    Continuous (starLinkProjection K v) := by
+  have hlink : Topology.IsEmbedding (fun x : geometricLink K v => (x.1.1 : ι → ℝ)) :=
+    (K.isClosedEmbedding_realization_coe_restrict hcompact).isEmbedding.comp
+      (Topology.IsEmbedding.inclusion fun _ hx => ((mem_geometricLink K v _).mp hx).2)
+  apply hlink.continuous_iff.mpr
+  apply continuous_pi
+  intro w
+  simp only [Function.comp_apply, starLinkProjection_apply]
   have hc := continuous_puncturedStar_coordinate K v
   have hinv := (continuous_const.sub (hc v)).inv₀
     (fun x => (sub_pos.mpr x.2.2).ne')

@@ -32,6 +32,13 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 
 variable {X Y : Scheme.{u}}
 
+/-- Forgetting the module structure commutes with direct image. -/
+lemma pushforward_comp_toSheaf (f : X ⟶ Y) :
+    pushforward f ⋙ SheafOfModules.toSheaf Y.ringCatSheaf =
+      SheafOfModules.toSheaf X.ringCatSheaf ⋙
+        TopCat.Sheaf.pushforward AddCommGrpCat.{u} f.base :=
+  (rfl)
+
 /-- Pushforward along an isomorphism agrees with restriction along its inverse. -/
 def pushforwardIsoRestrictFunctor (e : X ≅ Y) : pushforward e.hom ≅ restrictFunctor e.inv := by
   refine SheafOfModules.pushforwardCongr₂ _

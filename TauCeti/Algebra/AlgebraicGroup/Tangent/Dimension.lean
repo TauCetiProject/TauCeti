@@ -28,9 +28,6 @@ field. Consequently their dimension over `K` is the dimension of the original ta
 dim_K Lie(G)(K) = dim_k Lie(G)(k).
 ```
 
-This is the base-change dimension tool needed before geometric dimension and smoothness arguments
-in Layer 2 of the ReductiveGroups roadmap.
-
 ## Main declarations
 
 * `Derivation.finrank_eq_finrank_cotangentSpace`: tangent and cotangent `finrank` values

@@ -33,6 +33,10 @@ whose first map is `ideleToClassH2` and whose second, the connecting homomorphis
 `classToMultiplicativeH3`. The sum of local invariants is computed on `H²(Gal(L/F), I_L)` and
 descends only to the image of `ideleToClassH2`; `range_ideleToClassH2` says that a class of
 `H²(Gal(L/F), C_L)` lies in that image exactly when its obstruction in `H³(Gal(L/F), Lˣ)` vanishes.
+Two lifts of one class differ by the image of `H²(Gal(L/F), Lˣ)` under the map
+`multiplicativeToIdeleH2` induced by the principal ideles (`ker_ideleToClassH2`), and
+`ideleToClassH2` commutes with inflation to a refinement of the layer
+(`ideleToClassH2_cohomologyInfl`).
 
 The obstruction does not vanish in general: for the biquadratic field `ℚ(√13, √17)` every
 decomposition group has order at most two, so the image of `H²(Gal, I_L)` is killed by `2`, while
@@ -48,6 +52,8 @@ two-periodicity and the latter is zero by Hilbert 90.
   two maps, between the coefficient modules of `unitsFormation K`, `ideleFormation K` and
   `globalFormation K`.
 * `TauCeti.ClassFieldTheory.ideleShortComplex K L`: the sequence `Lˣ → I_L → C_L` of a layer.
+* `TauCeti.ClassFieldTheory.multiplicativeToIdeleH2 K L`: the map
+  `H²(Gal(L/F), Lˣ) → H²(Gal(L/F), I_L)`.
 * `TauCeti.ClassFieldTheory.ideleToClassH2 K L`: the map `H²(Gal(L/F), I_L) → H²(Gal(L/F), C_L)`.
 * `TauCeti.ClassFieldTheory.classToMultiplicativeH3 K L`: the connecting homomorphism
   `H²(Gal(L/F), C_L) → H³(Gal(L/F), Lˣ)`.
@@ -57,8 +63,12 @@ two-periodicity and the latter is zero by Hilbert 90.
 * `TauCeti.ClassFieldTheory.exists_ideleClassMk_eq_of_isClosed`: idele classes fixed by a closed
   subgroup of `G_K` are classes of ideles fixed by it.
 * `TauCeti.ClassFieldTheory.ideleShortComplex_shortExact`: `0 → Lˣ → I_L → C_L → 0` is exact.
+* `TauCeti.ClassFieldTheory.ker_ideleToClassH2`: the kernel of `ideleToClassH2` is the image of
+  `multiplicativeToIdeleH2`.
 * `TauCeti.ClassFieldTheory.range_ideleToClassH2`: the image of `ideleToClassH2` is the kernel of
   `classToMultiplicativeH3`.
+* `TauCeti.ClassFieldTheory.ideleToClassH2_cohomologyInfl`: `ideleToClassH2` commutes with
+  inflation to a refinement of the layer.
 * `TauCeti.ClassFieldTheory.surjective_ideleToClassH2_of_isCyclic`: on a cyclic layer every class
   of `H²(Gal(L/F), C_L)` lifts to `H²(Gal(L/F), I_L)`.
 
@@ -210,6 +220,26 @@ theorem ideleShortComplex_shortExact : (ideleShortComplex K L).ShortExact := by
 
 /-! ### The lifting obstruction -/
 
+/-- **The map `H²(Gal(L/F), Lˣ) → H²(Gal(L/F), I_L)`** induced by the embedding `Lˣ → I_L` of the
+principal ideles of the layer. -/
+def multiplicativeToIdeleH2 : L.H (unitsFormation K) 2 →+ L.H (ideleFormation K) 2 :=
+  ((groupCohomology.functor ℤ L.Gal 2).map (L.repMap (principalIdeleHom K))).hom.toAddMonoidHom
+
+/-- `multiplicativeToIdeleH2 K L` is the map induced in degree two by the principal ideles of the
+layer. -/
+theorem multiplicativeToIdeleH2_def :
+    multiplicativeToIdeleH2 K L =
+      ((groupCohomology.functor ℤ L.Gal 2).map
+        (L.repMap (principalIdeleHom K))).hom.toAddMonoidHom :=
+  (rfl)
+
+/-- `multiplicativeToIdeleH2 K L` applies Mathlib's cohomology map of the principal ideles of the
+layer. -/
+theorem multiplicativeToIdeleH2_apply (y : L.H (unitsFormation K) 2) :
+    multiplicativeToIdeleH2 K L y =
+      groupCohomology.map (MonoidHom.id L.Gal) (L.repMap (principalIdeleHom K)) 2 y :=
+  (rfl)
+
 /-- **The comparison `H²(Gal(L/F), I_L) → H²(Gal(L/F), C_L)`** induced by the quotient map
 `I_L → C_L` onto the idele classes of the layer. -/
 def ideleToClassH2 : L.H (ideleFormation K) 2 →+ L.H (globalFormation K) 2 :=
@@ -234,6 +264,22 @@ theorem classToMultiplicativeH3_def :
     classToMultiplicativeH3 K L =
       (groupCohomology.δ (ideleShortComplex_shortExact K L) 2 3 rfl).hom.toAddMonoidHom :=
   (rfl)
+
+/-- **Exactness at the idele layer**: a class of `H²(Gal(L/F), I_L)` vanishes in
+`H²(Gal(L/F), C_L)` exactly when it comes from `H²(Gal(L/F), Lˣ)`. -/
+theorem ker_ideleToClassH2 : (ideleToClassH2 K L).ker = (multiplicativeToIdeleH2 K L).range := by
+  have h := (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
+    (groupCohomology.mapShortComplex₂_exact (ideleShortComplex_shortExact K L) 2)
+  exact (congrArg Submodule.toAddSubgroup h).symm
+
+/-- **The comparison with idele classes commutes with inflation**: for a refinement `L'/F` of the
+layer `L/F`, mapping the inflation of a class of `H²(Gal(L/F), I_L)` to `H²(Gal(L'/F), C_{L'})` is
+inflating its image in `H²(Gal(L/F), C_L)`. -/
+theorem ideleToClassH2_cohomologyInfl {old new : NormalLayer (AbsoluteGaloisGroup K)}
+    (T : LayerRefinement old new) (x : old.H (ideleFormation K) 2) :
+    ideleToClassH2 K new (T.cohomologyInfl (ideleFormation K) 2 x) =
+      T.cohomologyInfl (globalFormation K) 2 (ideleToClassH2 K old x) :=
+  ConcreteCategory.congr_hom (T.cohomologyInfl_comp_map_repMap (ideleClassHom K) 2) x
 
 /-- **Exactness at the idele-class layer**: a class of `H²(Gal(L/F), C_L)` lifts to
 `H²(Gal(L/F), I_L)` exactly when its obstruction in `H³(Gal(L/F), Lˣ)` vanishes. -/

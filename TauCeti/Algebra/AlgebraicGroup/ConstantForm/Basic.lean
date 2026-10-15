@@ -127,7 +127,7 @@ theorem relationMatrix_def :
   rw [relationMatrix]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range fun ij : Fin n × Fin n => relationMatrix R n C ij.1 ij.2
 
 /-- Every entry of the relation matrix is a defining relation. -/
@@ -349,7 +349,7 @@ theorem inclusion_eq_eqToHom_comp_hopfSpec_map :
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R n C).op ≫
         eqToHom (GeneralLinear.groupScheme_def R n).symm := by
   rw [inclusion_def, GeneralLinear.hopfIdealInclusion_def,
-    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def, eqToIso.hom]
+    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def]
   simp only [eqToHom_refl, Category.id_comp]
 
 /-- The inclusion into the named general linear group scheme is a closed immersion. -/
@@ -388,12 +388,12 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 point. `CommHopfAlgCat.quotientPointsHom` is by definition the points map induced by the
 quotient morphism, so this is `coordinateMap_def` read on points; it is stated here to glue
 the two applied forms at a value algebra. -/
--- Not `@[simp]`: `CommHopfAlgCat.mapPointsFunctor_app_apply` already rewrites the left-hand
+-- Not `@[simp]`: `CommHopfAlgCat.Hom.mapPointsFunctor_app_apply` already rewrites the left-hand
 -- side to its composition form before this lemma could apply.
 theorem mapPointsFunctor_coordinateMap_app
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C)
       (CommAlgCat.of R A)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap R n C)).app (CommAlgCat.of R A) f =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R n C)).app (CommAlgCat.of R A) f =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n C)
         (CommAlgCat.of R A) f := by

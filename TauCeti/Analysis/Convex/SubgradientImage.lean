@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Convex.Subdifferential
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Analysis.Convex.Differentiability
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Convex.Continuous
 
@@ -20,7 +21,8 @@ Let `E` be a finite-dimensional real inner product space and let `f : E → ERea
 (convex real epigraph, never `⊥`), with `D` the interior of its effective domain `{x | f x ≠ ⊤}`.
 Since `f` is continuous on `D`, its subgradients for the inner product are bounded over every
 compact `K ⊆ D`, and the graph of the subdifferential over a closed `K ⊆ D` is closed. Hence
-the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact.
+the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact. The same
+compactness, with Rademacher's theorem, shows that `f` has a subgradient at every point of `D`.
 
 For a real function `u` continuous on the closure of a bounded set `Ω`, every slope of an affine
 function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
@@ -42,8 +44,12 @@ contains that of `K` under `F k`.
   compact subsets of `D`;
 * `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a closed
   subset of `D` is closed;
-* `TauCeti.isCompact_subgradientImage` — the subgradient image of a compact subset of `D` is
-  compact;
+* `TauCeti.isCompact_setOf_mem_subdifferential` and `TauCeti.isCompact_subgradientImage` — the
+  graph of the subdifferential over a compact subset of `D`, and the subgradient image of such a
+  set, are compact;
+* `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
+  point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
+  around which `f` is finite;
 * `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
   point of the graph that lie below the boundary values are subgradients at points of `Ω`;
 * `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le` — if `w ≤ u` on the frontier of
@@ -140,20 +146,66 @@ theorem isClosed_setOf_mem_subdifferential {K : Set E} (hK : IsClosed K)
   simp only [innerₗ_apply_apply]
   exact ((continuous_const.sub continuous_fst).inner continuous_snd).continuousOn
 
+/-- The graph of the subdifferential of a convex `f : E → EReal` over a compact subset `K` of the
+interior of the effective domain is compact. -/
+theorem isCompact_setOf_mem_subdifferential {K : Set E} (hK : IsCompact K)
+    (hKD : K ⊆ interior {x | f x ≠ ⊤}) :
+    IsCompact {z : E × E | z.1 ∈ K ∧ z.2 ∈ subdifferential (innerₗ E) f z.1} := by
+  obtain ⟨R, hR⟩ := exists_norm_le_of_mem_subdifferential hf hbot hK hKD
+  exact (hK.prod (isCompact_closedBall (0 : E) R)).of_isClosed_subset
+    (isClosed_setOf_mem_subdifferential hf hbot hK.isClosed hKD)
+    fun z hz => ⟨hz.1, mem_closedBall_zero_iff.2 (hR z.1 hz.1 z.2 hz.2)⟩
+
 /-- **Subgradient images of compact sets are compact.** For a convex `f : E → EReal` on a
 finite-dimensional real inner product space, the subgradient image of a compact subset of the
 interior of the effective domain is compact. -/
 theorem isCompact_subgradientImage {K : Set E} (hK : IsCompact K)
     (hKD : K ⊆ interior {x | f x ≠ ⊤}) :
     IsCompact (subgradientImage (innerₗ E) f K) := by
-  obtain ⟨R, hR⟩ := exists_norm_le_of_mem_subdifferential hf hbot hK hKD
-  have hG : IsCompact {z : E × E | z.1 ∈ K ∧ z.2 ∈ subdifferential (innerₗ E) f z.1} :=
-    (hK.prod (isCompact_closedBall (0 : E) R)).of_isClosed_subset
-      (isClosed_setOf_mem_subdifferential hf hbot hK.isClosed hKD)
-      fun z hz => ⟨hz.1, mem_closedBall_zero_iff.2 (hR z.1 hz.1 z.2 hz.2)⟩
-  convert hG.image continuous_snd using 1
+  convert (isCompact_setOf_mem_subdifferential hf hbot hK hKD).image continuous_snd using 1
   ext y
   simp
+
+/-- **Subgradients exist in the interior of the domain.** A convex `f : E → EReal` on a
+finite-dimensional real inner product space has a subgradient at every interior point of its
+effective domain. -/
+theorem nonempty_subdifferential_of_mem_interior {x : E} (hx : x ∈ interior {x | f x ≠ ⊤}) :
+    (subdifferential (innerₗ E) f x).Nonempty := by
+  -- On a closed ball `K` about `x` inside the domain, the graph `G` of the subdifferential is
+  -- compact, so the set of points of `K` carrying a subgradient, its first projection, is closed.
+  -- It contains every point of `K` at which the real representative is differentiable, since the
+  -- gradient is a subgradient there, and these points are dense by Rademacher's theorem (for a
+  -- Haar measure on `E` with its Borel σ-algebra).
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  obtain ⟨r, hr, hrD⟩ : ∃ r > 0, closedBall x r ⊆ interior {x | f x ≠ ⊤} :=
+    nhds_basis_closedBall.mem_iff.1 (isOpen_interior.mem_nhds hx)
+  set G := {z : E × E | z.1 ∈ closedBall x r ∧ z.2 ∈ subdifferential (innerₗ E) f z.1}
+  have hcl : x ∈ closure (Prod.fst '' G) := by
+    refine Metric.mem_closure_iff.2 fun ε hε => ?_
+    obtain ⟨z, hz, hdz⟩ := MeasureTheory.Measure.exists_mem_of_measure_ne_zero_of_ae
+      (measure_ball_pos (MeasureTheory.Measure.addHaar : MeasureTheory.Measure E) x
+        (lt_min hε hr)).ne'
+      (MeasureTheory.ae_restrict_of_ae
+        (convexOn_toReal hf hbot).ae_differentiableAt_of_mem_interior)
+    have hzK : z ∈ closedBall x r :=
+      ball_subset_closedBall (ball_subset_ball (min_le_right _ _) hz)
+    refine ⟨z, ⟨(z, _), ⟨hzK, gradient_toReal_mem_subdifferential hf hbot
+      (interior_subset (hrD hzK)) (hdz (hrD hzK))⟩, rfl⟩, ?_⟩
+    rw [dist_comm]
+    exact (mem_ball.1 hz).trans_le (min_le_left _ _)
+  rw [((isCompact_setOf_mem_subdifferential hf hbot (isCompact_closedBall x r) hrD).image
+    continuous_fst).isClosed.closure_eq] at hcl
+  obtain ⟨⟨x₀, y⟩, hz, rfl⟩ := hcl
+  exact ⟨y, hz.2⟩
+
+open scoped Topology in
+/-- If a convex `f : E → EReal` is finite at every point near `x`, then it has a subgradient at
+every point near `x`. -/
+theorem eventually_nonempty_subdifferential {x : E} (hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) :
+    ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty :=
+  Filter.eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hdom))
+    fun _ hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
 
 omit [FiniteDimensional ℝ E] hf hbot in
 /-- **Slopes below the boundary values are subgradients.** Let `Ω` be bounded and `u` continuous
@@ -255,7 +307,8 @@ theorem eventually_biUnion_subset_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
     rw [this]
     refine ContinuousOn.preimage_isClosed_of_isClosed ?_ (hK.isClosed.prod isClosed_univ)
       isClosed_Iic
-    exact ((hu.mono hKΩ).comp continuousOn_fst fun p hp => hp.1).add
+    exact ((hu.mono hKΩ).comp continuousOn_fst
+      fun p (hp : p ∈ K ×ˢ univ) => hp.1).add
       ((continuous_const.sub continuous_fst).inner continuous_snd).continuousOn
   have hempty : Disjoint (K ×ˢ (closedBall (0 : E) R \ V)) (⋂ i, Z i) := by
     refine disjoint_left.2 ?_

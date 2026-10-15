@@ -398,4 +398,43 @@ theorem W1p.halfSpaceTrace_eq_zero_of_w1p0 (a : ℝ)
 
 end Trace
 
+/-! ### The `W^{1,1}` trace -/
+
+section TraceOne
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The `L¹` trace on the boundary hyperplane `{a} × E` of a `W^{1,1}` function on the half-space
+`{x | a < x.fst}`. It is defined using the even reflection extension and the whole-space
+`W^{1,1}` hyperplane trace. -/
+def W1p.halfSpaceTraceOne (a : ℝ) :
+    W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 1 →L[ℝ]
+      Lp ℝ 1 (volume : Measure E) :=
+  (W1p.hyperplaneTraceOne a).comp (W1p.extendByReflectionL a)
+
+/-- The `W^{1,1}` half-space trace is the whole-space trace of the even reflection extension. -/
+@[simp]
+theorem W1p.halfSpaceTraceOne_apply (a : ℝ)
+    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 1) :
+    W1p.halfSpaceTraceOne a u =
+      W1p.hyperplaneTraceOne a (W1p.extendByReflectionL a u) := (rfl)
+
+/-- The `W^{1,1}` half-space trace is bounded by twice the Sobolev norm. -/
+theorem W1p.norm_halfSpaceTraceOne_le (a : ℝ)
+    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 1) :
+    ‖W1p.halfSpaceTraceOne a u‖ ≤ 2 * ‖u‖ := by
+  rw [W1p.halfSpaceTraceOne_apply]
+  exact (W1p.norm_hyperplaneTraceOne_le a _).trans
+    (W1p.norm_extendByReflectionL_le a u)
+
+/-- The operator norm of the `W^{1,1}` half-space trace is at most two. -/
+theorem W1p.opNorm_halfSpaceTraceOne_le (a : ℝ) :
+    ‖W1p.halfSpaceTraceOne (E := E) a‖ ≤ 2 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ (by norm_num)
+  intro u
+  simpa only [one_mul] using W1p.norm_halfSpaceTraceOne_le a u
+
+end TraceOne
+
 end TauCeti

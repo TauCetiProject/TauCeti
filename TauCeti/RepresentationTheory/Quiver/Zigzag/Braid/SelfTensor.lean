@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Factors
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Tensor
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.OuterFactors
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Corner
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.TensorEvaluation
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
@@ -55,84 +54,30 @@ private local instance selfTensorRightModule (i : V) : Module Zᵐᵒᵖ (U i) :
 private local instance selfTensorLeftModule (i : V) : Module Z (U i) :=
   TauCeti.Algebra.TensorProduct.moduleLeft (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
 
-private def vertexFactors (i : V) : U i ≃ₗ[k] L i ⊗[k] R i where
-  toFun u := zigzagBraidBimoduleFactorsEquiv k G i u
-  invFun t := (zigzagBraidBimoduleFactorsEquiv k G i).symm t
-  map_add' u v := (zigzagBraidBimoduleFactorsEquiv k G i).map_add u v
-  map_smul' a u := (zigzagBraidBimoduleFactorsEquiv k G i).map_smul a u
-  left_inv u := (zigzagBraidBimoduleFactorsEquiv k G i).symm_apply_apply u
-  right_inv t := (zigzagBraidBimoduleFactorsEquiv k G i).apply_symm_apply t
-
-private theorem vertexFactors_symm_apply (i : V) (t : L i ⊗[k] R i) :
-    (vertexFactors k G i).symm t = (zigzagBraidBimoduleFactorsEquiv k G i).symm t := (rfl)
-
-private def rightFactors (i : V) : U i ≃ₗ[k] R i ⊗[k] L i :=
-  (vertexFactors k G i).trans (TensorProduct.comm k _ _)
-
-private theorem rightFactors_equivariant (i : V) (a : Z) (m : U i) :
-    rightFactors k G i (op a • m) = op a • rightFactors k G i m := by
-  have key (t : L i ⊗[k] R i) :
-      TensorProduct.comm k (L i) (R i)
-        (TensorProduct.map ((Algebra.lsmul k k (L i)) (1 : Z))
-          ((Algebra.lsmul k k (R i)) (op a)) t) =
-        op a • TensorProduct.comm k (L i) (R i) t := by
-    induction t using TensorProduct.inductionOn with
-    | tmul l r => simp [TensorProduct.smul_tmul']
-    | add x y hx hy => simp only [map_add, smul_add, hx, hy]
-  exact (congrArg (TensorProduct.comm k (L i) (R i))
-    (zigzagBraidBimoduleFactorsEquiv_tmul_smul k G i 1 a m)).trans
-      (key (zigzagBraidBimoduleFactorsEquiv k G i m))
-
-private theorem leftFactors_equivariant (j : V) (a : Z) (n : U j) :
-    vertexFactors k G j (a • n) =
-      a • vertexFactors k G j n := by
-  have key (t : L j ⊗[k] R j) :
-      TensorProduct.map ((Algebra.lsmul k k (L j)) a)
-        ((Algebra.lsmul k k (R j)) (op (1 : Z))) t = a • t := by
-    induction t using TensorProduct.inductionOn with
-    | tmul l r => simp [TensorProduct.smul_tmul']
-    | add x y hx hy => simp only [map_add, smul_add, hx, hy]
-  exact (zigzagBraidBimoduleFactorsEquiv_tmul_smul k G j a 1 n).trans
-    (key (zigzagBraidBimoduleFactorsEquiv k G j n))
-
-private def tensorCornerEquiv (i j : V) :
-    GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U j) ≃ₗ[k]
-      cornerSubmodule k (e i) (e j) ⊗[k] (L i ⊗[k] R j) :=
-  (GradedModuleCat.bimoduleTensorUnderlyingEquiv Γ Γ Γ (U i) (U j)).trans
-    ((BalancedTensorProduct.congr (rightFactors k G i)
-      (vertexFactors k G j)
-      (rightFactors_equivariant k G i) (leftFactors_equivariant k G j)).trans
-    ((BalancedTensorProduct.outerFactors k Z (R i) (L j) (L i) (R j)).trans
-      (TensorProduct.congr (spanSingletonBalancedTensorProductEquivCorner k
-        (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-        (isIdempotentElem_zigzagAlgebraBasis_inl k G j)) (LinearEquiv.refl k _))))
-
 private def selfTensorEquiv (i : V) :
     GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U i) ≃ₗ[k] (U i) × (U i) :=
-  (tensorCornerEquiv k G i i).trans
+  (zigzagBraidTensorCornerEquiv k G i i).trans
     ((TensorProduct.congr (zigzagAlgebraSelfCornerEquiv k G i)
       (LinearEquiv.refl k _)).trans
     ((TensorProduct.prodLeft k k k k (L i ⊗[k] R i)).trans
       (((TensorProduct.lid k (L i ⊗[k] R i)).trans
-        (vertexFactors k G i).symm).prodCongr
+        (zigzagBraidBimoduleFactorsEquiv k G i).symm).prodCongr
        ((TensorProduct.lid k (L i ⊗[k] R i)).trans
-        (vertexFactors k G i).symm))))
+        (zigzagBraidBimoduleFactorsEquiv k G i).symm))))
 
 private theorem selfTensorEquiv_tmul (i : V) (l : L i) (r : R i)
     (l' : L i) (r' : R i) :
     selfTensorEquiv k G i
       (GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (U i) (U i)
-        ((vertexFactors k G i).symm (l ⊗ₜ[k] r))
-        ((vertexFactors k G i).symm (l' ⊗ₜ[k] r'))) =
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r))
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l' ⊗ₜ[k] r'))) =
       (((zigzagAlgebraBasis k G).repr (unop (r : Zᵐᵒᵖ) * (l' : Z)) (.inl i)) •
-          (vertexFactors k G i).symm (l ⊗ₜ[k] r'),
+          (zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r'),
        ((zigzagAlgebraBasis k G).repr (unop (r : Zᵐᵒᵖ) * (l' : Z)) (.inr (.inr i))) •
-          (vertexFactors k G i).symm (l ⊗ₜ[k] r')) := by
-  simp only [selfTensorEquiv, tensorCornerEquiv, rightFactors, LinearEquiv.trans_apply,
-    ]
-  rw [GradedModuleCat.bimoduleTensorUnderlyingEquiv_tmul Γ Γ Γ (U i) (U i)]
-  simp [LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LinearEquiv.prodCongr_apply]
+          (zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r')) := by
+  simp only [selfTensorEquiv, LinearEquiv.trans_apply]
+  rw [zigzagBraidTensorCornerEquiv_tmul]
+  simp [TensorProduct.congr_tmul, LinearEquiv.prodCongr_apply]
 
 private def vertexGenerator (i : V) : U i :=
   ⟨e i ⊗ₜ[k] op (e i), by
@@ -186,93 +131,83 @@ private def volumeInIdeal (i : V) : L i :=
       (isIdempotentElem_zigzagAlgebraBasis_inl k G i)).mpr (by simp)⟩
 
 private theorem vertexGenerator_eq (i : V) :
-    vertexGenerator k G i = (vertexFactors k G i).symm
+    vertexGenerator k G i = (zigzagBraidBimoduleFactorsEquiv k G i).symm
       ((spanSingletonGenerator (e i)) ⊗ₜ[k] (spanSingletonGenerator (op (e i)))) := by
   apply Subtype.ext
-  simpa only [vertexFactors_symm_apply, coe_spanSingletonGenerator, vertexGenerator] using
+  simpa only [coe_spanSingletonGenerator, vertexGenerator] using
     (coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul k G i
       (spanSingletonGenerator (e i)) (spanSingletonGenerator (op (e i)))).symm
 
 private theorem vertexVolumeTensor_eq (i : V) :
-    vertexVolumeTensor k G i = (vertexFactors k G i).symm
+    vertexVolumeTensor k G i = (zigzagBraidBimoduleFactorsEquiv k G i).symm
       ((volumeInIdeal k G i) ⊗ₜ[k] (spanSingletonGenerator (op (e i)))) := by
   apply Subtype.ext
-  simpa only [vertexFactors_symm_apply, coe_spanSingletonGenerator, vertexVolumeTensor,
+  simpa only [coe_spanSingletonGenerator, vertexVolumeTensor,
     volumeInIdeal] using
     (coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul k G i
       (volumeInIdeal k G i) (spanSingletonGenerator (op (e i)))).symm
 
-private theorem vertexFactors_symm_tmul_smul (i : V) (a : Z) (b : Zᵐᵒᵖ)
-    (x : L i) (y : R i) :
-    (a ⊗ₜ[k] b) • (vertexFactors k G i).symm (x ⊗ₜ[k] y) =
-      (vertexFactors k G i).symm ((a • x) ⊗ₜ[k] (b • y)) := by
-  apply Subtype.ext
-  -- The enveloping action on the cyclic ideal is multiplication of its representatives.
-  change (a ⊗ₜ[k] b) * ((vertexFactors k G i).symm (x ⊗ₜ[k] y) :
-      zigzagBraidBimodule k G i).val =
-    ((vertexFactors k G i).symm ((a • x) ⊗ₜ[k] (b • y)) :
-      zigzagBraidBimodule k G i).val
-  simp only [vertexFactors_symm_apply, coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul,
-    Algebra.TensorProduct.tmul_mul_tmul]
-  rfl
-
 private theorem selfTensorInsertZero_factors (i : V) (l : L i) (r : R i) :
-    selfTensorInsertZero k G i ((vertexFactors k G i).symm (l ⊗ₜ[k] r)) =
+    selfTensorInsertZero k G i ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r)) =
       GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (U i) (U i)
-        ((vertexFactors k G i).symm (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
-        ((vertexFactors k G i).symm (spanSingletonGenerator (e i) ⊗ₜ[k] r)) := by
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (spanSingletonGenerator (e i) ⊗ₜ[k] r)) := by
   have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
   have heop : IsIdempotentElem (op (e i)) := by rw [IsIdempotentElem, ← op_mul, he.eq]
   rw [selfTensorInsertZero, selfTensorInsert_apply]
-  have hu : ((vertexFactors k G i).symm (l ⊗ₜ[k] r) :
+  have hu : ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r) :
       zigzagBraidBimodule k G i).val = (l : Z) ⊗ₜ[k] (r : Zᵐᵒᵖ) :=
     coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul k G i l r
   rw [hu, GradedModuleCat.tmul_smul_bimoduleTensorTmul Γ Γ Γ (U i) (U i),
     vertexGenerator_eq]
-  simp only [vertexFactors_symm_tmul_smul, one_smul,
+  simp only [zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul,
+    one_smul,
     smul_spanSingletonGenerator he, smul_spanSingletonGenerator heop]
 
 private theorem selfTensorInsertTwo_factors (i : V) (l : L i) (r : R i) :
-    selfTensorInsertTwo k G i ((vertexFactors k G i).symm (l ⊗ₜ[k] r)) =
+    selfTensorInsertTwo k G i ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r)) =
       GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (U i) (U i)
-        ((vertexFactors k G i).symm (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
-        ((vertexFactors k G i).symm (volumeInIdeal k G i ⊗ₜ[k] r)) := by
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (volumeInIdeal k G i ⊗ₜ[k] r)) := by
   have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
   have heop : IsIdempotentElem (op (e i)) := by rw [IsIdempotentElem, ← op_mul, he.eq]
   rw [selfTensorInsertTwo, selfTensorInsert_apply]
-  have hu : ((vertexFactors k G i).symm (l ⊗ₜ[k] r) :
+  have hu : ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r) :
       zigzagBraidBimodule k G i).val = (l : Z) ⊗ₜ[k] (r : Zᵐᵒᵖ) :=
     coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul k G i l r
   rw [hu, GradedModuleCat.tmul_smul_bimoduleTensorTmul Γ Γ Γ (U i) (U i),
     vertexGenerator_eq, vertexVolumeTensor_eq]
-  simp only [vertexFactors_symm_tmul_smul, one_smul,
+  simp only [zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul,
+    one_smul,
     smul_spanSingletonGenerator he, smul_spanSingletonGenerator heop]
 
 private theorem selfTensorEquiv_insertZero (i : V) (u : U i) :
     selfTensorEquiv k G i (selfTensorInsertZero k G i u) = (u, 0) := by
   classical
   have key (t : L i ⊗[k] R i) :
-      selfTensorEquiv k G i (selfTensorInsertZero k G i ((vertexFactors k G i).symm t)) =
-        ((vertexFactors k G i).symm t, 0) := by
+      selfTensorEquiv k G i (selfTensorInsertZero k G i
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm t)) =
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm t, 0) := by
     induction t using TensorProduct.inductionOn with
     | tmul l r =>
       rw [selfTensorInsertZero_factors, selfTensorEquiv_tmul]
       simp
     | add x y hx hy => simp only [map_add, hx, hy, Prod.mk_add_mk, add_zero]
-  simpa only [LinearEquiv.symm_apply_apply] using key (vertexFactors k G i u)
+  simpa only [LinearEquiv.symm_apply_apply] using key (zigzagBraidBimoduleFactorsEquiv k G i u)
 
 private theorem selfTensorEquiv_insertTwo (i : V) (u : U i) :
     selfTensorEquiv k G i (selfTensorInsertTwo k G i u) = (0, u) := by
   classical
   have key (t : L i ⊗[k] R i) :
-      selfTensorEquiv k G i (selfTensorInsertTwo k G i ((vertexFactors k G i).symm t)) =
-        (0, (vertexFactors k G i).symm t) := by
+      selfTensorEquiv k G i (selfTensorInsertTwo k G i
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm t)) =
+        (0, (zigzagBraidBimoduleFactorsEquiv k G i).symm t) := by
     induction t using TensorProduct.inductionOn with
     | tmul l r =>
       rw [selfTensorInsertTwo_factors, selfTensorEquiv_tmul]
       simp [volumeInIdeal]
     | add x y hx hy => simp only [map_add, hx, hy, Prod.mk_add_mk, add_zero]
-  simpa only [LinearEquiv.symm_apply_apply] using key (vertexFactors k G i u)
+  simpa only [LinearEquiv.symm_apply_apply] using key (zigzagBraidBimoduleFactorsEquiv k G i u)
 
 /-- Insert the vertex component of the middle diagonal corner into the self-tensor. -/
 def zigzagBraidSelfTensorInl (i : V) :
@@ -388,8 +323,8 @@ theorem zigzagBraidSelfTensorInl_hom_factors (i : V) (l : L i) (r : R i) :
           (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
         ((zigzagBraidBimoduleFactorsEquiv k G i).symm
           (spanSingletonGenerator (e i) ⊗ₜ[k] r)) := by
-  simpa only [zigzagBraidSelfTensorInl, GradedModuleCat.hom_ofHom,
-    vertexFactors_symm_apply] using selfTensorInsertZero_factors k G i l r
+  simpa only [zigzagBraidSelfTensorInl, GradedModuleCat.hom_ofHom] using
+    selfTensorInsertZero_factors k G i l r
 
 private theorem volumeInIdeal_eq (i : V) : volumeInIdeal k G i =
     (zigzagAlgebraBasis k G (.inr (.inr i))) • spanSingletonGenerator (e i) := by
@@ -407,6 +342,56 @@ theorem zigzagBraidSelfTensorInr_hom_factors (i : V) (l : L i) (r : R i) :
         ((zigzagBraidBimoduleFactorsEquiv k G i).symm
           (((zigzagAlgebraBasis k G (.inr (.inr i))) • spanSingletonGenerator (e i)) ⊗ₜ[k] r)) := by
   simpa only [zigzagBraidSelfTensorInr, GradedModuleCat.hom_ofHom,
-    vertexFactors_symm_apply, volumeInIdeal_eq] using selfTensorInsertTwo_factors k G i l r
+    volumeInIdeal_eq] using selfTensorInsertTwo_factors k G i l r
+
+/-- The degree-zero self-tensor insertion followed by right evaluation is the identity. -/
+@[reassoc (attr := simp)]
+theorem zigzagBraidSelfTensorInl_evaluationRight (i : V) :
+    zigzagBraidSelfTensorInl k G i ≫ zigzagBraidTensorEvaluationRight k G i i =
+      𝟙 (U i) := by
+  apply GradedModuleCat.hom_ext
+  apply LinearMap.ext
+  intro u
+  obtain ⟨t, rfl⟩ := (zigzagBraidBimoduleFactorsEquiv k G i).symm.surjective u
+  induction t using TensorProduct.inductionOn with
+  | tmul l r =>
+    have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
+    have heop : IsIdempotentElem (op (e i)) := by rw [IsIdempotentElem, ← op_mul, he.eq]
+    have hr : e i * unop (r : Zᵐᵒᵖ) = unop (r : Zᵐᵒᵖ) := by
+      simpa only [unop_mul, unop_op] using
+        congrArg unop ((mem_span_singleton_iff_mul_eq_self heop).mp r.property)
+    simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+      GradedModuleCat.hom_id, LinearMap.id_apply]
+    rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,
+      zigzagBraidTensorEvaluationRight_tmul, hom_zigzagBraidEvaluationHom,
+      zigzagBraidEvaluation_factors]
+    simp only [coe_spanSingletonGenerator, hr, op_unop,
+      zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul,
+      smul_spanSingletonGenerator heop]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The degree-zero self-tensor insertion followed by left evaluation is the identity. -/
+@[reassoc (attr := simp)]
+theorem zigzagBraidSelfTensorInl_evaluationLeft (i : V) :
+    zigzagBraidSelfTensorInl k G i ≫ zigzagBraidTensorEvaluationLeft k G i i =
+      𝟙 (U i) := by
+  apply GradedModuleCat.hom_ext
+  apply LinearMap.ext
+  intro u
+  obtain ⟨t, rfl⟩ := (zigzagBraidBimoduleFactorsEquiv k G i).symm.surjective u
+  induction t using TensorProduct.inductionOn with
+  | tmul l r =>
+    have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
+    have hl : (l : Z) * e i = (l : Z) :=
+      (mem_span_singleton_iff_mul_eq_self he).mp l.property
+    simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+      GradedModuleCat.hom_id, LinearMap.id_apply]
+    rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,
+      zigzagBraidTensorEvaluationLeft_tmul, hom_zigzagBraidEvaluationHom,
+      zigzagBraidEvaluation_factors]
+    simp only [coe_spanSingletonGenerator, unop_op, hl,
+      zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul,
+      smul_spanSingletonGenerator he]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end TauCeti

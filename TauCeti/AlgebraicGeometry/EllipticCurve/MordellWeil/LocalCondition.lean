@@ -38,6 +38,8 @@ of square classes whose image in `(W⁄L).M` lies in the image of the local desc
 
 ## Main statements
 
+* `WeierstrassCurve.Affine.baseChange_discr_f`: the discriminant of the cubic `f` commutes with
+  base change.
 * `WeierstrassCurve.Affine.localRes_μX` and `WeierstrassCurve.Affine.localRes_comp_μ`: the
   descent map is natural under base change — restricting square classes after the global `μ` is
   applying the local `μ` after the base change of points.
@@ -78,7 +80,8 @@ give the isomorphism-invariance block — `range_μ_of_bijective_algebraMap` and
 One declaration is **not** adapted from the source: `localRes_injective_of_surjective_algebraMap`
 is re-derived here. The source obtains it from its local `Units.modPow.bijective_map`, which is in
 the square-class spelling this repository does not carry, and Mathlib has no `QuotientGroup.map`
-injectivity helper to appeal to instead.
+injectivity helper to appeal to instead. `baseChange_discr_f` is the source's lemma of that name
+at its later revision `3bfe124`.
 
 This advances `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (README:813-820), whose
 "Explicit `2`-descent (core, this layer)" bullet names "the local conditions" as the first item
@@ -138,6 +141,10 @@ variable {K : Type*} [Field K] (W : Affine K)
 section BaseChange
 
 variable (L : Type*) [Field L] [Algebra K L]
+
+/-- The discriminant of the cubic `f` commutes with base change. -/
+lemma baseChange_discr_f : (W⁄L).toAffine.f.discr = algebraMap K L W.f.discr := by
+  simp [discr_f, toAffine, map_ofNat]
 
 /-- The base-change homomorphism `K[X]⧸⟨f⟩ →+* L[X]⧸⟨f⟩` of étale algebras, as an instance of
 `AdjoinRoot.map` (so that its API — `map_of`, `map_root`, `map_comp_map`, `mapRingEquiv` —

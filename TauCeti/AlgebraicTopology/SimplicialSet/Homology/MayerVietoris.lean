@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Abelian.CommSq
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
 
 /-!

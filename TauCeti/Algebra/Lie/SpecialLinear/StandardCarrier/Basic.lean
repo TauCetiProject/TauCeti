@@ -251,6 +251,15 @@ theorem weight_def (k : Fin (r + 1)) (i : Fin r) :
       (if k = i.castSucc then 1 else 0) - (if k = i.succ then 1 else 0) :=
   by rw [weight]
 
+/-- Reversing both the standard-basis index and the fundamental-weight index
+negates a type-A standard weight. -/
+-- Not `@[simp]`: `weight_def` already simplifies the left-hand side, so `simpNF` rejects it.
+theorem weight_rev_rev (k : Fin (r + 1)) (i : Fin r) :
+    weight r k.rev i.rev = -weight r k i := by
+  rw [weight_def, weight_def]
+  simp only [← Fin.rev_succ, ← Fin.rev_castSucc, Fin.rev_injective.eq_iff]
+  ring
+
 /-- A standard-module weight as the difference of its possible adjacent basis characters. -/
 theorem weight_eq_dite_single_sub_dite_single (k : Fin (r + 1)) :
     weight r k =
@@ -356,7 +365,7 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin r ⊕ Fin r) (j : Fin r) :
 
 /-- **The standard `ℤ`-lattice of the standard `sl_{r+1}`-module**, spanned by the coordinate
 vectors. -/
-def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
+noncomputable def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
   TauCeti.coordinateLattice (Fin (r + 1))
 
 /-- A vector lies in the standard lattice exactly when all of its coordinates are integers. -/

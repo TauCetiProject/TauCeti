@@ -159,17 +159,15 @@ def toProdDiffeomorph : SL2Tilde ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ
 @[simp] theorem mfderiv_toProd_apply (p : SL2Tilde)
     (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
-      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v := by
-  exact congrArg (fun L => L v)
-    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
 
 /-- The differential of inverse global coordinates retains the model vector. -/
 @[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (r : ℝ × ℝ × ℝ)
     (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) r) :
     tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm r)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm r v) = v := by
-  exact congrArg (fun L => L v)
-    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm r v) = v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
 
 /-! ### The metric -/
 

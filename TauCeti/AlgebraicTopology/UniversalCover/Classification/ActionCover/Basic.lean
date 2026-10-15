@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
-public import TauCeti.Topology.Covering.BalancedProduct
+public import TauCeti.Topology.Covering.BalancedProduct.Basic
 public import TauCeti.Topology.Covering.Category
 public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
@@ -91,6 +91,26 @@ omit [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimplyConn
 theorem continuous_actionCoverProj : Continuous (actionCoverProj x₀ A) :=
   BalancedProduct.continuous_proj A _ (continuous_proj x₀)
 
+omit [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X] [DiscreteTopology A] in
+/-- The projection of the cover attached to `A` is an open map. -/
+theorem isOpenMap_actionCoverProj : IsOpenMap (actionCoverProj x₀ A) := by
+  apply IsOpenMap.of_comp (f := Quotient.mk _) continuous_quotient_mk' Quotient.mk_surjective
+  have hcomp : (fun p => actionCoverProj x₀ A (Quotient.mk _ p)) = proj ∘ Prod.fst :=
+    funext fun p => actionCoverProj_mk x₀ A p.1 p.2
+  -- `of_comp` leaves the composite with `Quotient.mk`; expose it pointwise for `hcomp`.
+  change IsOpenMap (fun p : UniversalCover x₀ × A => actionCoverProj x₀ A (Quotient.mk _ p))
+  rw [hcomp]
+  exact (isOpenMap_proj x₀).comp isOpenMap_fst
+
+omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] [TopologicalSpace A]
+  [DiscreteTopology A] in
+/-- The projection of the cover attached to a nonempty `A` is surjective. -/
+theorem actionCoverProj_surjective [Nonempty A] : Function.Surjective (actionCoverProj x₀ A) :=
+  fun x ↦
+    let ⟨e, he⟩ := proj_surjective (x₀ := x₀) x
+    ⟨BalancedProduct.mk (FundamentalGroup X x₀) e (Classical.arbitrary A),
+      (actionCoverProj_mk x₀ A e _).trans he⟩
+
 /-- **The cover attached to a `π₁(X, x₀)`-set is a covering space of `X`.** -/
 theorem isCoveringMap_actionCoverProj : IsCoveringMap (actionCoverProj x₀ A) :=
   BalancedProduct.isCoveringMap_proj A _ isQuotientCoveringMap
@@ -146,12 +166,13 @@ private theorem actionCoverFiberTransport_apply_coe
 private theorem actionCoverFiberTransport_apply_monodromy (g : FundamentalGroup X x₀)
     (e : ⇑(actionCoveringSpace x₀ A).proj ⁻¹' {x₀}) :
     actionCoverFiberTransport x₀ A
-        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g e) =
-      (isCoveringMap_actionCoverProj x₀ A).monodromy g (actionCoverFiberTransport x₀ A e) := by
+        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g.toPath e) =
+      (isCoveringMap_actionCoverProj x₀ A).monodromy g.toPath
+        (actionCoverFiberTransport x₀ A e) := by
   have hmonodromy := IsCoveringMap.fiberMap_monodromy
     (actionCoveringSpace x₀ A).isCoveringMap_proj (isCoveringMap_actionCoverProj x₀ A)
     (actionCoverTotalSpaceHomeomorph x₀ A)
-    (funext (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A)) g e
+    (funext (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A)) g.toPath e
   have hfiberMap (e' : ⇑(actionCoveringSpace x₀ A).proj ⁻¹' {x₀}) :
       Function.fiberMap (actionCoverTotalSpaceHomeomorph x₀ A : C(_, _))
           (funext (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A)) x₀ e' =
@@ -178,7 +199,7 @@ theorem actionCoverFiberEquiv_apply_coe (a : A) :
 the cover attached to `A` is the action of that loop class on `A`. -/
 @[simp]
 theorem monodromy_actionCoverFiberEquiv (g : FundamentalGroup X x₀) (a : A) :
-    (isCoveringMap_actionCoverProj x₀ A).monodromy g (actionCoverFiberEquiv x₀ A a) =
+    (isCoveringMap_actionCoverProj x₀ A).monodromy g.toPath (actionCoverFiberEquiv x₀ A a) =
       actionCoverFiberEquiv x₀ A (g • a) := by
   -- Attaching the label `a` is a map of covering spaces over `X`, so it intertwines monodromy.
   let ι : C(UniversalCover x₀, ActionCover x₀ A) :=
@@ -186,7 +207,7 @@ theorem monodromy_actionCoverFiberEquiv (g : FundamentalGroup X x₀) (a : A) :
       continuous_quotient_mk'.comp (continuous_id.prodMk continuous_const)⟩
   have hcomp : actionCoverProj x₀ A ∘ ι = proj := funext fun e => actionCoverProj_mk x₀ A e a
   have key := IsCoveringMap.fiberMap_monodromy (isCoveringMap x₀)
-    (isCoveringMap_actionCoverProj x₀ A) ι hcomp g (basepointLift x₀)
+    (isCoveringMap_actionCoverProj x₀ A) ι hcomp g.toPath (basepointLift x₀)
   have hbase : actionCoverFiberEquiv x₀ A a =
       Function.fiberMap ι hcomp x₀ (basepointLift x₀) :=
     Subtype.ext ((actionCoverFiberEquiv_apply_coe x₀ A a).trans
@@ -197,7 +218,7 @@ theorem monodromy_actionCoverFiberEquiv (g : FundamentalGroup X x₀) (a : A) :
   -- The application lemmas expose the maps, but leave coercions from the two fibre subtypes.
   -- This reduction records exactly their underlying points before rewriting quotient classes.
   change BalancedProduct.mk (FundamentalGroup X x₀)
-      ((isCoveringMap x₀).monodromy g (basepointLift x₀) : UniversalCover x₀) a =
+      ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) : UniversalCover x₀) a =
     BalancedProduct.mk (FundamentalGroup X x₀) (basepointLift x₀ : UniversalCover x₀) (g • a)
   rw [monodromy_basepointLift, BalancedProduct.mk_smul_left, inv_inv]
 
@@ -211,7 +232,7 @@ attached to `A` agrees with the given action of the fundamental group on `A`. -/
 theorem actionCoveringSpaceFiberEquiv_apply_monodromy (g : FundamentalGroup X x₀)
     (e : ⇑(actionCoveringSpace x₀ A).proj ⁻¹' {x₀}) :
     actionCoveringSpaceFiberEquiv x₀ A
-        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g e) =
+        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g.toPath e) =
       g • actionCoveringSpaceFiberEquiv x₀ A e := by
   obtain ⟨a, ha⟩ := (actionCoverFiberEquiv x₀ A).surjective (actionCoverFiberTransport x₀ A e)
   rw [actionCoveringSpaceFiberEquiv, Equiv.trans_apply, Equiv.trans_apply,

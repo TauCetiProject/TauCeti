@@ -109,8 +109,7 @@ theorem rootSubgroupPointsOfPair_eq_rootSubgroupPoints (k : Fin r ⊕ Fin r) :
   apply MonoidHom.ext
   intro c
   apply Subtype.ext
-  rw [coe_rootSubgroupPointsOfPair, coe_rootSubgroupPoints,
-    kostantRootSubgroupMatrix_eq_transvection, MulEquiv.apply_symm_apply]
+  rw [coe_rootSubgroupPointsOfPair, coe_rootSubgroupPoints_eq_transvectionUnit]
 
 /-- Root-subgroup values at non-chaining roots commute inside the carrier. -/
 theorem commute_rootSubgroupPointsOfPair (hij : i ≠ j) (hkl : k ≠ l)
@@ -225,7 +224,7 @@ private theorem definingIdeal_toIdeal_le_rootSubgroupCoordinateMap_ker
       _ = 0 := hzero
   have hpoint := TauCeti.GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app
     (R := ℤ) hij (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hpoint
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hpoint
   calc
     (TauCeti.GeneralLinear.rootSubgroupCoordinateMap
         (R := ℤ) hij).hom.toAlgHom.toRingHom x =
@@ -271,7 +270,7 @@ private theorem generalLinear_rootSubgroupCoordinateMap_eq_kostantRootSubgroupCo
   have hpoint := TauCeti.GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app
     (R := ℤ) (rootTarget_ne_rootSource r k)
     (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) q
-  have hmap := CommHopfAlgCat.mapPointsFunctor_app_apply
+  have hmap := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
     (TauCeti.GeneralLinear.rootSubgroupCoordinateMap
       (R := ℤ) (rootTarget_ne_rootSource r k))
     (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) q
@@ -284,7 +283,7 @@ private theorem generalLinear_rootSubgroupCoordinateMap_eq_kostantRootSubgroupCo
           (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q)) := by
     calc
       _ = TauCeti.GeneralLinear.pointsMulEquiv (r + 1)
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (TauCeti.GeneralLinear.rootSubgroupCoordinateMap
               (R := ℤ) (rootTarget_ne_rootSource r k))).app
               (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) q) := by

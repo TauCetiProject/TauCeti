@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Basic
-public import TauCeti.LinearAlgebra.RootSystem.EquivInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Symmetries of Geck's construction
@@ -77,7 +77,7 @@ public section
 
 namespace RootPairing.Equiv
 
-open Function Set Matrix TauCeti
+open Function Set Matrix
 
 -- The Lie ring structure on matrices is the one Geck's construction is stated against; Mathlib
 -- makes it a local instance rather than a global one.
@@ -187,7 +187,7 @@ private theorem submatrix_geckIndexEquiv_h (i : b.support) :
     simp only [submatrix_apply, geckIndexEquiv_apply_inl, geckIndexEquiv_apply_inr,
       GeckConstruction.h_def,
       fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁, fromBlocks_apply₂₂,
-      Matrix.zero_apply, diagonal_apply, Equiv.apply_eq_iff_eq, hτ, pairingIn_indexEquiv]
+      Matrix.zero_apply, diagonal_apply, Equiv.apply_eq_iff_eq, hτ, Hom.pairingIn_indexEquiv]
 
 section RootGenerators
 
@@ -206,10 +206,11 @@ private theorem submatrix_geckIndexEquiv_e (i : b.support) :
     simp only [submatrix_apply, geckIndexEquiv_apply_inl, geckIndexEquiv_apply_inr,
       GeckConstruction.e,
       fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁, fromBlocks_apply₂₂,
-      Matrix.zero_apply, of_apply, hτ, indexNeg_neg, ← indexEquiv_reflectionPerm g.toHom,
+      Matrix.zero_apply, of_apply, hτ, indexNeg_neg, ← g.toHom.indexEquiv_reflectionPerm,
       Equiv.apply_eq_iff_eq,
-      Base.cartanMatrixIn_def, pairingIn_indexEquiv, root_indexEquiv_eq_add_iff,
-      chainBotCoeff_indexEquiv]
+      Base.cartanMatrixIn_def, Hom.pairingIn_indexEquiv,
+      g.toHom.root_indexEquiv_eq_add_iff g.bijective_weightMap.injective,
+      g.toHom.chainBotCoeff_indexEquiv g.bijective_weightMap.injective]
 
 /-- The entrywise computation behind `RootPairing.Equiv.reindex_geckIndexEquiv_f`: pulling back
 `RootPairing.GeckConstruction.f (τ i)` along the index equivalence gives the matrix numbered by
@@ -224,10 +225,11 @@ private theorem submatrix_geckIndexEquiv_f (i : b.support) :
     simp only [submatrix_apply, geckIndexEquiv_apply_inl, geckIndexEquiv_apply_inr,
       GeckConstruction.f,
       fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁, fromBlocks_apply₂₂,
-      Matrix.zero_apply, of_apply, hτ, indexNeg_neg, ← indexEquiv_reflectionPerm g.toHom,
+      Matrix.zero_apply, of_apply, hτ, indexNeg_neg, ← g.toHom.indexEquiv_reflectionPerm,
       Equiv.apply_eq_iff_eq,
-      Base.cartanMatrixIn_def, pairingIn_indexEquiv, root_indexEquiv_eq_sub_iff,
-      chainTopCoeff_indexEquiv]
+      Base.cartanMatrixIn_def, Hom.pairingIn_indexEquiv,
+      g.toHom.root_indexEquiv_eq_sub_iff g.bijective_weightMap.injective,
+      g.toHom.chainTopCoeff_indexEquiv g.bijective_weightMap.injective]
 
 end RootGenerators
 

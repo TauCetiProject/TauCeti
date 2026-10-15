@@ -84,13 +84,7 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
     ∫ x, Real.exp (t * (f x - ∫ x', f x' ∂Measure.pi (fun _ : Fin n => ν)))
         ∂Measure.pi (fun _ : Fin n => ν)
       ≤ Real.exp ((∑ i, (c i / 2) ^ 2) * t ^ 2 / 2) := by
-  have : Nonempty β := by
-    by_contra h
-    rw [not_nonempty_iff] at h
-    have h1 : (Set.univ : Set β) = ∅ := Set.eq_empty_of_isEmpty _
-    have h2 : ν Set.univ = 0 := by rw [h1]; simp
-    rw [measure_univ] at h2
-    exact one_ne_zero h2
+  have : Nonempty β := nonempty_of_isProbabilityMeasure ν
   induction n with
   | zero =>
       -- On the empty product every function is constant, so the centered integrand is one.
@@ -364,13 +358,7 @@ theorem hasSubgaussianMGF_of_bounded_differences
       (fun x => f x - ∫ y, f y ∂Measure.pi (fun _ : ι => ν))
       (∑ i, (c i).toNNReal ^ 2 / 4)
       (Measure.pi fun _ : ι => ν) := by
-  have : Nonempty β := by
-    by_contra h
-    rw [not_nonempty_iff] at h
-    have h1 : (Set.univ : Set β) = ∅ := Set.eq_empty_of_isEmpty _
-    have h2 : ν Set.univ = 0 := by rw [h1]; simp
-    rw [measure_univ] at h2
-    exact one_ne_zero h2
+  have : Nonempty β := nonempty_of_isProbabilityMeasure ν
   set π : Measure (ι → β) := Measure.pi (fun _ : ι => ν)
   set I : ℝ := ∫ y, f y ∂π
   set x₀ : ι → β := fun _ => Classical.arbitrary β

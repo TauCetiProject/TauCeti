@@ -75,9 +75,7 @@ The carrier API follows the formal template of
 `TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme` and
 `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme`, and the pinning equations below follow
 that of `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum`; the split spin representation,
-exterior lattice, and type-`D` weights are specific to this construction. This advances Layer 9,
-"The Chevalley--Demazure construction", of the ReductiveGroups roadmap and supplies the type-`D`
-carrier required by milestone L0 of the CFSGStatement roadmap.
+exterior lattice, and type-`D` weights are specific to this construction.
 -/
 
 public section
@@ -460,6 +458,15 @@ theorem points_def (A : Type v) [CommRing A] :
       TauCeti.GeneralLinear.hopfIdealPointsSubgroup (dimension n) (definingIdeal n hn) A := by
   rw [points, definingIdeal]
   exact kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
+
+/-- The carrier points are the points of the generic Kostant toral closure they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n hn A =
+      kostantToralPointsSubgroup
+        (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n hn)
+        (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) A := (rfl)
 
 /-- A matrix is a carrier point exactly when its associated convolution point kills the
 defining Hopf ideal. -/

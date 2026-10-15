@@ -32,9 +32,6 @@ extension `K ⊗[k] H` is geometrically reduced over any field extension `K / k`
 For preservation, reducedness is transported along the equivalence cancelling successive scalar
 extensions. For descent, the two scalar extensions are compared in a common overfield, then
 reducedness descends along the resulting injective map.
-
-This advances Layer 2, "Smoothness and dimension tools via `Lie(G)`", of the ReductiveGroups
-roadmap.
 -/
 
 public section
@@ -42,6 +39,8 @@ public section
 open scoped TensorProduct
 
 namespace TauCeti
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
 
 universe u v
 
@@ -58,8 +57,8 @@ theorem geometricallyReducedCommHopfAlgProperty.baseChange
   let _ : IsScalarTower k K L := IsScalarTower.of_algebraMap_eq' rfl
   let _ := hH L
   exact isReduced_of_injective
-    (Algebra.TensorProduct.baseChangeTowerRingEquiv k K H L).toRingHom
-    (Algebra.TensorProduct.baseChangeTowerRingEquiv k K H L).injective
+    (Algebra.TensorProduct.baseChangeTowerRightAlgEquiv k K H L).toRingHom
+    (Algebra.TensorProduct.baseChangeTowerRightAlgEquiv k K H L).injective
 
 /-- **Geometric reducedness descends from an extension of the base field.**
 

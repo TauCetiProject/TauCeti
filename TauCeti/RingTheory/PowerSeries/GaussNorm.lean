@@ -70,6 +70,9 @@ closed unit disc next to its Gauss points.
   seminormed ring, at any nonnegative radius.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
   weighted coefficient dominates.
+* `TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le` and
+  `TauCeti.PowerSeries.tendsto_gaussNorm_of_isRestricted`: the Gauss norm is monotone and, for a
+  restricted series, right continuous in the radius.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
   series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
@@ -91,6 +94,9 @@ closed unit disc next to its Gauss points.
   Gauss norms first, and then distinguished degrees, respectively lowest dominant degrees in the
   reverse order.
 * `TauCeti.PowerSeries.gaussValuation_eq_zero_iff`: the Gauss valuation vanishes only at zero.
+* `TauCeti.PowerSeries.gaussValuationAbove_monomial_coeff_le` and
+  `TauCeti.PowerSeries.gaussValuationBelow_monomial_coeff_le`: every monomial of a series is at
+  most the series for both refined Gauss valuations.
 * `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
   `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: over a complete ring, a family of restricted
   series with summable Gauss norms has summable coefficients, and its coefficientwise sum is
@@ -183,6 +189,54 @@ theorem gaussNorm_eq_of_forall_le {S : Type*} [Semiring S] {v : S → ℝ} {a : 
     a.gaussNorm v c = v (a.coeff s) * c ^ s :=
   le_antisymm ((PowerSeries.gaussNorm_eq v c a).trans_le (ciSup_le h))
     (PowerSeries.le_gaussNorm v c a ⟨_, Set.forall_mem_range.mpr h⟩ s)
+
+/-- **The Gauss norm is monotone in the radius**: if the weighted coefficients of `a` at radius
+`s` are bounded, the Gauss norm at a radius `0 ≤ r ≤ s` is at most the one at `s`. -/
+theorem gaussNorm_le_gaussNorm_of_le {S : Type*} [Semiring S] {v : S → ℝ} {a : PowerSeries S}
+    (hv : ∀ x, 0 ≤ v x) {r s : ℝ} (hr : 0 ≤ r) (hrs : r ≤ s) (ha : a.HasGaussNorm v s) :
+    a.gaussNorm v r ≤ a.gaussNorm v s :=
+  (PowerSeries.gaussNorm_eq v r a).trans_le <| ciSup_le fun n ↦
+    (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hrs n) (hv _)).trans
+      (PowerSeries.le_gaussNorm v s a ha n)
+
+/-- **The Gauss norm is right continuous in the radius**: for a series restricted at radius `s`,
+if radii `rₙ ∈ [ρ, s]` tend to `ρ > 0`, the Gauss norms at `rₙ` tend to the Gauss norm at `ρ`.
+The weighted coefficients of high degree are uniformly small on `[ρ, s]`, and the finitely many of
+low degree grow by at most the factor `(rₙ / ρ) ^ N`. -/
+theorem tendsto_gaussNorm_of_isRestricted {s ρ : ℝ} {r : ℕ → ℝ} (hρ : 0 < ρ)
+    (hρr : ∀ n, ρ ≤ r n) (hrs : ∀ n, r n ≤ s) (hr : Tendsto r atTop (𝓝 ρ))
+    (hf : f.IsRestricted s) :
+    Tendsto (fun n ↦ f.gaussNorm norm (r n)) atTop (𝓝 (f.gaussNorm norm ρ)) := by
+  have hbdd {t : ℝ} (ht : 0 ≤ t) (hts : t ≤ s) : f.HasGaussNorm norm t :=
+    hasGaussNorm_of_isRestricted (isRestricted_of_abs_le hf (abs_le_abs_of_nonneg ht hts))
+  refine tendsto_order.mpr ⟨fun b hb ↦ Eventually.of_forall fun n ↦ hb.trans_le
+    (gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) hρ.le (hρr n)
+      (hbdd (hρ.le.trans (hρr n)) (hrs n))), fun b hb ↦ ?_⟩
+  have hG : 0 ≤ f.gaussNorm norm ρ := PowerSeries.gaussNorm_nonneg _ _ _ fun _ ↦ norm_nonneg _
+  -- beyond some degree `N`, the weighted coefficients at radius `s` are below `ε`
+  have hε : 0 < (b - f.gaussNorm norm ρ) / 2 := half_pos (sub_pos.mpr hb)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp
+    (((PowerSeries.isRestricted_iff' s f).mp hf).eventually (gt_mem_nhds hε))
+  -- below degree `N`, the weighted coefficients at radius `rₙ` are at most `|f|_ρ (rₙ / ρ) ^ N`
+  have hlim : Tendsto (fun n ↦ f.gaussNorm norm ρ * (r n / ρ) ^ N) atTop
+      (𝓝 (f.gaussNorm norm ρ)) := by
+    simpa [div_self hρ.ne'] using ((hr.div_const ρ).pow N).const_mul (f.gaussNorm norm ρ)
+  filter_upwards [hlim.eventually (gt_mem_nhds hb)] with n hn
+  refine lt_of_le_of_lt (b := max ((b - f.gaussNorm norm ρ) / 2)
+    (f.gaussNorm norm ρ * (r n / ρ) ^ N)) ?_ (max_lt (by linarith) hn)
+  rw [PowerSeries.gaussNorm_eq]
+  refine ciSup_le fun k ↦ ?_
+  rcases le_or_gt N k with hk | hk
+  · exact le_max_of_le_left ((mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ (hρ.le.trans (hρr n)) (hrs n) k) (norm_nonneg _)).trans (hN k hk).le)
+  · refine le_max_of_le_right ?_
+    calc ‖f.coeff k‖ * r n ^ k = ‖f.coeff k‖ * ρ ^ k * (r n / ρ) ^ k := by
+          rw [div_pow]
+          field_simp
+      _ ≤ f.gaussNorm norm ρ * (r n / ρ) ^ N :=
+          mul_le_mul (PowerSeries.le_gaussNorm _ _ _ (hbdd hρ.le ((hρr 0).trans (hrs 0))) k)
+            (pow_le_pow_right₀ ((one_le_div hρ).mpr (hρr n)) hk.le)
+            (pow_nonneg (div_nonneg (hρ.le.trans (hρr n)) hρ.le) k) hG
 
 section Distinguished
 
@@ -383,6 +437,34 @@ theorem isLowestDominant_monomial (hc : 0 < c) {a : R} (ha : a ≠ 0) (n : ℕ) 
   simp only [PowerSeries.coeff_monomial, hm.ne, ite_false, norm_zero, zero_mul]
   exact hf.gaussNorm_pos
 
+/-- A linear polynomial `X - b` whose root lies in the closed disc of radius `c > 0` is
+distinguished of degree `1` at `c`: its Gauss norm `max ‖b‖ c` is `c`, attained by the leading
+coefficient. -/
+theorem isDistinguished_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖b‖ ≤ c) :
+    IsDistinguished c 1 (PowerSeries.X - PowerSeries.C b) := by
+  have hnorm : (PowerSeries.X - PowerSeries.C b).gaussNorm norm c = c := by
+    rw [gaussNorm_eq_of_forall_le (s := 1)]
+    · simp
+    · rintro (_ | _ | m)
+      · simpa using hb
+      · simp
+      · simp [PowerSeries.coeff_X, hc.le]
+  refine ⟨by simp [hnorm], fun m hm ↦ ?_⟩
+  have hm0 : m ≠ 0 := by omega
+  simp [hnorm, PowerSeries.coeff_X, PowerSeries.coeff_C, hm.ne', hm0, hc]
+
+/-- A linear polynomial `X - b` whose root lies in the open disc of radius `c > 0` has lowest
+dominant degree `1` at `c`: its Gauss norm `c` is attained by the leading coefficient and not by
+the constant term `-b`. -/
+theorem isLowestDominant_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖b‖ < c) :
+    IsLowestDominant c 1 (PowerSeries.X - PowerSeries.C b) := by
+  have hf := isDistinguished_X_sub_C hc hb.le
+  have hnorm : (PowerSeries.X - PowerSeries.C b).gaussNorm norm c = c := by
+    simpa using hf.norm_coeff_mul_pow_eq.symm
+  refine ⟨hf.gaussNorm_pos, hf.norm_coeff_mul_pow_eq, fun m hm ↦ ?_⟩
+  obtain rfl : m = 0 := by omega
+  simpa [hnorm] using hb
+
 section Truncation
 
 section
@@ -431,8 +513,8 @@ theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc 
     split_ifs <;> simp
   have htr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
-    exact PowerSeries.isRestricted.add c hfr
-      (PowerSeries.isRestricted.neg c (isRestricted_polynomial _))
+    exact MvPowerSeries.IsRestricted.add hfr
+      (MvPowerSeries.IsRestricted.neg (isRestricted_polynomial _))
   rcases eq_or_ne (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)) 0 with h0 | h0
   · rw [h0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
     exact hf.gaussNorm_pos
@@ -1136,6 +1218,52 @@ theorem gaussValuationBelow_lt_of_lt (hc : 0 < c)
     (by simpa using (gaussValuation_eq_zero_iff hc).not.mp hg)
   rw [gaussValuationBelow_eq_coe hc ht (u := Units.mk0 _ hg) rfl, gaussValuationBelow_eq_lexValue]
   exact lexValue_lt_coe hc _ h _
+
+/-- **Every monomial of `f` is at most `f` just above `c`.** The monomial `aₙ Xⁿ` of `f` has Gauss
+norm `‖aₙ‖ cⁿ ≤ |f|_c`, and if the two agree then `n` is at most the distinguished degree of `f`,
+the last degree in which `f` attains its Gauss norm. -/
+theorem gaussValuationAbove_monomial_coeff_le (hc : 0 < c) (n : ℕ) :
+    gaussValuationAbove hc ⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
+      PowerSeries.isRestricted_monomial c n _⟩ ≤ gaussValuationAbove hc f := by
+  rcases eq_or_ne ((f : PowerSeries R).coeff n) 0 with ha | ha
+  · -- the monomial with zero coefficient is the zero element of the restricted subring
+    have h0 : (⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
+        PowerSeries.isRestricted_monomial c n _⟩ : PowerSeries.IsRestricted.subring (R := R) c) =
+        0 :=
+      Subtype.ext (by simp [ha])
+    rw [h0, map_zero]
+    exact zero_le
+  obtain ⟨s, hs⟩ := exists_isDistinguished hc f.2 fun h ↦ ha (by simp [h])
+  have hm := isDistinguished_monomial hc ha n
+  rw [gaussValuationAbove_le_iff hc hm hs, ← NNReal.coe_lt_coe, ← NNReal.coe_inj,
+    coe_gaussValuation, coe_gaussValuation, ← hm.norm_coeff_mul_pow_eq,
+    PowerSeries.coeff_monomial_same]
+  -- the weighted coefficient `‖aₙ‖ cⁿ` attains the Gauss norm only up to the distinguished degree
+  exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n).lt_or_eq.imp_right
+    fun heq ↦ ⟨heq, not_lt.mp fun hsn ↦ (hs.norm_coeff_mul_pow_lt n hsn).ne heq⟩
+
+/-- **Every monomial of `f` is at most `f` just below `c`.** The monomial `aₙ Xⁿ` of `f` has Gauss
+norm `‖aₙ‖ cⁿ ≤ |f|_c`, and if the two agree then `n` is at least the lowest dominant degree of
+`f`, the first degree in which `f` attains its Gauss norm. -/
+theorem gaussValuationBelow_monomial_coeff_le (hc : 0 < c) (n : ℕ) :
+    gaussValuationBelow hc ⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
+      PowerSeries.isRestricted_monomial c n _⟩ ≤ gaussValuationBelow hc f := by
+  rcases eq_or_ne ((f : PowerSeries R).coeff n) 0 with ha | ha
+  · -- the monomial with zero coefficient is the zero element of the restricted subring
+    have h0 : (⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
+        PowerSeries.isRestricted_monomial c n _⟩ : PowerSeries.IsRestricted.subring (R := R) c) =
+        0 :=
+      Subtype.ext (by simp [ha])
+    rw [h0, map_zero]
+    exact zero_le
+  obtain ⟨s, hs⟩ := exists_isLowestDominant hc f.2 fun h ↦ ha (by simp [h])
+  have hm := isLowestDominant_monomial hc ha n
+  rw [gaussValuationBelow_le_iff hc hm hs, ← NNReal.coe_lt_coe, ← NNReal.coe_inj,
+    coe_gaussValuation, coe_gaussValuation, ← hm.norm_coeff_mul_pow_eq,
+    PowerSeries.coeff_monomial_same]
+  -- the weighted coefficient `‖aₙ‖ cⁿ` attains the Gauss norm only from the lowest dominant degree
+  exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n).lt_or_eq.imp_right
+    fun heq ↦ ⟨heq, not_lt.mp fun hns ↦ (hs.norm_coeff_mul_pow_lt n hns).ne heq⟩
 
 end LexValuation
 

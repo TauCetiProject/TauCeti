@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.FieldTheory.FunctionField.Repartition.Basic
+-- Proof-only: the powers of a transcendental element are linearly independent.
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # Weil differentials of an algebraic function field
@@ -57,6 +59,8 @@ specialty, and are proved in `TauCeti/FieldTheory/FunctionField/Differential/Dim
 * `TauCeti.repartitionDualMulRight_injective` and `TauCeti.repartitionDualMul_ne_zero`: for a
   nonzero linear form `ω`, the map `x ↦ x · ω` is injective, so `z · ω` is again nonzero for
   `z ≠ 0`.
+* `TauCeti.linearIndependent_repartitionDualMul_pow`: for a transcendental `x` and a nonzero
+  linear form `ω`, the forms `x ^ n · ω` are linearly independent over `k`.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`: for `z ∈ Fˣ`, a linear form
   lies in `Ω_F(D)` exactly when `z · ω` lies in `Ω_F(D + div z)`, so `Ω_F` is stable under the
   action (`TauCeti.repartitionDualMul_mem_weilDifferentialSpace`).
@@ -305,6 +309,14 @@ theorem repartitionDualMul_ne_zero (hF : IsFunctionField k F) {z : F} (hz : z �
     repartitionDualMul hF z ω ≠ 0 := fun h ↦ hz <|
   (injective_iff_map_eq_zero _).mp (repartitionDualMulRight_injective hF hω) z
     (by rw [repartitionDualMulRight_apply, h])
+
+/-- **The multiples of a nonzero linear form by the powers of a transcendental element are
+linearly independent** over `k`. -/
+theorem linearIndependent_repartitionDualMul_pow (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) :
+    LinearIndependent k fun n : ℕ ↦ repartitionDualMul hF (x ^ n) ω :=
+  hx.linearIndependent_pow.map' (repartitionDualMulRight hF ω)
+    (LinearMap.ker_eq_bot.mpr (repartitionDualMulRight_injective hF hω))
 
 /-- **Multiplication translates the filtration by a principal divisor**: for a nonzero function
 `z`, a linear form is bounded by `D` exactly when `z · ω` is bounded by `D + div z`, exactly as

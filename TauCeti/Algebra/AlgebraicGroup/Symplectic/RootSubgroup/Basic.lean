@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- The ambient root subgroups supply the coordinate maps through which the symplectic maps factor.
+-- The general-linear root subgroups, which the long-root composites with `Sp₂ₘ → GL₂ₘ` recover.
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
 -- The symplectic scheme and its point equivalence identify the target of the root maps.
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Scheme
@@ -35,6 +35,10 @@ factorization through the symplectic equations is recorded scheme-theoretically,
 
 ## Main definitions
 
+* `TauCeti.Symplectic.rootSubgroupPoints`, `TauCeti.Symplectic.rootSubgroupPointsMap`,
+  `TauCeti.Symplectic.rootSubgroupCoordinateMap` and `TauCeti.Symplectic.rootSubgroup`: the shared
+  pipeline for a root index, on points, as a natural transformation, on coordinate Hopf algebras,
+  and as an affine group-scheme morphism.
 * `TauCeti.Symplectic.positiveLongRootSubgroupPoints` and
   `TauCeti.Symplectic.negativeLongRootSubgroupPoints`: the homomorphisms on algebra-valued points.
 * `TauCeti.Symplectic.positiveLongRootSubgroupCoordinateMap` and
@@ -78,7 +82,7 @@ noncomputable def rootSubgroupPoints (root : GLSymplecticFin.RootSubgroupIndex m
     (root.hom.comp (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).toMonoidHom)
 
 /-- Under the symplectic point equivalence, a root point is the selected matrix homomorphism. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_rootSubgroupPoints (root : GLSymplecticFin.RootSubgroupIndex m)
     (q : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) m (rootSubgroupPoints root q) =
@@ -130,7 +134,7 @@ noncomputable def shortRootSubgroupPoints (family : GLSymplecticFin.ShortRootFam
 
 /-- Under the symplectic point equivalence, the positive long-root point is its elementary
 transvection. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_positiveLongRootSubgroupPoints (i : Fin m)
     (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) m (positiveLongRootSubgroupPoints i f) =
@@ -142,7 +146,7 @@ theorem pointsMulEquiv_positiveLongRootSubgroupPoints (i : Fin m)
 
 /-- Under the symplectic point equivalence, the negative long-root point is its elementary
 transvection. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_negativeLongRootSubgroupPoints (i : Fin m)
     (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) m (negativeLongRootSubgroupPoints i f) =
@@ -154,7 +158,7 @@ theorem pointsMulEquiv_negativeLongRootSubgroupPoints (i : Fin m)
 
 /-- Under the symplectic point equivalence, a short-root point is its paired elementary-matrix
 one-parameter subgroup. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_shortRootSubgroupPoints
     (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j)
     (q : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
@@ -302,7 +306,7 @@ noncomputable def shortRootSubgroupCoordinateMap (family : GLSymplecticFin.Short
 /-- Precomposition by a root coordinate morphism is its natural map on points. -/
 theorem mapPointsFunctor_rootSubgroupCoordinateMap
     (root : GLSymplecticFin.RootSubgroupIndex m) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (rootSubgroupCoordinateMap (R := R) root) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R m)) =
@@ -311,7 +315,7 @@ theorem mapPointsFunctor_rootSubgroupCoordinateMap
 
 /-- Precomposition by the positive long-root coordinate morphism gives its natural point map. -/
 theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap (i : Fin m) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (positiveLongRootSubgroupCoordinateMap (R := R) i) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R m)) =
@@ -321,7 +325,7 @@ theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap (i : Fin m) :
 
 /-- Precomposition by the negative long-root coordinate morphism gives its natural point map. -/
 theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap (i : Fin m) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (negativeLongRootSubgroupCoordinateMap (R := R) i) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R m)) =
@@ -332,7 +336,7 @@ theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap (i : Fin m) :
 /-- Precomposition by the short-root coordinate morphism is its natural map on points. -/
 theorem mapPointsFunctor_shortRootSubgroupCoordinateMap
     (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (shortRootSubgroupCoordinateMap (R := R) family hij) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R m)) =
@@ -342,34 +346,34 @@ theorem mapPointsFunctor_shortRootSubgroupCoordinateMap
 
 /-- Over any value-algebra universe, a root coordinate morphism induces the constructed
 point map. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_rootSubgroupCoordinateMap_app
     (root : GLSymplecticFin.RootSubgroupIndex m) (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) root)).app A q = rootSubgroupPoints root q := by
   let q₀ := toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
   have hgeneric := congrArg
     (fun τ => τ.app (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) q₀)
     (mapPointsFunctor_rootSubgroupCoordinateMap (R := R) root)
-  rw [rootSubgroupPointsMap_app, CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [rootSubgroupPointsMap_app, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     AlgHom.id_comp] at hgeneric
   -- Expose the monoid hom beneath `GrpCat.ofHom` so naturality can rewrite the point.
   change toConv (rootSubgroupCoordinateMap (R := R) root).hom.toAlgHom =
     rootSubgroupPoints root q₀ at hgeneric
   have h := mapValue_rootSubgroupPoints root q.ofConv q₀
   rw [← hgeneric] at h
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   simp only [AlgHom.mapValue_apply, toConv_ofConv, q₀, AlgHom.comp_id] at h
   exact h
 
 /-- Over any value algebra, the positive coordinate morphism induces the constructed point
 homomorphism. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (positiveLongRootSubgroupCoordinateMap (R := R) i)).app A f =
       positiveLongRootSubgroupPoints i f := by
   rw [positiveLongRootSubgroupCoordinateMap, positiveLongRootSubgroupPoints,
@@ -377,22 +381,22 @@ theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
 
 /-- Over any value algebra, the negative coordinate morphism induces the constructed point
 homomorphism. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap_app (i : Fin m)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (negativeLongRootSubgroupCoordinateMap (R := R) i)).app A f =
       negativeLongRootSubgroupPoints i f := by
   rw [negativeLongRootSubgroupCoordinateMap, negativeLongRootSubgroupPoints,
     mapPointsFunctor_rootSubgroupCoordinateMap_app]
 
 /-- Over any value algebra, a short-root coordinate morphism induces its point homomorphism. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_shortRootSubgroupCoordinateMap_app
     (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j) (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (shortRootSubgroupCoordinateMap (R := R) family hij)).app A q =
       shortRootSubgroupPoints family hij q := by
   rw [shortRootSubgroupCoordinateMap, shortRootSubgroupPoints,
@@ -400,7 +404,7 @@ theorem mapPointsFunctor_shortRootSubgroupCoordinateMap_app
 
 /-- A root coordinate morphism sends the generic symplectic matrix to the identity
 plus its normalized linear term. Entries are indexed in paired coordinates. -/
-@[simp]
+@[simp↓]
 theorem rootSubgroupCoordinateMap_apply_X (root : GLSymplecticFin.RootSubgroupIndex m)
     (a b : Fin m ⊕ Fin m) :
     (rootSubgroupCoordinateMap (R := R) root).hom
@@ -439,43 +443,50 @@ theorem rootSubgroupCoordinateMap_apply_X (root : GLSymplecticFin.RootSubgroupIn
   rw [coordinateMap_def]
   exact h.trans hm
 
-/-- The positive long-root coordinate morphism factors the matching general-linear root
-coordinate morphism through the symplectic quotient. -/
-@[simp]
-theorem coordinateMap_comp_positiveLongRootSubgroupCoordinateMap (i : Fin m) :
-    coordinateMap R m ≫ positiveLongRootSubgroupCoordinateMap i =
-      GeneralLinear.rootSubgroupCoordinateMap
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) := by
+/-- A symplectic root whose matrix homomorphism is a general-linear root transvection factors
+that root's coordinate morphism through the symplectic quotient. -/
+private theorem coordinateMap_comp_rootSubgroupCoordinateMap_of_hom
+    (root : GLSymplecticFin.RootSubgroupIndex m) {a b : Fin (m + m)} (hab : a ≠ b)
+    (hroot : ∀ (A : CommAlgCat.{u} R) (c : A),
+      ((root.hom (R := A) (Multiplicative.ofAdd c) : GLSymplecticFin m A) : GL (Fin (m + m)) A) =
+        transvectionUnit hab c) :
+    coordinateMap R m ≫ rootSubgroupCoordinateMap root =
+      GeneralLinear.rootSubgroupCoordinateMap hab := by
   apply Quiver.Hom.op_inj
   apply (CommHopfAlgCat.pointsFunctor.{u, u, u} (R := R)).map_injective
   rw [op_comp, Functor.map_comp, CommHopfAlgCat.pointsFunctor_map,
     CommHopfAlgCat.pointsFunctor_map, CommHopfAlgCat.pointsFunctor_map]
   -- Mapping an opposite composite reverses it; `change` only removes the functor and
   -- opposite-category wrappers left by the preceding public rewrite lemmas.
-  change CommHopfAlgCat.mapPointsFunctor
-      (positiveLongRootSubgroupCoordinateMap (R := R) i) ≫
-        CommHopfAlgCat.mapPointsFunctor (coordinateMap R m) =
-    CommHopfAlgCat.mapPointsFunctor
-      (GeneralLinear.rootSubgroupCoordinateMap (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i))
-  rw [mapPointsFunctor_positiveLongRootSubgroupCoordinateMap,
+  change CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupCoordinateMap (R := R) root) ≫
+        CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R m) =
+    CommHopfAlgCat.Hom.mapPointsFunctor (GeneralLinear.rootSubgroupCoordinateMap (R := R) hab)
+  rw [mapPointsFunctor_rootSubgroupCoordinateMap,
     GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap]
   ext A f
-  rw [NatTrans.comp_app, positiveLongRootSubgroupPointsMap_app,
-    GeneralLinear.rootSubgroupPointsMap_app]
-  -- The component morphisms are `GrpCat.ofHom` wrappers, whose coercions to functions are
-  -- definitionally the displayed point homomorphisms; no separate coercion lemma is provided.
-  change (CommHopfAlgCat.mapPointsFunctor (coordinateMap R m)).app A
-      (positiveLongRootSubgroupPoints i f) =
-    GeneralLinear.rootSubgroupPoints (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) f
+  rw [NatTrans.comp_app, rootSubgroupPointsMap_app, GeneralLinear.rootSubgroupPointsMap_app]
+  -- The component morphisms are `GrpCat.ofHom` wrappers; `change` exposes the point
+  -- homomorphisms beneath them.
+  change (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R m)).app A (rootSubgroupPoints root
+    f) =
+    GeneralLinear.rootSubgroupPoints hab f
   rw [ConstantForm.mapPointsFunctor_coordinateMap_app]
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).injective
-  rw [pointsMulEquiv_coe]
-  have hSp := pointsMulEquiv_positiveLongRootSubgroupPoints
-    (R := R) (A := A) i f
-  have hGL := GeneralLinear.pointsMulEquiv_rootSubgroupPoints
-    (R := R) (A := A) (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) f
-  rw [hSp, hGL, GLSymplecticFin.coe_positiveLongRootTransvectionUnit]
+  rw [pointsMulEquiv_coe, pointsMulEquiv_rootSubgroupPoints,
+    GeneralLinear.pointsMulEquiv_rootSubgroupPoints]
+  exact hroot A _
+
+/-- The positive long-root coordinate morphism factors the matching general-linear root
+coordinate morphism through the symplectic quotient. -/
+@[simp]
+theorem coordinateMap_comp_positiveLongRootSubgroupCoordinateMap (i : Fin m) :
+    coordinateMap R m ≫ positiveLongRootSubgroupCoordinateMap i =
+      GeneralLinear.rootSubgroupCoordinateMap
+        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) :=
+  coordinateMap_comp_rootSubgroupCoordinateMap_of_hom (.positiveLong i) _ fun A c => by
+    rw [GLSymplecticFin.RootSubgroupIndex.hom_positiveLong,
+      GLSymplecticFin.positiveLongRootTransvectionHom_apply,
+      GLSymplecticFin.coe_positiveLongRootTransvectionUnit, toAdd_ofAdd]
 
 /-- The negative long-root coordinate morphism factors the matching general-linear root
 coordinate morphism through the symplectic quotient. -/
@@ -483,37 +494,11 @@ coordinate morphism through the symplectic quotient. -/
 theorem coordinateMap_comp_negativeLongRootSubgroupCoordinateMap (i : Fin m) :
     coordinateMap R m ≫ negativeLongRootSubgroupCoordinateMap i =
       GeneralLinear.rootSubgroupCoordinateMap
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) := by
-  apply Quiver.Hom.op_inj
-  apply (CommHopfAlgCat.pointsFunctor.{u, u, u} (R := R)).map_injective
-  rw [op_comp, Functor.map_comp, CommHopfAlgCat.pointsFunctor_map,
-    CommHopfAlgCat.pointsFunctor_map, CommHopfAlgCat.pointsFunctor_map]
-  -- Mapping an opposite composite reverses it; `change` only removes the functor and
-  -- opposite-category wrappers left by the preceding public rewrite lemmas.
-  change CommHopfAlgCat.mapPointsFunctor
-      (negativeLongRootSubgroupCoordinateMap (R := R) i) ≫
-        CommHopfAlgCat.mapPointsFunctor (coordinateMap R m) =
-    CommHopfAlgCat.mapPointsFunctor
-      (GeneralLinear.rootSubgroupCoordinateMap (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i))
-  rw [mapPointsFunctor_negativeLongRootSubgroupCoordinateMap,
-    GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap]
-  ext A f
-  rw [NatTrans.comp_app, negativeLongRootSubgroupPointsMap_app,
-    GeneralLinear.rootSubgroupPointsMap_app]
-  -- The component morphisms are `GrpCat.ofHom` wrappers, whose coercions to functions are
-  -- definitionally the displayed point homomorphisms; no separate coercion lemma is provided.
-  change (CommHopfAlgCat.mapPointsFunctor (coordinateMap R m)).app A
-      (negativeLongRootSubgroupPoints i f) =
-    GeneralLinear.rootSubgroupPoints (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) f
-  rw [ConstantForm.mapPointsFunctor_coordinateMap_app]
-  apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).injective
-  rw [pointsMulEquiv_coe]
-  have hSp := pointsMulEquiv_negativeLongRootSubgroupPoints
-    (R := R) (A := A) i f
-  have hGL := GeneralLinear.pointsMulEquiv_rootSubgroupPoints
-    (R := R) (A := A) (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) f
-  rw [hSp, hGL, GLSymplecticFin.coe_negativeLongRootTransvectionUnit]
+        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) :=
+  coordinateMap_comp_rootSubgroupCoordinateMap_of_hom (.negativeLong i) _ fun A c => by
+    rw [GLSymplecticFin.RootSubgroupIndex.hom_negativeLong,
+      GLSymplecticFin.negativeLongRootTransvectionHom_apply,
+      GLSymplecticFin.coe_negativeLongRootTransvectionUnit, toAdd_ofAdd]
 
 /-- The affine group-scheme morphism selected by a symplectic root index. -/
 noncomputable def rootSubgroup (root : GLSymplecticFin.RootSubgroupIndex m) :
@@ -614,25 +599,28 @@ theorem shortRootSubgroup_def (family : GLSymplecticFin.ShortRootFamily) (hij : 
         eqToHom (groupScheme_def R m).symm := by
   rw [shortRootSubgroup, shortRootSubgroupCoordinateMap, rootSubgroup_def]
 
+/-- A symplectic root subgroup followed by the symplectic inclusion is a general-linear root
+subgroup as soon as their coordinate morphisms match through the symplectic quotient. -/
+private theorem rootSubgroup_comp_inclusion_of_coordinateMap
+    (root : GLSymplecticFin.RootSubgroupIndex m) {a b : Fin (m + m)} (hab : a ≠ b)
+    (h : coordinateMap R m ≫ rootSubgroupCoordinateMap root =
+      GeneralLinear.rootSubgroupCoordinateMap hab) :
+    rootSubgroup (R := R) root ≫ inclusion R m = GeneralLinear.rootSubgroup (R := R) hab := by
+  rw [rootSubgroup_def, inclusion_def, GeneralLinear.hopfIdealInclusion_def,
+    GeneralLinear.rootSubgroup_def]
+  simp only [Category.assoc, eqToHom_refl, Category.id_comp]
+  rw [CommHopfAlgCat.quotientSpecι_def]
+  rw [← coordinateMap_def, ← Functor.map_comp_assoc, ← op_comp, h]
+
 /-- The positive long-root subgroup followed by the symplectic inclusion is the corresponding
 general-linear root subgroup. -/
 @[simp]
 theorem positiveLongRootSubgroup_comp_inclusion (i : Fin m) :
     positiveLongRootSubgroup (R := R) i ≫ inclusion R m =
       GeneralLinear.rootSubgroup (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) := by
-  rw [positiveLongRootSubgroup_def, inclusion_def,
-    GeneralLinear.hopfIdealInclusion_def, GeneralLinear.rootSubgroup_def]
-  simp only [Category.assoc, eqToHom_refl, Category.id_comp]
-  rw [CommHopfAlgCat.quotientSpecι_def]
-  rw [← coordinateMap_def]
-  rw [← Category.assoc
-    ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-      (positiveLongRootSubgroupCoordinateMap i).op)
-    ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R m).op)
-    ((eqToIso (GeneralLinear.groupScheme_def R (m + m)).symm).hom)]
-  rw [← Functor.map_comp, ← op_comp, coordinateMap_comp_positiveLongRootSubgroupCoordinateMap]
-  simp only [eqToIso.hom]
+        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) :=
+  rootSubgroup_comp_inclusion_of_coordinateMap (.positiveLong i) _
+    (coordinateMap_comp_positiveLongRootSubgroupCoordinateMap i)
 
 /-- The negative long-root subgroup followed by the symplectic inclusion is the corresponding
 general-linear root subgroup. -/
@@ -640,19 +628,9 @@ general-linear root subgroup. -/
 theorem negativeLongRootSubgroup_comp_inclusion (i : Fin m) :
     negativeLongRootSubgroup (R := R) i ≫ inclusion R m =
       GeneralLinear.rootSubgroup (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) := by
-  rw [negativeLongRootSubgroup_def, inclusion_def,
-    GeneralLinear.hopfIdealInclusion_def, GeneralLinear.rootSubgroup_def]
-  simp only [Category.assoc, eqToHom_refl, Category.id_comp]
-  rw [CommHopfAlgCat.quotientSpecι_def]
-  rw [← coordinateMap_def]
-  rw [← Category.assoc
-    ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-      (negativeLongRootSubgroupCoordinateMap i).op)
-    ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R m).op)
-    ((eqToIso (GeneralLinear.groupScheme_def R (m + m)).symm).hom)]
-  rw [← Functor.map_comp, ← op_comp, coordinateMap_comp_negativeLongRootSubgroupCoordinateMap]
-  simp only [eqToIso.hom]
+        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) :=
+  rootSubgroup_comp_inclusion_of_coordinateMap (.negativeLong i) _
+    (coordinateMap_comp_negativeLongRootSubgroupCoordinateMap i)
 
 end Scheme
 

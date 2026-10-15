@@ -72,6 +72,8 @@ for instance from a completion of a number field to a concrete model such as `�
   comparison of absolute Galois groups.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
+* `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap_of_fixes`: an element whose Artin
+  symbol fixes a finite Galois extension `M/K` is a norm from `M`.
 * `TauCeti.ClassFieldTheory.denseRange_artinMap`: the absolute local Artin map has dense image.
 * `TauCeti.ClassFieldTheory.exists_artinMap_mem_iff`: the preimage of an open subgroup of
   `G_K^ab` is a norm subgroup.
@@ -154,6 +156,32 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
     ← (localClassFormation K).abelianizationRestrict_absoluteArtinMap, habs,
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     abelianizationCongr_of, layerGalEquiv_mk]
+
+/-- **An Artin symbol that fixes a finite Galois extension comes from a norm.** If
+`σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ` and fixes
+pointwise a finite Galois extension `M` of `K` inside the algebraic closure, then `x` is a norm
+from `M`. This is `artinMap_restrict` combined with the kernel of the finite local Artin map
+(`localArtinMap_eq_zero_iff`). -/
+theorem mem_normGroup_of_mk_eq_artinMap_of_fixes {x : Kˣ} (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x)
+    (M : IntermediateField K (AlgebraicClosure K)) [FiniteDimensional K M] [IsGalois K M]
+    (hσM : ∀ z : M, DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ (z : AlgebraicClosure K) = z) :
+    x ∈ normGroup K M := by
+  -- `M` is separable over `K`, so it embeds in the separable closure.
+  let ι : M →ₐ[K] SeparableClosure K :=
+    M.val.codRestrict (separableClosure K (AlgebraicClosure K)).toSubalgebra
+      fun z ↦ mem_separableClosure_iff.2 ((Algebra.IsSeparable.isSeparable K z).map M.val
+        M.val.injective)
+  have h1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 := by
+    refine AlgEquiv.ext fun y ↦ ι.injective <|
+      (ι.restrictNormalHom_commutes _ y).trans (Subtype.ext ?_)
+    rw [AlgEquiv.one_apply]
+    refine (coe_absoluteGaloisGroupRestrictEquiv_apply K σ (ι y)).trans ?_
+    have hιy : ((ι y : SeparableClosure K) : AlgebraicClosure K) = y :=
+      AlgHom.coe_codRestrict _ _ _ y
+    rw [hιy, hσM y]
+    exact hιy.symm
+  rw [← localArtinMap_eq_zero_iff K M ι, artinMap_restrict K M ι x σ hσ, h1, map_one, ofMul_one]
 
 /-- **The absolute local Artin map has dense image**: it reaches every finite quotient of
 `G_K^ab`, because every finite local Artin map is surjective. -/
@@ -324,6 +352,11 @@ theorem artinMap_norm (x : Lˣ) (τ : Field.absoluteGaloisGroup L)
   have habs := (localClassFormation L).absoluteArtinMap_eq_of_mk_eq_fieldArtinMap x τ hτ
   -- It suffices to compare the two symbols in the quotients cut out by the open normal subgroups
   -- of `G_K` contained in `Gal(Kˢ/iota(L))`.
+  -- Instance search does not find zero-dimensionality within its default budget here, so
+  -- assemble it from the Krull topology being Hausdorff, compact and totally disconnected.
+  have : T2Space (AbsoluteGaloisGroup K) := krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
   obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (galoisSubgroup K L iota).isOpen (one_mem _)
   have key : (localClassFormation K).absoluteArtinMap

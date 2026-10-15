@@ -22,7 +22,8 @@ which is the identification a construction phrased as `FDRep.of ρ` needs in ord
 statement about the object it started from.
 
 `FDRep.forget₂Rep` supplies the canonical forgetful functor over any ring, extending Mathlib's
-commutative-ring instance with the same underlying construction.
+commutative-ring instance with the same underlying construction. It preserves addition of
+intertwiners over any ring, by `FDRep.forget₂_additive`.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
 `Representation` and the `FDRep.of` spellings in which consumers meet it.
@@ -46,10 +47,21 @@ half, over `ℂ`, is `TauCeti/RepresentationTheory/CharacterTable/Kernel.lean`. 
 no characters at all, the **common kernel of a family** of representations is registered as a normal
 subgroup.
 
+It also records the constructor `LinearEquiv.toFDRepIso`, which turns an equivariant linear
+equivalence into an isomorphism of `FDRep R G`: the `FDRep` counterpart of Mathlib's `Rep.mkIso`,
+with the equivariance condition read pointwise on the underlying linear maps rather than as an
+equation of morphisms of `FGModuleCat R`, and its converse `FDRep.isoToEquiv`, which reads an
+isomorphism of `FDRep R G` as an equivalence of the carried representations, so that invariants
+of `Representation.Equiv` apply to isomorphic objects.
+
 ## Main definitions
 
 * `FDRep.ofShrink`: a module-finite representation on a carrier in an arbitrary universe, as an
   object of `FDRep k G`.
+* `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
+  equivalence.
+* `FDRep.isoToEquiv`: the equivalence of representations underlying an isomorphism in
+  `FDRep R G`.
 
 ## Main statements
 
@@ -74,6 +86,10 @@ subgroup.
   object.
 * `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
+* `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
+  maps.
+* `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
+  product, read on the underlying linear maps.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
@@ -209,19 +225,15 @@ theorem character_of {k : Type u} {G : Type v} {V : Type u} [Field k] [Monoid G]
 theorem of_ρ_eq_self {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G) :
     FDRep.of A.ρ = A := (rfl)
 
-/-- **Forgetting finite-dimensionality is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
-preserves sums of intertwiners.  This is what lets an additive construction on `Rep R G` -- the
-induction of `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, say -- be recognized
-through the forgetful functor. -/
-instance forget₂_additive {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
+/-- **Forgetting finite generation is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
+preserves sums of intertwiners over any ring. It lets additive constructions on `Rep R G`, such as
+induction in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, be recognized through
+the forgetful functor. -/
+instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
     (forget₂ (FDRep R G) (Rep R G)).Additive where
-  map_add := by
-    intros
-    apply Rep.hom_ext
-    ext x
-    -- The remaining `rfl` only identifies the two names of the single underlying addition of
-    -- intertwiners, the same definitional identification that lets `FDRep.forget₂_ρ` be stated.
-    rfl
+  -- The composite of `mapAction` and `Rep.ActionToRep` keeps the underlying linear maps, so
+  -- preservation of addition is definitional.
+  map_add := by intros; rfl
 
 open MonoidalCategory in
 /-- **Forgetting finite-dimensionality preserves the tensor product on the nose.**  The monoidal
@@ -235,6 +247,27 @@ definitional equality it records is too deep for the unifier to find on its own.
 theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) :
     (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
       (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)
+
+/-- **A morphism of `FDRep R G` intertwines the two actions**, read on the underlying linear maps:
+`CategoryTheory.Action.Hom.comm` with the two layers of bundling, by morphisms of `FGModuleCat R`
+and of `ModuleCat R`, stripped away. -/
+theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y : FDRep R G}
+    (φ : X ⟶ Y) (g : G) : φ.hom.hom.hom ∘ₗ X.ρ g = Y.ρ g ∘ₗ φ.hom.hom.hom := by
+  simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
+
+open MonoidalCategory in
+/-- **The tensor unit of `FDRep R G` carries the trivial action**, read on the underlying linear
+maps: this is `CategoryTheory.Action.tensorUnit_ρ` stated for `FDRep.ρ` rather than for
+`Action.ρ`, the `FDRep` counterpart of Mathlib's `Rep.tensorUnit_ρ`. -/
+theorem tensorUnit_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (g : G) :
+    (𝟙_ (FDRep R G)).ρ g = LinearMap.id := (rfl)
+
+open MonoidalCategory in
+/-- **`G` acts diagonally on a tensor product in `FDRep R G`**, read on the underlying linear
+maps: this is `CategoryTheory.Action.tensor_ρ` stated for `FDRep.ρ` rather than for `Action.ρ`,
+the `FDRep` counterpart of Mathlib's `Rep.tensor_ρ`. -/
+theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) (g : G) :
+    (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
 
 section Shrink
 
@@ -294,15 +327,11 @@ This is the one computation behind `FDRep.char_biprod`: cyclicity of the trace m
 private theorem trace_comp_of_retraction {X B : FDRep k G} (i : X ⟶ B) (p : B ⟶ X)
     (h : i ≫ p = 𝟙 X) (g : G) :
     LinearMap.trace k B ((B.ρ g ∘ₗ i.hom.hom.hom) ∘ₗ p.hom.hom.hom) = X.character g := by
-  -- equivariance of `i`, namely `CategoryTheory.Action.Hom.comm`, read through the two layers of
-  -- bundling: `simp` strips the morphisms of `FGModuleCat k` and of `ModuleCat k` down to their
-  -- underlying linear maps, so no definitional unfolding is involved
-  have hcomm : i.hom.hom.hom ∘ₗ X.ρ g = B.ρ g ∘ₗ i.hom.hom.hom := by
-    simpa using congrArg (fun t : X.V ⟶ B.V => t.hom.hom) (i.comm g)
-  -- the retraction `h`, read the same way; here `simp` also rewrites the underlying map of `𝟙 X`
+  -- the retraction `h`, read through the two layers of bundling the way `FDRep.hom_hom_hom_comm`
+  -- reads the equivariance of `i`; here `simp` also rewrites the underlying map of `𝟙 X`
   have hpi : p.hom.hom.hom ∘ₗ i.hom.hom.hom = LinearMap.id := by
     simpa using congrArg (fun t : X ⟶ X => t.hom.hom.hom) h
-  rw [LinearMap.trace_comp_comm', ← hcomm, ← LinearMap.comp_assoc, hpi]
+  rw [LinearMap.trace_comp_comm', ← hom_hom_hom_comm i g, ← LinearMap.comp_assoc, hpi]
   simp [FDRep.character]
 
 /-- **The character is additive on biproducts.** Together with `FDRep.char_iso` and
@@ -405,4 +434,38 @@ instance normal_iInf_ker (W : ι → FDRep k G) : (⨅ i, (W i).ρ.ker).Normal :
 
 end CommonKernel
 
+section IsoToEquiv
+
+variable {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+
+/-- **The equivalence of representations underlying an isomorphism in `FDRep R G`**: the linear
+equivalence `FDRep.isoToLinearEquiv` intertwines the two actions, by `FDRep.Iso.conj_ρ`.  This is
+the `FDRep` counterpart of `Representation.equivOfIso` for `Rep`, and the converse of
+`LinearEquiv.toFDRepIso`. -/
+noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Equiv V.ρ W.ρ :=
+  .mk (isoToLinearEquiv i) fun g => LinearMap.ext fun v => by
+    simp [Iso.conj_ρ i g, LinearEquiv.conj_apply]
+
+@[simp]
+theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
+    (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=
+  (rfl)
+
+end IsoToEquiv
+
 end FDRep
+
+namespace TauCeti
+
+open CategoryTheory
+
+/-- **An isomorphism in `FDRep R G` from an equivariant linear equivalence.** This is
+`CategoryTheory.Action.mkIso` for `FDRep R G`, with the commutation condition stated pointwise on
+the underlying linear maps instead of as an equation of morphisms of `FGModuleCat R`. -/
+noncomputable def _root_.LinearEquiv.toFDRepIso {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    {X Y : FDRep R G} (e : X ≃ₗ[R] Y)
+    (he : ∀ (g : G) (x : X), e (X.ρ g x) = Y.ρ g (e x)) : X ≅ Y :=
+  Action.mkIso e.toFGModuleCatIso fun g =>
+    FGModuleCat.hom_ext (by simpa using LinearMap.ext (he g))
+
+end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 
 /-!
@@ -39,6 +40,13 @@ schemes over `S` is the homomorphism whose kernel is the `n`-torsion `E[n]`.
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_ext_left`: a homomorphism of elliptic curves is
   determined by its morphism of schemes.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_hom_hom_left_comp_structureMap`: the morphism of
+  schemes underlying a homomorphism of elliptic curves commutes with the structure morphisms.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isIso_iff_isIso_hom_hom_hom_left`: a homomorphism of
+  elliptic curves is an isomorphism exactly when its morphism of schemes is one.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_hom_hom_hom_left`: the
+  morphism of schemes underlying a homomorphism of elliptic curves is locally of finite
+  presentation.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.add_hom_hom_hom_left`,
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.zero_hom_hom_hom_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.neg_hom_hom_hom_left`: the sum, zero and negative
@@ -75,6 +83,38 @@ theorem hom_ext_left {f g : E.toCommGrp ⟶ E'.toCommGrp}
     (h : f.hom.hom.hom.left = g.hom.hom.hom.left) : f = g :=
   CommGrp.hom_ext _ _ (Over.OverMorphism.ext h)
 
+variable {E} in
+/-- The morphism of schemes underlying a homomorphism of elliptic curves over `S` commutes with the
+structure morphisms to `S`. -/
+@[reassoc]
+theorem hom_hom_hom_left_comp_structureMap (f : E.toCommGrp ⟶ E'.toCommGrp) :
+    f.hom.hom.hom.left ≫ E'.structureMap = E.structureMap :=
+  Over.w f.hom.hom.hom
+
+variable {E} in
+/-- **A homomorphism of elliptic curves is an isomorphism exactly when its morphism of schemes is
+one.** -/
+theorem isIso_iff_isIso_hom_hom_hom_left {f : E.toCommGrp ⟶ E'.toCommGrp} :
+    IsIso f ↔ IsIso f.hom.hom.hom.left := by
+  let F := CommGrp.forget₂Grp (Over S) ⋙ Grp.forget₂Mon (Over S) ⋙ Mon.forget (Over S) ⋙
+    Over.forget S
+  -- the forgetful functors only project out the underlying morphism of schemes
+  have hF : F.map f = f.hom.hom.hom.left := rfl
+  rw [← hF]
+  exact ⟨fun _ ↦ F.map_isIso f, fun h ↦ have : IsIso (F.map f) := h; isIso_of_reflects_iso f F⟩
+
+variable {E} in
+/-- **Homomorphisms of elliptic curves are locally of finite presentation**: the underlying
+morphism of schemes is a morphism over `S` between schemes smooth over `S`. -/
+instance locallyOfFinitePresentation_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.toCommGrp) :
+    LocallyOfFinitePresentation f.hom.hom.hom.left :=
+  have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
+  have : Smooth E'.structureMap := SmoothOfRelativeDimension.smooth 1 _
+  have : LocallyOfFinitePresentation (f.hom.hom.hom.left ≫ E'.structureMap) := by
+    rw [hom_hom_hom_left_comp_structureMap]
+    infer_instance
+  locallyOfFinitePresentation_of_comp _ E'.structureMap
+
 /-- The sum of two homomorphisms of elliptic curves over `S` is, on underlying schemes, their sum
 under the addition morphism of the target. -/
 theorem add_hom_hom_hom_left (f g : E.toCommGrp ⟶ E'.toCommGrp) :
@@ -99,7 +139,8 @@ theorem neg_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.toCommGrp) :
 /-- **Multiplication by `n` is the integer `n` of the endomorphism ring.** The homomorphism of
 elliptic curves given by `[n] : E ⟶ E` is the image of `n` under `ℤ → End_S(E)`. -/
 theorem homMk_mulBy (n : ℤ) :
-    CommGrp.homMk (A := E.toCommGrp) (B := E.toCommGrp) (E.mulBy n) = (n : End E.toCommGrp) :=
+    CommGrp.homMk (A := E.toCommGrp) (B := E.toCommGrp) (E.mulBy n) =
+      (n : End E.toCommGrp).asHom :=
   CommGrp.hom_ext _ _ <| by
     rw [CommGrp.homMk_hom_hom_hom, CommGrp.intCast_hom_hom_hom, mulBy_eq_zpow]
 
@@ -107,19 +148,21 @@ theorem homMk_mulBy (n : ℤ) :
 over the general `CategoryTheory.CommGrp.intCast_hom_hom_hom`, so that `E.mulBy n` is the simp
 normal form. -/
 @[simp high]
-theorem intCast_hom_hom_hom (n : ℤ) : (n : End E.toCommGrp).hom.hom.hom = E.mulBy n := by
+theorem intCast_hom_hom_hom (n : ℤ) :
+    (n : End E.toCommGrp).asHom.hom.hom.hom = E.mulBy n := by
   rw [← homMk_mulBy, CommGrp.homMk_hom_hom_hom]
 
 /-- The natural number `n` of the endomorphism ring of `E` is multiplication by `n`. -/
 @[simp high]
-theorem natCast_hom_hom_hom (n : ℕ) : (n : End E.toCommGrp).hom.hom.hom = E.mulBy n := by
+theorem natCast_hom_hom_hom (n : ℕ) :
+    (n : End E.toCommGrp).asHom.hom.hom.hom = E.mulBy n := by
   rw [← Int.cast_natCast, intCast_hom_hom_hom]
 
 /-- The image of the integer `n` of the endomorphism ring of `E` in the category of group schemes
 over `S` is multiplication by `n`. -/
 @[simp]
 theorem forget₂Grp_map_intCast (n : ℤ) :
-    (CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp) = Grp.ofHom (E.mulBy n) :=
+    (CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp).asHom = Grp.ofHom (E.mulBy n) :=
   Grp.hom_ext _ _ <| by
     rw [CommGrp.forget₂Grp_map_hom, Grp.ofHom_hom_hom, intCast_hom_hom_hom]
 

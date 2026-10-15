@@ -24,15 +24,12 @@ for `X` the localized generic matrix. On every commutative `R`-algebra `A`, its 
 is Mathlib's existing group `Matrix.orthogonalGroup (Fin n) A` of matrices with `M * Mᵀ = 1`,
 and that identification is what this file adds to the general construction.
 
-This is the orthogonal group of the **standard symmetric bilinear form**, the scheme of the
-functor `A ↦ {M | M Mᵀ = 1}` over every commutative ring. It is the classical worked example in
-every characteristic except two, where the bilinear-form and quadratic-form orthogonal groups
-differ and smoothness becomes sensitive to the rank and regularity of the form; no smoothness
-is claimed here, so the construction is stated over an arbitrary commutative ring without
-restriction. This is the ambient stage of the `SOₙ` worked example of the ReductiveGroups
-roadmap, built at the same boundary as the symplectic example (`TauCeti.Symplectic`):
-construction and points identification, with no smoothness or reductivity claim. The
-determinant-one cut `SOₙ` itself is built on top of this file in `TauCeti.SpecialOrthogonal`.
+This is the orthogonal group of the **standard symmetric bilinear form**, the scheme of the functor
+`A ↦ {M | M Mᵀ = 1}` over every commutative ring. It is the classical worked example in every
+characteristic except two, where the bilinear-form and quadratic-form orthogonal groups differ and
+smoothness becomes sensitive to the rank and regularity of the form; no smoothness is claimed here,
+so the construction is stated over an arbitrary commutative ring without restriction. The
+determinant-one cut `SOₙ` is built on top of this file in `TauCeti.SpecialOrthogonal`.
 
 The Hopf-ideal closure conditions, the quotient, the group scheme with its closed immersion
 into `GLₙ`, and the ambient membership criterion `M C Mᵀ = C` all come from
@@ -82,7 +79,7 @@ noncomputable abbrev relationMatrix :
   ConstantForm.relationMatrix R n 1
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   ConstantForm.relationSet R n 1
 
 /-- **The orthogonal Hopf ideal**: the ideal of the coordinate Hopf algebra of `GL n` generated

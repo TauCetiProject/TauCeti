@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Pullback of rough bundle-valued differential forms
@@ -15,6 +16,8 @@ Pullback precomposes each alternating map with the manifold derivative. Its valu
 at `x` is the original fiber at `f x`, so it works without a trivialization of the value
 bundle. Both within-set and unrestricted pullbacks are total; their chain rules carry
 the differentiability and unique-derivative hypotheses of Mathlib's `mfderivWithin`.
+For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed coefficient
+space. On model spaces they agree with precomposition by the Fréchet derivative.
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 14. The proofs reuse Mathlib's manifold chain rule and alternating-map composition.
@@ -26,8 +29,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Set
-open scoped Manifold
+open Set Filter
+open scoped Manifold Topology
 
 variable {E H M E' H' M' E'' H'' M'' : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -168,6 +171,21 @@ theorem bundleMpullbackWithin_comp_at {f : M → M'} {g : M' → M''}
   ext v
   simp [mfderivWithin_comp x hg hf hst hs]
 
+/-- The chain rule for bundle-valued pullbacks when the intermediate set condition holds only
+locally at the base point. -/
+theorem bundleMpullbackWithin_comp_of_preimage_mem_nhdsWithin
+    {f : M → M'} {g : M' → M''} {s : Set M} {t : Set M'} {x : M}
+    (hf : MDifferentiableWithinAt I I' f s x)
+    (hg : MDifferentiableWithinAt I' I'' g t (f x))
+    (hst : f ⁻¹' t ∈ 𝓝[s] x) (hs : UniqueMDiffWithinAt I s x)
+    (ω : RoughBundleForm I'' M'' V k) :
+    bundleMpullbackWithin I I'' (g ∘ f) s ω x =
+      bundleMpullbackWithin I I' f s (bundleMpullbackWithin I' I'' g t ω) x := by
+  ext v
+  simp only [bundleMpullbackWithin_apply]
+  rw [mfderivWithin_comp_of_preimage_mem_nhdsWithin x hg hf hst hs]
+  rfl
+
 /-- The chain rule for bundle-valued pullback at one point. -/
 theorem bundleMpullback_comp_at {f : M → M'} {g : M' → M''} {x : M}
     (hf : MDifferentiableAt I I' f x) (hg : MDifferentiableAt I' I'' g (f x))
@@ -194,4 +212,173 @@ theorem bundleMpullback_comp {f : M → M'} {g : M' → M''}
   funext fun x ↦ bundleMpullback_comp_at (hf x) (hg (f x)) ω
 
 end Composition
+
+section FixedCoefficients
+
+variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+
+/-- Pullback of a fixed-coefficient form using the derivative within `s`. -/
+def mpullbackWithin (I : ModelWithCorners ℝ E H) (I' : ModelWithCorners ℝ E' H')
+    (f : M → M') (s : Set M) (ω : RoughForm I' M' F k) : RoughForm I M F k :=
+  bundleMpullbackWithin I I' f s ω
+
+/-- Evaluation of fixed-coefficient within-set pullback on tangent vectors. -/
+@[simp]
+theorem mpullbackWithin_apply (f : M → M') (s : Set M) (ω : RoughForm I' M' F k)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    mpullbackWithin I I' f s ω x v =
+      ω (f x) (fun i ↦ mfderivWithin I I' f s x (v i)) :=
+  bundleMpullbackWithin_apply f s ω x v
+
+/-- Pullback of a fixed-coefficient rough form along the manifold derivative. -/
+def mpullback (I : ModelWithCorners ℝ E H) (I' : ModelWithCorners ℝ E' H')
+    (f : M → M') (ω : RoughForm I' M' F k) : RoughForm I M F k :=
+  bundleMpullback I I' f ω
+
+/-- Evaluation of fixed-coefficient pullback on tangent vectors. -/
+@[simp]
+theorem mpullback_apply (f : M → M') (ω : RoughForm I' M' F k)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    mpullback I I' f ω x v = ω (f x) (fun i ↦ mfderiv I I' f x (v i)) :=
+  bundleMpullback_apply f ω x v
+
+/-- Pullback within the whole manifold is ordinary pullback. -/
+@[simp]
+theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
+    mpullbackWithin I I' f univ ω = mpullback I I' f ω :=
+  bundleMpullbackWithin_univ f ω
+
+/-- Within-set and ordinary pullback agree where their derivatives agree. -/
+@[simp]
+theorem mpullbackWithin_eq_mpullback {f : M → M'} {s : Set M} {x : M}
+    (hs : UniqueMDiffWithinAt I s x) (hf : MDifferentiableAt I I' f x)
+    (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullback I I' f ω x :=
+  bundleMpullbackWithin_eq_bundleMpullback hs hf ω
+
+/-- Within-set pullback preserves zero. -/
+@[simp]
+theorem mpullbackWithin_zero (f : M → M') (s : Set M) :
+    mpullbackWithin I I' f s (0 : RoughForm I' M' F k) = 0 :=
+  bundleMpullbackWithin_zero f s
+
+/-- Pullback preserves zero. -/
+@[simp]
+theorem mpullback_zero (f : M → M') : mpullback I I' f (0 : RoughForm I' M' F k) = 0 :=
+  bundleMpullback_zero f
+
+/-- Within-set pullback preserves addition. -/
+@[simp]
+theorem mpullbackWithin_add [ContinuousAdd F] (f : M → M') (s : Set M)
+    (ω η : RoughForm I' M' F k) :
+    mpullbackWithin I I' f s (ω + η) =
+      mpullbackWithin I I' f s ω + mpullbackWithin I I' f s η :=
+  bundleMpullbackWithin_add f s ω η
+
+/-- Pullback preserves addition. -/
+@[simp]
+theorem mpullback_add [ContinuousAdd F] (f : M → M') (ω η : RoughForm I' M' F k) :
+    mpullback I I' f (ω + η) = mpullback I I' f ω + mpullback I I' f η :=
+  bundleMpullback_add f ω η
+
+/-- Within-set pullback respects scalar multiplication. -/
+@[simp]
+theorem mpullbackWithin_smul [ContinuousConstSMul ℝ F] (f : M → M') (s : Set M)
+    (c : ℝ) (ω : RoughForm I' M' F k) :
+    mpullbackWithin I I' f s (c • ω) = c • mpullbackWithin I I' f s ω :=
+  bundleMpullbackWithin_smul f s c ω
+
+/-- Pullback respects scalar multiplication. -/
+@[simp]
+theorem mpullback_smul [ContinuousConstSMul ℝ F] (f : M → M') (c : ℝ)
+    (ω : RoughForm I' M' F k) : mpullback I I' f (c • ω) = c • mpullback I I' f ω :=
+  bundleMpullback_smul f c ω
+
+/-- Within-set pullback by the identity fixes forms wherever the derivative is unique. -/
+@[simp]
+theorem mpullbackWithin_id {s : Set M} {x : M} (hs : UniqueMDiffWithinAt I s x)
+    (ω : RoughForm I M F k) : mpullbackWithin I I id s ω x = ω x :=
+  bundleMpullbackWithin_id hs ω
+
+/-- Pullback by the identity fixes forms. -/
+@[simp]
+theorem mpullback_id (ω : RoughForm I M F k) : mpullback I I id ω = ω :=
+  bundleMpullback_id ω
+
+/-- The within-set chain rule for fixed-coefficient forms. -/
+theorem mpullbackWithin_comp_at {f : M → M'} {g : M' → M''}
+    {s : Set M} {t : Set M'} {x : M} (hf : MDifferentiableWithinAt I I' f s x)
+    (hg : MDifferentiableWithinAt I' I'' g t (f x)) (hst : MapsTo f s t)
+    (hs : UniqueMDiffWithinAt I s x) (ω : RoughForm I'' M'' F k) :
+    mpullbackWithin I I'' (g ∘ f) s ω x =
+      mpullbackWithin I I' f s (mpullbackWithin I' I'' g t ω) x :=
+  bundleMpullbackWithin_comp_at hf hg hst hs ω
+
+/-- The within-set chain rule for fixed-coefficient forms with a local intermediate-set
+condition. -/
+theorem mpullbackWithin_comp_of_preimage_mem_nhdsWithin
+    {f : M → M'} {g : M' → M''} {s : Set M} {t : Set M'} {x : M}
+    (hf : MDifferentiableWithinAt I I' f s x)
+    (hg : MDifferentiableWithinAt I' I'' g t (f x))
+    (hst : f ⁻¹' t ∈ 𝓝[s] x) (hs : UniqueMDiffWithinAt I s x)
+    (ω : RoughForm I'' M'' F k) :
+    mpullbackWithin I I'' (g ∘ f) s ω x =
+      mpullbackWithin I I' f s (mpullbackWithin I' I'' g t ω) x :=
+  bundleMpullbackWithin_comp_of_preimage_mem_nhdsWithin hf hg hst hs ω
+
+/-- The chain rule for fixed-coefficient forms at a point. -/
+theorem mpullback_comp_at {f : M → M'} {g : M' → M''} {x : M}
+    (hf : MDifferentiableAt I I' f x) (hg : MDifferentiableAt I' I'' g (f x))
+    (ω : RoughForm I'' M'' F k) :
+    mpullback I I'' (g ∘ f) ω x = mpullback I I' f (mpullback I' I'' g ω) x :=
+  bundleMpullback_comp_at hf hg ω
+
+/-- The fixed-coefficient chain rule on a set. -/
+theorem mpullback_comp_on {f : M → M'} {g : M' → M''} {s : Set M}
+    (hf : ∀ x ∈ s, MDifferentiableAt I I' f x)
+    (hg : ∀ x ∈ s, MDifferentiableAt I' I'' g (f x)) (ω : RoughForm I'' M'' F k) :
+    ∀ x ∈ s, mpullback I I'' (g ∘ f) ω x =
+      mpullback I I' f (mpullback I' I'' g ω) x :=
+  bundleMpullback_comp_on hf hg ω
+
+/-- Pullback reverses composition of differentiable maps. -/
+theorem mpullback_comp {f : M → M'} {g : M' → M''}
+    (hf : MDifferentiable I I' f) (hg : MDifferentiable I' I'' g)
+    (ω : RoughForm I'' M'' F k) :
+    mpullback I I'' (g ∘ f) ω = mpullback I I' f (mpullback I' I'' g ω) :=
+  bundleMpullback_comp hf hg ω
+
+/-- Pullback of a degree-zero form is composition of its underlying function. -/
+@[simp]
+theorem mpullback_ofFunction (f : M → M') (a : M' → F) :
+    mpullback I I' f (RoughForm.ofFunction I' a) = RoughForm.ofFunction I (a ∘ f) := by
+  ext x v
+  simp
+
+/-- Within-set pullback of a degree-zero form is function composition. -/
+@[simp]
+theorem mpullbackWithin_ofFunction (f : M → M') (s : Set M) (a : M' → F) :
+    mpullbackWithin I I' f s (RoughForm.ofFunction I' a) = RoughForm.ofFunction I (a ∘ f) := by
+  ext x v
+  simp
+
+/-- On model spaces, within-set pullback is the flat pullback by the Fréchet derivative. -/
+theorem mpullbackWithin_eq_flat (f : E → E') (s : Set E)
+    (ω : RoughForm 𝓘(ℝ, E') E' F k) :
+    mpullbackWithin 𝓘(ℝ, E) 𝓘(ℝ, E') f s ω =
+      fun x ↦ (ω (f x)).compContinuousLinearMap (fderivWithin ℝ f s x) := by
+  ext x v
+  simp only [mpullbackWithin_apply, mfderivWithin_eq_fderivWithin]
+  -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
+  rfl
+
+/-- On model spaces, pullback is the flat pullback by the Fréchet derivative. -/
+theorem mpullback_eq_flat (f : E → E') (ω : RoughForm 𝓘(ℝ, E') E' F k) :
+    mpullback 𝓘(ℝ, E) 𝓘(ℝ, E') f ω =
+      fun x ↦ (ω (f x)).compContinuousLinearMap (fderiv ℝ f x) := by
+  ext x v
+  simp only [mpullback_apply, mfderiv_eq_fderiv]
+  -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
+  rfl
+
+end FixedCoefficients
 end TauCeti

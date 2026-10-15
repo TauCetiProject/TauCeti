@@ -43,9 +43,6 @@ equivalent in characteristic zero.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 3.2.
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.12.
 
-This is the complete-reducibility side of Layer 6, "Reductive and semisimple groups", in the
-ReductiveGroups roadmap.
-
 The organization follows `TauCeti/Algebra/AlgebraicGroup/Unipotent/Basic.lean`.
 -/
 
