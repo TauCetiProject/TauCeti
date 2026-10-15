@@ -190,7 +190,7 @@ private theorem universalPoint_diagonalTorusCoordinateMap :
       (CommAlgCat.of k (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ))))
       (toConv (AlgHom.id k
         (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ))))))
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at hvalue
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hvalue
   rw [AlgHom.id_apply] at hvalue
   exact hvalue
 

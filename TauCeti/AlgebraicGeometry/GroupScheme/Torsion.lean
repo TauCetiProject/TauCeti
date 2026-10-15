@@ -98,20 +98,20 @@ variable {S : Scheme.{u}} (G : CommGrp (Over S))
 kernel of multiplication by `n`, the integer `n` of the endomorphism ring of `G`, as a group object
 of `Over S`. -/
 noncomputable def torsion (n : ℤ) : Grp (Over S) :=
-  kernel ((CommGrp.forget₂Grp (Over S)).map (n : End G))
+  kernel ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom)
 
 /-- The torsion group scheme is the kernel of multiplication by its index. -/
 theorem torsion_eq_kernel (n : ℤ) :
-    torsion G n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End G)) :=
+    torsion G n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom) :=
   (rfl)
 
 /-- The inclusion `G[n] ⟶ G` of the `n`-torsion of `G`, a morphism of `Over S`. -/
 noncomputable def torsionι (n : ℤ) : (torsion G n).X ⟶ G.X :=
-  (kernel.ι ((CommGrp.forget₂Grp (Over S)).map (n : End G))).hom.hom
+  (kernel.ι ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom)).hom.hom
 
 /-- The inclusion of the `n`-torsion is a homomorphism of group schemes over `S`. -/
 instance isMonHom_torsionι (n : ℤ) : IsMonHom (torsionι G n) :=
-  (kernel.ι ((CommGrp.forget₂Grp (Over S)).map (n : End G))).hom.isMonHom_hom
+  (kernel.ι ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom)).hom.isMonHom_hom
 
 /-- The inclusion of the `n`-torsion is a monomorphism. -/
 instance mono_torsionι (n : ℤ) : Mono (torsionι G n) :=
@@ -126,7 +126,7 @@ instance isCommMonObj_torsion (n : ℤ) : IsCommMonObj (torsion G n).X :=
 /-- The inclusion of the `n`-torsion, followed by multiplication by `n`, is the unit point. -/
 @[reassoc]
 theorem torsionι_comp_zpow (n : ℤ) : torsionι G n ≫ 𝟙 G.X ^ n = 1 := by
-  have h := kernel_ι_comp_hom ((CommGrp.forget₂Grp (Over S)).map (n : End G))
+  have h := kernel_ι_comp_hom ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom)
   rw [CommGrp.forget₂Grp_map_hom, CommGrp.intCast_hom_hom_hom] at h
   exact h
 
@@ -138,7 +138,7 @@ theorem torsionι_zpow (n : ℤ) : torsionι G n ^ n = 1 := by
 /-- **The `n`-torsion is the fibre of multiplication by `n` over the unit section.** -/
 theorem isPullback_torsionι (n : ℤ) :
     IsPullback (torsionι G n) (toUnit _) (𝟙 G.X ^ n) η[G.X] := by
-  have h := isPullback_kernel_hom ((CommGrp.forget₂Grp (Over S)).map (n : End G))
+  have h := isPullback_kernel_hom ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom)
   rw [CommGrp.forget₂Grp_map_hom, CommGrp.intCast_hom_hom_hom] at h
   exact h
 
@@ -318,8 +318,9 @@ variable {G} {H K : CommGrp (Over S)}
 
 /-- A homomorphism of commutative group schemes commutes with multiplication by `n`. -/
 private theorem forget₂Grp_map_intCast_comp (f : G ⟶ H) (n : ℤ) :
-    (CommGrp.forget₂Grp (Over S)).map (n : End G) ≫ (CommGrp.forget₂Grp (Over S)).map f =
-      (CommGrp.forget₂Grp (Over S)).map f ≫ (CommGrp.forget₂Grp (Over S)).map (n : End H) := by
+    (CommGrp.forget₂Grp (Over S)).map (n : End G).asHom ≫ (CommGrp.forget₂Grp (Over S)).map f =
+      (CommGrp.forget₂Grp (Over S)).map f ≫
+        (CommGrp.forget₂Grp (Over S)).map (n : End H).asHom := by
   rw [← Functor.map_comp, ← Functor.map_comp]
   refine congrArg _ (CommGrp.hom_ext _ _ ?_)
   simp [GrpObj.zpow_comp, GrpObj.comp_zpow]
@@ -374,8 +375,8 @@ variable (G)
 /-- Base change along `s : T ⟶ S` takes multiplication by `n` on `G` to multiplication by `n` on
 the base change of `G`. -/
 private theorem pullback_mapGrp_map_intCast {T : Scheme.{u}} (s : T ⟶ S) (n : ℤ) :
-    (Over.pullback s).mapGrp.map ((CommGrp.forget₂Grp (Over S)).map (n : End G)) =
-      (CommGrp.forget₂Grp (Over T)).map (n : End ((Over.pullback s).mapCommGrp.obj G)) := by
+    (Over.pullback s).mapGrp.map ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom) =
+      (CommGrp.forget₂Grp (Over T)).map (n : End ((Over.pullback s).mapCommGrp.obj G)).asHom := by
   ext : 2
   rw [Functor.mapGrp_map_hom_hom, CommGrp.forget₂Grp_map_hom, CommGrp.forget₂Grp_map_hom,
     CommGrp.intCast_hom_hom_hom, CommGrp.intCast_hom_hom_hom]

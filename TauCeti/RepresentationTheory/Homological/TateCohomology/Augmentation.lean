@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Homological.TateCohomology.Basic
-public import TauCeti.RepresentationTheory.Homological.Augmentation
+public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 
@@ -14,12 +14,12 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 # The Tate dimension shift along the augmentation sequence
 
 For a group `G`, the augmentation sequence `0 ⟶ I_G ⟶ k[G] ⟶ k ⟶ 0` (built in
-`TauCeti.RepresentationTheory.Homological.Augmentation`) has a middle term whose Tate cohomology
-vanishes for every finite subgroup, because the left regular representation is Tate-acyclic. Its
-connecting homomorphisms are therefore isomorphisms `Ĥⁿ(S, k) ≅ Ĥⁿ⁺¹(S, I_G)` in every degree,
-for every finite subgroup `S ≤ G`. The ambient group need not be finite; only `S` need be, since
-only its Tate cohomology is formed. This is the first of the two dimension shifts behind Tate's
-theorem; the second is the splitting module of a two-dimensional class.
+`TauCeti.RepresentationTheory.Homological.Augmentation.Basic`) has a middle term whose Tate
+cohomology vanishes for every finite subgroup, because the left regular representation is
+Tate-acyclic. Its connecting homomorphisms are therefore isomorphisms `Ĥⁿ(S, k) ≅ Ĥⁿ⁺¹(S, I_G)` in
+every degree, for every finite subgroup `S ≤ G`. The ambient group need not be finite; only `S` need
+be, since only its Tate cohomology is formed. This is the first of the two dimension shifts behind
+Tate's theorem; the second is the splitting module of a two-dimensional class.
 
 ## Main definitions
 

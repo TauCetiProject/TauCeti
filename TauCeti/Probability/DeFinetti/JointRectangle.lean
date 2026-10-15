@@ -11,7 +11,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 -- the path-law transfer, and the machinery the symmetry transport runs on.
 -- Public: `tailConditionalProbabilityMeasure` names the witness in the exported statement.
 public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
-import TauCeti.Probability.DeFinetti.DirectingMeasure.BlockCylinder
+import TauCeti.Probability.Process.Tail.ConditionalLaw.BlockCylinder
 import TauCeti.Probability.DeFinetti.BlockFactorization
 import TauCeti.Probability.DeFinetti.ConditionalCommonEnding
 import TauCeti.Probability.Exchangeability.ConditionallyIID.Map
@@ -38,14 +38,17 @@ disintegration.
 
 The predicate `ConditionallyIIDWith` asks for a joint-law identity, so the block identities of the
 mixture route are not enough: the directing measure must survive alongside the block. Three layers
-supply that, all private.
+supply that.
 
 **The set-integral identity.** The mass on the tail event `ν ⁻¹' S` meeting a *prefix* block
 cylinder is the integral of the directing-measure product over that event. Since `ν` is
 `tailProcess`-measurable, `ν ⁻¹' S` is a tail event, so `setIntegral_condExp` may be tested against
 it and the prefix factorization replaces the conditional expectation. The real/`ℝ≥0∞` conversion it
 runs on is `TauCeti.Probability.Process.Tail.ConditionalLaw.Integral`, shared with
-`BlockFactorization`.
+`BlockFactorization`. The integration step is
+`measure_inter_blockCylinder_eq_setLIntegral_of_condExp` in
+`TauCeti.Probability.Process.Tail.ConditionalLaw.BlockCylinder`, applied to the tail event
+`ν ⁻¹' S`.
 
 **Symmetry transport.** A finitely supported permutation realising an injective selection on the
 initial segment carries the prefix identity to that selection. It fixes `ν`, because tail events lie
@@ -100,7 +103,8 @@ private theorem measure_inter_blockCylinder_eq_setLIntegral
       = ∫⁻ ω in tailConditionalProbabilityMeasure μ X ⁻¹' S,
           ∏ i, tailConditionalMeasure μ X ω (B i) ∂μ :=
   measure_inter_blockCylinder_eq_setLIntegral_of_condExp hX_meas hB
-    (condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure hX hX_meas hB) hS
+    (condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure hX hX_meas hB)
+    (measurable_tailProcess_tailConditionalProbabilityMeasure hS)
 
 -- A finitely supported reindexing pulls the prefix cylinder back to the `k`-cylinder, once the
 -- permutation realises `k` on the initial segment. This is a set identity: no measure, no

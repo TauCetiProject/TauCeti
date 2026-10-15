@@ -77,6 +77,28 @@ theorem HasLengthBound.component_comp_of_eq_zero {c : ℕ}
   simp only [LinearMap.comp_apply, TensorWords.component_apply, LinearMap.zero_apply]
   rw [← hf k (TensorWords.of R M i x), ht, map_zero, DFinsupp.zero_apply]
 
+/-- A length bound can be checked on individual tensor powers: an input of length at least
+`k + 1 + c` contributes nothing to the output of length `k`. -/
+theorem hasLengthBound_iff_component_of_eq_zero (c : ℕ)
+    (f : TensorWords R M →ₗ[R] TensorWords R N) :
+    HasLengthBound c f ↔ ∀ k n, k + 1 + c ≤ n →
+      ∀ z : TensorPower R n M, TensorWords.component R N k (f (TensorWords.of R M n z)) = 0 := by
+  constructor
+  · intro hf k n hn z
+    exact LinearMap.congr_fun (hf.component_comp_of_eq_zero k n hn) z
+  · intro hf k x
+    have h : TensorWords.component R N k ∘ₗ f ∘ₗ truncate R M (k + 1 + c) ∘ₗ
+        DFinsupp.coeFnLinearMap R = TensorWords.component R N k ∘ₗ f := by
+      apply TensorWords.linearMap_ext R M
+      intro n y
+      simp only [LinearMap.comp_apply]
+      rw [DFinsupp.coeFnLinearMap_apply, truncate_of]
+      split_ifs with hn
+      · rfl
+      · rw [map_zero, map_zero, hf k n (by omega)]
+    exact (TensorWords.component_apply R N k _).symm.trans
+      ((LinearMap.congr_fun h x).trans (TensorWords.component_apply R N k _))
+
 /-- Construct a linear map on completed tensor words by reading each output coordinate
 from a finite truncation of the input. It agrees with `f` on finite words when `f` has
 length bound `c`. -/
