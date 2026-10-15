@@ -71,34 +71,22 @@ noncomputable section
 
 variable (n : ℕ) (ht : (DynkinType.B (n + 1)).Valid)
 
-/-- The simple-root height of an integral type-`Bₙ₊₁` weight, `DynkinType.weightDegree` of
-`DynkinType.B (n + 1)` read on weights indexed by `Fin (n + 1)`. The rank of
-`DynkinType.B (n + 1)` is `n + 1` only up to unfolding, so this restatement is what lets it order
-the spin weights `DynkinType.typeBSpinWeight`. -/
-def weightDegree : (Fin (n + 1) → ℤ) →+ ℚ :=
-  (DynkinType.B (n + 1)).weightDegree ht
-
-/-- Every simple-root row of the type-`Bₙ₊₁` Cartan matrix, the weight of a positive numbered
-root generator, has height one. -/
-@[simp]
-theorem weightDegree_cartanMatrix_row (i : Fin (n + 1)) :
-    weightDegree n ht (CartanMatrix.B (n + 1) i) = 1 := by
-  rw [weightDegree, ← DynkinType.cartanMatrix_B]
-  exact DynkinType.weightDegree_cartanMatrix_row (DynkinType.B (n + 1)) ht i
-
 /-- The exterior basis of the type-`Bₙ₊₁` spin module renumbered by decreasing simple-root height
 of its weights. Indices of equal height are ordered by an arbitrary finite numbering. -/
 def weightOrderEquiv : Fin (dimension n) ≃ Fin (dimension n) :=
   (Fintype.equivFin (Finset (Fin (n + 1)))).symm.trans
-    (orderedWeightIndexEquiv (weightDegree n ht) DynkinType.typeBSpinWeight)
+    (orderedWeightIndexEquiv (κ := Fin (n + 1)) ((DynkinType.B (n + 1)).weightDegree ht)
+      DynkinType.typeBSpinWeight)
 
 /-- Renumbering the spin lattice basis by `weightOrderEquiv` gives the ordered weight basis. -/
 theorem latticeBasis_reindex_weightOrderEquiv :
     (latticeBasis n).reindex (weightOrderEquiv n ht) =
-      orderedWeightBasis (weightDegree n ht) DynkinType.typeBSpinWeight
+      orderedWeightBasis (κ := Fin (n + 1)) ((DynkinType.B (n + 1)).weightDegree ht)
+        DynkinType.typeBSpinWeight
         (TauCeti.ExteriorAlgebra.integralLatticeBasis (polarizationBasis n)) := by
   ext x
-  rw [Module.Basis.reindex_apply, orderedWeightBasis_apply, coe_latticeBasis,
+  refine Eq.trans ?_ (congrArg _ (orderedWeightBasis_apply _ _ _ x).symm)
+  rw [Module.Basis.reindex_apply, coe_latticeBasis,
     TauCeti.ExteriorAlgebra.coe_integralLatticeBasis]
   simp [weightOrderEquiv, signSet]
 
@@ -113,15 +101,18 @@ theorem isUpperUnitriangular_reindexGL_rootSubgroupPoints_inl (i : Fin (n + 1)) 
     have h := (polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
       (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) s
     rwa [← TauCeti.ExteriorAlgebra.coe_integralLatticeBasis] at h
-  have h := isUpperUnitriangular_kostantRootSubgroupMatrix_orderedWeightBasis
+  have h := isUpperUnitriangular_kostantRootSubgroupMatrix_orderedWeightBasis (κ := Fin (n + 1))
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ))
     (rep n) (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
     (TauCeti.ExteriorAlgebra.integralLatticeBasis (polarizationBasis n))
-    DynkinType.typeBSpinWeight (weightDegree n ht) hwt
+    DynkinType.typeBSpinWeight ((DynkinType.B (n + 1)).weightDegree ht) hwt
     (isNilpotent_rep_rootGenerator n (.inl i))
     (lie_coroot_rootGenerator n (.inl i))
-    (by simp)
+    (by
+      rw [rootGeneratorWeight_inl, ← DynkinType.cartanMatrix_B]
+      exact zero_lt_one.trans_eq
+        (DynkinType.weightDegree_cartanMatrix_row (DynkinType.B (n + 1)) ht i).symm)
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
   rw [← latticeBasis_reindex_weightOrderEquiv] at h
   convert h using 1
