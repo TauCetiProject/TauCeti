@@ -64,10 +64,20 @@ lemma toPushforwardSubscheme_app (U : X.Opens) (s : Γ(X, U)) :
     Scheme.Modules.Hom.app I.toPushforwardSubscheme U s = I.subschemeι.app U s :=
   (rfl)
 
+/-- A section of `𝒪_X` restricts to zero on `V(I)` exactly when it is a section of `I`, stated
+in the simp normal form reached by `toPushforwardSubscheme_app`: the equation still lives in the
+sections of `ι_* 𝒪_{V(I)}`, whose zero is not reducibly the zero of `Γ(V(I), ι⁻¹ U)`. -/
+@[simp]
+lemma subschemeι_app_eq_zero_iff {U : X.Opens} {s : Γ(X, U)} :
+    @Eq Γ((Scheme.Modules.pushforward I.subschemeι).obj
+        (SheafOfModules.unit I.subscheme.ringCatSheaf), U) (I.subschemeι.app U s) 0 ↔
+      s ∈ I.sections U :=
+  I.mem_sections_iff.symm
+
 /-- A section of `𝒪_X` restricts to zero on `V(I)` exactly when it is a section of `I`. -/
 lemma toPushforwardSubscheme_app_eq_zero_iff {U : X.Opens} {s : Γ(X, U)} :
-    Scheme.Modules.Hom.app I.toPushforwardSubscheme U s = 0 ↔ s ∈ I.sections U :=
-  I.mem_sections_iff.symm
+    Scheme.Modules.Hom.app I.toPushforwardSubscheme U s = 0 ↔ s ∈ I.sections U := by
+  simp
 
 /-- Regular functions in `I` vanish on `V(I)`. -/
 @[simp, reassoc]
