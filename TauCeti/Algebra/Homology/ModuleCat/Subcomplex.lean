@@ -30,6 +30,8 @@ the spectral sequence of a filtered complex.
 
 ## Main results
 
+* `HomologicalComplex.range_subobjectMk_arrow_f`: the terms of the subcomplex `Subobject.mk f` of a
+  monomorphism `f` are the ranges of its components.
 * `HomologicalComplex.mem_range_subobjectOfSubmodules_arrow_f_iff`: in degree `i` the subcomplex
   consists of the elements of `N i`.
 * `HomologicalComplex.subobjectOfSubmodules_factors`: a chain map carrying the submodules of one
@@ -52,15 +54,33 @@ namespace HomologicalComplex
 
 variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι}
 
+/-- In each degree, the subcomplex `Subobject.mk f` of a monomorphism of complexes of modules has
+the range of `f` as its terms. -/
+theorem range_subobjectMk_arrow_f {K L : HomologicalComplex (ModuleCat.{v} R) c} (f : L ⟶ K)
+    [Mono f] (i : ι) :
+    LinearMap.range ((Subobject.mk f).arrow.f i).hom = LinearMap.range (f.f i).hom := by
+  rw [← Subobject.underlyingIso_hom_comp_eq_mk, comp_f, ModuleCat.hom_comp,
+    LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
+
 section Construction
 
 variable (K : HomologicalComplex (ModuleCat.{v} R) c) (N : ∀ i, Submodule R (K.X i))
-  (hN : ∀ i j, ∀ x ∈ N i, K.d i j x ∈ N j)
+  (hN : ∀ i j, c.Rel i j → ∀ x ∈ N i, K.d i j x ∈ N j)
+
+include hN in
+/-- Stability under the differentials also holds between unrelated degrees, where the differential
+vanishes. -/
+private theorem d_mem (i j : ι) (x : K.X i) (hx : x ∈ N i) : K.d i j x ∈ N j := by
+  by_cases hij : c.Rel i j
+  · exact hN i j hij x hx
+  · rw [K.shape i j hij]
+    exact Submodule.zero_mem _
 
 /-- The complex with terms the submodules `N i ≤ K.X i` and the restricted differentials. -/
 def ofSubmodules : HomologicalComplex (ModuleCat.{v} R) c where
   X i := ModuleCat.of R (N i)
-  d i j := ModuleCat.ofHom ((K.d i j).hom.restrict (hN i j))
+  d i j := ModuleCat.ofHom ((K.d i j).hom.restrict (d_mem K N hN i j))
   shape i j h := by
     ext x
     -- The terms are `ModuleCat.of R (N i)` and the differential is `LinearMap.restrict`, whose
@@ -96,10 +116,7 @@ private theorem subobjectOfSubmodules_eq_mk :
 /-- In degree `i`, the subcomplex cut out by `N` consists of the elements of `N i`. -/
 theorem mem_range_subobjectOfSubmodules_arrow_f_iff (i : ι) (x : K.X i) :
     x ∈ LinearMap.range ((K.subobjectOfSubmodules N hN).arrow.f i).hom ↔ x ∈ N i := by
-  rw [subobjectOfSubmodules_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk, comp_f,
-    ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance)),
-    ofSubmodulesι]
+  rw [subobjectOfSubmodules_eq_mk, range_subobjectMk_arrow_f, ofSubmodulesι]
   -- The component of the inclusion is `ModuleCat.ofHom (N i).subtype` by definition.
   exact Iff.of_eq (congrArg (x ∈ ·) (Submodule.range_subtype (N i)))
 
@@ -124,8 +141,8 @@ end Construction
 section Map
 
 variable {K L : HomologicalComplex (ModuleCat.{v} R) c} {N : ∀ i, Submodule R (K.X i)}
-  {hN : ∀ i j, ∀ x ∈ N i, K.d i j x ∈ N j} {N' : ∀ i, Submodule R (L.X i)}
-  {hN' : ∀ i j, ∀ x ∈ N' i, L.d i j x ∈ N' j}
+  {hN : ∀ i j, c.Rel i j → ∀ x ∈ N i, K.d i j x ∈ N j} {N' : ∀ i, Submodule R (L.X i)}
+  {hN' : ∀ i j, c.Rel i j → ∀ x ∈ N' i, L.d i j x ∈ N' j}
 
 variable (hN hN') in
 /-- The restriction of a chain map carrying each `N i` into `N' i`. -/
@@ -160,7 +177,7 @@ theorem subobjectOfSubmodules_factors (φ : K ⟶ L) (h : ∀ i, ∀ x ∈ N i, 
 
 /-- The subcomplex cut out by a family of submodules is monotone in the family. -/
 theorem subobjectOfSubmodules_mono {N₁ : ∀ i, Submodule R (K.X i)}
-    {hN₁ : ∀ i j, ∀ x ∈ N₁ i, K.d i j x ∈ N₁ j} (h : ∀ i, N i ≤ N₁ i) :
+    {hN₁ : ∀ i j, c.Rel i j → ∀ x ∈ N₁ i, K.d i j x ∈ N₁ j} (h : ∀ i, N i ≤ N₁ i) :
     K.subobjectOfSubmodules N hN ≤ K.subobjectOfSubmodules N₁ hN₁ :=
   Subobject.mk_le_mk_of_comm (ofSubmodulesMap hN hN₁ (𝟙 K) fun i _ hx ↦ h i hx) (by
     rw [ofSubmodulesMap_comp_ofSubmodulesι, Category.comp_id])

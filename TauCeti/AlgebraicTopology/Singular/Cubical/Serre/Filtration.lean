@@ -286,14 +286,12 @@ private def serreSubmodule (s : ℤ) (n : ℕ) :
 /-- The Serre filtration of the normalized cubical chain complex of `E`, indexed by `ℕ`, by
 subcomplexes. -/
 def serreChainFiltration (s : ℤ) : Subobject ((normalizedCubicalChainComplex R).obj E) :=
-  HomologicalComplex.subobjectOfSubmodules _ (serreSubmodule R p s) fun i j x hx ↦ by
-      by_cases hij : i = j + 1
-      · subst hij
-        exact (congrArg (· ∈ NormalizedCubicalChain.serreFiltration R p.hom s j)
-          (normalizedCubicalChainComplex_obj_d_apply E j x)).mpr
-            (NormalizedCubicalChain.boundary_mem_serreFiltration hx)
-      · rw [HomologicalComplex.shape _ _ _ (fun (h : (ComplexShape.down ℕ).Rel i j) ↦ hij h.symm)]
-        exact Submodule.zero_mem _
+  HomologicalComplex.subobjectOfSubmodules _ (serreSubmodule R p s)
+    fun i j (hij : (ComplexShape.down ℕ).Rel i j) x hx ↦ by
+      obtain rfl : j + 1 = i := hij
+      exact (congrArg (· ∈ NormalizedCubicalChain.serreFiltration R p.hom s j)
+        (normalizedCubicalChainComplex_obj_d_apply E j x)).mpr
+          (NormalizedCubicalChain.boundary_mem_serreFiltration hx)
 
 /-- The **Serre filtration** of the cubical chains of `E`, as a filtration by subcomplexes of the
 normalized cubical chain complex placed in nonpositive cochain degrees: its `s`-th piece is

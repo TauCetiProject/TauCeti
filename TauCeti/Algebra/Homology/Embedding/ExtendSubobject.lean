@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Embedding.Extend
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Subobject.Lattice
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-import Mathlib.Algebra.Category.ModuleCat.EpiMono
+public import TauCeti.Algebra.Homology.ModuleCat.Subcomplex
 
 /-!
 # Extending subcomplexes along an embedding of complex shapes
@@ -137,9 +136,7 @@ theorem mem_range_extend_arrow_f_iff (S : Subobject K) {i : ι} {i' : ι'} (hi :
     (x : (K.extend e).X i') :
     x ∈ LinearMap.range ((S.extend e).arrow.f i').hom ↔
       (K.extendXIso e hi).hom x ∈ LinearMap.range (S.arrow.f i).hom := by
-  rw [extend_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk, HomologicalComplex.comp_f,
-    ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance)),
+  rw [extend_eq_mk, HomologicalComplex.range_subobjectMk_arrow_f,
     HomologicalComplex.extendMap_f _ e hi]
   constructor
   · rintro ⟨y, rfl⟩
