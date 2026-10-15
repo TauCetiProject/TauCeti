@@ -763,6 +763,20 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 open scoped Gradient InnerProductSpace
 
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- **A weak gradient is locally integrable.** If the functionals `⟪g x, ·⟫` form a weak
+derivative of `u` on `Ω`, then the vector field `g` is locally integrable on `Ω`. -/
+theorem HasWeakFDerivOn.locallyIntegrableOn_gradient {u : E → ℝ} {g : E → E}
+    (h : HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (g x)) : LocallyIntegrableOn g Ω μ := by
+  have hg := ((InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv :
+    StrongDual ℝ E →SL[starRingEnd ℝ] E).locallyIntegrableOn_comp h.locallyIntegrableOn_deriv
+  convert hg using 1
+  funext x
+  simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  exact ((InnerProductSpace.toDual ℝ E).symm_apply_eq.2 (ContinuousLinearMap.ext fun y => by
+    simp [InnerProductSpace.toDual_apply_apply])).symm
+
 /-- **A `C¹` function is weakly differentiable**, with weak derivative the continuous linear
 functional represented by its classical gradient. Only differentiability inside the open set `Ω`
 is used. -/
