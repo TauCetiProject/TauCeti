@@ -89,9 +89,9 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
     map f hf (congrEquiv e a) = congrEquiv e (map f hf a) := by
   induction a using Quotient.inductionOn
   rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk]
-  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`; they differ only in the order in which
-  -- the two compositions are bundled.
-  rfl
+  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`
+  refine congrArg _ (_root_.GenLoop.ext _ _ fun t => ?_)
+  simp only [_root_.GenLoop.congr_apply, _root_.GenLoop.map_apply]
 
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
@@ -406,14 +406,13 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
   -- the loop space `Ω X x` is `Ω^ (Fin 1) X x` through `homeomorphOfUnique`, under which `F`
   -- becomes the postcomposition with `f` on cube loops
   let F' : C(Ω^ (Fin 1) X x, Ω^ (Fin 1) Y y) :=
-    ⟨_root_.GenLoop.map f hf,
-      continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp f).comp continuous_subtype_val)⟩
+    ⟨_root_.GenLoop.map f hf, _root_.GenLoop.continuous_map f hf⟩
   rw [pathLoopSpaceMulEquiv_apply, pathLoopSpaceMulEquiv_apply]
   have key : (homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
       (GenLoop.homeomorphOfUnique_const (Fin 1))).symm
         (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
       map (y := (_root_.GenLoop.const : Ω^ (Fin 1) Y y)) F'
-        (GenLoop.ext _ _ fun _ => hf)
+        (_root_.GenLoop.map_const f hf)
         ((homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
           (GenLoop.homeomorphOfUnique_const (Fin 1))).symm a) := by
     induction a using Quotient.inductionOn with
@@ -421,7 +420,7 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
       refine congrArg (Quotient.mk _) (GenLoop.ext _ _ fun t => GenLoop.ext _ _ fun s => ?_)
       simp [F', hFf]
   rw [key]
-  exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun _ _ => rfl) _
+  exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun p t => _root_.GenLoop.map_apply f hf p t) _
 
 end Natural
 

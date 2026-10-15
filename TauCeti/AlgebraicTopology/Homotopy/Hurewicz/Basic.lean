@@ -117,8 +117,13 @@ lemma toCubeBoundaryPairHom_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin n) X 
     toCubeBoundaryPairHom (GenLoop.map f hf p) =
       toCubeBoundaryPairHom p ≫ TopPair.ofSubsetMap (TopCat.ofHom f)
         (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf)) :=
-  TopPair.ofSubsetMap_comp (TopCat.ofHom (p.1.comp ⟨ULift.down, continuous_uliftDown⟩))
-    (TopCat.ofHom f) _ _ _
+  by
+  have h : TopCat.ofHom ((map f hf p).1.comp ⟨ULift.down, continuous_uliftDown⟩) =
+      TopCat.ofHom (p.1.comp ⟨ULift.down, continuous_uliftDown⟩) ≫ TopCat.ofHom f := by
+    rw [show (map f hf p).1 = f.comp p.1 from coe_map f hf p]
+    rfl
+  unfold toCubeBoundaryPairHom
+  exact (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ h.symm).symm
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 

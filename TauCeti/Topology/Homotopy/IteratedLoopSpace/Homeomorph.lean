@@ -98,7 +98,7 @@ theorem iteratedLoopSpaceHomeomorph_map :
         GenLoop.map f.toContinuousMap f.map_basepoint (iteratedLoopSpaceHomeomorph k X γ)
   | 0, _, _, _, _ => by
     rw [Hom.iteratedLoopSpace_zero]
-    exact GenLoop.ext _ _ fun _ => rfl
+    exact GenLoop.ext _ _ fun _ => by rw [GenLoop.map_apply]; rfl
   | k + 1, _, _, f, γ => by
     rw [Hom.iteratedLoopSpace_succ]
     exact (congrArg (GenLoop.genLoopLoopHomeomorph _ k)
