@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 
 /-!
@@ -21,6 +22,8 @@ The exact fixing-subgroup equation identifies this arithmetic layer with the sub
 used in the pro-`p` class-module extension. The generating pair permits the tame-frame
 relation-module construction to be applied to this layer of any finite Galois quotient.
 The local-field structures on `L` may be any structures compatible with `K`.
+Its canonical embedding into the separable closure identifies the arithmetic fixing subgroup
+with the same product `P_K U` in the algebraic-closure model.
 
 The quotient comparison specializes `TauCeti.absoluteGaloisGroupQuotientEquiv`, and the pair
 is the image of the frame supplied by `TauCeti.exists_tameFrame_quotient`.
@@ -101,6 +104,48 @@ instance isGalois_tameLayer (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K
   apply (InfiniteGalois.normal_iff_isGalois _).mp
   rw [fixingSubgroup_tameLayer]
   exact (tameLayerSubgroup K U).isNormal'
+
+/-- The canonical inclusion of the finite tame layer into the separable closure. -/
+def tameLayerEmbedding (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K)) :
+    tameLayer K U →ₐ[K] SeparableClosure K :=
+  inclusion (le_separableClosure K (AlgebraicClosure K) (tameLayer K U))
+
+/-- The separable-closure inclusion preserves the original algebraic-closure coordinates. -/
+@[simp]
+theorem coe_tameLayerEmbedding (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (x : tameLayer K U) :
+    (tameLayerEmbedding K U x : AlgebraicClosure K) = x :=
+  (rfl)
+
+/-- Restriction to the tame layer agrees in the algebraic and separable closure models. -/
+theorem tameLayerEmbedding_restrictNormalHom
+    (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (σ : Field.absoluteGaloisGroup K) :
+    (tameLayerEmbedding K U).restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) =
+      AlgEquiv.restrictNormalHom (tameLayer K U) σ := by
+  apply (tameLayerEmbedding K U).restrictNormalHom_eq_iff.mpr
+  intro x
+  apply Subtype.val_injective
+  exact (coe_absoluteGaloisGroupRestrictEquiv_apply K σ (tameLayerEmbedding K U x)).trans
+    (AlgEquiv.restrictNormal_commutes σ (tameLayer K U) x).symm
+
+/-- The subgroup fixing the embedded tame layer pulls back to the product of wild inertia
+and the prescribed open normal subgroup. -/
+theorem galoisSubgroup_tameLayerEmbedding_comap
+    (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K)) :
+    (galoisSubgroup K (tameLayer K U) (tameLayerEmbedding K U)).toSubgroup.comap
+        (absoluteGaloisGroupRestrictEquiv K).toMulEquiv.toMonoidHom =
+      wildInertiaSubgroup K ⊔ U.toSubgroup := by
+  rw [galoisSubgroup_toSubgroup, ← AlgHom.ker_restrictNormalHom]
+  ext σ
+  simp only [Subgroup.mem_comap, MonoidHom.mem_ker]
+  refine (congrArg (· = 1) (tameLayerEmbedding_restrictNormalHom K U σ)).to_iff.trans ?_
+  -- Mathlib's kernel equation uses the automorphism-group presentation of the
+  -- absolute Galois group, whose derived group instance is hidden by the wrapper.
+  change σ ∈ (AlgEquiv.restrictNormalHom (tameLayer K U) :
+    Gal(AlgebraicClosure K/K) →* Gal(tameLayer K U/K)).ker ↔ _
+  rw [IntermediateField.restrictNormalHom_ker, fixingSubgroup_tameLayer]
+  rfl
 
 /-- The finite quotient by `P_K U` is the Galois group of the associated tame layer. -/
 def quotientTameLayerEquiv (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K)) :
