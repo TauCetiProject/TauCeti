@@ -17,8 +17,8 @@ Let `C` be a validated column commutation of a grid diagram `G`, write `G'` for 
 diagram `G.swapColumns C.column (finRotate n C.column)`, `∂` and `∂'` for the unblocked
 differentials of `G` and `G'`, and `Φ` for the commutation map `GridDiagram.commutationMap`,
 which counts empty pentagons turning on either side of the replaced grid line. This file proves
-the chain-map equation `Φ ∘ ∂ = ∂' ∘ Φ` over every commutative semiring of characteristic two in
-which addition is cancellative, in particular over `𝔽₂`.
+the chain-map equation `Φ ∘ ∂ = ∂' ∘ Φ` over every commutative semiring of characteristic two, in
+particular over `𝔽₂`.
 
 The terminal-side contributions have already been reduced to the initial-side ones, so it remains
 to account for an initial-side pentagon followed by a rectangle of `G'` whose two pieces share a
@@ -99,15 +99,17 @@ theorem sum_initialPentagonRectangleWeight_overlap_eq_sum_partners (hzx : z ≠ 
       ac_rfl
     _ = _ := by rw [← hself, add_zero]
 
-variable [IsCancelAdd R]
-
-/-- **The commutation map is a chain map.** Over a commutative semiring of characteristic two with
-cancellative addition, counting empty pentagons turning on either side of the replaced grid line
-intertwines the unblocked differentials of a grid diagram and of its column commutation. -/
+/-- **The commutation map is a chain map.** Over a commutative semiring of characteristic two,
+counting empty pentagons turning on either side of the replaced grid line intertwines the unblocked
+differentials of a grid diagram and of its column commutation. -/
 theorem commutationMap_comp_unblockedDifferential :
     (G.commutationMap R C).comp (G.unblockedDifferential R) =
       ((G.swapColumns C.column (finRotate n C.column)).unblockedDifferential R).comp
         (G.commutationMap R C) := by
+  -- In characteristic two every element is its own additive inverse, so addition cancels.
+  have : IsLeftCancelAdd R := ⟨fun a b c h => (CharTwo.add_cancel_left a b).symm.trans <|
+    (congrArg (a + ·) h).trans (CharTwo.add_cancel_left a c)⟩
+  have := AddCommMagma.IsLeftCancelAdd.toIsCancelAdd R
   refine (G.commutationMap_comp_unblockedDifferential_eq_iff_initialPentagon_overlap C R).2
     fun x z hzx => ?_
   rw [G.sum_rectangleInitialPentagonWeight_overlap_eq_sum_partners C R hzx,
