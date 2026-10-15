@@ -43,6 +43,8 @@ group, for `V ≤ W`:
 
 public section
 
+open Subgroup (quotientSubgroupOfEquivMap)
+
 namespace TauCeti
 
 open ContCohomology

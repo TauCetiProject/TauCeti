@@ -224,14 +224,16 @@ theorem valueGroupWithZeroIsoInt_valuation (x : Kˣ) :
     valueGroupWithZeroIsoInt K (valuation K (x : K))
       = WithZero.exp (-(normalizedValuation K x).toAdd) := by
   rw [toAdd_normalizedValuation_eq_ord]
-  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K)) x.ne_zero
+  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K))
+    ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)
 
 /-- The normalized valuation vanishes exactly on the elements of valuation `1`. -/
 @[simp]
 theorem normalizedValuation_eq_one_iff (x : Kˣ) :
     normalizedValuation K x = 1 ↔ valuation K (x : K) = 1 := by
   rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord,
-    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K)) x.ne_zero]
+    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K))
+      ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)]
   simp [intValuation]
 
 /-- The normalized valuation vanishes on every root of unity: `Multiplicative ℤ` is torsion

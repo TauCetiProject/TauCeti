@@ -54,6 +54,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 * `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
 * `Polygon.IsSimple.three_le`: a nonempty simple polygon over a densely ordered ring acting
   torsion freely has at least three vertices.
+* `Polygon.IsSimple.subsingleton_edgeSet_inter`: two distinct edges of such a simple polygon have
+  at most one common point.
 * `Polygon.range_boundaryParam`: the parametrization runs over the whole boundary.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
   give the same point exactly when they agree modulo `n`.
@@ -156,6 +158,24 @@ theorem IsSimple.three_le [NeZero n] (h : poly.IsSimple R) : 3 ≤ n := by
   · rcases AffineMap.lineMap_eq_left_iff.1 hx with h' | h'
     · exact h01 h'
     · exact hs0.ne' h'
+
+/-- **Two distinct edges of a simple polygon share at most one point**, the common vertex when
+they are consecutive. Over a densely ordered ring acting torsion freely, a simple polygon has at
+least three vertices, so two edges cannot be consecutive in both orders. -/
+theorem IsSimple.subsingleton_edgeSet_inter (h : poly.IsSimple R) {i j : Fin n} (hij : i ≠ j) :
+    (poly.edgeSet R i ∩ poly.edgeSet R j).Subsingleton := by
+  have : NeZero n := ⟨i.pos.ne'⟩
+  have hrot : finRotate n (finRotate n i) ≠ i := by
+    obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by have := h.three_le; omega⟩
+    rw [finRotate_apply, finRotate_apply, add_assoc, ne_eq, add_eq_left, Fin.ext_iff]
+    simp [Fin.val_add, Nat.mod_eq_of_lt (show 2 < m + 3 by omega)]
+  rintro x ⟨hxi, hxj⟩ y ⟨hyi, hyj⟩
+  rcases h.eq_vertex_of_mem_edgeSet hij hxi hxj with ⟨hji, rfl⟩ | ⟨hij', rfl⟩ <;>
+    rcases h.eq_vertex_of_mem_edgeSet hij hyi hyj with ⟨hji', rfl⟩ | ⟨hij'', rfl⟩
+  · rfl
+  · exact (hrot (hji ▸ hij''.symm)).elim
+  · exact (hrot (hji' ▸ hij'.symm)).elim
+  · rfl
 
 end ThreeLE
 

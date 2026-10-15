@@ -147,6 +147,13 @@ theorem comapOfIso_coordinateMap (T : SplitMaximalTorus R L r) (e : H ≅ L) :
     (T.comapOfIso e).coordinateMap = e.hom ≫ T.coordinateMap :=
   (rfl)
 
+/-- The coordinate map of a transported torus is restriction along the bialgebra equivalence
+underlying the isomorphism. -/
+theorem hom_comapOfIso_coordinateMap (T : SplitMaximalTorus R L r) (e : H ≅ L) :
+    (T.comapOfIso e).coordinateMap.hom =
+      T.coordinateMap.hom.comp (CommHopfAlgCat.ofIso e : H →ₐc[R] L) := by
+  rw [comapOfIso_coordinateMap, CommHopfAlgCat.hom_comp, CommHopfAlgCat.coe_ofIso]
+
 /-- The defining ideal of the transported torus is the pullback of the original defining ideal
 along `e`. -/
 @[simp]

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.PointModTorsion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.PointModTorsion.Basic
 -- The Gram-congruence lemmas are used only inside the proofs below, so the import is private:
--- nothing in this module's exported statements mentions `toMatrix₂Aux`.
+-- `toMatrix₂Aux` itself comes from Mathlib through the public import above.
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 
 /-!
@@ -27,6 +27,8 @@ types of two bases of the same module are equivalent.
 
 ## Main results
 
+* `WeierstrassCurve.Affine.neronTateGramMatrix_eq_toMatrix₂Aux`: the Gram matrix is the matrix
+  of the descended pairing in the sense of `LinearMap.toMatrix₂Aux`.
 * `WeierstrassCurve.Affine.neronTateGramMatrix_basis_change`: a change of basis acts on the
   Gram matrix by congruence.
 * `WeierstrassCurve.Affine.abs_det_neronTateGramMatrix_basis_change`: the absolute determinant is
@@ -54,7 +56,9 @@ variable {F : Type*} [Field F] {W : Affine F} [AdmissibleAbsValues F] [Decidable
 -- `neronTateGramMatrix` is defined as exactly this `toMatrix₂Aux`, but its body is not exposed
 -- across the module boundary, so the identification is not `rfl` here: it goes through the
 -- public entrywise characterisation `neronTateGramMatrix_apply`.
-private theorem neronTateGramMatrix_eq_toMatrix₂Aux [W.toAffine.IsElliptic] {ι : Type*}
+/-- The Gram matrix of the Néron-Tate pairing is the matrix `LinearMap.toMatrix₂Aux` of the
+descended pairing on the basis, which is how Mathlib's change-of-basis lemmas apply to it. -/
+theorem neronTateGramMatrix_eq_toMatrix₂Aux [W.toAffine.IsElliptic] {ι : Type*}
     (b : Module.Basis ι ℤ (PointModTorsion W)) :
     neronTateGramMatrix W b =
       LinearMap.toMatrix₂Aux ℤ (b : ι → PointModTorsion W) (b : ι → PointModTorsion W)
