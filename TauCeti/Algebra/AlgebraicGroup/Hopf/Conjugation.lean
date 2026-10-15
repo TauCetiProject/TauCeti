@@ -82,6 +82,22 @@ theorem toConv_conjugationAlgHom :
             (R := R) (H₁ := H) (H₂ := H)).toAlgHom)⁻¹ := by
   rw [conjugationAlgHom, toConv_ofConv]
 
+/-- **Evaluation against an arbitrary algebra map out of the tensor square.** Composing an
+algebra map `φ : H ⊗[R] H →ₐ[R] A` with the conjugation morphism conjugates its second
+restriction by its first. The product-map form is `productMap_comp_conjugationAlgHom`. -/
+theorem comp_conjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
+    (phi : H ⊗[R] H →ₐ[R] A) :
+    phi.comp (conjugationAlgHom (R := R) (H := H)) =
+      (toConv (phi.comp Algebra.TensorProduct.includeLeft) *
+        toConv (phi.comp Algebra.TensorProduct.includeRight) *
+        (toConv (phi.comp Algebra.TensorProduct.includeLeft))⁻¹).ofConv := by
+  have h := congrArg
+    (fun g : WithConv (H →ₐ[R] H ⊗[R] H) ↦ (AlgHom.mapValue phi g).ofConv)
+    (toConv_conjugationAlgHom (R := R) (H := H))
+  simpa only [map_mul, map_inv, AlgHom.mapValue_apply, ofConv_toConv,
+    Bialgebra.TensorProduct.includeLeft_toAlgHom,
+    Bialgebra.TensorProduct.includeRight_toAlgHom] using h
+
 /-- Evaluating the coordinate morphism of left conjugation at two algebra-valued points gives
 their group-theoretic conjugate.
 
@@ -94,41 +110,9 @@ theorem productMap_comp_conjugationAlgHom
     (Algebra.TensorProduct.productMap g.ofConv x.ofConv).comp
         (conjugationAlgHom (R := R) (H := H)) =
       (g * x * g⁻¹).ofConv := by
-  have hmap :
-      AlgHom.mapValue (H := H) (Algebra.TensorProduct.productMap g.ofConv x.ofConv)
-          (toConv (conjugationAlgHom (R := R) (H := H))) =
-        g * x * g⁻¹ := by
-    rw [toConv_conjugationAlgHom, map_mul, map_mul, map_inv]
-    simp only [AlgHom.mapValue_apply,
-      Bialgebra.TensorProduct.includeLeft_toAlgHom,
-      Bialgebra.TensorProduct.includeRight_toAlgHom,
-      Algebra.TensorProduct.productMap_left, Algebra.TensorProduct.productMap_right]
-  have h := congrArg WithConv.ofConv hmap
-  rwa [AlgHom.mapValue_apply, ofConv_toConv] at h
-
-/-- **Evaluation against an arbitrary algebra map out of the tensor square.** Every algebra map
-`φ : H ⊗[R] H →ₐ[R] A` is the product map of its two restrictions, so composing it with the
-conjugation morphism conjugates the second restriction by the first. This is the restriction form
-of `productMap_comp_conjugationAlgHom`, which needs `φ` presented as a product map. -/
-theorem comp_conjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
-    (phi : H ⊗[R] H →ₐ[R] A) :
-    phi.comp (conjugationAlgHom (R := R) (H := H)) =
-      (toConv (phi.comp Algebra.TensorProduct.includeLeft) *
-        toConv (phi.comp Algebra.TensorProduct.includeRight) *
-        (toConv (phi.comp Algebra.TensorProduct.includeLeft))⁻¹).ofConv := by
-  calc
-    phi.comp (conjugationAlgHom (R := R) (H := H)) =
-        (Algebra.TensorProduct.productMap
-          (phi.comp Algebra.TensorProduct.includeLeft)
-          (phi.comp Algebra.TensorProduct.includeRight)).comp
-            (conjugationAlgHom (R := R) (H := H)) :=
-      congrArg (fun psi : H ⊗[R] H →ₐ[R] A ↦ psi.comp (conjugationAlgHom (R := R) (H := H)))
-        (_root_.AlgHom.productMap_comp_includeLeft_includeRight phi).symm
-    _ = _ := by
-      simpa only [ofConv_toConv] using
-        productMap_comp_conjugationAlgHom (R := R) (H := H)
-          (toConv (phi.comp Algebra.TensorProduct.includeLeft))
-          (toConv (phi.comp Algebra.TensorProduct.includeRight))
+  simpa only [Algebra.TensorProduct.productMap_left, Algebra.TensorProduct.productMap_right,
+    toConv_ofConv] using comp_conjugationAlgHom
+      (Algebra.TensorProduct.productMap g.ofConv x.ofConv)
 
 /-- The coordinate morphism of conjugation is natural in the commutative Hopf algebra. -/
 theorem tensorProduct_map_comp_conjugationAlgHom
