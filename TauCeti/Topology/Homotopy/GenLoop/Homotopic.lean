@@ -21,7 +21,7 @@ homeomorphism between spaces of generalized loops preserves and reflects homotop
 ## Main declarations
 
 * `GenLoop.homotopic_iff_joined`: homotopy relative to the cube boundary is path connectedness.
-* `GenLoop.homotopic_homeomorph_iff`: a homeomorphism of generalized-loop spaces preserves and
+* `Homeomorph.genLoopHomotopic_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
 -/
 
@@ -81,7 +81,7 @@ theorem homotopic_iff_joined {p q : Ω^ N X x} :
 relative to the cube boundary: both are path connectedness, which a homeomorphism transports
 in both directions. -/
 @[simp]
-theorem homotopic_homeomorph_iff (φ : Ω^ M X x ≃ₜ Ω^ N Y y) {p q : Ω^ M X x} :
+theorem _root_.Homeomorph.genLoopHomotopic_iff (φ : Ω^ M X x ≃ₜ Ω^ N Y y) {p q : Ω^ M X x} :
     _root_.GenLoop.Homotopic (φ p) (φ q) ↔ _root_.GenLoop.Homotopic p q := by
   rw [homotopic_iff_joined, homotopic_iff_joined]
   refine ⟨fun h => ?_, fun h => h.map φ.continuous⟩

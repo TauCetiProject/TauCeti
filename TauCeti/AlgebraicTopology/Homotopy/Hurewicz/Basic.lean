@@ -120,7 +120,7 @@ lemma toCubeBoundaryPairHom_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin n) X 
   by
   have h : TopCat.ofHom ((map f hf p).1.comp ⟨ULift.down, continuous_uliftDown⟩) =
       TopCat.ofHom (p.1.comp ⟨ULift.down, continuous_uliftDown⟩) ≫ TopCat.ofHom f := by
-    rw [show (map f hf p).1 = f.comp p.1 from coe_map f hf p]
+    rw [coe_map f hf p]
     rfl
   unfold toCubeBoundaryPairHom
   exact (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ h.symm).symm
