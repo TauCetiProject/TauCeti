@@ -818,7 +818,7 @@ private theorem det_hyperbolicSixEvenUnitaryEquivGeneralLinear
   have h := hyperbolicSixEvenEquivMatrixProd_apply K (evenUnitaryGroupEvenPart _ x)
   rw [SpinPolarizationData.evenCliffordEquivProdMatrix_apply] at h
   rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  exact (congrArg (fun p ↦ Matrix.det p.1) h).trans (Algebra.det_endAlgEquivMatrix _ _ _ _)
+  simpa using congrArg (fun p ↦ Matrix.det p.1) h
 
 private theorem hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq
     {x y : evenUnitaryGroup (splitEvenForm K 3)}

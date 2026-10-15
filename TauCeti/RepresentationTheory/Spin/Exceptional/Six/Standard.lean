@@ -47,7 +47,8 @@ variable (K : Type u) [Field K]
 
 private theorem hyperbolicSix_spinPlus_finrank :
     finrank K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) = 4 := by
-  rw [finrank_spinPlus _ (hyperbolicSix_W_ne_bot K), hyperbolicSix_finrank_W K]
+  rw [finrank_spinPlus _ (splitEvenPolarization_W_ne_bot K (by norm_num)),
+    finrank_splitEvenPolarization_W K 3]
   norm_num
 
 variable [NeZero (2 : K)]
@@ -73,8 +74,8 @@ private theorem hyperbolicSixSpinEquivSpecialLinear_eq_toMatrix
         (spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
           (splitEvenPolarization_line K 3)
           (spinGroupToEven (splitEvenForm K 3) g)) := by
-  let hW := hyperbolicSix_W_ne_bot K
-  let hV := hyperbolicSix_finrank K
+  let hW := splitEvenPolarization_W_ne_bot K (by norm_num : (3 : ℕ) ≠ 0)
+  let hV := finrank_splitEvenSpace K 3
   let x := spinGroupToEven (splitEvenForm K 3) g
   calc
     (hyperbolicSixSpinEquivSpecialLinear K g : Matrix (Fin 4) (Fin 4) K) =
@@ -145,7 +146,7 @@ theorem nonempty_hyperbolicSix_halfSpin_equiv_stdSLRep_and_dual :
   obtain ⟨hline, ⟨eminus⟩⟩ :=
     exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
       (splitEvenPolarization K 3)
-        ((hyperbolicSix_finrank K).trans (by norm_num : (2 : ℕ) * 3 = 6))
+        ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
   have hh : hline = splitEvenPolarization_line K 3 := Subsingleton.elim _ _
   cases hh
   exact ⟨⟨eplus⟩, ⟨eminus.trans eplus.dual⟩⟩

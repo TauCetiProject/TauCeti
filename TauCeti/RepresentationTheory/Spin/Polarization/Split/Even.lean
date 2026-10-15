@@ -27,8 +27,7 @@ directly into the spin representation and Kostant-lattice constructions.
 * `TauCeti.splitEvenForm`: its quadratic form `(f, x) ↦ f x`.
 * `TauCeti.splitEvenPolarization`: the canonical polarization by the two coordinate axes.
 * `TauCeti.splitEvenBasis`: the coordinate basis of the first isotropic summand.
-* `TauCeti.hyperbolicSix_finrank_W`: the isotropic summand in three hyperbolic planes has
-  dimension three.
+* `TauCeti.finrank_splitEvenPolarization_W`: the first isotropic summand has dimension `n`.
 
 ## References
 
@@ -128,21 +127,21 @@ theorem coe_splitEvenBasis (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
 
 variable (K : Type u) [Field K]
 
-/-- The ambient split space of three hyperbolic planes has dimension `2 * 3`. -/
-theorem hyperbolicSix_finrank : finrank K (SplitEvenSpace K 3) = 2 * 3 := by
-  simp [SplitEvenSpace]
+/-- The standard split space of `n` hyperbolic planes has dimension `2 * n`. -/
+theorem finrank_splitEvenSpace (n : ℕ) : finrank K (SplitEvenSpace K n) = 2 * n := by
+  simp [SplitEvenSpace, two_mul]
 
-/-- The canonical isotropic summand of the split six-dimensional space has dimension three. -/
-theorem hyperbolicSix_finrank_W :
-    finrank K (splitEvenPolarization K 3).W = 3 := by
-  rw [(splitEvenPolarization K 3).finrank_W_eq_of_finrank_eq_two_mul
-    (hyperbolicSix_finrank K)]
+/-- The first isotropic summand in the standard split polarization has dimension `n`. -/
+@[simp]
+theorem finrank_splitEvenPolarization_W (n : ℕ) :
+    finrank K (splitEvenPolarization K n).W = n := by
+  rw [(splitEvenPolarization K n).finrank_W_eq_of_finrank_eq_two_mul
+    (finrank_splitEvenSpace K n)]
 
-/-- The isotropic summand in the canonical split polarization of three hyperbolic planes is
-nonzero. -/
-theorem hyperbolicSix_W_ne_bot : (splitEvenPolarization K 3).W ≠ ⊥ :=
+/-- The first isotropic summand in a nonzero standard split polarization is nonzero. -/
+theorem splitEvenPolarization_W_ne_bot {n : ℕ} (hn : n ≠ 0) :
+    (splitEvenPolarization K n).W ≠ ⊥ :=
   Submodule.finrank_eq_zero.not.1 <| by
-    rw [hyperbolicSix_finrank_W K]
-    norm_num
+    simpa using hn
 
 end TauCeti

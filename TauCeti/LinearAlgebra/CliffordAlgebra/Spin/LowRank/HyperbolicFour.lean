@@ -51,17 +51,6 @@ universe u
 
 variable (K : Type u) [Field K]
 
-private theorem hyperbolicFour_finrank :
-    finrank K (SplitEvenSpace K 2) = 2 * 2 := by
-  simp [SplitEvenSpace]
-
-private theorem hyperbolicFour_W_ne_bot :
-    (splitEvenPolarization K 2).W ≠ ⊥ :=
-  Submodule.finrank_eq_zero.not.1 <| by
-    rw [(splitEvenPolarization K 2).finrank_W_eq_of_finrank_eq_two_mul
-      (hyperbolicFour_finrank K)]
-    norm_num
-
 variable [NeZero (2 : K)]
 
 /-- The internal invertibility witness used by the characteristic-not-two Clifford APIs. -/
@@ -75,7 +64,7 @@ noncomputable def hyperbolicFourEvenEquivMatrixProd :
     even (splitEvenForm K 2) ≃ₐ[K]
       Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K := by
   simpa using (splitEvenPolarization K 2).evenCliffordEquivProdMatrix
-    (hyperbolicFour_W_ne_bot K) (hyperbolicFour_finrank K)
+    (splitEvenPolarization_W_ne_bot K (by norm_num)) (finrank_splitEvenSpace K 2)
 
 /-- The hyperbolic even-Clifford equivalence applies the matrix-product model of the canonical
 polarization. The latter's application theorem identifies its two coordinates with the matrices
@@ -85,11 +74,8 @@ theorem hyperbolicFourEvenEquivMatrixProd_apply
     (x : even (splitEvenForm K 2)) :
     hyperbolicFourEvenEquivMatrixProd K x =
       (splitEvenPolarization K 2).evenCliffordEquivProdMatrix (l := 2)
-        (Submodule.finrank_eq_zero.not.1 <| by
-          rw [(splitEvenPolarization K 2).finrank_W_eq_of_finrank_eq_two_mul
-            (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 2) = 2 * 2)]
-          norm_num)
-        (by simp [SplitEvenSpace]) x := by
+        (splitEvenPolarization_W_ne_bot K (by norm_num))
+        (finrank_splitEvenSpace K 2) x := by
   simp [hyperbolicFourEvenEquivMatrixProd]
 
 /-- The Spin group of the four-dimensional hyperbolic space is the product of two special linear
@@ -98,7 +84,8 @@ noncomputable def hyperbolicFourSpinEquivSpecialLinearProd :
     spinGroup (splitEvenForm K 2) ≃*
       Matrix.SpecialLinearGroup (Fin 2) K × Matrix.SpecialLinearGroup (Fin 2) K :=
   spinGroupEquivSpecialLinearProdOfAlgEquiv (splitEvenForm K 2)
-    (nondegenerate_splitEvenForm K 2) ((hyperbolicFour_finrank K).trans (by norm_num))
+    (nondegenerate_splitEvenForm K 2)
+      ((finrank_splitEvenSpace K 2).trans (by norm_num))
       (hyperbolicFourEvenEquivMatrixProd K)
 
 /-- The hyperbolic four-dimensional Spin equivalence evaluates the chosen even-Clifford

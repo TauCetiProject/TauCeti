@@ -12,8 +12,6 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `FiniteDimensional` and `Module.finrank` occur in the statement, and
 -- `Module.finBasisOfFinrankEq` in the body.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
--- `LinearMap.det` occurs in the statement of `TauCeti.Algebra.det_endAlgEquivMatrix`.
-public import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Matrix realizations of endomorphisms and their action on a basis
@@ -32,8 +30,6 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `TauCeti.Algebra.endAlgEquivMatrix`: the above, read off the basis
   `Module.finBasisOfFinrankEq`.
 * `TauCeti.Algebra.endAlgEquivMatrix_apply`: its evaluation as `LinearMap.toMatrix` in that basis.
-* `TauCeti.Algebra.det_endAlgEquivMatrix`: the matrix of an endomorphism has the determinant of
-  the endomorphism, whichever basis was chosen.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
@@ -120,6 +116,7 @@ noncomputable def endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) :
 /-- The chosen-basis matrix of an endomorphism is its `LinearMap.toMatrix` in
 `Module.finBasisOfFinrankEq`. This is the stable unfolding rule for `endAlgEquivMatrix`; it does
 not compute the entries of the chosen basis. -/
+@[simp]
 theorem endAlgEquivMatrix_apply {n : ℕ} (hn : Module.finrank K M = n) (f : Module.End K M) :
     endAlgEquivMatrix K M hn f =
       LinearMap.toMatrix (Module.finBasisOfFinrankEq K M hn)
@@ -128,12 +125,5 @@ theorem endAlgEquivMatrix_apply {n : ℕ} (hn : Module.finrank K M = n) (f : Mod
     ext i j
     simp [endAlgEquivMatrix, algEquivMatrix, algEquivMatrix',
       LinearEquiv.conjAlgEquiv_apply, LinearMap.toMatrix_apply]
-
-/-- The determinant of the matrix of an endomorphism is the determinant of the endomorphism.
-This does not depend on the basis that `endAlgEquivMatrix` chooses. -/
-@[simp]
-theorem det_endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) (f : Module.End K M) :
-    (endAlgEquivMatrix K M hn f).det = LinearMap.det f :=
-  LinearMap.det_toMatrix (Module.finBasisOfFinrankEq K M hn) f
 
 end TauCeti.Algebra
