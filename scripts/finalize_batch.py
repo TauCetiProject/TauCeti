@@ -127,27 +127,6 @@ def terminal_state(env, *, wait=wait_publication, observe=observation):
     return state, description
 
 
-def unacquired_fleet_retry(env, *, fetch=api):
-    """A canceled, never-started fleet attempt has no build verdict to publish.
-
-    Keep bors pending while the recovery workflow reruns this same run on Namespace.
-    Acquired jobs and every other cancellation retain ordinary terminal reporting.
-    """
-    if not (env.get("FLEET_FALLBACK_CANDIDATE") == "true"
-            and env.get("BORS_STAGING") == "true"
-            and env.get("GITHUB_RUN_ATTEMPT") == "1"
-            and env.get("BUILD_JOB_RESULT") == "cancelled"):
-        return False
-    data = fetch(f"/actions/runs/{env['GITHUB_RUN_ID']}/attempts/1/jobs?per_page=100")
-    jobs = data["jobs"]
-    if data["total_count"] != len(jobs) or len(jobs) > 100:
-        raise ValueError("incomplete fleet cancellation evidence")
-    builds = [j for j in jobs if j["name"] == "sandboxed-build"]
-    return (len(builds) == 1 and "tauceti-fleet" in builds[0].get("labels", [])
-            and not builds[0].get("runner_name") and not builds[0].get("runner_id")
-            and builds[0].get("conclusion") == "cancelled")
-
-
 def main():
     env = os.environ
     revision = env.get("STATUS_SHA")
@@ -155,9 +134,6 @@ def main():
         print("::error::cannot post a batch status without an exact commit SHA", file=sys.stderr)
         return 1
     try:
-        if unacquired_fleet_retry(env):
-            print("::notice::Unacquired fleet attempt canceled; awaiting same-run Namespace recovery")
-            return 0
         state, description = terminal_state(env)
     except (OSError, ValueError, KeyError, TypeError) as error:
         state, description = "failure", "batch finalization failed: " + type(error).__name__

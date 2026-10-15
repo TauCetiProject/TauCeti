@@ -9,6 +9,12 @@ LABELS = {"self-hosted", "linux", "x64", "tauceti-fleet"}
 
 
 def choose(pages, *, enabled, attempt):
+    """Prefer an idle matching runner only for enabled first attempts.
+
+    Pages must form a complete, consistently sized runner-group inventory.
+    Disabled routing, retries, or incomplete observations return False so the
+    caller retains Namespace. This function reserves no runner capacity.
+    """
     if not enabled or attempt != 1:
         return False
     found = []

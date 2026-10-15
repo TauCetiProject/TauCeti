@@ -14,5 +14,10 @@ jobs:
         run: |
           test "$(id -u)" -ne 0
           test -f /etc/os-release
+          gh --version
+          git --version
+          jq --version
+          sudo -n dpkg --version
+          sudo -n apparmor_parser --version
+          GH_TOKEN="${{ github.token }}" gh api repos/TauCetiProject/TauCeti --jq .full_name
           python3 -c 'import json,os; print(json.dumps(dict(cpus=os.cpu_count(), guest_user=os.getuid())))'
-          test ! -e /home/kim/.config/tauceti/secrets

@@ -5,7 +5,6 @@ import unittest
 
 from fleet_recovery import recover
 from fleet_runner import choose
-from finalize_batch import unacquired_fleet_retry
 
 
 def runner(*, busy=False, status="online", labels=None):
@@ -47,20 +46,6 @@ class Selection(unittest.TestCase):
 
 
 class Recovery(unittest.TestCase):
-    def test_unacquired_cancellation_does_not_publish_a_false_bors_failure(self):
-        env = dict(FLEET_FALLBACK_CANDIDATE="true", BORS_STAGING="true",
-                   GITHUB_RUN_ATTEMPT="1", GITHUB_RUN_ID="42", BUILD_JOB_RESULT="cancelled")
-        job = dict(name="sandboxed-build", labels=["tauceti-fleet"], runner_id=0,
-                   runner_name="", conclusion="cancelled")
-        def fetch(path):
-            return dict(total_count=1, jobs=[job])
-        self.assertTrue(unacquired_fleet_retry(env, fetch=fetch))
-        job["runner_id"] = 123
-        self.assertFalse(unacquired_fleet_retry(env, fetch=fetch))
-        job["runner_id"] = 0
-        env["GITHUB_RUN_ATTEMPT"] = "2"
-        self.assertFalse(unacquired_fleet_retry(env, fetch=fetch))
-
     def fixture(self, *, acquired=False):
         self.now = 1000
         self.calls = []
@@ -87,7 +72,7 @@ class Recovery(unittest.TestCase):
 
         def fetch(path, data=None):
             self.calls.append((path, data))
-            if path.endswith("/cancel"):
+            if path.endswith("/force-cancel"):
                 self.canceled = True
                 return {}
             if path.endswith("/rerun"):
@@ -117,8 +102,68 @@ class Recovery(unittest.TestCase):
         self.assertEqual(result, "rerun-on-namespace-requested")
         self.assertEqual(
             [p for p, d in self.calls if d is not None],
-            ["/actions/runs/42/cancel", "/actions/runs/42/rerun"],
+            ["/actions/runs/42/force-cancel", "/actions/runs/42/rerun"],
         )
+
+    def test_empty_labels_wait_for_placement_and_unobservable_picker_is_error(self):
+        fetch = self.fixture()
+        self.job["labels"] = []
+        def sleep(seconds):
+            self.now += seconds
+        with self.assertRaisesRegex(TimeoutError, "placement"):
+            recover(42, fetch=fetch, clock=lambda: self.now, wall=lambda: self.now, sleep=sleep)
+        self.assertFalse(self.canceled)
+
+    def test_rerun_failure_posts_terminal_failure_instead_of_leaving_bors_pending(self):
+        fetch = self.fixture()
+        def failing(path, data=None):
+            if path.endswith("/rerun"):
+                raise OSError("lost response")
+            if "/statuses/" in path:
+                self.calls.append((path, data))
+                return {}
+            return fetch(path, data)
+        def sleep(seconds):
+            self.now += seconds
+        with self.assertRaisesRegex(RuntimeError, "not confirmed"):
+            recover(42, fetch=failing, clock=lambda: self.now, wall=lambda: self.now, sleep=sleep)
+        posts = [(p, d) for p, d in self.calls if "/statuses/" in p]
+        self.assertEqual(len(posts), 1)
+        self.assertEqual(posts[0][1]["state"], "failure")
+
+    def test_lost_rerun_response_is_reconciled_without_repeating_mutation(self):
+        fetch = self.fixture()
+        def lost(path, data=None):
+            if path.endswith("/rerun"):
+                self.run["run_attempt"] = 2
+                raise OSError("lost response")
+            return fetch(path, data)
+        self.assertEqual(recover(42, fetch=lost, clock=lambda: self.now, wall=lambda: self.now), "rerun-on-namespace-observed")
+        self.assertFalse(any("/statuses/" in p for p, d in self.calls))
+
+    def test_cancellation_timeout_posts_failure_and_does_not_start_overlapping_retry(self):
+        fetch = self.fixture()
+        def stalled(path, data=None):
+            if path.endswith("/force-cancel") or "/statuses/" in path:
+                self.calls.append((path, data))
+                return {}
+            return fetch(path, data)
+        def sleep(seconds):
+            self.now += seconds
+        with self.assertRaisesRegex(TimeoutError, "cancellation"):
+            recover(42, fetch=stalled, clock=lambda: self.now, wall=lambda: self.now, sleep=sleep)
+        self.assertFalse(any(p.endswith("/rerun") for p, d in self.calls))
+        self.assertTrue(any("/statuses/" in p for p, d in self.calls))
+
+    def test_acquisition_during_force_cancel_reports_infrastructure_failure(self):
+        fetch = self.fixture()
+        def raced(path, data=None):
+            if path.endswith("/force-cancel"):
+                self.job["runner_id"] = 12
+            return fetch(path, data)
+        self.assertEqual(recover(42, fetch=raced, clock=lambda: self.now, wall=lambda: self.now), "runner-acquired-during-cancellation")
+        self.assertFalse(any(p.endswith("/rerun") for p, d in self.calls))
+        self.assertTrue(any("/statuses/" in p for p, d in self.calls))
 
     def test_acquired_runner_is_never_canceled(self):
         fetch = self.fixture(acquired=True)

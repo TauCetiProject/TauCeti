@@ -273,12 +273,12 @@ class PickerTests(unittest.TestCase):
         self.assertEqual(calls, [])
 
 
-def expression(value, event, action, picked, app_token="installation-token", variables=None):
+def expression(value, event, action, picked, app_token="installation-token", variables=None, fleet=""):
     """Evaluate the actual workflow expression's boolean/format/JSON subset."""
     source = value.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
     github = SimpleNamespace(run_attempt=1, event_name=event, event=SimpleNamespace(action=action), run_id=42)
-    needs = SimpleNamespace(**{"pick-runner": SimpleNamespace(outputs=SimpleNamespace(github=picked, fleet=""))})
+    needs = SimpleNamespace(**{"pick-runner": SimpleNamespace(outputs=SimpleNamespace(github=picked, fleet=fleet))})
     source = source.replace("needs.pick-runner", "needs.__dict__['pick-runner']")
     steps = SimpleNamespace(**{"app-token": SimpleNamespace(outputs=SimpleNamespace(token=app_token))})
     variables = variables or SimpleNamespace(PICKER_API_RESERVE="", PICKER_REPOSITORY_API_RESERVE="")
@@ -289,6 +289,16 @@ def expression(value, event, action, picked, app_token="installation-token", var
 
 
 class BatchPriorityTests(unittest.TestCase):
+    def test_explicit_fleet_answer_only_routes_bors_dispatches(self):
+        labels = expression(BUILD["jobs"]["sandboxed-build"]["runs-on"],
+                            "repository_dispatch", "tauceti-bors-staging", "false", fleet="true")
+        self.assertEqual(labels, {"group": "TauCetiFleet", "labels": ["self-hosted", "linux", "x64", "tauceti-fleet"]})
+        self.assertTrue(expression(BUILD["jobs"]["pick-runner"]["if"], "repository_dispatch",
+                                   "tauceti-bors-staging", "false", variables=SimpleNamespace(FLEET_CI_ENABLED="true")))
+        for event, action in [("pull_request_target", "opened"), ("merge_group", "checks_requested")]:
+            self.assertEqual(expression(BUILD["jobs"]["sandboxed-build"]["runs-on"], event, action, "false", fleet="true"),
+                             [NS, "namespace-features:container.privileged=true"])
+
     def test_bors_stays_on_namespace_and_has_priority_and_unique_assignment(self):
         jobs = BUILD["jobs"]
         for picked in ["true", "false", ""]:

@@ -106,7 +106,7 @@ jobs:
     # Only explicit fleet/github answers select those pools. Missing/failed picker output
     # retains Namespace. The fleet selector permits only the first bors run attempt.
     runs-on: >-
-      ${{ needs.pick-runner.outputs.fleet == 'true' && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet"]}') || github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
+      ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && needs.pick-runner.outputs.fleet == 'true' && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet"]}') || github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
         "nscloud-ubuntu-24.04-amd64-8x16-with-features{0}",
         "namespace-features:container.privileged=true{1}"
       ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
@@ -1200,15 +1200,19 @@ jobs:
           post_fail=0
           post_status() {
             local ctx="$1" st="$2" dsc="$3" attempt
-            if [ "${{ env.IS_BATCH }}" = "true" ]; then
-              current_attempt=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" --jq .run_attempt) || current_attempt=""
-              if [ "$current_attempt" != "${{ github.run_attempt }}" ]; then
-                echo "::notice::obsolete or unverifiable batch attempt will not publish statuses"
-                post_fail=1
-                return 0
-              fi
-            fi
             for attempt in 1 2 3; do
+              if [ "${{ env.IS_BATCH }}" = "true" ]; then
+                current_attempt=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" --jq .run_attempt) || current_attempt=""
+                if [ -z "$current_attempt" ]; then
+                  echo "::warning::batch attempt lookup unavailable (attempt $attempt/3)"
+                  if [ "$attempt" != 3 ]; then sleep $(( attempt * 5 )); fi
+                  continue
+                fi
+                if [ "$current_attempt" != "${{ github.run_attempt }}" ]; then
+                  echo "::notice::obsolete batch attempt will not publish statuses"
+                  return 0
+                fi
+              fi
               if gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
                    -f state="$st" -f context="$ctx" -f description="$dsc" \
                    -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; then
@@ -1422,7 +1426,7 @@ jobs:
   finalize-merge-group-build:
     # Start beside publication so an unacquired publisher cannot suppress terminal reporting.
     # Finalizer (2x4) + publisher (4x8) fit within the freed compiler allocation (8x16).
-    needs: [pick-runner, sandboxed-build]
+    needs: sandboxed-build
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
     runs-on:
       - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
@@ -1440,7 +1444,6 @@ jobs:
       BUILD_DESCRIPTION: ${{ needs.sandboxed-build.outputs.build-description }}
       PUBLICATION_REQUIRED: ${{ needs.sandboxed-build.outputs.publication-required }}
       BORS_STAGING: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
-      FLEET_FALLBACK_CANDIDATE: ${{ vars.FLEET_CI_ENABLED == 'true' && needs.pick-runner.outputs.fleet == 'true' && github.run_attempt == 1 }}
       BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
       BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
       BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}

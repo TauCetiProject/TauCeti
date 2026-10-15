@@ -6,16 +6,17 @@ on:
 permissions:
   contents: read
   actions: write
+  statuses: write  # terminal recovery failure must not leave bors pending indefinitely
 concurrency:
   group: fleet-recovery-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
 jobs:
   recover:
-    if: ${{ vars.FLEET_CI_ENABLED == 'true' && github.event.workflow_run.event == 'repository_dispatch' && github.event.workflow_run.run_attempt == 1 }}
+    if: ${{ vars.FLEET_CI_ENABLED == 'true' && github.event.workflow_run.event == 'repository_dispatch' && github.event.workflow_run.run_attempt == 1 && startsWith(github.event.workflow_run.display_title, 'bors branch=') }}
     runs-on:
       - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
       - namespace-features:github.run-id=${{ github.run_id }}
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
