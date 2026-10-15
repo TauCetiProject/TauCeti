@@ -96,6 +96,15 @@ theorem torsionCoeffWeilPairing_apply [NeZero m] (hm' : (m : SeparableClosure K)
         ((AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm Q) :=
   (rfl)
 
+/-- The Weil pairing on the coefficient module is alternating (Silverman III.8.1(b)). -/
+@[simp]
+theorem torsionCoeffWeilPairing_self (P : W.TorsionCoeff m) :
+    W.torsionCoeffWeilPairing m hm P P = 0 := by
+  classical
+  have := hm.neZero_natCast
+  rw [torsionCoeffWeilPairing_apply _ _ _ hm.natCast_ne_zero_of_algebra]
+  exact Isogeny.weilPairing_self _ _ _ _
+
 /-- **The Weil pairing is Galois-equivariant** (Silverman III.8.1(e)):
 `e_m(σ P, σ Q) = σ (e_m(P, Q))` for every `σ ∈ G_K`. -/
 @[simp]
