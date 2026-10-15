@@ -235,8 +235,8 @@ theorem realizationRelabelingHomeomorph_val {R : PreAbstractSimplicialComplex β
     (hR : R ≤ L.toPreAbstractSimplicialComplex) (x : Realization K) :
     (P.realizationRelabelingHomeomorph f hmap hP hR x).1.1 = Finsupp.mapDomain f x.1 := by
   -- The set-congruence transports preserve the underlying point.
-  dsimp only [realizationRelabelingHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.setCongr, Homeomorph.Set.univ, Equiv.Set.univ]
+  simp only [realizationRelabelingHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.setCongr_apply]
   exact relabelingHomeomorph_val P f hP.le (by rw [hmap]; exact hR) _
 
 /-- The inverse relabeling of a realization pulls back the barycentric coordinate vector. -/
@@ -247,8 +247,8 @@ theorem realizationRelabelingHomeomorph_symm_val {R : PreAbstractSimplicialCompl
     ((P.realizationRelabelingHomeomorph f hmap hP hR).symm y).1 =
       Finsupp.comapDomain f y.1.1 f.injective.injOn := by
   -- The set-congruence transports preserve the underlying point.
-  dsimp only [realizationRelabelingHomeomorph, Homeomorph.symm_trans_apply,
-    Homeomorph.setCongr, Homeomorph.Set.univ, Equiv.Set.univ]
+  simp only [realizationRelabelingHomeomorph, Homeomorph.symm_trans_apply,
+    TauCeti.Homeomorph.setCongr_symm_apply]
   exact relabelingHomeomorph_symm_val P f hP.le (by rw [hmap]; exact hR) _
 
 section Ambient
@@ -316,7 +316,7 @@ def realizationTopHomeomorphFace :
 theorem realizationTopHomeomorphFace_val (x : Realization (⊤ : AbstractSimplicialComplex α)) :
     (realizationTopHomeomorphFace K f hf x).1.1 = Finsupp.mapDomain f x.1 := by
   -- The set-congruence transport preserves the underlying point.
-  dsimp only [realizationTopHomeomorphFace, Homeomorph.trans_apply, Homeomorph.setCongr]
+  rw [realizationTopHomeomorphFace, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact realizationRelabelingHomeomorph_val _ f (map_simplex _)
     (by rw [simplex_univ, top_toPreAbstractSimplicialComplex]) (simplex_le_iff.mpr fun _ => hf) x
 
@@ -327,7 +327,8 @@ theorem realizationTopHomeomorphFace_symm_val
     ((realizationTopHomeomorphFace K f hf).symm y).1 =
       Finsupp.comapDomain f y.1.1 f.injective.injOn := by
   -- The set-congruence transport preserves the underlying point.
-  dsimp only [realizationTopHomeomorphFace, Homeomorph.symm_trans_apply, Homeomorph.setCongr]
+  rw [realizationTopHomeomorphFace, Homeomorph.symm_trans_apply,
+    TauCeti.Homeomorph.setCongr_symm_apply]
   exact realizationRelabelingHomeomorph_symm_val _ f (map_simplex _)
     (by rw [simplex_univ, top_toPreAbstractSimplicialComplex]) (simplex_le_iff.mpr fun _ => hf) _
 
