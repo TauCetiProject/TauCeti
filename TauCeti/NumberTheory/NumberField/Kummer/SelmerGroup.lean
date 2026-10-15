@@ -156,20 +156,46 @@ variable {K : Type*} [Field K] [NumberField K]
   {S : Set (HeightOneSpectrum (𝓞 K))} {n : ℕ}
 
 /-- **Finiteness of the Kummer classes unramified outside `S`.** Over a number field `K`, if `n` is
-invertible in `K`, `S` is a finite set of finite places and no place outside `S` divides `n`, only
-finitely many classes of `H¹(G_K, μₙ)` are unramified outside `S`: they are the Kummer classes of
-the finite group `K(S, n)`. -/
-theorem finite_unramifiedOutsideKummerCohomology (hSf : S.Finite) (hn : IsUnit (n : K))
-    (hS : ∀ v ∉ S, (n : 𝓞 K) ∉ v.asIdeal) :
+invertible in `K` and `S` is a finite set of finite places, only finitely many classes of
+`H¹(G_K, μₙ)` are unramified outside `S`. This follows by enlarging `S` by the finitely many places
+dividing `n`, where the classes are the Kummer classes of the finite group `K(S, n)`. -/
+theorem finite_unramifiedOutsideKummerCohomology (hSf : S.Finite) (hn : IsUnit (n : K)) :
     Finite (unramifiedOutsideKummerCohomology τ S n) := by
   have : NeZero n := ⟨fun h ↦ by simp [h] at hn⟩
-  have := finite_selmerGroup_of_numberField K S n hSf
-  -- the Kummer map descends to the power classes, and every class is the image of `K(S, n)`
-  let f := QuotientGroup.lift (powMonoidHom n : Kˣ →* Kˣ).range (kummerMap K n hn)
-    (by rw [ker_kummerMap hn, powerSubgroup_eq_range_powMonoidHom])
-  refine Set.Finite.to_subtype ((Set.finite_range fun x : selmerGroup (R := 𝓞 K) (K := K)
-    (S := S) (n := n) ↦ (f x).toAdd).subset fun c hc ↦ ?_)
-  obtain ⟨a, ha, rfl⟩ := (mem_unramifiedOutsideKummerCohomology_iff_exists hn hS).1 hc
-  exact ⟨⟨_, ha⟩, by simp [f]⟩
+  let T := S ∪ {v : HeightOneSpectrum (𝓞 K) | (n : 𝓞 K) ∈ v.asIdeal}
+  have hdiv : {v : HeightOneSpectrum (𝓞 K) | (n : 𝓞 K) ∈ v.asIdeal}.Finite :=
+    (HeightOneSpectrum.finite_setOfPred_valuation_ne_one (R := 𝓞 K) hn.ne_zero).subset <| by
+      intro v hv
+      exact ne_of_lt ((v.valuation_lt_one_iff_mem (K := K) (n : 𝓞 K)).2 hv)
+  have hTf : T.Finite := hSf.union hdiv
+  have hT : ∀ v ∉ T, (n : 𝓞 K) ∉ v.asIdeal := by
+    intro v hvT hvn
+    exact hvT (Set.mem_union_right S hvn)
+  have hfinT : Finite (unramifiedOutsideKummerCohomology τ T n) := by
+    have := finite_selmerGroup_of_numberField K T n hTf
+    -- the Kummer map descends to the power classes, and every class is the image of `K(T, n)`
+    let f := (kummerClassMap K n hn).comp
+      (QuotientGroup.quotientMulEquivOfEq
+        (powerSubgroup_eq_range_powMonoidHom Kˣ n).symm).toMonoidHom
+    refine Set.Finite.to_subtype ((Set.finite_range fun x : selmerGroup (R := 𝓞 K) (K := K)
+      (S := T) (n := n) ↦ (f x).toAdd).subset fun c hc ↦ ?_)
+    obtain ⟨a, ha, rfl⟩ :=
+      (mem_unramifiedOutsideKummerCohomology_iff_exists hn hT).1 hc
+    exact ⟨⟨_, ha⟩, by
+      change (f (QuotientGroup.mk a)).toAdd = _
+      dsimp [f]
+      rw [kummerClassMap_mk]⟩
+  refine @Finite.of_injective _ _ hfinT
+    (fun c : unramifiedOutsideKummerCohomology τ S n =>
+      (⟨c, ?_⟩ : unramifiedOutsideKummerCohomology τ T n)) ?_
+  · rw [mem_unramifiedOutsideKummerCohomology_iff]
+    have hc := c.property
+    rw [mem_unramifiedOutsideKummerCohomology_iff] at hc
+    intro v hvT
+    exact hc v fun hvS ↦ hvT (Set.mem_union_left _ hvS)
+  · intro a b hab
+    apply Subtype.ext
+    exact congrArg (fun c : unramifiedOutsideKummerCohomology τ T n =>
+      (c : H1 (AbsoluteGaloisGroup K) (KummerCoeff K n))) hab
 
 end TauCeti
