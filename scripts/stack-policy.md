@@ -69,8 +69,9 @@ or exceeded bounds produce `unknown` with an explicit gap and no closure.
   These relationships are not established by semantic inference.
 - Parents outside the bounded index, inaccessible/deleted source or histories
   beyond the bounds. These are gaps, not proved-safe results.
-- Individual merge commits with multiple parents. The detector declines rather than selecting a
-  guessed parent for the merge's content identity.
+- Individual merge/root commit patches. The detector skips these while looking
+  for a separate supported commit within the same bound, then records a gap if
+  none proves inheritance. It never guesses a merge's parent/content identity.
 - Context-free possible landing matches (including ambiguous deletion-only
   patches) are unknown. Arbitrary semantic rewrites during integration cannot
   be identified by exact source matching; closed landing claims without source

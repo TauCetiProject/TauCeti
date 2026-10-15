@@ -108,6 +108,34 @@ class GitFixtures(unittest.TestCase):
         p = self.pr(3)
         self.assertIsNone(self.detector().detect(p)[0])
 
+    def merged_parent(self, retain_one):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("one", "first parent contribution\n")
+        first = self.commit("one")
+        self.write("two", "second parent contribution\n")
+        self.commit("two")
+        git(self.root, "checkout", "main")
+        self.write("main-drift", "new main work\n")
+        self.commit("main advances")
+        git(self.root, "checkout", "parent")
+        git(self.root, "merge", "--no-ff", "main", "-m", "merge main into parent")
+        self.pr(1)
+        git(self.root, "checkout", "-b", "child")
+        self.write("two", "child replaces second contribution\n")
+        if not retain_one:
+            self.write("one", "child replaces first contribution\n")
+        self.commit("child")
+        return self.pr(2), first
+
+    def test_merge_head_does_not_hide_supported_retained_commit(self):
+        child, first = self.merged_parent(True)
+        self.assertEqual(self.detector().detect(child)[0].commit, first)
+
+    def test_unsupported_merge_without_alternative_proof_stays_unknown(self):
+        child, _ = self.merged_parent(False)
+        with self.assertRaisesRegex(sp.Gap, "no alternative retained commit proof"):
+            self.detector().detect(child)
+
     def test_independent_same_file(self):
         git(self.root, "checkout", "-b", "one")
         self.write("common", "independent one\n")

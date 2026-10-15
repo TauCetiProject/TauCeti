@@ -467,8 +467,15 @@ class Detector:
                 ordered = sorted(eligible - {parent.head})
                 if parent.head in eligible:
                     ordered.insert(0, parent.head)
+                unsupported = False
                 for commit in ordered[:MAX_EVIDENCE_COMMITS]:
-                    cb, cp, delta = self.source.commit_patch(commit)
+                    try:
+                        cb, cp, delta = self.source.commit_patch(commit)
+                    except Gap as error:
+                        if str(error) != "commit patch requires exactly one parent":
+                            raise
+                        unsupported = True
+                        continue
                     if (delta and self.source.contains(child.head, cp, delta)
                             and not self.source.landed(parent, cb, cp, delta, head=commit)):
                         if commit not in commits and self.source.present_at_fork(child, cb, cp, delta, commit):
@@ -485,6 +492,8 @@ class Detector:
                                         kind, commit, hashlib.sha256(delta).hexdigest(), cb), reasons
                 if len(ordered) > MAX_EVIDENCE_COMMITS:
                     raise Gap("retained-commit evidence search exceeds 16-commit bound")
+                if unsupported:
+                    raise Gap("individual merge/root commit unsupported; no alternative retained commit proof")
                 reasons.append(f"#{number}: no complete unlanded parent delta/commit retained")
             except (Gap, KeyError, ValueError) as e:
                 gaps.append(f"#{number}: {e}")
