@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.Height.Polynomial
 public import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
+public import TauCeti.Algebra.MvPolynomial.Rename
+public import Mathlib.NumberTheory.Height.NumberField
 
 /-!
 # Projective coefficient heights of multivariate polynomials
@@ -19,6 +21,8 @@ These comparisons allow auxiliary polynomials to be handled in their natural var
 
 The normalization is relative to the admissible family of absolute values of the field.
 In particular, constant polynomials and the zero polynomial have multiplicative height one.
+For nonzero polynomials over number fields, `logHeight_eq_of_numberField` expresses the height
+as a sum of local logarithmic sup norms, with complex-place multiplicity two.
 
 ## References
 
@@ -198,15 +202,55 @@ namespace MvPolynomial
 
 variable {K σ : Type*} [Field K] [Height.AdmissibleAbsValues K]
 
+/-- The coefficient height of `X i - C a` is the scalar multiplicative height of `a`. -/
 @[simp↓]
 theorem mulHeight_X_sub_C (i : σ) (a : K) :
     (X i - C a).mulHeight = Height.mulHeight₁ a := by
   rw [← Polynomial.toMvPolynomial_X i, ← Polynomial.toMvPolynomial_C i,
     ← map_sub, Polynomial.mulHeight_toMvPolynomial, Polynomial.mulHeight_X_sub_C]
 
+/-- The coefficient height of `X i - C a` is the scalar logarithmic height of `a`. -/
 @[simp↓]
 theorem logHeight_X_sub_C (i : σ) (a : K) :
     (X i - C a).logHeight = Height.logHeight₁ a := by
   rw [logHeight_eq_log_mulHeight, mulHeight_X_sub_C, Height.logHeight₁_eq_log_mulHeight₁]
+
+end MvPolynomial
+
+namespace MvPolynomial
+
+variable {K σ : Type*} [Field K] [NumberField K]
+
+/-- Over a number field, the relative logarithmic coefficient height is the sum of local
+logarithmic sup norms. Infinite places occur with their real or complex multiplicity; divide
+by `[K : ℚ]` for the absolute normalization. The variables may form an infinite type. -/
+theorem logHeight_eq_of_numberField {p : MvPolynomial σ K} (hp : p ≠ 0) :
+    p.logHeight =
+      (∑ v : NumberField.InfinitePlace K,
+        v.mult * Real.log (⨆ d, v (p.coeff d))) +
+      ∑ᶠ v : NumberField.FinitePlace K, Real.log (⨆ d, v (p.coeff d)) := by
+  classical
+  have hx : (fun d ↦ p.coeff d) ≠ 0 := by
+    intro h
+    apply hp
+    ext d
+    simpa using congrFun h d
+  obtain ⟨d, hd⟩ := Function.ne_iff.mp hx
+  have hv (v : AbsoluteValue K ℝ) : 0 < ⨆ d, v (p.coeff d) := by
+    have hb : BddAbove (Set.range (fun d ↦ v (p.coeff d))) := by
+      simpa only [Set.range_comp'] using
+        ((AddMonoidAlgebra.coeff p).finite_range.image v).bddAbove
+    exact (v.pos hd).trans_le (le_ciSup hb d)
+  have hi (v : NumberField.InfinitePlace K) : 0 < ⨆ d, v (p.coeff d) := by
+    simpa only [NumberField.InfinitePlace.coe_apply] using hv v.val
+  have hf (v : NumberField.FinitePlace K) : 0 < ⨆ d, v (p.coeff d) := by
+    simpa only [NumberField.FinitePlace.coe_apply] using hv v.val
+  rw [logHeight_eq_log_mulHeight, mulHeight_eq_finsupp,
+    Finsupp.mulHeight_eq_mulHeight_coe, NumberField.mulHeight_eq hx,
+    Real.log_mul (Finset.prod_pos (fun v _ ↦ pow_pos (hi v) v.mult)).ne'
+      (finprod_ne_zero (fun v ↦ (hf v).ne')),
+    Real.log_prod (fun v _ ↦ (pow_pos (hi v) v.mult).ne'),
+    Real.log_finprod hf]
+  simp only [Real.log_pow]
 
 end MvPolynomial

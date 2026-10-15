@@ -56,22 +56,32 @@ theorem mulHeight_eq_support (p : K[X]) :
   -- The native coefficient vector has definitionally the same support and evaluations.
   rfl
 
-/-- Any finite coefficient tuple extending past the degree gives the polynomial height. -/
-theorem mulHeight_eq_coeff (p : K[X]) {n : ℕ} (hn : p.natDegree < n) :
+/-- Any finite coefficient tuple containing the support gives the polynomial height. -/
+theorem mulHeight_eq_coeff (p : K[X]) {n : ℕ} (hn : p.support ⊆ Finset.range n) :
     p.mulHeight = Height.mulHeight (fun i : Fin n ↦ p.coeff i) := by
   classical
   let e : Fin n ≃ Finset.range n := Fin.equivSubtype.trans
     (Equiv.subtypeEquivProp (by ext; simp))
   rw [mulHeight_eq_finsupp, Finsupp.mulHeight_eq_of_support_subset _ (Finset.range n)
-    (by rw [support_toFinsupp]; exact p.supp_subset_range hn), ← Height.mulHeight_comp_equiv e]
+    (by rwa [support_toFinsupp]), ← Height.mulHeight_comp_equiv e]
   -- Reindexing along `e` is definitionally the usual finite coefficient tuple.
   rfl
 
 /-- The finite coefficient-tuple description of logarithmic polynomial height. -/
-theorem logHeight_eq_coeff (p : K[X]) {n : ℕ} (hn : p.natDegree < n) :
+theorem logHeight_eq_coeff (p : K[X]) {n : ℕ} (hn : p.support ⊆ Finset.range n) :
     p.logHeight = Height.logHeight (fun i : Fin n ↦ p.coeff i) := by
   rw [logHeight_eq_log_mulHeight, mulHeight_eq_coeff p hn,
     Height.logHeight_eq_log_mulHeight]
+
+/-- Any finite coefficient tuple extending past the degree gives the polynomial height. -/
+theorem mulHeight_eq_coeff_of_natDegree_lt (p : K[X]) {n : ℕ} (hn : p.natDegree < n) :
+    p.mulHeight = Height.mulHeight (fun i : Fin n ↦ p.coeff i) :=
+  mulHeight_eq_coeff p (p.supp_subset_range hn)
+
+/-- The logarithmic coefficient-tuple description when the tuple extends past the degree. -/
+theorem logHeight_eq_coeff_of_natDegree_lt (p : K[X]) {n : ℕ} (hn : p.natDegree < n) :
+    p.logHeight = Height.logHeight (fun i : Fin n ↦ p.coeff i) :=
+  logHeight_eq_coeff p (p.supp_subset_range hn)
 
 theorem one_le_mulHeight (p : K[X]) : 1 ≤ p.mulHeight :=
   Finsupp.one_le_mulHeight _
@@ -165,12 +175,14 @@ theorem logHeight_C_mul (p : K[X]) {c : K} (hc : c ≠ 0) :
 -/
 @[simp↓]
 theorem mulHeight_X_sub_C (a : K) : (X - C a).mulHeight = Height.mulHeight₁ a := by
-  rw [mulHeight_eq_coeff _ (n := 2) (by simp)]
+  rw [mulHeight_eq_coeff_of_natDegree_lt _ (n := 2) (by simp)]
   have hc : (fun i : Fin 2 ↦ (X - C a).coeff i) = ![-a, 1] := by
     ext i
     fin_cases i <;> simp
   rw [hc, ← Height.mulHeight₁_eq_mulHeight, Height.mulHeight₁_neg]
 
+/-- The logarithmic coefficient height of the linear polynomial with root `a` is the
+scalar logarithmic height of `a`. -/
 @[simp↓]
 theorem logHeight_X_sub_C (a : K) : (X - C a).logHeight = Height.logHeight₁ a := by
   rw [logHeight_eq_log_mulHeight, mulHeight_X_sub_C, Height.logHeight₁_eq_log_mulHeight₁]
@@ -213,7 +225,7 @@ private theorem mulHeight_convolutionMatrix_le (f g : K[X]) :
     · exact coeff_eq_zero_of_natDegree_lt (by omega)
     · simp_all
     · rfl
-  rw [hr, mulHeight_eq_coeff g (Nat.lt_succ_self _)]
+  rw [hr, mulHeight_eq_coeff_of_natDegree_lt g (Nat.lt_succ_self _)]
   simpa [x, Height.mulHeight_sumElim_zero_eq] using Height.mulHeight_comp_le r x
 
 /-- The height of a product is bounded by the product of coefficient heights,
@@ -228,7 +240,8 @@ theorem mulHeight_mul_le (f g : K[X]) :
   calc
     (f * g).mulHeight = Height.mulHeight
         (fun j : Fin (f.natDegree + g.natDegree + 1) ↦ (f * g).coeff j) :=
-      mulHeight_eq_coeff _ (lt_of_le_of_lt (natDegree_mul_le ..) (Nat.lt_succ_self _))
+      mulHeight_eq_coeff_of_natDegree_lt _
+        (lt_of_le_of_lt (natDegree_mul_le ..) (Nat.lt_succ_self _))
     _ ≤ ((f.natDegree + 1 : ℕ) : ℝ) ^ Height.totalWeight K *
         Height.mulHeight (convolutionMatrix f g) *
           Height.mulHeight (fun i : Fin (f.natDegree + 1) ↦ f.coeff i) := by
@@ -236,7 +249,7 @@ theorem mulHeight_mul_le (f g : K[X]) :
       simpa only [Nat.card_fin] using
         Height.mulHeight_linearMap_apply_le (convolutionMatrix f g) (fun i ↦ f.coeff i)
     _ ≤ ((f.natDegree + 1 : ℕ) : ℝ) ^ Height.totalWeight K * g.mulHeight * f.mulHeight := by
-      rw [← mulHeight_eq_coeff f (Nat.lt_succ_self _)]
+      rw [← mulHeight_eq_coeff_of_natDegree_lt f (Nat.lt_succ_self _)]
       exact mul_le_mul_of_nonneg_right
         (mul_le_mul_of_nonneg_left (mulHeight_convolutionMatrix_le f g) (by positivity))
         (le_of_lt (mulHeight_pos f))
