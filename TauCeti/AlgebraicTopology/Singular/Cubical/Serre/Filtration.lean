@@ -366,14 +366,6 @@ def serreSpectralSequence :=
   CochainComplex.spectralSequence
     (CochainComplex.filtrationFunctor (serreFiltration R p) (monotone_serreFiltration R p))
 
-variable (R p) in
-/-- The Serre spectral sequence is the spectral sequence of the filtration functor of the Serre
-filtration. -/
-theorem serreSpectralSequence_eq : serreSpectralSequence R p =
-    CochainComplex.spectralSequence
-      (CochainComplex.filtrationFunctor (serreFiltration R p) (monotone_serreFiltration R p)) := by
-  rw [serreSpectralSequence]
-
 /-- The first page of the Serre spectral sequence, numbered `2`: at `pq = (p, q)` it is the
 cohomology `H^{p+q}(F_{q+1} / F_q)` of a graded piece of the Serre filtration. -/
 def serreSpectralSequenceFirstPageXIsoCokernel (pq : ℤ × ℤ) :
@@ -382,7 +374,7 @@ def serreSpectralSequenceFirstPageXIsoCokernel (pq : ℤ × ℤ) :
         (monotone_serreFiltration R p)).map (homOfLE
           (CochainComplex.coe_le_coe_of_eq_add_one (rfl : pq.2 = pq.2) rfl)))).homology
             (pq.1 + pq.2) :=
-  eqToIso (by rw [serreSpectralSequence_eq]) ≪≫
+  eqToIso (by rw [serreSpectralSequence]) ≪≫
     CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq _ _ rfl rfl _ rfl
 
 /-- **Strong convergence of the Serre spectral sequence.** On every page `r ≥ 2` with
@@ -397,7 +389,7 @@ def serreSpectralSequencePageXIsoGraded (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × �
           (pq.1 + pq.2)) :=
   have : Epi ((serreFiltration R p (pq.2 + r - 1)).arrow.f (pq.1 + pq.2 - 1)) :=
     epi_serreFiltration_arrow_f h₃
-  eqToIso (by rw [serreSpectralSequence_eq]) ≪≫
+  eqToIso (by rw [serreSpectralSequence]) ≪≫
   CochainComplex.filtrationSpectralSequencePageXIsoEInfty _ _ r hr pq _ rfl
     ((serreFiltration R p _).isZero_homology_of_eq_bot (serreFiltration_eq_bot h₀) _)
     ((serreFiltration R p _).isZero_homology_cokernel_of_epi_arrow_f _) ≪≫

@@ -80,19 +80,10 @@ def ofSubmodulesι : K.ofSubmodules N hN ⟶ K where
   f i := ModuleCat.ofHom (N i).subtype
   comm' _ _ _ := rfl
 
-/-- The components of the inclusion are injective. -/
-theorem ofSubmodulesι_f_injective (i : ι) : Function.Injective ((K.ofSubmodulesι N hN).f i) :=
-  Subtype.val_injective
-
-/-- The range of the inclusion in degree `i` is `N i`. -/
-theorem range_ofSubmodulesι_f (i : ι) :
-    LinearMap.range ((K.ofSubmodulesι N hN).f i).hom = N i :=
-  Submodule.range_subtype (N i)
-
 /-- The inclusion of the complex with terms `N i` is a monomorphism. -/
 instance : Mono (K.ofSubmodulesι N hN) :=
-  mono_of_mono_f _ fun i ↦
-    (ModuleCat.mono_iff_injective _).2 (K.ofSubmodulesι_f_injective N hN i)
+  mono_of_mono_f _ fun _ ↦
+    (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
 
 /-- The subcomplex of `K` with terms the submodules `N i`. -/
 def subobjectOfSubmodules : Subobject K :=
@@ -108,7 +99,9 @@ theorem mem_range_subobjectOfSubmodules_arrow_f_iff (i : ι) (x : K.X i) :
   rw [subobjectOfSubmodules_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk, comp_f,
     ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance)),
-    range_ofSubmodulesι_f]
+    ofSubmodulesι]
+  -- The component of the inclusion is `ModuleCat.ofHom (N i).subtype` by definition.
+  exact Iff.of_eq (congrArg (x ∈ ·) (Submodule.range_subtype (N i)))
 
 /-- In a degree where `N i` is everything, the subcomplex is everything. -/
 theorem epi_subobjectOfSubmodules_arrow_f {i : ι} (h : N i = ⊤) :
