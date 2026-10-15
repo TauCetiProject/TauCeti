@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Polynomial.Wronskian
+public import TauCeti.RingTheory.Derivation.Wronskian.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.LinearAlgebra.Vandermonde
 import Mathlib.RingTheory.Polynomial.Pochhammer
@@ -21,9 +23,9 @@ For a family `g : Fin m → R[X]` of one-variable polynomials over a commutative
 *Hasse Wronskian* is the determinant `det (Dᵏ gₗ)` of the `m × m` matrix whose `(k, l)` entry is
 the `k`-th Hasse (divided) derivative of `gₗ`; the rows are the derivative orders `0 ≤ k < m` and
 the columns are the members of the family. Multiplying it by `∏ k < m, k!` gives the classical
-Wronskian `det (gₗ⁽ᵏ⁾)`, but the divided version has the advantage of being defined and
-integral over any commutative ring. Mathlib's `Polynomial.wronskian` is the case of two
-polynomials.
+Wronskian `det (gₗ⁽ᵏ⁾)`, the `Derivation.wronskian` of the derivation `derivative'`, but the
+divided version has the advantage of being defined and integral over any commutative ring.
+Mathlib's `Polynomial.wronskian` is the case of two polynomials.
 
 Over an integral domain a linearly dependent family has vanishing Hasse Wronskian. Over a field of
 characteristic zero the converse holds, so linear independence is equivalent to nonvanishing of
@@ -40,7 +42,8 @@ polynomials.
 ## Main results
 
 * `Polynomial.hasseWronskian_fin_two`: for two polynomials it is Mathlib's `wronskian`.
-* `Polynomial.prod_factorial_mul_hasseWronskian`: `(∏ k, k!) W(g) = det (derivative^[k] gₗ)`.
+* `Polynomial.prod_factorial_mul_hasseWronskian`: `(∏ k, k!) W(g)` is the classical Wronskian
+  `derivative'.wronskian g`.
 * `Polynomial.hasseWronskian_comp_perm`: permuting the family multiplies `W(g)` by the sign.
 * `Polynomial.hasseWronskian_map`: `W(g)` commutes with maps of coefficient rings.
 * `Polynomial.hasseWronskian_eq_zero_of_not_linearIndependent`: over an integral domain,
@@ -97,18 +100,22 @@ theorem hasseWronskian_fin_two (g : Fin 2 → R[X]) :
 determinant of the iterated ordinary derivatives `derivative^[k] gₗ`. -/
 theorem prod_factorial_mul_hasseWronskian (g : Fin m → R[X]) :
     (∏ k : Fin m, ((k : ℕ).factorial : R[X])) * hasseWronskian g =
-      (of fun k l : Fin m ↦ derivative^[k] (g l)).det := by
-  rw [hasseWronskian_def, ← det_mul_column]
+      (derivative' : Derivation R R[X] R[X]).wronskian g := by
+  rw [hasseWronskian_def, Derivation.wronskian_def, ← det_mul_column]
   congr 1
   ext1 k l
   simp only [of_apply]
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, nsmul_eq_mul]
+  rw [show ⇑(derivative' : Derivation R R[X] R[X]) = derivative from
+      _root_.funext derivative'_apply,
+    ← factorial_smul_hasseDeriv, LinearMap.smul_apply, nsmul_eq_mul]
 
 /-- Permuting the family multiplies the Hasse Wronskian by the sign of the permutation. -/
 theorem hasseWronskian_comp_perm (g : Fin m → R[X]) (σ : Equiv.Perm (Fin m)) :
     hasseWronskian (g ∘ σ) = Equiv.Perm.sign σ * hasseWronskian g := by
   rw [hasseWronskian_def, hasseWronskian_def, ← det_permute']
-  congr 1
+  refine congrArg det ?_
+  ext1 k l
+  simp only [of_apply, submatrix_apply, id_eq, Function.comp_apply]
 
 /-- The Hasse Wronskian commutes with maps of coefficient rings. -/
 @[simp]
@@ -169,7 +176,9 @@ theorem hasseWronskian_ne_zero_of_injective_natDegree [IsDomain R] [CharZero R]
     rw [det_eval_matrixOfPolynomials_eq_det_vandermonde _ (fun k : Fin m ↦ descPochhammer R k)
       (fun k ↦ descPochhammer_natDegree R k) (fun k ↦ monic_descPochhammer R k),
       ← det_transpose] at hv
-    exact hv
+    convert hv using 2
+    ext1 k l
+    simp only [of_apply, transpose_apply, Function.comp_apply]
   have htop : A.det.coeff (∑ l, (g l).natDegree) ≠ 0 := by
     rw [coeff_det_sum_eq_of_natDegree_le A _ hdeg]
     convert mul_ne_zero (prod_ne_zero_iff.mpr fun l _ ↦ leadingCoeff_ne_zero.mpr (hg l)) hV
@@ -179,8 +188,9 @@ theorem hasseWronskian_ne_zero_of_injective_natDegree [IsDomain R] [CharZero R]
     simp [A, hcoeff, descPochhammer_eval_eq_descFactorial, mul_comm]
   have hA : A.det = (∏ k : Fin m, X ^ (k : ℕ)) *
       ((∏ k : Fin m, ((k : ℕ).factorial : R[X])) * hasseWronskian g) := by
-    rw [prod_factorial_mul_hasseWronskian, ← det_mul_column]
-    simp [A]
+    rw [prod_factorial_mul_hasseWronskian, Derivation.wronskian_def, ← det_mul_column]
+    simp [A, show ⇑(derivative' : Derivation R R[X] R[X]) = derivative from
+      _root_.funext derivative'_apply]
   intro hW
   exact htop (by rw [hA, hW, mul_zero, mul_zero, coeff_zero])
 
