@@ -140,15 +140,18 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
     Module.Projective (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (LinearMap.ker β) := by
   have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
   have : FiniteDimensional K L := .right ℚ_[p] K L
+  have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
+  have : Algebra.IsAlgebraic ℚ_[p] K := Algebra.IsAlgebraic.of_finite ℚ_[p] K
+  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
   -- The local-field structures of `K` and `L`; the statement does not see them.
-  let _ := finiteExtensionValuativeRel ℚ_[p] K
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] K
+  let _ := algebraicExtensionValuativeRel ℚ_[p] K
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] K
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] K
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
-  have := finiteExtension_valuativeExtension ℚ_[p] L
+  have := algebraicExtension_valuativeExtension ℚ_[p] L
   have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
   let Λ := MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)
   let A := Rep.of (padicCompletionUnitsRepresentation p L K)
