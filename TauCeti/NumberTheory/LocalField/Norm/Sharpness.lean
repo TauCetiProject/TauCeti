@@ -27,7 +27,7 @@ Tameness is exactly the condition that the trace maps `𝒪[L]` onto `𝒪[K]`
 (`TauCeti.intTrace_surjective_iff_isTamelyRamified`), so there is an integer `u` of `L` of trace
 `1`. For a uniformizer `π` of `K`, the unit `1 + π ^ i u` lies in `U(L, e i)`, and its norm is
 `1 + π ^ i Tr(u) = 1 + π ^ i` modulo `π ^ (2 i)` (`Algebra.norm_one_add_smul`), which lies outside
-`U(K, i + 1)`. For example, in a tamely ramified quadratic extension in odd residue characteristic,
+`U(K, i + 1)`. For example, in a ramified quadratic extension in odd residue characteristic,
 some element of `U(L, 2)` has norm outside `U(K, 2)`.
 
 Separability is assumed because the trace criterion for tameness is stated for separable
