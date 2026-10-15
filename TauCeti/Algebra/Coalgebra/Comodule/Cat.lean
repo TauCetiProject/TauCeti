@@ -88,6 +88,10 @@ instance category : Category (ComoduleCat.{u, v, w} R C) where
 instance homFunLike (M N : ComoduleCat.{u, v, w} R C) : FunLike (M ⟶ N) M N :=
   inferInstanceAs (FunLike (Comodule.Hom R C M N) M N)
 
+/-- Categorical morphisms inherit the generic linear-map API of comodule morphisms. -/
+instance homLinearMapClass (M N : ComoduleCat.{u, v, w} R C) : LinearMapClass (M ⟶ N) R M N :=
+  inferInstanceAs (LinearMapClass (Comodule.Hom R C M N) R M N)
+
 /-- The zero structure on categorical morphisms is the zero comodule morphism. -/
 instance homZero (M N : ComoduleCat.{u, v, w} R C) : Zero (M ⟶ N) :=
   inferInstanceAs (Zero (Comodule.Hom R C M N))
