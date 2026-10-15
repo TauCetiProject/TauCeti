@@ -476,12 +476,12 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
   apply isClosed_of_closure_subset
   intro y hy
   have hyU : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) :=
-    closure_mono (fun _ hz ↦ hz.1.1) hy
+    closure_mono (by exact fun _ hz ↦ hz.1.1) hy
   have hyS : y ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) :=
-    closure_mono (fun _ hz ↦ hz.1.2) hy
+    closure_mono (by exact fun _ hz ↦ hz.1.2) hy
   have hyc : f y = c :=
     (isClosed_eq hfs.continuous continuous_const).closure_subset
-      (closure_mono (fun _ hz ↦ hz.2) hy)
+      (closure_mono (by exact fun _ hz ↦ hz.2) hy)
   obtain ⟨a, ha, hya⟩ := hconvU hyU
   obtain ⟨b, hb, hyb⟩ := hconvS hyS
   have hba : morseIndex f b ≤ morseIndex f a := by

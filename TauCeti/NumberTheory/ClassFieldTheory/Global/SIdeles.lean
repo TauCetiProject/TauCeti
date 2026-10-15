@@ -267,7 +267,8 @@ theorem sIdeles_hom_decomp :
   -- the two summands, computed on the `S`-idele `a`
   let a : sIdeles L (S : Set (HeightOneSpectrum (𝓞 K))) := Additive.toMul x
   have h₁ : (infiniteIdelesToSIdeles L S).hom
-      ((idelesToInfiniteIdeles K L).hom ((sIdelesToIdeles L S).hom x)) =
+      ((idelesToInfiniteIdeles K L).hom
+        ((sIdelesToIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))).hom x)) =
       Additive.ofMul ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
         (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
         ofInfiniteIdele_mem_sIdeles _ _⟩ :=

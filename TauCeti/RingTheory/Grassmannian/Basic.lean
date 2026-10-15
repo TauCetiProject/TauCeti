@@ -109,9 +109,9 @@ theorem ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B] (N : Submodule A (
       Submodule.span B ((IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M '' N) := by
   have hker : LinearMap.ker (N.mkQ.baseChange B) = N.baseChange B := by
     ext x
-    rw [LinearMap.mem_ker, LinearMap.baseChange_eq_ltensor, ← LinearMap.mem_ker, lTensor_mkQ,
+    rw [LinearMap.mem_ker, LinearMap.baseChange_eq_lTensor, ← LinearMap.mem_ker, lTensor_mkQ,
       Submodule.baseChange, LinearMap.mem_range, LinearMap.mem_range]
-    simp only [LinearMap.baseChange_eq_ltensor]
+    simp only [LinearMap.baseChange_eq_lTensor]
   have hcancel (x : A ⊗[R] M) : AlgebraTensorModule.cancelBaseChange R A B B M ((1 : B) ⊗ₜ x) =
       (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
     induction x using TensorProduct.inductionOn with

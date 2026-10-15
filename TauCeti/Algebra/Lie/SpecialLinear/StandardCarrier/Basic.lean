@@ -365,7 +365,7 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin r ⊕ Fin r) (j : Fin r) :
 
 /-- **The standard `ℤ`-lattice of the standard `sl_{r+1}`-module**, spanned by the coordinate
 vectors. -/
-def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
+noncomputable def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
   TauCeti.coordinateLattice (Fin (r + 1))
 
 /-- A vector lies in the standard lattice exactly when all of its coordinates are integers. -/

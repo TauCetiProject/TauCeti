@@ -94,6 +94,8 @@ matched with an infimum bound for supersolutions through a small positive power.
   `q > 2` and constant `S` on that ball, with a constant homogeneous in `S`.
 * `TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral`: the scale-invariant bound
   `u ≤ k + D R^{-n/2} ‖(u - k)⁺‖_{L²(B(x₀, R))}` in every dimension `n ≥ 1`.
+* `TauCeti.PDE.ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le`: one-sided bounds for `u`
+  and `-u` give a two-sided bound.
 * `TauCeti.PDE.exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral`: the two-sided bound
   `|u| ≤ D R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak solutions.
 * `TauCeti.PDE.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`: local `L²` bounds
@@ -809,8 +811,9 @@ private theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_
   have hK : 0 < K := by
     have : 0 < (n : ℝ)⁻¹ - δ := sub_pos.2 hδn
     have : 0 < 1 - δ := by linarith
-    have := ENNReal.toReal_pos (Metric.measure_ball_pos mu
-      (0 : EuclideanSpace ℝ ι) one_pos).ne' measure_ball_lt_top.ne
+    have : 0 < mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1) :=
+      ENNReal.toReal_pos (Metric.measure_ball_pos mu
+        (0 : EuclideanSpace ℝ ι) one_pos).ne' measure_ball_lt_top.ne
     positivity
   refine ⟨D₀ * K ^ (2 * δ)⁻¹, by positivity, ?_⟩
   intro Omega u k A B x₀ R hΩ hA hB hR hcacc
@@ -937,6 +940,51 @@ theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
       (energyFormH1_restrictL_nonpos hU hu) k)
   rwa [zero_mul, add_zero] at hbound
 
+omit [DecidableEq ι] in
+/-- **From one-sided to two-sided local bounds.** If `u ∈ H¹(Ω)` and `-u` both satisfy the
+one-sided local bound above the level `0` on `B(x₀, R) ⊆ Ω` with the same constant `K ≥ 0`, that
+is `±u ≤ K ‖(±u)⁺‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`, then
+
+`|u| ≤ K ‖u‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`.
+
+This is how local boundedness of weak subsolutions gives local boundedness of weak solutions of
+linear equations, for which `u` and `-u` are both subsolutions. -/
+theorem ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le {Omega : Opens (EuclideanSpace ℝ ι)}
+    {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R K : ℝ} (hR : 0 < R) (hK : 0 ≤ K)
+    (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hpos : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤
+      K * √(∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu))
+    (hneg : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value (-u) x ≤
+      K * √(∫ x in Metric.ball x₀ R, max (W1p.value (-u) x) 0 ^ 2 ∂mu)) :
+    ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
+      |W1p.value u x| ≤ K * √(∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu) := by
+  -- The square of the positive part of a square-integrable function is dominated by its square.
+  have hsq : ∀ w : W1p mu Omega 2,
+      ∫ x in Metric.ball x₀ R, max (W1p.value w x) 0 ^ 2 ∂mu ≤
+        ∫ x in Metric.ball x₀ R, W1p.value w x ^ 2 ∂mu := fun w => by
+    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity)
+      ((Lp.memLp (W1p.value w)).mono_measure (Measure.restrict_mono hball le_rfl)).integrable_sq
+      (ae_of_all _ fun x => ?_)
+    calc max (W1p.value w x) 0 ^ 2 ≤ |W1p.value w x| ^ 2 :=
+          pow_le_pow_left₀ (le_max_right _ _) (max_le (le_abs_self _) (abs_nonneg _)) 2
+      _ = W1p.value w x ^ 2 := sq_abs _
+  -- `-u` has the same `L²` norm on the ball.
+  have hneg_ae := W1p.value_neg_ae u
+  have hint : ∫ x in Metric.ball x₀ R, W1p.value (-u) x ^ 2 ∂mu =
+      ∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu := by
+    refine integral_congr_ae ?_
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hball hneg_ae] with x hx
+    rw [hx, Pi.neg_apply, neg_sq]
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    (Metric.ball_subset_ball (half_le_self hR.le)).trans hball
+  filter_upwards [hpos, hneg, ae_restrict_of_ae_restrict_of_subset hhalf hneg_ae]
+    with x hx hx' hxn
+  rw [hxn, Pi.neg_apply] at hx'
+  have h₁ := mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (hsq u)) hK
+  have h₂ := mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (hint ▸ hsq (-u))) hK
+  rw [abs_le]
+  constructor <;> linarith
+
 /-- **Local boundedness of weak solutions (De Giorgi).** In every dimension `n ≥ 1` there is
 `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure
 `mu`, such that for every measurable, uniformly elliptic `a` on `Ω` with constants `λ, Λ`, every
@@ -961,37 +1009,14 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
   refine ⟨D, hD, fun {Omega a u x₀ R} h ha hu hR hball => ?_⟩
-  have hDP : 0 ≤ D * R ^ (-(Fintype.card ι : ℝ) / 2) := by positivity
-  -- The square of the positive part of a square-integrable function is dominated by its square.
-  have hsq : ∀ w : W1p mu Omega 2,
-      ∫ x in Metric.ball x₀ R, max (W1p.value w x - 0) 0 ^ 2 ∂mu ≤
-        ∫ x in Metric.ball x₀ R, W1p.value w x ^ 2 ∂mu := fun w => by
-    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity)
-      ((Lp.memLp (W1p.value w)).mono_measure (Measure.restrict_mono hball le_rfl)).integrable_sq
-      (ae_of_all _ fun x => ?_)
-    simp only [sub_zero]
-    calc max (W1p.value w x) 0 ^ 2 ≤ |W1p.value w x| ^ 2 :=
-          pow_le_pow_left₀ (le_max_right _ _) (max_le (le_abs_self _) (abs_nonneg _)) 2
-      _ = W1p.value w x ^ 2 := sq_abs _
-  -- `-u` is a weak solution too, with the same `L²` norm on the ball.
-  have hneg := W1p.value_neg_ae u
+  -- `-u` is a weak solution too.
   have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) = 0 := fun v => by
     rw [energyFormH1_neg_left, hu v, neg_zero]
-  have hint : ∫ x in Metric.ball x₀ R, W1p.value (-u) x ^ 2 ∂mu =
-      ∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu := by
-    refine integral_congr_ae ?_
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hball hneg] with x hx
-    rw [hx, Pi.neg_apply, neg_sq]
-  have hpos := hbound (k := 0) h ha (fun v _ => (hu v).le) hR hball
-  have hneg' := hbound (k := 0) h ha (fun v _ => (hu' v).le) hR hball
-  have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    (Metric.ball_subset_ball (half_le_self hR.le)).trans hball
-  filter_upwards [hpos, hneg', ae_restrict_of_ae_restrict_of_subset hhalf hneg] with x hx hx' hxn
-  rw [hxn, Pi.neg_apply] at hx'
-  have h₁ := mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (hsq u)) hDP
-  have h₂ := mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (hint ▸ hsq (-u))) hDP
-  rw [abs_le]
-  constructor <;> linarith
+  exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le hR (by positivity) hball
+    (by simpa only [zero_add, sub_zero] using
+      hbound (k := 0) h ha (fun v _ => (hu v).le) hR hball)
+    (by simpa only [zero_add, sub_zero] using
+      hbound (k := 0) h ha (fun v _ => (hu' v).le) hR hball)
 
 
 /-! ### Local boundedness in terms of `Lᵖ` norms -/

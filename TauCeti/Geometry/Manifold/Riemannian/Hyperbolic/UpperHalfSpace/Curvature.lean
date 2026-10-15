@@ -90,7 +90,7 @@ private theorem second_connection_const (x : UpperHalfSpace E) (u v w : P) :
     simpa only [Function.comp_def, Pi.inv_apply, WithLp.sndL_apply, snd_coe] using
       (((WithLp.sndL 2 ℝ E ℝ).contDiff.contDiffAt.inv hne).contMDiffAt.comp x
         (contMDiff_coe x)).mdifferentiableAt (by simp)
-  rw [∇.isCovariantDerivativeOn.leibniz
+  rw [∇.isCovariantDerivativeOnUniv.leibniz
     ((contMDiff_constantField _ x).mdifferentiableAt (by simp)) hg]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_add, map_smul]
   rw [mvfderiv_inv_height]

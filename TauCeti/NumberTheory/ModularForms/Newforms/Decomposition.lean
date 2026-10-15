@@ -46,6 +46,8 @@ one, and the others lie in nebentypus spaces meeting `S_k(N, χ_f)` only in `0`.
   `HeckeRing.GL2.EigenformAwayFromLevel.exists_newform_eigenvalue_eq`: a nonzero simultaneous
   eigenvector of the good `Tₚ`, in particular a good Hecke eigenform, shares its eigenvalues at
   the primes not dividing the level with a newform of divisor level.
+* `Newform.exists_newform_comp_unitsMap_eq_and_eigenvalue_eq_of_forall_heckeTCuspNat_eq_smul`:
+  for a nonzero eigenvector in `S_k(N, χ)`, that newform can be chosen with nebentypus inducing `χ`.
 * `HeckeRing.GL2.Newform.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul`: a
   good Hecke eigenvector of `S_k(N, χ)` with the eigenvalues of a newform `f` of level `N` and
   nebentypus `χ` is the multiple `a₁ • f` of `f`.
@@ -184,6 +186,31 @@ theorem exists_newform_eigenvalue_eq_of_forall_heckeTCuspNat_eq_smul [NeZero N]
   refine (Submodule.span_eq_bot.mpr ?_).symm
   rintro _ ⟨M, d, _, _, h, g, hg, rfl⟩
   exact absurd ⟨M, inferInstance, dvd_of_mul_left_dvd h, g, hg⟩ hne
+
+/-- **A nonzero simultaneous eigenvector of the good Hecke operators in `S_k(N, χ)` has the
+eigenvalues of a newform whose nebentypus induces `χ`.** If a nonzero `F ∈ S_k(N, χ)` satisfies
+`Tₚ F = aₚ F` at every prime `p ∤ N`, then some newform `g` of some level `M ∣ N` has eigenvalue
+`aₚ` at every prime `p ∤ N`, and the nebentypus of `g`, read at level `N`, is `χ`. This is the
+existence half of Diamond–Shurman's Proposition 5.8.4 with the character stated. -/
+theorem exists_newform_comp_unitsMap_eq_and_eigenvalue_eq_of_forall_heckeTCuspNat_eq_smul
+    [NeZero N] {χ : (ZMod N)ˣ →* ℂˣ} {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hFχ : F ∈ cuspFormCharSpace k χ) (hF0 : F ≠ 0)
+    {a : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ℂ}
+    (hF : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
+      heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) F = a p hp hpN • F) :
+    ∃ (M : ℕ) (_ : NeZero M) (hM : M ∣ N) (g : Newform M k),
+      g.χ.comp (ZMod.unitsMap hM) = χ ∧
+      ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
+        g.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hM) = a p hp hpN := by
+  by_contra hne
+  -- otherwise every level-raised newform spanning `F` lies in a nebentypus space other than `χ`
+  refine hF0 ((Submodule.disjoint_def.mp (iSupIndep_def.mp (iSupIndep_cuspFormCharSpace k) χ))
+    F hFχ (Submodule.span_le.mpr ?_ (mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul hF)))
+  rintro _ ⟨M, d, _, _, hdM, g, hg, rfl⟩
+  have hgχ : g.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd hdM)) ≠ χ :=
+    fun h ↦ hne ⟨M, inferInstance, dvd_of_mul_left_dvd hdM, g, h, hg⟩
+  exact Submodule.mem_iSup_of_mem _ (Submodule.mem_iSup_of_mem hgχ
+    (CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd hdM g.χ g.mem_charSpace))
 
 end Newform
 

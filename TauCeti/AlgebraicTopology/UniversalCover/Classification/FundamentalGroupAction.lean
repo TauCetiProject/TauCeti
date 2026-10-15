@@ -117,7 +117,7 @@ theorem fiberActionFunctor_obj_V (p : CoveringSpace X) :
 @[simp]
 theorem fiberActionFunctor_obj_ρ_apply (p : CoveringSpace X) (g : FundamentalGroup X x₀)
     (e : ⇑p.proj ⁻¹' {x₀}) :
-    ((fiberActionFunctor x₀).obj p).ρ g e = p.isCoveringMap_proj.monodromy g e :=
+    ((fiberActionFunctor x₀).obj p).ρ g e = p.isCoveringMap_proj.monodromy g.toPath e :=
   (rfl)
 
 /-- The `MulAction` carried by the fundamental-group set attached to a cover is Mathlib's

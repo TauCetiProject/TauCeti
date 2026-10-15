@@ -204,14 +204,8 @@ private theorem gammaBeta_density_real {a b r u s : ℝ} (ha : 0 < a) (hb : 0 < 
   field_simp [(Real.Gamma_pos_of_pos ha).ne', (Real.Gamma_pos_of_pos hb).ne',
     (Real.Gamma_pos_of_pos (add_pos ha hb)).ne']
   ring_nf
-  calc
-    Real.exp (-(s * r * u)) * (1 - u) ^ (-1 + b) * Real.exp (-(s * r) + s * r * u) =
-        (1 - u) ^ (-1 + b) *
-          (Real.exp (-(s * r * u)) * Real.exp (-(s * r) + s * r * u)) := by ring
-    _ = (1 - u) ^ (-1 + b) * Real.exp (-(s * r)) := by
-      rw [← Real.exp_add]
-      congr 2
-      ring
+  rw [← Real.exp_add]
+  ring_nf
 
 private theorem gammaBeta_density {a b r : ℝ} (ha : 0 < a) (hb : 0 < b) (hr : 0 < r)
     {z : ℝ × ℝ} (hz : z ∈ gammaBetaTarget) :
