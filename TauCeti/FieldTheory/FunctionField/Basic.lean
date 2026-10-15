@@ -213,9 +213,8 @@ theorem IsFunctionField.of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
   have hxF : Transcendental k (algebraMap E F x) :=
     (transcendental_algebraMap_iff (algebraMap E F).injective).2 hx
   let f : k⟮x⟯ →ₐ[k] F := (IsScalarTower.toAlgHom k E F).comp (k⟮x⟯).val
-  have hrange : f.fieldRange = k⟮algebraMap E F x⟯ := by
-    simp only [f, IntermediateField.fieldRange_comp_val, IntermediateField.adjoin_map,
-      Set.image_singleton, IsScalarTower.coe_toAlgHom']
+  have hrange : f.fieldRange = k⟮algebraMap E F x⟯ :=
+    SetLike.coe_injective (IntermediateField.range_algebraMap_adjoin_simple x)
   have hfinite : FiniteDimensional f.fieldRange F := by
     rw [hrange]
     exact hF.finiteDimensional_adjoin hxF
