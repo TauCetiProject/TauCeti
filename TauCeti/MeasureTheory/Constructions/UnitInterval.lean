@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.UniformOn
 import Mathlib.MeasureTheory.Function.Floor
@@ -54,6 +55,9 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
 * `TauCeti.unitInterval.integral_pi_comp_cellIdx_eq_inv_smul_sum` — a function of the cell indices
   of finitely many independent uniform points integrates to the average of its values over
   `V → Fin m`.
+
+The file also records `TauCeti.intervalIntegral_eq_integral_unitInterval`: an interval integral
+over `[0, 1]` is the integral over the unit interval `I` with its volume measure.
 
 ## References
 
@@ -260,5 +264,11 @@ theorem integral_pi_comp_cellIdx_eq_inv_smul_sum (hm : 0 < m) (f : (V → ℕ) �
         rw [← Finset.smul_sum, inv_pow]
 
 end unitInterval
+
+/-- An interval integral over `[0, 1]` is the integral over the unit interval. -/
+theorem intervalIntegral_eq_integral_unitInterval {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : ℝ → G) : ∫ t in (0 : ℝ)..1, f t = ∫ t : I, f t := by
+  rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc,
+    ← integral_subtype measurableSet_Icc]
 
 end TauCeti
