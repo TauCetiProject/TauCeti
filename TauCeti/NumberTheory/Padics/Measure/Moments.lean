@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
+public import TauCeti.NumberTheory.Padics.MahlerBasis
 public import TauCeti.NumberTheory.Padics.Measure.Weight
 public import TauCeti.RingTheory.PowerSeries.MahlerDerivation
 
@@ -55,27 +56,13 @@ open scoped AbstractMeasure PowerSeries
 
 variable {p : ℕ} [Fact p.Prime]
 
-namespace TauCeti
-
-/-- The Mahler recurrence `x * (x choose n) = (n + 1) * (x choose (n + 1)) + n * (x choose n)`. -/
-theorem id_mul_mahler (n : ℕ) :
-    ContinuousMap.id ℤ_[p] * mahler n = (n + 1) • mahler (n + 1) + n • mahler n := by
-  refine ContinuousMap.ext fun x => ?_
-  have h := Ring.choose_smul_choose x (Nat.le_add_right n 1)
-  rw [Nat.choose_succ_self_right, Nat.add_sub_cancel_left, Ring.choose_one_right] at h
-  rw [ContinuousMap.mul_apply, ContinuousMap.add_apply, ContinuousMap.smul_apply,
-    ContinuousMap.smul_apply, ContinuousMap.id_apply, mahler_apply, mahler_apply, h,
-    nsmul_eq_mul]
-  ring
-
-end TauCeti
-
 namespace AbstractMeasure
 
 variable {R : Type*} [CommRing R] [TopologicalSpace R]
   [Algebra ℤ_[p] R] [ContinuousSMul ℤ_[p] R] [IsTopologicalRing R]
 
 /-- The constant coefficient of the Amice transform is the total mass. -/
+@[simp]
 theorem constantCoeff_amiceTransform (μ : D(ℤ_[p], R)) :
     PowerSeries.constantCoeff μ.amiceTransform = μ 1 := by
   have h : (mahler 0 • 1 : C(ℤ_[p], R)) = 1 :=
@@ -159,10 +146,25 @@ theorem ordinaryMoment_eq_factorial_coeff (μ : D(ℤ_[p], ℤ_[p])) (k : ℕ) :
       k.factorial * PowerSeries.coeff k
         ((PowerSeries.map (algebraMap ℤ_[p] ℚ_[p]) μ.amiceTransform).subst
           (PowerSeries.exp ℚ_[p] - 1)) := by
-  rw [ordinaryMoment_eq_constantCoeff, ← PowerSeries.constantCoeff_iterate_mahlerDerivation,
-    ← PowerSeries.map_iterate_mahlerDerivation, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
-    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
-    PadicInt.algebraMap_apply]
+  let D := PowerSeries.mahlerDerivation
+  have hmap := PowerSeries.map_iterate_mahlerDerivation
+    (algebraMap ℤ_[p] ℚ_[p]) μ.amiceTransform k
+  calc
+    (μ (ContinuousMap.id ℤ_[p] ^ k) : ℚ_[p]) =
+        algebraMap ℤ_[p] ℚ_[p]
+          (PowerSeries.constantCoeff ((D ℤ_[p])^[k] μ.amiceTransform)) := by
+      rw [ordinaryMoment_eq_constantCoeff, PadicInt.algebraMap_apply]
+    _ = PowerSeries.constantCoeff
+        (PowerSeries.map (algebraMap ℤ_[p] ℚ_[p]) ((D ℤ_[p])^[k] μ.amiceTransform)) := by
+      rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+        ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map]
+    _ = PowerSeries.constantCoeff
+        ((D ℚ_[p])^[k] (PowerSeries.map (algebraMap ℤ_[p] ℚ_[p]) μ.amiceTransform)) := by
+      rw [hmap]
+    _ = k.factorial * PowerSeries.coeff k
+        ((PowerSeries.map (algebraMap ℤ_[p] ℚ_[p]) μ.amiceTransform).subst
+          (PowerSeries.exp ℚ_[p] - 1)) := by
+      rw [PowerSeries.constantCoeff_iterate_mahlerDerivation]
 
 -- Weighting by `x` is not injective: it kills `δ₀`.
 example : weight (ContinuousMap.id ℤ_[3]) (dirac ℤ_[3] 0) = 0 ∧ dirac ℤ_[3] 0 ≠ 0 := by

@@ -107,9 +107,17 @@ variable {A : Type*} [CommRing A] [Algebra ℚ A]
 theorem derivative_subst_exp_sub_one (F : A⟦X⟧) :
     d⁄dX (F.subst (exp A - 1)) = (mahlerDerivation A F).subst (exp A - 1) := by
   have h := HasSubst.exp_sub_one (A := A)
-  rw [derivative_subst h, mahlerDerivation_apply, subst_mul h, subst_add h, subst_X h, map_sub,
-    derivative_exp, derivative_one, sub_zero, mul_comm, ← coe_substAlgHom h, map_one,
-    add_sub_cancel]
+  have hderiv : d⁄dX (exp A - 1) = 1 + (exp A - 1) := by
+    simp only [map_sub, derivative_exp, derivative_one, sub_zero, add_sub_cancel]
+  calc
+    d⁄dX (F.subst (exp A - 1)) =
+        (d⁄dX F).subst (exp A - 1) * d⁄dX (exp A - 1) := derivative_subst h
+    _ = (1 + (exp A - 1)) * (d⁄dX F).subst (exp A - 1) := by
+      rw [hderiv, mul_comm]
+    _ = ((1 + X) * d⁄dX F).subst (exp A - 1) := by
+      rw [subst_mul h, subst_add h, subst_X h, ← coe_substAlgHom h, map_one]
+    _ = (mahlerDerivation A F).subst (exp A - 1) := by
+      rw [mahlerDerivation_apply]
 
 /-- The iterated form of `derivative_subst_exp_sub_one`. -/
 theorem iterate_derivative_subst_exp_sub_one (F : A⟦X⟧) (k : ℕ) :
@@ -125,9 +133,18 @@ theorem iterate_derivative_subst_exp_sub_one (F : A⟦X⟧) (k : ℕ) :
 theorem constantCoeff_iterate_mahlerDerivation (F : A⟦X⟧) (k : ℕ) :
     constantCoeff ((mahlerDerivation A)^[k] F) = k.factorial * coeff k (F.subst (exp A - 1)) := by
   have h0 : constantCoeff (exp A - 1) = 0 := by simp [constantCoeff_exp]
-  rw [← constantCoeff_iterate_derivative, iterate_derivative_subst_exp_sub_one, eq_comm,
-    constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero h0, Algebra.algebraMap_self,
-    RingHom.id_apply]
+  have hsubst :
+      constantCoeff (((mahlerDerivation A)^[k] F).subst (exp A - 1)) =
+        constantCoeff ((mahlerDerivation A)^[k] F) := by
+    rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero h0,
+      Algebra.algebraMap_self, RingHom.id_apply]
+  calc
+    constantCoeff ((mahlerDerivation A)^[k] F) =
+        constantCoeff (((mahlerDerivation A)^[k] F).subst (exp A - 1)) := hsubst.symm
+    _ = constantCoeff (d⁄dX^[k] (F.subst (exp A - 1))) := by
+      rw [iterate_derivative_subst_exp_sub_one]
+    _ = k.factorial * coeff k (F.subst (exp A - 1)) :=
+      constantCoeff_iterate_derivative _ _
 
 end Exp
 
