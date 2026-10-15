@@ -10,9 +10,11 @@ Namespace runners, priority zero, assigned to their workflow run ID:
 
 Together they use 6 vCPU/12 GB, less than the freed staging allocation. Neither
 requests cache volumes, cached toolchains, git mirrors or privileged containers.
-The publisher refuses a mounted `/cache` or pre-existing `.lake`. It reads only
-the candidate's immutable toolchain pin and workflow-pinned planning tools;
-`LAKE_CACHE_KEY` remains confined to the inline curl upload step. Ordinary PRs
+The publisher refuses a mounted `/cache` or pre-existing `.lake`. Its repository
+checkouts are limited to the candidate's immutable toolchain pin and workflow-pinned
+planning tools. It also reads the hostile staging artifact and inherited/public
+cache objects, which the key-free planner validates as data; candidate code is
+never executed. `LAKE_CACHE_KEY` remains confined to the inline curl upload step. Ordinary PRs
 remain ineligible to produce shared compiled caches.
 
 The finalizer starts after the sandbox finishes, alongside the publisher. It
