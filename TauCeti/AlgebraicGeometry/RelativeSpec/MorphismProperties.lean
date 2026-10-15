@@ -91,13 +91,9 @@ open form a finite module over the structure ring. -/
 lemma relativeSpec_finite_iff :
     IsFinite A.relativeSpecToBase ↔
       ∀ (U : X.Opens), IsAffineOpen U → Module.Finite Γ(X, U) Γ(A.X, U) := by
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
-  have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FiniteType)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} := by
-    rw [IsFinite.eq_inf]
-    exact MorphismProperty.IsLocalAtTarget.inf _ _
+  have : IsZariskiLocalAtTarget @IsFinite.{u} :=
+    @HasAffineProperty.instIsZariskiLocalAtTarget _
+      (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom) (by exact?)
   rw [A.relativeSpecToBase_iff @IsFinite]
   simp_rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom,
     RingHom.finite_algebraMap]
