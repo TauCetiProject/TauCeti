@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 public import TauCeti.Topology.Connected.PathConnected
 public import Mathlib.Topology.Sets.Opens
-import Mathlib.Data.Nat.SuccPred
+import Mathlib.Order.SuccPred.Nat
 
 /-!
 # Successive van Kampen pushouts

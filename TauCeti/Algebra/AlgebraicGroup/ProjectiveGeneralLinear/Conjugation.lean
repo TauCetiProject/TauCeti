@@ -294,11 +294,11 @@ field: by the Skolem–Noether theorem, every such point of `PGLₙ` comes from 
 theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R] (K : Type w)
     [CommRing K] [IsLocalRing K] [Algebra R K] :
     Function.Surjective
-      ((CommHopfAlgCat.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
   intro q
   obtain ⟨G, hG⟩ := Matrix.GeneralLinearGroup.innerAut_surjective K (pointsMulEquiv n R _ q)
   refine ⟨(GeneralLinear.pointsMulEquiv n).symm G, (pointsMulEquiv n R _).injective ?_⟩
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, pointsMulEquiv_conjugationMap,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, pointsMulEquiv_conjugationMap,
     MulEquiv.apply_symm_apply, hG]
 
 end Kernel

@@ -599,6 +599,7 @@ theorem subsingleton_H1_of_forall_openNormalSubgroup
 
 /-! ### Degree two -/
 
+omit [TotallyDisconnectedSpace G] in
 /-- A degree-two class at a finite quotient which inflates to zero becomes zero after transition
 to a sufficiently deep finite quotient. This is the injectivity half of the degree-two
 finite-quotient colimit theorem. -/
@@ -620,6 +621,7 @@ theorem exists_explicitFiniteQuotientTransition2_eq_zero (U : OpenNormalSubgroup
     refine mem_B2_iff.2 ⟨bV, hbV, ?_⟩
     exact d1_descend_eq_cocyclesMap2 hVU c b bV hbV_apply hd
 
+omit [TotallyDisconnectedSpace G] in
 /-- Two finite-level degree-two classes with the same inflation agree after transition to a
 common deeper level: their difference inflates to zero, hence dies at a sufficiently deep
 level. -/

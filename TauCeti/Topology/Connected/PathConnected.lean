@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Order.PartialSups
-import Mathlib.Data.Nat.SuccPred
+import Mathlib.Order.SuccPred.Nat
 
 /-!
 # Path-connected unions and intersections

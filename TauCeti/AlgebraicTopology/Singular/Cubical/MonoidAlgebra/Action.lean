@@ -154,31 +154,10 @@ theorem act_assoc {p q r : ℕ} (c : NormalizedCubicalChain Y R p) (a : Normaliz
     (b : NormalizedCubicalChain G R r) :
     cast R (Nat.add_assoc p q r) (act Y G R (p + q) r (act Y G R p q c a) b) =
       act Y G R p (q + r) c (mul G R q r a b) := by
-  have hZ := crossProduct_assoc R c a b
-  -- `c × (a × b)` is the reindexed push-forward of `(c × a) × b` along the associator.
-  have hW : crossProduct Y (G × G) R p (q + r) c (crossProduct G G R q r a b) =
-      cast R (Nat.add_assoc p q r)
-        (map R (Homeomorph.prodAssoc Y G G : C((Y × G) × G, Y × G × G)) (p + q + r)
-          (crossProduct (Y × G) G R (p + q) r (crossProduct Y G R p q c a) b)) := by
-    rw [hZ, cast_cast, cast_rfl]
-  have key : (actMap Y G).comp ((actMap Y G).prodMap (ContinuousMap.id G)) =
-      (actMap Y G).comp (((ContinuousMap.id Y).prodMap (mulMap G)).comp
-        (Homeomorph.prodAssoc Y G G : C((Y × G) × G, Y × G × G))) := by
-    ext x
-    simp [Homeomorph.prodAssoc, Equiv.prodAssoc, mul_smul]
-  have hl : crossProduct Y G R (p + q) r (map R (actMap Y G) (p + q) (crossProduct Y G R p q c a))
-      b = map R ((actMap Y G).prodMap (ContinuousMap.id G)) (p + q + r)
-        (crossProduct (Y × G) G R (p + q) r (crossProduct Y G R p q c a) b) := by
-    rw [map_crossProduct, map_id, LinearMap.id_apply]
-  have hr : crossProduct Y G R p (q + r) c (map R (mulMap G) (q + r) (crossProduct G G R q r a b)) =
-      map R ((ContinuousMap.id Y).prodMap (mulMap G)) (p + (q + r))
-        (crossProduct Y (G × G) R p (q + r) c (crossProduct G G R q r a b)) := by
-    rw [map_crossProduct, map_id, LinearMap.id_apply]
   simp only [act_def, mul_def]
-  rw [hl, hr, hW, map_cast, map_cast]
-  congr 1
-  rw [← LinearMap.comp_apply (map R (actMap Y G) (p + q + r)), ← map_comp, key, map_comp,
-    map_comp, LinearMap.comp_apply, LinearMap.comp_apply]
+  refine map_crossProduct_map_assoc R ?_ c a b
+  ext x
+  simp [Homeomorph.prodAssoc, Equiv.prodAssoc, mul_smul]
 
 omit [ContinuousMul G] in
 /-- **The unit acts trivially**, after the reindexing `p + 0 = p`. -/
@@ -370,6 +349,24 @@ theorem cubicalChainModuleEquiv_differential (m : cubicalChainModule Y G R) :
       cubicalChainDifferential Y R (cubicalChainModuleEquiv Y G R m) := by
   simp [cubicalChainModuleDifferential]
 
+variable (Y G R) in
+/-- The differential of the module raises the cohomological degree by one. -/
+theorem cubicalChainModuleDifferential_isHomogeneous :
+    LinearMap.IsHomogeneous (cubicalChainModuleDifferential Y G R) (cubicalChainModuleGrading Y G R)
+      (cubicalChainModuleGrading Y G R) 1 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    rw [mem_cubicalChainModuleGrading, cubicalChainModuleEquiv_differential]
+    exact cubicalChainDifferential_mem Y R (mem_cubicalChainModuleGrading.1 hx)
+
+/-- The differential of the module squares to zero. -/
+@[simp]
+theorem cubicalChainModuleDifferential_cubicalChainModuleDifferential
+    (m : cubicalChainModule Y G R) :
+    cubicalChainModuleDifferential Y G R (cubicalChainModuleDifferential Y G R m) = 0 :=
+  (cubicalChainModuleEquiv Y G R).injective (by
+    rw [cubicalChainModuleEquiv_differential, cubicalChainModuleEquiv_differential,
+      cubicalChainDifferential_cubicalChainDifferential, map_zero])
+
 /-- The sign `(-1) ^ (-n)` acts on the module as `(-1) ^ n ∈ R`. -/
 theorem negOnePow_neg_natCast_smul_cubicalChainModule (n : ℕ) (m : cubicalChainModule Y G R) :
     (-(n : ℤ)).negOnePow • m = (-1 : R) ^ n • m :=
@@ -554,12 +551,8 @@ differential graded right module** over the DG algebra of cubical chains of `G`.
 theorem cubicalChainModule_isDGRightModule :
     IsDGRightModule (cubicalChain_isDGAlgebra G R) (cubicalChainModuleGrading Y G R)
       (cubicalChainModuleDifferential Y G R) where
-  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
-    rw [mem_cubicalChainModuleGrading, cubicalChainModuleEquiv_differential]
-    exact cubicalChainDifferential_mem Y R (mem_cubicalChainModuleGrading.1 hx)
-  sq_zero x := (cubicalChainModuleEquiv Y G R).injective (by
-    rw [cubicalChainModuleEquiv_differential, cubicalChainModuleEquiv_differential,
-      cubicalChainDifferential_cubicalChainDifferential, map_zero])
+  isHomogeneous := cubicalChainModuleDifferential_isHomogeneous Y G R
+  sq_zero := cubicalChainModuleDifferential_cubicalChainModuleDifferential
   leibniz := fun {q} {x} hx a ↦ by
     rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨m, c, hm, rfl⟩
     · simp
@@ -620,7 +613,7 @@ theorem cubicalChainModuleLinearMap_op_smul (f : C(Y, Y'))
   | lof p c =>
     induction a using DirectSum.induction_on with
     | zero => rw [op_zero, zero_smul, map_zero, zero_smul]
-    | add a a' ha ha' => rw [op_add, add_smul, map_add, ha, ha', add_smul]
+    | add a a' ha ha' => rw [MulOpposite.op_add, add_smul, map_add, ha, ha', add_smul]
     | of q z =>
       rw [← DirectSum.lof_eq_of R, op_lof_smul_cubicalChainModuleLof,
         cubicalChainModuleLinearMap_lof, cubicalChainModuleLinearMap_lof,

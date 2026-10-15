@@ -59,7 +59,7 @@ omit [T1Space S] in
 /-- Followed by the inclusion `(S, S ∖ {p, a p}) ⟶ (S, S ∖ {p})`, the inclusion of
 `(U, U ∖ {p})` is the excision map. -/
 private lemma interPairToComplPair_comp_ofSubsetMap_id (hapU : a p ∉ U) :
-    interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) = excisionMap U {p}ᶜ :=
+    interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1) = excisionMap U {p}ᶜ :=
   (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ h ↦ h) (Category.comp_id _)).trans
     (hom_ext_of_fst _ (TopCat.ext fun u ↦
       (ofSubsetMap_fst_apply _ _ u).trans (excisionMap_fst_apply _ _ u).symm))
@@ -84,7 +84,7 @@ private lemma singularHomologyMap_interPairToComplPair_comp_ofSubsetMap_comp_eq_
     (ha : Function.Involutive a) (hapU : a p ∉ U)
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) (n : ℕ) :
     TopPair.singularHomologyMap (interPairToComplPair hapU ≫ ofSubsetMap a haP ≫
-      ofSubsetMap (𝟙 S) (fun _ h ↦ h.1)) R n = 0 := by
+      ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1)) R n = 0 := by
   have hU (u : U) : a u.1 ∈ ({p}ᶜ : Set S) := fun (h : a u.1 = p) ↦
     hapU ((ha u.1).symm.trans (congrArg a h) ▸ u.2)
   refine (congrArg (TopPair.singularHomologyMap · R n) ((whisker_eq _
@@ -103,16 +103,16 @@ private def complSingletonMap (ha : Function.Involutive a) :
 omit [T1Space S] in
 private lemma ofSubsetMap_comp_ofSubsetMap_id_eq (ha : Function.Involutive a)
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) :
-    ofSubsetMap a haP ≫ ofSubsetMap (𝟙 S) (B' := ({a p}ᶜ : Set S)) (fun _ h ↦ h.2) =
-      ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) ≫ complSingletonMap ha :=
+    ofSubsetMap a haP ≫ ofSubsetMap (𝟙 S) (B' := ({a p}ᶜ : Set S)) (by exact fun _ h ↦ h.2) =
+      ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1) ≫ complSingletonMap ha :=
   (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ h ↦ (haP h).2) (Category.comp_id _)).trans
     (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.id_comp _)).symm
 
 omit [T1Space S] in
 private lemma ofSubsetMap_comp_ofSubsetMap_id_comp_complSingletonMap (ha : Function.Involutive a)
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) :
-    ofSubsetMap a haP ≫ ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) ≫ complSingletonMap ha =
-      ofSubsetMap (𝟙 S) (fun _ h ↦ h.2) :=
+    ofSubsetMap a haP ≫ ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1) ≫ complSingletonMap ha =
+      ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.2) :=
   (whisker_eq _ (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ h ↦ (haP h).2)
     (Category.id_comp _))).trans
     (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (TopCat.ext ha))
@@ -151,7 +151,7 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
           ε • s)
     (t : M ⟶ (interPair U {p}ᶜ).singularHomology R n)
     (ht : t ≫ TopPair.singularHomologyMap (excisionMap U {p}ᶜ) R n =
-      s ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) fun _ h ↦ h.1) R n) :
+      s ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1)) R n) :
     s ≫ TopPair.singularHomologyMap (ofSubsetMap f hfP) R n =
       (1 + ε) • (t ≫ TopPair.singularHomologyMap
         (ofSubsetMap (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
@@ -177,9 +177,9 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
         interPairToComplPair_comp_ofSubsetMap_id, ht, Category.assoc,
         singularHomologyMap_interPairToComplPair_comp_ofSubsetMap_comp_eq_zero R ha hapU haP,
         comp_zero, smul_zero, add_zero]
-    · calc s ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) fun _ h ↦ h.2) R n
+    · calc s ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.2)) R n
           = (s ≫ TopPair.singularHomologyMap (ofSubsetMap a haP) R n) ≫
-              TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (fun _ h ↦ h.1)) R n ≫
+              TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1)) R n ≫
                 TopPair.singularHomologyMap (complSingletonMap ha) R n := by
             rw [Category.assoc, ← TopPair.singularHomologyMap_comp,
               ← TopPair.singularHomologyMap_comp, haρ]
@@ -189,7 +189,7 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
         _ = (t ≫ TopPair.singularHomologyMap (interPairToComplPair hapU) R n +
               ε • (t ≫ TopPair.singularHomologyMap
                 (interPairToComplPair hapU ≫ ofSubsetMap a haP) R n)) ≫
-              TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) fun _ h ↦ h.2) R n := by
+              TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.2)) R n := by
             conv_rhs => rw [Preadditive.add_comp, Linear.smul_comp, Category.assoc,
               Category.assoc, ← TopPair.singularHomologyMap_comp,
               ← TopPair.singularHomologyMap_comp,

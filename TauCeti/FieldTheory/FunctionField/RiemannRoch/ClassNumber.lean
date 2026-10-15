@@ -153,7 +153,8 @@ theorem finite_ker_degreeClass (hF : IsFunctionField k F) [Finite k] :
   have hmcast : (m : ℤ) = n * degree B := Int.toNat_of_nonneg (by positivity)
   set T : Set (Divisor k F) := {D | WeilDivisor.IsEffective D ∧ degree D = (m : ℤ)}
   have : Finite T :=
-    ((finite_setOf_isEffective_degree_le hF m).subset fun _ hD ↦ ⟨hD.1, hD.2.le⟩).to_subtype
+    ((finite_setOf_isEffective_degree_le hF m).subset (t := T) fun _ hD ↦
+      ⟨hD.1, hD.2.le⟩).to_subtype
   have hnB : degree (n • B) = n * degree B := by rw [map_nsmul, nsmul_eq_mul]
   have hker : ∀ A : T, (Place.orderSystem hF).divisorClass ((A : Divisor k F) - n • B) ∈
       (Divisor.degreeClass hF).ker := by

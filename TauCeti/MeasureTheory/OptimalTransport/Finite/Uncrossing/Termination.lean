@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Data.Prod.Lex
+import Mathlib.Order.Prod.Lex.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Monotone
 
 /-!

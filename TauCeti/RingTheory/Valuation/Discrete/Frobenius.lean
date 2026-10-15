@@ -20,7 +20,9 @@ element in the image of the `n`-fold Frobenius has order under `v` divisible by 
 Consequently, an element whose order under a discrete valuation is not divisible by `p ^ n`
 cannot lie in the image of the `n`-fold Frobenius. Applied to the valuation of a function-field
 place, this is the valuation-theoretic input to the separating-element criterion in positive
-characteristic.
+characteristic. Since `z ^ p - b ^ p = (z - b) ^ p`, a difference of `p`-th powers also has order
+divisible by `p`; this is what rules out `p`-th roots of constants in the completion at a place
+with inseparable residue field.
 
 ## Main results
 
@@ -29,6 +31,8 @@ characteristic.
   `p ^ n`-power subfield forces divisibility of the order by `p ^ n`.
 * `Valuation.not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord`: the
   contrapositive, eliminating membership in the `p ^ n`-power subfield.
+* `Valuation.natCast_dvd_ord_pow_sub_pow`: a difference of `p`-th powers has order divisible by
+  `p`.
 
 ## References
 
@@ -70,6 +74,13 @@ theorem not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord (n : ℕ)
     (hz : ¬(p ^ n : ℤ) ∣ _root_.Valuation.ord v z) :
     z ∉ RingHom.fieldRange (iterateFrobenius F p n) := fun h =>
   hz (natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius v p n h)
+
+/-- A difference of `p`-th powers is the `p`-th power of the difference, so its order under a
+discrete valuation is divisible by `p`. -/
+theorem natCast_dvd_ord_pow_sub_pow (z b : F) :
+    (p : ℤ) ∣ _root_.Valuation.ord v (z ^ p - b ^ p) := by
+  rw [← sub_pow_expChar, _root_.Valuation.ord_pow]
+  exact dvd_mul_right _ _
 
 end Valuation
 

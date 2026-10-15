@@ -291,7 +291,8 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
       ∫⁻ y, 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) y ∂ν ≤ 2 ^ p.toReal * τ := by
     rw [lintegral_const_mul' _ _ h2q, lintegral_indicator hS]
     gcongr
-    exact (lintegral_mono_set fun y (hy : R ≤ nndist x y) ↦ hR'.trans hy).trans hν
+    exact (lintegral_mono_set (s := {y | R ≤ nndist x y}) (t := {y | R' ≤ nndist x y})
+      fun y (hy : R ≤ nndist x y) ↦ hR'.trans hy).trans hν
   have hf : Measurable fun w ↦ 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) w :=
     (((continuous_const.edist continuous_id).measurable.pow_const _).indicator hS).const_mul _
   -- The transport cost of the truncated cost tends to `0` along weak convergence.

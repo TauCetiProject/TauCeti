@@ -109,7 +109,7 @@ theorem _root_.MeasureTheory.UnifIntegrable.dist_of_memLp_dist {ι : Type*} {T :
     (hp' : p ≠ ∞) (hT : ∀ i, AEMeasurable (T i) μ) (hS' : AEMeasurable S' μ)
     (hSS' : MemLp (fun x ↦ dist (S x) (S' x)) p μ) :
     UnifIntegrable (fun i x ↦ dist (T i x) (S' x)) p μ :=
-  (h.add (unifIntegrable_const hp hp' hSS') hp).ae_mono
+  (h.add (unifIntegrable_const hp hp' hSS')).ae_mono
     (fun i ↦ ((hT i).dist hS').aestronglyMeasurable) fun i ↦ ae_of_all _ fun x ↦
       enorm_le_iff_norm_le.2 (norm_dist_le_norm_dist_add_dist (T i x) (S x) (S' x))
 

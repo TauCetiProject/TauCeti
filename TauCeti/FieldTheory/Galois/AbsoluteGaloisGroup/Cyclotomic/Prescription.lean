@@ -155,7 +155,7 @@ theorem continuousLocalCyclotomicCharacter_hasPrescriptionProperty [NeZero (p : 
     rw [Nat.cast_pow]
     exact (NeZero.ne (p : K)).isUnit.pow i
   -- compatible primitive roots of unity `ζ` of order `pⁱ` and `ζ'` of order `p`
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) (p ^ i)
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) (p ^ i)
   have hζ := hξ.isUnit_unit (pow_ne_zero i (Fact.out : p.Prime).ne_zero)
   have hζ' := hζ.pow (Nat.pos_of_ne_zero (pow_ne_zero i (Fact.out : p.Prime).ne_zero))
     (Nat.div_mul_cancel (pow_dvd_pow p hi)).symm

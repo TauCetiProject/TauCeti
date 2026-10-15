@@ -10,6 +10,7 @@ import Mathlib.Analysis.Normed.Module.RCLike.Real
 public import Mathlib.Analysis.Convex.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
+public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
 
 /-!
 # Realizations of finite simplices
@@ -38,6 +39,8 @@ the elementary equivalence between its two points and `Fin 2`.
 
 * `Finset.standardSimplexHomeomorph`: a closed coordinate simplex is homeomorphic to Mathlib's
   standard simplex on its finite vertex set.
+* `AbstractSimplicialComplex.instLocallyPathConnectedSpaceStandardSimplex`: every closed
+  coordinate simplex is locally path-connected.
 * `realizationTopHomeomorphStdSimplex`: the full complex realizes to Mathlib's standard simplex.
 * `realizationOneSimplexHomeomorphUnitInterval`: the standard one-simplex realizes to `[0, 1]`.
 * `realizationOneSimplexBoundaryHomeomorphSphereZero`: its boundary realizes to `S⁰`.
@@ -116,6 +119,11 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
+
+/-- Every closed coordinate simplex is locally path-connected. -/
+instance instLocallyPathConnectedSpaceStandardSimplex (σ : Finset ι) :
+    LocallyPathConnectedSpace (StandardSimplex σ) :=
+  (Finset.standardSimplexHomeomorph σ).symm.locallyPathConnectedSpace
 
 /-- A closed face, with the subspace topology of the weak realization, is homeomorphic to
 its coordinate simplex. The ambient complex and its vertex type may be infinite. -/

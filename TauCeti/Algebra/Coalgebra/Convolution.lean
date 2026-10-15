@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
-public import TauCeti.Algebra.Bialgebra.TensorProduct
 
 /-!
 # Comultiplication as a convolution product
 
-Let `C` be an `R`-algebra carrying a comultiplication. This file records that, in the convolution
-monoid of linear maps `C →ₗ[R] C ⊗[R] C`, comultiplication is the convolution product of the two
+Let `C` be an `R`-algebra carrying a comultiplication. This file records that, for the convolution
+product of linear maps `C →ₗ[R] C ⊗[R] C`, comultiplication is the convolution product of the two
 canonical inclusions `c ↦ c ⊗ₜ 1` and `c ↦ 1 ⊗ₜ c` of `C` into its tensor square.
 
-The file also provides the exterior convolution product `LinearMap.mulTensor`: linear maps
+The file also provides the exterior convolution product `WithConv.mulTensor`: linear maps
 out of modules `M` and `N`, valued in an algebra, applied legwise on `M ⊗[R] N` and
 multiplied in the codomain. Its normalization rules (zero, addition, scalars) and its
 multiplicativity for the convolution product make it the engine for composition-level
@@ -38,9 +37,9 @@ algebra with coefficients in `B'` with a free module over the one with coefficie
   algebra-hom points of a commutative bialgebra.
 * `TauCeti.Bialgebra.toConv_comp_comulAlgHom`: the functorial form of the previous identity,
   after post-composing with an arbitrary algebra map out of the tensor square.
-* `TauCeti.LinearMap.mulTensor`: the exterior convolution product, with its
-  normalization rules and `TauCeti.LinearMap.mulTensor_convMul`.
-* `TauCeti.AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
+* `WithConv.mulTensor`: the exterior convolution product, with its
+  normalization rules and `WithConv.mulTensor_convMul`.
+* `AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
   multiplication is its own exterior square.
 * `AlgHom.convCompLeft`: post-composition with an algebra map, as an algebra map of convolution
   algebras.
@@ -61,7 +60,7 @@ variable {R : Type*} {C : Type*} [CommSemiring R] [Semiring C] [Algebra R C]
   [_root_.CoalgebraStruct R C]
 
 /-- **Comultiplication is the convolution product of the two tensor inclusions.** In the
-convolution monoid of maps `C →ₗ[R] C ⊗[R] C`, the product of `includeLeft` and `includeRight`
+convolution product on maps `C →ₗ[R] C ⊗[R] C`, the product of `includeLeft` and `includeRight`
 multiplies the two legs of `Δ c` back together in order, which is `Δ` itself.
 
 Only the comultiplication *data* is used, so this needs `CoalgebraStruct` rather than
@@ -108,10 +107,10 @@ identity `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight` rather th
 theorem toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
     (phi : H ⊗[R] H →ₐ[R] A) :
     toConv (phi.comp (Bialgebra.comulAlgHom R H)) =
-      toConv (phi.comp (Bialgebra.TensorProduct.includeLeft
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom) *
-      toConv (phi.comp (Bialgebra.TensorProduct.includeRight
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom) := by
+      toConv (phi.comp (Algebra.TensorProduct.includeLeft
+        (R := R) (A := H) (B := H))) *
+      toConv (phi.comp (Algebra.TensorProduct.includeRight
+        (R := R) (A := H) (B := H))) := by
   apply WithConv.ofConv_injective
   apply AlgHom.toLinearMap_injective
   apply WithConv.toConv_injective
@@ -123,8 +122,7 @@ theorem toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
             (R := R) (A := H) (B := H)).toLinearMap).ofConv := by
     rw [← Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H)]
     simp
-  simp only [AlgHom.comp_toLinearMap, Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom, hcomul]
+  simp only [AlgHom.comp_toLinearMap, hcomul]
   exact congrArg WithConv.toConv (LinearMap.algHom_comp_convMul_distrib phi _ _)
 
 end Semiring
@@ -136,21 +134,16 @@ two canonical tensor-factor points. This is the algebra-hom form of
 `Coalgebra.comul_eq_convMul_includeLeft_includeRight`. -/
 theorem comulPoint_eq_include_mul :
     toConv (Bialgebra.comulAlgHom R H) =
-      toConv (Bialgebra.TensorProduct.includeLeft
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom *
-      toConv (Bialgebra.TensorProduct.includeRight
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom := by
-  apply WithConv.ofConv_injective
-  apply AlgHom.toLinearMap_injective
-  apply WithConv.toConv_injective
-  rw [AlgHom.toLinearMap_convMul]
-  simpa only [Bialgebra.toLinearMap_comulAlgHom,
-    Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom] using
-      (Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H))
+      toConv (Algebra.TensorProduct.includeLeft
+        (R := R) (A := H) (B := H)) *
+      toConv (Algebra.TensorProduct.includeRight
+        (R := R) (A := H) (B := H)) := by
+  simpa only [AlgHom.id_comp] using
+    toConv_comp_comulAlgHom (phi := AlgHom.id R (H ⊗[R] H))
 
 end Bialgebra
 
+end TauCeti
 
 section ExteriorProduct
 
@@ -159,9 +152,7 @@ open WithConv TensorProduct
 variable {R M N S : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N] [Semiring S] [Algebra R S]
 
-namespace LinearMap
-
-
+namespace WithConv
 
 /-- The exterior convolution product on `M ⊗[R] N`: apply one factor on each tensor
 leg and multiply the results in the coefficients. It underlies the Leibniz-rule
@@ -178,7 +169,6 @@ lemma mulTensor_apply_tmul
     (s : WithConv (M →ₗ[R] S)) (t : WithConv (N →ₗ[R] S)) (x : M) (y : N) :
     (mulTensor s t).ofConv (x ⊗ₜ[R] y) = s.ofConv x * t.ofConv y := by
   simp [mulTensor]
-
 
 /-- The exterior product vanishes when the left factor is zero. -/
 @[simp]
@@ -222,13 +212,12 @@ lemma mulTensor_smul_right (r : R) (s : WithConv (M →ₗ[R] S)) (t : WithConv 
   refine ofConv_injective (TensorProduct.ext' fun x y => ?_)
   simp
 
-end LinearMap
+end WithConv
 
 namespace AlgHom
 
 variable {A : Type*} [Semiring A] [Algebra R A]
 
-open TauCeti.LinearMap in
 /-- An algebra-map point composed with multiplication is its own exterior square:
 the multiplicativity of the point, in convolution form. -/
 @[simp]
@@ -252,7 +241,7 @@ variable {R C D S : Type*} [CommSemiring R]
   [AddCommMonoid D] [Module R D] [CoalgebraStruct R D]
   [CommSemiring S] [Algebra R S]
 
-namespace LinearMap
+namespace WithConv
 
 /-- The exterior product is multiplicative for convolution: products interleave
 legwise. Only the comultiplication *data* on each leg is used — no multiplication on the
@@ -264,16 +253,12 @@ lemma mulTensor_convMul
   have h := LinearMap.algHom_comp_convMul_distrib
     (Algebra.TensorProduct.lmul' R (S := S))
     (toConv (map s.ofConv t.ofConv)) (toConv (map u.ofConv v.ofConv))
-  rw [map_convMul_map] at h
-  -- The commutative multiplication algebra map and the plain multiplication linear map
-  -- agree; restate `h` in the linear form used by `mulTensor`.
-  rw [Algebra.TensorProduct.lmul'_toLinearMap] at h
-  calc mulTensor s t * mulTensor u v
-      = toConv (LinearMap.mul' R S ∘ₗ map (s * u).ofConv (t * v).ofConv) := by
-        rw [mulTensor, mulTensor, ← toConv_ofConv (toConv _ * toConv _), ← h]
-    _ = mulTensor (s * u) (t * v) := rfl
+  -- The multiplication algebra map and the plain multiplication linear map agree;
+  -- transport the resulting composition identity through the convolution type tag.
+  rw [map_convMul_map, Algebra.TensorProduct.lmul'_toLinearMap] at h
+  simpa only [mulTensor, ofConv_toConv, toConv_ofConv] using congrArg toConv h.symm
 
-end LinearMap
+end WithConv
 
 end ExteriorConvolution
 
@@ -368,5 +353,3 @@ theorem _root_.Module.Basis.convCoordEquiv_convCompLeft_mul [_root_.Coalgebra R 
 end Basis
 
 end CoefficientChange
-
-end TauCeti
