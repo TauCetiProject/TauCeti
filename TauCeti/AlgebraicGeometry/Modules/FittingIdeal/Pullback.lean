@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
-import Mathlib.AlgebraicGeometry.Morphisms.Flat
 
 /-!
 # Pullback of Fitting ideal sheaves
@@ -79,20 +78,9 @@ theorem _root_.AlgebraicGeometry.Scheme.fittingIdeal_kaehlerDifferential_preimag
   have hpush : IsPushout (CommRingCat.ofHom (algebraMap R R'))
       (CommRingCat.ofHom (algebraMap R Γ(X, U))) (CommRingCat.ofHom (algebraMap R' Γ(X', g ⁻¹ᵁ U)))
       (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(X', g ⁻¹ᵁ U))) := by
-    have := isIso_pushoutSection_of_isAffineOpen H (US := ⊤) (UT := ⊤) (UX := U)
-      (UY := g ⁻¹ᵁ U) le_top le_top (by simp) (isAffineOpen_top _) (isAffineOpen_top _) hU
-    refine ((isIso_pushoutSection_iff ..).mp this).flip.of_iso (Scheme.ΓSpecIso (.of R))
-      (Scheme.ΓSpecIso (.of R')) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
-    · rw [← Scheme.ΓSpecIso_naturality]
-      exact congrArg (· ≫ _) (Scheme.Hom.appLE_eq_app _)
-    · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-        Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
-        Category.comp_id]
-    · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-        Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
-        Category.comp_id]
-    · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Iso.refl_hom,
-        Category.comp_id, Category.id_comp]
+    simpa only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+      Scheme.Hom.appLE_eq_app] using
+      Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
   let : Algebra R Γ(X', g ⁻¹ᵁ U) :=
     ((algebraMap R' Γ(X', g ⁻¹ᵁ U)).comp (algebraMap R R')).toAlgebra
   have : IsScalarTower R R' Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
