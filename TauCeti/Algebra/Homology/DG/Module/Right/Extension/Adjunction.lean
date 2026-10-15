@@ -186,6 +186,7 @@ theorem fromExtendScalars_tmul (φ : DGRightModuleHom hM (hP.restrictScalars f))
     coe_toLinearMap]
 
 /-- The morphism out of the extension is natural in the source module. -/
+@[simp]
 theorem fromExtendScalars_comp (φ : DGRightModuleHom hN (hP.restrictScalars f))
     (g : DGRightModuleHom hM hN) :
     (φ.comp g).fromExtendScalars f hP = (φ.fromExtendScalars f hP).comp (g.extendScalars f) := by
@@ -194,6 +195,7 @@ theorem fromExtendScalars_comp (φ : DGRightModuleHom hN (hP.restrictScalars f))
   simp
 
 /-- The morphism into the restriction is natural in the target module. -/
+@[simp]
 theorem toRestrictScalars_comp {Q : Type*} [AddCommGroup Q] [Module R Q] [Module Bᵐᵒᵖ Q]
     [IsScalarTower R Bᵐᵒᵖ Q] {ℳQ : ℤ → Submodule R Q}
     [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳQ]
