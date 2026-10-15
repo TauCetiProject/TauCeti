@@ -90,11 +90,12 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "possible copied prefix"):
             self.detector().detect(victim)
 
-    def test_child_declared_cross_fork_stack_still_requires_and_gets_source_proof(self):
+    def test_unpinned_child_declaration_does_not_bypass_cross_fork_provenance(self):
         _, child = self.parent_child(explicit=True)
         child = sp.PR(**{**sp.asdict(child), "head_repo": "another/TauCeti", "author_id": 2})
         self.prs[-1] = child
-        self.assertIsNotNone(self.detector().detect(child)[0])
+        with self.assertRaisesRegex(sp.Gap, "possible copied prefix"):
+            self.detector().detect(child)
 
     def test_outsider_opening_existing_same_repository_branch_is_unknown(self):
         parent, child = self.parent_child()
@@ -107,6 +108,80 @@ class GitFixtures(unittest.TestCase):
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "author_id": 0})
         with self.assertRaisesRegex(sp.Gap, "unknown/different author"):
             self.detector().detect(child)
+
+    def test_stale_explicit_parent_cannot_copy_standalone_child_prefix(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("A", "old prerequisite\n")
+        self.commit("original prerequisite")
+        parent = self.pr(1)
+        git(self.root, "checkout", "-b", "child")
+        self.write("B", "child first contribution\n")
+        copied_prefix = self.commit("child first")
+        self.write("D", "child next contribution\n")
+        self.commit("child next")
+        child = self.pr(2, "Stacked on #1")
+        git(self.root, "checkout", "main")
+        git(self.root, "merge", "--squash", "parent")
+        self.commit("original prerequisite landed through another squash")
+        git(self.root, "update-ref", "refs/pull/1/head", copied_prefix)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "head": copied_prefix})
+        detector = self.detector()
+        # Another opener can use the existing fork branch too; test both forms.
+        for repository in (parent.head_repo, "outsider/TauCeti"):
+            with self.subTest(repository=repository):
+                detector.prs[1] = sp.PR(**{**sp.asdict(parent), "head": copied_prefix,
+                                      "author_id": 2, "head_repo": repository})
+                with self.assertRaisesRegex(sp.Gap, "provenance unproved|unknown/different author"):
+                    detector.detect(child)
+
+    def test_explicit_parent_with_unknown_author_remains_unknown(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "author_id": 0})
+        with self.assertRaisesRegex(sp.Gap, "unknown/different author"):
+            self.detector().detect(child)
+
+    def test_current_canonical_base_can_establish_cross_author_relationship(self):
+        parent, child = self.parent_child()
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "head_repo": sp.REPO, "author_id": 2})
+        child = sp.PR(**{**sp.asdict(child), "base": parent.branch})
+        self.prs[-1] = child
+        self.assertIsNotNone(self.detector().detect(child)[0])
+
+    def test_closed_parent_cannot_grant_canonical_base_exception(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed",
+                              "head_repo": sp.REPO, "author_id": 2})
+        child = sp.PR(**{**sp.asdict(child), "base": parent.branch})
+        self.prs[-1] = child
+        with self.assertRaisesRegex(sp.Gap, "provenance unproved"):
+            self.detector().detect(child)
+
+    def test_cross_principal_prose_cannot_attribute_copied_content(self):
+        git(self.root, "checkout", "-b", "victim")
+        self.write("copied", "victim contribution\n")
+        copied = self.commit("victim change")
+        self.write("own", "victim next contribution\n")
+        self.commit("victim next")
+        child = self.pr(2, "Stacked on #1")
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "outsider")
+        git(self.root, "cherry-pick", copied)
+        git(self.root, "commit", "--amend", "-m", "outsider copies victim content")
+        parent = self.pr(1)
+        self.prs[-1] = sp.PR(**{**sp.asdict(parent), "head_repo": "outsider/TauCeti", "author_id": 2})
+        self.assertNotEqual(parent.head, copied)
+        with self.assertRaisesRegex(sp.Gap, "provenance unproved"):
+            self.detector().detect(child)
+
+    def test_cross_principal_explicit_parent_landed_by_squash_is_not_unknown(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "head_repo": "other/TauCeti", "author_id": 2})
+        git(self.root, "checkout", "main")
+        git(self.root, "merge", "--squash", "parent")
+        self.commit("land parent through independent squash")
+        evidence, reasons = self.detector().detect(child)
+        self.assertIsNone(evidence)
+        self.assertTrue(any("source equivalent landed" in reason for reason in reasons))
 
     def test_nested_stack(self):
         self.parent_child()
@@ -577,6 +652,9 @@ class APITests(unittest.TestCase):
             api.request = lambda *args: {"data": {"repository": {"pullRequest": {"headRef": ref}}}}
             with self.assertRaises(sp.Gap):
                 api.pr(2)
+        api.request = lambda *args: {"errors": [{"type": "RATE_LIMITED"}]}
+        with self.assertRaises(sp.BudgetGap):
+            api.pr(2)
 
 
 class MainTests(unittest.TestCase):
@@ -602,13 +680,15 @@ class MainTests(unittest.TestCase):
     def main(self, *args):
         empty_bors = {"schema": "tauceti-bors.observation/v1", "repo": sp.REPO, "base": "main",
                       "batch_ids": [], "batches": [], "held": []}
-        source = SimpleNamespace(fetch=lambda _: None, begin_child=lambda: None, calls=0, started=sp.time.monotonic())
+        source = SimpleNamespace(fetch=MagicMock(), begin_child=lambda: None, calls=0, started=sp.time.monotonic())
+        self.last_source = source
         with patch.object(sp, "API", return_value=self.api), patch.object(sp, "Source", return_value=source), \
-                patch.object(sp, "Detector", return_value=self.detector), \
+                patch.object(sp, "Detector", return_value=self.detector) as constructor, \
                 patch.object(sp, "run", return_value=SimpleNamespace(stdout=b"/tmp/policy-fixture")), \
                 patch("bors_observation.observation", return_value=empty_bors), \
                 patch.dict(os.environ, {"STACK_ACTOR": "trusted[bot]"}), \
                 patch.object(sp.sys, "argv", ["stack_policy.py", *args]), redirect_stdout(io.StringIO()):
+            self.last_constructor = constructor
             return sp.main()
 
     def test_dry_run_confirmed_has_no_mutations(self):
@@ -656,14 +736,95 @@ class MainTests(unittest.TestCase):
         sp.block(self.api, self.child)
         self.assertEqual(sum(method == "POST" for _, method, _ in self.api.calls), 1)
 
-    def test_workflow_run_association_keeps_full_backlog_sweep(self):
-        visited = []
-        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+    def event(self, data, *args):
         with tempfile.TemporaryDirectory() as directory:
             event = Path(directory) / "event.json"
-            event.write_text(json.dumps({"workflow_run": {"pull_requests": [{"number": 1}]}}))
-            self.assertFalse(self.main("--github-event", str(event)))
-        self.assertEqual(visited, [1, 2])
+            event.write_text(json.dumps(data))
+            return self.main("--github-event", str(event), *args)
+
+    def test_workflow_run_association_focuses_only_triggered_pr(self):
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+        self.assertFalse(self.event({"workflow_run": {"head_sha": self.parent.head, "pull_requests": [{
+            "number": 1, "head": {"sha": self.parent.head},
+            "base": {"repo": {"url": f"https://api.github.com/repos/{sp.REPO}"}},
+        }]}}))
+        self.assertEqual(visited, [1])
+        self.assertEqual({p.number for p in self.last_source.fetch.call_args.args[0]}, {1, 2})
+        self.assertEqual({p.number for p in self.last_constructor.call_args.args[2]}, {1, 2})
+
+    def test_pr_event_focuses_older_target_and_explicit_pr_overrides_it(self):
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+        self.assertFalse(self.event({"pull_request": {"number": 1}}))
+        self.assertEqual(visited, [1])
+        visited.clear()
+        self.assertFalse(self.event({"pull_request": {"number": 1}}, "--pr", "2"))
+        self.assertEqual(visited, [2])
+
+    def test_schedule_and_unselected_manual_dispatch_keep_full_sweep(self):
+        for event in ({}, {"inputs": {"pr": "0"}}):
+            with self.subTest(event=event):
+                visited = []
+                self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+                self.assertFalse(self.event(event))
+                self.assertEqual(visited, [2, 1])
+
+    def test_fork_wake_without_association_matches_current_index(self):
+        fork = sp.PR(**{**sp.asdict(self.child), "base": "branch-1", "head_repo": "fork/TauCeti"})
+        wake = {"workflow_run": {"pull_requests": [], "head_sha": fork.head,
+                                "head_branch": fork.branch,
+                                "head_repository": {"full_name": fork.head_repo}}}
+        self.assertEqual(sp.event_targets(wake, [self.parent, fork, self.child]), {2})
+        for field, value in (("head_sha", "f" * 40), ("head_branch", "other"),
+                             ("head_repository", {"full_name": "outsider/TauCeti"})):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(wake)
+                changed["workflow_run"][field] = value
+                if field == "head_sha":
+                    self.assertEqual(sp.event_targets(changed, [fork]), {2})
+                else:
+                    with self.assertRaises(sp.Gap):
+                        sp.event_targets(changed, [fork])
+
+    def test_incomplete_wake_or_closed_event_never_broadens_to_backlog(self):
+        with self.assertRaises(sp.Gap):
+            self.event({"workflow_run": {"pull_requests": []}})
+        self.assertFalse(self.event({"pull_request": {"number": 99}}))
+        self.assertEqual(self.api.calls, [])
+
+    def test_out_of_order_fork_wakes_recompute_current_head(self):
+        fork = sp.PR(**{**sp.asdict(self.child), "base": "branch-1", "head_repo": "fork/TauCeti"})
+        self.raw[1] = self.record(fork)
+        wake = {"workflow_run": {"head_sha": "f" * 40, "head_branch": fork.branch,
+                                "head_repository": {"full_name": fork.head_repo}}}
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.head) or None, [])
+        for old in ("f" * 40, "b" * 40, fork.head):
+            wake["workflow_run"]["head_sha"] = old
+            self.assertFalse(self.event(wake))
+        self.assertEqual(visited, [fork.head] * 3)
+        self.raw[1]["head"]["repo"] = None
+        with self.assertRaises(sp.Gap):
+            self.event(wake)
+        self.assertEqual(self.api.calls, [])
+
+    def test_malformed_target_is_not_classified_superseded(self):
+        self.raw[1]["head"]["repo"] = None
+        with self.assertRaises(sp.Gap):
+            self.event({"pull_request": {"number": 2}})
+
+    def test_foreign_or_wrong_head_association_does_not_select_unrelated_pr(self):
+        fork = sp.PR(**{**sp.asdict(self.child), "base": "branch-1", "head_repo": "fork/TauCeti"})
+        wake = {"workflow_run": {"head_sha": fork.head, "head_branch": fork.branch,
+            "head_repository": {"full_name": fork.head_repo}, "pull_requests": [{
+                "number": 1, "head": {"sha": fork.head}, "base": {"repo": {"full_name": "other/repo"}},
+            }]}}
+        self.assertEqual(sp.event_targets(wake, [self.parent, fork]), {2})
+        linked = wake["workflow_run"]["pull_requests"][0]
+        linked["base"]["repo"]["full_name"] = sp.REPO
+        linked["head"]["sha"] = "f" * 40
+        self.assertEqual(sp.event_targets(wake, [self.parent, fork]), {2})
 
     def test_closed_parent_budget_does_not_abort_unrelated_children(self):
         self.raw[1]["body"] = "Dependencies: " + ", ".join(f"#{n}" for n in range(100, 165))
@@ -763,6 +924,16 @@ class IntegrationContractTests(unittest.TestCase):
         self.assertEqual(events["pull_request_target"]["branches"], ["main"])
         self.assertTrue(events["workflow_dispatch"]["inputs"]["dry-run"]["default"])
         job = workflow["jobs"]["enforce"]
+        self.assertNotIn("queue", workflow["concurrency"])
+        self.assertIn("github.event.pull_request.number", workflow["concurrency"]["group"])
+        self.assertIn("head_repository.id", workflow["concurrency"]["group"])
+        self.assertIn("head_branch", workflow["concurrency"]["group"])
+        self.assertIn("github.run_id", workflow["concurrency"]["group"])
+        self.assertEqual(job["concurrency"], {"group": "tauceti-no-stacking",
+                                           "queue": "max", "cancel-in-progress": False})
+        self.assertFalse(workflow["concurrency"]["cancel-in-progress"])
+        self.assertIn("vars.NO_STACK_APPLY == 'true'", job["if"])
+        self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])
         self.assertIn("github.ref == 'refs/heads/main'", job["if"])
         checkout = job["steps"][0]["with"]
         self.assertEqual(checkout["ref"], "refs/heads/main")
