@@ -103,8 +103,11 @@ private theorem rawInertiaTwist_apply_conj (g : inertia V) (n : N) (v : V) :
 
 /-- **The chosen intertwiner of `{}^g V` with `V`**, for `g` in the inertia group of
 `V : FDRep k N`, normalized to be the identity at `1`.  Conjugation leaves the underlying module
-alone, so the isomorphism is a linear automorphism of `V`.  Once `V` is simple the twist is
-determined by this choice up to a scalar (`TauCeti.exists_units_eq_smul_inertiaTwist`). -/
+alone, so the isomorphism is a linear automorphism of `V`.  Once `V` is simple *and* `k` is
+algebraically closed, the twist is determined by this choice up to a scalar
+(`TauCeti.exists_units_eq_smul_inertiaTwist`); simplicity alone does not suffice, because over a
+field that is not algebraically closed an irreducible representation can have nonscalar
+self-intertwiners. -/
 -- Normalization is arranged by composing an arbitrary choice at `g` with the inverse of the
 -- arbitrary choice at `1`, which is `N`-equivariant by `rawInertiaTwist_one_symm_apply`.
 noncomputable def inertiaTwist (g : inertia V) : V ≃ₗ[k] V :=
