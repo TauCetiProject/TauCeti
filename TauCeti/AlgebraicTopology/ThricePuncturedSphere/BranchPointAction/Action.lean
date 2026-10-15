@@ -41,15 +41,17 @@ variable {n : ℕ}
 
 private theorem isoClass_pullbackSelf_mob01
     (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
-    (C.pullbackSelf mob01).isoClass = MulOpposite.op (Equiv.swap (0 : Fin 3) 1) • C.isoClass := by
+    (C.pullbackSelf mob01 (by simp [PreconnectedSpace.connectedComponent_eq_univ])).isoClass =
+      MulOpposite.op (Equiv.swap (0 : Fin 3) 1) • C.isoClass := by
   rw [pullbackSelf_eq_pullback C mob01 mob01_basePt, isoClass_pullback_mob01]
 
 private theorem isoClass_pullbackSelf_mob1Inf
     (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
-    (C.pullbackSelf mob1Inf).isoClass =
+    (C.pullbackSelf mob1Inf (by simp [PreconnectedSpace.connectedComponent_eq_univ])).isoClass =
       MulOpposite.op (Equiv.swap (1 : Fin 3) 2) • C.isoClass := by
   rw [pullbackSelf_eq_basepointChange_pullback C mob1Inf (mob1Inf_mob1Inf basePt),
     isoClass_basepointChange_pullback_mob1Inf]
+  all_goals simp [PreconnectedSpace.connectedComponent_eq_univ]
 
 /-- The monodromy classification intertwines anharmonic pullback with branch-point
 reindexing, for all six permutations. The puncture permutation of `anharmonic ρ` is `ρ`,
@@ -57,7 +59,9 @@ and pullback acts by `MulOpposite.op ρ`. -/
 @[simp] theorem isoClass_pullbackSelf_anharmonic
     (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n)
     (ρ : Perm (Fin 3)) :
-    (C.pullbackSelf (anharmonic ρ)).isoClass = MulOpposite.op ρ • C.isoClass := by
+    (C.pullbackSelf (anharmonic ρ)
+      (by simp [PreconnectedSpace.connectedComponent_eq_univ])).isoClass =
+      MulOpposite.op ρ • C.isoClass := by
   have hr : mobRot = mob1Inf.trans mob01 := Homeomorph.ext mobRot_apply
   have hi : mobRotInv = mob01.trans mob1Inf := Homeomorph.ext mobRotInv_apply
   have hz : mob0Inf = mob01.trans (mob1Inf.trans mob01) :=
@@ -71,25 +75,33 @@ and pullback acts by `MulOpposite.op ρ`. -/
     exact congrArg (fun D => D.isoClass) (pullbackSelf_refl C)
   · simpa only [anharmonic_swap_zero_one] using isoClass_pullbackSelf_mob01 C
   · simpa only [anharmonic_swap_one_two] using isoClass_pullbackSelf_mob1Inf C
-  · rw [anharmonic_swap_zero_two, hz, pullbackSelf_trans, pullbackSelf_trans,
+  · simp only [anharmonic_swap_zero_two, hz]
+    rw [pullbackSelf_trans, pullbackSelf_trans,
       isoClass_pullbackSelf_mob01, isoClass_pullbackSelf_mob1Inf,
       isoClass_pullbackSelf_mob01, op_smul_op_smul, op_smul_op_smul, ← mul_assoc, hsts]
-  · rw [anharmonic_finRotate, hr, pullbackSelf_trans, isoClass_pullbackSelf_mob1Inf,
+    all_goals simp [PreconnectedSpace.connectedComponent_eq_univ]
+  · simp only [anharmonic_finRotate, hr]
+    rw [pullbackSelf_trans, isoClass_pullbackSelf_mob1Inf,
       isoClass_pullbackSelf_mob01, op_smul_op_smul, hst]
-  · rw [anharmonic_finRotate_inv, hi, pullbackSelf_trans, isoClass_pullbackSelf_mob01,
+    all_goals simp [PreconnectedSpace.connectedComponent_eq_univ]
+  · simp only [anharmonic_finRotate_inv, hi]
+    rw [pullbackSelf_trans, isoClass_pullbackSelf_mob01,
       isoClass_pullbackSelf_mob1Inf, op_smul_op_smul, hts]
+    all_goals simp [PreconnectedSpace.connectedComponent_eq_univ]
 
 /-- Anharmonic pullback acts on bare cover classes; the opposite group records the
 contravariance of pullback. -/
 noncomputable instance : SMul (Perm (Fin 3))ᵐᵒᵖ
     (ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) where
   smul ρ C := C.pullbackSelf (anharmonic ρ.unop)
+    (by simp [PreconnectedSpace.connectedComponent_eq_univ])
 
 /-- Acting by a puncture permutation is pullback by its anharmonic self-homeomorphism,
 with the degree measured again at the original basepoint. -/
 theorem smul_def
     (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n)
-    (ρ : (Perm (Fin 3))ᵐᵒᵖ) : ρ • C = C.pullbackSelf (anharmonic ρ.unop) := (rfl)
+    (ρ : (Perm (Fin 3))ᵐᵒᵖ) : ρ • C = C.pullbackSelf (anharmonic ρ.unop)
+    (by simp [PreconnectedSpace.connectedComponent_eq_univ]) := (rfl)
 
 /-- The cover-to-triple classification respects the anharmonic operations. -/
 @[simp] theorem isoClass_smul
@@ -101,11 +113,12 @@ theorem smul_def
 noncomputable instance : MulAction (Perm (Fin 3))ᵐᵒᵖ
     (ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) where
   one_smul C := by
-    rw [smul_def, MulOpposite.unop_one, anharmonic_one]
-    exact pullbackSelf_refl C
+    simpa only [smul_def, MulOpposite.unop_one, anharmonic_one] using pullbackSelf_refl C
   mul_smul ρ τ C := by
     simp only [smul_def, MulOpposite.unop_mul, anharmonic_mul]
     exact pullbackSelf_trans C _ _
+      (by simp [PreconnectedSpace.connectedComponent_eq_univ])
+      (by simp [PreconnectedSpace.connectedComponent_eq_univ])
 
 /-- Reconstructing a cover class from its monodromy class also respects branch-point
 permutations. -/

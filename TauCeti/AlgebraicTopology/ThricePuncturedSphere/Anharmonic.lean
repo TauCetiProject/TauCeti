@@ -367,25 +367,54 @@ noncomputable def anharmonic (ρ : Equiv.Perm (Fin 3)) :
 
 @[simp] theorem anharmonic_finRotate_inv : anharmonic (finRotate 3)⁻¹ = mobRotInv := (rfl)
 
+/-- Left multiplication by the transposition of `0` and `1` composes with `mob01`. -/
+private theorem anharmonic_swap_zero_one_mul (τ : Equiv.Perm (Fin 3)) :
+    anharmonic (Equiv.swap 0 1 * τ) = (anharmonic τ).trans mob01 := by
+  rcases fin_three_cases τ with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    apply Homeomorph.ext <;> intro z
+  · rfl
+  · exact (mob01_mob01 z).symm
+  · rfl
+  · change mobRotInv z = mob01 (mob0Inf z)
+    rw [← mob01_mob1Inf_mob01, mob01_mob01]
+    rfl
+  · change mob1Inf z = mob01 (mobRot z)
+    rw [mobRot_apply, mob01_mob01]
+  · rfl
+
+/-- Left multiplication by the transposition of `1` and `∞` composes with `mob1Inf`. -/
+private theorem anharmonic_swap_one_two_mul (τ : Equiv.Perm (Fin 3)) :
+    anharmonic (Equiv.swap 1 2 * τ) = (anharmonic τ).trans mob1Inf := by
+  rcases fin_three_cases τ with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    apply Homeomorph.ext <;> intro z
+  · rfl
+  · rfl
+  · exact (mob1Inf_mob1Inf z).symm
+  · change mobRot z = mob1Inf (mob0Inf z)
+    rw [← mob1Inf_mob01_mob1Inf, mob1Inf_mob1Inf]
+    rfl
+  · exact (mob1Inf_mob01_mob1Inf z).symm
+  · change mob01 z = mob1Inf (mobRotInv z)
+    rw [mobRotInv_apply, mob1Inf_mob1Inf]
+
 /-- Composition of anharmonic maps agrees with composition of puncture permutations. -/
 theorem anharmonic_mul (ρ τ : Equiv.Perm (Fin 3)) :
     anharmonic (ρ * τ) = (anharmonic τ).trans (anharmonic ρ) := by
-  rcases Equiv.Perm.fin_three_cases (ρ * τ) with hp | hp | hp | hp | hp | hp <;>
-    rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;>
-    rcases Equiv.Perm.fin_three_cases τ with rfl | rfl | rfl | rfl | rfl | rfl <;>
-    first
-    | exact absurd hp (by decide)
-    | rw [hp]
-      simp only [anharmonic_one, anharmonic_swap_zero_one, anharmonic_swap_one_two,
-        anharmonic_swap_zero_two, anharmonic_finRotate, anharmonic_finRotate_inv]
-      apply Homeomorph.ext
-      intro z
-      apply Subtype.ext
-      have h0 := z.ne_zero
-      have h1 := sub_ne_zero.mpr z.ne_one
-      have h1' := sub_ne_zero.mpr z.ne_one.symm
-      simp only [Homeomorph.trans_apply, Homeomorph.refl_apply, id_eq, coe_mob01, coe_mob1Inf,
-        coe_mob0Inf, coe_mobRot, coe_mobRotInv]
-      <;> first | ring1 | (field_simp <;> ring1)
+  have hst : Equiv.swap (0 : Fin 3) 1 * Equiv.swap 1 2 = finRotate 3 := by decide
+  have hts : Equiv.swap (1 : Fin 3) 2 * Equiv.swap 0 1 = (finRotate 3)⁻¹ := by decide
+  have hsts : Equiv.swap (0 : Fin 3) 1 * (Equiv.swap 1 2 * Equiv.swap 0 1) =
+      Equiv.swap 0 2 := by decide
+  rcases fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [one_mul, anharmonic_one]
+    rfl
+  · exact anharmonic_swap_zero_one_mul τ
+  · exact anharmonic_swap_one_two_mul τ
+  · rw [← hsts, mul_assoc, mul_assoc, anharmonic_swap_zero_one_mul,
+      anharmonic_swap_one_two_mul, anharmonic_swap_zero_one_mul]
+    rfl
+  · rw [← hst, mul_assoc, anharmonic_swap_zero_one_mul, anharmonic_swap_one_two_mul]
+    rfl
+  · rw [← hts, mul_assoc, anharmonic_swap_one_two_mul, anharmonic_swap_zero_one_mul]
+    rfl
 
 end Equiv.Perm

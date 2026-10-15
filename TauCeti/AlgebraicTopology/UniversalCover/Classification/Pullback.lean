@@ -39,8 +39,8 @@ its effect on monodromy.
   between the levels.
 
 `TauCeti.ConnectedCoverClass.pullbackSelf` retains a fixed basepoint under any
-self-homeomorphism of a preconnected base, without choosing a connecting path. It satisfies
-the same contravariant composition law.
+self-homeomorphism sending the basepoint into its connected component, without choosing a
+connecting path. It satisfies the same contravariant composition law.
 
 For the thrice-punctured sphere this is how the anharmonic self-homeomorphisms act on covers: the
 pullback along `z ↦ 1 − z`, which fixes the basepoint, realizes the exchange of the branch points
@@ -513,43 +513,48 @@ end ConnectedCoverClass
 
 namespace ConnectedCoverClass
 
-variable {X : Type u} [TopologicalSpace X] [PreconnectedSpace X] {x : X} {n : ℕ}
+variable {X : Type u} [TopologicalSpace X] {x : X} {n : ℕ}
 
 /-- Pull back a bare cover along a self-homeomorphism, retaining the original basepoint.
-The degree can be measured at any point of a connected base, so no connecting path is needed. -/
-noncomputable def pullbackSelf (C : ConnectedCoverClass (X := TopCat.of X) x n) (h : X ≃ₜ X) :
-    ConnectedCoverClass (X := TopCat.of X) x n :=
-  pullback (X := TopCat.of X) (Y := TopCat.of X) h rfl
-    (C.basepointChange (x₁ := h x) (by simp [PreconnectedSpace.connectedComponent_eq_univ]))
+The degree is constant on the basepoint's connected component, so no connecting path is needed. -/
+noncomputable def pullbackSelf (C : ConnectedCoverClass (X := TopCat.of X) x n) (h : X ≃ₜ X)
+    (hx : h x ∈ connectedComponent x) : ConnectedCoverClass (X := TopCat.of X) x n :=
+  pullback (X := TopCat.of X) (Y := TopCat.of X) h rfl (C.basepointChange hx)
 
 /-- On a representative, `pullbackSelf` changes only the projection of the cover. -/
-@[simp] theorem pullbackSelf_mk (c : ConnectedCover (X := TopCat.of X) x n) (h : X ≃ₜ X) :
-    (mk c).pullbackSelf h =
+@[simp] theorem pullbackSelf_mk (c : ConnectedCover (X := TopCat.of X) x n) (h : X ≃ₜ X)
+    (hx : h x ∈ connectedComponent x) :
+    (mk c).pullbackSelf h hx =
       mk (ConnectedCover.pullback (X := TopCat.of X) (Y := TopCat.of X) h rfl
-        (c.basepointChange (x₁ := h x)
-          (by simp [PreconnectedSpace.connectedComponent_eq_univ]))) := by
+        (c.basepointChange hx)) := by
   simp [pullbackSelf]
 
 /-- Retaining the original basepoint after pullback agrees with moving the pulled-back
-basepoint back, for any specified inverse image of the basepoint. -/
+basepoint back, for any specified inverse image in the same connected component. -/
 theorem pullbackSelf_eq_basepointChange_pullback (C : ConnectedCoverClass (X := TopCat.of X) x n)
-    (h : X ≃ₜ X) {y : X} (hy : h y = x) :
-    C.pullbackSelf h = (C.pullback h hy).basepointChange
-      (by simp [PreconnectedSpace.connectedComponent_eq_univ]) := by
+    (h : X ≃ₜ X) {y : X} (hy : h y = x) (hyx : x ∈ connectedComponent y) :
+    C.pullbackSelf h (by simpa only [hy] using h.continuous.mapsTo_connectedComponent y hyx) =
+      (C.pullback h hy).basepointChange hyx := by
   obtain ⟨c, rfl⟩ := mk_surjective C
   rw [pullbackSelf_mk, pullback_mk, basepointChange_mk]
   exact congrArg mk (ConnectedCover.ext (by simp))
 
 /-- A basepoint-preserving self-homeomorphism needs no change of basepoint. -/
 theorem pullbackSelf_eq_pullback (C : ConnectedCoverClass (X := TopCat.of X) x n)
-    (h : X ≃ₜ X) (hx : h x = x) : C.pullbackSelf h = C.pullback h hx := by
+    (h : X ≃ₜ X) (hx : h x = x) :
+    C.pullbackSelf h (hx.symm ▸ mem_connectedComponent) = C.pullback h hx := by
   obtain ⟨c, rfl⟩ := mk_surjective C
   rw [pullbackSelf_mk, pullback_mk]
   exact congrArg mk (ConnectedCover.ext (by simp))
 
-/-- Pullback at a fixed basepoint is contravariant in self-homeomorphisms. -/
-theorem pullbackSelf_trans (C : ConnectedCoverClass (X := TopCat.of X) x n) (h k : X ≃ₜ X) :
-    C.pullbackSelf (h.trans k) = (C.pullbackSelf k).pullbackSelf h := by
+/-- Pullback at a fixed basepoint is contravariant in self-homeomorphisms preserving its
+connected component. -/
+theorem pullbackSelf_trans (C : ConnectedCoverClass (X := TopCat.of X) x n) (h k : X ≃ₜ X)
+    (hx : h x ∈ connectedComponent x) (kx : k x ∈ connectedComponent x) :
+    C.pullbackSelf (h.trans k)
+        (by simpa only [Homeomorph.trans_apply, ← connectedComponent_eq kx] using
+          k.continuous.mapsTo_connectedComponent x hx) =
+      (C.pullbackSelf k kx).pullbackSelf h hx := by
   obtain ⟨c, rfl⟩ := mk_surjective C
   simp only [pullbackSelf_mk]
   apply congrArg mk
@@ -561,7 +566,7 @@ theorem pullbackSelf_trans (C : ConnectedCoverClass (X := TopCat.of X) x n) (h k
 
 /-- Pullback along the identity leaves a cover class unchanged. -/
 @[simp] theorem pullbackSelf_refl (C : ConnectedCoverClass (X := TopCat.of X) x n) :
-    C.pullbackSelf (Homeomorph.refl X) = C := by
+    C.pullbackSelf (Homeomorph.refl X) mem_connectedComponent = C := by
   rw [pullbackSelf_eq_pullback C _ rfl, pullback_refl]
 
 end ConnectedCoverClass
