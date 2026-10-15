@@ -157,6 +157,12 @@ theorem classicalDGLocalSystem_differential (L : LocalCoefficientSystem.{u, u, w
     (classicalDGLocalSystem x L).differential = 0 :=
   (rfl)
 
+/-- The DG local system of a classical local system is concentrated in degree zero. -/
+theorem isConcentratedInDegreeZero_classicalDGLocalSystem
+    (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (classicalDGLocalSystem x L).IsConcentratedInDegreeZero :=
+  DGRightModuleCat.isConcentratedInDegreeZero_iff.2 fun _ hq ↦ trivialGrading_eq_bot R _ hq
+
 /-- A Moore loop acts on the fiber by the monodromy of its class: the point chain of a loop `γ`
 acts by the monodromy of the inverse of `fundamentalGroupHom γ`, that is of the class of `γ`. -/
 @[simp]

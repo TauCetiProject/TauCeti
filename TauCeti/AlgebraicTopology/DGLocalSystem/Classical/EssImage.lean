@@ -33,11 +33,13 @@ system is `M`.
   system is the DG local system of the local system of that representation.
 * `TauCeti.classicalDGLocalSystemEquivalence`: on a path-connected space, classical local systems
   are equivalent to the DG local systems concentrated in degree zero.
+* `TauCeti.classicalDGLocalSystemEquivalenceInverseObjIso`: its inverse sends `M` to the local
+  system of `hM.representation`.
 
 ## Main results
 
-* `TauCeti.isConcentratedInDegreeZero_classicalDGLocalSystem`: the DG local system of a classical
-  local system is concentrated in degree zero.
+* `DGRightModuleCat.IsConcentratedInDegreeZero.representation_fundamentalGroupHom_inv_apply`:
+  the inverse of the class of a Moore loop acts as the point chain of the loop.
 * `TauCeti.essImage_classicalDGLocalSystemFunctor`: on a path-connected space, the essential image
   of the functor from classical local systems is the DG local systems concentrated in degree zero.
 
@@ -60,12 +62,6 @@ namespace TauCeti
 universe u w
 
 variable {R : Type u} [CommRing R] {X : TopCat.{u}} {x : X}
-
-/-- The DG local system of a classical local system is concentrated in degree zero. -/
-theorem isConcentratedInDegreeZero_classicalDGLocalSystem
-    (L : LocalCoefficientSystem.{u, u, w} R X) :
-    (classicalDGLocalSystem x L).IsConcentratedInDegreeZero :=
-  DGRightModuleCat.isConcentratedInDegreeZero_iff.2 fun _ hq ↦ trivialGrading_eq_bot R _ hq
 
 namespace DGRightModuleCat.IsConcentratedInDegreeZero
 
@@ -142,6 +138,15 @@ theorem representation_apply (g : FundamentalGroup X x) :
     hM.representation g = (hM.groupAlgebraAction (MonoidAlgebra.of R _ g⁻¹)).unop :=
   (rfl)
 
+/-- The inverse of the class of a Moore loop `γ` acts as the point chain of `γ`. -/
+theorem representation_fundamentalGroupHom_inv_apply (γ : MooreLoopSpace X x) (m : M) :
+    hM.representation (MooreLoopSpace.fundamentalGroupHom x γ)⁻¹ m =
+      op (cubicalChainLof (MooreLoopSpace X x) R 0
+        (NormalizedCubicalChain.ofCube (MooreLoopSpace X x) R (SingularCube.point γ))) • m := by
+  rw [representation_apply, inv_inv, MonoidAlgebra.of_apply,
+    ← groupAlgebraAction_loopChainToGroupAlgebra, loopChainToGroupAlgebra_lof_zero,
+    loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply]
+
 /-- The right action of the fundamental group on the fiber of the local system of the
 representation is the action of the group ring. -/
 theorem lift_fiberRightAction_ofRepresentation [PathConnectedSpace X] :
@@ -153,6 +158,10 @@ theorem lift_fiberRightAction_ofRepresentation [PathConnectedSpace X] :
   MonoidAlgebra.algHom_ext (fun g ↦ by
     rw [MonoidAlgebra.lift_single, one_smul, LocalCoefficientSystem.fiberRightAction_apply,
       LocalCoefficientSystem.monodromyRepresentation_ofRepresentation]
+    -- The two sides live in the endomorphisms of the fiber `(ofRepresentation x ρ)_x` and of `M`,
+    -- which agree by `LocalCoefficientSystem.ofRepresentation_obj` only up to unfolding, so
+    -- `representation_apply` is applied by `change` rather than by `rw`; for the same reason the
+    -- final equation, between the same element at the two types, is closed by `rfl`.
     change op (hM.groupAlgebraAction (MonoidAlgebra.of R _ g⁻¹⁻¹)).unop = _
     rw [inv_inv, op_unop, MonoidAlgebra.of_apply]
     rfl) (Subsingleton.elim _ _)
@@ -192,6 +201,9 @@ theorem classicalDGLocalSystemIso_inv_apply [PathConnectedSpace X] (m : M) :
 @[simp]
 theorem classicalDGLocalSystemIso_hom_apply [PathConnectedSpace X] (m : M) :
     hM.classicalDGLocalSystemIso.hom m = m :=
+  -- Unlike the inverse, `isoMk_hom_apply` does not unify here: its right-hand side `e m` has to be
+  -- matched against `m` across the carriers `(ofRepresentation x _)_x` and `M`, so the statement
+  -- is reduced to `classicalDGLocalSystemIso_inv_apply`.
   calc hM.classicalDGLocalSystemIso.hom m
       = hM.classicalDGLocalSystemIso.hom (hM.classicalDGLocalSystemIso.inv m) := by
         rw [classicalDGLocalSystemIso_inv_apply]
@@ -241,5 +253,16 @@ theorem classicalDGLocalSystemEquivalence_functor :
       ObjectProperty.lift _ (classicalDGLocalSystemFunctor.{u, w} R x)
         isConcentratedInDegreeZero_classicalDGLocalSystem :=
   (rfl)
+
+/-- **The inverse of the equivalence**: it sends a DG local system concentrated in degree zero to
+the local system of its representation of the fundamental group, up to isomorphism. -/
+def classicalDGLocalSystemEquivalenceInverseObjIso
+    (N : ObjectProperty.FullSubcategory (DGRightModuleCat.IsConcentratedInDegreeZero :
+      ObjectProperty (DGLocalSystem.{w} X x R))) :
+    (classicalDGLocalSystemEquivalence R x).inverse.obj N ≅
+      LocalCoefficientSystem.ofRepresentation x N.property.representation :=
+  (classicalDGLocalSystemEquivalence R x).fullyFaithfulFunctor.preimageIso
+    ((classicalDGLocalSystemEquivalence R x).counitIso.app N ≪≫
+      (ObjectProperty.fullyFaithfulι _).preimageIso N.property.classicalDGLocalSystemIso.symm)
 
 end TauCeti
