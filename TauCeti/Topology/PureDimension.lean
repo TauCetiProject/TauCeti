@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.KrullDimension
+public import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Pure-dimensional topological spaces
