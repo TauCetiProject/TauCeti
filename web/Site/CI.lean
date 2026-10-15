@@ -89,6 +89,7 @@ These timelines show up to the last thirty days, including the current partial U
 The backlog counts distinct PRs in the recorded ready-to-merge snapshots, including PRs
 being tested. The label is a readiness hint; admission still checks the current head's CI,
 reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
+Snapshots can briefly undercount while the bot rebuilds its candidate scan after a restart.
 
 :::blob queueSizeGraph
 :::

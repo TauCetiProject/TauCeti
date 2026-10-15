@@ -174,8 +174,8 @@ class MergeTimelinesTest(unittest.TestCase):
                           (daily.ts("2026-10-07T10:01:00Z"), 0)])
 
     def test_fractional_timestamps_and_partial_day_respect_window(self):
-        for stamp in ("2026-10-05T23:59:59.999Z", "2026-10-06T00:00:00Z",
-                      "2026-10-08T11:59:59.999Z", "2026-10-08T12:00:00Z"):
+        for stamp in ("2026-10-05T23:59:59.999999Z", "2026-10-06T00:00:00Z",
+                      "2026-10-08T11:59:59.999000Z", "2026-10-08T12:00:00Z"):
             self.sample(stamp, [42])
             self.staging(len(self.db.execute("SELECT * FROM runs").fetchall()), [42], stamp=stamp)
         m = self.history()
@@ -219,6 +219,29 @@ class MergeTimelinesTest(unittest.TestCase):
         self.assertIn(f",{daily.BOTTOM:.1f}", lines[0].attrib["points"])
         end_x = float(lines[-1].attrib["points"].split()[-1].split(",")[0])
         self.assertLess(end_x, daily.W-daily.R)
+
+    def test_non_failure_terminal_outcomes_are_grey(self):
+        for number, conclusion in enumerate(("stale", "action_required", "neutral"), 1):
+            self.staging(number, [42], conclusion)
+        dots = list(self.svg("ci-bors-staging.svg").iter("{http://www.w3.org/2000/svg}circle"))
+        self.assertEqual([p.attrib["fill"] for p in dots], [daily.MUTED] * 3)
+
+    def test_eleven_pr_maximum_has_whole_pr_ticks_on_both_graphs(self):
+        self.sample("2026-10-07T10:00:00Z", list(range(1, 12)))
+        self.staging(1, list(range(1, 12)))
+        for name in ("ci-queue-size.svg", "ci-bors-staging.svg"):
+            ticks = [node.text for node in self.svg(name).iter("{http://www.w3.org/2000/svg}text")
+                     if node.attrib.get("text-anchor") == "end"]
+            self.assertTrue(all(float(t).is_integer() for t in ticks), ticks)
+            self.assertGreaterEqual(float(ticks[-1]), 11)
+
+    def test_short_multiday_window_has_distinct_time_tick_labels(self):
+        self.staging(1, [42], stamp="2026-10-06T10:00:00Z")
+        labels = [node.text for node in self.svg("ci-bors-staging.svg").iter("{http://www.w3.org/2000/svg}text")
+                  if node.attrib.get("y") == str(daily.BOTTOM+18)]
+        self.assertGreater(len(labels), 1)
+        self.assertEqual(len(labels), len(set(labels)))
+        self.assertTrue(all(":" in label for label in labels))
 
     def test_empty_history_has_explicit_messages_and_whole_pr_ticks(self):
         charts = daily.merge_charts(self.db, self.until)

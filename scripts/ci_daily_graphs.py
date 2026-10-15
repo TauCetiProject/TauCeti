@@ -386,7 +386,9 @@ def merge_history(db: sqlite3.Connection, since: float, until: float) -> dict:
 
 def time_axes(out: list[str], since: float, until: float, vmax: int, ylabel: str):
     """A continuous UTC time axis and a whole-PR count axis."""
-    step, top = nice_max(max(vmax, 5))
+    step, _ = nice_max(max(vmax, 5))
+    step = math.ceil(step)
+    top = step * math.ceil(max(vmax, 5) / step)
     x = lambda t: L + (t - since) / (until - since) * (W - L - R)
     y = lambda v: BOTTOM - v / top * (BOTTOM - TOP)
     v = 0
@@ -403,7 +405,7 @@ def time_axes(out: list[str], since: float, until: float, vmax: int, ylabel: str
     t = math.ceil(since / tick) * tick
     while t < until:
         stamp = dt.datetime.fromtimestamp(t, UTC)
-        label = stamp.strftime("%d %b %H:%M" if span <= 2*86400 else "%d %b")
+        label = stamp.strftime("%d %b %H:%M" if tick < 86400 else "%d %b")
         out.append(f'<text class="tick" x="{x(t):.1f}" y="{BOTTOM+18}" text-anchor="middle">{label}</text>')
         t += tick
     out.append(f'<line class="axis" x1="{L}" x2="{W-R}" y1="{BOTTOM}" y2="{BOTTOM}"/>'
@@ -452,7 +454,7 @@ def merge_charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     for r in runs:
         conclusion = r["conclusion"]
         colour = (PALETTE[5] if conclusion == "success" else PALETTE[3]
-                  if conclusion in {"failure", "timed_out", "action_required", "startup_failure", "stale"}
+                  if conclusion in {"failure", "timed_out", "startup_failure"}
                   else MUTED)
         stamp = dt.datetime.fromtimestamp(r["at"], UTC).strftime("%d %b %Y %H:%M:%S UTC")
         label = (f'Run {r["run_id"]}, attempt {r["attempt"]}, batch {r["batch"]}: '
