@@ -69,6 +69,8 @@ decreases, as in the implication from `CD(K, N)` to `CD(K', N)` for `K' ≤ K`.
 * `TauCeti.distortionSigma_eq_top_iff`, `TauCeti.distortionTau_eq_top_iff`: for `N > 0`,
   `σ_{K,N}^{(t)}(θ)` is infinite exactly when `N π² ≤ K θ²`; for `N > 1`, `τ_{K,N}^{(t)}(θ)`
   is infinite exactly when `(N - 1) π² ≤ K θ²`.
+* `TauCeti.distortionTau_eq_top_of_lt`: for `K > 0`, `τ_{K,N}^{(t)}(θ)` is infinite beyond the
+  Bonnet–Myers distance `π √((N - 1) / K)`.
 * `TauCeti.distortionSigma_time_one`, `TauCeti.distortionTau_time_one`: below the critical
   distance both coefficients equal `1` at time `1`.
 
@@ -391,6 +393,19 @@ theorem distortionTau_eq_top_iff (hN : 1 < N) :
   have hNi : N⁻¹ < 1 := inv_lt_one_of_one_lt₀ hN
   rw [distortionTau_of_one_lt hN hπ, ENNReal.mul_eq_top] at h
   simp [ENNReal.rpow_eq_top_iff, hσ, hN₀, hN₀.not_gt, hNi.not_gt] at h
+
+/-- For `K > 0`, the coefficient `τ_{K,N}^{(t)}(θ)` is infinite beyond the Bonnet–Myers distance
+`π √((N - 1) / K)`, which is `0` for `N ≤ 1`. -/
+theorem distortionTau_eq_top_of_lt (hK : 0 < K) (h : π * √((N - 1) / K) < θ) :
+    distortionTau K N t θ = ⊤ := by
+  have hθ : 0 < θ := (by positivity : 0 ≤ π * √((N - 1) / K)).trans_lt h
+  rcases lt_or_ge 1 N with hN | hN
+  · refine distortionTau_eq_top_of_le hN ?_
+    have hsq := pow_lt_pow_left₀ h (by positivity) two_ne_zero
+    rw [mul_pow, Real.sq_sqrt (div_nonneg (sub_pos.2 hN).le hK.le), mul_div_assoc', div_lt_iff₀ hK]
+      at hsq
+    linarith
+  · rw [distortionTau_of_le_one hN, ite_eq_left (by positivity)]
 
 /-- Below the critical distance, `τ_{K,N}^{(1)}(θ) = 1`. -/
 @[simp]
