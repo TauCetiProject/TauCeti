@@ -159,8 +159,8 @@ theorem preimage_pairReindex_eq_self_of_measurableSet_arrayTail
     (fun k hk => hM k ((le_max_left M N).trans hk)) fun k hk => hN k ((le_max_right M N).trans hk)
 
 /-- **Every corner-tail event is fixed by the diagonal action**: a finitely supported relabelling
-of both coordinates changes only finitely many entries, and a corner-tail event does not read
-them. -/
+of both coordinates leaves every entry in a sufficiently far corner unchanged, which is all that a
+corner-tail event reads. -/
 theorem preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail
     {s : Set (ℕ × ℕ → α)}
     (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
