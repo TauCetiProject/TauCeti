@@ -62,6 +62,8 @@ space `W^{1,p}` on an interval by difference quotients.
   limits of curves with bounded actions are absolutely continuous.
 * `TauCeti.curveAction_le_liminf` and `TauCeti.curveAction_le_liminf_of_one_lt`: lower
   semicontinuity of the action under pointwise convergence.
+* `TauCeti.isClosed_setOfPred_absolutelyContinuousOnInterval_and_curveAction_le`: for `1 < p`, the
+  absolutely continuous paths of action at most `C < ∞` form a closed subset of `C([a, b], X)`.
 * `TauCeti.measurable_curveAction` and `TauCeti.measurable_curveAction_IccExtend`: measurability
   of the action in a measurable family of continuous curves and on the path space `C([a, b], X)`.
 
@@ -101,6 +103,12 @@ def curveAction (p : ℝ) (γ : ℝ → X) (a b : ℝ) : ℝ≥0∞ :=
 theorem curveAction_def (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
     curveAction p γ a b = ∫⁻ t in Ι a b, metricDerivative γ t ^ p :=
   (rfl)
+
+/-- Post-composing a curve with an isometry leaves its `p`-action unchanged. -/
+theorem _root_.Isometry.curveAction_comp {Y : Type*} [PseudoEMetricSpace Y] {f : X → Y}
+    (hf : Isometry f) (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
+    curveAction p (f ∘ γ) a b = curveAction p γ a b := by
+  simp only [curveAction_def, hf.metricDerivative_comp]
 
 /-- The `p`-action does not depend on the orientation of the interval. -/
 theorem curveAction_comm (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
@@ -503,6 +511,31 @@ theorem curveAction_le_liminf_of_one_lt [l.IsCountablyGenerated] (hp : 1 < p)
     exact le_top
   · exact curveAction_le_liminf hp.le hγs
       (absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top hp hγs hlim hA) hlim
+
+/-- **Closedness of action sublevels in path space.** For `1 < p` and `C ≠ ∞`, the paths in
+`C([a, b], X)` that are absolutely continuous on `[a, b]` with `p`-action at most `C` form a closed
+set for the uniform topology. The bound `C ≠ ∞` is needed: uniform limits of absolutely continuous
+paths need not be absolutely continuous. -/
+theorem isClosed_setOfPred_absolutelyContinuousOnInterval_and_curveAction_le (hab : a ≤ b)
+    (hp : 1 < p) {C : ℝ≥0∞} (hC : C ≠ ∞) :
+    IsClosed {γ : C(Icc a b, X) | AbsolutelyContinuousOnInterval (IccExtend hab γ) a b ∧
+      curveAction p (IccExtend hab γ) a b ≤ C} := by
+  refine isClosed_iff_clusterPt.2 fun γ hγ ↦ ?_
+  set S := {γ : C(Icc a b, X) | AbsolutelyContinuousOnInterval (IccExtend hab γ) a b ∧
+    curveAction p (IccExtend hab γ) a b ≤ C}
+  -- Approach `γ` through paths of the sublevel set.
+  have : (𝓝 γ ⊓ 𝓟 S).NeBot := hγ
+  have hS : ∀ᶠ δ in 𝓝 γ ⊓ 𝓟 S, δ ∈ S := mem_inf_of_right (mem_principal_self S)
+  have hlim (t : ℝ) (_ : t ∈ uIcc a b) : Tendsto (fun δ : C(Icc a b, X) ↦ IccExtend hab δ t)
+      (𝓝 γ ⊓ 𝓟 S) (𝓝 (IccExtend hab γ t)) := by
+    simp only [IccExtend_apply]
+    exact ((continuous_eval_const _).tendsto γ).mono_left inf_le_left
+  have hle : liminf (fun δ : C(Icc a b, X) ↦ curveAction p (IccExtend hab δ) a b)
+      (𝓝 γ ⊓ 𝓟 S) ≤ C :=
+    liminf_le_of_frequently_le' (hS.mono fun _ hδ ↦ hδ.2).frequently
+  have hAC := hS.mono fun _ hδ ↦ hδ.1
+  exact ⟨absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top hp hAC hlim
+    (ne_top_of_le_ne_top hC hle), (curveAction_le_liminf_of_one_lt hp hAC hlim).trans hle⟩
 
 end LowerSemicontinuous
 
