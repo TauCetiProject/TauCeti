@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.SymmetricAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
-public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Basic
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Fixed
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
-import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Noetherian
 import TauCeti.RingTheory.GradedAlgebra.FiniteType
 
@@ -80,31 +77,6 @@ namespace ComoduleAlgebra
 
 universe u v w
 
-section Semiring
-
-variable {R : Type*} {H : Type*} {A : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
-  [Semiring A] [Algebra R A] [ComoduleAlgebra R H A]
-
-/-- Left multiplication by an invariant element of a comodule algebra, as a comodule
-endomorphism. -/
-noncomputable def mulLeftHom (a : A) (ha : a ∈ coinvariants R H A) :
-    Comodule.Hom R H A A where
-  toLinearMap := LinearMap.mulLeft R a
-  map_coact := by
-    ext b
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply, coact_mul,
-      mem_coinvariants.1 ha]
-    induction Comodule.coact (R := R) (C := H) b using TensorProduct.inductionOn with
-    | tmul c h => simp
-    | add x y hx hy => rw [map_add, hx, hy, mul_add]
-
-@[simp]
-theorem mulLeftHom_apply (a : A) (ha : a ∈ coinvariants R H A) (b : A) :
-    mulLeftHom a ha b = a * b :=
-  (rfl)
-
-end Semiring
-
 section Field
 
 variable {k : Type u} [Field k] {H : Type v} [Semiring H] [Bialgebra k H]
@@ -136,41 +108,6 @@ theorem comap_map_coinvariants (hH : Coalgebra.IsLinearlyReductive.{u, v, u} k H
   exact J.sum_mem fun i _ ↦ J.mul_mem_left _ (hjJ i)
 
 end Field
-
-/-! ### The symmetric algebra -/
-
-section SymmetricAlgebra
-
-variable {R : Type*} {H : Type*} {M : Type*} [CommSemiring R] [CommSemiring H] [Bialgebra R H]
-  [AddCommMonoid M] [Module R M] [Comodule R H M]
-
-variable (R H M) in
-/-- The symmetric algebra of a comodule over a commutative bialgebra is a comodule algebra, with
-the multiplicative coaction `TauCeti.Comodule.symmetricAlgebraCoact`.
-
-Like `TauCeti.Comodule.symmetricAlgebra`, this is not a global instance. -/
-@[implicit_reducible]
-noncomputable def symmetricAlgebra : ComoduleAlgebra R H (SymmetricAlgebra R M) where
-  toComodule := Comodule.symmetricAlgebra R H M
-  coact_one := by rw [Comodule.symmetricAlgebra_coact, AlgHom.toLinearMap_apply, map_one]
-  coact_mul x y := by rw [Comodule.symmetricAlgebra_coact, AlgHom.toLinearMap_apply,
-    AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, map_mul]
-
-attribute [local instance] symmetricAlgebra
-
-/-- The homogeneous components of an invariant of the symmetric algebra of a comodule are
-invariant. -/
-theorem decompose_mem_coinvariants_symmetricAlgebra {x : SymmetricAlgebra R M}
-    (hx : x ∈ coinvariants R H (SymmetricAlgebra R M)) (n : ℕ) :
-    (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule R M) x n : SymmetricAlgebra R M) ∈
-      coinvariants R H (SymmetricAlgebra R M) := by
-  rw [← SetLike.mem_coe, coe_coinvariants] at hx ⊢
-  exact Comodule.decompose_mem_fixedSubcomodule _
-    (fun _ _ hy ↦ by
-      rw [Comodule.symmetricAlgebra_coact, AlgHom.toLinearMap_apply]
-      exact Comodule.symmetricAlgebraCoact_mem_decomposeTensor hy) hx n
-
-end SymmetricAlgebra
 
 /-! ### Hilbert's finiteness theorem -/
 
@@ -204,26 +141,6 @@ variable {k : Type u} [Field k] {H : Type v} [CommSemiring H] [Bialgebra k H]
 
 attribute [local instance] symmetricAlgebra
 
-/-- The algebra homomorphism from the symmetric algebra of a subcomodule of a comodule algebra,
-extending the inclusion, is a comodule morphism. -/
-private noncomputable def liftSubcomoduleHom [Module.Flat k H] (V : Subcomodule k H A) :
-    Comodule.Hom k H (SymmetricAlgebra k V) A where
-  toLinearMap := (SymmetricAlgebra.lift (SMulMemClass.subtype V)).toLinearMap
-  map_coact := by
-    have h : (Algebra.TensorProduct.map (SymmetricAlgebra.lift (SMulMemClass.subtype V))
-        (AlgHom.id k H)).comp (Comodule.symmetricAlgebraCoact k H V) =
-        (coactAlgHom k H A).comp (SymmetricAlgebra.lift (SMulMemClass.subtype V)) := by
-      apply SymmetricAlgebra.algHom_ext
-      ext v
-      simp only [← AlgHom.toLinearMap_eq_coe, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-        AlgHom.comp_apply, Comodule.symmetricAlgebraCoact_ι, SymmetricAlgebra.lift_ι_apply,
-        coactAlgHom_apply]
-      rw [SMulMemClass.coe_subtype, ← Subcomodule.subtype_rTensor_coact V v]
-      induction Comodule.coact (R := k) (C := H) v using TensorProduct.inductionOn with
-      | tmul w h => simp
-      | add x y hx hy => simp only [map_add, hx, hy]
-    simpa [TensorProduct.AlgebraTensorModule.map_eq] using congrArg AlgHom.toLinearMap h
-
 /-- **Finite generation of invariants.** The invariants of a finitely generated commutative
 comodule algebra over a linearly reductive commutative bialgebra form a finitely generated
 algebra. Geometrically, the invariant functions on an affine scheme of finite type acted on by a
@@ -238,23 +155,23 @@ theorem finiteType_coinvariants (hH : Coalgebra.IsLinearlyReductive.{u, v, u} k 
   have : Module.Finite k V := hVfin
   -- `Sym V` maps onto `A`, equivariantly.
   let φ := liftSubcomoduleHom V
-  have hφ (v : V) : φ (SymmetricAlgebra.ι k V v) = v := SymmetricAlgebra.lift_ι_apply _ _
   have hrange : (SymmetricAlgebra.lift (SMulMemClass.subtype V)).range = ⊤ := by
     rw [eq_top_iff, ← hs, Algebra.adjoin_le_iff]
     intro a ha
-    exact ⟨SymmetricAlgebra.ι k V ⟨a, hsV ha⟩, hφ ⟨a, hsV ha⟩⟩
+    exact ⟨SymmetricAlgebra.ι k V ⟨a, hsV ha⟩, by simp⟩
   -- By exactness of invariants, the invariants of `A` are the image of those of `Sym V`.
   have himage : (coinvariants k H (SymmetricAlgebra k V)).map
       (SymmetricAlgebra.lift (SMulMemClass.subtype V)) = coinvariants k H A := by
     apply le_antisymm
     · rintro _ ⟨y, hy, rfl⟩
-      exact mem_coinvariants.2 (Comodule.mem_fixedSubcomodule.1
-        (φ.mem_fixedSubcomodule (Comodule.mem_fixedSubcomodule.2 (mem_coinvariants.1 hy))))
+      exact mem_coinvariants.2 (Comodule.mem_fixedSubcomodule.1 (by
+        simpa [φ] using
+          φ.mem_fixedSubcomodule (Comodule.mem_fixedSubcomodule.2 (mem_coinvariants.1 hy))))
     · intro a ha
       obtain ⟨y, hy⟩ := (AlgHom.mem_range _).1 (hrange ▸ Algebra.mem_top : a ∈ _)
       obtain ⟨z, hz, hza⟩ := φ.exists_fixed_preimage_of_isLinearlyReductive hH
-        (Comodule.mem_fixedSubcomodule.2 (mem_coinvariants.1 ha)) ⟨y, hy⟩
-      exact ⟨z, mem_coinvariants.2 (Comodule.mem_fixedSubcomodule.1 hz), hza⟩
+        (Comodule.mem_fixedSubcomodule.2 (mem_coinvariants.1 ha)) ⟨y, by simpa [φ] using hy⟩
+      exact ⟨z, mem_coinvariants.2 (Comodule.mem_fixedSubcomodule.1 hz), by simpa [φ] using hza⟩
   rw [← Subalgebra.fg_iff_finiteType, ← himage]
   exact (fg_coinvariants_symmetricAlgebra hH V).map _
 
