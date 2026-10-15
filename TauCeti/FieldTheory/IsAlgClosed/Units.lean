@@ -19,17 +19,17 @@ from subgroups by Baer's criterion.
 
 public section
 
-namespace IsAlgClosed
+namespace TauCeti.IsAlgClosed
 
 variable (k : Type*) [Field k] [IsAlgClosed k]
 
 /-- The unit group of an algebraically closed field is divisible. -/
 noncomputable instance unitsRootableByNat : RootableBy kˣ ℕ :=
   rootableByOfPowLeftSurj kˣ ℕ fun {n} hn a ↦ by
-    obtain ⟨z, hz⟩ := exists_pow_nat_eq (a : k) (Nat.pos_of_ne_zero hn)
+    obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (a : k) (Nat.pos_of_ne_zero hn)
     have hz0 : z ≠ 0 := by
       rintro rfl
       exact a.ne_zero (by simpa [zero_pow hn] using hz.symm)
     exact ⟨Units.mk0 z hz0, Units.ext hz⟩
 
-end IsAlgClosed
+end TauCeti.IsAlgClosed
