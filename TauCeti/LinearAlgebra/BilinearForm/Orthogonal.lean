@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
@@ -31,6 +33,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 
 * `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
   which the form is right-separating are independent.
+* `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
+  disjoint sets of indices are orthogonal.
+* `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
+  forms are isometric.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -73,6 +79,54 @@ theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι 
   have hle : ⨆ (j) (_ : j ≠ i), N j ≤ B.orthogonal (N i) :=
     iSup₂_le fun j hj y hy z hz ↦ hO i j (Ne.symm hj) z hz y hy
   exact congrArg Subtype.val (hN i ⟨x, hxi⟩ fun z ↦ hle hx z z.2)
+
+/-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
+sets are orthogonal. -/
+theorem apply_eq_zero_of_mem_biSup (B : LinearMap.BilinForm K V) {ι : Type*}
+    {N : ι → Submodule K V} (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    {s t : Set ι} (hst : Disjoint s t) {x y : V} (hx : x ∈ ⨆ i ∈ s, N i)
+    (hy : y ∈ ⨆ j ∈ t, N j) : B x y = 0 := by
+  have hle : ⨆ i ∈ s, N i ≤ ⨅ y ∈ ⨆ j ∈ t, N j, LinearMap.ker (B.flip y) :=
+    iSup₂_le fun i hi x hx ↦ by
+      have hker : ⨆ j ∈ t, N j ≤ LinearMap.ker (B x) :=
+        iSup₂_le fun j hj y hy ↦ hO i j (hst.ne_of_mem hi hj) x hx y hy
+      simpa only [Submodule.mem_iInf, LinearMap.mem_ker, flip_apply] using fun y hy ↦ hker hy
+  simpa using (Submodule.mem_iInf _).mp ((Submodule.mem_iInf _).mp (hle hx) y) hy
+
+/-- **Orthogonal sums of isometric forms are isometric.** If two modules are internal direct sums
+of pairwise orthogonal families of submodules indexed by the same type, and the restrictions of the
+forms to corresponding members are isometric, then the forms are isometric. -/
+theorem equivalent_of_isInternal {M : Type*} [AddCommMonoid M] [Module K M] {ι : Type*}
+    [DecidableEq ι] {B : LinearMap.BilinForm K V} {B' : LinearMap.BilinForm K M}
+    {N : ι → Submodule K V} {N' : ι → Submodule K M} (hN : DirectSum.IsInternal N)
+    (hN' : DirectSum.IsInternal N')
+    (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0)
+    (hO' : ∀ i j, i ≠ j → ∀ x ∈ N' i, ∀ y ∈ N' j, B' x y = 0)
+    (h : ∀ i, (B.restrict (N i)).Equivalent (B'.restrict (N' i))) : B.Equivalent B' := by
+  let u i : N i ≃ₗ[K] N' i := (h i).some.toLinearEquiv
+  let e := DirectSum.congrLinearEquiv u
+  -- Both forms, pulled back to `⨁ i, N i`, agree on pairs of generators.
+  have key : B.compl₁₂ (DirectSum.coeLinearMap N) (DirectSum.coeLinearMap N) =
+      B'.compl₁₂ (DirectSum.coeLinearMap N' ∘ₗ e.toLinearMap)
+        (DirectSum.coeLinearMap N' ∘ₗ e.toLinearMap) := by
+    refine DirectSum.linearMap_ext K fun i ↦ LinearMap.ext fun x ↦
+      DirectSum.linearMap_ext K fun j ↦ LinearMap.ext fun y ↦ ?_
+    simp only [LinearMap.comp_apply, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, e,
+      DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof, DirectSum.coeLinearMap_lof]
+    by_cases hij : i = j
+    · subst hij
+      exact ((h i).some.map_app y x).symm
+    · rw [hO i j hij _ x.2 _ y.2, hO' i j hij _ (u i x).2 _ (u j y).2]
+  let c := LinearEquiv.ofBijective (DirectSum.coeLinearMap N) hN
+  have hc (x : V) : DirectSum.coeLinearMap N (c.symm x) = x := c.apply_symm_apply x
+  refine ⟨⟨c.symm ≪≫ₗ e ≪≫ₗ LinearEquiv.ofBijective (DirectSum.coeLinearMap N') hN',
+    fun x y ↦ ?_⟩⟩
+  -- The isometry decomposes `x`, applies the isometries `u i` and recombines; the first step of
+  -- the calculation spells this composite out.
+  calc B' (DirectSum.coeLinearMap N' (e (c.symm x))) (DirectSum.coeLinearMap N' (e (c.symm y)))
+      = B (DirectSum.coeLinearMap N (c.symm x)) (DirectSum.coeLinearMap N (c.symm y)) :=
+        (LinearMap.congr_fun₂ key _ _).symm
+    _ = B x y := by rw [hc, hc]
 
 end LinearMap.BilinForm
 

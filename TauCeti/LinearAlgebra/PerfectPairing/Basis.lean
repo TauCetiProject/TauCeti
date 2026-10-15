@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 
 /-!
@@ -21,7 +22,8 @@ over every commutative ring.
 
 More generally, a bilinear form whose Gram matrix `G` in a finite basis has unit determinant is a
 perfect pairing: in coordinates it is the invertible map `x ↦ Gᵀ x` followed by the identification
-of `M` with its dual given by the dual basis.
+of `M` with its dual given by the dual basis. Conversely, the Gram matrix of a perfect pairing in
+every finite basis has unit determinant.
 
 ## Main results
 
@@ -29,6 +31,8 @@ of `M` with its dual given by the dual basis.
   is a permutation matrix is a perfect pairing.
 * `Module.Basis.isPerfPair_of_isUnit_det`: a bilinear form whose Gram matrix in a finite basis has
   unit determinant is a perfect pairing.
+* `Module.Basis.isUnit_det_of_isPerfPair`: the Gram matrix of a perfect pairing in a finite basis
+  has unit determinant.
 -/
 
 public section
@@ -70,5 +74,18 @@ theorem isPerfPair_of_isUnit_det [Fintype ι] (b : Basis ι R M) (B : M →ₗ[R
       (Matrix.toLinearEquiv b Aᵀ (by rwa [Matrix.det_transpose])).bijective
   exact LinearMap.IsPerfPair.of_bijective B
     (hl _ h B fun i j ↦ (LinearMap.toMatrix₂_apply b b B i j).symm)
+
+open Matrix in
+omit [Finite ι] in
+/-- **The Gram matrix of a perfect pairing in a finite basis has unit determinant.** In the basis
+`b` and its dual basis, the matrix of the equivalence `M ≃ Dual R M` given by `B` is the transpose
+of the Gram matrix of `B`. -/
+theorem isUnit_det_of_isPerfPair [Fintype ι] (b : Basis ι R M) (B : M →ₗ[R] M →ₗ[R] R)
+    (h : B.IsPerfPair) : IsUnit (LinearMap.toMatrix₂ b b B).det := by
+  have hm : LinearMap.toMatrix b b.dualBasis (LinearEquiv.ofBijective B h.bijective_left) =
+      (LinearMap.toMatrix₂ b b B)ᵀ := by
+    ext i j
+    simp [LinearMap.toMatrix_apply, LinearMap.toMatrix₂_apply]
+  simpa [hm] using (LinearEquiv.ofBijective B h.bijective_left).isUnit_det b b.dualBasis
 
 end Module.Basis

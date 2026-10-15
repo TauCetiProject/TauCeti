@@ -13,9 +13,12 @@ public import TauCeti.LinearAlgebra.BilinearForm.Modular
 import TauCeti.Algebra.DirectSum.Internal
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.LinearAlgebra.Projection
+import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.Nakayama
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.Order.SupIndep
 import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
@@ -41,6 +44,14 @@ domain `R` and every nonzero non-unit `π`, in particular at the dyadic prime. T
 index at least `j`. By Nakayama's lemma the sum of these constituents therefore has the same rank
 for any two splittings, and the rank of the `j`-th constituent is a difference of two such ranks.
 
+On these vectors `x`, the form `B` agrees modulo `π ^ (j + 1)` with its values on the projections
+to the constituent `N j` (`LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`): the
+form `π ^ (-j) B` modulo `π` factors through the residue form of the unimodular rescaling of `N j`.
+Comparing two splittings through these projections shows that their unimodular rescalings at each
+index have the same residue forms, which decides their isometry class when the residue
+characteristic is odd (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_equivalent`
+in `TauCeti.LinearAlgebra.BilinearForm.Henselian`).
+
 ## Main definitions
 
 * `LinearMap.BilinForm.IsJordanSplitting`: a family `N : ℕ → Submodule R M` is a Jordan splitting
@@ -55,6 +66,12 @@ for any two splittings, and the rank of the `j`-th constituent is a difference o
   of equal rank.
 * `LinearMap.BilinForm.IsJordanSplitting.finrank_eq_of_equivalent`: the ranks of the constituents
   are invariants of the isometry class of the form.
+* `LinearMap.BilinForm.IsJordanSplitting.finite`, `LinearMap.BilinForm.IsJordanSplitting.free`:
+  the constituents of a Jordan splitting of a finite module are finite, and over a local ring the
+  constituents of a Jordan splitting of a finite free module are free.
+* `LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`: on the vectors pairing into
+  `π ^ j R`, the form is congruent modulo `π ^ (j + 1)` to its pullback along the projection to
+  the `j`-th constituent.
 
 ## References
 
@@ -391,5 +408,131 @@ theorem IsJordanSplitting.finrank_eq_of_equivalent [IsDomain R] [IsLocalRing R] 
   exact (he ▸ h.congr e.toLinearEquiv).finrank_eq h' hπ hπ' j
 
 end Uniqueness
+
+section Constituents
+
+/-! ### The constituents as modules, and their residue forms -/
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {π : R}
+  {N : ℕ → Submodule R M}
+
+/-- The constituents of a Jordan splitting of a finite module are finite. -/
+theorem IsJordanSplitting.finite [Module.Finite R M] (h : B.IsJordanSplitting π N) (j : ℕ) :
+    Module.Finite R (N j) :=
+  have hc : IsCompl (N j) (⨆ (i) (_ : i ≠ j), N i) :=
+    h.isInternal.submodule_iSupIndep.isCompl_biSup_ne h.isInternal.submodule_iSup_eq_top j
+  .of_surjective _ (Submodule.projectionOnto_surjective hc)
+
+/-- The constituents of a Jordan splitting of a finite free module over a local ring are free, being
+direct summands. -/
+theorem IsJordanSplitting.free [IsLocalRing R] [Module.Free R M] [Module.Finite R M]
+    (h : B.IsJordanSplitting π N) (j : ℕ) : Module.Free R (N j) :=
+  have hc : IsCompl (N j) (⨆ (i) (_ : i ≠ j), N i) :=
+    h.isInternal.submodule_iSupIndep.isCompl_biSup_ne h.isInternal.submodule_iSup_eq_top j
+  have := h.finite j
+  have := Module.Projective.of_split _ _ (Submodule.projectionOnto_comp_subtype hc)
+  Module.free_of_flat_of_isLocalRing
+
+/-- Vectors of the constituents of index below `m ≤ j` of a Jordan splitting which pair into
+`π ^ j R` with these constituents pair with each other into `π ^ (j + 1) R`. -/
+private theorem IsJordanSplitting.pow_succ_dvd_apply_of_mem_biSup_Iio
+    (h : B.IsJordanSplitting π N) (hπ : π ∈ nonZeroDivisors R) {j m : ℕ} (hm : m ≤ j) {x y : M}
+    (hx : x ∈ ⨆ i ∈ Set.Iio m, N i) (hy : y ∈ ⨆ i ∈ Set.Iio m, N i)
+    (hxz : ∀ z ∈ ⨆ i ∈ Set.Iio m, N i, π ^ j ∣ B x z)
+    (hyz : ∀ z ∈ ⨆ i ∈ Set.Iio m, N i, π ^ j ∣ B y z) : π ^ (j + 1) ∣ B x y := by
+  induction m generalizing x y with
+  | zero =>
+    obtain rfl : x = 0 := by simpa using hx
+    simp
+  | succ m ih =>
+    have hset : Set.Iio (m + 1) = insert m (Set.Iio m) := by
+      ext i
+      simp only [Set.mem_Iio, Set.mem_insert_iff]
+      omega
+    rw [hset, iSup_insert] at hx hy hxz hyz
+    obtain ⟨a, ha, x, hx', rfl⟩ := Submodule.mem_sup.mp hx
+    obtain ⟨b, hb, y, hy', rfl⟩ := Submodule.mem_sup.mp hy
+    have hdisj : Disjoint ({m} : Set ℕ) (Set.Iio m) := by simp
+    have h₁ {u v : M} (hu : u ∈ N m) (hv : v ∈ ⨆ i ∈ Set.Iio m, N i) : B u v = 0 :=
+      B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (by simpa using hu) hv
+    have h₂ {u v : M} (hv : v ∈ ⨆ i ∈ Set.Iio m, N i) (hu : u ∈ N m) : B v u = 0 :=
+      B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm hv (by simpa using hu)
+    simp only [map_add, LinearMap.add_apply, h₁ ha hy', h₂ hx' hb, add_zero, zero_add]
+    refine dvd_add ?_ (ih (by omega) hx' hy' (fun z hz ↦ ?_) fun z hz ↦ ?_)
+    · -- The components in the `π ^ m`-modular constituent `N m` are divisible by `π ^ (j - m)`.
+      have hdiv {u v : M} (hu : u ∈ N m) (hv : v ∈ ⨆ i ∈ Set.Iio m, N i)
+          (huz : ∀ z ∈ N m ⊔ ⨆ i ∈ Set.Iio m, N i, π ^ j ∣ B (u + v) z) :
+          ∃ w : N m, u = π ^ (j - m) • (w : M) := by
+        obtain ⟨w, hw⟩ := (h.isModular m).exists_eq_smul_of_forall_dvd (pow_mem hπ m)
+          (pow_mem hπ (j - m)) (x := ⟨u, hu⟩) fun z ↦ by
+            rw [← pow_add, Nat.add_sub_cancel' (show m ≤ j by omega), restrict_apply,
+              domRestrict_apply]
+            simpa [h₂ hv z.2] using huz z (Submodule.mem_sup_left z.2)
+        exact ⟨w, by simpa using congrArg Subtype.val hw⟩
+      obtain ⟨u, rfl⟩ := hdiv ha hx' hxz
+      obtain ⟨v, rfl⟩ := hdiv hb hy' hyz
+      rw [map_smul, map_smul, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul, ← mul_assoc,
+        ← pow_add]
+      calc π ^ (j + 1) ∣ π ^ (j - m + (j - m)) * π ^ m := by
+            rw [← pow_add]
+            exact pow_dvd_pow π (by omega)
+        _ ∣ π ^ (j - m + (j - m)) * B u v := mul_dvd_mul_left _ (h.pow_dvd_apply u.2 v)
+    · simpa [h₁ ha hz] using hxz z (Submodule.mem_sup_right hz)
+    · simpa [h₁ hb hz] using hyz z (Submodule.mem_sup_right hz)
+
+/-- **The residue form of a Jordan constituent.** Let `N` be a Jordan splitting of `B` with respect
+to a non-zero-divisor `π`. On the vectors `x` with `π ^ j ∣ B x z` for all `z`, the form `B` agrees
+modulo `π ^ (j + 1)` with its value on the projections to the constituent `N j` along the other
+constituents. Thus the form `π ^ (-j) B` modulo `π` on these vectors is pulled back from the
+residue form of the unimodular rescaling of `N j`. -/
+theorem IsJordanSplitting.exists_pow_succ_dvd_sub (h : B.IsJordanSplitting π N)
+    (hπ : π ∈ nonZeroDivisors R) (j : ℕ) :
+    ∃ f : M →ₗ[R] N j, (∀ x : N j, f x = x) ∧ ∀ x y : M, (∀ z, π ^ j ∣ B x z) →
+      (∀ z, π ^ j ∣ B y z) → π ^ (j + 1) ∣ B x y - B (f x) (f y) := by
+  have hK : ⨆ (i) (_ : i ≠ j), N i = (⨆ i ∈ Set.Iio j, N i) ⊔ ⨆ i ∈ Set.Ici (j + 1), N i := by
+    rw [← iSup_union]
+    refine iSup_congr fun i ↦ iSup_congr_Prop ?_ fun _ ↦ rfl
+    simp only [Set.mem_union, Set.mem_Iio, Set.mem_Ici]
+    omega
+  have hc : IsCompl (N j) (⨆ (i) (_ : i ≠ j), N i) :=
+    h.isInternal.submodule_iSupIndep.isCompl_biSup_ne h.isInternal.submodule_iSup_eq_top j
+  refine ⟨(N j).projectionOnto _ hc, Submodule.projectionOnto_apply_left hc, fun x y hx hy ↦ ?_⟩
+  -- Write `x = p + a + d` with `p ∈ N j`, `a` below index `j`, and `d` above it.
+  have hdecomp (x : M) : ∃ a ∈ ⨆ i ∈ Set.Iio j, N i, ∃ d ∈ ⨆ i ∈ Set.Ici (j + 1), N i,
+      x = (N j).projectionOnto _ hc x + a + d := by
+    obtain ⟨a, ha, d, hd, had⟩ := Submodule.mem_sup.mp
+      (hK.le (Submodule.sub_projection_mem hc x))
+    exact ⟨a, ha, d, hd, by rw [add_assoc, had, Submodule.coe_projectionOnto_apply,
+      add_sub_cancel]⟩
+  have orth {s t : Set ℕ} (hst : Disjoint s t) {u v : M} (hu : u ∈ ⨆ i ∈ s, N i)
+      (hv : v ∈ ⨆ i ∈ t, N i) : B u v = 0 :=
+    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hst hu hv
+  have h₀₁ : Disjoint ({j} : Set ℕ) (Set.Iio j) := by simp
+  have h₀₂ : Disjoint ({j} : Set ℕ) (Set.Ici (j + 1)) := by simp
+  have h₁₂ : Disjoint (Set.Iio j) (Set.Ici (j + 1)) :=
+    Set.disjoint_left.mpr fun i hi hi' ↦ by simp_all only [Set.mem_Iio, Set.mem_Ici]; omega
+  have hp (x : M) : ((N j).projectionOnto _ hc x : M) ∈ ⨆ i ∈ ({j} : Set ℕ), N i := by simp
+  obtain ⟨a, ha, d, hd, hxe⟩ := hdecomp x
+  obtain ⟨a', ha', d', hd', hye⟩ := hdecomp y
+  set p := ((N j).projectionOnto _ hc x : M)
+  set p' := ((N j).projectionOnto _ hc y : M)
+  have hpx : p ∈ ⨆ i ∈ ({j} : Set ℕ), N i := hp x
+  have hpy : p' ∈ ⨆ i ∈ ({j} : Set ℕ), N i := hp y
+  have hxy : B x y - B p p' = B a a' + B d d' := by
+    rw [hxe, hye]
+    simp only [map_add, LinearMap.add_apply, orth h₀₁ hpx ha', orth h₀₂ hpx hd',
+      orth h₀₁.symm ha hpy, orth h₁₂ ha hd', orth h₀₂.symm hd hpy, orth h₁₂.symm hd ha']
+    ring
+  rw [hxy]
+  refine dvd_add (h.pow_succ_dvd_apply_of_mem_biSup_Iio hπ le_rfl ha ha' (fun z hz ↦ ?_)
+    fun z hz ↦ ?_) (h.pow_dvd_apply_of_mem_biSup hd d')
+  · have hxz := hx z
+    rw [hxe] at hxz
+    simpa [orth h₀₁ hpx hz, orth h₁₂.symm hd hz] using hxz
+  · have hyz := hy z
+    rw [hye] at hyz
+    simpa [orth h₀₁ hpy hz, orth h₁₂.symm hd' hz] using hyz
+
+end Constituents
 
 end LinearMap.BilinForm
