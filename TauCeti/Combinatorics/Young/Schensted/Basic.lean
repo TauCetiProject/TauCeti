@@ -79,6 +79,18 @@ theorem IsRowAbove.append_right [LT α] {upper lower : List α} (h : upper.IsRow
   rw [getElem_append_left (hl.trans_le h.length_le)]
   exact h.getElem_lt j _ hl
 
+/-- Lengthening the lower row by an entry greater than the entry above it keeps the upper row on
+top of it. -/
+theorem IsRowAbove.append_singleton [LT α] {upper lower : List α} (h : upper.IsRowAbove lower)
+    {a : α} (hlen : lower.length < upper.length) (ha : upper[lower.length] < a) :
+    upper.IsRowAbove (lower ++ [a]) := by
+  refine ⟨by simpa using Nat.succ_le_of_lt hlen, fun j hu hl => ?_⟩
+  simp only [length_append, length_singleton] at hl
+  rcases Nat.lt_succ_iff_lt_or_eq.mp hl with hl | rfl
+  · rw [getElem_append_left hl]
+    exact h.getElem_lt j hu hl
+  · simpa using ha
+
 /-- If one row sits above a second, and the second above a third, the first sits above the
 third. -/
 theorem IsRowAbove.trans [LT α] [IsTrans α (· < ·)] {upper middle lower : List α}
@@ -88,6 +100,15 @@ theorem IsRowAbove.trans [LT α] [IsTrans α (· < ·)] {upper middle lower : Li
 
 instance [LT α] [IsTrans α (· < ·)] : IsTrans (List α) IsRowAbove :=
   ⟨fun _ _ _ => IsRowAbove.trans⟩
+
+/-- An entry of row `i` of a list of rows is an entry of the list. Rows beyond the last one are
+read as empty. -/
+theorem mem_flatten_of_mem_getD {rows : List (List α)} {i : ℕ} {x : α}
+    (hx : x ∈ rows.getD i []) : x ∈ rows.flatten := by
+  rw [getD_eq_getElem?_getD] at hx
+  cases hi : rows[i]? with
+  | none => simp [hi] at hx
+  | some row => exact mem_flatten.mpr ⟨row, mem_of_getElem? hi, by simpa [hi] using hx⟩
 
 /-- The rows, listed from top to bottom, of a semistandard tableau: every row is nonempty and
 weakly increasing, and every row sits on top of the next one in the sense of `List.IsRowAbove`.
@@ -152,6 +173,21 @@ theorem IsTableauRows.length_getD_succ_le {rows : List (List α)} (h : IsTableau
       cases rows with
       | nil => simp
       | cons lower rows => simpa using habove.length_le
+    | succ i => simpa using ih hrows i
+
+/-- Each row of a tableau sits on top of the next one. Rows beyond the last one are read as
+empty. -/
+theorem IsTableauRows.isRowAbove_getD {rows : List (List α)} (h : IsTableauRows rows) (i : ℕ) :
+    (rows.getD i []).IsRowAbove (rows.getD (i + 1) []) := by
+  induction rows generalizing i with
+  | nil => simp
+  | cons row rows ih =>
+    obtain ⟨-, -, habove, hrows⟩ := isTableauRows_cons.mp h
+    cases i with
+    | zero =>
+      cases rows with
+      | nil => simp
+      | cons lower rows => simpa using habove
     | succ i => simpa using ih hrows i
 
 end List
