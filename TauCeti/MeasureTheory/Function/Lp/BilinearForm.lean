@@ -36,8 +36,8 @@ variable [NormedAddCommGroup J] [NormedSpace ℝ J]
 continuous bilinear forms against two square-integrable functions. -/
 noncomputable def lpBilinearForm (μ : Measure X) (B : Lp (J →L[ℝ] J →L[ℝ] ℝ) ⊤ μ) :
     Lp J 2 μ →L[ℝ] Lp J 2 μ →L[ℝ] ℝ :=
-  ((ContinuousLinearMap.apply ℝ ℝ (E := J)).flip.lpPairing μ 2 2).comp
-    (((ContinuousLinearMap.apply ℝ (J →L[ℝ] ℝ) (E := J)).flip.holderL
+  ((ContinuousLinearMap.id ℝ (J →L[ℝ] ℝ)).lpPairing μ 2 2).comp
+    (((ContinuousLinearMap.id ℝ (J →L[ℝ] J →L[ℝ] ℝ)).holderL
       μ ⊤ 2 2) B)
 
 /-- The `L∞`-coefficient bilinear form is the integral of its pointwise action. -/
@@ -48,8 +48,8 @@ theorem lpBilinearForm_apply (μ : Measure X) (B : Lp (J →L[ℝ] J →L[ℝ] �
     ContinuousLinearMap.lpPairing_eq_integral]
   apply integral_congr_ae
   filter_upwards
-      [((ContinuousLinearMap.apply ℝ (J →L[ℝ] ℝ)
-        (E := J)).flip.coeFn_holder (r := 2) B U)] with x hx
+      [((ContinuousLinearMap.id ℝ (J →L[ℝ] J →L[ℝ] ℝ)).coeFn_holder (𝕜 := ℝ) (r := 2) B U)]
+      with x hx
   simp [hx]
 
 /-- Replacing an `L∞` coefficient field by an almost-everywhere equal field does not change
@@ -71,10 +71,10 @@ theorem integrable_bilinear_apply_of_memLp {μ : Measure X}
   -- The Hölder exponents are pinned explicitly, and the application goes through `exact`:
   -- elaborating it against the expected type in term mode unfolds `MemLp` and loops.
   have hBU : MemLp (fun x => B x (U x)) 2 μ := by
-    exact (ContinuousLinearMap.apply ℝ (J →L[ℝ] ℝ) (E := J)).flip.memLp_of_bilin
+    exact (ContinuousLinearMap.id ℝ (J →L[ℝ] J →L[ℝ] ℝ)).memLp_of_bilin (𝕜 := ℝ)
       (p := ⊤) (q := 2) (f := B) (g := fun x => U x) 2 hB (Lp.memLp U)
   exact memLp_one_iff_integrable.mp
-    ((ContinuousLinearMap.apply ℝ ℝ (E := J)).flip.memLp_of_bilin
+    ((ContinuousLinearMap.id ℝ (J →L[ℝ] ℝ)).memLp_of_bilin
       (p := 2) (q := 2) (f := fun x => B x (U x)) (g := fun x => V x) 1 hBU (Lp.memLp V))
 
 end TauCeti

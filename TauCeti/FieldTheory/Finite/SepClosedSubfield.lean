@@ -75,7 +75,7 @@ theorem coe_frobeniusFixedSubfield_eq_rootSet (hn : n ≠ 0) :
 /-- The equivalence used to count the Frobenius-fixed subfield: its elements are exactly the roots
 of `X ^ p ^ n - X`, a separable polynomial of degree `p ^ n`. The public form of this is
 `coe_frobeniusFixedSubfield_eq_rootSet`. -/
-private def frobeniusFixedSubfieldEquivRootSet (hn : n ≠ 0) :
+private noncomputable def frobeniusFixedSubfieldEquivRootSet (hn : n ≠ 0) :
     frobeniusFixedSubfield K p n ≃ (X ^ p ^ n - X : K[X]).rootSet K :=
   Set.equivOfEq (coe_frobeniusFixedSubfield_eq_rootSet K p n hn)
 

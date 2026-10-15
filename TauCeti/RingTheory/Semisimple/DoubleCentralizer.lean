@@ -283,15 +283,17 @@ theorem _root_.Subalgebra.centralizer_centralizer_of_isSemisimpleModule
   exact hx' ▸ a.2
 
 /-- **The double centralizer theorem for the image of a semisimple algebra.** The image of a
-semisimple `K`-algebra `S` in `Module.End K N`, for a finite `K`-module `N`, is its own double
-centralizer.
+semisimple `K`-algebra `S` in `Module.End K N` is its own double centralizer when `N` is finite
+over the endomorphism ring of the image's action.
 
 The image is a quotient of `S`, hence semisimple, so `N` is a semisimple module over it and
-`Subalgebra.centralizer_centralizer_of_isSemisimpleModule` applies, its finiteness hypothesis coming
-from `Module.Finite.of_restrictScalars_finite`. It is the image and not `S` that is recovered: the
-representation `S → Module.End K N` need not be injective. -/
-theorem _root_.AlgHom.centralizer_centralizer_range [Module.Finite K N]
-    {S : Type*} [Ring S] [Algebra K S] [IsSemisimpleRing S] (ρ : S →ₐ[K] Module.End K N) :
+`Subalgebra.centralizer_centralizer_of_isSemisimpleModule` applies. A caller with a finite
+`K`-module gets the required finiteness from `Module.Finite.of_restrictScalars_finite`. It is the
+image and not `S` that is recovered: the representation `S → Module.End K N` need not be
+injective. -/
+theorem _root_.AlgHom.centralizer_centralizer_range
+    {S : Type*} [Ring S] [Algebra K S] [IsSemisimpleRing S] (ρ : S →ₐ[K] Module.End K N)
+    [Module.Finite (Module.End ρ.range N) N] :
     Subalgebra.centralizer K
         (Subalgebra.centralizer K (ρ.range : Set (Module.End K N)) : Set (Module.End K N)) =
       ρ.range := by
@@ -299,7 +301,6 @@ theorem _root_.AlgHom.centralizer_centralizer_range [Module.Finite K N]
     RingHom.isSemisimpleRing_of_surjective ρ.rangeRestrict.toRingHom
       (AlgHom.rangeRestrict_surjective _)
   have : IsSemisimpleModule ρ.range N := IsSemisimpleRing.isSemisimpleModule
-  have := Module.Finite.of_restrictScalars_finite K (Module.End ρ.range N) N
   exact Subalgebra.centralizer_centralizer_of_isSemisimpleModule _
 
 /-- **The centralizer moves vectors as freely as annihilators allow.** Let `A` be a `K`-subalgebra
@@ -313,7 +314,7 @@ theorem _root_.Subalgebra.exists_mem_centralizer_apply_eq_iff_of_isSemisimpleMod
   · rintro ⟨f, hf, rfl⟩ a ha haw
     rw [← Module.End.mul_apply, (Subalgebra.mem_centralizer_iff K).1 hf a ha,
       Module.End.mul_apply, haw, map_zero]
-  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_end_apply_eq_iff (R := A)).mpr
+  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := A)).mpr
     fun a ha => h a a.2 ha
   exact ⟨f.restrictScalars K, A.restrictScalars_mem_centralizer f, hf⟩
 

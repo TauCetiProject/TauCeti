@@ -136,7 +136,7 @@ theorem isAbelianClassFieldLayer_kummerLayer : (kummerLayer n Δ).IsAbelianClass
 theorem degree_kummerLayer :
     (NormalLayer.ofOpenNormal (kummerLayer n Δ)).degree =
       (powMonoidHom n : Kˣ →* Kˣ).range.relIndex Δ := by
-  have : NeZero (n : K) := (HasEnoughRootsOfUnity.exists_primitiveRoot K n).choose_spec.neZero'
+  have : NeZero (n : K) := (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n).choose_spec.neZero'
   have : NeZero (n : SeparableClosure K) := .nat_of_injective (algebraMap K _).injective
   rw [NormalLayer.degree_eq_natCard_gal,
     Nat.card_congr (NormalLayer.galOfOpenNormalEquiv (kummerLayer n Δ)).toEquiv,
