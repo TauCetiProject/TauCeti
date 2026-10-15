@@ -10,6 +10,8 @@ public import TauCeti.Geometry.RealAlgebraic.DelineatingSet.Family
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Lifting
 public import TauCeti.Geometry.RealAlgebraic.Stack.Semialgebraic
 
+import Mathlib.Algebra.MvPolynomial.Division
+
 /-!
 # Order-invariant cylindrical algebraic decompositions by McCallum projection
 
@@ -30,6 +32,13 @@ roots of the delineating polynomials of the inputs
 (`Finset.exists_isSemialgebraicStack_orderAt_eq`). In both cases every input is order-invariant
 on the resulting cells, which are again analytic submanifolds.
 
+The hypothesis excluding nullification over cells with more than one point cannot be dropped
+(`TauCeti.exists_nullified_mcCallumProjection_orderAt_ne`). Over the line `x₁ = x₂ = 0` of `ℝ ^ 3`,
+the polynomial `X₂ (X₀ + 1) + X₃ X₁` is nullified, while its McCallum projection is
+order-invariant. Above the line its order is one except at the single point `(-1, 0, 0, 0)`, where
+it is at least two. Every cell of a stack lies over the whole line, so no stack over the line makes
+it order-invariant. This is the failure condition of McCallum's lifting.
+
 A finite family is *well-oriented* in McCallum's sense (`TauCeti.IsMcCallumWellOriented`) when,
 at every level of the recursive projection, it has an irreducible basis each of whose members is
 nullified at only finitely many points. On a cell where the projection is order-invariant, a
@@ -43,6 +52,8 @@ level. Every family of polynomials in at most two variables is well-oriented.
 * `TauCeti.exists_isSemialgebraicStack_orderAt_eq_of_mcCallumProjection`: lifting over one cell.
 * `TauCeti.IsCAD.exists_isCAD_orderAt_eq_of_mcCallumProjection`: lifting a CAD of `ℝ ^ n`
   adapted to the McCallum projection to a CAD of `ℝ ^ (n + 1)` adapted to the family.
+* `TauCeti.exists_nullified_mcCallumProjection_orderAt_ne`: lifting fails in general over a cell
+  with more than one point on which a basis polynomial is nullified.
 * `TauCeti.IsMcCallumWellOriented`: McCallum's well-orientedness condition.
 * `TauCeti.exists_isCAD_orderAt_eq_of_isMcCallumWellOriented`: **correctness of McCallum's
   projection**. A well-oriented family has a CAD into analytic submanifolds on whose cells every
@@ -136,6 +147,143 @@ theorem IsCAD.exists_isCAD_orderAt_eq_of_mcCallumProjection {𝒟 : Set (Set (Fi
     exact ((hθ C hC).2 E hE).2 f hf
 
 end Lifting
+
+/-! ### Nullification over cells with more than one point -/
+
+section Nullification
+
+/-- The order of `X₂ (X₀ + 1) + X₃ X₁` is at least two at `(-1, 0, 0, 0)`, where all its first
+partial derivatives vanish. -/
+private lemma two_le_orderAt_nullificationExample {y : Fin 4 → ℝ} (h0 : y 0 = -1) (h1 : y 1 = 0)
+    (h2 : y 2 = 0) (h3 : y 3 = 0) :
+    2 ≤ (X 2 * (X 0 + 1) + X 3 * X 1 : MvPolynomial (Fin 4) ℝ).orderAt y := by
+  rw [show (2 : ℕ∞) = 1 + 1 from rfl, succ_le_orderAt_iff]
+  refine ⟨by simp [h0, h1, h2, h3], fun i ↦ ?_⟩
+  rw [Order.one_le_iff_pos, orderAt_pos_iff]
+  simp only [pderiv_X, Pi.single_apply, map_add, Derivation.leibniz]
+  split_ifs <;> simp [h0, h1, h2, h3]
+
+/-- The order of `X₂ (X₀ + 1) + X₃ X₁` is one at its zeros with `y₁ ≠ 0`, where its partial
+derivative in `X₃` does not vanish. -/
+private lemma orderAt_nullificationExample_eq_one {y : Fin 4 → ℝ} (h1 : y 1 ≠ 0) (h2 : y 2 = 0)
+    (h3 : y 3 = 0) :
+    (X 2 * (X 0 + 1) + X 3 * X 1 : MvPolynomial (Fin 4) ℝ).orderAt y = 1 :=
+  orderAt_eq_one_of_eval_pderiv_ne_zero (by simp [h2, h3]) (i := 3) (by simpa [pderiv_X])
+
+private lemma finSuccEquiv_nullificationExample :
+    finSuccEquiv ℝ 3 (X 2 * (X 0 + 1) + X 3 * X 1) =
+      Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0) := by
+  rw [show (2 : Fin 4) = (1 : Fin 3).succ from rfl, show (3 : Fin 4) = (2 : Fin 3).succ from rfl,
+    show (1 : Fin 4) = (0 : Fin 3).succ from rfl]
+  simp only [map_add, map_mul, finSuccEquiv_X_zero, finSuccEquiv_X_succ, map_one]
+  ring
+
+/-- The linear polynomial `X₁ T + (X₁ + X₂ X₀)` is irreducible, since its coefficients are
+coprime, so it is its own irreducible basis. -/
+private lemma isIrreducibleBasis_nullificationExample :
+    ({Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0)} :
+      Finset (MvPolynomial (Fin 3) ℝ)[X]).IsIrreducibleBasis
+      {Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0)} := by
+  have hirr : Irreducible (Polynomial.C (X 1 : MvPolynomial (Fin 3) ℝ) * Polynomial.X +
+      Polynomial.C (X 1 + X 2 * X 0)) := by
+    refine irreducible_C_mul_X_add_C (X_ne_zero _) <|
+      (Irreducible.isRelPrime_iff_not_dvd (MvPolynomial.X_prime).irreducible).2 fun h ↦ ?_
+    rw [dvd_add_right dvd_rfl, X_dvd_mul_iff] at h
+    simp [X_dvd_X] at h
+  refine ⟨by simpa using hirr, fun b hb ↦ ?_, by simp, fun f hf ↦ ⟨1, fun _ ↦ 1, by simp_all⟩,
+    fun b hb ↦ ⟨b, hb, ?_, dvd_rfl⟩⟩
+  · rw [Finset.mem_singleton.1 hb, natDegree_linear (X_ne_zero _)]
+    exact one_pos
+  · rw [Finset.mem_singleton.1 hb]
+    exact hirr.ne_zero
+
+variable [NormalizedGCDMonoid (MvPolynomial (Fin 3) ℝ)]
+
+/-- **McCallum lifting fails over positive-dimensional nullifying cells.** The hypothesis of
+`TauCeti.exists_isSemialgebraicStack_orderAt_eq_of_mcCallumProjection` that no basis member is
+nullified over a cell with more than one point cannot be dropped, even over a connected
+semialgebraic analytic submanifold on which the McCallum projection is order-invariant.
+
+Explicitly, let `f = X₂ (X₀ + 1) + X₃ X₁`, a polynomial in the distinguished variable `X₀` and the
+base coordinates `X₁, X₂, X₃`, and let `C ⊆ ℝ ^ 3` be the line of base points `x` with
+`x₁ = x₂ = 0`. As a polynomial in `X₀`, `f` is linear with coprime coefficients `X₂` and
+`X₂ + X₃ X₁`, each of which vanishes to order one at every point of `C`; its content and
+discriminant are units. So for every irreducible basis `B` of `{f}`, every element of the McCallum
+projection has constant order on `C`, while every member of `B` is nullified over `C`. But `f` has
+order at least two at the point `(-1, 0, 0, 0)` above `C`, and order one at every point above
+`C` where `X₀ ≠ -1` or `X₁ ≠ 0`. Since every cell of a stack over `C` lies over the whole of `C`,
+no stack over `C`, given by pointwise strictly increasing functions, continuous or not, has `f`
+order-invariant on each cell. -/
+theorem exists_nullified_mcCallumProjection_orderAt_ne :
+    ∃ (f : MvPolynomial (Fin 4) ℝ) (C : Set (Fin 3 → ℝ)), IsSemialgebraic C ∧
+      IsAnalyticSubmanifold 1 C ∧ IsConnected C ∧
+      ∀ B, (({f} : Finset _).map (finSuccEquiv ℝ 3).toEquiv.toEmbedding).IsIrreducibleBasis B →
+        (∀ q ∈ (({f} : Finset _).map (finSuccEquiv ℝ 3).toEquiv.toEmbedding).mcCallumProjection B,
+          ∀ x ∈ C, ∀ y ∈ C, q.orderAt x = q.orderAt y) ∧
+        (∀ b ∈ B, ∀ x ∈ C, b.map (MvPolynomial.eval x) = 0) ∧
+        ∀ (k : ℕ) (θ : Fin k → C → ℝ), (∀ x, StrictMono fun i ↦ θ i x) →
+          ∃ E ∈ stackCells C θ, ∃ y ∈ E, ∃ y' ∈ E, f.orderAt y ≠ f.orderAt y' := by
+  set C : Set (Fin 3 → ℝ) := {x | ∀ i : Fin 3, 1 ≤ i.val → x i = 0} with hC
+  have hmem {x : Fin 3 → ℝ} : x ∈ C ↔ x 1 = 0 ∧ x 2 = 0 := by
+    simp [hC, Fin.forall_fin_succ]
+  have hCs : IsSemialgebraic C := by
+    convert (isSemialgebraic_eval_eq_zero (X 1 : MvPolynomial (Fin 3) ℝ)).inter
+      (isSemialgebraic_eval_eq_zero (X 2)) using 1
+    ext x
+    simp [hmem]
+  have hCc : IsConnected C := by
+    convert isConnected_range (firstCoords ℝ 1 3).continuous
+    ext x
+    refine ⟨fun hx ↦ ⟨firstCoords ℝ 3 1 x, firstCoords_firstCoords_of_forall hx⟩, ?_⟩
+    rintro ⟨u, rfl⟩ i hi
+    exact firstCoords_apply_of_le u hi
+  set g : (MvPolynomial (Fin 3) ℝ)[X] :=
+    Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0) with hg
+  have hF : (({X 2 * (X 0 + 1) + X 3 * X 1} : Finset (MvPolynomial (Fin 4) ℝ)).map
+      (finSuccEquiv ℝ 3).toEquiv.toEmbedding) = {g} := by
+    simp [finSuccEquiv_nullificationExample, hg]
+  refine ⟨X 2 * (X 0 + 1) + X 3 * X 1, C, hCs, isAnalyticSubmanifold_coordSubspace (by norm_num),
+    hCc, fun B hB ↦ ?_⟩
+  rw [hF] at hB ⊢
+  have h₀ : ({g} : Finset _).IsIrreducibleBasis {g} := isIrreducibleBasis_nullificationExample
+  refine ⟨fun q hq x hx y hy ↦ ?_, fun b hb x hx ↦ ?_, fun k θ hθ ↦ ?_⟩
+  · -- Every element of the projection is associated to one for the basis `{g}`: the content `1`,
+    -- the two coefficients of `g`, each of order one along `C`, and the discriminant `1`.
+    obtain ⟨q', hq', hqq'⟩ := h₀.exists_associated_mem_mcCallumProjection hB hq
+    rw [orderAt_eq_of_associated hqq', orderAt_eq_of_associated hqq']
+    have hX₁ {z : Fin 3 → ℝ} (hz : z ∈ C) : (X 1 : MvPolynomial (Fin 3) ℝ).orderAt z = 1 := by
+      simpa [(hmem.1 hz).1] using orderAt_X_sub_C (R := ℝ) z 1
+    have hcoeff {z : Fin 3 → ℝ} (hz : z ∈ C) :
+        (X 1 + X 2 * X 0 : MvPolynomial (Fin 3) ℝ).orderAt z = 1 :=
+      orderAt_eq_one_of_eval_pderiv_ne_zero (by simp [(hmem.1 hz).1, (hmem.1 hz).2]) (i := 1)
+        (by simp [pderiv_X])
+    rcases Finset.mem_mcCallumProjection.1 hq' with ⟨f, hf, rfl⟩ | ⟨b, hb, i, hi, rfl⟩ |
+      ⟨b, hb, rfl⟩ | ⟨b, hb, b', hb', hne, -⟩
+    · rw [(h₀.isPrimitive hf).content_eq_one, orderAt_one, orderAt_one]
+    · obtain rfl := Finset.mem_singleton.1 hb
+      rw [hg, natDegree_linear (X_ne_zero _)] at hi
+      interval_cases i <;> simp [hg, hX₁ hx, hX₁ hy, hcoeff hx, hcoeff hy]
+    · rw [Finset.mem_singleton.1 hb, discr_of_degree_eq_one (degree_linear (X_ne_zero _)),
+        orderAt_one, orderAt_one]
+    · exact (hne ((Finset.mem_singleton.1 hb).trans (Finset.mem_singleton.1 hb').symm)).elim
+  · obtain ⟨b', hb', r, -, rfl⟩ := hB.exists_eq_C_mul h₀ hb
+    simp [Finset.mem_singleton.1 hb', hg, (hmem.1 hx).1, (hmem.1 hx).2]
+  · -- The point `(-1, 0, 0, 0)` lies in a cell, which also contains a point over `(1, 0, 0)`.
+    obtain ⟨E, hE, hy₀E⟩ : ![-1, 0, 0, 0] ∈ ⋃₀ stackCells C θ := by
+      rw [sUnion_stackCells fun x ↦ (hθ x).monotone]
+      simp [hmem]
+    obtain ⟨y, hyE, hy⟩ : ![(1 : ℝ), 0, 0] ∈ Fin.tail '' E := by
+      rw [image_tail_of_mem_stackCells hθ hE]
+      simp [hmem]
+    have h₁ : y 1 = 1 := by simpa [Fin.tail] using congrFun hy 0
+    have h₂ : y 2 = 0 := by simpa [Fin.tail] using congrFun hy 1
+    have h₃ : y 3 = 0 := by simpa [Fin.tail] using congrFun hy 2
+    refine ⟨E, hE, _, hy₀E, y, hyE, ne_of_gt ?_⟩
+    rw [orderAt_nullificationExample_eq_one (by simp [h₁]) h₂ h₃]
+    exact (show (1 : ℕ∞) < 2 by norm_num).trans_le
+      (two_le_orderAt_nullificationExample rfl rfl rfl rfl)
+
+end Nullification
 
 /-! ### Well-oriented families -/
 
