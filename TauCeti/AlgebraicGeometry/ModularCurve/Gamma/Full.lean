@@ -82,6 +82,21 @@ theorem baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom {T : Over
       x ≫ X.curve.torsionPairHom N a := by
   rw [baseChangePointsEquiv_pointsPullback, baseChangePointsEquiv_universalDrinfeldBasisHom]
 
+/-- Pulling the universal Drinfeld-basis homomorphism back along a point `x` of
+`E[N] ×_S E[N]` gives `ψ` exactly when `x` classifies the pair of torsion points underlying
+`ψ`. -/
+theorem pointsPullback_comp_universalDrinfeldBasisHom_eq_iff {T : Over X.base}
+    (x : T ⟶ X.drinfeldBasisAmbient N)
+    (ψ : Multiplicative (ZMod N × ZMod N) →*
+      (𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+        Over.mk (X.baseChangeFunctor.obj T).curve.structureMap)) :
+    (EllipticCurveGeom.pointsPullback (X.baseChangeFunctor.map x).isPullback
+        (X.baseChangeFunctor.map x).zero_total).comp (X.universalDrinfeldBasisHom N) = ψ ↔
+      ∀ a, x ≫ X.curve.torsionPairHom N a = X.baseChangePointsEquiv T (ψ a) := by
+  simp only [MonoidHom.ext_iff, MonoidHom.comp_apply,
+    ← (X.baseChangePointsEquiv T).injective.eq_iff,
+    baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom]
+
 /-- The ideal sheaf on `E[N] ×_S E[N]` cutting out the locus where its universal pair is a
 Drinfeld basis. -/
 noncomputable def universalDrinfeldBasisLocus :
@@ -98,6 +113,32 @@ noncomputable abbrev drinfeldBasisScheme : Over X.base :=
 noncomputable abbrev drinfeldBasisSchemeι : X.drinfeldBasisScheme N ⟶
     X.drinfeldBasisAmbient N :=
   Over.homMk (X.universalDrinfeldBasisLocus N).subschemeι
+
+/-- A point `x` of `E[N] ×_S E[N]` along which the universal pair pulls back to a Drinfeld basis
+lifts to the Drinfeld-basis scheme. -/
+noncomputable def liftDrinfeldBasisScheme {T : Over X.base} (x : T ⟶ X.drinfeldBasisAmbient N)
+    (hx : (X.baseChangeFunctor.obj T).curve.IsDrinfeldBasis N
+      ((EllipticCurveGeom.pointsPullback (X.baseChangeFunctor.map x).isPullback
+        (X.baseChangeFunctor.map x).zero_total).comp (X.universalDrinfeldBasisHom N))) :
+    T ⟶ X.drinfeldBasisScheme N :=
+  Over.homMk
+    (IsClosedImmersion.lift (X.universalDrinfeldBasisLocus N).subschemeι x.left (by
+      rw [Scheme.IdealSheafData.ker_subschemeι]
+      exact (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff _ _ _).mp hx))
+    (by
+      dsimp only [drinfeldBasisScheme, Over.mk_hom]
+      rw [← Category.assoc, IsClosedImmersion.lift_fac]
+      exact x.w)
+
+/-- The lift of `x` to the Drinfeld-basis scheme factors `x` through the closed immersion. -/
+@[reassoc (attr := simp)]
+theorem liftDrinfeldBasisScheme_drinfeldBasisSchemeι {T : Over X.base}
+    (x : T ⟶ X.drinfeldBasisAmbient N)
+    (hx : (X.baseChangeFunctor.obj T).curve.IsDrinfeldBasis N
+      ((EllipticCurveGeom.pointsPullback (X.baseChangeFunctor.map x).isPullback
+        (X.baseChangeFunctor.map x).zero_total).comp (X.universalDrinfeldBasisHom N))) :
+    X.liftDrinfeldBasisScheme N x hx ≫ X.drinfeldBasisSchemeι N = x :=
+  Over.OverMorphism.ext (IsClosedImmersion.lift_fac _ _ _)
 
 /-- The Drinfeld-basis scheme is finite over the base. -/
 instance isFinite_drinfeldBasisScheme_hom : IsFinite (X.drinfeldBasisScheme N).hom := by
@@ -144,14 +185,8 @@ theorem isDrinfeldBasis_gammaStructureOfSchemeHom {T : Over X.base}
       (gammaStructureOfSchemeHom X y) := by
   let x : T ⟶ X.drinfeldBasisAmbient N := y ≫ X.drinfeldBasisSchemeι N
   let k := X.baseChangeFunctor.map x
-  have heq : (EllipticCurveGeom.pointsPullback k.isPullback k.zero_total).comp
-      (X.universalDrinfeldBasisHom N) = gammaStructureOfSchemeHom X y := by
-    apply MonoidHom.ext
-    intro a
-    apply (X.baseChangePointsEquiv T).injective
-    rw [MonoidHom.comp_apply,
-      EllObj.baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom]
-    simp [x]
+  have heq := (EllObj.pointsPullback_comp_universalDrinfeldBasisHom_eq_iff X N x
+    (gammaStructureOfSchemeHom X y)).2 fun a ↦ by simp [x]
   rw [← heq]
   apply (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff k.isPullback k.zero_total _).2
   exact (Scheme.IdealSheafData.ker_subschemeι _).symm.le.trans (y.left.le_ker_comp _)
@@ -188,31 +223,8 @@ noncomputable def gammaBaseChangeEquiv (T : Over X.base) :
     obtain ⟨⟨ψ, hψ⟩, rfl⟩ := (gammaEquiv _).symm.surjective α
     obtain ⟨x, hx, -⟩ := X.curve.existsUnique_comp_torsionPairHom N
       ((X.baseChangePointsEquiv T).toMonoidHom.comp ψ)
-    let k := X.baseChangeFunctor.map x
-    have heq : (EllipticCurveGeom.pointsPullback k.isPullback k.zero_total).comp
-        (X.universalDrinfeldBasisHom N) = ψ := by
-      apply MonoidHom.ext
-      intro a
-      apply (X.baseChangePointsEquiv T).injective
-      rw [MonoidHom.comp_apply,
-        EllObj.baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom]
-      exact hx a
-    have hle : X.universalDrinfeldBasisLocus N ≤ x.left.ker :=
-      (EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff k.isPullback k.zero_total _).mp <| by
-        rw [heq]
-        exact hψ
-    let y : T ⟶ X.drinfeldBasisScheme N := Over.homMk
-      (IsClosedImmersion.lift (X.universalDrinfeldBasisLocus N).subschemeι x.left (by
-        rw [Scheme.IdealSheafData.ker_subschemeι]
-        exact hle))
-      (by
-        dsimp only [EllObj.drinfeldBasisScheme, Over.mk_hom]
-        rw [← Category.assoc, IsClosedImmersion.lift_fac]
-        exact x.w)
-    have hy : y ≫ X.drinfeldBasisSchemeι N = x := by
-      apply Over.OverMorphism.ext
-      exact IsClosedImmersion.lift_fac _ _ _
-    refine ⟨y, ?_⟩
+    have heq := (EllObj.pointsPullback_comp_universalDrinfeldBasisHom_eq_iff X N x ψ).2 hx
+    refine ⟨X.liftDrinfeldBasisScheme N x (heq ▸ hψ), ?_⟩
     dsimp [toStructure]
     apply (gammaEquiv _).injective
     simp only [Equiv.apply_symm_apply]
@@ -220,7 +232,7 @@ noncomputable def gammaBaseChangeEquiv (T : Over X.base) :
     apply MonoidHom.ext
     intro a
     apply (X.baseChangePointsEquiv T).injective
-    simpa [reassoc_of% hy] using hx a
+    simpa using hx a
 
 /-- The point of the Drinfeld-basis scheme attached to the structure defined by a point `y` is
 `y` itself. -/
