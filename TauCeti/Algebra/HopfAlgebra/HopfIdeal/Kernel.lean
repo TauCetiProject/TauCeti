@@ -77,8 +77,8 @@ preservation of the Hopf structure. This construction works over commutative sem
 def kerOfComul (f : H →ₐc[R] K)
     (hcomul : ∀ ⦃x : H⦄, x ∈ RingHom.ker (f : H →ₐ[R] K) →
       Coalgebra.comul (R := R) x ∈
-        Ideal.leftTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K)) ⊔
-          Ideal.rightTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K))) :
+        Ideal.leftTensorIdeal (R := R) (B := H) (RingHom.ker (f : H →ₐ[R] K)) ⊔
+          Ideal.rightTensorIdeal (R := R) (A := H) (RingHom.ker (f : H →ₐ[R] K))) :
     HopfIdeal R H :=
   ofIdeal (RingHom.ker (f : H →ₐ[R] K)) hcomul
     (fun _ hx ↦ counit_eq_zero_of_mem_ker f hx)

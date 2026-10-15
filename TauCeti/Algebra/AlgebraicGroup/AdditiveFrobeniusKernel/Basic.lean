@@ -84,17 +84,17 @@ by the freshman's dream in characteristic `p`, `Δ(xᵖ) = xᵖ ⊗ 1 + 1 ⊗ x�
 (`TauCeti.AdditiveGroup.comul_ι_pow`). -/
 private theorem comul_gen_mem :
     Coalgebra.comul (R := R) (ι R R 1 ^ p) ∈
-      Ideal.leftTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+      Ideal.leftTensorIdeal (R := R) (B := SymmetricAlgebra R R)
           (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}) ⊔
-        Ideal.rightTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+        Ideal.rightTensorIdeal (R := R) (A := SymmetricAlgebra R R)
           (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}) := by
   rw [AdditiveGroup.comul_ι_pow R p]
   exact Ideal.add_mem _
     (Ideal.mem_sup_left
-      (Ideal.tmul_mem_leftTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+      (Ideal.tmul_mem_leftTensorIdeal (R := R) (B := SymmetricAlgebra R R)
         (Ideal.mem_span_singleton_self _) 1))
     (Ideal.mem_sup_right
-      (Ideal.tmul_mem_rightTensorIdeal (R := R) (H := SymmetricAlgebra R R) 1
+      (Ideal.tmul_mem_rightTensorIdeal (R := R) (A := SymmetricAlgebra R R) 1
         (Ideal.mem_span_singleton_self _)))
 
 omit [CharP R p] in

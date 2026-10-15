@@ -66,8 +66,8 @@ structure HopfIdeal where
   comul_mem' :
     ∀ ⦃x : H⦄, x ∈ carrier →
       Coalgebra.comul (R := R) x ∈
-        Ideal.leftTensorIdeal (R := R) (H := H) carrier ⊔
-          Ideal.rightTensorIdeal (R := R) (H := H) carrier
+        Ideal.leftTensorIdeal (R := R) (B := H) carrier ⊔
+          Ideal.rightTensorIdeal (R := R) (A := H) carrier
   /-- The counit vanishes on the ideal. -/
   counit_eq_zero' : ∀ ⦃x : H⦄, x ∈ carrier → Coalgebra.counit (R := R) x = 0
   /-- The antipode preserves the ideal. -/
@@ -133,7 +133,7 @@ theorem ext {I J : HopfIdeal R H} (h : ∀ x : H, x ∈ I ↔ x ∈ J) : I = J :
     (hcomul :
       ∀ ⦃x : H⦄, x ∈ I →
         Coalgebra.comul (R := R) x ∈
-          Ideal.leftTensorIdeal (R := R) (H := H) I ⊔ Ideal.rightTensorIdeal (R := R) (H := H) I)
+          Ideal.leftTensorIdeal (R := R) (B := H) I ⊔ Ideal.rightTensorIdeal (R := R) (A := H) I)
     (hcounit : ∀ ⦃x : H⦄, x ∈ I → Coalgebra.counit (R := R) x = 0)
     (hantipode : ∀ ⦃x : H⦄, x ∈ I → HopfAlgebra.antipode R x ∈ I) :
     HopfIdeal R H where
@@ -158,8 +158,8 @@ closure conditions only on those generators. -/
 def ofSpan (S : Set H) [hS : (Ideal.span S).IsTwoSided]
     (hcomul : ∀ x ∈ S,
       Coalgebra.comul (R := R) x ∈
-        Ideal.leftTensorIdeal (R := R) (H := H) (Ideal.span S) ⊔
-          Ideal.rightTensorIdeal (R := R) (H := H) (Ideal.span S))
+        Ideal.leftTensorIdeal (R := R) (B := H) (Ideal.span S) ⊔
+          Ideal.rightTensorIdeal (R := R) (A := H) (Ideal.span S))
     (hcounit : ∀ x ∈ S, Coalgebra.counit (R := R) x = 0)
     (hantipode : ∀ x ∈ S, HopfAlgebra.antipode R x ∈ Ideal.span S) :
     HopfIdeal R H :=
@@ -197,8 +197,8 @@ theorem ofSpan_toIdeal (S : Set H) [hS : (Ideal.span S).IsTwoSided]
 /-- The comultiplication of an element of a Hopf ideal lies in `I ⊗ H + H ⊗ I`. -/
 theorem comul_mem (I : HopfIdeal R H) {x : H} (hx : x ∈ I) :
     Coalgebra.comul (R := R) x ∈
-      Ideal.leftTensorIdeal (R := R) (H := H) I.toIdeal ⊔
-        Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal :=
+      Ideal.leftTensorIdeal (R := R) (B := H) I.toIdeal ⊔
+        Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal :=
   I.comul_mem' hx
 
 /-- The counit vanishes on a Hopf ideal. -/
@@ -269,16 +269,16 @@ instance instMax : Max (HopfIdeal R H) where
         refine add_mem ?_ ?_
         · exact
             (sup_le_sup
-                (Ideal.leftTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
+                (Ideal.leftTensorIdeal_mono (R := R) (B := H) (I := I.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_left)
-                (Ideal.rightTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
+                (Ideal.rightTensorIdeal_mono (R := R) (A := H) (I := I.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_left))
               (I.comul_mem hy)
         · exact
             (sup_le_sup
-                (Ideal.leftTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
+                (Ideal.leftTensorIdeal_mono (R := R) (B := H) (I := J.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_right)
-                (Ideal.rightTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
+                (Ideal.rightTensorIdeal_mono (R := R) (A := H) (I := J.toIdeal)
                   (J := I.toIdeal ⊔ J.toIdeal) le_sup_right))
               (J.comul_mem hz)
       counit_eq_zero' := by
@@ -339,9 +339,9 @@ instance instSupSet : SupSet (HopfIdeal R H) where
         rw [Finsupp.sum, map_sum]
         refine Submodule.sum_mem _ fun I _ => ?_
         exact sup_le_sup
-          (Ideal.leftTensorIdeal_mono (R := R) (H := H)
+          (Ideal.leftTensorIdeal_mono (R := R) (B := H)
             (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-          (Ideal.rightTensorIdeal_mono (R := R) (H := H)
+          (Ideal.rightTensorIdeal_mono (R := R) (A := H)
             (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
           ((I : HopfIdeal R H).comul_mem (hf I))
       counit_eq_zero' := fun _ hx => by

@@ -66,13 +66,13 @@ variable [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
 variable, so the right tensor ideal is the ideal of `G × V(I)`. -/
 def IsNormal (I : HopfIdeal R H) : Prop :=
   Ideal.map (HopfAlgebra.conjugationAlgHom (R := R) (H := H)).toRingHom I.toIdeal ≤
-    Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal
+    Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal
 
 /-- Normality restated as the defining ideal inclusion. -/
 theorem isNormal_def (I : HopfIdeal R H) :
     I.IsNormal ↔
       Ideal.map (HopfAlgebra.conjugationAlgHom (R := R) (H := H)).toRingHom I.toIdeal ≤
-        Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal :=
+        Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal :=
   Iff.rfl
 
 /-- A Hopf ideal is normal exactly when the coordinate conjugation of each of its elements
@@ -80,14 +80,14 @@ belongs to `H ⊗ I`. -/
 theorem isNormal_iff_conjugation_mem (I : HopfIdeal R H) :
     I.IsNormal ↔ ∀ ⦃x : H⦄, x ∈ I →
       HopfAlgebra.conjugationAlgHom (R := R) (H := H) x ∈
-        Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal := by
+        Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal := by
   rw [isNormal_def, Ideal.map_le_iff_le_comap]
   rfl
 
 /-- The coordinate conjugation of an element of a normal Hopf ideal belongs to `H ⊗ I`. -/
 theorem IsNormal.conjugation_mem {I : HopfIdeal R H} (hI : I.IsNormal) {x : H} (hx : x ∈ I) :
     HopfAlgebra.conjugationAlgHom (R := R) (H := H) x ∈
-      Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal :=
+      Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal :=
   (isNormal_iff_conjugation_mem I).mp hI hx
 
 /-- The image of a normal Hopf ideal under a morphism of commutative Hopf algebras is normal.
@@ -101,7 +101,7 @@ theorem IsNormal.map {K : Type w} [CommSemiring K] [HopfAlgebra R K]
   have hmap : f.toAlgHom.toRingHom = (f : H →+* K) := by
     ext
     rfl
-  rw [← hmap, ← AlgHom.map_tensor_rightTensorIdeal f.toAlgHom I.toIdeal]
+  rw [← hmap, ← AlgHom.map_tensor_rightTensorIdeal f.toAlgHom f.toAlgHom I.toIdeal]
   rw [Ideal.map_le_iff_le_comap]
   intro x hx
   rw [Ideal.mem_comap]
@@ -195,7 +195,7 @@ theorem quotientPointsSubgroup_normal (H : _root_.CommHopfAlgCat.{v} R)
   intro x hx
   rw [← HopfAlgebra.productMap_comp_conjugationAlgHom (R := R) (H := H) g n]
   have hker :
-      Ideal.rightTensorIdeal (R := R) (H := H) I.toIdeal ≤
+      Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal ≤
         RingHom.ker (Algebra.TensorProduct.productMap g.ofConv n.ofConv).toRingHom := by
     rw [Ideal.rightTensorIdeal_le_iff]
     intro y hy

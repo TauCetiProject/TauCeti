@@ -79,8 +79,8 @@ private theorem quotientEval_separates (S : Subgroup (WithConv (H →ₐ[k] k)))
 private theorem comul_mem_pointKernelIdeal (S : Subgroup (WithConv (H →ₐ[k] k)))
     {x : H} (hx : x ∈ pointKernelIdeal S) :
     Coalgebra.comul (R := k) x ∈
-      Ideal.leftTensorIdeal (R := k) (H := H) (pointKernelIdeal S) ⊔
-        Ideal.rightTensorIdeal (R := k) (H := H) (pointKernelIdeal S) := by
+      Ideal.leftTensorIdeal (R := k) (B := H) (pointKernelIdeal S) ⊔
+        Ideal.rightTensorIdeal (R := k) (A := H) (pointKernelIdeal S) := by
   let q := Ideal.Quotient.mkₐ k (pointKernelIdeal S)
   have hker : RingHom.ker q = pointKernelIdeal S := Ideal.Quotient.mkₐ_ker k (pointKernelIdeal S)
   rw [← hker, ← AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q

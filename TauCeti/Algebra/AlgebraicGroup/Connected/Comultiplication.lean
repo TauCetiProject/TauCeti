@@ -147,9 +147,9 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     [LocallyConnectedSpace (PrimeSpectrum H)] :
     Coalgebra.comul (R := k)
         (1 - PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k H)) ∈
-      Ideal.leftTensorIdeal (R := k) (H := H)
+      Ideal.leftTensorIdeal (R := k) (B := H)
           (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) ⊔
-        Ideal.rightTensorIdeal (R := k) (H := H)
+        Ideal.rightTensorIdeal (R := k) (A := H)
           (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) := by
   let I := PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)
   let e := PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k H)
@@ -167,8 +167,8 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     change 1 - F (Coalgebra.comul (R := k) e) = 0
     rw [ha_eq_one, sub_self]
   have hker_eq : RingHom.ker F.toRingHom =
-      Ideal.leftTensorIdeal (R := k) (H := H) I ⊔
-        Ideal.rightTensorIdeal (R := k) (H := H) I := by
+      Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
+        Ideal.rightTensorIdeal (R := k) (A := H) I := by
     have hqker : RingHom.ker q = I := by
       -- Unfold the local quotient-map abbreviation for Mathlib's kernel theorem.
       change RingHom.ker (Ideal.Quotient.mkₐ k I) = I
@@ -187,9 +187,9 @@ theorem comul_mem_connectedComponentIdeal_augmentationPoint
     letI : LocallyConnectedSpace (PrimeSpectrum H) := inferInstance
     x ∈ PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H) →
       Coalgebra.comul (R := k) x ∈
-        Ideal.leftTensorIdeal (R := k) (H := H)
+        Ideal.leftTensorIdeal (R := k) (B := H)
             (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) ⊔
-          Ideal.rightTensorIdeal (R := k) (H := H)
+          Ideal.rightTensorIdeal (R := k) (A := H)
             (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) := by
   dsimp only
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
@@ -200,8 +200,8 @@ theorem comul_mem_connectedComponentIdeal_augmentationPoint
   -- Expose the local component ideal so its principal-generator characterization can rewrite.
   change x ∈ I at hx
   change Coalgebra.comul (R := k) x ∈
-    Ideal.leftTensorIdeal (R := k) (H := H) I ⊔
-      Ideal.rightTensorIdeal (R := k) (H := H) I
+    Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
+      Ideal.rightTensorIdeal (R := k) (A := H) I
   rw [PrimeSpectrum.mem_connectedComponentIdeal_iff] at hx
   obtain ⟨a, rfl⟩ := hx
   rw [Bialgebra.comul_mul]

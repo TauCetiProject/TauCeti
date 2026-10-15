@@ -84,13 +84,13 @@ so the left tensor ideal is the ideal of `V(I) × G`: the condition says that co
 arbitrary point of `G` by a point of the closed subgroup `V(I)` leaves it unchanged. -/
 def IsCentral (I : HopfIdeal R H) : Prop :=
   ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
-      Algebra.TensorProduct.includeRight x ∈ Ideal.leftTensorIdeal (R := R) (H := H) I.toIdeal
+      Algebra.TensorProduct.includeRight x ∈ Ideal.leftTensorIdeal (R := R) (B := H) I.toIdeal
 
 /-- Centrality means that conjugation agrees with the second projection modulo the ideal
 of the subgroup in the first tensor factor. -/
 theorem isCentral_iff_conjugation_sub_mem (I : HopfIdeal R H) :
     I.IsCentral ↔ ∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
-      Algebra.TensorProduct.includeRight x ∈ Ideal.leftTensorIdeal (R := R) (H := H) I.toIdeal :=
+      Algebra.TensorProduct.includeRight x ∈ Ideal.leftTensorIdeal (R := R) (B := H) I.toIdeal :=
   Iff.rfl
 
 /-- Centrality passes to larger Hopf ideals, which cut out smaller closed subgroups. -/
@@ -110,11 +110,11 @@ theorem isCentral_bot_iff_isCocomm :
     (⊥ : HopfIdeal R H).IsCentral ↔ _root_.Coalgebra.IsCocomm R H := by
   rw [IsCentral, ← HopfAlgebra.commute_includeLeft_includeRight_iff_isCocomm R H,
     commute_iff_eq]
-  have hzero : Ideal.leftTensorIdeal (R := R) (H := H) (⊥ : HopfIdeal R H).toIdeal = ⊥ := by
+  have hzero : Ideal.leftTensorIdeal (R := R) (B := H) (⊥ : HopfIdeal R H).toIdeal = ⊥ := by
     rw [bot_toIdeal, Ideal.leftTensorIdeal_def, Ideal.map_bot]
   have hiff : (∀ x : H, HopfAlgebra.conjugationAlgHom (R := R) (H := H) x -
         Algebra.TensorProduct.includeRight x ∈
-          Ideal.leftTensorIdeal (R := R) (H := H) (⊥ : HopfIdeal R H).toIdeal) ↔
+          Ideal.leftTensorIdeal (R := R) (B := H) (⊥ : HopfIdeal R H).toIdeal) ↔
       HopfAlgebra.conjugationAlgHom (R := R) (H := H) =
         Algebra.TensorProduct.includeRight := by
     rw [hzero]
@@ -155,7 +155,7 @@ theorem isCentralPoint_of_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.
   rw [HopfAlgebra.isCentralPoint_def]
   intro B _ _ φ h
   set g' : WithConv (↥H →ₐ[R] B) := AlgHom.mapValue φ g with hg'
-  have hker : Ideal.leftTensorIdeal (R := R) (H := ↥H) I.toIdeal ≤
+  have hker : Ideal.leftTensorIdeal (R := R) (B := ↥H) I.toIdeal ≤
       RingHom.ker (Algebra.TensorProduct.productMap g'.ofConv h.ofConv).toRingHom := by
     rw [Ideal.leftTensorIdeal_le_iff]
     intro y hy

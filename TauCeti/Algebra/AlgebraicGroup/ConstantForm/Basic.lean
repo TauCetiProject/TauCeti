@@ -188,10 +188,10 @@ ideals of the span of the relations. -/
 private theorem comul_relationMatrix_mem (i j : Fin n) :
     Coalgebra.comul (R := R) (relationMatrix R n C i j) ∈
       Ideal.leftTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+          (B := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) ⊔
         Ideal.rightTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+          (A := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
   have h := congrFun (congrFun (relationMatrix_map_comul R n C) i) j
   rw [Matrix.map_apply, Bialgebra.comulAlgHom_apply] at h
@@ -200,11 +200,11 @@ private theorem comul_relationMatrix_mem (i j : Fin n) :
   · refine Matrix.mul_mul_apply_mem (fun k l => ?_) _ _ i j
     rw [Matrix.map_apply]
     exact Ideal.includeRight_mem_rightTensorIdeal (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n)
+      (A := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C k l))
   · rw [Matrix.map_apply]
     exact Ideal.includeLeft_mem_leftTensorIdeal (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n)
+      (B := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
 
 /-- The antipode image of the relation matrix is the negative of the relation matrix framed by

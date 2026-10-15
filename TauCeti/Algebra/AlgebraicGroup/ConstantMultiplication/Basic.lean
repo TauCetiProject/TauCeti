@@ -388,10 +388,10 @@ those of the two factors. -/
 private theorem comul_relationMatrix_mem (k i j : Fin n) :
     Coalgebra.comul (R := R) (relationMatrix R n C (GeneralLinear.genericMatrix R n) k i j) ∈
       Ideal.leftTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+          (B := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) ⊔
         Ideal.rightTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+          (A := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
   have hmap := relationMatrix_map R n C
     (Bialgebra.comulAlgHom R (GeneralLinear.coordinateHopfAlgebra R n))
@@ -405,12 +405,12 @@ private theorem comul_relationMatrix_mem (k i j : Fin n) :
         ((GeneralLinear.genericMatrix R n).map
           (Algebra.TensorProduct.includeRight (R := R))) k p q ∈
         Ideal.rightTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+          (A := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
       intro p q
       refine relationMatrix_map_genericMatrix_mem R n C _ _ (fun x hx => ?_) k p q
       exact Ideal.includeRight_mem_rightTensorIdeal (R := R)
-        (H := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
+        (A := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
     have hmem := Matrix.mul_mul_apply_mem hr
       ((GeneralLinear.genericMatrix R n).map
         (Algebra.TensorProduct.includeLeft (R := R) (S := R))) 1 i j
@@ -419,19 +419,19 @@ private theorem comul_relationMatrix_mem (k i j : Fin n) :
         ((GeneralLinear.genericMatrix R n).map
           (Algebra.TensorProduct.includeLeft (R := R) (S := R))) a p q ∈
         Ideal.leftTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+          (B := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
       intro a p q
       refine relationMatrix_map_genericMatrix_mem R n C _ _ (fun x hx => ?_) a p q
       exact Ideal.includeLeft_mem_leftTensorIdeal (R := R)
-        (H := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
+        (B := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
     have hsum : ∀ p q : Fin n,
         (∑ a, ((GeneralLinear.genericMatrix R n).map
               (Algebra.TensorProduct.includeRight (R := R))) a k •
             relationMatrix R n C ((GeneralLinear.genericMatrix R n).map
               (Algebra.TensorProduct.includeLeft (R := R) (S := R))) a) p q ∈
           Ideal.leftTensorIdeal (R := R)
-            (H := GeneralLinear.coordinateHopfAlgebra R n)
+            (B := GeneralLinear.coordinateHopfAlgebra R n)
             (Ideal.span (relationSet R n C)) :=
       fun p q => Matrix.sum_smul_apply_mem hl _ p q
     have hmem := Matrix.mul_mul_apply_mem hsum 1

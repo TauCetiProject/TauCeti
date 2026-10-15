@@ -459,15 +459,15 @@ private def coefficientSet (I : HopfIdeal K (baseChange (K := K) H)) : Set H :=
 private theorem comul_mem_of_mem_coefficientSet (I : HopfIdeal K (baseChange (K := K) H))
     {x : H} (hx : x ∈ coefficientSet b I) :
     Coalgebra.comul (R := k) x ∈
-      Ideal.leftTensorIdeal (R := k) (H := H) (Ideal.span (coefficientSet b I)) ⊔
-        Ideal.rightTensorIdeal (R := k) (H := H) (Ideal.span (coefficientSet b I)) := by
+      Ideal.leftTensorIdeal (R := k) (B := H) (Ideal.span (coefficientSet b I)) ⊔
+        Ideal.rightTensorIdeal (R := k) (A := H) (Ideal.span (coefficientSet b I)) := by
   obtain ⟨y, hy, j, rfl⟩ := hx
-  have hle : Ideal.leftTensorIdeal (R := K) (H := K ⊗[k] H) I.toIdeal ⊔
-        Ideal.rightTensorIdeal (R := K) (H := K ⊗[k] H) I.toIdeal ≤
+  have hle : Ideal.leftTensorIdeal (R := K) (B := K ⊗[k] H) I.toIdeal ⊔
+        Ideal.rightTensorIdeal (R := K) (A := K ⊗[k] H) I.toIdeal ≤
       Ideal.comap (tensorSquareBaseChangeHom H) (RingHom.ker
         (Algebra.TensorProduct.map (AlgHom.id K K) (Ideal.Quotient.mkₐ k
-          (Ideal.leftTensorIdeal (R := k) (H := H) (Ideal.span (coefficientSet b I)) ⊔
-            Ideal.rightTensorIdeal (R := k) (H := H)
+          (Ideal.leftTensorIdeal (R := k) (B := H) (Ideal.span (coefficientSet b I)) ⊔
+            Ideal.rightTensorIdeal (R := k) (A := H)
               (Ideal.span (coefficientSet b I)))))) := by
     refine sup_le ((Ideal.leftTensorIdeal_le_iff _ _).2 fun a ha ↦ ?_)
       ((Ideal.rightTensorIdeal_le_iff _ _).2 fun a ha ↦ ?_) <;>
