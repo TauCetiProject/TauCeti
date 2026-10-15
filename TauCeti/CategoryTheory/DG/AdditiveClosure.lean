@@ -314,6 +314,7 @@ theorem embedding_obj (X : C) : (embedding R).obj X = ⟨PUnit, fun _ ↦ X⟩ :
   (rfl)
 
 /-- The embedding acts on morphisms by `TauCeti.DGAdditiveClosure.embeddingHomEquiv`. -/
+@[simp]
 theorem dgMap_embedding {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     (embedding R).dgMap n f = embeddingHomEquiv R X Y n f :=
   (EnrichedFunctor.dgMap_apply _ f).trans rfl
