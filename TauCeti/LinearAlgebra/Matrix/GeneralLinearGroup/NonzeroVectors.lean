@@ -21,7 +21,7 @@ import Mathlib.Logic.Equiv.Option
 
 An invertible matrix carries a nonzero vector to a nonzero vector, because it has an inverse; so
 `GL n R` acts on the nonzero vectors of `n → R`. The underlying `GL n R`-set is
-`Matrix.GeneralLinearGroup.nonzeroVectors`, a `SubMulAction` of the `Matrix.mulVec` action of
+`TauCeti.nonzeroVectors`, a `SubMulAction` of the `Matrix.mulVec` action of
 `Mathlib.LinearAlgebra.Matrix.Action`, and the permutation representation it carries is Mathlib's
 `MulAction.toPermHom`.
 
@@ -29,25 +29,25 @@ That representation is faithful as soon as `R` is nontrivial: the standard basis
 then nonzero and `g • eⱼ` is the `j`-th column of `g`, so an element acting trivially on the
 nonzero vectors has the columns of the identity matrix. Over a finite ring the set being permuted
 has `|R| ^ |n| - 1` elements, which is what can make the representation surjective as well in
-small cases; the smallest such coincidence, `GL₂(𝔽₂) ≅ S₃`, is in
+small cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/FieldCardTwo.lean`.
 
 ## Main definitions
 
-* `Matrix.GeneralLinearGroup.nonzeroVectors`: the nonzero vectors of `n → R` as a `GL n R`-set.
+* `TauCeti.nonzeroVectors`: the nonzero vectors of `n → R` as a `GL n R`-set.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.faithfulSMulNonzeroVectors`: the action on the nonzero vectors is
-  faithful over a nontrivial ring.
-* `Matrix.GeneralLinearGroup.natCard_nonzeroVectors`: there are `|R| ^ |n| - 1` nonzero vectors.
+* `TauCeti.faithfulSMulNonzeroVectors`: the action on the nonzero vectors is faithful over a
+  nontrivial ring.
+* `TauCeti.natCard_nonzeroVectors`: there are `|R| ^ |n| - 1` nonzero vectors.
 -/
 
 public section
 
 open Matrix
 
-namespace Matrix.GeneralLinearGroup
+namespace TauCeti
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
 
@@ -88,4 +88,4 @@ theorem natCard_nonzeroVectors [Finite R] :
   rw [Nat.card_congr e]
   omega
 
-end Matrix.GeneralLinearGroup
+end TauCeti

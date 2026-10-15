@@ -9,14 +9,18 @@ public import Mathlib.Algebra.Group.Units.Hom
 public import Mathlib.Algebra.GroupWithZero.Hom
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
 public import Mathlib.Data.Set.Operations
+-- `Nat.card` occurs in the statement about a group with zero with two elements below.
+public import Mathlib.SetTheory.Cardinal.Finite
 -- Non-public: the `IsLocalHom` instance for a monoid-with-zero homomorphism out of a group with
 -- zero is used only in the proof below.
 import Mathlib.Algebra.GroupWithZero.Units.Lemmas
+-- Non-public: `Nat.card_units` counts the units of a group with zero, in one proof only.
+import Mathlib.Algebra.GroupWithZero.Units.Fintype
 
 /-!
 # Units and powers in groups with zero
 
-Two elementary facts about a group with zero `G₀`.
+Three elementary facts about a group with zero `G₀`.
 
 A product `a ^ i * a⁻¹ ^ (n - i)`, in which the two exponents are natural numbers adding up to
 `n`, is the integer power `a ^ (2 * i - n)`.  Such a product is what a diagonal matrix
@@ -32,11 +36,17 @@ of its values can be a unit: such a homomorphism is local, so a preimage of a un
 unit of `G₀`.  Membership of a unit in the range is therefore the same as being `Units.map` of a
 unit, which is what turns a hypothesis about `Set.range (algebraMap F E)` into one about `Fˣ`.
 
+A group with zero with two elements has a trivial unit group: by `Nat.card_units` the units are
+one fewer than the elements, so there is exactly one of them.  This is why a field with two
+elements has no pair of distinct units, hence none of the invariants indexed by such a pair.
+
 ## Main results
 
 * `TauCeti.pow_mul_inv_pow_eq_zpow₀`: `a ^ i * a⁻¹ ^ (n - i) = a ^ (2 * i - n)` for `i ≤ n`.
 * `TauCeti.mem_range_iff_exists_units_map_eq`: a unit lies in the range of a monoid-with-zero
   homomorphism out of a group with zero exactly when it is `Units.map` of a unit.
+* `TauCeti.subsingleton_units_of_natCard_eq_two`: a group with zero with two elements has a
+  trivial unit group.
 -/
 
 public section
@@ -62,5 +72,11 @@ theorem mem_range_iff_exists_units_map_eq {G₀ M₀ F : Type*} [GroupWithZero G
     exact ⟨(IsUnit.of_map f a (ha ▸ u.isUnit)).unit, Units.ext (by simp [ha])⟩
   · rintro ⟨a, rfl⟩
     exact ⟨a, rfl⟩
+
+/-- **A group with zero with two elements has a trivial unit group.** Its units are one fewer than
+its elements, by `Nat.card_units`, so there is exactly one of them. -/
+theorem subsingleton_units_of_natCard_eq_two {G₀ : Type*} [GroupWithZero G₀]
+    (h : Nat.card G₀ = 2) : Subsingleton G₀ˣ :=
+  (Nat.card_eq_one_iff_unique.1 (by rw [Nat.card_units G₀, h])).1
 
 end TauCeti

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Matrix.GeneralLinearGroup.nonzeroVectors` is the set permuted below, and its count is what
--- makes the permutation representation surjective here.
+-- `TauCeti.nonzeroVectors` is the set permuted below, and its count is what makes the permutation
+-- representation surjective here.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors
 -- `MulAction.toPermHom` occurs in the bijectivity statement below.
 public import Mathlib.Algebra.Group.Action.End
@@ -16,27 +16,34 @@ public import Mathlib.Algebra.Group.End
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 -- Non-public: `Nat.card_perm` counts the permutations of a finite type, in one proof only.
 import Mathlib.Data.Finite.Perm
--- Non-public: `Nat.card_units` gives the order of the unit group of a field, in one proof only.
-import Mathlib.Algebra.GroupWithZero.Units.Fintype
 
 /-!
 # `GL₂` over a field with two elements is the symmetric group on three letters
 
 A plane over a field `F` with two elements has exactly three nonzero vectors, and `GL (Fin 2) F`
-permutes them faithfully, by `Matrix.GeneralLinearGroup.faithfulSMulNonzeroVectors`. The
-permutation representation is therefore an embedding into a group of order `3! = 6`, and it is an
-isomorphism because `TauCeti.natCard_GL_fin_two` gives `|GL₂(F)| = (2 - 1)² · 2 · 3 = 6` as well.
-Numbering the three vectors turns this into `GL₂(F) ≃* Equiv.Perm (Fin 3)`, that is `GL₂(𝔽₂) ≅ S₃`.
+permutes them faithfully, by `TauCeti.faithfulSMulNonzeroVectors`. The permutation representation
+is therefore an embedding into a group of order `3! = 6`, and it is an isomorphism because
+`TauCeti.natCard_GL_fin_two` gives `|GL₂(F)| = (2 - 1)² · 2 · 3 = 6` as well. Numbering the three
+vectors turns this into `GL₂(F) ≃* Equiv.Perm (Fin 3)`, that is `GL₂(𝔽₂) ≅ S₃`.
 
-Recorded alongside it are the order `6` and the three conjugacy classes — the central class, the
-unipotent class of the transvections and the elliptic class of the elements of order `3` — and the
-triviality of `Fˣ`. The last is what makes this case of `GL₂` over a finite field small: with `Fˣ`
-a single point there is no pair of distinct eigenvalues, so the regular split semisimple classes
-and the irreducible principal series, both indexed by such pairs, are empty.
+Declared here are the count of the nonzero vectors, the bijectivity of the permutation
+representation, the isomorphism it gives, the numbering of the three vectors and the resulting
+isomorphism onto `Equiv.Perm (Fin 3)`. Three further facts about this degenerate case are stated
+with the general results they specialize rather than here: the order `6` is
+`TauCeti.natCard_GL_fin_two_of_card_eq_two` in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/Card.lean`, the three conjugacy classes — the
+central class, the unipotent class of the transvections and the elliptic class of the elements of
+order `3` — are counted by `TauCeti.natCard_conjClasses_GL_fin_two_of_card_eq_two` in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/ConjugacyClasses.lean`, and the triviality of
+`Fˣ` is `TauCeti.subsingleton_units_of_natCard_eq_two` in
+`TauCeti/Algebra/GroupWithZero/Units/Basic.lean`. The last is what makes this case of `GL₂` over a
+finite field small: with `Fˣ` a single point there is no pair of distinct eigenvalues, so the
+regular split semisimple classes and the irreducible principal series, both indexed by such pairs,
+are empty.
 
 The character degrees `1, 1, 2` of the resulting character table are a statement about complex
 representations and are not proved here; what is proved is the group isomorphism they are read
-off, together with the order and the class count.
+off, together with the order and the class count cited above.
 
 ## Main definitions
 
@@ -47,7 +54,6 @@ off, together with the order and the class count.
 
 ## Main results
 
-* `TauCeti.subsingleton_units_of_card_eq_two`: a field with two elements has a trivial unit group.
 * `TauCeti.natCard_nonzeroVectors_fin_two_of_card_eq_two`: the plane has three nonzero vectors.
 * `TauCeti.toPermHom_nonzeroVectors_bijective_of_card_eq_two`: the permutation representation on
   them is bijective.
@@ -63,14 +69,7 @@ open Matrix
 
 namespace TauCeti
 
-open Matrix.GeneralLinearGroup
-
 variable {F : Type*} [Field F] [Fintype F]
-
-/-- **A field with two elements has a trivial unit group.** -/
-theorem subsingleton_units_of_card_eq_two (hF : Fintype.card F = 2) : Subsingleton Fˣ := by
-  have h : Nat.card Fˣ = 1 := by rw [Nat.card_units, Nat.card_eq_fintype_card, hF]
-  exact (Nat.card_eq_one_iff_unique.1 h).1
 
 /-- **A plane over a field with two elements has three nonzero vectors.** -/
 theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hF : Fintype.card F = 2) :
@@ -79,8 +78,10 @@ theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hF : Fintype.card F = 2) 
     Fintype.card_fin]
   norm_num
 
-/-- **`GL₂` over a field with two elements permutes the three nonzero vectors of the plane
-bijectively.** -/
+/-- **Over a field with two elements, `MulAction.toPermHom` is a bijection of `GL₂` onto the whole
+permutation group of the three nonzero vectors of the plane.** Every one of the six permutations of
+those vectors is the action of exactly one matrix: the homomorphism is injective because the action
+is faithful, and surjective because the two groups both have order `6`. -/
 theorem toPermHom_nonzeroVectors_bijective_of_card_eq_two (hF : Fintype.card F = 2) :
     Function.Bijective
       (MulAction.toPermHom (GL (Fin 2) F) (nonzeroVectors (Fin 2) F)) := by
@@ -95,6 +96,8 @@ noncomputable def gl2MulEquivPermNonzeroVectors (hF : Fintype.card F = 2) :
     GL (Fin 2) F ≃* Equiv.Perm (nonzeroVectors (Fin 2) F) :=
   MulEquiv.ofBijective _ (toPermHom_nonzeroVectors_bijective_of_card_eq_two hF)
 
+/-- **The action identified by `TauCeti.gl2MulEquivPermNonzeroVectors`**: the permutation attached
+to `g` carries a nonzero vector `v` to `g *ᵥ v`. -/
 @[simp]
 theorem val_gl2MulEquivPermNonzeroVectors_apply (hF : Fintype.card F = 2) (g : GL (Fin 2) F)
     (v : nonzeroVectors (Fin 2) F) :
@@ -118,6 +121,9 @@ noncomputable def gl2MulEquivPermFinThree (hF : Fintype.card F = 2) :
   (gl2MulEquivPermNonzeroVectors hF).trans
     (Equiv.permCongrHom (nonzeroVectorsEquivFinThree hF))
 
+/-- **The action identified by `TauCeti.gl2MulEquivPermFinThree`**: on `Fin 3` it is the
+permutation of the nonzero vectors attached to `g`, conjugated along the numbering
+`TauCeti.nonzeroVectorsEquivFinThree`. -/
 @[simp]
 theorem gl2MulEquivPermFinThree_apply (hF : Fintype.card F = 2) (g : GL (Fin 2) F) (i : Fin 3) :
     gl2MulEquivPermFinThree hF g i =
