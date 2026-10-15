@@ -32,7 +32,8 @@ both extend that of the nonarchimedean local field `K`, then `Ω` is a valuative
 The extension `Ω / K` need not be algebraic. -/
 theorem valuativeExtension [ValuativeRel Ω] [ValuativeExtension K Ω]
     (E : IntermediateField K Ω) [Algebra.IsAlgebraic K E] [ValuativeRel E]
-    [ValuativeExtension K E] : ValuativeExtension E Ω :=
-  E.val.valuativeExtension
+    [ValuativeExtension K E] : ValuativeExtension E Ω := by
+  have h := E.val.valuativeExtension
+  exact ⟨fun a b ↦ h.vle_iff_vle a b⟩
 
 end IntermediateField

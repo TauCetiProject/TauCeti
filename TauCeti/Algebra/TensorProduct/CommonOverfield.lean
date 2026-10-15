@@ -93,6 +93,8 @@ noncomputable def commonOverfield (k : Type u) (K : Type v) (L : Type w)
 
 namespace CommonOverfield
 
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+
 variable {k : Type u} {K : Type v} {L : Type w} [Field k] [Field K] [Field L]
   [Algebra k K] [Algebra k L]
 
@@ -101,21 +103,21 @@ overfield. -/
 noncomputable def comparison (d : CommonOverfield k K L) (A : Type x)
     [CommSemiring A] [Algebra k A] :
     ((K ⊗[k] A) ⊗[K] d.Ω) ≃+* (A ⊗[k] d.Ω) :=
-  baseChangeTowerRingEquiv k K A d.Ω
+  (baseChangeTowerRightAlgEquiv k K A d.Ω).toRingEquiv
 
 /-- The common-overfield comparison sends nested pure tensors to pure tensors. -/
 @[simp]
 theorem comparison_tmul_tmul (d : CommonOverfield k K L) (A : Type x)
     [CommSemiring A] [Algebra k A] (x : K) (a : A) (ω : d.Ω) :
     d.comparison A ((x ⊗ₜ[k] a) ⊗ₜ[K] ω) = a ⊗ₜ[k] (x • ω) :=
-  baseChangeTowerRingEquiv_tmul_tmul k K A d.Ω x a ω
+  baseChangeTowerRightAlgEquiv_tmul_tmul k K A d.Ω x a ω
 
 /-- The inverse common-overfield comparison sends pure tensors to nested pure tensors. -/
 @[simp]
 theorem comparison_symm_tmul (d : CommonOverfield k K L) (A : Type x)
     [CommSemiring A] [Algebra k A] (a : A) (ω : d.Ω) :
     (d.comparison A).symm (a ⊗ₜ[k] ω) = (1 ⊗ₜ[k] a) ⊗ₜ[K] ω :=
-  baseChangeTowerRingEquiv_symm_tmul k K A d.Ω a ω
+  baseChangeTowerRightAlgEquiv_symm_tmul k K A d.Ω a ω
 
 /-- Scalar extension along the embedding of `L` into a common overfield. -/
 noncomputable def map (d : CommonOverfield k K L) (A : Type x)

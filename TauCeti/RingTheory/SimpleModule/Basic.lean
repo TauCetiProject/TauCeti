@@ -16,9 +16,8 @@ products `Π i, M i`. The dependent product covers a binary product only when bo
 the same universe, since the family `M : ι → Type u` is universe-monomorphic; this file supplies
 the binary case with the two factors in unrelated universes.
 
-For a **simple** module it records that multiplication by a natural number is all-or-nothing:
-multiplication by `n` is the `R`-linear endomorphism `n • LinearMap.id`, so its kernel is an
-`R`-submodule, hence `⊥` or `⊤`, and `n` either kills no nonzero element or kills every element.
+For a **simple** module it records that a natural number either kills no nonzero element or kills
+every element.
 
 It also records which elements of a semisimple module an endomorphism can connect: some
 `R`-linear endomorphism sends `w` to `x` exactly when every scalar killing `w` kills `x`. This
@@ -42,21 +41,11 @@ variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
 
 section SimpleModule
 
-/-- **In a simple module a natural number that kills one nonzero element kills every element.**
-Multiplication by `n` is the `R`-linear endomorphism `n • LinearMap.id`, so its kernel is an
-`R`-submodule; a nonzero element of that kernel keeps it from being `⊥`, and in a simple module it
-is then `⊤`. -/
+/-- **In a simple module a natural number that kills one nonzero element kills every element.** -/
 theorem forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M}
     (hm₀ : m₀ ≠ 0) (h : n • m₀ = 0) (m : M) : n • m = 0 := by
-  -- Membership in that kernel, read without the `ℕ`-action on linear maps.
-  have hmem : ∀ x : M, x ∈ LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ↔ n • x = 0 := fun x ↦ by
-    simp only [LinearMap.mem_ker, LinearMap.smul_apply, LinearMap.id_apply]
-  have hne : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ≠ ⊥ := by
-    intro hbot
-    exact hm₀ ((Submodule.mem_bot R).mp (hbot ▸ (hmem m₀).mpr h))
-  have htop : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) = ⊤ :=
-    (eq_bot_or_eq_top _).resolve_left hne
-  exact (hmem m).mp (htop ▸ Submodule.mem_top)
+  obtain ⟨r, rfl⟩ := _root_.IsSimpleModule.toSpanSingleton_surjective R hm₀ m
+  simp only [LinearMap.toSpanSingleton_apply, ← smul_comm r n, h, smul_zero]
 
 end SimpleModule
 

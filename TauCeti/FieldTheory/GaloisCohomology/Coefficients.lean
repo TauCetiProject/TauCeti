@@ -17,6 +17,8 @@ public import TauCeti.RingTheory.RootsOfUnity.Action
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 -- Non-public: the roots of unity of a separably closed field are used only inside a proof.
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+-- Non-public: the nonvanishing of `n` in `Kˢ` is used only inside a proof.
+import TauCeti.Algebra.Algebra.NatCast
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
 import TauCeti.Algebra.GroupWithZero.Units.Basic
 
@@ -259,9 +261,7 @@ theorem kummerSequence_exact : Function.Exact (kummerCoeffIncl K n) (unitsCoeffP
 invertible in `K`: `Xⁿ - a` is then separable, and `Kˢ` is separably closed. -/
 theorem unitsCoeffPow_surjective (hn : IsUnit (n : K)) :
     Function.Surjective (unitsCoeffPow K n) := by
-  have hn0 : (n : SeparableClosure K) ≠ 0 := by
-    have h := (map_ne_zero (algebraMap K (SeparableClosure K))).2 hn.ne_zero
-    rwa [map_natCast] at h
+  have hn0 : (n : SeparableClosure K) ≠ 0 := hn.natCast_ne_zero_of_algebra
   have hn' : n ≠ 0 := by rintro rfl; simp at hn0
   have : NeZero (n : SeparableClosure K) := ⟨hn0⟩
   intro x

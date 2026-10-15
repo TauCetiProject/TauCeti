@@ -12,7 +12,8 @@ public import Mathlib.Analysis.InnerProductSpace.Semisimple
 
 A subspace reduces an endomorphism when both it and its orthogonal complement are invariant.
 For a symmetric endomorphism, invariance of the subspace alone is enough. When an orthogonal
-projection exists, reduction is equivalently commutation with that projection.
+projection exists, reduction is equivalently commutation with that projection; in particular the
+orthogonal projection onto a subspace invariant under a symmetric endomorphism commutes with it.
 -/
 
 public section
@@ -66,5 +67,14 @@ theorem isReducing_iff_commute_starProjection (U : Submodule 𝕜 E) [U.HasOrtho
     (LinearMap.IsIdempotentElem.commute_iff
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap U.isIdempotentElem_starProjection)
     (T := A)).symm
+
+/-- The orthogonal projection onto a subspace invariant under a symmetric endomorphism commutes
+with that endomorphism. -/
+theorem _root_.LinearMap.IsSymmetric.starProjection_apply_comm {A : Module.End 𝕜 E}
+    (hA : A.IsSymmetric) {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
+    (hU : U ∈ A.invtSubmodule) (x : E) : U.starProjection (A x) = A (U.starProjection x) := by
+  have h := (U.isReducing_iff_commute_starProjection A).mp
+    ((hA.isReducing_iff_mem_invtSubmodule U).mpr hU)
+  simpa only [Module.End.mul_apply, ContinuousLinearMap.coe_coe] using congr($(h.eq) x)
 
 end Submodule
