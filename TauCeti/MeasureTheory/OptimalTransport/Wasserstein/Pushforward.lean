@@ -30,6 +30,9 @@ spaces.
 * `TauCeti.wassersteinEDist_map_le_eLpNorm` bounds the distance between the laws of two
   a.e. strongly measurable maps from arbitrary measurable spaces into a Borel extended
   pseudometric space, using any coupling of their source measures.
+* `TauCeti.wassersteinEDist_map_le_eLpNorm_of_measurable_edist` gives the same bound for
+  a.e. measurable maps into any space with a measurable extended distance, such as `ℝ≥0∞`, which
+  is not a pseudometric space in its order topology.
 * `TauCeti.hasFiniteMoment_map_iff_memLp_edist` identifies the moment condition on a law
   with radial `MemLp` on its source.
 * `TauCeti.exists_coe_eq_map_of_memLp` shows that the law of a map of `Lᵖ` under a probability
@@ -95,6 +98,33 @@ theorem wassersteinEDist_map_le_eLpNorm (hπ : IsCoupling π μ ν)
     (eLpNorm_map_measure hd (hfπ.prodMk hgπ))
 
 end MeasurableSource
+
+section MeasurableEDist
+
+variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z] [EDist Z]
+  {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)} {f : X → Z} {g : Y → Z} {p : ℝ≥0∞}
+
+/-- Two a.e. measurable maps into a space with a measurable extended distance send a coupling to a
+transport plan whose cost bounds the Wasserstein distance of their laws. The target needs no
+topology, so this applies to `ℝ≥0∞`, which is not a pseudometric space in its order topology. -/
+theorem wassersteinEDist_map_le_eLpNorm_of_measurable_edist (hπ : IsCoupling π μ ν)
+    (hd : Measurable fun z : Z × Z ↦ edist z.1 z.2) (hf : AEMeasurable f μ)
+    (hg : AEMeasurable g ν) :
+    wassersteinEDist p (μ.map f) (ν.map g) ≤
+      eLpNorm (fun q : X × Y ↦ edist (f q.1) (g q.2)) p π := by
+  -- Push `π` forward along measurable representatives of the two maps.
+  have hσ := hπ.map hf.measurable_mk hg.measurable_mk
+  rw [Measure.map_congr hf.ae_eq_mk, Measure.map_congr hg.ae_eq_mk]
+  refine (wassersteinEDist_le hσ p).trans_eq ?_
+  rw [eLpNorm_map_measure hd.aestronglyMeasurable
+    (hf.measurable_mk.prodMap hg.measurable_mk).aemeasurable]
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hf.ae_eq_mk,
+    hπ.measurePreserving_snd.quasiMeasurePreserving.ae_eq_comp hg.ae_eq_mk] with q h₁ h₂
+  simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd] at h₁ h₂ ⊢
+  rw [h₁, h₂]
+
+end MeasurableEDist
 
 section Moment
 

@@ -52,7 +52,8 @@ what the gluing lemma consumes.
 * `TauCeti.wassersteinEDist p μ ν` — the infimum of `eLpNorm (fun z ↦ edist z.1 z.2) p π` over the
   couplings `π` of `μ` and `ν`.
 * `TauCeti.HasFiniteMoment p μ` — the `MemLp` finite-moment condition about some basepoint, with
-  `TauCeti.hasFiniteMoment_of_ae_mem_finset` supplying finite moments for finite carriers.
+  `TauCeti.hasFiniteMoment_of_ae_mem_finset` supplying finite moments for finite carriers and
+  `TauCeti.hasFiniteMoment_dirac` for Dirac laws.
 
 ## Main statements
 
@@ -531,6 +532,26 @@ theorem wassersteinEDist_dirac_left_le_add (hd : Measurable fun z : X × X ↦ e
     _ ≤ eLpNorm (fun _ : X ↦ edist x₁ x₀) p ν + eLpNorm (fun y ↦ edist x₀ y) p ν :=
         eLpNorm_add_le hp
 
+/-- **The triangle inequality through a Dirac law.** For probability measures, the Wasserstein
+distance to a Dirac law is at most the distance to any intermediate probability measure plus the
+distance from it to the Dirac law. A Dirac law has a single coupling with each probability measure,
+so no gluing, and hence no standard Borel hypothesis, is needed; compare
+`TauCeti.wassersteinEDist_triangle`. -/
+theorem wassersteinEDist_triangle_dirac (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp : 1 ≤ p) (μ ν : Measure X) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (y : X) :
+    wassersteinEDist p μ (Measure.dirac y) ≤
+      wassersteinEDist p μ ν + wassersteinEDist p ν (Measure.dirac y) := by
+  have hy : Measurable fun x : X ↦ edist x y := hd.comp (measurable_id.prodMk measurable_const)
+  rw [wassersteinEDist_dirac_right hd, wassersteinEDist_dirac_right hd, wassersteinEDist]
+  simp only [ENNReal.iInf_add]
+  refine le_iInf₂ fun π hπ ↦ ?_
+  -- Read both distances to the atom on the coupling `π`, then apply Minkowski's inequality.
+  rw [← eLpNorm_comp_measurePreserving hy.aestronglyMeasurable hπ.measurePreserving_fst,
+    ← eLpNorm_comp_measurePreserving hy.aestronglyMeasurable hπ.measurePreserving_snd]
+  refine (eLpNorm_mono_enorm (hy.comp measurable_fst).aestronglyMeasurable fun z ↦ ?_).trans
+    (eLpNorm_add_le hp)
+  simpa using edist_triangle z.1 z.2 y
+
 /-- Finite `p`-moment about a basepoint is independent of the basepoint inside a fixed
 finite-distance component. On an extended pseudometric space the finite-distance hypothesis cannot
 be dropped: basepoints in different components can have unrelated moment conditions. -/
@@ -668,6 +689,15 @@ theorem hasFiniteMoment_of_ae_mem_finset [OpensMeasurableSpace X] {ν : Measure 
   · exact ((Finset.sup_lt_iff (by simp)).2 fun z _ ↦ edist_lt_top x₀ z).ne
   · filter_upwards [hs] with y hy
     simpa only [enorm_eq_self] using Finset.le_sup (f := fun z ↦ edist x₀ z) hy
+
+/-- A Dirac law has finite `p`-moment for every exponent: its distance from its atom vanishes
+almost everywhere. -/
+theorem hasFiniteMoment_dirac [OpensMeasurableSpace X] (p : ℝ≥0∞) (x : X) :
+    HasFiniteMoment p (Measure.dirac x) := by
+  refine hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := 0)
+    measurable_edist_right.aestronglyMeasurable ENNReal.zero_ne_top ?_⟩
+  filter_upwards [ae_eq_dirac' (a := x) (measurable_edist_right (x := x))] with y hy
+  simp only [enorm_eq_self, hy, Function.const_apply, edist_self, le_refl]
 
 /-- On an ordinary pseudometric space, the finite-moment condition can be tested at any prescribed
 basepoint whose distance section is almost-everywhere strongly measurable. -/
