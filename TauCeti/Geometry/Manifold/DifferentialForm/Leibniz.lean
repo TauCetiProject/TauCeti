@@ -11,11 +11,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 # The degree-zero Leibniz rule for manifold forms
 
 The exterior derivative of a product of scalar functions is the usual product rule, expressed in
-Tau Ceti's fixed-coefficient form carrier. This is the degree-zero specialization of the paired
-wedge Leibniz rule in DifferentialGeometry Layer 1.4; higher-degree factors require the alternating
-wedge calculation.
-
-The proof uses the existing `mextDeriv_ofFunction` bridge and Mathlib's `mvfderiv_mul` theorem.
+Tau Ceti's fixed-coefficient form carrier. This scalar identity supplies the degree-zero case
+needed for the general exterior-derivative wedge Leibniz identity.
 -/
 
 public section
