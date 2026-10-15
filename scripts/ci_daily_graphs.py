@@ -540,13 +540,17 @@ def merge_charts(db: sqlite3.Connection, until: float, *, queue_until=None, stag
     return result
 
 
-def charts(db: sqlite3.Connection, until: float, other_jobs_until=None, assets=None) -> dict[str, str]:
+def charts(db: sqlite3.Connection, until: float, other_jobs_until=None, assets=None, covered_since=None) -> dict[str, str]:
     """All daily charts, through the last complete UTC day before `until`."""
     last = (dt.datetime.fromtimestamp(until, UTC) - dt.timedelta(days=1)).date()
     first_row = db.execute(f"SELECT MIN(created_at) FROM runs WHERE workflow = '{PR_BUILD}'").fetchone()[0]
     if not first_row:
         return {}
     first = max(dt.date.fromisoformat(first_row[:10]), last - dt.timedelta(days=89))
+    if covered_since is not None:
+        start=dt.datetime.fromtimestamp(covered_since,UTC)
+        first_covered=start.date() if start.time()==dt.time() else start.date()+dt.timedelta(days=1)
+        first=max(first,first_covered)
     if first > last:
         return {}
     m = metrics(db, first.isoformat(), last.isoformat(), other_jobs_until)

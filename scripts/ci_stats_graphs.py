@@ -350,6 +350,24 @@ def download(dest: Path):
             shutil.copyfileobj(src, dst)
 
 
+def contiguous_coverage(db, stream):
+    """Union a stream's intervals and stop its daily charts at the first gap."""
+    try:
+        intervals = sorted((ts(lo),ts(hi)) for lo,hi in db.execute(
+            "SELECT since,complete_to FROM stream_coverage WHERE repo='TauCeti' AND stream=?", (stream,))
+            if ts(hi)>ts(lo))
+    except sqlite3.OperationalError:
+        return None,None
+    if not intervals:
+        return None,None
+    start,end = intervals[0]
+    for lo,hi in intervals[1:]:
+        if lo>end:
+            break
+        end=max(end,hi)
+    return start,end
+
+
 def chart_cutoffs(db, now, override=None):
     """Coverage follows each input stream; newer recorded staging data may be partial."""
     def one(query, args=()):
@@ -363,8 +381,8 @@ def chart_cutoffs(db, now, override=None):
     except sqlite3.OperationalError:
         covered = {}
     fleet = min(covered.values()) if covered else None
-    builds = one("SELECT MAX(complete_to) FROM stream_coverage WHERE repo='TauCeti' AND stream='build-jobs'")
-    details = one("SELECT MAX(complete_to) FROM stream_coverage WHERE repo='TauCeti' AND stream='details'")
+    _, builds = contiguous_coverage(db,'build-jobs')
+    _, details = contiguous_coverage(db,'details')
     queue = one('SELECT MAX(observed_at) FROM merge_observations')
     inventory = one("SELECT MAX(complete_to) FROM stream_coverage WHERE repo='TauCeti' AND stream='inventory'")
     if inventory is None:
@@ -376,7 +394,7 @@ def chart_cutoffs(db, now, override=None):
             'details': details if details is not None else covered.get('TauCeti'),
             'queue': None if queue is None else queue+0.001,
             'staging': staging}
-    return {name: override if override is not None else min(now, end) if end is not None else None
+    return {name: min(override,end) if override is not None and end is not None else override if override is not None else min(now, end) if end is not None else None
             for name, end in ends.items()}
 
 
@@ -417,7 +435,10 @@ def generate(db, out, now, override=None):
                     files[f'ci-fleet-{name}.svg'] = render(data, title, subtitle, annotations)
             elif group in ('daily','details'):
                 assets = detail_assets if group == 'details' else set(ci_daily_graphs.ASSET_NAMES)-detail_assets
-                files = ci_daily_graphs.charts(db, until, other_jobs_until=ends['fleet'] or 0, assets=assets)
+                start,_ = contiguous_coverage(db,'details' if group=='details' else 'build-jobs')
+                files = ci_daily_graphs.charts(db, until, other_jobs_until=ends['fleet'] or 0, assets=assets, covered_since=start)
+                if not files:
+                    raise ValueError('no complete UTC days within contiguous source coverage')
             else:
                 files = ci_daily_graphs.merge_charts(db, until, include_queue=group == 'queue',
                                                      include_staging=group == 'staging')

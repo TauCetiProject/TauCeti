@@ -108,6 +108,14 @@ class MergeQueueChartsTest(unittest.TestCase):
         self.assertIn("GitHub queue + bors", charts["ci-merge-queue.svg"])
         self.assertIn("PR arrivals on main", charts["ci-merge-queue.svg"])
 
+    def test_daily_chart_omits_partially_covered_first_day(self):
+        self.build(1,'pr',day='2026-10-05')
+        self.build(2,'pr',day='2026-10-06')
+        charts=daily.charts(self.db,daily.ts('2026-10-07'),covered_since=daily.ts('2026-10-05T12:00:00Z'))
+        for svg in charts.values():
+            self.assertIn('UTC days 06 Oct to 06 Oct',svg)
+        self.assertFalse(daily.charts(self.db,daily.ts('2026-10-06T18:00:00Z'),covered_since=daily.ts('2026-10-06T12:00:00Z')))
+
     def test_other_job_waits_stop_at_their_complete_day(self):
         self.build(1, 'pr', day='2026-10-06')
         self.db.execute("INSERT INTO jobs VALUES ('TauCeti',1,999,'label','2026-10-06T12:00:00Z',NULL,'success','github',600,2,NULL)")
@@ -334,6 +342,25 @@ class MergeTimelinesTest(unittest.TestCase):
         self.assertEqual(ends['daily'], daily.ts('2026-10-08'))
         history = daily.merge_history(self.db, self.since, ends['queue'], include_staging=False)
         self.assertEqual(len(history['queue']), 1)
+
+    def test_daily_coverage_unions_overlaps_and_stops_at_the_first_gap(self):
+        self.db.executescript("""
+            CREATE TABLE stream_coverage (repo TEXT,stream TEXT,since TEXT,complete_to TEXT);
+            INSERT INTO stream_coverage VALUES
+              ('TauCeti','build-jobs','2026-10-05','2026-10-06'),
+              ('TauCeti','build-jobs','2026-10-05T12:00:00Z','2026-10-07'),
+              ('TauCeti','build-jobs','2026-10-07','2026-10-08'),
+              ('TauCeti','build-jobs','2026-10-09','2026-10-10'),
+              ('TauCeti','details','2026-10-05T12:00:00Z','2026-10-07'),
+              ('TauCeti','details','2026-10-08','2026-10-10');
+        """)
+        self.assertEqual(fleet.contiguous_coverage(self.db,'build-jobs'),
+                         (daily.ts('2026-10-05'),daily.ts('2026-10-08')))
+        ends=fleet.chart_cutoffs(self.db,daily.ts('2026-10-11'))
+        self.assertEqual(ends['daily'],daily.ts('2026-10-08'))
+        self.assertEqual(ends['details'],daily.ts('2026-10-07'))
+        forced=fleet.chart_cutoffs(self.db,daily.ts('2026-10-11'),daily.ts('2026-10-11'))
+        self.assertEqual(forced['daily'],ends['daily'])
 
     def test_generator_writes_new_assets_with_the_existing_charts(self):
         # Exercise the public entry point and generated-asset list together.

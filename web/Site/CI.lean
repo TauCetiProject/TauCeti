@@ -109,6 +109,8 @@ do not establish that no runs occurred.
 # Day by day
 
 The charts below give one point per complete UTC day, for up to the last ninety days.
+Each uses its own continuous coverage interval and stops at the first gap; partially covered
+days are omitted.
 
 How long does a build take, and how long does it wait before starting? A pull-request build
 restores what it can from the artifact cache and compiles the rest, then runs the audits and lints.
