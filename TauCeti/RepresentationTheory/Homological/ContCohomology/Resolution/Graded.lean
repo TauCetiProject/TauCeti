@@ -88,6 +88,7 @@ theorem gradedResolutionDifferential_lof [DecidableEq ℕ] (n : ℕ) (x : (resol
   exact h
 
 /-- The differential of the total shifted resolution squares to zero. -/
+@[simp]
 theorem gradedResolutionDifferential_sq (x : X.gradedResolutionModule) :
     X.gradedResolutionDifferential (X.gradedResolutionDifferential x) = 0 :=
   (resolutionModuleComplex X).directSumDifferential_sq x
@@ -395,6 +396,7 @@ theorem gradedResolutionTopRepDifferential_apply (x : X.gradedResolutionModule) 
   (rfl)
 
 /-- The differential of the bundled discrete resolution squares to zero. -/
+@[simp]
 theorem gradedResolutionTopRepDifferential_sq :
     X.gradedResolutionTopRepDifferential ≫ X.gradedResolutionTopRepDifferential = 0 := by
   ext x

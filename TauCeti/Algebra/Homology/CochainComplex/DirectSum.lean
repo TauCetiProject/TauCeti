@@ -53,6 +53,7 @@ theorem directSumDifferential_lof [h : DecidableEq ℕ] (n : ℕ) (x : K.X n) :
   simp [directSumDifferential]
 
 /-- The total differential squares to zero. -/
+@[simp]
 theorem directSumDifferential_sq (x : K.directSumModule) :
     K.directSumDifferential (K.directSumDifferential x) = 0 := by
   have h : K.directSumDifferential.comp K.directSumDifferential = 0 := by
