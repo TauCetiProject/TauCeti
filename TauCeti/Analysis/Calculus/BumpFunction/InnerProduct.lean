@@ -17,13 +17,15 @@ in a direction along which `f` is stationary does not see `ψ'`.
 
 ## Main results
 
-* `fderiv_mul_comp_mul_inner_apply`: for any functions differentiable at the point.
+* `TauCeti.fderiv_mul_comp_mul_inner_apply`: for any functions differentiable at the point.
 * `ContDiffBump.fderiv_mul_comp_mul_inner_apply`: its form for bumps.
 -/
 
 public section
 
 open scoped RealInnerProductSpace
+
+namespace TauCeti
 
 /-- **The derivative of a localized linear test function.** For functions `θ : E → ℝ` and
 `ψ : ℝ → ℝ`, a vector `w` and a function `f`, with `θ` differentiable at `p`, `f` differentiable at
@@ -44,13 +46,16 @@ theorem fderiv_mul_comp_mul_inner_apply {E : Type*} [NormedAddCommGroup E]
     ContinuousLinearMap.comp_apply, hv, fderiv_eq_smul_deriv, zero_mul, mul_zero, add_zero]
   ring
 
-/-- **The derivative of a bump test function.** The case of `fderiv_mul_comp_mul_inner_apply` in
-which `θ` is a bump on `E` and `ψ` a bump on `ℝ`. -/
+end TauCeti
+
+/-- **The derivative of a bump test function.** The case of
+`TauCeti.fderiv_mul_comp_mul_inner_apply` in which `θ` is a bump on `E` and `ψ` a bump on `ℝ`. -/
 theorem ContDiffBump.fderiv_mul_comp_mul_inner_apply {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [HasContDiffBump E] {z : E} (θ : ContDiffBump z) {c : ℝ}
     (ψ : ContDiffBump c) (w : E) {f : E → ℝ} {p v : E} (hf : DifferentiableAt ℝ f p)
     (hv : fderiv ℝ f p v = 0) :
     fderiv ℝ (fun x ↦ θ x * (ψ (f x) * ⟪w, x⟫)) p v =
       (θ p * ⟪w, v⟫ + ⟪w, p⟫ * fderiv ℝ θ p v) * ψ (f p) :=
-  _root_.fderiv_mul_comp_mul_inner_apply w ((θ.contDiff (n := 1)).differentiable one_ne_zero p)
+  TauCeti.fderiv_mul_comp_mul_inner_apply w
+    ((θ.contDiff (n := 1)).differentiable one_ne_zero p)
     ((ψ.contDiff (n := 1)).differentiable one_ne_zero (f p)) hf hv
