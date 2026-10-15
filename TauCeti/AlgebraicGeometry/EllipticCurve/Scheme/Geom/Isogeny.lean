@@ -106,7 +106,7 @@ instance isIsogeny_comp (f : E.toCommGrp ⟶ E'.toCommGrp) (g : E'.toCommGrp ⟶
 variable (E : EllipticCurveGeom S)
 
 /-- **Multiplication by a nonzero integer is an isogeny** (Katz–Mazur 2.3.1), over any base. -/
-theorem isIsogeny_intCast {n : ℤ} (hn : n ≠ 0) : IsIsogeny (n : End E.toCommGrp) :=
+theorem isIsogeny_intCast {n : ℤ} (hn : n ≠ 0) : IsIsogeny (n : End E.toCommGrp).asHom :=
   (isIsogeny_iff _).mpr ⟨by simpa using E.isFinite_mulBy_left hn,
     by simpa using E.flat_mulBy_left hn, by simpa using E.surjective_mulBy_left hn⟩
 
@@ -114,14 +114,14 @@ theorem isIsogeny_intCast {n : ℤ} (hn : n ≠ 0) : IsIsogeny (n : End E.toComm
 its kernel `E[n]` is `n²` at every point of `S`. -/
 @[simp]
 theorem degree_intCast {n : ℤ} (hn : n ≠ 0) (s : S) :
-    GroupScheme.degree (n : End E.toCommGrp).hom s = n.natAbs ^ 2 := by
+    GroupScheme.degree (n : End E.toCommGrp).asHom.hom s = n.natAbs ^ 2 := by
   rw [GroupScheme.degree_apply]
   exact (congrArg (fun X : Over S ↦ X.hom.finrank s) (congrArg Grp.X (E.torsion_eq_kernel n))).symm
     |>.trans (E.finrank_torsion_hom hn s)
 
 /-- **Multiplication by a nonzero integer `n` is an isogeny of degree `n²`.** -/
 theorem isogenyOfDegree_intCast {n : ℤ} (hn : n ≠ 0) :
-    GroupScheme.IsogenyOfDegree (n : End E.toCommGrp).hom (n.natAbs ^ 2) :=
+    GroupScheme.IsogenyOfDegree (n : End E.toCommGrp).asHom.hom (n.natAbs ^ 2) :=
   ⟨(E.isIsogeny_intCast hn).isIsogeny, E.degree_intCast hn⟩
 
 end EllipticCurveGeom

@@ -133,7 +133,7 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
   -- By Prokhorov's theorem, a subsequence converges to a law `ηlim`.
   have hcpt : IsCompact (closure (range ηs)) := by
     refine isCompact_closure_of_isTightMeasureSet ?_
-    convert htight
+    convert htight using 1
     ext ν
     simp only [exists_range_iff]
     simp only [mem_ofPred_eq, mem_range, ηs, ProbabilityMeasure.coe_mk]
