@@ -419,8 +419,8 @@ theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
 the tableau. -/
 @[simp]
 theorem appendToRow_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
-    (h : rows.IsTableauRows) (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
-    {a : α} (ha : (rows.getD k []).getLast? = some a) :
+    (h : rows.IsTableauRows) (hk : (rows[k + 1]?.getD []).length < (rows[k]?.getD []).length)
+    {a : α} (ha : (rows[k]?.getD []).getLast? = some a) :
     appendToRow a k (dropLastOfRow k rows) = rows := by
   induction rows generalizing k with
   | nil => simp at ha
