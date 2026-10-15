@@ -62,7 +62,8 @@ theorem leftDual_eq (V : FGModuleCat.{u} K) : (ᘁV : FGModuleCat K) = dual K V 
 /-- Left evaluation is ordinary evaluation of a linear functional. -/
 @[simp]
 theorem leftEvaluation_apply (V : FGModuleCat.{u} K) (x : V) (f : Module.Dual K V) :
-    (ε_ (ᘁV) V).hom.hom (x ⊗ₜ[K] f) = f x := by
+    (ε_ (ᘁV) V).hom.hom (A := V.obj ⊗ (ᘁV).obj) (B := 𝟙_ (ModuleCat K))
+      (x ⊗ₜ[K] f) = f x := by
   -- Reduce the chosen dual in the dependent tensor-product types before simplifying maps.
   dsimp +instances [FGModuleCatDual, ExactPairing.evaluation, HasLeftDual.exact,
     HasLeftDual.leftDual, leftDual, leftExactPairing, exactPairingCongrRight,
