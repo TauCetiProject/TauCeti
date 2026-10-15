@@ -10,6 +10,7 @@ import base64
 from collections import defaultdict
 from dataclasses import dataclass, asdict, field
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -129,6 +130,8 @@ class API:
                 "variables": {"number": int(number)},
             })
             if data.get("errors"):
+                if any(e.get("type") == "RATE_LIMITED" for e in data["errors"]):
+                    raise BudgetGap("GraphQL API rate limit refused; sweep stopped")
                 raise Gap("live branch metadata unavailable")
             ref = data["data"]["repository"]["pullRequest"]["headRef"]
             if not ref or ref["target"]["oid"] != p.head:
@@ -137,6 +140,41 @@ class API:
 
     def main(self):
         return oid(self.call("git/ref/heads/main")["object"]["sha"])
+
+    def declared_parents(self, child):
+        """Only current GitHub-rendered prose may establish a body-only edge."""
+        cache = self.__dict__.setdefault("declarations", {})
+        key = child.number, child.head, child.body
+        if key not in cache:
+            try:
+                if not re.search(r"stack|depend|prereq|parent PR|based on|built on|carries", child.body, re.I):
+                    cache[key] = set()
+                else:
+                    data = self.request("https://api.github.com/graphql", "POST", {
+                        "query": 'query($number: Int!) { repository(owner: "TauCetiProject", name: "TauCeti") '
+                                 '{ pullRequest(number: $number) { body bodyHTML headRefOid } } }',
+                        "variables": {"number": child.number},
+                    })
+                    errors = data.get("errors") or []
+                    if any(e.get("type") == "RATE_LIMITED" for e in errors):
+                        raise BudgetGap("GraphQL API rate limit refused; sweep stopped")
+                    if errors:
+                        raise Gap("rendered PR prose unavailable")
+                    p = data["data"]["repository"]["pullRequest"]
+                    if not p or (p["body"] or "") != child.body or p["headRefOid"] != child.head:
+                        raise Gap("rendered PR prose/head identity changed; retry fresh metadata")
+                    cache[key] = rendered_parents(p["bodyHTML"])
+                    if not cache[key]:
+                        self.__dict__.setdefault("declaration_gaps", set()).add(child.number)
+                        emit(declaration_pr=child.number,
+                             gap="no complete unqualified rendered parent declaration; body-only inference declined")
+            except BudgetGap:
+                raise
+            except Exception as error:
+                cache[key] = Gap(f"unverified rendered PR prose: {error}")
+        if isinstance(cache[key], Gap):
+            raise cache[key]
+        return cache[key]
 
 
 def oid(value):
@@ -176,42 +214,182 @@ class PR:
                    if (p.get("user") or {}).get("login") != "ghost" else 0)
 
 
-def explicit_parents(body):
-    """Candidate discovery only: affirmative unquoted prose with local PR identities.
+def event_targets(event, prs):
+    """Focus events; reserve full source sweeps for schedules/manual dispatches."""
+    if event.get("pull_request"):
+        return {int(event["pull_request"]["number"])}
+    wake = event.get("workflow_run")
+    if not wake:
+        return None
+    head = oid(wake.get("head_sha"))
+    associated = set()
+    for linked in wake.get("pull_requests") or []:
+        base = (linked.get("base") or {}).get("repo") or {}
+        if ((base.get("full_name") == REPO or base.get("url") == f"https://api.github.com/repos/{REPO}")
+                and (linked.get("head") or {}).get("sha") == head):
+            associated.add(int(linked["number"]))
+    # Wake completions can arrive out of push order and replace a newer pending
+    # wake. Recompute the current branch's PRs, rather than declining its changed
+    # head. This stays focused and never fetches a fork URL.
+    repo = (wake.get("head_repository") or {}).get("full_name")
+    branch = wake.get("head_branch")
+    matched = {p.number for p in prs if p.base != "main"
+               and p.head_repo == repo and p.branch == branch}
+    if associated or matched:
+        return associated | matched
+    raise Gap("wake has no associated PR/current canonical PR identity match")
 
-    A mention never authorizes closure. Reject negatives, fenced/inline code, quoted
-    lines, HTML comments and foreign URLs (including their trailing issue numbers).
-    """
-    body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+
+def rendered_prose_parents(body):
+    """Candidate identities from filtered rendered paragraphs, never raw Markdown."""
     result = set()
-    fenced = False
     for line in body.splitlines():
-        if re.match(r"\s*(```|~~~)", line):
-            fenced = not fenced
+        if not line.strip():
             continue
-        if fenced or line.lstrip().startswith(">") or line.startswith("    "):
+        if re.fullmatch(r"Roadmap:\s*[A-Za-z][A-Za-z0-9_-]*", line):
             continue
-        line = re.sub(r"(`+).*?\1", "", line)
-        line = re.sub(r'''"[^"\n]*"|“[^”\n]*”|(?<!\w)'[^'\n]*'(?!\w)''', "", line)
-        line = re.sub(r"https://github.com/([^\s/)]+/[^\s/)]+)/(?:pull|issues)/(\d+)",
-                      lambda m: f"#{m[2]}" if m[1].lower() == REPO.lower() else "", line)
-        line = re.sub(r"https?://\S+", "", line)
+        if re.fullmatch(r"Refs\s+(?:TauCetiProject/TauCeti)?#[1-9]\d*", line):
+            continue
         for sentence in re.split(r"(?<=[.!?])\s+", line):
             if re.search(r"\b(not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t)\b", sentence, re.I):
-                continue
+                return set()
             claim = re.search(
                 r"\bstack(?:ed|s|ing)?\s+on\b|"
                 r"(?:^\s*(?:[-*]\s*)?|\bthis (?:PR|branch) (?:is )?)"
-                r"(?:depends? on|based on|built on|carries .*commits from)\b|"
+                r"(?:depends? on|carries (?:unmerged |prerequisite )?commits from)\b|"
                 r"\b(?:prerequisites?|dependencies|parent PR)\s*:", sentence, re.I)
             if claim:
+                if not re.fullmatch(
+                        r"\s*(?:[-*]\s*)?(?:this (?:PR|branch|pull request) (?:is )?)?",
+                        sentence[:claim.start()], re.I):
+                    return set()
                 # Identities must belong to this particular declaration. Other
                 # sentences may discuss superseded source or mathematical uses.
-                tail = sentence[claim.end():].split(";", 1)[0]
-                if not re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#", tail, re.I):
-                    continue
-                result.update(int(n) for n in re.findall(r"(?<![\w/])#([1-9]\d*)\b", tail))
+                tail = sentence[claim.end():]
+                first = re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#([1-9]\d*)\b", tail, re.I)
+                if not first:
+                    return set()
+                declared = {int(first[1])}
+                tail = tail[first.end():]
+                # Only a contiguous reference list belongs to this declaration.
+                # Later clauses (e.g. supersedes #N) cannot acquire parenthood.
+                while match := re.match(r"[\s,\[\]()&+]*(?:and\s+)?#([1-9]\d*)\b", tail, re.I):
+                    declared.add(int(match[1]))
+                    tail = tail[match.end():]
+                # A body-only declaration must be complete, rather than a
+                # question, condition or fragment followed by qualifying prose.
+                if re.fullmatch(r"[\s\])]*\.?\s*", tail):
+                    result.update(declared)
+                else:
+                    return set()
+            else:
+                return set()
     return result
+
+
+class RenderedProse(HTMLParser):
+    """Read HTML as data; never execute/fetch it or infer code from Markdown."""
+    excluded = {"pre", "code", "blockquote", "q", "kbd", "samp", "tt", "var",
+                "script", "style", "textarea", "template", "del", "s", "strike"}
+    blocks = {"p", "div", "li", "hr", "ul", "ol", "table", "tr", "td", "th",
+              "h1", "h2", "h3", "h4", "h5", "h6", "details", "summary"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.hidden = defaultdict(int)
+        self.anchors = []
+        self.prose, self.quoting = [], []
+
+    def boundary(self):
+        self.prose.append("\x1e")
+        self.quoting.append("\n")
+
+    def opaque(self):
+        # Excluding inline markup must not manufacture a fresh sentence start.
+        self.prose.append(" [excluded] ")
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.excluded:
+            self.hidden[tag] += 1
+            self.opaque()
+        elif tag == "a":
+            number = None
+            if not any(self.hidden.values()):
+                href = dict(attrs).get("href") or ""
+                if href.startswith("/"):
+                    href = "https://github.com" + href
+                match = re.fullmatch(r"https://github\.com/([^/]+/[^/]+)/(?:pull|issues)/([1-9]\d*)(?:[/?#].*)?", href)
+                if match and match[1].lower() == REPO.lower():
+                    number = int(match[2])
+            self.anchors.append({"number": number, "label": [], "position": len(self.prose)})
+            self.opaque()
+            self.hidden[tag] += 1  # Link labels cannot manufacture declarations.
+        elif tag in self.blocks:
+            self.boundary()
+        elif tag == "br":
+            self.prose.append(" ")
+        elif tag not in {"strong", "em", "b", "i"}:
+            # Task checkboxes, images, footnote controls and other unsupported
+            # markup cannot silently qualify an otherwise literal declaration.
+            self.opaque()
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.anchors:
+            self.hidden[tag] -= 1
+            anchor = self.anchors.pop()
+            number = anchor["number"]
+            label = "".join(anchor["label"]).strip()
+            allowed = {f"#{number}", f"https://github.com/{REPO}/pull/{number}",
+                       f"https://github.com/{REPO}/issues/{number}"}
+            if number and label in allowed:
+                self.prose[anchor["position"]] = f" #{number} "
+        elif self.hidden[tag]:
+            self.hidden[tag] -= 1
+            self.opaque()
+        elif tag in self.blocks:
+            self.boundary()
+
+    def handle_data(self, data):
+        data = data.replace("\x1e", " ")
+        for anchor in self.anchors:
+            anchor["label"].append(data)
+        # Suppressed markup cannot declare parents, but it may veto a claim.
+        # In particular, formatting a negative link label as code must not
+        # erase its negation. This deliberately favors conservative misses.
+        self.quoting.append(data)
+        if not any(self.hidden.values()):
+            self.prose.append(data)
+
+
+def rendered_parents(html):
+    """Extract candidate PR identities from canonical GitHub-rendered HTML.
+
+    Code/quotation/retracted elements and link labels cannot declare parents; soft wraps
+    and inline exclusions do not create sentence starts. Literal quoted prose
+    or explicit example/historical context conservatively returns an empty set.
+    Missing/non-string/oversized input is
+    a Gap, distinct from declined inference. Metadata identity must be checked
+    by the caller; even returned identities require independent source proof.
+    """
+    if not isinstance(html, str) or len(html.encode()) > MAX_BYTES:
+        raise Gap("rendered PR prose missing or exceeds byte bound")
+    parser = RenderedProse()
+    parser.feed(html)
+    parser.close()
+    # Literal quotation can span paragraphs/inline markup. Conservatively decline
+    # body-only inference in such prose; exact ancestry/base evidence still works.
+    visible = "".join(parser.quoting)
+    visible = re.sub(r"(?m)^\s*Roadmap:\s*[A-Za-z][A-Za-z0-9_-]*\s*$", "", visible)
+    if re.search(r'''["“”‘’«»‹›„‟「」『』]|(?<!\w)'|'(?!\w)''', visible):
+        return set()
+    if "`" in visible or "<!--" in visible:
+        return set()
+    if "?" in visible or re.search(r"\b(?:if|when|in case|unless|would|could|should|might|maybe|perhaps|hypothetical\w*)\b", visible, re.I):
+        return set()
+    if re.search(r"\b(?:examples?|for reference|not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t|supersed\w*)\b", visible, re.I):
+        return set()
+    paragraphs = [" ".join(p.split()) for p in "".join(parser.prose).split("\x1e")]
+    return rendered_prose_parents("\n".join(paragraphs))
 
 
 class Source:
@@ -450,7 +628,9 @@ class Detector:
                 self.gaps[p.number] = str(e)
 
     def candidates(self, child):
-        explicit = explicit_parents(child.body) - {child.number}
+        if self.api is None:
+            raise Gap("verified PR prose provider unavailable")
+        explicit = self.api.declared_parents(child) - {child.number}
         numbers = set(explicit)
         for commit in self.source.commits(child.head):
             numbers.update(self.index[commit])
@@ -486,17 +666,26 @@ class Detector:
                     reasons.append(f"#{number}: descendant of this child, not a parent")
                     continue
                 shared = sorted(commits & parent_commits)
-                relationship = (number in explicit or (parent.head_repo == REPO and child.base == parent.branch))
+                canonical_base = (parent.state == "open" and parent.head_repo == REPO
+                                  and child.base == parent.branch)
+                relationship = number in explicit or canonical_base
                 if not shared and not relationship:
                     continue
-                graph_direction = parent.head in commits or (parent.head_repo == REPO and child.base == parent.branch)
+                graph_direction = parent.head in commits or canonical_base
                 if not relationship:
                     if not graph_direction:
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
+                # A stale PR-number reference does not bind a future parent head.
+                # A different principal can copy this child's prefix into that PR.
+                # Only a current canonical base choice bypasses provenance guards.
+                provenance_gap = None
+                if not canonical_base:
                     if parent.head_repo != child.head_repo:
-                        raise Gap("cross-repository ancestry without a child-declared parent; possible copied prefix")
-                    if not child.author_id or parent.author_id != child.author_id:
-                        raise Gap("ancestry-only parent has unknown/different author; possible third-party branch PR")
+                        provenance_gap = "cross-repository parent provenance unproved; possible copied prefix"
+                    elif not child.author_id or parent.author_id != child.author_id:
+                        provenance_gap = "parent has unknown/different author; possible third-party branch PR"
+                if not relationship and provenance_gap:
+                    raise Gap(provenance_gap)
                 base, paths, patch = self.source.patch(parent)
                 if not patch:
                     reasons.append(f"#{number}: empty parent delta")
@@ -535,6 +724,8 @@ class Detector:
                             kind = ("ancestor-head" if commit == parent.head and commit in commits
                                     else "shared-unmerged-commit" if commit in commits
                                     else "explicit-parent-content")
+                        if provenance_gap:
+                            raise Gap(provenance_gap)
                         return Evidence(number, parent.head, child.head, self.source.main,
                                         kind, commit, hashlib.sha256(delta).hexdigest(), cb), reasons
                 if len(ordered) > MAX_EVIDENCE_COMMITS:
@@ -676,19 +867,9 @@ def main():
         # Never accept an API/PR-supplied report path.
         sys.stdout = args.report.open("w")
     api = API()
-    priority = set()
-    if args.github_event and not args.pr:
-        event = json.loads(args.github_event.read_text())
-        if event.get("pull_request"):
-            priority.add(int(event["pull_request"]["number"]))
-        wake = event.get("workflow_run")
-        if wake:
-            associated = wake.get("pull_requests") or []
-            numbers = {int(p["number"]) for p in associated}
-            priority.update(numbers)
-            emit(wake="bounded backlog sweep", associated_prs=sorted(numbers))
+    event = json.loads(args.github_event.read_text()) if args.github_event else {}
     prs = []
-    metadata_gaps = 0
+    metadata_gaps = set()
     incomplete_index = False
     for raw in api.pages("pulls?state=open&sort=created&direction=asc", MAX_PRS):
         try:
@@ -696,15 +877,30 @@ def main():
         except (Gap, KeyError, ValueError) as error:
             number = raw.get("number")
             emit(index_pr=number, classification="unknown", gap=str(error))
-            metadata_gaps += int(not args.pr or args.pr == number)
+            metadata_gaps.add(number)
             incomplete_index = True
     main_sha = api.main()
-    selected = [p for p in prs if not args.pr or p.number == args.pr]
-    selected.sort(key=lambda p: (p.number in priority, p.number), reverse=True)
+    targets = {args.pr} if args.pr else event_targets(event, prs)
+    selected = [p for p in prs if targets is None or p.number in targets]
+    if targets is not None and not selected:
+        if incomplete_index:
+            raise Gap("requested/event PR metadata unavailable in the bounded index")
+        emit(classification="superseded", reason="target absent from complete open index", selected=0)
+        return False
+    selected.sort(key=lambda p: p.number, reverse=True)
+    emit(scope="backlog" if targets is None else "focused", selected=[p.number for p in selected])
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
     # can still contain unlanded prerequisite work. Never assume closure = landing.
     indexed = {p.number for p in prs}
-    references = set().union(*(explicit_parents(p.body) for p in selected)) - indexed
+    references = set()
+    for child in selected:
+        try:
+            references.update(api.declared_parents(child))
+        except BudgetGap:
+            raise
+        except Gap as error:
+            emit(declaration_pr=child.number, classification="unknown", gap=str(error))
+    references -= indexed
     for number in sorted(references, reverse=True)[64:]:
         emit(index_pr=number, classification="unknown", gap="closed-parent lookup budget exceeded")
     for number in sorted(references, reverse=True)[:64]:
@@ -720,7 +916,7 @@ def main():
     if args.apply and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?", actor):
         raise Gap("STACK_ACTOR is required to authenticate idempotency comments")
     common = run(["git", "rev-parse", "--git-common-dir"]).stdout.decode().strip()
-    failures, unknowns = 0, metadata_gaps
+    failures, unknowns = 0, len(metadata_gaps if targets is None else targets & metadata_gaps)
     with tempfile.TemporaryDirectory(prefix="no-stack-") as directory:
         source = Source(directory, api, main_sha, Path(common) / "objects")
         source.fetch(prs)
@@ -766,6 +962,8 @@ def main():
                         emit(pr=child.number, mutation="closed", withdrawal="pull_request.closed webhook")
                         verify_withdrawal(child, before, observation)
                     elif child.blocked:
+                        if child.number in getattr(api, "declaration_gaps", set()):
+                            raise Gap("declined body-only declaration; retaining prior blocking label")
                         if incomplete_index or detector.gaps:
                             raise Gap("incomplete parent index; retaining blocking label")
                         if not owns_block(api, child, actor):
