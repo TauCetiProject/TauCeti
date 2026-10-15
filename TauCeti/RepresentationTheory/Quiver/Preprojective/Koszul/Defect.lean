@@ -37,20 +37,6 @@ simply-laced Dynkin diagram: **`K_v` is one-dimensional at every vertex**, spann
 element `y_v` of some graded corner `e_v Π_n e_u`. So the Koszul complex fails to be a resolution
 by exactly a one-dimensional simple module at its left end, concentrated in one degree.
 
-The proof uses only that `Π` is self-injective on both sides
-(`TauCeti.moduleInjective_preprojectiveAlgebra_of_finiteDimensional` and its right-handed
-companion), through the annihilator criterion of Ikeda and Nakayama
-(`TauCeti.exists_eq_sum_mul_of_forall_mul_eq_zero`).
-
-* `K_v` is nonzero. Otherwise the elements killed on the left by every arrow `b*` leaving `v`
-  would all be killed by `e_v`, and right self-injectivity would write `e_v` as a combination
-  `∑ c_b b*` of those arrows, which has no component in degree zero.
-* Every `r ∈ Π` acts on all of `K_v` by one scalar, the coefficient of `e_v` in `r`, since paths
-  of positive length kill `K_v`. So for `y` and `z` in `K_v`, with `y ≠ 0`, the left annihilator
-  of `y` is contained in that of `z`, and left self-injectivity gives `z ∈ y Π`.
-* For a nonzero homogeneous `y ∈ K_v` of largest degree, cut down to a single vertex on the right,
-  every arrow kills `y` on the right too, so `y Π` is the line `k y`.
-
 Through the Koszul defect formula
 (`TauCeti.finrank_preprojectiveCorner_add_two_add_finrank_preprojectiveCorner`), the dimensions of
 the graded corners `e_v Π_n e_i` of a finite-dimensional preprojective algebra therefore satisfy
@@ -79,6 +65,22 @@ degree of `Π`; that identification of the degree `n` is not proved here.
   Res. Lett. 14 (2007), Sections 2 and 3.
 * M. Ikeda and T. Nakayama, *On some characteristic properties of quasi-Frobenius and regular
   rings*, Proc. Amer. Math. Soc. 5 (1954).
+-/
+
+/-
+Proof outline. The proof uses only that `Π` is self-injective on both sides
+(`TauCeti.moduleInjective_preprojectiveAlgebra_of_finiteDimensional` and its right-handed
+companion), through the annihilator criterion of Ikeda and Nakayama
+(`TauCeti.exists_eq_sum_mul_of_forall_mul_eq_zero`).
+
+* `K_v` is nonzero. Otherwise the elements killed on the left by every arrow `b*` leaving `v`
+  would all be killed by `e_v`, and right self-injectivity would write `e_v` as a combination
+  `∑ c_b b*` of those arrows, which has no component in degree zero.
+* Every `r ∈ Π` acts on all of `K_v` by one scalar, the coefficient of `e_v` in `r`, since paths
+  of positive length kill `K_v`. So for `y` and `z` in `K_v`, with `y ≠ 0`, the left annihilator
+  of `y` is contained in that of `z`, and left self-injectivity gives `z ∈ y Π`.
+* For a nonzero homogeneous `y ∈ K_v` of largest degree, cut down to a single vertex on the right,
+  every arrow kills `y` on the right too, so `y Π` is the line `k y`.
 -/
 
 public section
@@ -344,20 +346,16 @@ theorem finrank_ker_preprojectiveKoszulLeft [FiniteDimensional k Π] (v : Q) :
       ext w b
       rw [coe_preprojectiveKoszulLeft_apply, h w b, smul_zero]
       rfl
-  -- The kernel is the line through `y`: `t ↦ t • y` is a bijection from `k`.
+  -- The kernel is the line through `y`.
   let y' : LinearMap.ker (preprojectiveKoszulLeft k v) :=
     ⟨⟨y, (mem_preprojectiveRightProjective_iff k _ y).2 hyv⟩, (hmem _).2 hyb⟩
-  have hbij : Function.Bijective (LinearMap.toSpanSingleton k _ y') := by
-    refine ⟨fun s t hst => ?_, fun x => ?_⟩
-    · have h := congrArg (fun x : LinearMap.ker (preprojectiveKoszulLeft k v) =>
-        ((x : preprojectiveRightProjective k (Symmetrify.of.obj v)) : Π)) hst
-      simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul_of_tower, y'] at h
-      exact smul_left_injective k hy0 h
-    · obtain ⟨t, ht⟩ := hz x (by
-        rw [doubledVertexIdempotent_def]
-        exact (mem_preprojectiveRightProjective_iff k _ _).1 x.1.2) ((hmem _).1 x.2)
-      exact ⟨t, by ext; simp [y', ht]⟩
-  rw [← (LinearEquiv.ofBijective _ hbij).finrank_eq, Module.finrank_self]
+  refine (finrank_eq_one_iff_of_nonzero' y' fun h => hy0 (congrArg
+    (fun x : LinearMap.ker (preprojectiveKoszulLeft k v) =>
+      ((x : preprojectiveRightProjective k (Symmetrify.of.obj v)) : Π)) h)).2 fun x => ?_
+  obtain ⟨t, ht⟩ := hz x (by
+    rw [doubledVertexIdempotent_def]
+    exact (mem_preprojectiveRightProjective_iff k _ _).1 x.1.2) ((hmem _).1 x.2)
+  exact ⟨t, by ext; simp [y', ht]⟩
 
 /-- **The graded pieces of the left Koszul kernel**: for a finite-dimensional preprojective
 algebra and a vertex `v`, the spaces `K_m(i, v)` of `y ∈ e_v Π_m e_i` killed by the reverse `b*` of
