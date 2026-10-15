@@ -320,23 +320,23 @@ private theorem map_comp_comulAlgHom_componentCoordinateMap
     -- Restrict a point of the tensor square to its two factors. Comultiplication evaluates as
     -- convolution on both the constant component group and `H`.
     let g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
-      toConv (f.comp (Bialgebra.TensorProduct.includeLeft
-        (R := k) (H₁ := H) (H₂ := H)).toAlgHom)
+      toConv (f.comp (Algebra.TensorProduct.includeLeft
+        (R := k) (A := H) (B := H)))
     let h : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
-      toConv (f.comp (Bialgebra.TensorProduct.includeRight
-        (R := k) (H₁ := H) (H₂ := H)).toAlgHom)
+      toConv (f.comp (Algebra.TensorProduct.includeRight
+        (R := k) (A := H) (B := H)))
     let q :=
       f.comp (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H))
     have hqleft :
-        q.comp (Bialgebra.TensorProduct.includeLeft (R := k)
-          (H₁ := ConstantGroup.coordinateRing k C)
-          (H₂ := ConstantGroup.coordinateRing k C)).toAlgHom =
+        q.comp (Algebra.TensorProduct.includeLeft (R := k)
+          (A := ConstantGroup.coordinateRing k C)
+          (B := ConstantGroup.coordinateRing k C)) =
           g.ofConv.comp (componentCoordinateMap H) := by
       simp [q, g, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
     have hqright :
-        q.comp (Bialgebra.TensorProduct.includeRight (R := k)
-          (H₁ := ConstantGroup.coordinateRing k C)
-          (H₂ := ConstantGroup.coordinateRing k C)).toAlgHom =
+        q.comp (Algebra.TensorProduct.includeRight (R := k)
+          (A := ConstantGroup.coordinateRing k C)
+          (B := ConstantGroup.coordinateRing k C)) =
           h.ofConv.comp (componentCoordinateMap H) := by
       simp [q, h, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight]
     have hsource :

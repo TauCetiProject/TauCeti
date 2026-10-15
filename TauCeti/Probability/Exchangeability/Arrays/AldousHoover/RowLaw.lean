@@ -264,7 +264,7 @@ theorem conditionallyIIDWith_arrayRow_separateArray {g : I × I × I × I → α
       iidMixtureLaw ((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => volume))
         (separateRowLaw g) := by
     rw [← Measure.map_map hΨ measurable_splitNoise, map_splitNoise_noiseMeasure]
-    exact map_prod_infinitePi_eq_iidMixtureLaw _ (measurable_separateRow hg)
+    exact Measure.map_prod_infinitePi_eq_iidMixtureLaw _ (measurable_separateRow hg)
       fun z => (separateRowLaw_toMeasure g z).symm
   have h := conditionallyIIDWith_iidMixtureLaw
     (π := (volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => volume))

@@ -51,6 +51,9 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
   continuous inclusion and projection, inducing the given action, bundled with its total group, and
   `TauCeti.ProfiniteGroupExtension.ofFactorSet`, the twisted product of a continuous factor set
   when `G` and `M` are profinite.
+* `TauCeti.ProfiniteGroupExtension.relabelQuotient` and `TauCeti.ProfiniteGroupExtension.relabel`:
+  the same profinite total group, with its quotient, or both its kernel and quotient, replaced by
+  continuously isomorphic groups whose actions correspond.
 * `TauCeti.GroupExtension.continuousMulEquivOfEquiv`: an equivalence of extensions with compact
   total group is a homeomorphism as soon as it is continuous, hence a `ContinuousMulEquiv`, and
   `TauCeti.GroupExtension.continuousMulEquivOfMonoidHom` is its form for a bare morphism. Neither
@@ -75,6 +78,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Ch. I, §2.
+  §VII.4, (7.4.1), for the relabelling of an extension along isomorphisms of its kernel and quotient
+  (`TauCeti.ProfiniteGroupExtension.relabel`).
 * L. Ribes, P. Zalesskii, *Profinite Groups*, 2nd ed., Prop. 2.2.2 for the continuous section over
   an arbitrary closed subgroup, of which the compact-kernel case used here is a special case.
 -/
@@ -410,6 +415,48 @@ theorem relabelQuotient_rightHom_apply (x : X.E) :
   simp
 
 end RelabelQuotient
+
+/-! ### Relabelling the kernel and quotient
+
+Continuous multiplicative equivalences transport an extension between different models of both its
+kernel and its quotient, provided the prescribed actions correspond. The total group remains
+unchanged. This is used to compare a presentation extension with an arithmetic one whose kernel
+and quotient are only continuously isomorphic to the desired models.
+-/
+
+section Relabel
+
+/-- Relabel the kernel and quotient of a profinite extension along continuous multiplicative
+equivalences which identify the prescribed actions, retaining its total group. -/
+abbrev relabel (X : ProfiniteGroupExtension G M)
+    {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
+    [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
+    (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
+    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    ProfiniteGroupExtension G' M' where
+  E := X.E
+  toGroupExtension := _root_.GroupExtension.relabel X.toGroupExtension
+    eM.toMulEquiv eG.toMulEquiv
+  continuous_inl := by
+    rw [GroupExtension.relabel_inl]
+    exact X.continuous_inl.comp eM.continuous
+  continuous_rightHom := by
+    rw [GroupExtension.relabel_rightHom]
+    exact eG.continuous.comp X.continuous_rightHom
+  inducesAction := X.inducesAction.relabel eM.toMulEquiv eG.toMulEquiv hsmul
+
+/-- The underlying exact sequence is obtained by relabelling both terms of the original one. -/
+@[simp]
+theorem relabel_toGroupExtension (X : ProfiniteGroupExtension G M)
+    {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
+    [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
+    (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
+    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    (X.relabel eG eM hsmul).toGroupExtension =
+      X.toGroupExtension.relabel eM.toMulEquiv eG.toMulEquiv :=
+  (rfl)
+
+end Relabel
 
 end ProfiniteGroupExtension
 

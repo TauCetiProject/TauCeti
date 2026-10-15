@@ -18,7 +18,7 @@ public import TauCeti.RingTheory.Valuation.Microbial
 /-!
 # Analytic points and the analytic locus of `Spa(A, A⁺)`
 
-**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(2), (3), (5),
+**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(1), (2), (3), (5),
 Remark 7.42(2), and Proposition 7.49.**
 
 This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
@@ -39,6 +39,9 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   for a Tate ring `A`, the analytic locus is the entire adic spectrum.
 * `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_not_le_supp_of_isAdic` : in an `I`-adic ring a
   point is analytic exactly when its support does not contain `I`.
+* `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp` :
+  **Wedhorn Remark 7.40(1)**, over a Huber ring a point is analytic exactly when some
+  topologically nilpotent element is outside its support.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
 * `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
   the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
@@ -54,7 +57,7 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(2), (3), (5),
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(1), (2), (3), (5),
   Remark 7.42(2), and Proposition 7.49.
 -/
 
@@ -130,6 +133,15 @@ theorem isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp
   have hsupp : v.supp.radical = v.supp :=
     (inferInstance : v.supp.IsPrime).isRadical.radical
   rw [hsupp]
+  exact Set.not_subset
+
+/-- **Wedhorn Remark 7.40(1).** Over a Huber ring, a point is analytic exactly when some
+topologically nilpotent element is outside its support. Unlike
+`isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp`, no pair of definition is
+chosen. -/
+theorem isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp [IsHuberRing A]
+    (v : Spv A) : IsAnalyticPoint v ↔ ∃ a : A, IsTopologicallyNilpotent a ∧ a ∉ v.supp := by
+  rw [isAnalyticPoint_def, isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime]
   exact Set.not_subset
 
 /-- An analytic point supplies an element of an ideal of definition which is outside its
