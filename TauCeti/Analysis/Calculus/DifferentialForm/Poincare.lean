@@ -8,12 +8,13 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Convex.Star
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.MeasureTheory.Constructions.UnitInterval
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
+import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # The Poincaré lemma for differential forms on star-convex open sets
@@ -26,15 +27,15 @@ and let `ω` be a `C¹` differential `(n + 1)`-form on `s` with values in a Bana
 
 It satisfies the homotopy formula `d (K ω) + K (d ω) = ω` on `s`
 (`StarConvex.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`). Consequently every closed
-form on `s` is exact: if `d ω = 0` on `s`, then `K ω` is a primitive of `ω`
+`C¹` form of positive degree on `s` is exact: if `d ω = 0` on `s`, then `K ω` is a primitive of `ω`
 (`StarConvex.extDeriv_poincareHomotopy`). The primitive is as smooth as `ω`
 (`StarConvex.contDiffOn_poincareHomotopy`) and vanishes at `x₀` (`TauCeti.poincareHomotopy_self`).
 
 Mathlib proves the Poincaré lemma for `1`-forms on convex sets by integrating along segments
 (`Convex.exists_forall_hasFDerivAt_of_fderiv_symmetric`); this file treats forms of every
-degree with Mathlib's exterior derivative `extDeriv`. A smooth primitive vanishing at the centre
-of a ball is what Moser's deformation argument integrates, for instance in the proof of Darboux's
-theorem.
+positive degree with Mathlib's exterior derivative `extDeriv`. A smooth primitive vanishing at the
+centre of a ball is what Moser's deformation argument integrates, for instance in the proof of
+Darboux's theorem.
 
 The homotopy formula is the integral over `t ∈ [0, 1]` of the identity
 `d/dt (tⁿ⁺¹ ω(x₀ + t (x - x₀))) = tⁿ⁺¹ Dω(…)(x - x₀) + (n + 1) tⁿ ω(…)`, after the derivative
@@ -68,8 +69,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace TauCeti
 
 /-- The **Poincaré homotopy operator** with centre `x₀`: the `n`-form
-`x ↦ ∫₀¹ tⁿ ω(x₀ + t (x - x₀))(x - x₀, ·) dt` built from a differential `(n + 1)`-form `ω`. On an
-open set star-convex with respect to `x₀` it satisfies `d (K ω) + K (d ω) = ω`. -/
+`x ↦ ∫₀¹ tⁿ ω(x₀ + t (x - x₀))(x - x₀, ·) dt` built from a differential `(n + 1)`-form `ω`.
+When `ω` is `C¹` on an open set star-convex with respect to `x₀` and takes values in a Banach
+space, it satisfies `d (K ω) + K (d ω) = ω` there. -/
 def poincareHomotopy (x₀ : E) (ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F) (x : E) :
     E [⋀^Fin n]→L[ℝ] F :=
   ∫ t in (0 : ℝ)..1, t ^ n • (ω (lineMap x₀ x t)).curryLeft (x - x₀)
@@ -85,33 +87,6 @@ theorem poincareHomotopy_self (x₀ : E) (ω : E → E [⋀^Fin (n + 1)]→L[ℝ
     poincareHomotopy x₀ ω x₀ = 0 := by
   simp [poincareHomotopy_apply]
 
-/-! ### Auxiliary facts about the rays from the centre -/
-
-private theorem contDiff_lineMap_uncurry (x₀ : E) :
-    ContDiff ℝ ⊤ fun p : E × ℝ ↦ lineMap x₀ p.1 p.2 := by
-  simp only [lineMap_apply_module']
-  fun_prop
-
-private theorem lineMap_mem {x₀ : E} {s : Set E} (hs : StarConvex ℝ x₀ s) {x : E} (hx : x ∈ s)
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : lineMap x₀ x t ∈ s := by
-  rw [lineMap_apply_module', add_comm]
-  exact hs.add_smul_sub_mem hx ht.1 ht.2
-
-private theorem lineMap_mem_of_mem_uIcc {x₀ : E} {s : Set E} (hs : StarConvex ℝ x₀ s) {x : E}
-    (hx : x ∈ s) {t : ℝ} (ht : t ∈ uIcc (0 : ℝ) 1) : lineMap x₀ x t ∈ s :=
-  lineMap_mem hs hx (by rwa [uIcc_of_le zero_le_one] at ht)
-
-/-- A function continuous on a star-convex set is continuous along each ray from the centre. -/
-private theorem continuousOn_comp_lineMap {G : Type*} [TopologicalSpace G] {x₀ : E} {s : Set E}
-    {f : E → G} (hf : ContinuousOn f s) (hs : StarConvex ℝ x₀ s) {x : E} (hx : x ∈ s) :
-    ContinuousOn (fun t : ℝ ↦ f (lineMap x₀ x t)) (uIcc 0 1) :=
-  hf.comp (lineMap_continuous (p := x₀) (q := x)).continuousOn
-    fun _ ht ↦ lineMap_mem_of_mem_uIcc hs hx ht
-
-private theorem isOpen_setOf_lineMap_mem (x₀ : E) {s : Set E} (hso : IsOpen s) :
-    IsOpen {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} :=
-  hso.preimage (contDiff_lineMap_uncurry x₀).continuous
-
 /-- The integrand of the homotopy operator is as smooth as the form, on the open set of pairs
 `(x, t)` with `x₀ + t (x - x₀) ∈ s`. -/
 private theorem contDiffOn_integrand {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
@@ -120,7 +95,7 @@ private theorem contDiffOn_integrand {x₀ : E} {s : Set E} {ω : E → E [⋀^F
       {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} := by
   have hcomp : ContDiffOn ℝ r (fun p : E × ℝ ↦ ω (lineMap x₀ p.1 p.2))
       {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} :=
-    hω.comp ((contDiff_lineMap_uncurry x₀).of_le le_top).contDiffOn fun _ hp ↦ hp
+    hω.comp (contDiff_const.lineMap contDiff_fst contDiff_snd).contDiffOn fun _ hp ↦ hp
   exact (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
     (n := n)).toContinuousLinearMap.contDiff.comp_contDiffOn hcomp |>.clm_apply
       ((contDiff_fst.sub contDiff_const).contDiffOn)
@@ -146,17 +121,6 @@ private theorem hasFDerivAt_integrand {x₀ : E} {s : Set E} {ω : E → E [⋀^
   ext h v
   simp [L, add_comm]
 
-/-- An interval integral over `[0, 1]` is the integral over the unit interval. -/
-private theorem intervalIntegral_eq_integral_unitInterval {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (f : ℝ → G) : ∫ t in (0 : ℝ)..1, f t = ∫ t : I, f t := by
-  rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc,
-    ← integral_subtype measurableSet_Icc]
-
-private theorem integrable_pow_unitInterval (n : ℕ) :
-    Integrable (fun t : I ↦ (t : ℝ) ^ n) volume :=
-  (continuous_subtype_val.pow n).integrable_of_hasCompactSupport
-    (HasCompactSupport.of_compactSpace _)
-
 end TauCeti
 
 open TauCeti
@@ -168,9 +132,13 @@ variable {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
 /-- The Poincaré homotopy operator of a `C^r` form on an open star-convex set is `C^r` there. -/
 theorem contDiffOn_poincareHomotopy (hs : StarConvex ℝ x₀ s) (hso : IsOpen s) {r : ℕ∞}
     (hω : ContDiffOn ℝ r ω s) : ContDiffOn ℝ r (poincareHomotopy x₀ ω) s := by
+  have hpow : Integrable (fun t : I ↦ (t : ℝ) ^ n) volume :=
+    (continuous_subtype_val.pow n).integrable_of_hasCompactSupport (.of_compactSpace _)
   refine (contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
-    (integrable_pow_unitInterval n) continuous_subtype_val (isOpen_setOf_lineMap_mem x₀ hso)
-    (contDiffOn_integrand hω) hso fun x hx t ↦ lineMap_mem (t := (t : ℝ)) hs hx t.2).congr
+    hpow continuous_subtype_val
+    (hso.preimage (by fun_prop : Continuous fun p : E × ℝ ↦ lineMap x₀ p.1 p.2))
+    (contDiffOn_integrand hω) hso fun x hx t ↦
+      hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x t.2)).congr
       fun x _ ↦ ?_
   rw [poincareHomotopy_apply, intervalIntegral_eq_integral_unitInterval]
 
@@ -185,22 +153,25 @@ private theorem extDeriv_poincareHomotopy_eq (hs : StarConvex ℝ x₀ s) (hso :
             ((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
               (n := n)).toContinuousLinearMap.flip (x - x₀) ∘L fderiv ℝ ω (lineMap x₀ x t)) +
           (n + 1) • ω (lineMap x₀ x t)) := by
-  have hW := isOpen_setOf_lineMap_mem x₀ hso
+  have hW : IsOpen {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} :=
+    hso.preimage (by fun_prop : Continuous fun p : E × ℝ ↦ lineMap x₀ p.1 p.2)
+  have hpow : Integrable (fun t : I ↦ (t : ℝ) ^ n) volume :=
+    (continuous_subtype_val.pow n).integrable_of_hasCompactSupport (.of_compactSpace _)
   have hF := contDiffOn_integrand (x₀ := x₀) hω
   have hmem (t : I) : (x, (t : ℝ)) ∈ {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} :=
-    lineMap_mem (t := (t : ℝ)) hs hx t.2
+    hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x t.2)
   have h : HasFDerivAt
       (fun x ↦ ∫ t : I, (t : ℝ) ^ n • (ω (lineMap x₀ x (t : ℝ))).curryLeft (x - x₀))
       (∫ t : I, (t : ℝ) ^ n •
         fderiv ℝ (fun x' ↦ (ω (lineMap x₀ x' (t : ℝ))).curryLeft (x' - x₀)) x) x :=
     hasFDerivAt_integral_smul_of_contDiffOn (μ := (volume : Measure I))
-      (integrable_pow_unitInterval n) continuous_subtype_val hW hF hmem
+      hpow continuous_subtype_val hW hF hmem
   have h' := h.congr_of_eventuallyEq (f₁ := poincareHomotopy x₀ ω) <|
     Filter.Eventually.of_forall fun x ↦ by
       rw [poincareHomotopy_apply, intervalIntegral_eq_integral_unitInterval]
   -- the derivative of the integrand is integrable, so the alternatization commutes with `∫`
   have hint := integrable_smul_of_continuousOn (μ := (volume : Measure I))
-    (integrable_pow_unitInterval n) continuous_subtype_val
+    hpow continuous_subtype_val
     ((hF.fderiv_partial_of_isOpen (m := 0) (by simpa using hW)).continuousOn) hmem
   calc extDeriv (poincareHomotopy x₀ ω) x
       = ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F (∫ t : I, (t : ℝ) ^ n •
@@ -221,11 +192,13 @@ private theorem integral_pow_smul_fderiv_add_eq (hs : StarConvex ℝ x₀ s) (hs
     (hω : ContDiffOn ℝ 1 ω s) {x : E} (hx : x ∈ s) :
     ∫ t in (0 : ℝ)..1, (t ^ (n + 1) • fderiv ℝ ω (lineMap x₀ x t) (x - x₀) +
       ((n + 1 : ℝ) * t ^ n) • ω (lineMap x₀ x t)) = ω x := by
+  have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) s := fun _ ht ↦
+    hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht))
   have hderiv (t : ℝ) (ht : t ∈ uIcc (0 : ℝ) 1) :
       HasDerivAt (fun t : ℝ ↦ t ^ (n + 1) • ω (lineMap x₀ x t))
         (t ^ (n + 1) • fderiv ℝ ω (lineMap x₀ x t) (x - x₀) +
           ((n + 1 : ℝ) * t ^ n) • ω (lineMap x₀ x t)) t := by
-    have hmem := lineMap_mem_of_mem_uIcc hs hx ht
+    have hmem := hmaps ht
     have hω' : HasFDerivAt ω (fderiv ℝ ω (lineMap x₀ x t)) (lineMap x₀ x t) :=
       ((hω.differentiableOn one_ne_zero _ hmem).differentiableAt (hso.mem_nhds hmem)).hasFDerivAt
     refine ((hasDerivAt_pow (n + 1) t).smul
@@ -235,9 +208,10 @@ private theorem integral_pow_smul_fderiv_add_eq (hs : StarConvex ℝ x₀ s) (hs
       ((n + 1 : ℝ) * t ^ n) • ω (lineMap x₀ x t)) volume 0 1 :=
     (((continuousOn_pow (n + 1)).smul
       ((ContinuousLinearMap.apply ℝ _ (x - x₀)).continuous.comp_continuousOn
-        (continuousOn_comp_lineMap (hω.continuousOn_fderiv_of_isOpen hso le_rfl) hs hx))).add
+        ((hω.continuousOn_fderiv_of_isOpen hso le_rfl).comp lineMap_continuous.continuousOn
+          hmaps))).add
       ((continuousOn_const.mul (continuousOn_pow n)).smul
-        (continuousOn_comp_lineMap hω.continuousOn hs hx))).intervalIntegrable
+        (hω.continuousOn.comp lineMap_continuous.continuousOn hmaps))).intervalIntegrable
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint]
   simp
 
@@ -249,7 +223,10 @@ theorem extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv (hs : StarConvex
   set L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
     (n := n)).toContinuousLinearMap
   set y := x - x₀
-  have hDω_cont := continuousOn_comp_lineMap (hω.continuousOn_fderiv_of_isOpen hso le_rfl) hs hx
+  have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) s := fun _ ht ↦
+    hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht))
+  have hDω_cont := (hω.continuousOn_fderiv_of_isOpen hso le_rfl).comp
+    lineMap_continuous.continuousOn hmaps
   have hD_int : IntervalIntegrable (fun t : ℝ ↦ t ^ n •
       (t • ContinuousAlternatingMap.alternatizeUncurryFin
           (L.flip y ∘L fderiv ℝ ω (lineMap x₀ x t)) +
@@ -257,7 +234,8 @@ theorem extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv (hs : StarConvex
     ContinuousOn.intervalIntegrable ((continuousOn_pow n).smul ((continuousOn_id.smul
       ((ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F).continuous.comp_continuousOn
         ((ContinuousLinearMap.compL ℝ E _ _ (L.flip y)).continuous.comp_continuousOn
-          hDω_cont))).add ((continuousOn_comp_lineMap hω.continuousOn hs hx).const_smul _)))
+          hDω_cont))).add
+        ((hω.continuousOn.comp lineMap_continuous.continuousOn hmaps).const_smul _)))
   have hcurry := (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
     (n := n + 1)).toContinuousLinearMap.flip y).comp
       (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F)).continuous.comp_continuousOn
@@ -286,7 +264,8 @@ theorem extDeriv_poincareHomotopy (hs : StarConvex ℝ x₀ s) (hso : IsOpen s)
     rw [poincareHomotopy_apply]
     refine (intervalIntegral.integral_congr (g := fun _ ↦ 0) fun t ht ↦ ?_).trans
       intervalIntegral.integral_zero
-    simp [hclosed _ (lineMap_mem_of_mem_uIcc hs hx ht)]
+    simp [hclosed _ (hs.segment_subset hx
+      (lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht)))]
   simpa [h0] using hs.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv hso hω hx
 
 /-- **The Poincaré lemma.** A closed `C^r` form, `r ≥ 1`, on an open star-convex set is the
