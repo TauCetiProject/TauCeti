@@ -73,7 +73,7 @@ noncomputable section
 
 open CategoryTheory Limits unitInterval
 
-universe u v w
+universe u v₁ v₂ v₃ w
 
 namespace TauCeti
 
@@ -82,18 +82,18 @@ namespace LocalCoefficientSystem
 open SingularCube
 open ContinuousMap (pathClass pathClass_self pathClass_comp_pathClass pathClass_comp map_pathClass)
 
-variable {R : Type u} [Ring R] {X Y Z : TopCat.{v}}
+variable {R : Type u} [Ring R] {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
 
 /-- The **cubical `n`-chains with coefficients in a local system** `L`: the direct sum, over the
 singular `n`-cubes `c`, of the fibre of `L` at the origin of `c`. -/
-abbrev TwistedCubicalChain (L : LocalCoefficientSystem.{u, v, w} R X) (n : ℕ) : Type (max v w) :=
+abbrev TwistedCubicalChain (L : LocalCoefficientSystem.{u, v₁, w} R X) (n : ℕ) : Type (max v₁ w) :=
   DirectSum (SingularCube X n) fun c ↦ L.obj (FundamentalGroupoid.mk (c 0))
 
 namespace TwistedCubicalChain
 
 section Basic
 
-variable (L : LocalCoefficientSystem.{u, v, w} R X)
+variable (L : LocalCoefficientSystem.{u, v₁, w} R X)
 
 open scoped Classical in
 /-- The inclusion of the summand of a singular cube into the cubical chains. -/
@@ -181,7 +181,7 @@ end Basic
 
 section Boundary
 
-variable (L : LocalCoefficientSystem.{u, v, w} R X)
+variable (L : LocalCoefficientSystem.{u, v₁, w} R X)
 
 /-- The boundary of a single `(n+1)`-cube with a coefficient:
 `∂ (c, a) = Σᵢ (-1) ^ i ((face i 0 c, τ a) - (face i 1 c, τ' a))`, the coefficient being
@@ -241,7 +241,7 @@ end Boundary
 
 section CoefficientMap
 
-variable {L K J : LocalCoefficientSystem.{u, v, w} R X}
+variable {L K J : LocalCoefficientSystem.{u, v₁, w} R X}
 
 /-- The map of cubical chains induced by a morphism of local coefficient systems. -/
 def coefficientMap (η : L ⟶ K) (n : ℕ) :
@@ -281,7 +281,7 @@ end CoefficientMap
 
 section Map
 
-variable (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v, w} R Y)
+variable (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y)
 
 /-- The map of cubical chains induced by a continuous map `f`, from the chains with coefficients
 in the pulled back system `f⁎L` to the chains with coefficients in `L`. -/
@@ -315,7 +315,7 @@ theorem map_boundary (n : ℕ) :
     rw [boundary_ofCube (L := L) (f.comp c) a]
 
 /-- The map induced by a continuous map is natural in the coefficient system. -/
-theorem coefficientMap_map {K : LocalCoefficientSystem.{u, v, w} R Y} (η : L ⟶ K) (n : ℕ) :
+theorem coefficientMap_map {K : LocalCoefficientSystem.{u, v₂, w} R Y} (η : L ⟶ K) (n : ℕ) :
     coefficientMap η n ∘ₗ map f L n = map f K n ∘ₗ coefficientMap ((pullback f).map η) n :=
   hom_ext fun c ↦ LinearMap.ext fun a ↦ by
     simp only [LinearMap.comp_apply, map_ofCube, coefficientMap_ofCube]
@@ -328,7 +328,7 @@ section MapComp
 /-- The identity map induces on cubical chains the map coming from the identification of a
 system with its pullback along the identity. -/
 @[simp]
-theorem map_id (L : LocalCoefficientSystem.{u, v, w} R X) (n : ℕ) :
+theorem map_id (L : LocalCoefficientSystem.{u, v₁, w} R X) (n : ℕ) :
     map (ContinuousMap.id X) L n = coefficientMap ((pullbackIdIso X).hom.app L) n :=
   hom_ext fun c ↦ LinearMap.ext fun a ↦ by
     simp only [LinearMap.coe_comp, Function.comp_apply, map_ofCube, coefficientMap_ofCube,
@@ -338,7 +338,7 @@ theorem map_id (L : LocalCoefficientSystem.{u, v, w} R X) (n : ℕ) :
 /-- A composite of continuous maps induces on cubical chains the composite of the two induced
 maps, after the identification of the pullback along the composite with the iterated
 pullback. -/
-theorem map_comp (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v, w} R Z)
+theorem map_comp (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z)
     (n : ℕ) :
     map (g.comp f) L n = map g L n ∘ₗ map f ((pullback g).obj L) n ∘ₗ
       coefficientMap ((pullbackCompIso f g).hom.app L) n :=
@@ -352,7 +352,7 @@ end MapComp
 
 section Augment
 
-variable {L : LocalCoefficientSystem.{u, v, w} R X}
+variable {L : LocalCoefficientSystem.{u, v₁, w} R X}
 
 /-- The **augmentation** of the cubical `0`-chains into a cocone `s` over the local system: a
 point `x` with a coefficient `a` goes to the image of `a` under the leg of `s` at `x`.  For the
@@ -361,6 +361,8 @@ of identities it is the sum of the coefficients. -/
 def augment (s : Cocone L) : L.TwistedCubicalChain 0 →ₗ[R] s.pt :=
   desc L fun c ↦ (s.ι.app (FundamentalGroupoid.mk (c 0))).hom
 
+/-- The augmentation sends a `0`-cube, a point, with a coefficient to the image of the coefficient
+under the leg of the cocone at that point. -/
 @[simp]
 theorem augment_ofCube (s : Cocone L) (c : SingularCube X 0)
     (a : L.obj (FundamentalGroupoid.mk (c 0))) :
@@ -381,13 +383,13 @@ theorem augment_boundary (s : Cocone L) : augment s ∘ₗ boundary L 0 = 0 :=
   hom_ext fun c ↦ LinearMap.ext fun a ↦ by simp [-ofSubcube_apply, augment_ofSubcube]
 
 /-- The augmentation is natural in the coefficient system. -/
-theorem augment_coefficientMap {K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K)
+theorem augment_coefficientMap {K : LocalCoefficientSystem.{u, v₁, w} R X} (η : L ⟶ K)
     (s : Cocone K) :
     augment s ∘ₗ coefficientMap η 0 = augment ((Cocone.precompose η).obj s) :=
   hom_ext fun c ↦ LinearMap.ext fun a ↦ by simp
 
 /-- The augmentation is natural in the space. -/
-theorem augment_map (f : C(X, Y)) {L : LocalCoefficientSystem.{u, v, w} R Y} (s : Cocone L) :
+theorem augment_map (f : C(X, Y)) {L : LocalCoefficientSystem.{u, v₂, w} R Y} (s : Cocone L) :
     augment s ∘ₗ map f L 0 = augment (s.whisker (FundamentalGroupoid.map f)) :=
   hom_ext fun c ↦ LinearMap.ext fun a ↦ (congrArg (augment s) (map_ofCube c a)).trans
     ((augment_ofCube (L := L) s (f.comp c) a).trans

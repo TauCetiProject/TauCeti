@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
-public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Chains
 
@@ -27,8 +25,8 @@ The degenerate chains form a subcomplex.  On a cube `c` which does not depend on
 faces are the subcube `s` of `c`, and the transport inside `c` is the transport inside `s`.
 
 The boundary, the maps induced by morphisms of local systems and by continuous maps, and the
-augmentation all descend to the normalized chains, and they assemble into a chain complex of
-modules `L.normalizedTwistedCubicalChainComplex` with chain maps between such complexes.
+augmentation all descend to the normalized chains; the chain complex they form is in
+`TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex`.
 
 ## Main definitions
 
@@ -37,20 +35,18 @@ modules `L.normalizedTwistedCubicalChainComplex` with chain maps between such co
   chains.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary`, `.coefficientMap`,
   `.map`, `.augment`: the induced boundary, functoriality and augmentation.
-* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplex L`: the normalized cubical
-  chain complex with coefficients in `L`, with the chain maps
-  `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexCoefficientMap η` and
-  `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap f L`.
 
 ## Main results
 
 * `TauCeti.LocalCoefficientSystem.TwistedCubicalChain.boundary_ofCube_mem_degenerate`,
   `TauCeti.LocalCoefficientSystem.TwistedCubicalChain.degenerate_le_comap_boundary`: the
   degenerate chains form a subcomplex.
-* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0`.
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary_ofCube`: the boundary
+  of a cube, and `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary_boundary`:
+  `∂ ∘ ∂ = 0`.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.augment_boundary`: `ε ∘ ∂ = 0`.
-* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap_id`,
-  `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap_comp`: functoriality.
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.map_id`,
+  `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.map_comp`: functoriality.
 
 ## References
 
@@ -67,7 +63,7 @@ noncomputable section
 
 open CategoryTheory Limits unitInterval
 
-universe u v w
+universe u v₁ v₂ v₃ w
 
 namespace TauCeti
 
@@ -76,13 +72,13 @@ namespace LocalCoefficientSystem
 open SingularCube
 open ContinuousMap (pathClass pathClass_self pathClass_comp_pathClass)
 
-variable {R : Type u} [Ring R] {X Y Z : TopCat.{v}}
+variable {R : Type u} [Ring R] {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
 
 namespace TwistedCubicalChain
 
 section Degenerate
 
-variable (L : LocalCoefficientSystem.{u, v, w} R X)
+variable (L : LocalCoefficientSystem.{u, v₁, w} R X)
 
 /-- The **degenerate `n`-chains** with coefficients in `L`: the sum of the summands of the
 degenerate `n`-cubes. -/
@@ -163,14 +159,14 @@ theorem degenerate_le_comap_boundary (n : ℕ) :
   degenerate_le fun _ hc a ↦ boundary_ofCube_mem_degenerate hc a
 
 /-- A morphism of local systems preserves degenerate chains. -/
-theorem degenerate_le_comap_coefficientMap {K : LocalCoefficientSystem.{u, v, w} R X}
+theorem degenerate_le_comap_coefficientMap {K : LocalCoefficientSystem.{u, v₁, w} R X}
     (η : L ⟶ K) (n : ℕ) : degenerate L n ≤ (degenerate K n).comap (coefficientMap η n) :=
   degenerate_le fun c hc a ↦ by
     rw [Submodule.mem_comap, coefficientMap_ofCube]
     exact ofCube_mem_degenerate hc _
 
 /-- A continuous map preserves degenerate chains. -/
-theorem degenerate_le_comap_map (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v, w} R Y)
+theorem degenerate_le_comap_map (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y)
     (n : ℕ) : degenerate ((pullback f).obj L) n ≤ (degenerate L n).comap (map f L n) :=
   degenerate_le fun c hc a ↦ by
     rw [Submodule.mem_comap, map_ofCube]
@@ -182,8 +178,8 @@ end TwistedCubicalChain
 
 /-- The **normalized cubical `n`-chains with coefficients in a local system** `L`: the cubical
 chains with coefficients in `L` modulo the degenerate ones. -/
-abbrev NormalizedTwistedCubicalChain (L : LocalCoefficientSystem.{u, v, w} R X) (n : ℕ) :
-    Type (max v w) :=
+abbrev NormalizedTwistedCubicalChain (L : LocalCoefficientSystem.{u, v₁, w} R X) (n : ℕ) :
+    Type (max v₁ w) :=
   L.TwistedCubicalChain n ⧸ TwistedCubicalChain.degenerate L n
 
 namespace NormalizedTwistedCubicalChain
@@ -191,7 +187,7 @@ namespace NormalizedTwistedCubicalChain
 
 section Basic
 
-variable (L : LocalCoefficientSystem.{u, v, w} R X)
+variable (L : LocalCoefficientSystem.{u, v₁, w} R X)
 
 /-- The class of a singular cube with a coefficient in the normalized chains. -/
 def ofCube {n : ℕ} (c : SingularCube X n) :
@@ -225,7 +221,7 @@ end Basic
 
 section Boundary
 
-variable (L : LocalCoefficientSystem.{u, v, w} R X)
+variable (L : LocalCoefficientSystem.{u, v₁, w} R X)
 
 /-- The boundary of normalized cubical chains with coefficients in `L`. -/
 def boundary (n : ℕ) :
@@ -242,6 +238,21 @@ theorem boundary_mk {n : ℕ} (x : L.TwistedCubicalChain (n + 1)) :
       Submodule.Quotient.mk (TwistedCubicalChain.boundary L n x) :=
   by rw [boundary, Submodule.mapQ_apply]
 
+/-- The boundary of the class of a cube is the alternating sum of the classes of its faces, with
+the coefficient transported along the path classes inside the cube to the origins of the faces. -/
+@[simp]
+theorem boundary_ofCube {n : ℕ} (c : SingularCube X (n + 1))
+    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
+    boundary L n (ofCube L c a) =
+      ∑ i : Fin (n + 1), ((-1 : ℤ) ^ (i : ℕ)) •
+        (ofCube L (c.comp (face i 0 (ContinuousMap.id _)))
+            (L.map (pathClass c 0 (face i 0 (ContinuousMap.id _) 0)) a) -
+          ofCube L (c.comp (face i 1 (ContinuousMap.id _)))
+            (L.map (pathClass c 0 (face i 1 (ContinuousMap.id _) 0)) a)) := by
+  rw [ofCube_apply, boundary_mk, TwistedCubicalChain.boundary_ofCube]
+  simp only [TwistedCubicalChain.ofSubcube_apply, ofCube_apply, ← Submodule.mkQ_apply, map_sum,
+    map_zsmul, map_sub]
+
 variable (L) in
 /-- The boundary of a boundary vanishes. -/
 theorem boundary_boundary (n : ℕ) : boundary L n ∘ₗ boundary L (n + 1) = 0 := by
@@ -252,7 +263,7 @@ end Boundary
 
 section CoefficientMap
 
-variable {L K J : LocalCoefficientSystem.{u, v, w} R X}
+variable {L K J : LocalCoefficientSystem.{u, v₁, w} R X}
 
 /-- The map of normalized cubical chains induced by a morphism of local systems. -/
 def coefficientMap (η : L ⟶ K) (n : ℕ) :
@@ -295,7 +306,7 @@ end CoefficientMap
 
 section Map
 
-variable (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v, w} R Y)
+variable (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y)
 
 /-- The map of normalized cubical chains induced by a continuous map `f`, from the chains with
 coefficients in the pulled back system `f⁎L` to the chains with coefficients in `L`. -/
@@ -328,7 +339,7 @@ theorem map_boundary (n : ℕ) :
   simp only [TwistedCubicalChain.map_boundary]
 
 /-- The map induced by a continuous map is natural in the coefficient system. -/
-theorem coefficientMap_map {K : LocalCoefficientSystem.{u, v, w} R Y} (η : L ⟶ K) (n : ℕ) :
+theorem coefficientMap_map {K : LocalCoefficientSystem.{u, v₂, w} R Y} (η : L ⟶ K) (n : ℕ) :
     coefficientMap η n ∘ₗ map f L n = map f K n ∘ₗ coefficientMap ((pullback f).map η) n := by
   rw [coefficientMap, coefficientMap, map, map, ← Submodule.mapQ_comp, ← Submodule.mapQ_comp]
   simp only [TwistedCubicalChain.coefficientMap_map]
@@ -336,7 +347,7 @@ theorem coefficientMap_map {K : LocalCoefficientSystem.{u, v, w} R Y} (η : L �
 /-- The identity map induces on normalized chains the map coming from the identification of a
 system with its pullback along the identity. -/
 @[simp]
-theorem map_id (L : LocalCoefficientSystem.{u, v, w} R X) (n : ℕ) :
+theorem map_id (L : LocalCoefficientSystem.{u, v₁, w} R X) (n : ℕ) :
     map (ContinuousMap.id X) L n = coefficientMap ((pullbackIdIso X).hom.app L) n := by
   rw [map, coefficientMap]
   simp only [TwistedCubicalChain.map_id]
@@ -345,7 +356,7 @@ theorem map_id (L : LocalCoefficientSystem.{u, v, w} R X) (n : ℕ) :
 /-- A composite of continuous maps induces on normalized chains the composite of the two induced
 maps, after the identification of the pullback along the composite with the iterated
 pullback. -/
-theorem map_comp (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v, w} R Z) (n : ℕ) :
+theorem map_comp (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z) (n : ℕ) :
     map (g.comp f) L n = map g L n ∘ₗ map f ((pullback g).obj L) n ∘ₗ
       coefficientMap ((pullbackCompIso f g).hom.app L) n := by
   refine LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x fun x ↦ ?_
@@ -355,7 +366,7 @@ end Map
 
 section Augment
 
-variable {L : LocalCoefficientSystem.{u, v, w} R X}
+variable {L : LocalCoefficientSystem.{u, v₁, w} R X}
 
 /-- The **augmentation** of the normalized `0`-chains into a cocone `s` over the local system. -/
 def augment (s : Cocone L) : L.NormalizedTwistedCubicalChain 0 →ₗ[R] s.pt :=
@@ -382,13 +393,13 @@ theorem augment_boundary (s : Cocone L) : augment s ∘ₗ boundary L 0 = 0 := b
     ← LinearMap.comp_assoc, augment, Submodule.liftQ_mkQ, TwistedCubicalChain.augment_boundary]
 
 /-- The augmentation is natural in the coefficient system. -/
-theorem augment_coefficientMap {K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K)
+theorem augment_coefficientMap {K : LocalCoefficientSystem.{u, v₁, w} R X} (η : L ⟶ K)
     (s : Cocone K) :
     augment s ∘ₗ coefficientMap η 0 = augment ((Cocone.precompose η).obj s) :=
   hom_ext fun c ↦ LinearMap.ext fun a ↦ by simp
 
 /-- The augmentation is natural in the space. -/
-theorem augment_map (f : C(X, Y)) {L : LocalCoefficientSystem.{u, v, w} R Y} (s : Cocone L) :
+theorem augment_map (f : C(X, Y)) {L : LocalCoefficientSystem.{u, v₂, w} R Y} (s : Cocone L) :
     augment s ∘ₗ map f L 0 = augment (s.whisker (FundamentalGroupoid.map f)) :=
   hom_ext fun c ↦ LinearMap.ext fun a ↦ (congrArg (augment s) (map_ofCube c a)).trans
     ((augment_ofCube (L := L) s (f.comp c) a).trans
@@ -397,135 +408,6 @@ theorem augment_map (f : C(X, Y)) {L : LocalCoefficientSystem.{u, v, w} R Y} (s 
 end Augment
 
 end NormalizedTwistedCubicalChain
-
-section ChainComplex
-
-open NormalizedTwistedCubicalChain
-
--- Exposed, like `TauCeti.normalizedCubicalChainComplex`, so that the term `X n` is definitionally
--- `ModuleCat.of R (L.NormalizedTwistedCubicalChain n)`: the chain maps to and from
--- `twistedChainComplex` in the comparison are built from linear maps on the normalized chains.
-/-- The **normalized cubical chain complex with coefficients in a local system** `L`. -/
-@[expose] def normalizedTwistedCubicalChainComplex (L : LocalCoefficientSystem.{u, v, w} R X) :
-    ChainComplex (ModuleCat.{max v w} R) ℕ :=
-  ChainComplex.of (fun n ↦ ModuleCat.of R (L.NormalizedTwistedCubicalChain n))
-    (fun n ↦ ModuleCat.ofHom (boundary L n)) fun n ↦ by
-      rw [← ModuleCat.ofHom_comp, boundary_boundary]
-      rfl
-
-/-- The terms of the normalized cubical chain complex are the normalized chains. -/
-@[simp]
-theorem normalizedTwistedCubicalChainComplex_X (L : LocalCoefficientSystem.{u, v, w} R X) (n : ℕ) :
-    L.normalizedTwistedCubicalChainComplex.X n =
-      ModuleCat.of R (L.NormalizedTwistedCubicalChain n) :=
-  (rfl)
-
-/-- The differential of the normalized cubical chain complex is the boundary. -/
-@[simp]
-theorem normalizedTwistedCubicalChainComplex_d_apply (L : LocalCoefficientSystem.{u, v, w} R X)
-    (n : ℕ)
-    (x : L.NormalizedTwistedCubicalChain (n + 1)) :
-    L.normalizedTwistedCubicalChainComplex.d (n + 1) n x = boundary L n x := by
-  simp only [normalizedTwistedCubicalChainComplex, ChainComplex.of_d]
-  rfl
-
-/-- The chain map of normalized cubical chain complexes induced by a morphism of local
-systems. -/
-def normalizedTwistedCubicalChainComplexCoefficientMap {L K : LocalCoefficientSystem.{u, v, w} R X}
-    (η : L ⟶ K) : L.normalizedTwistedCubicalChainComplex ⟶ K.normalizedTwistedCubicalChainComplex :=
-  ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (coefficientMap η n)) fun n ↦ by
-    simp only [normalizedTwistedCubicalChainComplex, ChainComplex.of_d, ← ModuleCat.ofHom_comp,
-      coefficientMap_boundary]
-
-/-- The components of the chain map induced by a morphism of local systems. -/
-@[simp]
-theorem normalizedTwistedCubicalChainComplexCoefficientMap_f
-    {L K : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K) (n : ℕ) :
-    (normalizedTwistedCubicalChainComplexCoefficientMap η).f n =
-      ModuleCat.ofHom (coefficientMap η n) := by
-  unfold normalizedTwistedCubicalChainComplexCoefficientMap
-  rfl
-
-/-- The chain map of normalized cubical chain complexes induced by a continuous map `f`, from the
-complex with coefficients in `f⁎L` to the complex with coefficients in `L`. -/
-def normalizedTwistedCubicalChainComplexMap (f : C(X, Y))
-    (L : LocalCoefficientSystem.{u, v, w} R Y) :
-    ((pullback f).obj L).normalizedTwistedCubicalChainComplex ⟶
-      L.normalizedTwistedCubicalChainComplex :=
-  ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (map f L n)) fun n ↦ by
-    simp only [normalizedTwistedCubicalChainComplex, ChainComplex.of_d, ← ModuleCat.ofHom_comp,
-      map_boundary]
-
-/-- The components of the chain map induced by a continuous map. -/
-@[simp]
-theorem normalizedTwistedCubicalChainComplexMap_f (f : C(X, Y))
-    (L : LocalCoefficientSystem.{u, v, w} R Y) (n : ℕ) :
-    (normalizedTwistedCubicalChainComplexMap f L).f n = ModuleCat.ofHom (map f L n) := by
-  unfold normalizedTwistedCubicalChainComplexMap
-  rfl
-
-/-- The identity of a local system induces the identity chain map. -/
-@[simp]
-theorem normalizedTwistedCubicalChainComplexCoefficientMap_id
-    (L : LocalCoefficientSystem.{u, v, w} R X) :
-    normalizedTwistedCubicalChainComplexCoefficientMap (𝟙 L) = 𝟙 _ := by
-  ext n : 1
-  simp only [normalizedTwistedCubicalChainComplexCoefficientMap_f, coefficientMap_id,
-    HomologicalComplex.id_f]
-  rfl
-
-/-- A composite of morphisms of local systems induces the composite chain map. -/
-theorem normalizedTwistedCubicalChainComplexCoefficientMap_comp
-    {L K J : LocalCoefficientSystem.{u, v, w} R X} (η : L ⟶ K) (θ : K ⟶ J) :
-    normalizedTwistedCubicalChainComplexCoefficientMap (η ≫ θ) =
-      normalizedTwistedCubicalChainComplexCoefficientMap η ≫
-        normalizedTwistedCubicalChainComplexCoefficientMap θ := by
-  ext n : 1
-  simp only [normalizedTwistedCubicalChainComplexCoefficientMap_f, HomologicalComplex.comp_f,
-    coefficientMap_comp, ModuleCat.ofHom_comp]
-  rfl
-
-/-- The identity map induces on the normalized cubical chain complex the chain map coming from
-the identification of a system with its pullback along the identity. -/
-@[simp]
-theorem normalizedTwistedCubicalChainComplexMap_id (L : LocalCoefficientSystem.{u, v, w} R X) :
-    normalizedTwistedCubicalChainComplexMap (ContinuousMap.id X) L =
-      normalizedTwistedCubicalChainComplexCoefficientMap ((pullbackIdIso X).hom.app L) := by
-  ext n : 1
-  simp only [normalizedTwistedCubicalChainComplexMap_f,
-    normalizedTwistedCubicalChainComplexCoefficientMap_f,
-    NormalizedTwistedCubicalChain.map_id]
-  rfl
-
-/-- A composite of continuous maps induces on normalized cubical chain complexes the composite of
-the two induced chain maps, after the identification of the pullback along the composite with
-the iterated pullback. -/
-theorem normalizedTwistedCubicalChainComplexMap_comp (f : C(X, Y)) (g : C(Y, Z))
-    (L : LocalCoefficientSystem.{u, v, w} R Z) :
-    normalizedTwistedCubicalChainComplexMap (g.comp f) L =
-      normalizedTwistedCubicalChainComplexCoefficientMap ((pullbackCompIso f g).hom.app L) ≫
-        normalizedTwistedCubicalChainComplexMap f ((pullback g).obj L) ≫
-          normalizedTwistedCubicalChainComplexMap g L := by
-  ext n : 1
-  simp only [normalizedTwistedCubicalChainComplexMap_f,
-    normalizedTwistedCubicalChainComplexCoefficientMap_f,
-    HomologicalComplex.comp_f, NormalizedTwistedCubicalChain.map_comp, ModuleCat.ofHom_comp]
-  rfl
-
-/-- The chain map induced by a continuous map is natural in the coefficient system. -/
-theorem normalizedTwistedCubicalChainComplexMap_naturality (f : C(X, Y))
-    {L K : LocalCoefficientSystem.{u, v, w} R Y} (η : L ⟶ K) :
-    normalizedTwistedCubicalChainComplexMap f L ≫
-        normalizedTwistedCubicalChainComplexCoefficientMap η =
-      normalizedTwistedCubicalChainComplexCoefficientMap ((pullback f).map η) ≫
-        normalizedTwistedCubicalChainComplexMap f K := by
-  ext n : 1
-  simp only [normalizedTwistedCubicalChainComplexMap_f,
-    normalizedTwistedCubicalChainComplexCoefficientMap_f,
-    HomologicalComplex.comp_f]
-  exact congrArg ModuleCat.ofHom (NormalizedTwistedCubicalChain.coefficientMap_map η n)
-
-end ChainComplex
 
 end LocalCoefficientSystem
 
