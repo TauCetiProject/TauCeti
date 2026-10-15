@@ -438,12 +438,10 @@ theorem center_inf_derivedSeries_eq_bot :
     LieAlgebra.center K L ⊓ derivedSeries K L 1 = ⊥ := by
   obtain ⟨J, hJ⟩ := (LieAlgebra.center K L).exists_isCompl_of_le_center le_rfl
   have hD : derivedSeries K L 1 ≤ J := by
-    refine (LieSubmodule.lie_le_iff _ _ _).2 fun x _ y _ ↦ ?_
-    have hy : y ∈ (LieAlgebra.center K L ⊔ J : LieIdeal K L) :=
-      hJ.sup_eq_top ▸ LieSubmodule.mem_top y
-    obtain ⟨z, hz, j, hj, rfl⟩ := (LieSubmodule.mem_sup _ _ _).1 hy
-    rw [lie_add, (LieModule.mem_maxTrivSubmodule K L L z).1 hz x, zero_add]
-    exact J.lie_mem hj
+    change ⁅(⊤ : LieIdeal K L), (⊤ : LieIdeal K L)⁆ ≤ J
+    rw [← hJ.sup_eq_top, LieSubmodule.lie_sup, LieModule.ideal_oper_maxTrivSubmodule_eq_bot,
+      bot_sup_eq]
+    exact LieSubmodule.lie_le_right _ _
   exact le_bot_iff.1 ((inf_le_inf_left _ hD).trans hJ.inf_eq_bot.le)
 
 /-- **A reductive Lie algebra is the direct sum of its centre and its derived ideal**:
@@ -471,11 +469,11 @@ end Reductive
 finite-dimensional Lie algebra is reductive (its solvable radical is its centre) if and only if it
 is the direct sum of its centre and its derived ideal, with the derived ideal semisimple.
 
-Both conjuncts are needed for the reverse implication to be a characterization of the right
-class: the semidirect product `sl₂ ⋉ K²` with the standard module has trivial centre and is its
-own derived ideal, so it satisfies the first conjunct without being reductive. The reverse
-implication itself only uses the second conjunct, through
-`TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`. -/
+The reverse implication only uses the second conjunct: semisimplicity of the derived ideal alone
+implies reductivity, through `TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`, and
+hence the first conjunct. The first conjunct alone is not enough: the semidirect product
+`sl₂ ⋉ K²` with the standard module has trivial centre and is its own derived ideal, so it
+satisfies the first conjunct without being reductive. -/
 theorem hasCentralRadical_iff_isCompl_center_derivedSeries :
     LieAlgebra.HasCentralRadical K L ↔
       IsCompl (LieAlgebra.center K L) (derivedSeries K L 1) ∧
