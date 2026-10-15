@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere
-public import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The round metric on the unit circle
@@ -37,7 +37,7 @@ noncomputable local instance circleChartedSpace :
 
 /-- The Riemannian bundle carrying the induced round metric on the complex unit circle. -/
 @[instance_reducible]
-noncomputable def circleRoundMetric :
+noncomputable def roundMetricCircle :
     RiemannianBundle (fun x : Circle ↦ TangentSpace (𝓡 1) x) :=
   ⟨(sphereRoundMetric (E := ℂ) (n := 1)).toRiemannianMetric⟩
 
@@ -48,12 +48,12 @@ namespace Circle
 /-- The round metric pairs circle tangent vectors by the ambient complex inner product of their
 manifold derivatives under the inclusion into `ℂ`. -/
 @[simp]
-theorem circleRoundMetric_inner (x : Circle) (v w : TangentSpace (𝓡 1) x) :
-    let _ := TauCeti.circleRoundMetric
+theorem roundMetricCircle_inner (x : Circle) (v w : TangentSpace (𝓡 1) x) :
+    let _ := TauCeti.roundMetricCircle
     inner ℝ v w =
       inner ℝ (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) x v)
         (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) x w) := by
-  let _ : RiemannianBundle (fun x : Circle ↦ TangentSpace (𝓡 1) x) := TauCeti.circleRoundMetric
+  let _ : RiemannianBundle (fun x : Circle ↦ TangentSpace (𝓡 1) x) := TauCeti.roundMetricCircle
   rw [← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply]
   exact TauCeti.inner_tangentSpace_sphere (E := ℂ) (n := 1) x v w
 
