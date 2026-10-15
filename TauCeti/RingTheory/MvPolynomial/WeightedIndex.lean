@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.NNRat.BigOperators
 public import Mathlib.Basic.ENNReal.BigOperators
-public import Mathlib.Basic.ENNReal.Inv
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 
 /-!
