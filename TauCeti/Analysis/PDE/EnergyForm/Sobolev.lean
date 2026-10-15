@@ -96,8 +96,6 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
   parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
   terms is the integral of `⟨a ∇u, ∇v⟩`.
-* `TauCeti.PDE.energyFormH1_const_eq_setIntegral`: the energy form of a constant principal
-  coefficient with no lower-order terms is the integral of `⟨A ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
   constant does not change the form.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
