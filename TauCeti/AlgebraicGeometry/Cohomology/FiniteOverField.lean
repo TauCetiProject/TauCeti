@@ -12,8 +12,9 @@ public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 # Cohomology of schemes finite over a field
 
 A scheme finite over a field `k` is affine and Noetherian, so the acyclicity of quasi-coherent
-sheaves on Noetherian affine opens (`Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`)
-applies to the whole scheme: a quasi-coherent sheaf on it has no cohomology in positive degrees.
+sheaves on affine locally Noetherian schemes
+(`Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`) applies: a quasi-coherent sheaf on it
+has no cohomology in positive degrees.
 
 ## Main declarations
 
@@ -44,10 +45,7 @@ theorem subsingleton_cohomology_succ_of_isFinite (k : Type u) [Field k]
   have : IsAffine X := isAffine_of_isAffineHom (X ↘ Spec (.of k))
   have : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : IsNoetherianRing Γ(X, ⊤) :=
-    IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top _⟩
-  have := subsingleton_cohomologyOn_succ_of_isAffineOpen M (isAffineOpen_top X) n
-  exact (cohomologyOnTopIso M (n + 1)).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
+  exact subsingleton_cohomology_succ_of_isAffine M n
 
 end AlgebraicGeometry.Scheme.Modules
 
