@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Multiplicity
-public import TauCeti.Analysis.Polynomial.RealRoots
+public import TauCeti.Analysis.Polynomial.RealRoots.Descent
 
 /-!
 # Ordered real roots of finite nonmonic Laurent limits

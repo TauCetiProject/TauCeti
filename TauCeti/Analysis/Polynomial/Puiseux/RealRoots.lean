@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Multiplicity
-public import TauCeti.Analysis.Polynomial.RealRoots
+public import TauCeti.Analysis.Polynomial.RealRoots.Descent
 
 /-!
 # Real roots on the exceptional hyperplane of a Puiseux splitting
