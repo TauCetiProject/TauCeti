@@ -8,15 +8,16 @@ module
 public import TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five.SquareClass
 public import TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five.StiefelWhitney
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Transfer
+import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
 # The relative Stiefel–Whitney calculation on all dyadic unit classes
 
-Every integer-ring unit of `ℚ₂(√5)` has a unique square class represented by
+Every nonzero element of `ℚ₂(√5)` with even valuation has a unique square class represented by
 `(-1)^c₀ (2 + √5)^c₁ (3 + 2√5)^c₂`, with `c : Fin 3 → ZMod 2`.
 This file connects these exhaustive representatives with the twisted trace-form tables.
-It computes both sides of the relative Stiefel–Whitney identities for every such unit,
-not just for a list of coefficients.
+It computes both sides of the relative Stiefel–Whitney identities for every such element,
+including every integer-ring unit, not just for a list of coefficients.
 
 Write `κ = (-1) ∪ (-1) ≠ 0` over `ℚ₂`. In these coordinates the results are
 
@@ -85,17 +86,16 @@ private theorem representative_values
       And.intro hc (And.intro h1 (And.intro h2 he))
 
 /-- **The complete unit-class calculation of the relative Stiefel–Whitney formula over
-`ℚ₂(√5)`.** Every integer-ring unit has unique binary square-class coordinates in the
-basis `-1`, `2 + √5`, `3 + 2√5`. In those coordinates the corestriction, the two classes
-of its twisted trace form, and the Evens norm have the displayed values. These evaluate
-both sides of the relative identities, since the untwisted classes are `(5)` and
+`ℚ₂(√5)`.** Every nonzero element of even valuation has unique binary square-class
+coordinates in the basis `-1`, `2 + √5`, `3 + 2√5`. In those coordinates the corestriction,
+the two classes of its twisted trace form, and the Evens norm have the displayed values.
+These evaluate both sides of the relative identities, since the untwisted classes are `(5)` and
 `κ = (-1) ∪ (-1)`, and the cross term vanishes. -/
-theorem existsUnique_relative_traceTransfer_values
-    (σ : DyadicSqrtFive →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) (u : 𝒪[DyadicSqrtFive]ˣ)
-    (hQ : (((Units.map (𝒪[DyadicSqrtFive].subtype :
-      𝒪[DyadicSqrtFive] →* DyadicSqrtFive) u : DyadicSqrtFive) •
-        sq (R := DyadicSqrtFive) (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate) :
-    let a := Units.map (𝒪[DyadicSqrtFive].subtype : 𝒪[DyadicSqrtFive] →* DyadicSqrtFive) u
+theorem existsUnique_relative_traceTransfer_values_of_even
+    (σ : DyadicSqrtFive →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) (a : DyadicSqrtFiveˣ)
+    (ha : Even (normalizedValuation DyadicSqrtFive a).toAdd)
+    (hQ : (((a : DyadicSqrtFive) • sq (R := DyadicSqrtFive)
+      (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate) :
     ∃! c : Fin 3 → ZMod 2,
       squareClass a = squareClass (unitSquareClassRep c) ∧
       galoisCor ℚ_[2] DyadicSqrtFive σ 1 (kummerClass a) =
@@ -108,8 +108,7 @@ theorem existsUnique_relative_traceTransfer_values
       galoisEvens ℚ_[2] DyadicSqrtFive σ finrank_eq_two (kummerClass a) =
         (1 + (1 + c 0) * (1 + c 1)) •
           kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
-  let a := Units.map (𝒪[DyadicSqrtFive].subtype : 𝒪[DyadicSqrtFive] →* DyadicSqrtFive) u
-  obtain ⟨c, hc, hunique⟩ := existsUnique_unitSquareClassRep u
+  obtain ⟨c, hc, hunique⟩ := (existsUnique_unitSquareClassRep_iff_even a).mpr ha
   have hk : kummerClass a = kummerClass (unitSquareClassRep c) := by
     rw [← kummerSquareClassEquiv_squareClass, ← kummerSquareClassEquiv_squareClass, hc]
   have hrep : (((unitSquareClassRep c : DyadicSqrtFive) • sq (R := DyadicSqrtFive)
@@ -132,5 +131,28 @@ theorem existsUnique_relative_traceTransfer_values
     exact hcor
   · rw [hk]
     exact hev
+
+/-- Every integer-ring unit has the relative Stiefel–Whitney values given by
+`existsUnique_relative_traceTransfer_values_of_even`, since its valuation is zero. -/
+theorem existsUnique_relative_traceTransfer_values
+    (σ : DyadicSqrtFive →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) (u : 𝒪[DyadicSqrtFive]ˣ)
+    (hQ : (((Units.map (𝒪[DyadicSqrtFive].subtype :
+      𝒪[DyadicSqrtFive] →* DyadicSqrtFive) u : DyadicSqrtFive) •
+        sq (R := DyadicSqrtFive) (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate) :
+    let a := Units.map (𝒪[DyadicSqrtFive].subtype : 𝒪[DyadicSqrtFive] →* DyadicSqrtFive) u
+    ∃! c : Fin 3 → ZMod 2,
+      squareClass a = squareClass (unitSquareClassRep c) ∧
+      galoisCor ℚ_[2] DyadicSqrtFive σ 1 (kummerClass a) =
+        c 1 • kummerClass (-1 : ℚ_[2]ˣ) +
+          c 2 • kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num)) ∧
+      sw1Class (formClass _ hQ) = c 1 • kummerClass (-1 : ℚ_[2]ˣ) +
+        (1 + c 2) • kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num)) ∧
+      sw2Class (formClass _ hQ) = ((1 + c 0) * (1 + c 1)) •
+        kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) ∧
+      galoisEvens ℚ_[2] DyadicSqrtFive σ finrank_eq_two (kummerClass a) =
+        (1 + (1 + c 0) * (1 + c 1)) •
+          kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
+  exact existsUnique_relative_traceTransfer_values_of_even σ _
+    (by simp [normalizedValuation_integerUnits]) hQ
 
 end TauCeti.DyadicSqrtFive
