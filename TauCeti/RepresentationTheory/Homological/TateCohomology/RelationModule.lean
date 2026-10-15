@@ -23,9 +23,9 @@ isomorphism `H-hat^n(S, k) ≅ H-hat^(n+2)(S, R)` for every finite subgroup `S` 
 `n : ℤ`.
 
 In particular `H-hat^3(S, R) ≅ H¹(S, k) = Hom(S, k)` vanishes when `k` has no additive torsion,
-and `H-hat^2(S, R) ≅ H-hat^0(S, k) = k ⧸ #S k`. These are the degree-two and degree-three inputs
-of Tate's isomorphism criterion for a map from the relation module to a module with the same
-low-degree cohomology, such as the completed multiplicative group of a local field.
+and `H-hat^2(S, R)` has the same cardinality as `k ⧸ #S k`. These are the degree-two and
+degree-three inputs of Tate's isomorphism criterion for a map from the relation module to a module
+with the same low-degree cohomology, such as the completed multiplicative group of a local field.
 
 ## Main statements
 
@@ -155,8 +155,8 @@ theorem isZero_tateCohomology_three_res_relationModule [IsAddTorsionFree k]
     (relationModuleShiftIso k hg S 1).symm
 
 variable (k) in
-/-- **`H-hat^2(S, R) ≅ k ⧸ #S k`** for the relation module `R` of a family generating `G` and a
-finite subgroup `S`, as a count of elements: it is `H-hat^0(S, k)`. -/
+/-- **`H-hat^2(S, R)` and `k ⧸ #S k` have equal cardinality** for the relation module `R` of a
+family generating `G` and a finite subgroup `S`, by comparison with `H-hat^0(S, k)`. -/
 theorem natCard_tateCohomology_two_res_relationModule (hg : Subgroup.closure (Set.range g) = ⊤)
     (S : Subgroup G) [Fintype S] :
     Nat.card (tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of
