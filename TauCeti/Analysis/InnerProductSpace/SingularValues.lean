@@ -806,8 +806,8 @@ theorem singularValues_comp_starProjection_range {X : F →L[𝕜] E}
     (hX : Isometry X) (T : E →L[𝕜] G) :
     ((T ∘L X.range.starProjection : E →L[𝕜] G) : E →ₗ[𝕜] G).singularValues =
       ((T ∘L X : F →L[𝕜] G) : F →ₗ[𝕜] G).singularValues := by
-  letI := FiniteDimensional.complete 𝕜 E
-  letI := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.complete 𝕜 F
   let W : F →ₗᵢ[𝕜] E := ⟨X, AddMonoidHomClass.isometry_iff_norm _ |>.1 hX⟩
   -- The linear map underlying `W` is `X` by construction.
   have hW : W.toLinearMap = X := rfl
