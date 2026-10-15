@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.Algebra.Polynomial.Roots
+public import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
 # Binary homogenization of a product of linear factors
@@ -32,16 +33,6 @@ public section
 namespace Polynomial
 
 variable {R : Type*} [CommRing R]
-
-/-- A product of `card s` monic linear factors has degree at most `card s`; unlike
-`natDegree_multiset_prod_X_sub_C_eq_card`, this needs no nontriviality. -/
-theorem natDegree_multiset_prod_X_sub_C_le (s : Multiset R) :
-    (s.map fun a ↦ X - C a).prod.natDegree ≤ Multiset.card s := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons a s ih =>
-    rw [Multiset.map_cons, Multiset.prod_cons, Multiset.card_cons, add_comm]
-    exact natDegree_mul_le.trans (add_le_add (natDegree_X_sub_C_le a) ih)
 
 /-- The homogenization of `∏_{a ∈ s} (X - a)` in degree `card s` is the product of the linear
 binary forms `X₀ - a X₁`. -/

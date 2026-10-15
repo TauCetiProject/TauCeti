@@ -27,7 +27,7 @@ vanishes at no rational number other than `α`.
 
 * `Polynomial.inv_le_norm_ratCast_sub`: Liouville's inequality for an integer polynomial `f`
   with root `α` at a rational `ξ` with `f(ξ) ≠ 0`.
-* `TauCeti.inv_le_norm_ratCast_sub_of_isAlgebraic`: Liouville's inequality for an algebraic
+* `IsAlgebraic.inv_le_norm_ratCast_sub`: Liouville's inequality for an algebraic
   number `α` of degree `d` and a rational number `ξ ≠ α`, with constant `2 ^ (1 - d) M(F_α)⁻¹`.
 
 ## References
@@ -95,26 +95,22 @@ open Polynomial
 with primitive minimal polynomial `F_α ∈ ℤ[X]`. Every rational number `ξ ≠ α` satisfies
 `|ξ - α| ≥ (2 ^ (d - 1) M(F_α) H(ξ) ^ d)⁻¹`, where `M(F_α)` is the Mahler measure of `F_α` (the
 Mahler measure of `α`) and `H(ξ)` the height of `ξ`. -/
-theorem inv_le_norm_ratCast_sub_of_isAlgebraic {α : ℂ} (hα : IsAlgebraic ℚ α) {ξ : ℚ}
+theorem _root_.IsAlgebraic.inv_le_norm_ratCast_sub {α : ℂ} (hα : IsAlgebraic ℚ α) {ξ : ℚ}
     (hξ : (ξ : ℂ) ≠ α) :
     (2 ^ ((minpoly ℚ α).natDegree - 1) *
         ((primitiveMinpoly α).map (Int.castRingHom ℂ)).mahlerMeasure *
         mulHeight₁ ξ ^ (minpoly ℚ α).natDegree)⁻¹ ≤ ‖(ξ : ℂ) - α‖ := by
   rw [← natDegree_primitiveMinpoly]
-  refine inv_le_norm_ratCast_sub _ ?_ fun h ↦ hξ ?_
+  refine Polynomial.inv_le_norm_ratCast_sub _ ?_ fun h ↦ hξ ?_
   · rw [IsRoot.def, ← algebraMap_int_eq, eval_map_algebraMap]
     exact aeval_primitiveMinpoly hα
-  -- `F_α` is a nonzero multiple of `minpoly ℚ α`, so `ξ` is a root of the irreducible
-  -- `minpoly ℚ α`, which is therefore `X - ξ`.
+  -- `F_α` is a nonzero multiple of `minpoly ℚ α`, so `ξ` is a rational root of `minpoly ℚ α`,
+  -- which forces `ξ = α`.
   rw [← eval_map_algebraMap, algebraMap_int_eq, map_primitiveMinpoly hα, eval_mul, eval_C,
     mul_eq_zero, Int.cast_eq_zero] at h
   have hroot : aeval ξ (minpoly ℚ α) = 0 :=
     h.resolve_left (leadingCoeff_primitiveMinpoly_pos α).ne'
-  have hmin : minpoly ℚ α = X - C ξ := by
-    rw [minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hα.isIntegral) hroot
-      (minpoly.monic hα.isIntegral), minpoly.eq_X_sub_C']
-  have := minpoly.aeval ℚ α
-  rw [hmin, map_sub, aeval_X, aeval_C, sub_eq_zero] at this
-  simpa using this.symm
+  rw [aeval_def, Algebra.algebraMap_self, eval₂_id] at hroot
+  simpa using minpoly.root hα.isIntegral hroot
 
 end TauCeti
