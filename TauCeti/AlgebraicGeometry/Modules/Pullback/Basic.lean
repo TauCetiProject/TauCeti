@@ -11,7 +11,9 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Restriction
 public import TauCeti.CategoryTheory.Adjunction.Mates
+public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 
 /-!
 # Pullback and restriction of modules on schemes
@@ -60,6 +62,9 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
   `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
   and pullback respect the lax and oplax monoidal structures;
+* `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
+  `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
+  without its inverse;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
   pullbacks;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
@@ -375,6 +380,28 @@ lemma pullback_comp_δ (M N : Z.Modules) :
     inferInstanceAs (pushforward f).IsRightAdjoint
   TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
 
+/-- The composition isomorphism followed by the tensor comparison for a composite pullback
+agrees with the successive tensor comparisons followed by the composition isomorphisms on
+both factors. This form does not involve the inverse composition isomorphism. -/
+@[reassoc]
+lemma _root_.TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ (M N : Z.Modules) :
+    (pullbackComp f g).hom.app (M ⊗ N) ≫
+        Functor.OplaxMonoidal.δ (pullback (f ≫ g)) M N =
+      (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
+        Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
+        ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) := by
+  rw [pullback_comp_δ, Iso.hom_inv_id_app_assoc]
+
+/-- The identification of the pullbacks along equal morphisms is compatible with their tensor
+comparisons `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`. -/
+@[reassoc]
+lemma pullbackCongr_hom_app_comp_δ {f' : X ⟶ Y} (hf : f = f') (M N : Y.Modules) :
+    (pullbackCongr hf).hom.app (M ⊗ N) ≫ Functor.OplaxMonoidal.δ (pullback f') M N =
+      Functor.OplaxMonoidal.δ (pullback f) M N ≫
+        ((pullbackCongr hf).hom.app M ⊗ₘ (pullbackCongr hf).hom.app N) := by
+  subst hf
+  simp [pullbackCongr]
+
 end Monoidal
 
 section Over
@@ -435,6 +462,15 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
   have : IsIso ((overEquiv (U i)).functor.map (φ.over (U i))) :=
     (NatIso.isIso_map_iff (overFunctorEquiv (U i)) φ).mpr this
   exact isIso_of_reflects_iso (φ.over (U i)) (overEquiv (U i)).functor
+
+/-- Monomorphisms of module sheaves can be checked after pullback to an open cover. -/
+theorem mono_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
+    (hU : TopologicalSpace.IsOpenCover U) {A B : X.Modules} (φ : A ⟶ B) :
+    Mono φ ↔ ∀ i, Mono ((pullback (U i).ι).map φ) := by
+  let F (i : ι) := pullback (U i).ι
+  have hF : JointlyReflectIsomorphisms F :=
+    ⟨fun f _ ↦ (isIso_iff_of_isOpenCover hU f).mpr fun i ↦ inferInstance⟩
+  exact hF.jointlyReflectMonomorphisms.mono_iff φ
 
 end Over
 
@@ -500,9 +536,10 @@ def _root_.SheafOfModules.LocalGeneratorsData.pullback {M : Y.Modules}
 /-- Carrying local generators along a morphism of schemes preserves finiteness. -/
 instance {M : Y.Modules} (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.ringCatSheaf) M)
     [q.IsFiniteType] (f : X ⟶ Y) : (q.pullback f).IsFiniteType where
-  isFiniteType i := SheafOfModules.GeneratingSections.isFiniteType_mapIso (q.generators i)
-    (pullbackOver f (q.X i)) (pullbackOverUnitIso f _) (pullbackOverObjIso f _ M)
-    (hσ := SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i)
+  isFiniteType i :=
+    let _ := SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i
+    SheafOfModules.GeneratingSections.isFiniteType_mapIso (q.generators i)
+      (pullbackOver f (q.X i)) (pullbackOverUnitIso f _) (pullbackOverObjIso f _ M)
 
 /-- Carrying locally free data along a morphism of schemes gives locally free data. -/
 instance {M : Y.Modules} (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.ringCatSheaf) M)

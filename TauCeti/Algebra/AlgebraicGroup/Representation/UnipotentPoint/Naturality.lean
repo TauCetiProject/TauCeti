@@ -40,9 +40,8 @@ uses flatness to make the comparison map injective.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This supplies value-field naturality for the geometric unipotence criterion in Layer 5,
-"Unipotent groups", of the ReductiveGroups roadmap. It is needed to compare geometric points
-across algebraic closures and field extensions.
+This supplies value-field naturality for the geometric unipotence criterion. It is needed to compare
+geometric points across algebraic closures and field extensions.
 -/
 
 public section

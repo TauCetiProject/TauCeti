@@ -41,8 +41,13 @@ vertex or a vertex at infinity.
   `exp ((f - c) / b)` extends continuously and injectively across `a i` with value `0` there,
   with real boundary values and the nearby upper half-plane carried into the upper half-plane.
   The turning exponent is then `e i = -1`.
+* At a vertex at infinity of opening `2 * π`, between two parallel sides pointing the same way,
+  `f` extends continuously and injectively to the closed upper half-disc about `a i` with `a i`
+  removed and tends to infinity at `a i`, and far out the image of the open upper half-disc is the
+  exterior of the closed half-strip `{0 ≤ re ((w - c) / b), 0 ≤ im ((w - c) / b) ≤ π}`.
+  The turning exponent is then `e i = -3`.
 
-With several prevertices of the last two kinds, this describes polygons with several vertices at
+With several prevertices of the last three kinds, this describes polygons with several vertices at
 infinity, such as strips.
 
 At infinity the condition is that `z * f''(z) / f'(z)` has a finite limit `L` as `z` tends to
@@ -56,9 +61,10 @@ These are local conditions; they do not assert global injectivity or surjectivit
 polygon.  Under these conditions, the proof runs the classical argument: the pre-Schwarzian
 derivative `f'' / f'` continues by Schwarz reflection across every boundary side to a
 conjugation-symmetric function holomorphic off the prevertices, a straightened corner, a power
-coordinate at a vertex at infinity, or the logarithm at a parallel-sided end gives it the residue
-`e i` at `a i`, the condition at infinity makes it decay there, so partial fractions identify it
-with `∑ i, e i / (z - a i)`, and integrating that differential equation recovers `f`.
+coordinate at a vertex at infinity, the logarithm at a parallel-sided end, or comparison with a
+model map at an end of opening `2 * π` gives it the residue `e i` at `a i`, the condition at
+infinity makes it decay there, so partial fractions identify it with `∑ i, e i / (z - a i)`, and
+integrating that differential equation recovers `f`.
 
 ## Main results
 
@@ -105,7 +111,7 @@ theorem exponent_sum_eq_of_logDeriv_deriv_eqOn
 /-- **The Schwarz--Christoffel formula.**  Let `f` be holomorphic with nonvanishing derivative on
 the upper half-plane.  Assume that away from the distinct real prevertices `a i` its boundary
 values run along affine lines with the upper half-plane on one side, and that each `a i` is
-carried to a vertex of one of three kinds:
+carried to a vertex of one of four kinds:
 * a finite vertex: `f` opens the sector of angle `(e i + 1) * π` at `f (a i)`, with boundary values
   on the two bounding rays, where `-1 < e i < 1`;
 * a vertex at infinity of opening `β * π` with `0 < β < 2`, where `e i = -β - 1`: the inverted map
@@ -113,7 +119,11 @@ carried to a vertex of one of three kinds:
   has its other boundary values on the two bounding rays;
 * a vertex at infinity between two parallel sides, where `e i = -1`: the exponential
   `exp ((f - c) / b)` extends across `a i` with value `0`, injectively, with real boundary values
-  and upper half-plane values above the axis.
+  and upper half-plane values above the axis;
+* a vertex at infinity of opening `2 * π`, where `e i = -3`: `f` is continuous and injective on
+  the closed upper half-disc about `a i` with `a i` removed, tends to infinity at `a i`, and far
+  out the image of the open upper half-disc is the exterior of the closed half-strip
+  `{0 ≤ re ((w - c) / b), 0 ≤ im ((w - c) / b) ≤ π}`.
 
 Assume finally that `z * f''(z) / f'(z)` has a finite limit as `z` tends to infinity in the upper
 half-plane.  Then throughout the upper half-plane
@@ -157,7 +167,15 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
         ContinuousOn g (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
         (∀ z ∈ Metric.ball ((a i : ℝ) : ℂ) r, z.im = 0 → (g z).im = 0) ∧
         MapsTo g (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im} ∧
-        InjOn g (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 ≤ z.im})))
+        InjOn g (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 ≤ z.im})) ∨
+      (e i = -3 ∧ ∃ r > 0, ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧
+        ContinuousOn f
+          ((Metric.closedBall ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) \ {((a i : ℝ) : ℂ)}) ∧
+        InjOn f ((Metric.closedBall ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) \ {((a i : ℝ) : ℂ)}) ∧
+        Tendsto f (𝓝[{z : ℂ | 0 ≤ z.im} \ {((a i : ℝ) : ℂ)}] ((a i : ℝ) : ℂ)) (cobounded ℂ) ∧
+        ∀ w : ℂ, ρ < ‖w - c‖ →
+          (w ∈ f '' (Metric.ball ((a i : ℝ) : ℂ) r ∩ upperHalfPlaneSet) ↔
+            ((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)))
     {L : ℂ} (hinfty : Tendsto (fun z => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L)) :
     EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
@@ -173,8 +191,8 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
       (S := range fun i => ((a i : ℝ) : ℂ)) hf hfn fun x hx =>
         hside x fun i hi => hx ⟨i, by simp [hi]⟩
   rw [inter_eq_left.mpr hre] at hφd
-  -- A straightened corner, or a logarithm at a parallel-sided end, gives it the residue `e i`
-  -- at the prevertex `a i`.
+  -- A straightened corner, a power coordinate or a logarithm at an end, or the model of an end of
+  -- opening `2 * π` gives it the residue `e i` at the prevertex `a i`.
   have hpole : ∀ i, Tendsto (fun z => (z - ((a i : ℝ) : ℂ)) * φ z)
       (𝓝[≠] ((a i : ℝ) : ℂ)) (𝓝 ((e i : ℝ) : ℂ)) := by
     intro i
@@ -189,7 +207,8 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
       exact hz
     rcases hvertex i with ⟨hei, r, hr, b, hb, hcont, hinj, hsector, hrays⟩ |
       ⟨hei, r, hr, c, b, hb, g, hgf, hg0, hgc, hgi, hsector, hrays⟩ |
-      ⟨hei, r, hr, c, b, hb, g, hgf, hg0, hgc, hgr, hgu, hgi⟩
+      ⟨hei, r, hr, c, b, hb, g, hgf, hg0, hgc, hgr, hgu, hgi⟩ |
+      ⟨hei, r, hr, ρ', c, b, hb, hfc, hfi, hp, hU⟩
     · have hcast : ((e i : ℝ) : ℂ) = ((e i + 1 : ℝ) : ℂ) - 1 := by push_cast; ring
       rw [hcast]
       exact tendsto_sub_mul_nhdsNE_of_sector (φ := φ) (f := f) (x := a i) (r := ρ)
@@ -207,6 +226,9 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
       exact tendsto_sub_mul_nhdsNE_of_eqOn_exp (x := a i) hρ hφρ (fun z _ => hφconj z)
         (hφf.mono inter_subset_left) hb Metric.isOpen_ball (hball r) (Metric.mem_ball_self hr)
         (hf.mono inter_subset_right) hgf hg0 hgc hgr hgu hgi
+    · rw [hei, ofReal_neg, ofReal_ofNat]
+      exact tendsto_sub_mul_nhdsNE_of_halfStripExterior hρ hφρ (fun z _ => hφconj z)
+        (hφf.mono inter_subset_left) hr hb (hf.mono inter_subset_right) hfc hfi hp hU
   -- The finite limit of `z * f'' / f'` at infinity makes it decay there.
   have hdecay : Tendsto φ (cobounded ℂ) (𝓝 0) := by
     refine tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet hinfty ?_

@@ -175,7 +175,7 @@ theorem lt_quantile_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
 /-- The quantile function is monotone on the levels where it is the honest generalized
 inverse. -/
 theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1) := by
-  rintro s ⟨hs0, hs1⟩ t ⟨ht0, ht1⟩ hst
+  rintro s ⟨hs0, hs1⟩ t ⟨_, ht1⟩ hst
   exact (quantile_le_iff μ hs0 hs1).mpr (hst.trans (le_cdf_quantile μ ht1))
 
 /-- Off `Ioo 0 1` the quantile function is constant equal to its junk value `0`, except possibly
@@ -225,7 +225,7 @@ uniform law on the open unit interval forward to that law. -/
 theorem map_quantile_volume_Ioo (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     (volume.restrict (Ioo (0 : ℝ) 1)).map μ.quantile = μ := by
   have huniform : IsProbabilityMeasure (volume.restrict (Ioo (0 : ℝ) 1)) := ⟨by simp⟩
-  have hmap : IsProbabilityMeasure ((volume.restrict (Ioo (0 : ℝ) 1)).map μ.quantile) :=
+  have _ : IsProbabilityMeasure ((volume.restrict (Ioo (0 : ℝ) 1)).map μ.quantile) :=
     (Measure.isProbabilityMeasure_map_iff (measurable_quantile μ).aemeasurable).mpr huniform
   refine Measure.ext_of_Iic _ _ fun x ↦ ?_
   rw [Measure.map_apply (measurable_quantile μ) measurableSet_Iic,
@@ -417,7 +417,7 @@ private theorem ae_not_of_lt_of_cdf_eq {ν : Measure ℝ} [IsProbabilityMeasure 
         _ = 0 := ENNReal.tsum_eq_zero.2 fun n ↦ by
           have h1div : (1 : ℝ) / (n + 2) < 1 :=
             (div_lt_iff₀ (by positivity : (0 : ℝ) < n + 2)).2 (by
-              have h : (1 : ℝ) ≤ n + 1 := by
+              have _h : (1 : ℝ) ≤ n + 1 := by
                 exact_mod_cast (Nat.succ_le_succ (Nat.zero_le n))
               linarith)
           have hlow : (b - y) / (n + 2) < b - y := by
@@ -464,7 +464,7 @@ theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] :
     filter_upwards [hplateau] with x hx
     have hne0 : cdf ν x ≠ 0 := by
       rintro h0
-      obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn (show x - 1 < x from by linarith)
+      obtain ⟨q, _, hq2⟩ := exists_rat_btwn (show x - 1 < x from by linarith)
       have hq0 : cdf ν q = 0 := by
         refine le_antisymm ?_ (cdf_nonneg ν _)
         simpa [h0] using monotone_cdf ν hq2.le

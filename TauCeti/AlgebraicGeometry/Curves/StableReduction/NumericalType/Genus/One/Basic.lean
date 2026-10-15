@@ -339,17 +339,6 @@ theorem topologicalGenus_le_one : T.topologicalGenus ≤ 1 := by
 
 end Cycle
 
-/-- Two components that meet have intersection number `aᵢⱼ = wᵢα = wⱼβ` for positive integers `α`
-and `β`. -/
-private lemma exists_intersection_eq_weight_mul {i j : T.Component}
-    (h : 0 < T.intersection i j) : ∃ α β : ℤ, 0 < α ∧ 0 < β ∧
-      T.intersection i j = T.weight i * α ∧ T.intersection i j = T.weight j * β := by
-  obtain ⟨α, hα⟩ := T.weight_dvd i j
-  obtain ⟨β, hβ⟩ := T.weight_dvd j i
-  rw [T.intersection_comm j i] at hβ
-  exact ⟨α, β, pos_of_mul_pos_right (hα ▸ h) (by positivity),
-    pos_of_mul_pos_right (hβ ▸ h) (by positivity), hα, hβ⟩
-
 /-! ### Two components -/
 
 variable (T) in
@@ -399,7 +388,7 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_two
   have hmi : (0 : ℤ) < T.multiplicity i := Int.natCast_pos.mpr (T.multiplicity i).pos
   have hmj : (0 : ℤ) < T.multiplicity j := Int.natCast_pos.mpr (T.multiplicity j).pos
   -- Write `aᵢⱼ = wᵢα = wⱼβ`; the fibre relations become `mⱼα = 2mᵢ` and `mᵢβ = 2mⱼ`.
-  obtain ⟨α, β, hα₀, hβ₀, hα, hβ⟩ := exists_intersection_eq_weight_mul
+  obtain ⟨α, β, hα₀, hβ₀, hα, hβ⟩ := T.exists_intersection_eq_weight_mul
     (pos_of_mul_pos_right (by linarith [mul_pos hmi hwi]) hmj.le)
   have e₁ : (T.multiplicity j : ℤ) * α = 2 * T.multiplicity i :=
     mul_left_cancel₀ hwi.ne' (by rw [hα] at ri; linear_combination ri)
@@ -562,9 +551,9 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
   have hmk : (0 : ℤ) < T.multiplicity k := Int.natCast_pos.mpr (T.multiplicity k).pos
   -- Write `aᵢⱼ = wᵢα = wⱼβ` and `aⱼₖ = wⱼγ = wₖδ`. The fibre relations become `mⱼα = 2mᵢ`,
   -- `mᵢβ + mₖγ = 2mⱼ` and `mⱼδ = 2mₖ`, whence `αβ + γδ = 4`.
-  obtain ⟨α, β, hα₀, hβ₀, hα, hβ⟩ := exists_intersection_eq_weight_mul (i := i) (j := j)
+  obtain ⟨α, β, hα₀, hβ₀, hα, hβ⟩ := T.exists_intersection_eq_weight_mul (i := i) (j := j)
     (pos_of_mul_pos_right (by linarith [mul_pos hmi hwi]) hmj.le)
-  obtain ⟨γ, δ, hγ₀, hδ₀, hγ, hδ⟩ := exists_intersection_eq_weight_mul (i := j) (j := k)
+  obtain ⟨γ, δ, hγ₀, hδ₀, hγ, hδ⟩ := T.exists_intersection_eq_weight_mul (i := j) (j := k)
     (pos_of_mul_pos_right (by linarith [mul_pos hmk hwk]) hmj.le)
   have e₁ : (T.multiplicity j : ℤ) * α = 2 * T.multiplicity i :=
     mul_left_cancel₀ hwi.ne' (by rw [hα] at ri; linear_combination ri)

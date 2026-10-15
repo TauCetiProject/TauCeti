@@ -388,6 +388,38 @@ theorem mem_coveredSquares_halfTurnEquiv (R : GridRectangleBetween x y) (p : Fin
   rw [← Grid.rev_mem_cIco_finRotate_rev R.left R.right c.rev,
     ← Grid.rev_mem_cIco_finRotate_rev R.bottom R.top r.rev, Fin.rev_rev, Fin.rev_rev]
 
+/-- The half-turn preserves the number of grid-state points in a rectangle's interior. -/
+theorem card_pointSet_inter_interior_halfTurnEquiv (R : GridRectangleBetween x y)
+    (m : GridState n) :
+    (m.halfTurn.pointSet ∩ (halfTurnEquiv x y R).toGridRectangle.interior).card =
+      (m.pointSet ∩ R.toGridRectangle.interior).card := by
+  let e : Equiv.Perm (Fin n) := (Fin.revPerm.trans (finRotate n))
+  refine (Finset.card_equiv (e.prodCongr e) fun p ↦ ?_).symm
+  obtain ⟨c, r⟩ := p
+  simp only [Equiv.prodCongr_apply]
+  dsimp only [e, Equiv.coe_trans, Prod.map]
+  simp only [Finset.mem_inter, GridState.mem_pointSet, GridRectangle.mem_interior,
+    GridRectangle.mem_columnInterior, GridRectangle.mem_rowInterior,
+    toGridRectangle_left, toGridRectangle_right, toGridRectangle_bottom, toGridRectangle_top,
+    Function.comp_apply, Fin.revPerm_apply, GridState.halfTurn_apply_finRotate_rev,
+    halfTurnEquiv_apply_left, halfTurnEquiv_apply_right,
+    halfTurnEquiv_apply_bottom, halfTurnEquiv_apply_top,
+    Grid.mem_cIoo_finRotate_rev]
+  exact and_congr (((finRotate n).injective.comp Fin.rev_injective).eq_iff.symm) Iff.rfl
+
+/-- The half-turn preserves the number of occupied source-state squares of a rectangle.
+The lower-left corner is counted separately from the interior grid points. -/
+theorem card_source_pointSet_inter_halfTurnEquiv (R : GridRectangleBetween x y) :
+    (x.halfTurn.pointSet ∩ (halfTurnEquiv x y R).toGridRectangle.coveredSquares).card =
+      (x.pointSet ∩ R.toGridRectangle.coveredSquares).card := by
+  classical
+  rw [pointSet_inter_coveredSquares_eq_insert, pointSet_inter_coveredSquares_eq_insert,
+    Finset.card_insert_of_notMem, Finset.card_insert_of_notMem,
+    card_pointSet_inter_interior_halfTurnEquiv]
+  · exact fun h ↦ R.toGridRectangle.notMem_interior_of_fst_eq_left rfl (Finset.mem_inter.mp h).2
+  · exact fun h ↦ (halfTurnEquiv x y R).toGridRectangle.notMem_interior_of_fst_eq_left
+      rfl (Finset.mem_inter.mp h).2
+
 /-- The half-turn preserves the number of marking squares covered by a rectangle. Marking
 square coordinates use `rotate`, whereas rectangle corners use `halfTurn`. -/
 theorem card_pointSet_inter_halfTurnEquiv (R : GridRectangleBetween x y) (m : GridState n) :

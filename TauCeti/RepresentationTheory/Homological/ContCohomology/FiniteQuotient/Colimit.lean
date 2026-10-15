@@ -447,7 +447,7 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
         (ContinuousMonoidHom.quotientMk U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
-        (subtype_quotientMk_smul G M U.toSubgroup) c) :
+        U.toSubgroup.fixedPoints_subtype_quotientMk_smul c) :
     d1 (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M) bV =
       cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
         (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
@@ -477,7 +477,7 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
         (ContinuousMonoidHom.quotientMk U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
-        (subtype_quotientMk_smul G M U.toSubgroup) c : G × G → M) := by
+        U.toSubgroup.fixedPoints_subtype_quotientMk_smul c : G × G → M) := by
     refine (congrArg _ (cocyclesMap2_coe _ _ _ _ _ _ _ _ c)).trans ?_
     exact (cochainsMap2_quotientMk_comp_transition (M := M) hVU c).trans
       (cocyclesMap2_coe _ _ _ _ _ _ _ _ c).symm
@@ -485,7 +485,7 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
   refine (cochainsMap2_d1
     (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
     (FixedPoints.addSubgroup V.toSubgroup M).subtype
-    (subtype_quotientMk_smul G M V.toSubgroup) bV).trans ?_
+    V.toSubgroup.fixedPoints_subtype_quotientMk_smul bV).trans ?_
   rw [hbV_eq, htransition]
   exact hd
 
@@ -599,6 +599,7 @@ theorem subsingleton_H1_of_forall_openNormalSubgroup
 
 /-! ### Degree two -/
 
+omit [TotallyDisconnectedSpace G] in
 /-- A degree-two class at a finite quotient which inflates to zero becomes zero after transition
 to a sufficiently deep finite quotient. This is the injectivity half of the degree-two
 finite-quotient colimit theorem. -/
@@ -620,6 +621,7 @@ theorem exists_explicitFiniteQuotientTransition2_eq_zero (U : OpenNormalSubgroup
     refine mem_B2_iff.2 ⟨bV, hbV, ?_⟩
     exact d1_descend_eq_cocyclesMap2 hVU c b bV hbV_apply hd
 
+omit [TotallyDisconnectedSpace G] in
 /-- Two finite-level degree-two classes with the same inflation agree after transition to a
 common deeper level: their difference inflates to zero, hence dies at a sufficiently deep
 level. -/

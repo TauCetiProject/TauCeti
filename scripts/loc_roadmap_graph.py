@@ -17,9 +17,9 @@ from their conventional-commit title. The latter is deliberately independent of
 chart's meaning.
 
 Data comes from `gh` by default (needs auth: GH_TOKEN with pull-requests:read), or
-from a `--data` JSON file (the output of
-`gh pr list --state merged --json number,title,labels,mergedAt,additions,deletions`) for
-offline rendering and tests. Pure stdlib otherwise, matching loc_graph.py so CI needs
+from a `--data` JSON file (the shared bors-aware PR snapshot, or a legacy
+list from `gh pr list --json number,title,labels,mergedAt,additions,deletions`)
+for offline rendering and tests. Pure stdlib otherwise, matching loc_graph.py so CI needs
 no pip install. Styled for the navy Tau Ceti site (see web/static_files/style.css).
 """
 
@@ -31,6 +31,8 @@ import math
 import re
 import subprocess
 import sys
+
+from pr_stats_graphs import apply_bors_merges, fetch_bors_merges
 
 from chart_style import MUTED, PALETTE, TEXT, base_css, card_rect, css_px
 
@@ -65,13 +67,26 @@ MERGED_PR_CEILING = 100_000
 
 def fetch_gh(repo: str) -> list[dict]:
     out = subprocess.run(
-        ["gh", "pr", "list", "--repo", repo, "--state", "merged",
+        ["gh", "pr", "list", "--repo", repo, "--state", "all",
          "--limit", str(MERGED_PR_CEILING),
-         "--json", "number,title,labels,mergedAt,additions,deletions"],
+         "--json", "number,title,state,createdAt,labels,mergedAt,additions,deletions"],
         check=True, text=True, stdout=subprocess.PIPE).stdout
     prs = json.loads(out)
     check_complete(prs)
-    return prs
+    normalized = [{**pr, "created_at": pr["createdAt"], "merged_at": pr["mergedAt"]}
+                  for pr in prs]
+    apply_bors_merges(normalized, fetch_bors_merges(repo)[0])
+    return snapshot_prs({"prs": normalized})
+
+
+def snapshot_prs(data: dict | list) -> list[dict]:
+    """Accept the shared, bors-aware snapshot as well as legacy offline PR lists."""
+    if isinstance(data, list):
+        return data
+    return [{**pr, "mergedAt": pr.get("merged_at"),
+             "labels": [{"name": label} if isinstance(label, str) else label
+                        for label in pr.get("labels", [])]}
+            for pr in data["prs"]]
 
 
 def check_complete(prs: list[dict]) -> None:
@@ -83,7 +98,7 @@ def check_complete(prs: list[dict]) -> None:
     """
     if len(prs) >= MERGED_PR_CEILING:
         raise RuntimeError(
-            f"gh returned {len(prs)} merged pull requests, at or above the {MERGED_PR_CEILING} "
+            f"gh returned {len(prs)} pull requests, at or above the {MERGED_PR_CEILING} "
             "ceiling, so the oldest ones were probably dropped and the cumulative series would "
             "start in the wrong place. Raise MERGED_PR_CEILING.")
 
@@ -103,7 +118,8 @@ def utc_day(stamp: str) -> dt.date:
 
 
 def roadmap_of(pr: dict) -> str | None:
-    if MAINTENANCE_TITLE.match(pr.get("title") or ""):
+    title = (pr.get("title") or "").removeprefix("[Merged by Bors] - ")
+    if MAINTENANCE_TITLE.match(title):
         return None
     labs = [l["name"] for l in pr.get("labels") or []
             if l["name"].startswith(AREA_PREFIX) and l["name"] not in EXCLUDE]
@@ -311,11 +327,11 @@ def render(dates, order, series, totals, title, out, omitted=0):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default="TauCetiProject/TauCeti")
-    ap.add_argument("--data", help="JSON file of merged PRs (offline); else query gh")
+    ap.add_argument("--data", help="shared normalized snapshot or JSON PR list (offline); else query gh")
     ap.add_argument("--title", default="Tau Ceti — lines of Lean per roadmap")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    prs = json.load(open(a.data)) if a.data else fetch_gh(a.repo)
+    prs = snapshot_prs(json.load(open(a.data))) if a.data else fetch_gh(a.repo)
     dates, order, series, totals = build_series(prs)
     if not dates:
         sys.exit("no labelled merged PRs found on a completed UTC day")

@@ -129,7 +129,7 @@ theorem isCoprime_primeDiscriminantRadicand {D E : ℤ}
     IsCoprime (primeDiscriminantRadicand D) (primeDiscriminantRadicand E) := by
   rw [Int.isCoprime_iff_nat_coprime]
   rcases isPrimeDiscriminant_iff.mp hD with hevD | ⟨p, hp, hpodd, rfl⟩
-  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, hq, hqodd, rfl⟩
+  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, _, hqodd, rfl⟩
     · rcases hevD with rfl | rfl | rfl <;> rcases hevE with rfl | rfl | rfl <;>
         simp_all
     · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hevD,
@@ -169,11 +169,11 @@ private theorem not_isSquare_prod_primeDiscriminantRadicands_of_mem_eight_neg_ei
     ring
   have hcopT : ∀ i ∈ T, ∀ j ∈ T, i ≠ j →
       IsCoprime (primeDiscriminantRadicand (D i)) (primeDiscriminantRadicand (D j)) := by
-    intro i hiT j hjT hij
+    intro i hiT j _ hij
     exact isCoprime_primeDiscriminantRadicand (hD i) (hD j) (fun h => hij (hinj h))
       (by
         intro hbad
-        rcases hbad with ⟨hi, hj⟩ | ⟨hi, hj⟩
+        rcases hbad with ⟨hi, _⟩ | ⟨hi, _⟩
         · exact Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hiT)
             (hinj (by rw [hi, hi8D]))
         · exact Finset.ne_of_mem_erase hiT (hinj (by rw [hi, him8D])))

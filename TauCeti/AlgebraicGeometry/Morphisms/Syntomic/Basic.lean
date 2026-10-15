@@ -136,6 +136,16 @@ theorem SyntomicOfRelativeDimension.locallyOfFinitePresentation
     RingHom.finitePresentation_ofLocalizationSpanTarget _).mp <|
       RingHom.locally_of_locally (fun hf ↦ hf.finitePresentation) h
 
+/-- A syntomic morphism of relative dimension one is flat. -/
+instance (priority := low)
+    [SyntomicOfRelativeDimension 1 f] : Flat f :=
+  SyntomicOfRelativeDimension.flat 1 f
+
+/-- A syntomic morphism of relative dimension one is locally of finite presentation. -/
+instance (priority := low)
+    [SyntomicOfRelativeDimension 1 f] : LocallyOfFinitePresentation f :=
+  SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 f
+
 variable {n} in
 /-- A standard syntomic algebra gives a syntomic morphism on spectra. -/
 instance syntomicOfRelativeDimension_SpecMap (R S : Type u) [CommRing R] [CommRing S]

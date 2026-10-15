@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Permutation
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Permutation.Augmentation
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.NumberTheory.RamificationInertia.Galois
 
@@ -18,15 +18,20 @@ For a finite Galois extension of number fields `L/K` and a finite set `S` of fin
 `∏ v ∈ S, [L_w : K_v]`. Each factor is independent of the choice of a prime `w` above `v`.
 Cyclicity is not needed. This supplies the finite-place factors in the permutation lattice
 used to compare the logarithmic `S`-unit lattice with the augmentation hyperplane.
+For cyclic `L/K` and nonempty `S`, the sum-zero lattice on these finite places has quotient
+`∏ v ∈ S, [L_w : K_v] / [L : K]`. Archimedean factors and the logarithmic comparison with
+`S`-units are separate from this finite-place calculation.
 
 The calculation combines
 `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_sigma_of_isPretransitive` with
 `IsDedekindDomain.HeightOneSpectrum.card_stabilizer_eq_finrank_adicCompletion`.
 
-## Main result
+## Main results
 
 * `TauCeti.ClassFieldTheory.herbrandQuotient_ofMulAction_primesAbove`: the local-degree product
   on the canonical `HeightOneSpectrum.primesAbove` carrier.
+* `TauCeti.ClassFieldTheory.herbrandQuotient_augmentationSubrepresentation_primesAbove`: the
+  sum-zero lattice's quotient, with denominator the global degree.
 
 ## References
 
@@ -76,5 +81,24 @@ theorem herbrandQuotient_ofMulAction_primesAbove
     (sigmaPrimesOverEquivPrimesAbove_smul K L ↑S)
   rw [← TateCohomology.herbrandQuotient_eq_of_iso e]
   exact herbrandQuotient_ofMulAction_sigma_primesOver S w
+
+/-- For a cyclic extension and a nonempty finite set of finite places, the sum-zero lattice
+on the primes above those places has Herbrand quotient the product of local degrees divided
+by the global degree. This is the finite-place augmentation calculation, not yet the
+Herbrand quotient of the `S`-units. -/
+theorem herbrandQuotient_augmentationSubrepresentation_primesAbove
+    [IsCyclic (L ≃ₐ[K] L)] (S : Finset (HeightOneSpectrum (𝓞 K))) (hS : S.Nonempty)
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    TateCohomology.herbrandQuotient (Rep.of
+      (augmentationSubrepresentation ℤ (L ≃ₐ[K] L)
+        ↥(HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) ↑S)).toRepresentation) =
+      (∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ)) /
+        Module.finrank K L := by
+  obtain ⟨v, hv⟩ := hS
+  have : Nonempty ↥(HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) ↑S) :=
+    ⟨sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) ↑S
+      ⟨⟨v, hv⟩, HeightOneSpectrum.liesOverEquivPrimesOver (𝓞 L) v (w ⟨v, hv⟩)⟩⟩
+  rw [TateCohomology.herbrandQuotient_augmentationSubrepresentation_eq_div,
+    herbrandQuotient_ofMulAction_primesAbove S w, IsGalois.card_aut_eq_finrank K L]
 
 end TauCeti.ClassFieldTheory

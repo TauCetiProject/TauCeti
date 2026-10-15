@@ -419,7 +419,7 @@ private theorem exists_isGreatestIdealCofinal {v : Valuation A Γ₀} {I : Ideal
   obtain ⟨a₀, ha₀I, ha₀0⟩ := hne
   obtain ⟨t₀, ht₀T, ht₀0, ht₀max⟩ := exists_mem_max_restrict_ne_zero hT hrad ha₀I ha₀0
   -- the witness and the power of it that lands in `I`
-  set h : v.valueGroup := valueGroup.mk (v : A →*₀ Γ₀) 1 t₀ (by simp) ht₀0 with hdef
+  let h : v.valueGroup := valueGroup.mk (v : A →*₀ Γ₀) 1 t₀ (by simp) ht₀0
   have hrestr : v.restrict t₀ = (h : v.ValueGroup₀) := v.restrict_eq_mk ht₀0
   have ht₀J : t₀ ∈ J := hT ▸ Ideal.subset_span ht₀T
   obtain ⟨n, hn0, hn⟩ := exists_pow_ne_zero_mem_of_radical_eq hrad.symm ht₀J

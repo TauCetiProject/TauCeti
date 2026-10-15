@@ -37,7 +37,7 @@ with the pinned simply connected group scheme of type `D₄`.
 ## Main declarations
 
 * `TauCeti.D4Tripled.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
-* `TauCeti.D4Tripled.frobenius_eq_pointsMap`: it is the map on points induced by the iterated
+* `TauCeti.D4Tripled.frobenius_eq_map`: it is the map on points induced by the iterated
   Frobenius of the value ring.
 * `TauCeti.D4Tripled.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise actions.
 * `TauCeti.D4Tripled.frobenius_rootSubgroupPoints`: its action on every numbered simple-root
@@ -74,19 +74,21 @@ variable (p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p]
 /-- **The `p ^ k`-power Frobenius endomorphism of the tripled type-`D₄` carrier**, the functorial
 map on points induced by the iterated Frobenius endomorphism of the value ring. -/
 def frobenius : points A →* points A :=
-  pointsMap (iterateFrobenius A p k)
+  (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k)
 
 /-- The Frobenius endomorphism of the tripled carrier is the map on points induced by the iterated
 Frobenius of the value ring. This is its unfolding lemma, through which the naturality of a
 symmetry of the carrier, such as triality, yields its commutation with the Frobenius. -/
-theorem frobenius_eq_pointsMap : frobenius p k A = pointsMap (iterateFrobenius A p k) :=
+theorem frobenius_eq_map :
+    frobenius p k A =
+      (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k) :=
   (rfl)
 
 /-- The Frobenius endomorphism of the tripled carrier acts by entrywise Frobenius. -/
 theorem coe_frobenius (g : points A) :
     (frobenius p k A g : _root_.Matrix.GeneralLinearGroup (Fin 24) A) =
       _root_.Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
-  rw [frobenius, coe_pointsMap]
+  rw [frobenius, GeneralLinear.IntegralPointsPresentation.coe_map]
 
 /-- Entrywise, the Frobenius endomorphism raises each matrix coefficient to its `p ^ k`-th
 power. -/
@@ -105,7 +107,7 @@ theorem frobenius_rootSubgroupPoints (i : Fin 4 ⊕ Fin 4) (u : Multiplicative A
     frobenius p k A (rootSubgroupPoints i A u) =
       rootSubgroupPoints i A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) := by
-  rw [frobenius, pointsMap_rootSubgroupPoints]
+  rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
 
 /-- **Frobenius raises every coordinate of the pinned split weight torus to its `p ^ k`-th
@@ -120,12 +122,13 @@ theorem frobenius_weightTorusPoints (s : Fin 4 → Aˣ) :
 /-- The zeroth Frobenius iterate is the identity on the tripled carrier's point group. -/
 @[simp]
 theorem frobenius_zero : frobenius p 0 A = MonoidHom.id _ := by
-  rw [frobenius, iterateFrobenius_zero, pointsMap_id]
+  rw [frobenius, iterateFrobenius_zero, GeneralLinear.IntegralPointsPresentation.map_id]
 
 /-- Frobenius iterates add under composition on the tripled carrier's point group. -/
 theorem frobenius_add (m : ℕ) :
     frobenius p (k + m) A = (frobenius p k A).comp (frobenius p m A) := by
-  rw [frobenius, frobenius, frobenius, iterateFrobenius_add, pointsMap_comp]
+  rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
+    GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation A)]
 
 /-- **Frobenius exponents multiply under taking powers**: the `m`-th power of the `p ^ k`-power
 Frobenius of the tripled carrier, in the endomorphism monoid of its points, is its

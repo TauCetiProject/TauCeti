@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Kaehler.TensorProduct
+public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.RingTheory.FittingIdeal.Generators
@@ -49,6 +50,8 @@ base change of the ground ring: if `B = S ⊗[R] A`, then `Fitt_k(Ω[B⁄S]) = F
   when `k < dim_K K ⊗[R] M`.
 * `TauCeti.fittingIdeal_le_iff_lt_finrank`: `Fitt_k(M) ⊆ p` exactly when
   `k < dim_{κ(p)} κ(p) ⊗[R] M`.
+* `TauCeti.fittingIdeal_zero_eq_top_iff`: `Fitt₀(M) = R` exactly when `M = 0`, and
+  `TauCeti.fittingIdeal_zero_map_eq_top_iff`: `Fitt₀(M) S = S` exactly when `S ⊗[R] M = 0`.
 * `TauCeti.fittingIdeal_kaehlerDifferential_eq_map`: `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B` for
   `B = S ⊗[R] A`.
 
@@ -195,6 +198,26 @@ theorem fittingIdeal_le_iff_lt_finrank (p : Ideal R) [p.IsPrime] (k : ℕ) :
     fittingIdeal R M k ≤ p ↔ k < finrank p.ResidueField (p.ResidueField ⊗[R] M) := by
   rw [← fittingIdeal_map_eq_bot_iff_lt_finrank, Ideal.map_eq_bot_iff_le_ker,
     Ideal.ker_algebraMap_residueField]
+
+/-- The zeroth Fitting ideal of a finite module `M` is the unit ideal exactly when `M = 0`. -/
+@[simp]
+theorem fittingIdeal_zero_eq_top_iff : fittingIdeal R M 0 = ⊤ ↔ Subsingleton M := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact iff_of_true (Subsingleton.elim _ _) (Module.subsingleton R M)
+  refine ⟨fun h ↦ (support_eq_empty_iff (R := R)).mp <|
+      Set.eq_empty_of_forall_notMem fun p hp ↦ ?_,
+    fun _ ↦ fittingIdeal_eq_top_of_surjective (φ := (0 : (Fin 0 → R) →ₗ[R] M))
+      (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) finrank_zero_of_subsingleton.le⟩
+  -- at a prime `p` of the support the fibre `κ(p) ⊗[R] M` is nonzero, so `Fitt₀(M) ≤ p`
+  rw [mem_support_iff_nontrivial_residueField_tensorProduct] at hp
+  exact p.2.ne_top <| top_le_iff.mp <|
+    h ▸ (fittingIdeal_le_iff_lt_finrank p.asIdeal 0).mpr finrank_pos
+
+/-- The base change `S ⊗[R] M` of a finite module `M` vanishes exactly when `Fitt₀(M)` extends to
+the unit ideal of `S`. -/
+theorem fittingIdeal_zero_map_eq_top_iff (S : Type*) [CommRing S] [Algebra R S] :
+    (fittingIdeal R M 0).map (algebraMap R S) = ⊤ ↔ Subsingleton (S ⊗[R] M) := by
+  rw [← fittingIdeal_baseChange, fittingIdeal_zero_eq_top_iff]
 
 section Kaehler
 

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.PDE.HeatKernel.Bounds
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
+import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 
 /-!
 # The heat convolution solves the heat equation
@@ -34,6 +36,12 @@ dominated for `s` near `t` by a multiple of `K_{4t}`.
 * `TauCeti.laplacian_heatKernel_convolution`: `Δ (K_t ⋆ g) = ΔK_t ⋆ g`.
 * `TauCeti.hasDerivAt_heatKernel_convolution`: **the heat equation**
   `∂ₜ (K_t ⋆ g)(x) = Δ (K_t ⋆ g)(x)` for `t > 0`.
+* `TauCeti.hasDerivAt_heatKernel_convolution_of_hasCompactSupport`: the heat equation in the form
+  `∂ₜ (K_t ⋆ φ) = K_t ⋆ Δ φ` for `C²` data `φ` with compact support.
+* `TauCeti.heatKernel_convolution_sub_eq_integral`: Duhamel's formula
+  `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds` for such `φ`.
+* `TauCeti.stronglyMeasurable_heatKernel_convolution`: `(t, x) ↦ (K_t ⋆ g)(x)` is strongly
+  measurable for continuous `g`.
 
 ## References
 
@@ -162,5 +170,54 @@ theorem hasDerivAt_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
   · refine Filter.Eventually.of_forall fun y s hs => ?_
     simpa only [lsmul_apply] using
       (hasDerivAt_heatKernel (by linarith [(hball s hs).1]) y).smul_const (g (x - y))
+
+/-- **The heat equation for `C²` data with compact support.** For `t > 0`, the function
+`s ↦ (K_s ⋆ φ)(x)` has derivative `(K_t ⋆ Δ φ)(x)` at `t`: the Laplacian of the solution is the
+heat convolution of the Laplacian of the datum. -/
+theorem hasDerivAt_heatKernel_convolution_of_hasCompactSupport [CompleteSpace F] {φ : E → F}
+    (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) (ht : 0 < t) (x : E) :
+    HasDerivAt (fun s => (heatKernel s ⋆ φ) x) ((heatKernel t ⋆ Δ φ) x) t := by
+  obtain ⟨C, hC⟩ := hφ.continuous.bounded_above_of_compact_support hc
+  have h := hasDerivAt_heatKernel_convolution ht hφ.continuous.aestronglyMeasurable
+    (ae_of_all _ hC) x
+  rwa [hc.laplacian_convolution_right _ (integrable_heatKernel ht).locallyIntegrable hφ] at h
+
+/-- **Duhamel's formula for the heat equation.** For `φ` of class `C²` with compact support and
+`t > 0`, `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds` at every point `x`. -/
+theorem heatKernel_convolution_sub_eq_integral [CompleteSpace F] {φ : E → F}
+    (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) (ht : 0 < t) (x : E) :
+    (heatKernel t ⋆ φ) x - φ x = ∫ s in 0..t, (heatKernel s ⋆ Δ φ) x := by
+  obtain ⟨C, hC⟩ := hφ.continuous.bounded_above_of_compact_support hc
+  obtain ⟨C₂, hC₂⟩ := hφ.continuous_laplacian.bounded_above_of_compact_support hc.laplacian
+  -- The integrand is continuous at positive times, being differentiable there, and bounded.
+  have hcont : ContinuousOn (fun s => (heatKernel s ⋆ Δ φ) x) (Ioi 0) := fun s hs =>
+    (hasDerivAt_heatKernel_convolution hs hφ.continuous_laplacian.aestronglyMeasurable
+      (ae_of_all _ hC₂) x).continuousAt.continuousWithinAt
+  have hint : IntervalIntegrable (fun s => (heatKernel s ⋆ Δ φ) x) volume 0 t := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le ht.le]
+    refine (integrableOn_const (C := C₂) measure_Ioc_lt_top.ne).mono'
+      ((hcont.mono Ioc_subset_Ioi_self).aestronglyMeasurable measurableSet_Ioc) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioc] with s hs
+    exact norm_heatKernel_convolution_le hs.1 (ae_of_all _ hC₂) x
+  refine (intervalIntegral.integral_eq_sub_of_hasDerivAt_of_tendsto ht
+    (fun s hs => hasDerivAt_heatKernel_convolution_of_hasCompactSupport hφ hc hs.1 x) hint
+    ?_ ?_).symm
+  · exact (tendsto_heatKernel_convolution hφ.continuous.aestronglyMeasurable (ae_of_all _ hC)
+      hφ.continuous.continuousAt).comp (Filter.tendsto_id.prodMk tendsto_const_nhds)
+  · exact (hasDerivAt_heatKernel_convolution_of_hasCompactSupport hφ hc ht x).continuousAt.tendsto
+      |>.mono_left nhdsWithin_le_nhds
+
+/-- The heat convolution of a continuous function is jointly strongly measurable in time
+and space. -/
+theorem stronglyMeasurable_heatKernel_convolution (hg : Continuous g) :
+    StronglyMeasurable fun z : ℝ × E => (heatKernel z.1 ⋆ g) z.2 := by
+  have hK : Measurable fun q : ℝ × E => heatKernel q.1 q.2 := by
+    simp only [heatKernel_apply]
+    fun_prop
+  simp only [convolution_def, lsmul_apply]
+  refine StronglyMeasurable.integral_prod_right
+    (f := fun (z : ℝ × E) (y : E) => heatKernel z.1 y • g (z.2 - y)) ?_
+  exact (hK.comp (measurable_fst.fst.prodMk measurable_snd)).stronglyMeasurable.smul
+    (hg.comp (continuous_fst.snd.sub continuous_snd)).stronglyMeasurable
 
 end TauCeti

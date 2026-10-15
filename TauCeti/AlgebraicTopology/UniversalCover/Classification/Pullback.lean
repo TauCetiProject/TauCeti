@@ -144,9 +144,9 @@ identification, the pullback along `h` transports a point of the fibre along a l
 exactly as the original cover transports it along `h ∘ γ` at `y`. -/
 theorem pullbackFiberEquiv_monodromy (γ : FundamentalGroup X x)
     (e : ⇑((pullback h).obj c).proj ⁻¹' {x}) :
-    pullbackFiberEquiv h c hx (((pullback h).obj c).isCoveringMap_proj.monodromy γ e) =
+    pullbackFiberEquiv h c hx (((pullback h).obj c).isCoveringMap_proj.monodromy γ.toPath e) =
       c.isCoveringMap_proj.monodromy
-        (FundamentalGroup.homeomorphMulEquivOfEq h hx γ : FundamentalGroup Y y)
+        (FundamentalGroup.homeomorphMulEquivOfEq h hx γ : FundamentalGroup Y y).toPath
         (pullbackFiberEquiv h c hx e) := by
   subst hx
   -- `Equiv.compFiberEquiv_monodromy` is this statement for the fibre over `h.symm.symm x` and the
@@ -154,7 +154,7 @@ theorem pullbackFiberEquiv_monodromy (γ : FundamentalGroup X x)
   -- under the induced isomorphism definitionally, but not syntactically, so the comparison is
   -- assembled in term mode rather than by rewriting.
   have key := congrArg Subtype.val
-    (c.isCoveringMap_proj.compFiberEquiv_monodromy h.symm (γ : Path.Homotopic.Quotient x x) e)
+    (c.isCoveringMap_proj.compFiberEquiv_monodromy h.symm γ.toPath e)
   have hpt (z : ⇑((pullback h).obj c).proj ⁻¹' {x}) :
       (Equiv.compFiberEquiv (p := ⇑c.proj) h.symm.toEquiv x z : (c : TopCat)) =
         (pullbackFiberEquiv h c rfl z : (c : TopCat)) :=
@@ -162,8 +162,8 @@ theorem pullbackFiberEquiv_monodromy (γ : FundamentalGroup X x)
   have hΦ : Equiv.compFiberEquiv (p := ⇑c.proj) h.symm.toEquiv x e = pullbackFiberEquiv h c rfl e :=
     Subtype.ext (hpt e)
   have hpath :
-      Path.Homotopic.Quotient.map (γ : Path.Homotopic.Quotient x x) (h.symm.symm : C(X, Y)) =
-        (FundamentalGroup.homeomorphMulEquivOfEq h rfl γ : FundamentalGroup Y (h x)) := by
+      Path.Homotopic.Quotient.map γ.toPath (h.symm.symm : C(X, Y)) =
+        (FundamentalGroup.homeomorphMulEquivOfEq h rfl γ : FundamentalGroup Y (h x)).toPath := by
     rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply]
     exact (Path.Homotopic.Quotient.cast_rfl_rfl _).symm
   refine Subtype.ext (((hpt _).symm.trans key).trans ?_)

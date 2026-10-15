@@ -87,7 +87,6 @@ theorem genus_le_finrank_sub_one_mul_finrank_sub_two_div_two (hF : IsFunctionFie
   have hRR := hc D (by
     rw [hdegD]
     have h1 : (c.toNat : ℤ) ≤ r := by exact_mod_cast le_max_right m c.toNat
-    have h2 : (1 : ℤ) ≤ m := by exact_mod_cast hm1
     nlinarith [Int.self_le_toNat c])
   -- The functions `y ^ j u ^ i` with `j < m` and `i + j ≤ r` are independent sections of `L(D)`.
   let f : (Σ j : Fin d, Fin (r + 1 - j)) → F := fun q ↦ y ^ (q.1 : ℕ) * (u : F) ^ (q.2 : ℕ)
@@ -281,9 +280,8 @@ theorem genus_le_totalDegree_sub_one_mul_totalDegree_sub_two_div_two
       exists_finiteDimensional_lt_card_constantCompositum_eq_top k F φ.totalDegree
     have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
     have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
-    have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
     have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-    have hex' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+    have hex' := hex.of_constantCompositum_eq_top h
     have hxy' : k'⟮algebraMap F F' x, algebraMap F F' y⟯ = ⊤ := by
       have := adjoin_image_eq_top_of_constantCompositum_eq_top hxy h
       rwa [Set.image_pair] at this

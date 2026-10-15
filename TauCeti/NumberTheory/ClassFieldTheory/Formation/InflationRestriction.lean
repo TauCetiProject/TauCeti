@@ -32,6 +32,10 @@ restriction to `L/K` vanishes. This is the finite-layer form of the statement th
 
 * `TauCeti.ClassFieldTheory.LayerRefinement.range_cohomologyInfl_eq_ker_cohomologyRes`: the
   inflation-restriction sequence of a refinement is exact.
+* `TauCeti.ClassFieldTheory.LayerRefinement.exists_cohomologyInfl_eq_of_cohomologyRes_eq_zero`: in
+  degree two, if `H¹(V/V', A^{V'})` vanishes, a class restricting to zero on `L/K` is inflated.
+* `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_subgroupRestriction_ker`: the
+  restriction to `L/K` has relative degree `[K : F]`.
 
 ## References
 
@@ -92,6 +96,26 @@ theorem range_cohomologyInfl_eq_ker_cohomologyRes (T : LayerRefinement old new)
   exact groupCohomology.range_map_succ_eq_ker_map_succ T.galHom_surjective hφ (range_repHom T F)
     R.galHom_injective (new.range_galHom_subgroupRestriction T.galHom.ker) hψ n
     fun i hi => have := hH i hi; ModuleCat.isZero_of_subsingleton _
+
+/-- **Degree-two inflation-restriction.** For a refinement `T : LayerRefinement old new`, the tower
+`F ⊆ K ⊆ L`, if `H¹` of the layer `L/K` vanishes, then a class of `H²(L/F)` whose restriction to
+`L/K` vanishes is inflated from `H²(K/F)`. -/
+theorem exists_cohomologyInfl_eq_of_cohomologyRes_eq_zero (T : LayerRefinement old new)
+    (F : Formation G) (hH : Subsingleton ((new.subgroupLayer T.galHom.ker).H F 1)) {y : new.H F 2}
+    (hy : (new.subgroupRestriction T.galHom.ker).cohomologyRes F 2 y = 0) :
+    ∃ x : old.H F 2, T.cohomologyInfl F 2 x = y :=
+  LinearMap.mem_range.1 ((T.range_cohomologyInfl_eq_ker_cohomologyRes F 1 fun i hi => by
+    obtain rfl : i = 0 := Nat.lt_one_iff.1 hi
+    exact hH).ge hy)
+
+/-- **The restriction to the layer `L/K` has relative degree `[K : F]`**: for a refinement
+`T : LayerRefinement old new`, the index of the kernel `V/V'` of `T.galHom` in `U/V'` is the
+degree of `old`. -/
+theorem relativeDegree_subgroupRestriction_ker (T : LayerRefinement old new) :
+    (new.subgroupRestriction T.galHom.ker).relativeDegree = old.degree := by
+  rw [new.relativeDegree_subgroupRestriction, Subgroup.index_ker,
+    MonoidHom.range_eq_top.2 T.galHom_surjective, Subgroup.card_top,
+    ← NormalLayer.degree_eq_natCard_gal]
 
 end LayerRefinement
 

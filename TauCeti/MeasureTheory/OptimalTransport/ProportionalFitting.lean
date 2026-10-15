@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.KullbackLeibler.Projection
-public import TauCeti.MeasureTheory.OptimalTransport.Entropic
+public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 
 /-!
 # Iterative proportional fitting

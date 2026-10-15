@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.Algebra.Homology.Boundaries
+import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Split complexes are homotopy equivalent to complexes with zero differential
@@ -20,12 +22,27 @@ a split monomorphism and the projection `Zᵢ ⟶ Hᵢ` onto the homology is a s
 
 Both hypotheses hold for every complex of vector spaces, and more generally of semisimple modules
 (see `TauCeti.Algebra.Homology.Semisimple`).  The second holds whenever the homology objects are
-projective (`HomologicalComplex.isSplitEpi_homologyπ_of_projective`).  As a mathematical remark
-not formalized here, the first holds for a complex of projective modules over a principal ideal
-domain, or over any hereditary ring, since the image of the differential out of `Kᵢ` is then
-projective.  The result therefore reduces statements
-about the homology of such complexes, such as the Künneth theorem, to complexes with zero
-differential.
+projective (`HomologicalComplex.isSplitEpi_homologyπ_of_projective`).  The first holds for a
+complex of projective modules over a principal ideal domain, since the image of the differential
+out of `Kᵢ` is then projective (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`);
+mathematically, the same argument works over any hereditary ring.  The result therefore reduces
+statements about the homology of such complexes, such as the Künneth theorem, to complexes with
+zero differential.
+
+For a chain complex indexed by `ℕ` whose terms and homology objects are projective, both
+hypotheses hold over any ring.  The projection of the cycles `Zₙ` onto the projective homology
+splits, so the boundaries `Bₙ = ker (Zₙ ⟶ Hₙ)` are a retract of `Zₙ`; and `Kₙ₊₁ ⟶ Bₙ` is the
+cokernel of `Zₙ₊₁ ⟶ Kₙ₊₁`, so `Zₙ₊₁` splits off `Kₙ₊₁` once `Bₙ` is projective.  Starting from
+`Z₀ = K₀`, induction on `n` shows that every `Zₙ` is projective and splits off
+(`ChainComplex.isSplitMono_iCycles_of_projective_homology`).  This is what makes the Künneth and
+universal coefficient theorems collapse over an arbitrary commutative ring for singular chains with
+projective homology.
+
+When only the cycles split off, the projection `r ≫ π` onto the complex `K.homologyComplex` of
+homology objects (`HomologicalComplex.toHomologyComplex`) is still a chain map inducing
+isomorphisms on homology (`HomologicalComplex.isIso_homologyMap_toHomologyComplex`), although it
+need not be a homotopy equivalence.  This is the situation for complexes of free abelian groups,
+and it is what splits the Künneth short exact sequence.
 
 The construction is the classical splitting.  Choose a retraction `r : Kᵢ ⟶ Zᵢ` of the inclusion
 `ι : Zᵢ ⟶ Kᵢ` and a section `s : Hᵢ ⟶ Zᵢ` of the projection `π : Zᵢ ⟶ Hᵢ`.  The chain maps are
@@ -43,6 +60,18 @@ inverts the differential on the complement of the cycles.  Precomposing it with 
   homology splits off its cycles is homotopy equivalent to a complex with zero differentials.
 * `HomologicalComplex.isSplitEpi_homologyπ_of_projective`: the projection onto a projective
   homology object splits.
+* `HomologicalComplex.isSplitMono_iCycles_of_projective`: the cycles split off a term whose
+  quotient by them is projective.
+* `HomologicalComplex.projective_kernel_homologyπ` and
+  `HomologicalComplex.isSplitMono_iCycles_of_projective_kernel_homologyπ`: the boundaries are
+  projective when the cycles and the homology are, and the cycles `Zᵢ` split off `Kᵢ` when the
+  boundaries `Bⱼ` of the next degree are projective.
+* `ChainComplex.projective_cycles_of_projective_homology` and
+  `ChainComplex.isSplitMono_iCycles_of_projective_homology`: for a chain complex indexed by `ℕ`
+  with projective terms and projective homology, the cycles are projective and split off.
+* `HomologicalComplex.homologyComplex`, `HomologicalComplex.toHomologyComplex` and
+  `HomologicalComplex.isIso_homologyMap_toHomologyComplex`: the complex of homology objects, and
+  the projection onto it when the cycles split off, a quasi-isomorphism.
 
 ## References
 
@@ -57,17 +86,64 @@ open CategoryTheory Limits
 
 namespace HomologicalComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι}
-  (K : HomologicalComplex C c)
+variable {C : Type*} [Category* C] {ι : Type*} {c : ComplexShape ι}
 
-/-- The projection from the cycles onto a projective homology object is a split epimorphism. -/
-instance isSplitEpi_homologyπ_of_projective (i : ι) [Projective (K.homology i)] :
+/-- The projection from the cycles onto a projective homology object is a split epimorphism.
+This only requires homology in degree `i`, in a category with zero morphisms. -/
+instance isSplitEpi_homologyπ_of_projective [HasZeroMorphisms C]
+    (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] [Projective (K.homology i)] :
     IsSplitEpi (K.homologyπ i) :=
   ⟨⟨Projective.factorThru (𝟙 _) (K.homologyπ i), Projective.factorThru_comp _ _⟩⟩
 
-namespace Split
+variable [Abelian C] (K : HomologicalComplex C c)
 
-/-! ### Inverting the differential on the complement of the cycles -/
+/-! ### The complex of homology objects -/
+
+/-- The complex with the homology objects of `K` as terms and zero differentials. -/
+@[expose, simps X]
+def homologyComplex : HomologicalComplex C c where
+  X i := K.homology i
+  d _ _ := 0
+
+/-- The complex of homology objects has zero differentials. -/
+@[simp]
+lemma homologyComplex_d (i j : ι) : K.homologyComplex.d i j = 0 :=
+  rfl
+
+/-- The inclusion of the cycles is a split monomorphism when the quotient of the term by its cycles
+is projective. -/
+instance isSplitMono_iCycles_of_projective (i : ι) [Projective (cokernel (K.iCycles i))] :
+    IsSplitMono (K.iCycles i) :=
+  have hS : (ShortComplex.mk (K.iCycles i) (cokernel.π (K.iCycles i))
+      (cokernel.condition _)).ShortExact :=
+    { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _) }
+  .mk' ⟨hS.splittingOfProjective.r, hS.splittingOfProjective.f_r⟩
+
+/-- The boundaries `Bᵢ = ker (Zᵢ ⟶ Hᵢ)` are projective when the cycles `Zᵢ` and the homology `Hᵢ`
+are: the projection of the cycles onto projective homology splits, so the boundaries are a retract
+of the cycles. -/
+lemma projective_kernel_homologyπ (i : ι) [Projective (K.cycles i)]
+    [Projective (K.homology i)] : Projective (kernel (K.homologyπ i)) :=
+  have hS : (ShortComplex.mk (kernel.ι (K.homologyπ i)) (K.homologyπ i)
+      (kernel.condition _)).ShortExact :=
+    TauCeti.kernelSequence_shortExact _
+  Retract.projective ⟨kernel.ι _, hS.splittingOfProjective.r, hS.splittingOfProjective.f_r⟩
+
+/-- For a relation `i → j` of the shape, the inclusion of the cycles `Zᵢ ⟶ Kᵢ` is a split
+monomorphism when the boundaries `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` are projective, since the differential
+corestricts to a cokernel `Kᵢ ⟶ Bⱼ` of that inclusion. -/
+lemma isSplitMono_iCycles_of_projective_kernel_homologyπ {i j : ι} (hij : c.Rel i j)
+    [Projective (kernel (K.homologyπ j))] : IsSplitMono (K.iCycles i) :=
+  have := K.epi_toBoundaries hij
+  -- `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Bⱼ ⟶ 0` is short exact with projective quotient, hence split
+  have hS : (ShortComplex.mk _ _ (K.iCycles_toBoundaries i j)).ShortExact :=
+    { exact := ShortComplex.exact_of_g_is_cokernel _ (K.toBoundariesIsCokernel hij) }
+  .mk' ⟨hS.splittingOfProjective.r, hS.splittingOfProjective.f_r⟩
+
+/-- The cycles of a projective term are projective when they split off the term. -/
+lemma projective_cycles_of_isSplitMono (i : ι) [Projective (K.X i)] [IsSplitMono (K.iCycles i)] :
+    Projective (K.cycles i) :=
+  Retract.projective ⟨K.iCycles i, retraction _, IsSplitMono.id _⟩
 
 variable [∀ i, IsSplitMono (K.iCycles i)]
 
@@ -76,6 +152,49 @@ the differential to the cycles. -/
 @[reassoc (attr := local simp)]
 private lemma d_retraction (j i : ι) : K.d j i ≫ retraction (K.iCycles i) = K.toCycles j i := by
   simp [← K.toCycles_i_assoc]
+
+/-- The projection `r ≫ π : Kᵢ ⟶ Hᵢ` onto the complex of homology objects, where `r` is the
+chosen retraction of the inclusion of the cycles; it is a chain map since boundaries have zero
+homology class.  It depends on the choice of `r`, so it need not be natural in `K`. -/
+def toHomologyComplex : K ⟶ K.homologyComplex where
+  f i := retraction (K.iCycles i) ≫ K.homologyπ i
+  comm' i j _ := by simp [homologyComplex]
+
+/-- The components of the projection onto the complex of homology objects. -/
+@[simp]
+lemma toHomologyComplex_f (i : ι) :
+    K.toHomologyComplex.f i = retraction (K.iCycles i) ≫ K.homologyπ i :=
+  (rfl)
+
+/-- On the cycles, the projection onto the complex of homology objects is the projection onto
+homology. -/
+@[reassoc]
+lemma iCycles_toHomologyComplex_f (i : ι) :
+    K.iCycles i ≫ K.toHomologyComplex.f i = K.homologyπ i :=
+  IsSplitMono.id_assoc _ _
+
+/-- The projection onto the complex of homology objects induces isomorphisms on homology. -/
+instance isIso_homologyMap_toHomologyComplex (i : ι) :
+    IsIso (homologyMap K.toHomologyComplex i) := by
+  have := K.homologyComplex.isIso_iCycles i (c.next i) rfl (by simp)
+  have := K.homologyComplex.isIso_homologyπ (c.prev i) i rfl (by simp)
+  -- the homology of `K.homologyComplex` is its term, through `π⁻¹ ≫ ι`, and the induced map
+  -- followed by this identification is the identity
+  have h : homologyMap K.toHomologyComplex i ≫ inv (K.homologyComplex.homologyπ i) ≫
+      K.homologyComplex.iCycles i = 𝟙 (K.homology i) := by
+    refine (cancel_epi (K.homologyπ i)).1 ?_
+    rw [homologyπ_naturality_assoc, IsIso.hom_inv_id_assoc, cyclesMap_i]
+    exact (iCycles_toHomologyComplex_f K i).trans (Category.comp_id _).symm
+  have : IsIso (homologyMap K.toHomologyComplex i ≫ inv (K.homologyComplex.homologyπ i) ≫
+      K.homologyComplex.iCycles i) := by
+    rw [h]
+    exact IsIso.id _
+  exact IsIso.of_isIso_comp_right _ (inv (K.homologyComplex.homologyπ i) ≫
+    K.homologyComplex.iCycles i)
+
+namespace Split
+
+/-! ### Inverting the differential on the complement of the cycles -/
 
 /-- For a relation `j → i` of the shape, the map `Bᵢ ⟶ Kⱼ` through which the projection
 `𝟙 - r ≫ ι` of `Kⱼ` onto the complement of the cycles factors. -/
@@ -126,33 +245,30 @@ private lemma d_htpy {i k : ι} (hik : c.Rel i k) :
     K.d i k ≫ htpy K k i hik = 𝟙 _ - retraction (K.iCycles i) ≫ K.iCycles i := by
   rw [htpy, reassoc_of% d_boundaryPart K i k, toBoundaries_fromBoundaries]
 
-/-! ### The complex of homology objects -/
-
-/-- The complex with the homology objects of `K` as terms and zero differentials. -/
-@[simps]
-private abbrev homologyComplex : HomologicalComplex C c where
-  X i := K.homology i
-  d _ _ := 0
+/-! ### The inclusion of the homology objects -/
 
 /-- The inclusion `s ≫ ι : Hᵢ ⟶ Kᵢ`, a chain map since it lands in the cycles. -/
-private def incl : homologyComplex K ⟶ K where
-  f i := section_ (K.homologyπ i) ≫ K.iCycles i
-  comm' i j _ := by simp
+private def incl : K.homologyComplex ⟶ K where
+  f i := (section_ (K.homologyπ i) : K.homology i ⟶ _) ≫ K.iCycles i
+  comm' i j _ := by simp [homologyComplex]
 
-/-- The projection `r ≫ π : Kᵢ ⟶ Hᵢ`, a chain map since boundaries have zero homology class. -/
-private def proj : K ⟶ homologyComplex K where
-  f i := retraction (K.iCycles i) ≫ K.homologyπ i
-  comm' i j _ := by simp
-
-private lemma incl_proj : incl K ≫ proj K = 𝟙 _ := by
+private lemma incl_toHomologyComplex : incl K ≫ K.toHomologyComplex = 𝟙 _ := by
   ext i
-  simp [incl, proj]
+  exact (Category.assoc _ _ _).trans
+    ((section_ (K.homologyπ i) ≫= K.iCycles_toHomologyComplex_f i).trans
+      (IsSplitEpi.id (K.homologyπ i)))
 
-/-- The identity of `K` minus the idempotent `proj ≫ incl` is `d h + h d`.  The term `d h` is the
-component of `Kᵢ` in the complement of the cycles, which vanishes when no differential leaves `i`,
-and `h d` is the component in the boundaries, which vanishes when no differential arrives. -/
-private lemma id_sub_proj_incl :
-    𝟙 K - proj K ≫ incl K = Homotopy.nullHomotopicMap' (htpy K) := by
+private lemma toHomologyComplex_f_incl_f (i : ι) :
+    K.toHomologyComplex.f i ≫ (incl K).f i =
+      retraction (K.iCycles i) ≫ K.homologyπ i ≫ section_ (K.homologyπ i) ≫ K.iCycles i :=
+  Category.assoc _ _ _
+
+/-- The identity of `K` minus the idempotent `toHomologyComplex ≫ incl` is `d h + h d`.  The term
+`d h` is the component of `Kᵢ` in the complement of the cycles, which vanishes when no differential
+leaves `i`, and `h d` is the component in the boundaries, which vanishes when no differential
+arrives. -/
+private lemma id_sub_toHomologyComplex_incl :
+    𝟙 K - K.toHomologyComplex ≫ incl K = Homotopy.nullHomotopicMap' (htpy K) := by
   ext i
   -- with no differential out of `i`, all of `Kᵢ` is cycles, so `r ≫ ι = 𝟙`
   have hZ (hn : ∀ l, ¬c.Rel i l) : retraction (K.iCycles i) ≫ K.iCycles i = 𝟙 _ := by
@@ -163,7 +279,7 @@ private lemma id_sub_proj_incl :
     have := K.isIso_homologyπ (c.prev i) i rfl (K.shape _ _ (hp _))
     rw [IsIso.eq_inv_of_inv_hom_id (IsSplitEpi.id (K.homologyπ i)), IsIso.hom_inv_id]
   simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.id_f, HomologicalComplex.comp_f,
-    proj, incl, Category.assoc]
+    toHomologyComplex_f_incl_f]
   by_cases hn : c.Rel i (c.next i) <;> by_cases hp : c.Rel (c.prev i) i
   · rw [Homotopy.nullHomotopicMap'_f hp hn, d_htpy, htpy_d]
     simp only [Preadditive.sub_comp, Preadditive.comp_sub, Category.id_comp, Category.assoc]
@@ -179,17 +295,18 @@ private lemma id_sub_proj_incl :
 
 /-- The homotopy equivalence between `K` and the complex of its homology objects with zero
 differentials. -/
-private def homotopyEquiv : HomotopyEquiv K (homologyComplex K) where
-  hom := proj K
+private def homotopyEquiv : HomotopyEquiv K K.homologyComplex where
+  hom := K.toHomologyComplex
   inv := incl K
   homotopyHomInvId :=
     (Homotopy.equivSubZero.symm
-      ((Homotopy.ofEq (id_sub_proj_incl K)).trans (Homotopy.nullHomotopy' (htpy K)))).symm
-  homotopyInvHomId := Homotopy.ofEq (incl_proj K)
+      ((Homotopy.ofEq (id_sub_toHomologyComplex_incl K)).trans
+        (Homotopy.nullHomotopy' (htpy K)))).symm
+  homotopyInvHomId := Homotopy.ofEq (incl_toHomologyComplex K)
 
 end Split
 
-variable [∀ i, IsSplitMono (K.iCycles i)] [∀ i, IsSplitEpi (K.homologyπ i)]
+variable [∀ i, IsSplitEpi (K.homologyπ i)]
 
 open Split in
 /-- A complex in an abelian category whose cycles split off its terms and whose homology splits off
@@ -199,6 +316,41 @@ of such a complex are its homology, so by `HomotopyEquiv.toHomologyIso` they are
 `K`. -/
 theorem exists_homotopyEquiv_d_eq_zero :
     ∃ L : HomologicalComplex C c, (∀ i j, L.d i j = 0) ∧ Nonempty (HomotopyEquiv K L) :=
-  ⟨homologyComplex K, fun _ _ ↦ rfl, ⟨homotopyEquiv K⟩⟩
+  ⟨K.homologyComplex, K.homologyComplex_d, ⟨homotopyEquiv K⟩⟩
 
 end HomologicalComplex
+
+namespace ChainComplex
+
+/-! ### Chain complexes of projective objects with projective homology -/
+
+variable {C : Type*} [Category* C] [Abelian C] (K : ChainComplex C ℕ)
+  [∀ n, Projective (K.X n)] [∀ n, Projective (K.homology n)]
+
+/-- In a chain complex indexed by `ℕ` whose terms and homology objects are all projective, the
+cycles are projective in every degree. -/
+theorem projective_cycles_of_projective_homology (n : ℕ) : Projective (K.cycles n) := by
+  induction n with
+  | zero =>
+    -- no differential leaves degree `0`, so all of `K₀` is cycles
+    exact Projective.of_iso K.cycles₀Iso.symm inferInstance
+  | succ n ih =>
+    -- by the induction hypothesis `ih`, the boundaries `Bₙ` are a retract of the projective `Zₙ`,
+    -- so `0 ⟶ Zₙ₊₁ ⟶ Kₙ₊₁ ⟶ Bₙ ⟶ 0` splits and `Zₙ₊₁` is a retract of `Kₙ₊₁`
+    have := K.projective_kernel_homologyπ n
+    have := K.isSplitMono_iCycles_of_projective_kernel_homologyπ (i := n + 1) (j := n) rfl
+    exact K.projective_cycles_of_isSplitMono (n + 1)
+
+/-- In a chain complex indexed by `ℕ` whose terms and homology objects are all projective, the
+cycles split off the terms in every degree.  Since the homology then also splits off the cycles
+(`HomologicalComplex.isSplitEpi_homologyπ_of_projective`), such a complex is homotopy equivalent
+to its homology with zero differentials (`HomologicalComplex.exists_homotopyEquiv_d_eq_zero`). -/
+theorem isSplitMono_iCycles_of_projective_homology (n : ℕ) : IsSplitMono (K.iCycles n) := by
+  cases n with
+  | zero => exact IsSplitMono.of_iso _
+  | succ n =>
+    have := K.projective_cycles_of_projective_homology n
+    have := K.projective_kernel_homologyπ n
+    exact K.isSplitMono_iCycles_of_projective_kernel_homologyπ (j := n) rfl
+
+end ChainComplex

@@ -251,8 +251,17 @@ theorem weight_def (k : Fin (r + 1)) (i : Fin r) :
       (if k = i.castSucc then 1 else 0) - (if k = i.succ then 1 else 0) :=
   by rw [weight]
 
+/-- Reversing both the standard-basis index and the fundamental-weight index
+negates a type-A standard weight. -/
+-- Not `@[simp]`: `weight_def` already simplifies the left-hand side, so `simpNF` rejects it.
+theorem weight_rev_rev (k : Fin (r + 1)) (i : Fin r) :
+    weight r k.rev i.rev = -weight r k i := by
+  rw [weight_def, weight_def]
+  simp only [← Fin.rev_succ, ← Fin.rev_castSucc, Fin.rev_injective.eq_iff]
+  ring
+
 /-- A standard-module weight as the difference of its possible adjacent basis characters. -/
-theorem weight_eq_ite_single_sub_ite_single (k : Fin (r + 1)) :
+theorem weight_eq_dite_single_sub_dite_single (k : Fin (r + 1)) :
     weight r k =
       (if hk : (k : ℕ) < r then Pi.single ⟨k, hk⟩ 1 else 0) -
         (if hk : 0 < (k : ℕ) then Pi.single ⟨k - 1, by omega⟩ 1 else 0) := by
@@ -314,7 +323,8 @@ theorem isCartanWeightVector_single (k : Fin (r + 1)) :
 /-- The Kronecker coefficient produced by bracketing a numbered Cartan generator with a numbered
 root generator is the corresponding entry of the type `A` Cartan matrix, with a sign for the
 lowering generators. -/
-private theorem cartanCoeff (k : Fin r ⊕ Fin r) (j : Fin r) :
+private theorem ite_sub_ite_sub_ite_sub_ite_eq_rootGeneratorWeight (k : Fin r ⊕ Fin r)
+    (j : Fin r) :
     ((if j.castSucc = rootTarget r k then (1 : ℤ) else 0) -
         (if j.succ = rootTarget r k then 1 else 0)) -
       ((if rootSource r k = j.castSucc then (1 : ℤ) else 0) -
@@ -346,7 +356,8 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin r ⊕ Fin r) (j : Fin r) :
   rw [val_cartanGenerator, val_rootGenerator,
     lie_single_of_mem_diagonalCartan
       (sub_mem (single_self_mem_diagonalCartan j.castSucc 1)
-        (single_self_mem_diagonalCartan j.succ 1)), ← cartanCoeff r k j]
+        (single_self_mem_diagonalCartan j.succ 1)),
+    ← ite_sub_ite_sub_ite_sub_ite_eq_rootGeneratorWeight r k j]
   simp only [Matrix.sub_apply, Matrix.single_apply, and_self, Int.cast_sub,
     apply_ite (fun z : ℤ => (z : ℚ)), Int.cast_one, Int.cast_zero, eq_comm]
 
@@ -354,7 +365,7 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin r ⊕ Fin r) (j : Fin r) :
 
 /-- **The standard `ℤ`-lattice of the standard `sl_{r+1}`-module**, spanned by the coordinate
 vectors. -/
-def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
+noncomputable def lattice : Submodule ℤ (Fin (r + 1) → ℚ) :=
   TauCeti.coordinateLattice (Fin (r + 1))
 
 /-- A vector lies in the standard lattice exactly when all of its coordinates are integers. -/
@@ -657,7 +668,7 @@ theorem rep_rootGenerator_latticeBasis_apply (k : Fin r ⊕ Fin r) (s : Fin (r +
 
 /-- A numbered root generator carries the coordinate basis vector at its source to the one at its
 target. This is the root step that makes the root subgroup a closed copy of `𝔾ₐ`. -/
-theorem rep_rootGenerator_latticeBasis (k : Fin r ⊕ Fin r) :
+private theorem rep_rootGenerator_latticeBasis (k : Fin r ⊕ Fin r) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r k))
         ((latticeBasis r (rootSource r k) : (lattice r).toAddSubgroup) : Fin (r + 1) → ℚ) =
       (1 : ℤ) • ((latticeBasis r (rootTarget r k) : (lattice r).toAddSubgroup) :

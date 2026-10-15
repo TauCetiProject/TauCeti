@@ -885,3 +885,14 @@ theorem Gamma_mul_eq_inf_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
   rw [← hab.lcm_eq_mul, Gamma_lcm_eq_inf]
 
 end CongruenceSubgroup
+
+namespace TauCeti
+
+/-- At level one, the real general-linear image of `Γ₁(1)` is the full modular group. -/
+@[simp]
+theorem Gamma1_one_map_eq_SL : (CongruenceSubgroup.Gamma1 1).map (mapGL ℝ) = 𝒮ℒ := by
+  have h : CongruenceSubgroup.Gamma1 1 = ⊤ :=
+    top_unique (CongruenceSubgroup.Gamma_one_top ▸ CongruenceSubgroup.Gamma_le_Gamma1 1)
+  simp [h, MonoidHom.range_eq_map]
+
+end TauCeti

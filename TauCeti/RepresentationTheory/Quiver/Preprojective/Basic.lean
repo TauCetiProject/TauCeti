@@ -34,11 +34,11 @@ is the vertex-corner expression
 ρ_v = ∑_{head a = v} a a* - ∑_{tail a = v} a* a.
 ```
 
-The two determine each other: `ρ` is the sum of the `ρ_v`, and each `ρ_v` is recovered from `ρ` by
-conjugating with the vertex idempotent `e_v`. Consequently the two-sided ideals they generate agree
-(`TauCeti.preprojectiveIdeal_eq_span_range_localPreprojectiveRelator`), so the preprojective algebra
-may be presented by the single global relation or by the family of local ones, and a map out of it
-may be built by checking either.
+The two determine each other: `ρ` is the sum of the `ρ_v`, and each `ρ_v` is recovered from `ρ` as
+its corner `e_v ρ e_v` at the vertex idempotent `e_v`. Consequently the two-sided ideals they
+generate agree (`TauCeti.preprojectiveIdeal_eq_span_range_localPreprojectiveRelator`), so the
+preprojective algebra may be presented by the single global relation or by the family of local
+ones, and a map out of it may be built by checking either.
 
 ## Main definitions
 
@@ -69,7 +69,7 @@ may be built by checking either.
 * `TauCeti.gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum`: the corner of the gauged
   relator at a vertex.
 * `TauCeti.preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator`:
-  conjugating the global relator by a vertex idempotent returns the local relator at that vertex.
+  the corner of the global relator at a vertex idempotent is the local relator at that vertex.
 * `TauCeti.preprojectiveIdeal_eq_span_range_localPreprojectiveRelator`: **the global relation and
   the family of local relations generate the same two-sided ideal.**
 * `TauCeti.sum_preprojectiveMk_headBacktrackElem_eq_sum_preprojectiveMk_tailBacktrackElem`: the
@@ -290,7 +290,7 @@ variable (k : Type w) {Q : Type u} [One k] [InvolutiveNeg k] [Quiver.{v} Q]
 @[simp]
 theorem doubledArrowSign_swap {i j : Symmetrify Q} (b : i ⟶ j) :
     doubledArrowSign k (i := j) (j := i) (Sum.swap b) = -doubledArrowSign k b := by
-  rcases b with a | a
+  rcases b with _ | _
   · rfl
   · exact (neg_neg (1 : k)).symm
 
@@ -309,11 +309,8 @@ variable (k : Type w) {Q : Type u} [MulOneClass k] [HasDistribNeg k] [Quiver.{v}
 @[simp]
 theorem doubledArrowSign_mul_self {i j : Symmetrify Q} (b : i ⟶ j) :
     doubledArrowSign k b * doubledArrowSign k b = 1 := by
-  rcases b with a | a
-  · exact (congrArg₂ (· * ·) (doubledArrowSign_inl k a) (doubledArrowSign_inl k a)).trans
-      (one_mul 1)
-  · exact (congrArg₂ (· * ·) (doubledArrowSign_inr k a) (doubledArrowSign_inr k a)).trans
-      (neg_mul_neg 1 1 |>.trans (one_mul 1))
+  rcases b with a | a <;> simp only [doubledArrowSign, Sum.elim_inl, Sum.elim_inr, neg_mul_neg,
+    mul_one]
 
 end SignSquare
 
@@ -484,9 +481,9 @@ theorem localPreprojectiveRelator_mul_doubledVertexIdempotent_of_ne {u v : Q} (h
     headBacktrackElem_mul_doubledVertexIdempotent_of_ne _ _ h,
     tailBacktrackElem_mul_doubledVertexIdempotent_of_ne _ _ h, Finset.sum_const_zero, sub_self]
 
-/-- **The local relator is the corner of the global one**: conjugating `ρ` by the idempotent at `v`
-returns `ρ_v`. Together with `TauCeti.sum_localPreprojectiveRelator` this says that the single
-global relation and the family of local relations carry the same information. -/
+/-- **The local relator is the corner of the global one**: multiplying `ρ` on both sides by the
+idempotent at `v` returns `ρ_v`. Together with `TauCeti.sum_localPreprojectiveRelator` this says
+that the single global relation and the family of local relations carry the same information. -/
 theorem preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator (v : Q) :
     doubledVertexIdempotent k v * preprojectiveRelator k Q * doubledVertexIdempotent k v
       = localPreprojectiveRelator k v := by
@@ -533,9 +530,9 @@ section GaugedRelatorCorner
 variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
-/-- **The corner of the gauged preprojective relator at a vertex**: conjugating `ρ_ε` by the
-idempotent at `v` keeps the weighted head backtracks of the arrows into `v` and the weighted tail
-backtracks of the arrows out of `v`. For the constant gauge this is
+/-- **The corner of the gauged preprojective relator at a vertex**: multiplying `ρ_ε` on both sides
+by the idempotent at `v` keeps the weighted head backtracks of the arrows into `v` and the weighted
+tail backtracks of the arrows out of `v`. For the constant gauge this is
 `TauCeti.preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator`. -/
 theorem gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum
     (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) (v : Q) :

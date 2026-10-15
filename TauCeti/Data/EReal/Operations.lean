@@ -15,7 +15,8 @@ subtraction in which one operand is a *real* number: both `a - (r : EReal)` and 
 are defined for every extended real `a`, are never of the form `∞ - ∞`, and behave like real
 subtraction in the ways recorded here. The first two results below have a real subtrahend and
 the last two a real minuend. The file also records that adding a finite extended nonnegative real
-to a real number is real addition.
+to a real number is real addition, and how the positive part `ENNReal.ofReal` of a real number
+compares with the number itself in `EReal`.
 
 ## Main results
 
@@ -36,6 +37,10 @@ to a real number is real addition.
   negated term by term;
 * `EReal.coe_le_coe_add_coe_ennreal_iff` — an inequality `x ≤ y + I` with `x`, `y` real and `I` a
   finite extended nonnegative real is the corresponding inequality between reals.
+* `EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff` — likewise for an inequality
+  `x + I ≤ y + J` with `I`, `J` finite extended nonnegative reals.
+* `EReal.coe_le_coe_ennreal_of_ofReal_le` — a real number whose positive part is at most
+  `a : ℝ≥0∞` is at most `a` in `EReal`.
 -/
 
 public section
@@ -120,6 +125,23 @@ theorem _root_.EReal.add_eq_coe_iff_neg_add_neg_eq {x y : EReal} {r : ℝ} :
 theorem _root_.EReal.coe_le_coe_add_coe_ennreal_iff {x y : ℝ} {I : ℝ≥0∞} (hI : I ≠ ∞) :
     (x : EReal) ≤ y + I ↔ x ≤ y + I.toReal := by
   rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- Adding finite elements of `ℝ≥0∞` to real numbers in `EReal` is real addition: the inequality
+`x + I ≤ y + J` between extended reals is `x + I.toReal ≤ y + J.toReal` between reals. -/
+theorem _root_.EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff {x y : ℝ} {I J : ℝ≥0∞}
+    (hI : I ≠ ∞) (hJ : J ≠ ∞) :
+    (x : EReal) + I ≤ y + J ↔ x + I.toReal ≤ y + J.toReal := by
+  rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_ennreal_toReal hJ, ← EReal.coe_add,
+    ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- A real number whose positive part is at most `a : ℝ≥0∞` is at most `a` in `EReal`. -/
+theorem _root_.EReal.coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
+    (h : ENNReal.ofReal x ≤ a) : (x : EReal) ≤ (a : EReal) := by
+  calc
+    (x : EReal) ≤ (ENNReal.ofReal x : EReal) := by
+      rw [EReal.coe_ennreal_ofReal]
+      exact le_max_left (x : EReal) 0
+    _ ≤ (a : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 h
 
 end TauCeti
 

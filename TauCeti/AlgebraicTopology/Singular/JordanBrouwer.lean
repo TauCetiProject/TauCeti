@@ -149,9 +149,9 @@ the complement of every point has vanishing reduced homology, and let `h` be a c
 into `Y` of the unit sphere of a real normed space of dimension `d`. Then
 `H_redᵢ(Y ∖ h(Sᵈ⁻¹)) ≅ H_redᵢ₊d(Y)`, with coefficients in any module.
 
-This is Hatcher, *Algebraic Topology*, Proposition 2B.1(b), in a general form. Like
-`TauCeti.reducedSingularHomologySphereIso`, the isomorphism depends on a chosen point of each
-sphere in the induction on the dimension, and is not a canonical identification. -/
+This is Hatcher, *Algebraic Topology*, Proposition 2B.1(b), in a general form. The isomorphism
+depends on a chosen point of each sphere in the induction on the dimension, and is not a canonical
+identification. -/
 def reducedSingularHomologyComplRangeSphereIso {h : sphere (0 : E) 1 → Y} (hc : Continuous h)
     (hi : Function.Injective h) (i : ℕ) :
     (reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ) ≅
@@ -193,8 +193,9 @@ theorem isZero_reducedSingularHomologyFunctor_sphere_compl_range_sphere {n : ℕ
 continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
 sphere of a real normed space of dimension `i + dim E + 1`. Then the reduced homology of the
 complement of its image in degree `i` is one copy of the coefficients (Hatcher, *Algebraic
-Topology*, Proposition 2B.1(b)). Like `TauCeti.reducedSingularHomologySphereIso`, the isomorphism
-depends on chosen points, and is one choice of generator rather than a canonical identification. -/
+Topology*, Proposition 2B.1(b)). Like `TauCeti.reducedSingularHomologyComplRangeSphereIso`, the
+isomorphism depends on chosen points, and is one choice of generator rather than a canonical
+identification. -/
 def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
     (hF : finrank ℝ F = i + finrank ℝ E + 1) (hc : Continuous h) (hi : Function.Injective h) :
     (reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ) ≅ M :=
@@ -203,7 +204,8 @@ def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
       (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton M) hc hi i ≪≫
     reducedSingularHomologySphereIsoOfFinrankEq M
       (F := EuclideanSpace ℝ (ULift.{w} (Fin (i + finrank ℝ E + 1)))) (by simp [hF]) _ ≪≫
-    reducedSingularHomologySphereIso M (by simp)
+    reducedSingularHomologySphereIso M
+      ((EuclideanSpace.basisFun (ULift.{w} (Fin (i + finrank ℝ E + 1))) ℝ).reindex Equiv.ulift)
 
 /-- **The Jordan–Brouwer separation theorem.** The complement of the image of a continuous injection
 of the unit sphere of a finite-dimensional real normed space `E` into the unit sphere of a real

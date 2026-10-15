@@ -31,6 +31,8 @@ pushing the system through a group isomorphism leaves lengths unchanged.
 * `TauCeti.natCard_length_even_eq_natCard_length_odd`: as many elements have even length as odd
   length, provided there is at least one simple reflection.
 * `TauCeti.even_natCard_of_nonempty_index`: hence a Coxeter group of positive rank has even order.
+* `CoxeterSystem.wordProd_map`: a word for `CoxeterSystem.map` is the image of the word for the
+  original system.
 * `TauCeti.length_reindex` and `TauCeti.length_map`: the length function is unchanged by
   `CoxeterSystem.reindex` and by `CoxeterSystem.map`.
 
@@ -130,7 +132,8 @@ private theorem wordProd_reindex (e : B ≃ B') (ω : List B') :
 
 /-- Pushing a word through the isomorphism computes the corresponding word for the transported
 Coxeter system. -/
-private theorem wordProd_map (e : W ≃* H) (ω : List B) :
+@[simp]
+theorem _root_.CoxeterSystem.wordProd_map (e : W ≃* H) (ω : List B) :
     (cs.map e).wordProd ω = e (cs.wordProd ω) := by
   induction ω with
   | nil => simp
@@ -163,11 +166,11 @@ theorem length_map (e : W ≃* H) (w : W) : (cs.map e).length (e w) = cs.length 
   refine le_antisymm ?_ ?_
   · obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
     calc (cs.map e).length (e (cs.wordProd ω))
-        = (cs.map e).length ((cs.map e).wordProd ω) := by rw [wordProd_map]
+        = (cs.map e).length ((cs.map e).wordProd ω) := by rw [CoxeterSystem.wordProd_map]
       _ ≤ ω.length := CoxeterSystem.length_wordProd_le _ _
       _ = cs.length (cs.wordProd ω) := hω.eq.symm
   · obtain ⟨ω, hω, hw⟩ := (cs.map e).exists_isReduced (e w)
-    have hw' : w = cs.wordProd ω := e.injective (by rw [hw, wordProd_map])
+    have hw' : w = cs.wordProd ω := e.injective (by rw [hw, CoxeterSystem.wordProd_map])
     calc cs.length w = cs.length (cs.wordProd ω) := by rw [hw']
       _ ≤ ω.length := CoxeterSystem.length_wordProd_le _ _
       _ = (cs.map e).length (e w) := by rw [hw, hω.eq]

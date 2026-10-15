@@ -64,7 +64,6 @@ theorem exists_le_mul_mul_rpow_add_of_le_mul_add {θ : ℝ} (hθ0 : 0 ≤ θ) (h
     rw [Real.rpow_neg hτ0.le, ← div_eq_mul_inv, div_lt_one (Real.rpow_pos_of_pos hτ0 β)]
     exact hθτ
   have hθ' : 0 < 1 - θ := sub_pos.2 hθ1
-  have hq' : 0 < 1 - q := sub_pos.2 hq1
   refine ⟨max ((1 - τ) ^ (-β) / (1 - q)) (1 - θ)⁻¹, lt_max_of_lt_right (inv_pos.2 hθ'), ?_⟩
   intro f r₀ r₁ A B hr hA hB hbdd hf
   obtain ⟨M, hM⟩ := hbdd
@@ -80,7 +79,6 @@ theorem exists_le_mul_mul_rpow_add_of_le_mul_add {θ : ℝ} (hθ0 : 0 ≤ θ) (h
     simp only [s, pow_succ]
     ring
   set K := ((1 - τ) * d) ^ (-β)
-  have hK : 0 ≤ K := Real.rpow_nonneg (by nlinarith) _
   have hgapβ : ∀ i, (s (i + 1) - s i) ^ (-β) = (τ ^ (-β)) ^ i * K := fun i => by
     rw [hgap, Real.mul_rpow (pow_nonneg hτ0.le i) (by nlinarith),
       Real.rpow_pow_comm hτ0.le]
@@ -123,7 +121,6 @@ theorem exists_le_mul_mul_rpow_add_of_le_mul_add {θ : ℝ} (hθ0 : 0 ≤ θ) (h
   refine (ge_of_tendsto' hlim hbound).trans ?_
   -- Compare with the constant `C`.
   have hKd : K = (1 - τ) ^ (-β) * d ^ (-β) := Real.mul_rpow (by linarith) hd.le
-  have hdβ : 0 ≤ d ^ (-β) := Real.rpow_nonneg hd.le _
   rw [hKd, mul_add]
   gcongr ?_ + ?_
   · calc A * ((1 - τ) ^ (-β) * d ^ (-β)) / (1 - q)

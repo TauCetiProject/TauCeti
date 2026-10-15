@@ -62,6 +62,16 @@ noncomputable def rootIntMatrix (j : Fin 6 ⊕ Fin 6) : Matrix (Fin 54) (Fin 54)
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice j matrixBasis
 
+/-- The numbered integral root matrix is the matrix of the lattice endomorphism supplied by
+its Kostant root operator. -/
+theorem rootIntMatrix_eq_toMatrix (k : Fin 6 ⊕ Fin 6) :
+    rootIntMatrix k = LinearMap.toMatrix matrixBasis matrixBasis
+      (kostantRootOperator
+        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+        (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice k) := by
+  rw [rootIntMatrix, kostantRootGeneratorIntMatrix_eq_toMatrix]
+
 /-- A represented root operator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_matrixBasis_eq_sum (j : Fin 6 ⊕ Fin 6) (s : Fin 54) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -120,6 +130,23 @@ theorem rootIntMatrix_apply (j : Fin 6 ⊕ Fin 6) (a b : Fin 54) :
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice j matrixBasis
     (rep_rootGenerator_matrixBasis_eq_smul j b) a
+
+/-- A numbered root operator has nonzero entries only at its signed simple-root weight
+difference. The weights are integral, before any change of coefficient ring. -/
+theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin 6 ⊕ Fin 6) {a b : Fin 54}
+    (hab : matrixWeight a - matrixWeight b ≠ E6.rootGeneratorWeight k) :
+    rootIntMatrix k a b = 0 := by
+  rw [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
+  exact repr_eq_zero_of_isCartanWeightVector
+    (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+    (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+    rep_kostantForm_mem_lattice matrixBasis matrixWeight isCartanWeightVector_matrixBasis
+    (isCartanWeightVector_coe_kostantRootOperator
+      (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+      (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice k (E6.lie_serreH_rootGenerator k)
+      (isCartanWeightVector_matrixBasis b))
+    (by intro h; exact hab (sub_eq_iff_eq_add'.mpr h))
 
 /-- The root-operator matrices have zero entries between distinct minuscule summands. -/
 theorem rootIntMatrix_eq_zero_of_summand_ne (j : Fin 6 ⊕ Fin 6) {a b : Fin 54}

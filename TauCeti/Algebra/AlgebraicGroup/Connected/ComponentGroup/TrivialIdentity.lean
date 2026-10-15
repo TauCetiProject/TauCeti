@@ -35,11 +35,6 @@ points then promotes the pointwise isomorphism to an isomorphism of coordinate H
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This is the component-group input for the Layer 6 theorem that the center of a semisimple affine
-group is finite. Applied to the reduced center, it turns the vanishing of that smooth group's
-identity component into finiteness; finiteness of the original center then follows by controlling
-its nilpotent thickening.
 -/
 
 public section
@@ -80,14 +75,14 @@ private theorem
     (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H) =
       HopfIdeal.augmentation k H) :
-    IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u} (componentCoordinateHom H)) := by
+    IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} (componentCoordinateHom H)) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro A
   apply (ConcreteCategory.isIso_iff_bijective _).2
   have heq (g : HopfAlgebra.points (R := k) (H := H) A) :
-      (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)).app A g =
+      (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)).app A g =
         componentPointsHom H A g := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, componentPointsHom_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, componentPointsHom_apply]
   have hb :=
     componentPointsHom_bijective_of_identityComponentHopfIdeal_eq_augmentation H hH A
   constructor

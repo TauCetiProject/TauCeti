@@ -291,7 +291,7 @@ theorem quadraticDefect_eq_zero_iff {a : Kˣ} : quadraticDefect a = 0 ↔ IsSqua
 /-- The quadratic defect of an integral element is an integral ideal. -/
 theorem quadraticDefect_le_one {a : Kˣ} (ha : (a : K) ∈ 𝒪[K]) : quadraticDefect a ≤ 1 := by
   refine (quadraticDefect_le a 0).trans ?_
-  rw [← FractionalIdeal.spanSingleton_one, spanSingleton_le_spanSingleton_iff_valuation_le,
+  rw [← map_one (FractionalIdeal.spanSingleton _), spanSingleton_le_spanSingleton_iff_valuation_le,
     zero_pow two_ne_zero, sub_zero, map_one]
   exact (Valuation.mem_integer_iff _ _).mp ha
 
@@ -304,7 +304,7 @@ theorem quadraticDefect_mul_sq (a c : Kˣ) :
   have key : ∀ ξ : K, ((a * c ^ 2 : Kˣ) : K) - (c * ξ) ^ 2 = (c : K) ^ 2 * ((a : K) - ξ ^ 2) :=
     fun ξ => by push_cast; ring
   rw [quadraticDefect_eq_spanSingleton_of_forall h₀,
-    FractionalIdeal.spanSingleton_mul_spanSingleton, ← key]
+    ← map_mul (FractionalIdeal.spanSingleton _), ← key]
   refine quadraticDefect_eq_spanSingleton_of_forall fun η => ?_
   have hη : η = c * (η / c) := by field_simp
   rw [hη, key, key, map_mul, map_mul]
@@ -389,27 +389,26 @@ section UnitDefect
 variable {π : 𝒪[K]}
 
 /-- **The improvement step of O'Meara 63:2.** In residue characteristic two, an approximation
-`u - ξ²` of an integral element `u` of `Kˣ` of order exactly `2k` with `k < v_K(2)` is not
-optimal: writing `(u - ξ²)/π^{2k} ≡ s² mod 𝓂[K]`, which is possible because the residue field is
-perfect of characteristic two, the correction `ξ + π^k s` approximates `u` to order at least
-`2k + 1`. The hypothesis `k < v_K(2)` is what makes the cross term `2 ξ π^k s` negligible. -/
+`u - ξ²` of an integral element `u : K` of order at least `2k` with `k < v_K(2)` can be
+improved to order at least `2k + 1`: writing `(u - ξ²)/π^{2k} ≡ s² mod 𝓂[K]`, which is
+possible because the residue field is perfect of characteristic two, gives the correction
+`ξ + π^k s`. The hypothesis `k < v_K(2)` makes the cross term `2 ξ π^k s` negligible. -/
 theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
-    (hπ : Irreducible π) {u : Kˣ} (hu : valuation K (u : K) ≤ 1) {ξ : K} {k : ℕ}
+    (hπ : Irreducible π) {u : K} (hu : valuation K u ≤ 1) {ξ : K} {k : ℕ}
     (hk : k < natCastValuation K 2 h2)
-    (hξ : valuation K ((u : K) - ξ ^ 2) = valuation K (π : K) ^ (2 * k)) :
-    ∃ η : K, valuation K ((u : K) - η ^ 2) ≤ valuation K (π : K) ^ (2 * k + 1) := by
+    (hξ : valuation K (u - ξ ^ 2) ≤ valuation K (π : K) ^ (2 * k)) :
+    ∃ η : K, valuation K (u - η ^ 2) ≤ valuation K (π : K) ^ (2 * k + 1) := by
   have hπ0 : (π : K) ≠ 0 := fun h => hπ.ne_zero (Subtype.ext h)
   have hπ1 : valuation K (π : K) < 1 :=
     Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
-  have hπv : valuation K (π : K) ≠ 0 := by simpa using hπ0
   -- The residue field has characteristic two, so every residue is a square.
   have hchar : ringChar 𝓀[K] = 2 :=
     (natCastValuation_ne_zero_iff_ringChar_eq K Nat.prime_two h2).mp (by omega)
-  -- `c = (u - ξ²)/π^{2k}` is a unit of `𝒪[K]`.
-  set c : K := ((u : K) - ξ ^ 2) / (π : K) ^ (2 * k) with hc
-  have hcv : valuation K c = 1 := by
-    rw [hc, map_div₀, hξ, map_pow, div_self (pow_ne_zero _ hπv)]
-  have hcO : c ∈ 𝒪[K] := (Valuation.mem_integer_iff _ _).mpr hcv.le
+  -- `c = (u - ξ²)/π^{2k}` is integral.
+  set c : K := (u - ξ ^ 2) / (π : K) ^ (2 * k) with hc
+  have hcO : c ∈ 𝒪[K] := by
+    rw [Valuation.mem_integer_iff, hc, map_div₀, map_pow]
+    exact div_le_one_of_le₀ hξ zero_le
   obtain ⟨t, ht⟩ := FiniteField.isSquare_of_char_two hchar
     (IsLocalRing.residue 𝒪[K] ⟨c, hcO⟩)
   obtain ⟨s, rfl⟩ := IsLocalRing.residue_surjective t
@@ -421,12 +420,11 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
       (hπ.maximalIdeal_eq_setOfPred_le_v_coe (valuation K))
       ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2)).mp hsmem
     convert h using 1
-    simp
   -- The corrected approximation.
   refine ⟨ξ + (π : K) ^ k * (s : K), ?_⟩
-  have hcmul : ((π : K) ^ k) ^ 2 * c = (u : K) - ξ ^ 2 := by
+  have hcmul : ((π : K) ^ k) ^ 2 * c = u - ξ ^ 2 := by
     rw [hc, ← pow_mul, mul_comm k 2, mul_div_cancel₀ _ (pow_ne_zero _ hπ0)]
-  have hid : (u : K) - (ξ + (π : K) ^ k * (s : K)) ^ 2
+  have hid : u - (ξ + (π : K) ^ k * (s : K)) ^ 2
       = ((π : K) ^ k) ^ 2 * (c - (s : K) ^ 2) - 2 * ξ * ((π : K) ^ k * (s : K)) := by
     linear_combination -hcmul
   -- Both terms have valuation at most `v(π)^{2k+1}`.
@@ -441,7 +439,7 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
       (valuation_natCast_eq_pow hπ 2 h2).le
     have hξ1 : valuation K ξ ≤ 1 :=
       valuation_le_one_of_sub_sq_le_one hu
-        (hξ ▸ pow_le_one₀ zero_le hπ1.le)
+        (hξ.trans (pow_le_one₀ zero_le hπ1.le))
     have hs1 : valuation K (s : K) ≤ 1 := (Valuation.mem_integer_iff _ _).mp s.2
     calc valuation K (2 * ξ * ((π : K) ^ k * (s : K)))
         = valuation K (2 : K) * valuation K ξ *
@@ -510,8 +508,8 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
       ∃ k < natCastValuation K 2 h2, defectExponent u = ((2 * k + 1 : ℕ) : ℤ) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
-  set e := natCastValuation K 2 h2 with he
-  set d := (normalizedValuation K x).toAdd with hd
+  set e := natCastValuation K 2 h2
+  set d := (normalizedValuation K x).toAdd
   -- The valuation of `u` is one of the approximation orders, so `0 ≤ δ(u)`.
   have hd0 : 0 ≤ d := by
     have h := toAdd_normalizedValuation_le_defectExponent u
@@ -533,7 +531,7 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
       rw [hx] at h
       simpa only [zpow_natCast, Units.val_mk0] using h
     obtain ⟨η, hη⟩ := exists_valuation_sub_sq_le_of_lt_natCastValuation h2 hπ hu.le
-      (k := k) (by omega) hξv
+      (k := k) (by omega) hξv.le
     have hle := (valuation_le_valuation_sub_sq_of_eq hsq hxd η).trans hη
     have h := (le_toAdd_normalizedValuation_iff_valuation_le_zpow
       (normalizedValuation_irreducible hπ) ((2 * k + 1 : ℕ) : ℤ) x).mpr

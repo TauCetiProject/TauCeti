@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 
 /-!
 # Continuous pushforwards of probability measures
@@ -19,6 +20,11 @@ when the product topology has measurable opens.
 `MeasureTheory.ProbabilityMeasure.continuous_map` by making the map's measurability explicit
 instead of requiring the target's measurable space to be Borel. Its proof uses the same
 bounded-continuous-test-function characterization of weak convergence.
+
+`MeasureTheory.ProbabilityMeasure.continuous_map_of_forall_continuous`: the laws of a family of
+random variables that depends continuously on a parameter, for every outcome, depend continuously
+on that parameter. For example, the time marginals of a law on a space of continuous paths form a
+continuous curve of probability measures.
 -/
 
 public section
@@ -41,5 +47,21 @@ lemma continuous_map_of_measurable {f : X → Y} (hf : Continuous f) (hm : Measu
     rw [toMeasure_map, lintegral_map (by fun_prop) hm]
   simp_rw [hmap]
   exact continuous_lintegral_boundedContinuousFunction (g.compContinuous ⟨f, hf⟩)
+
+end MeasureTheory.ProbabilityMeasure
+
+namespace MeasureTheory.ProbabilityMeasure
+
+variable {T Ω E : Type*} [TopologicalSpace T] [FirstCountableTopology T] [MeasurableSpace Ω]
+  [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+
+/-- If `f t ω` depends continuously on `t` for every `ω`, then the laws `P.map (f t)` depend
+continuously on `t` for the weak topology. For instance, the time marginals of a law on a space
+of continuous paths form a continuous curve. -/
+lemma continuous_map_of_forall_continuous (P : ProbabilityMeasure Ω) {f : T → Ω → E}
+    (hf : ∀ t, AEMeasurable (f t) P) (hcont : ∀ ω, Continuous fun t ↦ f t ω) :
+    Continuous fun t ↦ P.map (f t) :=
+  continuous_iff_continuousAt.2 fun t ↦ (tendstoInDistribution_of_ae_tendsto hf (hf t)
+    (ae_of_all _ fun ω ↦ (hcont ω).tendsto t)).tendsto
 
 end MeasureTheory.ProbabilityMeasure

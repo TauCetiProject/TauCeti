@@ -34,6 +34,8 @@ inverse tangent-bundle trivializations act componentwise.
 
 ## Main results
 
+* `TauCeti.Manifold.mfderiv_atlas_eq_continuousLinearMapAt`: the derivative of an atlas chart
+  is the actual continuous linear map of its tangent-core trivialization.
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
@@ -69,6 +71,8 @@ inverse tangent-bundle trivializations act componentwise.
   inverse tangent-bundle trivializations agree through this equivalence.
 * `TauCeti.Manifold.tangentSpaceProdEquiv`: the canonical continuous linear equivalence between
   the tangent space of a product and the product of the tangent spaces.
+* `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
+  under this equivalence.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
@@ -93,6 +97,22 @@ variable
 section BasePoint
 
 variable [IsManifold I 1 M]
+
+/-- The derivative of an atlas chart reads tangent vectors in that chart's core trivialization. -/
+theorem mfderiv_atlas_eq_continuousLinearMapAt (e : atlas H M) {x : M}
+    (hx : x ∈ e.val.source) :
+    mfderiv I I e.val x =
+      ((tangentBundleCore I M).localTriv e).continuousLinearMapAt 𝕜 x := by
+  rw [(tangentBundleCore I M).localTriv_continuousLinearMapAt hx,
+    (mdifferentiableAt_atlas e.property hx).mfderiv]
+  simp only [writtenInExtChartAt, extChartAt_self_eq]
+  rw [tangentBundleCore_coordChange, tangentBundleCore_indexAt, achart_val]
+  simp only [extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_assoc]
+  -- At this foundational bridge, both implementation casts identify the tangent fibre with E.
+  ext v
+  simp only [ContinuousLinearMap.comp_apply, tangentSpaceCastModel]
+  rfl
+
 
 /-- Read in the canonical trivialization at `x`, a tangent vector at `x` itself is its own
 coordinate vector: the trivialization is built from the chart at `x`, whose transition function
@@ -155,7 +175,7 @@ theorem contDiffOn_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] (x
     haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
     ContDiffOn 𝕜 n (fun a : E => tangentCoordChange I x y ((extChartAt I x).symm a))
       (((extChartAt I x).symm ≫ extChartAt I y).source) := by
-  have hI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+  have _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
   refine (contDiffOn_fderiv_coord_change (𝕜 := 𝕜) (n := n) (I := I) (M := M)
     (achart H x) (achart H y)).congr (fun a ha => ?_)
   have ha2 : a ∈ (extChartAt I x).target := by
@@ -688,6 +708,25 @@ theorem tangentSpaceProdEquiv_symm_apply (p : M × N)
     (v : TangentSpace I p.1 × TangentSpace J p.2) :
     (tangentSpaceProdEquiv (I := I) (J := J) p).symm v = v := by
   exact (rfl)
+
+/-- The differential of a product map acts componentwise under the canonical
+identifications of the product tangent spaces. -/
+theorem mfderiv_prodMap_apply
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
+    {f : M → M'} {g : N → N'} {p : M × N}
+    (hf : MDifferentiableAt I I' f p.1) (hg : MDifferentiableAt J J' g p.2)
+    (v : TangentSpace I p.1 × TangentSpace J p.2) :
+    mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p
+        ((tangentSpaceProdEquiv p).symm v) =
+      (tangentSpaceProdEquiv (f p.1, g p.2)).symm
+        (mfderiv I I' f p.1 v.1, mfderiv J J' g p.2 v.2) := by
+  rw [mfderiv_prodMap hf hg]
+  rfl
 
 /-- On the common domain of two product charts, the tangent coordinate change of a product
 manifold is the product of the tangent coordinate changes of the factors. -/

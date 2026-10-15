@@ -483,7 +483,7 @@ theorem smul_mem_diagonalRepartitions (f : F) {a : Place k F → F}
     (ha : a ∈ diagonalRepartitions k F) : f • a ∈ diagonalRepartitions k F := by
   obtain ⟨g, rfl⟩ := mem_diagonalRepartitions_iff.mp ha
   refine mem_diagonalRepartitions_iff.mpr ⟨f * g, ?_⟩
-  funext P
+  funext _
   simp [smul_eq_mul]
 
 /-- Multiplication of repartitions by a function, as a `k`-algebra map to the `k`-linear

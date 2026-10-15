@@ -91,7 +91,7 @@ private theorem exists_pos_zmultiples_eq_cuspPeriods [DiscreteTopology Γ] {c : 
     rw [mem_cuspPeriods, ← hpx]
     simp [mul_assoc]
   have := discreteTopology_cuspPeriods (Γ := Γ) σ
-  have := AddSubgroup.discrete_iff_addCyclic.mpr this
+  have := AddSubgroup.isAddCyclic_iff_discreteTopology.mpr this
   have : Nontrivial (cuspPeriods Γ σ) := ⟨⟨⟨x, hxP⟩, 0, fun h ↦ hx (congrArg Subtype.val h)⟩⟩
   obtain ⟨a, ha, haP⟩ := LinearOrderedAddCommGroup.Subgroup.exists_neg_generator
     (cuspPeriods Γ σ)
@@ -230,6 +230,16 @@ theorem cuspOrbit_eq_iff (D' : Γ.CuspDatum) :
 /-- The stabilizer of the cusp consists of the integer powers of the selected generator. -/
 theorem mem_stabilizer_iff {g : Γ} : g ∈ stabilizer Γ D.cusp ↔ ∃ n : ℤ, D.generator ^ n = g := by
   rw [← D.zpowers_generator, mem_zpowers_iff]
+
+/-- Every nonidentity element of the stabilizer of a normalized cusp is parabolic. -/
+theorem isParabolic_of_mem_stabilizer_of_ne_one {g : Γ}
+    (hg : g ∈ stabilizer Γ D.cusp) (h1 : g ≠ 1) : IsParabolic (g : PSL(2, ℝ)) := by
+  obtain ⟨k, rfl⟩ := D.mem_stabilizer_iff.mp hg
+  have hk0 : k ≠ 0 := by
+    intro hk0
+    exact h1 (by simp [hk0])
+  rw [Subgroup.coe_zpow]
+  exact D.isParabolic_generator.zpow hk0
 
 /-- Conjugation by the scaling sends the `n`-th power of the generator to translation by
 `n * width`. -/

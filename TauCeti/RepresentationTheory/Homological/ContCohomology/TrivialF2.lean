@@ -36,6 +36,8 @@ trivial coefficient object for that subgroup.
 
 * `TauCeti.trivialF2`: trivial `𝔽₂` coefficients over an arbitrary
   universe.
+* `TauCeti.DiscreteRep.trivialF2`: the same coefficient object in the equivalent category of
+  discrete continuous representations.
 * `TauCeti.cohomF2`: continuous cohomology with trivial `𝔽₂` coefficients, with its canonical
   `ZMod 2`-module structure `TauCeti.cohomF2.instModule`.
 * `TauCeti.trivialF2ResMap`: restriction on continuous cohomology with trivial `𝔽₂`
@@ -219,6 +221,11 @@ theorem res_trivialF2 (S : Subgroup G) :
 open CategoryTheory _root_.ContinuousCohomology
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- The canonical trivial `𝔽₂` coefficient object, read in the equivalent category of
+discrete continuous representations. -/
+noncomputable abbrev DiscreteRep.trivialF2 : DiscreteRep.{0, u, u} ℤ G :=
+  (ofSmoothDiscrete ℤ G).obj ⟨TauCeti.trivialF2 G, isSmoothDiscrete_trivialF2 G⟩
 
 /-- Restriction on continuous cohomology with trivial `𝔽₂` coefficients. This is the
 generic restriction map followed by the on-the-nose identification `res_trivialF2`. -/

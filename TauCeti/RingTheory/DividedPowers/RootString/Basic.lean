@@ -138,7 +138,7 @@ private theorem mul_rootStringSeries (hxy : x * y = y * x + z) (hxz : x * z = z 
           (if 0 < p.1 then
             (2 * (p.2 + 1)) • (dividedPower (n - (p.1 - 1) - (p.2 + 1)) y *
               dividedPower (p.1 - 1) z * dividedPower (p.2 + 1) w) else 0) := by
-    intro p hp
+    intro p _
     have h1 : n - (p.1 + 1) - p.2 = n - p.1 - p.2 - 1 := by omega
     have h2 : 0 < p.1 → n - (p.1 - 1) - (p.2 + 1) = n - p.1 - p.2 := by omega
     rw [mul_dividedPower_triple hxy hxz hxw hyz hzw (n - p.1 - p.2) p.1 p.2, h1]
@@ -256,7 +256,7 @@ theorem dividedPower_mul_dividedPower_of_commutator_eq_two_nsmul (hxy : x * y = 
     simpa only [hS] using (mem_chainLeTwoIndex (m := m) (n := n) (p := p))
   have hseries := dividedPower_mul_of_ad_dividedPower_series
     (x := x) (d := rootStringSeries y z w n)
-    (fun k => mul_rootStringSeries hxy hxz hxw hyz hzw n k) m
+    m (fun k _ ↦ mul_rootStringSeries hxy hxz hxw hyz hzw n k)
   rw [rootStringSeries_zero] at hseries
   rw [hseries]
   -- Group the flat sum by the value of `b + 2c`, which is the index of the series.

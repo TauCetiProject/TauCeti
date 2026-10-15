@@ -39,8 +39,9 @@ graded algebras are formed in this category with this shift.
 
 ## Main results
 
-* `TauCeti.GradedModuleCat.mem_shift_functor_obj_piece_iff` and
-  `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{1})ₚ = M_{p-1}` and
+* `TauCeti.GradedModuleCat.shift_functor_obj`: the shift autoequivalence sends `M` to `M{1}`.
+* `TauCeti.GradedModuleCat.mem_shiftObj_piece_iff` and
+  `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{n})ₚ = M_{p-n}` and
   `(M{-1})ₚ = M_{p+1}`.
 -/
 
@@ -135,6 +136,21 @@ theorem hom_injective : Function.Injective (fun f : M ⟶ N ↦ f.hom) :=
 theorem map_mem (f : M ⟶ N) {p : ℤ} {x : M} (hx : x ∈ M.grading.piece p) :
     f.hom x ∈ N.grading.piece p := by
   simpa using f.isHomogeneous.map_mem hx
+
+/-- A graded surjection preserves vanishing of a homogeneous piece. In particular, a quotient
+of a module concentrated in one degree is concentrated in that degree. -/
+theorem piece_eq_bot_of_surjective (f : M ⟶ N)
+    (hf : Function.Surjective f.hom) (p : ℤ) (hp : M.grading.piece p = ⊥) :
+    N.grading.piece p = ⊥ := by
+  apply (Submodule.eq_bot_iff _).mpr
+  intro y hy
+  obtain ⟨x, rfl⟩ := hf y
+  have hx : (_root_.DirectSum.decompose M.grading.piece x p : M) = 0 := by
+    simpa only [hp, Submodule.mem_bot] using
+      (_root_.DirectSum.decompose M.grading.piece x p).property
+  have h := f.isHomogeneous.map_decompose p x
+  rw [add_zero, _root_.DirectSum.decompose_of_mem_same N.grading.piece hy, hx, map_zero] at h
+  exact h.symm
 
 end Hom
 
@@ -260,8 +276,9 @@ theorem mem_shiftObj_piece_iff (n p : ℤ) (x : M) :
     x ∈ (M.shiftObj n).grading.piece p ↔ x ∈ M.grading.piece (p - n) := by
   simp [sub_eq_add_neg]
 
-/-- The shift `M ↦ M{n}` of graded modules, the identity on underlying linear maps. -/
-@[expose]
+/-- The shift `M ↦ M{n}` of graded modules, the identity on underlying linear maps.
+Its objects compute during type inference, agreeing with `shiftObj` in morphism types. -/
+@[expose, implicit_reducible]
 def shiftFunctor (n : ℤ) : GradedModuleCat.{v} 𝒜 ⥤ GradedModuleCat.{v} 𝒜 where
   obj M := M.shiftObj n
   map {M N} f := ofHom (M := M.shiftObj n) (N := N.shiftObj n) f.hom <|
@@ -283,18 +300,18 @@ variable (𝒜) in
 autoequivalence; its inverse is `M ↦ M{-1}`. -/
 @[expose]
 def shift : GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} 𝒜 where
-  functor := shiftFunctor 1
-  inverse := shiftFunctor (-1)
-  unitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  functor := shiftFunctor (𝒜 := 𝒜) 1
+  inverse := shiftFunctor (𝒜 := 𝒜) (-1)
+  unitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
-  counitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  counitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
   functor_unitIso_comp _ := by ext; rfl
 
+/-- The grading-shift autoequivalence sends a module to its shift by one. -/
 @[simp]
-theorem mem_shift_functor_obj_piece_iff (p : ℤ) (x : M) :
-    x ∈ ((shift 𝒜).functor.obj M).grading.piece p ↔ x ∈ M.grading.piece (p - 1) :=
-  M.mem_shiftObj_piece_iff 1 p x
+theorem shift_functor_obj : (shift 𝒜).functor.obj M = M.shiftObj 1 :=
+  rfl
 
 @[simp]
 theorem mem_shift_inverse_obj_piece_iff (p : ℤ) (x : M) :
@@ -343,10 +360,10 @@ instance (n : ℤ) : (shiftFunctor (𝒜 := 𝒜) n).Linear k where
   map_smul _ _ := rfl
 
 instance : (shift 𝒜).functor.Additive :=
-  inferInstanceAs (shiftFunctor 1).Additive
+  inferInstanceAs (shiftFunctor (𝒜 := 𝒜) 1).Additive
 
 instance : (shift 𝒜).functor.Linear k :=
-  inferInstanceAs ((shiftFunctor 1).Linear k)
+  inferInstanceAs ((shiftFunctor (𝒜 := 𝒜) 1).Linear k)
 
 end Shift
 

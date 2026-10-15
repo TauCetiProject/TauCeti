@@ -212,7 +212,6 @@ theorem
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) :
     ρ (A ∩ blockCylinder (fun j (x : ℕ → α) => x j) k B)
       = ρ (A ∩ blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin r => (i : ℕ)) B) := by
-  have hAm : MeasurableSet A := MeasurableSpace.invariants_le _ _ hA
   have hcoord : ∀ (s : Fin r → ℕ) (i : Fin r),
       AEMeasurable (fun x : ℕ → α => x (s i)) (ρ.restrict A) :=
     fun s i => (measurable_pi_apply (s i)).aemeasurable
@@ -239,10 +238,6 @@ theorem ContractableLaw.setIntegral_comp_coord_eq_comp_zero_of_measurableSet_inv
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A)
     {f : α → ℝ} (hf : Measurable f) :
     ∫ x in A, f (x r) ∂ρ = ∫ x in A, f (x 0) ∂ρ := by
-  have hmap := hρ.map_restrict_prefixProj_of_strictMono_of_measurableSet_invariants
-    (k := fun _ : Fin 1 => r) (Subsingleton.strictMono _) hA
-  have hmap0 := hρ.map_restrict_prefixProj_of_strictMono_of_measurableSet_invariants
-    (k := fun _ : Fin 1 => 0) (Subsingleton.strictMono _) hA
   have hg : Measurable fun y : Fin 1 → α => f (y 0) := hf.comp (measurable_pi_apply 0)
   have hcoord : ∀ (s : ℕ), Measurable fun x : ℕ → α => fun _ : Fin 1 => x s :=
     fun s => Measurable.of_eval fun _ => measurable_pi_apply s

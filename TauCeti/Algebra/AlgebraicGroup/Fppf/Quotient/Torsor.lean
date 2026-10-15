@@ -48,9 +48,6 @@ No representability of `G / V(I)` is asserted.
 
 * J. S. Milne, *Algebraic Groups* (2017), Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 14.
-
-This is the torsor and kernel-pair step of Layer 3, "Normality and quotients", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -178,7 +175,7 @@ private noncomputable def quotientSubgroupPointsPresheafGrpInclusion
     pointsPresheafGrp (quotient H I) ⟶ pointsPresheafGrp H :=
   groupFunctorGrpMap <| Functor.whiskerRight
     (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R))
-      (mapPointsFunctor (mkQuotient H I)))
+      (CommHopfAlgCat.Hom.mapPointsFunctor (mkQuotient H I)))
     GrpCat.uliftFunctor.{u + 1, u}
 
 /-- The action map in the pointwise torsor square, `(g, n) ↦ gn`. -/

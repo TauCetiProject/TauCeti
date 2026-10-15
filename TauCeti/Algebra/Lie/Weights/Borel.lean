@@ -95,12 +95,6 @@ reflection `P.reflectionPerm i i`.
 
 ## References
 
-This file supplies the "Borel and the nilradicals" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signatures
-`positiveNilradical`, `negativeNilradical` and `borelSubalgebra` are pinned in the accompanying
-`Suggested.lean`. They are the subalgebras the Verma module `U(L) ⊗_{U(𝔟)} Kλ` of that layer is
-induced from.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §10.1.
 -/
 
@@ -303,11 +297,11 @@ theorem rootSpaceSubalgebra_le_iff {S : Set H.root} (hS : IsSpecialClosedRootSet
 variable (H)
 
 /-- The **positive nilradical** `n⁺ = ⨁_{α > 0} Lα` of the positive system determined by `b`. -/
-def positiveNilradical : LieSubalgebra K L :=
+noncomputable def positiveNilradical : LieSubalgebra K L :=
   rootSpaceSubalgebra H _ (isSpecialClosedRootSet_posRoots b)
 
 /-- The **negative nilradical** `n⁻ = ⨁_{α < 0} Lα` of the positive system determined by `b`. -/
-def negativeNilradical : LieSubalgebra K L :=
+noncomputable def negativeNilradical : LieSubalgebra K L :=
   rootSpaceSubalgebra H _ (isSpecialClosedRootSet_negRoots b)
 
 @[simp]
@@ -367,7 +361,7 @@ private theorem lie_mem_sup_positiveNilradical {x y : L}
 
 It is a subalgebra because `H` is one, because `⁅H, n⁺⁆ ≤ n⁺` — the root spaces being
 `H`-submodules — and because `n⁺` is one. -/
-def borelSubalgebra : LieSubalgebra K L where
+noncomputable def borelSubalgebra : LieSubalgebra K L where
   __ := (H : Submodule K L) ⊔ (positiveNilradical H b : Submodule K L)
   lie_mem' hx hy := lie_mem_sup_positiveNilradical H b hx hy
 

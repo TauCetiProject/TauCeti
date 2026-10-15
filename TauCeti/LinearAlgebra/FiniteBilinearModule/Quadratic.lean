@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -31,6 +31,8 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
 * `TauCeti.FiniteQuadraticModule.toFiniteBilinearModule`: the canonical polar bilinear module.
 * `TauCeti.FiniteQuadraticModule.Hom`: a quadratic-map-preserving additive homomorphism.
 * `TauCeti.FiniteQuadraticModule.Isometry`: a quadratic-map isometric equivalence.
+* `TauCeti.FiniteQuadraticModule.Hom.toIsometryOfNondegenerate`: a morphism from a
+  nondegenerate source of the same finite cardinality, packaged as an isometry.
 * `TauCeti.FiniteQuadraticModule.IsIsotropic`: quadratic isotropy of an additive subgroup.
 * `TauCeti.FiniteQuadraticModule.isIsotropic_prod_iff`: quadratic isotropy of a product subgroup
   in an orthogonal direct sum is quadratic isotropy of each factor subgroup.
@@ -318,6 +320,12 @@ namespace Hom
 
 variable {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
 
+/-- A quadratic morphism from a nondegenerate finite module is injective. -/
+theorem injective (f : Hom A B) (hA : A.IsNondegenerate) : Function.Injective f :=
+  fun x y hxy ↦ FiniteBilinearModule.Hom.injective f.toFiniteBilinearModule hA
+    ((toFiniteBilinearModule_apply f x).trans
+      (hxy.trans (toFiniteBilinearModule_apply f y).symm))
+
 /-- A bijective morphism of finite quadratic modules is an isometry. -/
 noncomputable def toIsometry (f : Hom A B) (hf : Function.Bijective f) : Isometry A B where
   toLinearEquiv := (AddEquiv.ofBijective f.toLinearMap.toAddMonoidHom hf).toIntLinearEquiv
@@ -333,6 +341,26 @@ theorem toIsometry_toHom (f : Hom A B) (hf : Function.Bijective f) :
     (f.toIsometry hf).toHom = f := by
   ext
   rfl
+
+/-- A quadratic morphism from a nondegenerate source is an isometry when the two
+finite modules have the same cardinality. -/
+noncomputable def toIsometryOfNondegenerate (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) : Isometry A B :=
+  f.toIsometry ((Nat.bijective_iff_injective_and_card f).mpr ⟨f.injective hA, hcard⟩)
+
+/-- Packaging the morphism with nondegeneracy and equal cardinality preserves its action. -/
+@[simp]
+theorem toIsometryOfNondegenerate_apply (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) (x : A) :
+    f.toIsometryOfNondegenerate hA hcard x = f x :=
+  toIsometry_apply f _ x
+
+/-- Forgetting the isometry constructed from nondegeneracy recovers the morphism. -/
+@[simp]
+theorem toIsometryOfNondegenerate_toHom (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) :
+    (f.toIsometryOfNondegenerate hA hcard).toHom = f :=
+  toIsometry_toHom f _
 
 end Hom
 

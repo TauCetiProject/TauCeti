@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 
 /-!

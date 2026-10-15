@@ -19,10 +19,17 @@ is moreover surjective then so is that map. Openness is what the statements turn
 surjection alone gives only a dense image in the completion of `H`. Nothing is asked of `H` beyond
 being a uniform additive group.
 
+Openness also computes the kernel of the induced map: it is the closure of the image of the kernel
+of `f`, and for this first countability is not needed. Together with surjectivity this identifies
+the completion of `H` with the quotient of the completion of `G` by that closed subgroup, which is
+how completion commutes with passing to an open quotient (Bourbaki, *General Topology*, Chapter IX,
+§3.1, Proposition 4, for metrisable groups).
+
 ## Main results
 
 * `AddMonoidHom.isOpenMap_completion`: the induced map on completions is open.
 * `AddMonoidHom.surjective_completion`: it is surjective when `f` is.
+* `AddMonoidHom.ker_completion`: its kernel is the closure of the image of the kernel of `f`.
 -/
 
 public section
@@ -110,6 +117,69 @@ theorem surjective_completion [NonarchimedeanAddGroup G] [(𝓝 (0 : G)).IsCount
   have hy : y ∈ ((F.range : AddSubgroup (Completion H)) : Set (Completion H)) := by
     rw [huniv]; exact Set.mem_univ y
   exact AddMonoidHom.mem_range.mp hy
+
+/-- **The kernel of the map induced on completions by a continuous open homomorphism out of a
+nonarchimedean additive group is the closure of the image of the kernel.** Unlike
+`AddMonoidHom.surjective_completion`, this needs no first countability.
+
+Openness cannot be dropped: a continuous injective homomorphism can kill a nonzero point of the
+completion. The identity of `ℤ`, from the `6`-adic to the `2`-adic topology, induces the
+projection `ℤ₂ × ℤ₃ → ℤ₂` on completions. -/
+theorem ker_completion [NonarchimedeanAddGroup G] (f : G →+ H) (hf : Continuous f)
+    (hopen : IsOpenMap f) :
+    (f.completion hf).ker = (f.ker.map (toCompl : G →+ Completion G)).topologicalClosure := by
+  refine le_antisymm (fun x hx ↦ ?_) (AddSubgroup.topologicalClosure_minimal _ ?_ ?_)
+  · rw [AddMonoidHom.mem_ker] at hx
+    rw [← SetLike.mem_coe, AddSubgroup.topologicalClosure_coe, mem_closure_iff_nhds]
+    intro N hN
+    -- an open subgroup `W` of the completion with `x + W ⊆ N`, and its preimage `V` in `G`
+    have hN0 : (fun w ↦ x + w) ⁻¹' N ∈ 𝓝 (0 : Completion G) :=
+      (continuous_const_add x).continuousAt.preimage_mem_nhds (by simpa using hN)
+    -- the image of `ker f` is contained in the closed kernel, so only the other inclusion has
+    -- content: `x + W` meets the image of `ker f` for every open subgroup `W`
+    obtain ⟨W, hW⟩ := NonarchimedeanAddGroup.is_nonarchimedean _ hN0
+    set V : AddSubgroup G := (W : AddSubgroup (Completion G)).comap toCompl with hV
+    have hVopen : IsOpen (V : Set G) := W.isOpen.preimage (continuous_coe G)
+    -- a point of `G` whose image lies in `x + W`
+    obtain ⟨_, hgW, g, rfl⟩ := (denseRange_coe (α := G)).inter_open_nonempty
+      ((fun w ↦ w - x) ⁻¹' W) (W.isOpen.preimage (continuous_sub_right x)) ⟨x, by simp⟩
+    have hgW' : (g : Completion G) - x ∈ W := hgW
+    -- `W` lies in the closure of the image of `V`, so the induced map carries it into the
+    -- closure of the image of the open subgroup `f '' V`; that subgroup is closed, so the
+    -- closure meets the image of `H` only in the image of `f '' V`
+    have hWsub : (W : Set (Completion G)) ⊆ closure (((↑) : G → Completion G) '' (V : Set G)) := by
+      intro w hw
+      refine closure_mono ?_ ((denseRange_coe (α := G)).open_subset_closure_inter W.isOpen hw)
+      rintro _ ⟨hw', y, rfl⟩
+      exact ⟨y, hw', rfl⟩
+    have hfV : IsOpen ((V.map f : AddSubgroup H) : Set H) := by
+      simpa [AddSubgroup.coe_map] using hopen _ hVopen
+    have hFg : ((f g : H) : Completion H) ∈
+        closure (((↑) : H → Completion H) '' ((V.map f : AddSubgroup H) : Set H)) := by
+      have h1 : f.completion hf ((g : Completion G) - x) = (f g : Completion H) := by
+        rw [map_sub, hx, sub_zero, AddMonoidHom.completion_coe]
+      rw [← h1]
+      refine closure_mono ?_ (image_closure_subset_closure_image
+        (AddMonoidHom.continuous_completion f hf) ⟨_, hWsub hgW', rfl⟩)
+      rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+      exact ⟨f y, ⟨y, hy, rfl⟩, (AddMonoidHom.completion_coe f hf y).symm⟩
+    have hfg : f g ∈ V.map f := by
+      rw [← SetLike.mem_coe, ← preimage_closure_image_coe hfV]
+      exact hFg
+    -- `g = v + k` with `v ∈ V` and `k ∈ ker f`, and the image of `k` lies in `x + W ⊆ N`
+    obtain ⟨v, hv, hfv⟩ := AddSubgroup.mem_map.mp hfg
+    refine ⟨((g - v : G) : Completion G), ?_, g - v, ?_, rfl⟩
+    · have hvW : (v : Completion G) ∈ W := hv
+      have : ((g - v : G) : Completion G) - x ∈ W := by
+        rw [coe_sub, sub_right_comm]
+        exact W.sub_mem hgW' hvW
+      simpa using hW this
+    · rw [SetLike.mem_coe, AddMonoidHom.mem_ker, map_sub, hfv, sub_self]
+  · rintro _ ⟨k, hk, rfl⟩
+    rw [AddMonoidHom.mem_ker, toCompl_apply, AddMonoidHom.completion_coe,
+      AddMonoidHom.mem_ker.mp hk, coe_zero]
+  · exact (isClosed_singleton (x := (0 : Completion H))).preimage
+      (AddMonoidHom.continuous_completion f hf)
 
 end AddMonoidHom
 

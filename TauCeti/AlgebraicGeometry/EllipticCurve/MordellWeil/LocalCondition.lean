@@ -34,11 +34,12 @@ of square classes whose image in `(W⁄L).M` lies in the image of the local desc
 * `WeierstrassCurve.Affine.mapA`: the base-change homomorphism `K[X]⧸⟨f⟩ →+* L[X]⧸⟨f⟩` of étale
   algebras.
 * `WeierstrassCurve.Affine.localRes`: the induced map `W.M →* (W⁄L).M` on square classes.
-* `WeierstrassCurve.Affine.pointMap`: the base-change homomorphism `W(K) →+ W(L)` on points.
 * `WeierstrassCurve.Affine.localCondition`: the local `2`-descent condition at `L`.
 
 ## Main statements
 
+* `WeierstrassCurve.Affine.baseChange_discr_f`: the discriminant of the cubic `f` commutes with
+  base change.
 * `WeierstrassCurve.Affine.localRes_μX` and `WeierstrassCurve.Affine.localRes_comp_μ`: the
   descent map is natural under base change — restricting square classes after the global `μ` is
   applying the local `μ` after the base change of points.
@@ -62,9 +63,8 @@ which is not a Mathlib declaration and which TauCeti deliberately does not carry
 repository has a single spelling of square classes. Accordingly `localRes` is built from
 `QuotientGroup.map` rather than from the source's `Units.modPow.map`.
 
-`pointMap` is Mathlib's `WeierstrassCurve.Affine.Point.map` and is not a new construction: the
-only content is the alignment of `W` with `W⁄K`, which `baseChange_self` supplies and
-Mathlib's `AddEquiv.cast` transports along.
+The base change of points is `WeierstrassCurve.Affine.pointMap`, from
+`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/BaseChange.lean`.
 
 ## Provenance
 
@@ -80,7 +80,8 @@ give the isomorphism-invariance block — `range_μ_of_bijective_algebraMap` and
 One declaration is **not** adapted from the source: `localRes_injective_of_surjective_algebraMap`
 is re-derived here. The source obtains it from its local `Units.modPow.bijective_map`, which is in
 the square-class spelling this repository does not carry, and Mathlib has no `QuotientGroup.map`
-injectivity helper to appeal to instead.
+injectivity helper to appeal to instead. `baseChange_discr_f` is the source's lemma of that name
+at its later revision `3bfe124`.
 
 This advances `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (README:813-820), whose
 "Explicit `2`-descent (core, this layer)" bullet names "the local conditions" as the first item
@@ -141,6 +142,10 @@ section BaseChange
 
 variable (L : Type*) [Field L] [Algebra K L]
 
+/-- The discriminant of the cubic `f` commutes with base change. -/
+lemma baseChange_discr_f : (W⁄L).toAffine.f.discr = algebraMap K L W.f.discr := by
+  simp [discr_f, toAffine, map_ofNat]
+
 /-- The base-change homomorphism `K[X]⧸⟨f⟩ →+* L[X]⧸⟨f⟩` of étale algebras, as an instance of
 `AdjoinRoot.map` (so that its API — `map_of`, `map_root`, `map_comp_map`, `mapRingEquiv` —
 applies directly). -/
@@ -197,33 +202,6 @@ lemma localRes_injective_of_surjective_algebraMap (h : Function.Surjective (alge
   obtain ⟨w', rfl⟩ := (Units.map_bijective hb).2 w
   exact (QuotientGroup.eq_one_iff _).mpr ⟨w', (Units.map_bijective hb).1
     (by simpa only [powMonoidHom_apply, map_pow] using hw)⟩
-
-section PointMap
-
-open scoped Classical in
-/-- The base-change homomorphism on points, `W(K) →+ W(L)`: Mathlib's
-`WeierstrassCurve.Affine.Point.map`, aligned with the plain base change `W⁄L` via
-`baseChange_self`. -/
-noncomputable def pointMap : W.Point →+ (W⁄L).toAffine.Point :=
-  (Point.map (W' := W) (Algebra.ofId K L)).comp
-    (AddEquiv.cast (M := fun W' : Affine K => W'.Point) W.baseChange_self.symm).toAddMonoidHom
-
-open scoped Classical in
-/-- The base-change map on an affine point carries its coordinates along `algebraMap K L`. -/
-@[simp]
-lemma pointMap_some {x y : K} (h : W.Nonsingular x y) : W.pointMap L (Point.some x y h) =
-      Point.some (W' := (W⁄L).toAffine) (algebraMap K L x) (algebraMap K L y)
-        (show (W⁄L).toAffine.Nonsingular (algebraMap K L x) (algebraMap K L y) from
-          (W.map_nonsingular (algebraMap K L).injective x y).mpr h) := by
-  -- The type ascription above is load-bearing: `map_nonsingular` produces the nonsingularity
-  -- proof at `W.map (algebraMap K L)`, and although `W⁄L` is a reducible abbreviation for
-  -- exactly that, the elaborator does not unfold it at `instances` transparency, so the two
-  -- identically-printing types do not unify without being told the target.
-  rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.cast_apply,
-    Point.cast_some W.baseChange_self.symm, Point.map_some]
-  rfl
-
-end PointMap
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 

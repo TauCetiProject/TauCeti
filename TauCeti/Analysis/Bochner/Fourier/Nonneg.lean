@@ -117,7 +117,7 @@ private theorem double_integral_comp_simpleFunc_eq_sum {W : Type*} [Sub W] (ψ :
         ((μ (sn ⁻¹' {u})).toReal : ℂ) *
         ((μ (sn ⁻¹' {v})).toReal : ℂ) * ψ (u - v) := by
   classical
-  set R := sn.range with hR
+  set R := sn.range
   have h_inner : ∀ x, ∫ y, ψ (sn x - sn y) ∂μ =
       ∑ v ∈ R, (μ (⇑sn ⁻¹' {v})).toReal • ψ (sn x - v) :=
     fun x => integral_simpleFunc_comp sn (fun v => ψ (sn x - v)) μ
@@ -241,7 +241,7 @@ private theorem re_double_integral_simpleFunc_nonneg (ψ : V → ℂ)
   classical
   rw [double_integral_comp_simpleFunc_eq_sum ψ μ sn]
   -- Reindex both sums over the coercion of the range to a type, then apply positive definiteness.
-  set R := sn.range with hR
+  set R := sn.range
   simp_rw [← Finset.sum_coe_sort R]
   set c : R → ℂ := fun i => ((μ (sn ⁻¹' {(i : V)})).toReal : ℂ) with hc
   have hpd_eval := re_sum_nonneg_of_kernel hpd (fun i : R => (i : V)) c
@@ -469,7 +469,8 @@ private theorem fejer_indicator_form (ψ : V → ℂ) (R : ℝ) :
       rw [← indicator_closedBall_inter ψ R x v, Set.indicator_of_mem hx]
     · rw [Set.indicator_of_notMem hx]
       have hzero : (fun v => (B ∩ Metric.closedBall v R).indicator (fun _ => ψ v) x) = 0 :=
-        funext fun v => Set.indicator_of_notMem (fun h => hx h.1) _
+        funext fun v => Set.indicator_of_notMem
+          (fun (h : x ∈ B ∩ Metric.closedBall v R) => hx h.1) _
       rw [hzero]
       simp
 
@@ -798,7 +799,7 @@ theorem integrable_fourier_of_posSemidef (F : V → ℂ)
     (hint : Integrable F) (hcont : Continuous F) :
     Integrable (𝓕 F) := by
   have hft_cont : Continuous (𝓕 F) := continuous_fourier_of_integrable hint
-  set tn : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1) with htn_def
+  set tn : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1)
   have htn_pos : ∀ n, 0 < tn n := fun n => by positivity
   have htn_lim : Tendsto tn atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
   have hf_meas : ∀ n : ℕ, Measurable fun ξ : V =>

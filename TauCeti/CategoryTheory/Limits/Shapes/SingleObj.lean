@@ -9,11 +9,12 @@ public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 public import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!
-# Recognising colimits of shape `SingleObj G`
+# Recognising colimits and limits of shape `SingleObj G`
 
 A functor `J : SingleObj G ⥤ C` is an object of `C` with an action of the monoid `G`, and its
-colimit, when it exists, is the object of coinvariants of that action. This file gives two
-criteria for a given cocone to be that colimit.
+colimit, when it exists, is the object of coinvariants of that action, and its limit the object of
+invariants. This file gives two criteria for a given cocone to be that colimit, and, in the
+preadditive setting, the dual criterion for a given cone to be that limit.
 
 In types, for a group `G`, Mathlib computes the colimit as the quotient by the action
 (`CategoryTheory.Limits.SingleObj.Types.colimitEquivQuotient`). Correspondingly, a cocone over
@@ -29,6 +30,18 @@ hypotheses are equations between morphisms, so every additive functor preserves 
 preserves this colimit (`CategoryTheory.Limits.SingleObj.isColimitMapCoconeOfTransfer`). This is
 the formal reason why, for a finite covering with deck group `G` and coefficients in which `|G|`
 is invertible, the homology of the base is the coinvariants of the homology of the total space.
+
+For the infinite cyclic group, the coinvariants are a cokernel: if `ℤ` acts on an object of a
+preadditive category with generator acting by `t`, a colimit cocone over the action is a cokernel
+of `𝟙 - t` (`CategoryTheory.Limits.SingleObj.isColimitCokernelCoforkOfIsColimit`).  For an
+infinite cyclic covering, this presents the chains of the base as a cokernel.
+
+Dually, a cone over the action whose leg `t : c.pt ⟶ J.obj *` has a morphism `p : J.obj * ⟶ c.pt`
+back, with `t ≫ p = |G| • 𝟙` and `p ≫ t = ∑_{g ∈ G} J.map g`, is a limit cone when `|G|` is
+invertible on both objects (`CategoryTheory.Limits.SingleObj.isLimitOfTransfer`), and every
+additive functor preserves this limit (`CategoryTheory.Limits.SingleObj.isLimitMapConeOfTransfer`).
+This is why the transfer identifies the homology of the base with the invariants of the homology of
+the total space.
 
 ## References
 
@@ -131,5 +144,93 @@ noncomputable def isColimitMapCoconeOfTransfer {D : Type*} [Category D] [Preaddi
     (by simp only [Functor.mapCocone_ι_app, ← F.map_comp, ht', F.map_sum, Functor.comp_map])
 
 end Preadditive
+
+section Int
+
+variable {C : Type*} [Category C] {J : SingleObj (Multiplicative ℤ) ⥤ C}
+
+/-- A morphism out of an object with an action of `ℤ` that is invariant under the generator is
+invariant under the whole action. -/
+lemma map_comp_eq_of_map_ofAdd_one_comp_eq {W : C} {g : J.obj (SingleObj.star _) ⟶ W}
+    (hg : J.map (Multiplicative.ofAdd 1) ≫ g = g) (n : Multiplicative ℤ) : J.map n ≫ g = g := by
+  -- In `SingleObj`, composition is multiplication in the opposite order.
+  have hmul (a b : Multiplicative ℤ) :
+      J.map (X := SingleObj.star _) (Y := SingleObj.star _) (a * b) =
+        J.map (X := SingleObj.star _) (Y := SingleObj.star _) b ≫ J.map a := by
+    rw [← SingleObj.comp_as_mul, J.map_comp]
+  induction n using Multiplicative.rec with | ofAdd n => ?_
+  induction n using Int.induction_on with
+  | zero => rw [ofAdd_zero, ← SingleObj.id_as_one, J.map_id, Category.id_comp]
+  | succ k hk => rw [ofAdd_add, mul_comm, hmul, Category.assoc, hg, hk]
+  | pred k hk =>
+    conv_lhs => rw [← hg, ← Category.assoc, ← hmul, ← ofAdd_add]
+    rw [add_sub_cancel, hk]
+
+variable [Preadditive C] (c : Cocone J)
+
+/-- **Coinvariants of an action of `ℤ` are a cokernel.**  For an action of `ℤ` on an object of a
+preadditive category, whose generator acts by `t`, a colimit cocone is a cokernel of `𝟙 - t`. -/
+noncomputable def isColimitCokernelCoforkOfIsColimit (hc : IsColimit c)
+    {t : J.obj (SingleObj.star _) ⟶ J.obj (SingleObj.star _)}
+    (ht : J.map (Multiplicative.ofAdd 1) = t) :
+    IsColimit (CokernelCofork.ofπ (f := 𝟙 _ - t) (c.ι.app (SingleObj.star _))
+      (by simp [← ht, Preadditive.sub_comp])) :=
+  -- A morphism killing `𝟙 - t` is invariant under the generator, hence a cocone over the action.
+  let cocone {W : C} (g : J.obj (SingleObj.star _) ⟶ W) (hg : (𝟙 _ - t) ≫ g = 0) : Cocone J :=
+    { pt := W
+      ι :=
+        { app _ := g
+          naturality _ _ n := by
+            refine (map_comp_eq_of_map_ofAdd_one_comp_eq ?_ n).trans (Category.comp_id g).symm
+            rwa [Preadditive.sub_comp, Category.id_comp, sub_eq_zero, eq_comm, ← ht] at hg } }
+  CokernelCofork.IsColimit.ofπ _ _ (fun g hg ↦ hc.desc (cocone g hg))
+    (fun g hg ↦ hc.fac (cocone g hg) (SingleObj.star _))
+    (fun g hg m hm ↦ hc.hom_ext fun j ↦ by
+      obtain rfl : j = SingleObj.star _ := rfl
+      exact hm.trans (hc.fac (cocone g hg) _).symm)
+
+end Int
+
+section PreadditiveLimit
+
+variable {C : Type*} [Category C] [Preadditive C] {G : Type*} [Monoid G] [Fintype G]
+  {J : SingleObj G ⥤ C} (c : Cone J) (p : J.obj (SingleObj.star G) ⟶ c.pt)
+
+/-- Let `G` be a finite monoid acting on an object of a preadditive category, and let `c` be a
+cone over the action whose leg `t` has a *projection* `p` back with `t ≫ p = |G| • 𝟙` and
+`p ≫ t = ∑_{g ∈ G} J.map g`. If multiplication by `|G|` is invertible on the acted-on object and on
+the cone point, then `c` is a limit cone: the cone point is the object of invariants. -/
+noncomputable def isLimitOfTransfer
+    (hp : c.π.app (SingleObj.star G) ≫ p = Fintype.card G • 𝟙 c.pt)
+    (hp' : p ≫ c.π.app (SingleObj.star G) = ∑ g : G, J.map g)
+    [IsIso (Fintype.card G • 𝟙 (J.obj (SingleObj.star G)))] [IsIso (Fintype.card G • 𝟙 c.pt)] :
+    IsLimit c where
+  lift s := s.π.app (SingleObj.star G) ≫ p ≫ inv (Fintype.card G • 𝟙 c.pt)
+  fac s j := by
+    obtain rfl : j = SingleObj.star G := rfl
+    rw [Category.assoc, Category.assoc, ← Preadditive.comp_inv_nsmul_id, reassoc_of% hp',
+      ← Category.assoc, IsIso.comp_inv_eq]
+    simp [Preadditive.comp_sum, Preadditive.comp_nsmul, s.w]
+  uniq s m hm := by
+    rw [← hm (SingleObj.star G), Category.assoc, reassoc_of% hp, IsIso.hom_inv_id]
+    exact (Category.comp_id m).symm
+
+/-- The limit of `CategoryTheory.Limits.SingleObj.isLimitOfTransfer` is preserved by every
+additive functor: if `c` and `p` satisfy its transfer identities, then every additive functor `F`
+for which multiplication by `|G|` is invertible on the images of the acted-on object and of the
+cone point sends `c` to a limit cone. -/
+noncomputable def isLimitMapConeOfTransfer {D : Type*} [Category D] [Preadditive D]
+    (F : C ⥤ D) [F.Additive]
+    (hp : c.π.app (SingleObj.star G) ≫ p = Fintype.card G • 𝟙 c.pt)
+    (hp' : p ≫ c.π.app (SingleObj.star G) = ∑ g : G, J.map g)
+    [IsIso (Fintype.card G • 𝟙 ((J ⋙ F).obj (SingleObj.star G)))]
+    [IsIso (Fintype.card G • 𝟙 (F.mapCone c).pt)] :
+    IsLimit (F.mapCone c) :=
+  isLimitOfTransfer (F.mapCone c) (F.map p)
+    (by simp only [Functor.mapCone_pt, Functor.mapCone_π_app, ← F.map_comp, hp,
+      F.map_nsmul, F.map_id])
+    (by simp only [Functor.mapCone_π_app, ← F.map_comp, hp', F.map_sum, Functor.comp_map])
+
+end PreadditiveLimit
 
 end CategoryTheory.Limits.SingleObj

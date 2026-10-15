@@ -236,7 +236,8 @@ instance instIsManifold : IsManifold 𝓘(𝕜) ω (OnePoint 𝕜) := by
   rcases he with rfl | rfl <;> rcases he' with rfl | rfl
   · exact hself _
   · -- From the affine chart to the inverted chart: `z ↦ z⁻¹` away from `0`.
-    refine ((contDiffOn_inv 𝕜).mono fun u hu h ↦ hu.2 (congrArg _ h)).congr fun u _ ↦ ?_
+    refine ((contDiffOn_inv 𝕜).mono ?hsub).congr fun u _ ↦ ?_
+    case hsub => intro u hu h; exact hu.2 (congrArg _ h)
     simp
   · -- From the inverted chart to the affine chart: `w ↦ w⁻¹` away from `0`.
     have hsub : invChart.target ∩ invChart.symm ⁻¹' affineChart.source ⊆ ({0}ᶜ : Set 𝕜) := by

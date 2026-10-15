@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.LinHom
+public import TauCeti.RepresentationTheory.LinHom.Basic
 
 /-!
 # Removing a rank-one twist

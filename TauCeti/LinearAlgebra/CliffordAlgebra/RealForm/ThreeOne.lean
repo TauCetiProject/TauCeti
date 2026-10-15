@@ -317,7 +317,8 @@ theorem realCliffordThreeOneEvenEquivComplexMatrix_reverseEven
 
 /-- In the Lorentzian matrix model of `Cl⁺(3,1)`, the reverse norm-one equation is determinant
 one. -/
-@[simp]
+-- Compute the matrix norm condition before generic one-sided-inverse rewrites.
+@[simp 1100]
 theorem realCliffordThreeOne_reverseEven_mul_self_eq_one_iff_det_eq_one
     (x : CliffordAlgebra.even (realCliffordForm 3 1)) :
     CliffordAlgebra.reverseEven (realCliffordForm 3 1) x * x = 1 ↔

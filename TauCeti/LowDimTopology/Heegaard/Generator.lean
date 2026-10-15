@@ -111,7 +111,7 @@ theorem generator_card :
     (pairwise_disjoint_fiber D.beta) (by
       intro i j
       exact hPoint.subset (by
-        intro p hp
+        intro p _
         exact Set.mem_univ p))
 
 /-- Construct a generator from a point choice and its two curve-label conditions. -/

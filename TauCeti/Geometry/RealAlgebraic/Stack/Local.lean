@@ -125,7 +125,7 @@ private theorem signs_of_local_delineations [PreconnectedSpace X]
   constructor
   · intro k i
     apply (isPreconnected_sectionSet (hrc i)).signInvariant_of_locally
-    intro z hz
+    intro z _
     let a := z.1
     refine ⟨Prod.fst ⁻¹' U a, (hU a).preimage continuous_fst, hxU a, ?_⟩
     rw [signInvariant_def]
@@ -136,7 +136,7 @@ private theorem signs_of_local_delineations [PreconnectedSpace X]
     · exact mem_sectionSet.mpr ((hrU a ⟨w.1, hw.2⟩ i).symm.trans (mem_sectionSet.mp hw.1))
   · intro k j
     apply (isPreconnected_sectorSet hrc hrmono j).signInvariant_of_locally
-    intro z hz
+    intro z _
     let a := z.1
     refine ⟨Prod.fst ⁻¹' U a, (hU a).preimage continuous_fst, hxU a, ?_⟩
     have hmem {v : X × ℝ} (hv : v ∈ sectorSet r j ∩ (Prod.fst ⁻¹' U a)) :

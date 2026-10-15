@@ -41,12 +41,12 @@ discriminant — odd, `4 ·` odd, `8 ·` odd — then differ only in the single 
 
 ## Main results
 
-* `TauCeti.Multiquadratic.IsFundamentalDiscriminant.exists_finset_primeDiscriminant`: every
+* `Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`: every
   fundamental discriminant is a product of a finite set of prime discriminants with at most one
-  even value — the converse of `isFundamentalDiscriminant_prod`.
+  even value — the converse of `isFundamentalDiscr_prod`.
 * `TauCeti.Multiquadratic.finset_primeDiscriminant_eq_of_prod_eq`: two finite sets of prime
   discriminants with the same product have the same factors.
-* `TauCeti.Multiquadratic.IsFundamentalDiscriminant.existsUnique_finset_primeDiscriminant`: every
+* `Int.IsFundamentalDiscr.existsUnique_finset_primeDiscriminant`: every
   fundamental discriminant has a unique factorization into a finite set of prime discriminants.
 -/
 
@@ -127,25 +127,31 @@ private lemma exists_finset_insert_evenPrimeDiscriminant {D e : ℤ} {n : ℕ} (
 
 /-- **Analysis half of the prime-discriminant correspondence.** Every fundamental discriminant
 `D` is a product of a finite set of prime discriminants, at most one of which is even. This is the
-converse of `TauCeti.Multiquadratic.isFundamentalDiscriminant_prod`. -/
-theorem IsFundamentalDiscriminant.exists_finset_primeDiscriminant {D : ℤ}
-    (hD : IsFundamentalDiscriminant D) :
+converse of `TauCeti.Multiquadratic.isFundamentalDiscr_prod`. -/
+theorem _root_.Int.IsFundamentalDiscr.exists_finset_primeDiscriminant {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) :
     ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧
       (∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) ∧
       ∏ P ∈ s, P = D := by
-  rcases hD.mod_four_eq_zero_or_one with h0 | h1
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, hsf⟩ | ⟨h0, hsf, hmm⟩
+  · -- `D ≡ 1 (mod 4)`, `D` odd squarefree: no even factor.
+    have hodd : Odd D := Int.odd_iff.mpr (by omega)
+    obtain ⟨himg, hprodimg⟩ := oddPrimeDiscriminant_image_prod (Int.natAbs_odd.mpr hodd)
+    refine ⟨D.natAbs.primeFactors.image oddPrimeDiscriminant, fun P hP => (himg P hP).1, ?_, ?_⟩
+    · intro P hP Q _ hPe _
+      exact absurd hPe (himg P hP).2
+    · rw [hprodimg]
+      exact prod_oddPrimeDiscriminant_primeFactors_eq hsf hodd h1
   · -- `D = 4 * m`, `m` squarefree, `m ≡ 2` or `3 (mod 4)`.
-    have hsf : Squarefree (D / 4) := hD.squarefree_div_four h0
-    have hmm : D / 4 % 4 = 2 ∨ D / 4 % 4 = 3 := hD.div_four_mod_four_eq_two_or_three h0
     have hDm : D = 4 * (D / 4) := by omega
-    set m := D / 4 with hm
+    set m := D / 4
     rcases hmm with hm2 | hm3
     · -- `m ≡ 2 (mod 4)`: write `m = 2 * k` with `k` odd; the even factor is `±8`.
       have hk2 : m = 2 * (m / 2) := by omega
-      set k := m / 2 with hk
+      set k := m / 2
       have hkodd : Odd k := Int.odd_iff.mpr (by omega)
       have hksf : Squarefree k := hsf.squarefree_of_dvd ⟨2, by omega⟩
-      have hD8 : D = 8 * k := by omega
+      have _hD8 : D = 8 * k := by omega
       rcases (by omega : k % 4 = 1 ∨ k % 4 = 3) with hk1 | hk3
       · -- `k ≡ 1 (mod 4)`: even factor `8`, odd product `k`.
         have hcore := prod_oddPrimeDiscriminant_primeFactors_eq hksf hkodd hk1
@@ -162,15 +168,6 @@ theorem IsFundamentalDiscriminant.exists_finset_primeDiscriminant {D : ℤ}
       rw [Int.natAbs_neg] at hcore
       exact exists_finset_insert_evenPrimeDiscriminant (Int.natAbs_odd.mpr hmodd)
         isPrimeDiscriminant_neg_four (by simp) (by rw [hcore]; omega)
-  · -- `D ≡ 1 (mod 4)`, `D` odd squarefree: no even factor.
-    have hsf : Squarefree D := hD.squarefree_of_mod_four_eq_one h1
-    have hodd : Odd D := Int.odd_iff.mpr (by omega)
-    obtain ⟨himg, hprodimg⟩ := oddPrimeDiscriminant_image_prod (Int.natAbs_odd.mpr hodd)
-    refine ⟨D.natAbs.primeFactors.image oddPrimeDiscriminant, fun P hP => (himg P hP).1, ?_, ?_⟩
-    · intro P hP Q _ hPe _
-      exact absurd hPe (himg P hP).2
-    · rw [hprodimg]
-      exact prod_oddPrimeDiscriminant_primeFactors_eq hsf hodd h1
 
 /-- An odd prime-discriminant factor of one product occurs in any equal prime-discriminant
 product.  The rational prime below an odd prime discriminant determines it uniquely. -/
@@ -234,7 +231,7 @@ theorem finset_primeDiscriminant_eq_of_prod_eq {s t : Finset ℤ}
     rw [Finset.prod_ne_zero_iff]
     intro P hP
     rcases isPrimeDiscriminant_iff.mp (hs P (Finset.mem_filter.mp hP).1) with
-      hPeven | ⟨p, hp, hPodd, rfl⟩
+      hPeven | ⟨p, hp, _, rfl⟩
     · exact absurd hPeven (Finset.mem_filter.mp hP).2
     · exact oddPrimeDiscriminant_ne_zero.mpr hp.ne_zero
   have heven_prod : (∏ P ∈ s with IsEvenPrimeDiscriminant P, P) =
@@ -255,8 +252,8 @@ theorem finset_primeDiscriminant_eq_of_prod_eq {s t : Finset ℤ}
 
 /-- **Unique prime-discriminant factorization of a fundamental discriminant.** Every fundamental
 discriminant is the product of a unique finite set of prime discriminants. -/
-theorem IsFundamentalDiscriminant.existsUnique_finset_primeDiscriminant {D : ℤ}
-    (hD : IsFundamentalDiscriminant D) :
+theorem _root_.Int.IsFundamentalDiscr.existsUnique_finset_primeDiscriminant {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) :
     ∃! s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧ ∏ P ∈ s, P = D := by
   obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
   refine ⟨s, ⟨hs, hprod⟩, fun t ht => ?_⟩

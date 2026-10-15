@@ -32,6 +32,8 @@ matrix past `J`.
   `A * J + J * Aᵀ = 0`.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
+* `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
+* `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
 
 public section
@@ -88,6 +90,10 @@ namespace Matrix
 
 variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
 
+/-- The standard symplectic matrix acts on a vector as minus that vector multiplied on the left. -/
+theorem J_mulVec (v : l ⊕ l → R) : J l R *ᵥ v = -(v ᵥ* J l R) := by
+  rw [← mulVec_transpose, J_transpose, neg_mulVec, neg_neg]
+
 /-- A symplectic Lie matrix has symmetric off-diagonal blocks and diagonal blocks
 which are negatives of each other's transposes. This criterion includes characteristic two. -/
 theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
@@ -105,3 +111,16 @@ theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
   grind
 
 end Matrix
+
+namespace LieAlgebra.Symplectic
+
+variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
+
+/-- **Symplectic Lie matrices have trace zero**, over every commutative ring: the two diagonal
+blocks are negatives of each other's transposes. -/
+theorem trace_eq_zero_of_mem_sp {A : Matrix (l ⊕ l) (l ⊕ l) R} (hA : A ∈ sp l R) :
+    A.trace = 0 := by
+  obtain ⟨-, -, h⟩ := (Matrix.mem_symplecticLieAlgebra_iff A).mp hA
+  simp [Matrix.trace, Fintype.sum_sum_type, h]
+
+end LieAlgebra.Symplectic

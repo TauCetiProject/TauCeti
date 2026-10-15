@@ -270,7 +270,6 @@ and each of the three factors is positive. -/
 lemma norm_pseudoHyperbolicCenter_add_pseudoHyperbolicRadius_lt_one
     (ha : ‖a‖ < 1) (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
     ‖pseudoHyperbolicCenter a t‖ + pseudoHyperbolicRadius a t < 1 := by
-  have hn : 0 ≤ ‖a‖ := norm_nonneg a
   have hD : 0 < 1 - t ^ 2 * ‖a‖ ^ 2 := one_sub_sq_mul_sq_norm_pos ha (by linarith) ht₁.le
   have hnum : 0 ≤ (1 - t ^ 2) / (1 - t ^ 2 * ‖a‖ ^ 2) := by
     apply div_nonneg _ hD.le

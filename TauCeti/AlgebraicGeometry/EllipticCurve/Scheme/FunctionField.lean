@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.AlgebraicGeometry.FunctionField
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
+public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 
@@ -23,6 +25,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
 
 * `WeierstrassCurve.projModelFunctionFieldEquiv`: the isomorphism
   `W.projModel.functionField ≃+* W.toAffine.FunctionField`.
+* `WeierstrassCurve.projModelFunctionFieldAlgebra`: the transported `R`-algebra structure on
+  `W.projModel.functionField`.
+* `WeierstrassCurve.projModelFunctionFieldAlgEquiv`: the comparison as an `R`-algebra equivalence.
 
 ## Main results
 
@@ -30,6 +35,12 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
   chart `D₊(Z)` of the projective model is nonempty.
 * `WeierstrassCurve.projModelFunctionFieldEquiv_germToFunctionField_awayToSection_mk`: the
   isomorphism sends the rational function `p(X, Y, Z) / Zⁿ` on the chart `D₊(Z)` to `p(x, y, 1)`.
+* `WeierstrassCurve.projModelFunctionFieldEquiv_baseRingToFunctionField`: the isomorphism respects
+  the constants pulled back along the structure morphism `projModel W ⟶ Spec R`.
+* `WeierstrassCurve.SpecMap_projModelFunctionFieldEquiv_fromSpecStalk`: through the isomorphism,
+  the generic point `Spec K(E) ⟶ E` of the projective model is the point with homogeneous
+  coordinates `[x : y : 1]`, where `x` and `y` are the affine coordinates in
+  `W.toAffine.FunctionField`.
 
 ## References
 
@@ -48,7 +59,7 @@ chart identification is built on `WeierstrassCurve.Projective.awayEquivChartRing
 
 public section
 
-open AlgebraicGeometry HomogeneousLocalization MvPolynomial
+open CategoryTheory AlgebraicGeometry HomogeneousLocalization MvPolynomial
 
 universe u
 
@@ -146,6 +157,33 @@ noncomputable def projModelFunctionFieldEquiv [IsDomain R] :
   -- affine open, so both sides are fraction fields of the same ring
   IsFractionRing.ringEquivOfRingEquiv W.chartSectionsEquivCoordinateRing
 
+/-- The algebra structure on the projective function field transported from the affine
+function field. -/
+noncomputable instance projModelFunctionFieldAlgebra [IsDomain R] :
+    Algebra R W.projModel.functionField := by
+  let f : R →+* W.projModel.functionField :=
+    W.projModelFunctionFieldEquiv.symm.toRingHom.comp (algebraMap R W.toAffine.FunctionField)
+  exact f.toAlgebra
+
+/-- The function-field comparison between the projective model and the affine equation, as an
+equivalence of `R`-algebras. -/
+noncomputable def projModelFunctionFieldAlgEquiv [IsDomain R] :
+    W.projModel.functionField ≃ₐ[R] W.toAffine.FunctionField :=
+  AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) (by
+    intro x
+    -- The transported algebra map is the affine algebra map followed by the inverse comparison.
+    -- Expose that composite so the ring equivalence and its inverse cancel by `simp`.
+    change W.projModelFunctionFieldEquiv
+      (W.projModelFunctionFieldEquiv.symm (algebraMap R W.toAffine.FunctionField x)) = _
+    simp)
+
+/-- The underlying ring equivalence of the algebra comparison is the original function-field
+comparison. -/
+@[simp]
+theorem projModelFunctionFieldAlgEquiv_toRingEquiv [IsDomain R] :
+    W.projModelFunctionFieldAlgEquiv.toRingEquiv = W.projModelFunctionFieldEquiv :=
+  (rfl)
+
 /-- On the standard affine chart `D₊(Z)`, `projModelFunctionFieldEquiv` sends the rational
 function `p(X, Y, Z) / Zⁿ`, for `p` whose class in the homogeneous coordinate ring has degree `n`,
 to `p(x, y, 1)`, where `x` and `y` are the classes of the affine coordinates in
@@ -164,5 +202,85 @@ theorem projModelFunctionFieldEquiv_germToFunctionField_awayToSection_mk [IsDoma
   (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans <| congrArg _ <|
     (W.chartSectionsEquivCoordinateRing_awayToSection _).trans <| congrArg _ <|
       W.toProjective.awayEquivChartRing_mk 2 hp
+
+-- The inclusion `Spec Γ(E, D₊(Z)) ⟶ E` of the affine chart `D₊(Z)` is `Spec` of the identification
+-- `A_(Z) ≅ Γ(E, D₊(Z))` followed by the chart `Spec A_(Z) ⟶ E`.
+private theorem fromSpec_basicOpen_coord_two
+    (hU : IsAffineOpen (Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2))) :
+    hU.fromSpec = Spec.map (Proj.awayToSection _ _) ≫ Proj.awayι W.toProjective.grading
+      (W.toProjective.coord 2) (W.toProjective.coord_mem_grading 2) one_pos := by
+  have : IsIso (Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2)).toSpecΓ := by
+    rw [← hU.isoSpec_hom]
+    infer_instance
+  -- both sides precomposed with the isomorphism `D₊(Z) ⟶ Spec Γ(E, D₊(Z))` are the inclusion
+  rw [← cancel_epi (Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2)).toSpecΓ,
+    hU.toSpecΓ_fromSpec,
+    ← Proj.basicOpenIsoSpec_inv_ι _ _ (W.toProjective.coord_mem_grading 2) one_pos,
+    ← Category.assoc, ← Category.assoc, ← Proj.basicOpenToSpec,
+    ← Proj.basicOpenIsoSpec_hom _ _ (W.toProjective.coord_mem_grading 2) one_pos, Iso.hom_inv_id,
+    Category.id_comp]
+
+/-- **The generic point of the projective Weierstrass model.** Over an integral domain `R`, the
+canonical morphism `Spec K(E) ⟶ E` from the spectrum of the function field of `E = projModel W`,
+read through `projModelFunctionFieldEquiv` as a morphism out of `Spec` of the function field of
+the affine equation, is the point with homogeneous coordinates `[x : y : 1]`, where `x` and `y` are
+the affine coordinates `genericX` and `genericY`. -/
+theorem SpecMap_projModelFunctionFieldEquiv_fromSpecStalk [IsDomain R] :
+    Spec.map (CommRingCat.ofHom (W.projModelFunctionFieldEquiv : W.projModel.functionField →+*
+        W.toAffine.FunctionField)) ≫ W.projModel.fromSpecStalk (genericPoint W.projModel) =
+      W.projModelPoint (algebraMap R W.toAffine.FunctionField)
+        (P := ![Affine.genericX W.toAffine, Affine.genericY W.toAffine, 1])
+        ((Projective.equation_some _ _).mpr (Affine.equation_genericX_genericY W.toAffine)) (i := 2)
+        (by simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] using
+          isUnit_one) := by
+  have hU := Proj.isAffineOpen_basicOpen W.toProjective.grading _
+    (W.toProjective.coord_mem_grading 2) one_pos
+  have hη : genericPoint W.projModel ∈
+      Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) :=
+    ((genericPoint_spec W.projModel).mem_open_set_iff (Proj.basicOpen _ _).isOpen).mpr
+      (by simpa using W.nonempty_basicOpen_coord_two)
+  have hι : Proj.awayι W.toProjective.grading (W.toProjective.coord 2)
+      (W.toProjective.coord_mem_grading 2) one_pos =
+        Spec.map (CommRingCat.ofHom ((W.toProjective.awayEquivChartRing 2).symm : _ →+* _)) ≫
+          W.chartι 2 := by
+    rw [chartι_def, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp]
+    simp
+  -- the generic point lies on the chart `D₊(Z)`, so the morphism is `Spec` of a homomorphism out of
+  -- the chart ring followed by the chart, which is the point whose homogeneous coordinates are the
+  -- images of the classes of `X`, `Y` and `Z`
+  rw [← hU.fromSpecStalk_eq_fromSpecStalk hη, IsAffineOpen.fromSpecStalk,
+    fromSpec_basicOpen_coord_two, hι, ← Spec.map_comp_assoc, ← Spec.map_comp_assoc,
+    ← Spec.map_comp_assoc, SpecMap_chartι]
+  refine projModelPoint_eq_projModelPoint_iff.mpr ⟨?_, 1, ?_⟩
+  · -- on constants, read as fractions `r / Z⁰`
+    ext r
+    have hp : Ideal.Quotient.mk _ (C r) ∈ W.toProjective.grading (0 • 1) :=
+      W.toProjective.mem_grading_iff.mpr ⟨C r, by simpa using isHomogeneous_C _ r, rfl⟩
+    have hr : (W.toProjective.awayEquivChartRing 2).symm (algebraMap R _ r) =
+        Away.mk _ (W.toProjective.coord_mem_grading 2) 0 _ hp := by
+      rw [RingEquiv.symm_apply_eq, Projective.awayEquivChartRing_mk]
+      rfl
+    simp [hr, ← IsScalarTower.algebraMap_apply]
+  · -- on the fractions `X / Z`, `Y / Z` and `Z / Z`
+    ext k
+    fin_cases k <;> simp [Affine.genericX_def, Affine.genericY_def, Affine.CoordinateRing.mk]
+
+/-- **The function-field comparison respects constants.** The rational function on the projective
+model pulled back from `r : R` along the structure morphism `projModel W ⟶ Spec R` goes to `r` in
+the function field of the affine equation. Thus `projModelFunctionFieldEquiv` is also compatible
+with the `R`-algebra structure `Scheme.functionFieldBaseAlgebra` defined by the structure morphism,
+not only with the transported structure `projModelFunctionFieldAlgebra`. -/
+theorem projModelFunctionFieldEquiv_baseRingToFunctionField [IsDomain R] (r : R) :
+    W.projModelFunctionFieldEquiv (Scheme.baseRingToFunctionField R W.projModel r) =
+      algebraMap R W.toAffine.FunctionField r := by
+  -- Both sides are the ring maps under `Spec` of the composite `Spec K(W) ⟶ E ⟶ Spec R` through
+  -- the generic point: one computed through the base algebra of `E`, the other through the point
+  -- `[x : y : 1]` of `E` with values in `K(W)`.
+  have h := congrArg (· ≫ (W.projModel ↘ Spec (.of R)))
+    W.SpecMap_projModelFunctionFieldEquiv_fromSpecStalk
+  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over, over_projModel,
+    projModelPoint_projModelOver, ← Spec.map_comp, Spec.map_inj] at h
+  rw [← Scheme.algebraMap_functionField_eq_baseRingToFunctionField]
+  exact congr($h r)
 
 end WeierstrassCurve

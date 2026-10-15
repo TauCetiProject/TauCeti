@@ -126,7 +126,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- An algebra-valued point belongs to the subgroup cut out in `SL₂` exactly when its matrix is
 upper triangular, equivalently when it belongs to `SL2Borel`. -/
-@[simp↓]
+@[simp↓ high]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R) (H := SpecialLinear.coordinateHopfAlgebra R 2)
       (CommAlgCat.of R A)) :
@@ -147,7 +147,7 @@ noncomputable def pointsMulEquiv :
 
 /-- Under the Borel and special-linear point equivalences, the quotient-point inclusion is the
 ordinary inclusion of the standard Borel into `SL₂`. -/
-@[simp↓]
+@[simp↓ high]
 theorem pointsMulEquiv_coe
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
       (CommAlgCat.of R A)) :

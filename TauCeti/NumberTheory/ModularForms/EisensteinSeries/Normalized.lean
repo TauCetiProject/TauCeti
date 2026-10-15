@@ -192,7 +192,7 @@ theorem normalizedCharEisensteinSeriesMFRaise_one (hk : 3 ≤ (k : ℤ))
     (huv : u * v ∣ N) :
     haveI : NeZero (u * v) := NeZero.of_dvd huv
     normalizedCharEisensteinSeriesMFRaise psi phi 1 hk (by simpa using huv) =
-      ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd huv)
+      ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd huv)
         (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl) := by
   rw [normalizedCharEisensteinSeriesMFRaise, ModularForm.levelRaise_one]
 

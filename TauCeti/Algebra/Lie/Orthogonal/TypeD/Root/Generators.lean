@@ -217,8 +217,8 @@ theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_chain {K M : Type*} [CommRing
         Matrix.single (.inr (chainNext n i hi)) (.inr i) 1 := by
     rw [raisingMatrix_of_chain n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The fork raising matrix sends a coordinate basis vector to the alternating pair selected by
@@ -234,8 +234,8 @@ theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_fork {K M : Type*} [CommRing 
         Matrix.single (.inl (forkRight n hn)) (.inr (forkLeft n hn)) 1 := by
     rw [raisingMatrix_of_fork n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- A chain lowering matrix sends a coordinate basis vector to the difference of its two
@@ -251,8 +251,8 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_chain {K M : Type*} [CommRin
         Matrix.single (.inr i) (.inr (chainNext n i hi)) 1 := by
     rw [loweringMatrix_of_chain n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The fork lowering matrix sends a coordinate basis vector to the alternating pair selected by
@@ -268,8 +268,8 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_fork {K M : Type*} [CommRing
         Matrix.single (.inr (forkLeft n hn)) (.inl (forkRight n hn)) 1 := by
     rw [loweringMatrix_of_fork n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The explicit raising matrix is skew-adjoint for the split type-`D` Gram matrix. -/
@@ -471,7 +471,7 @@ private theorem lie_typeDDiagonalMatrix_raisingMatrix_of_fork {K : Type*} [CommR
   · simp [typeDDiagonalMatrix_lie_apply, Matrix.fromBlocks]
   · by_cases h₁ : forkLeft n hn = a ∧ forkRight n hn = b
     · have h₂ : ¬(forkRight n hn = a ∧ forkLeft n hn = b) := by
-        rintro ⟨hra, hlb⟩
+        rintro ⟨hra, _⟩
         exact forkLeft_ne_forkRight n hn (h₁.1.trans hra.symm)
       rcases h₁ with ⟨rfl, rfl⟩
       simpa [typeDDiagonalMatrix_lie_apply, Matrix.fromBlocks, Matrix.single_apply, hne]
@@ -644,16 +644,12 @@ private theorem lie_raisingMatrix_loweringMatrix_of_ne {K : Type*} [CommRing K]
     · exfalso
       apply hij
       apply Fin.ext
-      have hi' := i.isLt
-      have hj' := j.isLt
       omega
 
 private theorem lie_raisingMatrix_raisingMatrix_chain_chain_of_cartan_eq_zero
     {K : Type*} [CommRing K] (i j : Fin n) (hi : (i : ℕ) + 1 < n)
     (hj : (j : ℕ) + 1 < n) (hij : CartanMatrix.D n i j = 0) :
     ⁅raisingMatrix (K := K) n hn i, raisingMatrix (K := K) n hn j⁆ = 0 := by
-  have hi' := i.isLt
-  have hj' := j.isLt
   have hforward : chainNext n i hi ≠ j := by
     intro h
     have hval := congrArg Fin.val h
@@ -676,8 +672,6 @@ private theorem lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero
     {K : Type*} [CommRing K] (i j : Fin n) (hi : (i : ℕ) + 1 < n)
     (hj : ¬(j : ℕ) + 1 < n) (hij : CartanMatrix.D n i j = 0) :
     ⁅raisingMatrix (K := K) n hn i, raisingMatrix (K := K) n hn j⁆ = 0 := by
-  have hi' := i.isLt
-  have hj' := j.isLt
   have hne := forkLeft_ne_forkRight n hn
   have hjfork : j = forkRight n hn := by
     apply Fin.ext
@@ -729,8 +723,6 @@ private theorem lie_raisingMatrix_raisingMatrix_of_cartan_eq_zero
         neg_zero]
     · have heq : i = j := by
         apply Fin.ext
-        have hi' := i.isLt
-        have hj' := j.isLt
         omega
       subst j
       simp [CartanMatrix.D] at hij

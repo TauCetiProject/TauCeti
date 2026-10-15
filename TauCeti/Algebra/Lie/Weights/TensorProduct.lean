@@ -64,10 +64,6 @@ and is not proved here.
 
 * N. Bourbaki, *Groupes et algèbres de Lie*, Chapitre VII, §1.1, Proposition 2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.
-* [Highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 6, "The representation ring and the character algebra", which asks for the tensor product of
-  Lie modules as the preliminary to a formal character multiplicative on tensor products
-  (`formalCharacter_tensor`); this file supplies its weight-theoretic half.
 -/
 
 public section

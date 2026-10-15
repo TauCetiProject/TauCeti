@@ -323,8 +323,7 @@ theorem basisModificationDeltaZero_add_of_two [Fintype X] (hp : p = 2)
       gradedBracket 2 (freeProP 2 X) 0 0 (v i) (w i) := by
     have h := gradedCast_gradedBracket_swap (v i) (w i)
     rw [gradedCast_rfl] at h
-    rw [h, neg_eq_iff_add_eq_zero]
-    exact (two_nsmul _).symm.trans (nsmul_gradedPiece_eq_zero _)
+    rw [h, ZModModule.neg_eq_self]
   simp only [basisModificationDeltaZero_add, Nat.choose_self, one_nsmul, hswap]
 
 /-! ### The quadratic term is not an artifact -/

@@ -15,24 +15,20 @@ import Mathlib.Tactic.Ring
 /-!
 # Weil divisors as finite integer combinations of points
 
-This file provides the first, purely combinatorial piece of the Jacobian roadmap's Layer A:
-Weil divisors are finite formal integer sums of points. The scheme-theoretic predicates
-which decide which points are codimension-one points, the principal-divisor map, and the
-comparison with Cartier divisors are deliberately not bundled here; those are later geometric
-constructions.
+This file provides the purely combinatorial part of the theory: Weil divisors are finite formal
+integer sums of points. The scheme-theoretic predicates which decide which points are
+codimension-one points, the principal-divisor map, and the comparison with Cartier divisors are not
+part of this file.
 
-The API here records the free-abelian-group operations needed before that geometry exists:
-point divisors, effectivity, pushforward of formal sums along a map of point sets, and both
-the unweighted degree and the weighted degree used for curves over a field. It also packages
-the degree-zero subgroups that later receive principal divisors and model the abstract
-`Pic⁰` kernel before the Picard functor and Picard scheme exist.
+The API here records the free-abelian-group operations: point divisors, effectivity, pushforward of
+formal sums along a map of point sets, and both the unweighted degree and the weighted degree used
+for curves over a field. It also packages the degree-zero subgroups: when principal divisors have
+degree zero, they lie in these subgroups, and the resulting quotient identifies with the abstract
+`Pic⁰` kernel.
 
 For a curve over `k`, the intended weighted degree has weight
 `x ↦ [κ(x) : k]`; this file only supplies the formal finite-sum operation against an arbitrary
 integer-valued weight.
-
-This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve: Weil divisors
-`⊕_x ℤ`", "Degree", and "`Pic⁰ X = ker deg` (as an abstract group)".
 -/
 
 public section
@@ -145,7 +141,7 @@ lemma isEffective_iff (D : WeilDivisor X) : IsEffective D ↔ ∀ x, 0 ≤ coeff
 
 @[simp]
 lemma isEffective_zero : IsEffective (0 : WeilDivisor X) := by
-  intro x
+  intro _
   simp
 
 lemma IsEffective.add {D E : WeilDivisor X} (hD : IsEffective D) (hE : IsEffective E) :

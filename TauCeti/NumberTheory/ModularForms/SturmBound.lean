@@ -52,7 +52,7 @@ variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsFiniteRelIndex 𝒮ℒ] {k :
 
 private lemma strictWidthInfty_pos_of_finiteRelIndex {𝒢 : Subgroup (GL (Fin 2) ℝ)}
     [𝒢.IsFiniteRelIndex 𝒮ℒ] [DiscreteTopology 𝒢.strictPeriods] : 0 < 𝒢.strictWidthInfty := by
-  obtain ⟨m', hm'_pos, hnRw⟩ :=
+  obtain ⟨m', _, hnRw⟩ :=
     Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty (𝒢 := 𝒢)
   refine 𝒢.strictWidthInfty_nonneg.lt_of_ne fun heq ↦ ?_
   rw [← heq, mul_zero] at hnRw

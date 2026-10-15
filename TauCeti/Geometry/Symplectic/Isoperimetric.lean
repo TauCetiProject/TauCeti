@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Fourier.Wirtinger
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
+public import TauCeti.Geometry.Symplectic.Area.Basic
+import TauCeti.MeasureTheory.Integral.CircleLIntegral
 
 /-!
 # The isoperimetric inequality in a symplectic vector space
@@ -35,16 +37,18 @@ in `CompatibleMetric.lean`).
 ## Main results
 
 * `TauCeti.SymplecticForm.abs_integral_apply_le`: the isoperimetric inequality.
+* `TauCeti.SymplecticForm.abs_integral_fderiv_apply_annulus_le`: the area of an annulus is
+  bounded by half the sum of the energies of its two boundary loops.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
-  Colloquium Publications **52**, 2012, Section 4.4.
+  Colloquium Publications **52**, 2012, Sections 4.4 and 4.5.
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set TauCeti
 open scoped Real Interval RealInnerProductSpace
 
 namespace TauCeti
@@ -67,13 +71,47 @@ theorem abs_integral_apply_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hab : a <
   have hB : ‖B‖ ≤ 1 := LinearMap.mkContinuous₂_norm_le _ zero_le_one _
   have hE : 0 ≤ ∫ x in a..b, ‖γ' x‖ ^ 2 :=
     intervalIntegral.integral_nonneg hab.le fun x _ => by positivity
-  have hc : 0 ≤ (b - a) / (2 * π) := div_nonneg (sub_pos.2 hab).le (by positivity)
   calc |∫ x in a..b, ω (γ x) (γ' x)| = ‖∫ x in a..b, B (γ x) (γ' x)‖ := by
         simp [B, Real.norm_eq_abs]
     _ ≤ ‖B‖ * ((b - a) / (2 * π)) * ∫ x in a..b, ‖γ' x‖ ^ 2 :=
       B.norm_integral_apply_apply_le hab hγ hγab hγ'
     _ ≤ 1 * ((b - a) / (2 * π)) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by gcongr
     _ = (b - a) / (2 * π) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by rw [one_mul]
+
+/-- The absolute symplectic area of a `C²` map on an annulus is at most half the sum of the
+energies of its boundary loops parametrized on `[-π, π]`. The map need not extend over the
+inner disc, and no holomorphicity assumption is imposed. -/
+theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (ha : 0 < a) (hab : a ≤ b)
+    (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
+    |∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
+      ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I)| ≤
+      (1 / 2 : ℝ) * ((∫ θ in -π..π,
+        ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) +
+        ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ a θ)) θ‖ ^ 2) := by
+  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.mkContinuous₂ ω.toBilinForm 1 fun v w ↦ by
+    rw [one_mul, Real.norm_eq_abs]
+    exact abs_apply_le_norm_mul_norm hg v w
+  have hB : ‖B‖ ≤ 1 := LinearMap.mkContinuous₂_norm_le _ zero_le_one _
+  have hloop (r : ℝ) (hr : r ∈ Icc a b) :
+      |∫ θ in -π..π, ω (u (circleMap z₀ r θ))
+        (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)| ≤
+        ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 := by
+    have hmem (θ : ℝ) :
+        circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+      simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
+        abs_of_nonneg (ha.le.trans hr.1)] using (mem_Icc.mp hr)
+    have hE : 0 ≤ ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 :=
+      intervalIntegral.integral_nonneg (by linarith [Real.pi_pos]) fun θ _ ↦ sq_nonneg _
+    have h := norm_integral_apply_apply_circleMap_le u (B := B) z₀ r
+      (fun θ ↦ (hu _ (hmem θ)).of_le one_le_two)
+    simpa only [B, LinearMap.mkContinuous₂_apply, Real.norm_eq_abs, one_mul] using
+      h.trans (mul_le_mul_of_nonneg_right hB hE)
+  rw [ω.integral_fderiv_apply_annulus z₀ ha hab hu, abs_mul,
+    abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
+  gcongr
+  exact (abs_sub _ _).trans (add_le_add (hloop b ⟨hab, le_rfl⟩)
+    (hloop a ⟨le_rfl, hab⟩))
 
 end SymplecticForm
 

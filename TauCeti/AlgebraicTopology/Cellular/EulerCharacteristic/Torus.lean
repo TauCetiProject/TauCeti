@@ -47,7 +47,7 @@ theorem eulerChar_addCircle (p : ℝ) [NeZero p] : eulerChar (AddCircle p) = 0 :
 /-- **The Euler characteristic of a torus.**  A product `∀ i, AddCircle (p i)` of finitely many
 circles of nonzero periods, with at least one factor, has Euler characteristic zero. -/
 @[simp]
-theorem eulerChar_torus {ι : Type} [Finite ι] [Nonempty ι] (p : ι → ℝ) [∀ i, NeZero (p i)] :
+theorem eulerChar_torus {ι : Type*} [Finite ι] [Nonempty ι] (p : ι → ℝ) [∀ i, NeZero (p i)] :
     eulerChar (∀ i, AddCircle (p i)) = 0 := by
   have := Fintype.ofFinite ι
   rw [eulerChar_pi]

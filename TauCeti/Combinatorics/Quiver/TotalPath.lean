@@ -5,24 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Path
+public import TauCeti.Combinatorics.Quiver.Symmetric
 
 /-!
-# Indexed quiver paths and partial concatenation
+# Indexed quiver paths, concatenation, and reversal
 
 `TauCeti.Quiver.TotalPath Q` records a path of a quiver together with its source and target. Two
 such paths can be concatenated when the target of the second is the source of the first. The
 partial operation `TauCeti.Quiver.TotalPath.mul?` records this condition with an `Option` result,
 using the later-factor-first order: `x.mul? y` traces `y` and then `x`.
 
-Concatenation adds path lengths and is associative as a partial operation. Trivial paths are left
-and right units at the appropriate endpoints. These operations supply the path index and
-multiplication of the path algebra, independently of any coefficient semiring.
+Concatenation adds path lengths and keeps the source of the factor written second — the one traced
+first — so it is the trivial path at a vertex exactly when both its factors are. It is associative
+as a partial operation, and trivial paths are left and right units at the appropriate endpoints.
+These operations supply the path index and multiplication of the path algebra, independently of any
+coefficient semiring.
+
+When the quiver has arrow reversal, indexed paths can also be reversed, exchanging their source and
+target and reversing the order of partial concatenation. Involutive arrow reversal makes path
+reversal involutive.
 
 ## Main definitions
 
 * `TauCeti.Quiver.TotalPath`: the total space `Σ a b, Quiver.Path a b` of paths.
 * `TauCeti.Quiver.TotalPath.mul?`: concatenation when the paths meet, and `none` otherwise.
+* `TauCeti.Quiver.TotalPath.reverse`: reversal of an indexed path, including its endpoints.
 
 ## Main results
 
@@ -30,9 +37,14 @@ multiplication of the path algebra, independently of any coefficient semiring.
   there and has length zero.
 * `TauCeti.Quiver.TotalPath.mul?_eq_none_iff`: concatenation is undefined exactly when the
   endpoints do not meet.
-* `TauCeti.Quiver.TotalPath.length_eq_add_of_mul?_eq_some`: concatenation adds lengths.
+* `TauCeti.Quiver.TotalPath.length_eq_add_of_mul?_eq_some` and
+  `TauCeti.Quiver.TotalPath.fst_of_mul?_eq_some`: concatenation adds lengths and keeps the source
+  of the factor written second, which is traced first.
+* `TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`: a concatenation is the trivial path at a
+  vertex exactly when both its factors are.
 * `TauCeti.Quiver.TotalPath.mul?_nil_left`, `TauCeti.Quiver.TotalPath.mul?_nil_right`, and
   `TauCeti.Quiver.TotalPath.mul?_assoc`: trivial-path units and associativity.
+* `TauCeti.Quiver.TotalPath.map_reverse_mul?`: reversal reverses the order of partial concatenation.
 * `TauCeti.Quiver.TotalPath.mk_cons_eq_mk_cons_iff`: a path into a vertex is determined by its
   last arrow and the path before it.
 
@@ -58,6 +70,29 @@ abbrev Quiver.TotalPath (Q : Type u) [Quiver.{v} Q] : Type _ :=
 namespace Quiver.TotalPath
 
 variable {Q : Type u} [Quiver.{v} Q]
+
+/-- Reverse an indexed path and exchange its source and target. -/
+def reverse [HasReverse Q] (x : TotalPath Q) : TotalPath Q :=
+  ⟨x.2.1, x.1, x.2.2.reverse⟩
+
+/-- Reversal of an explicitly indexed path reverses its underlying path. -/
+@[simp]
+theorem reverse_mk [HasReverse Q] {a b : Q} (p : Path a b) :
+    reverse (⟨a, b, p⟩ : TotalPath Q) = ⟨b, a, p.reverse⟩ :=
+  (rfl)
+
+/-- Reversing an indexed path preserves its length. -/
+@[simp]
+theorem length_reverse [HasReverse Q] (x : TotalPath Q) :
+    x.reverse.2.2.length = x.2.2.length := by
+  simp only [reverse, _root_.Quiver.Path.length_reverse]
+
+/-- Reversing an indexed path twice returns the original path. -/
+@[simp]
+theorem reverse_reverse [HasInvolutiveReverse Q] (x : TotalPath Q) :
+    x.reverse.reverse = x := by
+  obtain ⟨a, b, p⟩ := x
+  simp
 
 /-- An indexed path is the trivial path at `v` exactly when it starts at `v` and has length zero.
 Stated this way the equality is checked against two non-dependent conditions, so recognizing a
@@ -96,6 +131,18 @@ theorem mul?_eq_none_iff {x y : TotalPath Q} : mul? x y = none ↔ y.2.1 ≠ x.1
   rw [mul?, dite_eq_left hne] at h
   exact Option.some_ne_none _ h
 
+/-- Reversal reverses the order of partial concatenation, preserving undefined products. -/
+@[simp]
+theorem map_reverse_mul? [HasReverse Q] (x y : TotalPath Q) :
+    (x.mul? y).map reverse = y.reverse.mul? x.reverse := by
+  obtain ⟨a, b, p⟩ := x
+  obtain ⟨c, d, q⟩ := y
+  by_cases h : d = a
+  · subst d
+    simp [Path.reverse_comp]
+  · rw [mul?_eq_none h, Option.map_none, reverse_mk, reverse_mk,
+      mul?_eq_none (fun he ↦ h he.symm)]
+
 /-- **Concatenation adds lengths**: a path produced by `mul?` is as long as its two factors
 together. -/
 theorem length_eq_add_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some z) :
@@ -109,6 +156,39 @@ theorem length_eq_add_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some
     simp [Nat.add_comm]
   · rw [mul?_eq_none hda] at h
     exact absurd h.symm (Option.some_ne_none z)
+
+/-- **Concatenation keeps the source**: a path produced by `mul?` starts where the factor written
+second, which is traced first, starts. -/
+theorem fst_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some z) : z.1 = y.1 := by
+  obtain ⟨a, b, p⟩ := x
+  obtain ⟨c, d, q⟩ := y
+  by_cases hda : d = a
+  · subst hda
+    rw [mul?_mk] at h
+    obtain rfl := Option.some.inj h
+    rfl
+  · rw [mul?_eq_none hda] at h
+    exact absurd h.symm (Option.some_ne_none z)
+
+/-- **A concatenation is the trivial path at `v` exactly when both its factors are.** Lengths add
+under `mul?`, so both factors have length zero, and the concatenation starts where the factor
+written second does, so that common endpoint is `v`. -/
+theorem eq_nil_iff_of_mul?_eq_some {v : Q} {x y z : TotalPath Q} (h : mul? x y = some z) :
+    z = ⟨v, v, _root_.Quiver.Path.nil⟩ ↔
+      x = ⟨v, v, _root_.Quiver.Path.nil⟩ ∧ y = ⟨v, v, _root_.Quiver.Path.nil⟩ := by
+  have hcomp : y.2.1 = x.1 := by
+    by_contra hne
+    rw [mul?_eq_none hne] at h
+    exact absurd h.symm (Option.some_ne_none z)
+  simp only [eq_nil_iff, fst_of_mul?_eq_some h, length_eq_add_of_mul?_eq_some h]
+  constructor
+  · rintro ⟨hy, hlen⟩
+    have hylen : y.2.2.length = 0 := by omega
+    refine ⟨⟨?_, by omega⟩, hy, hylen⟩
+    rw [← hcomp, ← y.2.2.eq_of_length_zero hylen]
+    exact hy
+  · rintro ⟨⟨-, hx⟩, hy, hy'⟩
+    exact ⟨hy, by omega⟩
 
 /-- The trivial path at the target of `x` is a left unit for `x`. -/
 @[simp]

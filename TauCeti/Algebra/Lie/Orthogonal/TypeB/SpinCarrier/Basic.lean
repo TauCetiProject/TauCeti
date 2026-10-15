@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
@@ -41,8 +40,16 @@ subgroups is separate from this carrier construction.
 * `TauCeti.TypeBSpinCarrier.rootSubgroup`: its numbered simple-root subgroup morphisms.
 * `TauCeti.TypeBSpinCarrier.weightTorus`: its closed split weight torus.
 * `TauCeti.TypeBSpinCarrier.points`: its matrix-valued points over a commutative ring.
-* `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints`: the torus conjugation
-  equation on matrix-valued points.
+* `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints` and
+  `TauCeti.TypeBSpinCarrier.weightTorus_conj_rootSubgroup`: the torus conjugation equation on
+  matrix-valued points and on scheme points.
+* `TauCeti.TypeBSpinCarrier.rootGeneratorWeight_inl_eq_root_simpleIndex`,
+  `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex`,
+  `TauCeti.TypeBSpinCarrier.weightTorus_conj_rootSubgroup_root_simpleIndex`, and their
+  negative-root counterparts: the generator weights are the named simple roots of
+  `TauCeti.DynkinType.simplyConnectedRootDatum` at `B (n + 1)`, and the conjugation equations
+  take them as exponents. They assume `(DynkinType.B (n + 1)).Valid`, which fails at `n = 0`,
+  where the carrier still exists.
 * `TauCeti.TypeBSpinCarrier.rep_rootGenerator_inl_castSucc` and its three siblings: each numbered
   simple generator acts on the spin module by creation and contraction of exterior coordinates.
 * `TauCeti.TypeBSpinCarrier.pow_two_rep_rootGenerator_eq_zero`: each numbered simple generator
@@ -118,6 +125,7 @@ noncomputable def basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
   Fintype.equivFin (Finset (Fin (n + 1))) (DynkinType.typeBSpinReflection i (signSet n a))
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
+@[simp]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
     signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) := by
   simp [basisReflection, signSet]
@@ -233,8 +241,8 @@ theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) 
         (TauCeti.typeBSimpleRootGeneratorFamily (.inr (Fin.last n)))) x =
       CliffordAlgebra.involute
         (CliffordAlgebra.contractLeft ((polarizationBasis n).coord (Fin.last n)) x) := by
-  -- `rw` with the terminal-generator equation times out on the concrete carrier here, while
-  -- `simp only` performs the same rewrite.
+  -- `simp only` performs this rewrite about fifteen times faster than `rw` with the same
+  -- terminal-generator equations on the concrete carrier.
   simp only [TauCeti.typeBSimpleRootGeneratorFamily_inr,
     TauCeti.typeBSimpleNegativeRootGenerator_last]
   have h := SpinPolarizationData.typeBSpinRep_shortNegativeRootGenerator_apply (polarization n)
@@ -315,7 +323,6 @@ theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :
   have h := (polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
     (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
     (signSet n i)
-  rw [SpinPolarizationData.typeBSpinCorootWeight_eq_typeBSpinWeight] at h
   rwa [coe_latticeBasis]
 
 /-- The full spin weights span the simply connected type-`B` character lattice. -/
@@ -332,24 +339,14 @@ private theorem rep_coroot_ne_zero (i : Fin (n + 1)) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i)) ≠ 0 := by
   intro hzero
-  have hweight :=
-    (isCartanWeightVector_iff (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)).1
-      (isCartanWeightVector_latticeBasis n (Fintype.equivFin (Finset (Fin (n + 1))) {i})) i
-  simp only [hzero, LinearMap.zero_apply, coe_latticeBasis] at hweight
-  simp only [basisWeight, signSet, Equiv.symm_apply_apply] at hweight
-  have hone : TauCeti.DynkinType.typeBSpinWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
-    rw [TauCeti.DynkinType.typeBSpinWeight_apply]
-    by_cases hnext : (i : ℕ) + 1 < n + 1
-    · have hnotmax : ¬IsMax i :=
-        not_isMax_of_lt (b := (⟨(i : ℕ) + 1, hnext⟩ : Fin (n + 1))) (by simp [Fin.lt_def])
-      have hsucc : Order.succ i ∉ ({i} : Finset (Fin (n + 1))) := by
-        rw [Finset.mem_singleton, Order.succ_eq_iff_isMax]
-        exact hnotmax
-      simp [hnext, hsucc]
-    · simp [hnext]
-  rw [hone] at hweight
-  simp only [Int.cast_one, one_smul] at hweight
-  exact (polarizationBasis n).ExteriorAlgebra.ne_zero {i} hweight.symm
+  have h := (isCartanWeightVector_iff _ _).1
+    ((polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
+      (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) {i}) i
+  rw [hzero, LinearMap.zero_apply] at h
+  have hone : DynkinType.typeBSpinWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
+    induction i using Fin.lastCases <;> simp [Fin.orderSucc_castSucc, Fin.castSucc_lt_succ.ne']
+  rw [hone, Int.cast_one, one_smul] at h
+  exact (polarizationBasis n).ExteriorAlgebra.ne_zero {i} h.symm
 
 /-- The represented positive and negative simple generators at a common type-`B` node, together
 with the represented simple coroot, form an `sl_2` triple. -/
@@ -361,19 +358,10 @@ theorem isSl2Triple_rep_rootGenerator (i : Fin (n + 1)) :
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) (.inl i))))
       (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) (.inr i)))) := by
-  let φ := (polarization n).typeBSpinLieRep (polarizationBasis n) (remainderOne n)
-    (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
-  have hrep (x : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ) :
-      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) = φ x := by
-    simp only [_root_.UniversalEnvelopingAlgebra.ι_apply, rep, SpinPolarizationData.typeBSpinRep_ι,
-      SpinPolarizationData.typeBSpinLieRep_apply, φ]
-  have hh : φ (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i) ≠ 0 := by
-    rw [← hrep]
-    exact rep_coroot_ne_zero n i
-  have hsource := TauCeti.isSl2Triple_typeBSimpleRootGenerator (K := ℚ) i
-  have htriple := hsource.map φ hh
-  simpa only [hrep, TauCeti.typeBSimpleRootGeneratorFamily_inl,
-    TauCeti.typeBSimpleRootGeneratorFamily_inr] using htriple
+  have h := (TauCeti.isSl2Triple_typeBSimpleRootGenerator (K := ℚ) i).map
+    ((rep n).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (rep_coroot_ne_zero n i)
+  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
+    TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGeneratorFamily_inr] using h
 
 /-! ## The closed carrier and its pinned generators -/
 
@@ -536,9 +524,18 @@ theorem points_def (A : Type v) [CommRing A] :
   rw [points, definingIdeal]
   exact kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
 
+/-- The carrier points are the points of the generic Kostant toral closure they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n A =
+      kostantToralPointsSubgroup
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+        (latticeBasis n) (basisWeight n) A := (rfl)
+
 /-- A matrix is a carrier point exactly when its associated convolution point kills the
 defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin (dimension n)) A) :
     g ∈ points n A ↔
@@ -641,7 +638,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints
     (lie_coroot_rootGenerator n k) A s u
 
 /-- Conjugation by the spin weight torus rescales each root subgroup by its root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶

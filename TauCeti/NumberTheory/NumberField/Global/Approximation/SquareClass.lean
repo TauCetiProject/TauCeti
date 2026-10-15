@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
+import TauCeti.FieldTheory.SquareClassGroup.Real
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Topology.Algebra.GroupWithZero.Squares
@@ -61,15 +62,13 @@ theorem exists_fieldUnit_isSquare_div_at_places
       hcont.continuousAt hopen (a v).ne_zero
   have hr (w : T) : ∀ᶠ y in 𝓝 target, y.2 w ≠ 0 ∧ IsSquare (y.2 w / (b w : ℝ)) := by
     have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) =>
-        y.2 w / (b w : ℝ)) :=
-      ((continuous_apply w).comp continuous_snd).div_const _
-    have hpos : ∀ᶠ y in 𝓝 target, 0 < y.2 w / (b w : ℝ) :=
-      hcont.continuousAt.eventually
-        (isOpen_Ioi.mem_nhds (by
-          simpa only [target, div_self (b w).ne_zero, Set.mem_Ioi]
-            using (zero_lt_one : (0 : ℝ) < 1)))
-    filter_upwards [hpos] with y hy
-    exact ⟨fun hzero => by simp [hzero] at hy, Real.isSquare_iff.mpr hy.le⟩
+        y.2 w) :=
+      (continuous_apply w).comp continuous_snd
+    exact hcont.continuousAt.eventually_isSquare_div_of_isOpen_squares
+      (by
+        simpa only [Units.isSquare_iff_pos] using
+          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}))
+      (b w).ne_zero
   have he := (eventually_all.mpr hf).and (eventually_all.mpr hr)
   obtain ⟨y, hy, x, rfl⟩ := mem_closure_iff_nhds.mp
     ((denseRange_algebraMap_embedding_of_isReal S T) target) _ he

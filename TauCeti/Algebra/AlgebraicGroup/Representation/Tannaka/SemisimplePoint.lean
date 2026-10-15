@@ -25,9 +25,6 @@ comodules equals the original point-action automorphism exactly when `g` is semi
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This is a representation-theoretic step toward the Jordan decomposition of group elements in
-Layer 4 of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -55,6 +52,7 @@ theorem isSemisimplePoint_iff_fgPointSemisimplePartNatIso_eq_fgPointNatIsoHom
   constructor
   · intro hg
     apply Aut.ext
+    apply Iso.ext
     apply NatTrans.ext
     funext (M : FGComoduleCat.{u, v, u} k H)
     rw [Tannaka.fgPointSemisimplePartNatIso_hom_app,
@@ -70,7 +68,7 @@ theorem isSemisimplePoint_iff_fgPointSemisimplePartNatIso_eq_fgPointNatIsoHom
     intro M
     have happ := congrArg
       (fun a : Aut (FGComoduleCat.scalarExtensionFunctor.{u, v, u, x} k H K) ↦
-        a.hom.app M) h
+        a.asIso.hom.app M) h
     rw [Tannaka.fgPointSemisimplePartNatIso_hom_app,
       Tannaka.fgPointNatIsoHom_hom_app] at happ
     rw [cancel_epi] at happ

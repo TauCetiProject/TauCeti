@@ -63,10 +63,6 @@ open scoped TensorProduct Topology
 
 noncomputable section
 
-/-- The canonical invertibility witness for two over the rationals. -/
-local instance compactOpenInvertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
 
 /-- Compatible compact-open reference subgroups for the local orthogonal and Spin groups of a

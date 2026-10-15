@@ -29,15 +29,15 @@ opposite DG and `A∞` objects without changing their sign convention.
 
 * `InternalGrading.op_mem_opposite_piece_iff`: `op` preserves each degree.
 * `InternalGrading.oppositeGradedAlgebra`: a graded algebra induces one on its opposite.
-* `instGradedSMulOppositeSelf`: right multiplication makes a graded algebra a graded right module
-  over itself.
+* `instGradedSMulOppositeSelf`: right multiplication respects an internal grading whenever
+  multiplication does, including for nonunital multiplication.
 * `InternalGrading.op_koszulTwist`: the Koszul twist commutes with `op`.
 * `InternalGrading.opLinearEquiv_comp_quadraticTwist`, `InternalGrading.op_quadraticTwist`, and
   `InternalGrading.unop_quadraticTwist`: the quadratic twist commutes with passage to and from the
   opposite.
 
-This supplies the opposite compatibility in Layer 0 of the `DGAInfinity` roadmap. The conventions
-follow B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3 and 7.
+The conventions follow B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3
+and 7.
 -/
 
 public section
@@ -103,20 +103,7 @@ variable {R : Type u} {M : Type v}
 theorem opLinearEquiv_comp_koszulTwist (G : InternalGrading R M) (q : ℤ) :
     (opLinearEquiv R).toLinearMap ∘ₗ G.koszulTwist q =
       G.opposite.koszulTwist q ∘ₗ (opLinearEquiv R).toLinearMap := by
-  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p => ?_
-  ext x
-  have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
-  have hop : op (x : M) ∈ G.opposite.piece p :=
-    (G.op_mem_opposite_piece_iff p x).2 hx
-  have htwist := G.koszulTwist_apply_of_mem hx q
-  have htwistOp := G.opposite.koszulTwist_apply_of_mem hop q
-  calc
-    ((opLinearEquiv R).toLinearMap ∘ₗ G.koszulTwist q) (x : M) =
-        op (G.koszulTwist q (x : M)) := rfl
-    _ = op (((((q * p).negOnePow : ℤ) : R)) • (x : M)) := congrArg op htwist
-    _ = (((q * p).negOnePow : ℤ) : R) • op (x : M) := by simp
-    _ = G.opposite.koszulTwist q (op (x : M)) := htwistOp.symm
-    _ = (G.opposite.koszulTwist q ∘ₗ (opLinearEquiv R).toLinearMap) (x : M) := rfl
+  simpa using ((G.isHomogeneous_op).koszulTwist_comp q).symm
 
 /-- Applying the Koszul twist and then `op` agrees with twisting the opposite element. -/
 @[simp]
@@ -136,20 +123,10 @@ theorem unop_koszulTwist (G : InternalGrading R M) (q : ℤ) (x : Mᵐᵒᵖ) :
 theorem opLinearEquiv_comp_quadraticTwist (G : InternalGrading R M) :
     (opLinearEquiv R).toLinearMap ∘ₗ G.quadraticTwist =
       G.opposite.quadraticTwist ∘ₗ (opLinearEquiv R).toLinearMap := by
-  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p => ?_
-  ext x
-  have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
-  have hop : op (x : M) ∈ G.opposite.piece p :=
-    (G.op_mem_opposite_piece_iff p x).2 hx
-  calc
-    ((opLinearEquiv R).toLinearMap ∘ₗ G.quadraticTwist) (x : M) =
-        op (G.quadraticTwist (x : M)) := rfl
-    _ = op (((((quadraticExponent p).negOnePow : ℤ) : R)) • (x : M)) :=
-      congrArg op (G.quadraticTwist_apply_of_mem hx)
-    _ = (((quadraticExponent p).negOnePow : ℤ) : R) • op (x : M) := by simp
-    _ = G.opposite.quadraticTwist (op (x : M)) :=
-      (G.opposite.quadraticTwist_apply_of_mem hop).symm
-    _ = (G.opposite.quadraticTwist ∘ₗ (opLinearEquiv R).toLinearMap) (x : M) := rfl
+  apply G.linearMap_ext
+  intro p x hx
+  have hop := (G.op_mem_opposite_piece_iff p x).2 hx
+  simp [G.quadraticTwist_apply_of_mem hx, G.opposite.quadraticTwist_apply_of_mem hop]
 
 /-- Applying the quadratic twist and then `op` agrees with twisting the opposite element. -/
 @[simp]
@@ -167,10 +144,10 @@ theorem unop_quadraticTwist (G : InternalGrading R M) (x : Mᵐᵒᵖ) :
 
 end KoszulTwist
 
-section GradedAlgebra
+section GradedMonoid
 
 variable {R : Type u} {A : Type v}
-  [CommSemiring R] [Semiring A] [Algebra R A]
+  [Semiring R] [AddCommMonoid A] [Module R A] [Monoid A]
 
 variable (G : InternalGrading R A) [SetLike.GradedMonoid G.piece]
 
@@ -186,6 +163,15 @@ noncomputable instance oppositeGradedMonoid : SetLike.GradedMonoid G.opposite.pi
     rw [unop_mul, add_comm]
     exact SetLike.mul_mem_graded hy hx
 
+end GradedMonoid
+
+section GradedAlgebra
+
+variable {R : Type u} {A : Type v}
+  [CommSemiring R] [Semiring A] [Algebra R A]
+
+variable (G : InternalGrading R A) [SetLike.GradedMonoid G.piece]
+
 /-- An internally graded algebra induces the internal graded algebra on its multiplicative
 opposite. -/
 noncomputable instance oppositeGradedAlgebra : GradedAlgebra G.opposite.piece :=
@@ -198,11 +184,12 @@ end InternalGrading
 section RightSelfAction
 
 variable {R : Type u} {A : Type v}
-  [CommSemiring R] [Semiring A] [Algebra R A]
+  [Semiring R] [AddCommMonoid A] [Module R A] [Mul A]
 
-/-- Right multiplication makes a graded algebra a graded right module over itself: the degrees of
-the two factors add, in the order fixed by the opposite grading. -/
-instance instGradedSMulOppositeSelf (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] :
+/-- Right multiplication respects the grading: the degrees of the two factors add, in the order
+fixed by the opposite grading. Multiplication need not be unital or associative. -/
+instance instGradedSMulOppositeSelf (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜]
+    [SetLike.GradedMul 𝒜] :
     SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒜 where
   smul_mem := by
     intro i j a b ha hb

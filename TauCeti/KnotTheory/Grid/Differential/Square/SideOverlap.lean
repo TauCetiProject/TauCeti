@@ -17,11 +17,11 @@ This file makes that split exact: the pairs are disjoint, have one common column
 The last case occurs exactly when the two rectangle moves return to the source state.
 
 The finite set `GridRectangleDecomposition.commonSideColumns` is the intersection of the two
-two-element side sets. Its cardinality is therefore at most two. Cardinality zero is the existing
-predicate `HasDisjointSides`; cardinality one is named `HasOneCommonSide`; and cardinality two is
-equivalent to equality of the source and target states. Consequently a nondiagonal coefficient
-of the differential square has precisely the two geometric cases used by the later pairing:
-disjoint rectangles or rectangles sharing exactly one side column.
+two-element side sets. Its cardinality is therefore at most two. Cardinality zero is the predicate
+`HasDisjointSides`; cardinality one is named `HasOneCommonSide`; and cardinality two is equivalent
+to equality of the source and target states. Consequently a nondiagonal coefficient of the
+differential square has precisely the two geometric cases of the rectangle pairing: disjoint
+rectangles or rectangles sharing exactly one side column.
 
 ## Main definitions
 
@@ -59,10 +59,8 @@ disjoint rectangles or rectangles sharing exactly one side column.
 
 ## References
 
-This supplies the side-overlap case split for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`".
-The split is the opening bookkeeping of the juxtaposition proof in
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
+The split is the opening bookkeeping of the juxtaposition proof in Ozsváth--Stipsicz--Szabó, *Grid
+Homology for Knots and Links*, Chapter 4.6.
 -/
 
 public section
@@ -125,18 +123,63 @@ theorem hasOneCommonSide_iff_existsUnique (D : GridRectangleDecomposition x z) :
   rw [HasOneCommonSide, Finset.card_eq_one_iff_existsUnique]
   simp only [mem_commonSideColumns]
 
-/-- Two rectangles sharing their initial side, the second ending strictly inside the first's
-column interval, share exactly one side column. -/
-theorem hasOneCommonSide_of_left_eq_left_of_mem_cIoo (D : GridRectangleDecomposition x z)
+/-- Two rectangles sharing their initial side and having distinct terminal sides share exactly
+one side column. -/
+theorem hasOneCommonSide_of_left_eq_left (D : GridRectangleDecomposition x z)
     (hcommon : D.first.left = D.second.left)
-    (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right) : D.HasOneCommonSide := by
+    (hother : D.first.right ≠ D.second.right) : D.HasOneCommonSide := by
   apply D.hasOneCommonSide_iff_existsUnique.mpr
   refine ⟨D.first.left, ?_, ?_⟩
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
-    have hne := Grid.ne_right_of_mem_cIoo hcol
-    have := D.first.left_ne_right
+    grind
+
+/-- Two rectangles sharing their terminal side and having distinct initial sides share exactly
+one side column. -/
+theorem hasOneCommonSide_of_right_eq_right (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.right)
+    (hother : D.first.left ≠ D.second.left) : D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.right, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
+    grind
+
+/-- Two rectangles sharing their initial side, the second ending strictly inside the first's
+column interval, share exactly one side column. -/
+theorem hasOneCommonSide_of_left_eq_left_of_mem_cIoo (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.left)
+    (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right) : D.HasOneCommonSide := by
+  exact D.hasOneCommonSide_of_left_eq_left hcommon (Grid.ne_right_of_mem_cIoo hcol).symm
+
+/-- Two rectangles, the first ending where the second starts, whose other sides differ share
+exactly one side column. -/
+theorem hasOneCommonSide_of_right_eq_left (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.left) (hother : D.first.left ≠ D.second.right) :
+    D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.right, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
+    have hfirst := D.first.left_ne_right
+    have hsecond := D.second.left_ne_right
+    grind
+
+/-- Two rectangles, the first starting where the second ends, whose other sides differ share
+exactly one side column. -/
+theorem hasOneCommonSide_of_left_eq_right (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.right) (hother : D.first.right ≠ D.second.left) :
+    D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.left, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
+    have hfirst := D.first.left_ne_right
+    have hsecond := D.second.left_ne_right
     grind
 
 /-- If two rectangles share exactly one side column, that column occurs in one of the four

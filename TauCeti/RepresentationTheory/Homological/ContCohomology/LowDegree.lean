@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle.Topology
 
 import Mathlib.Tactic.Abel
+import TauCeti.Topology.Discrete
 
 /-!
 # The explicit low-degree complex of continuous cochains
@@ -49,6 +50,10 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.d1_comp_d0` and `TauCeti.ContCohomology.d2_comp_d1`: `d ∘ d = 0`.
 * `TauCeti.ContCohomology.B1_le_Z1` and `TauCeti.ContCohomology.B2_le_Z2`: the form of `d ∘ d = 0`
   that the two quotients need, coboundaries being continuous.
+* `TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1` and `mem_Z2_of_injective_comp_mem_Z2`:
+  continuous cocycles descend along an injective equivariant map into a discrete module, whatever
+  the topology of the source, with `mem_Z1_of_injective_comp_eq_d0` and
+  `mem_Z2_of_injective_comp_eq_d1` their forms over a coboundary.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
   `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton_coefficients` and
@@ -98,8 +103,8 @@ conditions.
 
 `H1` and `H2` divide `Z¹` and `Z²` by the coboundaries *viewed inside the cocycles*, in the
 `AddSubgroup.addSubgroupOf` spelling, so that no proof term enters either quotient subgroup. Each
-carrier retains the hypotheses of `TauCeti.ContCohomology.B1_le_Z1`, respectively
-`B2_le_Z2`, through that inclusion theorem, so the subgroup divided out is always the whole of
+carrier retains a continuous unital monoid action through `TauCeti.ContCohomology.B1_le_Z1`,
+respectively `B2_le_Z2`, so the subgroup divided out is always the whole of
 `B¹`, respectively `B²`, and never the intersection `B ⊓ Z` that `addSubgroupOf` would cut out at a
 weaker generality; `AddSubgroup.map_addSubgroupOf_eq_of_le` turns those inclusions into that
 identity whenever a consumer needs it spelled out. The two carriers therefore sit in separate
@@ -277,28 +282,59 @@ theorem d2_apply_eq_zero_iff {f : G × G → M} :
 
 end CocycleConditions
 
-section Complex
+section ComplexDegreeZero
 
-/-! `d ∘ d = 0` and degree `0` of the complex need the action to be associative and unital; only
-the degree-`1` inverse formula further on needs inverses. -/
+/-! `d¹ ∘ d⁰ = 0` needs only an associative scalar action, without a unit or associativity
+of the multiplication on `G`. -/
 
-variable (G : Type u) [Monoid G] (M : Type v) [AddCommGroup M] [DistribMulAction G M]
+variable (G : Type u) [Mul G] (M : Type v) [AddCommGroup M] [DistribSMul G M]
+  [IsScalarTower G G M]
 
 /-- `d¹ ∘ d⁰ = 0`. -/
 theorem d1_comp_d0 : (d1 G M).comp (d0 G M) = 0 := by
   refine AddMonoidHom.ext fun m => funext fun q => ?_
   obtain ⟨g, h⟩ := q
   simp only [AddMonoidHom.coe_comp, Function.comp_apply, d1_apply, d0_apply,
-    AddMonoidHom.zero_apply, Pi.zero_apply, smul_sub, ← mul_smul]
+    AddMonoidHom.zero_apply, Pi.zero_apply, smul_sub, ← smul_assoc, smul_eq_mul]
   abel
+
+variable {G M}
+
+/-- `d¹ ∘ d⁰ = 0`, evaluated at a `0`-cochain. -/
+@[simp]
+theorem d1_comp_d0_apply (m : M) : d1 G M (d0 G M m) = 0 :=
+  DFunLike.congr_fun (d1_comp_d0 G M) m
+
+end ComplexDegreeZero
+
+section ComplexDegreeOne
+
+/-! `d² ∘ d¹ = 0` additionally needs associativity of the multiplication on `G`. -/
+
+variable (G : Type u) [Semigroup G] (M : Type v) [AddCommGroup M] [DistribSMul G M]
+  [IsScalarTower G G M]
 
 /-- `d² ∘ d¹ = 0`. -/
 theorem d2_comp_d1 : (d2 G M).comp (d1 G M) = 0 := by
   refine AddMonoidHom.ext fun f => funext fun q => ?_
   obtain ⟨g, h, j⟩ := q
   simp only [AddMonoidHom.coe_comp, Function.comp_apply, d2_apply, d1_apply,
-    AddMonoidHom.zero_apply, Pi.zero_apply, smul_sub, smul_add, ← mul_smul, mul_assoc]
+    AddMonoidHom.zero_apply, Pi.zero_apply, smul_sub, smul_add, ← smul_assoc, smul_eq_mul,
+    mul_assoc]
   abel
+
+variable {G M}
+
+/-- `d² ∘ d¹ = 0`, evaluated at a `1`-cochain. -/
+@[simp]
+theorem d2_comp_d1_apply (f : G → M) : d2 G M (d1 G M f) = 0 :=
+  DFunLike.congr_fun (d2_comp_d1 G M) f
+
+end ComplexDegreeOne
+
+section Invariants
+
+variable (G : Type u) [Monoid G] (M : Type v) [AddCommGroup M] [DistribMulAction G M]
 
 /-- Degree `0` of the explicit complex: the invariants `M^G`. Unlike `H¹` and `H²` this is a
 subgroup and not a quotient. It is named because the low-degree corestriction, the connecting
@@ -309,22 +345,11 @@ abbrev H0 : AddSubgroup M := FixedPoints.addSubgroup G M
 
 variable {G M}
 
-/-- `d¹ ∘ d⁰ = 0`, evaluated at a `0`-cochain. This is the form a consumer of the complex uses;
-the composed form needs unfolding before it can rewrite. -/
-@[simp]
-theorem d1_comp_d0_apply (m : M) : d1 G M (d0 G M m) = 0 :=
-  DFunLike.congr_fun (d1_comp_d0 G M) m
-
-/-- `d² ∘ d¹ = 0`, evaluated at a `1`-cochain. -/
-@[simp]
-theorem d2_comp_d1_apply (f : G → M) : d2 G M (d1 G M f) = 0 :=
-  DFunLike.congr_fun (d2_comp_d1 G M) f
-
 /-- For a trivial action `H⁰(G, M) = M`. -/
 theorem H0_eq_top_of_smul_eq_self (htriv : ∀ (g : G) (m : M), g • m = m) : H0 G M = ⊤ :=
   eq_top_iff.2 fun m _ => (FixedPoints.mem_addSubgroup G M m).2 fun g => htriv g m
 
-end Complex
+end Invariants
 
 section CompatiblePairDegreeZero
 
@@ -674,9 +699,9 @@ end ContinuityMul
 
 section ContinuityAction
 
-variable (G : Type u) [Monoid G] [TopologicalSpace G]
+variable (G : Type u) [Mul G] [TopologicalSpace G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribMulAction G M] [ContinuousSMul G M]
+  [DistribSMul G M] [IsScalarTower G G M] [ContinuousSMul G M]
 
 /-- `d ∘ d = 0` in the form the degree-`1` quotient needs. -/
 theorem B1_le_Z1 : B1 G M ≤ Z1 G M := by
@@ -688,9 +713,9 @@ end ContinuityAction
 
 section ContinuityMulAction
 
-variable (G : Type u) [Monoid G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type u) [Semigroup G] [TopologicalSpace G] [ContinuousMul G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribMulAction G M] [ContinuousSMul G M]
+  [DistribSMul G M] [IsScalarTower G G M] [ContinuousSMul G M]
 
 /-- `d ∘ d = 0` in the form the degree-`2` quotient needs. -/
 theorem B2_le_Z2 : B2 G M ≤ Z2 G M := by
@@ -700,11 +725,91 @@ theorem B2_le_Z2 : B2 G M ≤ Z2 G M := by
 
 end ContinuityMulAction
 
+section InjectiveDescent
+
+/-! An injection into a discrete space reflects continuity, whatever the topology of its source
+(`TauCeti.continuous_of_injective_comp`), and an injective equivariant map reflects the cocycle
+identities, so continuous cocycles descend along such a map. -/
+
+variable {G : Type u} [TopologicalSpace G]
+  {A : Type*} [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  {B : Type*} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+  {φ : A →+ B}
+
+section Mul
+
+variable [Mul G] [DistribSMul G A] [DistribSMul G B]
+
+/-- **A `1`-cochain on `A` lying over a continuous `1`-cocycle on `B` along an injective
+equivariant map is one.** Both halves of membership in `Z¹` descend: continuity because an
+injection into the discrete `B` reflects it, whatever the topology of `A`, and the cocycle identity
+because the map is injective. -/
+theorem mem_Z1_of_injective_comp_mem_Z1 (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {a : G → A} {e : G → B}
+    (hae : ∀ g : G, φ (a g) = e g) (he : e ∈ Z1 G B) : a ∈ Z1 G A := by
+  obtain ⟨hcont, hcocycle⟩ := mem_Z1_iff.1 he
+  refine mem_Z1_iff.2 ⟨continuous_of_injective_comp hφ ?_, fun g h => ?_⟩
+  · simpa only [hae] using hcont
+  · refine hφ ?_
+    simp only [map_add, heq, hae]
+    exact hcocycle g h
+
+/-- **A `2`-cochain on `A` lying over a continuous `2`-cocycle on `B` along an injective
+equivariant map is one**, the degree-`2` counterpart of
+`TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1`. -/
+theorem mem_Z2_of_injective_comp_mem_Z2 (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {a : G × G → A} {z : G × G → B}
+    (haz : ∀ p : G × G, φ (a p) = z p) (hz : z ∈ Z2 G B) : a ∈ Z2 G A := by
+  obtain ⟨hcont, hcocycle⟩ := mem_Z2_iff.1 hz
+  refine mem_Z2_iff.2 ⟨continuous_of_injective_comp hφ ?_, fun g h j => ?_⟩
+  · simpa only [haz] using hcont
+  · refine hφ ?_
+    simp only [map_add, heq, haz]
+    exact hcocycle g h j
+
+end Mul
+
+variable [DistribSMul G A] [DistribSMul G B] [ContinuousSMul G B]
+
+section DegreeOne
+
+variable [Mul G] [IsScalarTower G G B]
+
+/-- **A cochain on `A` lying over a coboundary of `B` along an injective equivariant map is a
+continuous `1`-cocycle**: the case `e = d⁰ b` of
+`TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1`, a coboundary being a continuous cocycle
+already. -/
+theorem mem_Z1_of_injective_comp_eq_d0 (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {b : B} {a : G → A}
+    (hab : ∀ g : G, φ (a g) = g • b - b) : a ∈ Z1 G A :=
+  mem_Z1_of_injective_comp_mem_Z1 hφ heq (e := d0 G B b)
+    (fun g => (hab g).trans (d0_apply b g).symm) (B1_le_Z1 G B (d0_mem_B1 b))
+
+end DegreeOne
+
+section DegreeTwo
+
+variable [Semigroup G] [IsScalarTower G G B]
+
+/-- **A `2`-cochain on `A` lying over the coboundary of a continuous `1`-cochain on `B` along an
+injective equivariant map is a continuous `2`-cocycle**: the case `z = d¹ e` of
+`TauCeti.ContCohomology.mem_Z2_of_injective_comp_mem_Z2`. -/
+theorem mem_Z2_of_injective_comp_eq_d1 [ContinuousMul G] (hφ : Function.Injective φ)
+    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {e : G → B} (hc : Continuous e)
+    {a : G × G → A} (hae : ∀ g h : G, φ (a (g, h)) = g • e h - e (g * h) + e g) :
+    a ∈ Z2 G A :=
+  mem_Z2_of_injective_comp_mem_Z2 hφ heq (z := d1 G B e)
+    (fun p => (hae p.1 p.2).trans (d1_apply e p.1 p.2).symm)
+    (B2_le_Z2 G B (mem_B2_iff.2 ⟨e, hc, rfl⟩))
+
+end DegreeTwo
+
+end InjectiveDescent
+
 section CohomologyDegree1
 
-/-! Degree `1` of the cohomology is formed exactly where `TauCeti.ContCohomology.B1_le_Z1` holds:
-under a weaker action `B¹` need not consist of cocycles and the quotient below would silently be
-by `B¹ ⊓ Z¹`. -/
+/-! Degree `1` of the cohomology is formed for a continuous unital monoid action. The inclusion
+`TauCeti.ContCohomology.B1_le_Z1` ensures that the quotient is by all of `B¹`. -/
 
 variable (G : Type u) [Monoid G] [TopologicalSpace G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
@@ -713,7 +818,7 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G]
 /-- The first continuous cohomology group `H¹(G, M) = Z¹/B¹`.
 
 The denominator is `B¹` viewed inside `Z¹`, in Mathlib's `AddSubgroup.addSubgroupOf` spelling,
-so that no proof term enters the quotient subgroup. The hypotheses in force are those of
+so that no proof term enters the quotient subgroup. The hypotheses in force imply
 `TauCeti.ContCohomology.B1_le_Z1`, so the subgroup divided out really is the whole of `B¹`:
 `AddSubgroup.map_addSubgroupOf_eq_of_le (B1_le_Z1 G M)` says its image in `G → M` is `B¹` itself.
 
@@ -785,7 +890,7 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G] [hcontMul : ContinuousMul 
 
 /-- The second continuous cohomology group `H²(G, M) = Z²/B²`.
 
-As for `H¹` the denominator is `B²` viewed inside `Z²`, and the hypotheses in force are those of
+As for `H¹` the denominator is `B²` viewed inside `Z²`, and the hypotheses in force imply
 `TauCeti.ContCohomology.B2_le_Z2`, so the subgroup divided out really is the whole of `B²`. The
 inherited quotient topology is again not the intended one, and `H²` is used as a bare additive
 group. -/

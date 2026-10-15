@@ -164,7 +164,7 @@ private theorem nonempty_affineConeOrbit_of_basis (hi : IsIntegralLattice i)
   apply (mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F _).2
   rw [Equiv.apply_symm_apply]
   intro ρ
-  by_cases hρ : ρ ∈ hσ.faceOrderIso hi F <;> simp
+  simp
 
 /-- Every face-indexed affine-cone orbit is nonempty. -/
 theorem nonempty_affineConeOrbit (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
@@ -558,7 +558,7 @@ theorem contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattice i)
       · convert (contDiff_const : ContDiff ℂ n (fun _ :
           (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ)) ↦ (0 : ℂ)))
         rw [dite_eq_left h]
-      · convert (contDiff_apply ℂ ℂ (⟨κ.symm a, h⟩ :
+      · convert (contDiff_apply ℂ (fun _ ↦ ℂ) (⟨κ.symm a, h⟩ :
           {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F})).comp contDiff_fst
         rw [dite_eq_right h]
         rfl
@@ -605,7 +605,7 @@ theorem contMDiff_of_contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattic
   have hp : ContDiff ℂ n p := by
     apply ContDiff.prodMk
     · rw [contDiff_pi]
-      exact fun ρ ↦ (contDiff_apply ℂ ℂ (κ ρ.1)).comp contDiff_fst
+      exact fun ρ ↦ (contDiff_apply ℂ (fun _ ↦ ℂ) (κ ρ.1)).comp contDiff_fst
     · exact contDiff_snd
   refine (hp.comp_contMDiff
     ((contMDiff_coneChartAmbient hi hσ.toIsToricCone hb κ g n).comp hf)).congr fun x ↦ ?_

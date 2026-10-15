@@ -62,10 +62,43 @@ theorem contMDiff_constantField (v : P) : ContMDiff J ((J).prod J) ∞
   exact (contMDiff_vectorSpace_iff_contDiff (n := ∞)
     (V := fun _ : P => v)).2 contDiff_const
 
-private theorem mdifferentiableAt_constantField (v : P) (p : Sol) :
+/-- Constant coordinate fields are differentiable as sections of the tangent bundle. -/
+theorem mdifferentiableAt_constantField (v : P) (p : Sol) :
     MDifferentiableAt J ((J).prod J)
       (fun q => (⟨q, constantField v q⟩ : TangentBundle J Sol)) p :=
   (contMDiff_constantField v p).mdifferentiableAt (by simp)
+
+/-- Constant coordinate fields on Sol have zero Lie bracket. -/
+@[simp] theorem mlieBracket_constantField (u v : P) (p : Sol) :
+    mlieBracket J (constantField u) (constantField v) p = 0 := by
+  -- Sol inherits P's model-space atlas, so its tangent-space casts are definitionally
+  -- the identity and its constant coordinate fields are model-space constant fields.
+  exact TauCeti.mlieBracket_const_model_space u v (toProd p)
+
+private theorem hasFDerivAt_exp_height (c : ℝ) (p : Sol) :
+    HasFDerivAt (fun q : P => exp (c * q.2.2))
+      (exp (c * p.z) • c • ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp
+        (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ)))) (toProd p) := by
+  exact (((ContinuousLinearMap.snd ℝ ℝ ℝ).comp
+    (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))).hasFDerivAt.const_mul c).exp
+
+/-- The exponential of a scalar multiple of height is differentiable on Sol. -/
+theorem mdifferentiableAt_exp_height (c : ℝ) (p : Sol) :
+    MDifferentiableAt J 𝓘(ℝ) (fun q : Sol => exp (c * q.z)) p := by
+  -- Sol's coordinates and charts are those of P, so the coordinate derivative applies.
+  exact (hasFDerivAt_exp_height c p).differentiableAt.mdifferentiableAt
+
+/-- The derivative of an exponential of height along a constant coordinate field. -/
+theorem mvfderiv_exp_height (c : ℝ) (p : Sol) (u : P) :
+    mvfderiv J (fun q : Sol => exp (c * q.z)) p (constantField u p) =
+      exp (c * p.z) * c * u.2.2 := by
+  -- Identify the inherited global Sol chart with its model-space chart.
+  rw [constantField_apply]
+  change mvfderiv J (fun q : P => exp (c * q.2.2)) (toProd p) u = _
+  rw [mvfderiv_eq_fderiv, (hasFDerivAt_exp_height c p).fderiv]
+  -- The model-space tangent identification is the identity continuous linear equivalence.
+  change exp (c * p.z) • c • u.2.2 = _
+  simp [mul_assoc]
 
 private theorem mvfderiv_inner_constantField (u v w : P) (p : Sol) :
     mvfderiv J (fun q => inner ℝ (constantField u q) (constantField v q)) p (constantField w p) =
@@ -86,18 +119,13 @@ private theorem mvfderiv_inner_constantField (u v w : P) (p : Sol) :
   -- The model-space tangent cast in `mvfderiv_eq_fderiv` is the identity.
   change fderiv ℝ (fun q : P => exp (2 * q.2.2) * u.1 * v.1 +
     exp (-2 * q.2.2) * u.2.1 * v.2.1 + u.2.2 * v.2.2) (toProd p) w = _
-  let hz := (ContinuousLinearMap.snd ℝ ℝ ℝ).comp
-    (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))
-  have hd := hz.hasFDerivAt (x := toProd p)
-  have h := ((((hd.const_mul 2).exp.mul_const u.1).mul_const v.1).add
-    (((hd.const_mul (-2)).exp.mul_const u.2.1).mul_const v.2.1)).add_const
+  have h := ((((hasFDerivAt_exp_height 2 p).mul_const u.1).mul_const v.1).add
+    (((hasFDerivAt_exp_height (-2) p).mul_const u.2.1).mul_const v.2.1)).add_const
       (u.2.2 * v.2.2)
-  simp only [hz, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_snd',
-    Pi.add_apply] at h
+  simp only [Pi.add_apply] at h
   rw [h.fderiv]
   simp only [add_apply, smul_apply,
     smul_eq_mul, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_snd']
-  simp only [snd_snd_toProd]
   ring
 
 /-- The Levi-Civita derivative of a constant coordinate field on Sol. The horizontal
@@ -123,9 +151,7 @@ coefficients couple the horizontal and vertical directions; the vertical coeffic
       (mdifferentiableAt_constantField u p) (mdifferentiableAt_constantField v p)
       (mdifferentiableAt_constantField w p)
     rw [TauCeti.Manifold.koszul_apply] at h
-    have hb (b c : P) : mlieBracket J (constantField b) (constantField c) p = 0 :=
-      TauCeti.mlieBracket_const_model_space b c (toProd p)
-    simp only [hb, inner_zero_left, mvfderiv_inner_constantField] at h
+    simp only [mlieBracket_constantField, inner_zero_left, mvfderiv_inner_constantField] at h
     simp only [inner_def, constantField, ContinuousLinearEquiv.apply_symm_apply] at h ⊢
     dsimp only [a]
     linear_combination h / 2
