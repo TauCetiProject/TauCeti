@@ -23,7 +23,10 @@ not prove stacking. Discovery by prose never suffices for closure.
 Explicit declarations use GitHub's rendered body, read through the canonical PR
 API with matching raw body and head identity, then cached within the sweep.
 The HTML is parsed as data: code, blockquotes, quotation/retracted elements and link labels
-cannot provide declarations. Canonical local PR links can identify parents.
+cannot provide declarations. Canonical local PR links identify parents only when
+their complete text label is exactly the matching #N or canonical PR URL.
+Descriptive, qualified, alternative or mismatched labels remain opaque, including
+formatted labels; removing their wording cannot manufacture unconditional claims.
 Visible link-label text can still veto negated/retracted claims; deleting a
 negative label must not turn its surrounding prose into an affirmative claim.
 Suppressed markup also participates in these conservative vetoes, so formatting

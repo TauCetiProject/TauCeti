@@ -97,6 +97,11 @@ class GitFixtures(unittest.TestCase):
             with self.subTest(body=body):
                 changed = sp.PR(**{**sp.asdict(child), "body": body})
                 self.assertIsNone(detector.detect(changed)[0])
+        for label in ("#1 (optional)", "#1 or #3", "<strong>#1 (optional)</strong>"):
+            with self.subTest(label=label):
+                rendered = f'<p>Depends on <a href="/TauCetiProject/TauCeti/pull/1">{label}</a>.</p>'
+                detector.api = SimpleNamespace(declared_parents=lambda _: sp.rendered_parents(rendered))
+                self.assertIsNone(detector.detect(child)[0])
 
     def parent_child(self, *, draft=False, explicit=False):
         git(self.root, "checkout", "-b", "parent")
@@ -526,9 +531,9 @@ class ProseTests(unittest.TestCase):
                 self.assertEqual(sp.rendered_parents(html), set())
 
     def test_rendered_current_statement_and_canonical_parent_link(self):
-        html = '<p>This PR is stacked on <a href="/TauCetiProject/TauCeti/pull/12">parent</a>.</p>'
+        html = '<p>This PR is stacked on <a href="/TauCetiProject/TauCeti/pull/12">#12</a>.</p>'
         self.assertEqual(sp.rendered_parents(html), {12})
-        html = '<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">first</a>, <a href="/TauCetiProject/TauCeti/pull/13">second</a>.</p>'
+        html = '<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">#12</a>, <a href="/TauCetiProject/TauCeti/pull/13">#13</a>.</p>'
         self.assertEqual(sp.rendered_parents(html), {12, 13})
         self.assertEqual(sp.rendered_parents("<p>Dependencies: #12, #13</p>"), {12, 13})
         self.assertEqual(sp.rendered_parents("<p>This PR is\nstacked on #12</p>"), {12})
@@ -575,6 +580,16 @@ class ProseTests(unittest.TestCase):
     def test_based_or_built_on_does_not_alone_assert_a_dependency(self):
         for phrase in ("Based on", "Built on", "This PR is based on", "This branch is built on"):
             self.assertEqual(sp.rendered_parents(f"<p>{phrase} #12.</p>"), set())
+
+    def test_canonical_link_label_must_be_the_unqualified_matching_identity(self):
+        for label in ("#12 or #13", "#12 (optional)", "<strong>#12 (optional)</strong>",
+                      "<em>#12 or #13</em>", "parent", "#13"):
+            with self.subTest(label=label):
+                self.assertEqual(sp.rendered_parents(
+                    f'<p>Depends on <a href="/TauCetiProject/TauCeti/pull/12">{label}</a>.</p>'), set())
+        for label in ("#12", "<strong>#12</strong>", f"https://github.com/{sp.REPO}/pull/12"):
+            self.assertEqual(sp.rendered_parents(
+                f'<p>Depends on <a href="/TauCetiProject/TauCeti/pull/12">{label}</a>.</p>'), {12})
 
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
@@ -627,7 +642,7 @@ class ProseTests(unittest.TestCase):
 
     def test_affirmative_parent_identity(self):
         self.assertEqual(sp.rendered_parents("<p>This PR is stacked on #12 (#11).</p>"), {11, 12})
-        self.assertEqual(sp.rendered_parents('<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">parent</a></p>'), {12})
+        self.assertEqual(sp.rendered_parents('<p>Stacked on <a href="/TauCetiProject/TauCeti/pull/12">#12</a></p>'), {12})
         self.assertEqual(sp.rendered_parents("<p>Prerequisite: #12</p>"), {12})
 
     def test_superseding_closed_source_is_not_a_stack_claim(self):

@@ -303,18 +303,16 @@ class RenderedProse(HTMLParser):
             self.hidden[tag] += 1
             self.opaque()
         elif tag == "a":
-            canonical = False
+            number = None
             if not any(self.hidden.values()):
                 href = dict(attrs).get("href") or ""
                 if href.startswith("/"):
                     href = "https://github.com" + href
                 match = re.fullmatch(r"https://github\.com/([^/]+/[^/]+)/(?:pull|issues)/([1-9]\d*)(?:[/?#].*)?", href)
                 if match and match[1].lower() == REPO.lower():
-                    self.prose.append(f" #{match[2]} ")
-                    canonical = True
-            self.anchors.append(not canonical)
-            if not canonical:
-                self.opaque()
+                    number = int(match[2])
+            self.anchors.append({"number": number, "label": [], "position": len(self.prose)})
+            self.opaque()
             self.hidden[tag] += 1  # Link labels cannot manufacture declarations.
         elif tag in self.blocks:
             self.boundary()
@@ -324,8 +322,13 @@ class RenderedProse(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "a" and self.anchors:
             self.hidden[tag] -= 1
-            if self.anchors.pop():
-                self.opaque()
+            anchor = self.anchors.pop()
+            number = anchor["number"]
+            label = "".join(anchor["label"]).strip()
+            allowed = {f"#{number}", f"https://github.com/{REPO}/pull/{number}",
+                       f"https://github.com/{REPO}/issues/{number}"}
+            if number and label in allowed:
+                self.prose[anchor["position"]] = f" #{number} "
         elif self.hidden[tag]:
             self.hidden[tag] -= 1
             self.opaque()
@@ -334,6 +337,8 @@ class RenderedProse(HTMLParser):
 
     def handle_data(self, data):
         data = data.replace("\x1e", " ")
+        for anchor in self.anchors:
+            anchor["label"].append(data)
         # Suppressed markup cannot declare parents, but it may veto a claim.
         # In particular, formatting a negative link label as code must not
         # erase its negation. This deliberately favors conservative misses.
