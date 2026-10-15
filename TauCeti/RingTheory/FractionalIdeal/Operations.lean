@@ -30,6 +30,8 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 * `FractionalIdeal.toPrincipalIdeal_eq_one_iff`: the principal-map kernel consists of base units.
 * `FractionalIdeal.toPrincipalIdeal_neg`: negating a generator preserves its principal ideal.
 * `FractionalIdeal.isUnit_spanSingleton`: the principal fractional ideal of a unit is a unit.
+* `FractionalIdeal.isUnit_num_iff`: a fractional ideal and its integral numerator are invertible
+  together, over any localization.
 * `FractionalIdeal.spanSingleton_inv_mul_cancel_left`: scaling by a unit and then by its inverse
   returns the fractional ideal.
 -/
@@ -116,6 +118,14 @@ theorem isUnit_spanSingleton {x : P} (hx : IsUnit x) : IsUnit (spanSingleton S x
   obtain ⟨u, rfl⟩ := hx
   exact IsUnit.of_mul_eq_one (spanSingleton S ((u⁻¹ : Pˣ) : P)) (by
     rw [spanSingleton_mul_spanSingleton, Units.mul_inv, spanSingleton_one])
+
+/-- A fractional ideal is invertible exactly when its integral numerator is invertible.
+This extends Mathlib's `FractionalIdeal.isUnit_num` to any localization. -/
+@[simp]
+theorem isUnit_num_iff {I : FractionalIdeal S P} :
+    IsUnit (I.num : FractionalIdeal S P) ↔ IsUnit I := by
+  rw [← den_mul_self_eq_num' S P I, IsUnit.mul_iff,
+    and_iff_right (isUnit_spanSingleton (IsLocalization.map_units P I.den))]
 
 /-- Scaling a fractional ideal by a unit and then by its inverse returns the ideal. -/
 theorem spanSingleton_inv_mul_cancel_left (x : Pˣ) (I : FractionalIdeal S P) :

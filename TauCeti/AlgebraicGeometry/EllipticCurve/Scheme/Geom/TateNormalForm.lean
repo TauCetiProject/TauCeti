@@ -299,29 +299,6 @@ section Chart
 
 variable (c : PointedWeierstrassChart E.structureMap E.zero)
 
--- The section of the restriction of `E` to the base of `c` induced by `P`.
-private noncomputable def chartPoint : c.base ⟶ c.pullbackCarrier :=
-  c.isPullback.lift (c.baseMap ≫ P) (𝟙 _) (by simp [hP])
-
-@[reassoc (attr := simp)]
-private theorem chartPoint_toTotal : chartPoint hP c ≫ c.toTotal = c.baseMap ≫ P :=
-  IsPullback.lift_fst _ _ _ _
-
-@[reassoc (attr := simp)]
-private theorem chartPoint_toBase : chartPoint hP c ≫ c.toBase = 𝟙 _ :=
-  IsPullback.lift_snd _ _ _ _
-
--- The section of the projective model of the equation of `c` induced by `P`.
-private noncomputable def modelPoint : Spec c.ring ⟶ c.equation.projModel :=
-  c.baseIso.inv ≫ chartPoint hP c ≫ c.modelIso.hom
-
-private theorem chartPoint_modelIso_hom :
-    chartPoint hP c ≫ c.modelIso.hom = c.baseIso.hom ≫ modelPoint hP c := by
-  simp [modelPoint]
-
-private theorem modelPoint_projModelOver : modelPoint hP c ≫ c.equation.projModelOver = 𝟙 _ := by
-  simp [modelPoint]
-
 -- The restriction of `E` to the base of `c`, read through `modelIso`, is a pointed cartesian
 -- square from the projective model of the equation of `c` to `E`.
 private theorem isPullback_chart : IsPullback (c.modelIso.inv ≫ c.toTotal)
@@ -329,47 +306,23 @@ private theorem isPullback_chart : IsPullback (c.modelIso.inv ≫ c.toTotal)
   c.isPullback.of_iso c.modelIso (.refl _) c.baseIso (.refl _) (by simp) c.modelIso_over.symm
     (by simp) (by simp)
 
-private theorem projModelZero_chart : c.equation.projModelZero ≫ c.modelIso.inv ≫ c.toTotal =
-    (c.baseIso.inv ≫ c.baseMap) ≫ E.zero := by
-  rw [← cancel_epi c.baseIso.hom, ← c.modelIso_zero_assoc]
-  simp
-
-@[reassoc]
-private theorem modelPoint_chart : modelPoint hP c ≫ c.modelIso.inv ≫ c.toTotal =
-    (c.baseIso.inv ≫ c.baseMap) ≫ P := by
-  simp [modelPoint]
-
-variable {c} in
-private theorem modelPoint_projModelMap {k : PointedWeierstrassChart E.structureMap E.zero}
-    {h : k.base ⟶ c.base} (hh : h ≫ c.baseMap = k.baseMap) :
-    modelPoint hP k ≫ PointedWeierstrassChart.projModelMap hh =
-      (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ modelPoint hP c := by
-  have : chartPoint hP k ≫ PointedWeierstrassChart.pullbackCarrierMap hh = h ≫ chartPoint hP c :=
-    c.isPullback.hom_ext (by simp [reassoc_of% hh]) (by simp)
-  simp [modelPoint, reassoc_of% this]
-
--- The section induced by `P` on the model of a chart satisfies the conditions of the Tate normal
--- form if `P` does: the chart carries `modelPoint hP c` to `P` and the zero section to the zero
--- section, and multiplication by `n` commutes with it.
-private theorem modelPoint_ne (h₁ : ∀ s, P s ≠ E.zero s) (s : Spec c.ring) :
-    modelPoint hP c s ≠ c.equation.projModelZero s := fun hs ↦
-  h₁ ((c.baseIso.inv ≫ c.baseMap) s) (by
-    simpa only [← Scheme.Hom.comp_apply, modelPoint_chart, projModelZero_chart] using
-    congrArg (c.modelIso.inv ≫ c.toTotal) hs)
-
 private theorem modelPoint_mulBy_ne {n : ℤ} (hn : ∀ s, (P ≫ (E.mulBy n).left) s ≠ E.zero s)
     (s : Spec c.ring) :
-    (modelPoint hP c ≫ c.equation.projModelMulBy n) s ≠ c.equation.projModelZero s := fun hs ↦
-  hn ((c.baseIso.inv ≫ c.baseMap) s) (by simpa only [← Scheme.Hom.comp_apply, Category.assoc,
-    c.equation.projModelMulBy_comp_of_isPullback (isPullback_chart c) (projModelZero_chart c),
-    modelPoint_chart_assoc, projModelZero_chart] using congrArg (c.modelIso.inv ≫ c.toTotal) hs)
+    (c.modelPoint hP ≫ c.equation.projModelMulBy n) s ≠ c.equation.projModelZero s := fun hs ↦
+  hn ((c.baseIso.inv ≫ c.baseMap) s) (by
+    simpa only [← Scheme.Hom.comp_apply, Category.assoc,
+      (c.equation.projModelMulBy_comp_of_isPullback (isPullback_chart c)
+        c.projModelZero_modelIso_inv_toTotal),
+      c.modelPoint_modelIso_inv_toTotal_assoc hP, c.projModelZero_modelIso_inv_toTotal] using
+      congrArg (c.modelIso.inv ≫ c.toTotal) hs)
 
 -- A classifying pair of `(E, P)` restricts to a classifying pair of the model of every chart.
 private theorem isTate_chart {f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
     {g : E.carrier ⟶ curveULift.projModel} (hg : IsTate E.structureMap E.zero P f g) :
-    IsTate c.equation.projModelOver c.equation.projModelZero (modelPoint hP c)
+    IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP)
       ((c.baseIso.inv ≫ c.baseMap) ≫ f) ((c.modelIso.inv ≫ c.toTotal) ≫ g) :=
-  hg.comp (isPullback_chart c) (projModelZero_chart c) (modelPoint_chart hP c)
+  hg.comp (isPullback_chart c) c.projModelZero_modelIso_inv_toTotal
+    (c.modelPoint_modelIso_inv_toTotal hP)
 
 end Chart
 
@@ -392,13 +345,15 @@ private theorem IsTate.unique {f f' : S ⟶ Spec (.of (ULift.{u} UniversalTate.R
     (hg' : IsTate E.structureMap E.zero P f' g') : f = f' ∧ g = g' := by
   obtain ⟨A⟩ := E.localModel
   obtain rfl : f = f' := hom_ext_baseMap A fun i ↦ by
-    have := IsTate.base_eq (modelPoint_projModelOver hP _) (modelPoint_ne hP _ h₁)
-      (modelPoint_mulBy_ne hP _ h₂) (modelPoint_mulBy_ne hP _ h₃) (isTate_chart hP (A.chart i) hg)
+    have := IsTate.base_eq ((A.chart i).modelPoint_projModelOver hP)
+      ((A.chart i).modelPoint_apply_ne hP h₁) (modelPoint_mulBy_ne hP _ h₂)
+      (modelPoint_mulBy_ne hP _ h₃) (isTate_chart hP (A.chart i) hg)
       (isTate_chart hP (A.chart i) hg')
     rw [← cancel_epi (A.chart i).baseIso.inv]
     simpa using this
   refine ⟨rfl, A.hom_ext_of_toTotal g g' fun i ↦ ?_⟩
-  have := IsTate.total_eq (modelPoint_projModelOver hP _) (isTate_chart hP (A.chart i) hg)
+  have := IsTate.total_eq ((A.chart i).modelPoint_projModelOver hP)
+    (isTate_chart hP (A.chart i) hg)
     (isTate_chart hP (A.chart i) hg')
   rw [← cancel_epi (A.chart i).modelIso.inv]
   simpa using this
@@ -409,8 +364,8 @@ variable (c : PointedWeierstrassChart E.structureMap E.zero)
 
 include h₁ h₂ h₃ in
 private theorem exists_isTate_chart :
-    ∃ f g, IsTate c.equation.projModelOver c.equation.projModelZero (modelPoint hP c) f g :=
-  exists_isTate (modelPoint_projModelOver hP c) (modelPoint_ne hP c h₁)
+    ∃ f g, IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP) f g :=
+  exists_isTate (c.modelPoint_projModelOver hP) (c.modelPoint_apply_ne hP h₁)
     (modelPoint_mulBy_ne hP c h₂) (modelPoint_mulBy_ne hP c h₃)
 
 -- The base of a chosen classifying pair of the model of `c`.
@@ -422,7 +377,7 @@ private noncomputable def chartTotal : c.equation.projModel ⟶ curveULift.projM
   (exists_isTate_chart hP h₁ h₂ h₃ c).choose_spec.choose
 
 private theorem isTate_chartBase :
-    IsTate c.equation.projModelOver c.equation.projModelZero (modelPoint hP c)
+    IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP)
       (chartBase hP h₁ h₂ h₃ c) (chartTotal hP h₁ h₂ h₃ c) :=
   (exists_isTate_chart hP h₁ h₂ h₃ c).choose_spec.choose_spec
 
@@ -432,23 +387,24 @@ variable {c} {k : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶
 -- The chosen classifying pair of `c` restricts along a morphism of chart bases to the chosen
 -- classifying pair of `k`, by uniqueness over an affine base.
 private theorem isTate_projModelMap :
-    IsTate k.equation.projModelOver k.equation.projModelZero (modelPoint hP k)
+    IsTate k.equation.projModelOver k.equation.projModelZero (k.modelPoint hP)
       ((k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ chartBase hP h₁ h₂ h₃ c)
       (PointedWeierstrassChart.projModelMap hh ≫ chartTotal hP h₁ h₂ h₃ c) :=
   (isTate_chartBase hP h₁ h₂ h₃ c).comp (PointedWeierstrassChart.isPullback_projModelMap hh)
-    (PointedWeierstrassChart.projModelZero_projModelMap hh) (modelPoint_projModelMap hP hh)
+    (PointedWeierstrassChart.projModelZero_projModelMap hh)
+    (PointedWeierstrassChart.modelPoint_projModelMap hP hh)
 
 include hh in
 private theorem chartBase_comp :
     (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ chartBase hP h₁ h₂ h₃ c = chartBase hP h₁ h₂ h₃ k :=
-  IsTate.base_eq (modelPoint_projModelOver hP k) (modelPoint_ne hP k h₁)
+  IsTate.base_eq (k.modelPoint_projModelOver hP) (k.modelPoint_apply_ne hP h₁)
     (modelPoint_mulBy_ne hP k h₂) (modelPoint_mulBy_ne hP k h₃)
     (isTate_projModelMap hP h₁ h₂ h₃ hh) (isTate_chartBase hP h₁ h₂ h₃ k)
 
 private theorem chartTotal_comp :
     PointedWeierstrassChart.projModelMap hh ≫ chartTotal hP h₁ h₂ h₃ c =
       chartTotal hP h₁ h₂ h₃ k :=
-  IsTate.total_eq (modelPoint_projModelOver hP k)
+  IsTate.total_eq (k.modelPoint_projModelOver hP)
     (chartBase_comp hP h₁ h₂ h₃ hh ▸ isTate_projModelMap hP h₁ h₂ h₃ hh)
     (isTate_chartBase hP h₁ h₂ h₃ k)
 
@@ -527,7 +483,8 @@ private theorem isTate_tate :
   · rw [← (A.chart i).pulledZero_toTotal_assoc, toTotal_tateTotal,
       (A.chart i).modelIso_zero_assoc, (isTate_chartBase hP h₁ h₂ h₃ _).2.1,
       baseMap_tateBase_assoc]
-  · rw [← chartPoint_toTotal_assoc hP, toTotal_tateTotal, reassoc_of% chartPoint_modelIso_hom hP,
+  · rw [← PointedWeierstrassChart.chartPoint_toTotal_assoc _ hP, toTotal_tateTotal,
+      reassoc_of% PointedWeierstrassChart.chartPoint_modelIso_hom _ hP,
       (isTate_chartBase hP h₁ h₂ h₃ _).2.2, baseMap_tateBase_assoc]
 
 end Glue

@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
+public import TauCeti.RingTheory.Huber.WeightedEval.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
+import TauCeti.Data.Set.Finite
 import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
@@ -100,6 +102,10 @@ it.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_of_surjective`: **over a Tate ring, a
   surjection out of `A⟨X₁, …, Xₖ⟩` that is continuous at zero is already a strict
   presentation** — openness is supplied by the open mapping theorem rather than assumed.
+* `TauCeti.Huber.exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append`: over a
+  Huber ring the completion of `A⟨X₁, …, Xₖ⟩_T` is an open quotient of the completion of
+  `A⟨X'₁, …, X'ₖ, Y₁, …, Yₘ⟩_{V, 1}`, for any weights `V` making each `Vᵢ Xᵢ` power-bounded, with
+  `X'ᵢ` going to `Xᵢ` and each unweighted `Yⱼ` to a weighted variable `t Xᵢ`.
 * `TauCeti.Huber.exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion`: over a Tate ring the
   completion of `A⟨X₁, …, Xₖ⟩_T` is an open quotient of an unweighted `A⟨Y₁, …, Yₘ⟩`, each `Yⱼ`
   going to a weighted variable `t Xᵢ` and every weighted variable being hit.
@@ -402,13 +408,19 @@ theorem isStrictlyTopologicallyFiniteType_of_surjective {k : ℕ}
 
 end OpenMappingPresentation
 
-/-! ### Weighted presentations over a Tate ring
+/-! ### Trading weights for variables
 
-Over a Tate ring the weights can be removed: the completed weighted algebra `A⟨X₁, …, Xₖ⟩_T` is an
-open quotient of an unweighted `A⟨Yⱼ⟩`, with one variable `Y_{(i, t)}` for each `t ∈ Tᵢ`, sent to
-`t Xᵢ`. Consequently the two finite-type notions of Wedhorn's §6.6 coincide over a Tate ring
-(Wedhorn Proposition 6.34), and strong noetherianness passes to every algebra topologically of
-finite type over a strongly noetherian Tate ring, which is the input to Corollary 8.35.
+Over a Huber ring the substitution `Y_{(i, t)} ↦ t Xᵢ`, with one unweighted variable for each
+`t ∈ Tᵢ`, maps `A⟨Yⱼ⟩` openly into the completed weighted algebra `A⟨X₁, …, Xₖ⟩_T`, onto an open
+subring. Adjoining the variables `Xᵢ` themselves, with any weights `Vᵢ` making `Vᵢ Xᵢ`
+power-bounded, gives an open quotient map onto `A⟨X₁, …, Xₖ⟩_T`.
+
+Over a Tate ring the weights can be removed altogether: the open subring already contains each
+`Xᵢ`, since the pseudouniformiser is a unit, so `A⟨X₁, …, Xₖ⟩_T` is an open quotient of the
+unweighted `A⟨Yⱼ⟩`. Consequently the two finite-type notions of Wedhorn's §6.6 coincide over a
+Tate ring (Wedhorn Proposition 6.34), and strong noetherianness passes to every algebra
+topologically of finite type over a strongly noetherian Tate ring, which is the input to
+Corollary 8.35.
 -/
 
 section Lift
@@ -507,12 +519,11 @@ private theorem exists_aeval_eq_of_forall_coeff_mem
 
 end Lift
 
-section Tate
+section Substitution
 
 open Filter Topology
-open scoped Uniformity
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   {k m : ℕ} {T : Fin k → Set A} (hT : IsWeightFamily T) {idx : Fin m → Fin k} {t : Fin m → A}
   (htT : ∀ j, t j ∈ T (idx j))
 
@@ -600,8 +611,8 @@ private theorem coe_mem_closure_image_weightSubst
 of zero. -/
 private theorem closure_image_weightSubst_mem_nhds
     (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a)
-    {V : AddSubgroup (restrictedMvPowerSeriesCompletion m A)}
-    (hV : (V : Set (restrictedMvPowerSeriesCompletion m A)) ∈ 𝓝 0) :
+    {V : Set (restrictedMvPowerSeriesCompletion m A)}
+    (hV : V ∈ 𝓝 0) :
     closure (weightSubst hT htT '' V) ∈ 𝓝 (0 : Completion (weightedRestrictedSubring T hT)) := by
   obtain ⟨U, -, hU⟩ := (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_iff.mp
     ((Completion.continuous_coe _).continuousAt.preimage_mem_nhds (by simpa using hV))
@@ -613,73 +624,227 @@ private theorem closure_image_weightSubst_mem_nhds
   exact closure_mono (Set.image_mono (by rintro _ ⟨x, hx, rfl⟩; exact hU hx))
     (coe_mem_closure_image_weightSubst htT ht U hh)
 
-/-- Henkel's approximation removes the closure, so the range of `weightSubst` is a neighbourhood
-of zero. -/
-private theorem range_weightSubst_mem_nhds (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) :
-    ((weightSubst hT htT).range : Set (Completion (weightedRestrictedSubring T hT))) ∈ 𝓝 0 := by
-  obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.exists_antitone_basis_openAddSubgroup
-    (G := restrictedMvPowerSeriesCompletion m A)
-  have hVnhds n : (V n : Set (restrictedMvPowerSeriesCompletion m A)) ∈ 𝓝 0 :=
-    (V n).isOpen.mem_nhds (V n).zero_mem
-  refine Filter.mem_of_superset (closure_image_weightSubst_mem_nhds htT ht (hVnhds 0))
-    fun y hy ↦ ?_
-  obtain ⟨x, -, rfl⟩ := TauCeti.mem_image_of_mem_closure_image (weightSubst hT htT)
-    (continuous_weightSubst hT htT).continuousAt (V := fun n ↦ (V n).toAddSubgroup) hV
-    (fun n ↦ closure_image_weightSubst_mem_nhds htT ht (hVnhds (n + 1))) hy
-  exact ⟨x, rfl⟩
+/-- Henkel's approximation removes the closure, so `weightSubst` is an open map. -/
+private theorem isOpenMap_weightSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) :
+    IsOpenMap (weightSubst hT htT) :=
+  TauCeti.isOpenMap_of_closure_image_mem_nhds (weightSubst hT htT)
+    (continuous_weightSubst hT htT).continuousAt fun _ hV ↦
+      closure_image_weightSubst_mem_nhds htT ht hV
+
+end Substitution
+
+section Huber
+
+open Topology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  {k m : ℕ} {T : Fin k → Set A} {hT : IsWeightFamily T} {idx : Fin m → Fin k} {t : Fin m → A}
+  {V : Fin k → Set A}
+
+/-- The values of the substitution `X'ᵢ ↦ Xᵢ`, `Yⱼ ↦ tⱼ X_{idx j}` satisfy the hypothesis of the
+universal property of `A⟨X', Y⟩_{V, 1}`. -/
+private theorem isWeightBounded_append (htT : ∀ j, t j ∈ T (idx j)) (hVX : IsWeightedVarPowerBounded
+    (algebraMap A (Completion (weightedRestrictedSubring T hT))) V
+    fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
+      Completion (weightedRestrictedSubring T hT))) :
+    IsWeightBounded (algebraMap A (Completion (weightedRestrictedSubring T hT)))
+      (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
+      (Fin.append (fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
+          Completion (weightedRestrictedSubring T hT)))
+        fun j ↦ ((weightedC T hT (t j) * weightedX T hT (idx j) :
+          weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT))) := by
+  refine isWeightBounded_of_isWeightedVarPowerBounded ((isWeightedVarPowerBounded_iff _ _ _).mpr
+    (Fin.addCases (fun i ↦ ?_) fun j ↦ ?_))
+  · simpa using (isWeightedVarPowerBounded_iff _ _ _).mp hVX i
+  · refine (isPowerBounded_iff.mp (isPowerBounded_completion_coe_of_isPowerBounded
+      (isPowerBounded_weightedC_mul_weightedX hT (htT j)))).subset ?_
+    simp [Set.singleton_pow, Completion.coe_one]
+
+/-- The substitution `A⟨X'₁, …, X'ₖ, Y₁, …, Yₘ⟩_{V, 1} → A⟨X₁, …, Xₖ⟩_T` (completed) sending `X'ᵢ`
+to `Xᵢ` and `Yⱼ` to `tⱼ X_{idx j}`. -/
+private noncomputable def appendSubst (htT : ∀ j, t j ∈ T (idx j)) (hV : IsWeightFamily V)
+    (hVX : IsWeightedVarPowerBounded
+    (algebraMap A (Completion (weightedRestrictedSubring T hT))) V
+    fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
+      Completion (weightedRestrictedSubring T hT))) :
+    Completion (weightedRestrictedSubring (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
+        (hV.append isWeightFamily_one_weight)) →+*
+      Completion (weightedRestrictedSubring T hT) :=
+  weightedEvalHomCompletion _
+    (continuous_algebraMap_completion_weightedRestrictedSubring k A hT).continuousAt
+    (isWeightBounded_append htT hVX)
+
+/-- The inclusion `A⟨Y₁, …, Yₘ⟩ → A⟨X'₁, …, X'ₖ, Y₁, …, Yₘ⟩_{V, 1}` of the unweighted block. -/
+private noncomputable def appendIncl (hV : IsWeightFamily V) :
+    restrictedMvPowerSeriesCompletion m A →+*
+      Completion (weightedRestrictedSubring (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
+        (hV.append isWeightFamily_one_weight)) :=
+  weightedEvalHomCompletion isWeightFamily_one_weight
+    (continuous_algebraMap_completion_weightedRestrictedSubring (k + m) A _).continuousAt
+    ((isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun j ↦
+      isPowerBounded_completion_coe_of_isPowerBounded
+        (isPowerBounded_weightedX (hV.append isWeightFamily_one_weight) (i := Fin.natAdd k j)
+          (by simp)))
+
+variable {htT : ∀ j, t j ∈ T (idx j)} {hV : IsWeightFamily V} {hVX : IsWeightedVarPowerBounded
+    (algebraMap A (Completion (weightedRestrictedSubring T hT))) V
+    fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
+      Completion (weightedRestrictedSubring T hT))}
+
+private theorem appendSubst_algebraMap (a : A) :
+    appendSubst htT hV hVX (algebraMap A _ a) =
+      algebraMap A (Completion (weightedRestrictedSubring T hT)) a := by
+  rw [algebraMap_completion_weightedRestrictedSubring_apply, appendSubst,
+    weightedEvalHomCompletion_coe, weightedEvalHom_weightedC]
+
+private theorem appendSubst_weightedX_castAdd (i : Fin k) :
+    appendSubst htT hV hVX (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.castAdd m i) :
+        weightedRestrictedSubring _ _) =
+      ((weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) := by
+  rw [appendSubst, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX, Fin.append_left]
+
+private theorem appendSubst_weightedX_natAdd (j : Fin m) :
+    appendSubst htT hV hVX (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.natAdd k j) :
+        weightedRestrictedSubring _ _) =
+      ((weightedC T hT (t j) * weightedX T hT (idx j) : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) := by
+  rw [appendSubst, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX, Fin.append_right]
+
+private theorem appendIncl_algebraMap (a : A) :
+    appendIncl hV (algebraMap A (restrictedMvPowerSeriesCompletion m A) a) =
+      algebraMap A _ a := by
+  rw [algebraMap_completion_weightedRestrictedSubring_apply, appendIncl,
+    weightedEvalHomCompletion_coe, weightedEvalHom_weightedC]
+
+private theorem appendIncl_weightedX (j : Fin m) :
+    appendIncl hV (weightedX _ (isWeightFamily_one_weight (A := A)) j :
+        weightedRestrictedSubring _ _) =
+      Completion.coe' (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.natAdd k j) :
+        weightedRestrictedSubring _ _) := by
+  rw [appendIncl, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
+
+private theorem weightSubst_weightedX (j : Fin m) :
+    weightSubst hT htT (weightedX _ (isWeightFamily_one_weight (A := A)) j :
+        weightedRestrictedSubring _ _) =
+      ((weightedC T hT (t j) * weightedX T hT (idx j) : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) := by
+  rw [weightSubst, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
+
+/-- On the unweighted block the substitution is `weightSubst`. -/
+private theorem appendSubst_appendIncl (x : restrictedMvPowerSeriesCompletion m A) :
+    appendSubst htT hV hVX (appendIncl hV x) = weightSubst hT htT x := by
+  refine DFunLike.congr_fun (completion_weightedRestrictedSubring_ringHom_ext_of_continuous
+    (f := (appendSubst htT hV hVX).comp (appendIncl hV)) (g := weightSubst hT htT)
+    isWeightFamily_one_weight
+    ((continuous_weightedEvalHomCompletion ..).comp (continuous_weightedEvalHomCompletion ..))
+    (continuous_weightSubst hT htT) (fun a ↦ ?_) fun j ↦ ?_) x
+  · simp only [RingHom.comp_apply, ← algebraMap_completion_weightedRestrictedSubring_apply,
+      appendIncl_algebraMap, appendSubst_algebraMap, weightSubst_algebraMap]
+  · simp only [RingHom.comp_apply, appendIncl_weightedX, appendSubst_weightedX_natAdd,
+      weightSubst_weightedX]
+
+/-- The substitution is open: the image of a neighbourhood of zero contains the image under
+`weightSubst` of its preimage in the unweighted block, whose closure is a neighbourhood of zero. -/
+private theorem isOpenMap_appendSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) :
+    IsOpenMap (appendSubst htT hV hVX) := by
+  refine TauCeti.isOpenMap_of_closure_image_mem_nhds (appendSubst htT hV hVX)
+    (continuous_weightedEvalHomCompletion ..).continuousAt fun N hN ↦ ?_
+  have hN' : (appendIncl hV) ⁻¹' N ∈ 𝓝 (0 : restrictedMvPowerSeriesCompletion m A) :=
+    (continuous_weightedEvalHomCompletion ..).continuousAt.preimage_mem_nhds
+      (by rwa [map_zero])
+  refine Filter.mem_of_superset (closure_image_weightSubst_mem_nhds htT ht hN')
+    (closure_mono ?_)
+  rintro _ ⟨x, hx, rfl⟩
+  exact ⟨appendIncl hV x, hx, appendSubst_appendIncl x⟩
+
+/-- The substitution is surjective: its range is an open subring containing the constants and
+every `Xᵢ`. -/
+private theorem surjective_appendSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) :
+    Function.Surjective (appendSubst htT hV hVX) :=
+  mem_of_mem_nhds_of_forall_weightedX_mem hT
+    ((isOpenMap_appendSubst ht).isOpen_range.mem_nhds ⟨0, map_zero _⟩)
+    (fun a ↦ RingHom.mem_range.mpr ⟨_, appendSubst_algebraMap a⟩)
+    fun i ↦ RingHom.mem_range.mpr ⟨_, appendSubst_weightedX_castAdd i⟩
+
+variable (hT) in
+/-- **Over a Huber ring the completed weighted algebra is an open quotient of a partly unweighted
+one.** Let `T` be a finite weight family and `V` a weight family such that each weighted variable
+`Vᵢ Xᵢ` is power-bounded in the completion of `A⟨X₁, …, Xₖ⟩_T`. For an enumeration
+`j ↦ (idx j, t j)` of the pairs `(i, t)` with `t ∈ Tᵢ`, there is an open quotient map over `A`
+from the completion of `A⟨X'₁, …, X'ₖ, Y₁, …, Yₘ⟩_{V, 1}` onto that of `A⟨X₁, …, Xₖ⟩_T`, sending
+`X'ᵢ` to `Xᵢ` and `Yⱼ` to `tⱼ X_{idx j}`.
+
+Each unweighted `Yⱼ` stands for the weighted variable `tⱼ X_{idx j}`, so the weights `T` reappear
+as variables. The variables `X'ᵢ` are needed because over a general Huber ring the `tⱼ X_{idx j}`
+need not generate `Xᵢ`: over `ℤ_[p]` with `T = {p}`, the series in `p X` do not contain `X`. They
+may carry any weights `V` for which `Vᵢ Xᵢ` is power-bounded. Over a Tate ring the `X'ᵢ` can be
+dropped:
+`TauCeti.Huber.exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion`. -/
+theorem exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append
+    (hTfin : ∀ i, (T i).Finite) (hV : IsWeightFamily V) (hVX : IsWeightedVarPowerBounded
+      (algebraMap A (Completion (weightedRestrictedSubring T hT))) V
+      fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT))) :
+    ∃ (m : ℕ) (idx : Fin m → Fin k) (t : Fin m → A), (∀ j, t j ∈ T (idx j)) ∧
+      (∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) ∧
+      ∃ θ : Completion (weightedRestrictedSubring (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
+          (hV.append isWeightFamily_one_weight)) →+* Completion (weightedRestrictedSubring T hT),
+        IsOpenQuotientMap θ ∧
+          θ.comp (algebraMap A _) = algebraMap A (Completion (weightedRestrictedSubring T hT)) ∧
+          (∀ i, θ (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.castAdd m i) :
+              weightedRestrictedSubring _ _) =
+            ((weightedX T hT i : weightedRestrictedSubring T hT) :
+              Completion (weightedRestrictedSubring T hT))) ∧
+          ∀ j, θ (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.natAdd k j) :
+              weightedRestrictedSubring _ _) =
+            ((weightedC T hT (t j) * weightedX T hT (idx j) : weightedRestrictedSubring T hT) :
+              Completion (weightedRestrictedSubring T hT)) := by
+  obtain ⟨m, idx, t, htT, ht⟩ := Set.exists_enumeration_finite_family T hTfin
+  exact ⟨m, idx, t, htT, ht, appendSubst htT hV hVX,
+    ⟨surjective_appendSubst ht, continuous_weightedEvalHomCompletion .., isOpenMap_appendSubst ht⟩,
+    RingHom.ext appendSubst_algebraMap, appendSubst_weightedX_castAdd,
+    appendSubst_weightedX_natAdd⟩
+
+end Huber
+
+section Tate
+
+open Filter Topology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  {k m : ℕ} {T : Fin k → Set A} {hT : IsWeightFamily T} {idx : Fin m → Fin k} {t : Fin m → A}
+  (htT : ∀ j, t j ∈ T (idx j))
 
 /-- `weightSubst` is surjective once every element of every `Tᵢ` is some `tⱼ` with
 `idx j = i`. -/
 private theorem surjective_weightSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) :
     Function.Surjective (weightSubst hT htT) := by
   -- the range `R` is an open subring; it contains every `Xᵢ`, because some `ϖⁿ Xᵢ` is small and
-  -- the pseudouniformiser `ϖ` is a unit; so it contains the polynomials, then all of `A⟨X⟩_T`,
-  -- and being closed it is everything
+  -- the pseudouniformiser `ϖ` is a unit
   set R := (weightSubst hT htT).range
-  have hR := range_weightSubst_mem_nhds (hT := hT) htT ht
-  have hX (i : Fin k) : ((weightedX T hT i : weightedRestrictedSubring T hT) :
-      Completion (weightedRestrictedSubring T hT)) ∈ R := by
-    obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-    obtain ⟨u, rfl⟩ := hϖ.isUnit
-    have hc : Continuous fun a : A ↦ ((weightedC T hT a * weightedX T hT i :
-        weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) :=
-      (Completion.continuous_coe _).comp ((continuous_weightedC hT).mul continuous_const)
-    have hlim := (hc.tendsto 0).comp hϖ.isTopologicallyNilpotent
-    rw [map_zero, zero_mul, Completion.coe_zero] at hlim
-    obtain ⟨n, hn⟩ := (hlim.eventually_mem hR).exists
-    have hXi : ((weightedX T hT i : weightedRestrictedSubring T hT) :
-        Completion (weightedRestrictedSubring T hT)) =
-          algebraMap A (Completion (weightedRestrictedSubring T hT)) ((↑u⁻¹ : A) ^ n) *
-            ((weightedC T hT ((u : A) ^ n) * weightedX T hT i : weightedRestrictedSubring T hT) :
-              Completion (weightedRestrictedSubring T hT)) := by
-      rw [algebraMap_completion_weightedRestrictedSubring_apply, ← Completion.coe_mul,
-        ← mul_assoc, ← map_mul, ← mul_pow, Units.inv_mul, one_pow, map_one, one_mul]
-    rw [hXi]
-    exact R.mul_mem ⟨_, weightSubst_algebraMap hT htT _⟩ hn
-  have hpoly (p : MvPolynomial (Fin k) A) : ((weightedPolynomialHom T hT p :
-      weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) ∈ R := by
-    induction p using MvPolynomial.induction_on with
-    | C a => exact ⟨_, (weightSubst_coe_weightedPolynomialHom hT htT (MvPolynomial.C a)).trans
-        (by rw [MvPolynomial.aeval_C, MvPolynomial.algebraMap_eq])⟩
-    | add p q hp hq => simpa only [map_add, Completion.coe_add] using R.add_mem hp hq
-    | mul_X p i hp =>
-      rw [map_mul, Completion.coe_mul, weightedPolynomialHom_X]
-      exact R.mul_mem hp (hX i)
-  -- an open subgroup containing the polynomials contains every series
-  have hH (h : weightedRestrictedSubring T hT) :
-      (h : Completion (weightedRestrictedSubring T hT)) ∈ R := by
-    obtain ⟨U, -, hU⟩ := (hasBasis_nhds_zero_weightedTopology hT).mem_iff.mp
-      ((Completion.continuous_coe _).continuousAt.preimage_mem_nhds (by simpa using hR))
-    obtain ⟨p, hp⟩ := exists_mvPolynomial_forall_coeff_sub_mem
-      (mem_weightedRestrictedSubring.mp h.2) U
-    have hsum := R.add_mem (hpoly p) (hU (mem_weightedNhd.mpr fun ν ↦ by simpa using hp ν :
-      h - weightedPolynomialHom T hT p ∈ weightedNhd T hT U.toAddSubgroup))
-    rwa [← Completion.coe_add, add_sub_cancel] at hsum
-  -- a closed subgroup containing the dense image of `A⟨X⟩_T` is everything
-  intro y
-  exact closure_minimal (Set.range_subset_iff.mpr hH)
-    (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR))
-    (Completion.denseRange_coe y)
+  have hR : (R : Set (Completion (weightedRestrictedSubring T hT))) ∈ 𝓝 0 :=
+    (isOpenMap_weightSubst htT ht).isOpen_range.mem_nhds ⟨0, map_zero _⟩
+  refine mem_of_mem_nhds_of_forall_weightedX_mem hT hR
+    (fun a ↦ ⟨_, weightSubst_algebraMap hT htT a⟩)
+    fun i ↦ ?_
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨u, rfl⟩ := hϖ.isUnit
+  have hc : Continuous fun a : A ↦ ((weightedC T hT a * weightedX T hT i :
+      weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) :=
+    (Completion.continuous_coe _).comp ((continuous_weightedC hT).mul continuous_const)
+  have hlim := (hc.tendsto 0).comp hϖ.isTopologicallyNilpotent
+  rw [map_zero, zero_mul, Completion.coe_zero] at hlim
+  obtain ⟨n, hn⟩ := (hlim.eventually_mem hR).exists
+  have hXi : ((weightedX T hT i : weightedRestrictedSubring T hT) :
+      Completion (weightedRestrictedSubring T hT)) =
+        algebraMap A (Completion (weightedRestrictedSubring T hT)) ((↑u⁻¹ : A) ^ n) *
+          ((weightedC T hT ((u : A) ^ n) * weightedX T hT i : weightedRestrictedSubring T hT) :
+            Completion (weightedRestrictedSubring T hT)) := by
+    rw [algebraMap_completion_weightedRestrictedSubring_apply, ← Completion.coe_mul,
+      ← mul_assoc, ← map_mul, ← mul_pow, Units.inv_mul, one_pow, map_one, one_mul]
+  rw [hXi]
+  exact R.mul_mem ⟨_, weightSubst_algebraMap hT htT _⟩ hn
 
 variable (hT) in
 /-- **Over a Tate ring the completed weighted algebra is an open quotient of an unweighted one.**
@@ -698,24 +863,11 @@ theorem exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion
               weightedRestrictedSubring _ _) =
             ((weightedC T hT (t j) * weightedX T hT (idx j) : weightedRestrictedSubring T hT) :
               Completion (weightedRestrictedSubring T hT)) := by
-  -- enumerate the pairs `(i, t)` with `t ∈ T i`
-  have : ∀ i, Finite (T i) := fun i ↦ (hTfin i).to_subtype
-  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ((i : Fin k) × T i)
-  have ht : ∀ i, ∀ a ∈ T i, ∃ j, (e.symm j).1 = i ∧ ((e.symm j).2 : A) = a := fun i a ha ↦
-    ⟨e ⟨i, a, ha⟩, by rw [Equiv.symm_apply_apply],
-      congrArg (fun x : (i : Fin k) × T i ↦ (x.2 : A)) (e.symm_apply_apply _)⟩
-  have htT : ∀ j, ((e.symm j).2 : A) ∈ T (e.symm j).1 := fun j ↦ (e.symm j).2.2
-  -- the open mapping theorem makes the continuous surjection `weightSubst` open
-  have : (𝓤 (Completion (weightedRestrictedSubring T hT))).IsCountablyGenerated :=
-    IsUniformAddGroup.uniformity_countably_generated
-  have : (𝓤 (restrictedMvPowerSeriesCompletion m A)).IsCountablyGenerated :=
-    IsUniformAddGroup.uniformity_countably_generated
+  obtain ⟨m, idx, t, htT, ht⟩ := Set.exists_enumeration_finite_family T hTfin
   let θ : restrictedMvPowerSeriesCompletion m A →ₐ[A] Completion (weightedRestrictedSubring T hT) :=
     { weightSubst hT htT with commutes' := weightSubst_algebraMap hT htT }
-  have hs : Function.Surjective θ := surjective_weightSubst htT ht
-  refine ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, htT, ht, θ.toRingHom,
-    ⟨hs, continuous_weightSubst hT htT,
-      IsTateRing.isOpenMap θ.toLinearMap hs (continuous_weightSubst hT htT).continuousAt⟩,
+  refine ⟨m, idx, t, htT, ht, θ.toRingHom,
+    ⟨surjective_weightSubst htT ht, continuous_weightSubst hT htT, isOpenMap_weightSubst htT ht⟩,
     RingHom.ext (weightSubst_algebraMap hT htT), fun j ↦ ?_⟩
   simp only [θ]
   rw [weightSubst, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]

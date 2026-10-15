@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
@@ -63,6 +67,11 @@ Jordan–Kinderlehrer–Otto step is unique.
 * `TauCeti.potentialEnergy_dirac`: the potential energy of a Dirac mass at `x` is `V x`.
 * `TauCeti.potentialEnergy_ne_bot_of_hasFiniteMoment`: a potential with at most quadratic negative
   part has potential energy `≠ ⊥` against every finite measure with finite second moment.
+* `TauCeti.integrable_comp_of_norm_gradient_le`: a differentiable potential whose gradient grows at
+  most linearly is integrable against the law of every square-integrable random vector.
+* `TauCeti.hasDerivAt_integral_comp_add_smul`: the first variation `∫ ⟪∇V, ξ⟫ dρ` of the potential
+  energy of such a potential along the perturbation `x ↦ x + h • ξ x` of a law of finite second
+  moment.
 * `TauCeti.potentialEnergy_eq_lintegral_add_sub`: for an almost everywhere measurable potential
   almost everywhere bounded below by `-c`, the potential energy of a probability measure is
   `∫⁻ (V + c) - c`.
@@ -88,7 +97,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal unitInterval
+open scoped ENNReal unitInterval RealInnerProductSpace
 
 namespace TauCeti
 
@@ -259,6 +268,94 @@ theorem potentialEnergy_ne_bot_of_hasFiniteMoment {V : E → ℝ} {μ : Measure 
     (.of_forall hVAB)
 
 end Growth
+
+section FirstVariation
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {ξ : E → E} {V : E → ℝ} {C : ℝ}
+
+omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] in
+/-- A differentiable potential whose gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, is
+integrable against the law of every square-integrable random vector: for a finite measure `ρ` and
+`T ∈ L²(ρ; E)`, the function `V ∘ T` is integrable. -/
+theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {ρ : Measure α}
+    [IsFiniteMeasure ρ] {T : α → E} (hV : Differentiable ℝ V)
+    (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖)) (hT : MemLp T 2 ρ) :
+    Integrable (fun a ↦ V (T a)) ρ := by
+  -- By the mean value inequality, `V` grows at most quadratically.
+  have hgrowth (x : E) : |V x - V 0| ≤ C * (1 + ‖x‖) * ‖x‖ := by
+    have hb : ∀ y ∈ Metric.closedBall (0 : E) ‖x‖, ‖fderiv ℝ V y‖ ≤ C * (1 + ‖x‖) := by
+      intro y hy
+      rw [← toDual_gradient, LinearIsometryEquiv.norm_map]
+      exact (hV' y).trans (mul_le_mul_of_nonneg_left (by simpa using hy)
+        (by simpa using (norm_nonneg _).trans (hV' 0)))
+    have := (convex_closedBall (0 : E) ‖x‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
+      (fun y _ ↦ hV y) hb (Metric.mem_closedBall_self (norm_nonneg x) : (0 : E) ∈ _)
+      (by simp : x ∈ Metric.closedBall (0 : E) ‖x‖)
+    simpa [← Real.norm_eq_abs] using this
+  have hT₂ : Integrable (fun a ↦ ‖T a‖ ^ 2) ρ :=
+    (memLp_two_iff_integrable_sq_norm hT.aestronglyMeasurable).1 hT
+  have hT₁ : Integrable (fun a ↦ ‖T a‖) ρ := (hT.integrable one_le_two).norm
+  refine ((integrable_const |V 0|).add ((hT₁.add hT₂).const_mul C)).mono'
+    (hV.continuous.comp_aestronglyMeasurable hT.aestronglyMeasurable) (.of_forall fun a ↦ ?_)
+  have := hgrowth (T a)
+  simp only [Real.norm_eq_abs, Pi.add_apply]
+  rw [abs_le] at this ⊢
+  constructor <;> nlinarith [neg_abs_le (V 0), le_abs_self (V 0)]
+
+/-- **The first variation of the potential energy.** Let `V` be a differentiable potential whose
+gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, and let `ρ` be a finite measure with
+finite second moment. For every vector field `ξ ∈ L²(ρ; E)`, the potential energy
+`h ↦ ∫ V (x + h • ξ x) dρ` of the perturbation of `ρ` along `ξ` has derivative
+`∫ ⟪∇V x, ξ x⟫ dρ` at `h = 0`. -/
+theorem hasDerivAt_integral_comp_add_smul {ρ : Measure E} [IsFiniteMeasure ρ]
+    (hV : Differentiable ℝ V) (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖)) (hρ : MemLp id 2 ρ)
+    (hξ : MemLp ξ 2 ρ) :
+    HasDerivAt (fun h : ℝ ↦ ∫ x, V (x + h • ξ x) ∂ρ) (∫ x, ⟪gradient V x, ξ x⟫ ∂ρ) 0 := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hV' 0)
+  have hξm := hξ.aestronglyMeasurable
+  have hVint (h : ℝ) : Integrable (fun x ↦ V (x + h • ξ x)) ρ :=
+    integrable_comp_of_norm_gradient_le hV hV' (hρ.add (hξ.const_smul h))
+  have hpt (x : E) (h : ℝ) : HasDerivAt (fun h ↦ V (x + h • ξ x))
+      ⟪gradient V (x + h • ξ x), ξ x⟫ h := by
+    have hl : HasDerivAt (fun h : ℝ ↦ x + h • ξ x) (ξ x) h := by
+      simpa using ((hasDerivAt_id h).smul_const (ξ x)).const_add x
+    have := (hV (x + h • ξ x)).hasFDerivAt.comp_hasDerivAt h hl
+    rwa [← toDual_gradient, InnerProductSpace.toDual_apply_apply] at this
+  have hgm : AEStronglyMeasurable (fun x ↦ ⟪gradient V x, ξ x⟫) ρ := by
+    have : Measurable (gradient V) :=
+      (InnerProductSpace.toDual ℝ E).symm.continuous.measurable.comp (measurable_fderiv ℝ V)
+    exact this.aestronglyMeasurable.inner hξm
+  -- For `|h| < 1` the derivative is dominated by `C (1 + ‖x‖ + ‖ξ x‖) ‖ξ x‖`, which is
+  -- integrable because `x` and `ξ x` are square integrable.
+  have hx₂ : Integrable (fun x : E ↦ ‖x‖ ^ 2) ρ :=
+    (memLp_two_iff_integrable_sq_norm aestronglyMeasurable_id).1 hρ
+  have hξ₂ : Integrable (fun x ↦ ‖ξ x‖ ^ 2) ρ := (memLp_two_iff_integrable_sq_norm hξm).1 hξ
+  have hbd : Integrable (fun x ↦ C * (‖ξ x‖ + (‖x‖ ^ 2 + ‖ξ x‖ ^ 2) / 2 + ‖ξ x‖ ^ 2)) ρ :=
+    (((hξ.integrable one_le_two).norm.add ((hx₂.add hξ₂).div_const 2)).add hξ₂).const_mul C
+  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (F' := fun h x ↦ ⟪gradient V (x + h • ξ x), ξ x⟫) (Metric.ball_mem_nhds 0 one_pos)
+    (.of_forall fun h ↦ (hVint h).aestronglyMeasurable)
+    (by simpa only [zero_smul, add_zero] using hVint 0)
+    (by simpa only [zero_smul, add_zero] using hgm) ?_ hbd
+    (.of_forall fun x h _ ↦ hpt x h)).2.congr_deriv (by simp only [zero_smul, add_zero])
+  refine .of_forall fun x h hh ↦ ?_
+  rw [Metric.mem_ball, dist_zero_right, Real.norm_eq_abs] at hh
+  have hs : ‖x + h • ξ x‖ ≤ ‖x‖ + ‖ξ x‖ := by
+    refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
+    rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) hh.le
+  calc ‖⟪gradient V (x + h • ξ x), ξ x⟫‖
+      ≤ ‖gradient V (x + h • ξ x)‖ * ‖ξ x‖ := norm_inner_le_norm _ _
+    _ ≤ C * (1 + (‖x‖ + ‖ξ x‖)) * ‖ξ x‖ :=
+      mul_le_mul_of_nonneg_right ((hV' _).trans
+        (mul_le_mul_of_nonneg_left (by linarith) hC)) (norm_nonneg _)
+    _ ≤ C * (‖ξ x‖ + (‖x‖ ^ 2 + ‖ξ x‖ ^ 2) / 2 + ‖ξ x‖ ^ 2) := by
+      rw [mul_assoc]
+      refine mul_le_mul_of_nonneg_left ?_ hC
+      nlinarith [sq_nonneg (‖x‖ - ‖ξ x‖)]
+
+end FirstVariation
 
 section LowerSemicontinuous
 

@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
-import TauCeti.NumberTheory.LocalField.FiniteExtension.DiscreteValuationRing
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.DiscreteValuationRing
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 
 /-!
@@ -190,9 +190,9 @@ theorem HasPotentialGoodReduction.exists_tateModuleGaloisRepresentation_eq_one
           W.tateModuleGaloisRepresentation ℓ σ = 1 := by
   obtain ⟨L, _, _, _, S, _, _, _, _, _, _, _, hS, hgood⟩ := hasPotentialGoodReduction_iff.1 h
   -- Equip `L` with its structure of a local field.
-  let := finiteExtensionValuativeRel K L
-  let := finiteExtensionNormedFieldTopology K L
-  have := finiteExtension_valuativeExtension K L
+  let := algebraicExtensionValuativeRel K L
+  let := algebraicExtensionNormedFieldTopology K L
+  have := algebraicExtension_valuativeExtension K L
   have := finiteExtension_isNonarchimedeanLocalField K L
   -- The minimal model of `W` over `S` is `C • W` for a change of variables `C`. As `S` lies in
   -- `𝒪[L]`, it has good reduction over `𝒪[L]` too.
