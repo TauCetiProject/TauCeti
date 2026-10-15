@@ -82,7 +82,7 @@ def wait_publication(run_id, attempt, *, fetch=api, clock=time.monotonic, sleep=
                 previous = current
             if job["status"] == "completed" and not job.get("runner_name"):
                 return "failure", "publisher completed without acquiring a runner; inspect run jobs and Namespace routing"
-            if job["status"] in {"in_progress", "completed"} and job.get("conclusion") != "skipped":
+            if job.get("runner_name") and job["status"] in {"in_progress", "completed"}:
                 if not isolated_runner(data, job, run_id):
                     return "failure", "publisher runner/labels are not isolated; inspect Namespace routing"
             if job["status"] == "completed":
@@ -112,7 +112,15 @@ def terminal_state(env, *, wait=wait_publication, observe=observation):
         try:
             batch_id = int(env["BORS_BATCH_ID"])
             branch = env["BORS_BASE_REF"]
-            candidate_ref(observe(batch_id, branch), env["STATUS_SHA"], env["BORS_BASE_SHA"],
+            for attempt in range(3):
+                try:
+                    data = observe(batch_id, branch)
+                    break
+                except OSError:
+                    if attempt == 2:
+                        raise
+                    time.sleep(5 * (attempt + 1))
+            candidate_ref(data, env["STATUS_SHA"], env["BORS_BASE_SHA"],
                           batch_id=batch_id, branch=branch)
         except (OSError, ValueError, KeyError, TypeError):
             return "failure", "bors generation is stale or its authority is unavailable; redispatch current batch"
@@ -147,7 +155,7 @@ def main():
             api(f"/statuses/{revision}", payload)
             print(f"Posted build={state} on {revision}: {description}", flush=True)
             return 0 if state == "success" else 1
-        except (OSError, ValueError, KeyError) as error:
+        except (OSError, ValueError, KeyError, TypeError) as error:
             print(f"::warning::terminal status POST failed: {type(error).__name__}", flush=True)
             headers = getattr(error, "headers", None)
             retry_after = headers.get("Retry-After") if headers else None

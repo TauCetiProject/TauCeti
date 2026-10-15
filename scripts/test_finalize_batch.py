@@ -110,6 +110,11 @@ class FinalizerTests(unittest.TestCase):
         self.assertIn("without acquiring", result[1])
         self.assertEqual(elapsed, 0)
 
+    def test_in_progress_without_runner_name_is_observed_as_not_yet_acquired(self):
+        result, elapsed = self.wait([jobs(dict(job("in_progress", None), runner_name="")), jobs(job())])
+        self.assertEqual(result[0], "success")
+        self.assertEqual(elapsed, 30)
+
     def test_failed_canceled_or_missing_sandbox_never_waits_or_posts_green(self):
         wait = Mock(side_effect=AssertionError("no publisher wait after failed audit"))
         for result in ["failure", "cancelled", "skipped", ""]:
@@ -136,7 +141,13 @@ class FinalizerTests(unittest.TestCase):
             stale = copy.deepcopy(data)
             stale["requested_batch"][field] = value
             self.assertEqual(finalizer.terminal_state(env, wait=wait, observe=lambda *_: stale)[0], "failure")
-        self.assertEqual(finalizer.terminal_state(env, wait=wait, observe=Mock(side_effect=OSError()))[0], "failure")
+        with patch.object(finalizer.time, "sleep"):
+            self.assertEqual(finalizer.terminal_state(env, wait=wait, observe=Mock(side_effect=OSError()))[0], "failure")
+        observe = Mock(side_effect=[OSError(), OSError(), data])
+        with patch.object(finalizer.time, "sleep") as sleep:
+            self.assertEqual(finalizer.terminal_state(env, wait=wait, observe=observe)[0], "success")
+            self.assertEqual(observe.call_count, 3)
+            self.assertEqual([call.args for call in sleep.call_args_list], [(5,), (10,)])
 
     def test_status_uses_exact_sha_and_retries_boundedly(self):
         for state in ["success", "failure"]:
@@ -221,6 +232,7 @@ class WorkflowBoundaryTests(unittest.TestCase):
                                               "namespace-features:github.run-id=${{ github.run_id }}"])
         self.assertEqual(report["needs"], "sandboxed-build")
         self.assertEqual(report["permissions"], {"contents": "read", "actions": "read", "statuses": "write"})
+        self.assertEqual(report["timeout-minutes"], 30)
         self.assertEqual(PUB["permissions"], {"contents": "read"})
         checkout = report["steps"][0]["with"]
         self.assertEqual(checkout["ref"], "${{ github.workflow_sha }}")

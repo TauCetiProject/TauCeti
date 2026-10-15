@@ -34,8 +34,11 @@ The publisher has a 15-minute execution limit. Once the finalizer starts its
 observer, missing/unassigned/unobservable publication fails within five minutes;
 acquired publication has a twenty-minute total observation budget. HTTP requests
 and status retries are separately bounded; status posting retries for up to three
-minutes, honoring `Retry-After` within that budget. Failure descriptions direct operators
-to the run's jobs and Namespace routing/capacity. A delayed publisher may later
+minutes, honoring `Retry-After` within that budget. The finalizer's thirty-minute
+execution limit leaves room for bounded HTTP
+overruns, authority retries and terminal-status recovery after the publication
+observation budget is exhausted. Failure descriptions direct operators to the
+run's jobs and Namespace routing/capacity. A delayed publisher may later
 finish uploading the already audited immutable candidate, but cannot turn the
 finalizer's failure green. No second publisher or hosted recovery job starts.
 
@@ -51,6 +54,9 @@ These labels and unique names are routing evidence and defense in depth, not
 proof of provider VM isolation; fresh single-job isolation remains a trust
 property of Namespace's ephemeral runner service. A full credential-bearing
 production publication and finalization must still be verified after landing.
+Main CI uses the same publisher. A Namespace acquisition outage can therefore
+also hold main's `main-ci-cache-publisher` concurrency group; its optional upload
+setting does not bypass a queued job. The human recovery procedure below applies.
 This account cannot read org runner groups (403) and has no
 Namespace workspace configuration credential, so no reserved-capacity SLA or
 workspace-limit change is claimed. If the finalizer itself cannot acquire a
