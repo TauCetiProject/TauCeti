@@ -49,6 +49,8 @@ def cubeToOnePoint : C((N → I), OnePoint (N → ℝ)) where
 
 variable {N}
 
+/-- The collapse of the cube is the collapse `unitBallToOnePoint` of the closed unit ball, applied
+to the image of the cube point in the ball. -/
 theorem cubeToOnePoint_apply (z : N → I) :
     cubeToOnePoint N z = unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ) := by
   rw [cubeToOnePoint]
