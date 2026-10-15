@@ -9,6 +9,7 @@ public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.Topology.Separation.DisjointCover
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+-- Supplies compact and totally disconnected instances; `PrincipalUnits` imports it privately.
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 
