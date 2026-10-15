@@ -68,40 +68,6 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
   (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient J).plus))
     (presentationLimitPresheaf (P.quotient J) (S.quotient J).plus))
 
--- The morphism `Spa(A⟨T/s⟩, A_U⁺) ⟶ Spa(A, A⁺)` induced by the structure map, for any plus ring
--- equal to `A_U⁺`, is an open immersion onto `R(T/s)`. The plus ring is left variable because the
--- rational localisation pair `rationalLocalizationPair` has plus ring `A_U⁺` only up to unfolding.
-private theorem isOpenImmersion_comap_toCompletionLoc_of_eq (S : Pair A) (P : PairOfDefinition A)
-    (hP : P.ringOfDefinition ≤ S.plus) {T : Finset A} {s : A} (L : Type u) [CommRing L]
-    [Algebra A L] [IsLocalization.Away s L] (hden : P.HasDenominatorPower T s L)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
-    letI := P.locUniformSpace T s L hden
-    letI := P.isUniformAddGroup_locUniformSpace T s L hden
-    letI := P.isTopologicalRing_locUniformSpace T s L hden
-    ∀ (Bplus : Subring (UniformSpace.Completion L))
-      (hB : Bplus = P.completedPlusSubring S.plus T s L hden) (hBplus) (hPB) (hsB),
-      IsOpenImmersion (presentationLimitPreAdicSpaceComap (Bplus := Bplus)
-        (P' := P.completionLocalization T s L hden) (P.toCompletionLoc T s L hden)
-        (P.continuous_toCompletionLoc T s L hden)
-        (fun _ hI ↦ P.isOpen_map_toCompletionLoc T s L hden hI)
-        (fun _ ha ↦ hB ▸ P.toCompletionLoc_mem_completedPlusSubring S.plus T s L hden ha)
-        S.isRingOfIntegralElements.isPowerBounded_of_mem hBplus hP hPB hsB) ∧
-      Set.range (presentationLimitPreAdicSpaceComap (Bplus := Bplus)
-        (P' := P.completionLocalization T s L hden) (P.toCompletionLoc T s L hden)
-        (P.continuous_toCompletionLoc T s L hden)
-        (fun _ hI ↦ P.isOpen_map_toCompletionLoc T s L hden hI)
-        (fun _ ha ↦ hB ▸ P.toCompletionLoc_mem_completedPlusSubring S.plus T s L hden ha)
-        S.isRingOfIntegralElements.isPowerBounded_of_mem hBplus hP hPB hsB).base =
-        (spaBasicOpen S.plus T s : Set (spa S.plus)) := by
-  let _ := P.locUniformSpace T s L hden
-  have _ := P.isUniformAddGroup_locUniformSpace T s L hden
-  have _ := P.isTopologicalRing_locUniformSpace T s L hden
-  rintro _ rfl _ _ hsB
-  exact ⟨isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc P S.plus T s L hden
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP hT hsB,
-    range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base P S.plus T s L hden
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP hsB⟩
-
 /-- **The quotient morphism restricts to a closed immersion over a rational subset.** Let
 `(A, A⁺)` be a Huber pair whose structure presheaf is a sheaf, `J ⊆ A` an ideal with sheafy
 quotient pair, and `R(T/s)` a rational subset of `Spa(A, A⁺)` with `T` spanning an open ideal.
@@ -168,34 +134,38 @@ theorem isClosedImmersion_restrictPreimage_presentationLimitPreAdicSpaceQuotient
   have hK : IsClosed (RingHom.ker π.toRingHom : Set (UniformSpace.Completion L)) :=
     isClosed_singleton.preimage π.continuous_toRingHom
   -- the vertical sides: the open immersions induced by the structure maps
-  let v := presentationLimitPreAdicSpaceComap (Bplus := Sloc.plus) (P' := Ploc)
-    (P.toCompletionLoc T s L hden) (P.continuous_toCompletionLoc T s L hden)
-    (fun _ hI ↦ P.isOpen_map_toCompletionLoc T s L hden hI)
-    (fun _ ha ↦ (rationalLocalizationPair_plus P S hP T s L hden) ▸
-      P.toCompletionLoc_mem_completedPlusSubring S.plus T s L hden ha)
+  let v := presentationLimitPreAdicSpaceComap (P' := Ploc)
+    (P.toCompletionLocHom S hP T s L hden).toRingHom
+    (P.toCompletionLocHom S hP T s L hden).continuous_toRingHom
+    (fun _ hI ↦ by
+      rw [toRingHom_toCompletionLocHom]
+      exact P.isOpen_map_toCompletionLoc T s L hden hI)
+    (P.toCompletionLocHom S hP T s L hden).map_mem_plus
     S.isRingOfIntegralElements.isPowerBounded_of_mem
     Sloc.isRingOfIntegralElements.isPowerBounded_of_mem hP hPloc hsY
-  obtain ⟨hvo, hvr⟩ : IsOpenImmersion v ∧
-      Set.range v.base = (spaBasicOpen S.plus T s : Set (spa S.plus)) :=
-    isOpenImmersion_comap_toCompletionLoc_of_eq S P hP L hden hT Sloc.plus
-      (rationalLocalizationPair_plus P S hP T s L hden)
-      Sloc.isRingOfIntegralElements.isPowerBounded_of_mem hPloc hsY
-  let u := presentationLimitPreAdicSpaceComap (Bplus := Sloc'.plus) (P' := Ploc')
-    ((P.quotient J).toCompletionLoc T' (Ideal.Quotient.mk J s) L' hden')
-    ((P.quotient J).continuous_toCompletionLoc T' (Ideal.Quotient.mk J s) L' hden')
-    (fun _ hI ↦ (P.quotient J).isOpen_map_toCompletionLoc T' (Ideal.Quotient.mk J s) L' hden' hI)
-    (fun _ ha ↦ (rationalLocalizationPair_plus (P.quotient J) (S.quotient J) hPq T'
-      (Ideal.Quotient.mk J s) L' hden') ▸ (P.quotient J).toCompletionLoc_mem_completedPlusSubring
-        (S.quotient J).plus T' (Ideal.Quotient.mk J s) L' hden' ha)
+  have hvo : IsOpenImmersion v :=
+    isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom P hP T s L hden hT hsY
+  have hvr : Set.range v.base = (spaBasicOpen S.plus T s : Set (spa S.plus)) :=
+    range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base P hP T s L hden hsY
+  let u := presentationLimitPreAdicSpaceComap (P' := Ploc')
+    ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
+      hden').toRingHom
+    ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
+      hden').continuous_toRingHom
+    (fun _ hI ↦ by
+      rw [toRingHom_toCompletionLocHom]
+      exact (P.quotient J).isOpen_map_toCompletionLoc T' (Ideal.Quotient.mk J s) L' hden' hI)
+    ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
+      hden').map_mem_plus
     (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem
     Sloc'.isRingOfIntegralElements.isPowerBounded_of_mem hPq hPloc' hsX
-  obtain ⟨huo, hur⟩ : IsOpenImmersion u ∧ Set.range u.base =
-      (spaBasicOpen (S.quotient J).plus T' (Ideal.Quotient.mk J s) :
-        Set (spa (S.quotient J).plus)) :=
-    isOpenImmersion_comap_toCompletionLoc_of_eq (S.quotient J) (P.quotient J) hPq L' hden' hTq
-      Sloc'.plus (rationalLocalizationPair_plus (P.quotient J) (S.quotient J) hPq T'
-        (Ideal.Quotient.mk J s) L' hden')
-      Sloc'.isRingOfIntegralElements.isPowerBounded_of_mem hPloc' hsX
+  have huo : IsOpenImmersion u :=
+    isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom (P.quotient J) hPq T'
+      (Ideal.Quotient.mk J s) L' hden' hTq hsX
+  have hur : Set.range u.base = (spaBasicOpen (S.quotient J).plus T' (Ideal.Quotient.mk J s) :
+      Set (spa (S.quotient J).plus)) :=
+    range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base (P.quotient J) hPq T'
+      (Ideal.Quotient.mk J s) L' hden' hsX
   refine (Hom.prop_restrictPreimage_iff_of_isOpenImmersion _ (spaBasicOpen S.plus T s)
     (@IsClosedImmersion.{u}) _ u v hvr ?_ ?_).mpr
     (isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMapping Sloc Ploc hPloc
@@ -212,7 +182,8 @@ theorem isClosedImmersion_restrictPreimage_presentationLimitPreAdicSpaceQuotient
     simp only [u, v]
     rw [← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_comp]
     congr 1
-    rw [toRingHom_completionLocQuotientPairHom]
+    rw [toRingHom_completionLocQuotientPairHom, toRingHom_toCompletionLocHom,
+      toRingHom_toCompletionLocHom]
     exact P.completionLocQuotientHom_comp_toCompletionLoc J T s L hT' L' hden
 
 end ValuationSpectrum
@@ -299,22 +270,10 @@ sheaf, then `f⁻¹(W) → W` is a closed immersion for every open `W` of `Y`. S
 models of `f` exist over every open of `Y`, not only over the neighbourhoods chosen in the
 definition. -/
 theorem IsClosedImmersion.restrictPreimage {f : X ⟶ Y} (hf : IsClosedImmersion f)
-    (hY : isSheafy Y) (W : Opens Y) : IsClosedImmersion (f.restrictPreimage W) := by
-  choose V' hyV' hV'W hV' using hf.exists_le_isClosedImmersion_restrictPreimage hY W
-  -- the opens `V' y`, read as opens of `Y|_W`, cover it
-  let O (y : Y.restrict W.isOpenEmbedding) : Opens (Y.restrict W.isOpenEmbedding) :=
-    (Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj (V' y)
-  refine IsClosedImmersion.of_iSup_eq_top O
-    (eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, Opens.mem_map.mpr (hyV' y)⟩) fun y ↦ ?_
-  have hO : W.isOpenEmbedding.isOpenMap.functor.obj (O y) = V' y := by
-    ext x
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact hz
-    · intro hx
-      exact ⟨⟨x, hV'W y hx⟩, hx, rfl⟩
-  rw [Hom.prop_restrictPreimage_restrictPreimage_iff f (@IsClosedImmersion.{u}), hO]
-  exact hV' y
+    (hY : isSheafy Y) (W : Opens Y) : IsClosedImmersion (f.restrictPreimage W) :=
+  Hom.prop_restrictPreimage_of_forall_exists_le f (@IsClosedImmersion.{u})
+    (fun _ ↦ IsClosedImmersion.of_iSup_eq_top) W
+    (hf.exists_le_isClosedImmersion_restrictPreimage hY W)
 
 /-- **Being a closed immersion is local on a sheafy target**: for a morphism `f : X ⟶ Y` into a
 pre-adic space with sheaf structure presheaf and an open cover `V` of `Y`, `f` is a closed immersion

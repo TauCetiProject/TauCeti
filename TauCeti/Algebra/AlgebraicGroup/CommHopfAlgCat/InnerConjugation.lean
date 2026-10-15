@@ -113,7 +113,7 @@ theorem innerConjugationIso_hom_toAlgHom
   apply AlgHom.ext
   intro x
   have hpoint :
-      (mapPointsFunctor (innerConjugationIso H g).hom).app (CommAlgCat.of R H)
+      (CommHopfAlgCat.Hom.mapPointsFunctor (innerConjugationIso H g).hom).app (CommAlgCat.of R H)
           (toConv (AlgHom.id R H)) =
         extendPoint H (CommAlgCat.of R H) g * toConv (AlgHom.id R H) *
           (extendPoint H (CommAlgCat.of R H) g)⁻¹ := by
@@ -122,7 +122,7 @@ theorem innerConjugationIso_hom_toAlgHom
     exact HopfAlgebra.innerConjugationPointNatIso_hom_app_apply H g _ _
   have hx := congrArg (fun p : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R H) ↦
     p.ofConv x) hpoint
-  rw [mapPointsFunctor_app_apply] at hx
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hx
   calc
     (innerConjugationIso H g).hom.hom.toAlgHom x =
         (extendPoint H (CommAlgCat.of R H) g * toConv (AlgHom.id R H) *
@@ -152,7 +152,7 @@ commutative value algebras in any universe. -/
 @[simp]
 theorem mapPointsFunctor_innerConjugationIso_hom
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    mapPointsFunctor.{u, u, v} (innerConjugationIso H g).hom =
+    CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, v} (innerConjugationIso H g).hom =
       (HopfAlgebra.innerConjugationPointNatIso H g).hom := by
   -- `mapPointsFunctor_homOfPointsMap` only covers value universe `u`; prove the
   -- universe-`v` statement pointwise using the coordinate formula.
@@ -160,7 +160,7 @@ theorem mapPointsFunctor_innerConjugationIso_hom
   intro A x
   rw [HopfAlgebra.innerConjugationPointNatIso_hom_app_apply]
   apply WithConv.ofConv_injective
-  rw [mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   rw [innerConjugationIso_hom_toAlgHom]
   rw [← AlgHom.comp_assoc]
   have hprod :
@@ -178,7 +178,7 @@ on points over commutative value algebras in any universe. -/
 @[simp]
 theorem mapPointsFunctor_innerConjugationIso_inv
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    mapPointsFunctor.{u, u, v} (innerConjugationIso H g).inv =
+    CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, v} (innerConjugationIso H g).inv =
       (HopfAlgebra.innerConjugationPointNatIso H g).inv := by
   rw [← Iso.symm_hom, ← innerConjugationIso_inv_point,
     mapPointsFunctor_innerConjugationIso_hom,

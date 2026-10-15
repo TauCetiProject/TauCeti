@@ -187,7 +187,7 @@ private theorem volume_parallelepiped_symmetricBasis (p : ℕ) :
       ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 4)) := by
   rw [Basis.coe_parallelepiped, ← addHaar_symScaled p, Measure.addHaar_parallelepiped,
     Basis.det_unitsSMul]
-  simp only [AlternatingMap.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
+  simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
   rw [prod_symScale_inv]
   exact congrArg ENNReal.ofReal (abs_of_nonneg (Real.rpow_nonneg (by norm_num) _))
 

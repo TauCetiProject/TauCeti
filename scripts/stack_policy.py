@@ -9,6 +9,7 @@ import argparse
 import base64
 from collections import defaultdict
 from dataclasses import dataclass, asdict, field
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -73,7 +74,7 @@ class API:
         self.child_calls, self.child_bytes = self.calls + 256, self.bytes + 16 * 1024 * 1024
         self.child_deadline = time.monotonic() + 120
 
-    def request(self, url, method="GET", data=None):
+    def request(self, url, method="GET", data=None, *, token=None):
         self.calls += 1
         if self.calls > 4000 or self.bytes > 64 * MAX_BYTES or time.monotonic() > self.deadline:
             raise BudgetGap("sweep API/time budget exhausted")
@@ -81,7 +82,7 @@ class API:
             raise ChildGap("child API/time budget exhausted")
         req = Request(url, method=method,
                       data=None if data is None else json.dumps(data).encode(),
-                      headers={"Authorization": f"Bearer {self.token}",
+                      headers={"Authorization": f"Bearer {token or self.token}",
                                "Accept": "application/vnd.github+json",
                                "X-GitHub-Api-Version": "2022-11-28",
                                "Content-Type": "application/json"})
@@ -129,6 +130,8 @@ class API:
                 "variables": {"number": int(number)},
             })
             if data.get("errors"):
+                if any(e.get("type") == "RATE_LIMITED" for e in data["errors"]):
+                    raise BudgetGap("GraphQL API rate limit refused; sweep stopped")
                 raise Gap("live branch metadata unavailable")
             ref = data["data"]["repository"]["pullRequest"]["headRef"]
             if not ref or ref["target"]["oid"] != p.head:
@@ -137,6 +140,60 @@ class API:
 
     def main(self):
         return oid(self.call("git/ref/heads/main")["object"]["sha"])
+
+
+    def historical_head(self, parent, head):
+        """Bind a pinned SHA to this PR's branch during its server-recorded lifetime.
+
+        Fork workflow associations may be empty. A canonical PR-event run still
+        records the exact head repository/branch/SHA and event creation time.
+        No workflow artifacts or candidate assertions are trusted.
+        """
+        cache = self.__dict__.setdefault("historical_heads", {})
+        key = parent.number, parent.head_repo, parent.branch, parent.created_at, parent.closed_at, head
+        if key not in cache:
+            try:
+                start = timestamp(parent.created_at)
+                end = timestamp(parent.closed_at) if parent.state == "closed" else None
+                data = self.request(
+                    f"https://api.github.com/repos/{REPO}/actions/runs?head_sha={oid(head)}&per_page=100&page=1",
+                    token=os.environ.get("STACK_HISTORY_TOKEN"))
+                runs = data.get("workflow_runs")
+                count = data.get("total_count")
+                if (not isinstance(runs, list) or type(count) is not int or count < 0
+                        or count > 100 or count != len(runs)):
+                    raise Gap("historical PR-event run index incomplete or exceeds 100-run bound")
+                found = None
+                for run in runs:
+                    if not isinstance(run, dict):
+                        raise Gap("invalid historical PR-event metadata")
+                    if (run.get("event") not in {"pull_request", "pull_request_target"}
+                            or run.get("head_sha") != head
+                            or run.get("head_branch") != parent.branch
+                            or (run.get("head_repository") or {}).get("full_name") != parent.head_repo
+                            or (run.get("repository") or {}).get("full_name") != REPO):
+                        continue
+                    observed = timestamp(run.get("created_at"))
+                    if observed >= start and (end is None or observed <= end):
+                        if type(run.get("id")) is not int or run["id"] <= 0:
+                            raise Gap("invalid historical PR-event run identity")
+                        found = run["id"]
+                        break
+                cache[key] = found
+            except (BudgetGap, ChildGap):
+                raise
+            except (Gap, KeyError, ValueError, TypeError, HTTPError) as error:
+                cache[key] = Gap(str(error))
+        if isinstance(cache[key], Gap):
+            raise cache[key]
+        return cache[key]
+
+
+def timestamp(value):
+    if not isinstance(value, str) or not value.endswith("Z"):
+        raise Gap("missing canonical PR-event timestamp")
+    parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    return parsed
 
 
 def oid(value):
@@ -153,12 +210,13 @@ class PR:
     base: str
     branch: str
     head_repo: str
-    body: str
     draft: bool
     base_head: str = ""
     blocked: bool = field(default=False, compare=False)
     landing_claim: bool = False
     author_id: int = 0
+    created_at: str = ""
+    closed_at: str = ""
 
     @classmethod
     def parse(cls, p):
@@ -168,50 +226,39 @@ class PR:
         if not h.get("repo"):
             raise Gap(f"#{p['number']}: deleted head repository")
         return cls(int(p["number"]), p["state"], oid(h["sha"]), p["base"]["ref"],
-                   h["ref"], h["repo"]["full_name"], p.get("body") or "", bool(p["draft"]),
+                   h["ref"], h["repo"]["full_name"], bool(p["draft"]),
                    oid(p["base"]["sha"]), any(l.get("name") == BLOCK_LABEL for l in p.get("labels", [])),
                    p.get("merged_at") is not None or bool(re.match(r"^\[Merged by Bors\] - ",
                                                                   p.get("title") or "", re.I)),
                    int((p.get("user") or {}).get("id") or 0)
-                   if (p.get("user") or {}).get("login") != "ghost" else 0)
+                   if (p.get("user") or {}).get("login") != "ghost" else 0,
+                   p.get("created_at") or "", p.get("closed_at") or "")
 
 
-def explicit_parents(body):
-    """Candidate discovery only: affirmative unquoted prose with local PR identities.
-
-    A mention never authorizes closure. Reject negatives, fenced/inline code, quoted
-    lines, HTML comments and foreign URLs (including their trailing issue numbers).
-    """
-    body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
-    result = set()
-    fenced = False
-    for line in body.splitlines():
-        if re.match(r"\s*(```|~~~)", line):
-            fenced = not fenced
-            continue
-        if fenced or line.lstrip().startswith(">") or line.startswith("    "):
-            continue
-        line = re.sub(r"(`+).*?\1", "", line)
-        line = re.sub(r'''"[^"\n]*"|“[^”\n]*”|(?<!\w)'[^'\n]*'(?!\w)''', "", line)
-        line = re.sub(r"https://github.com/([^\s/)]+/[^\s/)]+)/(?:pull|issues)/(\d+)",
-                      lambda m: f"#{m[2]}" if m[1].lower() == REPO.lower() else "", line)
-        line = re.sub(r"https?://\S+", "", line)
-        for sentence in re.split(r"(?<=[.!?])\s+", line):
-            if re.search(r"\b(not|no|none|never|previously|formerly|historically|was|used to|isn't|isn’t)\b", sentence, re.I):
-                continue
-            claim = re.search(
-                r"\bstack(?:ed|s|ing)?\s+on\b|"
-                r"(?:^\s*(?:[-*]\s*)?|\bthis (?:PR|branch) (?:is )?)"
-                r"(?:depends? on|based on|built on|carries .*commits from)\b|"
-                r"\b(?:prerequisites?|dependencies|parent PR)\s*:", sentence, re.I)
-            if claim:
-                # Identities must belong to this particular declaration. Other
-                # sentences may discuss superseded source or mathematical uses.
-                tail = sentence[claim.end():].split(";", 1)[0]
-                if not re.match(r"\s*(?:PR\s*|pull request\s*)?[\[(\s]*#", tail, re.I):
-                    continue
-                result.update(int(n) for n in re.findall(r"(?<![\w/])#([1-9]\d*)\b", tail))
-    return result
+def event_targets(event, prs):
+    """Focus events; reserve full source sweeps for schedules/manual dispatches."""
+    if event.get("pull_request"):
+        return {int(event["pull_request"]["number"])}
+    wake = event.get("workflow_run")
+    if not wake:
+        return None
+    head = oid(wake.get("head_sha"))
+    associated = set()
+    for linked in wake.get("pull_requests") or []:
+        base = (linked.get("base") or {}).get("repo") or {}
+        if ((base.get("full_name") == REPO or base.get("url") == f"https://api.github.com/repos/{REPO}")
+                and (linked.get("head") or {}).get("sha") == head):
+            associated.add(int(linked["number"]))
+    # Wake completions can arrive out of push order and replace a newer pending
+    # wake. Recompute the current branch's PRs, rather than declining its changed
+    # head. This stays focused and never fetches a fork URL.
+    repo = (wake.get("head_repository") or {}).get("full_name")
+    branch = wake.get("head_branch")
+    matched = {p.number for p in prs if p.base != "main"
+               and p.head_repo == repo and p.branch == branch}
+    if associated or matched:
+        return associated | matched
+    raise Gap("wake has no associated PR/current canonical PR identity match")
 
 
 class Source:
@@ -229,6 +276,8 @@ class Source:
             (self.root / "objects/info/alternates").write_text(str(Path(alternates).resolve()) + "\n")
         self.git("remote", "add", "origin", remote or f"https://github.com/{REPO}.git")
         self.commits_cache = {}
+        self.first_parent_cache = {}
+        self.historical_commits_cache = {}
         self.patch_cache = {}
         self.landed_cache = {}
         self.tree_cache = {}
@@ -307,6 +356,46 @@ class Source:
         if self.commits_cache[head] is None:
             raise Gap("head changed while fetching")
         return self.commits_cache[head]
+
+    def first_parent_history(self, head):
+        if head not in self.first_parent_cache:
+            rows = [line.split() for line in self.git(
+                "rev-list", "--first-parent", "--parents", f"--max-count={MAX_COMMITS + 1}",
+                head, "--not", self.main).stdout.decode().splitlines()]
+            if len(rows) > MAX_COMMITS:
+                raise Gap("first-parent history exceeds bound")
+            self.first_parent_cache[head] = rows
+        return self.first_parent_cache[head]
+
+    def historical_commits(self, child_head, parent_head):
+        """Map newly imported parent-line commits to a child merge and pinned SHA.
+
+        Inspect the child's first-parent merges, including indirect imports. The
+        first parent describes everything the child already owned before that
+        merge, including side branches; none of that work can be parent evidence.
+        """
+        key = child_head, parent_head
+        if key not in self.historical_commits_cache:
+            child_rows = self.first_parent_history(child_head)
+            child_line = {row[0] for row in child_rows}
+            parent_line = {row[0] for row in self.first_parent_history(parent_head)}
+            evidence = {}
+            for row in child_rows:
+                if len(row) != 3:
+                    continue
+                merge, before, incoming = row
+                observed = self.git("merge-base", "--all", incoming, parent_head, check=False)
+                if observed.returncode not in (0, 1):
+                    raise Gap("historical merge-base observation failed")
+                bases = observed.stdout.decode().splitlines()
+                if len(bases) != 1 or bases[0] not in parent_line or bases[0] in child_line:
+                    continue
+                pin = bases[0]
+                introduced = (parent_line & self.commits(pin)) - self.commits(before) - child_line
+                for commit in introduced:
+                    evidence.setdefault(commit, (pin, merge))
+            self.historical_commits_cache[key] = evidence
+        return self.historical_commits_cache[key]
 
     def tree(self, revision, paths):
         key = revision, tuple(paths)
@@ -429,6 +518,9 @@ class Evidence:
     commit: str
     patch_sha256: str
     patch_base: str = ""
+    parent_pin: str = ""
+    child_merge: str = ""
+    historical_run: int = 0
 
 
 class Detector:
@@ -439,19 +531,17 @@ class Detector:
         self.gaps = {}
         for p in prs:
             try:
-                # Closed parents are scoped to the child explicitly naming
-                # them. Their discovery by another child must not alter this PR.
-                if p.state == "open":
-                    for commit in source.commits(p.head):
-                        self.index[commit].add(p.number)
+                # A bounded recent closed-PR index also supplies source-only
+                # candidates. Closure never establishes that their source landed.
+                for commit in source.commits(p.head):
+                    self.index[commit].add(p.number)
             except (BudgetGap, ChildGap):
                 raise
             except Gap as e:
                 self.gaps[p.number] = str(e)
 
     def candidates(self, child):
-        explicit = explicit_parents(child.body) - {child.number}
-        numbers = set(explicit)
+        numbers = set()
         for commit in self.source.commits(child.head):
             numbers.update(self.index[commit])
         for p in list(self.prs.values()):
@@ -459,20 +549,18 @@ class Detector:
                 numbers.add(p.number)
         if len(numbers) > 64:
             raise Gap("parent candidate bound exceeded")
-        return sorted(numbers - {child.number}), explicit
+        return sorted(numbers - {child.number})
 
     def detect(self, child):
         if child.number in self.gaps:
             raise Gap(self.gaps[child.number])
         commits = self.source.commits(child.head)
-        candidates, explicit = self.candidates(child)
+        candidates = self.candidates(child)
         reasons = []
         gaps = []
         for number in candidates:
             try:
                 parent = self.prs.get(number)
-                if parent is None:
-                    raise Gap("explicit parent absent from bounded index")
                 if parent.head == child.head:
                     reasons.append(f"#{number}: identical head; duplicate identity is not a stack proof")
                     continue
@@ -486,17 +574,29 @@ class Detector:
                     reasons.append(f"#{number}: descendant of this child, not a parent")
                     continue
                 shared = sorted(commits & parent_commits)
-                relationship = (number in explicit or (parent.head_repo == REPO and child.base == parent.branch))
-                if not shared and not relationship:
+                canonical_base = (parent.state == "open" and parent.head_repo == REPO
+                                  and child.base == parent.branch)
+                if not shared and not canonical_base:
                     continue
-                graph_direction = parent.head in commits or (parent.head_repo == REPO and child.base == parent.branch)
-                if not relationship:
-                    if not graph_direction:
+                graph_direction = parent.head in commits or canonical_base
+                imported_commits = {}
+                constrain_imports = not graph_direction
+                if parent.head in commits and not canonical_base:
+                    child_line = {row[0] for row in self.source.first_parent_history(child.head)}
+                    constrain_imports = parent.head not in child_line
+                if constrain_imports:
+                    imported_commits = self.source.historical_commits(child.head, parent.head)
+                    if not imported_commits:
+                        if graph_direction:
+                            raise Gap("current parent import has no supported newly introduced parent-line work")
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
+                # Only a current canonical base choice bypasses provenance guards.
+                provenance_gap = None
+                if not canonical_base:
                     if parent.head_repo != child.head_repo:
-                        raise Gap("cross-repository ancestry without a child-declared parent; possible copied prefix")
-                    if not child.author_id or parent.author_id != child.author_id:
-                        raise Gap("ancestry-only parent has unknown/different author; possible third-party branch PR")
+                        provenance_gap = "cross-repository parent provenance unproved; possible copied prefix"
+                    elif not child.author_id or parent.author_id != child.author_id:
+                        provenance_gap = "parent has unknown/different author; possible third-party branch PR"
                 base, paths, patch = self.source.patch(parent)
                 if not patch:
                     reasons.append(f"#{number}: empty parent delta")
@@ -504,39 +604,52 @@ class Detector:
                 # A descendant can edit part of the parent's aggregate diff while
                 # retaining another complete, individually unlanded commit. Check
                 # exact commit patches, with the same main-history exclusion.
-                if not graph_direction and not aggregate_retained:
-                    raise Gap("body-only direction without complete current parent content")
                 landed = self.source.landed(parent, base, paths, patch) if patch else None
                 if landed:
                     reasons.append(f"#{number}: aggregate source equivalent landed at {landed}")
-                # Body-only links can establish whole-parent patch identity for
-                # a cherry-pick/rebase. They cannot attribute a shared precursor
-                # commit to a dependent PR whose own current work is absent.
-                eligible = parent_commits if graph_direction else {parent.head}
-                ordered = sorted(eligible - {parent.head})
-                if parent.head in eligible:
-                    ordered.insert(0, parent.head)
+                eligible = set(imported_commits) if constrain_imports else parent_commits
+                preferred = parent.head
+                ordered = sorted(eligible - {preferred})
+                if preferred in eligible:
+                    ordered.insert(0, preferred)
                 unsupported = False
                 for commit in ordered[:MAX_EVIDENCE_COMMITS]:
+                    historical = imported_commits.get(commit)
+                    # A current head is already bound by the fresh PR API. Older
+                    # import pins additionally need their historical event binding.
+                    if historical and historical[0] == parent.head:
+                        historical = None
+                    historical_run = 0
                     try:
                         cb, cp, delta = self.source.commit_patch(commit)
                     except UnsupportedCommit:
                         unsupported = True
                         continue
                     if (delta and self.source.contains(child.head, cp, delta)
+                            and self.source.contains(parent.head, cp, delta)
                             and not self.source.landed(parent, cb, cp, delta, head=commit)):
                         if commit not in commits and self.source.present_at_fork(child, cb, cp, delta, commit):
                             raise Gap("matched content already present at child's main fork point; base drift")
-                        if parent.state == "closed" and parent.landing_claim:
-                            raise Gap("closed parent reports landing but exact source equivalence is unproved")
+                        if provenance_gap:
+                            raise Gap(provenance_gap)
+                        if parent.state == "closed":
+                            if parent.landing_claim:
+                                raise Gap("closed parent reports landing but exact source equivalence is unproved")
+                            raise Gap("closed parent has unlanded source; prerequisite versus supersession/resubmission is unproved")
                         kind = ("retained-unmerged-commit" if commit in commits
-                                else "explicit-parent-commit-content")
+                                else "canonical-base-commit-content")
                         if aggregate_retained:
                             kind = ("ancestor-head" if commit == parent.head and commit in commits
                                     else "shared-unmerged-commit" if commit in commits
-                                    else "explicit-parent-content")
+                                    else "canonical-base-content")
+                        if historical:
+                            historical_run = self.api.historical_head(parent, historical[0])
+                            if not historical_run:
+                                raise Gap("historical parent head lacks a canonical PR-event binding")
+                            kind = "merged-historical-parent-commit"
                         return Evidence(number, parent.head, child.head, self.source.main,
-                                        kind, commit, hashlib.sha256(delta).hexdigest(), cb), reasons
+                                        kind, commit, hashlib.sha256(delta).hexdigest(), cb,
+                                        *(historical or ("", "")), historical_run), reasons
                 if len(ordered) > MAX_EVIDENCE_COMMITS:
                     raise Gap("retained-commit evidence search exceeds 16-commit bound")
                 if unsupported:
@@ -552,13 +665,20 @@ class Detector:
 
 
 def unchanged(api, child, parent, main):
-    """Fresh identities/body/base/state before EACH externally visible mutation."""
+    """Fresh identities/base/state before EACH externally visible mutation."""
     return api.pr(parent.number) == parent and api.pr(child.number) == child and api.main() == main
 
 
 def comment_text(evidence, parent_state="open"):
     e = evidence
     detail = (f"[{e.kind} `{e.commit}`](https://github.com/{REPO}/commit/{e.commit}); " if e.commit else "")
+    if e.parent_pin:
+        detail += (f"child merge [`{e.child_merge}`](https://github.com/{REPO}/commit/{e.child_merge}) "
+                   f"incorporates parent revision [`{e.parent_pin}`](https://github.com/{REPO}/commit/{e.parent_pin}) "
+                   "through its incoming history; "
+                   f"[historical PR event](https://github.com/{REPO}/actions/runs/{e.historical_run}) "
+                   "binds that SHA to the parent's branch while its PR existed; "
+                   "the selected patch remains present in both current PR trees; ")
     next_step = ("The prerequisite PR is closed without this source landing. Remove the inherited work, "
                  "or resubmit the prerequisite separately and wait for it to land. " if parent_state == "closed"
                  else "Wait for the prerequisite to land. ")
@@ -676,19 +796,9 @@ def main():
         # Never accept an API/PR-supplied report path.
         sys.stdout = args.report.open("w")
     api = API()
-    priority = set()
-    if args.github_event and not args.pr:
-        event = json.loads(args.github_event.read_text())
-        if event.get("pull_request"):
-            priority.add(int(event["pull_request"]["number"]))
-        wake = event.get("workflow_run")
-        if wake:
-            associated = wake.get("pull_requests") or []
-            numbers = {int(p["number"]) for p in associated}
-            priority.update(numbers)
-            emit(wake="bounded backlog sweep", associated_prs=sorted(numbers))
+    event = json.loads(args.github_event.read_text()) if args.github_event else {}
     prs = []
-    metadata_gaps = 0
+    metadata_gaps = set()
     incomplete_index = False
     for raw in api.pages("pulls?state=open&sort=created&direction=asc", MAX_PRS):
         try:
@@ -696,31 +806,43 @@ def main():
         except (Gap, KeyError, ValueError) as error:
             number = raw.get("number")
             emit(index_pr=number, classification="unknown", gap=str(error))
-            metadata_gaps += int(not args.pr or args.pr == number)
+            metadata_gaps.add(number)
             incomplete_index = True
     main_sha = api.main()
-    selected = [p for p in prs if not args.pr or p.number == args.pr]
-    selected.sort(key=lambda p: (p.number in priority, p.number), reverse=True)
-    # Resolve closed explicit parents once, before fetching/indexing. A closed PR
-    # can still contain unlanded prerequisite work. Never assume closure = landing.
+    targets = {args.pr} if args.pr else event_targets(event, prs)
+    selected = [p for p in prs if targets is None or p.number in targets]
+    if targets is not None and not selected:
+        if incomplete_index:
+            raise Gap("requested/event PR metadata unavailable in the bounded index")
+        emit(classification="superseded", reason="target absent from complete open index", selected=0)
+        return False
+    selected.sort(key=lambda p: p.number, reverse=True)
+    emit(scope="backlog" if targets is None else "focused", selected=[p.number for p in selected])
+    # Inspect a bounded recent closed index without interpreting descriptions.
+    # Older closed parents remain outside coverage; never infer landing from state.
+    recent_closed = api.call("pulls?state=closed&sort=updated&direction=desc&per_page=64&page=1")
+    if not isinstance(recent_closed, list) or len(recent_closed) > 64:
+        raise Gap("invalid bounded recent-closed PR index")
     indexed = {p.number for p in prs}
-    references = set().union(*(explicit_parents(p.body) for p in selected)) - indexed
-    for number in sorted(references, reverse=True)[64:]:
-        emit(index_pr=number, classification="unknown", gap="closed-parent lookup budget exceeded")
-    for number in sorted(references, reverse=True)[:64]:
+    for raw in recent_closed:
         try:
-            prs.append(api.pr(number))
-        except BudgetGap:
-            raise
-        except Exception as e:
-            # A prose #reference may name an issue, a deleted fork, or an
-            # inaccessible parent. Preserve the per-child gap, not a fake PR.
-            emit(index_pr=number, classification="unknown", gap=f"explicit parent metadata: {e}")
+            parent = PR.parse(raw)
+            if parent.number in indexed:
+                continue
+            if parent.state != "closed":
+                raise Gap("recent closed PR changed state; retry fresh index")
+            prs.append(parent)
+            indexed.add(parent.number)
+        except (Gap, KeyError, ValueError) as error:
+            incomplete_index = True
+            emit(index_pr=raw.get("number"), classification="unknown", gap=str(error))
+    emit(parent_index="open plus at most 64 recently updated closed PRs",
+         recent_closed_count=len(recent_closed), older_closed_parents="outside coverage")
     actor = os.environ.get("STACK_ACTOR", "")
     if args.apply and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?", actor):
         raise Gap("STACK_ACTOR is required to authenticate idempotency comments")
     common = run(["git", "rev-parse", "--git-common-dir"]).stdout.decode().strip()
-    failures, unknowns = 0, metadata_gaps
+    failures, unknowns = 0, len(metadata_gaps if targets is None else targets & metadata_gaps)
     with tempfile.TemporaryDirectory(prefix="no-stack-") as directory:
         source = Source(directory, api, main_sha, Path(common) / "objects")
         source.fetch(prs)

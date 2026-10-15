@@ -171,17 +171,18 @@ private theorem map_inclusion_comp_localFunctor (hST : S ⊆ T) (hS : IsPathConn
   simp only [localFunctor, Functor.comp_map, Groupoid.functorOfEndHom_map, connect_map_obj,
     eqToHom_refl, Category.id_comp, Category.comp_id, MonoidHom.coe_comp, Function.comp_apply]
   -- `FundamentalGroup.map` applies the functor `FundamentalGroupoid.map` to a loop.
-  exact congrArg f (by simp only [CategoryTheory.Functor.map_comp,
-    CategoryTheory.Functor.map_inv]; rfl :
-      (FundamentalGroupoid.map (ContinuousMap.inclusion hST)).map
-        (baseHom hS s₀ y ≫ g ≫ inv (baseHom hS s₀ z)) = _).symm
+  congr 1
+  ext
+  change _ = (FundamentalGroupoid.map (ContinuousMap.inclusion hST)).map _
+  simp only [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_inv]
+  rfl
 
 /-- On loops at the basepoint, the local functor is the given homomorphism. -/
 private theorem localFunctor_map_base (hST : S ⊆ T) (hS : IsPathConnected S)
     (hT : IsPathConnected T) (s₀ : S)
     (f : FundamentalGroup T (ContinuousMap.inclusion hST s₀) →* K)
     (g : FundamentalGroup T (ContinuousMap.inclusion hST s₀)) :
-    (localFunctor hST hS hT s₀ f).map g = f g := by
+    (localFunctor hST hS hT s₀ f).map g.asHom = f g := by
   simp [localFunctor]
 
 end Connect
@@ -251,8 +252,8 @@ private theorem vanKampenDesc_map_subtypeVal (hCover : interior A ∪ interior B
         (localFunctor_compatibility hA hB hAB hxA hxB fA fB h) = F)
     (g : FundamentalGroup U ⟨x, hx⟩) :
     vanKampenDesc hCover hA hB hAB hxA hxB fA fB h
-        (FundamentalGroup.map (ContinuousMap.subtypeVal _) ⟨x, hx⟩ g) = F.map g := by
-  have hg := CategoryTheory.Functor.congr_hom hF g
+        (FundamentalGroup.map (ContinuousMap.subtypeVal _) ⟨x, hx⟩ g) = F.map g.asHom := by
+  have hg := CategoryTheory.Functor.congr_hom hF g.asHom
   simp only [Functor.comp_map, eqToHom_refl, Category.comp_id, Category.id_comp] at hg
   -- `SingleObj.mapHom` has no evaluation lemma: its inverse evaluates a functor on a loop, and
   -- `FundamentalGroup.map` applies `FundamentalGroupoid.map` to it, so `hg` is the claim.
@@ -356,7 +357,7 @@ theorem isPushout_fundamentalGroup (hCover : interior A ∪ interior B = univ)
       (FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩).comp
         (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right) ⟨x, hxA, hxB⟩) := by
     -- Both composites send the class of a loop in `A ∩ B` to the class of the same loop in `X`.
-    ext g
+    ext ⟨g⟩
     induction g using Path.Homotopic.Quotient.ind
     rfl
   refine IsPushout.of_isColimit (PushoutCocone.IsColimit.mk (congrArg GrpCat.ofHom comm)
@@ -448,8 +449,9 @@ theorem simplyConnectedSpace_of_interior_union
     (PathConnectedSpace.somePath z x)
   have hxsub : Subsingleton (FundamentalGroup X x) :=
     ⟨fun a b ↦ e.symm.injective (hzsub.elim (e.symm a) (e.symm b))⟩
-  exact Quotient.eq.mp (hxsub.elim (Path.Homotopic.Quotient.mk γ)
-    (Path.Homotopic.Quotient.mk (Path.refl x)))
+  exact Quotient.eq.mp (congrArg End.asHom (hxsub.elim
+    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))
+    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)))))
 
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 
@@ -473,7 +475,9 @@ theorem vanKampenLift_bijective (hCover : interior A ∪ interior B = univ)
     · exact vanKampenDesc_comp_map_left hCover hA hB hAB.isPathConnected hxA hxB _ _ h
     · exact vanKampenDesc_comp_map_right hCover hA hB hAB.isPathConnected hxA hxB _ _ h
   constructor
-  · exact Function.LeftInverse.injective fun g ↦ DFunLike.congr_fun hleft g
+  · exact Function.LeftInverse.injective
+      (g := vanKampenDesc hCover hA hB hAB.isPathConnected hxA hxB _ _ h)
+      fun g ↦ DFunLike.congr_fun hleft g
   · rw [← MonoidHom.range_eq_top]
     exact (Monoid.Coprod.range_lift _ _).trans <|
       FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB hAB.isPathConnected hxA hxB
@@ -568,7 +572,7 @@ theorem vanKampenWideDesc_map (hU : ∀ y, ∃ i, U i ∈ 𝓝 y)
     vanKampenWideDesc hU hUp hC hCU hUC hx f h
         (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩ g) = f i g := by
   have hg := CategoryTheory.Functor.congr_hom (FundamentalGroupoid.map_subtypeVal_comp_glue hU _
-    (localFunctor_compatibility_of_pairwise hUp hC hCU hUC hx f h) i) g
+    (localFunctor_compatibility_of_pairwise hUp hC hCU hUC hx f h) i) g.asHom
   simp only [Functor.comp_map, eqToHom_refl, Category.comp_id, Category.id_comp] at hg
   -- `SingleObj.mapHom` has no evaluation lemma: its inverse evaluates a functor on a loop, and
   -- `FundamentalGroup.map` applies `FundamentalGroupoid.map` to it, so `hg` is the claim up to
@@ -620,7 +624,7 @@ noncomputable def fundamentalGroupWideCocone (hCU : ∀ i, C ⊆ U i) (hx : x �
     (fun i ↦ GrpCat.ofHom (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩))
     fun i ↦ by
       -- Both composites send the class of a loop in `C` to the class of the same loop in `X`.
-      ext g
+      ext ⟨g⟩
       induction g using Path.Homotopic.Quotient.ind
       rfl
 
@@ -674,12 +678,13 @@ noncomputable def isColimitFundamentalGroupWideCocone (hU : ∀ y, ∃ i, U i �
       | none =>
         obtain ⟨i, -⟩ := hU x
         refine Eq.trans ?_ (hs s i)
-        ext g
+        ext ⟨g⟩
         induction g using Path.Homotopic.Quotient.ind with | mk γ =>
         -- The leg at `C` sends the class of `γ` to the class of the same loop in `X`, which is
         -- also the image under the leg at `U i` of the class of `γ` in `U i`.
         exact vanKampenWideDesc_map hU hUp hC hCU hUC hx (f s) (hf s) i
-          (FundamentalGroup.map (ContinuousMap.inclusion (hCU i)) ⟨x, hx⟩ ⟦γ⟧)
+          (FundamentalGroup.map (ContinuousMap.inclusion (hCU i)) ⟨x, hx⟩
+            (FundamentalGroup.fromPath ⟦γ⟧))
       | some i => exact vanKampenWideDesc_comp_map hU hUp hC hCU hUC hx (f s) (hf s) i
     uniq s m hm := GrpCat.hom_ext <| vanKampenWide_hom_ext hU (fun i ↦ hCU i hx)
       (isPathConnected_inter_of_pairwise hUp hC hCU hUC) fun i ↦

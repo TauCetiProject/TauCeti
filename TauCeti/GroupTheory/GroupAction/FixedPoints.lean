@@ -280,10 +280,9 @@ variable {N : Type*} [AddMonoid N] [DistribMulAction G N]
 
 /-- A `G`-equivariant additive map restricts to the fixed points of any subgroup. -/
 def fixedPointsMap (f : M →+[G] N) (H : Subgroup G) :
-    FixedPoints.addSubmonoid H M →+ FixedPoints.addSubmonoid H N where
-  toFun m := ⟨f (m : M), f.toMulActionHom.map_mem_fixedPoints (H := H.toSubmonoid) m.2⟩
-  map_zero' := Subtype.ext (map_zero f)
-  map_add' a b := Subtype.ext (map_add f (a : M) (b : M))
+    FixedPoints.addSubmonoid H M →+ FixedPoints.addSubmonoid H N :=
+  f.toAddMonoidHom.restrict fun _ hm ↦
+    f.toMulActionHom.map_mem_fixedPoints (H := H.toSubmonoid) hm
 
 /-- The restricted map is the original map on underlying elements. -/
 @[simp]
@@ -409,14 +408,8 @@ def fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ N →+ P)
   toFun m :=
     { toFun := fun n =>
         ⟨μ (m : M) (n : N), (FixedPoints.mem_addSubmonoid H P _).2 fun h => by
-          have hm : (h : G) • (m : M) = m := by
-            simpa only [Subgroup.smul_def] using
-              (FixedPoints.mem_addSubmonoid H M _).1 m.2 h
-          have hn : (h : G) • (n : N) = n := by
-            simpa only [Subgroup.smul_def] using
-              (FixedPoints.mem_addSubmonoid H N _).1 n.2 h
-          simpa only [Subgroup.smul_def, hm, hn] using
-            (hequiv h (m : M) (n : N)).symm⟩
+          rw [Subgroup.smul_def, ← hequiv]
+          exact congrArg₂ (fun m n ↦ μ m n) (m.2 h) (n.2 h)⟩
       map_zero' := Subtype.ext (map_zero (μ (m : M)))
       map_add' := fun n n' => Subtype.ext (map_add (μ (m : M)) (n : N) (n' : N)) }
   map_zero' := AddMonoidHom.ext fun _ => Subtype.ext <| by simp
