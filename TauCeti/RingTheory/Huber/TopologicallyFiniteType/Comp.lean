@@ -104,49 +104,7 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
     IsTopologicallyFiniteType (ψ.comp φ) := by
   classical
   obtain ⟨k, T, hTfin, hT, π, hπ, hπφ⟩ := isTopologicallyFiniteType_iff.mp hφ
-  -- The open quotient presentation of `B` transports a pair of definition from its Huber source.
-  let _ : IsHuberRing B := ⟨by
-    obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition
-      (A := Completion (weightedRestrictedSubring T hT))
-    let B₀ : Subring B := P.ringOfDefinition.map π
-    let π₀ : P.ringOfDefinition →+* B₀ :=
-      (π.comp P.ringOfDefinition.subtype).codRestrict B₀ fun a ↦
-        Subring.mem_map.mpr ⟨a, a.2, rfl⟩
-    have hπ₀_cont : Continuous π₀ :=
-      (hπ.continuous.comp continuous_subtype_val).subtype_mk _
-    have hπ₀_open : IsOpenMap π₀ :=
-      hπ.isOpenMap.subtype_map P.isOpen_ringOfDefinition
-        (fun a ha ↦ Subring.mem_map.mpr ⟨a, ha, rfl⟩)
-    have hπ₀_surj : Function.Surjective π₀ := by
-      rintro ⟨b, hb⟩
-      obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hb
-      exact ⟨⟨a, ha⟩, rfl⟩
-    exact ⟨{
-      ringOfDefinition := B₀
-      isOpen_ringOfDefinition := by
-        rw [Subring.coe_map]
-        exact hπ.isOpenMap _ P.isOpen_ringOfDefinition
-      idealOfDefinition := P.idealOfDefinition.map π₀
-      fg_idealOfDefinition := P.fg_idealOfDefinition.map π₀
-      isAdic_idealOfDefinition := isAdic_iff.mpr ⟨by
-        intro n
-        rw [← Ideal.map_pow]
-        have hset : ((P.idealOfDefinition ^ n).map π₀ : Set B₀) =
-            π₀ '' ((P.idealOfDefinition ^ n : Ideal P.ringOfDefinition) :
-              Set P.ringOfDefinition) := by
-          ext b
-          exact Ideal.mem_map_iff_of_surjective π₀ hπ₀_surj
-        rw [hset]
-        exact hπ₀_open _ ((isAdic_iff.mp P.isAdic_idealOfDefinition).1 n), by
-        intro s hs
-        obtain ⟨n, hn⟩ := (isAdic_iff.mp P.isAdic_idealOfDefinition).2
-          (π₀ ⁻¹' s) (hπ₀_cont.continuousAt.preimage_mem_nhds (by simpa using hs))
-        refine ⟨n, ?_⟩
-        rw [← Ideal.map_pow]
-        rintro b hb
-        obtain ⟨a, ha, rfl⟩ := Ideal.mem_map_iff_of_surjective π₀ hπ₀_surj |>.mp hb
-        exact hn ha⟩
-    }⟩⟩
+  have : IsHuberRing B := IsHuberRing.of_isOpenQuotientMap hπ
   obtain ⟨m, U, hUfin, hU, ρ, hρ, hρψ⟩ := isTopologicallyFiniteType_iff.mp hψ
   have hρψ_apply (b : B) :
       ρ (algebraMap B (Completion (weightedRestrictedSubring U hU)) b) = ψ b := by
