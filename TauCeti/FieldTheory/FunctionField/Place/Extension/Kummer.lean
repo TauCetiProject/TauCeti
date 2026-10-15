@@ -514,8 +514,8 @@ private theorem moduleFinite_integralClosure_of_adjoin_eq
     Module.Finite P.integers (integralClosure P.integers F') := by
   refine ⟨?_⟩
   rw [← Algebra.top_toSubmodule, ← adjoin_eq_top_of_adjoin_eq hy]
-  exact ((isIntegral_algHom_iff (integralClosure P.integers F').val Subtype.val_injective).mp
-    (mem_integralClosure_of_adjoin_eq hy)).fg_adjoin_singleton
+  exact (integralClosure.isIntegral
+    ⟨y, mem_integralClosure_of_adjoin_eq hy⟩).fg_adjoin_singleton
 
 omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- The monic polynomial `φ` over `𝒪_P` lifting the minimal polynomial of `y` over `F` is the
@@ -542,15 +542,6 @@ private theorem conductor_sup_eq_top_of_adjoin_eq
       (IsDiscreteValuationRing.maximalIdeal P.integers).asIdeal = ⊤ := by
   rw [conductor_eq_top_of_adjoin_eq_top (adjoin_eq_top_of_adjoin_eq hy), Ideal.comap_top,
     top_sup_eq]
-
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
-/-- Under monogenicity, `y` is integral over `𝒪_P` as an element of `𝒪'_P`. -/
-private theorem isIntegral_of_adjoin_eq
-    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
-    IsIntegral P.integers
-      (⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F') :=
-  (isIntegral_algHom_iff (integralClosure P.integers F').val Subtype.val_injective).mp
-    (mem_integralClosure_of_adjoin_eq hy)
 
 attribute [local instance] Ideal.Quotient.field
 
@@ -593,7 +584,8 @@ noncomputable def restrictEquivNormalizedFactors {φ : P.integers[X]}
   have := moduleFinite_integralClosure_of_adjoin_eq hy
   (Equiv.subtypeEquivRight fun P' ↦ by rw [ofPrime_maximalIdeal]).trans <|
     (restrictOfPrimeEquivNormalizedFactors k F (IsDiscreteValuationRing.maximalIdeal P.integers)
-      (conductor_sup_eq_top_of_adjoin_eq hy) (isIntegral_of_adjoin_eq hy)).trans
+      (conductor_sup_eq_top_of_adjoin_eq hy)
+      (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩)).trans
       (normalizedFactorsEquiv hmin hy)
 
 variable {k k' F P}
@@ -610,7 +602,8 @@ private theorem coe_restrictEquivNormalizedFactors_symm_apply {φ : P.integers[X
     haveI := moduleFinite_integralClosure_of_adjoin_eq hy
     ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).1 =
       ((restrictOfPrimeEquivNormalizedFactors k F (IsDiscreteValuationRing.maximalIdeal P.integers)
-        (conductor_sup_eq_top_of_adjoin_eq hy) (isIntegral_of_adjoin_eq hy)).symm
+        (conductor_sup_eq_top_of_adjoin_eq hy)
+        (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩)).symm
           ((normalizedFactorsEquiv hmin hy).symm γ)).1 :=
   rfl
 
@@ -665,7 +658,8 @@ theorem valuation_integersEval_restrictEquivNormalizedFactors_symm_apply_lt_one
   have := moduleFinite_integralClosure_of_adjoin_eq hy
   have h := valuation_restrictOfPrimeEquivNormalizedFactors_symm_apply_lt_one (k' := k')
     (F' := F') k F (IsDiscreteValuationRing.maximalIdeal P.integers)
-    (conductor_sup_eq_top_of_adjoin_eq hy) (isIntegral_of_adjoin_eq hy) (Q := Q)
+    (conductor_sup_eq_top_of_adjoin_eq hy)
+    (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩) (Q := Q)
     ((normalizedFactorsEquiv hmin hy).symm ⟨Q.map (IsLocalRing.residue P.integers), hQ⟩).2
   -- `Q (y)` computed in `F'` is the image of `Q (y)` computed in `𝒪'_P`.
   have heval : algebraMap (integralClosure P.integers F') F'
