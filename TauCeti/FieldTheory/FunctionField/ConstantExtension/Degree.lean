@@ -93,7 +93,7 @@ private theorem span_range_basis_of_finite_constantCompositum
   have htop : A = ⊤ := eq_top_iff.mpr fun z _ => hle (by simp [h])
   have halg : ∀ z ∈ Set.range (algebraMap F F'), IsAlgebraic C' z := by
     rintro _ ⟨x, rfl⟩
-    exact ((Algebra.IsAlgebraic.isAlgebraic (R := C) x).map f).tower_top
+    exact (IsAlgebraic.algHom f (Algebra.IsAlgebraic.isAlgebraic (R := C) x)).tower_top
   have htop' := congrArg IntermediateField.toSubalgebra htop
   change (IntermediateField.adjoin C' (Set.range (algebraMap F F'))).toSubalgebra = ⊤ at htop'
   rw [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic halg] at htop'
