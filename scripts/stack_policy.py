@@ -246,7 +246,7 @@ def rendered_prose_parents(body):
             claim = re.search(
                 r"\bstack(?:ed|s|ing)?\s+on\b|"
                 r"(?:^\s*(?:[-*]\s*)?|\bthis (?:PR|branch) (?:is )?)"
-                r"(?:depends? on|based on|built on|carries .*commits from)\b|"
+                r"(?:depends? on|based on|built on|carries (?:unmerged |prerequisite )?commits from)\b|"
                 r"\b(?:prerequisites?|dependencies|parent PR)\s*:", sentence, re.I)
             if claim:
                 if not re.fullmatch(

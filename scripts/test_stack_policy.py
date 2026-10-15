@@ -554,6 +554,15 @@ class ProseTests(unittest.TestCase):
                 with self.subTest(claim=claim, suffix=suffix):
                     self.assertEqual(sp.rendered_parents(f"<p>{claim} #12{suffix}</p>"), set())
 
+    def test_carries_commits_requires_literal_affirmative_wording(self):
+        for qualifier in ("zero", "0", "zero remaining", "0 prerequisite", "none of the"):
+            with self.subTest(qualifier=qualifier):
+                self.assertEqual(sp.rendered_parents(
+                    f"<p>This PR carries {qualifier} commits from #12.</p>"), set())
+        for qualifier in ("", "unmerged ", "prerequisite "):
+            self.assertEqual(sp.rendered_parents(
+                f"<p>This PR carries {qualifier}commits from #12.</p>"), {12})
+
     def test_rendered_metadata_cache_identity_and_failures(self):
         child = sp.PR(2, "open", "c" * 40, "main", "branch", sp.REPO,
                       "Stacked on #1", False)
