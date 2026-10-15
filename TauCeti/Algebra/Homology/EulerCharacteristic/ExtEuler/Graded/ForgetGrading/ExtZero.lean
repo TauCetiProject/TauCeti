@@ -78,10 +78,9 @@ theorem gradedExtZeroForgetEquiv_of (X Y : GradedModuleCat.{uA} 𝒜) [Module.Fi
     gradedExtZeroForgetEquiv 𝒜 X Y (DirectSum.of _ j e) =
       (Ext.linearEquiv₀ (R := k) (X := toModuleCat.obj X) (Y := toModuleCat.obj Y)).symm
         (ModuleCat.ofHom (homShiftPowEquiv 𝒜 X Y j (Ext.linearEquiv₀ (R := k) e)).hom) := by
-  rw [gradedExtZeroForgetEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply, DirectSum.coe_congrLinearEquiv, ← DirectSum.lof_eq_of k,
-    DirectSum.lmap_lof, DirectSum.lof_eq_of, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-    homShiftDirectSumEquiv_of]
+  classical
+  simp only [gradedExtZeroForgetEquiv, LinearEquiv.trans_apply, DirectSum.coe_congrLinearEquiv,
+    DirectSum.lmap_of, LinearEquiv.coe_coe, homShiftDirectSumEquiv_of]
   rfl
 
 end TauCeti.GradedModuleCat

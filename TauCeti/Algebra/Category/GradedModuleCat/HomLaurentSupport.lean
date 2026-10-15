@@ -100,19 +100,11 @@ private theorem isHomogeneous_hom_to_shift {j : ℤ} (f : M ⟶ N.shiftObj j) :
   rw [mem_shiftObj_piece_iff] at h
   simpa only [add_zero, sub_eq_add_neg] using h
 
-private theorem homShiftDirectSumMap_injective :
-    Function.Injective (homShiftDirectSumMap M N) := by
-  intro z z' h
-  apply DirectSum.ext
-  intro j
-  apply hom_ext
-  have hpart := congrArg
-    (fun f : M →ₗ[A] N ↦ M.grading.homogeneousPartOfGradedSMul N.grading 𝒜 f (-j)) h
-  suffices key : ∀ y : DirectSum ℤ (fun j ↦ (M ⟶ N.shiftObj j)),
-      M.grading.homogeneousPartOfGradedSMul N.grading 𝒜
-          (homShiftDirectSumMap M N y) (-j) = (y j).hom by
-    simpa only [key] using hpart
-  intro y
+/-- The degree-`-j` homogeneous part of a sum of graded maps recovers its `j`-th summand. -/
+private theorem homogeneousPartOfGradedSMul_homShiftDirectSumMap
+    (y : DirectSum ℤ (fun j ↦ (M ⟶ N.shiftObj j))) (j : ℤ) :
+    M.grading.homogeneousPartOfGradedSMul N.grading 𝒜 (homShiftDirectSumMap M N y) (-j) =
+      (y j).hom := by
   induction y using DirectSum.induction_on with
   | zero => simp
   | of i f =>
@@ -129,6 +121,15 @@ private theorem homShiftDirectSumMap_injective :
   | add x y hx hy =>
       rw [map_add, M.grading.homogeneousPartOfGradedSMul_add, hx, hy, DirectSum.add_apply,
         hom_add]
+
+private theorem homShiftDirectSumMap_injective :
+    Function.Injective (homShiftDirectSumMap M N) := by
+  intro z z' h
+  apply DirectSum.ext
+  intro j
+  apply hom_ext
+  rw [← homogeneousPartOfGradedSMul_homShiftDirectSumMap, h,
+    homogeneousPartOfGradedSMul_homShiftDirectSumMap]
 
 /-- An ungraded map out of a finitely generated graded module has only finitely many nonzero
 homogeneous parts. -/
@@ -197,6 +198,15 @@ theorem homShiftDirectSumEquiv_of [Module.Finite A M] (j : ℤ) (f : M ⟶ N.shi
     homShiftDirectSumEquiv M N
         (DirectSum.of (fun j : ℤ ↦ M ⟶ N.shiftObj j) j f) = f.hom :=
   homShiftDirectSumMap_of M N j f
+
+/-- The `j`-th summand of `homShiftDirectSumEquiv.symm f` is the degree-`-j` homogeneous part of
+the ungraded map `f`. -/
+@[simp]
+theorem homShiftDirectSumEquiv_symm_apply_hom [Module.Finite A M] (f : M →ₗ[A] N) (j : ℤ) :
+    ((homShiftDirectSumEquiv M N).symm f j).hom =
+      M.grading.homogeneousPartOfGradedSMul N.grading 𝒜 f (-j) := by
+  conv_rhs => rw [← (homShiftDirectSumEquiv M N).apply_symm_apply f]
+  exact (homogeneousPartOfGradedSMul_homShiftDirectSumMap M N _ j).symm
 
 /-! ### Finite Laurent support -/
 

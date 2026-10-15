@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGrading
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGradingExtZero
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGrading.Basic
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGrading.ExtZero
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.ForgetGrading
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Dimension
 
