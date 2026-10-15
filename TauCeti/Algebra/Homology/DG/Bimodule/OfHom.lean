@@ -53,31 +53,6 @@ namespace DGAlgHom
 
 variable (f : DGAlgHom hA hB)
 
-noncomputable instance bimoduleModuleLeft :
-    Module A (Bimodule f.toGradedAlgHom.toAlgHom) :=
-  Algebra.TensorProduct.moduleLeft (k := R) (A := A) (B := Bᵐᵒᵖ)
-    (Bimodule f.toGradedAlgHom.toAlgHom)
-
-noncomputable instance bimoduleModuleRight :
-    Module Bᵐᵒᵖ (Bimodule f.toGradedAlgHom.toAlgHom) :=
-  Algebra.TensorProduct.moduleRight (k := R) (A := A) (B := Bᵐᵒᵖ)
-    (Bimodule f.toGradedAlgHom.toAlgHom)
-
-noncomputable instance bimoduleScalarTowerLeft :
-    IsScalarTower R A (Bimodule f.toGradedAlgHom.toAlgHom) :=
-  Algebra.TensorProduct.moduleLeftIsScalarTower
-    (k := R) (A := A) (B := Bᵐᵒᵖ) (Bimodule f.toGradedAlgHom.toAlgHom)
-
-noncomputable instance bimoduleScalarTowerRight :
-    IsScalarTower R Bᵐᵒᵖ (Bimodule f.toGradedAlgHom.toAlgHom) :=
-  Algebra.TensorProduct.moduleRightIsScalarTower
-    (k := R) (A := A) (B := Bᵐᵒᵖ) (Bimodule f.toGradedAlgHom.toAlgHom)
-
-noncomputable instance bimoduleSMulCommClass :
-    SMulCommClass A Bᵐᵒᵖ (Bimodule f.toGradedAlgHom.toAlgHom) :=
-  Algebra.TensorProduct.moduleSMulCommClass
-    (k := R) (A := A) (B := Bᵐᵒᵖ) (Bimodule f.toGradedAlgHom.toAlgHom)
-
 /-! ### Grading and differential -/
 
 /-- The grading on `{}_f B`, transported from the target DG algebra. -/
@@ -163,6 +138,8 @@ theorem isDGBimodule :
     apply (Bimodule.of f.toGradedAlgHom.toAlgHom).symm.injective
     simp only [bimoduleOf_symm_bimoduleDifferential, map_add, Units.smul_def, map_zsmul,
       Algebra.TensorProduct.smul_moduleLeft, Bimodule.symm_smul, unop_one, mul_one]
+    -- The remaining conversion unfolds the `Bimodule` type synonym and reads the restricted
+    -- left-factor action through `f`; both sides then lie in the target algebra `B`.
     change dB (f a * (Bimodule.of f.toGradedAlgHom.toAlgHom).symm b) =
       f (dA a) * (Bimodule.of f.toGradedAlgHom.toAlgHom).symm b +
         p.negOnePow •
