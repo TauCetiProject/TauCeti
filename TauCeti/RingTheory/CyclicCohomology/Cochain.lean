@@ -501,7 +501,8 @@ theorem hochschildCoboundary_zero_eq_zero_iff (φ : MultilinearMap R (fun _ : Fi
   · ext a
     rw [hochschildCoboundary_zero_apply, h, sub_self, zero_apply]
 
-/-- The Hochschild coboundary preserves cyclic cochains, so they form a subcomplex. -/
+/-- The Hochschild coboundary preserves cyclic cochains. When the multiplication is associative,
+so that `b ∘ b = 0`, the cyclic cochains therefore form a subcomplex. -/
 theorem hochschildCoboundary_mem_cyclicCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n) :
     hochschildCoboundary R A M n φ ∈ cyclicCochains R A M (n + 1) := by
@@ -517,8 +518,8 @@ theorem hochschildCoboundary_mem_cyclicCochains
     rw [add_right_comm, add_comm _ n, add_right_comm]
   · rw [← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
 
-/-- The Hochschild coboundary `b` restricted to the cyclic subcomplex, as a linear map
-`C_λⁿ → C_λⁿ⁺¹`. -/
+/-- The Hochschild coboundary `b` restricted to the submodules of cyclic cochains, as a linear
+map `C_λⁿ → C_λⁿ⁺¹`. It squares to zero when the multiplication is associative. -/
 def cyclicHochschildCoboundary (n : ℕ) :
     cyclicCochains R A M n →ₗ[R] cyclicCochains R A M (n + 1) :=
   (hochschildCoboundary R A M n).restrict fun _ ↦ hochschildCoboundary_mem_cyclicCochains R A M
