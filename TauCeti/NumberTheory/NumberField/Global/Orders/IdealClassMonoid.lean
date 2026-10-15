@@ -75,7 +75,7 @@ def homothetyCon : Con O.nonzeroFractionalIdeals where
   r I J := ∃ x : Kˣ, spanSingleton (nonZeroDivisors O.toSubalgebra) (x : K) *
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) = J
   iseqv :=
-    { refl I := ⟨1, by rw [Units.val_one, spanSingleton_one, one_mul]⟩
+    { refl I := ⟨1, by rw [Units.val_one, map_one (spanSingleton _), one_mul]⟩
       symm := by
         rintro I J ⟨x, hx⟩
         refine ⟨x⁻¹, ?_⟩
@@ -83,12 +83,12 @@ def homothetyCon : Con O.nonzeroFractionalIdeals where
       trans := by
         rintro I J L ⟨x, hx⟩ ⟨y, hy⟩
         refine ⟨y * x, ?_⟩
-        rw [← hy, ← hx, ← mul_assoc, spanSingleton_mul_spanSingleton, Units.val_mul] }
+        rw [← hy, ← hx, ← mul_assoc, ← map_mul (spanSingleton _), Units.val_mul] }
   mul' := by
     rintro I I' J J' ⟨x, hx⟩ ⟨y, hy⟩
     refine ⟨x * y, ?_⟩
     rw [Submonoid.coe_mul, Submonoid.coe_mul, ← hx, ← hy, Units.val_mul,
-      ← spanSingleton_mul_spanSingleton]
+      map_mul (spanSingleton _)]
     ring
 
 /-- Two nonzero fractional ideals are homothetic exactly when one is a nonzero scalar multiple of

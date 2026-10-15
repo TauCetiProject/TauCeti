@@ -665,7 +665,7 @@ theorem isCartanWeightVector_single (a : Fin (n + 1) ⊕ Fin (n + 1)) :
   simp
 
 /-- The standard coordinate `ℤ`-lattice in the symplectic module. -/
-def lattice : Submodule ℤ ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
+noncomputable def lattice : Submodule ℤ ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
   TauCeti.coordinateLattice (Fin (n + 1) ⊕ Fin (n + 1))
 
 /-- A vector is in the standard lattice exactly when all its coordinates are integers. -/

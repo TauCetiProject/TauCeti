@@ -127,7 +127,7 @@ theorem relationMatrix_def :
   rw [relationMatrix]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range fun ij : Fin n × Fin n => relationMatrix R n C ij.1 ij.2
 
 /-- Every entry of the relation matrix is a defining relation. -/
