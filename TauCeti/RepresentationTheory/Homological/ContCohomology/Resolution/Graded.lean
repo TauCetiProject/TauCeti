@@ -27,6 +27,8 @@ resolutions; tensor products can apply the differential on one carrier while tra
 
 * `gradedResolutionTopRepDifferential` bundles the square-zero differential as a morphism of
   discrete topological representations.
+* `gradedResolutionTopRepAugmentation` includes discrete coefficients into the degree-zero term
+  as a morphism of topological representations, naturally in the coefficients.
 * `gradedResolutionTopRepMap` bundles coefficient maps, preserving identities, composition,
   and the differential.
 
@@ -398,6 +400,28 @@ theorem gradedResolutionTopRepDifferential_sq :
   ext x
   exact X.gradedResolutionDifferential_sq x
 
+/-- The augmentation from discrete coefficients into the total resolution as a morphism of
+topological representations. -/
+noncomputable def gradedResolutionTopRepAugmentation [DiscreteTopology X.V] :
+    X ⟶ X.gradedResolutionTopRep where
+  hom' := {
+    toContinuousLinearMap := ⟨X.gradedResolutionAugmentation, continuous_of_discreteTopology⟩
+    isIntertwining' g := by
+      ext x
+      exact X.gradedResolutionAugmentation_equivariant g x
+  }
+
+/-- Bundling the augmentation preserves its action on the original coefficient carrier. -/
+theorem gradedResolutionTopRepAugmentation_apply [DiscreteTopology X.V] (x : X.V) :
+    X.gradedResolutionTopRepAugmentation.hom x = X.gradedResolutionAugmentation x :=
+  (rfl)
+
+/-- The bundled augmentation takes values in the kernel of the total differential. -/
+theorem gradedResolutionTopRepDifferential_augmentation [DiscreteTopology X.V] :
+    X.gradedResolutionTopRepAugmentation ≫ X.gradedResolutionTopRepDifferential = 0 := by
+  ext x
+  exact X.gradedResolutionDifferential_augmentation x
+
 variable {X} {Y Z : TopRep.{max v w} R G}
 
 /-- A coefficient morphism induces a morphism of discrete total resolutions. -/
@@ -434,6 +458,14 @@ theorem gradedResolutionTopRepMap_differential (f : X ⟶ Y) :
       gradedResolutionTopRepMap f ≫ Y.gradedResolutionTopRepDifferential := by
   ext x
   exact gradedResolutionMap_differential f x
+
+/-- Bundled coefficient maps preserve the augmentations of discrete coefficients. -/
+theorem gradedResolutionTopRepMap_augmentation [DiscreteTopology X.V] [DiscreteTopology Y.V]
+    (f : X ⟶ Y) :
+    X.gradedResolutionTopRepAugmentation ≫ gradedResolutionTopRepMap f =
+      f ≫ Y.gradedResolutionTopRepAugmentation := by
+  ext x
+  exact gradedResolutionMap_augmentation f x
 
 variable (X)
 
