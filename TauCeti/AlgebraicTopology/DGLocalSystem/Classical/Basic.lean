@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.LocalCoefficient
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 
@@ -247,7 +248,7 @@ theorem classicalDGLocalSystemMap_injective [PathConnectedSpace X]
   have hx : φ.app (FundamentalGroupoid.mk x) = ψ.app (FundamentalGroupoid.mk x) :=
     ModuleCat.hom_ext (LinearMap.ext fun m ↦ congrArg (fun f ↦ f.toLinearMap m) h)
   exact Groupoid.natTrans_ext (x₀ := FundamentalGroupoid.mk x)
-    (fun y ↦ ⟨(⟦PathConnectedSpace.somePath x y.as⟧ : Path.Homotopic.Quotient x y.as)⟩) hx
+    (FundamentalGroupoid.nonempty_hom _) hx
 
 /-- On a path-connected space, the functor from classical to DG local systems is faithful. -/
 instance [PathConnectedSpace X] : (classicalDGLocalSystemFunctor R x).Faithful where

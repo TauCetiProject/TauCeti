@@ -24,6 +24,10 @@ constructed from Weil differentials. Consequently, for every line bundle `L`, th
 `H¹(X, L)` is linearly equivalent to `H⁰(X, Ω_{X/k} ⊗ L⁻¹)`. This is only the existence of a
 noncanonical equivalence: the comparison does not provide a natural trace pairing.
 
+The numerical invariants of `Ω_{X/k}` follow: it has `g` independent global sections,
+one-dimensional `H¹`, and degree `2g - 2`, and every line bundle `L` satisfies the Riemann–Roch
+theorem `dim H⁰(X, L) - dim H⁰(X, Ω_{X/k} ⊗ L⁻¹) = deg L + 1 - g`.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, II, Section 8, and IV, Section 1.
@@ -38,6 +42,7 @@ public section
 
 open CategoryTheory AlgebraicGeometry Order Opposite
 open scoped IntermediateField
+open Module (finrank)
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -245,6 +250,62 @@ theorem nonempty_cohomologyOneDualEquivCohomologyZero_differentials_tensor_dual
   exact InvertibleSheaf.nonempty_cohomologyOneDualEquivCohomologyZero_tensor_dual
     hex hdim hF hk L
       ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
+
+include hF hk hdim hex in
+/-- **The global differentials form a space of dimension the genus.** Over a perfect exact
+constant field, `dim H⁰(X, Ω_{X/k}) = g`, where `g = dim H¹(X, 𝒪_X)`. -/
+theorem finrank_cohomology_zero_relativeDifferentials :
+    haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k
+      (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
+        (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
+    finrank k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 0) = X.genus k := by
+  obtain ⟨e⟩ := nonempty_iso_relativeDifferentials_canonicalBundle hF hk hdim hex
+  exact InvertibleSheaf.finrank_cohomology_zero_eq_genus_of_mk_eq_canonicalBundle hex hdim hF hk
+    ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
+
+include hF hk hdim hex in
+/-- Over a perfect exact constant field, `H¹(X, Ω_{X/k})` is one-dimensional. -/
+theorem finrank_cohomology_one_relativeDifferentials :
+    finrank k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) = 1 := by
+  obtain ⟨e⟩ := nonempty_iso_relativeDifferentials_canonicalBundle hF hk hdim hex
+  exact InvertibleSheaf.finrank_cohomology_one_eq_one_of_mk_eq_canonicalBundle hex hdim hF hk
+    ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
+
+include hF hk hdim hex in
+/-- **The Riemann–Roch theorem with the sheaf of differentials.** Over a perfect exact constant
+field, every line bundle `L` satisfies
+
+`dim H⁰(X, L) - dim H⁰(X, Ω_{X/k} ⊗ L⁻¹) = deg L + 1 - g`,
+
+where `deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and `g = dim H¹(X, 𝒪_X)`. -/
+theorem finrank_cohomology_zero_sub_finrank_cohomology_zero_differentials_tensor_dual
+    (L : InvertibleSheaf X) :
+    haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k
+      (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
+        (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
+    (finrank k (Scheme.Modules.Cohomology L.obj 0) : ℤ) -
+        finrank k (Scheme.Modules.Cohomology
+          (InvertibleSheaf.tensorProduct ⟨X.relativeDifferentials k, inferInstance⟩
+            (InvertibleSheaf.dual L)).obj 0) =
+      L.eulerDegree k + 1 - X.genus k := by
+  obtain ⟨e⟩ := nonempty_iso_relativeDifferentials_canonicalBundle hF hk hdim hex
+  exact InvertibleSheaf.finrank_cohomology_zero_sub_finrank_cohomology_zero_tensor_dual
+    hex hdim hF hk L
+      ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
+
+include hF hk hdim hex in
+/-- **The sheaf of differentials of a proper curve has degree `2g - 2`.** Over a perfect exact
+constant field, the Euler-characteristic degree of `Ω_{X/k}` is `2g - 2`, where
+`g = dim H¹(X, 𝒪_X)`. -/
+theorem eulerDegree_relativeDifferentials [IsProper (X ↘ Spec (.of k))] :
+    haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k
+      (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
+        (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
+    InvertibleSheaf.eulerDegree k (⟨X.relativeDifferentials k, inferInstance⟩ : InvertibleSheaf X) =
+      2 * X.genus k - 2 := by
+  obtain ⟨e⟩ := nonempty_iso_relativeDifferentials_canonicalBundle hF hk hdim hex
+  rw [InvertibleSheaf.eulerDegree_congr k e]
+  exact InvertibleSheaf.eulerDegree_canonicalBundle hex hdim hF hk
 
 end ProperCurve
 

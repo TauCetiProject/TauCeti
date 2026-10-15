@@ -130,6 +130,15 @@ theorem mem_subdifferential_coe_iff (f : E → ℝ) :
   simp only [mem_subdifferential_iff, ne_eq, EReal.coe_ne_bot, EReal.coe_ne_top,
     not_false_eq_true, true_and, ← EReal.coe_add, EReal.coe_le_coe_iff]
 
+/-- A subgradient of a real-valued function is a linear tilt for which the point is a
+global minimizer. -/
+theorem mem_subdifferential_coe_iff_isMinOn_sub (f : E → ℝ) :
+    y ∈ subdifferential B (fun z => (f z : EReal)) x ↔
+      IsMinOn (fun z => f z - B z y) Set.univ x := by
+  rw [mem_subdifferential_coe_iff, isMinOn_iff]
+  simp only [map_sub, LinearMap.sub_apply, Set.mem_univ, forall_const]
+  constructor <;> intro h z <;> have := h z <;> linarith
+
 /-- For a real function `u` extended by `⊤` off `Ω`, a subgradient at a point `x ∈ Ω` is a `y`
 satisfying the subgradient inequality `u x + B (x' - x) y ≤ u x'` at every `x' ∈ Ω`. -/
 -- Not `@[simp]`: `mem_subdifferential_iff` already rewrites the left-hand side.
