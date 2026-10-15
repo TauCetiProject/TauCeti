@@ -121,15 +121,9 @@ theorem affineIsometryImage (h : IsLipschitzBoundaryChart Ω x e φ K r s)
   refine ⟨?_, h.normalRadius_pos, h.tangentRadius_pos, h.lipschitzWith, ?_⟩
   · simpa using h.center
   · intro y hyr hys
-    have hy := h.mem_iff (g.symm y) (by simpa using hyr) (by simpa using hys)
-    change (y ∈ g '' (Ω : Set X) ↔ φ (e (g.symm y)).snd < (e (g.symm y)).fst)
-    rw [show y ∈ g '' (Ω : Set X) ↔ g.symm y ∈ Ω by
-      constructor
-      · rintro ⟨z, hz, rfl⟩
-        simpa using hz
-      · intro hz
-        exact ⟨g.symm y, hz, g.apply_symm_apply y⟩]
-    exact hy
+    refine Opens.mem_mk.trans ?_
+    rw [← AffineIsometryEquiv.coe_toHomeomorph, g.toHomeomorph.image_eq_preimage_symm]
+    exact h.mem_iff (g.symm y) (by simpa using hyr) (by simpa using hys)
 
 end IsLipschitzBoundaryChart
 
@@ -168,6 +162,12 @@ def IsLipschitzDomain (E : Type u) [NormedAddCommGroup E] [NormedSpace ℝ E]
     (Ω : Opens X) : Prop :=
   ∀ x ∈ frontier (Ω : Set X), IsLipschitzBoundaryAt E Ω x
 
+/-- Characterization of Lipschitz domains by boundary charts at every frontier point. -/
+theorem isLipschitzDomain_iff (E : Type u) [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (Ω : Opens X) :
+    IsLipschitzDomain E Ω ↔ ∀ x ∈ frontier (Ω : Set X), IsLipschitzBoundaryAt E Ω x :=
+  Iff.rfl
+
 /-- A Lipschitz domain has Lipschitz boundary at every frontier point. -/
 theorem IsLipschitzDomain.boundaryAt {Ω : Opens X} (h : IsLipschitzDomain E Ω)
     {x : X} (hx : x ∈ frontier (Ω : Set X)) :
@@ -181,10 +181,7 @@ theorem IsLipschitzDomain.affineIsometryImage {Ω : Opens X}
       (⟨g '' Ω, g.toHomeomorph.isOpenMap _ Ω.isOpen⟩ : Opens X') := by
   intro y hy
   have hy' : y ∈ g '' frontier (Ω : Set X) := by
-    rw [show g '' frontier (Ω : Set X) = frontier (g '' (Ω : Set X)) by
-      simpa only [AffineIsometryEquiv.coe_toHomeomorph] using
-        g.toHomeomorph.image_frontier (Ω : Set X)]
-    exact hy
+    rwa [← AffineIsometryEquiv.coe_toHomeomorph, g.toHomeomorph.image_frontier]
   obtain ⟨x, hx, rfl⟩ := hy'
   exact (h.boundaryAt hx).affineIsometryImage g
 
