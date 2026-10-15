@@ -124,7 +124,7 @@ theorem compl_range_ofQuotient : (range (ofQuotient (Γ := Γ)))ᶜ = range ofCu
 
 /-- The basic neighbourhood of the cusp orbit of the cusp datum `D` at height `A`: the cusp orbit
 together with the image of the horodisc of height `A` at `D`. -/
-def cuspNhd (D : Γ.CuspDatum) (A : ℝ) : Set Γ.CompactifiedQuotient :=
+noncomputable def cuspNhd (D : Γ.CuspDatum) (A : ℝ) : Set Γ.CompactifiedQuotient :=
   insert (ofCusp D.cuspOrbit) (ofQuotient '' (Quotient.mk (orbitRel Γ ℍ) '' horodisc D A))
 
 variable (D : Γ.CuspDatum) (A : ℝ)

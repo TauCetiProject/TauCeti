@@ -22,7 +22,8 @@ which is the identification a construction phrased as `FDRep.of ρ` needs in ord
 statement about the object it started from.
 
 `FDRep.forget₂Rep` supplies the canonical forgetful functor over any ring, extending Mathlib's
-commutative-ring instance with the same underlying construction.
+commutative-ring instance with the same underlying construction. It preserves addition of
+intertwiners over any ring, by `FDRep.forget₂_additive`.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
 `Representation` and the `FDRep.of` spellings in which consumers meet it.
@@ -49,7 +50,9 @@ subgroup.
 It also records the constructor `LinearEquiv.toFDRepIso`, which turns an equivariant linear
 equivalence into an isomorphism of `FDRep R G`: the `FDRep` counterpart of Mathlib's `Rep.mkIso`,
 with the equivariance condition read pointwise on the underlying linear maps rather than as an
-equation of morphisms of `FGModuleCat R`.
+equation of morphisms of `FGModuleCat R`, and its converse `FDRep.isoToEquiv`, which reads an
+isomorphism of `FDRep R G` as an equivalence of the carried representations, so that invariants
+of `Representation.Equiv` apply to isomorphic objects.
 
 ## Main definitions
 
@@ -57,6 +60,8 @@ equation of morphisms of `FGModuleCat R`.
   object of `FDRep k G`.
 * `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
   equivalence.
+* `FDRep.isoToEquiv`: the equivalence of representations underlying an isomorphism in
+  `FDRep R G`.
 
 ## Main statements
 
@@ -220,19 +225,15 @@ theorem character_of {k : Type u} {G : Type v} {V : Type u} [Field k] [Monoid G]
 theorem of_ρ_eq_self {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G) :
     FDRep.of A.ρ = A := (rfl)
 
-/-- **Forgetting finite-dimensionality is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
-preserves sums of intertwiners.  This is what lets an additive construction on `Rep R G` -- the
-induction of `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, say -- be recognized
-through the forgetful functor. -/
-instance forget₂_additive {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
+/-- **Forgetting finite generation is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
+preserves sums of intertwiners over any ring. It lets additive constructions on `Rep R G`, such as
+induction in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, be recognized through
+the forgetful functor. -/
+instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
     (forget₂ (FDRep R G) (Rep R G)).Additive where
-  map_add := by
-    intros
-    apply Rep.hom_ext
-    ext x
-    -- The remaining `rfl` only identifies the two names of the single underlying addition of
-    -- intertwiners, the same definitional identification that lets `FDRep.forget₂_ρ` be stated.
-    rfl
+  -- The composite of `mapAction` and `Rep.ActionToRep` keeps the underlying linear maps, so
+  -- preservation of addition is definitional.
+  map_add := by intros; rfl
 
 open MonoidalCategory in
 /-- **Forgetting finite-dimensionality preserves the tensor product on the nose.**  The monoidal
@@ -432,6 +433,25 @@ instance normal_iInf_ker (W : ι → FDRep k G) : (⨅ i, (W i).ρ.ker).Normal :
   Subgroup.normal_iInf_normal fun _ => inferInstance
 
 end CommonKernel
+
+section IsoToEquiv
+
+variable {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+
+/-- **The equivalence of representations underlying an isomorphism in `FDRep R G`**: the linear
+equivalence `FDRep.isoToLinearEquiv` intertwines the two actions, by `FDRep.Iso.conj_ρ`.  This is
+the `FDRep` counterpart of `Representation.equivOfIso` for `Rep`, and the converse of
+`LinearEquiv.toFDRepIso`. -/
+noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Equiv V.ρ W.ρ :=
+  .mk (isoToLinearEquiv i) fun g => LinearMap.ext fun v => by
+    simp [Iso.conj_ρ i g, LinearEquiv.conj_apply]
+
+@[simp]
+theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
+    (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=
+  (rfl)
+
+end IsoToEquiv
 
 end FDRep
 

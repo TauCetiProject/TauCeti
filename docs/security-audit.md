@@ -36,17 +36,41 @@ Individual commits are inspected in order: a later revert cannot conceal an earl
 dangerous version. Candidate code is never executed. The model has no GitHub
 credential, general filesystem access, shell or editing authority; trusted Worker
 code verifies its structured verdict and updates the ref. A finding, incomplete
-review, client failure or input beyond the workload limits stops the cursor for
-human attention. Local input bundles, actual launchers/environments/prompts,
+review or input beyond the workload limits stops the cursor for human attention.
+Provider service errors without a final model answer may be retried without human
+source attestation. The Worker makes at most two automatic retries with backoff,
+resuming the same retained conversation with unchanged source, inspection policy,
+model, tool restrictions and read receipt. Progress notes and all failed requests
+are retained. Findings, incomplete verdicts, malformed answers/streams and
+unauthorized tools cannot be retried as service errors. Exhausted retries leave
+the cursor blocked until a later service recovery; an admin may use the Worker's
+`retry-service --state DIR --reason ...` command to continue the same retained
+inspection. Only a complete pass and confirmed reference update clear that block. Local input bundles, actual launchers/environments/prompts,
 transcripts, read receipts, native Codex
 compaction/usage records, verdicts and advancement records are retained by the worker.
 A pre-inspection commit-budget block from the old 256 KiB planner can be archived and
 replanned when the exact next commit fits the new limits. That does not attest the
-commit or retry a model verdict; other blocks still require human attention.
+commit or retry a model verdict; source findings and incomplete verdicts still
+require human attention.
 After inspecting every intermediate commit themselves, an admin can use the Worker's
 explicit `attest --through SHA --reason ...` command for an oversized range or to
 resolve a finding. It records human evidence and repeats the same ancestry and
 authority checks. A model re-roll is not a substitute for that review.
+
+An unexplained `incomplete` answer with an empty findings list, or a paged `pass`
+whose input digest omits only its final character, may receive bounded output repair
+in the same retained Luna conversation. The exact ordered commits and remaining
+schema must validate; paged input must have complete receipt coverage and the correct
+final token. A repaired answer must echo the exact full digest. The response schema
+fixes that digest to prevent copying errors. Earlier source findings and explained
+incomplete verdicts remain binding. The repair preserves all notes and uncertainty;
+only a new complete passing answer can approve the original batch. Service retries
+and repairs share at most three launches per invocation. Each batch permits at most two
+explicit admin `repair-output --state DIR --reason ...` invocation. Failed answers,
+repair counts and recovery kinds are retained in the evidence and ledger. Exhausted
+repairs remain blocked. The original pre-profile incident has a narrowly pinned
+compatibility continuation for its exact reader-context failure; it does not permit
+other explained incomplete verdicts to be retried.
 
 Local blocks are not a shared authorization service. Administrators must not evade
 a finding by changing worker IDs, and should keep admin credentials out of ordinary

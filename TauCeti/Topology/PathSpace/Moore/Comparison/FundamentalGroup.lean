@@ -37,15 +37,19 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
 /-- The multiplicative class of a Moore loop. The inverse compensates for Mathlib's convention
 that the product of fundamental-group elements traverses the right factor first. -/
 def fundamentalGroupHom (x : X) : MooreLoopSpace X x →* FundamentalGroup X x where
-  toFun γ := Inv.inv (α := FundamentalGroup X x) (Path.Homotopic.Quotient.mk γ.toPath)
+  toFun γ := Inv.inv (α := FundamentalGroup X x)
+    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath))
   map_one' := by
     rw [toPath_one]
     exact inv_one
   map_mul' γ δ := by
-    let a : FundamentalGroup X x := Path.Homotopic.Quotient.mk γ.toPath
-    let b : FundamentalGroup X x := Path.Homotopic.Quotient.mk δ.toPath
-    have h : Path.Homotopic.Quotient.mk (γ * δ).toPath = b * a := by
-      rw [FundamentalGroup.mul_def, ← Path.Homotopic.Quotient.mk_trans]
+    let a : FundamentalGroup X x := FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)
+    let b : FundamentalGroup X x := FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk δ.toPath)
+    have h : FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (γ * δ).toPath) = b * a := by
+      rw [FundamentalGroup.mul_def]
+      refine CategoryTheory.End.ext ?_
+      dsimp only [a, b, FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
+      rw [← Path.Homotopic.Quotient.mk_trans]
       apply Quotient.sound
       apply Path.joined_iff_homotopic.mp
       exact ⟨((mulToPathHomotopy x).evalAt (γ, δ)).symm.cast
@@ -56,7 +60,8 @@ def fundamentalGroupHom (x : X) : MooreLoopSpace X x →* FundamentalGroup X x w
 @[simp]
 theorem fundamentalGroupHom_apply (γ : MooreLoopSpace X x) :
     fundamentalGroupHom x γ =
-      Inv.inv (α := FundamentalGroup X x) (Path.Homotopic.Quotient.mk γ.toPath) :=
+      Inv.inv (α := FundamentalGroup X x)
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)) :=
   (rfl)
 
 /-- Path components of Moore loops identify with the fundamental group, in the multiplicative
@@ -98,6 +103,7 @@ theorem fundamentalGroupHom_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpac
   rw [fundamentalGroupHom_apply, fundamentalGroupHom_apply, map_inv,
     FundamentalGroup.mapOfEq_apply]
   congr 1
+  refine CategoryTheory.End.ext ?_
   apply congrArg Path.Homotopic.Quotient.mk
   ext t
   simp [toPath_apply, Path.cast_coe, toMoorePath_map, MoorePath.map_apply]

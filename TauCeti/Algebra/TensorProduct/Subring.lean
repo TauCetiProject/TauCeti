@@ -89,9 +89,9 @@ rational tensor square of the ambient algebra is injective. -/
 -- gives the stated map.
 theorem _root_.Subring.tensorSquareMap_injective (S : Subring A) :
     Function.Injective (Subring.tensorSquareMap ℚ S) := by
-  let : IsAddTorsionFree A := .of_module_rat A
-  let : IsAddTorsionFree S :=
-    Function.Injective.isAddTorsionFree S.subtype.toAddMonoidHom S.subtype_injective
+  let : HasUniqueDiv A := .of_module_rat A
+  let : HasUniqueDiv S :=
+    Function.Injective.hasUniqueDiv S.subtype.toAddMonoidHom S.subtype_injective
   let : Module.Flat ℤ S := inferInstance
   let f : S →ₗ[ℤ] A := S.subtype.toIntAlgHom.toLinearMap
   have hinjective : Function.Injective (TensorProduct.map f f) :=

@@ -163,7 +163,7 @@ theorem F_inf_rationalToComplexSubmodule_eq_iSup (h : IsHodgeBigrading hℚ hℂ
     F p ⊓ rationalToComplexSubmodule hℚ hℂ (WQ k) =
       ⨆ (pq : ℤ × ℤ) (_ : p ≤ pq.1 ∧ pq.1 + pq.2 ≤ k), I pq := by
   rw [h.F_eq_iSup p, h.rationalToComplexSubmodule_eq_iSup k]
-  exact TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep _ _
+  exact iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep _ _
 
 /-- Inside `W_k`, the conjugate of the Hodge step `F^r` is spanned, modulo `W_{k-1}`, by pieces
 whose second index is at least `r`. -/
@@ -215,7 +215,7 @@ theorem isCompl_complexGradedF (h : IsHodgeBigrading hℚ hℂ WQ F I) (k p : �
       exact biSup_mono fun _ ↦ Or.inl
     refine (inf_le_inf hA hB).trans ?_
     simp only [hW]
-    rw [TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep,
+    rw [iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep,
       h.rationalToComplexSubmodule_eq_iSup]
     exact biSup_mono fun _ ↦ by omega
   · -- Every piece of total degree at most `k` lies in `W_{k-1}` or in one of the two images.

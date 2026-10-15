@@ -182,7 +182,7 @@ theorem ihomObjEquiv_ihomComparison_natTrans_app_app (Y : Over X)
     (s : ((ihom M).obj N).obj (op Y.left)) :
     ihomObjEquiv Y ((pushforward₀ (Over.forget X) R).obj M)
         ((pushforward₀ (Over.forget X) R).obj N)
-        ((((pushforward₀ (Over.forget X) R).ihomComparison M).natTrans.app N).app (op Y) s) =
+        ((((pushforward₀ (Over.forget X) R).ihomComparison M).app N).app (op Y) s) =
       (pushforward₀ (Over.iteratedSliceForward Y) ((Over.forget Y.left).op ⋙ R)).map
         (ihomObjEquiv Y.left M N s) := by
   let F := pushforward₀ (Over.forget X) R
@@ -190,12 +190,12 @@ theorem ihomObjEquiv_ihomComparison_natTrans_app_app (Y : Over X)
   -- Both morphisms act on `m` by evaluating a restricted section: on the left the restriction
   -- along `Z.hom` of the image of `s`, on the right the restriction of `s` along `Z.hom.left`.
   refine (ihomObjEquiv_apply_app Y (F.obj M) (F.obj N)
-    (((F.ihomComparison M).natTrans.app N).app (op Y) s) Z.hom m).trans
+    (((F.ihomComparison M).app N).app (op Y) s) Z.hom m).trans
     (Eq.trans ?_ (ihomObjEquiv_apply_app Y.left M N s Z.hom.left m).symm)
   -- The comparison commutes with restriction, and evaluation after it is evaluation before it,
   -- since the tensorator of restriction is the identity on pure tensors.
   have hnat := PresheafOfModulesOfCommRing.naturality_apply
-    ((F.ihomComparison M).natTrans.app N) Z.hom.op s
+    ((F.ihomComparison M).app N) Z.hom.op s
   have hev := congrArg (fun f ↦ f.app' (op Z.left) (TensorProduct.tmul _ m
     (((ihom M).obj N).map Z.hom.left.op s))) (F.ihomComparison_ev M N)
   exact (congrArg (fun x ↦ ((ihom.ev (F.obj M)).app (F.obj N)).app' (op Z.left)
@@ -210,7 +210,7 @@ private theorem iteratedSliceEquiv_unit_app_left_left (Y : Over X) (Z : Over Y) 
 /-- The internal Hom comparison for restriction to a slice is bijective on sections. -/
 private theorem bijective_ihomComparison_natTrans_app_app (Y : Over X) :
     Function.Bijective
-      ((((pushforward₀ (Over.forget X) R).ihomComparison M).natTrans.app N).app (op Y)) := by
+      ((((pushforward₀ (Over.forget X) R).ihomComparison M).app N).app (op Y)) := by
   let F := pushforward₀ (Over.forget X) R
   -- Restriction along the two halves of the iterated-slice equivalence.
   let fwd := pushforward₀ (Over.iteratedSliceForward Y) ((Over.forget Y.left).op ⋙ R)
@@ -259,7 +259,7 @@ private theorem bijective_ihomComparison_natTrans_app_app (Y : Over X) :
 /-- Restriction to the slice over `X` commutes with internal Hom: the canonical comparison
 `𝓗om(M, N)|_X ⟶ 𝓗om(M|_X, N|_X)` is an isomorphism for every presheaf of modules `M`. -/
 instance isIso_ihomComparison_pushforward₀_overForget :
-    IsIso ((pushforward₀ (Over.forget X) R).ihomComparison M).natTrans := by
+    IsIso ((pushforward₀ (Over.forget X) R).ihomComparison M) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro N
   have := mono_of_injective fun Y ↦ (bijective_ihomComparison_natTrans_app_app X M N Y.unop).1

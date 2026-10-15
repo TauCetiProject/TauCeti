@@ -291,7 +291,7 @@ theorem quadraticDefect_eq_zero_iff {a : Kˣ} : quadraticDefect a = 0 ↔ IsSqua
 /-- The quadratic defect of an integral element is an integral ideal. -/
 theorem quadraticDefect_le_one {a : Kˣ} (ha : (a : K) ∈ 𝒪[K]) : quadraticDefect a ≤ 1 := by
   refine (quadraticDefect_le a 0).trans ?_
-  rw [← FractionalIdeal.spanSingleton_one, spanSingleton_le_spanSingleton_iff_valuation_le,
+  rw [← map_one (FractionalIdeal.spanSingleton _), spanSingleton_le_spanSingleton_iff_valuation_le,
     zero_pow two_ne_zero, sub_zero, map_one]
   exact (Valuation.mem_integer_iff _ _).mp ha
 
@@ -304,7 +304,7 @@ theorem quadraticDefect_mul_sq (a c : Kˣ) :
   have key : ∀ ξ : K, ((a * c ^ 2 : Kˣ) : K) - (c * ξ) ^ 2 = (c : K) ^ 2 * ((a : K) - ξ ^ 2) :=
     fun ξ => by push_cast; ring
   rw [quadraticDefect_eq_spanSingleton_of_forall h₀,
-    FractionalIdeal.spanSingleton_mul_spanSingleton, ← key]
+    ← map_mul (FractionalIdeal.spanSingleton _), ← key]
   refine quadraticDefect_eq_spanSingleton_of_forall fun η => ?_
   have hη : η = c * (η / c) := by field_simp
   rw [hη, key, key, map_mul, map_mul]
@@ -420,7 +420,6 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
       (hπ.maximalIdeal_eq_setOfPred_le_v_coe (valuation K))
       ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2)).mp hsmem
     convert h using 1
-    simp
   -- The corrected approximation.
   refine ⟨ξ + (π : K) ^ k * (s : K), ?_⟩
   have hcmul : ((π : K) ^ k) ^ 2 * c = u - ξ ^ 2 := by
