@@ -27,13 +27,23 @@ as its base. For a body-only rebase/cherry-pick link, both the complete current
 parent aggregate and its head commit patch must be present; a shared precursor
 alone cannot establish direction. Content-only evidence must also be absent at
 the child's main fork point; old main content is base drift, not inherited work.
-An ancestry-only relationship additionally requires the same head repository
-and the same known PR-author account ID. Deleted/unknown authors cannot authorize
-it; an outsider opening a PR from someone else's existing branch cannot either.
-Cross-repository ancestry needs the child's explicit parent declaration or a
-canonical parent base branch; an outsider's copied prefix cannot condemn its
-original PR. Repository identity alone never proves stacking. The source diff
-and its SHA-256 are reported.
+Except for a current open canonical parent branch used as the child's base, every
+relationship additionally requires the same head repository and the same known
+PR-author account ID. An unpinned prose reference does not bypass these guards:
+it can remain stale after the original prerequisite lands, while another account
+force-pushes that parent to a copied prefix of the now-standalone child.
+Deleted/unknown authors and an outsider opening a PR from someone else's branch
+also cannot authorize closure. The canonical-base exception relies on the
+child's current explicit base choice and the open parent's live branch identity,
+rechecked before mutation. [GitHub requires write access to the source branch
+to open a PR](https://docs.github.com/en/rest/pulls/pulls#create-a-pull-request);
+the canonical exception therefore trusts repository branch writers. Account
+identity does not distinguish independent agents sharing that account. If one
+opens a prerequisite PR at another PR's prefix, the existing source proof can
+classify the older PR as stacked and close it even when the prerequisite PR was
+opened later. PR numbering does not exempt a current confirmed stack.
+Repository or author identity alone never proves stacking. The source diff and
+its SHA-256 are reported.
 Before confirming, the detector checks actual main source history for the same
 complete content, including combined bors squashes and later modifications or
 reverts. GitHub PR closure/mergedAt is never proof of landing. Closed but
@@ -74,9 +84,10 @@ precede expensive content checks; summary records Git operations and elapsed tim
 
 - Unmentioned, independently rebased/cherry-picked inherited work with no shared
   unmerged commit and no matching canonical parent base branch.
-- Cross-repository ancestry without a child-declared parent or canonical base
-  relationship, because a copied commit prefix cannot establish ownership.
-- Ancestry-only links with different/unknown PR authors, for the same reason.
+- Cross-repository or different/unknown-author relationships without a current
+  canonical parent base branch, even with an unpinned explicit parent reference.
+  Such a reference cannot authenticate a later force-pushed head. Immutable head
+  declarations or trusted changed-parent history are not yet supported.
 - Work whose parent diff and individual commit patches were partially edited,
   split, rewritten or only partly inherited so that no complete reverse patch
   applies, and body-only links whose current parent content is incomplete.

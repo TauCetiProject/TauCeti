@@ -90,11 +90,12 @@ class GitFixtures(unittest.TestCase):
         with self.assertRaisesRegex(sp.Gap, "possible copied prefix"):
             self.detector().detect(victim)
 
-    def test_child_declared_cross_fork_stack_still_requires_and_gets_source_proof(self):
+    def test_unpinned_child_declaration_does_not_bypass_cross_fork_provenance(self):
         _, child = self.parent_child(explicit=True)
         child = sp.PR(**{**sp.asdict(child), "head_repo": "another/TauCeti", "author_id": 2})
         self.prs[-1] = child
-        self.assertIsNotNone(self.detector().detect(child)[0])
+        with self.assertRaisesRegex(sp.Gap, "possible copied prefix"):
+            self.detector().detect(child)
 
     def test_outsider_opening_existing_same_repository_branch_is_unknown(self):
         parent, child = self.parent_child()
@@ -107,6 +108,80 @@ class GitFixtures(unittest.TestCase):
         self.prs[0] = sp.PR(**{**sp.asdict(parent), "author_id": 0})
         with self.assertRaisesRegex(sp.Gap, "unknown/different author"):
             self.detector().detect(child)
+
+    def test_stale_explicit_parent_cannot_copy_standalone_child_prefix(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("A", "old prerequisite\n")
+        self.commit("original prerequisite")
+        parent = self.pr(1)
+        git(self.root, "checkout", "-b", "child")
+        self.write("B", "child first contribution\n")
+        copied_prefix = self.commit("child first")
+        self.write("D", "child next contribution\n")
+        self.commit("child next")
+        child = self.pr(2, "Stacked on #1")
+        git(self.root, "checkout", "main")
+        git(self.root, "merge", "--squash", "parent")
+        self.commit("original prerequisite landed through another squash")
+        git(self.root, "update-ref", "refs/pull/1/head", copied_prefix)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "head": copied_prefix})
+        detector = self.detector()
+        # Another opener can use the existing fork branch too; test both forms.
+        for repository in (parent.head_repo, "outsider/TauCeti"):
+            with self.subTest(repository=repository):
+                detector.prs[1] = sp.PR(**{**sp.asdict(parent), "head": copied_prefix,
+                                      "author_id": 2, "head_repo": repository})
+                with self.assertRaisesRegex(sp.Gap, "provenance unproved|unknown/different author"):
+                    detector.detect(child)
+
+    def test_explicit_parent_with_unknown_author_remains_unknown(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "author_id": 0})
+        with self.assertRaisesRegex(sp.Gap, "unknown/different author"):
+            self.detector().detect(child)
+
+    def test_current_canonical_base_can_establish_cross_author_relationship(self):
+        parent, child = self.parent_child()
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "head_repo": sp.REPO, "author_id": 2})
+        child = sp.PR(**{**sp.asdict(child), "base": parent.branch})
+        self.prs[-1] = child
+        self.assertIsNotNone(self.detector().detect(child)[0])
+
+    def test_closed_parent_cannot_grant_canonical_base_exception(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed",
+                              "head_repo": sp.REPO, "author_id": 2})
+        child = sp.PR(**{**sp.asdict(child), "base": parent.branch})
+        self.prs[-1] = child
+        with self.assertRaisesRegex(sp.Gap, "provenance unproved"):
+            self.detector().detect(child)
+
+    def test_cross_principal_prose_cannot_attribute_copied_content(self):
+        git(self.root, "checkout", "-b", "victim")
+        self.write("copied", "victim contribution\n")
+        copied = self.commit("victim change")
+        self.write("own", "victim next contribution\n")
+        self.commit("victim next")
+        child = self.pr(2, "Stacked on #1")
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "outsider")
+        git(self.root, "cherry-pick", copied)
+        git(self.root, "commit", "--amend", "-m", "outsider copies victim content")
+        parent = self.pr(1)
+        self.prs[-1] = sp.PR(**{**sp.asdict(parent), "head_repo": "outsider/TauCeti", "author_id": 2})
+        self.assertNotEqual(parent.head, copied)
+        with self.assertRaisesRegex(sp.Gap, "provenance unproved"):
+            self.detector().detect(child)
+
+    def test_cross_principal_explicit_parent_landed_by_squash_is_not_unknown(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "head_repo": "other/TauCeti", "author_id": 2})
+        git(self.root, "checkout", "main")
+        git(self.root, "merge", "--squash", "parent")
+        self.commit("land parent through independent squash")
+        evidence, reasons = self.detector().detect(child)
+        self.assertIsNone(evidence)
+        self.assertTrue(any("source equivalent landed" in reason for reason in reasons))
 
     def test_nested_stack(self):
         self.parent_child()

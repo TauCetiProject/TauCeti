@@ -486,17 +486,26 @@ class Detector:
                     reasons.append(f"#{number}: descendant of this child, not a parent")
                     continue
                 shared = sorted(commits & parent_commits)
-                relationship = (number in explicit or (parent.head_repo == REPO and child.base == parent.branch))
+                canonical_base = (parent.state == "open" and parent.head_repo == REPO
+                                  and child.base == parent.branch)
+                relationship = number in explicit or canonical_base
                 if not shared and not relationship:
                     continue
-                graph_direction = parent.head in commits or (parent.head_repo == REPO and child.base == parent.branch)
+                graph_direction = parent.head in commits or canonical_base
                 if not relationship:
                     if not graph_direction:
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
+                # A stale PR-number reference does not bind a future parent head.
+                # A different principal can copy this child's prefix into that PR.
+                # Only a current canonical base choice bypasses provenance guards.
+                provenance_gap = None
+                if not canonical_base:
                     if parent.head_repo != child.head_repo:
-                        raise Gap("cross-repository ancestry without a child-declared parent; possible copied prefix")
-                    if not child.author_id or parent.author_id != child.author_id:
-                        raise Gap("ancestry-only parent has unknown/different author; possible third-party branch PR")
+                        provenance_gap = "cross-repository parent provenance unproved; possible copied prefix"
+                    elif not child.author_id or parent.author_id != child.author_id:
+                        provenance_gap = "parent has unknown/different author; possible third-party branch PR"
+                if not relationship and provenance_gap:
+                    raise Gap(provenance_gap)
                 base, paths, patch = self.source.patch(parent)
                 if not patch:
                     reasons.append(f"#{number}: empty parent delta")
@@ -535,6 +544,8 @@ class Detector:
                             kind = ("ancestor-head" if commit == parent.head and commit in commits
                                     else "shared-unmerged-commit" if commit in commits
                                     else "explicit-parent-content")
+                        if provenance_gap:
+                            raise Gap(provenance_gap)
                         return Evidence(number, parent.head, child.head, self.source.main,
                                         kind, commit, hashlib.sha256(delta).hexdigest(), cb), reasons
                 if len(ordered) > MAX_EVIDENCE_COMMITS:
