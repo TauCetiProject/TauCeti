@@ -658,6 +658,13 @@ theorem map_mem_completionPlus {Aplus : Subring A} {a : A} (ha : a ∈ Aplus) :
     Completion.coeRingHom a ∈ completionPlus Aplus :=
   Subring.le_topologicalClosure _ ⟨a, ha, rfl⟩
 
+/-- **`Â⁺` consists of power-bounded elements when `A⁺` does**: this is
+`topologicalClosure_map_coeRingHom_le_powerBoundedSubring` for `completionPlus`. -/
+theorem completionPlus_le_powerBoundedSubring [IsHuberRing A] {Aplus : Subring A}
+    (h : Aplus ≤ powerBoundedSubring A) :
+    completionPlus Aplus ≤ powerBoundedSubring (Completion A) :=
+  topologicalClosure_map_coeRingHom_le_powerBoundedSubring h
+
 /-! ### The completion of a Huber pair -/
 
 namespace Pair
