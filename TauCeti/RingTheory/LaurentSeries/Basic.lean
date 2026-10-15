@@ -18,7 +18,9 @@ action `HahnSeries.instSMul` found by default.
 
 This file records that the algebra actions form a scalar tower `R → A⟦X⟧ → A⸨X⸩`. This is what
 fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require to extend an
-`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`.
+`R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. Over a field `K`, it also records that
+a nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is
+a unit of `K⟦X⟧`.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
@@ -43,6 +45,8 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
   structure acts coefficientwise.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action.
+* `TauCeti.LaurentSeries.valuation_eq_exp_neg_order`: a nonzero Laurent series `f` has valuation
+  `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative`: the derivative of Laurent series extends that of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
@@ -80,6 +84,43 @@ theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
     (algebraMap R R⸨X⸩ c * f).coeff n = c * f.coeff n := by
   rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C,
     HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul]
+
+section Valuation
+
+open HahnSeries PowerSeries WithZero
+
+variable {K : Type*} [Field K]
+
+/-- A unit of `K⟦X⟧`, that is a power series of nonzero constant coefficient, has valuation one
+in `K⸨X⸩`. -/
+theorem valuation_coe_of_isUnit {h : K⟦X⟧} (hh : IsUnit h) : Valued.v (h : K⸨X⸩) = 1 :=
+  Valuation.Integers.one_of_isUnit' hh fun g ↦ (_root_.LaurentSeries.val_le_one_iff_eq_coe K _).mpr
+    ⟨g, rfl⟩
+
+/-- The power series part of a nonzero Laurent series is a unit: its constant coefficient is the
+leading coefficient. -/
+theorem isUnit_powerSeriesPart {f : K⸨X⸩} (hf : f ≠ 0) : IsUnit f.powerSeriesPart := by
+  rw [isUnit_iff_constantCoeff, ← coeff_zero_eq_constantCoeff_apply,
+    _root_.LaurentSeries.powerSeriesPart_coeff, Nat.cast_zero, add_zero, isUnit_iff_ne_zero]
+  exact coeff_order_eq_zero.not.mpr hf
+
+/-- A nonzero Laurent series `f` has valuation `exp (-ord f)`. -/
+theorem valuation_eq_exp_neg_order {f : K⸨X⸩} (hf : f ≠ 0) : Valued.v f = exp (-f.order) := by
+  nth_rw 1 [← f.single_order_mul_powerSeriesPart]
+  rw [map_mul, valuation_coe_of_isUnit (isUnit_powerSeriesPart hf), mul_one,
+    _root_.LaurentSeries.valuation_single_zpow]
+
+/-- A nonzero power series `g` has valuation `exp (-ord g)` in `K⸨X⸩`. -/
+theorem valuation_coe {g : K⟦X⟧} (hg : g ≠ 0) :
+    Valued.v (g : K⸨X⸩) = exp (-(g.order.toNat : ℤ)) := by
+  have hu : IsUnit g.divXPowOrder := by
+    rw [isUnit_iff_constantCoeff, isUnit_iff_ne_zero]
+    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hg
+  nth_rw 1 [← X_pow_order_mul_divXPowOrder (f := g)]
+  rw [PowerSeries.coe_mul, map_mul, PowerSeries.coe_pow, _root_.LaurentSeries.valuation_X_pow,
+    valuation_coe_of_isUnit hu, mul_one]
+
+end Valuation
 
 end TauCeti.LaurentSeries
 
