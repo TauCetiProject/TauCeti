@@ -11,11 +11,12 @@ public import Mathlib.Topology.ContinuousMap.Compact
 /-!
 # Continuity and bounds for pushforward of abstract measures
 
-Pushforward is continuous for the weak topology of test-function evaluations. On compact
-spaces it also contracts the continuous-dual operator norm, and hence is continuous for the
-strong topology. These facts allow restrictions and inclusions of measure spaces to be
-compared in either topology. The weak statement allows module-valued measures and does not
-require compactness; the norm and strong statements also allow module-valued measures.
+Pushforward is continuous for the weak topology of test-function evaluations and for the
+strong topology on arbitrary source and target spaces. Strong continuity comes from
+precomposition by `f.compCLM`. On compact spaces the strong topology is the continuous-dual
+operator-norm topology, and pushforward contracts this norm. These facts allow restrictions
+and inclusions of measure spaces to be compared in either topology. All statements allow
+module-valued measures.
 
 We use Mathlib's `AbstractMeasure.map` and `AbstractMeasure.toCLMEquiv`, and select its
 `WeakTopology` and `StrongTopology` explicitly without installing global instances.
@@ -49,6 +50,19 @@ theorem continuous_abstractMeasure_map_weak [CommRing R] [TopologicalSpace R] [I
 
 end ContinuousMap
 
+namespace AbstractMeasure
+
+/-- Under the continuous-linear-map equivalence, pushforward is precomposition. -/
+@[simp]
+theorem toCLMEquiv_map [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+    [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module R E] [ContinuousSMul R E] (μ : AbstractMeasure X R E) (f : C(X, Y)) :
+    toCLMEquiv (map f μ) = (toCLMEquiv μ).comp (f.compCLM R R) := by
+  ext g
+  simp
+
+end AbstractMeasure
+
 variable [CompactSpace X] [CompactSpace Y] [NontriviallyNormedField R]
   [NormedAddCommGroup E] [NormedSpace R E]
 
@@ -57,12 +71,14 @@ namespace AbstractMeasure
 /-- Pushforward between compact spaces does not increase the continuous-dual operator norm. -/
 theorem norm_toCLMEquiv_map_le (μ : AbstractMeasure X R E) (f : C(X, Y)) :
     ‖toCLMEquiv (map f μ)‖ ≤ ‖toCLMEquiv μ‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun g ↦ ?_
-  simp only [coe_toCLMEquiv, map_apply]
-  simpa only [coe_toCLMEquiv] using (toCLMEquiv μ).le_opNorm (g.comp f) |>.trans <|
-    mul_le_mul_of_nonneg_left
-      ((ContinuousMap.norm_le _ (norm_nonneg g)).mpr fun x ↦
-        ContinuousMap.norm_coe_le_norm g (f x)) (norm_nonneg _)
+  have hcomp : ‖f.compCLM R R‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ ?_
+    simpa only [one_mul, ContinuousMap.compCLM_apply] using
+      (ContinuousMap.norm_le _ (norm_nonneg g)).mpr fun x ↦
+        ContinuousMap.norm_coe_le_norm g (f x)
+  rw [toCLMEquiv_map]
+  exact ((toCLMEquiv μ).opNorm_comp_le _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) hcomp)
 
 end AbstractMeasure
 
@@ -76,11 +92,18 @@ theorem continuous_abstractMeasure_map_strong (f : C(X, Y)) :
       (StrongTopology (X := Y) (R := R) (E := E)) (map (R := R) (E := E) f) := by
   let : TopologicalSpace (AbstractMeasure X R E) := StrongTopology
   let : TopologicalSpace (AbstractMeasure Y R E) := StrongTopology
+  -- StrongTopology is by definition the continuous-linear-map topology on the type synonym,
+  -- so h also gives continuity between these measure spaces after identifying the functions.
   have h : Continuous (fun μ : C(X, R) →L[R] E ↦ μ.comp (f.compCLM R R)) :=
     (ContinuousLinearMap.precomp (τ := RingHom.id R) (ρ := RingHom.id R)
       E (f.compCLM R R)).continuous
   exact h.congr fun μ ↦ by
     ext g
-    exact (map_apply (R := R) (E := E) f μ g).symm
+    calc
+      μ ((f.compCLM R R) g) = (toCLMEquiv μ) ((f.compCLM R R) g) :=
+        (coe_toCLMEquiv μ _).symm
+      _ = toCLMEquiv (map f μ) g :=
+        DFunLike.congr_fun (toCLMEquiv_map μ f).symm g
+      _ = map f μ g := coe_toCLMEquiv _ _
 
 end ContinuousMap
