@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+import all TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 
 /-!
 # Coordinates of polyhedra with unused vertices
@@ -110,14 +111,7 @@ nonnegative, sum to one, and have support in the abstract simplicial complex. -/
 @[simp]
 theorem mem_standardGeometricComplex_space_iff {K : AbstractSimplicialComplex ι} {x : ι →₀ ℝ} :
     x ∈ (standardGeometricComplex K).space ↔
-      (∀ i, 0 ≤ x i) ∧ x.sum (fun _ r => r) = 1 ∧ x.support ∈ K := by
-  constructor
-  · intro hx
-    let p : K.Realization := ⟨x, hx⟩
-    exact ⟨Realization.nonneg K p, Realization.sum_eq_one K p, support_mem K p⟩
-  · rintro ⟨hnonneg, hsum, hsupp⟩
-    refine mem_realization_iff.mpr ⟨x.support, hsupp, ?_⟩
-    rw [Finset.coe_image, mem_standardSimplex_iff]
-    exact ⟨hnonneg, hsum, Finset.Subset.rfl⟩
+      (∀ i, 0 ≤ x i) ∧ x.sum (fun _ r => r) = 1 ∧ x.support ∈ K :=
+  Geometry.SimplicialComplex.mem_space_onFinsupp_iff (K := K.toPreAbstractSimplicialComplex)
 
 end TauCeti
