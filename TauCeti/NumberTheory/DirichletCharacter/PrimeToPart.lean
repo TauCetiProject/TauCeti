@@ -61,9 +61,12 @@ theorem primeToPart_apply_unit (p : ℕ) (χ : DirichletCharacter R N)
 
 /-- The prime-to-`p` part is primitive at the prime-to-`p` factor of the conductor. -/
 @[simp]
-theorem conductor_primeToPart [NeZero N] (p : ℕ) (χ : DirichletCharacter R N) :
+theorem conductor_primeToPart (p : ℕ) (χ : DirichletCharacter R N) :
     (primeToPart p χ).conductor = ordCompl[p] χ.conductor := by
-  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
+  by_cases hc : χ.conductor = 0
+  · have hlevel : ordCompl[p] χ.conductor = 0 := by simp [hc]
+    exact (DirichletCharacter.conductor_eq_zero_iff_level_eq_zero.mpr hlevel).trans hlevel.symm
+  have : NeZero χ.conductor := ⟨hc⟩
   let h := Nat.isExactDivisor_primePow (N := χ.conductor) (p := p)
   let ψ : DirichletCharacter R (p ^ χ.conductor.factorization p) := MulChar.ofUnitHom
     ((χ.primitiveCharacter.toUnitHom.comp h.unitsEquivProd.symm.toMonoidHom).comp
