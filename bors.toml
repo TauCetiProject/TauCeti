@@ -2,7 +2,9 @@
 # TauCetiReview supplies the head-bound bors approval; trusted CI supplies
 # these statuses. A batch is tested once, then fast-forwarded to main.
 status = ["build", "bump-guard", "scope"]
-pr_status = ["build", "bump-guard", "scope"]
+# Cheap trusted source-only policy runs before admission; it is not a staging
+# build context and does not replace any of the normal build/scope/audit gates.
+pr_status = ["build", "bump-guard", "scope", "no-stack"]
 
 use_squash_merge = true
 use_codeowners = false

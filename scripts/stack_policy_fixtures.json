@@ -1,0 +1,452 @@
+{
+  "schema": "tauceti-no-stack.read-only-fixtures/v1",
+  "source": "Canonical GitHub PR API and refs/pull/*/head; no mutations",
+  "observed_date": "2026-10-15",
+  "results": [
+    {
+      "classification": "unknown",
+      "gap": "explicit parent metadata: HTTP Error 404: Not Found",
+      "index_pr": 16236
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "index_pr": 15977
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "index_pr": 16035
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "1f4604928b0b5419a7f5fb768a46ea9af2ba0632",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 12763,
+      "reasons": []
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "a8786d12c561fed15b97244988d1c5daa21272d4",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 12767,
+      "reasons": []
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "2f7f73dd160b1e186f2cf923f84011f202e09af7",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 12883,
+      "reasons": [
+        "#12767: no complete unlanded parent delta/commit retained"
+      ]
+    },
+    {
+      "classification": "unknown",
+      "gap": "#13110: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta",
+      "pr": 13100
+    },
+    {
+      "classification": "unknown",
+      "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13117: shared ancestry without a confirmed direction/complete parent delta",
+      "pr": 13110
+    },
+    {
+      "classification": "unknown",
+      "gap": "#13100: shared ancestry without a confirmed direction/complete parent delta; #13110: shared ancestry without a confirmed direction/complete parent delta",
+      "pr": 13117
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "pr": 15977
+    },
+    {
+      "classification": "unknown",
+      "gap": "head changed while fetching",
+      "pr": 16035
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16099,
+      "reasons": [
+        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16110: descendant of this child, not a parent",
+        "#16123: descendant of this child, not a parent",
+        "#16132: descendant of this child, not a parent",
+        "#16139: descendant of this child, not a parent"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "fead0f3deb76816704252b4727bf05c3d7ef15be",
+        "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16099,
+        "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7",
+        "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"
+      },
+      "head": "fead0f3deb76816704252b4727bf05c3d7ef15be",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16110,
+      "reasons": [
+        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "unknown",
+      "gap": "#16137: shared ancestry without a confirmed direction/complete parent delta; #16143: shared ancestry without a confirmed direction/complete parent delta; #16147: shared ancestry without a confirmed direction/complete parent delta; #16155: shared ancestry without a confirmed direction/complete parent delta; #16168: shared ancestry without a confirmed direction/complete parent delta",
+      "pr": 16112
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "e15c5dfbfa8fd8372ffc79e2187437003c8acd2e",
+        "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16099,
+        "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7",
+        "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"
+      },
+      "head": "e15c5dfbfa8fd8372ffc79e2187437003c8acd2e",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16123,
+      "reasons": [
+        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "34bf92e3ee88334e8731e954766a742f61ea2177",
+        "commit": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "kind": "ancestor-head",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16112,
+        "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "patch_base": "6b6eb8841267ea9fcc3534e4ba525e1255ecde99",
+        "patch_sha256": "429e6ec3f203f46589365aa6d50b5869b5034d3c4e54ed25461bed8efcf3b96e"
+      },
+      "head": "34bf92e3ee88334e8731e954766a742f61ea2177",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16129,
+      "reasons": [
+        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "unknown",
+      "gap": "#16035: head changed while fetching",
+      "pr": 16130
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "086915556b455cdd6be431b692c269a79d6bb2e6",
+        "commit": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16099,
+        "parent_head": "3a7c05d2806ef0b352b364b0f7ead081d5668b5a",
+        "patch_base": "6d108ade89ab44cdebef39157684d3ae9f0e11b7",
+        "patch_sha256": "13ce0cda76b3b47315d6a771a27c7c993b31d7263ba698884e2379bec5ba1dd3"
+      },
+      "head": "086915556b455cdd6be431b692c269a79d6bb2e6",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16132,
+      "reasons": [
+        "#877: source equivalent landed at bdd17cbba209934bea19abf2d1c8905fbb7c37ee",
+        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "a1e09697c71ee3f4dc620571fcfcd7166d38e05a",
+        "commit": "00b41b6d6300244c96d1a727b071a412c0c21175",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16112,
+        "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "patch_base": "1b011a2355de2e633c90f789e005601630e9cd0f",
+        "patch_sha256": "e41f5ad7e8129a43341059baa8b17d9c779fff8771d943d152a51bc7ea8d0650"
+      },
+      "head": "a1e09697c71ee3f4dc620571fcfcd7166d38e05a",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16137,
+      "reasons": [
+        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "0e878567d43c2513358641451bd7f408dcd3408c",
+        "commit": "086915556b455cdd6be431b692c269a79d6bb2e6",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16132,
+        "parent_head": "086915556b455cdd6be431b692c269a79d6bb2e6",
+        "patch_base": "a1e83cf58e1c3a324622c6b7be55bfa0e7e38873",
+        "patch_sha256": "1961f3487602f42fb21b38cab33b8e7d42afe5e65b0e590d9898e5675f412125"
+      },
+      "head": "0e878567d43c2513358641451bd7f408dcd3408c",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16139,
+      "reasons": [
+        "#15975: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731",
+        "#16003: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "a33ff8ffc89220458cc00e3a8dd80f3eeadcc7bc",
+        "commit": "00b41b6d6300244c96d1a727b071a412c0c21175",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16112,
+        "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "patch_base": "1b011a2355de2e633c90f789e005601630e9cd0f",
+        "patch_sha256": "e41f5ad7e8129a43341059baa8b17d9c779fff8771d943d152a51bc7ea8d0650"
+      },
+      "head": "a33ff8ffc89220458cc00e3a8dd80f3eeadcc7bc",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16143,
+      "reasons": [
+        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "7ede66c0b8a4476a5de9d8488e3e9dfebf52bf95",
+        "commit": "00b41b6d6300244c96d1a727b071a412c0c21175",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16112,
+        "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "patch_base": "1b011a2355de2e633c90f789e005601630e9cd0f",
+        "patch_sha256": "e41f5ad7e8129a43341059baa8b17d9c779fff8771d943d152a51bc7ea8d0650"
+      },
+      "head": "7ede66c0b8a4476a5de9d8488e3e9dfebf52bf95",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16147,
+      "reasons": [
+        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "c272fecb862f14b62d328e04b9e1eb2e5e6f6b24",
+        "commit": "00b41b6d6300244c96d1a727b071a412c0c21175",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16112,
+        "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "patch_base": "1b011a2355de2e633c90f789e005601630e9cd0f",
+        "patch_sha256": "e41f5ad7e8129a43341059baa8b17d9c779fff8771d943d152a51bc7ea8d0650"
+      },
+      "head": "c272fecb862f14b62d328e04b9e1eb2e5e6f6b24",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16155,
+      "reasons": [
+        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "bc6aa60f6f1ed19e590212b320686bacebc9126f",
+        "commit": "545e89f9bdefaa4f4fb2cfc12d2ed07280c802ef",
+        "kind": "ancestor-head",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16148,
+        "parent_head": "545e89f9bdefaa4f4fb2cfc12d2ed07280c802ef",
+        "patch_base": "928dda60826eede0deee976484da5c8b2bd835dc",
+        "patch_sha256": "acc034714b2d77f37547f7db970b15ff52e9fe86b37621519257bbde9c0e3d29"
+      },
+      "head": "bc6aa60f6f1ed19e590212b320686bacebc9126f",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16164,
+      "reasons": [
+        "#15967: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "fa1bea85bfc0073af05653c28bd87febe9c859fa",
+        "commit": "00b41b6d6300244c96d1a727b071a412c0c21175",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16112,
+        "parent_head": "72e7f46f113d6f4d5dd449841647f077c384ee95",
+        "patch_base": "1b011a2355de2e633c90f789e005601630e9cd0f",
+        "patch_sha256": "e41f5ad7e8129a43341059baa8b17d9c779fff8771d943d152a51bc7ea8d0650"
+      },
+      "head": "fa1bea85bfc0073af05653c28bd87febe9c859fa",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16168,
+      "reasons": [
+        "#15631: source equivalent landed at 92a217b7c39f089540952ca4f72703b476b1548d",
+        "#16082: source equivalent landed at 1844920e9c82791e848e12fd5313fa212e542731"
+      ]
+    },
+    {
+      "classification": "unknown",
+      "gap": "#16236: explicit parent absent from bounded index",
+      "pr": 16434
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "cc9807d1e1a48c7b2b26dc178194215e588a418e",
+        "commit": "7d84dbfc0b3a62ab56e1133cd92680f2fc37c418",
+        "kind": "ancestor-head",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16611,
+        "parent_head": "7d84dbfc0b3a62ab56e1133cd92680f2fc37c418",
+        "patch_base": "ea3f6eafadd29eb5e5068b3708b4c7a3e132b2e9",
+        "patch_sha256": "1543fcf33d0f1d34ce7e7ac2ef4860a67dd6d8b03493dfd5607460b966d58848"
+      },
+      "head": "cc9807d1e1a48c7b2b26dc178194215e588a418e",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16613,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "37383128b6670351ec031b099611d16bfbb1575d",
+        "commit": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 15253,
+        "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "patch_base": "7400dba421b0c3662a22eaee68a6e1c4dde80aa6",
+        "patch_sha256": "24dbadea86d11d91895d367dcf509a78df4f20282a92143342f66dfd5c42622a"
+      },
+      "head": "37383128b6670351ec031b099611d16bfbb1575d",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16632,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "d2ec9a3c551f864027baf2a1f1e63eece9d010f8",
+        "commit": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 15253,
+        "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "patch_base": "7400dba421b0c3662a22eaee68a6e1c4dde80aa6",
+        "patch_sha256": "24dbadea86d11d91895d367dcf509a78df4f20282a92143342f66dfd5c42622a"
+      },
+      "head": "d2ec9a3c551f864027baf2a1f1e63eece9d010f8",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16643,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "08e330e228096ba58c6642045b37244200d855a0",
+        "commit": "0581399d4bd8f65d35c87c7fee5f670a10b2f55e",
+        "kind": "retained-unmerged-commit",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 15253,
+        "parent_head": "b9a1ec085cd9d1a31074dc352d80f8d2ba8d1894",
+        "patch_base": "96192f9340666c5133bb465b16323c855fbb8c0f",
+        "patch_sha256": "30fb8038d09dea00978e098ce89379fa086b49abdfca79b01a88aee3ad69eaed"
+      },
+      "head": "08e330e228096ba58c6642045b37244200d855a0",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16656,
+      "reasons": []
+    },
+    {
+      "classification": "confirmed-stack",
+      "evidence": {
+        "child_head": "1b93d629ae4d189045b17fa4da89445d821aecaf",
+        "commit": "14ede099247a63cf3f8084c31257e52b789b383c",
+        "kind": "ancestor-head",
+        "main": "1844920e9c82791e848e12fd5313fa212e542731",
+        "parent": 16515,
+        "parent_head": "14ede099247a63cf3f8084c31257e52b789b383c",
+        "patch_base": "72deee1b215882d059345d906d76b667d9d465ff",
+        "patch_sha256": "61724d0022e384751951b358377dff8d208a61110671d639bbdaa0d7bc57c529"
+      },
+      "head": "1b93d629ae4d189045b17fa4da89445d821aecaf",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16755,
+      "reasons": []
+    },
+    {
+      "classification": "no-confirmed-stack",
+      "evidence": null,
+      "head": "f891f3a74b3bbf475dbb644a94ca4e9a8fe003a6",
+      "main": "1844920e9c82791e848e12fd5313fa212e542731",
+      "pr": 16784,
+      "reasons": [
+        "#16786: descendant of this child, not a parent"
+      ]
+    },
+    {
+      "api_bytes": 13943079,
+      "api_calls": 130,
+      "failures": 8,
+      "mode": "dry-run",
+      "selected": 613,
+      "summary": true
+    }
+  ],
+  "explicit_prose": {
+    "16755": {
+      "head": "1b93d629ae4d189045b17fa4da89445d821aecaf",
+      "body_lines": [
+        "Stacked on #16515; keep draft until dependency lands. Parent head: `14ede099247a63cf3f8084c31257e52b789b383c`."
+      ]
+    },
+    "16656": {
+      "head": "08e330e228096ba58c6642045b37244200d855a0",
+      "body_lines": [
+        "This PR is stacked on #16643 (#16632, #15253). Only the last commit is new here."
+      ]
+    },
+    "16613": {
+      "head": "cc9807d1e1a48c7b2b26dc178194215e588a418e",
+      "body_lines": [
+        "**Stacked on #16611**: only the last commit (`Cubical/LocalCoefficients/Normalized.lean`) is new."
+      ]
+    },
+    "16130": {
+      "head": "c8897d521d6448a721fde38841661cb1e41645a6",
+      "body_lines": [
+        "This PR is stacked on https://github.com/TauCetiProject/TauCeti/pull/15856 \"feat: present rational subsets of the closed disc by polynomials\" and https://github.com/TauCetiProject/TauCeti/pull/16035, both approved and labelled `ready-to-merge`. Until they land, the branch carries their commits rebased onto `main`. The commit specific to this PR is the last one, \"feat: every rational subset of the closed unit disc is a finite union of holed discs\"."
+      ]
+    }
+  }
+}

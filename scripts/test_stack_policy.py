@@ -1,0 +1,363 @@
+"""Real Git fixtures and mutation/race tests; no network or Lean execution."""
+
+import copy
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+
+import stack_policy as sp
+
+
+def git(root, *args):
+    return subprocess.check_output(["git", "-C", str(root), *args], stderr=subprocess.DEVNULL).decode().strip()
+
+
+class GitFixtures(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name) / "repo"
+        self.root.mkdir()
+        git(self.root, "init", "-b", "main")
+        git(self.root, "config", "user.name", "Fixture")
+        git(self.root, "config", "user.email", "fixture@example.invalid")
+        self.write("common", "main ancestor\n")
+        self.base = self.commit("base")
+        self.prs = []
+
+    def write(self, path, text):
+        (self.root / path).write_text(text)
+
+    def commit(self, title):
+        git(self.root, "add", ".")
+        git(self.root, "commit", "-m", title)
+        return git(self.root, "rev-parse", "HEAD")
+
+    def pr(self, number, body="", *, draft=False, fork=True, base="main", state="open"):
+        head = git(self.root, "rev-parse", "HEAD")
+        git(self.root, "update-ref", f"refs/pull/{number}/head", head)
+        p = sp.PR(number, state, head, base, f"branch-{number}",
+                  "fork/TauCeti" if fork else sp.REPO, body, draft)
+        self.prs.append(p)
+        return p
+
+    def detector(self):
+        main = git(self.root, "rev-parse", "main")
+        src = sp.Source(Path(self.tmp.name) / "source", None, main,
+                        self.root / ".git/objects", str(self.root))
+        src.fetch(self.prs)
+        return sp.Detector(None, src, self.prs)
+
+    def parent_child(self, *, draft=False, explicit=False):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("parent", "prerequisite\n")
+        self.commit("prerequisite")
+        parent = self.pr(1)
+        git(self.root, "checkout", "-b", "child")
+        self.write("child", "own change\n")
+        self.commit("own change")
+        child = self.pr(2, "Stacked on #1" if explicit else "", draft=draft)
+        return parent, child
+
+    def test_ancestor_head_draft_fork(self):
+        parent, child = self.parent_child(draft=True)
+        evidence, _ = self.detector().detect(child)
+        self.assertEqual(evidence.kind, "ancestor-head")
+        self.assertEqual(evidence.commit, parent.head)
+        self.assertIn("branch is preserved", sp.comment_text(evidence))
+
+    def test_do_not_reverse_stack_and_close_its_standalone_parent(self):
+        parent, _ = self.parent_child()
+        self.assertIsNone(self.detector().detect(parent)[0])
+
+    def test_nested_stack(self):
+        self.parent_child()
+        self.write("third", "third\n")
+        self.commit("third")
+        child = self.pr(3)
+        self.assertIsNotNone(self.detector().detect(child)[0])
+
+    def test_child_edits_aggregate_but_retains_complete_unlanded_commit(self):
+        git(self.root, "checkout", "-b", "parent")
+        self.write("parent-one", "first contribution\n")
+        self.commit("first parent change")
+        self.write("parent-two", "second contribution\n")
+        commit = self.commit("second parent change")
+        self.pr(1)
+        git(self.root, "checkout", "-b", "child")
+        self.write("parent-one", "edited by child\n")
+        self.commit("child edits first change")
+        child = self.pr(2, "Stacked on #1")
+        evidence, _ = self.detector().detect(child)
+        self.assertEqual(evidence.kind, "retained-unmerged-commit")
+        self.assertEqual(evidence.commit, commit)
+
+    def test_common_main_ancestry_is_not_stack(self):
+        self.parent_child()
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "independent")
+        self.write("different", "independent\n")
+        self.commit("independent")
+        p = self.pr(3)
+        self.assertIsNone(self.detector().detect(p)[0])
+
+    def test_independent_same_file(self):
+        git(self.root, "checkout", "-b", "one")
+        self.write("common", "independent one\n")
+        self.commit("one")
+        self.pr(1)
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "two")
+        self.write("common", "independent two\n")
+        self.commit("two")
+        child = self.pr(2)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_parent_landed_normally(self):
+        parent, child = self.parent_child(explicit=True)
+        git(self.root, "update-ref", "refs/heads/main", parent.head)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_parent_landed_by_bors_squash_then_changed_again(self):
+        _, child = self.parent_child(explicit=True)
+        git(self.root, "checkout", "main")
+        git(self.root, "merge", "--squash", "parent")
+        self.commit("bors squash")
+        self.write("parent", "later modification\n")
+        self.commit("later change")
+        evidence, reasons = self.detector().detect(child)
+        self.assertIsNone(evidence)
+        self.assertTrue(any("source equivalent landed" in r for r in reasons))
+
+    def test_closed_but_unlanded_parent(self):
+        parent, child = self.parent_child(explicit=True)
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "state": "closed"})
+        self.assertIsNotNone(self.detector().detect(child)[0])
+
+    def test_stale_description_and_reverted_inheritance(self):
+        _, child = self.parent_child(explicit=True)
+        git(self.root, "rm", "parent")
+        self.commit("remove prerequisite")
+        self.prs.pop()
+        child = self.pr(2, child.body)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_cherry_pick_identity_with_explicit_parent(self):
+        parent, _ = self.parent_child()
+        self.prs.pop()
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "rebased")
+        self.write("unrelated", "different fork point\n")
+        self.commit("advance")
+        git(self.root, "cherry-pick", parent.head)
+        self.write("child", "own change\n")
+        self.commit("child")
+        child = self.pr(2, "This PR is stacked on #1.")
+        evidence, _ = self.detector().detect(child)
+        self.assertEqual(evidence.kind, "explicit-parent-content")
+
+    def test_open_head_branch_parent(self):
+        parent, child = self.parent_child()
+        self.prs[0] = sp.PR(**{**sp.asdict(parent), "head_repo": sp.REPO})
+        child = sp.PR(**{**sp.asdict(child), "base": parent.branch})
+        self.prs[1] = child
+        self.assertIsNotNone(self.detector().detect(child)[0])
+
+    def test_non_main_base_alone_is_not_evidence(self):
+        self.parent_child()
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "standalone")
+        self.write("standalone", "independent\n")
+        self.commit("independent")
+        child = self.pr(3, base="branch-1")
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_identical_heads_are_not_proof(self):
+        self.parent_child()
+        self.prs = self.prs[1:]
+        child = self.pr(3)
+        self.assertIsNone(self.detector().detect(child)[0])
+
+    def test_incomplete_history_is_unknown(self):
+        _, child = self.parent_child()
+        detector = self.detector()
+        detector.gaps[child.number] = "incomplete history"
+        with self.assertRaises(sp.Gap):
+            detector.detect(child)
+
+    def test_changed_head_during_fetch_is_unknown(self):
+        _, child = self.parent_child()
+        self.write("race", "new head\n")
+        self.commit("head changed")
+        git(self.root, "update-ref", "refs/pull/2/head", "HEAD")
+        with self.assertRaises(sp.Gap):
+            self.detector().detect(child)
+
+
+class ProseTests(unittest.TestCase):
+    def test_read_only_historical_explicit_examples(self):
+        fixtures = json.loads((Path(__file__).with_name("stack_policy_fixtures.json")).read_text())
+        expected = {"16755": {16515}, "16656": {16643, 16632, 15253},
+                    "16613": {16611}, "16130": {15856, 16035}}
+        for number, parents in expected.items():
+            item = fixtures["explicit_prose"][number]
+            self.assertEqual(sp.oid(item["head"]), item["head"])
+            self.assertEqual(sp.explicit_parents("\n".join(item["body_lines"])), parents)
+
+    def test_affirmative_parent_identity(self):
+        self.assertEqual(sp.explicit_parents("This PR is stacked on #12 (#11)."), {11, 12})
+        self.assertEqual(sp.explicit_parents(f"Stacked on https://github.com/{sp.REPO}/pull/12"), {12})
+        self.assertEqual(sp.explicit_parents("Prerequisite: #12"), {12})
+
+    def test_superseding_closed_source_is_not_a_stack_claim(self):
+        self.assertFalse(sp.explicit_parents(
+            "Includes the prerequisite source from #12. This PR supersedes that standalone foundation."))
+        self.assertFalse(sp.explicit_parents(
+            "Includes #12 (a composition theorem, which depends on #11). This PR supersedes them."))
+        self.assertEqual(sp.explicit_parents(
+            "Prerequisite: #12. This PR includes #11 and supersedes it."), {12})
+
+    def test_misleading_quoted_negative_and_foreign_prose(self):
+        for body in ["> Stacked on #12", "```\nStacked on #12\n```", "Not stacked on #12",
+                     "This was stacked on #12", '`Stacked on #12`', 'The title is "stacked on #12"',
+                     '“Stacked on #12”', "'Stacked on #12'", "    Stacked on #12", "``Stacked on #12``",
+                     "<!-- Stacked on #12 -->", "Stacked on https://github.com/other/repo/pull/12"]:
+            with self.subTest(body=body):
+                self.assertFalse(sp.explicit_parents(body))
+
+
+class FakeAPI:
+    def __init__(self, child, parent, main):
+        self.prs = {child.number: child, parent.number: parent}
+        self.sha = main
+        self.comments = []
+        self.calls = []
+        self.fail_comment = False
+        self.fail_close = False
+        self.race = None
+
+    def main(self):
+        return self.sha
+
+    def pr(self, n):
+        return self.prs[n]
+
+    def pages(self, path, limit):
+        return copy.deepcopy(self.comments)
+
+    def call(self, path, method="GET", data=None):
+        self.calls.append((path, method, data))
+        if path.endswith("/comments"):
+            if self.fail_comment:
+                raise sp.Gap("comment permission/rate limit")
+            self.comments.append({"user": {"login": "trusted[bot]"}, "body": data["body"]})
+            if self.race:
+                self.race()
+        if method == "PATCH" and self.fail_close:
+            raise sp.Gap("close failed")
+        return {}
+
+
+class MutationTests(unittest.TestCase):
+    def setUp(self):
+        self.child = sp.PR(2, "open", "c" * 40, "main", "child", sp.REPO, "Stacked on #1", True)
+        self.parent = sp.PR(1, "open", "b" * 40, "main", "parent", sp.REPO, "", False)
+        self.evidence = sp.Evidence(1, self.parent.head, self.child.head, "a" * 40,
+                                    "ancestor-head", self.parent.head, "d" * 64)
+        self.api = FakeAPI(self.child, self.parent, self.evidence.main)
+
+    def enforce(self):
+        sp.enforce(self.api, self.child, self.parent, self.evidence, "trusted[bot]")
+
+    def test_comment_precedes_close_and_branch_never_deleted(self):
+        self.enforce()
+        self.assertEqual([c[1] for c in self.api.calls], ["POST", "PATCH"])
+        self.assertEqual(self.api.calls[-1][2], {"state": "closed"})
+
+    def test_comment_failure_does_not_close(self):
+        self.api.fail_comment = True
+        with self.assertRaises(sp.Gap):
+            self.enforce()
+        self.assertFalse(any(c[1] == "PATCH" for c in self.api.calls))
+
+    def test_close_failure_retry_has_one_comment(self):
+        self.api.fail_close = True
+        with self.assertRaises(sp.Gap):
+            self.enforce()
+        self.api.fail_close = False
+        self.enforce()
+        self.assertEqual(len(self.api.comments), 1)
+
+    def test_forged_comment_does_not_suppress_explanation(self):
+        self.api.comments.append({"user": {"login": "attacker"}, "body": sp.comment_text(self.evidence)})
+        self.enforce()
+        self.assertEqual(len(self.api.comments), 2)
+
+    def test_main_race_before_comment(self):
+        self.api.sha = "f" * 40
+        with self.assertRaises(sp.Gap):
+            self.enforce()
+        self.assertEqual(self.api.calls, [])
+
+    def test_head_base_parent_state_races_after_comment(self):
+        changes = [(2, "head", "f" * 40), (2, "base", "changed"),
+                   (1, "head", "f" * 40), (1, "state", "closed")]
+        for number, key, value in changes:
+            with self.subTest(key=key, number=number):
+                self.api = FakeAPI(self.child, self.parent, self.evidence.main)
+                self.api.race = lambda: self.api.prs.update({number: sp.PR(**{
+                    **sp.asdict(self.api.prs[number]), key: value})})
+                with self.assertRaises(sp.Gap):
+                    self.enforce()
+                self.assertFalse(any(c[1] == "PATCH" for c in self.api.calls))
+
+
+class APITests(unittest.TestCase):
+    def test_pagination_truncation_and_rate_limit_are_failures(self):
+        api = object.__new__(sp.API)
+        api.call = lambda *args: [None] * 100
+        with self.assertRaises(sp.Gap):
+            api.pages("pulls", 100)
+        api.call = lambda *args: (_ for _ in ()).throw(sp.Gap("rate limited"))
+        with self.assertRaises(sp.Gap):
+            api.pages("pulls", 100)
+
+    def test_deleted_or_changed_branch_is_unknown(self):
+        api = object.__new__(sp.API)
+        api.call = lambda *args: {
+            "number": 2, "state": "open", "draft": False, "body": "",
+            "base": {"ref": "main", "repo": {"full_name": sp.REPO}},
+            "head": {"ref": "branch", "sha": "c" * 40, "repo": {"full_name": sp.REPO}},
+        }
+        for ref in [None, {"target": {"oid": "b" * 40}}]:
+            api.request = lambda *args: {"data": {"repository": {"pullRequest": {"headRef": ref}}}}
+            with self.assertRaises(sp.Gap):
+                api.pr(2)
+
+
+class IntegrationContractTests(unittest.TestCase):
+    def test_required_pr_status_and_workflow_trust(self):
+        import tomllib
+        import yaml
+        root = Path(__file__).resolve().parent.parent
+        bors = tomllib.loads((root / "bors.toml").read_text())
+        self.assertIn("no-stack", bors["pr_status"])
+        self.assertNotIn("no-stack", bors["status"])
+        workflow = yaml.safe_load((root / ".github/workflows/stack-policy.yml").read_text())
+        events = workflow.get("on", workflow.get(True))
+        self.assertEqual(events["pull_request_target"]["branches"], ["main"])
+        self.assertTrue(events["workflow_dispatch"]["inputs"]["dry-run"]["default"])
+        job = workflow["jobs"]["enforce"]
+        self.assertIn("github.ref == 'refs/heads/main'", job["if"])
+        checkout = job["steps"][0]["with"]
+        self.assertEqual(checkout["ref"], "refs/heads/main")
+        self.assertFalse(checkout["persist-credentials"])
+        wake = yaml.safe_load((root / ".github/workflows/stack-policy-wake.yml").read_text())
+        self.assertEqual(wake["permissions"], {})
+        self.assertEqual(wake["jobs"]["wake"]["steps"], [{"run": "true"}])
+
+
+if __name__ == "__main__":
+    unittest.main()
