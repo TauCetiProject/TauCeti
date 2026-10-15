@@ -26,6 +26,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.toAddSubgroup_mul_eq_closure_mul`: additive generators of a product of ideals.
 * `Ideal.smul_top_eq_top_of_pi`: an ideal that expands the whole of a product of modules expands
   the whole of every factor.
+* `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
 * `LinearMap.apply_mem_of_mem_smul_top`: a linear functional carries `I • M` into `I`.
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
@@ -80,6 +81,19 @@ theorem eq_one_of_mul_eq_one [I.IsTwoSided] (h : I * J = 1) : I = 1 := by
   exact eq_top_mono Ideal.mul_le_left h
 
 end Mul
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- The product `I * J`, viewed as a submodule of `I`, is the action of `J` on `I`. -/
+theorem smul_top_eq_comap_mul (I J : Ideal R) :
+    J • (⊤ : Submodule R I) = Submodule.comap I.subtype (I * J) := by
+  ext x
+  simp only [Submodule.mem_smul_top_iff, Submodule.mem_comap, Submodule.coe_subtype,
+    Ideal.smul_eq_mul, mul_comm J I]
+
+end CommSemiring
 
 section Pi
 
