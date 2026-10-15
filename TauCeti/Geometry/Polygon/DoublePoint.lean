@@ -133,6 +133,7 @@ theorem doublePointPartner_mem_boundary (hx : x ∈ poly.boundary R) :
   · rwa [doublePointPartner_of_notMem hx']
 
 /-- A point is its own partner exactly when it is not a double point. -/
+@[simp]
 theorem doublePointPartner_eq_self_iff :
     poly.doublePointPartner R π x = x ↔ x ∉ poly.doublePoints R π :=
   ⟨fun h hx ↦ doublePointPartner_ne hx h, doublePointPartner_of_notMem⟩
