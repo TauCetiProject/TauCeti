@@ -729,9 +729,16 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
   have hesource : (x₀, y₀) ∈ e.source :=
     hΦsmooth.mem_toOpenPartialHomeomorph_source hΦ (by simp)
   have hesymm : ContDiffAt ℝ (n + 1) e.symm (x₀, y₀) := by
-    have hinv := hΦsmooth.to_localInverse hΦ (by simp)
     rw [← hΦ₀]
-    exact hinv
+    have heinv : e.symm (Φ (x₀, y₀)) = (x₀, y₀) := by
+      rw [← hefun]
+      exact e.left_inv hesource
+    apply e.contDiffAt_symm
+      (hΦsmooth.image_mem_toOpenPartialHomeomorph_target hΦ (by simp))
+    · rw [heinv, hefun]
+      exact hΦ
+    · rw [heinv, hefun]
+      exact hΦsmooth
   have hefun' : (e : E × F → E × F) = (fun p ↦ (p.1, u p)) := by
     simpa only [Φ] using hefun
   refine ⟨u, e, hu₀, husmooth, huinit, hefun', hesource, hesymm, ?_⟩
