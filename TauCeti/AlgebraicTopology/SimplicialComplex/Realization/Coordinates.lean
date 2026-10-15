@@ -98,3 +98,26 @@ theorem mem_space_onFinsupp_iff {K : PreAbstractSimplicialComplex ι} {x : ι �
     exact ⟨hnonneg, hsum, Finset.Subset.rfl⟩
 
 end Geometry.SimplicialComplex
+
+open AbstractSimplicialComplex
+
+namespace TauCeti
+
+variable {ι : Type*}
+
+/-- A point belongs to the standard realization exactly when its barycentric coordinates are
+nonnegative, sum to one, and have support in the abstract simplicial complex. -/
+@[simp]
+theorem mem_standardGeometricComplex_space_iff {K : AbstractSimplicialComplex ι} {x : ι →₀ ℝ} :
+    x ∈ (standardGeometricComplex K).space ↔
+      (∀ i, 0 ≤ x i) ∧ x.sum (fun _ r => r) = 1 ∧ x.support ∈ K := by
+  constructor
+  · intro hx
+    let p : K.Realization := ⟨x, hx⟩
+    exact ⟨Realization.nonneg K p, Realization.sum_eq_one K p, support_mem K p⟩
+  · rintro ⟨hnonneg, hsum, hsupp⟩
+    refine mem_realization_iff.mpr ⟨x.support, hsupp, ?_⟩
+    rw [Finset.coe_image, mem_standardSimplex_iff]
+    exact ⟨hnonneg, hsum, Finset.Subset.rfl⟩
+
+end TauCeti

@@ -132,9 +132,7 @@ theorem mem_indexedJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
     x ∈ (indexedJoin A).standardGeometricComplex.space ↔
       (∀ v, 0 ≤ x v) ∧ x.sum (fun _ r => r) = 1 ∧
         ∀ v w, x v ≠ 0 → x w ≠ 0 → v.1 = w.1 → v = w := by
-  rw [AbstractSimplicialComplex.standardGeometricComplex,
-    Geometry.SimplicialComplex.mem_space_onFinsupp_iff,
-    AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex, mem_indexedJoin_iff]
+  rw [mem_standardGeometricComplex_space_iff, mem_indexedJoin_iff]
   constructor
   · rintro ⟨hnonneg, hsum, -, hinj⟩
     exact ⟨hnonneg, hsum, fun v w hv hw hvw => hinj
