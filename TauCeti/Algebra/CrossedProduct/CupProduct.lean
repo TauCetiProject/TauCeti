@@ -238,7 +238,6 @@ private theorem coboundary_eq {a b : Kˣ} {α β : (SeparableClosure K)ˣ}
       or_false, smul_one, div_one, one_div, mul_one]
   all_goals first
     | exact div_self' _
-    | exact inv_mul_cancel _
     | rw [← smul_mul', ← sq, hβ, smul_units_map_algebraMap]
     | rw [neg_mul, ← smul_mul', ← sq, hβ, smul_units_map_algebraMap, div_neg, div_one]
     | rw [← neg_inv, neg_mul, inv_mul_cancel, inv_neg_one]

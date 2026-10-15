@@ -29,6 +29,9 @@ open TauCeti
 
 noncomputable section
 
+-- Prefer the subaction's own action instances; the generic search times out on these carriers.
+attribute [local instance high] SubMulAction.smul' SubMulAction.mulAction
+
 /-- The compact Spin orbit identifies the quotient by a unit-level stabilizer with that level. -/
 noncomputable def realCliffordSpinOrbitHomeomorph (n : ℕ) (hn : 2 ≤ n)
     (x : realCliffordUnitLevel n) :

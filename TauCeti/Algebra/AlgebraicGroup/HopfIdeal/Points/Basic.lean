@@ -67,7 +67,7 @@ quotient Hopf algebra to its composite with the quotient map from `H`. -/
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     HopfAlgebra.points (R := R) (H := quotient H I) A ⟶
       HopfAlgebra.points (R := R) (H := H) A :=
-  (mapPointsFunctor (mkQuotient H I)).app A
+  (CommHopfAlgCat.Hom.mapPointsFunctor (mkQuotient H I)).app A
 
 /-- The quotient-points map acts by pre-composition with the quotient morphism. -/
 @[simp]
@@ -75,7 +75,7 @@ lemma quotientPointsHom_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
     quotientPointsHom H I A f =
       toConv (f.ofConv.comp ((mkQuotient H I).hom : H →ₐ[R] quotient H I)) :=
-  mapPointsFunctor_app_apply (mkQuotient H I) A f
+  CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (mkQuotient H I) A f
 
 /-- Pointwise form of `CommHopfAlgCat.quotientPointsHom_apply`. -/
 @[simp]
@@ -94,16 +94,17 @@ lemma mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
     {H K : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
     (f : quotient H I ⟶ K) (g : H ⟶ K) (hfg : mkQuotient H I ≫ f = g)
     (A : CommAlgCat.{w} R) (q : HopfAlgebra.points (R := R) (H := K) A) :
-    (mapPointsFunctor g).app A q =
-      quotientPointsHom H I A ((mapPointsFunctor f).app A q) := by
+    (CommHopfAlgCat.Hom.mapPointsFunctor g).app A q =
+      quotientPointsHom H I A ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A q) := by
   rw [quotientPointsHom, ← hfg]
-  exact mapPointsFunctor_comp_app_apply (mkQuotient H I) f A q
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply (mkQuotient H I) f A q
 
 /-- The map from quotient points to ambient points is injective. -/
 lemma quotientPointsHom_injective (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     Function.Injective (quotientPointsHom H I A) :=
-  mapPointsFunctor_app_injective_of_surjective (mkQuotient H I) (mkQuotient_surjective H I) A
+  CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective (mkQuotient H I)
+    (mkQuotient_surjective H I) A
 
 /-- An ambient `A`-point factors through `H ⧸ I` when it kills the Hopf ideal `I`. -/
 noncomputable def liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
@@ -226,18 +227,18 @@ theorem mem_quotientPointsSubgroup_map_iff
     (f : HopfAlgebra.points (R := R) (H := K) A) :
     f ∈ quotientPointsSubgroup K (J.map phi.hom) A ↔
       (show HopfAlgebra.points (R := R) (H := H) A from
-        (mapPointsFunctor phi).app A f) ∈ quotientPointsSubgroup H J A := by
+        (CommHopfAlgCat.Hom.mapPointsFunctor phi).app A f) ∈ quotientPointsSubgroup H J A := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
   constructor
   · intro hf x hx
-    rw [mapPointsFunctor_app_apply_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply]
     exact hf _ (HopfIdeal.mem_map_of_mem phi.hom hx)
   · intro hf
     have hle : (J.map phi.hom).toIdeal ≤ RingHom.ker f.ofConv.toRingHom := by
       rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
       intro x hx
       have hx' := hf x (HopfIdeal.mem_toIdeal.mp hx)
-      rw [mapPointsFunctor_app_apply_apply] at hx'
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hx'
       exact Ideal.mem_comap.mpr (RingHom.mem_ker.mpr hx')
     exact fun y hy ↦ RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hy))
 

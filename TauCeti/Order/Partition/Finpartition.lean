@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Setoid.Partition
+public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
 import Mathlib.Data.Set.Finite.Range
 
@@ -26,8 +26,8 @@ namespace Finpartition
 part when it is bottom. -/
 noncomputable def bipartition {α : Type*} [BooleanAlgebra α] [DecidableEq α] (s : α) :
     Finpartition (⊤ : α) :=
-  (Finpartition.ofPairwiseDisjoint {s, sᶜ} (by
-    simp [Set.pairwiseDisjoint_insert, disjoint_compl_right])).copy (by simp)
+  Finpartition.ofErase {s, sᶜ} (Set.PairwiseDisjoint.supIndep (by
+    simp [Set.pairwiseDisjoint_insert, disjoint_compl_right])) (by simp)
 
 @[simp]
 theorem parts_bipartition {α : Type*} [BooleanAlgebra α] [DecidableEq α] (s : α) :

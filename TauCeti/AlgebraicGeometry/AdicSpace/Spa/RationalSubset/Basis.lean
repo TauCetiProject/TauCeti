@@ -468,6 +468,7 @@ theorem exists_finite_spaRationalFamily_refinement [IsHuberRing A] {Aplus : Subr
     exact Set.mem_biUnion ⟨hWmem, i, hWV⟩ hxW
   obtain ⟨𝒲, h𝒲G, h𝒲fin, h𝒲cov⟩ :=
     (isCompact_of_mem_spaRationalFamily hU).elim_finite_subcover_image
+      (b := {W ∈ spaRationalFamily Aplus | ∃ i, W ⊆ V i})
       (fun W hW ↦ (isTopologicalBasis_spaRationalFamily Aplus).isOpen hW.1) hcov
   exact ⟨𝒲, fun W hW ↦ (h𝒲G hW).1, h𝒲fin, fun W hW ↦ (h𝒲G hW).2,
     by simpa [Set.sUnion_eq_biUnion] using h𝒲cov⟩

@@ -365,7 +365,7 @@ theorem pairwise_disjoint_neighborhood : Pairwise (Disjoint on neighborhood) := 
   have h01 := disjoint_puncturedNeighborhoodZero_puncturedNeighborhoodOne
   have h0i := disjoint_puncturedNeighborhoodZero_puncturedNeighborhoodInf
   have h1i := disjoint_puncturedNeighborhoodOne_puncturedNeighborhoodInf
-  rintro (_ | _ | _) (_ | _ | _) h <;> first | exact absurd rfl h | skip
+  rintro (_ | _ | _) (_ | _ | _) h <;> try exact absurd rfl h
   exacts [h01, h0i, h01.symm, h1i, h0i.symm, h1i.symm]
 
 /-- The standard coordinate of the punctured neighborhood of a puncture, identifying it with the
