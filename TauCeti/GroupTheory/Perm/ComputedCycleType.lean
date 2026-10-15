@@ -206,6 +206,15 @@ theorem _root_.Equiv.Perm.computedCycleType_eq_fullCycleType (σ : Perm α) :
     Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle]
   rw [← Equiv.Perm.cycleMin_eq_cycleMin_iff, hmin, eq_comm]
 
+/-- A computed cycle-type table for a finset of permutations gives exactly its set of canonical
+full cycle types, including fixed points. -/
+theorem _root_.Equiv.Perm.image_fullCycleType_eq_of_computedCycleType
+    {s : Finset (Perm α)} {t : Finset (Multiset ℕ)}
+    (h : s.image Equiv.Perm.computedCycleType = t) :
+    Equiv.Perm.fullCycleType '' (s : Set (Perm α)) = (t : Set (Multiset ℕ)) := by
+  simpa only [Finset.coe_image, Equiv.Perm.computedCycleType_eq_fullCycleType] using
+    congrArg (fun u : Finset (Multiset ℕ) => (u : Set (Multiset ℕ))) h
+
 end LinearOrder
 
 end TauCeti
