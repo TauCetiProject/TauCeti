@@ -180,9 +180,9 @@ lemma liftQuotient_mk (I : HopfIdeal R H) (f : H ⟶ K)
 lemma mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
     mkQuotient H I ≫ liftQuotient I f hf = f := by
-  ext h
-  exact BialgHom.congr_fun
-    (Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom I.toIdeal f.hom hf) h
+  apply _root_.CommHopfAlgCat.hom_ext
+  simpa only [_root_.CommHopfAlgCat.hom_comp, hom_mkQuotient, hom_liftQuotient] using
+    Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom I.toIdeal f.hom hf
 
 /-- A morphism out of the quotient object is determined by its precomposition with the
 quotient morphism. -/
@@ -348,18 +348,8 @@ lemma quotientIsoOfIso_inv_mk (e : H ≅ K) (I : HopfIdeal R K) (y : K) :
     (quotientIsoOfIso e I).inv.hom (Ideal.Quotient.mk I.toIdeal y) =
       Ideal.Quotient.mkₐ R
         (I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2).toIdeal
-        (e.inv.hom y) := by
-  calc
-    (quotientIsoOfIso e I).inv.hom (Ideal.Quotient.mkₐ R I.toIdeal y) =
-        (mkQuotient K I ≫ (quotientIsoOfIso e I).inv).hom y := by
-      rw [_root_.CommHopfAlgCat.comp_apply, mkQuotient_apply]
-    _ = (e.inv ≫ mkQuotient H
-        (I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2)).hom y := by
-      rw [mkQuotient_comp_quotientIsoOfIso_inv]
-    _ = Ideal.Quotient.mkₐ R
-        (I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2).toIdeal
-        (e.inv.hom y) := by
-      rw [_root_.CommHopfAlgCat.comp_apply, mkQuotient_apply]
+        (e.inv.hom y) :=
+  congr($(mkQuotient_comp_quotientIsoOfIso_inv e I).hom y)
 
 /-- Quotienting a commutative Hopf algebra by the zero Hopf ideal gives an isomorphic object
 of `CommHopfAlgCat`. -/
@@ -368,13 +358,9 @@ noncomputable def quotientBotIso (H : _root_.CommHopfAlgCat.{v} R) :
   hom := liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le
   inv := mkQuotient H (⊥ : HopfIdeal R H)
   hom_inv_id := by
-    apply _root_.CommHopfAlgCat.hom_ext
-    ext q
-    obtain ⟨h, rfl⟩ :=
-      Ideal.Quotient.mkₐ_surjective R (⊥ : HopfIdeal R H).toIdeal q
-    rw [_root_.CommHopfAlgCat.comp_apply,
-      liftQuotient_mk (hf := bot_le), mkQuotient_apply]
-    rfl
+    apply mkQuotient_hom_ext
+    rw [← Category.assoc, mkQuotient_comp_liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le]
+    simp only [Category.id_comp, Category.comp_id]
   inv_hom_id := mkQuotient_comp_liftQuotient
     (⊥ : HopfIdeal R H) (𝟙 H) bot_le
 
@@ -452,13 +438,9 @@ lemma toIdeal_le_ker_mkQuotient_of_le
 lemma toIdeal_le_ker_of_mkQuotient_comp {I : HopfIdeal R H} {g : quotient H I ⟶ K}
     {f : H ⟶ K} (hg : mkQuotient H I ≫ g = f) :
     I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom := by
-  intro x hx
-  have hx0 : (mkQuotient H I).hom x = 0 := (mkQuotient_eq_zero_iff H I x).mpr hx
-  rw [RingHom.mem_ker, ← hg]
-  -- The ring-hom coercion of a composite is definitionally the composite of the underlying
-  -- maps; no lemma states this for the whole `hom.toAlgHom.toRingHom` coercion chain.
-  change g.hom ((mkQuotient H I).hom x) = 0
-  rw [hx0, map_zero]
+  rw [← hg, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom,
+    AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, ← RingHom.comap_ker]
+  exact (mkQuotient_ker H I).ge.trans (Ideal.ker_le_comap _)
 
 /-- The coordinate morphism `H ⧸ I ⟶ H ⧸ J` induced by an inclusion `I ≤ J` of Hopf
 ideals.
