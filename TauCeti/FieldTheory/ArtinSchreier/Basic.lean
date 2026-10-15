@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
+public import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
 # Artin–Schreier extensions
@@ -33,18 +34,6 @@ public section
 
 open Polynomial
 open scoped IntermediateField
-
-namespace Polynomial
-
-/-- The nonconstant part of an Artin–Schreier polynomial has its expected natural degree. -/
-@[simp]
-theorem natDegree_X_pow_sub_X {R : Type*} [Ring R] [Nontrivial R]
-    {p : ℕ} (hp : 1 < p) : (X ^ p - X : R[X]).natDegree = p := by
-  rw [natDegree_sub_eq_left_of_natDegree_lt] <;> rw [natDegree_X_pow]
-  rw [natDegree_X]
-  exact hp
-
-end Polynomial
 
 namespace TauCeti.ArtinSchreier
 
