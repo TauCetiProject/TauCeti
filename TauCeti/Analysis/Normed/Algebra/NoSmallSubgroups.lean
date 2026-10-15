@@ -11,7 +11,9 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 
 import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Tactic.NoncommRing
+import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Topology.Algebra.Group.Units
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # No small subgroups in the units of a normed ring
@@ -48,6 +50,8 @@ a nonarchimedean local field, is seen to be trivial on one of them.
   `1 / 2` of `1` is `1`.
 * `ContinuousMonoidHom.exists_mem_nhds_one_forall_le_ker`: a continuous homomorphism into `Aˣ` is
   trivial on every subgroup contained in a suitable neighbourhood of `1`.
+* `ContinuousMonoidHom.isOpen_ker_of_compactSpace_of_totallyDisconnectedSpace`: a continuous
+  homomorphism from a profinite group into `Aˣ` has open kernel.
 -/
 
 public section
@@ -117,5 +121,15 @@ theorem exists_mem_nhds_one_forall_le_ker (f : G →ₜ* Aˣ) :
     have hn : ‖(f (g ^ n) : A) - 1‖ < 1 / 2 := hH (H.pow_mem hg n)
     rw [map_pow, Units.val_pow_eq_pow_val] at hn
     exact hn.le
+
+/-- A continuous homomorphism from a profinite group to the units of a normed ring whose norm
+is homogeneous under integer scalar multiplication has open kernel. -/
+theorem isOpen_ker_of_compactSpace_of_totallyDisconnectedSpace
+    [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] (f : G →ₜ* Aˣ) :
+    IsOpen (f.ker : Set G) := by
+  obtain ⟨N, hN, hNker⟩ := f.exists_mem_nhds_one_forall_le_ker
+  obtain ⟨U, hUN, hU, h1U⟩ := mem_nhds_iff.mp hN
+  obtain ⟨H, hH⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hU h1U
+  exact Subgroup.isOpen_mono (hNker H.toSubgroup (hH.trans hUN)) H.isOpen
 
 end ContinuousMonoidHom

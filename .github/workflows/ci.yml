@@ -76,6 +76,9 @@ jobs:
           export LEAN LEAN_SYSROOT
           python3 scripts/test_duplicate_declarations.py
 
+      - name: Import header audit regression tests
+        run: python3 scripts/test_check_imports.py
+
   build:
     runs-on: ubuntu-latest
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
@@ -124,6 +127,7 @@ jobs:
           python3 scripts/pr_status/test_stuck_alerts.py
           python3 scripts/test_roadmap_label.py
           PYTHONPATH=scripts python3 scripts/test_housekeeping.py
+          python3 scripts/test_stack_policy.py
           python3 scripts/pr_status/test_pr_labels.py
           python3 scripts/pr_status/test_zulip.py
           python3 scripts/pr_status/test_conflicts.py
@@ -136,15 +140,21 @@ jobs:
           python3 scripts/test_bump_latest.py
           python3 scripts/test_lint_scope.py
           python3 scripts/test_bors_scope_approval.py
+          python3 scripts/test_bors_staging_identity.py
+          python3 scripts/test_bors_train_identity.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
+          python3 scripts/test_dependency_warm.py
           python3 scripts/test_duplicate_audit_workflow.py
+          python3 scripts/test_ci_host_resources.py
           python3 scripts/test_web_pins.py
           python3 scripts/test_attest_pr_config.py
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py
           python3 scripts/test_lake_cache_reuse.py
+          python3 scripts/test_lake_cache_publish.py
+          python3 scripts/test_finalize_batch.py
           PYTHONPATH=. python3 scripts/perf/test_perf.py
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
@@ -214,6 +224,27 @@ jobs:
             lake exe cache get!
           fi
 
+      # Publish only official Mathlib downloads before TauCeti source executes, so a cold
+      # root compilation cannot delay warming for other jobs. PR builds remain restore-only.
+      # GitHub cache keys are immutable; an exact restore needs no redundant save, while a
+      # prefix restore is extended with the newly downloaded hashes under the exact current key.
+      # Pruning is essential: without it, every prefix restore would carry all old pins forward
+      # and each immutable snapshot would grow monotonically. If pruning itself breaks, leave main
+      # green but skip publication rather than saving an unbounded snapshot.
+      - name: Prune Mathlib's download cache to the current pin
+        id: mathlib_ltar_prune
+        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        run: lake exe cache clean
+
+      - name: Save Mathlib's compressed download cache
+        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' && steps.mathlib_ltar_prune.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
+          key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
       # --- Lake artifact-cache restore (dormant until configured) --------------------
       # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without
       # this, the post-merge run recompiled the whole library from scratch on every push,
@@ -267,7 +298,12 @@ jobs:
         run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
 
       - name: Lake archive reuse integration tests
-        run: python3 scripts/test_lake_cache_reuse.py --integration
+        run: |
+          python3 scripts/test_lake_cache_reuse.py --integration
+          python3 scripts/test_lake_cache_publish.py --integration
+
+      - name: Audit import headers against the complete source inventory
+        run: python3 scripts/check-imports.py
 
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
@@ -280,45 +316,14 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: lake build
 
-      # Main and already-audited merge-group commits publish TauCeti's Lake artifacts through the
-      # same secret-isolated workflow. Ordinary PR heads remain restore-only and cannot populate
-      # a cache consumed by later builds.
-      # GitHub cache keys are immutable; an exact restore needs no redundant save, while a
-      # prefix restore is extended with the newly downloaded hashes under the exact current key.
-      # Pruning is essential: without it, every prefix restore would carry all old pins forward
-      # and each immutable snapshot would grow monotonically. If pruning itself breaks, leave main
-      # green but skip publication rather than saving an unbounded snapshot.
-      - name: Prune Mathlib's download cache to the current pin
-        id: mathlib_ltar_prune
-        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' }}
-        continue-on-error: true
-        run: lake exe cache clean
+      # The same shared checks as trusted PR builds, compiled from merged main's sources.
+      - name: Shared ownership and axiom audits
+        run: |
+          bash scripts/build-audit-driver.sh . scripts "$RUNNER_TEMP/audit-driver"
+          lake env "$RUNNER_TEMP/audit-driver/audit-driver"
 
-      - name: Save Mathlib's compressed download cache
-        if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' && steps.mathlib_ltar_prune.outcome == 'success' }}
-        continue-on-error: true
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
-          key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
-
-      - name: Duplicate-declaration audit
-        run: lake env lean --run scripts/DuplicateDeclarations.lean
-
-      # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
-      # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
-      # Quot.sound}, catching sorry/admit (sorryAx), native_decide (Lean.ofReduceBool),
-      # and home-rolled axioms, including ones reaching in through imports.
-      - name: Axiom audit (TauCeti/ uses only allowlisted axioms)
-        env:
-          LAKE_NO_CACHE: "true"
-        run: lake exe axioms
-
-      # Module-system audit. Inspects the built TauCeti `.olean`s and rejects any module that
-      # did not opt into the Lean module system (a leading `module`). It reads each module's
-      # `ModuleData.isModule` flag from the compiled artifact, so it cannot be fooled by a
-      # `module` appearing in a comment or string the way a textual grep could.
-      - name: Module-system audit (every TauCeti/ file opts into `module`)
+      # Read compiled module flags with the canonical direct-artifact checker.
+      - name: Module-system audit (every TauCeti file opts into module)
         env:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system
@@ -363,13 +368,6 @@ jobs:
       # checks; the empty root makes that command linter skip every library module at this pin.
       - name: Header audit equivalence tests
         run: lake env python3 scripts/test_header_style.py
-
-      # The meta-import guard's fixtures, plus the invariant itself over the whole checkout.
-      # pr-build.yml runs the guard on a change's files only, so this post-merge pass is where
-      # a `meta import` that reached main some other way would surface. Headers alone: nothing
-      # here builds or imports a TauCeti module, and the whole library costs about 5 seconds.
-      - name: Meta-import guard tests and whole-library invariant
-        run: python3 scripts/test_check_meta_imports.py
 
       - name: Source style lint (copyright headers + text linters)
         run: bash scripts/lint-style.sh
@@ -438,40 +436,42 @@ jobs:
           # Restated at step level, and the same values the restore step sets job-wide when the
           # public endpoints are configured, so staging works either way: with the restore on,
           # the health-check build already packed these artifacts; with it off, the pack below
-          # is what puts them in the cache directory for `lake cache stage` to find.
+          # is what puts them in the cache directory for `lake_cache_publish.py stage` to find.
           LAKE_ARTIFACT_CACHE: "true"
           LAKE_RESTORE_ARTIFACTS: "true"
           # Don't download during the packing build — we only want to PUT, not GET. (The
           # S3 host needs SigV4 even for reads, so an anonymous GET here would 403 anyway.)
           LAKE_NO_CACHE: "true"
           LAKE_CACHE_DIR: ${{ github.workspace }}/.lake/cache
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          LAKE_CACHE_FULL_PUBLICATION: ${{ vars.LAKE_CACHE_FULL_PUBLICATION }}
         run: |
           # Pack the already-built oleans into the local Lake cache (no recompile, since the
           # health-check build above left matching traces), emit the root-package
-          # input->output mappings, then copy exactly the artifacts those mappings name into
-          # a staging directory, alongside a copy of the mappings themselves. `lake cache
-          # stage` reads no credential and contacts no network.
+          # input->output mappings. The key-free planner keeps the FULL map and stages
+          # new archives plus availability-check misses, reusing only matching downloaded
+          # records saved before the build. The isolated publisher SHA-256 checks inherited bytes.
           lake build >/dev/null
           python3 scripts/lake_cache_reuse.py reconnect . "$RUNNER_TEMP/lake-cache-reuse.json"
           # Hash the linked archives themselves, ignoring any old .ltar.hash sidecars.
           lake build --no-build --rehash -o .lake/outputs.jsonl
           echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-          lake cache stage .lake/outputs.jsonl "$RUNNER_TEMP/lake-cache-staging"
-          # `lake cache put-staged` does not configure the workspace, which is precisely what
-          # keeps project build code out of the publisher, so it cannot derive the toolchain and
-          # platform halves of the upload scope. The publisher supplies them from the sparse pin
+          python3 scripts/lake_cache_publish.py stage . "$RUNNER_TEMP/lake-cache-staging" \
+            --index "$RUNNER_TEMP/lake-cache-reuse.json"
+          # The isolated publisher never configures the workspace, so it cannot derive
+          # the toolchain and platform halves of the upload scope. It supplies them from the sparse pin
           # instead, which is right only while the package config keeps the two assumptions
           # below. Check them here, where the workspace does exist: `platformIndependent` is
-          # what makes Lake leave the platform out of the scope (put-staged's default), while
+          # what makes Lake leave the platform out of the scope (the publisher's map scope), while
           # `fixedToolchain` or `bootstrap` would make Lake leave the toolchain out of it (which
-          # put-staged is told to include). Either silent mismatch would publish under a scope
+          # the publisher is told to include). Either silent mismatch would publish under a scope
           # pr-build's `lake cache get --service ... --repo` never reads, i.e. a cache never hit.
           if ! grep -Eq '^[[:space:]]*platformIndependent[[:space:]]*=[[:space:]]*true' lakefile.toml; then
-            echo "::error::lakefile.toml no longer sets platformIndependent = true; publish-lake-cache must now pass --platform to lake cache put-staged"
+            echo "::error::lakefile.toml no longer sets platformIndependent = true; publish-lake-cache must now include the platform scope"
             exit 1
           fi
           if grep -Eq '^[[:space:]]*(fixedToolchain|bootstrap)[[:space:]]*=[[:space:]]*true' lakefile.toml; then
-            echo "::error::lakefile.toml now sets fixedToolchain or bootstrap; Lake drops the toolchain from the scope for such a package, so publish-lake-cache must stop passing --toolchain"
+            echo "::error::lakefile.toml now sets fixedToolchain or bootstrap; Lake drops the toolchain from the scope for such a package, so publish-lake-cache must stop including the toolchain scope"
             exit 1
           fi
           # `lake env` reports the workspace's own view of the toolchain, which is exactly the

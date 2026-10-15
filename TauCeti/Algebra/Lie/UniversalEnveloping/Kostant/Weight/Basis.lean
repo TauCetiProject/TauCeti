@@ -81,7 +81,7 @@ variable {ι : Type w} {κ : Type*}
 variable {V : Type v} [AddCommGroup V] [Module ℚ V]
 
 attribute [local instance] TauCeti.moduleNNRat
-attribute [local instance] IsAddTorsionFree.of_module_rat
+attribute [local instance] HasUniqueDiv.of_module_rat
 
 variable (e : ι → L) (h : κ → L)
   (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)

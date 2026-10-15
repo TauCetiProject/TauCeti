@@ -277,11 +277,11 @@ theorem isCocomm_iff_isCommMonObj_hopfSpec
     let _ := h
     constructor
     let leftPoint : WithConv (H →ₐ[R] TensorProduct R H H) :=
-      toConv (Bialgebra.TensorProduct.includeLeft
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+      toConv (Algebra.TensorProduct.includeLeft
+        (R := R) (A := H) (B := H))
     let rightPoint : WithConv (H →ₐ[R] TensorProduct R H H) :=
-      toConv (Bialgebra.TensorProduct.includeRight
-        (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+      toConv (Algebra.TensorProduct.includeRight
+        (R := R) (A := H) (B := H))
     have hcomm : leftPoint * rightPoint = rightPoint * leftPoint := by
       apply (AlgebraicGeometry.Spec.mapMulEquiv
         (R := R) (S := H) (T := TensorProduct R H H)).injective
@@ -295,8 +295,6 @@ theorem isCocomm_iff_isCommMonObj_hopfSpec
           (Bialgebra.comulAlgHom R H)) = rightPoint * leftPoint := by
       rw [Bialgebra.toConv_comp_comulAlgHom]
       simp only [leftPoint, rightPoint,
-        Bialgebra.TensorProduct.includeLeft_toAlgHom,
-        Bialgebra.TensorProduct.includeRight_toAlgHom,
         Algebra.TensorProduct.comm_comp_includeLeft,
         Algebra.TensorProduct.comm_comp_includeRight]
     have hcomul :

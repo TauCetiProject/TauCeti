@@ -176,7 +176,7 @@ theorem coe_ofLieDerivation (D : LieDerivation R L L) :
     ⇑(Lie.Derivation.ofLieDerivation A D) = ⇑(D.baseChange A) := by
   funext z
   rw [Lie.Derivation.ofLieDerivation_apply]
-  exact (congrFun (LinearMap.baseChange_eq_ltensor D.toLinearMap) z).symm
+  exact (congrFun (LinearMap.baseChange_eq_lTensor D.toLinearMap) z).symm
 
 variable (A) in
 /-- Extension of scalars as an `R`-linear homomorphism of Lie algebras. The extended derivations

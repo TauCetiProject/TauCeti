@@ -77,10 +77,10 @@ theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsFiniteMeas
   set G : ℕ → Set X := fun N ↦ ⋃ k < N, Metric.ball (u k) ρ
   have hG : Tendsto (fun N ↦ μ (G N)ᶜ) atTop (𝓝 0) := by
     have hlim := tendsto_measure_iInter_atTop (μ := μ) (s := fun N ↦ (G N)ᶜ)
-      (fun N ↦ (MeasurableSet.biUnion (to_countable _)
-        fun _ _ ↦ measurableSet_ball).compl.nullMeasurableSet)
-      (fun M N hMN ↦ compl_subset_compl.2 <| biUnion_subset_biUnion_left fun k hk ↦
-        lt_of_lt_of_le hk hMN) ⟨0, measure_ne_top _ _⟩
+      (fun N ↦ (MeasurableSet.iUnion fun _ ↦ MeasurableSet.iUnion fun _ ↦
+        measurableSet_ball).compl.nullMeasurableSet)
+      (fun M N hMN ↦ compl_subset_compl.2 <| iUnion_mono fun _ ↦
+        iUnion_subset_iUnion_const fun hk ↦ lt_of_lt_of_le hk hMN) ⟨0, measure_ne_top _ _⟩
     have hempty : ⋂ N, (G N)ᶜ = ∅ := by
       rw [← compl_iUnion, compl_empty_iff, eq_univ_iff_forall]
       intro x

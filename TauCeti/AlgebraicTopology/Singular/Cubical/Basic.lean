@@ -247,6 +247,12 @@ theorem isDegenerate_iff_exists_eq_degeneracy {n : ℕ} {s : SingularCube X (n +
   · rintro ⟨i, t, rfl⟩
     exact (isDegenerateAt_degeneracy t i).isDegenerate
 
+/-- A constant cube of positive dimension is degenerate. -/
+@[simp]
+theorem isDegenerate_const {n : ℕ} (x : X) :
+    IsDegenerate (ContinuousMap.const (Fin (n + 1) → I) x) :=
+  ⟨0, fun _ _ ↦ rfl⟩
+
 /-- A `0`-cube, a point, is never degenerate. -/
 theorem not_isDegenerate_zero (c : SingularCube X 0) : ¬ IsDegenerate c :=
   fun ⟨i, _⟩ ↦ i.elim0

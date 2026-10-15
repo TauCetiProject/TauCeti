@@ -63,10 +63,10 @@ theorem le_topologicalGeneratorRankNat_absoluteGaloisGroup
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
   let L := CyclotomicField p K
   have : FiniteDimensional K L := IsCyclotomicExtension.finiteDimensional {p} K L
-  let := finiteExtensionValuativeRel K L
-  let := finiteExtensionNormedFieldTopology K L
+  let := algebraicExtensionValuativeRel K L
+  let := algebraicExtensionNormedFieldTopology K L
   have := finiteExtension_isNonarchimedeanLocalField K L
-  have := finiteExtension_valuativeExtension K L
+  have := algebraicExtension_valuativeExtension K L
   have := ValuativeExtension.trans ℚ_[p] K L
   have hmu : ∃ ζ : L, IsPrimitiveRoot ζ p :=
     ⟨IsCyclotomicExtension.zeta p K L, IsCyclotomicExtension.zeta_spec p K L⟩

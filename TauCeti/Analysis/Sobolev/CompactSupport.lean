@@ -7,53 +7,135 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
-# Extending a compactly supported weak derivative across the boundary
+# Extension by zero of weak derivatives
 
 Extending a weakly differentiable function by zero across `∂Ω` destroys weak differentiability in
 general: the jump along the boundary contributes a singular term that no locally integrable
-function represents.  This file proves that the obstruction is entirely a boundary phenomenon.
-If `u` and its weak derivative vanish almost everywhere outside a **compact** `K ⊆ Ω`, then the
-extension of `u` by zero is weakly differentiable on the whole space, with the zero-extension of
-the weak derivative as its derivative.
+function represents. If the value and derivative vanish almost everywhere off a closed set `K`
+with `V ∩ K ⊆ Ω`, they extend by zero from `Ω` to `V`. This permits the support to meet the
+boundary of `V`, avoiding only the artificial boundary introduced by localization.
+
+The compact-support case follows by taking `V = ⊤`: when `K` is compact and contained in `Ω`,
+the extension is weakly differentiable on the whole space. No regularity of `∂Ω` is assumed.
 
 ## The argument
 
-Test the extension against a test function `φ` on the whole space.  A smooth cutoff `χ` equal to
-`1` on a neighbourhood of `K` and compactly supported inside `Ω`
-(`IsCompact.exists_contDiff_cutoff`) turns `χ φ` into a test function *on `Ω`*, to which the
-hypothesis applies.  The product rule replaces `∂_v (χ φ)` by `χ ∂_v φ + (∂_v χ) φ`, and both
-correction terms vanish where they are paired with `u`: off `K` because `u` does, and on `K`
-because `χ` is constant there.  What is left is the defining identity for the extension.
-
-Nothing is assumed about `∂Ω`; the compact support is what replaces boundary regularity.  The
-same statement for a general `u ∈ W^{1,p}(Ω)` is false, and the extension theorem that repairs it
-needs a Lipschitz boundary.
+Each test function `φ` on `V` is localized near its compact support intersected with `K`.
+A smooth cutoff `χ` equal to `1` on a neighbourhood of this intersection and compactly supported
+inside `Ω` (`IsCompact.exists_contDiff_cutoff`) turns `χ φ` into a test function on `Ω`.
+The cutoff leaves both test pairings unchanged where the value and derivative can be nonzero.
+The compact-support statements `indicator_of_isCompact` are corollaries of
+`indicator_of_isClosed`.
 
 ## Main declarations
 
-* `TauCeti.HasWeakLineDerivOn.indicator_of_isCompact`: the directional statement.
+* `TauCeti.HasWeakLineDerivOn.indicator_of_isClosed`: relative directional zero extension.
+* `TauCeti.HasWeakFDerivOn.indicator_of_isClosed`: its Fréchet form.
+* `TauCeti.HasWeakLineDerivOn.indicator_of_isCompact`: whole-space compact-support extension.
 * `TauCeti.HasWeakFDerivOn.indicator_of_isCompact`: its Fréchet form.
 
 ## References
 
 L. C. Evans, *Partial Differential Equations*, §5.3.3, and H. Brezis, *Functional Analysis,
-Sobolev Spaces and Partial Differential Equations*, Lemma 9.5.
+Sobolev Spaces and Partial Differential Equations*, Lemma 9.5. The relative argument imposes
+the support condition only inside the target domain.
 -/
 
 public section
 
 open MeasureTheory Set TopologicalSpace
-
-open scoped ContDiff Distributions
+open scoped Distributions
 
 namespace TauCeti
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {mu : Measure E} {Omega : Opens E} {u u' : E → F} {v : E} {K : Set E}
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {μ : Measure E} {Ω V : Opens E} {u u' : E → F} {v : E} {K : Set E}
+
+/-- Weak directional derivatives extend by zero to `V` if the value and derivative vanish
+almost everywhere off a closed `K` whose intersection with `V` lies in `Ω`. No boundary
+condition on the part of `∂Ω` outside `V` is required. -/
+theorem HasWeakLineDerivOn.indicator_of_isClosed (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hK : IsClosed K) (hKV : (V : Set E) ∩ K ⊆ Ω)
+    (hu : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → u x = 0)
+    (hu' : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → u' x = 0) :
+    HasWeakLineDerivOn μ V ((Ω : Set E).indicator u) ((Ω : Set E).indicator u') v := by
+  rw [hasWeakLineDerivOn_iff_testFunction]
+  refine ⟨h.completeSpace,
+    h.locallyIntegrableOn.indicator_of_isClosed Ω.isOpen.measurableSet
+      V.isOpen.isLocallyClosed hK hKV hu,
+    h.locallyIntegrableOn_deriv.indicator_of_isClosed Ω.isOpen.measurableSet
+      V.isOpen.isLocallyClosed hK hKV hu', ?_⟩
+  intro φ
+  -- Only the compact part of the test support that meets `K` needs a cutoff.
+  have hC : IsCompact (tsupport (φ : E → ℝ) ∩ K) := φ.hasCompactSupport.inter_right hK
+  obtain ⟨χ, hχ, -, hχone, -, hχΩ⟩ := hC.exists_contDiff_cutoff Ω.isOpen
+    (fun x hx => hKV ⟨φ.tsupport_subset hx.1, hx.2⟩)
+  let ψ : 𝓓(Ω, ℝ) := ⟨χ * (φ : E → ℝ), hχ.mul φ.contDiff,
+    φ.hasCompactSupport.mul_left, tsupport_mul_subset_left.trans hχΩ⟩
+  have hψ : (ψ : E → ℝ) = χ * (φ : E → ℝ) := TestFunction.coe_mk
+  have hone (x : E) (hx : x ∈ tsupport (φ : E → ℝ) ∩ K) :
+      χ =ᶠ[nhds x] fun _ => (1 : ℝ) := by
+    filter_upwards [isOpen_interior.mem_nhds (hχone hx)] with y hy
+    have hy' : y ∈ χ ⁻¹' ({1} : Set ℝ) := interior_subset hy
+    exact hy'
+  -- The cutoff leaves both test pairings unchanged where the jet can be nonzero.
+  have hleft : (fun x => lineDeriv ℝ (φ : E → ℝ) x v • (Ω : Set E).indicator u x) =ᵐ[μ]
+      fun x => lineDeriv ℝ (ψ : E → ℝ) x v • u x := by
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hu] with x hx
+    by_cases hxφ : x ∈ tsupport (φ : E → ℝ)
+    · by_cases hxK : x ∈ K
+      · have hxΩ := hKV ⟨φ.tsupport_subset hxφ, hxK⟩
+        have heq : (ψ : E → ℝ) =ᶠ[nhds x] (φ : E → ℝ) := by
+          filter_upwards [hone x ⟨hxφ, hxK⟩] with y hy
+          simp [hψ, hy]
+        rw [indicator_of_mem hxΩ, heq.lineDeriv_eq]
+      · by_cases hxΩ : x ∈ (Ω : Set E)
+        · simp [indicator_of_mem hxΩ, hx hxΩ hxK]
+        · rw [indicator_of_notMem hxΩ]
+          have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
+            hxΩ (ψ.tsupport_subset hxψ)
+          simp [lineDeriv_eq_zero_of_notMem_tsupport ψ hxψ v]
+    · have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
+        hxφ (tsupport_mul_subset_right (by rw [hψ, Pi.mul_def] at hxψ; exact hxψ))
+      simp [lineDeriv_eq_zero_of_notMem_tsupport φ hxφ v,
+        lineDeriv_eq_zero_of_notMem_tsupport ψ hxψ v]
+  have hright : (fun x => (φ : E → ℝ) x • (Ω : Set E).indicator u' x) =ᵐ[μ]
+      fun x => (ψ : E → ℝ) x • u' x := by
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hu'] with x hx
+    by_cases hxφ : x ∈ tsupport (φ : E → ℝ)
+    · by_cases hxK : x ∈ K
+      · simp [hψ, (hone x ⟨hxφ, hxK⟩).eq_of_nhds,
+          indicator_of_mem (hKV ⟨φ.tsupport_subset hxφ, hxK⟩)]
+      · by_cases hxΩ : x ∈ (Ω : Set E)
+        · simp [hψ, indicator_of_mem hxΩ, hx hxΩ hxK]
+        · have hχzero : χ x = 0 := image_eq_zero_of_notMem_tsupport
+            (fun hxχ => hxΩ (hχΩ hxχ))
+          simp [hψ, indicator_of_notMem hxΩ, hχzero]
+    · simp [hψ, image_eq_zero_of_notMem_tsupport hxφ]
+  rw [integral_congr_ae hleft, integral_congr_ae hright]
+  exact h.integral_lineDeriv_smul_eq_neg_integral_smul ψ
+
+/-- Weak Fréchet derivatives extend by zero from `Ω` to `V` when the value and derivative
+vanish almost everywhere off a closed `K` with `V ∩ K ⊆ Ω`. -/
+theorem HasWeakFDerivOn.indicator_of_isClosed {U : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u U) (hK : IsClosed K) (hKV : (V : Set E) ∩ K ⊆ Ω)
+    (hu : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → u x = 0)
+    (hU : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → U x = 0) :
+    HasWeakFDerivOn μ V ((Ω : Set E).indicator u) ((Ω : Set E).indicator U) := by
+  refine hasWeakFDerivOn_iff.2 fun v => ?_
+  have hUv : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → U x v = 0 := by
+    filter_upwards [hU] with x hx hxK
+    simp [hx hxK]
+  refine ((h.hasWeakLineDerivOn v).indicator_of_isClosed hK hKV hu hUv).congr_ae_deriv
+    (.of_forall fun x => ?_)
+  by_cases hx : x ∈ (Ω : Set E) <;> simp [hx]
+
+variable {mu : Measure E} {Omega : Opens E}
 
 /-- **Extension by zero of a compactly supported weak directional derivative.**  If `u'` is a
 weak derivative of `u` in the direction `v` on `Ω`, and both vanish almost everywhere on `Ω`
@@ -67,79 +149,7 @@ theorem HasWeakLineDerivOn.indicator_of_isCompact (h : HasWeakLineDerivOn mu Ome
     (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → u x = 0)
     (hu' : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → u' x = 0) :
     HasWeakLineDerivOn mu ⊤ ((Omega : Set E).indicator u) ((Omega : Set E).indicator u') v := by
-  have _ := h.completeSpace
-  obtain ⟨chi, hchi, -, hchi_one_nhds, hchi_cpt, hchi_tsupport⟩ :=
-    hK.exists_contDiff_cutoff Omega.isOpen hKO
-  -- the cutoff is constant near `K`, so it is one there and its derivative vanishes there
-  have hchi_nhds : ∀ x ∈ K, chi =ᶠ[nhds x] (fun _ => 1 : E → ℝ) := by
-    intro x hx
-    filter_upwards [isOpen_interior.mem_nhds (hchi_one_nhds hx)] with y hy
-    have hy' : y ∈ chi ⁻¹' ({1} : Set ℝ) := interior_subset hy
-    exact hy'
-  have hchi_one : ∀ x ∈ K, chi x = 1 := fun x hx => (hchi_nhds x hx).self_of_nhds
-  have hchi_fderiv_K : ∀ x ∈ K, fderiv ℝ chi x = 0 := fun x hx => by
-    rw [(hchi_nhds x hx).fderiv_eq]
-    simp
-  have hchi_zero : ∀ x ∉ (Omega : Set E), chi x = 0 := fun x hx =>
-    image_eq_zero_of_notMem_tsupport fun hx' => hx (hchi_tsupport hx')
-  have hchi_fderiv_zero : ∀ x ∉ (Omega : Set E), fderiv ℝ chi x = 0 := fun x hx =>
-    fderiv_of_notMem_tsupport ℝ fun hx' => hx (hchi_tsupport hx')
-  have huO := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hu
-  have hu'O := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hu'
-  have hOmega : NullMeasurableSet (Omega : Set E) mu :=
-    Omega.isOpen.measurableSet.nullMeasurableSet
-  have hKnull : NullMeasurableSet K mu := hK.measurableSet.nullMeasurableSet
-  rw [hasWeakLineDerivOn_iff_testFunction]
-  refine ⟨‹CompleteSpace F›,
-    (h.locallyIntegrableOn.integrable_indicator_of_isCompact hOmega hK hKnull hKO hu)
-      |>.locallyIntegrable
-      |>.locallyIntegrableOn _,
-    (h.locallyIntegrableOn_deriv.integrable_indicator_of_isCompact hOmega hK hKnull hKO hu')
-      |>.locallyIntegrable
-      |>.locallyIntegrableOn _, fun phi => ?_⟩
-  -- `χ φ` is a test function on `Ω`
-  obtain ⟨Phi, hPhi⟩ : ∃ Phi : 𝓓(Omega, ℝ), (Phi : E → ℝ) = chi * (phi : E → ℝ) :=
-    ⟨⟨chi * (phi : E → ℝ), hchi.mul phi.contDiff, hchi_cpt.mul_right,
-      tsupport_mul_subset_left.trans hchi_tsupport⟩, rfl⟩
-  -- the classical product rule for the two smooth factors
-  have hline : ∀ x, lineDeriv ℝ (Phi : E → ℝ) x v
-      = chi x * lineDeriv ℝ (phi : E → ℝ) x v + fderiv ℝ chi x v * (phi : E → ℝ) x := by
-    intro x
-    have hdchi : DifferentiableAt ℝ chi x := (hchi.differentiable (by simp)) x
-    have hdphi : DifferentiableAt ℝ (phi : E → ℝ) x := (phi.contDiff.differentiable (by simp)) x
-    rw [hPhi, (hdchi.mul hdphi).lineDeriv_eq_fderiv, hdphi.lineDeriv_eq_fderiv,
-      fderiv_mul hdchi hdphi]
-    simp only [add_apply, smul_apply, smul_eq_mul]
-    ring
-  have hleft : ∫ x, lineDeriv ℝ (phi : E → ℝ) x v • (Omega : Set E).indicator u x ∂mu
-      = ∫ x, lineDeriv ℝ (Phi : E → ℝ) x v • u x ∂mu := by
-    refine integral_congr_ae ?_
-    filter_upwards [huO] with x hx
-    rw [hline x]
-    by_cases hxO : x ∈ (Omega : Set E)
-    · by_cases hxK : x ∈ K
-      · rw [indicator_of_mem hxO, hchi_one x hxK, hchi_fderiv_K x hxK]
-        simp
-      · rw [indicator_of_mem hxO, hx hxO hxK]
-        simp
-    · rw [indicator_of_notMem hxO, hchi_zero x hxO, hchi_fderiv_zero x hxO]
-      simp
-  have hright : ∫ x, (phi : E → ℝ) x • (Omega : Set E).indicator u' x ∂mu
-      = ∫ x, (Phi : E → ℝ) x • u' x ∂mu := by
-    refine integral_congr_ae ?_
-    filter_upwards [hu'O] with x hx
-    rw [hPhi]
-    simp only [Pi.mul_apply]
-    by_cases hxO : x ∈ (Omega : Set E)
-    · by_cases hxK : x ∈ K
-      · rw [indicator_of_mem hxO, hchi_one x hxK]
-        simp
-      · rw [indicator_of_mem hxO, hx hxO hxK]
-        simp
-    · rw [indicator_of_notMem hxO, hchi_zero x hxO]
-      simp
-  rw [hleft, hright]
-  exact h.integral_lineDeriv_smul_eq_neg_integral_smul Phi
+  exact h.indicator_of_isClosed hK.isClosed (fun _ hx => hKO hx.2) hu hu'
 
 /-- **Extension by zero of a compactly supported weak Fréchet derivative.**  The Fréchet form of
 `TauCeti.HasWeakLineDerivOn.indicator_of_isCompact`: a weakly differentiable function whose jet
@@ -150,16 +160,6 @@ theorem HasWeakFDerivOn.indicator_of_isCompact {U : E → E →L[ℝ] F}
     (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → u x = 0)
     (hU : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → U x = 0) :
     HasWeakFDerivOn mu ⊤ ((Omega : Set E).indicator u) ((Omega : Set E).indicator U) := by
-  rw [hasWeakFDerivOn_iff]
-  intro v
-  have hUv : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → U x v = 0 := by
-    filter_upwards [hU] with x hx hxK
-    rw [hx hxK]
-    rfl
-  refine ((h.hasWeakLineDerivOn v).indicator_of_isCompact hK hKO hu hUv).congr_ae_deriv
-    (Filter.Eventually.of_forall fun x => ?_)
-  by_cases hxO : x ∈ (Omega : Set E)
-  · simp [indicator_of_mem hxO]
-  · simp [indicator_of_notMem hxO]
+  exact h.indicator_of_isClosed hK.isClosed (fun _ hx => hKO hx.2) hu hU
 
 end TauCeti
