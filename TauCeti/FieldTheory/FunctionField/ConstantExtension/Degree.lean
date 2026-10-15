@@ -95,7 +95,7 @@ private theorem span_range_basis_of_finite_constantCompositum
     simpa only [A, IntermediateField.top_toSubalgebra] using
       congrArg IntermediateField.toSubalgebra htop
   rw [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic halg] at htop'
-  exact span_range_basis_eq_top_of_adjoin_eq_top C b htop'
+  exact C.span_range_basis_eq_top_of_adjoin_eq_top b htop'
 
 /-- **Extending constants can only lower a finite degree over `k(x)`**: if `F' = F · k'`
 and `F / k(x)` is finite, then `[F' : k'(x)] ≤ [F : k(x)]`. The extension `k' / k` may be
