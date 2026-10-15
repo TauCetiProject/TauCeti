@@ -106,7 +106,10 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   let F : B ⟶ C := ofModuleMonoidAlgebra.map (ModuleCat.ofHom β)
   have hF : ∀ x, χ (f.toAdditive x) = F.hom (ψ x) := by
     intro x
-    dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv, Rep.ofHom]
+    dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv,
+      MulEquiv.toAdditive]
+    simp only [AddEquiv.trans_apply, AddEquiv.refl_symm, AddEquiv.refl_apply,
+      MulDistribMulActionHom.toAdditive_apply, Rep.hom_ofHom, ModuleCat.hom_ofHom]
     change ofMul (eR.symm (f x.toMul)) = β (eL x)
     rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
@@ -175,7 +178,10 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
   let F : B ⟶ C := ofModuleMonoidAlgebra.map (ModuleCat.ofHom β)
   have hF : ∀ x, χ (f.toAdditive x) = F.hom (ψ x) := by
     intro x
-    dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv, Rep.ofHom]
+    dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv,
+      MulEquiv.toAdditive]
+    simp only [AddEquiv.trans_apply, AddEquiv.refl_symm, AddEquiv.refl_apply,
+      MulDistribMulActionHom.toAdditive_apply, Rep.hom_ofHom, ModuleCat.hom_ofHom]
     change ofMul (eR.symm (f x.toMul)) = β (eL x)
     rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
