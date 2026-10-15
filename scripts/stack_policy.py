@@ -129,6 +129,8 @@ class API:
                 "variables": {"number": int(number)},
             })
             if data.get("errors"):
+                if any(e.get("type") == "RATE_LIMITED" for e in data["errors"]):
+                    raise BudgetGap("GraphQL API rate limit refused; sweep stopped")
                 raise Gap("live branch metadata unavailable")
             ref = data["data"]["repository"]["pullRequest"]["headRef"]
             if not ref or ref["target"]["oid"] != p.head:
@@ -174,6 +176,32 @@ class PR:
                                                                   p.get("title") or "", re.I)),
                    int((p.get("user") or {}).get("id") or 0)
                    if (p.get("user") or {}).get("login") != "ghost" else 0)
+
+
+def event_targets(event, prs):
+    """Focus events; reserve full source sweeps for schedules/manual dispatches."""
+    if event.get("pull_request"):
+        return {int(event["pull_request"]["number"])}
+    wake = event.get("workflow_run")
+    if not wake:
+        return None
+    head = oid(wake.get("head_sha"))
+    associated = set()
+    for linked in wake.get("pull_requests") or []:
+        base = (linked.get("base") or {}).get("repo") or {}
+        if ((base.get("full_name") == REPO or base.get("url") == f"https://api.github.com/repos/{REPO}")
+                and (linked.get("head") or {}).get("sha") == head):
+            associated.add(int(linked["number"]))
+    # Wake completions can arrive out of push order and replace a newer pending
+    # wake. Recompute the current branch's PRs, rather than declining its changed
+    # head. This stays focused and never fetches a fork URL.
+    repo = (wake.get("head_repository") or {}).get("full_name")
+    branch = wake.get("head_branch")
+    matched = {p.number for p in prs if p.base != "main"
+               and p.head_repo == repo and p.branch == branch}
+    if associated or matched:
+        return associated | matched
+    raise Gap("wake has no associated PR/current canonical PR identity match")
 
 
 def explicit_parents(body):
@@ -486,17 +514,26 @@ class Detector:
                     reasons.append(f"#{number}: descendant of this child, not a parent")
                     continue
                 shared = sorted(commits & parent_commits)
-                relationship = (number in explicit or (parent.head_repo == REPO and child.base == parent.branch))
+                canonical_base = (parent.state == "open" and parent.head_repo == REPO
+                                  and child.base == parent.branch)
+                relationship = number in explicit or canonical_base
                 if not shared and not relationship:
                     continue
-                graph_direction = parent.head in commits or (parent.head_repo == REPO and child.base == parent.branch)
+                graph_direction = parent.head in commits or canonical_base
                 if not relationship:
                     if not graph_direction:
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
+                # A stale PR-number reference does not bind a future parent head.
+                # A different principal can copy this child's prefix into that PR.
+                # Only a current canonical base choice bypasses provenance guards.
+                provenance_gap = None
+                if not canonical_base:
                     if parent.head_repo != child.head_repo:
-                        raise Gap("cross-repository ancestry without a child-declared parent; possible copied prefix")
-                    if not child.author_id or parent.author_id != child.author_id:
-                        raise Gap("ancestry-only parent has unknown/different author; possible third-party branch PR")
+                        provenance_gap = "cross-repository parent provenance unproved; possible copied prefix"
+                    elif not child.author_id or parent.author_id != child.author_id:
+                        provenance_gap = "parent has unknown/different author; possible third-party branch PR"
+                if not relationship and provenance_gap:
+                    raise Gap(provenance_gap)
                 base, paths, patch = self.source.patch(parent)
                 if not patch:
                     reasons.append(f"#{number}: empty parent delta")
@@ -535,6 +572,8 @@ class Detector:
                             kind = ("ancestor-head" if commit == parent.head and commit in commits
                                     else "shared-unmerged-commit" if commit in commits
                                     else "explicit-parent-content")
+                        if provenance_gap:
+                            raise Gap(provenance_gap)
                         return Evidence(number, parent.head, child.head, self.source.main,
                                         kind, commit, hashlib.sha256(delta).hexdigest(), cb), reasons
                 if len(ordered) > MAX_EVIDENCE_COMMITS:
@@ -676,19 +715,9 @@ def main():
         # Never accept an API/PR-supplied report path.
         sys.stdout = args.report.open("w")
     api = API()
-    priority = set()
-    if args.github_event and not args.pr:
-        event = json.loads(args.github_event.read_text())
-        if event.get("pull_request"):
-            priority.add(int(event["pull_request"]["number"]))
-        wake = event.get("workflow_run")
-        if wake:
-            associated = wake.get("pull_requests") or []
-            numbers = {int(p["number"]) for p in associated}
-            priority.update(numbers)
-            emit(wake="bounded backlog sweep", associated_prs=sorted(numbers))
+    event = json.loads(args.github_event.read_text()) if args.github_event else {}
     prs = []
-    metadata_gaps = 0
+    metadata_gaps = set()
     incomplete_index = False
     for raw in api.pages("pulls?state=open&sort=created&direction=asc", MAX_PRS):
         try:
@@ -696,11 +725,18 @@ def main():
         except (Gap, KeyError, ValueError) as error:
             number = raw.get("number")
             emit(index_pr=number, classification="unknown", gap=str(error))
-            metadata_gaps += int(not args.pr or args.pr == number)
+            metadata_gaps.add(number)
             incomplete_index = True
     main_sha = api.main()
-    selected = [p for p in prs if not args.pr or p.number == args.pr]
-    selected.sort(key=lambda p: (p.number in priority, p.number), reverse=True)
+    targets = {args.pr} if args.pr else event_targets(event, prs)
+    selected = [p for p in prs if targets is None or p.number in targets]
+    if targets is not None and not selected:
+        if incomplete_index:
+            raise Gap("requested/event PR metadata unavailable in the bounded index")
+        emit(classification="superseded", reason="target absent from complete open index", selected=0)
+        return False
+    selected.sort(key=lambda p: p.number, reverse=True)
+    emit(scope="backlog" if targets is None else "focused", selected=[p.number for p in selected])
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
     # can still contain unlanded prerequisite work. Never assume closure = landing.
     indexed = {p.number for p in prs}
@@ -720,7 +756,7 @@ def main():
     if args.apply and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?", actor):
         raise Gap("STACK_ACTOR is required to authenticate idempotency comments")
     common = run(["git", "rev-parse", "--git-common-dir"]).stdout.decode().strip()
-    failures, unknowns = 0, metadata_gaps
+    failures, unknowns = 0, len(metadata_gaps if targets is None else targets & metadata_gaps)
     with tempfile.TemporaryDirectory(prefix="no-stack-") as directory:
         source = Source(directory, api, main_sha, Path(common) / "objects")
         source.fetch(prs)
