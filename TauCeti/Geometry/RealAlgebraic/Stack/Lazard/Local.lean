@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
-import Mathlib.Topology.LocallyConstant.Basic
 import TauCeti.Analysis.Polynomial.RealRoots.Common
 
 /-!
