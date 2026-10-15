@@ -110,7 +110,7 @@ restriction of cochains: both send a cycle to its value, a `G`-invariant element
 private theorem cyclesMap_cochainsExtToTate_zero_comp_inclusion (M : Rep R G) (H : Subgroup G) :
     HomologicalComplex.cyclesMap ((cochainsExtToTate R G).app M) 0 ≫
         (H0CyclesIso M).hom ≫ ModuleCat.ofHom (Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) =
+          (M.ρ.invariants_le_invariants_comp H.subtype)) =
       HomologicalComplex.cyclesMap ((cochainsExtToTateRes H).app M) 0 ≫
         (H0CyclesIso (Rep.res H.subtype M)).hom := by
   have : Mono (ModuleCat.ofHom (Rep.res H.subtype M).ρ.invariants.subtype) :=
