@@ -100,35 +100,55 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]
   [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-/-- For finite measures on a finite product with strictly positive reference masses,
-KL divergence is matrix entropy plus Mathlib's finite-measure mass correction.
-The plan is encoded by its singleton masses; no separate nonnegativity assumption on
-`P` is needed. -/
+/-- For finite measures on a finite product, KL divergence is matrix entropy plus Mathlib's
+finite-measure mass correction when the first measure vanishes at every zero of the reference.
+The measures are encoded by their singleton masses; no separate nonnegativity assumption on
+`P` or `K` is needed. -/
 theorem klDiv_eq_ofReal_relEntropy_add_mass_correction_of_real_singleton
     (π R : Measure (ι × κ)) [IsFiniteMeasure π] [IsFiniteMeasure R]
     (P K : Matrix ι κ ℝ)
     (hπ : ∀ i j, π.real {(i, j)} = P i j)
     (hR : ∀ i j, R.real {(i, j)} = K i j)
-    (hK : ∀ i j, 0 < K i j) :
+    (hPK : ∀ i j, K i j = 0 → P i j = 0) :
     klDiv π R = ENNReal.ofReal
       (Matrix.relEntropy P K + R.real Set.univ - π.real Set.univ) := by
-  have hRpos : ∀ q : ι × κ, R {q} ≠ 0 := by
-    rintro ⟨i, j⟩ hzero
-    have h := hK i j
-    rw [← hR i j] at h
-    simp [Measure.real, hzero] at h
-  rw [TauCeti.klDiv_eq_ofReal_sum_log_singleton hRpos]
+  have hac : π ≪ R := by
+    refine Measure.AbsolutelyContinuous.mk fun s _ hs ↦ ?_
+    rw [← Set.Finite.coe_toFinset (Set.toFinite s), ← sum_measure_singleton]
+    apply Finset.sum_eq_zero
+    intro q hq
+    have hRq : R {q} = 0 :=
+      measure_mono_null (Set.singleton_subset_iff.mpr ((Set.toFinite s).mem_toFinset.mp hq)) hs
+    have hKq : K q.1 q.2 = 0 := by
+      rw [← hR q.1 q.2, Measure.real, hRq]
+      simp
+    have hPq := hPK q.1 q.2 hKq
+    rw [← hπ q.1 q.2, Measure.real] at hPq
+    exact ((ENNReal.toReal_eq_zero_iff _).mp hPq).resolve_right (measure_ne_top _ _)
+  rw [klDiv_of_ac_of_integrable hac Integrable.of_finite,
+    integral_fintype (f := llr π R) (μ := π) (Integrable.of_finite)]
   have hsum :
-      (∑ q : ι × κ, π.real {q} * Real.log (π.real {q} / R.real {q})) =
+      (∑ q : ι × κ, π.real {q} • llr π R q) =
         Matrix.relEntropy P K := by
     rw [Matrix.relEntropy_def, Fintype.sum_prod_type]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hπ i j, hR i j]
-    by_cases hP : P i j = 0
-    · simp [hP]
-    · rw [Real.log_div hP (ne_of_gt (hK i j))]
-      ring
+    by_cases hK : K i j = 0
+    · simp [hπ i j, hPK i j hK]
+    · have hRne : R {(i, j)} ≠ 0 := by
+        intro hzero
+        apply hK
+        rw [← hR i j, Measure.real, hzero]
+        simp
+      simp only [smul_eq_mul, llr]
+      rw [Measure.rnDeriv_eq_measure_singleton_div hRne (measure_ne_top R _),
+        ENNReal.toReal_div]
+      change π.real {(i, j)} * Real.log (π.real {(i, j)} / R.real {(i, j)}) = _
+      rw [hπ i j, hR i j]
+      by_cases hP : P i j = 0
+      · simp [hP]
+      · rw [Real.log_div hP hK]
+        ring
   rw [hsum]
 
 end MeasureTheory.Measure

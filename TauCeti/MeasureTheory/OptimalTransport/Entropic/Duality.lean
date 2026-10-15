@@ -115,6 +115,32 @@ theorem entropicGibbsFactor_of_ne_top {z : X × Y} (hz : c z ≠ ∞) :
     entropicGibbsFactor c ε φ ψ z = Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
   Set.indicator_of_mem hz _
 
+end TauCeti
+
+namespace Matrix
+
+variable {X Y : Type*}
+
+/-- On a real-valued matrix cost, the generic Gibbs factor splits into its row potential, Gibbs
+kernel, and column potential factors. -/
+@[simp]
+theorem entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp (C : Matrix X Y ℝ) (ε : ℝ≥0)
+    (φ : X → ℝ) (ψ : Y → ℝ) (i : X) (j : Y) (hC : 0 ≤ C i j) :
+    TauCeti.entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) =
+      Real.exp (φ i / ε) * Real.exp (-C i j / ε) * Real.exp (ψ j / ε) := by
+  rw [TauCeti.entropicGibbsFactor_of_ne_top ENNReal.ofReal_ne_top,
+    ENNReal.toReal_ofReal hC, ← Real.exp_add, ← Real.exp_add]
+  congr 1
+  ring
+
+end Matrix
+
+namespace TauCeti
+
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+  {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} {π : Measure (X × Y)} {μ : Measure X} {ν : Measure Y}
+  {φ φ' : X → ℝ} {ψ ψ' : Y → ℝ}
+
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- Where the cost is infinite, the Gibbs factor vanishes. -/
 @[simp]

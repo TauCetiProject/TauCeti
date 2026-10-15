@@ -24,16 +24,14 @@ row scaling, the finite Gibbs kernel, and the column scaling. Consequently the g
 dual value is the temperature times `Matrix.relEntropyDual` after rescaling the potentials by the
 temperature.
 
-The strict positivity assumption on the marginals in the primal bridge is precisely what makes
-the product reference charge every atom, as required by the finite KL-divergence formula.
-
 ## Main results
 
 * `TauCeti.TransportMatrix.ofReal_entropicTransportObjective_eq`: the matrix primal objective is
   the real representative of the measure-theoretic primal objective.
+* `Matrix.ofReal_entropicTransportValue_eq`: the finite and measure-theoretic primal values agree.
 * `Matrix.isDiagonalScaling_gibbs_iff`: finite diagonal scaling is exactly the generic Gibbs
   density formula.
-* `TauCeti.entropicDualValue_eq_mul_relEntropyDual`: the generic and finite dual objectives agree.
+* `Matrix.entropicDualValue_eq_mul_relEntropyDual`: the generic and finite dual objectives agree.
 -/
 
 public section
@@ -49,29 +47,38 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]
   [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-omit [Fintype ι] [Fintype κ] [MeasurableSpace ι] [MeasurableSingletonClass ι]
-  [MeasurableSpace κ] [MeasurableSingletonClass κ] in
-/-- On a real-valued matrix cost, the generic Gibbs factor splits into its row potential, Gibbs
-kernel, and column potential factors. -/
-theorem entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp (C : Matrix ι κ ℝ) (ε : ℝ≥0)
-    (φ : ι → ℝ) (ψ : κ → ℝ) (i : ι) (j : κ) (hC : 0 ≤ C i j) :
-    entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) =
-      Real.exp (φ i / ε) * Real.exp (-C i j / ε) * Real.exp (ψ j / ε) := by
-  rw [entropicGibbsFactor_of_ne_top ENNReal.ofReal_ne_top,
-    ENNReal.toReal_ofReal hC, ← Real.exp_add, ← Real.exp_add]
-  congr 1
-  ring
+end TauCeti
+
+namespace PMF
+
+variable {ι κ : Type*}
+  [MeasurableSpace ι] [MeasurableSingletonClass ι]
+  [MeasurableSpace κ] [MeasurableSingletonClass κ]
+
+/-- The real mass of a singleton under the product of two PMF measures is the product of their
+point masses. -/
+private theorem real_prod_toMeasure_singleton (μ : PMF ι) (ν : PMF κ) (i : ι) (j : κ) :
+    (μ.toMeasure.prod ν.toMeasure).real {(i, j)} = (μ i).toReal * (ν j).toReal := by
+  rw [← Set.singleton_prod_singleton, measureReal_prod_prod, Measure.real,
+    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _), Measure.real,
+    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
+
+end PMF
+
+namespace TauCeti
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+  [MeasurableSpace ι] [MeasurableSingletonClass ι]
+  [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
 namespace TransportMatrix
 
 variable {μ : PMF ι} {ν : PMF κ}
 
 /-- The finite matrix objective is the real representative of the measure-theoretic entropic
-objective of the associated coupling. The marginals are assumed positive so that their product
-charges every atom. -/
+objective of the associated coupling. -/
 theorem ofReal_entropicTransportObjective_eq (A : TransportMatrix μ ν) (C : Matrix ι κ ℝ)
-    (ε : ℝ≥0) (hC : ∀ i j, 0 ≤ C i j) (hμ : ∀ i, 0 < (μ i).toReal)
-    (hν : ∀ j, 0 < (ν j).toReal) :
+    (ε : ℝ≥0) (hC : ∀ i j, 0 ≤ C i j) :
     ENNReal.ofReal
         (C.entropicTransportObjective ε (fun i ↦ (μ i).toReal) (fun j ↦ (ν j).toReal)
           (Matrix.of fun i j ↦ A.toRealFun (i, j))) =
@@ -83,11 +90,8 @@ theorem ofReal_entropicTransportObjective_eq (A : TransportMatrix μ ν) (C : Ma
     rw [toPMF_apply, toRealFun_apply]
   have hR (i : ι) (j : κ) :
       (μ.toMeasure.prod ν.toMeasure).real {(i, j)} =
-        (μ i).toReal * (ν j).toReal := by
-    rw [show ({(i, j)} : Set (ι × κ)) = {i} ×ˢ {j} by simp,
-      measureReal_prod_prod, Measure.real,
-      PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _), Measure.real,
-      PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
+        (μ i).toReal * (ν j).toReal :=
+    μ.real_prod_toMeasure_singleton ν i j
   have hkl :
       klDiv A.toPMF.toMeasure (μ.toMeasure.prod ν.toMeasure) =
         ENNReal.ofReal (Matrix.relEntropy
@@ -97,7 +101,13 @@ theorem ofReal_entropicTransportObjective_eq (A : TransportMatrix μ ν) (C : Ma
       A.toPMF.toMeasure (μ.toMeasure.prod ν.toMeasure)
       (Matrix.of fun i j ↦ A.toRealFun (i, j))
       (Matrix.vecMulVec (fun i ↦ (μ i).toReal) fun j ↦ (ν j).toReal)
-      hπ hR (fun i j ↦ mul_pos (hμ i) (hν j))]
+      hπ hR (fun i j h ↦ by
+        simp only [Matrix.vecMulVec_apply, mul_eq_zero] at h
+        rcases h with h | h
+        · exact le_antisymm (h ▸ le_toReal_fst_of_mem_realPlans
+            A.toRealFun_mem_realPlans (i, j)) (A.toRealFun_nonneg (i, j))
+        · exact le_antisymm (h ▸ le_toReal_snd_of_mem_realPlans
+            A.toRealFun_mem_realPlans (i, j)) (A.toRealFun_nonneg (i, j)))]
     simp
   have hcost_nonneg :
       0 ≤ ∑ i, ∑ j, C i j * A.toRealFun (i, j) :=
@@ -132,7 +142,55 @@ namespace Matrix
 
 variable {ι κ : Type*}
 
-/-- A finite matrix is a diagonal scaling of the product-weighted Gibbs kernel exactly when its
+section Finite
+
+variable [Fintype ι] [Fintype κ]
+  [MeasurableSpace ι] [MeasurableSingletonClass ι]
+  [MeasurableSpace κ] [MeasurableSingletonClass κ]
+
+/-- The finite matrix entropic transport value is the real representative of the generic
+measure-theoretic entropic transport cost. -/
+theorem ofReal_entropicTransportValue_eq (C : Matrix ι κ ℝ) (ε : ℝ≥0)
+    (μ : PMF ι) (ν : PMF κ) (hC : ∀ i j, 0 ≤ C i j) :
+    ENNReal.ofReal (C.entropicTransportValue ε (fun i ↦ (μ i).toReal)
+      (fun j ↦ (ν j).toReal)) =
+      TauCeti.entropicTransportCost (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε
+        μ.toMeasure ν.toMeasure := by
+  let A₀ := TauCeti.TransportMatrix.independent μ ν
+  have hA₀ : Matrix.of (fun i j ↦ A₀.toRealFun (i, j)) ∈
+      transportPolytope (fun i ↦ (μ i).toReal) (fun j ↦ (ν j).toReal) := by
+    rw [mem_transportPolytope, hasMarginals_def]
+    exact ⟨fun i j ↦ A₀.toRealFun_mem_realPlans.1 (i, j),
+      A₀.toRealFun_mem_realPlans.2⟩
+  obtain ⟨P, hP, hPmin⟩ := exists_isMinOn_entropicTransportObjective
+    (a := fun i ↦ (μ i).toReal) (b := fun j ↦ (ν j).toReal) C ε
+    ⟨Matrix.of fun i j ↦ A₀.toRealFun (i, j), hA₀⟩
+  have hPdata := (mem_transportPolytope (P := P)
+    (a := fun i ↦ (μ i).toReal) (b := fun j ↦ (ν j).toReal)).mp hP
+  have hP' : (fun q ↦ P q.1 q.2) ∈ TauCeti.RealPlans μ ν := by
+    exact ⟨fun q ↦ hPdata.1 q.1 q.2, (hasMarginals_def _ _ _).1 hPdata.2⟩
+  let A := TauCeti.TransportMatrix.ofRealFun hP'
+  have hA : Matrix.of (fun i j ↦ A.toRealFun (i, j)) = P := by
+    ext i j
+    simpa [A] using congrFun (TauCeti.TransportMatrix.toRealFun_ofRealFun hP') (i, j)
+  rw [entropicTransportValue_eq_of_isMinOn hP hPmin]
+  rw [← hA, TauCeti.TransportMatrix.ofReal_entropicTransportObjective_eq A C ε hC]
+  apply le_antisymm
+  · exact TauCeti.le_entropicTransportCost fun π hπ ↦ by
+      obtain ⟨B, rfl⟩ := hπ.exists_transportMatrix
+      rw [← TauCeti.TransportMatrix.ofReal_entropicTransportObjective_eq A C ε hC,
+        ← TauCeti.TransportMatrix.ofReal_entropicTransportObjective_eq B C ε hC]
+      apply ENNReal.ofReal_le_ofReal
+      rw [hA]
+      apply isMinOn_iff.1 hPmin
+      rw [mem_transportPolytope, hasMarginals_def]
+      exact ⟨fun i j ↦ B.toRealFun_mem_realPlans.1 (i, j),
+        B.toRealFun_mem_realPlans.2⟩
+  · exact TauCeti.entropicTransportCost_le A.isCoupling_toPMF_toMeasure _ _
+
+end Finite
+
+/-- A matrix is a diagonal scaling of the product-weighted Gibbs kernel exactly when its
 entries are the product reference masses multiplied by the generic Gibbs factor. -/
 theorem isDiagonalScaling_gibbs_iff (P C : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
     (ε : ℝ≥0) (φ : ι → ℝ) (ψ : κ → ℝ) (hC : ∀ i j, 0 ≤ C i j) :
@@ -144,15 +202,15 @@ theorem isDiagonalScaling_gibbs_iff (P C : Matrix ι κ ℝ) (a : ι → ℝ) (b
   rw [isDiagonalScaling_def]
   constructor <;> intro h i j
   · rw [h i j, of_apply,
-      TauCeti.entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
+      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
     ring
   · rw [h i j, of_apply,
-      TauCeti.entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
+      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
     ring
 
 end Matrix
 
-namespace TauCeti
+namespace Matrix
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]
@@ -163,17 +221,15 @@ the matrix relative-entropy dual objective for the product-weighted Gibbs kernel
 theorem entropicDualValue_eq_mul_relEntropyDual (C : Matrix ι κ ℝ) (ε : ℝ≥0)
     (μ : PMF ι) (ν : PMF κ) (φ : ι → ℝ) (ψ : κ → ℝ) (hε : ε ≠ 0)
     (hC : ∀ i j, 0 ≤ C i j) :
-    entropicDualValue (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε μ.toMeasure ν.toMeasure φ ψ =
+    TauCeti.entropicDualValue (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε
+      μ.toMeasure ν.toMeasure φ ψ =
       ε * (Matrix.of fun i j ↦ (μ i).toReal * (ν j).toReal * Real.exp (-C i j / ε)).relEntropyDual
         (fun i ↦ (μ i).toReal) (fun j ↦ (ν j).toReal)
         (fun i ↦ φ i / ε) (fun j ↦ ψ j / ε) := by
   have hprod (i : ι) (j : κ) :
       (μ.toMeasure.prod ν.toMeasure).real {(i, j)} =
-        (μ i).toReal * (ν j).toReal := by
-    rw [show ({(i, j)} : Set (ι × κ)) = {i} ×ˢ {j} by simp,
-      measureReal_prod_prod, Measure.real,
-      PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _), Measure.real,
-      PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
+        (μ i).toReal * (ν j).toReal :=
+    μ.real_prod_toMeasure_singleton ν i j
   have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
   have hmass : ∑ i, ∑ j, (μ i).toReal * (ν j).toReal = 1 := by
     simp_rw [← Finset.mul_sum]
@@ -209,13 +265,13 @@ theorem entropicDualValue_eq_mul_relEntropyDual (C : Matrix ι κ ℝ) (ε : ℝ
     apply Finset.sum_congr rfl
     intro j hj
     field_simp
-  rw [entropicDualValue_def, ← finiteDualValue_eq_kantorovichDualValue,
+  rw [TauCeti.entropicDualValue_def, ← TauCeti.finiteDualValue_eq_kantorovichDualValue,
     MeasureTheory.integral_fintype Integrable.of_finite, Matrix.relEntropyDual_def,
     Fintype.sum_prod_type]
   simp_rw [hprod,
     entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ _ _ (hC _ _)]
-  simp only [finiteDualValue_def, Matrix.of_apply, smul_eq_mul, PMF.sum_toReal_eq_one]
+  simp only [TauCeti.finiteDualValue_def, Matrix.of_apply, smul_eq_mul, PMF.sum_toReal_eq_one]
   rw [hpenalty]
   linear_combination -hφ - hψ
 
-end TauCeti
+end Matrix
