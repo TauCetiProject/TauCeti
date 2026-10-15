@@ -18,10 +18,11 @@ closed field of characteristic zero, let `H` be a splitting Cartan subalgebra, l
 its root system, and let `M` be an `L`-module carrying a highest weight vector of weight `lam`.
 This file describes the weights of `M` in two ways.
 
-If `M` is irreducible and `lam` is dominant integral, `M` has only **finitely many** weights. `M`
-is not assumed finite-dimensional, and that is the whole point: for the modules `L(lam)` of
-Layer 4 of the highest weight roadmap, finite-dimensionality is the conclusion. Together with
-finite-dimensionality of the individual weight spaces it is what makes `L(lam)` finite-dimensional.
+If `M` is irreducible and `lam` is dominant integral, `M` has only **finitely many** weights. `M` is
+not assumed finite-dimensional, and that is the whole point: for such a module finite-dimensionality
+is the conclusion. Together with finite-dimensionality of the individual weight spaces it is what
+makes such a module finite-dimensional
+(`TauCeti.finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral`).
 
 If instead `M` is finite-dimensional, every weight of `M` has a **dominant integral Weyl
 conjugate** which is again a weight of `M`. That is the form in which a weight of `M` is compared
@@ -64,10 +65,6 @@ dominance of `lam`: the weights of such a module are Weyl stable
 (`TauCeti.isIntegralWeight_of_formalCharacter_coeff_ne_zero`).
 
 ## References
-
-This is the "weight-cone bound" milestone of Layer 4, "the classification of finite-dimensional
-irreducibles", of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, together with
-the dominant-conjugate step that Layer 7's "Freudenthal's multiplicity formula" needs.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2, and
   §13.2 for the dominant conjugate.

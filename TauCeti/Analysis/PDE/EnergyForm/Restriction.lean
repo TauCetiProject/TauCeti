@@ -27,9 +27,17 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
-* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak supersolution,
-  shifted by a constant, is a weak supersolution.
+* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
+  `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
+  or supersolution with no mass term, shifted by a constant, is again one.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
+* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`: if `u` solves `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G`
+  weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
+  essentially bounded it satisfies `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)` and
+  every constant `c` with `G - c ∈ L²(B)`, since constants have zero divergence. This is the
+  hypothesis of the energy estimate for the replacement on a ball.
+* `TauCeti.PDE.inner_toLp_gradient_ofTestFunctionₗ`: the test-function case,
+  `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`.
 -/
 
 public section
@@ -126,22 +134,34 @@ theorem energyFormH1_restrictL_nonneg {a : EuclideanSpace ℝ ι → Matrix ι �
   rw [map_smul, energyFormH1_smul_left] at hneg
   linarith
 
-/-- **Shifted weak supersolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≥ 0` for every nonnegative
-`v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` of finite measure and every constant `δ`, the shifted
-restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≥ 0` for every nonnegative
-`v ∈ H¹₀(U)`: adding a constant does not change the gradient, and the form has no lower-order
-terms. -/
-theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (hU : U ≤ Omega) [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
+/-- **Shifted weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0` for every nonnegative
+`v ∈ H¹₀(Ω)`, for an energy form with no mass term, then for every open `U ⊆ Ω` of finite measure
+and every constant `δ`, the shifted restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≤ 0`
+for every nonnegative `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_add_const_nonpos {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2))
+        energyFormH1 a b 0 u (v : W1p mu Omega 2) ≤ 0)
     (δ : ℝ) (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
-    0 ≤ energyFormH1 a 0 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
-  have heq : energyFormH1 a 0 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) =
-      energyFormH1 a 0 0 (W1p.restrictL hU u) (v : W1p mu U 2) := by
-    simp [energyFormH1_def, driftForm_apply, massForm_apply]
-  rw [heq]
+    energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) ≤ 0 := by
+  rw [energyFormH1_add_const_left]
+  exact energyFormH1_restrictL_nonpos hU hu v hv
+
+/-- **Shifted weak supersolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≥ 0` for every nonnegative
+`v ∈ H¹₀(Ω)`, for an energy form with no mass term, then for every open `U ⊆ Ω` of finite measure
+and every constant `δ`, the shifted restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≥ 0`
+for every nonnegative `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b 0 u (v : W1p mu Omega 2))
+    (δ : ℝ) (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    0 ≤ energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
+  rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
@@ -169,6 +189,92 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
         · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
     _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
         rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+
+section Transfer
+
+open InnerProductSpace
+open scoped Distributions Gradient InnerProductSpace
+
+/-- Subtracting a constant `c` from a square-integrable field `G` on `B` does not change its
+pairing with gradients of test functions on `B`. -/
+theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)}
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι}
+    (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B)) (φ : 𝓓(B, ℝ)) :
+    ⟪hGc.toLp, W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ)⟫_ℝ =
+      ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
+  -- The constant `c` integrates to zero against `∇φ`.
+  have hpt : ∀ x, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ = lineDeriv ℝ (φ : _ → ℝ) x c :=
+    fun x => by
+      rw [real_inner_comm, gradient, InnerProductSpace.toDual_symm_apply,
+        (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+  have hcint : IntegrableOn (fun x => ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
+    simpa [hpt] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
+      (locallyIntegrableOn_const (1 : ℝ) (μ := mu) (s := B)) φ c).integrableOn
+  have hc : ∫ x in B, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu = 0 := by
+    rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
+    simpa only [hpt] using TestFunction.integral_lineDeriv_eq_zero (μ := mu) φ c
+  have hGint : IntegrableOn (fun x => ⟪G x - c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
+    refine (L2.integrable_inner hGc.toLp
+      (gradientTestFunctionLp (mu := mu) (Omega := B) 2 φ)).congr ?_
+    filter_upwards [hGc.coeFn_toLp,
+      gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
+    rw [hx, hφx]
+  rw [L2.inner_def]
+  calc ∫ x in B, ⟪MemLp.toLp _ hGc x, W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ) x⟫_ℝ ∂mu
+      = ∫ x in B, (⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ -
+          ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [hGc.coeFn_toLp,
+          gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
+        rw [W1p.gradient_ofTestFunctionₗ, hx, hφx, inner_sub_left]
+    _ = ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
+        rw [integral_sub ((hGint.add hcint).congr (ae_of_all _ fun x => by simp)) hcint, hc,
+          sub_zero]
+
+/-- The weak equation `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G` on `Ω`, tested against test functions, holds on
+every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,
+provided `G - c` is square integrable on `B` and the coefficients are essentially bounded on `B`:
+constants have zero divergence. -/
+theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι)}
+    (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu)
+    {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
+    (v : W1p0 mu B 2) :
+    energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
+      ⟪hGc.toLp, W1p.gradient (v : W1p mu B 2)⟫_ℝ := by
+  set L : W1p mu B 2 →L[ℝ] ℝ :=
+    energyFormH1L ha (W1p.restrictL hB u) - (innerSL ℝ hGc.toLp).comp W1p.gradientL
+  have hL : ∀ w, L w = energyFormH1 a 0 0 (W1p.restrictL hB u) w -
+      ⟪hGc.toLp, W1p.gradient w⟫_ℝ := fun w => by
+    simp only [L, sub_apply, ContinuousLinearMap.comp_apply,
+      innerSL_apply_apply, W1p.gradientL_apply, energyFormH1L_apply, Pi.zero_def]
+  -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
+  suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
+    have := hzero v.2
+    simp only [mem_ofPred_eq, hL] at this
+    linarith
+  refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_
+  simp only [mem_ofPred_eq, hL, inner_toLp_gradient_ofTestFunctionₗ hGc φ, sub_eq_zero]
+  -- The zero extension of `φ` from `B` to `Ω` is `φ` regarded as a test function on `Ω`, so
+  -- `a(u|_B, φ) = a(u, φ) = ∫_Ω ⟪G, ∇φ⟫ = ∫_B ⟪G, ∇φ⟫`.
+  have hext : ((W1p0.extendByZeroL hB
+      (⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩ : W1p0 mu B 2) : W1p0 mu Omega 2) :
+      W1p mu Omega 2) = W1p.ofTestFunctionₗ mu Omega 2 (TestFunction.monoCLM ℝ φ) := by
+    apply Subtype.ext
+    rw [W1p0.coe_extendByZeroL]
+    exact Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ hB φ
+  have hφ := energyFormH1_restrictL a 0 0 hB u ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+  have hmono : ((TestFunction.monoCLM ℝ φ : 𝓓(Omega, ℝ)) : EuclideanSpace ℝ ι → ℝ) = φ := by
+    rw [TestFunction.monoCLM_apply]
+    simp [hB]
+  rw [hext, hu, hmono] at hφ
+  rw [hφ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient G (φ.tsupport_subset.trans hB),
+    φ.setIntegral_inner_gradient_eq_integral_inner_gradient G φ.tsupport_subset]
+
+end Transfer
 
 end PDE
 

@@ -53,11 +53,13 @@ a permutation-invariant mixing law (`separatelyExchangeable_iff_exists_coding`).
 ## Implementation
 
 The row process of the coded array is the coded sequence in path space, so its law is the
-de Finetti barycenter of the mixing law (`map_prod_unitIntervalCoding_eq_deFinettiBarycenter` at
-value space `ℕ → α`). Both array symmetries are therefore read off that barycenter: permuting the
+de Finetti barycenter of the mixing law
+(`Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter` at value space `ℕ → α`).
+Both array symmetries are therefore read off that barycenter: permuting the
 rows is exchangeability of the barycenter (`exchangeableLaw_deFinettiBarycenter`), and permuting
-the columns is a coordinatewise pushforward, which by naturality (`map_pi_deFinettiBarycenter`) is
-the barycenter of the pushed-forward mixing law. Only the second uses the hypothesis on `π`. The
+the columns is a coordinatewise pushforward, which by naturality
+(`Measure.map_pi_deFinettiBarycenter`) is the barycenter of the pushed-forward mixing law. Only the
+second uses the hypothesis on `π`. The
 transport from the row process back to the array is `map_uncurry_pathLaw_arrayRow`, along which
 every statement here is read.
 
@@ -98,8 +100,8 @@ private theorem map_prod_unitIntervalCoding_array
     (π : Measure (ProbabilityMeasure (ℕ → α))) :
     ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
         fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2)
-      = (deFinettiBarycenter π).map Function.uncurry := by
-  rw [← map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
+      = (Measure.deFinettiBarycenter π).map Function.uncurry := by
+  rw [← Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
     Measure.map_map measurable_uncurry (measurable_unitIntervalCodingPath (α := ℕ → α))]
   refine congrArg (Measure.map · _) ?_
   funext q ⟨i, j⟩
@@ -112,13 +114,13 @@ private theorem map_prod_unitIntervalCoding_array_pairReindex
     (π : Measure (ProbabilityMeasure (ℕ → α))) (σ τ : Equiv.Perm ℕ) :
     ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
         fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 (σ p.1)) (τ p.2))
-      = (((deFinettiBarycenter π).map (permReindex (α := ℕ → α) σ)).map
+      = (((Measure.deFinettiBarycenter π).map (permReindex (α := ℕ → α) σ)).map
           fun x i => permReindex (α := α) τ (x i)).map Function.uncurry := by
   have hR := measurable_unitIntervalCodingPath (α := ℕ → α)
   have hS : Measurable (permReindex (α := ℕ → α) σ) := measurable_reindex σ
   have hT : Measurable fun x : ℕ → ℕ → α => fun i => permReindex (α := α) τ (x i) :=
     Measurable.of_eval fun i => (measurable_reindex τ).comp (measurable_pi_apply i)
-  rw [← map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
+  rw [← Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
     Measure.map_map hS hR, Measure.map_map hT (hS.comp hR),
     Measure.map_map measurable_uncurry (hT.comp (hS.comp hR))]
   refine congrArg (Measure.map · _) ?_
@@ -138,19 +140,20 @@ theorem separatelyExchangeable_unitIntervalCoding
         (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval)))
       fun p q => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
   refine separatelyExchangeable_iff.mpr fun σ τ => ?_
-  have hrow : (deFinettiBarycenter π).map (permReindex (α := ℕ → α) σ) = deFinettiBarycenter π :=
+  have hrow : (Measure.deFinettiBarycenter π).map (permReindex (α := ℕ → α) σ) =
+      Measure.deFinettiBarycenter π :=
     (exchangeableLaw_deFinettiBarycenter (π := π)).map_permReindex σ
-  have hcol : ((deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
-      fun i => permReindex (α := α) τ (x i)) = deFinettiBarycenter π := by
-    have hnat := map_pi_deFinettiBarycenter π (measurable_reindex (α := α) τ)
+  have hcol : ((Measure.deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
+      fun i => permReindex (α := α) τ (x i)) = Measure.deFinettiBarycenter π := by
+    have hnat := Measure.map_pi_deFinettiBarycenter π (measurable_reindex (α := α) τ)
     rw [hπ τ] at hnat
     exact hnat
   calc ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
           fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 (σ p.1)) (τ p.2))
-      = (((deFinettiBarycenter π).map (permReindex (α := ℕ → α) σ)).map
+      = (((Measure.deFinettiBarycenter π).map (permReindex (α := ℕ → α) σ)).map
           fun x i => permReindex (α := α) τ (x i)).map Function.uncurry :=
         map_prod_unitIntervalCoding_array_pairReindex π σ τ
-    _ = (deFinettiBarycenter π).map Function.uncurry := by rw [hrow, hcol]
+    _ = (Measure.deFinettiBarycenter π).map Function.uncurry := by rw [hrow, hcol]
     _ = (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
           fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 :=
         (map_prod_unitIntervalCoding_array π).symm
@@ -192,8 +195,8 @@ theorem SeparatelyExchangeable.exists_arrayLaw_eq_map_unitIntervalCoding
     simp only [ProbabilityMeasure.coe_mk]
     rw [AEMeasurable.map_map_of_aemeasurable hmap.aemeasurable hν_meas.aemeasurable]
     exact hinv τ
-  · have hpath : pathLaw μ (arrayRow X) = deFinettiBarycenter (μ.map ν) := by
-      rw [deFinettiBarycenter_def]
+  · have hpath : pathLaw μ (arrayRow X) = Measure.deFinettiBarycenter (μ.map ν) := by
+      rw [Measure.deFinettiBarycenter_def]
       exact pathLaw_eq_bind_infinitePi_of_mixedIIDWith
         (mixedIIDWith_of_conditionallyIIDWith hν)
     simp only [ProbabilityMeasure.coe_mk]

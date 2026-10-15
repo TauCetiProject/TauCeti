@@ -23,8 +23,14 @@ transports the divisor-sheaf duality to arbitrary line bundles:
 The equivalence is asserted as an existence result: no canonical trace or naturality is claimed.
 The construction uses Weil differentials, not a relative dualizing complex, and does not yet
 identify the canonical bundle with the sheaf of Kähler differentials or provide base change.
-The degree of the canonical bundle is `2g - 2` on a proper curve. These results allow line-bundle
-cohomology to be used without choosing divisor presentations in the statements.
+The degree of the canonical bundle is `2g - 2` on a proper curve, it has `g` independent global
+sections and one-dimensional `H¹`, and Riemann–Roch takes the form
+
+`dim H⁰(X, L) - dim H⁰(X, ω ⊗ L⁻¹) = deg L + 1 - g`.
+
+Here exactness of the constants replaces the rational point used by the Euler-characteristic form
+`InvertibleSheaf.eulerCharBelow_eq_relativeDegree_add_one_sub_genus`. These results allow
+line-bundle cohomology to be used without choosing divisor presentations in the statements.
 
 ## References
 
@@ -161,6 +167,55 @@ theorem finrank_cohomology_one_eq_finrank_cohomology_zero_tensor_dual
   rw [← Subspace.dual_finrank_eq]
   exact (nonempty_cohomologyOneDualEquivCohomologyZero_tensor_dual
     hex hdim hF hk L ω hω).some.finrank_eq
+
+/-- **The canonical line bundle has `g` independent global sections**: for every representative
+`ω` of the canonical class, `dim H⁰(X, ω) = g`, where `g = dim H¹(X, 𝒪_X)`. -/
+theorem finrank_cohomology_zero_eq_genus_of_mk_eq_canonicalBundle (ω : InvertibleSheaf X)
+    (hω : LineBundleClass.mk ω = LineBundleClass.mk (canonicalBundle hex hdim hF hk)) :
+    haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k
+      (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
+        (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
+    finrank k (Scheme.Modules.Cohomology ω.obj 0) = X.genus k := by
+  obtain ⟨i⟩ := LineBundleClass.mk_eq_mk_iff.mp (LineBundleClass.mk_tensorProduct_dual_trivial ω)
+  rw [Scheme.genus_def, finrank_cohomology_one_eq_finrank_cohomology_zero_tensor_dual
+    hex hdim hF hk (trivial X) ω hω, Scheme.Modules.finrank_cohomology_congr k i 0]
+
+/-- **The canonical line bundle has one-dimensional `H¹`**: for every representative `ω` of the
+canonical class, `dim H¹(X, ω) = 1`, dual to the constants `H⁰(X, 𝒪_X) = k`. -/
+theorem finrank_cohomology_one_eq_one_of_mk_eq_canonicalBundle (ω : InvertibleSheaf X)
+    (hω : LineBundleClass.mk ω = LineBundleClass.mk (canonicalBundle hex hdim hF hk)) :
+    finrank k (Scheme.Modules.Cohomology ω.obj 1) = 1 := by
+  obtain ⟨e⟩ := nonempty_cohomologyZeroDualEquivCohomologyOne_tensor_dual
+    hex hdim hF hk (trivial X) ω hω
+  obtain ⟨i⟩ := LineBundleClass.mk_eq_mk_iff.mp (LineBundleClass.mk_tensorProduct_dual_trivial ω)
+  rw [← Scheme.Modules.finrank_cohomology_congr k i 1,
+    ← e.finrank_eq, Subspace.dual_finrank_eq,
+    SchemeWeilDivisor.finrank_cohomology_zero_trivial_eq_one_of_isIntegrallyClosedIn
+      hex hdim hF hk]
+
+/-- **The Riemann–Roch theorem for line bundles, in Serre-duality form.** For every line bundle
+`L` and every representative `ω` of the canonical class,
+
+`dim H⁰(X, L) - dim H⁰(X, ω ⊗ L⁻¹) = deg L + 1 - g`,
+
+where `deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and `g = dim H¹(X, 𝒪_X)`. No
+rational point is needed: it is the integral closedness of `k` in `k(X)` that makes
+`H⁰(X, 𝒪_X)` one-dimensional. -/
+theorem finrank_cohomology_zero_sub_finrank_cohomology_zero_tensor_dual
+    (L ω : InvertibleSheaf X)
+    (hω : LineBundleClass.mk ω = LineBundleClass.mk (canonicalBundle hex hdim hF hk)) :
+    haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k
+      (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
+        (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
+    (finrank k (Scheme.Modules.Cohomology L.obj 0) : ℤ) -
+        finrank k (Scheme.Modules.Cohomology (tensorProduct ω (dual L)).obj 0) =
+      L.eulerDegree k + 1 - X.genus k := by
+  rw [← finrank_cohomology_one_eq_finrank_cohomology_zero_tensor_dual hex hdim hF hk L ω hω,
+    eulerDegree_eq_finrank_sub, Scheme.genus_def,
+    SchemeWeilDivisor.finrank_cohomology_zero_trivial_eq_one_of_isIntegrallyClosedIn
+      hex hdim hF hk]
+  push_cast
+  ring
 
 /-- On a proper curve, the Euler-characteristic degree of the canonical line bundle is
     `2g - 2`, where `g = dim H¹(X, 𝒪_X)`. -/

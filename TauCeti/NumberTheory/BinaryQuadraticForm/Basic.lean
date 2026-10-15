@@ -347,6 +347,19 @@ protected def discrim (f : BinaryQuadraticForm R) : R :=
 theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = discrim f.a f.b f.c :=
   rfl
 
+/-- The discriminant of an integral binary form is zero or one modulo four. -/
+theorem discrim_emod_four_eq_zero_or_one (f : BinaryQuadraticForm ℤ) :
+    f.discrim % 4 = 0 ∨ f.discrim % 4 = 1 := by
+  rw [discrim_def, Int.discrim_emod_four]
+  exact Int.emod_two_eq_zero_or_one f.b
+
+/-- A form of nonsquare discriminant has nonzero leading coefficient. -/
+theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
+    (hf : ¬ IsSquare f.discrim) : f.a ≠ 0 := by
+  intro ha
+  apply hf
+  exact ⟨f.b, by simp [discrim_def, _root_.discrim, ha, pow_two]⟩
+
 /-- `γ • f` is the form `f ∘ γ⁻¹` (`eval_smul`). The coefficients are written through the entries
 of the adjugate `γ⁻¹ = !![s, -q; -r, p]` of `γ = !![p, q; r, s]`, so each is a polynomial in the
 entries of `γ`. -/

@@ -35,7 +35,7 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   possible monomial with exponent `n` in `X₁` is `X₁ ^ n`.
 * `MvPolynomial.totalDegree_pos_of_aeval_eq_zero`: if the coefficient of `X₁ ^ n` in `φ` is `1`,
   where `n` is the total degree of `φ`, and `φ` has a zero, then `n` is positive.
-* `MvPolynomial.exists_sum_coeff_mul_pow_ne_zero`: over a field with more than `deg φ` elements,
+* `MvPolynomial.exists_sum_coeff_mul_pow_ne_zero`: over a domain with more than `deg φ` elements,
   the leading form `φ_n` of `φ` satisfies `φ_n(c, 1) ≠ 0` for some `c`.
 * `MvPolynomial.natDegree_minpoly_le_totalDegree`: if `φ(u + c y, y) = 0` with `u ∈ K` and
   `φ_n(c, 1) ≠ 0`, then `y` has degree at most `deg φ` over `K`.
@@ -48,6 +48,8 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   `Polynomial.Bivariate.natDegree_equivMvPolynomial_symm`: if `φ` has total degree at most `n` and
   the coefficient of `X₁ ^ n` is `1`, then `φ`, read as a polynomial in `X₁` over `R[X₀]`, is monic
   of degree `n`.
+* `Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero`: if `φ(a, T) ≠ 0` and
+  `φ(a, y) = 0` for a constant `a ∈ k`, then `y` is algebraic over `k`.
 
 ## The chart at infinity
 
@@ -134,6 +136,7 @@ theorem inftyChart_add (n : ℕ) (φ ψ : MvPolynomial (Fin 2) R) :
 
 /-- The chart equation at infinity of the monomial `c X₀ ^ s 0 X₁ ^ s 1` is
 `c X₀ ^ (n - s 0 - s 1) X₁ ^ s 1`. -/
+@[simp]
 theorem inftyChart_monomial (n : ℕ) (s : Fin 2 →₀ ℕ) (c : R) :
     inftyChart n (monomial s c) =
       monomial (Finsupp.single 0 (n - (s 0 + s 1)) + Finsupp.single 1 (s 1)) c := by
@@ -183,6 +186,7 @@ theorem inftyChart_dehomogenize {G : MvPolynomial (Fin 3) R} {n : ℕ} (hG : G.I
   -- Both sides are additive in `G`, so it suffices to compare them on the monomials of `G`.
   let L : MvPolynomial (Fin 2) R →+ MvPolynomial (Fin 2) R :=
     { toFun := inftyChart n, map_zero' := by simp [inftyChart], map_add' := inftyChart_add n }
+  -- Use the bundled additive map to rewrite the sum without unfolding its definition.
   change L _ = _
   conv_lhs => rw [G.as_sum]
   conv_rhs => rw [G.as_sum]
@@ -212,23 +216,15 @@ theorem totalDegree_inftyChart_le {φ : MvPolynomial (Fin 2) R} {n : ℕ}
   omega
 
 /-- Passing to the chart at infinity keeps the coefficient of `X₁ ^ n`. -/
+@[simp]
 theorem coeff_single_one_inftyChart {φ : MvPolynomial (Fin 2) R} {n : ℕ}
     (hφ : φ.totalDegree ≤ n) :
     (inftyChart n φ).coeff (Finsupp.single 1 n) = φ.coeff (Finsupp.single 1 n) := by
-  classical
-  rw [inftyChart, coeff_sum]
-  simp_rw [coeff_monomial]
-  rw [Finset.sum_eq_single (Finsupp.single 1 n)]
-  · simp
-  · refine fun s hs hne ↦ ite_eq_right_iff.mpr fun h ↦ (hne ?_).elim
-    exact eq_single_one_of_mem_support hφ hs (by simpa using congrArg (· 1) h)
-  · intro h
-    rw [notMem_support_iff.mp h]
-    simp
+  simpa using coeff_inftyChart hφ (Finsupp.single 1 n)
 
-section Field
+section Semifield
 
-variable {L : Type*} [Field L] [Algebra R L] {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+variable {L : Type*} [Semifield L] [Algebra R L] {φ : MvPolynomial (Fin 2) R} {n : ℕ}
 
 /-- **Evaluating the chart equation at infinity**: for `x ≠ 0` and `φ` of total degree at most
 `n`, `inftyChart n φ (x⁻¹, y x⁻¹) = x⁻ⁿ φ(x, y)`. -/
@@ -241,8 +237,8 @@ theorem aeval_inftyChart (hφ : φ.totalDegree ≤ n) {x : L} (hx : x ≠ 0) (y 
     Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp), hm,
     Nat.add_sub_cancel_left]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  have h : x ^ s 0 * x⁻¹ ^ s 0 = 1 := by rw [← mul_pow, mul_inv_cancel₀ hx, one_pow]
-  linear_combination (-(algebraMap R L (φ.coeff s) * x⁻¹ ^ m * x⁻¹ ^ s 1 * y ^ s 1)) * h
+  simp only [mul_pow, pow_add, inv_pow]
+  field_simp [hx]
 
 /-- **The partial derivative in `X₁` in the chart at infinity**: for `x ≠ 0` and `φ` of total
 degree at most `n`, `∂(inftyChart n φ)/∂X₁ (x⁻¹, y x⁻¹) = x^(1 - n) ∂φ/∂X₁ (x, y)`. -/
@@ -261,23 +257,24 @@ theorem aeval_pderiv_one_inftyChart (hφ : φ.totalDegree ≤ n) {x : L} (hx : x
   rcases Nat.eq_zero_or_eq_succ_pred (s 1) with h0 | hj
   · simp [h0]
   · set j := (s 1).pred
+    -- Normalize the natural exponents before cancelling powers.
     rw [hm, hj, Nat.succ_sub_one, show s 0 + j.succ + m - 1 = s 0 + j + m by omega,
       show s 0 + j.succ + m - (s 0 + j.succ) = m by omega]
-    have h : x ^ s 0 * x⁻¹ ^ s 0 = 1 := by rw [← mul_pow, mul_inv_cancel₀ hx, one_pow]
-    linear_combination (-(algebraMap R L (φ.coeff s) * (j.succ : L) * x⁻¹ ^ m * x⁻¹ ^ j *
-      y ^ j)) * h
+    simp only [mul_pow, pow_add, inv_pow]
+    field_simp [hx]
 
-end Field
+end Semifield
 
-section Field
+section Algebra
 
-variable {k : Type*} [Field k]
+variable {k : Type*}
 
 open scoped Polynomial
 
-/-- Over a field with more than `n` elements, the leading form `φ_n` of a nonzero polynomial `φ`
+/-- Over a domain with more than `n` elements, the leading form `φ_n` of a nonzero polynomial `φ`
 of total degree `n` satisfies `φ_n(c, 1) ≠ 0` for some `c`. -/
-theorem exists_sum_coeff_mul_pow_ne_zero {φ : MvPolynomial (Fin 2) k} (hφ : φ ≠ 0)
+theorem exists_sum_coeff_mul_pow_ne_zero [CommRing k] [IsDomain k]
+    {φ : MvPolynomial (Fin 2) k} (hφ : φ ≠ 0)
     (hcard : (φ.totalDegree : ℕ∞) < ENat.card k) :
     ∃ c : k, ∑ s ∈ φ.support with s 0 + s 1 = φ.totalDegree, φ.coeff s * c ^ s 0 ≠ 0 := by
   classical
@@ -307,9 +304,11 @@ theorem exists_sum_coeff_mul_pow_ne_zero {φ : MvPolynomial (Fin 2) k} (hφ : φ
 
 /-- If `φ(u + c y, y) = 0` with `u ∈ K` and the leading form of `φ` does not vanish at `(c, 1)`,
 then `y` has degree at most `deg φ` over `K`: it is a root of `φ(u + c Y, Y)`, whose coefficient of
-`Y ^ n` is `φ_n(c, 1)`. -/
-theorem natDegree_minpoly_le_totalDegree {K F : Type*} [Field K] [Field F] [Algebra k K]
-    [Algebra K F] [Algebra k F] [IsScalarTower k K F] {φ : MvPolynomial (Fin 2) k} {u : K} {y : F}
+`Y ^ n` is `φ_n(c, 1)`. The coefficients may lie in any commutative semiring mapping faithfully
+into `K`, and `y` may lie in any commutative `K`-algebra. -/
+theorem natDegree_minpoly_le_totalDegree [CommSemiring k] {K F : Type*} [Field K] [CommRing F]
+    [Algebra k K] [FaithfulSMul k K] [Algebra K F] [Algebra k F] [IsScalarTower k K F]
+    {φ : MvPolynomial (Fin 2) k} {u : K} {y : F}
     {c : k} (hφ : aeval ![algebraMap K F u + algebraMap k F c * y, y] φ = 0)
     (hc : ∑ s ∈ φ.support with s 0 + s 1 = φ.totalDegree, φ.coeff s * c ^ s 0 ≠ 0) :
     (minpoly K y).natDegree ≤ φ.totalDegree := by
@@ -339,14 +338,14 @@ theorem natDegree_minpoly_le_totalDegree {K F : Type*} [Field K] [Field F] [Alge
       simp [L]
     · rw [Polynomial.coeff_eq_zero_of_natDegree_lt ((hterm s).trans_lt
         (lt_of_le_of_ne (add_le_totalDegree_of_mem_support hs) hsn)), mul_zero]
-  have hψ0 : ψ ≠ 0 := fun h ↦ hc <| (algebraMap k K).injective <| by
+  have hψ0 : ψ ≠ 0 := fun h ↦ hc <| FaithfulSMul.algebraMap_injective k K <| by
     rw [← hcoeff, h, Polynomial.coeff_zero, map_zero]
   have hψy : Polynomial.aeval y ψ = 0 := by
     rw [← hφ, aeval_fin_two_eq_sum]
     simp [ψ, L, ← IsScalarTower.algebraMap_apply, add_comm]
   exact (Polynomial.natDegree_le_natDegree (minpoly.degree_le_of_ne_zero _ y hψ0 hψy)).trans hψdeg
 
-end Field
+end Algebra
 
 end MvPolynomial
 
@@ -408,7 +407,7 @@ theorem natDegree_equivMvPolynomial_symm_le {φ : MvPolynomial (Fin 2) R} {n : �
     (by have := (MvPolynomial.add_le_totalDegree_of_mem_support hs).trans hφ; omega)
 
 /-- For a polynomial in two variables of total degree at most `n`, the coefficient of `X₁ ^ n`
-over `R[X₀]` is the constant coefficient of the monomial `X₁ ^ n`. -/
+over `R[X₀]` is the constant polynomial given by the coefficient of `X₁ ^ n`. -/
 theorem coeff_equivMvPolynomial_symm_of_totalDegree_le {φ : MvPolynomial (Fin 2) R} {n : ℕ}
     (hφ : φ.totalDegree ≤ n) :
     ((equivMvPolynomial R).symm φ).coeff n = C (φ.coeff (Finsupp.single 1 n)) := by
@@ -441,5 +440,26 @@ theorem natDegree_equivMvPolynomial_symm [Nontrivial R] {φ : MvPolynomial (Fin 
     (by rw [coeff_equivMvPolynomial_symm_of_totalDegree_le hφ, hc, map_one]; exact one_ne_zero)
 
 end MvPolynomial
+
+/-- If `φ ∈ k[X₀, X₁]` and `a ∈ k` are such that `φ(a, T) ≠ 0` and `φ(a, y) = 0`, then `y` is
+algebraic over `k`: it is a root of the nonzero polynomial `φ(a, T)`. This applies in particular
+when `φ` is monic in `X₁` over `k[X₀]` and `k` is nontrivial. -/
+theorem isAlgebraic_of_aeval_algebraMap_eq_zero {k F : Type*} [CommRing k] [CommRing F]
+    [Algebra k F] {φ : MvPolynomial (Fin 2) k} {a : k}
+    (hq : ((equivMvPolynomial k).symm φ).map (evalRingHom a) ≠ 0) {y : F}
+    (hy : MvPolynomial.aeval ![algebraMap k F a, y] φ = 0) : IsAlgebraic k y := by
+  set q := (equivMvPolynomial k).symm φ
+  refine ⟨q.map (evalRingHom a), hq, ?_⟩
+  -- View `F` as a `k[X]`-algebra with `X ↦ a`.
+  let _ : Algebra k[X] F := (aeval (algebraMap k F a)).toRingHom.toAlgebra
+  have : IsScalarTower k k[X] F := .of_algebraMap_eq fun c ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+  have h := aeval_equivMvPolynomial (R := k) (A := F) y q
+  rw [AlgEquiv.apply_symm_apply, RingHom.algebraMap_toAlgebra] at h
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, aeval_X, hy] at h
+  rw [aeval_def, eval₂_map]
+  rw [aeval_def] at h
+  convert h.symm using 2
+  refine ringHom_ext (fun r ↦ ?_) ?_ <;> simp [RingHom.algebraMap_toAlgebra]
 
 end Polynomial.Bivariate

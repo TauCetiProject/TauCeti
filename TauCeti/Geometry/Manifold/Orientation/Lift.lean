@@ -239,9 +239,12 @@ private theorem map_signedOrientation (o : OrientationLift I M ι) {α β x : M}
   have hd := o.compatible α β x hα hβ
   have hdet : LinearMap.det ((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
       (trivializationAt E (TangentSpace I) β) x).toLinearEquiv.toLinearMap =
-      (tangentCoordChange I α β x).det :=
-    (tangentBundleCore I M).det_trivializationAt_coordChangeL
-      (α := α) (β := β) (x := x) ⟨hα, hβ⟩
+      (tangentCoordChange I α β x).det := by
+    change LinearMap.det (((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
+      (trivializationAt E (TangentSpace I) β) x : E →L[ℝ] E).toLinearMap) = _
+    exact congrArg (fun f : E →L[ℝ] E ↦ LinearMap.det f.toLinearMap)
+      ((tangentBundleCore I M).trivializationAt_coordChangeL
+        (α := α) (β := β) (x := x) ⟨hα, hβ⟩)
   rwa [hdet]
 
 /-- The signed model orientation read in a preferred chart at a point of its source. -/
@@ -371,9 +374,12 @@ def ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
     let A := (trivializationAt E (TangentSpace I) α).coordChangeL ℝ
       (trivializationAt E (TangentSpace I) β) x
     have hdet : LinearMap.det A.toLinearEquiv.toLinearMap =
-        (tangentCoordChange I α β x).det :=
-      (tangentBundleCore I M).det_trivializationAt_coordChangeL
-        (α := α) (β := β) (x := x) ⟨hα, hβ⟩
+        (tangentCoordChange I α β x).det := by
+      change LinearMap.det (((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
+        (trivializationAt E (TangentSpace I) β) x : E →L[ℝ] E).toLinearMap) = _
+      exact congrArg (fun f : E →L[ℝ] E ↦ LinearMap.det f.toLinearMap)
+        ((tangentBundleCore I M).trivializationAt_coordChangeL
+          (α := α) (β := β) (x := x) ⟨hα, hβ⟩)
     rw [tangentCoordChange_def] at hdet
     let a := (trivializationAt E (TangentSpace I) α).mapOrientation ι
       (by rwa [TangentBundle.trivializationAt_baseSet (I := I)]) (o x)

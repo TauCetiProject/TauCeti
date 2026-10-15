@@ -89,12 +89,6 @@ reductivity, maximality of the weight torus, or any finiteness or simplicity sta
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * J. E. Humphreys, *Linear Algebraic Groups*, §27.
-
-This is the pinned instance of the graph-automorphism half of "Pinnings ... This is what makes
-'the' graph automorphism well defined" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L1, ordinary and
-graph-twisted Steinberg maps, of `TauCetiRoadmap/CFSGStatement/README.md`, whose twisted branches
-compose such a `γ` with the field Frobenius.
 -/
 
 public section

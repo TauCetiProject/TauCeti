@@ -130,8 +130,6 @@ private theorem map_comp_comul_pointConjugationAlgHom
   apply WithConv.toConv_injective
   rw [Bialgebra.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
     Bialgebra.comulPoint_eq_include_mul]
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight,
     comp_pointConjugationAlgHom

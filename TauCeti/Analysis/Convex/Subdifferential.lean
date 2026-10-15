@@ -41,10 +41,13 @@ convex.
 * `TauCeti.mem_subdifferential_coe_iff` — for a real-valued `f` the finiteness condition is
   automatic and membership is the subgradient inequality, and
   `TauCeti.mem_subdifferential_iff_forall_toReal_add_le` is the same statement between real
-  representatives for an `f` that is never `⊥`;
+  representatives for an `f` that is never `⊥`, whose forward direction is
+  `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
+* `StrictConvexOn.eq_of_mem_subdifferential` — a strictly convex function has disjoint
+  subdifferentials at distinct points;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
 * `TauCeti.convex_setOf_mem_subdifferential` — for a convex `f`, the points at which a fixed `y`
@@ -127,6 +130,15 @@ theorem mem_subdifferential_coe_iff (f : E → ℝ) :
   simp only [mem_subdifferential_iff, ne_eq, EReal.coe_ne_bot, EReal.coe_ne_top,
     not_false_eq_true, true_and, ← EReal.coe_add, EReal.coe_le_coe_iff]
 
+/-- A subgradient of a real-valued function is a linear tilt for which the point is a
+global minimizer. -/
+theorem mem_subdifferential_coe_iff_isMinOn_sub (f : E → ℝ) :
+    y ∈ subdifferential B (fun z => (f z : EReal)) x ↔
+      IsMinOn (fun z => f z - B z y) Set.univ x := by
+  rw [mem_subdifferential_coe_iff, isMinOn_iff]
+  simp only [map_sub, LinearMap.sub_apply, Set.mem_univ, forall_const]
+  constructor <;> intro h z <;> have := h z <;> linarith
+
 /-- For a real function `u` extended by `⊤` off `Ω`, a subgradient at a point `x ∈ Ω` is a `y`
 satisfying the subgradient inequality `u x + B (x' - x) y ≤ u x'` at every `x' ∈ Ω`. -/
 -- Not `@[simp]`: `mem_subdifferential_iff` already rewrites the left-hand side.
@@ -160,6 +172,13 @@ theorem mem_subdifferential_iff_forall_toReal_add_le (hbot : ∀ x', f x' ≠ �
     exact le_top
   exact (key x' hx').2 (h x' hx')
 
+/-- The subgradient inequality between real representatives: if `y ∈ ∂f(x)` and `f x'` is finite,
+then `(f x).toReal + B (x' - x) y ≤ (f x').toReal`. -/
+theorem toReal_add_le_toReal_of_mem_subdifferential (h : y ∈ subdifferential B f x) {x' : E}
+    (hx' : f x' ≠ ⊤) : (f x).toReal + B (x' - x) y ≤ (f x').toReal :=
+  (mem_subdifferential_iff_forall_toReal_add_le B (apply_ne_bot_of_mem_subdifferential B h)
+    (ne_top_of_mem_subdifferential B h)).1 h x' hx'
+
 /-- **Subgradients are monotone.** If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`, then
 `B (x₂ - x₁) y₁ ≤ B (x₂ - x₁) y₂`; for the inner product this is the monotonicity
 `⟪x₂ - x₁, y₂ - y₁⟫ ≥ 0` of the subdifferential. -/
@@ -173,6 +192,22 @@ theorem apply_le_apply_of_mem_subdifferential {x₁ x₂ : E} {y₁ y₂ : F}
     (ne_top_of_mem_subdifferential B h₂)).1 h₂ x₁ (ne_top_of_mem_subdifferential B h₁)
   rw [← neg_sub x₂ x₁, map_neg, LinearMap.neg_apply] at e₂
   linarith
+
+/-- **Strict convexity separates subdifferentials.** If `f` is strictly convex on `s`, two points
+of `s` at which `f` has a common subgradient coincide: the subdifferentials of `f` at distinct
+points of `s` are disjoint. -/
+theorem _root_.StrictConvexOn.eq_of_mem_subdifferential {s : Set E} {f : E → ℝ}
+    (hf : StrictConvexOn ℝ s f) {x₁ x₂ : E} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s)
+    (h₁ : y ∈ subdifferential B (fun x => (f x : EReal)) x₁)
+    (h₂ : y ∈ subdifferential B (fun x => (f x : EReal)) x₂) : x₁ = x₂ := by
+  -- A common subgradient `y` makes `x₁` and `x₂` minimisers of the strictly convex `f - B · y`.
+  have hmin {x₀ : E} (h : y ∈ subdifferential B (fun x => (f x : EReal)) x₀) :
+      IsMinOn (f - ⇑(B.flip y)) s x₀ := fun x _ => by
+    have := (mem_subdifferential_coe_iff B f).1 h x
+    simp only [map_sub, LinearMap.sub_apply] at this
+    simp only [Set.mem_ofPred_eq, Pi.sub_apply, LinearMap.flip_apply]
+    linarith
+  exact (hf.sub_concaveOn ((B.flip y).concaveOn hf.1)).eq_of_isMinOn (hmin h₁) (hmin h₂) hx₁ hx₂
 
 /-! ### Subgradient images -/
 

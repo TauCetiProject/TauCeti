@@ -139,7 +139,8 @@ theorem ordIndex_ne_zero_of_isNontrivial [v.IsNontrivial] : ordIndex v ≠ 0 := 
   have hxne : x ≠ 0 := fun h ↦ hx0 (by simp [h])
   refine fun h ↦ hx1 ?_
   have hord := (ordIndex_eq_zero_iff v).mp h x
-  rwa [ord_eq_iff_valuation_eq_exp_neg v hxne, neg_zero, WithZero.exp_zero] at hord
+  rwa [ord_eq_iff_valuation_eq_exp_neg v (v.ne_zero_iff.mpr hxne), neg_zero,
+    WithZero.exp_zero] at hord
 
 /-- **The index is unchanged by restriction along a surjective map**: `v` and `v.comap f` attain
 the same orders. Applied to a ring isomorphism, this says that the index of a valuation does not
@@ -174,7 +175,8 @@ noncomputable def normalization : _root_.Valuation F ℤᵐ⁰ where
     rcases eq_or_ne g 0 with rfl | hg
     · simp
     have hfg : f * g ≠ 0 := mul_ne_zero hf hg
-    rw [ord_mul v hf hg, Int.add_ediv_of_dvd_left (ordIndex_dvd_ord v f), neg_add,
+    rw [ord_mul v (v.ne_zero_iff.mpr hf) (v.ne_zero_iff.mpr hg),
+      Int.add_ediv_of_dvd_left (ordIndex_dvd_ord v f), neg_add,
       WithZero.exp_add]
     simp [hf, hg, hfg]
   map_add_le_max' f g := by
@@ -184,7 +186,7 @@ noncomputable def normalization : _root_.Valuation F ℤᵐ⁰ where
     · simp
     rcases eq_or_ne (f + g) 0 with h0 | h0
     · simp [h0]
-    have hmin := min_ord_le_ord_add v h0
+    have hmin := min_ord_le_ord_add v (v.ne_zero_iff.mpr h0)
     simp only [hf, hg, h0, ite_false]
     rcases le_total (ord v f) (ord v g) with h | h
     · refine le_trans ?_ (le_max_left _ _)
@@ -253,7 +255,7 @@ theorem normalization_eq_self_of_surjective (hv : Function.Surjective v) : norma
   rcases eq_or_ne f 0 with rfl | hf
   · simp
   · rw [normalization_apply v hf, ordIndex_eq_one_of_surjective v hv, Nat.cast_one, Int.ediv_one,
-      ← valuation_eq_exp_neg_ord v hf]
+      ← valuation_eq_exp_neg_ord v (v.ne_zero_iff.mpr hf)]
 
 /-- The normalization of a nontrivial valuation is surjective: its value group is all of
 `ℤᵐ⁰`. -/

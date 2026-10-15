@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Basic
-public import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Changing the coordinates of a bundle homomorphism
@@ -18,9 +17,9 @@ proved in coordinates centred at a point to be transported to fixed trivializati
 The corresponding range-transport theorem identifies the subspaces in different
 charts, as required for quotient-bundle coordinate changes.
 
-`VectorBundleCore.det_localTriv_coordChangeL` and
-`VectorBundleCore.det_trivializationAt_coordChangeL` identify the determinants of transitions
-between actual trivializations with their core coordinate-change determinants.
+`VectorBundleCore.localTriv_coordChangeL` and
+`VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
+trivializations with their core coordinate-change maps.
 
 The construction follows Mathlib's `ContinuousLinearMap.inCoordinates` and
 `Bundle.Trivialization.comp_continuousLinearEquivAt_eq_coord_change`.
@@ -35,23 +34,22 @@ namespace VectorBundleCore
 variable {𝕜 B F κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- A transition between core trivializations has the determinant of the core coordinate map. -/
-theorem det_localTriv_coordChangeL (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
+/-- A transition between core trivializations is the core coordinate-change map. -/
+@[simp] theorem localTriv_coordChangeL (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
     (hx : x ∈ (Z.localTriv i).baseSet ∩ (Z.localTriv j).baseSet) :
-    LinearMap.det ((Z.localTriv i).coordChangeL 𝕜
-      (Z.localTriv j) x).toLinearEquiv.toLinearMap = (Z.coordChange i j x).det := by
-  congr 1
+    ((Z.localTriv i).coordChangeL 𝕜 (Z.localTriv j) x : F →L[𝕜] F) = Z.coordChange i j x := by
   ext v
   exact Z.localTriv_coordChange_eq i j hx v
 
-/-- Preferred core trivializations use the same determinants as their selected core charts. -/
-theorem det_trivializationAt_coordChangeL (Z : VectorBundleCore 𝕜 B F κ)
+/-- Preferred core trivializations use their selected core coordinate-change maps. -/
+@[simp] theorem trivializationAt_coordChangeL (Z : VectorBundleCore 𝕜 B F κ)
     {α β x : B} (hx : x ∈ (trivializationAt F Z.Fiber α).baseSet ∩
       (trivializationAt F Z.Fiber β).baseSet) :
-    LinearMap.det ((trivializationAt F Z.Fiber α).coordChangeL 𝕜
-      (trivializationAt F Z.Fiber β) x).toLinearEquiv.toLinearMap =
-        (Z.coordChange (Z.indexAt α) (Z.indexAt β) x).det :=
-  Z.det_localTriv_coordChangeL hx
+    ((trivializationAt F Z.Fiber α).coordChangeL 𝕜
+      (trivializationAt F Z.Fiber β) x : F →L[𝕜] F) =
+        Z.coordChange (Z.indexAt α) (Z.indexAt β) x := by
+  ext v
+  exact Z.trivializationAt_coordChange_eq hx v
 
 end VectorBundleCore
 
