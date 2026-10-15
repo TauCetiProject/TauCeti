@@ -87,17 +87,18 @@ theorem W1p.translate_mem_w1p0Submodule (hp : p ≠ ∞) {h : E} (hVO : MapsTo (
     W1p.translate hVO u ∈ w1p0Submodule mu Omega p := by
   have hUV : (Omega : Set E) = (· + h) ⁻¹' Omega :=
     Subset.antisymm (fun x hx => hVO hx) fun x hx => hΩ x hx
-  have hd : ContDiffOn ℝ 1 (· + h) (Omega : Set E) := (contDiff_id.add contDiff_const).contDiffOn
+  have hl : LocallyLipschitzOn (Omega : Set E) (· + h) :=
+    (isometry_add_right h).lipschitzWith.locallyLipschitz.locallyLipschitzOn
   have hM : ∀ x ∈ (Omega : Set E), ‖fderiv ℝ (· + h) x‖ ≤ 1 := fun x _ => by
     rw [fderiv_add_const, fderiv_fun_id]
     exact ContinuousLinearMap.norm_id_le
   -- The translate is the composition with the measure-preserving homeomorphism `x ↦ x + h`.
   have heq : W1p.translate hVO u =
-      W1p.compMeasurePreservingL (measurePreserving_add_right mu h) hUV hd hM u :=
+      W1p.compMeasurePreservingL (measurePreserving_add_right mu h) hUV hl hM u :=
     W1p.ext_value (Lp.ext ((W1p.value_translate_ae _ u).trans
-      (W1p.value_compMeasurePreservingL_ae _ hUV hd hM u).symm))
+      (W1p.value_compMeasurePreservingL_ae _ hUV hl hM u).symm))
   rw [heq]
   exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp (Homeomorph.addRight h).isProperMap
-    (measurePreserving_add_right mu h) hUV hd hM hu
+    (measurePreserving_add_right mu h) hUV hl hM hu
 
 end TauCeti

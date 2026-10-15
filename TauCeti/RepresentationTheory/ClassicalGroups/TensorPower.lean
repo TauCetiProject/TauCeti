@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.PiTensorProduct.GeneralLinear
 public import TauCeti.RepresentationTheory.AsAlgebraHom
@@ -27,6 +28,11 @@ infinite field.
 * `TauCeti.commute_permTensorAction_tensorPowerRep` proves that the general-linear and
   symmetric-group actions commute, and `TauCeti.commute_permTensorActionAlgHom_tensorPowerRep`
   extends that to the whole group algebra `k[S_d]`.
+* `TauCeti.permTensorPowerRep` combines the two commuting actions into one representation of
+  `S_d × GL n k`, and `TauCeti.range_asAlgebraHom_permTensorAction_le_comap` says that the image of
+  any element of `k[S_d]`, such as a Young symmetrizer, is a `GL n k`-subrepresentation.
+* `TauCeti.map_reindex_range_asAlgebraHom`: relabeling the tensor factors along `Fin m ≃ Fin d`
+  carries the image of an element of `k[S_m]` onto the image of its transport to `k[S_d]`.
 * `TauCeti.trace_permTensorAction_conj_mul_tensorPowerRep`: for any `g ∈ GL n k`, the trace of a
   permutation of the tensor factors composed with `g^{⊗d}` is a class function of the permutation.
 * `TauCeti.tensorPowerPermIntertwiningMap` packages `g^{⊗d}` as an intertwining map of the
@@ -98,6 +104,48 @@ theorem commute_permTensorActionAlgHom_tensorPowerRep
     permTensorAction_def]
   exact PiTensorProduct.commute_reindexRepresentation_asAlgebraHom_map k (Fin n → k) (Fin d) a
     (stdRep k n g)
+
+/-- **The image of an element of `k[S_d]` in `(kⁿ)^{⊗d}` is stable under `GL n k`**, because the
+two actions commute.  In particular a Young symmetrizer cuts out a subrepresentation. -/
+theorem range_asAlgebraHom_permTensorAction_le_comap (a : MonoidAlgebra k (Equiv.Perm (Fin d)))
+    (g : GL (Fin n) k) :
+    LinearMap.range ((permTensorAction k n d).asAlgebraHom a) ≤
+      (LinearMap.range ((permTensorAction k n d).asAlgebraHom a)).comap
+        (tensorPowerRep k n d g) := by
+  rintro _ ⟨x, rfl⟩
+  have h := commute_permTensorActionAlgHom_tensorPowerRep k n d a g
+  rw [permTensorActionAlgHom_def] at h
+  exact ⟨tensorPowerRep k n d g x, LinearMap.congr_fun h.eq x⟩
+
+/-- **Relabeling the tensor factors transports the image of an element of `k[S_m]`**: along
+`Fin m ≃ Fin d`, it carries the image of `a` in `(kⁿ)^{⊗m}` onto the image in `(kⁿ)^{⊗d}` of the
+transport of `a` to `k[S_d]`. -/
+theorem map_reindex_range_asAlgebraHom {m : ℕ} (h : m = d)
+    (a : MonoidAlgebra k (Equiv.Perm (Fin m))) :
+    (LinearMap.range ((permTensorAction k n m).asAlgebraHom a)).map
+        (PiTensorProduct.reindex k (fun _ => Fin n → k) (finCongr h) :
+          ⨂[k]^m (Fin n → k) →ₗ[k] ⨂[k]^d (Fin n → k)) =
+      LinearMap.range ((permTensorAction k n d).asAlgebraHom
+        (MonoidAlgebra.domCongr k k (finCongr h).permCongrHom a)) := by
+  subst h
+  have he : (Equiv.refl (Fin m)).permCongrHom = MulEquiv.refl _ := by
+    ext
+    simp
+  simp [he]
+
+/-- **The joint action of `S_d × GL n k` on `(kⁿ)^{⊗d}`**: a pair `(σ, g)` acts by permuting the
+tensor factors by `σ` after applying `g` in every factor.  It is a representation of the product
+group because the two actions commute. -/
+noncomputable def permTensorPowerRep :
+    Representation k (Equiv.Perm (Fin d) × GL (Fin n) k) (⨂[k]^d (Fin n → k)) :=
+  (permTensorAction k n d).noncommCoprod (tensorPowerRep k n d)
+    (commute_permTensorAction_tensorPowerRep k n d)
+
+/-- The pair `(σ, g)` acts on `(kⁿ)^{⊗d}` as `σ ∘ g^{⊗d}`. -/
+@[simp]
+theorem permTensorPowerRep_apply (σ : Equiv.Perm (Fin d)) (g : GL (Fin n) k) :
+    permTensorPowerRep k n d (σ, g) = permTensorAction k n d σ * tensorPowerRep k n d g :=
+  (rfl)
 
 /-- The operator `g^{⊗d}` on `(kⁿ)^{⊗d}` as an intertwining map of the symmetric-group action:
 the diagonal action of `GL n k` commutes with permuting the tensor factors. -/

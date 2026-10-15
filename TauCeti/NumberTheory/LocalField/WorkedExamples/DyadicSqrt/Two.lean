@@ -61,7 +61,7 @@ extension with its quadratic subextension: the third lower group of `ℚ₂(√2
 ## Formal sources
 
 The construction is adapted from
-`TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five` and
+`TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five.Basic` and
 `TauCeti.NumberTheory.LocalField.WorkedExamples.NonGaloisCubic`.
 -/
 
@@ -98,13 +98,13 @@ instance : FiniteDimensional ℚ_[2] DyadicSqrtTwo := powerBasis.finite
 instance : CharZero DyadicSqrtTwo :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[2] DyadicSqrtTwo).injective
 
-instance : ValuativeRel DyadicSqrtTwo := finiteExtensionValuativeRel ℚ_[2] DyadicSqrtTwo
+instance : ValuativeRel DyadicSqrtTwo := algebraicExtensionValuativeRel ℚ_[2] DyadicSqrtTwo
 
 instance : TopologicalSpace DyadicSqrtTwo :=
-  finiteExtensionNormedFieldTopology ℚ_[2] DyadicSqrtTwo
+  algebraicExtensionNormedFieldTopology ℚ_[2] DyadicSqrtTwo
 
 instance : ValuativeExtension ℚ_[2] DyadicSqrtTwo :=
-  finiteExtension_valuativeExtension ℚ_[2] DyadicSqrtTwo
+  algebraicExtension_valuativeExtension ℚ_[2] DyadicSqrtTwo
 
 instance : IsNonarchimedeanLocalField DyadicSqrtTwo :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] DyadicSqrtTwo

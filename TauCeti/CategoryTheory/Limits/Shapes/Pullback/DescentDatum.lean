@@ -48,9 +48,17 @@ construct.
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
   `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`, with the morphism
   `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`.
+* `TauCeti.DescentDatum.transportArrow e D`: the descent datum relative to `q` obtained from a
+  descent datum `D` relative to `p` along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q`,
+  functorial on morphisms, inverse to transport along `e.symm` (`transportArrowSymmHom`), and
+  compatible with canonical descent data (`baseChangeTransportArrowHom`).
 
 A descent datum `D` is *effective* when there are an object `X` over `S` and a morphism
 `baseChange p X ⟶ D` of descent data which is an isomorphism over `S'`.
+Effectivity is invariant under isomorphisms of arrows
+(`TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_transportArrow`), so an effectivity theorem
+proved for a normal form of `p`, such as `Spec` of a ring map, applies to every arrow isomorphic
+to it.
 
 ## References
 
@@ -95,6 +103,12 @@ namespace DescentDatum
 attribute [reassoc (attr := simp)] act_hom lift_act
 
 variable {p}
+
+/-- The action of a descent datum lies over `S`: `π (s · x) = π x` for `π = X.hom ≫ p`. -/
+@[reassoc]
+theorem act_comp_hom_comp {X : Over S'} (D : DescentDatum p X) :
+    D.act ≫ X.hom ≫ p = pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p := by
+  rw [D.act_hom_assoc, pullback.condition]
 
 section Hom
 
@@ -515,6 +529,155 @@ variable (p) in
 theorem baseChangeHom_comp {X Y Z : Over S} (f : X ⟶ Y) (g : Y ⟶ Z) :
     baseChangeHom p (f ≫ g) = (baseChangeHom p g).comp (baseChangeHom p f) :=
   Hom.ext ((Over.pullback p).map_comp f g)
+
+section ArrowIso
+
+variable {T T' : C} {q : T' ⟶ T} (e : Arrow.mk p ≅ Arrow.mk q) {X Y : Over S'}
+
+/-- The comparison from the action space of a datum transported along
+`e : Arrow.mk p ≅ Arrow.mk q` to the original action space. On points it sends `(t, x)` to
+`(e⁻¹ t, x)`. -/
+noncomputable def transportArrowActionComparison (X : Over S') :
+    pullback q (((Over.map e.hom.left).obj X).hom ≫ q) ⟶ pullback p (X.hom ≫ p) :=
+  pullback.map q (((Over.map e.hom.left).obj X).hom ≫ q) p (X.hom ≫ p) e.inv.left (𝟙 X.left)
+    e.inv.right (Arrow.w_mk_right e.inv).symm (by simp)
+
+/-- The action-space comparison for transport moves the point of `T'` to `S'` along `e⁻¹`. -/
+@[reassoc (attr := simp)]
+theorem transportArrowActionComparison_fst (X : Over S') :
+    transportArrowActionComparison e X ≫ pullback.fst p (X.hom ≫ p) =
+      pullback.fst _ _ ≫ e.inv.left :=
+  pullback.lift_fst _ _ _
+
+/-- The action-space comparison for transport preserves the point of `X`. -/
+@[reassoc (attr := simp)]
+theorem transportArrowActionComparison_snd (X : Over S') :
+    transportArrowActionComparison e X ≫ pullback.snd p (X.hom ≫ p) = pullback.snd _ _ :=
+  (pullback.lift_snd _ _ _).trans (Category.comp_id _)
+
+/-- The transport of a descent datum along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q`.
+If `D` acts on `X ⟶ S'` relative to `p : S' ⟶ S`, then `D.transportArrow e` acts on
+`X ⟶ S' ≅ T'` relative to `q : T' ⟶ T`, by `t · x = e⁻¹ t · x`. -/
+noncomputable def transportArrow (D : DescentDatum p X) :
+    DescentDatum q ((Over.map e.hom.left).obj X) where
+  act := transportArrowActionComparison e X ≫ D.act
+  act_hom := by simp
+  lift_act := by
+    refine Eq.trans ?_ D.lift_act
+    rw [← Category.assoc]
+    congr 1
+    ext <;> simp
+  act_assoc := by
+    dsimp only [Over.map_obj_left, Over.map_obj_hom]
+    -- Compare both sides with the original twice-iterated action space, where `D.act_assoc`
+    -- applies directly.
+    have key := pullback.map q (pullback.fst q ((X.hom ≫ e.hom.left) ≫ q) ≫ q)
+      p (pullback.fst p (X.hom ≫ p) ≫ p) e.inv.left (transportArrowActionComparison e X)
+      e.inv.right (Arrow.w_mk_right e.inv).symm (by simp) ≫= D.act_assoc
+    simp only [← Category.assoc] at key ⊢
+    convert key using 2 <;> refine pullback.hom_ext ?_ ?_ <;> simp
+
+/-- The transported action is the original action after moving the point of `T'` to `S'` along
+`e⁻¹`: `t · x = e⁻¹ t · x`. -/
+theorem transportArrow_act (D : DescentDatum p X) :
+    (D.transportArrow e).act = transportArrowActionComparison e X ≫ D.act :=
+  (rfl)
+
+/-- The transport of a morphism of descent data along an isomorphism of arrows. -/
+noncomputable def Hom.transportArrow {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E) :
+    Hom (D.transportArrow e) (E.transportArrow e) where
+  hom := (Over.map e.hom.left).map f.hom
+  map_act := by
+    rw [transportArrow_act, transportArrow_act, Category.assoc]
+    refine Eq.trans ?_ (congrArg (_ ≫ ·) f.map_act)
+    rw [← Category.assoc, ← Category.assoc]
+    congr 1
+    ext <;> simp
+
+@[simp]
+theorem Hom.transportArrow_hom {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E) :
+    (f.transportArrow e).hom = (Over.map e.hom.left).map f.hom :=
+  (rfl)
+
+/-- Transport along an isomorphism of arrows preserves identity morphisms of descent data. -/
+@[simp]
+theorem Hom.transportArrow_id (D : DescentDatum p X) :
+    (Hom.id D).transportArrow e = Hom.id (D.transportArrow e) :=
+  Hom.ext ((Over.map e.hom.left).map_id X)
+
+/-- Transport along an isomorphism of arrows preserves composition of morphisms of descent
+data. -/
+@[simp]
+theorem Hom.transportArrow_comp {Z : Over S'} {D : DescentDatum p X} {E : DescentDatum p Y}
+    {F : DescentDatum p Z} (g : Hom E F) (f : Hom D E) :
+    (g.comp f).transportArrow e = (g.transportArrow e).comp (f.transportArrow e) :=
+  Hom.ext ((Over.map e.hom.left).map_comp f.hom g.hom)
+
+/-- Transport along an isomorphism of arrows preserves isomorphisms of descent data. -/
+instance Hom.isIso_transportArrow_hom {D : DescentDatum p X} {E : DescentDatum p Y}
+    (f : Hom D E) [IsIso f.hom] : IsIso (f.transportArrow e).hom := by
+  rw [Hom.transportArrow_hom]
+  infer_instance
+
+/-- Transporting a descent datum along `e` and back along `e.symm` gives back the original datum:
+the identity of `X` is an isomorphism of descent data. -/
+noncomputable def transportArrowSymmHom (D : DescentDatum p X) :
+    Hom ((D.transportArrow e).transportArrow e.symm) D where
+  hom := (Over.isoMk (f := (Over.map e.symm.hom.left).obj ((Over.map e.hom.left).obj X)) (g := X)
+    (Iso.refl X.left) (by simp)).hom
+  map_act := by
+    rw [transportArrow_act, transportArrow_act]
+    simp only [Over.isoMk_hom_left, Iso.refl_hom]
+    refine Eq.trans ?_ ((Category.assoc _ _ _).trans (Category.comp_id _).symm)
+    congr 1
+    ext <;> simp [transportArrowActionComparison]
+
+@[simp]
+theorem transportArrowSymmHom_hom_left (D : DescentDatum p X) :
+    (transportArrowSymmHom e D).hom.left = 𝟙 X.left :=
+  (rfl)
+
+/-- The round-trip comparison `transportArrowSymmHom` is an isomorphism of descent data. -/
+instance isIso_transportArrowSymmHom_hom (D : DescentDatum p X) :
+    IsIso (transportArrowSymmHom e D).hom := by
+  rw [transportArrowSymmHom]
+  infer_instance
+
+/-- Transport along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q` takes canonical descent
+data to canonical descent data: for `Y₀` over `S`, the base change of `Y₀ ⟶ S ≅ T` along `q` is
+isomorphic, as a descent datum, to the transport of the base change of `Y₀` along `p`. -/
+noncomputable def baseChangeTransportArrowHom (Y₀ : Over S) :
+    Hom (baseChange q ((Over.map e.hom.right).obj Y₀)) ((baseChange p Y₀).transportArrow e) where
+  hom := (Over.isoMk (asIso (pullback.map (Y₀.hom ≫ e.hom.right) q Y₀.hom p (𝟙 Y₀.left)
+    e.inv.left e.inv.right (by simp) (Arrow.w_mk_right e.inv).symm)) (by simp)).hom
+  map_act := by
+    rw [transportArrow_act]
+    refine pullback.hom_ext ?_ ?_ <;> simp [baseChange, transportArrowActionComparison]
+
+@[simp]
+theorem baseChangeTransportArrowHom_hom_left (Y₀ : Over S) :
+    (baseChangeTransportArrowHom e Y₀).hom.left =
+      pullback.map (Y₀.hom ≫ e.hom.right) q Y₀.hom p (𝟙 Y₀.left) e.inv.left e.inv.right
+        (by simp) (Arrow.w_mk_right e.inv).symm :=
+  (rfl)
+
+/-- The comparison `baseChangeTransportArrowHom` is an isomorphism of descent data. -/
+instance isIso_baseChangeTransportArrowHom_hom (Y₀ : Over S) :
+    IsIso (baseChangeTransportArrowHom e Y₀).hom := by
+  rw [baseChangeTransportArrowHom]
+  infer_instance
+
+/-- **Effectivity is invariant under isomorphisms of arrows.** If the transport of `D` along
+`e : Arrow.mk p ≅ Arrow.mk q` is isomorphic to the canonical descent datum on the base change of
+`Y₀` along `q`, then `D` is isomorphic to the canonical descent datum on the base change of
+`Y₀ ⟶ T ≅ S` along `p`. -/
+theorem exists_baseChange_hom_isIso_of_transportArrow (D : DescentDatum p X) {Y₀ : Over T}
+    (f : Hom (baseChange q Y₀) (D.transportArrow e)) [IsIso f.hom] :
+    ∃ g : Hom (baseChange p ((Over.map e.inv.right).obj Y₀)) D, IsIso g.hom :=
+  ⟨(transportArrowSymmHom e D).comp ((f.transportArrow e.symm).comp
+    (baseChangeTransportArrowHom e.symm Y₀)), by simp only [Hom.comp_hom]; infer_instance⟩
+
+end ArrowIso
 
 end DescentDatum
 
