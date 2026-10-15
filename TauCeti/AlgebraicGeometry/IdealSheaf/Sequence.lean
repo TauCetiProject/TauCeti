@@ -52,22 +52,24 @@ in the sections of `ι_* 𝒪_{V(I)}`, whose zero is not reducibly the zero of
 `Γ(V(I), ι⁻¹ U)`. -/
 @[simp]
 lemma subschemeι_app_eq_zero_iff {U : X.Opens} {s : Γ(X, U)} :
+    -- The target is pinned to `Scheme.Modules.pushforward`, as in `sheafι_toPushforwardSubscheme`
+    -- below. `simp` does not identify these sections with those of the defeq target
+    -- `SheafOfModules.pushforward` that Mathlib gives `unitToPushforwardObjUnit`.
     Scheme.Modules.Hom.app
-        (show Scheme.Modules.Hom (SheafOfModules.unit X.ringCatSheaf)
-            ((Scheme.Modules.pushforward I.subschemeι).obj
-              (SheafOfModules.unit I.subscheme.ringCatSheaf)) from
-          SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) U s = 0 ↔
+        (N := (Scheme.Modules.pushforward I.subschemeι).obj
+          (SheafOfModules.unit I.subscheme.ringCatSheaf))
+        (SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) U s = 0 ↔
       s ∈ I.sections U :=
   I.mem_sections_iff.symm
 
 /-- Regular functions in `I` vanish on `V(I)`. -/
 @[simp, reassoc]
 lemma sheafι_toPushforwardSubscheme :
-    I.sheafι ≫
-        (show Scheme.Modules.Hom (SheafOfModules.unit X.ringCatSheaf)
-            ((Scheme.Modules.pushforward I.subschemeι).obj
-              (SheafOfModules.unit I.subscheme.ringCatSheaf)) from
-          SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) = 0 := by
+    -- The target is pinned to `Scheme.Modules.pushforward`: at Mathlib's
+    -- `SheafOfModules.pushforward` target no zero morphism is synthesized for `0`.
+    (I.sheafι ≫ SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom :
+      I.sheaf ⟶ (Scheme.Modules.pushforward I.subschemeι).obj
+        (SheafOfModules.unit I.subscheme.ringCatSheaf)) = 0 := by
   refine Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_
   -- The components of a composite and of the zero morphism are computed sectionwise
   -- (`Scheme.Modules.Hom.comp_app` and `Scheme.Modules.Hom.zero_app` hold by `rfl`). Neither
