@@ -68,9 +68,9 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
   have hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)) := by
     rw [hg, Subgroup.coe_top]
     exact dense_univ
-  let := freeProfiniteGroup.presentationClassModuleAction p hd
+  letI := freeProfiniteGroup.presentationClassModuleAction p hd
   let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
-  let := galoisClassModuleAction p K L j
+  letI := galoisClassModuleAction p K L j
   let := continuousSMul_galoisClassModuleAction p K L j
   let B : Rep ℤ_[p] (L ≃ₐ[K] L) :=
     ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
@@ -108,19 +108,16 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     intro x
     dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv,
       MulEquiv.toAdditive]
-    simp only [AddEquiv.trans_apply, AddEquiv.refl_symm, AddEquiv.refl_apply,
-      MulDistribMulActionHom.toAdditive_apply, Rep.hom_ofHom, ModuleCat.hom_ofHom]
+    simp only [MulDistribMulActionHom.toAdditive_apply, ModuleCat.hom_ofHom]
     change ofMul (eR.symm (f x.toMul)) = β (eL x)
     rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
     exact congrArg ofMul (eR.symm_apply_apply _)
   intro x
-  have hnat := explicitH2AddEquivGroupCohomology_explicitCoeff2
+  unfold explicitH2EquivPadicCompletionUnits freeProfiniteGroup.explicitH2EquivRelationModule
+  rw [_root_.groupCohomology.functor_map]
+  exact explicitH2AddEquivGroupCohomology_explicitCoeff2
     (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
-  simpa only [explicitH2EquivPadicCompletionUnits,
-    freeProfiniteGroup.explicitH2EquivRelationModule, _root_.groupCohomology.functor_map,
-    ψ, χ, f, hf, F, eL, eR, B, C]
-    using hnat
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
 on explicit second cohomology after transport through Lyndon and local reciprocity. -/
@@ -140,9 +137,9 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
   have hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)) := by
     rw [hg, Subgroup.coe_top]
     exact dense_univ
-  let := freeProfiniteGroup.presentationClassModuleAction p hd
+  letI := freeProfiniteGroup.presentationClassModuleAction p hd
   let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
-  let := galoisClassModuleAction p K L j
+  letI := galoisClassModuleAction p K L j
   let := continuousSMul_galoisClassModuleAction p K L j
   let B : Rep ℤ_[p] (L ≃ₐ[K] L) :=
     ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
@@ -180,8 +177,7 @@ theorem bijective_explicitCoeff2_relationModuleToAbelianizationProPEquivariant
     intro x
     dsimp only [χ, ψ, F, ofModuleMonoidAlgebra, RestrictScalars.addEquiv,
       MulEquiv.toAdditive]
-    simp only [AddEquiv.trans_apply, AddEquiv.refl_symm, AddEquiv.refl_apply,
-      MulDistribMulActionHom.toAdditive_apply, Rep.hom_ofHom, ModuleCat.hom_ofHom]
+    simp only [MulDistribMulActionHom.toAdditive_apply, ModuleCat.hom_ofHom]
     change ofMul (eR.symm (f x.toMul)) = β (eL x)
     rw [relationModuleToAbelianizationProPEquivariant_apply,
       relationModuleToAbelianizationProP_apply]
