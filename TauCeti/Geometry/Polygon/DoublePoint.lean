@@ -351,10 +351,12 @@ theorem IsRegularProjection.linearIndependent_of_projAlong_eq (hs : poly.IsSimpl
     refine projAlong_eq_projAlong_iff.2 ⟨a - l * g 2, ?_⟩
     rw [hpath, hpath, vadd_vsub_vadd_comm, ← ha]
     linear_combination (norm := module) (-l) • hg
-  have hpair := hπ.subsingleton_setOf_mem_edgeSet hs hij
-    (show (poly.edgePath ℝ i s, poly.edgePath ℝ j t) ∈ _ from ⟨hmem i hsI, hmem j htI, h⟩)
-    (show (poly.edgePath ℝ i (s + l * g 0), poly.edgePath ℝ j (t + -(l * g 1))) ∈ _ from
-      ⟨hmem i hl₁, hmem j hl₂, hproj⟩)
+  let S : Set (P × P) := {q | q.1 ∈ poly.edgeSet ℝ i ∧ q.2 ∈ poly.edgeSet ℝ j ∧
+    projAlong ℝ p₀ d q.1 = projAlong ℝ p₀ d q.2}
+  have hq₀ : (poly.edgePath ℝ i s, poly.edgePath ℝ j t) ∈ S := ⟨hmem i hsI, hmem j htI, h⟩
+  have hq₁ : (poly.edgePath ℝ i (s + l * g 0), poly.edgePath ℝ j (t + -(l * g 1))) ∈ S :=
+    ⟨hmem i hl₁, hmem j hl₂, hproj⟩
+  have hpair := hπ.subsingleton_setOf_mem_edgeSet hs hij hq₀ hq₁
   have hx := congrArg Prod.fst hpair
   dsimp only at hx
   rw [hpath, eq_comm] at hx

@@ -57,7 +57,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
   torsion freely has at least three vertices.
 * `Polygon.IsSimple.subsingleton_edgeSet_inter`: two distinct edges of such a simple polygon have
   at most one common point.
-* `Polygon.range_boundaryParam`: the parametrization runs over the whole boundary.
+* `Polygon.range_boundaryParam` and `Polygon.boundaryParam_mem_boundary`: the parametrization runs
+  over the whole boundary, and stays on it.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
   give the same point exactly when they agree modulo `n`.
 * `Polygon.exists_mem_Ico_boundaryParam_eq` and `Polygon.IsSimple.injOn_boundaryParam`: every
@@ -273,6 +274,11 @@ theorem range_boundaryParam : range poly.boundaryParam = poly.boundary ℝ := by
     rw [edgeSet_eq_image_edgePath] at hi
     obtain ⟨s, hs, rfl⟩ := hi
     exact mem_range.2 ⟨_, poly.boundaryParam_natCast_add i hs⟩
+
+/-- The boundary parametrization stays on the boundary of the polygon. -/
+theorem boundaryParam_mem_boundary (t : ℝ) : poly.boundaryParam t ∈ poly.boundary ℝ := by
+  rw [← poly.range_boundaryParam]
+  exact mem_range_self t
 
 /-- The boundary parametrization induces a map from the circle `AddCircle n`, of length the number
 of vertices. -/

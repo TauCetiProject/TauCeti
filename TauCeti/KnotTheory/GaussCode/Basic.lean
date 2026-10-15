@@ -285,6 +285,16 @@ theorem orderIsoFinOfCardEq_ofPerfectMatching_partner (i : Fin (2 * m)) :
       p.val (Fintype.orderIsoFinOfCardEq α hα i) := by
   simp [ofPerfectMatching]
 
+/-- **Crossings are numbered in the order of their first visits.** The crossing met at the `i`-th
+visit of `ofPerfectMatching` has a smaller label than the one met at the `j`-th visit exactly when
+the earlier visit of the first pair comes before the earlier visit of the second. -/
+theorem ofPerfectMatching_visit_lt_visit_iff (i j : Fin (2 * m)) :
+    (ofPerfectMatching hα p over hover sign).visit i <
+        (ofPerfectMatching hα p over hover sign).visit j ↔
+      min (Fintype.orderIsoFinOfCardEq α hα i) (p.val (Fintype.orderIsoFinOfCardEq α hα i)) <
+        min (Fintype.orderIsoFinOfCardEq α hα j) (p.val (Fintype.orderIsoFinOfCardEq α hα j)) := by
+  simp only [ofPerfectMatching, pairLabel, OrderIso.lt_iff_lt, Subtype.mk_lt_mk]
+
 /-- When `sign` takes the same value at the two visits of each pair, the sign of the crossing met
 at the `i`-th visit of `ofPerfectMatching` is `sign` at the `i`-th element. -/
 theorem ofPerfectMatching_sign_visit (hsign : ∀ a, sign (p.val a) = sign a) (i : Fin (2 * m)) :

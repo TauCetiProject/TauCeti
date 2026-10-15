@@ -57,6 +57,8 @@ by Reidemeister moves, are not proved here.
   in increasing order.
 * `Polygon.gaussCode_visit_eq_visit_iff`: two visits belong to the same crossing exactly when
   their points have the same projection.
+* `Polygon.gaussCode_visit_lt_visit_iff`: the crossings are numbered in the order of their first
+  visits.
 * `Polygon.boundaryParam_visitTime_partner`: the partner visit is at the partner double point.
 * `Polygon.gaussCode_over_eq_true_iff`: the over/under convention.
 * `Polygon.gaussCode_sign_visit`: the sign of a crossing is the sign of `b.det ![u, w, d]`.
@@ -123,29 +125,25 @@ theorem finite_crossingTimes (hs : poly.IsSimple ℝ)
     (by rw [image_boundaryParam_crossingTimes]; exact hπ.finite_doublePoints hs)
     (hs.injOn_boundaryParam.mono crossingTimes_subset_Ico)
 
-private theorem boundaryParam_mem_boundary (t : ℝ) : poly.boundaryParam t ∈ poly.boundary ℝ := by
-  rw [← poly.range_boundaryParam]
-  exact mem_range_self t
-
 variable (poly p₀ d) in
 /-- The time in `[0, n)` at which the boundary parametrization reaches the partner of the point
 reached at time `t`. -/
 private noncomputable def partnerTime (t : ℝ) : ℝ :=
   (exists_mem_Ico_boundaryParam_eq
     (doublePointPartner_mem_boundary (π := projAlong ℝ p₀ d)
-      (boundaryParam_mem_boundary (poly := poly) t))).choose
+      (poly.boundaryParam_mem_boundary t))).choose
 
 private theorem partnerTime_mem_Ico (t : ℝ) : partnerTime poly p₀ d t ∈ Ico (0 : ℝ) n :=
   (exists_mem_Ico_boundaryParam_eq
     (doublePointPartner_mem_boundary (π := projAlong ℝ p₀ d)
-      (boundaryParam_mem_boundary (poly := poly) t))).choose_spec.1
+      (poly.boundaryParam_mem_boundary t))).choose_spec.1
 
 private theorem boundaryParam_partnerTime (t : ℝ) :
     poly.boundaryParam (partnerTime poly p₀ d t) =
       poly.doublePointPartner ℝ (projAlong ℝ p₀ d) (poly.boundaryParam t) :=
   (exists_mem_Ico_boundaryParam_eq
     (doublePointPartner_mem_boundary (π := projAlong ℝ p₀ d)
-      (boundaryParam_mem_boundary (poly := poly) t))).choose_spec.2
+      (poly.boundaryParam_mem_boundary t))).choose_spec.2
 
 private theorem partnerTime_mem_crossingTimes {t : ℝ} (ht : t ∈ poly.crossingTimes p₀ d) :
     partnerTime poly p₀ d t ∈ poly.crossingTimes p₀ d :=
@@ -396,8 +394,21 @@ theorem gaussCode_visit_eq_visit_iff (i j) :
     · refine .inr ((strictMono_visitTime hs hπ).injective (hs.injOn_boundaryParam
         (visitTime_mem_crossingTimes hs hπ j).1 (visitTime_mem_crossingTimes hs hπ _).1 ?_))
       rw [boundaryParam_visitTime_partner]
-      exact hπ.eq_doublePointPartner (boundaryParam_mem_boundary _) (boundaryParam_mem_boundary _)
-        heq h.symm
+      exact hπ.eq_doublePointPartner (poly.boundaryParam_mem_boundary _)
+        (poly.boundaryParam_mem_boundary _) heq h.symm
+
+/-- **Crossings are numbered in the order of their first visits.** The crossing met at visit `i`
+has a smaller label than the one met at visit `j` exactly when the first visit time of the first
+crossing is less than that of the second. -/
+theorem gaussCode_visit_lt_visit_iff (i j) :
+    (gaussCode hs hπ b).visit i < (gaussCode hs hπ b).visit j ↔
+      min (visitTime hs hπ i) (visitTime hs hπ ((gaussCode hs hπ b).partner.val i)) <
+        min (visitTime hs hπ j) (visitTime hs hπ ((gaussCode hs hπ b).partner.val j)) := by
+  have : Fintype (poly.crossingTimes p₀ d) := (finite_crossingTimes hs hπ).fintype
+  rw [visitTime_partner, visitTime_partner, gaussCode_eq,
+    BasedOrientedGaussCode.ofPerfectMatching_visit_lt_visit_iff, visitTime_eq hs hπ,
+    visitTime_eq hs hπ, ← coe_crossingMatching_apply hs hπ, ← coe_crossingMatching_apply hs hπ,
+    ← (Subtype.mono_coe _).map_min, ← (Subtype.mono_coe _).map_min, Subtype.coe_lt_coe]
 
 /-- **The over/under convention.** A visit is over exactly when its point is obtained from the
 point of the partner visit by adding a positive multiple of `d`: the diagram is viewed from the
