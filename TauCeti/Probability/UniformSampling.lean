@@ -1,12 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Alexander Richard Towell
 -/
 module
 
 public import Mathlib.Probability.UniformOn
-import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Fintype.CardEmbedding
 
 /-!
 # Uniform sampling with and without replacement
@@ -17,8 +17,10 @@ coordinates collide with probability at most
 
 `(Fintype.card ι).choose 2 / Fintype.card κ`.
 
-When the function space is empty, Mathlib's `uniformOn` is instead the zero measure, and the same
-inequality remains valid under that convention.
+The exact collision probability on a nonempty function space is
+`1 - (Fintype.card κ).descFactorial (Fintype.card ι) / (Fintype.card κ) ^ Fintype.card ι`.
+When the function space is empty, Mathlib's `uniformOn` is instead the zero measure; the union
+bound remains valid under that convention, but the complement formula requires nonemptiness.
 
 When injective maps exist, conditioning the random map to be injective is uniform sampling without
 replacement.  The main results compare every event under the uniform measures on all maps and on
@@ -27,13 +29,16 @@ injective map exists (when Mathlib's `uniformOn` is the zero measure); in the fe
 the coupling step used to compare a finite exchangeable law with the product of its empirical
 measure.
 
-The proof is the classical union bound over the unordered pairs of coordinates.  It uses
-Mathlib's `ProbabilityTheory.uniformOn`, `measure_biUnion_finset_le`, and
-`Fintype.card_product_filter_lt`; no sampling distribution is redefined here.
+The exact formula counts embeddings using Mathlib's `Fintype.card_embedding_eq`. The simpler
+estimate is the classical union bound over unordered coordinate pairs, using
+`measure_biUnion_finset_le` and `Fintype.card_product_filter_lt`. Both use Mathlib's
+`ProbabilityTheory.uniformOn`; no sampling distribution is redefined here.
 
 ## Main results
 
-* `uniformOn_not_injective_le` bounds the probability of a collision;
+* `uniformOn_not_injective_le` bounds the uniform-measure mass of collisions;
+* `uniformOn_injective_apply_eq` and `uniformOn_not_injective_apply_eq` compute the exact
+  uniform-measure masses;
 * `uniformOn_le_univ_add_compl` and `uniformOn_univ_le_add_compl` give the general conditioning
   comparison;
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
@@ -41,7 +46,7 @@ Mathlib's `ProbabilityTheory.uniformOn`, `measure_biUnion_finset_le`, and
 * `uniformOn_injective_le_add_choose_two_div` and
   `uniformOn_univ_le_injective_add_choose_two_div` give the quantitative forms.
 
-This advances Layer 8, "finite de Finetti bounds", of the Exchangeability roadmap.
+These comparisons feed quantitative finite de Finetti bounds.
 -/
 
 public section
@@ -57,8 +62,40 @@ namespace Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-/-- The real-valued probability of an event under a finite uniform sample is the ratio of its
-cardinality to the cardinality of the sampling set. -/
+/-- The uniform-measure mass of injective maps is the number of ordered injections divided by
+the number of maps. This is an injectivity probability when the function space is nonempty;
+when the function space is empty, `uniformOn` is the zero measure and both sides are zero. -/
+@[simp]
+theorem uniformOn_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonClass κ] :
+    uniformOn (Set.univ : Set (ι → κ)) {f | Function.Injective f} =
+      (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+  classical
+  have hcard : Fintype.card {f : ι → κ | Function.Injective f} =
+      (Fintype.card κ).descFactorial (Fintype.card ι) :=
+    (Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding ι κ)).trans
+      Fintype.card_embedding_eq
+  rw [uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _),
+    ← Set.ncard_eq_toFinset_card _ (Set.toFinite _),
+    ← Set.fintypeCard_eq_ncard, hcard, Fintype.card_fun, Nat.cast_pow]
+
+/-- The exact collision probability for a uniform random map on a nonempty finite function
+space. The descending factorial counts ordered samples without replacement, so this retains
+the overlap between pairwise collision events discarded by the union bound. -/
+@[simp]
+theorem uniformOn_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonClass κ]
+    [Nonempty (ι → κ)] :
+    uniformOn (Set.univ : Set (ι → κ)) {f | ¬ Function.Injective f} =
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+  let _ : IsProbabilityMeasure (uniformOn (Set.univ : Set (ι → κ))) :=
+    isProbabilityMeasure_uniformOn Set.finite_univ Set.univ_nonempty
+  rw [← Set.compl_ofPred, prob_compl_eq_one_sub (Set.toFinite _).measurableSet,
+    uniformOn_injective_apply_eq]
+
+/-- The real-valued mass of an event under a finite uniform measure is the ratio of its
+cardinality to the cardinality of the sampling set. This also covers the zero measure when
+the sampling set is empty. -/
 theorem uniformOn_toReal {Ω : Type*} [Finite Ω] [MeasurableSpace Ω]
     [MeasurableSingletonClass Ω] (S T : Set Ω) :
     (uniformOn S T).toReal =
