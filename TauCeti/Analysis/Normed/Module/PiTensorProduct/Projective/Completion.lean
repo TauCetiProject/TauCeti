@@ -107,36 +107,13 @@ theorem continuousLinearMap_ext {g h : CompletedProjectiveTensorProduct p →L[�
     (hgh : ∀ x : ∀ i, E i, g (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p) =
       h (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p)) :
     g = h := by
-  apply ContinuousLinearMap.ext
-  intro z
-  induction z using Completion.induction_on with
-  | hp => exact isClosed_eq g.continuous h.continuous
-  | ih z =>
-      let g₀ : ProjectiveTensorProduct p →ₗ[𝕜] F :=
-        { toFun := fun x => g (x : CompletedProjectiveTensorProduct p)
-          map_add' := by
-            intro x y
-            rw [Completion.coe_add, map_add]
-          map_smul' := by
-            intro c x
-            rw [Completion.coe_smul, map_smul]
-            rfl }
-      let h₀ : ProjectiveTensorProduct p →ₗ[𝕜] F :=
-        { toFun := fun x => h (x : CompletedProjectiveTensorProduct p)
-          map_add' := by
-            intro x y
-            rw [Completion.coe_add, map_add]
-          map_smul' := by
-            intro c x
-            rw [Completion.coe_smul, map_smul]
-            rfl }
-      have hz : g₀ = h₀ := by
-        apply ProjectiveTensorProduct.linearMap_ext p
-        intro x
-        dsimp only [g₀, h₀]
-        simpa only [LinearMap.coe_mk, AddHom.coe_mk,
-          ProjectiveTensorProduct.tprod_apply] using hgh x
-      exact LinearMap.congr_fun hz z
+  have hz : g.toLinearMap.comp Completion.toComplL.toLinearMap =
+      h.toLinearMap.comp Completion.toComplL.toLinearMap :=
+    ProjectiveTensorProduct.linearMap_ext p fun x => by
+      simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
+        ProjectiveTensorProduct.tprod_apply] using hgh x
+  exact DFunLike.coe_injective <|
+    Completion.ext g.continuous h.continuous (LinearMap.congr_fun hz)
 
 /-- The completed lift is the unique continuous linear map with the prescribed values on pure
 tensors. -/
