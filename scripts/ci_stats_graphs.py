@@ -351,7 +351,10 @@ def download(dest: Path):
 
 
 def contiguous_coverage(db, stream):
-    """Union a stream's intervals and stop its daily charts at the first gap."""
+    """Union a stream's intervals and stop its daily charts at the first gap.
+
+    Stream schema: https://github.com/TauCetiProject/TauCetiCI/pull/16
+    """
     try:
         intervals = sorted((ts(lo),ts(hi)) for lo,hi in db.execute(
             "SELECT since,complete_to FROM stream_coverage WHERE repo='TauCeti' AND stream=?", (stream,))

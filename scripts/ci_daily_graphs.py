@@ -362,6 +362,7 @@ def merge_history(db: sqlite3.Connection, since: float, until: float, *, include
     """
     bounds = tuple(dt.datetime.fromtimestamp(t, UTC).isoformat() for t in (since, until))
     queue = []
+    # Snapshot-completeness/count contract: https://github.com/TauCetiProject/TauCetiCI/pull/16
     metadata = db.execute("SELECT 1 FROM sqlite_master WHERE name='queue_observation_metadata'").fetchone()
     query = ("""SELECT o.observed_at,
                     CASE WHEN m.eligible_count IS NULL THEN o.eligible_json END,
@@ -431,7 +432,10 @@ def time_axes(out: list[str], since: float, until: float, vmax: int, ylabel: str
 
 
 def inventory_gaps(db, since, until):
-    """Intervals lacking proven TauCeti run inventory; recorded dots remain useful there."""
+    """Intervals lacking proven TauCeti run inventory; recorded dots remain useful there.
+
+    Stream schema: https://github.com/TauCetiProject/TauCetiCI/pull/16
+    """
     if db.execute("SELECT 1 FROM sqlite_master WHERE name='stream_coverage'").fetchone():
         rows = db.execute("""SELECT since,complete_to FROM stream_coverage
             WHERE repo='TauCeti' AND stream='inventory' ORDER BY since""").fetchall()
@@ -453,15 +457,12 @@ def inventory_gaps(db, since, until):
     return gaps
 
 
-def merge_charts(db: sqlite3.Connection, until: float, *, queue_until=None, staging_until=None,
-                 include_queue=True, include_staging=True) -> dict[str, str]:
+def merge_charts(db: sqlite3.Connection, until: float, *, include_queue=True, include_staging=True) -> dict[str, str]:
     """Merge timelines use independent observation and recorded-run timestamps.
 
     Incomplete run inventory is shaded, so partial staging data is never
     presented as proof that no runs occurred. Queue samples never fill gaps.
     """
-    queue_until = until if queue_until is None else queue_until
-    staging_until = until if staging_until is None else staging_until
     since = until - 30 * 86400
     m = merge_history(db, since, until, include_queue=include_queue, include_staging=include_staging)
     starts = [t for t, _ in m["queue"]] + [r["at"] for r in m["runs"]]
@@ -470,8 +471,8 @@ def merge_charts(db: sqlite3.Connection, until: float, *, queue_until=None, stag
     def through(t):
         return dt.datetime.fromtimestamp(t, UTC).strftime("%d %b %Y %H:%M UTC")
 
-    out = frame("Merge queue size", f"Observed ready-to-merge PR backlog; data through {through(queue_until)}")
-    samples = [(t, n) for t, n in m['queue'] if t < queue_until]
+    out = frame("Merge queue size", f"Observed ready-to-merge PR backlog; data through {through(until)}")
+    samples = [(t, n) for t, n in m['queue'] if t < until]
     x, y = time_axes(out, since, until, max((n for _, n in samples if n is not None), default=0), "PRs")
     segments = []
     segment = None
@@ -504,8 +505,8 @@ def merge_charts(db: sqlite3.Connection, until: float, *, queue_until=None, stag
     if not include_staging:
         return {'ci-queue-size.svg': queue_svg} if include_queue else {}
 
-    out = frame("Bors staging runs", f"Recorded runs at creation time; data through {through(staging_until)}")
-    runs = [r for r in m['runs'] if r['at'] < staging_until]
+    out = frame("Bors staging runs", f"Recorded runs at creation time; data through {through(until)}")
+    runs = [r for r in m['runs'] if r['at'] < until]
     x, y = time_axes(out, since, until, max((r["prs"] for r in runs), default=0), "PRs in batch")
     gaps = inventory_gaps(db, since, until)
     for lo, hi in gaps:
