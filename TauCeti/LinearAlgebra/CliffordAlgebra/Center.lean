@@ -36,8 +36,7 @@ form on a finite-dimensional space has such a list, by
 `ω` by a nonzero scalar, hence leaves the generated subalgebra unchanged. Reading the
 description as a dimension count, the centre is two-dimensional, and in particular strictly larger
 than the scalars: an odd-dimensional Clifford algebra is never central over `K`. That last
-statement needs no nondegeneracy at all, since every symmetric bilinear form has an orthogonal
-basis and the volume element of one of odd length is a nonzero central element of odd degree.
+statement needs no nondegeneracy at all, and holds for an arbitrary quadratic form of odd rank.
 
 ## Main results
 
@@ -251,9 +250,8 @@ theorem finrank_center_eq_two_of_odd_finrank [NeZero (2 : K)] (hQ : Q.Nondegener
   -- The coordinate map `(a, b) ↦ a + b • ω`. It is injective, and its range is the centre, so the
   -- centre has the dimension of `K × K`.
   let f : K × K →ₗ[K] CliffordAlgebra Q :=
-    (Algebra.linearMap K (CliffordAlgebra Q)).comp (LinearMap.fst K K K) +
-      (LinearMap.toSpanSingleton K (CliffordAlgebra Q) (l.map (ι Q)).prod).comp
-        (LinearMap.snd K K K)
+    (Algebra.linearMap K (CliffordAlgebra Q)).coprod
+      (LinearMap.toSpanSingleton K (CliffordAlgebra Q) (l.map (ι Q)).prod)
   have hf (p : K × K) :
       f p = algebraMap K (CliffordAlgebra Q) p.1 + p.2 • (l.map (ι Q)).prod := rfl
   have hinj : Function.Injective f := by
@@ -273,11 +271,8 @@ theorem finrank_center_eq_two_of_odd_finrank [NeZero (2 : K)] (hQ : Q.Nondegener
   rw [← Subalgebra.finrank_toSubmodule, ← hrange, LinearMap.finrank_range_of_inj hinj]
   simp
 
-/-- **An odd-dimensional Clifford algebra is not central over the base field.** No nondegeneracy
-is needed: every symmetric bilinear form has an orthogonal basis
-(`LinearMap.BilinForm.exists_orthogonal_basis`), and the volume element `ω` of such a basis of odd
-length is central (`CliffordAlgebra.prod_map_ι_mem_center_of_odd_length`), nonzero
-(`CliffordAlgebra.prod_map_ι_ofFn_ne_zero`) and of odd degree, hence not a scalar.
+/-- **An odd-dimensional Clifford algebra is not central over the base field.** The quadratic form
+is arbitrary; no nondegeneracy is needed.
 
 When `Q` is nondegenerate the centre is moreover exactly two-dimensional, by
 `CliffordAlgebra.finrank_center_eq_two_of_odd_finrank`; for a degenerate form it can be larger, as
@@ -288,6 +283,8 @@ theorem not_isCentral_of_odd_finrank [NeZero (2 : K)] (hodd : Odd (finrank K V))
     ¬ Algebra.IsCentral K (CliffordAlgebra Q) := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   have _ : FiniteDimensional K V := .of_finrank_pos hodd.pos
+  -- Every symmetric bilinear form has an orthogonal basis, and the volume element `ω` of such a
+  -- basis of odd length is central, nonzero and of odd degree, hence not a scalar.
   obtain ⟨b, hb⟩ := LinearMap.BilinForm.exists_orthogonal_basis
     (B := QuadraticMap.associated Q) (QuadraticForm.associated_isSymm K Q)
   have hlen : Odd (List.ofFn b).length := by rw [List.length_ofFn]; exact hodd
