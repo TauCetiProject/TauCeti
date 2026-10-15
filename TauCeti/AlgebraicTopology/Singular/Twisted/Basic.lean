@@ -185,6 +185,11 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
+/-- Vertex transport is transport inside the simplex between the two initial vertices. -/
+lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
+      (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
+
 /-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
 lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     (q : Path (toTopInitialVertex m.unop)
@@ -274,6 +279,12 @@ def twistedChains : SimplicialObject (ModuleCat.{max v w} R) where
 def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
     L.obj (initialVertex σ) ⟶ (twistedChains L).obj n :=
   Sigma.ι (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) σ
+
+/-- Twisted chains in a simplicial degree are the coproduct of the coefficient fibres at the
+initial vertices of its singular simplices. -/
+def isColimitCofanTwistedChains (n : SimplexCategoryᵒᵖ) :
+    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) :=
+  coproductIsCoproduct _
 
 /-- Two maps out of a module of twisted chains agree as soon as they agree on every summand. -/
 @[ext]
