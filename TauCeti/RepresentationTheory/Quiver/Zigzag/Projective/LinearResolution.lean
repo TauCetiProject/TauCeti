@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Module.GradedModule.Nakayama
 public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.CartanMap
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Radical
 
 /-!
 # Linear resolutions over a zigzag algebra
@@ -408,7 +407,8 @@ private theorem subsingleton_smul_piece_of_lt (hr : r.IsLinear) (u : V) {n : ℕ
     (hr.piece_eq_bot_of_lt (fun _ hi => zigzagIntegerGrade_eq_bot_of_neg k G hi) hp) u
 
 omit hns in
-/-- A term of a linear resolution vanishes two degrees above its homological degree. -/
+/-- A term of a linear resolution vanishes in degrees strictly greater than two above its
+homological degree. -/
 private theorem subsingleton_smul_piece_of_add_two_lt (hr : r.IsLinear) (u : V) {n : ℕ}
     {p : ℤ} (hp : n + 2 < p) :
     Subsingleton ↥(zigzagVertexIdempotent k G u • (r.grading n).piece p) :=
