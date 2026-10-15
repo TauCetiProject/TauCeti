@@ -68,6 +68,14 @@ private theorem eq_first_harmonics_of_fourierCoeff_eq_zero
       simp [h n hn.1 hn.2])
   simpa using (hasSum_fourier_series_L2 f).unique hs
 
+private theorem fourierCoeff_first_harmonics (a b : ℂ) (n : ℤ) :
+    fourierCoeff (a • fourierLp 2 1 + b • fourierLp 2 (-1) : Lp ℂ 2 (@haarAddCircle T _)) n =
+      (if n = 1 then a else 0) + (if n = -1 then b else 0) := by
+  classical
+  rw [← fourierBasis_repr, HilbertBasis.repr_apply_apply, coe_fourierBasis]
+  simp [inner_add_right, inner_smul_right,
+    orthonormal_iff_ite.mp (orthonormal_fourier (T := T)), mul_ite]
+
 /-- Equality in the circle spectral gap holds exactly for linear combinations of
 its positive and negative first harmonics. Equality is in `L²`, hence is independent
 of the choice of almost-everywhere representative. -/
@@ -107,11 +115,7 @@ theorem integral_norm_sq_eq_tsum_frequency_sq_fourierCoeff_iff
     by_cases hp : n = -1
     · simp [hp]
     have hc : fourierCoeff f n = 0 := by
-      rw [hf, ← fourierBasis_repr]
-      rw [← coe_fourierBasis]
-      simp only [map_add, map_smul, HilbertBasis.repr_self, lp.coeFn_add,
-        lp.coeFn_smul, lp.coeFn_single]
-      dsimp only [Pi.add_apply, Pi.smul_apply]
+      rw [hf, fourierCoeff_first_harmonics]
       simp [hn, hp]
     simp [hc]
 
