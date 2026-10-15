@@ -247,8 +247,8 @@ variable {R G V}
 
 /-- Composed with the comultiplication of `R[G]`, the pair of coefficient maps at equal indices is
 a single coefficient map: the elements `single g 1` are group-like. -/
-private theorem pairCoeff_comp_comul_self (g : G) :
-    pairCoeff (R := R) (monoidCoeff R G g) (monoidCoeff R G g) ∘ₗ
+private theorem coeff_comp_tensorComponent_comp_comul_self (g : G) :
+    monoidCoeff R G g ∘ₗ _root_.LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ
         Coalgebra.comul (R := R) (A := MonoidAlgebra R G) = monoidCoeff R G g := by
   refine MonoidAlgebra.lhom_ext' fun k => ?_
   ext
@@ -257,8 +257,8 @@ private theorem pairCoeff_comp_comul_self (g : G) :
 
 /-- Composed with the comultiplication of `R[G]`, the pair of coefficient maps at distinct indices
 vanishes. -/
-private theorem pairCoeff_comp_comul_of_ne {h g : G} (hne : h ≠ g) :
-    pairCoeff (R := R) (monoidCoeff R G h) (monoidCoeff R G g) ∘ₗ
+private theorem coeff_comp_tensorComponent_comp_comul_of_ne {h g : G} (hne : h ≠ g) :
+    monoidCoeff R G h ∘ₗ _root_.LinearMap.tensorComponent (monoidCoeff R G g) ∘ₗ
         Coalgebra.comul (R := R) (A := MonoidAlgebra R G) = 0 := by
   refine MonoidAlgebra.lhom_ext' fun k => ?_
   ext
@@ -267,34 +267,20 @@ private theorem pairCoeff_comp_comul_of_ne {h g : G} (hne : h ≠ g) :
 
 variable [Comodule R (MonoidAlgebra R G) V]
 
-private theorem weightProj_weightProj_eq (h g : G) (v : V) :
-    weightProj R G V h (weightProj R G V g v) =
-      tensorPairComponent (R := R) (M := V) (monoidCoeff R G h) (monoidCoeff R G g)
-        ((Coalgebra.comul (R := R) (A := MonoidAlgebra R G)).lTensor V
-          (coact (R := R) (C := MonoidAlgebra R G) v)) :=
-  coactComponent_coactComponent (R := R) (C := MonoidAlgebra R G) (M := V)
-    (monoidCoeff R G h) (monoidCoeff R G g) v
-
 /-- **The weight projections are idempotent.** -/
 @[simp]
 theorem weightProj_weightProj_self (g : G) (v : V) :
     weightProj R G V g (weightProj R G V g v) = weightProj R G V g v := by
-  rw [weightProj_weightProj_eq]
-  have h := tensorPairComponent_comp_lTensor_comul (M := V)
-    (pairCoeff_comp_comul_self (R := R) (G := G) g)
-  simpa only [LinearMap.coe_comp, Function.comp_apply, weightProj_apply] using
-    congr($h (coact (R := R) (C := MonoidAlgebra R G) v))
+  simp only [weightProj, coactComponent_coactComponent,
+    coeff_comp_tensorComponent_comp_comul_self]
 
 /-- **The weight projections at distinct indices are orthogonal.** -/
 @[simp]
 theorem weightProj_weightProj_of_ne {h g : G} (hne : h ≠ g) (v : V) :
     weightProj R G V h (weightProj R G V g v) = 0 := by
-  rw [weightProj_weightProj_eq]
-  have h0 := tensorPairComponent_comp_lTensor_comul (M := V)
-    (pairCoeff_comp_comul_of_ne (R := R) (G := G) hne)
-  have := congr($h0 (coact (R := R) (C := MonoidAlgebra R G) v))
-  simpa only [LinearMap.coe_comp, Function.comp_apply, map_zero,
-    LinearMap.zero_apply] using this
+  rw [weightProj, weightProj, coactComponent_coactComponent,
+    coeff_comp_tensorComponent_comp_comul_of_ne hne, coactComponent_apply]
+  simp
 
 end Coassoc
 

@@ -119,22 +119,19 @@ theorem coeff_zero_eq_counit :
   simp only [Bialgebra.counitAlgHom_apply, SymmetricAlgebra.counit_ι]
   cases n <;> simp
 
-/-- The pairing of two coefficient functionals on a tensor square of the coordinate algebra. -/
-private noncomputable def coeffPair (i j : ℕ) :
-    SymmetricAlgebra R R ⊗[R] SymmetricAlgebra R R →ₗ[R] R :=
-  Comodule.pairCoeff (R := R) (coeff R i) (coeff R j)
-
 /-- **The coefficient functionals are a divided-power system.** Pairing the `i`-th and `j`-th
 coefficients across the comultiplication returns `(i + j choose i)` times the `(i + j)`-th
 coefficient. -/
-private theorem coeffPair_comp_comul (i j : ℕ) :
-    coeffPair R i j ∘ₗ (Coalgebra.comul (R := R) (A := SymmetricAlgebra R R)) =
+private theorem coeff_comp_tensorComponent_comp_comul (i j : ℕ) :
+    coeff R i ∘ₗ _root_.LinearMap.tensorComponent (coeff R j) ∘ₗ
+        Coalgebra.comul (R := R) (A := SymmetricAlgebra R R) =
       ((i + j).choose i) • coeff R (i + j) := by
   refine (monomialBasis R).ext fun n => ?_
   rw [monomialBasis_apply]
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.smul_apply]
   rw [TauCeti.Bialgebra.comul_pow_of_primitive _ (SymmetricAlgebra.comul_ι R R 1) n]
-  simp only [coeff_pow, map_sum, map_nsmul, coeffPair, Comodule.pairCoeff_tmul, coeff_pow]
+  simp only [coeff_pow, map_sum, map_nsmul,
+    _root_.LinearMap.tensorComponent_tmul, map_smul, smul_eq_mul, coeff_pow]
   rcases eq_or_ne n (i + j) with rfl | hn
   · rw [Finset.sum_eq_single (i, j)]
     · simp
@@ -154,29 +151,6 @@ private theorem coeffPair_comp_comul (i j : ℕ) :
     · simp [hmi]
 
 end MonomialBasis
-
-section Component
-
-variable (R : Type u) [CommSemiring R] (V : Type v) [AddCommMonoid V] [Module R V]
-
-/-- Pairing the `i`-th and `j`-th coefficients across the comultiplication picks out
-`(i + j choose i)` times the `(i + j)`-th coefficient. -/
-private theorem tensorPairComponent_comp_lTensor_comul (i j : ℕ) :
-    Comodule.tensorPairComponent (R := R) (M := V) (coeff R i) (coeff R j) ∘ₗ
-        (Coalgebra.comul (R := R) (A := SymmetricAlgebra R R)).lTensor V =
-      ((i + j).choose i) •
-        _root_.LinearMap.tensorComponent (R := R) (M := V) (coeff R (i + j)) := by
-  refine TensorProduct.ext' fun v h => ?_
-  have hc := congr($(coeffPair_comp_comul R i j) h)
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.smul_apply] at hc
-  simp only [coeffPair] at hc
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.lTensor_tmul,
-    Comodule.tensorPairComponent_tmul, hc, LinearMap.smul_apply,
-    _root_.LinearMap.tensorComponent_tmul]
-  rw [← Nat.cast_smul_eq_nsmul R, smul_eq_mul, mul_smul]
-  simp only [Nat.cast_smul_eq_nsmul]
-
-end Component
 
 section CoactComponent
 
@@ -208,12 +182,9 @@ Nᵢ₊ⱼ`. This is coassociativity of the coaction, read off in the monomial b
 theorem coactComponent_coactComponent (i j : ℕ) (v : V) :
     coactComponent R V i (coactComponent R V j v) =
       ((i + j).choose i) • coactComponent R V (i + j) v := by
-  rw [coactComponent, coactComponent,
-    Comodule.coactComponent_coactComponent]
-  have hfinal := congr($(tensorPairComponent_comp_lTensor_comul R V i j)
-    (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v))
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.smul_apply] at hfinal
-  rw [hfinal, coactComponent_apply]
+  rw [coactComponent, coactComponent, Comodule.coactComponent_coactComponent,
+    coeff_comp_tensorComponent_comp_comul, Comodule.coactComponent_apply,
+    map_nsmul, LinearMap.smul_apply, coactComponent_apply]
 
 end CoactComponent
 

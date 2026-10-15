@@ -24,6 +24,8 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
+* `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
+  reassociation.
 * `TauCeti.tensorProduct_rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
@@ -92,6 +94,15 @@ theorem tensorComponent_assoc_symm (phi : P →ₗ[R] R) (u : M ⊗[R] (N ⊗[R]
     | tmul n p =>
       simp only [TensorProduct.assoc_symm_tmul, LinearMap.tensorComponent_tmul,
         LinearMap.lTensor_tmul, TensorProduct.tmul_smul]
+
+/-- Applying two tensor components successively is contraction by the composed functional
+on the last two factors, after reassociation. -/
+theorem tensorComponent_comp_tensorComponent (phi : N →ₗ[R] R) (psi : P →ₗ[R] R) :
+    tensorComponent (M := M) phi ∘ₗ tensorComponent (M := M ⊗[R] N) psi =
+      tensorComponent (M := M) (phi ∘ₗ tensorComponent psi) ∘ₗ
+        (TensorProduct.assoc R M N P).toLinearMap := by
+  refine TensorProduct.ext_threefold fun m n p ↦ ?_
+  simp [smul_smul]
 
 /-- Applying functionals to both factors is independent of the order of contraction. -/
 theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :

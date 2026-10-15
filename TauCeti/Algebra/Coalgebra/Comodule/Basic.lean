@@ -103,42 +103,6 @@ theorem lTensor_counit_coact (m : M) :
 
 /-! ## Components selected by linear functionals -/
 
-/-- Pair two linear functionals on the factors of a tensor square. -/
-noncomputable def pairCoeff (phi psi : C →ₗ[R] R) : C ⊗[R] C →ₗ[R] R :=
-  (TensorProduct.rid R R).toLinearMap ∘ₗ TensorProduct.map phi psi
-
-omit [Coalgebra R C] in
-@[simp]
-theorem pairCoeff_tmul (phi psi : C →ₗ[R] R) (c d : C) :
-    pairCoeff (R := R) phi psi (c ⊗ₜ[R] d) = phi c * psi d := by
-  simp [pairCoeff, smul_eq_mul, mul_comm]
-
-/-- Apply a pair of linear functionals to the two coalgebra factors of a threefold tensor. -/
-noncomputable def tensorPairComponent (phi psi : C →ₗ[R] R) :
-    M ⊗[R] (C ⊗[R] C) →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ (pairCoeff (R := R) phi psi).lTensor M
-
-omit [Coalgebra R C] [Comodule R C M] in
-@[simp]
-theorem tensorPairComponent_tmul (phi psi : C →ₗ[R] R) (m : M) (t : C ⊗[R] C) :
-    tensorPairComponent (R := R) (M := M) phi psi (m ⊗ₜ[R] t) =
-      pairCoeff (R := R) phi psi t • m := by
-  simp [tensorPairComponent]
-
-omit [Coalgebra R C] [Comodule R C M] in
-/-- Applying two tensor components successively is applying their pair after reassociation. -/
-theorem tensorComponent_comp_tensorComponent (phi psi : C →ₗ[R] R) :
-    _root_.LinearMap.tensorComponent (R := R) (M := M) phi ∘ₗ
-        _root_.LinearMap.tensorComponent (R := R) (M := M ⊗[R] C) psi =
-      tensorPairComponent (R := R) (M := M) phi psi ∘ₗ
-        (TensorProduct.assoc R M C C).toLinearMap := by
-  refine TensorProduct.ext_threefold fun m c d => ?_
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-    TensorProduct.assoc_tmul, tensorPairComponent_tmul, pairCoeff_tmul,
-    _root_.LinearMap.tensorComponent_tmul,
-    map_smul, smul_smul]
-  rw [mul_comm]
-
 /-- Taking a tensor component commutes with a coaction on the other factor. -/
 theorem coact_comp_tensorComponent (phi : C →ₗ[R] R) :
     coact (R := R) (C := C) (M := M) ∘ₗ
@@ -162,27 +126,20 @@ theorem coactComponent_apply (phi : C →ₗ[R] R) (m : M) :
 theorem coactComponent_coactComponent (phi psi : C →ₗ[R] R) (m : M) :
     coactComponent (R := R) (C := C) (M := M) phi
         (coactComponent (R := R) (C := C) (M := M) psi m) =
-      tensorPairComponent (R := R) (M := M) phi psi
-        (Coalgebra.comul.lTensor M (coact m)) := by
+      coactComponent (R := R) (C := C) (M := M)
+        (phi ∘ₗ _root_.LinearMap.tensorComponent psi ∘ₗ Coalgebra.comul) m := by
   have hcoact := congr($(coact_comp_tensorComponent (R := R) (C := C) (M := M) psi)
     (coact (R := R) (C := C) (M := M) m))
-  simp only [LinearMap.coe_comp, Function.comp_apply] at hcoact
-  have hpair := congr($(tensorComponent_comp_tensorComponent
-    (R := R) (C := C) (M := M) phi psi)
+  simp only [LinearMap.comp_apply] at hcoact
+  have hpair := congr($(_root_.LinearMap.tensorComponent_comp_tensorComponent
+    (R := R) (M := M) phi psi)
       ((coact (R := R) (C := C) (M := M)).rTensor C (coact m)))
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe] at hpair
-  rw [coactComponent_apply, coactComponent_apply, hcoact, hpair, coassoc_apply]
-
-omit [Comodule R C M] in
-/-- Contracting a pair component after comultiplication uses the corresponding contraction of
-the two coefficient functionals. -/
-theorem tensorPairComponent_comp_lTensor_comul {phi psi theta : C →ₗ[R] R}
-    (h : pairCoeff (R := R) phi psi ∘ₗ Coalgebra.comul = theta) :
-    tensorPairComponent (R := R) (M := M) phi psi ∘ₗ Coalgebra.comul.lTensor M =
-      _root_.LinearMap.tensorComponent (R := R) (M := M) theta := by
-  rw [tensorPairComponent, LinearMap.comp_assoc, ← LinearMap.lTensor_comp, h]
-  refine TensorProduct.ext' fun m c ↦ ?_
-  simp
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hpair
+  rw [coactComponent_apply, coactComponent_apply, hcoact, hpair, coassoc_apply,
+    coactComponent_apply]
+  simpa only [LinearMap.id_apply, LinearMap.lTensor_def, LinearMap.comp_assoc] using
+    _root_.LinearMap.tensorComponent_map (phi ∘ₗ _root_.LinearMap.tensorComponent psi)
+      LinearMap.id Coalgebra.comul (coact (R := R) (C := C) m)
 
 variable (R C) in
 /-- The regular right comodule of a coalgebra over itself, with coaction given by the

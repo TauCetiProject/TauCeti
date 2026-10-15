@@ -51,19 +51,21 @@ variable [AddCommGroup M] [Module k M] [Comodule k C M]
 
 /-- Comultiplying and then pairing with a functional and a group-like coordinate is the same as
 scaling that coordinate by the value of the functional at the group-like element. -/
-private theorem pairCoeff_coord_comp_comul
+private theorem coord_comp_tensorComponent_comp_comul
     (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤)
     (φ : Module.Dual k C) (g : GroupLike k C) :
-    pairCoeff (R := k) φ ((Subcoalgebra.groupLikeBasis hC).coord g) ∘ₗ Coalgebra.comul =
+    φ ∘ₗ _root_.LinearMap.tensorComponent ((Subcoalgebra.groupLikeBasis hC).coord g) ∘ₗ
+        Coalgebra.comul =
       φ g.val • (Subcoalgebra.groupLikeBasis hC).coord g := by
   classical
   refine (Subcoalgebra.groupLikeBasis hC).ext fun h ↦ ?_
-  rw [LinearMap.comp_apply, Subcoalgebra.groupLikeBasis_apply,
-    h.isGroupLikeElem_val.comul_eq_tmul_self, pairCoeff_tmul, LinearMap.smul_apply,
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, Subcoalgebra.groupLikeBasis_apply,
+    h.isGroupLikeElem_val.comul_eq_tmul_self,
+    _root_.LinearMap.tensorComponent_tmul, map_smul, LinearMap.smul_apply,
     ← Subcoalgebra.groupLikeBasis_apply hC h,
     Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply, smul_eq_mul]
   split_ifs with hhg
-  · rw [hhg, Subcoalgebra.groupLikeBasis_apply]
+  · simp [hhg, Subcoalgebra.groupLikeBasis_apply, smul_eq_mul]
   · simp
 
 /-- The coordinate of a coaction along a group-like basis vector has that group-like weight. -/
@@ -75,12 +77,8 @@ theorem coactComponent_groupLikeBasis_coord_mem_weightSpace
   let _ : Module.Projective k C := Module.Projective.of_basis (Subcoalgebra.groupLikeBasis hC)
   rw [mem_groupLikeWeightSpace_iff_forall_coactComponent_eq_smul]
   intro φ
-  rw [coactComponent_coactComponent, ← LinearMap.comp_apply,
-    tensorPairComponent_comp_lTensor_comul (pairCoeff_coord_comp_comul hC φ g),
-    coactComponent_apply]
-  induction coact (R := k) (C := C) m using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy, smul_add]
-  | tmul x c => simp [smul_smul]
+  rw [coactComponent_coactComponent, coord_comp_tensorComponent_comp_comul,
+    coactComponent_apply, map_smul, LinearMap.smul_apply, ← coactComponent_apply]
 
 /-- **A comodule over a coalgebra spanned by its group-like elements is spanned by its group-like
 weight spaces.** -/

@@ -58,16 +58,12 @@ noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.
     rfl
   map_mul' f g := by
     ext m
-    rw [Module.End.mul_apply, coactComponent_coactComponent, coactComponent_apply]
-    have h : pairCoeff f.ofConv g.ofConv ∘ₗ Coalgebra.comul = (f * g).ofConv := by
-      rw [LinearMap.convMul_def]
-      have hp : pairCoeff f.ofConv g.ofConv =
-          LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
-        ext c d
-        simp
-      rw [hp, LinearMap.comp_assoc]
-    exact (LinearMap.congr_fun
-      (tensorPairComponent_comp_lTensor_comul (M := M) h) (coact m)).symm
+    rw [Module.End.mul_apply, coactComponent_coactComponent]
+    have hp : f.ofConv ∘ₗ LinearMap.tensorComponent g.ofConv =
+        LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
+      ext c d
+      simp [mul_comm]
+    rw [← LinearMap.comp_assoc, hp, LinearMap.convMul_def, LinearMap.comp_assoc]
   commutes' r := by
     ext m
     have h : (algebraMap R (WithConv (C →ₗ[R] R)) r).ofConv =
