@@ -22,8 +22,7 @@ cochains, those with
 `φ(aₙ, a₀, …, aₙ₋₁) = (-1)ⁿ φ(a₀, …, aₙ)`. For unital `A` and `M = R` these are the data from
 which the Hochschild cochain complex of `A` with coefficients in its dual `A*` and Connes' cyclic
 subcomplex can be assembled; the complexes themselves and their cohomology are not constructed
-here. The formulas make sense for nonunital `A`, so they also apply to unitizations and their
-relative complexes.
+here.
 
 The coboundary is the alternating sum of the cofaces `φ ↦ φ ∘ dᵢ`, where `dᵢ` are face maps
 on tuples. For unital `A`, these faces and the rotation are part of the Hochschild cyclic module;
