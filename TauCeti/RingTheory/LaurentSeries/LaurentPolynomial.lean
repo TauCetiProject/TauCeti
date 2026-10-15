@@ -166,7 +166,7 @@ theorem coeff_laurentPolynomialTrunc {A : Type*} [Semiring A] (a n : ℤ) (f : A
 
 /-- Finite Laurent truncation agrees with Hahn-series truncation after inclusion. -/
 @[simp]
-theorem toLaurentSeries_trunc (a : ℤ) (f : R⸨X⸩) :
+theorem toLaurentSeries_laurentPolynomialTrunc (a : ℤ) (f : R⸨X⸩) :
     LaurentPolynomial.toLaurentSeries (laurentPolynomialTrunc a f) = truncLT a f := by
   ext n
   simp [HahnSeries.coeff_truncLT]
