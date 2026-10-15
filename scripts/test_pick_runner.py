@@ -277,11 +277,12 @@ def expression(value, event, action, picked, app_token="installation-token", var
     """Evaluate the actual workflow expression's boolean/format/JSON subset."""
     source = value.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
-    github = SimpleNamespace(event_name=event, event=SimpleNamespace(action=action), run_id=42)
-    needs = SimpleNamespace(**{"pick-runner": SimpleNamespace(outputs=SimpleNamespace(github=picked))})
+    github = SimpleNamespace(run_attempt=1, event_name=event, event=SimpleNamespace(action=action), run_id=42)
+    needs = SimpleNamespace(**{"pick-runner": SimpleNamespace(outputs=SimpleNamespace(github=picked, fleet=""))})
     source = source.replace("needs.pick-runner", "needs.__dict__['pick-runner']")
     steps = SimpleNamespace(**{"app-token": SimpleNamespace(outputs=SimpleNamespace(token=app_token))})
     variables = variables or SimpleNamespace(PICKER_API_RESERVE="", PICKER_REPOSITORY_API_RESERVE="")
+    variables.FLEET_CI_ENABLED = getattr(variables, "FLEET_CI_ENABLED", "")
     source = source.replace("steps.app-token", "steps.__dict__['app-token']")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "steps": steps, "vars": variables, "fromJSON": json.loads, "format": lambda s, *args: s.format(*args)})

@@ -1,0 +1,19 @@
+name: Fleet smoke test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    if: ${{ vars.FLEET_CI_ENABLED == 'true' }}
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet]
+    timeout-minutes: 5
+    steps:
+      - name: Verify unprivileged guest execution
+        run: |
+          test "$(id -u)" -ne 0
+          test -f /etc/os-release
+          python3 -c 'import json,os; print(json.dumps(dict(cpus=os.cpu_count(), guest_user=os.getuid())))'
+          test ! -e /home/kim/.config/tauceti/secrets

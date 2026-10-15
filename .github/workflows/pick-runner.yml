@@ -34,13 +34,22 @@ name: pick-runner
 
 on:
   workflow_call:
+    inputs:
+      fleet-staging:
+        type: boolean
+        required: false
+        default: false
     secrets:
       # Optional. The App's installation token has a far larger hourly API budget than
       # `github.token`, which pr-build.yml's volume would exhaust. Without it, the picker
       # uses `github.token`.
+      FLEET_READ_TOKEN: { required: false }
       APP_ID: { required: false }
       APP_PRIVATE_KEY: { required: false }
     outputs:
+      fleet:
+        description: "true only for an initial bors attempt with ready dedicated capacity"
+        value: ${{ jobs.pick.outputs.fleet }}
       github:
         description: "`true` when the caller should run on a GitHub-hosted runner"
         value: ${{ jobs.pick.outputs.github }}
@@ -53,15 +62,34 @@ on:
 
 jobs:
   pick:
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-latest' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
+      fleet: ${{ steps.fleet.outputs.fleet }}
       github: ${{ steps.pick.outputs.github }}
       busy: ${{ steps.pick.outputs.busy }}
       budget: ${{ steps.pick.outputs.budget }}
     steps:
+      - name: Checkout workflow-pinned fleet selector
+        if: inputs.fleet-staging
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: scripts/fleet_runner.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Prefer ready dedicated capacity for bors
+        id: fleet
+        if: inputs.fleet-staging
+        env:
+          FLEET_CI_ENABLED: ${{ vars.FLEET_CI_ENABLED }}
+          FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
+          FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+        run: python3 scripts/fleet_runner.py
       - name: Check for the App
+        if: ${{ !inputs.fleet-staging }}
         id: app
         env:
           APP_ID: ${{ secrets.APP_ID }}
@@ -71,7 +99,7 @@ jobs:
       # permission beyond metadata.
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
-        if: steps.app.outputs.present == 'true'
+        if: ${{ !inputs.fleet-staging && steps.app.outputs.present == 'true' }}
         continue-on-error: true
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -80,6 +108,7 @@ jobs:
           permission-metadata: read
 
       - name: Count busy GitHub-hosted jobs
+        if: ${{ !inputs.fleet-staging }}
         id: pick
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}

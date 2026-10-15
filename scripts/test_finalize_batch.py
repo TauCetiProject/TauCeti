@@ -230,7 +230,7 @@ class WorkflowBoundaryTests(unittest.TestCase):
         for part, shape in [(report, "2x4"), (publisher, "4x8")]:
             self.assertEqual(part["runs-on"], [f"nscloud-ubuntu-24.04-amd64-{shape}-with-features;job.priority=0",
                                               "namespace-features:github.run-id=${{ github.run_id }}"])
-        self.assertEqual(report["needs"], "sandboxed-build")
+        self.assertEqual(report["needs"], ["pick-runner", "sandboxed-build"])
         self.assertEqual(report["permissions"], {"contents": "read", "actions": "read", "statuses": "write"})
         self.assertEqual(report["timeout-minutes"], 30)
         self.assertEqual(PUB["permissions"], {"contents": "read"})

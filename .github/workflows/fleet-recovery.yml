@@ -1,0 +1,30 @@
+name: Fleet startup recovery
+on:
+  workflow_run:
+    workflows: [pr-build]
+    types: [in_progress]
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: fleet-recovery-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+jobs:
+  recover:
+    if: ${{ vars.FLEET_CI_ENABLED == 'true' && github.event.workflow_run.event == 'repository_dispatch' && github.event.workflow_run.run_attempt == 1 }}
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: scripts/fleet_recovery.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Recover an unacquired dedicated runner on Namespace
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FLEET_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 scripts/fleet_recovery.py
