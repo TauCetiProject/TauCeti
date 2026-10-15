@@ -25,9 +25,9 @@ transports along the order isomorphisms that Mathlib provides between prime spec
 ## Main definitions and results
 
 * `TauCeti.Excellence.IsCatenary R`: the ring `R` is catenary.
-* `TauCeti.Excellence.IsCatenary.of_surjective`: a quotient of a catenary ring is catenary
+* `RingHom.isCatenary_of_surjective`: a quotient of a catenary ring is catenary
   (Stacks, Lemma 10.105.7 (00NK)); in particular catenarity is invariant under ring isomorphism.
-* `TauCeti.Excellence.IsCatenary.of_isLocalization`: a localization of a catenary ring is catenary
+* `Submonoid.isCatenary_of_isLocalization`: a localization of a catenary ring is catenary
   (Stacks, Lemma 10.105.4 (00NJ)).
 * `TauCeti.Excellence.isCatenary_iff_forall_isMaximal`: a ring is catenary if and only if its
   localizations at all maximal ideals are (Stacks, Lemma 10.105.6 (0AUN)).
@@ -45,45 +45,71 @@ Stacks, Definition 10.105.1 (00NI). -/
 abbrev IsCatenary (R : Type*) [CommSemiring R] : Prop :=
   Order.IsCatenary (PrimeSpectrum R)
 
-namespace IsCatenary
+end TauCeti.Excellence
+
+namespace RingHom
 
 variable {R S : Type*}
 
 /-- A ring receiving a surjection from a catenary ring is catenary: the primes of `S` are the
 primes of `R` containing the kernel, an upper set of `Spec R`. Stacks, Lemma 10.105.7 (00NK). -/
-theorem of_surjective [CommRing R] [CommRing S] [IsCatenary R] (f : R →+* S)
-    (hf : Function.Surjective f) : IsCatenary S :=
+theorem isCatenary_of_surjective [CommRing R] [CommRing S] [TauCeti.Excellence.IsCatenary R]
+    (f : R →+* S) (hf : Function.Surjective f) : TauCeti.Excellence.IsCatenary S :=
   have : (PrimeSpectrum.zeroLocus (RingHom.ker f : Set R)).OrdConnected :=
     IsUpperSet.ordConnected fun _ _ hpq hp => by
       rw [PrimeSpectrum.mem_zeroLocus] at hp ⊢
       exact hp.trans (SetLike.coe_subset_coe.2 hpq)
-  Order.IsCatenary.of_orderIso (Ideal.primeSpectrumOrderIsoZeroLocusOfSurj f hf rfl)
+  (Ideal.primeSpectrumOrderIsoZeroLocusOfSurj f hf rfl).isCatenary
+
+end RingHom
+
+namespace RingEquiv
+
+variable {R S : Type*}
 
 /-- Catenarity is invariant under ring isomorphism. -/
-theorem of_ringEquiv [CommRing R] [CommRing S] [IsCatenary R] (e : R ≃+* S) : IsCatenary S :=
-  of_surjective e.toRingHom e.surjective
+theorem isCatenary [CommSemiring R] [CommSemiring S] [TauCeti.Excellence.IsCatenary R]
+    (e : R ≃+* S) : TauCeti.Excellence.IsCatenary S :=
+  (PrimeSpectrum.comapEquiv e).symm.isCatenary
+
+end RingEquiv
+
+namespace Ideal
+
+variable {R : Type*}
 
 /-- A quotient of a catenary ring is catenary. Stacks, Lemma 10.105.7 (00NK). -/
-instance quotient [CommRing R] [IsCatenary R] (I : Ideal R) : IsCatenary (R ⧸ I) :=
-  of_surjective (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+instance isCatenary_quotient [CommRing R] [TauCeti.Excellence.IsCatenary R] (I : Ideal R) :
+    TauCeti.Excellence.IsCatenary (R ⧸ I) :=
+  (Ideal.Quotient.mk I).isCatenary_of_surjective Ideal.Quotient.mk_surjective
+
+end Ideal
+
+
+namespace Submonoid
+
+variable {R S : Type*}
 
 /-- A localization of a catenary ring is catenary: the primes of `S` are the primes of `R`
 disjoint from `M`, a lower set of `Spec R`. Stacks, Lemma 10.105.4 (00NJ). -/
-theorem of_isLocalization [CommSemiring R] [CommSemiring S] [Algebra R S] [IsCatenary R]
-    (M : Submonoid R) [IsLocalization M S] : IsCatenary S :=
+theorem isCatenary_of_isLocalization [CommSemiring R] [CommSemiring S] [Algebra R S]
+    [TauCeti.Excellence.IsCatenary R] (M : Submonoid R) [IsLocalization M S] :
+    TauCeti.Excellence.IsCatenary S :=
   have : {p : PrimeSpectrum R | Disjoint (M : Set R) p.asIdeal}.OrdConnected :=
     IsLowerSet.ordConnected fun _ _ hqp hp => hp.mono_right (SetLike.coe_subset_coe.2 hqp)
   -- `IsLocalization.primeSpectrumOrderIso` lands in the subtype of this order-connected set.
-  have : Order.IsCatenary {p : PrimeSpectrum R // Disjoint (M : Set R) p.asIdeal} :=
-    Order.IsCatenary.subtype {p : PrimeSpectrum R | Disjoint (M : Set R) p.asIdeal}
-  Order.IsCatenary.of_orderIso (IsLocalization.primeSpectrumOrderIso M S)
+  have : TauCeti.Order.IsCatenary {p : PrimeSpectrum R // Disjoint (M : Set R) p.asIdeal} :=
+    Set.isCatenary {p : PrimeSpectrum R | Disjoint (M : Set R) p.asIdeal}
+  (IsLocalization.primeSpectrumOrderIso M S).isCatenary
 
 /-- A localization of a catenary ring is catenary. Stacks, Lemma 10.105.4 (00NJ). -/
-instance localization [CommSemiring R] [IsCatenary R] (M : Submonoid R) :
-    IsCatenary (Localization M) :=
-  of_isLocalization M
+instance isCatenary_localization [CommSemiring R] [TauCeti.Excellence.IsCatenary R]
+    (M : Submonoid R) : TauCeti.Excellence.IsCatenary (Localization M) :=
+  M.isCatenary_of_isLocalization
 
-end IsCatenary
+end Submonoid
+
+namespace TauCeti.Excellence
 
 /-- A ring is catenary if and only if its localizations at all maximal ideals are catenary. A
 chain of primes ending at `q` consists of primes contained in a maximal ideal `m ⊇ q`, and these
@@ -94,8 +120,7 @@ theorem isCatenary_iff_forall_isMaximal {R : Type*} [CommSemiring R] :
     Order.IsCatenary.of_forall_exists_ordConnected fun p q hpq => ?_⟩
   obtain ⟨m, hm, hqm⟩ := q.asIdeal.exists_le_maximal q.isPrime.ne_top
   exact ⟨Set.Iic ⟨m, hm.isPrime⟩, Set.ordConnected_Iic, hpq.trans hqm, hqm,
-    Order.IsCatenary.of_orderIso
-      (IsLocalization.AtPrime.primeSpectrumOrderIso (Localization.AtPrime m) m).symm⟩
+    (IsLocalization.AtPrime.primeSpectrumOrderIso (Localization.AtPrime m) m).symm.isCatenary⟩
 
 /-- A ring is catenary if and only if its quotients by all minimal primes are catenary. A chain of
 primes starting at `p` consists of primes containing a minimal prime `p₀ ⊆ p`, and these are the
@@ -112,7 +137,7 @@ theorem isCatenary_iff_forall_minimalPrimes {R : Type*} [CommRing R] :
       exact hp.trans (SetLike.coe_subset_coe.2 hpq)
   exact ⟨_, this, (PrimeSpectrum.mem_zeroLocus _ _).2 hp₀p,
     (PrimeSpectrum.mem_zeroLocus _ _).2 (hp₀p.trans hpq),
-    Order.IsCatenary.of_orderIso (Ideal.primeSpectrumQuotientOrderIsoZeroLocus p₀).symm⟩
+    (Ideal.primeSpectrumQuotientOrderIsoZeroLocus p₀).symm.isCatenary⟩
 
 example : IsCatenary ℤ := inferInstance
 

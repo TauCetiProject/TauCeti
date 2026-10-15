@@ -13,9 +13,9 @@ public import Mathlib.Order.KrullDimension
 A preorder is *catenary* when, between any two of its elements, strict chains have bounded length
 and all saturated chains (chains whose consecutive members are covering pairs) have the same
 length. Applied to the prime spectrum of a commutative ring this is the notion of a catenary ring
-(Stacks, Definition 10.105.1 (00NI)); applied to the specialization order of a topological space it
-is the notion of a catenary space (Stacks, Definition 5.11.4 (02I1)). Every property used to
-transport catenarity between rings is order-theoretic, so it is developed here for preorders.
+(Stacks, Definition 10.105.1 (00NI)); applied to the specialization order of a sober topological
+space it is the notion of a catenary space (Stacks, Definition 5.11.4 (02I1)). Every property used
+to transport catenarity between rings is order-theoretic, so it is developed here for preorders.
 
 Saturated chains are Mathlib's `RelSeries {(a, b) : α × α | a ⋖ b}`, the target of
 `LTSeries.exists_relSeries_covBy`, and strict chains are `LTSeries α`.
@@ -24,7 +24,7 @@ Saturated chains are Mathlib's `RelSeries {(a, b) : α × α | a ⋖ b}`, the ta
 
 * `TauCeti.Order.IsCatenary α`: strict chains between two fixed elements have bounded length, and
   saturated chains with the same endpoints have the same length.
-* `TauCeti.Order.IsCatenary.of_orderEmbedding`: catenarity passes along an order embedding whose
+* `OrderEmbedding.isCatenary`: catenarity passes along an order embedding whose
   range is order-connected; in particular to order-connected subsets and along order
   isomorphisms.
 * `TauCeti.Order.IsCatenary.of_forall_exists_ordConnected`: a preorder is catenary as soon as any
@@ -51,27 +51,52 @@ class IsCatenary (α : Type*) [Preorder α] : Prop where
   length_eq_of_covBy {s t : RelSeries {(x, y) : α × α | x ⋖ y}} :
     s.head = t.head → s.last = t.last → s.length = t.length
 
-namespace IsCatenary
+end TauCeti.Order
+
+namespace OrderEmbedding
+
+variable {α β : Type*} [Preorder α] [Preorder β]
 
 /-- Catenarity passes along an order embedding with order-connected range: strict and saturated
 chains of `α` map to strict and saturated chains of `β` with the same length. -/
-theorem of_orderEmbedding [IsCatenary β] (f : α ↪o β) (hf : (Set.range f).OrdConnected) :
-    IsCatenary α where
+theorem isCatenary [TauCeti.Order.IsCatenary β] (f : α ↪o β)
+    (hf : (Set.range f).OrdConnected) : TauCeti.Order.IsCatenary α where
   exists_length_le a b := by
-    obtain ⟨n, hn⟩ := exists_length_le (f a) (f b)
+    obtain ⟨n, hn⟩ := TauCeti.Order.IsCatenary.exists_length_le (f a) (f b)
     exact ⟨n, fun s hsa hsb => hn (s.map f f.strictMono) (by simp [hsa]) (by simp [hsb])⟩
   length_eq_of_covBy {s t} hst hst' := by
     let g : SetRel.Hom {(x, y) : α × α | x ⋖ y} {(x, y) : β × β | x ⋖ y} :=
       ⟨f, fun h => CovBy.image f h hf⟩
-    exact length_eq_of_covBy (s := s.map g) (t := t.map g) (by simp [g, hst]) (by simp [g, hst'])
+    exact TauCeti.Order.IsCatenary.length_eq_of_covBy
+      (s := s.map g) (t := t.map g) (by simp [g, hst]) (by simp [g, hst'])
+
+end OrderEmbedding
+
+namespace OrderIso
+
+variable {α β : Type*} [Preorder α] [Preorder β]
 
 /-- Catenarity is invariant under order isomorphism. -/
-theorem of_orderIso [IsCatenary β] (e : α ≃o β) : IsCatenary α :=
-  of_orderEmbedding e.toOrderEmbedding (by simpa using Set.ordConnected_univ)
+theorem isCatenary [TauCeti.Order.IsCatenary β] (e : α ≃o β) : TauCeti.Order.IsCatenary α :=
+  e.toOrderEmbedding.isCatenary (by simpa using Set.ordConnected_univ)
+
+end OrderIso
+
+namespace Set
+
+variable {α : Type*} [Preorder α]
 
 /-- An order-connected subset of a catenary preorder is catenary. -/
-instance subtype [IsCatenary α] (S : Set α) [S.OrdConnected] : IsCatenary S :=
-  of_orderEmbedding (OrderEmbedding.subtype _) (by simpa)
+instance isCatenary [TauCeti.Order.IsCatenary α] (S : Set α) [S.OrdConnected] :
+    TauCeti.Order.IsCatenary S :=
+  (OrderEmbedding.subtype _).isCatenary (by simpa)
+
+end Set
+
+
+namespace TauCeti.Order.IsCatenary
+
+variable {α : Type*} [Preorder α]
 
 /-- Catenarity is local: a preorder is catenary as soon as any two elements `a ≤ b` lie in a common
 catenary order-connected subset. Every chain from `a` to `b` lies in such a subset, and covering
@@ -123,6 +148,4 @@ instance of_krullDimLE_one [Order.KrullDimLE 1 α] : IsCatenary α :=
       simp only [toLT, RelSeries.map_length] at h1 h2
       omega }
 
-end IsCatenary
-
-end TauCeti.Order
+end TauCeti.Order.IsCatenary
