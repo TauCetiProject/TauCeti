@@ -27,6 +27,14 @@ isomorphism class `TauCeti.AnalyticBelyiPair.isoClass` does not depend on the nu
 the combinatorial datum attached to the pair, the one through which analytic Belyi pairs are
 compared with permutation triples and dessins d'enfants.
 
+An isomorphism of analytic Belyi pairs is a biholomorphism of their surfaces over the sphere
+(`TauCeti.AnalyticBelyiPair.Iso`). It restricts to an isomorphism of the attached covers of
+`ℂ ∖ {0, 1}`, so isomorphic pairs have the same degree and isomorphic monodromy triples, and the
+permutation triple is a well-defined function of the isomorphism class of a pair of degree `n`
+(`TauCeti.AnalyticBelyiPair.toIsoClass`). This is the map from analytic Belyi pairs to permutation
+triples through which the analytic Riemann existence theorem for three-point covers compares the
+two classifications.
+
 The basic examples live on the sphere itself: for `n ≠ 0`, the power map `z ↦ z ^ n` is a Belyi
 map of degree `n`, ramified of index `n` over `0` and `∞` and unramified over `1`
 (`TauCeti.AnalyticBelyiPair.pow`). For `n = 1` this is the trivial pair, the identity of the
@@ -45,6 +53,13 @@ sphere.
   `TauCeti.AnalyticBelyiPair.ncard_restrict_preimage_singleton` points in each fibre.
 * `TauCeti.AnalyticBelyiPair.isoClass`, `TauCeti.AnalyticBelyiPair.isoClass_eq`: the isomorphism
   class of the monodromy triple, computed by any numbering of the fibre over `1/2`.
+* `TauCeti.AnalyticBelyiPair.Iso`: isomorphisms of analytic Belyi pairs, with
+  `TauCeti.AnalyticBelyiPair.Iso.restrict` the isomorphism of the attached covers of `ℂ ∖ {0, 1}`.
+* `TauCeti.AnalyticBelyiPair.Iso.degree_eq` and
+  `TauCeti.AnalyticBelyiPair.Iso.isoClass_monodromyTriple_eq`: isomorphic pairs have the same
+  degree and isomorphic monodromy triples.
+* `TauCeti.AnalyticBelyiPair.isoSetoid`, `TauCeti.AnalyticBelyiPair.toIsoClass`: isomorphism of
+  pairs of degree `n`, and the permutation triple of an isomorphism class of such pairs.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
 
@@ -230,6 +245,173 @@ def pow {n : ℕ} (hn : n ≠ 0) : AnalyticBelyiPair.{0} where
 @[simp]
 theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun z : ℂ ↦ z ^ n :=
   FiniteHolomorphicMap.coe_spherePow hn
+
+end AnalyticBelyiPair
+
+/-! ### Isomorphisms of analytic Belyi pairs -/
+
+open scoped ContDiff in
+/-- An **isomorphism of analytic Belyi pairs** `P ≅ Q`: a biholomorphism of the Riemann surfaces
+`P.X ≃ Q.X` lying over the Riemann sphere, that is, carrying the Belyi map of `Q` back to the
+Belyi map of `P`. -/
+structure AnalyticBelyiPair.Iso (P Q : AnalyticBelyiPair.{u}) : Type u where
+  /-- The underlying biholomorphism of Riemann surfaces. -/
+  toDiffeomorph : P.X ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ Q.X
+  /-- The biholomorphism lies over the Riemann sphere. -/
+  β_toDiffeomorph : ∀ x, Q.β (toDiffeomorph x) = P.β x
+
+namespace AnalyticBelyiPair.Iso
+
+variable {P Q R : AnalyticBelyiPair.{u}}
+
+instance : EquivLike (P.Iso Q) P.X Q.X where
+  coe e := e.toDiffeomorph
+  inv e := e.toDiffeomorph.symm
+  left_inv e := e.toDiffeomorph.symm_apply_apply
+  right_inv e := e.toDiffeomorph.apply_symm_apply
+  coe_injective' e e' h _ := by
+    obtain ⟨f, _⟩ := e
+    obtain ⟨f', _⟩ := e'
+    congr
+    exact Diffeomorph.coeFn_injective h
+
+@[simp]
+theorem coe_toDiffeomorph (e : P.Iso Q) : ⇑e.toDiffeomorph = e :=
+  (rfl)
+
+@[ext]
+theorem ext {e e' : P.Iso Q} (h : ∀ x, e x = e' x) : e = e' :=
+  DFunLike.ext _ _ h
+
+/-- An isomorphism of analytic Belyi pairs lies over the Riemann sphere. -/
+@[simp]
+theorem β_apply (e : P.Iso Q) (x : P.X) : Q.β (e x) = P.β x :=
+  e.β_toDiffeomorph x
+
+/-- An isomorphism of analytic Belyi pairs lies over the Riemann sphere. -/
+theorem β_comp (e : P.Iso Q) : Q.β ∘ e = P.β :=
+  funext e.β_apply
+
+/-- The identity isomorphism of an analytic Belyi pair. -/
+@[refl]
+protected def refl (P : AnalyticBelyiPair.{u}) : P.Iso P where
+  toDiffeomorph := .refl _ _ _
+  β_toDiffeomorph _ := rfl
+
+/-- The inverse of an isomorphism of analytic Belyi pairs. -/
+@[symm]
+protected def symm (e : P.Iso Q) : Q.Iso P where
+  toDiffeomorph := e.toDiffeomorph.symm
+  β_toDiffeomorph y := by
+    rw [← e.β_toDiffeomorph, Diffeomorph.apply_symm_apply]
+
+/-- The composite of two isomorphisms of analytic Belyi pairs. -/
+@[trans]
+protected def trans (e : P.Iso Q) (e' : Q.Iso R) : P.Iso R where
+  toDiffeomorph := e.toDiffeomorph.trans e'.toDiffeomorph
+  β_toDiffeomorph x := by
+    simp
+
+@[simp]
+theorem refl_apply (x : P.X) : Iso.refl P x = x :=
+  (rfl)
+
+@[simp]
+theorem trans_apply (e : P.Iso Q) (e' : Q.Iso R) (x : P.X) : e.trans e' x = e' (e x) :=
+  (rfl)
+
+@[simp]
+theorem symm_apply_apply (e : P.Iso Q) (x : P.X) : e.symm (e x) = x :=
+  e.toDiffeomorph.symm_apply_apply x
+
+@[simp]
+theorem apply_symm_apply (e : P.Iso Q) (y : Q.X) : e (e.symm y) = y :=
+  e.toDiffeomorph.apply_symm_apply y
+
+@[simp]
+theorem symm_symm (e : P.Iso Q) : e.symm.symm = e :=
+  ext fun _ ↦ rfl
+
+/-- The homeomorphism of Riemann surfaces underlying an isomorphism of analytic Belyi pairs. -/
+def toHomeomorph (e : P.Iso Q) : P.X ≃ₜ Q.X :=
+  e.toDiffeomorph.toHomeomorph
+
+@[simp]
+theorem coe_toHomeomorph (e : P.Iso Q) : ⇑e.toHomeomorph = e :=
+  (rfl)
+
+/-- The isomorphism of covers of `ℂ ∖ {0, 1}` underlying an isomorphism of analytic Belyi pairs:
+its restriction to the points over the thrice-punctured sphere, which commutes with the restricted
+Belyi maps (`TauCeti.AnalyticBelyiPair.Iso.restrict_restrict`). -/
+def restrict (e : P.Iso Q) : P.β ⁻¹' range toOnePoint ≃ₜ Q.β ⁻¹' range toOnePoint :=
+  e.toHomeomorph.subtype fun x ↦ by simp
+
+@[simp]
+theorem coe_restrict_apply (e : P.Iso Q) (x : P.β ⁻¹' range toOnePoint) :
+    (e.restrict x : Q.X) = e x :=
+  (rfl)
+
+/-- The restriction of an isomorphism of analytic Belyi pairs is a map of covers over
+`ℂ ∖ {0, 1}`. -/
+@[simp]
+theorem restrict_restrict (e : P.Iso Q) (x : P.β ⁻¹' range toOnePoint) :
+    Q.restrict (e.restrict x) = P.restrict x := by
+  apply isOpenEmbedding_toOnePoint.injective
+  simp only [toOnePoint_apply, coe_restrict_apply, AnalyticBelyiPair.coe_restrict_apply, β_apply]
+
+/-- The restriction of an isomorphism of analytic Belyi pairs is a map of covers over
+`ℂ ∖ {0, 1}`. -/
+theorem restrict_comp_restrict (e : P.Iso Q) : Q.restrict ∘ e.restrict = P.restrict :=
+  funext e.restrict_restrict
+
+/-- **Isomorphic analytic Belyi pairs have the same degree.** -/
+theorem degree_eq (e : P.Iso Q) : degree P.β = degree Q.β := by
+  rw [← P.ncard_restrict_preimage_singleton basePt, ← Q.ncard_restrict_preimage_singleton basePt,
+    ← e.restrict_comp_restrict, preimage_comp, ncard_preimage_of_injective_subset_range
+      e.restrict.injective (by simp [e.restrict.surjective.range_eq])]
+
+/-- **Isomorphic analytic Belyi pairs have isomorphic monodromy triples**, whatever the
+numberings of the fibres over `1/2`. -/
+theorem isoClass_monodromyTriple_eq {n : ℕ} (e : P.Iso Q) (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
+    (ν' : Q.restrict ⁻¹' {basePt} ≃ Fin n) :
+    PermutationTriple.IsoClass.mk (Q.isCoveringMap_restrict.monodromyTriple ν') =
+      PermutationTriple.IsoClass.mk (P.isCoveringMap_restrict.monodromyTriple ν) :=
+  P.isCoveringMap_restrict.isoClass_monodromyTriple_eq_of_homeomorph ν
+    Q.isCoveringMap_restrict ν' e.restrict e.restrict_comp_restrict
+
+end AnalyticBelyiPair.Iso
+
+/-! ### Isomorphism classes of analytic Belyi pairs -/
+
+namespace AnalyticBelyiPair
+
+/-- Isomorphism of analytic Belyi pairs of degree `n`, as an equivalence relation. -/
+def isoSetoid (n : ℕ) : Setoid {P : AnalyticBelyiPair.{u} // degree P.β = n} where
+  r P Q := Nonempty (P.1.Iso Q.1)
+  iseqv := ⟨fun P ↦ ⟨Iso.refl P.1⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩
+
+theorem isoSetoid_r {n : ℕ} {P Q : {P : AnalyticBelyiPair.{u} // degree P.β = n}} :
+    (isoSetoid n).r P Q ↔ Nonempty (P.1.Iso Q.1) :=
+  Iff.rfl
+
+/-- **The permutation triple of an isomorphism class of analytic Belyi pairs** of degree `n`: the
+isomorphism class of the monodromy triple of any representative, for any numbering of its fibre
+over `1/2` (`TauCeti.AnalyticBelyiPair.toIsoClass_mk`). It is well defined because isomorphic
+pairs have isomorphic monodromy triples
+(`TauCeti.AnalyticBelyiPair.Iso.isoClass_monodromyTriple_eq`). -/
+def toIsoClass (n : ℕ) : Quotient (isoSetoid.{u} n) → PermutationTriple.IsoClass n :=
+  Quotient.lift
+    (fun P ↦ .mk (P.1.isCoveringMap_restrict.monodromyTriple
+      ((P.1.nonempty_restrict_preimage_singleton_equiv basePt).some.trans (finCongr P.2))))
+    fun _ _ ⟨e⟩ ↦ (e.isoClass_monodromyTriple_eq _ _).symm
+
+/-- The permutation triple of the class of an analytic Belyi pair of degree `n` is the class of
+its monodromy triple, for any numbering of the fibre over `1/2`. -/
+theorem toIsoClass_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n})
+    (ν : P.1.restrict ⁻¹' {basePt} ≃ Fin n) :
+    toIsoClass n ⟦P⟧ = .mk (P.1.isCoveringMap_restrict.monodromyTriple ν) := by
+  rw [toIsoClass, Quotient.lift_mk]
+  exact P.1.isCoveringMap_restrict.isoClass_monodromyTriple_eq _ _
 
 end AnalyticBelyiPair
 
