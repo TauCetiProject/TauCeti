@@ -221,6 +221,8 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
     ‖W1p.gradient (W1p.differenceQuotient le_rfl w t (hw t) (u : W1p mu Omega 2))‖ ≤
       ‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu Omega 2)‖) / lam := by
   have hlam := ha.pos
+  letI : TopologicalSpace.PseudoMetrizableSpace (Matrix ι ι ℝ) :=
+    inferInstanceAs (TopologicalSpace.PseudoMetrizableSpace (ι → ι → ℝ))
   have hmeas : AEStronglyMeasurable a (mu.restrict Omega) :=
     (continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
       Omega.isOpen.measurableSet
