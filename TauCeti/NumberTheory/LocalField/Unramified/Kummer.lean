@@ -55,7 +55,7 @@ noncomputable section
 
 namespace TauCeti
 
-open ContCohomology ValuativeRel
+open ContCohomology _root_.ValuativeRel
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {n : ℕ}
