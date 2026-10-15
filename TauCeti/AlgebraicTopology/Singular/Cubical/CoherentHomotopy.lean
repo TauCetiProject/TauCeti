@@ -95,15 +95,14 @@ def threshold (k : ℕ) : I :=
 
 /-- The thresholds increase strictly with the dimension. -/
 theorem threshold_lt_succ (k : ℕ) : threshold k < threshold (k + 1) := by
-  change (k / (k + 1) : ℝ) < ((k + 1 : ℕ) : ℝ) / ((k + 1 : ℕ) + 1)
+  rw [← Subtype.coe_lt_coe, threshold, threshold]
   push_cast
   rw [div_lt_div_iff₀ (by positivity) (by positivity)]
   nlinarith
 
 /-- Every threshold is strictly before the end of the homotopies. -/
 theorem threshold_lt_one (k : ℕ) : threshold k < 1 := by
-  change (k / (k + 1) : ℝ) < 1
-  rw [div_lt_one (by positivity)]
+  rw [← Subtype.coe_lt_coe, threshold, Set.Icc.coe_one, div_lt_one (by positivity)]
   linarith
 
 variable {m : ℕ} (L : CoherentCubeHomotopies X m)
