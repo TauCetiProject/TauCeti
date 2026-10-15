@@ -209,7 +209,9 @@ theorem _root_.Subgroup.exists_minimal_isClosed_le (R : Subgroup (A × G))
     (hclosed : IsClosed (R : Set (A × G))) (hsurj : ∀ g : G, ∃ a : A, (a, g) ∈ R) :
     ∃ H : Subgroup (A × G), Minimal (fun H : Subgroup (A × G) ↦
       H ≤ R ∧ IsClosed (H : Set (A × G)) ∧ ∀ g : G, ∃ a : A, (a, g) ∈ H) H := by
-  refine zorn_ge₀ _ fun c hcs hchain ↦ ?_
+  refine zorn_ge₀ {H : Subgroup (A × G) |
+    H ≤ R ∧ IsClosed (H : Set (A × G)) ∧ ∀ g : G, ∃ a : A, (a, g) ∈ H}
+    fun c hcs hchain ↦ ?_
   rcases c.eq_empty_or_nonempty with rfl | hne
   · exact ⟨R, ⟨le_rfl, hclosed, hsurj⟩, by simp⟩
   obtain ⟨K, hK⟩ := hne

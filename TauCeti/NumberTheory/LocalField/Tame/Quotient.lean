@@ -182,7 +182,7 @@ theorem exists_topologicalClosure_zpowers_inertiaTameCharacter_eq_top :
     (inertiaTameCharacter K).continuous (proj_inertiaTameCharacter_surjective K) fun m ↦ by
       have : NeZero ((m : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
         (IsLocalRing.isUnit_natCast_iff_not_dvd.2 (hp.coprime_iff_not_dvd.1 m.2.2.symm))⟩
-      exact HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) m
+      exact HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) m
   exact ⟨τ, PrimeToPTateModule.topologicalClosure_zpowers_eq_top hτ⟩
 
 variable {K} in

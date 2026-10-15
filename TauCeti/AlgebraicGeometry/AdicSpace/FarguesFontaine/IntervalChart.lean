@@ -123,7 +123,9 @@ theorem rationalSubset_windowNumerators (hq : q ≠ 0) :
     rw [windowDenominator_def, ← not_iff_not, ValuativeRel.not_vlt, not_and_or,
       ValuativeRel.not_vlt, ValuativeRel.not_vlt, ← mem_supp_iff, ← mem_supp_iff, ← mem_supp_iff]
     exact Ideal.IsPrime.mul_mem_iff_mem_or_mem inferInstance
-  rw [mem_rationalSubset_iff, Set.mem_ofPred_eq, mem_spaY_iff,
+  rw [mem_rationalSubset_iff]
+  simp only [Set.mem_ofPred_eq]
+  rw [mem_spaY_iff,
     isRadiusLowerBound_iff_of_eq_div q.den_ne_zero (NNRat.num_div_den q).symm,
     isRadiusUpperBound_iff_of_eq_div q'.den_ne_zero (NNRat.num_div_den q').symm,
     ValuativeRel.not_vle, hs, hpos ha, hpos q'.den_ne_zero]

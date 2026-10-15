@@ -152,7 +152,7 @@ theorem map_baseChange_eq_of_forall_commute_familyInvariant
   have hrange' : LinearMap.range (p.baseChange A) = L.baseChange A := by
     rw [← hrange]
     ext x
-    simpa only [Submodule.baseChange, LinearMap.mem_range, LinearMap.baseChange_eq_ltensor] using
+    simpa only [Submodule.baseChange, LinearMap.mem_range, LinearMap.baseChange_eq_lTensor] using
       SetLike.ext_iff.mp (LinearMap.lTensor_range (Q := A) (g := p)) x
   rw [← hrange']
   have heunit : IsUnit e.toLinearMap := (Module.End.isUnit_iff _).mpr e.bijective
