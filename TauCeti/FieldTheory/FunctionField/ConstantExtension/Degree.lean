@@ -24,7 +24,7 @@ field. No function-field hypothesis is needed. Without separability or exactness
 * `TauCeti.finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top`:
   `[F' : k'(x)] = [F : k(x)]` for every `x ∈ F`.
 * `TauCeti.finrank_over_adjoin_simple_le_of_constantCompositum_eq_top`:
-  `[F' : k'(x)] ≤ [F : k(x)]` for an algebraic `k' / k`, separable or not, over any constant field.
+  `[F' : k'(x)] ≤ [F : k(x)]` for any constant extension, when `F / k(x)` is finite.
 * `TauCeti.finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top`:
   `[F' : E · k'] = [F : E]` for every subfield `E` of `F` containing `k`.
 * `TauCeti.adjoin_simple_eq_top_of_constantCompositum_eq_top` and
@@ -62,19 +62,54 @@ theorem finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
   rwa [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right,
     ← Module.finrank_eq_nat_card_basis b] at hdegree
 
-/-- **An algebraic extension of constants can only lower the degree over `k(x)`**: if
-`F' = F · k'` for an algebraic extension `k' / k` and `F / k(x)` is finite, then
-`[F' : k'(x)] ≤ [F : k(x)]`, because a basis of `F / k(x)` spans `F' / k'(x)`.  Neither
-separability of `k' / k` nor exactness of `k` in `F` is assumed; with both, this is the equality
-`TauCeti.finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top`, while an inseparable
-`k' / k` can make the inequality strict. -/
-theorem finrank_over_adjoin_simple_le_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
+private theorem span_range_basis_of_finite_constantCompositum
+    (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
+    [FiniteDimensional C F] {ι : Type*} (b : Module.Basis ι C F) :
+    Submodule.span (IntermediateField.adjoin k' (Set.range (algebraMap C F')))
+      (Set.range (algebraMap F F' ∘ b)) = ⊤ := by
+  let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
+  let g : C →+* C' := (algebraMap C F').codRestrict C'.toSubring fun x =>
+    IntermediateField.subset_adjoin k' _ ⟨x, rfl⟩
+  let : Algebra C C' := g.toAlgebra
+  have : IsScalarTower C C' F' := .of_algebraMap_eq fun _ => rfl
+  let f := IsScalarTower.toAlgHom C F F'
+  let e := AlgEquiv.ofInjective f f.injective
+  have hspan := f.range.adjoin_eq_span_basis C' (b.map e.toLinearEquiv)
+  have hrange : (f.range : Set F') = Set.range (algebraMap F F') := rfl
+  have hfun : (fun i => ((b.map e.toLinearEquiv) i : F')) = algebraMap F F' ∘ b := by
+    ext i
+    exact AlgEquiv.ofInjective_apply f f.injective (b i)
+  rw [hrange, hfun] at hspan
+  let A := IntermediateField.adjoin C' (Set.range (algebraMap F F'))
+  have hle : (constantCompositum F k' F' : Set F') ⊆ A := by
+    rw [constantCompositum_def]
+    refine (IntermediateField.adjoin_subset_adjoin_iff F).2 ?_
+    constructor
+    · rintro _ ⟨x, rfl⟩
+      exact IntermediateField.subset_adjoin C' _ ⟨x, rfl⟩
+    · rintro _ ⟨c, rfl⟩
+      rw [IsScalarTower.algebraMap_apply k' C' F' c]
+      exact A.algebraMap_mem (algebraMap k' C' c)
+  have htop : A = ⊤ := eq_top_iff.mpr fun z _ => hle (by simp [h])
+  have halg : ∀ z ∈ Set.range (algebraMap F F'), IsAlgebraic C' z := by
+    rintro _ ⟨x, rfl⟩
+    exact ((Algebra.IsAlgebraic.isAlgebraic (R := C) x).map f).tower_top
+  have htop' := congrArg IntermediateField.toSubalgebra htop
+  change (IntermediateField.adjoin C' (Set.range (algebraMap F F'))).toSubalgebra = ⊤ at htop'
+  rw [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic halg] at htop'
+  rw [htop', Algebra.top_toSubmodule] at hspan
+  exact hspan.symm
+
+/-- **Extending constants can only lower a finite degree over `k(x)`**: if `F' = F · k'`
+and `F / k(x)` is finite, then `[F' : k'(x)] ≤ [F : k(x)]`. The extension `k' / k` may be
+transcendental; neither separability nor exactness of the constant field is assumed. -/
+theorem finrank_over_adjoin_simple_le_of_constantCompositum_eq_top
     (h : constantCompositum F k' F' = ⊤) (x : F) [FiniteDimensional k⟮x⟯ F] :
     Module.finrank k'⟮algebraMap F F' x⟯ F' ≤ Module.finrank k⟮x⟯ F := by
   let b := Module.finBasis k⟮x⟯ F
   have hle := finrank_range_le_card
     (R := IntermediateField.adjoin k' (Set.range (algebraMap k⟮x⟯ F'))) (algebraMap F F' ∘ b)
-  rwa [Set.finrank, span_range_basis_of_constantCompositum_eq_top h k⟮x⟯ b, finrank_top,
+  rwa [Set.finrank, span_range_basis_of_finite_constantCompositum h k⟮x⟯ b, finrank_top,
     Fintype.card_fin, IntermediateField.range_algebraMap_adjoin_simple,
     IntermediateField.adjoin_adjoin_right] at hle
 

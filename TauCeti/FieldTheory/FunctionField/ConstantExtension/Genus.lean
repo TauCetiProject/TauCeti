@@ -30,14 +30,10 @@ Exactness of `k'` in `F'` is not needed for the degree and genus identities; whe
 class of `F' / k'` is spoken of, it follows from exactness of `k` in `F`
 (`IsIntegrallyClosedIn.of_constantCompositum_eq_top`).
 
-Without separability the genus can drop (`TauCeti.GenusDrop.genus_lt_genus`), but it never
-increases: for any finite `k' / k`, comparing `ℓ(Con D)` with `ℓ(D)` gives
-`[k' : k] (g(F' / k') - 1) ≤ [F' : F] (g(F / k) - 1)`, and `[F' : F] ≤ [k' : k]`.  For an algebraic
-`k' / k`, finite or not, the comparison runs through the finite subextensions `M` of `k' / k`.
-Either `[F · M : F] = [M : k]` for all of them, and then `F` and `k'` are linearly disjoint over
-`k`, so the multiples `l B` of a pole divisor lose no dimension in `F'`; or some `M` has
-`[F · M : F] < [M : k]`, and then the degree `[F · M : M(x)]` of the pole divisor of `x` drops
-below `[F : k(x)]`, which allows an induction on that degree.
+The genus never increases under any algebraic extension of constants, including inseparable
+and infinite extensions. For a finite extension the conorm comparison also gives
+`[k' : k] (g(F' / k') - 1) ≤ [F' : F] (g(F / k) - 1)`. Without separability the genus inequality
+can be strict (`TauCeti.GenusDrop.genus_lt_genus`).
 
 ## Main results
 
@@ -141,11 +137,8 @@ end Finite
 
 section IsAlgebraic
 
-/-- The case of `TauCeti.genus_le_genus_of_constantCompositum_eq_top` in which `F` and `k'` are
-linearly disjoint over `k`.  Then a `k`-basis of `L(l B)`, for `B` the pole divisor of a
-transcendental `x ∈ F`, stays linearly independent over `k'` inside `L(l B')`, where `B'` is the
-pole divisor of `x` in `F'`; and `deg B' ≤ deg B`.  So `deg (l B') + 1 - ℓ(l B')` is at most the
-genus of `F / k`, and every divisor of `F' / k'` is controlled by some `l B'`. -/
+/-- A linearly disjoint algebraic extension of constants cannot increase the genus.
+The pole-divisor degrees do not increase, while the Riemann–Roch dimensions do not decrease. -/
 private theorem genus_le_genus_of_linearDisjoint [Algebra.IsAlgebraic k k']
     (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤)
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) :
@@ -188,16 +181,15 @@ private theorem genus_le_genus_of_linearDisjoint [Algebra.IsAlgebraic k k']
     mul_le_mul_of_nonneg_left hdeg (Nat.cast_nonneg l)
   omega
 
-/-- The induction behind `TauCeti.genus_le_genus_of_constantCompositum_eq_top`, on the degree
-`n = [E : K(x)]` of a lower field `E / K` whose constants and field live in the universes of `k'`
-and `F'`.  If adjoining every finite subextension `M` of `k' / K` costs `[M : K]`, then `E` and `k'`
-are linearly disjoint over `K`.  Otherwise some `M` has `[E · M : E] < [M : K]`; the conorm then
-gives `[E · M : M(x)] < n`, and `g(E · M / M) ≤ g(E / K)` because `M / K` is finite. -/
+/-- For a function field `E / K` of degree `n` over a rational subfield, every algebraic
+extension of its constants has genus at most that of `E / K`. -/
 private theorem genus_le_genus_aux (n : ℕ) :
     ∀ (K : Type u') (E : Type v') [Field K] [Field E] [Algebra K k'] [Algebra K E]
       [Algebra K F'] [Algebra E F'] [IsScalarTower K k' F'] [IsScalarTower K E F']
       [Algebra.IsAlgebraic K k'], IsFunctionField K E → constantCompositum E k' F' = ⊤ →
       ∀ x : E, Transcendental K x → Module.finrank K⟮x⟯ E = n → genus k' F' ≤ genus K E := by
+  -- Induct on the degree over a rational subfield. A finite constant extension either
+  -- preserves the degree or reduces it, yielding a smaller-degree comparison.
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   intro K E _ _ _ _ _ _ _ _ _ hE h x hx hn

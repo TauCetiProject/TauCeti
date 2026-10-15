@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
+public import TauCeti.RingTheory.Algebraic.Basic
 
 /-!
 # Algebraic extensions of the constant field
@@ -32,13 +33,6 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-/-- **Transcendence survives an algebraic extension of constants**: if `x ∈ F` is transcendental
-over `k` and `k' / k` is algebraic, then the image of `x` in `F'` is transcendental over `k'`. -/
-theorem _root_.Transcendental.algebraMap_of_isAlgebraic [Algebra.IsAlgebraic k k'] {x : F}
-    (hx : Transcendental k x) : Transcendental k' (algebraMap F F' x) :=
-  (Algebra.IsAlgebraic.transcendental_iff k k').1
-    ((transcendental_algebraMap_iff (algebraMap F F').injective).2 hx)
 
 /-- The compositum with an algebraic algebra of constants is algebraic over the original field.
 The constants need only form a commutative ring, and their map into the ambient field need not

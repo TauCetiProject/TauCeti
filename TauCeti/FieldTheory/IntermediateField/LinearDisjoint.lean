@@ -248,29 +248,23 @@ theorem linearDisjoint_fieldRange_of_forall_finiteDimensional [Algebra.IsAlgebra
     (h : ∀ M : IntermediateField k k', FiniteDimensional k M →
       (IsScalarTower.toAlgHom k M E).fieldRange.LinearDisjoint F) :
     (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
-  set K := (IsScalarTower.toAlgHom k k' E).fieldRange
-  let e := (IsScalarTower.toAlgHom k k' E).equivFieldRange
-  have he (y : K) : algebraMap k' E (e.symm y) = y := by
-    conv_rhs => rw [← e.apply_symm_apply y]
-    rw [AlgHom.equivFieldRange_apply_coe, IsScalarTower.toAlgHom_apply]
-  let b := Module.Basis.ofVectorSpace k K
-  refine .of_basis_left b (linearIndependent_iff_finset_linearIndependent.2 fun s ↦ ?_)
-  -- the finitely many basis vectors indexed by `s` come from a finite subextension `M`
-  let M : IntermediateField k k' :=
-    IntermediateField.adjoin k (Set.range fun i : s ↦ e.symm (b i))
-  have : FiniteDimensional k M := IntermediateField.finiteDimensional_adjoin fun _ _ ↦
-    (Algebra.IsAlgebraic.isAlgebraic _).isIntegral
-  let KM := (IsScalarTower.toAlgHom k M E).fieldRange
-  let v : s → KM := fun i ↦
-    ⟨b i, ⟨⟨e.symm (b i), IntermediateField.subset_adjoin k _ ⟨i, rfl⟩⟩, he (b i)⟩⟩
-  have hb : LinearIndependent k (K.val ∘ b) :=
-    b.linearIndependent.map' K.val.toLinearMap (LinearMap.ker_eq_bot.2 Subtype.val_injective)
-  have hv : LinearIndependent k v :=
-    .of_comp KM.val.toLinearMap (hb.comp _ Subtype.val_injective)
-  -- `v` and the basis vectors indexed by `s` have the same underlying elements of `E`
-  convert (h M this).linearIndependent_left hv using 1
-  ext i
-  simp [v]
+  let f := IsScalarTower.toAlgHom k k' E
+  change f.fieldRange.toSubalgebra.LinearDisjoint (IsScalarTower.toAlgHom k F E).range
+  apply Subalgebra.LinearDisjoint.of_linearDisjoint_finite_left
+  intro A hA hfinite
+  let N : IntermediateField k E := Algebra.IsAlgebraic.toIntermediateField A
+  let M : IntermediateField k k' := N.comap f
+  let g : M →ₐ[k] A := (f.comp M.val).codRestrict A fun x => x.property
+  have : FiniteDimensional k M :=
+    FiniteDimensional.of_injective g.toLinearMap g.injective
+  have hN : N ≤ f.fieldRange := hA
+  have hmap : M.map f = N := IntermediateField.map_comap_eq_self hN
+  have hfield : (IsScalarTower.toAlgHom k M E).fieldRange = N := by
+    change (f.comp M.val).fieldRange = N
+    rw [IntermediateField.fieldRange_comp_val, hmap]
+  have hdisj := (IntermediateField.linearDisjoint_iff.mp (h M this))
+  rw [hfield] at hdisj
+  exact hdisj
 
 end ExtendScalars
 
