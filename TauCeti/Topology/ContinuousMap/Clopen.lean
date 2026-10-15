@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.LocallyConstant
 public import TauCeti.Topology.Sets.Clopens
 
@@ -25,11 +26,11 @@ subset.
 
 public section
 
-open Set TopologicalSpace
+open Set TopologicalSpace ContinuousMap
 
-namespace ContinuousMap
+namespace TauCeti.ContinuousMap
 
-variable {X R : Type*} [TopologicalSpace X] [CompactSpace X] [NormedCommRing R]
+variable {X R : Type*} [TopologicalSpace X] [CompactSpace X] [NormedRing R]
 
 private noncomputable def zeroExtendClopenFn (s : Clopens X) (f : C(s, R)) : C(X, R) := by
   let S : Bool → Set X
@@ -74,15 +75,13 @@ private noncomputable def zeroExtendClopenLinearMap (s : Clopens X) :
   map_add' f g := by
     ext x
     by_cases hx : x ∈ s
-    · simp only [zeroExtendClopenFn_apply_mem s _ hx, add_apply]
-    · simp only [zeroExtendClopenFn_apply_not_mem s _ hx, add_apply, add_zero]
+    · simp only [zeroExtendClopenFn_apply_mem s _ hx, ContinuousMap.add_apply]
+    · simp only [zeroExtendClopenFn_apply_not_mem s _ hx, ContinuousMap.add_apply, add_zero]
   map_smul' c f := by
     ext x
     by_cases hx : x ∈ s
-    · simp only [zeroExtendClopenFn_apply_mem s _ hx, smul_apply]
-      rw [Algebra.smul_def]
-      rfl
-    · simp only [zeroExtendClopenFn_apply_not_mem s _ hx, smul_apply, smul_zero]
+    · simp only [zeroExtendClopenFn_apply_mem s _ hx, ContinuousMap.smul_apply, RingHom.id_apply]
+    · simp only [zeroExtendClopenFn_apply_not_mem s _ hx, ContinuousMap.smul_apply, smul_zero]
 
 /-- Extend a continuous function on a clopen subset by zero on its complement. -/
 noncomputable def zeroExtendClopen (s : Clopens X) : C(s, R) →L[R] C(X, R) :=
@@ -166,4 +165,4 @@ example : zeroExtendClopen (⊥ : Clopens (Fin 2)) (0 : C((⊥ : Clopens (Fin 2)
   ext x
   simp
 
-end ContinuousMap
+end TauCeti.ContinuousMap

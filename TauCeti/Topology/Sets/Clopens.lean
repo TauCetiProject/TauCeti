@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Compact
+public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Sets.Closeds
 
 /-!
@@ -18,10 +18,10 @@ public section
 
 open TopologicalSpace
 
-namespace TopologicalSpace.Clopens
+namespace TauCeti.TopologicalSpace.Clopens
 
 /-- A clopen subset of a compact space is compact. -/
 instance instCompactSpace [TopologicalSpace X] [CompactSpace X] (s : Clopens X) : CompactSpace s :=
   isCompact_iff_compactSpace.mp s.isClosed.isCompact
 
-end TopologicalSpace.Clopens
+end TauCeti.TopologicalSpace.Clopens
