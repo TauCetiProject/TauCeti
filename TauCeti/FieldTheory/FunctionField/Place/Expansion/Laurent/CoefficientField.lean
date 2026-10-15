@@ -112,6 +112,15 @@ theorem completionEquivLaurentSeriesResidueField_uniformizer :
     HahnSeries.ofPowerSeries_X] at h
   exact h
 
+/-- The coefficient field expands to the constant Laurent series. -/
+theorem completionEquivLaurentSeriesResidueField_completionResidueFieldSection
+    (a : P.ResidueField) :
+    P.completionEquivLaurentSeriesResidueField ht (P.completionResidueFieldSection a) =
+      HahnSeries.C a := by
+  rw [completionEquivLaurentSeriesResidueField_apply_integer,
+    completionIntegersEquivPowerSeriesResidueField_completionResidueFieldSection,
+    HahnSeries.ofPowerSeries_C]
+
 /-- Laurent-series expansion preserves the normalized valuation. -/
 @[simp]
 theorem valuation_completionEquivLaurentSeriesResidueField (x : P.Completion) :
