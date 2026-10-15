@@ -109,57 +109,18 @@ still open, so the whole `Universal` namespace below is absent from Mathlib.
 ## Provenance
 
 Ported from J. Xu's `LutzNagell/Universal.lean` in AINTLIB (`github.com/CBirkbeck/AINTLIB`,
-Apache 2.0, `main` at `1c1c7466`, `projects/NagellLutz/LutzNagell/Universal.lean`), the source the
-roadmap pins for the Nagell–Lutz strand. **Most** declarations here come from that file: the
-`Coeff` index type and the bulk of the `Universal` namespace (`curve`, `Poly`, `Ring`, `Field`,
-`polyToField`, `pointedCurve`, `Affine.point`, `Jacobian.point`, `curvePoly` and `curveRing` with
-their lemmas), and the specialization API (`specialize`, `polyEval`, `ringEval` with their
-compatibility lemmas).
-
-Three groups are **not** simple ports, and are listed among the adaptations below: `ringHom_ext`
-is new, and so is `map_polyToField` — upstream that identity is definitional and is taken as `rfl`
-inside the `ZSMul.lean` proofs that need it, which this repository's unexposed `polyToField` makes
-impossible; the `CharZero Universal.Ring` instance **replaces** the source's `Poly.two_ne_zero` and
-`Field.two_ne_zero` rather than porting them, and carries the field case with it — Mathlib derives
-`CharZero Universal.Field` from it through `IsFractionRing.charZero`, so no second instance is
-declared. That derivation is why `Mathlib.Algebra.CharP.Algebra` is imported: without it
-`(2 : Universal.Field) ≠ 0`, which the division-polynomial addition formulas need, does not
-synthesize. And
-the equation lemmas for the opaque definitions
-(`polyToField_apply`, `Affine.point_def`, `Jacobian.point_def`, `pointedCurve_Δ`) exist because
-this repository's module system leaves definition bodies unexposed.
-That file's header reads `Authors: Junyan Xu`; following this repository's convention for adapted
-material, the upstream authorship is credited here rather than in the copyright header.
-
-Four adaptations were made. The file was converted to this repository's module system (`module`,
-`public import`, `public section`). The source's three opening lemmas —
-`CoordinateRing.algebraMap_poly_injective`, `CoordinateRing.algebraMap_injective'` and
-`Affine.Point.some_eq_some_iff` — are **not** ported: the first two are
-`FaithfulSMul.algebraMap_injective` applied to Mathlib's own `FaithfulSMul` instances on the
-coordinate ring, and the third is the `Iff` reading of the auto-generated `some.injEq`, which `simp`
-proves alone. This repository declines such wrappers, and had already declined the analogous
-instances in `Affine/FunctionField/Finrank.lean`; the one internal use, in
-`algebraMap_field_injective`, calls `FaithfulSMul.algebraMap_injective` directly. Dropping them also
-removes the source's `set_option backward.isDefEq.respectTransparency false in`, which existed only
-for the first of them and which `TauCeti/` forbids in any case.
-No definition in this file is exposed. `polyToField_apply`, `algebraMap_field_eq_comp`, the five
-`pointedCurve_aᵢ` lemmas and the two `point_def` lemmas are proved `:= (rfl)`: the parentheses
-satisfy the module system's export check without publishing any body, which is what an `@[expose]`
-would do. The section is a plain `public section` for the reason spelled out in
-`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/Point/VariableChange.lean` — exposing the whole file
-would publish every proof body to make a handful of `rfl`s go through. And `equation_point` opens
-with `change` where the source has `show`, that step rewriting the goal rather than only naming it
-(`linter.style.show`).
-
-`polyToField_polynomial` is the source's declaration of that name (its `:120`), and the last of
-this file's declarations to arrive; `equation_point`, which the source also routes through it,
-does so here too. One difference: upstream it is `@[simp]`, and here it must not be. `simp` can
-already prove the statement, because this file's `polyToField_apply` is `@[simp]` where the
-source's is not, and the tag therefore fails `scripts/lint-env.sh` with a fresh
-`simpNF` violation (*"simp can prove this: by simp only [\*, polyToField_apply, AdjoinRoot.mk_self,
-map_zero]"*). Untagged, that run reports no new violations. Being redundant for `simp` does not
-make the name redundant: three proofs cite it by name, `equation_point` here and the two doubling
-formulas in `DivisionPolynomial/ZSMul.lean`.
+Apache 2.0, `main` at `1c1c7466`, `projects/NagellLutz/LutzNagell/Universal.lean`), whose header
+reads `Authors: Junyan Xu`. **Most** declarations here come from that file: the `Coeff` index type
+and the bulk of the `Universal` namespace (`curve`, `Poly`, `Ring`, `Field`, `polyToField`,
+`pointedCurve`, `Affine.point`, `Jacobian.point`, `curvePoly` and `curveRing` with their lemmas),
+and the specialization API (`specialize`, `polyEval`, `ringEval` with their compatibility lemmas).
+`map_polyToField` is new; upstream that identity is definitional. The `CharZero Universal.Ring`
+instance replaces the source's `Poly.two_ne_zero` and `Field.two_ne_zero`, and Mathlib derives
+`CharZero Universal.Field` from it through `IsFractionRing.charZero`. The source's three opening
+lemmas, `CoordinateRing.algebraMap_poly_injective`, `CoordinateRing.algebraMap_injective'` and
+`Affine.Point.some_eq_some_iff`, are not ported: the first two are
+`FaithfulSMul.algebraMap_injective` for Mathlib's `FaithfulSMul` instances on the coordinate ring,
+and the third is the `Iff` form of the auto-generated `some.injEq`.
 
 The section on the universal elliptic Weierstrass curve has a second source: the ModularCurves
 project of AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache 2.0, commit

@@ -135,15 +135,6 @@ public theorem d4TripledWeight_vectorIndex (a : Fin 4 ⊕ Fin 4) (i : Fin 4) :
   rcases a with a | a <;> fin_cases a <;> fin_cases i <;>
     simp [vectorIndex, typeDSimpleRoot_of_add_one_lt, typeDSimpleRoot_of_not_add_one_lt]
 
-/- The positive and negative generator comparisons share the same finite normalization after
-their respective public entry formulas have reduced the matrix definitions. -/
-local macro "solve_vector_generator" : tactic => set_option hygiene false in
-  `(tactic| (
-    rcases a with a | a <;> rcases b with b | b
-    all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
-      simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector,
-        CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]))
-
 /-- The natural block of a tripled raising matrix is the standard vector raising matrix after the
 alternating basis normalization. With `D` the diagonal matrix of `vectorBasisSign`, the restricted
 tripled matrix `B` and standard matrix `A` satisfy `B * D = D * A` entrywise. -/
@@ -152,7 +143,10 @@ public theorem raisingMatrix_vectorIndex (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
       vectorBasisSign a * TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i a b := by
   rw [D4Tripled.raisingMatrix_apply]
   simp only [vectorIndex_eq_d4TripledReflection_iff]
-  solve_vector_generator
+  rcases a with a | a <;> rcases b with b | b
+  all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
+    simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector,
+      CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]
 
 /-- The natural block of a tripled lowering matrix is the standard vector lowering matrix after
 the same alternating basis normalization. -/
@@ -161,7 +155,10 @@ public theorem loweringMatrix_vectorIndex (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
       vectorBasisSign a * TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i a b := by
   rw [D4Tripled.loweringMatrix_apply]
   simp only [vectorIndex_eq_d4TripledReflection_iff]
-  solve_vector_generator
+  rcases a with a | a <;> rcases b with b | b
+  all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
+    simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector,
+      CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]
 
 /-- The natural block of a tripled Cartan-generator matrix is the standard vector Cartan matrix
 after the alternating basis normalization. -/
