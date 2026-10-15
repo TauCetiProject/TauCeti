@@ -36,24 +36,28 @@ as the child's base, establishes direction. A child that is the other PR's
 ancestor is not closed by reversing that relationship. Identical heads alone
 are duplicate identity, not a stack proof.
 
-A parent can advance after its child last merged it. A historical relationship
-requires an explicit two-parent merge in the child's bounded history whose
-second parent lies on the candidate parent's own first-parent line, outside the
-child's first-parent line. The audit records that merge and pinned revision. A canonical GitHub Actions
-PR-event record must also bind the exact head repository, branch and SHA while
-the parent PR existed (server timestamps between creation and closure). This
-checks branch history without parsing descriptions or trusting workflow artifacts.
-Fork run associations can be empty; the binding uses server-recorded branch/head
-identity and PR lifetime. Only pull_request/pull_request_target events qualify.
-The run lookup is cached per parent/pin and bounded at 100 results; incomplete
-results, missing timestamps or unavailable event evidence are unknown.
-Only commits on the pinned parent's own line are searched, excluding the child's
-own first-parent line. Work the child already owned before merging the parent
-cannot be attributed to that parent. A precursor imported through merges by
-both PRs does not establish a direction between them. For this
-historical relationship, the complete selected patch must also remain in the
-CURRENT parent tree. Content moved out of a parent cannot authorize closure of
-its new owner merely because an old parent commit once contained it.
+A parent can advance after its child last merged it. Historical evidence starts
+with a two-parent merge on the CHILD's first-parent line. The unique merge base
+between its incoming history and the current parent must lie on the parent's
+own first-parent line, outside the child's first-parent line. This supports
+indirect imports through another branch. The audit records that merge and pinned
+revision. Only parent-line commits NEWLY introduced by this merge are eligible:
+all commits reachable from the child's pre-merge first parent are excluded,
+including work it previously merged from its own side branches.
+
+A canonical GitHub Actions PR-event record must independently bind the exact
+head repository, branch and pinned SHA while the parent PR existed (server
+timestamps between creation and closure). This checks branch history without
+parsing descriptions or trusting workflow artifacts. Fork run associations can
+be empty; the binding uses server-recorded branch/head identity and PR lifetime.
+Only pull_request/pull_request_target events qualify. The lookup is cached per
+parent/pin and bounded at 100 results; incomplete results, missing timestamps or
+unavailable event evidence are unknown.
+
+The complete selected patch must also remain in BOTH current trees. Source
+moved out of a parent cannot authorize closing its new owner because an old
+parent commit once contained it. Shared precursors imported through merges by
+both PRs do not establish a direction between them.
 
 Except for an open canonical parent branch currently used as the child's base,
 all relationships additionally require the same head repository and the same

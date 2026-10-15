@@ -277,7 +277,7 @@ class Source:
         self.git("remote", "add", "origin", remote or f"https://github.com/{REPO}.git")
         self.commits_cache = {}
         self.first_parent_cache = {}
-        self.merge_rows_cache = {}
+        self.historical_commits_cache = {}
         self.patch_cache = {}
         self.landed_cache = {}
         self.tree_cache = {}
@@ -367,27 +367,35 @@ class Source:
             self.first_parent_cache[head] = rows
         return self.first_parent_cache[head]
 
-    def merged_parent(self, child_head, parent_head):
-        """A child merge pins an older revision on the parent's own first-parent line.
+    def historical_commits(self, child_head, parent_head):
+        """Map newly imported parent-line commits to a child merge and pinned SHA.
 
-        A shared prefix reached through a merge by both PRs supplies no direction.
-        The API must also bind the pinned SHA to the parent's branch lifetime;
-        current source containment is checked separately before using this edge.
+        Inspect the child's first-parent merges, including indirect imports. The
+        first parent describes everything the child already owned before that
+        merge, including side branches; none of that work can be parent evidence.
         """
-        child_rows = self.first_parent_history(child_head)
-        child_line = {row[0] for row in child_rows}
-        parent_line = {row[0] for row in self.first_parent_history(parent_head)}
-        if child_head not in self.merge_rows_cache:
-            rows = [line.split() for line in self.git(
-                "rev-list", "--parents", f"--max-count={MAX_COMMITS + 1}",
-                child_head, "--not", self.main).stdout.decode().splitlines()]
-            if len(rows) > MAX_COMMITS:
-                raise Gap("historical merge graph exceeds bound")
-            self.merge_rows_cache[child_head] = rows
-        for row in self.merge_rows_cache[child_head]:
-            if len(row) == 3 and row[2] in parent_line and row[2] not in child_line:
-                return row[2], row[0]
-        return None
+        key = child_head, parent_head
+        if key not in self.historical_commits_cache:
+            child_rows = self.first_parent_history(child_head)
+            child_line = {row[0] for row in child_rows}
+            parent_line = {row[0] for row in self.first_parent_history(parent_head)}
+            evidence = {}
+            for row in child_rows:
+                if len(row) != 3:
+                    continue
+                merge, before, incoming = row
+                observed = self.git("merge-base", "--all", incoming, parent_head, check=False)
+                if observed.returncode not in (0, 1):
+                    raise Gap("historical merge-base observation failed")
+                bases = observed.stdout.decode().splitlines()
+                if len(bases) != 1 or bases[0] not in parent_line or bases[0] in child_line:
+                    continue
+                pin = bases[0]
+                introduced = (parent_line & self.commits(pin)) - self.commits(before) - child_line
+                for commit in introduced:
+                    evidence.setdefault(commit, (pin, merge))
+            self.historical_commits_cache[key] = evidence
+        return self.historical_commits_cache[key]
 
     def tree(self, revision, paths):
         key = revision, tuple(paths)
@@ -571,15 +579,11 @@ class Detector:
                 if not shared and not canonical_base:
                     continue
                 graph_direction = parent.head in commits or canonical_base
-                historical = None
-                historical_run = 0
+                historical_commits = {}
                 if not graph_direction:
-                    historical = self.source.merged_parent(child.head, parent.head)
-                    if not historical:
+                    historical_commits = self.source.historical_commits(child.head, parent.head)
+                    if not historical_commits:
                         raise Gap("shared ancestry without a confirmed direction/complete parent delta")
-                    historical_run = self.api.historical_head(parent, historical[0])
-                    if not historical_run:
-                        raise Gap("historical parent head lacks a canonical PR-event binding")
                 # Only a current canonical base choice bypasses provenance guards.
                 provenance_gap = None
                 if not canonical_base:
@@ -597,23 +601,15 @@ class Detector:
                 landed = self.source.landed(parent, base, paths, patch) if patch else None
                 if landed:
                     reasons.append(f"#{number}: aggregate source equivalent landed at {landed}")
-                eligible = parent_commits
+                eligible = set(historical_commits) if historical_commits else parent_commits
                 preferred = parent.head
-                if historical:
-                    preferred, _ = historical
-                    # Attribute only the pinned parent's own line, not another
-                    # prerequisite imported by both PRs. The current parent must
-                    # still retain the complete selected source patch below.
-                    eligible = ({row[0] for row in self.source.first_parent_history(parent.head)}
-                                & self.source.commits(preferred))
-                    # The child can already own a prefix that the parent later
-                    # imports. Never cite the child's own first-parent commits.
-                    eligible -= {row[0] for row in self.source.first_parent_history(child.head)}
                 ordered = sorted(eligible - {preferred})
                 if preferred in eligible:
                     ordered.insert(0, preferred)
                 unsupported = False
                 for commit in ordered[:MAX_EVIDENCE_COMMITS]:
+                    historical = historical_commits.get(commit)
+                    historical_run = 0
                     try:
                         cb, cp, delta = self.source.commit_patch(commit)
                     except UnsupportedCommit:
@@ -637,6 +633,9 @@ class Detector:
                                     else "shared-unmerged-commit" if commit in commits
                                     else "canonical-base-content")
                         if historical:
+                            historical_run = self.api.historical_head(parent, historical[0])
+                            if not historical_run:
+                                raise Gap("historical parent head lacks a canonical PR-event binding")
                             kind = "merged-historical-parent-commit"
                         return Evidence(number, parent.head, child.head, self.source.main,
                                         kind, commit, hashlib.sha256(delta).hexdigest(), cb,
@@ -665,7 +664,8 @@ def comment_text(evidence, parent_state="open"):
     detail = (f"[{e.kind} `{e.commit}`](https://github.com/{REPO}/commit/{e.commit}); " if e.commit else "")
     if e.parent_pin:
         detail += (f"child merge [`{e.child_merge}`](https://github.com/{REPO}/commit/{e.child_merge}) "
-                   f"pins parent revision [`{e.parent_pin}`](https://github.com/{REPO}/commit/{e.parent_pin}); "
+                   f"incorporates parent revision [`{e.parent_pin}`](https://github.com/{REPO}/commit/{e.parent_pin}) "
+                   "through its incoming history; "
                    f"[historical PR event](https://github.com/{REPO}/actions/runs/{e.historical_run}) "
                    "binds that SHA to the parent's branch while its PR existed; "
                    "the selected patch remains present in both current PR trees; ")

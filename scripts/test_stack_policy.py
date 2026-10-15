@@ -316,6 +316,35 @@ class GitFixtures(unittest.TestCase):
         self.pr(1)
         self.assertIsNone(self.detector().detect(child)[0])
 
+    def test_historical_parent_cannot_claim_childs_previously_merged_side_branch(self):
+        git(self.root, "checkout", "-b", "child-side")
+        self.write("C", "child's own side-branch work\n")
+        self.commit("child side contribution")
+        git(self.root, "checkout", "main")
+        git(self.root, "checkout", "-b", "child")
+        self.write("own", "child main line\n")
+        self.commit("child main contribution")
+        git(self.root, "merge", "--no-ff", "child-side", "-m", "child imports own side branch")
+        git(self.root, "checkout", "child-side")
+        git(self.root, "checkout", "-b", "parent")
+        self.write("P", "parent change\n")
+        pinned = self.commit("parent contribution")
+        git(self.root, "checkout", "child")
+        git(self.root, "merge", "--no-ff", "parent", "-m", "merge parent")
+        self.write("P", "child rewrites parent change\n")
+        self.commit("rewrite P")
+        child = self.pr(2)
+        git(self.root, "checkout", "parent")
+        self.write("future", "parent next change\n")
+        self.commit("parent advances")
+        self.pr(1)
+        api = SimpleNamespace(historical_head=lambda _, head: 12345 if head == pinned else None)
+        try:
+            evidence, _ = self.detector(api).detect(child)
+        except sp.Gap:
+            evidence = None
+        self.assertIsNone(evidence)
+
     def test_closed_submission_cannot_close_its_own_resubmission(self):
         parent, old_child = self.parent_child()
         self.prs[-1] = sp.PR(**{**sp.asdict(old_child), "state": "closed"})
