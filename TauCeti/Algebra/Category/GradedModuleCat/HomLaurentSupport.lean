@@ -131,33 +131,11 @@ private theorem homShiftDirectSumMap_injective :
   rw [← homogeneousPartOfGradedSMul_homShiftDirectSumMap, h,
     homogeneousPartOfGradedSMul_homShiftDirectSumMap]
 
-/-- An ungraded map out of a finitely generated graded module has only finitely many nonzero
-homogeneous parts. -/
-private theorem exists_finset_homogeneousPartOfGradedSMul_eq_zero [Module.Finite A M]
-    (f : M →ₗ[A] N) :
-    ∃ d : Finset ℤ, ∀ r ∉ d, M.grading.homogeneousPartOfGradedSMul N.grading 𝒜 f r = 0 := by
-  classical
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
-  -- The degree-`r` part vanishes on each component `xₚ` of a generator `x` unless `p + r` is in
-  -- the support of `f xₚ`.
-  refine ⟨s.biUnion fun x ↦ (DirectSum.decompose M.grading.piece x).support.biUnion fun p ↦
-      (DirectSum.decompose N.grading.piece
-        (f (DirectSum.decompose M.grading.piece x p))).support.image (· - p),
-    fun r hr ↦ LinearMap.ext_on hs fun x hx ↦ ?_⟩
-  rw [LinearMap.zero_apply, ← DirectSum.sum_support_decompose M.grading.piece x, map_sum]
-  refine Finset.sum_eq_zero fun p hp ↦ ?_
-  rw [M.grading.homogeneousPartOfGradedSMul_apply_of_mem N.grading 𝒜 f r
-    (DirectSum.decompose M.grading.piece x p).property]
-  by_contra hne
-  exact hr (Finset.mem_biUnion.2 ⟨x, Finset.mem_coe.1 hx, Finset.mem_biUnion.2 ⟨p, hp,
-    Finset.mem_image.2 ⟨p + r, DFinsupp.mem_support_iff.2 fun h ↦ hne (by simp [h]),
-      add_sub_cancel_left p r⟩⟩⟩)
-
 private theorem homShiftDirectSumMap_surjective [Module.Finite A M] :
     Function.Surjective (homShiftDirectSumMap M N) := by
   classical
   intro f
-  obtain ⟨d, hd⟩ := exists_finset_homogeneousPartOfGradedSMul_eq_zero M N f
+  obtain ⟨d, hd⟩ := M.grading.exists_finset_homogeneousPartOfGradedSMul_eq_zero N.grading 𝒜 f
   refine ⟨∑ r ∈ d, DirectSum.of (fun j : ℤ ↦ M ⟶ N.shiftObj j) (-r)
       (homogeneousPartToShift M N f r), M.grading.linearMap_ext fun p x hx ↦ ?_⟩
   simp only [map_sum, homShiftDirectSumMap_of, homogeneousPartToShift_hom, LinearMap.sum_apply,

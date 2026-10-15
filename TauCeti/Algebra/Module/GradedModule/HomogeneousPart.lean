@@ -240,6 +240,26 @@ theorem homogeneousPartOfGradedSMul_eq_zero_of_ne (f : M →ₗ[A] N) {r s : ℤ
   exact DirectSum.decompose_of_mem_ne H.piece (hf.map_mem hx) fun h ↦
     hrs (add_left_cancel h.symm)
 
+/-- A graded-scalar map out of a finitely generated module has only finitely many nonzero
+homogeneous parts. -/
+theorem exists_finset_homogeneousPartOfGradedSMul_eq_zero [Module.Finite A M] (f : M →ₗ[A] N) :
+    ∃ d : Finset ℤ, ∀ r ∉ d, G.homogeneousPartOfGradedSMul H 𝒜 f r = 0 := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
+  -- The degree-`r` part vanishes on each component `xₚ` of a generator `x` unless `p + r` is in
+  -- the support of `f xₚ`.
+  refine ⟨s.biUnion fun x ↦ (DirectSum.decompose G.piece x).support.biUnion fun p ↦
+      (DirectSum.decompose H.piece (f (DirectSum.decompose G.piece x p))).support.image (· - p),
+    fun r hr ↦ LinearMap.ext_on hs fun x hx ↦ ?_⟩
+  rw [LinearMap.zero_apply, ← DirectSum.sum_support_decompose G.piece x, map_sum]
+  refine Finset.sum_eq_zero fun p hp ↦ ?_
+  rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r
+    (DirectSum.decompose G.piece x p).property]
+  by_contra hne
+  exact hr (Finset.mem_biUnion.2 ⟨x, Finset.mem_coe.1 hx, Finset.mem_biUnion.2 ⟨p, hp,
+    Finset.mem_image.2 ⟨p + r, DFinsupp.mem_support_iff.2 fun h ↦ hne (by simp [h]),
+      add_sub_cancel_left p r⟩⟩⟩)
+
 /-- A graded-scalar map is fixed by its degree-`r` component exactly when it has degree `r`. -/
 @[simp]
 theorem homogeneousPartOfGradedSMul_eq_self_iff (f : M →ₗ[A] N) (r : ℤ) :
