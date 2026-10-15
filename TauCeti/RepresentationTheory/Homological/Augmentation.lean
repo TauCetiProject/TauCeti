@@ -191,6 +191,29 @@ def augmentationKerIso :
   have : IsIso l.1 := isIso_of_mono_of_epi _
   asIso l.1
 
+/-- The augmentation-kernel isomorphism is compatible with the inclusions into the group ring. -/
+@[simp]
+theorem augmentationι_augmentationKerIso_hom_apply
+    (x : (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
+      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)))).V) :
+    (augmentationι k G).hom ((augmentationKerIso k G).hom x) =
+      ((RestrictScalars.addEquiv k (MonoidAlgebra k G)
+        (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) x :
+          RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G) := by
+  simp only [augmentationKerIso, asIso_hom]
+  have hzero : augmentationKerToLeftRegular k G ≫ augmentation k G = 0 := by
+    ext y
+    exact (augmentation_hom_apply k G _).trans
+      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ y).2
+  have h := (KernelFork.IsLimit.lift' (augmentationιIsKernel k G)
+    (augmentationKerToLeftRegular k G) hzero).2
+  have h' : (KernelFork.IsLimit.lift' (augmentationιIsKernel k G)
+      (augmentationKerToLeftRegular k G) hzero).1 ≫ augmentationι k G =
+      augmentationKerToLeftRegular k G := by
+    simpa only [Fork.ι_ofι] using h
+  exact (ConcreteCategory.comp_apply _ _ x).symm.trans
+    ((ConcreteCategory.congr_hom h' x).trans rfl)
+
 end Rep
 
 namespace TauCeti.AugmentationIdeal
