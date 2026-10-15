@@ -41,7 +41,7 @@ linear algebra behind the contractibility of the space of tame almost complex st
 
 ## Main results
 
-* `TauCeti.SymplecticForm.Compatible.convex_cayleyBall`: the Cayley ball is convex.
+* `TauCeti.SymplecticForm.Tames.convex_cayleyBall`: the Cayley ball is convex.
 * `TauCeti.SymplecticForm.Tames.isUnit_one_sub_mul` and
   `TauCeti.SymplecticForm.isUnit_one_sub_of_mem_cayleyBall`: the denominators `1 - J₀ J` of the
   transform and `1 - C` of its inverse are invertible.
@@ -94,28 +94,25 @@ lemma mem_cayleyBall {C : Module.End ℝ V} :
 lemma Tames.zero_mem_cayleyBall (h₀ : ω.Tames J₀) : 0 ∈ ω.cayleyBall J₀ :=
   ⟨by simp, fun v hv => by simpa using h₀ v hv⟩
 
-/-- For a `J₀`-invariant form, the quadratic form `q(v) = ω(v, J₀ v)` satisfies the convexity
-identity `q(a x + b y) = a q(x) + b q(y) - a b q(x - y)` when `a + b = 1`. -/
-private lemma Invariant.apply_add_apply_eq (h₀ : ω.Invariant J₀) {a b : ℝ} (hab : a + b = 1)
-    (x y : V) :
+/-- The quadratic form `q(v) = ω(v, J₀ v)` satisfies the convexity identity
+`q(a x + b y) = a q(x) + b q(y) - a b q(x - y)` when `a + b = 1`. -/
+private lemma apply_add_apply_eq {a b : ℝ} (hab : a + b = 1) (x y : V) :
     ω (a • x + b • y) (J₀ (a • x + b • y)) =
       a * ω x (J₀ x) + b * ω y (J₀ y) - a * b * ω (x - y) (J₀ (x - y)) := by
-  have hswap := h₀.associatedBilinForm_apply_swap y x
   simp only [map_add, map_smul, map_sub, LinearMap.add_apply, LinearMap.smul_apply,
-    LinearMap.sub_apply, smul_eq_mul] at hswap ⊢
-  rw [hswap]
+    LinearMap.sub_apply, smul_eq_mul]
   obtain rfl : b = 1 - a := by linarith
   ring
 
-/-- The Cayley ball of a compatible pair is convex. -/
-theorem Compatible.convex_cayleyBall (h₀ : ω.Compatible J₀) : Convex ℝ (ω.cayleyBall J₀) := by
+/-- The Cayley ball of `J₀` is convex when `ω` tames `J₀`. -/
+theorem Tames.convex_cayleyBall (h₀ : ω.Tames J₀) : Convex ℝ (ω.cayleyBall J₀) := by
   intro C hC D hD a b ha hb hab
   refine ⟨?_, fun v hv => ?_⟩
   · simp only [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, hC.1, hD.1, smul_neg, neg_add]
   · have hCv := hC.2 v hv
     have hDv := hD.2 v hv
-    have hnonneg := h₀.tames.symplecticForm_apply_apply_self_nonneg (C v - D v)
-    have hab' := h₀.invariant.apply_add_apply_eq hab (C v) (D v)
+    have hnonneg := h₀.symplecticForm_apply_apply_self_nonneg (C v - D v)
+    have hab' := apply_add_apply_eq (ω := ω) (J₀ := J₀) hab (C v) (D v)
     simp only [LinearMap.add_apply, LinearMap.smul_apply]
     beta_reduce at hCv hDv hnonneg hab' ⊢
     set m := max (ω (C v) (J₀ (C v))) (ω (D v) (J₀ (D v)))
