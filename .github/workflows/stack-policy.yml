@@ -24,15 +24,16 @@ permissions:
   contents: read
 
 # Serialize comment/close transactions so retries cannot duplicate comments.
-# Every event also sweeps the backlog, so replacing a pending scheduled run
-# with an event cannot starve enforcement under continuous PR traffic.
+# FIFO retains scheduled/manual backlog runs while PR events use focused checks.
+# GitHub bounds this queue at 100; overflow cancellation is visible in Actions.
 concurrency:
   group: tauceti-no-stacking
   cancel-in-progress: false
+  queue: max
 
 jobs:
   enforce:
-    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.NO_STACK_APPLY == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

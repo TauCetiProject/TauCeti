@@ -94,6 +94,10 @@ precede expensive content checks; summary records Git operations and elapsed tim
   These relationships are not established by semantic inference.
 - Parents outside the bounded index, inaccessible/deleted source or histories
   beyond the bounds. These are gaps, not proved-safe results.
+- A non-main fork wake without an association or matching current repository,
+  branch and head identity is unknown until a backlog sweep. Events canceled by
+  GitHub's 100-entry concurrency bound supply no coverage; the next completed
+  scheduled/manual backlog sweep must reconcile them.
 - Individual merge/root commit patches. The detector skips these while looking
   for a separate supported commit within the same bound, then records a gap if
   none proves inheritance. It never guesses a merge's parent/content identity.
@@ -110,18 +114,26 @@ precede expensive content checks; summary records Git operations and elapsed tim
 
 Main-target PR opened/reopened/edited/synchronize/draft events invoke the trusted
 policy directly. Other bases invoke an unprivileged wake workflow, then the
-main-defined workflow_run observer. Every event performs a bounded backlog sweep,
-so coalesced events cannot starve a pending hourly sweep. Manual dispatch can
-select one PR. The triggering PR is classified first, followed by the newest
-backlog PRs, so
-old costly claims cannot prevent the triggering PR from being checked.
+main-defined workflow_run observer. PR events inspect only the triggering PR
+against the bounded complete parent index. An unassociated fork wake must match
+current canonical PR metadata by head, head repository and branch; stale or
+missing identities produce a gap rather than a fallback backlog sweep.
+Hourly schedules and manual dispatches inspect the bounded backlog; manual
+dispatch can also select one PR. This avoids repeating every older PR's expensive
+content/landing checks on each ordinary event. A deployed full audit measured
+382 API calls for 594 PRs; repeating full audits under event traffic exhausted
+the App's rate limit. FIFO serialization uses GitHub's `queue: max` (up to 100),
+so a newly arriving event does not replace an already pending schedule/manual
+run. Queue overflow cancels excess runs visibly in Actions; it is not coverage.
 The workflow checks out main-defined tooling explicitly; candidate-defined code
 never receives its app token. Every run publishes JSONL
-in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables enforcement;
-otherwise all triggers audit only. Manual dispatch additionally defaults to
-dry-run. Clearing this repository variable pauses mutations while audits continue.
+in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables automatic
+checks/enforcement. Otherwise automatic jobs skip and manual audits remain
+available, preventing background quota consumption during an audit-only rollout.
+Manual dispatch additionally defaults to dry-run. Clearing the repository
+variable pauses automatic jobs and mutations while retaining manual audits.
 `NO_STACK_APPLY=dispatch` permits only a manual apply selecting one positive PR
-number, for a production canary before enabling automatic sweeps. A dry-run also
+number, for a production canary before enabling automatic checks. A dry-run also
 checks current identities and live fork branches for every confirmed result.
 
 Only a confirmed stack receives the `stacked-pr` label **before** its explanation

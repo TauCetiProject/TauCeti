@@ -129,6 +129,8 @@ class API:
                 "variables": {"number": int(number)},
             })
             if data.get("errors"):
+                if any(e.get("type") == "RATE_LIMITED" for e in data["errors"]):
+                    raise BudgetGap("GraphQL API rate limit refused; sweep stopped")
                 raise Gap("live branch metadata unavailable")
             ref = data["data"]["repository"]["pullRequest"]["headRef"]
             if not ref or ref["target"]["oid"] != p.head:
@@ -174,6 +176,29 @@ class PR:
                                                                   p.get("title") or "", re.I)),
                    int((p.get("user") or {}).get("id") or 0)
                    if (p.get("user") or {}).get("login") != "ghost" else 0)
+
+
+def event_targets(event, prs):
+    """Focus events; reserve full source sweeps for schedules/manual dispatches."""
+    if event.get("pull_request"):
+        return {int(event["pull_request"]["number"])}
+    wake = event.get("workflow_run")
+    if not wake:
+        return None
+    associated = {int(p["number"]) for p in wake.get("pull_requests") or []}
+    if associated:
+        return associated
+    # Fork wake runs can omit their PR association. Match their API identities
+    # against this repository's current index; never fetch a fork URL or broaden
+    # a stale/unmatched wake into another expensive backlog sweep.
+    head = oid(wake.get("head_sha"))
+    repo = (wake.get("head_repository") or {}).get("full_name")
+    branch = wake.get("head_branch")
+    matched = {p.number for p in prs if p.base != "main" and p.head == head
+               and p.head_repo == repo and p.branch == branch}
+    if not matched:
+        raise Gap("wake has no associated PR/current canonical PR identity match")
+    return matched
 
 
 def explicit_parents(body):
@@ -687,17 +712,7 @@ def main():
         # Never accept an API/PR-supplied report path.
         sys.stdout = args.report.open("w")
     api = API()
-    priority = set()
-    if args.github_event and not args.pr:
-        event = json.loads(args.github_event.read_text())
-        if event.get("pull_request"):
-            priority.add(int(event["pull_request"]["number"]))
-        wake = event.get("workflow_run")
-        if wake:
-            associated = wake.get("pull_requests") or []
-            numbers = {int(p["number"]) for p in associated}
-            priority.update(numbers)
-            emit(wake="bounded backlog sweep", associated_prs=sorted(numbers))
+    event = json.loads(args.github_event.read_text()) if args.github_event else {}
     prs = []
     metadata_gaps = 0
     incomplete_index = False
@@ -710,8 +725,12 @@ def main():
             metadata_gaps += int(not args.pr or args.pr == number)
             incomplete_index = True
     main_sha = api.main()
-    selected = [p for p in prs if not args.pr or p.number == args.pr]
-    selected.sort(key=lambda p: (p.number in priority, p.number), reverse=True)
+    targets = {args.pr} if args.pr else event_targets(event, prs)
+    selected = [p for p in prs if targets is None or p.number in targets]
+    if targets is not None and not selected:
+        raise Gap("requested/event PR is not open in the bounded index")
+    selected.sort(key=lambda p: p.number, reverse=True)
+    emit(scope="backlog" if targets is None else "focused", selected=[p.number for p in selected])
     # Resolve closed explicit parents once, before fetching/indexing. A closed PR
     # can still contain unlanded prerequisite work. Never assume closure = landing.
     indexed = {p.number for p in prs}

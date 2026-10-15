@@ -652,6 +652,9 @@ class APITests(unittest.TestCase):
             api.request = lambda *args: {"data": {"repository": {"pullRequest": {"headRef": ref}}}}
             with self.assertRaises(sp.Gap):
                 api.pr(2)
+        api.request = lambda *args: {"errors": [{"type": "RATE_LIMITED"}]}
+        with self.assertRaises(sp.BudgetGap):
+            api.pr(2)
 
 
 class MainTests(unittest.TestCase):
@@ -731,14 +734,55 @@ class MainTests(unittest.TestCase):
         sp.block(self.api, self.child)
         self.assertEqual(sum(method == "POST" for _, method, _ in self.api.calls), 1)
 
-    def test_workflow_run_association_keeps_full_backlog_sweep(self):
-        visited = []
-        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+    def event(self, data, *args):
         with tempfile.TemporaryDirectory() as directory:
             event = Path(directory) / "event.json"
-            event.write_text(json.dumps({"workflow_run": {"pull_requests": [{"number": 1}]}}))
-            self.assertFalse(self.main("--github-event", str(event)))
-        self.assertEqual(visited, [1, 2])
+            event.write_text(json.dumps(data))
+            return self.main("--github-event", str(event), *args)
+
+    def test_workflow_run_association_focuses_only_triggered_pr(self):
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+        self.assertFalse(self.event({"workflow_run": {"pull_requests": [{"number": 1}]}}))
+        self.assertEqual(visited, [1])
+
+    def test_pr_event_focuses_older_target_and_explicit_pr_overrides_it(self):
+        visited = []
+        self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+        self.assertFalse(self.event({"pull_request": {"number": 1}}))
+        self.assertEqual(visited, [1])
+        visited.clear()
+        self.assertFalse(self.event({"pull_request": {"number": 1}}, "--pr", "2"))
+        self.assertEqual(visited, [2])
+
+    def test_schedule_and_unselected_manual_dispatch_keep_full_sweep(self):
+        for event in ({}, {"inputs": {"pr": "0"}}):
+            with self.subTest(event=event):
+                visited = []
+                self.detector.detect = lambda p: (visited.append(p.number) or None, [])
+                self.assertFalse(self.event(event))
+                self.assertEqual(visited, [2, 1])
+
+    def test_fork_wake_without_association_matches_current_index(self):
+        fork = sp.PR(**{**sp.asdict(self.child), "base": "branch-1", "head_repo": "fork/TauCeti"})
+        wake = {"workflow_run": {"pull_requests": [], "head_sha": fork.head,
+                                "head_branch": fork.branch,
+                                "head_repository": {"full_name": fork.head_repo}}}
+        self.assertEqual(sp.event_targets(wake, [self.parent, fork, self.child]), {2})
+        for field, value in (("head_sha", "f" * 40), ("head_branch", "other"),
+                             ("head_repository", {"full_name": "outsider/TauCeti"})):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(wake)
+                changed["workflow_run"][field] = value
+                with self.assertRaisesRegex(sp.Gap, "no associated PR/current canonical PR"):
+                    sp.event_targets(changed, [fork])
+
+    def test_incomplete_wake_or_closed_event_never_broadens_to_backlog(self):
+        with self.assertRaises(sp.Gap):
+            self.event({"workflow_run": {"pull_requests": []}})
+        with self.assertRaisesRegex(sp.Gap, "not open"):
+            self.event({"pull_request": {"number": 99}})
+        self.assertEqual(self.api.calls, [])
 
     def test_closed_parent_budget_does_not_abort_unrelated_children(self):
         self.raw[1]["body"] = "Dependencies: " + ", ".join(f"#{n}" for n in range(100, 165))
@@ -838,6 +882,10 @@ class IntegrationContractTests(unittest.TestCase):
         self.assertEqual(events["pull_request_target"]["branches"], ["main"])
         self.assertTrue(events["workflow_dispatch"]["inputs"]["dry-run"]["default"])
         job = workflow["jobs"]["enforce"]
+        self.assertEqual(workflow["concurrency"]["queue"], "max")
+        self.assertFalse(workflow["concurrency"]["cancel-in-progress"])
+        self.assertIn("vars.NO_STACK_APPLY == 'true'", job["if"])
+        self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])
         self.assertIn("github.ref == 'refs/heads/main'", job["if"])
         checkout = job["steps"][0]["with"]
         self.assertEqual(checkout["ref"], "refs/heads/main")
