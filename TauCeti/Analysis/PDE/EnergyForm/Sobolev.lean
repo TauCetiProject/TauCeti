@@ -406,20 +406,18 @@ theorem aestronglyMeasurable_energyFormH1 {α : Type*} [MeasurableSpace α] {ν 
     (memLp_jetField u).aestronglyMeasurable.comp_snd
     (memLp_jetField v).aestronglyMeasurable.comp_snd).integral_prod_right'
 
-/-- Essential boundedness of the drift- and mass-free energy densities is invariant under
-translating the coefficients, by translation invariance of the Haar measure. -/
+/-- Essential boundedness of the drift- and mass-free energy densities is preserved by
+translations that map the domain onto itself. -/
 theorem memLp_energyIntegrand_comp_add_right
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (h : EuclideanSpace ℝ ι) :
-    MemLp (fun x => energyIntegrand (a (x + h)) 0 0) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
-  -- Name the normed structure on bilinear forms so that `MemLp` can be transported.
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (h : EuclideanSpace ℝ ι) (hOmega : (Omega : Set _) = (· + h) ⁻¹' Omega) :
+    MemLp (fun x => energyIntegrand (a (x + h)) 0 0) ⊤ (mu.restrict Omega) := by
   let : NormedAddCommGroup
       ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
-  simp only [Opens.coe_top, Measure.restrict_univ] at hcoeff ⊢
-  exact hcoeff.comp_measurePreserving (measurePreserving_add_right mu h)
+  have hres : MeasurePreserving (· + h) (mu.restrict Omega) (mu.restrict Omega) :=
+    hOmega ▸ (measurePreserving_add_right mu h).restrict_preimage Omega.isOpen.measurableSet
+  exact hcoeff.comp_measurePreserving hres
 
 /-- **The drift- and mass-free energy form.** With no drift or mass term, the energy form on
 `H¹(Ω)` is the integral of `⟨a ∇u, ∇v⟩` over `Ω`. This is the shape the difference-quotient
@@ -438,6 +436,43 @@ theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu O
     energyFormH1 (fun _ => A) 0 0 u v
       = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu :=
   energyFormH1_zero_zero_eq_setIntegral _ u v
+
+/-- The constant-coefficient energy form of `w ∈ H¹(Ω)` against a test function `ψ` is
+`∑ⱼ ∫ (∂_{cⱼ} ψ) ∂ⱼw`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
+theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu Omega 2)
+    (ψ : 𝓓(Omega, ℝ)) :
+    energyFormH1 (fun _ => A) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 ψ) =
+      ∑ j, ∫ x, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
+        innerSL ℝ (W1p.gradient w x) (EuclideanSpace.basisFun ι ℝ j) ∂mu := by
+  set b := EuclideanSpace.basisFun ι ℝ
+  have hloc : ∀ j, LocallyIntegrableOn (fun x => innerSL ℝ (W1p.gradient w x) (b j)) Omega mu :=
+    fun j => ((W1p.hasWeakFDerivOn w).hasWeakLineDerivOn (b j)).locallyIntegrableOn_deriv
+  -- Pointwise, `⟨η, A ξ⟩ = ∑ⱼ ⟨η, cⱼ⟩ ξⱼ`.
+  have hB : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ =
+      ∑ j, ⟪η, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * innerSL ℝ ξ (b j) := fun η ξ => by
+    simp only [b, innerSL_apply_apply, EuclideanSpace.inner_basisFun_real]
+    simp only [matrixBilinearForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
+      Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  rw [energyFormH1_const_eq_setIntegral]
+  calc ∫ x in Omega, matrixBilinearForm A
+        (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
+      = ∫ x in Omega, ∑ j, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
+          innerSL ℝ (W1p.gradient w x) (b j) ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 ψ] with x hx
+        rw [W1p.gradient_ofTestFunctionₗ, hx, hB]
+        refine Finset.sum_congr rfl fun j _ => ?_
+        rw [smul_eq_mul, (ψ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
+          inner_gradient_left]
+    _ = ∑ j, ∫ x in Omega, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
+          innerSL ℝ (W1p.gradient w x) (b j) ∂mu :=
+        integral_finsetSum _ fun j _ =>
+          (integrable_lineDeriv_smul_of_locallyIntegrableOn (hloc j) ψ
+            (WithLp.toLp 2 (Aᵀ j))).restrict
+    _ = _ := Finset.sum_congr rfl fun j _ =>
+        setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul ψ (WithLp.toLp 2 (Aᵀ j))
 
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]

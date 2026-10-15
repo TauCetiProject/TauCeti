@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
+import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 
 /-!
 # `H²` regularity up to the boundary of a half-space
@@ -35,7 +37,7 @@ The proof is the classical one (Evans, §6.3.2, Theorem 4).
   difference quotients of `u` in such a direction stay in `H¹₀(Ω)` and are admissible test
   functions. The difference-quotient argument then bounds `∂_τ ∇u` in `L²(Ω)` for every tangential
   `τ`
-  (`UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith_of_mapsTo`).
+  (`UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzOnWith_of_mapsTo`).
   Since weak derivatives commute, this gives every second derivative except `∂_ν ∂_ν u`.
 * **The normal direction.** Against a test function `φ`, the equation reads
   `∑ⱼ ∫ (∂_{cⱼ} φ) ∂ⱼu = ∫ f φ`, where `cⱼ` is the `j`-th column of `A`. Splitting
@@ -155,23 +157,6 @@ private theorem hasWeakLineDerivOn_inner_gradient_sum_smul_basisFun
   rw [hL, hR, ← heq, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun j _ => by rw [hsplit j]; ring
 
-/-- The vector `m = ∑ⱼ sⱼ eⱼ` of `hasWeakLineDerivOn_inner_gradient_sum_smul_basisFun` satisfies
-`⟪m, ν⟫ ‖ν‖² = ν ⬝ᵥ A ν`. -/
-private theorem inner_sum_smul_basisFun_mul_norm_sq (hν : ν ≠ 0) :
-    ⟪∑ j, (⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ / ‖ν‖ ^ 2) • EuclideanSpace.basisFun ι ℝ j, ν⟫_ℝ *
-      ‖ν‖ ^ 2 = ν.ofLp ⬝ᵥ A *ᵥ ν.ofLp := by
-  have hN : ‖ν‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hν)
-  have hcol : ∀ j, ⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ = ∑ i, A i j * ν.ofLp i := fun j => by
-    simp [PiLp.inner_apply, mul_comm]
-  have hs : ∀ j, ⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ / ‖ν‖ ^ 2 * ν.ofLp j * ‖ν‖ ^ 2 =
-      (∑ i, A i j * ν.ofLp i) * ν.ofLp j := fun j => by
-    rw [hcol]
-    field_simp
-  simp only [sum_inner, real_inner_smul_left, EuclideanSpace.basisFun_inner, Finset.sum_mul, hs]
-  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-
 /-- **Second derivatives up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by
 every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `A` be a
 constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let `u ∈ H¹₀(Ω)` be a weak solution
@@ -224,8 +209,8 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
   have htan : ∀ y {τ}, ⟪τ, ν⟫_ℝ = 0 → D y τ := by
     intro y τ hτ
     obtain ⟨G, -, hG⟩ := (uniformlyEllipticOn_const (Omega : Set (EuclideanSpace ℝ ι)) hlam hA)
-      |>.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith_of_mapsTo (K := 0) (hΩ τ hτ)
-        (Bornology.isBounded_singleton.subset Set.range_const_subset) (LipschitzWith.const _) hu y
+      |>.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzOnWith_of_mapsTo (K := 0) (hΩ τ hτ)
+        (LipschitzWith.const _).lipschitzOnWith hu y
     exact ⟨G, hG⟩
   -- The normal direction, from the equation.
   let s : ι → ℝ := fun j => ⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ / ‖ν‖ ^ 2
@@ -241,7 +226,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
   -- Ellipticity makes `m` transversal to the boundary: `⟪m, ν⟫ ‖ν‖² = ν ⬝ᵥ A ν ≥ λ ‖ν‖²`.
   have hmpos : 0 < ⟪m, ν⟫_ℝ := by
     have h := hA ν
-    rw [← inner_sum_smul_basisFun_mul_norm_sq hν] at h
+    rw [← Matrix.inner_sum_smul_basisFun_mul_norm_sq A hν] at h
     exact hlam.trans_le (le_of_mul_le_mul_right h hN)
   -- Hence `ν` is a combination of `m` and a tangential vector, and `∂_ν ∂_ν u` exists.
   have hνν : D ν ν := by
@@ -274,14 +259,6 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo (hν : ν ≠ 0)
   W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
     fun _ _ => exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hΩ hlam hA hu _ _
 
-/-- Every translation parallel to the boundary of the half-space `{x | c < ⟪x, ν⟫}` maps it into
-itself. -/
-private theorem mapsTo_add_smul_of_halfSpace (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
-    {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0) (t : ℝ) :
-    MapsTo (· + t • τ) Omega Omega := fun x hx => by
-  have hx' := (hΩ x).1 hx
-  exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
-
 /-- **Second derivatives up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
 `ν ≠ 0`, let `A` be a constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let
 `u ∈ H¹₀(Ω)` be a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w`
@@ -296,7 +273,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace (hν
     ∃ G : Lp ℝ 2 (mu.restrict Omega),
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient (u : W1p mu Omega 2) x, y⟫_ℝ) G w :=
   exists_hasWeakLineDerivOn_gradient_of_mapsTo hν
-    (fun _ hτ => mapsTo_add_smul_of_halfSpace hΩ hτ) hlam hA hu y w
+    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hlam hA hu y w
 
 /-- **`H²` regularity up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
 `ν ≠ 0`, let `A` be a constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let
@@ -310,7 +287,8 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace (hν : ν ≠ 0)
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) :
     ∃ U : Wkp mu Omega 2 2, Wkp.lowerOrder 1 U = (u : W1p mu Omega 2) :=
-  exists_lowerOrder_eq_of_mapsTo hν (fun _ hτ => mapsTo_add_smul_of_halfSpace hΩ hτ) hlam hA hu
+  exists_lowerOrder_eq_of_mapsTo hν
+    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hlam hA hu
 
 end PDE
 

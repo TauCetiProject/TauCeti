@@ -88,8 +88,6 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction` and
   `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
   enough to test the weak formulation against `C_c^∞(Ω)`.
-* `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_sum`: the constant-coefficient energy form against a
-  test function, written column by column as `∑ⱼ ∫ (∂_{cⱼ} φ) ∂ⱼw`.
 * `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`, and
   `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound`: coercivity
   when the potential absorbs the drift.
@@ -233,43 +231,6 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
       (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.2
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
-
-/-- The constant-coefficient energy form of `w ∈ H¹(Ω)` against a test function `ψ` is
-`∑ⱼ ∫ (∂_{cⱼ} ψ) ∂ⱼw`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
-theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu Omega 2)
-    (ψ : 𝓓(Omega, ℝ)) :
-    energyFormH1 (fun _ => A) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 ψ) =
-      ∑ j, ∫ x, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-        innerSL ℝ (W1p.gradient w x) (EuclideanSpace.basisFun ι ℝ j) ∂mu := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  have hloc : ∀ j, LocallyIntegrableOn (fun x => innerSL ℝ (W1p.gradient w x) (b j)) Omega mu :=
-    fun j => ((W1p.hasWeakFDerivOn w).hasWeakLineDerivOn (b j)).locallyIntegrableOn_deriv
-  -- Pointwise, `⟨η, A ξ⟩ = ∑ⱼ ⟨η, cⱼ⟩ ξⱼ`.
-  have hB : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ =
-      ∑ j, ⟪η, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * innerSL ℝ ξ (b j) := fun η ξ => by
-    simp only [b, innerSL_apply_apply, EuclideanSpace.inner_basisFun_real]
-    simp only [matrixBilinearForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
-      Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  rw [energyFormH1_const_eq_setIntegral]
-  calc ∫ x in Omega, matrixBilinearForm A
-        (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
-      = ∫ x in Omega, ∑ j, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-          innerSL ℝ (W1p.gradient w x) (b j) ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 ψ] with x hx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, hB]
-        refine Finset.sum_congr rfl fun j _ => ?_
-        rw [smul_eq_mul, (ψ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
-          inner_gradient_left]
-    _ = ∑ j, ∫ x in Omega, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
-          innerSL ℝ (W1p.gradient w x) (b j) ∂mu :=
-        integral_finsetSum _ fun j _ =>
-          (integrable_lineDeriv_smul_of_locallyIntegrableOn (hloc j) ψ
-            (WithLp.toLp 2 (Aᵀ j))).restrict
-    _ = _ := Finset.sum_congr rfl fun j _ =>
-        setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul ψ (WithLp.toLp 2 (Aᵀ j))
 
 /-- **Testing against test functions suffices.** When the energy density is essentially bounded,
 so that the energy form is continuous on `H¹(Ω)`, `u` is a weak solution as soon as the weak
