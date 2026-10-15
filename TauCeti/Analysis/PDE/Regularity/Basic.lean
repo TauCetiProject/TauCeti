@@ -163,8 +163,8 @@ theorem abs_energyFormH1_differenceQuotient_add_le
   have hτ : ‖W1p.gradient τ‖ = ‖W1p.gradient v‖ := by
     have hres : MeasurePreserving (· + (-t) • w)
         (mu.restrict Omega) (mu.restrict Omega) :=
-      hOmega (-t) ▸ (measurePreserving_add_right mu ((-t) • w)).restrict_preimage
-        Omega.isOpen.measurableSet
+      by simpa only [← hOmega (-t)] using
+        (measurePreserving_add_right mu ((-t) • w)).restrict_preimage Omega.isOpen.measurableSet
     have heq : W1p.gradient τ =
         Lp.compMeasurePreserving (· + (-t) • w) hres (W1p.gradient v) :=
       Lp.ext ((W1p.gradient_translate_ae _ v).trans

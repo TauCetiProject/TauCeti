@@ -152,6 +152,7 @@ namespace TauCeti
 namespace PDE
 
 open MeasureTheory Set TopologicalSpace
+open scoped Distributions InnerProductSpace Matrix
 
 /-! ### The jet field of a Sobolev function -/
 
@@ -416,7 +417,8 @@ theorem memLp_energyIntegrand_comp_add_right
   let : NormedAddCommGroup
       ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
   have hres : MeasurePreserving (· + h) (mu.restrict Omega) (mu.restrict Omega) :=
-    hOmega ▸ (measurePreserving_add_right mu h).restrict_preimage Omega.isOpen.measurableSet
+    by simpa only [← hOmega] using
+      (measurePreserving_add_right mu h).restrict_preimage Omega.isOpen.measurableSet
   exact hcoeff.comp_measurePreserving hres
 
 /-- **The drift- and mass-free energy form.** With no drift or mass term, the energy form on

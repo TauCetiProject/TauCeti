@@ -121,10 +121,11 @@ open scoped InnerProductSpace
 
 /-- The coordinate vector formed from the projections of the columns of `A` onto `ν`
 satisfies `⟪m, ν⟫ ‖ν‖² = ν ⬝ᵥ A ν`. -/
-theorem inner_sum_smul_basisFun_mul_norm_sq {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem inner_sum_smul_basisFun_mul_norm_sq {ι : Type*} [Fintype ι]
     (A : Matrix ι ι ℝ) {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0) :
     ⟪∑ j, (⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ / ‖ν‖ ^ 2) • EuclideanSpace.basisFun ι ℝ j, ν⟫_ℝ *
       ‖ν‖ ^ 2 = ν.ofLp ⬝ᵥ A *ᵥ ν.ofLp := by
+  classical
   have hN : ‖ν‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hν)
   have hcol : ∀ j, ⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ = ∑ i, A i j * ν.ofLp i := fun j => by
     simp [PiLp.inner_apply, mul_comm]

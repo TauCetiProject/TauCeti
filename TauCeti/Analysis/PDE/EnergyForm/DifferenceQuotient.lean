@@ -90,7 +90,8 @@ theorem energyFormH1_translate (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         (W1p.translate hkOmega v) := by
   rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral]
   have hres : MeasurePreserving (· + h) (mu.restrict Omega) (mu.restrict Omega) :=
-    hOmega ▸ (measurePreserving_add_right mu h).restrict_preimage Omega.isOpen.measurableSet
+    by simpa only [← hOmega] using
+      (measurePreserving_add_right mu h).restrict_preimage Omega.isOpen.measurableSet
   have hcancel : ∀ x : EuclideanSpace ℝ ι, x + h + k = x := fun x => by
     rw [add_assoc, hk, add_zero]
   have htr : ∀ (s : EuclideanSpace ℝ ι) (hs : MapsTo (· + s) Omega Omega)
