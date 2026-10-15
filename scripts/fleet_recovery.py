@@ -7,6 +7,7 @@ bypasses always() finalizers; failed recovery publishes an infrastructure verdic
 """
 
 import json
+from http.client import HTTPException
 import os
 import re
 import sys
@@ -87,7 +88,7 @@ def recover(
         for attempt in range(3):
             try:
                 return operation(path) if data is None else operation(path, data)
-            except OSError:
+            except (OSError, HTTPException):
                 if data is not None or attempt == 2:
                     raise
                 sleep(5 * (attempt + 1))
@@ -97,7 +98,7 @@ def recover(
         return "not-an-initial-bors-attempt"
     try:
         return wait_for_fleet(run_id, fetch=fetch, clock=clock, sleep=sleep, run=run)
-    except (OSError, ValueError, KeyError, TypeError, RuntimeError):
+    except (OSError, HTTPException, ValueError, KeyError, TypeError, RuntimeError):
         failure_status(run_id, run, fetch=fetch)
         raise
 
@@ -145,7 +146,7 @@ def handoff(run_id, run, *, fetch, clock, sleep):
             # and cannot silently strand bors.
             fetch(f"/actions/runs/{run_id}/cancel", {})
         # A conflict or server error may mean it was accepted: reconcile.
-    except OSError:
+    except (OSError, HTTPException):
         pass  # The server may have accepted it: reconcile before further action.
     deadline = clock() + 120
     while clock() < deadline:
@@ -165,7 +166,7 @@ def handoff(run_id, run, *, fetch, clock, sleep):
             try:
                 fetch(f"/actions/runs/{run_id}/rerun", {})
                 return "rerun-on-namespace-requested"
-            except OSError:
+            except (OSError, HTTPException):
                 # POST may have succeeded despite a lost response. Observe the
                 # successor before deciding to hand recovery back to bors.
                 deadline = clock() + 60
@@ -201,7 +202,7 @@ def main():
             raise ValueError("run id")
         print(recover(run_id))
         return 0
-    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
+    except (OSError, HTTPException, ValueError, KeyError, TypeError, RuntimeError) as exc:
         print(
             "::error::Fleet startup recovery incomplete: "
             + type(exc).__name__

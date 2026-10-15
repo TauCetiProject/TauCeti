@@ -16,7 +16,7 @@ jobs:
     runs-on:
       - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
       - namespace-features:github.run-id=${{ github.run_id }}
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
