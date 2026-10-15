@@ -73,10 +73,13 @@ theorem mulHeight_eq_mulHeight_coe (x : α →₀ K) : x.mulHeight = Height.mulH
       · exact Finite.le_ciSup_of_le ⟨j, mem_support_iff.mpr hj⟩ le_rfl
   simp only [Finsupp.mulHeight, Height.mulHeight_eq hs, Height.mulHeight_eq hfun, hv]
 
-/-- The native logarithmic Finsupp height is the logarithm of its support height. -/
+/-- The native logarithmic Finsupp height is the logarithm of its support height.
+Mathlib's native characteristic equation uses `Height.mulHeight ⇑x`; this bridge uses
+`Finsupp.mulHeight x`, the height on the finite support. -/
 theorem logHeight_eq_log_mulHeight_support (x : α →₀ K) :
     x.logHeight = Real.log x.mulHeight := by
-  rw [Finsupp.logHeight, mulHeight_eq_mulHeight_coe]
+  exact (Finsupp.logHeight_eq_log_mulHeight x).trans
+    (congrArg Real.log (mulHeight_eq_mulHeight_coe x).symm)
 
 theorem logHeight_nonneg (x : α →₀ K) : 0 ≤ x.logHeight := by
   rw [logHeight_eq_log_mulHeight_support]
