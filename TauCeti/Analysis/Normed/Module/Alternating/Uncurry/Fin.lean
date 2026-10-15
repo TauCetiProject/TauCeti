@@ -44,8 +44,9 @@ theorem alternatizeUncurryFin_curryLeft_comp_add_curryLeft
   ext v
   have hremove (i : Fin (n + 1)) :
       Fin.removeNth i.succ (Matrix.vecCons y v) = Matrix.vecCons y (Fin.removeNth i v) := by
-    change (Fin.cons y v ∘ i.succ.succAbove) = Fin.cons y (i.removeNth v)
-    exact Fin.cons_comp_succ_succAbove y v i
+    funext j
+    rw [Fin.removeNth_apply, Matrix.vecCons, Matrix.vecCons, ← Fin.cons_comp_succ_succAbove y v i,
+      Function.comp_apply]
   rw [add_apply, curryLeft_apply_apply, alternatizeUncurryFin_apply, alternatizeUncurryFin_apply,
     Fin.sum_univ_succ (n := n + 1)]
   simp [hremove, pow_succ]
