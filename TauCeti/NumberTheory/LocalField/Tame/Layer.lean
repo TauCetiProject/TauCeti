@@ -118,6 +118,7 @@ theorem coe_tameLayerEmbedding (U : OpenNormalSubgroup (Field.absoluteGaloisGrou
   (rfl)
 
 /-- Restriction to the tame layer agrees in the algebraic and separable closure models. -/
+@[simp]
 theorem tameLayerEmbedding_restrictNormalHom
     (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
     (σ : Field.absoluteGaloisGroup K) :
@@ -131,6 +132,7 @@ theorem tameLayerEmbedding_restrictNormalHom
 
 /-- The subgroup fixing the embedded tame layer pulls back to the product of wild inertia
 and the prescribed open normal subgroup. -/
+@[simp↓]
 theorem galoisSubgroup_tameLayerEmbedding_comap
     (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K)) :
     (galoisSubgroup K (tameLayer K U) (tameLayerEmbedding K U)).toSubgroup.comap

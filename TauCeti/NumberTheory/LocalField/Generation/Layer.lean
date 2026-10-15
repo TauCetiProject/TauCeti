@@ -27,12 +27,6 @@ prescribed generators under the canonical quotient identification. Thus an arith
 relation-module calculation can be used directly without changing coefficient actions
 or transporting its second-cohomology hypothesis to a different quotient model.
 
-The arithmetic extension class generates by
-`galoisClassModuleExtension_contCohomologyClass_generates`. The extension generators use
-`freeProfiniteGroup.exists_topologicalClosure_closure_range_eq_top_of_bijective_explicitCoeff2`;
-the class-module map induced by `absoluteGaloisGroupRestrictEquiv` then descends them to
-the original finite quotient.
-
 ## References
 
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, 2nd ed.,
@@ -81,6 +75,11 @@ theorem exists_generating_tuple_quotient_of_galoisClassModuleMap
               simpa only [tameLayerSubgroup_toSubgroup] using
                 (le_sup_right : U.toSubgroup ≤ wildInertiaSubgroup K ⊔ U.toSubgroup))
               (t i)) = g i := by
+  /- The arithmetic extension class generates by
+  `galoisClassModuleExtension_contCohomologyClass_generates`. The extension generators use
+  `freeProfiniteGroup.exists_topologicalClosure_closure_range_eq_top_of_bijective_explicitCoeff2`;
+  the class-module map induced by `absoluteGaloisGroupRestrictEquiv` then descends them to
+  the original finite quotient. -/
   intro j
   have hd : Dense (Subgroup.closure (Set.range g) : Set Gal(tameLayer K U/K)) := by
     rw [hg, Subgroup.coe_top]
