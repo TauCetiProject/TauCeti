@@ -24,9 +24,9 @@ null or conull. No hypothesis on `α` is needed.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.Measure.ergodic_shift_of_iIndepFun` — a shift-preserving path law with
+* `MeasureTheory.Measure.ergodic_shift_of_iIndepFun` — a shift-preserving path law with
   independent coordinates is ergodic for the one-sided shift;
-* `TauCeti.MeasureTheory.Measure.ergodic_shift_infinitePi_const` — an i.i.d. product law is
+* `MeasureTheory.Measure.ergodic_shift_infinitePi_const` — an i.i.d. product law is
   ergodic for the one-sided shift.
 
 ## References
@@ -37,11 +37,7 @@ null or conull. No hypothesis on `α` is needed.
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory
-
-namespace TauCeti
-
-open Probability
+open Filter MeasureTheory ProbabilityTheory TauCeti TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
@@ -78,5 +74,3 @@ theorem ergodic_shift_infinitePi_const (μ : Measure α) [IsProbabilityMeasure �
     (iIndepFun_infinitePi (X := fun _ => id) fun _ => measurable_id) hmp
 
 end MeasureTheory.Measure
-
-end TauCeti
