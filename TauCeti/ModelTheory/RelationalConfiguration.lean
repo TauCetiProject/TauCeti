@@ -70,7 +70,7 @@ def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, 
 
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
-theorem Atom.rec_atom {motive : Atom L V → Prop}
+theorem Atom.induction_atom {motive : Atom L V → Prop}
     (h : ∀ {n : ℕ} (R : L.Relations n) (x : Fin n → V), motive (atom R x)) (a : Atom L V) :
     motive a := by
   obtain ⟨n, R, x⟩ := a

@@ -24,18 +24,18 @@ shows that pulling a graph back along a vertex map corresponds to restricting it
 
 * `TauCeti.RelationalConfiguration.IsSimpleGraph` — a configuration of the language of graphs is
   symmetric and irreflexive;
-* `TauCeti.RelationalConfiguration.ofSimpleGraph` — the configuration of a simple graph;
-* `TauCeti.RelationalConfiguration.simpleGraphEquiv` — the measurable equivalence between simple
-  graphs and symmetric irreflexive configurations.
+* `SimpleGraph.toRelationalConfiguration` — the configuration of a simple graph;
+* `SimpleGraph.relationalConfigurationEquiv` — the measurable equivalence between simple graphs and
+  symmetric irreflexive configurations.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.ofSimpleGraph_comap` — encoding a pulled-back graph is
-  restricting its encoding;
+* `SimpleGraph.toRelationalConfiguration_comap` — encoding a pulled-back graph is restricting its
+  encoding;
 * `TauCeti.RelationalConfiguration.IsSimpleGraph.restrict` — restriction preserves symmetry and
   irreflexivity, also along non-injective vertex maps;
-* `TauCeti.RelationalConfiguration.simpleGraphEquiv_comap` and
-  `TauCeti.RelationalConfiguration.simpleGraphEquiv_symm_restrict` — the equivalence commutes with
+* `SimpleGraph.relationalConfigurationEquiv_comap` and
+  `SimpleGraph.relationalConfigurationEquiv_symm_restrict` — the equivalence commutes with
   restriction in both directions.
 -/
 
@@ -45,9 +45,9 @@ noncomputable section
 
 open MeasureTheory
 
-namespace TauCeti
-
 open _root_.FirstOrder (Language)
+
+namespace TauCeti
 
 namespace RelationalConfiguration
 
@@ -65,9 +65,9 @@ theorem adjAtom_map (f : V → W) (u v : V) : (adjAtom u v).map f = adjAtom (f u
 
 /-- Every atom of the language of graphs is an adjacency atom. -/
 @[elab_as_elim]
-theorem Atom.rec_adjAtom {motive : Atom Language.graph V → Prop}
+theorem Atom.induction_adjAtom {motive : Atom Language.graph V → Prop}
     (h : ∀ u v : V, motive (adjAtom u v)) (a : Atom Language.graph V) : motive a := by
-  induction a using Atom.rec_atom with
+  induction a using Atom.induction_atom with
   | h R x =>
     cases R
     have hx : x = ![x 0, x 1] := by
@@ -88,21 +88,6 @@ theorem isSimpleGraph_iff {c : RelationalConfiguration Language.graph V} :
       (∀ u v, c.eval (adjAtom u v) = c.eval (adjAtom v u)) ∧ ∀ v, c.eval (adjAtom v v) = false :=
   Iff.rfl
 
-/-- The configuration of a simple graph, read off its first-order structure. -/
-def ofSimpleGraph (G : SimpleGraph V) : RelationalConfiguration Language.graph V :=
-  @ofStructure Language.graph V G.structure
-
-open Classical in
-@[simp]
-theorem eval_ofSimpleGraph_adjAtom (G : SimpleGraph V) (u v : V) :
-    (ofSimpleGraph G).eval (adjAtom u v) = decide (G.Adj u v) := by
-  simp only [ofSimpleGraph, adjAtom, eval_ofStructure]
-  rfl
-
-theorem isSimpleGraph_ofSimpleGraph (G : SimpleGraph V) : IsSimpleGraph (ofSimpleGraph G) := by
-  classical
-  refine ⟨fun u v => ?_, fun v => ?_⟩ <;> simp [G.adj_comm]
-
 /-- The simple graph of a symmetric irreflexive configuration. -/
 def toSimpleGraph (c : RelationalConfiguration Language.graph V) (hc : IsSimpleGraph c) :
     SimpleGraph V where
@@ -114,11 +99,43 @@ def toSimpleGraph (c : RelationalConfiguration Language.graph V) (hc : IsSimpleG
 theorem toSimpleGraph_adj (c : RelationalConfiguration Language.graph V) (hc : IsSimpleGraph c)
     (u v : V) : (toSimpleGraph c hc).Adj u v ↔ c.eval (adjAtom u v) = true := Iff.rfl
 
+/-- Restriction preserves symmetry and irreflexivity. The vertex map need not be injective: a pair
+of distinct vertices with the same image reads a diagonal atom, which is false. -/
+theorem IsSimpleGraph.restrict {c : RelationalConfiguration Language.graph W}
+    (hc : IsSimpleGraph c) (f : V → W) : IsSimpleGraph (c.restrict f) :=
+  ⟨fun u v => by simpa using hc.1 (f u) (f v), fun v => by simpa using hc.2 (f v)⟩
+
+end RelationalConfiguration
+
+end TauCeti
+
+namespace SimpleGraph
+
+open TauCeti TauCeti.RelationalConfiguration
+
+variable {V W : Type*}
+
+/-- The configuration of a simple graph, read off its first-order structure. -/
+def toRelationalConfiguration (G : SimpleGraph V) : RelationalConfiguration Language.graph V :=
+  @ofStructure Language.graph V G.structure
+
+open Classical in
+@[simp]
+theorem eval_toRelationalConfiguration_adjAtom (G : SimpleGraph V) (u v : V) :
+    G.toRelationalConfiguration.eval (adjAtom u v) = decide (G.Adj u v) := by
+  simp only [toRelationalConfiguration, adjAtom, eval_ofStructure]
+  rfl
+
+theorem isSimpleGraph_toRelationalConfiguration (G : SimpleGraph V) :
+    IsSimpleGraph G.toRelationalConfiguration := by
+  classical
+  refine ⟨fun u v => ?_, fun v => ?_⟩ <;> simp [G.adj_comm]
+
 /-- **Simple graphs are the symmetric irreflexive configurations** of the language of graphs, as a
 measurable equivalence. -/
-def simpleGraphEquiv :
+def relationalConfigurationEquiv :
     SimpleGraph V ≃ᵐ {c : RelationalConfiguration Language.graph V // IsSimpleGraph c} where
-  toFun G := ⟨ofSimpleGraph G, isSimpleGraph_ofSimpleGraph G⟩
+  toFun G := ⟨G.toRelationalConfiguration, G.isSimpleGraph_toRelationalConfiguration⟩
   invFun c := toSimpleGraph c.1 c.2
   left_inv G := by
     classical
@@ -126,67 +143,62 @@ def simpleGraphEquiv :
     simp
   right_inv c := by
     classical
-    refine Subtype.ext (ext fun a => ?_)
-    induction a using Atom.rec_adjAtom with
+    refine Subtype.ext (RelationalConfiguration.ext fun a => ?_)
+    induction a using Atom.induction_adjAtom with
     | h u v => simp
   measurable_toFun := by
     classical
     refine Measurable.subtype_mk (measurable_iff.2 fun a => ?_)
-    induction a using Atom.rec_adjAtom with
+    induction a using Atom.induction_adjAtom with
     | h u v =>
-      simp only [eval_ofSimpleGraph_adjAtom]
+      simp only [eval_toRelationalConfiguration_adjAtom]
       exact (Measurable.of_discrete (f := fun p : Prop => decide p)).comp
-        (SimpleGraph.measurable_iff_adj.1 measurable_id u v)
+        (measurable_iff_adj.1 measurable_id u v)
   measurable_invFun :=
-    SimpleGraph.measurable_iff_adj.2 fun u v =>
+    measurable_iff_adj.2 fun u v =>
       (Measurable.of_discrete (f := fun b : Bool => b = true)).comp
         ((measurable_eval (adjAtom u v)).comp measurable_subtype_coe)
 
 /-- Encoding a simple graph as a configuration is measurable. -/
 @[fun_prop]
-theorem measurable_ofSimpleGraph :
-    Measurable (ofSimpleGraph : SimpleGraph V → RelationalConfiguration Language.graph V) :=
-  measurable_subtype_coe.comp simpleGraphEquiv.measurable
+theorem measurable_toRelationalConfiguration :
+    Measurable
+      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
+  measurable_subtype_coe.comp relationalConfigurationEquiv.measurable
 
 @[simp]
-theorem coe_simpleGraphEquiv (G : SimpleGraph V) :
-    (simpleGraphEquiv G : RelationalConfiguration Language.graph V) = ofSimpleGraph G := (rfl)
+theorem coe_relationalConfigurationEquiv (G : SimpleGraph V) :
+    (relationalConfigurationEquiv G : RelationalConfiguration Language.graph V) =
+      G.toRelationalConfiguration := (rfl)
 
 @[simp]
-theorem simpleGraphEquiv_symm_apply
+theorem relationalConfigurationEquiv_symm_apply
     (c : {c : RelationalConfiguration Language.graph V // IsSimpleGraph c}) :
-    simpleGraphEquiv.symm c = toSimpleGraph c.1 c.2 := (rfl)
+    relationalConfigurationEquiv.symm c = toSimpleGraph c.1 c.2 := (rfl)
 
 /-! ### Compatibility with restriction -/
 
-/-- Restriction preserves symmetry and irreflexivity. The vertex map need not be injective: a pair
-of distinct vertices with the same image reads a diagonal atom, which is false. -/
-theorem IsSimpleGraph.restrict {c : RelationalConfiguration Language.graph W}
-    (hc : IsSimpleGraph c) (f : V → W) : IsSimpleGraph (c.restrict f) :=
-  ⟨fun u v => by simpa using hc.1 (f u) (f v), fun v => by simpa using hc.2 (f v)⟩
-
 /-- **Encoding commutes with restriction**: the configuration of a pulled-back graph is the
 restriction of the configuration. -/
-theorem ofSimpleGraph_comap (f : V → W) (G : SimpleGraph W) :
-    ofSimpleGraph (G.comap f) = (ofSimpleGraph G).restrict f := by
+theorem toRelationalConfiguration_comap (f : V → W) (G : SimpleGraph W) :
+    (G.comap f).toRelationalConfiguration = G.toRelationalConfiguration.restrict f := by
   classical
   ext a
-  induction a using Atom.rec_adjAtom with
+  induction a using Atom.induction_adjAtom with
   | h u v => simp
 
-theorem simpleGraphEquiv_comap (f : V → W) (G : SimpleGraph W) :
-    simpleGraphEquiv (G.comap f) =
-      ⟨(simpleGraphEquiv G : RelationalConfiguration Language.graph W).restrict f,
-        (simpleGraphEquiv G).2.restrict f⟩ :=
-  Subtype.ext (ofSimpleGraph_comap f G)
+theorem relationalConfigurationEquiv_comap (f : V → W) (G : SimpleGraph W) :
+    relationalConfigurationEquiv (G.comap f) =
+      ⟨(relationalConfigurationEquiv G : RelationalConfiguration Language.graph W).restrict f,
+        (relationalConfigurationEquiv G).2.restrict f⟩ :=
+  Subtype.ext (toRelationalConfiguration_comap f G)
 
 /-- Decoding commutes with restriction. -/
-theorem simpleGraphEquiv_symm_restrict (f : V → W)
+theorem relationalConfigurationEquiv_symm_restrict (f : V → W)
     (c : {c : RelationalConfiguration Language.graph W // IsSimpleGraph c}) :
-    simpleGraphEquiv.symm ⟨c.1.restrict f, c.2.restrict f⟩ = (simpleGraphEquiv.symm c).comap f := by
+    relationalConfigurationEquiv.symm ⟨c.1.restrict f, c.2.restrict f⟩ =
+      (relationalConfigurationEquiv.symm c).comap f := by
   ext u v
   simp
 
-end RelationalConfiguration
-
-end TauCeti
+end SimpleGraph
