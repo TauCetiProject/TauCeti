@@ -26,7 +26,7 @@ point is the kernel of a `k`-algebra homomorphism `ψ` on it
 
 ## Main declarations
 
-* `TauCeti.SymmetricAlgebra.apply_awayMk_eq_lift`: a `k`-algebra homomorphism on the chart of a
+* `AlgHom.apply_awayMk_eq_lift`: a `k`-algebra homomorphism on the chart of a
   linear coordinate `φ` evaluates `a / φⁿ` as `a` at the functional `c ↦ ψ (c / φ)`.
 * `ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
   point of `Proj (Sym N)` is the vanishing locus of a nonzero functional on `N`.
@@ -52,7 +52,7 @@ variable {k N A : Type u} [CommRing k] [AddCommMonoid N] [Module k N] [CommRing 
 /-- On the standard chart `D₊(φ)` of a linear coordinate `φ`, a `k`-algebra homomorphism `ψ`
 evaluates a homogeneous fraction `a / φⁿ` as the polynomial `a` evaluated at a linear map `v`
 that agrees with `c ↦ ψ (c / φ)` on linear coordinates. -/
-theorem apply_awayMk_eq_lift {φ : N}
+theorem _root_.AlgHom.apply_awayMk_eq_lift {φ : N}
     (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) (v : N →ₗ[k] A)
     (hv : ∀ c, ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) 1 (SymmetricAlgebra.ι k N c)
       (by simp)) = v c)
@@ -135,7 +135,7 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
     (SymmetricAlgebra.ι k N).codRestrict (homogeneousSubmodule k N (1 • 1))
       (fun c ↦ by simp)
   have key {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :=
-    apply_awayMk_eq_lift ψ v (fun c ↦ by simp [v]) ha
+    ψ.apply_awayMk_eq_lift v (fun c ↦ by simp [v]) ha
   refine ⟨v, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
   · -- The functional takes the value `1` on the chart coordinate `φ`.
     have h1 : Away.mk _ hφ 1 (SymmetricAlgebra.ι k N φ) (by simp) = 1 := by
