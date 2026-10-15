@@ -92,7 +92,12 @@ def days_between(first: str, last: str) -> list[str]:
 
 
 def metrics(db: sqlite3.Connection, first: str, last: str, other_jobs_until=None) -> dict:
-    """Per-day series for every daily chart, over complete UTC days first..last."""
+    """Daily series over the inclusive UTC date range ``first`` through ``last``.
+
+    ``other_jobs_until`` is an optional UTC epoch cutoff for auxiliary-job waits;
+    that series omits the cutoff's partial UTC day and all later days, even when
+    the requested build date range continues. None applies no additional limit.
+    """
     days = days_between(first, last)
     lo, hi = f"{first}T00:00:00Z", f"{last}T23:59:59Z"
     # Every attempt's build job (jobs keeps all attempts; runs only the latest):
@@ -545,7 +550,15 @@ def merge_charts(db: sqlite3.Connection, until: float, *, include_queue=True, in
 
 
 def charts(db: sqlite3.Connection, until: float, other_jobs_until=None, assets=None, covered_since=None) -> dict[str, str]:
-    """All daily charts, through the last complete UTC day before `until`."""
+    """Render the requested daily SVG assets within a proven coverage interval.
+
+    ``until`` is the group's UTC epoch upper bound; its partial UTC day is omitted.
+    ``covered_since`` optionally excludes earlier or partially covered first days.
+    At most ninety complete days are drawn. ``other_jobs_until`` independently
+    bounds the auxiliary-job wait series as described by ``metrics``.
+    ``assets`` optionally selects a subset of output filenames; None returns all
+    daily assets. Return an empty mapping if there are no complete covered days.
+    """
     last = (dt.datetime.fromtimestamp(until, UTC) - dt.timedelta(days=1)).date()
     first_row = db.execute(f"SELECT MIN(created_at) FROM runs WHERE workflow = '{PR_BUILD}'").fetchone()[0]
     if not first_row:
