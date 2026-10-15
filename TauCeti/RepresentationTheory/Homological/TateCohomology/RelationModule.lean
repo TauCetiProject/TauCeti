@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
-import TauCeti.RepresentationTheory.Homological.TateCohomology.Augmentation
-import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Augmentation
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective.Basic
 
 /-!
 # Tate cohomology of the relation module
@@ -29,6 +29,8 @@ low-degree cohomology, such as the completed multiplicative group of a local fie
 
 ## Main statements
 
+* `TauCeti.TateCohomology.relationModuleShiftIso`: the double dimension-shift isomorphism
+  `H-hat^n(S, k) ≅ H-hat^(n+2)(S, R)`.
 * `TauCeti.TateCohomology.isZero_tateCohomology_three_res_relationModule`: `H-hat^3(S, R) = 0`
   when `k` has no additive torsion.
 * `TauCeti.TateCohomology.natCard_tateCohomology_two_res_relationModule`: `H-hat^2(S, R)` has as
@@ -53,59 +55,6 @@ namespace TauCeti.TateCohomology
 open _root_.Rep
 
 variable {k G : Type u} [CommRing k] [Group G] {ι : Type u} [Fintype ι] {g : ι → G}
-
-/-- The inclusion `I_G → k[G]` of the augmentation ideal, as a morphism from the representation
-attached to the `k[G]`-module `I_G` to the left regular representation. -/
-private def augmentationKerToLeftRegular :
-    ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))) ⟶ leftRegular k G :=
-  ConcreteCategory.ofHom
-  { toFun x := ((RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x :
-      RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G)
-    map_add' _ _ := rfl
-    map_smul' r x := (congrArg Subtype.val
-      (RestrictScalars.addEquiv_map_smul k (MonoidAlgebra k G)
-        (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) r x)).trans
-      (Algebra.smul_def r _).symm
-    -- Both actions are left multiplication by `single h 1`; the closing `rfl`s identify the
-    -- representations `ofModule I_G` and `ofMulAction k G G` with the actions of the objects
-    -- `ofModuleMonoidAlgebra.obj I_G` and `leftRegular k G`, which are these by definition.
-    isIntertwining' h := LinearMap.ext fun x ↦
-      (congrArg (fun y ↦ ((RestrictScalars.addEquiv k (MonoidAlgebra k G) _ y :
-          RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G))
-        ((Representation.ofModule_asAlgebraHom_apply_apply
-          (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) (MonoidAlgebra.single h 1)
-            x).symm.trans
-          (by rw [Representation.asAlgebraHom_single_one]; rfl))).symm.trans
-      ((Representation.asAlgebraHom_ofMulAction_smul_eq_mul _ _).symm.trans
-        (by rw [Representation.asAlgebraHom_single_one]; rfl)) }
-
-/-- The representation attached to the augmentation ideal of `k[G]`, the last term of Lyndon's
-sequence, is the augmentation ideal `Rep.augmentationIdeal k G`, the categorical kernel of the
-augmentation: the inclusion `I_G → k[G]` lifts to an isomorphism onto that kernel. -/
-private def augmentationKerIso :
-    ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))) ≅ augmentationIdeal k G :=
-  let l := KernelFork.IsLimit.lift' (augmentationιIsKernel k G) augmentationKerToLeftRegular (by
-    ext x
-    exact (augmentation_hom_apply k G _).trans
-      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x).2)
-  have : Mono augmentationKerToLeftRegular := (Rep.mono_iff_injective _).2 fun x y h ↦
-    (RestrictScalars.addEquiv k (MonoidAlgebra k G) _).injective (Subtype.ext h)
-  have : Mono l.1 := mono_of_mono_fac l.2
-  have hy (y : augmentationIdeal k G) :
-      (augmentationι k G).hom y ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) := by
-    rw [RingHom.mem_ker, ← augmentation_hom_apply, ← ConcreteCategory.comp_apply,
-      augmentationι_comp_augmentation]
-    rfl
-  have : Epi l.1 := (Rep.epi_iff_surjective _).2 fun y ↦
-    ⟨(RestrictScalars.addEquiv k (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))).symm ⟨_, hy y⟩,
-      TauCeti.AugmentationIdeal.augmentationι_injective k G <|
-        (ConcreteCategory.comp_apply l.1 (augmentationι k G) _).symm.trans
-          (ConcreteCategory.congr_hom l.2 _)⟩
-  have : IsIso l.1 := isIso_of_mono_of_epi _
-  asIso l.1
 
 variable (g) in
 /-- The map `k[G]^ι → I_G`, `e_i ↦ g_i - 1`, whose kernel is the relation module. -/
@@ -139,24 +88,59 @@ private theorem relationModuleShortComplex_shortExact (hg : Subgroup.closure (Se
   exact ⟨c, rfl⟩
 
 variable (k) in
+/-- The connecting homomorphism of Lyndon's sequence for a family `g` generating `G`, restricted
+to a finite subgroup `S`. -/
+def relationModuleδ (hg : Subgroup.closure (Set.range g) = ⊤) (S : Subgroup G)
+    [Fintype S] (n : ℤ) :
+    tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
+      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))))) n ⟶
+      tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
+        (TauCeti.MonoidAlgebra.relationModule k G g)))) (n + 1) :=
+  (_root_.TateCohomology.map_tateComplexFunctor_shortExact ((shortExact_res S.subtype).2
+    ((relationModuleShortComplex_shortExact hg).map_of_exact ofModuleMonoidAlgebra))).δ
+    n (n + 1) rfl
+
+/-- The connecting homomorphism of Lyndon's sequence is an isomorphism because its middle term is
+free. -/
+noncomputable instance relationModuleδ_isIso (hg : Subgroup.closure (Set.range g) = ⊤)
+    (S : Subgroup G) [Fintype S] (n : ℤ) : IsIso (relationModuleδ k hg S n) :=
+  (_root_.TateCohomology.map_tateComplexFunctor_shortExact ((shortExact_res S.subtype).2
+    ((relationModuleShortComplex_shortExact hg).map_of_exact ofModuleMonoidAlgebra))).isIso_δ
+    n (n + 1) rfl
+    (isZero_res_ofModuleMonoidAlgebra_obj (.of _ (ι → MonoidAlgebra k G)) S _)
+    (isZero_res_ofModuleMonoidAlgebra_obj (.of _ (ι → MonoidAlgebra k G)) S _)
+
+variable (k) in
 /-- **The double dimension shift of the relation module**: for a family `g` generating `G` and a
 finite subgroup `S`, `H-hat^n(S, k) ≅ H-hat^(n+2)(S, R)`, where `R` is the relation module of
 `g`. It is the augmentation dimension shift `augmentationδIso`, carried to the last term `I_G` of
 Lyndon's sequence `0 → R → k[G]^ι → I_G → 0`, followed by the connecting homomorphism of that
 sequence. -/
-private def relationModuleShiftIso (hg : Subgroup.closure (Set.range g) = ⊤) (S : Subgroup G)
+def relationModuleShiftIso (hg : Subgroup.closure (Set.range g) = ⊤) (S : Subgroup G)
     [Fintype S] (n : ℤ) :
     tateCohomology (res S.subtype (trivial k G k)) n ≅
       tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
         (TauCeti.MonoidAlgebra.relationModule k G g)))) (n + 1 + 1) :=
   augmentationδIso k S n ≪≫
     (tateCohomologyFunctor (n + 1)).mapIso
-      ((resFunctor S.subtype).mapIso augmentationKerIso.symm) ≪≫
-    (_root_.TateCohomology.map_tateComplexFunctor_shortExact ((shortExact_res S.subtype).2
-      ((relationModuleShortComplex_shortExact hg).map_of_exact ofModuleMonoidAlgebra))).δIso
-      (n + 1) (n + 1 + 1) rfl
-      (isZero_res_ofModuleMonoidAlgebra_obj (.of _ (ι → MonoidAlgebra k G)) S _)
-      (isZero_res_ofModuleMonoidAlgebra_obj (.of _ (ι → MonoidAlgebra k G)) S _)
+      ((resFunctor S.subtype).mapIso (augmentationKerIso k G).symm) ≪≫
+    asIso (relationModuleδ k hg S (n + 1))
+
+/-- The double dimension shift is the connecting map of the augmentation sequence, transported
+across the comparison between the two augmentation ideals, followed by the connecting map of
+Lyndon's sequence. -/
+@[simp]
+theorem relationModuleShiftIso_hom (hg : Subgroup.closure (Set.range g) = ⊤)
+    (S : Subgroup G) [Fintype S] (n : ℤ) :
+    (relationModuleShiftIso k hg S n).hom =
+      @_root_.TateCohomology.δ k S _ _ _ _
+          (augmentationSES_res_shortExact k G S.subtype) n ≫
+        (tateCohomologyFunctor (n + 1)).map
+          ((resFunctor S.subtype).map (augmentationKerIso k G).inv) ≫
+        (asIso (relationModuleδ k hg S (n + 1))).hom := by
+  rw [relationModuleShiftIso, Iso.trans_hom, Iso.trans_hom, augmentationδIso_hom,
+    Functor.mapIso_hom, Functor.mapIso_hom, Iso.symm_hom]
+  rfl
 
 variable (k) in
 /-- **`H-hat^3(S, R) = 0`** for the relation module `R` of a family generating `G`, a finite

@@ -11,7 +11,7 @@ import TauCeti.LinearAlgebra.FreeModule.PID
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Rational
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
-import TauCeti.RepresentationTheory.Homological.TateCohomology.ProjectiveKernel
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective.Kernel
 import TauCeti.RepresentationTheory.Homological.TateCohomology.RelationModule
 
 /-!

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.RepresentationTheory.Rep.Iso
 public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 
@@ -27,6 +28,8 @@ Nothing here mentions cohomology: the cohomological consequences live in
 * `Rep.augmentationIdeal`: the augmentation ideal `I_G`, the kernel of the augmentation.
 * `Rep.augmentationSES`: the short exact sequence `I_G ⟶ k[G] ⟶ k`.
 * `Rep.augmentationιIsKernel`: the augmentation ideal is a kernel of the augmentation.
+* `Rep.augmentationKerIso`: the module-theoretic kernel of the group-ring augmentation is the
+  categorical augmentation ideal.
 
 ## Main statements
 
@@ -134,6 +137,59 @@ theorem augmentationSES_shortExact : (augmentationSES k G).ShortExact where
 theorem augmentationSES_res_shortExact {H : Type*} [Monoid H] (f : H →* G) :
     ((augmentationSES k G).map (resFunctor f)).ShortExact :=
   (shortExact_res f).mpr (augmentationSES_shortExact k G)
+
+/-- The inclusion `I_G → k[G]` of the module-theoretic augmentation kernel, as a morphism to the
+left regular representation. -/
+private def augmentationKerToLeftRegular :
+    ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
+      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))) ⟶ leftRegular k G :=
+  ConcreteCategory.ofHom
+  { toFun x := ((RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x :
+      RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G)
+    map_add' _ _ := rfl
+    map_smul' r x := (congrArg Subtype.val
+      (RestrictScalars.addEquiv_map_smul k (MonoidAlgebra k G)
+        (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) r x)).trans
+      (Algebra.smul_def r _).symm
+    -- Both actions are left multiplication by `single h 1`; the closing `rfl`s identify the
+    -- representations `ofModule I_G` and `ofMulAction k G G` with the actions of the objects
+    -- `ofModuleMonoidAlgebra.obj I_G` and `leftRegular k G`, which are these by definition.
+    isIntertwining' h := LinearMap.ext fun x ↦
+      (congrArg (fun y ↦ ((RestrictScalars.addEquiv k (MonoidAlgebra k G) _ y :
+          RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G))
+        ((Representation.ofModule_asAlgebraHom_apply_apply
+          (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) (MonoidAlgebra.single h 1)
+            x).symm.trans
+          (by rw [Representation.asAlgebraHom_single_one]; rfl))).symm.trans
+      ((Representation.asAlgebraHom_ofMulAction_smul_eq_mul _ _).symm.trans
+        (by rw [Representation.asAlgebraHom_single_one]; rfl)) }
+
+/-- The representation attached to the module-theoretic augmentation kernel of `k[G]` is the
+categorical augmentation ideal `Rep.augmentationIdeal k G`. -/
+def augmentationKerIso :
+    ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
+      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))) ≅ augmentationIdeal k G :=
+  let l := KernelFork.IsLimit.lift' (augmentationιIsKernel k G)
+    (augmentationKerToLeftRegular k G) (by
+    ext x
+    exact (augmentation_hom_apply k G _).trans
+      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x).2)
+  have : Mono (augmentationKerToLeftRegular k G) := (Rep.mono_iff_injective _).2 fun x y h ↦
+    (RestrictScalars.addEquiv k (MonoidAlgebra k G) _).injective (Subtype.ext h)
+  have : Mono l.1 := mono_of_mono_fac l.2
+  have hy (y : augmentationIdeal k G) :
+      (augmentationι k G).hom y ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) := by
+    rw [RingHom.mem_ker, ← augmentation_hom_apply, ← ConcreteCategory.comp_apply,
+      augmentationι_comp_augmentation]
+    rfl
+  have : Epi l.1 := (Rep.epi_iff_surjective _).2 fun y ↦
+    ⟨(RestrictScalars.addEquiv k (MonoidAlgebra k G)
+      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))).symm ⟨_, hy y⟩,
+      (Rep.mono_iff_injective (augmentationι k G)).1 inferInstance <|
+        (ConcreteCategory.comp_apply l.1 (augmentationι k G) _).symm.trans
+          (ConcreteCategory.congr_hom l.2 _)⟩
+  have : IsIso l.1 := isIso_of_mono_of_epi _
+  asIso l.1
 
 end Rep
 

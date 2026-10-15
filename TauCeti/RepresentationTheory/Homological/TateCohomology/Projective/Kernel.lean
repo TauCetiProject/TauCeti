@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.IsoCriterion
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective.Basic
 
 /-!
 # Tate cohomology isomorphisms have projective kernels
