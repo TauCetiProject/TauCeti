@@ -468,8 +468,7 @@ noncomputable def indexSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (i₁ i�
     ((m.indexSpectralSequence dM hM).page 2).X pq ≅
       (indexGradedPieceComplex ind hM i₂).homology n :=
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
-    (HomologicalComplex.homologyFunctor _ _ n).mapIso
-      (m.indexFiltrationCokernelIso hM i₁ i₂ (by rw [hi₁, hi₂]))
+    HomologicalComplex.homologyMapIso (m.indexFiltrationCokernelIso hM i₁ i₂ (by rw [hi₁, hi₂])) n
 
 /-- `indexSpectralSequenceFirstPageXIso` is the identification of the first page with the
 cohomology of the graded pieces, followed by `indexFiltrationCokernelIso`. -/
@@ -477,8 +476,8 @@ theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) (i₁ i₂ : ℤ
     (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
     m.indexSpectralSequenceFirstPageXIso hM pq i₁ i₂ hi₁ hi₂ n hn =
       CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
-        (HomologicalComplex.homologyFunctor _ _ n).mapIso
-          (m.indexFiltrationCokernelIso hM i₁ i₂ (by rw [hi₁, hi₂])) :=
+        HomologicalComplex.homologyMapIso
+          (m.indexFiltrationCokernelIso hM i₁ i₂ (by rw [hi₁, hi₂])) n :=
   (rfl)
 
 end FirstPage
