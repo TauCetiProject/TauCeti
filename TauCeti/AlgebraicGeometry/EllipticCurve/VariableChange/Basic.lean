@@ -1,0 +1,358 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
+
+/-!
+# Complements on admissible changes of variables
+
+Material complementing `Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean`: the
+negation automorphism `[-1]` of a Weierstrass curve as an admissible change of variables, with
+its involution API, together with the compatibility of the action with base change
+(`baseChange_smul_baseChange`, and `smul_baseChange_eq_baseChange_smul_map` for a curve defined
+over a ring mapping into `R`; whence the instance `isElliptic_baseChange_smul`: the base change of
+`C • V` is elliptic along with that of `V`, and `baseChange_smul_c₄` / `baseChange_smul_c₆`: a
+change of variables with `u = 1` leaves the `c`-invariants of a base change alone) and the three
+base-change facts that Galois descent runs on:
+`smul_eq_of_baseChange_smul_eq` (a relation between base changes descends when the change of
+variables does), `negVariableChange_baseChange_map` (`[-1]` is defined over the base, so a base
+automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorphism of base
+changes is again one). Comparing an isomorphism with its conjugate via the last of these is what
+produces the Galois cocycle used by the twist classification. A change of variables over an
+extension descends to the base field exactly when its four coefficients do
+(`VariableChange.mem_range_baseChange_iff`).
+
+That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
+`mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
+components of `[-1]` at each use. The negation automorphism of `C • E` is that of `E` conjugated
+by `C` (`negVariableChange_smul`).
+
+Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
+recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
+discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
+
+The negation is the nontrivial automorphism in the `Aut (E, O)`
+milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
+`TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
+`j(E) ∉ {0, 1728}`.
+
+A change of variables that fixes three affine points `(x₁, y₁)`, `(x₁, y₁')` and `(x₂, y₂)`, with
+`x₁ - x₂` and `y₁ - y₁'` units, is the identity (`VariableChange.eq_one_of_isUnit_sub`): the two
+`x`-coordinates force `u² = 1` and `r = 0`, the two `y`-coordinates over `x₁` force `u = 1`, and
+then `s = t = 0`. Read on the points of `E[N]` for `N ≥ 3`, this is the rigidity of full level
+structures.
+
+Everything here is stated over a commutative ring: `⟨-1, 0, -a₁, -a₃⟩` is an admissible change
+of variables for a Weierstrass curve over any commutative ring, and the two identities it
+satisfies are polynomial. Only the nontriviality `negVariableChange_ne_one` needs the curve to
+be elliptic over a nontrivial ring.
+
+Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at the roadmap's pin
+`bc2fe8ff7396` (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude), generalised here from
+FLT's field-level statements to a commutative ring.
+-/
+
+public section
+
+namespace WeierstrassCurve
+
+variable {R : Type*} [CommRing R] (E : WeierstrassCurve R)
+
+/-- The automorphism `[-1] : (x, y) ↦ (x, -y - a₁x - a₃)` of a Weierstrass curve, as an admissible
+change of variables `⟨-1, 0, -a₁, -a₃⟩`. It fixes `E` (`negVariableChange_smul_self`) and is an
+involution (`negVariableChange_mul_self`). -/
+def negVariableChange : VariableChange R :=
+  ⟨-1, 0, -E.a₁, -E.a₃⟩
+
+@[simp] lemma negVariableChange_u : E.negVariableChange.u = -1 := by
+  simp only [negVariableChange]
+
+@[simp] lemma negVariableChange_r : E.negVariableChange.r = 0 := by
+  simp only [negVariableChange]
+
+@[simp] lemma negVariableChange_s : E.negVariableChange.s = -E.a₁ := by
+  simp only [negVariableChange]
+
+@[simp] lemma negVariableChange_t : E.negVariableChange.t = -E.a₃ := by
+  simp only [negVariableChange]
+
+/-- The negation automorphism fixes the curve. -/
+@[simp] lemma negVariableChange_smul_self : E.negVariableChange • E = E := by
+  ext <;>
+    simp only [negVariableChange, variableChange_def, inv_neg, inv_one, Units.val_neg,
+      Units.val_one] <;>
+    ring
+
+/-- The negation automorphism commutes with base change along a ring homomorphism. -/
+@[simp] lemma negVariableChange_map {A : Type*} [CommRing A] (φ : R →+* A) :
+    (E.map φ).negVariableChange = E.negVariableChange.map φ := by
+  ext <;> simp [negVariableChange, VariableChange.map, map_a₁, map_a₃]
+
+/-- The negation automorphism is nontrivial for an elliptic curve: where `2 ≠ 0` it has
+`u = -1 ≠ 1`, and where `2 = 0` it has `(s, t) = (-a₁, -a₃) ≠ (0, 0)`, since an elliptic curve
+over a ring in which `2 = 0` cannot have `a₁ = a₃ = 0`. -/
+lemma negVariableChange_ne_one [Nontrivial R] [E.IsElliptic] : E.negVariableChange ≠ 1 := by
+  intro h
+  have hv : (-1 : R) = 1 := by
+    simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
+  have hs := congrArg VariableChange.s h
+  have ht := congrArg VariableChange.t h
+  simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
+  grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
+
+namespace VariableChange
+
+variable {A : Type*} [CommRing A]
+
+/-- **A change of variables maps its inverse to the inverse of its image.** Mathlib has this as
+`map_inv` for the bundled `VariableChange.mapHom`; this is the same fact in the `.map` spelling,
+which is the one goals are phrased in — `rw` does not see through `mapHom φ C ≡ C.map φ`. -/
+@[simp] lemma map_inv (φ : R →+* A) (C : VariableChange R) : C⁻¹.map φ = (C.map φ)⁻¹ :=
+  _root_.map_inv (VariableChange.mapHom φ) C
+
+/-- **A change of variables maps the identity to the identity**, in the `.map` spelling. The
+companion of `VariableChange.map_inv`; see there for why the bundled `mapHom` form is not enough. -/
+@[simp] lemma map_one (φ : R →+* A) : (1 : VariableChange R).map φ = 1 :=
+  _root_.map_one (VariableChange.mapHom φ)
+
+/-- **A change of variables maps a product to the product of the images**, in the `.map` spelling.
+The companion of `VariableChange.map_inv`; see there for why the bundled `mapHom` form is not
+enough. -/
+@[simp] lemma map_mul (φ : R →+* A) (C D : VariableChange R) :
+    (C * D).map φ = C.map φ * D.map φ :=
+  _root_.map_mul (VariableChange.mapHom φ) C D
+
+/-! ### Components of `C * D⁻¹`
+
+`C * D⁻¹` is the change of variables carrying `D • W` to `C • W`. Its components are the
+differences of those of `C` and `D`, rescaled by powers of `D.u⁻¹`. -/
+
+/-- The scaling factor of `C * D⁻¹` is `C.u * D.u⁻¹`. -/
+@[simp] lemma mul_inv_u (C D : VariableChange R) : (C * D⁻¹).u = C.u * D.u⁻¹ :=
+  rfl
+
+/-- The translation `r` of `C * D⁻¹` is `(C.r - D.r) * D.u⁻¹ ^ 2`. -/
+@[simp] lemma mul_inv_r (C D : VariableChange R) : (C * D⁻¹).r = (C.r - D.r) * ↑D.u⁻¹ ^ 2 := by
+  simp only [mul_def, inv_def]
+  ring
+
+/-- The shear `s` of `C * D⁻¹` is `(C.s - D.s) * D.u⁻¹`. -/
+@[simp] lemma mul_inv_s (C D : VariableChange R) : (C * D⁻¹).s = (C.s - D.s) * ↑D.u⁻¹ := by
+  simp only [mul_def, inv_def]
+  ring
+
+/-- The translation `t` of `C * D⁻¹` is `(C.t - D.t - D.s * (C.r - D.r)) * D.u⁻¹ ^ 3`. -/
+@[simp] lemma mul_inv_t (C D : VariableChange R) :
+    (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) * ↑D.u⁻¹ ^ 3 := by
+  simp only [mul_def, inv_def]
+  ring
+
+end VariableChange
+
+/-! ### Components of a change of variables composed with `[-1]`
+
+`[-1]` has `u = -1` and `r = 0`, so composing with it negates `u`, fixes `r`, and shifts `s` and
+`t` by the curve's `a₁` and `a₃`. These four are `@[simp]`: their right-hand sides are the normal
+form wanted downstream, since the cocycle comparisons of the twist classification land on exactly
+this product. -/
+
+variable (C : VariableChange R)
+
+/-- Composing with `[-1]` negates the scaling factor `u`. -/
+@[simp] lemma mul_negVariableChange_u : (C * E.negVariableChange).u = -C.u := by
+  simp [VariableChange.mul_def]
+
+/-- Composing with `[-1]` leaves the translation `r` unchanged, `[-1]` having `r = 0` and
+`u = -1` entering squared. -/
+@[simp] lemma mul_negVariableChange_r : (C * E.negVariableChange).r = C.r := by
+  simp [VariableChange.mul_def]
+
+/-- Composing with `[-1]` negates the shear `s` and shifts it by the curve's `a₁`. -/
+@[simp] lemma mul_negVariableChange_s : (C * E.negVariableChange).s = -C.s - E.a₁ := by
+  simp [VariableChange.mul_def]
+  ring
+
+/-- Composing with `[-1]` negates the translation `t` and shifts it by `r * a₁` and the curve's
+`a₃`. -/
+@[simp] lemma mul_negVariableChange_t :
+    (C * E.negVariableChange).t = -C.t - C.r * E.a₁ - E.a₃ := by
+  simp [VariableChange.mul_def]
+  ring
+
+/-- The negation automorphism is an involution. -/
+@[simp] lemma negVariableChange_mul_self : E.negVariableChange * E.negVariableChange = 1 := by
+  simp [VariableChange.mul_def, VariableChange.one_def, negVariableChange,
+    Odd.neg_one_pow (by decide : Odd 3)]
+
+/-- The negation automorphism is its own inverse, being an involution. -/
+@[simp] lemma negVariableChange_inv : E.negVariableChange⁻¹ = E.negVariableChange :=
+  inv_eq_of_mul_eq_one_left E.negVariableChange_mul_self
+
+/-- The negation automorphism of `C • E` is that of `E` conjugated by `C`: negating a point of
+`C • E` is carrying it to `E` by `C`, negating there, and carrying the result back by `C⁻¹`. -/
+lemma negVariableChange_smul : (C • E).negVariableChange = C * E.negVariableChange * C⁻¹ := by
+  rw [eq_mul_inv_iff_mul_eq]
+  ext
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def, variableChange_a₁]
+    ring
+  · have hu : (↑C.u⁻¹ : R) ^ 3 * (C.u : R) ^ 3 = 1 := by rw [← mul_pow, Units.inv_mul, one_pow]
+    simp [VariableChange.mul_def, variableChange_a₃]
+    linear_combination (-E.a₃ - C.r * E.a₁ - 2 * C.t) * hu
+
+section Translate
+
+variable (W : WeierstrassCurve R) (x y : R)
+
+/-- **A translation does not change the discriminant.** -/
+@[simp]
+theorem variableChange_translate_Δ : (VariableChange.mk 1 x 0 y • W).Δ = W.Δ := by
+  simp [variableChange_Δ]
+
+/-- **A translation does not change `c₄`.** -/
+@[simp]
+theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ = W.c₄ := by
+  simp [variableChange_c₄]
+
+end Translate
+
+section BaseChange
+
+variable (L : Type*) [CommRing L] [Algebra R L]
+
+/-- **Base change commutes with the action of a change of variables.** Base changing a curve and
+then acting by the base-changed variable change gives the same model as acting first and base
+changing the result, so a `VariableChange`-invariant statement over `R` transports to `L`. Stated
+in the `baseChange` spelling, so it rewrites directly in goals phrased that way. -/
+@[simp]
+lemma baseChange_smul_baseChange (C : VariableChange R) (V : WeierstrassCurve R) :
+    (C.baseChange L) • V.baseChange L = (C • V).baseChange L :=
+  map_variableChange (W := V) (C := C) (φ := algebraMap R L)
+
+variable {L} in
+/-- **Base change commutes with the action of a change of variables, through an intermediate
+ring.** Let `φ : A →+* R` be compatible with the structure maps to `L`. For a change of variables
+`C` over `R` and a curve `W₀` over `A`, acting by `Cᴸ` on `W₀ᴸ` gives the base change of `C`
+applied to the image of `W₀` in `R`. This extends `baseChange_smul_baseChange` to an equation
+over a ring mapping into `R`, such as an equation over `ℤ`. -/
+lemma smul_baseChange_eq_baseChange_smul_map {A : Type*} [CommRing A] [Algebra A L]
+    {φ : A →+* R} (hφ : (algebraMap R L).comp φ = algebraMap A L) (C : VariableChange R)
+    (W₀ : WeierstrassCurve A) :
+    C.baseChange L • W₀.baseChange L = (C • W₀.map φ).baseChange L := by
+  have hW₀ : W₀.baseChange L = (W₀.map φ).baseChange L := congrArg W₀.map hφ.symm
+  exact hW₀ ▸ map_variableChange ..
+
+variable {L} in
+/-- The base change of `C • V` to `L` is elliptic whenever that of `V` is, since it is
+`Cᴸ • Vᴸ`. -/
+instance isElliptic_baseChange_smul (V : WeierstrassCurve R) (C : VariableChange R)
+    [(V.baseChange L).IsElliptic] : ((C • V).baseChange L).IsElliptic := by
+  rw [← baseChange_smul_baseChange]
+  infer_instance
+
+/-- **A change of variables with `u = 1` leaves `c₄` alone**, and base change carries that along:
+the scaling factor `u⁻¹ ^ 4` of `WeierstrassCurve.variableChange_c₄` is `1`. -/
+@[simp] lemma baseChange_smul_c₄ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+    ((C • V).baseChange L).c₄ = (V.baseChange L).c₄ := by
+  rw [← baseChange_smul_baseChange, variableChange_c₄, VariableChange.baseChange,
+    VariableChange.map_u, hu]
+  simp
+
+/-- **A change of variables with `u = 1` leaves `c₆` alone**, and base change carries that along:
+the scaling factor `u⁻¹ ^ 6` of `WeierstrassCurve.variableChange_c₆` is `1`. -/
+@[simp] lemma baseChange_smul_c₆ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+    ((C • V).baseChange L).c₆ = (V.baseChange L).c₆ := by
+  rw [← baseChange_smul_baseChange, variableChange_c₆, VariableChange.baseChange,
+    VariableChange.map_u, hu]
+  simp
+
+/-- **A relation between base changes descends, provided the change of variables does.** If `C` is
+defined over `R` and `Cᴸ` carries `Vᴸ` to `Wᴸ`, then `C` already carries `V` to `W` over `R`. The
+content is that base change is injective on models when `R → L` is. -/
+lemma smul_eq_of_baseChange_smul_eq (hRL : Function.Injective (algebraMap R L))
+    (C : VariableChange R) {V W : WeierstrassCurve R}
+    (h : (C.baseChange L) • V.baseChange L = W.baseChange L) : C • V = W :=
+  map_injective hRL ((baseChange_smul_baseChange L C V).symm.trans h)
+
+/-- **The automorphism `[-1]` of a base-changed curve is defined over the base**, hence fixed by
+every `R`-algebra map `L → L`: its four components `-1, 0, -a₁, -a₃` all come from `R`. -/
+@[simp]
+lemma negVariableChange_baseChange_map (σ : L →ₐ[R] L) :
+    (E.baseChange L).negVariableChange.map (σ : L →+* L)
+      = (E.baseChange L).negVariableChange := by
+  have h : (E.baseChange L).map (σ : L →+* L) = E.baseChange L :=
+    map_baseChange (R := R) (W := E) σ
+  rw [← negVariableChange_map, h]
+
+/-- **The conjugate of an isomorphism between base-changed curves is again one.** If
+`ρ : Vᴸ ≅ Wᴸ` and `V`, `W` are defined over `R`, then `σρ` is also an isomorphism `Vᴸ ≅ Wᴸ`,
+because `σ` fixes both curves. Only that `σ` is an `R`-algebra map is used, not that it is
+invertible; the Galois case is the instance the twist classification takes. Comparing `ρ` with
+`σρ` is what produces the Galois cocycle. -/
+lemma map_smul_baseChange_eq (σ : L →ₐ[R] L) {V W : WeierstrassCurve R}
+    {ρ : VariableChange L}
+    (hρ : ρ • V.baseChange L = W.baseChange L) :
+    (ρ.map (σ : L →+* L)) • V.baseChange L = W.baseChange L := by
+  have hV : (V.baseChange L).map (σ : L →+* L) = V.baseChange L :=
+    map_baseChange (R := R) (W := V) σ
+  have hW : (W.baseChange L).map (σ : L →+* L) = W.baseChange L :=
+    map_baseChange (R := R) (W := W) σ
+  have hmv := map_variableChange (W := V.baseChange L) (C := ρ) (φ := (σ : L →+* L))
+  rwa [hρ, hV, hW] at hmv
+
+end BaseChange
+
+/-- **A change of variables descends exactly when its coefficients do.** A change of variables
+over a nontrivial `K`-algebra `L` is the base change of one over the field `K` if and only if its
+four coefficients `u, r, s, t` lie in the image of `K`. -/
+lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing L] [Nontrivial L]
+    [Algebra K L] (C : VariableChange L) :
+    C ∈ Set.range (fun D : VariableChange K ↦ D.baseChange L) ↔
+      (C.u : L) ∈ Set.range (algebraMap K L) ∧ C.r ∈ Set.range (algebraMap K L) ∧
+        C.s ∈ Set.range (algebraMap K L) ∧ C.t ∈ Set.range (algebraMap K L) := by
+  constructor
+  · rintro ⟨D, rfl⟩
+    exact ⟨⟨D.u, rfl⟩, ⟨D.r, rfl⟩, ⟨D.s, rfl⟩, ⟨D.t, rfl⟩⟩
+  · rintro ⟨⟨u, hu⟩, ⟨r, hr⟩, ⟨s, hs⟩, ⟨t, ht⟩⟩
+    have hu₀ : u ≠ 0 := by
+      rintro rfl
+      exact C.u.ne_zero (hu.symm.trans (map_zero _))
+    exact ⟨⟨Units.mk0 u hu₀, r, s, t⟩, VariableChange.ext (Units.ext hu) hr hs ht⟩
+
+/-- **A change of variables fixing three suitable points is the identity.** Let
+`C = (u, r, s, t)` fix the affine points `(x₁, y₁)`, `(x₁, y₁')` and `(x₂, y₂)` under
+`(x, y) ↦ (u²x + r, u³y + u²sx + t)`. If `x₁ - x₂` and `y₁ - y₁'` are units, then `C = 1`. For
+points of a Weierstrass curve, `(x₁, y₁')` is typically the negative of `(x₁, y₁)`, and the
+hypotheses then say that the three points have distinct images in every residue field. -/
+lemma VariableChange.eq_one_of_isUnit_sub (C : VariableChange R) {x₁ x₂ y₁ y₁' y₂ : R}
+    (hx : IsUnit (x₁ - x₂)) (hy : IsUnit (y₁ - y₁'))
+    (hx₁ : (C.u : R) ^ 2 * x₁ + C.r = x₁) (hx₂ : (C.u : R) ^ 2 * x₂ + C.r = x₂)
+    (hy₁ : (C.u : R) ^ 3 * y₁ + (C.u : R) ^ 2 * C.s * x₁ + C.t = y₁)
+    (hy₁' : (C.u : R) ^ 3 * y₁' + (C.u : R) ^ 2 * C.s * x₁ + C.t = y₁')
+    (hy₂ : (C.u : R) ^ 3 * y₂ + (C.u : R) ^ 2 * C.s * x₂ + C.t = y₂) : C = 1 := by
+  have hu2 : (C.u : R) ^ 2 = 1 := by
+    have : ((C.u : R) ^ 2 - 1) * (x₁ - x₂) = 0 := by linear_combination hx₁ - hx₂
+    exact sub_eq_zero.mp (hx.mul_left_eq_zero.mp this)
+  have hu3 : (C.u : R) ^ 3 = 1 := by
+    have : ((C.u : R) ^ 3 - 1) * (y₁ - y₁') = 0 := by linear_combination hy₁ - hy₁'
+    exact sub_eq_zero.mp (hy.mul_left_eq_zero.mp this)
+  have hu : (C.u : R) = 1 := by linear_combination hu3 - (C.u : R) * hu2
+  have hs : C.s = 0 := by
+    have : C.s * (x₁ - x₂) = 0 := by
+      linear_combination hy₁ - hy₂ - (y₁ - y₂) * hu3 - C.s * (x₁ - x₂) * hu2
+    exact hx.mul_left_eq_zero.mp this
+  rw [VariableChange.one_def]
+  refine VariableChange.ext (Units.ext hu) ?_ hs ?_
+  · linear_combination hx₁ - x₁ * hu2
+  · linear_combination hy₁ - y₁ * hu3 - x₁ * (C.u : R) ^ 2 * hs
+
+end WeierstrassCurve
+
+end

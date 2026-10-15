@@ -21,8 +21,8 @@ import TauCeti.Analysis.Calculus.Morse.TrajectorySpace
 
 A negative gradient trajectory trapped, in forward time, in a closed ball containing no critical
 point other than its centre `x` converges to `x`; the same holds in backward time. So the radius of
-such a ball isolates `x` in the sense of `TauCeti.Dynamics.Flow.Breaking`, and every sufficiently
-small radius about a nondegenerate critical point does.
+such a ball satisfies the trapping hypotheses of `TauCeti.Dynamics.Flow.Breaking`, and every
+sufficiently small radius about a nondegenerate critical point does.
 
 Feeding this into `Flow.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet` gives the
 elementary step of the compactness theorem for spaces of Morse trajectories. If trajectories
@@ -154,7 +154,8 @@ theorem eventually_exists_mem_closure_stableSet_inter_unstableSet
     h.eventually_forall_mem_stableSet_of_forall_mem_closedBall hφ,
     h.eventually_forall_mem_unstableSet_of_forall_mem_closedBall hφ] with r hr hfwd hbwd
   exact Flow.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet (mem_Ioi.1 hr)
-    hfwd hbwd (Flow.isInvariant_stableSet φ q) (Flow.disjoint_stableSet hqx) hy
+    (isCompact_sphere x r) hfwd hbwd (Flow.isInvariant_stableSet φ q)
+    (Flow.disjoint_stableSet hqx) hy
 
 /-- **Limits of trajectories break at a nondegenerate critical point, in backward time.** Let `x` be
 a nondegenerate critical point and `p ≠ x`. If a point `y` of the unstable set of `x` is a limit of
@@ -169,7 +170,8 @@ theorem eventually_exists_mem_closure_unstableSet_inter_stableSet
     h.eventually_forall_mem_stableSet_of_forall_mem_closedBall hφ,
     h.eventually_forall_mem_unstableSet_of_forall_mem_closedBall hφ] with r hr hfwd hbwd
   exact Flow.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet (mem_Ioi.1 hr)
-    hfwd hbwd (Flow.isInvariant_unstableSet φ p) (Flow.disjoint_unstableSet hpx) hy
+    (isCompact_sphere x r) hfwd hbwd (Flow.isInvariant_unstableSet φ p)
+    (Flow.disjoint_unstableSet hpx) hy
 
 end IsNondegenerateCriticalPoint
 
@@ -474,12 +476,12 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
   apply isClosed_of_closure_subset
   intro y hy
   have hyU : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) :=
-    closure_mono (fun _ hz ↦ hz.1.1) hy
+    closure_mono (by exact fun _ hz ↦ hz.1.1) hy
   have hyS : y ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) :=
-    closure_mono (fun _ hz ↦ hz.1.2) hy
+    closure_mono (by exact fun _ hz ↦ hz.1.2) hy
   have hyc : f y = c :=
     (isClosed_eq hfs.continuous continuous_const).closure_subset
-      (closure_mono (fun _ hz ↦ hz.2) hy)
+      (closure_mono (by exact fun _ hz ↦ hz.2) hy)
   obtain ⟨a, ha, hya⟩ := hconvU hyU
   obtain ⟨b, hb, hyb⟩ := hconvS hyS
   have hba : morseIndex f b ≤ morseIndex f a := by

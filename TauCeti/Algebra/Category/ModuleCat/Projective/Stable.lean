@@ -51,7 +51,9 @@ theorem indecomposable_projectiveStableFunctor_obj_iff (M : ModuleCat.{v} A)
       TauCeti.ExactStructure.abelian_isProjective_iff]
   exact ⟨fun h ↦ h.1 ∘ hzero.mpr,
     fun h ↦ (S).indecomposable_obj_of_map_surjective_of_isLocalRing_end
-      (h ∘ hzero.mp) (S).map_surjective⟩
+      (h ∘ hzero.mp) (fun e ↦ by
+        obtain ⟨f, hf⟩ := (S).map_surjective e.asHom
+        exact ⟨End.of f, End.ext hf⟩)⟩
 
 /-- The projective stable quotient reflects invertibility between non-projective,
 finite-length indecomposable modules. -/

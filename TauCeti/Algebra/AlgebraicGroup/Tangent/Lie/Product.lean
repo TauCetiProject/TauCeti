@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+public import TauCeti.Algebra.Bialgebra.TensorProduct
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Basis.VectorSpace

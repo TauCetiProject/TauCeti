@@ -127,7 +127,7 @@ theorem map_snd_arrayRowCodingLaw (π : Measure (ProbabilityMeasure (ℕ → α)
     (arrayRowCodingLaw π).map Prod.snd =
       (Measure.deFinettiBarycenter π).map Function.uncurry := by
   rw [arrayRowCodingLaw_def, Measure.map_map measurable_snd measurable_arrayRowCoding,
-    ← map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α),
+    ← Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α),
     Measure.map_map measurable_uncurry measurable_unitIntervalCodingPath]
   refine congrArg (Measure.map · _) ?_
   funext q p
@@ -268,7 +268,7 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
   have hcode : arrayRowCodingLaw π =
       (iidMixtureLaw π id).map C := by
     rw [arrayRowCodingLaw_def,
-      ← map_prod_unitIntervalCoding_eq_iidMixtureLaw (α := ℕ → α) π,
+      ← Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw (α := ℕ → α) π,
       Measure.map_map hC hK]
     rfl
   have hrow (P : ProbabilityMeasure (ℕ → α)) :

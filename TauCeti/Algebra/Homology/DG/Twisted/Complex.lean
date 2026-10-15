@@ -338,16 +338,6 @@ noncomputable def twistedCochainComplex : CochainComplex (ModuleCat.{max uP uM} 
       twistedDifferential_mem_twistedTotalGrading m dM hm hM.isHomogeneous hf)
     fun _ f ↦ twistedDifferential_sq_zero m dM hm htw hM f
 
-/-- The twisted complex is the cochain complex assembled by `gradedCochainComplex` from the total
-grading and the twisted differential. -/
-theorem twistedCochainComplex_eq_gradedCochainComplex :
-    twistedCochainComplex hm htw hM =
-      gradedCochainComplex (twistedTotalGrading ℳ ind) (twistedDifferential m ℳ dM)
-        (LinearMap.isHomogeneous_def.mpr fun _ _ hf ↦
-          twistedDifferential_mem_twistedTotalGrading m dM hm hM.isHomogeneous hf)
-        fun _ f ↦ twistedDifferential_sq_zero m dM hm htw hM f :=
-  (rfl)
-
 @[simp]
 theorem twistedCochainComplex_X (n : ℤ) :
     (twistedCochainComplex hm htw hM).X n = ModuleCat.of R (twistedTotalGrading ℳ ind n) := by
@@ -359,13 +349,6 @@ linear equivalence. -/
 noncomputable def twistedCochainComplexXEquiv (n : ℤ) :
     (twistedCochainComplex hm htw hM).X n ≃ₗ[R] twistedTotalGrading ℳ ind n :=
   gradedCochainComplexXEquiv (ℳ := twistedTotalGrading ℳ ind) (dM := twistedDifferential m ℳ dM) n
-
-/-- `twistedCochainComplexXEquiv` is `gradedCochainComplexXEquiv` after transport along
-`twistedCochainComplex_eq_gradedCochainComplex`. -/
-theorem twistedCochainComplexXEquiv_apply (n : ℤ) (f : (twistedCochainComplex hm htw hM).X n) :
-    twistedCochainComplexXEquiv hm htw hM n f = gradedCochainComplexXEquiv n
-      (((eqToHom (twistedCochainComplex_eq_gradedCochainComplex hm htw hM)).f n).hom f) :=
-  (rfl)
 
 /-- Under `twistedCochainComplexXEquiv`, the differential of the twisted complex is the twisted
 differential. -/

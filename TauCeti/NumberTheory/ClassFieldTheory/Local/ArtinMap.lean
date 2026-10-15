@@ -352,6 +352,11 @@ theorem artinMap_norm (x : Lˣ) (τ : Field.absoluteGaloisGroup L)
   have habs := (localClassFormation L).absoluteArtinMap_eq_of_mk_eq_fieldArtinMap x τ hτ
   -- It suffices to compare the two symbols in the quotients cut out by the open normal subgroups
   -- of `G_K` contained in `Gal(Kˢ/iota(L))`.
+  -- Instance search does not find zero-dimensionality within its default budget here, so
+  -- assemble it from the Krull topology being Hausdorff, compact and totally disconnected.
+  have : T2Space (AbsoluteGaloisGroup K) := krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
   obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (galoisSubgroup K L iota).isOpen (one_mem _)
   have key : (localClassFormation K).absoluteArtinMap

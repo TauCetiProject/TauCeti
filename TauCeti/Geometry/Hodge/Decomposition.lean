@@ -417,7 +417,8 @@ theorem disjoint_iSup_ge_iSup_lt (h : IsHodgeDecomposition ω n H) (p : ℤ) :
     intro q hq hq'
     simp only [Set.mem_ofPred_eq] at hq hq'
     omega
-  exact h.iSupIndep.disjoint_biSup_biSup hdisjoint
+  have key := h.iSupIndep.disjoint_biSup_biSup hdisjoint
+  simpa only [Set.mem_ofPred_eq] using key
 
 /-- The tail sum `⨆_{q ≥ p} H^q` and the head sum `⨆_{q < p} H^q` of a Hodge decomposition are
 complementary: this is the opposedness of the filtration the decomposition generates. -/

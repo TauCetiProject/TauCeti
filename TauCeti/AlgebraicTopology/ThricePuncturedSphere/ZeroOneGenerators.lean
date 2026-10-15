@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
@@ -105,7 +106,7 @@ private theorem map_direction_bijective (hR : 0 < R)
       FundamentalGroup.map (c.directionFrom (ball c R)) (ballHomeomorph hS hsub z) ∘
         FundamentalGroup.map (⟨ballHomeomorph hS hsub, (ballHomeomorph hS hsub).continuous⟩ :
           C(S, ↥(ball c R \ {c}))) z :=
-    funext fun γ => FundamentalGroupoid.map_comp_map _ _ γ
+    funext fun γ => CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
   rw [hcomp]
   have hhome : ⇑(FundamentalGroup.homeomorphMulEquiv (ballHomeomorph hS hsub) z) =
       ⇑(FundamentalGroup.map (⟨ballHomeomorph hS hsub, (ballHomeomorph hS hsub).continuous⟩ :
@@ -228,11 +229,11 @@ theorem transport_δZero_eq_periph0 :
     (αZero.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
     ⟨Subtype.val, continuous_subtype_val⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
-  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
+  rw [FundamentalGroup.map_fromPath _ _ δZero,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph0_def,
     ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
     ← Path.Homotopic.Quotient.mk_trans]
-  exact Quotient.sound h.symm
+  exact congrArg CategoryTheory.End.of (Quotient.sound h.symm)
 
 /-! ### The puncture `1` -/
 
@@ -332,11 +333,11 @@ theorem transport_δOne_eq_periph1 :
     (αOne.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
     ⟨Subtype.val, continuous_subtype_val⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
-  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
+  rw [FundamentalGroup.map_fromPath _ _ δOne,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph1_def,
     ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
     ← Path.Homotopic.Quotient.mk_trans]
-  exact Quotient.sound h.symm
+  exact congrArg CategoryTheory.End.of (Quotient.sound h.symm)
 
 end ThricePuncturedSphere
 end TauCeti

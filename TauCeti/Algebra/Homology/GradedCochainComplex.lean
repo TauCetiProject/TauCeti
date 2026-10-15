@@ -9,8 +9,6 @@ public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.Algebra.Homology.HomologicalComplex
-public import Mathlib.CategoryTheory.Subobject.Lattice
-import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.Additive
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
@@ -36,12 +34,11 @@ supplies: it serves the underlying complex of a DG algebra and of a DG module on
 * `TauCeti.gradedCochainComplex`: the cochain complex whose degree-`p` term is the submodule
   `ℳ p` and whose differential is the restriction of `dM`.
 * `TauCeti.gradedCochainComplexXEquiv`: its degree-`p` term identified with `ℳ p`.
+* `TauCeti.gradedCochainComplexInclusion`: the cochain map induced by inclusions of grading
+  submodules preserved by the same ambient differential.
 * `TauCeti.gradedCochainComplexLift`: the same complex with its terms lifted to a larger
   module universe.
 * `TauCeti.gradedCochainComplexMap`: the induced map in a common module universe.
-* `TauCeti.gradedCochainComplexInclusion`: the inclusion of the complex of a smaller family.
-* `TauCeti.gradedCochainComplexSubobject`: the subcomplex cut out by a submodule stable under
-  `dM`, monotone in the submodule.
 
 ## Implementation notes
 
@@ -124,6 +121,45 @@ theorem gradedCochainComplexXEquiv_d (p : ℤ) (x : (gradedCochainComplex ℳ dM
   rw [show (eqToHom (gradedCochainComplex_X p).symm) (gradedCochainComplexXEquiv p x) = x from
     (eqToIso (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p)).hom_inv_id_apply x] at key
   exact congrArg Subtype.val key
+
+section Inclusion
+
+variable {𝒩 : ℤ → Submodule R M}
+  {hdegN : LinearMap.IsHomogeneous dM 𝒩 𝒩 1}
+  {hsqN : ∀ p (x : 𝒩 p), dM (dM x) = 0}
+
+/-- Degreewise inclusions of grading submodules induce a cochain map when both complexes
+use the same ambient differential. -/
+noncomputable def gradedCochainComplexInclusion (h : ∀ n, ℳ n ≤ 𝒩 n) :
+    gradedCochainComplex ℳ dM hdeg hsq ⟶ gradedCochainComplex 𝒩 dM hdegN hsqN :=
+  CochainComplex.ofHom (fun n ↦ by
+    -- Both degree terms definitionally use their grading submodules, so the component is
+    -- the submodule inclusion with the scalar actions used by those terms.
+    change ModuleCat.of R (ℳ n) ⟶ ModuleCat.of R (𝒩 n)
+    exact ModuleCat.ofHom (Submodule.inclusion (h n))) (fun n ↦ by
+      apply ModuleCat.hom_ext
+      apply LinearMap.ext
+      intro x
+      apply Subtype.ext
+      dsimp [gradedCochainComplex, ModuleCat.hom_comp, LinearMap.comp_apply]
+      simp only [CochainComplex.of_d]
+      -- Both sides have ambient value `dM x`: inclusion preserves values, and the
+      -- restricted differential applies the same ambient map `dM`.
+      rfl)
+
+/-- The cochain inclusion preserves the underlying homogeneous element. -/
+@[simp]
+theorem gradedCochainComplexInclusion_apply (h : ∀ n, ℳ n ≤ 𝒩 n) (n : ℤ)
+    (x : (gradedCochainComplex ℳ dM hdeg hsq).X n) :
+    (gradedCochainComplexXEquiv (hdeg := hdegN) (hsq := hsqN) n
+      (((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq)
+        (hdegN := hdegN) (hsqN := hsqN) h).f n).hom x) : M) =
+      gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) n x := by
+  unfold gradedCochainComplexXEquiv
+  rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
+  rfl
+
+end Inclusion
 
 /-- The graded cochain complex in a common module universe. Its degree-`p` term is
 `ULift (ℳ p)`, and its differential is the lifted restriction of `dM`. -/
@@ -307,183 +343,5 @@ theorem gradedCochainComplexMap_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P)
     -- this is the component formula recorded by `gradedCochainComplexMap_f_apply`.
     change g (f x.val) = g (f x.val)
     rfl
-
-section Subcomplex
-
-variable {ℳ' : ℤ → Submodule R M}
-
-/-- For a pointwise smaller family `ℳ' ≤ ℳ` of submodules, also carried into itself by `dM`, the
-inclusions `ℳ' p ⊆ ℳ p` form a cochain map between the assembled complexes.  Unlike
-`gradedCochainComplexMap`, no universe lift is involved: the target is `gradedCochainComplex ℳ dM`
-itself, as subcomplexes of it require. -/
-def gradedCochainComplexInclusion (hle : ∀ p, ℳ' p ≤ ℳ p)
-    (hdeg' : LinearMap.IsHomogeneous dM ℳ' ℳ' 1) :
-    gradedCochainComplex ℳ' dM hdeg' (fun p x ↦ hsq p ⟨x, hle p x.2⟩) ⟶
-      gradedCochainComplex ℳ dM hdeg hsq :=
-  -- The terms of `gradedCochainComplex` are `ModuleCat.of R (ℳ p)` by definition
-  -- (`gradedCochainComplex_X`), which is what lets `Submodule.inclusion` serve as a component.
-  CochainComplex.ofHom (fun p ↦ ModuleCat.ofHom (Submodule.inclusion (hle p))) fun p ↦ by
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro x
-    apply Subtype.ext
-    -- The components are typed by `ModuleCat.of R (ℳ p)` rather than by the terms of the
-    -- complexes, so the composites here are ill-typed at implicit transparency and neither
-    -- `ModuleCat.hom_comp` nor `gradedCochainComplexXEquiv_d` can rewrite them.  Unfolding the
-    -- differentials to their defining `ModuleCat.ofHom (dM.restrict _)` instead leaves two sides
-    -- which are both `dM x` by evaluating `LinearMap.restrict` and `Submodule.inclusion`.
-    unfold gradedCochainComplex
-    simp only [CochainComplex.of_d]
-    rfl
-
-variable (hle : ∀ p, ℳ' p ≤ ℳ p) (hdeg' : LinearMap.IsHomogeneous dM ℳ' ℳ' 1)
-
-/-- Under `gradedCochainComplexXEquiv`, the inclusion of complexes is the inclusion of
-submodules. -/
-@[simp]
-theorem gradedCochainComplexXEquiv_inclusion_f (p : ℤ)
-    (x : (gradedCochainComplex ℳ' dM hdeg' (fun p x ↦ hsq p ⟨x, hle p x.2⟩)).X p) :
-    (gradedCochainComplexXEquiv p
-        (((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg').f p).hom x) : M) =
-      gradedCochainComplexXEquiv p x := by
-  unfold gradedCochainComplexXEquiv
-  rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
-  -- Once the term identifications are reflexive, the equivalence is the identity and the
-  -- component is `Submodule.inclusion` by definition, so both sides reduce to `x.val`.
-  rfl
-
-/-- Inclusions of complexes of nested families compose to the inclusion. -/
-theorem gradedCochainComplexInclusion_comp {ℳ'' : ℤ → Submodule R M} (hle' : ∀ p, ℳ'' p ≤ ℳ' p)
-    (hdeg'' : LinearMap.IsHomogeneous dM ℳ'' ℳ'' 1) :
-    gradedCochainComplexInclusion (hdeg := hdeg') (hsq := fun p x ↦ hsq p ⟨x, hle p x.2⟩) hle'
-        hdeg'' ≫ gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg' =
-      gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq)
-        (fun p ↦ (hle' p).trans (hle p)) hdeg'' := by
-  refine HomologicalComplex.hom_ext _ _ fun p ↦ ?_
-  ext x
-  apply (gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) p).injective
-  apply Subtype.ext
-  rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-    gradedCochainComplexXEquiv_inclusion_f, gradedCochainComplexXEquiv_inclusion_f,
-    gradedCochainComplexXEquiv_inclusion_f]
-
-/-- Each component of the inclusion of complexes is injective. -/
-theorem gradedCochainComplexInclusion_f_injective (p : ℤ) :
-    Function.Injective
-      ((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg').f p).hom := by
-  intro x y h
-  apply (gradedCochainComplexXEquiv p).injective
-  apply Submodule.inclusion_injective (hle p)
-  apply Subtype.ext
-  simpa only [gradedCochainComplexXEquiv_inclusion_f, Submodule.coe_inclusion] using
-    congrArg (fun z ↦ (gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) p z : M)) h
-
-instance : Mono (gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) hle hdeg') :=
-  HomologicalComplex.mono_of_mono_f _ fun p ↦
-    (ModuleCat.mono_iff_injective _).2 (gradedCochainComplexInclusion_f_injective hle hdeg' p)
-
-variable (ℳ dM hdeg hsq) in
-/-- The subcomplex of `gradedCochainComplex ℳ dM` cut out by a submodule `N` of `M` stable under
-`dM`: its degree-`p` term is `ℳ p ⊓ N`. -/
-def gradedCochainComplexSubobject (N : Submodule R M) (hN : ∀ x ∈ N, dM x ∈ N) :
-    Subobject (gradedCochainComplex ℳ dM hdeg hsq) :=
-  Subobject.mk (gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ N) (fun _ ↦ inf_le_left)
-    (hdeg.inf hN))
-
-/-- The subcomplex cut out by `N` is the image of the inclusion of the complex with terms
-`ℳ p ⊓ N`. -/
-theorem gradedCochainComplexSubobject_eq_mk (N : Submodule R M) (hN : ∀ x ∈ N, dM x ∈ N) :
-    gradedCochainComplexSubobject ℳ dM hdeg hsq N hN =
-      Subobject.mk (gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ N)
-        (fun _ ↦ inf_le_left) (hdeg.inf hN)) :=
-  (rfl)
-
-/-- In degree `p`, the subcomplex cut out by `N` consists of the elements of `ℳ p` lying in `N`:
-an element of the degree-`p` term is in the range of the subcomplex inclusion if and only if its
-image under `gradedCochainComplexXEquiv` lies in `N`. -/
-theorem mem_range_gradedCochainComplexSubobject_arrow_f_iff (N : Submodule R M)
-    (hN : ∀ x ∈ N, dM x ∈ N) (p : ℤ) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
-    x ∈ LinearMap.range ((gradedCochainComplexSubobject ℳ dM hdeg hsq N hN).arrow.f p).hom ↔
-      (gradedCochainComplexXEquiv p x : M) ∈ N := by
-  rw [gradedCochainComplexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
-    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
-  constructor
-  · rintro ⟨y, rfl⟩
-    have hy : (gradedCochainComplexXEquiv p
-        (((gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ N) (hdeg := hdeg)
-          (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p).hom y)) ∈
-        LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ N ≤ ℳ p)) := by
-      refine ⟨gradedCochainComplexXEquiv p y, ?_⟩
-      apply Subtype.ext
-      rw [gradedCochainComplexXEquiv_inclusion_f, Submodule.coe_inclusion]
-    rw [Submodule.range_inclusion] at hy
-    exact hy.2
-  · intro hx
-    have hx' : gradedCochainComplexXEquiv p x ∈
-        LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ N ≤ ℳ p)) := by
-      rw [Submodule.range_inclusion]
-      exact ⟨(gradedCochainComplexXEquiv p x).2, hx⟩
-    rcases hx' with ⟨y, hy⟩
-    refine ⟨(gradedCochainComplexXEquiv p).symm y, ?_⟩
-    apply (gradedCochainComplexXEquiv p).injective
-    apply Subtype.ext
-    rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
-    exact congrArg Subtype.val hy
-
-/-- The simp-normal form of `mem_range_gradedCochainComplexSubobject_arrow_f_iff`, with range
-membership unfolded by `LinearMap.mem_range`. -/
-@[simp]
-theorem exists_gradedCochainComplexSubobject_arrow_f_apply_eq_iff (N : Submodule R M)
-    (hN : ∀ x ∈ N, dM x ∈ N) (p : ℤ) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
-    (∃ y, ((gradedCochainComplexSubobject ℳ dM hdeg hsq N hN).arrow.f p).hom y = x) ↔
-      (gradedCochainComplexXEquiv p x : M) ∈ N :=
-  LinearMap.mem_range.symm.trans (mem_range_gradedCochainComplexSubobject_arrow_f_iff N hN p x)
-
-/-- The subcomplex cut out by a submodule is monotone in the submodule. -/
-theorem gradedCochainComplexSubobject_mono {N N' : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
-    (hN' : ∀ x ∈ N', dM x ∈ N') (h : N ≤ N') :
-    gradedCochainComplexSubobject ℳ dM hdeg hsq N hN ≤
-      gradedCochainComplexSubobject ℳ dM hdeg hsq N' hN' :=
-  Subobject.mk_le_mk_of_comm (gradedCochainComplexInclusion (ℳ := fun p ↦ ℳ p ⊓ N')
-    (ℳ' := fun p ↦ ℳ p ⊓ N) (fun _ ↦ inf_le_inf_left _ h)
-    (hdeg.inf hN)) (gradedCochainComplexInclusion_comp _ _ _ _)
-
-/-- The subcomplex cut out by the whole module is the whole complex. -/
-theorem gradedCochainComplexSubobject_eq_top {N : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
-    (h : N = ⊤) : gradedCochainComplexSubobject ℳ dM hdeg hsq N hN = ⊤ := by
-  subst h
-  rw [gradedCochainComplexSubobject_eq_mk]
-  -- Each component is the inclusion of `ℳ p ⊓ ⊤` into `ℳ p`, a bijection.
-  have (p : ℤ) : IsIso ((gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg)
-      (hsq := hsq) (fun _ ↦ inf_le_left) (hdeg.inf hN)).f p) := by
-    apply (ConcreteCategory.isIso_iff_bijective _).2
-    refine ⟨gradedCochainComplexInclusion_f_injective _ _ p, fun y ↦ ?_⟩
-    have hy : gradedCochainComplexXEquiv p y ∈
-        LinearMap.range (Submodule.inclusion (inf_le_left : ℳ p ⊓ ⊤ ≤ ℳ p)) := by
-      rw [Submodule.range_inclusion, inf_top_eq]
-      exact (gradedCochainComplexXEquiv p y).2
-    rcases hy with ⟨x, hx⟩
-    refine ⟨(gradedCochainComplexXEquiv p).symm x, ?_⟩
-    apply (gradedCochainComplexXEquiv p).injective
-    apply Subtype.ext
-    rw [gradedCochainComplexXEquiv_inclusion_f, LinearEquiv.apply_symm_apply]
-    exact congrArg Subtype.val hx
-  have := HomologicalComplex.Hom.isIso_of_components
-    (gradedCochainComplexInclusion (ℳ' := fun p ↦ ℳ p ⊓ ⊤) (hdeg := hdeg) (hsq := hsq)
-      (fun _ ↦ inf_le_left) (hdeg.inf hN))
-  exact Subobject.mk_eq_top_of_isIso _
-
-/-- The subcomplex cut out by the zero submodule is the zero subcomplex. -/
-theorem gradedCochainComplexSubobject_eq_bot {N : Submodule R M} (hN : ∀ x ∈ N, dM x ∈ N)
-    (h : N = ⊥) : gradedCochainComplexSubobject ℳ dM hdeg hsq N hN = ⊥ := by
-  subst h
-  refine Subobject.mk_eq_bot_iff_zero.2 (HomologicalComplex.hom_ext _ _ fun p ↦ ?_)
-  ext x
-  refine (gradedCochainComplexXEquiv p).injective (Subtype.ext ?_)
-  rw [gradedCochainComplexXEquiv_inclusion_f]
-  simpa using (gradedCochainComplexXEquiv p x).2.2
-
-end Subcomplex
 
 end TauCeti

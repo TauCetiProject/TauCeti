@@ -198,7 +198,7 @@ point of the ambient general linear group. -/
 @[simp]
 theorem mapPointsFunctor_coordinateMap_app
     (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
@@ -364,9 +364,9 @@ theorem mulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
     (B : CommAlgCat.{w} ℤ) (k : Fin 4 ⊕ Fin 4)
     (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ) B) :
     (pointsPresentation B).mulEquiv
-        ((CommHopfAlgCat.mapPointsFunctor (rootSubgroupIntegralCoordinateMap k)).app B q) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupIntegralCoordinateMap k)).app B q) =
       rootSubgroupPoints k B (AdditiveGroup.gaPointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_rootSubgroupPoints]
   have h := pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
@@ -374,7 +374,7 @@ theorem mulEquiv_mapPointsFunctor_rootSubgroupIntegralCoordinateMap
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight definingIdeal_def k B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   simpa only [rootSubgroupIntegralCoordinateMap] using h
 
 /-- The integral factored root-subgroup coordinate map represents the carrier's `k`th numbered root
@@ -456,10 +456,10 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
     (B : CommAlgCat.{w} A) (k : Fin 4 ⊕ Fin 4)
     (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
     baseChangePointsMulEquiv A B
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (rootSubgroupToBaseChangeCoordinateMap A k)).app B q) =
       rootSubgroupPoints k B (AdditiveGroup.gaPointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [coe_baseChangePointsMulEquiv_apply, coe_rootSubgroupPoints]
   -- The generic matrix theorem uses the canonical integer-algebra instance; this spelling makes
@@ -475,7 +475,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A definingIdeal_def k B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h
 
@@ -513,9 +513,9 @@ theorem mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
     (q : HopfAlgebra.points (R := ℤ)
       (H := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin 4))).obj) B) :
     (pointsPresentation B).mulEquiv
-        ((CommHopfAlgCat.mapPointsFunctor weightTorusIntegralCoordinateMap).app B q) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor weightTorusIntegralCoordinateMap).app B q) =
       weightTorusPoints B (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply, coe_weightTorusPoints]
   have h := pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
@@ -523,7 +523,7 @@ theorem mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight definingIdeal_def B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   simpa only [weightTorusIntegralCoordinateMap] using h
 
 /-- The integral factored weight-torus coordinate map represents the carrier's weight torus. -/
@@ -602,9 +602,9 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordin
     (q : HopfAlgebra.points (R := A)
       (H := (DiagonalizableGroup.coordinateRing A (SplitTorus.characterGroup (Fin 4))).obj) B) :
     baseChangePointsMulEquiv A B
-        ((CommHopfAlgCat.mapPointsFunctor (weightTorusToBaseChangeCoordinateMap A)).app B q) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (weightTorusToBaseChangeCoordinateMap A)).app B q) =
       weightTorusPoints B (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   apply Subtype.ext
   rw [coe_baseChangePointsMulEquiv_apply, coe_weightTorusPoints]
   have h := pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap
@@ -612,7 +612,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordin
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A definingIdeal_def B q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
   exact h
 
