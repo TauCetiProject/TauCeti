@@ -60,6 +60,9 @@ or exceeded bounds produce `unknown` with an explicit gap and no closure.
   relationships are not established by semantic inference.
 - Parents outside the bounded index, inaccessible/deleted source or histories
   beyond the bounds. These are gaps, not proved-safe results.
+- Individual merge commits with multiple parents when the aggregate patch does
+  not establish inheritance. The detector declines rather than selecting a
+  guessed parent for the merge's content identity.
 - Landed work rewritten sufficiently during integration that exact reverse-patch
   equivalence no longer identifies it. Exact-source checks cannot establish
   arbitrary semantic equivalence; inspect these cases manually.

@@ -349,6 +349,7 @@ class MutationTests(unittest.TestCase):
 
     def test_head_base_parent_state_races_after_comment(self):
         changes = [(2, "head", "f" * 40), (2, "base", "changed"),
+                   (2, "base_head", "f" * 40),
                    (1, "head", "f" * 40), (1, "state", "closed")]
         for number, key, value in changes:
             with self.subTest(key=key, number=number):
@@ -374,7 +375,7 @@ class APITests(unittest.TestCase):
         api = object.__new__(sp.API)
         api.call = lambda *args: {
             "number": 2, "state": "open", "draft": False, "body": "",
-            "base": {"ref": "main", "repo": {"full_name": sp.REPO}},
+            "base": {"ref": "main", "sha": "a" * 40, "repo": {"full_name": sp.REPO}},
             "head": {"ref": "branch", "sha": "c" * 40, "repo": {"full_name": sp.REPO}},
         }
         for ref in [None, {"target": {"oid": "b" * 40}}]:

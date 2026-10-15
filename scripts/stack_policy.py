@@ -126,6 +126,7 @@ class PR:
     head_repo: str
     body: str
     draft: bool
+    base_head: str = ""
 
     @classmethod
     def parse(cls, p):
@@ -135,7 +136,8 @@ class PR:
         if not h.get("repo"):
             raise Gap(f"#{p['number']}: deleted head repository")
         return cls(int(p["number"]), p["state"], oid(h["sha"]), p["base"]["ref"],
-                   h["ref"], h["repo"]["full_name"], p.get("body") or "", bool(p["draft"]))
+                   h["ref"], h["repo"]["full_name"], p.get("body") or "", bool(p["draft"]),
+                   oid(p["base"]["sha"]))
 
 
 def explicit_parents(body):
