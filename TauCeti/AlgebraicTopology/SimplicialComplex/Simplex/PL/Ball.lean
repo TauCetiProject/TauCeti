@@ -178,16 +178,8 @@ theorem isPiecewiseAffineOn_simplexHalfSpacePLChart_transition (n : ℕ)
     let I := modelWithCornersHalfSpace (Fin n → ℝ)
     let e := (simplexHalfSpacePLChart n v).symm.trans (simplexHalfSpacePLChart n w)
     IsPiecewiseAffineOn (I ∘ e ∘ I.symm) (I.symm ⁻¹' e.source ∩ range I) := by
-  refine ((isPiecewiseAffineOn_coordinateSimplexHalfSpaceChart_transition v w).mono ?_).congr ?_
-  · intro y hy
-    simpa only [simplexHalfSpacePLChart, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, Homeomorph.transOpenPartialHomeomorph_target,
-      Homeomorph.transOpenPartialHomeomorph_symm_apply,
-      Homeomorph.transOpenPartialHomeomorph_source, Function.comp_apply, mem_inter_iff,
-      mem_preimage, Homeomorph.apply_symm_apply] using hy
-  · intro y hy
-    simp only [simplexHalfSpacePLChart, mfld_simps]
-    simp
+  simpa only [simplexHalfSpacePLChart, Homeomorph.transOpenPartialHomeomorph_symm_trans] using
+    isPiecewiseAffineOn_coordinateSimplexHalfSpaceChart_transition v w
 
 /-- The finite vertex atlas on the solid simplex's weak realization. -/
 @[instance_reducible] def simplexHalfSpacePLChartedSpace (n : ℕ) :

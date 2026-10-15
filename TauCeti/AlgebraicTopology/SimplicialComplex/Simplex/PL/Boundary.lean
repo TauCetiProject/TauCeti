@@ -182,16 +182,8 @@ theorem isPiecewiseAffineOn_simplexBoundaryPLChart_transition (n : ℕ)
     (v w : Option (Option (Fin n))) :
     IsPiecewiseAffineOn ((simplexBoundaryPLChart n v).symm.trans (simplexBoundaryPLChart n w))
       ((simplexBoundaryPLChart n v).symm.trans (simplexBoundaryPLChart n w)).source := by
-  refine ((isPiecewiseAffineOn_coordinateSimplexBoundaryChart_transition v w).mono ?_).congr ?_
-  · intro y hy
-    simpa only [simplexBoundaryPLChart, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, Homeomorph.transOpenPartialHomeomorph_target,
-      Homeomorph.transOpenPartialHomeomorph_symm_apply,
-      Homeomorph.transOpenPartialHomeomorph_source, Function.comp_apply, mem_inter_iff,
-      mem_preimage, Homeomorph.apply_symm_apply] using hy
-  · intro y hy
-    simp only [simplexBoundaryPLChart, mfld_simps]
-    simp
+  simpa only [simplexBoundaryPLChart, Homeomorph.transOpenPartialHomeomorph_symm_trans] using
+    isPiecewiseAffineOn_coordinateSimplexBoundaryChart_transition v w
 
 /-- The finite vertex atlas on the weak realization of a standard simplex boundary. -/
 @[instance_reducible] def simplexBoundaryPLChartedSpace (n : ℕ) :
