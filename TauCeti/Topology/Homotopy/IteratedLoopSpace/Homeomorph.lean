@@ -88,37 +88,6 @@ theorem iteratedLoopSpaceHomeomorph_symm_const (k : ℕ) (X : BasedTopologicalSp
   (iteratedLoopSpaceHomeomorph k X).symm_apply_eq.2
     (iteratedLoopSpaceHomeomorph_basepoint k X).symm
 
-/-- **Naturality of the currying homeomorphism**: `GenLoop.genLoopLoopSumHomeomorph` commutes with
-the maps induced on cube loops by a based map `f` and by `Ω f`, for any index type of cube
-directions. -/
-@[simp]
-theorem genLoopLoopSumHomeomorph_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y)
-    (M : Type*) (p : GenLoop M X.loopSpace.carrier X.loopSpace.basepoint) :
-    GenLoop.genLoopLoopSumHomeomorph Y.basepoint M
-        (GenLoop.map f.loopSpace.toContinuousMap f.loopSpace.map_basepoint p) =
-      GenLoop.map f.toContinuousMap f.map_basepoint
-        (GenLoop.genLoopLoopSumHomeomorph X.basepoint M p) := by
-  refine GenLoop.ext _ _ fun t => ?_
-  rw [GenLoop.genLoopLoopSumHomeomorph_apply]
-  exact (Hom.loopSpace_apply' f _ _).trans
-    (congrArg f (GenLoop.genLoopLoopSumHomeomorph_apply X.basepoint M p t).symm)
-
-/-- **Naturality of the currying homeomorphism** for `k` cube directions: the specialization of
-`genLoopLoopSumHomeomorph_map` to `Fin k`. -/
-@[simp]
-theorem genLoopLoopHomeomorph_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y)
-    (k : ℕ) (p : GenLoop (Fin k) X.loopSpace.carrier X.loopSpace.basepoint) :
-    GenLoop.genLoopLoopHomeomorph Y.basepoint k
-        (GenLoop.map f.loopSpace.toContinuousMap f.loopSpace.map_basepoint p) =
-      GenLoop.map f.toContinuousMap f.map_basepoint
-        (GenLoop.genLoopLoopHomeomorph X.basepoint k p) := by
-  exact (GenLoop.genLoopLoopHomeomorph_apply_eq _ _ _).trans
-    ((congrArg (GenLoop.congr Y.basepoint finSumFinEquiv)
-      (genLoopLoopSumHomeomorph_map f (Fin k) p)).trans
-        ((GenLoop.ext _ _ fun _ => rfl).trans
-          (congrArg (GenLoop.map f.toContinuousMap f.map_basepoint)
-            (GenLoop.genLoopLoopHomeomorph_apply_eq _ _ _).symm)))
-
 /-- **Naturality of the cube-loop homeomorphism**: a based map `f` acts on iterated loops
 `Ω^[k] f` and on cube loops by postcomposition compatibly with `iteratedLoopSpaceHomeomorph`. -/
 @[simp]
@@ -129,12 +98,13 @@ theorem iteratedLoopSpaceHomeomorph_map :
         GenLoop.map f.toContinuousMap f.map_basepoint (iteratedLoopSpaceHomeomorph k X γ)
   | 0, _, _, _, _ => by
     rw [Hom.iteratedLoopSpace_zero]
-    exact GenLoop.ext _ _ fun _ => rfl
+    exact GenLoop.ext _ _ fun _ => by rw [GenLoop.map_apply]; rfl
   | k + 1, _, _, f, γ => by
     rw [Hom.iteratedLoopSpace_succ]
     exact (congrArg (GenLoop.genLoopLoopHomeomorph _ k)
       (iteratedLoopSpaceHomeomorph_map k f.loopSpace γ)).trans
-        (genLoopLoopHomeomorph_map f k _)
+        (ContinuousMap.genLoopLoopHomeomorph_map f.toContinuousMap f.map_basepoint
+          f.loopSpace.toContinuousMap (fun γ t => Hom.loopSpace_apply' f γ t) k _)
 
 end BasedTopologicalSpace
 

@@ -49,6 +49,7 @@ def onePointHomeomorphSphere (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1)
       (MulAction.exists_smul_eq (EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ]
         EuclideanSpace ℝ (Fin (k + 1))) (onePointHomeomorphSphereAux k ∞) s₀).choose).toHomeomorph
 
+/-- The homeomorphism sends `∞` to the prescribed basepoint. -/
 @[simp]
 theorem onePointHomeomorphSphere_infty (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
     onePointHomeomorphSphere k s₀ ∞ = s₀ := by
