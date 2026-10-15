@@ -293,13 +293,19 @@ theorem windowPreAdicSpaceIso_inv_base_apply
   have _ := P.isTopologicalRing_locUniformSpace (windowNumerators p ϖ q q')
     (windowDenominator p ϖ q q') L hden
   intro y
-  -- `y` is the image of `inv y` under the forward map, which `_hom_base_val` describes
+  -- Evaluate the forward formula at `inv y`, then cancel the inverse ring pullbacks.
   set f := windowPreAdicSpaceIso hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ P'
-  have hy : f.hom.base (f.inv.base y) = y := by
-    rw [← ConcreteCategory.comp_apply, ← PreAdicSpace.comp_base, f.inv_hom_id]
-    rfl
-  conv_rhs => rw [← hy, windowPreAdicSpaceIso_hom_base_apply]
-  rw [← Function.comp_apply (f := comap _), ← comap_comp, RingEquiv.symm_comp, comap_id, id_eq]
+  have hy : f.hom.base (f.inv.base y) = y :=
+    congrArg (fun φ => φ.base y) f.inv_hom_id
+  have hforward := windowPreAdicSpaceIso_hom_base_apply hv hϖ hϖ' hρ₁ hρ₂ hI P hden
+    h₁ h₂ h₁₂ P' (f.inv.base y)
+  change (f.hom.base (f.inv.base y)).val = _ at hforward
+  rw [hy] at hforward
+  have h := congrArg (comap
+    (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ :
+      _ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) hforward
+  simpa only [← Function.comp_apply (f := comap _), ← comap_comp, RingEquiv.symm_comp,
+    comap_id, id_eq] using h.symm
 
 /-- **A window of `𝒴` is an adic space**: the window `{q ≤ κ ≤ q'}` of `Spa(𝕎 O, 𝕎 O)`, the
 restriction along the open embedding `j : Spa(𝕎 O⟨T/s⟩, A_U⁺) → Spa(𝕎 O, 𝕎 O)`, is isomorphic to
