@@ -157,7 +157,8 @@ theorem typeBQuadraticEquiv_typeBDifferenceRootGenerator (i j : ι) (hij : i ≠
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   -- Each matrix unit picks out one basis index, and so does each polar coordinate.
-  rw [coe_typeBDifferenceRootGenerator, toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis]
+  rw [coe_typeBDifferenceRootGenerator,
+    Module.Basis.toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-- **The short root vector `e_{εᵢ}` is the Clifford bivector of the `i`-th basis vector and the
@@ -170,7 +171,7 @@ theorem typeBQuadraticEquiv_typeBShortRootGenerator (i : ι) :
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   -- The polar self-pairing `2` of the remainder vector matches the matrix coefficient `2`.
-  rw [coe_typeBShortRootGenerator, toLinAlgEquiv_typeBShortRootMatrix_apply_basis]
+  rw [coe_typeBShortRootGenerator, Module.Basis.toLinAlgEquiv_typeBShortRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-- **The negative short root vector `f_{εᵢ}` is the Clifford bivector of the remainder vector and
@@ -182,7 +183,7 @@ theorem typeBQuadraticEquiv_typeBShortNegativeRootGenerator (i : ι) :
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   rw [coe_typeBShortNegativeRootGenerator,
-    toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis]
+    Module.Basis.toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-! ### The Cartan generators -/

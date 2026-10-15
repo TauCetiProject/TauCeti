@@ -55,6 +55,8 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
 
 ## Main results
 
+* `TauCeti.Huber.mem_of_mem_nhds_of_forall_weightedX_mem`: a neighbourhood subring
+  containing the constants and variables contains the entire completion.
 * `TauCeti.Huber.continuous_algebraMap_completion_weightedRestrictedSubring`: the structure map
   `A → A⟨X⟩_T` into the completion is continuous, for an arbitrary weight family;
   `TauCeti.Huber.continuous_algebraMap_restrictedMvPowerSeriesCompletion` is the trivial-weight
@@ -363,5 +365,50 @@ theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv_symm :
   exact UniformSpace.Completion.continuous_mapRingEquiv_symm _ _ _
 
 end ZeroVariables
+
+section Subring
+
+open UniformSpace Filter Topology
+
+variable {k A}
+
+/-- A subring of the completion of `A⟨X⟩_T` that is a neighbourhood of zero and contains the
+constants and the variables is everything: it contains the polynomials, then every element of
+`A⟨X⟩_T`, and being an open, hence closed, subgroup it contains their dense image. -/
+theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
+    (hT : IsWeightFamily T)
+    {R : Subring (Completion (weightedRestrictedSubring T hT))}
+    (hR : (R : Set (Completion (weightedRestrictedSubring T hT))) ∈ 𝓝 0)
+    (hC : ∀ a, algebraMap A (Completion (weightedRestrictedSubring T hT)) a ∈ R)
+    (hX : ∀ i, ((weightedX T hT i : weightedRestrictedSubring T hT) :
+      Completion (weightedRestrictedSubring T hT)) ∈ R)
+    (y : Completion (weightedRestrictedSubring T hT)) : y ∈ R := by
+  have hpoly (p : MvPolynomial (Fin k) A) : ((weightedPolynomialHom T hT p :
+      weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) ∈ R := by
+    -- Write the composite inclusion as polynomial evaluation and apply `eval₂_mem`.
+    have h := MvPolynomial.eval₂_mem (p := p) (s := R)
+      (f := (Completion.coeRingHom.comp (weightedPolynomialHom T hT)).comp MvPolynomial.C)
+      (fun ν _ ↦ by
+        rw [RingHom.comp_apply, RingHom.comp_apply, weightedPolynomialHom_C]
+        exact algebraMap_completion_weightedRestrictedSubring_apply _ _ hT (p.coeff ν) ▸
+          hC (p.coeff ν))
+      (v := Completion.coeRingHom.comp (weightedPolynomialHom T hT) ∘ MvPolynomial.X)
+      (fun i ↦ by
+        rw [Function.comp_apply, RingHom.comp_apply, weightedPolynomialHom_X]
+        exact hX i)
+    rwa [← MvPolynomial.eval₂_comp_left, MvPolynomial.eval₂_eta] at h
+  have hdense : Dense (R : Set (Completion (weightedRestrictedSubring T hT))) :=
+    Completion.denseRange_coe.dense_of_mapsTo (Completion.continuous_coe _)
+      (dense_weightedPolynomials hT) (by
+        intro f hf
+        obtain ⟨p, hp⟩ := (weightedPolynomialsEquiv hT).surjective ⟨f, hf⟩
+        have hp' := congrArg
+          (fun z : weightedPolynomials T hT ↦ (z : weightedRestrictedSubring T hT)) hp
+        rw [coe_weightedPolynomialsEquiv] at hp'
+        simpa only [hp', SetLike.mem_coe] using hpoly p)
+  exact closure_minimal (fun _ hx ↦ hx)
+    (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR)) (hdense y)
+
+end Subring
 
 end TauCeti.Huber

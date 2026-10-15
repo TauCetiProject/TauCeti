@@ -194,7 +194,8 @@ theorem IsJordanDomain.injOn_closedBall_of_conformal
     fun _ ha => hJ.isPreconnectedApproachAt ha
 
 /-- **Boundary injectivity, Jordan case**, in the hypothesis shape of
-`TauCeti.exists_continuousOn_closedBall_eqOn_of_isJordanCurve_frontier`. -/
+`TauCeti.exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier` with a Jordan-curve
+boundary. -/
 theorem injOn_closedBall_of_isJordanCurve_frontier (hr : 0 < r)
     (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) (hJf : IsJordanCurve (frontier (f '' ball c r)))

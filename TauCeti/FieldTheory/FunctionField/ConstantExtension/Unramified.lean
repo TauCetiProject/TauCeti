@@ -204,8 +204,7 @@ theorem isIntegrallyClosedIn_of_isTotallyRamified [FiniteDimensional F F']
       ← Polynomial.separable_map (algebraMap k F),
       minpoly.map_algebraMap_of_isIntegrallyClosedIn hex hci]
     exact Algebra.IsSeparable.isSeparable F c
-  let : Algebra K E := ((algebraMap K F').codRestrict E fun a ↦
-    algebraMap_mem_constantCompositum F K F' a).toAlgebra
+  let : Algebra K E := constantCompositumAlgebra F K F'
   let : Algebra k E := ((algebraMap k F').codRestrict E fun a ↦ by
     rw [IsScalarTower.algebraMap_apply k F F']
     exact IntermediateField.algebraMap_mem E (algebraMap k F a)).toAlgebra
@@ -218,9 +217,7 @@ theorem isIntegrallyClosedIn_of_isTotallyRamified [FiniteDimensional F F']
   let : IsScalarTower k E F' := .of_algebraMap_eq fun a ↦ by
     rw [IsScalarTower.algebraMap_apply k F E, ← IsScalarTower.algebraMap_apply F E F',
       ← IsScalarTower.algebraMap_apply k F F']
-  let : IsScalarTower K E F' := .of_algebraMap_eq fun a ↦
-    (RingHom.codRestrict_apply (algebraMap K F') E
-      (algebraMap_mem_constantCompositum F K F') a).symm
+  have : IsScalarTower K E F' := isScalarTower_constantCompositum F K F'
   let Q : Place K E := Place.constantsEquiv k K E (P'.restrict k E)
   have hQ : Q.ramificationIdx F = 1 := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top
     (k := k) ((constantCompositum_eq_top_iff F K F' E).2 rfl) Q

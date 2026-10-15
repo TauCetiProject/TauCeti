@@ -6,11 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
+-- Proof-only: finiteness of the torsion of an elliptic curve.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
+
+-- Non-public: the nonvanishing of `m` in `Kˢ` is used only inside proofs.
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # The Galois coefficient modules of an elliptic curve
@@ -61,8 +67,10 @@ automorphisms of an algebraic closure are the points over the perfect closure of
 
 * `WeierstrassCurve.PointCoeff.instContinuousSMul`,
   `WeierstrassCurve.TorsionCoeff.instContinuousSMul`: the coefficients are discrete modules.
+* `WeierstrassCurve.finite_torsionCoeff`: `E(Kˢ)[m]` is finite for `W` elliptic and `m ≠ 0`.
 * `WeierstrassCurve.pointGaloisAction_apply_eq_smul`: the action is
   `WeierstrassCurve.pointGaloisAction`.
+* `WeierstrassCurve.natCard_torsionCoeff`: `E(Kˢ)[m]` has `m²` points for `m` invertible in `K`.
 * `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`.
 
 ## Implementation notes
@@ -212,6 +220,13 @@ instance TorsionCoeff.instContinuousSMul (m : ℕ) :
     ContinuousSMul (AbsoluteGaloisGroup K) (W.TorsionCoeff m) :=
   AddSubgroup.restrictDistribMulAction_continuousSMul _ fun σ _ => smul_mem_torsionCoeff σ
 
+open scoped Classical in
+/-- For `W` elliptic and `m ≠ 0`, the `m`-torsion `E(Kˢ)[m]` of `W` over the separable closure is
+finite. -/
+instance finite_torsionCoeff [W.IsElliptic] (m : ℕ) [NeZero m] : Finite (W.TorsionCoeff m) :=
+  have := (W⁄(SeparableClosure K)).finite_torsionBy (Int.natCast_ne_zero.2 (NeZero.ne m))
+  .of_equiv _ (AddEquiv.torsionByCongr W.pointCoeffEquiv m).toEquiv
+
 /-- The inclusion `E(Kˢ)[m] → E(Kˢ)`, as a `G_K`-equivariant homomorphism. -/
 def torsionCoeffIncl (m : ℕ) : W.TorsionCoeff m →+[AbsoluteGaloisGroup K] W.PointCoeff where
   toFun := Subtype.val
@@ -223,6 +238,21 @@ def torsionCoeffIncl (m : ℕ) : W.TorsionCoeff m →+[AbsoluteGaloisGroup K] W.
 theorem torsionCoeffIncl_apply {m : ℕ} (P : W.TorsionCoeff m) :
     W.torsionCoeffIncl m P = (P : W.PointCoeff) :=
   (rfl)
+
+open scoped Classical in
+/-- **`E(Kˢ)[m]` has `m²` points** when `m` is invertible in `K`. -/
+theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
+    Nat.card (W.TorsionCoeff m) = m ^ 2 := by
+  have hm' : (((m : ℕ) : ℤ) : SeparableClosure K) ≠ 0 := by
+    rw [Int.cast_natCast]
+    exact hm.natCast_ne_zero_of_algebra
+  rw [Nat.card_congr (AddEquiv.torsionByCongr W.pointCoeffEquiv.symm _).toEquiv]
+  -- `W.PointCoeff` carries the group law for one choice of decidable equality on `Kˢ`, and
+  -- `natCard_torsionBy` is stated for another; the two choices agree.
+  have hI : (fun a b ↦ Subtype.instDecidableEq a b : DecidableEq (SeparableClosure K)) =
+      fun a b ↦ Classical.propDecidable (a = b) := Subsingleton.elim _ _
+  rw [hI, WeierstrassCurve.natCard_torsionBy (W.baseChange (SeparableClosure K)) hm',
+    Int.natAbs_natCast]
 
 /-! ### The Kummer sequence -/
 
@@ -237,10 +267,8 @@ def kummerShortExact [W.IsElliptic] (m : ℕ) (hm : IsUnit (m : K)) :
   incl_injective := Subtype.val_injective
   proj_surjective P := by
     classical
-    have hm' : ((m : ℕ) : SeparableClosure K) ≠ 0 := by
-      rw [← map_natCast (algebraMap K (SeparableClosure K))]
-      exact (map_ne_zero _).2 hm.ne_zero
-    obtain ⟨Q, hQ⟩ := Affine.nsmul_surjective (W⁄(SeparableClosure K)).toAffine hm'
+    obtain ⟨Q, hQ⟩ := Affine.nsmul_surjective (W⁄(SeparableClosure K)).toAffine
+      hm.natCast_ne_zero_of_algebra
       (W.pointCoeffEquiv.symm P)
     refine ⟨W.pointCoeffEquiv Q, ?_⟩
     rw [nsmulAddMonoidHom_apply, ← map_nsmul]

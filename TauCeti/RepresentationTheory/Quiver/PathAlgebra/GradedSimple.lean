@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
-public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
+public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedProjective
 

@@ -7,11 +7,12 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.RingTheory.Polynomial.RootEnumeration
+import TauCeti.RingTheory.Polynomial.ScaleRoots
 
 /-!
 # Discriminants under integral normalization
 
-Integral normalization replaces a degree `n` polynomial with leading coefficient `a` by a
+Integral normalization replaces a nonzero degree `n` polynomial with leading coefficient `a` by a
 monic polynomial whose roots are the original roots multiplied by `a`. Its discriminant is
 `a ^ ((n - 1) * (n - 2))` times the original discriminant. This identity lets one reduce
 nonmonic polynomial families to monic families while retaining control of the discriminant,
@@ -33,9 +34,9 @@ The root-scaling identity controls the discriminant before monic normalization; 
 
 public section
 
-open Finset Polynomial
+open Finset
 
-namespace TauCeti
+namespace Polynomial
 
 variable {R : Type*} [CommRing R]
 
@@ -65,20 +66,18 @@ private theorem discr_scaleRoots_of_splits {K : Type*} [Field K] {f : K[X]}
     rfl
   have hscale : (∏ i, (X - C (r i))).scaleRoots a =
       ∏ i, (X - C (r i * a)) := by
-    induction (univ : Finset (Fin f.natDegree)) using Finset.induction_on with
-    | empty => simp
-    | @insert i s hi ih =>
-      simp only [prod_insert hi, mul_scaleRoots_of_noZeroDivisors, X_sub_C_scaleRoots, ih]
+    simp [prod_scaleRoots]
   have hlc := leadingCoeff_ne_zero.2 hf
   conv_lhs => rw [hfac, mul_scaleRoots_of_noZeroDivisors, scaleRoots_C, hscale]
-  rw [discr_C_mul _ hlc, discr_prod_scaled_roots]
-  conv_rhs => rw [hfac, discr_C_mul _ hlc]
+  rw [TauCeti.discr_C_mul _ hlc, discr_prod_scaled_roots]
+  conv_rhs => rw [hfac, TauCeti.discr_C_mul _ hlc]
   simp only [natDegree_C_mul hlc, natDegree_finsetProd_X_sub_C_eq_card, card_univ, Fintype.card_fin]
   ring
 
 /-- Scaling every root by `a` multiplies the discriminant of a degree `n` polynomial by
 `a ^ (n * (n - 1))`. The formula holds over every commutative ring, including at `a = 0`. -/
-theorem discr_scaleRoots {f : R[X]} (a : R) :
+@[simp]
+theorem discr_scaleRoots (f : R[X]) (a : R) :
     (f.scaleRoots a).discr = a ^ (f.natDegree * (f.natDegree - 1)) * f.discr := by
   -- Establish the universal identity by degree-preserving base change from split fields.
   induction f using induction_of_Splits_of_injective_of_surjective with
@@ -116,7 +115,8 @@ theorem discr_scaleRoots {f : R[X]} (a : R) :
 `(n - 1) * (n - 2)` power of its leading coefficient. In particular, normalization preserves the
 form “a power of a parameter times a unit” when both the leading coefficient and the
 discriminant have that form. Constants and zero are included. -/
-theorem discr_integralNormalization {f : R[X]} :
+@[simp]
+theorem discr_integralNormalization (f : R[X]) :
     f.integralNormalization.discr =
       f.leadingCoeff ^ ((f.natDegree - 1) * (f.natDegree - 2)) * f.discr := by
   obtain rfl | hf := eq_or_ne f 0
@@ -148,9 +148,9 @@ theorem discr_integralNormalization {f : R[X]} :
       pow_zero, discr_C, mul_one]
     simpa only [C_1] using discr_C (R := R) 1
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.2 hf
-  have key := discr_scaleRoots (f := f) f.leadingCoeff
+  have key := f.discr_scaleRoots f.leadingCoeff
   rw [← integralNormalization_mul_C_leadingCoeff, mul_comm f.integralNormalization,
-    discr_C_mul _ hlc, natDegree_integralNormalization] at key
+    TauCeti.discr_C_mul _ hlc, natDegree_integralNormalization] at key
   -- Cancel only in the domain case; the resulting identity then descends to all rings.
   apply mul_left_cancel₀ (a := f.leadingCoeff ^ (2 * f.natDegree - 2)) (pow_ne_zero _ hlc)
   rw [key, ← mul_assoc, ← pow_add]
@@ -164,4 +164,4 @@ theorem discr_integralNormalization {f : R[X]} :
       nlinarith
   rw [hexp]
 
-end TauCeti
+end Polynomial
