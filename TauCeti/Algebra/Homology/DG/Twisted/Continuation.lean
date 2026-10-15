@@ -137,16 +137,11 @@ section Properties
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M]
-  {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ}
-  [Fintype P] [Fintype Q] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
-  (ν : P → Q → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
-
-variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d}
+  [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+  {ℳ : ℤ → Submodule R M}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
-  [Fintype Q] in
 /-- A homogeneous element `α` of degree `q`, acted on by a homogeneous `a` of degree `e`, has
 degree `q + e`. -/
 theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ} {α : M}
@@ -157,7 +152,9 @@ theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ
   have := SetLike.GradedSMul.smul_mem hop hα
   rwa [vadd_eq_add, add_comm] at this
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype Q] in
+variable {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ}
+  [Fintype P] [SMulCommClass R Aᵐᵒᵖ M] (ν : P → Q → A)
+
 /-- The continuation map of a matrix with homogeneous entries of degree `indQ y - ind x`
 preserves the total degree. -/
 theorem continuationMap_mem_twistedTotalGrading (hν : ∀ x y, ν x y ∈ 𝒜 (indQ y - ind x))
@@ -171,7 +168,8 @@ theorem continuationMap_mem_twistedTotalGrading (hν : ∀ x y, ν x y ∈ 𝒜 
   convert this using 2
   ring
 
-variable (mP : P → P → A) (mQ : Q → Q → A) (dM : M →ₗ[R] M)
+variable [Fintype Q] [IsScalarTower R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ]
+  {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d} (mP : P → P → A) (mQ : Q → Q → A) (dM : M →ₗ[R] M)
 
 /-- **The continuation map is a chain map**: for a matrix `ν` with homogeneous entries which
 satisfies the continuation equation between `mP` and `mQ`, and a differential graded right module
@@ -232,14 +230,16 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
     rw [op_smul, smul_assoc, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul, neg_add_cancel]
   rw [h₁, add_assoc, h₂, add_zero]
 
+end Properties
+
 /-! ### The Kronecker matrix and the matrix product -/
 
 section Kronecker
 
-variable [DecidableEq P] (m : P → P → A)
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {P : Type uP} {ind : P → ℤ} [DecidableEq P]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
-  [Fintype Q] in
 /-- The Kronecker matrix has entries of degree `ind y - ind x`. -/
 theorem kronecker_mem_graded (x y : P) : (1 : Matrix P P A) x y ∈ 𝒜 (ind y - ind x) := by
   rw [Matrix.one_apply]
@@ -249,7 +249,8 @@ theorem kronecker_mem_graded (x y : P) : (1 : Matrix P P A) x y ∈ 𝒜 (ind y 
     exact SetLike.one_mem_graded 𝒜
   · exact zero_mem _
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype Q] in
+variable [Fintype P] {d : A →ₗ[R] A} (m : P → P → A)
+
 /-- The Kronecker matrix satisfies the continuation equation from `m` to `m`, for any matrix `m`,
 as soon as `d 1 = 0`. -/
 theorem continuation_kronecker (hd : d 1 = 0) (x y : P) :
@@ -267,10 +268,11 @@ end Kronecker
 
 section MatMul
 
-variable {S : Type uS} {indS : S → ℤ} [Fintype S] (ν₁ : P → Q → A) (ν₂ : Q → S → A)
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {P : Type uP} {Q : Type uQ} {S : Type uS} {ind : P → ℤ} {indQ : Q → ℤ} {indS : S → ℤ}
+  [Fintype Q] {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+  (ν₁ : P → Q → A) (ν₂ : Q → S → A)
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
-  [Fintype S] in
 /-- The matrix product of matrices with entries of degrees `indQ y - ind x` and `indS z - indQ y`
 has entries of degree `indS z - ind x`. -/
 theorem matMul_mem_graded (hν₁ : ∀ x y, ν₁ x y ∈ 𝒜 (indQ y - ind x))
@@ -283,7 +285,8 @@ theorem matMul_mem_graded (hν₁ : ∀ x y, ν₁ x y ∈ 𝒜 (indQ y - ind x)
   convert this using 2
   ring
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] in
+variable [Fintype P] [Fintype S] {d : A →ₗ[R] A}
+
 /-- The matrix product of continuation cocycles `m₁ → m₂` and `m₂ → m₃` satisfies the
 continuation equation from `m₁` to `m₃`. -/
 theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m₂ : Q → Q → A)
@@ -329,8 +332,6 @@ theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m�
 
 end MatMul
 
-end Properties
-
 /-! ### Continuation cocycles -/
 
 section Cocycle
@@ -339,7 +340,7 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   {P : Type uP} {Q : Type uQ} {S : Type uS} {ind : P → ℤ} {indQ : Q → ℤ} {indS : S → ℤ}
   [Fintype P] [Fintype Q] [Fintype S]
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
 
 /-- A **continuation cocycle** from the twisting cocycle `mP` on `(P, ind)` to the twisting cocycle
 `mQ` on `(Q, indQ)` (the source's Definition 1.10): a matrix `ν x y ∈ 𝒜 (indQ y - ind x)` with
@@ -359,13 +360,14 @@ namespace ContinuationCocycle
 variable {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
   {mS : TwistingCocycle 𝒜 d S indS}
 
-omit [GradedAlgebra 𝒜] in
 @[ext]
 theorem ext {ν₁ ν₂ : ContinuationCocycle mP mQ} (h : ∀ x y, ν₁.ν x y = ν₂.ν x y) : ν₁ = ν₂ := by
   obtain ⟨ν₁, _, _⟩ := ν₁
   obtain ⟨ν₂, _, _⟩ := ν₂
   obtain rfl : ν₁ = ν₂ := funext fun x ↦ funext fun y ↦ h x y
   rfl
+
+variable [GradedAlgebra 𝒜]
 
 /-- The Kronecker matrix, as a continuation cocycle from `m` to itself, for a differential with
 `d 1 = 0`. -/
@@ -420,19 +422,18 @@ theorem comp_assoc {T : Type uT} {indT : T → ℤ} [Fintype T] {mT : TwistingCo
   exact congrFun (congrFun
     (Matrix.mul_assoc (Matrix.of ν₁.ν) (Matrix.of ν₂.ν) (Matrix.of ν₃.ν)) x) y
 
-variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
-  [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ] {dM : M →ₗ[R] M}
-  {h : IsDGAlgebra 𝒜 d}
+variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M}
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype S] in
 /-- The continuation map of a continuation cocycle preserves the total degree. -/
 theorem continuationMap_mem_twistedTotalGrading (ν : ContinuationCocycle mP mQ) {n : ℤ}
     {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
     continuationMap R M ν.ν f ∈ twistedTotalGrading ℳ indQ n :=
   TauCeti.continuationMap_mem_twistedTotalGrading ν.ν ν.mem_graded hf
 
-omit [Fintype S] in
+variable [IsScalarTower R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
+  {h : IsDGAlgebra 𝒜 d} in
 /-- **The continuation map of a continuation cocycle is a chain map** between the twisted
 complexes of a differential graded right module. -/
 theorem continuationMap_twistedDifferential (ν : ContinuationCocycle mP mQ)
@@ -441,13 +442,11 @@ theorem continuationMap_twistedDifferential (ν : ContinuationCocycle mP mQ)
       twistedDifferential mQ.m ℳ dM (continuationMap R M ν.ν f) :=
   TauCeti.continuationMap_twistedDifferential ν.ν mP.m mQ.m dM ν.mem_graded ν.continuation hM f
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [Fintype Q] [Fintype S] in
 /-- The Kronecker continuation cocycle induces the identity. -/
 theorem continuationMap_refl [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycle 𝒜 d P ind) :
     continuationMap R M (refl hd m).ν = LinearMap.id :=
   continuationMap_kronecker
 
-omit [IsScalarTower R Aᵐᵒᵖ M] in
 /-- The composite continuation cocycle induces the composite of the continuation maps. -/
 theorem continuationMap_comp (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
     (ν₂ : ContinuationCocycle mQ mS) :
