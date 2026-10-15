@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.LowDimTopology.SeifertFibration
@@ -115,34 +116,50 @@ theorem planarSurface_one : planarSurface 1 = {z : ℂ | 2⁻¹ ≤ ‖z‖ ∧ 
   simp only [mem_planarSurface, Fin.forall_fin_one]
   norm_num [and_comm]
 
-/-- The first coordinate of a point of the genus-one handlebody is nonzero. -/
-private theorem ne_zero_of_mem_handlebody_one {x : ℂ × ℝ} (hx : x ∈ handlebody 1) : x.1 ≠ 0 := by
-  have h := (mem_handlebody.1 hx).1
-  rw [planarSurface_one] at h
-  exact norm_pos_iff.1 (lt_of_lt_of_le (by norm_num) h.1)
+/-- A point of the closed disc with one hole is nonzero. -/
+private theorem ne_zero_of_mem_planarSurface_one {z : ℂ} (hz : z ∈ planarSurface 1) : z ≠ 0 := by
+  rw [planarSurface_one] at hz
+  exact norm_pos_iff.1 (lt_of_lt_of_le (by norm_num) hz.1)
+
+/-- The radii `[1 / 2, 2]` of the closed disc with one hole are positive. -/
+private theorem pos_of_mem_Icc_inv_two_two {r : ℝ} (hr : r ∈ Icc (2⁻¹ : ℝ) 2) : 0 < r :=
+  lt_of_lt_of_le (by norm_num) hr.1
+
+/-- Polar coordinates, restricted from `homeomorphUnitSphereProd ℂ`, identify the closed disc with
+one hole with the product of the interval `[1 / 2, 2]` and the circle. -/
+private def planarSurfaceOneHomeomorph : planarSurface 1 ≃ₜ Icc (2⁻¹ : ℝ) 2 × Circle where
+  toFun z :=
+    (⟨homeomorphUnitSphereProd ℂ ⟨z, ne_zero_of_mem_planarSurface_one z.2⟩ |>.2,
+      by simpa [planarSurface_one] using z.2⟩,
+      homeomorphUnitSphereProd ℂ ⟨z, ne_zero_of_mem_planarSurface_one z.2⟩ |>.1)
+  invFun y := ⟨(homeomorphUnitSphereProd ℂ).symm (y.2, ⟨y.1, pos_of_mem_Icc_inv_two_two y.1.2⟩),
+    by
+      have hr := abs_of_pos (pos_of_mem_Icc_inv_two_two y.1.2)
+      rw [planarSurface_one, homeomorphUnitSphereProd_symm_apply_coe]
+      exact ⟨by simpa [norm_smul, hr] using y.1.2.1, by simpa [norm_smul, hr] using y.1.2.2⟩⟩
+  left_inv z := by
+    ext
+    exact congrArg (fun w : ({0}ᶜ : Set ℂ) ↦ (w : ℂ)) <|
+      (homeomorphUnitSphereProd ℂ).symm_apply_apply ⟨z, ne_zero_of_mem_planarSurface_one z.2⟩
+  right_inv y := by
+    have h := (homeomorphUnitSphereProd ℂ).apply_symm_apply
+      (y.2, ⟨y.1, pos_of_mem_Icc_inv_two_two y.1.2⟩)
+    ext1
+    · exact Subtype.ext (congrArg (fun w ↦ (w.2 : ℝ)) h)
+    · exact congrArg Prod.fst h
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
 
 /-- Polar coordinates on the annulus, and the identity on the interval, identify the genus-one
 handlebody with the product of a rectangle and the circle. -/
 private def handlebodyOneHomeomorphProd :
-    handlebody 1 ≃ₜ (Icc (2⁻¹ : ℝ) 2 ×ˢ Icc (-1 : ℝ) 1 : Set (ℝ × ℝ)) × Circle where
-  toFun x :=
-    (⟨(‖x.1.1‖, x.1.2), ⟨by simpa [planarSurface_one] using (mem_handlebody.1 x.2).1,
-        (mem_handlebody.1 x.2).2⟩⟩,
-      ⟨(‖x.1.1‖⁻¹ : ℂ) * x.1.1, mem_sphere_zero_iff_norm.2 <| by
-        simp [ne_zero_of_mem_handlebody_one x.2]⟩)
-  invFun y := ⟨((y.1.1.1 : ℂ) * y.2, y.1.1.2), mem_handlebody.2
-    ⟨by simpa [planarSurface_one, abs_of_pos (lt_of_lt_of_le (by norm_num) y.1.2.1.1)]
-      using y.1.2.1, y.1.2.2⟩⟩
-  left_inv x := by
-    ext <;> simp [ne_zero_of_mem_handlebody_one x.2]
-  right_inv y := by
-    have hr : 0 < y.1.1.1 := lt_of_lt_of_le (by norm_num) y.1.2.1.1
-    ext <;> simp [abs_of_pos hr, hr.ne']
-  continuous_toFun := by
-    refine .prodMk (by fun_prop) (Continuous.subtype_mk (.mul (.inv₀ (by fun_prop) fun x ↦ ?_)
-      (by fun_prop)) _)
-    simpa using ne_zero_of_mem_handlebody_one x.2
-  continuous_invFun := by fun_prop
+    handlebody 1 ≃ₜ (Icc (2⁻¹ : ℝ) 2 ×ˢ Icc (-1 : ℝ) 1 : Set (ℝ × ℝ)) × Circle :=
+  (Homeomorph.Set.prod (planarSurface 1) (Icc (-1) 1)).trans <|
+    (planarSurfaceOneHomeomorph.prodCongr (.refl _)).trans <|
+      (Homeomorph.prodAssoc _ _ _).trans <|
+        ((Homeomorph.refl _).prodCongr (Homeomorph.prodComm _ _)).trans <|
+          (Homeomorph.prodAssoc _ _ _).symm.trans <|
+            (Homeomorph.Set.prod _ _).symm.prodCongr (.refl _)
 
 /-- The rectangle `[1 / 2, 2] × [-1, 1]` is a closed disc. -/
 private theorem nonempty_homeomorph_rectangle_closedBall :

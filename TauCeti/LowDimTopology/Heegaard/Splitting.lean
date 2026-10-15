@@ -221,6 +221,17 @@ theorem hemisphereHeegaardSplitting_genus (p : sphere (0 : E) 1) :
     (hemisphereHeegaardSplitting p).genus = 0 :=
   (rfl)
 
+@[simp]
+theorem hemisphereHeegaardSplitting_left (p : sphere (0 : E) 1) :
+    (hemisphereHeegaardSplitting p).left = {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), (p : E)⟫} :=
+  (rfl)
+
+@[simp]
+theorem hemisphereHeegaardSplitting_right (p : sphere (0 : E) 1) :
+    (hemisphereHeegaardSplitting p).right = {x : sphere (0 : E) 1 | ⟪(x : E), (p : E)⟫ ≤ 0} := by
+  ext x
+  simp [hemisphereHeegaardSplitting, inner_neg_right]
+
 private theorem nonempty_sphere_of_finrank_eq_four : Nonempty (sphere (0 : E) 1) := by
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : Module.finrank ℝ E = 4)
   exact ((NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one).to_subtype
