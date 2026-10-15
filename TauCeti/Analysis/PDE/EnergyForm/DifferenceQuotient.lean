@@ -145,9 +145,7 @@ theorem norm_energyFormH1_comp_add_sub_le
       ‖(matrixBilinearForm (a (x + s)) - matrixBilinearForm (a x))
       (W1p.gradient z x) (W1p.gradient y x)‖
         ≤ K * ‖s‖ * (‖W1p.gradient z x‖ * ‖W1p.gradient y x‖) := fun x hx => by
-    have hxs : x + s ∈ Omega := by
-      change x ∈ (· + s) ⁻¹' Omega
-      rwa [← hOmega]
+    have hxs : x + s ∈ Omega := (Set.ext_iff.mp hOmega x).mp hx
     calc _ ≤ ‖matrixBilinearForm (a (x + s)) - matrixBilinearForm (a x)‖
             * ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖ := ContinuousLinearMap.le_opNorm₂ _ _ _
       _ ≤ K * ‖s‖ * ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖ := by
