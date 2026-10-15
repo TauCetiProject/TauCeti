@@ -34,6 +34,8 @@ reverse inequality.
 * `TauCeti.Isogeny.Hom.exists_naiveHeight_pointMap_le`: `h(f P) ≤ deg f · h(P) + C`.
 * `TauCeti.Isogeny.Hom.canonicalHeight_pointMap`:
   `canonicalHeight (f P) = deg f · canonicalHeight P`.
+* `TauCeti.Isogeny.Hom.neronTatePairing_pointMap`: polarising, `⟨f P, f Q⟩ = deg f · ⟨P, Q⟩` for
+  the Néron–Tate pairing.
 
 ## References
 
@@ -124,5 +126,14 @@ theorem canonicalHeight_pointMap (f : Hom W₁ W₂) (P : W₁.Point) :
   have hd' : (0 : ℝ) < f.degree := Nat.cast_pos.mpr hd
   refine le_antisymm h₁ (le_of_mul_le_mul_left ?_ hd')
   linarith
+
+/-- **The Néron–Tate pairing scales by the degree along a morphism**:
+`⟨f P, f Q⟩ = deg f · ⟨P, Q⟩`, the polarisation of `canonicalHeight_pointMap`. -/
+@[simp]
+theorem neronTatePairing_pointMap (f : Hom W₁ W₂) (P Q : W₁.Point) :
+    neronTatePairing W₂ (f.pointMap P) (f.pointMap Q) = f.degree * neronTatePairing W₁ P Q := by
+  rw [neronTatePairing_apply, neronTatePairing_apply, ← pointMap_add, canonicalHeight_pointMap,
+    canonicalHeight_pointMap, canonicalHeight_pointMap]
+  ring
 
 end TauCeti.Isogeny.Hom

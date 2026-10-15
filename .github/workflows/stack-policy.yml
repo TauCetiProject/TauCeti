@@ -1,0 +1,94 @@
+name: No Stacked PRs
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft]
+  workflow_run:
+    workflows: [Stack Policy Wake]
+    types: [completed]
+  schedule:
+    - cron: '10 * * * *'
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR number, or 0 for a bounded backlog sweep'
+        type: number
+        default: 0
+      dry-run:
+        description: 'Publish classifications without labels, comments or closure'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# Coalesce repeated events for one PR/fork branch before the global job queue.
+# Backlog runs have unique groups and cannot replace each other here.
+concurrency:
+  group: >-
+    ${{ github.event_name == 'pull_request_target' && format('no-stack-pr-{0}', github.event.pull_request.number)
+      || github.event_name == 'workflow_run' && format('no-stack-wake-{0}-{1}', github.event.workflow_run.head_repository.id, github.event.workflow_run.head_branch)
+      || format('no-stack-backlog-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+jobs:
+  enforce:
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.NO_STACK_APPLY == 'true')
+    # One mutation lock across all PRs and backlog sweeps; retries cannot race
+    # duplicate comments. GitHub rejects new arrivals when all 100 slots are full.
+    concurrency:
+      group: tauceti-no-stacking
+      cancel-in-progress: false
+      queue: max
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Even a dispatch selects only main-defined tooling. Candidate refs are
+          # fetched later into a disposable bare source store and never executed.
+          ref: refs/heads/main
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Test trusted policy
+        run: python3 scripts/test_stack_policy.py
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: read
+          permission-issues: read
+          permission-pull-requests: write
+      - name: Inspect current source and enforce confirmed stacks
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          STACK_ACTOR: ${{ steps.app-token.outputs.app-slug }}[bot]
+          REQUESTED_PR: ${{ inputs.pr || 0 }}
+          APPLY_ENABLED: ${{ (vars.NO_STACK_APPLY == 'true' || (vars.NO_STACK_APPLY == 'dispatch' && github.event_name == 'workflow_dispatch' && inputs.pr > 0)) && (github.event_name != 'workflow_dispatch' || !inputs.dry-run) }}
+        run: |
+          args=()
+          if [ "$APPLY_ENABLED" = true ]; then args+=(--apply); fi
+          python3 scripts/stack_policy.py --github-event "$GITHUB_EVENT_PATH" \
+            --pr "$REQUESTED_PR" --report stack-policy.jsonl "${args[@]}"
+      - name: Publish audit
+        if: always()
+        run: |
+          if [ -f stack-policy.jsonl ]; then
+            cat stack-policy.jsonl
+            {
+              echo '### No-stacking source audit'
+              echo '```jsonl'
+              cat stack-policy.jsonl
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stack-policy-${{ github.run_id }}
+          path: stack-policy.jsonl
+          retention-days: 14
