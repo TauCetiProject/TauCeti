@@ -12,9 +12,10 @@ public import Mathlib.Topology.Order
 # Maps and convergence in discrete spaces
 
 A continuous map into a discrete space is locally constant, and this file records three
-consequences. Pointwise continuous families of equivalences have continuous inverse evaluation
-when the target space is discrete (`TauCeti.continuous_equiv_symm_apply`); this supplies
-continuity of inverse permutation evaluation in `TauCeti.WreathProduct.continuous_right_inv` and
+consequences. Pointwise continuous families of equivalences into a discrete space have continuous
+inverse evaluation, whatever the topology of their source (`TauCeti.continuous_equiv_symm_apply`).
+This supplies continuity of inverse permutation evaluation in
+`TauCeti.WreathProduct.continuous_right_inv` and
 inverse coset translation in `Subgroup.continuous_inv_smul_const`. A continuous map lifts along any
 surjection onto a discrete space (`TauCeti.exists_continuous_lift`), and an injection into a
 discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); these give
@@ -31,21 +32,17 @@ public section
 
 namespace TauCeti
 
-/-- Inverse evaluation of a family of equivalences on a discrete space is continuous if every
-forward evaluation is continuous. -/
-theorem continuous_equiv_symm_apply {α β : Type*} [TopologicalSpace α]
-    [TopologicalSpace β] [DiscreteTopology β] {f : α → β ≃ β}
-    (hf : ∀ b, Continuous fun a => f a b) (b : β) :
+/-- Inverse evaluation of a family of equivalences into a discrete space is continuous if every
+forward evaluation is continuous, whatever the topology on the source of the equivalences. -/
+theorem continuous_equiv_symm_apply {α β γ : Type*} [TopologicalSpace α] [TopologicalSpace β]
+    [TopologicalSpace γ] [DiscreteTopology γ] {f : α → β ≃ γ}
+    (hf : ∀ c, Continuous fun a => f a c) (b : γ) :
     Continuous fun a => (f a).symm b := by
-  rw [continuous_discrete_rng]
+  apply IsLocallyConstant.continuous
+  rw [IsLocallyConstant.iff_isOpen_fiber]
   intro c
-  have h : (fun a : α => (f a).symm b) ⁻¹' {c} =
-      (fun a : α => f a c) ⁻¹' {b} := by
-    ext a
-    simp only [Set.mem_preimage, Set.mem_singleton_iff]
-    exact (Equiv.symm_apply_eq (e := f a) (x := b) (y := c)).trans eq_comm
-  rw [h]
-  exact (isOpen_discrete _).preimage (hf c)
+  simpa only [Set.preimage, Set.mem_singleton_iff, Equiv.symm_apply_eq, eq_comm (a := b)] using
+    (isOpen_discrete ({b} : Set γ)).preimage (hf c)
 
 /-- **A continuous map lifts along any surjection onto a discrete space.** A continuous map into
 the discrete `C` is locally constant, so composing it with any set-theoretic section of `p` is
