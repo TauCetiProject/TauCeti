@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
 
 import roadmap_completion as completion
 import roadmap_progress as progress
@@ -139,6 +140,38 @@ class Forecasts(unittest.TestCase):
         self.assertEqual(events[0]["library_lines"], 100)
 
 
+class Presentation(unittest.TestCase):
+    def test_durations_round_month_sized_estimates_and_use_singular_units(self):
+        self.assertEqual(completion.duration(dict(state="finite", days=31.75)), "About 1 month")
+        self.assertEqual(completion.duration(dict(state="finite", days=52.61)), "About 2 months")
+        self.assertEqual(completion.duration(dict(state="finite", days=7)), "About 1 week")
+
+    def test_only_layers_are_needed_to_render_the_two_scenarios(self):
+        data = dict(last_full_day="2026-10-07", estimates=dict(layers=dict(
+            backlog=286, stop_authoring=dict(state="finite", days=31.75),
+            continue_authoring=dict(state="finite", days=52.61))))
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "forecast.html"
+            completion.render_forecasts(data, path)
+            content = path.read_text()
+        HTMLParser().feed(content)
+        self.assertIn("286", content)
+        self.assertIn("About 1 month", content)
+        self.assertIn("About 2 months", content)
+        self.assertIn("If no new roadmap work is added", content)
+        self.assertIn("If new work continues at last week&#x27;s pace", content)
+        self.assertNotIn("Roadmap size", content)
+        self.assertNotIn("Lean lines", content)
+
+    def test_unavailable_and_nonshrinking_backlogs_do_not_display_finite_dates(self):
+        self.assertEqual(completion.duration(dict(state="insufficient-history", days=None)),
+                         "Not enough data to estimate")
+        self.assertEqual(completion.duration(dict(state="not-catching-up", days=None)),
+                         "Backlog would not shrink")
+        self.assertEqual(completion.duration(dict(state="exhausted", days=0)),
+                         "No recorded backlog")
+
+
 class GitHistory(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -218,7 +251,8 @@ class GitHistory(unittest.TestCase):
         saved = json.loads((out / "roadmap-completion.json").read_text())
         self.assertEqual(saved, payload)
         self.assertEqual(saved["history"][-1]["completed_layers"], 1)
-        self.assertEqual(len(list(out.glob("*.svg"))), 3)
+        self.assertEqual(len(list(out.glob("*.svg"))), 2)
+        HTMLParser().feed((out / "roadmap-exhaustion.html").read_text())
         self.assertEqual({path.name for path in out.iterdir()}, set(completion.ASSET_NAMES))
 
     def test_cached_loc_data_fixes_the_cutoff_across_midnight(self):

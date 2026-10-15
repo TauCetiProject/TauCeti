@@ -27,9 +27,9 @@ import tempfile
 
 import loc_graph
 import roadmap_progress as progress
-from chart_style import MUTED, PALETTE, base_css, card_rect, css_px
+from chart_style import MUTED, PALETTE, base_css, card_rect
 
-ASSET_NAMES = ("loc-roadmap.svg", "roadmap-layers.svg", "roadmap-exhaustion.svg",
+ASSET_NAMES = ("loc-roadmap.svg", "roadmap-layers.svg", "roadmap-exhaustion.html",
                "roadmap-completion.json")
 
 
@@ -298,45 +298,78 @@ def render_history(rows, total_key, done_key, unknown_key, title, unit, out):
 
 def duration(estimate):
     if estimate["state"] == "not-catching-up":
-        return "No exhaustion at this pace"
+        return "Backlog would not shrink"
     if estimate["state"] == "insufficient-history":
-        return "Not enough growth / history"
+        return "Not enough data to estimate"
     days = estimate["days"]
     if days == 0:
         return "No recorded backlog"
     if days < 1:
         return "Less than a day"
-    if days < 60:
-        return f"About {days:.0f} days"
-    if days < 730:
-        return f"About {days / 30.44:.0f} months"
-    return f"About {days / 365.25:.1f} years"
+    if days < 7:
+        count, unit = max(1, round(days)), "day"
+    elif days < 30:
+        count, unit = max(1, round(days / 7)), "week"
+    elif days < 365.25:
+        count, unit = max(1, round(days / 30.44)), "month"
+    else:
+        count, unit = max(1, round(days / 365.25)), "year"
+    return f"About {count} {unit}{'' if count == 1 else 's'}"
 
 
 def render_forecasts(data, out):
-    width, height = 980, 350
-    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" role="img" '
-           'aria-label="Rough time to roadmap exhaustion, with and without continued authoring">',
-           f'<style>{base_css(width)}.estimate{{font-size:{css_px(width,18)};font-weight:600}}'
-           f'.forecast{{fill:{PALETTE[0]}}}</style>',
-           card_rect(width, height),
-           '<text class="title" x="35" y="35">Rough time to exhaustion</text>',
-           f'<text class="subtitle" x="35" y="60">Recent pace: {data["library_growth_lines_per_day"]:,.0f} added Lean lines/day · seven days through {data["last_full_day"]}</text>',
-           '<text class="subtitle" x="325" y="100">Stop roadmap authoring</text>',
-           '<text class="subtitle" x="625" y="100">Continue seven-day authoring pace</text>']
-    for i, (basis, label, unit) in enumerate((("spec_lines", "Roadmap size", "specification lines"),
-                                             ("layers", "Layers / lanes", "layers"))):
-        estimate = data["estimates"][basis]
-        top = 142 + 90 * i
-        svg += [f'<text class="estimate" x="35" y="{top}">{label}</text>',
-                f'<text class="subtitle" x="35" y="{top+24}">{estimate["backlog"]:,} {unit} remaining</text>']
-        for scenario_name, pos in (("stop_authoring", 325), ("continue_authoring", 625)):
-            svg.append(f'<text class="estimate forecast" x="{pos}" y="{top}">{duration(estimate[scenario_name])}</text>')
-        capacity = estimate["completion_units_per_day"]
-        rate = f"{capacity:,.1f}" if capacity is not None else "unknown"
-        svg.append(f'<text class="subtitle" x="325" y="{top+24}">Inferred completion: {rate}/day · authoring: {estimate["authoring_units_per_day"]:,.1f}/day</text>')
-    svg.append('<text class="subtitle" x="35" y="315">Completions per added Lean line over recorded history × recent Lean growth. Unequal goals; approximate dates.</text></svg>\n')
-    pathlib.Path(out).write_text("".join(svg))
+    # Native text reflows at phone widths instead of shrinking the entire SVG table.
+    estimate = data["estimates"]["layers"]
+    scenarios = (("stop_authoring", "If no new roadmap work is added"),
+                 ("continue_authoring", "If new work continues at last week's pace"))
+    rows = "\n".join(
+        f'<tr><th scope="row">{html.escape(label)}</th>'
+        f'<td class="{"unavailable" if estimate[name]["days"] is None else "estimate"}">'
+        f'{html.escape(duration(estimate[name]))}</td></tr>'
+        for name, label in scenarios)
+    document = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>How long until we run out of roadmap work?</title>
+<style>
+* {{ box-sizing: border-box; }}
+body {{ margin: 0; color: #eef2fb; font: 17px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif; }}
+section {{ min-height: 100vh; background: #101936; border: 1px solid #1b2547; border-radius: 12px; padding: 24px; }}
+h1 {{ font-size: 26px; line-height: 1.25; margin: 0 0 12px; }}
+p {{ margin: 8px 0; }}
+.date, .note {{ color: #9aa6c9; font-size: 15px; }}
+table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+th, td {{ border-top: 1px solid #27335a; padding: 18px 0; text-align: left; }}
+th {{ font-weight: 400; width: 65%; padding-right: 24px; }}
+td {{ color: #5eead4; font-size: 24px; font-weight: 600; }}
+.unavailable {{ color: #9aa6c9; font-size: 17px; font-weight: 400; }}
+@media (max-width: 600px) {{
+  section {{ padding: 20px; }}
+  h1 {{ font-size: 24px; }}
+  table, tbody, tr, th, td {{ display: block; width: 100%; }}
+  tr {{ border-top: 1px solid #27335a; padding: 16px 0; }}
+  th, td {{ border: 0; padding: 0; }}
+  td {{ margin-top: 6px; }}
+}}
+</style>
+</head>
+<body>
+<section aria-labelledby="question">
+<h1 id="question">How long until we run out of roadmap work?</h1>
+<p><strong>{estimate['backlog']:,}</strong> {'layer is' if estimate['backlog'] == 1 else 'layers are'} not yet recorded complete.</p>
+<p class="date">Recent pace: seven complete days through {html.escape(data['last_full_day'])}.</p>
+<table aria-label="Two scenarios for the remaining roadmap layers">
+<tbody>{rows}</tbody>
+</table>
+<p class="note">Assumes code production continues at its recent pace. Layers vary in difficulty,
+so these are rough extrapolations.</p>
+</section>
+</body>
+</html>
+'''
+    pathlib.Path(out).write_text(document)
 
 
 def generate(roadmap_repo, roadmap_ref, code_repo, code_ref, out_dir, today=None, code_data=None):
@@ -377,7 +410,7 @@ def generate(roadmap_repo, roadmap_ref, code_repo, code_ref, out_dir, today=None
                        "Tau Ceti Roadmap — specification size", "specification lines", staging / "loc-roadmap.svg")
         render_history(rows, "layers", "completed_layers", "unassessed_layers",
                        "Roadmap layers / lanes — completion", "layers / lanes", staging / "roadmap-layers.svg")
-        render_forecasts(forecast, staging / "roadmap-exhaustion.svg")
+        render_forecasts(forecast, staging / "roadmap-exhaustion.html")
         (staging / "roadmap-completion.json").write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
         for name in ASSET_NAMES:
             (staging / name).replace(out_dir / name)
