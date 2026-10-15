@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.SeparablyGenerated
+import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Separating elements in transcendence degree one
@@ -18,6 +20,9 @@ simple field `k(x)`.
 This is the one-variable form of Mathlib's
 `exists_isTranscendenceBasis_and_isSeparable_of_perfectField`.  It is useful for passing from
 abstract separable generation to constructions that require a single separating parameter.
+
+An element outside the image of the base field with an exponential-characteristic power in
+that image rules out every separating element, even over an imperfect base field.
 
 ## Reference
 
@@ -57,5 +62,31 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_perfectField
   refine ⟨x, hs.1.transcendental ⟨x, by simp⟩, ?_⟩
   rw [Finset.coe_singleton] at hsep
   exact hsep
+
+/-- **A purely inseparable element outside `k` rules out separating elements**: if `α ∈ F` is not
+in `k` but some power `α ^ q ^ n`, `q` the exponential characteristic of `k`, is, then `F` is
+separable over `k(x)` for no `x` transcendental over `k`. -/
+theorem not_isSeparable_adjoin_of_pow_mem (q : ℕ) [ExpChar k q] {α : F}
+    (hα : α ∉ (algebraMap k F).range) {n : ℕ} (hn : α ^ q ^ n ∈ (algebraMap k F).range)
+    {x : F} (hx : Transcendental k x) : ¬ Algebra.IsSeparable k⟮x⟯ F := by
+  -- `α` would be separable and purely inseparable over `k(x)`, hence in `k(x)`; being algebraic
+  -- over `k`, it would then be in `k`.
+  intro hsep
+  have := expChar_of_injective_algebraMap (algebraMap k k⟮x⟯).injective q
+  obtain ⟨c, hc⟩ := hn
+  have hmem : α ∈ perfectClosure k⟮x⟯ F := by
+    rw [mem_perfectClosure_iff_pow_mem q]
+    exact ⟨n, algebraMap k k⟮x⟯ c, by rw [← IsScalarTower.algebraMap_apply, hc]⟩
+  rw [perfectClosure.eq_bot_of_isSeparable, IntermediateField.mem_bot] at hmem
+  obtain ⟨β, rfl⟩ := hmem
+  have hβ : IsAlgebraic k β := by
+    refine (isAlgebraic_algebraMap_iff (algebraMap k⟮x⟯ F).injective).mp
+      (IsAlgebraic.of_pow (n := q ^ n) (pow_pos (expChar_pos k q) n) ?_)
+    rw [← hc]
+    exact isAlgebraic_algebraMap c
+  have := hx.isIntegrallyClosedIn_adjoin
+  obtain ⟨d, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp hβ.isIntegral
+  exact hα ⟨d, (IsScalarTower.algebraMap_apply k k⟮x⟯ F d).symm⟩
+
 
 end TauCeti

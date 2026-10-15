@@ -140,7 +140,10 @@ lemma isClopen_of_isCompact_of_isOpen_generateFrom {V : Set X} (hV : IsCompact V
 lemma quasiSeparatedSpace_of_isClopen_generateFrom : QuasiSeparatedSpace X := by
   refine QuasiSeparatedSpace.of_isTopologicalBasis
     (b := fun f : {f : Set (Set X) // f.Finite ∧ f ⊆ U} ↦ ⋂₀ f.1)
-    (Set.image_eq_range _ _ ▸ isTopologicalBasis_sInter_of_patch htU) fun i j ↦ ?_
+    (by
+      have h := isTopologicalBasis_sInter_of_patch htU
+      rw [Set.image_eq_range] at h
+      exact h) fun i j ↦ ?_
   rw [← Set.sInter_union]
   exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU (i.2.1.union j.2.1)
     (Set.union_subset i.2.2 j.2.2)

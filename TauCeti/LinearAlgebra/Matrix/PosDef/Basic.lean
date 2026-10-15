@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.Localization.Integer
-import Mathlib.Data.Rat.Star
+import Mathlib.Algebra.Order.Star.Rat
 
 /-!
 # Positive definiteness over the rationals

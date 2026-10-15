@@ -188,7 +188,7 @@ def characterConductorExp (χ : Kˣ →ₜ* ℂˣ) : ℕ :=
 `U(K, characterConductorExp K χ)`. -/
 theorem unitFiltration_characterConductorExp_le_ker (χ : Kˣ →ₜ* ℂˣ) :
     unitFiltration K (characterConductorExp K χ) ≤ χ.ker :=
-  Nat.sInf_mem (exists_unitFiltration_le_ker K χ)
+  Nat.sInf_mem (s := {n : ℕ | unitFiltration K n ≤ χ.ker}) (exists_unitFiltration_le_ker K χ)
 
 /-- **The characterizing property of the character conductor exponent**: it is at most `n`
 exactly when `χ` is trivial on `U(K,n)`. -/

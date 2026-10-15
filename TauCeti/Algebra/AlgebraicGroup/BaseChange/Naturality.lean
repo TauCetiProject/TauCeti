@@ -65,12 +65,12 @@ Post-composing an `R`-valued point by a `K`-algebra homomorphism `φ : R →ₐ[
 base-changing agrees with first base-changing the point and then post-composing by `φ`. -/
 lemma mapValue_baseChangePointsMulEquiv (φ : R →ₐ[K] S)
     (f : WithConv (A →ₐ[k] R)) :
-    mapValue (H := K ⊗[k] A) φ
+    AlgHom.mapValue (H := K ⊗[k] A) φ
         (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f) =
       baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := S)
-        (mapValue (H := A) (φ.restrictScalars k) f) := by
+        (AlgHom.mapValue (H := A) (φ.restrictScalars k) f) := by
   ext a
-  simp [mapValue_apply]
+  simp [AlgHom.mapValue_apply]
 
 /-- The inverse direction of base change is natural in the value algebra.
 
@@ -79,11 +79,11 @@ post-composing the restricted point. -/
 lemma baseChangePointsMulEquiv_symm_mapValue (φ : R →ₐ[K] S)
     (f : WithConv (K ⊗[k] A →ₐ[K] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := S)).symm
-        (mapValue (H := K ⊗[k] A) φ f) =
-      mapValue (H := A) (φ.restrictScalars k)
+        (AlgHom.mapValue (H := K ⊗[k] A) φ f) =
+      AlgHom.mapValue (H := A) (φ.restrictScalars k)
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f) := by
   ext a
-  simp only [baseChangePointsMulEquiv_symm_apply, mapValue_apply, AlgHom.coe_comp,
+  simp only [baseChangePointsMulEquiv_symm_apply, AlgHom.mapValue_apply, AlgHom.coe_comp,
     Function.comp_apply]
   rfl
 

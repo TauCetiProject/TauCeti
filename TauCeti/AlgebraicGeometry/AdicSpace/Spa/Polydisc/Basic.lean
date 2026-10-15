@@ -112,7 +112,7 @@ variable (k : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A] [Nonarchimedean
 /-- **The closed polydisc of dimension `k` over `A`**: the adic spectrum of the restricted power
 series ring `A⟨T₁, …, Tₖ⟩` with its power-bounded subring as plus ring. Over a complete
 nonarchimedean field this is the closed unit polydisc (Wedhorn, Example 7.57 at `k = 1`). -/
-def closedPolydisc :
+noncomputable def closedPolydisc :
     Set (Spv (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight)) :=
   spa (powerBoundedSubring _)
@@ -548,6 +548,15 @@ theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc 
     v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
         v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
+
+/-- The canonical valuation at a point of the closed polydisc strictly compares constants by
+their norms. -/
+-- Not `@[simp]`: `valuation_lt_iff` rewrites the left-hand side.
+@[grind =]
+theorem closedPolydisc_valuation_weightedC_lt_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) <
+        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ < ‖y‖ := by
+  simp only [lt_iff_le_not_ge, closedPolydisc_valuation_weightedC_le_iff]
 
 /-- A point of the closed polydisc gives constants of equal norm equal values. -/
 theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPolydisc k K)

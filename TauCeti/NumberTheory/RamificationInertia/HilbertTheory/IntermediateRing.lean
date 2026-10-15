@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.NumberTheory.RamificationInertia.ResidueSeparable
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 public import TauCeti.RingTheory.Ideal.Pointwise
+import Mathlib.FieldTheory.PurelyInseparable.Tower
+import Mathlib.RingTheory.Finiteness.Quotient
 
 /-!
 # Ramification indices below an intermediate invariant ring
@@ -24,12 +26,14 @@ The division-free tower formula needs only that `H` is the Galois group of `B/C`
 that its residue extension is separable; the base ring need not be a domain. The index
 formula additionally uses the invariant extension `B/A`. Residue separability is essential:
 without it the inertia order is the ramification index times the inseparable residue degree.
+The general index formula below includes this inseparable residue degree and requires no
+residue separability.
 The translated formulas apply the same description throughout the group orbit of a selected
 prime, while requiring separability only at that prime.
 
 ## References
 
-* J. Neukirch, *Algebraic Number Theory*, Chapter I, §9.
+* J. Neukirch, *Algebraic Number Theory*, Chapter I, §9, including Exercise 4.
 * G. J. Janusz, *Algebraic Number Fields*, Chapter I.
 * These results generalize Tau Ceti's `NumberField.ramificationIdx_under_eq_one_iff_inertia_le`
   in `TauCeti/NumberTheory/NumberField/Inertia.lean` to intermediate invariant rings.
@@ -131,3 +135,60 @@ theorem ramificationIdx_under_smul_eq_one_iff_inertia_le (Q : Ideal B) [Q.IsMaxi
   rw [Q.ramificationIdx_under_smul_eq_relIndex_inertia H C σ, Subgroup.relIndex_eq_one]
 
 end Ideal
+
+open Ideal
+
+namespace TauCeti.RamificationInertia
+
+attribute [local instance] Ideal.Quotient.field
+
+variable (A C : Type*) {B G : Type*}
+  [CommRing A] [IsDomain A] [CommRing B] [IsDomain B] [CommRing C] [IsDomain C]
+  [Algebra A B] [Algebra A C] [Algebra C B] [IsScalarTower A C B]
+  [Group G] [MulSemiringAction G B] [IsGaloisGroup G A B]
+  [Module.Finite A B] [Module.Flat A B] [Module.Flat C B]
+  (H : Subgroup G) [IsGaloisGroup H C B]
+
+/-- The inertia index below an intermediate invariant ring is the ramification index times
+the inseparable residue degree. This holds even when the upper residue extension is inseparable. -/
+theorem ramificationIdx_under_mul_finInsepDegree_eq_relIndex_inertia
+    (p : Ideal A) [p.IsMaximal] {P : Ideal B} [P.IsMaximal] [P.LiesOver p] :
+    let := Module.Finite.right A C B
+    (P.under C).ramificationIdx A *
+        Field.finInsepDegree (A ⧸ p) (C ⧸ P.under C) =
+      H.relIndex (P.inertia G) := by
+  have : Finite G := IsGaloisGroup.finite G A B
+  let := Module.Finite.right A C B
+  have : (P.under C).LiesOver p := LiesOver.tower_bot P (P.under C) p
+  let _ : IsScalarTower (A ⧸ p) (C ⧸ P.under C) (B ⧸ P) :=
+    IsScalarTower.of_algebraMap_eq' (by
+      ext x
+      simp only [RingHom.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver]
+      rw [IsScalarTower.algebraMap_apply A C B])
+  have : Algebra.IsAlgebraic (A ⧸ p) (C ⧸ P.under C) :=
+    .tower_bot _ _ (B ⧸ P)
+  have hcard : Nat.card (P.inertia G ⊓ H : Subgroup G) =
+      P.ramificationIdx C * Field.finInsepDegree (C ⧸ P.under C) (B ⧸ P) := by
+    rw [← AddSubgroup.inertia_map_subtype,
+      ← Nat.card_congr (Subgroup.equivMapOfInjective (P.inertia H) H.subtype
+        H.subtype_injective).toEquiv]
+    exact card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := C) (G := H) P
+  have hidx := H.relIndex_mul_card (P.inertia G)
+  rw [inf_comm, hcard,
+    card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (G := G) p P,
+    ramificationIdxIn_eq_ramificationIdx p P G] at hidx
+  have htower :
+      ((P.under C).ramificationIdx A *
+          Field.finInsepDegree (A ⧸ p) (C ⧸ P.under C)) *
+        (P.ramificationIdx C * Field.finInsepDegree (C ⧸ P.under C) (B ⧸ P)) =
+      P.ramificationIdx A * Field.finInsepDegree (A ⧸ p) (B ⧸ P) := by
+    rw [ramificationIdx_tower (R := A) (P.under C) P,
+      ← Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic
+        (A ⧸ p) (C ⧸ P.under C) (B ⧸ P)]
+    ring
+  exact Nat.eq_of_mul_eq_mul_right
+    (Nat.mul_pos (ramificationIdx_pos C P)
+      (NeZero.pos (Field.finInsepDegree (C ⧸ P.under C) (B ⧸ P))))
+    (htower.trans hidx.symm)
+
+end TauCeti.RamificationInertia

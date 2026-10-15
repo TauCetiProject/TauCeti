@@ -36,7 +36,7 @@ namespace TauCeti
 variable (n : ℕ) [NeZero n] (M : Type*) [AddCommGroup M]
 
 /-- A torsion-free abelian group, such as `ℤ`, has no nonzero `n`-torsion for `n ≠ 0`. -/
-instance subsingleton_torsionBy_int [IsAddTorsionFree M] :
+instance subsingleton_torsionBy_int [HasUniqueDiv M] :
     Subsingleton (Submodule.torsionBy ℤ M (n : ℤ)) := by
   refine ⟨fun x y ↦ Subtype.ext ?_⟩
   have hx := (Submodule.mem_torsionBy_iff _ _).mp x.property
