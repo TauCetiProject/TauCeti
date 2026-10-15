@@ -27,9 +27,10 @@ vanishes. The corresponding
 divided square is made explicit below. These integral divided powers are the data needed to
 exponentiate the root operators over `ℤ` in the type-`B` Chevalley construction.
 
-The root matrices and divided squares are defined over an additive group with one. Their product
-identities hold over a nonassociative ring, and their commutator identities over any ring. The
-bundled Lie-algebra constructions and the actions on a basis are developed over a commutative ring.
+The root matrices, coroot matrices, and divided squares are defined over an additive group with one.
+Their product identities hold over a nonassociative ring, and their commutator identities over any
+ring. The bundled Lie-algebra constructions and the actions on a basis are developed over a
+commutative ring.
 
 ## Main definitions
 
@@ -84,6 +85,18 @@ theorem typeBDifferenceRootMatrix_def (i j : ι) (hij : i ≠ j) :
         single (.inr (.inr j)) (.inr (.inr i)) 1 :=
   (rfl)
 
+/-- The diagonal coroot matrix paired with the long root `εᵢ - εⱼ`; the inequality witness
+excludes the degenerate zero-weight case. -/
+def typeBDifferenceCorootMatrix (i j : ι) (_hij : i ≠ j) :
+    Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
+  typeBDiagonalMatrix (Pi.single i 1 - Pi.single j 1)
+
+/-- The difference coroot matrix as a type-`B` diagonal matrix. -/
+theorem typeBDifferenceCorootMatrix_def (i j : ι) (hij : i ≠ j) :
+    typeBDifferenceCorootMatrix (K := K) i j hij =
+      typeBDiagonalMatrix (Pi.single i 1 - Pi.single j 1) :=
+  (rfl)
+
 /-! ### Short-root matrices and divided squares -/
 
 /-- The ambient root matrix for the short type-`B` root `εᵢ`, with the integral Chevalley
@@ -106,6 +119,15 @@ def typeBShortNegativeRootMatrix (i : ι) :
 theorem typeBShortNegativeRootMatrix_def (i : ι) :
     typeBShortNegativeRootMatrix (K := K) i =
       single (.inl ()) (.inr (.inl i)) 1 - single (.inr (.inr i)) (.inl ()) 2 :=
+  (rfl)
+
+/-- The diagonal coroot `2εᵢ` of the short root `εᵢ`, in the standard type-`B` coordinates. -/
+def typeBShortCorootMatrix (i : ι) : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
+  typeBDiagonalMatrix (2 • Pi.single i 1)
+
+/-- The short coroot matrix as a type-`B` diagonal matrix. -/
+theorem typeBShortCorootMatrix_def (i : ι) :
+    typeBShortCorootMatrix (K := K) i = typeBDiagonalMatrix (2 • Pi.single i 1) :=
   (rfl)
 
 /-- The integral divided square `e_{εᵢ}^{(2)}` of a positive short-root vector. -/
@@ -168,6 +190,24 @@ theorem typeBSimpleNegativeRootMatrix_castSucc (j : Fin n) :
     typeBSimpleNegativeRootMatrix (K := K) j.castSucc =
       typeBDifferenceRootMatrix j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ) := by
   simp [typeBSimpleNegativeRootMatrix]
+
+/-- The simple coroot matrices of `Bₙ₊₁` in Bourbaki order. -/
+def typeBSimpleCorootMatrix (i : Fin (n + 1)) :
+    Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K :=
+  Fin.lastCases (typeBShortCorootMatrix (Fin.last n))
+    (fun j => typeBDifferenceCorootMatrix j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)) i
+
+@[simp]
+theorem typeBSimpleCorootMatrix_last :
+    typeBSimpleCorootMatrix (K := K) (Fin.last n) =
+      typeBShortCorootMatrix (Fin.last n) := by
+  simp [typeBSimpleCorootMatrix]
+
+@[simp]
+theorem typeBSimpleCorootMatrix_castSucc (j : Fin n) :
+    typeBSimpleCorootMatrix (K := K) j.castSucc =
+      typeBDifferenceCorootMatrix j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ) := by
+  simp [typeBSimpleCorootMatrix]
 
 /-- The divided square of a Bourbaki simple-root matrix. It vanishes at long nodes and is the
 integral short-root divided square at the terminal node. -/
@@ -379,12 +419,6 @@ theorem coe_typeBDifferenceRootGenerator (i j : ι) (hij : i ≠ j) :
       Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDifferenceRootMatrix i j hij :=
   (rfl)
 
-/-- The diagonal coroot matrix paired with the long root `εᵢ - εⱼ`; the inequality witness
-excludes the degenerate zero-weight case. -/
-def typeBDifferenceCorootMatrix (i j : ι) (_hij : i ≠ j) :
-    Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
-  typeBDiagonalMatrix (Pi.single i 1 - Pi.single j 1)
-
 /-- The coroot `h_{εᵢ-εⱼ}` of the long root `εᵢ - εⱼ` in the split type-`B` Lie algebra. -/
 def typeBDifferenceCorootGenerator (i j : ι) (hij : i ≠ j) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBDifferenceCorootMatrix i j hij, typeBDiagonalMatrix_mem_typeB _⟩
@@ -403,8 +437,8 @@ theorem typeBDifferenceCorootGenerator_eq_diagonal (i j : ι) (hij : i ≠ j) :
       ((typeBDiagonalEquiv (K := K) (ι := ι) (Pi.single i 1 - Pi.single j 1) :
         typeBDiagonalCartan K ι) : LieAlgebra.Orthogonal.typeB ι K) := by
   apply Subtype.ext
-  rw [coe_typeBDiagonalEquiv_apply]
-  rfl
+  simp only [coe_typeBDifferenceCorootGenerator, typeBDifferenceCorootMatrix_def,
+    coe_typeBDiagonalEquiv_apply]
 
 /-- Opposite difference-root vectors bracket to their diagonal coroot. -/
 @[simp]
@@ -417,7 +451,7 @@ theorem typeBDifferenceRootGenerator_lie_swap (i j : ι) (hij : i ≠ j) :
     coe_typeBDifferenceRootGenerator, coe_typeBDifferenceCorootGenerator,
     LieRing.of_associative_ring_bracket]
   ext (a | (a | a)) (b | (b | b)) <;>
-    simp [typeBDifferenceRootMatrix, typeBDifferenceCorootMatrix, typeBDiagonalMatrix_apply,
+    simp [typeBDifferenceRootMatrix, typeBDifferenceCorootMatrix_def, typeBDiagonalMatrix_apply,
       mul_sub, sub_mul, Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne,
       Matrix.single_apply, Pi.single_apply]
   all_goals aesop
@@ -548,10 +582,6 @@ theorem typeBDiagonalMatrix_lie_shortNegativeRootGenerator (d : ι → K) (i : �
     lie_single_of_mem_diagonalCartan hd, smul_sub]
   simp
 
-/-- The diagonal coroot `2εᵢ` of the short root `εᵢ`, in the standard type-`B` coordinates. -/
-def typeBShortCorootMatrix (i : ι) : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
-  typeBDiagonalMatrix (2 • Pi.single i 1)
-
 /-- The coroot `h_{εᵢ}` of the short root `εᵢ` in the split type-`B` Lie algebra. -/
 def typeBShortCorootGenerator (i : ι) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBShortCorootMatrix i, typeBDiagonalMatrix_mem_typeB _⟩
@@ -569,8 +599,8 @@ theorem typeBShortCorootGenerator_eq_diagonal (i : ι) :
       ((typeBDiagonalEquiv (K := K) (ι := ι) (2 • Pi.single i 1) :
         typeBDiagonalCartan K ι) : LieAlgebra.Orthogonal.typeB ι K) := by
   apply Subtype.ext
-  rw [coe_typeBDiagonalEquiv_apply]
-  rfl
+  simp only [coe_typeBShortCorootGenerator, typeBShortCorootMatrix_def,
+    coe_typeBDiagonalEquiv_apply]
 
 /-- The positive and negative short-root vectors bracket to the coroot of `εᵢ`. -/
 @[simp]
@@ -582,30 +612,12 @@ theorem typeBShortRootGenerator_lie_negative (i : ι) :
     coe_typeBShortNegativeRootGenerator, coe_typeBShortCorootGenerator,
     LieRing.of_associative_ring_bracket]
   ext (a | (a | a)) (b | (b | b)) <;>
-    simp [typeBShortRootMatrix, typeBShortNegativeRootMatrix, typeBShortCorootMatrix,
+    simp [typeBShortRootMatrix, typeBShortNegativeRootMatrix, typeBShortCorootMatrix_def,
       typeBDiagonalMatrix_apply, mul_sub, sub_mul, Matrix.single_mul_single_same,
       Matrix.single_mul_single_of_ne, Matrix.single_apply, Pi.single_apply]
   all_goals aesop
 
 /-! ### The Bourbaki simple system -/
-
-/-- The simple coroot matrices of `Bₙ₊₁` in Bourbaki order. -/
-def typeBSimpleCorootMatrix (i : Fin (n + 1)) :
-    Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K :=
-  Fin.lastCases (typeBShortCorootMatrix (Fin.last n))
-    (fun j => typeBDifferenceCorootMatrix j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)) i
-
-@[simp]
-theorem typeBSimpleCorootMatrix_last :
-    typeBSimpleCorootMatrix (K := K) (Fin.last n) =
-      typeBShortCorootMatrix (Fin.last n) := by
-  simp [typeBSimpleCorootMatrix]
-
-@[simp]
-theorem typeBSimpleCorootMatrix_castSucc (j : Fin n) :
-    typeBSimpleCorootMatrix (K := K) j.castSucc =
-      typeBDifferenceCorootMatrix j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ) := by
-  simp [typeBSimpleCorootMatrix]
 
 /-- Every Bourbaki simple-root matrix belongs to the split type-`B` Lie algebra. -/
 theorem typeBSimpleRootMatrix_mem_typeB (i : Fin (n + 1)) :
@@ -632,9 +644,9 @@ theorem typeBSimpleNegativeRootMatrix_mem_typeB (i : Fin (n + 1)) :
 theorem typeBSimpleCorootMatrix_mem_typeB (i : Fin (n + 1)) :
     typeBSimpleCorootMatrix (K := K) i ∈ LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K := by
   refine Fin.lastCases ?_ (fun j => ?_) i
-  · rw [typeBSimpleCorootMatrix_last, typeBShortCorootMatrix]
+  · rw [typeBSimpleCorootMatrix_last, typeBShortCorootMatrix_def]
     exact typeBDiagonalMatrix_mem_typeB _
-  · rw [typeBSimpleCorootMatrix_castSucc, typeBDifferenceCorootMatrix]
+  · rw [typeBSimpleCorootMatrix_castSucc, typeBDifferenceCorootMatrix_def]
     exact typeBDiagonalMatrix_mem_typeB _
 
 /-- The positive simple-root vector `eᵢ` for the Bourbaki pinning of `Bₙ₊₁`. -/
