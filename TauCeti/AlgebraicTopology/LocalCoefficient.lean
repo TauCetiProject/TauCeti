@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
 
 /-!
 # Local coefficient systems on topological spaces
@@ -18,9 +20,10 @@ groupoid laws give all compatibility with concatenation and reversal of paths.
 
 This file provides the categorical operations needed before constructing singular chains with
 local coefficients: constant systems, pullback along continuous maps, evaluation at a point,
-path transport, and the monodromy representation of the fundamental group.  It also proves that
-these constructions interact in the expected way.  In particular, a morphism of local systems
-induces an intertwining map on monodromy representations, and transport along a path identifies
+path transport, compatibility of pullback with tensor products, and the monodromy representation
+of the fundamental group. It also proves that these constructions interact in the expected way.
+In particular, a morphism of local systems induces an intertwining map on monodromy representations,
+and transport along a path identifies
 the monodromy at its endpoints.  Homotopic maps have canonically isomorphic pullback functors,
 with components given by transport along the pointwise paths of the homotopy.
 
@@ -184,6 +187,39 @@ theorem pullbackConstantIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f :
     (M : ModuleCat.{w} R) (x : FundamentalGroupoid X) :
     (pullbackConstantIso (R := R) f M).inv.app x = 𝟙 M :=
   (rfl)
+
+section Tensor
+
+open MonoidalCategory
+
+variable {S : Type w} [CommRing S]
+
+/-- Pullback commutes with the pointwise tensor product of local coefficient systems.
+This is the inverse tensorator of Mathlib's monoidal precomposition functor; on each fibre
+both directions are the identity. The ring and module fibres share a universe, as required
+by the monoidal structure on `ModuleCat`. -/
+def pullbackTensorIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L K : LocalCoefficientSystem.{w, v₂, w} S Y) :
+    (pullback f).obj (L ⊗ K) ≅ (pullback f).obj L ⊗ (pullback f).obj K :=
+  (Functor.Monoidal.μIso
+    ((Functor.whiskeringLeft _ _ (ModuleCat.{w} S)).obj (FundamentalGroupoid.map f))
+      L K).symm
+
+/-- The pullback tensor comparison is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackTensorIso_hom_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L K : LocalCoefficientSystem.{w, v₂, w} S Y) (x : FundamentalGroupoid X) :
+    (pullbackTensorIso f L K).hom.app x = 𝟙 _ := by
+  rfl
+
+/-- The inverse pullback tensor comparison is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L K : LocalCoefficientSystem.{w, v₂, w} S Y) (x : FundamentalGroupoid X) :
+    (pullbackTensorIso f L K).inv.app x = 𝟙 _ := by
+  rfl
+
+end Tensor
 
 section Homotopy
 
