@@ -97,9 +97,10 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_continuousOn_closedBall
     exact h
   have hH : BijOn (g ∘ c) upperHalfPlaneSet Ω := (hgΩ).comp hcH
   have hK : insert p ((g ∘ c) '' {z : ℂ | 0 ≤ z.im}) = closure Ω := by
-    rw [← hζp, insert_image_comp_of_bijOn_sdiff_singleton hcK (sphere_subset_closedBall hζ), hgcl]
+    rw [← hζp, insert_image_comp_of_image_eq_sdiff_singleton hcK.image_eq
+      (sphere_subset_closedBall hζ), hgcl]
   have hR : insert p ((g ∘ c) '' {z : ℂ | z.im = 0}) = frontier Ω := by
-    rw [← hζp, insert_image_comp_of_bijOn_sdiff_singleton hcR hζ, hgfr]
+    rw [← hζp, insert_image_comp_of_image_eq_sdiff_singleton hcR.image_eq hζ, hgfr]
   refine ⟨g ∘ c, hgc.comp hcd.continuousOn fun z hz => (hcK.mapsTo hz).1,
     hgd.comp (hcd.mono (ofPred_subset_ofPred.mpr fun _ => le_of_lt)) hcH.mapsTo, hH, hK, hR,
     by simpa [hζp] using (hgc ζ (mem_closedBall.mpr hζ.le)).tendsto.comp hct⟩
