@@ -108,6 +108,13 @@ class MergeQueueChartsTest(unittest.TestCase):
         self.assertIn("GitHub queue + bors", charts["ci-merge-queue.svg"])
         self.assertIn("PR arrivals on main", charts["ci-merge-queue.svg"])
 
+    def test_other_job_waits_stop_at_their_complete_day(self):
+        self.build(1, 'pr', day='2026-10-06')
+        self.db.execute("INSERT INTO jobs VALUES ('TauCeti',1,999,'label','2026-10-06T12:00:00Z',NULL,'success','github',600,2,NULL)")
+        m = daily.metrics(self.db, '2026-10-05', '2026-10-07', daily.ts('2026-10-06T12:00:00Z'))
+        self.assertNotIn(('2026-10-06', 'other GitHub jobs'), m['wait'])
+        self.assertIn(('2026-10-06', 'PR, Namespace'), m['wait'])
+
     def test_fleet_legend_has_clearance_above_running_panel(self):
         data = {"since": 0, "until": 3600, "step": 3600,
                 "running": {key: [1.0] for key, _, _ in fleet.SERIES},
@@ -254,6 +261,80 @@ class MergeTimelinesTest(unittest.TestCase):
                      if node.attrib.get("text-anchor") == "end"]
             self.assertTrue(all(float(t).is_integer() for t in ticks))
 
+
+    def test_incomplete_initial_candidate_scan_is_a_gap_and_completed_snapshot_can_be_reused(self):
+        self.db.execute("CREATE TABLE queue_observation_metadata (observed_at TEXT, eligible_count INTEGER, candidate_scan_complete INTEGER, candidate_snapshot_at TEXT)")
+        for minute, complete, snapshot, count in [(0, 1, '2026-10-07T10:00:00Z', 17),
+                                                  (1, 0, None, 2),
+                                                  (2, 0, '2026-10-07T10:00:00Z', 17)]:
+            stamp = f'2026-10-07T10:0{minute}:00Z'
+            self.sample(stamp, [42])
+            self.db.execute('INSERT INTO queue_observation_metadata VALUES (?,?,?,?)',
+                            (stamp, count, complete, snapshot))
+        self.assertEqual([n for _, n in self.history()['queue']], [17, None, 17])
+        lines = list(self.svg('ci-queue-size.svg').iter('{http://www.w3.org/2000/svg}polyline'))
+        self.assertEqual(len(lines), 2)
+
+    def test_active_staging_runs_have_no_result_dots(self):
+        self.staging(1, [42], None)
+        self.assertFalse(self.history()['runs'])
+
+    def test_inventory_gap_union_clips_intervals_and_shades_partial_results(self):
+        self.db.execute('CREATE TABLE stream_coverage (repo TEXT, stream TEXT, since TEXT, complete_to TEXT)')
+        for lo, hi in [('2026-10-05', '2026-10-06T06:00:00Z'),
+                       ('2026-10-06T05:00:00Z', '2026-10-06T12:00:00Z'),
+                       ('2026-10-07', '2026-10-10'), ('2026-10-11', '2026-10-12')]:
+            self.db.execute('INSERT INTO stream_coverage VALUES (?,?,?,?)', ('TauCeti', 'inventory', lo, hi))
+        self.assertEqual(daily.inventory_gaps(self.db, self.since, self.until),
+                         [(daily.ts('2026-10-06T12:00:00Z'), daily.ts('2026-10-07'))])
+        self.staging(1, [42], stamp='2026-10-06T18:00:00Z')
+        svg = self.svg('ci-bors-staging.svg')
+        self.assertTrue(any(n.attrib.get('class') == 'coverage-gap' for n in svg))
+        self.assertEqual(len(list(svg.iter('{http://www.w3.org/2000/svg}circle'))), 1)
+
+    def test_fresh_timelines_survive_stale_fleet_without_replacing_its_fallbacks(self):
+        self.db.executescript("""
+            CREATE TABLE coverage (repo TEXT, complete_to TEXT);
+            INSERT INTO coverage VALUES ('TauCeti', '2026-10-02T00:00:00Z');
+            CREATE TABLE stream_coverage (repo TEXT, stream TEXT, since TEXT, complete_to TEXT);
+            INSERT INTO stream_coverage VALUES ('TauCeti','inventory','2026-10-06','2026-10-08T12:00:00Z');
+        """)
+        self.sample('2026-10-08T11:00:00Z', [42])
+        self.staging(1, [42])
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            (out/'ci-fleet-72h.svg').write_text('preserved fleet')
+            (out/'ci-duration.svg').write_text('preserved daily')
+            errors = fleet.generate(self.db, out, self.until)
+            self.assertEqual(len(errors), 2)
+            self.assertEqual((out/'ci-fleet-72h.svg').read_text(), 'preserved fleet')
+            self.assertEqual((out/'ci-duration.svg').read_text(), 'preserved daily')
+            ET.parse(out/'ci-queue-size.svg'); ET.parse(out/'ci-bors-staging.svg')
+            status = json.loads((out/'ci-freshness.json').read_text())['groups']
+            self.assertEqual({g: s['status'] for g, s in status.items()},
+                             {'fleet': 'stale', 'daily': 'stale', 'queue': 'updated', 'staging': 'updated'})
+            self.assertIn('ci-freshness.json', generated_assets.GENERATED_ASSETS)
+
+    def test_missing_staging_schema_does_not_block_queue(self):
+        self.db.execute('DROP TABLE merge_builds')
+        self.sample('2026-10-08T11:00:00Z', [42])
+        self.assertEqual(list(daily.merge_charts(self.db, self.until, include_staging=False)),
+                         ['ci-queue-size.svg'])
+
+    def test_builds_use_their_own_coverage_and_queue_includes_last_sample(self):
+        self.db.executescript("""
+            CREATE TABLE coverage (repo TEXT, complete_to TEXT);
+            INSERT INTO coverage VALUES ('TauCeti','2026-10-02'),('Other','2026-10-01');
+            CREATE TABLE stream_coverage (repo TEXT, stream TEXT, since TEXT, complete_to TEXT);
+            INSERT INTO stream_coverage VALUES ('TauCeti','build-jobs','2026-10-01','2026-10-08');
+        """)
+        self.sample('2026-10-08T11:00:00Z', [42])
+        ends = fleet.chart_cutoffs(self.db, self.until)
+        self.assertEqual(ends['fleet'], daily.ts('2026-10-01'))
+        self.assertEqual(ends['daily'], daily.ts('2026-10-08'))
+        history = daily.merge_history(self.db, self.since, ends['queue'], include_staging=False)
+        self.assertEqual(len(history['queue']), 1)
+
     def test_generator_writes_new_assets_with_the_existing_charts(self):
         # Exercise the public entry point and generated-asset list together.
         schema = MergeQueueChartsTest()
@@ -268,8 +349,8 @@ class MergeTimelinesTest(unittest.TestCase):
             CREATE TABLE merge_observations (observed_at TEXT, eligible_json TEXT);
             CREATE TABLE merge_builds (repo TEXT, run_id INTEGER, engine TEXT,
                                        batch_id INTEGER, members_json TEXT);
-            CREATE TABLE coverage (complete_to TEXT);
-            INSERT INTO coverage VALUES ('2026-10-08T12:00:00Z');
+            CREATE TABLE coverage (repo TEXT, complete_to TEXT);
+            INSERT INTO coverage VALUES ('TauCeti','2026-10-08T12:00:00Z');
         """)
         schema.db.execute("INSERT INTO runs (repo,run_id,workflow,trigger,created_at) VALUES (?,?,?,?,?)",
                           ("TauCeti", 1, daily.PR_BUILD, "pr", "2026-10-06T10:00:00Z"))

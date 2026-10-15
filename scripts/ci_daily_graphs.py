@@ -88,7 +88,7 @@ def days_between(first: str, last: str) -> list[str]:
     return [(d0 + dt.timedelta(days=i)).isoformat() for i in range((d1 - d0).days + 1)]
 
 
-def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
+def metrics(db: sqlite3.Connection, first: str, last: str, other_jobs_until=None) -> dict:
     """Per-day series for every daily chart, over complete UTC days first..last."""
     days = days_between(first, last)
     lo, hi = f"{first}T00:00:00Z", f"{last}T23:59:59Z"
@@ -127,10 +127,14 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
             job_ids.append(job_id)
 
     # Waits of the other (short) GitHub jobs, from what was recorded (a sample, for most workflows).
+    other_hi = hi
+    if other_jobs_until is not None:
+        other_last = (dt.datetime.fromtimestamp(other_jobs_until, UTC)-dt.timedelta(days=1)).date()
+        other_hi = min(hi, f'{other_last}T23:59:59Z')
     for day, wait_s in db.execute("""
             SELECT substr(j.created_at, 1, 10), j.wait_s FROM jobs j JOIN runs r USING (repo, run_id)
             WHERE j.runner_kind = 'github' AND j.name NOT IN ('sandboxed-build', 'verify', 'build')
-              AND j.wait_s IS NOT NULL AND j.created_at BETWEEN ? AND ?""", (lo, hi)):
+              AND j.wait_s IS NOT NULL AND j.created_at BETWEEN ? AND ?""", (lo, other_hi)):
         wait[(day, "other GitHub jobs")].append(wait_s / 60)
 
     # Where a successful PR build's time goes: step durations grouped into phases, with the single
@@ -350,7 +354,7 @@ def stacked_chart(title, subtitle, days, series, ylabel, line=None, line_fmt=lam
 QUEUE_SAMPLE_GAP = 3 * 60
 
 
-def merge_history(db: sqlite3.Connection, since: float, until: float) -> dict:
+def merge_history(db: sqlite3.Connection, since: float, until: float, *, include_queue=True, include_staging=True) -> dict:
     """Timestamped backlog samples and one result per recorded production staging run.
 
     runs holds each run's latest attempt; use its overall conclusion, including
@@ -358,22 +362,35 @@ def merge_history(db: sqlite3.Connection, since: float, until: float) -> dict:
     """
     bounds = tuple(dt.datetime.fromtimestamp(t, UTC).isoformat() for t in (since, until))
     queue = []
-    for stamp, eligible in db.execute("""
-            SELECT observed_at, eligible_json FROM merge_observations
-            WHERE julianday(observed_at) >= julianday(?)
-              AND julianday(observed_at) < julianday(?) ORDER BY observed_at""", bounds):
-        prs = {p["pr"] for p in json.loads(eligible)
-               if type(p.get("pr")) is int and p["pr"] > 0}
-        queue.append((ts(stamp), len(prs)))
+    metadata = db.execute("SELECT 1 FROM sqlite_master WHERE name='queue_observation_metadata'").fetchone()
+    query = ("""SELECT o.observed_at,
+                    CASE WHEN m.eligible_count IS NULL THEN o.eligible_json END,
+                    m.eligible_count, m.candidate_scan_complete, m.candidate_snapshot_at
+                FROM merge_observations o LEFT JOIN queue_observation_metadata m USING(observed_at)"""
+             if metadata else """SELECT o.observed_at,o.eligible_json,NULL,NULL,NULL FROM merge_observations o""")
+    query += """ WHERE julianday(o.observed_at) >= julianday(?)
+                  AND julianday(o.observed_at) < julianday(?) ORDER BY o.observed_at"""
+    for stamp, eligible, count, complete, snapshot in (db.execute(query, bounds) if include_queue else []):
+        if complete == 0 and not snapshot:
+            # After a bot restart the first scan is only a partial candidate set.
+            # A later in-progress scan may safely reuse its completed snapshot.
+            queue.append((ts(stamp), None))
+            continue
+        if count is None:
+            count = len({p['pr'] for p in json.loads(eligible)
+                         if type(p.get('pr')) is int and p['pr'] > 0})
+        queue.append((ts(stamp), count))
 
     runs, missing_members = [], 0
-    for stamp, run_id, attempt, conclusion, batch, members in db.execute(f"""
+    rows = db.execute(f"""
             SELECT r.created_at, r.run_id, r.run_attempt, r.conclusion, m.batch_id, m.members_json
             FROM runs r JOIN merge_builds m USING (repo, run_id)
             WHERE r.repo = 'TauCeti' AND r.workflow = '{PR_BUILD}'
               AND r.trigger = 'bors_staging' AND m.engine = 'bors'
+              AND r.conclusion IS NOT NULL
               AND julianday(r.created_at) >= julianday(?)
-              AND julianday(r.created_at) < julianday(?) ORDER BY r.created_at, r.run_id""", bounds):
+              AND julianday(r.created_at) < julianday(?) ORDER BY r.created_at, r.run_id""", bounds) if include_staging else []
+    for stamp, run_id, attempt, conclusion, batch, members in rows:
         prs = {p["pr"] for p in json.loads(members or "[]")
                if type(p.get("pr")) is int and p["pr"] > 0}
         if not prs:
@@ -413,23 +430,59 @@ def time_axes(out: list[str], since: float, until: float, vmax: int, ylabel: str
     return x, y
 
 
-def merge_charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
-    """Merge timelines over up to thirty days, ending at the shared CI watermark."""
+def inventory_gaps(db, since, until):
+    """Intervals lacking proven TauCeti run inventory; recorded dots remain useful there."""
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='stream_coverage'").fetchone():
+        rows = db.execute("""SELECT since,complete_to FROM stream_coverage
+            WHERE repo='TauCeti' AND stream='inventory' ORDER BY since""").fetchall()
+    elif db.execute("SELECT 1 FROM sqlite_master WHERE name='coverage'").fetchone():
+        rows = [(dt.datetime.fromtimestamp(since, UTC).isoformat(), end)
+                for (end,) in db.execute("SELECT complete_to FROM coverage WHERE repo='TauCeti'")]
+    else:
+        rows = []
+    cursor, gaps = since, []
+    for lo, hi in sorted((ts(lo), ts(hi)) for lo, hi in rows):
+        lo, hi = max(since, lo), min(until, hi)
+        if hi <= lo or hi <= cursor:
+            continue
+        if lo > cursor:
+            gaps.append((cursor, lo))
+        cursor = hi
+    if cursor < until:
+        gaps.append((cursor, until))
+    return gaps
+
+
+def merge_charts(db: sqlite3.Connection, until: float, *, queue_until=None, staging_until=None,
+                 include_queue=True, include_staging=True) -> dict[str, str]:
+    """Merge timelines use independent observation and recorded-run timestamps.
+
+    Incomplete run inventory is shaded, so partial staging data is never
+    presented as proof that no runs occurred. Queue samples never fill gaps.
+    """
+    queue_until = until if queue_until is None else queue_until
+    staging_until = until if staging_until is None else staging_until
     since = until - 30 * 86400
-    m = merge_history(db, since, until)
+    m = merge_history(db, since, until, include_queue=include_queue, include_staging=include_staging)
     starts = [t for t, _ in m["queue"]] + [r["at"] for r in m["runs"]]
     if starts:
         since = max(since, math.floor(min(starts) / 86400) * 86400)
-    through = dt.datetime.fromtimestamp(until, UTC).strftime("%d %b %Y %H:%M UTC")
+    def through(t):
+        return dt.datetime.fromtimestamp(t, UTC).strftime("%d %b %Y %H:%M UTC")
 
-    out = frame("Merge queue size", f"Observed ready-to-merge PR backlog; data through {through}")
-    samples = m["queue"]
-    x, y = time_axes(out, since, until, max((n for _, n in samples), default=0), "PRs")
+    out = frame("Merge queue size", f"Observed ready-to-merge PR backlog; data through {through(queue_until)}")
+    samples = [(t, n) for t, n in m['queue'] if t < queue_until]
+    x, y = time_axes(out, since, until, max((n for _, n in samples if n is not None), default=0), "PRs")
     segments = []
+    segment = None
     for t, n in samples:
-        if not segments or t - segments[-1][-1][0] > QUEUE_SAMPLE_GAP:
-            segments.append([])
-        segments[-1].append((t, n))
+        if n is None:
+            segment = None
+            continue
+        if segment is None or t - segment[-1][0] > QUEUE_SAMPLE_GAP:
+            segment = []
+            segments.append(segment)
+        segment.append((t, n))
     for segment in segments:
         # Keep both sides of a change, but omit redundant interior samples.
         points = [segment[0]]
@@ -443,14 +496,22 @@ def merge_charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
             t, n = segment[0]
             out.append(f'<circle cx="{x(t):.1f}" cy="{y(n):.1f}" r="2.5" fill="{PALETTE[2]}"/>')
     legend(out, [("ready-to-merge PRs", PALETTE[2])])
-    if not samples:
+    if not any(n is not None for _, n in samples):
         out.append(f'<text class="note" x="{L+16}" y="{TOP+24}">No queue observations in this window</text>')
     out.append("</svg>")
     queue_svg = "\n".join(out)
 
-    out = frame("Bors staging runs", f"One dot per run at creation time; data through {through}")
-    runs = m["runs"]
+    if not include_staging:
+        return {'ci-queue-size.svg': queue_svg} if include_queue else {}
+
+    out = frame("Bors staging runs", f"Recorded runs at creation time; data through {through(staging_until)}")
+    runs = [r for r in m['runs'] if r['at'] < staging_until]
     x, y = time_axes(out, since, until, max((r["prs"] for r in runs), default=0), "PRs in batch")
+    gaps = inventory_gaps(db, since, until)
+    for lo, hi in gaps:
+        out.append(f'<rect class="coverage-gap" x="{x(lo):.1f}" y="{TOP}" '
+                   f'width="{x(hi)-x(lo):.1f}" height="{BOTTOM-TOP}" fill="{MUTED}" fill-opacity="0.12">'
+                   '<title>Run inventory incomplete; recorded runs are shown</title></rect>')
     for r in runs:
         conclusion = r["conclusion"]
         colour = (PALETTE[5] if conclusion == "success" else PALETTE[3]
@@ -461,17 +522,25 @@ def merge_charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
                  f'{r["prs"]} PRs, {conclusion}; created {stamp}')
         out.append(f'<circle cx="{x(r["at"]):.1f}" cy="{y(r["prs"]):.1f}" r="3.5" '
                    f'fill="{colour}" fill-opacity="0.85"><title>{html.escape(label)}</title></circle>')
-    legend(out, [("success", PALETTE[5]), ("failure", PALETTE[3]), ("cancelled / other", MUTED)])
+    items = [("success", PALETTE[5]), ("failure", PALETTE[3]), ("cancelled / other", MUTED)]
+    if gaps:
+        items.append(('shaded: inventory gaps', MUTED))
+    legend(out, items)
     if not runs:
         out.append(f'<text class="note" x="{L+16}" y="{TOP+24}">No staging runs with known batch sizes</text>')
     if m["missing_members"]:
         out.append(f'<text class="note" x="{L}" y="{TOP-10}">'
                    f'{m["missing_members"]} runs omitted: batch membership unavailable</text>')
     out.append("</svg>")
-    return {"ci-queue-size.svg": queue_svg, "ci-bors-staging.svg": "\n".join(out)}
+    result = {}
+    if include_queue:
+        result['ci-queue-size.svg'] = queue_svg
+    if include_staging:
+        result['ci-bors-staging.svg'] = '\n'.join(out)
+    return result
 
 
-def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
+def charts(db: sqlite3.Connection, until: float, other_jobs_until=None) -> dict[str, str]:
     """All daily charts, through the last complete UTC day before `until`."""
     last = (dt.datetime.fromtimestamp(until, UTC) - dt.timedelta(days=1)).date()
     first_row = db.execute(f"SELECT MIN(created_at) FROM runs WHERE workflow = '{PR_BUILD}'").fetchone()[0]
@@ -480,7 +549,7 @@ def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     first = max(dt.date.fromisoformat(first_row[:10]), last - dt.timedelta(days=89))
     if first > last:
         return {}
-    m = metrics(db, first.isoformat(), last.isoformat())
+    m = metrics(db, first.isoformat(), last.isoformat(), other_jobs_until)
     days = m["days"]
     span = f"UTC days {dt.date.fromisoformat(days[0]):%d %b} to {dt.date.fromisoformat(days[-1]):%d %b}"
     places = [("PR, GitHub", PALETTE[2]), ("PR, Namespace", PALETTE[1]), ("merge validation", PALETTE[3])]
@@ -501,6 +570,11 @@ def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     out["ci-build-wait.svg"] = lines_chart(
         "How long a job waits for a runner", f"From the job being queued to it starting; {span}",
         days, series, "minutes", dashed={s[0] for s in series if s[0].endswith("pct")})
+    if other_jobs_until is not None and other_jobs_until < until:
+        stamp = dt.datetime.fromtimestamp(other_jobs_until, UTC).strftime('%d %b %H:%M UTC')
+        note = f'Other GitHub jobs: coverage through {stamp}' if other_jobs_until > 0 else 'Other GitHub jobs: coverage unavailable'
+        out['ci-build-wait.svg'] = out['ci-build-wait.svg'].replace('</svg>',
+            f'<text class="note" x="{L}" y="112">{note}</text>\n</svg>')
 
     phases = [p for p in PHASE_ORDER if any(m["phase_minutes"][d].get(p) for d in days)]
     series = [(p, PALETTE[i % len(PALETTE)],
