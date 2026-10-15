@@ -129,8 +129,8 @@ theorem exists_abelianLayer_localNormSubgroup_eq_of_powerSubgroup_le {n : ℕ} (
   obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) n
   let K' := K⟮ξ⟯
   have : FiniteDimensional K K' := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral ξ)
-  let _ := finiteExtensionValuativeRel K K'
-  let _ := finiteExtensionNormedFieldTopology K K'
+  let _ := algebraicExtensionValuativeRel K K'
+  let _ := algebraicExtensionNormedFieldTopology K K'
   have := finiteExtension_isNonarchimedeanLocalField K K'
   have hζ : IsPrimitiveRoot (AdjoinSimple.gen K ξ) n :=
     .of_map_of_injective (f := K'.val) (by simpa using hξ) K'.val.injective

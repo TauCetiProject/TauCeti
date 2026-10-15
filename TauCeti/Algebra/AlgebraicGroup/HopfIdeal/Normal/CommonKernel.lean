@@ -38,11 +38,6 @@ normal and ordinary generated subgroups agree.
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§15--16.
-
-This is subgroup-generation infrastructure for Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. The radical construction must form a normal closed subgroup containing
-all connected normal unipotent candidates before proving that the generated subgroup remains
-connected and unipotent.
 -/
 
 public section

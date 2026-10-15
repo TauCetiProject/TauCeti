@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import TauCeti.RingTheory.Valuation.NontrivialComap
@@ -65,6 +66,8 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.restrict` they say that every place of `F'` lies over exactly one place of `F`.
 * `TauCeti.Place.restrict_eq_iff_isEquiv_comap`: `P' ∣ P` exactly when the restricted valuation
   is equivalent to that of `P`.
+* `TauCeti.Place.restrict_map_restrictScalars`: transport along an isomorphism over `F`
+  preserves the place below.
 * `TauCeti.Place.linearIndependent_mul_pow_of_linearIndependent_residue`: the independence
   statement carrying the fundamental inequality, together with the three ingredients of its
   proof — `TauCeti.Place.ord_sum_eq_zero_of_isUnit`,
@@ -447,6 +450,24 @@ theorem ramificationIdx_eq_of_forall_ord_eq {e : ℕ}
 
 end Restrict
 
+section RestrictMap
+
+variable [Algebra.IsIntegral F F']
+
+/-- **Transport along an isomorphism over `F` preserves the place below**: for `e : F' ≃ F''`
+over `F`, the place `P.map e` of `F''` lies over the same place of `F / k` as `P` does, because
+`e` fixes `F` pointwise. -/
+@[simp]
+theorem restrict_map_restrictScalars {F'' : Type*} [Field F''] [Algebra k F''] [Algebra F F'']
+    [IsScalarTower k F F''] [Algebra.IsIntegral F F''] (P : Place k F') (e : F' ≃ₐ[F] F'') :
+    (P.map (e.restrictScalars k)).restrict k F = P.restrict k F := by
+  apply integers_injective
+  ext x
+  rw [mem_integers_restrict_iff, mem_integers_restrict_iff, mem_integers_map_iff]
+  exact Iff.of_eq (congrArg (· ∈ P.integers) (e.symm.commutes x))
+
+end RestrictMap
+
 section ResidueField
 
 variable (k F) (P' : Place k' F') [Algebra.IsIntegral F F']
@@ -565,7 +586,8 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
         rw [hm, hm₀]
         exact fun hcontra ↦ hj.2 (eq_of_mul_add_natCast_eq hcontra)
       have hge := hj₀ j (by simp [hJdef, hAj])
-      apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation hj₀A hAj).mp
+      apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation
+        (P'.valuation.ne_zero_iff.mpr hj₀A) (P'.valuation.ne_zero_iff.mpr hAj)).mp
       simpa only [Valuation.ord_def, ord_def] using lt_of_le_of_ne hge hne.symm
   exact ⟨j₀, hj₀A, hj₀ j₁ (by simp [hJdef, hj₁]),
     P'.valuation.map_sum_eq_of_lt (Finset.mem_univ j₀) hlt⟩

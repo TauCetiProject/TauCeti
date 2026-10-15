@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Analysis.Matrix.Frobenius
-public import TauCeti.Data.Matrix.Scaling
+public import TauCeti.Data.Matrix.Scaling.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
@@ -34,8 +34,8 @@ one-sided one, because the regularised problem has a unique optimal plan.
 
 The regularised objective is `ε` times the relative entropy against the Gibbs kernel
 `a i * b j * exp (-C i j / ε)`, so its minimiser is the entropy minimiser of
-`TauCeti/Data/Matrix/Scaling.lean`, which exists and has strictly positive entries. The proof of
-the derivative is quantitative. At a positive minimiser `P` for the cost `C`, the first-order
+`TauCeti/Data/Matrix/Scaling/Basic.lean`, which exists and has strictly positive entries. The proof
+of the derivative is quantitative. At a positive minimiser `P` for the cost `C`, the first-order
 condition says that `C + ε log P` integrates to `0` against every matrix with zero row and column
 sums. Comparing the conditions at the minimisers `P` and `Q` for two costs `C` and `C'` gives
 
@@ -173,7 +173,7 @@ theorem entropicTransportObjective_eq_mul_relEntropy (C : Matrix ι κ ℝ) (hε
 
 /-- For a positive temperature, a minimiser of the regularised objective over the transport
 polytope minimises the relative entropy against the Gibbs kernel, in the form used by
-`TauCeti/Data/Matrix/Scaling.lean`. -/
+`TauCeti/Data/Matrix/Scaling/Basic.lean`. -/
 private theorem relEntropy_le_of_isMinOn (hε : 0 < ε) (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j)
     (hmin : IsMinOn (C.entropicTransportObjective ε a b) (transportPolytope a b) P) :
     ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.BilinearForm.Ideals
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import Mathlib.LinearAlgebra.Basis.SMul
@@ -66,8 +67,7 @@ exactly when their associated quadratic forms are equivalent.
   of Gram determinants in any finite bases with the same index type.
 * `LinearMap.BilinForm.IsSymm.equivalent_iff_toQuadraticMap_equivalent`: when `2` is invertible,
   equivalence of symmetric bilinear forms is equivalent to equivalence of their quadratic forms.
-* `LinearMap.BilinForm.dvd_apply_of_forall_dvd_basis`,
-  `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from Gram entries or diagonal values.
+* `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from diagonal values.
 * `LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic`: an orthogonal basis of the
   hyperbolic plane forces `2` to be a unit.
 * `LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`: over a local ring with
@@ -189,15 +189,6 @@ theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
     exact ⟨{ toLinearEquiv := f.toLinearEquiv
              map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
 
-/-- A common divisor of the Gram entries of a bilinear form in a basis divides every value of the
-form. -/
-theorem dvd_apply_of_forall_dvd_basis {ι : Type*} (b : Basis ι R M) {d : R}
-    (hd : ∀ i j, d ∣ B (b i) (b j)) (x y : M) : d ∣ B x y := by
-  rw [← B.sum_repr_mul_repr_mul b x y]
-  refine Finset.dvd_sum fun i _ ↦ Finset.dvd_sum fun j _ ↦ ?_
-  simp only [smul_eq_mul]
-  exact dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (hd i j) _) _
-
 /-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
 every value of the form. -/
 theorem iIsOrtho.dvd_apply {ι : Type*} {b : Basis ι R M} (hb : B.iIsOrtho b) {d : R}
@@ -275,14 +266,16 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
     have : Free R N := free_of_flat_of_isLocalRing
     have hli : ∀ a : R, ∀ y ∈ N, a • x + y = 0 → a = 0 := by
       intro a y hy hay
-      have hxy : B x y = 0 := (mem_orthogonal_span_singleton_iff B).mp hy
+      have hxy : B x y = 0 := by simpa [N, orthogonal] using hy
       have := congrArg (B x) hay
       simp only [map_add, map_smul, smul_eq_mul, hxy, add_zero, map_zero] at this
       exact (mem_nonZeroDivisors_iff_right.mp hxx.mem_nonZeroDivisors) a this
     have hsp : ∀ z : M, ∃ a : R, z + a • x ∈ N := by
       intro z
       obtain ⟨a, ha⟩ := (hxx.dvd : B x x ∣ B x z)
-      refine ⟨-a, (mem_orthogonal_span_singleton_iff B).mpr ?_⟩
+      refine ⟨-a, ?_⟩
+      simp only [N, orthogonal, Submodule.mem_orthogonalBilin_span]
+      rintro _ rfl
       simp only [map_add, map_smul, smul_eq_mul, ha]
       ring
     -- The split basis also computes the complement's rank and its unit Gram determinant.
@@ -301,7 +294,7 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
         intro j
         simpa only [toMatrix_apply, c₁, Basis.coe_mkFinCons, Fin.cons_zero,
           Fin.cons_succ, Function.comp_apply] using
-          (mem_orthogonal_span_singleton_iff B).mp (v j).property
+          mem_orthogonal_iff.1 (v j).property x (Submodule.mem_span_singleton_self x)
       simp only [hzero, mul_zero, zero_mul, Finset.sum_const_zero, add_zero,
         Fin.val_zero, pow_zero, one_mul, Fin.succAbove_zero]
       congr 1
@@ -360,8 +353,8 @@ private theorem IsSymm.exists_apply_self_ne_zero_and_not_isAlt_restrict_orthogon
   obtain ⟨u, w, huw⟩ : ∃ u w : B.orthogonal (K ∙ x), B u w ≠ 0 := by
     by_contra! h
     exact hne (LinearMap.ext fun u => LinearMap.ext fun w => by simpa using h u w)
-  have hxu : B x u = 0 := (mem_orthogonal_span_singleton_iff B).1 u.2
-  have hxw : B x w = 0 := (mem_orthogonal_span_singleton_iff B).1 w.2
+  have hxu : B x u = 0 := by simpa [orthogonal] using u.2
+  have hxw : B x w = 0 := by simpa [orthogonal] using w.2
   have huu : B u u = 0 := by simpa using halt u
   have hww : B w w = 0 := by simpa using halt w
   set z := x + u with hz
@@ -369,8 +362,7 @@ private theorem IsSymm.exists_apply_self_ne_zero_and_not_isAlt_restrict_orthogon
   have hzw : B z w = B u w := by simp [hz, hxw]
   refine ⟨z, hzz ▸ hx, fun halt' => huw ?_⟩
   obtain ⟨c, hc⟩ : ∃ c, c * B z z = B z w := ⟨B z w / B z z, div_mul_cancel₀ _ (hzz ▸ hx)⟩
-  have hw' : w - c • z ∈ B.orthogonal (K ∙ z) :=
-    (mem_orthogonal_span_singleton_iff B).2 (by simp [hc])
+  have hw' : w - c • z ∈ B.orthogonal (K ∙ z) := by simp [orthogonal, hc]
   have h0 : B w w - c * B z w - c * (B z w - c * B z z) = 0 := by
     simpa [hB.eq w z] using halt' ⟨w - c • z, hw'⟩
   have hcb : c * B z w = 0 := by linear_combination -h0 + c * hc + hww

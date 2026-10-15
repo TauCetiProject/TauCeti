@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
+public import TauCeti.Geometry.Manifold.VectorField.Regularity
+public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Outward-pointing vectors at the boundary
@@ -27,7 +30,8 @@ vector is outward at every boundary point.
 public section
 
 open Set
-open scoped Manifold
+open Bundle
+open scoped Manifold ContDiff
 
 namespace TauCeti
 
@@ -87,6 +91,22 @@ theorem add {x : M} {v w : TangentSpace (𝓡∂ (n + 1)) x}
   rw [ContinuousLinearMap.map_add, map_add]
   simpa using add_neg hv hw
 
+/-- The outward-pointing vectors at a fixed point form a convex set.  This is the pointwise
+interface used when smooth local outward fields are glued by a partition of unity. -/
+theorem convex (x : M) :
+    Convex ℝ {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} := by
+  intro v hv w hw a b ha hb hab
+  by_cases ha0 : a = 0
+  · have hb1 : b = 1 := by linarith
+    subst a
+    simpa [hb1] using hw
+  by_cases hb0 : b = 0
+  · have ha1 : a = 1 := by linarith
+    subst b
+    simpa [ha1] using hv
+  exact (hv.smul_pos (lt_of_le_of_ne ha (Ne.symm ha0))).add
+    (hw.smul_pos (lt_of_le_of_ne hb (Ne.symm hb0)))
+
 /-- An outward vector is nonzero. -/
 theorem ne_zero {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
     (hv : IsOutwardPointing x v) : v ≠ 0 := by
@@ -109,5 +129,114 @@ theorem isOutwardPointing_standard_halfSpace
   -- `NormedSpace.fromTangentSpace` is its canonical definitional identification.
   change (-EuclideanSpace.single (𝕜 := ℝ) 0 1) 0 < 0
   simp
+
+/-- A smooth vector field is outward-pointing when each of its boundary values points out of the
+half-space. Smoothness is recorded as regularity of the corresponding tangent-bundle section, so
+the predicate does not depend on a choice of tangent-bundle trivialization. -/
+def IsOutwardPointingField {M : Type*} [TopologicalSpace M]
+    [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
+    [IsManifold (𝓡∂ (n + 1)) ∞ M]
+    (V : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x) : Prop :=
+  ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% V) ∧
+    ∀ x ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing x (V x)
+
+variable {M : Type*} [TopologicalSpace M]
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
+  [IsManifold (𝓡∂ (n + 1)) ∞ M]
+  {V : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
+
+/-- Characterization of a smooth outward-pointing field by its smoothness and boundary values. -/
+@[grind =]
+theorem isOutwardPointingField_iff :
+    IsOutwardPointingField V ↔
+      ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% V) ∧
+        ∀ x ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing x (V x) :=
+  Iff.rfl
+
+namespace IsOutwardPointingField
+
+variable {M : Type*} [TopologicalSpace M]
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
+  [IsManifold (𝓡∂ (n + 1)) ∞ M]
+  {V : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
+
+/-- Construct a smooth outward-pointing field from its smoothness and boundary values. -/
+theorem intro
+    (hV : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% V))
+    (hout : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing x (V x)) :
+    IsOutwardPointingField V :=
+  ⟨hV, hout⟩
+
+/-- The field component of an outward-pointing field is smooth. -/
+theorem contMDiff (hV : IsOutwardPointingField V) :
+    ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% V) :=
+  hV.1
+
+/-- Every boundary value of an outward-pointing field points out. -/
+theorem isOutwardPointing (hV : IsOutwardPointingField V) {x : M}
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
+    IsOutwardPointing x (V x) :=
+  hV.2 x hx
+
+/-- The sum of two smooth outward-pointing fields is outward-pointing. -/
+theorem add {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
+    (hV : IsOutwardPointingField V) (hW : IsOutwardPointingField W) :
+    IsOutwardPointingField (fun x ↦ V x + W x) := by
+  refine ⟨hV.contMDiff.add_section hW.contMDiff, ?_⟩
+  intro x hx
+  exact (hV.isOutwardPointing hx).add (hW.isOutwardPointing hx)
+
+/-- Multiplication by a smooth positive scalar preserves an outward-pointing field. -/
+theorem smul {f : M → ℝ} (hV : IsOutwardPointingField V)
+    (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f)
+    (hpos : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 < f x) :
+    IsOutwardPointingField (fun x ↦ f x • V x) := by
+  refine ⟨hf.smul_section hV.1, fun x hx ↦ (hV.2 x hx).smul_pos (hpos x hx)⟩
+
+/-- Smooth convex combinations of outward-pointing fields remain outward-pointing.
+The coefficients are smooth globally, nonnegative on the boundary, and sum to one there. -/
+theorem smul_add_smul {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
+    (hV : IsOutwardPointingField V) (hW : IsOutwardPointingField W)
+    {f g : M → ℝ} (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f)
+    (hg : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ g)
+    (hf_nonneg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 ≤ f x)
+    (hg_nonneg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 ≤ g x)
+    (hfg : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, f x + g x = 1) :
+    IsOutwardPointingField (fun x ↦ f x • V x + g x • W x) := by
+  refine ⟨(hf.smul_section hV.contMDiff).add_section (hg.smul_section hW.contMDiff), ?_⟩
+  intro x hx
+  exact (IsOutwardPointing.convex x) (hV.isOutwardPointing hx) (hW.isOutwardPointing hx)
+    (hf_nonneg x hx) (hg_nonneg x hx) (hfg x hx)
+
+end IsOutwardPointingField
+
+/-- The constant negative normal field on the standard Euclidean half-space. -/
+noncomputable def standardOutwardVectorField (n : ℕ) :
+    ∀ x : EuclideanHalfSpace (n + 1), TangentSpace (𝓡∂ (n + 1)) x :=
+  fun _ ↦ -EuclideanSpace.single 0 1
+
+/-- The standard field has constant negative zeroth coordinate. -/
+@[simp]
+theorem standardOutwardVectorField_apply (n : ℕ)
+    (x : EuclideanHalfSpace (n + 1)) :
+    standardOutwardVectorField n x = -EuclideanSpace.single 0 1 := by
+  rfl
+
+/-- The standard negative normal field is smooth as a tangent-bundle section. -/
+theorem contMDiff_standardOutwardVectorField (n : ℕ) :
+    ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞
+      (T% (standardOutwardVectorField n)) := by
+  have h := contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
+    (𝓡∂ (n + 1)) (-EuclideanSpace.single 0 1) ∞
+  apply h.congr
+  intro x
+  simp only [tangentBundleModelSpaceHomeomorph_coe_symm, TotalSpace.toProd]
+  rfl
+
+/-- The standard Euclidean half-space has a smooth outward-pointing field. -/
+theorem isOutwardPointingField_standard_halfSpace (n : ℕ) :
+    IsOutwardPointingField (standardOutwardVectorField n) := by
+  refine ⟨contMDiff_standardOutwardVectorField n, fun x hx ↦ ?_⟩
+  exact isOutwardPointing_standard_halfSpace (n := n) (x := x) hx
 
 end TauCeti
