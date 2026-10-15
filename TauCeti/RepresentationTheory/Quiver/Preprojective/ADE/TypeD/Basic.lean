@@ -60,7 +60,7 @@ relation ideal is admissible, and `Π_k(Q)` is finite-dimensional over every fie
 
 * W. Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
   problem*, Section 1, for the preprojective algebra and its local relations.
-* S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 3, for the
+* S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1, for the
   signless relation and its comparison with the preprojective relation of a bipartite graph.
 * C. M. Ringel, *The preprojective algebra of a quiver*, for the finite-Dynkin Frobenius property.
 -/
@@ -108,15 +108,16 @@ private noncomputable def forkEntry (i : ℕ)
   if i ≤ c then ladderValley (forkUp k G c) (forkDown k G c) 0 (c - i) 0 * E
   else signlessArrow k G i c * E
 
-/-- The **normal forms of a path** from the vertex `i₀` to the vertex `j`, of length `L`, whose
-source idempotent is `E`:
+/-- An invariant bounding the length `L` of a path from the vertex `i₀` to the vertex `j` whose
+source idempotent is `E`: the element `z` is one of
 
-* a valley word on the long arm, with rungs counted from the branch node, which stays at least
-  one rung away from it;
-* a climb from the branch node to `j` on the long arm, after a product `w` of `t` backtracks into
-  the leaves and an integer multiple `D` of the direct path into the branch node, of length at most
-  `c + 1`;
-* the arrow from the branch node to the leaf `j`, after such `w` and `D`;
+* an integer multiple of a valley word on the long arm, with rungs counted from the branch node,
+  which stays at least one rung away from it;
+* a climb from the branch node to `j` on the long arm, after an element `w` of
+  `forkSpan k G c ^ t` and an integer multiple `D` of the direct path into the branch node, where
+  `L` is `2 * t` plus the length of the climb plus at most `c + 1`;
+* the arrow from the branch node to the leaf `j`, after such `w` and `D`, where `L` is
+  `2 * t + 1` plus at most `c + 1`;
 * the empty path at a leaf. -/
 private def ForkNormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
     Prop :=
@@ -176,6 +177,7 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
     have hprev : c - w = 0 := by omega
     simp only [forkUp, forkDown, hrung, hprev, h0, mul_zero, add_zero]
 
+omit hn in
 /-- **The relation at a leaf**: the backtrack from a leaf `l` vanishes. -/
 private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln : l < n) :
     signlessArrow k G c l * signlessArrow k G l c = 0 := by
@@ -192,11 +194,12 @@ private theorem forkDown_mul_forkUp_add_forkTurn :
     (fun u hu hu' => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu'; omega)
   rwa [Finset.sum_insert (by simp; omega), Finset.sum_pair (by omega)] at h
 
+omit hn in
 /-- The backtracks into the leaves square to zero. -/
 private theorem forkTurn_mul_self {l : ℕ} (hl : c < l) (hln : l < n) :
     forkTurn k G c l * forkTurn k G c l = 0 := by
   rw [forkTurn, mul_assoc, ← mul_assoc (signlessArrow k G c l),
-    signlessArrow_mul_signlessArrow_leaf k hn hG hl hln, zero_mul, mul_zero]
+    signlessArrow_mul_signlessArrow_leaf k hG hl hln, zero_mul, mul_zero]
 
 /-- The backtrack into the long arm is minus the sum of the backtracks into the leaves; in
 particular it lies in their span. -/
@@ -218,8 +221,8 @@ private theorem forkTurn_add_pow_eq_zero :
 /-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
 private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le ht
-  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hn hG (by omega) (by omega))
-    (forkTurn_mul_self k hn hG (by omega) (by omega))
+  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega) (by omega))
+    (forkTurn_mul_self k hG (by omega) (by omega))
     (forkTurn_add_pow_eq_zero k hn hG), Submodule.bot_mul]
 
 /-! ### Normal forms of paths -/
@@ -388,7 +391,6 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_fork
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
-  have hb := ((vertexEquiv G).symm b).2
   -- A valley word on the long arm, or the empty path, is too short; otherwise the word in the
   -- backtracks into the leaves is long enough to vanish.
   rcases forkNormalForm_ofPath k hn hG p with ⟨m, s, r, ε, hm, hL, hs, hr, -⟩ |

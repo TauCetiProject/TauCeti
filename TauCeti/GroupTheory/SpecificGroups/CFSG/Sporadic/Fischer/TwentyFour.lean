@@ -146,8 +146,8 @@ inspection.
 Every definition here except the abbreviation `TauCeti.Sporadic.Fi24AutomorphismGroup` has its
 body sealed, and each is pinned by a public characteristic equation named after it: the `_def`
 theorems below, the evaluation lemmas
-`TauCeti.Sporadic.fi24AutomorphismCoxeterMatrix_apply`, `TauCeti.Sporadic.fi24TargetGenerator_val`
-and `TauCeti.Sporadic.fi24SchreierFactors_nil`/`_cons`, and the field equations of the presentation
+`TauCeti.Sporadic.fi24AutomorphismCoxeterMatrix_apply` and
+`TauCeti.Sporadic.fi24SchreierFactors_nil`/`_cons`, and the field equations of the presentation
 row ending in `TauCeti.Sporadic.fi24PrimePresentation_relatorLetters`, jointly determine every
 transcribed relation without unfolding a single body.
 
@@ -347,18 +347,6 @@ theorem even_length_of_mem_fi24AutomorphismRelators :
 
 /-! ## Reidemeister--Schreier rewriting -/
 
-/-- The target generator `ax` corresponding to a source generator `x ≠ a`.
-The source index drops by one because `a` itself contributes no target generator. -/
-def fi24TargetGenerator (i : Fin 12) (_h : i.val ≠ 0) : Fin 11 :=
-  ⟨i.val - 1, by omega⟩
-
-/-- The index shift performed by `TauCeti.Sporadic.fi24TargetGenerator`. Since a `Fin 11` is
-determined by its value, this equation determines the map. -/
-@[simp]
-theorem fi24TargetGenerator_val (i : Fin 12) (h : i.val ≠ 0) :
-    (fi24TargetGenerator i h).val = i.val - 1 := by
-  simp only [fi24TargetGenerator]
-
 /-- Rewrite source letters into the Schreier generators `ab` through `al`.
 
 The Boolean records whether the current transversal representative is `a`. Source signs are
@@ -370,9 +358,9 @@ def fi24SchreierFactors : Bool → PresentationWord (Fin 12) → List (Relator (
   | _, [] => []
   | positive, (i, _) :: w =>
       let rest := fi24SchreierFactors (!positive) w
-      if h : i.val = 0 then rest
+      if h : i = 0 then rest
       else
-        let g : Relator (Fin 11) := .gen (fi24TargetGenerator i h)
+        let g : Relator (Fin 11) := .gen (i.pred h)
         (if positive then g else .inv g) :: rest
 
 /-- The empty source word contributes no Schreier factor. -/
@@ -389,10 +377,10 @@ the rewrite of every source word. -/
 theorem fi24SchreierFactors_cons (positive : Bool) (i : Fin 12) (sign : Bool)
     (w : PresentationWord (Fin 12)) :
     fi24SchreierFactors positive ((i, sign) :: w) =
-      if h : i.val = 0 then fi24SchreierFactors (!positive) w
+      if h : i = 0 then fi24SchreierFactors (!positive) w
       else
-        (if positive then .gen (fi24TargetGenerator i h)
-          else .inv (.gen (fi24TargetGenerator i h))) :: fi24SchreierFactors (!positive) w := by
+        (if positive then .gen (i.pred h)
+          else .inv (.gen (i.pred h))) :: fi24SchreierFactors (!positive) w := by
   simp only [fi24SchreierFactors]
 
 /-- Assemble a possibly empty list of Schreier factors as one relator expression: the factors
@@ -428,8 +416,7 @@ private theorem length_foldr_fi24SchreierFactors (positive : Bool)
     rw [fi24SchreierFactors_cons, List.countP_cons]
     by_cases hi : i = 0
     · subst hi; simpa using ih (!positive)
-    · have h : i.val ≠ 0 := fun hv => hi (Fin.ext hv)
-      cases positive <;> simp [h, hi, ih, Nat.add_comm]
+    · cases positive <;> simp [hi, ih, Nat.add_comm]
 
 /-- **The Reidemeister--Schreier rewrite keeps exactly the source letters other than `a`.** The
 distinguished letter `a` is the transversal element, so it contributes no Schreier generator, while
@@ -842,12 +829,8 @@ private theorem toWord_foldr_fi24SchreierFactors (positive : Bool) (w : Presenta
     by_cases hi : i = 0
     · simp only [hi, ↓reduceDIte, List.nil_append]
       exact ih (!positive)
-    · have hv : i.val ≠ 0 := fun h => hi (Fin.ext h)
-      have ht : fi24TargetGenerator i hv = fi24SchreierEquiv ⟨i, hi⟩ := by
-        rw [fi24SchreierEquiv_apply]
-        ext
-        simp
-      simp only [hv, hi, ↓reduceDIte, List.foldr_cons, Relator.toWord_mul, ih (!positive), ht]
+    · simp only [hi, ↓reduceDIte, List.foldr_cons, Relator.toWord_mul, ih (!positive),
+        ← fi24SchreierEquiv_apply i hi]
       cases positive
       · simp [FreeGroup.invRev]
       · simp

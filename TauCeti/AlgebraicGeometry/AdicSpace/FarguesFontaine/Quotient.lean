@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
 public import TauCeti.Topology.Algebra.ConstMulAction
 
 import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic

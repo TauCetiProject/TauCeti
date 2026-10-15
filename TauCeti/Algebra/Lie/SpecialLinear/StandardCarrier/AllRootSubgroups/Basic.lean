@@ -109,8 +109,7 @@ theorem rootSubgroupPointsOfPair_eq_rootSubgroupPoints (k : Fin r ⊕ Fin r) :
   apply MonoidHom.ext
   intro c
   apply Subtype.ext
-  rw [coe_rootSubgroupPointsOfPair, coe_rootSubgroupPoints,
-    kostantRootSubgroupMatrix_eq_transvection, MulEquiv.apply_symm_apply]
+  rw [coe_rootSubgroupPointsOfPair, coe_rootSubgroupPoints_eq_transvectionUnit]
 
 /-- Root-subgroup values at non-chaining roots commute inside the carrier. -/
 theorem commute_rootSubgroupPointsOfPair (hij : i ≠ j) (hkl : k ≠ l)

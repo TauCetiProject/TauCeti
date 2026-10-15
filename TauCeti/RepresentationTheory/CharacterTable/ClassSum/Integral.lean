@@ -33,8 +33,6 @@ character on the class sums algebraic integers.
 
 ## References
 
-* [Character Theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 1, “The integral class center”.
 * C. W. Curtis and I. Reiner, *Methods of Representation Theory*, Volume I, Chapters 1–3.
 -/
 

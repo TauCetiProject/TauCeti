@@ -43,8 +43,8 @@ separate steps.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 5.a, 6.a.
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4.
 
-This advances Layer 5, "The unipotent radical", of the ReductiveGroups roadmap by proving the
-containment and normality parts of binary-product closure for unipotent-radical candidates.
+This proves the containment and normality parts of binary-product closure for unipotent-radical
+candidates.
 -/
 
 public section

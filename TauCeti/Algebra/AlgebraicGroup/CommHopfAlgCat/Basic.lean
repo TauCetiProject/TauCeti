@@ -38,6 +38,8 @@ by pre-composition.
   a represented group-object map.
 * `CommHopfAlgCat.grpObjMap_injective`: represented group-object maps determine their coordinate
   Hopf-algebra morphisms.
+* `CommHopfAlgCat.coe_ofIso`: the bialgebra equivalence of an isomorphism has the forward
+  morphism as its underlying bialgebra morphism.
 
 ## See also
 
@@ -113,6 +115,12 @@ theorem grpObjMap_comp {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) (g : 
     grpObjMap (f ≫ g) = grpObjMap g ≫ grpObjMap f := by
   rfl
 
+/-- The bialgebra equivalence underlying an isomorphism of commutative Hopf algebras has the
+forward morphism of the isomorphism as its underlying bialgebra morphism. -/
+theorem coe_ofIso {H K : _root_.CommHopfAlgCat.{u} R} (e : H ≅ K) :
+    ((_root_.CommHopfAlgCat.ofIso e : H ≃ₐc[R] K) : H →ₐc[R] K) = e.hom.hom :=
+  (rfl)
+
 /-- A morphism represented by a commutative Hopf-algebra morphism preserves the group-object
 multiplication. -/
 noncomputable instance grpObjMap_isMonHom {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
@@ -161,13 +169,8 @@ lemma mapPointsFunctor_naturality_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶
 /-- Pre-composition with a surjective coordinate morphism is injective on points. -/
 lemma mapPointsFunctor_app_injective_of_surjective {H K : CommHopfAlgCat.{v} R}
     (φ : H ⟶ K) (hφ : Function.Surjective φ.hom) (A : CommAlgCat.{w} R) :
-    Function.Injective ((mapPointsFunctor φ).app A) := by
-  intro f g hfg
-  apply WithConv.ofConv_injective
-  apply AlgHom.ext
-  intro k
-  obtain ⟨h, rfl⟩ := hφ k
-  exact congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A => p.ofConv h) hfg
+    Function.Injective ((mapPointsFunctor φ).app A) :=
+  AlgHom.mapDomain_injective_of_surjective (A := A) φ.hom hφ
 
 /-- `mapPointsFunctor` sends the identity coordinate morphism to the identity natural
 transformation. -/

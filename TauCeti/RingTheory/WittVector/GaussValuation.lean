@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Valuation.Integers
+public import Mathlib.RingTheory.WittVector.Domain
+public import Mathlib.Topology.Instances.NNReal.Lemmas
+public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.RingTheory.Valuation.Continuous.Adic
 public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 
@@ -35,6 +37,8 @@ modulo a suitable power of `p`.
 ## Main definitions
 
 * `TauCeti.WittVector.gaussValuation` : the Gauss valuation `λ_ρ` on `𝕎 O`.
+* `TauCeti.WittVector.gaussDegree` : Kedlaya's degree for `λ_ρ`, the largest index `d` with
+  `v(x_d) ρ ^ d = λ_ρ(x)`.
 
 ## Main results
 
@@ -43,14 +47,25 @@ modulo a suitable power of `p`.
 * `TauCeti.WittVector.gaussValuation_apply` : `λ_ρ(x) = supₙ v(xₙ) ρⁿ`.
 * `TauCeti.WittVector.gaussValuation_teichmuller_mul_pow` : `λ_ρ([a] p ^ m) = v(a) ρ ^ m`.
 * `TauCeti.WittVector.gaussValuation_eq_zero_iff` : for `0 < ρ`, `λ_ρ` vanishes only at `0`.
+* `TauCeti.WittVector.gaussValuation_pos` : for `0 < ρ`, `λ_ρ` is positive away from `0`.
+* `TauCeti.WittVector.gaussValuation_teichmuller_add_teichmuller_sub_le` : Teichmüller
+  representatives are additive up to multiples of `p`, with
+  `λ_ρ([a] + [b] - [a + b]) ≤ ρ max (v(a), v(b))`.
 * `TauCeti.WittVector.isContinuous_gaussValuation` : if `v(ϖ) < 1`, then `λ_ρ` is continuous for
   the `(p, [ϖ])`-adic topology.
+* `TauCeti.WittVector.eventually_gaussValuation_eq_mul_pow_gaussDegree` : for `ρ'` slightly larger
+  than `ρ`, `λ_ρ'(x) = v(x_d) ρ' ^ d` for the degree `d` of `x` for `λ_ρ`.
+* `TauCeti.WittVector.gaussDegree_eq_of_gaussValuation_sub_lt` : the degree only depends on the
+  leading part (Kedlaya, Remark 2.7).
+* `TauCeti.WittVector.gaussDegree_mul` : the degree is additive on products (Kedlaya, Lemma 2.6).
 
 ## References
 
 * L. Fargues and J.-M. Fontaine, *Courbes et fibrés vectoriels en théorie de Hodge p-adique*,
   Astérisque 406 (2018), Chapter 1, for the Gauss norms on `A_inf`.
 * K. S. Kedlaya, *Nonarchimedean geometry of Witt vectors*, Nagoya Math. J. 209 (2013).
+* K. S. Kedlaya, *Noetherian properties of Fargues–Fontaine curves*, IMRN 2016, no. 8,
+  2544–2567; arXiv:1410.5160v3, Definition 2.5, Lemma 2.6 and Remark 2.7, for the degree.
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017, §3.1.
 -/
 
@@ -380,6 +395,47 @@ theorem le_gaussValuation (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) (n : �
     v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n ≤ gaussValuation p hv ρ hρ x :=
   le_ciSup (bddAbove_range_gaussTerm hv hρ.le x) n
 
+/-- Increasing the radius increases the Gauss valuation of a Witt vector. -/
+theorem gaussValuation_mono (hv : v.Integers O) {ρ₁ ρ₂ : ℝ≥0}
+    (hρ₁ : ρ₁ < 1) (hρ₂ : ρ₂ < 1) (hρ : ρ₁ ≤ ρ₂) (x : 𝕎 O) :
+    gaussValuation p hv ρ₁ hρ₁ x ≤ gaussValuation p hv ρ₂ hρ₂ x := by
+  rw [gaussValuation_apply]
+  exact ciSup_le fun n ↦ (mul_le_mul' le_rfl (pow_le_pow_left' hρ n)).trans
+    (le_gaussValuation hv hρ₂ x n)
+
+/-- **The Hadamard three circles inequality for Gauss valuations.** For radii
+`0 < ρ₁ ≤ ρ ≤ ρ₂` and `m : ℕ`, the value `λ_ρ(x) / ρ ^ m`, which is the Gauss valuation at `ρ` of
+`x / p ^ m` once `p` is inverted, is at most the larger of its values at `ρ₁` and `ρ₂`: each term
+`v(xₙ) ρ ^ (n - m)` is monotone in `ρ`, increasing if `m ≤ n` and decreasing otherwise. -/
+theorem gaussValuation_mul_inv_pow_le_max (hv : v.Integers O) {ρ₁ ρ₂ : ℝ≥0} (hρ : ρ < 1)
+    (hρ₁ : ρ₁ < 1) (hρ₂ : ρ₂ < 1) (h₀ : 0 < ρ₁) (h₁ : ρ₁ ≤ ρ) (h₂ : ρ ≤ ρ₂) (x : 𝕎 O) (m : ℕ) :
+    gaussValuation p hv ρ hρ x * (ρ ^ m)⁻¹ ≤
+      max (gaussValuation p hv ρ₁ hρ₁ x * (ρ₁ ^ m)⁻¹)
+        (gaussValuation p hv ρ₂ hρ₂ x * (ρ₂ ^ m)⁻¹) := by
+  rw [gaussValuation_apply, NNReal.iSup_mul]
+  refine ciSup_le fun n ↦ ?_
+  rw [mul_assoc]
+  rcases le_or_gt m n with hmn | hnm
+  · -- `ρ ^ n / ρ ^ m = ρ ^ (n - m)` is at most `ρ₂ ^ (n - m)`
+    refine le_max_of_le_right ?_
+    rw [← pow_sub₀ _ (h₀.trans_le h₁).ne' hmn]
+    calc v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ (n - m)
+        ≤ v (algebraMap O K (x.teichmullerCoeff n)) * ρ₂ ^ (n - m) := by gcongr
+      _ = v (algebraMap O K (x.teichmullerCoeff n)) * ρ₂ ^ n * (ρ₂ ^ m)⁻¹ := by
+        rw [pow_sub₀ _ (h₀.trans_le (h₁.trans h₂)).ne' hmn, mul_assoc]
+      _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₂ x n
+  · -- `ρ ^ n / ρ ^ m = (ρ ^ (m - n))⁻¹` is at most `(ρ₁ ^ (m - n))⁻¹`
+    refine le_max_of_le_left ?_
+    have hρ₀ : 0 < ρ := h₀.trans_le h₁
+    have key (r : ℝ≥0) (hr : 0 < r) : r ^ n * (r ^ m)⁻¹ = (r ^ (m - n))⁻¹ := by
+      rw [pow_sub₀ _ hr.ne' hnm.le, mul_inv, inv_inv, mul_comm]
+    calc v (algebraMap O K (x.teichmullerCoeff n)) * (ρ ^ n * (ρ ^ m)⁻¹)
+        ≤ v (algebraMap O K (x.teichmullerCoeff n)) * (ρ₁ ^ n * (ρ₁ ^ m)⁻¹) := by
+          rw [key ρ hρ₀, key ρ₁ h₀]
+          gcongr
+      _ = v (algebraMap O K (x.teichmullerCoeff n)) * ρ₁ ^ n * (ρ₁ ^ m)⁻¹ := (mul_assoc ..).symm
+      _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₁ x n
+
 /-- The Gauss valuation is at most one. -/
 theorem gaussValuation_le_one (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) :
     gaussValuation p hv ρ hρ x ≤ 1 :=
@@ -403,6 +459,60 @@ theorem gaussValuation_p (hv : v.Integers O) (hρ : ρ < 1) :
     gaussValuation p hv ρ hρ (p : 𝕎 O) = ρ := by
   simpa using gaussValuation_teichmuller_mul_pow (p := p) hv hρ 1 1
 
+/-- In the splitting `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b` of the Teichmüller expansion
+(`WittVector.exists_eq_sum_teichmullerCoeff_add_pow_mul`), the tail satisfies
+`λ_ρ(b) ρᵐ ≤ λ_ρ(y)`. -/
+theorem gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul (hv : v.Integers O) (hρ : ρ < 1)
+    {y b : 𝕎 O} {m : ℕ}
+    (hb : y = ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
+      (p : 𝕎 O) ^ m * b) :
+    gaussValuation p hv ρ hρ b * ρ ^ m ≤ gaussValuation p hv ρ hρ y := by
+  have hsum : gaussValuation p hv ρ hρ
+      (∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i) ≤
+        gaussValuation p hv ρ hρ y :=
+    Valuation.map_sum_le _ fun i _ ↦ by
+      rw [gaussValuation_teichmuller_mul_pow]
+      exact le_gaussValuation hv hρ y i
+  have h : (p : 𝕎 O) ^ m * b =
+      y - ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i :=
+    eq_sub_iff_add_eq'.mpr hb.symm
+  calc gaussValuation p hv ρ hρ b * ρ ^ m = gaussValuation p hv ρ hρ ((p : 𝕎 O) ^ m * b) := by
+        rw [map_mul, map_pow, gaussValuation_p, mul_comm]
+    _ ≤ _ := h ▸ (Valuation.map_sub _ _ _).trans (max_le le_rfl hsum)
+
+/-- A Witt vector whose `0`-th coordinate vanishes, that is, a multiple of `p`, has Gauss
+valuation at most `ρ`. -/
+theorem gaussValuation_le_of_coeff_zero_eq_zero (hv : v.Integers O) (hρ : ρ < 1) {x : 𝕎 O}
+    (hx : x.coeff 0 = 0) : gaussValuation p hv ρ hρ x ≤ ρ := by
+  rw [gaussValuation_apply]
+  refine ciSup_le fun n ↦ ?_
+  rcases n with _ | n
+  · simp [hx]
+  · exact (mul_le_of_le_one_left' (hv.map_le_one _)).trans
+      (pow_le_of_le_one zero_le hρ.le n.succ_ne_zero)
+
+/-- **Teichmüller representatives are additive up to `p`**, quantitatively:
+`λ_ρ([a] + [b] - [a + b]) ≤ ρ max (v(a), v(b))`. -/
+theorem gaussValuation_teichmuller_add_teichmuller_sub_le (hv : v.Integers O) (hρ : ρ < 1)
+    (a b : O) :
+    gaussValuation p hv ρ hρ (teichmuller p a + teichmuller p b - teichmuller p (a + b)) ≤
+      ρ * max (v (algebraMap O K a)) (v (algebraMap O K b)) := by
+  wlog h : v (algebraMap O K b) ≤ v (algebraMap O K a) generalizing a b
+  · rw [max_comm, add_comm (teichmuller p a), add_comm a]
+    exact this b a (le_of_not_ge h)
+  obtain ⟨t, rfl⟩ := hv.dvd_of_le h
+  -- `[a] + [a t] - [a + a t] = [a] (1 + [t] - [1 + t])`, and the second factor is a multiple of
+  -- `p`.
+  have he : (1 + teichmuller p t - teichmuller p (1 + t)).coeff 0 = 0 := by
+    rw [← constantCoeff_apply, map_sub, map_add, map_one, constantCoeff_apply,
+      constantCoeff_apply, teichmuller_coeff_zero, teichmuller_coeff_zero, sub_self]
+  have hfac : teichmuller p a + teichmuller p (a * t) - teichmuller p (a + a * t) =
+      teichmuller p a * (1 + teichmuller p t - teichmuller p (1 + t)) := by
+    rw [← mul_one_add a t, map_mul, map_mul]
+    ring
+  rw [hfac, map_mul, gaussValuation_teichmuller, max_eq_left h, mul_comm ρ]
+  exact mul_le_mul' le_rfl (gaussValuation_le_of_coeff_zero_eq_zero hv hρ he)
+
 /-- For `0 < ρ`, the Gauss valuation vanishes only at zero. -/
 @[simp]
 theorem gaussValuation_eq_zero_iff (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x : 𝕎 O} :
@@ -414,6 +524,11 @@ theorem gaussValuation_eq_zero_iff (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : 
   rw [← teichmullerCoeff_pow, zero_coeff,
     hn.resolve_right (pow_ne_zero n hρ₀.ne'), zero_pow (pow_ne_zero n (Fact.out : p.Prime).ne_zero)]
 
+/-- For `0 < ρ`, the Gauss valuation of a nonzero Witt vector is positive. -/
+theorem gaussValuation_pos (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x : 𝕎 O}
+    (hx : x ≠ 0) : 0 < gaussValuation p hv ρ hρ x :=
+  pos_iff_ne_zero.mpr ((gaussValuation_eq_zero_iff hv hρ₀ hρ).not.mpr hx)
+
 /-- **The Gauss valuations are continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`, when
 `v(ϖ) < 1`: `λ_ρ` is at most `1` everywhere, and at most `max ρ v(ϖ) < 1` at `p` and `[ϖ]`. -/
 theorem isContinuous_gaussValuation [TopologicalSpace (𝕎 O)] {ϖ : O}
@@ -422,5 +537,229 @@ theorem isContinuous_gaussValuation [TopologicalSpace (𝕎 O)] {ϖ : O}
   refine Valuation.isContinuous_of_isAdic hI (fun a _ ↦ gaussValuation_le_one hv hρ a)
     (max_lt hρ hϖ) fun t ht ↦ ?_
   rcases ht with rfl | rfl <;> simp
+
+/-! ### The degree
+
+For `0 < ρ < 1` and `x ≠ 0`, the weighted valuations `v(xₙ) ρⁿ` attain their supremum `λ_ρ(x)` at
+finitely many indices. Kedlaya calls the largest of them the *degree* of `x`. Viewing `x` as a
+power series in `p` with Teichmüller coefficients, it is the degree of the leading part of `x` for
+`λ_ρ`, and it behaves like the degree of a polynomial: it is additive on products and only depends
+on `x` up to terms of smaller Gauss valuation.
+
+Both facts come from the radii slightly larger than `ρ`. There `λ_ρ'(x) = v(x_d) ρ' ^ d` for the
+degree `d`, because enlarging the radius favours the larger indices among those attaining
+`λ_ρ(x)`. Since every `λ_ρ'` is a valuation, the degree is the exponent of this power law, and it
+is computed from the valuations `λ_ρ'` alone, with no reference to Witt vector arithmetic. -/
+
+section Degree
+
+open Filter Topology
+
+variable (p) in
+/-- **The degree of a Witt vector for the Gauss valuation `λ_ρ`**: the largest index `d` with
+`v(x_d) ρ ^ d = λ_ρ(x)`, for `x ≠ 0` and `0 < ρ < 1`. -/
+noncomputable def gaussDegree (hv : v.Integers O) (ρ : ℝ≥0) (hρ : ρ < 1) (x : 𝕎 O) : ℕ :=
+  sSup {n | v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n = gaussValuation p hv ρ hρ x}
+
+/-- The degree of `0` is `0`: every index attains its Gauss valuation `0`. -/
+@[simp]
+theorem gaussDegree_zero (hv : v.Integers O) (hρ : ρ < 1) : gaussDegree p hv ρ hρ 0 = 0 := by
+  simp [gaussDegree]
+
+/-- The indices at which a nonzero Witt vector attains its Gauss valuation are bounded. -/
+private theorem bddAbove_setOf_eq_gaussValuation (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+    {x : 𝕎 O} (hx : x ≠ 0) :
+    BddAbove {n | v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n =
+      gaussValuation p hv ρ hρ x} := by
+  obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one (gaussValuation_pos hv hρ₀ hρ hx) hρ
+  refine ⟨N, fun n hn ↦ le_of_not_ge fun hNn ↦ ?_⟩
+  have h : v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n < gaussValuation p hv ρ hρ x :=
+    ((mul_le_of_le_one_left' (hv.map_le_one (x.teichmullerCoeff n))).trans
+      (pow_le_pow_of_le_one zero_le hρ.le hNn)).trans_lt hN
+  exact h.ne hn
+
+/-- A nonzero Witt vector attains its Gauss valuation at some index. -/
+private theorem nonempty_setOf_eq_gaussValuation (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) :
+    {n | v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n =
+      gaussValuation p hv ρ hρ x}.Nonempty := by
+  obtain ⟨i₀, hi₀, -⟩ := exists_isGreatest_gaussTerm hv hρ x
+  exact ⟨i₀, (gaussSup_eq_gaussTerm hv hρ.le hi₀).symm⟩
+
+/-- A nonzero Witt vector attains its Gauss valuation at its degree:
+`λ_ρ(x) = v(x_d) ρ ^ d` for `d = gaussDegree p hv ρ hρ x`. -/
+theorem gaussValuation_eq_mul_pow_gaussDegree (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+    {x : 𝕎 O} (hx : x ≠ 0) :
+    gaussValuation p hv ρ hρ x = v (algebraMap O K (x.teichmullerCoeff (gaussDegree p hv ρ hρ x))) *
+      ρ ^ gaussDegree p hv ρ hρ x :=
+  (Nat.sSup_mem (nonempty_setOf_eq_gaussValuation hv hρ x)
+    (bddAbove_setOf_eq_gaussValuation hv hρ₀ hρ hx)).symm
+
+/-- Every index at which a nonzero Witt vector attains its Gauss valuation is at most its
+degree. -/
+theorem le_gaussDegree (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x : 𝕎 O} (hx : x ≠ 0)
+    {n : ℕ} (hn : v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n = gaussValuation p hv ρ hρ x) :
+    n ≤ gaussDegree p hv ρ hρ x :=
+  le_csSup (bddAbove_setOf_eq_gaussValuation hv hρ₀ hρ hx) hn
+
+/-- Beyond its degree, the weighted valuations of a nonzero Witt vector are smaller than its
+Gauss valuation. -/
+theorem mul_pow_lt_gaussValuation_of_gaussDegree_lt (hv : v.Integers O) (hρ₀ : 0 < ρ)
+    (hρ : ρ < 1) {x : 𝕎 O} (hx : x ≠ 0) {n : ℕ} (hn : gaussDegree p hv ρ hρ x < n) :
+    v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n < gaussValuation p hv ρ hρ x :=
+  (le_gaussValuation hv hρ x n).lt_of_ne fun h ↦ (le_gaussDegree hv hρ₀ hρ hx h).not_gt hn
+
+/-- **The Gauss valuations near `ρ` follow a power law of the degree.** For `ρ'` slightly larger
+than `ρ`, the Gauss valuation `λ_ρ'(x)` of a nonzero Witt vector is attained at its degree `d` for
+`λ_ρ`: `λ_ρ'(x) = v(x_d) ρ' ^ d`. -/
+theorem eventually_gaussValuation_eq_mul_pow_gaussDegree (hv : v.Integers O) (hρ₀ : 0 < ρ)
+    (hρ : ρ < 1) {x : 𝕎 O} (hx : x ≠ 0) :
+    ∀ᶠ ρ' in 𝓝[≥] ρ, ∀ hρ' : ρ' < 1, gaussValuation p hv ρ' hρ' x =
+      v (algebraMap O K (x.teichmullerCoeff (gaussDegree p hv ρ hρ x))) *
+        ρ' ^ gaussDegree p hv ρ hρ x := by
+  set d := gaussDegree p hv ρ hρ x
+  set a : ℕ → ℝ≥0 := fun n ↦ v (algebraMap O K (x.teichmullerCoeff n))
+  have hM := gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx
+  have hM₀ : 0 < a d * ρ ^ d := hM ▸ gaussValuation_pos hv hρ₀ hρ hx
+  obtain ⟨ρ₁, hρρ₁, hρ₁⟩ := exists_between hρ
+  obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one hM₀ hρ₁
+  -- Each of the finitely many indices below `N` is dominated by the degree near `ρ`: the indices
+  -- below `d` for every `ρ' ≥ ρ`, and those above `d` by continuity, as they are strictly
+  -- dominated at `ρ`.
+  have hfin : ∀ᶠ ρ' in 𝓝[≥] ρ, ∀ n ∈ Finset.range N, a n * ρ' ^ n ≤ a d * ρ' ^ d := by
+    refine (Filter.eventually_all_finset _).mpr fun n _ ↦ ?_
+    rcases le_or_gt n d with hnd | hdn
+    · filter_upwards [self_mem_nhdsWithin] with ρ' (hρ' : ρ ≤ ρ')
+      -- Cancel `ρ ^ n` from `a n ρ ^ n ≤ a d ρ ^ d`, then enlarge `ρ ^ (d - n)` to `ρ' ^ (d - n)`.
+      have key (b c : ℝ≥0) (k : ℕ) (hbc : b * ρ ^ n ≤ c * ρ ^ (n + k)) :
+          b * ρ' ^ n ≤ c * ρ' ^ (n + k) := by
+        rw [pow_add, mul_comm (ρ ^ n), ← mul_assoc] at hbc
+        rw [pow_add, mul_comm (ρ' ^ n), ← mul_assoc]
+        exact mul_le_mul' ((le_of_mul_le_mul_right hbc (pow_pos hρ₀ n)).trans
+          (mul_le_mul' le_rfl (pow_le_pow_left₀ zero_le hρ' k))) le_rfl
+      obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hnd
+      have h : a n * ρ ^ n ≤ a d * ρ ^ d := hM ▸ le_gaussValuation hv hρ x n
+      rw [hk] at h ⊢
+      exact key _ _ k h
+    · have hlt : a n * ρ ^ n < a d * ρ ^ d :=
+        hM ▸ mul_pow_lt_gaussValuation_of_gaussDegree_lt hv hρ₀ hρ hx hdn
+      exact (((continuous_const.mul (continuous_pow n)).continuousAt.eventually_lt
+        (continuous_const.mul (continuous_pow d)).continuousAt hlt).filter_mono
+          nhdsWithin_le_nhds).mono fun _ h ↦ h.le
+  filter_upwards [hfin, self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds hρρ₁)] with
+    ρ' hfin (hρ' : ρ ≤ ρ') (hρ'₁ : ρ' < ρ₁) hρ'1
+  -- The indices from `N` on are dominated uniformly for `ρ ≤ ρ' < ρ₁`.
+  have hle (n : ℕ) : a n * ρ' ^ n ≤ a d * ρ' ^ d := by
+    rcases lt_or_ge n N with hn | hn
+    · exact hfin n (Finset.mem_range.mpr hn)
+    calc a n * ρ' ^ n ≤ ρ₁ ^ N :=
+          (mul_le_of_le_one_left' (hv.map_le_one _)).trans
+            ((pow_le_pow_left₀ zero_le hρ'₁.le n).trans (pow_le_pow_of_le_one zero_le hρ₁.le hn))
+      _ ≤ a d * ρ ^ d := hN.le
+      _ ≤ a d * ρ' ^ d := mul_le_mul' le_rfl (pow_le_pow_left₀ zero_le hρ' d)
+  rw [gaussValuation_apply]
+  exact le_antisymm (ciSup_le hle) (le_ciSup ⟨_, Set.forall_mem_range.mpr hle⟩ d)
+
+/-- **The degree is the exponent of the power law.** If, for all `ρ'` slightly larger than `ρ`,
+the Gauss valuation `λ_ρ'(x)` of a nonzero Witt vector is `c ρ' ^ n`, then `n` is the degree of
+`x` for `λ_ρ`. -/
+theorem gaussDegree_eq_of_eventually_eq_mul_pow (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+    {x : 𝕎 O} (hx : x ≠ 0) {c : ℝ≥0} {n : ℕ}
+    (h : ∀ᶠ ρ' in 𝓝[≥] ρ, ∀ hρ' : ρ' < 1, gaussValuation p hv ρ' hρ' x = c * ρ' ^ n) :
+    gaussDegree p hv ρ hρ x = n := by
+  set d := gaussDegree p hv ρ hρ x
+  set a := v (algebraMap O K (x.teichmullerCoeff d))
+  have hM₀ : a * ρ ^ d ≠ 0 :=
+    (gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx ▸ gaussValuation_pos hv hρ₀ hρ hx).ne'
+  have heq : ∀ᶠ ρ' in 𝓝[≥] ρ, a * ρ' ^ d = c * ρ' ^ n := by
+    filter_upwards [h, eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
+      nhdsWithin_le_nhds (Iio_mem_nhds hρ)] with ρ' h h' hρ'
+    exact (h' hρ').symm.trans (h hρ')
+  -- Comparing the power laws at `ρ` and at some `ρ' > ρ` identifies the exponents.
+  obtain ⟨ρ', hρ', hρρ'⟩ :=
+    ((heq.filter_mono (nhdsWithin_mono _ Set.Ioi_subset_Ici_self)).and self_mem_nhdsWithin).exists
+  set r := ρ' / ρ
+  have hr : ρ' = ρ * r := (mul_div_cancel₀ ρ' hρ₀.ne').symm
+  have hρeq : a * ρ ^ d = c * ρ ^ n := heq.self_of_nhdsWithin le_rfl
+  rw [hr, mul_pow, mul_pow, ← mul_assoc, ← mul_assoc, hρeq] at hρ'
+  have hr₁ : 1 < r := (one_lt_div hρ₀).mpr hρρ'
+  exact pow_right_injective₀ (zero_lt_one.trans hr₁) hr₁.ne'
+    (mul_left_cancel₀ (hρeq ▸ hM₀) hρ')
+
+/-- **The degree only depends on the leading part** (Kedlaya, Remark 2.7): if
+`λ_ρ(x - y) < λ_ρ(x)`, then `x` and `y` have the same degree. -/
+theorem gaussDegree_eq_of_gaussValuation_sub_lt (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+    {x y : 𝕎 O} (h : gaussValuation p hv ρ hρ (x - y) < gaussValuation p hv ρ hρ x) :
+    gaussDegree p hv ρ hρ y = gaussDegree p hv ρ hρ x := by
+  rcases eq_or_ne x y with rfl | hxy
+  · rfl
+  have hx : x ≠ 0 := by
+    rintro rfl
+    exact (zero_le.trans_lt h).ne' (map_zero _)
+  have hy : y ≠ 0 := by
+    rintro rfl
+    simp at h
+  set d := gaussDegree p hv ρ hρ x
+  set a := v (algebraMap O K (x.teichmullerCoeff d))
+  set e := gaussDegree p hv ρ hρ (x - y)
+  set b := v (algebraMap O K ((x - y).teichmullerCoeff e))
+  have hxy' : x - y ≠ 0 := sub_ne_zero.mpr hxy
+  have hlt : b * ρ ^ e < a * ρ ^ d := by
+    rwa [gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
+      gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hxy'] at h
+  have hlt' : ∀ᶠ ρ' in 𝓝[≥] ρ, b * ρ' ^ e < a * ρ' ^ d :=
+    ((continuous_const.mul (continuous_pow e)).continuousAt.eventually_lt
+      (continuous_const.mul (continuous_pow d)).continuousAt hlt).filter_mono nhdsWithin_le_nhds
+  refine gaussDegree_eq_of_eventually_eq_mul_pow (c := a) hv hρ₀ hρ hy ?_
+  filter_upwards [hlt', eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
+    eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hxy'] with ρ' hlt' hx' hxy' hρ'
+  rw [← hx' hρ', ← hxy' hρ'] at hlt'
+  rw [← hx' hρ', ← Valuation.map_sub_eq_of_lt_left _ hlt', sub_sub_cancel]
+
+/-- **The degree is additive on products** (Kedlaya, Lemma 2.6). -/
+theorem gaussDegree_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x y : 𝕎 O} (hx : x ≠ 0)
+    (hy : y ≠ 0) :
+    gaussDegree p hv ρ hρ (x * y) = gaussDegree p hv ρ hρ x + gaussDegree p hv ρ hρ y := by
+  have := hv.isDomain
+  refine gaussDegree_eq_of_eventually_eq_mul_pow
+    (c := v (algebraMap O K (x.teichmullerCoeff (gaussDegree p hv ρ hρ x))) *
+      v (algebraMap O K (y.teichmullerCoeff (gaussDegree p hv ρ hρ y)))) hv hρ₀ hρ
+    (mul_ne_zero hx hy) ?_
+  filter_upwards [eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
+    eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hy] with ρ' hx' hy' hρ'
+  rw [map_mul, hx' hρ', hy' hρ', pow_add]
+  ring
+
+/-- The degree of `[a] p ^ m` is `m`, for `a ≠ 0`. -/
+theorem gaussDegree_teichmuller_mul_pow (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {a : O}
+    (ha : a ≠ 0) (m : ℕ) : gaussDegree p hv ρ hρ (teichmuller p a * (p : 𝕎 O) ^ m) = m := by
+  have := hv.isDomain
+  have hp : (p : 𝕎 O) ≠ 0 := fun h ↦ hρ₀.ne (by simpa [h] using gaussValuation_p (p := p) hv hρ)
+  exact gaussDegree_eq_of_eventually_eq_mul_pow hv hρ₀ hρ
+    (mul_ne_zero (teichmuller_ne_zero p ha) (pow_ne_zero m hp))
+    (Filter.Eventually.of_forall fun ρ' hρ' ↦ gaussValuation_teichmuller_mul_pow hv hρ' a m)
+
+/-- Multiplying by a Teichmüller representative `[c]` with `c ≠ 0` does not change the degree. -/
+@[simp]
+theorem gaussDegree_teichmuller_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {c : O}
+    (hc : c ≠ 0) (x : 𝕎 O) :
+    gaussDegree p hv ρ hρ (teichmuller p c * x) = gaussDegree p hv ρ hρ x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [mul_zero]
+  have h₀ := gaussDegree_teichmuller_mul_pow (p := p) hv hρ₀ hρ hc 0
+  rw [pow_zero, mul_one] at h₀
+  rw [gaussDegree_mul hv hρ₀ hρ (teichmuller_ne_zero p hc) hx, h₀, zero_add]
+
+/-- A nonzero finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` has degree less than `n`. -/
+theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O) (hρ₀ : 0 < ρ)
+    (hρ : ρ < 1) {a : ℕ → O} {n : ℕ}
+    (h : ∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j ≠ 0) :
+    gaussDegree p hv ρ hρ (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j) < n := by
+  by_contra! hn
+  have := gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ h
+  simp only [teichmullerCoeff_sum_range_teichmuller_mul_pow, hn.not_gt, ↓reduceIte, map_zero,
+    zero_mul, gaussValuation_eq_zero_iff hv hρ₀ hρ] at this
+  exact h this
+
+end Degree
 
 end TauCeti.WittVector

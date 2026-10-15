@@ -265,7 +265,7 @@ private theorem stasheffTerm_opOperation (𝒜 : AInfinityAlgebra R A) (d : ℕ 
       ← Fin.sum_univ_eq_sum_range (fun j ↦ d (p + (s - 1 - j))) s]
     exact h
   rw [AInfinity.stasheffTerm_def, AInfinity.stasheffTerm_def, hin,
-    evalNat_replaceBlock_smul _ _ _ (by omega : p < p + 1 + t),
+    MultilinearMap.evalNat_replaceBlock_smul _ _ _ (by omega : p < p + 1 + t),
     evalNat_opOperation 𝒜 (p + 1 + t) (AInfinity.replaceDeg d p s) _ fun i hi ↦
       AInfinity.replaceBlock_mem_replaceDeg_of_mem_blockDeg 𝒜.grading.piece
         (n := p + s + t) hx hv (by omega) (by omega)]

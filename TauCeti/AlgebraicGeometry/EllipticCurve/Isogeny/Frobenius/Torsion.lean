@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Determinant
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Galois
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 
 /-!
 # The Frobenius on torsion
@@ -18,13 +19,10 @@ acts on the points of `W` over `K` as the `q`-power map on coordinates. When `K`
 `F`, that map is the Frobenius automorphism `σ` of `K` over `F`, so on `N`-torsion `π` acts as the
 Galois automorphism `σ`.
 
-When moreover `K` is separably closed and `N` is invertible in `K`, the Weil pairing is
-Galois-equivariant, and `σ` raises roots of unity to the `q`-th power, so `π` scales the Weil
-pairing by `q`. Hence the determinant of the action of `π` on `E[N]` is `q = deg π` modulo `N`,
-although `π` is inseparable (the Frobenius case of Silverman III.8.6). This is the determinant of
-the Frobenius matrix in the Weil-pairing proof of the Hasse bound. The isogeny `1 - π`, and
-`r π - s` when the characteristic does not divide `s`, are separable, so they are covered by
-`TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`.
+When `K` is separably closed and `N` is invertible in `K`, the determinant of the action of `π` on
+`E[N]` is `q = deg π` modulo `N` (Silverman III.8.6): base change preserves the degree, so this is a
+case of `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`. It is the determinant of the
+Frobenius matrix in the Weil-pairing proof of the Hasse bound.
 
 ## Main results
 
@@ -33,7 +31,7 @@ the Frobenius matrix in the Weil-pairing proof of the Hasse bound. The isogeny `
 * `TauCeti.Isogeny.Hom.torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply`: over an algebraic
   extension, `π` acts on `N`-torsion as the Frobenius automorphism.
 * `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny_baseChangeFrobenius`: the determinant of
-  the action of `π` on `E[N]` is `q`.
+  the action of `π` on `E[N]` is `q` modulo `N`.
 
 ## References
 
@@ -80,19 +78,14 @@ theorem torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply (N : ℕ)
 
 end Fintype
 
-variable [Finite F] [Algebra.IsAlgebraic F K] [IsSepClosed K] {N : ℕ} [NeZero N]
+variable [Finite F] [IsSepClosed K] {N : ℕ} [NeZero N]
 
-/-- **The determinant of the action of the Frobenius on `E[N]` is `q = #F`**, over a separably
-closed algebraic extension `K` of the finite base `F` in which `N` is invertible. -/
+/-- **The determinant of the action of the Frobenius on `E[N]` is `q = #F` modulo `N`**, over a
+separably closed extension `K` of the finite base `F` in which `N` is invertible. -/
 theorem det_torsionLinearMap_ofIsogeny_baseChangeFrobenius (hN : (N : K) ≠ 0) :
     LinearMap.det ((ofIsogeny (baseChangeFrobenius K W)).torsionLinearMap N) = Nat.card F := by
-  cases nonempty_fintype F
-  rw [Nat.card_eq_fintype_card]
-  refine det_eq_of_weilPairing_eq_smul hN fun S T ↦ ?_
-  rw [torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply,
-    torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply, weilPairing_torsionGaloisAction]
-  refine Additive.toMul.injective <| Subtype.ext <| Units.ext ?_
-  simp [restrictRootsOfUnity_coe_apply, Nat.cast_smul_eq_nsmul]
+  rw [det_torsionLinearMap_ofIsogeny hN, baseChangeFrobenius_def]
+  exact congrArg Nat.cast ((Isogeny.degree_map _ _).trans (degree_frobeniusIsogeny W))
 
 end TauCeti.Isogeny.Hom
 

@@ -10,8 +10,8 @@ The database is the `ci.sqlite.gz` asset of https://github.com/TauCetiProject/Ta
   ci-fleet-30d.svg   the same for the last 30 days in 2-hour bins
   ci-stats.json      the binned series behind both, for anyone who wants the numbers
 
-and the daily charts of ci_daily_graphs.py (build duration, waits, phases, failures, runner-minutes,
-merge queue, runner picker).
+and the charts of ci_daily_graphs.py (daily build duration, waits, phases, failures, runner-minutes,
+merge validation and runner picker, plus timestamped merge backlog and bors staging runs).
 
 The fleet timeline has three panels on one time axis, after Marcelo Lynch's mathlib4 fleet graph:
 
@@ -59,7 +59,7 @@ SERIES = [
     ("gh-build-other", "main and scheduled builds on GitHub", PALETTE[10]),
     ("gh-other", "other GitHub jobs", PALETTE[0]),
     ("ns-pr", "PR builds on Namespace", PALETTE[1]),
-    ("ns-mq", "merge queue on Namespace", PALETTE[3]),
+    ("ns-mq", "merge validation on Namespace", PALETTE[3]),
     ("ns-other", "other Namespace jobs", PALETTE[4]),
 ]
 WAIT_SERIES = [("build", "builds", PALETTE[1]), ("other", "other jobs", PALETTE[0])]
@@ -77,7 +77,8 @@ def iso(t: float) -> str:
 def classify(name: str, kind: str, trigger: str) -> tuple[str, str]:
     build = name in BUILD_JOBS
     if kind == "namespace":
-        key = {"merge_queue": "ns-mq", "pr": "ns-pr"}.get(trigger, "ns-other")
+        key = ("ns-mq" if trigger in ci_daily_graphs.MERGE_TRIGGERS
+               else "ns-pr" if trigger == "pr" else "ns-other")
     elif build:
         key = "gh-build-pr" if trigger in ("pr", "workflow_dispatch") else "gh-build-other"
     else:
@@ -392,6 +393,7 @@ def main(argv=None):
         ET.fromstring(svgs[name])  # refuse to publish a malformed SVG
     files = {f"ci-fleet-{name}.svg": svg for name, svg in svgs.items()}
     files.update(ci_daily_graphs.charts(db, until))
+    files.update(ci_daily_graphs.merge_charts(db, until))
     for svg in files.values():
         ET.fromstring(svg)  # refuse to publish a malformed SVG
     # Written only once every chart has rendered and parsed, so a failure leaves the fallbacks.

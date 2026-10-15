@@ -26,10 +26,9 @@ and its monomorphism and monoid-homomorphism instances.
 
 ## References
 
-This is the categorical form of the Layer 3 Hopf-ideal/closed-subgroup dictionary in the
-ReductiveGroups roadmap. It uses Mathlib's `commHopfAlgCatEquivCogrpCommAlgCat` and
-`CategoryTheory.op_mono_of_epi` together with the quotient API in
-`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic`.
+This is the categorical form of the Hopf-ideal/closed-subgroup dictionary. It uses Mathlib's
+`commHopfAlgCatEquivCogrpCommAlgCat` and `CategoryTheory.op_mono_of_epi` together with the quotient
+API in `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic`.
 -/
 
 public section

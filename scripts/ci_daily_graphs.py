@@ -1,6 +1,6 @@
-"""Daily CI charts for the CI page, from the TauCetiCI database. Called by ci_stats_graphs.py.
+"""CI charts for the CI page, from the TauCetiCI database. Called by ci_stats_graphs.py.
 
-Every chart is one point (or bar) per complete UTC day, up to the database's coverage watermark:
+The daily charts have one point (or bar) per complete UTC day, up to the coverage watermark:
 
   ci-build-duration.svg   median and 90th-percentile build time, by where the build ran
   ci-build-wait.svg       median and 90th-percentile wait for a runner, by where the job ran
@@ -8,8 +8,13 @@ Every chart is one point (or bar) per complete UTC day, up to the database's cov
   ci-failures.svg         failed PR builds by cause, and the share of PR builds that failed
   ci-runner-minutes.svg   runner-minutes per day on each kind of runner, and those spent on
                           builds cancelled before finishing
-  ci-merge-queue.svg      merge-queue builds by outcome, and PRs landed
+  ci-merge-queue.svg      GitHub queue and bors builds by outcome, and PR arrivals
   ci-picker.svg           the share of PR builds that ran on GitHub-hosted runners
+
+The merge timelines use observation/run timestamps, including the current partial UTC day:
+
+  ci-queue-size.svg       observed ready-to-merge PR backlog
+  ci-bors-staging.svg     PRs bundled into each bors staging run, coloured by outcome
 """
 
 from __future__ import annotations
@@ -26,10 +31,12 @@ from chart_style import MUTED, PALETTE, TEXT, base_css, card_rect, css_px, svg_u
 UTC = dt.timezone.utc
 BUILD = "sandboxed-build"
 PR_BUILD = ".github/workflows/pr-build.yml"
+MERGE_TRIGGERS = {"merge_queue", "bors_staging"}
 
 ASSET_NAMES = [
     "ci-build-duration.svg", "ci-build-wait.svg", "ci-build-phases.svg", "ci-failures.svg",
     "ci-runner-minutes.svg", "ci-merge-queue.svg", "ci-picker.svg",
+    "ci-queue-size.svg", "ci-bors-staging.svg",
 ]
 
 # Step-name patterns for the sandboxed-build job, first match wins, mapped to a phase.
@@ -85,18 +92,18 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
     """Per-day series for every daily chart, over complete UTC days first..last."""
     days = days_between(first, last)
     lo, hi = f"{first}T00:00:00Z", f"{last}T23:59:59Z"
-    # Every attempt's build job (jobs keeps all attempts; runs only the latest), PR and merge-queue
-    # builds only: manual dispatches are neither.
+    # Every attempt's build job (jobs keeps all attempts; runs only the latest):
+    # PR builds and both main-branch merge engines, excluding manual dispatches.
     builds = db.execute(f"""
         SELECT substr(j.created_at, 1, 10), r.trigger, j.runner_kind, j.conclusion, j.wait_s, j.run_s,
                j.failure_class, j.job_id, r.run_id
         FROM jobs j JOIN runs r USING (repo, run_id)
         WHERE r.repo = 'TauCeti' AND r.workflow = '{PR_BUILD}' AND j.name = '{BUILD}'
-          AND r.trigger IN ('pr', 'merge_queue') AND j.runner_kind IN ('github', 'namespace')
+          AND r.trigger IN ('pr', 'merge_queue', 'bors_staging') AND j.runner_kind IN ('github', 'namespace')
           AND j.created_at BETWEEN ? AND ?""", (lo, hi)).fetchall()
 
     def where(trigger, kind):
-        return "merge queue" if trigger == "merge_queue" else f"PR, {'GitHub' if kind == 'github' else 'Namespace'}"
+        return "merge validation" if trigger in MERGE_TRIGGERS else f"PR, {'GitHub' if kind == 'github' else 'Namespace'}"
 
     dur = defaultdict(list)
     wait = defaultdict(list)
@@ -185,14 +192,23 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
         if trigger == "pr" and concl == "cancelled":
             minutes[day]["cancelled PR builds"] += run_s / 60
 
-    # Merge-queue build jobs, every attempt.
+    # Main-branch validation builds for both engines, including every rerun.
+    # Pilot and unidentified bors dispatches are excluded from production totals.
     mq = defaultdict(lambda: defaultdict(int))
     for day, trigger, kind, concl, *_ in builds:
-        if trigger == "merge_queue":
+        if trigger in MERGE_TRIGGERS:
             mq[day][concl if concl in ("success", "failure", "cancelled") else "other"] += 1
     landed = defaultdict(int)
-    for day, n in db.execute("""SELECT substr(committed_at, 1, 10), COUNT(*) FROM main_commits
-                                WHERE pr IS NOT NULL AND committed_at BETWEEN ? AND ? GROUP BY 1""", (lo, hi)):
+    # A staging commit can exist hours before it is accepted onto main. Use
+    # the earliest recorded main-push evidence, never its committer timestamp.
+    # Repeated validation and duplicate commits for one PR still count once.
+    for day, n in db.execute("""
+            SELECT substr(landed_at, 1, 10), COUNT(*) FROM (
+                SELECT c.pr, MIN(l.landed_at) AS landed_at
+                FROM main_commits c JOIN main_landings l
+                  ON l.repo = 'TauCeti' AND l.head_sha = c.sha
+                WHERE c.pr IS NOT NULL GROUP BY c.pr
+            ) WHERE landed_at BETWEEN ? AND ? GROUP BY 1""", (lo, hi)):
         landed[day] = n
 
     return {"days": days, "dur": dur, "wait": wait, "fails": fails, "pr_total": pr_total,
@@ -329,6 +345,132 @@ def stacked_chart(title, subtitle, days, series, ylabel, line=None, line_fmt=lam
     return "\n".join(out)
 
 
+# Minute observations normally arrive sixty seconds apart. Do not connect across
+# an outage or extrapolate the last sample to the coverage watermark.
+QUEUE_SAMPLE_GAP = 3 * 60
+
+
+def merge_history(db: sqlite3.Connection, since: float, until: float) -> dict:
+    """Timestamped backlog samples and one result per recorded production staging run.
+
+    runs holds each run's latest attempt; use its overall conclusion, including
+    publication/finalization failures after a successful sandboxed build.
+    """
+    bounds = tuple(dt.datetime.fromtimestamp(t, UTC).isoformat() for t in (since, until))
+    queue = []
+    for stamp, eligible in db.execute("""
+            SELECT observed_at, eligible_json FROM merge_observations
+            WHERE julianday(observed_at) >= julianday(?)
+              AND julianday(observed_at) < julianday(?) ORDER BY observed_at""", bounds):
+        prs = {p["pr"] for p in json.loads(eligible)
+               if type(p.get("pr")) is int and p["pr"] > 0}
+        queue.append((ts(stamp), len(prs)))
+
+    runs, missing_members = [], 0
+    for stamp, run_id, attempt, conclusion, batch, members in db.execute(f"""
+            SELECT r.created_at, r.run_id, r.run_attempt, r.conclusion, m.batch_id, m.members_json
+            FROM runs r JOIN merge_builds m USING (repo, run_id)
+            WHERE r.repo = 'TauCeti' AND r.workflow = '{PR_BUILD}'
+              AND r.trigger = 'bors_staging' AND m.engine = 'bors'
+              AND julianday(r.created_at) >= julianday(?)
+              AND julianday(r.created_at) < julianday(?) ORDER BY r.created_at, r.run_id""", bounds):
+        prs = {p["pr"] for p in json.loads(members or "[]")
+               if type(p.get("pr")) is int and p["pr"] > 0}
+        if not prs:
+            missing_members += 1
+            continue
+        runs.append({"at": ts(stamp), "run_id": run_id, "attempt": attempt,
+                     "conclusion": conclusion, "batch": batch, "prs": len(prs)})
+    return {"queue": queue, "runs": runs, "missing_members": missing_members}
+
+
+def time_axes(out: list[str], since: float, until: float, vmax: int, ylabel: str):
+    """A continuous UTC time axis and a whole-PR count axis."""
+    step, _ = nice_max(max(vmax, 5))
+    step = math.ceil(step)
+    top = step * math.ceil(max(vmax, 5) / step)
+    x = lambda t: L + (t - since) / (until - since) * (W - L - R)
+    y = lambda v: BOTTOM - v / top * (BOTTOM - TOP)
+    v = 0
+    while v <= top:
+        out.append(f'<line class="grid" x1="{L}" x2="{W-R}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
+                   f'<text class="tick" x="{L-8}" y="{y(v)+4:.1f}" text-anchor="end">{v:g}</text>')
+        v += step
+    out.append(f'<text class="tick" transform="translate(16,{(TOP+BOTTOM)/2:.0f}) rotate(-90)" '
+               f'text-anchor="middle">{html.escape(ylabel)}</text>')
+    # Choose ticks from hours/days, rather than placing one dot at each day's centre.
+    span = until - since
+    tick = next(t for t in (3600, 3*3600, 6*3600, 12*3600, 86400, 2*86400, 4*86400)
+                if span / t <= 10)
+    t = math.ceil(since / tick) * tick
+    while t < until:
+        stamp = dt.datetime.fromtimestamp(t, UTC)
+        label = stamp.strftime("%d %b %H:%M" if tick < 86400 else "%d %b")
+        out.append(f'<text class="tick" x="{x(t):.1f}" y="{BOTTOM+18}" text-anchor="middle">{label}</text>')
+        t += tick
+    out.append(f'<line class="axis" x1="{L}" x2="{W-R}" y1="{BOTTOM}" y2="{BOTTOM}"/>'
+               f'<text class="tick" x="{(L+W-R)/2}" y="{BOTTOM+40}" text-anchor="middle">Time (UTC)</text>')
+    return x, y
+
+
+def merge_charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
+    """Merge timelines over up to thirty days, ending at the shared CI watermark."""
+    since = until - 30 * 86400
+    m = merge_history(db, since, until)
+    starts = [t for t, _ in m["queue"]] + [r["at"] for r in m["runs"]]
+    if starts:
+        since = max(since, math.floor(min(starts) / 86400) * 86400)
+    through = dt.datetime.fromtimestamp(until, UTC).strftime("%d %b %Y %H:%M UTC")
+
+    out = frame("Merge queue size", f"Observed ready-to-merge PR backlog; data through {through}")
+    samples = m["queue"]
+    x, y = time_axes(out, since, until, max((n for _, n in samples), default=0), "PRs")
+    segments = []
+    for t, n in samples:
+        if not segments or t - segments[-1][-1][0] > QUEUE_SAMPLE_GAP:
+            segments.append([])
+        segments[-1].append((t, n))
+    for segment in segments:
+        # Keep both sides of a change, but omit redundant interior samples.
+        points = [segment[0]]
+        for previous, current in zip(segment, segment[1:]):
+            if previous[1] != current[1]:
+                points.extend([(current[0], previous[1]), current])
+        points.append(segment[-1])
+        out.append(f'<polyline fill="none" stroke="{PALETTE[2]}" stroke-width="{svg_unit(W, 2)}" '
+                   f'points="' + " ".join(f"{x(t):.1f},{y(n):.1f}" for t, n in points) + '"/>')
+        if len(segment) == 1:
+            t, n = segment[0]
+            out.append(f'<circle cx="{x(t):.1f}" cy="{y(n):.1f}" r="2.5" fill="{PALETTE[2]}"/>')
+    legend(out, [("ready-to-merge PRs", PALETTE[2])])
+    if not samples:
+        out.append(f'<text class="note" x="{L+16}" y="{TOP+24}">No queue observations in this window</text>')
+    out.append("</svg>")
+    queue_svg = "\n".join(out)
+
+    out = frame("Bors staging runs", f"One dot per run at creation time; data through {through}")
+    runs = m["runs"]
+    x, y = time_axes(out, since, until, max((r["prs"] for r in runs), default=0), "PRs in batch")
+    for r in runs:
+        conclusion = r["conclusion"]
+        colour = (PALETTE[5] if conclusion == "success" else PALETTE[3]
+                  if conclusion in {"failure", "timed_out", "startup_failure"}
+                  else MUTED)
+        stamp = dt.datetime.fromtimestamp(r["at"], UTC).strftime("%d %b %Y %H:%M:%S UTC")
+        label = (f'Run {r["run_id"]}, attempt {r["attempt"]}, batch {r["batch"]}: '
+                 f'{r["prs"]} PRs, {conclusion}; created {stamp}')
+        out.append(f'<circle cx="{x(r["at"]):.1f}" cy="{y(r["prs"]):.1f}" r="3.5" '
+                   f'fill="{colour}" fill-opacity="0.85"><title>{html.escape(label)}</title></circle>')
+    legend(out, [("success", PALETTE[5]), ("failure", PALETTE[3]), ("cancelled / other", MUTED)])
+    if not runs:
+        out.append(f'<text class="note" x="{L+16}" y="{TOP+24}">No staging runs with known batch sizes</text>')
+    if m["missing_members"]:
+        out.append(f'<text class="note" x="{L}" y="{TOP-10}">'
+                   f'{m["missing_members"]} runs omitted: batch membership unavailable</text>')
+    out.append("</svg>")
+    return {"ci-queue-size.svg": queue_svg, "ci-bors-staging.svg": "\n".join(out)}
+
+
 def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     """All daily charts, through the last complete UTC day before `until`."""
     last = (dt.datetime.fromtimestamp(until, UTC) - dt.timedelta(days=1)).date()
@@ -341,7 +483,7 @@ def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     m = metrics(db, first.isoformat(), last.isoformat())
     days = m["days"]
     span = f"UTC days {dt.date.fromisoformat(days[0]):%d %b} to {dt.date.fromisoformat(days[-1]):%d %b}"
-    places = [("PR, GitHub", PALETTE[2]), ("PR, Namespace", PALETTE[1]), ("merge queue", PALETTE[3])]
+    places = [("PR, GitHub", PALETTE[2]), ("PR, Namespace", PALETTE[1]), ("merge validation", PALETTE[3])]
     out = {}
 
     series = []
@@ -389,9 +531,9 @@ def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     series = [(o, c, [m["mq"][d].get(o, 0) for d in days]) for o, c in outcomes]
     landed = [m["landed"].get(d, 0) for d in days]
     out["ci-merge-queue.svg"] = stacked_chart(
-        "The merge queue", f"Merge-queue builds by outcome (bars) and PRs landed (dashed, right scale); "
-        f"{span}", days, series, "merge-queue builds",
-        line=("PRs landed", TEXT, landed, max(landed + [1])))
+        "Merge validation", f"GitHub queue + bors builds (bars); PR arrivals on main (dashed, right scale); "
+        f"{span}", days, series, "merge validation builds",
+        line=("PR arrivals on main", TEXT, landed, max(landed + [1])))
 
     share = [m["picker"][d][0] / sum(m["picker"][d]) if sum(m["picker"][d]) else None for d in days]
     out["ci-picker.svg"] = lines_chart(

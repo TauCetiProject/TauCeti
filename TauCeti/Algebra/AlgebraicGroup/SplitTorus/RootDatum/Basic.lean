@@ -47,8 +47,7 @@ reflecting root. The construction is independent of any choice of an enumeration
 The ordered-pair construction and its proof plan are adapted from the formal template in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`.
 
-This is the coordinate-lattice construction used by the diagonal-torus root datum of `GL_n` in
-Layer 7 of the ReductiveGroups roadmap.
+This is the coordinate-lattice construction used by the diagonal-torus root datum of `GL_n`.
 -/
 
 public section

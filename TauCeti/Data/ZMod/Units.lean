@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck, Claude
+Authors: Chris Birkbeck, Claude, Wentao Li
 -/
 module
 
@@ -21,6 +21,8 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti/NumberTheory/HeckeRing/GL2/Gamma0/`, which need the `Int.gcd` form of the unit
   condition carried by membership of `Δ₀(N)`, and `Int.exists_nonneg_lt_and_dvd_mul_sub` in
   `TauCeti/Data/Int/LinearCongruence.lean`, which needs the other direction.
+* `ZMod.isUnit_intCast_two_pow_of_odd` — an odd integer is a unit modulo every power
+  of two, including the trivial modulus at exponent zero.
 * `IsCoprime.exists_int_lifts` — a *pair* of coprime residues mod `d` lifts to a coprime pair
   of integers. Ported from the AINTLIB `LeanModularForms` project
   (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
@@ -63,6 +65,12 @@ theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
     IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
   (ZMod.coe_int_isUnit_iff_isCoprime _ _).trans
     (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
+
+/-- An odd integer is a unit modulo any power of two, including exponent zero. -/
+theorem ZMod.isUnit_intCast_two_pow_of_odd (n : ℕ) {a : ℤ} (ha : Odd a) :
+    IsUnit (a : ZMod (2 ^ n)) := by
+  apply (ZMod.coe_int_isUnit_iff_isCoprime a (2 ^ n)).mpr
+  simpa only [Nat.cast_pow, Nat.cast_ofNat] using (ha.isCoprime_two.pow_right (n := n)).symm
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
     (hac : IsCoprime (a₁ : ZMod d) (c₁ : ZMod d)) :

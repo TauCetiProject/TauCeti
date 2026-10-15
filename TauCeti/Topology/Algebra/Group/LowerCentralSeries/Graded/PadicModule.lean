@@ -25,6 +25,8 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
 
 ## Main results
 
+* `TauCeti.IsProP.mk_padicPow_eq_of_pow_dvd_sub`: exponents congruent modulo `p ^ k` give
+  the same power modulo the `k`-th term of the lower `p`-series.
 * `TauCeti.IsProP.gradedMk_padicPow`, `TauCeti.IsProP.gradedMkZero_padicPow`: a `p`-adic power
   becomes scalar multiplication on a graded piece.
 * `TauCeti.IsProP.mk_commutatorElement_padicPow_left`,
@@ -57,6 +59,22 @@ universe u
 
 variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- In a pro-`p` group, exponents congruent modulo `p ^ k` give the same `p`-adic power
+modulo the `k`-th term of the lower `p`-series. -/
+theorem IsProP.mk_padicPow_eq_of_pow_dvd_sub (hG : IsProP p G) (g : G) (k : ℕ)
+    {u v : ℤ_[p]} (huv : (p : ℤ_[p]) ^ k ∣ u - v) :
+    QuotientGroup.mk' (pLowerCentralSeries p G k) (hG.padicPow g u) =
+      QuotientGroup.mk' (pLowerCentralSeries p G k) (hG.padicPow g v) := by
+  obtain ⟨a, ha⟩ := huv
+  have hu : u = v + (p : ℤ_[p]) ^ k * a := by rw [← ha]; ring
+  have hpk : g ^ p ^ k ∈ pLowerCentralSeries p G k := by
+    simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) k
+  have haq : QuotientGroup.mk' (pLowerCentralSeries p G k)
+      (hG.padicPow (g ^ p ^ k) a) = 1 :=
+    (QuotientGroup.eq_one_iff _).2 (hG.padicPow_mem (isClosed_pLowerCentralSeries k) hpk a)
+  rw [hu, hG.padicPow_add, hG.padicPow_mul, ← Nat.cast_pow, hG.padicPow_natCast,
+    map_mul, haq, mul_one]
 
 /-- The canonical `ℤ_p`-module structure on a graded piece of the lower `q`-series of a pro-`p`
 group. It is the module structure on the abelian pro-`p` quotient `λ_n / λ_{n+1}`. -/
@@ -268,10 +286,8 @@ theorem IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv (hG : IsProP p G
   let _ : Module ℤ_[p] (gradedPiece q G 0) := hG.gradedPieceModule q 0
   let _ : Module ℤ_[p] (gradedPiece q G m) := hG.gradedPieceModule q m
   let _ : Module ℤ_[p] (gradedPiece q G (0 + m + 1)) := hG.gradedPieceModule q (0 + m + 1)
-  rw [← gradedBracket_gradedMk
-      (⟨(c⁻¹ * hG.padicPow y u * c)⁻¹, mem_pLowerCentralSeries_zero q _⟩ :
-        pLowerCentralSeries q G 0) x⁻¹]
-  simp only [gradedMk_zero, gradedMkZero_inv, gradedMkZero_conj, hG.gradedMkZero_padicPow,
+  rw [← gradedBracket_gradedMkZero_gradedMk]
+  simp only [gradedMkZero_inv, gradedMkZero_conj, hG.gradedMkZero_padicPow,
     gradedMk_inv, map_neg, AddMonoidHom.neg_apply, neg_neg, hG.gradedBracket_smul_left]
 
 end TauCeti

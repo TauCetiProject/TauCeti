@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 
 /-!
 # Multiplication by an integer on an elliptic curve over a scheme
@@ -44,6 +45,8 @@ morphism of bases carries `[n]` to `[n]`.
   over `S` commutes with multiplication by `n`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isProper_mulBy_left`: multiplication by `n` is
   proper.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_mulBy_left`:
+  multiplication by `n` is locally of finite presentation.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_zero_left`,
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_neg_one_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_add_left`: `[0]`, `[-1]` and `[m + n]` on
@@ -150,6 +153,16 @@ instance isProper_mulBy_left (n : ℤ) : IsProper (E.mulBy n).left := by
     rw [mulBy_left_structureMap]
     infer_instance
   exact .of_comp _ E.structureMap
+
+/-- **Multiplication by `n` is locally of finite presentation**: it is a morphism over `S` between
+schemes smooth over `S`. -/
+instance locallyOfFinitePresentation_mulBy_left (n : ℤ) :
+    LocallyOfFinitePresentation (E.mulBy n).left :=
+  have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
+  have : LocallyOfFinitePresentation ((E.mulBy n).left ≫ E.structureMap) := by
+    rw [mulBy_left_structureMap]
+    infer_instance
+  locallyOfFinitePresentation_of_comp _ E.structureMap
 
 /-- Multiplication by `n` fixes the zero section. -/
 @[reassoc (attr := simp)]

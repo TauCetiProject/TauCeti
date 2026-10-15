@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window.Sections
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.WindowSections
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Descent
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Sheaf
@@ -33,10 +33,18 @@ on wandering opens, such as the Frobenius windows, with the corresponding pieces
   point of `𝒴` lies in such an open, a Frobenius window, so the stalk maps of `q` are isomorphisms:
   the stalks of `𝒪_𝒳` are local, and the stalk at `q y` receives the valuation of `𝒴` at `y`.
   Frobenius preserves these valuations, so they do not depend on the point `y` of the orbit, and
-  `PreAdicSpace.descend` makes `𝒳` a pre-adic space with `q` a morphism of `𝒱^pre`.
+  `PreAdicSpace.descend`, applied to `q` alone, makes `𝒳` a pre-adic space with `q` a morphism
+  of `𝒱^pre`.
+* `𝒳` is the quotient of `𝒴` by Frobenius: a morphism out of `𝒴` with `φ ≫ g = g` factors
+  uniquely through `q`, so `q` is the coequalizer of the identity and Frobenius, among presheafed
+  spaces and, when `𝒪_𝒴` is a sheaf, in `𝒱^pre`. On points the factorization is the induced map of
+  orbit spaces; on sections it takes values in the Frobenius-invariant sections of `𝒪_𝒴`, which are
+  those of `𝒪_𝒳`.
 
-The sheaf condition on `𝒪_𝒴` is a hypothesis throughout, as for `isSheaf_spaXPresheaf` and
-`isIso_spaXPresheafRestrict`; it is not proved here.
+The sheaf condition on `𝒪_𝒴` is a hypothesis for the window charts and the stalks of `𝒳`, for `𝒳`
+as a pre-adic space and for the universal property in `𝒱^pre`, as for `isSheaf_spaXPresheaf` and
+`isIso_spaXPresheafRestrict`; it is not proved here. Frobenius on `𝒴`, the projection `q` and its
+universal property among presheafed spaces do not need it.
 
 ## Main definitions
 
@@ -47,6 +55,9 @@ The sheaf condition on `𝒪_𝒴` is a hypothesis throughout, as for `isSheaf_s
 * `TauCeti.FarguesFontaine.spaXPreAdicSpace`: `𝒳` as a pre-adic space, when `𝒪_𝒴` is a sheaf.
 * `TauCeti.FarguesFontaine.quotientPreAdicHom`: the projection `q` as a morphism of pre-adic
   spaces.
+* `TauCeti.FarguesFontaine.quotientPresheafedDesc` and
+  `TauCeti.FarguesFontaine.quotientPreAdicDesc`: the factorization through `q` of a
+  Frobenius-invariant morphism out of `𝒴`.
 
 ## Main results
 
@@ -59,6 +70,12 @@ The sheaf condition on `𝒪_𝒴` is a hypothesis throughout, as for `isSheaf_s
 * `TauCeti.FarguesFontaine.isSheafy_spaXPreAdicSpace`: the pre-adic space `𝒳` is sheafy.
 * `TauCeti.FarguesFontaine.isOpenImmersion_ofRestrict_comp_quotientPreAdicHom`: the window charts
   `V → 𝒳` are open immersions of pre-adic spaces.
+* `TauCeti.FarguesFontaine.spaYFrobenius_comp_ofRestrict`: Frobenius on `𝒴` is the restriction of
+  Frobenius on `Spa(𝕎 R, 𝕎 R)`.
+* `TauCeti.FarguesFontaine.isColimitQuotientPresheafedCofork` and
+  `TauCeti.FarguesFontaine.isColimitQuotientPreAdicCofork`: `q` is the coequalizer of the
+  identity and Frobenius on `𝒴`, among presheafed spaces and in `𝒱^pre`; uniqueness is
+  `quotientPresheafedHom_hom_ext` and `quotientPreAdicHom_hom_ext`.
 
 ## References
 
@@ -171,6 +188,16 @@ theorem spaYFrobenius_toHom : (spaYFrobenius P hI).toHom = spaYFrobeniusHom P hI
   unfold spaYFrobenius
   exact @PreAdicSpace.Hom.ofFac_toHom ..
 
+/-- **Frobenius on `𝒴` is the restriction of Frobenius on `Spa(𝕎 R, 𝕎 R)`**: the inclusion of `𝒴`
+intertwines `spaYFrobenius` with the automorphism of `Spa(𝕎 R, 𝕎 R)` induced by `φ`. -/
+@[reassoc]
+theorem spaYFrobenius_comp_ofRestrict :
+    spaYFrobenius P hI ≫ (spaPreAdicSpace P hI).ofRestrict (isOpenEmbedding_spaYInclusion p ϖ) =
+      (spaPreAdicSpace P hI).ofRestrict (isOpenEmbedding_spaYInclusion p ϖ) ≫
+        (presentationLimitPreAdicSpaceFrobeniusIso P hI).hom :=
+  PreAdicSpace.Hom.ext' ((congrArg (· ≫ _) (spaYFrobenius_toHom P hI)).trans
+    (spaYFrobeniusHom_comp_ofRestrict P hI))
+
 /-! ### The projection to `𝒳` -/
 
 -- The presheafed space and the projection are exposed: a point of `𝒳` must be a point of
@@ -208,6 +235,172 @@ theorem spaYFrobenius_toHom_comp_quotientPresheafedHom :
   -- the two restriction maps to `q⁻¹U` agree, as the opens of `𝒴` form a thin category
   exact NatTrans.ext (funext fun U ↦ (Category.assoc _ _ _).trans
     ((congrArg (fun t ↦ _ ≫ _ ≫ (spaYPresheaf P ϖ).map t) (Subsingleton.elim _ _)).trans (h U)))
+
+omit [IsTopologicalRing (WittVector p R)] in
+variable {hI} in
+/-- A function on `𝒴`, possibly dependent, that is invariant under Frobenius is invariant under
+every integer power of Frobenius. -/
+private theorem heq_zpow_apply_of_heq_frobenius {β : spaY p ϖ → Sort*} (F : ∀ y, β y)
+    (hF : ∀ y, HEq (F (frobeniusHomeomorph hI y)) (F y)) (n : ℤ) (y : spaY p ϖ) :
+    HEq (F ((frobeniusHomeomorph hI ^ n) y)) (F y) := by
+  induction n using Int.induction_on generalizing y with
+  | zero => exact congr_arg_heq F (by simp [Homeomorph.one_apply])
+  | succ n ih =>
+    rw [add_comm, zpow_one_add, Homeomorph.mul_apply]
+    exact (hF _).trans (ih y)
+  | pred n ih =>
+    have e : frobeniusHomeomorph hI ((frobeniusHomeomorph hI ^ (-(n : ℤ) - 1)) y) =
+        (frobeniusHomeomorph hI ^ (-(n : ℤ))) y := by
+      rw [← Homeomorph.mul_apply, ← zpow_one_add]
+      congr 2
+      omega
+    exact (hF _).symm.trans ((congr_arg_heq F e).trans (ih y))
+
+/-! ### The universal property of the projection -/
+
+section Desc
+
+open CategoryTheory.Limits
+
+variable {P hI} {W : PresheafedSpace CompleteSeparatedTopCommRingCat.{v}}
+  {g : (spaYPreAdicSpace P hI).toPresheafedSpace ⟶ W}
+
+/-- A Frobenius-invariant morphism out of `𝒴` is invariant on points under every integer power of
+Frobenius. -/
+private theorem base_zpow_apply_of_comp_eq (hg : (spaYFrobenius P hI).toHom ≫ g = g) (n : ℤ)
+    (v : spaY p ϖ) : g.base ((frobeniusHomeomorph hI ^ n) v) = g.base v := by
+  refine eq_of_heq (heq_zpow_apply_of_heq_frobenius (fun v ↦ g.base v) (fun v ↦ heq_of_eq ?_) n v)
+  have := congrArg (fun f ↦ f.base v) hg
+  rw [spaYFrobenius_toHom] at this
+  exact this
+
+/-- The continuous map `𝒳 → W` through which a Frobenius-invariant morphism `𝒴 → W` factors. -/
+private def descBase (hg : (spaYFrobenius P hI).toHom ≫ g = g) :
+    TopCat.of (spaX hI) ⟶ W.carrier :=
+  TopCat.ofHom ⟨spaX.lift hI (g.base ·) (base_zpow_apply_of_comp_eq hg), by
+    rw [(isOpenQuotientMap_quotientMap hI).isQuotientMap.continuous_iff]
+    exact (continuous_congr fun v ↦
+      (spaX.lift_quotientMap hI _ (base_zpow_apply_of_comp_eq hg) v).symm).mp
+        g.base.hom.continuous⟩
+
+private theorem base_comp_descBase (hg : (spaYFrobenius P hI).toHom ≫ g = g) :
+    (quotientPresheafedHom P hI).base ≫ descBase hg = g.base := by
+  ext v
+  exact spaX.lift_quotientMap hI _ (base_zpow_apply_of_comp_eq hg) v
+
+/-- The map on sections `𝒪_W → 𝒪_𝒳` through which a Frobenius-invariant morphism `𝒴 → W` factors:
+the sections of `𝒪_𝒴` it produces are Frobenius-invariant, so they lie in `𝒪_𝒳`. -/
+private def descC (hg : (spaYFrobenius P hI).toHom ≫ g = g) :
+    W.presheaf ⟶ (TopCat.Presheaf.pushforward _ (descBase hg)).obj (spaXPresheaf P hI) :=
+  -- pushforward is precomposition with the preimage functor, so it preserves equalizers
+  haveI : PreservesLimitsOfShape WalkingParallelPair
+      (TopCat.Presheaf.pushforward CompleteSeparatedTopCommRingCat.{v} (descBase hg)) :=
+    whiskeringLeft_preservesLimitsOfShape _ _
+  Fork.IsLimit.lift (isLimitMapConeForkEquiv _ _
+      (isLimitOfPreserves (TopCat.Presheaf.pushforward _ (descBase hg))
+        (isLimitSpaXPresheafFork P hI)))
+    (g.c ≫ (TopCat.Presheaf.pushforwardEq (base_comp_descBase hg).symm _).hom ≫
+      (TopCat.Presheaf.Pushforward.comp _ _ _).hom)
+    (by
+      -- on sections over `U`, Frobenius-invariance of `g` says that `g.c` followed by Frobenius
+      -- is `g.c`, up to restrictions along equalities of opens
+      have hg' : spaYFrobeniusHom P hI ≫ g = g := by rwa [spaYFrobenius_toHom] at hg
+      refine NatTrans.ext (funext fun U ↦ ?_)
+      have h := PresheafedSpace.congr_app hg' U
+      rw [PresheafedSpace.comp_c_app] at h
+      simp only [TopCat.Presheaf.comp_app, TopCat.Presheaf.pushforward_map_app',
+        pushforwardSpaYPresheafFrobenius_app, Category.assoc, Category.comp_id,
+        CategoryTheory.Functor.map_id]
+      -- the points of `𝒴` occur both as `TopCat.of (spaY p ϖ)` and as the carrier of the pre-adic
+      -- space `𝒴`, which agree only after unfolding, so the remaining rewrites need `erw`
+      erw [NatTrans.comp_app, TopCat.Presheaf.pushforwardEq_hom_app,
+        TopCat.Presheaf.Pushforward.comp_hom_app, Category.comp_id,
+        (spaYPresheafFrobenius P hI).naturality_assoc, reassoc_of% h, Category.assoc]
+      refine congrArg (g.c.app U ≫ ·) ?_
+      erw [eqToHom_map, eqToHom_map, eqToHom_map, eqToHom_map, eqToHom_trans, eqToHom_trans]
+      rfl)
+
+private theorem descC_comp (hg : (spaYFrobenius P hI).toHom ≫ g = g) :
+    descC hg ≫ (TopCat.Presheaf.pushforward _ (descBase hg)).map (spaXPresheafι P hI) =
+      g.c ≫ (TopCat.Presheaf.pushforwardEq (base_comp_descBase hg).symm _).hom ≫
+        (TopCat.Presheaf.Pushforward.comp _ _ _).hom :=
+  Fork.IsLimit.lift_ι' _ _ _
+
+variable (g) in
+/-- **Morphisms out of `𝒳`**: a morphism of presheafed spaces `g : 𝒴 → W` with `φ ≫ g = g`
+factors through the projection `q : 𝒴 → 𝒳`
+(`quotientPresheafedHom_comp_quotientPresheafedDesc`), and uniquely so
+(`quotientPresheafedHom_hom_ext`). On points it is the map induced on Frobenius orbits; on
+sections it lands in the Frobenius-invariant sections of `𝒪_𝒴`, which are those of `𝒪_𝒳`. -/
+def quotientPresheafedDesc (hg : (spaYFrobenius P hI).toHom ≫ g = g) :
+    spaXPresheafedSpace P hI ⟶ W where
+  base := descBase hg
+  c := descC hg
+
+/-- The factorization of a Frobenius-invariant morphism through `q` sends the orbit of a point to
+the image of that point. -/
+@[simp]
+theorem quotientPresheafedDesc_base_quotientMap (hg : (spaYFrobenius P hI).toHom ≫ g = g)
+    (v : spaY p ϖ) : (quotientPresheafedDesc g hg).base (quotientMap hI v) = g.base v :=
+  spaX.lift_quotientMap hI _ (base_zpow_apply_of_comp_eq hg) v
+
+/-- A Frobenius-invariant morphism out of `𝒴` factors through the projection `q : 𝒴 → 𝒳`. -/
+@[reassoc (attr := simp)]
+theorem quotientPresheafedHom_comp_quotientPresheafedDesc
+    (hg : (spaYFrobenius P hI).toHom ≫ g = g) :
+    quotientPresheafedHom P hI ≫ quotientPresheafedDesc g hg = g := by
+  have hc : (quotientPresheafedHom P hI ≫ quotientPresheafedDesc g hg).c =
+      descC hg ≫ (TopCat.Presheaf.pushforward _ (descBase hg)).map (spaXPresheafι P hI) :=
+    PresheafedSpace.comp_c _ _
+  refine PresheafedSpace.ext _ _ (base_comp_descBase hg) ?_
+  -- as in `descC`, the two descriptions of the points of `𝒴` force `erw`; what remains on sections
+  -- over `U` is `g.c` followed by restrictions along equalities of opens
+  erw [hc, descC_comp hg]
+  refine NatTrans.ext (funext fun U ↦ ?_)
+  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
+    TopCat.Presheaf.pushforwardEq_hom_app, TopCat.Presheaf.Pushforward.comp_hom_app,
+    Functor.whiskerRight_app, eqToHom_app, Category.comp_id, Category.assoc, ← Functor.map_comp,
+    eqToHom_trans, eqToHom_refl, CategoryTheory.Functor.map_id, Category.comp_id]
+
+/-- **Morphisms out of `𝒳` are determined by their composites with `q`**: the projection is an
+epimorphism of presheafed spaces. On points this is surjectivity of `q`; on sections it is
+injectivity of the inclusion of the Frobenius-invariant sections. -/
+theorem quotientPresheafedHom_hom_ext {m₁ m₂ : spaXPresheafedSpace P hI ⟶ W}
+    (h : quotientPresheafedHom P hI ≫ m₁ = quotientPresheafedHom P hI ≫ m₂) : m₁ = m₂ := by
+  have hb : m₁.base = m₂.base := by
+    ext x
+    induction x using spaX.inductionOn with
+    | h v => exact congrArg (fun f ↦ f.base v) h
+  refine PresheafedSpace.ext _ _ hb (NatTrans.ext (funext fun U ↦ ?_))
+  refine (cancel_mono ((spaXPresheafι P hI).app (op ((Opens.map m₂.base).obj U.unop)))).mp ?_
+  have h' := PresheafedSpace.congr_app h U
+  rw [PresheafedSpace.comp_c_app, PresheafedSpace.comp_c_app] at h'
+  -- after the inclusion into `𝒪_𝒴`, the sections over `U` are those given by `h'`; the presheaf of
+  -- `𝒳` occurs both as `spaXPresheaf` and as that of `spaXPresheafedSpace`, hence `erw`
+  erw [NatTrans.comp_app, Functor.whiskerRight_app, eqToHom_app, Category.assoc,
+    (spaXPresheafι P hI).naturality, ← Category.assoc, h', Category.assoc, Category.assoc,
+    ← Functor.map_comp, eqToHom_map (Opens.map (quotientTopHom hI)).op, eqToHom_trans,
+    eqToHom_refl, CategoryTheory.Functor.map_id, Category.comp_id]
+  -- the projection's map on sections is the inclusion of the Frobenius-invariant sections
+  rfl
+
+instance : Epi (quotientPresheafedHom P hI) :=
+  ⟨fun _ _ h ↦ quotientPresheafedHom_hom_ext h⟩
+
+variable (P hI) in
+/-- **`𝒳` is the coequalizer of the identity and Frobenius on `𝒴`** in presheafed spaces of complete
+separated topological rings, with the projection `q` as coprojection. -/
+def isColimitQuotientPresheafedCofork :
+    IsColimit (Cofork.ofπ (f := 𝟙 _) (g := (spaYFrobenius P hI).toHom)
+      (quotientPresheafedHom P hI)
+      ((Category.id_comp _).trans (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI).symm)) :=
+  Cofork.IsColimit.mk _
+    (fun s ↦ quotientPresheafedDesc s.π (by simpa using s.condition.symm))
+    (fun s ↦ quotientPresheafedHom_comp_quotientPresheafedDesc _)
+    (fun s m hm ↦ quotientPresheafedHom_hom_ext
+      (hm.trans (quotientPresheafedHom_comp_quotientPresheafedDesc _).symm))
+
+end Desc
 
 /-! ### Charts on wandering opens -/
 
@@ -309,25 +502,16 @@ private theorem heq_descendedValuation_frobenius (y : spaY p ϖ) :
     (congrArg (fun f ↦ f.base y) (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI)).symm
   exact (congr_arg_heq (descendedValuation P hI) hb).symm.trans
     ((ValuationSpectrum.comap_eqToHom_eq_iff_heq _ h₀.symm _ _).mp
-      (PreAdicSpace.comap_stalkMap_base_eq_of_comp_eq (spaYFrobenius P hI)
-        (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI) y h₀))
+      (PreAdicSpace.comap_stalkMap_base_eq_of_comp_eq
+        (π := fun _ : Unit ↦ quotientPresheafedHom P hI) (i := ()) (j := ()) (𝟙 _)
+        (spaYFrobenius P hI) (by
+          rw [PreAdicSpace.id_toHom, Category.id_comp]
+          exact (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI).symm) y h₀))
 
 /-- Integer powers of Frobenius do not change the descended valuation. -/
 private theorem heq_descendedValuation_zpow (n : ℤ) (y : spaY p ϖ) :
-    HEq (descendedValuation P hI ((frobeniusHomeomorph hI ^ n) y)) (descendedValuation P hI y) := by
-  induction n using Int.induction_on generalizing y with
-  | zero => exact congr_arg_heq (descendedValuation P hI) (by simp [Homeomorph.one_apply])
-  | succ n ih =>
-    rw [add_comm, zpow_one_add, Homeomorph.mul_apply]
-    exact (heq_descendedValuation_frobenius _).trans (ih y)
-  | pred n ih =>
-    have e : frobeniusHomeomorph hI ((frobeniusHomeomorph hI ^ (-(n : ℤ) - 1)) y) =
-        (frobeniusHomeomorph hI ^ (-(n : ℤ))) y := by
-      rw [← Homeomorph.mul_apply, ← zpow_one_add]
-      congr 2
-      omega
-    exact (heq_descendedValuation_frobenius _).symm.trans
-      ((congr_arg_heq (descendedValuation P hI) e).trans (ih y))
+    HEq (descendedValuation P hI ((frobeniusHomeomorph hI ^ n) y)) (descendedValuation P hI y) :=
+  heq_zpow_apply_of_heq_frobenius _ heq_descendedValuation_frobenius n y
 
 /-- **The descended valuations do not depend on the representative of an orbit**: the compatibility
 hypothesis of `PreAdicSpace.descend` for the projection `𝒴 → 𝒳`. -/
@@ -350,8 +534,10 @@ presheaf is `𝒪_𝒳`, the Frobenius-invariant sections of `𝒪_𝒴`; the st
 stalk of `𝒪_𝒴` at `y` through the projection, hence local, and carries the valuation of `𝒴` at `y`,
 which does not depend on the point `y` of the orbit. -/
 def spaXPreAdicSpace (h : (spaYPresheaf P ϖ).IsSheaf) : PreAdicSpace.{v} :=
-  (spaYPreAdicSpace P hI).descend (quotientPresheafedHom P hI)
-    (isOpenQuotientMap_quotientMap hI).surjective (isIso_stalkMap_quotientPresheafedHom h)
+  PreAdicSpace.descend (fun _ : Unit ↦ spaYPreAdicSpace P hI)
+    (fun _ ↦ quotientPresheafedHom P hI)
+    (fun y ↦ ⟨(), (isOpenQuotientMap_quotientMap hI).surjective y⟩)
+    (fun _ ↦ isIso_stalkMap_quotientPresheafedHom h)
 
 end SpaXPreAdicDef
 
@@ -359,7 +545,9 @@ variable (P hI) in
 /-- **The projection `𝒴 → 𝒳` as a morphism of pre-adic spaces**, when `𝒪_𝒴` is a sheaf. -/
 def quotientPreAdicHom (h : (spaYPresheaf P ϖ).IsSheaf) :
     spaYPreAdicSpace P hI ⟶ spaXPreAdicSpace P hI h :=
-  PreAdicSpace.toDescend _ _ comap_stalkMap_quotientPresheafedHom_eq
+  PreAdicSpace.toDescend (X := fun _ : Unit ↦ spaYPreAdicSpace P hI)
+    (π := fun _ ↦ quotientPresheafedHom P hI) _ _
+    (fun _ _ ↦ comap_stalkMap_quotientPresheafedHom_eq) ()
 
 /-- The presheafed space underlying the pre-adic space `𝒳` is `(𝒳, 𝒪_𝒳)`. -/
 @[simp]
@@ -371,7 +559,8 @@ theorem spaXPreAdicSpace_toPresheafedSpace (h : (spaYPresheaf P ϖ).IsSheaf) :
 @[simp]
 theorem quotientPreAdicHom_toHom (h : (spaYPresheaf P ϖ).IsSheaf) :
     (quotientPreAdicHom P hI h).toHom = quotientPresheafedHom P hI :=
-  PreAdicSpace.toDescend_toHom ..
+  PreAdicSpace.toDescend_toHom (X := fun _ : Unit ↦ spaYPreAdicSpace P hI)
+    (π := fun _ ↦ quotientPresheafedHom P hI) ..
 
 /-- **The pre-adic space `𝒳` is sheafy** when `𝒪_𝒴` is a sheaf. -/
 theorem isSheafy_spaXPreAdicSpace (h : (spaYPresheaf P ϖ).IsSheaf) :
@@ -398,6 +587,76 @@ theorem isOpenImmersion_ofRestrict_comp_quotientPreAdicHom (h : (spaYPresheaf P 
       ((spaYPreAdicSpace P hI).ofRestrict V.isOpenEmbedding ≫ quotientPreAdicHom P hI h) := by
   rw [PreAdicSpace.IsOpenImmersion, PreAdicSpace.comp_toHom, quotientPreAdicHom_toHom]
   exact isOpenImmersion_ofRestrict_comp_quotientPresheafedHom h hV
+
+/-! ### The universal property of `𝒳` in `𝒱^pre` -/
+
+section Desc
+
+open CategoryTheory.Limits
+
+variable {W : PreAdicSpace.{v}} {g : spaYPreAdicSpace P hI ⟶ W}
+
+variable (g) in
+/-- **Morphisms out of the pre-adic space `𝒳`**: when `𝒪_𝒴` is a sheaf, a morphism of pre-adic
+spaces `g : 𝒴 → W` with `φ ≫ g = g` factors through the projection `q : 𝒴 → 𝒳`
+(`quotientPreAdicHom_comp_quotientPreAdicDesc`), and uniquely so (`quotientPreAdicHom_hom_ext`).
+Its underlying morphism of presheafed spaces is `quotientPresheafedDesc`; it is compatible with the
+stalk valuations because `q` is surjective and those of `𝒳` are descended from `𝒴`. -/
+def quotientPreAdicDesc (h : (spaYPresheaf P ϖ).IsSheaf) (hg : spaYFrobenius P hI ≫ g = g) :
+    spaXPreAdicSpace P hI h ⟶ W :=
+  PreAdicSpace.Hom.ofFacOfSurjective g (quotientPreAdicHom P hI h)
+    (quotientPresheafedDesc g.toHom (congrArg PreAdicSpace.Hom.toHom hg))
+    (by
+      rw [congrArg PresheafedSpace.Hom.base (quotientPreAdicHom_toHom h)]
+      exact (isOpenQuotientMap_quotientMap hI).surjective)
+    ((congrArg (· ≫ _) (quotientPreAdicHom_toHom h)).trans
+      (quotientPresheafedHom_comp_quotientPresheafedDesc _))
+
+/-- The morphism of presheafed spaces underlying `quotientPreAdicDesc` is
+`quotientPresheafedDesc`. -/
+@[simp]
+theorem quotientPreAdicDesc_toHom (h : (spaYPresheaf P ϖ).IsSheaf)
+    (hg : spaYFrobenius P hI ≫ g = g) :
+    (quotientPreAdicDesc g h hg).toHom =
+      quotientPresheafedDesc g.toHom (congrArg PreAdicSpace.Hom.toHom hg) :=
+  PreAdicSpace.Hom.ofFacOfSurjective_toHom ..
+
+/-- A Frobenius-invariant morphism of pre-adic spaces out of `𝒴` factors through the projection
+`q : 𝒴 → 𝒳`. -/
+@[reassoc (attr := simp)]
+theorem quotientPreAdicHom_comp_quotientPreAdicDesc (h : (spaYPresheaf P ϖ).IsSheaf)
+    (hg : spaYFrobenius P hI ≫ g = g) :
+    quotientPreAdicHom P hI h ≫ quotientPreAdicDesc g h hg = g :=
+  PreAdicSpace.Hom.ext' (by
+    rw [PreAdicSpace.comp_toHom, quotientPreAdicHom_toHom, quotientPreAdicDesc_toHom]
+    exact quotientPresheafedHom_comp_quotientPresheafedDesc _)
+
+/-- **Morphisms of pre-adic spaces out of `𝒳` are determined by their composites with `q`.** -/
+theorem quotientPreAdicHom_hom_ext {h : (spaYPresheaf P ϖ).IsSheaf}
+    {m₁ m₂ : spaXPreAdicSpace P hI h ⟶ W}
+    (hm : quotientPreAdicHom P hI h ≫ m₁ = quotientPreAdicHom P hI h ≫ m₂) : m₁ = m₂ :=
+  PreAdicSpace.Hom.ext' (quotientPresheafedHom_hom_ext (by
+    have hm' := congrArg PreAdicSpace.Hom.toHom hm
+    rw [PreAdicSpace.comp_toHom, PreAdicSpace.comp_toHom, quotientPreAdicHom_toHom] at hm'
+    exact hm'))
+
+instance (h : (spaYPresheaf P ϖ).IsSheaf) : Epi (quotientPreAdicHom P hI h) :=
+  ⟨fun _ _ hm ↦ quotientPreAdicHom_hom_ext hm⟩
+
+variable (P hI) in
+/-- **`𝒳 = 𝒴 / φ^ℤ` is the quotient of `𝒴` by Frobenius in `𝒱^pre`**: when `𝒪_𝒴` is a sheaf, the
+pre-adic space `𝒳` is the coequalizer of the identity and Frobenius on `𝒴`, with the projection `q`
+as coprojection. -/
+def isColimitQuotientPreAdicCofork (h : (spaYPresheaf P ϖ).IsSheaf) :
+    IsColimit (Cofork.ofπ (f := 𝟙 _) (g := spaYFrobenius P hI) (quotientPreAdicHom P hI h)
+      ((Category.id_comp _).trans (spaYFrobenius_comp_quotientPreAdicHom h).symm)) :=
+  Cofork.IsColimit.mk _
+    (fun s ↦ quotientPreAdicDesc s.π h (by simpa using s.condition.symm))
+    (fun s ↦ quotientPreAdicHom_comp_quotientPreAdicDesc h _)
+    (fun s m hm ↦ quotientPreAdicHom_hom_ext
+      (hm.trans (quotientPreAdicHom_comp_quotientPreAdicDesc h _).symm))
+
+end Desc
 
 end SpaX
 

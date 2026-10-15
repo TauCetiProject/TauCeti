@@ -13,10 +13,8 @@ public import TauCeti.LinearAlgebra.Submodule.Prod
 /-!
 # Products of Fredholm operators
 
-This file proves that the Cartesian product of two Fredholm operators is Fredholm and that its
-index is the sum of the two indices. This is elementary bookkeeping needed for the block
-decompositions and finite-dimensional reductions in the Fredholm substrate of the analytic
-Heegaard Floer roadmap.
+This file proves that the Cartesian product of two Fredholm operators is Fredholm and that its index
+is the sum of the two indices.
 
 The proof identifies the kernel and range of the product operator with the products of the
 individual kernels and ranges, and counts the cokernel with `Submodule.finrank_quotient_prod`.

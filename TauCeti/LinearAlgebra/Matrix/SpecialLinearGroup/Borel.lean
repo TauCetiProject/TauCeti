@@ -23,9 +23,10 @@ matrices. Over a field, its two Bruhat cells are represented by the identity and
 element whose square is not one. In particular, this holds over every infinite field.
 
 The maximal-solvability theorem is the abstract-group input for proving that the
-upper-triangular closed subgroup scheme of `SL₂` is a Borel subgroup. The field hypothesis is
-used only to rule out solvability of `SL₂`; the Bruhat decomposition itself holds over every
-field. Entrywise mapping makes the construction functorial in the coefficient ring.
+upper-triangular closed subgroup scheme of `SL₂` is a Borel subgroup. The hypothesis that the
+field has a nonzero element whose square is not one is used only to rule out solvability of
+`SL₂`; the Bruhat decomposition itself holds over every field. Entrywise mapping makes the
+construction functorial in the coefficient ring.
 
 ## Main declarations
 
@@ -46,7 +47,6 @@ field. Entrywise mapping makes the construction functorial in the coefficient ri
 
 public section
 
-open Matrix
 open scoped MatrixGroups
 
 namespace TauCeti
@@ -96,8 +96,8 @@ def mk (a : Rˣ) (b : R) : SL2Borel R :=
 /-- The matrix underlying `mk a b`. -/
 @[simp]
 theorem coe_mk (a : Rˣ) (b : R) :
-    (mk a b : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] :=
-  by rw [mk]
+    (mk a b : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] := by
+  rw [mk]
 
 /-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
 def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=
@@ -111,8 +111,8 @@ def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S
 of its underlying matrix. -/
 @[simp]
 theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
-    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 :=
-  by rfl
+    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 := by
+  simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
 
 /-- The `(i, j)` entry of the entrywise map of `g` is the image under `phi` of the `(i, j)`
 entry of `g`. -/
@@ -148,21 +148,18 @@ theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
 
 /-- The canonical inclusion from the `SL₂` Borel to the `GL₂` Borel. -/
 def toGL2Borel : SL2Borel R →* GL2Borel R :=
-  Matrix.SpecialLinearGroup.toGL.restrict fun _ hg ↦ by
-    exact GL2Borel.mem_iff.mpr (mem_iff.mp hg)
+  Matrix.SpecialLinearGroup.toGL.subgroupComap (GL2Borel R)
 
 /-- The inclusion of the `SL₂` Borel into the `GL₂` Borel does not change the underlying
 general linear matrix. -/
 @[simp]
 theorem coe_toGL2Borel (g : SL2Borel R) :
     (toGL2Borel g : GL (Fin 2) R) = Matrix.SpecialLinearGroup.toGL g.1 :=
-  by
-    simp only [toGL2Borel, MonoidHom.restrict, MonoidHom.codRestrict_apply,
-      MonoidHom.domRestrict_apply]
+  MonoidHom.subgroupComap_apply_coe _ _ g
 
 /-- The inclusion from the `SL₂` Borel to the `GL₂` Borel is injective. -/
 theorem toGL2Borel_injective : Function.Injective (toGL2Borel (R := R)) :=
-  MonoidHom.restrict_injective _ Matrix.SpecialLinearGroup.toGL_injective
+  MonoidHom.subgroupComap_injective _ _ Matrix.SpecialLinearGroup.toGL_injective
 
 /-- The upper-left diagonal entry of an `SL₂` Borel matrix, bundled as a unit. -/
 def diag : SL2Borel R →* Rˣ :=
@@ -172,7 +169,8 @@ def diag : SL2Borel R →* Rˣ :=
 @[simp]
 theorem diag_val (g : SL2Borel R) :
     (diag g : R) = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
-  exact GL2Borel.diag_fst_val (toGL2Borel g)
+  rw [diag, MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_fst, GL2Borel.diag_fst_val,
+    coe_toGL2Borel, Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
 /-- The free upper-right parameter of an `SL₂` Borel matrix. -/
 def upperRight (g : SL2Borel R) : R :=
@@ -180,8 +178,8 @@ def upperRight (g : SL2Borel R) : R :=
 
 /-- The upper-right parameter is the upper-right matrix entry. -/
 theorem upperRight_apply (g : SL2Borel R) :
-    upperRight g = (g : Matrix (Fin 2) (Fin 2) R) 0 1 :=
-  by rw [upperRight]
+    upperRight g = (g : Matrix (Fin 2) (Fin 2) R) 0 1 := by
+  rw [upperRight]
 
 /-- The diagonal parameter of a matrix built by `mk` is its first argument. -/
 @[simp]
@@ -308,16 +306,16 @@ theorem mem_doubleCoset_modularGroup_S_of_notMem {g : SL(2, F)} (hg : g ∉ SL2B
 theorem closure_insert_modularGroup_S_eq_top :
     Subgroup.closure
         (insert (((ModularGroup.S : SL(2, ℤ)) : SL(2, F)))
-          (SL2Borel F : Set SL(2, F))) = ⊤ := by
-  exact Subgroup.closure_insert_eq_top_of_notMem_imp_mem_doubleCoset (SL2Borel F)
+          (SL2Borel F : Set SL(2, F))) = ⊤ :=
+  Subgroup.closure_insert_eq_top_of_notMem_imp_mem_doubleCoset (SL2Borel F)
     ((ModularGroup.S : SL(2, ℤ)) : SL(2, F)) mem_doubleCoset_modularGroup_S_of_notMem
 
 /-- Every solvable subgroup of `SL₂(F)` that contains the standard Borel is contained in it if
 `F` has a nonzero element whose square is not one. -/
 theorem le_of_isSolvable (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1)
     (P : Subgroup SL(2, F)) [Group.IsSolvable P]
-    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F := by
-  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F :=
+  Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (SL2Borel F) P ((ModularGroup.S : SL(2, ℤ)) : SL(2, F))
     (Matrix.SpecialLinearGroup.not_isSolvable_fin_two F hF)
     mem_doubleCoset_modularGroup_S_of_notMem hBP
@@ -326,8 +324,8 @@ theorem le_of_isSolvable (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1)
 is contained in it. -/
 theorem le_of_isSolvable_of_infinite [Infinite F]
     (P : Subgroup SL(2, F)) [Group.IsSolvable P]
-    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F := by
-  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F :=
+  Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (SL2Borel F) P ((ModularGroup.S : SL(2, ℤ)) : SL(2, F))
     (Matrix.SpecialLinearGroup.not_isSolvable_fin_two_of_infinite F)
     mem_doubleCoset_modularGroup_S_of_notMem hBP

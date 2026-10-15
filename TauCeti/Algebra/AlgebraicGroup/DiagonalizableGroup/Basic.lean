@@ -15,7 +15,7 @@ public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 For a commutative group `G`, the group algebra `R[G]` is a commutative Hopf algebra in which
 every group element `g` is group-like (`Δ(single g 1) = single g 1 ⊗ single g 1`,
 `ε(single g 1) = 1`, antipode `single g 1 ↦ single g⁻¹ 1`). The associated affine group
-scheme `Spec R[G]` is the *diagonalizable group* `D(G)` of the reductive-groups roadmap.
+scheme `Spec R[G]` is the *diagonalizable group* `D(G)`.
 
 This file records the functor-of-points calculation for `D(G)`: for every commutative
 `R`-algebra `A`, the convolution group of `R`-algebra homomorphisms `R[G] →ₐ[R] A` is the
@@ -29,11 +29,6 @@ group-algebra presentation `R[Multiplicative ℤ]`: the character read from a po
 on the generator, and this agrees with the canonical Laurent-polynomial `𝔾ₘ` of
 `TauCeti.MultiplicativeGroup` after precomposition by
 `AddMonoidAlgebra.toMultiplicativeAlgEquiv`.
-
-This is a worked-example check for the reductive-groups roadmap (Layer 4, "diagonalizable
-groups and groups of multiplicative type: the anti-equivalence `M ↦ D(M) = Spec k[M]`", and
-the Layer 0 target "R-points as a group"), in the same spirit as the existing multiplicative
-group `𝔾ₘ`.
 
 ## Main definitions
 
@@ -54,8 +49,7 @@ The Hopf algebra structure on a group algebra is Mathlib's
 Livingston's monoid-algebra formalization), and `MonoidAlgebra.lift` is its universal
 property. The convolution group of points and its antipode-driven inverse are Tau Ceti's
 `TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints`, built on the Mathlib convolution monoid of
-Yaël Dillies, Michał Mrugała and Yunzhou Xie. This realizes the diagonalizable-group worked
-example of the Tau Ceti reductive-groups roadmap (Layer 4 and Layer 0).
+Yaël Dillies, Michał Mrugała and Yunzhou Xie.
 -/
 
 public section

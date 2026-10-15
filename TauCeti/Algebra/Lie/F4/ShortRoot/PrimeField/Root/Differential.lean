@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Differential
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.ClosedGenerators
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
@@ -175,14 +175,11 @@ theorem rootVector_ne_zero (k : Fin 4 ⊕ Fin 4) : rootVector k ≠ 0 := by
   intro h
   have hd := congrArg (Derivation.cotangentLinearEquiv (B := ZMod 2)) h
   rw [cotangentLinearEquiv_rootVector, map_zero] at hd
-  have hinj := derivationComp_injective_of_surjective (B := ZMod 2)
-    (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
-    (CommHopfAlgCat.commonKernelLift_surjective_of_surjective generator (.inl k)
-      (generator_surjective (.inl k)))
-  have hz := hinj (hd.trans (map_zero _).symm)
-  have hu := congrArg AdditiveGroup.gaTangentLinearEquiv hz
-  exact (one_ne_zero : (1 : ZMod 2) ≠ 0)
-    (by simpa only [LinearEquiv.apply_symm_apply, map_zero] using hu)
+  exact AdditiveGroup.derivationComp_gaTangentLinearEquiv_symm_one_ne_zero _
+    (derivationComp_injective_of_surjective (B := ZMod 2)
+      (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
+      (CommHopfAlgCat.commonKernelLift_surjective_of_surjective generator (.inl k)
+        (generator_surjective (.inl k)))) hd
 
 /-- The weight-space criterion for the carrier's weight torus: a tangent matrix has only
 entries whose integral weight difference is the prescribed character. -/

@@ -13,14 +13,9 @@ alerted" list below for ordinary backlog that does not belong here.
 
 Detectors (each names the infra failure it implies):
 
-  1. stuck-bump      The last-known-good bump PR (branch hopscotch/lkg-bump) has a
-                     RED `build` check that has stayed red past a grace window. The
-                     hourly bump cannot cross a mathlib breaking change on its own;
-                     something needs a fix, e.g. a proof, scripts/lint-env.sh, or a
-                     guard.
-  2. stale-pin       main's mathlib pin has not moved in several days. The bump has
-                     stopped advancing, e.g. a wedged PR, an unresolved
-                     first-known-bad freeze, or update.yml silently broken.
+  2. stale-pin       main's pinned mathlib commit is over three days old. The active
+                     fixed-target bump has not landed yet, or update.yml is failing;
+                     recent manifest edits do not restore freshness.
   3. stranded-pr     A PR that is in-scope (TauCeti/ + allowed roots, bump-guard
                      green for any pin change), `build` green, every blocking
                      rubric green at HEAD, not draft/hold, mergeable, and quiet for
@@ -40,9 +35,6 @@ Detectors (each names the infra failure it implies):
                      exactly how pages.yml served a stale site unnoticed.
   6. main-red        The newest conclusive CI run on main is red, with no newer
                      successful run. The "main is always green" invariant is broken.
-  7. stale-fkb       An open first-known-bad issue (label `dependency-incompatibility`)
-                     has been open past a grace window. A regression against TauCeti
-                     nobody has landed the fix for.
   8. eviction-loop   The merge queue has accepted and evicted the same green PR
                      repeatedly. One eviction looks like nothing (merge-sweep just
                      re-enqueues), so only the count reveals a broken merge-group
@@ -126,7 +118,6 @@ import core  # noqa: E402
 import zulip as zp  # noqa: E402
 
 REPO = core.REPO
-LKG_BRANCH = "hopscotch/lkg-bump"  # keep in sync with update.yml's LKG_BRANCH
 LINT_REPAIR_BRANCH = "lint-repair/main"  # keep in sync with lint-full.yml
 
 # Keys we generate use only this alphabet; the marker is anchored to the final
@@ -139,11 +130,10 @@ MARKER_RE = re.compile(r"<!--stuck:v1 (" + KEY_RE.pattern + r")-->\s*\Z")
 # --- thresholds --------------------------------------------------------------
 # Each scheduler threshold is ~2-3x the workflow's cadence, generous enough to
 # ride out GitHub's routine scheduled-run delays without false-firing.
-BUMP_STUCK_HOURS = 24
 # A lint repair PR starts red by design and needs a worker round or two; two days open means the
 # worker is not getting it green on its own.
 LINT_REPAIR_STUCK_HOURS = 48
-PIN_STALE_DAYS = 4
+PIN_STALE_DAYS = 3
 STRANDED_HOURS = 6
 # Evictions since the current readiness, within the window, before a bounce counts as a loop.
 EVICTION_LOOP_MIN = 2
@@ -157,7 +147,6 @@ MISSING_STATUS_HOURS = 0.5
 # runs at eight to eighty-six cancellations a day, so the wait has to be long enough that
 # no ordinary re-dispatch is still pending. A day is many times the slowest build.
 ABANDONED_CANCEL_HOURS = 24
-FKB_STALE_DAYS = 3
 SCHEDULERS = {
     # workflow file            (human name,               max age hours)
     "update.yml":            ("hourly mathlib bump",       4),
@@ -181,9 +170,6 @@ FAILING_SCHEDULER_RUNS = 2
 SCHEDULER_RUN_WINDOW = 10
 # A PR carrying any of these labels is intentionally parked; never "stranded".
 HOLD_LABELS = {"keep", "hold", "wip", "human", "do-not-close", "blocked"}
-# The downstream-reports first-known-bad tracking issue carries this label
-# (author github-actions[bot]); the label is the stable signal, not the title.
-FKB_LABEL = "dependency-incompatibility"
 # CI conclusions that mean main is broken (not just `failure`).
 RED_CONCLUSIONS = {"failure", "timed_out", "startup_failure"}
 CONCLUSIVE_CI = RED_CONCLUSIONS | {"success"}
@@ -248,37 +234,6 @@ newest_status = core.newest_status
 # prefix (the part before the first "/") names the detector, so a detector that
 # errors marks exactly its own keys "unknown" and never clears them.
 
-def detect_stuck_bump():
-    prs = gh_stream(
-        f"/repos/{REPO}/pulls?state=open&head=TauCetiProject:{LKG_BRANCH}&per_page=5",
-        jq='.[] | {number, head: .head.sha, created_at}', paginate=False)
-    out = []
-    for pr in prs:
-        state, _ = newest_status(pr["head"], "build")
-        # Clock off the PR's age, not the build-status timestamp. A HEALTHY LKG
-        # bump PR merges within hours and a fresh one is created per advance, so an
-        # open LKG PR older than the window is reliably stuck. The build-status
-        # `updated_at` is the wrong clock here: repeated branch updates can
-        # re-run the same red build and reset that timestamp, masking a
-        # genuine multi-day wedge (observed on PR #1057). Requiring the build to
-        # be currently red avoids firing on a
-        # PR that has since gone green and is merging.
-        if state in ("failure", "error") and hours_since(pr["created_at"]) >= BUMP_STUCK_HOURS:
-            out.append({
-                "key": f"stuck-bump/{pr['number']}",
-                "title": "Mathlib bump wedged — LKG bump PR build stays red",
-                "body": (
-                    f"The last-known-good bump PR "
-                    f"https://github.com/{REPO}/pull/{pr['number']} has had a red "
-                    f"`build` check and has been open over {BUMP_STUCK_HOURS}h. The hourly bump cannot "
-                    f"cross a mathlib breaking change on its own.\n\n"
-                    f"**Fix:** open the failing build, and land whatever fix it needs "
-                    f"together with the pin move in one human-owned PR, so the bump "
-                    f"can resume."),
-            })
-    return out
-
-
 def detect_stuck_lint_repair():
     prs = gh_stream(
         f"/repos/{REPO}/pulls?state=open&head=TauCetiProject:{LINT_REPAIR_BRANCH}&per_page=5",
@@ -303,34 +258,38 @@ def detect_stuck_lint_repair():
 
 
 def detect_stale_pin():
-    # Staleness is "how long since the pin last MOVED", not the age of the pinned
-    # commit: right after a bump to an LKG commit that itself lags master, the
-    # pinned commit can be days old while the bump is perfectly healthy. The daily
-    # bump rewrites lake-manifest.json whenever mathlib advances, so the manifest's
-    # last-change date on main is a direct proxy for the bump cadence.
-    date = gh_scalar(f"/repos/{REPO}/commits?path=lake-manifest.json&sha=main&per_page=1",
-                     jq='.[0].commit.committer.date // ""')
-    if not date or hours_since(date) / 24.0 < PIN_STALE_DAYS:
-        return []
-    rev = ""
+    # A recent manifest edit can still leave main weeks behind upstream. Measure
+    # the actual pinned Mathlib commit, independently of when the bump landed.
+    # Missing evidence must raise so collect_alerts preserves an existing alert.
     content = gh_scalar(f"/repos/{REPO}/contents/lake-manifest.json?ref=main", jq='.content')
-    if content:
-        try:  # contents is base64 with embedded newlines; b64decode discards them
-            data = json.loads(base64.b64decode(content).decode())
-            rev = next((p["rev"] for p in data.get("packages", [])
-                        if p["name"] == "mathlib"), "")
-        except Exception:
-            rev = ""
-    pin = f" (mathlib `{rev[:10]}`)" if rev else ""
+    data = json.loads(base64.b64decode(content).decode())
+    mathlib = [p for p in data["packages"] if p.get("name") == "mathlib"]
+    if len(mathlib) != 1 or not re.fullmatch(r"[0-9a-f]{40}", mathlib[0].get("rev", "")):
+        raise RuntimeError("main manifest must contain exactly one full Mathlib commit SHA")
+    rev = mathlib[0]["rev"]
+    date = gh_scalar(f"/repos/leanprover-community/mathlib4/git/commits/{rev}",
+                     jq='.committer.date // ""')
+    committed = parse_ts(date)
+    if committed.tzinfo is None:
+        raise RuntimeError("Mathlib commit timestamp has no timezone")
+    age_days = (now_utc() - committed).total_seconds() / 86400.0
+    if age_days < 0:
+        raise RuntimeError("Mathlib commit timestamp is in the future")
+    if age_days <= PIN_STALE_DAYS:
+        return []
     return [{
         "key": "stale-pin",
-        "title": "Mathlib pin has stopped advancing",
+        "title": "Pinned Mathlib commit is too old",
         "body": (
-            f"`lake-manifest.json` on main{pin} has not changed in over "
-            f"{PIN_STALE_DAYS} days; the hourly bump has stalled.\n\n"
-            f"**Fix:** find why — a wedged bump PR (see any stuck-bump alert), an "
-            f"unresolved first-known-bad freeze, or `update.yml` failing — and clear "
-            f"it so `hopscotch/lkg-bump` can move forward again."),
+            f"Main pins mathlib [`{rev[:10]}`]"
+            f"(https://github.com/leanprover-community/mathlib4/commit/{rev}), "
+            f"committed at {date}. That commit exceeds the "
+            f"{PIN_STALE_DAYS}-day freshness limit. "
+            f"A recent manifest edit does not reset this clock.\n\n"
+            f"Workers repair the fixed-target bump automatically; full CI, review, and "
+            f"Bors must finish before the new pin lands. Check the active "
+            f"[Mathlib bump](https://github.com/{REPO}/pulls?q=is%3Aopen+head%3Abump-mathlib%2F) "
+            f"and `update.yml` for the current failure. Downstream reports do not freeze the updater."),
     }]
 
 
@@ -826,31 +785,9 @@ def detect_main_red():
     }]
 
 
-def detect_stale_fkb():
-    issues = gh_stream(
-        f"/repos/{REPO}/issues?state=open&labels={FKB_LABEL}&per_page=100",
-        jq='.[] | select(.pull_request == null) | {number, created_at}')
-    out = []
-    for i in issues:
-        if hours_since(i["created_at"]) / 24.0 < FKB_STALE_DAYS:
-            continue
-        out.append({
-            "key": f"stale-fkb/{i['number']}",
-            "title": "Mathlib incompatibility unresolved",
-            "body": (
-                f"A first-known-bad tracking issue (`{FKB_LABEL}`) has been open for "
-                f"over {FKB_STALE_DAYS} days: https://github.com/{REPO}/issues/{i['number']}. "
-                f"The pin is frozen at the last-known-good commit until it is fixed.\n\n"
-                f"**Fix:** land the fix PR whose manifest is pinned at the first-known-bad commit so the "
-                f"freeze lifts and the hourly bump resumes toward master."),
-        })
-    return out
-
-
 # (prefix, detector). The prefix is the part of every key before the first "/",
 # so a detector that raises marks exactly its own alerts "unknown" for the run.
 DETECTORS = [
-    ("stuck-bump", detect_stuck_bump),
     ("stuck-lint-repair", detect_stuck_lint_repair),
     ("stale-pin", detect_stale_pin),
     ("stranded-pr", detect_stranded_prs),
@@ -861,7 +798,6 @@ DETECTORS = [
     ("dead-scheduler", detect_dead_schedulers),
     ("failing-scheduler", detect_failing_schedulers),
     ("main-red", detect_main_red),
-    ("stale-fkb", detect_stale_fkb),
 ]
 
 

@@ -23,18 +23,30 @@ all rational points identifies the derived defining ideal with the vanishing ide
 abstract commutator subgroup. Thus the all-points comparison is a specialization of the
 subgroup-closure comparison.
 
-If the rational points of the ambient group have finite derived length, then commutators of
-closures lie in the closure of the commutator
-(`TauCeti.HopfIdeal.commutator_quotientPointsSubgroup_vanishingIdeal_le`), so the rational points
-of the derived subgroup have strictly smaller derived length. This is the measure the Lie--Kolchin
-induction decreases.
+Commutators of closures lie in the closure of the commutator
+(`TauCeti.HopfIdeal.commutator_quotientPointsSubgroup_vanishingIdeal_le`). Whenever the rational
+points are schematically dense, so that the derived subgroup is the closure of the commutator
+subgroup, it follows that if the rational points have derived length at most `n + 1`, then those
+of the derived subgroup have derived length at most `n`; this holds in particular for a reduced
+finite-type affine group over an algebraically closed field. This bound is the measure the
+Lie--Kolchin induction decreases.
 
 ## Main declarations
 
+* `TauCeti.CommHopfAlgCat.
+    comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator`:
+  over any field, the derived subgroup of the reduced closure of a rational-point subgroup `S` is
+  the reduced closure of `⁅S, S⁆`.
+* `TauCeti.CommHopfAlgCat.derivedDefiningIdeal_eq_vanishingIdeal_commutator_of_dense_points`: if
+  the rational points are schematically dense, the derived subgroup is the closure of their
+  abstract commutator subgroup.
 * `TauCeti.CommHopfAlgCat.derivedDefiningIdeal_eq_vanishingIdeal_commutator`: the derived
   subgroup is the closure of the abstract commutator subgroup of rational points.
-* `TauCeti.CommHopfAlgCat.derivedSeries_points_derived_eq_bot`: if the rational points have
-  derived length at most `n + 1`, those of the derived subgroup have derived length at most `n`.
+* `TauCeti.CommHopfAlgCat.derivedSeries_points_derived_eq_bot_of_dense_points`: if the rational
+  points are schematically dense and have derived length at most `n + 1`, those of the derived
+  subgroup have derived length at most `n`.
+* `TauCeti.CommHopfAlgCat.derivedSeries_points_derived_eq_bot`: the same bound for a reduced
+  finite-type affine group over an algebraically closed field.
 
 ## References
 
@@ -48,8 +60,6 @@ open WithConv
 open scoped commutatorElement
 
 namespace TauCeti.CommHopfAlgCat
-
-noncomputable section
 
 -- The subgroup-closure proof adapts the in-repository proof of
 -- `derivedDefiningIdeal_eq_vanishingIdeal_commutator` previously in this module.
@@ -69,10 +79,8 @@ private theorem map_vanishingIdeal_commutator_le_derivedDefiningIdeal
   let lift (g : S) := liftQuotientPoint A I (CommAlgCat.of k k) g.val
     (fun x hx ↦ (HopfIdeal.mem_vanishingIdeal S x).mp hx g)
   have hsep := HopfIdeal.eq_zero_of_forall_liftQuotientPoint_apply_eq_zero S
-  rw [le_derivedDefiningIdeal_iff]
-  intro x hx
-  obtain ⟨x, hmem, rfl⟩ :=
-    (HopfIdeal.mem_map_iff_of_surjective (mkQuotient_surjective A I)).mp hx
+  rw [le_derivedDefiningIdeal_iff, HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
+  intro x hmem
   apply RingHom.mem_ker.mpr
   apply tensor_eq_zero_of_forall_productMap_eq_zero
     (fun g : S ↦ (lift g).ofConv) (fun g : S ↦ (lift g).ofConv) hsep hsep
@@ -133,6 +141,39 @@ theorem derivedDefiningIdeal_eq_vanishingIdeal_commutator_of_dense_points
   rw [hbot] at h
   simpa only [← commutator_def] using h
 
+/-- **Passing to the derived subgroup lowers a derived-length bound by one.** If the rational
+points of an affine group over a field are schematically dense and have derived length at most
+`n + 1`, then the rational points of its scheme-theoretic derived subgroup have derived length at
+most `n`. -/
+theorem derivedSeries_points_derived_eq_bot_of_dense_points {n : ℕ}
+    (hdense : HopfIdeal.vanishingIdeal (⊤ : Subgroup (WithConv (H →ₐ[k] k))) = ⊥)
+    (hn : derivedSeries (WithConv (H →ₐ[k] k)) (n + 1) = ⊥) :
+    derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
+      (derivedDefiningIdeal (R := k) H) →ₐ[k] k)) n = ⊥ := by
+  let A := _root_.CommHopfAlgCat.of k H
+  let cl (S : Subgroup (WithConv (H →ₐ[k] k))) :=
+    quotientPointsSubgroup A (HopfIdeal.vanishingIdeal S) (CommAlgCat.of k k)
+  let φ := (quotientPointsHom A (derivedDefiningIdeal H) (CommAlgCat.of k k)).hom
+  -- The `i`-th derived subgroup of the derived points lies in the closure of the `(i + 1)`-st
+  -- derived subgroup of the ambient points.
+  have hle (i : ℕ) : (derivedSeries _ i).map φ ≤ cl (derivedSeries _ (i + 1)) := by
+    induction i with
+    | zero =>
+      rw [derivedSeries_zero, ← MonoidHom.range_eq_map, derivedSeries_one]
+      -- `quotientPointsSubgroup` is defined as the range of `quotientPointsHom`.
+      exact (congrArg (fun I ↦ quotientPointsSubgroup A I (CommAlgCat.of k k))
+        (derivedDefiningIdeal_eq_vanishingIdeal_commutator_of_dense_points hdense)).le
+    | succ i ih =>
+      rw [derivedSeries_succ, Subgroup.map_commutator, derivedSeries_succ _ (i + 1)]
+      exact (Subgroup.commutator_mono ih ih).trans
+        (HopfIdeal.commutator_quotientPointsSubgroup_vanishingIdeal_le _ _)
+  have hmap : (derivedSeries _ n).map φ = ⊥ := by
+    have h := hle n
+    rw [hn] at h
+    exact le_bot_iff.mp (h.trans HopfIdeal.quotientPointsSubgroup_vanishingIdeal_bot.le)
+  exact (Subgroup.map_eq_bot_iff_of_injective _
+    (quotientPointsHom_injective A _ (CommAlgCat.of k k))).mp hmap
+
 variable [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
 
 /-- The derived subgroup is the reduced closed subgroup generated by the abstract
@@ -150,38 +191,14 @@ element of the abstract commutator subgroup of rational points. -/
       ∀ g : commutator (WithConv (H →ₐ[k] k)), g.val.ofConv x = 0 := by
   rw [derivedDefiningIdeal_eq_vanishingIdeal_commutator, HopfIdeal.mem_vanishingIdeal]
 
-/-- **The derived subgroup has strictly shorter derived length.** If the rational points of a
-reduced finite-type affine group over an algebraically closed field have derived length at most
-`n + 1`, then the rational points of its scheme-theoretic derived subgroup have derived length at
-most `n`. -/
+/-- The derived-length bound `derivedSeries_points_derived_eq_bot_of_dense_points` for a reduced
+finite-type affine group over an algebraically closed field, whose rational points are dense: if
+they have derived length at most `n + 1`, then the rational points of its scheme-theoretic derived
+subgroup have derived length at most `n`. -/
 theorem derivedSeries_points_derived_eq_bot {n : ℕ}
     (hn : derivedSeries (WithConv (H →ₐ[k] k)) (n + 1) = ⊥) :
     derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
-      (derivedDefiningIdeal (R := k) H) →ₐ[k] k)) n = ⊥ := by
-  let A := _root_.CommHopfAlgCat.of k H
-  let cl (S : Subgroup (WithConv (H →ₐ[k] k))) :=
-    quotientPointsSubgroup A (HopfIdeal.vanishingIdeal S) (CommAlgCat.of k k)
-  let φ := (quotientPointsHom A (derivedDefiningIdeal H) (CommAlgCat.of k k)).hom
-  -- The `i`-th derived subgroup of the derived points lies in the closure of the `(i + 1)`-st
-  -- derived subgroup of the ambient points.
-  have hle (i : ℕ) : (derivedSeries _ i).map φ ≤ cl (derivedSeries _ (i + 1)) := by
-    induction i with
-    | zero =>
-      rw [derivedSeries_zero, ← MonoidHom.range_eq_map, derivedSeries_one]
-      -- `quotientPointsSubgroup` is defined as the range of `quotientPointsHom`.
-      exact (congrArg (fun I ↦ quotientPointsSubgroup A I (CommAlgCat.of k k))
-        derivedDefiningIdeal_eq_vanishingIdeal_commutator).le
-    | succ i ih =>
-      rw [derivedSeries_succ, Subgroup.map_commutator, derivedSeries_succ _ (i + 1)]
-      exact (Subgroup.commutator_mono ih ih).trans
-        (HopfIdeal.commutator_quotientPointsSubgroup_vanishingIdeal_le _ _)
-  have hmap : (derivedSeries _ n).map φ = ⊥ := by
-    have h := hle n
-    rw [hn] at h
-    exact le_bot_iff.mp (h.trans HopfIdeal.quotientPointsSubgroup_vanishingIdeal_bot.le)
-  exact (Subgroup.map_eq_bot_iff_of_injective _
-    (quotientPointsHom_injective A _ (CommAlgCat.of k k))).mp hmap
-
-end
+      (derivedDefiningIdeal (R := k) H) →ₐ[k] k)) n = ⊥ :=
+  derivedSeries_points_derived_eq_bot_of_dense_points HopfIdeal.vanishingIdeal_top hn
 
 end TauCeti.CommHopfAlgCat

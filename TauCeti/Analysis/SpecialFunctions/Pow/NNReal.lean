@@ -16,6 +16,10 @@ since it is neither `0` nor `∞` unless `X = 0`, in which case the conclusion i
 the last step of every norming argument for `Lᵖ` norms, where `X` is a norm and `X ^ r` is its
 pairing with the extremal function.
 
+For an exponent `p ∈ [0, 1]` the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`, with no
+finiteness or positivity hypothesis on `x`. This is the case `s = t` of geometric interpolations
+`t ^ p s ^ (1 - p)`, such as the distortion coefficient `τ_{K,N}^{(t)}(θ)` with `p = 1 / N`.
+
 A nonpositive real power is antitone on `ℝ≥0∞`. Because `0 ^ z = ∞` for `z < 0`, no positivity
 hypothesis is needed, unlike its `ℝ≥0` counterpart `NNReal.rpow_le_rpow_of_nonpos`; this is what
 makes `ℝ≥0∞`-valued bounds on weakly singular integrands such as `|x - c| ^ (-1/2)` hold
@@ -25,15 +29,21 @@ product of three linear factors follow: at infinity the kernel decays like `y ^ 
 three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
+For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
+closed intervals for a reciprocal radius parameter `α / r`.
+
 ## Main declarations
 
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
+* `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
+* `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
+  for the reciprocal parameter `α / r`.
 -/
 
 public section
@@ -53,6 +63,11 @@ theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ 
   have hpow0 : X ^ (r - 1) ≠ 0 := by simp [rpow_eq_zero_iff, hX0, hX]
   rw [hXr, mul_comm C] at h
   exact (ENNReal.mul_le_mul_iff_right hpow0 (rpow_ne_top_of_ne_zero hX0 hX)).1 h
+
+/-- For `p ∈ [0, 1]`, the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`. -/
+theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
+    x ^ p * x ^ (1 - p) = x := by
+  rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
 
 /-- A nonpositive real power is antitone on `ℝ≥0∞`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`. -/
 theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz : z ≤ 0) :
@@ -129,3 +144,62 @@ theorem exists_enorm_sub_rpow_neg_half_mul_le {E : Type*} [NormedAddCommGroup E]
       _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_self_add.trans le_self_add
 
 end ENNReal
+
+namespace NNReal
+
+/-- For a base greater than one, real powers are ordered exactly by their exponents. -/
+theorem rpow_le_rpow_iff_of_one_lt {b : ℝ≥0} (hb : 1 < b) {x y : ℝ} :
+    b ^ x ≤ b ^ y ↔ x ≤ y := by
+  constructor
+  · contrapose!
+    exact rpow_lt_rpow_of_exponent_lt hb
+  · exact rpow_le_rpow_of_exponent_le hb.le
+
+/-- **Reciprocal radius interval dictionary.** For a base `c > 1`, the interval
+`c ^ (-α/a) ≤ c ^ (-r) ≤ c ^ (-α/b)` is equivalent to `a ≤ α / r ≤ b` when
+`r`, `a`, and `b` are positive. -/
+theorem rpow_neg_mem_Icc_iff {c : ℝ≥0} (hc : 1 < c) (α r a b : ℝ)
+    (hr : 0 < r) (ha : 0 < a) (hb : 0 < b) :
+    c ^ (-r) ∈ Set.Icc (c ^ (-α / a)) (c ^ (-α / b)) ↔
+      α / r ∈ Set.Icc a b := by
+  simp only [Set.mem_Icc]
+  rw [rpow_le_rpow_iff_of_one_lt hc, rpow_le_rpow_iff_of_one_lt hc]
+  constructor
+  · rintro ⟨h₁, h₂⟩
+    constructor
+    · apply (le_div_iff₀ hr).2
+      have := (div_le_iff₀ ha).1 h₁
+      nlinarith
+    · apply (div_le_iff₀ hr).2
+      have := (le_div_iff₀ hb).1 h₂
+      nlinarith
+  · rintro ⟨h₁, h₂⟩
+    constructor
+    · have := (le_div_iff₀ hr).1 h₁
+      exact (div_le_iff₀ ha).2 (by nlinarith)
+    · have := (div_le_iff₀ hr).1 h₂
+      exact (le_div_iff₀ hb).2 (by nlinarith)
+
+/-- A rational lower bound on the ratio `α / r`, expressed as a comparison of powers.
+
+For `r > 0`, the inequality `(b ^ (-α)) ^ q.den ≤ (b ^ (-r)) ^ q.num` is equivalent to
+`q ≤ α / r`; the base is arbitrary above one. -/
+theorem rpow_num_den_le_iff {b : ℝ≥0} (hb : 1 < b) (r : ℝ) (hr : 0 < r)
+    (α : ℝ) (q : ℚ≥0) :
+    (b ^ (-α)) ^ q.den ≤ (b ^ (-r)) ^ q.num ↔ (q : ℝ) ≤ α / r := by
+  rw [← rpow_mul_natCast, ← rpow_mul_natCast, rpow_le_rpow_iff_of_one_lt hb,
+    NNRat.cast_def, div_le_div_iff₀ (by exact_mod_cast q.den_pos) hr]
+  constructor <;> intro h <;> nlinarith
+
+/-- A rational upper bound on the ratio `α / r`, expressed as a comparison of powers.
+
+For `r > 0`, the inequality `(b ^ (-r)) ^ q.num ≤ (b ^ (-α)) ^ q.den` is equivalent to
+`α / r ≤ q`; the base is arbitrary above one. -/
+theorem rpow_den_num_le_iff {b : ℝ≥0} (hb : 1 < b) (r : ℝ) (hr : 0 < r)
+    (α : ℝ) (q : ℚ≥0) :
+    (b ^ (-r)) ^ q.num ≤ (b ^ (-α)) ^ q.den ↔ α / r ≤ (q : ℝ) := by
+  rw [← rpow_mul_natCast, ← rpow_mul_natCast, rpow_le_rpow_iff_of_one_lt hb,
+    NNRat.cast_def, div_le_div_iff₀ hr (by exact_mod_cast q.den_pos)]
+  constructor <;> intro h <;> nlinarith
+
+end NNReal

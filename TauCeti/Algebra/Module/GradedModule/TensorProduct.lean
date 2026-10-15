@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
@@ -24,8 +25,7 @@ the same sum.
 
 The resulting grading has the expected API on pure tensors. In particular, a tensor of elements
 of degrees `p` and `q` has degree `p + q`, and tensoring homogeneous linear maps adds their
-degrees. This is the tensor-product compatibility requested in Layer 0 of the `DGAInfinity`
-roadmap and supplies the grading used by tensor products of DG objects.
+degrees. This grading is used by tensor products of differential graded objects.
 
 ## Main definitions
 
@@ -43,8 +43,8 @@ roadmap and supplies the grading used by tensor products of DG objects.
 * `TauCeti.InternalGrading.koszulTwist_tensorProduct`: the Koszul twist of the total grading is
   the tensor product of the Koszul twists of the factors.
 
-The proof reuses Tau Ceti's two-factor internal decomposition theorem
-`DirectSum.IsInternal.tensorProduct`; no formalization is vendored.
+The construction reuses `DirectSum.IsInternal.tensorProduct` for the bidegree decomposition
+and `DirectSum.IsInternal.iSup_fiber` to collect equal total degrees.
 -/
 
 public section
@@ -59,25 +59,23 @@ namespace InternalGrading
 
 section PiTensorProduct
 
-variable {R : Type u} [CommSemiring R]
-variable {M : Type v} [AddCommMonoid M] [Module R M]
+variable {R : Type u} [CommSemiring R] {ι : Type*} [Finite ι]
+variable {M : ι → Type v} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 variable {N : Type w} [AddCommMonoid N] [Module R N]
 
-/-- Two linear maps from a finite tensor product of an internally graded module agree if they
-agree on pure tensors of homogeneous elements. -/
-theorem piTensorProduct_ext (G : InternalGrading R M) {n : ℕ}
-    {f g : PiTensorProduct R (fun _ : Fin n ↦ M) →ₗ[R] N}
-    (h : ∀ q : ∀ _ : Fin n, Σ d : ℤ, G.piece d,
+/-- Two linear maps from a tensor product of a finite family of internally graded modules agree
+if they agree on pure tensors of homogeneous elements. -/
+theorem piTensorProduct_ext (G : ∀ i, InternalGrading R (M i))
+    {f g : PiTensorProduct R M →ₗ[R] N}
+    (h : ∀ q : ∀ i, Σ d : ℤ, (G i).piece d,
       f (PiTensorProduct.tprod R fun i ↦ (q i).2) =
         g (PiTensorProduct.tprod R fun i ↦ (q i).2)) : f = g := by
   apply PiTensorProduct.ext_of_span_eq_top
-    (g := fun _ (q : Σ d : ℤ, G.piece d) ↦ (q.2 : M))
-  · intro _
-    apply top_unique
-    rw [← G.isInternal.submodule_iSup_eq_top]
-    refine iSup_le fun d ↦ ?_
-    intro a ha
-    exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
+    (g := fun i (q : Σ d : ℤ, (G i).piece d) ↦ (q.2 : M i))
+  · intro i
+    convert (G i).span_setOf_exists_mem_piece_eq_top R using 2
+    ext x
+    simp
   · exact h
 
 end PiTensorProduct
@@ -121,103 +119,21 @@ variable {R : Type u} [CommSemiring R]
 variable {M : Type v} {N : Type w}
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
-/-- Regrouping a family by the fibers of a degree map does not alter its supremum. -/
-private theorem iSup_fiber_eq_iSup {I J : Type*} (P : I → Submodule R M) (degree : I → J) :
-    (⨆ j, ⨆ i, ⨆ _ : degree i = j, P i) = ⨆ i, P i := by
-  apply le_antisymm
-  · exact iSup_le fun _ ↦ iSup_le fun i ↦ iSup_le fun _ ↦ le_iSup P i
-  · exact iSup_le fun i ↦
-      le_iSup_of_le (degree i) (le_iSup_of_le i (le_iSup_of_le rfl le_rfl))
-
-/-- Projection onto each fiber proves that the canonical recomposition map for the collected
-pieces is injective. -/
-private theorem coeLinearMap_iSup_fiber_injective {I J : Type*} [DecidableEq I] [DecidableEq J]
-    {P : I → Submodule R M} (hP : DirectSum.IsInternal P) (degree : I → J) :
-    Function.Injective <| DirectSum.coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i := by
-  let Q : J → Submodule R M := fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i
-  let _ : DirectSum.Decomposition P := hP.chooseDecomposition
-  let projection (j : J) : M →ₗ[R] M :=
-    (DirectSum.toModule R I M fun i ↦
-      if degree i = j then (P i).subtype else 0) ∘ₗ
-        (DirectSum.decomposeLinearEquiv P).toLinearMap
-  have projection_piece (j : J) (i : I) {x : M} (hx : x ∈ P i) :
-      projection j x = if degree i = j then x else 0 := by
-    dsimp only [projection]
-    rw [LinearMap.comp_apply]
-    -- The decomposition lemma takes an element of the summand; `hx` supplies that subtype view.
-    change (DirectSum.toModule R I M fun i ↦
-      if degree i = j then (P i).subtype else 0)
-        ((DirectSum.decomposeLinearEquiv P) (⟨x, hx⟩ : P i)) = _
-    rw [DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.toModule_lof]
-    split <;> rfl
-  have Q_eq (j : J) : Q j = ⨆ i : {i // degree i = j}, P i := by
-    apply le_antisymm
-    · refine iSup_le fun i ↦ iSup_le fun hi ↦ ?_
-      exact le_iSup_of_le ⟨i, hi⟩ le_rfl
-    · exact iSup_le fun i ↦ le_iSup_of_le i.1 (le_iSup_of_le i.2 le_rfl)
-  have projection_mem (j k : J) {x : M} (hx : x ∈ Q k) :
-      projection j x = if k = j then x else 0 := by
-    rw [Q_eq] at hx
-    refine Submodule.iSup_induction (fun i : {i // degree i = k} ↦ P i)
-      (motive := fun y ↦ projection j y = if k = j then y else 0) hx
-      (fun i x hx ↦ ?_) (by simp) (fun x y ihx ihy ↦ ?_)
-    · simpa only [i.property] using projection_piece j i hx
-    · simp only [map_add, ihx, ihy, ite_add_zero]
-  have projection_coe (j : J) (z : ⨁ k, ↥(Q k)) :
-      projection j (DirectSum.coeLinearMap Q z) = z j := by
-    induction z using DirectSum.induction_on with
-    | zero => simp
-    | of k x =>
-        rw [DirectSum.coeLinearMap_of, projection_mem j k x.property]
-        simp only [DirectSum.coe_of_apply]
-        split <;> rfl
-    | add x y ihx ihy =>
-        rw [map_add (DirectSum.coeLinearMap Q), map_add (projection j), ihx, ihy]
-        rfl
-  intro x y hxy
-  apply DirectSum.ext fun j ↦ Subtype.ext ?_
-  exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
-    (projection_coe j y))
-
-/-- Collecting an internal decomposition along an arbitrary degree map again gives an internal
-decomposition. This local form is used to collect tensor bidegrees by their sum. -/
-private theorem isInternal_iSup_fiber {I J : Type*} [DecidableEq I] [DecidableEq J]
-    {P : I → Submodule R M} (hP : DirectSum.IsInternal P) (degree : I → J) :
-    DirectSum.IsInternal fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i := by
-  -- `IsInternal` uses the canonical additive recomposition map. For submodules its underlying
-  -- function is definitionally the canonical linear recomposition map used below.
-  change Function.Bijective (DirectSum.coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i)
-  refine ⟨coeLinearMap_iSup_fiber_injective hP degree, ?_⟩
-  rw [← LinearMap.range_eq_top, DirectSum.range_coeLinearMap]
-  rw [iSup_fiber_eq_iSup P degree]
-  exact hP.submodule_iSup_eq_top
-
 /-- The tensor product of internally graded modules, graded by total degree. -/
 noncomputable def tensorProduct (G : InternalGrading R M) (H : InternalGrading R N) :
     InternalGrading R (M ⊗[R] N) where
   piece := tensorProductPiece G H
   isInternal := by
-    -- The reused theorem is declared in a `Classical` scope, whereas `InternalGrading` fixes the
-    -- canonical decidable equality on `ℤ`; transport the two input decompositions across that
-    -- implementation-only difference before applying it.
     classical
-    have hG : @DirectSum.IsInternal ℤ M (Submodule R M) (Classical.decEq ℤ)
-        _ _ _ G.piece := by
-      have hdec : (Int.instDecidableEq : DecidableEq ℤ) = Classical.decEq ℤ :=
-        Subsingleton.elim _ _
-      exact hdec ▸ G.isInternal
-    have hH : @DirectSum.IsInternal ℤ N (Submodule R N) (Classical.decEq ℤ)
-        _ _ _ H.piece := by
-      have hdec : (Int.instDecidableEq : DecidableEq ℤ) = Classical.decEq ℤ :=
-        Subsingleton.elim _ _
-      exact hdec ▸ H.isInternal
-    apply isInternal_iSup_fiber
-    -- Unfold the private bidegree wrapper to match the reused tensor-product decomposition.
+    apply DirectSum.IsInternal.iSup_fiber
+    -- Unfold the private bidegree wrapper to match the tensor-product decomposition.
     change DirectSum.IsInternal fun d : ℤ × ℤ ↦
       Submodule.map₂ (TensorProduct.mk R M N) (G.piece d.1) (H.piece d.2)
-    have hPair := DirectSum.IsInternal.tensorProduct G.piece H.piece hG hH
-    -- Only the proof-irrelevant decidable-equality and additive instances now differ.
-    convert hPair using 1
+    -- The reused theorem uses classical decidable equality; `convert` transports the
+    -- decompositions across the proof-irrelevant choice of decidable equality on `ℤ`.
+    convert DirectSum.IsInternal.tensorProduct G.piece H.piece ?_ ?_ using 1
+    · convert G.isInternal
+    · convert H.isInternal
 
 /-- The degree-`n` piece of the tensor-product grading is the sum of the tensor-product images
 whose first degree is `p` and whose second degree is `n - p`. -/

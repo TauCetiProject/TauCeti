@@ -20,6 +20,9 @@ weights are the bilinear expressions `∑ m, w.weights m * (v m).weights n`, so 
 continuous; `Convexity.StdSimplex.continuousAffineMapMk` bundles it as a continuous map. This
 makes affine simplices, such as the simplices of a barycentric subdivision,
 available as continuous maps between topological standard simplices.
+
+A standard simplex on a finite type is Hausdorff (`Convexity.StdSimplex.t2Space`), so continuous
+surjections onto it from compact spaces are quotient maps.
 -/
 
 public section
@@ -92,5 +95,9 @@ noncomputable def continuousAffineMapMk [Finite N] (v : M → StdSimplex R N) :
 @[simp]
 lemma continuousAffineMapMk_apply [Finite N] (v : M → StdSimplex R N) (w : StdSimplex R M) :
     continuousAffineMapMk v w = affineMapMk v w := (rfl)
+
+/-- A standard simplex on a finite type is Hausdorff, being embedded in `N → R` by its weights. -/
+instance t2Space [T2Space R] [Finite N] : T2Space (StdSimplex R N) :=
+  (isEmbedding_toFun_comp_weights R N).t2Space
 
 end Convexity.StdSimplex

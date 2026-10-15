@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 public import TauCeti.Analysis.Convex.CoordinateSimplex
 
 /-!
@@ -113,6 +114,39 @@ theorem realizationTopHomeomorphCoordinateSimplex_symm_last (n : ℕ)
     ((realizationTopHomeomorphCoordinateSimplex n).symm y).1 (Fin.last n) =
       1 - ∑ i, y.1 i :=
   coordinateSimplexToTop_last n y
+
+/-- In the standard `n`-simplex, the open star of the last vertex is described in the
+dropped barycentric coordinates by the strict sum inequality. -/
+theorem mem_openStarRealization_top_last_iff_sum_lt_one (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    x ∈ openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))
+      (Fin.last n) ↔
+      ∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).1 i < 1 := by
+  have h := Realization.sum_eq_one
+    (⊤ : AbstractSimplicialComplex (Fin (n + 1))) x
+  rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
+  have hsum : (∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).1 i) +
+      x.1 (Fin.last n) = 1 := by
+    simpa only [realizationTopHomeomorphCoordinateSimplex_apply] using h
+  rw [mem_openStarRealization]
+  constructor <;> intro hx <;> linarith
+
+/-- The coordinate homeomorphism maps the open star of the last vertex of the standard
+`n`-simplex onto the points of the coordinate simplex whose coordinate sum is less than one. -/
+theorem image_openStarRealization_top_last (n : ℕ) :
+    realizationTopHomeomorphCoordinateSimplex n ''
+        openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) (Fin.last n) =
+      {y : coordinateSimplex (Fin n) | ∑ i, y.1 i < 1} := by
+  ext y
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact (mem_openStarRealization_top_last_iff_sum_lt_one n x).mp hx
+  · intro hy
+    refine ⟨(realizationTopHomeomorphCoordinateSimplex n).symm y, ?_, ?_⟩
+    · rw [mem_openStarRealization, realizationTopHomeomorphCoordinateSimplex_symm_last]
+      simp only [Set.mem_ofPred_eq] at hy
+      linarith
+    · simp
 
 /-- The inverse comparison preserves the retained coordinates. -/
 @[simp]

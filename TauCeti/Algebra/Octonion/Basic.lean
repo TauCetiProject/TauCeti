@@ -70,6 +70,9 @@ nothing more.
   form of the composition algebra, `TauCeti.Octonion.trace_mul_conj`.
 * `TauCeti.Octonion.left_alternative`, `TauCeti.Octonion.right_alternative` and
   `TauCeti.Octonion.flexible`: `𝕆` is **alternative** and **flexible**.
+* `TauCeti.Octonion.conj_mul_mul` and `TauCeti.Octonion.mul_mul_conj`: multiplication by
+  an octonion and its conjugate cancels to its norm, on either side. Their polarizations
+  reduce the corresponding mixed triple products to the polar form of the norm.
 * `TauCeti.Octonion.moufang_left`, `TauCeti.Octonion.moufang_right` and
   `TauCeti.Octonion.moufang_middle`: the three **Moufang identities**.
 * `TauCeti.Octonion.mul_self`: every octonion satisfies its rank-two equation
@@ -457,6 +460,16 @@ def normQuadraticForm (R : Type*) [CommRing R] : QuadraticForm R (Octonion R) :=
 
 @[simp] theorem normQuadraticForm_apply (x : Octonion R) : normQuadraticForm R x = norm x := (rfl)
 
+/-- Left multiplication scales the polar norm form by the norm of the multiplying octonion. -/
+theorem polar_norm_mul_left {R : Type*} [CommRing R] (x y z : TauCeti.Octonion R) :
+    QuadraticMap.polar (TauCeti.Octonion.normQuadraticForm R) (x * y) (x * z) =
+      TauCeti.Octonion.norm x * QuadraticMap.polar (TauCeti.Octonion.normQuadraticForm R) y z := by
+  rw [QuadraticMap.polar, QuadraticMap.polar]
+  simp only [TauCeti.Octonion.normQuadraticForm_apply]
+  rw [← mul_add]
+  simp only [TauCeti.Octonion.norm_mul]
+  ring
+
 /-- The polar form of the norm, read off the entries of the two vector matrices. Stated for
 `QuadraticMap.polar` rather than for `QuadraticMap.polarBilin`, which `simp` unfolds to it. Not a
 `simp` lemma: the polar form and its half `QuadraticMap.associated` are the interface the Hermitian
@@ -557,6 +570,52 @@ theorem right_alternative (x y : Octonion R) : x * y * y = x * (y * y) := by
   simpa only [conj_mul, conj_conj] using h.symm
 
 end Vector
+
+/-! ### Conjugate cancellation and its polarization
+
+These identities reduce nested products with a repeated octonion to a scalar norm. Their
+polarizations give the mixed terms when two octonions occupy the same off-diagonal slot in
+Hermitian matrix products. No inverse of the norm or characteristic assumption is needed.
+-/
+
+/-- Left multiplication by an octonion followed by its conjugate is scalar multiplication
+by its norm. -/
+@[simp, grind =]
+theorem conj_mul_mul (x y : Octonion R) : conj x * (x * y) = norm x • y := by
+  calc
+    conj x * (x * y) = (conj x * x) * y := by
+      simp only [conj_eq_trace_smul_one_sub, sub_mul, smul_mul_assoc, one_mul,
+        left_alternative]
+    _ = norm x • y := by rw [conj_mul_self, smul_mul_assoc, one_mul]
+
+/-- Right multiplication by an octonion followed by its conjugate is scalar multiplication
+by its norm. -/
+@[simp, grind =]
+theorem mul_mul_conj (x y : Octonion R) : x * y * conj y = norm y • x := by
+  have h := congrArg conj (conj_mul_mul (conj y) (conj x))
+  simpa only [conj_mul, conj_conj, map_smul, norm_conj] using h
+
+/-- The mixed terms of left conjugate cancellation give the polar form of the norm,
+without dividing by `2`. -/
+theorem conj_mul_mul_add_conj_mul_mul (x y z : Octonion R) :
+    conj x * (y * z) + conj y * (x * z) =
+      QuadraticMap.polar (normQuadraticForm R) x y • z := by
+  have h := conj_mul_mul (x + y) z
+  simp only [map_add, add_mul, mul_add, conj_mul_mul] at h
+  rw [QuadraticMap.polar, normQuadraticForm_apply, normQuadraticForm_apply,
+    normQuadraticForm_apply, sub_smul, sub_smul]
+  apply eq_sub_iff_add_eq.mpr
+  apply eq_sub_iff_add_eq.mpr
+  simpa only [add_assoc, add_comm, add_left_comm] using h
+
+/-- The mixed terms of right conjugate cancellation give the polar form of the norm,
+without dividing by `2`. -/
+theorem mul_mul_conj_add_mul_mul_conj (x y z : Octonion R) :
+    z * x * conj y + z * y * conj x =
+      QuadraticMap.polar (normQuadraticForm R) x y • z := by
+  have h := congrArg conj (conj_mul_mul_add_conj_mul_mul (conj x) (conj y) (conj z))
+  simpa only [map_add, map_smul, conj_mul, conj_conj, polar_normQuadraticForm_conj,
+    add_comm] using h
 
 /-! ### The Moufang identities
 

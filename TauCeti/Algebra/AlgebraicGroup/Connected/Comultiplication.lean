@@ -33,9 +33,7 @@ identity component.  The affine Nullstellensatz then promotes this pointwise sta
 required identity in the tensor square; tensor-product right exactness identifies its kernel with
 `I ⊗ H + H ⊗ I`.
 
-The algebraically closed hypothesis is the natural one for the geometric identity component in
-the reductive-groups roadmap.  Descent of this construction to the ground field and construction
-of the component group are separate steps.
+The algebraically closed hypothesis is the natural one for the geometric identity component.
 
 ## Main declarations
 
@@ -48,11 +46,6 @@ of the component group are separate steps.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This advances Layer 3, "Identity component `G°` and component group `π₀(G)`", of the
-ReductiveGroups roadmap.  The quotient Hopf algebra now gives the identity component over an
-algebraically closed field; descent, geometric connectedness over a general field, and the finite
-étale component group remain.
 -/
 
 public section

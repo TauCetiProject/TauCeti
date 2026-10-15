@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
@@ -46,6 +47,8 @@ left to the caller in the general construction.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix`: the represented generator
   in an integral lattice basis, shared with the matrix construction of
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm`.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_eq_of_action`: the basis
+  action determines the integral root matrix.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_baseChange`: the coordinates
   of a root-subgroup point on a base-changed basis vector.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_of_isRootStep`: a root step
@@ -114,7 +117,7 @@ private theorem integralDividedPower_one_apply_of_step
     (hstep : x (v : V) = c • (w : V)) :
     integralDividedPower x M 1 hmem v = c • w := by
   refine Subtype.ext ?_
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_one, AddSubgroup.coe_zsmul]
+  rw [coe_integralDividedPower_one_apply, AddSubgroup.coe_zsmul]
   exact hstep
 
 /-- Beyond the first divided power, the column of a root step vanishes. -/
@@ -172,6 +175,30 @@ variable {η : Type*} (b : Module.Basis η ℤ M)
   b.toMatrix fun s ↦
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
       hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
+
+/-- The represented integral root matrix is the matrix of its lattice endomorphism. -/
+theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b =
+      LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) := by
+  ext r s
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, LinearMap.toMatrix_apply]
+  congr 2
+  apply Subtype.ext
+  rw [coe_kostantRootOperator_apply]
+
+/-- If a represented root generator acts on the lattice basis by the columns of `X`, then its
+integral matrix is `X`. -/
+theorem kostantRootGeneratorIntMatrix_eq_of_action [Fintype η] (X : Matrix η η ℤ)
+    (haction : ∀ s, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) =
+      ∑ r, X r s • (b r : V)) :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b = X := by
+  have hcol (s : η) : (⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
+      hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩ : M) = ∑ r, X r s • b r := by
+    apply Subtype.ext
+    simpa only [AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_zsmul] using haction s
+  ext r s
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, hcol]
+  exact congrFun (b.repr_sum_self (fun r => X r s)) r
 
 /-- A represented root generator acts on each lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis η ℤ M) (s : η) :
@@ -294,8 +321,7 @@ theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action
           (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv)
           (b s) = if s = source then b target else 0 := by
     apply Subtype.ext
-    rw [coe_integralDividedPower_apply, Associative.dividedPower_one, Module.End.smul_def,
-      haction]
+    rw [coe_integralDividedPower_one_apply, Module.End.smul_def, haction]
     split <;> rfl
   rw [Module.Basis.baseChange_apply, kostantRootSubgroupPoints_tmul, hclass,
     Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero, hone]

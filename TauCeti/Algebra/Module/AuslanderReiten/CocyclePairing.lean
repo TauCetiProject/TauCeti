@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.InjectivelyTrivial
-public import TauCeti.Algebra.Module.HomCocycle
+public import TauCeti.Algebra.Module.HomCocycle.Basic
 
 /-!
 # The Auslander–Reiten pairing on Hom cocycles
