@@ -38,6 +38,14 @@ functoriality API.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_mul_self` and
   `CliffordAlgebra.evenUnitaryGroup.self_mul_reverse` give its two norm equations.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
+* `QuadraticMap.Isometry.evenUnitaryGroupMap` is the homomorphism induced by a quadratic isometry,
+  and `QuadraticMap.IsometryEquiv.evenUnitaryGroupEquiv` the equivalence induced by an isometry
+  equivalence; `QuadraticMap.IsometryEquiv.coe_evenUnitaryGroupEquiv_apply` computes it by
+  `CliffordAlgebra.equivOfIsometry`.
+* `QuadraticMap.Isometry.evenUnitaryGroupMap_spinGroupToEvenUnitary` and
+  `QuadraticMap.IsometryEquiv.map_range_spinGroupToEvenUnitary`: these maps restrict to the
+  induced maps of Spin groups, so an isometry equivalence carries the image of Spin onto the image
+  of Spin.
 * `CliffordAlgebra.rightIotaEven_spinGroup_smul` transports the Spin action after right
   multiplication by a vector of quadratic value `-1`.
 -/
@@ -203,7 +211,97 @@ theorem evenUnitaryGroupMap_comp (f : Q₂ →qᵢ Q₃)
       h ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁))
     (CliffordAlgebra.map_comp_map f g)
 
+/-- An even-unitary-group map is injective if its underlying Clifford-algebra map is
+injective. -/
+theorem evenUnitaryGroupMap_injective (f : Q₁ →qᵢ Q₂)
+    (hf : Function.Injective (CliffordAlgebra.map f)) :
+    Function.Injective f.evenUnitaryGroupMap := by
+  intro x y hxy
+  apply Subtype.ext
+  apply Units.ext
+  apply hf
+  simpa using congrArg (fun z : CliffordAlgebra.evenUnitaryGroup Q₂ ↦
+    ((z : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂)) hxy
+
+/-- A quadratic isometry with an isometric left inverse induces an injective map of even
+unitary groups. -/
+theorem evenUnitaryGroupMap_injective_of_leftInverse (f : Q₁ →qᵢ Q₂) (g : Q₂ →qᵢ Q₁)
+    (h : Function.LeftInverse g f) : Function.Injective f.evenUnitaryGroupMap :=
+  f.evenUnitaryGroupMap_injective (CliffordAlgebra.leftInverse_map_of_leftInverse f g h).injective
+
 end QuadraticMap.Isometry
+
+namespace QuadraticMap.IsometryEquiv
+
+universe u v w z
+
+variable {R : Type u} [CommRing R]
+variable {M₁ : Type v} {M₂ : Type w} {M₃ : Type z}
+  [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃]
+  [Module R M₁] [Module R M₂] [Module R M₃]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q₃ : QuadraticForm R M₃}
+
+/-- The equivalence of even unitary groups induced by a quadratic isometry equivalence. On
+Clifford values it is `CliffordAlgebra.equivOfIsometry`; see
+`QuadraticMap.IsometryEquiv.coe_evenUnitaryGroupEquiv_apply`. -/
+def evenUnitaryGroupEquiv (e : Q₁.IsometryEquiv Q₂) :
+    CliffordAlgebra.evenUnitaryGroup Q₁ ≃* CliffordAlgebra.evenUnitaryGroup Q₂ :=
+  MonoidHom.toMulEquiv e.toIsometry.evenUnitaryGroupMap e.symm.toIsometry.evenUnitaryGroupMap
+    (by
+      rw [QuadraticMap.Isometry.evenUnitaryGroupMap_comp]
+      have h : e.symm.toIsometry.comp e.toIsometry = QuadraticMap.Isometry.id Q₁ := by
+        ext m
+        exact e.symm_apply_apply m
+      rw [h, QuadraticMap.Isometry.evenUnitaryGroupMap_id])
+    (by
+      rw [QuadraticMap.Isometry.evenUnitaryGroupMap_comp]
+      have h : e.toIsometry.comp e.symm.toIsometry = QuadraticMap.Isometry.id Q₂ := by
+        ext m
+        exact e.apply_symm_apply m
+      rw [h, QuadraticMap.Isometry.evenUnitaryGroupMap_id])
+
+/-- The equivalence induced on even unitary groups agrees with the forward isometry map. -/
+@[simp]
+theorem evenUnitaryGroupEquiv_apply (e : Q₁.IsometryEquiv Q₂)
+    (x : CliffordAlgebra.evenUnitaryGroup Q₁) :
+    e.evenUnitaryGroupEquiv x = e.toIsometry.evenUnitaryGroupMap x :=
+  (rfl)
+
+/-- On Clifford values, the induced equivalence of even unitary groups is the Clifford-algebra
+equivalence `CliffordAlgebra.equivOfIsometry` of the isometry. -/
+theorem coe_evenUnitaryGroupEquiv_apply (e : Q₁.IsometryEquiv Q₂)
+    (x : CliffordAlgebra.evenUnitaryGroup Q₁) :
+    (((e.evenUnitaryGroupEquiv x : CliffordAlgebra.evenUnitaryGroup Q₂) :
+        (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) =
+      CliffordAlgebra.equivOfIsometry e ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) := by
+  simp [CliffordAlgebra.equivOfIsometry_apply]
+
+/-- The inverse of the induced even-unitary-group equivalence is induced by the inverse
+quadratic isometry. -/
+@[simp]
+theorem evenUnitaryGroupEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
+    e.evenUnitaryGroupEquiv.symm = e.symm.evenUnitaryGroupEquiv := by
+  ext x
+  rfl
+
+/-- The identity isometry induces the identity equivalence of even unitary groups. -/
+@[simp]
+theorem evenUnitaryGroupEquiv_refl (Q : QuadraticForm R M₁) :
+    (QuadraticMap.IsometryEquiv.refl Q).evenUnitaryGroupEquiv = MulEquiv.refl _ := by
+  ext x
+  rw [coe_evenUnitaryGroupEquiv_apply, CliffordAlgebra.equivOfIsometry_refl]
+  simp
+
+/-- The even-unitary-group equivalences respect composition of isometry equivalences. -/
+@[simp]
+theorem evenUnitaryGroupEquiv_trans (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    e₁₂.evenUnitaryGroupEquiv.trans e₂₃.evenUnitaryGroupEquiv =
+      (e₁₂.trans e₂₃).evenUnitaryGroupEquiv := by
+  ext x
+  simp only [MulEquiv.trans_apply, coe_evenUnitaryGroupEquiv_apply,
+    ← CliffordAlgebra.equivOfIsometry_trans, AlgEquiv.trans_apply]
+
+end QuadraticMap.IsometryEquiv
 
 namespace CliffordAlgebra
 
@@ -652,3 +750,61 @@ theorem neg_rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
   simpa [neg_mul, mul_neg] using h
 
 end CliffordAlgebra
+
+/-! ### Naturality of the comparison with Spin -/
+
+namespace QuadraticMap.Isometry
+
+variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup M₂]
+  [Module R M₁] [Module R M₂] {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- The inclusion of Spin into the even unitary carrier commutes with the maps induced by a
+quadratic isometry. -/
+@[simp]
+theorem evenUnitaryGroupMap_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
+    f.evenUnitaryGroupMap (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x) =
+      CliffordAlgebra.spinGroupToEvenUnitary Q₂ (f.spinGroupMap x) :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_evenUnitaryGroupMap_apply, CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
+      CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
+    -- Mathlib states no coercion lemma for `spinGroup.toUnits`, whose value field is the
+    -- underlying Clifford element, so both sides are `map f x` by definition.
+    exact (coe_spinGroupMap_apply f x).symm
+
+/-- The inclusion of Spin into the even unitary carrier, as a commuting square of group
+homomorphisms along a quadratic isometry. -/
+theorem evenUnitaryGroupMap_comp_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) :
+    f.evenUnitaryGroupMap.comp (CliffordAlgebra.spinGroupToEvenUnitary Q₁) =
+      (CliffordAlgebra.spinGroupToEvenUnitary Q₂).comp f.spinGroupMap :=
+  MonoidHom.ext (f.evenUnitaryGroupMap_spinGroupToEvenUnitary)
+
+end QuadraticMap.Isometry
+
+namespace QuadraticMap.IsometryEquiv
+
+variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup M₂]
+  [Module R M₁] [Module R M₂] {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- The equivalence of even unitary groups induced by an isometry equivalence restricts to the
+induced equivalence of Spin groups. -/
+theorem evenUnitaryGroupEquiv_spinGroupToEvenUnitary (e : Q₁.IsometryEquiv Q₂)
+    (x : spinGroup Q₁) :
+    e.evenUnitaryGroupEquiv (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x) =
+      CliffordAlgebra.spinGroupToEvenUnitary Q₂ (e.spinGroupEquiv x) := by
+  rw [evenUnitaryGroupEquiv_apply, spinGroupEquiv_apply,
+    QuadraticMap.Isometry.evenUnitaryGroupMap_spinGroupToEvenUnitary]
+
+/-- An isometry equivalence carries the image of Spin in the even unitary carrier onto the image
+of Spin. -/
+theorem map_range_spinGroupToEvenUnitary (e : Q₁.IsometryEquiv Q₂) :
+    (CliffordAlgebra.spinGroupToEvenUnitary Q₁).range.map
+        e.evenUnitaryGroupEquiv.toMonoidHom =
+      (CliffordAlgebra.spinGroupToEvenUnitary Q₂).range := by
+  rw [MonoidHom.map_range]
+  have h : e.evenUnitaryGroupEquiv.toMonoidHom.comp (CliffordAlgebra.spinGroupToEvenUnitary Q₁) =
+      (CliffordAlgebra.spinGroupToEvenUnitary Q₂).comp e.spinGroupEquiv.toMonoidHom :=
+    MonoidHom.ext (e.evenUnitaryGroupEquiv_spinGroupToEvenUnitary)
+  rw [h, MonoidHom.range_comp, MonoidHom.range_eq_top.mpr e.spinGroupEquiv.surjective,
+    ← MonoidHom.range_eq_map]
+
+end QuadraticMap.IsometryEquiv
