@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
+public import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
 
 /-!
 # Completed tensor coalgebras
@@ -18,7 +19,8 @@ coordinates, including the empty blocks. This is a completed coalgebra, not an o
 
 Finite tensor words embed by `DFinsupp.coeFnLinearMap R`. Their coproduct agrees with the
 completed one after projecting to each bidegree. The length filtration is separated, and
-compatible finite truncations determine a unique completed word. Thus the product permits
+compatible finite truncations determine a unique completed word, so the length filtration is
+complete and separated (`isCompleteFiltration_filtration`). Thus the product permits
 infinite length support whereas `TensorWords` is the direct-sum coalgebra.
 
 The length-completion convention follows J.-L. Loday and B. Vallette, *Algebraic Operads*,
@@ -129,6 +131,29 @@ theorem truncate_apply (n : ℕ) (x : CompletedTensorWords R M) (k : ℕ) :
     truncate R M n x k = if k < n then x k else 0 := by
   simp [truncate, DFinsupp.lmk, DFinsupp.mk_apply]
 
+/-- A finite truncation is the sum of its included length components. -/
+theorem truncate_eq_sum (n : ℕ) (x : CompletedTensorWords R M) :
+    truncate R M n x = ∑ k ∈ Finset.range n, TensorWords.of R M k (x k) := by
+  classical
+  ext j
+  simp only [truncate_apply, DirectSum.sum_apply]
+  by_cases hj : j < n
+  · rw [ite_eq_left hj, Finset.sum_eq_single j]
+    · simp only [← TensorWords.component_apply, TensorWords.component_of]
+    · intro k _ hkj
+      simpa only [← TensorWords.component_apply] using
+        TensorWords.component_of_of_ne R M hkj (x k)
+    · simp [hj]
+  · rw [ite_eq_right hj]
+    symm
+    apply Finset.sum_eq_zero
+    intro k hk
+    have hkj : k ≠ j := by
+      have := Finset.mem_range.mp hk
+      omega
+    simpa only [← TensorWords.component_apply] using
+      TensorWords.component_of_of_ne R M hkj (x k)
+
 /-- Truncating twice retains the components below the smaller cutoff. -/
 @[simp]
 theorem truncate_truncate (n m : ℕ) (x : CompletedTensorWords R M) :
@@ -222,3 +247,13 @@ end AddCommGroup
 
 end CompletedTensorWords
 end TauCeti
+
+namespace TauCeti.CompletedTensorWords
+
+variable (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The tensor-length filtration of completed tensor words is complete and separated. -/
+theorem isCompleteFiltration_filtration : IsCompleteFiltration (filtration R M) :=
+  isCompleteFiltration_pi id _ fun n x ↦ mem_filtration R M x n
+
+end TauCeti.CompletedTensorWords

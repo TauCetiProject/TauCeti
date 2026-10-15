@@ -843,6 +843,13 @@ theorem map_of (f : M →ₗ[R] N) (n : ℕ) (x : TensorPower R n M) :
     map f (of R M n x) = of R N n (PiTensorProduct.map (fun _ ↦ f) x) := by
   simp [map, of_def]
 
+/-- A letterwise map acts separately on each length component. -/
+@[simp]
+theorem component_map (f : M →ₗ[R] N) (n : ℕ) (x : TensorWords R M) :
+    component R N n (map f x) =
+      PiTensorProduct.map (fun _ ↦ f) (component R M n x) := by
+  simp only [component, map, ← DirectSum.apply_eq_component, DirectSum.lmap_apply]
+
 /-- Mapping a pure tensor applies the map to each of its letters. -/
 theorem map_of_tprod (f : M →ₗ[R] N) (n : ℕ) (x : Fin n → M) :
     map f (of R M n (PiTensorProduct.tprod R x)) =

@@ -206,13 +206,13 @@ theorem starCartanMatrix_comp (e : α ≃ β) (ℓ : β → ℕ) :
   exact starCartanMatrix_comp_apply e ℓ v w
 
 /-- Finite type is invariant under a relabelling of the arms of a star. -/
-theorem isFiniteType_starCartanMatrix_comp [Fintype α] [Fintype β] {m : β → ℕ} (e : α ≃ β)
+theorem isFiniteType_starCartanMatrix_comp {m : β → ℕ} (e : α ≃ β)
     (h : IsFiniteType (starCartanMatrix m)) : IsFiniteType (starCartanMatrix (m ∘ e)) := by
   rw [starCartanMatrix_comp]
   exact h.submatrix (starIndexCongrArms e m).injective
 
 /-- Finite type is invariant under a relabelling of the arms of a star, in either direction. -/
-@[simp] theorem isFiniteType_starCartanMatrix_comp_iff [Fintype α] [Fintype β] {m : β → ℕ}
+@[simp] theorem isFiniteType_starCartanMatrix_comp_iff {m : β → ℕ}
     (e : α ≃ β) : IsFiniteType (starCartanMatrix (m ∘ e)) ↔
       IsFiniteType (starCartanMatrix m) := by
   constructor
