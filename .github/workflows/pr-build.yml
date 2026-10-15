@@ -72,7 +72,8 @@ jobs:
   # Bors prefers the dedicated pool only when explicitly enabled and idle. Merge groups and
   # all unavailable/retried bors placements retain Namespace, without waiting for a GitHub slot.
   # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
-  # Bors staging has scheduling priority over PR overflow and a run-specific assignment.
+  # Bors staging uses 16CPU/32GB, scheduling priority over PR overflow and a run-specific assignment.
+  # Other Namespace builds retain 8CPU/16GB; rollback is the staging shape expression below.
   # https://namespace.so/docs/solutions/github-actions/runner-controls/job-ordering
   pick-runner:
     if: github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging' || vars.FLEET_CI_ENABLED == 'true')
@@ -107,9 +108,9 @@ jobs:
     # retains Namespace. The fleet selector permits only the first bors run attempt.
     runs-on: >-
       ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && needs.pick-runner.outputs.fleet == 'true' && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet"]}') || github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
-        "nscloud-ubuntu-24.04-amd64-8x16-with-features{0}",
-        "namespace-features:container.privileged=true{1}"
-      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
+        "nscloud-ubuntu-24.04-amd64-{0}-with-features{1}",
+        "namespace-features:container.privileged=true{2}"
+      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && '16x32' || '8x16', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}

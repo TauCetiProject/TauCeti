@@ -305,7 +305,7 @@ class BatchPriorityTests(unittest.TestCase):
             with self.subTest(picked=picked):
                 labels = expression(jobs["sandboxed-build"]["runs-on"],
                                     "repository_dispatch", "tauceti-bors-staging", picked)
-                self.assertEqual(labels, [NS + ";job.priority=1",
+                self.assertEqual(labels, ["nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1",
                     "namespace-features:container.privileged=true;github.run-id=42"])
                 self.assertFalse(expression(jobs["pick-runner"]["if"],
                                             "repository_dispatch", "tauceti-bors-staging", picked))
