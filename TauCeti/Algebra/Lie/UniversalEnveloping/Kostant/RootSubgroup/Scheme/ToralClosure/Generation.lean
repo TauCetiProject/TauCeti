@@ -99,7 +99,7 @@ theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_universal_torus_me
     rw [← basisMatrix_kostantTorusPoints M b wt s]
     exact ⟨_, hs, rfl⟩
   have hq_matrix : GeneralLinear.pointsMulEquiv n
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (GeneralLinear.weightTorusCoordinateMap wt)).app A q) =
       kostantTorusMatrix M b wt s := by
     rw [GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap,
@@ -107,10 +107,10 @@ theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_universal_torus_me
   have hmatrix' : GeneralLinear.pointToGeneralLinear n
       (toConv (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom) ∈
       kostantGeneratedPointsSubgroup e h ρ M hM hnil b T := by
-    have hp : (CommHopfAlgCat.mapPointsFunctor
+    have hp : (CommHopfAlgCat.Hom.mapPointsFunctor
         (GeneralLinear.weightTorusCoordinateMap wt)).app A q =
         toConv (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom := by
-      rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
         WithConv.ofConv_toConv, AlgHom.id_comp]
     rw [← GeneralLinear.pointsMulEquiv_apply, ← hp, hq_matrix]
     exact hmatrix

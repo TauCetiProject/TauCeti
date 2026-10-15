@@ -25,6 +25,8 @@ circle.
 
 ## Main results
 
+* `TauCeti.exists_arccos_sub_arccos_eq` — two circles satisfying the law of cosines meet in the
+  upper half-plane with the prescribed difference of radius-vector arguments.
 * `TauCeti.exp_mul_I_sub_exp_mul_I` — the polar form of the chord: the half-angle sine rotated a
   quarter turn past the midpoint direction.
 * `TauCeti.dist_circleExp_eq_two_mul_abs_sin` — the chord subtended by an arc of angle `θ` of the
@@ -77,6 +79,63 @@ namespace TauCeti
 open Metric Set
 
 open scoped Real
+
+/-- Two circles with centres `c₂ < c₁` on the real axis and positive radii `ρ₁`, `ρ₂`, whose
+centre distance satisfies the law of cosines for an angle `γ ∈ (0, π)`, meet in the upper
+half-plane at a point where their radius-vector arguments differ by `γ`. -/
+theorem exists_arccos_sub_arccos_eq {c₁ c₂ ρ₁ ρ₂ γ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₂ : 0 < ρ₂)
+    (hγ : 0 < γ) (hγπ : γ < π) (hD : 0 < c₁ - c₂)
+    (hkey : (c₁ - c₂) ^ 2 = ρ₁ ^ 2 + ρ₂ ^ 2 - 2 * ρ₁ * ρ₂ * Real.cos γ) :
+    ∃ x y : ℝ, 0 < y ∧ (x - c₁) ^ 2 + y ^ 2 = ρ₁ ^ 2 ∧ (x - c₂) ^ 2 + y ^ 2 = ρ₂ ^ 2 ∧
+      Real.arccos ((x - c₁) / ρ₁) - Real.arccos ((x - c₂) / ρ₂) = γ := by
+  set D := c₁ - c₂
+  set c := Real.cos γ
+  set s := Real.sin γ
+  have hs : 0 < s := Real.sin_pos_of_pos_of_lt_pi hγ hγπ
+  have hcs : s ^ 2 + c ^ 2 = 1 := Real.sin_sq_add_cos_sq γ
+  have hc : c < 1 := by
+    rw [← Real.cos_zero]
+    exact Real.cos_lt_cos_of_nonneg_of_le_pi le_rfl hγπ.le hγ
+  -- the cosines `u₁`, `u₂` and sines `ρ₂ s / D`, `ρ₁ s / D` of the radius-vector arguments
+  set u₁ := -(ρ₁ - ρ₂ * c) / D with hu₁
+  set u₂ := (ρ₂ - ρ₁ * c) / D with hu₂
+  have hx : c₁ + ρ₁ * u₁ - c₂ = ρ₂ * u₂ := by
+    rw [hu₁, hu₂]
+    field_simp
+    linear_combination hkey
+  have hu₁' : 1 - u₁ ^ 2 = (ρ₂ * s / D) ^ 2 := by
+    rw [hu₁]
+    field_simp
+    linear_combination hkey - ρ₂ ^ 2 * hcs
+  have hu₂' : 1 - u₂ ^ 2 = (ρ₁ * s / D) ^ 2 := by
+    rw [hu₂]
+    field_simp
+    linear_combination hkey - ρ₁ ^ 2 * hcs
+  have hsin₁ : Real.sin (Real.arccos u₁) = ρ₂ * s / D := by
+    rw [Real.sin_arccos, hu₁', Real.sqrt_sq (by positivity)]
+  have hsin₂ : Real.sin (Real.arccos u₂) = ρ₁ * s / D := by
+    rw [Real.sin_arccos, hu₂', Real.sqrt_sq (by positivity)]
+  have hb₁ : -1 ≤ u₁ ∧ u₁ ≤ 1 := by
+    constructor <;> nlinarith [sq_nonneg (ρ₂ * s / D)]
+  have hb₂ : -1 ≤ u₂ ∧ u₂ ≤ 1 := by
+    constructor <;> nlinarith [sq_nonneg (ρ₁ * s / D)]
+  have hcos : Real.cos (Real.arccos u₁ - Real.arccos u₂) = c := by
+    rw [Real.cos_sub, Real.cos_arccos hb₁.1 hb₁.2, Real.cos_arccos hb₂.1 hb₂.2, hsin₁, hsin₂,
+      hu₁, hu₂]
+    field_simp
+    linear_combination (-c) * hkey + ρ₁ * ρ₂ * hcs
+  have hle : u₁ ≤ u₂ := by
+    rw [hu₁, hu₂, div_le_div_iff_of_pos_right hD]
+    nlinarith
+  clear_value u₁ u₂
+  refine ⟨c₁ + ρ₁ * u₁, ρ₁ * (ρ₂ * s / D), by positivity, ?_, ?_, ?_⟩
+  · linear_combination (-ρ₁ ^ 2) * hu₁'
+  · rw [hx]
+    linear_combination (-ρ₂ ^ 2) * hu₂'
+  · rw [add_sub_cancel_left, mul_div_cancel_left₀ _ hρ₁.ne', hx, mul_div_cancel_left₀ _ hρ₂.ne',
+      ← Real.arccos_cos (sub_nonneg.2 (Real.arccos_le_arccos hle))
+        ((sub_le_self _ (Real.arccos_nonneg _)).trans (Real.arccos_le_pi _)), hcos,
+      Real.arccos_cos hγ.le hγπ.le]
 
 /-- The chord of the circle between the angles `a` and `b`, normalized to the chord from angle
 `a - b` to angle `0`, which is the quantity Mathlib's `Complex.norm_exp_I_mul_ofReal_sub_one` and

@@ -69,20 +69,16 @@ theorem isCongrOne_of_sub_one_mem {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa
     (hmem : a - 1 ∈ 𝔪.finitePart)
     (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
     IsCongrOne 𝔪 x := by
-  refine isCongrOne_iff.mpr ⟨fun v _ ↦ ?_, hpos⟩
-  have hsub : (x : K) - 1 = algebraMap (𝓞 K) K (a - 1) := by rw [map_sub, map_one, hxa]
-  rw [hsub, valuation_of_algebraMap, intValuation_le_pow_iff_mem]
-  exact Ideal.le_of_dvd (Modulus.pow_exponent_dvd_finitePart 𝔪 v) hmem
+  exact isCongrOne_iff_mem_congruenceSubgroup_and_pos.mpr
+    ⟨(Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mpr hmem, hpos⟩
 
 /-- **Congruence to one, read back on an algebraic integer.**  The converse of
 `isCongrOne_of_sub_one_mem` at the finite places: a unit congruent to one modulo `𝔪` that is the
 image of `a : 𝓞 K` has `a - 1` in the finite part. -/
 theorem sub_one_mem_of_isCongrOne {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa : (x : K) = a)
     (h : IsCongrOne 𝔪 x) : a - 1 ∈ 𝔪.finitePart := by
-  refine Modulus.mem_finitePart_of_forall_mem_pow_exponent 𝔪 fun v hv ↦ ?_
-  have hsub : (x : K) - 1 = algebraMap (𝓞 K) K (a - 1) := by rw [map_sub, map_one, hxa]
-  simpa only [hsub, valuation_of_algebraMap, intValuation_le_pow_iff_mem]
-    using h.valuation_sub_one_le hv
+  exact (Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mp
+    (isCongrOne_iff_mem_congruenceSubgroup_and_pos.mp h).1
 
 /-- **A generator congruent to one inside an ideal comaximal with the finite part.**  For a nonzero
 ideal `D` with `D ⊔ 𝔪₀ = ⊤` there is an algebraic integer `a ∈ D` whose image in `Kˣ` is congruent

@@ -9,11 +9,12 @@ public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
 
 /-!
-# Neighbourhoods, σ-compactness and preconnected sets in a group of units
+# Separation, neighbourhoods, σ-compactness and preconnected sets in a group of units
 
 The units `Mˣ` of a topological monoid `M` carry the topology induced by `u ↦ (u, u⁻¹)`.  This
-file records three consequences of that definition.
+file records consequences of that definition.
 
+* The units of a `T₁` monoid form a `T₁` space, without a continuity assumption on multiplication.
 * The neighbourhood filter of a unit `u` is the meet of the pullbacks of the neighbourhood filters
   of `u` and of `u⁻¹` along the coercion and the inverse coercion.  Concretely, a set is a
   neighbourhood of `u` in `Mˣ` exactly when it contains every unit `v` with `v` in a prescribed
@@ -26,6 +27,7 @@ file records three consequences of that definition.
 
 ## Main results
 
+* `Units.instT1Space`: the `T₁` separation property for units.
 * `Units.nhds_eq_comap_inf`: the neighbourhood filter of a unit.
 * `Units.mem_nhds_iff`: the resulting membership criterion for neighbourhoods of a unit.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
@@ -40,6 +42,11 @@ open Filter Topology
 namespace Units
 
 variable {M : Type*} [Monoid M] [TopologicalSpace M]
+
+/-- The units of a `T₁` monoid form a `T₁` space. -/
+@[to_additive /-- The additive units of a `T₁` additive monoid form a `T₁` space. -/]
+instance instT1Space [T1Space M] : T1Space Mˣ :=
+  t1Space_of_injective_of_continuous val_injective continuous_val
 
 /-- **The neighbourhood filter of a unit** is the meet of the pullbacks of the neighbourhood
 filters of the unit and of its inverse along the two coercions to `M`. -/

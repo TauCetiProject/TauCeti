@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
-public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.Topology.Algebra.Group.Units
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 import Mathlib.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -34,8 +34,8 @@ topological group are computed pointwise, and the multiplicative isomorphism und
 continuous multiplicative isomorphism has the same underlying function. A topologically embedded
 continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
 range, with forward and inverse computation rules. The file also records the
-pointwise characterization of finite-order continuous homomorphisms and the open kernel of a
-finite-order continuous character into the units of a `T1` topological field.
+agreement of finite order before and after forgetting continuity, and the open kernel of a
+finite-order continuous character into the units of a `T1` commutative integral domain.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -66,22 +66,24 @@ theorem _root_.ContinuousMonoidHom.eq_one_of_isMulTorsionFree
   exact (Set.infinite_range_of_injective
     (injective_pow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree ha))) hfin
 
-/-- A continuous homomorphism into a commutative topological monoid has finite order exactly when
-all its values have a common positive exponent equal to one. -/
-theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
+/-- Forgetting continuity preserves and reflects finite order when continuous homomorphisms
+carry their pointwise monoid structure. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.isOfFinOrder_coe
     {A B : Type*} [Monoid A] [TopologicalSpace A] [CommMonoid B] [TopologicalSpace B]
-    [ContinuousMul B] (f : A →ₜ* B) :
-    IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
+    [ContinuousMul B] (f : A →ₜ* B) : IsOfFinOrder (f : A →* B) ↔ IsOfFinOrder f := by
+  rw [(f : A →* B).isOfFinOrder_iff_exists_pow_apply_eq_one]
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, ContinuousMonoidHom.pow_apply,
-    ContinuousMonoidHom.coe_one, Pi.one_apply]
+    ContinuousMonoidHom.coe_one, Pi.one_apply, MonoidHom.coe_ofClass]
 
-/-- A finite-order continuous character into the units of a `T₁` topological field has open
-kernel. -/
+/-- A continuous character whose underlying homomorphism has finite order has open kernel when
+the target consists of units of a `T₁` commutative integral domain. -/
 theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
-    {M K : Type*} [Monoid M] [TopologicalSpace M] [Field K] [TopologicalSpace K]
-    [IsTopologicalRing K] [T1Space K] {χ : M →ₜ* Kˣ}
-    (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
-  obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
+    {M K : Type*} [Monoid M] [TopologicalSpace M] [CommRing K] [IsDomain K]
+    [TopologicalSpace K] [T1Space K] {χ : M →ₜ* Kˣ}
+    (hχ : IsOfFinOrder (χ : M →* Kˣ)) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
+  obtain ⟨n, hn, hχn⟩ := (χ : M →* Kˣ).isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
+  simp only [MonoidHom.coe_ofClass] at hχn
   let _ : NeZero n := ⟨hn.ne'⟩
   have hmem : ∀ x, χ x ∈ rootsOfUnity n K := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
   have hset : ((χ : M → Kˣ) ⁻¹' {1}) =

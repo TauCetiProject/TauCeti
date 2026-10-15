@@ -18,6 +18,8 @@ whose actions on `K` and on `L` form a scalar tower `k → K → L` also acts co
 
 * `IntermediateField.instIsScalarTower`: `IsScalarTower k E L` for an intermediate field
   `E` of `L / K` and a commutative semiring `k` acting compatibly on `K` and `L`.
+* `IntermediateField.le_of_isScalarTower`: an intermediate field `E` lies in an intermediate
+  field `E'` as soon as some algebra structure of `E'` over `E` is compatible with `L`.
 -/
 
 public section
@@ -32,5 +34,13 @@ instance instIsScalarTower {k K L : Type*} [CommSemiring k] [Field K] [Field L]
     [SMul k K] [Algebra k L] [Algebra K L] [IsScalarTower k K L]
     (E : IntermediateField K L) : IsScalarTower k E L :=
   Subalgebra.isScalarTower_mid E.toSubalgebra
+
+/-- If `E'` is an algebra over `E` compatibly with their inclusions in `L`, then `E ≤ E'`: every
+`x ∈ E` is the image in `L` of `algebraMap E E' x ∈ E'`. -/
+theorem le_of_isScalarTower {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {E E' : IntermediateField K L} [Algebra E E'] [IsScalarTower E E' L] : E ≤ E' := fun x hx ↦ by
+  have h : ((algebraMap E E' ⟨x, hx⟩ : E') : L) = x := by
+    rw [← algebraMap_apply, ← IsScalarTower.algebraMap_apply, algebraMap_apply]
+  exact h ▸ (algebraMap E E' ⟨x, hx⟩).2
 
 end IntermediateField
