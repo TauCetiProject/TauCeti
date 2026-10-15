@@ -115,7 +115,7 @@ theorem mgradient_smul (c : ℝ) (hf : MDifferentiable I 𝓘(ℝ) f) :
   funext x
   simpa [mgradient, mvfderiv_const, Pi.smul_def, smul_eq_mul] using
     congrArg (Riemannian.Tensor.rieszDual (I := I) x)
-      (mvfderiv_smul (a := fun _ : M ↦ c) mdifferentiableAt_const (hf x))
+      (mvfderiv_fun_smul (a := fun _ : M ↦ c) mdifferentiableAt_const (hf x))
 
 /-- The gradient of `-f` is the opposite of the gradient of `f`. -/
 @[simp]
