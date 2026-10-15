@@ -536,8 +536,8 @@ private theorem exists_radial_solution_family [FiniteDimensional ℝ E] [FiniteD
       (fun z hz ↦ (hc (z, y) (hpair hz)).1)
       (fun z hz ↦ (hc (z, y) (hpair hz)).2.1) hz (left_mem_Icc.2 zero_le_one)
     have hscale' : c (0, y) 1 = c (0, y) 0 := by simpa using hscale
-    change (c (x₀ - x₀, y) 1).2 = y
-    rw [sub_self, hscale', (hc (0, y) (hpair hz)).1]
+    simp only [α, sub_self]
+    rw [hscale', (hc (0, y) (hpair hz)).1]
   have hpair_mem {z : E} (hz : z ∈ Metric.ball (0 : E) r) :
       (z, q.2) ∈ Metric.ball ((0 : E), y₀) r := by
     rw [Metric.mem_ball, Prod.dist_eq] at hq ⊢
@@ -560,8 +560,7 @@ private theorem exists_radial_solution_family [FiniteDimensional ℝ E] [FiniteD
       (fun z ↦ hcont (z, q.2))
       (fun z hz ↦ (hc (z, q.2) (hpair_mem hz)).1)
       (fun z hz ↦ (hc (z, q.2) (hpair_mem hz)).2.1) hzq hs
-    change (c (x₀ + s • q.1 - x₀, q.2) 1).2 = (c q s).2
-    rw [add_sub_cancel_left]
+    simp only [α, add_sub_cancel_left]
     exact congrArg Prod.snd hscale
   have h1 : HasDerivAt (fun s ↦ α (x₀ + s • q.1, q.2))
       (g (c q t) q.1) t := by
@@ -573,20 +572,6 @@ private theorem exists_radial_solution_family [FiniteDimensional ℝ E] [FiniteD
   rw [h2.unique h1]
   congr 2
   exact Prod.ext (hfst t (Ioo_subset_Icc_self ht)) (hray t (Ioo_subset_Icc_self ht)).symm
-
-/-- The invertible graph shear `(v, w) ↦ (v, A v + w)`. -/
-private def graphShearLinearEquiv (A : E →ₗ[ℝ] F) : (E × F) ≃ₗ[ℝ] (E × F) where
-  toFun p := (p.1, A p.1 + p.2)
-  invFun p := (p.1, p.2 - A p.1)
-  left_inv p := by ext <;> simp
-  right_inv p := by ext <;> simp
-  map_add' p q := by ext <;> simp [add_assoc, add_left_comm, add_comm]
-  map_smul' c p := by ext <;> simp
-
-/-- The graph shear as a continuous linear equivalence in finite dimension. -/
-private noncomputable def graphShearContinuousLinearEquiv [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ F] (A : E →ₗ[ℝ] F) : (E × F) ≃L[ℝ] (E × F) :=
-  (graphShearLinearEquiv A).toContinuousLinearEquiv
 
 /-- **A smooth local family of Frobenius solutions.** Under the hypotheses of the local
 Frobenius theorem, the solutions through `(x₀, y)` for `y` near `y₀` can be chosen to depend
@@ -612,8 +597,9 @@ theorem exists_contDiffAt_solution_family_of_isFrobeniusIntegrableAt
   obtain ⟨V, hV, hαV⟩ := (hαsmooth.of_le le_add_self).contDiffOn le_rfl (by simp)
   have hgraph : Tendsto (fun p : E × F ↦ (p.1, α p)) (𝓝 (x₀, y₀)) (𝓝 (x₀, y₀)) := by
     simpa [hα0] using (continuousAt_fst.prodMk hαsmooth.continuousAt).tendsto
+  have hV' : ∀ᶠ p in 𝓝 (x₀, y₀), p ∈ V := hV
   obtain ⟨ρ₁, hρ₁, hball⟩ := Metric.eventually_nhds_iff_ball.1
-    ((show ∀ᶠ p in 𝓝 (x₀, y₀), p ∈ V from hV).and (hgraph.eventually hgint))
+    (hV'.and (hgraph.eventually hgint))
   let ρ := min ρ₁ (r / 4)
   have hρ : 0 < ρ := lt_min hρ₁ (div_pos hr (by norm_num))
   have hU (p : E × F) (hp : p ∈ Metric.ball (x₀, y₀) ρ) :=
@@ -724,7 +710,7 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
             ext <;> simp
       _ = f (x₀, y₀) q.1 + q.2 := by rw [hx, hy]
   let A : (E × F) ≃L[ℝ] (E × F) :=
-    graphShearContinuousLinearEquiv (f (x₀, y₀)).toLinearMap
+    (ContinuousLinearEquiv.refl ℝ E).skewProd (ContinuousLinearEquiv.refl ℝ F) (f (x₀, y₀))
   have hΦsmooth : ContDiffAt ℝ (n + 1) Φ (x₀, y₀) := contDiffAt_fst.prodMk husmooth
   have hΦ : HasFDerivAt Φ (A : (E × F) →L[ℝ] (E × F)) (x₀, y₀) := by
     have hderiv := hasFDerivAt_fst.prodMk huDeriv
@@ -732,10 +718,7 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
         (ContinuousLinearMap.fst ℝ E F).prod (fderiv ℝ u (x₀, y₀)) := by
       apply ContinuousLinearMap.ext
       intro q
-      apply Prod.ext
-      · rfl
-      · change f (x₀, y₀) q.1 + q.2 = fderiv ℝ u (x₀, y₀) q
-        exact (htotal q).symm
+      simpa [A, add_comm] using congrArg (fun z : F ↦ (q.1, z)) (htotal q).symm
     rw [hderivEq]
     exact hderiv
   have hΦ₀ : Φ (x₀, y₀) = (x₀, y₀) := by simp [Φ, hu₀]
