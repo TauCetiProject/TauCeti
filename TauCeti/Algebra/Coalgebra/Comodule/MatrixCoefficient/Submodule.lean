@@ -105,7 +105,7 @@ theorem mapsTo_endOfPoint_baseChange_iff (W : Submodule k M) (g : C →ₐ[k] A)
       LinearMap.ker (W.mkQ.lTensor A) := by
     ext z
     simp only [SetLike.mem_coe, lTensor_mkQ, baseChange, LinearMap.mem_range,
-      LinearMap.baseChange_eq_ltensor]
+      LinearMap.baseChange_eq_lTensor]
   constructor
   · intro h ψ w hw
     have hz := h (tmul_mem_baseChange_of_mem (1 : A) hw)

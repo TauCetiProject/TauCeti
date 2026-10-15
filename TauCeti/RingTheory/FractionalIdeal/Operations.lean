@@ -117,7 +117,7 @@ variable {R : Type*} [CommRing R] {S : Submonoid R} {P : Type*} [CommRing P] [Al
 theorem isUnit_spanSingleton {x : P} (hx : IsUnit x) : IsUnit (spanSingleton S x) := by
   obtain ⟨u, rfl⟩ := hx
   exact IsUnit.of_mul_eq_one (spanSingleton S ((u⁻¹ : Pˣ) : P)) (by
-    rw [spanSingleton_mul_spanSingleton, Units.mul_inv, spanSingleton_one])
+    rw [← map_mul (spanSingleton _), Units.mul_inv, map_one (spanSingleton _)])
 
 /-- A fractional ideal is invertible exactly when its integral numerator is invertible.
 This extends Mathlib's `FractionalIdeal.isUnit_num` to any localization. -/
@@ -130,7 +130,7 @@ theorem isUnit_num_iff {I : FractionalIdeal S P} :
 /-- Scaling a fractional ideal by a unit and then by its inverse returns the ideal. -/
 theorem spanSingleton_inv_mul_cancel_left (x : Pˣ) (I : FractionalIdeal S P) :
     spanSingleton S ((x⁻¹ : Pˣ) : P) * (spanSingleton S (x : P) * I) = I := by
-  rw [← mul_assoc, spanSingleton_mul_spanSingleton, Units.inv_mul, spanSingleton_one, one_mul]
+  rw [← mul_assoc, ← map_mul (spanSingleton _), Units.inv_mul, map_one (spanSingleton _), one_mul]
 
 end SpanSingleton
 

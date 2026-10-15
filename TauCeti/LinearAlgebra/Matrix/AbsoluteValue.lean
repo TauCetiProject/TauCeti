@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Int.AbsoluteValue
+public import Mathlib.Algebra.Order.AbsoluteValue.Int
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 

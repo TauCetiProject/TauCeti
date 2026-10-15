@@ -74,6 +74,15 @@ private theorem contMDiff_concatMotion (F : SmoothIsotopy f₀ f₁)
   classical
   have htime : Continuous (fun p : unitInterval × M => (p.1 : ℝ)) :=
     continuous_subtype_val.comp continuous_fst
+  have hpw : concatMotion F G = Set.piecewise {p : unitInterval × M | (p.1 : ℝ) ≤ 1 / 2}
+      (F ∘ fun p => (firstTime p.1, p.2)) (G ∘ fun p => (secondTime p.1, p.2)) := by
+    funext p
+    by_cases hp : (p.1 : ℝ) ≤ 1 / 2
+    · rw [Set.piecewise_eq_of_mem _ _ _ (by exact hp)]
+      exact ite_eq_left hp
+    · rw [Set.piecewise_eq_of_notMem _ _ _ (by exact hp)]
+      exact ite_eq_right hp
+  rw [hpw]
   apply (F.contMDiff.comp
     (((contMDiff_firstTime hn).comp contMDiff_fst).prodMk contMDiff_snd)).piecewise
     (G.contMDiff.comp

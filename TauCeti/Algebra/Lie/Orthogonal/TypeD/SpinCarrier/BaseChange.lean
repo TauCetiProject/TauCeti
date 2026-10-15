@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.ClosedRootSubgroup
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
@@ -55,6 +56,8 @@ connected type-`Dₙ` datum.
 * `TauCeti.TypeDSpinCarrier.mkQuotient_comp_rootSubgroupIntegralCoordinateMap` and
   `TauCeti.TypeDSpinCarrier.mkQuotient_comp_weightTorusIntegralCoordinateMap`: over `ℤ`, each
   integral generator map recovers the coordinate map it factors.
+* `TauCeti.TypeDSpinCarrier.rootSubgroupIntegralCoordinateMap_surjective`: every numbered integral
+  root-subgroup coordinate map is surjective.
 * `TauCeti.TypeDSpinCarrier.hopfSpec_map_rootSubgroupIntegralCoordinateMap_op` and
   `TauCeti.TypeDSpinCarrier.hopfSpec_map_weightTorusIntegralCoordinateMap_op`: those integral
   maps represent the carrier's existing root-subgroup and weight-torus morphisms.
@@ -360,6 +363,16 @@ theorem mkQuotient_comp_rootSubgroupIntegralCoordinateMap (k : Fin n ⊕ Fin n) 
     (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n hn)
     (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) (definingIdeal_def n hn) k
+
+/-- Every numbered integral root-subgroup coordinate map is surjective. -/
+theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin n ⊕ Fin n) :
+    Function.Surjective (rootSubgroupIntegralCoordinateMap n hn k).hom := by
+  have h := (rootSubgroupCoordinateMap_surjective n hn k).comp
+    (CommHopfAlgCat.mkQuotient_surjective _ _)
+  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
+    ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at h
+  exact Function.Surjective.of_comp h
 
 /-- On points, the integral factored coordinate map is the named numbered root subgroup. -/
 @[simp]

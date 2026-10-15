@@ -89,6 +89,34 @@ theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
 theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
     a.map (g ∘ f) = (a.map f).map g := (rfl)
 
+/-- The atoms relabelled from `Fin m` are relabelled from `Fin n` for every `n ≥ m`. -/
+private theorem Atom.exists_map_val_of_le {m n : ℕ} (hmn : m ≤ n) {a : Atom L ℕ}
+    (ha : ∃ b : Atom L (Fin m), b.map Fin.val = a) : ∃ b : Atom L (Fin n), b.map Fin.val = a := by
+  obtain ⟨b, rfl⟩ := ha
+  -- `Fin.val ∘ Fin.castLE hmn` is `Fin.val` by definition; no rewrite lemma states it.
+  exact ⟨b.map (Fin.castLE hmn), by rw [← Atom.map_comp]; rfl⟩
+
+/-- Every finite set of atoms over `ℕ` has its vertices below some bound `n`, so its atoms are
+relabelled from atoms of `Fin n`. -/
+theorem Atom.exists_forall_map_val (J : Finset (Atom L ℕ)) :
+    ∃ n, ∀ a ∈ J, ∃ b : Atom L (Fin n), b.map Fin.val = a := by
+  classical
+  induction J using Finset.induction_on with
+  | empty => exact ⟨0, by simp⟩
+  | insert a J _ ih =>
+    obtain ⟨m, hm⟩ := ih
+    -- The single atom `a` has its finitely many vertices below some bound `k`.
+    obtain ⟨k, hk⟩ : ∃ k, ∃ b : Atom L (Fin k), b.map Fin.val = a := by
+      induction a using Atom.induction_atom with
+      | h R x =>
+        obtain ⟨k, hk⟩ := Finset.exists_nat_subset_range (Finset.univ.image x)
+        exact ⟨k, atom R fun i => ⟨x i, Finset.mem_range.1 (hk (Finset.mem_image_of_mem _
+          (Finset.mem_univ i)))⟩, by rw [Atom.map_atom]; rfl⟩
+    refine ⟨max k m, fun b hb => ?_⟩
+    rcases Finset.mem_insert.1 hb with rfl | hb
+    · exact exists_map_val_of_le (le_max_left k m) hk
+    · exact exists_map_val_of_le (le_max_right k m) (hm b hb)
+
 /-! ### Configurations -/
 
 /-- The value of a configuration at the atom `R(x)`. -/
@@ -106,6 +134,11 @@ theorem eval_mk (c : Atom L V → Bool) (a : Atom L V) : (mk c).eval a = c a := 
 theorem ext {c d : RelationalConfiguration L V} (h : ∀ a, c.eval a = d.eval a) : c = d :=
   funext h
 
+/-- A language with countably many relation symbols of each arity has countably many atoms over a
+countable vertex type. -/
+instance [∀ n, Countable (L.Relations n)] [Countable V] : Countable (Atom L V) :=
+  inferInstanceAs (Countable (Σ n, L.Relations n × (Fin n → V)))
+
 /-- Configurations carry the product σ-algebra, one Boolean coordinate per atom. -/
 instance : MeasurableSpace (RelationalConfiguration L V) :=
   inferInstanceAs (MeasurableSpace (Atom L V → Bool))
@@ -115,6 +148,11 @@ instance : MeasurableSpace (RelationalConfiguration L V) :=
 theorem measurable_eval (a : Atom L V) :
     Measurable fun c : RelationalConfiguration L V => c.eval a :=
   measurable_pi_apply (X := fun _ : Atom L V => Bool) a
+
+/-- Building a configuration from its values at atoms is measurable. -/
+@[fun_prop]
+theorem measurable_mk : Measurable (mk : (Atom L V → Bool) → RelationalConfiguration L V) :=
+  measurable_id
 
 /-- A map into configurations is measurable exactly when each atom coordinate is. -/
 theorem measurable_iff {Ω : Type*} [MeasurableSpace Ω] {F : Ω → RelationalConfiguration L V} :
@@ -145,6 +183,57 @@ the source. -/
 theorem measurable_restrict (f : V → W) :
     Measurable (restrict (L := L) f) :=
   measurable_iff.2 fun a => by simpa using measurable_eval (a.map f)
+
+/-! ### Extension by `false` -/
+
+/-- Relabelling atoms along an injective vertex map is injective. -/
+theorem Atom.map_injective {f : V → W} (hf : Function.Injective f) :
+    Function.Injective (Atom.map (L := L) f) := by
+  rintro ⟨n, R, x⟩ ⟨m, S, y⟩ h
+  obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
+  obtain ⟨rfl, h⟩ := Prod.mk.inj (eq_of_heq h)
+  cases hf.comp_left h
+  rfl
+
+/-- Extend a configuration along a vertex map `f : V → W`: an atom of `W` relabelled from an atom
+of `V` takes the value of such an atom, and every other atom is false. Along an injective map the
+relabelled atom is unique (`eval_extend_map`), so restriction undoes extension
+(`restrict_extend`). -/
+noncomputable def extend (f : V → W) (c : RelationalConfiguration L V) :
+    RelationalConfiguration L W :=
+  mk (Function.extend (Atom.map f) c.eval fun _ => false)
+
+/-- The value of an extension at an atom, through `Function.extend`. -/
+theorem eval_extend (f : V → W) (c : RelationalConfiguration L V) (a : Atom L W) :
+    (c.extend f).eval a = Function.extend (Atom.map f) c.eval (fun _ => false) a := (rfl)
+
+/-- Along an injective map, the relabelled atom `R(f ∘ x)` of the extension takes the value of the
+atom `R(x)`. -/
+@[simp]
+theorem eval_extend_map {f : V → W} (hf : Function.Injective f) (c : RelationalConfiguration L V)
+    (a : Atom L V) : (c.extend f).eval (a.map f) = c.eval a := by
+  rw [eval_extend, (Atom.map_injective hf).extend_apply]
+
+/-- An atom of `W` that is not relabelled from an atom of `V` is false in the extension. -/
+theorem eval_extend_of_forall_ne {f : V → W} (c : RelationalConfiguration L V) {a : Atom L W}
+    (ha : ∀ b : Atom L V, b.map f ≠ a) : (c.extend f).eval a = false := by
+  rw [eval_extend, Function.extend_apply' _ _ a fun ⟨b, hb⟩ => ha b hb]
+
+/-- Along an injective map, restriction undoes extension. -/
+@[simp]
+theorem restrict_extend {f : V → W} (hf : Function.Injective f)
+    (c : RelationalConfiguration L V) : (c.extend f).restrict f = c :=
+  ext fun a => by rw [eval_restrict, eval_extend_map hf]
+
+/-- Extension is measurable: each atom coordinate of the extension is an atom coordinate of the
+source or constantly false. -/
+@[fun_prop]
+theorem measurable_extend (f : V → W) : Measurable (extend (L := L) f) := by
+  refine measurable_iff.2 fun a => ?_
+  classical
+  by_cases ha : ∃ b : Atom L V, b.map f = a
+  · simpa only [eval_extend, Function.extend_def, ha, ↓reduceDIte] using measurable_eval _
+  · simpa only [eval_extend, Function.extend_def, ha, ↓reduceDIte] using measurable_const
 
 /-! ### Configurations of structures -/
 

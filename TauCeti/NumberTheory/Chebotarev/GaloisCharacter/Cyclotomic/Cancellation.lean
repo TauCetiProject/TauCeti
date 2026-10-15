@@ -55,7 +55,8 @@ private theorem idealSummatory_restrictAway_galoisCharacterUnitaryWeight (χ : (
         (RayClassCharacter.onIdeals (χ.comp (cyclotomicArtin K F m)) I : ℂ) := by
     rw [rayClassCharacterPartialSum_def, ← finsum_mem_coe_finset, coe_normLE]
     exact finsum_set_coe_eq_finsum_mem
-      (f := fun I ↦ (RayClassCharacter.onIdeals (χ.comp (cyclotomicArtin K F m)) I : ℂ)) _
+      (f := fun I ↦ (RayClassCharacter.onIdeals (χ.comp (cyclotomicArtin K F m)) I : ℂ))
+      {I : integralIdealsPrimeTo 𝔪 | Ideal.absNorm (I : Ideal (𝓞 K)) ≤ x}
   rw [hsum, idealSummatory_apply]
   refine (Finset.sum_of_injOn e (fun I _ J _ h ↦ Subtype.ext (by simpa [e] using h))
     (fun I hI ↦ by simpa [e] using hI) (fun J hJ hJe ↦ ?_) (fun I _ ↦ ?_)).symm
