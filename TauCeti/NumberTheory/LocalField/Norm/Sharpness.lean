@@ -36,7 +36,7 @@ residue characteristic.
 
 ## Main results
 
-* `TauCeti.not_map_normUnits_unitFiltration_le_succ`: for `L/K` separable and tame,
+* `TauCeti.not_map_normUnits_unitFiltration_le_succ_of_isTamelyRamified`: for separable, tame `L/K`,
   `N_{L/K}(U(L, e (i + 1))) ⊄ U(K, i + 2)`.
 * `TauCeti.not_map_normUnits_unitFiltration_le_of_one_lt_ramificationIndex`: for `L/K`
   separable and tame with `e(L/K) > 1`, `N_{L/K}(U(L, i)) ⊄ U(K, i)` for every `i ≥ 2`.
@@ -61,7 +61,8 @@ variable (K L) in
 then for every `i` the norm does not carry `U(L, e(L/K) (i + 1))` into `U(K, i + 2)`. Thus the
 inclusion `N_{L/K}(U(L, e(L/K) i)) ⊆ U(K, i)` of `map_normUnits_unitFiltration_le` cannot be
 improved by one step at any positive depth. -/
-theorem not_map_normUnits_unitFiltration_le_succ [Algebra.IsSeparable K L]
+theorem not_map_normUnits_unitFiltration_le_succ_of_isTamelyRamified
+    [Algebra.IsSeparable K L]
     (ht : IsTamelyRamified K L) (i : ℕ) :
     ¬ (unitFiltration L (ramificationIndex K L * (i + 1))).map (Algebra.normUnits K) ≤
       unitFiltration K (i + 2) := by
@@ -115,7 +116,7 @@ theorem not_map_normUnits_unitFiltration_le_of_one_lt_ramificationIndex
     have := Nat.div_le_div_left (a := i - 1) he_two two_pos
     omega
   intro h
-  exact not_map_normUnits_unitFiltration_le_succ K L ht ((i - 1) / e)
+  exact not_map_normUnits_unitFiltration_le_succ_of_isTamelyRamified K L ht ((i - 1) / e)
     ((Subgroup.map_mono (unitFiltration_antitone h₁)).trans
       (h.trans (unitFiltration_antitone h₂)))
 

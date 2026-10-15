@@ -45,7 +45,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open _root_.IntermediateField ValuativeRel
+open _root_.IntermediateField _root_.ValuativeRel
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
@@ -66,10 +66,10 @@ theorem localSymbol_kummerClass_eq_zero_of_mem_unitFiltration (hp : ¬ ringChar 
   have : FiniteDimensional K K⟮s⟯ :=
     adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral s)
   have ht : AdjoinSimple.gen K s ^ n = algebraMap K K⟮s⟯ b := Subtype.ext (by simpa using hs)
-  let _ := finiteExtensionValuativeRel K K⟮s⟯
-  let _ := finiteExtensionNormedFieldTopology K K⟮s⟯
+  let _ := algebraicExtensionValuativeRel K K⟮s⟯
+  let _ := algebraicExtensionNormedFieldTopology K K⟮s⟯
   have := finiteExtension_isNonarchimedeanLocalField K K⟮s⟯
-  have := finiteExtension_valuativeExtension K K⟮s⟯
+  have := algebraicExtension_valuativeExtension K K⟮s⟯
   -- `E / K` is unramified, since `s` lies in the maximal unramified extension
   have : IsUnramified K K⟮s⟯ := (le_maximalUnramifiedExtension_iff K⟮s⟯).1 <|
     adjoin_simple_le_iff.2 (mem_maximalUnramifiedExtension_of_pow_eq hp hb hs)

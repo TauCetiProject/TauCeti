@@ -45,6 +45,8 @@ is an involution over `S` that fixes the zero section.
   chart restricts, over a chart whose base maps into its base, to the negation of that chart.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.toTotal_neg`: on the restriction of `E` to the base
   of any pointed Weierstrass chart, the negation morphism is the negation of the chart.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.modelPoint_neg`: on a chart, the model point of
+  `-P` is the negative of the model point of `P`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.eq_neg_of_atlas`: a morphism `E ⟶ E` that restricts
   to the negation of every chart of a pointed Weierstrass atlas is the negation morphism.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.neg_structureMap`,
@@ -189,6 +191,20 @@ theorem neg_structureMap : E.neg ≫ E.structureMap = E.structureMap := by
   obtain ⟨A⟩ := E.localModel
   refine A.hom_ext_of_toTotal _ _ fun i ↦ ?_
   simp [(A.chart i).isPullback.w]
+
+variable {E} in
+/-- The model point of the negative `P ≫ E.neg` of a section `P` is the negative of its model
+point. -/
+@[simp]
+theorem modelPoint_neg (c : PointedWeierstrassChart E.structureMap E.zero) {P : S ⟶ E.carrier}
+    (hP : P ≫ E.structureMap = 𝟙 S) :
+    c.modelPoint (P := P ≫ E.neg) (by simp [hP]) = c.modelPoint hP ≫ c.equation.projModelNeg := by
+  have : c.chartPoint (P := P ≫ E.neg) (by simp [hP]) = c.chartPoint hP ≫ c.neg :=
+    c.isPullback.hom_ext
+      (by simp only [Category.assoc, ← toTotal_neg, PointedWeierstrassChart.chartPoint_toTotal,
+        PointedWeierstrassChart.chartPoint_toTotal_assoc])
+      (by simp)
+  simp [PointedWeierstrassChart.modelPoint_def, this, c.neg_modelIso_hom]
 
 /-- The negation morphism of an elliptic curve fixes the zero section. -/
 @[reassoc (attr := simp)]
