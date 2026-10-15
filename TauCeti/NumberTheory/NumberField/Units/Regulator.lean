@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
+public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 
 /-!
-# Evaluating a rank-one regulator
+# Evaluating and bounding the regulator
 
 For a number field of unit rank one, a unit generating the units modulo torsion computes the
 regulator at any infinite place `w` as `w.mult * |Real.log (w u)|`. In particular, at a place
@@ -25,9 +26,22 @@ place. The product formula over the two infinite places also forces a unit expan
 them to contract at the other, which controls the remaining conjugates of a unit bounded at a
 chosen place.
 
+In every rank, Hadamard's `ℓ¹` bound `Matrix.abs_det_le_prod_sum_abs` bounds the regulator of a
+family of units by the product of the `ℓ¹` norms of their logarithmic embeddings
+(`TauCeti.NumberField.Units.regOfFamily_le_prod_sum_abs_logEmbedding`), and hence by the product
+of the full sums `∑ w, mult w * |log (w u)|` over all infinite places
+(`TauCeti.NumberField.Units.regOfFamily_le_prod_sum_mult_mul_abs_log`). A family has the
+regulator of `K` as its regulator exactly when it generates the units modulo torsion
+(`TauCeti.NumberField.Units.regOfFamily_eq_regulator_iff`), so the same products bound
+`regulator K` for every fundamental system. By the product formula, the full sum for a unit is
+twice its logarithmic height, so these bounds are the input to the upper bound of the regulator
+by the heights of a fundamental system (Bugeaud–Győry, Lemma 1).
+
 ## References
 
 * H. Cohen, *A Course in Computational Algebraic Number Theory*, §5.7.
+* Y. Bugeaud and K. Győry, Bounds for the solutions of unit equations, *Acta Arith.* **74**
+  (1996), 67–80, §3, Lemma 1.
 -/
 
 public section
@@ -184,5 +198,59 @@ theorem regulator_eq_mult_log_of_rank_eq_one (hr : rank K = 1) (u : (𝓞 K)ˣ)
     regulator K = w.mult * Real.log (w u) := by
   rw [regulator_eq_mult_abs_log_of_rank_eq_one hr u hu w,
     abs_of_pos (Real.log_pos hw)]
+
+/-- A family of units has the regulator of `K` as its regulator if and only if it generates the
+units modulo torsion. -/
+theorem regOfFamily_eq_regulator_iff {u : Fin (rank K) → (𝓞 K)ˣ} :
+    regOfFamily u = regulator K ↔ Subgroup.closure (Set.range u) ⊔ torsion K = ⊤ := by
+  rw [← Subgroup.index_eq_one, ← Nat.cast_inj (R := ℝ), ← regOfFamily_div_regulator,
+    Nat.cast_one, div_eq_one_iff_eq (regulator_ne_zero K)]
+
+open scoped Classical in
+/-- **Hadamard's bound for the regulator of a family.** The regulator of a family of units is at
+most the product of the `ℓ¹` norms of their logarithmic embeddings. -/
+theorem regOfFamily_le_prod_sum_abs_logEmbedding (u : Fin (rank K) → (𝓞 K)ˣ) :
+    regOfFamily u ≤ ∏ i, ∑ w, |logEmbedding K (Additive.ofMul (u i)) w| := by
+  rw [regOfFamily_eq_det']
+  refine (Matrix.abs_det_le_prod_sum_abs _).trans_eq ?_
+  exact Fintype.prod_equiv (equivFinRank K).symm _ _ fun _ => by simp
+
+open scoped Classical in
+/-- The `ℓ¹` norm of the logarithmic embedding of a unit, which omits the distinguished infinite
+place, is at most the sum of the weighted absolute logarithms over all infinite places. -/
+theorem sum_abs_logEmbedding_le_sum_mult_mul_abs_log (u : (𝓞 K)ˣ) :
+    ∑ w, |logEmbedding K (Additive.ofMul u) w| ≤
+      ∑ w : InfinitePlace K, w.mult * |Real.log (w u)| := by
+  simp_rw [dirichletUnitTheorem.logEmbedding_component, abs_mul, Nat.abs_cast]
+  rw [← Finset.sum_subtype {w | w ≠ dirichletUnitTheorem.w₀} (by simp)
+    fun w : InfinitePlace K => (w.mult : ℝ) * |Real.log (w u)|]
+  exact Finset.sum_le_univ_sum_of_nonneg fun _ => by positivity
+
+/-- **Hadamard's bound for the regulator of a family, over all places.** The regulator of a
+family of units is at most the product, over the family, of the sums of the weighted absolute
+logarithms at all infinite places. -/
+theorem regOfFamily_le_prod_sum_mult_mul_abs_log (u : Fin (rank K) → (𝓞 K)ˣ) :
+    regOfFamily u ≤ ∏ i, ∑ w : InfinitePlace K, w.mult * |Real.log (w (u i))| := by
+  refine (regOfFamily_le_prod_sum_abs_logEmbedding u).trans ?_
+  gcongr with i
+  exact sum_abs_logEmbedding_le_sum_mult_mul_abs_log (u i)
+
+open scoped Classical in
+/-- **Hadamard's bound for the regulator.** For every fundamental system of units `ε`, the
+regulator of `K` is at most the product of the `ℓ¹` norms of their logarithmic embeddings. -/
+theorem regulator_le_prod_sum_abs_logEmbedding {ε : Fin (rank K) → (𝓞 K)ˣ}
+    (hε : Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤) :
+    regulator K ≤ ∏ i, ∑ w, |logEmbedding K (Additive.ofMul (ε i)) w| :=
+  (regOfFamily_eq_regulator_iff.mpr hε).symm.trans_le <|
+    regOfFamily_le_prod_sum_abs_logEmbedding ε
+
+/-- **Hadamard's bound for the regulator, over all places.** For every fundamental system of
+units `ε`, the regulator of `K` is at most the product, over the system, of the sums of the
+weighted absolute logarithms at all infinite places. -/
+theorem regulator_le_prod_sum_mult_mul_abs_log {ε : Fin (rank K) → (𝓞 K)ˣ}
+    (hε : Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤) :
+    regulator K ≤ ∏ i, ∑ w : InfinitePlace K, w.mult * |Real.log (w (ε i))| :=
+  (regOfFamily_eq_regulator_iff.mpr hε).symm.trans_le <|
+    regOfFamily_le_prod_sum_mult_mul_abs_log ε
 
 end TauCeti.NumberField.Units
