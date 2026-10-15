@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.Factorization
 # Multiplicative congruence modulo an ideal
 
 For a Dedekind domain `R` with fraction field `K`,
-`TauCeti.DedekindDomain.congruenceSubgroup m K hm` consists of the elements of `Kˣ`
+`Ideal.congruenceSubgroup m K hm` consists of the elements of `Kˣ`
 congruent to one locally modulo the nonzero ideal `m`.
 At a prime dividing `m`, the valuation of `x - 1` must be at most the negative
 exponential of the multiplicity of that prime in `m`. Such an `x` is a local unit.
@@ -26,9 +26,9 @@ at real places to define the congruence subgroup of a number-field modulus.
 
 ## Usage
 
-With `open TauCeti`, write `DedekindDomain.congruenceSubgroup m K hm` for an ideal
+Write `m.congruenceSubgroup K hm` for an ideal
 `m : Ideal R` and a proof `hm : m ≠ ⊥`. The residue-unit kernel formula is
-`DedekindDomain.comap_congruenceSubgroup_eq_ker m K hm`; it is also a simp lemma.
+`Ideal.comap_congruenceSubgroup_eq_ker m K hm`; it is also a simp lemma.
 
 ## Dependencies and provenance
 
@@ -36,7 +36,7 @@ The valuation and prime-power dictionary is Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.intValuation_le_pow_iff_mem`, and the passage
 from local membership to membership in `m` uses `Ideal.iInf_maxPowDividing_eq`.
 
-`TauCeti.DedekindDomain.congruenceSubgroup` and its subgroup proofs generalize the former
+`Ideal.congruenceSubgroup` and its subgroup proofs generalize the former
 number-field construction `TauCeti.GlobalNumberFields.congruenceSubgroup` in
 `TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus`.
 
@@ -50,7 +50,7 @@ public section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
-namespace TauCeti.DedekindDomain
+namespace Ideal
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
@@ -165,4 +165,4 @@ theorem comap_congruenceSubgroup_eq_ker (m : Ideal R) (K : Type*) [Field K]
     MonoidHom.mem_ker, Units.ext_iff, Units.coe_map, Units.val_one]
   exact (Ideal.Quotient.mk_eq_one_iff_sub_mem (I := m) (u : R)).symm
 
-end TauCeti.DedekindDomain
+end Ideal

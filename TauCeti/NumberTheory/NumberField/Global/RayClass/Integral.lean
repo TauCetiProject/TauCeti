@@ -70,14 +70,14 @@ theorem isCongrOne_of_sub_one_mem {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa
     (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
     IsCongrOne 𝔪 x := by
   exact isCongrOne_iff_mem_congruenceSubgroup_and_pos.mpr
-    ⟨(DedekindDomain.mem_congruenceSubgroup_iff_sub_one_mem hxa).mpr hmem, hpos⟩
+    ⟨(Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mpr hmem, hpos⟩
 
 /-- **Congruence to one, read back on an algebraic integer.**  The converse of
 `isCongrOne_of_sub_one_mem` at the finite places: a unit congruent to one modulo `𝔪` that is the
 image of `a : 𝓞 K` has `a - 1` in the finite part. -/
 theorem sub_one_mem_of_isCongrOne {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa : (x : K) = a)
     (h : IsCongrOne 𝔪 x) : a - 1 ∈ 𝔪.finitePart := by
-  exact (DedekindDomain.mem_congruenceSubgroup_iff_sub_one_mem hxa).mp
+  exact (Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mp
     (isCongrOne_iff_mem_congruenceSubgroup_and_pos.mp h).1
 
 /-- **A generator congruent to one inside an ideal comaximal with the finite part.**  For a nonzero
