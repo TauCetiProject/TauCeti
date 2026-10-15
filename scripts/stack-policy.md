@@ -92,6 +92,9 @@ candidate-defined code never receives its app token. Every run publishes JSONL
 in logs, a job summary and an artifact. `NO_STACK_APPLY=true` enables enforcement;
 otherwise all triggers audit only. Manual dispatch additionally defaults to
 dry-run. Clearing this repository variable pauses mutations while audits continue.
+`NO_STACK_APPLY=dispatch` permits only a manual apply selecting one positive PR
+number, for a production canary before enabling automatic sweeps. A dry-run also
+checks current identities and live fork branches for every confirmed result.
 
 Only a confirmed stack receives the `stacked-pr` label **before** its explanation
 and close. Main's bors.toml blocks admission on that label using the existing
@@ -103,6 +106,9 @@ publication gates remain. An obsolete policy label is removed only after a
 complete no-proof result, complete parent index, fresh identity checks and a
 latest label event owned by the policy bot. Human-applied labels and uncertainty
 retain a prior block. Existing status/roadmap label reconciliation preserves it.
+Retaining a block is an audit gap, not a failed mutation. A persistently incomplete
+repository index can prevent automatic removal; manual label removal after review
+remains available. A source/API identity mismatch is never resolved by guessing.
 Parent/content changes are reconsidered on subsequent sweeps; no waiting PR
 builds/rebases are started. A deleted fork is recorded per PR, not a reason to
 abort all other observations. Failed individual ref fetches likewise produce gaps.
@@ -125,7 +131,7 @@ an actual admitted child's removal using the bors observation endpoint, not just
 infer it from a successful GitHub API response.
 Unknown detections remain explicit in the audit summary; only mutation or
 withdrawal failures make a completed per-PR sweep fail. Global observation
-failures still fail the run. Closed-parent budget overflow affects the children
+failures and global source/API budget exhaustion still fail the run. Closed-parent budget overflow affects the children
 naming unavailable parents, rather than preventing unrelated classifications.
 The apply audit records read-only bors membership before the blocking label and
 close, then makes at most six observations (five-second gaps) after close. A

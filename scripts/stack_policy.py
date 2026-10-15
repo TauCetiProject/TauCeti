@@ -37,6 +37,14 @@ class Gap(RuntimeError):
     """Observation is incomplete; do not close or claim safety."""
 
 
+class UnsupportedCommit(Gap):
+    """No unambiguous individual patch; another commit may still prove inheritance."""
+
+
+class BudgetGap(Gap):
+    """The sweep cannot continue observing within its global budget."""
+
+
 def emit(**record):
     print(json.dumps(record, sort_keys=True), flush=True)
 
@@ -60,16 +68,23 @@ class API:
     def request(self, url, method="GET", data=None):
         self.calls += 1
         if self.calls > 4000 or self.bytes > 64 * MAX_BYTES or time.monotonic() > self.deadline:
-            raise Gap("sweep API/time budget exhausted")
+            raise BudgetGap("sweep API/time budget exhausted")
         req = Request(url, method=method,
                       data=None if data is None else json.dumps(data).encode(),
                       headers={"Authorization": f"Bearer {self.token}",
                                "Accept": "application/vnd.github+json",
                                "X-GitHub-Api-Version": "2022-11-28",
                                "Content-Type": "application/json"})
-        with urlopen(req, timeout=45) as response:
-            raw = response.read(8 * MAX_BYTES + 1)
+        try:
+            with urlopen(req, timeout=45) as response:
+                raw = response.read(min(8 * MAX_BYTES, 64 * MAX_BYTES - self.bytes) + 1)
+        except HTTPError as error:
+            if error.code in (403, 429):
+                raise BudgetGap("API permission/rate limit refused; sweep stopped") from error
+            raise
         self.bytes += len(raw)
+        if self.bytes > 64 * MAX_BYTES:
+            raise BudgetGap("sweep API byte budget exhausted")
         if len(raw) > 8 * MAX_BYTES:
             raise Gap("API response truncated by byte bound")
         return json.loads(raw) if raw else None
@@ -212,7 +227,7 @@ class Source:
         if hasattr(self, "deadline"):
             self.calls += 1
             if self.calls > 30000 or time.monotonic() > self.deadline:
-                raise Gap("source operation/time budget exhausted")
+                raise BudgetGap("source operation/time budget exhausted")
         return run(["git", "--git-dir", str(self.root), *args], data=data,
                    env={**self.env, "GIT_INDEX_FILE": self.index} if hasattr(self, "index") else self.env,
                    check=check, limit=limit)
@@ -228,11 +243,15 @@ class Source:
             try:
                 self.git("fetch", "--no-tags", "--filter=blob:none", f"--depth={MAX_COMMITS}", "origin",
                          *(f"+refs/pull/{p.number}/head:refs/policy/{p.number}" for p in batch))
+            except BudgetGap:
+                raise
             except (Gap, subprocess.TimeoutExpired):
                 for p in batch:
                     try:
                         self.git("fetch", "--no-tags", "--filter=blob:none", f"--depth={MAX_COMMITS}",
                                  "origin", f"+refs/pull/{p.number}/head:refs/policy/{p.number}")
+                    except BudgetGap:
+                        raise
                     except (Gap, subprocess.TimeoutExpired):
                         self.commits_cache[p.head] = None
         shallow = self.root / "shallow"
@@ -307,7 +326,7 @@ class Source:
     def commit_patch(self, commit):
         parents = self.git("rev-list", "--parents", "-n", "1", commit).stdout.decode().split()
         if len(parents) != 2:
-            raise Gap("commit patch requires exactly one parent")
+            raise UnsupportedCommit("commit patch requires exactly one parent")
         return self.patch_between(parents[1], commit)
 
     def patch_between(self, base, head):
@@ -402,6 +421,8 @@ class Detector:
                 if p.state == "open":
                     for commit in source.commits(p.head):
                         self.index[commit].add(p.number)
+            except BudgetGap:
+                raise
             except Gap as e:
                 self.gaps[p.number] = str(e)
 
@@ -471,9 +492,7 @@ class Detector:
                 for commit in ordered[:MAX_EVIDENCE_COMMITS]:
                     try:
                         cb, cp, delta = self.source.commit_patch(commit)
-                    except Gap as error:
-                        if str(error) != "commit patch requires exactly one parent":
-                            raise
+                    except UnsupportedCommit:
                         unsupported = True
                         continue
                     if (delta and self.source.contains(child.head, cp, delta)
@@ -495,6 +514,8 @@ class Detector:
                 if unsupported:
                     raise Gap("individual merge/root commit unsupported; no alternative retained commit proof")
                 reasons.append(f"#{number}: no complete unlanded parent delta/commit retained")
+            except BudgetGap:
+                raise
             except (Gap, KeyError, ValueError) as e:
                 gaps.append(f"#{number}: {e}")
         if gaps:
@@ -651,11 +672,13 @@ def main():
     # can still contain unlanded prerequisite work. Never assume closure = landing.
     indexed = {p.number for p in prs}
     references = set().union(*(explicit_parents(p.body) for p in selected)) - indexed
-    for number in sorted(references)[64:]:
+    for number in sorted(references, reverse=True)[64:]:
         emit(index_pr=number, classification="unknown", gap="closed-parent lookup budget exceeded")
-    for number in sorted(references)[:64]:
+    for number in sorted(references, reverse=True)[:64]:
         try:
             prs.append(api.pr(number))
+        except BudgetGap:
+            raise
         except Exception as e:
             # A prose #reference may name an issue, a deleted fork, or an
             # inaccessible parent. Preserve the per-child gap, not a fake PR.
@@ -679,6 +702,10 @@ def main():
                 emit(pr=child.number, head=child.head, main=main_sha,
                      classification="confirmed-stack" if evidence else "no-confirmed-stack",
                      evidence=asdict(evidence) if evidence else None, reasons=reasons)
+                if evidence and not args.apply:
+                    if not unchanged(api, child, detector.prs[evidence.parent], main_sha):
+                        raise Gap("dry-run preflight identities changed; no mutation")
+                    emit(pr=child.number, preflight="current child/parent/main identities and live branches verified")
                 if args.apply:
                     if evidence:
                         mutation_started = True
@@ -699,15 +726,17 @@ def main():
                         emit(pr=child.number, mutation="closed", withdrawal="pull_request.closed webhook")
                         verify_withdrawal(child, before, observation)
                     elif child.blocked:
-                        mutation_started = True
                         if incomplete_index or detector.gaps:
                             raise Gap("incomplete parent index; retaining blocking label")
                         if not owns_block(api, child, actor):
                             raise Gap("blocking label is not policy-owned; retaining it")
                         if api.main() != main_sha or api.pr(child.number) != child:
                             raise Gap("identities changed before removing obsolete stack label")
+                        mutation_started = True
                         api.call(f"issues/{child.number}/labels/{BLOCK_LABEL}", "DELETE")
                         emit(pr=child.number, mutation="obsolete blocking label removed")
+            except BudgetGap:
+                raise
             except Exception as e:
                 unknowns += 1
                 failures += int(mutation_started)

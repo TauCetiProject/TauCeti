@@ -630,7 +630,7 @@ class MainTests(unittest.TestCase):
         self.raw[1]["labels"] = [{"name": sp.BLOCK_LABEL}]
         for incomplete in (True, False):
             self.detector.gaps = {1: "source unavailable"} if incomplete else {}
-            self.assertTrue(self.main("--apply", "--pr", "2"))
+            self.assertFalse(self.main("--apply", "--pr", "2"))
             self.assertFalse(any(method == "DELETE" for _, method, _ in self.api.calls))
 
     def test_only_latest_policy_owned_label_can_be_removed(self):
@@ -641,8 +641,14 @@ class MainTests(unittest.TestCase):
         self.assertEqual(self.api.calls[-1][1], "DELETE")
         self.api.calls.clear()
         self.api.events.append({**self.api.events[0], "id": 2, "actor": {"login": "human"}})
-        self.assertTrue(self.main("--apply", "--pr", "2"))
+        self.assertFalse(self.main("--apply", "--pr", "2"))
         self.assertEqual(self.api.calls, [])
+
+    def test_global_budget_exhaustion_aborts_sweep(self):
+        self.detector.detect = MagicMock(side_effect=sp.BudgetGap("source operation/time budget exhausted"))
+        with self.assertRaises(sp.BudgetGap):
+            self.main()
+        self.assertEqual(self.detector.detect.call_count, 1)
 
     def test_failed_label_write_does_not_abort_remaining_prs_or_close(self):
         other = sp.PR(3, "open", "e" * 40, "main", "other", sp.REPO, "", False, "a" * 40)
