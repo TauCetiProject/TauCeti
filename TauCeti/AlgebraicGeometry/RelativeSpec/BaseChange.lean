@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 
