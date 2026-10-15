@@ -385,6 +385,12 @@ class MutationTests(unittest.TestCase):
     def test_closed_unlanded_parent_gets_actionable_advice(self):
         self.assertIn("Remove the inherited work", sp.comment_text(self.evidence, "closed"))
 
+    def test_forged_merge_marker_cannot_trigger_repository_branch_deletion(self):
+        self.child = sp.PR(**{**sp.asdict(self.child), "landing_claim": True})
+        with self.assertRaisesRegex(sp.Gap, "branch preservation"):
+            self.enforce()
+        self.assertEqual(self.api.calls, [])
+
     def test_comment_failure_does_not_close(self):
         self.api.fail_comment = True
         with self.assertRaises(sp.Gap):

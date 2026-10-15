@@ -73,6 +73,10 @@ or exceeded bounds produce `unknown` with an explicit gap and no closure.
   patches) are unknown. Arbitrary semantic rewrites during integration cannot
   be identified by exact source matching; closed landing claims without source
   proof are unknown. The policy never declares semantic equivalence from prose.
+- A repository-owned head with bors's merged-title marker is blocked when proved
+  stacked but not closed automatically: the existing bors branch deleter could
+  interpret that marker as permission to delete the branch. Fork heads and
+  ordinary unmerged repository heads use the normal closure path.
 
 ## Enforcement and retries
 

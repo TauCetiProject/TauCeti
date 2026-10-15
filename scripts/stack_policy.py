@@ -507,6 +507,10 @@ def comment_text(evidence, parent_state="open"):
 
 
 def enforce(api, child, parent, evidence, actor):
+    if child.head_repo == REPO and child.landing_claim:
+        # The existing bors branch deleter recognizes its merged-title marker.
+        # A forged/reopened marker must not turn policy closure into deletion.
+        raise Gap("repository-head PR has a bors merge marker; branch preservation unproved, closure declined")
     body = comment_text(evidence, parent.state)
     marker = body.splitlines()[0]
     comments = api.pages(f"issues/{child.number}/comments", 1000)
