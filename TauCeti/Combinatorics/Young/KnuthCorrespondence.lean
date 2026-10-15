@@ -174,20 +174,6 @@ private theorem dropLastOfRow_appendToRow (a : α) {k : ℕ} {rows : List (List 
       simpa [appendToRow, dropLastOfRow] using
         ih (fun h => hne (mem_cons_of_mem _ h)) (by simpa using hk)
 
-/-- At a corner of a tableau, the row below a one-cell row is empty. -/
-private theorem eq_nil_of_corner [Preorder α] {row : List α} {rows : List (List α)}
-    (h : (row :: rows).IsTableauRows) (hk : (rows.getD 0 []).length < row.length)
-    (hd : row.dropLast = []) : rows = [] := by
-  obtain ⟨hne, -, -, hrows⟩ := isTableauRows_cons.mp h
-  cases rows with
-  | nil => rfl
-  | cons lower rows =>
-    have h1 := congrArg length hd
-    rw [length_dropLast, length_nil] at h1
-    have := length_pos_iff.mpr (isTableauRows_cons.mp hrows).1
-    simp at hk
-    omega
-
 private theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
     (h : rows.IsTableauRows) (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
     (i : ℕ) :
@@ -199,7 +185,7 @@ private theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α
     cases k with
     | zero =>
       by_cases hd : row.dropLast = []
-      · obtain rfl := eq_nil_of_corner h (by simpa using hk) hd
+      · obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) hd
         cases i <;> simp [dropLastOfRow, hd]
       · cases i <;> simp [dropLastOfRow, hd]
     | succ k =>
@@ -219,7 +205,7 @@ private theorem appendToRow_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (
       obtain ⟨ys, rfl⟩ := getLast?_eq_some_iff.mp (by simpa using ha)
       by_cases hd : ys = []
       · subst hd
-        obtain rfl := eq_nil_of_corner h (by simpa using hk) (by simp)
+        obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) (by simp)
         simp [appendToRow, dropLastOfRow]
       · simp [appendToRow, dropLastOfRow, hd]
     | succ k =>
@@ -255,7 +241,7 @@ private theorem _root_.List.IsTableauRows.dropLastOfRow [Preorder α] {k : ℕ}
         | nil => simp [TauCeti.dropLastOfRow]
         | cons lower rows =>
           by_cases hd : lower.dropLast = []
-          · obtain rfl := eq_nil_of_corner hrows (by simpa using hk) hd
+          · obtain rfl := hrows.eq_nil_of_dropLast_eq_nil (by simpa using hk) hd
             simp [TauCeti.dropLastOfRow, hd]
           · simp only [TauCeti.dropLastOfRow, hd, ite_false, headD_cons]
             refine ⟨by rw [length_dropLast]; exact (Nat.sub_le _ _).trans hab.length_le,
@@ -365,17 +351,13 @@ private theorem sortedLE_map_toLex_append_singleton {ws : List (α × β)} {w : 
     getLast?_map]
   cases ws.getLast? <;> simp
 
-/-- The top letters of a two-line array weakly increase. -/
-private theorem fst_le_fst_of_toLex_le {v w : α × β} (h : toLex v ≤ toLex w) : v.1 ≤ w.1 := by
-  simpa using Prod.Lex.monotone_fst _ _ h
-
 /-- The entries of the recording tableau of the earlier pairs of a two-line array are at most the
 last top letter. -/
 private theorem le_of_mem_flatten_snd {ws : List (α × β)} {w : α × β}
     (h : ((ws ++ [w]).map toLex).SortedLE) {x : α}
     (hx : x ∈ (robinsonSchenstedKnuth ws).2.flatten) : x ≤ w.1 := by
   obtain ⟨v, hv, rfl⟩ := mem_map.mp ((flatten_robinsonSchenstedKnuth_snd_perm ws).subset hx)
-  exact fst_le_fst_of_toLex_le (toLex_le_of_mem h hv)
+  exact Prod.Lex.monotone_fst _ _ (toLex_le_of_mem h hv)
 
 /-- **The cells recorded with the last top letter form a horizontal strip**: in the recording
 tableau of the earlier pairs of a two-line array ending in `(a, b)`, every cell containing `a` lies
@@ -404,7 +386,7 @@ private theorem lt_of_getElem?_getD_snd_eq_some (ws : List (α × β)) (a : α) 
       · exact hle
     -- An old cell containing `a` forces `w.1 = a`, and then lies left of the cell added for `w`.
     have hold (ha' : ((robinsonSchenstedKnuth ws).2.getD i [])[j]? = some a) := by
-      have hw : w.1 = a := le_antisymm (fst_le_fst_of_toLex_le hwab)
+      have hw : w.1 = a := le_antisymm (Prod.Lex.monotone_fst _ _ hwab)
         (le_of_mem_flatten_snd hws (mem_flatten_of_mem_getD (mem_of_getElem? ha')))
       exact (ih w.1 w.2 hws (hw ▸ ha')).trans (hcol hw)
     rw [robinsonSchenstedKnuth_append_singleton] at ha ⊢
@@ -506,7 +488,7 @@ theorem robinsonSchenstedKnuth_injOn :
         (hx : x ∈ (robinsonSchenstedKnuth (us ++ [u])).2.flatten) : x ≤ u.1 := by
       obtain ⟨v, hv, rfl⟩ := mem_map.mp ((flatten_robinsonSchenstedKnuth_snd_perm _).subset hx)
       rcases mem_append.mp hv with hv | hv
-      · exact fst_le_fst_of_toLex_le (toLex_le_of_mem hu hv)
+      · exact Prod.Lex.monotone_fst _ _ (toLex_le_of_mem hu hv)
       · simp [mem_singleton.mp hv]
     have hmem {x : α} {rows : List (List α)} {i : ℕ}
         (hrow : (rows.getD i []).getLast? = some x) : x ∈ rows.flatten :=

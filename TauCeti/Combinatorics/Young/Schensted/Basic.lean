@@ -190,6 +190,21 @@ theorem IsTableauRows.isRowAbove_getD {rows : List (List α)} (h : IsTableauRows
       | cons lower rows => simpa using habove
     | succ i => simpa using ih hrows i
 
+/-- At a corner of the first row of a tableau, a first row with a single entry is the whole
+tableau: the row below it is empty. -/
+theorem IsTableauRows.eq_nil_of_dropLast_eq_nil {row : List α} {rows : List (List α)}
+    (h : (row :: rows).IsTableauRows) (hk : (rows.getD 0 []).length < row.length)
+    (hd : row.dropLast = []) : rows = [] := by
+  obtain ⟨-, -, -, hrows⟩ := isTableauRows_cons.mp h
+  cases rows with
+  | nil => rfl
+  | cons lower rows =>
+    have h1 := congrArg length hd
+    rw [length_dropLast, length_nil] at h1
+    have := length_pos_iff.mpr (isTableauRows_cons.mp hrows).1
+    simp at hk
+    omega
+
 end List
 
 namespace TauCeti
@@ -476,23 +491,6 @@ theorem reverseRowInsert_rowInsert (x : α) {rows : List (List α)} (hne : [] �
         reverseRowInsert_succ_cons_of_eq_some _ (by rw [ih']), ih',
         reverseRowBump_rowBump_of_sortedLE x y (hs row mem_cons_self) hb]
 
-/-- At a corner of the first row, a first row with a single entry is the whole tableau. -/
-private theorem eq_nil_of_dropLast_eq_nil {α : Type*} [Preorder α]
-    {row : List α} {rows : List (List α)}
-    (h : (row :: rows).IsTableauRows)
-    (hk : ((row :: rows).getD 1 []).length < ((row :: rows).getD 0 []).length)
-    (hd : row.dropLast = []) : rows = [] := by
-  obtain ⟨hne, -, -, hrows⟩ := isTableauRows_cons.mp h
-  cases rows with
-  | nil => rfl
-  | cons lower rows =>
-    have h1 := congrArg length hd
-    rw [length_dropLast, length_nil] at h1
-    have := length_pos_iff.mpr hne
-    have hlow := length_pos_iff.mpr (isTableauRows_cons.mp hrows).1
-    simp at hk
-    omega
-
 /-- The column relation between an old row `L` and the row `L'` replacing it after reverse
 insertion, when the letter `L[c]` was ejected from column `c`: `L'` is no longer, its entries
 are no smaller, and from column `c` on they exceed the ejected letter. -/
@@ -573,7 +571,7 @@ private theorem exists_reverseRowInsert_of_isTableauRows {k : ℕ} {rows : List 
       refine ⟨row.length - 1, by omega, ?_⟩
       by_cases hd : row.dropLast = []
       · -- a one-cell first row at a corner is the whole tableau
-        obtain rfl := eq_nil_of_dropLast_eq_nil h hk hd
+        obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) hd
         refine ⟨?_, ?_, ?_, ?_, ?_⟩
         · simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?]
         · simp [reverseRowInsert_zero_cons, hd]
