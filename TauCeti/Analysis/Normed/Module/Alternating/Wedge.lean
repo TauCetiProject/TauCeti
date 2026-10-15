@@ -457,7 +457,7 @@ variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {k l : ℕ}
 
 /-- The normed and norm-free interior products agree on normed spaces. -/
-theorem curryLeft_eq_curryLeftTopological {n : ℕ}
+theorem _root_.ContinuousAlternatingMap.curryLeft_eq_curryLeftTopological {n : ℕ}
     (f : E [⋀^Fin (n + 1)]→L[ℝ] F₁) (x : E) :
     f.curryLeft x = f.curryLeftTopological x := by
   ext v
@@ -478,7 +478,8 @@ theorem curryLeft_wedgeWith (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     ← ContinuousAlternatingMap.curryLeftTopological_apply_apply]
   have h := ContinuousAlternatingMap.curryLeftTopological_pairedWedge
     mu mu.continuous₂ phi psi v w
-  simpa only [wedgeWith_eq_topological, curryLeft_eq_curryLeftTopological] using h
+  simpa only [wedgeWith_eq_topological,
+    ContinuousAlternatingMap.curryLeft_eq_curryLeftTopological] using h
 
 
 end InteriorProduct

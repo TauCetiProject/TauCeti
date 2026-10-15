@@ -68,14 +68,10 @@ noncomputable def curryLeftTopological {n : ℕ}
         (AlternatingMap.curryLeft (R := R) f.toAlternatingMap x).map_eq_zero_of_eq' }
   map_add' x y := by
     ext v
-    change (f.toAlternatingMap.curryLeft (x + y)) v = _
-    rw [map_add]
-    rfl
+    exact f.toAlternatingMap.map_vecCons_add v x y
   map_smul' c x := by
     ext v
-    change (f.toAlternatingMap.curryLeft (c • x)) v = _
-    rw [map_smul]
-    rfl
+    exact f.toAlternatingMap.map_vecCons_smul v c x
 
 @[simp]
 theorem curryLeftTopological_apply_apply {n : ℕ} (f : M [⋀^Fin (n + 1)]→L[R] N) (x : M)

@@ -299,14 +299,14 @@ open Equiv
 variable {E F₁ F₂ F₃ : Type*}
   [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
   [AddCommGroup F₁] [Module ℝ F₁] [TopologicalSpace F₁]
-  [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
+  [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
   [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
+  [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
   [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
   [IsTopologicalAddGroup F₃] [ContinuousSMul ℝ F₃]
   {k l : ℕ}
 
-omit [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
+omit [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂] in
 private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (k + 1)) :
@@ -331,7 +331,7 @@ private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ
     fun sigma => ?_
   simp [Perm.sign_permCongr]
 
-omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁] in
+omit [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁] in
 private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (l + 1)) :
