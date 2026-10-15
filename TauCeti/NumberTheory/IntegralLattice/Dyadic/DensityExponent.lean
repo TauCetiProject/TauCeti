@@ -18,6 +18,7 @@ data in `TauCeti.DyadicJordanProfile`, defines Cho's exponents `nM`, `nQ`, and
 
 The profile records a finitely supported family of constituent ranks and the subset having type I.
 Thus a nonzero constituent outside `typeI` has type II, while an empty constituent is never type I.
+As for an actual splitting, every constituent outside `typeI` has even rank.
 The definitions also expose the three statistics used in the closed formula: the number of type-I
 constituents, the number of adjacent type-I pairs, and the sum of the ranks of type-II constituents.
 
@@ -36,7 +37,7 @@ namespace TauCeti
 The value `ranks i` is the rank of the constituent of scale `2 ^ i`. The finset `typeI` consists
 of the scales of the type-I constituents. The containment condition enforces the convention that
 an empty constituent is not of type I; every nonempty constituent at a scale outside `typeI` is
-of type II. -/
+of type II, and so has even rank. -/
 @[ext]
 structure DyadicJordanProfile where
   /-- The finitely supported ranks of the Jordan constituents. -/
@@ -45,6 +46,8 @@ structure DyadicJordanProfile where
   typeI : Finset ℕ
   /-- A type-I constituent is nonempty. -/
   typeI_subset_support : typeI ⊆ ranks.support
+  /-- A constituent that is not of type I has even rank. -/
+  even_rank_of_notMem_typeI : ∀ i, i ∉ typeI → Even (ranks i)
 
 namespace DyadicJordanProfile
 
@@ -181,18 +184,26 @@ def empty : DyadicJordanProfile where
   ranks := 0
   typeI := ∅
   typeI_subset_support := by simp
+  even_rank_of_notMem_typeI _ _ := by simp
 
-/-- A single type-II unimodular constituent of rank `n`. At `n = 0` this is the empty profile. -/
-noncomputable def unimodularTypeII (n : ℕ) : DyadicJordanProfile where
+/-- A single type-II unimodular constituent of even rank `n`. At `n = 0` this is the empty
+profile. -/
+noncomputable def unimodularTypeII (n : ℕ) (hn : Even n) : DyadicJordanProfile where
   ranks := Finsupp.single 0 n
   typeI := ∅
   typeI_subset_support := by simp
+  even_rank_of_notMem_typeI i _ := by
+    rcases eq_or_ne i 0 with rfl | hi
+    · simpa using hn
+    · simp [Finsupp.single_eq_of_ne hi]
 
 /-- A unary type-I constituent at scale `2 ^ i`. -/
 noncomputable def unaryTypeI (i : ℕ) : DyadicJordanProfile where
   ranks := Finsupp.single i 1
   typeI := {i}
   typeI_subset_support := by simp
+  even_rank_of_notMem_typeI j hj := by
+    simp [Finsupp.single_eq_of_ne (Finset.mem_singleton.not.mp hj)]
 
 /-- Two unary type-I constituents at the adjacent scales `1` and `2`. -/
 noncomputable def adjacentUnaryTypeI : DyadicJordanProfile where
@@ -202,6 +213,9 @@ noncomputable def adjacentUnaryTypeI : DyadicJordanProfile where
     intro i hi
     simp only [Finset.mem_insert, Finset.mem_singleton] at hi
     rcases hi with rfl | rfl <;> simp
+  even_rank_of_notMem_typeI j hj := by
+    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hj
+    simp [Finsupp.single_eq_of_ne hj.1, Finsupp.single_eq_of_ne hj.2]
 
 /-- The empty profile has no nonzero ranks. -/
 @[simp]
@@ -213,12 +227,13 @@ theorem empty_typeI : empty.typeI = ∅ := (rfl)
 
 /-- The unimodular type-II profile has one possibly nonzero rank at scale zero. -/
 @[simp]
-theorem unimodularTypeII_ranks (n : ℕ) :
-    (unimodularTypeII n).ranks = Finsupp.single 0 n := (rfl)
+theorem unimodularTypeII_ranks (n : ℕ) (hn : Even n) :
+    (unimodularTypeII n hn).ranks = Finsupp.single 0 n := (rfl)
 
 /-- The unimodular type-II profile has no type-I constituents. -/
 @[simp]
-theorem unimodularTypeII_typeI (n : ℕ) : (unimodularTypeII n).typeI = ∅ := (rfl)
+theorem unimodularTypeII_typeI (n : ℕ) (hn : Even n) : (unimodularTypeII n hn).typeI = ∅ :=
+  (rfl)
 
 /-- A unary type-I profile has rank one at its given scale. -/
 @[simp]
@@ -243,10 +258,10 @@ theorem densityExponent_empty : empty.densityExponent = 0 := by
   simp [empty, densityExponent, typeICount, adjacentTypeICount, lowerCrossExponent,
     diagonalExponent, typeIIRank]
 
-/-- A unimodular type-II constituent of rank `n` has density exponent `n`. -/
+/-- A unimodular type-II constituent of even rank `n` has density exponent `n`. -/
 @[simp]
-theorem densityExponent_unimodularTypeII (n : ℕ) :
-    (unimodularTypeII n).densityExponent = n := by
+theorem densityExponent_unimodularTypeII (n : ℕ) (hn : Even n) :
+    (unimodularTypeII n hn).densityExponent = n := by
   by_cases hn : n = 0
   · subst n
     simp [unimodularTypeII, densityExponent, typeICount, adjacentTypeICount,
