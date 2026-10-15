@@ -30,6 +30,9 @@ shows that pulling a graph back along a vertex map corresponds to restricting it
 
 ## Main results
 
+* `SimpleGraph.measurableEmbedding_toRelationalConfiguration` — on a countable vertex type, the
+  encoding is a measurable embedding onto the simple-graph configurations
+  (`SimpleGraph.range_toRelationalConfiguration`);
 * `SimpleGraph.toRelationalConfiguration_comap` — encoding a pulled-back graph is restricting its
   encoding;
 * `TauCeti.RelationalConfiguration.IsSimpleGraph.restrict` — restriction preserves symmetry and
@@ -105,6 +108,16 @@ theorem IsSimpleGraph.restrict {c : RelationalConfiguration Language.graph W}
     (hc : IsSimpleGraph c) (f : V → W) : IsSimpleGraph (c.restrict f) :=
   ⟨fun u v => by simpa using hc.1 (f u) (f v), fun v => by simpa using hc.2 (f v)⟩
 
+/-- On a countable vertex type, the simple-graph configurations form a measurable set: a countable
+intersection of conditions on one or two atoms. -/
+theorem measurableSet_setOf_isSimpleGraph [Countable V] :
+    MeasurableSet {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} := by
+  simp only [IsSimpleGraph, Set.ofPred_and, Set.ofPred_forall]
+  exact (MeasurableSet.iInter fun u => MeasurableSet.iInter fun v =>
+      ((measurable_eval (adjAtom u v)).prodMk (measurable_eval (adjAtom v u)))
+        (.of_discrete : MeasurableSet {p : Bool × Bool | p.1 = p.2})).inter
+    (MeasurableSet.iInter fun v => measurable_eval (adjAtom v v) (measurableSet_singleton false))
+
 end RelationalConfiguration
 
 end TauCeti
@@ -175,6 +188,24 @@ theorem coe_relationalConfigurationEquiv (G : SimpleGraph V) :
 theorem relationalConfigurationEquiv_symm_apply
     (c : {c : RelationalConfiguration Language.graph V // IsSimpleGraph c}) :
     relationalConfigurationEquiv.symm c = toSimpleGraph c.1 c.2 := (rfl)
+
+/-- The configurations of simple graphs are exactly the simple-graph configurations. -/
+@[simp]
+theorem range_toRelationalConfiguration :
+    Set.range
+        (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) =
+      {c | IsSimpleGraph c} := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 isSimpleGraph_toRelationalConfiguration)
+    fun c hc => ⟨relationalConfigurationEquiv.symm ⟨c, hc⟩,
+      congrArg Subtype.val (relationalConfigurationEquiv.apply_symm_apply ⟨c, hc⟩)⟩
+
+/-- On a countable vertex type, encoding simple graphs as configurations is a measurable embedding,
+so laws on simple graphs are the laws on configurations concentrated on simple graphs. -/
+theorem measurableEmbedding_toRelationalConfiguration [Countable V] :
+    MeasurableEmbedding
+      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
+  (MeasurableEmbedding.subtype_coe measurableSet_setOf_isSimpleGraph).comp
+    relationalConfigurationEquiv.measurableEmbedding
 
 /-! ### Compatibility with restriction -/
 
