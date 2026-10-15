@@ -188,22 +188,19 @@ theorem mextDerivWithin_apply_one {φ : RoughForm I M F 1}
   have hempty : (fun _ : Fin 0 ↦ W x) = ![] := Subsingleton.elim _ _
   simpa only [htuple, hWtuple, hVtuple, hempty, sub_eq_add_neg] using h
 
-/-- For a `C¹` one-form and `C¹` vector fields, the exterior derivative is the commutator
-of directional evaluations, corrected by evaluating the form on the Lie bracket. -/
+/-- For a one-form and vector fields differentiable at a point, the exterior derivative is
+the commutator of directional evaluations, corrected by evaluating the form on the Lie bracket. -/
 theorem mextDeriv_apply_one {φ : RoughForm I M F 1}
-    (hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) 1 φ)
     {V W : (y : M) → TangentSpace I y}
-    (hV : ContMDiff I I.tangent 1 (fun y ↦ (V y : TangentBundle I M)))
-    (hW : ContMDiff I I.tangent 1 (fun y ↦ (W y : TangentBundle I M))) (x : M) :
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
     mextDeriv φ x ![V x, W x] =
       mvfderiv I (fun y ↦ φ y ![W y]) x (V x) -
         mvfderiv I (fun y ↦ φ y ![V y]) x (W x) - φ x ![mlieBracket I V W x] := by
-  have hφ' := ((isSmoothBundleForm_def (I := I) (F := F) (V := Trivial M F) 1 φ).mp hφ
-    x).mdifferentiableAt one_ne_zero
   simpa only [mextDerivWithin_univ, mvfderivWithin_univ, mlieBracketWithin_univ] using
-    mextDerivWithin_apply_one hφ'.mdifferentiableWithinAt
-      ((hV x).mdifferentiableAt one_ne_zero).mdifferentiableWithinAt
-      ((hW x).mdifferentiableAt one_ne_zero).mdifferentiableWithinAt
-      (uniqueMDiffWithinAt_univ I)
+    mextDerivWithin_apply_one hφ.mdifferentiableWithinAt hV.mdifferentiableWithinAt
+      hW.mdifferentiableWithinAt (uniqueMDiffWithinAt_univ I)
 
 end TauCeti
