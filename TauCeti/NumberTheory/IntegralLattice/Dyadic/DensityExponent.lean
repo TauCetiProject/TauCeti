@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Order
+public import Mathlib.Data.Finsupp.Basic
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -19,6 +19,7 @@ data in `TauCeti.DyadicJordanProfile`, defines Cho's exponents `nM`, `nQ`, and
 The profile records a finitely supported family of constituent ranks and the subset having type I.
 Thus a nonzero constituent outside `typeI` has type II, while an empty constituent is never type I.
 As for an actual splitting, every constituent outside `typeI` has even rank.
+A constituent is bound when an adjacent constituent has type I, and free otherwise.
 The definitions also expose the three statistics used in the closed formula: the number of type-I
 constituents, the number of adjacent type-I pairs, and the sum of the ranks of type-II constituents.
 
@@ -50,6 +51,40 @@ structure DyadicJordanProfile where
   even_rank_of_notMem_typeI : ∀ i, i ∉ typeI → Even (ranks i)
 
 namespace DyadicJordanProfile
+
+/-- The constituent of scale `2 ^ i` is bound if a constituent of an adjacent scale `2 ^ (i - 1)`
+or `2 ^ (i + 1)` has type I. -/
+def IsBound (P : DyadicJordanProfile) (i : ℕ) : Prop :=
+  i + 1 ∈ P.typeI ∨ ∃ j ∈ P.typeI, j + 1 = i
+
+/-- The constituent of scale `2 ^ i` is free if it is not bound, that is, both adjacent
+constituents have type II. -/
+def IsFree (P : DyadicJordanProfile) (i : ℕ) : Prop :=
+  ¬P.IsBound i
+
+/-- The constituent of scale `1` is bound exactly when the one of scale `2` has type I. -/
+@[simp]
+theorem isBound_zero_iff (P : DyadicJordanProfile) : P.IsBound 0 ↔ 1 ∈ P.typeI := by
+  simp [IsBound]
+
+/-- The constituent of scale `2 ^ (i + 1)` is bound exactly when one of the constituents of
+scales `2 ^ i` and `2 ^ (i + 2)` has type I. -/
+@[simp]
+theorem isBound_succ_iff (P : DyadicJordanProfile) (i : ℕ) :
+    P.IsBound (i + 1) ↔ i + 2 ∈ P.typeI ∨ i ∈ P.typeI := by
+  simp [IsBound]
+
+/-- A constituent is free exactly when it is not bound. -/
+@[simp]
+theorem isFree_iff_not_isBound (P : DyadicJordanProfile) (i : ℕ) :
+    P.IsFree i ↔ ¬P.IsBound i := by
+  rw [IsFree]
+
+instance (P : DyadicJordanProfile) : DecidablePred P.IsBound := fun i ↦
+  decidable_of_iff (i + 1 ∈ P.typeI ∨ ∃ j ∈ P.typeI, j + 1 = i) (by rw [IsBound])
+
+instance (P : DyadicJordanProfile) : DecidablePred P.IsFree := fun i ↦
+  decidable_of_iff (¬P.IsBound i) (P.isFree_iff_not_isBound i).symm
 
 /-- The number `t` of type-I constituents. -/
 def typeICount (P : DyadicJordanProfile) : ℕ := P.typeI.card
