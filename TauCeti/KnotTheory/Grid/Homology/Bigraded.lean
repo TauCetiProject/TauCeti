@@ -62,34 +62,27 @@ end Cycles
 
 variable [CommRing R]
 
-private noncomputable def chainGrading : InternalGrading R (GridChainMinus R n) (ℤ × ℤ) :=
-  ⟨G.bigradedChainMinusPiece R, G.isInternal_bigradedChainMinusPiece R⟩
-
-private theorem differential_homogeneous :
-    LinearMap.IsHomogeneous (G.1.unblockedDifferential R)
-      (G.chainGrading R).piece (G.chainGrading R).piece (-(1, 0)) := by
-  rw [LinearMap.isHomogeneous_def]
-  intro g c hc
-  simp only [chainGrading] at hc ⊢
-  simpa only [sub_eq_add_neg] using G.unblockedDifferential_mem_bigradedChainMinusPiece hc
-
 /-- The homogeneous cycle modules form an internal direct sum. -/
 theorem isInternal_bigradedUnblockedCyclesPiece :
     DirectSum.IsInternal (G.bigradedUnblockedCyclesPiece R) := by
-  have hpieces : ((G.chainGrading R).ker (G.differential_homogeneous R)).piece =
+  have hpieces : ((G.bigradedChainMinusGrading R).ker
+    (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)).piece =
       G.bigradedUnblockedCyclesPiece R := by
     funext g
     ext z
-    exact (G.chainGrading R).mem_ker_piece (G.differential_homogeneous R)
+    exact (G.bigradedChainMinusGrading R).mem_ker_piece
+      (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
   rw [← hpieces]
-  exact ((G.chainGrading R).ker (G.differential_homogeneous R)).isInternal
+  exact ((G.bigradedChainMinusGrading R).ker
+    (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)).isInternal
 
 variable [CharP R 2]
 
 /-- The internal `(O-Maslov, Alexander)` grading of unblocked grid homology. -/
 noncomputable def bigradedUnblockedHomologyGrading :
     InternalGrading R (G.1.unblockedHomology R) (ℤ × ℤ) :=
-  ((G.chainGrading R).homology (G.differential_homogeneous R)
+  ((G.bigradedChainMinusGrading R).homology
+    (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
     (G.1.unblockedDifferential_comp_self_eq_zero R)).map
       ((G.1.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
 
@@ -155,13 +148,15 @@ theorem monomial_smul_mem_bigradedUnblockedHomologyPiece (d : Fin n →₀ ℕ) 
     InternalGrading.mem_map_piece_iff] at hy ⊢
   -- Use the polynomial-linear quotient isomorphism to transport the monomial action.
   suffices h : (G.1.unblockedHomologyIso R).hom ((monomial d a) • y) ∈
-      ((G.chainGrading R).homology (G.differential_homogeneous R)
+      ((G.bigradedChainMinusGrading R).homology
+        (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
         (G.1.unblockedDifferential_comp_self_eq_zero R)).piece
           (g - (2 * (d.degree : ℤ), (d.degree : ℤ))) by exact h
   rw [map_smul, sub_eq_add_neg]
-  refine (G.chainGrading R).smul_mem_homology_piece (G.differential_homogeneous R)
+  refine (G.bigradedChainMinusGrading R).smul_mem_homology_piece
+    (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
     (G.1.unblockedDifferential_comp_self_eq_zero R) (fun p c hc ↦ ?_) hy
-  simp only [chainGrading] at hc ⊢
+  simp only [bigradedChainMinusGrading] at hc ⊢
   simpa only [sub_eq_add_neg] using G.monomial_smul_mem_bigradedChainMinusPiece d a hc
 
 /-- Multiplication by a grid variable lowers homology bidegree by `(2, 1)`. -/
