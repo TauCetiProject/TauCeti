@@ -103,23 +103,61 @@ lemma ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f (n : ℕ)
 
 variable {L K} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R X}
 
+/- Transport a tensor-diagonal naturality equation through the alternating-face comparisons.
+The common source allows the pullback tensor comparison to precede the source diagonal. -/
+private lemma twistedAlexanderWhitneyDiagonal_naturality_of_comparison
+    {Y : TopCat.{v}} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R Y}
+    {C : ChainComplex (ModuleCat.{max v w} R) ℕ}
+    (a : C ⟶ (L' ⊗ K').twistedChainComplex)
+    (b : C ⟶ (L ⊗ K).twistedChainComplex)
+    (η : twistedChains L ⟶ twistedChains L') (θ : twistedChains K ⟶ twistedChains K')
+    (f : L.twistedChainComplex ⟶ L'.twistedChainComplex)
+    (g : K.twistedChainComplex ⟶ K'.twistedChainComplex)
+    (hf : f ≫ (twistedChainComplexIsoAlternatingFaceMapComplex L').hom =
+      (twistedChainComplexIsoAlternatingFaceMapComplex L).hom ≫
+        (alternatingFaceMapComplex _).map η)
+    (hg : g ≫ (twistedChainComplexIsoAlternatingFaceMapComplex K').hom =
+      (twistedChainComplexIsoAlternatingFaceMapComplex K).hom ≫
+        (alternatingFaceMapComplex _).map θ)
+    (h : a ≫ (twistedChainComplexIsoAlternatingFaceMapComplex (L' ⊗ K')).hom ≫
+        (alternatingFaceMapComplex _).map (twistedChainsTensorDiagonal L' K') =
+      b ≫ (twistedChainComplexIsoAlternatingFaceMapComplex (L ⊗ K)).hom ≫
+        (alternatingFaceMapComplex _).map (twistedChainsTensorDiagonal L K) ≫
+          (alternatingFaceMapComplex _).map (η ⊗ₘ θ)) :
+    a ≫ twistedAlexanderWhitneyDiagonal L' K' =
+      b ≫ twistedAlexanderWhitneyDiagonal L K ≫ (f ⊗ₘ g) := by
+  apply (cancel_mono ((twistedChainComplexIsoAlternatingFaceMapComplex L').hom ⊗ₘ
+    (twistedChainComplexIsoAlternatingFaceMapComplex K').hom)).1
+  have hfg : (f ⊗ₘ g) ≫
+      ((twistedChainComplexIsoAlternatingFaceMapComplex L').hom ⊗ₘ
+        (twistedChainComplexIsoAlternatingFaceMapComplex K').hom) =
+      ((twistedChainComplexIsoAlternatingFaceMapComplex L).hom ⊗ₘ
+        (twistedChainComplexIsoAlternatingFaceMapComplex K).hom) ≫
+          ((alternatingFaceMapComplex _).map η ⊗ₘ
+            (alternatingFaceMapComplex _).map θ) := by
+    simp only [tensorHom_comp_tensorHom, hf, hg]
+  simpa only [Category.assoc, hfg, twistedAlexanderWhitneyDiagonal_comp_comparison,
+    twistedAlexanderWhitneyDiagonal_comp_comparison_assoc,
+    SimplicialObject.alexanderWhitney_naturality] using
+    congrArg (· ≫ SimplicialObject.alexanderWhitney (twistedChains L') (twistedChains K')) h
+
 /-- Changing both local coefficient systems commutes with their twisted diagonal. -/
 @[reassoc]
 lemma twistedAlexanderWhitneyDiagonal_naturality (η : L ⟶ L') (θ : K ⟶ K') :
     twistedChainComplexCoefficientMap (η ⊗ₘ θ) ≫ twistedAlexanderWhitneyDiagonal L' K' =
       twistedAlexanderWhitneyDiagonal L K ≫
         (twistedChainComplexCoefficientMap η ⊗ₘ twistedChainComplexCoefficientMap θ) := by
-  apply (cancel_mono ((twistedChainComplexIsoAlternatingFaceMapComplex L').hom ⊗ₘ
-    (twistedChainComplexIsoAlternatingFaceMapComplex K').hom)).1
-  simp only [Category.assoc, twistedAlexanderWhitneyDiagonal_comp_comparison,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality_assoc]
-  rw [← Functor.map_comp_assoc, twistedChainsTensorDiagonal_naturality]
-  simp only [Functor.map_comp, Category.assoc]
-  rw [SimplicialObject.alexanderWhitney_naturality]
-  simp only [tensorHom_comp_tensorHom,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality]
-  simp only [← tensorHom_comp_tensorHom,
-    twistedAlexanderWhitneyDiagonal_comp_comparison_assoc]
+  apply twistedAlexanderWhitneyDiagonal_naturality_of_comparison
+    (twistedChainComplexCoefficientMap (η ⊗ₘ θ)) (𝟙 _)
+    (twistedChainsCoefficientMap η) (twistedChainsCoefficientMap θ)
+    (twistedChainComplexCoefficientMap η) (twistedChainComplexCoefficientMap θ)
+    (twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality η)
+    (twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality θ)
+  have h := congrArg (fun φ ↦
+    (twistedChainComplexIsoAlternatingFaceMapComplex (L ⊗ K)).hom ≫
+      (alternatingFaceMapComplex _).map φ) (twistedChainsTensorDiagonal_naturality η θ)
+  simpa only [Functor.map_comp, Category.assoc, Category.id_comp,
+    twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality_assoc] using h
 
 section Space
 
@@ -133,18 +171,19 @@ lemma twistedAlexanderWhitneyDiagonal_space_naturality :
       twistedChainComplexCoefficientMap (pullbackTensorIso f.hom L K).hom ≫
         twistedAlexanderWhitneyDiagonal ((pullback f.hom).obj L) ((pullback f.hom).obj K) ≫
           (twistedChainComplexMap f L ⊗ₘ twistedChainComplexMap f K) := by
-  apply (cancel_mono ((twistedChainComplexIsoAlternatingFaceMapComplex L).hom ⊗ₘ
-    (twistedChainComplexIsoAlternatingFaceMapComplex K).hom)).1
-  simp only [Category.assoc, twistedAlexanderWhitneyDiagonal_comp_comparison,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality_assoc]
-  rw [← Functor.map_comp_assoc, twistedChainsTensorDiagonal_space_naturality]
-  simp only [Functor.map_comp, Category.assoc]
-  rw [SimplicialObject.alexanderWhitney_naturality]
-  simp only [tensorHom_comp_tensorHom,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality]
-  simp only [← tensorHom_comp_tensorHom,
-    twistedAlexanderWhitneyDiagonal_comp_comparison_assoc,
-    twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality_assoc]
+  apply twistedAlexanderWhitneyDiagonal_naturality_of_comparison
+    (twistedChainComplexMap f (L ⊗ K))
+    (twistedChainComplexCoefficientMap (pullbackTensorIso f.hom L K).hom)
+    (twistedChainsMap f L) (twistedChainsMap f K)
+    (twistedChainComplexMap f L) (twistedChainComplexMap f K)
+    (twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality f L)
+    (twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality f K)
+  have h := congrArg (fun φ ↦ (twistedChainComplexIsoAlternatingFaceMapComplex
+      ((pullback f.hom).obj (L ⊗ K))).hom ≫ (alternatingFaceMapComplex _).map φ)
+      (twistedChainsTensorDiagonal_space_naturality f L K)
+  simpa only [Functor.map_comp, Category.assoc,
+    twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality_assoc,
+    twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality_assoc] using h
 
 end Space
 
