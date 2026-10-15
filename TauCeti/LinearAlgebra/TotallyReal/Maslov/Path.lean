@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # Relative Maslov index of paths of totally real subspaces
@@ -25,21 +26,31 @@ The relative index has the formal properties of the Robbin--Salamon Maslov index
   `μ(Λ₁ ⬝ Λ₂, Γ₁ ⬝ Γ₂) = μ(Λ₁, Γ₁) + μ(Λ₂, Γ₂)`
   (`TauCeti.TotallyRealPath.relativeMaslovIndex_trans`), and reversing both paths negates it
   (`TauCeti.TotallyRealPath.relativeMaslovIndex_symm`);
+* it is natural: moving both paths by the same continuous path of complex-linear automorphisms
+  does not change it (`TauCeti.TotallyRealPath.relativeMaslovIndex_map`);
+* it is invariant under homotopies of the pair, given by continuous two-parameter frames, during
+  which the two paths keep common endpoints
+  (`TauCeti.TotallyRealPath.relativeMaslovIndex_eq_of_homotopy`);
+* it is additive under direct sums, `μ(Λ ⊕ Λ', Γ ⊕ Γ') = μ(Λ, Γ) + μ(Λ', Γ')`
+  (`TauCeti.TotallyRealPath.relativeMaslovIndex_prod`, in
+  `TauCeti/LinearAlgebra/TotallyReal/Maslov/Prod.lean`);
 * for two loops with the same base subspace it is the difference of their Maslov indices,
   `μ(Λ, Γ) = μ(Λ) - μ(Γ)` (`TauCeti.TotallyRealLoop.relativeMaslovIndex_toTotallyRealPath`).
 
 The paths are given, like loops, by continuous frames of complex-linear automorphisms acting on
-one maximal totally real subspace; reversal (`TauCeti.TotallyRealPath.symm`) and catenation
-(`TauCeti.TotallyRealPath.trans`) are constructed on such frames.
+one maximal totally real subspace; reversal (`TauCeti.TotallyRealPath.symm`), catenation
+(`TauCeti.TotallyRealPath.trans`) and the pointwise image under a path of automorphisms
+(`TauCeti.TotallyRealPath.map`) are constructed on such frames.
 
 The Maslov phase and its loop degree follow McDuff--Salamon, *J-holomorphic Curves and Symplectic
-Topology*, 2nd ed., Appendix C.3. The relative path viewpoint and the catenation property are
-those of the Robbin--Salamon Maslov index for paths.
+Topology*, 2nd ed., Appendix C.3. The relative path viewpoint and the naturality, catenation,
+homotopy and direct-sum properties are those of the Robbin--Salamon Maslov index for paths.
 
 ## Main declarations
 
 * `TauCeti.TotallyRealPath`: paths of maximal totally real subspaces.
 * `TauCeti.TotallyRealPath.symm`, `TauCeti.TotallyRealPath.trans`: reversal and catenation.
+* `TauCeti.TotallyRealPath.map`: the pointwise image under a path of automorphisms.
 * `TauCeti.TotallyRealLoop.toTotallyRealPath`: a loop, read as a path.
 * `TauCeti.TotallyRealPath.relativeMaslovPhasePath`: the loop `t ↦ ρ(Γ t, Λ t)`.
 * `TauCeti.TotallyRealPath.relativeMaslovIndex`: its degree.
@@ -51,7 +62,8 @@ those of the Robbin--Salamon Maslov index for paths.
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
   Colloquium Publications **52**, 2012, Appendix C.3.
 * J. Robbin and D. Salamon, *The Maslov index for paths*, Topology **32** (1993), 827--844,
-  Theorem 2.3 (the axioms of the Maslov index for paths, including catenation).
+  Theorem 2.3 (the axioms of the Maslov index for paths, including naturality, catenation,
+  homotopy invariance and the direct sum).
 -/
 
 public section
@@ -176,6 +188,30 @@ theorem trans_one (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : Λ.trans Γ h 
   · congr 1
     ext
     norm_num
+
+/-- The pointwise image `t ↦ B t (Λ t)` of a path of maximal totally real subspaces under a
+continuous path `B` of complex-linear automorphisms. -/
+noncomputable def map (Λ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
+    (hB : Continuous fun t => (B t : E →L[ℂ] E)) : TotallyRealPath E where
+  toFun t := (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)
+  exists_frame := by
+    obtain ⟨L₀, hL₀, A, hA, hΛ⟩ := Λ.exists_frame
+    refine ⟨L₀, hL₀, fun t => (A t).trans (B t), ?_, fun t => ?_⟩
+    · have h : (fun t => ((A t).trans (B t) : E →L[ℂ] E)) =
+          fun t => (B t : E →L[ℂ] E) ∘L (A t : E →L[ℂ] E) := by
+        funext t
+        ext x
+        simp
+      rw [h]
+      exact hB.clm_comp hA
+    · rw [hΛ t, ← Submodule.map_comp]
+      rfl
+
+@[simp]
+theorem map_apply (Λ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
+    (hB : Continuous fun t => (B t : E →L[ℂ] E)) (t : I) :
+    Λ.map B hB t = (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) :=
+  (rfl)
 
 variable [FiniteDimensional ℂ E]
 
@@ -320,6 +356,81 @@ theorem relativeMaslovIndex_symm (Λ Γ : TotallyRealPath E)
   exact (IsMaximalTotallyReal.maslovPhase_congr_left _ (Γ.symm.isMaximalTotallyReal t) _
     (symm_apply Γ t).symm).trans
     (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (symm_apply Λ t).symm)
+
+/-- **Naturality of the relative Maslov index:** moving both paths by the same continuous path
+`B` of complex-linear automorphisms does not change their relative index,
+`μ(B Λ, B Γ) = μ(Λ, Γ)`. -/
+@[simp]
+theorem relativeMaslovIndex_map (Λ Γ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
+    (hB : Continuous fun t => (B t : E →L[ℂ] E)) (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) :
+    relativeMaslovIndex (Λ.map B hB) (Γ.map B hB) (by simp [h₀]) (by simp [h₁]) =
+      relativeMaslovIndex Λ Γ h₀ h₁ := by
+  refine (relativeMaslovIndex_eq_degree _ _ _ _ (Λ.relativeMaslovPhasePath Γ h₀ h₁)
+    fun t => ?_).trans (relativeMaslovIndex_def Λ Γ h₀ h₁).symm
+  rw [relativeMaslovPhasePath_apply, ← (Γ.isMaximalTotallyReal t).maslovPhase_map_map
+    (Λ.isMaximalTotallyReal t) (B t).toLinearEquiv]
+  exact (IsMaximalTotallyReal.maslovPhase_congr_left _ ((Γ.map B hB).isMaximalTotallyReal t) _
+    (map_apply Γ B hB t).symm).trans
+    (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (map_apply Λ B hB t).symm)
+
+/-- **Homotopy invariance of the relative Maslov index.** Let `A (s, t)` and `B (s, t)` be
+continuous two-parameter families of complex-linear automorphisms and `L₀` a maximal totally real
+subspace such that, for every `s`, the paths `t ↦ A (s, t) L₀` and `t ↦ B (s, t) L₀` have the same
+endpoints; the common endpoints may move with `s`. Then the relative index of the two paths at
+`s = 0` equals that at `s = 1`. -/
+theorem relativeMaslovIndex_eq_of_homotopy (Λ₀ Γ₀ Λ₁ Γ₁ : TotallyRealPath E)
+    {L₀ : Submodule ℝ E}
+    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀)
+    (A B : I × I → E ≃L[ℂ] E) (hA : Continuous fun p => (A p : E →L[ℂ] E))
+    (hB : Continuous fun p => (B p : E →L[ℂ] E))
+    (hΛ₀ : ∀ t, Λ₀ t = L₀.map (((A (0, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
+    (hΓ₀ : ∀ t, Γ₀ t = L₀.map (((B (0, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
+    (hΛ₁ : ∀ t, Λ₁ t = L₀.map (((A (1, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
+    (hΓ₁ : ∀ t, Γ₁ t = L₀.map (((B (1, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
+    (hAB₀ : ∀ s, L₀.map (((A (s, 0)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) =
+      L₀.map (((B (s, 0)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
+    (hAB₁ : ∀ s, L₀.map (((A (s, 1)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) =
+      L₀.map (((B (s, 1)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)) :
+    relativeMaslovIndex Λ₀ Γ₀ (by rw [hΛ₀, hΓ₀, hAB₀]) (by rw [hΛ₀, hΓ₀, hAB₁]) =
+      relativeMaslovIndex Λ₁ Γ₁ (by rw [hΛ₁, hΓ₁, hAB₀]) (by rw [hΛ₁, hΓ₁, hAB₁]) := by
+  -- The two-parameter family of relative phases
+  -- `ρ(B (s, t) L₀, A (s, t) L₀) = ρ(L₀, A (s, t) L₀) / ρ(L₀, B (s, t) L₀)`.
+  have hphase (p : I × I) : (hL₀.map_linearEquiv (B p).toLinearEquiv).maslovPhase
+      (hL₀.map_linearEquiv (A p).toLinearEquiv) =
+      hL₀.maslovPhase (hL₀.map_linearEquiv (A p).toLinearEquiv) /
+        hL₀.maslovPhase (hL₀.map_linearEquiv (B p).toLinearEquiv) :=
+    (hL₀.maslovPhase_div_maslovPhase _ _).symm
+  let F : C(I × I, Circle) :=
+    ⟨fun p => ⟨(hL₀.map_linearEquiv (B p).toLinearEquiv).maslovPhase
+        (hL₀.map_linearEquiv (A p).toLinearEquiv),
+      mem_sphere_zero_iff_norm.2 (IsMaximalTotallyReal.norm_maslovPhase _ _)⟩, by
+      refine Continuous.subtype_mk ?_ _
+      simp_rw [hphase, IsMaximalTotallyReal.maslovPhase_map]
+      refine (continuous_det_div_conj A hA).div (continuous_det_div_conj B hB) fun p => ?_
+      rw [← IsMaximalTotallyReal.maslovPhase_map hL₀]
+      exact hL₀.maslovPhase_ne_zero _⟩
+  -- At both ends of the `t`-interval the two subspaces agree, so the phase is `1` there.
+  have hF (s : I) (t : I) (h : L₀.map (((A (s, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) =
+      L₀.map (((B (s, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)) : F (s, t) = 1 :=
+    Circle.ext <| ((hL₀.map_linearEquiv (B (s, t)).toLinearEquiv).maslovPhase_congr _
+      (hL₀.map_linearEquiv (B (s, t)).toLinearEquiv) h).trans
+      (IsMaximalTotallyReal.maslovPhase_self _)
+  let γ (s : I) : Path (F (s, 0)) (F (s, 0)) :=
+    { toFun := fun t => F (s, t)
+      continuous_toFun := by fun_prop
+      source' := rfl
+      target' := (hF s 1 (hAB₁ s)).trans (hF s 0 (hAB₀ s)).symm }
+  have hμ₀ := relativeMaslovIndex_eq_degree Λ₀ Γ₀ (by rw [hΛ₀, hΓ₀, hAB₀])
+    (by rw [hΛ₀, hΓ₀, hAB₁]) (γ 0) fun t =>
+      ((IsMaximalTotallyReal.maslovPhase_congr_left _ _ _ (hΓ₀ t).symm).trans
+        (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (hΛ₀ t).symm))
+  have hμ₁ := relativeMaslovIndex_eq_degree Λ₁ Γ₁ (by rw [hΛ₁, hΓ₁, hAB₀])
+    (by rw [hΛ₁, hΓ₁, hAB₁]) (γ 1) fun t =>
+      ((IsMaximalTotallyReal.maslovPhase_congr_left _ _ _ (hΓ₁ t).symm).trans
+        (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (hΛ₁ t).symm))
+  rw [hμ₀, hμ₁]
+  exact Circle.degree_eq_of_homotopy (γ 0) (γ 1) F (fun _ => rfl) (fun _ => rfl)
+    fun s => (hF s 0 (hAB₀ s)).trans (hF s 1 (hAB₁ s)).symm
 
 /-- Compute the relative Maslov index from continuous angle lifts of the two Maslov phase paths.
 If the change in the difference of the angles is `2π n`, the relative index is `n`. -/
