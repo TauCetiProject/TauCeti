@@ -7,14 +7,17 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Isometry
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
+import Mathlib.Algebra.Ring.NonZeroDivisors
 
 /-!
 # Isometric endomorphisms of a bilinear form
 
 This file defines the predicate that an endomorphism preserves a bilinear form and provides its
-elementary API, including the bridge to Mathlib's bundled isometric maps. The isometry group and
-the determinant, base-change, and orthogonal-complement API are developed in
-`TauCeti.LinearAlgebra.BilinearForm.Isometry`.
+elementary API, including the bridge to Mathlib's bundled isometric maps. It also records that
+scaling two forms by the same non-zero-divisor preserves whether they are isometric
+(`LinearMap.BilinForm.equivalent_smul_iff`). The isometry group and the determinant, base-change,
+and orthogonal-complement API are developed in `TauCeti.LinearAlgebra.BilinearForm.Isometry`.
 -/
 
 public section
@@ -82,3 +85,21 @@ end CommSemiring
 end BilinForm
 
 end TauCeti
+
+namespace LinearMap.BilinForm
+
+open LinearMap (BilinForm)
+
+variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] {C : BilinForm R M} {C' : BilinForm R M'} {a : R}
+
+/-- Scaling two bilinear forms by the same non-zero-divisor `a` neither creates nor destroys an
+isometry between them. In particular the constituents `a • C` and `a • C'` of two Jordan splittings
+are isometric exactly when their unimodular rescalings `C` and `C'` are. -/
+theorem equivalent_smul_iff (ha : a ∈ nonZeroDivisors R) :
+    (a • C).Equivalent (a • C') ↔ C.Equivalent C' :=
+  ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
+      simpa using e.map_app y x)⟩⟩,
+    fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ by simp⟩⟩⟩
+
+end LinearMap.BilinForm

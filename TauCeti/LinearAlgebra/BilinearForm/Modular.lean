@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
-public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
@@ -31,8 +30,7 @@ This file proves the facts about modular forms that hold over every commutative 
 
 * when `a` is a non-zero-divisor, `a`-modularity is characterized by divisibility of all values
   by `a`, left separation, and the representability of `a f` for each linear functional `f`
-  (`LinearMap.BilinForm.isModular_iff`), and `a • C` and `a • C'` are isometric exactly when `C`
-  and `C'` are (`LinearMap.BilinForm.equivalent_smul_iff`);
+  (`LinearMap.BilinForm.isModular_iff`);
 * a vector `x` with `a r ∣ B x y` for all `y`, where `B` is `a`-modular and `a` and `r` are
   non-zero-divisors, is divisible by `r`
   (`LinearMap.BilinForm.IsModular.exists_eq_smul_of_forall_dvd`);
@@ -86,16 +84,6 @@ theorem exists_smul_eq_of_forall_dvd (ha : a ∈ nonZeroDivisors R) (h : ∀ x y
   · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_eq_mul]
   · ext x y
     simp [hc]
-
-/-- Scaling two bilinear forms by the same non-zero-divisor `a` neither creates nor destroys an
-isometry between them. In particular the constituents `a • C` and `a • C'` of two Jordan splittings
-are isometric exactly when their unimodular rescalings `C` and `C'` are. -/
-theorem equivalent_smul_iff {M' : Type*} [AddCommGroup M'] [Module R M'] {C : BilinForm R M}
-    {C' : BilinForm R M'} (ha : a ∈ nonZeroDivisors R) :
-    (a • C).Equivalent (a • C') ↔ C.Equivalent C' :=
-  ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
-      simpa using e.map_app y x)⟩⟩,
-    fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ by simp⟩⟩⟩
 
 end Division
 

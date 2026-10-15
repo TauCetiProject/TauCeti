@@ -48,9 +48,12 @@ On these vectors `x`, the form `B` agrees modulo `π ^ (j + 1)` with its values 
 to the constituent `N j` (`LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`): the
 form `π ^ (-j) B` modulo `π` factors through the residue form of the unimodular rescaling of `N j`.
 Comparing two splittings through these projections shows that their unimodular rescalings at each
-index have the same residue forms, which decides their isometry class when the residue
-characteristic is odd (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_equivalent`
-in `TauCeti.LinearAlgebra.BilinearForm.Henselian`).
+index have the same residue forms. For symmetric forms on finite free modules over a Henselian
+local domain with finite residue field and two invertible, this decides their isometry class
+(`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_equivalent` in
+`TauCeti.LinearAlgebra.BilinearForm.Henselian`). Without the Henselian hypothesis it fails: over
+`ℤ` localized at `3`, the rank-one forms `⟨1⟩` and `⟨7⟩` have the same residue form but are not
+isometric.
 
 ## Main definitions
 
