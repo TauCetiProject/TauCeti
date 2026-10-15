@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.Dart
 public import TauCeti.Combinatorics.SimpleGraph.NeighborChoice
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Corner
@@ -85,7 +86,8 @@ local notation "C" => signlessPreprojectiveCorner k (DoubledQuiver G)
 
 /-- The term in homological degree `n` of the Koszul complex of the zigzag simple module at `v`:
 the left module `⨁_u Hom_k(e_u Π_n e_v, Z e_u)` over the zigzag relation quotient `Z`, where `Π`
-is the signless preprojective algebra of the doubled quiver, the quadratic dual of `Z`. -/
+is the signless preprojective algebra of the doubled quiver, the quadratic dual of the quadratic
+zigzag presentation (`TauCeti.quadraticDualQuadraticZigzagEquivSignless`). -/
 abbrev ZigzagKoszulTerm (v : V) (n : ℕ) : Type _ :=
   ∀ u : V, C n (vertex G v) (vertex G u) →ₗ[k] zigzagProjective k G u
 
@@ -167,13 +169,13 @@ private theorem zigzagMk_arrow_symm_mul_arrow [Finite V] {w j : V} (h : G.Adj w 
       zigzagVolume k G w :=
   zigzagMk_ofArrow_mul_ofArrow_symm k G ⟨(j, w), h.symm⟩
 
-/-- **The Koszul complex is a complex.** Composing two differentials multiplies by a length-two
-zigzag path: it vanishes unless the path returns, and the returning paths at `w` all give the
-volume class, multiplied by the image of the signless relator `∑_{j ∼ w} (w → j → w)`, which is
-zero. -/
+/-- **The Koszul complex is a complex:** two consecutive Koszul differentials compose to zero. -/
 @[simp]
 theorem zigzagKoszulDifferential_comp_zigzagKoszulDifferential (v : V) (n : ℕ) :
     zigzagKoszulDifferential k G v n ∘ₗ zigzagKoszulDifferential k G v (n + 1) = 0 := by
+  -- Composing two differentials multiplies by a length-two zigzag path: it vanishes unless the
+  -- path returns, and the returning paths at `w` all give the volume class, multiplied by the
+  -- image of the signless relator `∑_{j ∼ w} (w → j → w)`, which is zero.
   refine LinearMap.ext fun f => funext fun w => LinearMap.ext fun y => Subtype.ext ?_
   rw [LinearMap.comp_apply, coe_zigzagKoszulDifferential_apply, LinearMap.zero_apply,
     Pi.zero_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero]
@@ -224,21 +226,11 @@ section Coordinates
 
 variable {G} (hns : ∀ i : V, ∃ j, G.Adj i j)
 
-omit [Fintype V] [DecidableRel G.Adj] in
-/-- The darts with tail `u` are the neighbours of `u`. -/
-private def dartFstEquiv (u : V) : {d : G.Dart // d.fst = u} ≃ G.neighborSet u where
-  toFun d := ⟨d.1.snd, (G.mem_neighborSet _ _).2 (Eq.mp (congrArg (G.Adj · d.1.snd) d.2) d.1.adj)⟩
-  invFun j := ⟨G.dartOfNeighborSet u j, rfl⟩
-  left_inv d := by
-    obtain ⟨⟨⟨a, b⟩, h⟩, rfl⟩ := d
-    rfl
-  right_inv _ := rfl
-
 /-- The vertex, arrow and volume basis of `Z e_u`, with the arrows indexed by the neighbours. -/
 private noncomputable def projBasis (u : V) :
     Module.Basis (Unit ⊕ G.neighborSet u ⊕ Unit) k (zigzagProjective k G u) :=
   (zigzagProjectiveBasis k G hns u).reindex
-    (Equiv.sumCongr (Equiv.refl _) (Equiv.sumCongr (dartFstEquiv u) (Equiv.refl _)))
+    (Equiv.sumCongr (Equiv.refl _) (Equiv.sumCongr (G.dartFstEquivNeighborSet u) (Equiv.refl _)))
 
 omit [DecidableRel G.Adj] in
 private theorem coe_projBasis_inl (u : V) (a : Unit) :
@@ -485,15 +477,13 @@ private theorem exists_arrowLift (hf : zigzagKoszulDifferential k G v n f = 0) (
       Subtype.ext (hyz l)
     simp only [arrowCoordSum_apply, hzl]
     exact sum_projBasis_repr_inr_of_mem_ker hns hf u ⟨y, hy⟩
-  obtain ⟨g, hg⟩ := (incomingArrowSum v (n + 1) u).exists_rightInverse_of_surjective
-    (LinearMap.range_eq_top.2 hM)
-  refine ⟨arrowCoordSum hns f u ∘ₗ g, fun l z => ?_⟩
-  have hlift := hker (g (incomingArrowSum v (n + 1) u (Pi.single l z)) - Pi.single l z) (by
-    rw [map_sub, ← LinearMap.comp_apply _ g, hg, LinearMap.id_apply, sub_self])
-  rw [map_sub, sub_eq_zero, incomingArrowSum_single] at hlift
-  rw [LinearMap.comp_apply, hlift, arrowCoordSum_apply, Finset.sum_eq_single l
-    (fun l' _ hl' => by rw [Pi.single_eq_of_ne hl', map_zero, map_zero, Finsupp.coe_zero,
-      Pi.zero_apply]) (fun h => absurd (Finset.mem_univ l) h), Pi.single_eq_same]
+  refine ⟨(incomingArrowSum v (n + 1) u).liftOfSurjective hM
+    ⟨arrowCoordSum hns f u, fun z hz =>
+      LinearMap.mem_ker.2 (hker z (LinearMap.mem_ker.1 hz))⟩, fun l z => ?_⟩
+  rw [← incomingArrowSum_single, LinearMap.equivOfSurjective_apply, arrowCoordSum_apply,
+    Finset.sum_eq_single l (fun l' _ hl' => by
+      rw [Pi.single_eq_of_ne hl', map_zero, map_zero, Finsupp.coe_zero, Pi.zero_apply])
+      (fun h => absurd (Finset.mem_univ l) h), Pi.single_eq_same]
 
 /-- Left multiplication by the arrows out of `w`, as a map into the direct sum of the graded
 corners at the neighbours of `w`. -/
@@ -567,18 +557,17 @@ private theorem exists_adj_of_forall_eq_zero
 complex `0 → e_w Π → ⨁_{j ∼ w} e_j Π` of the signless preprojective
 algebra `Π` is exact at its left end at every vertex `w`, then the Koszul complex of every zigzag
 simple module is exact in every positive homological degree: the image of the differential out of
-degree `n + 2` is the kernel of the differential out of degree `n + 1`.
-
-The three coordinates of a zigzag projective match the three terms of the signless Koszul complex:
-vertex coordinates vanish on cycles because `Π` is generated by its arrows, arrow coordinates lift
-by the exactness of the signless complex at its middle term, and volume coordinates lift by its
-exactness at its left end. -/
+degree `n + 2` is the kernel of the differential out of degree `n + 1`. -/
 theorem range_zigzagKoszulDifferential_eq_ker
     (hinj : ∀ (w : V) (y : Π), σ (vertexIdempotent k (vertex G w)) * y = y →
       (∀ (i : DoubledQuiver G) (b : i ⟶ vertex G w), σ (ofArrow (reverse b)) * y = 0) → y = 0)
     (v : V) (n : ℕ) :
     LinearMap.range (zigzagKoszulDifferential k G v (n + 1)) =
       LinearMap.ker (zigzagKoszulDifferential k G v n) := by
+  -- The three coordinates of a zigzag projective match the three terms of the signless Koszul
+  -- complex: vertex coordinates vanish on cycles because `Π` is generated by its arrows, arrow
+  -- coordinates lift by the exactness of the signless complex at its middle term, and volume
+  -- coordinates lift by its exactness at its left end.
   classical
   refine le_antisymm (LinearMap.range_le_ker_iff.2
     (zigzagKoszulDifferential_comp_zigzagKoszulDifferential k G v n)) fun f hf => ?_
