@@ -47,6 +47,14 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
   smooth at `x` with the identity as its derivative there.
+* `TauCeti.preimage_extChartAt_source_mem_nhdsWithin`,
+  `TauCeti.writtenInExtChartAt_preimage_target_mem_nhdsWithin` and
+  `TauCeti.mfderiv_comp_mfderivWithin_extChartAt_symm`: near a chart point `z` of the source chart
+  at `x` whose image under `f` lies in the target chart at `f x`, the map
+  `writtenInExtChartAt I I' x f` stays in that target chart, and the manifold derivative of `f`
+  read through the inverse source chart is the inverse target chart applied after the Fréchet
+  derivative of `writtenInExtChartAt I I' x f` within `range I`, at `z` rather than only at the
+  chart centre.
 -/
 
 public section
@@ -234,5 +242,83 @@ theorem contMDiffAt_chartAt_comp {n : WithTop ℕ∞} (x : N) :
   exact contMDiffAt_iff.2 ⟨(chartAt X x).continuousAt (mem_chart_source X x),
     contDiffWithinAt_id.congr_of_eventuallyEq (writtenInExtChartAt_chartAt_comp_eventuallyEq x)
       (writtenInExtChartAt_chartAt_comp x (mem_extChartAt_target x))⟩
+
+end TauCeti
+
+/-! ### Maps between manifolds, read near a point of the preferred source chart -/
+
+namespace TauCeti
+
+variable {f : M → M'} {x : M} {z : E}
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Near a chart point whose image lies in the target chart at `f x`, the source chart inverse
+followed by `f` stays in that target chart. -/
+theorem preimage_extChartAt_source_mem_nhdsWithin
+    (hz : z ∈ (extChartAt I x).target) (hf : ContinuousAt f ((extChartAt I x).symm z))
+    (hfz : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source) :
+    (f ∘ (extChartAt I x).symm) ⁻¹' (extChartAt I' (f x)).source ∈ 𝓝[range I] z :=
+  (hf.comp (continuousAt_extChartAt_symm'' hz)).continuousWithinAt.preimage_mem_nhdsWithin
+    (extChartAt_source_mem_nhds' hfz)
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Near a chart point whose image lies in the target chart at `f x`,
+`writtenInExtChartAt I I' x f` stays in the target of that chart. -/
+theorem writtenInExtChartAt_preimage_target_mem_nhdsWithin
+    (hz : z ∈ (extChartAt I x).target) (hf : ContinuousAt f ((extChartAt I x).symm z))
+    (hfz : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source) :
+    writtenInExtChartAt I I' x f ⁻¹' (extChartAt I' (f x)).target ∈ 𝓝[range I] z := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hz,
+    preimage_extChartAt_source_mem_nhdsWithin hz hf hfz] with w hw hfw
+  exact writtenInExtChartAt_mapsTo ⟨hw, hfw⟩
+
+/-- The manifold derivative of `f`, read through the source chart inverse, agrees with the
+target chart inverse composed with the flat derivative of `writtenInExtChartAt I I' x f`. -/
+theorem mfderiv_comp_mfderivWithin_extChartAt_symm
+    (hz : z ∈ (extChartAt I x).target) (hf : MDifferentiableAt I I' f ((extChartAt I x).symm z))
+    (hfz : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source) :
+    (mfderiv I I' f ((extChartAt I x).symm z)).comp
+        (mfderivWithin 𝓘(𝕜, E) I (extChartAt I x).symm (range I) z) =
+      (mfderivWithin 𝓘(𝕜, E') I' (extChartAt I' (f x)).symm (range I')
+          (extChartAt I' (f x) (f ((extChartAt I x).symm z)))).comp
+        (fderivWithin 𝕜 (writtenInExtChartAt I I' x f) (range I) z : E →L[𝕜] E') := by
+  let g : E → E' := writtenInExtChartAt I I' x f
+  have hgz : g z = extChartAt I' (f x) (f ((extChartAt I x).symm z)) := rfl
+  have hgzt : g z ∈ (extChartAt I' (f x)).target := by
+    rw [hgz]
+    exact (extChartAt I' (f x)).map_source hfz
+  have hsource : MDifferentiableWithinAt 𝓘(𝕜, E) I (extChartAt I x).symm (range I) z :=
+    mdifferentiableWithinAt_extChartAt_symm hz
+  have hchart :
+      MDifferentiableAt I' 𝓘(𝕜, E') (extChartAt I' (f x)) (f ((extChartAt I x).symm z)) :=
+    mdifferentiableAt_extChartAt (by simpa using hfz)
+  have hg : MDifferentiableWithinAt 𝓘(𝕜, E) 𝓘(𝕜, E') g (range I) z := by
+    simpa only [g, writtenInExtChartAt, Function.comp_assoc] using
+      hchart.comp_mdifferentiableWithinAt z (hf.comp_mdifferentiableWithinAt z hsource)
+  have hlocalSource := preimage_extChartAt_source_mem_nhdsWithin hz hf.continuousAt hfz
+  have hpreTarget :=
+    writtenInExtChartAt_preimage_target_mem_nhdsWithin hz hf.continuousAt hfz
+  have hu : UniqueMDiffWithinAt 𝓘(𝕜, E) (range I) z := by
+    rw [uniqueMDiffWithinAt_iff_uniqueDiffWithinAt]
+    exact I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x hz)
+  have hleft : (extChartAt I' (f x)).symm ∘ g =ᶠ[𝓝[range I] z]
+      f ∘ (extChartAt I x).symm := by
+    filter_upwards [hpreTarget, hlocalSource] with w hw hfw
+    exact (extChartAt I' (f x)).left_inv hfw
+  have hleft_z : ((extChartAt I' (f x)).symm ∘ g) z = (f ∘ (extChartAt I x).symm) z :=
+    (extChartAt I' (f x)).left_inv hfz
+  have hcompTarget :=
+    mfderivWithin_comp_of_preimage_mem_nhdsWithin_of_eq
+      (I := 𝓘(𝕜, E)) (I' := 𝓘(𝕜, E')) (I'' := I')
+      (f := g) (g := (extChartAt I' (f x)).symm) (s := range I) (u := range I')
+      (x := z) (y := g z) (mdifferentiableWithinAt_extChartAt_symm hgzt) hg
+      (Filter.mem_of_superset hpreTarget
+        (preimage_mono (extChartAt_target_subset_range (f x)))) hu rfl
+  have hflat : mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E') g (range I) z = fderivWithin 𝕜 g (range I) z :=
+    mfderivWithin_eq_fderivWithin
+  refine Eq.trans ?_ (congrArg (fun L ↦ (mfderivWithin 𝓘(𝕜, E') I'
+    (extChartAt I' (f x)).symm (range I') (g z)).comp L) hflat)
+  rw [← hcompTarget, ← mfderiv_comp_mfderivWithin z hf hsource hu]
+  exact (hleft.mfderivWithin_eq hleft_z).symm
 
 end TauCeti

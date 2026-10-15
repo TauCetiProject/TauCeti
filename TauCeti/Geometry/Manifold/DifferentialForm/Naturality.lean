@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # Naturality of the exterior derivative on manifolds
@@ -46,77 +47,7 @@ variable {E H M E' H' M' F : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
-/-- Near a chart point whose image lies in the target chart at `f x`, the source chart inverse
-followed by `f` stays in that target chart. -/
-private theorem preimage_extChartAt_source_mem_nhdsWithin {f : M → M'} {x : M} {z : E}
-    (hz : z ∈ (extChartAt I x).target) (hf : ContinuousAt f ((extChartAt I x).symm z))
-    (hfz : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source) :
-    (f ∘ (extChartAt I x).symm) ⁻¹' (extChartAt I' (f x)).source ∈ 𝓝[range I] z :=
-  (hf.comp (continuousAt_extChartAt_symm'' hz)).continuousWithinAt.preimage_mem_nhdsWithin
-    (extChartAt_source_mem_nhds' hfz)
-
-/-- Near such a chart point, `writtenInExtChartAt I I' x f` stays in the target chart at
-`f x`. -/
-private theorem writtenInExtChartAt_preimage_target_mem_nhdsWithin {f : M → M'} {x : M}
-    {z : E} (hz : z ∈ (extChartAt I x).target) (hf : ContinuousAt f ((extChartAt I x).symm z))
-    (hfz : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source) :
-    writtenInExtChartAt I I' x f ⁻¹' (extChartAt I' (f x)).target ∈ 𝓝[range I] z := by
-  filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hz,
-    preimage_extChartAt_source_mem_nhdsWithin hz hf hfz] with w hw hfw
-  exact writtenInExtChartAt_mapsTo ⟨hw, hfw⟩
-
 variable [IsManifold I 2 M] [IsManifold I' 2 M']
-
-/-- The manifold derivative of `f`, read through the source chart inverse, agrees with the
-target chart inverse composed with the flat derivative of `writtenInExtChartAt I I' x f`. -/
-private theorem mfderiv_comp_mfderivWithin_extChartAt_symm {f : M → M'} {x : M} {z : E}
-    (hz : z ∈ (extChartAt I x).target) (hf : MDifferentiableAt I I' f ((extChartAt I x).symm z))
-    (hfz : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source) :
-    (mfderiv I I' f ((extChartAt I x).symm z)).comp
-        (mfderivWithin (modelWithCornersSelf ℝ E) I (extChartAt I x).symm (range I) z) =
-      (mfderivWithin (modelWithCornersSelf ℝ E') I' (extChartAt I' (f x)).symm (range I')
-          (extChartAt I' (f x) (f ((extChartAt I x).symm z)))).comp
-        (fderivWithin ℝ (writtenInExtChartAt I I' x f) (range I) z : E →L[ℝ] E') := by
-  let g : E → E' := writtenInExtChartAt I I' x f
-  have hgz : g z = extChartAt I' (f x) (f ((extChartAt I x).symm z)) := rfl
-  have hgzt : g z ∈ (extChartAt I' (f x)).target := by
-    rw [hgz]
-    exact (extChartAt I' (f x)).map_source hfz
-  have hsource : MDifferentiableWithinAt (modelWithCornersSelf ℝ E) I
-      (extChartAt I x).symm (range I) z :=
-    mdifferentiableWithinAt_extChartAt_symm hz
-  have hchart : MDifferentiableAt I' (modelWithCornersSelf ℝ E')
-      (extChartAt I' (f x)) (f ((extChartAt I x).symm z)) :=
-    mdifferentiableAt_extChartAt (by simpa using hfz)
-  have hg : MDifferentiableWithinAt (modelWithCornersSelf ℝ E)
-      (modelWithCornersSelf ℝ E') g (range I) z := by
-    simpa only [g, writtenInExtChartAt, Function.comp_assoc] using
-      hchart.comp_mdifferentiableWithinAt z (hf.comp_mdifferentiableWithinAt z hsource)
-  have hlocalSource := preimage_extChartAt_source_mem_nhdsWithin hz hf.continuousAt hfz
-  have hpreTarget :=
-    writtenInExtChartAt_preimage_target_mem_nhdsWithin hz hf.continuousAt hfz
-  have hu : UniqueMDiffWithinAt (modelWithCornersSelf ℝ E) (range I) z := by
-    rw [uniqueMDiffWithinAt_iff_uniqueDiffWithinAt]
-    exact I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x hz)
-  have hleft : (extChartAt I' (f x)).symm ∘ g =ᶠ[𝓝[range I] z]
-      f ∘ (extChartAt I x).symm := by
-    filter_upwards [hpreTarget, hlocalSource] with w hw hfw
-    exact (extChartAt I' (f x)).left_inv hfw
-  have hleft_z : ((extChartAt I' (f x)).symm ∘ g) z = (f ∘ (extChartAt I x).symm) z :=
-    (extChartAt I' (f x)).left_inv hfz
-  have hcompTarget :=
-    mfderivWithin_comp_of_preimage_mem_nhdsWithin_of_eq
-      (I := modelWithCornersSelf ℝ E) (I' := modelWithCornersSelf ℝ E') (I'' := I')
-      (f := g) (g := (extChartAt I' (f x)).symm) (s := range I) (u := range I')
-      (x := z) (y := g z) (mdifferentiableWithinAt_extChartAt_symm hgzt) hg
-      (mem_of_superset hpreTarget (preimage_mono (extChartAt_target_subset_range (f x)))) hu rfl
-  have hflat : mfderivWithin (modelWithCornersSelf ℝ E)
-      (modelWithCornersSelf ℝ E') g (range I) z = fderivWithin ℝ g (range I) z :=
-    mfderivWithin_eq_fderivWithin
-  refine Eq.trans ?_ (congrArg (fun L ↦ (mfderivWithin (modelWithCornersSelf ℝ E') I'
-    (extChartAt I' (f x)).symm (range I') (g z)).comp L) hflat)
-  rw [← hcompTarget, ← mfderiv_comp_mfderivWithin z hf hsource hu]
-  exact (hleft.mfderivWithin_eq hleft_z).symm
 
 private theorem RoughForm.inChartAt_mpullback_eventuallyEq
     {f : M → M'} (hf : ContMDiff I I' 2 f) (phi : RoughForm I' M' F k) (x : M) :
