@@ -224,8 +224,8 @@ theorem isAbelianGalois_classField_iff {V : OpenNormalSubgroup (AbsoluteGaloisGr
     IsAbelianGalois F (classField F V) ↔ V.IsAbelianClassFieldLayer := by
   rw [V.isAbelianClassFieldLayer_iff_isMulCommutative]
   let e := (galClassFieldEquiv V).trans (NormalLayer.galOfOpenNormalEquiv V)
-  exact ⟨fun h ↦ e.surjective.isMulCommutative h.toIsMulCommutative,
-    fun h ↦ { toIsMulCommutative := e.symm.surjective.isMulCommutative h }⟩
+  exact ⟨fun h ↦ have := h.toIsMulCommutative; e.surjective.isMulCommutative,
+    fun _ ↦ { toIsMulCommutative := e.symm.surjective.isMulCommutative }⟩
 
 end Layer
 

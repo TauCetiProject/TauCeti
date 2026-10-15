@@ -46,7 +46,7 @@ private def coinvariantsLeg (y : FundamentalGroupoid X) :
 private lemma map_coinvariantsLeg {y z : FundamentalGroupoid X} (p : y ⟶ z) :
     L.map p ≫ coinvariantsLeg L x z = coinvariantsLeg L x y := by
   ext a
-  let g : FundamentalGroup X x := inv (returnPath x y) ≫ p ≫ returnPath x z
+  let g : FundamentalGroup X x := .of (inv (returnPath x y) ≫ p ≫ returnPath x z)
   have hg : monodromyRepresentation L x g (L.map (returnPath x y) a) =
       L.map (returnPath x z) (L.map p a) := by
     simp only [monodromyRepresentation_apply, ← L.map_comp_apply, g]
@@ -69,7 +69,7 @@ private def isColimitCoinvariantsCocone : IsColimit (coinvariantsCocone L x) whe
   desc s := ModuleCat.ofHom (Representation.Coinvariants.lift _
     (s.ι.app (FundamentalGroupoid.mk x)).hom (fun g ↦ by
       ext a
-      exact s.w_apply g a))
+      exact s.w_apply g.asHom a))
   fac s y := by
     ext a
     simp only [coinvariantsCocone, coinvariantsLeg, ModuleCat.hom_comp, LinearMap.comp_apply,
@@ -87,7 +87,7 @@ private def isColimitCoinvariantsCocone : IsColimit (coinvariantsCocone L x) whe
         (L.map (returnPath x (FundamentalGroupoid.mk x)) a) =
         Representation.Coinvariants.mk (monodromyRepresentation L x) a :=
       Representation.Coinvariants.mk_self_apply (monodromyRepresentation L x)
-        (returnPath x (FundamentalGroupoid.mk x)) a
+        (.of (returnPath x (FundamentalGroupoid.mk x))) a
     rw [hm] at h
     exact h
 
@@ -108,7 +108,7 @@ lemma ιTwistedHomology₀_isoCoinvariants_hom :
   refine h.trans ?_
   ext a
   exact Representation.Coinvariants.mk_self_apply (monodromyRepresentation L x)
-    (returnPath x (FundamentalGroupoid.mk x)) a
+    (.of (returnPath x (FundamentalGroupoid.mk x))) a
 
 /-- At any point, transport to the basepoint followed by the monodromy quotient computes
 the coinvariant class. Any path to the basepoint gives the same answer. -/

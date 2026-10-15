@@ -323,16 +323,17 @@ the shape a change of representative produces below. -/
 private theorem res_ρ_comm_ρAut_hom {L M N : Type u} [Group L] [Monoid M] [Monoid N]
     (A : FDRep k L) (g : L) (φ : M →* N) (σ : N →* L) (σ' : M →* L)
     (hg : ∀ y : M, g * σ (φ y) = σ' y * g) (y : M) :
-    ((Action.res (FGModuleCat k) φ).obj ((Action.res (FGModuleCat k) σ).obj A)).ρ y ≫
-        (Action.ρAut A g).hom =
-      (Action.ρAut A g).hom ≫ ((Action.res (FGModuleCat k) σ').obj A).ρ y := by
+    (((Action.res (FGModuleCat k) φ).obj ((Action.res (FGModuleCat k) σ).obj A)).ρ y).asHom ≫
+        (Action.ρAut A g).asIso.hom =
+      (Action.ρAut A g).asIso.hom ≫ (((Action.res (FGModuleCat k) σ').obj A).ρ y).asHom := by
   -- Both restricted actions are, by the definition of `Action.res`, the action of `A` composed
   -- with the homomorphism, and this reads them that way.  `Action.res_obj_ρ` is not usable as a
   -- rewrite here: it rewrites the restricted action into one valued in `End A.V`, where the goal
   -- is composing endomorphisms of `((Action.res _ σ').obj A).V`, and those two objects agree only
   -- by unfolding `Action.res`, so the rewritten goal is rejected as not type-correct.  Stating the
   -- step once, here, is what keeps that reading out of the two isomorphisms built below.
-  change Action.ρ A (σ (φ y)) ≫ Action.ρ A g = Action.ρ A g ≫ Action.ρ A (σ' y)
+  change (Action.ρ A (σ (φ y))).asHom ≫ (Action.ρ A g).asHom =
+    (Action.ρ A g).asHom ≫ (Action.ρ A (σ' y)).asHom
   rw [← End.mul_asHom, ← End.mul_asHom, ← map_mul, ← map_mul, hg]
 
 open CategoryTheory in
@@ -356,7 +357,7 @@ theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep 
   let α : (Action.res (FGModuleCat k) ((mackeySubgroupOfCongr hh₁ hh₂ s) : _ →* _)).obj
         (Subgroup.resFDRep ((mackeySubgroup (h₁ * s * h₂) K H).subgroupOf H) A) ≅
       Subgroup.resFDRep ((mackeySubgroup s K H).subgroupOf H) A :=
-    Action.mkIso (Action.ρAut A (⟨h₁, hh₁⟩ : H)⁻¹) <|
+    Action.mkIso (Action.ρAut A (⟨h₁, hh₁⟩ : H)⁻¹).asIso <|
       res_ρ_comm_ρAut_hom A (⟨h₁, hh₁⟩ : H)⁻¹ _ _ _ fun y => Subtype.ext (by
         simp only [MonoidHom.coe_ofClass, Subgroup.coe_subtype, coe_mackeySubgroupOfCongr_apply,
           Subgroup.coe_mul, Subgroup.coe_inv]
@@ -366,7 +367,7 @@ theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep 
   let β : (Action.res (FGModuleCat k) ((mackeySubgroupOfCongr hh₁ hh₂ s) : _ →* _)).obj
         ((Action.res (FGModuleCat k) (mackeyToH (h₁ * s * h₂) K H)).obj B) ≅
       (Action.res (FGModuleCat k) (mackeyToH s K H)).obj B :=
-    Action.mkIso (Action.ρAut B ⟨h₂, hh₂⟩) <|
+    Action.mkIso (Action.ρAut B ⟨h₂, hh₂⟩).asIso <|
       res_ρ_comm_ρAut_hom B ⟨h₂, hh₂⟩ _ _ _ fun y => Subtype.ext (by
         simp only [MonoidHom.coe_ofClass, coe_mackeyToH_apply, coe_mackeySubgroupOfCongr_apply,
           Subgroup.coe_mul]

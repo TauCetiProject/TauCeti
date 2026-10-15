@@ -94,10 +94,10 @@ universe w v u
 
 namespace TopCat
 
+section General
+
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
-
-section General
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [CategoryWithHomology C]
   [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]

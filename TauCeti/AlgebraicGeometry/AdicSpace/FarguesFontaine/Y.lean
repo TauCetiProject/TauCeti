@@ -132,8 +132,10 @@ theorem spaY_eq_spa_inter_basicOpen (ϖ : R) :
       basicOpen ((p : WittVector p R) * teichmuller p ϖ)
         ((p : WittVector p R) * teichmuller p ϖ) := by
   ext v
-  rw [basicOpen_self, mem_spaY_iff, Set.mem_inter_iff, Set.mem_ofPred_eq, ← mem_supp_iff,
-    Ideal.IsPrime.mul_mem_iff_mem_or_mem inferInstance, not_or]
+  rw [basicOpen_self, mem_spaY_iff, Set.mem_inter_iff]
+  refine and_congr_right fun _ ↦ ?_
+  rw [Set.mem_ofPred_eq, ← mem_supp_iff, Ideal.IsPrime.mul_mem_iff_mem_or_mem inferInstance,
+    not_or]
 
 /-- **`𝒴` is open in `Spa(𝕎 R, 𝕎 R)`.** -/
 theorem isOpen_val_preimage_spaY (ϖ : R) :

@@ -72,7 +72,7 @@ theorem exists_naiveHeight_pointMap_le (f : Hom W₁ W₂) :
   have hP := P.naiveHeight_nonneg
   rcases P with _ | ⟨x, y, h⟩
   · rw [← Point.zero_def, pointMap_zero, Point.naiveHeight_zero]
-    positivity
+    exact add_nonneg (mul_nonneg (Nat.cast_nonneg _) hP) (le_max_right _ _)
   by_cases hd : φ.xRatFunc.denom.eval x = 0
   · rw [(pointMap_ofIsogeny_some_eq_zero_iff h).mpr hd, Point.naiveHeight_zero]
     positivity

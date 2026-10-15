@@ -101,7 +101,8 @@ theorem W1p.norm_hyperplaneTrace_le_norm_restrictL (a : ℝ)
   refine (W1p.denseRange_ofTestFunctionₗ_top
     (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)).induction_on u
       (isClosed_le (W1p.hyperplaneTrace a).continuous.norm
-        (W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)).continuous.norm)
+        (W1p.restrictL (mu := volume) (p := 2)
+          (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)).continuous.norm)
       (norm_hyperplaneTrace_ofTestFunction_le a)
 
 /-- Whole-space extensions whose values agree almost everywhere on the right-hand half-space

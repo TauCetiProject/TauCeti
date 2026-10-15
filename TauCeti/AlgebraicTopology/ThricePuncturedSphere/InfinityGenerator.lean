@@ -80,7 +80,8 @@ theorem map_directionAtInf_bijective (z : puncturedNeighborhoodInf) :
         (FundamentalGroup.map (⟨infBallHomeomorph, infBallHomeomorph.continuous⟩ :
           C(puncturedNeighborhoodInf, ↥(ball (0 : ℂ) (1 / 2) \ {0}))) z) := by
     dsimp only [directionAtInf]
-    exact funext fun γ => FundamentalGroupoid.map_comp_map _ _ γ
+    exact funext fun γ =>
+      CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
   rw [hcomp]
   have hhome : ⇑(FundamentalGroup.homeomorphMulEquiv infBallHomeomorph z) =
       ⇑(FundamentalGroup.map
@@ -101,8 +102,9 @@ theorem infFundamentalGroupMulEquivInt_fromPath {z : puncturedNeighborhoodInf} (
     infFundamentalGroupMulEquivInt z (FundamentalGroup.fromPath (.mk γ)) =
       Multiplicative.ofAdd (Circle.degree (γ.map directionAtInf.continuous)) := by
   simp only [infFundamentalGroupMulEquivInt, MulEquiv.trans_apply,
-    MulEquiv.ofBijective_apply, FundamentalGroup.map_apply,
-    ← Path.Homotopic.Quotient.mk_map, Circle.fundamentalGroupMulEquiv_fromPath]
+    MulEquiv.ofBijective_apply]
+  -- The image of the class of `γ` is, by definition, the class of the mapped loop.
+  exact Circle.fundamentalGroupMulEquiv_fromPath _
 
 /-- The standard punctured neighborhood of infinity is path connected: in the coordinate `w = 1/z`
 it is a punctured disc, which is homotopy equivalent to a circle. -/
@@ -194,11 +196,14 @@ theorem transport_δInf_eq_periphInf :
       (FundamentalGroup.map
         (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodInf, _)) infBasePt
         (FundamentalGroup.fromPath (.mk δInf))) = periphInf := by
-  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map, map_val_δInf,
+  rw [show FundamentalGroup.map (⟨Subtype.val, continuous_subtype_val⟩ :
+        C(puncturedNeighborhoodInf, _)) infBasePt (FundamentalGroup.fromPath (.mk δInf)) =
+      FundamentalGroup.fromPath (.mk (δInf.map continuous_subtype_val)) from rfl, map_val_δInf,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periphInf_eq_fromPath]
   -- The imported identity uses generic quotient notation, whereas the transport API uses
   -- `Path.Homotopic.Quotient.mk`; both denote the same homotopy class.
-  exact (Path.Homotopic.Quotient.trans_assoc (.mk αPlus) (.mk δ.symm) (.mk αPlus.symm)).symm
+  exact congrArg CategoryTheory.End.of
+    (Path.Homotopic.Quotient.trans_assoc (.mk αPlus) (.mk δ.symm) (.mk αPlus.symm)).symm
 
 /-- Transporting the included positive local generator along any path gives the peripheral
 conjugacy class at infinity. Thus the class is independent of the transporting path. -/

@@ -263,7 +263,8 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
       infiniteInvMap u ((ideleLocalization K x).2 u) = 0 := by
     rw [ideleLocalization_snd_apply,
       ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
-        IsSepClosed.lift χ hχ a (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
+        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ a
+        (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
   -- At `v` the invariant is `v(π) · χ_v(Frob) = 1 / n`.
   have hv : invMap (v.adicCompletion K) ((ideleLocalization K x).1 v) =
       ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by

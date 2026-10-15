@@ -118,6 +118,22 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable [Algebr
     k F (P.center hR) fun P' ↦ ?_
   rw [hs P', ofPrime_center]
 
+omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
+open _root_.IntermediateField _root_.IntermediateField.algebraAdjoinAdjoin in
+/-- For `t` transcendental over `k`, the integral closure in `F'` of the integral closure `R_t` of
+`k[t]` in `F` is a finite `R_t`-module: it is also the integral closure of `k[t]` in `F'`, which
+is finite over `k[t]` with no separability hypothesis. -/
+private theorem finite_integralClosure_integralClosure_adjoin {t : F} (htr : Transcendental k t)
+    [FiniteDimensional k⟮t⟯ F'] :
+    Module.Finite (integralClosure (Algebra.adjoin k {t}) F)
+      (integralClosure (integralClosure (Algebra.adjoin k {t}) F) F') := by
+  let R := integralClosure (Algebra.adjoin k {t}) F
+  let S := integralClosure R F'
+  have : IsIntegralClosure S (Algebra.adjoin k {t}) F' := IsIntegralClosure.tower_bot (A := R)
+  have : Module.Finite (Algebra.adjoin k {t}) S :=
+    IsIntegralClosure.finite_adjoin_of_transcendental k htr F' S
+  exact Module.Finite.of_restrictScalars_finite (Algebra.adjoin k {t}) R S
+
 open _root_.IntermediateField _root_.IntermediateField.algebraAdjoinAdjoin in
 /-- **The fundamental identity** (Stichtenoth, Theorem 3.1.11) at an arbitrary place `P` of an
 algebraic function field `F / k`, for an extension `F' / k'` whose extension of function fields
@@ -150,11 +166,7 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
   have : IsDedekindDomain S := integralClosure.isDedekindDomain R F F'
   have : IsFractionRing S F' := integralClosure.isFractionRing_of_finite_extension F F'
   -- `S` is also the integral closure of `k[t]` in `F'`, hence finite over `k[t]` and over `R`.
-  have : Module.Finite R S := by
-    have : IsIntegralClosure S (Algebra.adjoin k {t}) F' := IsIntegralClosure.tower_bot (A := R)
-    have : Module.Finite (Algebra.adjoin k {t}) S :=
-      IsIntegralClosure.finite_adjoin_of_transcendental k htr F' S
-    exact Module.Finite.of_restrictScalars_finite (Algebra.adjoin k {t}) R S
+  have : Module.Finite R S := finite_integralClosure_integralClosure_adjoin k F htr
   -- `P` is finite on `R`, since `t` has no pole at `P`.
   have hR : ∀ r : R, algebraMap R F r ∈ P.integers := fun r ↦
     P.mem_integers_iff.mpr
