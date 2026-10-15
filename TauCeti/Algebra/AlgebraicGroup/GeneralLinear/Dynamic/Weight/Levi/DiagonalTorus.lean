@@ -77,24 +77,25 @@ private theorem mapPointsFunctor_weightLeviDiagonalCoordinateMap_app
         (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))) A) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
         (weightLeviDefiningHopfIdeal R w) A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (weightLeviDiagonalCoordinateMap R w)).app A f) =
       diagonalTorusPoints f := by
-  -- `quotientPointsHom` and `mapPointsFunctor` use definitionally equal presentations of the
+  -- `quotientPointsHom` and `CommHopfAlgCat.Hom.mapPointsFunctor` use definitionally equal
+  -- presentations of the
   -- quotient point type, but no theorem rewrites across the residual `GrpCat` wrapper.
-  change (CommHopfAlgCat.mapPointsFunctor
+  change (CommHopfAlgCat.Hom.mapPointsFunctor
       (CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
         (weightLeviDefiningHopfIdeal R w))).app A
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (weightLeviDiagonalCoordinateMap R w)).app A f) = _
-  rw [← CommHopfAlgCat.mapPointsFunctor_comp_app_apply,
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
     weightLeviCoordinateMap_comp_weightLeviDiagonalCoordinateMap]
   exact mapPointsFunctor_diagonalTorusCoordinateMap_app A f
 
 private theorem bijective_mapPointsFunctor_weightLeviDiagonalCoordinateMap_app
     (w : Fin N → ℤ) (hw : Function.Injective w) (A : CommAlgCat.{u} R) :
     Function.Bijective
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (weightLeviDiagonalCoordinateMap R w)).app A) := by
   constructor
   · intro f g hfg
@@ -138,7 +139,7 @@ private theorem bijective_mapPointsFunctor_weightLeviDiagonalCoordinateMap_app
 
 private theorem isIso_mapPointsFunctor_weightLeviDiagonalCoordinateMap
     (w : Fin N → ℤ) (hw : Function.Injective w) :
-    IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (weightLeviDiagonalCoordinateMap R w)) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro A
@@ -153,7 +154,7 @@ noncomputable def weightLeviDiagonalCoordinateIso
       CommHopfAlgCat.of R
         (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) := by
   let f := weightLeviDiagonalCoordinateMap R w
-  let _ : IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u} f) := by
+  let _ : IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} f) := by
     dsimp only [f]
     exact isIso_mapPointsFunctor_weightLeviDiagonalCoordinateMap R w hw
   let _ : IsIso f := CommHopfAlgCat.isIso_of_isIso_mapPointsFunctor f

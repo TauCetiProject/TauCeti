@@ -77,7 +77,8 @@ def integralBocksteinShortExact (n : ℕ) [NeZero n] :
     AddEquiv.ulift.toAddMonoidHom
   incl_equivariant := fun _ _ ↦ rfl
   proj_equivariant := fun _ _ ↦ rfl
-  incl_injective := nsmul_right_injective (NeZero.ne n)
+  incl_injective a b h := ULift.ext <| nsmul_right_injective (NeZero.ne n) <| by
+    simpa using congrArg ULift.down h
   proj_surjective := AddEquiv.ulift.symm.surjective.comp
     (ZMod.intCast_surjective.comp AddEquiv.ulift.surjective)
   exact x := by

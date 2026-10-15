@@ -75,7 +75,7 @@ theorem _root_.IsCoveringMap.joinedIn_preimage_monodromy (hp : IsCoveringMap p) 
   have he : p (e : E) = x := e.2
   have h₀ : γ.toContinuousMap 0 = p e := by simp [he]
   refine ⟨⟨hp.liftPath γ.toContinuousMap e h₀, hp.liftPath_zero .., ?_⟩, fun t => ?_⟩
-  · exact (hp.coe_monodromy_mk γ e h₀).symm
+  · exact (hp.coe_monodromy_mk γ e).symm
   · rw [Set.mem_preimage, Path.coe_mk', ← Function.comp_apply (f := p), hp.liftPath_lifts]
     exact hγ t
 
@@ -86,8 +86,8 @@ theorem _root_.IsCoveringMap.joinedIn_preimage_iff (hp : IsCoveringMap p) {V : S
     (hv : v ∈ V) (e e' : p ⁻¹' {v}) :
     JoinedIn (p ⁻¹' V) (e : E) (e' : E) ↔
       ∃ g : FundamentalGroup V ⟨v, hv⟩,
-        hp.monodromy (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩ g) e =
-          e' := by
+        hp.monodromy (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩ g).toPath
+          e = e' := by
   have he : p (e : E) = v := e.2
   have he' : p (e' : E) = v := e'.2
   constructor
@@ -98,7 +98,10 @@ theorem _root_.IsCoveringMap.joinedIn_preimage_iff (hp : IsCoveringMap p) {V : S
     have hδ : FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩
         (FundamentalGroup.fromPath (.mk (γ.codRestrict (x := ⟨v, hv⟩) (y := ⟨v, hv⟩) hγ))) =
           FundamentalGroup.fromPath (.mk γ) := by
-      rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map]
+      refine CategoryTheory.End.ext ?_
+      rw [FundamentalGroup.map_apply_asHom]
+      dsimp only [FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
+      rw [← Path.Homotopic.Quotient.mk_map]
       exact congrArg _ (Path.map_codRestrict (x := ⟨v, hv⟩) (y := ⟨v, hv⟩) γ hγ)
     refine ⟨FundamentalGroup.fromPath (.mk (γ.codRestrict (x := ⟨v, hv⟩) (y := ⟨v, hv⟩) hγ)), ?_⟩
     rw [hδ]
@@ -107,9 +110,12 @@ theorem _root_.IsCoveringMap.joinedIn_preimage_iff (hp : IsCoveringMap p) {V : S
     exact eq_of_heq ((Path.Homotopic.Quotient.cast_heq _ _).trans
       (Path.Homotopic.Quotient.cast_heq _ _)).symm
   · rintro ⟨g, rfl⟩
+    obtain ⟨g⟩ := g
     induction g using Path.Homotopic.Quotient.ind with | mk δ => ?_
     -- The lift of a loop of `V` is a path in `p ⁻¹' V`.
-    rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map]
+    simp only [FundamentalGroup.toPath, FundamentalGroup.toArrow,
+      FundamentalGroup.map_apply_asHom]
+    rw [← Path.Homotopic.Quotient.mk_map]
     exact hp.joinedIn_preimage_monodromy _ (fun t => (δ t).2) e
 
 /-- **Every point over a path-connected `V` is joined over `V` to the fibre over `v`.** Lifting a

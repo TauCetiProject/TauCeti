@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import Mathlib.Probability.HasLaw
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Weighted Monge–Ampère measures of transport potentials
@@ -38,6 +39,20 @@ solution of its transport equation
 (`TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq`, in
 `TauCeti.MeasureTheory.OptimalTransport.Brenier`).
 
+A weak solution need not be an *Aleksandrov* solution, one whose unweighted measure
+`MA_f(s) = ρ(∂f(s ∩ D))`, for an additive Haar measure `ρ`, is `g₀ / g₁(∇f) dx`. For `ν = g ρ` with
+`g` finite almost everywhere, the transport identity holds for every weight `h`,
+`MA_{f, h ν} = h (T x) μ`, and splitting `ρ` into `g⁻¹ ν` and its restriction to `{g = 0}` gives
+
+  `MA_f = (g ∘ T)⁻¹ μ + MA_{f, ρ|{g = 0}}`.
+
+The second term is subgradient mass that the target does not see, and it vanishes exactly when
+`ρ(∂f(D) ∩ {g = 0}) = 0`. This holds when every slope of `f` lies in the closure of a convex set
+on which `g` is positive almost everywhere, because the frontier of a convex set is null. The
+Brenier corollary is
+`TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq_withDensity`,
+in `TauCeti.MeasureTheory.OptimalTransport.Brenier`.
+
 ## Main statements
 
 * `TauCeti.mongeAmpereMeasure_eq_of_hasLaw` — a transport map from `μ` to `ν` selecting
@@ -46,12 +61,23 @@ solution of its transport equation
   `MA_{f,ν} = μ` and `ν` is carried by `∂f(D)`, the gradient of `f` pushes `μ` to `ν`;
 * `TauCeti.hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage` —
   for absolutely continuous `μ` and `ν`, the gradient of `f` pushes `μ` to `ν` with `f` finite
-  `μ`-almost everywhere exactly when `MA_{f,ν} = μ` and `ν` is carried by `∂f(D)`.
+  `μ`-almost everywhere exactly when `MA_{f,ν} = μ` and `ν` is carried by `∂f(D)`;
+* `TauCeti.mongeAmpereMeasure_withDensity_eq_of_hasLaw` — the weighted identity
+  `MA_{f, h ν} = h (T x) μ`;
+* `TauCeti.mongeAmpereMeasure_eq_withDensity_inv_add` — for `ν = g ρ`, the decomposition
+  `MA_f = (g ∘ T)⁻¹ μ + MA_{f, ρ|{g = 0}}`;
+* `TauCeti.mongeAmpereMeasure_eq_withDensity_inv_iff` — `f` is an Aleksandrov solution of
+  `MA_f = (g ∘ T)⁻¹ μ` exactly when `ρ(∂f(D) ∩ {g = 0}) = 0`;
+* `TauCeti.mongeAmpereMeasure_eq_withDensity_inv_of_convex` — this holds when the slopes of `f`
+  lie in the closure of a convex set on which `g` is positive almost everywhere.
 
 ## References
 
 * A. Figalli, *The Monge–Ampère Equation and Its Applications*, Zurich Lectures in Advanced
-  Mathematics, EMS, 2017, §4.6, for Brenier solutions of the second boundary value problem.
+  Mathematics, EMS, 2017, §4.6, for Brenier solutions of the second boundary value problem and
+  their relation to Aleksandrov solutions.
+* L. A. Caffarelli, *The regularity of mappings with a convex potential*, J. Amer. Math. Soc. 5
+  (1992), 99–104, for Aleksandrov solutions from a convex target.
 * C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
   §4.1.
 -/
@@ -60,10 +86,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open MeasureTheory Measure Set Filter ProbabilityTheory
-open scoped Topology Gradient
+open scoped Topology Gradient ENNReal
+
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {ρ : Measure E} [ρ.IsAddHaarMeasure] {μ ν : Measure E}
@@ -200,5 +226,121 @@ theorem hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgr
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 (mongeAmpereMeasure_compl_interior ν (f := f))]
       with x hx
     exact interior_subset (notMem_compl_iff.1 hx)
+
+
+/-! ### Aleksandrov solutions -/
+
+/-- **A transport map selecting subgradients computes the weighted Monge–Ampère measures.** Let
+`f : E → EReal` be convex and never `⊥`, with `D` the interior of its effective domain, and let
+`ν` be absolutely continuous with respect to an additive Haar measure. If `T` pushes `μ` to `ν`,
+`μ` is carried by `D`, and `T x ∈ ∂f(x)` for `μ`-almost every `x`, then for every measurable
+weight `h` the Monge–Ampère measure of `f` weighted by `h ν` is `h (T x) μ`:
+`∫_{∂f(s ∩ D)} h dν = ∫_s h (T x) dμ` for every measurable `s`. -/
+theorem mongeAmpereMeasure_withDensity_eq_of_hasLaw (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) (hν : ν ≪ ρ) {T : E → E} (hT : HasLaw T ν μ)
+    (hD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    (hsub : ∀ᵐ x ∂μ, T x ∈ subdifferential (innerₗ E) f x) {h : E → ℝ≥0∞} (hh : Measurable h) :
+    mongeAmpereMeasure (ν.withDensity h) f = μ.withDensity fun x => h (T x) := by
+  -- Replace `T` by a measurable representative `T'`; it carries `h (T' x) μ` to `h ν`.
+  set T' := hT.aemeasurable.mk T
+  have hTT' : T =ᵐ[μ] T' := hT.aemeasurable.ae_eq_mk
+  have hlaw : HasLaw T' (ν.withDensity h) (μ.withDensity fun x => h (T' x)) := by
+    refine ⟨hT.aemeasurable.measurable_mk.aemeasurable,
+      map_withDensity_eq_withDensity hT.aemeasurable.measurable_mk measurable_one hh ?_
+        (ae_of_all _ fun x => one_mul _)⟩
+    rw [withDensity_one]
+    exact (hT.congr hTT'.symm).map_eq
+  have hac := withDensity_absolutelyContinuous μ fun x => h (T' x)
+  have hcongr : (μ.withDensity fun x => h (T x)) = μ.withDensity fun x => h (T' x) :=
+    withDensity_congr_ae (by filter_upwards [hTT'] with x hx; rw [hx])
+  rw [hcongr]
+  refine mongeAmpereMeasure_eq_of_hasLaw hf hbot ((withDensity_absolutelyContinuous ν h).trans hν)
+    hlaw (hac.ae_le hD) (hac.ae_le ?_)
+  filter_upwards [hsub, hTT'] with x hx hx'
+  rwa [← hx']
+
+/-- **The Aleksandrov measure of a transporting potential.** Let `f : E → EReal` be convex and
+never `⊥`, with `D` the interior of its effective domain, let `ρ` be an additive Haar measure, and
+let `g` be a measurable density, finite almost everywhere. If `T` pushes `μ` to `g ρ`, `μ` is
+carried by `D`, and `T x ∈ ∂f(x)` for `μ`-almost every `x`, then the Aleksandrov Monge–Ampère
+measure of `f` is
+
+  `MA_f = (g ∘ T)⁻¹ μ + MA_{f, ρ|{g = 0}}`,
+
+where the second term `s ↦ ρ(∂f(s ∩ D) ∩ {g = 0})` is the subgradient mass that falls where the
+target density vanishes. For `μ = g₀ ρ` the first term is the right-hand side `g₀ / g(∇f)` of the
+Monge–Ampère equation `det D²f = g₀ / g(∇f)`. -/
+theorem mongeAmpereMeasure_eq_withDensity_inv_add (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) {g : E → ℝ≥0∞} (hg : Measurable g) (hgtop : ∀ᵐ y ∂ρ, g y ≠ ⊤)
+    {T : E → E} (hT : HasLaw T (ρ.withDensity g) μ) (hD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    (hsub : ∀ᵐ x ∂μ, T x ∈ subdifferential (innerₗ E) f x) :
+    mongeAmpereMeasure ρ f =
+      μ.withDensity (fun x => (g (T x))⁻¹) + mongeAmpereMeasure (ρ.restrict {y | g y = 0}) f := by
+  have hν := withDensity_absolutelyContinuous ρ g
+  have hZ : MeasurableSet {y | g y = 0} := hg (measurableSet_singleton 0)
+  -- `ρ` is `g⁻¹ (g ρ)` on `{g ≠ 0}` plus its restriction to `{g = 0}`.
+  have hsplit : ρ = (ρ.withDensity g).withDensity g⁻¹ + ρ.restrict {y | g y = 0} := by
+    have hpos : (ρ.withDensity g).withDensity g⁻¹ = ρ.restrict {y | g y = 0}ᶜ := by
+      rw [← withDensity_mul ρ hg hg.inv, ← withDensity_indicator_one hZ.compl]
+      refine withDensity_congr_ae ?_
+      filter_upwards [hgtop] with y hy
+      by_cases h0 : g y = 0
+      · simp [h0]
+      · simp [h0, ENNReal.mul_inv_cancel h0 hy]
+    rw [hpos, add_comm, restrict_add_restrict_compl hZ]
+  conv_lhs => rw [hsplit]
+  rw [mongeAmpereMeasure_add ((withDensity_absolutelyContinuous _ _).trans hν)
+      (absolutelyContinuous_of_le restrict_le_self),
+    mongeAmpereMeasure_withDensity_eq_of_hasLaw hf hbot hν hT hD hsub hg.inv]
+  simp only [Pi.inv_apply]
+
+/-- **When a transporting potential is an Aleksandrov solution.** Let `f : E → EReal` be convex
+and never `⊥`, with `D` the interior of its effective domain, let `ρ` be an additive Haar measure,
+and let `g` be a measurable density, finite almost everywhere. If `T` pushes `μ` to `g ρ`, `μ` is
+carried by `D`, and `T x ∈ ∂f(x)` for `μ`-almost every `x`, then `f` is an Aleksandrov solution
+of the Monge–Ampère equation `MA_f = (g ∘ T)⁻¹ μ` exactly when the subgradient image of `D` meets
+the zero set of the target density in a null set. Subgradient mass where `g` vanishes is the
+zero-density remainder of `mongeAmpereMeasure_eq_withDensity_inv_add`, invisible to the weighted
+transport equation `MA_{f, g ρ} = μ`, and it is exactly the obstruction. -/
+theorem mongeAmpereMeasure_eq_withDensity_inv_iff (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) {g : E → ℝ≥0∞} (hg : Measurable g) (hgtop : ∀ᵐ y ∂ρ, g y ≠ ⊤)
+    {T : E → E} (hT : HasLaw T (ρ.withDensity g) μ) (hD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    (hsub : ∀ᵐ x ∂μ, T x ∈ subdifferential (innerₗ E) f x) :
+    mongeAmpereMeasure ρ f = μ.withDensity (fun x => (g (T x))⁻¹) ↔
+      ρ (subgradientImage (innerₗ E) f (interior {x | f x ≠ ⊤}) ∩ {y | g y = 0}) = 0 := by
+  have hZ : MeasurableSet {y | g y = 0} := hg (measurableSet_singleton 0)
+  have hsing : mongeAmpereMeasure (ρ.restrict {y | g y = 0}) f univ =
+      ρ (subgradientImage (innerₗ E) f (interior {x | f x ≠ ⊤}) ∩ {y | g y = 0}) := by
+    rw [mongeAmpereMeasure_apply _ hf hbot (absolutelyContinuous_of_le restrict_le_self)
+      MeasurableSet.univ, univ_inter, restrict_apply' hZ]
+  have hσ := sigmaFinite_mongeAmpereMeasure ρ f
+  have hsplit := mongeAmpereMeasure_eq_withDensity_inv_add hf hbot hg hgtop hT hD hsub
+  rw [← hsing, measure_univ_eq_zero]
+  refine ⟨fun h => ?_, fun h => by rw [hsplit, h, add_zero]⟩
+  -- `MA_f` is σ-finite, so the absolutely continuous part can be cancelled.
+  have : SigmaFinite (μ.withDensity fun x => (g (T x))⁻¹) := by rw [← h]; exact hσ
+  exact (Measure.add_right_inj _ _ 0).1 (hsplit.symm.trans (h.trans (add_zero _).symm))
+
+/-- **Transporting potentials with slopes in a convex target are Aleksandrov solutions.** Let
+`f : E → EReal` be convex and never `⊥`, with `D` the interior of its effective domain, let `ρ` be
+an additive Haar measure, and let `g` be a measurable density, finite almost everywhere. Suppose
+`T` pushes `μ` to `g ρ`, `μ` is carried by `D`, and `T x ∈ ∂f(x)` for `μ`-almost every `x`. If every
+subgradient of `f` at a point of `D` lies in the closure of a convex set `Y` on which `g` is
+almost everywhere positive, then `f` is an Aleksandrov solution of `MA_f = (g ∘ T)⁻¹ μ`.
+Convexity enters because the frontier of a convex set is null. -/
+theorem mongeAmpereMeasure_eq_withDensity_inv_of_convex
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {g : E → ℝ≥0∞}
+    (hg : Measurable g) (hgtop : ∀ᵐ y ∂ρ, g y ≠ ⊤) {T : E → E} (hT : HasLaw T (ρ.withDensity g) μ)
+    (hD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    (hsub : ∀ᵐ x ∂μ, T x ∈ subdifferential (innerₗ E) f x) {Y : Set E} (hY : Convex ℝ Y)
+    (hsubY : subgradientImage (innerₗ E) f (interior {x | f x ≠ ⊤}) ⊆ closure Y)
+    (hgY : ∀ᵐ y ∂ρ, y ∈ Y → g y ≠ 0) :
+    mongeAmpereMeasure ρ f = μ.withDensity fun x => (g (T x))⁻¹ := by
+  refine (mongeAmpereMeasure_eq_withDensity_inv_iff hf hbot hg hgtop hT hD hsub).2
+    (measure_mono_null ?_ (measure_union_null (hY.addHaar_frontier ρ) (ae_iff.1 hgY)))
+  rintro y ⟨hy, hy0⟩
+  by_cases hyY : y ∈ Y
+  · exact Or.inr fun h => h hyY hy0
+  · exact Or.inl ⟨hsubY hy, fun h => hyY (interior_subset h)⟩
 
 end TauCeti

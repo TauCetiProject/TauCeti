@@ -198,7 +198,7 @@ theorem exists_isPrimitiveRoot_natCard_pow_sub_one [IsSepClosed Ω] {f : ℕ} (h
     (algebraMap K Ω)
   rw [map_natCast, map_natCast] at h
   have : NeZero ((Nat.card 𝓀[K] ^ f - 1 : ℕ) : Ω) := ⟨h.ne_zero⟩
-  exact HasEnoughRootsOfUnity.exists_primitiveRoot Ω _
+  exact HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω _
 
 /-- The unramified extension of degree `f` is a finite extension of `K`. -/
 instance finiteDimensional_unramifiedExtension (f : ℕ) :

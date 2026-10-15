@@ -68,10 +68,10 @@ private lemma conj_comp_mul'
     toConv ((toConv g.ofConv.toLinearMap *
         toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
         toConv ((g⁻¹).ofConv.toLinearMap)).ofConv ∘ₗ LinearMap.mul' R A) =
-      LinearMap.mulTensor 1 (toConv g.ofConv.toLinearMap *
+      WithConv.mulTensor 1 (toConv g.ofConv.toLinearMap *
           toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv ((g⁻¹).ofConv.toLinearMap)) +
-        LinearMap.mulTensor (toConv g.ofConv.toLinearMap *
+        WithConv.mulTensor (toConv g.ofConv.toLinearMap *
           toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv ((g⁻¹).ofConv.toLinearMap)) 1 := by
   have h := LinearMap.convMul_comp_coalgHom_distrib
@@ -88,8 +88,8 @@ private lemma conj_comp_mul'
   rw [h2, toConv_ofConv]
   rw [AlgHom.toConv_toLinearMap_comp_mul' g.ofConv, toConv_coe_comp_mul' d,
     AlgHom.toConv_toLinearMap_comp_mul' (g⁻¹).ofConv]
-  rw [mul_add, add_mul, LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul,
-    LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul, mul_one,
+  rw [mul_add, add_mul, WithConv.mulTensor_convMul, WithConv.mulTensor_convMul,
+    WithConv.mulTensor_convMul, WithConv.mulTensor_convMul, mul_one,
     ← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
 
 /-- The Leibniz rule for a conjugated derivation, in scalar-action form. -/
@@ -107,7 +107,7 @@ private lemma conj_ofConv_mul
           toConv ((g⁻¹).ofConv.toLinearMap)).ofConv a := by
   have h := congrArg (fun F => F.ofConv (a ⊗ₜ[R] b)) (conj_comp_mul' g d)
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.mul'_apply,
-    ofConv_add, LinearMap.add_apply, LinearMap.mulTensor_apply_tmul,
+    ofConv_add, LinearMap.add_apply, WithConv.mulTensor_apply_tmul,
     LinearMap.convOne_apply, Bialgebra.CounitAlgebra.algebraMap_base] at h
   rw [h, ← Bialgebra.CounitAlgebra.algebraMap_apply R A B a,
     ← Bialgebra.CounitAlgebra.algebraMap_apply R A B b, ← Algebra.commutes,

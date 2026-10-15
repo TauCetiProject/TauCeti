@@ -52,7 +52,8 @@ what the gluing lemma consumes.
 * `TauCeti.wassersteinEDist p μ ν` — the infimum of `eLpNorm (fun z ↦ edist z.1 z.2) p π` over the
   couplings `π` of `μ` and `ν`.
 * `TauCeti.HasFiniteMoment p μ` — the `MemLp` finite-moment condition about some basepoint, with
-  `TauCeti.hasFiniteMoment_of_ae_mem_finset` supplying finite moments for finite carriers.
+  `TauCeti.hasFiniteMoment_of_ae_mem_finset` supplying finite moments for finite carriers and
+  `TauCeti.hasFiniteMoment_dirac` for Dirac laws.
 
 ## Main statements
 
@@ -531,6 +532,26 @@ theorem wassersteinEDist_dirac_left_le_add (hd : Measurable fun z : X × X ↦ e
     _ ≤ eLpNorm (fun _ : X ↦ edist x₁ x₀) p ν + eLpNorm (fun y ↦ edist x₀ y) p ν :=
         eLpNorm_add_le hp
 
+/-- **The triangle inequality through a Dirac law.** For probability measures, the Wasserstein
+distance to a Dirac law is at most the distance to any intermediate probability measure plus the
+distance from it to the Dirac law. A Dirac law has a single coupling with each probability measure,
+so no gluing, and hence no standard Borel hypothesis, is needed; compare
+`TauCeti.wassersteinEDist_triangle`. -/
+theorem wassersteinEDist_triangle_dirac (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp : 1 ≤ p) (μ ν : Measure X) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (y : X) :
+    wassersteinEDist p μ (Measure.dirac y) ≤
+      wassersteinEDist p μ ν + wassersteinEDist p ν (Measure.dirac y) := by
+  have hy : Measurable fun x : X ↦ edist x y := hd.comp (measurable_id.prodMk measurable_const)
+  rw [wassersteinEDist_dirac_right hd, wassersteinEDist_dirac_right hd, wassersteinEDist]
+  simp only [ENNReal.iInf_add]
+  refine le_iInf₂ fun π hπ ↦ ?_
+  -- Read both distances to the atom on the coupling `π`, then apply Minkowski's inequality.
+  rw [← eLpNorm_comp_measurePreserving hy.aestronglyMeasurable hπ.measurePreserving_fst,
+    ← eLpNorm_comp_measurePreserving hy.aestronglyMeasurable hπ.measurePreserving_snd]
+  refine (eLpNorm_mono_enorm (hy.comp measurable_fst).aestronglyMeasurable fun z ↦ ?_).trans
+    (eLpNorm_add_le hp)
+  simpa using edist_triangle z.1 z.2 y
+
 /-- Finite `p`-moment about a basepoint is independent of the basepoint inside a fixed
 finite-distance component. On an extended pseudometric space the finite-distance hypothesis cannot
 be dropped: basepoints in different components can have unrelated moment conditions. -/
@@ -580,33 +601,9 @@ theorem wassersteinEDist_triangle (hd : Measurable fun z : X × X ↦ edist z.1 
   have hcoup : IsCoupling (γ.map (Prod.map id Prod.snd)) μ ρ :=
     ⟨(Measure.fst_map_prodMap_id_snd hγπ).trans hπ.fst_eq,
       (Measure.snd_map_prodMap_id_snd hγσ).trans hσ.snd_eq⟩
-  refine (wassersteinEDist_le hcoup p).trans ?_
-  have houter : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (γ.map (Prod.map id Prod.snd))
-      = eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.2) p γ := by
-    rw [eLpNorm_map_measure hd.aestronglyMeasurable
-      (measurable_id.prodMap measurable_snd).aemeasurable]
-    rfl
-  have hfirst : eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.1) p γ
-      = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π := by
-    rw [← hγπ, eLpNorm_map_measure hd.aestronglyMeasurable
-      (measurable_id.prodMap measurable_fst).aemeasurable]
-    rfl
-  have hsecond : eLpNorm (fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ
-      = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p σ := by
-    rw [← hγσ, Measure.snd, eLpNorm_map_measure hd.aestronglyMeasurable
-      measurable_snd.aemeasurable]
-    rfl
-  have houtm : AEStronglyMeasurable (fun w : X × X × X ↦ edist w.1 w.2.2) γ :=
-    (hd.comp (measurable_fst.prodMk (measurable_snd.comp measurable_snd))).aestronglyMeasurable
-  rw [houter, ← hfirst, ← hsecond]
-  calc eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.2) p γ
-      ≤ eLpNorm ((fun w : X × X × X ↦ edist w.1 w.2.1)
-          + fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ :=
-        eLpNorm_mono_enorm houtm fun w ↦ by
-          simpa using edist_triangle w.1 w.2.1 w.2.2
-    _ ≤ eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.1) p γ
-          + eLpNorm (fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ :=
-        eLpNorm_add_le hp
+  exact (wassersteinEDist_le hcoup p).trans
+    (MeasureTheory.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦
+      edist_triangle x y z)
 
 end Triangle
 
@@ -668,6 +665,15 @@ theorem hasFiniteMoment_of_ae_mem_finset [OpensMeasurableSpace X] {ν : Measure 
   · exact ((Finset.sup_lt_iff (by simp)).2 fun z _ ↦ edist_lt_top x₀ z).ne
   · filter_upwards [hs] with y hy
     simpa only [enorm_eq_self] using Finset.le_sup (f := fun z ↦ edist x₀ z) hy
+
+/-- A Dirac law has finite `p`-moment for every exponent: its distance from its atom vanishes
+almost everywhere. -/
+theorem hasFiniteMoment_dirac [OpensMeasurableSpace X] (p : ℝ≥0∞) (x : X) :
+    HasFiniteMoment p (Measure.dirac x) := by
+  refine hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := 0)
+    measurable_edist_right.aestronglyMeasurable ENNReal.zero_ne_top ?_⟩
+  filter_upwards [ae_eq_dirac' (a := x) (measurable_edist_right (x := x))] with y hy
+  simp only [enorm_eq_self, hy, Function.const_apply, edist_self, le_refl]
 
 /-- On an ordinary pseudometric space, the finite-moment condition can be tested at any prescribed
 basepoint whose distance section is almost-everywhere strongly measurable. -/
@@ -903,6 +909,16 @@ theorem integrable_norm_sub_sq_of_hasFiniteMoment {π : Measure (E × E)} [IsFin
   exact (memLp_two_iff_integrable_sq_norm (by fun_prop)).1 <|
     (memLp_of_hasFiniteMoment_map measurable_fst h₁).sub
       (memLp_of_hasFiniteMoment_map measurable_snd h₂)
+
+/-- The displacement `(x, y) ↦ y - x` is square integrable against a finite measure on `E × E`
+whose two marginals have finite second moment. -/
+theorem memLp_sub_of_hasFiniteMoment {π : Measure (E × E)} [IsFiniteMeasure π]
+    (h₁ : HasFiniteMoment 2 π.fst) (h₂ : HasFiniteMoment 2 π.snd) :
+    MemLp (fun z : E × E ↦ z.2 - z.1) 2 π := by
+  rw [Measure.fst] at h₁
+  rw [Measure.snd] at h₂
+  exact (memLp_of_hasFiniteMoment_map measurable_snd h₂).sub
+    (memLp_of_hasFiniteMoment_map measurable_fst h₁)
 
 end NormedMoment
 

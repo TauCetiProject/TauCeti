@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.Transfer
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
-import TauCeti.GroupTheory.Transfer
+import TauCeti.GroupTheory.Transfer.Basic
 
 /-!
 # Maps between abelianized Galois groups of finite normal layers

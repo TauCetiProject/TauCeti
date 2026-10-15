@@ -664,7 +664,7 @@ theorem integralMapToComplex_injective (h₁ : IsBaseChange ℂ ι₁) (h₂ : I
   have hmodel : integralMapToComplex h₁ ι₂ f =
       h₂.equiv.toLinearMap ∘ₗ f.baseChange ℂ ∘ₗ h₁.equiv.symm.toLinearMap :=
     h₁.algHom_ext _ _ fun x ↦ by simp [h₁.equiv_symm_apply, h₂.equiv_tmul]
-  rw [hmodel, LinearMap.coe_comp, LinearMap.coe_comp, LinearMap.baseChange_eq_ltensor]
+  rw [hmodel, LinearMap.coe_comp, LinearMap.coe_comp, LinearMap.baseChange_eq_lTensor]
   exact h₂.equiv.injective.comp
     ((Module.Flat.lTensor_preserves_injective_linearMap f hf).comp h₁.equiv.symm.injective)
 

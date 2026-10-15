@@ -156,8 +156,8 @@ theorem contMDiff_analyticProdHomeomorph_symm (n : ℕ∞ω) :
         𝓘(ℂ, (Fin _ → ℂ) × (Fin l' → ℂ))) n
       (fun q : Φ.analyticRealization hΦ × Ψ.analyticRealization hΨ ↦
         (P.symm q.1, Q.symm q.2)) (P.target ×ˢ Q.target) :=
-    (P.symm.contMDiffOn.comp contMDiffOn_fst fun _ hz ↦ hz.1).prodMk
-      (Q.symm.contMDiffOn.comp contMDiffOn_snd fun _ hz ↦ hz.2)
+    (P.symm.contMDiffOn.comp contMDiffOn_fst fun _ (hz : _ ∈ P.target ×ˢ Q.target) ↦ hz.1).prodMk
+      (Q.symm.contMDiffOn.comp contMDiffOn_snd fun _ (hz : _ ∈ P.target ×ˢ Q.target) ↦ hz.2)
   have hlocal := (Φ.contMDiff_productChart Ψ hΦ hΨ σ τ hB hC κ κ' n).comp_contMDiffOn hsymm
   have hmem : P.target ×ˢ Q.target ∈ 𝓝 p :=
     (P.open_target.prod Q.open_target).mem_nhds ⟨hP ▸ ⟨a, ha⟩, hQ ▸ ⟨b, hb⟩⟩

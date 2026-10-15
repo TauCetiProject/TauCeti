@@ -92,7 +92,7 @@ theorem card_unitPowerClasses_adicCompletion_of_hasEnoughRootsOfUnity
     rintro rfl
     simp at hnv⟩
   rw [v.card_unitPowerClasses_adicCompletion hnv]
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   exact (hζ.map_of_injective (algebraMap K (v.adicCompletion K)).injective).card_rootsOfUnity
 
 end IsDedekindDomain.HeightOneSpectrum
