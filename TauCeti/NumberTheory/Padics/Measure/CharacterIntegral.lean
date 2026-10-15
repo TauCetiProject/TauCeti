@@ -62,6 +62,7 @@ variable [Monoid G] [ContinuousMul G]
 
 /-- A continuous character is an eigenfunction of right convolution by any measure `ν`, with
 eigenvalue `ν κ`. -/
+@[simp]
 theorem convolveFunRight_continuousMonoidHom (ν : D(G, R)) (κ : G →ₜ* R) :
     convolveFunRight ν (κ : C(G, R)) = ν κ • (κ : C(G, R)) := by
   ext x
