@@ -64,7 +64,7 @@ theorem mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one
     g ∈ CommHopfAlgCat.quotientPointsSubgroup
         (weightParabolicCoordinateHopfAlgebra R w)
         (weightUnipotentInParabolicHopfIdeal R w) A ↔
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (weightParabolicLimitCoordinateMap R w)).app A g = 1 := by
   rcases A with ⟨A⟩
   let p : Cocharacter.parabolic A (weightCocharacter (R := R) w) :=
@@ -174,7 +174,7 @@ theorem kernelHopfIdeal_weightParabolicLimitCoordinateMap (w : Fin N → ℤ) :
       (weightUnipotentInParabolicHopfIdeal R w)
     apply (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff
       (weightParabolicLimitCoordinateMap R w) _ _).mp
-    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
     apply (mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one R w _ _).mp
     exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
   · apply hopfIdeal_le_of_quotientGenericPoint_mem R
@@ -182,7 +182,7 @@ theorem kernelHopfIdeal_weightParabolicLimitCoordinateMap (w : Fin N → ℤ) :
       (weightUnipotentInParabolicHopfIdeal R w)
       (CommHopfAlgCat.kernelHopfIdeal (weightParabolicLimitCoordinateMap R w))
     apply (mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one R w _ _).mpr
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
     apply (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff
       (weightParabolicLimitCoordinateMap R w) _ _).mpr
     exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _

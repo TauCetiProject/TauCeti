@@ -54,7 +54,7 @@ theorem geckGroupSchemePointMulEquiv_comp_geckInnerConjugation
     t.geckGroupSchemePointMulEquiv ht A q ≫
         (t.geckInnerConjugation ht g).hom.hom.hom =
       t.geckGroupSchemePointMulEquiv ht A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
             (t.geckCoordinatePoint ht g)).hom).app (CommAlgCat.of ℤ A) q) := by
   rw [geckInnerConjugation_def]

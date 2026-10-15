@@ -16,8 +16,9 @@ import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 The rank-four weight-torus map of the prime-field short-root carrier is a closed immersion.
 Its kernel is an intrinsic Hopf ideal of the carrier, whose quotient is the rank-four split
 torus. Over every commutative `𝔽₂`-algebra, points of this closed subgroup are precisely the
-named weight-torus matrix points. The identification retains nonreduced coefficient algebras,
-which pointwise arguments over fields alone cannot detect.
+named weight-torus matrix points. This description is preserved by arbitrary scalar extension
+from `𝔽₂`. The identifications retain nonreduced coefficient algebras, which pointwise
+arguments over fields alone cannot detect.
 
 This supplies the torus subgroup used in the carrier's root datum and pinning. Maximality is
 a separate question: the standard representation has a two-dimensional zero-weight space,
@@ -99,11 +100,11 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal
     apply Subtype.ext
     calc
       _ = (coordinatePointsEquiv A
-          ((CommHopfAlgCat.mapPointsFunctor weightTorusRestriction).app
+          ((CommHopfAlgCat.Hom.mapPointsFunctor weightTorusRestriction).app
             (CommAlgCat.of (ZMod 2) A) q) : GL (Fin 26) A) := by
-        rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
+        rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
       _ = GeneralLinear.pointsMulEquiv 26
-          ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app
             (CommAlgCat.of (ZMod 2) A) q) :=
         coe_coordinatePointsEquiv_commonKernelLift (.inr ()) A q
       _ = _ := (coe_weightTorusPoints_pointsMulEquiv A q).symm
@@ -121,9 +122,27 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal
     rw [MulEquiv.coe_toMonoidHom]
     calc
       _ = coordinatePointsEquiv A (AlgHom.mapDomain weightTorusRestriction.hom q) := by
-        rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
+        rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
       _ = weightTorusPoints A (SplitTorus.pointsMulEquiv q) := hpoint q
       _ = _ := congrArg _ (MulEquiv.apply_symm_apply _ s)
+
+section Extension
+
+variable (k : Type v) [CommRing k] [Algebra (ZMod 2) k]
+
+/-- After scalar extension from `𝔽₂`, the extended torus ideal still cuts out exactly the
+named weight-torus matrix points. -/
+theorem map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal :
+    (CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.baseChange (K := k) Q)
+      (CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal)
+      (CommAlgCat.of k k)).map (baseChangePointsEquiv k).toMonoidHom =
+        (weightTorusPoints k).range := by
+  rw [← map_quotientPointsSubgroup_weightTorusDefiningIdeal k]
+  ext g
+  rw [Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, baseChangePointsEquiv_symm_apply]
+  exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem _ _).symm
+
+end Extension
 
 end
 

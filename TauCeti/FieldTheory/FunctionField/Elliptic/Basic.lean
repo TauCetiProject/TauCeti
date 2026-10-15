@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+public import TauCeti.FieldTheory.FunctionField.Consequences.PointSeparation
 
 /-!
 # Elliptic function fields
@@ -35,9 +35,9 @@ transported group depends on the choice of `P₀`, so it is a definition, not an
 
 ## Main results
 
-* `TauCeti.Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one` and
-  `TauCeti.Place.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
-  degree one is linearly equivalent to exactly one place of degree one.
+* `TauCeti.Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
+  degree one is linearly equivalent to a place of degree one; uniqueness follows from
+  `TauCeti.Place.eq_of_linearlyEquivalent_ofPoint_of_genus_pos`.
 * `TauCeti.IsEllipticFunctionField.exists_place_degree_eq_one`: an elliptic function field has
   a place of degree one;
   `TauCeti.isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one` is the
@@ -99,23 +99,6 @@ theorem Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one (hF : IsFuncti
   exact Divisor.exists_linearlyEquivalent_ofPoint_of_degree_eq_one hF hD
     ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF D).mp (by omega))
 
-/-- **Linearly equivalent places of degree one of a genus-one function field are equal**
-(Stichtenoth, Proposition 6.1.6(b)): over an exact constant field `ℓ(P) = 1` forces the complete
-linear system of `P` to be the single divisor `P`. -/
-theorem Place.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) {P Q : Place k F} (hP : P.degree = 1)
-    (h : (Place.orderSystem hF).LinearlyEquivalent
-      (WeilDivisor.ofPoint P) (WeilDivisor.ofPoint Q)) :
-    P = Q := by
-  have hdim : Divisor.dim (WeilDivisor.ofPoint P : Divisor k F) = 1 := by
-    have := Divisor.dim_eq_degree_of_genus_eq_one hF hex hg
-      (D := (WeilDivisor.ofPoint P : Divisor k F)) (by rw [Divisor.degree_ofPoint, hP]; norm_num)
-    rw [Divisor.degree_ofPoint, hP] at this
-    exact_mod_cast this
-  exact WeilDivisor.ofPoint_injective (Divisor.eq_of_linearlyEquivalent_of_dim_eq_one hF
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint Q)) hdim h)
-
 /-! ### Places of degree one -/
 
 /-- **An elliptic function field has a place of degree one** (Stichtenoth,
@@ -143,22 +126,6 @@ theorem isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one
 namespace Place
 
 variable {P₀ : Place k F}
-
-/-- **Distinct places of degree one of a genus-one function field have distinct classes**
-relative to a base place. -/
-theorem eq_of_divisorClass_pointDifference_eq (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) {P Q : Place k F} (hP : P.degree = 1)
-    (h : (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P P₀) =
-      (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference Q P₀)) :
-    P = Q := by
-  refine eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one hF hex hg hP ?_
-  have hdiff : WeilDivisor.pointDifference P P₀ - WeilDivisor.pointDifference Q P₀ =
-      WeilDivisor.ofPoint P - WeilDivisor.ofPoint Q := by
-    rw [WeilDivisor.pointDifference, WeilDivisor.pointDifference]
-    abel
-  rw [WeilDivisor.OrderSystem.divisorClass_eq_iff,
-    WeilDivisor.OrderSystem.linearlyEquivalent_iff, hdiff] at h
-  exact ((Place.orderSystem hF).linearlyEquivalent_iff).mpr h
 
 /-- **Every degree-zero divisor class of a genus-one function field is the class of a difference
 of places of degree one** (Stichtenoth, Proposition 6.1.6(b)). -/
@@ -192,7 +159,7 @@ noncomputable def degreeOneEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
     (fun P ↦ ⟨(Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.1 P₀), by
       rw [AddMonoidHom.mem_ker, Divisor.degreeClass_divisorClass, WeilDivisor.pointDifference,
         Divisor.degree_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint, P.2, hP₀, sub_self]⟩)
-    ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF hex hg P.2
+    ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF hex (by omega) P.2
         (congrArg Subtype.val h)),
       fun c ↦ by
         obtain ⟨P, hP, hc⟩ := exists_degree_eq_one_and_divisorClass_pointDifference_eq hF hex hg hP₀
