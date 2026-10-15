@@ -78,11 +78,8 @@ theorem d_apply_mem_of_rel (i j : ι) (x : K.X i) (hx : x ∈ N i) : K.d i j x �
   · rw [K.shape i j hij]
     exact Submodule.zero_mem _
 
--- Exposed so that the terms of the complex are the submodules `N i` by definition: the
--- characteristic lemmas of its differentials and of the maps into and out of it are stated on
--- these terms.
 /-- The complex with terms the submodules `N i ≤ K.X i` and the restricted differentials. -/
-@[expose] def ofSubmodules : HomologicalComplex (ModuleCat.{v} R) c where
+def ofSubmodules : HomologicalComplex (ModuleCat.{v} R) c where
   X i := ModuleCat.of R (N i)
   d i j := ModuleCat.ofHom ((K.d i j).hom.restrict (d_apply_mem_of_rel K N hN i j))
   shape i j h := by
@@ -101,26 +98,14 @@ theorem d_apply_mem_of_rel (i j : ι) (x : K.X i) (hx : x ∈ N i) : K.d i j x �
 
 /-- The terms of the complex `K.ofSubmodules N hN` are the submodules `N i`. -/
 @[simp]
-theorem ofSubmodules_X (i : ι) : (K.ofSubmodules N hN).X i = ModuleCat.of R (N i) :=
-  (rfl)
-
-/-- The differentials of `K.ofSubmodules N hN` are the restrictions of those of `K`. -/
-@[simp]
-theorem ofSubmodules_d (i j : ι) :
-    (K.ofSubmodules N hN).d i j =
-      ModuleCat.ofHom ((K.d i j).hom.restrict (d_apply_mem_of_rel K N hN i j)) :=
-  (rfl)
+theorem ofSubmodules_X (i : ι) : (K.ofSubmodules N hN).X i = ModuleCat.of R (N i) := by
+  unfold ofSubmodules
+  rfl
 
 /-- The inclusion of the complex with terms `N i` into `K`. -/
 def ofSubmodulesι : K.ofSubmodules N hN ⟶ K where
   f i := ModuleCat.ofHom (N i).subtype
   comm' _ _ _ := rfl
-
-/-- The components of the inclusion are the inclusions of the submodules. -/
-@[simp]
-theorem ofSubmodulesι_f (i : ι) :
-    (K.ofSubmodulesι N hN).f i = ModuleCat.ofHom (N i).subtype :=
-  (rfl)
 
 /-- The inclusion of the complex with terms `N i` is a monomorphism. -/
 instance : Mono (K.ofSubmodulesι N hN) :=
@@ -188,12 +173,6 @@ def ofSubmodulesMap (φ : K ⟶ L) (h : ∀ i, ∀ x ∈ N i, φ.f i x ∈ N' i)
       -- As in `ofSubmodules`: restricted maps act on underlying elements by definition.
       change L.d i j (φ.f i (x : N i).1) = φ.f j (K.d i j (x : N i).1)
       rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, φ.comm])
-
-/-- The components of the restriction of a chain map are the restrictions of its components. -/
-@[simp]
-theorem ofSubmodulesMap_f (φ : K ⟶ L) (h : ∀ i, ∀ x ∈ N i, φ.f i x ∈ N' i) (i : ι) :
-    (ofSubmodulesMap hN hN' φ h).f i = ModuleCat.ofHom ((φ.f i).hom.restrict (h i)) :=
-  (rfl)
 
 /-- The restriction of a chain map commutes with the inclusions. -/
 @[reassoc (attr := simp)]
