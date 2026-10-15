@@ -56,7 +56,7 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
   `gcd n m`.
 
 The signature `LaurentSeries.expand (d : ℕ+)` follows the one proposed for Mathlib in
-mathlib4 PR #42313, so that this API can be replaced by Mathlib's once it lands.
+mathlib4 PR #42313.
 -/
 
 public section
