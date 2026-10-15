@@ -23,14 +23,9 @@ The pointwise group law on homomorphisms of abelian varieties is written *multip
 `TauCeti.AlgebraicGeometry.AbelianVariety.MorphismGroup`, matching the multiplicative encoding
 (`GrpObj`, `μ`, `η`, `ι`) of a group object. A ring is written additively, so the endomorphism ring
 is the additive reindexing `Additive (A ⟶ A)` of that group rather than the hom-set itself; this
-keeps the multiplicative convention on all hom-sets intact. (Declaring `AbelianVariety K`
-`CategoryTheory.Preadditive` instead would put an `AddCommGroup (A ⟶ B)` on the very hom-sets that
-already carry `AbelianVariety.Hom.instCommGroup` for the same operation, the situation `Additive`
-exists to avoid, and would mean re-deriving that group law additively rather than transporting
-Mathlib's multiplicative `CategoryTheory.MonObj.Hom.commGroup`; that is a change to already-merged
-material, not part of this file.) The multiplicative monoid is composition, in the same order as
-Mathlib's `CategoryTheory.End A`, and conjugation by an isomorphism mirrors Mathlib's
-`CategoryTheory.Iso.conj`.
+keeps the multiplicative convention on all hom-sets intact while giving the endomorphism ring its
+additive notation. The multiplicative monoid transports Mathlib's `CategoryTheory.End A`, and
+conjugation by an isomorphism transports Mathlib's `CategoryTheory.Iso.conj`.
 `AbelianVariety.End.toHom` and `AbelianVariety.End.ofHom` translate between the two views, and the
 `toHom_*` lemmas turn every ring operation into a group or categorical operation on morphisms.
 
@@ -46,15 +41,11 @@ The specialization to the trivial abelian variety is in
 `TauCeti.AlgebraicGeometry.AbelianVariety.End.Trivial`, which is where the trivial-variety theory
 gets imported.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API", and its item "`[n]` as an
-isogeny": the endomorphism ring is where `[n]` lives, and where the homomorphism produced by
-Layer F's universal property of the Abel–Jacobi map is compared with others. That `[n]` *is* an
-isogeny needs the dimension and torsion theory of Layer E and is not proved here. No external
-mathematics is vendored; the ring is assembled from Tau Ceti's homomorphism-group API, Mathlib's
-`Additive` type synonym and categorical composition, with the distributivity supplied by
-`AbelianVariety.Hom.mul_comp` and `AbelianVariety.Hom.comp_mul`, the same assembly as Mathlib's
-`Ring (CategoryTheory.End X)` for preadditive categories.
+The endomorphism ring packages multiplication-by-integer maps and provides a common codomain
+for comparing homomorphisms obtained from the universal property of the Abel–Jacobi map. Proving
+that `[n]` is an isogeny additionally requires dimension and torsion results. The ring uses
+Tau Ceti's homomorphism-group API and Mathlib's `Additive` type synonym, with distributivity
+supplied by `AbelianVariety.Hom.mul_comp` and `AbelianVariety.Hom.comp_mul`.
 -/
 
 public section
