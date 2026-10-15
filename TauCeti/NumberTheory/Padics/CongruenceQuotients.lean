@@ -78,15 +78,8 @@ theorem unitToZModPowQuotient_eq_native (n : ℕ) :
     unitToZModPowQuotient p n =
       (QuotientGroup.quotientMulEquivOfEq (ker_unitsToZModPow p n).symm).trans
         (QuotientGroup.quotientKerEquivOfSurjective _
-          (PadicInt.unitsToZModPow_surjective n)) := by
-  apply MulEquiv.ext
-  intro x
-  induction x using QuotientGroup.induction_on with
-  | H u =>
-    rw [unitToZModPowQuotient_mk, MulEquiv.trans_apply,
-      QuotientGroup.quotientMulEquivOfEq_mk,
-      QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
-    rfl
+          (PadicInt.unitsToZModPow_surjective n)) :=
+  (rfl)
 
 /-- The inverse of the congruence quotient sends the truncation of `u` modulo `p ^ n` to the coset
 of `u`. -/
