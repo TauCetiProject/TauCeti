@@ -19,7 +19,8 @@ cycles. This is the degree multiplication in the tensor construction of the Even
 
 The construction accepts families of submodules, without requiring a direct-sum decomposition:
 its terms are precisely their total-degree tensor spans. In applications to graded modules,
-these are the usual total-degree pieces.
+these are the usual total-degree pieces. Degree-preserving factorwise maps commuting with
+differentials induce cochain maps, preserving identities and composition.
 
 ## References
 
@@ -219,6 +220,120 @@ theorem cochainComplexXEquiv_d [CharP R 2] (ℳ : ∀ i, ℤ → Submodule R (M 
       differential d (cochainComplexXEquiv ℳ d hdeg hd n z) := by
   dsimp only [cochainComplexXEquiv]
   exact gradedCochainComplexXEquiv_d n z
+
+section Map
+
+variable [CharP R 2] {N P : ι → Type w}
+  [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+  [∀ i, AddCommGroup (P i)] [∀ i, Module R (P i)]
+  {ℳ : ∀ i, ℤ → Submodule R (M i)} {𝒩 : ∀ i, ℤ → Submodule R (N i)}
+  {𝒦 : ∀ i, ℤ → Submodule R (P i)}
+  {d : ∀ i, Module.End R (M i)} {e : ∀ i, Module.End R (N i)}
+  {k : ∀ i, Module.End R (P i)}
+  {hdeg : ∀ i, LinearMap.IsHomogeneous (d i) (ℳ i) (ℳ i) 1}
+  {hedeg : ∀ i, LinearMap.IsHomogeneous (e i) (𝒩 i) (𝒩 i) 1}
+  {hkdeg : ∀ i, LinearMap.IsHomogeneous (k i) (𝒦 i) (𝒦 i) 1}
+  {hd : ∀ i, d i ∘ₗ d i = 0} {he : ∀ i, e i ∘ₗ e i = 0}
+  {hk : ∀ i, k i ∘ₗ k i = 0}
+
+/-- Degree-preserving factorwise maps commuting with differentials induce a map of total-degree
+tensor cochain complexes. -/
+noncomputable def cochainComplexMap (f : ∀ i, M i →ₗ[R] N i)
+    (hf : ∀ i, LinearMap.IsHomogeneous (f i) (ℳ i) (𝒩 i) 0)
+    (hcomm : ∀ i, e i ∘ₗ f i = f i ∘ₗ d i) :
+    cochainComplex ℳ d hdeg hd ⟶ cochainComplex 𝒩 e hedeg he :=
+  CochainComplex.ofHom (fun n ↦
+    eqToHom (cochainComplex_X ℳ d hdeg hd n) ≫
+      ModuleCat.ofHom ((_root_.PiTensorProduct.map f).restrict
+        (fun _ hz ↦ map_mem_degreePiece ℳ 𝒩 f hf hz)) ≫
+      eqToHom (cochainComplex_X 𝒩 e hedeg he n).symm) (fun n ↦ by
+    rw [cochainComplex_d, cochainComplex_d]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    apply (cancel_epi _).2
+    simp only [← Category.assoc]
+    apply (cancel_mono _).2
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro z
+    apply Subtype.ext
+    exact LinearMap.congr_fun (differential_comp_map d e f hcomm) z)
+
+/-- Each component is the tensor of the factor maps restricted to the total-degree piece. -/
+@[simp]
+theorem cochainComplexMap_f (f : ∀ i, M i →ₗ[R] N i)
+    (hf : ∀ i, LinearMap.IsHomogeneous (f i) (ℳ i) (𝒩 i) 0)
+    (hcomm : ∀ i, e i ∘ₗ f i = f i ∘ₗ d i) (n : ℤ) :
+    (cochainComplexMap (hdeg := hdeg) (hd := hd) (hedeg := hedeg) (he := he)
+      f hf hcomm).f n =
+      eqToHom (cochainComplex_X ℳ d hdeg hd n) ≫
+        ModuleCat.ofHom ((_root_.PiTensorProduct.map f).restrict
+          (fun _ hz ↦ map_mem_degreePiece ℳ 𝒩 f hf hz)) ≫
+        eqToHom (cochainComplex_X 𝒩 e hedeg he n).symm :=
+  (rfl)
+
+/-- Under the degree-piece identifications, the induced map applies the factor maps. -/
+theorem cochainComplexMap_f_apply (f : ∀ i, M i →ₗ[R] N i)
+    (hf : ∀ i, LinearMap.IsHomogeneous (f i) (ℳ i) (𝒩 i) 0)
+    (hcomm : ∀ i, e i ∘ₗ f i = f i ∘ₗ d i) (n : ℤ) (z : degreePiece ℳ n) :
+    eqToHom (cochainComplex_X 𝒩 e hedeg he n)
+      ((cochainComplexMap (hdeg := hdeg) (hd := hd) (hedeg := hedeg) (he := he)
+        f hf hcomm).f n (eqToHom (cochainComplex_X ℳ d hdeg hd n).symm z)) =
+      (⟨_root_.PiTensorProduct.map f z, map_mem_degreePiece ℳ 𝒩 f hf z.2⟩ :
+        degreePiece 𝒩 n) := by
+  -- Compose before evaluating so the degree-piece transports cancel categorically.
+  have h := congrArg (fun t ↦ t z)
+    (show eqToHom (cochainComplex_X ℳ d hdeg hd n).symm ≫
+        (cochainComplexMap (hdeg := hdeg) (hd := hd) (hedeg := hedeg) (he := he)
+          f hf hcomm).f n ≫ eqToHom (cochainComplex_X 𝒩 e hedeg he n) =
+        ModuleCat.ofHom ((_root_.PiTensorProduct.map f).restrict
+          (fun _ hz ↦ map_mem_degreePiece ℳ 𝒩 f hf hz)) by
+      rw [cochainComplexMap_f]
+      simp)
+  exact h
+
+/-- Tensoring the identity factor maps induces the identity cochain map. -/
+@[simp]
+theorem cochainComplexMap_id :
+    cochainComplexMap (d := d) (e := d) (hdeg := hdeg) (hd := hd) (hedeg := hdeg) (he := hd)
+      (fun _ ↦ LinearMap.id) (fun i ↦ LinearMap.isHomogeneous_id (ℳ i))
+      (fun _ ↦ by simp) = 𝟙 (cochainComplex ℳ d hdeg hd) := by
+  apply HomologicalComplex.hom_ext
+  intro n
+  simp only [cochainComplexMap_f, _root_.PiTensorProduct.map_id, HomologicalComplex.id_f]
+  have h : ModuleCat.ofHom ((LinearMap.id : Module.End R (⨂[R] i, M i)).restrict
+      (p := degreePiece ℳ n) (q := degreePiece ℳ n) (fun _ hz ↦ hz)) = 𝟙 _ := rfl
+  rw [h]
+  simp
+
+/-- Tensor cochain maps preserve composition of factorwise chain maps. This is an explicit
+rewrite lemma since the intermediate differential cannot be inferred from the composite. -/
+theorem cochainComplexMap_comp (f : ∀ i, M i →ₗ[R] N i) (g : ∀ i, N i →ₗ[R] P i)
+    (hf : ∀ i, LinearMap.IsHomogeneous (f i) (ℳ i) (𝒩 i) 0)
+    (hg : ∀ i, LinearMap.IsHomogeneous (g i) (𝒩 i) (𝒦 i) 0)
+    (hcommf : ∀ i, e i ∘ₗ f i = f i ∘ₗ d i)
+    (hcommg : ∀ i, k i ∘ₗ g i = g i ∘ₗ e i) :
+    cochainComplexMap (hdeg := hdeg) (hd := hd) (hedeg := hkdeg) (he := hk)
+      (fun i ↦ g i ∘ₗ f i) (fun i ↦ by simpa using (hg i).comp (hf i))
+      (fun i ↦ by rw [← LinearMap.comp_assoc, hcommg i, LinearMap.comp_assoc,
+        hcommf i, LinearMap.comp_assoc]) =
+      cochainComplexMap (hdeg := hdeg) (hd := hd) (hedeg := hedeg) (he := he)
+        f hf hcommf ≫
+      cochainComplexMap (hdeg := hedeg) (hd := he) (hedeg := hkdeg) (he := hk)
+        g hg hcommg := by
+  apply HomologicalComplex.hom_ext
+  intro n
+  simp only [HomologicalComplex.comp_f, cochainComplexMap_f, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  apply (cancel_epi _).2
+  simp only [← Category.assoc]
+  apply (cancel_mono _).2
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro z
+  apply Subtype.ext
+  exact LinearMap.congr_fun (_root_.PiTensorProduct.map_comp g f) z.val
+
+end Map
 
 end Ring
 
