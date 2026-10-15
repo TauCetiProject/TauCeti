@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Symmetric
+public import TauCeti.Combinatorics.Quiver.Symmetric
 
 /-!
 # Indexed quiver paths, concatenation, and reversal
@@ -80,6 +80,12 @@ def reverse [HasReverse Q] (x : TotalPath Q) : TotalPath Q :=
 theorem reverse_mk [HasReverse Q] {a b : Q} (p : Path a b) :
     reverse (⟨a, b, p⟩ : TotalPath Q) = ⟨b, a, p.reverse⟩ :=
   (rfl)
+
+/-- Reversing an indexed path preserves its length. -/
+@[simp]
+theorem length_reverse [HasReverse Q] (x : TotalPath Q) :
+    x.reverse.2.2.length = x.2.2.length := by
+  simp only [reverse, _root_.Quiver.Path.length_reverse]
 
 /-- Reversing an indexed path twice returns the original path. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.FixedField
 
@@ -21,8 +21,8 @@ corresponding to the contraction `σ Q ∩ 𝓞 E`.
 
 The bijection specializes `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant`,
 the invariant-ring construction in
-`TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant`. It separates into two ingredients.
-Two primes of `𝓞 M` have the same contraction to
+`TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic`. It separates into two
+ingredients. Two primes of `𝓞 M` have the same contraction to
 `𝓞 E` exactly when they lie in one `H`-orbit, because `H` is the Galois group of `M / E` and a
 Galois group acts transitively on the primes above a fixed prime; this is
 `Ideal.under_fixedField_eq_iff_mem_orbit`, and it is where all the arithmetic sits.  The rest is

@@ -32,7 +32,13 @@ prime to the order of `t`, since conjugation preserves orders, and so `s` normal
 subgroup `⟨t⟩`. This is the finite shadow of a relation `s t s⁻¹ = t ^ q`, such as the one between
 Frobenius and tame inertia.
 
+A homomorphism into a commutative monoid has finite order exactly when its values have a common
+positive exponent equal to one; the source only needs a multiplication and identity.
+
 ## Main results
+
+* `MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one`: the common-exponent characterization
+  of finite order for monoid homomorphisms.
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
@@ -48,6 +54,14 @@ Frobenius and tame inertia.
 -/
 
 public section
+
+/-- A homomorphism into a commutative monoid has finite order exactly when all its values have
+a common positive exponent equal to one. -/
+theorem MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
+    {A B : Type*} [MulOneClass A] [CommMonoid B] (f : A →* B) :
+    IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
+  simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, MonoidHom.pow_apply,
+    MonoidHom.one_apply]
 
 namespace IsOfFinOrder
 

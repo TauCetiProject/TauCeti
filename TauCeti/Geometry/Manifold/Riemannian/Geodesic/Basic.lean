@@ -28,9 +28,9 @@ and its derivative along the curve are then read within `s`, and the predicate c
 `UniqueDiffOn ℝ s` — satisfied by the nondegenerate intervals and by `Set.univ` which the theory
 uses — because that is the hypothesis under which a derivative within
 `s` is determined by the curve.  Together with the `C²` regularity it is the hypothesis under
-which the equation is intended to be read as one between honest derivatives; that the two of them
-do make the chart reading of the curve twice differentiable within `s` is not yet formalized, so
-the `derivWithin`s below may still carry the junk value `0`.
+which the equation is read as one between honest derivatives.  In particular,
+`TauCeti.Manifold.hasDerivWithinAt_derivWithin_extChartAt_comp_curve` witnesses the second
+derivative occurring in the chart equation.
 
 Reading the curve in the extended chart centred at the current point turns the definition into
 the second-order equation
@@ -57,6 +57,8 @@ with the rest of the acceleration API in
   `TauCeti.Manifold.IsGeodesicCurveOnFrom.hasMFDerivAt_zero` the unrestricted derivative at `0`.
 * `TauCeti.Manifold.isGeodesicCurveOn_iff_chart`: **the geodesic equation in a chart**, the
   second-order ODE `u'' + Γ (u', u') = 0`.
+* `TauCeti.Manifold.hasDerivWithinAt_derivWithin_extChartAt_comp_curve`: the second
+  within-derivative in that ODE is the derivative of the first one, rather than a junk value.
 * `TauCeti.Manifold.isGeodesicCurveOn_iff_of_isOpen`: on an open parameter set the equation is
   the unrestricted one.
 * `TauCeti.Manifold.isGeodesicCurveOn_const`: a constant curve is a geodesic.
@@ -99,10 +101,8 @@ structure IsGeodesicCurveOn : Prop where
   /-- The parameter set has unique derivatives.  Without this the derivatives within `s` are not
   determined by the curve, and the geodesic equation below does not say what it should. -/
   uniqueDiffOn : UniqueDiffOn ℝ s
-  /-- A geodesic is `C²` on its parameter set: this is the regularity under which the geodesic
-  equation is intended to be an equation between honest derivatives.  That it does make the chart
-  reading of the curve twice differentiable within `s` is not yet formalized, so the equation may
-  still read the junk values of `CovariantDerivative.alongCurveInChartWithin`. -/
+  /-- A geodesic is `C²` on its parameter set, so the two derivatives in its chart equation are
+  genuine within-derivatives. -/
   contMDiffOn : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s
   /-- **The geodesic equation**: the covariant acceleration vanishes at every parameter of `s`. -/
   accelerationWithin_eq_zero : ∀ r ∈ s, accelerationWithin (leviCivitaConnection I M) γ s r = 0

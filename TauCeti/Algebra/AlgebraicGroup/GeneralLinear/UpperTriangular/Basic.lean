@@ -415,7 +415,7 @@ noncomputable def rootSubgroupCoordinateMap (hij : i < j) :
       have hmem := rootSubgroupPoints_mem R hij
         (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))
       rw [← GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app,
-        CommHopfAlgCat.mapPointsFunctor_app_apply,
+        CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
         CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hmem
       intro x hx
       exact hmem x hx)

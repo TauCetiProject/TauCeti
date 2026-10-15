@@ -78,9 +78,9 @@ theorem eventually_lazardExponent_eq_of_laurent
       (huy : u (y, 0) ≠ 0) (hwy : ∀ i, e i < 0 → w i (y, 0) ≠ 0) :
       (weight c (p.lazardExponent (Polynomial.C ∘ φ y)) : ℤ) =
         a + ∑ i, min (e i) 0 := by
-    apply (p.lazardEval_eq_C_mul_prod_of_laurent hp (φ y) c
+    apply p.weight_lazardExponent_eq_of_laurent hp (φ y) c
       (hcy.mono (by simp)) hy.self_of_nhds.1.curry_right huy
-      (fun i ↦ (hy.self_of_nhds.2.1 i).curry_right) hwy ?_).1
+      (fun i ↦ (hy.self_of_nhds.2.1 i).curry_right) hwy
     filter_upwards [hy.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with t ht ht0
     exact ht.2.2 (by simpa using ht0)
   have hxweight := hweight x (hc.self_of_nhdsWithin hx) hslice.self_of_nhds
@@ -90,11 +90,7 @@ theorem eventually_lazardExponent_eq_of_laurent
   have heq : weight c (p.lazardExponent (Polynomial.C ∘ φ y)) =
       weight c (p.lazardExponent (Polynomial.C ∘ φ x)) := by
     exact_mod_cast (hweight y hcy hy hunit.1 hunit.2).trans hxweight.symm
-  rcases lt_trichotomy (toLex (p.lazardExponent (Polynomial.C ∘ φ y)))
-      (toLex (p.lazardExponent (Polynomial.C ∘ φ x))) with hlt | he | hgt
-  · exact (ne_of_lt (hcy.weight_lt_weight (by simp) hlt) heq).elim
-  · exact toLex.injective he
-  · exact (ne_of_lt (hcy.weight_lt_weight (by simp) hgt) heq.symm).elim
+  exact hcy.weight_injOn (by simp) (by simp) heq
 
 /-- On a preconnected parameter set, local complete Laurent forms with locally fixed scalar
 and branch exponents give one removed Lazard base-exponent vector. The local units and integer

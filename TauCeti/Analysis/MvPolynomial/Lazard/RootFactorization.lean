@@ -111,6 +111,59 @@ theorem lazardEval_eq_C_mul_prod_of_laurent
     omega
   · simpa only [hF0, q] using hcentral
 
+/-- A complete Laurent splitting along a Lazard evaluator determines the evaluator-weight of the
+removed Lazard exponent. It is the exponent of the leading scalar plus the sum of the negative
+root exponents. In particular, the right-hand side depends only on the Laurent exponents, not on
+their analytic unit factors or their finite limits. -/
+theorem weight_lazardExponent_eq_of_laurent
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (x : Fin n → 𝕜) (c : Fin n → ℕ)
+    (hc : TauCeti.IsLazardEvaluator {p.lazardExponent (Polynomial.C ∘ x)} c)
+    {a : ℤ} {e : ι → ℤ} {u : 𝕜 → 𝕜} {w : ι → 𝕜 → 𝕜}
+    (hu : AnalyticAt 𝕜 u 0) (hu0 : u 0 ≠ 0)
+    (hw : ∀ i, AnalyticAt 𝕜 (w i) 0) (hw0 : ∀ i, e i < 0 → w i 0 ≠ 0)
+    (hfac : ∀ᶠ y in 𝓝[≠] (0 : 𝕜),
+      (aeval (monomialCurve (Polynomial.C ∘ x) c) p).eval (Polynomial.C y) =
+        Polynomial.C (y ^ a * u y) *
+          ∏ i, (Polynomial.X - Polynomial.C (y ^ e i * w i y))) :
+    (Finsupp.weight c (p.lazardExponent (Polynomial.C ∘ x)) : ℤ) =
+      a + ∑ i, min (e i) 0 :=
+  (lazardEval_eq_C_mul_prod_of_laurent p hp x c hc hu hu0 hw hw0 hfac).1
+
+/-- **Constant removed exponents from global Laurent exponents.** Suppose one evaluator controls
+the removed Lazard exponents of `p` on `S`, and at every point of `S` the monomial-curve
+specialization has a Laurent factorization with the same scalar exponent `a` and the same root
+exponents `e`. The removed Lazard exponent of `p` is then constant on `S`.
+
+The analytic unit factors and the finite root limits may vary with the point. Their only role is
+to make each Laurent factorization nondegenerate; the preceding weight formula shows that all
+removed exponents have the same evaluator-weight, and evaluator injectivity recovers equality of
+the exponent vectors. -/
+theorem lazardExponent_eq_of_laurent
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (c : Fin n → ℕ) {V : Set (Fin n →₀ ℕ)} (hc : TauCeti.IsLazardEvaluator V c)
+    {S : Set (Fin n → 𝕜)} {a : ℤ} {e : ι → ℤ}
+    (hexponent : ∀ x ∈ S, p.lazardExponent (Polynomial.C ∘ x) ∈ V)
+    (hLaurent : ∀ x ∈ S, ∃ (u : 𝕜 → 𝕜) (w : ι → 𝕜 → 𝕜),
+      AnalyticAt 𝕜 u 0 ∧ u 0 ≠ 0 ∧
+      (∀ i, AnalyticAt 𝕜 (w i) 0) ∧ (∀ i, e i < 0 → w i 0 ≠ 0) ∧
+      ∀ᶠ y in 𝓝[≠] (0 : 𝕜),
+        (aeval (monomialCurve (Polynomial.C ∘ x) c) p).eval (Polynomial.C y) =
+          Polynomial.C (y ^ a * u y) *
+            ∏ i, (Polynomial.X - Polynomial.C (y ^ e i * w i y))) :
+    ∀ x ∈ S, ∀ y ∈ S,
+      p.lazardExponent (Polynomial.C ∘ x) = p.lazardExponent (Polynomial.C ∘ y) := by
+  intro x hx y hy
+  obtain ⟨ux, wx, hux, hux0, hwx, hwx0, hfacx⟩ := hLaurent x hx
+  obtain ⟨uy, wy, huy, huy0, hwy, hwy0, hfacy⟩ := hLaurent y hy
+  have hxweight := weight_lazardExponent_eq_of_laurent p hp x c
+    (hc.mono (Set.singleton_subset_iff.mpr (hexponent x hx))) hux hux0 hwx hwx0 hfacx
+  have hyweight := weight_lazardExponent_eq_of_laurent p hp y c
+    (hc.mono (Set.singleton_subset_iff.mpr (hexponent y hy))) huy huy0 hwy hwy0 hfacy
+  apply hc.weight_injOn (hexponent x hx) (hexponent y hy)
+  apply Int.ofNat_injective
+  exact hxweight.trans hyweight.symm
+
 /-- A complete Laurent splitting along a Lazard evaluator determines the Lazard evaluation's
 root multiset. A branch of exponent zero contributes its unit value at the origin, a branch
 of positive exponent contributes zero, and a branch with a pole contributes no finite root.
