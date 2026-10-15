@@ -119,8 +119,8 @@ theorem finite_continuousCohomology_of_prime_ge_two (hn : (n : F) ≠ 0) (A : Ga
   set e := absoluteGaloisGroupRestrictEquiv F
   obtain ⟨W, ⟨ζ, hζ'⟩, hW⟩ := exists_classField_trivializing hn A hA
   set L := classField F W
-  let := finiteExtensionValuativeRel F L
-  let := finiteExtensionNormedFieldTopology F L
+  let := algebraicExtensionValuativeRel F L
+  let := algebraicExtensionNormedFieldTopology F L
   have := finiteExtension_isNonarchimedeanLocalField F L
   -- the subgroup `U = Gal(Fˢ/L) ≅ G_L`, which is `W`, and its image `V ≅ U` in `G_F`
   set U := (galoisSubgroup F L L.val).toSubgroup
