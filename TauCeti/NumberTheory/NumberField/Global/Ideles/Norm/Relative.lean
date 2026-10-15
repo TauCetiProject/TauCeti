@@ -182,7 +182,7 @@ theorem principalSubgroup_le_comap_ideleNormMap :
 ideles. -/
 def ideleClassNormMap : IdeleClassGroup (𝓞 L) L →ₜ* IdeleClassGroup (𝓞 K) K :=
   ContinuousMonoidHom.quotientLift (IdeleGroup.principalSubgroup (𝓞 L) L)
-    ((ContinuousMonoidHom.quotientMk (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
+    ((Subgroup.quotientMkContinuousMonoidHom (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
       (ideleNormMap K L)) (by
         intro x hx
         simpa using principalSubgroup_le_comap_ideleNormMap K L hx)

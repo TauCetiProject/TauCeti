@@ -138,7 +138,7 @@ theorem isSmoothDiscrete_galRepOfQuotient (V : OpenNormalSubgroup (Field.absolut
     IsSmoothDiscrete (ZMod n) ((galRepOfQuotient n F V).obj A) := by
   rw [galRepOfQuotient_obj]
   exact (isSmoothDiscrete_discreteTopRep (ZMod n) _ A).res
-    (ContinuousMonoidHom.quotientMk V.toSubgroup).continuous
+    (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup).continuous
 
 /-- Supply smoothness as the instance hypothesis used by local cohomology and duality. -/
 instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))

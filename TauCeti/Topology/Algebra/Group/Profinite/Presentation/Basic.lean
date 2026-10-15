@@ -105,7 +105,7 @@ namespace presentedProfiniteGroup
 /-- The canonical quotient map from the free profinite group to the presented profinite group. -/
 noncomputable def mk {X : Type u} (rels : Set (freeProfiniteGroup X)) :
     freeProfiniteGroup X →ₜ* presentedProfiniteGroup X rels :=
-  ContinuousMonoidHom.quotientMk _
+  Subgroup.quotientMkContinuousMonoidHom _
 
 /-- The canonical quotient map onto a presented profinite group is surjective. -/
 theorem mk_surjective {X : Type u} (rels : Set (freeProfiniteGroup X)) :
@@ -173,7 +173,7 @@ theorem lift_comp_mk {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
   -- factorization equation.
   change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
     (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
+      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
   exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented profinite group computes on classes as the original
@@ -484,7 +484,7 @@ namespace presentedProP
 /-- The canonical quotient map from the free pro-`p` group to the presented pro-`p` group. -/
 noncomputable def mk (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
     freeProP p X →ₜ* presentedProP p X rels :=
-  ContinuousMonoidHom.quotientMk _
+  Subgroup.quotientMkContinuousMonoidHom _
 
 /-- The canonical quotient map onto a presented pro-`p` group is surjective. -/
 theorem mk_surjective (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
@@ -533,7 +533,7 @@ the relators. -/
 @[simp] theorem ker_mk :
     (mk p rels : freeProP p X →* presentedProP p X rels).ker =
       (Subgroup.normalClosure rels).topologicalClosure := by
-  rw [mk, ContinuousMonoidHom.coe_quotientMk, QuotientGroup.ker_mk']
+  rw [mk, Subgroup.coe_quotientMkContinuousMonoidHom, QuotientGroup.ker_mk']
 
 /-- The generators generate the presented pro-`p` group topologically, as an equation of
 subgroups. -/
@@ -575,7 +575,7 @@ theorem lift_comp_mk {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
   -- factorization equation.
   change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
     (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
+      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
   exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented pro-`p` group computes on classes as the original

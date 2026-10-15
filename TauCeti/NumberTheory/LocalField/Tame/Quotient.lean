@@ -148,7 +148,7 @@ instance : TotallyDisconnectedSpace (tameQuotient K) :=
 
 /-- The quotient map `G_K →ₜ* G_K^t` onto the tame quotient. -/
 def toTameQuotient : Field.absoluteGaloisGroup K →ₜ* tameQuotient K :=
-  ContinuousMonoidHom.quotientMk _
+  Subgroup.quotientMkContinuousMonoidHom _
 
 variable {K} in
 /-- The quotient map onto the tame quotient sends `σ` to its class modulo wild inertia. -/

@@ -127,10 +127,10 @@ noncomputable def H1ConjInvariantsEquivOfSmulEqSelf :
     (Additive.toMul (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m) x.1))
     (pLowerCentralStep_subgroupOf_le_ker_of_mem_H1ConjInvariants htriv p hN hpM x.2))
   invFun ψ := ⟨(H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m)).symm
-      (Additive.ofMul ((Additive.toMul ψ).comp (ContinuousMonoidHom.quotientMk _))),
+      (Additive.ofMul ((Additive.toMul ψ).comp (Subgroup.quotientMkContinuousMonoidHom _))),
     (mem_H1ConjInvariants_iff_of_smul_eq_self htriv).mpr fun g n ↦ by
       simp only [AddEquiv.apply_symm_apply, toMul_ofMul, ContinuousMonoidHom.comp_toFun,
-        ContinuousMonoidHom.quotientMk_apply, mk_conjNormal_eq]⟩
+        Subgroup.quotientMkContinuousMonoidHom_apply, mk_conjNormal_eq]⟩
   left_inv x := Subtype.ext <| by
     simp only [toMul_ofMul, ContinuousMonoidHom.quotientLift_comp_quotientMk, ofMul_toMul,
       AddEquiv.symm_apply_apply]
@@ -160,7 +160,7 @@ theorem H1ConjInvariantsEquivOfSmulEqSelf_symm_apply_coe
     (ψ : Additive ((N ⧸ (pLowerCentralStep p N).subgroupOf N) →ₜ* Multiplicative M)) :
     ((H1ConjInvariantsEquivOfSmulEqSelf htriv p hN hpM).symm ψ : H1 N M) =
       (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m)).symm
-        (Additive.ofMul ((Additive.toMul ψ).comp (ContinuousMonoidHom.quotientMk _))) := by
+        (Additive.ofMul ((Additive.toMul ψ).comp (Subgroup.quotientMkContinuousMonoidHom _))) := by
   rw [H1ConjInvariantsEquivOfSmulEqSelf]
   simp only [AddEquiv.symm_mk, AddEquiv.coe_mk, Equiv.coe_fn_symm_mk]
 

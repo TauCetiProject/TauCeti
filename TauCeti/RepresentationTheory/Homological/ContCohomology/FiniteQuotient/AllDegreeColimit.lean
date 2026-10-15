@@ -95,10 +95,10 @@ variable (G M) in
 /-- The compatible pair of the comparison leg at `U`: the quotient map `G → G ⧸ U` together with
 the inclusion `M^U → M`. -/
 private noncomputable abbrev legPair (U : OpenNormalSubgroup G) :
-    TopRep.res (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+    TopRep.res (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
         (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) ⟶
       ofDiscreteModule ℤ G M :=
-  ofDiscreteModulePair (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+  ofDiscreteModulePair (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
     (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
     U.toSubgroup.fixedPoints_subtype_quotientMk_smul
 
@@ -119,10 +119,11 @@ by the comparison map of the `V`-level is the comparison map of the `U`-level. -
 private theorem legPair_resolutionMap_transition {U V : OpenNormalSubgroup G} (hVU : V ≤ U) :
     ∀ (i : ℕ) (F : (TopRep.resolutionX (ofDiscreteModule ℤ (G ⧸ U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M)) i).V),
-      (resolutionMap (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V) i).hom
+      (resolutionMap (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V) i).hom
           ((resolutionMap (continuousFiniteQuotientMap G hVU)
             (continuousFiniteQuotientPair G M hVU) i).hom F) =
-        (resolutionMap (ContinuousMonoidHom.quotientMk U.toSubgroup) (legPair G M U) i).hom F
+        (resolutionMap (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) (legPair G M U)
+          i).hom F
   | 0, m => by
     -- `change`: the level-zero maps are the coefficient pairs themselves, whose evaluation lemmas
     -- are stated on the pairs rather than on `resolutionMap _ _ 0`.
@@ -138,8 +139,8 @@ private theorem legPair_resolutionMap_transition {U V : OpenNormalSubgroup G} (h
     rw [resolutionMap_succ_apply, resolutionMap_succ_apply, resolutionMap_succ_apply]
     -- `G → G ⧸ V → G ⧸ U` is `G → G ⧸ U`
     have hg : continuousFiniteQuotientMap G hVU
-        (ContinuousMonoidHom.quotientMk V.toSubgroup g) =
-          ContinuousMonoidHom.quotientMk U.toSubgroup g :=
+        (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup g) =
+          Subgroup.quotientMkContinuousMonoidHom U.toSubgroup g :=
       continuousFiniteQuotientMap_mk G hVU g
     rw [hg]
     exact legPair_resolutionMap_transition hVU i _
@@ -154,7 +155,7 @@ normal subgroup `V`: it is `f ∘ F' ∘ π` for the quotient map `π : G → G 
 private theorem exists_openNormalSubgroup_resolutionMap_quotientMk_eq :
     ∀ (i : ℕ) (F : (TopRep.resolutionX (ofDiscreteModule ℤ G M) i).V),
       ∃ U : OpenNormalSubgroup G, ∀ V : OpenNormalSubgroup G, V ≤ U →
-        ∃ F', (resolutionMap (ContinuousMonoidHom.quotientMk V.toSubgroup)
+        ∃ F', (resolutionMap (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup)
           (legPair G M V) i).hom F' = F
   | 0, m => by
     -- an element of `M` is fixed by an open normal subgroup
@@ -196,7 +197,7 @@ every sufficiently small open normal subgroup `V`. -/
 private theorem exists_openNormalSubgroup_cochainsMap_eq (n : ℕ)
     (F : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).X n) :
     ∃ U : OpenNormalSubgroup G, ∀ V : OpenNormalSubgroup G, V ≤ U →
-      ∃ F', (cochainsMap (ContinuousMonoidHom.quotientMk V.toSubgroup)
+      ∃ F', (cochainsMap (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup)
         (legPair G M V)).f n F' = F := by
   obtain ⟨U, hU⟩ := exists_openNormalSubgroup_resolutionMap_quotientMk_eq (n + 1) F.1
   refine ⟨U, fun V hVU ↦ ?_⟩
@@ -205,11 +206,12 @@ private theorem exists_openNormalSubgroup_cochainsMap_eq (n : ℕ)
   -- equivariant along the surjection `G → G ⧸ V`
   refine ⟨⟨F', fun q ↦ ?_⟩, Subtype.ext hF'⟩
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-  apply resolutionMap_injective (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V)
+  apply resolutionMap_injective (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M
+    V)
     QuotientGroup.mk_surjective (legPair_hom_injective V) (n + 1)
   calc
     _ = _ := TopRep.hom_comm_apply (resolutionMap
-      (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V) (n + 1)) g F'
+      (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V) (n + 1)) g F'
     _ = _ := congrArg _ hF'
     _ = _ := F.2 g
     _ = _ := hF'.symm
@@ -225,10 +227,10 @@ level is the comparison of the original level. -/
 private theorem legPair_cochainsMap_f_transition {U V : OpenNormalSubgroup G} (hVU : V ≤ U)
     (n : ℕ) (c : (TopRep.homogeneousCochains (ofDiscreteModule ℤ (G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup M))).X n) :
-    (cochainsMap (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V)).f n
+    (cochainsMap (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V)).f n
         ((cochainsMap (continuousFiniteQuotientMap G hVU)
           (continuousFiniteQuotientPair G M hVU)).f n c) =
-      (cochainsMap (ContinuousMonoidHom.quotientMk U.toSubgroup) (legPair G M U)).f n c :=
+      (cochainsMap (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) (legPair G M U)).f n c :=
   Subtype.ext (legPair_resolutionMap_transition hVU (n + 1) c.1)
 
 end CochainMaps
@@ -258,10 +260,12 @@ theorem exists_continuousFiniteQuotientComparisonApp_eq {n : ℕ}
   obtain ⟨c, hc⟩ := hU U le_rfl
   -- the descended cochain is a cocycle, since its image is one and the cochain map is injective
   have hd : (KU.d n (n + 1)).hom c = 0 := by
-    apply cochainsMap_f_injective (ContinuousMonoidHom.quotientMk U.toSubgroup) (legPair G M U)
+    apply cochainsMap_f_injective (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) (legPair G
+      M U)
       QuotientGroup.mk_surjective (legPair_hom_injective U) (n + 1)
     have h := ConcreteCategory.congr_hom
-      ((cochainsMap (ContinuousMonoidHom.quotientMk U.toSubgroup) (legPair G M U)).comm n (n + 1)) c
+      ((cochainsMap (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) (legPair G M U)).comm n
+        (n + 1)) c
     simp only [ConcreteCategory.comp_apply] at h
     calc
       _ = _ := h.symm
@@ -303,10 +307,12 @@ theorem exists_continuousFiniteQuotientTransition_eq_zero {n : ℕ} (U : OpenNor
   -- there `w'` is a primitive of the transition of `z`, as both sides have the same image in `G`
   refine (KV.homologyπ_eq_zero_iff n hm).2 ⟨w', KV.iCycles_injective n ?_⟩
   rw [KV.iCycles_toCycles_apply, iCycles_cocyclesMap_apply]
-  apply cochainsMap_f_injective (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V)
+  apply cochainsMap_f_injective (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M
+    V)
     QuotientGroup.mk_surjective (legPair_hom_injective V) n
   have h := ConcreteCategory.congr_hom
-    ((cochainsMap (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V)).comm m n) w'
+    ((cochainsMap (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V)).comm m n)
+      w'
   simp only [ConcreteCategory.comp_apply] at h
   calc
     _ = _ := h.symm
