@@ -15,9 +15,9 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 /-!
 # The conorm of a divisor along an extension of function fields
 
-Let `F' / k'` be a finite extension of the algebraic function field `F / k`.  Every place `P'` of
-`F' / k'` restricts to a place `P'.restrict k F` of `F / k`, and a place of `F / k` has only
-finitely many places above it.  The **conorm**
+Let `F' / F` be an algebraic extension with compatible constant fields `k ⊆ k'`, and suppose
+that each place of `F / k` has only finitely many places of `F' / k'` above it. This includes
+finite extensions and algebraic constant field extensions, even infinite ones. The **conorm**
 
 `Con(P) = ∑_{P' ∣ P} e(P' ∣ P) · P'`
 
@@ -77,6 +77,11 @@ implicit, because a divisor of `F / k` determines the latter but not the former.
 opposite convention to `TauCeti.Place.restrict`, and for the same reason: there the argument
 determines the upper field and the lower one has to be supplied.
 
+Finiteness is expressed by `Finite` instances on the restriction fibres. For finite extensions
+these are supplied by `TauCeti.Place.finite_restrict_eq`. For an algebraic constant extension,
+`TauCeti.Place.finite_setOf_restrict_eq_of_constantCompositum_eq_top` supplies them locally.
+The degree identities and the tower statement below assume finite field extensions.
+
 The conorm is built from its coefficients through `Finsupp.ofSupportFinite` rather than as the
 formal sum `∑_P D(P) · Con(P)`.  The coefficient formula is then definitional and additivity is
 immediate, whereas the sum form needs the fibres to be disjoint before either can be read off;
@@ -105,9 +110,13 @@ universe u u' v v'
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F'] [FiniteDimensional F F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
 
 variable (k' F')
+
+section FiniteFibres
+
+variable [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
 
 /-- The candidate coefficient family of the conorm is finitely supported: a place contributing to
 it lies over a place in the support of `D`, and each of those has only finitely many places above
@@ -116,12 +125,12 @@ private theorem finite_support_conormCoeff (D : Divisor k F) :
     (Function.support fun P' : Place k' F' ↦
       (Place.ramificationIdx F P' : ℤ) * D.coeff (P'.restrict k F)).Finite := by
   refine Set.Finite.subset (D.support.finite_toSet.biUnion
-    fun P _ ↦ Place.finite_setOf_restrict_eq (k' := k') (F' := F') k F P) fun P' hP' ↦ ?_
+    fun P _ ↦ @Set.toFinite _ {P' : Place k' F' | P'.restrict k F = P} (hfinite P)) fun P' hP' ↦ ?_
   simp only [Function.mem_support, ne_eq, mul_eq_zero, not_or] at hP'
   exact Set.mem_biUnion (Finset.mem_coe.mpr (WeilDivisor.mem_support_iff.mpr hP'.2)) rfl
 
-/-- **The conorm of a divisor** along a finite extension `F' / k'` of `F / k` (Stichtenoth,
-Definition 3.1.8): the divisor of `F' / k'` whose coefficient at a place `P'` is `e(P' ∣ P)` times
+/-- **The conorm of a divisor** along an algebraic extension with finite restriction fibres
+(Stichtenoth, Definition 3.1.8): the divisor whose coefficient at a place `P'` is `e(P' ∣ P)` times
 the coefficient of `D` at the place `P` that `P'` lies over.  On a single place it is the formal
 sum `∑_{P' ∣ P} e(P' ∣ P) · P'`; see `TauCeti.Divisor.conorm_ofPoint`. -/
 noncomputable def conorm : Divisor k F →+ Divisor k' F' where
@@ -160,7 +169,7 @@ ramification indices as multiplicities.  Its expansion as a sum of point divisor
 theorem conorm_ofPoint (P : Place k F) :
     conorm k' F' (WeilDivisor.ofPoint P) =
       WeilDivisor.ofFinsetWithMultiplicity
-        (Place.finite_setOf_restrict_eq (k' := k') (F' := F') k F P).toFinset
+        (@Set.toFinite _ {P' : Place k' F' | P'.restrict k F = P} (hfinite P)).toFinset
         (Place.ramificationIdx F) := by
   classical
   refine WeilDivisor.ext fun Q ↦ ?_
@@ -230,9 +239,13 @@ theorem conorm_injective [Algebra.IsIntegral k k'] (hF' : IsFunctionField k' F')
     Nat.cast_ne_zero.mpr (Place.ramificationIdx_pos F P').ne'
   exact mul_left_cancel₀ he hP'
 
+end FiniteFibres
+
 /-! ### The degree of a conorm -/
 
 section Degree
+
+variable [FiniteDimensional F F']
 
 /-- The degree of the conorm of a place: `[k' : k] · deg (Con P) = [F' : F] · deg P`.  The
 fundamental identity sums the products `e(P' ∣ P) · f(P' ∣ P)` over the fibre, and
@@ -389,6 +402,10 @@ theorem degree_conorm_of_isSeparable_of_finrank_eq_one [Algebra.IsSeparable F F'
 
 end Degree
 
+section FiniteFibres
+
+variable [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+
 /-! ### Principal divisors and divisor classes -/
 
 /-- **The conorm of a principal divisor is principal** (Stichtenoth, Proposition 3.1.9): the conorm
@@ -450,6 +467,8 @@ theorem conormClassGroup_divisorClass (hF : IsFunctionField k F) (hF' : IsFuncti
     conormClassGroup k' F' hF hF' ((Place.orderSystem hF).divisorClass D) =
       (Place.orderSystem hF').divisorClass (conorm k' F' D) :=
   WeilDivisor.OrderSystem.ClassGroup.lift_divisorClass _ _ _ D
+
+end FiniteFibres
 
 end Extension
 

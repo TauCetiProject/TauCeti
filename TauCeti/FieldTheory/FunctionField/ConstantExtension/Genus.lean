@@ -231,7 +231,7 @@ theorem conormClassGroup_canonicalClass_of_constantCompositum_eq_top (hF : IsFun
   obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
   have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
   rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',
-    Divisor.dim_conorm hex h hF', Divisor.degree_conorm_of_constantCompositum_eq_top hex h,
+    Divisor.dim_conorm hex h hF, Divisor.degree_conorm_of_constantCompositum_eq_top hex h,
     genus_eq_genus_of_constantCompositum_eq_top hF hex h]
   exact hW'
 
@@ -252,7 +252,7 @@ theorem conormClassGroup_injective_of_constantCompositum_eq_top (hF : IsFunction
     rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hex h, ← hz,
       Divisor.degree_principal]
   have hdim : 1 ≤ Divisor.dim D := by
-    rw [← Divisor.dim_conorm hex h hF']
+    rw [← Divisor.dim_conorm hex h hF]
     exact (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF' (by
       rw [Divisor.degree_conorm_of_constantCompositum_eq_top hex h, hdeg])).2 ⟨z, hz⟩
   exact (Divisor.divisorClass_eq_zero_iff hF).2
