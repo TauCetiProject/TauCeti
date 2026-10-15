@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.FiniteOverField
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
@@ -122,8 +122,8 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
     rw [InvertibleSheaf.trivial_obj]
     exact eulerCharBelow_congr k e 2
   have h₃ := Scheme.Hom.eulerCharBelow_pushforward_structureSheaf I.subschemeι k s
-  change eulerCharBelow k X ((Scheme.Modules.pushforward I.subschemeι).obj M) 2 =
-    (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s at h₃
+  -- `V(I)` lies over `k` through `X`, so its rank is that of `V(I) ⟶ X ⟶ Spec k`.
+  rw [comp_over I.subschemeι (Spec (.of k))]
   linarith
 
 end FiniteCohomology

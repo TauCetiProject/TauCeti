@@ -69,9 +69,10 @@ lemma sheafι_toPushforwardSubscheme :
               (SheafOfModules.unit I.subscheme.ringCatSheaf)) from
           SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) = 0 := by
   refine Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_
-  change Scheme.Modules.Hom.app
-    (SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) U
-      (Scheme.Modules.Hom.app I.sheafι U t) = 0
+  -- The components of a composite and of the zero morphism are computed sectionwise
+  -- (`Scheme.Modules.Hom.comp_app` and `Scheme.Modules.Hom.zero_app` hold by `rfl`). Neither
+  -- `rw` nor `simp` can apply `comp_app` here: the goal is ill-typed at `implicit` transparency,
+  -- where the ring sheaf of `V(I)` is a `TopCat.Sheaf` rather than a sheaf on the site.
   exact (I.subschemeι_app_eq_zero_iff).mpr (I.sheafι_app_mem U t)
 
 /-- `I` is the kernel of the restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}`. -/
