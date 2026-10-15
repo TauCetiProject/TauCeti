@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
-public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 
@@ -70,18 +69,20 @@ abbrev baseChangeAffineSchemeOver (f : Y ⟶ X) :
 theorem baseChangeAffineSchemeOver_map_left_fst (f : Y ⟶ X) {V W : AffineSchemeOver X}
     (g : V ⟶ W) :
     ((baseChangeAffineSchemeOver f).map g).left ≫ pullback.fst W.hom f =
-      pullback.fst V.hom f ≫ g.left := by
-  change pullback.lift _ _ _ ≫ pullback.fst W.hom f = _
-  exact pullback.lift_fst _ _ _
+      pullback.fst V.hom f ≫ g.left :=
+  -- The generated `MorphismProperty.Over.pullback_map_left` does not rewrite here: `@IsAffineHom`
+  -- only has type `MorphismProperty Scheme` after unfolding the semireducible `MorphismProperty`,
+  -- so the rewrite fails to match. The map is identified with `pullback.lift` by unfolding.
+  pullback.lift_fst _ _ _
 
 /-- The induced map between base changes lies over the identity of the new base. -/
 @[simp]
 theorem baseChangeAffineSchemeOver_map_left_snd (f : Y ⟶ X) {V W : AffineSchemeOver X}
     (g : V ⟶ W) :
     ((baseChangeAffineSchemeOver f).map g).left ≫ pullback.snd W.hom f =
-      pullback.snd V.hom f := by
-  change pullback.lift _ _ _ ≫ pullback.snd W.hom f = _
-  exact pullback.lift_snd _ _ _
+      pullback.snd V.hom f :=
+  -- Definitional unfolding, as in `baseChangeAffineSchemeOver_map_left_fst`.
+  pullback.lift_snd _ _ _
 
 end
 
