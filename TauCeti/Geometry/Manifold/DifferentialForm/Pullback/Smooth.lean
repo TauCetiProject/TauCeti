@@ -21,8 +21,9 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`.
 
-The proof uses Mathlib's regularity of `mfderivWithin` in tangent coordinates and the smooth
-polynomial precomposition operation on continuous alternating maps.
+In tangent coordinates, pullback precomposes the form's coordinates with those of Mathlib's
+`mfderivWithin`, via `ContinuousAlternatingMap.compContinuousLinearMap`. This expresses
+pullback regularity in terms of maps between fixed model fibres.
 
 ## References
 
