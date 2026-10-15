@@ -296,6 +296,9 @@ def realizationTopHomeomorphFace :
     (simplex_le_iff.mpr fun _ => hf)).trans
     (Homeomorph.setCongr (by
       ext x
+      -- Unifying `Homeomorph.setCongr` with the two subtypes infers both sets as bare
+      -- predicate lambdas, so `ext` leaves `x ∈ fun y => _` rather than `x ∈ {y | _}`. No
+      -- membership lemma matches that form, so `change` unfolds it to the predicates.
       change x.1.support ∈ simplex _ ↔ x.1.support ⊆ _
       rw [mem_simplex]
       exact and_iff_right (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))))
