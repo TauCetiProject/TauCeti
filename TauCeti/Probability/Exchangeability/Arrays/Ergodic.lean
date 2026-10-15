@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Arrays.ZeroOne
 public import TauCeti.MeasureTheory.Group.CountableAction
-public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
+public import TauCeti.Probability.Process.Array.FinitaryAction
 -- Non-public: cylinder approximation and its real-valued measure estimates are proof tools.
 import TauCeti.MeasureTheory.Constructions.CylinderApproximation
 import TauCeti.MeasureTheory.Measure.ZeroOne
@@ -16,10 +16,12 @@ import Mathlib.Probability.Process.FiniteDimensionalLaws
 /-!
 # Finitary actions and ergodicity for exchangeable arrays
 
-The finitely supported permutations of `ℕ` act diagonally on array path space: one permutation
-relabels both array coordinates.  For a jointly exchangeable array law, this action is ergodic
-exactly when the coordinate array is jointly dissociated.  By the corner-tail theorem in
-`Arrays.ZeroOne`, these are also equivalent to triviality of the corner-tail σ-algebra.
+The finitely supported permutations of `ℕ` act diagonally on array path space, one permutation
+relabelling both array coordinates, and separately, by independent row and column relabelings
+(`TauCeti.Probability.Process.Array.FinitaryAction`).  For a jointly exchangeable array law, the
+diagonal action is ergodic exactly when the coordinate array is jointly dissociated.  By the
+corner-tail theorem in `Arrays.ZeroOne`, these are also equivalent to triviality of the corner-tail
+σ-algebra.
 
 Together with the corner-tail theorem this closes a representation-free triangle for jointly
 exchangeable arrays: joint dissociation, triviality of the corner tail, and ergodicity of the
@@ -34,19 +36,14 @@ because finite-dimensional marginals determine the array law.
 
 ## Main declarations
 
-* `TauCeti.Probability.instSMulFinitaryPermArray` — the diagonal action of the finitary symmetric
-  group `TauCeti.FinitaryPerm` (defined in `Algebra/GroupAction/FiniteSupportPerm.lean`) on array
-  path space, one permutation relabelling both coordinates;
-* `TauCeti.Probability.instSMulFinitaryPermPairArray` — independent finitary row and column
-  relabelings, with `SeparatelyExchangeable.smulInvariantMeasure_pair` and its converse linking
-  separate exchangeability to invariance of the law;
+* `TauCeti.Probability.JointlyExchangeable.smulInvariantMeasure` — a jointly exchangeable array
+  law is invariant under the diagonal action;
+* `TauCeti.Probability.SeparatelyExchangeable.smulInvariantMeasure_pair` and its converse — separate
+  exchangeability is invariance of the law under the separate action;
 * `TauCeti.Probability.jointlyExchangeable_of_smulInvariantMeasure` — invariance under the
   diagonal finitary action gives joint exchangeability;
 * `TauCeti.Probability.separatelyExchangeable_iff_map_pairReindex_finitary` — finite-support
   reindexings suffice to test separate exchangeability;
-* `TauCeti.Probability.preimage_pairReindex_eq_self_of_measurableSet_arrayTail` — a corner-tail
-  event is fixed by every pair of finitely supported axis permutations, not only by the diagonal
-  ones;
 * `TauCeti.Probability.jointlyDissociated_iff_ergodicSMul` — joint dissociation is ergodicity of
   that action for a jointly exchangeable array law;
 * `TauCeti.Probability.jointlyDissociated_iff_ergodicSMul_pair` — joint dissociation is
@@ -73,59 +70,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α : Type*}
-
-/-! ## The diagonal finitary-permutation action -/
-
-/-- Finitely supported vertex permutations act diagonally on array path space, by the inverse
-permutation so that reindexing is a left action. -/
-instance instSMulFinitaryPermArray : SMul FinitaryPerm (ℕ × ℕ → α) :=
-  ⟨fun g x => pairReindex (FinitaryPerm.toPerm g)⁻¹ (FinitaryPerm.toPerm g)⁻¹ x⟩
-
-/-- The diagonal array action written as an explicit pair reindexing. -/
-theorem finitaryPerm_smul_array_def (g : FinitaryPerm) (x : ℕ × ℕ → α) :
-    g • x = pairReindex (FinitaryPerm.toPerm g)⁻¹ (FinitaryPerm.toPerm g)⁻¹ x :=
-  rfl
-
-/-- The diagonal array action relabels both coordinates by the inverse permutation. -/
-@[simp]
-theorem finitaryPerm_smul_array_apply (g : FinitaryPerm) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
-    (g • x) p = x ((FinitaryPerm.toPerm g)⁻¹ p.1, (FinitaryPerm.toPerm g)⁻¹ p.2) :=
-  by rw [finitaryPerm_smul_array_def, pairReindex_apply]
-
-instance instMulActionFinitaryPermArray : MulAction FinitaryPerm (ℕ × ℕ → α) where
-  one_smul x := by ext p; simp
-  mul_smul g h x := by ext p; simp [mul_inv_rev]
-
-/-- Independent finitely supported permutations act on the two axes of an array. The inverse
-permutations make reindexing a left action. -/
-instance instSMulFinitaryPermPairArray :
-    SMul (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) :=
-  ⟨fun g x => pairReindex (FinitaryPerm.toPerm g.1)⁻¹
-    (FinitaryPerm.toPerm g.2)⁻¹ x⟩
-
-/-- The separate action is coordinate reindexing on each axis. -/
-@[simp]
-theorem finitaryPermPair_smul_array_apply (g : FinitaryPerm × FinitaryPerm)
-    (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
-    (g • x) p = x ((FinitaryPerm.toPerm g.1)⁻¹ p.1,
-      (FinitaryPerm.toPerm g.2)⁻¹ p.2) := by
-  -- Expose the reindexing map behind the scalar action.
-  change (pairReindex (FinitaryPerm.toPerm g.1)⁻¹
-    (FinitaryPerm.toPerm g.2)⁻¹ x) p = _
-  rw [pairReindex_apply]
-
-/-- Independent row and column permutations compose as a left action on arrays. -/
-instance instMulActionFinitaryPermPairArray :
-    MulAction (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) where
-  one_smul x := by ext p; simp
-  mul_smul g h x := by ext p; simp [mul_inv_rev]
-
-variable [MeasurableSpace α]
-
-instance instMeasurableConstSMulFinitaryPermArray :
-    MeasurableConstSMul FinitaryPerm (ℕ × ℕ → α) :=
-  ⟨fun _ => measurable_pairReindex (α := α) _ _⟩
+variable {α : Type*} [MeasurableSpace α]
 
 /-- A jointly exchangeable array law is invariant under diagonal finitary relabeling. -/
 theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → α)}
@@ -139,62 +84,6 @@ theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → �
     (jointlyExchangeable_iff.mp hρ (FinitaryPerm.toPerm g)⁻¹)
   rw [← pairReindex_def, Measure.map_id'] at hmap
   exact hmap
-
-/-! ## Corner-tail events are invariant -/
-
-private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
-    {s : Set (ℕ × ℕ → α)} {σ τ : Equiv.Perm ℕ} {N : ℕ}
-    (hs : MeasurableSet[arrayTailFamily (fun p (x : ℕ × ℕ → α) => x p) N] s)
-    (hσ : ∀ k, N ≤ k → σ k = k) (hτ : ∀ k, N ≤ k → τ k = k) :
-    pairReindex (α := α) σ τ ⁻¹' s = s := by
-  rw [arrayTailFamily_eq_blockSigma, blockSigma_def] at hs
-  rw [MeasurableSpace.measurableSet_iSup] at hs
-  induction hs with
-  | basic u hu =>
-      rcases hu with ⟨p, hu⟩
-      rw [MeasurableSpace.measurableSet_iSup] at hu
-      induction hu with
-      | basic u hu =>
-          rcases hu with ⟨hp, v, _, rfl⟩
-          ext x
-          simp only [Set.mem_preimage, pairReindex_apply]
-          rw [hσ p.1 hp.1, hτ p.2 hp.2]
-      | empty => simp
-      | compl t _ hpre => rw [Set.preimage_compl, hpre]
-      | iUnion f _ hf =>
-          rw [Set.preimage_iUnion]
-          simp [hf]
-  | empty => simp
-  | compl t _ hpre => rw [Set.preimage_compl, hpre]
-  | iUnion f _ hf =>
-      rw [Set.preimage_iUnion]
-      simp [hf]
-
-/-- **Every corner-tail event is fixed by a finitely supported separate relabelling**: permuting
-the two axes independently by finitely supported permutations fixes every sufficiently far corner,
-which is all that a corner-tail event reads. -/
-theorem preimage_pairReindex_eq_self_of_measurableSet_arrayTail
-    {s : Set (ℕ × ℕ → α)}
-    (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
-    {σ τ : Equiv.Perm ℕ} (hσ : (MulAction.fixedBy ℕ σ)ᶜ.Finite)
-    (hτ : (MulAction.fixedBy ℕ τ)ᶜ.Finite) : pairReindex (α := α) σ τ ⁻¹' s = s := by
-  obtain ⟨M, hM⟩ := finite_compl_fixedBy_eventually_eq_self hσ
-  obtain ⟨N, hN⟩ := finite_compl_fixedBy_eventually_eq_self hτ
-  exact preimage_pairReindex_eq_of_measurable_arrayTailFamily
-    ((measurableSet_arrayTail_iff.mp hs) (max M N))
-    (fun k hk => hM k ((le_max_left M N).trans hk)) fun k hk => hN k ((le_max_right M N).trans hk)
-
-/-- **Every corner-tail event is fixed by the diagonal action**: a finitely supported relabelling
-of both coordinates changes only finitely many entries, and a corner-tail event does not read
-them. -/
-theorem preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail
-    {s : Set (ℕ × ℕ → α)}
-    (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
-    (g : FinitaryPerm) : (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s := by
-  have hfin : (MulAction.fixedBy ℕ (FinitaryPerm.toPerm g)⁻¹)ᶜ.Finite := by
-    simpa only [FinitaryPerm.toPerm_inv] using FinitaryPerm.finite_compl_fixedBy_toPerm g⁻¹
-  simp only [finitaryPerm_smul_array_def]
-  exact preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs hfin hfin
 
 /-! ## The block-swap zero-one argument -/
 
@@ -441,20 +330,13 @@ theorem jointlyExchangeable_iff_smulInvariantMeasure {ρ : Measure (ℕ × ℕ �
     JointlyExchangeable ρ (fun p x => x p) ↔ SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ :=
   ⟨JointlyExchangeable.smulInvariantMeasure, fun _ => jointlyExchangeable_of_smulInvariantMeasure⟩
 
-/-- Each independent finitary relabeling is measurable. -/
-instance instMeasurableConstSMulFinitaryPermPairArray :
-    MeasurableConstSMul (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) :=
-  ⟨fun _ => measurable_pairReindex _ _⟩
-
 /-- A separately exchangeable array law is invariant under the separate finitary action. -/
 theorem SeparatelyExchangeable.smulInvariantMeasure_pair {ρ : Measure (ℕ × ℕ → α)}
     (hρ : SeparatelyExchangeable ρ fun p x => x p) :
     SMulInvariantMeasure (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) ρ := by
   constructor
   intro g s hs
-  -- Unfold only the action, leaving the measurable reindexing map visible to `map_apply`.
-  change ρ (pairReindex (FinitaryPerm.toPerm g.1)⁻¹
-    (FinitaryPerm.toPerm g.2)⁻¹ ⁻¹' s) = ρ s
+  simp only [finitaryPermPair_smul_array_def]
   rw [← Measure.map_apply (measurable_pairReindex _ _) hs]
   have hmap := congrArg (fun m : Measure (ℕ × ℕ → α) => m s)
     (separatelyExchangeable_iff.mp hρ (FinitaryPerm.toPerm g.1)⁻¹
@@ -480,21 +362,6 @@ theorem separatelyExchangeable_of_smulInvariantMeasure_pair {ρ : Measure (ℕ �
     funext x p
     simp [finitaryPermPair_smul_array_apply, pairReindex_apply, g]
   rwa [hact] at h
-
-/-- A corner-tail event is fixed by every separate finitary relabeling. -/
-theorem preimage_finitaryPermPair_smul_array_eq_self_of_measurableSet_arrayTail
-    {s : Set (ℕ × ℕ → α)}
-    (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
-    (g : FinitaryPerm × FinitaryPerm) :
-    (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s := by
-  have h₁ : (MulAction.fixedBy ℕ (FinitaryPerm.toPerm g.1)⁻¹)ᶜ.Finite := by
-    simpa only [FinitaryPerm.toPerm_inv] using FinitaryPerm.finite_compl_fixedBy_toPerm g.1⁻¹
-  have h₂ : (MulAction.fixedBy ℕ (FinitaryPerm.toPerm g.2)⁻¹)ᶜ.Finite := by
-    simpa only [FinitaryPerm.toPerm_inv] using FinitaryPerm.finite_compl_fixedBy_toPerm g.2⁻¹
-  -- The action is exactly this two-axis reindexing.
-  change pairReindex (FinitaryPerm.toPerm g.1)⁻¹
-    (FinitaryPerm.toPerm g.2)⁻¹ ⁻¹' s = s
-  exact preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs h₁ h₂
 
 /-- Joint dissociation is ergodicity for the independent row-and-column action on a separately
 exchangeable array law. -/
