@@ -771,28 +771,12 @@ theorem evenUnitaryGroupMap_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) (x : 
     -- underlying Clifford element, so both sides are `map f x` by definition.
     exact (coe_spinGroupMap_apply f x).symm
 
-/-- The inclusion of Spin into the even unitary carrier, as a commuting square of group
-homomorphisms along a quadratic isometry. -/
-theorem evenUnitaryGroupMap_comp_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) :
-    f.evenUnitaryGroupMap.comp (CliffordAlgebra.spinGroupToEvenUnitary Q₁) =
-      (CliffordAlgebra.spinGroupToEvenUnitary Q₂).comp f.spinGroupMap :=
-  MonoidHom.ext (f.evenUnitaryGroupMap_spinGroupToEvenUnitary)
-
 end QuadraticMap.Isometry
 
 namespace QuadraticMap.IsometryEquiv
 
 variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup M₂]
   [Module R M₁] [Module R M₂] {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
-
-/-- The equivalence of even unitary groups induced by an isometry equivalence restricts to the
-induced equivalence of Spin groups. -/
-theorem evenUnitaryGroupEquiv_spinGroupToEvenUnitary (e : Q₁.IsometryEquiv Q₂)
-    (x : spinGroup Q₁) :
-    e.evenUnitaryGroupEquiv (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x) =
-      CliffordAlgebra.spinGroupToEvenUnitary Q₂ (e.spinGroupEquiv x) := by
-  rw [evenUnitaryGroupEquiv_apply, spinGroupEquiv_apply,
-    QuadraticMap.Isometry.evenUnitaryGroupMap_spinGroupToEvenUnitary]
 
 /-- An isometry equivalence carries the image of Spin in the even unitary carrier onto the image
 of Spin. -/
@@ -803,7 +787,7 @@ theorem map_range_spinGroupToEvenUnitary (e : Q₁.IsometryEquiv Q₂) :
   rw [MonoidHom.map_range]
   have h : e.evenUnitaryGroupEquiv.toMonoidHom.comp (CliffordAlgebra.spinGroupToEvenUnitary Q₁) =
       (CliffordAlgebra.spinGroupToEvenUnitary Q₂).comp e.spinGroupEquiv.toMonoidHom :=
-    MonoidHom.ext (e.evenUnitaryGroupEquiv_spinGroupToEvenUnitary)
+    MonoidHom.ext fun x ↦ by simp
   rw [h, MonoidHom.range_comp, MonoidHom.range_eq_top.mpr e.spinGroupEquiv.surjective,
     ← MonoidHom.range_eq_map]
 
