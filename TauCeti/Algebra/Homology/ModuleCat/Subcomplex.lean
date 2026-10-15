@@ -22,7 +22,8 @@ the spectral sequence of a filtered complex.
 
 ## Main definitions
 
-* `HomologicalComplex.ofSubmodules K N hN`: the complex with terms `N i`.
+* `HomologicalComplex.ofSubmodules K N hN`: the complex with terms `N i`, identified with them by
+  `HomologicalComplex.ofSubmodulesXEquiv`.
 * `HomologicalComplex.ofSubmodulesι K N hN`: its inclusion into `K`, and
   `HomologicalComplex.ofSubmodulesMap`: the restriction of a chain map.
 * `HomologicalComplex.subobjectOfSubmodules K N hN`: the corresponding subcomplex of `K`.
@@ -107,6 +108,26 @@ def ofSubmodulesι : K.ofSubmodules N hN ⟶ K where
   f i := ModuleCat.ofHom (N i).subtype
   comm' _ _ _ := rfl
 
+/-- The term of `K.ofSubmodules N hN` in degree `i` is the submodule `N i`, as a linear
+equivalence. -/
+def ofSubmodulesXEquiv (i : ι) : (K.ofSubmodules N hN).X i ≃ₗ[R] N i :=
+  LinearEquiv.refl R (N i)
+
+/-- The inclusion of the complex with terms `N i` is the inclusion of the submodules. -/
+@[simp]
+theorem ofSubmodulesι_f_apply (i : ι) (x : (K.ofSubmodules N hN).X i) :
+    (K.ofSubmodulesι N hN).f i x = (K.ofSubmodulesXEquiv N hN i x : K.X i) := by
+  unfold ofSubmodulesι ofSubmodulesXEquiv
+  rfl
+
+/-- The differentials of `K.ofSubmodules N hN` are the restrictions of those of `K`. -/
+@[simp]
+theorem ofSubmodules_d_apply (i j : ι) (x : (K.ofSubmodules N hN).X i) :
+    (K.ofSubmodulesXEquiv N hN j ((K.ofSubmodules N hN).d i j x) : K.X j) =
+      K.d i j (K.ofSubmodulesXEquiv N hN i x) := by
+  unfold ofSubmodulesXEquiv ofSubmodules
+  rfl
+
 /-- The inclusion of the complex with terms `N i` is a monomorphism. -/
 instance : Mono (K.ofSubmodulesι N hN) :=
   mono_of_mono_f _ fun _ ↦
@@ -179,6 +200,15 @@ def ofSubmodulesMap (φ : K ⟶ L) (h : ∀ i, ∀ x ∈ N i, φ.f i x ∈ N' i)
 theorem ofSubmodulesMap_comp_ofSubmodulesι (φ : K ⟶ L) (h : ∀ i, ∀ x ∈ N i, φ.f i x ∈ N' i) :
     ofSubmodulesMap hN hN' φ h ≫ L.ofSubmodulesι N' hN' = K.ofSubmodulesι N hN ≫ φ := by
   ext i x
+  rfl
+
+/-- The restriction of a chain map acts on the submodules as the chain map. -/
+@[simp]
+theorem ofSubmodulesMap_f_apply (φ : K ⟶ L) (h : ∀ i, ∀ x ∈ N i, φ.f i x ∈ N' i) (i : ι)
+    (x : (K.ofSubmodules N hN).X i) :
+    (L.ofSubmodulesXEquiv N' hN' i ((ofSubmodulesMap hN hN' φ h).f i x) : L.X i) =
+      φ.f i (K.ofSubmodulesXEquiv N hN i x) := by
+  unfold ofSubmodulesXEquiv ofSubmodulesMap
   rfl
 
 /-- A chain map carrying each `N i` into `N' i` restricts to the subcomplexes: the composite of
