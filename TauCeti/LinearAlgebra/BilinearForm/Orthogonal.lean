@@ -223,17 +223,11 @@ submodule to its orthogonal complement for a symmetric form. -/
 theorem map_dualAnnihilator_toPerfPair_symm (B : LinearMap.BilinForm R M) [B.IsPerfPair]
     (hB : B.IsSymm) (S : Submodule R M) :
     S.dualAnnihilator.map B.toPerfPair.symm.toLinearMap = B.orthogonal S := by
-  ext x
-  constructor
-  · rintro ⟨f, hf, rfl⟩ y hy
-    rw [hB.eq]
-    exact congrArg (fun g : Module.Dual R M ↦ g y)
-      (B.apply_symm_toPerfPair_self f) |>.trans (((Submodule.mem_dualAnnihilator f).mp hf) y hy)
-  · intro hx
-    refine ⟨B x, (Submodule.mem_dualAnnihilator (B x)).mpr fun y hy ↦ ?_,
-      B.toPerfPair.symm_apply_apply x⟩
-    rw [hB.eq]
-    exact hx y hy
+  rw [Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
+  have hmap : B.toPerfPair.toLinearMap = B := LinearMap.ext B.toLinearMap_toPerfPair
+  have hflip : LinearMap.flip B = B := LinearMap.ext₂ fun x y ↦ hB.eq y x
+  simpa only [hmap, hflip, orthogonal] using
+    Submodule.comap_dualAnnihilator_eq_orthogonalBilin B S
 
 /-- A symmetric perfect pairing restricts to a perfect pairing on any submodule complementary
 to its orthogonal complement. No field or finite generation hypothesis is needed. -/
