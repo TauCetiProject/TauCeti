@@ -27,7 +27,8 @@ it is the separately constructed symplectic group scheme.
 ## Main definitions
 
 * `TauCeti.SpStd.groupScheme`: the carrier, cut out of the general linear group by
-  `TauCeti.SpStd.definingIdeal`, with its closed immersion `TauCeti.SpStd.carrierι`.
+  `TauCeti.SpStd.definingIdeal`, with its closed immersion `TauCeti.SpStd.carrierι`, and its
+  coordinate Hopf algebra `TauCeti.SpStd.coordinateHopfAlgebra`.
 * `TauCeti.SpStd.rootSubgroup` and `TauCeti.SpStd.weightTorus`: the numbered root subgroups and
   the split weight torus, each a closed immersion into the carrier.
 * `TauCeti.SpStd.points`, `TauCeti.SpStd.rootSubgroupPoints` and
@@ -92,6 +93,15 @@ theorem groupScheme_def :
         (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
         (definingIdeal n) := by
   rw [groupScheme, definingIdeal]
+
+/-- The coordinate Hopf algebra of the full-weight type-`C_(n+1)` carrier: the quotient of
+`O(GL_(2n+2))` whose quotient spectrum is `groupScheme n`. -/
+noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{0} ℤ :=
+  CommHopfAlgCat.quotient (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
+    (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (rootGenerator n)
+      (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
+      (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+      (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n))
 
 /-- The canonical inclusion of the type-`C_(n+1)` carrier into its ambient general linear group. -/
 noncomputable def carrierι :

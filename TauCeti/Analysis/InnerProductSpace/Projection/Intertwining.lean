@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Idempotents
+public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 
@@ -34,6 +34,8 @@ complementary pairs of projections this is Kato's unitary `U = T (T† T)^(-1/2)
 
 * `CompleteOrthogonalIdempotents.of_isSymmetricProjection`: symmetric idempotents summing to the
   identity are complete orthogonal idempotents.
+* `TauCeti.forall_comp_operatorAbs_eq_iff`: the block polar-factor equations are equivalent to
+  the polar-factor equation for the assembled overlap.
 * `TauCeti.existsUnique_linearIsometryEquiv_comp_operatorAbs_eq`: under Davis's non-degeneracy
   condition, there is a unique unitary `U` with `U |P'ⱼ Pⱼ| = P'ⱼ Pⱼ` for every `j`.
 * `TauCeti.comp_eq_comp_of_forall_comp_operatorAbs_eq`: this unitary satisfies `U Pⱼ = P'ⱼ U`;
@@ -83,24 +85,25 @@ variable {P P' : ι → E →ₗ[𝕜] E}
 
 section Overlap
 
-variable (hP : CompleteOrthogonalIdempotents P) (hP' : CompleteOrthogonalIdempotents P')
+variable (hP : CompleteOrthogonalIdempotents P) (hP' : OrthogonalIdempotents P')
 include hP
 
 /-- The assembled overlap `T = ∑ⱼ P'ⱼ Pⱼ` restricts to the block overlap on `range Pⱼ`. -/
 private theorem overlap_comp (j : ι) : (∑ k, P' k ∘ₗ P k) ∘ₗ P j = P' j ∘ₗ P j := by
-  classical
-  simp only [← Module.End.mul_eq_comp, Finset.sum_mul, mul_assoc, hP.mul_eq, mul_ite, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  simpa only [projectionFamilyOverlap_def, Module.End.mul_eq_comp] using
+    hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul P' j
 
 include hP'
 
 /-- The assembled overlap intertwines the two families: `T Pⱼ = P'ⱼ T`. -/
 private theorem overlap_comp_eq_comp (j : ι) :
     (∑ k, P' k ∘ₗ P k) ∘ₗ P j = P' j ∘ₗ ∑ k, P' k ∘ₗ P k := by
-  classical
-  rw [overlap_comp hP]
-  simp only [← Module.End.mul_eq_comp, Finset.mul_sum, ← mul_assoc, hP'.mul_eq, ite_mul,
-    zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  -- The block identities use multiplication in the endomorphism ring; convert their result
+  -- to composition after simplifying both sides to the same matched block.
+  simpa only [projectionFamilyOverlap_def, Module.End.mul_eq_comp] using
+    (show projectionFamilyOverlap P P' * P j = P' j * projectionFamilyOverlap P P' from by
+      simp only [hP.toOrthogonalIdempotents.projectionFamilyOverlap_mul,
+        hP'.mul_projectionFamilyOverlap])
 
 variable [FiniteDimensional 𝕜 E] (hPs : ∀ j, (P j).IsSymmetric) (hP's : ∀ j, (P' j).IsSymmetric)
 include hPs hP's
@@ -124,9 +127,9 @@ private theorem operatorAbs_comp (j : ι) :
   exact operatorAbs_comp_of_commute ⟨hP.idem j, hPs j⟩
     (commute_adjoint_overlap_comp_overlap hP hP' hPs hP's j)
 
-/-- A map is a simultaneous polar factor of every block overlap exactly when it is a polar factor
-of the assembled overlap. -/
-private theorem forall_comp_operatorAbs_eq_iff (V : E →ₗ[𝕜] E) :
+/-- With a complete source family and an orthogonal target family, a map is a simultaneous polar
+factor of every block overlap exactly when it is a polar factor of the assembled overlap. -/
+theorem forall_comp_operatorAbs_eq_iff (V : E →ₗ[𝕜] E) :
     (∀ j, V ∘ₗ (P' j ∘ₗ P j).operatorAbs = P' j ∘ₗ P j) ↔
       V ∘ₗ (∑ k, P' k ∘ₗ P k).operatorAbs = ∑ k, P' k ∘ₗ P k := by
   simp only [operatorAbs_comp hP hP' hPs hP's, ← comp_assoc]
@@ -145,14 +148,13 @@ variable [FiniteDimensional 𝕜 E]
 private theorem surjective_operatorAbs_overlap (hP : CompleteOrthogonalIdempotents P)
     (hP' : CompleteOrthogonalIdempotents P') (hnd : ∀ j, Disjoint (range (P j)) (ker (P' j))) :
     Function.Surjective (∑ k, P' k ∘ₗ P k).operatorAbs := by
-  refine injective_iff_surjective.1 (LinearMap.ker_eq_bot.1 ?_)
-  rw [ker_operatorAbs, LinearMap.ker_eq_bot']
-  intro x hx
-  have hblock (j : ι) : P j x = 0 := by
-    refine (disjoint_ker.1 (hnd j)) _ (mem_range_self _ x) ?_
-    rw [← comp_apply, ← overlap_comp hP, overlap_comp_eq_comp hP hP', comp_apply, hx, map_zero]
-  rw [← Module.End.one_apply (R := 𝕜) x, ← hP.complete, LinearMap.sum_apply]
-  exact Finset.sum_eq_zero fun j _ ↦ hblock j
+  apply LinearMap.surjective_of_injective
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_operatorAbs]
+  apply LinearMap.ker_eq_bot.mpr
+  simpa only [projectionFamilyOverlap_def, Module.End.mul_eq_comp] using
+    projectionFamilyOverlap_injective hP.complete hP'.toOrthogonalIdempotents
+      ((projectionFamilyNondegenerate_iff P P').mpr
+        (fun j ↦ (LinearMap.disjoint_ker_iff_injOn).1 (hnd j)))
 
 variable (hP : ∀ j, (P j).IsSymmetricProjection) (hPsum : ∑ j, P j = 1)
   (hP' : ∀ j, (P' j).IsSymmetricProjection) (hP'sum : ∑ j, P' j = 1)
@@ -169,7 +171,7 @@ theorem existsUnique_linearIsometryEquiv_comp_operatorAbs_eq :
   have hc' := CompleteOrthogonalIdempotents.of_isSymmetricProjection hP' hP'sum
   have hPs (j : ι) := (hP j).isSymmetric
   have hP's (j : ι) := (hP' j).isSymmetric
-  simp only [forall_comp_operatorAbs_eq_iff hc hc' hPs hP's]
+  simp only [forall_comp_operatorAbs_eq_iff hc hc'.toOrthogonalIdempotents hPs hP's]
   set T := ∑ k, P' k ∘ₗ P k
   obtain ⟨U, hU⟩ := exists_linearIsometryEquiv_of_inner_eq (v := T.operatorAbs) (w := T)
     fun x y ↦ by
@@ -190,12 +192,14 @@ theorem comp_eq_comp_of_forall_comp_operatorAbs_eq {V : E →ₗ[𝕜] E}
   have hc' := CompleteOrthogonalIdempotents.of_isSymmetricProjection hP' hP'sum
   have hPs (k : ι) := (hP k).isSymmetric
   have hP's (k : ι) := (hP' k).isSymmetric
-  rw [forall_comp_operatorAbs_eq_iff hc hc' hPs hP's] at hV
+  rw [forall_comp_operatorAbs_eq_iff hc hc'.toOrthogonalIdempotents hPs hP's] at hV
   set T := ∑ k, P' k ∘ₗ P k
   have hcomm : P j ∘ₗ T.operatorAbs = T.operatorAbs ∘ₗ P j :=
-    (commute_operatorAbs_of_commute (commute_adjoint_overlap_comp_overlap hc hc' hPs hP's j)).eq
+    (commute_operatorAbs_of_commute
+      (commute_adjoint_overlap_comp_overlap hc hc'.toOrthogonalIdempotents hPs hP's j)).eq
   refine (cancel_right (surjective_operatorAbs_overlap hc hc' hnd)).1 ?_
-  rw [comp_assoc, hcomm, ← comp_assoc, hV, overlap_comp_eq_comp hc hc', comp_assoc, hV]
+  rw [comp_assoc, hcomm, ← comp_assoc, hV,
+    overlap_comp_eq_comp hc hc'.toOrthogonalIdempotents, comp_assoc, hV]
 
 /-- Under Davis's non-degeneracy condition, some unitary intertwines the two complete families of
 orthogonal projections: `U Pⱼ = P'ⱼ U` for every `j`. -/
