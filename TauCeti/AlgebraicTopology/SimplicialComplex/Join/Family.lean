@@ -1,0 +1,145 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
+
+-- Unfold the standard complex to apply the coordinate characterization for onFinsupp.
+import all TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+
+/-!
+# Joins of discrete families
+
+The join of a family of discrete sets has vertices `Σ i, A i`. Its faces are nonempty finite
+sets containing at most one vertex at each index. We construct this abstract complex, describe
+its barycentric coordinates, and give the simplicial maps induced by maps of families and by
+inclusions of subsets of indices. The realization uses the weak topology, not the topology
+induced by a norm on the coordinate vectors.
+
+Taking the index type to be `ℕ` gives the countable join used in Milnor's construction of
+classifying spaces.
+
+The construction follows J. Milnor, *Construction of universal bundles, II*, Ann. of Math.
+63 (1956). It uses Mathlib's `AbstractSimplicialComplex` and the weak realization and simplicial
+realization maps in `TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic` and
+`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map`.
+-/
+
+public section
+
+open AbstractSimplicialComplex
+open PreAbstractSimplicialComplex (SimplicialMap)
+
+namespace TauCeti.AbstractSimplicialComplex
+
+variable {I : Type*} (A : I → Type*)
+
+/-- The join of discrete sets indexed by `I`: a face contains at most one vertex at each index.
+In particular, taking `I = ℕ` gives the countable join. -/
+def sigmaJoin : AbstractSimplicialComplex (Σ i, A i) where
+  faces := {σ | σ.Nonempty ∧ Set.InjOn Sigma.fst (σ : Set (Σ i, A i))}
+  isRelLowerSet_faces := by
+    rintro σ ⟨hne, hinj⟩
+    exact ⟨hne, fun _ hsub hne' => ⟨hne', hinj.mono hsub⟩⟩
+  singleton_mem v := ⟨Finset.singleton_nonempty v, by simp⟩
+
+/-- Faces are precisely the nonempty finite sets meeting every index at most once. -/
+@[simp]
+theorem mem_sigmaJoin_iff {σ : Finset (Σ i, A i)} :
+    σ ∈ sigmaJoin A ↔ σ.Nonempty ∧ Set.InjOn Sigma.fst (σ : Set (Σ i, A i)) :=
+  Iff.rfl
+
+/-- Two vertices of a face at the same index are equal. -/
+theorem eq_of_mem_sigmaJoin {σ : Finset (Σ i, A i)} (hσ : σ ∈ sigmaJoin A)
+    {v w : Σ i, A i} (hv : v ∈ σ) (hw : w ∈ σ) (h : v.1 = w.1) : v = w :=
+  (mem_sigmaJoin_iff A).mp hσ |>.2 hv hw h
+
+variable {A} {J K : Type*} {B : J → Type*} {C : K → Type*}
+
+/-- An injective map of indices and maps of the discrete families induce a simplicial map.
+No injectivity assumption is required on the family maps. -/
+def sigmaJoinMap [DecidableEq (Σ j, B j)] (e : I → J) (he : Function.Injective e)
+    (f : ∀ i, A i → B (e i)) :
+    SimplicialMap (sigmaJoin A).toPreAbstractSimplicialComplex
+      (sigmaJoin B).toPreAbstractSimplicialComplex where
+  toFun := Sigma.map e f
+  map_face' := by
+    intro σ hσ
+    rw [_root_.AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex] at hσ ⊢
+    refine ⟨Finset.image_nonempty.mpr hσ.1, ?_⟩
+    intro v hv w hw heq
+    obtain ⟨v', hv', rfl⟩ := Finset.mem_image.mp hv
+    obtain ⟨w', hw', rfl⟩ := Finset.mem_image.mp hw
+    exact congrArg (Sigma.map e f) (eq_of_mem_sigmaJoin A hσ hv' hw' (he heq))
+
+@[simp]
+theorem sigmaJoinMap_apply [DecidableEq (Σ j, B j)] (e : I → J)
+    (he : Function.Injective e) (f : ∀ i, A i → B (e i)) (v : Σ i, A i) :
+    sigmaJoinMap e he f v = ⟨e v.1, f v.1 v.2⟩ :=
+  (rfl)
+
+/-- The identity on indices and families induces the identity simplicial map. -/
+@[simp]
+theorem sigmaJoinMap_id [DecidableEq (Σ i, A i)] :
+    sigmaJoinMap id Function.injective_id (fun _ x => x) =
+      SimplicialMap.id (sigmaJoin A).toPreAbstractSimplicialComplex := by
+  apply DFunLike.ext
+  intro v
+  simp
+
+/-- The indexed family construction respects composition strictly. -/
+@[simp]
+theorem sigmaJoinMap_comp [DecidableEq (Σ j, B j)] [DecidableEq (Σ k, C k)]
+    (e : I → J) (he : Function.Injective e) (g : J → K) (hg : Function.Injective g)
+    (h : ∀ j, B j → C (g j)) (f : ∀ i, A i → B (e i)) :
+    (sigmaJoinMap g hg h).comp (sigmaJoinMap e he f) =
+      sigmaJoinMap (g ∘ e) (hg.comp he) (fun i x => h (e i) (f i x)) := by
+  apply DFunLike.ext
+  intro v
+  simp
+
+variable (A)
+
+/-- The inclusion of the subjoin on a subset of indices. Taking a finite subset gives the
+finite-index subjoins of the countable join. -/
+def subjoinInclusion [DecidableEq (Σ i, A i)] (s : Set I) :
+    SimplicialMap (sigmaJoin (fun i : s => A i)).toPreAbstractSimplicialComplex
+      (sigmaJoin A).toPreAbstractSimplicialComplex :=
+  sigmaJoinMap Subtype.val Subtype.val_injective (fun _ => id)
+
+@[simp]
+theorem subjoinInclusion_apply [DecidableEq (Σ i, A i)] (s : Set I)
+    (v : Σ i : s, A i) : subjoinInclusion A s v = ⟨v.1.1, v.2⟩ :=
+  (rfl)
+
+/-- Subjoin inclusions are injective on vertices. -/
+theorem subjoinInclusion_injective [DecidableEq (Σ i, A i)] (s : Set I) :
+    Function.Injective (subjoinInclusion A s) :=
+  Subtype.val_injective.sigma_map (fun _ => Function.injective_id)
+
+/-- Barycentric coordinates of the join are nonnegative, sum to one, and have at most one
+nonzero coordinate at each index. -/
+@[simp]
+theorem mem_sigmaJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
+    x ∈ (standardGeometricComplex (sigmaJoin A)).space ↔
+      (∀ v, 0 ≤ x v) ∧ x.sum (fun _ r => r) = 1 ∧
+        Set.InjOn Sigma.fst (x.support : Set (Σ i, A i)) := by
+  classical
+  -- Match the classical vertex equality used by the standard simplex coordinate API.
+  let : DecidableEq (Σ i, A i) := Classical.decEq _
+  rw [standardGeometricComplex, Geometry.SimplicialComplex.mem_space_onFinsupp_iff,
+    _root_.AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex, mem_sigmaJoin_iff]
+  constructor
+  · rintro ⟨hnonneg, hsum, _, hinj⟩
+    exact ⟨hnonneg, hsum, hinj⟩
+  · rintro ⟨hnonneg, hsum, hinj⟩
+    refine ⟨hnonneg, hsum, ?_, hinj⟩
+    apply Finsupp.support_nonempty_iff.mpr
+    intro hzero
+    simp [hzero] at hsum
+
+end TauCeti.AbstractSimplicialComplex
