@@ -33,6 +33,12 @@ a point of the other, which regularity forces to be a common point of the two ed
 distinct edges of a simple polygon share at most one point. The projection along a direction,
 `Polygon.projAlong`, is affine, so these results apply to it.
 
+Third, for a simple real polygon and the projection along a direction `d`, the crossings are
+transverse: at a double point and its partner, the directions of the two edges through them and
+`d` are linearly independent
+(`Polygon.IsRegularProjection.linearIndependent_of_projAlong_eq`). This is what makes the sign of
+a crossing of the knot diagram well defined.
+
 ## Main definitions
 
 * `Polygon.doublePoints R poly π`: the points of the polygon with the same image under `π` as
@@ -52,6 +58,8 @@ distinct edges of a simple polygon share at most one point. The projection along
   projection.
 * `Polygon.IsRegularProjection.finite_doublePoints`: an affine regular projection of a simple
   polygon has finitely many double points.
+* `Polygon.IsRegularProjection.linearIndependent_of_projAlong_eq`: the crossings of a regular
+  projection along a direction are transverse.
 
 ## References
 
@@ -263,5 +271,98 @@ theorem IsRegularProjection.finite_doublePoints (hs : poly.IsSimple R)
   exact mem_iUnion₂.2 ⟨i, j, mem_iUnion.2 ⟨hij, (x, y), ⟨hxi, hyj, hπyx.symm⟩, rfl⟩⟩
 
 end Finite
+
+section Transversality
+
+open Filter Topology
+
+variable [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {poly : Polygon P n} {p₀ : P} {d : V}
+
+/-- **Crossings of a regular projection are transverse.** Let `x` and `y` be distinct points in
+the interiors of edges `i` and `j` of a simple polygon with the same projection along `d`, a
+regular projection. Then the directions of the two edges and `d` are linearly independent:
+otherwise either an edge would be parallel to `d`, or moving `x` and `y` along their edges would
+give a second pair of points of the two edges with the same projection. -/
+theorem IsRegularProjection.linearIndependent_of_projAlong_eq (hs : poly.IsSimple ℝ)
+    (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {i j : Fin n} {s t : ℝ}
+    (hsI : s ∈ Ioo (0 : ℝ) 1) (htI : t ∈ Ioo (0 : ℝ) 1)
+    (hne : poly.edgePath ℝ i s ≠ poly.edgePath ℝ j t)
+    (h : projAlong ℝ p₀ d (poly.edgePath ℝ i s) = projAlong ℝ p₀ d (poly.edgePath ℝ j t)) :
+    LinearIndependent ℝ ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] := by
+  have hmem (k : Fin n) {r : ℝ} (hr : r ∈ Ioo (0 : ℝ) 1) :
+      poly.edgePath ℝ k r ∈ poly.edgeSet ℝ k := by
+    rw [edgeSet_eq_image_edgePath]
+    exact mem_image_of_mem _ (Ioo_subset_Icc_self hr)
+  have hij : i ≠ j := by
+    rintro rfl
+    exact hne (hπ.injOn_edgeSet i (hmem i hsI) (hmem i htI) h)
+  -- Moving along an edge by `c` translates a point of it by `c` times the edge direction.
+  have hpath (k : Fin n) (r c : ℝ) : poly.edgePath ℝ k (r + c) =
+      c • (poly (finRotate n k) -ᵥ poly k) +ᵥ poly.edgePath ℝ k r := by
+    simp only [edgePath, lineMap_apply, vadd_vadd, ← add_smul, add_comm]
+  -- No edge is parallel to `d`, since the projection is injective on the vertices.
+  have hnpar (k : Fin n) (a : ℝ) (ha : a • d = poly (finRotate n k) -ᵥ poly k) : False :=
+    hs.hasNondegenerateEdges k (hπ.eq_vertex_of_apply_eq k
+      (mem_iUnion.2 ⟨k, poly.apply_finRotate_mem_edgeSet ℝ k⟩)
+      (projAlong_eq_projAlong_iff.2 ⟨a, ha⟩)).symm
+  obtain ⟨a, ha⟩ := projAlong_eq_projAlong_iff.1 h
+  have hd : d ≠ 0 := by
+    rintro rfl
+    rw [smul_zero, eq_comm, vsub_eq_zero_iff_eq] at ha
+    exact hne ha
+  rw [Fintype.linearIndependent_iff]
+  intro g hg
+  simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at hg
+  suffices h01 : g 0 = 0 ∧ g 1 = 0 by
+    obtain ⟨h0, h1⟩ := h01
+    have h2 : g 2 = 0 := by
+      rw [h0, h1, zero_smul, zero_smul, zero_add, zero_add, smul_eq_zero] at hg
+      exact hg.resolve_right hd
+    intro k
+    fin_cases k <;> assumption
+  by_cases h0 : g 0 = 0
+  · refine ⟨h0, by_contra fun h1 ↦ hnpar j (-((g 1)⁻¹ * g 2)) ?_⟩
+    rw [h0, zero_smul, zero_add] at hg
+    have := congrArg ((g 1)⁻¹ • ·) hg
+    simp only [smul_add, smul_smul, inv_mul_cancel₀ h1, one_smul, smul_zero] at this
+    rw [neg_smul, neg_eq_iff_eq_neg, eq_neg_iff_add_eq_zero, add_comm, this]
+  by_cases h1 : g 1 = 0
+  · refine (hnpar i (-((g 0)⁻¹ * g 2)) ?_).elim
+    rw [h1, zero_smul, add_zero] at hg
+    have := congrArg ((g 0)⁻¹ • ·) hg
+    simp only [smul_add, smul_smul, inv_mul_cancel₀ h0, one_smul, smul_zero] at this
+    rw [neg_smul, neg_eq_iff_eq_neg, eq_neg_iff_add_eq_zero, add_comm, this]
+  -- Both edges move: for small `l ≠ 0`, the points of the edges at the parameters `s + l * g 0`
+  -- and `t - l * g 1` again have the same projection.
+  exfalso
+  have hev : ∀ᶠ l in 𝓝 (0 : ℝ), s + l * g 0 ∈ Ioo (0 : ℝ) 1 ∧ t + -(l * g 1) ∈ Ioo (0 : ℝ) 1 := by
+    refine (Tendsto.eventually_mem ?_ (Ioo_mem_nhds hsI.1 hsI.2)).and
+      (Tendsto.eventually_mem ?_ (Ioo_mem_nhds htI.1 htI.2))
+    · have : Continuous fun l : ℝ ↦ s + l * g 0 := by fun_prop
+      simpa using this.tendsto 0
+    · have : Continuous fun l : ℝ ↦ t + -(l * g 1) := by fun_prop
+      simpa using this.tendsto 0
+  obtain ⟨l, ⟨hl₁, hl₂⟩, hl₀⟩ :=
+    ((hev.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := {0}ᶜ))).exists
+  have hl₀ : l ≠ 0 := hl₀
+  have hproj : projAlong ℝ p₀ d (poly.edgePath ℝ i (s + l * g 0)) =
+      projAlong ℝ p₀ d (poly.edgePath ℝ j (t + -(l * g 1))) := by
+    refine projAlong_eq_projAlong_iff.2 ⟨a - l * g 2, ?_⟩
+    rw [hpath, hpath, vadd_vsub_vadd_comm, ← ha]
+    linear_combination (norm := module) (-l) • hg
+  have hpair := hπ.subsingleton_setOf_mem_edgeSet hs hij
+    (show (poly.edgePath ℝ i s, poly.edgePath ℝ j t) ∈ _ from ⟨hmem i hsI, hmem j htI, h⟩)
+    (show (poly.edgePath ℝ i (s + l * g 0), poly.edgePath ℝ j (t + -(l * g 1))) ∈ _ from
+      ⟨hmem i hl₁, hmem j hl₂, hproj⟩)
+  have hx := congrArg Prod.fst hpair
+  dsimp only at hx
+  rw [hpath, eq_comm] at hx
+  have hv := (vadd_vsub _ _).symm.trans ((congrArg (· -ᵥ poly.edgePath ℝ i s) hx).trans
+    (vsub_self _))
+  rw [smul_eq_zero, vsub_eq_zero_iff_eq] at hv
+  exact hv.elim (mul_ne_zero hl₀ h0) fun hx ↦ hs.hasNondegenerateEdges i hx.symm
+
+end Transversality
 
 end Polygon

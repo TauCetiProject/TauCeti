@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Finset.Sort
 import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.Data.Fin.Rev
 import Mathlib.Data.Fintype.Prod
@@ -29,6 +30,11 @@ operations needed by those developments: relabelling crossings, mirroring, rever
 the writhe, and the crossing-free witness. `FramedBasedOrientedGaussCode` adds the integer framing
 coefficient relative to the Seifert framing, while `BasedUnorientedGaussCode` quotients by
 orientation reversal; their projections respectively forget framing and orientation.
+
+A traversal whose visits are the elements of a finite linearly ordered set, paired by a perfect
+matching and decorated with over/under data and signs, determines a based code,
+`BasedOrientedGaussCode.ofPerfectMatching`, with crossings numbered in the order of their first
+visits. This is how the code of a concrete diagram, such as a projected polygonal knot, is built.
 
 The conventions follow Lickorish, *An Introduction to Knot Theory*, Chapter 1: `over i = true`
 means that the traversal passes over at visit `i`, and a positive crossing contributes `+1` to the
@@ -181,6 +187,115 @@ noncomputable def visitDataEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) �
 theorem visitDataEquiv_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
     D.visitDataEquiv i = (D.visit i, D.over i) := by
   rw [visitDataEquiv, Equiv.ofBijective_apply, D.visitData_apply]
+
+/-!
+### Gauss codes of ordered traversals
+-/
+
+section OfPerfectMatching
+
+variable {α : Type*} [LinearOrder α] [Fintype α] {m : ℕ}
+
+/-- The visits of a matched finite linear order that come before their partner. -/
+private def leadingVisits (p : PerfectMatching α) : Finset α :=
+  {a | a < p.val a}
+
+private theorem mem_leadingVisits {p : PerfectMatching α} {a : α} :
+    a ∈ leadingVisits p ↔ a < p.val a := by
+  simp [leadingVisits]
+
+private theorem min_mem_leadingVisits (p : PerfectMatching α) (a : α) :
+    min a (p.val a) ∈ leadingVisits p := by
+  rw [mem_leadingVisits]
+  rcases lt_or_gt_of_ne (p.apply_ne a).symm with h | h
+  · rwa [min_eq_left h.le]
+  · rwa [min_eq_right h.le, p.apply_apply]
+
+private theorem card_leadingVisits (p : PerfectMatching α) (hα : Fintype.card α = 2 * m) :
+    (leadingVisits p).card = m := by
+  have hcompl : (leadingVisits p)ᶜ = (leadingVisits p).map p.val.toEmbedding := by
+    ext a
+    have hsymm : p.val.symm a = p.val a := (Equiv.symm_apply_eq _).2 (p.apply_apply a).symm
+    simp only [Finset.mem_compl, mem_leadingVisits, not_lt, Finset.mem_map_equiv, hsymm,
+      p.apply_apply]
+    exact le_iff_lt_or_eq.trans (or_iff_left (p.apply_ne a))
+  have h := Finset.card_add_card_compl (leadingVisits p)
+  rw [hcompl, Finset.card_map] at h
+  omega
+
+/-- The leading visits, enumerated in increasing order. -/
+private def leadingVisitsOrderIso (p : PerfectMatching α) (hα : Fintype.card α = 2 * m) :
+    Fin m ≃o leadingVisits p :=
+  (leadingVisits p).orderIsoOfFin (card_leadingVisits p hα)
+
+/-- The crossing label of a visit: the rank of the earlier visit of its pair among all earlier
+visits. -/
+private def pairLabel (p : PerfectMatching α) (hα : Fintype.card α = 2 * m) (a : α) : Fin m :=
+  (leadingVisitsOrderIso p hα).symm ⟨min a (p.val a), min_mem_leadingVisits p a⟩
+
+private theorem pairLabel_eq_pairLabel_iff (p : PerfectMatching α)
+    (hα : Fintype.card α = 2 * m) (a b : α) :
+    pairLabel p hα a = pairLabel p hα b ↔ b = a ∨ b = p.val a := by
+  rw [pairLabel, pairLabel, (leadingVisitsOrderIso p hα).symm.injective.eq_iff, Subtype.mk.injEq]
+  constructor
+  · intro h
+    rcases min_choice a (p.val a) with ha | ha <;> rcases min_choice b (p.val b) with hb | hb <;>
+      rw [ha, hb] at h
+    · exact .inl h.symm
+    · exact .inr (by rw [h, p.apply_apply])
+    · exact .inr h.symm
+    · exact .inl (p.val.injective h).symm
+  · rintro (rfl | rfl)
+    · rfl
+    · rw [p.apply_apply, min_comm]
+
+/-- The based oriented Gauss code of a traversal whose visits are the elements of a finite linear
+order `α` of cardinality `2 * m`, met in increasing order. The two visits of each crossing are
+paired by a perfect matching `p`, the over/under status of a visit is `over`, with exactly one
+visit of each pair over, and the sign of a crossing is `sign` at the earlier of its two visits.
+Crossings are labelled by `Fin m` in the order of their first visits. -/
+noncomputable def ofPerfectMatching (hα : Fintype.card α = 2 * m) (p : PerfectMatching α)
+    (over : α → Bool) (hover : ∀ a, over (p.val a) = !over a) (sign : α → ℤˣ) :
+    BasedOrientedGaussCode m where
+  visit i := pairLabel p hα (Fintype.orderIsoFinOfCardEq α hα i)
+  over i := over (Fintype.orderIsoFinOfCardEq α hα i)
+  sign c := sign (leadingVisitsOrderIso p hα c)
+  partner := PerfectMatching.congr (Fintype.orderIsoFinOfCardEq α hα).symm.toEquiv p
+  visit_eq_iff i j := by
+    rw [pairLabel_eq_pairLabel_iff, PerfectMatching.congr_val_apply,
+      (Fintype.orderIsoFinOfCardEq α hα).injective.eq_iff]
+    simp [OrderIso.eq_symm_apply]
+  over_partner i := by
+    simp [hover]
+
+variable (hα : Fintype.card α = 2 * m) (p : PerfectMatching α) (over : α → Bool)
+  (hover : ∀ a, over (p.val a) = !over a) (sign : α → ℤˣ)
+
+/-- The `i`-th visit of `ofPerfectMatching` is over exactly when the `i`-th element is. -/
+@[simp]
+theorem ofPerfectMatching_over (i : Fin (2 * m)) :
+    (ofPerfectMatching hα p over hover sign).over i = over (Fintype.orderIsoFinOfCardEq α hα i) :=
+  (rfl)
+
+/-- The partner of the `i`-th visit of `ofPerfectMatching` is the visit at the partner of the
+`i`-th element. -/
+@[simp]
+theorem orderIsoFinOfCardEq_ofPerfectMatching_partner (i : Fin (2 * m)) :
+    Fintype.orderIsoFinOfCardEq α hα ((ofPerfectMatching hα p over hover sign).partner.val i) =
+      p.val (Fintype.orderIsoFinOfCardEq α hα i) := by
+  simp [ofPerfectMatching]
+
+/-- When `sign` takes the same value at the two visits of each pair, the sign of the crossing met
+at the `i`-th visit of `ofPerfectMatching` is `sign` at the `i`-th element. -/
+theorem ofPerfectMatching_sign_visit (hsign : ∀ a, sign (p.val a) = sign a) (i : Fin (2 * m)) :
+    (ofPerfectMatching hα p over hover sign).sign
+        ((ofPerfectMatching hα p over hover sign).visit i) =
+      sign (Fintype.orderIsoFinOfCardEq α hα i) := by
+  simp only [ofPerfectMatching, pairLabel, OrderIso.apply_symm_apply]
+  set a := Fintype.orderIsoFinOfCardEq α hα i
+  rcases min_choice a (p.val a) with h | h <;> simp only [h, hsign]
+
+end OfPerfectMatching
 
 /-- The writhe is the sum of the signs of all crossings. -/
 def writhe (D : BasedOrientedGaussCode n) : ℤ :=
