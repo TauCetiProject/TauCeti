@@ -164,7 +164,8 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) (E : B → Type w)
   [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)] {B' : Type w}
   [TopologicalSpace B'] (f : C(B', B))
 
-local instance (b' : B') : Zero (((⇑f) *ᵖ E) b') :=
+/-- The zero of a fibre of the pullback `f*E` is the zero of the corresponding fibre of `E`. -/
+local instance pullbackFiberZero (b' : B') : Zero (((⇑f) *ᵖ E) b') :=
   inferInstanceAs (Zero (E (f b')))
 
 /-- The map `(f*E, (f*E)₀) ⟶ (E, E₀)` of Thom pairs covering a continuous map `f : B' → B`. -/
