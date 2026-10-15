@@ -60,8 +60,6 @@ through divisors of points, such as points of exact order `N`, pull back along b
   section of `E` there; in particular (`pointsPullback_left_apply_eq_zero_iff`) the base change
   `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the zero
   section at `f s'`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: the points of
-  `S` at which an `S`-point of `E` meets the zero section form a closed set.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_pointsPullback_left`: the ideal sheaf of `P'`
   is the inverse image of the ideal sheaf of `P` along `g`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`: the inverse image of
@@ -310,19 +308,6 @@ theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.
     (pointsPullback hg h0 P).left s' = E'.zero s' ↔ P.left (f s') = E.zero (f s') := by
   rw [left_apply_eq_zero_iff_of_isPullback hg h0, ← Scheme.Hom.comp_apply,
     pointsPullback_left_comp, Scheme.Hom.comp_apply]
-
-/-- **Meeting the zero section is a closed condition.** The set of points of `S` at which an
-`S`-point of `E` meets the zero section is closed: it is the preimage of the image of the zero
-section, a closed immersion since `E` is separated over `S`. -/
-theorem isClosed_setOf_left_apply_eq_zero (x : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
-    IsClosed {s | x.left s = E.zero s} := by
-  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
-  ext s
-  refine ⟨fun h ↦ ⟨s, h.symm⟩, fun ⟨s', hs'⟩ ↦ ?_⟩
-  -- a point of the zero section lying on `x` lies over the same point of `S`
-  obtain rfl : s' = s := by
-    simpa [← Scheme.Hom.comp_apply] using congrArg E.structureMap hs'
-  exact hs'.symm
 
 /-- **The divisor of a base-changed point.** The ideal sheaf of the base change `P'` of an
 `S`-point `P` of `E`, which cuts out the divisor `[P']` on `E'`, is the inverse image along `g` of
