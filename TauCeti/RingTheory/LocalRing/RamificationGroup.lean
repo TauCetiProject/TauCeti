@@ -684,7 +684,11 @@ variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemi
 ideal.** Let `f : S →+* T` be a homomorphism of local rings, equivariant along `φ : G →* H`, such
 that `f⁻¹ (𝔪_T ^ n) = 𝔪_S ^ n` and `S` surjects onto `T ⧸ 𝔪_T ^ n` for every `n`, as for the
 inclusion of a discrete valuation ring into its completion. Then `G_i` is the preimage of `H_i`
-under `φ`. -/
+under `φ`.
+
+The approximation argument generalizes
+`IsDedekindDomain.HeightOneSpectrum.mem_ramificationGroup_iff_decompositionHom_mem` from
+`TauCeti/NumberTheory/NumberField/LocalGlobal/RamificationGroup.lean`. -/
 theorem ramificationGroup_eq_comap_of_comap_maximalIdeal_pow (φ : G →* H) (f : S →+* T)
     (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x)
     (hcomap : ∀ n : ℕ, (maximalIdeal T ^ n).comap f = maximalIdeal S ^ n)

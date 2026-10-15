@@ -23,6 +23,10 @@ For an automorphism `σ` of `F` fixing `P`, the extension preserves the complete
 so it lies in the decomposition group of the completed place. This is how the decomposition group
 of a place in a Galois extension acts on the completion.
 
+This API adapts `IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr` and its transport
+lemmas from `TauCeti/RingTheory/DedekindDomain/AdicValuation/Transport.lean` to places of
+function fields, using the extracted general transport `Valuation.Completion.congr`.
+
 ## Main definitions
 
 * `TauCeti.Place.completionCongr`: the isomorphism of completions `F_P ≃ₐ[k] F'_Q` extending `σ`.

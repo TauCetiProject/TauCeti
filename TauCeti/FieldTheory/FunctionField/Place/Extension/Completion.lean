@@ -59,20 +59,13 @@ variable {k F F' : Type*} [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 variable (F) (P : Place k F')
 
-/-- An automorphism fixing `P`, viewed as a `k`-automorphism, leaves the valuation at `P`
-unchanged. -/
-theorem valuation_restrictScalars_decompositionSubgroup
-    (g : P.integers.decompositionSubgroup F) (x : F') :
-    P.valuation ((g : F' ≃ₐ[F] F').restrictScalars k x) = P.valuation x := by
-  simpa only [AlgEquiv.restrictScalars_apply] using valuation_decompositionSubgroup_apply F P g x
-
 /-- **The action of the decomposition group on the completion**: an element of the decomposition
 group of `P` extends by continuity to an automorphism of the completion at `P` that preserves the
 completed valuation ring. -/
 noncomputable def completionDecompositionHom :
     P.integers.decompositionSubgroup F →* P.completionPlace.integers.decompositionSubgroup k where
   toFun g := ⟨completionCongr P P ((g : F' ≃ₐ[F] F').restrictScalars k)
-      (valuation_restrictScalars_decompositionSubgroup F P g),
+      (valuation_decompositionSubgroup_apply F P g),
     completionCongr_mem_decompositionSubgroup _ _⟩
   -- Restricting scalars leaves the underlying equivalence unchanged, so the identity case is
   -- definitionally the `AlgEquiv.refl` case of `completionCongr_refl`.
@@ -82,8 +75,8 @@ noncomputable def completionDecompositionHom :
     (completionCongr_trans (P := P) (Q := P) (R := P)
       (σ := ((h : F' ≃ₐ[F] F').restrictScalars k))
       (τ := ((g : F' ≃ₐ[F] F').restrictScalars k))
-      (valuation_restrictScalars_decompositionSubgroup F P h)
-      (valuation_restrictScalars_decompositionSubgroup F P g))
+      (valuation_decompositionSubgroup_apply F P h)
+      (valuation_decompositionSubgroup_apply F P g))
     x).symm
 
 variable {F P}
@@ -92,7 +85,7 @@ variable {F P}
 theorem coe_completionDecompositionHom (g : P.integers.decompositionSubgroup F) :
     (completionDecompositionHom F P g : P.Completion ≃ₐ[k] P.Completion) =
       completionCongr P P ((g : F' ≃ₐ[F] F').restrictScalars k)
-        (valuation_restrictScalars_decompositionSubgroup F P g) := by
+        (valuation_decompositionSubgroup_apply F P g) := by
   -- This holds by definition of `completionDecompositionHom`.
   rfl
 
@@ -103,8 +96,9 @@ theorem completionDecompositionHom_completionEmbedding (g : P.integers.decomposi
     (completionDecompositionHom F P g : P.Completion ≃ₐ[k] P.Completion)
         (P.completionEmbedding x) =
       P.completionEmbedding ((g : F' ≃ₐ[F] F') x) := by
-  rw [coe_completionDecompositionHom, completionCongr_completionEmbedding,
-    AlgEquiv.restrictScalars_apply]
+  rw [coe_completionDecompositionHom]
+  exact completionCongr_completionEmbedding (σ := (g : F' ≃ₐ[F] F').restrictScalars k)
+    (valuation_decompositionSubgroup_apply F P g) x
 
 /-- The action of the decomposition group on the completion is continuous. -/
 theorem continuous_completionDecompositionHom (g : P.integers.decompositionSubgroup F) :

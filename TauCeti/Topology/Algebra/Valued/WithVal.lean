@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Valued.WithVal
 public import TauCeti.Algebra.GroupWithZero.Range
+public import TauCeti.RingTheory.Valuation.RingEquiv
 public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
@@ -17,6 +18,11 @@ on `K'`, in the sense that `w (σ x) = v x`. Then `σ` is uniformly continuous f
 structures that `v` and `w` define, so it extends to an isomorphism of the completions
 `v.Completion ≃+* w.Completion`. This is how an automorphism of a field fixing a place acts on the
 completion at that place.
+
+The uniform-continuity and completion-transport arguments are extracted and generalized from
+`IsDedekindDomain.HeightOneSpectrum.uniformContinuous_withValCongr` and
+`IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Transport.lean`.
 
 ## Main definitions
 
@@ -96,11 +102,6 @@ theorem continuous_valued {L : Type*} [Field L] {q : Valuation L Γ₀}
   Valued.continuous_valuation_of_surjective <|
     Valued.valuedCompletion_surjective_iff.mpr (.of_comp hq)
 
-/-- The inverse of an isomorphism carrying `v` to `w` carries `w` to `v`. -/
-private theorem symm_apply_eq {σ : K ≃+* K'} (hσ : ∀ x, w (σ x) = v x) (y : K') :
-    v (σ.symm y) = w y := by
-  rw [← hσ, RingEquiv.apply_symm_apply]
-
 /-- **The isomorphism of completions extending `σ`**: an isomorphism `σ : K ≃+* K'` carrying the
 valuation `v` to `w` extends by continuity to
 `v.Completion ≃+* w.Completion`. -/
@@ -108,7 +109,7 @@ noncomputable def congr (σ : K ≃+* K') (hσ : ∀ x, w (σ x) = v x) :
     v.Completion ≃+* w.Completion :=
   UniformSpace.Completion.mapRingEquiv (WithVal.congr v w σ)
     (WithVal.uniformContinuous_congr σ hσ).continuous
-    (WithVal.uniformContinuous_congr σ.symm (symm_apply_eq hσ)).continuous
+    (WithVal.uniformContinuous_congr σ.symm (Valuation.apply_symm_eq_of_apply_eq hσ)).continuous
 
 variable {σ : K ≃+* K'} (hσ : ∀ x, w (σ x) = v x)
 
