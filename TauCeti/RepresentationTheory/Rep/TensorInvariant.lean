@@ -13,19 +13,19 @@ public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 For an invariant `y` of a representation `N`, this file constructs the morphism of
 representations `M ⟶ M ⊗ N` that sends `m` to `m ⊗ₜ y`. It also records its additivity,
 linearity, naturality in both representations, and compatibility with the associator and
-braiding.
+braiding, as well as restriction along arbitrary homomorphisms of groups.
 -/
 
 public noncomputable section
 
-universe u
+universe u v w
 
 open CategoryTheory MonoidalCategory
 open scoped TensorProduct
 
 namespace Rep
 
-variable {k G : Type u} [CommRing k] [Group G]
+variable {k : Type u} {G : Type v} [CommRing k] [Group G]
 
 /-- For an invariant `y` of the representation `N`, the morphism of representations
 `M ⟶ M ⊗ N`, `m ↦ m ⊗ₜ y`. -/
@@ -43,24 +43,18 @@ theorem tensorInvariant_hom_apply (M : Rep k G) {N : Rep k G} (y : N.ρ.invarian
     (dsimp% ((tensorInvariant M y).hom m)) = m ⊗ₜ[k] (y : N.V) :=
   (rfl)
 
-/-- Restricting the map `m ↦ m ⊗ y` gives the map defined by the restricted invariant. -/
+/-- Restricting the map `m ↦ m ⊗ y` along a homomorphism of groups gives the map defined by
+the restricted invariant. -/
 @[simp]
-theorem resMap_tensorInvariant (M N : Rep k G) (H : Subgroup G)
+theorem resMap_tensorInvariant (M N : Rep k G) {H : Type w} [Group H] (f : H →* G)
     (y : N.ρ.invariants) :
-    Rep.resMap H.subtype (tensorInvariant M y) =
-      tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
-        ((Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y) := by
+    Rep.resMap f (tensorInvariant M y) =
+      tensorInvariant (N := Rep.res f N) (Rep.res f M)
+        ((Submodule.inclusion (N.ρ.invariants_le_invariants_comp f)) y) := by
   ext m
-  -- Both restricted representations retain the same underlying module and tensor product.
-  change (tensorInvariant M y).hom m =
-    (tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
-      ((Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y)).hom m
   exact (tensorInvariant_hom_apply M y m).trans
-    (tensorInvariant_hom_apply (N := Rep.res H.subtype N) (Rep.res H.subtype M)
-      ((Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y) m).symm
+    (tensorInvariant_hom_apply (N := Rep.res f N) (Rep.res f M)
+      ((Submodule.inclusion (N.ρ.invariants_le_invariants_comp f)) y) m).symm
 
 variable (M : Rep k G) {N : Rep k G}
 
@@ -141,7 +135,7 @@ end Rep
 
 namespace TauCeti.Rep
 
-variable {k G : Type u} [CommRing k] [Group G] {M N : _root_.Rep k G}
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] {M N : _root_.Rep k G}
 
 /-- Braiding the tensor of a vector with an invariant puts the invariant first. -/
 theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
@@ -166,7 +160,7 @@ end TauCeti.Rep
 
 namespace Rep
 
-variable {k G : Type u} [CommRing k] [Group G]
+variable {k : Type u} {G : Type v} [CommRing k] [Group G]
 
 /-- Tensoring with the invariant `1` of the trivial representation, then braiding and applying
 the left unitor, is the identity. -/
@@ -188,7 +182,7 @@ theorem tensorInvariant_one_braiding_leftUnitor (M : Rep k G) :
 
 /-- Restricting `y ↦ x ⊗ₜ y` along a monoid homomorphism gives the same map for the restricted
 representations, tensoring with `x` viewed as an invariant of the restriction. -/
-theorem resMap_tensorInvariant_braiding {M : Rep k G} (N : Rep k G) {H : Type u} [Group H]
+theorem resMap_tensorInvariant_braiding {M : Rep k G} (N : Rep k G) {H : Type w} [Group H]
     (f : H →* G) (x : M.ρ.invariants) (x' : (Rep.res f M).ρ.invariants) (hx : (x' : M.V) = x) :
     Rep.resMap f (tensorInvariant N x ≫ (β_ N M).hom) =
       tensorInvariant (Rep.res f N) x' ≫ (β_ (Rep.res f N) (Rep.res f M)).hom := by
