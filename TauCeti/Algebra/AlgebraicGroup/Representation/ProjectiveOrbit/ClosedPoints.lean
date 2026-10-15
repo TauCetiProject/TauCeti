@@ -32,14 +32,15 @@ the lines through translated vectors.
 
 The closed points of the whole projective space of lines are likewise the lines `k ∙ m` for
 nonzero vectors `m`, that is, the images of the identity point under the orbit morphisms of
-nonzero vectors. One direction is the description of closed points of `Proj (Sym N)` by
-nonzero functionals (`TauCeti.SymmetricAlgebra.exists_ne_zero_forall_mem_iff_of_isClosed`),
-applied to `N = M∨`; the other is Mathlib's `pointEquivClosedPoint`. This part needs neither
-finite generation nor reducedness of the Hopf algebra.
+nonzero vectors. One direction applies the description of closed points of `Proj (Sym N)` by
+nonzero functionals to `N = M∨`
+(`ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`); the other
+is Mathlib's `pointEquivClosedPoint`. This part needs neither finite generation nor
+reducedness of the Hopf algebra.
 
 ## Main declarations
 
-* `TauCeti.Comodule.mem_closedPoints_iff_exists_projectiveOrbitMap_eq`: the closed points of
+* `ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq`: the closed points of
   projective space are the identity images of orbit morphisms of nonzero vectors.
 * `TauCeti.Comodule.range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints`: the
   rational orbit images are the closed points of the orbit.
@@ -64,14 +65,14 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k 
 finite-dimensional representation are exactly the images of the identity point under the
 projective orbit morphisms of its nonzero vectors, that is, the lines `k ∙ m`. Neither finite
 generation nor reducedness of the Hopf algebra is needed. -/
-theorem mem_closedPoints_iff_exists_projectiveOrbitMap_eq
+theorem _root_.ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq
     (x : Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))) :
     x ∈ closedPoints _ ↔ ∃ (m : M) (hm : Module.IsUnimodular k m),
       projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) = x := by
   constructor
   · intro hx
     obtain ⟨v, hv0, hv⟩ :=
-      TauCeti.SymmetricAlgebra.exists_ne_zero_forall_mem_iff_of_isClosed x hx
+      ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed x hx
     obtain ⟨φ, hφ⟩ : ∃ φ, v φ ≠ 0 := by
       by_contra! h
       exact hv0 (LinearMap.ext h)
@@ -99,8 +100,11 @@ theorem mem_closedPoints_iff_exists_projectiveOrbitMap_eq
       have h : Spec.map (CommRingCat.ofHom (Bialgebra.counitAlgHom k H : H →+* k))
           (IsLocalRing.closedPoint k) = AlgHom.kernelPoint (Bialgebra.counitAlgHom k H) := by
         apply PrimeSpectrum.ext
-        change (PrimeSpectrum.comap _ (IsLocalRing.closedPoint k)).asIdeal = _
-        rw [PrimeSpectrum.comap_asIdeal, AlgHom.kernelPoint_asIdeal]
+        -- `IsLocalRing.closedPoint k` is a point of `PrimeSpectrum k`, not syntactically of
+        -- `Spec (.of k)`, so `Spec.map_apply` is applied by unification rather than by rewriting.
+        rw [congrArg PrimeSpectrum.asIdeal (Spec.map_apply
+            (CommRingCat.ofHom (Bialgebra.counitAlgHom k H : H →+* k)) (IsLocalRing.closedPoint k)),
+          PrimeSpectrum.comap_asIdeal, AlgHom.kernelPoint_asIdeal]
         dsimp only [IsLocalRing.closedPoint]
         rw [IsLocalRing.maximalIdeal_eq_bot, RingHom.ker_eq_comap_bot]
         rfl

@@ -21,12 +21,15 @@ a nonzero vector of `V`, so the closed points of the projective space of lines i
 The point is read on the standard chart `D₊(φ)` of a linear coordinate `φ` not vanishing at it.
 This chart is the spectrum of a finitely generated `k`-algebra, so by the Nullstellensatz the
 point is the kernel of a `k`-algebra homomorphism `ψ` on it
-(`PrimeSpectrum.exists_kernelPoint_eq_of_isClosed`); the functional is `c ↦ ψ (c / φ)`.
+(`PrimeSpectrum.exists_kernelPoint_eq_of_isClosed`); the functional is `c ↦ ψ (c / φ)`, and
+`ψ` evaluates every homogeneous fraction `a / φⁿ` as `a` at this functional.
 
 ## Main declarations
 
-* `TauCeti.SymmetricAlgebra.exists_ne_zero_forall_mem_iff_of_isClosed`: a closed point of
-  `Proj (Sym N)` is the vanishing locus of a nonzero functional on `N`.
+* `TauCeti.SymmetricAlgebra.apply_awayMk_eq_lift`: a `k`-algebra homomorphism on the chart of a
+  linear coordinate `φ` evaluates `a / φⁿ` as `a` at the functional `c ↦ ψ (c / φ)`.
+* `ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
+  point of `Proj (Sym N)` is the vanishing locus of a nonzero functional on `N`.
 
 ## References
 
@@ -42,13 +45,65 @@ namespace TauCeti.SymmetricAlgebra
 
 universe u
 
+section Chart
+
+variable {k N A : Type u} [CommRing k] [AddCommMonoid N] [Module k N] [CommRing A] [Algebra k A]
+
+/-- On the standard chart `D₊(φ)` of a linear coordinate `φ`, a `k`-algebra homomorphism `ψ`
+evaluates a homogeneous fraction `a / φⁿ` as the polynomial `a` evaluated at a linear map `v`
+that agrees with `c ↦ ψ (c / φ)` on linear coordinates. -/
+theorem apply_awayMk_eq_lift {φ : N}
+    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) (v : N →ₗ[k] A)
+    (hv : ∀ c, ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) 1 (SymmetricAlgebra.ι k N c)
+      (by simp)) = v c)
+    {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :
+    ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) n a (by rwa [smul_eq_mul, mul_one])) =
+      SymmetricAlgebra.lift v a := by
+  have hφ := ι_mem_homogeneousSubmodule k N φ
+  induction ha using Submodule.pow_induction_on_left' with
+  | algebraMap r =>
+    have : Away.mk _ hφ 0 (algebraMap k _ r) (by simp) = algebraMap k (Away _ _) r := by
+      apply val_injective
+      rw [Away.val_mk, val_algebraMap,
+        IsScalarTower.algebraMap_apply k (SymmetricAlgebra k N) (Localization.Away _) r,
+        ← Localization.mk_one_eq_algebraMap]
+      exact congrArg _ (Subtype.ext (pow_zero _))
+    rw [this]
+    simp
+  | add a b i ha hb iha ihb =>
+    have : Away.mk _ hφ i (a + b) (by simpa using add_mem ha hb) =
+        Away.mk _ hφ i a (by simpa using ha) + Away.mk _ hφ i b (by simpa using hb) := by
+      apply val_injective
+      simp [Away.val_mk, Localization.add_mk_self]
+    rw [this, map_add, iha, ihb, map_add]
+  | mem_mul c hc i a ha iha =>
+    obtain ⟨c, rfl⟩ := hc
+    have hc : SymmetricAlgebra.ι k N c ∈ homogeneousSubmodule k N (1 • 1) := by simp
+    have ha' : a ∈ homogeneousSubmodule k N (i • 1) := by simpa using ha
+    have hca : SymmetricAlgebra.ι k N c * a ∈ homogeneousSubmodule k N ((i + 1) • 1) := by
+      simpa [add_comm] using SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule k N c) ha
+    have : Away.mk _ hφ (i + 1) _ hca = Away.mk _ hφ 1 _ hc * Away.mk _ hφ i a ha' := by
+      apply val_injective
+      simp [Away.val_mk, Localization.mk_mul, pow_succ']
+    rw [this, map_mul, iha, map_mul, SymmetricAlgebra.lift_ι_apply, hv]
+
+end Chart
+
+end TauCeti.SymmetricAlgebra
+
+namespace ProjectiveSpectrum
+
+open TauCeti.SymmetricAlgebra
+
+universe u
+
 variable {k N : Type u} [Field k] [AddCommGroup N] [Module k N]
 
 /-- Over an algebraically closed field, a closed point of the projective spectrum of `Sym N`, for
 `N` finite-dimensional, is cut out by a nonzero functional `v` on `N`: a homogeneous polynomial
 of positive degree lies in its homogeneous prime ideal exactly when it vanishes at `v`. -/
-theorem exists_ne_zero_forall_mem_iff_of_isClosed [IsAlgClosed k] [Module.Finite k N]
-    (x : Proj (homogeneousSubmodule k N)) (hx : IsClosed {x}) :
+theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed k]
+    [Module.Finite k N] (x : Proj (homogeneousSubmodule k N)) (hx : IsClosed {x}) :
     ∃ v : Module.Dual k N, v ≠ 0 ∧ ∀ n > 0, ∀ s ∈ homogeneousSubmodule k N n,
       s ∈ x.asHomogeneousIdeal ↔ SymmetricAlgebra.lift v s = 0 := by
   -- A relevant prime does not contain every linear coordinate.
@@ -79,51 +134,26 @@ theorem exists_ne_zero_forall_mem_iff_of_isClosed [IsAlgClosed k] [Module.Finite
   let v : Module.Dual k N := ψ.toLinearMap ∘ₗ Away.mkLinearMap hφ 1 ∘ₗ
     (SymmetricAlgebra.ι k N).codRestrict (homogeneousSubmodule k N (1 • 1))
       (fun c ↦ by simp)
-  have key (n : ℕ) (a : SymmetricAlgebra k N) (ha : a ∈ homogeneousSubmodule k N n) :
-      ψ (Away.mk _ hφ n a (by rwa [smul_eq_mul, mul_one])) = SymmetricAlgebra.lift v a := by
-    induction ha using Submodule.pow_induction_on_left' with
-    | algebraMap r =>
-      have : Away.mk _ hφ 0 (algebraMap k _ r) (by simp) = algebraMap k (Away _ _) r := by
-        apply val_injective
-        rw [Away.val_mk, val_algebraMap,
-          IsScalarTower.algebraMap_apply k (SymmetricAlgebra k N) (Localization.Away _) r,
-          ← Localization.mk_one_eq_algebraMap]
-        exact congrArg _ (Subtype.ext (pow_zero _))
-      rw [this]
-      simp
-    | add a b i ha hb iha ihb =>
-      have : Away.mk _ hφ i (a + b) (by simpa using add_mem ha hb) =
-          Away.mk _ hφ i a (by simpa using ha) + Away.mk _ hφ i b (by simpa using hb) := by
-        apply val_injective
-        simp [Away.val_mk, Localization.add_mk_self]
-      rw [this, map_add, iha, ihb, map_add]
-    | mem_mul c hc i a ha iha =>
-      obtain ⟨c, rfl⟩ := hc
-      have hc : SymmetricAlgebra.ι k N c ∈ homogeneousSubmodule k N (1 • 1) := by simp
-      have ha' : a ∈ homogeneousSubmodule k N (i • 1) := by simpa using ha
-      have hca : SymmetricAlgebra.ι k N c * a ∈ homogeneousSubmodule k N ((i + 1) • 1) := by
-        simpa [add_comm] using SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule k N c) ha
-      have : Away.mk _ hφ (i + 1) _ hca = Away.mk _ hφ 1 _ hc * Away.mk _ hφ i a ha' := by
-        apply val_injective
-        simp [Away.val_mk, Localization.mk_mul, pow_succ']
-      rw [this, map_mul, iha, map_mul, SymmetricAlgebra.lift_ι_apply]
-      simp [v]
+  have key {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :=
+    apply_awayMk_eq_lift ψ v (fun c ↦ by simp [v]) ha
   refine ⟨v, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
   · -- The functional takes the value `1` on the chart coordinate `φ`.
     have h1 : Away.mk _ hφ 1 (SymmetricAlgebra.ι k N φ) (by simp) = 1 := by
       apply val_injective
       simp [Away.val_mk]
-    have := key 1 _ hφ
+    have := key hφ
     rw [h1, map_one, SymmetricAlgebra.lift_ι_apply, hv, LinearMap.zero_apply] at this
     exact one_ne_zero this
   · -- Read membership in `x` on the chart, where `s` becomes `s / φⁿ`.
-    rw [← not_iff_not]
-    change Proj.awayι _ _ hφ one_pos (AlgHom.kernelPoint ψ) ∈ Proj.basicOpen _ s ↔ _
-    rw [← Scheme.Hom.mem_preimage, Proj.awayι_preimage_basicOpen _ hφ one_pos hs hn]
-    change Away.isLocalizationElem hφ hs ∉ (AlgHom.kernelPoint ψ).asIdeal ↔ _
-    rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
-    have := key n (s ^ 1) (by simpa using hs)
+    rw [← not_iff_not, ← Proj.mem_basicOpen, ← Scheme.Hom.mem_preimage,
+      Proj.awayι_preimage_basicOpen _ hφ one_pos hs hn]
+    -- The open is `PrimeSpectrum.basicOpen` viewed as an open of the scheme `Spec`, whose type
+    -- differs syntactically from the opens of `PrimeSpectrum`, so `PrimeSpectrum.mem_basicOpen`
+    -- is applied by unification rather than by rewriting.
+    refine (PrimeSpectrum.mem_basicOpen (Away.isLocalizationElem hφ hs) _).trans ?_
+    rw [TauCeti.AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
+    have := key (n := n) (a := s ^ 1) (by simpa using hs)
     rw [map_pow, pow_one (SymmetricAlgebra.lift v s)] at this
     exact not_congr (Iff.of_eq (congrArg (· = (0 : k)) this))
 
-end TauCeti.SymmetricAlgebra
+end ProjectiveSpectrum
