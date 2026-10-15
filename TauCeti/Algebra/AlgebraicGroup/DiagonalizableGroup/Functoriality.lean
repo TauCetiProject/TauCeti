@@ -75,7 +75,7 @@ theorem pointsMap_apply (φ : G →* G') (f : WithConv (MonoidAlgebra R G' →�
     pointsMap (A := A) φ f =
       toConv (f.ofConv.comp
         (MonoidAlgebra.mapDomainBialgHom R φ : MonoidAlgebra R G →ₐ[R] MonoidAlgebra R G')) :=
-  rfl
+  BialgHom.mapDomain_apply _ _
 
 /-- Pre-composition by the identity homomorphism is the identity on points. -/
 @[simp]

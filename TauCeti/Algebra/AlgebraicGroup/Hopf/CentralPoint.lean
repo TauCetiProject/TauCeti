@@ -130,8 +130,10 @@ theorem IsCentralPoint.mapDomain_bialgEquiv {g : WithConv (K →ₐ[R] A)}
   simp only [MulEquiv.coe_toMonoidHom] at hc'
   have hnatural :
       E (AlgHom.mapValue (H := K) φ g) =
-        AlgHom.mapValue (H := H) φ (BialgHom.mapDomain (A := A) e.toBialgHom g) :=
-    DFunLike.congr_fun (BialgHom.mapValue_mapDomain e.toBialgHom φ) g
+        AlgHom.mapValue (H := H) φ (BialgHom.mapDomain (A := A) e.toBialgHom g) := by
+    dsimp only [E]
+    rw [BialgEquiv.mapDomainMulEquiv_apply]
+    exact DFunLike.congr_fun (BialgHom.mapValue_mapDomain e.toBialgHom φ) g
   rw [hnatural, E.apply_symm_apply] at hc'
   exact hc'
 

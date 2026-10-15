@@ -189,9 +189,8 @@ lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_id (H : CommHopfAlgCat.{v} R) :
       𝟙 (HopfAlgebra.pointsFunctor (R := R) (H := H) :
         CommAlgCat.{w} R ⥤ GrpCat.{max v w}) := by
   ext A f
-  -- `mapPointsFunctor (𝟙 H)` precomposes each point with the identity coordinate morphism, so
-  -- both sides are the same map on `A`-points by construction; after the bump no `simp` lemma
-  -- spans the `GrpCat.Hom.hom` wrapper the `ext` leaves behind.
+  change BialgHom.mapDomain (BialgHom.id R H) f = f
+  rw [BialgHom.mapDomain_id]
   rfl
 
 /-- `mapPointsFunctor` sends coordinate-algebra composition to reverse composition of natural
@@ -201,10 +200,9 @@ lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_comp
     mapPointsFunctor (φ ≫ ψ) =
       mapPointsFunctor ψ ≫ mapPointsFunctor φ := by
   ext A f
-  -- as in `mapPointsFunctor_id`: precomposition with `φ ≫ ψ` is precomposition with `ψ` then
-  -- with `φ` by associativity of `AlgHom.comp`, which holds definitionally, and the residual
-  -- `GrpCat.Hom.hom` wrapper has no rewrite lemma after the bump.
-  rfl
+  change BialgHom.mapDomain (ψ.hom.comp φ.hom) f =
+    BialgHom.mapDomain φ.hom (BialgHom.mapDomain ψ.hom f)
+  rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply]
 
 /-- Pointwise form of contravariance of `mapPointsFunctor` under composition. -/
 lemma _root_.CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply {H K L : CommHopfAlgCat.{v} R}

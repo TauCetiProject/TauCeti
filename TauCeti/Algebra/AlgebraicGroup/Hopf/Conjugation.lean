@@ -124,8 +124,11 @@ theorem tensorProduct_map_comp_conjugationAlgHom
     Algebra.TensorProduct.map_comp_includeRight]
   apply WithConv.toConv_injective
   simp only [toConv_ofConv]
-  -- Expose precomposition as `mapDomain` so its convolution functoriality can rewrite the target.
-  change _ = BialgHom.mapDomain f (toConv (conjugationAlgHom (R := R) (H := K)))
+  have hpre :
+      BialgHom.mapDomain f (toConv (conjugationAlgHom (R := R) (H := K))) =
+        toConv ((conjugationAlgHom (R := R) (H := K)).comp f.toAlgHom) := by
+    rw [BialgHom.mapDomain_apply, ofConv_toConv]
+  rw [← hpre]
   rw [toConv_conjugationAlgHom, map_mul, map_mul, map_inv]
   have hleft_coe :
       toConv (Algebra.TensorProduct.includeLeft.comp f.toAlgHom) =

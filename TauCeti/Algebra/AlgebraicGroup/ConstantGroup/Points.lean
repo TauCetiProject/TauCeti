@@ -148,7 +148,7 @@ theorem pointHom_eq_one_of_connected {G : Type v} [Group G] [Finite G]
   apply MonoidHom.ext
   intro p
   apply (pointsMulEquiv k G).injective
-  rw [pointsMulEquiv_pointHom, MonoidHom.one_apply, map_one]
+  rw [pointsMulEquiv_pointHom, MonoidHom.one_apply, map_one, BialgHom.mapDomain_apply]
   exact point_comp_eq_one_of_connected G hconnected f p.ofConv
 
 end

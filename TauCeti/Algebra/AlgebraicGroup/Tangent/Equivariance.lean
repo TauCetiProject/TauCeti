@@ -90,6 +90,7 @@ theorem derivationComp_adDerivation (φ : A' →ₐc[R] A)
       (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)⁻¹ =
         BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ (g⁻¹) :=
     ((BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ).map_inv g).symm
+  simp only [BialgHom.mapDomain_apply] at mapDomain_inv ⊢
   apply Derivation.ext
   intro a
   apply (Bialgebra.CounitAlgebra.algEquivSelf R A' B).injective

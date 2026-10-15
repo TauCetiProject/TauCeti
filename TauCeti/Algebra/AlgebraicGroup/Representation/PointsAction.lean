@@ -165,6 +165,7 @@ theorem basePointsRepresentation_corestrict (φ : H₁ →ₐc[R] H₂)
      basePointsRepresentation (R := R) (H := H₂) M g) =
       basePointsRepresentation (R := R) (H := H₁) M (BialgHom.mapDomain φ g) := by
   let _ : Comodule R H₂ M := Corestrict φ.toCoalgHom
+  rw [BialgHom.mapDomain_apply]
   apply LinearMap.ext
   intro m
   rw [basePointsRepresentation_apply, basePointsRepresentation_apply]
