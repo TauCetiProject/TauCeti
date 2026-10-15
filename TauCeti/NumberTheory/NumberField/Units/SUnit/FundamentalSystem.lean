@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
+import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 
 /-!
@@ -55,13 +56,6 @@ private instance instModuleFiniteAdditiveUnit : Module.Finite ℤ (Additive (S.u
   rw [Module.Finite.iff_addGroup_fg]
   infer_instance
 
-omit [Finite S] in
-private theorem ofMul_mem_torsion_iff {x : S.unit K} :
-    Additive.ofMul x ∈ Submodule.torsion ℤ (Additive (S.unit K)) ↔
-      x ∈ CommGroup.torsion (S.unit K) := by
-  rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_int, AddCommGroup.mem_torsion,
-    isOfFinAddOrder_ofMul_iff, CommGroup.mem_torsion]
-
 /-- A basis of the group of S-units modulo its torsion submodule. -/
 def basisModTorsion :
     Basis (Fin (NumberField.Units.rank K + Nat.card S)) ℤ
@@ -97,7 +91,7 @@ theorem fun_eq_repr {x ζ : S.unit K} {f : Fin (NumberField.Units.rank K + Nat.c
     (h : x = ζ * ∏ i, fundSystem S i ^ f i) :
     f = (basisModTorsion S).repr (Submodule.Quotient.mk (Additive.ofMul x)) := by
   rw [h, ofMul_mul, Submodule.Quotient.mk_add,
-    (Submodule.Quotient.mk_eq_zero _).mpr ((ofMul_mem_torsion_iff S).mpr hζ), zero_add,
+    (Submodule.Quotient.mk_eq_zero _).mpr (ofMul_mem_torsion_int_iff.mpr hζ), zero_add,
     mk_prod_fundSystem_zpow, (basisModTorsion S).repr_sum_self f]
 
 /-- Every S-unit has a unique expression as a torsion S-unit times a product of integral powers
@@ -109,7 +103,7 @@ theorem exist_unique_eq_mul_prod (x : S.unit K) :
   let e := (basisModTorsion S).repr (Submodule.Quotient.mk (Additive.ofMul x))
   let ζ := x * (∏ i, fundSystem S i ^ e i)⁻¹
   have h_tors : ζ ∈ CommGroup.torsion (S.unit K) := by
-    rw [← ofMul_mem_torsion_iff, ← Submodule.Quotient.mk_eq_zero, ofMul_mul, ofMul_inv,
+    rw [← ofMul_mem_torsion_int_iff, ← Submodule.Quotient.mk_eq_zero, ofMul_mul, ofMul_inv,
       Submodule.Quotient.mk_add, Submodule.Quotient.mk_neg, mk_prod_fundSystem_zpow,
       (basisModTorsion S).sum_repr, add_neg_cancel]
   refine ⟨⟨⟨ζ, h_tors⟩, (e : Fin (NumberField.Units.rank K + Nat.card S) → ℤ)⟩, ?_, ?_⟩

@@ -65,4 +65,11 @@ theorem subsingleton_torsionBy_of_injective_zsmul {V : Type*} [AddCommGroup V] (
     ((Submodule.mem_torsionBy_iff _ _).mp x.property).trans
       ((Submodule.mem_torsionBy_iff _ _).mp y.property).symm⟩
 
+/-- An element of a commutative group `G` lies in the torsion submodule of the `ℤ`-module
+`Additive G` exactly when it lies in the torsion subgroup of `G`. -/
+theorem ofMul_mem_torsion_int_iff {G : Type*} [CommGroup G] {x : G} :
+    Additive.ofMul x ∈ Submodule.torsion ℤ (Additive G) ↔ x ∈ CommGroup.torsion G := by
+  rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_int, AddCommGroup.mem_torsion,
+    isOfFinAddOrder_ofMul_iff, CommGroup.mem_torsion]
+
 end TauCeti
